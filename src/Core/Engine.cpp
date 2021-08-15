@@ -185,6 +185,9 @@ namespace SparkyStudios::Audio::Amplitude
 
     bool Engine::Initialize(const EngineConfigDefinition* config)
     {
+        // Lock drivers registry
+        Driver::LockRegistry();
+
         // Create the internal engine state
         _state = new EngineInternalState();
         _state->version = Version();

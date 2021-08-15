@@ -104,6 +104,15 @@ namespace SparkyStudios::Audio::Amplitude
          */
         static void SetDefault(AmString name);
 
+        /**
+         * @brief Locks the drivers registry.
+         *
+         * This function is mainly used for internal purposes. Its
+         * called before the Engine initialization, to discard the
+         * registration of new divers after the engine is fully loaded.
+         */
+        static void LockRegistry();
+
     protected:
         /**
          * @brief The driver name.

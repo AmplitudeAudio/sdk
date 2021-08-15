@@ -93,4 +93,9 @@ namespace SparkyStudios::Audio::Amplitude
             }
         }
     }
+
+    void Driver::LockRegistry()
+    {
+        lockDrivers() = true;
+    }
 } // namespace SparkyStudios::Audio::Amplitude
