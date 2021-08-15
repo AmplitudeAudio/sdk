@@ -56,7 +56,7 @@ namespace SparkyStudios::Audio::Amplitude
          *
          * @return The number of audio frames loaded into the buffer.
          */
-        virtual AmUInt32 Load(AmVoidPtr out) = 0;
+        virtual AmUInt32 Load(AmFloat32Buffer out) = 0;
 
         /**
          * @brief Stream a part of the file from disk into the output buffer.
@@ -67,7 +67,7 @@ namespace SparkyStudios::Audio::Amplitude
          *
          * @return The number of frames read.
          */
-        virtual AmUInt32 Stream(AmVoidPtr out, AmUInt32 offset, AmUInt32 length) = 0;
+        virtual AmUInt32 Stream(AmFloat32Buffer out, AmUInt32 offset, AmUInt32 length) = 0;
 
         /**
          * @brief Checks whether this Codec can handle the file at
