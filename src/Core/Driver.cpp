@@ -87,7 +87,7 @@ namespace SparkyStudios::Audio::Amplitude
         {
             if (i->second->m_name == name)
             {
-                drivers.insert(drivers.cbegin(), DriverImpl(i->first, i->second));
+                drivers.insert(DriverImpl(i->first, i->second));
                 drivers.erase(i);
                 return;
             }
