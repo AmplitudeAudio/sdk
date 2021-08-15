@@ -578,6 +578,11 @@ static void atmxMixLayer(struct atmx_layer* lay, __m128 vol, __m128* align, uint
             uint32_t aChunkSize = ATOMIX_ALIGN(chunkSize) >> 1;
             int32_t len = atmxSoundStreamUpdate(lay->snd, cur, chunkSize);
 
+            // having 0 here mainly means that we have reached
+            // the end of the stream and the audio is not looping.
+            if (len == 0)
+                break;
+
             auto* buf = (__m128*)((float*)align + ((rnum - c) * 2));
 
             // action based on flag
