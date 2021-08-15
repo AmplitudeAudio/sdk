@@ -73,6 +73,11 @@ table EngineConfigDefinition {
 
   // The location of the buses definition file.
   buses_file:string;
+
+  // The name of the audio driver to use.
+  // If empty, or the given driver name is not registered,
+  // the default driver will be used instead.
+  driver:string;
 }
 
 root_type EngineConfigDefinition;

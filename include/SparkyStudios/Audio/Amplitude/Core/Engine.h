@@ -25,6 +25,7 @@
 
 #include <SparkyStudios/Audio/Amplitude/Core/Bus.h>
 #include <SparkyStudios/Audio/Amplitude/Core/Channel.h>
+#include <SparkyStudios/Audio/Amplitude/Core/Driver.h>
 #include <SparkyStudios/Audio/Amplitude/Core/Listener.h>
 #include <SparkyStudios/Audio/Amplitude/Core/Version.h>
 
@@ -67,6 +68,13 @@ namespace SparkyStudios::Audio::Amplitude
          * @return Whether initialization was successful.
          */
         bool Initialize(const EngineConfigDefinition* config);
+
+        /**
+         * @brief Deinitialize the audio engine.
+         *
+         * @return Whether the engine was successfully deinitialized.
+         */
+        bool Deinitialize();
 
         /**
          * @brief Update audio volume per channel each frame.
@@ -273,6 +281,16 @@ namespace SparkyStudios::Audio::Amplitude
         [[nodiscard]] const EngineConfigDefinition* GetEngineConfigDefinition() const;
 
         /**
+         * @brief Gets the audio driver used by this Engine.
+         *
+         * @return The audio driver.
+         */
+        [[nodiscard]] Driver* GetDriver() const
+        {
+            return _audioDriver;
+        }
+
+        /**
          * @brief Returns an unique instance of the Amplitude Engine.
          */
         [[nodiscard]] static Engine* GetInstance();
@@ -281,7 +299,11 @@ namespace SparkyStudios::Audio::Amplitude
         // Hold the engine config file contents.
         std::string _configSrc;
 
+        // The current state of the engine.
         EngineInternalState* _state;
+
+        // The audio driver used by the engine.
+        Driver* _audioDriver;
     };
 
 } // namespace SparkyStudios::Audio::Amplitude

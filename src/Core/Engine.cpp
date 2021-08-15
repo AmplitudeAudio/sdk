@@ -25,16 +25,13 @@
 
 #include "Sound.h"
 
-#include "engine_config_definition_generated.h"
 #include "buses_definition_generated.h"
+#include "engine_config_definition_generated.h"
 #include "sound_collection_definition_generated.h"
 
 namespace SparkyStudios::Audio::Amplitude
 {
     typedef flatbuffers::Vector<flatbuffers::Offset<flatbuffers::String>> BusNameList;
-
-    // Amplitude Engine unique instance.
-    static Engine* amplitude = nullptr;
 
     bool LoadFile(AmString filename, std::string* dest)
     {
@@ -69,15 +66,22 @@ namespace SparkyStudios::Audio::Amplitude
 
     Engine::Engine()
         : _state(nullptr)
+        , _audioDriver(nullptr)
+        , _configSrc()
     {}
 
     Engine::~Engine()
     {
+        _configSrc.clear();
         delete _state;
+        delete _audioDriver;
     }
 
     Engine* Engine::GetInstance()
     {
+        // Amplitude Engine unique instance.
+        static Engine* amplitude = nullptr;
+
         if (amplitude == nullptr)
             amplitude = new Engine();
 
@@ -181,15 +185,32 @@ namespace SparkyStudios::Audio::Amplitude
 
     bool Engine::Initialize(const EngineConfigDefinition* config)
     {
-        // Construct internals.
+        // Create the internal engine state
         _state = new EngineInternalState();
         _state->version = Version();
 
-        // Initialize audio engine.
-        if (!_state->mixer.Initialize(config))
+        // Load the audio driver
+        if (_audioDriver = Driver::Find(config->driver()->c_str()); _audioDriver == nullptr)
         {
+            CallLogFunc("Could load the audio driver '%s'. Loading the default driver.\n", config->driver()->c_str());
+            _audioDriver = Driver::Default();
+        }
+
+        if (_audioDriver == nullptr)
+        {
+            CallLogFunc("Could not load the audio driver.\n");
             return false;
         }
+
+        // Initialize audio mixer
+        if (!_state->mixer.Initialize(config))
+        {
+            CallLogFunc("Could not initialize the audio mixer.\n");
+            return false;
+        }
+
+        // Initialize the audio driver
+        _audioDriver->Initialize(&_state->mixer);
 
         // Initialize the channel internal data.
         InitializeChannelFreeLists(
@@ -237,7 +258,14 @@ namespace SparkyStudios::Audio::Amplitude
         _state->mute = false;
         _state->master_gain = 1.0f;
 
-        return true;
+        // Open the audio device through the driver
+        return _audioDriver->Open(config);
+    }
+
+    bool Engine::Deinitialize()
+    {
+        // Close the audio device through the driver
+        return _audioDriver->Close();
     }
 
     bool Engine::LoadSoundBank(const std::string& filename)

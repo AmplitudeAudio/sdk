@@ -43,6 +43,7 @@ namespace SparkyStudios::Audio::Amplitude
 
     Driver::Driver(AmString name)
         : m_name(name)
+        , m_mixer(nullptr)
     {
         if (lockDrivers())
             return;
@@ -67,7 +68,7 @@ namespace SparkyStudios::Audio::Amplitude
     Driver* Driver::Default()
     {
         Drivers& drivers = driverRegistry();
-        if (drivers.size())
+        if (!drivers.empty())
             return drivers.rbegin()->second;
         return nullptr;
     }
@@ -75,10 +76,10 @@ namespace SparkyStudios::Audio::Amplitude
     Driver* Driver::Find(AmString name)
     {
         Drivers& drivers = driverRegistry();
-        for (Drivers::const_iterator i = drivers.cbegin(), e = drivers.cend(); i != e; ++i)
+        for (auto&& driver : drivers)
         {
-            if (std::string(i->second->m_name).find(name) == 0)
-                return i->second;
+            if (driver.second->m_name == name)
+                return driver.second;
         }
         return nullptr;
     }
@@ -86,9 +87,9 @@ namespace SparkyStudios::Audio::Amplitude
     void Driver::SetDefault(AmString name)
     {
         Drivers& drivers = driverRegistry();
-        for (Drivers::const_iterator i = drivers.cbegin(), e = drivers.cend(); i != e; ++i)
+        for (auto i = drivers.cbegin(), e = drivers.cend(); i != e; ++i)
         {
-            if (std::string(i->second->m_name).find(name) == 0)
+            if (i->second->m_name == name)
             {
                 drivers.insert(drivers.cbegin(), DriverImpl(i->first, i->second));
                 drivers.erase(i);

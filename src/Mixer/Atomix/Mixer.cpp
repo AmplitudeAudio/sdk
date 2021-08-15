@@ -58,8 +58,6 @@ namespace SparkyStudios::Audio::Amplitude
 
         if (_initialized)
         {
-            miniaudio_uninit(this);
-
             free(m_userData);
             m_userData = nullptr;
             _initialized = false;
@@ -90,14 +88,7 @@ namespace SparkyStudios::Audio::Amplitude
 
         _audioEngineConfig = config;
 
-        _initialized = miniaudio_init(this, config, ma_format_f32);
-
-        if (!_initialized)
-        {
-            _audioEngineConfig = nullptr;
-            CallLogFunc("Unable to load the audio playback device.");
-            return false;
-        }
+        _initialized = true;
 
         return _initialized;
     }
