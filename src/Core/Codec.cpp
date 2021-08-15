@@ -63,7 +63,7 @@ namespace SparkyStudios::Audio::Amplitude
         Codecs& codecs = codecRegistry();
         for (auto&& codec : codecs)
         {
-            if (codec.second->m_name == name)
+            if (strcmp(codec.second->m_name, name) == 0)
                 return codec.second;
         }
         return nullptr;

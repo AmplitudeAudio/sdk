@@ -74,7 +74,7 @@ namespace SparkyStudios::Audio::Amplitude
         Drivers& drivers = driverRegistry();
         for (auto&& driver : drivers)
         {
-            if (driver.second->m_name == name)
+            if (strcmp(driver.second->m_name, name) == 0)
                 return driver.second;
         }
         return nullptr;
@@ -85,10 +85,11 @@ namespace SparkyStudios::Audio::Amplitude
         Drivers& drivers = driverRegistry();
         for (auto i = drivers.cbegin(), e = drivers.cend(); i != e; ++i)
         {
-            if (i->second->m_name == name)
+            if (strcmp(i->second->m_name, name) == 0)
             {
-                drivers.insert(DriverImpl(i->first, i->second));
+                std::pair<AmString, Driver*> node = DriverImpl(i->first, i->second);
                 drivers.erase(i);
+                drivers.insert(node);
                 return;
             }
         }
