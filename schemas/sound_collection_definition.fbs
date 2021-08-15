@@ -1,0 +1,121 @@
+// Copyright (c) 2021-present Sparky Studios. All rights reserved.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+namespace SparkyStudios.Audio.Amplitude;
+
+// NonPositional sounds are always played at their regular GetGain.
+// Positional sounds have their GetGain adjusted based on the attenuator and
+// the collider.
+enum Mode : byte {
+  NonPositional,
+  Positional,
+}
+
+// Available sound schedulers. A scheduler is a way for the sound collection
+// to pick a sound from the list of audio samples.
+enum Scheduler : byte {
+  Random,
+  Sequence,
+}
+
+// Reference to audio data (a sample) and basic attributes that affect its
+// playback at runtime.
+table AudioSample {
+  // Linear gain (0.0 .. 1.0) of the sample when played back by the audio
+  // system.
+  gain:float = 1.0;
+
+  // String identifier for the sample.
+  filename:string;
+}
+
+// Entry in a set of AudioSample objects.
+table AudioSampleSetEntry {
+  // Probability of this sample being selected to relative to others in a set.
+  // Only used when the "random" scheduler is used.
+  playback_probability:float = 1.0;
+
+  // Sample associated with this set entry.
+  audio_sample:AudioSample;
+}
+
+// Basic triggered sound object.
+table SoundCollectionDefinition {
+  // Identifier for the sound that can be referenced by other objects.
+  name:string;
+
+  // Priority of this sound relative to all other Sound objects. If the
+  // application requests the playback of more Sound objects than playback
+  // channels available in the system, only the highest priority Sounds are
+  // played back.
+  priority:float = 1.0;
+
+  // Overall linear GetGain (0.0 .. 1.0) of the sound when played back by the audio
+  // system.
+  gain:float = 1.0;
+
+  // Name of the GetBus this sound should be played on.
+  bus:string;
+
+  // Whether the sound should loop.
+  loop:bool = false;
+
+  // Set of samples from which a weighted random selection is performed to
+  // determine which sample to play when Sound playback is triggered.
+  audio_sample_set:[AudioSampleSetEntry];
+
+  // Whether this sound should be streamed or loaded into a buffer.
+  // Generally music is streamed and sound effects are loaded into a buffer.
+  stream:bool = false;
+
+  // Whether this sound should grow louder or quieter based on distance.
+  // NonPositional sounds are always played at their regular GetGain.
+  // Positional sounds have their GetGain adjusted based on the distance to a
+  // listener.
+  mode:Mode = NonPositional;
+
+  // The scheduler to use when playing an audio sample of this collection.
+  scheduler:Scheduler = Random;
+
+  // The minimum or maximum distance from which this sound can be heard. This
+  // only applies to spatial sounds.
+  min_audible_radius:float = 0.0;
+  max_audible_radius:float = 0.0;
+
+  // When the distance between the listener and the sound source is between the
+  // min_audible_radius and the roll_in_radius or between the roll_out_radius
+  // and the max_audbile_radius attenuation will be applied based on the
+  // distance.
+  roll_in_radius:float = 0.0;
+  roll_out_radius:float = 0.0;
+
+  // The curve factor can be adjusted based on how rapidly the attenuation
+  // should change with distance.
+  //
+  // A curve factor of 1.0 means the attenuation will adjust linearly with
+  // distance.
+  //
+  // A curve factor greater than 1.0 means the attenuation will change gently
+  // at first, then rapidly approach its target.
+  //
+  // A fractional curve factor between 0.0 and 1.0 means the attenuation will
+  // change rapidly at first, then gently approach its target.
+  roll_in_curve_factor:float = 2.0;
+  roll_out_curve_factor:float = 0.5;
+}
+
+root_type SoundCollectionDefinition;
+
+file_identifier "AMSC";
+file_extension "amsound";

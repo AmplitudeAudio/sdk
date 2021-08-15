@@ -1,0 +1,116 @@
+// Copyright (c) 2021-present Sparky Studios. All rights reserved.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+#ifndef SPARK_AUDIO_LISTENER_H
+#define SPARK_AUDIO_LISTENER_H
+
+#include <SparkyStudios/Audio/Amplitude/Math/HandmadeMath.h>
+
+namespace SparkyStudios::Audio::Amplitude
+{
+    class ListenerInternalState;
+
+    /**
+     * @brief An object whose distance from sounds determines their gain.
+     *
+     * The Listener class is a lightweight reference to a ListenerInternalState
+     * which is managed by the Engine. Multiple Listener objects may point to
+     * the same underlying data.
+     */
+    class Listener
+    {
+    public:
+        /**
+         * @brief Construct an uninitialized Listener.
+         *
+         * An uninitialized Listener cannot have its location set or queried.
+         * To initialize the Listener, use <code>Engine::AddListener();</code>.
+         */
+        Listener()
+            : _state(nullptr)
+        {}
+
+        explicit Listener(ListenerInternalState* state)
+            : _state(state)
+        {}
+
+        /**
+         * @brief Uninitializes this Listener.
+         *
+         * Note that this does not destroy the internal state it references,
+         * it just removes this reference to it. To destroy the Listener,
+         * use <code>Engine::RemoveListener();</code>.
+         */
+        void Clear();
+
+        /**
+         * @brief Checks whether this Listener has been initialized.
+         *
+         * @return bool true if this Listener has been initialized.
+         */
+        [[nodiscard]] bool Valid() const;
+
+        /**
+         * @brief Returns the location of this Listener.
+         *
+         * @return hmm_vec3 The location of this Listener.
+         */
+        [[nodiscard]] hmm_vec3 GetLocation() const;
+
+        /**
+         * @brief Set the location of this Listener.
+         *
+         * @param location The new location of this Listener.
+         */
+        void SetLocation(const hmm_vec3& location);
+
+        /**
+         * @brief Set the location, direction and up vector of this Listener.
+         *
+         * @param location The location of this Listener.
+         * @param direction The direction of this Listener.
+         * @param up THe up vector of this Listener.
+         */
+        void SetOrientation(const hmm_vec3& location, const hmm_vec3& direction, const hmm_vec3& up);
+
+        /**
+         * @brief Set the location and orientation of this listener using a matrix.
+         *
+         * @param matrix The matrix representing the location and orientation of this Listener.
+         */
+        void SetMatrix(const hmm_mat4& matrix);
+
+        /**
+         * @brief Returns the matrix of this Listener.
+         *
+         * @return hmm_mat4 The matrix of this Listener.
+         */
+        [[nodiscard]] hmm_mat4 GetMatrix() const;
+
+        /**
+         * @brief Returns the internal state of this Listener.
+         *
+         * @return ListenerInternalState*
+         */
+        [[nodiscard]] ListenerInternalState* GetState() const
+        {
+            return _state;
+        }
+
+    private:
+        ListenerInternalState* _state;
+    };
+} // namespace SparkyStudios::Audio::Amplitude
+
+#endif // SPARK_AUDIO_LISTENER_H

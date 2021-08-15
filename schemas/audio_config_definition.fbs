@@ -1,0 +1,82 @@
+// Copyright (c) 2021-present Sparky Studios. All rights reserved.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+namespace SparkyStudios.Audio.Amplitude;
+
+// The supported output channels.
+enum PlaybackOutputChannels : ushort {
+  None = 0,
+  Mono = 1,
+  Stereo = 2,
+  Quad = 4,
+  Surround_5_1 = 6,
+  Surround_7_1 = 8
+}
+
+// The supported output formats.
+enum PlaybackOutputFormat : ushort {
+  Default = 0,
+  UInt8 = 1,
+  Int16 = 2,
+  Int24 = 3,
+  Int32 = 4,
+  Float32 = 5,
+}
+
+// Playback device configuration
+table PlaybackOutputConfig {
+  // Output sampling frequency in samples per second.
+  frequency:uint;
+
+  // The number of output channels to support.
+  channels:PlaybackOutputChannels = Stereo;
+
+  // Bytes used per output sample.
+  buffer_size:uint;
+
+  // The output buffer format.
+  format:PlaybackOutputFormat = Default;
+}
+
+// Audio mixer configuration
+table AudioMixerConfig {
+  // The number of active audio mixer channels to allocate.
+  active_channels:uint;
+
+  // The number of virtuals audio mixer channels to allocate
+  // in addition to the active channels. Mixing does not occur
+  // on virtual channels, but information about the channel is
+  // still tracked.
+  virtual_channels:uint;
+}
+
+table EngineConfigDefinition {
+  // Configures the playback device.
+  output:PlaybackOutputConfig;
+
+  // Configures the audio mixer.
+  mixer:AudioMixerConfig;
+
+  // The number of listeners to allocate.
+  listeners:uint;
+
+  // The location of the buses definition file.
+  buses_file:string;
+}
+
+root_type EngineConfigDefinition;
+
+file_identifier "AMAC";
+file_extension "amconfig";
+
