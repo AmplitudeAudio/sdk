@@ -279,7 +279,7 @@ namespace SparkyStudios::Audio::Amplitude
 
     private:
         // Hold the engine config file contents.
-        std::string _config;
+        std::string _configSrc;
 
         EngineInternalState* _state;
     };

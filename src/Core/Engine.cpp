@@ -171,7 +171,7 @@ namespace SparkyStudios::Audio::Amplitude
 
     bool Engine::Initialize(AmString config_file)
     {
-        if (!LoadFile(config_file, &_config))
+        if (!LoadFile(config_file, &_configSrc))
         {
             CallLogFunc("Could not load audio config file.\n");
             return false;
@@ -759,7 +759,7 @@ namespace SparkyStudios::Audio::Amplitude
 
     const EngineConfigDefinition* Engine::GetEngineConfigDefinition() const
     {
-        return Amplitude::GetEngineConfigDefinition(_config.c_str());
+        return Amplitude::GetEngineConfigDefinition(_configSrc.c_str());
     }
 
 } // namespace SparkyStudios::Audio::Amplitude
