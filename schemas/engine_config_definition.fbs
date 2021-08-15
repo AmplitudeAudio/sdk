@@ -77,6 +77,6 @@ table EngineConfigDefinition {
 
 root_type EngineConfigDefinition;
 
-file_identifier "AMAC";
+file_identifier "AMEC";
 file_extension "amconfig";
 

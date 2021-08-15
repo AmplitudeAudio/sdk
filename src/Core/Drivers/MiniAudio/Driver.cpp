@@ -19,7 +19,7 @@
 
 #include "Mixer.h"
 
-#include "audio_config_definition_generated.h"
+#include "engine_config_definition_generated.h"
 #include "miniaudio.h"
 
 namespace SparkyStudios::Audio::Amplitude

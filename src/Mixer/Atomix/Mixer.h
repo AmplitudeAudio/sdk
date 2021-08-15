@@ -25,7 +25,7 @@
 #include <Core/Drivers/MiniAudio/miniaudio.h>
 #include <Utils/intrusive_list.h>
 
-#include "audio_config_definition_generated.h"
+#include "engine_config_definition_generated.h"
 
 namespace SparkyStudios::Audio::Amplitude
 {

@@ -21,7 +21,7 @@
 #include <SparkyStudios/Audio/Amplitude/Core/Engine.h>
 
 #include "Mixer.h"
-#include "audio_config_definition_generated.h"
+#include "engine_config_definition_generated.h"
 
 namespace SparkyStudios::Audio::Amplitude
 {
