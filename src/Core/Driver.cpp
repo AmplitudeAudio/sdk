@@ -45,11 +45,7 @@ namespace SparkyStudios::Audio::Amplitude
         : m_name(name)
         , m_mixer(nullptr)
     {
-        if (lockDrivers())
-            return;
-
-        Drivers& drivers = driverRegistry();
-        drivers.insert(DriverImpl(name, this));
+        Driver::Register(this);
     }
 
     void Driver::Register(Driver* driver)
