@@ -16,6 +16,7 @@
 #define SPARK_AUDIO_SOUND_H
 
 #include <SparkyStudios/Audio/Amplitude/IO/FileLoader.h>
+#include <SparkyStudios/Audio/Amplitude/Sound/Sound.h>
 #include <SparkyStudios/Audio/Amplitude/Sound/SoundCollection.h>
 
 #include <Core/Drivers/MiniAudio/miniaudio.h>

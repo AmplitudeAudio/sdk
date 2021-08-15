@@ -19,20 +19,158 @@
 
 #include <SparkyStudios/Audio/Amplitude/Core/Common.h>
 
+#include <SparkyStudios/Audio/Amplitude/Sound/Sound.h>
+
 namespace SparkyStudios::Audio::Amplitude
 {
     /**
-     * @brief Audio file reader and parser.
+     * @brief Audio file reader and writer.
      *
-     * The Codec class is used to implement an audio file reader and parser.
+     * The Codec class is used to implement an audio file reader and writer.
      * This is the base class for all audio codecs, each implementation should
-     * allow to load the entire file into memory or stream it from disk.
-     *
-     * The Stream() method of a codec implementation should be thread safe.
+     * allow to build decoders and encoders.
      */
     class Codec
     {
     public:
+        /**
+         * @brief Audio file reader.
+         *
+         * The Decoder is built by a Codec instance. It's used to read
+         * an audio file and process its data. Each implementation should
+         * allow to load the entire file into memory or stream it from disk.
+         *
+         * The Stream() method of a decoder implementation should be thread safe.
+         */
+        class Decoder
+        {
+        public:
+            explicit Decoder(const Codec* codec)
+                : m_format()
+                , m_codec(codec)
+            {}
+
+            virtual ~Decoder() = default;
+
+            /**
+             * @brief Initializes the decoder instance with the given file.
+             *
+             * @param filePath The path to the file to read.
+             */
+            virtual bool Initialize(AmString filePath) = 0;
+
+            /**
+             * @brief Gets the audio sample format.
+             *
+             * @return The audio sample format.
+             */
+            [[nodiscard]] const SoundFormat& GetFormat() const
+            {
+                return m_format;
+            }
+
+            /**
+             * @breif Loads the entire audio file into the output buffer.
+             *
+             * The output buffer must allocate enough size for this operation
+             * to be successful.
+             *
+             * @param out The buffer to load audio data data into.
+             *
+             * @return The number of audio frames loaded into the buffer.
+             */
+            virtual AmUInt64 Load(AmFloat32Buffer out) = 0;
+
+            /**
+             * @brief Streams a part of the file from disk into the output buffer.
+             *
+             * @param out The buffer to stream the file data into.
+             * @param offset The offset in frames from which start to read the file.
+             * @param length The length in frames to read from the file.
+             *
+             * @return The number of frames read.
+             */
+            virtual AmUInt64 Stream(AmFloat32Buffer out, AmUInt64 offset, AmUInt64 length) = 0;
+
+        protected:
+            /**
+             * @brief The audio sample format of the file
+             * currently loaded by this decoder.
+             *
+             * The sound format must be filled during the initialization
+             * of this decoder.
+             */
+            SoundFormat m_format;
+
+            /**
+             * @brief The codec instance which built this decoder.
+             */
+            const Codec* m_codec;
+        };
+
+        /**
+         * @brief Audio file writer.
+         *
+         * The Encoder is built by a Codec instance. It's used to write
+         * data to an audio file.
+         *
+         * The Write() methods of an encoder implementation should be thread safe.
+         */
+        class Encoder
+        {
+        public:
+            explicit Encoder(const Codec* codec)
+                : m_format()
+                , m_codec(codec)
+            {}
+
+            virtual ~Encoder() = default;
+
+            /**
+             * @brief Initializes the encoder instance with the given file.
+             *
+             * @param filePath The path to the file to write.
+             */
+            virtual bool Initialize(AmString filePath) = 0;
+
+            /**
+             * @brief Sets the audio sample format.
+             *
+             * @param format The audio sample format.
+             */
+            void SetFormat(const SoundFormat& format)
+            {
+                m_format = format;
+            }
+
+            /**
+             * @brief Writes a the given buffer into the file.
+             *
+             * @param in The buffer to write into the the file.
+             * @param offset The offset in frames from which write the input buffer.
+             * @param length The length in frames to write from the input buffer.
+             *
+             * @return The number of frames written.
+             */
+            virtual AmUInt64 Write(const float* in, AmUInt64 offset, AmUInt64 length) = 0;
+
+        protected:
+            /**
+             * @brief The audio sample format of the file
+             * to write using this encoder.
+             *
+             * The sound format must be set before the initialization
+             * of this encoder. Otherwise the encoder initialization will
+             * mostly fail.
+             */
+            SoundFormat m_format;
+
+            /**
+             * @brief The codec instance which built this decoder.
+             */
+            const Codec* m_codec;
+        };
+
         /**
          * @brief Create a new Codec instance.
          *
@@ -44,30 +182,20 @@ namespace SparkyStudios::Audio::Amplitude
         virtual ~Codec() = default;
 
         /**
-         * @brief Initialize the codec instance with the given file.
-         * @param filePath The path to the file.
+         * @brief Creates a new instance of the decoder associated
+         * to this codec.
+         *
+         * @return A Decoder instance.
          */
-        virtual bool Initialize(AmString filePath) = 0;
+        virtual Decoder* CreateDecoder() = 0;
 
         /**
-         * @breif Load the entire audio file into the output buffer.
+         * @brief Creates a new instance of the encoder associated
+         * to this codec.
          *
-         * @param out The buffer to load audio file data into.
-         *
-         * @return The number of audio frames loaded into the buffer.
+         * @return An Encoder instance.
          */
-        virtual AmUInt64 Load(AmFloat32Buffer out) = 0;
-
-        /**
-         * @brief Stream a part of the file from disk into the output buffer.
-         *
-         * @param out The buffer to stream the file data into.
-         * @param offset The offset in frames from which start to read the file.
-         * @param length The length in frames to read from the file.
-         *
-         * @return The number of frames read.
-         */
-        virtual AmUInt64 Stream(AmFloat32Buffer out, AmUInt64 offset, AmUInt64 length) = 0;
+        virtual Encoder* CreateEncoder() = 0;
 
         /**
          * @brief Checks whether this Codec can handle the file at
@@ -77,7 +205,7 @@ namespace SparkyStudios::Audio::Amplitude
          *
          * @return Whether this Codec can handle a file.
          */
-        virtual bool CanHandleFile(AmString filePath) = 0;
+        virtual bool CanHandleFile(AmString filePath) const = 0;
 
         /**
          * @brief Gets the name of this codec.
@@ -121,6 +249,9 @@ namespace SparkyStudios::Audio::Amplitude
         static void LockRegistry();
 
     protected:
+        /**
+         * @brief The name of this codec.
+         */
         AmString m_name;
     };
 } // namespace SparkyStudios::Audio::Amplitude

@@ -31,22 +31,6 @@
 
 namespace SparkyStudios::Audio::Amplitude
 {
-    void SoundFormat::SetAll(
-        unsigned int sampleRate,
-        unsigned short numChannels,
-        unsigned int bitsPerSample,
-        unsigned int frameSize,
-        AM_SAMPLE_FORMAT sampleType,
-        AM_INTERLEAVE_TYPE interleaveType)
-    {
-        m_sampleRate = sampleRate;
-        m_numChannels = numChannels;
-        m_bitsPerSample = bitsPerSample;
-        m_frameSize = frameSize;
-        m_sampleType = sampleType;
-        m_interleaveType = interleaveType;
-    }
-
     bool SoundCollection::LoadSoundCollectionDefinition(const std::string& source, EngineInternalState* state)
     {
         _source = source;

@@ -16,6 +16,7 @@
 
 #include <SparkyStudios/Audio/Amplitude/Core/Common.h>
 
+#include <SparkyStudios/Audio/Amplitude/Core/Codec.h>
 #include <SparkyStudios/Audio/Amplitude/Core/Log.h>
 #include <SparkyStudios/Audio/Amplitude/Sound/SoundCollection.h>
 
@@ -28,20 +29,21 @@
 
 namespace SparkyStudios::Audio::Amplitude
 {
-    // static void atomix_sound_event_handler(atomix_event* e)
-    // {
-    //     auto* sound = static_cast<Sound*>(e->snd->userData);
-
-    //     switch (e->type)
-    //     {
-    //     case ATOMIX_EVENT_STREAM:
-    //         sound->GetAudio(e);
-    //         break;
-    //     case ATOMIX_EVENT_DESTROY:
-    //         sound->Destroy();
-    //         break;
-    //     }
-    // }
+    void SoundFormat::SetAll(
+        AmUInt32 sampleRate,
+        AmUInt16 numChannels,
+        AmUInt32 bitsPerSample,
+        AmUInt32 frameSize,
+        AM_SAMPLE_FORMAT sampleType,
+        AM_INTERLEAVE_TYPE interleaveType)
+    {
+        _sampleRate = sampleRate;
+        _numChannels = numChannels;
+        _bitsPerSample = bitsPerSample;
+        _frameSize = frameSize;
+        _sampleType = sampleType;
+        _interleaveType = interleaveType;
+    }
 
     Sound::~Sound()
     {
@@ -67,8 +69,11 @@ namespace SparkyStudios::Audio::Amplitude
             return;
         }
 
-        const char* filename = GetFilename().c_str();
+        AmString filename = GetFilename().c_str();
         const EngineConfigDefinition* config = Engine::GetInstance()->GetEngineConfigDefinition();
+
+        Codec* codec = Codec::FindCodecForFile(filename);
+        codec
 
         ma_decoder_config cfg = ma_decoder_config_init(ma_format_f32, config->output()->channels(), config->output()->frequency());
         ma_uint64 size;

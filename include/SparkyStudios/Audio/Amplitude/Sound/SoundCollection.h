@@ -33,25 +33,6 @@ namespace SparkyStudios::Audio::Amplitude
     struct EngineInternalState;
     struct SoundCollectionDefinition;
 
-    struct SoundFormat
-    {
-    public:
-        void SetAll(
-            AmUInt32 sampleRate,
-            AmUInt16 numChannels,
-            AmUInt32 bitsPerSample,
-            AmUInt32 frameSize,
-            AM_SAMPLE_FORMAT sampleType,
-            AM_INTERLEAVE_TYPE interleaveType);
-
-        AmUInt32 m_sampleRate;
-        AmUInt16 m_numChannels;
-        AmUInt32 m_bitsPerSample;
-        AmUInt32 m_frameSize;
-        AM_SAMPLE_FORMAT m_sampleType;
-        AM_INTERLEAVE_TYPE m_interleaveType;
-    };
-
     /**
      * SoundCollection represent an abstract sound (like a 'whoosh'), which contains
      * a number of pieces of audio with weighted probabilities to choose between
