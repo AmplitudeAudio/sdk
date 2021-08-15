@@ -47,14 +47,16 @@ namespace SparkyStudios::Audio::Amplitude
          * @brief Initialize the codec instance with the given file.
          * @param filePath The path to the file.
          */
-        virtual void Initialize(AmString filePath) = 0;
+        virtual bool Initialize(AmString filePath) = 0;
 
         /**
          * @breif Load the entire audio file into the output buffer.
          *
          * @param out The buffer to load audio file data into.
+         *
+         * @return The number of audio frames loaded into the buffer.
          */
-        virtual void Load(AmVoidPtr out) = 0;
+        virtual AmUInt32 Load(AmVoidPtr out) = 0;
 
         /**
          * @brief Stream a part of the file from disk into the output buffer.
@@ -62,8 +64,10 @@ namespace SparkyStudios::Audio::Amplitude
          * @param out The buffer to stream the file data into.
          * @param offset The offset in frames from which start to read the file.
          * @param length The length in frames to read from the file.
+         *
+         * @return The number of frames read.
          */
-        virtual void Stream(AmVoidPtr out, AmUInt32 offset, AmUInt32 length) = 0;
+        virtual AmUInt32 Stream(AmVoidPtr out, AmUInt32 offset, AmUInt32 length) = 0;
 
         /**
          * @brief Checks whether this Codec can handle the file at
