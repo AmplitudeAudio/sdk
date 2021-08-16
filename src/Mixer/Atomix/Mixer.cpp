@@ -27,7 +27,31 @@
 
 namespace SparkyStudios::Audio::Amplitude
 {
-    static AmInt32 atomix_sound_stream(atomix_sound* snd, uint32_t offset, uint32_t frames)
+    static void atomix_sound_started(atomix_sound* snd)
+    {
+        auto* sound = static_cast<Sound*>(snd->udata);
+        CallLogFunc("Started sound: %s\n", sound->GetFilename().c_str());
+    }
+
+    static void atomix_sound_paused(atomix_sound* snd)
+    {
+        auto* sound = static_cast<Sound*>(snd->udata);
+        CallLogFunc("Paused sound: %s\n", sound->GetFilename().c_str());
+    }
+
+    static void atomix_sound_resumed(atomix_sound* snd)
+    {
+        auto* sound = static_cast<Sound*>(snd->udata);
+        CallLogFunc("Resumed sound: %s\n", sound->GetFilename().c_str());
+    }
+
+    static void atomix_sound_stopped(atomix_sound* snd)
+    {
+        auto* sound = static_cast<Sound*>(snd->udata);
+        CallLogFunc("Stopped sound: %s\n", sound->GetFilename().c_str());
+    }
+
+    static AmUInt64 atomix_sound_stream(atomix_sound* snd, AmUInt64 offset, AmUInt64 frames)
     {
         auto* sound = static_cast<Sound*>(snd->udata);
         return sound->GetAudio(offset, frames);
@@ -47,6 +71,10 @@ namespace SparkyStudios::Audio::Amplitude
         , _audioThreadMutex(nullptr)
         , _insideAudioThreadMutex(false)
     {
+        atomixSoundSetStartedCallback(atomix_sound_started);
+        atomixSoundSetPausedCallback(atomix_sound_paused);
+        atomixSoundSetResumedCallback(atomix_sound_resumed);
+        atomixSoundSetStoppedCallback(atomix_sound_stopped);
         atomixSoundSetStreamCallback(atomix_sound_stream);
         atomixSoundSetDestroyCallback(atomix_sound_destroy);
     }

@@ -34,6 +34,7 @@ namespace SparkyStudios::Audio::Amplitude
     RealChannel::RealChannel()
         : _channelId(kInvalidChannelId)
         , _stream(false)
+        , _loop(false)
         , _pan(0.0f)
         , _gain(1.0f)
     {}
@@ -62,8 +63,10 @@ namespace SparkyStudios::Audio::Amplitude
 
         AMPLITUDE_ASSERT(Valid());
         const SoundCollectionDefinition* def = collection->GetSoundCollectionDefinition();
-        unsigned int loops = def->loop() ? kLoopForever : kPlayOnce;
+        _loop = def->loop();
         _stream = def->stream();
+
+        AmUInt32 loops = _loop ? kLoopForever : kPlayOnce;
 
         _channelId = atomixMixerPlay(_mixer, static_cast<atomix_sound*>(sound->GetUserData()), loops, def->gain(), 0.0f);
         _gain = def->gain();
@@ -109,7 +112,7 @@ namespace SparkyStudios::Audio::Amplitude
     void RealChannel::Halt()
     {
         AMPLITUDE_ASSERT(Valid());
-        atomixMixerSetState(_mixer, _channelId, ATOMIX_HALT);
+        atomixMixerSetState(_mixer, _channelId, ATOMIX_STOP);
     }
 
     void RealChannel::Pause()
@@ -122,7 +125,7 @@ namespace SparkyStudios::Audio::Amplitude
     void RealChannel::Resume()
     {
         AMPLITUDE_ASSERT(Valid());
-        atomixMixerSetState(_mixer, _channelId, ATOMIX_PLAY);
+        atomixMixerSetState(_mixer, _channelId, _loop ? ATOMIX_LOOP : ATOMIX_PLAY);
         // Mix_Resume(_channelId);
     }
 

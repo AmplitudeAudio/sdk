@@ -39,9 +39,6 @@
 #define ATOMIX_ALIGN(v) ((v + 3) & ~0x03)
 #define ATOMIX_MAX_STREAM_BUFFER_SIZE_ALIGNED ATOMIX_ALIGN(ATOMIX_MAX_STREAM_BUFFER_SIZE)
 
-//#define ATOMIX_IMPLEMENTATION
-//#define ATOMIX_NO_SSE
-
 // includes
 #include <cstdint> //integer types
 
@@ -52,10 +49,23 @@ struct atomix_sound; // forward declaration
 // callback
 typedef void (*atomix_mixer_before_mix_callback)(atomix_mixer*, float*, uint32_t);
 typedef void (*atomix_mixer_after_mix_callback)(atomix_mixer*, float*, uint32_t);
-typedef int32_t (*atomix_sound_stream_callback)(atomix_sound*, uint32_t, uint32_t);
+
+typedef void (*atomix_sound_started_callback)(atomix_sound*);
+typedef void (*atomix_sound_paused_callback)(atomix_sound*);
+typedef void (*atomix_sound_resumed_callback)(atomix_sound*);
+typedef void (*atomix_sound_stopped_callback)(atomix_sound*);
+typedef uint64_t (*atomix_sound_stream_callback)(atomix_sound*, uint64_t, uint64_t);
 typedef void (*atomix_sound_destroy_callback)(atomix_sound*);
 
 // function declarations
+// defines the callback function called when a sound started event occurs.
+ATMXDEF void atomixSoundSetStartedCallback(atomix_sound_started_callback);
+// defines the callback function called when a sound paused event occurs.
+ATMXDEF void atomixSoundSetPausedCallback(atomix_sound_paused_callback);
+// defines the callback function called when a sound resumed event occurs.
+ATMXDEF void atomixSoundSetResumedCallback(atomix_sound_resumed_callback);
+// defines the callback function called when a sound stopped event occurs.
+ATMXDEF void atomixSoundSetStoppedCallback(atomix_sound_stopped_callback);
 // defines the callback function called when a sound stream event occurs.
 ATMXDEF void atomixSoundSetStreamCallback(atomix_sound_stream_callback);
 // defines the callback function called when a sound is destroyed.
@@ -145,6 +155,10 @@ using namespace std;
 #include <cstring> //memcpy
 
 // callbacks
+static atomix_sound_started_callback onStarted; // called when a sound is started
+static atomix_sound_paused_callback onPaused; // called when a sound is paused
+static atomix_sound_resumed_callback onResumed; // called when a sound is resumed
+static atomix_sound_stopped_callback onStopped; // called when a sound is stopped
 static atomix_sound_stream_callback onStream; // called when a stream event occurs
 static atomix_sound_destroy_callback onDestroy; // called when a destroy event occurs
 
@@ -191,7 +205,7 @@ struct atomix_mixer
 };
 
 // function declarations
-static int32_t atmxSoundStreamUpdate(struct atomix_sound*, uint32_t, uint32_t);
+static uint64_t atmxSoundStreamUpdate(struct atomix_sound*, uint64_t, uint64_t);
 #ifndef ATOMIX_NO_SSE
 static void atmxMixLayer(struct atmx_layer*, __m128, __m128*, uint32_t, int32_t);
 static int32_t atmxMixFadeMono(struct atmx_layer*, int32_t, __m128, __m128*, uint32_t);
@@ -208,6 +222,22 @@ static int32_t atmxMixPlayStereo(struct atmx_layer*, int, int32_t, struct atmx_f
 static struct atmx_f2 atmxGainf2(float, float);
 
 // public functions
+ATMXDEF void atomixSoundSetStartedCallback(atomix_sound_started_callback handler)
+{
+    onStarted = handler;
+}
+ATMXDEF void atomixSoundSetPausedCallback(atomix_sound_paused_callback handler)
+{
+    onPaused = handler;
+}
+ATMXDEF void atomixSoundSetResumedCallback(atomix_sound_resumed_callback handler)
+{
+    onResumed = handler;
+}
+ATMXDEF void atomixSoundSetStoppedCallback(atomix_sound_stopped_callback handler)
+{
+    onStopped = handler;
+}
 ATMXDEF void atomixSoundSetStreamCallback(atomix_sound_stream_callback handler)
 {
     onStream = handler;
@@ -359,9 +389,9 @@ ATMXDEF uint32_t atomixMixerMix(struct atomix_mixer* mix, float* speaker, uint32
             int32_t c = fnum;
             while (c > 0)
             {
-                uint32_t cur = ATMX_LOAD(&lay.cursor);
-                uint32_t chunkSize = fmin(ATOMIX_MAX_STREAM_BUFFER_SIZE, c);
-                int32_t len = atmxSoundStreamUpdate(lay.snd, cur, chunkSize);
+                uint64_t cur = ATMX_LOAD(&lay.cursor);
+                uint64_t chunkSize = fmin(ATOMIX_MAX_STREAM_BUFFER_SIZE, c);
+                uint64_t len = atmxSoundStreamUpdate(lay.snd, cur, chunkSize);
                 atmxMixLayer(&lay, vol, (float*)buff + ((fnum - c) * 2), chunkSize);
                 c -= len;
             }
@@ -471,6 +501,17 @@ ATMXDEF int atomixMixerSetState(struct atomix_mixer* mix, uint32_t id, uint8_t f
         // return success if already in desired state
         if (prev == flag)
             return 1;
+
+        // run appropiate callback
+        if (prev == ATOMIX_STOP && (flag == ATOMIX_PLAY || flag == ATOMIX_LOOP) && onStarted)
+            onStarted(lay->snd);
+        else if ((prev == ATOMIX_PLAY || prev == ATOMIX_LOOP) && flag == ATOMIX_HALT && onPaused)
+            onPaused(lay->snd);
+        else if (prev == ATOMIX_HALT && (flag == ATOMIX_PLAY || flag == ATOMIX_LOOP) && onResumed)
+            onResumed(lay->snd);
+        else if ((prev == ATOMIX_PLAY || prev == ATOMIX_LOOP) && flag == ATOMIX_STOP && onStopped)
+            onStopped(lay->snd);
+
         // swap if flag has not changed and return if successful
         if (ATMX_CSWAP(&lay->flag, &prev, flag))
             return 1;
@@ -540,11 +581,11 @@ ATMXDEF void atomixMixerPlayAll(struct atomix_mixer* mix)
 }
 
 // internal functions
-static int32_t atmxSoundStreamUpdate(struct atomix_sound* snd, uint32_t offset, uint32_t fnum)
+static uint64_t atmxSoundStreamUpdate(struct atomix_sound* snd, uint64_t offset, uint64_t fnum)
 {
     if (snd->buf && onStream)
     {
-        int32_t len = onStream(snd, offset, fnum);
+        int64_t len = onStream(snd, offset, fnum);
         memcpy(snd->data, snd->buf, len * snd->cha * sizeof(float));
         return len;
     }
@@ -572,9 +613,9 @@ static void atmxMixLayer(struct atmx_layer* lay, __m128 vol, __m128* align, uint
         int32_t f = 0;
         while (c > 0)
         {
-            uint32_t chunkSize = AM_MIN(ATOMIX_MAX_STREAM_BUFFER_SIZE, c);
-            uint32_t aChunkSize = ATOMIX_ALIGN(chunkSize) >> 1;
-            int32_t len = atmxSoundStreamUpdate(lay->snd, cur, chunkSize);
+            uint64_t chunkSize = AM_MIN(ATOMIX_MAX_STREAM_BUFFER_SIZE, c);
+            uint64_t aChunkSize = ATOMIX_ALIGN(chunkSize) >> 1;
+            uint64_t len = atmxSoundStreamUpdate(lay->snd, cur, chunkSize);
 
             // having 0 here mainly means that we have reached
             // the end of the stream and the audio is not looping.

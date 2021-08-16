@@ -149,6 +149,7 @@ namespace SparkyStudios::Audio::Amplitude
 
         AmHandle _channelId;
         bool _stream;
+        bool _loop;
 
         float _pan;
         float _gain;

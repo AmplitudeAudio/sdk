@@ -33,17 +33,17 @@ namespace SparkyStudios::Audio::Amplitude
 
     Sound::~Sound()
     {
-        delete _streamBuffer;
-        _streamBuffer = nullptr;
-
-        delete _decoder;
-        _decoder = nullptr;
-
         if (_userData)
         {
             atomixSoundDestroy(static_cast<atomix_sound*>(_userData));
             _userData = nullptr;
         }
+
+        delete _streamBuffer;
+        _streamBuffer = nullptr;
+
+        delete _decoder;
+        _decoder = nullptr;
     }
 
     void Sound::Initialize(const SoundCollection* collection)
@@ -57,7 +57,7 @@ namespace SparkyStudios::Audio::Amplitude
     {
         if (GetFilename().empty())
         {
-            CallLogFunc("The filename is empty");
+            CallLogFunc("The filename is empty.\n");
             return;
         }
 
@@ -67,14 +67,14 @@ namespace SparkyStudios::Audio::Amplitude
         Codec* codec = Codec::FindCodecForFile(filename);
         if (codec == nullptr)
         {
-            CallLogFunc("Unable to find codec for '%s'\n.", filename);
+            CallLogFunc("Unable to find codec for '%s'.\n", filename);
             return;
         }
 
         _decoder = codec->CreateDecoder();
         if (!_decoder->Open(filename))
         {
-            CallLogFunc("Unable to initialize decoder for '%s'\n.", filename);
+            CallLogFunc("Unable to initialize decoder for '%s'.\n", filename);
             return;
         }
 
@@ -89,7 +89,7 @@ namespace SparkyStudios::Audio::Amplitude
                 atomixSoundNew(m_format.GetNumChannels(), _streamBuffer->GetBuffer(), m_format.GetFramesCount(), true, this);
             if (!sound)
             {
-                CallLogFunc("Could not load sound file '%s'\n.", filename);
+                CallLogFunc("Could not load sound file '%s'.\n", filename);
                 return;
             }
 
@@ -100,7 +100,7 @@ namespace SparkyStudios::Audio::Amplitude
             auto data = (AmFloat32Buffer)malloc(m_format.GetFramesCount() * m_format.GetFrameSize());
             if (_decoder->Load(data) != m_format.GetFramesCount())
             {
-                CallLogFunc("Could not load sound file '%s'\n.", filename);
+                CallLogFunc("Could not load sound file '%s'.\n", filename);
                 return;
             }
 
@@ -109,7 +109,7 @@ namespace SparkyStudios::Audio::Amplitude
 
             if (!sound)
             {
-                CallLogFunc("Could not load sound file '%s'\n.", filename);
+                CallLogFunc("Could not load sound file '%s'.\n", filename);
                 return;
             }
 
@@ -117,7 +117,7 @@ namespace SparkyStudios::Audio::Amplitude
         }
     }
 
-    AmInt64 Sound::GetAudio(AmUInt64 offset, AmUInt64 frames)
+    AmUInt64 Sound::GetAudio(AmUInt64 offset, AmUInt64 frames)
     {
         if (_stream)
         {
