@@ -19,8 +19,6 @@
 
 #include <SparkyStudios/Audio/Amplitude/Core/Common.h>
 
-#include <SparkyStudios/Audio/Amplitude/Sound/Sound.h>
-
 namespace SparkyStudios::Audio::Amplitude
 {
     /**
@@ -187,7 +185,7 @@ namespace SparkyStudios::Audio::Amplitude
          *
          * @return A Decoder instance.
          */
-        virtual Decoder* CreateDecoder() = 0;
+        [[nodiscard]] virtual Decoder* CreateDecoder() const = 0;
 
         /**
          * @brief Creates a new instance of the encoder associated
@@ -195,7 +193,7 @@ namespace SparkyStudios::Audio::Amplitude
          *
          * @return An Encoder instance.
          */
-        virtual Encoder* CreateEncoder() = 0;
+        [[nodiscard]] virtual Encoder* CreateEncoder() const = 0;
 
         /**
          * @brief Checks whether this Codec can handle the file at

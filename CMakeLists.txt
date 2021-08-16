@@ -69,7 +69,9 @@ set(SA_SOURCE
     include/SparkyStudios/Audio/Amplitude/Sound/SoundCollectionScheduler.h
     include/SparkyStudios/Audio/Amplitude/Amplitude.h
 
-    src/Core/Codecs/WAV/WAVCodec.cpp src/Core/Codec.cpp
+    src/Core/Codecs/WAV/Codec.cpp
+    src/Core/Codecs/WAV/Codec.h
+    src/Core/Codecs/WAV/dr_wav.h
 
     src/Core/Drivers/MiniAudio/Driver.cpp
     src/Core/Drivers/MiniAudio/Driver.h

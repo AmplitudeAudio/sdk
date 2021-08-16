@@ -27,6 +27,10 @@
 #include "engine_config_definition_generated.h"
 #include "sound_collection_definition_generated.h"
 
+#pragma region Default Codecs
+#include <Core/Codecs/WAV/Codec.h>
+#pragma endregion
+
 #pragma region Default Drivers
 #include <Core/Drivers/MiniAudio/Driver.h>
 #pragma endregion
@@ -196,9 +200,16 @@ namespace SparkyStudios::Audio::Amplitude
         _state->version = Version();
 
         // Load the audio driver
-        if (_audioDriver = Driver::Find(config->driver()->c_str()); _audioDriver == nullptr)
+        if (config->driver())
         {
-            CallLogFunc("Could load the audio driver '%s'. Loading the default driver.\n", config->driver()->c_str());
+            if (_audioDriver = Driver::Find(config->driver()->c_str()); _audioDriver == nullptr)
+            {
+                CallLogFunc("Could load the audio driver '%s'. Loading the default driver.\n", config->driver()->c_str());
+                _audioDriver = Driver::Default();
+            }
+        }
+        else
+        {
             _audioDriver = Driver::Default();
         }
 
