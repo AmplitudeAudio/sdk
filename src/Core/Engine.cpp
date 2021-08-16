@@ -29,6 +29,7 @@
 
 #pragma region Default Codecs
 #include <Core/Codecs/WAV/Codec.h>
+#include <Core/Codecs/OGG/Codec.h>
 #pragma endregion
 
 #pragma region Default Drivers

@@ -14,25 +14,25 @@
 
 #pragma once
 
-#ifndef SS_AMPLITUDE_AUDIO_WAV_CODEC_H
-#define SS_AMPLITUDE_AUDIO_WAV_CODEC_H
+#ifndef SS_AMPLITUDE_AUDIO_OGG_CODEC_H
+#define SS_AMPLITUDE_AUDIO_OGG_CODEC_H
 
 #include <SparkyStudios/Audio/Amplitude/Amplitude.h>
 
-#include "dr_wav.h"
+#include "stb_vorbis.h"
 
 namespace SparkyStudios::Audio::Amplitude::Codecs
 {
-    [[maybe_unused]] static class WAVCodec final : public Codec
+    [[maybe_unused]] static class OGGCodec final : public Codec
     {
     public:
-        class WAVDecoder final : public Codec::Decoder
+        class OGGDecoder final : public Codec::Decoder
         {
         public:
-            explicit WAVDecoder(const Codec* codec)
+            explicit OGGDecoder(const Codec* codec)
                 : Codec::Decoder(codec)
                 , _initialized(false)
-                , _wav()
+                , _ogg(nullptr)
             {}
 
             bool Open(AmString filePath) final;
@@ -47,16 +47,16 @@ namespace SparkyStudios::Audio::Amplitude::Codecs
 
         private:
             bool _initialized;
-            drwav _wav;
+            stb_vorbis* _ogg;
         };
 
-        class WAVEncoder final : public Codec::Encoder
+        class OGGEncoder final : public Codec::Encoder
         {
         public:
-            explicit WAVEncoder(const Codec* codec)
+            explicit OGGEncoder(const Codec* codec)
                 : Codec::Encoder(codec)
                 , _initialized(false)
-                , _wav()
+                , _ogg(nullptr)
             {}
 
             bool Open(AmString filePath) final;
@@ -67,21 +67,21 @@ namespace SparkyStudios::Audio::Amplitude::Codecs
 
         private:
             bool _initialized;
-            drwav _wav;
+            stb_vorbis* _ogg;
         };
 
-        WAVCodec()
-            : Codec("wav")
+        OGGCodec()
+            : Codec("ogg")
         {}
 
-        ~WAVCodec() final = default;
+        ~OGGCodec() final = default;
 
         [[nodiscard]] Decoder* CreateDecoder() const final;
 
         [[nodiscard]] Encoder* CreateEncoder() const final;
 
         bool CanHandleFile(AmString filePath) const final;
-    } wav_codec; // NOLINT(cert-err58-cpp)
+    } ogg_codec; // NOLINT(cert-err58-cpp)
 } // namespace SparkyStudios::Audio::Amplitude::Codecs
 
-#endif // SS_AMPLITUDE_AUDIO_WAV_CODEC_H
+#endif // SS_AMPLITUDE_AUDIO_OGG_CODEC_H

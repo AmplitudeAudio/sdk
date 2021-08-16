@@ -73,6 +73,11 @@ set(SA_SOURCE
     src/Core/Codecs/WAV/Codec.h
     src/Core/Codecs/WAV/dr_wav.h
 
+    src/Core/Codecs/OGG/Codec.cpp
+    src/Core/Codecs/OGG/Codec.h
+    src/Core/Codecs/OGG/stb_vorbis.c
+    src/Core/Codecs/OGG/stb_vorbis.h
+
     src/Core/Drivers/MiniAudio/Driver.cpp
     src/Core/Drivers/MiniAudio/Driver.h
     src/Core/Drivers/MiniAudio/miniaudio.h
@@ -113,8 +118,6 @@ set(SA_SOURCE
     src/Sound/RefCounter.cpp
 
     src/Utils/intrusive_list.h
-    src/Utils/stb_vorbis.c
-    src/Utils/stb_vorbis.h
 
     src/IO/File.h
     src/IO/File.cpp
