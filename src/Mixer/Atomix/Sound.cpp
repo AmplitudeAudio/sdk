@@ -21,22 +21,6 @@
 
 namespace SparkyStudios::Audio::Amplitude
 {
-    void SoundFormat::SetAll(
-        AmUInt32 sampleRate,
-        AmUInt16 numChannels,
-        AmUInt32 bitsPerSample,
-        AmUInt32 frameSize,
-        AM_SAMPLE_FORMAT sampleType,
-        AM_INTERLEAVE_TYPE interleaveType)
-    {
-        _sampleRate = sampleRate;
-        _numChannels = numChannels;
-        _bitsPerSample = bitsPerSample;
-        _frameSize = frameSize;
-        _sampleType = sampleType;
-        _interleaveType = interleaveType;
-    }
-
     Sound::~Sound()
     {
         if (_userData)

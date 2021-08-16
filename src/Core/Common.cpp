@@ -61,4 +61,21 @@ namespace SparkyStudios::Audio::Amplitude
         m_data = (AmFloat32Buffer)(((size_t)basePtr + 15) & ~15);
     }
 
+    void SoundFormat::SetAll(
+        AmUInt32 sampleRate,
+        AmUInt16 numChannels,
+        AmUInt32 bitsPerSample,
+        AmUInt64 framesCount,
+        AmUInt32 frameSize,
+        AM_SAMPLE_FORMAT sampleType,
+        AM_INTERLEAVE_TYPE interleaveType)
+    {
+        _sampleRate = sampleRate;
+        _numChannels = numChannels;
+        _bitsPerSample = bitsPerSample;
+        _framesCount = framesCount;
+        _frameSize = frameSize;
+        _sampleType = sampleType;
+        _interleaveType = interleaveType;
+    }
 } // namespace SparkyStudios::Audio::Amplitude
