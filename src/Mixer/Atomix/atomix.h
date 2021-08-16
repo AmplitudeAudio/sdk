@@ -16,6 +16,8 @@
 #ifndef ATOMIX_H
 #define ATOMIX_H
 
+#include <SparkyStudios/Audio/Amplitude/Core/Common.h>
+
 // process configuration
 #ifdef ATOMIX_STATIC
 #define ATOMIX_IMPLEMENTATION
@@ -29,10 +31,6 @@
 #define ATOMIX_HALT 2
 #define ATOMIX_PLAY 3
 #define ATOMIX_LOOP 4
-
-#ifndef M_PI
-#define M_PI 3.14159265358979323846264f // from CRC
-#endif
 
 #ifndef ATOMIX_MAX_STREAM_BUFFER_SIZE
 #define ATOMIX_MAX_STREAM_BUFFER_SIZE 512
@@ -574,7 +572,7 @@ static void atmxMixLayer(struct atmx_layer* lay, __m128 vol, __m128* align, uint
         int32_t f = 0;
         while (c > 0)
         {
-            uint32_t chunkSize = fmin(ATOMIX_MAX_STREAM_BUFFER_SIZE, c);
+            uint32_t chunkSize = AM_MIN(ATOMIX_MAX_STREAM_BUFFER_SIZE, c);
             uint32_t aChunkSize = ATOMIX_ALIGN(chunkSize) >> 1;
             int32_t len = atmxSoundStreamUpdate(lay->snd, cur, chunkSize);
 
