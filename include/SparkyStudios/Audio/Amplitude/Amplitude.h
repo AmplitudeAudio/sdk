@@ -40,6 +40,7 @@
 #include <SparkyStudios/Audio/Amplitude/Sound/Schedulers/SequenceScheduler.h>
 
 #include <SparkyStudios/Audio/Amplitude/Sound/RefCounter.h>
+#include <SparkyStudios/Audio/Amplitude/Sound/Sound.h>
 #include <SparkyStudios/Audio/Amplitude/Sound/SoundBank.h>
 #include <SparkyStudios/Audio/Amplitude/Sound/SoundCollection.h>
 #include <SparkyStudios/Audio/Amplitude/Sound/SoundCollectionScheduler.h>

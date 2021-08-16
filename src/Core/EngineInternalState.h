@@ -21,6 +21,7 @@
 #include <SparkyStudios/Audio/Amplitude/Core/Engine.h>
 #include <SparkyStudios/Audio/Amplitude/IO/FileLoader.h>
 #include <SparkyStudios/Audio/Amplitude/Math/HandmadeMath.h>
+#include <SparkyStudios/Audio/Amplitude/Sound/Sound.h>
 #include <SparkyStudios/Audio/Amplitude/Sound/SoundBank.h>
 #include <SparkyStudios/Audio/Amplitude/Sound/SoundCollection.h>
 
@@ -30,7 +31,6 @@
 #include <Utils/intrusive_list.h>
 
 #include "Mixer.h"
-#include "Sound.h"
 
 #include "sound_collection_definition_generated.h"
 

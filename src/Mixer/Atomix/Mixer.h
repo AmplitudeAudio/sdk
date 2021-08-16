@@ -22,7 +22,6 @@
 #include <SparkyStudios/Audio/Amplitude/Core/Fader.h>
 
 #include <Core/BusInternalState.h>
-#include <Core/Drivers/MiniAudio/miniaudio.h>
 #include <Utils/intrusive_list.h>
 
 #include "engine_config_definition_generated.h"
@@ -104,10 +103,6 @@ namespace SparkyStudios::Audio::Amplitude
         EngineInternalState* _engineState;
         const EngineConfigDefinition* _audioEngineConfig;
     };
-
-    void miniaudio_mixer(ma_device* pDevice, AmVoidPtr pOutput, const void* pInput, ma_uint32 frameCount);
-    void miniaudio_uninit(Mixer* mixer);
-    bool miniaudio_init(Mixer* mixer, const EngineConfigDefinition* audioEngineConfig, ma_format format);
 } // namespace SparkyStudios::Audio::Amplitude
 
 #endif // SPARK_AUDIO_MIXER_H

@@ -12,20 +12,12 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include <cstdlib>
-#include <memory>
 #include <string>
 #include <vector>
 
+#include <SparkyStudios/Audio/Amplitude/Amplitude.h>
+
 #include <Core/EngineInternalState.h>
-
-#include <SparkyStudios/Audio/Amplitude/Core/Log.h>
-#include <SparkyStudios/Audio/Amplitude/IO/FileLoader.h>
-#include <SparkyStudios/Audio/Amplitude/Sound/Schedulers/RandomScheduler.h>
-#include <SparkyStudios/Audio/Amplitude/Sound/Schedulers/SequenceScheduler.h>
-#include <SparkyStudios/Audio/Amplitude/Sound/SoundCollection.h>
-
-#include "Sound.h"
 
 #include "sound_collection_definition_generated.h"
 

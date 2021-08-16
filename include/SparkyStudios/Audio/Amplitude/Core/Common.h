@@ -207,4 +207,63 @@ namespace SparkyStudios::Audio::Amplitude
     };
 } // namespace SparkyStudios::Audio::Amplitude
 
+namespace SparkyStudios::Audio::Amplitude
+{
+    /**
+     * @brief Describe the format of an audio sample.
+     *
+     * This data structure is mainly filled by a Codec
+     * during the initialization time.
+     */
+    struct SoundFormat
+    {
+    public:
+        void SetAll(
+            AmUInt32 sampleRate,
+            AmUInt16 numChannels,
+            AmUInt32 bitsPerSample,
+            AmUInt32 frameSize,
+            AM_SAMPLE_FORMAT sampleType,
+            AM_INTERLEAVE_TYPE interleaveType);
+
+        [[nodiscard]] AmUInt32 GetSampleRate() const
+        {
+            return _sampleRate;
+        }
+
+        [[nodiscard]] AmUInt16 GetNumChannels() const
+        {
+            return _numChannels;
+        }
+
+        [[nodiscard]] AmUInt32 GetBitsPerSample() const
+        {
+            return _bitsPerSample;
+        }
+
+        [[nodiscard]] AmUInt32 GetFrameSize() const
+        {
+            return _frameSize;
+        }
+
+        [[nodiscard]] AM_SAMPLE_FORMAT GetSampleType() const
+        {
+            return _sampleType;
+        }
+
+        [[nodiscard]] AM_INTERLEAVE_TYPE GetInterleaveType() const
+        {
+            return _interleaveType;
+        }
+
+    private:
+        AmUInt32 _sampleRate;
+        AmUInt16 _numChannels;
+        AmUInt32 _bitsPerSample;
+        AmUInt32 _frameSize;
+        AM_SAMPLE_FORMAT _sampleType;
+        AM_INTERLEAVE_TYPE _interleaveType;
+    };
+} // namespace SparkyStudios::Audio::Amplitude
+
 #endif // SS_AMPLITUDE_AUDIO_COMMON_H

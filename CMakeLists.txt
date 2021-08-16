@@ -51,13 +51,13 @@ set(SA_SOURCE
     include/SparkyStudios/Audio/Amplitude/Core/Codec.h
     include/SparkyStudios/Audio/Amplitude/Core/Common.h
     include/SparkyStudios/Audio/Amplitude/Core/Config.h
+    include/SparkyStudios/Audio/Amplitude/Core/Driver.h
     include/SparkyStudios/Audio/Amplitude/Core/Engine.h
     include/SparkyStudios/Audio/Amplitude/Core/Fader.h
     include/SparkyStudios/Audio/Amplitude/Core/Listener.h
     include/SparkyStudios/Audio/Amplitude/Core/Log.h
     include/SparkyStudios/Audio/Amplitude/Core/Thread.h
     include/SparkyStudios/Audio/Amplitude/Core/Version.h
-    include/SparkyStudios/Audio/Amplitude/Core/Driver.h
     include/SparkyStudios/Audio/Amplitude/IO/FileLoader.h
     include/SparkyStudios/Audio/Amplitude/Math/HandmadeMath.h
     include/SparkyStudios/Audio/Amplitude/Sound/Schedulers/SequenceScheduler.h
@@ -102,7 +102,6 @@ set(SA_SOURCE
     src/Mixer/Atomix/RealChannel.cpp
     src/Mixer/Atomix/RealChannel.h
     src/Mixer/Atomix/Sound.cpp
-    src/Mixer/Atomix/Sound.h
 
     src/Sound/Schedulers/SequenceScheduler.cpp
     src/Sound/Schedulers/RandomScheduler.cpp

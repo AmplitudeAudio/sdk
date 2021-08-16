@@ -23,11 +23,11 @@
 
 #include <SparkyStudios/Audio/Amplitude/Sound/RefCounter.h>
 #include <SparkyStudios/Audio/Amplitude/Sound/SoundCollectionScheduler.h>
+#include <SparkyStudios/Audio/Amplitude/Sound/Sound.h>
 
 namespace SparkyStudios::Audio::Amplitude
 {
     class RealChannel;
-    class Sound;
 
     class BusInternalState;
     struct EngineInternalState;

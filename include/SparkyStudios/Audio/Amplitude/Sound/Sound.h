@@ -19,64 +19,98 @@
 
 #include <SparkyStudios/Audio/Amplitude/Core/Common.h>
 
+#include <SparkyStudios/Audio/Amplitude/Core/Codec.h>
+#include <SparkyStudios/Audio/Amplitude/IO/FileLoader.h>
+
 namespace SparkyStudios::Audio::Amplitude
 {
-    /**
-     * @brief Describe the format of an audio sample.
-     *
-     * This data structure is mainly filled by a Codec
-     * during the initialization time.
-     */
-    struct SoundFormat
+    class SoundCollection;
+
+    class Sound : public Resource
     {
     public:
-        void SetAll(
-            AmUInt32 sampleRate,
-            AmUInt16 numChannels,
-            AmUInt32 bitsPerSample,
-            AmUInt32 frameSize,
-            AM_SAMPLE_FORMAT sampleType,
-            AM_INTERLEAVE_TYPE interleaveType);
+        ~Sound() override;
 
-        [[nodiscard]] AmUInt32 GetSampleRate() const
+        /**
+         * @brief Initializes the Sound given the SoundCollection that it is a part of.
+         *
+         * The sound collection may contain useful metadata about the sound, like whether
+         * or not the sound should be streamed, which may impact how you load it.
+         *
+         * @param collection The collection that the sound is part of.
+         */
+        void Initialize(const SoundCollection* collection);
+
+        /**
+         * @brief Loads the audio file.
+         */
+        void Load(FileLoader* loader) override;
+
+        /**
+         * @brief Sets the format of this Sound.
+         *
+         * @param format The sound format.
+         */
+        void SetFormat(const SoundFormat& format)
         {
-            return _sampleRate;
+            m_format = format;
         }
 
-        [[nodiscard]] AmUInt16 GetNumChannels() const
+        /**
+         * @brief Gets the format of this Sound.
+         * @return The format of this Sound.
+         */
+        [[nodiscard]] const SoundFormat& GetFormat() const
         {
-            return _numChannels;
+            return m_format;
         }
 
-        [[nodiscard]] AmUInt32 GetBitsPerSample() const
+        /**
+         * @brief Returns the user data associated to this Sound.
+         * @return The user data.
+         */
+        [[nodiscard]] AmVoidPtr GetUserData() const
         {
-            return _bitsPerSample;
+            return _userData;
         }
 
-        [[nodiscard]] AmUInt32 GetFrameSize() const
+        /**
+         * @brief Sets the user data associated to this Sound.
+         * @param userData The user data.
+         */
+        void SetUserData(AmVoidPtr userData)
         {
-            return _frameSize;
+            _userData = userData;
         }
 
-        [[nodiscard]] AM_SAMPLE_FORMAT GetSampleType() const
+        /**
+         * @brief Returns the SoundCollection storing this Sound.
+         * @return The Sound collection.
+         */
+        [[nodiscard]] const SoundCollection* GetSoundCollection() const
         {
-            return _sampleType;
+            return m_collection;
         }
 
-        [[nodiscard]] AM_INTERLEAVE_TYPE GetInterleaveType() const
-        {
-            return _interleaveType;
-        }
+        AmInt32 GetAudio(AmUInt32 offset, AmUInt32 frames);
+        void Destroy();
+
+    protected:
+        const SoundCollection* m_collection;
+        SoundFormat m_format;
 
     private:
-        AmUInt32 _sampleRate;
-        AmUInt16 _numChannels;
-        AmUInt32 _bitsPerSample;
-        AmUInt32 _frameSize;
-        AM_SAMPLE_FORMAT _sampleType;
-        AM_INTERLEAVE_TYPE _interleaveType;
-    };
+        AmVoidPtr _userData;
 
+        AmFloat32Buffer _streamBuffer;
+        Codec::Decoder* _streamDecoder;
+
+        bool _stream;
+        bool _loop;
+
+        AmUInt32 _size;
+        AmUInt8 _channels;
+    };
 } // namespace SparkyStudios::Audio::Amplitude
 
 #endif // SS_AMPLITUDE_AUDIO_SOUND_H

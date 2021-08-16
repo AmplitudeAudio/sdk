@@ -23,8 +23,6 @@
 #include <Core/EngineInternalState.h>
 #include <IO/File.h>
 
-#include "Sound.h"
-
 #include "buses_definition_generated.h"
 #include "engine_config_definition_generated.h"
 #include "sound_collection_definition_generated.h"

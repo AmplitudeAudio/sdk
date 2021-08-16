@@ -13,17 +13,16 @@
 // limitations under the License.
 
 #define ATOMIX_IMPLEMENTATION
+#include "atomix.h"
 
+#include <SparkyStudios/Audio/Amplitude/Amplitude.h>
+
+#include <Core/Drivers/MiniAudio/miniaudio.h>
 #include <Core/EngineInternalState.h>
-
-#include <SparkyStudios/Audio/Amplitude/Core/Log.h>
-#include <SparkyStudios/Audio/Amplitude/Core/Thread.h>
 
 #include "Mixer.h"
 #include "RealChannel.h"
-#include "Sound.h"
 
-#include "atomix.h"
 #include "engine_config_definition_generated.h"
 
 namespace SparkyStudios::Audio::Amplitude

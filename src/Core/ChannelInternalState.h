@@ -19,9 +19,9 @@
 
 #include <SparkyStudios/Audio/Amplitude/Core/Channel.h>
 #include <SparkyStudios/Audio/Amplitude/Math/HandmadeMath.h>
+#include <SparkyStudios/Audio/Amplitude/Sound/Sound.h>
 
 #include "RealChannel.h"
-#include "Sound.h"
 
 #include <Utils/intrusive_list.h>
 

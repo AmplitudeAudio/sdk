@@ -14,15 +14,7 @@
 
 #include <SparkyStudios/Audio/Amplitude/Amplitude.h>
 
-#include <SparkyStudios/Audio/Amplitude/Core/Common.h>
-
-#include <SparkyStudios/Audio/Amplitude/Core/Codec.h>
-#include <SparkyStudios/Audio/Amplitude/Core/Log.h>
-#include <SparkyStudios/Audio/Amplitude/Sound/SoundCollection.h>
-
 #include <Core/EngineInternalState.h>
-
-#include "Sound.h"
 
 #include "atomix.h"
 #include "sound_collection_definition_generated.h"

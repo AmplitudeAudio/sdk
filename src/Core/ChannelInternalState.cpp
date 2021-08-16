@@ -12,8 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include <Core/ChannelInternalState.h>
-
 #ifdef _WIN32
 #if !defined(_USE_MATH_DEFINES)
 #define _USE_MATH_DEFINES
@@ -23,14 +21,11 @@
 #include <algorithm>
 #include <cmath>
 
-#include <SparkyStudios/Audio/Amplitude/Core/Common.h>
-
-#include <SparkyStudios/Audio/Amplitude/Sound/SoundCollection.h>
+#include <SparkyStudios/Audio/Amplitude/Amplitude.h>
 
 #include <Core/BusInternalState.h>
+#include <Core/ChannelInternalState.h>
 #include <Utils/intrusive_list.h>
-
-#include "Sound.h"
 
 #include "sound_collection_definition_generated.h"
 
