@@ -16,16 +16,16 @@
 
 namespace SparkyStudios::Audio::Amplitude
 {
-#define SA_VERSION_MAJOR 1
-#define SA_VERSION_MINOR 0
-#define SA_VERSION_REVISION 0
+#define AM_VERSION_MAJOR 1
+#define AM_VERSION_MINOR 0
+#define AM_VERSION_REVISION 0
 
 // Turn X into a string literal.
-#define SA_STRING_EXPAND(X) #X
-#define SA_STRING(X) SA_STRING_EXPAND(X)
+#define AM_STRING_EXPAND(X) #X
+#define AM_STRING(X) AM_STRING_EXPAND(X)
 
     /// @var kVersion
-    /// @brief String which identifies the current version of SparkAudio.
+    /// @brief String which identifies the current version of Amplitude.
     ///
     /// @ref kVersion is used by Google developers to identify which applications
     /// uploaded to Google Play are using this library. This allows the development
@@ -36,13 +36,13 @@ namespace SparkyStudios::Audio::Amplitude
     /// appreciate if you left it in.
     // clang-format off
     static const struct Version kVersion = {
-        SA_VERSION_MAJOR,
-        SA_VERSION_MINOR,
-        SA_VERSION_REVISION,
-        "SparkAudio "
-        SA_STRING(SA_VERSION_MAJOR) "."
-        SA_STRING(SA_VERSION_MINOR) "."
-        SA_STRING(SA_VERSION_REVISION)
+        AM_VERSION_MAJOR,
+        AM_VERSION_MINOR,
+        AM_VERSION_REVISION,
+        "Amplitude "
+        AM_STRING(SA_VERSION_MAJOR) "."
+        AM_STRING(SA_VERSION_MINOR) "."
+        AM_STRING(SA_VERSION_REVISION)
     };
     // clang-format on
 
