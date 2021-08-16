@@ -24,7 +24,7 @@ namespace SparkyStudios::Audio::Amplitude::Codecs
     [[maybe_unused]] static class WAVCodec final : public Codec
     {
     public:
-        class WAVDecoder : public Codec::Decoder
+        class WAVDecoder final : public Codec::Decoder
         {
         public:
             explicit WAVDecoder(const Codec* codec)
@@ -33,18 +33,22 @@ namespace SparkyStudios::Audio::Amplitude::Codecs
                 , _wav()
             {}
 
-            bool Initialize(AmString filePath) final;
+            bool Open(AmString filePath) final;
+
+            bool Close() final;
 
             AmUInt64 Load(AmFloat32Buffer out) final;
 
             AmUInt64 Stream(AmFloat32Buffer out, AmUInt64 offset, AmUInt64 length) final;
+
+            bool Seek(AmUInt64 offset) final;
 
         private:
             bool _initialized;
             drwav _wav;
         };
 
-        class WAVEncoder : public Codec::Encoder
+        class WAVEncoder final : public Codec::Encoder
         {
         public:
             explicit WAVEncoder(const Codec* codec)
@@ -53,7 +57,9 @@ namespace SparkyStudios::Audio::Amplitude::Codecs
                 , _wav()
             {}
 
-            bool Initialize(AmString filePath) final;
+            bool Open(AmString filePath) final;
+
+            bool Close() final;
 
             AmUInt64 Write(const float* in, AmUInt64 offset, AmUInt64 length) final;
 

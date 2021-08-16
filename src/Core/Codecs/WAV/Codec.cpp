@@ -19,17 +19,17 @@
 
 namespace SparkyStudios::Audio::Amplitude::Codecs
 {
-    bool WAVCodec::WAVDecoder::Initialize(AmString filePath)
+    bool WAVCodec::WAVDecoder::Open(AmString filePath)
     {
         if (!m_codec->CanHandleFile(filePath))
         {
-            CallLogFunc("The WAV codec cannot handle the file: %s\n", filePath);
+            CallLogFunc("The WAV codec cannot handle the file: '%s'\n", filePath);
             return false;
         }
 
         if (drwav_init_file(&_wav, filePath, nullptr) == DRWAV_FALSE)
         {
-            CallLogFunc("Cannot load the WAV file: %s\n", filePath);
+            CallLogFunc("Cannot load the WAV file: '%s'\n.", filePath);
             return false;
         }
 
@@ -41,6 +41,19 @@ namespace SparkyStudios::Audio::Amplitude::Codecs
 
         _initialized = true;
 
+        return true;
+    }
+
+    bool WAVCodec::WAVDecoder::Close()
+    {
+        if (_initialized)
+        {
+            m_format = SoundFormat();
+            _initialized = false;
+            return drwav_uninit(&_wav) == DRWAV_TRUE;
+        }
+
+        // true because it is already closed
         return true;
     }
 
@@ -66,7 +79,7 @@ namespace SparkyStudios::Audio::Amplitude::Codecs
             return 0;
         }
 
-        if (drwav_seek_to_pcm_frame(&_wav, offset) != DRWAV_TRUE)
+        if (!Seek(offset))
         {
             return 0;
         }
@@ -74,10 +87,25 @@ namespace SparkyStudios::Audio::Amplitude::Codecs
         return drwav_read_pcm_frames_f32(&_wav, length, out);
     }
 
-    bool WAVCodec::WAVEncoder::Initialize(AmString filePath)
+    bool WAVCodec::WAVDecoder::Seek(AmUInt64 offset)
+    {
+        return drwav_seek_to_pcm_frame(&_wav, offset) == DRWAV_TRUE;
+    }
+
+    bool WAVCodec::WAVEncoder::Open(AmString filePath)
     {
         _initialized = true;
         return false;
+    }
+
+    bool WAVCodec::WAVEncoder::Close()
+    {
+        if (_initialized)
+        {
+            return true;
+        }
+
+        return true;
     }
 
     AmUInt64 WAVCodec::WAVEncoder::Write(const float* in, AmUInt64 offset, AmUInt64 length)

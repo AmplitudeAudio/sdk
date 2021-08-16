@@ -51,11 +51,18 @@ namespace SparkyStudios::Audio::Amplitude
             virtual ~Decoder() = default;
 
             /**
-             * @brief Initializes the decoder instance with the given file.
+             * @brief Opens the given file to start decoding.
              *
              * @param filePath The path to the file to read.
              */
-            virtual bool Initialize(AmString filePath) = 0;
+            virtual bool Open(AmString filePath) = 0;
+
+            /**
+             * @brief Closes the file previously opened.
+             *
+             * @return Whether is operation is successful.
+             */
+            virtual bool Close() = 0;
 
             /**
              * @brief Gets the audio sample format.
@@ -89,6 +96,14 @@ namespace SparkyStudios::Audio::Amplitude
              * @return The number of frames read.
              */
             virtual AmUInt64 Stream(AmFloat32Buffer out, AmUInt64 offset, AmUInt64 length) = 0;
+
+            /**
+             * @brief Moves the cursor to the given frame.
+             * @param offset The offset in frames to move the cursor to.
+             *
+             * @return Whether the operation is successful.
+             */
+            virtual bool Seek(AmUInt64 offset) = 0;
 
         protected:
             /**
@@ -125,11 +140,18 @@ namespace SparkyStudios::Audio::Amplitude
             virtual ~Encoder() = default;
 
             /**
-             * @brief Initializes the encoder instance with the given file.
+             * @brief Opens or create a file at the given path to start encoding.
              *
              * @param filePath The path to the file to write.
              */
-            virtual bool Initialize(AmString filePath) = 0;
+            virtual bool Open(AmString filePath) = 0;
+
+            /**
+             * @brief Closes the opened file.
+             *
+             * @return Whether the operation is successful.
+             */
+            virtual bool Close() = 0;
 
             /**
              * @brief Sets the audio sample format.

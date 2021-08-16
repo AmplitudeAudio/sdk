@@ -21,8 +21,24 @@
 
 namespace SparkyStudios::Audio::Amplitude
 {
+    Sound::Sound()
+        : m_collection(nullptr)
+        , m_format()
+        , _decoder(nullptr)
+        , _loop(false)
+        , _streamBuffer(nullptr)
+        , _stream(false)
+        , _userData(nullptr)
+    {}
+
     Sound::~Sound()
     {
+        delete _streamBuffer;
+        _streamBuffer = nullptr;
+
+        delete _decoder;
+        _decoder = nullptr;
+
         if (_userData)
         {
             atomixSoundDestroy(static_cast<atomix_sound*>(_userData));
@@ -49,83 +65,81 @@ namespace SparkyStudios::Audio::Amplitude
         const EngineConfigDefinition* config = Engine::GetInstance()->GetEngineConfigDefinition();
 
         Codec* codec = Codec::FindCodecForFile(filename);
-        codec
+        if (codec == nullptr)
+        {
+            CallLogFunc("Unable to find codec for '%s'\n.", filename);
+            return;
+        }
 
-        ma_decoder_config cfg = ma_decoder_config_init(ma_format_f32, config->output()->channels(), config->output()->frequency());
-        ma_uint64 size;
+        _decoder = codec->CreateDecoder();
+        if (!_decoder->Open(filename))
+        {
+            CallLogFunc("Unable to initialize decoder for '%s'\n.", filename);
+            return;
+        }
+
+        m_format = _decoder->GetFormat();
 
         if (_stream)
         {
-            _streamDecoder = {};
-            if (ma_decoder_init_file(filename, &cfg, &_streamDecoder) != MA_SUCCESS)
+            _streamBuffer = new AmAlignedFloat32Buffer();
+            _streamBuffer->Init(ATOMIX_MAX_STREAM_BUFFER_SIZE * m_format.GetNumChannels());
+
+            atomix_sound* sound =
+                atomixSoundNew(m_format.GetNumChannels(), _streamBuffer->GetBuffer(), m_format.GetFramesCount(), true, this);
+            if (!sound)
             {
-                CallLogFunc("LoadFile fail on %s", filename);
+                CallLogFunc("Could not load sound file '%s'\n.", filename);
                 return;
             }
 
-            size = ma_decoder_get_length_in_pcm_frames(&_streamDecoder);
-
-            _channels = _streamDecoder.outputChannels;
-            _streamBuffer = new float[ATOMIX_MAX_STREAM_BUFFER_SIZE * _channels];
-
-            atomix_sound* atmxSound = atomixSoundNew(_channels, _streamBuffer, (int)size, true, this);
-
-            if (!atmxSound)
-            {
-                CallLogFunc("Could not load sound file: %s.", GetFilename().c_str());
-                return;
-            }
-
-            SetUserData(atmxSound);
+            SetUserData(sound);
         }
         else
         {
-            AmVoidPtr data;
-
-            if (ma_decode_file(filename, &cfg, &size, &data) != MA_SUCCESS)
+            auto data = (AmFloat32Buffer)malloc(m_format.GetFramesCount() * m_format.GetFrameSize());
+            if (_decoder->Load(data) != m_format.GetFramesCount())
             {
-                CallLogFunc("LoadFile fail on %s", filename);
+                CallLogFunc("Could not load sound file '%s'\n.", filename);
                 return;
             }
 
-            _channels = cfg.channels;
+            atomix_sound* sound = atomixSoundNew(m_format.GetNumChannels(), data, m_format.GetFramesCount(), false, this);
+            free(data);
 
-            atomix_sound* atmxSound = atomixSoundNew(_channels, (AmFloat32Buffer)data, (int)size, false, this);
-            ma_free(data, nullptr); // We can delete the buffer here since atomix will own the data.
-
-            if (!atmxSound)
+            if (!sound)
             {
-                CallLogFunc("Could not load sound file: %s.", GetFilename().c_str());
+                CallLogFunc("Could not load sound file '%s'\n.", filename);
                 return;
             }
 
-            SetUserData(atmxSound);
+            SetUserData(sound);
         }
-
-        _size = size;
     }
 
-    AmInt32 Sound::GetAudio(AmUInt32 offset, AmUInt32 frames)
+    AmInt64 Sound::GetAudio(AmUInt64 offset, AmUInt64 frames)
     {
         if (_stream)
         {
-            ma_uint64 n = 0, l = frames, r = 0;
-            AmFloat32Buffer b = &_streamBuffer[0];
+            _streamBuffer->Clear();
+
+            AmUInt64 n, l = frames, o = offset, r = 0;
+            AmFloat32Buffer b = _streamBuffer->GetBuffer();
 
         fill:
-            n = ma_decoder_read_pcm_frames(&_streamDecoder, b, l);
+            n = _decoder->Stream(b, o, l);
             r += n;
 
             // If we reached the end of the file but looping is enabled, then
             // seek back to the beginning of the file and fill the remaining part of the buffer.
-            if (n < l && _loop && ma_decoder_seek_to_pcm_frame(&_streamDecoder, 0) == MA_SUCCESS)
+            if (n < l && _loop && _decoder->Seek(0))
             {
-                b += n * _channels;
+                b += n * m_format.GetNumChannels();
                 l -= n;
                 goto fill;
             }
 
-            return (int)r;
+            return r;
         }
 
         return 0;
@@ -135,9 +149,8 @@ namespace SparkyStudios::Audio::Amplitude
     {
         if (_stream)
         {
-            ma_decoder_uninit(&_streamDecoder);
-            delete[] _streamBuffer;
+            _decoder->Close();
+            delete _streamBuffer;
         }
     }
-
 } // namespace SparkyStudios::Audio::Amplitude

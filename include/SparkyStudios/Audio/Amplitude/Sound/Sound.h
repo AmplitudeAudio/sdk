@@ -29,6 +29,7 @@ namespace SparkyStudios::Audio::Amplitude
     class Sound : public Resource
     {
     public:
+        Sound();
         ~Sound() override;
 
         /**
@@ -92,7 +93,23 @@ namespace SparkyStudios::Audio::Amplitude
             return m_collection;
         }
 
-        AmInt32 GetAudio(AmUInt32 offset, AmUInt32 frames);
+        /**
+         * @brief Renders audio data.
+         *
+         * The audio data is read from the audio file loaded by this
+         * Sound. This function is mostly for internal uses.
+         *
+         * @param offset The offset in the audio data to start reading from.
+         * @param frames The number of audio frames to read.
+         *
+         * @return The number of frames read.
+         */
+        AmInt64 GetAudio(AmUInt64 offset, AmUInt64 frames);
+
+        /**
+         * @brief Destroys the audio sample loaded by this Sound and
+         * releases all resources.
+         */
         void Destroy();
 
     protected:
@@ -102,14 +119,11 @@ namespace SparkyStudios::Audio::Amplitude
     private:
         AmVoidPtr _userData;
 
-        AmFloat32Buffer _streamBuffer;
-        Codec::Decoder* _streamDecoder;
+        AmAlignedFloat32Buffer* _streamBuffer;
+        Codec::Decoder* _decoder;
 
         bool _stream;
         bool _loop;
-
-        AmUInt32 _size;
-        AmUInt8 _channels;
     };
 } // namespace SparkyStudios::Audio::Amplitude
 

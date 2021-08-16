@@ -242,6 +242,11 @@ namespace SparkyStudios::Audio::Amplitude
             return _bitsPerSample;
         }
 
+        [[nodiscard]] AmUInt64 SoundFormat::GetFramesCount() const
+        {
+            return _framesCount;
+        }
+
         [[nodiscard]] AmUInt32 GetFrameSize() const
         {
             return _frameSize;
