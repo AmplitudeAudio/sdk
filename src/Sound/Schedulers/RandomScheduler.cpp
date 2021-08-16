@@ -25,7 +25,7 @@ namespace SparkyStudios::Audio::Amplitude
     {
         _definition = definition;
 
-        flatbuffers::uoffset_t sample_count = definition->audio_sample_set() ? definition->audio_sample_set()->Length() : 0;
+        flatbuffers::uoffset_t sample_count = definition->audio_sample_set() ? definition->audio_sample_set()->size() : 0;
 
         for (flatbuffers::uoffset_t i = 0; i < sample_count; ++i)
         {
