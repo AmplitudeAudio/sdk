@@ -27,6 +27,10 @@
 #include "engine_config_definition_generated.h"
 #include "sound_collection_definition_generated.h"
 
+#pragma region Default Drivers
+#include <Core/Drivers/MiniAudio/Driver.h>
+#pragma endregion
+
 namespace SparkyStudios::Audio::Amplitude
 {
     typedef flatbuffers::Vector<flatbuffers::Offset<flatbuffers::String>> BusNameList;

@@ -72,6 +72,7 @@ set(SA_SOURCE
     src/Core/Codecs/WAV/WAVCodec.cpp src/Core/Codec.cpp
 
     src/Core/Drivers/MiniAudio/Driver.cpp
+    src/Core/Drivers/MiniAudio/Driver.h
     src/Core/Drivers/MiniAudio/miniaudio.h
 
     src/Core/Bus.cpp
@@ -88,7 +89,6 @@ set(SA_SOURCE
     src/Core/ListenerInternalState.h
     src/Core/Listener.cpp
     src/Core/Log.cpp
-    src/Core/MiniAudio.cpp
     src/Core/Thread.cpp
     src/Core/Version.cpp
 

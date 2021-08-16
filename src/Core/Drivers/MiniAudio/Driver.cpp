@@ -13,16 +13,18 @@
 // limitations under the License.
 
 #define MINIAUDIO_IMPLEMENTATION
-
-#include <SparkyStudios/Audio/Amplitude/Core/Driver.h>
-#include <SparkyStudios/Audio/Amplitude/Core/Log.h>
-
-#include "Mixer.h"
-
-#include "engine_config_definition_generated.h"
+#define MA_NO_DECODING
+#define MA_NO_ENCODING
 #include "miniaudio.h"
 
-namespace SparkyStudios::Audio::Amplitude
+#include <SparkyStudios/Audio/Amplitude/Amplitude.h>
+
+#include "Mixer.h"
+#include <Core/Drivers/MiniAudio/Driver.h>
+
+#include "engine_config_definition_generated.h"
+
+namespace SparkyStudios::Audio::Amplitude::Drivers
 {
     static void miniaudio_mixer(ma_device* pDevice, AmVoidPtr pOutput, const void* pInput, ma_uint32 frameCount)
     {
@@ -50,76 +52,61 @@ namespace SparkyStudios::Audio::Amplitude
         }
     }
 
-    static class MiniAudioDriver : public Driver
+    MiniAudioDriver::~MiniAudioDriver()
     {
-    public:
-        MiniAudioDriver()
-            : Driver("miniaudio")
-            , _initialized(false)
-            , _device()
-        {}
-
-        ~MiniAudioDriver() override
+        if (_initialized)
         {
-            if (_initialized)
-            {
-                Close();
-                ma_device_uninit(&_device);
-            }
+            Close();
+            ma_device_uninit(&_device);
         }
+    }
 
-        bool Open(const EngineConfigDefinition* config) final
+    bool MiniAudioDriver::Open(const EngineConfigDefinition* config)
+    {
+        if (!_initialized)
         {
+            ma_device_config deviceConfig = ma_device_config_init(ma_device_type_playback);
+            deviceConfig.periodSizeInFrames = config->output()->buffer_size();
+            deviceConfig.playback.format = ma_format_from_amplitude(config->output()->format());
+            deviceConfig.playback.channels = config->output()->channels();
+            deviceConfig.sampleRate = config->output()->frequency();
+            deviceConfig.dataCallback = miniaudio_mixer;
+            deviceConfig.pUserData = (void*)m_mixer;
+
+            _initialized = ma_device_init(nullptr, &deviceConfig, &_device) == MA_SUCCESS;
             if (!_initialized)
             {
-                ma_device_config deviceConfig = ma_device_config_init(ma_device_type_playback);
-                deviceConfig.periodSizeInFrames = config->output()->buffer_size();
-                deviceConfig.playback.format = ma_format_from_amplitude(config->output()->format());
-                deviceConfig.playback.channels = config->output()->channels();
-                deviceConfig.sampleRate = config->output()->frequency();
-                deviceConfig.dataCallback = miniaudio_mixer;
-                deviceConfig.pUserData = (void*)m_mixer;
-
-                _initialized = ma_device_init(nullptr, &deviceConfig, &_device) == MA_SUCCESS;
-                if (!_initialized)
-                {
-                    CallLogFunc("The miniaudio driver was not initialized successfully.");
-                    return false;
-                }
-
-                m_mixer->PostInit(
-                    _device.playback.internalPeriodSizeInFrames, _device.playback.internalSampleRate, _device.playback.internalChannels);
-            }
-
-            if (ma_device_is_started(&_device) == MA_FALSE && ma_device_start(&_device) != MA_SUCCESS)
-            {
-                CallLogFunc("Unable to open the audio device.");
+                CallLogFunc("The miniaudio driver was not initialized successfully.");
                 return false;
             }
 
-            return true;
+            m_mixer->PostInit(
+                _device.playback.internalPeriodSizeInFrames, _device.playback.internalSampleRate, _device.playback.internalChannels);
         }
 
-        bool Close() final
+        if (ma_device_is_started(&_device) == MA_FALSE && ma_device_start(&_device) != MA_SUCCESS)
         {
-            if (!_initialized)
-            {
-                CallLogFunc("Cannot close an uninitialized audio device.");
-                return false;
-            }
-
-            if (ma_device_is_started(&_device) == MA_TRUE && ma_device_stop(&_device) != MA_SUCCESS)
-            {
-                CallLogFunc("Unable to close the audio device.");
-                return false;
-            }
-
-            return true;
+            CallLogFunc("Unable to open the audio device.");
+            return false;
         }
 
-    private:
-        bool _initialized;
+        return true;
+    }
 
-        ma_device _device;
-    } miniaudio_driver;
-} // namespace SparkyStudios::Audio::Amplitude
+    bool MiniAudioDriver::Close()
+    {
+        if (!_initialized)
+        {
+            CallLogFunc("Cannot close an uninitialized audio device.");
+            return false;
+        }
+
+        if (ma_device_is_started(&_device) == MA_TRUE && ma_device_stop(&_device) != MA_SUCCESS)
+        {
+            CallLogFunc("Unable to close the audio device.");
+            return false;
+        }
+
+        return true;
+    }
+} // namespace SparkyStudios::Audio::Amplitude::Drivers
