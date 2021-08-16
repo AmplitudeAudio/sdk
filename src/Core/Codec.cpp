@@ -12,18 +12,19 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+#include <cstring>
 #include <map>
 
 #include <SparkyStudios/Audio/Amplitude/Core/Codec.h>
 
 namespace SparkyStudios::Audio::Amplitude
 {
-    typedef std::map<AmString, Codec*> Codecs;
-    typedef Codecs::value_type CodecImpl;
+    typedef std::map<AmString, Codec*> CodecRegistry;
+    typedef CodecRegistry::value_type CodecImpl;
 
-    static Codecs& codecRegistry()
+    static CodecRegistry& codecRegistry()
     {
-        static Codecs r;
+        static CodecRegistry r;
         return r;
     }
 
@@ -52,7 +53,7 @@ namespace SparkyStudios::Audio::Amplitude
 
         if (!Find(codec->GetName()))
         {
-            Codecs& codecs = codecRegistry();
+            CodecRegistry& codecs = codecRegistry();
             codecs.insert(CodecImpl(codec->GetName(), codec));
             codecsCount()++;
         }
@@ -60,7 +61,7 @@ namespace SparkyStudios::Audio::Amplitude
 
     Codec* Codec::Find(AmString name)
     {
-        Codecs& codecs = codecRegistry();
+        CodecRegistry& codecs = codecRegistry();
         for (auto&& codec : codecs)
         {
             if (strcmp(codec.second->m_name, name) == 0)
@@ -71,7 +72,7 @@ namespace SparkyStudios::Audio::Amplitude
 
     Codec* Codec::FindCodecForFile(AmString filePath)
     {
-        Codecs& codecs = codecRegistry();
+        CodecRegistry& codecs = codecRegistry();
         for (auto&& codec : codecs)
         {
             if (codec.second->CanHandleFile(filePath))

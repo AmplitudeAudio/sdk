@@ -12,20 +12,19 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+#include <cstring>
 #include <map>
-#include <string>
-#include <vector>
 
 #include <SparkyStudios/Audio/Amplitude/Core/Driver.h>
 
 namespace SparkyStudios::Audio::Amplitude
 {
-    typedef std::map<AmString, Driver*> Drivers;
-    typedef Drivers::value_type DriverImpl;
+    typedef std::map<AmString, Driver*> DriverRegistry;
+    typedef DriverRegistry::value_type DriverImpl;
 
-    static Drivers& driverRegistry()
+    static DriverRegistry& driverRegistry()
     {
-        static Drivers r;
+        static DriverRegistry r;
         return r;
     }
 
@@ -55,7 +54,7 @@ namespace SparkyStudios::Audio::Amplitude
 
         if (!Find(driver->GetName()))
         {
-            Drivers& drivers = driverRegistry();
+            DriverRegistry& drivers = driverRegistry();
             drivers.insert(DriverImpl(driver->GetName(), driver));
             driversCount()++;
         }
@@ -63,7 +62,7 @@ namespace SparkyStudios::Audio::Amplitude
 
     Driver* Driver::Default()
     {
-        Drivers& drivers = driverRegistry();
+        DriverRegistry& drivers = driverRegistry();
         if (!drivers.empty())
             return drivers.rbegin()->second;
         return nullptr;
@@ -71,7 +70,7 @@ namespace SparkyStudios::Audio::Amplitude
 
     Driver* Driver::Find(AmString name)
     {
-        Drivers& drivers = driverRegistry();
+        DriverRegistry& drivers = driverRegistry();
         for (auto&& driver : drivers)
         {
             if (strcmp(driver.second->m_name, name) == 0)
@@ -82,7 +81,7 @@ namespace SparkyStudios::Audio::Amplitude
 
     void Driver::SetDefault(AmString name)
     {
-        Drivers& drivers = driverRegistry();
+        DriverRegistry& drivers = driverRegistry();
         for (auto i = drivers.cbegin(), e = drivers.cend(); i != e; ++i)
         {
             if (strcmp(i->second->m_name, name) == 0)

@@ -81,6 +81,7 @@ set(SA_SOURCE
     src/Core/Channel.cpp
     src/Core/ChannelInternalState.cpp
     src/Core/ChannelInternalState.h
+    src/Core/Codec.cpp
     src/Core/Common.cpp
     src/Core/Driver.cpp
     src/Core/Engine.cpp
