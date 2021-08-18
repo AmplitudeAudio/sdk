@@ -24,12 +24,21 @@ namespace SparkyStudios::Audio::Amplitude
         // noop
     }
 
-    Sound* SequenceScheduler::Select(std::vector<Sound>& sounds)
+    Sound* SequenceScheduler::Select(std::vector<Sound>& sounds, const std::vector<const Sound*>& toSkip)
     {
         if (_lastIndex == sounds.size())
             _lastIndex = 0;
 
-        Sound* sound = &sounds[_lastIndex];
+        Sound* sound = nullptr;
+        for (; _lastIndex < sounds.size(); ++_lastIndex)
+        {
+            if (auto foundIt = std::find(toSkip.begin(), toSkip.end(), &sounds[_lastIndex]); foundIt != toSkip.end())
+                // Try to pick the next sound, since this one needs to be skipped
+                continue;
+
+            sound = &sounds[_lastIndex];
+            break;
+        }
         _lastIndex++;
 
         return sound;

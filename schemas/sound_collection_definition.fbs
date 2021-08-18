@@ -14,18 +14,40 @@
 
 namespace SparkyStudios.Audio.Amplitude;
 
-// NonPositional sounds are always played at their regular GetGain.
-// Positional sounds have their GetGain adjusted based on the attenuator and
+// NonPositional sounds are always played at their regular gain.
+// Positional sounds have their gain adjusted based on the attenuator and
 // the collider.
-enum Mode : byte {
+enum Type : byte {
   NonPositional,
   Positional,
+}
+
+// PlayModes are the way the sound collection is played when received a play request.
+enum PlayMode : byte {
+  // On each play request, an audio sample is picked by the scheduler and played only once.
+  PlayOne,
+
+  // On each play request, an audio sample is picked by the scheduler and looped until stopped.
+  LoopOne,
+
+  // On each play request, an audio sample is picked by the scheduler and played once.
+  // This task is repeated until all the audio samples are picked.
+  PlayAll,
+
+  // On each play request, an audio sample is picked by the scheduler and played once.
+  // This mode will play all the audio samples and once until stopped.
+  LoopAll,
 }
 
 // Available sound schedulers. A scheduler is a way for the sound collection
 // to pick a sound from the list of audio samples.
 enum Scheduler : byte {
+  // An audio sample is randomly selected from the list each time a play
+  // request is made on the sound collection.
   Random,
+
+  // Audio samples are sequentially selected from the list each time a play
+  // request is made on the sound collection.
   Sequence,
 }
 
@@ -61,15 +83,12 @@ table SoundCollectionDefinition {
   // played back.
   priority:float = 1.0;
 
-  // Overall linear GetGain (0.0 .. 1.0) of the sound when played back by the audio
+  // Overall linear gain (0.0 .. 1.0) of the sound when played back by the audio
   // system.
   gain:float = 1.0;
 
-  // Name of the GetBus this sound should be played on.
+  // Name of the bus this sound should be played on.
   bus:string;
-
-  // Whether the sound should loop.
-  loop:bool = false;
 
   // Set of samples from which a weighted random selection is performed to
   // determine which sample to play when Sound playback is triggered.
@@ -80,10 +99,14 @@ table SoundCollectionDefinition {
   stream:bool = false;
 
   // Whether this sound should grow louder or quieter based on distance.
-  // NonPositional sounds are always played at their regular GetGain.
-  // Positional sounds have their GetGain adjusted based on the distance to a
+  // NonPositional sounds are always played at their regular gain.
+  // Positional sounds have their gain adjusted based on the distance to a
   // listener.
-  mode:Mode = NonPositional;
+  type:Type = NonPositional;
+
+  // Defines the play mode of this sound. The play mode set the way audio samples
+  // of this sound are played. The default is PlayOne.
+  play_mode: PlayMode = PlayOne;
 
   // The scheduler to use when playing an audio sample of this collection.
   scheduler:Scheduler = Random;

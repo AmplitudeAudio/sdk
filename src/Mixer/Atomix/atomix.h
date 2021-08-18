@@ -54,6 +54,7 @@ typedef void (*atomix_sound_started_callback)(atomix_sound*);
 typedef void (*atomix_sound_paused_callback)(atomix_sound*);
 typedef void (*atomix_sound_resumed_callback)(atomix_sound*);
 typedef void (*atomix_sound_stopped_callback)(atomix_sound*);
+typedef void (*atomix_sound_ended_callback)(atomix_sound*);
 typedef uint64_t (*atomix_sound_stream_callback)(atomix_sound*, uint64_t, uint64_t);
 typedef void (*atomix_sound_destroy_callback)(atomix_sound*);
 
@@ -70,6 +71,8 @@ ATMXDEF void atomixSoundSetStoppedCallback(atomix_sound_stopped_callback);
 ATMXDEF void atomixSoundSetStreamCallback(atomix_sound_stream_callback);
 // defines the callback function called when a sound is destroyed.
 ATMXDEF void atomixSoundSetDestroyCallback(atomix_sound_destroy_callback);
+// defines the callback function called when a sound has reached the end.
+ATMXDEF void atomixSoundSetEndedCallback(atomix_sound_ended_callback);
 // creates a new atomix sound with given number of channels and data
 // length of data is in frames and rounded to multiple of 4 for alignment
 // given data is copied, so the buffer can safely be freed after return
@@ -159,6 +162,7 @@ static atomix_sound_started_callback onStarted; // called when a sound is starte
 static atomix_sound_paused_callback onPaused; // called when a sound is paused
 static atomix_sound_resumed_callback onResumed; // called when a sound is resumed
 static atomix_sound_stopped_callback onStopped; // called when a sound is stopped
+static atomix_sound_ended_callback onEnded; // called when a sound has played to the end
 static atomix_sound_stream_callback onStream; // called when a stream event occurs
 static atomix_sound_destroy_callback onDestroy; // called when a destroy event occurs
 
@@ -246,19 +250,23 @@ ATMXDEF void atomixSoundSetDestroyCallback(atomix_sound_destroy_callback handler
 {
     onDestroy = handler;
 }
+ATMXDEF void atomixSoundSetEndedCallback(atomix_sound_destroy_callback handler)
+{
+    onEnded = handler;
+}
 ATMXDEF struct atomix_sound* atomixSoundNew(uint8_t cha, float* data, int32_t len, bool stream, void* udata)
 {
     // validate arguments first and return NULL if invalid
     if ((cha < 1) || (cha > 2) || (!data) || (len < 1))
         return nullptr;
     // round length to next multiple of 4
-    int32_t rlen = (len + 3) & ~0x03;
+    int32_t rlen = ATOMIX_ALIGN(len);
 // allocate sound struct and space for data
 #ifndef ATOMIX_NO_SSE
     auto* snd = (struct atomix_sound*)ATOMIX_ZALLOC(
-        sizeof(struct atomix_sound) + (stream ? ATOMIX_MAX_STREAM_BUFFER_SIZE_ALIGNED : rlen) * cha * sizeof(float) + 15);
+        sizeof(struct atomix_sound) + (stream ? ATOMIX_MAX_STREAM_BUFFER_SIZE_ALIGNED : rlen) * cha * sizeof(float) + 16);
 #else
-    struct atomix_sound* snd = (struct atomix_sound*)ATOMIX_ZALLOC(
+    auto* snd = (struct atomix_sound*)ATOMIX_ZALLOC(
         sizeof(struct atomix_sound) + (stream ? ATOMIX_MAX_STREAM_BUFFER_SIZE_ALIGNED : rlen) * cha * sizeof(float));
 #endif
     // return if zalloc failed
@@ -346,7 +354,7 @@ ATMXDEF uint32_t atomixMixerMix(struct atomix_mixer* mix, float* speaker, uint32
         }
     }
     // asize in __m128 (__m128 = 2 frames) and multiple of 2
-    uint32_t asize = ((rnum + 3) & ~3) >> 1;
+    uint32_t asize = ATOMIX_ALIGN(rnum) >> 1;
     // dynamically sized aligned buffer
     auto* align = new __m128[asize];
     // clear the aligned buffer using SSE assignment
@@ -610,7 +618,6 @@ static void atmxMixLayer(struct atmx_layer* lay, __m128 vol, __m128* align, uint
     {
         // mix sound per chunk of streamed data
         int32_t c = rnum;
-        int32_t f = 0;
         while (c > 0)
         {
             uint64_t chunkSize = AM_MIN(ATOMIX_MAX_STREAM_BUFFER_SIZE, c);
@@ -631,27 +638,24 @@ static void atmxMixLayer(struct atmx_layer* lay, __m128 vol, __m128* align, uint
                 if ((lay->fade > 0) && (cur < lay->end))
                     cur = lay->snd->cha == 1 ? atmxMixFadeMono(lay, cur, gmul, buf, aChunkSize)
                                              : atmxMixFadeStereo(lay, cur, gmul, buf, aChunkSize);
+
+                // clear flag if ATOMIX_STOP and fully faded or at end
+                if ((flag == ATOMIX_STOP) && ((lay->fade == 0) || (cur == lay->end)))
+                    ATMX_STORE(&lay->flag, (uint8_t)0);
             }
             else
             {
                 // ATOMIX_PLAY or ATOMIX_LOOP, play including fade in
                 cur = lay->snd->cha == 1 ? atmxMixPlayMono(lay, (flag == ATOMIX_LOOP), cur, gmul, buf, aChunkSize)
                                          : atmxMixPlayStereo(lay, (flag == ATOMIX_LOOP), cur, gmul, buf, aChunkSize);
+
+                // clear flag if ATOMIX_PLAY and the cursor has reached the end
+                if ((flag == ATOMIX_PLAY) && (cur == lay->end))
+                    ATMX_CSWAP(&lay->flag, &flag, (uint8_t)0);
             }
 
-            // memcpy(buff + ((rnum - c) * 2), lay.snd->data, chunkSize * 2 * sizeof(float));
-            // memcpy(buf, lay->snd->data, chunkSize * 2 * sizeof(float));
             c -= len;
-            f += len;
         }
-
-        // clear flag if ATOMIX_STOP and fully faded or at end
-        if ((flag == ATOMIX_STOP) && ((lay->fade == 0) || (cur == lay->end)))
-            ATMX_STORE(&lay->flag, (uint8_t)0);
-
-        // clear flag if ATOMIX_PLAY and the cursor has reached the end
-        if ((flag == ATOMIX_PLAY) && (cur == lay->end))
-            ATMX_CSWAP(&lay->flag, &flag, (uint8_t)0);
     }
     else
     {
@@ -661,6 +665,7 @@ static void atmxMixLayer(struct atmx_layer* lay, __m128 vol, __m128* align, uint
             // ATOMIX_STOP or ATOMIX_HALT, fade out if not faded or at end
             if ((lay->fade > 0) && (cur < lay->end))
                 cur = lay->snd->cha == 1 ? atmxMixFadeMono(lay, cur, gmul, align, asize) : atmxMixFadeStereo(lay, cur, gmul, align, asize);
+
             // clear flag if ATOMIX_STOP and fully faded or at end
             if ((flag == ATOMIX_STOP) && ((lay->fade == 0) || (cur == lay->end)))
                 ATMX_STORE(&lay->flag, (uint8_t)0);
@@ -668,15 +673,18 @@ static void atmxMixLayer(struct atmx_layer* lay, __m128 vol, __m128* align, uint
         else
         {
             // ATOMIX_PLAY or ATOMIX_LOOP, play including fade in
-            if (lay->snd->cha == 1)
-                cur = atmxMixPlayMono(lay, (flag == ATOMIX_LOOP), cur, gmul, align, asize);
-            else
-                cur = atmxMixPlayStereo(lay, (flag == ATOMIX_LOOP), cur, gmul, align, asize);
+            cur = (lay->snd->cha == 1) ? atmxMixPlayMono(lay, (flag == ATOMIX_LOOP), cur, gmul, align, asize)
+                                       : atmxMixPlayStereo(lay, (flag == ATOMIX_LOOP), cur, gmul, align, asize);
+
             // clear flag if ATOMIX_PLAY and the cursor has reached the end
             if ((flag == ATOMIX_PLAY) && (cur == lay->end))
                 ATMX_CSWAP(&lay->flag, &flag, (uint8_t)0);
         }
     }
+
+    // run callback if reached the end
+    if (cur == lay->end && onEnded)
+        onEnded(lay->snd);
 }
 static int32_t atmxMixFadeMono(struct atmx_layer* lay, int32_t cur, __m128 gmul, __m128* align, uint32_t asize)
 {
@@ -755,7 +763,17 @@ static int32_t atmxMixFadeStereo(struct atmx_layer* lay, int32_t cur, __m128 gmu
                 // get faded volume multiplier
                 __m128 fmul = _mm_mul_ps(_mm_set_ps1((float)lay->fade / (float)lay->fmax), gmul);
                 // mod for repeating and convert to __m128 offset
-                int32_t off = (cur % lay->snd->len) >> 1;
+                int32_t off = 0;
+                if (lay->snd->buf)
+                {
+                    // when streaming we always fit the data buffer,
+                    // otherwise something is wrong
+                    off = i;
+                }
+                else
+                {
+                    off = (cur % lay->snd->len) >> 1;
+                }
                 // mix in first two frames
                 align[i] = _mm_add_ps(align[i], _mm_mul_ps(lay->snd->data[off], fmul));
                 // mix in second two frames
@@ -778,7 +796,17 @@ static int32_t atmxMixFadeStereo(struct atmx_layer* lay, int32_t cur, __m128 gmu
             if (cur >= 0)
             {
                 // mod for repeating and convert to __m128 offset
-                int32_t off = (cur % lay->snd->len) >> 1;
+                int32_t off = 0;
+                if (lay->snd->buf)
+                {
+                    // when streaming we always fit the data buffer,
+                    // otherwise something is wrong
+                    off = i;
+                }
+                else
+                {
+                    off = (cur % lay->snd->len) >> 1;
+                }
                 // mix in first two frames
                 align[i] = _mm_add_ps(align[i], _mm_mul_ps(lay->snd->data[off], gmul));
                 // mix in second two frames
@@ -819,7 +847,18 @@ static int32_t atmxMixPlayMono(struct atmx_layer* lay, int loop, int32_t cur, __
                 // get faded volume multiplier
                 __m128 fmul = _mm_mul_ps(_mm_set_ps1((float)lay->fade / (float)lay->fmax), gmul);
                 // load 4 samples from data (this is 4 frames)
-                __m128 sam = lay->snd->data[(cur % lay->snd->len) >> 2];
+                int32_t off = 0;
+                if (lay->snd->buf)
+                {
+                    // when streaming we always fit the data buffer,
+                    // otherwise something is wrong
+                    off = i;
+                }
+                else
+                {
+                    off = (cur % lay->snd->len) >> 2;
+                }
+                __m128 sam = lay->snd->data[off];
                 // mix low samples obtained with unpacklo
                 align[i] = _mm_add_ps(align[i], _mm_mul_ps(_mm_unpacklo_ps(sam, sam), fmul));
                 // mix high samples obtained with unpackhi
@@ -850,7 +889,18 @@ static int32_t atmxMixPlayMono(struct atmx_layer* lay, int loop, int32_t cur, __
             if (cur >= 0)
             {
                 // load 4 samples from data (this is 4 frames)
-                __m128 sam = lay->snd->data[(cur % lay->snd->len) >> 2];
+                int32_t off = 0;
+                if (lay->snd->buf)
+                {
+                    // when streaming we always fit the data buffer,
+                    // otherwise something is wrong
+                    off = i;
+                }
+                else
+                {
+                    off = (cur % lay->snd->len) >> 2;
+                }
+                __m128 sam = lay->snd->data[off];
                 // mix low samples obtained with unpacklo
                 align[i] = _mm_add_ps(align[i], _mm_mul_ps(_mm_unpacklo_ps(sam, sam), gmul));
                 // mix high samples obtained with unpackhi
@@ -892,7 +942,9 @@ static int32_t atmxMixPlayStereo(struct atmx_layer* lay, int loop, int32_t cur, 
                 int32_t off = 0;
                 if (lay->snd->buf)
                 {
-                    off = (cur % ATOMIX_MAX_STREAM_BUFFER_SIZE_ALIGNED) >> 1;
+                    // when streaming we always fit the data buffer,
+                    // otherwise something is wrong
+                    off = i;
                 }
                 else
                 {

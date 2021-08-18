@@ -22,8 +22,8 @@
 #include <vector>
 
 #include <SparkyStudios/Audio/Amplitude/Sound/RefCounter.h>
-#include <SparkyStudios/Audio/Amplitude/Sound/SoundCollectionScheduler.h>
 #include <SparkyStudios/Audio/Amplitude/Sound/Sound.h>
+#include <SparkyStudios/Audio/Amplitude/Sound/SoundCollectionScheduler.h>
 
 namespace SparkyStudios::Audio::Amplitude
 {
@@ -60,7 +60,7 @@ namespace SparkyStudios::Audio::Amplitude
         [[nodiscard]] const SoundCollectionDefinition* GetSoundCollectionDefinition() const;
 
         // Return a random piece of audio from the set of audio for this sound.
-        Sound* Select();
+        Sound* Select(const std::vector<const Sound*>& toSkip);
 
         // Return the bus this SoundCollection will play on.
         BusInternalState* GetBus()
@@ -71,6 +71,11 @@ namespace SparkyStudios::Audio::Amplitude
         RefCounter* GetRefCounter()
         {
             return &_refCounter;
+        }
+
+        [[nodiscard]] const std::vector<Sound>& GetAudioSamples() const
+        {
+            return _sounds;
         }
 
     private:

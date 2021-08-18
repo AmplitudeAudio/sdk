@@ -29,37 +29,66 @@ namespace SparkyStudios::Audio::Amplitude
 {
     static void atomix_sound_started(atomix_sound* snd)
     {
-        auto* sound = static_cast<Sound*>(snd->udata);
-        CallLogFunc("Started sound: %s\n", sound->GetFilename().c_str());
+        auto* sound = static_cast<SoundInstance*>(snd->udata);
+        CallLogFunc("Started sound: %s\n", sound->GetSound()->GetFilename().c_str());
     }
 
     static void atomix_sound_paused(atomix_sound* snd)
     {
-        auto* sound = static_cast<Sound*>(snd->udata);
-        CallLogFunc("Paused sound: %s\n", sound->GetFilename().c_str());
+        auto* sound = static_cast<SoundInstance*>(snd->udata);
+        CallLogFunc("Paused sound: %s\n", sound->GetSound()->GetFilename().c_str());
     }
 
     static void atomix_sound_resumed(atomix_sound* snd)
     {
-        auto* sound = static_cast<Sound*>(snd->udata);
-        CallLogFunc("Resumed sound: %s\n", sound->GetFilename().c_str());
+        auto* sound = static_cast<SoundInstance*>(snd->udata);
+        CallLogFunc("Resumed sound: %s\n", sound->GetSound()->GetFilename().c_str());
     }
 
     static void atomix_sound_stopped(atomix_sound* snd)
     {
-        auto* sound = static_cast<Sound*>(snd->udata);
-        CallLogFunc("Stopped sound: %s\n", sound->GetFilename().c_str());
+        auto* sound = static_cast<SoundInstance*>(snd->udata);
+        CallLogFunc("Stopped sound: %s\n", sound->GetSound()->GetFilename().c_str());
+    }
+
+    static void atomix_sound_ended(atomix_sound* snd)
+    {
+        auto* sound = static_cast<SoundInstance*>(snd->udata);
+        CallLogFunc("Ended sound: %s\n", sound->GetSound()->GetFilename().c_str());
+        RealChannel* channel = sound->GetChannel();
+        SoundCollection* collection = sound->GetSound()->GetSoundCollection();
+        const SoundCollectionDefinition* config = collection->GetSoundCollectionDefinition();
+
+        if (config->play_mode() == PlayMode_LoopAll || config->play_mode() == PlayMode_PlayAll)
+        {
+            channel->MarkAsPlayed(sound->GetSound());
+            if (channel->AllSoundsHasPlayed())
+            {
+                channel->ClearPlayedSounds();
+                if (config->play_mode() == PlayMode_PlayAll)
+                {
+                    goto Delete;
+                }
+            }
+
+            // Play the collection again
+            sound->GetChannel()->GetParentChannelState()->Play(collection);
+        }
+
+    Delete:
+        // Delete the sound instance at the end of the playback
+        delete sound;
     }
 
     static AmUInt64 atomix_sound_stream(atomix_sound* snd, AmUInt64 offset, AmUInt64 frames)
     {
-        auto* sound = static_cast<Sound*>(snd->udata);
+        auto* sound = static_cast<SoundInstance*>(snd->udata);
         return sound->GetAudio(offset, frames);
     }
 
     static void atomix_sound_destroy(atomix_sound* snd)
     {
-        auto* sound = static_cast<Sound*>(snd->udata);
+        auto* sound = static_cast<SoundInstance*>(snd->udata);
         sound->Destroy();
     }
 
@@ -77,6 +106,7 @@ namespace SparkyStudios::Audio::Amplitude
         atomixSoundSetStoppedCallback(atomix_sound_stopped);
         atomixSoundSetStreamCallback(atomix_sound_stream);
         atomixSoundSetDestroyCallback(atomix_sound_destroy);
+        atomixSoundSetEndedCallback(atomix_sound_ended);
     }
 
     Mixer::~Mixer()

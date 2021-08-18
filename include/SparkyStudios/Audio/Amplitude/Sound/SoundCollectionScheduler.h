@@ -44,9 +44,13 @@ namespace SparkyStudios::Audio::Amplitude
          * This assumes that the scheduler was already initialized.
          *
          * @param sounds The list of available sounds.
+         * @param toSkip The list of sounds to skip from selection.
+         *
+         * The values of this list are pointers of available sounds.
+         *
          * @return The selected sound.
          */
-        virtual Sound* Select(std::vector<Sound>& sounds) = 0;
+        virtual Sound* Select(std::vector<Sound>& sounds, const std::vector<const Sound*>& toSkip) = 0;
     };
 } // namespace SparkyStudios::Audio::Amplitude
 

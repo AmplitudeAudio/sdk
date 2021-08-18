@@ -40,7 +40,7 @@ namespace SparkyStudios::Audio::Amplitude
     {
     public:
         ChannelInternalState()
-            : _realChannel()
+            : _realChannel(this)
             , _channelState(ChannelStateStopped)
             , _collection(nullptr)
             , _sound(nullptr)

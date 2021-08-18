@@ -25,7 +25,8 @@ namespace SparkyStudios::Audio::Amplitude
     {
     public:
         void Init(const SoundCollectionDefinition* definition) override;
-        Sound* Select(std::vector<Sound>& sounds) override;
+        Sound* Select(std::vector<Sound>& sounds, const std::vector<const Sound*>& toSkip) override;
+
     private:
         float _probabilitiesSum;
         const SoundCollectionDefinition* _definition;

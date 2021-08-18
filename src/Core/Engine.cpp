@@ -28,8 +28,8 @@
 #include "sound_collection_definition_generated.h"
 
 #pragma region Default Codecs
-#include <Core/Codecs/WAV/Codec.h>
 #include <Core/Codecs/OGG/Codec.h>
+#include <Core/Codecs/WAV/Codec.h>
 #pragma endregion
 
 #pragma region Default Drivers
@@ -80,8 +80,11 @@ namespace SparkyStudios::Audio::Amplitude
     Engine::~Engine()
     {
         _configSrc.clear();
+
+        _audioDriver = nullptr;
+
         delete _state;
-        delete _audioDriver;
+        _state = nullptr;
     }
 
     Engine* Engine::GetInstance()
@@ -241,7 +244,7 @@ namespace SparkyStudios::Audio::Amplitude
         // Load the audio buses.
         if (!LoadFile(config->buses_file()->c_str(), &_state->buses_source))
         {
-            CallLogFunc("Could not load audio GetBus file.\n");
+            CallLogFunc("Could not load audio bus file.\n");
             return false;
         }
         const BusDefinitionList* bus_def_list = Amplitude::GetBusDefinitionList(_state->buses_source.c_str());
@@ -268,7 +271,7 @@ namespace SparkyStudios::Audio::Amplitude
         _state->master_bus = FindBusInternalState(_state, "master");
         if (!_state->master_bus)
         {
-            CallLogFunc("No master GetBus specified.\n");
+            CallLogFunc("No master bus specified.\n");
             return false;
         }
 
@@ -418,7 +421,7 @@ namespace SparkyStudios::Audio::Amplitude
     {
         const SoundCollectionDefinition* def = collection->GetSoundCollectionDefinition();
         *gain = def->gain() * collection->GetBus()->GetGain() * user_gain;
-        if (def->mode() == Mode_Positional)
+        if (def->type() == Type_Positional)
         {
             ListenerList::const_iterator listener;
             float distance_squared;
@@ -488,7 +491,7 @@ namespace SparkyStudios::Audio::Amplitude
         ChannelInternalState* new_channel = nullptr;
         // Grab a free ChannelInternalState if there is one and the engine is not
         // paused. The engine is paused, grab a virtual channel for now, and it will
-        // fix itself when the engine is unpaused.
+        // fix itself when the engine is not paused.
         if (!paused && !real_channel_free_list->empty())
         {
             new_channel = &real_channel_free_list->front();
@@ -675,15 +678,15 @@ namespace SparkyStudios::Audio::Amplitude
             {
                 if (pause)
                 {
-                    // Pause the real channel underlying this virutal channel. This freezes
+                    // Pause the real channel underlying this virtual channel. This freezes
                     // playback of the channel without marking it as paused from the audio
                     // engine's point of view, so that we know to restart it when the audio
-                    // engine is unpaused.
+                    // engine is not paused.
                     iter.GetRealChannel().Pause();
                 }
                 else
                 {
-                    // Unpause all channels that were not explicitly paused.
+                    // Resumed all channels that were not explicitly paused.
                     iter.GetRealChannel().Resume();
                 }
             }
