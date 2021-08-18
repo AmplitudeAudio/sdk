@@ -30,16 +30,19 @@ namespace SparkyStudios::Audio::Amplitude
         for (flatbuffers::uoffset_t i = 0; i < sample_count; ++i)
         {
             const AudioSampleSetEntry* entry = definition->audio_sample_set()->Get(i);
-            const char* entry_filename = entry->audio_sample()->filename()->c_str();
             _probabilitiesSum += entry->playback_probability();
         }
     }
 
-    Sound* RandomScheduler::Select(std::vector<Sound>& sounds)
+    Sound* RandomScheduler::Select(std::vector<Sound>& sounds, const std::vector<const Sound*>& toSkip)
     {
         float selection = std::rand() / static_cast<float>(RAND_MAX) * _probabilitiesSum;
         for (size_t i = 0; i < sounds.size(); ++i)
         {
+            if (auto foundIt = std::find(toSkip.begin(), toSkip.end(), &sounds[i]); foundIt != toSkip.end())
+                // Try to pick the next sound, since this one needs to be skipped
+                continue;
+
             const AudioSampleSetEntry* entry = _definition->audio_sample_set()->Get(static_cast<flatbuffers::uoffset_t>(i));
 
             selection -= entry->playback_probability();

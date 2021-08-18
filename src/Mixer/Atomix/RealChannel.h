@@ -15,6 +15,9 @@
 #ifndef SPARK_AUDIO_REAL_CHANNEL_H
 #define SPARK_AUDIO_REAL_CHANNEL_H
 
+#include <vector>
+
+#include <SparkyStudios/Audio/Amplitude/Core/Channel.h>
 #include <SparkyStudios/Audio/Amplitude/Core/Fader.h>
 #include <SparkyStudios/Audio/Amplitude/Math/HandmadeMath.h>
 
@@ -23,6 +26,7 @@
 namespace SparkyStudios::Audio::Amplitude
 {
     class EngineInternalState;
+    class ChannelInternalState;
 
     class SoundCollection;
     class Sound;
@@ -43,10 +47,12 @@ namespace SparkyStudios::Audio::Amplitude
      */
     class RealChannel
     {
+        friend class ChannelInternalState;
         friend class Mixer;
 
     public:
         RealChannel();
+        explicit RealChannel(ChannelInternalState* parent);
 
         /**
          * @brief Initialize this channel.
@@ -56,7 +62,7 @@ namespace SparkyStudios::Audio::Amplitude
         /**
          * @brief Play the audio on the real channel.
          */
-        bool Play(SoundCollection* handle, Sound* sound);
+        bool Play(SoundCollection* handle, const Sound* sound);
 
         /**
          * @brief Halt the real channel so it may be re-used. However this virtual channel may still be considered playing.
@@ -108,6 +114,54 @@ namespace SparkyStudios::Audio::Amplitude
          */
         [[nodiscard]] bool Valid() const;
 
+        /**
+         * @brief Marks a sound as played.
+         *
+         * This method is mainly for internal purposes. You can use this only
+         * if you know what you are doing.
+         *
+         * This method is used on sound collections with play mode set to
+         * PlayAll or LoopAll to cache the list of played sounds so the scheduler
+         * will be able to skip them on subsequent play requests.
+         *
+         * The played sounds cache is reset when a stop request is received.
+         *
+         * @param sound The sound to cache in the played sounds list.
+         */
+        void MarkAsPlayed(const Sound* sound);
+
+        /**
+         * @brief Checks if all sounds of this collection have played.
+         *
+         * This method is used on sound collections with play mode set to
+         * PlayAll or LoopAll to check if all sounds have been played and
+         * then decide if to play them again (LoopAll) or not (PlayAll).
+         *
+         * @return true if all sounds have been played.
+         */
+        [[nodiscard]] bool AllSoundsHasPlayed() const;
+
+        /**
+         * @brief Clears the played sounds cache of this collection.
+         *
+         * This method is mainly for internal purposes. You can use this only
+         * if you know what you are doing.
+         *
+         * This method is used on sound collections with play mode set to
+         * PlayAll or LoopAll to clear the play sounds cache when needed.
+         */
+        void ClearPlayedSounds();
+
+        /**
+         * @brief Gets the parent Channel object which created this RealChannel.
+         *
+         * @return Channel*
+         */
+        [[nodiscard]] ChannelInternalState* GetParentChannelState() const
+        {
+            return _parentChannelState;
+        }
+
     private:
         bool _activeFader;
 
@@ -155,6 +209,11 @@ namespace SparkyStudios::Audio::Amplitude
         float _gain;
 
         atomix_mixer* _mixer;
+        SoundInstance* _activeSound;
+
+        ChannelInternalState* _parentChannelState;
+
+        std::vector<const Sound*> _playedSounds;
     };
 } // namespace SparkyStudios::Audio::Amplitude
 

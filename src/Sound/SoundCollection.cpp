@@ -32,7 +32,7 @@ namespace SparkyStudios::Audio::Amplitude
         for (flatbuffers::uoffset_t i = 0; i < sample_count; ++i)
         {
             const AudioSampleSetEntry* entry = def->audio_sample_set()->Get(i);
-            const char* entry_filename = entry->audio_sample()->filename()->c_str();
+            AmString entry_filename = entry->audio_sample()->filename()->c_str();
 
             Sound& sound = _sounds[i];
             sound.Initialize(this);
@@ -41,13 +41,13 @@ namespace SparkyStudios::Audio::Amplitude
 
         if (!def->bus())
         {
-            CallLogFunc("Sound collection %s does not specify a GetBus", def->name());
+            CallLogFunc("Sound collection %s does not specify a bus.\n", def->name());
             return false;
         }
 
         if (!def->scheduler())
         {
-            CallLogFunc("Sound collection %s does not specify a scheduler, using the RandomScheduler by default", def->name());
+            CallLogFunc("Sound collection %s does not specify a scheduler, using the RandomScheduler by default.\n", def->name());
             _scheduler = new RandomScheduler();
         }
         else
@@ -70,7 +70,7 @@ namespace SparkyStudios::Audio::Amplitude
             _bus = FindBusInternalState(state, def->bus()->c_str());
             if (!_bus)
             {
-                CallLogFunc("Sound collection %s specifies an unknown GetBus: %s", def->name(), def->bus()->c_str());
+                CallLogFunc("Sound collection %s specifies an unknown bus: %s.\n", def->name(), def->bus()->c_str());
                 return false;
             }
         }
@@ -89,7 +89,7 @@ namespace SparkyStudios::Audio::Amplitude
         return Amplitude::GetSoundCollectionDefinition(_source.c_str());
     }
 
-    Sound* SoundCollection::Select()
+    Sound* SoundCollection::Select(const std::vector<const Sound*>& toSkip)
     {
         const SoundCollectionDefinition* sound_def = GetSoundCollectionDefinition();
         if (_scheduler == nullptr)
@@ -98,7 +98,7 @@ namespace SparkyStudios::Audio::Amplitude
             _scheduler->Init(sound_def);
         }
 
-        return _scheduler->Select(_sounds);
+        return _scheduler->Select(_sounds, toSkip);
     }
 
 } // namespace SparkyStudios::Audio::Amplitude

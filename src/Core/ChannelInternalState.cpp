@@ -60,7 +60,7 @@ namespace SparkyStudios::Audio::Amplitude
     bool ChannelInternalState::Play(SoundCollection* collection)
     {
         _collection = collection;
-        _sound = collection->Select();
+        _sound = collection->Select(_realChannel.Valid() ? _realChannel._playedSounds : std::vector<const Sound*>());
         _channelState = ChannelStatePlaying;
         return !_realChannel.Valid() || _realChannel.Play(_collection, _sound);
     }
@@ -82,17 +82,6 @@ namespace SparkyStudios::Audio::Amplitude
 
     void ChannelInternalState::Halt()
     {
-        // If this channel loops, we may want to resume it later. If this is a one
-        // shot sound that does not loop, just halt it now.
-        // TODO(amablue): What we really want is for one shot sounds to change to the
-        // stopped state when the sound would have finished. However, SDL mixer does
-        // not give good visibility into the length of loaded audio, which makes this
-        // difficult. b/20697050
-        if (!_collection->GetSoundCollectionDefinition()->loop())
-        {
-            _channelState = ChannelStateStopped;
-        }
-
         if (_realChannel.Valid())
         {
             _realChannel.Halt();
@@ -172,9 +161,7 @@ namespace SparkyStudios::Audio::Amplitude
         {
         case ChannelStatePaused:
         case ChannelStateStopped:
-            {
-                break;
-            }
+            break;
         case ChannelStatePlaying:
             if (_realChannel.Valid() && !_realChannel.Playing())
             {
@@ -182,18 +169,13 @@ namespace SparkyStudios::Audio::Amplitude
             }
             break;
         case ChannelStateFadingOut:
+            if (!_realChannel.Valid() || !_realChannel.Playing())
             {
-                if (!_realChannel.Valid() || !_realChannel.Playing())
-                {
-                    _channelState = ChannelStateStopped;
-                }
-                break;
+                _channelState = ChannelStateStopped;
             }
+            break;
         default:
-            {
-                AMPLITUDE_ASSERT(false);
-            }
+            AMPLITUDE_ASSERT(false);
         }
     }
-
 } // namespace SparkyStudios::Audio::Amplitude
