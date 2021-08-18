@@ -107,8 +107,7 @@ namespace SparkyStudios::Audio::Amplitude
 
         AmUInt32 loops = _loop ? ATOMIX_LOOP : ATOMIX_PLAY;
 
-        _channelId = atomixMixerPlay(_mixer, static_cast<atomix_sound*>(_activeSound->GetUserData()), loops, def->gain(), 0.0f);
-        _gain = def->gain();
+        _channelId = atomixMixerPlay(_mixer, static_cast<atomix_sound*>(_activeSound->GetUserData()), loops, _gain, _pan);
 
         // Check if playing the sound was successful, and display the error if it was
         // not.
