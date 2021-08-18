@@ -90,8 +90,6 @@ namespace SparkyStudios::Audio::Amplitude
         AmVoidPtr m_userData;
 
     private:
-        void discardUserData();
-
         void lockAudioMutex();
         void unlockAudioMutex();
 
