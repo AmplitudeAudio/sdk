@@ -22,8 +22,8 @@
 #include <vector>
 
 #include <SparkyStudios/Audio/Amplitude/Sound/RefCounter.h>
+#include <SparkyStudios/Audio/Amplitude/Sound/Scheduler.h>
 #include <SparkyStudios/Audio/Amplitude/Sound/Sound.h>
-#include <SparkyStudios/Audio/Amplitude/Sound/SoundCollectionScheduler.h>
 
 namespace SparkyStudios::Audio::Amplitude
 {
@@ -83,7 +83,7 @@ namespace SparkyStudios::Audio::Amplitude
         BusInternalState* _bus;
 
         // The sound collection scheduler
-        SoundCollectionScheduler* _scheduler;
+        Scheduler* _scheduler;
 
         std::string _source;
         std::vector<Sound> _sounds;

@@ -28,7 +28,7 @@ namespace SparkyStudios::Audio::Amplitude
     /**
      * @brief An abstract class for SoundCollection schedulers
      */
-    class SoundCollectionScheduler
+    class Scheduler
     {
     public:
         /**

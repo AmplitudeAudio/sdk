@@ -19,11 +19,11 @@
 
 #include <SparkyStudios/Audio/Amplitude/Core/Common.h>
 
-#include <SparkyStudios/Audio/Amplitude/Sound/SoundCollectionScheduler.h>
+#include <SparkyStudios/Audio/Amplitude/Sound/Scheduler.h>
 
 namespace SparkyStudios::Audio::Amplitude
 {
-    class SequenceScheduler : public SoundCollectionScheduler
+    class SequenceScheduler : public Scheduler
     {
     public:
         void Init(const SoundCollectionDefinition* definition) override;

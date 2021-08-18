@@ -17,11 +17,11 @@
 #ifndef SPARK_AUDIO_RANDOM_SCHEDULER_H
 #define SPARK_AUDIO_RANDOM_SCHEDULER_H
 
-#include <SparkyStudios/Audio/Amplitude/Sound/SoundCollectionScheduler.h>
+#include <SparkyStudios/Audio/Amplitude/Sound/Scheduler.h>
 
 namespace SparkyStudios::Audio::Amplitude
 {
-    class RandomScheduler : public SoundCollectionScheduler
+    class RandomScheduler : public Scheduler
     {
     public:
         void Init(const SoundCollectionDefinition* definition) override;
