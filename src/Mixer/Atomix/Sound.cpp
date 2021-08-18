@@ -26,31 +26,20 @@ namespace SparkyStudios::Audio::Amplitude
         , m_format()
         , _decoder(nullptr)
         , _loop(false)
-        , _streamBuffer(nullptr)
         , _stream(false)
-        , _userData(nullptr)
     {}
 
     Sound::~Sound()
     {
-        if (_userData)
-        {
-            atomixSoundDestroy(static_cast<atomix_sound*>(_userData));
-            _userData = nullptr;
-        }
-
-        delete _streamBuffer;
-        _streamBuffer = nullptr;
-
         delete _decoder;
         _decoder = nullptr;
     }
 
-    void Sound::Initialize(const SoundCollection* collection)
+    void Sound::Initialize(SoundCollection* collection)
     {
         m_collection = collection;
         _stream = collection->GetSoundCollectionDefinition()->stream();
-        _loop = collection->GetSoundCollectionDefinition()->loop();
+        _loop = collection->GetSoundCollectionDefinition()->play_mode() == PlayMode_LoopOne;
     }
 
     void Sound::Load(FileLoader* loader)
@@ -79,17 +68,46 @@ namespace SparkyStudios::Audio::Amplitude
         }
 
         m_format = _decoder->GetFormat();
+    }
 
-        if (_stream)
+    SoundInstance* Sound::CreateInstance() const
+    {
+        return new SoundInstance(this);
+    }
+
+    SoundInstance::SoundInstance(const Sound* parent)
+        : _parent(parent)
+        , _userData(nullptr)
+        , _channel(nullptr)
+        , _streamBuffer()
+    {}
+
+    SoundInstance::~SoundInstance()
+    {
+        if (_userData)
         {
-            _streamBuffer = new AmAlignedFloat32Buffer();
-            _streamBuffer->Init(ATOMIX_MAX_STREAM_BUFFER_SIZE * m_format.GetNumChannels());
+            atomixSoundDestroy(static_cast<atomix_sound*>(_userData));
+            _userData = nullptr;
+        }
 
-            atomix_sound* sound =
-                atomixSoundNew(m_format.GetNumChannels(), _streamBuffer->GetBuffer(), m_format.GetFramesCount(), true, this);
+        _parent = nullptr;
+    }
+
+    void SoundInstance::Load()
+    {
+        AMPLITUDE_ASSERT(Valid());
+
+        AmUInt16 channels = _parent->m_format.GetNumChannels();
+        AmUInt32 frames = _parent->m_format.GetFramesCount();
+
+        if (_parent->_stream)
+        {
+            _streamBuffer.Init(ATOMIX_MAX_STREAM_BUFFER_SIZE * _parent->m_format.GetNumChannels());
+
+            atomix_sound* sound = atomixSoundNew(channels, _streamBuffer.GetBuffer(), frames, true, this);
             if (!sound)
             {
-                CallLogFunc("Could not load sound file '%s'.\n", filename);
+                CallLogFunc("Could not load a sound instance. Unable to read data from the parent sound.\n");
                 return;
             }
 
@@ -97,19 +115,20 @@ namespace SparkyStudios::Audio::Amplitude
         }
         else
         {
-            auto data = (AmFloat32Buffer)malloc(m_format.GetFramesCount() * m_format.GetFrameSize());
-            if (_decoder->Load(data) != m_format.GetFramesCount())
+            AmAlignedFloat32Buffer buffer;
+            buffer.Init(frames * channels);
+
+            if (_parent->_decoder->Load(buffer.GetBuffer()) != frames)
             {
-                CallLogFunc("Could not load sound file '%s'.\n", filename);
+                CallLogFunc("Could not load a sound instance. Unable to read data from the parent sound.\n");
                 return;
             }
 
-            atomix_sound* sound = atomixSoundNew(m_format.GetNumChannels(), data, m_format.GetFramesCount(), false, this);
-            free(data);
+            atomix_sound* sound = atomixSoundNew(channels, buffer.GetBuffer(), frames, false, this);
 
             if (!sound)
             {
-                CallLogFunc("Could not load sound file '%s'.\n", filename);
+                CallLogFunc("Could not load a sound instance. Unable to read data from the parent sound.\n");
                 return;
             }
 
@@ -117,26 +136,28 @@ namespace SparkyStudios::Audio::Amplitude
         }
     }
 
-    AmUInt64 Sound::GetAudio(AmUInt64 offset, AmUInt64 frames)
+    AmUInt64 SoundInstance::GetAudio(AmUInt64 offset, AmUInt64 frames)
     {
-        if (_stream)
+        AMPLITUDE_ASSERT(Valid());
+
+        if (_parent->_stream)
         {
-            _streamBuffer->Clear();
+            _streamBuffer.Clear();
 
             AmUInt64 n, l = frames, o = offset, r = 0;
-            AmFloat32Buffer b = _streamBuffer->GetBuffer();
+            AmFloat32Buffer b = _streamBuffer.GetBuffer();
 
-        fill:
-            n = _decoder->Stream(b, o, l);
+        Fill:
+            n = _parent->_decoder->Stream(b, o, l);
             r += n;
 
             // If we reached the end of the file but looping is enabled, then
             // seek back to the beginning of the file and fill the remaining part of the buffer.
-            if (n < l && _loop && _decoder->Seek(0))
+            if (n < l && _parent->_loop && _parent->_decoder->Seek(0))
             {
-                b += n * m_format.GetNumChannels();
+                b += n * _parent->m_format.GetNumChannels();
                 l -= n;
-                goto fill;
+                goto Fill;
             }
 
             return r;
@@ -145,12 +166,29 @@ namespace SparkyStudios::Audio::Amplitude
         return 0;
     }
 
-    void Sound::Destroy()
+    void SoundInstance::Destroy()
     {
-        if (_stream)
+        AMPLITUDE_ASSERT(Valid());
+
+        if (_parent->_stream)
         {
-            _decoder->Close();
-            delete _streamBuffer;
+            _parent->_decoder->Close();
+            _streamBuffer = AmAlignedFloat32Buffer();
         }
+    }
+
+    bool SoundInstance::Valid() const
+    {
+        return _parent != nullptr;
+    }
+
+    void SoundInstance::SetChannel(RealChannel* channel)
+    {
+        _channel = channel;
+    }
+
+    RealChannel* SoundInstance::GetChannel() const
+    {
+        return _channel;
     }
 } // namespace SparkyStudios::Audio::Amplitude

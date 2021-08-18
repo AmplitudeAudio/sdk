@@ -25,9 +25,13 @@
 namespace SparkyStudios::Audio::Amplitude
 {
     class SoundCollection;
+    class SoundInstance;
+    class RealChannel;
 
     class Sound : public Resource
     {
+        friend class SoundInstance;
+
     public:
         Sound();
         ~Sound() override;
@@ -40,12 +44,19 @@ namespace SparkyStudios::Audio::Amplitude
          *
          * @param collection The collection that the sound is part of.
          */
-        void Initialize(const SoundCollection* collection);
+        void Initialize(SoundCollection* collection);
 
         /**
          * @brief Loads the audio file.
          */
         void Load(FileLoader* loader) override;
+
+        /**
+         * @brief Create a new SoundInstance from this Sound.
+         *
+         * @return SoundInstance* An sound instance which can be played.
+         */
+        SoundInstance* CreateInstance() const;
 
         /**
          * @brief Sets the format of this Sound.
@@ -67,6 +78,42 @@ namespace SparkyStudios::Audio::Amplitude
         }
 
         /**
+         * @brief Returns the SoundCollection storing this Sound.
+         * @return The Sound collection.
+         */
+        [[nodiscard]] SoundCollection* GetSoundCollection() const
+        {
+            return m_collection;
+        }
+
+    protected:
+        SoundCollection* m_collection;
+        SoundFormat m_format;
+
+    private:
+        Codec::Decoder* _decoder;
+
+        bool _stream;
+        bool _loop;
+    };
+
+    class SoundInstance
+    {
+    public:
+        /**
+         * @brief Construct a new SoundInstance from the given Sound.
+         *
+         * @param parent The parent Sound from which to create an instance.
+         */
+        SoundInstance(const Sound* parent);
+        ~SoundInstance();
+
+        /**
+         * @brief Loads the audio sample data into this SoundInstance.
+         */
+        void Load();
+
+        /**
          * @brief Returns the user data associated to this Sound.
          * @return The user data.
          */
@@ -82,15 +129,6 @@ namespace SparkyStudios::Audio::Amplitude
         void SetUserData(AmVoidPtr userData)
         {
             _userData = userData;
-        }
-
-        /**
-         * @brief Returns the SoundCollection storing this Sound.
-         * @return The Sound collection.
-         */
-        [[nodiscard]] const SoundCollection* GetSoundCollection() const
-        {
-            return m_collection;
         }
 
         /**
@@ -112,18 +150,45 @@ namespace SparkyStudios::Audio::Amplitude
          */
         void Destroy();
 
-    protected:
-        const SoundCollection* m_collection;
-        SoundFormat m_format;
+        /**
+         * @brief Checks if this SoundInstance has a valid state.
+         *
+         * @return true when the state of this SoundInstance is valid.
+         * @return false when the state of this SoundInstance is not valid.
+         */
+        [[nodiscard]] bool Valid() const;
+
+        /**
+         * @brief Sets the RealChannel in which this SoundInstance is playing.
+         *
+         * @param channel The RealChannel instance in which this SoundInstance is playing.
+         */
+        void SetChannel(RealChannel* channel);
+
+        /**
+         * @brief Gets the RealChannel in which this SoundInstance is playing.
+         *
+         * @return The RealChannel instance in which this SoundInstance is playing.
+         */
+        [[nodiscard]] RealChannel* GetChannel() const;
+
+        /**
+         * @brief Gets the Sound source which generates this SoundInstance.
+         *
+         * @return const Sound*
+         */
+        [[nodiscard]] const Sound* GetSound() const
+        {
+            return _parent;
+        }
 
     private:
         AmVoidPtr _userData;
 
-        AmAlignedFloat32Buffer* _streamBuffer;
-        Codec::Decoder* _decoder;
+        AmAlignedFloat32Buffer _streamBuffer;
 
-        bool _stream;
-        bool _loop;
+        RealChannel* _channel;
+        const Sound* _parent;
     };
 } // namespace SparkyStudios::Audio::Amplitude
 
