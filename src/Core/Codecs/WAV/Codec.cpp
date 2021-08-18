@@ -34,7 +34,7 @@ namespace SparkyStudios::Audio::Amplitude::Codecs
         }
 
         m_format.SetAll(
-            _wav.sampleRate, _wav.channels, _wav.bitsPerSample, _wav.totalPCMFrameCount, _wav.channels * _wav.bitsPerSample >> 3,
+            _wav.sampleRate, _wav.channels, _wav.bitsPerSample, _wav.totalPCMFrameCount, _wav.channels * sizeof(float),
             AM_SAMPLE_FORMAT_FLOAT, // This codec always read frames as float32 values
             AM_SAMPLE_INTERLEAVED // dr_wav always read interleaved frames
         );
