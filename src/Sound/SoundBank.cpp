@@ -58,7 +58,7 @@ namespace SparkyStudios::Audio::Amplitude
         // Load each SoundCollection named in the sound bank.
         for (flatbuffers::uoffset_t i = 0; i < _soundBankDef->filenames()->size(); ++i)
         {
-            const char* sound_filename = _soundBankDef->filenames()->Get(i)->c_str();
+            AmString sound_filename = _soundBankDef->filenames()->Get(i)->c_str();
             success &= InitializeSoundCollection(sound_filename, audio_engine);
         }
         return success;
@@ -90,7 +90,7 @@ namespace SparkyStudios::Audio::Amplitude
     {
         for (flatbuffers::uoffset_t i = 0; i < _soundBankDef->filenames()->size(); ++i)
         {
-            const char* filename = _soundBankDef->filenames()->Get(i)->c_str();
+            AmString filename = _soundBankDef->filenames()->Get(i)->c_str();
             if (!DeinitializeSoundCollection(filename, audio_engine->GetState()))
             {
                 CallLogFunc("Error while deinitializing SoundCollection %s in SoundBank.\n", filename);
