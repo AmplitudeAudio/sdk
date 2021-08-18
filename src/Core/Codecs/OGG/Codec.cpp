@@ -22,13 +22,13 @@ namespace SparkyStudios::Audio::Amplitude::Codecs
     {
         if (!m_codec->CanHandleFile(filePath))
         {
-            CallLogFunc("The OGG codec cannot handle the file: '%s'\n", filePath);
+            CallLogFunc("The OGG codec cannot handle the file: '%s'.\n", filePath);
             return false;
         }
 
         if (_ogg = stb_vorbis_open_filename(filePath, nullptr, nullptr); _ogg == nullptr)
         {
-            CallLogFunc("Cannot load the OGG file: '%s'\n.", filePath);
+            CallLogFunc("Cannot load the OGG file: '%s'.\n", filePath);
             return false;
         }
 
@@ -36,7 +36,7 @@ namespace SparkyStudios::Audio::Amplitude::Codecs
         AmUInt32 framesCount = stb_vorbis_stream_length_in_samples(_ogg);
 
         m_format.SetAll(
-            info.sample_rate, info.channels, info.max_frame_size, framesCount, info.channels * info.max_frame_size >> 3,
+            info.sample_rate, info.channels, info.max_frame_size, framesCount, info.channels * sizeof(float),
             AM_SAMPLE_FORMAT_FLOAT, // This codec always read frames as float32 values
             AM_SAMPLE_INTERLEAVED // stb_vorbis always read interleaved frames
         );
@@ -72,7 +72,8 @@ namespace SparkyStudios::Audio::Amplitude::Codecs
             return 0;
         }
 
-        return stb_vorbis_get_samples_float_interleaved(_ogg, m_format.GetNumChannels(), out, m_format.GetFramesCount());
+        return stb_vorbis_get_samples_float_interleaved(
+            _ogg, m_format.GetNumChannels(), out, m_format.GetFramesCount() * m_format.GetNumChannels());
     }
 
     AmUInt64 OGGCodec::OGGDecoder::Stream(AmFloat32Buffer out, AmUInt64 offset, AmUInt64 length)
@@ -87,12 +88,12 @@ namespace SparkyStudios::Audio::Amplitude::Codecs
             return 0;
         }
 
-        return stb_vorbis_get_samples_float_interleaved(_ogg, m_format.GetNumChannels(), out, length);
+        return stb_vorbis_get_samples_float_interleaved(_ogg, m_format.GetNumChannels(), out, length * m_format.GetNumChannels());
     }
 
     bool OGGCodec::OGGDecoder::Seek(AmUInt64 offset)
     {
-        return stb_vorbis_seek_frame(_ogg, offset) != 0;
+        return stb_vorbis_seek(_ogg, offset) != 0;
     }
 
     bool OGGCodec::OGGEncoder::Open(AmString filePath)
