@@ -41,7 +41,7 @@ enum PlayMode : byte {
 
 // Available sound schedulers. A scheduler is a way for the sound collection
 // to pick a sound from the list of audio samples.
-enum Scheduler : byte {
+enum SoundScheduler : byte {
   // An audio sample is randomly selected from the list each time a play
   // request is made on the sound collection.
   Random,
@@ -106,10 +106,10 @@ table SoundCollectionDefinition {
 
   // Defines the play mode of this sound. The play mode set the way audio samples
   // of this sound are played. The default is PlayOne.
-  play_mode: PlayMode = PlayOne;
+  play_mode:PlayMode = PlayOne;
 
   // The scheduler to use when playing an audio sample of this collection.
-  scheduler:Scheduler = Random;
+  scheduler:SoundScheduler = Random;
 
   // The minimum or maximum distance from which this sound can be heard. This
   // only applies to spatial sounds.

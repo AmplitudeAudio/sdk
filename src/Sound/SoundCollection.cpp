@@ -54,10 +54,10 @@ namespace SparkyStudios::Audio::Amplitude
         {
             switch (def->scheduler())
             {
-            case Scheduler_Random:
+            case SoundScheduler_Random:
                 _scheduler = new RandomScheduler();
                 break;
-            case Scheduler_Sequence:
+            case SoundScheduler_Sequence:
                 _scheduler = new SequenceScheduler();
                 break;
             }
