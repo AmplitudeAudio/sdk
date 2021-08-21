@@ -24,7 +24,7 @@ namespace SparkyStudios::Audio::Amplitude
     class Mixer;
 
     /**
-     * @biref Helper class to process faders.
+     * @brief Helper class to process faders.
      *
      * A fader is use to move a value to a specific target value
      * during an amount of time.
@@ -64,12 +64,27 @@ namespace SparkyStudios::Audio::Amplitude
          */
         float Get(AmTime currentTime);
 
+        /**
+         * @brief Get the state of this Fader.
+         *
+         * @return The Fader state.
+         */
         [[nodiscard]] AM_FADER_STATE GetState() const
         {
-            return m_active;
+            return m_state;
         }
 
-    private:
+        /**
+         * @brief Set the state of this Fader.
+         *
+         * @param state The state to set.
+         */
+        void SetState(AM_FADER_STATE state)
+        {
+            m_state = state;
+        }
+
+    protected:
         // Value to fade from
         float m_from;
         // Value to fade to
@@ -85,7 +100,7 @@ namespace SparkyStudios::Audio::Amplitude
         // Current value. Used in case AmTime rolls over.
         float m_current;
         // Active flag; 0 means disabled, 1 is active, 2 is LFO, -1 means was active, but stopped
-        AM_FADER_STATE m_active;
+        AM_FADER_STATE m_state;
     };
 }; // namespace SparkyStudios::Audio::Amplitude
 

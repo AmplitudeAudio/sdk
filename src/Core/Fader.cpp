@@ -21,7 +21,7 @@ namespace SparkyStudios::Audio::Amplitude
     {
         m_current = m_from = m_to = m_delta = 0;
         m_time = m_startTime = m_endTime = 0;
-        m_active = AM_FADER_STATE_DISABLED;
+        m_state = AM_FADER_STATE_DISABLED;
     }
 
     void Fader::Set(float from, float to, AmTime time, AmTime startTime)
@@ -33,12 +33,12 @@ namespace SparkyStudios::Audio::Amplitude
         m_startTime = startTime;
         m_delta = to - from;
         m_endTime = m_startTime + m_time;
-        m_active = AM_FADER_STATE_ACTIVE;
+        m_state = AM_FADER_STATE_ACTIVE;
     }
 
     void Fader::SetLFO(float from, float to, AmTime time, AmTime startTime)
     {
-        m_active = AM_FADER_STATE_LFO;
+        m_state = AM_FADER_STATE_LFO;
         m_current = 0;
         m_from = from;
         m_to = to;
@@ -52,7 +52,7 @@ namespace SparkyStudios::Audio::Amplitude
 
     float Fader::Get(AmTime currentTime)
     {
-        if (m_active == 2)
+        if (m_state == AM_FADER_STATE_LFO)
         {
             // LFO mode
             if (m_startTime > currentTime)
@@ -72,14 +72,14 @@ namespace SparkyStudios::Audio::Amplitude
             float p = (m_current - m_from) / m_delta; // 0..1
             m_from = m_current;
             m_startTime = currentTime;
-            m_time = m_time * (1 - p); // SLTime left
+            m_time = m_time * (1 - p); // time left
             m_delta = m_to - m_from;
             m_endTime = m_startTime + m_time;
         }
 
         if (currentTime > m_endTime)
         {
-            m_active = AM_FADER_STATE_STOPPED;
+            m_state = AM_FADER_STATE_STOPPED;
             return m_to;
         }
 
