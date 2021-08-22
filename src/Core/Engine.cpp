@@ -411,7 +411,7 @@ namespace SparkyStudios::Audio::Amplitude
         {
             return 0.0f;
         }
-        float distance = std::sqrt(distance_squared);
+        float distance = AM_SquareRootF(distance_squared);
         if (distance < def->roll_in_radius())
         {
             return AttenuationCurve(distance, def->min_audible_radius(), def->roll_in_radius(), def->roll_in_curve_factor());
