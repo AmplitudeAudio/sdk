@@ -61,6 +61,11 @@ namespace SparkyStudios::Audio::Amplitude
         // Remove this channel from all lists that it is a part of.
         void Remove();
 
+        /**
+         * @brief Resets this channel to its initial state.
+         */
+        void Reset();
+
         // Get or set the sound collection playing on this channel. Note that when you set
         // the sound collection, you also add this channel to the GetBus list that
         // corresponds to that sound collection.

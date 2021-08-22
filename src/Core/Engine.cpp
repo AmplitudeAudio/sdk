@@ -541,6 +541,7 @@ namespace SparkyStudios::Audio::Amplitude
     static void InsertIntoFreeList(EngineInternalState* state, ChannelInternalState* channel)
     {
         channel->Remove();
+        channel->Reset();
         FreeList* list = channel->IsReal() ? &state->real_channel_free_list : &state->virtual_channel_free_list;
         list->push_front(*channel);
     }

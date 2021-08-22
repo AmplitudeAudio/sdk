@@ -46,6 +46,18 @@ namespace SparkyStudios::Audio::Amplitude
         entity_node.remove();
     }
 
+    void ChannelInternalState::Reset()
+    {
+        _realChannel = RealChannel();
+        _channelState = ChannelStateStopped;
+        _collection = nullptr;
+        _entity = Entity();
+        _sound = nullptr;
+        _userGain = 0.0f;
+        _gain = 0.0f;
+        _location = AM_Vec3(0, 0, 0);
+    }
+
     void ChannelInternalState::SetSoundCollection(SoundCollection* collection)
     {
         if (_collection && _collection->GetBus())
