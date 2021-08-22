@@ -27,6 +27,7 @@
 
 #include <Core/BusInternalState.h>
 #include <Core/ChannelInternalState.h>
+#include <Core/EntityInternalState.h>
 #include <Core/ListenerInternalState.h>
 #include <Utils/intrusive_list.h>
 
@@ -48,12 +49,14 @@ namespace SparkyStudios::Audio::Amplitude
 
     typedef std::vector<ChannelInternalState> ChannelStateVector;
 
-    typedef std::vector<ListenerInternalState> ListenerStateVector;
-
     typedef fplutil::intrusive_list<ChannelInternalState> PriorityList;
 
     typedef fplutil::intrusive_list<ChannelInternalState> FreeList;
 
+    typedef std::vector<EntityInternalState> EntityStateVector;
+    typedef fplutil::intrusive_list<EntityInternalState> EntityList;
+
+    typedef std::vector<ListenerInternalState> ListenerStateVector;
     typedef fplutil::intrusive_list<ListenerInternalState> ListenerList;
 
     struct EngineInternalState
@@ -76,6 +79,9 @@ namespace SparkyStudios::Audio::Amplitude
             , listener_list(&ListenerInternalState::node)
             , listener_state_memory()
             , listener_state_free_list()
+            , entity_list(&EntityInternalState::node)
+            , entity_state_memory()
+            , entity_state_free_list()
             , loader()
             , current_frame(0)
             , version(nullptr)
@@ -122,6 +128,11 @@ namespace SparkyStudios::Audio::Amplitude
         ListenerList listener_list;
         ListenerStateVector listener_state_memory;
         std::vector<ListenerInternalState*> listener_state_free_list;
+
+        // The list of entities.
+        EntityList entity_list;
+        EntityStateVector entity_state_memory;
+        std::vector<EntityInternalState*> entity_state_free_list;
 
         // Loads the sound files.
         FileLoader loader;

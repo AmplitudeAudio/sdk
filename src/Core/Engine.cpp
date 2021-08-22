@@ -183,6 +183,18 @@ namespace SparkyStudios::Audio::Amplitude
         }
     }
 
+    static void InitializeEntityFreeList(
+        std::vector<EntityInternalState*>* entity_state_free_list, EntityStateVector* entity_list, AmUInt32 list_size)
+    {
+        entity_list->resize(list_size);
+        entity_state_free_list->reserve(list_size);
+        for (size_t i = 0; i < list_size; ++i)
+        {
+            EntityInternalState& entity = (*entity_list)[i];
+            entity_state_free_list->push_back(&entity);
+        }
+    }
+
     bool Engine::Initialize(AmString config_file)
     {
         if (!LoadFile(config_file, &_configSrc))
@@ -240,6 +252,9 @@ namespace SparkyStudios::Audio::Amplitude
 
         // Initialize the listener internal data.
         InitializeListenerFreeList(&_state->listener_state_free_list, &_state->listener_state_memory, config->listeners());
+
+        // Initialize the entity internal data.
+        InitializeEntityFreeList(&_state->entity_state_free_list, &_state->entity_state_memory, config->entities());
 
         // Load the audio buses.
         if (!LoadFile(config->buses_file()->c_str(), &_state->buses_source))
@@ -660,6 +675,25 @@ namespace SparkyStudios::Audio::Amplitude
         AMPLITUDE_ASSERT(listener->Valid());
         listener->GetState()->node.remove();
         _state->listener_state_free_list.push_back(listener->GetState());
+    }
+
+    Entity Engine::AddEntity()
+    {
+        if (_state->entity_state_free_list.empty())
+        {
+            return Entity(nullptr);
+        }
+        EntityInternalState* entity = _state->entity_state_free_list.back();
+        _state->entity_state_free_list.pop_back();
+        _state->entity_list.push_back(*entity);
+        return Entity(entity);
+    }
+
+    void Engine::RemoveEntity(Entity* entity)
+    {
+        AMPLITUDE_ASSERT(entity->Valid());
+        entity->GetState()->node.remove();
+        _state->entity_state_free_list.push_back(entity->GetState());
     }
 
     Bus Engine::FindBus(AmString bus_name)

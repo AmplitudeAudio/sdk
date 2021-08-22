@@ -26,6 +26,7 @@
 #include <SparkyStudios/Audio/Amplitude/Core/Bus.h>
 #include <SparkyStudios/Audio/Amplitude/Core/Channel.h>
 #include <SparkyStudios/Audio/Amplitude/Core/Driver.h>
+#include <SparkyStudios/Audio/Amplitude/Core/Entity.h>
 #include <SparkyStudios/Audio/Amplitude/Core/Listener.h>
 #include <SparkyStudios/Audio/Amplitude/Core/Version.h>
 
@@ -171,9 +172,23 @@ namespace SparkyStudios::Audio::Amplitude
         /**
          * @brief Remove a Listener.
          *
-         * @param The Listener to be removed.
+         * @param listener The Listener to be removed.
          */
         void RemoveListener(Listener* listener);
+
+        /**
+         * @brief Initialize and return an Entity.
+         *
+         * @return An initialized Entity.
+         */
+        Entity AddEntity();
+
+        /**
+         * @brief Remove an Entity.
+         *
+         * @param entity The Entity to be removed.
+         */
+        void RemoveEntity(Entity* entity);
 
         /**
          * @brief Returns the named GetBus.

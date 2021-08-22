@@ -19,6 +19,8 @@
 
 #include <SparkyStudios/Audio/Amplitude/Core/Common.h>
 
+#include <Utils/intrusive_list.h>
+
 namespace SparkyStudios::Audio::Amplitude
 {
     class EntityInternalState
@@ -53,6 +55,8 @@ namespace SparkyStudios::Audio::Amplitude
          * each frame update.
          */
         void Update();
+
+        fplutil::intrusive_list_node node;
 
     private:
         hmm_vec3 _location;
