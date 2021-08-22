@@ -69,7 +69,10 @@ table EngineConfigDefinition {
   mixer:AudioMixerConfig;
 
   // The number of listeners to allocate.
-  listeners:uint;
+  listeners:uint = 1;
+
+  // The number of entities to allocate.
+  entities:uint = 4096;
 
   // The location of the buses definition file.
   buses_file:string;
