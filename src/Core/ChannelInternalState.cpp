@@ -196,6 +196,11 @@ namespace SparkyStudios::Audio::Amplitude
         return GetGain() * _collection->GetSoundCollectionDefinition()->priority();
     }
 
+    void ChannelInternalState::AdvanceFrame(AmTime delta_time)
+    {
+        // TODO: Faders
+    }
+
     void ChannelInternalState::UpdateState()
     {
         switch (_channelState)

@@ -174,6 +174,13 @@ namespace SparkyStudios::Audio::Amplitude
         // multiplier on the sound collection definition.
         [[nodiscard]] float Priority() const;
 
+        /**
+         * @brief Update this channel data per frames.
+         *
+         * @param delta_time The time elapsed since the last frame.
+         */
+        void AdvanceFrame(AmTime delta_time);
+
         // Returns the real channel.
         RealChannel& GetRealChannel()
         {
