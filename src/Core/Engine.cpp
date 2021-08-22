@@ -677,13 +677,14 @@ namespace SparkyStudios::Audio::Amplitude
         _state->listener_state_free_list.push_back(listener->GetState());
     }
 
-    Entity Engine::AddEntity()
+    Entity Engine::AddEntity(AmUInt64 id)
     {
         if (_state->entity_state_free_list.empty())
         {
             return Entity(nullptr);
         }
         EntityInternalState* entity = _state->entity_state_free_list.back();
+        entity->SetId(id);
         _state->entity_state_free_list.pop_back();
         _state->entity_list.push_back(*entity);
         return Entity(entity);

@@ -61,6 +61,13 @@ namespace SparkyStudios::Audio::Amplitude
         [[nodiscard]] bool Valid() const;
 
         /**
+         * @brief Gets the ID of this Entity in game.
+         *
+         * @return The game Entity ID.
+         */
+        [[nodiscard]] AmUInt64 GetId() const;
+
+        /**
          * @brief Sets the location of this Entity.
          *
          * @param location The new location.

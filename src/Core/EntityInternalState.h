@@ -19,13 +19,31 @@
 
 #include <SparkyStudios/Audio/Amplitude/Core/Common.h>
 
+#include <Core/ChannelInternalState.h>
 #include <Utils/intrusive_list.h>
 
 namespace SparkyStudios::Audio::Amplitude
 {
+    typedef fplutil::intrusive_list<ChannelInternalState> ChannelList;
+
     class EntityInternalState
     {
     public:
+        EntityInternalState();
+        /**
+         * @brief Gets the ID of this Entity in game.
+         *
+         * @return The game Entity ID.
+         */
+        [[nodiscard]] AmUInt64 GetId() const;
+
+        /**
+         * @brief Sets the ID of this Entity in game.
+         *
+         * @param id The game Entity ID.
+         */
+        void SetId(AmUInt64 id);
+
         /**
          * @brief Sets the location of this Entity.
          *
@@ -56,14 +74,29 @@ namespace SparkyStudios::Audio::Amplitude
          */
         void Update();
 
+        ChannelList& GetPlayingSoundList()
+        {
+            return _playingSoundList;
+        }
+
+        [[nodiscard]] const ChannelList& GetPlayingSoundList() const
+        {
+            return _playingSoundList;
+        }
+
         fplutil::intrusive_list_node node;
 
     private:
+        AmUInt64 _id;
+
         hmm_vec3 _location;
         hmm_vec3 _direction;
         hmm_vec3 _up;
 
         hmm_mat4 _inverseMatrix;
+
+        // Keeps track of how many sounds are being played on this entity.
+        ChannelList _playingSoundList;
     };
 } // namespace SparkyStudios::Audio::Amplitude
 

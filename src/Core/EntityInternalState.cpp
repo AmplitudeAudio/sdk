@@ -16,6 +16,25 @@
 
 namespace SparkyStudios::Audio::Amplitude
 {
+    EntityInternalState::EntityInternalState()
+        : _playingSoundList(&ChannelInternalState::entity_node)
+        , _id(0)
+        , _location()
+        , _direction()
+        , _up()
+        , _inverseMatrix(AM_Mat4d(1.0f))
+    {}
+
+    AmUInt64 EntityInternalState::GetId() const
+    {
+        return _id;
+    }
+
+    void EntityInternalState::SetId(AmUInt64 id)
+    {
+        _id = id;
+    }
+
     void EntityInternalState::SetLocation(const hmm_vec3& location)
     {
         _location = location;
