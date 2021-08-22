@@ -38,26 +38,31 @@ namespace SparkyStudios::Audio::Amplitude
 
     void Entity::SetLocation(const hmm_vec3& location)
     {
+        AMPLITUDE_ASSERT(Valid());
         _state->SetLocation(location);
     }
 
     const hmm_vec3& Entity::GetLocation() const
     {
+        AMPLITUDE_ASSERT(Valid());
         return _state->GetLocation();
     }
 
     void Entity::SetOrientation(const hmm_vec3& direction, const hmm_vec3& up)
     {
+        AMPLITUDE_ASSERT(Valid());
         _state->SetOrientation(direction, up);
     }
 
     void Entity::Update()
     {
+        AMPLITUDE_ASSERT(Valid());
         _state->Update();
     }
 
     EntityInternalState* Entity::GetState() const
     {
+        AMPLITUDE_ASSERT(Valid());
         return _state;
     }
 } // namespace SparkyStudios::Audio::Amplitude
