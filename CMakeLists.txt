@@ -94,6 +94,9 @@ set(SA_SOURCE
     src/Core/Driver.cpp
     src/Core/Engine.cpp
     src/Core/EngineInternalState.h
+    src/Core/Entity.cpp
+    src/Core/EntityInternalState.cpp
+    src/Core/EntityInternalState.h
     src/Core/Fader.cpp
     src/Core/ListenerInternalState.h
     src/Core/Listener.cpp
