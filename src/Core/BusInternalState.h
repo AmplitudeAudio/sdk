@@ -44,14 +44,14 @@ namespace SparkyStudios::Audio::Amplitude
 
         void Initialize(const BusDefinition* bus_def);
 
-        // Return the GetBus definition.
+        // Return the bus definition.
         [[nodiscard]] const BusDefinition* GetBusDefinition() const
         {
             return _busDefinition;
         }
 
         // Return the final gain after all modifiers have been applied (parent gain,
-        // duck gain, GetBus gain, user gain).
+        // duck gain, bus gain, user gain).
         [[nodiscard]] float GetGain() const
         {
             return _gain;
@@ -88,7 +88,7 @@ namespace SparkyStudios::Audio::Amplitude
         }
 
         // Return the vector of duck buses, the buses to be ducked when a sound is
-        // playing on this GetBus.
+        // playing on this bus.
         std::vector<BusInternalState*>& GetDuckBuses()
         {
             return _duckBuses;
@@ -110,40 +110,40 @@ namespace SparkyStudios::Audio::Amplitude
         // Apply appropriate duck gain to all ducked buses.
         void UpdateDuckGain(AmTime delta_time);
 
-        // Recursively update the final gain of the GetBus.
+        // Recursively update the final gain of the bus.
         void AdvanceFrame(AmTime delta_time, float parent_gain);
 
     private:
         const BusDefinition* _busDefinition;
 
-        // Children of a given GetBus have their GetGain multiplied against their parent's
+        // Children of a given bus have their GetGain multiplied against their parent's
         // GetGain.
         std::vector<BusInternalState*> _childBuses;
 
-        // When a sound is played on this GetBus, sounds played on these buses should be
+        // When a sound is played on this bus, sounds played on these buses should be
         // ducked.
         std::vector<BusInternalState*> _duckBuses;
 
-        // The current user GetGain of this GetBus.
+        // The current user GetGain of this bus.
         float _userGain;
 
-        // The target user GetGain of this GetBus (used for fading).
+        // The target user GetGain of this bus (used for fading).
         float _targetUserGain;
 
         // How much to adjust the GetGain per second while fading.
         float _targetUserGainStep;
 
-        // The current _duckGain of this GetBus to be applied to all buses in
+        // The current _duckGain of this bus to be applied to all buses in
         // _duckBuses.
         float _duckGain;
 
-        // The final GetGain to be applied to all sounds on this GetBus.
+        // The final GetGain to be applied to all sounds on this bus.
         float _gain;
 
-        // Keeps track of how many sounds are being played on this GetBus.
+        // Keeps track of how many sounds are being played on this bus.
         ChannelList _playingSoundList;
 
-        // If a sound is playing on this GetBus, all _duckBuses should lower in volume
+        // If a sound is playing on this bus, all _duckBuses should lower in volume
         // over time. This tracks how far we are into that transition.
         float _transitionPercentage;
     };
