@@ -55,4 +55,9 @@ namespace SparkyStudios::Audio::Amplitude
     {
         _state->Update();
     }
+
+    EntityInternalState* Entity::GetState() const
+    {
+        return _state;
+    }
 } // namespace SparkyStudios::Audio::Amplitude

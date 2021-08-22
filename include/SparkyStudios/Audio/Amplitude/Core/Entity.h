@@ -90,6 +90,13 @@ namespace SparkyStudios::Audio::Amplitude
          */
         void Update();
 
+        /**
+         * @brief Returns the internal state of this Entity.
+         *
+         * @return The Entity internal state.
+         */
+        [[nodiscard]] EntityInternalState* GetState() const;
+
     private:
         EntityInternalState* _state;
     };
