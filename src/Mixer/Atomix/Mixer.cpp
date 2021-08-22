@@ -61,19 +61,32 @@ namespace SparkyStudios::Audio::Amplitude
 
         if (config->play_mode() == PlayMode_LoopAll || config->play_mode() == PlayMode_PlayAll)
         {
-            channel->MarkAsPlayed(sound->GetSound());
-            if (channel->AllSoundsHasPlayed())
+            if (channel->Valid())
             {
-                channel->ClearPlayedSounds();
-                if (config->play_mode() == PlayMode_PlayAll)
+                channel->MarkAsPlayed(sound->GetSound());
+                if (channel->AllSoundsHasPlayed())
                 {
-                    goto Delete;
+                    channel->ClearPlayedSounds();
+                    if (config->play_mode() == PlayMode_PlayAll)
+                    {
+                        goto Stop;
+                    }
+                }
+
+                // Play the collection again only if the channel is still playing.
+                if (channel->Playing())
+                {
+                    channel->GetParentChannelState()->Play();
                 }
             }
 
-            // Play the collection again
-            sound->GetChannel()->GetParentChannelState()->Play(collection);
+            // Delete the current sound instance.
+            goto Delete;
         }
+
+    Stop:
+        // Stop playing the sound
+        channel->GetParentChannelState()->Halt();
 
     Delete:
         // Delete the sound instance at the end of the playback

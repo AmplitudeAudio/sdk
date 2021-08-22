@@ -25,6 +25,7 @@
 
 #include <Core/BusInternalState.h>
 #include <Core/ChannelInternalState.h>
+#include <Core/EntityInternalState.h>
 #include <Utils/intrusive_list.h>
 
 #include "sound_collection_definition_generated.h"
@@ -42,6 +43,7 @@ namespace SparkyStudios::Audio::Amplitude
         free_node.remove();
         priority_node.remove();
         bus_node.remove();
+        entity_node.remove();
     }
 
     void ChannelInternalState::SetSoundCollection(SoundCollection* collection)
@@ -57,10 +59,37 @@ namespace SparkyStudios::Audio::Amplitude
         }
     }
 
-    bool ChannelInternalState::Play(SoundCollection* collection)
+    void ChannelInternalState::SetEntity(const Entity& entity)
     {
-        _collection = collection;
-        _sound = collection->Select(_realChannel.Valid() ? _realChannel._playedSounds : std::vector<const Sound*>());
+        if (_entity.Valid())
+        {
+            entity_node.remove();
+        }
+        _entity = entity;
+        if (_entity.Valid())
+        {
+            _entity.GetState()->GetPlayingSoundList().push_front(*this);
+        }
+    }
+
+    bool ChannelInternalState::Play()
+    {
+        if (_collection == nullptr)
+        {
+            CallLogFunc("[Debug] Cannot play a channel. No sound collection defined.\n");
+            return false;
+        }
+
+        const SoundCollectionDefinition* definition = _collection->GetSoundCollectionDefinition();
+        if (!_entity.Valid() && definition->scope() == Scope_Entity)
+        {
+            CallLogFunc("[Debug] Cannot play a channel in entity scope. No entity defined.\n");
+            return false;
+        }
+
+        std::vector<const Sound*> toSkip = _realChannel.Valid() ? _realChannel._playedSounds : std::vector<const Sound*>();
+        _sound = _entity.Valid() ? _collection->SelectFromEntity(_entity, toSkip) : _collection->SelectFromWorld(toSkip);
+
         _channelState = ChannelStatePlaying;
         return !_realChannel.Valid() || _realChannel.Play(_collection, _sound);
     }
