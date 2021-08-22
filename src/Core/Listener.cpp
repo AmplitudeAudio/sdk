@@ -33,13 +33,13 @@ namespace SparkyStudios::Audio::Amplitude
     void Listener::SetOrientation(const hmm_vec3& location, const hmm_vec3& direction, const hmm_vec3& up)
     {
         AMPLITUDE_ASSERT(Valid());
-        _state->SetInverseMatrix(AM_LookAt(location + direction, location, up));
+        _state->SetInverseMatrix(AM_LookAt(location, location + direction, up));
     }
 
     hmm_vec3 Listener::GetLocation() const
     {
         hmm_mat4 matrix = _state->GetInverseMatrix();
-        return AM_Vec3(matrix.Elements[3][0], matrix.Elements[3][1], matrix.Elements[3][2]);
+        return AM_Vec3(-matrix.Elements[3][0], -matrix.Elements[3][1], -matrix.Elements[3][2]);
     }
 
     void Listener::SetLocation(const hmm_vec3& location)

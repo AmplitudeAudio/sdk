@@ -17,9 +17,13 @@
 #ifndef SPARK_AUDIO_SOUND_COLLECTION_H
 #define SPARK_AUDIO_SOUND_COLLECTION_H
 
+#include <map>
 #include <memory>
 #include <string>
 #include <vector>
+
+#include <SparkyStudios/Audio/Amplitude/Core/Common.h>
+#include <SparkyStudios/Audio/Amplitude/Core/Entity.h>
 
 #include <SparkyStudios/Audio/Amplitude/Sound/RefCounter.h>
 #include <SparkyStudios/Audio/Amplitude/Sound/Scheduler.h>
@@ -44,7 +48,8 @@ namespace SparkyStudios::Audio::Amplitude
     public:
         SoundCollection()
             : _bus(nullptr)
-            , _scheduler(nullptr)
+            , _worldScopeScheduler(nullptr)
+            , _entityScopeSchedulers()
             , _source()
             , _sounds()
             , _refCounter()
@@ -59,8 +64,24 @@ namespace SparkyStudios::Audio::Amplitude
         // Return the SoundDef.
         [[nodiscard]] const SoundCollectionDefinition* GetSoundCollectionDefinition() const;
 
-        // Return a random piece of audio from the set of audio for this sound.
-        Sound* Select(const std::vector<const Sound*>& toSkip);
+        /**
+         * @brief Returns a Sound from this sound collection from the World scope.
+         *
+         * @param toSkip The list of sound instance to skip fom the selection.
+         *
+         * @return The selected Sound.
+         */
+        Sound* SelectFromWorld(const std::vector<const Sound*>& toSkip);
+
+        /**
+         * @brief Returns a Sound from this sound collection from an Entity scope.
+         *
+         * @param entity The entity from which pick the sound.
+         * @param toSkip The list of sound instance to skip fom the selection.
+         *
+         * @return The selected Sound.
+         */
+        Sound* SelectFromEntity(const Entity& entity, const std::vector<const Sound*>& toSkip);
 
         // Return the bus this SoundCollection will play on.
         BusInternalState* GetBus()
@@ -79,11 +100,16 @@ namespace SparkyStudios::Audio::Amplitude
         }
 
     private:
+        static Scheduler* CreateScheduler(const SoundCollectionDefinition* definition);
+
         // The GetBus this SoundCollection will play on.
         BusInternalState* _bus;
 
-        // The sound collection scheduler
-        Scheduler* _scheduler;
+        // The World scope sound scheduler
+        Scheduler* _worldScopeScheduler;
+
+        // Entity scope sound schedulers
+        std::map<AmUInt64, Scheduler*> _entityScopeSchedulers;
 
         std::string _source;
         std::vector<Sound> _sounds;

@@ -53,6 +53,7 @@ set(SA_SOURCE
     include/SparkyStudios/Audio/Amplitude/Core/Config.h
     include/SparkyStudios/Audio/Amplitude/Core/Driver.h
     include/SparkyStudios/Audio/Amplitude/Core/Engine.h
+    include/SparkyStudios/Audio/Amplitude/Core/Entity.h
     include/SparkyStudios/Audio/Amplitude/Core/Fader.h
     include/SparkyStudios/Audio/Amplitude/Core/Listener.h
     include/SparkyStudios/Audio/Amplitude/Core/Log.h
@@ -93,6 +94,9 @@ set(SA_SOURCE
     src/Core/Driver.cpp
     src/Core/Engine.cpp
     src/Core/EngineInternalState.h
+    src/Core/Entity.cpp
+    src/Core/EntityInternalState.cpp
+    src/Core/EntityInternalState.h
     src/Core/Fader.cpp
     src/Core/ListenerInternalState.h
     src/Core/Listener.cpp

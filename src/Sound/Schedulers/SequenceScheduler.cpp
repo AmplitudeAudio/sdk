@@ -19,6 +19,11 @@
 
 namespace SparkyStudios::Audio::Amplitude
 {
+    bool SequenceScheduler::Valid() const
+    {
+        return true;
+    }
+
     void SequenceScheduler::Init(const SoundCollectionDefinition* definition)
     {
         // noop

@@ -45,25 +45,8 @@ namespace SparkyStudios::Audio::Amplitude
             return false;
         }
 
-        if (!def->scheduler())
-        {
-            CallLogFunc("Sound collection %s does not specify a scheduler, using the RandomScheduler by default.\n", def->name());
-            _scheduler = new RandomScheduler();
-        }
-        else
-        {
-            switch (def->scheduler())
-            {
-            case SoundScheduler_Random:
-                _scheduler = new RandomScheduler();
-                break;
-            case SoundScheduler_Sequence:
-                _scheduler = new SequenceScheduler();
-                break;
-            }
-        }
-
-        _scheduler->Init(def);
+        _worldScopeScheduler = CreateScheduler(def);
+        _worldScopeScheduler->Init(def);
 
         if (state)
         {
@@ -89,16 +72,47 @@ namespace SparkyStudios::Audio::Amplitude
         return Amplitude::GetSoundCollectionDefinition(_source.c_str());
     }
 
-    Sound* SoundCollection::Select(const std::vector<const Sound*>& toSkip)
+    Sound* SoundCollection::SelectFromWorld(const std::vector<const Sound*>& toSkip)
     {
         const SoundCollectionDefinition* sound_def = GetSoundCollectionDefinition();
-        if (_scheduler == nullptr)
+        if (_worldScopeScheduler == nullptr || !_worldScopeScheduler->Valid())
         {
-            _scheduler = new RandomScheduler();
-            _scheduler->Init(sound_def);
+            CallLogFunc("Sound collection %s does not have a valid scheduler.\n", sound_def->name()->c_str());
+            return nullptr;
         }
 
-        return _scheduler->Select(_sounds, toSkip);
+        return _worldScopeScheduler->Select(_sounds, toSkip);
     }
 
+    Sound* SoundCollection::SelectFromEntity(const Entity& entity, const std::vector<const Sound*>& toSkip)
+    {
+        const SoundCollectionDefinition* sound_def = GetSoundCollectionDefinition();
+        if (auto findIt = _entityScopeSchedulers.find(entity.GetId()); findIt == _entityScopeSchedulers.end())
+        {
+            _entityScopeSchedulers.insert({ entity.GetId(), CreateScheduler(sound_def) });
+        }
+
+        return _entityScopeSchedulers[entity.GetId()]->Select(_sounds, toSkip);
+    }
+
+    Scheduler* SoundCollection::CreateScheduler(const SoundCollectionDefinition* definition)
+    {
+        if (!definition->scheduler())
+        {
+            CallLogFunc(
+                "[Debug] Sound collection %s does not specify a scheduler, using the RandomScheduler by default.\n",
+                definition->name()->c_str());
+            return new RandomScheduler();
+        }
+        else
+        {
+            switch (definition->scheduler())
+            {
+            case SoundScheduler_Random:
+                return new RandomScheduler();
+            case SoundScheduler_Sequence:
+                return new SequenceScheduler();
+            }
+        }
+    }
 } // namespace SparkyStudios::Audio::Amplitude

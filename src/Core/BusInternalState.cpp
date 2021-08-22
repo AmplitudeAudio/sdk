@@ -87,7 +87,14 @@ namespace SparkyStudios::Audio::Amplitude
         // Update final gain.
         _gain = _busDefinition->gain() * parent_gain * _duckGain * _userGain;
 
-        for (auto child_bus : _childBuses)
+        // Advance frames in playing channels.
+        for (auto& channel: _playingSoundList)
+        {
+            channel.AdvanceFrame(delta_time);
+        }
+
+        // Advance frames in child buses.
+        for (auto& child_bus : _childBuses)
         {
             if (child_bus)
             {
@@ -95,5 +102,4 @@ namespace SparkyStudios::Audio::Amplitude
             }
         }
     }
-
 } // namespace SparkyStudios::Audio::Amplitude

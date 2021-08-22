@@ -17,8 +17,10 @@
 
 #include <utility>
 
+#include <SparkyStudios/Audio/Amplitude/Core/Common.h>
+
 #include <SparkyStudios/Audio/Amplitude/Core/Channel.h>
-#include <SparkyStudios/Audio/Amplitude/Math/HandmadeMath.h>
+#include <SparkyStudios/Audio/Amplitude/Core/Entity.h>
 #include <SparkyStudios/Audio/Amplitude/Sound/Sound.h>
 
 #include "RealChannel.h"
@@ -59,6 +61,11 @@ namespace SparkyStudios::Audio::Amplitude
         // Remove this channel from all lists that it is a part of.
         void Remove();
 
+        /**
+         * @brief Resets this channel to its initial state.
+         */
+        void Reset();
+
         // Get or set the sound collection playing on this channel. Note that when you set
         // the sound collection, you also add this channel to the GetBus list that
         // corresponds to that sound collection.
@@ -67,6 +74,18 @@ namespace SparkyStudios::Audio::Amplitude
         [[nodiscard]] SoundCollection* GetSoundCollection() const
         {
             return _collection;
+        }
+
+        void SetEntity(const Entity& entity);
+
+        Entity& GetEntity()
+        {
+            return _entity;
+        }
+
+        [[nodiscard]] const Entity& GetEntity() const
+        {
+            return _entity;
         }
 
         // Get the current state of this channel (playing, stopped, paused, etc). This
@@ -80,16 +99,26 @@ namespace SparkyStudios::Audio::Amplitude
         // Get or set the location of this channel
         void SetLocation(const hmm_vec3& location)
         {
+            // Entity scoped channel
+            if (_entity.Valid())
+                return;
+
+            // World scoped channel
             _location = location;
         }
 
         [[nodiscard]] const hmm_vec3& GetLocation() const
         {
+            // Entity scoped channel
+            if (_entity.Valid())
+                return _entity.GetLocation();
+
+            // World scoped channel
             return _location;
         }
 
-        // Play a sound on this channel.
-        bool Play(SoundCollection* collection);
+        // Play the sound associated to this channel.
+        bool Play();
 
         // Check if this channel is currently playing on a real or virtual channel.
         [[nodiscard]] bool Playing() const;
@@ -145,6 +174,13 @@ namespace SparkyStudios::Audio::Amplitude
         // multiplier on the sound collection definition.
         [[nodiscard]] float Priority() const;
 
+        /**
+         * @brief Update this channel data per frames.
+         *
+         * @param delta_time The time elapsed since the last frame.
+         */
+        void AdvanceFrame(AmTime delta_time);
+
         // Returns the real channel.
         RealChannel& GetRealChannel()
         {
@@ -171,6 +207,9 @@ namespace SparkyStudios::Audio::Amplitude
         // The node that tracks the list of sounds playing on a given bus.
         fplutil::intrusive_list_node bus_node;
 
+        // The node that tracks the list of sounds playing on a given entity.
+        fplutil::intrusive_list_node entity_node;
+
     private:
         RealChannel _realChannel;
 
@@ -179,6 +218,9 @@ namespace SparkyStudios::Audio::Amplitude
 
         // The collection of the sound being played on this channel.
         SoundCollection* _collection;
+
+        // The entity which is playing the sound of this channel.
+        Entity _entity;
 
         // The sound source that was chosen from the sound collection.
         Sound* _sound;

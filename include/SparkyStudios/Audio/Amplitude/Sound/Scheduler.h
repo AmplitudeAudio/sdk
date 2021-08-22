@@ -32,6 +32,13 @@ namespace SparkyStudios::Audio::Amplitude
     {
     public:
         /**
+         * @brief Returns whether this scheduler has a valid state.
+         *
+         * @return true if the scheduler has a valid state.
+         */
+        [[nodiscard]] virtual bool Valid() const = 0;
+
+        /**
          * @brief Initializes the scheduler for the given sound collection.
          *
          * @param definition The SoundCollectionDefinition to use for initialization.
