@@ -15,7 +15,7 @@
 #ifndef SPARK_AUDIO_LISTENER_INTERNAL_STATE_H
 #define SPARK_AUDIO_LISTENER_INTERNAL_STATE_H
 
-#include <SparkyStudios/Audio/Amplitude/Math/HandmadeMath.h>
+#include <SparkyStudios/Audio/Amplitude/Core/Common.h>
 
 #include <Utils/intrusive_list.h>
 
