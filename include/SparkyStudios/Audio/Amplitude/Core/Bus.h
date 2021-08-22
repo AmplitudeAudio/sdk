@@ -28,8 +28,8 @@ namespace SparkyStudios::Audio::Amplitude
      * Buses are used to adjust a set of channel gains in tandem.
      *
      * The Bus class is a lightweight reference to a BusInternalState object which
-     * is managed by the Engine. There is always at least one bus, the master GetBus,
-     * and any number of additional buses may be defined as well. Each GetBus can be
+     * is managed by the Engine. There is always at least one bus, the master bus,
+     * and any number of additional buses may be defined as well. Each bus can be
      * thought as a node in the tree. The gain on a Bus is applied to all child buses as well.
      */
     class Bus
