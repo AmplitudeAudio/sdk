@@ -21,6 +21,11 @@
 
 namespace SparkyStudios::Audio::Amplitude
 {
+    bool RandomScheduler::Valid() const
+    {
+        return _definition != nullptr;
+    }
+
     void RandomScheduler::Init(const SoundCollectionDefinition* definition)
     {
         _definition = definition;

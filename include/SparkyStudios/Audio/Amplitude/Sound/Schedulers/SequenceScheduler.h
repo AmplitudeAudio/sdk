@@ -26,6 +26,7 @@ namespace SparkyStudios::Audio::Amplitude
     class SequenceScheduler : public Scheduler
     {
     public:
+        [[nodiscard]] bool Valid() const override;
         void Init(const SoundCollectionDefinition* definition) override;
         Sound* Select(std::vector<Sound>& sounds, const std::vector<const Sound*>& toSkip) override;
 
