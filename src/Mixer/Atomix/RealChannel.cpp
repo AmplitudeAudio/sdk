@@ -96,6 +96,7 @@ namespace SparkyStudios::Audio::Amplitude
 
         if (!_activeSound->GetUserData())
         {
+            _channelId = kInvalidChannelId;
             CallLogFunc("The sound was not loaded successfully.");
             return false;
         }
@@ -114,6 +115,7 @@ namespace SparkyStudios::Audio::Amplitude
         bool success = _channelId != kInvalidChannelId;
         if (!success)
         {
+            _channelId = kInvalidChannelId;
             CallLogFunc("Could not play sound %s\n", sound->GetFilename().c_str());
         }
 
@@ -123,8 +125,12 @@ namespace SparkyStudios::Audio::Amplitude
     bool RealChannel::Playing() const
     {
         AMPLITUDE_ASSERT(Valid());
-        unsigned int state = atomixMixerGetState(_mixer, _channelId);
-        return state == ATOMIX_PLAY || state == ATOMIX_LOOP;
+        PlayMode mode = _parentChannelState->GetSoundCollection()->GetSoundCollectionDefinition()->play_mode();
+        AmUInt32 state = atomixMixerGetState(_mixer, _channelId);
+
+        return mode == PlayMode_PlayOne ? state == ATOMIX_PLAY
+            : mode == PlayMode_LoopOne  ? state == ATOMIX_LOOP
+                                        : _channelId != kInvalidChannelId && _gain > 0.0f;
     }
 
     bool RealChannel::Paused() const
