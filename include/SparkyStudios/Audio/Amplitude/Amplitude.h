@@ -27,6 +27,7 @@
 #include <SparkyStudios/Audio/Amplitude/Core/Driver.h>
 #include <SparkyStudios/Audio/Amplitude/Core/Engine.h>
 #include <SparkyStudios/Audio/Amplitude/Core/Entity.h>
+#include <SparkyStudios/Audio/Amplitude/Core/Event.h>
 #include <SparkyStudios/Audio/Amplitude/Core/Fader.h>
 #include <SparkyStudios/Audio/Amplitude/Core/Listener.h>
 #include <SparkyStudios/Audio/Amplitude/Core/Log.h>

@@ -36,6 +36,14 @@ enum EventActionType: byte {
 
   // Mutes the bus with the given name.
   Mute,
+
+  // Mutes the bus with the given name.
+  Unmute,
+}
+
+enum EventActionScope: byte {
+  World,
+  Entity,
 }
 
 // An action in an event. Actions are applied when an event is triggered.
@@ -49,17 +57,19 @@ table EventActionDefinition {
   // The list of targets on which apply the action.
   // Each target name should be in the same group (SoundCollection or Bus).
   targets:[string];
+
+  scope:EventActionScope = Entity;
 }
 
 // An Amplitude Event.
 // An event is a way to trigger a sequence of actions during the game. Those
 // actions can change the playback of a given sound collection or bus.
-table EventDefinition { 
+table EventDefinition {
   // The name of the event.
   name:string;
 
   // The event ID.
-  id:uint;
+  id:ulong;
 
   // The list of actions to apply when this event is triggered.
   actions:[EventActionDefinition];
