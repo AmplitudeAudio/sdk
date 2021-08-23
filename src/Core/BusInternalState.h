@@ -40,6 +40,7 @@ namespace SparkyStudios::Audio::Amplitude
             , _duckGain(1.0f)
             , _playingSoundList(&ChannelInternalState::bus_node)
             , _transitionPercentage(0.0f)
+            , _muted(false)
         {}
 
         void Initialize(const BusDefinition* bus_def);
@@ -54,7 +55,7 @@ namespace SparkyStudios::Audio::Amplitude
         // duck gain, bus gain, user gain).
         [[nodiscard]] float GetGain() const
         {
-            return _gain;
+            return _muted ? 0.0f : _gain;
         }
 
         // Set the user gain.
@@ -70,6 +71,15 @@ namespace SparkyStudios::Audio::Amplitude
         {
             return _userGain;
         }
+
+        void SetMute(bool mute);
+
+        /**
+         * @brief Returns whether this bus is muted.
+         *
+         * @return true if this Bus is muted, false otherwise.
+         */
+        [[nodiscard]] bool IsMute() const;
 
         // Fade to the given gain over duration seconds.
         void FadeTo(float gain, AmTime duration);
@@ -139,6 +149,8 @@ namespace SparkyStudios::Audio::Amplitude
 
         // The final GetGain to be applied to all sounds on this bus.
         float _gain;
+
+        bool _muted;
 
         // Keeps track of how many sounds are being played on this bus.
         ChannelList _playingSoundList;

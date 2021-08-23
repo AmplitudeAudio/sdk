@@ -97,6 +97,15 @@ namespace SparkyStudios::Audio::Amplitude
          */
         [[nodiscard]] float GetFinalGain() const;
 
+        void SetMute(bool mute);
+
+        /**
+         * @brief Returns whether this Bus is muted.
+         *
+         * @return true if this Bus is muted, false otherwise.
+         */
+        [[nodiscard]] bool IsMute() const;
+
         /**
          * @brief Returns the internal state of this Bus.
          *
