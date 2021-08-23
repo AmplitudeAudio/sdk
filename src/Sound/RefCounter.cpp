@@ -14,7 +14,7 @@
 
 #include <cassert>
 
-#include <SparkyStudios/Audio/Amplitude/Sound/RefCounter.h>
+#include <SparkyStudios/Audio/Amplitude/Core/RefCounter.h>
 
 namespace SparkyStudios::Audio::Amplitude
 {
