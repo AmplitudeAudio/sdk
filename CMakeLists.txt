@@ -58,13 +58,13 @@ set(SA_SOURCE
     include/SparkyStudios/Audio/Amplitude/Core/Fader.h
     include/SparkyStudios/Audio/Amplitude/Core/Listener.h
     include/SparkyStudios/Audio/Amplitude/Core/Log.h
+    include/SparkyStudios/Audio/Amplitude/Core/RefCounter.h
     include/SparkyStudios/Audio/Amplitude/Core/Thread.h
     include/SparkyStudios/Audio/Amplitude/Core/Version.h
     include/SparkyStudios/Audio/Amplitude/IO/FileLoader.h
     include/SparkyStudios/Audio/Amplitude/Math/HandmadeMath.h
     include/SparkyStudios/Audio/Amplitude/Sound/Schedulers/SequenceScheduler.h
     include/SparkyStudios/Audio/Amplitude/Sound/Schedulers/RandomScheduler.h
-    include/SparkyStudios/Audio/Amplitude/Sound/RefCounter.h
     include/SparkyStudios/Audio/Amplitude/Sound/Scheduler.h
     include/SparkyStudios/Audio/Amplitude/Sound/Sound.h
     include/SparkyStudios/Audio/Amplitude/Sound/SoundBank.h
