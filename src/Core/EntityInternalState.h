@@ -30,6 +30,7 @@ namespace SparkyStudios::Audio::Amplitude
     {
     public:
         EntityInternalState();
+
         /**
          * @brief Gets the ID of this Entity in game.
          *
