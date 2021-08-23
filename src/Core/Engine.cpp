@@ -590,7 +590,7 @@ namespace SparkyStudios::Audio::Amplitude
         }
         else
         {
-            CallLogFunc("Cannot play sound: invalid name (%s)\n", sound_name.c_str());
+            CallLogFunc("Cannot play sound: invalid name (%s).\n", sound_name.c_str());
             return Channel(nullptr);
         }
     }
@@ -614,10 +614,49 @@ namespace SparkyStudios::Audio::Amplitude
         }
     }
 
+    EventCanceler Engine::Trigger(EventHandle event_handle, const Entity& entity)
+    {
+        EventHandle event = event_handle;
+        if (!event)
+        {
+            CallLogFunc("Cannot trigger event: Invalid event handle.\n");
+            return EventCanceler(nullptr);
+        }
+
+        EventInstance instance = event->Trigger(entity);
+        _state->running_events.push_back(instance);
+
+        return EventCanceler(&instance);
+    }
+
+    EventCanceler Engine::Trigger(const std::string& event_name, const Entity& entity)
+    {
+        EventHandle handle = GetEventHandle(event_name);
+        if (handle)
+        {
+            return Trigger(handle, entity);
+        }
+        else
+        {
+            CallLogFunc("Cannot trigger event: invalid name (%s).\n", event_name.c_str());
+            return EventCanceler(nullptr);
+        }
+    }
+
     SoundHandle Engine::GetSoundHandle(const std::string& sound_name) const
     {
         auto iter = _state->sound_collection_map.find(sound_name);
         if (iter == _state->sound_collection_map.end())
+        {
+            return nullptr;
+        }
+        return iter->second.get();
+    }
+
+    EventHandle Engine::GetEventHandle(const std::string& sound_name) const
+    {
+        auto iter = _state->event_map.find(sound_name);
+        if (iter == _state->event_map.end())
         {
             return nullptr;
         }
@@ -632,6 +671,16 @@ namespace SparkyStudios::Audio::Amplitude
             return nullptr;
         }
         return GetSoundHandle(iter->second);
+    }
+
+    EventHandle Engine::GetEventHandleFromFile(const std::string& filename) const
+    {
+        auto iter = _state->event_id_map.find(filename);
+        if (iter == _state->event_id_map.end())
+        {
+            return nullptr;
+        }
+        return GetEventHandle(iter->second);
     }
 
     void Engine::SetMasterGain(float gain)
@@ -786,22 +835,26 @@ namespace SparkyStudios::Audio::Amplitude
     void Engine::AdvanceFrame(AmTime delta_time)
     {
         ++_state->current_frame;
+
         EraseFinishedSounds(_state);
-        for (auto& bus : _state->buses)
+
+        for (auto&& bus : _state->buses)
         {
             bus.ResetDuckGain();
         }
-        for (auto& bus : _state->buses)
+        for (auto&& bus : _state->buses)
         {
             bus.UpdateDuckGain(delta_time);
         }
+
         if (_state->master_bus)
         {
             float master_gain = _state->mute ? 0.0f : _state->master_gain;
             _state->master_bus->AdvanceFrame(delta_time, master_gain);
         }
+
         PriorityList& list = _state->playing_channel_list;
-        for (auto& iter : list)
+        for (auto&& iter : list)
         {
             UpdateChannel(&iter, _state);
         }
@@ -810,10 +863,25 @@ namespace SparkyStudios::Audio::Amplitude
             {
                 return a.Priority() < b.Priority();
             });
+
         // No point in updating which channels are real and virtual when paused.
         if (!_state->paused)
         {
             UpdateRealChannels(&_state->playing_channel_list, &_state->real_channel_free_list, &_state->virtual_channel_free_list);
+        }
+
+        for (size_t i = 0; i < _state->running_events.size(); ++i)
+        {
+            EventInstance* event = &_state->running_events[i];
+
+            if (!event->IsRunning())
+            {
+                _state->running_events.erase(_state->running_events.begin() + i);
+                --i;
+                continue;
+            }
+
+            event->AdvanceFrame(delta_time);
         }
     }
 

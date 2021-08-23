@@ -25,7 +25,7 @@
 #include <SparkyStudios/Audio/Amplitude/Core/Common.h>
 #include <SparkyStudios/Audio/Amplitude/Core/Entity.h>
 
-#include <SparkyStudios/Audio/Amplitude/Sound/RefCounter.h>
+#include <SparkyStudios/Audio/Amplitude/Core/RefCounter.h>
 #include <SparkyStudios/Audio/Amplitude/Sound/Scheduler.h>
 #include <SparkyStudios/Audio/Amplitude/Sound/Sound.h>
 

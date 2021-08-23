@@ -25,16 +25,20 @@
 #include <SparkyStudios/Audio/Amplitude/Core/Channel.h>
 #include <SparkyStudios/Audio/Amplitude/Core/Driver.h>
 #include <SparkyStudios/Audio/Amplitude/Core/Entity.h>
+#include <SparkyStudios/Audio/Amplitude/Core/Event.h>
 #include <SparkyStudios/Audio/Amplitude/Core/Listener.h>
 #include <SparkyStudios/Audio/Amplitude/Core/Version.h>
 
+#include <SparkyStudios/Audio/Amplitude/Sound/SoundCollection.h>
+
 namespace SparkyStudios::Audio::Amplitude
 {
-    class SoundCollection;
     struct EngineConfigDefinition;
+
     struct EngineInternalState;
 
     typedef SoundCollection* SoundHandle;
+    typedef Event* EventHandle;
 
     /**
      * @brief The central class of  the library that manages the Listeners, Channels, and tracks all of the internal state.
@@ -119,11 +123,25 @@ namespace SparkyStudios::Audio::Amplitude
         [[nodiscard]] SoundHandle GetSoundHandle(const std::string& name) const;
 
         /**
-         * @brief Get a SoundHandle given its SoundCollectionDef filename.
+         * @brief Get an EventHandle given its name as defined in its JSON data.
+         *
+         * @param name The unique name as defined in the JSON data.
+         */
+        [[nodiscard]] EventHandle GetEventHandle(const std::string& sound_name) const;
+
+        /**
+         * @brief Get a SoundHandle given its SoundCollectionDefinition filename.
          *
          * @param name The filename containing the flatbuffer binary data.
          */
         [[nodiscard]] SoundHandle GetSoundHandleFromFile(const std::string& filename) const;
+
+        /**
+         * @brief Get an EventHandle given its EventDefinition filename.
+         *
+         * @param name The filename containing the flatbuffer binary data.
+         */
+        [[nodiscard]] EventHandle GetEventHandleFromFile(const std::string& filename) const;
 
         /**
          * @brief Adjusts the gain on the master bus.
@@ -332,6 +350,31 @@ namespace SparkyStudios::Audio::Amplitude
          *         played, an invalid Channel is returned.
          */
         Channel Play(const std::string& sound_name, const Entity& entity, float gain);
+
+        /**
+         * @brief Trigger the event associated with the given sound handle at the
+         *        given location.
+         *
+         * @param event_handle A handle of the event to trigger.
+         * @param entity The which trigger the event.
+         *
+         * @return The triggered event.
+         */
+        EventCanceler Trigger(EventHandle event_handle, const Entity& entity);
+
+        /**
+         * @brief Trigger the event associated with the specified event name at
+         *        the given location.
+         *
+         * Note: Triggering an event with its EventHandle is faster than using the
+         * event name as using the name requires a map lookup internally.
+         *
+         * @param event_name The name of event to trigger.
+         * @param entity The which trigger the event.
+         *
+         * @return The triggered event.
+         */
+        EventCanceler Trigger(const std::string& event_name, const Entity& entity);
 
         /**
          * @brief Gets the version structure.

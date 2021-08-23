@@ -18,6 +18,16 @@
 
 namespace SparkyStudios::Audio::Amplitude
 {
+    void BusInternalState::SetMute(bool mute)
+    {
+        _muted = mute;
+    }
+
+    bool BusInternalState::IsMute() const
+    {
+        return _muted;
+    }
+
     void BusInternalState::FadeTo(float gain, AmTime duration)
     {
         _targetUserGain = gain;

@@ -18,12 +18,7 @@
 #include <map>
 #include <vector>
 
-#include <SparkyStudios/Audio/Amplitude/Core/Engine.h>
-#include <SparkyStudios/Audio/Amplitude/IO/FileLoader.h>
-#include <SparkyStudios/Audio/Amplitude/Math/HandmadeMath.h>
-#include <SparkyStudios/Audio/Amplitude/Sound/Sound.h>
-#include <SparkyStudios/Audio/Amplitude/Sound/SoundBank.h>
-#include <SparkyStudios/Audio/Amplitude/Sound/SoundCollection.h>
+#include <SparkyStudios/Audio/Amplitude/Amplitude.h>
 
 #include <Core/BusInternalState.h>
 #include <Core/ChannelInternalState.h>
@@ -42,8 +37,11 @@ namespace SparkyStudios::Audio::Amplitude
     struct SoundBankDefinition;
 
     typedef std::map<std::string, std::unique_ptr<SoundCollection>> SoundCollectionMap;
-
     typedef std::map<std::string, std::string> SoundIdMap;
+
+    typedef std::map<std::string, std::unique_ptr<Event>> EventMap;
+    typedef std::map<std::string, std::string> EventIdMap;
+    typedef std::vector<EventInstance> EventInstanceVector;
 
     typedef std::map<std::string, std::unique_ptr<SoundBank>> SoundBankMap;
 
@@ -71,6 +69,9 @@ namespace SparkyStudios::Audio::Amplitude
             , paused(true)
             , sound_collection_map()
             , sound_id_map()
+            , event_map()
+            , event_id_map()
+            , running_events()
             , sound_bank_map()
             , channel_state_memory()
             , playing_channel_list(&ChannelInternalState::priority_node)
@@ -112,6 +113,15 @@ namespace SparkyStudios::Audio::Amplitude
 
         // A map of file names to sound ids to determine if a file needs to be loaded.
         SoundIdMap sound_id_map;
+
+        // A map of event names to EventInternalStates.
+        EventMap event_map;
+
+        // A map of file names to event ids to determine if a file needs to be loaded.
+        EventIdMap event_id_map;
+
+        // A vector of currently active events.
+        EventInstanceVector running_events;
 
         // Hold the sounds banks.
         SoundBankMap sound_bank_map;
