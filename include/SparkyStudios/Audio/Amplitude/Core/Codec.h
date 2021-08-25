@@ -84,7 +84,7 @@ namespace SparkyStudios::Audio::Amplitude
              *
              * @return The number of audio frames loaded into the buffer.
              */
-            virtual AmUInt64 Load(AmFloat32Buffer out) = 0;
+            virtual AmUInt64 Load(AmReal32Buffer out) = 0;
 
             /**
              * @brief Streams a part of the file from disk into the output buffer.
@@ -95,7 +95,7 @@ namespace SparkyStudios::Audio::Amplitude
              *
              * @return The number of frames read.
              */
-            virtual AmUInt64 Stream(AmFloat32Buffer out, AmUInt64 offset, AmUInt64 length) = 0;
+            virtual AmUInt64 Stream(AmReal32Buffer out, AmUInt64 offset, AmUInt64 length) = 0;
 
             /**
              * @brief Moves the cursor to the given frame.

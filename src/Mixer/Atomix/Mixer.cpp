@@ -172,7 +172,7 @@ namespace SparkyStudios::Audio::Amplitude
 
         lockAudioMutex();
 
-        atomixMixerMix((atomix_mixer*)m_userData, (AmFloat32Buffer)mixBuffer, frameCount);
+        atomixMixerMix((atomix_mixer*)m_userData, (AmReal32Buffer)mixBuffer, frameCount);
 
         unlockAudioMutex();
     }

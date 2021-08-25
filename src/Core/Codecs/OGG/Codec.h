@@ -39,9 +39,9 @@ namespace SparkyStudios::Audio::Amplitude::Codecs
 
             bool Close() final;
 
-            AmUInt64 Load(AmFloat32Buffer out) final;
+            AmUInt64 Load(AmReal32Buffer out) final;
 
-            AmUInt64 Stream(AmFloat32Buffer out, AmUInt64 offset, AmUInt64 length) final;
+            AmUInt64 Stream(AmReal32Buffer out, AmUInt64 offset, AmUInt64 length) final;
 
             bool Seek(AmUInt64 offset) final;
 

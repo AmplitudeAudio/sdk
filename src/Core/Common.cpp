@@ -35,12 +35,12 @@ namespace SparkyStudios::Audio::Amplitude
         m_basePtr = new unsigned char[size * sizeof(float)];
         if (m_basePtr == nullptr)
             return AM_ERROR_OUT_OF_MEMORY;
-        m_data = (float*)m_basePtr;
+        m_data = (AmReal32Buffer)m_basePtr;
 #else
         m_basePtr = new unsigned char[size * sizeof(float) + 16];
         if (m_basePtr == nullptr)
             return AM_ERROR_OUT_OF_MEMORY;
-        m_data = (AmFloat32Buffer)(((size_t)m_basePtr + 15) & ~15);
+        m_data = (AmReal32Buffer)(((size_t)m_basePtr + 15) & ~15);
 #endif
         return AM_ERROR_NO_ERROR;
     }
@@ -58,7 +58,7 @@ namespace SparkyStudios::Audio::Amplitude
     TinyAlignedFloatBuffer::TinyAlignedFloatBuffer()
     {
         AmUInt8Buffer basePtr = &m_actualData[0];
-        m_data = (AmFloat32Buffer)(((size_t)basePtr + 15) & ~15);
+        m_data = (AmReal32Buffer)(((size_t)basePtr + 15) & ~15);
     }
 
     void SoundFormat::SetAll(

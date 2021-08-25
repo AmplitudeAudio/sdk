@@ -145,7 +145,7 @@ namespace SparkyStudios::Audio::Amplitude
             _streamBuffer.Clear();
 
             AmUInt64 n, l = frames, o = offset, r = 0;
-            AmFloat32Buffer b = _streamBuffer.GetBuffer();
+            AmReal32Buffer b = _streamBuffer.GetBuffer();
 
         Fill:
             n = _parent->_decoder->Stream(b, o, l);

@@ -60,7 +60,7 @@ namespace SparkyStudios::Audio::Amplitude::Codecs
         return true;
     }
 
-    AmUInt64 OGGCodec::OGGDecoder::Load(AmFloat32Buffer out)
+    AmUInt64 OGGCodec::OGGDecoder::Load(AmReal32Buffer out)
     {
         if (!_initialized)
         {
@@ -76,7 +76,7 @@ namespace SparkyStudios::Audio::Amplitude::Codecs
             _ogg, m_format.GetNumChannels(), out, m_format.GetFramesCount() * m_format.GetNumChannels());
     }
 
-    AmUInt64 OGGCodec::OGGDecoder::Stream(AmFloat32Buffer out, AmUInt64 offset, AmUInt64 length)
+    AmUInt64 OGGCodec::OGGDecoder::Stream(AmReal32Buffer out, AmUInt64 offset, AmUInt64 length)
     {
         if (!_initialized)
         {

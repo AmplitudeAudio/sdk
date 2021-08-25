@@ -57,7 +57,7 @@ namespace SparkyStudios::Audio::Amplitude::Codecs
         return true;
     }
 
-    AmUInt64 WAVCodec::WAVDecoder::Load(AmFloat32Buffer out)
+    AmUInt64 WAVCodec::WAVDecoder::Load(AmReal32Buffer out)
     {
         if (!_initialized)
         {
@@ -72,7 +72,7 @@ namespace SparkyStudios::Audio::Amplitude::Codecs
         return drwav_read_pcm_frames_f32(&_wav, _wav.totalPCMFrameCount, out);
     }
 
-    AmUInt64 WAVCodec::WAVDecoder::Stream(AmFloat32Buffer out, AmUInt64 offset, AmUInt64 length)
+    AmUInt64 WAVCodec::WAVDecoder::Stream(AmReal32Buffer out, AmUInt64 offset, AmUInt64 length)
     {
         if (!_initialized)
         {
