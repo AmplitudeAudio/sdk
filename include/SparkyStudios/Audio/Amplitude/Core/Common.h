@@ -21,6 +21,8 @@
 /////////////////////////////////////////////////////////////////////
 // Standard Library
 
+#include <cmath>
+#include <cstdlib>
 #include <map>
 #include <string>
 #include <vector>
