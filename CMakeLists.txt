@@ -46,12 +46,12 @@ build_flatbuffers("${FLATBUFFERS_SCHEMAS}"
 
 # Setup project source files.
 set(SA_SOURCE
+    include/SparkyStudios/Audio/Amplitude/Core/Common/Config.h
     include/SparkyStudios/Audio/Amplitude/Core/Common/Types.h
     include/SparkyStudios/Audio/Amplitude/Core/Bus.h
     include/SparkyStudios/Audio/Amplitude/Core/Channel.h
     include/SparkyStudios/Audio/Amplitude/Core/Codec.h
     include/SparkyStudios/Audio/Amplitude/Core/Common.h
-    include/SparkyStudios/Audio/Amplitude/Core/Config.h
     include/SparkyStudios/Audio/Amplitude/Core/Driver.h
     include/SparkyStudios/Audio/Amplitude/Core/Engine.h
     include/SparkyStudios/Audio/Amplitude/Core/Entity.h
