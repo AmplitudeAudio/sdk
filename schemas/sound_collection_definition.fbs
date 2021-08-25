@@ -49,15 +49,57 @@ enum PlayMode: byte {
   LoopAll,
 }
 
-// A sound scheduler is a way for the sound collection to pick a sound
+// A sound scheduler mode is a way for the sound collection to pick a sound
 // from the list of audio samples on each play request.
 // - Random: An audio sample is randomly selected from the list each time
 // a play request is made on the sound collection.
 // - Sequence: Audio samples are sequentially selected from the list each
 // time a play request is made on the sound collection.
-enum SoundScheduler: byte {
+enum SoundSchedulerMode: byte {
   Random,
   Sequence,
+}
+
+// Describes the behavior of the Sequence scheduler when reaching the end of the sound collection
+// - Restart: The scheduler restarts the sound collection at the first item.
+// - Reverse: The scheduler play the sound collection in reverse order. The last and first sounds
+// are not played twice.
+enum SequenceSoundSchedulerEndBehavior: byte {
+  Restart,
+  Reverse,
+}
+
+// Random Scheduler configuration.
+table RandomSoundSchedulerConfig {
+  // Avoids to pick a sound from the list of audio samples before
+   // the last n audio samples played, where n is the repeat count.
+  avoid_repeat:bool = false;
+
+  // Specifies the number of audio samples which should be played
+  // before others can be repeated.
+  repeat_count:uint = 1;
+}
+
+// Sequence Scheduler configuration.
+table SequenceSoundSchedulerConfig {
+  // Specifies the behavior of the Sequence scheduler when reaching
+  // the end of the sound collection.
+  end_behavior:SequenceSoundSchedulerEndBehavior;
+}
+
+// Union type for schedulers configuration.
+union SoundSchedulerConfig {
+  Random:RandomSoundSchedulerConfig,
+  Sequence:SequenceSoundSchedulerConfig
+}
+
+// Configures the sound collection schedule
+table SoundSchedulerSettings {
+  // The scheduler mode to use when playing an audio sample of this collection.
+  mode:SoundSchedulerMode = Random;
+
+  // Configuration for the selected scheduler.
+  config:SoundSchedulerConfig;
 }
 
 // Reference to audio data (a sample) and basic attributes that affect its
@@ -117,8 +159,8 @@ table SoundCollectionDefinition {
   // of this sound are played. The default is PlayOne.
   play_mode:PlayMode = PlayOne;
 
-  // The scheduler to use when playing an audio sample of this collection.
-  scheduler:SoundScheduler = Random;
+  // Defines the behavior of the sound scheduler of this collection.
+  scheduler:SoundSchedulerSettings;
 
   // The scope where to apply this sound collection. The default is World.
   scope:Scope = World;
