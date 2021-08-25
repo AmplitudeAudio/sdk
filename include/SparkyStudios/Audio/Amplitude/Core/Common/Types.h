@@ -17,42 +17,28 @@
 #ifndef SS_AMPLITUDE_AUDIO_TYPES_H
 #define SS_AMPLITUDE_AUDIO_TYPES_H
 
+#if defined(AM_WINDOWS_VERSION)
+#include <SparkyStudios/Audio/Amplitude/Core/Common/Platforms/Windows/Types.h>
+#elif defined(AM_ANDROID_VERSION)
+#include <SparkyStudios/Audio/Amplitude/Core/Common/Platforms/Android/Types.h>
+#elif defined(AM_LINUX_VERSION)
+#include <SparkyStudios/Audio/Amplitude/Core/Common/Platforms/Linux/Types.h>
+#endif
+
 namespace SparkyStudios::Audio::Amplitude
 {
-    typedef signed char                 AmInt8;
-    typedef signed short                AmInt16;
-    typedef signed int                  AmInt32;
-    typedef signed long long            AmInt64;
+    typedef AmUInt64            AmBankID;
+    typedef AmUInt64            AmBusID;
+    typedef AmUInt64            AmSoundCollectionID;
+    typedef AmUInt64            AmSoundID;
+    typedef AmUInt64            AmEntityID;
+    typedef AmUInt64            AmListenerID;
+    typedef AmUInt64            AmChannelID;
+    typedef AmUInt64            AmEventID;
 
-    typedef unsigned char               AmUInt8;
-    typedef unsigned short              AmUInt16;
-    typedef unsigned int                AmUInt32;
-    typedef unsigned long long          AmUInt64;
-
-    typedef float                       AmReal32;
-    typedef double                      AmReal64;
-
-    typedef signed char*                AmInt8Buffer;
-    typedef signed short*               AmInt16Buffer;
-    typedef signed int*                 AmInt32Buffer;
-    typedef signed long long*           AmInt64Buffer;
-
-    typedef unsigned char*              AmUInt8Buffer;
-    typedef unsigned short*             AmUInt16Buffer;
-    typedef unsigned int*               AmUInt32Buffer;
-    typedef unsigned long long*         AmUInt64Buffer;
-
-    typedef float*                      AmReal32Buffer;
-    typedef double*                     AmReal64Buffer;
-
-    typedef void*                       AmVoidPtr;
-
-    typedef const char*                 AmString;
-
-    typedef AmUInt8                     AmResult;
-    typedef AmUInt64                    AmHandle;
-    typedef AmReal64                    AmTime;
-
+    typedef AmUInt8             AmResult;
+    typedef AmUInt64            AmHandle;
+    typedef AmReal64            AmTime;
 } // namespace SparkyStudios::Audio::Amplitude
 
 #endif // SS_AMPLITUDE_AUDIO_TYPES_H

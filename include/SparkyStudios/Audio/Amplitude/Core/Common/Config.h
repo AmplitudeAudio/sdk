@@ -17,47 +17,31 @@
 #ifndef SS_AMPLITUDE_AUDIO_CONFIG_H
 #define SS_AMPLITUDE_AUDIO_CONFIG_H
 
-#include <cmath> // sin
-#include <cstdlib> // rand
-
-#ifdef AMPLITUDE_NO_ASSERTS
-#define AMPLITUDE_ASSERT(x)
+#ifndef AM_ALIGN
+#if defined(_MSC_VER)
+#define AM_ALIGN(_declaration_, _alignment_) __declspec(align(_alignment_)) _declaration_
 #else
-#ifdef _MSC_VER
-#include <cstdio> // for sprintf in asserts
-#ifndef VC_EXTRALEAN
-#define VC_EXTRALEAN
-#endif
-#ifndef WIN32_LEAN_AND_MEAN
-#define WIN32_LEAN_AND_MEAN
-#endif
-#include <Windows.h> // only needed for OutputDebugStringA, should be solved somehow.
-#define AMPLITUDE_ASSERT(x)                                                                                                                \
-    if (!(x))                                                                                                                              \
-    {                                                                                                                                      \
-        char temp[200];                                                                                                                    \
-        sprintf(temp, "%s(%d): assert(%s) failed.\n", __FILE__, __LINE__, #x);                                                             \
-        OutputDebugStringA(temp);                                                                                                          \
-        __debugbreak();                                                                                                                    \
-    }
-#else
-#include <cassert> // assert
-#define AMPLITUDE_ASSERT(x) assert(x)
+#define AK_ALIGN(_declaration_, _alignment_) _declaration_ __attribute__((aligned(_alignment_)))
 #endif
 #endif
 
-#ifndef M_PI
-#define M_PI 3.14159265358979323846264f // from CRC
-#endif
-
-#if defined(_WIN32) || defined(_WIN64)
-#define AM_WINDOWS_VERSION
+#if defined(_WIN32) || defined(_WIN64) || defined(WINAPI_FAMILY)
+#include <SparkyStudios/Audio/Amplitude/Core/Common/Platforms/Windows/Config.h>
+#elif defined(__ANDROID__)
+#include <SparkyStudios/Audio/Amplitude/Core/Common/Platforms/Android/Config.h>
+#elif defined(__linux__)
+#include <SparkyStudios/Audio/Amplitude/Core/Common/Platforms/Linux/Config.h>
 #endif
 
 #if !defined(AMPLITUDE_DISABLE_SIMD)
-#if defined(__x86_64__) || defined(_M_X64) || defined(__i386) || defined(_M_IX86)
+#if defined(AM_CPU_X86) || defined(AM_CPU_X86_64)
 #define AM_SSE_INTRINSICS
 #endif
+#endif
+
+// Define the value of Pi if the platform doesn't do that
+#ifndef M_PI
+#define M_PI 3.14159265358979323846264f // from CRC
 #endif
 
 /////////////////////////////////////////////////////////////////////
