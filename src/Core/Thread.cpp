@@ -26,7 +26,7 @@
 
 namespace SparkyStudios::Audio::Amplitude::Thread
 {
-#ifdef WINDOWS_VERSION
+#ifdef AM_WINDOWS_VERSION
     struct AmThreadHandleData
     {
         HANDLE thread;

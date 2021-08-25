@@ -177,9 +177,9 @@ namespace SparkyStudios::Audio::Amplitude
         // Overall volume; overallVolume = setVolume * 3DVolume
         float _overallVolume;
         // Current channel volumes, used to ramp the volume changes to avoid clicks
-        float _currentChannelVolume[MAX_CHANNELS]{};
+        float _currentChannelVolume[AM_MAX_CHANNELS]{};
         // Volume for each channel (panning)
-        float _channelVolume[MAX_CHANNELS]{};
+        float _channelVolume[AM_MAX_CHANNELS]{};
 
         // Relative play speed
         float _setRelativePlaySpeed;

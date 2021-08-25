@@ -51,28 +51,23 @@
 #endif
 
 #if defined(_WIN32) || defined(_WIN64)
-#define WINDOWS_VERSION
+#define AM_WINDOWS_VERSION
 #endif
 
-#if !defined(DISABLE_SIMD)
+#if !defined(AMPLITUDE_DISABLE_SIMD)
 #if defined(__x86_64__) || defined(_M_X64) || defined(__i386) || defined(_M_IX86)
-#define AMPLITUDE_SSE_INTRINSICS
+#define AM_SSE_INTRINSICS
 #endif
 #endif
-
-#define AMPLITUDE_VERSION 202002
 
 /////////////////////////////////////////////////////////////////////
 /////////////////////////////////////////////////////////////////////
 // Configuration defines
 
 // Maximum number of filters per stream
-#define FILTERS_PER_STREAM 8
+#define AM_FILTERS_PER_STREAM 8
 
-// 1)mono, 2)stereo 4)quad 6)5.1 8)7.1
-#define MAX_CHANNELS 8
-
-// Default resampler for both main and GetBus mixers
-#define AMPLITUDE_DEFAULT_RESAMPLER SoLoud::Engine::RESAMPLER_LINEAR
+// 1) Mono, 2) Stereo, 4) Quad, 6) 5.1, 8) 7.1
+#define AM_MAX_CHANNELS 8
 
 #endif // SS_AMPLITUDE_AUDIO_CONFIG_H
