@@ -48,12 +48,30 @@ namespace SparkyStudios::Audio::Amplitude
     typedef double*                 AmReal64Buffer;
 
     typedef void*                   AmVoidPtr;
+
+    typedef const int8_t*           AmConstInt8Buffer;
+    typedef const int16_t*          AmConstInt16Buffer;
+    typedef const int32_t*          AmConstInt32Buffer;
+    typedef const int64_t*          AmConstInt64Buffer;
+
+    typedef const uint8_t*          AmConstUInt8Buffer;
+    typedef const uint16_t*         AmConstUInt16Buffer;
+    typedef const uint32_t*         AmConstUInt32Buffer;
+    typedef const uint64_t*         AmConstUInt64Buffer;
+
+    typedef const float*            AmConstReal32Buffer;
+    typedef const double*           AmConstReal64Buffer;
+
+    typedef const void*             AmConstVoidPtr;
+
     typedef intptr_t                AmIntPtr;
     typedef uintptr_t               AmUIntPtr;
 
     typedef const char*             AmString;
     typedef wchar_t                 AmOsChar;
     typedef const wchar_t*          AmOsString;
+
+    typedef FILE*                   AmFileHandle;
 } // namespace SparkyStudios::Audio::Amplitude
 
 #endif // SS_AMPLITUDE_AUDIO_WINDOWS_TYPES_H
