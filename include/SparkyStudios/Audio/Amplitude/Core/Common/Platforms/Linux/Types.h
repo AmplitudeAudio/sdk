@@ -17,6 +17,6 @@
 #ifndef SS_AMPLITUDE_AUDIO_LINUX_TYPES_H
 #define SS_AMPLITUDE_AUDIO_LINUX_TYPES_H
 
-#include <SparkyStudios/Audio/Amplitude/Core/Common/Platforms/UNIX/Type.h>
+#include <SparkyStudios/Audio/Amplitude/Core/Common/Platforms/UNIX/Types.h>
 
 #endif // SS_AMPLITUDE_AUDIO_LINUX_TYPES_H
