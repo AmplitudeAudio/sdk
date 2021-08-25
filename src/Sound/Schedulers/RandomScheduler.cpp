@@ -21,6 +21,17 @@
 
 namespace SparkyStudios::Audio::Amplitude
 {
+    RandomScheduler::RandomScheduler()
+        : RandomScheduler(nullptr)
+    {}
+
+    RandomScheduler::RandomScheduler(const RandomSoundSchedulerConfig* config)
+        : _config(config)
+        , _probabilitiesSum(0.0f)
+        , _definition(nullptr)
+        , _avoidRepeatStack()
+    {}
+
     bool RandomScheduler::Valid() const
     {
         return _definition != nullptr;
@@ -41,22 +52,41 @@ namespace SparkyStudios::Audio::Amplitude
 
     Sound* RandomScheduler::Select(std::vector<Sound>& sounds, const std::vector<const Sound*>& toSkip)
     {
+    Pick:
         float selection = std::rand() / static_cast<float>(RAND_MAX) * _probabilitiesSum;
         for (size_t i = 0; i < sounds.size(); ++i)
         {
-            if (auto foundIt = std::find(toSkip.begin(), toSkip.end(), &sounds[i]); foundIt != toSkip.end())
-                // Try to pick the next sound, since this one needs to be skipped
-                continue;
-
             const AudioSampleSetEntry* entry = _definition->audio_sample_set()->Get(static_cast<flatbuffers::uoffset_t>(i));
-
             selection -= entry->playback_probability();
 
             if (selection <= 0)
             {
-                return &sounds[i];
+                if (auto foundIt = std::find(toSkip.begin(), toSkip.end(), &sounds[i]); foundIt != toSkip.end())
+                    // Try to pick the next sound, since this one needs to be skipped
+                    goto Pick;
+
+                if (_config->avoid_repeat())
+                {
+                    if (auto foundIt = std::find(_avoidRepeatStack.begin(), _avoidRepeatStack.end(), &sounds[i]);
+                        foundIt != _avoidRepeatStack.end())
+                        // Try to pick the next sound, since this one has already been played
+                        goto Pick;
+                }
+
+                Sound* sound = &sounds[i];
+                if (_config->avoid_repeat())
+                {
+                    if (!_avoidRepeatStack.empty() && _avoidRepeatStack.size() >= _config->repeat_count())
+                        _avoidRepeatStack.erase(_avoidRepeatStack.begin());
+
+                    _avoidRepeatStack.push_back(sound);
+                }
+
+                return sound;
             }
         }
+
+        _avoidRepeatStack.clear();
 
         return nullptr;
     }

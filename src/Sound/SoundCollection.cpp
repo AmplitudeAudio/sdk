@@ -97,23 +97,32 @@ namespace SparkyStudios::Audio::Amplitude
 
     Scheduler* SoundCollection::CreateScheduler(const SoundCollectionDefinition* definition)
     {
+        Scheduler* scheduler;
+
         if (!definition->scheduler())
         {
             CallLogFunc(
                 "[Debug] Sound collection %s does not specify a scheduler, using the RandomScheduler by default.\n",
                 definition->name()->c_str());
-            return new RandomScheduler();
+            scheduler = new RandomScheduler(nullptr);
         }
         else
         {
-            switch (definition->scheduler())
+            const SoundSchedulerSettings* schedulerSettings = definition->scheduler();
+            switch (schedulerSettings->mode())
             {
             default:
-            case SoundScheduler_Random:
-                return new RandomScheduler();
-            case SoundScheduler_Sequence:
-                return new SequenceScheduler();
+            case SoundSchedulerMode_Random:
+                scheduler = new RandomScheduler(schedulerSettings->config_as_Random());
+                break;
+            case SoundSchedulerMode_Sequence:
+                scheduler = new SequenceScheduler(schedulerSettings->config_as_Sequence());
+                break;
             }
         }
+
+        scheduler->Init(definition);
+
+        return scheduler;
     }
 } // namespace SparkyStudios::Audio::Amplitude
