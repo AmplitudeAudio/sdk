@@ -54,6 +54,11 @@ namespace SparkyStudios::Audio::Amplitude
     {
         auto* sound = static_cast<SoundInstance*>(snd->udata);
         CallLogFunc("Ended sound: " AM_OS_CHAR_FMT "\n", sound->GetSound()->GetFilename());
+
+        Engine* engine = Engine::GetInstance();
+        if (engine->GetState()->stopping)
+            return;
+
         RealChannel* channel = sound->GetChannel();
         SoundCollection* collection = sound->GetSound()->GetSoundCollection();
         const SoundCollectionDefinition* config = collection->GetSoundCollectionDefinition();
