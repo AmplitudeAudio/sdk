@@ -93,7 +93,7 @@ namespace SparkyStudios::Audio::Amplitude
 #if defined(AM_WINDOWS_VERSION)
         _wfopen_s(&mFileHandle, fileName, AM_OS_STRING("rb"));
 #else
-        fopen_s(&mFileHandle, aFilename, AM_OS_STRING("rb"));
+        mFileHandle = fopen(AM_OS_STRING_TO_STRING(fileName), "rb");
 #endif
 
         if (!mFileHandle)

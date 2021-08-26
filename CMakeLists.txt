@@ -151,4 +151,13 @@ add_dependencies(ss_amplitude_audio
     generated_includes
 )
 
+if(UNIX)
+  find_package(Threads REQUIRED)
+
+  target_link_libraries(ss_amplitude_audio
+    PUBLIC Threads::Threads
+    ${CMAKE_DL_LIBS}
+  )
+endif()
+
 add_subdirectory(samples)
