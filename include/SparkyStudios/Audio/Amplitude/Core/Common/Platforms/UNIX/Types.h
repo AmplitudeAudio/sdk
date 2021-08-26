@@ -71,8 +71,13 @@ namespace SparkyStudios::Audio::Amplitude
     typedef uintptr_t               AmUIntPtr;
 
     typedef const char*             AmString;
+#if defined(AM_WCHAR_SUPPORTED)
+    typedef wchar_t                 AmOsChar;
+    typedef const wchar_t*          AmOsString;
+#else
     typedef char                    AmOsChar;
     typedef const char*             AmOsString;
+#endif
 
     typedef FILE*                   AmFileHandle;
 
@@ -80,7 +85,11 @@ namespace SparkyStudios::Audio::Amplitude
     {
         bool operator()(AmOsString a, AmOsString b) const
         {
+#if defined(AM_WCHAR_SUPPORTED)
+            return std::wstring(a).compare(b) < 0;
+#else
             return std::strcmp(a, b) < 0;
+#endif
         }
     };
 } // namespace SparkyStudios::Audio::Amplitude

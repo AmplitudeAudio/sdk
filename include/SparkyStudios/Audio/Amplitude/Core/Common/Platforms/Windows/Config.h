@@ -44,6 +44,9 @@
 #define AM_ALIGN_SIMD(_declaration_) AM_ALIGN(_declaration_, AM_SIMD_ALIGNMENT)
 #define AM_BUFFER_ALIGNMENT AM_SIMD_ALIGNMENT
 
+// Windows platforms support wchar_t
+#define AM_WCHAR_SUPPORTED
+
 // Defines the format used to print AmOsString text
 #define AM_OS_CHAR_FMT "%ls"
 

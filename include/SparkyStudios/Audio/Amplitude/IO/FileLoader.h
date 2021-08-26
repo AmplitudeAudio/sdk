@@ -49,13 +49,17 @@ namespace SparkyStudios::Audio::Amplitude
 
         [[nodiscard]] AmOsString GetFilename() const
         {
-            return _filename;
+            return _filename.c_str();
         }
 
     private:
         virtual void Load(FileLoader* loader) = 0;
 
-        AmOsString _filename = nullptr;
+#if defined(AM_WCHAR_SUPPORTED)
+        std::wstring _filename;
+#else
+        std::string _filename;
+#endif
     };
 } // namespace SparkyStudios::Audio::Amplitude
 
