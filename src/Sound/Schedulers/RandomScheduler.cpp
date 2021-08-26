@@ -40,6 +40,7 @@ namespace SparkyStudios::Audio::Amplitude
     void RandomScheduler::Init(const SoundCollectionDefinition* definition)
     {
         _definition = definition;
+        _probabilitiesSum = 0.0f;
 
         flatbuffers::uoffset_t sample_count = definition->audio_sample_set() ? definition->audio_sample_set()->size() : 0;
 
