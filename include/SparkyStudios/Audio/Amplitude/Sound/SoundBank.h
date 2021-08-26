@@ -40,7 +40,7 @@ namespace SparkyStudios::Audio::Amplitude
         SoundBank();
 
         /**
-         * Initializes the sound bank by loading all the packed data.
+         * @brief Initializes the sound bank by loading all the packed data.
          *
          * @param filename The path to the sound bank file.
          * @param engine The engine in which load the sound bank.
@@ -50,35 +50,35 @@ namespace SparkyStudios::Audio::Amplitude
         bool Initialize(AmOsString filename, Engine* engine);
 
         /**
-         * Unloads the sound bank from the Engine.
+         * @brief Unloads the sound bank from the Engine.
          *
          * @param engine The engine from which unload the sound bank.
          */
         void Deinitialize(Engine* engine);
 
         /**
-         * Returns the unique ID of this SoundBank.
+         * @brief Returns the unique ID of this SoundBank.
          *
          * @return The SoundBank unique ID.
          */
         [[nodiscard]] AmBankID GetId() const;
 
         /**
-         * Returns the name of this SoundBank.
+         * @brief Returns the name of this SoundBank.
          *
          * @return The SoundBank name.
          */
         [[nodiscard]] const std::string& GetName() const;
 
         /**
-         * Returns the definition data used to initialize this SoundBank.
+         * @brief Returns the definition data used to initialize this SoundBank.
          *
          * @return The sound bank definition data.
          */
         [[nodiscard]] const SoundBankDefinition* GetSoundBankDefinition() const;
 
         /**
-         * Get the references counter of this instance.
+         * @brief Get the references counter of this instance.
          *
          * @return The references counter.
          */
