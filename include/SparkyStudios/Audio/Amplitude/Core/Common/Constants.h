@@ -22,7 +22,7 @@ namespace SparkyStudios::Audio::Amplitude
     /**
      * @brief Invalid Amplitude object ID.
      */
-    const AmUInt64 kAmInvalidObjectId = 0;
+    const AmObjectID kAmInvalidObjectId = 0;
 
     /**
      * @brief Specifies the value of the "master" bus ID.
