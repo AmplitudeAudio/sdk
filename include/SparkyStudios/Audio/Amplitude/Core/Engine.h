@@ -206,7 +206,7 @@ namespace SparkyStudios::Audio::Amplitude
          *
          * @return An initialized Entity.
          */
-        Entity AddEntity(AmUInt64 id);
+        Entity AddEntity(AmEntityID id);
 
         /**
          * @brief Remove an Entity.

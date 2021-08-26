@@ -36,7 +36,7 @@ namespace SparkyStudios::Audio::Amplitude
         return _state != nullptr;
     }
 
-    AmUInt64 Entity::GetId() const
+    AmEntityID Entity::GetId() const
     {
         AMPLITUDE_ASSERT(Valid());
         return _state->GetId();

@@ -797,7 +797,7 @@ namespace SparkyStudios::Audio::Amplitude
         _state->listener_state_free_list.push_back(listener->GetState());
     }
 
-    Entity Engine::AddEntity(AmUInt64 id)
+    Entity Engine::AddEntity(AmEntityID id)
     {
         if (_state->entity_state_free_list.empty())
         {

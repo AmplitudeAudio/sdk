@@ -25,12 +25,12 @@ namespace SparkyStudios::Audio::Amplitude
         , _inverseMatrix(AM_Mat4d(1.0f))
     {}
 
-    AmUInt64 EntityInternalState::GetId() const
+    AmEntityID EntityInternalState::GetId() const
     {
         return _id;
     }
 
-    void EntityInternalState::SetId(AmUInt64 id)
+    void EntityInternalState::SetId(AmEntityID id)
     {
         _id = id;
     }

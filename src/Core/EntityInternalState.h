@@ -36,14 +36,14 @@ namespace SparkyStudios::Audio::Amplitude
          *
          * @return The game Entity ID.
          */
-        [[nodiscard]] AmUInt64 GetId() const;
+        [[nodiscard]] AmEntityID GetId() const;
 
         /**
          * @brief Sets the ID of this Entity in game.
          *
          * @param id The game Entity ID.
          */
-        void SetId(AmUInt64 id);
+        void SetId(AmEntityID id);
 
         /**
          * @brief Sets the location of this Entity.
@@ -88,7 +88,7 @@ namespace SparkyStudios::Audio::Amplitude
         fplutil::intrusive_list_node node;
 
     private:
-        AmUInt64 _id;
+        AmEntityID _id;
 
         hmm_vec3 _location;
         hmm_vec3 _direction;
