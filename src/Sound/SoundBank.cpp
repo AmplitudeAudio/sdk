@@ -59,6 +59,7 @@ namespace SparkyStudios::Audio::Amplitude
 
             collection->GetRefCounter()->Increment();
             audio_engine->GetState()->sound_collection_map[id] = std::move(collection);
+            audio_engine->GetState()->sound_id_map[filename] = id;
         }
 
         return true;
@@ -85,6 +86,7 @@ namespace SparkyStudios::Audio::Amplitude
 
             std::string name = event->GetEventDefinition()->name()->c_str();
             audio_engine->GetState()->event_map[name] = std::move(event);
+            audio_engine->GetState()->event_id_map[filename] = name;
         }
 
         return true;
