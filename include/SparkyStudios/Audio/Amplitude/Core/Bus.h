@@ -65,6 +65,20 @@ namespace SparkyStudios::Audio::Amplitude
         [[nodiscard]] bool Valid() const;
 
         /**
+         * @brief Gets the unique ID of this Bus.
+         *
+         * @return The Bus unique ID.
+         */
+        [[nodiscard]] AmBusID GetId() const;
+
+        /**
+         * @brief Gets the name of this Bus.
+         *
+         * @return The bus name.
+         */
+        [[nodiscard]] const std::string& GetName() const;
+
+        /**
          * @brief Sets the gain on this Bus.
          *
          * @param gain The new gain value.
