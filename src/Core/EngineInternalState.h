@@ -96,7 +96,7 @@ namespace SparkyStudios::Audio::Amplitude
         // The state of the buses.
         std::vector<BusInternalState> buses;
 
-        // The master GetBus, cached to prevent needless lookups.
+        // The master bus, cached to prevent needless lookups.
         BusInternalState* master_bus;
 
         // The gain applied to all buses.
@@ -159,8 +159,11 @@ namespace SparkyStudios::Audio::Amplitude
      */
     void EraseFinishedSounds(EngineInternalState* state);
 
-    // Find a GetBus with the given name.
-    BusInternalState* FindBusInternalState(EngineInternalState* state, AmString name);
+    // Find a bus with the given ID.
+    BusInternalState* FindBusInternalState(EngineInternalState* state, AmBusID id);
+
+    // Find a bus with the given name.
+    BusInternalState* FindBusInternalState(EngineInternalState* state, AmString id);
 
     // Given a playing sound, find where a new sound with the given priority should
     // be inserted into the list.

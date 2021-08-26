@@ -38,7 +38,7 @@
 
 namespace SparkyStudios::Audio::Amplitude
 {
-    typedef flatbuffers::Vector<flatbuffers::Offset<flatbuffers::String>> BusNameList;
+    typedef flatbuffers::Vector<uint64_t> BusIdList;
 
     bool LoadFile(AmOsString filename, std::string* dest)
     {
@@ -98,13 +98,32 @@ namespace SparkyStudios::Audio::Amplitude
         return amplitude;
     }
 
+    BusInternalState* FindBusInternalState(EngineInternalState* state, AmBusID id)
+    {
+        auto it = std::find_if(
+            state->buses.begin(), state->buses.end(),
+            [id](const BusInternalState& bus)
+            {
+                return bus.GetId() == id;
+            });
+
+        if (it != state->buses.end())
+        {
+            return &*it;
+        }
+        else
+        {
+            return nullptr;
+        }
+    }
+
     BusInternalState* FindBusInternalState(EngineInternalState* state, AmString name)
     {
         auto it = std::find_if(
             state->buses.begin(), state->buses.end(),
             [name](const BusInternalState& bus)
             {
-                return strcmp(bus.GetBusDefinition()->name()->c_str(), name) == 0;
+                return bus.GetName() == name;
             });
 
         if (it != state->buses.end())
@@ -118,19 +137,19 @@ namespace SparkyStudios::Audio::Amplitude
     }
 
     static bool PopulateBuses(
-        EngineInternalState* state, AmString list_name, const BusNameList* child_name_list, std::vector<BusInternalState*>* output)
+        EngineInternalState* state, AmString list_name, const BusIdList* childIdList, std::vector<BusInternalState*>* output)
     {
-        for (flatbuffers::uoffset_t i = 0; child_name_list && i < child_name_list->size(); ++i)
+        for (flatbuffers::uoffset_t i = 0; childIdList && i < childIdList->size(); ++i)
         {
-            AmString bus_name = child_name_list->Get(i)->c_str();
-            BusInternalState* bus = FindBusInternalState(state, bus_name);
+            AmBusID busId = childIdList->Get(i);
+            BusInternalState* bus = FindBusInternalState(state, busId);
             if (bus)
             {
                 output->push_back(bus);
             }
             else
             {
-                CallLogFunc("Unknown GetBus \"%s\" listed in %s.\n", bus_name, list_name);
+                CallLogFunc("Unknown bus with ID \"%u\" listed in %s.\n", busId, list_name);
                 return false;
             }
         }
