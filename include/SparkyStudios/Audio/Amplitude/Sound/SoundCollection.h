@@ -17,9 +17,6 @@
 #ifndef SPARK_AUDIO_SOUND_COLLECTION_H
 #define SPARK_AUDIO_SOUND_COLLECTION_H
 
-#include <map>
-#include <memory>
-#include <string>
 #include <vector>
 
 #include <SparkyStudios/Audio/Amplitude/Core/Common.h>
@@ -38,30 +35,39 @@ namespace SparkyStudios::Audio::Amplitude
     struct SoundCollectionDefinition;
 
     /**
-     * SoundCollection represent an abstract sound (like a 'whoosh'), which contains
-     * a number of pieces of audio with weighted probabilities to choose between
-     * randomly when played. It holds objects of type `Audio`, which can be either
-     * Sounds or Music
+     * @brief SoundCollection represent an abstract sound (like a 'whoosh'), which contains
+     *        a number of pieces of audio which are selected through the configured Scheduler.
      */
     class SoundCollection
     {
     public:
-        SoundCollection()
-            : _bus(nullptr)
-            , _worldScopeScheduler(nullptr)
-            , _entityScopeSchedulers()
-            , _source()
-            , _sounds()
-            , _refCounter()
-        {}
+        SoundCollection();
 
-        // Load the given flatbuffer data representing a SoundCollectionDef.
+        /**
+         * @brief Loads the sound collection from the given source.
+         *
+         * @param source The sound collection file content to load.
+         * @param state The engine state to use while loading the sound collection.
+         *
+         * @return true if the sound collection was loaded successfully, false otherwise.
+         */
         bool LoadSoundCollectionDefinition(const std::string& source, EngineInternalState* state);
 
-        // Load the given flatbuffer binary file containing a SoundDef.
+        /**
+         * @brief Loads the sound collection from the given file path.
+         *
+         * @param filename The path to the sound collection file to load.
+         * @param state The engine state to use while loading the sound collection.
+         *
+         * @return true if the sound collection was loaded successfully, false otherwise.
+         */
         bool LoadSoundCollectionDefinitionFromFile(AmOsString filename, EngineInternalState* state);
 
-        // Return the SoundDef.
+        /**
+         * @brief Returns the loaded sound collection definition.
+         *
+         * @return The loaded sound collection definition.
+         */
         [[nodiscard]] const SoundCollectionDefinition* GetSoundCollectionDefinition() const;
 
         /**
@@ -83,21 +89,40 @@ namespace SparkyStudios::Audio::Amplitude
          */
         Sound* SelectFromEntity(const Entity& entity, const std::vector<const Sound*>& toSkip);
 
-        // Return the bus this SoundCollection will play on.
-        BusInternalState* GetBus()
-        {
-            return _bus;
-        }
+        /**
+         * @brief Returns the unique ID of this SoundCollection.
+         *
+         * @return The SoundCollection unique ID.
+         */
+        [[nodiscard]] AmSoundCollectionID GetId() const;
 
-        RefCounter* GetRefCounter()
-        {
-            return &_refCounter;
-        }
+        /**
+         * @brief Returns the name of this SoundCollection.
+         *
+         * @return The SoundCollection name.
+         */
+        [[nodiscard]] const std::string& GetName() const;
 
-        [[nodiscard]] const std::vector<Sound>& GetAudioSamples() const
-        {
-            return _sounds;
-        }
+        /**
+         * @brief Return the bus this SoundCollection will play on.
+         *
+         * @return The bus this SoundCollection will play on.
+         */
+        [[nodiscard]] BusInternalState* GetBus() const;
+
+        /**
+         * @brief Get the references counter of this instance.
+         *
+         * @return The references counter.
+         */
+        RefCounter* GetRefCounter();
+
+        /**
+         * @brief Returns the list of audio samples stored in this sound collection.
+         *
+         * @return The list of audio samples.
+         */
+        [[nodiscard]] const std::vector<Sound>& GetAudioSamples() const;
 
     private:
         static Scheduler* CreateScheduler(const SoundCollectionDefinition* definition);
@@ -113,6 +138,9 @@ namespace SparkyStudios::Audio::Amplitude
 
         std::string _source;
         std::vector<Sound> _sounds;
+
+        AmSoundCollectionID _id;
+        std::string _name;
 
         RefCounter _refCounter;
     };

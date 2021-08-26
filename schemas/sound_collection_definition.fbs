@@ -142,7 +142,7 @@ table SoundCollectionDefinition {
   gain:float = 1.0;
 
   // Name of the bus this sound should be played on.
-  bus:string;
+  bus:ulong;
 
   // Set of samples from which a weighted random selection is performed to
   // determine which sample to play when Sound playback is triggered.
