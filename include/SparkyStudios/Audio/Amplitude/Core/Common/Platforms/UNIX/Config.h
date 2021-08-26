@@ -17,6 +17,10 @@
 #ifndef SS_AMPLITUDE_AUDIO_UNIX_CONFIG_H
 #define SS_AMPLITUDE_AUDIO_UNIX_CONFIG_H
 
+// Function inline
+#define AM_INLINE inline
+#define AM_NO_INLINE __attribute__((noinline))
+
 // Alignment required for SIMD data processing
 #define AM_SIMD_ALIGNMENT 16
 #define AM_ALIGN_SIMD(_declaration_) AM_ALIGN(_declaration_, AM_SIMD_ALIGNMENT)
@@ -27,6 +31,10 @@
 
 // Macro used to convert a string literal to an AmOsString string at compile-time
 #define AM_OS_STRING(s) s
+
+// Conversion between OS strings and default strings
+#define AM_OS_STRING_TO_STRING(s) s
+#define AM_STRING_TO_OS_STRING(s) s
 
 // AMPLITUDE_ASSERT Config
 #ifdef AMPLITUDE_NO_ASSERTS

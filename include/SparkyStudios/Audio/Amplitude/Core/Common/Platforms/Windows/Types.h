@@ -18,6 +18,7 @@
 #define SS_AMPLITUDE_AUDIO_WINDOWS_TYPES_H
 
 #include <cstdint>
+#include <string>
 
 namespace SparkyStudios::Audio::Amplitude
 {
@@ -72,6 +73,14 @@ namespace SparkyStudios::Audio::Amplitude
     typedef const wchar_t*          AmOsString;
 
     typedef FILE*                   AmFileHandle;
+
+    struct AmOsStringComparator
+    {
+        bool operator()(AmOsString a, AmOsString b) const
+        {
+            return std::wstring(a).compare(b) < 0;
+        }
+    };
 } // namespace SparkyStudios::Audio::Amplitude
 
 #endif // SS_AMPLITUDE_AUDIO_WINDOWS_TYPES_H

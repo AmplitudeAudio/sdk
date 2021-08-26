@@ -75,6 +75,14 @@ namespace SparkyStudios::Audio::Amplitude
     typedef const char*             AmOsString;
 
     typedef FILE*                   AmFileHandle;
+
+    struct AmOsStringComparator
+    {
+        bool operator()(AmOsString a, AmOsString b) const
+        {
+            return std::strcmp(a, b) < 0;
+        }
+    };
 } // namespace SparkyStudios::Audio::Amplitude
 
 #endif // SS_AMPLITUDE_AUDIO_UNIX_TYPES_H
