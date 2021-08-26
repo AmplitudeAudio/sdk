@@ -186,8 +186,10 @@ namespace SparkyStudios::Audio::Amplitude
     {
         _source = event;
         const EventDefinition* definition = GetEventDefinition();
+
         _id = definition->id();
-        _name = definition->name()->c_str();
+        _name = definition->name()->str();
+
         flatbuffers::uoffset_t actions_count = definition->actions() ? definition->actions()->size() : 0;
         _actions.resize(actions_count);
         for (flatbuffers::uoffset_t i = 0; i < actions_count; ++i)
@@ -210,7 +212,7 @@ namespace SparkyStudios::Audio::Amplitude
 
     EventInstance Event::Trigger(const Entity& entity)
     {
-        CallLogFunc("[Debug] Event %s triggered.\n", _name);
+        CallLogFunc("[Debug] Event %s triggered.\n", _name.c_str());
 
         auto event = EventInstance(this);
         event.Start(entity);
@@ -223,7 +225,7 @@ namespace SparkyStudios::Audio::Amplitude
         return _id;
     }
 
-    AmString Event::GetName() const
+    const std::string& Event::GetName() const
     {
         return _name;
     }

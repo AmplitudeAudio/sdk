@@ -128,7 +128,7 @@ namespace SparkyStudios::Audio::Amplitude
          *
          * @return The name of this event.
          */
-        [[nodiscard]] AmString GetName() const;
+        [[nodiscard]] const std::string& GetName() const;
 
         /**
          * @brief Get the event definition which generated this event.
@@ -148,7 +148,7 @@ namespace SparkyStudios::Audio::Amplitude
         std::string _source;
 
         AmUInt64 _id;
-        AmString _name;
+        std::string _name;
         std::vector<EventAction> _actions;
 
         RefCounter _refCounter;
