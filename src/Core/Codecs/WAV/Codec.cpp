@@ -19,7 +19,7 @@
 
 namespace SparkyStudios::Audio::Amplitude::Codecs
 {
-    bool WAVCodec::WAVDecoder::Open(AmString filePath)
+    bool WAVCodec::WAVDecoder::Open(AmOsString filePath)
     {
         if (!m_codec->CanHandleFile(filePath))
         {
@@ -27,7 +27,7 @@ namespace SparkyStudios::Audio::Amplitude::Codecs
             return false;
         }
 
-        if (drwav_init_file(&_wav, filePath, nullptr) == DRWAV_FALSE)
+        if (drwav_init_file(&_wav, AM_OS_STRING_TO_STRING(filePath), nullptr) == DRWAV_FALSE)
         {
             CallLogFunc("Cannot load the WAV file: '%s'\n.", filePath);
             return false;
@@ -92,7 +92,7 @@ namespace SparkyStudios::Audio::Amplitude::Codecs
         return drwav_seek_to_pcm_frame(&_wav, offset) == DRWAV_TRUE;
     }
 
-    bool WAVCodec::WAVEncoder::Open(AmString filePath)
+    bool WAVCodec::WAVEncoder::Open(AmOsString filePath)
     {
         _initialized = true;
         return false;
@@ -123,12 +123,12 @@ namespace SparkyStudios::Audio::Amplitude::Codecs
         return new WAVEncoder(this);
     }
 
-    bool WAVCodec::CanHandleFile(AmString filePath) const
+    bool WAVCodec::CanHandleFile(AmOsString filePath) const
     {
         // TODO: Maybe check by extension instead?
 
         drwav dummy;
-        bool can = drwav_init_file(&dummy, filePath, nullptr) == DRWAV_TRUE;
+        bool can = drwav_init_file(&dummy, AM_OS_STRING_TO_STRING(filePath), nullptr) == DRWAV_TRUE;
         drwav_uninit(&dummy);
 
         return can;

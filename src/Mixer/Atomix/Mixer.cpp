@@ -17,7 +17,6 @@
 
 #include <SparkyStudios/Audio/Amplitude/Amplitude.h>
 
-#include <Core/Drivers/MiniAudio/miniaudio.h>
 #include <Core/EngineInternalState.h>
 
 #include "Mixer.h"
@@ -30,31 +29,31 @@ namespace SparkyStudios::Audio::Amplitude
     static void atomix_sound_started(atomix_sound* snd)
     {
         auto* sound = static_cast<SoundInstance*>(snd->udata);
-        CallLogFunc("Started sound: %s\n", sound->GetSound()->GetFilename().c_str());
+        CallLogFunc("Started sound: " AM_OS_CHAR_FMT "\n", sound->GetSound()->GetFilename());
     }
 
     static void atomix_sound_paused(atomix_sound* snd)
     {
         auto* sound = static_cast<SoundInstance*>(snd->udata);
-        CallLogFunc("Paused sound: %s\n", sound->GetSound()->GetFilename().c_str());
+        CallLogFunc("Paused sound: " AM_OS_CHAR_FMT "\n", sound->GetSound()->GetFilename());
     }
 
     static void atomix_sound_resumed(atomix_sound* snd)
     {
         auto* sound = static_cast<SoundInstance*>(snd->udata);
-        CallLogFunc("Resumed sound: %s\n", sound->GetSound()->GetFilename().c_str());
+        CallLogFunc("Resumed sound: " AM_OS_CHAR_FMT "\n", sound->GetSound()->GetFilename());
     }
 
     static void atomix_sound_stopped(atomix_sound* snd)
     {
         auto* sound = static_cast<SoundInstance*>(snd->udata);
-        CallLogFunc("Stopped sound: %s\n", sound->GetSound()->GetFilename().c_str());
+        CallLogFunc("Stopped sound: " AM_OS_CHAR_FMT "\n", sound->GetSound()->GetFilename());
     }
 
     static void atomix_sound_ended(atomix_sound* snd)
     {
         auto* sound = static_cast<SoundInstance*>(snd->udata);
-        CallLogFunc("Ended sound: %s\n", sound->GetSound()->GetFilename().c_str());
+        CallLogFunc("Ended sound: " AM_OS_CHAR_FMT "\n", sound->GetSound()->GetFilename());
         RealChannel* channel = sound->GetChannel();
         SoundCollection* collection = sound->GetSound()->GetSoundCollection();
         const SoundCollectionDefinition* config = collection->GetSoundCollectionDefinition();

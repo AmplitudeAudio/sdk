@@ -55,7 +55,7 @@ namespace SparkyStudios::Audio::Amplitude
              *
              * @param filePath The path to the file to read.
              */
-            virtual bool Open(AmString filePath) = 0;
+            virtual bool Open(AmOsString filePath) = 0;
 
             /**
              * @brief Closes the file previously opened.
@@ -144,7 +144,7 @@ namespace SparkyStudios::Audio::Amplitude
              *
              * @param filePath The path to the file to write.
              */
-            virtual bool Open(AmString filePath) = 0;
+            virtual bool Open(AmOsString filePath) = 0;
 
             /**
              * @brief Closes the opened file.
@@ -172,7 +172,7 @@ namespace SparkyStudios::Audio::Amplitude
              *
              * @return The number of frames written.
              */
-            virtual AmUInt64 Write(const float* in, AmUInt64 offset, AmUInt64 length) = 0;
+            virtual AmUInt64 Write(AmConstReal32Buffer in, AmUInt64 offset, AmUInt64 length) = 0;
 
         protected:
             /**
@@ -225,7 +225,7 @@ namespace SparkyStudios::Audio::Amplitude
          *
          * @return Whether this Codec can handle a file.
          */
-        virtual bool CanHandleFile(AmString filePath) const = 0;
+        virtual bool CanHandleFile(AmOsString filePath) const = 0;
 
         /**
          * @brief Gets the name of this codec.
@@ -257,7 +257,7 @@ namespace SparkyStudios::Audio::Amplitude
          * @param filePath The path to the file.
          * @return The codec which can handle the given file.
          */
-        static Codec* FindCodecForFile(AmString filePath);
+        static Codec* FindCodecForFile(AmOsString filePath);
 
         /**
          * @brief Locks the codecs registry.

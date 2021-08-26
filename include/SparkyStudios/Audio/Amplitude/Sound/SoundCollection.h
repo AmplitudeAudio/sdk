@@ -59,7 +59,7 @@ namespace SparkyStudios::Audio::Amplitude
         bool LoadSoundCollectionDefinition(const std::string& source, EngineInternalState* state);
 
         // Load the given flatbuffer binary file containing a SoundDef.
-        bool LoadSoundCollectionDefinitionFromFile(const std::string& filename, EngineInternalState* state);
+        bool LoadSoundCollectionDefinitionFromFile(AmOsString filename, EngineInternalState* state);
 
         // Return the SoundDef.
         [[nodiscard]] const SoundCollectionDefinition* GetSoundCollectionDefinition() const;

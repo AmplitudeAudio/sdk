@@ -70,7 +70,7 @@ namespace SparkyStudios::Audio::Amplitude
         return nullptr;
     }
 
-    Codec* Codec::FindCodecForFile(AmString filePath)
+    Codec* Codec::FindCodecForFile(AmOsString filePath)
     {
         CodecRegistry& codecs = codecRegistry();
         for (auto&& codec : codecs)

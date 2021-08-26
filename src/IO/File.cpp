@@ -12,67 +12,64 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include <cstdio>
-#include <cstring>
-
 #include <IO/File.h>
 
 namespace SparkyStudios::Audio::Amplitude
 {
-    unsigned int File::Read8()
+    AmUInt32 File::Read8()
     {
-        unsigned char d = 0;
-        Read((unsigned char*)&d, 1);
+        AmUInt8 d = 0;
+        Read((AmUInt8Buffer)&d, 1);
         return d;
     }
 
-    unsigned int File::Read16()
+    AmUInt32 File::Read16()
     {
-        unsigned short d = 0;
-        Read((unsigned char*)&d, 2);
+        AmUInt8 d = 0;
+        Read((AmUInt8Buffer)&d, 2);
         return d;
     }
 
-    unsigned int File::Read32()
+    AmUInt32 File::Read32()
     {
-        unsigned int d = 0;
-        Read((unsigned char*)&d, 4);
+        AmUInt32 d = 0;
+        Read((AmUInt8Buffer)&d, 4);
         return d;
     }
 
-    DiskFile::DiskFile(FILE* fp)
+    DiskFile::DiskFile(AmFileHandle fp)
         : mFileHandle(fp)
     {}
 
-    unsigned int DiskFile::Read(unsigned char* aDst, unsigned int aBytes)
+    AmUInt32 DiskFile::Read(AmUInt8Buffer dst, AmUInt32 bytes)
     {
-        return (unsigned int)fread(aDst, 1, aBytes, mFileHandle);
+        return (AmUInt32)fread(dst, 1, bytes, mFileHandle);
     }
 
-    unsigned int DiskFile::Length()
+    AmUInt32 DiskFile::Length()
     {
         if (!mFileHandle)
             return 0;
 
         long pos = ftell(mFileHandle);
         fseek(mFileHandle, 0, SEEK_END);
-        auto len = (unsigned int)ftell(mFileHandle);
+        auto len = (AmUInt32)ftell(mFileHandle);
         fseek(mFileHandle, pos, SEEK_SET);
 
         return len;
     }
 
-    void DiskFile::Seek(int aOffset)
+    void DiskFile::Seek(AmInt32 offset)
     {
-        fseek(mFileHandle, aOffset, SEEK_SET);
+        fseek(mFileHandle, offset, SEEK_SET);
     }
 
-    unsigned int DiskFile::Pos()
+    AmUInt32 DiskFile::Pos()
     {
-        return (unsigned int)ftell(mFileHandle);
+        return (AmUInt32)ftell(mFileHandle);
     }
 
-    FILE* DiskFile::GetFilePtr()
+    AmFileHandle DiskFile::GetFilePtr()
     {
         return mFileHandle;
     }
@@ -88,56 +85,61 @@ namespace SparkyStudios::Audio::Amplitude
         mFileHandle = nullptr;
     }
 
-    unsigned int DiskFile::Open(const char* aFilename)
+    AmResult DiskFile::Open(AmOsString fileName)
     {
-        if (!aFilename)
-            return FILE_ERROR_INVALID_PARAMETER;
+        if (!fileName)
+            return AM_ERROR_INVALID_PARAMETER;
 
-        fopen_s(&mFileHandle, aFilename, "rb");
+#if defined(AM_WINDOWS_VERSION)
+        _wfopen_s(&mFileHandle, fileName, AM_OS_STRING("rb"));
+#else
+        fopen_s(&mFileHandle, aFilename, AM_OS_STRING("rb"));
+#endif
 
         if (!mFileHandle)
-            return FILE_ERROR_FILE_NOT_FOUND;
+            return AM_ERROR_FILE_NOT_FOUND;
 
-        return FILE_ERROR_NO_ERROR;
+        return AM_ERROR_NO_ERROR;
     }
 
-    int DiskFile::Eof()
+    bool DiskFile::Eof()
     {
-        return feof(mFileHandle);
+        return feof(mFileHandle) != 0;
     }
 
-    unsigned int MemoryFile::Read(unsigned char* aDst, unsigned int aBytes)
+    AmUInt32 MemoryFile::Read(AmUInt8Buffer dst, AmUInt32 bytes)
     {
-        if (mOffset + aBytes >= mDataLength)
-            aBytes = mDataLength - mOffset;
+        if (mOffset + bytes >= mDataLength)
+            bytes = mDataLength - mOffset;
 
-        memcpy(aDst, mDataPtr + mOffset, aBytes);
-        mOffset += aBytes;
+        memcpy(dst, mDataPtr + mOffset, bytes);
+        mOffset += bytes;
 
-        return aBytes;
+        return bytes;
     }
 
-    unsigned int MemoryFile::Length()
+    AmUInt32 MemoryFile::Length()
     {
         return mDataLength;
     }
 
-    void MemoryFile::Seek(int aOffset)
+    void MemoryFile::Seek(AmInt32 offset)
     {
-        if (aOffset >= 0)
-            mOffset = aOffset;
+        if (offset >= 0)
+            mOffset = offset;
         else
-            mOffset = mDataLength + aOffset;
+            mOffset = mDataLength + offset;
+
         if (mOffset > mDataLength - 1)
             mOffset = mDataLength - 1;
     }
 
-    unsigned int MemoryFile::Pos()
+    AmUInt32 MemoryFile::Pos()
     {
         return mOffset;
     }
 
-    const unsigned char* MemoryFile::GetMemPtr()
+    AmConstUInt8Buffer MemoryFile::GetMemPtr()
     {
         return mDataPtr;
     }
@@ -156,78 +158,88 @@ namespace SparkyStudios::Audio::Amplitude
         mDataOwned = false;
     }
 
-    unsigned int MemoryFile::OpenMem(const unsigned char* aData, unsigned int aDataLength, bool aCopy, bool aTakeOwnership)
+    AmResult MemoryFile::OpenMem(AmConstUInt8Buffer data, AmUInt32 dataLength, bool copy, bool takeOwnership)
     {
-        if (aData == nullptr || aDataLength == 0)
-            return FILE_ERROR_INVALID_PARAMETER;
+        if (data == nullptr || dataLength == 0)
+            return AM_ERROR_INVALID_PARAMETER;
 
         if (mDataOwned)
             delete[] mDataPtr;
         mDataPtr = nullptr;
         mOffset = 0;
 
-        mDataLength = aDataLength;
+        mDataLength = dataLength;
 
-        if (aCopy)
+        if (copy)
         {
             mDataOwned = true;
-            mDataPtr = new unsigned char[aDataLength];
+            mDataPtr = new unsigned char[dataLength];
             if (mDataPtr == nullptr)
-                return FILE_ERROR_OUT_OF_MEMORY;
-            memcpy((void*)mDataPtr, aData, aDataLength);
-            return FILE_ERROR_NO_ERROR;
+                return AM_ERROR_OUT_OF_MEMORY;
+
+            memcpy((AmVoidPtr)mDataPtr, data, dataLength);
+            return AM_ERROR_NO_ERROR;
         }
 
-        mDataPtr = aData;
-        mDataOwned = aTakeOwnership;
-        return FILE_ERROR_NO_ERROR;
+        mDataPtr = data;
+        mDataOwned = takeOwnership;
+
+        return AM_ERROR_NO_ERROR;
     }
 
-    unsigned int MemoryFile::OpenToMem(const char* aFile)
+    AmResult MemoryFile::OpenToMem(AmOsString fileName)
     {
-        if (!aFile)
-            return FILE_ERROR_INVALID_PARAMETER;
+        if (!fileName)
+            return AM_ERROR_INVALID_PARAMETER;
         if (mDataOwned)
             delete[] mDataPtr;
+
         mDataPtr = nullptr;
         mOffset = 0;
 
         DiskFile df;
-        unsigned int res = df.Open(aFile);
-        if (res != FILE_ERROR_NO_ERROR)
+        AmResult res = df.Open(fileName);
+        if (res != AM_ERROR_NO_ERROR)
             return res;
 
         mDataLength = df.Length();
-        mDataPtr = new unsigned char[mDataLength];
+        mDataPtr = new AmUInt8[mDataLength];
+
         if (mDataPtr == nullptr)
-            return FILE_ERROR_OUT_OF_MEMORY;
-        df.Read((unsigned char*)mDataPtr, mDataLength);
+            return AM_ERROR_OUT_OF_MEMORY;
+
+        df.Read((AmUInt8Buffer)mDataPtr, mDataLength);
         mDataOwned = true;
-        return FILE_ERROR_NO_ERROR;
+
+        return AM_ERROR_NO_ERROR;
     }
 
-    unsigned int MemoryFile::OpenFileToMem(File* aFile)
+    AmResult MemoryFile::OpenFileToMem(File* aFile)
     {
         if (!aFile)
-            return FILE_ERROR_INVALID_PARAMETER;
+            return AM_ERROR_INVALID_PARAMETER;
         if (mDataOwned)
             delete[] mDataPtr;
+
         mDataPtr = nullptr;
         mOffset = 0;
 
         mDataLength = aFile->Length();
-        mDataPtr = new unsigned char[mDataLength];
+        mDataPtr = new AmUInt8[mDataLength];
         if (mDataPtr == nullptr)
-            return FILE_ERROR_OUT_OF_MEMORY;
-        aFile->Read((unsigned char*)mDataPtr, mDataLength);
+            return AM_ERROR_OUT_OF_MEMORY;
+
+        aFile->Read((AmUInt8Buffer)mDataPtr, mDataLength);
         mDataOwned = true;
-        return FILE_ERROR_NO_ERROR;
+
+        return AM_ERROR_NO_ERROR;
     }
 
-    int MemoryFile::Eof()
+    bool MemoryFile::Eof()
     {
         if (mOffset >= mDataLength)
-            return 1;
-        return 0;
+            return true;
+
+        return false;
     }
 } // namespace SparkyStudios::Audio::Amplitude

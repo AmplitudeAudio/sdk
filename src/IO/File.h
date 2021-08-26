@@ -12,42 +12,45 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+#pragma once
+
 #ifndef SPARK_AUDIO_FILE_H
 #define SPARK_AUDIO_FILE_H
 
 #include <cstdio>
+#include <cstring>
+
+#include <SparkyStudios/Audio/Amplitude/Core/Common.h>
 
 namespace SparkyStudios::Audio::Amplitude
 {
-    enum FILE_ERROR
-    {
-        FILE_ERROR_NO_ERROR = 0, // No error
-        FILE_ERROR_INVALID_PARAMETER = 1, // Some parameter is invalid
-        FILE_ERROR_FILE_NOT_FOUND = 2, // File not found
-        FILE_ERROR_FILE_LOAD_FAILED = 3, // File found, but could not be loaded
-        FILE_ERROR_DLL_NOT_FOUND = 4, // DLL not found, or wrong DLL
-        FILE_ERROR_OUT_OF_MEMORY = 5, // Out of memory
-        FILE_ERROR_UNKNOWN = 7 // Other error
-    };
-
     class File
     {
     public:
-        virtual ~File()
-        {}
-        unsigned int Read8();
-        unsigned int Read16();
-        unsigned int Read32();
-        virtual int Eof() = 0;
-        virtual unsigned int Read(unsigned char* aDst, unsigned int aBytes) = 0;
-        virtual unsigned int Length() = 0;
-        virtual void Seek(int aOffset) = 0;
-        virtual unsigned int Pos() = 0;
-        virtual FILE* GetFilePtr()
+        virtual ~File() = default;
+
+        AmUInt32 Read8();
+
+        AmUInt32 Read16();
+
+        AmUInt32 Read32();
+
+        virtual bool Eof() = 0;
+
+        virtual AmUInt32 Read(AmUInt8Buffer dst, AmUInt32 bytes) = 0;
+
+        virtual AmUInt32 Length() = 0;
+
+        virtual void Seek(AmInt32 offset) = 0;
+
+        virtual AmUInt32 Pos() = 0;
+
+        virtual AmFileHandle GetFilePtr()
         {
             return nullptr;
         }
-        virtual const unsigned char* GetMemPtr()
+
+        virtual AmConstUInt8Buffer GetMemPtr()
         {
             return nullptr;
         }
@@ -56,39 +59,54 @@ namespace SparkyStudios::Audio::Amplitude
     class DiskFile : public File
     {
     public:
-        FILE* mFileHandle;
-
-        virtual int Eof();
-        virtual unsigned int Read(unsigned char* aDst, unsigned int aBytes);
-        virtual unsigned int Length();
-        virtual void Seek(int aOffset);
-        virtual unsigned int Pos();
-        virtual ~DiskFile();
         DiskFile();
-        DiskFile(FILE* fp);
-        unsigned int Open(const char* aFilename);
-        virtual FILE* GetFilePtr();
+        explicit DiskFile(AmFileHandle fp);
+
+        ~DiskFile() override;
+
+        bool Eof() override;
+
+        AmUInt32 Read(AmUInt8Buffer dst, AmUInt32 bytes) override;
+
+        AmUInt32 Length() override;
+
+        void Seek(AmInt32 offset) override;
+
+        AmUInt32 Pos() override;
+
+        AmResult Open(AmOsString fileName);
+
+        AmFileHandle GetFilePtr() override;
+
+    private:
+        AmFileHandle mFileHandle;
     };
 
     class MemoryFile : public File
     {
     public:
-        const unsigned char* mDataPtr;
-        unsigned int mDataLength;
-        unsigned int mOffset;
-        bool mDataOwned;
-
-        virtual int Eof();
-        virtual unsigned int Read(unsigned char* aDst, unsigned int aBytes);
-        virtual unsigned int Length();
-        virtual void Seek(int aOffset);
-        virtual unsigned int Pos();
-        virtual const unsigned char* GetMemPtr();
-        virtual ~MemoryFile();
         MemoryFile();
-        unsigned int OpenMem(const unsigned char* aData, unsigned int aDataLength, bool aCopy = false, bool aTakeOwnership = true);
-        unsigned int OpenToMem(const char* aFilename);
-        unsigned int OpenFileToMem(File* aFile);
+
+        ~MemoryFile() override;
+
+        bool Eof() override;
+
+        AmUInt32 Read(AmUInt8Buffer dst, AmUInt32 bytes) override;
+
+        AmUInt32 Length() override;
+
+        void Seek(AmInt32 offset) override;
+        AmUInt32 Pos() override;
+        AmConstUInt8Buffer GetMemPtr() override;
+        AmResult OpenMem(AmConstUInt8Buffer data, AmUInt32 dataLength, bool copy = false, bool takeOwnership = true);
+        AmResult OpenToMem(AmOsString fileName);
+        AmResult OpenFileToMem(File* aFile);
+
+    private:
+        AmConstUInt8Buffer mDataPtr;
+        AmUInt32 mDataLength;
+        AmUInt32 mOffset;
+        bool mDataOwned;
     };
 }; // namespace SparkyStudios::Audio::Amplitude
 

@@ -31,7 +31,7 @@ namespace SparkyStudios::Audio::Amplitude
     class SoundBank
     {
     public:
-        bool Initialize(const std::string& filename, Engine* audio_engine);
+        bool Initialize(AmOsString filename, Engine* audio_engine);
 
         void Deinitialize(Engine* audio_engine);
 

@@ -44,14 +44,13 @@ namespace SparkyStudios::Audio::Amplitude
 
     void Sound::Load(FileLoader* loader)
     {
-        if (GetFilename().empty())
+        if (GetFilename() == nullptr)
         {
             CallLogFunc("The filename is empty.\n");
             return;
         }
 
-        AmString filename = GetFilename().c_str();
-        const EngineConfigDefinition* config = Engine::GetInstance()->GetEngineConfigDefinition();
+        AmOsString filename = GetFilename();
 
         Codec* codec = Codec::FindCodecForFile(filename);
         if (codec == nullptr)

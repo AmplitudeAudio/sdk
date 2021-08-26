@@ -16,7 +16,7 @@
 
 namespace SparkyStudios::Audio::Amplitude
 {
-    void Resource::LoadFile(const char* filename, FileLoader* loader)
+    void Resource::LoadFile(AmOsString filename, FileLoader* loader)
     {
         SetFilename(filename);
         Load(loader);

@@ -57,11 +57,11 @@ namespace SparkyStudios::Audio::Amplitude
         /**
          * @brief Initialize the audio engine.
          *
-         * @param configFile the path to the file containing an EngineConfigDefinition flatbuffer binary.
+         * @param configFile The path to the file containing an EngineConfigDefinition flatbuffer binary.
          *
          * @return Whether initialization was successful.
          */
-        bool Initialize(AmString configFile);
+        bool Initialize(AmOsString configFile);
 
         /**
          * @brief Initialize the audio engine.
@@ -94,14 +94,14 @@ namespace SparkyStudios::Audio::Amplitude
          * @param filename The file containing the SoundBank flatbuffer binary data.
          * @return true Returns true on success
          */
-        bool LoadSoundBank(const std::string& filename);
+        bool LoadSoundBank(AmOsString filename);
 
         /**
          * @brief Unload a sound bank.
          *
          * @param filename The file to unload.
          */
-        void UnloadSoundBank(const std::string& filename);
+        void UnloadSoundBank(AmOsString filename);
 
         /**
          * @brief Kick off loading thread to load all sound files queued with
@@ -134,14 +134,14 @@ namespace SparkyStudios::Audio::Amplitude
          *
          * @param name The filename containing the flatbuffer binary data.
          */
-        [[nodiscard]] SoundHandle GetSoundHandleFromFile(const std::string& filename) const;
+        [[nodiscard]] SoundHandle GetSoundHandleFromFile(AmOsString filename) const;
 
         /**
          * @brief Get an EventHandle given its EventDefinition filename.
          *
          * @param name The filename containing the flatbuffer binary data.
          */
-        [[nodiscard]] EventHandle GetEventHandleFromFile(const std::string& filename) const;
+        [[nodiscard]] EventHandle GetEventHandleFromFile(AmOsString filename) const;
 
         /**
          * @brief Adjusts the gain on the master bus.

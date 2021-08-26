@@ -56,7 +56,7 @@ namespace SparkyStudios::Audio::Amplitude
          *
          * @return SoundInstance* An sound instance which can be played.
          */
-        SoundInstance* CreateInstance() const;
+        [[nodiscard]] SoundInstance* CreateInstance() const;
 
         /**
          * @brief Sets the format of this Sound.
@@ -105,7 +105,7 @@ namespace SparkyStudios::Audio::Amplitude
          *
          * @param parent The parent Sound from which to create an instance.
          */
-        SoundInstance(const Sound* parent);
+        explicit SoundInstance(const Sound* parent);
         ~SoundInstance();
 
         /**
