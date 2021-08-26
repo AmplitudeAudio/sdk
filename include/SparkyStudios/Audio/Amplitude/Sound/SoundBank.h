@@ -37,6 +37,8 @@ namespace SparkyStudios::Audio::Amplitude
     class SoundBank
     {
     public:
+        SoundBank();
+
         /**
          * Initializes the sound bank by loading all the packed data.
          *

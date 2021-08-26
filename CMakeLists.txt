@@ -55,6 +55,7 @@ set(SA_SOURCE
     include/SparkyStudios/Audio/Amplitude/Core/Common/Platforms/Windows/Config.h
     include/SparkyStudios/Audio/Amplitude/Core/Common/Platforms/Windows/Types.h
     include/SparkyStudios/Audio/Amplitude/Core/Common/Config.h
+    include/SparkyStudios/Audio/Amplitude/Core/Common/Constants.h
     include/SparkyStudios/Audio/Amplitude/Core/Common/Types.h
     include/SparkyStudios/Audio/Amplitude/Core/Bus.h
     include/SparkyStudios/Audio/Amplitude/Core/Channel.h
