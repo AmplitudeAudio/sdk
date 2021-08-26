@@ -27,14 +27,16 @@
 
 namespace SparkyStudios::Audio::Amplitude
 {
-    typedef AmUInt64            AmBankID;
-    typedef AmUInt64            AmBusID;
-    typedef AmUInt64            AmSoundCollectionID;
-    typedef AmUInt64            AmSoundID;
-    typedef AmUInt64            AmEntityID;
-    typedef AmUInt64            AmListenerID;
-    typedef AmUInt64            AmChannelID;
-    typedef AmUInt64            AmEventID;
+    typedef AmUInt64            AmObjectID;
+
+    typedef AmObjectID          AmBankID;
+    typedef AmObjectID          AmBusID;
+    typedef AmObjectID          AmSoundCollectionID;
+    typedef AmObjectID          AmSoundID;
+    typedef AmObjectID          AmEntityID;
+    typedef AmObjectID          AmListenerID;
+    typedef AmObjectID          AmChannelID;
+    typedef AmObjectID          AmEventID;
 
     typedef AmUInt8             AmResult;
     typedef AmUInt64            AmHandle;

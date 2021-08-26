@@ -33,6 +33,7 @@
 
 #include <SparkyStudios/Audio/Amplitude/Core/Common/Config.h>
 #include <SparkyStudios/Audio/Amplitude/Core/Common/Types.h>
+#include <SparkyStudios/Audio/Amplitude/Core/Common/Constants.h>
 
 #include <SparkyStudios/Audio/Amplitude/Math/HandmadeMath.h>
 

@@ -28,6 +28,16 @@ namespace SparkyStudios::Audio::Amplitude
         return _state != nullptr;
     }
 
+    AmBusID Bus::GetId() const
+    {
+        return _state->GetId();
+    }
+
+    const std::string& Bus::GetName() const
+    {
+        return _state->GetName();
+    }
+
     void Bus::SetGain(float gain)
     {
         return _state->SetUserGain(gain);
@@ -56,5 +66,10 @@ namespace SparkyStudios::Audio::Amplitude
     bool Bus::IsMute() const
     {
         return _state->IsMute();
+    }
+
+    BusInternalState* Bus::GetState() const
+    {
+        return _state;
     }
 } // namespace SparkyStudios::Audio::Amplitude

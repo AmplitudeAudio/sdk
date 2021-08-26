@@ -22,6 +22,13 @@
 
 namespace SparkyStudios::Audio::Amplitude
 {
+    SoundBank::SoundBank()
+        : _id(kAmInvalidObjectId)
+        , _name()
+        , _refCounter()
+        , _soundBankDefSource()
+    {}
+
     static bool InitializeSoundCollection(AmOsString filename, Engine* audio_engine)
     {
         // Find the ID.

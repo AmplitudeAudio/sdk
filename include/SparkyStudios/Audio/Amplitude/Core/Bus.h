@@ -65,6 +65,20 @@ namespace SparkyStudios::Audio::Amplitude
         [[nodiscard]] bool Valid() const;
 
         /**
+         * @brief Gets the unique ID of this Bus.
+         *
+         * @return The Bus unique ID.
+         */
+        [[nodiscard]] AmBusID GetId() const;
+
+        /**
+         * @brief Gets the name of this Bus.
+         *
+         * @return The bus name.
+         */
+        [[nodiscard]] const std::string& GetName() const;
+
+        /**
          * @brief Sets the gain on this Bus.
          *
          * @param gain The new gain value.
@@ -97,6 +111,11 @@ namespace SparkyStudios::Audio::Amplitude
          */
         [[nodiscard]] float GetFinalGain() const;
 
+        /**
+         * @brief Sets the muted state of this Bus.
+         *
+         * @param mute The muted state.
+         */
         void SetMute(bool mute);
 
         /**
@@ -111,10 +130,7 @@ namespace SparkyStudios::Audio::Amplitude
          *
          * @return BusInternalState*
          */
-        [[nodiscard]] BusInternalState* GetState() const
-        {
-            return _state;
-        }
+        [[nodiscard]] BusInternalState* GetState() const;
 
     private:
         BusInternalState* _state;

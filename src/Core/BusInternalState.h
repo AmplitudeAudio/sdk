@@ -33,6 +33,8 @@ namespace SparkyStudios::Audio::Amplitude
     public:
         BusInternalState()
             : _busDefinition(nullptr)
+            , _id(kAmInvalidObjectId)
+            , _name()
             , _userGain(1.0f)
             , _gain(1.0f)
             , _targetUserGain(1.0f)
@@ -49,6 +51,16 @@ namespace SparkyStudios::Audio::Amplitude
         [[nodiscard]] const BusDefinition* GetBusDefinition() const
         {
             return _busDefinition;
+        }
+
+        [[nodiscard]] AmBusID GetId() const
+        {
+            return _id;
+        }
+
+        [[nodiscard]] const std::string& GetName() const
+        {
+            return _name;
         }
 
         // Return the final gain after all modifiers have been applied (parent gain,
@@ -126,28 +138,34 @@ namespace SparkyStudios::Audio::Amplitude
     private:
         const BusDefinition* _busDefinition;
 
-        // Children of a given bus have their GetGain multiplied against their parent's
-        // GetGain.
+        // The bus unique ID.
+        AmBusID _id;
+
+        // The name of the bus.
+        std::string _name;
+
+        // Children of a given bus have their gain multiplied against their parent's
+        // gain.
         std::vector<BusInternalState*> _childBuses;
 
         // When a sound is played on this bus, sounds played on these buses should be
         // ducked.
         std::vector<BusInternalState*> _duckBuses;
 
-        // The current user GetGain of this bus.
+        // The current user gain of this bus.
         float _userGain;
 
-        // The target user GetGain of this bus (used for fading).
+        // The target user gain of this bus (used for fading).
         float _targetUserGain;
 
-        // How much to adjust the GetGain per second while fading.
+        // How much to adjust the gain per second while fading.
         float _targetUserGainStep;
 
         // The current _duckGain of this bus to be applied to all buses in
         // _duckBuses.
         float _duckGain;
 
-        // The final GetGain to be applied to all sounds on this bus.
+        // The final gain to be applied to all sounds on this bus.
         float _gain;
 
         bool _muted;

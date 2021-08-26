@@ -40,6 +40,10 @@ namespace SparkyStudios::Audio::Amplitude
         AMPLITUDE_ASSERT(_busDefinition == nullptr);
         _busDefinition = bus_def;
 
+        // Initialize the ID with the value specified by the definition file.
+        _id = _busDefinition->id();
+        // Initialize the name with the value specified by the definition file.
+        _name = _busDefinition->name()->str();
         // Initialize the gain with the value specified by the definition file.
         _gain = _busDefinition->gain();
     }
@@ -98,7 +102,7 @@ namespace SparkyStudios::Audio::Amplitude
         _gain = _busDefinition->gain() * parent_gain * _duckGain * _userGain;
 
         // Advance frames in playing channels.
-        for (auto& channel: _playingSoundList)
+        for (auto& channel : _playingSoundList)
         {
             channel.AdvanceFrame(delta_time);
         }
