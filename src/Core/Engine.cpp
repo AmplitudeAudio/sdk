@@ -668,9 +668,25 @@ namespace SparkyStudios::Audio::Amplitude
         }
     }
 
-    SoundHandle Engine::GetSoundHandle(const std::string& sound_name) const
+    SoundHandle Engine::GetSoundHandle(const std::string& name) const
     {
-        auto iter = _state->sound_collection_map.find(sound_name);
+        auto iter = std::find_if(
+            _state->sound_collection_map.begin(), _state->sound_collection_map.end(),
+            [name](const auto& item)
+            {
+                return item.second->GetName() == name;
+            });
+
+        if (iter == _state->sound_collection_map.end())
+        {
+            return nullptr;
+        }
+        return iter->second.get();
+    }
+
+    SoundHandle Engine::GetSoundHandle(AmSoundCollectionID id) const
+    {
+        auto iter = _state->sound_collection_map.find(id);
         if (iter == _state->sound_collection_map.end())
         {
             return nullptr;

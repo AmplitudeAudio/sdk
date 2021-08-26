@@ -123,6 +123,13 @@ namespace SparkyStudios::Audio::Amplitude
         [[nodiscard]] SoundHandle GetSoundHandle(const std::string& name) const;
 
         /**
+         * @brief Get a SoundHandle given its ID as defined in its JSON data.
+         *
+         * @param id The unique ID as defined in the JSON data.
+         */
+        [[nodiscard]] SoundHandle GetSoundHandle(AmSoundCollectionID id) const;
+
+        /**
          * @brief Get an EventHandle given its name as defined in its JSON data.
          *
          * @param name The unique name as defined in the JSON data.
