@@ -63,11 +63,11 @@ namespace SparkyStudios::Audio::Amplitude
     /**
      * @brief Class that handles aligned allocations to support vectorized operations.
      */
-    class AmAlignedFloat32Buffer
+    class AmAlignedReal32Buffer
     {
     public:
-        AmAlignedFloat32Buffer();
-        ~AmAlignedFloat32Buffer();
+        AmAlignedReal32Buffer();
+        ~AmAlignedReal32Buffer();
 
         /**
          * @brief Allocates and align buffer.
@@ -121,14 +121,14 @@ namespace SparkyStudios::Audio::Amplitude
     /**
      * @brief Lightweight class that handles small aligned buffer to support vectorized operations.
      */
-    class TinyAlignedFloatBuffer
+    class TinyAlignedReal32Buffer
     {
     public:
-        TinyAlignedFloatBuffer();
+        TinyAlignedReal32Buffer();
 
     private:
         AmReal32Buffer m_data; // aligned pointer
-        AmUInt8 m_actualData[sizeof(float) * 16 + 16]{};
+        AmUInt8 m_actualData[sizeof(float) * AM_SIMD_ALIGNMENT + AM_SIMD_ALIGNMENT]{};
     };
 }; // namespace SparkyStudios::Audio::Amplitude
 

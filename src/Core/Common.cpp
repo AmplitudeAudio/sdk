@@ -18,47 +18,47 @@
 
 namespace SparkyStudios::Audio::Amplitude
 {
-    AmAlignedFloat32Buffer::AmAlignedFloat32Buffer()
+    AmAlignedReal32Buffer::AmAlignedReal32Buffer()
     {
         m_basePtr = nullptr;
         m_data = nullptr;
         m_floats = 0;
     }
 
-    AmResult AmAlignedFloat32Buffer::Init(AmUInt32 size)
+    AmResult AmAlignedReal32Buffer::Init(AmUInt32 size)
     {
         delete[] m_basePtr;
         m_basePtr = nullptr;
         m_data = nullptr;
         m_floats = size;
 #ifndef AM_SSE_INTRINSICS
-        m_basePtr = new unsigned char[size * sizeof(float)];
+        m_basePtr = new AmUInt8[size * sizeof(float)];
         if (m_basePtr == nullptr)
             return AM_ERROR_OUT_OF_MEMORY;
         m_data = (AmReal32Buffer)m_basePtr;
 #else
-        m_basePtr = new unsigned char[size * sizeof(float) + 16];
+        m_basePtr = new AmUInt8[size * sizeof(float) + AM_SIMD_ALIGNMENT];
         if (m_basePtr == nullptr)
             return AM_ERROR_OUT_OF_MEMORY;
-        m_data = (AmReal32Buffer)(((size_t)m_basePtr + 15) & ~15);
+        m_data = (AmReal32Buffer)(((size_t)m_basePtr + (AM_SIMD_ALIGNMENT - 1)) & ~(AM_SIMD_ALIGNMENT - 1));
 #endif
         return AM_ERROR_NO_ERROR;
     }
 
-    void AmAlignedFloat32Buffer::Clear() const
+    void AmAlignedReal32Buffer::Clear() const
     {
         memset(m_data, 0, sizeof(float) * m_floats);
     }
 
-    AmAlignedFloat32Buffer::~AmAlignedFloat32Buffer()
+    AmAlignedReal32Buffer::~AmAlignedReal32Buffer()
     {
         delete[] m_basePtr;
     }
 
-    TinyAlignedFloatBuffer::TinyAlignedFloatBuffer()
+    TinyAlignedReal32Buffer::TinyAlignedReal32Buffer()
     {
         AmUInt8Buffer basePtr = &m_actualData[0];
-        m_data = (AmReal32Buffer)(((size_t)basePtr + 15) & ~15);
+        m_data = (AmReal32Buffer)(((size_t)basePtr + (AM_SIMD_ALIGNMENT - 1)) & ~(AM_SIMD_ALIGNMENT - 1));
     }
 
     void SoundFormat::SetAll(

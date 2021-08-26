@@ -185,7 +185,7 @@ namespace SparkyStudios::Audio::Amplitude
     private:
         AmVoidPtr _userData;
 
-        AmAlignedFloat32Buffer _streamBuffer;
+        AmAlignedReal32Buffer _streamBuffer;
 
         RealChannel* _channel;
         const Sound* _parent;

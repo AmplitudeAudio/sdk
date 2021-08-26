@@ -114,7 +114,7 @@ namespace SparkyStudios::Audio::Amplitude
         }
         else
         {
-            AmAlignedFloat32Buffer buffer;
+            AmAlignedReal32Buffer buffer;
             buffer.Init(frames * channels);
 
             if (_parent->_decoder->Load(buffer.GetBuffer()) != frames)
@@ -172,7 +172,7 @@ namespace SparkyStudios::Audio::Amplitude
         if (_parent->_stream)
         {
             _parent->_decoder->Close();
-            _streamBuffer = AmAlignedFloat32Buffer();
+            _streamBuffer = AmAlignedReal32Buffer();
         }
     }
 
