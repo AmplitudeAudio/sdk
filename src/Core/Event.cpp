@@ -182,6 +182,14 @@ namespace SparkyStudios::Audio::Amplitude
         }
     }
 
+    Event::Event()
+        : _id(kAmInvalidObjectId)
+        , _name()
+        , _actions()
+        , _source()
+        , _refCounter()
+    {}
+
     bool Event::LoadEventDefinition(const std::string& event)
     {
         _source = event;
@@ -220,7 +228,7 @@ namespace SparkyStudios::Audio::Amplitude
         return event;
     }
 
-    AmUInt64 Event::GetId() const
+    AmEventID Event::GetId() const
     {
         return _id;
     }

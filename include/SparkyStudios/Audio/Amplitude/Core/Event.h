@@ -91,6 +91,8 @@ namespace SparkyStudios::Audio::Amplitude
         friend class EventInstance;
 
     public:
+        Event();
+
         /**
          * @brief Loads an event definition in this state.
          *
@@ -121,7 +123,7 @@ namespace SparkyStudios::Audio::Amplitude
          *
          * @return The ID of this event.
          */
-        [[nodiscard]] AmUInt64 GetId() const;
+        [[nodiscard]] AmEventID GetId() const;
 
         /**
          * @brief Returns the name of this event.
@@ -147,7 +149,7 @@ namespace SparkyStudios::Audio::Amplitude
     private:
         std::string _source;
 
-        AmUInt64 _id;
+        AmEventID _id;
         std::string _name;
         std::vector<EventAction> _actions;
 
