@@ -46,11 +46,20 @@ build_flatbuffers("${FLATBUFFERS_SCHEMAS}"
 
 # Setup project source files.
 set(SA_SOURCE
+    include/SparkyStudios/Audio/Amplitude/Core/Common/Platforms/Android/Config.h
+    include/SparkyStudios/Audio/Amplitude/Core/Common/Platforms/Android/Types.h
+    include/SparkyStudios/Audio/Amplitude/Core/Common/Platforms/Linux/Config.h
+    include/SparkyStudios/Audio/Amplitude/Core/Common/Platforms/Linux/Types.h
+    include/SparkyStudios/Audio/Amplitude/Core/Common/Platforms/UNIX/Config.h
+    include/SparkyStudios/Audio/Amplitude/Core/Common/Platforms/UNIX/Types.h
+    include/SparkyStudios/Audio/Amplitude/Core/Common/Platforms/Windows/Config.h
+    include/SparkyStudios/Audio/Amplitude/Core/Common/Platforms/Windows/Types.h
+    include/SparkyStudios/Audio/Amplitude/Core/Common/Config.h
+    include/SparkyStudios/Audio/Amplitude/Core/Common/Types.h
     include/SparkyStudios/Audio/Amplitude/Core/Bus.h
     include/SparkyStudios/Audio/Amplitude/Core/Channel.h
     include/SparkyStudios/Audio/Amplitude/Core/Codec.h
     include/SparkyStudios/Audio/Amplitude/Core/Common.h
-    include/SparkyStudios/Audio/Amplitude/Core/Config.h
     include/SparkyStudios/Audio/Amplitude/Core/Driver.h
     include/SparkyStudios/Audio/Amplitude/Core/Engine.h
     include/SparkyStudios/Audio/Amplitude/Core/Entity.h
@@ -141,5 +150,14 @@ add_library(ss_amplitude_audio ${SA_SOURCE})
 add_dependencies(ss_amplitude_audio
     generated_includes
 )
+
+if(UNIX)
+  find_package(Threads REQUIRED)
+
+  target_link_libraries(ss_amplitude_audio
+    PUBLIC Threads::Threads
+    ${CMAKE_DL_LIBS}
+  )
+endif()
 
 add_subdirectory(samples)

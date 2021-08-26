@@ -44,14 +44,13 @@ namespace SparkyStudios::Audio::Amplitude
 
     void Sound::Load(FileLoader* loader)
     {
-        if (GetFilename().empty())
+        if (GetFilename() == nullptr)
         {
             CallLogFunc("The filename is empty.\n");
             return;
         }
 
-        AmString filename = GetFilename().c_str();
-        const EngineConfigDefinition* config = Engine::GetInstance()->GetEngineConfigDefinition();
+        AmOsString filename = GetFilename();
 
         Codec* codec = Codec::FindCodecForFile(filename);
         if (codec == nullptr)
@@ -115,7 +114,7 @@ namespace SparkyStudios::Audio::Amplitude
         }
         else
         {
-            AmAlignedFloat32Buffer buffer;
+            AmAlignedReal32Buffer buffer;
             buffer.Init(frames * channels);
 
             if (_parent->_decoder->Load(buffer.GetBuffer()) != frames)
@@ -145,7 +144,7 @@ namespace SparkyStudios::Audio::Amplitude
             _streamBuffer.Clear();
 
             AmUInt64 n, l = frames, o = offset, r = 0;
-            AmFloat32Buffer b = _streamBuffer.GetBuffer();
+            AmReal32Buffer b = _streamBuffer.GetBuffer();
 
         Fill:
             n = _parent->_decoder->Stream(b, o, l);
@@ -173,7 +172,7 @@ namespace SparkyStudios::Audio::Amplitude
         if (_parent->_stream)
         {
             _parent->_decoder->Close();
-            _streamBuffer = AmAlignedFloat32Buffer();
+            _streamBuffer = AmAlignedReal32Buffer();
         }
     }
 

@@ -36,7 +36,7 @@ namespace SparkyStudios::Audio::Amplitude
 
             Sound& sound = _sounds[i];
             sound.Initialize(this);
-            sound.LoadFile(entry_filename, &state->loader);
+            sound.LoadFile(AM_STRING_TO_OS_STRING(entry_filename), &state->loader);
         }
 
         if (!def->bus())
@@ -61,10 +61,10 @@ namespace SparkyStudios::Audio::Amplitude
         return true;
     }
 
-    bool SoundCollection::LoadSoundCollectionDefinitionFromFile(const std::string& filename, EngineInternalState* state)
+    bool SoundCollection::LoadSoundCollectionDefinitionFromFile(AmOsString filename, EngineInternalState* state)
     {
         std::string source;
-        return LoadFile(filename.c_str(), &source) && LoadSoundCollectionDefinition(source, state);
+        return LoadFile(filename, &source) && LoadSoundCollectionDefinition(source, state);
     }
 
     const SoundCollectionDefinition* SoundCollection::GetSoundCollectionDefinition() const

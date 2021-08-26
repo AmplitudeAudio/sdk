@@ -17,8 +17,6 @@
 #ifndef SPARK_AUDIO_SPARK_AUDIO_H
 #define SPARK_AUDIO_SPARK_AUDIO_H
 
-#include <SparkyStudios/Audio/Amplitude/Core/Config.h>
-
 #include <SparkyStudios/Audio/Amplitude/Core/Common.h>
 
 #include <SparkyStudios/Audio/Amplitude/Core/Bus.h>

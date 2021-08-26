@@ -12,13 +12,34 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include <SparkyStudios/Audio/Amplitude/IO/FileLoader.h>
+#pragma once
 
-namespace SparkyStudios::Audio::Amplitude
-{
-    void Resource::LoadFile(AmOsString filename, FileLoader* loader)
-    {
-        SetFilename(filename);
-        Load(loader);
-    }
-} // namespace SparkyStudios::Audio::Amplitude
+#ifndef SS_AMPLITUDE_AUDIO_LINUX_CONFIG_H
+#define SS_AMPLITUDE_AUDIO_LINUX_CONFIG_H
+
+// Enable Android Compilation
+#define AM_LINUX_VERSION
+
+// Detect the platform CPU type
+#if defined(__LP64__) || defined(_LP64)
+#ifdef __aarch64__
+#define AM_CPU_ARM_64
+#define AM_CPU_ARM_NEON
+#else
+#define AM_CPU_X86_64
+#endif
+#else
+#ifdef __arm__
+#define AM_CPU_ARM
+#define AM_CPU_ARM_NEON
+#else
+#define AM_CPU_X86
+#endif
+#endif
+
+// Linux platforms support wchar_t
+#define AM_WCHAR_SUPPORTED
+
+#include <SparkyStudios/Audio/Amplitude/Core/Common/Platforms/UNIX/Config.h>
+
+#endif // SS_AMPLITUDE_AUDIO_LINUX_CONFIG_H

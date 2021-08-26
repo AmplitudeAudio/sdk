@@ -116,7 +116,7 @@ namespace SparkyStudios::Audio::Amplitude
         if (!success)
         {
             _channelId = kInvalidChannelId;
-            CallLogFunc("Could not play sound %s\n", sound->GetFilename().c_str());
+            CallLogFunc("Could not play sound " AM_OS_CHAR_FMT "\n", sound->GetFilename());
         }
 
         return success;

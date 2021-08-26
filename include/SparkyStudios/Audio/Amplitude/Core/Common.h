@@ -17,14 +17,30 @@
 #ifndef SS_AMPLITUDE_AUDIO_COMMON_H
 #define SS_AMPLITUDE_AUDIO_COMMON_H
 
-#include <SparkyStudios/Audio/Amplitude/Core/Config.h>
+/////////////////////////////////////////////////////////////////////
+/////////////////////////////////////////////////////////////////////
+// Standard Library
+
+#include <cmath>
+#include <cstdlib>
+#include <map>
+#include <string>
+#include <vector>
+
+/////////////////////////////////////////////////////////////////////
+/////////////////////////////////////////////////////////////////////
+// Amplitude
+
+#include <SparkyStudios/Audio/Amplitude/Core/Common/Config.h>
+#include <SparkyStudios/Audio/Amplitude/Core/Common/Types.h>
+
 #include <SparkyStudios/Audio/Amplitude/Math/HandmadeMath.h>
 
 /////////////////////////////////////////////////////////////////////
 /////////////////////////////////////////////////////////////////////
 // Common defines
 
-// Define an invalid soloud object AmHandle
+// Define an invalid object handle
 #define AM_INVALID_HANDLE 0
 
 // Check for handle validity
@@ -41,115 +57,78 @@
 
 // Typedefs have to be made before the includes, as the
 // includes depend on them.
-namespace SparkyStudios::Audio::Amplitude
-{
-    class Engine;
-
-    typedef void (*AmMutexCallFunction)(void* mutex);
-    typedef void (*AmEngineCallFunction)(Engine* engine);
-    typedef unsigned int AmResult;
-    typedef unsigned int AmHandle;
-    typedef double AmTime;
-
-    typedef signed char AmInt8;
-    typedef signed short AmInt16;
-    typedef signed int AmInt32;
-    typedef signed long long AmInt64;
-
-    typedef unsigned char AmUInt8;
-    typedef unsigned short AmUInt16;
-    typedef unsigned int AmUInt32;
-    typedef unsigned long long AmUInt64;
-
-    typedef float* AmFloat32Buffer;
-
-    typedef signed char* AmInt8Buffer;
-    typedef signed short* AmInt16Buffer;
-    typedef signed int* AmInt32Buffer;
-    typedef signed long long* AmInt64Buffer;
-
-    typedef unsigned char* AmUInt8Buffer;
-    typedef unsigned short* AmUInt16Buffer;
-    typedef unsigned int* AmUInt32Buffer;
-    typedef unsigned long long* AmUInt64Buffer;
-
-    typedef void* AmVoidPtr;
-
-    typedef const char* AmString;
-}; // namespace SparkyStudios::Audio::Amplitude
 
 namespace SparkyStudios::Audio::Amplitude
 {
-    class Engine;
-
     /**
-     * Class that handles aligned allocations to support vectorized operations.
+     * @brief Class that handles aligned allocations to support vectorized operations.
      */
-    class AmAlignedFloat32Buffer
+    class AmAlignedReal32Buffer
     {
-        friend class Engine;
-
     public:
-        AmAlignedFloat32Buffer();
-        ~AmAlignedFloat32Buffer();
+        AmAlignedReal32Buffer();
+        ~AmAlignedReal32Buffer();
 
         /**
-         * Allocates and align buffer.
+         * @brief Allocates and align buffer.
+         *
          * @param size The buffer size.
          * @return the result of the allocation.
          */
         AmResult Init(AmUInt32 size);
 
         /**
-         * Clears all data.
+         * @brief Clears all data.
          */
         void Clear() const;
 
         /**
-         * Gets the size of the buffer.
+         * @brief Gets the size of the buffer.
+         *
          * @return AmUInt32
          */
-        AmUInt32 GetSize() const
+        [[nodiscard]] AmUInt32 GetSize() const
         {
             return m_floats;
         }
 
         /**
-         * Gets the current aligned pointer.
+         * @brief Gets the current aligned pointer.
+         *
          * @return AmFloat32Buffer
          */
-        AmFloat32Buffer GetBuffer() const
+        [[nodiscard]] AmReal32Buffer GetBuffer() const
         {
             return m_data;
         }
 
         /**
-         * Gets the raw allocated pointer.
+         * @brief Gets the raw allocated pointer.
+         *
          * @return AmUInt8Buffer
          */
-        AmUInt8Buffer GetPointer() const
+        [[nodiscard]] AmUInt8Buffer GetPointer() const
         {
             return m_basePtr;
         }
 
     private:
-        AmFloat32Buffer m_data; // aligned pointer
+        AmReal32Buffer m_data; // aligned pointer
         AmUInt8Buffer m_basePtr; // raw allocated pointer (for delete)
         AmUInt32 m_floats; // size of buffer (w/out padding)
     };
 
     /**
-     * Lightweight class that handles small aligned buffer to support vectorized operations.
+     * @brief Lightweight class that handles small aligned buffer to support vectorized operations.
      */
-    class TinyAlignedFloatBuffer
+    class TinyAlignedReal32Buffer
     {
-        friend class Engine;
-
     public:
-        TinyAlignedFloatBuffer();
+        TinyAlignedReal32Buffer();
 
-        AmFloat32Buffer m_data; // aligned pointer
-        AmUInt8 m_actualData[sizeof(float) * 16 + 16]{};
+    private:
+        AmReal32Buffer m_data; // aligned pointer
+        AmUInt8 m_actualData[sizeof(float) * AM_SIMD_ALIGNMENT + AM_SIMD_ALIGNMENT]{};
     };
 }; // namespace SparkyStudios::Audio::Amplitude
 
@@ -182,7 +161,7 @@ namespace SparkyStudios::Audio::Amplitude
         AM_SPEAKER_7_1,
     };
 
-    // Enumerates the list of possible sample formats handled by SoLoud
+    // Enumerates the list of possible sample formats handled by Amplitude
     enum AM_SAMPLE_FORMAT : AmUInt32
     {
         // floating point

@@ -40,22 +40,26 @@ namespace SparkyStudios::Audio::Amplitude
     public:
         virtual ~Resource() = default;
 
-        void LoadFile(AmString filename, FileLoader* loader);
+        void LoadFile(AmOsString filename, FileLoader* loader);
 
-        void SetFilename(const std::string& filename)
+        void SetFilename(AmOsString filename)
         {
             _filename = filename;
         }
 
-        [[nodiscard]] const std::string& GetFilename() const
+        [[nodiscard]] AmOsString GetFilename() const
         {
-            return _filename;
+            return _filename.c_str();
         }
 
     private:
         virtual void Load(FileLoader* loader) = 0;
 
+#if defined(AM_WCHAR_SUPPORTED)
+        std::wstring _filename;
+#else
         std::string _filename;
+#endif
     };
 } // namespace SparkyStudios::Audio::Amplitude
 

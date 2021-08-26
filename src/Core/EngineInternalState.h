@@ -37,13 +37,13 @@ namespace SparkyStudios::Audio::Amplitude
     struct SoundBankDefinition;
 
     typedef std::map<std::string, std::unique_ptr<SoundCollection>> SoundCollectionMap;
-    typedef std::map<std::string, std::string> SoundIdMap;
+    typedef std::map<AmOsString, std::string, AmOsStringComparator> SoundIdMap;
 
     typedef std::map<std::string, std::unique_ptr<Event>> EventMap;
-    typedef std::map<std::string, std::string> EventIdMap;
+    typedef std::map<AmOsString, std::string, AmOsStringComparator> EventIdMap;
     typedef std::vector<EventInstance> EventInstanceVector;
 
-    typedef std::map<std::string, std::unique_ptr<SoundBank>> SoundBankMap;
+    typedef std::map<AmOsString, std::unique_ptr<SoundBank>, AmOsStringComparator> SoundBankMap;
 
     typedef std::vector<ChannelInternalState> ChannelStateVector;
 
@@ -203,7 +203,7 @@ namespace SparkyStudios::Audio::Amplitude
     // listener, respectively.
     hmm_vec2 CalculatePan(const hmm_vec3& listener_space_location);
 
-    bool LoadFile(AmString filename, std::string* dest);
+    bool LoadFile(AmOsString filename, std::string* dest);
 
     AmUInt32 GetMaxNumberOfChannels(const EngineConfigDefinition* config);
 

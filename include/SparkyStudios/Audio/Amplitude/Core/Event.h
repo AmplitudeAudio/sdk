@@ -25,6 +25,7 @@ namespace SparkyStudios::Audio::Amplitude
     struct EventDefinition;
     struct EventActionDefinition;
 
+    class Event;
     class EventInstance;
 
     /**
@@ -106,7 +107,7 @@ namespace SparkyStudios::Audio::Amplitude
          *
          * @return true if the event definition file was successfully loaded.
          */
-        bool LoadEventDefinitionFromFile(const std::string& filename);
+        bool LoadEventDefinitionFromFile(AmOsString filename);
 
         /**
          * @brief Triggers the event for the specified engine state.

@@ -35,13 +35,13 @@ namespace SparkyStudios::Audio::Amplitude::Codecs
                 , _ogg(nullptr)
             {}
 
-            bool Open(AmString filePath) final;
+            bool Open(AmOsString filePath) final;
 
             bool Close() final;
 
-            AmUInt64 Load(AmFloat32Buffer out) final;
+            AmUInt64 Load(AmReal32Buffer out) final;
 
-            AmUInt64 Stream(AmFloat32Buffer out, AmUInt64 offset, AmUInt64 length) final;
+            AmUInt64 Stream(AmReal32Buffer out, AmUInt64 offset, AmUInt64 length) final;
 
             bool Seek(AmUInt64 offset) final;
 
@@ -59,7 +59,7 @@ namespace SparkyStudios::Audio::Amplitude::Codecs
                 , _ogg(nullptr)
             {}
 
-            bool Open(AmString filePath) final;
+            bool Open(AmOsString filePath) final;
 
             bool Close() final;
 
@@ -80,7 +80,7 @@ namespace SparkyStudios::Audio::Amplitude::Codecs
 
         [[nodiscard]] Encoder* CreateEncoder() const final;
 
-        bool CanHandleFile(AmString filePath) const final;
+        bool CanHandleFile(AmOsString filePath) const final;
     } ogg_codec; // NOLINT(cert-err58-cpp)
 } // namespace SparkyStudios::Audio::Amplitude::Codecs
 

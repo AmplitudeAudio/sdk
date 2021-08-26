@@ -14,12 +14,68 @@
 
 #pragma once
 
-#ifndef SS_AMPLITUDE_AUDIO_CONFIG_H
-#define SS_AMPLITUDE_AUDIO_CONFIG_H
+#ifndef SS_AMPLITUDE_AUDIO_WINDOWS_CONFIG_H
+#define SS_AMPLITUDE_AUDIO_WINDOWS_CONFIG_H
 
-#include <cmath> // sin
-#include <cstdlib> // rand
+#include <sstream>
 
+// Enable Windows Compilation
+#define AM_WINDOWS_VERSION
+
+// Detect the platform CPU type
+#if defined(_M_IX86)
+#define AM_CPU_X86
+#elif defined(_M_AMD64)
+#define AM_CPU_X86_64
+#elif defined(_M_ARM)
+#define AM_CPU_ARM
+#define AM_CPU_ARM_NEON
+#elif defined(_M_ARM64)
+#define AM_CPU_ARM_64
+#define AM_CPU_ARM_NEON
+#endif
+
+// Function inline
+#define AM_INLINE __forceinline
+#define AM_NO_INLINE __declspec(noinline)
+
+// Alignment required for SIMD data processing
+#define AM_SIMD_ALIGNMENT 16
+#define AM_ALIGN_SIMD(_declaration_) AM_ALIGN(_declaration_, AM_SIMD_ALIGNMENT)
+#define AM_BUFFER_ALIGNMENT AM_SIMD_ALIGNMENT
+
+// Windows platforms support wchar_t
+#define AM_WCHAR_SUPPORTED
+
+// Defines the format used to print AmOsString text
+#define AM_OS_CHAR_FMT "%ls"
+
+// Macro used to convert a string literal to an AmOsString string at compile-time
+#define AM_OS_STRING(s) L##s
+
+AM_INLINE std::wstring am_string_widen(const std::string& str)
+{
+    std::wostringstream wstm;
+    const auto& ctfacet = std::use_facet<std::ctype<wchar_t>>(wstm.getloc());
+    for (char i : str)
+        wstm << ctfacet.widen(i);
+    return wstm.str();
+}
+
+AM_INLINE std::string am_wstring_narrow(const std::wstring& str)
+{
+    std::ostringstream stm;
+    const auto& ctfacet = std::use_facet<std::ctype<wchar_t>>(stm.getloc());
+    for (wchar_t i : str)
+        stm << ctfacet.narrow(i, 0);
+    return stm.str();
+}
+
+// Conversion between OS strings and default strings
+#define AM_OS_STRING_TO_STRING(s) am_wstring_narrow(s).c_str()
+#define AM_STRING_TO_OS_STRING(s) am_string_widen(s).c_str()
+
+// AMPLITUDE_ASSERT Config
 #ifdef AMPLITUDE_NO_ASSERTS
 #define AMPLITUDE_ASSERT(x)
 #else
@@ -46,33 +102,4 @@
 #endif
 #endif
 
-#ifndef M_PI
-#define M_PI 3.14159265358979323846264f // from CRC
-#endif
-
-#if defined(_WIN32) || defined(_WIN64)
-#define WINDOWS_VERSION
-#endif
-
-#if !defined(DISABLE_SIMD)
-#if defined(__x86_64__) || defined(_M_X64) || defined(__i386) || defined(_M_IX86)
-#define AMPLITUDE_SSE_INTRINSICS
-#endif
-#endif
-
-#define AMPLITUDE_VERSION 202002
-
-/////////////////////////////////////////////////////////////////////
-/////////////////////////////////////////////////////////////////////
-// Configuration defines
-
-// Maximum number of filters per stream
-#define FILTERS_PER_STREAM 8
-
-// 1)mono, 2)stereo 4)quad 6)5.1 8)7.1
-#define MAX_CHANNELS 8
-
-// Default resampler for both main and GetBus mixers
-#define AMPLITUDE_DEFAULT_RESAMPLER SoLoud::Engine::RESAMPLER_LINEAR
-
-#endif // SS_AMPLITUDE_AUDIO_CONFIG_H
+#endif // SS_AMPLITUDE_AUDIO_WINDOWS_CONFIG_H

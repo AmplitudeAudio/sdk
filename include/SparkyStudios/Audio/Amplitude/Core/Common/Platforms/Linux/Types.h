@@ -12,13 +12,11 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include <SparkyStudios/Audio/Amplitude/IO/FileLoader.h>
+#pragma once
 
-namespace SparkyStudios::Audio::Amplitude
-{
-    void Resource::LoadFile(AmOsString filename, FileLoader* loader)
-    {
-        SetFilename(filename);
-        Load(loader);
-    }
-} // namespace SparkyStudios::Audio::Amplitude
+#ifndef SS_AMPLITUDE_AUDIO_LINUX_TYPES_H
+#define SS_AMPLITUDE_AUDIO_LINUX_TYPES_H
+
+#include <SparkyStudios/Audio/Amplitude/Core/Common/Platforms/UNIX/Types.h>
+
+#endif // SS_AMPLITUDE_AUDIO_LINUX_TYPES_H

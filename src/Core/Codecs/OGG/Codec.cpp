@@ -18,17 +18,17 @@
 
 namespace SparkyStudios::Audio::Amplitude::Codecs
 {
-    bool OGGCodec::OGGDecoder::Open(AmString filePath)
+    bool OGGCodec::OGGDecoder::Open(AmOsString filePath)
     {
         if (!m_codec->CanHandleFile(filePath))
         {
-            CallLogFunc("The OGG codec cannot handle the file: '%s'.\n", filePath);
+            CallLogFunc("The OGG codec cannot handle the file: '" AM_OS_CHAR_FMT "'.\n", filePath);
             return false;
         }
 
-        if (_ogg = stb_vorbis_open_filename(filePath, nullptr, nullptr); _ogg == nullptr)
+        if (_ogg = stb_vorbis_open_filename(AM_OS_STRING_TO_STRING(filePath), nullptr, nullptr); _ogg == nullptr)
         {
-            CallLogFunc("Cannot load the OGG file: '%s'.\n", filePath);
+            CallLogFunc("Cannot load the OGG file: '" AM_OS_CHAR_FMT "'.\n", filePath);
             return false;
         }
 
@@ -60,7 +60,7 @@ namespace SparkyStudios::Audio::Amplitude::Codecs
         return true;
     }
 
-    AmUInt64 OGGCodec::OGGDecoder::Load(AmFloat32Buffer out)
+    AmUInt64 OGGCodec::OGGDecoder::Load(AmReal32Buffer out)
     {
         if (!_initialized)
         {
@@ -73,10 +73,10 @@ namespace SparkyStudios::Audio::Amplitude::Codecs
         }
 
         return stb_vorbis_get_samples_float_interleaved(
-            _ogg, m_format.GetNumChannels(), out, m_format.GetFramesCount() * m_format.GetNumChannels());
+            _ogg, m_format.GetNumChannels(), out, (int)m_format.GetFramesCount() * m_format.GetNumChannels());
     }
 
-    AmUInt64 OGGCodec::OGGDecoder::Stream(AmFloat32Buffer out, AmUInt64 offset, AmUInt64 length)
+    AmUInt64 OGGCodec::OGGDecoder::Stream(AmReal32Buffer out, AmUInt64 offset, AmUInt64 length)
     {
         if (!_initialized)
         {
@@ -88,7 +88,7 @@ namespace SparkyStudios::Audio::Amplitude::Codecs
             return 0;
         }
 
-        return stb_vorbis_get_samples_float_interleaved(_ogg, m_format.GetNumChannels(), out, length * m_format.GetNumChannels());
+        return stb_vorbis_get_samples_float_interleaved(_ogg, m_format.GetNumChannels(), out, (int)length * m_format.GetNumChannels());
     }
 
     bool OGGCodec::OGGDecoder::Seek(AmUInt64 offset)
@@ -96,7 +96,7 @@ namespace SparkyStudios::Audio::Amplitude::Codecs
         return stb_vorbis_seek(_ogg, offset) != 0;
     }
 
-    bool OGGCodec::OGGEncoder::Open(AmString filePath)
+    bool OGGCodec::OGGEncoder::Open(AmOsString filePath)
     {
         _initialized = true;
         return false;
@@ -127,11 +127,11 @@ namespace SparkyStudios::Audio::Amplitude::Codecs
         return new OGGEncoder(this);
     }
 
-    bool OGGCodec::CanHandleFile(AmString filePath) const
+    bool OGGCodec::CanHandleFile(AmOsString filePath) const
     {
         // TODO: Maybe check by extension instead?
 
-        if (stb_vorbis* h = stb_vorbis_open_filename(filePath, nullptr, nullptr); h != nullptr)
+        if (stb_vorbis* h = stb_vorbis_open_filename(AM_OS_STRING_TO_STRING(filePath), nullptr, nullptr); h != nullptr)
         {
             stb_vorbis_close(h);
             return true;

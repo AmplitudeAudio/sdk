@@ -40,7 +40,7 @@ namespace SparkyStudios::Audio::Amplitude
 {
     typedef flatbuffers::Vector<flatbuffers::Offset<flatbuffers::String>> BusNameList;
 
-    bool LoadFile(AmString filename, std::string* dest)
+    bool LoadFile(AmOsString filename, std::string* dest)
     {
         if (!filename)
         {
@@ -50,8 +50,8 @@ namespace SparkyStudios::Audio::Amplitude
 
         // load into memory:
         MemoryFile mf;
-        AmUInt32 result = mf.OpenToMem(filename);
-        if (result != FILE_ERROR_NO_ERROR)
+        AmResult result = mf.OpenToMem(filename);
+        if (result != AM_ERROR_NO_ERROR)
         {
             CallLogFunc("LoadFile fail on %s", filename);
             return false;
@@ -195,7 +195,7 @@ namespace SparkyStudios::Audio::Amplitude
         }
     }
 
-    bool Engine::Initialize(AmString config_file)
+    bool Engine::Initialize(AmOsString config_file)
     {
         if (!LoadFile(config_file, &_configSrc))
         {
@@ -257,7 +257,7 @@ namespace SparkyStudios::Audio::Amplitude
         InitializeEntityFreeList(&_state->entity_state_free_list, &_state->entity_state_memory, config->entities());
 
         // Load the audio buses.
-        if (!LoadFile(config->buses_file()->c_str(), &_state->buses_source))
+        if (!LoadFile(AM_STRING_TO_OS_STRING(config->buses_file()->c_str()), &_state->buses_source))
         {
             CallLogFunc("Could not load audio bus file.\n");
             return false;
@@ -304,7 +304,7 @@ namespace SparkyStudios::Audio::Amplitude
         return _audioDriver->Close();
     }
 
-    bool Engine::LoadSoundBank(const std::string& filename)
+    bool Engine::LoadSoundBank(AmOsString filename)
     {
         bool success = true;
         auto iter = _state->sound_bank_map.find(filename);
@@ -325,12 +325,12 @@ namespace SparkyStudios::Audio::Amplitude
         return success;
     }
 
-    void Engine::UnloadSoundBank(const std::string& filename)
+    void Engine::UnloadSoundBank(AmOsString filename)
     {
         auto iter = _state->sound_bank_map.find(filename);
         if (iter == _state->sound_bank_map.end())
         {
-            CallLogFunc("Error while deinitializing SoundBank %s - sound bank not loaded.\n", filename.c_str());
+            CallLogFunc("Error while deinitializing SoundBank " AM_OS_CHAR_FMT " - sound bank not loaded.\n", filename);
             AMPLITUDE_ASSERT(0);
         }
         if (iter->second->GetRefCounter()->Decrement() == 0)
@@ -461,7 +461,7 @@ namespace SparkyStudios::Audio::Amplitude
     // Given the priority of a node, and the list of ChannelInternalStates sorted by
     // priority, find the location in the list where the node would be inserted.
     // Note that the node should be inserted using InsertAfter. If the node you want
-    // to insert turns out the be the highest priority node, this will return the
+    // to insert turns out to be the highest priority node, this will return the
     // list terminator (and inserting after the terminator will put it at the front
     // of the list).
     PriorityList::iterator FindInsertionPoint(PriorityList* list, float priority)
@@ -663,7 +663,7 @@ namespace SparkyStudios::Audio::Amplitude
         return iter->second.get();
     }
 
-    SoundHandle Engine::GetSoundHandleFromFile(const std::string& filename) const
+    SoundHandle Engine::GetSoundHandleFromFile(AmOsString filename) const
     {
         auto iter = _state->sound_id_map.find(filename);
         if (iter == _state->sound_id_map.end())
@@ -673,7 +673,7 @@ namespace SparkyStudios::Audio::Amplitude
         return GetSoundHandle(iter->second);
     }
 
-    EventHandle Engine::GetEventHandleFromFile(const std::string& filename) const
+    EventHandle Engine::GetEventHandleFromFile(AmOsString filename) const
     {
         auto iter = _state->event_id_map.find(filename);
         if (iter == _state->event_id_map.end())

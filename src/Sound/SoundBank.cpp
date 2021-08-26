@@ -22,7 +22,7 @@
 
 namespace SparkyStudios::Audio::Amplitude
 {
-    static bool InitializeSoundCollection(const std::string& filename, Engine* audio_engine)
+    static bool InitializeSoundCollection(AmOsString filename, Engine* audio_engine)
     {
         // Find the ID.
         SoundHandle handle = audio_engine->GetSoundHandleFromFile(filename);
@@ -48,7 +48,7 @@ namespace SparkyStudios::Audio::Amplitude
         return true;
     }
 
-    static bool InitializeEvent(const std::string& filename, Engine* audio_engine)
+    static bool InitializeEvent(AmOsString filename, Engine* audio_engine)
     {
         // Find the ID.
         EventHandle handle = audio_engine->GetEventHandleFromFile(filename);
@@ -74,10 +74,10 @@ namespace SparkyStudios::Audio::Amplitude
         return true;
     }
 
-    bool SoundBank::Initialize(const std::string& filename, Engine* audio_engine)
+    bool SoundBank::Initialize(AmOsString filename, Engine* audio_engine)
     {
         bool success = true;
-        if (!LoadFile(filename.c_str(), &_soundBankDefSource))
+        if (!LoadFile(filename, &_soundBankDefSource))
         {
             return false;
         }
@@ -87,20 +87,20 @@ namespace SparkyStudios::Audio::Amplitude
         for (flatbuffers::uoffset_t i = 0; i < _soundBankDef->sounds()->size(); ++i)
         {
             AmString sound_filename = _soundBankDef->sounds()->Get(i)->c_str();
-            success &= InitializeSoundCollection(sound_filename, audio_engine);
+            success &= InitializeSoundCollection(AM_STRING_TO_OS_STRING(sound_filename), audio_engine);
         }
 
         // Load each Event named in the sound bank.
         for (flatbuffers::uoffset_t i = 0; i < _soundBankDef->events()->size(); ++i)
         {
             AmString event_filename = _soundBankDef->events()->Get(i)->c_str();
-            success &= InitializeEvent(event_filename, audio_engine);
+            success &= InitializeEvent(AM_STRING_TO_OS_STRING(event_filename), audio_engine);
         }
 
         return success;
     }
 
-    static bool DeinitializeSoundCollection(AmString filename, EngineInternalState* state)
+    static bool DeinitializeSoundCollection(AmOsString filename, EngineInternalState* state)
     {
         auto id_iter = state->sound_id_map.find(filename);
         if (id_iter == state->sound_id_map.end())
@@ -123,7 +123,7 @@ namespace SparkyStudios::Audio::Amplitude
         return true;
     }
 
-    static bool DeinitializeEvent(AmString filename, EngineInternalState* state)
+    static bool DeinitializeEvent(AmOsString filename, EngineInternalState* state)
     {
         auto id_iter = state->event_id_map.find(filename);
         if (id_iter == state->event_id_map.end())
@@ -151,7 +151,7 @@ namespace SparkyStudios::Audio::Amplitude
         for (flatbuffers::uoffset_t i = 0; i < _soundBankDef->sounds()->size(); ++i)
         {
             AmString filename = _soundBankDef->sounds()->Get(i)->c_str();
-            if (!DeinitializeSoundCollection(filename, audio_engine->GetState()))
+            if (!DeinitializeSoundCollection(AM_STRING_TO_OS_STRING(filename), audio_engine->GetState()))
             {
                 CallLogFunc("Error while deinitializing sound collection %s in sound bank.\n", filename);
                 AMPLITUDE_ASSERT(0);
@@ -161,7 +161,7 @@ namespace SparkyStudios::Audio::Amplitude
         for (flatbuffers::uoffset_t i = 0; i < _soundBankDef->events()->size(); ++i)
         {
             AmString filename = _soundBankDef->events()->Get(i)->c_str();
-            if (!DeinitializeEvent(filename, audio_engine->GetState()))
+            if (!DeinitializeEvent(AM_STRING_TO_OS_STRING(filename), audio_engine->GetState()))
             {
                 CallLogFunc("Error while deinitializing event %s in sound bank.\n", filename);
                 AMPLITUDE_ASSERT(0);

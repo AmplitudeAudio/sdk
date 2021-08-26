@@ -202,10 +202,10 @@ namespace SparkyStudios::Audio::Amplitude
         return true;
     }
 
-    bool Event::LoadEventDefinitionFromFile(const std::string& filename)
+    bool Event::LoadEventDefinitionFromFile(AmOsString filename)
     {
         std::string source;
-        return LoadFile(filename.c_str(), &source) && LoadEventDefinition(source);
+        return LoadFile(filename, &source) && LoadEventDefinition(source);
     }
 
     EventInstance Event::Trigger(const Entity& entity)
