@@ -36,14 +36,20 @@ namespace SparkyStudios::Audio::Amplitude
     struct BusDefinitionList;
     struct SoundBankDefinition;
 
+#if defined(AM_WCHAR_SUPPORTED)
+    typedef std::map<std::wstring, AmSoundCollectionID> SoundIdMap;
+    typedef std::map<std::wstring, std::string> EventIdMap;
+    typedef std::map<std::wstring, std::unique_ptr<SoundBank>> SoundBankMap;
+#else
+    typedef std::map<std::string, AmSoundCollectionID> SoundIdMap;
+    typedef std::map<std::string, std::string> EventIdMap;
+    typedef std::map<std::string, std::unique_ptr<SoundBank>> SoundBankMap;
+#endif
+
     typedef std::map<AmSoundCollectionID, std::unique_ptr<SoundCollection>> SoundCollectionMap;
-    typedef std::map<AmOsString, AmSoundCollectionID, AmOsStringComparator> SoundIdMap;
 
     typedef std::map<std::string, std::unique_ptr<Event>> EventMap;
-    typedef std::map<AmOsString, std::string, AmOsStringComparator> EventIdMap;
     typedef std::vector<EventInstance> EventInstanceVector;
-
-    typedef std::map<AmOsString, std::unique_ptr<SoundBank>, AmOsStringComparator> SoundBankMap;
 
     typedef std::vector<ChannelInternalState> ChannelStateVector;
 
@@ -67,6 +73,7 @@ namespace SparkyStudios::Audio::Amplitude
             , master_gain(1.0f)
             , mute(true)
             , paused(true)
+            , stopping(false)
             , sound_collection_map()
             , sound_id_map()
             , event_map()
@@ -107,6 +114,9 @@ namespace SparkyStudios::Audio::Amplitude
 
         // If true, the entire audio engine has paused all playback.
         bool paused;
+
+        // If true, the engine is in the process of shutting down.
+        bool stopping;
 
         // A map of sound names to SoundCollections.
         SoundCollectionMap sound_collection_map;
