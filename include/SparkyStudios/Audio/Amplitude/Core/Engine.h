@@ -188,9 +188,11 @@ namespace SparkyStudios::Audio::Amplitude
         /**
          * @brief Initialize and return a Listener.
          *
+         * @param id The game Listener ID.
+         *
          * @return An initialized Listener.
          */
-        Listener AddListener();
+        Listener AddListener(AmListenerID id);
 
         /**
          * @brief Remove a Listener.

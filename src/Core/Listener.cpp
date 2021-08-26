@@ -20,6 +20,14 @@
 
 namespace SparkyStudios::Audio::Amplitude
 {
+    Listener::Listener()
+        : _state(nullptr)
+    {}
+
+    Listener::Listener(ListenerInternalState* state)
+        : _state(state)
+    {}
+
     void Listener::Clear()
     {
         _state = nullptr;
@@ -28,6 +36,12 @@ namespace SparkyStudios::Audio::Amplitude
     bool Listener::Valid() const
     {
         return _state != nullptr && _state->node.in_list();
+    }
+
+    AmListenerID Listener::GetId() const
+    {
+        AMPLITUDE_ASSERT(Valid());
+        return _state->GetId();
     }
 
     void Listener::SetOrientation(const hmm_vec3& location, const hmm_vec3& direction, const hmm_vec3& up)
@@ -58,5 +72,4 @@ namespace SparkyStudios::Audio::Amplitude
     {
         return AM_Mat4d(1.0f); // TODO
     }
-
 } // namespace SparkyStudios::Audio::Amplitude

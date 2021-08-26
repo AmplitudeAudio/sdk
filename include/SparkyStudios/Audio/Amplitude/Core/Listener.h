@@ -12,10 +12,12 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+#pragma once
+
 #ifndef SPARK_AUDIO_LISTENER_H
 #define SPARK_AUDIO_LISTENER_H
 
-#include <SparkyStudios/Audio/Amplitude/Math/HandmadeMath.h>
+#include <SparkyStudios/Audio/Amplitude/Core/Common.h>
 
 namespace SparkyStudios::Audio::Amplitude
 {
@@ -37,13 +39,9 @@ namespace SparkyStudios::Audio::Amplitude
          * An uninitialized Listener cannot have its location set or queried.
          * To initialize the Listener, use <code>Engine::AddListener();</code>.
          */
-        Listener()
-            : _state(nullptr)
-        {}
+        Listener();
 
-        explicit Listener(ListenerInternalState* state)
-            : _state(state)
-        {}
+        explicit Listener(ListenerInternalState* state);
 
         /**
          * @brief Uninitializes this Listener.
@@ -60,6 +58,13 @@ namespace SparkyStudios::Audio::Amplitude
          * @return bool true if this Listener has been initialized.
          */
         [[nodiscard]] bool Valid() const;
+
+        /**
+         * @brief Gets the ID of this Listener in game.
+         *
+         * @return The game Listener ID.
+         */
+        [[nodiscard]] AmListenerID GetId() const;
 
         /**
          * @brief Returns the location of this Listener.

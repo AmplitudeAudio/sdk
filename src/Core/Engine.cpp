@@ -778,13 +778,14 @@ namespace SparkyStudios::Audio::Amplitude
         FindBus("master").SetGain(gain);
     }
 
-    Listener Engine::AddListener()
+    Listener Engine::AddListener(AmListenerID id)
     {
         if (_state->listener_state_free_list.empty())
         {
             return Listener(nullptr);
         }
         ListenerInternalState* listener = _state->listener_state_free_list.back();
+        listener->SetId(id);
         _state->listener_state_free_list.pop_back();
         _state->listener_list.push_back(*listener);
         return Listener(listener);
@@ -793,6 +794,7 @@ namespace SparkyStudios::Audio::Amplitude
     void Engine::RemoveListener(Listener* listener)
     {
         AMPLITUDE_ASSERT(listener->Valid());
+        listener->GetState()->SetId(kAmInvalidObjectId);
         listener->GetState()->node.remove();
         _state->listener_state_free_list.push_back(listener->GetState());
     }

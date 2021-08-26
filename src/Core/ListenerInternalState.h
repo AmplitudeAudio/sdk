@@ -12,6 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+#pragma once
+
 #ifndef SPARK_AUDIO_LISTENER_INTERNAL_STATE_H
 #define SPARK_AUDIO_LISTENER_INTERNAL_STATE_H
 
@@ -26,7 +28,28 @@ namespace SparkyStudios::Audio::Amplitude
     public:
         ListenerInternalState()
             : _inverseMatrix(AM_Mat4d(1))
+            , _id(kAmInvalidObjectId)
         {}
+
+        /**
+         * @brief Gets the ID of this Listener in game.
+         *
+         * @return The game Listener ID.
+         */
+        [[nodiscard]] AmListenerID GetId() const
+        {
+            return _id;
+        }
+
+        /**
+         * @brief Sets the ID of this Listener in game.
+         *
+         * @param id The game Listener ID.
+         */
+        void SetId(AmListenerID id)
+        {
+            _id = id;
+        }
 
         void SetInverseMatrix(const hmm_mat4& matrix)
         {
@@ -38,7 +61,7 @@ namespace SparkyStudios::Audio::Amplitude
             return _inverseMatrix;
         }
 
-        const hmm_mat4& GetInverseMatrix() const
+        [[nodiscard]] const hmm_mat4& GetInverseMatrix() const
         {
             return _inverseMatrix;
         }
@@ -46,6 +69,8 @@ namespace SparkyStudios::Audio::Amplitude
         fplutil::intrusive_list_node node;
 
     private:
+        AmListenerID _id;
+
         hmm_mat4 _inverseMatrix;
     };
 } // namespace SparkyStudios::Audio::Amplitude
