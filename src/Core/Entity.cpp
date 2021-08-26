@@ -33,7 +33,7 @@ namespace SparkyStudios::Audio::Amplitude
 
     bool Entity::Valid() const
     {
-        return _state != nullptr;
+        return _state != nullptr && _state->node.in_list();
     }
 
     AmEntityID Entity::GetId() const
