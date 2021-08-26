@@ -97,6 +97,11 @@ namespace SparkyStudios::Audio::Amplitude
          */
         [[nodiscard]] float GetFinalGain() const;
 
+        /**
+         * @brief Sets the muted state of this Bus.
+         *
+         * @param mute The muted state.
+         */
         void SetMute(bool mute);
 
         /**
