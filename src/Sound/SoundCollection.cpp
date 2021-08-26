@@ -71,7 +71,6 @@ namespace SparkyStudios::Audio::Amplitude
         }
 
         _worldScopeScheduler = CreateScheduler(def);
-        _worldScopeScheduler->Init(def);
 
         return true;
     }
