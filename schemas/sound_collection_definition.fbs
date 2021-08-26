@@ -125,7 +125,10 @@ table AudioSampleSetEntry {
 
 // Basic triggered sound object.
 table SoundCollectionDefinition {
-  // Identifier for the sound that can be referenced by other objects.
+  // Unique identifier for this sound collection.
+  id:ulong = 0;
+
+  // Sound collection name.
   name:string;
 
   // Priority of this sound relative to all other Sound objects. If the
