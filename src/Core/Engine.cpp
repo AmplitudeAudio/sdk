@@ -813,6 +813,7 @@ namespace SparkyStudios::Audio::Amplitude
     void Engine::RemoveEntity(Entity* entity)
     {
         AMPLITUDE_ASSERT(entity->Valid());
+        entity->GetState()->SetId(kAmInvalidObjectId);
         entity->GetState()->node.remove();
         _state->entity_state_free_list.push_back(entity->GetState());
     }
