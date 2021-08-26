@@ -18,7 +18,7 @@ namespace SparkyStudios::Audio::Amplitude
 {
     EntityInternalState::EntityInternalState()
         : _playingSoundList(&ChannelInternalState::entity_node)
-        , _id(0)
+        , _id(kAmInvalidObjectId)
         , _location()
         , _direction()
         , _up()
