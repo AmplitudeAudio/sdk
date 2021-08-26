@@ -639,6 +639,49 @@ namespace SparkyStudios::Audio::Amplitude
         }
     }
 
+    Channel Engine::Play(AmSoundCollectionID id)
+    {
+        return Play(id, AM_Vec3(0, 0, 0), 1.0f);
+    }
+
+    Channel Engine::Play(AmSoundCollectionID id, const hmm_vec3& location)
+    {
+        return Play(id, location, 1.0f);
+    }
+
+    Channel Engine::Play(AmSoundCollectionID id, const hmm_vec3& location, float user_gain)
+    {
+        SoundHandle handle = GetSoundHandle(id);
+        if (handle)
+        {
+            return Play(handle, location, user_gain);
+        }
+        else
+        {
+            CallLogFunc("Cannot play sound: invalid ID (%u).\n", id);
+            return Channel(nullptr);
+        }
+    }
+
+    Channel Engine::Play(AmSoundCollectionID id, const Entity& entity)
+    {
+        return Play(id, entity, 1.0f);
+    }
+
+    Channel Engine::Play(AmSoundCollectionID id, const Entity& entity, float user_gain)
+    {
+        SoundHandle handle = GetSoundHandle(id);
+        if (handle)
+        {
+            return Play(handle, entity, user_gain);
+        }
+        else
+        {
+            CallLogFunc("Cannot play sound: invalid name (%u)\n", id);
+            return Channel(nullptr);
+        }
+    }
+
     EventCanceler Engine::Trigger(EventHandle event_handle, const Entity& entity)
     {
         EventHandle event = event_handle;
