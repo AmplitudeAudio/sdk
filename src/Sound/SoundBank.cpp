@@ -46,10 +46,20 @@ namespace SparkyStudios::Audio::Amplitude
             {
                 return false;
             }
-            collection->GetRefCounter()->Increment();
 
-            std::string name = collection->GetSoundCollectionDefinition()->name()->c_str();
-            audio_engine->GetState()->sound_collection_map[name] = std::move(collection);
+            const SoundCollectionDefinition* definition = collection->GetSoundCollectionDefinition();
+            AmSoundCollectionID id = definition->id();
+            if (id == kAmInvalidObjectId)
+            {
+                CallLogFunc(
+                    "[ERROR] Cannot load sound collection \'" AM_OS_CHAR_FMT "\'. Invalid ID.\n",
+                    AM_STRING_TO_OS_STRING(definition->name()->c_str()));
+                return false;
+            }
+
+            collection->GetRefCounter()->Increment();
+            audio_engine->GetState()->sound_collection_map[id] = std::move(collection);
+            audio_engine->GetState()->sound_id_map[filename] = id;
         }
 
         return true;
@@ -76,6 +86,7 @@ namespace SparkyStudios::Audio::Amplitude
 
             std::string name = event->GetEventDefinition()->name()->c_str();
             audio_engine->GetState()->event_map[name] = std::move(event);
+            audio_engine->GetState()->event_id_map[filename] = name;
         }
 
         return true;
@@ -119,7 +130,7 @@ namespace SparkyStudios::Audio::Amplitude
             return false;
         }
 
-        std::string id = id_iter->second;
+        AmSoundCollectionID id = id_iter->second;
         auto collection_iter = state->sound_collection_map.find(id);
         if (collection_iter == state->sound_collection_map.end())
         {

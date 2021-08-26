@@ -23,10 +23,41 @@
 
 namespace SparkyStudios::Audio::Amplitude
 {
+    SoundCollection::SoundCollection()
+        : _bus(nullptr)
+        , _worldScopeScheduler(nullptr)
+        , _entityScopeSchedulers()
+        , _source()
+        , _sounds()
+        , _id(kAmInvalidObjectId)
+        , _name()
+        , _refCounter()
+    {}
+
     bool SoundCollection::LoadSoundCollectionDefinition(const std::string& source, EngineInternalState* state)
     {
         _source = source;
         const SoundCollectionDefinition* def = GetSoundCollectionDefinition();
+
+        if (!def->bus())
+        {
+            CallLogFunc("Sound collection %s does not specify a bus.\n", def->name()->c_str());
+            return false;
+        }
+
+        if (state)
+        {
+            _bus = FindBusInternalState(state, def->bus());
+            if (!_bus)
+            {
+                CallLogFunc("Sound collection %s specifies an unknown bus ID: %u.\n", def->name(), def->bus());
+                return false;
+            }
+        }
+
+        _id = def->id();
+        _name = def->name()->str();
+
         flatbuffers::uoffset_t sample_count = def->audio_sample_set() ? def->audio_sample_set()->size() : 0;
         _sounds.resize(sample_count);
         for (flatbuffers::uoffset_t i = 0; i < sample_count; ++i)
@@ -39,24 +70,8 @@ namespace SparkyStudios::Audio::Amplitude
             sound.LoadFile(AM_STRING_TO_OS_STRING(entry_filename), &state->loader);
         }
 
-        if (!def->bus())
-        {
-            CallLogFunc("Sound collection %s does not specify a bus.\n", def->name());
-            return false;
-        }
-
         _worldScopeScheduler = CreateScheduler(def);
         _worldScopeScheduler->Init(def);
-
-        if (state)
-        {
-            _bus = FindBusInternalState(state, def->bus()->c_str());
-            if (!_bus)
-            {
-                CallLogFunc("Sound collection %s specifies an unknown bus: %s.\n", def->name(), def->bus()->c_str());
-                return false;
-            }
-        }
 
         return true;
     }
@@ -124,5 +139,30 @@ namespace SparkyStudios::Audio::Amplitude
         scheduler->Init(definition);
 
         return scheduler;
+    }
+
+    AmBankID SoundCollection::GetId() const
+    {
+        return _id;
+    }
+
+    const std::string& SoundCollection::GetName() const
+    {
+        return _name;
+    }
+
+    BusInternalState* SoundCollection::GetBus() const
+    {
+        return _bus;
+    }
+
+    RefCounter* SoundCollection::GetRefCounter()
+    {
+        return &_refCounter;
+    }
+
+    const std::vector<Sound>& SoundCollection::GetAudioSamples() const
+    {
+        return _sounds;
     }
 } // namespace SparkyStudios::Audio::Amplitude

@@ -19,7 +19,7 @@ namespace SparkyStudios.Audio.Amplitude;
 // children.
 table BusDefinition {
   // The bus unique identifier.
-  id:ulong;
+  id:ulong = 0;
 
   // Name of the bus that can be referenced by other Bus objects. A bus
   // called "master" must be defined as the root playback bus. Names should

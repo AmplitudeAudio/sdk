@@ -36,8 +36,8 @@ namespace SparkyStudios::Audio::Amplitude
     struct BusDefinitionList;
     struct SoundBankDefinition;
 
-    typedef std::map<std::string, std::unique_ptr<SoundCollection>> SoundCollectionMap;
-    typedef std::map<AmOsString, std::string, AmOsStringComparator> SoundIdMap;
+    typedef std::map<AmSoundCollectionID, std::unique_ptr<SoundCollection>> SoundCollectionMap;
+    typedef std::map<AmOsString, AmSoundCollectionID, AmOsStringComparator> SoundIdMap;
 
     typedef std::map<std::string, std::unique_ptr<Event>> EventMap;
     typedef std::map<AmOsString, std::string, AmOsStringComparator> EventIdMap;

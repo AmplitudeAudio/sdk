@@ -639,6 +639,49 @@ namespace SparkyStudios::Audio::Amplitude
         }
     }
 
+    Channel Engine::Play(AmSoundCollectionID id)
+    {
+        return Play(id, AM_Vec3(0, 0, 0), 1.0f);
+    }
+
+    Channel Engine::Play(AmSoundCollectionID id, const hmm_vec3& location)
+    {
+        return Play(id, location, 1.0f);
+    }
+
+    Channel Engine::Play(AmSoundCollectionID id, const hmm_vec3& location, float user_gain)
+    {
+        SoundHandle handle = GetSoundHandle(id);
+        if (handle)
+        {
+            return Play(handle, location, user_gain);
+        }
+        else
+        {
+            CallLogFunc("Cannot play sound: invalid ID (%u).\n", id);
+            return Channel(nullptr);
+        }
+    }
+
+    Channel Engine::Play(AmSoundCollectionID id, const Entity& entity)
+    {
+        return Play(id, entity, 1.0f);
+    }
+
+    Channel Engine::Play(AmSoundCollectionID id, const Entity& entity, float user_gain)
+    {
+        SoundHandle handle = GetSoundHandle(id);
+        if (handle)
+        {
+            return Play(handle, entity, user_gain);
+        }
+        else
+        {
+            CallLogFunc("Cannot play sound: invalid name (%u)\n", id);
+            return Channel(nullptr);
+        }
+    }
+
     EventCanceler Engine::Trigger(EventHandle event_handle, const Entity& entity)
     {
         EventHandle event = event_handle;
@@ -668,9 +711,25 @@ namespace SparkyStudios::Audio::Amplitude
         }
     }
 
-    SoundHandle Engine::GetSoundHandle(const std::string& sound_name) const
+    SoundHandle Engine::GetSoundHandle(const std::string& name) const
     {
-        auto iter = _state->sound_collection_map.find(sound_name);
+        auto iter = std::find_if(
+            _state->sound_collection_map.begin(), _state->sound_collection_map.end(),
+            [name](const auto& item)
+            {
+                return item.second->GetName() == name;
+            });
+
+        if (iter == _state->sound_collection_map.end())
+        {
+            return nullptr;
+        }
+        return iter->second.get();
+    }
+
+    SoundHandle Engine::GetSoundHandle(AmSoundCollectionID id) const
+    {
+        auto iter = _state->sound_collection_map.find(id);
         if (iter == _state->sound_collection_map.end())
         {
             return nullptr;

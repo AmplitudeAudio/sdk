@@ -123,6 +123,13 @@ namespace SparkyStudios::Audio::Amplitude
         [[nodiscard]] SoundHandle GetSoundHandle(const std::string& name) const;
 
         /**
+         * @brief Get a SoundHandle given its ID as defined in its JSON data.
+         *
+         * @param id The unique ID as defined in the JSON data.
+         */
+        [[nodiscard]] SoundHandle GetSoundHandle(AmSoundCollectionID id) const;
+
+        /**
          * @brief Get an EventHandle given its name as defined in its JSON data.
          *
          * @param name The unique name as defined in the JSON data.
@@ -350,6 +357,81 @@ namespace SparkyStudios::Audio::Amplitude
          *         played, an invalid Channel is returned.
          */
         Channel Play(const std::string& sound_name, const Entity& entity, float gain);
+
+        /**
+         * @brief Play a sound associated with the given sound name.
+         *
+         * Note: Playing a sound with its SoundHandle is faster than using the sound
+         * ID as using the name requires a map lookup internally.
+         *
+         * @param id The ID of the sound to play.
+         *
+         * @return The channel the sound is played on. If the sound could not be
+         *         played, an invalid Channel is returned.
+         */
+        Channel Play(AmSoundCollectionID id);
+
+        /**
+         * @brief Play a sound associated with the given sound name in the World
+         *        scope at the given location.
+         *
+         * Note: Playing a sound with its SoundHandle is faster than using the sound
+         * ID as using the name requires a map lookup internally.
+         *
+         * @param id The ID of the sound to play.
+         * @param location The location of the sound.
+         *
+         * @return The channel the sound is played on. If the sound could not be
+         *         played, an invalid Channel is returned.
+         */
+        Channel Play(AmSoundCollectionID id, const hmm_vec3& location);
+
+        /**
+         * @brief Play a sound associated with the given sound name in the World
+         *        scope at the given location with the given gain.
+         *
+         * Note: Playing a sound with its SoundHandle is faster than using the sound
+         * ID as using the name requires a map lookup internally.
+         *
+         * @param id The ID of the sound to play.
+         * @param location The location of the sound.
+         * @param gain The gain of the sound.
+         *
+         * @return The channel the sound is played on. If the sound could not be
+         *         played, an invalid Channel is returned.
+         */
+        Channel Play(AmSoundCollectionID id, const hmm_vec3& location, float gain);
+
+        /**
+         * @brief Play a sound associated with the given sound handle in an
+         *        entity scope.
+         *
+         * Note: Playing a sound with its SoundHandle is faster than using the sound
+         * ID as using the name requires a map lookup internally.
+         *
+         * @param id The ID of the sound to play.
+         * @param entity The entity which is playing the sound.
+         *
+         * @return The channel the sound is played on. If the sound could not be
+         *         played, an invalid Channel is returned.
+         */
+        Channel Play(AmSoundCollectionID id, const Entity& entity);
+
+        /**
+         * @brief Play a sound associated with the given sound handle in an
+         *        entity scope with the given gain.
+         *
+         * Note: Playing a sound with its SoundHandle is faster than using the sound
+         * ID as using the name requires a map lookup internally.
+         *
+         * @param id The ID of the sound to play.
+         * @param entity The entity which is playing the sound.
+         * @param gain The gain of the sound.
+         *
+         * @return The channel the sound is played on. If the sound could not be
+         *         played, an invalid Channel is returned.
+         */
+        Channel Play(AmSoundCollectionID id, const Entity& entity, float gain);
 
         /**
          * @brief Trigger the event associated with the given sound handle at the
