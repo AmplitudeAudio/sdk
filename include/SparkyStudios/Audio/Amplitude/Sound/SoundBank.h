@@ -12,13 +12,10 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+#pragma once
+
 #ifndef SPARK_AUDIO_SOUND_BANK_H
 #define SPARK_AUDIO_SOUND_BANK_H
-
-#include <map>
-#include <memory>
-#include <string>
-#include <vector>
 
 #include <SparkyStudios/Audio/Amplitude/Core/RefCounter.h>
 
@@ -28,22 +25,69 @@ namespace SparkyStudios::Audio::Amplitude
 
     class Engine;
 
+    /**
+     * @brief Amplitude Sound Bank
+     *
+     * A Sound Bank is a group of sound collections and event, packed in a single binary. This way allows
+     * you to pack the needed data for your game as you want (ie. sound banks per levels). A sound bank
+     * need to be loaded by the Engine using <code>Engine::LoadSoundBank()</code> before to play sounds and
+     * trigger events inside it. When the sound bank data should be released (ie. changing the level, closing
+     * the game, etc.), you need to unload the sound bank using <code>Engine::UnloadSoundBank()</code>.
+     */
     class SoundBank
     {
     public:
-        bool Initialize(AmOsString filename, Engine* audio_engine);
+        /**
+         * Initializes the sound bank by loading all the packed data.
+         *
+         * @param filename The path to the sound bank file.
+         * @param engine The engine in which load the sound bank.
+         *
+         * @return true when the operation succeeds, false otherwise.
+         */
+        bool Initialize(AmOsString filename, Engine* engine);
 
-        void Deinitialize(Engine* audio_engine);
+        /**
+         * Unloads the sound bank from the Engine.
+         *
+         * @param engine The engine from which unload the sound bank.
+         */
+        void Deinitialize(Engine* engine);
 
-        RefCounter* GetRefCounter()
-        {
-            return &_refCounter;
-        }
+        /**
+         * Returns the unique ID of this SoundBank.
+         *
+         * @return The SoundBank unique ID.
+         */
+        [[nodiscard]] AmBankID GetId() const;
+
+        /**
+         * Returns the name of this SoundBank.
+         *
+         * @return The SoundBank name.
+         */
+        [[nodiscard]] const std::string& GetName() const;
+
+        /**
+         * Returns the definition data used to initialize this SoundBank.
+         *
+         * @return The sound bank definition data.
+         */
+        [[nodiscard]] const SoundBankDefinition* GetSoundBankDefinition() const;
+
+        /**
+         * Get the references counter of this instance.
+         *
+         * @return The references counter.
+         */
+        RefCounter* GetRefCounter();
 
     private:
         RefCounter _refCounter;
         std::string _soundBankDefSource;
-        const SoundBankDefinition* _soundBankDef;
+
+        std::string _name;
+        AmBankID _id;
     };
 
 } // namespace SparkyStudios::Audio::Amplitude
