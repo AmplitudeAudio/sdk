@@ -57,4 +57,9 @@ namespace SparkyStudios::Audio::Amplitude
     {
         return _state->IsMute();
     }
+
+    BusInternalState* Bus::GetState() const
+    {
+        return _state;
+    }
 } // namespace SparkyStudios::Audio::Amplitude

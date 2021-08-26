@@ -116,10 +116,7 @@ namespace SparkyStudios::Audio::Amplitude
          *
          * @return BusInternalState*
          */
-        [[nodiscard]] BusInternalState* GetState() const
-        {
-            return _state;
-        }
+        [[nodiscard]] BusInternalState* GetState() const;
 
     private:
         BusInternalState* _state;
