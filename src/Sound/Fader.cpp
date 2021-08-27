@@ -12,14 +12,15 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include <SparkyStudios/Audio/Amplitude/Math/HandmadeMath.h>
 #include <SparkyStudios/Audio/Amplitude/Sound/Fader.h>
+
+#include <Sound/Faders/LinearFader.h>
 
 namespace SparkyStudios::Audio::Amplitude
 {
     Fader::Fader()
     {
-        m_current = m_from = m_to = m_delta = 0;
+        m_from = m_to = m_delta = 0;
         m_time = m_startTime = m_endTime = 0;
         m_state = AM_FADER_STATE_DISABLED;
     }
@@ -27,7 +28,6 @@ namespace SparkyStudios::Audio::Amplitude
     void Fader::Set(float from, float to, AmTime time)
     {
         Start(0.0);
-        m_current = m_from;
         m_from = from;
         m_to = to;
         m_time = time;
@@ -37,31 +37,26 @@ namespace SparkyStudios::Audio::Amplitude
 
     float Fader::Get(AmTime currentTime)
     {
+        if (m_state != AM_FADER_STATE_ACTIVE)
+            return 0.0f;
+
         if (m_startTime > currentTime)
-        {
-            // Time rolled over.
-            // Figure out where we were...
-            float p = (m_current - m_from) / m_delta; // 0..1
-            m_from = m_current;
-            m_startTime = currentTime;
-            m_time = m_time * (1 - p); // time left
-            m_delta = m_to - m_from;
-            m_endTime = m_startTime + m_time;
-        }
+            return m_from;
 
         if (currentTime > m_endTime)
-        {
-            m_state = AM_FADER_STATE_STOPPED;
             return m_to;
-        }
 
-        m_current = (float)(m_from + m_delta * ((currentTime - m_startTime) / m_time));
-        return m_current;
+        return Get((currentTime - m_startTime) / (m_endTime - m_startTime));
     }
 
     void Fader::Start(AmTime time)
     {
         m_startTime = time;
         m_endTime = m_startTime + m_time;
+    }
+
+    Fader* Fader::CreateLinear()
+    {
+        return new LinearFader();
     }
 } // namespace SparkyStudios::Audio::Amplitude
