@@ -39,6 +39,7 @@
 namespace SparkyStudios::Audio::Amplitude
 {
     typedef flatbuffers::Vector<uint64_t> BusIdList;
+    typedef flatbuffers::Vector<flatbuffers::Offset<DuckBusDefinition>> DuckBusDefinitionList;
 
     bool LoadFile(AmOsString filename, std::string* dest)
     {
@@ -136,20 +137,44 @@ namespace SparkyStudios::Audio::Amplitude
         }
     }
 
-    static bool PopulateBuses(
-        EngineInternalState* state, AmString list_name, const BusIdList* childIdList, std::vector<BusInternalState*>* output)
+    static bool PopulateChildBuses(EngineInternalState* state, BusInternalState* parent, const BusIdList* childIdList)
     {
+        std::vector<BusInternalState*>* output = &parent->GetChildBuses();
+
         for (flatbuffers::uoffset_t i = 0; childIdList && i < childIdList->size(); ++i)
         {
             AmBusID busId = childIdList->Get(i);
             BusInternalState* bus = FindBusInternalState(state, busId);
+
             if (bus)
             {
                 output->push_back(bus);
             }
             else
             {
-                CallLogFunc("Unknown bus with ID \"%u\" listed in %s.\n", busId, list_name);
+                CallLogFunc("Unknown bus with ID \"%u\" listed in child buses.\n", busId);
+                return false;
+            }
+        }
+        return true;
+    }
+
+    static bool PopulateDuckBuses(EngineInternalState* state, BusInternalState* parent, const DuckBusDefinitionList* duckBusDefinitionList)
+    {
+        std::vector<DuckBusInternalState*>* output = &parent->GetDuckBuses();
+
+        for (flatbuffers::uoffset_t i = 0; duckBusDefinitionList && i < duckBusDefinitionList->size(); ++i)
+        {
+            const DuckBusDefinition* duck = duckBusDefinitionList->Get(i);
+            auto* bus = new DuckBusInternalState(parent);
+
+            if (bus->Initialize(duck))
+            {
+                output->push_back(bus);
+            }
+            else
+            {
+                CallLogFunc("Unknown bus with ID \"%u\" listed in duck buses.\n", duck->id());
                 return false;
             }
         }
@@ -157,7 +182,7 @@ namespace SparkyStudios::Audio::Amplitude
     }
 
     // The InternalChannelStates have three lists they are a part of: The engine's
-    // priority list, the GetBus's playing sound list, and which free list they are in.
+    // priority list, the bus's playing sound list, and which free list they are in.
     // Initially, all nodes are in a free list because nothing is playing. Separate
     // free lists are kept for real channels and virtual channels (where 'real'
     // channels are channels that have a channel_id
@@ -292,11 +317,11 @@ namespace SparkyStudios::Audio::Amplitude
         for (auto& bus : _state->buses)
         {
             const BusDefinition* def = bus.GetBusDefinition();
-            if (!PopulateBuses(_state, "child_buses", def->child_buses(), &bus.GetChildBuses()))
+            if (!PopulateChildBuses(_state, &bus, def->child_buses()))
             {
                 return false;
             }
-            if (!PopulateBuses(_state, "duck_buses", def->duck_buses(), &bus.GetDuckBuses()))
+            if (!PopulateDuckBuses(_state, &bus, def->duck_buses()))
             {
                 return false;
             }
