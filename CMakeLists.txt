@@ -65,7 +65,6 @@ set(SA_SOURCE
     include/SparkyStudios/Audio/Amplitude/Core/Engine.h
     include/SparkyStudios/Audio/Amplitude/Core/Entity.h
     include/SparkyStudios/Audio/Amplitude/Core/Event.h
-    include/SparkyStudios/Audio/Amplitude/Core/Fader.h
     include/SparkyStudios/Audio/Amplitude/Core/Listener.h
     include/SparkyStudios/Audio/Amplitude/Core/Log.h
     include/SparkyStudios/Audio/Amplitude/Core/RefCounter.h
@@ -75,6 +74,7 @@ set(SA_SOURCE
     include/SparkyStudios/Audio/Amplitude/Math/HandmadeMath.h
     include/SparkyStudios/Audio/Amplitude/Sound/Schedulers/SequenceScheduler.h
     include/SparkyStudios/Audio/Amplitude/Sound/Schedulers/RandomScheduler.h
+    include/SparkyStudios/Audio/Amplitude/Sound/Fader.h
     include/SparkyStudios/Audio/Amplitude/Sound/Scheduler.h
     include/SparkyStudios/Audio/Amplitude/Sound/Sound.h
     include/SparkyStudios/Audio/Amplitude/Sound/SoundBank.h
@@ -109,7 +109,6 @@ set(SA_SOURCE
     src/Core/EntityInternalState.cpp
     src/Core/EntityInternalState.h
     src/Core/Event.cpp
-    src/Core/Fader.cpp
     src/Core/ListenerInternalState.h
     src/Core/Listener.cpp
     src/Core/Log.cpp
@@ -129,6 +128,7 @@ set(SA_SOURCE
 
     src/Sound/Schedulers/SequenceScheduler.cpp
     src/Sound/Schedulers/RandomScheduler.cpp
+    src/Sound/Fader.cpp
     src/Sound/SoundCollection.cpp
     src/Sound/SoundBank.cpp
     src/Sound/RefCounter.cpp

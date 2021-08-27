@@ -18,8 +18,8 @@
 #include <vector>
 
 #include <SparkyStudios/Audio/Amplitude/Core/Channel.h>
-#include <SparkyStudios/Audio/Amplitude/Core/Fader.h>
 #include <SparkyStudios/Audio/Amplitude/Math/HandmadeMath.h>
+#include <SparkyStudios/Audio/Amplitude/Sound/Fader.h>
 
 #include "atomix.h"
 

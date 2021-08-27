@@ -12,8 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include <SparkyStudios/Audio/Amplitude/Core/Fader.h>
 #include <SparkyStudios/Audio/Amplitude/Math/HandmadeMath.h>
+#include <SparkyStudios/Audio/Amplitude/Sound/Fader.h>
 
 namespace SparkyStudios::Audio::Amplitude
 {
@@ -24,47 +24,19 @@ namespace SparkyStudios::Audio::Amplitude
         m_state = AM_FADER_STATE_DISABLED;
     }
 
-    void Fader::Set(float from, float to, AmTime time, AmTime startTime)
+    void Fader::Set(float from, float to, AmTime time)
     {
+        Start(0.0);
         m_current = m_from;
         m_from = from;
         m_to = to;
         m_time = time;
-        m_startTime = startTime;
         m_delta = to - from;
-        m_endTime = m_startTime + m_time;
         m_state = AM_FADER_STATE_ACTIVE;
-    }
-
-    void Fader::SetLFO(float from, float to, AmTime time, AmTime startTime)
-    {
-        m_state = AM_FADER_STATE_LFO;
-        m_current = 0;
-        m_from = from;
-        m_to = to;
-        m_time = time;
-        m_delta = (to - from) / 2;
-        if (m_delta < 0)
-            m_delta = -m_delta;
-        m_startTime = startTime;
-        m_endTime = M_PI * 2.0f / m_time;
     }
 
     float Fader::Get(AmTime currentTime)
     {
-        if (m_state == AM_FADER_STATE_LFO)
-        {
-            // LFO mode
-            if (m_startTime > currentTime)
-            {
-                // Time rolled over.
-                m_startTime = currentTime;
-            }
-
-            AmTime t = currentTime - m_startTime;
-            return AM_SinF((float)(t * m_endTime) * m_delta + (m_from + m_delta));
-        }
-
         if (m_startTime > currentTime)
         {
             // Time rolled over.
@@ -85,5 +57,11 @@ namespace SparkyStudios::Audio::Amplitude
 
         m_current = (float)(m_from + m_delta * ((currentTime - m_startTime) / m_time));
         return m_current;
+    }
+
+    void Fader::Start(AmTime time)
+    {
+        m_startTime = time;
+        m_endTime = m_startTime + m_time;
     }
 } // namespace SparkyStudios::Audio::Amplitude

@@ -37,24 +37,13 @@ namespace SparkyStudios::Audio::Amplitude
         Fader();
 
         /**
-         * @brief Set up LFO.
-         *
-         * @param from The start value.
-         * @param to The target value.
-         * @param time The duration of transition.
-         * @param startTime
-         */
-        void SetLFO(float from, float to, AmTime time, AmTime startTime);
-
-        /**
          * @brief Set up fader.
          *
          * @param from
          * @param to
          * @param time
-         * @param startTime
          */
-        void Set(float from, float to, AmTime time, AmTime startTime);
+        void Set(float from, float to, AmTime time);
 
         /**
          * @brief Get the current fading value.
@@ -83,6 +72,13 @@ namespace SparkyStudios::Audio::Amplitude
         {
             m_state = state;
         }
+
+        /**
+         * @brief Sets the fading start time.
+         *
+         * @param time The fading start time.
+         */
+        void Start(AmTime time);
 
     protected:
         // Value to fade from

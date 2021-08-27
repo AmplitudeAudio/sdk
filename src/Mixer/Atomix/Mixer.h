@@ -19,7 +19,7 @@
 
 #include <SparkyStudios/Audio/Amplitude/Core/Common.h>
 
-#include <SparkyStudios/Audio/Amplitude/Core/Fader.h>
+#include <SparkyStudios/Audio/Amplitude/Sound/Fader.h>
 
 #include <Core/BusInternalState.h>
 #include <Utils/intrusive_list.h>
