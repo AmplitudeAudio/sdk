@@ -825,6 +825,11 @@ namespace SparkyStudios::Audio::Amplitude
         return Bus(FindBusInternalState(_state, bus_name));
     }
 
+    Bus Engine::FindBus(AmBusID id)
+    {
+        return Bus(FindBusInternalState(_state, id));
+    }
+
     void Engine::Pause(bool pause)
     {
         _state->paused = pause;

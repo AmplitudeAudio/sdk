@@ -218,11 +218,22 @@ namespace SparkyStudios::Audio::Amplitude
         void RemoveEntity(Entity* entity);
 
         /**
-         * @brief Returns the named GetBus.
+         * @brief Returns the bus with the specified name.
          *
-         * @return The named GetBus.
+         * @param name The name of the bus.
+         *
+         * @return A valid bus if found, otherwise an invalid bus.
          */
         Bus FindBus(AmString bus_name);
+
+        /**
+         * @brief Returns the bus with the given ID.
+         *
+         * @param id The ID of the bus.
+         *
+         * @return A valid bus if found, otherwise an invalid bus.
+         */
+        Bus FindBus(AmBusID id);
 
         /**
          * @brief Play a sound associated with the given sound handle in the
