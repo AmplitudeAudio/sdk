@@ -79,7 +79,7 @@ namespace SparkyStudios::Audio::Amplitude
                 _transitionPercentage = 0.0f;
             }
         }
-        float duck_gain = AM_Lerp(1.0f, _busDefinition->duck_gain(), _transitionPercentage);
+        float duck_gain = AM_Lerp(1.0f, _transitionPercentage, _busDefinition->duck_gain());
         for (auto bus : _duckBuses)
         {
             bus->_duckGain = AM_MIN(duck_gain, bus->_duckGain);
