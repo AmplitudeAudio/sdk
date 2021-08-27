@@ -12,6 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+#pragma once
+
 #ifndef SPARK_AUDIO_REAL_CHANNEL_H
 #define SPARK_AUDIO_REAL_CHANNEL_H
 
@@ -163,44 +165,6 @@ namespace SparkyStudios::Audio::Amplitude
         }
 
     private:
-        bool _activeFader;
-
-        float _dopplerValue;
-
-        // Sample rate; sampleRate = audioEngineOutputFrequency * relativePlaySpeed
-        float _sampleRate;
-
-        // Set volume
-        float _setVolume;
-        // 3D volume
-        float _3DVolume;
-        // Overall volume; overallVolume = setVolume * 3DVolume
-        float _overallVolume;
-        // Current channel volumes, used to ramp the volume changes to avoid clicks
-        float _currentChannelVolume[AM_MAX_CHANNELS]{};
-        // Volume for each channel (panning)
-        float _channelVolume[AM_MAX_CHANNELS]{};
-
-        // Relative play speed
-        float _setRelativePlaySpeed;
-        // Overall relative play speed; overall = dopplerValue * setRelativePlaySpeed
-        float _overallRelativePlaySpeed;
-        // How long this stream has played, in seconds.
-        AmTime _streamTime;
-        // Position of this stream, in seconds.
-        AmTime _streamPosition;
-
-        // Fader for the audio panning
-        Fader _panFader;
-        // Fader for the audio volume
-        Fader _volumeFader;
-        // Fader for the relative Play speed
-        Fader _relativePlaySpeedFader;
-        // Fader used to schedule pausing of the stream
-        Fader _pauseScheduler;
-        // Fader used to schedule stopping of the stream
-        Fader _stopScheduler;
-
         AmHandle _channelId;
         bool _stream;
         bool _loop;
