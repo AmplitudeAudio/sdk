@@ -87,6 +87,13 @@ namespace SparkyStudios::Audio::Amplitude
         void AdvanceFrame(AmTime delta);
 
         /**
+         * @brief Gets the total elapsed time since the start of the game.
+         *
+         * @return The total elapsed time since the start of the game.
+         */
+        AmTime GetTotalTime() const;
+
+        /**
          * @brief Load a sound bank from a file. Queue the sound files in that sound
          *        bank for loading. Call StartLoadingSoundFiles() to trigger loading
          *        of the sound files on a separate thread.

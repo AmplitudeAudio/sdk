@@ -933,6 +933,7 @@ namespace SparkyStudios::Audio::Amplitude
     void Engine::AdvanceFrame(AmTime delta_time)
     {
         ++_state->current_frame;
+        _state->total_time += delta_time;
 
         EraseFinishedSounds(_state);
 
@@ -981,6 +982,11 @@ namespace SparkyStudios::Audio::Amplitude
 
             event->AdvanceFrame(delta_time);
         }
+    }
+
+    AmTime Engine::GetTotalTime() const
+    {
+        return _state->total_time;
     }
 
     const struct Version* Engine::Version() const

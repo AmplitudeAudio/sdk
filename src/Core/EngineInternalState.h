@@ -92,6 +92,7 @@ namespace SparkyStudios::Audio::Amplitude
             , entity_state_free_list()
             , loader()
             , current_frame(0)
+            , total_time(0.0)
             , version(nullptr)
         {}
 
@@ -158,7 +159,10 @@ namespace SparkyStudios::Audio::Amplitude
         FileLoader loader;
 
         // The current frame, i.e. the number of times AdvanceFrame has been called.
-        AmUInt32 current_frame;
+        AmUInt64 current_frame;
+
+        // The total elapsed time since the start of the game.
+        AmTime total_time;
 
         const struct Version* version;
     };
