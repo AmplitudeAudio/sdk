@@ -23,7 +23,7 @@ namespace SparkyStudios::Audio::Amplitude
 {
     class LinearFader : public Fader
     {
-        float Get(float percentage) override;
+        float GetFromPercentage(double percentage) override;
     };
 } // namespace SparkyStudios::Audio::Amplitude
 

@@ -48,11 +48,14 @@ namespace SparkyStudios::Audio::Amplitude
         /**
          * @brief Get the current fading value.
          *
-         * @param currentTime The time at which the value should be calculated.
+         * To use this method you need to define the fading stat time using
+         * <code>Fader::Start()</code> firstly.
+         *
+         * @param time The time at which the value should be calculated.
          *
          * @return The current value.
          */
-        float Get(AmTime currentTime);
+        float GetFromTime(AmTime time);
 
         /**
          * @brief Get the current fading value.
@@ -61,7 +64,7 @@ namespace SparkyStudios::Audio::Amplitude
          *
          * @return The current value.
          */
-        virtual float Get(float percentage) = 0;
+        virtual float GetFromPercentage(double percentage) = 0;
 
         /**
          * @brief Get the state of this Fader.

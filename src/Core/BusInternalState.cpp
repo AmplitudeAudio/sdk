@@ -88,7 +88,7 @@ namespace SparkyStudios::Audio::Amplitude
                 _transitionPercentage = 1.0;
             }
 
-            duckGain = _faderIn->Get((float)_transitionPercentage);
+            duckGain = _faderIn->GetFromPercentage(_transitionPercentage);
         }
         else if (!playing && _transitionPercentage >= 0.0)
         {
@@ -103,7 +103,7 @@ namespace SparkyStudios::Audio::Amplitude
                 _transitionPercentage = 0.0;
             }
 
-            duckGain = _faderOut->Get((float)(1.0f - _transitionPercentage));
+            duckGain = _faderOut->GetFromPercentage(_transitionPercentage);
         }
 
         _bus.GetState()->_duckGain = AM_MIN(duckGain, _bus.GetState()->_duckGain);

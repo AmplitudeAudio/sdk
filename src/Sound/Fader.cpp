@@ -35,18 +35,18 @@ namespace SparkyStudios::Audio::Amplitude
         m_state = AM_FADER_STATE_ACTIVE;
     }
 
-    float Fader::Get(AmTime currentTime)
+    float Fader::GetFromTime(AmTime time)
     {
         if (m_state != AM_FADER_STATE_ACTIVE)
             return 0.0f;
 
-        if (m_startTime > currentTime)
+        if (m_startTime > time)
             return m_from;
 
-        if (currentTime > m_endTime)
+        if (time > m_endTime)
             return m_to;
 
-        return Get((currentTime - m_startTime) / (m_endTime - m_startTime));
+        return GetFromPercentage((time - m_startTime) / (m_endTime - m_startTime));
     }
 
     void Fader::Start(AmTime time)
