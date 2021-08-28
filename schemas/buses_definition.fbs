@@ -65,6 +65,9 @@ table BusDefinition {
 
   /// Configures the duck buses attached to this bus.
   duck_buses:[DuckBusDefinition];
+
+  /// Defines the fader algorithm to use when manually fading the gain of this bus.
+  fader:FaderAlgorithm = Linear;
 }
 
 table BusDefinitionList {

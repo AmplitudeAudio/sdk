@@ -76,10 +76,10 @@ namespace SparkyStudios::Audio::Amplitude
             , _userGain(1.0f)
             , _gain(1.0f)
             , _targetUserGain(1.0f)
-            , _targetUserGainStep(0.0f)
             , _duckGain(1.0f)
             , _playingSoundList(&ChannelInternalState::bus_node)
             , _muted(false)
+            , _gainFader(nullptr)
         {}
 
         void Initialize(const BusDefinition* bus_def);
@@ -112,7 +112,7 @@ namespace SparkyStudios::Audio::Amplitude
         {
             _userGain = user_gain;
             _targetUserGain = user_gain;
-            _targetUserGainStep = 0.0f;
+            _gainFader->SetState(AM_FADER_STATE_STOPPED);
         }
 
         // Return the user gain.
@@ -195,8 +195,8 @@ namespace SparkyStudios::Audio::Amplitude
         // The target user gain of this bus (used for fading).
         float _targetUserGain;
 
-        // How much to adjust the gain per second while fading.
-        float _targetUserGainStep;
+        // The bus gain fader.
+        Fader* _gainFader;
 
         // The current _duckGain of this bus to be applied to all buses in
         // _duckBuses.
@@ -205,6 +205,7 @@ namespace SparkyStudios::Audio::Amplitude
         // The final gain to be applied to all sounds on this bus.
         float _gain;
 
+        // The muted state of the bus.
         bool _muted;
 
         // Keeps track of how many sounds are being played on this bus.

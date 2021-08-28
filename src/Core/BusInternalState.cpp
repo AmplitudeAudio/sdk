@@ -109,8 +109,12 @@ namespace SparkyStudios::Audio::Amplitude
 
     void BusInternalState::FadeTo(float gain, AmTime duration)
     {
+        // Setup fader
         _targetUserGain = gain;
-        _targetUserGainStep = (_targetUserGain - _userGain) / (float)duration;
+        _gainFader->Set(_userGain, _targetUserGain, duration);
+
+        // Set now as the stat time of the transition
+        _gainFader->Start(Engine::GetInstance()->GetTotalTime());
     }
 
     void BusInternalState::Initialize(const BusDefinition* bus_def)
@@ -126,6 +130,8 @@ namespace SparkyStudios::Audio::Amplitude
         // Initialize the gain with the value specified by the definition file.
         _gain = _busDefinition->gain();
 
+        _gainFader = Fader::Create(static_cast<Fader::FADER_ALGORITHM>(_busDefinition->fader()));
+
         _childBuses.clear();
         _duckBuses.clear();
     }
@@ -140,27 +146,29 @@ namespace SparkyStudios::Audio::Amplitude
 
     void BusInternalState::AdvanceFrame(AmTime delta_time, float parent_gain)
     {
-        // Update fading.
-        _userGain += (float)delta_time * _targetUserGainStep;
-        bool fading_complete =
-            (_targetUserGainStep < 0 && _userGain < _targetUserGain) || (_targetUserGainStep > 0 && _userGain > _targetUserGain);
-        if (fading_complete)
+        if (_gainFader->GetState() == AM_FADER_STATE_ACTIVE)
         {
-            _userGain = _targetUserGain;
-            _targetUserGainStep = 0;
+            // Update fading.
+            _userGain = _gainFader->GetFromTime(Engine::GetInstance()->GetTotalTime());
+
+            if (_userGain == _targetUserGain)
+            {
+                // Fading is ended, disable fader.
+                _gainFader->SetState(AM_FADER_STATE_STOPPED);
+            }
         }
 
         // Update final gain.
         _gain = _busDefinition->gain() * parent_gain * _duckGain * _userGain;
 
         // Advance frames in playing channels.
-        for (auto& channel : _playingSoundList)
+        for (auto&& channel : _playingSoundList)
         {
             channel.AdvanceFrame(delta_time);
         }
 
         // Advance frames in child buses.
-        for (auto& child_bus : _childBuses)
+        for (auto&& child_bus : _childBuses)
         {
             if (child_bus)
             {
