@@ -59,4 +59,14 @@ namespace SparkyStudios::Audio::Amplitude
     {
         return new LinearFader();
     }
+
+    Fader* Fader::Create(Fader::FADER_ALGORITHM algorithm)
+    {
+        switch (algorithm)
+        {
+        default:
+        case Fader::ALGORITHM_LINEAR:
+            return CreateLinear();
+        }
+    }
 } // namespace SparkyStudios::Audio::Amplitude

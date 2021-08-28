@@ -34,6 +34,14 @@ namespace SparkyStudios::Audio::Amplitude
         friend class Mixer;
 
     public:
+        enum FADER_ALGORITHM : AmInt8
+        {
+            /**
+             * @brief Fades linearly from the initial value to the final value.
+             */
+            ALGORITHM_LINEAR = 0,
+        };
+
         Fader();
 
         /**
@@ -99,6 +107,15 @@ namespace SparkyStudios::Audio::Amplitude
          * @return A linear fader.
          */
         static Fader* CreateLinear();
+
+        /**
+         * @brief Creates a fader from the provided algorithm.
+         *
+         * @param algorithm The fader algorithm.
+         *
+         * @return A fader instance which matches the provided algorithm.
+         */
+        static Fader* Create(FADER_ALGORITHM algorithm);
 
     protected:
         // Value to fade from

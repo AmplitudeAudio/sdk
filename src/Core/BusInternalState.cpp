@@ -45,23 +45,11 @@ namespace SparkyStudios::Audio::Amplitude
         _fadeInDuration = definition->fade_in()->duration();
         _fadeOutDuration = definition->fade_out()->duration();
 
-        switch (definition->fade_in()->fader())
-        {
-        default:
-        case FaderType_Linear:
-            _faderIn = Fader::CreateLinear();
-            _faderIn->Set(_bus.GetGain(), _targetGain, _fadeInDuration);
-            break;
-        }
+        _faderIn = Fader::Create(static_cast<Fader::FADER_ALGORITHM>(definition->fade_in()->fader()));
+        _faderIn->Set(_bus.GetGain(), _targetGain, _fadeInDuration);
 
-        switch (definition->fade_out()->fader())
-        {
-        default:
-        case FaderType_Linear:
-            _faderOut = Fader::CreateLinear();
-            _faderOut->Set(_targetGain, _bus.GetGain(), _fadeOutDuration);
-            break;
-        }
+        _faderOut = Fader::Create(static_cast<Fader::FADER_ALGORITHM>(definition->fade_out()->fader()));
+        _faderOut->Set(_bus.GetGain(), _targetGain, _fadeOutDuration);
 
         _initialized = true;
         return true;
