@@ -68,7 +68,7 @@ namespace SparkyStudios::Audio::Amplitude
          *
          * @return The current value.
          */
-        float GetFromTime(AmTime time);
+        virtual float GetFromTime(AmTime time);
 
         /**
          * @brief Get the current fading value.
@@ -105,13 +105,6 @@ namespace SparkyStudios::Audio::Amplitude
          * @param time The fading start time.
          */
         void Start(AmTime time);
-
-        /**
-         * @brief Creates a fader which fades linearly between two values.
-         *
-         * @return A linear fader.
-         */
-        static Fader* CreateLinear();
 
         /**
          * @brief Creates a fader from the provided algorithm.

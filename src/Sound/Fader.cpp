@@ -56,11 +56,6 @@ namespace SparkyStudios::Audio::Amplitude
         m_state = AM_FADER_STATE_ACTIVE;
     }
 
-    Fader* Fader::CreateLinear()
-    {
-        return new LinearFader();
-    }
-
     Fader* Fader::Create(Fader::FADER_ALGORITHM algorithm)
     {
         switch (algorithm)
