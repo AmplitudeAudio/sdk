@@ -56,6 +56,9 @@
 // Returns the maximum value between a and b
 #define AM_MAX(a, b) ((a) > (b)) ? (a) : (b)
 
+// Clamps a value between a and b
+#define AM_CLAMP(v, a, b) AM_MAX(a, AM_MIN(b, v))
+
 // Typedefs have to be made before the includes, as the
 // includes depend on them.
 
@@ -184,7 +187,6 @@ namespace SparkyStudios::Audio::Amplitude
         AM_FADER_STATE_STOPPED = -1,
         AM_FADER_STATE_DISABLED = 0,
         AM_FADER_STATE_ACTIVE = 1,
-        AM_FADER_STATE_LFO = 2,
     };
 } // namespace SparkyStudios::Audio::Amplitude
 
