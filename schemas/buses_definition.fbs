@@ -18,11 +18,11 @@ namespace SparkyStudios.Audio.Amplitude;
 
 /// Defines the settings fo a duck bus gain transition.
 table DuckBusTransitionSettings {
-  /// The transition duration.
+  /// The transition duration in seconds.
   duration:double = 0;
 
   /// The fader algorithm to use during the transition.
-  fader:FaderType = Linear;
+  fader:FaderAlgorithm = Linear;
 }
 
 /// Define the configuration for a duck bus.

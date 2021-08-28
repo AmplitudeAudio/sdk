@@ -16,7 +16,7 @@ namespace SparkyStudios.Audio.Amplitude;
 
 /// Faders allow to progressively update a value
 /// to a given target during the specified period of time.
-enum FaderType: byte {
+enum FaderAlgorithm: byte {
   Linear,
 }
 
