@@ -49,7 +49,7 @@ namespace SparkyStudios::Audio::Amplitude
         _faderIn->Set(_bus.GetGain(), _targetGain, _fadeInDuration);
 
         _faderOut = Fader::Create(static_cast<Fader::FADER_ALGORITHM>(definition->fade_out()->fader()));
-        _faderOut->Set(_bus.GetGain(), _targetGain, _fadeOutDuration);
+        _faderOut->Set(_targetGain, _bus.GetGain(), _fadeOutDuration);
 
         _initialized = true;
         return true;
@@ -91,7 +91,7 @@ namespace SparkyStudios::Audio::Amplitude
                 _transitionPercentage = 0.0;
             }
 
-            duckGain = _faderOut->GetFromPercentage(_transitionPercentage);
+            duckGain = _faderOut->GetFromPercentage(1.0 - _transitionPercentage);
         }
 
         _bus.GetState()->_duckGain = AM_MIN(duckGain, _bus.GetState()->_duckGain);
