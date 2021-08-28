@@ -40,6 +40,11 @@ namespace SparkyStudios::Audio::Amplitude
              * @brief Fades linearly from the initial value to the final value.
              */
             ALGORITHM_LINEAR = 0,
+
+            /**
+             * @brief Keeps returning the initial value until the transition is complete.
+             */
+            ALGORITHM_CONSTANT = 1,
         };
 
         Fader();

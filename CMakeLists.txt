@@ -126,6 +126,8 @@ set(SA_SOURCE
     src/Mixer/Atomix/RealChannel.h
     src/Mixer/Atomix/Sound.cpp
 
+    src/Sound/Faders/ConstantFader.cpp
+    src/Sound/Faders/ConstantFader.h
     src/Sound/Faders/LinearFader.cpp
     src/Sound/Faders/LinearFader.h
     src/Sound/Schedulers/SequenceScheduler.cpp

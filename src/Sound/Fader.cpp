@@ -14,6 +14,7 @@
 
 #include <SparkyStudios/Audio/Amplitude/Sound/Fader.h>
 
+#include <Sound/Faders/ConstantFader.h>
 #include <Sound/Faders/LinearFader.h>
 
 namespace SparkyStudios::Audio::Amplitude
@@ -66,7 +67,9 @@ namespace SparkyStudios::Audio::Amplitude
         {
         default:
         case Fader::ALGORITHM_LINEAR:
-            return CreateLinear();
+            return new LinearFader();
+        case Fader::ALGORITHM_CONSTANT:
+            return new ConstantFader();
         }
     }
 } // namespace SparkyStudios::Audio::Amplitude

@@ -12,11 +12,19 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-namespace SparkyStudios.Audio.Amplitude;
+#pragma once
 
-/// Faders allow to progressively update a value
-/// to a given target during the specified period of time.
-enum FaderAlgorithm: byte {
-  Linear,
-  Constant,
-}
+#ifndef SS_AMPLITUDE_AUDIO_CONSTANT_FADER_H
+#define SS_AMPLITUDE_AUDIO_CONSTANT_FADER_H
+
+#include <SparkyStudios/Audio/Amplitude/Sound/Fader.h>
+
+namespace SparkyStudios::Audio::Amplitude
+{
+    class ConstantFader : public Fader
+    {
+        float GetFromPercentage(double percentage) override;
+    };
+} // namespace SparkyStudios::Audio::Amplitude
+
+#endif // SS_AMPLITUDE_AUDIO_CONSTANT_FADER_H
