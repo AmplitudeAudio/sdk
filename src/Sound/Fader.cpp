@@ -27,12 +27,11 @@ namespace SparkyStudios::Audio::Amplitude
 
     void Fader::Set(float from, float to, AmTime time)
     {
-        Start(0.0);
         m_from = from;
         m_to = to;
         m_time = time;
         m_delta = to - from;
-        m_state = AM_FADER_STATE_ACTIVE;
+        Start(0.0);
     }
 
     float Fader::GetFromTime(AmTime time)
@@ -53,6 +52,7 @@ namespace SparkyStudios::Audio::Amplitude
     {
         m_startTime = time;
         m_endTime = m_startTime + m_time;
+        m_state = AM_FADER_STATE_ACTIVE;
     }
 
     Fader* Fader::CreateLinear()
