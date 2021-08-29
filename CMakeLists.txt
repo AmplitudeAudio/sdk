@@ -130,6 +130,8 @@ set(SA_SOURCE
     src/Sound/Faders/ConstantFader.h
     src/Sound/Faders/LinearFader.cpp
     src/Sound/Faders/LinearFader.h
+    src/Sound/Faders/SCurveFader.cpp
+    src/Sound/Faders/SCurveFader.h
     src/Sound/Schedulers/SequenceScheduler.cpp
     src/Sound/Schedulers/RandomScheduler.cpp
     src/Sound/Fader.cpp

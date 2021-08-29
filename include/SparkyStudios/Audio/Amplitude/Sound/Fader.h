@@ -45,6 +45,11 @@ namespace SparkyStudios::Audio::Amplitude
              * @brief Keeps returning the initial value until the transition is complete.
              */
             ALGORITHM_CONSTANT = 1,
+
+            /**
+             * @brief Returns values using an S-shaped curve from the initial value to the final value.
+             */
+            ALGORITHM_S_CURVE = 2,
         };
 
         Fader();

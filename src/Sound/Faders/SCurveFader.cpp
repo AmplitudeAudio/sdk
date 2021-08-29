@@ -12,15 +12,12 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-namespace SparkyStudios.Audio.Amplitude;
+#include <Sound/Faders/SCurveFader.h>
 
-/// Faders allow to progressively update a value
-/// to a given target during the specified period of time.
-enum FaderAlgorithm: byte {
-  /// Fades linearly from the initial value to the final value.
-  Linear = 0,
-  /// Keeps returning the initial value until the transition is complete.
-  Constant = 1,
-  /// Returns values using an S-shaped curve from the initial value to the final value.
-  S_Curve = 2,
-}
+namespace SparkyStudios::Audio::Amplitude
+{
+    float SCurveFader::GetFromPercentage(double percentage)
+    {
+        return m_delta / (1.0f + AM_PowerF((float)(percentage / (1.0f - percentage)), -1.5f)) + m_from;
+    }
+} // namespace SparkyStudios::Audio::Amplitude
