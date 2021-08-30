@@ -52,6 +52,7 @@ namespace SparkyStudios::Audio::Amplitude
             , _location()
             , _userGain(1.0f)
             , _gain(1.0f)
+            , _pan()
         {}
 
         // Updates the state enum based on whether this channel is stopped, playing,
@@ -132,7 +133,7 @@ namespace SparkyStudios::Audio::Amplitude
         // Check if this channel is currently paused on a real or virtual channel.
         [[nodiscard]] bool Paused() const;
 
-        // Set and query the user GetGain of this channel.
+        // Set and query the user gain of this channel.
         void SetUserGain(const float user_gain)
         {
             _userGain = user_gain;
@@ -143,8 +144,8 @@ namespace SparkyStudios::Audio::Amplitude
             return _userGain;
         }
 
-        // Set and query the current GetGain of this channel.
-        void SetGain(const float gain);
+        // Set and query the current gain of this channel.
+        void SetGain(float gain);
 
         [[nodiscard]] float GetGain() const
         {
@@ -166,11 +167,17 @@ namespace SparkyStudios::Audio::Amplitude
         // Sets the pan based on a position in a unit circle.
         void SetPan(const hmm_vec2& pan);
 
+        // Returns the pan of this channel.
+        [[nodiscard]] const hmm_vec2& GetPan() const
+        {
+            return _pan;
+        }
+
         // Devirtualizes a virtual channel. This transfers ownership of the given
         // channel's channel_id to this channel.
         void Devirtualize(ChannelInternalState* other);
 
-        // Returns the priority of this channel based on its GetGain and priority
+        // Returns the priority of this channel based on its gain and priority
         // multiplier on the sound collection definition.
         [[nodiscard]] float Priority() const;
 
@@ -228,11 +235,14 @@ namespace SparkyStudios::Audio::Amplitude
         // The sound source that was chosen from the sound collection.
         Sound* _sound;
 
-        // The GetGain set by the user.
+        // The gain set by the user.
         float _userGain;
 
-        // The GetGain of this channel.
+        // The gain of this channel.
         float _gain;
+
+        // The pan of this channel.
+        hmm_vec2 _pan;
 
         // The location of this channel's sound.
         hmm_vec3 _location;

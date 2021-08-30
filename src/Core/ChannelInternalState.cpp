@@ -167,6 +167,7 @@ namespace SparkyStudios::Audio::Amplitude
 
     void ChannelInternalState::SetPan(const hmm_vec2& pan)
     {
+        _pan = pan;
         if (_realChannel.Valid())
         {
             _realChannel.SetPan(pan);

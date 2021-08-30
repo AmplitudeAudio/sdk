@@ -902,11 +902,7 @@ namespace SparkyStudios::Audio::Amplitude
         CalculateGainAndPan(
             &gain, &pan, channel->GetSoundCollection(), channel->GetLocation(), state->listener_list, channel->GetUserGain());
         channel->SetGain(gain);
-        if (channel->IsReal())
-        {
-            channel->GetRealChannel().SetGain(gain);
-            channel->GetRealChannel().SetPan(pan);
-        }
+        channel->SetPan(pan);
     }
 
     // If there are any free real channels, assign those to virtual channels that
@@ -1069,12 +1065,8 @@ namespace SparkyStudios::Audio::Amplitude
         }
 
         new_channel->SetGain(gain);
+        new_channel->SetPan(pan);
         new_channel->SetLocation(location);
-        if (new_channel->IsReal())
-        {
-            new_channel->GetRealChannel().SetGain(gain);
-            new_channel->GetRealChannel().SetPan(pan);
-        }
 
         return Channel(new_channel);
     }
