@@ -12,17 +12,12 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-namespace SparkyStudios.Audio.Amplitude;
+#include <Sound/Faders/ExponentialFader.h>
 
-/// Faders allow to progressively update a value
-/// to a given target during the specified period of time.
-enum FaderAlgorithm: byte {
-  /// Fades linearly from the initial value to the final value.
-  Linear = 0,
-  /// Keeps returning the initial value until the transition is complete.
-  Constant = 1,
-  /// Returns values using an S-shaped curve from the initial value to the final value.
-  S_Curve = 2,
-  /// Returns values using an exponential growth algorithm from the initial value to the final value..
-  Exponential = 3,
-}
+namespace SparkyStudios::Audio::Amplitude
+{
+    float ExponentialFader::GetFromPercentage(double percentage)
+    {
+        return m_from * AM_PowerF(m_to / m_from, (float)percentage);
+    }
+} // namespace SparkyStudios::Audio::Amplitude

@@ -50,6 +50,11 @@ namespace SparkyStudios::Audio::Amplitude
              * @brief Returns values using an S-shaped curve from the initial value to the final value.
              */
             ALGORITHM_S_CURVE = 2,
+
+            /**
+             * @brief Returns values using an exponential growth algorithm from the initial value to the final value.
+             */
+            ALGORITHM_EXPONENTIAL = 3,
         };
 
         Fader();

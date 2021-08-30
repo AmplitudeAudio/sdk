@@ -15,6 +15,7 @@
 #include <SparkyStudios/Audio/Amplitude/Sound/Fader.h>
 
 #include <Sound/Faders/ConstantFader.h>
+#include <Sound/Faders/ExponentialFader.h>
 #include <Sound/Faders/LinearFader.h>
 #include <Sound/Faders/SCurveFader.h>
 
@@ -68,6 +69,8 @@ namespace SparkyStudios::Audio::Amplitude
             return new ConstantFader();
         case Fader::ALGORITHM_S_CURVE:
             return new SCurveFader();
+        case Fader::ALGORITHM_EXPONENTIAL:
+            return new ExponentialFader();
         }
     }
 } // namespace SparkyStudios::Audio::Amplitude
