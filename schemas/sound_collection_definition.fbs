@@ -12,6 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+include "common.fbs";
+
 namespace SparkyStudios.Audio.Amplitude;
 
 // Specify the 3D spatialization to apply on the sound.
@@ -167,6 +169,9 @@ table SoundCollectionDefinition {
 
   // The scope where to apply this sound collection. The default is World.
   scope:Scope = World;
+
+  /// The fader algorithm used by this sound collection.
+  fader:FaderAlgorithm = Linear;
 
   // The minimum or maximum distance from which this sound can be heard. This
   // only applies to spatial sounds.

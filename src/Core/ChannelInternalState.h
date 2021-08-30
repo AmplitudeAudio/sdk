@@ -12,6 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+#pragma once
+
 #ifndef SPARK_AUDIO_CHANNEL_INTERNAL_STATE_H
 #define SPARK_AUDIO_CHANNEL_INTERNAL_STATE_H
 
@@ -45,6 +47,7 @@ namespace SparkyStudios::Audio::Amplitude
             : _realChannel(this)
             , _channelState(ChannelStateStopped)
             , _collection(nullptr)
+            , _fader(nullptr)
             , _sound(nullptr)
             , _location()
             , _userGain(1.0f)
@@ -88,7 +91,7 @@ namespace SparkyStudios::Audio::Amplitude
             return _entity;
         }
 
-        // Get the current state of this channel (playing, stopped, paused, etc). This
+        // Get the current state of this channel (playing, stopped, paused, etc.). This
         // is tracked manually because not all ChannelInternalStates are backed by
         // real channels.
         [[nodiscard]] ChannelState GetChannelState() const
@@ -141,10 +144,7 @@ namespace SparkyStudios::Audio::Amplitude
         }
 
         // Set and query the current GetGain of this channel.
-        void SetGain(const float gain)
-        {
-            _gain = gain;
-        }
+        void SetGain(const float gain);
 
         [[nodiscard]] float GetGain() const
         {
@@ -161,7 +161,7 @@ namespace SparkyStudios::Audio::Amplitude
         void Resume();
 
         // Fade out over the specified number of milliseconds.
-        void FadeOut(AmInt32 milliseconds);
+        void FadeOut(AmTime duration);
 
         // Sets the pan based on a position in a unit circle.
         void SetPan(const hmm_vec2& pan);
@@ -218,6 +218,9 @@ namespace SparkyStudios::Audio::Amplitude
 
         // The collection of the sound being played on this channel.
         SoundCollection* _collection;
+
+        // The sound fade of this channel. This is updated by the current sound collection.
+        Fader* _fader;
 
         // The entity which is playing the sound of this channel.
         Entity _entity;

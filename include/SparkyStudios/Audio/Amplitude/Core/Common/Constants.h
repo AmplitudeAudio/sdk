@@ -28,6 +28,11 @@ namespace SparkyStudios::Audio::Amplitude
      * @brief Specifies the value of the "master" bus ID.
      */
     const AmBusID kAmMasterBusId = 1;
+
+    /**
+     * @brief The number of milliseconds in one second.
+     */
+    const AmTime kAmSecond = 1000.0;
 } // namespace SparkyStudios::Audio::Amplitude
 
 #endif // SS_AMPLITUDE_AUDIO_CONSTANTS_H

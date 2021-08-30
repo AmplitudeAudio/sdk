@@ -107,11 +107,6 @@ namespace SparkyStudios::Audio::Amplitude
         void SetPan(const hmm_vec2& pan);
 
         /**
-         * @brief Fade this channel out over the given number of milliseconds.
-         */
-        void FadeOut(int milliseconds);
-
-        /**
          * @brief Return true if this is a valid real channel.
          */
         [[nodiscard]] bool Valid() const;

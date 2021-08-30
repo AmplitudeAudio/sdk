@@ -14,7 +14,6 @@
 
 #include <cassert>
 #include <cmath>
-#include <cstdlib>
 
 #include <SparkyStudios/Audio/Amplitude/Core/Log.h>
 #include <SparkyStudios/Audio/Amplitude/Sound/SoundCollection.h>
@@ -31,13 +30,7 @@ namespace SparkyStudios::Audio::Amplitude
     static const unsigned int kInvalidChannelId = 0;
 
     RealChannel::RealChannel()
-        : _channelId(kInvalidChannelId)
-        , _stream(false)
-        , _loop(false)
-        , _pan(0.0f)
-        , _gain(1.0f)
-        , _activeSound(nullptr)
-        , _parentChannelState(nullptr)
+        : RealChannel(nullptr)
     {}
 
     RealChannel::RealChannel(ChannelInternalState* parent)
@@ -48,6 +41,7 @@ namespace SparkyStudios::Audio::Amplitude
         , _gain(1.0f)
         , _activeSound(nullptr)
         , _parentChannelState(parent)
+        , _mixer(nullptr)
     {}
 
     void RealChannel::Initialize(int i)
@@ -169,12 +163,6 @@ namespace SparkyStudios::Audio::Amplitude
     {
         AMPLITUDE_ASSERT(Valid());
         atomixMixerSetState(_mixer, _channelId, _loop ? ATOMIX_LOOP : ATOMIX_PLAY);
-    }
-
-    void RealChannel::FadeOut(int milliseconds)
-    {
-        AMPLITUDE_ASSERT(Valid());
-        atomixMixerFade(_mixer, milliseconds);
     }
 
     void RealChannel::SetPan(const hmm_vec2& pan)
