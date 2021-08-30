@@ -800,7 +800,7 @@ namespace SparkyStudios::Audio::Amplitude
 
     void Engine::SetMasterGain(float gain)
     {
-        FindBus("master").SetGain(gain);
+        FindBus(kAmMasterBusId).SetGain(gain);
     }
 
     Listener Engine::AddListener(AmListenerID id)
