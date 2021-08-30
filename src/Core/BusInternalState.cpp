@@ -12,12 +12,91 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+#include <SparkyStudios/Audio/Amplitude/Core/Engine.h>
+#include <SparkyStudios/Audio/Amplitude/Core/Log.h>
+
 #include <Core/BusInternalState.h>
 
 #include "buses_definition_generated.h"
 
 namespace SparkyStudios::Audio::Amplitude
 {
+    bool DuckBusInternalState::Initialize(const DuckBusDefinition* definition)
+    {
+        if (definition == nullptr)
+            return false;
+
+        if (definition->id() == kAmInvalidObjectId)
+        {
+            CallLogFunc("[ERROR] Cannot initialize duck-bus internal state: the duck-bus ID is invalid.");
+            return false;
+        }
+
+        Engine* engine = Engine::GetInstance();
+
+        _bus = engine->FindBus(definition->id());
+        if (!_bus.Valid())
+        {
+            CallLogFunc("[ERROR] Cannot initialize duck-bus internal state: unable to find a duck-bus with ID %u.", definition->id());
+            return false;
+        }
+
+        _targetGain = definition->target_gain();
+        _fadeInDuration = definition->fade_in()->duration();
+        _fadeOutDuration = definition->fade_out()->duration();
+
+        _faderIn = Fader::Create(static_cast<Fader::FADER_ALGORITHM>(definition->fade_in()->fader()));
+        _faderIn->Set(1.0f, _targetGain, _fadeInDuration);
+
+        _faderOut = Fader::Create(static_cast<Fader::FADER_ALGORITHM>(definition->fade_out()->fader()));
+        _faderOut->Set(_targetGain, 1.0f, _fadeOutDuration);
+
+        _initialized = true;
+        return true;
+    }
+
+    void DuckBusInternalState::Update(AmTime deltaTime)
+    {
+        if (!_initialized)
+            return; // Don't waste time with an uninitialized state.
+
+        bool playing = !_parent->_playingSoundList.empty();
+        float duckGain = _bus.GetState()->_duckGain;
+
+        if (playing && _transitionPercentage <= 1.0)
+        {
+            // Fading to duck gain.
+            if (_fadeInDuration > 0.0)
+            {
+                _transitionPercentage += deltaTime / _fadeInDuration;
+                _transitionPercentage = AM_MIN(_transitionPercentage, 1.0);
+            }
+            else
+            {
+                _transitionPercentage = 1.0;
+            }
+
+            duckGain = _faderIn->GetFromPercentage(_transitionPercentage);
+        }
+        else if (!playing && _transitionPercentage >= 0.0)
+        {
+            // Fading to standard gain.
+            if (_fadeOutDuration > 0.0)
+            {
+                _transitionPercentage -= deltaTime / _fadeOutDuration;
+                _transitionPercentage = AM_MAX(_transitionPercentage, 0.0);
+            }
+            else
+            {
+                _transitionPercentage = 0.0;
+            }
+
+            duckGain = _faderOut->GetFromPercentage(1.0 - _transitionPercentage);
+        }
+
+        _bus.GetState()->_duckGain = duckGain;
+    }
+
     void BusInternalState::SetMute(bool mute)
     {
         _muted = mute;
@@ -30,8 +109,12 @@ namespace SparkyStudios::Audio::Amplitude
 
     void BusInternalState::FadeTo(float gain, AmTime duration)
     {
+        // Setup fader
         _targetUserGain = gain;
-        _targetUserGainStep = (_targetUserGain - _userGain) / (float)duration;
+        _gainFader->Set(_userGain, _targetUserGain, duration);
+
+        // Set now as the stat time of the transition
+        _gainFader->Start(Engine::GetInstance()->GetTotalTime());
     }
 
     void BusInternalState::Initialize(const BusDefinition* bus_def)
@@ -46,69 +129,46 @@ namespace SparkyStudios::Audio::Amplitude
         _name = _busDefinition->name()->str();
         // Initialize the gain with the value specified by the definition file.
         _gain = _busDefinition->gain();
+
+        _gainFader = Fader::Create(static_cast<Fader::FADER_ALGORITHM>(_busDefinition->fader()));
+
+        _childBuses.clear();
+        _duckBuses.clear();
     }
 
     void BusInternalState::UpdateDuckGain(AmTime delta_time)
     {
-        bool playing = !_playingSoundList.empty();
-        if (playing && _transitionPercentage <= 1.0f)
+        for (auto&& bus : _duckBuses)
         {
-            // Fading to duck gain.
-            float fade_in_time = _busDefinition->duck_fade_in_time();
-            if (fade_in_time > 0)
-            {
-                _transitionPercentage += (float)delta_time / fade_in_time;
-                _transitionPercentage = AM_MIN(_transitionPercentage, 1.0f);
-            }
-            else
-            {
-                _transitionPercentage = 1.0f;
-            }
-        }
-        else if (!playing && _transitionPercentage >= 0.0f)
-        {
-            // Fading to standard gain.
-            float fade_out_time = _busDefinition->duck_fade_out_time();
-            if (fade_out_time > 0)
-            {
-                _transitionPercentage -= (float)delta_time / fade_out_time;
-                _transitionPercentage = AM_MAX(_transitionPercentage, 0.0f);
-            }
-            else
-            {
-                _transitionPercentage = 0.0f;
-            }
-        }
-        float duck_gain = AM_Lerp(1.0f, _busDefinition->duck_gain(), _transitionPercentage);
-        for (auto bus : _duckBuses)
-        {
-            bus->_duckGain = AM_MIN(duck_gain, bus->_duckGain);
+            bus->Update(delta_time);
         }
     }
 
     void BusInternalState::AdvanceFrame(AmTime delta_time, float parent_gain)
     {
-        // Update fading.
-        _userGain += (float)delta_time * _targetUserGainStep;
-        bool fading_complete =
-            (_targetUserGainStep < 0 && _userGain < _targetUserGain) || (_targetUserGainStep > 0 && _userGain > _targetUserGain);
-        if (fading_complete)
+        if (_gainFader->GetState() == AM_FADER_STATE_ACTIVE)
         {
-            _userGain = _targetUserGain;
-            _targetUserGainStep = 0;
+            // Update fading.
+            _userGain = _gainFader->GetFromTime(Engine::GetInstance()->GetTotalTime());
+
+            if (_userGain == _targetUserGain)
+            {
+                // Fading is ended, disable fader.
+                _gainFader->SetState(AM_FADER_STATE_STOPPED);
+            }
         }
 
         // Update final gain.
         _gain = _busDefinition->gain() * parent_gain * _duckGain * _userGain;
 
         // Advance frames in playing channels.
-        for (auto& channel : _playingSoundList)
+        for (auto&& channel : _playingSoundList)
         {
             channel.AdvanceFrame(delta_time);
         }
 
         // Advance frames in child buses.
-        for (auto& child_bus : _childBuses)
+        for (auto&& child_bus : _childBuses)
         {
             if (child_bus)
             {

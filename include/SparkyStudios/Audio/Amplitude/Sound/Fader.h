@@ -34,35 +34,60 @@ namespace SparkyStudios::Audio::Amplitude
         friend class Mixer;
 
     public:
-        Fader();
+        enum FADER_ALGORITHM : AmInt8
+        {
+            /**
+             * @brief Fades linearly from the initial value to the final value.
+             */
+            ALGORITHM_LINEAR = 0,
 
-        /**
-         * @brief Set up LFO.
-         *
-         * @param from The start value.
-         * @param to The target value.
-         * @param time The duration of transition.
-         * @param startTime
-         */
-        void SetLFO(float from, float to, AmTime time, AmTime startTime);
+            /**
+             * @brief Keeps returning the initial value until the transition is complete.
+             */
+            ALGORITHM_CONSTANT = 1,
+
+            /**
+             * @brief Returns values using an S-shaped curve from the initial value to the final value.
+             */
+            ALGORITHM_S_CURVE = 2,
+
+            /**
+             * @brief Returns values using an exponential growth algorithm from the initial value to the final value.
+             */
+            ALGORITHM_EXPONENTIAL = 3,
+        };
+
+        Fader();
 
         /**
          * @brief Set up fader.
          *
-         * @param from
-         * @param to
-         * @param time
-         * @param startTime
+         * @param from The start value.
+         * @param to The target value.
+         * @param time The duration of transition.
          */
-        void Set(float from, float to, AmTime time, AmTime startTime);
+        void Set(float from, float to, AmTime time);
 
         /**
          * @brief Get the current fading value.
          *
-         * @param currentTime The time at which the value should be calculated.
+         * To use this method you need to define the fading stat time using
+         * <code>Fader::Start()</code> firstly.
+         *
+         * @param time The time at which the value should be calculated.
+         *
          * @return The current value.
          */
-        float Get(AmTime currentTime);
+        virtual float GetFromTime(AmTime time);
+
+        /**
+         * @brief Get the current fading value.
+         *
+         * @param percentage The percentage of time elapsed. This should be in the range [0, 1].
+         *
+         * @return The current value.
+         */
+        virtual float GetFromPercentage(double percentage) = 0;
 
         /**
          * @brief Get the state of this Fader.
@@ -84,6 +109,22 @@ namespace SparkyStudios::Audio::Amplitude
             m_state = state;
         }
 
+        /**
+         * @brief Sets the fading start time.
+         *
+         * @param time The fading start time.
+         */
+        void Start(AmTime time);
+
+        /**
+         * @brief Creates a fader from the provided algorithm.
+         *
+         * @param algorithm The fader algorithm.
+         *
+         * @return A fader instance which matches the provided algorithm.
+         */
+        static Fader* Create(FADER_ALGORITHM algorithm);
+
     protected:
         // Value to fade from
         float m_from;
@@ -97,9 +138,7 @@ namespace SparkyStudios::Audio::Amplitude
         AmTime m_startTime;
         // Time fading will end
         AmTime m_endTime;
-        // Current value. Used in case AmTime rolls over.
-        float m_current;
-        // Active flag; 0 means disabled, 1 is active, 2 is LFO, -1 means was active, but stopped
+        // Active flag; 0 means disabled, 1 is active, -1 means was active, but stopped
         AM_FADER_STATE m_state;
     };
 }; // namespace SparkyStudios::Audio::Amplitude

@@ -12,38 +12,62 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+include "common.fbs";
+
 namespace SparkyStudios.Audio.Amplitude;
 
-// Representation of an audio bus similar to a bus on a mixing desk. Buses are
-// hierarchical where the gain of each parent bus is applied to each of the
-// children.
-table BusDefinition {
-  // The bus unique identifier.
-  id:ulong = 0;
+/// Defines the settings fo a duck bus gain transition.
+table DuckBusTransitionSettings {
+  /// The transition duration in seconds.
+  duration:double = 0;
 
-  // Name of the bus that can be referenced by other Bus objects. A bus
-  // called "master" must be defined as the root playback bus. Names should
-  // be unique accross buses.
+  /// The fader algorithm to use during the transition.
+  fader:FaderAlgorithm = Linear;
+}
+
+/// Define the configuration for a duck bus.
+///
+/// A duck bus is a bus referenced in another one, in a way that when
+/// the parent bus is played all buses referenced as duck buses inside
+/// him have their gain faded out. When the parent bus stops playing
+/// all duck buses have their gain faded in.
+table DuckBusDefinition {
+  /// The bus ID. This ID should correspond to an eisting bus.
+  id:uint64;
+
+  /// The targeted gain value when the parent bus starts playing.
+  target_gain:float = 0;
+
+  /// Settings fo the fade in transition.
+  fade_in:DuckBusTransitionSettings;
+
+  /// Settings fo the fade out transition.
+  fade_out:DuckBusTransitionSettings;
+}
+
+/// Representation of an audio bus similar to a bus on a mixing desk. Buses are
+/// hierarchical where the gain of each parent bus is applied to each of the
+/// children.
+table BusDefinition {
+  /// The bus unique identifier.
+  id:uint64 = 0;
+
+  /// Name of the bus that can be referenced by other Bus objects. A bus
+  /// called "master" must be defined as the root playback bus. Names should
+  /// be unique accross buses.
   name:string;
 
-  // Linear gain that is applied to all Sound objects played on this bus.
+  /// Linear gain that is applied to all Sound objects played on this bus.
   gain:float = 1.0;
 
-  // Identifiers of children of this bus.
-  child_buses:[ulong];
+  /// Identifiers of children of this bus.
+  child_buses:[uint64];
 
-  // Identifiers of buses that should be ducked when sounds are played on this
-  // bus.
-  duck_buses:[ulong];
+  /// Configures the duck buses attached to this bus.
+  duck_buses:[DuckBusDefinition];
 
-  // Gain applied to duck buses when a sound plays on this bus.
-  duck_gain:float;
-
-  // Time (in seconds) for gain to duck gain transition.
-  duck_fade_in_time:float;
-
-  // Time (in seconds) for duck gain to gain transition.
-  duck_fade_out_time:float;
+  /// Defines the fader algorithm to use when manually fading the gain of this bus.
+  fader:FaderAlgorithm = Linear;
 }
 
 table BusDefinitionList {

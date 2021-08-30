@@ -14,25 +14,17 @@
 
 #pragma once
 
-#ifndef SS_AMPLITUDE_AUDIO_CONSTANTS_H
-#define SS_AMPLITUDE_AUDIO_CONSTANTS_H
+#ifndef SS_AMPLITUDE_AUDIO_LINEAR_FADER_H
+#define SS_AMPLITUDE_AUDIO_LINEAR_FADER_H
+
+#include <SparkyStudios/Audio/Amplitude/Sound/Fader.h>
 
 namespace SparkyStudios::Audio::Amplitude
 {
-    /**
-     * @brief Invalid Amplitude object ID.
-     */
-    const AmObjectID kAmInvalidObjectId = 0;
-
-    /**
-     * @brief Specifies the value of the "master" bus ID.
-     */
-    const AmBusID kAmMasterBusId = 1;
-
-    /**
-     * @brief The number of milliseconds in one second.
-     */
-    const AmTime kAmSecond = 1000.0;
+    class LinearFader : public Fader
+    {
+        float GetFromPercentage(double percentage) override;
+    };
 } // namespace SparkyStudios::Audio::Amplitude
 
-#endif // SS_AMPLITUDE_AUDIO_CONSTANTS_H
+#endif // SS_AMPLITUDE_AUDIO_LINEAR_FADER_H

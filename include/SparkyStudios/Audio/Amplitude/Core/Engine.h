@@ -87,6 +87,13 @@ namespace SparkyStudios::Audio::Amplitude
         void AdvanceFrame(AmTime delta);
 
         /**
+         * @brief Gets the total elapsed time since the start of the game.
+         *
+         * @return The total elapsed time since the start of the game.
+         */
+        AmTime GetTotalTime() const;
+
+        /**
          * @brief Load a sound bank from a file. Queue the sound files in that sound
          *        bank for loading. Call StartLoadingSoundFiles() to trigger loading
          *        of the sound files on a separate thread.
@@ -218,11 +225,22 @@ namespace SparkyStudios::Audio::Amplitude
         void RemoveEntity(Entity* entity);
 
         /**
-         * @brief Returns the named GetBus.
+         * @brief Returns the bus with the specified name.
          *
-         * @return The named GetBus.
+         * @param name The name of the bus.
+         *
+         * @return A valid bus if found, otherwise an invalid bus.
          */
         Bus FindBus(AmString bus_name);
+
+        /**
+         * @brief Returns the bus with the given ID.
+         *
+         * @param id The ID of the bus.
+         *
+         * @return A valid bus if found, otherwise an invalid bus.
+         */
+        Bus FindBus(AmBusID id);
 
         /**
          * @brief Play a sound associated with the given sound handle in the

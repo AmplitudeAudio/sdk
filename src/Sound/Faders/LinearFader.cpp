@@ -12,27 +12,12 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#pragma once
-
-#ifndef SS_AMPLITUDE_AUDIO_CONSTANTS_H
-#define SS_AMPLITUDE_AUDIO_CONSTANTS_H
+#include <Sound/Faders/LinearFader.h>
 
 namespace SparkyStudios::Audio::Amplitude
 {
-    /**
-     * @brief Invalid Amplitude object ID.
-     */
-    const AmObjectID kAmInvalidObjectId = 0;
-
-    /**
-     * @brief Specifies the value of the "master" bus ID.
-     */
-    const AmBusID kAmMasterBusId = 1;
-
-    /**
-     * @brief The number of milliseconds in one second.
-     */
-    const AmTime kAmSecond = 1000.0;
+    float LinearFader::GetFromPercentage(double percentage)
+    {
+        return AM_Lerp(m_from, AM_CLAMP(percentage, 0.0, 1.0), m_to);
+    }
 } // namespace SparkyStudios::Audio::Amplitude
-
-#endif // SS_AMPLITUDE_AUDIO_CONSTANTS_H

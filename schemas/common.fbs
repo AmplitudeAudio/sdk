@@ -12,27 +12,17 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#pragma once
+namespace SparkyStudios.Audio.Amplitude;
 
-#ifndef SS_AMPLITUDE_AUDIO_CONSTANTS_H
-#define SS_AMPLITUDE_AUDIO_CONSTANTS_H
-
-namespace SparkyStudios::Audio::Amplitude
-{
-    /**
-     * @brief Invalid Amplitude object ID.
-     */
-    const AmObjectID kAmInvalidObjectId = 0;
-
-    /**
-     * @brief Specifies the value of the "master" bus ID.
-     */
-    const AmBusID kAmMasterBusId = 1;
-
-    /**
-     * @brief The number of milliseconds in one second.
-     */
-    const AmTime kAmSecond = 1000.0;
-} // namespace SparkyStudios::Audio::Amplitude
-
-#endif // SS_AMPLITUDE_AUDIO_CONSTANTS_H
+/// Faders allow to progressively update a value
+/// to a given target during the specified period of time.
+enum FaderAlgorithm: byte {
+  /// Fades linearly from the initial value to the final value.
+  Linear = 0,
+  /// Keeps returning the initial value until the transition is complete.
+  Constant = 1,
+  /// Returns values using an S-shaped curve from the initial value to the final value.
+  S_Curve = 2,
+  /// Returns values using an exponential growth algorithm from the initial value to the final value..
+  Exponential = 3,
+}

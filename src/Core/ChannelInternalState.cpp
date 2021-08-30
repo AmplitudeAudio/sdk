@@ -51,6 +51,7 @@ namespace SparkyStudios::Audio::Amplitude
         _realChannel = RealChannel();
         _channelState = ChannelStateStopped;
         _collection = nullptr;
+        _fader = nullptr;
         _entity = Entity();
         _sound = nullptr;
         _userGain = 0.0f;
@@ -102,6 +103,8 @@ namespace SparkyStudios::Audio::Amplitude
         std::vector<const Sound*> toSkip = _realChannel.Valid() ? _realChannel._playedSounds : std::vector<const Sound*>();
         _sound = _entity.Valid() ? _collection->SelectFromEntity(_entity, toSkip) : _collection->SelectFromWorld(toSkip);
 
+        _fader = Fader::Create(static_cast<Fader::FADER_ALGORITHM>(definition->fader()));
+
         _channelState = ChannelStatePlaying;
         return !_realChannel.Valid() || _realChannel.Play(_collection, _sound);
     }
@@ -151,11 +154,12 @@ namespace SparkyStudios::Audio::Amplitude
         _channelState = ChannelStatePlaying;
     }
 
-    void ChannelInternalState::FadeOut(int milliseconds)
+    void ChannelInternalState::FadeOut(AmTime duration)
     {
         if (_realChannel.Valid())
         {
-            _realChannel.FadeOut(milliseconds);
+            _fader->Set(_gain, 0.0f, duration / kAmSecond);
+            _fader->Start(Engine::GetInstance()->GetTotalTime());
         }
 
         _channelState = ChannelStateFadingOut;
@@ -166,6 +170,19 @@ namespace SparkyStudios::Audio::Amplitude
         if (_realChannel.Valid())
         {
             _realChannel.SetPan(pan);
+        }
+    }
+
+    void ChannelInternalState::SetGain(const float gain)
+    {
+        if (_channelState == ChannelStateFadingOut)
+            // Do not update gain when fading...
+            return;
+
+        _gain = gain;
+        if (_realChannel.Valid())
+        {
+            _realChannel.SetGain(gain);
         }
     }
 
@@ -198,7 +215,21 @@ namespace SparkyStudios::Audio::Amplitude
 
     void ChannelInternalState::AdvanceFrame(AmTime delta_time)
     {
-        // TODO: Faders
+        if (_channelState == ChannelStateFadingOut && _fader != nullptr)
+        {
+            _gain = _fader->GetFromTime(Engine::GetInstance()->GetTotalTime());
+
+            if (_realChannel.Valid())
+            {
+                _realChannel.SetGain(_gain);
+            }
+
+            if (_gain == 0.0f)
+            {
+                // Fading out transition complete. Now we can halt the channel.
+                Halt();
+            }
+        }
     }
 
     void ChannelInternalState::UpdateState()
