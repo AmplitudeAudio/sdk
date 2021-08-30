@@ -36,7 +36,7 @@ namespace SparkyStudios::Audio::Amplitude::Thread
     void Sleep(AmInt32 milliseconds);
     void Wait(AmThreadHandle threadHandle);
     void Release(AmThreadHandle threadHandle);
-    AmInt32 GetTimeMillis();
+    AmInt64 GetTimeMillis();
 
 #define MAX_THREAD_POOL_TASKS 1024
 

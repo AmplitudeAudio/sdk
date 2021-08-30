@@ -12,7 +12,9 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#if defined(_WIN32) || defined(_WIN64)
+#include <SparkyStudios/Audio/Amplitude/Core/Thread.h>
+
+#if defined(AM_WINDOWS_VERSION)
 #include <Windows.h>
 #include <processthreadsapi.h>
 #else
@@ -20,11 +22,9 @@
 #include <pthread.h>
 #endif
 
-#include <SparkyStudios/Audio/Amplitude/Core/Thread.h>
-
 namespace SparkyStudios::Audio::Amplitude::Thread
 {
-#ifdef AM_WINDOWS_VERSION
+#if defined(AM_WINDOWS_VERSION)
     struct AmThreadHandleData
     {
         HANDLE thread;
@@ -33,14 +33,14 @@ namespace SparkyStudios::Audio::Amplitude::Thread
     AmVoidPtr CreateMutexAm()
     {
         auto* cs = new CRITICAL_SECTION;
-        InitializeCriticalSectionAndSpinCount(cs, 100);
+        ::InitializeCriticalSectionAndSpinCount(cs, 100);
         return (AmVoidPtr)cs;
     }
 
     void DestroyMutex(AmVoidPtr handle)
     {
         auto* cs = (CRITICAL_SECTION*)handle;
-        DeleteCriticalSection(cs);
+        ::DeleteCriticalSection(cs);
         delete cs;
     }
 
@@ -49,7 +49,7 @@ namespace SparkyStudios::Audio::Amplitude::Thread
         auto* cs = (CRITICAL_SECTION*)handle;
         if (cs)
         {
-            EnterCriticalSection(cs);
+            ::EnterCriticalSection(cs);
         }
     }
 
@@ -58,7 +58,7 @@ namespace SparkyStudios::Audio::Amplitude::Thread
         auto* cs = (CRITICAL_SECTION*)handle;
         if (cs)
         {
-            LeaveCriticalSection(cs);
+            ::LeaveCriticalSection(cs);
         }
     }
 
@@ -98,18 +98,18 @@ namespace SparkyStudios::Audio::Amplitude::Thread
 
     void Wait(AmThreadHandle threadHandle)
     {
-        WaitForSingleObject(threadHandle->thread, INFINITE);
+        ::WaitForSingleObject(threadHandle->thread, INFINITE);
     }
 
     void Release(AmThreadHandle threadHandle)
     {
-        CloseHandle(threadHandle->thread);
+        ::CloseHandle(threadHandle->thread);
         delete threadHandle;
     }
 
-    AmInt32 GetTimeMillis()
+    AmInt64 GetTimeMillis()
     {
-        return GetTickCount();
+        return ::GetTickCount();
     }
 #else // pthreads
     struct AmThreadHandleData
@@ -203,11 +203,11 @@ namespace SparkyStudios::Audio::Amplitude::Thread
         delete threadHandle;
     }
 
-    AmInt32 GetTimeMillis()
+    AmInt64 GetTimeMillis()
     {
         struct timespec spec = { 0 };
         clock_gettime(CLOCK_REALTIME, &spec);
-        return (AmInt32)spec.tv_sec * 1000 + (AmInt32)(spec.tv_nsec / 1.0e6);
+        return spec.tv_sec * 1000 + (spec.tv_nsec / 1.0e6);
     }
 #endif
 
