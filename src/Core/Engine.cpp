@@ -1001,6 +1001,11 @@ namespace SparkyStudios::Audio::Amplitude
             event->AdvanceFrame(delta_time);
         }
 
+        for (auto&& item : _state->listener_list)
+        {
+            item.Update();
+        }
+
         ++_state->current_frame;
         _state->total_time += delta_time;
     }
