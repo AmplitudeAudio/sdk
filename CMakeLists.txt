@@ -71,6 +71,7 @@ set(SA_SOURCE
     include/SparkyStudios/Audio/Amplitude/Core/Thread.h
     include/SparkyStudios/Audio/Amplitude/Core/Version.h
     include/SparkyStudios/Audio/Amplitude/IO/FileLoader.h
+    include/SparkyStudios/Audio/Amplitude/Math/Curve.h
     include/SparkyStudios/Audio/Amplitude/Math/HandmadeMath.h
     include/SparkyStudios/Audio/Amplitude/Sound/Schedulers/SequenceScheduler.h
     include/SparkyStudios/Audio/Amplitude/Sound/Schedulers/RandomScheduler.h
@@ -118,6 +119,7 @@ set(SA_SOURCE
 
     src/IO/FileLoader.cpp
 
+    src/Math/Curve.cpp
     src/Math/HMM_Impl.cpp
 
     src/Mixer/Atomix/atomix.h
