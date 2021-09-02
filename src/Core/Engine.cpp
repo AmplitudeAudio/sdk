@@ -486,6 +486,7 @@ namespace SparkyStudios::Audio::Amplitude
         float* gain,
         hmm_vec2* pan,
         SoundCollection* collection,
+        const Entity& entity,
         const hmm_vec3& location,
         const ListenerList& listener_list,
         float user_gain)
@@ -499,7 +500,22 @@ namespace SparkyStudios::Audio::Amplitude
             hmm_vec3 listener_space_location;
             if (BestListener(&listener, &distance_squared, &listener_space_location, listener_list, location))
             {
-                *gain *= CalculateDistanceAttenuation(distance_squared, def);
+                AttenuationHandle attenuation = collection->GetAttenuation();
+                if (attenuation)
+                {
+                    *gain *= attenuation->GetGain(AM_SquareRootF(distance_squared));
+
+                    if (def->spatialization() == Spatialization_PositionOrientation)
+                    {
+                        AMPLITUDE_ASSERT(entity.Valid())
+                        *gain *= attenuation->GetShape()->GetAttenuationFactor(entity.GetState(), &*listener);
+                    }
+                    else
+                    {
+                        *gain *= attenuation->GetShape()->GetAttenuationFactor(location, &*listener);
+                    }
+                }
+
                 *pan = CalculatePan(listener_space_location);
             }
             else
@@ -955,7 +971,8 @@ namespace SparkyStudios::Audio::Amplitude
         float gain;
         hmm_vec2 pan;
         CalculateGainAndPan(
-            &gain, &pan, channel->GetSoundCollection(), channel->GetLocation(), state->listener_list, channel->GetUserGain());
+            &gain, &pan, channel->GetSoundCollection(), channel->GetEntity(), channel->GetLocation(), state->listener_list,
+            channel->GetUserGain());
         channel->SetGain(gain);
         channel->SetPan(pan);
     }
@@ -1098,7 +1115,7 @@ namespace SparkyStudios::Audio::Amplitude
         // Find where it belongs in the list.
         float gain;
         hmm_vec2 pan;
-        CalculateGainAndPan(&gain, &pan, collection, location, _state->listener_list, user_gain);
+        CalculateGainAndPan(&gain, &pan, collection, entity, location, _state->listener_list, user_gain);
         float priority = gain * sound_handle->GetSoundCollectionDefinition()->priority();
         PriorityList::iterator insertion_point = FindInsertionPoint(&_state->playing_channel_list, priority);
 

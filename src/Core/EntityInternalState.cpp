@@ -51,6 +51,21 @@ namespace SparkyStudios::Audio::Amplitude
         _up = up;
     }
 
+    const hmm_vec3& EntityInternalState::GetDirection() const
+    {
+        return _direction;
+    }
+
+    const hmm_vec3& EntityInternalState::GetUp() const
+    {
+        return _up;
+    }
+
+    const hmm_mat4& EntityInternalState::GetInverseMatrix() const
+    {
+        return _inverseMatrix;
+    }
+
     void EntityInternalState::Update()
     {
         _inverseMatrix = AM_LookAt(_location, _location + _direction, _up);
