@@ -1034,6 +1034,12 @@ namespace SparkyStudios::Audio::Amplitude
             return Channel(nullptr);
         }
 
+        if (collection->GetSoundCollectionDefinition()->scope() == Scope_Entity && !entity.Valid())
+        {
+            CallLogFunc("[Debug] Cannot play a channel in entity scope. No entity defined.\n");
+            return Channel(nullptr);
+        }
+
         // Find where it belongs in the list.
         float gain;
         hmm_vec2 pan;
