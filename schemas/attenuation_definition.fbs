@@ -1,0 +1,161 @@
+// Copyright (c) 2021-present Sparky Studios. All rights reserved.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+include "common.fbs";
+
+namespace SparkyStudios.Audio.Amplitude;
+
+/// The attenuation shape.
+/// This allows to define how the attenuation will be increased.
+enum AttenuationShapeModel: byte {
+  /// This produces a spherical attenuation shape, with only distance attenuation applied.
+  Default = 0,
+
+  /// This produces a cone attenuation shape.
+  /// This is useful in situations when you want a directional
+  /// attenuation pattern—for example, public address speakers.
+  Cone = 1,
+
+  /// This produces a spherical attenuation shape, which is useful
+  /// for most spot sounds as it models how sound propagates in the real world.
+  Sphere = 2,
+
+  /// This produces a box attenuation shape.
+  /// This is useful for things like room tones/ambiance as you can define the shape of the box to match that of the room.
+  Box = 3,
+
+  /// This produces a capsule attenuation shape (a cylinder with rounded ends).
+  /// This is useful for things like water pipes, where the sound doesn't want to appear
+  /// to come from a single, specific point in space—the sound of gurgling water would follow the length of the pipe
+  Capsule = 4,
+}
+
+/// Available settings for a cone attenuation shape.
+/// A cone attenuation shape is built from two 3D cones: the inner cone and the outer cone.
+/// - Listeners inside the inner cone doesn't have sounds attenuated.
+/// - Listeners outside the inner cone but inside the outer cone have sounds attenuated gradually according to their
+/// distance to the outer cone edges.
+/// - Listeners outside the outer cone have sounds attenuated by the max_attenuation_factor value.
+table ConeAttenuationSettings {
+  /// The radius of the inner cone.
+  inner_radius:float;
+
+  /// The radius of the outer cone.
+  outer_radius:float;
+
+  /// The height of the inner cone.
+  inner_height:float;
+
+  /// The height of the outer cone.
+  outer_height:float;
+}
+
+/// Available settings for a spherical attenuation shape.
+/// A spherical attenuation shape is built from two spheres: the inner sphere and the outer sphere.
+/// - Listeners inside the inner sphere doesn't have sounds attenuated.
+/// - Listeners outside the inner sphere but inside the outer sphere have sounds attenuated gradually according to their
+/// distance to the outer sphere edges.
+/// - Listeners outside the outer sphere have sounds attenuated by the max_attenuation_factor value.
+table SphereAttenuationSettings {
+  /// The inner sphere radius.
+  inner_radius:float;
+
+  /// The outer sphere radius.
+  outer_radius:float;
+}
+
+/// Available settings for a box attenuation shape.
+/// A box attenuation shape is built from two boxes: the inner box and the outer box.
+/// - Listeners inside the inner box doesn't have sounds attenuated.
+/// - Listeners outside the inner box but inside the outer box have sounds attenuated gradually according to their
+/// distance to the outer box edges.
+/// - Listeners outside the outer box have sounds attenuated by the max_attenuation_factor value.
+table BoxAttenuationSettings {
+  /// The inner box width.
+  inner_width:float;
+
+  /// The outer box width.
+  outer_width:float;
+
+  /// The inner box height.
+  inner_height:float;
+
+  /// The outer box height.
+  outer_height:float;
+}
+
+/// Available settings for a capsule attenuation shape.
+/// A capsule attenuation shape is built from two capsules: the inner capsule and the outer capsule.
+/// - Listeners inside the inner capsule doesn't have sounds attenuated.
+/// - Listeners outside the inner capsule but inside the outer capsule have sounds attenuated gradually according to their
+/// position to the outer capsule edges.
+/// - Listeners outside the outer capsule have sounds attenuated by the max_attenuation_factor value.
+table CapsuleAttenuationSettings {
+  /// The inner capsule radius.
+  inner_radius:float;
+
+  /// The inner capsule height.
+  inner_height:float;
+
+  /// The outer capsule radius.
+  outer_radius:float;
+
+  /// The outer capsule height.
+  outer_height:float;
+}
+
+/// Merges the settings from attenuation shapes.
+union AttenuationShapeSettings {
+  Cone:ConeAttenuationSettings,
+  Sphere:SphereAttenuationSettings,
+  Box:BoxAttenuationSettings,
+  Capsule:CapsuleAttenuationSettings,
+}
+
+/// Schema definition for an attenuation shape configuration.
+table AttenuationShapeDefinition {
+  /// The attenuation shape model to apply.
+  model:AttenuationShapeModel = Default;
+
+  /// The attenuation shape model's settings.
+  /// This should match the settings of the selected model.
+  settings:AttenuationShapeSettings;
+
+  /// The maximum attenuation factor to apply on the sound.
+  /// This value should be in the range [0..1].
+  max_attenuation_factor:float;
+}
+
+/// The attenuation definition.
+table AttenuationDefinition {
+  /// The attenuation object ID.
+  id:uint64 = 0;
+
+  /// The attenuation name.
+  name:string;
+
+  /// The maximum distance for the sound to have a gain of 0.
+  max_distance:double;
+
+  /// The attenuation shape configuration.
+  shape:AttenuationShapeDefinition;
+
+  /// The curve that the attenuation will use to know the sound gain according to the distance from the listener.
+  gain_curve:CurveDefinition;
+}
+
+root_type AttenuationDefinition;
+
+file_identifier "AMAT";
+file_extension "amattenuation";

@@ -75,6 +75,7 @@ set(SA_SOURCE
     include/SparkyStudios/Audio/Amplitude/Math/HandmadeMath.h
     include/SparkyStudios/Audio/Amplitude/Sound/Schedulers/SequenceScheduler.h
     include/SparkyStudios/Audio/Amplitude/Sound/Schedulers/RandomScheduler.h
+    include/SparkyStudios/Audio/Amplitude/Sound/Attenuation.h
     include/SparkyStudios/Audio/Amplitude/Sound/Fader.h
     include/SparkyStudios/Audio/Amplitude/Sound/Scheduler.h
     include/SparkyStudios/Audio/Amplitude/Sound/Sound.h
@@ -139,6 +140,9 @@ set(SA_SOURCE
     src/Sound/Faders/SCurveFader.h
     src/Sound/Schedulers/SequenceScheduler.cpp
     src/Sound/Schedulers/RandomScheduler.cpp
+    src/Sound/Attenuation.cpp
+    src/Sound/AttenuationShapes.cpp
+    src/Sound/AttenuationShapes.h
     src/Sound/Fader.cpp
     src/Sound/SoundCollection.cpp
     src/Sound/SoundBank.cpp
