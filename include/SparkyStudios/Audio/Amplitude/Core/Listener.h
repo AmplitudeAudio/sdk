@@ -83,25 +83,10 @@ namespace SparkyStudios::Audio::Amplitude
         /**
          * @brief Set the location, direction and up vector of this Listener.
          *
-         * @param location The location of this Listener.
          * @param direction The direction of this Listener.
          * @param up THe up vector of this Listener.
          */
-        void SetOrientation(const hmm_vec3& location, const hmm_vec3& direction, const hmm_vec3& up);
-
-        /**
-         * @brief Set the location and orientation of this listener using a matrix.
-         *
-         * @param matrix The matrix representing the location and orientation of this Listener.
-         */
-        void SetMatrix(const hmm_mat4& matrix);
-
-        /**
-         * @brief Returns the matrix of this Listener.
-         *
-         * @return hmm_mat4 The matrix of this Listener.
-         */
-        [[nodiscard]] hmm_mat4 GetMatrix() const;
+        void SetOrientation(const hmm_vec3& direction, const hmm_vec3& up);
 
         /**
          * @brief Returns the internal state of this Listener.

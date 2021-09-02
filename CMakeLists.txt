@@ -109,6 +109,7 @@ set(SA_SOURCE
     src/Core/EntityInternalState.cpp
     src/Core/EntityInternalState.h
     src/Core/Event.cpp
+    src/Core/ListenerInternalState.cpp
     src/Core/ListenerInternalState.h
     src/Core/Listener.cpp
     src/Core/Log.cpp

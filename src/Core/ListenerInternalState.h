@@ -26,50 +26,64 @@ namespace SparkyStudios::Audio::Amplitude
     class ListenerInternalState
     {
     public:
-        ListenerInternalState()
-            : _inverseMatrix(AM_Mat4d(1))
-            , _id(kAmInvalidObjectId)
-        {}
+        ListenerInternalState();
 
         /**
          * @brief Gets the ID of this Listener in game.
          *
          * @return The game Listener ID.
          */
-        [[nodiscard]] AmListenerID GetId() const
-        {
-            return _id;
-        }
+        [[nodiscard]] AmListenerID GetId() const;
 
         /**
          * @brief Sets the ID of this Listener in game.
          *
          * @param id The game Listener ID.
          */
-        void SetId(AmListenerID id)
-        {
-            _id = id;
-        }
+        void SetId(AmListenerID id);
 
-        void SetInverseMatrix(const hmm_mat4& matrix)
-        {
-            _inverseMatrix = matrix;
-        }
+        /**
+         * @brief Sets the location of this Entity.
+         *
+         * @param location The new location.
+         */
+        void SetLocation(const hmm_vec3& location);
 
-        hmm_mat4& GetInverseMatrix()
-        {
-            return _inverseMatrix;
-        }
+        /**
+         * @brief Gets the current location of this Entity.
+         *
+         * @return The current location of this Entity.
+         */
+        [[nodiscard]] const hmm_vec3& GetLocation() const;
 
-        [[nodiscard]] const hmm_mat4& GetInverseMatrix() const
-        {
-            return _inverseMatrix;
-        }
+        /**
+         * @brief Sets the orientation of this Entity.
+         *
+         * @param direction The direction towards the Entity.
+         * @param up The up vector.
+         */
+        void SetOrientation(const hmm_vec3& direction, const hmm_vec3& up);
+
+        hmm_mat4& GetInverseMatrix();
+
+        [[nodiscard]] const hmm_mat4& GetInverseMatrix() const;
+
+        /**
+         * @brief Updates the inverse matrix of this Entity.
+         *
+         * This method is called automatically by the Engine on
+         * each frame update.
+         */
+        void Update();
 
         fplutil::intrusive_list_node node;
 
     private:
         AmListenerID _id;
+
+        hmm_vec3 _location;
+        hmm_vec3 _direction;
+        hmm_vec3 _up;
 
         hmm_mat4 _inverseMatrix;
     };
