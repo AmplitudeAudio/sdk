@@ -38,7 +38,7 @@ namespace SparkyStudios::Audio::Amplitude
 
 #if defined(AM_WCHAR_SUPPORTED)
     typedef std::map<std::wstring, AmSoundCollectionID> SoundIdMap;
-    typedef std::map<std::wstring, std::string> EventIdMap;
+    typedef std::map<std::wstring, AmEventID> EventIdMap;
     typedef std::map<std::wstring, std::unique_ptr<SoundBank>> SoundBankMap;
 #else
     typedef std::map<std::string, AmSoundCollectionID> SoundIdMap;
@@ -48,7 +48,7 @@ namespace SparkyStudios::Audio::Amplitude
 
     typedef std::map<AmSoundCollectionID, std::unique_ptr<SoundCollection>> SoundCollectionMap;
 
-    typedef std::map<std::string, std::unique_ptr<Event>> EventMap;
+    typedef std::map<AmEventID, std::unique_ptr<Event>> EventMap;
     typedef std::vector<EventInstance> EventInstanceVector;
 
     typedef std::vector<ChannelInternalState> ChannelStateVector;

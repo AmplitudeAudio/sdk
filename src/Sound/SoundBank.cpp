@@ -82,11 +82,20 @@ namespace SparkyStudios::Audio::Amplitude
             {
                 return false;
             }
+
+            const EventDefinition* definition = event->GetEventDefinition();
+            AmEventID id = definition->id();
+            if (id == kAmInvalidObjectId)
+            {
+                CallLogFunc(
+                    "[ERROR] Cannot load event \'" AM_OS_CHAR_FMT "\'. Invalid ID.\n", AM_STRING_TO_OS_STRING(definition->name()->c_str()));
+                return false;
+            }
+
             event->GetRefCounter()->Increment();
 
-            std::string name = event->GetEventDefinition()->name()->c_str();
-            audio_engine->GetState()->event_map[name] = std::move(event);
-            audio_engine->GetState()->event_id_map[filename] = name;
+            audio_engine->GetState()->event_map[id] = std::move(event);
+            audio_engine->GetState()->event_id_map[filename] = id;
         }
 
         return true;
@@ -153,7 +162,7 @@ namespace SparkyStudios::Audio::Amplitude
             return false;
         }
 
-        std::string id = id_iter->second;
+        AmEventID id = id_iter->second;
         auto event_iter = state->event_map.find(id);
         if (event_iter == state->event_map.end())
         {

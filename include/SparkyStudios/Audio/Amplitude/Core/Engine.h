@@ -137,6 +137,13 @@ namespace SparkyStudios::Audio::Amplitude
         [[nodiscard]] SoundHandle GetSoundHandle(AmSoundCollectionID id) const;
 
         /**
+         * @brief Get a SoundHandle given its SoundCollectionDefinition filename.
+         *
+         * @param name The filename containing the flatbuffer binary data.
+         */
+        [[nodiscard]] SoundHandle GetSoundHandleFromFile(AmOsString filename) const;
+
+        /**
          * @brief Get an EventHandle given its name as defined in its JSON data.
          *
          * @param name The unique name as defined in the JSON data.
@@ -144,11 +151,11 @@ namespace SparkyStudios::Audio::Amplitude
         [[nodiscard]] EventHandle GetEventHandle(const std::string& sound_name) const;
 
         /**
-         * @brief Get a SoundHandle given its SoundCollectionDefinition filename.
+         * @brief Get an EventHandle given its ID as defined in its JSON data.
          *
-         * @param name The filename containing the flatbuffer binary data.
+         * @param id The unique ID as defined in the JSON data.
          */
-        [[nodiscard]] SoundHandle GetSoundHandleFromFile(AmOsString filename) const;
+        [[nodiscard]] EventHandle GetEventHandle(AmEventID id) const;
 
         /**
          * @brief Get an EventHandle given its EventDefinition filename.

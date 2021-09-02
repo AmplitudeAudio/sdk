@@ -788,6 +788,32 @@ namespace SparkyStudios::Audio::Amplitude
         return GetSoundHandle(iter->second);
     }
 
+    EventHandle Engine::GetEventHandle(const std::string& name) const
+    {
+        auto iter = std::find_if(
+            _state->event_map.begin(), _state->event_map.end(),
+            [name](const auto& item)
+            {
+                return item.second->GetName() == name;
+            });
+
+        if (iter == _state->event_map.end())
+        {
+            return nullptr;
+        }
+        return iter->second.get();
+    }
+
+    EventHandle Engine::GetEventHandle(AmEventID id) const
+    {
+        auto iter = _state->event_map.find(id);
+        if (iter == _state->event_map.end())
+        {
+            return nullptr;
+        }
+        return iter->second.get();
+    }
+
     EventHandle Engine::GetEventHandleFromFile(AmOsString filename) const
     {
         auto iter = _state->event_id_map.find(filename);
