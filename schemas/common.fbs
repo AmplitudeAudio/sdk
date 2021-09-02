@@ -23,6 +23,31 @@ enum FaderAlgorithm: byte {
   Constant = 1,
   /// Returns values using an S-shaped curve from the initial value to the final value.
   S_Curve = 2,
-  /// Returns values using an exponential growth algorithm from the initial value to the final value..
+  /// Returns values using an exponential growth algorithm from the initial value to the final value.
   Exponential = 3,
+}
+
+/// A point coordinates in a curve.
+struct CurvePointDefinition {
+  x:double;
+  y:float;
+}
+
+/// A part of a curve. This is materialized by a start point, an end point,
+/// and the fader algorithm between them.
+struct CurvePartDefinition {
+  /// The curve part start point.
+  start:CurvePointDefinition;
+
+  /// The curve part end point.
+  end:CurvePointDefinition;
+
+  /// The fader algorithm.
+  fader:FaderAlgorithm = Linear;
+}
+
+/// A curve. Mainly used by attenuators.
+table CurveDefinition {
+  /// The parts of the curve.
+  parts:[CurvePartDefinition];
 }
