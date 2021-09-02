@@ -37,6 +37,7 @@ namespace SparkyStudios::Audio::Amplitude
     typedef AmObjectID          AmListenerID;
     typedef AmObjectID          AmChannelID;
     typedef AmObjectID          AmEventID;
+    typedef AmObjectID          AmAttenuationID;
 
     typedef AmUInt8             AmResult;
     typedef AmUInt64            AmHandle;
