@@ -768,16 +768,6 @@ namespace SparkyStudios::Audio::Amplitude
         return iter->second.get();
     }
 
-    EventHandle Engine::GetEventHandle(const std::string& sound_name) const
-    {
-        auto iter = _state->event_map.find(sound_name);
-        if (iter == _state->event_map.end())
-        {
-            return nullptr;
-        }
-        return iter->second.get();
-    }
-
     SoundHandle Engine::GetSoundHandleFromFile(AmOsString filename) const
     {
         auto iter = _state->sound_id_map.find(filename);
@@ -822,6 +812,45 @@ namespace SparkyStudios::Audio::Amplitude
             return nullptr;
         }
         return GetEventHandle(iter->second);
+    }
+
+    AttenuationHandle Engine::GetAttenuationHandle(const std::string& name) const
+    {
+        auto iter = std::find_if(
+            _state->attenuation_map.begin(), _state->attenuation_map.end(),
+            [name](const auto& item)
+            {
+                return item.second->GetName() == name;
+            });
+
+        if (iter == _state->attenuation_map.end())
+        {
+            return nullptr;
+        }
+
+        return iter->second.get();
+    }
+
+    AttenuationHandle Engine::GetAttenuationHandle(AmAttenuationID id) const
+    {
+        auto iter = _state->attenuation_map.find(id);
+        if (iter == _state->attenuation_map.end())
+        {
+            return nullptr;
+        }
+
+        return iter->second.get();
+    }
+
+    AttenuationHandle Engine::GetAttenuationHandleFromFile(AmOsString filename) const
+    {
+        auto iter = _state->attenuation_id_map.find(filename);
+        if (iter == _state->attenuation_id_map.end())
+        {
+            return nullptr;
+        }
+
+        return GetAttenuationHandle(iter->second);
     }
 
     void Engine::SetMasterGain(float gain)

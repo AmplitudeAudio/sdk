@@ -18,7 +18,7 @@ namespace SparkyStudios.Audio.Amplitude;
 // to load by the engine.
 table SoundBankDefinition {
   // The sound bank unique identifier.
-  id:ulong = 0;
+  id:uint64 = 0;
 
   // The name of this sound bank.
   name:string;
@@ -32,6 +32,11 @@ table SoundBankDefinition {
   // more that one SoundBanck and can only be triggered once it
   // has been loaded by at least one SoundBank.
   events:[string];
+
+  /// The list of Attenuation files to load. An Attenuation may be present in
+  /// more than one SoundBank and can only be used by SoundCollection once it
+  /// has been loaded by at least one SoundBank.
+  attenuators:[string];
 }
 
 root_type SoundBankDefinition;

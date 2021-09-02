@@ -37,16 +37,20 @@ namespace SparkyStudios::Audio::Amplitude
     struct SoundBankDefinition;
 
 #if defined(AM_WCHAR_SUPPORTED)
+    typedef std::map<std::wstring, AmAttenuationID> AttenuationIdMap;
     typedef std::map<std::wstring, AmSoundCollectionID> SoundIdMap;
     typedef std::map<std::wstring, AmEventID> EventIdMap;
     typedef std::map<std::wstring, std::unique_ptr<SoundBank>> SoundBankMap;
 #else
+    typedef std::map<std::string, AmAttenuationID> AttenuationIdMap;
     typedef std::map<std::string, AmSoundCollectionID> SoundIdMap;
     typedef std::map<std::string, std::string> EventIdMap;
     typedef std::map<std::string, std::unique_ptr<SoundBank>> SoundBankMap;
 #endif
 
     typedef std::map<AmSoundCollectionID, std::unique_ptr<SoundCollection>> SoundCollectionMap;
+
+    typedef std::map<AmAttenuationID, std::unique_ptr<Attenuation>> AttenuationMap;
 
     typedef std::map<AmEventID, std::unique_ptr<Event>> EventMap;
     typedef std::vector<EventInstance> EventInstanceVector;
@@ -79,6 +83,8 @@ namespace SparkyStudios::Audio::Amplitude
             , event_map()
             , event_id_map()
             , running_events()
+            , attenuation_map()
+            , attenuation_id_map()
             , sound_bank_map()
             , channel_state_memory()
             , playing_channel_list(&ChannelInternalState::priority_node)
@@ -133,6 +139,12 @@ namespace SparkyStudios::Audio::Amplitude
 
         // A vector of currently active events.
         EventInstanceVector running_events;
+
+        // A map of attenuation ids to Attenuation
+        AttenuationMap attenuation_map;
+
+        // A map of file names to attenuation ids to determine if a file needs to be loaded.
+        AttenuationIdMap attenuation_id_map;
 
         // Hold the sounds banks.
         SoundBankMap sound_bank_map;
