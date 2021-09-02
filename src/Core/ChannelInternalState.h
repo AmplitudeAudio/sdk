@@ -48,11 +48,12 @@ namespace SparkyStudios::Audio::Amplitude
             , _channelState(ChannelStateStopped)
             , _collection(nullptr)
             , _fader(nullptr)
+            , _entity()
             , _sound(nullptr)
-            , _location()
             , _userGain(1.0f)
             , _gain(1.0f)
             , _pan()
+            , _location()
         {}
 
         // Updates the state enum based on whether this channel is stopped, playing,

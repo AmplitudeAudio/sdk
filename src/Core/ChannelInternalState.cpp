@@ -211,6 +211,13 @@ namespace SparkyStudios::Audio::Amplitude
 
     void ChannelInternalState::AdvanceFrame(AmTime delta_time)
     {
+        // Update attached entity if any
+        if (_entity.Valid())
+        {
+            _entity.Update();
+        }
+
+        // Update the fading out animation if necessary
         if (_channelState == ChannelStateFadingOut && _fader != nullptr)
         {
             _gain = _fader->GetFromTime(Engine::GetInstance()->GetTotalTime());
