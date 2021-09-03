@@ -206,36 +206,17 @@ namespace SparkyStudios::Audio::Amplitude
         const ListenerList& listeners,
         const hmm_vec3& location);
 
-    // This will take a point between lower_bound and upper_bound and use it to
-    // calculate an attenuation multiplier. The curve_factor can be adjusted based
-    // on how rapidly the attenuation should change with distance.
-    //
-    // A curve_factor of 1.0 means the attenuation will adjust linearly with
-    // distance.
-    //
-    // A curve_factor greater than 1.0 means the attenuation will change gently at
-    // first, then rapidly approach its target.
-    //
-    // A fractional curve_factor between 0.0 and 1.0 means the attenuation will
-    // change rapidly at first, then gently approach its target.
-    float AttenuationCurve(float point, float lower_bound, float upper_bound, float curve_factor);
-
-    // Determine whether the sound can be heard at all. If it can, apply the roll
-    // in gain, roll out gain, or norminal gain appropriately.
-    float CalculateDistanceAttenuation(float distance_squared, const SoundCollectionDefinition* def);
-
     // Given a vector in listener space, return a vector inside a unit circle
     // representing the direction from the listener to the sound. A value of (-1, 0)
     // means the sound is directly to the listener's left, while a value of (1, 0)
     // means the sound is directly to the listener's right. Likewise, values of
     // (0, 1) and (0, -1) mean the sound is directly in front or behind the
     // listener, respectively.
-    hmm_vec2 CalculatePan(const hmm_vec3& listener_space_location);
+    hmm_vec2 CalculatePan(SoundCollection* collection, const hmm_vec3& listener_space_location, const Entity& entity);
 
     bool LoadFile(AmOsString filename, std::string* dest);
 
     AmUInt32 GetMaxNumberOfChannels(const EngineConfigDefinition* config);
-
 } // namespace SparkyStudios::Audio::Amplitude
 
 #endif // SPARK_AUDIO_ENGINE_INTERNAL_STATE_H

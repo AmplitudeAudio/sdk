@@ -435,7 +435,7 @@ namespace SparkyStudios::Audio::Amplitude
         return true;
     }
 
-    hmm_vec2 CalculatePan(const hmm_vec3& listener_space_location)
+    hmm_vec2 CalculatePan(SoundCollection* collection, const hmm_vec3& listener_space_location, const Entity& entity)
     {
         // Zero length vectors just end up with NaNs when normalized. Return a zero
         // vector instead.
@@ -446,40 +446,6 @@ namespace SparkyStudios::Audio::Amplitude
         }
         hmm_vec3 direction = AM_Normalize(listener_space_location);
         return AM_Vec2(AM_Dot(AM_Vec3(1, 0, 0), direction), AM_Dot(AM_Vec3(0, 0, 1), direction));
-    }
-
-    float AttenuationCurve(float point, float lower_bound, float upper_bound, float curve_factor)
-    {
-        AMPLITUDE_ASSERT(lower_bound <= point && point <= upper_bound && curve_factor >= 0.0f);
-        float distance = point - lower_bound;
-        float range = upper_bound - lower_bound;
-        return distance / ((range - distance) * (curve_factor - 1.0f) + range);
-    }
-
-    inline float Square(float f)
-    {
-        return f * f;
-    }
-
-    float CalculateDistanceAttenuation(float distance_squared, const SoundCollectionDefinition* def)
-    {
-        if (distance_squared < Square(def->min_audible_radius()) || distance_squared > Square(def->max_audible_radius()))
-        {
-            return 0.0f;
-        }
-        float distance = AM_SquareRootF(distance_squared);
-        if (distance < def->roll_in_radius())
-        {
-            return AttenuationCurve(distance, def->min_audible_radius(), def->roll_in_radius(), def->roll_in_curve_factor());
-        }
-        else if (distance > def->roll_out_radius())
-        {
-            return 1.0f - AttenuationCurve(distance, def->roll_out_radius(), def->max_audible_radius(), def->roll_out_curve_factor());
-        }
-        else
-        {
-            return 1.0f;
-        }
     }
 
     static void CalculateGainAndPan(
@@ -516,7 +482,7 @@ namespace SparkyStudios::Audio::Amplitude
                     }
                 }
 
-                *pan = CalculatePan(listener_space_location);
+                *pan = CalculatePan(collection, listener_space_location, entity);
             }
             else
             {
