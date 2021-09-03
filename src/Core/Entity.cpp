@@ -60,6 +60,18 @@ namespace SparkyStudios::Audio::Amplitude
         _state->SetOrientation(direction, up);
     }
 
+    const hmm_vec3& Entity::GetDirection() const
+    {
+        AMPLITUDE_ASSERT(Valid())
+        return _state->GetDirection();
+    }
+
+    const hmm_vec3& Entity::GetUp() const
+    {
+        AMPLITUDE_ASSERT(Valid())
+        return _state->GetUp();
+    }
+
     void Entity::Update()
     {
         AMPLITUDE_ASSERT(Valid());

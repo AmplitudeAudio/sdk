@@ -90,6 +90,20 @@ namespace SparkyStudios::Audio::Amplitude
         void SetOrientation(const hmm_vec3& direction, const hmm_vec3& up);
 
         /**
+         * @brief Get the direction vector of the Entity.
+         *
+         * @return The direction vector.
+         */
+        [[nodiscard]] const hmm_vec3& GetDirection() const;
+
+        /**
+         * @brief Get the up vector of the Entity.
+         *
+         * @return The up vector.
+         */
+        [[nodiscard]] const hmm_vec3& GetUp() const;
+
+        /**
          * @brief Update the state of this Entity.
          *
          * This method is called automatically by the Engine
