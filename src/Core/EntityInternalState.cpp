@@ -47,8 +47,8 @@ namespace SparkyStudios::Audio::Amplitude
 
     void EntityInternalState::SetOrientation(const hmm_vec3& direction, const hmm_vec3& up)
     {
-        _direction = direction;
-        _up = up;
+        _direction = AM_Normalize(direction);
+        _up = AM_Normalize(up);
     }
 
     const hmm_vec3& EntityInternalState::GetDirection() const
@@ -68,6 +68,9 @@ namespace SparkyStudios::Audio::Amplitude
 
     void EntityInternalState::Update()
     {
-        _inverseMatrix = AM_LookAt(_location, _location + _direction, _up);
+        hmm_vec3 eye = AM_Vec3(-_location.X, _location.Y, _location.Z);
+        hmm_vec3 forward = AM_Vec3(-_direction.X, _direction.Y, _direction.Z);
+
+        _inverseMatrix = AM_LookAt(eye, eye + forward, _up);
     }
 } // namespace SparkyStudios::Audio::Amplitude
