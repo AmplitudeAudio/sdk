@@ -59,6 +59,9 @@
 // Clamps a value between a and b
 #define AM_CLAMP(v, a, b) (AM_MAX(a, AM_MIN(b, v)))
 
+// Checks if a value is between a and b
+#define AM_BETWEEN(v, a, b) (v >= a && v <= b)
+
 // Typedefs have to be made before the includes, as the
 // includes depend on them.
 
