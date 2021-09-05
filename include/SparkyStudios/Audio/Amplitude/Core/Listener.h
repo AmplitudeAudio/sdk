@@ -44,7 +44,7 @@ namespace SparkyStudios::Audio::Amplitude
         explicit Listener(ListenerInternalState* state);
 
         /**
-         * @brief Uninitializes this Listener.
+         * @brief Uninitialize this Listener.
          *
          * Note that this does not destroy the internal state it references,
          * it just removes this reference to it. To destroy the Listener,

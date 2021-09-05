@@ -46,8 +46,18 @@ namespace SparkyStudios::Audio::Amplitude
 
     void ListenerInternalState::SetOrientation(const hmm_vec3& direction, const hmm_vec3& up)
     {
-        _direction = AM_Normalize(direction);
-        _up = AM_Normalize(up);
+        _direction = direction;
+        _up = up;
+    }
+
+    const hmm_vec3& ListenerInternalState::GetDirection() const
+    {
+        return _direction;
+    }
+
+    const hmm_vec3& ListenerInternalState::GetUp() const
+    {
+        return _up;
     }
 
     hmm_mat4& ListenerInternalState::GetInverseMatrix()
@@ -62,9 +72,6 @@ namespace SparkyStudios::Audio::Amplitude
 
     void ListenerInternalState::Update()
     {
-        hmm_vec3 eye = AM_Vec3(-_location.X, _location.Y, _location.Z);
-        hmm_vec3 forward = AM_Vec3(-_direction.X, _direction.Y, _direction.Z);
-
-        _inverseMatrix = AM_LookAt(eye, eye + forward, _up);
+        _inverseMatrix = AM_LookAt(_location, _location + _direction, _up);
     }
-}
+} // namespace SparkyStudios::Audio::Amplitude

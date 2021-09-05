@@ -417,7 +417,7 @@ namespace SparkyStudios::Audio::Amplitude
             return false;
         }
         ListenerList::const_iterator listener = listener_list.cbegin();
-        hmm_mat4 mat = listener->GetInverseMatrix();
+        const hmm_mat4& mat = listener->GetInverseMatrix();
         *listener_space_location = AM_Multiply(mat, AM_Vec4v(location, 1.0f)).XYZ;
         *distance_squared = AM_LengthSquared(*listener_space_location);
         *best_listener = listener;
@@ -466,19 +466,16 @@ namespace SparkyStudios::Audio::Amplitude
             hmm_vec3 listener_space_location;
             if (BestListener(&listener, &distance_squared, &listener_space_location, listener_list, location))
             {
-                AttenuationHandle attenuation = collection->GetAttenuation();
-                if (attenuation)
+                if (const Attenuation* attenuation = collection->GetAttenuation())
                 {
-                    *gain *= attenuation->GetGain(AM_SquareRootF(distance_squared));
-
                     if (def->spatialization() == Spatialization_PositionOrientation)
                     {
                         AMPLITUDE_ASSERT(entity.Valid())
-                        *gain *= attenuation->GetShape()->GetAttenuationFactor(entity.GetState(), &*listener);
+                        *gain *= attenuation->GetGain(entity.GetState(), &*listener);
                     }
                     else
                     {
-                        *gain *= attenuation->GetShape()->GetAttenuationFactor(location, &*listener);
+                        *gain *= attenuation->GetGain(location, &*listener);
                     }
                 }
 
@@ -1076,6 +1073,12 @@ namespace SparkyStudios::Audio::Amplitude
         {
             CallLogFunc("[Debug] Cannot play a channel in entity scope. No entity defined.\n");
             return Channel(nullptr);
+        }
+
+        if (entity.Valid())
+        {
+            // Process the first entity update
+            entity.GetState()->Update();
         }
 
         // Find where it belongs in the list.

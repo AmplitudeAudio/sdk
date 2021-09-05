@@ -30,6 +30,8 @@ namespace SparkyStudios::Audio::Amplitude
     class AttenuationDefinition;
     class AttenuationShapeDefinition;
 
+    class Attenuation;
+
     /**
      * @brief The propagation shape for positional sounds.
      *
@@ -44,24 +46,26 @@ namespace SparkyStudios::Audio::Amplitude
          *
          * This method is used only for position based sound sources.
          *
+         * @param attenuation The Attenuator object to use for distance attenuation.
          * @param soundLocation The location of the sound source.
          * @param listener The listener for which compute the attenuation.
          *
          * @return The attenuation factor.
          */
-        virtual float GetAttenuationFactor(const hmm_vec3& soundLocation, const ListenerInternalState* listener);
+        virtual float GetAttenuationFactor(const Attenuation* attenuation, const hmm_vec3& soundLocation, const ListenerInternalState* listener);
 
         /**
          * @brief Returns the attenuation factor.
          *
          * This method is used by position and orientation based sound sources.
          *
+         * @param attenuation The Attenuator object to use for distance attenuation.
          * @param entity The entity which emits the sound.
          * @param listener The listener for which compute the attenuation.
          *
          * @return The attenuation factor.
          */
-        virtual float GetAttenuationFactor(const EntityInternalState* entity, const ListenerInternalState* listener);
+        virtual float GetAttenuationFactor(const Attenuation* attenuation, const EntityInternalState* entity, const ListenerInternalState* listener);
 
         /**
          * @brief Creates an AttenuationShape object from the definition.
@@ -106,11 +110,22 @@ namespace SparkyStudios::Audio::Amplitude
         /**
          * @brief Returns the gain of the sound from the given distance to the listener.
          *
-         * @param distance The distance from the sound source to the listener.
+         * @param soundLocation The location of the sound source.
+         * @param listener The listener which is hearing the sound.
          *
          * @return The computed gain value fom the curve.
          */
-        float GetGain(double distance);
+        float GetGain(const hmm_vec3& soundLocation, const ListenerInternalState* listener) const;
+
+        /**
+         * @brief Returns the gain of the sound from the given distance to the listener.
+         *
+         * @param entity The entity which emits the sound.
+         * @param listener The listener which is hearing the sound.
+         *
+         * @return The computed gain value fom the curve.
+         */
+        float GetGain(const EntityInternalState* entity, const ListenerInternalState* listener) const;
 
         /**
          * @brief Returns the unique ID of this Attenuation.
@@ -134,6 +149,20 @@ namespace SparkyStudios::Audio::Amplitude
         [[nodiscard]] AttenuationShape* GetShape() const;
 
         /**
+         * @brief Returns the gain curve attached to this Attenuation.
+         *
+         * @return The attenuation's gain curve.
+         */
+        [[nodiscard]] const Curve& GetGainCurve() const;
+
+        /**
+         * @brief Returns the maximum distance for a fully attenuated sound
+         *
+         * @return The maximum sound attenuation distance.
+         */
+        [[nodiscard]] double GetMaxDistance() const;
+
+        /**
          * @brief Get the attenuation definition which generated this attenuation.
          *
          * @return The attenuation definition.
@@ -148,7 +177,7 @@ namespace SparkyStudios::Audio::Amplitude
         AmAttenuationID _id;
         std::string _name;
 
-        double _max_distance;
+        double _maxDistance;
 
         AttenuationShape* _shape;
 
