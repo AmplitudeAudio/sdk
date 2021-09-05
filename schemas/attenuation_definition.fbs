@@ -83,16 +83,22 @@ table SphereAttenuationSettings {
 /// - Listeners outside the outer box have sounds attenuated by the max_attenuation_factor value.
 table BoxAttenuationSettings {
   /// The inner box width.
-  inner_width:float;
+  inner_half_width:float;
 
   /// The outer box width.
-  outer_width:float;
+  outer_half_width:float;
 
   /// The inner box height.
-  inner_height:float;
+  inner_half_height:float;
 
   /// The outer box height.
-  outer_height:float;
+  outer_half_height:float;
+
+  /// The inner box depth.
+  inner_half_depth:float;
+
+  /// The outer box depth.
+  outer_half_depth:float;
 }
 
 /// Available settings for a capsule attenuation shape.
@@ -106,13 +112,13 @@ table CapsuleAttenuationSettings {
   inner_radius:float;
 
   /// The inner capsule height.
-  inner_height:float;
+  inner_half_height:float;
 
   /// The outer capsule radius.
   outer_radius:float;
 
   /// The outer capsule height.
-  outer_height:float;
+  outer_half_height:float;
 }
 
 /// Merges the settings from attenuation shapes.

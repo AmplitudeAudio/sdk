@@ -42,8 +42,8 @@ namespace SparkyStudios::Audio::Amplitude
             _outerHeight = settings->outer_height();
         }
 
-        float GetAttenuationFactor(const hmm_vec3& soundLocation, const ListenerInternalState* listener) override;
-        float GetAttenuationFactor(const EntityInternalState* entity, const ListenerInternalState* listener) override;
+        float GetAttenuationFactor(const Attenuation*, const hmm_vec3& soundLocation, const ListenerInternalState* listener) override;
+        float GetAttenuationFactor(const Attenuation*, const EntityInternalState* entity, const ListenerInternalState* listener) override;
         [[nodiscard]] float GetInnerRadius() const;
         [[nodiscard]] float GetOuterRadius() const;
         [[nodiscard]] float GetInnerHeight() const;
@@ -66,8 +66,8 @@ namespace SparkyStudios::Audio::Amplitude
             _outerRadius = settings->outer_radius();
         }
 
-        float GetAttenuationFactor(const hmm_vec3& soundLocation, const ListenerInternalState* listener) override;
-        float GetAttenuationFactor(const EntityInternalState* entity, const ListenerInternalState* listener) override;
+        float GetAttenuationFactor(const Attenuation*, const hmm_vec3& soundLocation, const ListenerInternalState* listener) override;
+        float GetAttenuationFactor(const Attenuation*, const EntityInternalState* entity, const ListenerInternalState* listener) override;
 
         [[nodiscard]] float GetInnerRadius() const
         {
@@ -90,37 +90,56 @@ namespace SparkyStudios::Audio::Amplitude
         explicit BoxAttenuationShape(const BoxAttenuationSettings* settings)
             : AttenuationShape()
         {
-            _innerHeight = settings->inner_height();
-            _outerHeight = settings->outer_height();
-            _innerWidth = settings->inner_width();
-            _outerWidth = settings->outer_width();
+            _innerHalfHeight = settings->inner_half_height();
+            _outerHalfHeight = settings->outer_half_height();
+            _innerHalfWidth = settings->inner_half_width();
+            _outerHalfWidth = settings->outer_half_width();
+            _innerHalfDepth = settings->inner_half_depth();
+            _outerHalfDepth = settings->outer_half_depth();
         }
 
-        [[nodiscard]] float GetInnerHeight() const
+        float GetAttenuationFactor(const Attenuation*, const hmm_vec3& soundLocation, const ListenerInternalState* listener) override;
+        float GetAttenuationFactor(const Attenuation*, const EntityInternalState* entity, const ListenerInternalState* listener) override;
+
+        [[nodiscard]] float GetInnerHalfHeight() const
         {
-            return _innerHeight;
+            return _innerHalfHeight;
         }
 
-        [[nodiscard]] float GetOuterHeight() const
+        [[nodiscard]] float GetOuterHalfHeight() const
         {
-            return _outerHeight;
+            return _outerHalfHeight;
         }
 
-        [[nodiscard]] float GetInnerWidth() const
+        [[nodiscard]] float GetInnerHalfWidth() const
         {
-            return _innerWidth;
+            return _innerHalfWidth;
         }
 
-        [[nodiscard]] float GetOuterWidth() const
+        [[nodiscard]] float GetOuterHalfWidth() const
         {
-            return _outerWidth;
+            return _outerHalfWidth;
+        }
+
+        [[nodiscard]] float GetInnerHalfDepth() const
+        {
+            return _innerHalfDepth;
+        }
+
+        [[nodiscard]] float GetOuterHalfDepth() const
+        {
+            return _outerHalfDepth;
         }
 
     private:
-        float _innerHeight;
-        float _outerHeight;
-        float _innerWidth;
-        float _outerWidth;
+        float _getFactor(const hmm_vec3& soundLocation, const ListenerInternalState* listener, hmm_mat4 lookAt);
+
+        float _innerHalfHeight;
+        float _outerHalfHeight;
+        float _innerHalfWidth;
+        float _outerHalfWidth;
+        float _innerHalfDepth;
+        float _outerHalfDepth;
     };
 
     class CapsuleAttenuationShape : public AttenuationShape
@@ -131,9 +150,12 @@ namespace SparkyStudios::Audio::Amplitude
         {
             _innerRadius = settings->inner_radius();
             _outerRadius = settings->outer_radius();
-            _innerHeight = settings->inner_height();
-            _outerHeight = settings->outer_height();
+            _innerHalfHeight = settings->inner_half_height();
+            _outerHalfHeight = settings->outer_half_height();
         }
+
+        float GetAttenuationFactor(const Attenuation*, const hmm_vec3& soundLocation, const ListenerInternalState* listener) override;
+        float GetAttenuationFactor(const Attenuation*, const EntityInternalState* entity, const ListenerInternalState* listener) override;
 
         [[nodiscard]] float GetInnerRadius() const
         {
@@ -145,21 +167,23 @@ namespace SparkyStudios::Audio::Amplitude
             return _outerRadius;
         }
 
-        [[nodiscard]] float GetInnerHeight() const
+        [[nodiscard]] float GetInnerHalfHeight() const
         {
-            return _innerHeight;
+            return _innerHalfHeight;
         }
 
-        [[nodiscard]] float GetOuterHeight() const
+        [[nodiscard]] float GetOuterHalfHeight() const
         {
-            return _outerHeight;
+            return _outerHalfHeight;
         }
 
     private:
+        float _getFactor(const Attenuation* attenuation, const hmm_vec3& soundLocation, const ListenerInternalState* listener, hmm_mat4 lookAt);
+
         float _innerRadius;
         float _outerRadius;
-        float _innerHeight;
-        float _outerHeight;
+        float _innerHalfHeight;
+        float _outerHalfHeight;
     };
 } // namespace SparkyStudios::Audio::Amplitude
 
