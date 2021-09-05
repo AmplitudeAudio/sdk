@@ -153,20 +153,20 @@ namespace SparkyStudios::Audio::Amplitude
         _name = definition->name()->str();
 
         // Load each Attenuation named in the sound bank.
-        for (flatbuffers::uoffset_t i = 0; i < definition->attenuators()->size(); ++i)
+        for (flatbuffers::uoffset_t i = 0; success && i < definition->attenuators()->size(); ++i)
         {
             AmString attenuation_filename = definition->attenuators()->Get(i)->c_str();
             success &= InitializeAttenuation(AM_STRING_TO_OS_STRING(attenuation_filename), engine);
         }
 
         // Load each Event named in the sound bank.
-        for (flatbuffers::uoffset_t i = 0; i < definition->events()->size(); ++i)
+        for (flatbuffers::uoffset_t i = 0; success && i < definition->events()->size(); ++i)
         {
             AmString event_filename = definition->events()->Get(i)->c_str();
             success &= InitializeEvent(AM_STRING_TO_OS_STRING(event_filename), engine);
         }
         // Load each SoundCollection named in the sound bank.
-        for (flatbuffers::uoffset_t i = 0; i < definition->sounds()->size(); ++i)
+        for (flatbuffers::uoffset_t i = 0; success && i < definition->sounds()->size(); ++i)
         {
             AmString sound_filename = definition->sounds()->Get(i)->c_str();
             success &= InitializeSoundCollection(AM_STRING_TO_OS_STRING(sound_filename), engine);
