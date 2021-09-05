@@ -18,6 +18,7 @@ namespace SparkyStudios::Audio::Amplitude
 {
     float SCurveFader::GetFromPercentage(double percentage)
     {
+        percentage = AM_CLAMP(percentage, 0.0, 1.0);
         return m_delta / (1.0f + AM_PowerF((float)(percentage / (1.0f - percentage)), -1.5f)) + m_from;
     }
 } // namespace SparkyStudios::Audio::Amplitude

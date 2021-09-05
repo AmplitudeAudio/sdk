@@ -21,8 +21,9 @@
 
 #include <SparkyStudios/Audio/Amplitude/Core/Common.h>
 #include <SparkyStudios/Audio/Amplitude/Core/Entity.h>
-
 #include <SparkyStudios/Audio/Amplitude/Core/RefCounter.h>
+
+#include <SparkyStudios/Audio/Amplitude/Sound/Attenuation.h>
 #include <SparkyStudios/Audio/Amplitude/Sound/Scheduler.h>
 #include <SparkyStudios/Audio/Amplitude/Sound/Sound.h>
 
@@ -111,6 +112,13 @@ namespace SparkyStudios::Audio::Amplitude
         [[nodiscard]] BusInternalState* GetBus() const;
 
         /**
+         * @brief Returns the attenuation attached to this SoundCollection.
+         *
+         * @return The attenuation of this SoundCollection if available or nullptr.
+         */
+        [[nodiscard]] const Attenuation* GetAttenuation() const;
+
+        /**
          * @brief Get the references counter of this instance.
          *
          * @return The references counter.
@@ -141,6 +149,8 @@ namespace SparkyStudios::Audio::Amplitude
 
         AmSoundCollectionID _id;
         std::string _name;
+
+        Attenuation* _attenuation;
 
         RefCounter _refCounter;
     };

@@ -29,6 +29,7 @@
 #include <SparkyStudios/Audio/Amplitude/Core/Listener.h>
 #include <SparkyStudios/Audio/Amplitude/Core/Version.h>
 
+#include <SparkyStudios/Audio/Amplitude/Sound/Attenuation.h>
 #include <SparkyStudios/Audio/Amplitude/Sound/SoundCollection.h>
 
 namespace SparkyStudios::Audio::Amplitude
@@ -39,6 +40,7 @@ namespace SparkyStudios::Audio::Amplitude
 
     typedef SoundCollection* SoundHandle;
     typedef Event* EventHandle;
+    typedef Attenuation* AttenuationHandle;
 
     /**
      * @brief The central class of  the library that manages the Listeners, Channels, and tracks all of the internal state.
@@ -91,7 +93,7 @@ namespace SparkyStudios::Audio::Amplitude
          *
          * @return The total elapsed time since the start of the game.
          */
-        AmTime GetTotalTime() const;
+        [[nodiscard]] AmTime GetTotalTime() const;
 
         /**
          * @brief Load a sound bank from a file. Queue the sound files in that sound
@@ -137,13 +139,6 @@ namespace SparkyStudios::Audio::Amplitude
         [[nodiscard]] SoundHandle GetSoundHandle(AmSoundCollectionID id) const;
 
         /**
-         * @brief Get an EventHandle given its name as defined in its JSON data.
-         *
-         * @param name The unique name as defined in the JSON data.
-         */
-        [[nodiscard]] EventHandle GetEventHandle(const std::string& sound_name) const;
-
-        /**
          * @brief Get a SoundHandle given its SoundCollectionDefinition filename.
          *
          * @param name The filename containing the flatbuffer binary data.
@@ -151,11 +146,46 @@ namespace SparkyStudios::Audio::Amplitude
         [[nodiscard]] SoundHandle GetSoundHandleFromFile(AmOsString filename) const;
 
         /**
+         * @brief Get an EventHandle given its name as defined in its JSON data.
+         *
+         * @param name The unique name as defined in the JSON data.
+         */
+        [[nodiscard]] EventHandle GetEventHandle(const std::string& sound_name) const;
+
+        /**
+         * @brief Get an EventHandle given its ID as defined in its JSON data.
+         *
+         * @param id The unique ID as defined in the JSON data.
+         */
+        [[nodiscard]] EventHandle GetEventHandle(AmEventID id) const;
+
+        /**
          * @brief Get an EventHandle given its EventDefinition filename.
          *
          * @param name The filename containing the flatbuffer binary data.
          */
         [[nodiscard]] EventHandle GetEventHandleFromFile(AmOsString filename) const;
+
+        /**
+         * @brief Get an AttenuationHandle given its name as defined in its JSON data.
+         *
+         * @param name The unique name as defined in the JSON data.
+         */
+        [[nodiscard]] AttenuationHandle GetAttenuationHandle(const std::string& sound_name) const;
+
+        /**
+         * @brief Get an AttenuationHandle given its ID as defined in its JSON data.
+         *
+         * @param id The unique ID as defined in the JSON data.
+         */
+        [[nodiscard]] AttenuationHandle GetAttenuationHandle(AmAttenuationID id) const;
+
+        /**
+         * @brief Get an AttenuationHandle given its AttenuationDefinition filename.
+         *
+         * @param name The filename containing the flatbuffer binary data.
+         */
+        [[nodiscard]] AttenuationHandle GetAttenuationHandleFromFile(AmOsString filename) const;
 
         /**
          * @brief Adjusts the gain on the master bus.

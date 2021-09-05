@@ -17,6 +17,7 @@
 
 #include <Core/EngineInternalState.h>
 
+#include "attenuation_definition_generated.h"
 #include "event_definition_generated.h"
 #include "sound_bank_definition_generated.h"
 
@@ -82,11 +83,57 @@ namespace SparkyStudios::Audio::Amplitude
             {
                 return false;
             }
+
+            const EventDefinition* definition = event->GetEventDefinition();
+            AmEventID id = definition->id();
+            if (id == kAmInvalidObjectId)
+            {
+                CallLogFunc(
+                    "[ERROR] Cannot load event \'" AM_OS_CHAR_FMT "\'. Invalid ID.\n", AM_STRING_TO_OS_STRING(definition->name()->c_str()));
+                return false;
+            }
+
             event->GetRefCounter()->Increment();
 
-            std::string name = event->GetEventDefinition()->name()->c_str();
-            audio_engine->GetState()->event_map[name] = std::move(event);
-            audio_engine->GetState()->event_id_map[filename] = name;
+            audio_engine->GetState()->event_map[id] = std::move(event);
+            audio_engine->GetState()->event_id_map[filename] = id;
+        }
+
+        return true;
+    }
+
+    static bool InitializeAttenuation(AmOsString filename, Engine* audio_engine)
+    {
+        // Find the ID.
+        AttenuationHandle handle = audio_engine->GetAttenuationHandleFromFile(filename);
+        if (handle)
+        {
+            // We've seen this ID before, update it.
+            handle->GetRefCounter()->Increment();
+        }
+        else
+        {
+            // This is a new event, load it and update it.
+            std::unique_ptr<Attenuation> attenuation(new Attenuation());
+            if (!attenuation->LoadAttenuationDefinitionFromFile(filename))
+            {
+                return false;
+            }
+
+            const AttenuationDefinition* definition = attenuation->GetAttenuationDefinition();
+            AmAttenuationID id = definition->id();
+            if (id == kAmInvalidObjectId)
+            {
+                CallLogFunc(
+                    "[ERROR] Cannot load attenuation \'" AM_OS_CHAR_FMT "\'. Invalid ID.\n",
+                    AM_STRING_TO_OS_STRING(definition->name()->c_str()));
+                return false;
+            }
+
+            attenuation->GetRefCounter()->Increment();
+
+            audio_engine->GetState()->attenuation_map[id] = std::move(attenuation);
+            audio_engine->GetState()->attenuation_id_map[filename] = id;
         }
 
         return true;
@@ -105,18 +152,24 @@ namespace SparkyStudios::Audio::Amplitude
         _id = definition->id();
         _name = definition->name()->str();
 
-        // Load each SoundCollection named in the sound bank.
-        for (flatbuffers::uoffset_t i = 0; i < definition->sounds()->size(); ++i)
+        // Load each Attenuation named in the sound bank.
+        for (flatbuffers::uoffset_t i = 0; success && i < definition->attenuators()->size(); ++i)
         {
-            AmString sound_filename = definition->sounds()->Get(i)->c_str();
-            success &= InitializeSoundCollection(AM_STRING_TO_OS_STRING(sound_filename), engine);
+            AmString attenuation_filename = definition->attenuators()->Get(i)->c_str();
+            success &= InitializeAttenuation(AM_STRING_TO_OS_STRING(attenuation_filename), engine);
         }
 
         // Load each Event named in the sound bank.
-        for (flatbuffers::uoffset_t i = 0; i < definition->events()->size(); ++i)
+        for (flatbuffers::uoffset_t i = 0; success && i < definition->events()->size(); ++i)
         {
             AmString event_filename = definition->events()->Get(i)->c_str();
             success &= InitializeEvent(AM_STRING_TO_OS_STRING(event_filename), engine);
+        }
+        // Load each SoundCollection named in the sound bank.
+        for (flatbuffers::uoffset_t i = 0; success && i < definition->sounds()->size(); ++i)
+        {
+            AmString sound_filename = definition->sounds()->Get(i)->c_str();
+            success &= InitializeSoundCollection(AM_STRING_TO_OS_STRING(sound_filename), engine);
         }
 
         return success;
@@ -153,7 +206,7 @@ namespace SparkyStudios::Audio::Amplitude
             return false;
         }
 
-        std::string id = id_iter->second;
+        AmEventID id = id_iter->second;
         auto event_iter = state->event_map.find(id);
         if (event_iter == state->event_map.end())
         {
@@ -163,6 +216,29 @@ namespace SparkyStudios::Audio::Amplitude
         if (event_iter->second->GetRefCounter()->Decrement() == 0)
         {
             state->event_map.erase(event_iter);
+        }
+
+        return true;
+    }
+
+    static bool DeinitializeAttenuation(AmOsString filename, EngineInternalState* state)
+    {
+        auto id_iter = state->attenuation_id_map.find(filename);
+        if (id_iter == state->attenuation_id_map.end())
+        {
+            return false;
+        }
+
+        AmAttenuationID id = id_iter->second;
+        auto attenuation_iter = state->attenuation_map.find(id);
+        if (attenuation_iter == state->attenuation_map.end())
+        {
+            return false;
+        }
+
+        if (attenuation_iter->second->GetRefCounter()->Decrement() == 0)
+        {
+            state->attenuation_map.erase(attenuation_iter);
         }
 
         return true;
@@ -188,6 +264,16 @@ namespace SparkyStudios::Audio::Amplitude
             if (!DeinitializeEvent(AM_STRING_TO_OS_STRING(filename), engine->GetState()))
             {
                 CallLogFunc("Error while deinitializing event %s in sound bank.\n", filename);
+                AMPLITUDE_ASSERT(0);
+            }
+        }
+
+        for (flatbuffers::uoffset_t i = 0; i < definition->attenuators()->size(); ++i)
+        {
+            AmString filename = definition->attenuators()->Get(i)->c_str();
+            if (!DeinitializeAttenuation(AM_STRING_TO_OS_STRING(filename), engine->GetState()))
+            {
+                CallLogFunc("Error while deinitializing attenuation %s in sound bank.\n", filename);
                 AMPLITUDE_ASSERT(0);
             }
         }

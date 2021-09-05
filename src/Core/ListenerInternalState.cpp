@@ -12,61 +12,65 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include <Core/EntityInternalState.h>
+#include <Core/ListenerInternalState.h>
 
 namespace SparkyStudios::Audio::Amplitude
 {
-    EntityInternalState::EntityInternalState()
-        : _playingSoundList(&ChannelInternalState::entity_node)
-        , _id(kAmInvalidObjectId)
+    ListenerInternalState::ListenerInternalState()
+        : _inverseMatrix(AM_Mat4d(1))
         , _location()
         , _direction()
         , _up()
-        , _inverseMatrix(AM_Mat4d(1.0f))
+        , _id(kAmInvalidObjectId)
     {}
 
-    AmEntityID EntityInternalState::GetId() const
+    AmListenerID ListenerInternalState::GetId() const
     {
         return _id;
     }
 
-    void EntityInternalState::SetId(AmEntityID id)
+    void ListenerInternalState::SetId(AmListenerID id)
     {
         _id = id;
     }
 
-    void EntityInternalState::SetLocation(const hmm_vec3& location)
+    void ListenerInternalState::SetLocation(const hmm_vec3& location)
     {
         _location = location;
     }
 
-    const hmm_vec3& EntityInternalState::GetLocation() const
+    const hmm_vec3& ListenerInternalState::GetLocation() const
     {
         return _location;
     }
 
-    void EntityInternalState::SetOrientation(const hmm_vec3& direction, const hmm_vec3& up)
+    void ListenerInternalState::SetOrientation(const hmm_vec3& direction, const hmm_vec3& up)
     {
         _direction = direction;
         _up = up;
     }
 
-    const hmm_vec3& EntityInternalState::GetDirection() const
+    const hmm_vec3& ListenerInternalState::GetDirection() const
     {
         return _direction;
     }
 
-    const hmm_vec3& EntityInternalState::GetUp() const
+    const hmm_vec3& ListenerInternalState::GetUp() const
     {
         return _up;
     }
 
-    const hmm_mat4& EntityInternalState::GetInverseMatrix() const
+    hmm_mat4& ListenerInternalState::GetInverseMatrix()
     {
         return _inverseMatrix;
     }
 
-    void EntityInternalState::Update()
+    const hmm_mat4& ListenerInternalState::GetInverseMatrix() const
+    {
+        return _inverseMatrix;
+    }
+
+    void ListenerInternalState::Update()
     {
         _inverseMatrix = AM_LookAt(_location, _location + _direction, _up);
     }

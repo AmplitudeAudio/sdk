@@ -33,6 +33,7 @@
 
 #include <SparkyStudios/Audio/Amplitude/Core/Common/Config.h>
 #include <SparkyStudios/Audio/Amplitude/Core/Common/Types.h>
+
 #include <SparkyStudios/Audio/Amplitude/Core/Common/Constants.h>
 
 #include <SparkyStudios/Audio/Amplitude/Math/HandmadeMath.h>
@@ -51,13 +52,16 @@
 #define AM_IS_VALID_CHANNELS_VALUE(channels) (channels == 1 || channels == 2 || channels == 4 || channels == 6 || channels == 8)
 
 // Returns the minimum value between a and b
-#define AM_MIN(a, b) ((a) < (b)) ? (a) : (b)
+#define AM_MIN(a, b) (((a) < (b)) ? (a) : (b))
 
 // Returns the maximum value between a and b
-#define AM_MAX(a, b) ((a) > (b)) ? (a) : (b)
+#define AM_MAX(a, b) (((a) > (b)) ? (a) : (b))
 
 // Clamps a value between a and b
-#define AM_CLAMP(v, a, b) AM_MAX(a, AM_MIN(b, v))
+#define AM_CLAMP(v, a, b) (AM_MAX(a, AM_MIN(b, v)))
+
+// Checks if a value is between a and b
+#define AM_BETWEEN(v, a, b) (v >= AM_MIN(a, b) && v <= AM_MAX(a, b))
 
 // Typedefs have to be made before the includes, as the
 // includes depend on them.

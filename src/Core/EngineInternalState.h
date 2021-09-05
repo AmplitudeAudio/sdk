@@ -37,10 +37,12 @@ namespace SparkyStudios::Audio::Amplitude
     struct SoundBankDefinition;
 
 #if defined(AM_WCHAR_SUPPORTED)
+    typedef std::map<std::wstring, AmAttenuationID> AttenuationIdMap;
     typedef std::map<std::wstring, AmSoundCollectionID> SoundIdMap;
-    typedef std::map<std::wstring, std::string> EventIdMap;
+    typedef std::map<std::wstring, AmEventID> EventIdMap;
     typedef std::map<std::wstring, std::unique_ptr<SoundBank>> SoundBankMap;
 #else
+    typedef std::map<std::string, AmAttenuationID> AttenuationIdMap;
     typedef std::map<std::string, AmSoundCollectionID> SoundIdMap;
     typedef std::map<std::string, std::string> EventIdMap;
     typedef std::map<std::string, std::unique_ptr<SoundBank>> SoundBankMap;
@@ -48,7 +50,9 @@ namespace SparkyStudios::Audio::Amplitude
 
     typedef std::map<AmSoundCollectionID, std::unique_ptr<SoundCollection>> SoundCollectionMap;
 
-    typedef std::map<std::string, std::unique_ptr<Event>> EventMap;
+    typedef std::map<AmAttenuationID, std::unique_ptr<Attenuation>> AttenuationMap;
+
+    typedef std::map<AmEventID, std::unique_ptr<Event>> EventMap;
     typedef std::vector<EventInstance> EventInstanceVector;
 
     typedef std::vector<ChannelInternalState> ChannelStateVector;
@@ -79,6 +83,8 @@ namespace SparkyStudios::Audio::Amplitude
             , event_map()
             , event_id_map()
             , running_events()
+            , attenuation_map()
+            , attenuation_id_map()
             , sound_bank_map()
             , channel_state_memory()
             , playing_channel_list(&ChannelInternalState::priority_node)
@@ -133,6 +139,12 @@ namespace SparkyStudios::Audio::Amplitude
 
         // A vector of currently active events.
         EventInstanceVector running_events;
+
+        // A map of attenuation ids to Attenuation
+        AttenuationMap attenuation_map;
+
+        // A map of file names to attenuation ids to determine if a file needs to be loaded.
+        AttenuationIdMap attenuation_id_map;
 
         // Hold the sounds banks.
         SoundBankMap sound_bank_map;
@@ -194,36 +206,17 @@ namespace SparkyStudios::Audio::Amplitude
         const ListenerList& listeners,
         const hmm_vec3& location);
 
-    // This will take a point between lower_bound and upper_bound and use it to
-    // calculate an attenuation multiplier. The curve_factor can be adjusted based
-    // on how rapidly the attenuation should change with distance.
-    //
-    // A curve_factor of 1.0 means the attenuation will adjust linearly with
-    // distance.
-    //
-    // A curve_factor greater than 1.0 means the attenuation will change gently at
-    // first, then rapidly approach its target.
-    //
-    // A fractional curve_factor between 0.0 and 1.0 means the attenuation will
-    // change rapidly at first, then gently approach its target.
-    float AttenuationCurve(float point, float lower_bound, float upper_bound, float curve_factor);
-
-    // Determine whether the sound can be heard at all. If it can, apply the roll
-    // in gain, roll out gain, or norminal gain appropriately.
-    float CalculateDistanceAttenuation(float distance_squared, const SoundCollectionDefinition* def);
-
     // Given a vector in listener space, return a vector inside a unit circle
     // representing the direction from the listener to the sound. A value of (-1, 0)
     // means the sound is directly to the listener's left, while a value of (1, 0)
     // means the sound is directly to the listener's right. Likewise, values of
     // (0, 1) and (0, -1) mean the sound is directly in front or behind the
     // listener, respectively.
-    hmm_vec2 CalculatePan(const hmm_vec3& listener_space_location);
+    hmm_vec2 CalculatePan(SoundCollection* collection, const hmm_vec3& listener_space_location, const Entity& entity);
 
     bool LoadFile(AmOsString filename, std::string* dest);
 
     AmUInt32 GetMaxNumberOfChannels(const EngineConfigDefinition* config);
-
 } // namespace SparkyStudios::Audio::Amplitude
 
 #endif // SPARK_AUDIO_ENGINE_INTERNAL_STATE_H

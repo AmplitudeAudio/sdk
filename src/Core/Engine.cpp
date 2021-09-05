@@ -417,7 +417,7 @@ namespace SparkyStudios::Audio::Amplitude
             return false;
         }
         ListenerList::const_iterator listener = listener_list.cbegin();
-        hmm_mat4 mat = listener->GetInverseMatrix();
+        const hmm_mat4& mat = listener->GetInverseMatrix();
         *listener_space_location = AM_Multiply(mat, AM_Vec4v(location, 1.0f)).XYZ;
         *distance_squared = AM_LengthSquared(*listener_space_location);
         *best_listener = listener;
@@ -435,7 +435,7 @@ namespace SparkyStudios::Audio::Amplitude
         return true;
     }
 
-    hmm_vec2 CalculatePan(const hmm_vec3& listener_space_location)
+    hmm_vec2 CalculatePan(SoundCollection* collection, const hmm_vec3& listener_space_location, const Entity& entity)
     {
         // Zero length vectors just end up with NaNs when normalized. Return a zero
         // vector instead.
@@ -448,44 +448,11 @@ namespace SparkyStudios::Audio::Amplitude
         return AM_Vec2(AM_Dot(AM_Vec3(1, 0, 0), direction), AM_Dot(AM_Vec3(0, 0, 1), direction));
     }
 
-    float AttenuationCurve(float point, float lower_bound, float upper_bound, float curve_factor)
-    {
-        AMPLITUDE_ASSERT(lower_bound <= point && point <= upper_bound && curve_factor >= 0.0f);
-        float distance = point - lower_bound;
-        float range = upper_bound - lower_bound;
-        return distance / ((range - distance) * (curve_factor - 1.0f) + range);
-    }
-
-    inline float Square(float f)
-    {
-        return f * f;
-    }
-
-    float CalculateDistanceAttenuation(float distance_squared, const SoundCollectionDefinition* def)
-    {
-        if (distance_squared < Square(def->min_audible_radius()) || distance_squared > Square(def->max_audible_radius()))
-        {
-            return 0.0f;
-        }
-        float distance = AM_SquareRootF(distance_squared);
-        if (distance < def->roll_in_radius())
-        {
-            return AttenuationCurve(distance, def->min_audible_radius(), def->roll_in_radius(), def->roll_in_curve_factor());
-        }
-        else if (distance > def->roll_out_radius())
-        {
-            return 1.0f - AttenuationCurve(distance, def->roll_out_radius(), def->max_audible_radius(), def->roll_out_curve_factor());
-        }
-        else
-        {
-            return 1.0f;
-        }
-    }
-
     static void CalculateGainAndPan(
         float* gain,
         hmm_vec2* pan,
         SoundCollection* collection,
+        const Entity& entity,
         const hmm_vec3& location,
         const ListenerList& listener_list,
         float user_gain)
@@ -499,8 +466,20 @@ namespace SparkyStudios::Audio::Amplitude
             hmm_vec3 listener_space_location;
             if (BestListener(&listener, &distance_squared, &listener_space_location, listener_list, location))
             {
-                *gain *= CalculateDistanceAttenuation(distance_squared, def);
-                *pan = CalculatePan(listener_space_location);
+                if (const Attenuation* attenuation = collection->GetAttenuation())
+                {
+                    if (def->spatialization() == Spatialization_PositionOrientation)
+                    {
+                        AMPLITUDE_ASSERT(entity.Valid())
+                        *gain *= attenuation->GetGain(entity.GetState(), &*listener);
+                    }
+                    else
+                    {
+                        *gain *= attenuation->GetGain(location, &*listener);
+                    }
+                }
+
+                *pan = CalculatePan(collection, listener_space_location, entity);
             }
             else
             {
@@ -768,16 +747,6 @@ namespace SparkyStudios::Audio::Amplitude
         return iter->second.get();
     }
 
-    EventHandle Engine::GetEventHandle(const std::string& sound_name) const
-    {
-        auto iter = _state->event_map.find(sound_name);
-        if (iter == _state->event_map.end())
-        {
-            return nullptr;
-        }
-        return iter->second.get();
-    }
-
     SoundHandle Engine::GetSoundHandleFromFile(AmOsString filename) const
     {
         auto iter = _state->sound_id_map.find(filename);
@@ -788,6 +757,32 @@ namespace SparkyStudios::Audio::Amplitude
         return GetSoundHandle(iter->second);
     }
 
+    EventHandle Engine::GetEventHandle(const std::string& name) const
+    {
+        auto iter = std::find_if(
+            _state->event_map.begin(), _state->event_map.end(),
+            [name](const auto& item)
+            {
+                return item.second->GetName() == name;
+            });
+
+        if (iter == _state->event_map.end())
+        {
+            return nullptr;
+        }
+        return iter->second.get();
+    }
+
+    EventHandle Engine::GetEventHandle(AmEventID id) const
+    {
+        auto iter = _state->event_map.find(id);
+        if (iter == _state->event_map.end())
+        {
+            return nullptr;
+        }
+        return iter->second.get();
+    }
+
     EventHandle Engine::GetEventHandleFromFile(AmOsString filename) const
     {
         auto iter = _state->event_id_map.find(filename);
@@ -796,6 +791,45 @@ namespace SparkyStudios::Audio::Amplitude
             return nullptr;
         }
         return GetEventHandle(iter->second);
+    }
+
+    AttenuationHandle Engine::GetAttenuationHandle(const std::string& name) const
+    {
+        auto iter = std::find_if(
+            _state->attenuation_map.begin(), _state->attenuation_map.end(),
+            [name](const auto& item)
+            {
+                return item.second->GetName() == name;
+            });
+
+        if (iter == _state->attenuation_map.end())
+        {
+            return nullptr;
+        }
+
+        return iter->second.get();
+    }
+
+    AttenuationHandle Engine::GetAttenuationHandle(AmAttenuationID id) const
+    {
+        auto iter = _state->attenuation_map.find(id);
+        if (iter == _state->attenuation_map.end())
+        {
+            return nullptr;
+        }
+
+        return iter->second.get();
+    }
+
+    AttenuationHandle Engine::GetAttenuationHandleFromFile(AmOsString filename) const
+    {
+        auto iter = _state->attenuation_id_map.find(filename);
+        if (iter == _state->attenuation_id_map.end())
+        {
+            return nullptr;
+        }
+
+        return GetAttenuationHandle(iter->second);
     }
 
     void Engine::SetMasterGain(float gain)
@@ -900,7 +934,8 @@ namespace SparkyStudios::Audio::Amplitude
         float gain;
         hmm_vec2 pan;
         CalculateGainAndPan(
-            &gain, &pan, channel->GetSoundCollection(), channel->GetLocation(), state->listener_list, channel->GetUserGain());
+            &gain, &pan, channel->GetSoundCollection(), channel->GetEntity(), channel->GetLocation(), state->listener_list,
+            channel->GetUserGain());
         channel->SetGain(gain);
         channel->SetPan(pan);
     }
@@ -1001,6 +1036,11 @@ namespace SparkyStudios::Audio::Amplitude
             event->AdvanceFrame(delta_time);
         }
 
+        for (auto&& item : _state->listener_list)
+        {
+            item.Update();
+        }
+
         ++_state->current_frame;
         _state->total_time += delta_time;
     }
@@ -1029,10 +1069,22 @@ namespace SparkyStudios::Audio::Amplitude
             return Channel(nullptr);
         }
 
+        if (collection->GetSoundCollectionDefinition()->scope() == Scope_Entity && !entity.Valid())
+        {
+            CallLogFunc("[Debug] Cannot play a channel in entity scope. No entity defined.\n");
+            return Channel(nullptr);
+        }
+
+        if (entity.Valid())
+        {
+            // Process the first entity update
+            entity.GetState()->Update();
+        }
+
         // Find where it belongs in the list.
         float gain;
         hmm_vec2 pan;
-        CalculateGainAndPan(&gain, &pan, collection, location, _state->listener_list, user_gain);
+        CalculateGainAndPan(&gain, &pan, collection, entity, location, _state->listener_list, user_gain);
         float priority = gain * sound_handle->GetSoundCollectionDefinition()->priority();
         PriorityList::iterator insertion_point = FindInsertionPoint(&_state->playing_channel_list, priority);
 

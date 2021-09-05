@@ -31,6 +31,7 @@ namespace SparkyStudios::Audio::Amplitude
         , _sounds()
         , _id(kAmInvalidObjectId)
         , _name()
+        , _attenuation(nullptr)
         , _refCounter()
     {}
 
@@ -52,6 +53,20 @@ namespace SparkyStudios::Audio::Amplitude
             {
                 CallLogFunc("Sound collection %s specifies an unknown bus ID: %u.\n", def->name(), def->bus());
                 return false;
+            }
+
+            if (def->attenuation() != kAmInvalidObjectId)
+            {
+                if (auto findIt = state->attenuation_map.find(def->attenuation()); findIt != state->attenuation_map.end())
+                {
+                    _attenuation = findIt->second.get();
+                }
+
+                if (!_attenuation)
+                {
+                    CallLogFunc("Sound collection %s specifies an unknown attenuation ID: %u.\n", def->name(), def->attenuation());
+                    return false;
+                }
             }
         }
 
@@ -163,5 +178,10 @@ namespace SparkyStudios::Audio::Amplitude
     const std::vector<Sound>& SoundCollection::GetAudioSamples() const
     {
         return _sounds;
+    }
+
+    const Attenuation* SoundCollection::GetAttenuation() const
+    {
+        return _attenuation;
     }
 } // namespace SparkyStudios::Audio::Amplitude

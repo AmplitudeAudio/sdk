@@ -94,11 +94,6 @@ namespace SparkyStudios::Audio::Amplitude
         }
 
         const SoundCollectionDefinition* definition = _collection->GetSoundCollectionDefinition();
-        if (!_entity.Valid() && definition->scope() == Scope_Entity)
-        {
-            CallLogFunc("[Debug] Cannot play a channel in entity scope. No entity defined.\n");
-            return false;
-        }
 
         std::vector<const Sound*> toSkip = _realChannel.Valid() ? _realChannel._playedSounds : std::vector<const Sound*>();
         _sound = _entity.Valid() ? _collection->SelectFromEntity(_entity, toSkip) : _collection->SelectFromWorld(toSkip);
@@ -216,6 +211,13 @@ namespace SparkyStudios::Audio::Amplitude
 
     void ChannelInternalState::AdvanceFrame(AmTime delta_time)
     {
+        // Update attached entity if any
+        if (_entity.Valid())
+        {
+            _entity.Update();
+        }
+
+        // Update the fading out animation if necessary
         if (_channelState == ChannelStateFadingOut && _fader != nullptr)
         {
             _gain = _fader->GetFromTime(Engine::GetInstance()->GetTotalTime());

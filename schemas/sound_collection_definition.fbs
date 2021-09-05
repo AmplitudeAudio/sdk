@@ -128,7 +128,7 @@ table AudioSampleSetEntry {
 // Basic triggered sound object.
 table SoundCollectionDefinition {
   // Unique identifier for this sound collection.
-  id:ulong = 0;
+  id:uint64 = 0;
 
   // Sound collection name.
   name:string;
@@ -159,6 +159,9 @@ table SoundCollectionDefinition {
   // Positional sounds have their gain adjusted based on the distance to a
   // listener.
   spatialization:Spatialization = None;
+
+  /// The ID of the attenuation to apply to this sound.
+  attenuation:uint64 = 0;
 
   // Defines the play mode of this sound. The play mode set the way audio samples
   // of this sound are played. The default is PlayOne.

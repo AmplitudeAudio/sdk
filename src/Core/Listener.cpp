@@ -44,32 +44,22 @@ namespace SparkyStudios::Audio::Amplitude
         return _state->GetId();
     }
 
-    void Listener::SetOrientation(const hmm_vec3& location, const hmm_vec3& direction, const hmm_vec3& up)
+    void Listener::SetOrientation(const hmm_vec3& direction, const hmm_vec3& up)
     {
         AMPLITUDE_ASSERT(Valid());
-        _state->SetInverseMatrix(AM_LookAt(location, location + direction, up));
+        _state->SetOrientation(direction, up);
     }
 
     hmm_vec3 Listener::GetLocation() const
     {
-        hmm_mat4 matrix = _state->GetInverseMatrix();
-        return AM_Vec3(-matrix.Elements[3][0], -matrix.Elements[3][1], -matrix.Elements[3][2]);
+        AMPLITUDE_ASSERT(Valid());
+        return _state->GetLocation();
     }
 
     void Listener::SetLocation(const hmm_vec3& location)
     {
         AMPLITUDE_ASSERT(Valid());
-        _state->SetInverseMatrix(AM_Translate(-location));
+        _state->SetLocation(location);
     }
 
-    void Listener::SetMatrix(const hmm_mat4& matrix)
-    {
-        AMPLITUDE_ASSERT(Valid());
-        // TODO: _state->SetInverseMatrix(AM_Translate(matrix));
-    }
-
-    hmm_mat4 Listener::GetMatrix() const
-    {
-        return AM_Mat4d(1.0f); // TODO
-    }
 } // namespace SparkyStudios::Audio::Amplitude
