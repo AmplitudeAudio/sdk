@@ -116,7 +116,7 @@ namespace SparkyStudios::Audio::Amplitude
          *
          * @return The attenuation of this SoundCollection if available or nullptr.
          */
-        [[nodiscard]] Attenuation* GetAttenuation() const;
+        [[nodiscard]] const Attenuation* GetAttenuation() const;
 
         /**
          * @brief Get the references counter of this instance.

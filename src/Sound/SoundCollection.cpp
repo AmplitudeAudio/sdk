@@ -180,7 +180,7 @@ namespace SparkyStudios::Audio::Amplitude
         return _sounds;
     }
 
-    Attenuation* SoundCollection::GetAttenuation() const
+    const Attenuation* SoundCollection::GetAttenuation() const
     {
         return _attenuation;
     }
