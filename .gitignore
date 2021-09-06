@@ -7,6 +7,9 @@ tests/*_test
 *.ambus
 *.amconfig
 *.amsound
+*.amecollection
+*.amevent
+*.amattenuation
 *.a
 
 # CMake files

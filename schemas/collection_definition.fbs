@@ -1,0 +1,143 @@
+// Copyright (c) 2021-present Sparky Studios. All rights reserved.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+include "common.fbs";
+
+namespace SparkyStudios.Audio.Amplitude;
+
+/// Specifies the way the collection is played when a play request is received.
+enum CollectionPlayMode: byte {
+  /// On each play request, an audio sample is picked by the scheduler and played only once.
+  PlayOne,
+  /// On each play request, an audio sample is picked by the scheduler and looped until stopped.
+  LoopOne,
+  /// On each play request, an audio sample is picked by the scheduler and played once. This task
+  /// is repeated until all the audio samples are picked.
+  PlayAll,
+  /// On each play request, an audio sample is picked by the scheduler and played once. This mode
+  /// will play all the audio samples and once until stopped.
+  LoopAll,
+}
+
+/// A sound scheduler mode is a way for the collection to pick a sound
+/// from the list of audio samples on each play request.
+enum SoundSchedulerMode: byte {
+  /// An audio sample is randomly selected from the list each time
+  /// a play request is made on the collection.
+  Random,
+  /// Audio samples are sequentially selected from the list each
+  /// time a play request is made on the collection.
+  Sequence,
+}
+
+/// Describes the behavior of the Sequence scheduler when reaching the end of the collection
+enum SequenceSoundSchedulerEndBehavior: byte {
+  /// The scheduler restarts the collection at the first item.
+  Restart,
+  /// The scheduler play the collection in reverse order. The last and first sounds
+  /// are not played twice.
+  Reverse,
+}
+
+/// Random Scheduler configuration.
+table RandomSoundSchedulerConfig {
+  /// Avoids to pick a sound from the list of audio samples before
+  /// the last n audio samples played, where n is the repeat count.
+  avoid_repeat:bool = false;
+
+  /// Specifies the number of audio samples which should be played
+  /// before others can be repeated.
+  repeat_count:uint = 1;
+}
+
+/// Sequence Scheduler configuration.
+table SequenceSoundSchedulerConfig {
+  /// Specifies the behavior of the Sequence scheduler when reaching
+  /// the end of the collection.
+  end_behavior:SequenceSoundSchedulerEndBehavior;
+}
+
+/// Union type for schedulers configuration.
+union SoundSchedulerConfig {
+  Random:RandomSoundSchedulerConfig,
+  Sequence:SequenceSoundSchedulerConfig
+}
+
+/// Configures the collection scheduler
+table SoundSchedulerSettings {
+  /// The scheduler mode to use when playing an audio sample of this collection.
+  mode:SoundSchedulerMode = Random;
+
+  /// Configuration for the selected scheduler.
+  config:SoundSchedulerConfig;
+}
+
+/// Entry in a set of Sound objects.
+table SoundEntry {
+  /// Probability of this sample being selected to relative to others in a set.
+  /// Only used when the "Random" scheduler is used.
+  weight:float = 1.0;
+
+  /// Sound ID associated with this entry.
+  sound:uint64;
+}
+
+/// A collection is a group of sounds, played in a according to the specified scheduler.
+table CollectionDefinition {
+  /// Unique identifier for this collection.
+  id:uint64 = 0;
+
+  /// Collection name.
+  name:string;
+
+  /// Priority of this collection relative to all other Collection objects. If the
+  /// application requests the playback of more Collection objects than playback
+  /// channels available in the system, only the highest priority collections are
+  /// played.
+  priority:float = 1.0;
+
+  /// Overall linear gain (0.0 .. 1.0) of the collection when played back by the audio system.
+  gain:float = 1.0;
+
+  /// ID of the bus this collection should be played on.
+  bus:uint64;
+
+  /// Set of samples from which a weighted random selection is performed to
+  /// determine which sample to play when Sound playback is triggered.
+  sounds:[SoundEntry];
+
+  /// Whether this sound should grow louder or quieter based on distance.
+  spatialization:Spatialization = None;
+
+  /// The ID of the attenuation to apply to this sound.
+  attenuation:uint64 = 0;
+
+  /// Defines the play mode of this sound. The play mode set the way audio samples
+  /// of this sound are played. The default is PlayOne.
+  play_mode:CollectionPlayMode = PlayOne;
+
+  /// Defines the behavior of the sound scheduler of this collection.
+  scheduler:SoundSchedulerSettings;
+
+  /// The scope where to apply this collection. The default is World.
+  scope:Scope = World;
+
+  /// The fader algorithm used by this collection.
+  fader:FaderAlgorithm = Linear;
+}
+
+root_type CollectionDefinition;
+
+file_identifier "AMSC";
+file_extension "amcollection";
