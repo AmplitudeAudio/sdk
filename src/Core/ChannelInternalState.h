@@ -74,9 +74,9 @@ namespace SparkyStudios::Audio::Amplitude
         // Get or set the sound collection playing on this channel. Note that when you set
         // the sound collection, you also add this channel to the GetBus list that
         // corresponds to that sound collection.
-        void SetSoundCollection(SoundCollection* collection);
+        void SetSoundCollection(Collection* collection);
 
-        [[nodiscard]] SoundCollection* GetSoundCollection() const
+        [[nodiscard]] Collection* GetSoundCollection() const
         {
             return _collection;
         }
@@ -225,7 +225,7 @@ namespace SparkyStudios::Audio::Amplitude
         ChannelState _channelState;
 
         // The collection of the sound being played on this channel.
-        SoundCollection* _collection;
+        Collection* _collection;
 
         // The sound fade of this channel. This is updated by the current sound collection.
         Fader* _fader;

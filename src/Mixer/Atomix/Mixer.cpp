@@ -60,8 +60,8 @@ namespace SparkyStudios::Audio::Amplitude
             return;
 
         RealChannel* channel = sound->GetChannel();
-        SoundCollection* collection = sound->GetSound()->GetSoundCollection();
-        const SoundCollectionDefinition* config = collection->GetSoundCollectionDefinition();
+        Collection* collection = sound->GetSound()->GetSoundCollection();
+        const CollectionDefinition* config = collection->GetSoundCollectionDefinition();
 
         if (config->play_mode() == PlayMode_LoopAll || config->play_mode() == PlayMode_PlayAll)
         {
@@ -205,5 +205,4 @@ namespace SparkyStudios::Audio::Amplitude
             Thread::UnlockMutex(_audioThreadMutex);
         }
     }
-
 } // namespace SparkyStudios::Audio::Amplitude

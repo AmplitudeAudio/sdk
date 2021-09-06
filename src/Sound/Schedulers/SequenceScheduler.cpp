@@ -17,7 +17,7 @@
 #include <SparkyStudios/Audio/Amplitude/Sound/Schedulers/SequenceScheduler.h>
 #include <SparkyStudios/Audio/Amplitude/Sound/Sound.h>
 
-#include "sound_collection_definition_generated.h"
+#include "collection_definition_generated.h"
 
 namespace SparkyStudios::Audio::Amplitude
 {
@@ -37,7 +37,7 @@ namespace SparkyStudios::Audio::Amplitude
         return true;
     }
 
-    void SequenceScheduler::Init(const SoundCollectionDefinition* definition)
+    void SequenceScheduler::Init(const CollectionDefinition* definition)
     {
         // noop
     }

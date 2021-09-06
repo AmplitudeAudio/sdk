@@ -17,7 +17,7 @@
 #include <Core/EngineInternalState.h>
 
 #include "atomix.h"
-#include "sound_collection_definition_generated.h"
+#include "collection_definition_generated.h"
 
 namespace SparkyStudios::Audio::Amplitude
 {
@@ -35,11 +35,11 @@ namespace SparkyStudios::Audio::Amplitude
         _decoder = nullptr;
     }
 
-    void Sound::Initialize(SoundCollection* collection)
+    void Sound::Initialize(Collection* collection)
     {
         m_collection = collection;
-        _stream = collection->GetSoundCollectionDefinition()->stream();
-        _loop = collection->GetSoundCollectionDefinition()->play_mode() == PlayMode_LoopOne;
+        _stream = collection->GetCollectionDefinition()->stream();
+        _loop = collection->GetCollectionDefinition()->play_mode() == PlayMode_LoopOne;
     }
 
     void Sound::Load(FileLoader* loader)

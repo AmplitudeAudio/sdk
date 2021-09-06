@@ -17,8 +17,8 @@
 #include <Core/EngineInternalState.h>
 #include <Core/EntityInternalState.h>
 
+#include "collection_definition_generated.h"
 #include "event_definition_generated.h"
-#include "sound_collection_definition_generated.h"
 
 namespace SparkyStudios::Audio::Amplitude
 {
@@ -106,7 +106,7 @@ namespace SparkyStudios::Audio::Amplitude
             {
                 for (auto&& item : entity.GetState()->GetPlayingSoundList())
                 {
-                    if (strcmp(target, item.GetSoundCollection()->GetSoundCollectionDefinition()->name()->c_str()) == 0)
+                    if (strcmp(target, item.GetSoundCollection()->GetCollectionDefinition()->name()->c_str()) == 0)
                     {
                         item.Pause();
                     }
@@ -129,7 +129,7 @@ namespace SparkyStudios::Audio::Amplitude
             {
                 for (auto&& item : entity.GetState()->GetPlayingSoundList())
                 {
-                    if (strcmp(target, item.GetSoundCollection()->GetSoundCollectionDefinition()->name()->c_str()) == 0)
+                    if (strcmp(target, item.GetSoundCollection()->GetCollectionDefinition()->name()->c_str()) == 0)
                     {
                         item.Resume();
                     }
@@ -152,7 +152,7 @@ namespace SparkyStudios::Audio::Amplitude
             {
                 for (auto&& item : entity.GetState()->GetPlayingSoundList())
                 {
-                    if (strcmp(target, item.GetSoundCollection()->GetSoundCollectionDefinition()->name()->c_str()) == 0)
+                    if (strcmp(target, item.GetSoundCollection()->GetCollectionDefinition()->name()->c_str()) == 0)
                     {
                         item.Halt();
                     }

@@ -24,8 +24,8 @@
 #include <IO/File.h>
 
 #include "buses_definition_generated.h"
+#include "collection_definition_generated.h"
 #include "engine_config_definition_generated.h"
-#include "sound_collection_definition_generated.h"
 
 #pragma region Default Codecs
 #include <Core/Codecs/OGG/Codec.h>
@@ -435,7 +435,7 @@ namespace SparkyStudios::Audio::Amplitude
         return true;
     }
 
-    hmm_vec2 CalculatePan(SoundCollection* collection, const hmm_vec3& listener_space_location, const Entity& entity)
+    hmm_vec2 CalculatePan(Collection* collection, const hmm_vec3& listener_space_location, const Entity& entity)
     {
         // Zero length vectors just end up with NaNs when normalized. Return a zero
         // vector instead.
@@ -451,13 +451,13 @@ namespace SparkyStudios::Audio::Amplitude
     static void CalculateGainAndPan(
         float* gain,
         hmm_vec2* pan,
-        SoundCollection* collection,
+        Collection* collection,
         const Entity& entity,
         const hmm_vec3& location,
         const ListenerList& listener_list,
         float user_gain)
     {
-        const SoundCollectionDefinition* def = collection->GetSoundCollectionDefinition();
+        const CollectionDefinition* def = collection->GetCollectionDefinition();
         *gain = def->gain() * collection->GetBus()->GetGain() * user_gain;
         if (def->spatialization() == Spatialization_Position || def->spatialization() == Spatialization_PositionOrientation)
         {
@@ -581,27 +581,27 @@ namespace SparkyStudios::Audio::Amplitude
         list->push_front(*channel);
     }
 
-    Channel Engine::Play(SoundHandle sound_handle)
+    Channel Engine::Play(CollectionHandle sound_handle)
     {
         return Play(sound_handle, AM_Vec3(0, 0, 0), 1.0f);
     }
 
-    Channel Engine::Play(SoundHandle sound_handle, const hmm_vec3& location)
+    Channel Engine::Play(CollectionHandle sound_handle, const hmm_vec3& location)
     {
         return Play(sound_handle, location, 1.0f);
     }
 
-    Channel Engine::Play(SoundHandle sound_handle, const hmm_vec3& location, float user_gain)
+    Channel Engine::Play(CollectionHandle sound_handle, const hmm_vec3& location, float user_gain)
     {
         return _playScopedSound(sound_handle, Entity(nullptr), location, user_gain);
     }
 
-    Channel Engine::Play(SoundHandle sound_handle, const Entity& entity)
+    Channel Engine::Play(CollectionHandle sound_handle, const Entity& entity)
     {
         return Play(sound_handle, entity, 1.0f);
     }
 
-    Channel Engine::Play(SoundHandle sound_handle, const Entity& entity, float user_gain)
+    Channel Engine::Play(CollectionHandle sound_handle, const Entity& entity, float user_gain)
     {
         return _playScopedSound(sound_handle, entity, entity.GetLocation(), user_gain);
     }
@@ -618,7 +618,7 @@ namespace SparkyStudios::Audio::Amplitude
 
     Channel Engine::Play(const std::string& sound_name, const hmm_vec3& location, float user_gain)
     {
-        SoundHandle handle = GetSoundHandle(sound_name);
+        CollectionHandle handle = GetCollectionHandle(sound_name);
         if (handle)
         {
             return Play(handle, location, user_gain);
@@ -637,7 +637,7 @@ namespace SparkyStudios::Audio::Amplitude
 
     Channel Engine::Play(const std::string& sound_name, const Entity& entity, float user_gain)
     {
-        SoundHandle handle = GetSoundHandle(sound_name);
+        CollectionHandle handle = GetCollectionHandle(sound_name);
         if (handle)
         {
             return Play(handle, entity, user_gain);
@@ -649,19 +649,19 @@ namespace SparkyStudios::Audio::Amplitude
         }
     }
 
-    Channel Engine::Play(AmSoundCollectionID id)
+    Channel Engine::Play(AmCollectionID id)
     {
         return Play(id, AM_Vec3(0, 0, 0), 1.0f);
     }
 
-    Channel Engine::Play(AmSoundCollectionID id, const hmm_vec3& location)
+    Channel Engine::Play(AmCollectionID id, const hmm_vec3& location)
     {
         return Play(id, location, 1.0f);
     }
 
-    Channel Engine::Play(AmSoundCollectionID id, const hmm_vec3& location, float user_gain)
+    Channel Engine::Play(AmCollectionID id, const hmm_vec3& location, float user_gain)
     {
-        SoundHandle handle = GetSoundHandle(id);
+        CollectionHandle handle = GetCollectionHandle(id);
         if (handle)
         {
             return Play(handle, location, user_gain);
@@ -673,14 +673,14 @@ namespace SparkyStudios::Audio::Amplitude
         }
     }
 
-    Channel Engine::Play(AmSoundCollectionID id, const Entity& entity)
+    Channel Engine::Play(AmCollectionID id, const Entity& entity)
     {
         return Play(id, entity, 1.0f);
     }
 
-    Channel Engine::Play(AmSoundCollectionID id, const Entity& entity, float user_gain)
+    Channel Engine::Play(AmCollectionID id, const Entity& entity, float user_gain)
     {
-        SoundHandle handle = GetSoundHandle(id);
+        CollectionHandle handle = GetCollectionHandle(id);
         if (handle)
         {
             return Play(handle, entity, user_gain);
@@ -721,40 +721,40 @@ namespace SparkyStudios::Audio::Amplitude
         }
     }
 
-    SoundHandle Engine::GetSoundHandle(const std::string& name) const
+    CollectionHandle Engine::GetCollectionHandle(const std::string& name) const
     {
         auto iter = std::find_if(
-            _state->sound_collection_map.begin(), _state->sound_collection_map.end(),
+            _state->collection_map.begin(), _state->collection_map.end(),
             [name](const auto& item)
             {
                 return item.second->GetName() == name;
             });
 
-        if (iter == _state->sound_collection_map.end())
+        if (iter == _state->collection_map.end())
         {
             return nullptr;
         }
         return iter->second.get();
     }
 
-    SoundHandle Engine::GetSoundHandle(AmSoundCollectionID id) const
+    CollectionHandle Engine::GetCollectionHandle(AmCollectionID id) const
     {
-        auto iter = _state->sound_collection_map.find(id);
-        if (iter == _state->sound_collection_map.end())
+        auto iter = _state->collection_map.find(id);
+        if (iter == _state->collection_map.end())
         {
             return nullptr;
         }
         return iter->second.get();
     }
 
-    SoundHandle Engine::GetSoundHandleFromFile(AmOsString filename) const
+    CollectionHandle Engine::GetCollectionHandleFromFile(AmOsString filename) const
     {
-        auto iter = _state->sound_id_map.find(filename);
-        if (iter == _state->sound_id_map.end())
+        auto iter = _state->collection_id_map.find(filename);
+        if (iter == _state->collection_id_map.end())
         {
             return nullptr;
         }
-        return GetSoundHandle(iter->second);
+        return GetCollectionHandle(iter->second);
     }
 
     EventHandle Engine::GetEventHandle(const std::string& name) const
@@ -1060,16 +1060,16 @@ namespace SparkyStudios::Audio::Amplitude
         return Amplitude::GetEngineConfigDefinition(_configSrc.c_str());
     }
 
-    Channel Engine::_playScopedSound(SoundHandle sound_handle, const Entity& entity, const hmm_vec3& location, float user_gain)
+    Channel Engine::_playScopedSound(CollectionHandle sound_handle, const Entity& entity, const hmm_vec3& location, float user_gain)
     {
-        SoundCollection* collection = sound_handle;
+        Collection* collection = sound_handle;
         if (!collection)
         {
             CallLogFunc("Cannot play sound: invalid sound handle\n");
             return Channel(nullptr);
         }
 
-        if (collection->GetSoundCollectionDefinition()->scope() == Scope_Entity && !entity.Valid())
+        if (collection->GetCollectionDefinition()->scope() == Scope_Entity && !entity.Valid())
         {
             CallLogFunc("[Debug] Cannot play a channel in entity scope. No entity defined.\n");
             return Channel(nullptr);
@@ -1085,7 +1085,7 @@ namespace SparkyStudios::Audio::Amplitude
         float gain;
         hmm_vec2 pan;
         CalculateGainAndPan(&gain, &pan, collection, entity, location, _state->listener_list, user_gain);
-        float priority = gain * sound_handle->GetSoundCollectionDefinition()->priority();
+        float priority = gain * sound_handle->GetCollectionDefinition()->priority();
         PriorityList::iterator insertion_point = FindInsertionPoint(&_state->playing_channel_list, priority);
 
         // Decide which ChannelInternalState object to use.

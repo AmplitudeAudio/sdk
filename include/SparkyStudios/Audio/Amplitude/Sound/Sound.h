@@ -24,7 +24,7 @@
 
 namespace SparkyStudios::Audio::Amplitude
 {
-    class SoundCollection;
+    class Collection;
     class SoundInstance;
     class RealChannel;
 
@@ -37,14 +37,14 @@ namespace SparkyStudios::Audio::Amplitude
         ~Sound() override;
 
         /**
-         * @brief Initializes the Sound given the SoundCollection that it is a part of.
+         * @brief Initializes the Sound given the Collection that it is a part of.
          *
-         * The sound collection may contain useful metadata about the sound, like whether
+         * The collection may contain useful metadata about the sound, like whether
          * or not the sound should be streamed, which may impact how you load it.
          *
          * @param collection The collection that the sound is part of.
          */
-        void Initialize(SoundCollection* collection);
+        void Initialize(Collection* collection);
 
         /**
          * @brief Loads the audio file.
@@ -78,16 +78,16 @@ namespace SparkyStudios::Audio::Amplitude
         }
 
         /**
-         * @brief Returns the SoundCollection storing this Sound.
-         * @return The Sound collection.
+         * @brief Returns the Collection storing this Sound.
+         * @return The Collection.
          */
-        [[nodiscard]] SoundCollection* GetSoundCollection() const
+        [[nodiscard]] Collection* GetSoundCollection() const
         {
             return m_collection;
         }
 
     protected:
-        SoundCollection* m_collection;
+        Collection* m_collection;
         SoundFormat m_format;
 
     private:

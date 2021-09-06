@@ -32,18 +32,19 @@ namespace SparkyStudios::Audio::Amplitude
         explicit SequenceScheduler(const SequenceSoundSchedulerConfig* config);
 
         [[nodiscard]] bool Valid() const override;
-        void Init(const SoundCollectionDefinition* definition) override;
+        void Init(const CollectionDefinition* definition) override;
         Sound* Select(std::vector<Sound>& sounds, const std::vector<const Sound*>& toSkip) override;
 
     private:
-        enum STEP_MODE: AmUInt8 {
+        enum STEP_MODE : AmUInt8
+        {
             MODE_INCREMENT,
             MODE_DECREMENT
         };
 
         AmUInt32 _lastIndex;
         STEP_MODE _stepMode;
-        const SoundCollectionDefinition* _definition;
+        const CollectionDefinition* _definition;
         const SequenceSoundSchedulerConfig* _config;
     };
 } // namespace SparkyStudios::Audio::Amplitude

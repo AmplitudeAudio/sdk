@@ -28,7 +28,7 @@
 #include <Core/EntityInternalState.h>
 #include <Utils/intrusive_list.h>
 
-#include "sound_collection_definition_generated.h"
+#include "collection_definition_generated.h"
 
 namespace SparkyStudios::Audio::Amplitude
 {
@@ -59,7 +59,7 @@ namespace SparkyStudios::Audio::Amplitude
         _location = AM_Vec3(0, 0, 0);
     }
 
-    void ChannelInternalState::SetSoundCollection(SoundCollection* collection)
+    void ChannelInternalState::SetSoundCollection(Collection* collection)
     {
         if (_collection && _collection->GetBus())
         {
@@ -93,7 +93,7 @@ namespace SparkyStudios::Audio::Amplitude
             return false;
         }
 
-        const SoundCollectionDefinition* definition = _collection->GetSoundCollectionDefinition();
+        const CollectionDefinition* definition = _collection->GetCollectionDefinition();
 
         std::vector<const Sound*> toSkip = _realChannel.Valid() ? _realChannel._playedSounds : std::vector<const Sound*>();
         _sound = _entity.Valid() ? _collection->SelectFromEntity(_entity, toSkip) : _collection->SelectFromWorld(toSkip);
@@ -206,7 +206,7 @@ namespace SparkyStudios::Audio::Amplitude
     float ChannelInternalState::Priority() const
     {
         AMPLITUDE_ASSERT(_collection);
-        return GetGain() * _collection->GetSoundCollectionDefinition()->priority();
+        return GetGain() * _collection->GetCollectionDefinition()->priority();
     }
 
     void ChannelInternalState::AdvanceFrame(AmTime delta_time)

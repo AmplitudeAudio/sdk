@@ -39,10 +39,10 @@
 #include <SparkyStudios/Audio/Amplitude/Sound/Schedulers/RandomScheduler.h>
 #include <SparkyStudios/Audio/Amplitude/Sound/Schedulers/SequenceScheduler.h>
 
+#include <SparkyStudios/Audio/Amplitude/Sound/Collection.h>
 #include <SparkyStudios/Audio/Amplitude/Sound/Fader.h>
 #include <SparkyStudios/Audio/Amplitude/Sound/Scheduler.h>
 #include <SparkyStudios/Audio/Amplitude/Sound/Sound.h>
 #include <SparkyStudios/Audio/Amplitude/Sound/SoundBank.h>
-#include <SparkyStudios/Audio/Amplitude/Sound/SoundCollection.h>
 
 #endif // SPARK_AUDIO_SPARK_AUDIO_H

@@ -23,10 +23,10 @@ namespace SparkyStudios::Audio::Amplitude
 {
     class Sound;
 
-    struct SoundCollectionDefinition;
+    struct CollectionDefinition;
 
     /**
-     * @brief An abstract class for SoundCollection schedulers
+     * @brief An abstract class for Collection schedulers
      */
     class Scheduler
     {
@@ -41,9 +41,9 @@ namespace SparkyStudios::Audio::Amplitude
         /**
          * @brief Initializes the scheduler for the given sound collection.
          *
-         * @param definition The SoundCollectionDefinition to use for initialization.
+         * @param definition The CollectionDefinition to use for initialization.
          */
-        virtual void Init(const SoundCollectionDefinition* definition) = 0;
+        virtual void Init(const CollectionDefinition* definition) = 0;
 
         /**
          * @brief Selects a sound from the list of available sounds.

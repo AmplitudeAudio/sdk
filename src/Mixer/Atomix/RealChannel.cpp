@@ -23,7 +23,7 @@
 
 #include "RealChannel.h"
 
-#include "sound_collection_definition_generated.h"
+#include "collection_definition_generated.h"
 
 namespace SparkyStudios::Audio::Amplitude
 {
@@ -79,7 +79,7 @@ namespace SparkyStudios::Audio::Amplitude
         return _channelId != kInvalidChannelId && _mixer != nullptr && _parentChannelState != nullptr;
     }
 
-    bool RealChannel::Play(SoundCollection* collection, const Sound* sound)
+    bool RealChannel::Play(Collection* collection, const Sound* sound)
     {
         if (!sound || !collection)
             return false;
@@ -96,7 +96,7 @@ namespace SparkyStudios::Audio::Amplitude
         }
 
         AMPLITUDE_ASSERT(Valid());
-        const SoundCollectionDefinition* def = collection->GetSoundCollectionDefinition();
+        const CollectionDefinition* def = collection->GetCollectionDefinition();
         _loop = def->play_mode() == PlayMode_LoopOne;
         _stream = def->stream();
 
@@ -119,7 +119,7 @@ namespace SparkyStudios::Audio::Amplitude
     bool RealChannel::Playing() const
     {
         AMPLITUDE_ASSERT(Valid());
-        PlayMode mode = _parentChannelState->GetSoundCollection()->GetSoundCollectionDefinition()->play_mode();
+        PlayMode mode = _parentChannelState->GetSoundCollection()->GetCollectionDefinition()->play_mode();
         AmUInt32 state = atomixMixerGetState(_mixer, _channelId);
 
         return mode == PlayMode_PlayOne ? state == ATOMIX_PLAY

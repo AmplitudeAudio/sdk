@@ -30,7 +30,7 @@ namespace SparkyStudios::Audio::Amplitude
     class EngineInternalState;
     class ChannelInternalState;
 
-    class SoundCollection;
+    class Collection;
     class Sound;
 
     class Mixer;
@@ -64,7 +64,7 @@ namespace SparkyStudios::Audio::Amplitude
         /**
          * @brief Play the audio on the real channel.
          */
-        bool Play(SoundCollection* handle, const Sound* sound);
+        bool Play(Collection* handle, const Sound* sound);
 
         /**
          * @brief Halt the real channel so it may be re-used. However this virtual channel may still be considered playing.

@@ -19,11 +19,11 @@
 
 #include <Core/EngineInternalState.h>
 
-#include "sound_collection_definition_generated.h"
+#include "collection_definition_generated.h"
 
 namespace SparkyStudios::Audio::Amplitude
 {
-    SoundCollection::SoundCollection()
+    Collection::Collection()
         : _bus(nullptr)
         , _worldScopeScheduler(nullptr)
         , _entityScopeSchedulers()
@@ -35,14 +35,14 @@ namespace SparkyStudios::Audio::Amplitude
         , _refCounter()
     {}
 
-    bool SoundCollection::LoadSoundCollectionDefinition(const std::string& source, EngineInternalState* state)
+    bool Collection::LoadCollectionDefinition(const std::string& source, EngineInternalState* state)
     {
         _source = source;
-        const SoundCollectionDefinition* def = GetSoundCollectionDefinition();
+        const CollectionDefinition* def = GetCollectionDefinition();
 
         if (!def->bus())
         {
-            CallLogFunc("Sound collection %s does not specify a bus.\n", def->name()->c_str());
+            CallLogFunc("Collection %s does not specify a bus.\n", def->name()->c_str());
             return false;
         }
 
@@ -51,7 +51,7 @@ namespace SparkyStudios::Audio::Amplitude
             _bus = FindBusInternalState(state, def->bus());
             if (!_bus)
             {
-                CallLogFunc("Sound collection %s specifies an unknown bus ID: %u.\n", def->name(), def->bus());
+                CallLogFunc("Collection %s specifies an unknown bus ID: %u.\n", def->name(), def->bus());
                 return false;
             }
 
@@ -64,7 +64,7 @@ namespace SparkyStudios::Audio::Amplitude
 
                 if (!_attenuation)
                 {
-                    CallLogFunc("Sound collection %s specifies an unknown attenuation ID: %u.\n", def->name(), def->attenuation());
+                    CallLogFunc("Collection %s specifies an unknown attenuation ID: %u.\n", def->name(), def->attenuation());
                     return false;
                 }
             }
@@ -90,32 +90,32 @@ namespace SparkyStudios::Audio::Amplitude
         return true;
     }
 
-    bool SoundCollection::LoadSoundCollectionDefinitionFromFile(AmOsString filename, EngineInternalState* state)
+    bool Collection::LoadCollectionDefinitionFromFile(AmOsString filename, EngineInternalState* state)
     {
         std::string source;
-        return LoadFile(filename, &source) && LoadSoundCollectionDefinition(source, state);
+        return LoadFile(filename, &source) && LoadCollectionDefinition(source, state);
     }
 
-    const SoundCollectionDefinition* SoundCollection::GetSoundCollectionDefinition() const
+    const CollectionDefinition* Collection::GetCollectionDefinition() const
     {
-        return Amplitude::GetSoundCollectionDefinition(_source.c_str());
+        return Amplitude::GetCollectionDefinition(_source.c_str());
     }
 
-    Sound* SoundCollection::SelectFromWorld(const std::vector<const Sound*>& toSkip)
+    Sound* Collection::SelectFromWorld(const std::vector<const Sound*>& toSkip)
     {
-        const SoundCollectionDefinition* sound_def = GetSoundCollectionDefinition();
+        const CollectionDefinition* sound_def = GetCollectionDefinition();
         if (_worldScopeScheduler == nullptr || !_worldScopeScheduler->Valid())
         {
-            CallLogFunc("Sound collection %s does not have a valid scheduler.\n", sound_def->name()->c_str());
+            CallLogFunc("Collection %s does not have a valid scheduler.\n", sound_def->name()->c_str());
             return nullptr;
         }
 
         return _worldScopeScheduler->Select(_sounds, toSkip);
     }
 
-    Sound* SoundCollection::SelectFromEntity(const Entity& entity, const std::vector<const Sound*>& toSkip)
+    Sound* Collection::SelectFromEntity(const Entity& entity, const std::vector<const Sound*>& toSkip)
     {
-        const SoundCollectionDefinition* sound_def = GetSoundCollectionDefinition();
+        const CollectionDefinition* sound_def = GetCollectionDefinition();
         if (auto findIt = _entityScopeSchedulers.find(entity.GetId()); findIt == _entityScopeSchedulers.end())
         {
             _entityScopeSchedulers.insert({ entity.GetId(), CreateScheduler(sound_def) });
@@ -124,15 +124,14 @@ namespace SparkyStudios::Audio::Amplitude
         return _entityScopeSchedulers[entity.GetId()]->Select(_sounds, toSkip);
     }
 
-    Scheduler* SoundCollection::CreateScheduler(const SoundCollectionDefinition* definition)
+    Scheduler* Collection::CreateScheduler(const CollectionDefinition* definition)
     {
         Scheduler* scheduler;
 
         if (!definition->scheduler())
         {
             CallLogFunc(
-                "[Debug] Sound collection %s does not specify a scheduler, using the RandomScheduler by default.\n",
-                definition->name()->c_str());
+                "[Debug] Collection %s does not specify a scheduler, using the RandomScheduler by default.\n", definition->name()->c_str());
             scheduler = new RandomScheduler(nullptr);
         }
         else
@@ -155,32 +154,32 @@ namespace SparkyStudios::Audio::Amplitude
         return scheduler;
     }
 
-    AmBankID SoundCollection::GetId() const
+    AmBankID Collection::GetId() const
     {
         return _id;
     }
 
-    const std::string& SoundCollection::GetName() const
+    const std::string& Collection::GetName() const
     {
         return _name;
     }
 
-    BusInternalState* SoundCollection::GetBus() const
+    BusInternalState* Collection::GetBus() const
     {
         return _bus;
     }
 
-    RefCounter* SoundCollection::GetRefCounter()
+    RefCounter* Collection::GetRefCounter()
     {
         return &_refCounter;
     }
 
-    const std::vector<Sound>& SoundCollection::GetAudioSamples() const
+    const std::vector<Sound>& Collection::GetAudioSamples() const
     {
         return _sounds;
     }
 
-    const Attenuation* SoundCollection::GetAttenuation() const
+    const Attenuation* Collection::GetAttenuation() const
     {
         return _attenuation;
     }

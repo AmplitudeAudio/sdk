@@ -17,7 +17,7 @@
 #include <SparkyStudios/Audio/Amplitude/Sound/Schedulers/RandomScheduler.h>
 #include <SparkyStudios/Audio/Amplitude/Sound/Sound.h>
 
-#include "sound_collection_definition_generated.h"
+#include "collection_definition_generated.h"
 
 namespace SparkyStudios::Audio::Amplitude
 {
@@ -37,7 +37,7 @@ namespace SparkyStudios::Audio::Amplitude
         return _definition != nullptr;
     }
 
-    void RandomScheduler::Init(const SoundCollectionDefinition* definition)
+    void RandomScheduler::Init(const CollectionDefinition* definition)
     {
         _definition = definition;
         _probabilitiesSum = 0.0f;

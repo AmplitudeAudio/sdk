@@ -28,7 +28,7 @@
 
 #include "Mixer.h"
 
-#include "sound_collection_definition_generated.h"
+#include "collection_definition_generated.h"
 
 namespace SparkyStudios::Audio::Amplitude
 {
@@ -38,17 +38,17 @@ namespace SparkyStudios::Audio::Amplitude
 
 #if defined(AM_WCHAR_SUPPORTED)
     typedef std::map<std::wstring, AmAttenuationID> AttenuationIdMap;
-    typedef std::map<std::wstring, AmSoundCollectionID> SoundIdMap;
+    typedef std::map<std::wstring, AmCollectionID> CollectionIdMap;
     typedef std::map<std::wstring, AmEventID> EventIdMap;
     typedef std::map<std::wstring, std::unique_ptr<SoundBank>> SoundBankMap;
 #else
     typedef std::map<std::string, AmAttenuationID> AttenuationIdMap;
-    typedef std::map<std::string, AmSoundCollectionID> SoundIdMap;
+    typedef std::map<std::string, AmCollectionID> CollectionIdMap;
     typedef std::map<std::string, std::string> EventIdMap;
     typedef std::map<std::string, std::unique_ptr<SoundBank>> SoundBankMap;
 #endif
 
-    typedef std::map<AmSoundCollectionID, std::unique_ptr<SoundCollection>> SoundCollectionMap;
+    typedef std::map<AmCollectionID, std::unique_ptr<Collection>> CollectionMap;
 
     typedef std::map<AmAttenuationID, std::unique_ptr<Attenuation>> AttenuationMap;
 
@@ -78,8 +78,8 @@ namespace SparkyStudios::Audio::Amplitude
             , mute(true)
             , paused(true)
             , stopping(false)
-            , sound_collection_map()
-            , sound_id_map()
+            , collection_map()
+            , collection_id_map()
             , event_map()
             , event_id_map()
             , running_events()
@@ -126,10 +126,11 @@ namespace SparkyStudios::Audio::Amplitude
         bool stopping;
 
         // A map of sound names to SoundCollections.
-        SoundCollectionMap sound_collection_map;
+        CollectionMap collection_map;
 
         // A map of file names to sound ids to determine if a file needs to be loaded.
-        SoundIdMap sound_id_map;
+        CollectionIdMap collection_id_map;
+
 
         // A map of event names to EventInternalStates.
         EventMap event_map;
@@ -212,7 +213,7 @@ namespace SparkyStudios::Audio::Amplitude
     // means the sound is directly to the listener's right. Likewise, values of
     // (0, 1) and (0, -1) mean the sound is directly in front or behind the
     // listener, respectively.
-    hmm_vec2 CalculatePan(SoundCollection* collection, const hmm_vec3& listener_space_location, const Entity& entity);
+    hmm_vec2 CalculatePan(Collection* collection, const hmm_vec3& listener_space_location, const Entity& entity);
 
     bool LoadFile(AmOsString filename, std::string* dest);
 

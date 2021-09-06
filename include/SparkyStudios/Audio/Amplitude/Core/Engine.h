@@ -30,7 +30,7 @@
 #include <SparkyStudios/Audio/Amplitude/Core/Version.h>
 
 #include <SparkyStudios/Audio/Amplitude/Sound/Attenuation.h>
-#include <SparkyStudios/Audio/Amplitude/Sound/SoundCollection.h>
+#include <SparkyStudios/Audio/Amplitude/Sound/Collection.h>
 
 namespace SparkyStudios::Audio::Amplitude
 {
@@ -38,7 +38,7 @@ namespace SparkyStudios::Audio::Amplitude
 
     struct EngineInternalState;
 
-    typedef SoundCollection* SoundHandle;
+    typedef Collection* CollectionHandle;
     typedef Event* EventHandle;
     typedef Attenuation* AttenuationHandle;
 
@@ -125,25 +125,25 @@ namespace SparkyStudios::Audio::Amplitude
         bool TryFinalize();
 
         /**
-         * @brief Get a SoundHandle given its name as defined in its JSON data.
+         * @brief Get a CollectionHandle given its name as defined in its JSON data.
          *
          * @param name The unique name as defined in the JSON data.
          */
-        [[nodiscard]] SoundHandle GetSoundHandle(const std::string& name) const;
+        [[nodiscard]] CollectionHandle GetCollectionHandle(const std::string& name) const;
 
         /**
-         * @brief Get a SoundHandle given its ID as defined in its JSON data.
+         * @brief Get a CollectionHandle given its ID as defined in its JSON data.
          *
          * @param id The unique ID as defined in the JSON data.
          */
-        [[nodiscard]] SoundHandle GetSoundHandle(AmSoundCollectionID id) const;
+        [[nodiscard]] CollectionHandle GetCollectionHandle(AmCollectionID id) const;
 
         /**
-         * @brief Get a SoundHandle given its SoundCollectionDefinition filename.
+         * @brief Get a CollectionHandle given its CollectionDefinition filename.
          *
          * @param name The filename containing the flatbuffer binary data.
          */
-        [[nodiscard]] SoundHandle GetSoundHandleFromFile(AmOsString filename) const;
+        [[nodiscard]] CollectionHandle GetCollectionHandleFromFile(AmOsString filename) const;
 
         /**
          * @brief Get an EventHandle given its name as defined in its JSON data.
@@ -281,7 +281,7 @@ namespace SparkyStudios::Audio::Amplitude
          * @return The channel the sound is played on. If the sound could not be
          *         played, an invalid Channel is returned.
          */
-        Channel Play(SoundHandle sound_handle);
+        Channel Play(CollectionHandle sound_handle);
 
         /**
          * @brief Play a sound associated with the given sound handle in the
@@ -293,7 +293,7 @@ namespace SparkyStudios::Audio::Amplitude
          * @return The channel the sound is played on. If the sound could not be
          *         played, an invalid Channel is returned.
          */
-        Channel Play(SoundHandle sound_handle, const hmm_vec3& location);
+        Channel Play(CollectionHandle sound_handle, const hmm_vec3& location);
 
         /**
          * @brief Play a sound associated with the given sound_handle at the given
@@ -306,7 +306,7 @@ namespace SparkyStudios::Audio::Amplitude
          * @return The channel the sound is played on. If the sound could not be
          *         played, an invalid Channel is returned.
          */
-        Channel Play(SoundHandle sound_handle, const hmm_vec3& location, float gain);
+        Channel Play(CollectionHandle sound_handle, const hmm_vec3& location, float gain);
 
         /**
          * @brief Play a sound associated with the given sound handle in an
@@ -318,7 +318,7 @@ namespace SparkyStudios::Audio::Amplitude
          * @return The channel the sound is played on. If the sound could not be
          *         played, an invalid Channel is returned.
          */
-        Channel Play(SoundHandle sound_handle, const Entity& entity);
+        Channel Play(CollectionHandle sound_handle, const Entity& entity);
 
         /**
          * @brief Play a sound associated with the given sound handle in an
@@ -331,12 +331,12 @@ namespace SparkyStudios::Audio::Amplitude
          * @return The channel the sound is played on. If the sound could not be
          *         played, an invalid Channel is returned.
          */
-        Channel Play(SoundHandle sound_handle, const Entity& entity, float gain);
+        Channel Play(CollectionHandle sound_handle, const Entity& entity, float gain);
 
         /**
          * @brief Play a sound associated with the given sound name.
          *
-         * Note: Playing a sound with its SoundHandle is faster than using the sound
+         * Note: Playing a sound with its CollectionHandle is faster than using the sound
          * name as using the name requires a map lookup internally.
          *
          * @param sound_name The name of the sound to play.
@@ -350,7 +350,7 @@ namespace SparkyStudios::Audio::Amplitude
          * @brief Play a sound associated with the given sound name in the World
          *        scope at the given location.
          *
-         * Note: Playing a sound with its SoundHandle is faster than using the sound
+         * Note: Playing a sound with its CollectionHandle is faster than using the sound
          * name as using the name requires a map lookup internally.
          *
          * @param sound_name The name of the sound to play.
@@ -365,7 +365,7 @@ namespace SparkyStudios::Audio::Amplitude
          * @brief Play a sound associated with the given sound name in the World
          *        scope at the given location with the given gain.
          *
-         * Note: Playing a sound with its SoundHandle is faster than using the sound
+         * Note: Playing a sound with its CollectionHandle is faster than using the sound
          * name as using the name requires a map lookup internally.
          *
          * @param sound_name The name of the sound to play.
@@ -381,7 +381,7 @@ namespace SparkyStudios::Audio::Amplitude
          * @brief Play a sound associated with the given sound handle in an
          *        entity scope.
          *
-         * Note: Playing a sound with its SoundHandle is faster than using the sound
+         * Note: Playing a sound with its CollectionHandle is faster than using the sound
          * name as using the name requires a map lookup internally.
          *
          * @param sound_name The name of the sound to play.
@@ -396,7 +396,7 @@ namespace SparkyStudios::Audio::Amplitude
          * @brief Play a sound associated with the given sound handle in an
          *        entity scope with the given gain.
          *
-         * Note: Playing a sound with its SoundHandle is faster than using the sound
+         * Note: Playing a sound with its CollectionHandle is faster than using the sound
          * name as using the name requires a map lookup internally.
          *
          * @param sound_name The name of the sound to play.
@@ -411,7 +411,7 @@ namespace SparkyStudios::Audio::Amplitude
         /**
          * @brief Play a sound associated with the given sound name.
          *
-         * Note: Playing a sound with its SoundHandle is faster than using the sound
+         * Note: Playing a sound with its CollectionHandle is faster than using the sound
          * ID as using the name requires a map lookup internally.
          *
          * @param id The ID of the sound to play.
@@ -419,13 +419,13 @@ namespace SparkyStudios::Audio::Amplitude
          * @return The channel the sound is played on. If the sound could not be
          *         played, an invalid Channel is returned.
          */
-        Channel Play(AmSoundCollectionID id);
+        Channel Play(AmCollectionID id);
 
         /**
          * @brief Play a sound associated with the given sound name in the World
          *        scope at the given location.
          *
-         * Note: Playing a sound with its SoundHandle is faster than using the sound
+         * Note: Playing a sound with its CollectionHandle is faster than using the sound
          * ID as using the name requires a map lookup internally.
          *
          * @param id The ID of the sound to play.
@@ -434,13 +434,13 @@ namespace SparkyStudios::Audio::Amplitude
          * @return The channel the sound is played on. If the sound could not be
          *         played, an invalid Channel is returned.
          */
-        Channel Play(AmSoundCollectionID id, const hmm_vec3& location);
+        Channel Play(AmCollectionID id, const hmm_vec3& location);
 
         /**
          * @brief Play a sound associated with the given sound name in the World
          *        scope at the given location with the given gain.
          *
-         * Note: Playing a sound with its SoundHandle is faster than using the sound
+         * Note: Playing a sound with its CollectionHandle is faster than using the sound
          * ID as using the name requires a map lookup internally.
          *
          * @param id The ID of the sound to play.
@@ -450,13 +450,13 @@ namespace SparkyStudios::Audio::Amplitude
          * @return The channel the sound is played on. If the sound could not be
          *         played, an invalid Channel is returned.
          */
-        Channel Play(AmSoundCollectionID id, const hmm_vec3& location, float gain);
+        Channel Play(AmCollectionID id, const hmm_vec3& location, float gain);
 
         /**
          * @brief Play a sound associated with the given sound handle in an
          *        entity scope.
          *
-         * Note: Playing a sound with its SoundHandle is faster than using the sound
+         * Note: Playing a sound with its CollectionHandle is faster than using the sound
          * ID as using the name requires a map lookup internally.
          *
          * @param id The ID of the sound to play.
@@ -465,13 +465,13 @@ namespace SparkyStudios::Audio::Amplitude
          * @return The channel the sound is played on. If the sound could not be
          *         played, an invalid Channel is returned.
          */
-        Channel Play(AmSoundCollectionID id, const Entity& entity);
+        Channel Play(AmCollectionID id, const Entity& entity);
 
         /**
          * @brief Play a sound associated with the given sound handle in an
          *        entity scope with the given gain.
          *
-         * Note: Playing a sound with its SoundHandle is faster than using the sound
+         * Note: Playing a sound with its CollectionHandle is faster than using the sound
          * ID as using the name requires a map lookup internally.
          *
          * @param id The ID of the sound to play.
@@ -481,7 +481,7 @@ namespace SparkyStudios::Audio::Amplitude
          * @return The channel the sound is played on. If the sound could not be
          *         played, an invalid Channel is returned.
          */
-        Channel Play(AmSoundCollectionID id, const Entity& entity, float gain);
+        Channel Play(AmCollectionID id, const Entity& entity, float gain);
 
         /**
          * @brief Trigger the event associated with the given sound handle at the
@@ -543,7 +543,7 @@ namespace SparkyStudios::Audio::Amplitude
         [[nodiscard]] static Engine* GetInstance();
 
     private:
-        Channel _playScopedSound(SoundHandle handle, const Entity& entity, const hmm_vec3& location, float gain);
+        Channel _playScopedSound(CollectionHandle handle, const Entity& entity, const hmm_vec3& location, float gain);
 
         // Hold the engine config file contents.
         std::string _configSrc;
