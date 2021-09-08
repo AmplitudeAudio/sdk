@@ -22,17 +22,27 @@ namespace SparkyStudios::Audio::Amplitude
     /**
      * @brief Invalid Amplitude object ID.
      */
-    const AmObjectID kAmInvalidObjectId = 0;
+    constexpr AmObjectID kAmInvalidObjectId = 0;
 
     /**
      * @brief Specifies the value of the "master" bus ID.
      */
-    const AmBusID kAmMasterBusId = 1;
+    constexpr AmBusID kAmMasterBusId = 1;
 
     /**
      * @brief The number of milliseconds in one second.
      */
-    const AmTime kAmSecond = 1000.0;
+    constexpr AmTime kAmSecond = 1000.0;
+
+    /**
+     * @brief Minimum value where values lower than this are considered to be 0.
+     */
+    constexpr AmReal32 kEpsilon = 0.0001f;
+
+    /**
+     * @brief The minimum fade duration in milliseconds.
+     */
+    constexpr AmTime kMinFadeDuration = 10.0;
 } // namespace SparkyStudios::Audio::Amplitude
 
 #endif // SS_AMPLITUDE_AUDIO_CONSTANTS_H
