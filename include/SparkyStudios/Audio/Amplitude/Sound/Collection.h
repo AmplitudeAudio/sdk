@@ -78,7 +78,7 @@ namespace SparkyStudios::Audio::Amplitude
          *
          * @return The selected Sound.
          */
-        Sound* SelectFromWorld(const std::vector<const Sound*>& toSkip);
+        Sound* SelectFromWorld(const std::vector<AmSoundID>& toSkip);
 
         /**
          * @brief Returns a Sound from this collection from an Entity scope.
@@ -88,7 +88,7 @@ namespace SparkyStudios::Audio::Amplitude
          *
          * @return The selected Sound.
          */
-        Sound* SelectFromEntity(const Entity& entity, const std::vector<const Sound*>& toSkip);
+        Sound* SelectFromEntity(const Entity& entity, const std::vector<AmSoundID>& toSkip);
 
         /**
          * @brief Returns the unique ID of this Collection.
@@ -126,16 +126,16 @@ namespace SparkyStudios::Audio::Amplitude
         RefCounter* GetRefCounter();
 
         /**
-         * @brief Returns the list of audio samples stored in this collection.
+         * @brief Returns the list of Sound objects referenced in this collection.
          *
-         * @return The list of audio samples.
+         * @return The list of Sound IDs.
          */
-        [[nodiscard]] const std::vector<Sound>& GetAudioSamples() const;
+        [[nodiscard]] const std::vector<AmSoundID>& GetAudioSamples() const;
 
     private:
         static Scheduler* CreateScheduler(const CollectionDefinition* definition);
 
-        // The GetBus this Collection will play on.
+        // The bus this Collection will play on.
         BusInternalState* _bus;
 
         // The World scope sound scheduler
@@ -145,7 +145,7 @@ namespace SparkyStudios::Audio::Amplitude
         std::map<AmUInt64, Scheduler*> _entityScopeSchedulers;
 
         std::string _source;
-        std::vector<Sound> _sounds;
+        std::vector<AmSoundID> _sounds;
 
         AmCollectionID _id;
         std::string _name;

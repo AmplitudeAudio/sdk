@@ -33,7 +33,7 @@ namespace SparkyStudios::Audio::Amplitude
 
         [[nodiscard]] bool Valid() const override;
         void Init(const CollectionDefinition* definition) override;
-        Sound* Select(std::vector<Sound>& sounds, const std::vector<const Sound*>& toSkip) override;
+        Sound* Select(const std::vector<AmSoundID>& toSkip) override;
 
     private:
         enum STEP_MODE : AmUInt8
@@ -46,6 +46,7 @@ namespace SparkyStudios::Audio::Amplitude
         STEP_MODE _stepMode;
         const CollectionDefinition* _definition;
         const SequenceSoundSchedulerConfig* _config;
+        std::vector<Sound*> _sounds;
     };
 } // namespace SparkyStudios::Audio::Amplitude
 

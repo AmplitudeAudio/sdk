@@ -7,7 +7,7 @@ tests/*_test
 *.ambus
 *.amconfig
 *.amsound
-*.amecollection
+*.amcollection
 *.amevent
 *.amattenuation
 *.a
@@ -49,3 +49,6 @@ docs/html/
 docs/linklint_results/
 gen/
 
+samples/
+scripts/
+assets/

@@ -16,7 +16,8 @@
 #include <cmath>
 
 #include <SparkyStudios/Audio/Amplitude/Core/Log.h>
-#include <SparkyStudios/Audio/Amplitude/Sound/SoundCollection.h>
+
+#include <SparkyStudios/Audio/Amplitude/Sound/Collection.h>
 
 #include <Core/ChannelInternalState.h>
 #include <Core/EngineInternalState.h>
@@ -27,7 +28,7 @@
 
 namespace SparkyStudios::Audio::Amplitude
 {
-    static const unsigned int kInvalidChannelId = 0;
+    static constexpr unsigned int kInvalidChannelId = 0;
 
     RealChannel::RealChannel()
         : RealChannel(nullptr)
@@ -39,9 +40,9 @@ namespace SparkyStudios::Audio::Amplitude
         , _loop(false)
         , _pan(0.0f)
         , _gain(1.0f)
+        , _mixer(nullptr)
         , _activeSound(nullptr)
         , _parentChannelState(parent)
-        , _mixer(nullptr)
     {}
 
     void RealChannel::Initialize(int i)
@@ -52,15 +53,15 @@ namespace SparkyStudios::Audio::Amplitude
 
     void RealChannel::MarkAsPlayed(const Sound* sound)
     {
-        _playedSounds.push_back(sound);
+        _playedSounds.push_back(sound->GetId());
     }
 
     bool RealChannel::AllSoundsHasPlayed() const
     {
         bool result = true;
-        for (auto&& sound : _parentChannelState->GetSoundCollection()->GetAudioSamples())
+        for (auto&& sound : _parentChannelState->GetCollection()->GetAudioSamples())
         {
-            if (auto foundIt = std::find(_playedSounds.begin(), _playedSounds.end(), &sound); foundIt != _playedSounds.end())
+            if (auto foundIt = std::find(_playedSounds.begin(), _playedSounds.end(), sound); foundIt != _playedSounds.end())
                 continue;
 
             result = false;
@@ -79,38 +80,34 @@ namespace SparkyStudios::Audio::Amplitude
         return _channelId != kInvalidChannelId && _mixer != nullptr && _parentChannelState != nullptr;
     }
 
-    bool RealChannel::Play(Collection* collection, const Sound* sound)
+    bool RealChannel::Play(SoundInstance* sound)
     {
-        if (!sound || !collection)
-            return false;
+        AMPLITUDE_ASSERT(sound != nullptr);
 
-        _activeSound = sound->CreateInstance();
+        _activeSound = sound;
         _activeSound->SetChannel(this);
         _activeSound->Load();
 
         if (!_activeSound->GetUserData())
         {
             _channelId = kInvalidChannelId;
-            CallLogFunc("The sound was not loaded successfully.");
+            CallLogFunc("[ERROR] The sound was not loaded successfully.");
             return false;
         }
 
-        AMPLITUDE_ASSERT(Valid());
-        const CollectionDefinition* def = collection->GetCollectionDefinition();
-        _loop = def->play_mode() == PlayMode_LoopOne;
-        _stream = def->stream();
+        _loop = _activeSound->GetSound()->IsLoop();
+        _stream = _activeSound->GetSound()->IsStream();
 
-        AmUInt32 loops = _loop ? ATOMIX_LOOP : ATOMIX_PLAY;
+        const AmUInt8 loops = _loop ? ATOMIX_LOOP : ATOMIX_PLAY;
 
         _channelId = atomixMixerPlay(_mixer, static_cast<atomix_sound*>(_activeSound->GetUserData()), loops, _gain, _pan);
 
-        // Check if playing the sound was successful, and display the error if it was
-        // not.
-        bool success = _channelId != kInvalidChannelId;
+        // Check if playing the sound was successful, and display the error if it was not.
+        const bool success = _channelId != kInvalidChannelId;
         if (!success)
         {
             _channelId = kInvalidChannelId;
-            CallLogFunc("Could not play sound " AM_OS_CHAR_FMT "\n", sound->GetFilename());
+            CallLogFunc("[ERROR] Could not play sound " AM_OS_CHAR_FMT "\n", _activeSound->GetSound()->GetFilename());
         }
 
         return success;
@@ -119,12 +116,20 @@ namespace SparkyStudios::Audio::Amplitude
     bool RealChannel::Playing() const
     {
         AMPLITUDE_ASSERT(Valid());
-        PlayMode mode = _parentChannelState->GetSoundCollection()->GetCollectionDefinition()->play_mode();
-        AmUInt32 state = atomixMixerGetState(_mixer, _channelId);
+        const AmUInt32 state = atomixMixerGetState(_mixer, _channelId);
 
-        return mode == PlayMode_PlayOne ? state == ATOMIX_PLAY
-            : mode == PlayMode_LoopOne  ? state == ATOMIX_LOOP
-                                        : _channelId != kInvalidChannelId && _gain > 0.0f;
+        if (const auto* collection = _parentChannelState->GetCollection(); collection == nullptr)
+        {
+            return !_loop && state == ATOMIX_PLAY  || _loop && state == ATOMIX_LOOP;
+        }
+        else
+        {
+            const CollectionPlayMode mode = collection->GetCollectionDefinition()->play_mode();
+
+            return mode == CollectionPlayMode_PlayOne && !_loop ? state == ATOMIX_PLAY
+                : mode == CollectionPlayMode_PlayOne && _loop   ? state == ATOMIX_LOOP
+                                                                : _channelId != kInvalidChannelId;
+        }
     }
 
     bool RealChannel::Paused() const

@@ -159,6 +159,7 @@ include_directories(src
     include
     src/Mixer/Atomix
     ${FLATC_INCLUDE_DIR}
+    ${SPARK_AUDIO_FLATBUFFERS_GENERATED_INCLUDES_DIR}
 )
 
 add_library(ss_amplitude_audio ${SA_SOURCE})

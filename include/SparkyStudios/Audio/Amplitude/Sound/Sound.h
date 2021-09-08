@@ -20,13 +20,39 @@
 #include <SparkyStudios/Audio/Amplitude/Core/Common.h>
 
 #include <SparkyStudios/Audio/Amplitude/Core/Codec.h>
+#include <SparkyStudios/Audio/Amplitude/Core/RefCounter.h>
+
+#include <SparkyStudios/Audio/Amplitude/Sound/Attenuation.h>
+
 #include <SparkyStudios/Audio/Amplitude/IO/FileLoader.h>
 
 namespace SparkyStudios::Audio::Amplitude
 {
+    struct SoundDefinition;
+
+    struct EngineInternalState;
+    class BusInternalState;
+
     class Collection;
     class SoundInstance;
     class RealChannel;
+
+    enum class SoundKind
+    {
+        Contained,
+        Standalone,
+    };
+
+    struct SoundInstanceSettings
+    {
+        SoundKind m_kind;
+        AmBusID m_busID;
+        AmAttenuationID m_attenuationID;
+        AmUInt8 m_spatialization;
+        AmReal32 m_priority;
+        AmReal32 m_gain;
+        bool m_loop;
+    };
 
     class Sound : public Resource
     {
@@ -37,14 +63,31 @@ namespace SparkyStudios::Audio::Amplitude
         ~Sound() override;
 
         /**
-         * @brief Initializes the Sound given the Collection that it is a part of.
+         * @brief Loads the sound from the given source.
          *
-         * The collection may contain useful metadata about the sound, like whether
-         * or not the sound should be streamed, which may impact how you load it.
+         * @param source The sound file content to load.
+         * @param state The engine state to use while loading the sound.
          *
-         * @param collection The collection that the sound is part of.
+         * @return true if the sound was loaded successfully, false otherwise.
          */
-        void Initialize(Collection* collection);
+        bool LoadSoundDefinition(const std::string& source, EngineInternalState* state);
+
+        /**
+         * @brief Loads the sound from the given file path.
+         *
+         * @param filename The path to the sound file to load.
+         * @param state The engine state to use while loading the sound.
+         *
+         * @return true if the sound was loaded successfully, false otherwise.
+         */
+        bool LoadSoundDefinitionFromFile(AmOsString filename, EngineInternalState* state);
+
+        /**
+         * @brief Returns the loaded sound definition.
+         *
+         * @return The loaded sound definition.
+         */
+        [[nodiscard]] const SoundDefinition* GetSoundDefinition() const;
 
         /**
          * @brief Loads the audio file.
@@ -54,58 +97,114 @@ namespace SparkyStudios::Audio::Amplitude
         /**
          * @brief Create a new SoundInstance from this Sound.
          *
-         * @return SoundInstance* An sound instance which can be played.
+         * The SoundInstance created this way will use settings fom the Sound object.
+         *
+         * @return SoundInstance* A sound instance which can be played.
          */
         [[nodiscard]] SoundInstance* CreateInstance() const;
+
+        /**
+         * @brief Create a new SoundInstance from this Sound.
+         *
+         * The SoundInstance created this way will use the settings fom the given
+         * Collection. This is mainly used when a Collection play a sound fom his container.
+         *
+         * @param collection The Collection that the sound is part of.
+         *
+         * @return SoundInstance* A sound instance which can be played.
+         */
+        [[nodiscard]] SoundInstance* CreateInstance(const Collection* collection) const;
 
         /**
          * @brief Sets the format of this Sound.
          *
          * @param format The sound format.
          */
-        void SetFormat(const SoundFormat& format)
-        {
-            m_format = format;
-        }
+        void SetFormat(const SoundFormat& format);
 
         /**
          * @brief Gets the format of this Sound.
          * @return The format of this Sound.
          */
-        [[nodiscard]] const SoundFormat& GetFormat() const
-        {
-            return m_format;
-        }
+        [[nodiscard]] const SoundFormat& GetFormat() const;
 
         /**
-         * @brief Returns the Collection storing this Sound.
-         * @return The Collection.
+         * @brief Get the unique ID of this Sound.
+         *
+         * @return The unique sound ID.
          */
-        [[nodiscard]] Collection* GetSoundCollection() const
-        {
-            return m_collection;
-        }
+        [[nodiscard]] AmSoundID GetId() const;
+
+        /**
+         * @brief Get the name of this Sound.
+         *
+         * @return The sound name.
+         */
+        [[nodiscard]] const std::string& GetName() const;
+
+        /**
+         * @brief Get the Attenuation object associated with this Sound.
+         *
+         * @return The Attenuation object.
+         */
+        [[nodiscard]] const Attenuation* GetAttenuation() const;
+
+        /**
+         * @brief Return the bus this Sound will play on.
+         *
+         * @return The bus this Sound will play on.
+         */
+        [[nodiscard]] BusInternalState* GetBus() const;
+
+        /**
+         * @brief Checks streaming is enabled for this Sound.
+         *
+         * @return true if streaming is enabled, false otherwise.
+         */
+        [[nodiscard]] bool IsStream() const;
+
+        /**
+         * @brief Checks if looping is enabled for this Sound.
+         *
+         * @return true if looping is enabled, false otherwise.
+         */
+        [[nodiscard]] bool IsLoop() const;
+
+        RefCounter* GetRefCounter();
 
     protected:
-        Collection* m_collection;
         SoundFormat m_format;
 
     private:
         Codec::Decoder* _decoder;
 
+        // The bus this Sound will play on.
+        BusInternalState* _bus;
+
+        AmSoundID _id;
+        std::string _name;
+
+        Attenuation* _attenuation;
         bool _stream;
         bool _loop;
+
+        std::string _source;
+
+        RefCounter _refCounter;
     };
 
     class SoundInstance
     {
+        friend class Sound;
+
     public:
         /**
          * @brief Construct a new SoundInstance from the given Sound.
          *
          * @param parent The parent Sound from which to create an instance.
+         * @param settings The settings of the Sound instance.
          */
-        explicit SoundInstance(const Sound* parent);
+        SoundInstance(const Sound* parent, const SoundInstanceSettings& settings);
         ~SoundInstance();
 
         /**
@@ -114,22 +213,23 @@ namespace SparkyStudios::Audio::Amplitude
         void Load();
 
         /**
+         * @brief Get the settings used to create this SoundInstance.
+         *
+         * @return The SoundInstance settings.
+         */
+        [[nodiscard]] const SoundInstanceSettings& GetSettings() const;
+
+        /**
          * @brief Returns the user data associated to this Sound.
          * @return The user data.
          */
-        [[nodiscard]] AmVoidPtr GetUserData() const
-        {
-            return _userData;
-        }
+        [[nodiscard]] AmVoidPtr GetUserData() const;
 
         /**
          * @brief Sets the user data associated to this Sound.
          * @param userData The user data.
          */
-        void SetUserData(AmVoidPtr userData)
-        {
-            _userData = userData;
-        }
+        void SetUserData(AmVoidPtr userData);
 
         /**
          * @brief Renders audio data.
@@ -177,10 +277,9 @@ namespace SparkyStudios::Audio::Amplitude
          *
          * @return const Sound*
          */
-        [[nodiscard]] const Sound* GetSound() const
-        {
-            return _parent;
-        }
+        [[nodiscard]] const Sound* GetSound() const;
+
+        [[nodiscard]] const Collection* GetCollection() const;
 
     private:
         AmVoidPtr _userData;
@@ -189,6 +288,9 @@ namespace SparkyStudios::Audio::Amplitude
 
         RealChannel* _channel;
         const Sound* _parent;
+        const Collection* _collection;
+
+        SoundInstanceSettings _settings;
     };
 } // namespace SparkyStudios::Audio::Amplitude
 

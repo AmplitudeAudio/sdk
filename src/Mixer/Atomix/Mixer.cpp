@@ -52,18 +52,21 @@ namespace SparkyStudios::Audio::Amplitude
 
     static void atomix_sound_ended(atomix_sound* snd)
     {
-        auto* sound = static_cast<SoundInstance*>(snd->udata);
+        const auto* sound = static_cast<SoundInstance*>(snd->udata);
         CallLogFunc("Ended sound: " AM_OS_CHAR_FMT "\n", sound->GetSound()->GetFilename());
 
-        Engine* engine = Engine::GetInstance();
-        if (engine->GetState()->stopping)
-            return;
+        if (const Engine* engine = Engine::GetInstance(); engine->GetState()->stopping)
+            goto Delete;
+
+        if (sound->GetSettings().m_kind == SoundKind::Standalone)
+            goto Delete;
 
         RealChannel* channel = sound->GetChannel();
-        Collection* collection = sound->GetSound()->GetSoundCollection();
-        const CollectionDefinition* config = collection->GetSoundCollectionDefinition();
+        const Collection* collection = sound->GetCollection();
+        AMPLITUDE_ASSERT(collection != nullptr); // Should always have a collection for contained sound instances.
+        const CollectionDefinition* config = collection->GetCollectionDefinition();
 
-        if (config->play_mode() == PlayMode_LoopAll || config->play_mode() == PlayMode_PlayAll)
+        if (config->play_mode() == CollectionPlayMode_PlayAll)
         {
             if (channel->Valid())
             {
@@ -71,7 +74,7 @@ namespace SparkyStudios::Audio::Amplitude
                 if (channel->AllSoundsHasPlayed())
                 {
                     channel->ClearPlayedSounds();
-                    if (config->play_mode() == PlayMode_PlayAll)
+                    if (config->play_mode() == CollectionPlayMode_PlayAll)
                     {
                         goto Stop;
                     }
@@ -150,7 +153,7 @@ namespace SparkyStudios::Audio::Amplitude
             return false;
         }
 
-        m_userData = atomixMixerNew(1.0f, 0);
+        m_userData = atomixMixerNew(1.0f, kMinFadeDuration);
 
         if (!m_userData)
         {
@@ -172,6 +175,9 @@ namespace SparkyStudios::Audio::Amplitude
         AMPLITUDE_ASSERT(!_insideAudioThreadMutex);
 
         if (!_initialized)
+            return;
+
+        if (Engine::GetInstance()->GetState()->stopping)
             return;
 
         lockAudioMutex();

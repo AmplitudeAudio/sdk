@@ -39,16 +39,20 @@ namespace SparkyStudios::Audio::Amplitude
 #if defined(AM_WCHAR_SUPPORTED)
     typedef std::map<std::wstring, AmAttenuationID> AttenuationIdMap;
     typedef std::map<std::wstring, AmCollectionID> CollectionIdMap;
+    typedef std::map<std::wstring, AmSoundID> SoundIdMap;
     typedef std::map<std::wstring, AmEventID> EventIdMap;
     typedef std::map<std::wstring, std::unique_ptr<SoundBank>> SoundBankMap;
 #else
     typedef std::map<std::string, AmAttenuationID> AttenuationIdMap;
     typedef std::map<std::string, AmCollectionID> CollectionIdMap;
+    typedef std::map<std::string, AmSoundID> SoundIdMap;
     typedef std::map<std::string, std::string> EventIdMap;
     typedef std::map<std::string, std::unique_ptr<SoundBank>> SoundBankMap;
 #endif
 
     typedef std::map<AmCollectionID, std::unique_ptr<Collection>> CollectionMap;
+
+    typedef std::map<AmSoundID, std::unique_ptr<Sound>> SoundMap;
 
     typedef std::map<AmAttenuationID, std::unique_ptr<Attenuation>> AttenuationMap;
 
@@ -131,6 +135,11 @@ namespace SparkyStudios::Audio::Amplitude
         // A map of file names to sound ids to determine if a file needs to be loaded.
         CollectionIdMap collection_id_map;
 
+        // A map of sound names to SoundCollections.
+        SoundMap sound_map;
+
+        // A map of file names to sound ids to determine if a file needs to be loaded.
+        SoundIdMap sound_id_map;
 
         // A map of event names to EventInternalStates.
         EventMap event_map;
@@ -201,9 +210,9 @@ namespace SparkyStudios::Audio::Amplitude
     // and the location, as well as the given location translated into listener
     // space.  Returns true on success, or false if the list was empty.
     bool BestListener(
-        ListenerList::const_iterator* best_listener,
-        float* distance_squared,
-        hmm_vec3* listener_space_location,
+        ListenerList::const_iterator* bestListener,
+        float* distanceSquared,
+        hmm_vec3* listenerSpaceLocation,
         const ListenerList& listeners,
         const hmm_vec3& location);
 
@@ -213,7 +222,7 @@ namespace SparkyStudios::Audio::Amplitude
     // means the sound is directly to the listener's right. Likewise, values of
     // (0, 1) and (0, -1) mean the sound is directly in front or behind the
     // listener, respectively.
-    hmm_vec2 CalculatePan(Collection* collection, const hmm_vec3& listener_space_location, const Entity& entity);
+    hmm_vec2 CalculatePan(const hmm_vec3& listenerSpaceLocation);
 
     bool LoadFile(AmOsString filename, std::string* dest);
 

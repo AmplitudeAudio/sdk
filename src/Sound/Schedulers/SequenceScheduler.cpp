@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include <SparkyStudios/Audio/Amplitude/Core/Common.h>
+#include <SparkyStudios/Audio/Amplitude/Core/Engine.h>
 
 #include <SparkyStudios/Audio/Amplitude/Sound/Schedulers/SequenceScheduler.h>
 #include <SparkyStudios/Audio/Amplitude/Sound/Sound.h>
@@ -39,12 +39,18 @@ namespace SparkyStudios::Audio::Amplitude
 
     void SequenceScheduler::Init(const CollectionDefinition* definition)
     {
-        // noop
+        Engine* engine = Engine::GetInstance();
+
+        for (size_t i = 0; i < definition->sounds()->size(); ++i)
+        {
+            const SequenceSchedulerCollectionEntry* entry = definition->sounds()->GetAs<SequenceSchedulerCollectionEntry>(i);
+            _sounds.push_back(engine->GetSoundHandle(entry->sound()));
+        }
     }
 
-    Sound* SequenceScheduler::Select(std::vector<Sound>& sounds, const std::vector<const Sound*>& toSkip)
+    Sound* SequenceScheduler::Select(const std::vector<AmSoundID>& toSkip)
     {
-        if (_lastIndex == sounds.size() || _lastIndex == 0)
+        if (_lastIndex == _sounds.size() || _lastIndex == 0)
         {
             SequenceSoundSchedulerEndBehavior onEnd =
                 _config != nullptr ? _config->end_behavior() : SequenceSoundSchedulerEndBehavior_Restart;
@@ -57,9 +63,9 @@ namespace SparkyStudios::Audio::Amplitude
                 _stepMode = MODE_INCREMENT;
                 break;
             case SequenceSoundSchedulerEndBehavior_Reverse:
-                if (_lastIndex == sounds.size())
+                if (_lastIndex == _sounds.size())
                 {
-                    _lastIndex = sounds.size() - 2; // Do not play the last sound twice
+                    _lastIndex = _sounds.size() - 2; // Do not play the last sound twice
                     _stepMode = MODE_DECREMENT;
                 }
                 else
@@ -71,8 +77,8 @@ namespace SparkyStudios::Audio::Amplitude
             }
         }
 
-        Sound* sound = &sounds[_lastIndex];
-        _lastIndex = AM_Clamp(0, _stepMode == MODE_INCREMENT ? _lastIndex + 1 : _lastIndex - 1, sounds.size());
+        Sound* sound = _sounds[_lastIndex];
+        _lastIndex = AM_Clamp(0, _stepMode == MODE_INCREMENT ? _lastIndex + 1 : _lastIndex - 1, _sounds.size());
 
         return sound;
     }

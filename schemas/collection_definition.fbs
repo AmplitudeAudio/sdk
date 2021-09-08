@@ -20,14 +20,9 @@ namespace SparkyStudios.Audio.Amplitude;
 enum CollectionPlayMode: byte {
   /// On each play request, an audio sample is picked by the scheduler and played only once.
   PlayOne,
-  /// On each play request, an audio sample is picked by the scheduler and looped until stopped.
-  LoopOne,
   /// On each play request, an audio sample is picked by the scheduler and played once. This task
   /// is repeated until all the audio samples are picked.
   PlayAll,
-  /// On each play request, an audio sample is picked by the scheduler and played once. This mode
-  /// will play all the audio samples and once until stopped.
-  LoopAll,
 }
 
 /// A sound scheduler mode is a way for the collection to pick a sound
@@ -83,14 +78,42 @@ table SoundSchedulerSettings {
   config:SoundSchedulerConfig;
 }
 
-/// Entry in a set of Sound objects.
-table SoundEntry {
+/// A Sound entry with basic needed data.
+table DefaultCollectionEntry {
+  /// Sound ID associated with this entry.
+  sound:uint64;
+
+  /// Special gain to apply only to this entry.
+  gain:float = 1.0;
+}
+
+/// A Sound entry for a Collection which uses a Random scheduler.
+table RandomSchedulerCollectionEntry {
+  /// Sound ID associated with this entry.
+  sound:uint64;
+
+  /// Special gain to apply only to this entry.
+  gain:float = 1.0;
+
   /// Probability of this sample being selected to relative to others in a set.
   /// Only used when the "Random" scheduler is used.
   weight:float = 1.0;
+}
 
+/// A Sound entry for a Collection which uses a Sequence scheduler.
+table SequenceSchedulerCollectionEntry {
   /// Sound ID associated with this entry.
   sound:uint64;
+
+  /// Special gain to apply only to this entry.
+  gain:float = 1.0;
+}
+
+/// Union type for collection entries.
+union CollectionEntry {
+  Default:DefaultCollectionEntry,
+  Random:RandomSchedulerCollectionEntry,
+  Sequence:SequenceSchedulerCollectionEntry
 }
 
 /// A collection is a group of sounds, played in a according to the specified scheduler.
@@ -115,7 +138,7 @@ table CollectionDefinition {
 
   /// Set of samples from which a weighted random selection is performed to
   /// determine which sample to play when Sound playback is triggered.
-  sounds:[SoundEntry];
+  sounds:[CollectionEntry];
 
   /// Whether this sound should grow louder or quieter based on distance.
   spatialization:Spatialization = None;

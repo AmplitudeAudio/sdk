@@ -74,7 +74,7 @@ namespace SparkyStudios::Audio::Amplitude
         bool _active;
         AmInt8 _type;
         AmInt8 _scope;
-        std::vector<AmString> _targets;
+        std::vector<AmObjectID> _targets;
 
         Event* _parent;
     };

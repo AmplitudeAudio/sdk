@@ -14,8 +14,8 @@
 
 #pragma once
 
-#ifndef SPARK_AUDIO_SOUND_COLLECTION_SCHEDULER_H
-#define SPARK_AUDIO_SOUND_COLLECTION_SCHEDULER_H
+#ifndef SS_AMPLITUDE_AUDIO_SOUND_COLLECTION_SCHEDULER_H
+#define SS_AMPLITUDE_AUDIO_SOUND_COLLECTION_SCHEDULER_H
 
 #include <vector>
 
@@ -50,15 +50,14 @@ namespace SparkyStudios::Audio::Amplitude
          *
          * This assumes that the scheduler was already initialized.
          *
-         * @param sounds The list of available sounds.
          * @param toSkip The list of sounds to skip from selection.
          *
          * The values of this list are pointers of available sounds.
          *
          * @return The selected sound.
          */
-        virtual Sound* Select(std::vector<Sound>& sounds, const std::vector<const Sound*>& toSkip) = 0;
+        virtual Sound* Select(const std::vector<AmSoundID>& toSkip) = 0;
     };
 } // namespace SparkyStudios::Audio::Amplitude
 
-#endif // SPARK_AUDIO_SOUND_COLLECTION_SCHEDULER_H
+#endif // SS_AMPLITUDE_AUDIO_SOUND_COLLECTION_SCHEDULER_H

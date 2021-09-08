@@ -14,6 +14,8 @@
 
 #include <cstdlib>
 
+#include <SparkyStudios/Audio/Amplitude/Core/Engine.h>
+
 #include <SparkyStudios/Audio/Amplitude/Sound/Schedulers/RandomScheduler.h>
 #include <SparkyStudios/Audio/Amplitude/Sound/Sound.h>
 
@@ -39,42 +41,45 @@ namespace SparkyStudios::Audio::Amplitude
 
     void RandomScheduler::Init(const CollectionDefinition* definition)
     {
+        Engine* engine = Engine::GetInstance();
+
         _definition = definition;
         _probabilitiesSum = 0.0f;
 
-        flatbuffers::uoffset_t sample_count = definition->audio_sample_set() ? definition->audio_sample_set()->size() : 0;
+        flatbuffers::uoffset_t sample_count = definition->sounds() ? definition->sounds()->size() : 0;
 
         for (flatbuffers::uoffset_t i = 0; i < sample_count; ++i)
         {
-            const AudioSampleSetEntry* entry = definition->audio_sample_set()->Get(i);
-            _probabilitiesSum += entry->playback_probability();
+            const RandomSchedulerCollectionEntry* entry = definition->sounds()->GetAs<RandomSchedulerCollectionEntry>(i);
+            _probabilitiesSum += entry->weight();
+            _sounds.push_back(engine->GetSoundHandle(entry->sound()));
         }
     }
 
-    Sound* RandomScheduler::Select(std::vector<Sound>& sounds, const std::vector<const Sound*>& toSkip)
+    Sound* RandomScheduler::Select(const std::vector<AmSoundID>& toSkip)
     {
     Pick:
         float selection = std::rand() / static_cast<float>(RAND_MAX) * _probabilitiesSum;
-        for (size_t i = 0; i < sounds.size(); ++i)
+        for (flatbuffers::uoffset_t i = 0; i < _sounds.size(); ++i)
         {
-            const AudioSampleSetEntry* entry = _definition->audio_sample_set()->Get(static_cast<flatbuffers::uoffset_t>(i));
-            selection -= entry->playback_probability();
+            const RandomSchedulerCollectionEntry* entry = _definition->sounds()->GetAs<RandomSchedulerCollectionEntry>(i);
+            selection -= entry->weight();
 
             if (selection <= 0)
             {
-                if (auto foundIt = std::find(toSkip.begin(), toSkip.end(), &sounds[i]); foundIt != toSkip.end())
+                if (auto foundIt = std::find(toSkip.begin(), toSkip.end(), _sounds[i]->GetId()); foundIt != toSkip.end())
                     // Try to pick the next sound, since this one needs to be skipped
                     goto Pick;
 
                 if (_config->avoid_repeat())
                 {
-                    if (auto foundIt = std::find(_avoidRepeatStack.begin(), _avoidRepeatStack.end(), &sounds[i]);
+                    if (auto foundIt = std::find(_avoidRepeatStack.begin(), _avoidRepeatStack.end(), _sounds[i]);
                         foundIt != _avoidRepeatStack.end())
                         // Try to pick the next sound, since this one has already been played
                         goto Pick;
                 }
 
-                Sound* sound = &sounds[i];
+                Sound* sound = _sounds[i];
                 if (_config->avoid_repeat())
                 {
                     if (!_avoidRepeatStack.empty() && _avoidRepeatStack.size() >= _config->repeat_count())
