@@ -24,8 +24,9 @@
 #include <IO/File.h>
 
 #include "buses_definition_generated.h"
+#include "collection_definition_generated.h"
 #include "engine_config_definition_generated.h"
-#include "sound_collection_definition_generated.h"
+#include "sound_definition_generated.h"
 
 #pragma region Default Codecs
 #include <Core/Codecs/OGG/Codec.h>
@@ -45,24 +46,23 @@ namespace SparkyStudios::Audio::Amplitude
     {
         if (!filename)
         {
-            CallLogFunc("The filename is empty");
+            CallLogFunc("[ERROR] The filename is empty");
             return false;
         }
 
         // load into memory:
         MemoryFile mf;
-        AmResult result = mf.OpenToMem(filename);
-        if (result != AM_ERROR_NO_ERROR)
+        if (const AmResult result = mf.OpenToMem(filename); result != AM_ERROR_NO_ERROR)
         {
-            CallLogFunc("LoadFile fail on %s", filename);
+            CallLogFunc("[ERROR] LoadFile fail on %s", filename);
             return false;
         }
 
         // get its size:
-        dest->assign(mf.Length() + 1, 0);
+        dest->assign(static_cast<size_t>(mf.Length()) + 1, 0);
 
         // read the data:
-        AmUInt32 len = mf.Read(reinterpret_cast<AmUInt8Buffer>(&(*dest)[0]), mf.Length());
+        const AmUInt32 len = mf.Read(reinterpret_cast<AmUInt8Buffer>(&(*dest)[0]), mf.Length());
 
         return len == mf.Length() && len > 0;
     }
@@ -73,9 +73,9 @@ namespace SparkyStudios::Audio::Amplitude
     }
 
     Engine::Engine()
-        : _state(nullptr)
+        : _configSrc()
+        , _state(nullptr)
         , _audioDriver(nullptr)
-        , _configSrc()
     {}
 
     Engine::~Engine()
@@ -101,40 +101,34 @@ namespace SparkyStudios::Audio::Amplitude
 
     BusInternalState* FindBusInternalState(EngineInternalState* state, AmBusID id)
     {
-        auto it = std::find_if(
-            state->buses.begin(), state->buses.end(),
-            [id](const BusInternalState& bus)
-            {
-                return bus.GetId() == id;
-            });
-
-        if (it != state->buses.end())
+        if (const auto it = std::find_if(
+                state->buses.begin(), state->buses.end(),
+                [id](const BusInternalState& bus)
+                {
+                    return bus.GetId() == id;
+                });
+            it != state->buses.end())
         {
             return &*it;
         }
-        else
-        {
-            return nullptr;
-        }
+
+        return nullptr;
     }
 
     BusInternalState* FindBusInternalState(EngineInternalState* state, AmString name)
     {
-        auto it = std::find_if(
-            state->buses.begin(), state->buses.end(),
-            [name](const BusInternalState& bus)
-            {
-                return bus.GetName() == name;
-            });
-
-        if (it != state->buses.end())
+        if (const auto it = std::find_if(
+                state->buses.begin(), state->buses.end(),
+                [name](const BusInternalState& bus)
+                {
+                    return bus.GetName() == name;
+                });
+            it != state->buses.end())
         {
             return &*it;
         }
-        else
-        {
-            return nullptr;
-        }
+
+        return nullptr;
     }
 
     static bool PopulateChildBuses(EngineInternalState* state, BusInternalState* parent, const BusIdList* childIdList)
@@ -143,16 +137,15 @@ namespace SparkyStudios::Audio::Amplitude
 
         for (flatbuffers::uoffset_t i = 0; childIdList && i < childIdList->size(); ++i)
         {
-            AmBusID busId = childIdList->Get(i);
-            BusInternalState* bus = FindBusInternalState(state, busId);
+            const AmBusID busId = childIdList->Get(i);
 
-            if (bus)
+            if (BusInternalState* bus = FindBusInternalState(state, busId))
             {
                 output->push_back(bus);
             }
             else
             {
-                CallLogFunc("Unknown bus with ID \"%u\" listed in child buses.\n", busId);
+                CallLogFunc("[ERROR] Unknown bus with ID \"%u\" listed in child buses.\n", busId);
                 return false;
             }
         }
@@ -166,15 +159,14 @@ namespace SparkyStudios::Audio::Amplitude
         for (flatbuffers::uoffset_t i = 0; duckBusDefinitionList && i < duckBusDefinitionList->size(); ++i)
         {
             const DuckBusDefinition* duck = duckBusDefinitionList->Get(i);
-            auto* bus = new DuckBusInternalState(parent);
 
-            if (bus->Initialize(duck))
+            if (auto* bus = new DuckBusInternalState(parent); bus->Initialize(duck))
             {
                 output->push_back(bus);
             }
             else
             {
-                CallLogFunc("Unknown bus with ID \"%u\" listed in duck buses.\n", duck->id());
+                CallLogFunc("[ERROR] Unknown bus with ID \"%u\" listed in duck buses.\n", duck->id());
                 return false;
             }
         }
@@ -187,63 +179,65 @@ namespace SparkyStudios::Audio::Amplitude
     // free lists are kept for real channels and virtual channels (where 'real'
     // channels are channels that have a channel_id
     static void InitializeChannelFreeLists(
-        FreeList* real_channel_free_list,
-        FreeList* virtual_channel_free_list,
+        FreeList* realChannelFreeList,
+        FreeList* virtualChannelFreeList,
         std::vector<ChannelInternalState>* channels,
-        AmUInt32 virtual_channels,
-        AmUInt32 real_channels)
+        const AmUInt32 virtualChannels,
+        const AmUInt32 realChannels)
     {
         // We do our own tracking of audio channels so that when a new sound is
         // played we can determine if one of the currently playing channels is lower
         // priority so that we can drop it.
-        AmUInt32 total_channels = real_channels + virtual_channels;
-        channels->resize(total_channels);
-        for (size_t i = 0; i < total_channels; ++i)
+        const AmUInt32 totalChannels = realChannels + virtualChannels;
+        channels->resize(totalChannels);
+
+        for (size_t i = 0; i < totalChannels; ++i)
         {
             ChannelInternalState& channel = (*channels)[i];
 
             // Track real channels separately from virtual channels.
-            if (i < real_channels)
+            if (i < realChannels)
             {
-                channel.GetRealChannel().Initialize(static_cast<int>(i));
-                real_channel_free_list->push_front(channel);
+                channel.GetRealChannel().Initialize(static_cast<int>(i + 1));
+                realChannelFreeList->push_front(channel);
             }
             else
             {
-                virtual_channel_free_list->push_front(channel);
+                channel.GetRealChannel().Initialize(kAmInvalidObjectId);
+                virtualChannelFreeList->push_front(channel);
             }
         }
     }
 
     static void InitializeListenerFreeList(
-        std::vector<ListenerInternalState*>* listener_state_free_list, ListenerStateVector* listener_list, AmUInt32 list_size)
+        std::vector<ListenerInternalState*>* listenerStateFreeList, ListenerStateVector* listenerList, const AmUInt32 listSize)
     {
-        listener_list->resize(list_size);
-        listener_state_free_list->reserve(list_size);
-        for (size_t i = 0; i < list_size; ++i)
+        listenerList->resize(listSize);
+        listenerStateFreeList->reserve(listSize);
+        for (size_t i = 0; i < listSize; ++i)
         {
-            ListenerInternalState& listener = (*listener_list)[i];
-            listener_state_free_list->push_back(&listener);
+            ListenerInternalState& listener = (*listenerList)[i];
+            listenerStateFreeList->push_back(&listener);
         }
     }
 
     static void InitializeEntityFreeList(
-        std::vector<EntityInternalState*>* entity_state_free_list, EntityStateVector* entity_list, AmUInt32 list_size)
+        std::vector<EntityInternalState*>* entityStateFreeList, EntityStateVector* entityList, const AmUInt32 listSize)
     {
-        entity_list->resize(list_size);
-        entity_state_free_list->reserve(list_size);
-        for (size_t i = 0; i < list_size; ++i)
+        entityList->resize(listSize);
+        entityStateFreeList->reserve(listSize);
+        for (size_t i = 0; i < listSize; ++i)
         {
-            EntityInternalState& entity = (*entity_list)[i];
-            entity_state_free_list->push_back(&entity);
+            EntityInternalState& entity = (*entityList)[i];
+            entityStateFreeList->push_back(&entity);
         }
     }
 
-    bool Engine::Initialize(AmOsString config_file)
+    bool Engine::Initialize(AmOsString configFile)
     {
-        if (!LoadFile(config_file, &_configSrc))
+        if (!LoadFile(configFile, &_configSrc))
         {
-            CallLogFunc("Could not load audio config file.\n");
+            CallLogFunc("[ERROR] Could not load audio config file at path '" AM_OS_CHAR_FMT "'.\n", configFile);
             return false;
         }
         return Initialize(GetEngineConfigDefinition());
@@ -264,7 +258,7 @@ namespace SparkyStudios::Audio::Amplitude
         {
             if (_audioDriver = Driver::Find(config->driver()->c_str()); _audioDriver == nullptr)
             {
-                CallLogFunc("Could load the audio driver '%s'. Loading the default driver.\n", config->driver()->c_str());
+                CallLogFunc("[WARNING] Could load the audio driver '%s'. Loading the default driver.\n", config->driver()->c_str());
                 _audioDriver = Driver::Default();
             }
         }
@@ -275,14 +269,14 @@ namespace SparkyStudios::Audio::Amplitude
 
         if (_audioDriver == nullptr)
         {
-            CallLogFunc("Could not load the audio driver.\n");
+            CallLogFunc("[ERROR] Could not load the audio driver.\n");
             return false;
         }
 
         // Initialize audio mixer
         if (!_state->mixer.Initialize(config))
         {
-            CallLogFunc("Could not initialize the audio mixer.\n");
+            CallLogFunc("[ERROR] Could not initialize the audio mixer.\n");
             return false;
         }
 
@@ -303,14 +297,14 @@ namespace SparkyStudios::Audio::Amplitude
         // Load the audio buses.
         if (!LoadFile(AM_STRING_TO_OS_STRING(config->buses_file()->c_str()), &_state->buses_source))
         {
-            CallLogFunc("Could not load audio bus file.\n");
+            CallLogFunc("[ERROR] Could not load audio bus file.\n");
             return false;
         }
-        const BusDefinitionList* bus_def_list = Amplitude::GetBusDefinitionList(_state->buses_source.c_str());
-        _state->buses.resize(bus_def_list->buses()->size());
-        for (flatbuffers::uoffset_t i = 0; i < bus_def_list->buses()->size(); ++i)
+        const BusDefinitionList* busDefList = Amplitude::GetBusDefinitionList(_state->buses_source.c_str());
+        _state->buses.resize(busDefList->buses()->size());
+        for (flatbuffers::uoffset_t i = 0; i < busDefList->buses()->size(); ++i)
         {
-            _state->buses[i].Initialize(bus_def_list->buses()->Get(i));
+            _state->buses[i].Initialize(busDefList->buses()->Get(i));
         }
 
         // Set up the children and ducking pointers.
@@ -335,7 +329,7 @@ namespace SparkyStudios::Audio::Amplitude
             _state->master_bus = FindBusInternalState(_state, kAmMasterBusId);
             if (!_state->master_bus)
             {
-                CallLogFunc("[Error] Unable to find a master bus.\n");
+                CallLogFunc("[ERROR] Unable to find a master bus.\n");
                 return false;
             }
         }
@@ -363,35 +357,34 @@ namespace SparkyStudios::Audio::Amplitude
     bool Engine::LoadSoundBank(AmOsString filename)
     {
         bool success = true;
-        auto iter = _state->sound_bank_map.find(filename);
-        if (iter == _state->sound_bank_map.end())
+        if (const auto findIt = _state->sound_bank_map.find(filename); findIt == _state->sound_bank_map.end())
         {
-            auto& sound_bank = _state->sound_bank_map[filename];
-            sound_bank = std::make_unique<SoundBank>();
-            success = sound_bank->Initialize(filename, this);
+            auto& soundBank = _state->sound_bank_map[filename];
+            soundBank = std::make_unique<SoundBank>();
+            success = soundBank->Initialize(filename, this);
             if (success)
             {
-                sound_bank->GetRefCounter()->Increment();
+                soundBank->GetRefCounter()->Increment();
             }
         }
         else
         {
-            iter->second->GetRefCounter()->Increment();
+            findIt->second->GetRefCounter()->Increment();
         }
         return success;
     }
 
     void Engine::UnloadSoundBank(AmOsString filename)
     {
-        auto iter = _state->sound_bank_map.find(filename);
-        if (iter == _state->sound_bank_map.end())
+        const auto findIt = _state->sound_bank_map.find(filename);
+        if (findIt == _state->sound_bank_map.end())
         {
-            CallLogFunc("Error while deinitializing SoundBank " AM_OS_CHAR_FMT " - sound bank not loaded.\n", filename);
+            CallLogFunc("[ERROR] Error while deinitializing SoundBank " AM_OS_CHAR_FMT " - sound bank not loaded.\n", filename);
             AMPLITUDE_ASSERT(0);
         }
-        if (iter->second->GetRefCounter()->Decrement() == 0)
+        if (findIt->second->GetRefCounter()->Decrement() == 0)
         {
-            iter->second->Deinitialize(this);
+            findIt->second->Deinitialize(this);
         }
     }
 
@@ -406,69 +399,70 @@ namespace SparkyStudios::Audio::Amplitude
     }
 
     bool BestListener(
-        ListenerList::const_iterator* best_listener,
-        float* distance_squared,
-        hmm_vec3* listener_space_location,
-        const ListenerList& listener_list,
+        ListenerList::const_iterator* bestListener,
+        float* distanceSquared,
+        hmm_vec3* listenerSpaceLocation,
+        const ListenerList& listeners,
         const hmm_vec3& location)
     {
-        if (listener_list.empty())
+        if (listeners.empty())
         {
             return false;
         }
-        ListenerList::const_iterator listener = listener_list.cbegin();
+
+        auto listener = listeners.cbegin();
         const hmm_mat4& mat = listener->GetInverseMatrix();
-        *listener_space_location = AM_Multiply(mat, AM_Vec4v(location, 1.0f)).XYZ;
-        *distance_squared = AM_LengthSquared(*listener_space_location);
-        *best_listener = listener;
-        for (++listener; listener != listener_list.cend(); ++listener)
+        *listenerSpaceLocation = AM_Multiply(mat, AM_Vec4v(location, 1.0f)).XYZ;
+        *distanceSquared = AM_LengthSquared(*listenerSpaceLocation);
+        *bestListener = listener;
+        for (++listener; listener != listeners.cend(); ++listener)
         {
-            hmm_vec3 transformed_location = AM_Multiply(listener->GetInverseMatrix(), AM_Vec4v(location, 1.0f)).XYZ;
-            float magnitude_squared = AM_LengthSquared(transformed_location);
-            if (magnitude_squared < *distance_squared)
+            const hmm_vec3 transformedLocation = AM_Multiply(listener->GetInverseMatrix(), AM_Vec4v(location, 1.0f)).XYZ;
+            if (const float magnitudeSquared = AM_LengthSquared(transformedLocation); magnitudeSquared < *distanceSquared)
             {
-                *best_listener = listener;
-                *distance_squared = magnitude_squared;
-                *listener_space_location = transformed_location;
+                *bestListener = listener;
+                *distanceSquared = magnitudeSquared;
+                *listenerSpaceLocation = transformedLocation;
             }
         }
+
         return true;
     }
 
-    hmm_vec2 CalculatePan(SoundCollection* collection, const hmm_vec3& listener_space_location, const Entity& entity)
+    hmm_vec2 CalculatePan(const hmm_vec3& listenerSpaceLocation)
     {
-        // Zero length vectors just end up with NaNs when normalized. Return a zero
-        // vector instead.
-        const float kEpsilon = 0.0001f;
-        if (AM_LengthSquared(listener_space_location) <= kEpsilon)
+        if (AM_LengthSquared(listenerSpaceLocation) <= kEpsilon)
         {
             return AM_Vec2(0.0f, 0.0f);
         }
-        hmm_vec3 direction = AM_Normalize(listener_space_location);
+
+        const hmm_vec3 direction = AM_Normalize(listenerSpaceLocation);
         return AM_Vec2(AM_Dot(AM_Vec3(1, 0, 0), direction), AM_Dot(AM_Vec3(0, 0, 1), direction));
     }
 
     static void CalculateGainAndPan(
         float* gain,
         hmm_vec2* pan,
-        SoundCollection* collection,
+        const float soundGain,
+        const BusInternalState* bus,
+        const Spatialization spatialization,
+        const Attenuation* attenuation,
         const Entity& entity,
         const hmm_vec3& location,
-        const ListenerList& listener_list,
-        float user_gain)
+        const ListenerList& listeners,
+        const float userGain)
     {
-        const SoundCollectionDefinition* def = collection->GetSoundCollectionDefinition();
-        *gain = def->gain() * collection->GetBus()->GetGain() * user_gain;
-        if (def->spatialization() == Spatialization_Position || def->spatialization() == Spatialization_PositionOrientation)
+        *gain = soundGain * bus->GetGain() * userGain;
+        if (spatialization == Spatialization_Position || spatialization == Spatialization_PositionOrientation)
         {
             ListenerList::const_iterator listener;
-            float distance_squared;
-            hmm_vec3 listener_space_location;
-            if (BestListener(&listener, &distance_squared, &listener_space_location, listener_list, location))
+            float distanceSquared;
+            hmm_vec3 listenerSpaceLocation;
+            if (BestListener(&listener, &distanceSquared, &listenerSpaceLocation, listeners, location))
             {
-                if (const Attenuation* attenuation = collection->GetAttenuation())
+                if (attenuation != nullptr)
                 {
-                    if (def->spatialization() == Spatialization_PositionOrientation)
+                    if (spatialization == Spatialization_PositionOrientation)
                     {
                         AMPLITUDE_ASSERT(entity.Valid())
                         *gain *= attenuation->GetGain(entity.GetState(), &*listener);
@@ -479,7 +473,7 @@ namespace SparkyStudios::Audio::Amplitude
                     }
                 }
 
-                *pan = CalculatePan(collection, listener_space_location, entity);
+                *pan = CalculatePan(listenerSpaceLocation);
             }
             else
             {
@@ -499,13 +493,12 @@ namespace SparkyStudios::Audio::Amplitude
     // to insert turns out to be the highest priority node, this will return the
     // list terminator (and inserting after the terminator will put it at the front
     // of the list).
-    PriorityList::iterator FindInsertionPoint(PriorityList* list, float priority)
+    PriorityList::iterator FindInsertionPoint(PriorityList* list, const float priority)
     {
         PriorityList::reverse_iterator iter;
         for (iter = list->rbegin(); iter != list->rend(); ++iter)
         {
-            float p = iter->Priority();
-            if (p > priority)
+            if (const float p = iter->Priority(); p > priority)
             {
                 break;
             }
@@ -532,43 +525,44 @@ namespace SparkyStudios::Audio::Amplitude
     //
     // This function could use some unit tests b/20752976
     static ChannelInternalState* FindFreeChannelInternalState(
-        PriorityList::iterator insertion_point,
+        PriorityList::iterator insertionPoint,
         PriorityList* list,
-        FreeList* real_channel_free_list,
-        FreeList* virtual_channel_free_list,
-        bool paused)
+        FreeList* realChannelFreeList,
+        FreeList* virtualChannelFreeList,
+        const bool paused)
     {
-        ChannelInternalState* new_channel = nullptr;
+        ChannelInternalState* newChannel = nullptr;
         // Grab a free ChannelInternalState if there is one and the engine is not
         // paused. The engine is paused, grab a virtual channel for now, and it will
         // fix itself when the engine is not paused.
-        if (!paused && !real_channel_free_list->empty())
+        if (!paused && !realChannelFreeList->empty())
         {
-            new_channel = &real_channel_free_list->front();
-            real_channel_free_list->pop_front();
-            PriorityList::insert_before(*insertion_point, *new_channel, &ChannelInternalState::priority_node);
+            newChannel = &realChannelFreeList->front();
+            realChannelFreeList->pop_front();
+            PriorityList::insert_before(*insertionPoint, *newChannel, &ChannelInternalState::priority_node);
         }
-        else if (!virtual_channel_free_list->empty())
+        else if (!virtualChannelFreeList->empty())
         {
-            new_channel = &virtual_channel_free_list->front();
-            virtual_channel_free_list->pop_front();
-            PriorityList::insert_before(*insertion_point, *new_channel, &ChannelInternalState::priority_node);
+            newChannel = &virtualChannelFreeList->front();
+            virtualChannelFreeList->pop_front();
+            PriorityList::insert_before(*insertionPoint, *newChannel, &ChannelInternalState::priority_node);
         }
-        else if (&*insertion_point != &list->back())
+        else if (&*insertionPoint != &list->back())
         {
             // If there are no free sounds, and the new sound is not the lowest priority
             // sound, evict the lowest priority sound.
-            new_channel = &list->back();
-            new_channel->Halt();
+            newChannel = &list->back();
+            newChannel->Halt();
 
             // Move it to a new spot in the list if it needs to be moved.
-            if (&*insertion_point != new_channel)
+            if (&*insertionPoint != newChannel)
             {
                 list->pop_back();
-                list->insert(insertion_point, *new_channel);
+                list->insert(insertionPoint, *newChannel);
             }
         }
-        return new_channel;
+
+        return newChannel;
     }
 
     // Returns this channel to the free appropriate free list based on whether it's
@@ -581,120 +575,153 @@ namespace SparkyStudios::Audio::Amplitude
         list->push_front(*channel);
     }
 
-    Channel Engine::Play(SoundHandle sound_handle)
+    Channel Engine::Play(CollectionHandle handle)
     {
-        return Play(sound_handle, AM_Vec3(0, 0, 0), 1.0f);
+        return Play(handle, AM_Vec3(0, 0, 0), 1.0f);
     }
 
-    Channel Engine::Play(SoundHandle sound_handle, const hmm_vec3& location)
+    Channel Engine::Play(CollectionHandle handle, const hmm_vec3& location)
     {
-        return Play(sound_handle, location, 1.0f);
+        return Play(handle, location, 1.0f);
     }
 
-    Channel Engine::Play(SoundHandle sound_handle, const hmm_vec3& location, float user_gain)
+    Channel Engine::Play(CollectionHandle handle, const hmm_vec3& location, const float userGain)
     {
-        return _playScopedSound(sound_handle, Entity(nullptr), location, user_gain);
+        return PlayScopedCollection(handle, Entity(nullptr), location, userGain);
     }
 
-    Channel Engine::Play(SoundHandle sound_handle, const Entity& entity)
+    Channel Engine::Play(CollectionHandle handle, const Entity& entity)
     {
-        return Play(sound_handle, entity, 1.0f);
+        return Play(handle, entity, 1.0f);
     }
 
-    Channel Engine::Play(SoundHandle sound_handle, const Entity& entity, float user_gain)
+    Channel Engine::Play(CollectionHandle handle, const Entity& entity, const float userGain)
     {
-        return _playScopedSound(sound_handle, entity, entity.GetLocation(), user_gain);
+        return PlayScopedCollection(handle, entity, entity.GetLocation(), userGain);
     }
 
-    Channel Engine::Play(const std::string& sound_name)
+    Channel Engine::Play(SoundHandle handle)
     {
-        return Play(sound_name, AM_Vec3(0, 0, 0), 1.0f);
+        return Play(handle, AM_Vec3(0, 0, 0), 1.0f);
     }
 
-    Channel Engine::Play(const std::string& sound_name, const hmm_vec3& location)
+    Channel Engine::Play(SoundHandle handle, const hmm_vec3& location)
     {
-        return Play(sound_name, location, 1.0f);
+        return Play(handle, location, 1.0f);
     }
 
-    Channel Engine::Play(const std::string& sound_name, const hmm_vec3& location, float user_gain)
+    Channel Engine::Play(SoundHandle handle, const hmm_vec3& location, float userGain)
     {
-        SoundHandle handle = GetSoundHandle(sound_name);
-        if (handle)
+        return PlayScopedSound(handle, Entity(nullptr), location, userGain);
+    }
+
+    Channel Engine::Play(SoundHandle handle, const Entity& entity)
+    {
+        return Play(handle, entity, 1.0f);
+    }
+
+    Channel Engine::Play(SoundHandle handle, const Entity& entity, float userGain)
+    {
+        return PlayScopedSound(handle, entity, entity.GetLocation(), userGain);
+    }
+
+    Channel Engine::Play(const std::string& name)
+    {
+        return Play(name, AM_Vec3(0, 0, 0), 1.0f);
+    }
+
+    Channel Engine::Play(const std::string& name, const hmm_vec3& location)
+    {
+        return Play(name, location, 1.0f);
+    }
+
+    Channel Engine::Play(const std::string& name, const hmm_vec3& location, const float userGain)
+    {
+        if (SoundHandle handle = GetSoundHandle(name))
         {
-            return Play(handle, location, user_gain);
+            return Play(handle, location, userGain);
         }
-        else
+
+        if (CollectionHandle handle = GetCollectionHandle(name))
         {
-            CallLogFunc("Cannot play sound: invalid name (%s).\n", sound_name.c_str());
-            return Channel(nullptr);
+            return Play(handle, location, userGain);
         }
+
+        CallLogFunc("[ERROR] Cannot play object: invalid name (%s).\n", name.c_str());
+        return Channel(nullptr);
     }
 
-    Channel Engine::Play(const std::string& sound_name, const Entity& entity)
+    Channel Engine::Play(const std::string& name, const Entity& entity)
     {
-        return Play(sound_name, entity, 1.0f);
+        return Play(name, entity, 1.0f);
     }
 
-    Channel Engine::Play(const std::string& sound_name, const Entity& entity, float user_gain)
+    Channel Engine::Play(const std::string& name, const Entity& entity, const float userGain)
     {
-        SoundHandle handle = GetSoundHandle(sound_name);
-        if (handle)
+        if (SoundHandle handle = GetSoundHandle(name))
         {
-            return Play(handle, entity, user_gain);
+            return Play(handle, entity, userGain);
         }
-        else
+
+        if (CollectionHandle handle = GetCollectionHandle(name))
         {
-            CallLogFunc("Cannot play sound: invalid name (%s)\n", sound_name.c_str());
-            return Channel(nullptr);
+            return Play(handle, entity, userGain);
         }
+
+        CallLogFunc("Cannot play sound: invalid name (%s)\n", name.c_str());
+        return Channel(nullptr);
     }
 
-    Channel Engine::Play(AmSoundCollectionID id)
+    Channel Engine::Play(AmObjectID id)
     {
         return Play(id, AM_Vec3(0, 0, 0), 1.0f);
     }
 
-    Channel Engine::Play(AmSoundCollectionID id, const hmm_vec3& location)
+    Channel Engine::Play(AmObjectID id, const hmm_vec3& location)
     {
         return Play(id, location, 1.0f);
     }
 
-    Channel Engine::Play(AmSoundCollectionID id, const hmm_vec3& location, float user_gain)
+    Channel Engine::Play(AmObjectID id, const hmm_vec3& location, const float userGain)
     {
-        SoundHandle handle = GetSoundHandle(id);
-        if (handle)
+        if (SoundHandle handle = GetSoundHandle(id))
         {
-            return Play(handle, location, user_gain);
+            return Play(handle, location, userGain);
         }
-        else
+
+        if (CollectionHandle handle = GetCollectionHandle(id))
         {
-            CallLogFunc("Cannot play sound: invalid ID (%u).\n", id);
-            return Channel(nullptr);
+            return Play(handle, location, userGain);
         }
+
+        CallLogFunc("Cannot play sound: invalid ID (%u).\n", id);
+        return Channel(nullptr);
     }
 
-    Channel Engine::Play(AmSoundCollectionID id, const Entity& entity)
+    Channel Engine::Play(AmObjectID id, const Entity& entity)
     {
         return Play(id, entity, 1.0f);
     }
 
-    Channel Engine::Play(AmSoundCollectionID id, const Entity& entity, float user_gain)
+    Channel Engine::Play(AmObjectID id, const Entity& entity, const float userGain)
     {
-        SoundHandle handle = GetSoundHandle(id);
-        if (handle)
+        if (SoundHandle handle = GetSoundHandle(id))
         {
-            return Play(handle, entity, user_gain);
+            return Play(handle, entity, userGain);
         }
-        else
+
+        if (CollectionHandle handle = GetCollectionHandle(id))
         {
-            CallLogFunc("Cannot play sound: invalid name (%u)\n", id);
-            return Channel(nullptr);
+            return Play(handle, entity, userGain);
         }
+
+        CallLogFunc("Cannot play sound: invalid name (%u)\n", id);
+        return Channel(nullptr);
     }
 
-    EventCanceler Engine::Trigger(EventHandle event_handle, const Entity& entity)
+    EventCanceler Engine::Trigger(EventHandle handle, const Entity& entity)
     {
-        EventHandle event = event_handle;
+        EventHandle event = handle;
         if (!event)
         {
             CallLogFunc("Cannot trigger event: Invalid event handle.\n");
@@ -707,134 +734,191 @@ namespace SparkyStudios::Audio::Amplitude
         return EventCanceler(&instance);
     }
 
-    EventCanceler Engine::Trigger(const std::string& event_name, const Entity& entity)
+    EventCanceler Engine::Trigger(const std::string& name, const Entity& entity)
     {
-        EventHandle handle = GetEventHandle(event_name);
-        if (handle)
+        if (EventHandle handle = GetEventHandle(name))
         {
             return Trigger(handle, entity);
         }
-        else
-        {
-            CallLogFunc("Cannot trigger event: invalid name (%s).\n", event_name.c_str());
-            return EventCanceler(nullptr);
-        }
+
+        CallLogFunc("Cannot trigger event: invalid name (%s).\n", name.c_str());
+        return EventCanceler(nullptr);
     }
 
-    SoundHandle Engine::GetSoundHandle(const std::string& name) const
+    CollectionHandle Engine::GetCollectionHandle(const std::string& name) const
     {
-        auto iter = std::find_if(
-            _state->sound_collection_map.begin(), _state->sound_collection_map.end(),
+        const auto pair = std::find_if(
+            _state->collection_map.begin(), _state->collection_map.end(),
             [name](const auto& item)
             {
                 return item.second->GetName() == name;
             });
 
-        if (iter == _state->sound_collection_map.end())
+        if (pair == _state->collection_map.end())
         {
             return nullptr;
         }
-        return iter->second.get();
+
+        return pair->second.get();
     }
 
-    SoundHandle Engine::GetSoundHandle(AmSoundCollectionID id) const
+    CollectionHandle Engine::GetCollectionHandle(AmCollectionID id) const
     {
-        auto iter = _state->sound_collection_map.find(id);
-        if (iter == _state->sound_collection_map.end())
+        const auto pair = _state->collection_map.find(id);
+        if (pair == _state->collection_map.end())
         {
             return nullptr;
         }
-        return iter->second.get();
+
+        return pair->second.get();
+    }
+
+    CollectionHandle Engine::GetCollectionHandleFromFile(AmOsString filename) const
+    {
+        const auto pair = _state->collection_id_map.find(filename);
+        if (pair == _state->collection_id_map.end())
+        {
+            return nullptr;
+        }
+
+        return GetCollectionHandle(pair->second);
+    }
+
+    SoundHandle Engine::GetSoundHandle(const std::string& name) const
+    {
+        const auto pair = std::find_if(
+            _state->sound_map.begin(), _state->sound_map.end(),
+            [name](const auto& item)
+            {
+                return item.second->GetName() == name;
+            });
+
+        if (pair == _state->sound_map.end())
+        {
+            return nullptr;
+        }
+
+        return pair->second.get();
+    }
+
+    SoundHandle Engine::GetSoundHandle(AmSoundID id) const
+    {
+        const auto pair = _state->sound_map.find(id);
+        if (pair == _state->sound_map.end())
+        {
+            return nullptr;
+        }
+
+        return pair->second.get();
     }
 
     SoundHandle Engine::GetSoundHandleFromFile(AmOsString filename) const
     {
-        auto iter = _state->sound_id_map.find(filename);
-        if (iter == _state->sound_id_map.end())
+        const auto pair = _state->sound_id_map.find(filename);
+        if (pair == _state->sound_id_map.end())
         {
             return nullptr;
         }
-        return GetSoundHandle(iter->second);
+
+        return GetSoundHandle(pair->second);
     }
 
     EventHandle Engine::GetEventHandle(const std::string& name) const
     {
-        auto iter = std::find_if(
+        const auto pair = std::find_if(
             _state->event_map.begin(), _state->event_map.end(),
             [name](const auto& item)
             {
                 return item.second->GetName() == name;
             });
 
-        if (iter == _state->event_map.end())
+        if (pair == _state->event_map.end())
         {
             return nullptr;
         }
-        return iter->second.get();
+
+        return pair->second.get();
     }
 
     EventHandle Engine::GetEventHandle(AmEventID id) const
     {
-        auto iter = _state->event_map.find(id);
-        if (iter == _state->event_map.end())
+        const auto pair = _state->event_map.find(id);
+        if (pair == _state->event_map.end())
         {
             return nullptr;
         }
-        return iter->second.get();
+
+        return pair->second.get();
     }
 
     EventHandle Engine::GetEventHandleFromFile(AmOsString filename) const
     {
-        auto iter = _state->event_id_map.find(filename);
-        if (iter == _state->event_id_map.end())
+        const auto pair = _state->event_id_map.find(filename);
+        if (pair == _state->event_id_map.end())
         {
             return nullptr;
         }
-        return GetEventHandle(iter->second);
+
+        return GetEventHandle(pair->second);
     }
 
     AttenuationHandle Engine::GetAttenuationHandle(const std::string& name) const
     {
-        auto iter = std::find_if(
+        const auto pair = std::find_if(
             _state->attenuation_map.begin(), _state->attenuation_map.end(),
             [name](const auto& item)
             {
                 return item.second->GetName() == name;
             });
 
-        if (iter == _state->attenuation_map.end())
+        if (pair == _state->attenuation_map.end())
         {
             return nullptr;
         }
 
-        return iter->second.get();
+        return pair->second.get();
     }
 
     AttenuationHandle Engine::GetAttenuationHandle(AmAttenuationID id) const
     {
-        auto iter = _state->attenuation_map.find(id);
-        if (iter == _state->attenuation_map.end())
+        const auto pair = _state->attenuation_map.find(id);
+        if (pair == _state->attenuation_map.end())
         {
             return nullptr;
         }
 
-        return iter->second.get();
+        return pair->second.get();
     }
 
     AttenuationHandle Engine::GetAttenuationHandleFromFile(AmOsString filename) const
     {
-        auto iter = _state->attenuation_id_map.find(filename);
-        if (iter == _state->attenuation_id_map.end())
+        const auto pair = _state->attenuation_id_map.find(filename);
+        if (pair == _state->attenuation_id_map.end())
         {
             return nullptr;
         }
 
-        return GetAttenuationHandle(iter->second);
+        return GetAttenuationHandle(pair->second);
     }
 
-    void Engine::SetMasterGain(float gain)
+    void Engine::SetMasterGain(const float gain)
     {
-        FindBus(kAmMasterBusId).SetGain(gain);
+        _state->master_gain = gain;
+    }
+
+    float Engine::GetMasterGain() const
+    {
+        return _state->master_gain;
+    }
+
+    void Engine::SetMute(const bool mute)
+    {
+        _state->mute = mute;
+    }
+
+    bool Engine::GetMute() const
+    {
+        return _state->mute;
     }
 
     Listener Engine::AddListener(AmListenerID id)
@@ -850,7 +934,7 @@ namespace SparkyStudios::Audio::Amplitude
         return Listener(listener);
     }
 
-    void Engine::RemoveListener(Listener* listener)
+    void Engine::RemoveListener(const Listener* listener)
     {
         AMPLITUDE_ASSERT(listener->Valid());
         listener->GetState()->SetId(kAmInvalidObjectId);
@@ -871,7 +955,7 @@ namespace SparkyStudios::Audio::Amplitude
         return Entity(entity);
     }
 
-    void Engine::RemoveEntity(Entity* entity)
+    void Engine::RemoveEntity(const Entity* entity)
     {
         AMPLITUDE_ASSERT(entity->Valid());
         entity->GetState()->SetId(kAmInvalidObjectId);
@@ -879,12 +963,12 @@ namespace SparkyStudios::Audio::Amplitude
         _state->entity_state_free_list.push_back(entity->GetState());
     }
 
-    Bus Engine::FindBus(AmString bus_name)
+    Bus Engine::FindBus(AmString name) const
     {
-        return Bus(FindBusInternalState(_state, bus_name));
+        return Bus(FindBusInternalState(_state, name));
     }
 
-    Bus Engine::FindBus(AmBusID id)
+    Bus Engine::FindBus(AmBusID id) const
     {
         return Bus(FindBusInternalState(_state, id));
     }
@@ -894,9 +978,9 @@ namespace SparkyStudios::Audio::Amplitude
         _state->paused = pause;
 
         PriorityList& list = _state->playing_channel_list;
-        for (auto& iter : list)
+        for (auto&& state : list)
         {
-            if (!iter.Paused() && iter.IsReal())
+            if (!state.Paused() && state.IsReal())
             {
                 if (pause)
                 {
@@ -904,12 +988,12 @@ namespace SparkyStudios::Audio::Amplitude
                     // playback of the channel without marking it as paused from the audio
                     // engine's point of view, so that we know to restart it when the audio
                     // engine is not paused.
-                    iter.GetRealChannel().Pause();
+                    state.GetRealChannel().Pause();
                 }
                 else
                 {
                     // Resumed all channels that were not explicitly paused.
-                    iter.GetRealChannel().Resume();
+                    state.GetRealChannel().Resume();
                 }
             }
         }
@@ -918,9 +1002,9 @@ namespace SparkyStudios::Audio::Amplitude
     void EraseFinishedSounds(EngineInternalState* state)
     {
         PriorityList& list = state->playing_channel_list;
-        for (auto iter = list.begin(); iter != list.end();)
+        for (auto channelInternalState = list.begin(); channelInternalState != list.end();)
         {
-            auto current = iter++;
+            auto current = channelInternalState++;
             current->UpdateState();
             if (current->Stopped())
             {
@@ -929,64 +1013,87 @@ namespace SparkyStudios::Audio::Amplitude
         }
     }
 
-    static void UpdateChannel(ChannelInternalState* channel, EngineInternalState* state)
+    static void UpdateChannel(ChannelInternalState* channel, const EngineInternalState* state)
     {
-        float gain;
-        hmm_vec2 pan;
-        CalculateGainAndPan(
-            &gain, &pan, channel->GetSoundCollection(), channel->GetEntity(), channel->GetLocation(), state->listener_list,
-            channel->GetUserGain());
-        channel->SetGain(gain);
-        channel->SetPan(pan);
+        if (const Collection* collection = channel->GetCollection(); collection != nullptr)
+        {
+            const CollectionDefinition* definition = collection->GetCollectionDefinition();
+
+            float gain;
+            hmm_vec2 pan;
+            CalculateGainAndPan(
+                &gain, &pan, definition->gain(), collection->GetBus(), definition->spatialization(), collection->GetAttenuation(),
+                channel->GetEntity(), channel->GetLocation(), state->listener_list, channel->GetUserGain());
+            channel->SetGain(gain);
+            channel->SetPan(pan);
+        }
+        else if (const Sound* sound = channel->GetSound(); sound != nullptr)
+        {
+            const SoundDefinition* definition = sound->GetSoundDefinition();
+
+            float gain;
+            hmm_vec2 pan;
+            CalculateGainAndPan(
+                &gain, &pan, definition->gain(), sound->GetBus(), definition->spatialization(), sound->GetAttenuation(),
+                channel->GetEntity(), channel->GetLocation(), state->listener_list, channel->GetUserGain());
+            channel->SetGain(gain);
+            channel->SetPan(pan);
+        }
+        else
+        {
+            AMPLITUDE_ASSERT(false);
+        }
     }
 
     // If there are any free real channels, assign those to virtual channels that
     // need them. If the priority list has gaps (i.e. if there are real channels
     // that are lower priority than virtual channels) then move the lower priority
     // real channels to the higher priority virtual channels.
-    // TODO(amablue): Write unit tests for this function. b/20696606
-    static void UpdateRealChannels(PriorityList* priority_list, FreeList* real_free_list, FreeList* virtual_free_list)
+    static void UpdateRealChannels(PriorityList* priorityList, FreeList* realFreeList, FreeList* virtualFreeList)
     {
-        PriorityList::reverse_iterator reverse_iter = priority_list->rbegin();
-        for (auto iter = priority_list->begin(); iter != priority_list->end(); ++iter)
+        auto reverseIterator = priorityList->rbegin();
+        for (auto state = priorityList->begin(); state != priorityList->end(); ++state)
         {
-            if (!iter->IsReal())
+            if (!state->IsReal())
             {
                 // First check if there are any free real channels.
-                if (!real_free_list->empty())
+                if (!realFreeList->empty())
                 {
                     // We have a free real channel. Assign this channel id to the channel
                     // that is trying to resume, clear the free channel, and push it into
                     // the virtual free list.
-                    ChannelInternalState* free_channel = &real_free_list->front();
-                    iter->Devirtualize(free_channel);
-                    virtual_free_list->push_front(*free_channel);
-                    iter->Resume();
+                    ChannelInternalState* freeChannel = &realFreeList->front();
+                    state->Devirtualize(freeChannel);
+
+                    freeChannel->Remove();
+                    virtualFreeList->push_front(*freeChannel);
+
+                    state->Resume();
                 }
-                else
+                else if (&*reverseIterator != &*state)
                 {
                     // If there aren't any free channels, then scan from the back of the
                     // list for low priority real channels.
-                    reverse_iter = std::find_if(
-                        reverse_iter, PriorityList::reverse_iterator(iter),
+                    reverseIterator = std::find_if(
+                        reverseIterator, PriorityList::reverse_iterator(state),
                         [](const ChannelInternalState& channel)
                         {
                             return channel.GetRealChannel().Valid();
                         });
-                    if (reverse_iter == priority_list->rend())
+                    if (reverseIterator == priorityList->rend())
                     {
                         // There is no more swapping that can be done. Return.
                         return;
                     }
                     // Found a real channel that we can give to the higher priority
                     // channel.
-                    iter->Devirtualize(&*reverse_iter);
+                    state->Devirtualize(&*reverseIterator);
                 }
             }
         }
     }
 
-    void Engine::AdvanceFrame(AmTime delta_time)
+    void Engine::AdvanceFrame(AmTime delta)
     {
         EraseFinishedSounds(_state);
 
@@ -996,19 +1103,19 @@ namespace SparkyStudios::Audio::Amplitude
         }
         for (auto&& bus : _state->buses)
         {
-            bus.UpdateDuckGain(delta_time);
+            bus.UpdateDuckGain(delta);
         }
 
         if (_state->master_bus)
         {
-            float master_gain = _state->mute ? 0.0f : _state->master_gain;
-            _state->master_bus->AdvanceFrame(delta_time, master_gain);
+            const float masterGain = _state->mute ? 0.0f : _state->master_gain;
+            _state->master_bus->AdvanceFrame(delta, masterGain);
         }
 
         PriorityList& list = _state->playing_channel_list;
-        for (auto&& iter : list)
+        for (auto&& state : list)
         {
-            UpdateChannel(&iter, _state);
+            UpdateChannel(&state, _state);
         }
         list.sort(
             [](const ChannelInternalState& a, const ChannelInternalState& b) -> bool
@@ -1033,16 +1140,16 @@ namespace SparkyStudios::Audio::Amplitude
                 continue;
             }
 
-            event->AdvanceFrame(delta_time);
+            event->AdvanceFrame(delta);
         }
 
-        for (auto&& item : _state->listener_list)
+        for (auto&& state : _state->listener_list)
         {
-            item.Update();
+            state.Update();
         }
 
         ++_state->current_frame;
-        _state->total_time += delta_time;
+        _state->total_time += delta;
     }
 
     AmTime Engine::GetTotalTime() const
@@ -1055,23 +1162,36 @@ namespace SparkyStudios::Audio::Amplitude
         return _state->version;
     }
 
+    EngineInternalState* Engine::GetState() const
+    {
+        return _state;
+    }
+
     const EngineConfigDefinition* Engine::GetEngineConfigDefinition() const
     {
         return Amplitude::GetEngineConfigDefinition(_configSrc.c_str());
     }
 
-    Channel Engine::_playScopedSound(SoundHandle sound_handle, const Entity& entity, const hmm_vec3& location, float user_gain)
+    Driver* Engine::GetDriver() const
     {
-        SoundCollection* collection = sound_handle;
+        return _audioDriver;
+    }
+
+    Channel Engine::PlayScopedCollection(
+        CollectionHandle handle, const Entity& entity, const hmm_vec3& location, const float userGain) const
+    {
+        Collection* collection = handle;
         if (!collection)
         {
-            CallLogFunc("Cannot play sound: invalid sound handle\n");
+            CallLogFunc("[ERROR] Cannot play collection: Invalid collection handle\n");
             return Channel(nullptr);
         }
 
-        if (collection->GetSoundCollectionDefinition()->scope() == Scope_Entity && !entity.Valid())
+        const CollectionDefinition* definition = collection->GetCollectionDefinition();
+
+        if (definition->scope() == Scope_Entity && !entity.Valid())
         {
-            CallLogFunc("[Debug] Cannot play a channel in entity scope. No entity defined.\n");
+            CallLogFunc("[ERROR] Cannot play a collection in Entity scope. No entity defined.\n");
             return Channel(nullptr);
         }
 
@@ -1084,42 +1204,110 @@ namespace SparkyStudios::Audio::Amplitude
         // Find where it belongs in the list.
         float gain;
         hmm_vec2 pan;
-        CalculateGainAndPan(&gain, &pan, collection, entity, location, _state->listener_list, user_gain);
-        float priority = gain * sound_handle->GetSoundCollectionDefinition()->priority();
-        PriorityList::iterator insertion_point = FindInsertionPoint(&_state->playing_channel_list, priority);
+        CalculateGainAndPan(
+            &gain, &pan, definition->gain(), collection->GetBus(), definition->spatialization(), collection->GetAttenuation(), entity,
+            location, _state->listener_list, userGain);
+        const float priority = gain * definition->priority();
+        const auto insertionPoint = FindInsertionPoint(&_state->playing_channel_list, priority);
 
         // Decide which ChannelInternalState object to use.
-        ChannelInternalState* new_channel = FindFreeChannelInternalState(
-            insertion_point, &_state->playing_channel_list, &_state->real_channel_free_list, &_state->virtual_channel_free_list,
+        ChannelInternalState* newChannel = FindFreeChannelInternalState(
+            insertionPoint, &_state->playing_channel_list, &_state->real_channel_free_list, &_state->virtual_channel_free_list,
             _state->paused);
 
         // The sound could not be added to the list; not high enough priority.
-        if (new_channel == nullptr)
+        if (newChannel == nullptr)
         {
             return Channel(nullptr);
         }
 
         // Now that we have our new sound, set the data on it and update the next
         // pointers.
-        new_channel->SetEntity(entity);
-        new_channel->SetSoundCollection(sound_handle);
-        new_channel->SetUserGain(user_gain);
+        newChannel->SetEntity(entity);
+        newChannel->SetCollection(handle);
+        newChannel->SetUserGain(userGain);
 
         // Attempt to play the sound if the engine is not paused.
         if (!_state->paused)
         {
-            if (!new_channel->Play())
+            if (!newChannel->Play())
             {
                 // Error playing the sound, put it back in the free list.
-                InsertIntoFreeList(_state, new_channel);
+                InsertIntoFreeList(_state, newChannel);
                 return Channel(nullptr);
             }
         }
 
-        new_channel->SetGain(gain);
-        new_channel->SetPan(pan);
-        new_channel->SetLocation(location);
+        newChannel->SetGain(gain);
+        newChannel->SetPan(pan);
+        newChannel->SetLocation(location);
 
-        return Channel(new_channel);
+        return Channel(newChannel);
+    }
+
+    Channel Engine::PlayScopedSound(SoundHandle handle, const Entity& entity, const hmm_vec3& location, float userGain) const
+    {
+        if (!handle)
+        {
+            CallLogFunc("[ERROR] Cannot play sound: Invalid sound handle\n");
+            return Channel(nullptr);
+        }
+
+        const SoundDefinition* definition = handle->GetSoundDefinition();
+
+        if (definition->scope() == Scope_Entity && !entity.Valid())
+        {
+            CallLogFunc("[ERROR] Cannot play a sound in Entity scope. No entity defined.\n");
+            return Channel(nullptr);
+        }
+
+        if (entity.Valid())
+        {
+            // Process the first entity update
+            entity.GetState()->Update();
+        }
+
+        // Find where it belongs in the list.
+        float gain;
+        hmm_vec2 pan;
+        CalculateGainAndPan(
+            &gain, &pan, definition->gain(), handle->GetBus(), definition->spatialization(), handle->GetAttenuation(), entity, location,
+            _state->listener_list, userGain);
+        const float priority = gain * definition->priority();
+        const auto insertionPoint = FindInsertionPoint(&_state->playing_channel_list, priority);
+
+        // Decide which ChannelInternalState object to use.
+        ChannelInternalState* newChannel = FindFreeChannelInternalState(
+            insertionPoint, &_state->playing_channel_list, &_state->real_channel_free_list, &_state->virtual_channel_free_list,
+            _state->paused);
+
+        // The sound could not be added to the list; not high enough priority.
+        if (newChannel == nullptr)
+        {
+            return Channel(nullptr);
+        }
+
+        // Now that we have our new sound, set the data on it and update the next
+        // pointers.
+        newChannel->SetEntity(entity);
+        newChannel->SetSound(handle);
+        newChannel->SetUserGain(userGain);
+
+        // Attempt to play the sound if the engine is not paused.
+        if (!_state->paused)
+        {
+            if (!newChannel->Play())
+            {
+                // Error playing the sound, put it back in the free list.
+                InsertIntoFreeList(_state, newChannel);
+                return Channel(nullptr);
+            }
+        }
+
+        newChannel->SetGain(gain);
+        newChannel->SetPan(pan);
+        newChannel->SetLocation(location);
+
+        return Channel(newChannel);
     }
 } // namespace SparkyStudios::Audio::Amplitude

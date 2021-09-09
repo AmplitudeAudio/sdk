@@ -14,10 +14,10 @@
 
 #pragma once
 
-#ifndef SPARK_AUDIO_CHANNEL_H
-#define SPARK_AUDIO_CHANNEL_H
+#ifndef SS_AMPLITUDE_AUDIO_CHANNEL_H
+#define SS_AMPLITUDE_AUDIO_CHANNEL_H
 
-#include <SparkyStudios/Audio/Amplitude/Math/HandmadeMath.h>
+#include <SparkyStudios/Audio/Amplitude/Core/Common.h>
 
 namespace SparkyStudios::Audio::Amplitude
 {
@@ -39,13 +39,9 @@ namespace SparkyStudios::Audio::Amplitude
          * An uninitialized Channel cannot have its data set or queried.
          * To initialize the Channel, use <code>Engine::PlaySound();</code>.
          */
-        Channel()
-            : _state(nullptr)
-        {}
+        Channel();
 
-        explicit Channel(ChannelInternalState* state)
-            : _state(state)
-        {}
+        explicit Channel(ChannelInternalState* state);
 
         /**
          * @brief Uninitializes this Channel.
@@ -75,23 +71,29 @@ namespace SparkyStudios::Audio::Amplitude
          *
          * Stop this channel from playing. A sound will stop on its own if it not set
          * to loop. Looped audio must be explicitly stopped.
+         *
+         * @param duration The fade out duration before to stop the channel.
          */
-        void Stop();
+        void Stop(AmTime duration = kMinFadeDuration);
 
         /**
          * @brief Pause a channel.
          *
          * Pause this channel. A paused channel may be resumed where it left off.
+         *
+         * @param duration The fade out duration before to pause the channel.
          */
-        void Pause();
+        void Pause(AmTime duration = kMinFadeDuration);
 
         /**
          * @brief Resumes a paused channel.
          *
          * Resume this channel. If this channel was paused it will continue where it
          * left off.
+         *
+         * @param duration The fade in duration after resuming the channel.
          */
-        void Resume();
+        void Resume(AmTime duration = kMinFadeDuration);
 
         /**
          * @brief Get the location of this Channel.
@@ -131,14 +133,11 @@ namespace SparkyStudios::Audio::Amplitude
          *
          * @return The internal state of this Channel.
          */
-        [[nodiscard]] ChannelInternalState* GetState() const
-        {
-            return _state;
-        }
+        [[nodiscard]] ChannelInternalState* GetState() const;
 
     private:
         ChannelInternalState* _state;
     };
 } // namespace SparkyStudios::Audio::Amplitude
 
-#endif // SPARK_AUDIO_CHANNEL_H
+#endif // SS_AMPLITUDE_AUDIO_CHANNEL_H

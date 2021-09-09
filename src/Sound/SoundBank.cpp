@@ -18,8 +18,10 @@
 #include <Core/EngineInternalState.h>
 
 #include "attenuation_definition_generated.h"
+#include "collection_definition_generated.h"
 #include "event_definition_generated.h"
 #include "sound_bank_definition_generated.h"
+#include "sound_definition_generated.h"
 
 namespace SparkyStudios::Audio::Amplitude
 {
@@ -30,10 +32,10 @@ namespace SparkyStudios::Audio::Amplitude
         , _soundBankDefSource()
     {}
 
-    static bool InitializeSoundCollection(AmOsString filename, Engine* audio_engine)
+    static bool InitializeCollection(AmOsString filename, Engine* audio_engine)
     {
         // Find the ID.
-        SoundHandle handle = audio_engine->GetSoundHandleFromFile(filename);
+        CollectionHandle handle = audio_engine->GetCollectionHandleFromFile(filename);
         if (handle)
         {
             // We've seen this ID before, update it.
@@ -41,26 +43,64 @@ namespace SparkyStudios::Audio::Amplitude
         }
         else
         {
-            // This is a new sound collection, load it and update it.
-            std::unique_ptr<SoundCollection> collection(new SoundCollection());
-            if (!collection->LoadSoundCollectionDefinitionFromFile(filename, audio_engine->GetState()))
+            // This is a new collection, load it and update it.
+            std::unique_ptr<Collection> collection(new Collection());
+            if (!collection->LoadCollectionDefinitionFromFile(filename, audio_engine->GetState()))
             {
                 return false;
             }
 
-            const SoundCollectionDefinition* definition = collection->GetSoundCollectionDefinition();
-            AmSoundCollectionID id = definition->id();
+            const CollectionDefinition* definition = collection->GetCollectionDefinition();
+            AmCollectionID id = definition->id();
             if (id == kAmInvalidObjectId)
             {
                 CallLogFunc(
-                    "[ERROR] Cannot load sound collection \'" AM_OS_CHAR_FMT "\'. Invalid ID.\n",
+                    "[ERROR] Cannot load collection \'" AM_OS_CHAR_FMT "\'. Invalid ID.\n",
                     AM_STRING_TO_OS_STRING(definition->name()->c_str()));
                 return false;
             }
 
             collection->GetRefCounter()->Increment();
-            audio_engine->GetState()->sound_collection_map[id] = std::move(collection);
-            audio_engine->GetState()->sound_id_map[filename] = id;
+
+            audio_engine->GetState()->collection_map[id] = std::move(collection);
+            audio_engine->GetState()->collection_id_map[filename] = id;
+        }
+
+        return true;
+    }
+
+    static bool InitializeSound(AmOsString filename, Engine* engine)
+    {
+        // Find the ID
+        SoundHandle handle = engine->GetSoundHandleFromFile(filename);
+        if (handle)
+        {
+            // We've seen this id before, update it
+            handle->GetRefCounter()->Increment();
+        }
+        else
+        {
+            // This is a new sound, load it and update it.
+            std::unique_ptr<Sound> sound(new Sound());
+            if (!sound->LoadSoundDefinitionFromFile(filename, engine->GetState()))
+            {
+                return false;
+            }
+
+            const SoundDefinition* definition = sound->GetSoundDefinition();
+            AmSoundID id = definition->id();
+            if (id == kAmInvalidObjectId)
+            {
+                CallLogFunc(
+                    "[ERROR] Cannot load sound \'" AM_OS_CHAR_FMT "'. Invalid ID.\n", AM_STRING_TO_OS_STRING(definition->name()->c_str()));
+                return false;
+            }
+
+            sound->Load(&engine->GetState()->loader);
+            sound->GetRefCounter()->Increment();
+
+            engine->GetState()->sound_map[id] = std::move(sound);
+            engine->GetState()->sound_id_map[filename] = id;
         }
 
         return true;
@@ -165,17 +205,48 @@ namespace SparkyStudios::Audio::Amplitude
             AmString event_filename = definition->events()->Get(i)->c_str();
             success &= InitializeEvent(AM_STRING_TO_OS_STRING(event_filename), engine);
         }
-        // Load each SoundCollection named in the sound bank.
+
+        // Load each Sound named in the sound bank.
         for (flatbuffers::uoffset_t i = 0; success && i < definition->sounds()->size(); ++i)
         {
-            AmString sound_filename = definition->sounds()->Get(i)->c_str();
-            success &= InitializeSoundCollection(AM_STRING_TO_OS_STRING(sound_filename), engine);
+            AmString filename = definition->sounds()->Get(i)->c_str();
+            success &= InitializeSound(AM_STRING_TO_OS_STRING(filename), engine);
+        }
+
+        // Load each Collection named in the sound bank.
+        for (flatbuffers::uoffset_t i = 0; success && i < definition->collections()->size(); ++i)
+        {
+            AmString sound_filename = definition->collections()->Get(i)->c_str();
+            success &= InitializeCollection(AM_STRING_TO_OS_STRING(sound_filename), engine);
         }
 
         return success;
     }
 
-    static bool DeinitializeSoundCollection(AmOsString filename, EngineInternalState* state)
+    static bool DeinitializeCollection(AmOsString filename, EngineInternalState* state)
+    {
+        auto id_iter = state->collection_id_map.find(filename);
+        if (id_iter == state->collection_id_map.end())
+        {
+            return false;
+        }
+
+        AmCollectionID id = id_iter->second;
+        auto collection_iter = state->collection_map.find(id);
+        if (collection_iter == state->collection_map.end())
+        {
+            return false;
+        }
+
+        if (collection_iter->second->GetRefCounter()->Decrement() == 0)
+        {
+            state->collection_map.erase(collection_iter);
+        }
+
+        return true;
+    }
+
+    static bool DeinitializeSound(AmOsString filename, EngineInternalState* state)
     {
         auto id_iter = state->sound_id_map.find(filename);
         if (id_iter == state->sound_id_map.end())
@@ -183,16 +254,16 @@ namespace SparkyStudios::Audio::Amplitude
             return false;
         }
 
-        AmSoundCollectionID id = id_iter->second;
-        auto collection_iter = state->sound_collection_map.find(id);
-        if (collection_iter == state->sound_collection_map.end())
+        AmSoundID id = id_iter->second;
+        auto sound_iter = state->sound_map.find(id);
+        if (sound_iter == state->sound_map.end())
         {
             return false;
         }
 
-        if (collection_iter->second->GetRefCounter()->Decrement() == 0)
+        if (sound_iter->second->GetRefCounter()->Decrement() == 0)
         {
-            state->sound_collection_map.erase(collection_iter);
+            state->sound_map.erase(sound_iter);
         }
 
         return true;
@@ -248,12 +319,22 @@ namespace SparkyStudios::Audio::Amplitude
     {
         const SoundBankDefinition* definition = GetSoundBankDefinition();
 
+        for (flatbuffers::uoffset_t i = 0; i < definition->collections()->size(); ++i)
+        {
+            AmString filename = definition->collections()->Get(i)->c_str();
+            if (!DeinitializeCollection(AM_STRING_TO_OS_STRING(filename), engine->GetState()))
+            {
+                CallLogFunc("Error while deinitializing collection %s in sound bank.\n", filename);
+                AMPLITUDE_ASSERT(0);
+            }
+        }
+
         for (flatbuffers::uoffset_t i = 0; i < definition->sounds()->size(); ++i)
         {
             AmString filename = definition->sounds()->Get(i)->c_str();
-            if (!DeinitializeSoundCollection(AM_STRING_TO_OS_STRING(filename), engine->GetState()))
+            if (!DeinitializeSound(AM_STRING_TO_OS_STRING(filename), engine->GetState()))
             {
-                CallLogFunc("Error while deinitializing sound collection %s in sound bank.\n", filename);
+                CallLogFunc("Error while deinitializing sound %s in sound bank.\n", filename);
                 AMPLITUDE_ASSERT(0);
             }
         }

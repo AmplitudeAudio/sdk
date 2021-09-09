@@ -1,0 +1,80 @@
+// Copyright (c) 2021-present Sparky Studios. All rights reserved.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+include "common.fbs";
+
+namespace SparkyStudios.Audio.Amplitude;
+
+/// Defines the behavio of a looping sound.
+table SoundLoopConfig {
+  /// If the sound should loop o not.
+  enabled:bool;
+
+  /// The numbe of times this sound should loop until to stop.
+  /// Set it to 0 fo an infinite loop until manually stopped.
+  loop_count:uint = 0;
+}
+
+/// Reference to audio data (a sample) and basic attributes that affect its
+/// playback at runtime.
+table SoundDefinition {
+  /// Unique identifier for the sound.
+  id:uint64 = 0;
+
+  /// The name of the sound.
+  name:string;
+
+  /// Linear gain (0.0 .. 1.0) of the sound when played back by the audio system.
+  gain:float = 1.0;
+
+  /// ID of the bus this sound should be played on.
+  bus:uint64;
+
+  /// Priority of this collection relative to all other Collection objects. If the
+  /// application requests the playback of more Collection objects than playback
+  /// channels available in the system, only the highest priority collections are
+  /// played.
+  priority:float = 1.0;
+
+  /// Whether this sound should be streamed or loaded into a buffer.
+  /// Generally music is streamed and sound effects are loaded into a buffer.
+  stream:bool = false;
+
+  /// Configures how this sound should loop when playing.
+  loop:SoundLoopConfig;
+
+  // Whether this sound should grow louder or quieter based on distance.
+  // NonPositional sounds are always played at their regular gain.
+  // Positional sounds have their gain adjusted based on the distance to a
+  // listener.
+  spatialization:Spatialization = None;
+
+  /// The ID of the attenuation to apply to this sound.
+  attenuation:uint64 = 0;
+  
+  /// The scope where to apply this sound. The default is World.
+  scope:Scope = World;
+
+  /// The fader algorithm used by this sound.
+  fader:FaderAlgorithm = Linear;
+
+  /// Path to the audio sample file.
+  path:string;
+}
+
+
+root_type SoundDefinition;
+
+file_identifier "AMSD";
+file_extension "amsound";

@@ -14,8 +14,8 @@
 
 #pragma once
 
-#ifndef SPARK_AUDIO_CHANNEL_INTERNAL_STATE_H
-#define SPARK_AUDIO_CHANNEL_INTERNAL_STATE_H
+#ifndef SS_AMPLITUDE_AUDIO_CHANNEL_INTERNAL_STATE_H
+#define SS_AMPLITUDE_AUDIO_CHANNEL_INTERNAL_STATE_H
 
 #include <utility>
 
@@ -31,12 +31,13 @@
 
 namespace SparkyStudios::Audio::Amplitude
 {
-    enum ChannelState
+    enum class ChannelState
     {
-        ChannelStateStopped,
-        ChannelStatePlaying,
-        ChannelStateFadingOut,
-        ChannelStatePaused,
+        Stopped,
+        Playing,
+        FadingIn,
+        FadingOut,
+        Paused,
     };
 
     // Represents a sample that is playing on a channel.
@@ -45,9 +46,10 @@ namespace SparkyStudios::Audio::Amplitude
     public:
         ChannelInternalState()
             : _realChannel(this)
-            , _channelState(ChannelStateStopped)
+            , _channelState(ChannelState::Stopped)
             , _collection(nullptr)
             , _fader(nullptr)
+            , _targetFadeOutState(ChannelState::Stopped)
             , _entity()
             , _sound(nullptr)
             , _userGain(1.0f)
@@ -71,15 +73,22 @@ namespace SparkyStudios::Audio::Amplitude
          */
         void Reset();
 
-        // Get or set the sound collection playing on this channel. Note that when you set
-        // the sound collection, you also add this channel to the GetBus list that
-        // corresponds to that sound collection.
-        void SetSoundCollection(SoundCollection* collection);
+        // Get or set the collection playing on this channel. Note that when you set
+        // the collection, you also add this channel to the bus list that
+        // corresponds to that collection.
+        void SetCollection(Collection* collection);
 
-        [[nodiscard]] SoundCollection* GetSoundCollection() const
+        // Get or set the sound playing on this channel. Note that when you set
+        // the sound, you also add this channel to the bus list that
+        // corresponds to that sound.
+        void SetSound(Sound* sound);
+
+        [[nodiscard]] Collection* GetCollection() const
         {
             return _collection;
         }
+
+        [[nodiscard]] Sound* GetSound() const;
 
         void SetEntity(const Entity& entity);
 
@@ -162,8 +171,11 @@ namespace SparkyStudios::Audio::Amplitude
         // Resumes this channel if it is paused.
         void Resume();
 
+        // Fade in over the specified number of milliseconds.
+        void FadeIn(AmTime duration);
+
         // Fade out over the specified number of milliseconds.
-        void FadeOut(AmTime duration);
+        void FadeOut(AmTime duration, ChannelState targetState = ChannelState::Stopped);
 
         // Sets the pan based on a position in a unit circle.
         void SetPan(const hmm_vec2& pan);
@@ -185,9 +197,9 @@ namespace SparkyStudios::Audio::Amplitude
         /**
          * @brief Update this channel data per frames.
          *
-         * @param delta_time The time elapsed since the last frame.
+         * @param deltaTime The time elapsed since the last frame.
          */
-        void AdvanceFrame(AmTime delta_time);
+        void AdvanceFrame(AmTime deltaTime);
 
         // Returns the real channel.
         RealChannel& GetRealChannel()
@@ -206,6 +218,16 @@ namespace SparkyStudios::Audio::Amplitude
             return _realChannel.Valid();
         }
 
+        [[nodiscard]] AmObjectID GetPlayingObjectId() const
+        {
+            if (_collection)
+                return _collection->GetId();
+            if (_sound)
+                return _sound->GetId();
+
+            return kAmInvalidObjectId;
+        }
+
         // The node that tracks the location in the priority list.
         fplutil::intrusive_list_node priority_node;
 
@@ -219,16 +241,22 @@ namespace SparkyStudios::Audio::Amplitude
         fplutil::intrusive_list_node entity_node;
 
     private:
+        bool PlayCollection();
+        bool PlaySound();
+
         RealChannel _realChannel;
 
         // Whether this channel is currently playing, stopped, fading out, etc.
         ChannelState _channelState;
 
         // The collection of the sound being played on this channel.
-        SoundCollection* _collection;
+        Collection* _collection;
 
         // The sound fade of this channel. This is updated by the current sound collection.
         Fader* _fader;
+
+        // The target state of the fade out transition. Must be either Paused or Stopped.
+        ChannelState _targetFadeOutState;
 
         // The entity which is playing the sound of this channel.
         Entity _entity;
@@ -250,4 +278,4 @@ namespace SparkyStudios::Audio::Amplitude
     };
 } // namespace SparkyStudios::Audio::Amplitude
 
-#endif // SPARK_AUDIO_CHANNEL_INTERNAL_STATE_H
+#endif // SS_AMPLITUDE_AUDIO_CHANNEL_INTERNAL_STATE_H

@@ -76,11 +76,11 @@ set(SA_SOURCE
     include/SparkyStudios/Audio/Amplitude/Sound/Schedulers/SequenceScheduler.h
     include/SparkyStudios/Audio/Amplitude/Sound/Schedulers/RandomScheduler.h
     include/SparkyStudios/Audio/Amplitude/Sound/Attenuation.h
+    include/SparkyStudios/Audio/Amplitude/Sound/Collection.h
     include/SparkyStudios/Audio/Amplitude/Sound/Fader.h
     include/SparkyStudios/Audio/Amplitude/Sound/Scheduler.h
     include/SparkyStudios/Audio/Amplitude/Sound/Sound.h
     include/SparkyStudios/Audio/Amplitude/Sound/SoundBank.h
-    include/SparkyStudios/Audio/Amplitude/Sound/SoundCollection.h
     include/SparkyStudios/Audio/Amplitude/Amplitude.h
 
     src/Core/Codecs/WAV/Codec.cpp
@@ -143,8 +143,8 @@ set(SA_SOURCE
     src/Sound/Attenuation.cpp
     src/Sound/AttenuationShapes.cpp
     src/Sound/AttenuationShapes.h
+    src/Sound/Collection.cpp
     src/Sound/Fader.cpp
-    src/Sound/SoundCollection.cpp
     src/Sound/SoundBank.cpp
     src/Sound/RefCounter.cpp
 
@@ -159,6 +159,7 @@ include_directories(src
     include
     src/Mixer/Atomix
     ${FLATC_INCLUDE_DIR}
+    ${SPARK_AUDIO_FLATBUFFERS_GENERATED_INCLUDES_DIR}
 )
 
 add_library(ss_amplitude_audio ${SA_SOURCE})

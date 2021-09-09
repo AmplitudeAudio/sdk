@@ -30,14 +30,16 @@ namespace SparkyStudios::Audio::Amplitude
         explicit RandomScheduler(const RandomSoundSchedulerConfig* config);
 
         [[nodiscard]] bool Valid() const override;
-        void Init(const SoundCollectionDefinition* definition) override;
-        Sound* Select(std::vector<Sound>& sounds, const std::vector<const Sound*>& toSkip) override;
+        void Init(const CollectionDefinition* definition) override;
+        Sound* Select(const std::vector<AmSoundID>& toSkip) override;
+        void Reset() override;
 
     private:
         float _probabilitiesSum;
-        const SoundCollectionDefinition* _definition;
+        const CollectionDefinition* _definition;
         const RandomSoundSchedulerConfig* _config;
         std::vector<Sound*> _avoidRepeatStack;
+        std::vector<Sound*> _sounds;
     };
 } // namespace SparkyStudios::Audio::Amplitude
 

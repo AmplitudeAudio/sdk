@@ -14,23 +14,28 @@
 
 namespace SparkyStudios.Audio.Amplitude;
 
-// A SoundBankDefinition defines the list of sounds and events
-// to load by the engine.
+/// A SoundBankDefinition defines the list of sounds and events
+/// to load by the engine.
 table SoundBankDefinition {
-  // The sound bank unique identifier.
+  /// The sound bank unique identifier.
   id:uint64 = 0;
 
-  // The name of this sound bank.
+  /// The name of this sound bank.
   name:string;
 
-  // The list of SoundCollection files to load. A SoundCollection
-  // may be present in more than one SoundBank and can only be played once it
-  // has been loaded by at least one SoundBank.
+  /// The list of Collection files to load. A Collection
+  /// may be present in more than one SoundBank and can only be played once it
+  /// has been loaded by at least one SoundBank.
+  collections:[string];
+
+  /// The list of Sound files to load. A Sound may be present in more than
+  /// one SoundBank and can only be played once it
+  /// has been loaded by at least one SoundBank.
   sounds:[string];
 
-  // The list of Event files to load. An Event may be present in
-  // more that one SoundBanck and can only be triggered once it
-  // has been loaded by at least one SoundBank.
+  /// The list of Event files to load. An Event may be present in
+  /// more that one SoundBanck and can only be triggered once it
+  /// has been loaded by at least one SoundBank.
   events:[string];
 
   /// The list of Attenuation files to load. An Attenuation may be present in

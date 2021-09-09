@@ -20,18 +20,19 @@
 #include <vector>
 
 #include <SparkyStudios/Audio/Amplitude/Core/Channel.h>
+
 #include <SparkyStudios/Audio/Amplitude/Math/HandmadeMath.h>
+
+#include <SparkyStudios/Audio/Amplitude/Sound/Collection.h>
 #include <SparkyStudios/Audio/Amplitude/Sound/Fader.h>
+#include <SparkyStudios/Audio/Amplitude/Sound/Sound.h>
 
 #include "atomix.h"
 
 namespace SparkyStudios::Audio::Amplitude
 {
-    class EngineInternalState;
+    struct EngineInternalState;
     class ChannelInternalState;
-
-    class SoundCollection;
-    class Sound;
 
     class Mixer;
 
@@ -64,7 +65,7 @@ namespace SparkyStudios::Audio::Amplitude
         /**
          * @brief Play the audio on the real channel.
          */
-        bool Play(SoundCollection* handle, const Sound* sound);
+        bool Play(SoundInstance* sound);
 
         /**
          * @brief Halt the real channel so it may be re-used. However this virtual channel may still be considered playing.
@@ -80,6 +81,8 @@ namespace SparkyStudios::Audio::Amplitude
          * @brief Resume the paused real channel.
          */
         void Resume();
+
+        void Destroy();
 
         /**
          * @brief Check if this channel is currently playing on a real channel.
@@ -160,7 +163,9 @@ namespace SparkyStudios::Audio::Amplitude
         }
 
     private:
-        AmHandle _channelId;
+        AmChannelID _channelId;
+        AmUInt32 _channelLayerId;
+
         bool _stream;
         bool _loop;
 
@@ -172,7 +177,7 @@ namespace SparkyStudios::Audio::Amplitude
 
         ChannelInternalState* _parentChannelState;
 
-        std::vector<const Sound*> _playedSounds;
+        std::vector<AmSoundID> _playedSounds;
     };
 } // namespace SparkyStudios::Audio::Amplitude
 

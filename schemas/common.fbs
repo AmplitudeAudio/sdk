@@ -14,6 +14,27 @@
 
 namespace SparkyStudios.Audio.Amplitude;
 
+/// Specifies the 3D spatialization to apply on the sound.
+enum Spatialization: byte {
+  /// Sounds are always played at their regular gain.
+  None,
+  /// Sounds have their gain adjusted based on the attenuation.
+  Position,
+  /// Sounds have their gain adjusted based on the attenuation and following their orientation.
+  PositionOrientation,
+}
+
+/// Scopes allow specifying how playback data are shared between each instance
+/// of collections.
+enum Scope: byte {
+  /// All instances of the collection will be treated as one object so
+  /// that the repetition across entities is avoided.
+  World,
+  /// Each instance of the collection will be treated as a single object
+  /// and therefore no data will be shared across entities.
+  Entity,
+}
+
 /// Faders allow to progressively update a value
 /// to a given target during the specified period of time.
 enum FaderAlgorithm: byte {

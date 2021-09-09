@@ -7,6 +7,9 @@ tests/*_test
 *.ambus
 *.amconfig
 *.amsound
+*.amcollection
+*.amevent
+*.amattenuation
 *.a
 
 # CMake files
@@ -46,3 +49,6 @@ docs/html/
 docs/linklint_results/
 gen/
 
+samples/
+scripts/
+assets/

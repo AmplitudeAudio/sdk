@@ -52,18 +52,21 @@ namespace SparkyStudios::Audio::Amplitude
 
     static void atomix_sound_ended(atomix_sound* snd)
     {
-        auto* sound = static_cast<SoundInstance*>(snd->udata);
+        const auto* sound = static_cast<SoundInstance*>(snd->udata);
         CallLogFunc("Ended sound: " AM_OS_CHAR_FMT "\n", sound->GetSound()->GetFilename());
 
-        Engine* engine = Engine::GetInstance();
-        if (engine->GetState()->stopping)
-            return;
+        if (const Engine* engine = Engine::GetInstance(); engine->GetState()->stopping)
+            goto Delete;
+
+        if (sound->GetSettings().m_kind == SoundKind::Standalone)
+            goto Delete;
 
         RealChannel* channel = sound->GetChannel();
-        SoundCollection* collection = sound->GetSound()->GetSoundCollection();
-        const SoundCollectionDefinition* config = collection->GetSoundCollectionDefinition();
+        const Collection* collection = sound->GetCollection();
+        AMPLITUDE_ASSERT(collection != nullptr); // Should always have a collection for contained sound instances.
+        const CollectionDefinition* config = collection->GetCollectionDefinition();
 
-        if (config->play_mode() == PlayMode_LoopAll || config->play_mode() == PlayMode_PlayAll)
+        if (config->play_mode() == CollectionPlayMode_PlayAll)
         {
             if (channel->Valid())
             {
@@ -71,7 +74,7 @@ namespace SparkyStudios::Audio::Amplitude
                 if (channel->AllSoundsHasPlayed())
                 {
                     channel->ClearPlayedSounds();
-                    if (config->play_mode() == PlayMode_PlayAll)
+                    if (config->play_mode() == CollectionPlayMode_PlayAll)
                     {
                         goto Stop;
                     }
@@ -95,6 +98,23 @@ namespace SparkyStudios::Audio::Amplitude
     Delete:
         // Delete the sound instance at the end of the playback
         delete sound;
+    }
+
+    bool Mixer::atomix_sound_looped(atomix_sound* snd)
+    {
+        auto* sound = static_cast<SoundInstance*>(snd->udata);
+        CallLogFunc("Looped sound: " AM_OS_CHAR_FMT "\n", sound->GetSound()->GetFilename());
+
+        ++sound->_currentLoopCount;
+
+        const AmUInt32 loopCount = sound->GetSettings().m_loopCount;
+        if (sound->_currentLoopCount == loopCount)
+        {
+            sound->GetChannel()->Halt();
+            return false;
+        }
+
+        return true;
     }
 
     static AmUInt64 atomix_sound_stream(atomix_sound* snd, AmUInt64 offset, AmUInt64 frames)
@@ -124,6 +144,7 @@ namespace SparkyStudios::Audio::Amplitude
         atomixSoundSetStreamCallback(atomix_sound_stream);
         atomixSoundSetDestroyCallback(atomix_sound_destroy);
         atomixSoundSetEndedCallback(atomix_sound_ended);
+        atomixSoundSetLoopedCallback(atomix_sound_looped);
     }
 
     Mixer::~Mixer()
@@ -150,7 +171,7 @@ namespace SparkyStudios::Audio::Amplitude
             return false;
         }
 
-        m_userData = atomixMixerNew(1.0f, 0);
+        m_userData = atomixMixerNew(1.0f, kMinFadeDuration);
 
         if (!m_userData)
         {
@@ -172,6 +193,9 @@ namespace SparkyStudios::Audio::Amplitude
         AMPLITUDE_ASSERT(!_insideAudioThreadMutex);
 
         if (!_initialized)
+            return;
+
+        if (Engine::GetInstance()->GetState()->stopping)
             return;
 
         lockAudioMutex();
@@ -205,5 +229,4 @@ namespace SparkyStudios::Audio::Amplitude
             Thread::UnlockMutex(_audioThreadMutex);
         }
     }
-
 } // namespace SparkyStudios::Audio::Amplitude

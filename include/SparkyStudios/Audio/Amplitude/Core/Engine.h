@@ -14,8 +14,8 @@
 
 #pragma once
 
-#ifndef SPARK_AUDIO_ENGINE_H
-#define SPARK_AUDIO_ENGINE_H
+#ifndef SS_AMPLITUDE_AUDIO_ENGINE_H
+#define SS_AMPLITUDE_AUDIO_ENGINE_H
 
 #include <string>
 
@@ -30,7 +30,8 @@
 #include <SparkyStudios/Audio/Amplitude/Core/Version.h>
 
 #include <SparkyStudios/Audio/Amplitude/Sound/Attenuation.h>
-#include <SparkyStudios/Audio/Amplitude/Sound/SoundCollection.h>
+#include <SparkyStudios/Audio/Amplitude/Sound/Collection.h>
+#include <SparkyStudios/Audio/Amplitude/Sound/Sound.h>
 
 namespace SparkyStudios::Audio::Amplitude
 {
@@ -38,12 +39,14 @@ namespace SparkyStudios::Audio::Amplitude
 
     struct EngineInternalState;
 
-    typedef SoundCollection* SoundHandle;
+    typedef Collection* CollectionHandle;
+    typedef Sound* SoundHandle;
     typedef Event* EventHandle;
     typedef Attenuation* AttenuationHandle;
 
     /**
-     * @brief The central class of  the library that manages the Listeners, Channels, and tracks all of the internal state.
+     * @brief The central class of  the library that manages the Listeners, Entities,
+     * Sounds, Collections, Channels, and tracks all of the internal state.
      */
     class Engine
     {
@@ -125,6 +128,27 @@ namespace SparkyStudios::Audio::Amplitude
         bool TryFinalize();
 
         /**
+         * @brief Get a CollectionHandle given its name as defined in its JSON data.
+         *
+         * @param name The unique name as defined in the JSON data.
+         */
+        [[nodiscard]] CollectionHandle GetCollectionHandle(const std::string& name) const;
+
+        /**
+         * @brief Get a CollectionHandle given its ID as defined in its JSON data.
+         *
+         * @param id The unique ID as defined in the JSON data.
+         */
+        [[nodiscard]] CollectionHandle GetCollectionHandle(AmCollectionID id) const;
+
+        /**
+         * @brief Get a CollectionHandle given its CollectionDefinition filename.
+         *
+         * @param filename The filename containing the flatbuffer binary data.
+         */
+        [[nodiscard]] CollectionHandle GetCollectionHandleFromFile(AmOsString filename) const;
+
+        /**
          * @brief Get a SoundHandle given its name as defined in its JSON data.
          *
          * @param name The unique name as defined in the JSON data.
@@ -136,12 +160,12 @@ namespace SparkyStudios::Audio::Amplitude
          *
          * @param id The unique ID as defined in the JSON data.
          */
-        [[nodiscard]] SoundHandle GetSoundHandle(AmSoundCollectionID id) const;
+        [[nodiscard]] SoundHandle GetSoundHandle(AmSoundID id) const;
 
         /**
-         * @brief Get a SoundHandle given its SoundCollectionDefinition filename.
+         * @brief Get a SoundHandle given its SoundDefinition filename.
          *
-         * @param name The filename containing the flatbuffer binary data.
+         * @param filename The filename containing the flatbuffer binary data.
          */
         [[nodiscard]] SoundHandle GetSoundHandleFromFile(AmOsString filename) const;
 
@@ -150,7 +174,7 @@ namespace SparkyStudios::Audio::Amplitude
          *
          * @param name The unique name as defined in the JSON data.
          */
-        [[nodiscard]] EventHandle GetEventHandle(const std::string& sound_name) const;
+        [[nodiscard]] EventHandle GetEventHandle(const std::string& name) const;
 
         /**
          * @brief Get an EventHandle given its ID as defined in its JSON data.
@@ -162,7 +186,7 @@ namespace SparkyStudios::Audio::Amplitude
         /**
          * @brief Get an EventHandle given its EventDefinition filename.
          *
-         * @param name The filename containing the flatbuffer binary data.
+         * @param filename The filename containing the flatbuffer binary data.
          */
         [[nodiscard]] EventHandle GetEventHandleFromFile(AmOsString filename) const;
 
@@ -171,7 +195,7 @@ namespace SparkyStudios::Audio::Amplitude
          *
          * @param name The unique name as defined in the JSON data.
          */
-        [[nodiscard]] AttenuationHandle GetAttenuationHandle(const std::string& sound_name) const;
+        [[nodiscard]] AttenuationHandle GetAttenuationHandle(const std::string& name) const;
 
         /**
          * @brief Get an AttenuationHandle given its ID as defined in its JSON data.
@@ -183,7 +207,7 @@ namespace SparkyStudios::Audio::Amplitude
         /**
          * @brief Get an AttenuationHandle given its AttenuationDefinition filename.
          *
-         * @param name The filename containing the flatbuffer binary data.
+         * @param filename The filename containing the flatbuffer binary data.
          */
         [[nodiscard]] AttenuationHandle GetAttenuationHandleFromFile(AmOsString filename) const;
 
@@ -213,12 +237,12 @@ namespace SparkyStudios::Audio::Amplitude
          *
          * @return Whether the Engine is currently muted.
          */
-        bool GetMute() const;
+        [[nodiscard]] bool GetMute() const;
 
         /**
          * @brief Pauses all playing sounds and streams.
          *
-         * @param pause Whether to pause or unpause the Engine.
+         * @param pause Whether to pause or resume the Engine.
          */
         void Pause(bool pause);
 
@@ -236,7 +260,7 @@ namespace SparkyStudios::Audio::Amplitude
          *
          * @param listener The Listener to be removed.
          */
-        void RemoveListener(Listener* listener);
+        void RemoveListener(const Listener* listener);
 
         /**
          * @brief Initialize and return an Entity.
@@ -252,7 +276,7 @@ namespace SparkyStudios::Audio::Amplitude
          *
          * @param entity The Entity to be removed.
          */
-        void RemoveEntity(Entity* entity);
+        void RemoveEntity(const Entity* entity);
 
         /**
          * @brief Returns the bus with the specified name.
@@ -261,7 +285,7 @@ namespace SparkyStudios::Audio::Amplitude
          *
          * @return A valid bus if found, otherwise an invalid bus.
          */
-        Bus FindBus(AmString bus_name);
+        [[nodiscard]] Bus FindBus(AmString name) const;
 
         /**
          * @brief Returns the bus with the given ID.
@@ -270,229 +294,307 @@ namespace SparkyStudios::Audio::Amplitude
          *
          * @return A valid bus if found, otherwise an invalid bus.
          */
-        Bus FindBus(AmBusID id);
+        [[nodiscard]] Bus FindBus(AmBusID id) const;
 
         /**
-         * @brief Play a sound associated with the given sound handle in the
+         * @brief Play a collection associated with the given handle in the
          *        World scope.
          *
-         * @param sound_handle A handle to the sound to play.
+         * @param handle A handle to the collection to play.
          *
-         * @return The channel the sound is played on. If the sound could not be
+         * @return The channel the collection is played on. If the collection could not be
          *         played, an invalid Channel is returned.
          */
-        Channel Play(SoundHandle sound_handle);
+        Channel Play(CollectionHandle handle);
 
         /**
-         * @brief Play a sound associated with the given sound handle in the
+         * @brief Play a collection associated with the given handle in the
          *        World scope at the given location.
          *
-         * @param sound_handle A handle to the sound to play.
-         * @param location The location of the sound.
+         * @param handle A handle to the collection to play.
+         * @param location The location on which play the collection.
          *
-         * @return The channel the sound is played on. If the sound could not be
+         * @return The channel the collection is played on. If the collection could not be
          *         played, an invalid Channel is returned.
          */
-        Channel Play(SoundHandle sound_handle, const hmm_vec3& location);
+        Channel Play(CollectionHandle handle, const hmm_vec3& location);
 
         /**
-         * @brief Play a sound associated with the given sound_handle at the given
+         * @brief Play a collection associated with the given handle in the
          *        location with the given gain.
          *
-         * @param sound_handle A handle to the sound to play.
-         * @param location The location of the sound.
-         * @param gain The gain of the sound.
+         * @param handle A handle to the collection to play.
+         * @param location The location on which play the collection.
+         * @param userGain The gain of the sound.
+         *
+         * @return The channel the collection is played on. If the collection could not be
+         *         played, an invalid Channel is returned.
+         */
+        Channel Play(CollectionHandle handle, const hmm_vec3& location, float userGain);
+
+        /**
+         * @brief Play a collection associated with the given handle in the
+         *        Entity scope.
+         *
+         * @param handle A handle to the collection to play.
+         * @param entity The entity which is playing the collection.
+         *
+         * @return The channel the collection is played on. If the collection could not be
+         *         played, an invalid Channel is returned.
+         */
+        Channel Play(CollectionHandle handle, const Entity& entity);
+
+        /**
+         * @brief Play a collection associated with the given handle in an
+         *        Entity scope with the given gain.
+         *
+         * @param handle A handle to the collection to play.
+         * @param entity The entity which is playing the collection.
+         * @param userGain The gain of the sound.
+         *
+         * @return The channel the collection is played on. If the collection could not be
+         *         played, an invalid Channel is returned.
+         */
+        Channel Play(CollectionHandle handle, const Entity& entity, float userGain);
+
+        /**
+         * @brief Play a sound associated with the given handle in the
+         *        World scope.
+         *
+         * @param handle A handle to the sound to play.
          *
          * @return The channel the sound is played on. If the sound could not be
          *         played, an invalid Channel is returned.
          */
-        Channel Play(SoundHandle sound_handle, const hmm_vec3& location, float gain);
+        Channel Play(SoundHandle handle);
+
+        /**
+         * @brief Play a sound associated with the given handle in the
+         *        World scope at the given location.
+         *
+         * @param handle A handle to the sound to play.
+         * @param location The location on which play the sound.
+         *
+         * @return The channel the sound is played on. If the sound could not be
+         *         played, an invalid Channel is returned.
+         */
+        Channel Play(SoundHandle handle, const hmm_vec3& location);
+
+        /**
+         * @brief Play a sound associated with the given handle in the
+         *        World scope at the given location with the given gain.
+         *
+         * @param handle A handle to the sound to play.
+         * @param location The location on which play the sound.
+         * @param userGain The gain of the sound.
+         *
+         * @return The channel the sound is played on. If the sound could not be
+         *         played, an invalid Channel is returned.
+         */
+        Channel Play(SoundHandle handle, const hmm_vec3& location, float userGain);
 
         /**
          * @brief Play a sound associated with the given sound handle in an
-         *        entity scope.
+         *        Entity scope.
          *
-         * @param sound_handle A handle to the sound to play.
+         * @param handle A handle to the sound to play.
          * @param entity The entity which is playing the sound.
          *
          * @return The channel the sound is played on. If the sound could not be
          *         played, an invalid Channel is returned.
          */
-        Channel Play(SoundHandle sound_handle, const Entity& entity);
+        Channel Play(SoundHandle handle, const Entity& entity);
 
         /**
          * @brief Play a sound associated with the given sound handle in an
-         *        entity scope with the given gain.
+         *        Entity scope with the given gain.
          *
-         * @param sound_handle A handle to the sound to play.
+         * @param handle A handle to the sound to play.
          * @param entity The entity which is playing the sound.
-         * @param gain The gain of the sound.
+         * @param userGain The gain of the sound.
          *
          * @return The channel the sound is played on. If the sound could not be
          *         played, an invalid Channel is returned.
          */
-        Channel Play(SoundHandle sound_handle, const Entity& entity, float gain);
+        Channel Play(SoundHandle handle, const Entity& entity, float userGain);
 
         /**
-         * @brief Play a sound associated with the given sound name.
+         * @brief Play a sound or a collection associated with the given name.
          *
-         * Note: Playing a sound with its SoundHandle is faster than using the sound
+         * Sound objects will have the priority on collection objects.
+         *
+         * Note: Playing an object with its handle is faster than using the
          * name as using the name requires a map lookup internally.
          *
-         * @param sound_name The name of the sound to play.
+         * @param name The name of the object to play.
          *
-         * @return The channel the sound is played on. If the sound could not be
+         * @return The channel the sound is played on. If the object could not be
          *         played, an invalid Channel is returned.
          */
-        Channel Play(const std::string& sound_name);
+        Channel Play(const std::string& name);
 
         /**
-         * @brief Play a sound associated with the given sound name in the World
-         *        scope at the given location.
+         * @brief Play a sound or a collection associated with the given name.
          *
-         * Note: Playing a sound with its SoundHandle is faster than using the sound
+         * Sound objects will have the priority on collection objects.
+         *
+         * Note: Playing an object with its handle is faster than using the
          * name as using the name requires a map lookup internally.
          *
-         * @param sound_name The name of the sound to play.
+         * @param name The name of the object to play.
+         * @param location The location of the sound.
+         *
+         * @return The channel the sound is played on. If the object could not be
+         *         played, an invalid Channel is returned.
+         */
+        Channel Play(const std::string& name, const hmm_vec3& location);
+
+        /**
+         * @brief Play a sound or a collection associated with the given name.
+         *
+         * Sound objects will have the priority on collection objects.
+         *
+         * Note: Playing an object with its handle is faster than using the
+         * name as using the name requires a map lookup internally.
+         *
+         * @param name The name of the object to play.
+         * @param location The location of the sound.
+         * @param userGain The gain of the sound.
+         *
+         * @return The channel the sound is played on. If the object could not be
+         *         played, an invalid Channel is returned.
+         */
+        Channel Play(const std::string& name, const hmm_vec3& location, float userGain);
+
+        /**
+         * @brief Play a sound or a collection associated with the given name.
+         *
+         * Sound objects will have the priority on collection objects.
+         *
+         * Note: Playing an object with its handle is faster than using the
+         * name as using the name requires a map lookup internally.
+         *
+         * @param name The name of the object to play.
+         * @param entity The entity which is playing the sound.
+         *
+         * @return The channel the sound is played on. If the object could not be
+         *         played, an invalid Channel is returned.
+         */
+        Channel Play(const std::string& name, const Entity& entity);
+
+        /**
+         * @brief Play a sound or a collection associated with the given name.
+         *
+         * Sound objects will have the priority on collection objects.
+         *
+         * Note: Playing an object with its handle is faster than using the
+         * name as using the name requires a map lookup internally.
+         *
+         * @param name The name of the object to play.
+         * @param entity The entity which is playing the sound.
+         * @param userGain The gain of the sound.
+         *
+         * @return The channel the sound is played on. If the object could not be
+         *         played, an invalid Channel is returned.
+         */
+        Channel Play(const std::string& name, const Entity& entity, float userGain);
+
+        /**
+         * @brief Play a sound or a collection associated with the given ID in the
+         * World scope, at the origin of the world.
+         *
+         * Sound objects will have the priority on collection objects.
+         *
+         * Note: Playing an object with its handle is faster than using the
+         * ID as using the ID requires a map lookup internally.
+         *
+         * @param id The ID of the object to play.
+         *
+         * @return The channel the sound is played on. If the object could not be
+         *         played, an invalid Channel is returned.
+         */
+        Channel Play(AmObjectID id);
+
+        /**
+         * @brief Play a sound or a collection associated with the given ID in the
+         * World scope, at the given location.
+         *
+         * Sound objects will have the priority on collection objects.
+         *
+         * Note: Playing an object with its handle is faster than using the
+         * ID as using the ID requires a map lookup internally.
+         *
+         * @param id The ID of the object to play.
          * @param location The location of the sound.
          *
          * @return The channel the sound is played on. If the sound could not be
          *         played, an invalid Channel is returned.
          */
-        Channel Play(const std::string& sound_name, const hmm_vec3& location);
+        Channel Play(AmObjectID id, const hmm_vec3& location);
 
         /**
-         * @brief Play a sound associated with the given sound name in the World
-         *        scope at the given location with the given gain.
+         * @brief Play a sound or a collection associated with the given ID in the
+         * World scope, at the given location, and with the given gain.
          *
-         * Note: Playing a sound with its SoundHandle is faster than using the sound
-         * name as using the name requires a map lookup internally.
+         * Sound objects will have the priority on collection objects.
          *
-         * @param sound_name The name of the sound to play.
+         * Note: Playing an object with its handle is faster than using the
+         * ID as using the ID requires a map lookup internally.
+         *
+         * @param id The ID of the object to play.
          * @param location The location of the sound.
-         * @param gain The gain of the sound.
+         * @param userGain The gain of the sound.
          *
          * @return The channel the sound is played on. If the sound could not be
          *         played, an invalid Channel is returned.
          */
-        Channel Play(const std::string& sound_name, const hmm_vec3& location, float gain);
+        Channel Play(AmObjectID id, const hmm_vec3& location, float userGain);
 
         /**
-         * @brief Play a sound associated with the given sound handle in an
-         *        entity scope.
+         * @brief Play a sound or a collection associated with the given ID in an
+         * Entity scope.
          *
-         * Note: Playing a sound with its SoundHandle is faster than using the sound
-         * name as using the name requires a map lookup internally.
+         * Sound objects will have the priority on collection objects.
          *
-         * @param sound_name The name of the sound to play.
+         * Note: Playing an object with its handle is faster than using the
+         * ID as using the ID requires a map lookup internally.
+         *
+         * @param id The ID of the object to play.
          * @param entity The entity which is playing the sound.
          *
          * @return The channel the sound is played on. If the sound could not be
          *         played, an invalid Channel is returned.
          */
-        Channel Play(const std::string& sound_name, const Entity& entity);
+        Channel Play(AmObjectID id, const Entity& entity);
 
         /**
-         * @brief Play a sound associated with the given sound handle in an
-         *        entity scope with the given gain.
+         * @brief Play a sound or a collection associated with the given ID in an
+         * Entity scope with the given gain.
          *
-         * Note: Playing a sound with its SoundHandle is faster than using the sound
-         * name as using the name requires a map lookup internally.
+         * Sound objects will have the priority on collection objects.
          *
-         * @param sound_name The name of the sound to play.
+         * Note: Playing an object with its handle is faster than using the
+         * ID as using the ID requires a map lookup internally.
+         *
+         * @param id The ID of the object to play.
          * @param entity The entity which is playing the sound.
-         * @param gain The gain of the sound.
+         * @param userGain The gain of the sound.
          *
          * @return The channel the sound is played on. If the sound could not be
          *         played, an invalid Channel is returned.
          */
-        Channel Play(const std::string& sound_name, const Entity& entity, float gain);
-
-        /**
-         * @brief Play a sound associated with the given sound name.
-         *
-         * Note: Playing a sound with its SoundHandle is faster than using the sound
-         * ID as using the name requires a map lookup internally.
-         *
-         * @param id The ID of the sound to play.
-         *
-         * @return The channel the sound is played on. If the sound could not be
-         *         played, an invalid Channel is returned.
-         */
-        Channel Play(AmSoundCollectionID id);
-
-        /**
-         * @brief Play a sound associated with the given sound name in the World
-         *        scope at the given location.
-         *
-         * Note: Playing a sound with its SoundHandle is faster than using the sound
-         * ID as using the name requires a map lookup internally.
-         *
-         * @param id The ID of the sound to play.
-         * @param location The location of the sound.
-         *
-         * @return The channel the sound is played on. If the sound could not be
-         *         played, an invalid Channel is returned.
-         */
-        Channel Play(AmSoundCollectionID id, const hmm_vec3& location);
-
-        /**
-         * @brief Play a sound associated with the given sound name in the World
-         *        scope at the given location with the given gain.
-         *
-         * Note: Playing a sound with its SoundHandle is faster than using the sound
-         * ID as using the name requires a map lookup internally.
-         *
-         * @param id The ID of the sound to play.
-         * @param location The location of the sound.
-         * @param gain The gain of the sound.
-         *
-         * @return The channel the sound is played on. If the sound could not be
-         *         played, an invalid Channel is returned.
-         */
-        Channel Play(AmSoundCollectionID id, const hmm_vec3& location, float gain);
-
-        /**
-         * @brief Play a sound associated with the given sound handle in an
-         *        entity scope.
-         *
-         * Note: Playing a sound with its SoundHandle is faster than using the sound
-         * ID as using the name requires a map lookup internally.
-         *
-         * @param id The ID of the sound to play.
-         * @param entity The entity which is playing the sound.
-         *
-         * @return The channel the sound is played on. If the sound could not be
-         *         played, an invalid Channel is returned.
-         */
-        Channel Play(AmSoundCollectionID id, const Entity& entity);
-
-        /**
-         * @brief Play a sound associated with the given sound handle in an
-         *        entity scope with the given gain.
-         *
-         * Note: Playing a sound with its SoundHandle is faster than using the sound
-         * ID as using the name requires a map lookup internally.
-         *
-         * @param id The ID of the sound to play.
-         * @param entity The entity which is playing the sound.
-         * @param gain The gain of the sound.
-         *
-         * @return The channel the sound is played on. If the sound could not be
-         *         played, an invalid Channel is returned.
-         */
-        Channel Play(AmSoundCollectionID id, const Entity& entity, float gain);
+        Channel Play(AmObjectID id, const Entity& entity, float userGain);
 
         /**
          * @brief Trigger the event associated with the given sound handle at the
          *        given location.
          *
-         * @param event_handle A handle of the event to trigger.
+         * @param handle A handle of the event to trigger.
          * @param entity The which trigger the event.
          *
          * @return The triggered event.
          */
-        EventCanceler Trigger(EventHandle event_handle, const Entity& entity);
+        EventCanceler Trigger(EventHandle handle, const Entity& entity);
 
         /**
          * @brief Trigger the event associated with the specified event name at
@@ -501,12 +603,12 @@ namespace SparkyStudios::Audio::Amplitude
          * Note: Triggering an event with its EventHandle is faster than using the
          * event name as using the name requires a map lookup internally.
          *
-         * @param event_name The name of event to trigger.
+         * @param name The name of event to trigger.
          * @param entity The which trigger the event.
          *
          * @return The triggered event.
          */
-        EventCanceler Trigger(const std::string& event_name, const Entity& entity);
+        EventCanceler Trigger(const std::string& name, const Entity& entity);
 
         /**
          * @brief Gets the version structure.
@@ -520,10 +622,7 @@ namespace SparkyStudios::Audio::Amplitude
          *
          * @return The current state of this Engine.
          */
-        [[nodiscard]] EngineInternalState* GetState() const
-        {
-            return _state;
-        }
+        [[nodiscard]] EngineInternalState* GetState() const;
 
         [[nodiscard]] const EngineConfigDefinition* GetEngineConfigDefinition() const;
 
@@ -532,10 +631,7 @@ namespace SparkyStudios::Audio::Amplitude
          *
          * @return The audio driver.
          */
-        [[nodiscard]] Driver* GetDriver() const
-        {
-            return _audioDriver;
-        }
+        [[nodiscard]] Driver* GetDriver() const;
 
         /**
          * @brief Returns an unique instance of the Amplitude Engine.
@@ -543,7 +639,8 @@ namespace SparkyStudios::Audio::Amplitude
         [[nodiscard]] static Engine* GetInstance();
 
     private:
-        Channel _playScopedSound(SoundHandle handle, const Entity& entity, const hmm_vec3& location, float gain);
+        Channel PlayScopedCollection(CollectionHandle handle, const Entity& entity, const hmm_vec3& location, float userGain) const;
+        Channel PlayScopedSound(SoundHandle handle, const Entity& entity, const hmm_vec3& location, float userGain) const;
 
         // Hold the engine config file contents.
         std::string _configSrc;
@@ -557,4 +654,4 @@ namespace SparkyStudios::Audio::Amplitude
 
 } // namespace SparkyStudios::Audio::Amplitude
 
-#endif // SPARK_AUDIO_ENGINE_H
+#endif // SS_AMPLITUDE_AUDIO_ENGINE_H

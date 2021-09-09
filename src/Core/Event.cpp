@@ -17,8 +17,8 @@
 #include <Core/EngineInternalState.h>
 #include <Core/EntityInternalState.h>
 
+#include "collection_definition_generated.h"
 #include "event_definition_generated.h"
-#include "sound_collection_definition_generated.h"
 
 namespace SparkyStudios::Audio::Amplitude
 {
@@ -31,7 +31,7 @@ namespace SparkyStudios::Audio::Amplitude
         , _active(false)
         , _type(EventActionType_None)
         , _targets()
-        , _scope(EventActionScope_Entity)
+        , _scope(Scope_Entity)
     {}
 
     void EventAction::Initialize(const EventActionDefinition* definition)
@@ -42,7 +42,7 @@ namespace SparkyStudios::Audio::Amplitude
         flatbuffers::uoffset_t targets_count = definition->targets() ? definition->targets()->size() : 0;
         for (flatbuffers::uoffset_t i = 0; i < targets_count; ++i)
         {
-            _targets.push_back(definition->targets()->Get(i)->c_str());
+            _targets.push_back(definition->targets()->Get(i));
         }
     }
 
@@ -57,25 +57,30 @@ namespace SparkyStudios::Audio::Amplitude
         case EventActionType_None:
             return;
 
-        case EventActionType_Play:
+        case EventActionType_PlayCollection:
+        case EventActionType_PlaySound:
             return _executePlay(entity);
 
-        case EventActionType_Pause:
+        case EventActionType_PauseCollection:
+        case EventActionType_PauseSound:
             return _executePause(entity);
 
-        case EventActionType_Resume:
+        case EventActionType_ResumeCollection:
+        case EventActionType_ResumeSound:
             return _executeResume(entity);
 
-        case EventActionType_Stop:
+        case EventActionType_StopCollection:
+        case EventActionType_StopSound:
             return _executeStop(entity);
 
-        case EventActionType_Seek:
+        case EventActionType_SeekCollection:
+        case EventActionType_SeekSound:
             return _executeSeek(entity);
 
-        case EventActionType_Mute:
+        case EventActionType_MuteBus:
             return _executeMute(entity, true);
 
-        case EventActionType_Unmute:
+        case EventActionType_UnmuteBus:
             return _executeMute(entity, false);
         }
     }
@@ -102,11 +107,11 @@ namespace SparkyStudios::Audio::Amplitude
 
         for (auto&& target : _targets)
         {
-            if (_scope == EventActionScope_Entity)
+            if (_scope == Scope_Entity)
             {
                 for (auto&& item : entity.GetState()->GetPlayingSoundList())
                 {
-                    if (strcmp(target, item.GetSoundCollection()->GetSoundCollectionDefinition()->name()->c_str()) == 0)
+                    if (target == item.GetPlayingObjectId())
                     {
                         item.Pause();
                     }
@@ -125,11 +130,11 @@ namespace SparkyStudios::Audio::Amplitude
 
         for (auto&& target : _targets)
         {
-            if (_scope == EventActionScope_Entity)
+            if (_scope == Scope_Entity)
             {
                 for (auto&& item : entity.GetState()->GetPlayingSoundList())
                 {
-                    if (strcmp(target, item.GetSoundCollection()->GetSoundCollectionDefinition()->name()->c_str()) == 0)
+                    if (target == item.GetPlayingObjectId())
                     {
                         item.Resume();
                     }
@@ -148,11 +153,11 @@ namespace SparkyStudios::Audio::Amplitude
 
         for (auto&& target : _targets)
         {
-            if (_scope == EventActionScope_Entity)
+            if (_scope == Scope_Entity)
             {
                 for (auto&& item : entity.GetState()->GetPlayingSoundList())
                 {
-                    if (strcmp(target, item.GetSoundCollection()->GetSoundCollectionDefinition()->name()->c_str()) == 0)
+                    if (target == item.GetPlayingObjectId())
                     {
                         item.Halt();
                     }
@@ -183,10 +188,10 @@ namespace SparkyStudios::Audio::Amplitude
     }
 
     Event::Event()
-        : _id(kAmInvalidObjectId)
+        : _source()
+        , _id(kAmInvalidObjectId)
         , _name()
         , _actions()
-        , _source()
         , _refCounter()
     {}
 
@@ -220,7 +225,7 @@ namespace SparkyStudios::Audio::Amplitude
 
     EventInstance Event::Trigger(const Entity& entity)
     {
-        CallLogFunc("[Debug] Event %s triggered.\n", _name.c_str());
+        CallLogFunc("[Debug] Event " AM_OS_CHAR_FMT " triggered.\n", AM_STRING_TO_OS_STRING(_name));
 
         auto event = EventInstance(this);
         event.Start(entity);

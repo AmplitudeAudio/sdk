@@ -20,7 +20,13 @@
 
 namespace SparkyStudios::Audio::Amplitude
 {
-    const int kFadeOutDurationMs = 10;
+    Channel::Channel()
+        : _state(nullptr)
+    {}
+
+    Channel::Channel(ChannelInternalState* state)
+        : _state(state)
+    {}
 
     void Channel::Clear()
     {
@@ -38,32 +44,36 @@ namespace SparkyStudios::Audio::Amplitude
         return _state->Playing();
     }
 
-    void Channel::Stop()
+    void Channel::Stop(AmTime duration)
     {
         AMPLITUDE_ASSERT(Valid());
-        // Fade out rather than halting to avoid clicks.  However, SDL_Mixer will
-        // not fade out channels with a volume of 0.  Manually halt channels in this
-        // case.
         if (!_state->IsReal() || _state->GetRealChannel().GetGain() == 0.0f)
         {
             _state->Halt();
         }
         else
         {
-            _state->FadeOut(kFadeOutDurationMs);
+            _state->FadeOut(duration, ChannelState::Stopped);
         }
     }
 
-    void Channel::Pause()
+    void Channel::Pause(AmTime duration)
     {
         AMPLITUDE_ASSERT(Valid());
-        _state->Pause();
+        if (!_state->IsReal() || _state->GetRealChannel().GetGain() == 0.0f)
+        {
+            _state->Pause();
+        }
+        else
+        {
+            _state->FadeOut(duration, ChannelState::Paused);
+        }
     }
 
-    void Channel::Resume()
+    void Channel::Resume(AmTime duration)
     {
         AMPLITUDE_ASSERT(Valid());
-        _state->Resume();
+        _state->FadeIn(duration);
     }
 
     const hmm_vec3& Channel::GetLocation() const
@@ -78,13 +88,20 @@ namespace SparkyStudios::Audio::Amplitude
         _state->SetLocation(location);
     }
 
-    void Channel::SetGain(float gain)
+    void Channel::SetGain(const float gain)
     {
+        AMPLITUDE_ASSERT(Valid());
         return _state->SetUserGain(gain);
     }
 
     float Channel::GetGain() const
     {
+        AMPLITUDE_ASSERT(Valid());
         return _state->GetUserGain();
+    }
+
+    ChannelInternalState* Channel::GetState() const
+    {
+        return _state;
     }
 } // namespace SparkyStudios::Audio::Amplitude

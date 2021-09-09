@@ -17,16 +17,21 @@
 #include <Core/EngineInternalState.h>
 
 #include "atomix.h"
-#include "sound_collection_definition_generated.h"
+#include "collection_definition_generated.h"
+#include "sound_definition_generated.h"
 
 namespace SparkyStudios::Audio::Amplitude
 {
     Sound::Sound()
-        : m_collection(nullptr)
-        , m_format()
+        : m_format()
         , _decoder(nullptr)
-        , _loop(false)
+        , _bus(nullptr)
+        , _id()
+        , _name()
+        , _attenuation(nullptr)
         , _stream(false)
+        , _loop(false)
+        , _refCounter()
     {}
 
     Sound::~Sound()
@@ -35,18 +40,74 @@ namespace SparkyStudios::Audio::Amplitude
         _decoder = nullptr;
     }
 
-    void Sound::Initialize(SoundCollection* collection)
+    bool Sound::LoadSoundDefinition(const std::string& source, EngineInternalState* state)
     {
-        m_collection = collection;
-        _stream = collection->GetSoundCollectionDefinition()->stream();
-        _loop = collection->GetSoundCollectionDefinition()->play_mode() == PlayMode_LoopOne;
+        // Ensure we don't load the sound more than once
+        AMPLITUDE_ASSERT(_id == kAmInvalidObjectId);
+
+        _source = source;
+        const SoundDefinition* definition = GetSoundDefinition();
+
+        if (definition->id() == kAmInvalidObjectId)
+        {
+            CallLogFunc("[ERROR] Sound definition is invalid: no ID defined.");
+            return false;
+        }
+
+        if (definition->bus() == kAmInvalidObjectId)
+        {
+            CallLogFunc("[ERROR] Sound definition is invalid: no bus ID defined.");
+            return false;
+        }
+
+        _bus = FindBusInternalState(state, definition->bus());
+        if (!_bus)
+        {
+            CallLogFunc("[ERROR] Sound %s specifies an unknown bus ID: %u.\n", definition->name(), definition->bus());
+            return false;
+        }
+
+        if (definition->attenuation() != kAmInvalidObjectId)
+        {
+            if (const auto findIt = state->attenuation_map.find(definition->attenuation()); findIt != state->attenuation_map.end())
+            {
+                _attenuation = findIt->second.get();
+                _attenuation->GetRefCounter()->Increment();
+            }
+            else
+            {
+                CallLogFunc("[ERROR] Sound definition is invalid: invalid attenuation ID \"%u\"", definition->attenuation());
+                return false;
+            }
+        }
+
+        _id = definition->id();
+        _name = definition->name()->str();
+
+        SetFilename(AM_STRING_TO_OS_STRING(definition->path()->c_str()));
+        _stream = definition->stream();
+        _loop = definition->loop() ? definition->loop()->enabled() : false;
+        _loopCount = definition->loop() ? definition->loop()->loop_count() : 0;
+
+        return true;
+    }
+
+    bool Sound::LoadSoundDefinitionFromFile(AmOsString filename, EngineInternalState* state)
+    {
+        std::string source;
+        return Amplitude::LoadFile(filename, &source) && LoadSoundDefinition(source, state);
+    }
+
+    const SoundDefinition* Sound::GetSoundDefinition() const
+    {
+        return Amplitude::GetSoundDefinition(_source.c_str());
     }
 
     void Sound::Load(FileLoader* loader)
     {
         if (GetFilename() == nullptr)
         {
-            CallLogFunc("The filename is empty.\n");
+            CallLogFunc("[ERROR] Cannot load the sound: the filename is empty.\n");
             return;
         }
 
@@ -55,14 +116,14 @@ namespace SparkyStudios::Audio::Amplitude
         Codec* codec = Codec::FindCodecForFile(filename);
         if (codec == nullptr)
         {
-            CallLogFunc("Unable to find codec for '%s'.\n", filename);
+            CallLogFunc("[ERROR] Cannot load the sound: unable to find codec for '" AM_OS_CHAR_FMT "'.\n", filename);
             return;
         }
 
         _decoder = codec->CreateDecoder();
         if (!_decoder->Open(filename))
         {
-            CallLogFunc("Unable to initialize decoder for '%s'.\n", filename);
+            CallLogFunc("[ERROR] Cannot load the sound: unable to initialize a decoder for '" AM_OS_CHAR_FMT "'.\n", filename);
             return;
         }
 
@@ -71,14 +132,96 @@ namespace SparkyStudios::Audio::Amplitude
 
     SoundInstance* Sound::CreateInstance() const
     {
-        return new SoundInstance(this);
+        const SoundDefinition* definition = GetSoundDefinition();
+
+        SoundInstanceSettings settings;
+        settings.m_kind = SoundKind::Standalone;
+        settings.m_busID = definition->bus();
+        settings.m_attenuationID = definition->attenuation();
+        settings.m_spatialization = definition->spatialization();
+        settings.m_priority = definition->priority();
+        settings.m_gain = definition->gain();
+        settings.m_loop = _loop;
+        settings.m_loopCount = _loopCount;
+
+        return new SoundInstance(this, settings);
     }
 
-    SoundInstance::SoundInstance(const Sound* parent)
-        : _parent(parent)
-        , _userData(nullptr)
-        , _channel(nullptr)
+    SoundInstance* Sound::CreateInstance(const Collection* collection) const
+    {
+        if (collection == nullptr)
+            return CreateInstance();
+
+        const CollectionDefinition* definition = collection->GetCollectionDefinition();
+
+        SoundInstanceSettings settings;
+        settings.m_kind = SoundKind::Contained;
+        settings.m_busID = definition->bus();
+        settings.m_attenuationID = definition->attenuation();
+        settings.m_spatialization = definition->spatialization();
+        settings.m_priority = definition->priority();
+        settings.m_gain = definition->gain();
+        settings.m_loop = _loop;
+        settings.m_loopCount = _loopCount;
+
+        auto* sound = new SoundInstance(this, settings);
+        sound->_collection = collection;
+
+        return sound;
+    }
+
+    void Sound::SetFormat(const SoundFormat& format)
+    {
+        m_format = format;
+    }
+
+    const SoundFormat& Sound::GetFormat() const
+    {
+        return m_format;
+    }
+
+    AmSoundID Sound::GetId() const
+    {
+        return _id;
+    }
+
+    const std::string& Sound::GetName() const
+    {
+        return _name;
+    }
+
+    const Attenuation* Sound::GetAttenuation() const
+    {
+        return _attenuation;
+    }
+
+    BusInternalState* Sound::GetBus() const
+    {
+        return _bus;
+    }
+
+    bool Sound::IsLoop() const
+    {
+        return _loop;
+    }
+
+    bool Sound::IsStream() const
+    {
+        return _stream;
+    }
+
+    RefCounter* Sound::GetRefCounter()
+    {
+        return &_refCounter;
+    }
+
+    SoundInstance::SoundInstance(const Sound* parent, const SoundInstanceSettings& settings)
+        : _userData(nullptr)
         , _streamBuffer()
+        , _channel(nullptr)
+        , _parent(parent)
+        , _settings(settings)
+        , _currentLoopCount(0)
     {}
 
     SoundInstance::~SoundInstance()
@@ -135,6 +278,21 @@ namespace SparkyStudios::Audio::Amplitude
         }
     }
 
+    const SoundInstanceSettings& SoundInstance::GetSettings() const
+    {
+        return _settings;
+    }
+
+    AmVoidPtr SoundInstance::GetUserData() const
+    {
+        return _userData;
+    }
+
+    void SoundInstance::SetUserData(AmVoidPtr userData)
+    {
+        _userData = userData;
+    }
+
     AmUInt64 SoundInstance::GetAudio(AmUInt64 offset, AmUInt64 frames)
     {
         AMPLITUDE_ASSERT(Valid());
@@ -189,5 +347,20 @@ namespace SparkyStudios::Audio::Amplitude
     RealChannel* SoundInstance::GetChannel() const
     {
         return _channel;
+    }
+
+    const Sound* SoundInstance::GetSound() const
+    {
+        return _parent;
+    }
+
+    const Collection* SoundInstance::GetCollection() const
+    {
+        return _collection;
+    }
+
+    AmUInt32 SoundInstance::GetCurrentLoopCount() const
+    {
+        return _currentLoopCount;
     }
 } // namespace SparkyStudios::Audio::Amplitude

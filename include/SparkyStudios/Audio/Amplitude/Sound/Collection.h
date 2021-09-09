@@ -29,92 +29,99 @@
 
 namespace SparkyStudios::Audio::Amplitude
 {
-    class RealChannel;
-
-    class BusInternalState;
     struct EngineInternalState;
-    struct SoundCollectionDefinition;
+    struct CollectionDefinition;
+
+    class RealChannel;
+    class BusInternalState;
 
     /**
-     * @brief SoundCollection represent an abstract sound (like a 'whoosh'), which contains
+     * @brief Collection represent an abstract sound (like a 'whoosh'), which contains
      *        a number of pieces of audio which are selected through the configured Scheduler.
      */
-    class SoundCollection
+    class Collection
     {
     public:
-        SoundCollection();
+        Collection();
 
         /**
-         * @brief Loads the sound collection from the given source.
+         * @brief Loads the collection from the given source.
          *
-         * @param source The sound collection file content to load.
-         * @param state The engine state to use while loading the sound collection.
+         * @param source The collection file content to load.
+         * @param state The engine state to use while loading the collection.
          *
-         * @return true if the sound collection was loaded successfully, false otherwise.
+         * @return true if the collection was loaded successfully, false otherwise.
          */
-        bool LoadSoundCollectionDefinition(const std::string& source, EngineInternalState* state);
+        bool LoadCollectionDefinition(const std::string& source, EngineInternalState* state);
 
         /**
-         * @brief Loads the sound collection from the given file path.
+         * @brief Loads the collection from the given file path.
          *
-         * @param filename The path to the sound collection file to load.
-         * @param state The engine state to use while loading the sound collection.
+         * @param filename The path to the collection file to load.
+         * @param state The engine state to use while loading the collection.
          *
-         * @return true if the sound collection was loaded successfully, false otherwise.
+         * @return true if the collection was loaded successfully, false otherwise.
          */
-        bool LoadSoundCollectionDefinitionFromFile(AmOsString filename, EngineInternalState* state);
+        bool LoadCollectionDefinitionFromFile(AmOsString filename, EngineInternalState* state);
 
         /**
-         * @brief Returns the loaded sound collection definition.
+         * @brief Returns the loaded collection definition.
          *
-         * @return The loaded sound collection definition.
+         * @return The loaded collection definition.
          */
-        [[nodiscard]] const SoundCollectionDefinition* GetSoundCollectionDefinition() const;
+        [[nodiscard]] const CollectionDefinition* GetCollectionDefinition() const;
 
         /**
-         * @brief Returns a Sound from this sound collection from the World scope.
+         * @brief Returns a Sound from this collection from the World scope.
          *
          * @param toSkip The list of sound instance to skip fom the selection.
          *
          * @return The selected Sound.
          */
-        Sound* SelectFromWorld(const std::vector<const Sound*>& toSkip);
+        Sound* SelectFromWorld(const std::vector<AmSoundID>& toSkip);
 
         /**
-         * @brief Returns a Sound from this sound collection from an Entity scope.
+         * @brief Returns a Sound from this collection from an Entity scope.
          *
          * @param entity The entity from which pick the sound.
          * @param toSkip The list of sound instance to skip fom the selection.
          *
          * @return The selected Sound.
          */
-        Sound* SelectFromEntity(const Entity& entity, const std::vector<const Sound*>& toSkip);
+        Sound* SelectFromEntity(const Entity& entity, const std::vector<AmSoundID>& toSkip);
 
         /**
-         * @brief Returns the unique ID of this SoundCollection.
+         * @brief Resets the internal of the scheduler running for the given Entity.
          *
-         * @return The SoundCollection unique ID.
+         * @param entity The entity to reset the scheduler for.
          */
-        [[nodiscard]] AmSoundCollectionID GetId() const;
+        void ResetEntityScopeScheduler(const Entity& entity);
 
         /**
-         * @brief Returns the name of this SoundCollection.
+         * @brief Returns the unique ID of this Collection.
          *
-         * @return The SoundCollection name.
+         * @return The Collection unique ID.
+         */
+        [[nodiscard]] AmCollectionID GetId() const;
+
+        /**
+         * @brief Returns the name of this Collection.
+         *
+         * @return The Collection name.
          */
         [[nodiscard]] const std::string& GetName() const;
 
         /**
-         * @brief Return the bus this SoundCollection will play on.
+         * @brief Return the bus this Collection will play on.
          *
-         * @return The bus this SoundCollection will play on.
+         * @return The bus this Collection will play on.
          */
         [[nodiscard]] BusInternalState* GetBus() const;
 
         /**
-         * @brief Returns the attenuation attached to this SoundCollection.
+         * @brief Returns the attenuation attached to this Collection.
          *
-         * @return The attenuation of this SoundCollection if available or nullptr.
+         * @return The attenuation of this Collection if available or nullptr.
          */
         [[nodiscard]] const Attenuation* GetAttenuation() const;
 
@@ -126,16 +133,16 @@ namespace SparkyStudios::Audio::Amplitude
         RefCounter* GetRefCounter();
 
         /**
-         * @brief Returns the list of audio samples stored in this sound collection.
+         * @brief Returns the list of Sound objects referenced in this collection.
          *
-         * @return The list of audio samples.
+         * @return The list of Sound IDs.
          */
-        [[nodiscard]] const std::vector<Sound>& GetAudioSamples() const;
+        [[nodiscard]] const std::vector<AmSoundID>& GetAudioSamples() const;
 
     private:
-        static Scheduler* CreateScheduler(const SoundCollectionDefinition* definition);
+        static Scheduler* CreateScheduler(const CollectionDefinition* definition);
 
-        // The GetBus this SoundCollection will play on.
+        // The bus this Collection will play on.
         BusInternalState* _bus;
 
         // The World scope sound scheduler
@@ -145,9 +152,9 @@ namespace SparkyStudios::Audio::Amplitude
         std::map<AmUInt64, Scheduler*> _entityScopeSchedulers;
 
         std::string _source;
-        std::vector<Sound> _sounds;
+        std::vector<AmSoundID> _sounds;
 
-        AmSoundCollectionID _id;
+        AmCollectionID _id;
         std::string _name;
 
         Attenuation* _attenuation;

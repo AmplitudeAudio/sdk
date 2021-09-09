@@ -14,8 +14,8 @@
 
 #pragma once
 
-#ifndef SPARK_AUDIO_SOUND_COLLECTION_SCHEDULER_H
-#define SPARK_AUDIO_SOUND_COLLECTION_SCHEDULER_H
+#ifndef SS_AMPLITUDE_AUDIO_SOUND_COLLECTION_SCHEDULER_H
+#define SS_AMPLITUDE_AUDIO_SOUND_COLLECTION_SCHEDULER_H
 
 #include <vector>
 
@@ -23,10 +23,10 @@ namespace SparkyStudios::Audio::Amplitude
 {
     class Sound;
 
-    struct SoundCollectionDefinition;
+    struct CollectionDefinition;
 
     /**
-     * @brief An abstract class for SoundCollection schedulers
+     * @brief An abstract class for Collection schedulers
      */
     class Scheduler
     {
@@ -41,24 +41,28 @@ namespace SparkyStudios::Audio::Amplitude
         /**
          * @brief Initializes the scheduler for the given sound collection.
          *
-         * @param definition The SoundCollectionDefinition to use for initialization.
+         * @param definition The CollectionDefinition to use for initialization.
          */
-        virtual void Init(const SoundCollectionDefinition* definition) = 0;
+        virtual void Init(const CollectionDefinition* definition) = 0;
 
         /**
          * @brief Selects a sound from the list of available sounds.
          *
          * This assumes that the scheduler was already initialized.
          *
-         * @param sounds The list of available sounds.
          * @param toSkip The list of sounds to skip from selection.
          *
          * The values of this list are pointers of available sounds.
          *
          * @return The selected sound.
          */
-        virtual Sound* Select(std::vector<Sound>& sounds, const std::vector<const Sound*>& toSkip) = 0;
+        virtual Sound* Select(const std::vector<AmSoundID>& toSkip) = 0;
+
+        /**
+         * @brief Resets the internal state of the scheduler.
+         */
+        virtual void Reset() = 0;
     };
 } // namespace SparkyStudios::Audio::Amplitude
 
-#endif // SPARK_AUDIO_SOUND_COLLECTION_SCHEDULER_H
+#endif // SS_AMPLITUDE_AUDIO_SOUND_COLLECTION_SCHEDULER_H

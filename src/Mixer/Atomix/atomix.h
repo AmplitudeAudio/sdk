@@ -55,6 +55,7 @@ typedef void (*atomix_sound_paused_callback)(atomix_sound*);
 typedef void (*atomix_sound_resumed_callback)(atomix_sound*);
 typedef void (*atomix_sound_stopped_callback)(atomix_sound*);
 typedef void (*atomix_sound_ended_callback)(atomix_sound*);
+typedef bool (*atomix_sound_looped_callback)(atomix_sound*);
 typedef uint64_t (*atomix_sound_stream_callback)(atomix_sound*, uint64_t, uint64_t);
 typedef void (*atomix_sound_destroy_callback)(atomix_sound*);
 
@@ -73,6 +74,8 @@ ATMXDEF void atomixSoundSetStreamCallback(atomix_sound_stream_callback);
 ATMXDEF void atomixSoundSetDestroyCallback(atomix_sound_destroy_callback);
 // defines the callback function called when a sound has reached the end.
 ATMXDEF void atomixSoundSetEndedCallback(atomix_sound_ended_callback);
+// defines the callback function called when a sound has reached the end and loop.
+ATMXDEF void atomixSoundSetLoopedCallback(atomix_sound_looped_callback);
 // creates a new atomix sound with given number of channels and data
 // length of data is in frames and rounded to multiple of 4 for alignment
 // given data is copied, so the buffer can safely be freed after return
@@ -89,28 +92,29 @@ ATMXDEF struct atomix_mixer* atomixMixerNew(float, int32_t);
 ATMXDEF uint32_t atomixMixerMix(struct atomix_mixer*, float*, uint32_t);
 // uses given atomix mixer to play given atomix sound with given initial state, gain, and pan
 // returns a sound handle used to reference the sound at a later point, or 0 on failure
-ATMXDEF uint32_t atomixMixerPlay(struct atomix_mixer*, struct atomix_sound*, uint8_t, float, float);
+ATMXDEF uint32_t atomixMixerPlay(struct atomix_mixer*, struct atomix_sound*, uint8_t, float, float, uint32_t, uint32_t);
 // variant of atomixPlay that sets the start and end frames in the sound, positions are truncated to multiple of 4
 // a negative start value can be used to play a sound with a delay, a high end value can be used to loop a few times
 // if in the ATOMIX_LOOP state, looping will include these start/end positions, allowing for partial sounds to loop
 // returns a sound handle used to reference the sound at a later point, or 0 on failure
-ATMXDEF uint32_t atomixMixerPlayAdv(struct atomix_mixer*, struct atomix_sound*, uint8_t, float, float, int32_t, int32_t, int32_t);
+ATMXDEF uint32_t
+atomixMixerPlayAdv(struct atomix_mixer*, struct atomix_sound*, uint8_t, float, float, int32_t, int32_t, int32_t, uint32_t, uint32_t);
 // sets the gain and pan for the sound with given handle in given mixer
 // gain may be any float including negative, pan is clamped internally
 // returns 0 on success, non-zero if the handle is invalid
-ATMXDEF int atomixMixerSetGainPan(struct atomix_mixer*, uint32_t, float, float);
+ATMXDEF int atomixMixerSetGainPan(struct atomix_mixer*, uint32_t, uint32_t, float, float);
 // sets the cursor for the sound with given handle in given mixer
 // given cursor value is clamped and truncated to multiple of 4
 // returns 0 on success, non-zero if the handle is invalid
-ATMXDEF int atomixMixerSetCursor(struct atomix_mixer*, uint32_t, int32_t);
+ATMXDEF int atomixMixerSetCursor(struct atomix_mixer*, uint32_t, uint32_t, int32_t);
 // sets the state for the sound with given handle in given mixer
 // given state must be one of the ATOMIX_XXX define constants
 // returns 0 on success, non-zero if the handle is invalid
-ATMXDEF int atomixMixerSetState(struct atomix_mixer*, uint32_t, uint8_t);
+ATMXDEF int atomixMixerSetState(struct atomix_mixer*, uint32_t, uint32_t, uint8_t);
 // gets the state for the sound with given handle in given mixer
 // returned state will be one of the ATOMIX_XXX define constants
 // returns the state of the sound with given handle
-ATMXDEF unsigned int atomixMixerGetState(struct atomix_mixer* mix, uint32_t id);
+ATMXDEF unsigned int atomixMixerGetState(struct atomix_mixer*, uint32_t, uint32_t);
 // sets the global volume for given atomix mixer, may be any float including negative
 ATMXDEF void atomixMixerVolume(struct atomix_mixer*, float);
 // sets the global default fade value applied to all new sounds added after this command
@@ -139,7 +143,7 @@ ATMXDEF void atomixMixerPlayAll(struct atomix_mixer*);
 
 // constants
 #ifndef ATOMIX_LBITS
-#define ATOMIX_LBITS 8
+#define ATOMIX_LBITS 16
 #endif
 #define ATMX_LAYERS (1 << ATOMIX_LBITS)
 #define ATMX_LMASK (ATMX_LAYERS - 1)
@@ -163,6 +167,7 @@ static atomix_sound_paused_callback onPaused; // called when a sound is paused
 static atomix_sound_resumed_callback onResumed; // called when a sound is resumed
 static atomix_sound_stopped_callback onStopped; // called when a sound is stopped
 static atomix_sound_ended_callback onEnded; // called when a sound has played to the end
+static atomix_sound_looped_callback onLooped; // called when a sound has played to the end and loop
 static atomix_sound_stream_callback onStream; // called when a stream event occurs
 static atomix_sound_destroy_callback onDestroy; // called when a destroy event occurs
 
@@ -250,9 +255,13 @@ ATMXDEF void atomixSoundSetDestroyCallback(atomix_sound_destroy_callback handler
 {
     onDestroy = handler;
 }
-ATMXDEF void atomixSoundSetEndedCallback(atomix_sound_destroy_callback handler)
+ATMXDEF void atomixSoundSetEndedCallback(atomix_sound_ended_callback handler)
 {
     onEnded = handler;
+}
+ATMXDEF void atomixSoundSetLoopedCallback(atomix_sound_looped_callback handler)
+{
+    onLooped = handler;
 }
 ATMXDEF struct atomix_sound* atomixSoundNew(uint8_t cha, float* data, int32_t len, bool stream, void* udata)
 {
@@ -297,6 +306,9 @@ ATMXDEF void atomixSoundDestroy(struct atomix_sound* snd)
 {
     if (onDestroy)
         onDestroy(snd);
+
+    snd->buf = nullptr;
+    snd->udata = nullptr;
 
     free(snd);
 }
@@ -418,13 +430,23 @@ ATMXDEF uint32_t atomixMixerMix(struct atomix_mixer* mix, float* speaker, uint32
     // return
     return fnum;
 }
-ATMXDEF uint32_t atomixMixerPlay(struct atomix_mixer* mix, struct atomix_sound* snd, uint8_t flag, float gain, float pan)
+ATMXDEF uint32_t
+atomixMixerPlay(struct atomix_mixer* mix, struct atomix_sound* snd, uint8_t flag, float gain, float pan, uint32_t id, uint32_t lid)
 {
     // play with start and end equal to start and end of the sound itself
-    return atomixMixerPlayAdv(mix, snd, flag, gain, pan, 0, snd->len, mix->fade);
+    return atomixMixerPlayAdv(mix, snd, flag, gain, pan, 0, snd->len, mix->fade, id, lid);
 }
 ATMXDEF uint32_t atomixMixerPlayAdv(
-    struct atomix_mixer* mix, struct atomix_sound* snd, uint8_t flag, float gain, float pan, int32_t start, int32_t end, int32_t fade)
+    struct atomix_mixer* mix,
+    struct atomix_sound* snd,
+    uint8_t flag,
+    float gain,
+    float pan,
+    int32_t start,
+    int32_t end,
+    int32_t fade,
+    uint32_t id,
+    uint32_t lid)
 {
     // return failure if given flag invalid
     if ((flag < 1) || (flag > 4))
@@ -436,8 +458,7 @@ ATMXDEF uint32_t atomixMixerPlayAdv(
     for (int i = 0; i < ATMX_LAYERS; i++)
     {
         // get layer for next sound handle id
-        uint32_t id;
-        struct atmx_layer* lay = &mix->lays[(id = mix->nid++) & ATMX_LMASK];
+        struct atmx_layer* lay = &mix->lays[(lid = lid == 0 ? ++mix->nid : lid) & ATMX_LMASK];
         // check if corresponding layer is free
         if (ATMX_LOAD(&lay->flag) == 0)
         {
@@ -459,16 +480,16 @@ ATMXDEF uint32_t atomixMixerPlayAdv(
             // store flag last, releasing the layer to the mixer thread
             ATMX_STORE(&lay->flag, flag);
             // return success
-            return id;
+            return lid;
         }
     }
     // return failure
     return 0;
 }
-ATMXDEF int atomixMixerSetGainPan(struct atomix_mixer* mix, uint32_t id, float gain, float pan)
+ATMXDEF int atomixMixerSetGainPan(struct atomix_mixer* mix, uint32_t id, uint32_t lid, float gain, float pan)
 {
     // get layer based on the lowest bits of id
-    struct atmx_layer* lay = &mix->lays[id & ATMX_LMASK];
+    struct atmx_layer* lay = &mix->lays[lid & ATMX_LMASK];
     // check id and state flag to make sure the id is valid
     if ((id == lay->id) && (ATMX_LOAD(&lay->flag) > 1))
     {
@@ -480,10 +501,10 @@ ATMXDEF int atomixMixerSetGainPan(struct atomix_mixer* mix, uint32_t id, float g
     // return failure
     return 0;
 }
-ATMXDEF int atomixMixerSetCursor(struct atomix_mixer* mix, uint32_t id, int32_t cursor)
+ATMXDEF int atomixMixerSetCursor(struct atomix_mixer* mix, uint32_t id, uint32_t lid, int32_t cursor)
 {
     // get layer based on the lowest bits of id
-    struct atmx_layer* lay = &mix->lays[id & ATMX_LMASK];
+    struct atmx_layer* lay = &mix->lays[lid & ATMX_LMASK];
     // check id and state flag to make sure the id is valid
     if ((id == lay->id) && (ATMX_LOAD(&lay->flag) > 1))
     {
@@ -495,13 +516,13 @@ ATMXDEF int atomixMixerSetCursor(struct atomix_mixer* mix, uint32_t id, int32_t 
     // return failure
     return 0;
 }
-ATMXDEF int atomixMixerSetState(struct atomix_mixer* mix, uint32_t id, uint8_t flag)
+ATMXDEF int atomixMixerSetState(struct atomix_mixer* mix, uint32_t id, uint32_t lid, uint8_t flag)
 {
     // return failure if given flag invalid
-    if ((flag < 1) || (flag > 4))
+    if (flag > 4)
         return 0;
     // get layer based on the lowest bits of id
-    struct atmx_layer* lay = &mix->lays[id & ATMX_LMASK];
+    struct atmx_layer* lay = &mix->lays[lid & ATMX_LMASK];
     uint8_t prev;
     // check id and state flag to make sure the id is valid
     if ((id == lay->id) && ((prev = ATMX_LOAD(&lay->flag)) > 1))
@@ -510,7 +531,7 @@ ATMXDEF int atomixMixerSetState(struct atomix_mixer* mix, uint32_t id, uint8_t f
         if (prev == flag)
             return 1;
 
-        // run appropiate callback
+        // run appropriate callback
         if (prev == ATOMIX_STOP && (flag == ATOMIX_PLAY || flag == ATOMIX_LOOP) && onStarted)
             onStarted(lay->snd);
         else if ((prev == ATOMIX_PLAY || prev == ATOMIX_LOOP) && flag == ATOMIX_HALT && onPaused)
@@ -527,10 +548,10 @@ ATMXDEF int atomixMixerSetState(struct atomix_mixer* mix, uint32_t id, uint8_t f
     // return failure
     return 0;
 }
-ATMXDEF unsigned int atomixMixerGetState(struct atomix_mixer* mix, uint32_t id)
+ATMXDEF unsigned int atomixMixerGetState(struct atomix_mixer* mix, uint32_t id, uint32_t lid)
 {
     // get layer based on the lowest bits of id
-    struct atmx_layer* lay = &mix->lays[id & ATMX_LMASK];
+    struct atmx_layer* lay = &mix->lays[lid & ATMX_LMASK];
     uint8_t flag;
     // check id and state flag to make sure the id is valid
     if ((id == lay->id) && ((flag = ATMX_LOAD(&lay->flag)) > 1))
@@ -614,12 +635,15 @@ static void atmxMixLayer(struct atmx_layer* lay, __m128 vol, __m128* align, uint
     struct atmx_f2 g = ATMX_LOAD(&lay->gain);
     __m128 gmul = _mm_mul_ps(_mm_setr_ps(g.l, g.r, g.l, g.r), vol);
     // if this sound is streaming and we have a stream event callback
-    if (lay->snd && lay->snd->buf && onStream)
+    if (lay->snd != nullptr && lay->snd->buf != nullptr && onStream != nullptr)
     {
         // mix sound per chunk of streamed data
         int32_t c = rnum;
-        while (c > 0)
+        while (c > 0 && flag != 0)
         {
+            // update flag value
+            flag = ATMX_LOAD(&lay->flag);
+
             uint64_t chunkSize = AM_MIN(ATOMIX_MAX_STREAM_BUFFER_SIZE, c);
             uint64_t aChunkSize = ATOMIX_ALIGN(chunkSize) >> 1;
             uint64_t len = atmxSoundStreamUpdate(lay->snd, cur, chunkSize);
@@ -838,8 +862,26 @@ static int32_t atmxMixPlayMono(struct atmx_layer* lay, int loop, int32_t cur, __
                 // quit unless looping
                 if (!loop)
                     break;
-                // wrap around if looping
-                cur = lay->start;
+
+                // call the onLoop callback
+                if (onLooped)
+                {
+                    if (onLooped(lay->snd))
+                    {
+                        // wrap around if allowed to loop again
+                        cur = lay->start;
+                    }
+                    else
+                    {
+                        // stop playback
+                        break;
+                    }
+                }
+                else
+                {
+                    // wrap around if looping
+                    cur = lay->start;
+                }
             }
             // mix if cursor within sound
             if (cur >= 0)
@@ -882,8 +924,26 @@ static int32_t atmxMixPlayMono(struct atmx_layer* lay, int loop, int32_t cur, __
                 // quit unless looping
                 if (!loop)
                     break;
-                // wrap around if looping
-                cur = lay->start;
+
+                // call the onLoop callback
+                if (onLooped)
+                {
+                    if (onLooped(lay->snd))
+                    {
+                        // wrap around if allowed to loop again
+                        cur = lay->start;
+                    }
+                    else
+                    {
+                        // stop playback
+                        break;
+                    }
+                }
+                else
+                {
+                    // wrap around if looping
+                    cur = lay->start;
+                }
             }
             // mix if cursor within sound
             if (cur >= 0)
@@ -932,8 +992,26 @@ static int32_t atmxMixPlayStereo(struct atmx_layer* lay, int loop, int32_t cur, 
                 // quit unless looping
                 if (!loop)
                     break;
-                // wrap around if looping
-                cur = lay->start;
+
+                // call the onLoop callback
+                if (onLooped)
+                {
+                    if (onLooped(lay->snd))
+                    {
+                        // wrap around if allowed to loop again
+                        cur = lay->start;
+                    }
+                    else
+                    {
+                        // stop playback
+                        break;
+                    }
+                }
+                else
+                {
+                    // wrap around if looping
+                    cur = lay->start;
+                }
             }
             // mix if cursor within sound
             if (cur >= 0)
@@ -975,8 +1053,26 @@ static int32_t atmxMixPlayStereo(struct atmx_layer* lay, int loop, int32_t cur, 
                 // quit unless looping
                 if (!loop)
                     break;
-                // wrap around if looping
-                cur = lay->start;
+
+                // call the onLoop callback
+                if (onLooped)
+                {
+                    if (onLooped(lay->snd))
+                    {
+                        // wrap around if allowed to loop again
+                        cur = lay->start;
+                    }
+                    else
+                    {
+                        // stop playback
+                        break;
+                    }
+                }
+                else
+                {
+                    // wrap around if looping
+                    cur = lay->start;
+                }
             }
             // mix if cursor within sound
             if (cur >= 0)
@@ -1180,8 +1276,26 @@ static int32_t atmxMixPlayMono(struct atmx_layer* lay, int loop, int32_t cur, st
                 // quit unless looping
                 if (!loop)
                     break;
-                // wrap around if looping
-                cur = lay->start;
+
+                // call the onLoop callback
+                if (onLooped)
+                {
+                    if (onLooped(lay->snd))
+                    {
+                        // wrap around if allowed to loop again
+                        cur = lay->start;
+                    }
+                    else
+                    {
+                        // stop playback
+                        break;
+                    }
+                }
+                else
+                {
+                    // wrap around if looping
+                    cur = lay->start;
+                }
             }
             // mix if cursor within sound
             if (cur >= 0)
@@ -1213,8 +1327,26 @@ static int32_t atmxMixPlayMono(struct atmx_layer* lay, int loop, int32_t cur, st
                 // quit unless looping
                 if (!loop)
                     break;
-                // wrap around if looping
-                cur = lay->start;
+
+                // call the onLoop callback
+                if (onLooped)
+                {
+                    if (onLooped(lay->snd))
+                    {
+                        // wrap around if allowed to loop again
+                        cur = lay->start;
+                    }
+                    else
+                    {
+                        // stop playback
+                        break;
+                    }
+                }
+                else
+                {
+                    // wrap around if looping
+                    cur = lay->start;
+                }
             }
             // mix if cursor within sound
             if (cur >= 0)
@@ -1252,8 +1384,26 @@ static int32_t atmxMixPlayStereo(struct atmx_layer* lay, int loop, int32_t cur, 
                 // quit unless looping
                 if (!loop)
                     break;
-                // wrap around if looping
-                cur = lay->start;
+
+                // call the onLoop callback
+                if (onLooped)
+                {
+                    if (onLooped(lay->snd))
+                    {
+                        // wrap around if allowed to loop again
+                        cur = lay->start;
+                    }
+                    else
+                    {
+                        // stop playback
+                        break;
+                    }
+                }
+                else
+                {
+                    // wrap around if looping
+                    cur = lay->start;
+                }
             }
             // mix if cursor within sound
             if (cur >= 0)
@@ -1285,8 +1435,26 @@ static int32_t atmxMixPlayStereo(struct atmx_layer* lay, int loop, int32_t cur, 
                 // quit unless looping
                 if (!loop)
                     break;
-                // wrap around if looping
-                cur = lay->start;
+
+                // call the onLoop callback
+                if (onLooped)
+                {
+                    if (onLooped(lay->snd))
+                    {
+                        // wrap around if allowed to loop again
+                        cur = lay->start;
+                    }
+                    else
+                    {
+                        // stop playback
+                        break;
+                    }
+                }
+                else
+                {
+                    // wrap around if looping
+                    cur = lay->start;
+                }
             }
             // mix if cursor within sound
             if (cur >= 0)

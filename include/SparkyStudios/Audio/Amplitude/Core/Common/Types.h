@@ -31,7 +31,7 @@ namespace SparkyStudios::Audio::Amplitude
 
     typedef AmObjectID          AmBankID;
     typedef AmObjectID          AmBusID;
-    typedef AmObjectID          AmSoundCollectionID;
+    typedef AmObjectID          AmCollectionID;
     typedef AmObjectID          AmSoundID;
     typedef AmObjectID          AmEntityID;
     typedef AmObjectID          AmListenerID;
