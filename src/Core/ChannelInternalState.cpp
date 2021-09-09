@@ -52,7 +52,7 @@ namespace SparkyStudios::Audio::Amplitude
 
     void ChannelInternalState::Reset()
     {
-        _realChannel = RealChannel(this);
+        _realChannel._channelLayerId = kAmInvalidObjectId;
         _channelState = ChannelState::Stopped;
         _collection = nullptr;
         _fader = nullptr;
@@ -228,22 +228,26 @@ namespace SparkyStudios::Audio::Amplitude
         AMPLITUDE_ASSERT(!_realChannel.Valid());
         AMPLITUDE_ASSERT(other->_realChannel.Valid());
 
-        // Transfer the real channel id to this channel.
-        std::swap(_realChannel, other->_realChannel);
+        other->_realChannel.Pause();
 
-        _realChannel._parentChannelState = this;
-        _realChannel.ClearPlayedSounds();
+        // Transfer the real channel id to this channel.
+        std::swap(_realChannel._channelId, other->_realChannel._channelId);
 
         if (Playing())
         {
             // Resume playing the audio.
+            if (_realChannel._channelLayerId == kAmInvalidObjectId)
+            {
             _realChannel.Play(_sound->CreateInstance(_collection));
+            }
+            else
+            {
+                _realChannel.Resume();
+            }
         }
         else if (Paused())
         {
-            // The audio needs to be playing to pause it.
-            _realChannel.Play(_sound->CreateInstance(_collection));
-            _realChannel.Pause();
+            Resume();
         }
     }
 
@@ -385,7 +389,7 @@ namespace SparkyStudios::Audio::Amplitude
         _fader = Fader::Create(static_cast<Fader::FADER_ALGORITHM>(definition->fader()));
 
         _channelState = ChannelState::Playing;
-        return !_realChannel.Valid() || _realChannel.Play(_sound->CreateInstance(_collection));
+        return _realChannel.Valid() ? _realChannel.Play(_sound->CreateInstance(_collection)) : true;
     }
 
     bool ChannelInternalState::PlaySound()
@@ -397,6 +401,6 @@ namespace SparkyStudios::Audio::Amplitude
         _fader = Fader::Create(static_cast<Fader::FADER_ALGORITHM>(definition->fader()));
 
         _channelState = ChannelState::Playing;
-        return !_realChannel.Valid() || _realChannel.Play(_sound->CreateInstance());
+        return _realChannel.Valid() ? _realChannel.Play(_sound->CreateInstance()) : true;
     }
 } // namespace SparkyStudios::Audio::Amplitude

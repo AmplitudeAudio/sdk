@@ -28,14 +28,13 @@
 
 namespace SparkyStudios::Audio::Amplitude
 {
-    static constexpr unsigned int kInvalidChannelId = 0;
-
     RealChannel::RealChannel()
         : RealChannel(nullptr)
     {}
 
     RealChannel::RealChannel(ChannelInternalState* parent)
-        : _channelId(kInvalidChannelId)
+        : _channelId(kAmInvalidObjectId)
+        , _channelLayerId(kAmInvalidObjectId)
         , _stream(false)
         , _loop(false)
         , _pan(0.0f)
@@ -77,7 +76,7 @@ namespace SparkyStudios::Audio::Amplitude
 
     bool RealChannel::Valid() const
     {
-        return _channelId != kInvalidChannelId && _mixer != nullptr && _parentChannelState != nullptr;
+        return _channelId != kAmInvalidObjectId && _mixer != nullptr && _parentChannelState != nullptr;
     }
 
     bool RealChannel::Play(SoundInstance* sound)
@@ -90,7 +89,9 @@ namespace SparkyStudios::Audio::Amplitude
 
         if (!_activeSound->GetUserData())
         {
-            _channelId = kInvalidChannelId;
+            _channelId = kAmInvalidObjectId;
+            _channelLayerId = kAmInvalidObjectId;
+
             CallLogFunc("[ERROR] The sound was not loaded successfully.");
             return false;
         }
@@ -100,27 +101,36 @@ namespace SparkyStudios::Audio::Amplitude
 
         const AmUInt8 loops = _loop ? ATOMIX_LOOP : ATOMIX_PLAY;
 
-        _channelId = atomixMixerPlay(_mixer, static_cast<atomix_sound*>(_activeSound->GetUserData()), loops, _gain, _pan);
+        _channelLayerId = atomixMixerPlay(
+            _mixer, static_cast<atomix_sound*>(_activeSound->GetUserData()), loops, _gain, _pan, _channelId, _channelLayerId);
 
         // Check if playing the sound was successful, and display the error if it was not.
-        const bool success = _channelId != kInvalidChannelId;
+        const bool success = _channelLayerId != kAmInvalidObjectId;
         if (!success)
         {
-            _channelId = kInvalidChannelId;
+            _channelId = kAmInvalidObjectId;
+            _channelLayerId = kAmInvalidObjectId;
+
             CallLogFunc("[ERROR] Could not play sound " AM_OS_CHAR_FMT "\n", _activeSound->GetSound()->GetFilename());
         }
 
         return success;
     }
 
+    void RealChannel::Destroy()
+    {
+        AMPLITUDE_ASSERT(Valid() && _channelLayerId != kAmInvalidObjectId);
+        atomixMixerSetState(_mixer, _channelId, _channelLayerId, 0);
+    }
+
     bool RealChannel::Playing() const
     {
         AMPLITUDE_ASSERT(Valid());
-        const AmUInt32 state = atomixMixerGetState(_mixer, _channelId);
+        const AmUInt32 state = atomixMixerGetState(_mixer, _channelId, _channelLayerId);
 
         if (const auto* collection = _parentChannelState->GetCollection(); collection == nullptr)
         {
-            return !_loop && state == ATOMIX_PLAY  || _loop && state == ATOMIX_LOOP;
+            return !_loop && state == ATOMIX_PLAY || _loop && state == ATOMIX_LOOP;
         }
         else
         {
@@ -128,21 +138,21 @@ namespace SparkyStudios::Audio::Amplitude
 
             return mode == CollectionPlayMode_PlayOne && !_loop ? state == ATOMIX_PLAY
                 : mode == CollectionPlayMode_PlayOne && _loop   ? state == ATOMIX_LOOP
-                                                                : _channelId != kInvalidChannelId;
+                                                                : _channelId != kAmInvalidObjectId;
         }
     }
 
     bool RealChannel::Paused() const
     {
         AMPLITUDE_ASSERT(Valid());
-        return atomixMixerGetState(_mixer, _channelId) == ATOMIX_HALT;
+        return atomixMixerGetState(_mixer, _channelId, _channelLayerId) == ATOMIX_HALT;
     }
 
     void RealChannel::SetGain(const float gain)
     {
         AMPLITUDE_ASSERT(Valid());
 
-        atomixMixerSetGainPan(_mixer, _channelId, gain, _pan);
+        atomixMixerSetGainPan(_mixer, _channelId, _channelLayerId, gain, _pan);
         _gain = gain;
     }
 
@@ -155,25 +165,25 @@ namespace SparkyStudios::Audio::Amplitude
     void RealChannel::Halt()
     {
         AMPLITUDE_ASSERT(Valid());
-        atomixMixerSetState(_mixer, _channelId, ATOMIX_STOP);
+        atomixMixerSetState(_mixer, _channelId, _channelLayerId, ATOMIX_STOP);
     }
 
     void RealChannel::Pause()
     {
         AMPLITUDE_ASSERT(Valid());
-        atomixMixerSetState(_mixer, _channelId, ATOMIX_HALT);
+        atomixMixerSetState(_mixer, _channelId, _channelLayerId, ATOMIX_HALT);
     }
 
     void RealChannel::Resume()
     {
         AMPLITUDE_ASSERT(Valid());
-        atomixMixerSetState(_mixer, _channelId, _loop ? ATOMIX_LOOP : ATOMIX_PLAY);
+        atomixMixerSetState(_mixer, _channelId, _channelLayerId, _loop ? ATOMIX_LOOP : ATOMIX_PLAY);
     }
 
     void RealChannel::SetPan(const hmm_vec2& pan)
     {
         AMPLITUDE_ASSERT(Valid());
-        atomixMixerSetGainPan(_mixer, _channelId, _gain, pan.X);
+        atomixMixerSetGainPan(_mixer, _channelId, _channelLayerId, _gain, pan.X);
         _pan = pan.X;
     }
 } // namespace SparkyStudios::Audio::Amplitude

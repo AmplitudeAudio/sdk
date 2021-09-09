@@ -92,28 +92,29 @@ ATMXDEF struct atomix_mixer* atomixMixerNew(float, int32_t);
 ATMXDEF uint32_t atomixMixerMix(struct atomix_mixer*, float*, uint32_t);
 // uses given atomix mixer to play given atomix sound with given initial state, gain, and pan
 // returns a sound handle used to reference the sound at a later point, or 0 on failure
-ATMXDEF uint32_t atomixMixerPlay(struct atomix_mixer*, struct atomix_sound*, uint8_t, float, float);
+ATMXDEF uint32_t atomixMixerPlay(struct atomix_mixer*, struct atomix_sound*, uint8_t, float, float, uint32_t, uint32_t);
 // variant of atomixPlay that sets the start and end frames in the sound, positions are truncated to multiple of 4
 // a negative start value can be used to play a sound with a delay, a high end value can be used to loop a few times
 // if in the ATOMIX_LOOP state, looping will include these start/end positions, allowing for partial sounds to loop
 // returns a sound handle used to reference the sound at a later point, or 0 on failure
-ATMXDEF uint32_t atomixMixerPlayAdv(struct atomix_mixer*, struct atomix_sound*, uint8_t, float, float, int32_t, int32_t, int32_t);
+ATMXDEF uint32_t
+atomixMixerPlayAdv(struct atomix_mixer*, struct atomix_sound*, uint8_t, float, float, int32_t, int32_t, int32_t, uint32_t, uint32_t);
 // sets the gain and pan for the sound with given handle in given mixer
 // gain may be any float including negative, pan is clamped internally
 // returns 0 on success, non-zero if the handle is invalid
-ATMXDEF int atomixMixerSetGainPan(struct atomix_mixer*, uint32_t, float, float);
+ATMXDEF int atomixMixerSetGainPan(struct atomix_mixer*, uint32_t, uint32_t, float, float);
 // sets the cursor for the sound with given handle in given mixer
 // given cursor value is clamped and truncated to multiple of 4
 // returns 0 on success, non-zero if the handle is invalid
-ATMXDEF int atomixMixerSetCursor(struct atomix_mixer*, uint32_t, int32_t);
+ATMXDEF int atomixMixerSetCursor(struct atomix_mixer*, uint32_t, uint32_t, int32_t);
 // sets the state for the sound with given handle in given mixer
 // given state must be one of the ATOMIX_XXX define constants
 // returns 0 on success, non-zero if the handle is invalid
-ATMXDEF int atomixMixerSetState(struct atomix_mixer*, uint32_t, uint8_t);
+ATMXDEF int atomixMixerSetState(struct atomix_mixer*, uint32_t, uint32_t, uint8_t);
 // gets the state for the sound with given handle in given mixer
 // returned state will be one of the ATOMIX_XXX define constants
 // returns the state of the sound with given handle
-ATMXDEF unsigned int atomixMixerGetState(struct atomix_mixer* mix, uint32_t id);
+ATMXDEF unsigned int atomixMixerGetState(struct atomix_mixer*, uint32_t, uint32_t);
 // sets the global volume for given atomix mixer, may be any float including negative
 ATMXDEF void atomixMixerVolume(struct atomix_mixer*, float);
 // sets the global default fade value applied to all new sounds added after this command
@@ -142,7 +143,7 @@ ATMXDEF void atomixMixerPlayAll(struct atomix_mixer*);
 
 // constants
 #ifndef ATOMIX_LBITS
-#define ATOMIX_LBITS 8
+#define ATOMIX_LBITS 16
 #endif
 #define ATMX_LAYERS (1 << ATOMIX_LBITS)
 #define ATMX_LMASK (ATMX_LAYERS - 1)
@@ -429,13 +430,23 @@ ATMXDEF uint32_t atomixMixerMix(struct atomix_mixer* mix, float* speaker, uint32
     // return
     return fnum;
 }
-ATMXDEF uint32_t atomixMixerPlay(struct atomix_mixer* mix, struct atomix_sound* snd, uint8_t flag, float gain, float pan)
+ATMXDEF uint32_t
+atomixMixerPlay(struct atomix_mixer* mix, struct atomix_sound* snd, uint8_t flag, float gain, float pan, uint32_t id, uint32_t lid)
 {
     // play with start and end equal to start and end of the sound itself
-    return atomixMixerPlayAdv(mix, snd, flag, gain, pan, 0, snd->len, mix->fade);
+    return atomixMixerPlayAdv(mix, snd, flag, gain, pan, 0, snd->len, mix->fade, id, lid);
 }
 ATMXDEF uint32_t atomixMixerPlayAdv(
-    struct atomix_mixer* mix, struct atomix_sound* snd, uint8_t flag, float gain, float pan, int32_t start, int32_t end, int32_t fade)
+    struct atomix_mixer* mix,
+    struct atomix_sound* snd,
+    uint8_t flag,
+    float gain,
+    float pan,
+    int32_t start,
+    int32_t end,
+    int32_t fade,
+    uint32_t id,
+    uint32_t lid)
 {
     // return failure if given flag invalid
     if ((flag < 1) || (flag > 4))
@@ -447,8 +458,7 @@ ATMXDEF uint32_t atomixMixerPlayAdv(
     for (int i = 0; i < ATMX_LAYERS; i++)
     {
         // get layer for next sound handle id
-        uint32_t id;
-        struct atmx_layer* lay = &mix->lays[(id = mix->nid++) & ATMX_LMASK];
+        struct atmx_layer* lay = &mix->lays[(lid = lid == 0 ? ++mix->nid : lid) & ATMX_LMASK];
         // check if corresponding layer is free
         if (ATMX_LOAD(&lay->flag) == 0)
         {
@@ -470,16 +480,16 @@ ATMXDEF uint32_t atomixMixerPlayAdv(
             // store flag last, releasing the layer to the mixer thread
             ATMX_STORE(&lay->flag, flag);
             // return success
-            return id;
+            return lid;
         }
     }
     // return failure
     return 0;
 }
-ATMXDEF int atomixMixerSetGainPan(struct atomix_mixer* mix, uint32_t id, float gain, float pan)
+ATMXDEF int atomixMixerSetGainPan(struct atomix_mixer* mix, uint32_t id, uint32_t lid, float gain, float pan)
 {
     // get layer based on the lowest bits of id
-    struct atmx_layer* lay = &mix->lays[id & ATMX_LMASK];
+    struct atmx_layer* lay = &mix->lays[lid & ATMX_LMASK];
     // check id and state flag to make sure the id is valid
     if ((id == lay->id) && (ATMX_LOAD(&lay->flag) > 1))
     {
@@ -491,10 +501,10 @@ ATMXDEF int atomixMixerSetGainPan(struct atomix_mixer* mix, uint32_t id, float g
     // return failure
     return 0;
 }
-ATMXDEF int atomixMixerSetCursor(struct atomix_mixer* mix, uint32_t id, int32_t cursor)
+ATMXDEF int atomixMixerSetCursor(struct atomix_mixer* mix, uint32_t id, uint32_t lid, int32_t cursor)
 {
     // get layer based on the lowest bits of id
-    struct atmx_layer* lay = &mix->lays[id & ATMX_LMASK];
+    struct atmx_layer* lay = &mix->lays[lid & ATMX_LMASK];
     // check id and state flag to make sure the id is valid
     if ((id == lay->id) && (ATMX_LOAD(&lay->flag) > 1))
     {
@@ -506,13 +516,13 @@ ATMXDEF int atomixMixerSetCursor(struct atomix_mixer* mix, uint32_t id, int32_t 
     // return failure
     return 0;
 }
-ATMXDEF int atomixMixerSetState(struct atomix_mixer* mix, uint32_t id, uint8_t flag)
+ATMXDEF int atomixMixerSetState(struct atomix_mixer* mix, uint32_t id, uint32_t lid, uint8_t flag)
 {
     // return failure if given flag invalid
-    if ((flag < 1) || (flag > 4))
+    if (flag > 4)
         return 0;
     // get layer based on the lowest bits of id
-    struct atmx_layer* lay = &mix->lays[id & ATMX_LMASK];
+    struct atmx_layer* lay = &mix->lays[lid & ATMX_LMASK];
     uint8_t prev;
     // check id and state flag to make sure the id is valid
     if ((id == lay->id) && ((prev = ATMX_LOAD(&lay->flag)) > 1))
@@ -538,10 +548,10 @@ ATMXDEF int atomixMixerSetState(struct atomix_mixer* mix, uint32_t id, uint8_t f
     // return failure
     return 0;
 }
-ATMXDEF unsigned int atomixMixerGetState(struct atomix_mixer* mix, uint32_t id)
+ATMXDEF unsigned int atomixMixerGetState(struct atomix_mixer* mix, uint32_t id, uint32_t lid)
 {
     // get layer based on the lowest bits of id
-    struct atmx_layer* lay = &mix->lays[id & ATMX_LMASK];
+    struct atmx_layer* lay = &mix->lays[lid & ATMX_LMASK];
     uint8_t flag;
     // check id and state flag to make sure the id is valid
     if ((id == lay->id) && ((flag = ATMX_LOAD(&lay->flag)) > 1))

@@ -82,6 +82,8 @@ namespace SparkyStudios::Audio::Amplitude
          */
         void Resume();
 
+        void Destroy();
+
         /**
          * @brief Check if this channel is currently playing on a real channel.
          */
@@ -161,7 +163,9 @@ namespace SparkyStudios::Audio::Amplitude
         }
 
     private:
-        AmUInt32 _channelId;
+        AmChannelID _channelId;
+        AmUInt32 _channelLayerId;
+
         bool _stream;
         bool _loop;
 

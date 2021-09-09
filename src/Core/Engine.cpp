@@ -198,11 +198,12 @@ namespace SparkyStudios::Audio::Amplitude
             // Track real channels separately from virtual channels.
             if (i < realChannels)
             {
-                channel.GetRealChannel().Initialize(static_cast<int>(i));
+                channel.GetRealChannel().Initialize(static_cast<int>(i + 1));
                 realChannelFreeList->push_front(channel);
             }
             else
             {
+                channel.GetRealChannel().Initialize(kAmInvalidObjectId);
                 virtualChannelFreeList->push_front(channel);
             }
         }
@@ -569,6 +570,7 @@ namespace SparkyStudios::Audio::Amplitude
     static void InsertIntoFreeList(EngineInternalState* state, ChannelInternalState* channel)
     {
         channel->Remove();
+        channel->Reset();
         FreeList* list = channel->IsReal() ? &state->real_channel_free_list : &state->virtual_channel_free_list;
         list->push_front(*channel);
     }
@@ -1062,10 +1064,13 @@ namespace SparkyStudios::Audio::Amplitude
                     // the virtual free list.
                     ChannelInternalState* freeChannel = &realFreeList->front();
                     state->Devirtualize(freeChannel);
+
+                    freeChannel->Remove();
                     virtualFreeList->push_front(*freeChannel);
+
                     state->Resume();
                 }
-                else
+                else if (&*reverseIterator != &*state)
                 {
                     // If there aren't any free channels, then scan from the back of the
                     // list for low priority real channels.
