@@ -65,6 +65,20 @@ namespace SparkyStudios::Audio::Amplitude
         bool LoadCollectionDefinitionFromFile(AmOsString filename, EngineInternalState* state);
 
         /**
+         * @brief Acquires referenced objects in this Collection.
+         *
+         * @param state The engine state used while loading the collection.
+         */
+        void AcquireReferences(EngineInternalState* state);
+
+        /**
+         * @brief Releases the references acquired when loading the collection.
+         *
+         * @param state The engine state used while loading the collection.
+         */
+        void ReleaseReferences(EngineInternalState* state);
+
+        /**
          * @brief Returns the loaded collection definition.
          *
          * @return The loaded collection definition.

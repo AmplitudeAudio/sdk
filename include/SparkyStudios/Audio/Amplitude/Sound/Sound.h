@@ -84,6 +84,20 @@ namespace SparkyStudios::Audio::Amplitude
         bool LoadSoundDefinitionFromFile(AmOsString filename, EngineInternalState* state);
 
         /**
+         * @brief Acquires referenced objects in this Sound.
+         *
+         * @param state The engine state used while loading the sound.
+         */
+        void AcquireReferences(EngineInternalState* state);
+
+        /**
+         * @brief Releases the references acquired when loading the sound.
+         *
+         * @param state The engine state used while loading the sound.
+         */
+        void ReleaseReferences(EngineInternalState* state);
+
+        /**
          * @brief Returns the loaded sound definition.
          *
          * @return The loaded sound definition.

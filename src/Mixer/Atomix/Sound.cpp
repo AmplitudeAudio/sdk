@@ -72,7 +72,6 @@ namespace SparkyStudios::Audio::Amplitude
             if (const auto findIt = state->attenuation_map.find(definition->attenuation()); findIt != state->attenuation_map.end())
             {
                 _attenuation = findIt->second.get();
-                _attenuation->GetRefCounter()->Increment();
             }
             else
             {
@@ -96,6 +95,26 @@ namespace SparkyStudios::Audio::Amplitude
     {
         std::string source;
         return Amplitude::LoadFile(filename, &source) && LoadSoundDefinition(source, state);
+    }
+
+    void Sound::AcquireReferences(EngineInternalState* state)
+    {
+        AMPLITUDE_ASSERT(_id != kAmInvalidObjectId);
+
+        if (_attenuation)
+        {
+            _attenuation->GetRefCounter()->Increment();
+        }
+    }
+
+    void Sound::ReleaseReferences(EngineInternalState* state)
+    {
+        AMPLITUDE_ASSERT(_id != kAmInvalidObjectId);
+
+        if (_attenuation)
+        {
+            _attenuation->GetRefCounter()->Decrement();
+        }
     }
 
     const SoundDefinition* Sound::GetSoundDefinition() const
