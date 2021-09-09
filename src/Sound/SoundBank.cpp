@@ -32,10 +32,10 @@ namespace SparkyStudios::Audio::Amplitude
         , _soundBankDefSource()
     {}
 
-    static bool InitializeCollection(AmOsString filename, Engine* audio_engine)
+    static bool InitializeCollection(AmOsString filename, Engine* engine)
     {
         // Find the ID.
-        CollectionHandle handle = audio_engine->GetCollectionHandleFromFile(filename);
+        CollectionHandle handle = engine->GetCollectionHandleFromFile(filename);
         if (handle)
         {
             // We've seen this ID before, update it.
@@ -45,7 +45,7 @@ namespace SparkyStudios::Audio::Amplitude
         {
             // This is a new collection, load it and update it.
             std::unique_ptr<Collection> collection(new Collection());
-            if (!collection->LoadCollectionDefinitionFromFile(filename, audio_engine->GetState()))
+            if (!collection->LoadCollectionDefinitionFromFile(filename, engine->GetState()))
             {
                 return false;
             }
@@ -60,10 +60,11 @@ namespace SparkyStudios::Audio::Amplitude
                 return false;
             }
 
+            collection->AcquireReferences(engine->GetState());
             collection->GetRefCounter()->Increment();
 
-            audio_engine->GetState()->collection_map[id] = std::move(collection);
-            audio_engine->GetState()->collection_id_map[filename] = id;
+            engine->GetState()->collection_map[id] = std::move(collection);
+            engine->GetState()->collection_id_map[filename] = id;
         }
 
         return true;
@@ -97,6 +98,8 @@ namespace SparkyStudios::Audio::Amplitude
             }
 
             sound->Load(&engine->GetState()->loader);
+
+            sound->AcquireReferences(engine->GetState());
             sound->GetRefCounter()->Increment();
 
             engine->GetState()->sound_map[id] = std::move(sound);
@@ -106,10 +109,10 @@ namespace SparkyStudios::Audio::Amplitude
         return true;
     }
 
-    static bool InitializeEvent(AmOsString filename, Engine* audio_engine)
+    static bool InitializeEvent(AmOsString filename, Engine* engine)
     {
         // Find the ID.
-        EventHandle handle = audio_engine->GetEventHandleFromFile(filename);
+        EventHandle handle = engine->GetEventHandleFromFile(filename);
         if (handle)
         {
             // We've seen this ID before, update it.
@@ -135,17 +138,17 @@ namespace SparkyStudios::Audio::Amplitude
 
             event->GetRefCounter()->Increment();
 
-            audio_engine->GetState()->event_map[id] = std::move(event);
-            audio_engine->GetState()->event_id_map[filename] = id;
+            engine->GetState()->event_map[id] = std::move(event);
+            engine->GetState()->event_id_map[filename] = id;
         }
 
         return true;
     }
 
-    static bool InitializeAttenuation(AmOsString filename, Engine* audio_engine)
+    static bool InitializeAttenuation(AmOsString filename, Engine* engine)
     {
         // Find the ID.
-        AttenuationHandle handle = audio_engine->GetAttenuationHandleFromFile(filename);
+        AttenuationHandle handle = engine->GetAttenuationHandleFromFile(filename);
         if (handle)
         {
             // We've seen this ID before, update it.
@@ -172,8 +175,8 @@ namespace SparkyStudios::Audio::Amplitude
 
             attenuation->GetRefCounter()->Increment();
 
-            audio_engine->GetState()->attenuation_map[id] = std::move(attenuation);
-            audio_engine->GetState()->attenuation_id_map[filename] = id;
+            engine->GetState()->attenuation_map[id] = std::move(attenuation);
+            engine->GetState()->attenuation_id_map[filename] = id;
         }
 
         return true;

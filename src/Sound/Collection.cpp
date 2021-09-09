@@ -63,7 +63,6 @@ namespace SparkyStudios::Audio::Amplitude
                 if (auto findIt = state->attenuation_map.find(def->attenuation()); findIt != state->attenuation_map.end())
                 {
                     _attenuation = findIt->second.get();
-                    _attenuation->GetRefCounter()->Increment();
                 }
 
                 if (!_attenuation)
@@ -95,10 +94,6 @@ namespace SparkyStudios::Audio::Amplitude
                 CallLogFunc("[ERROR] Collection %s specifies an unknown sound ID: %u", def->name()->c_str(), id);
                 return false;
             }
-            else
-            {
-                findIt->second->GetRefCounter()->Increment();
-            }
 
             _sounds[i] = id;
         }
@@ -114,9 +109,32 @@ namespace SparkyStudios::Audio::Amplitude
         return Amplitude::LoadFile(filename, &source) && LoadCollectionDefinition(source, state);
     }
 
+    void Collection::AcquireReferences(EngineInternalState* state)
+    {
+        AMPLITUDE_ASSERT(_id != kAmInvalidObjectId);
+
+        if (_attenuation)
+        {
+            _attenuation->GetRefCounter()->Increment();
+        }
+
+        for (auto&& sound : _sounds)
+        {
+            if (auto findIt = state->sound_map.find(sound); findIt != state->sound_map.end())
+            {
+                findIt->second->GetRefCounter()->Increment();
+            }
+        }
+    }
+
     void Collection::ReleaseReferences(EngineInternalState* state)
     {
-        _attenuation->GetRefCounter()->Decrement();
+        AMPLITUDE_ASSERT(_id != kAmInvalidObjectId);
+
+        if (_attenuation)
+        {
+            _attenuation->GetRefCounter()->Decrement();
+        }
 
         for (auto&& sound : _sounds)
         {
