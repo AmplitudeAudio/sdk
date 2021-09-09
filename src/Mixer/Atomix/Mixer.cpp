@@ -100,6 +100,23 @@ namespace SparkyStudios::Audio::Amplitude
         delete sound;
     }
 
+    bool Mixer::atomix_sound_looped(atomix_sound* snd)
+    {
+        auto* sound = static_cast<SoundInstance*>(snd->udata);
+        CallLogFunc("Looped sound: " AM_OS_CHAR_FMT "\n", sound->GetSound()->GetFilename());
+
+        ++sound->_currentLoopCount;
+
+        const AmUInt32 loopCount = sound->GetSettings().m_loopCount;
+        if (sound->_currentLoopCount == loopCount)
+        {
+            sound->GetChannel()->Halt();
+            return false;
+        }
+
+        return true;
+    }
+
     static AmUInt64 atomix_sound_stream(atomix_sound* snd, AmUInt64 offset, AmUInt64 frames)
     {
         auto* sound = static_cast<SoundInstance*>(snd->udata);
@@ -127,6 +144,7 @@ namespace SparkyStudios::Audio::Amplitude
         atomixSoundSetStreamCallback(atomix_sound_stream);
         atomixSoundSetDestroyCallback(atomix_sound_destroy);
         atomixSoundSetEndedCallback(atomix_sound_ended);
+        atomixSoundSetLoopedCallback(atomix_sound_looped);
     }
 
     Mixer::~Mixer()

@@ -52,6 +52,7 @@ namespace SparkyStudios::Audio::Amplitude
         AmReal32 m_priority;
         AmReal32 m_gain;
         bool m_loop;
+        AmUInt32 m_loopCount;
     };
 
     class Sound : public Resource
@@ -187,6 +188,7 @@ namespace SparkyStudios::Audio::Amplitude
         Attenuation* _attenuation;
         bool _stream;
         bool _loop;
+        AmUInt32 _loopCount;
 
         std::string _source;
 
@@ -195,6 +197,7 @@ namespace SparkyStudios::Audio::Amplitude
 
     class SoundInstance
     {
+        friend class Mixer;
         friend class Sound;
 
     public:
@@ -273,13 +276,25 @@ namespace SparkyStudios::Audio::Amplitude
         [[nodiscard]] RealChannel* GetChannel() const;
 
         /**
-         * @brief Gets the Sound source which generates this SoundInstance.
+         * @brief Gets the Sound source which have generated this SoundInstance.
          *
-         * @return const Sound*
+         * @return The Sound object which is the source of this instance.
          */
         [[nodiscard]] const Sound* GetSound() const;
 
+        /**
+         * @brief Gets the Collection which have generated this SoundInstance.
+         *
+         * @return The Collection object which have generated this instance, if any.
+         */
         [[nodiscard]] const Collection* GetCollection() const;
+
+        /**
+         * @brief Gets the number of times this SoundInstance have looped.
+         *
+         * @return The number of times this sound instance have looped.
+         */
+        [[nodiscard]] AmUInt32 GetCurrentLoopCount() const;
 
     private:
         AmVoidPtr _userData;
@@ -291,6 +306,8 @@ namespace SparkyStudios::Audio::Amplitude
         const Collection* _collection;
 
         SoundInstanceSettings _settings;
+
+        AmUInt32 _currentLoopCount;
     };
 } // namespace SparkyStudios::Audio::Amplitude
 

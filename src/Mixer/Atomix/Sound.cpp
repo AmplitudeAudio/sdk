@@ -87,6 +87,7 @@ namespace SparkyStudios::Audio::Amplitude
         SetFilename(AM_STRING_TO_OS_STRING(definition->path()->c_str()));
         _stream = definition->stream();
         _loop = definition->loop() ? definition->loop()->enabled() : false;
+        _loopCount = definition->loop() ? definition->loop()->loop_count() : 0;
 
         return true;
     }
@@ -141,6 +142,7 @@ namespace SparkyStudios::Audio::Amplitude
         settings.m_priority = definition->priority();
         settings.m_gain = definition->gain();
         settings.m_loop = _loop;
+        settings.m_loopCount = _loopCount;
 
         return new SoundInstance(this, settings);
     }
@@ -160,6 +162,7 @@ namespace SparkyStudios::Audio::Amplitude
         settings.m_priority = definition->priority();
         settings.m_gain = definition->gain();
         settings.m_loop = _loop;
+        settings.m_loopCount = _loopCount;
 
         auto* sound = new SoundInstance(this, settings);
         sound->_collection = collection;
@@ -218,6 +221,7 @@ namespace SparkyStudios::Audio::Amplitude
         , _channel(nullptr)
         , _parent(parent)
         , _settings(settings)
+        , _currentLoopCount(0)
     {}
 
     SoundInstance::~SoundInstance()
@@ -353,5 +357,10 @@ namespace SparkyStudios::Audio::Amplitude
     const Collection* SoundInstance::GetCollection() const
     {
         return _collection;
+    }
+
+    AmUInt32 SoundInstance::GetCurrentLoopCount() const
+    {
+        return _currentLoopCount;
     }
 } // namespace SparkyStudios::Audio::Amplitude

@@ -90,6 +90,8 @@ namespace SparkyStudios::Audio::Amplitude
         AmVoidPtr m_userData;
 
     private:
+        static bool atomix_sound_looped(atomix_sound* snd);
+
         void lockAudioMutex();
         void unlockAudioMutex();
 
