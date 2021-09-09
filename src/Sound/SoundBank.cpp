@@ -238,6 +238,8 @@ namespace SparkyStudios::Audio::Amplitude
             return false;
         }
 
+        collection_iter->second->ReleaseReferences(state);
+
         if (collection_iter->second->GetRefCounter()->Decrement() == 0)
         {
             state->collection_map.erase(collection_iter);
@@ -260,6 +262,8 @@ namespace SparkyStudios::Audio::Amplitude
         {
             return false;
         }
+
+        sound_iter->second->ReleaseReferences(state);
 
         if (sound_iter->second->GetRefCounter()->Decrement() == 0)
         {

@@ -95,6 +95,10 @@ namespace SparkyStudios::Audio::Amplitude
                 CallLogFunc("[ERROR] Collection %s specifies an unknown sound ID: %u", def->name()->c_str(), id);
                 return false;
             }
+            else
+            {
+                findIt->second->GetRefCounter()->Increment();
+            }
 
             _sounds[i] = id;
         }
@@ -107,7 +111,20 @@ namespace SparkyStudios::Audio::Amplitude
     bool Collection::LoadCollectionDefinitionFromFile(AmOsString filename, EngineInternalState* state)
     {
         std::string source;
-        return LoadFile(filename, &source) && LoadCollectionDefinition(source, state);
+        return Amplitude::LoadFile(filename, &source) && LoadCollectionDefinition(source, state);
+    }
+
+    void Collection::ReleaseReferences(EngineInternalState* state)
+    {
+        _attenuation->GetRefCounter()->Decrement();
+
+        for (auto&& sound : _sounds)
+        {
+            if (auto findIt = state->sound_map.find(sound); findIt != state->sound_map.end())
+            {
+                findIt->second->GetRefCounter()->Decrement();
+            }
+        }
     }
 
     const CollectionDefinition* Collection::GetCollectionDefinition() const

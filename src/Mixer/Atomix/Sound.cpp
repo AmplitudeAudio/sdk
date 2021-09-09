@@ -98,6 +98,11 @@ namespace SparkyStudios::Audio::Amplitude
         return Amplitude::LoadFile(filename, &source) && LoadSoundDefinition(source, state);
     }
 
+    void Sound::ReleaseReferences(EngineInternalState* state)
+    {
+        _attenuation->GetRefCounter()->Decrement();
+    }
+
     const SoundDefinition* Sound::GetSoundDefinition() const
     {
         return Amplitude::GetSoundDefinition(_source.c_str());
