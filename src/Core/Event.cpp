@@ -97,7 +97,6 @@ namespace SparkyStudios::Audio::Amplitude
 
         for (auto&& target : _targets)
         {
-            // TODO: Play Sound with ID
             engine->Play(target, entity);
         }
     }
@@ -226,7 +225,7 @@ namespace SparkyStudios::Audio::Amplitude
 
     EventInstance Event::Trigger(const Entity& entity)
     {
-        CallLogFunc("[Debug] Event %s triggered.\n", _name.c_str());
+        CallLogFunc("[Debug] Event " AM_OS_CHAR_FMT " triggered.\n", AM_STRING_TO_OS_STRING(_name));
 
         auto event = EventInstance(this);
         event.Start(entity);

@@ -82,4 +82,10 @@ namespace SparkyStudios::Audio::Amplitude
 
         return sound;
     }
+
+    void SequenceScheduler::Reset()
+    {
+        _lastIndex = 0;
+        _stepMode = MODE_INCREMENT;
+    }
 } // namespace SparkyStudios::Audio::Amplitude

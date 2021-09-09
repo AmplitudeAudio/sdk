@@ -34,6 +34,7 @@ namespace SparkyStudios::Audio::Amplitude
         [[nodiscard]] bool Valid() const override;
         void Init(const CollectionDefinition* definition) override;
         Sound* Select(const std::vector<AmSoundID>& toSkip) override;
+        void Reset() override;
 
     private:
         enum STEP_MODE : AmUInt8

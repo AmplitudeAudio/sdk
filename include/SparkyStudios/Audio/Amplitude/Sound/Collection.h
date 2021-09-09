@@ -91,6 +91,13 @@ namespace SparkyStudios::Audio::Amplitude
         Sound* SelectFromEntity(const Entity& entity, const std::vector<AmSoundID>& toSkip);
 
         /**
+         * @brief Resets the internal of the scheduler running for the given Entity.
+         *
+         * @param entity The entity to reset the scheduler for.
+         */
+        void ResetEntityScopeScheduler(const Entity& entity);
+
+        /**
          * @brief Returns the unique ID of this Collection.
          *
          * @return The Collection unique ID.

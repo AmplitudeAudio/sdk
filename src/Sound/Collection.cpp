@@ -138,6 +138,14 @@ namespace SparkyStudios::Audio::Amplitude
         return _entityScopeSchedulers[entity.GetId()]->Select(toSkip);
     }
 
+    void Collection::ResetEntityScopeScheduler(const Entity& entity)
+    {
+        if (auto findIt = _entityScopeSchedulers.find(entity.GetId()); findIt != _entityScopeSchedulers.end())
+        {
+            findIt->second->Reset();
+        }
+    }
+
     Scheduler* Collection::CreateScheduler(const CollectionDefinition* definition)
     {
         Scheduler* scheduler;

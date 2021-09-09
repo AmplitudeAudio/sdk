@@ -147,6 +147,11 @@ namespace SparkyStudios::Audio::Amplitude
         }
 
         _channelState = ChannelState::Stopped;
+
+        if (_entity.Valid() && _collection != nullptr)
+        {
+            _collection->ResetEntityScopeScheduler(_entity);
+        }
     }
 
     void ChannelInternalState::Pause()
@@ -238,7 +243,7 @@ namespace SparkyStudios::Audio::Amplitude
             // Resume playing the audio.
             if (_realChannel._channelLayerId == kAmInvalidObjectId)
             {
-            _realChannel.Play(_sound->CreateInstance(_collection));
+                _realChannel.Play(_sound->CreateInstance(_collection));
             }
             else
             {

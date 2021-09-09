@@ -57,6 +57,11 @@ namespace SparkyStudios::Audio::Amplitude
          * @return The selected sound.
          */
         virtual Sound* Select(const std::vector<AmSoundID>& toSkip) = 0;
+
+        /**
+         * @brief Resets the internal state of the scheduler.
+         */
+        virtual void Reset() = 0;
     };
 } // namespace SparkyStudios::Audio::Amplitude
 

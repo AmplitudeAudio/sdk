@@ -96,4 +96,9 @@ namespace SparkyStudios::Audio::Amplitude
 
         return nullptr;
     }
+
+    void RandomScheduler::Reset()
+    {
+        // noop
+    }
 } // namespace SparkyStudios::Audio::Amplitude
