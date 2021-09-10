@@ -745,6 +745,99 @@ namespace SparkyStudios::Audio::Amplitude
         return EventCanceler(nullptr);
     }
 
+    void Engine::SetSwitchState(SwitchHandle handle, AmObjectID stateId)
+    {
+        if (!handle)
+        {
+            CallLogFunc("[ERROR] Cannot update switch state: Invalid switch handle.\n");
+            return;
+        }
+
+        handle->SetState(stateId);
+    }
+
+    void Engine::SetSwitchState(SwitchHandle handle, const std::string& stateName)
+    {
+        if (!handle)
+        {
+            CallLogFunc("[ERROR] Cannot update switch state: Invalid switch handle.\n");
+            return;
+        }
+
+        handle->SetState(stateName);
+    }
+
+    void Engine::SetSwitchState(SwitchHandle handle, const SwitchState& state)
+    {
+        if (!handle)
+        {
+            CallLogFunc("[ERROR] Cannot update switch state: Invalid switch handle.\n");
+            return;
+        }
+
+        handle->SetState(state);
+    }
+
+    void Engine::SetSwitchState(AmSwitchID id, AmObjectID stateId)
+    {
+        if (SwitchHandle handle = GetSwitchHandle(id))
+        {
+            return SetSwitchState(handle, stateId);
+        }
+
+        CallLogFunc("Cannot update switch: Invalid ID (%u).\n", id);
+    }
+
+    void Engine::SetSwitchState(AmSwitchID id, const std::string& stateName)
+    {
+        if (SwitchHandle handle = GetSwitchHandle(id))
+        {
+            return SetSwitchState(handle, stateName);
+        }
+
+        CallLogFunc("Cannot update switch: Invalid ID (%u).\n", id);
+    }
+
+    void Engine::SetSwitchState(AmSwitchID id, const SwitchState& state)
+    {
+        if (SwitchHandle handle = GetSwitchHandle(id))
+        {
+            return SetSwitchState(handle, state);
+        }
+
+        CallLogFunc("Cannot update switch: Invalid ID (%u).\n", id);
+    }
+
+    void Engine::SetSwitchState(const std::string name, AmObjectID stateId)
+    {
+        if (SwitchHandle handle = GetSwitchHandle(name))
+        {
+            return SetSwitchState(handle, stateId);
+        }
+
+        CallLogFunc("Cannot update switch: Invalid name (%s).\n", name.c_str());
+    }
+
+    void Engine::SetSwitchState(const std::string name, const std::string& stateName)
+    {
+        if (SwitchHandle handle = GetSwitchHandle(name))
+        {
+            return SetSwitchState(handle, stateName);
+        }
+
+        CallLogFunc("Cannot update switch: Invalid name (%s).\n", name.c_str());
+    }
+
+    void Engine::SetSwitchState(const std::string name, const SwitchState& state)
+    {
+        if (SwitchHandle handle = GetSwitchHandle(name))
+        {
+            return SetSwitchState(handle, state);
+        }
+
+        CallLogFunc("Cannot update switch: Invalid name (%s).\n", name.c_str());
+    }
+
     CollectionHandle Engine::GetCollectionHandle(const std::string& name) const
     {
         const auto pair = std::find_if(
@@ -899,6 +992,45 @@ namespace SparkyStudios::Audio::Amplitude
         }
 
         return GetAttenuationHandle(pair->second);
+    }
+
+    SwitchHandle Engine::GetSwitchHandle(const std::string& name) const
+    {
+        const auto pair = std::find_if(
+            _state->switch_map.begin(), _state->switch_map.end(),
+            [name](const auto& item)
+            {
+                return item.second->GetName() == name;
+            });
+
+        if (pair == _state->switch_map.end())
+        {
+            return nullptr;
+        }
+
+        return pair->second.get();
+    }
+
+    SwitchHandle Engine::GetSwitchHandle(AmSwitchID id) const
+    {
+        const auto pair = _state->switch_map.find(id);
+        if (pair == _state->switch_map.end())
+        {
+            return nullptr;
+        }
+
+        return pair->second.get();
+    }
+
+    SwitchHandle Engine::GetSwitchHandleFromFile(AmOsString filename) const
+    {
+        const auto pair = _state->switch_id_map.find(filename);
+        if (pair == _state->switch_id_map.end())
+        {
+            return nullptr;
+        }
+
+        return GetSwitchHandle(pair->second);
     }
 
     void Engine::SetMasterGain(const float gain)

@@ -81,6 +81,7 @@ set(SA_SOURCE
     include/SparkyStudios/Audio/Amplitude/Sound/Scheduler.h
     include/SparkyStudios/Audio/Amplitude/Sound/Sound.h
     include/SparkyStudios/Audio/Amplitude/Sound/SoundBank.h
+    include/SparkyStudios/Audio/Amplitude/Sound/Switch.h
     include/SparkyStudios/Audio/Amplitude/Amplitude.h
 
     src/Core/Codecs/WAV/Codec.cpp
@@ -146,6 +147,7 @@ set(SA_SOURCE
     src/Sound/Collection.cpp
     src/Sound/Fader.cpp
     src/Sound/SoundBank.cpp
+    src/Sound/Switch.cpp
     src/Sound/RefCounter.cpp
 
     src/Utils/intrusive_list.h

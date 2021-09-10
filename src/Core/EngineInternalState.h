@@ -12,8 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef SPARK_AUDIO_ENGINE_INTERNAL_STATE_H
-#define SPARK_AUDIO_ENGINE_INTERNAL_STATE_H
+#ifndef SS_AMPLITUDE_AUDIO_ENGINEINTERNALSTATE_H
+#define SS_AMPLITUDE_AUDIO_ENGINEINTERNALSTATE_H
 
 #include <map>
 #include <vector>
@@ -37,12 +37,14 @@ namespace SparkyStudios::Audio::Amplitude
     struct SoundBankDefinition;
 
 #if defined(AM_WCHAR_SUPPORTED)
+    typedef std::map<std::wstring, AmSwitchID> SwitchIdMap;
     typedef std::map<std::wstring, AmAttenuationID> AttenuationIdMap;
     typedef std::map<std::wstring, AmCollectionID> CollectionIdMap;
     typedef std::map<std::wstring, AmSoundID> SoundIdMap;
     typedef std::map<std::wstring, AmEventID> EventIdMap;
     typedef std::map<std::wstring, std::unique_ptr<SoundBank>> SoundBankMap;
 #else
+    typedef std::map<std::string, AmSwitchID> SwitchIdMap;
     typedef std::map<std::string, AmAttenuationID> AttenuationIdMap;
     typedef std::map<std::string, AmCollectionID> CollectionIdMap;
     typedef std::map<std::string, AmSoundID> SoundIdMap;
@@ -55,6 +57,8 @@ namespace SparkyStudios::Audio::Amplitude
     typedef std::map<AmSoundID, std::unique_ptr<Sound>> SoundMap;
 
     typedef std::map<AmAttenuationID, std::unique_ptr<Attenuation>> AttenuationMap;
+
+    typedef std::map<AmSwitchID, std::unique_ptr<Switch>> SwitchMap;
 
     typedef std::map<AmEventID, std::unique_ptr<Event>> EventMap;
     typedef std::vector<EventInstance> EventInstanceVector;
@@ -156,6 +160,12 @@ namespace SparkyStudios::Audio::Amplitude
         // A map of file names to attenuation ids to determine if a file needs to be loaded.
         AttenuationIdMap attenuation_id_map;
 
+        // A map of switch ids to Switch
+        SwitchMap switch_map;
+
+        // A map of file names to switch ids to determine if a file needs to be loaded.
+        SwitchIdMap switch_id_map;
+
         // Hold the sounds banks.
         SoundBankMap sound_bank_map;
 
@@ -229,4 +239,4 @@ namespace SparkyStudios::Audio::Amplitude
     AmUInt32 GetMaxNumberOfChannels(const EngineConfigDefinition* config);
 } // namespace SparkyStudios::Audio::Amplitude
 
-#endif // SPARK_AUDIO_ENGINE_INTERNAL_STATE_H
+#endif // SS_AMPLITUDE_AUDIO_ENGINEINTERNALSTATE_H

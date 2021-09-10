@@ -32,6 +32,7 @@
 #include <SparkyStudios/Audio/Amplitude/Sound/Attenuation.h>
 #include <SparkyStudios/Audio/Amplitude/Sound/Collection.h>
 #include <SparkyStudios/Audio/Amplitude/Sound/Sound.h>
+#include <SparkyStudios/Audio/Amplitude/Sound/Switch.h>
 
 namespace SparkyStudios::Audio::Amplitude
 {
@@ -43,6 +44,7 @@ namespace SparkyStudios::Audio::Amplitude
     typedef Sound* SoundHandle;
     typedef Event* EventHandle;
     typedef Attenuation* AttenuationHandle;
+    typedef Switch* SwitchHandle;
 
     /**
      * @brief The central class of  the library that manages the Listeners, Entities,
@@ -210,6 +212,27 @@ namespace SparkyStudios::Audio::Amplitude
          * @param filename The filename containing the flatbuffer binary data.
          */
         [[nodiscard]] AttenuationHandle GetAttenuationHandleFromFile(AmOsString filename) const;
+
+        /**
+         * @brief Get a SwitchHandle given its name as defined in its JSON data.
+         *
+         * @param name The unique name as defined in the JSON data.
+         */
+        [[nodiscard]] SwitchHandle GetSwitchHandle(const std::string& name) const;
+
+        /**
+         * @brief Get an SwitchHandle given its ID as defined in its JSON data.
+         *
+         * @param id The unique ID as defined in the JSON data.
+         */
+        [[nodiscard]] SwitchHandle GetSwitchHandle(AmSwitchID id) const;
+
+        /**
+         * @brief Get an SwitchHandle given its SwitchDefinition filename.
+         *
+         * @param filename The filename containing the flatbuffer binary data.
+         */
+        [[nodiscard]] SwitchHandle GetSwitchHandleFromFile(AmOsString filename) const;
 
         /**
          * @brief Adjusts the gain on the master bus.
@@ -609,6 +632,78 @@ namespace SparkyStudios::Audio::Amplitude
          * @return The triggered event.
          */
         EventCanceler Trigger(const std::string& name, const Entity& entity);
+
+        /**
+         * @brief Set the active state of the defined Switch.
+         *
+         * @param handle The handle of the Switch.
+         * @param stateId The ID of the active state to set.
+         */
+        void SetSwitchState(SwitchHandle handle, AmObjectID stateId);
+
+        /**
+         * @brief Set the active state of the defined Switch.
+         *
+         * @param handle The handle of the Switch.
+         * @param stateName The name of the active state to set.
+         */
+        void SetSwitchState(SwitchHandle handle, const std::string& stateName);
+
+        /**
+         * @brief Set the active state of the defined Switch.
+         *
+         * @param handle The handle of the Switch.
+         * @param state The active state to set.
+         */
+        void SetSwitchState(SwitchHandle handle, const SwitchState& state);
+
+        /**
+         * @brief Set the active state of the defined Switch.
+         *
+         * @param id The ID of the Switch to update.
+         * @param stateId The ID of the active state to set.
+         */
+        void SetSwitchState(AmSwitchID id, AmObjectID stateId);
+
+        /**
+         * @brief Set the active state of the defined Switch.
+         *
+         * @param id The ID of the Switch to update.
+         * @param stateName The name of the active state to set.
+         */
+        void SetSwitchState(AmSwitchID id, const std::string& stateName);
+
+        /**
+         * @brief Set the active state of the defined Switch.
+         *
+         * @param id The ID of the Switch to update.
+         * @param state The active state to set.
+         */
+        void SetSwitchState(AmSwitchID id, const SwitchState& state);
+
+        /**
+         * @brief Set the active state of the defined Switch.
+         *
+         * @param name The name of the Switch to update.
+         * @param stateId The ID of the active state to set.
+         */
+        void SetSwitchState(const std::string name, AmObjectID stateId);
+
+        /**
+         * @brief Set the active state of the defined Switch.
+         *
+         * @param name The name of the Switch to update.
+         * @param stateName The name of the active state to set.
+         */
+        void SetSwitchState(const std::string name, const std::string& stateName);
+
+        /**
+         * @brief Set the active state of the defined Switch.
+         *
+         * @param name The name of the Switch to update.
+         * @param state The active state to set.
+         */
+        void SetSwitchState(const std::string name, const SwitchState& state);
 
         /**
          * @brief Gets the version structure.
