@@ -39,9 +39,14 @@ table SoundBankDefinition {
   events:[string];
 
   /// The list of Attenuation files to load. An Attenuation may be present in
-  /// more than one SoundBank and can only be used by SoundCollection once it
+  /// more than one SoundBank and can only be used by Sound or Collection once it
   /// has been loaded by at least one SoundBank.
   attenuators:[string];
+
+  /// The list of Switch files to load. A Switch may be present in more than
+  /// one SoundBank and can only be used by SwitchContainer once it has been
+  /// loaded by at least one SoundBank.
+  switches:[string];
 }
 
 root_type SoundBankDefinition;
