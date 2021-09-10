@@ -1,0 +1,105 @@
+// Copyright (c) 2021-present Sparky Studios. All rights reserved.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+include "common.fbs";
+
+namespace SparkyStudios.Audio.Amplitude;
+
+/// Describes how the SwitchContainer should update sounds
+enum SwitchContainerUpdateBehavior: byte {
+  /// Update sounds only on play requests. Previous play requests will still
+  /// have the previous switch state.
+  UpdateOnPlay,
+  /// Update sounds on each switch state change.
+  UpdateOnChange,
+}
+
+/// An entry in the SwitchContainer. Can be linked to a Sound object
+/// or a Collection object.
+table SwitchContainerEntry {
+  /// The ID of the linked object. Can be either a Sound or a Collection.
+  object:uint64;
+
+  /// Defines whether the object should continue to play when it is
+  /// assigned to more than one switch state and the switch state changes.
+  /// - If true, the object will continue to play when the switch state will change
+  /// between the states where this object is assigned to.
+  /// - If false, the object will stop and start over when the switch state will change
+  /// between the states where this object is assigned to.
+  continue_between_states: bool;
+
+  /// Fade in transition when one of the states where this object is assigned becomes active.
+  fade_in:FadeTransitionSettings;
+
+  /// Fade out transition when one of the states where this object is assigned becomes inactive.
+  fade_out:FadeTransitionSettings;
+
+  /// A custom gain to apply only on this object.
+  gain:float;
+
+  /// The list of switch states where this object is assigned.
+  switch_states:[uint64];
+}
+
+/// A SwitchContainer group Sound or Collection objects into switch states. All the objects inside
+/// the active state are played on each play request. When the switch state changes, the container
+/// is updated according to the specified update behavior.
+table SwitchContainerDefinition {
+  /// Unique identifier for this switch container.
+  id:uint64 = 0;
+
+  /// The name of the switch container.
+  name:string;
+
+  /// Priority of this container relative to all other objects. If the
+  /// application requests the playback of more objects than playback
+  /// channels available in the system, only the highest priority objects are
+  /// played.
+  priority:float = 1.0;
+
+  /// Overall linear gain (0.0 .. 1.0) of the switch container when played back by the audio system.
+  gain:float = 1.0;
+
+  /// ID of the bus this switch container should be played on.
+  bus:uint64;
+  
+  /// Whether this sound should grow louder or quieter based on distance.
+  spatialization:Spatialization = None;
+
+  /// The ID of the attenuation to apply to this sound.
+  attenuation:uint64 = 0;
+
+  /// The scope where to apply this collection. The default is World.
+  scope:Scope = World;
+
+  /// The fader algorithm used by this collection.
+  fader:FaderAlgorithm = Linear;
+
+  /// Specifies the behavior of the SwitchContainer when the switch state is updated.
+  update_behavior:SwitchContainerUpdateBehavior;
+
+  /// The ID of the switch to use for this SwitchContainer.
+  switch_goup:uint64;
+
+  /// The default switch state ID.
+  default_switch_state:uint64;
+
+  /// The list of child objects which should be played.
+  entries:[SwitchContainerEntry];
+}
+
+root_type SwitchContainerDefinition;
+
+file_identifier "AMSC";
+file_extension "amswitchcontainer";

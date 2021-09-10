@@ -162,5 +162,5 @@ table CollectionDefinition {
 
 root_type CollectionDefinition;
 
-file_identifier "AMSC";
+file_identifier "AMCO";
 file_extension "amcollection";
