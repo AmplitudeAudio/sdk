@@ -72,3 +72,12 @@ table CurveDefinition {
   /// The parts of the curve.
   parts:[CurvePartDefinition];
 }
+
+/// Defines the settings fo a fade transition.
+table FadeTransitionSettings {
+  /// The transition duration in seconds.
+  duration:double = 0;
+
+  /// The fader algorithm to use during the transition.
+  fader:FaderAlgorithm = Linear;
+}
