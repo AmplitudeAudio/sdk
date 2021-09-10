@@ -151,8 +151,7 @@ namespace SparkyStudios::Audio::Amplitude
     void RealChannel::SetGain(const float gain)
     {
         AMPLITUDE_ASSERT(Valid());
-
-        atomixMixerSetGainPan(_mixer, _channelId, _channelLayerId, gain, _pan);
+        atomixMixerSetGainPan(_mixer, _channelId, _channelLayerId, gain * _activeSound->GetSettings().m_gain, _pan);
         _gain = gain;
     }
 
@@ -183,7 +182,7 @@ namespace SparkyStudios::Audio::Amplitude
     void RealChannel::SetPan(const hmm_vec2& pan)
     {
         AMPLITUDE_ASSERT(Valid());
-        atomixMixerSetGainPan(_mixer, _channelId, _channelLayerId, _gain, pan.X);
+        atomixMixerSetGainPan(_mixer, _channelId, _channelLayerId, _gain * _activeSound->GetSettings().m_gain, pan.X);
         _pan = pan.X;
     }
 } // namespace SparkyStudios::Audio::Amplitude

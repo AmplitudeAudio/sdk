@@ -26,11 +26,14 @@ namespace SparkyStudios::Audio::Amplitude
         : m_format()
         , _decoder(nullptr)
         , _bus(nullptr)
-        , _id()
+        , _id(kAmInvalidObjectId)
         , _name()
         , _attenuation(nullptr)
         , _stream(false)
         , _loop(false)
+        , _loopCount(0)
+        , _source()
+        , _settings()
         , _refCounter()
     {}
 
@@ -38,6 +41,8 @@ namespace SparkyStudios::Audio::Amplitude
     {
         delete _decoder;
         _decoder = nullptr;
+        _bus = nullptr;
+        _attenuation = nullptr;
     }
 
     bool Sound::LoadSoundDefinition(const std::string& source, EngineInternalState* state)
@@ -87,6 +92,15 @@ namespace SparkyStudios::Audio::Amplitude
         _stream = definition->stream();
         _loop = definition->loop() ? definition->loop()->enabled() : false;
         _loopCount = definition->loop() ? definition->loop()->loop_count() : 0;
+
+        _settings.m_kind = SoundKind::Standalone;
+        _settings.m_busID = definition->bus();
+        _settings.m_attenuationID = definition->attenuation();
+        _settings.m_spatialization = definition->spatialization();
+        _settings.m_priority = definition->priority();
+        _settings.m_gain = definition->gain();
+        _settings.m_loop = _loop;
+        _settings.m_loopCount = _loopCount;
 
         return true;
     }
@@ -151,19 +165,8 @@ namespace SparkyStudios::Audio::Amplitude
 
     SoundInstance* Sound::CreateInstance() const
     {
-        const SoundDefinition* definition = GetSoundDefinition();
-
-        SoundInstanceSettings settings;
-        settings.m_kind = SoundKind::Standalone;
-        settings.m_busID = definition->bus();
-        settings.m_attenuationID = definition->attenuation();
-        settings.m_spatialization = definition->spatialization();
-        settings.m_priority = definition->priority();
-        settings.m_gain = definition->gain();
-        settings.m_loop = _loop;
-        settings.m_loopCount = _loopCount;
-
-        return new SoundInstance(this, settings);
+        AMPLITUDE_ASSERT(_id != kAmInvalidObjectId);
+        return new SoundInstance(this, _settings);
     }
 
     SoundInstance* Sound::CreateInstance(const Collection* collection) const
@@ -171,19 +174,8 @@ namespace SparkyStudios::Audio::Amplitude
         if (collection == nullptr)
             return CreateInstance();
 
-        const CollectionDefinition* definition = collection->GetCollectionDefinition();
-
-        SoundInstanceSettings settings;
-        settings.m_kind = SoundKind::Contained;
-        settings.m_busID = definition->bus();
-        settings.m_attenuationID = definition->attenuation();
-        settings.m_spatialization = definition->spatialization();
-        settings.m_priority = definition->priority();
-        settings.m_gain = definition->gain();
-        settings.m_loop = _loop;
-        settings.m_loopCount = _loopCount;
-
-        auto* sound = new SoundInstance(this, settings);
+        AMPLITUDE_ASSERT(_id != kAmInvalidObjectId);
+        auto* sound = new SoundInstance(this, collection->_soundSettings.at(_id));
         sound->_collection = collection;
 
         return sound;

@@ -29,11 +29,20 @@ namespace SparkyStudios::Audio::Amplitude
         , _entityScopeSchedulers()
         , _source()
         , _sounds()
+        , _soundSettings()
         , _id(kAmInvalidObjectId)
         , _name()
         , _attenuation(nullptr)
         , _refCounter()
     {}
+
+    Collection::~Collection()
+    {
+        delete _worldScopeScheduler;
+        _worldScopeScheduler = nullptr;
+        _entityScopeSchedulers.clear();
+        _attenuation = nullptr;
+    }
 
     bool Collection::LoadCollectionDefinition(const std::string& source, EngineInternalState* state)
     {
@@ -77,7 +86,10 @@ namespace SparkyStudios::Audio::Amplitude
         _name = def->name()->str();
 
         flatbuffers::uoffset_t sample_count = def->sounds() ? def->sounds()->size() : 0;
+
         _sounds.resize(sample_count);
+        _soundSettings.clear();
+
         for (flatbuffers::uoffset_t i = 0; i < sample_count; ++i)
         {
             const DefaultCollectionEntry* entry = def->sounds()->GetAs<DefaultCollectionEntry>(i);
@@ -94,8 +106,21 @@ namespace SparkyStudios::Audio::Amplitude
                 CallLogFunc("[ERROR] Collection %s specifies an unknown sound ID: %u", def->name()->c_str(), id);
                 return false;
             }
+            else
+            {
+                SoundInstanceSettings settings;
+                settings.m_kind = SoundKind::Contained;
+                settings.m_busID = def->bus();
+                settings.m_attenuationID = def->attenuation();
+                settings.m_spatialization = def->spatialization();
+                settings.m_priority = def->priority();
+                settings.m_gain = entry->gain();
+                settings.m_loop = findIt->second->_loop;
+                settings.m_loopCount = findIt->second->_loopCount;
 
-            _sounds[i] = id;
+                _sounds[i] = id;
+                _soundSettings[id] = settings;
+            }
         }
 
         _worldScopeScheduler = CreateScheduler(def);

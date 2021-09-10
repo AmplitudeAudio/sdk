@@ -41,8 +41,11 @@ namespace SparkyStudios::Audio::Amplitude
      */
     class Collection
     {
+        friend class Sound;
+
     public:
         Collection();
+        ~Collection();
 
         /**
          * @brief Loads the collection from the given source.
@@ -167,6 +170,7 @@ namespace SparkyStudios::Audio::Amplitude
 
         std::string _source;
         std::vector<AmSoundID> _sounds;
+        std::map<AmSoundID, SoundInstanceSettings> _soundSettings;
 
         AmCollectionID _id;
         std::string _name;

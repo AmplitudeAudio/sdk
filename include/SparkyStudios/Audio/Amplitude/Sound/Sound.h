@@ -57,6 +57,7 @@ namespace SparkyStudios::Audio::Amplitude
 
     class Sound : public Resource
     {
+        friend class Collection;
         friend class SoundInstance;
 
     public:
@@ -205,6 +206,7 @@ namespace SparkyStudios::Audio::Amplitude
         AmUInt32 _loopCount;
 
         std::string _source;
+        SoundInstanceSettings _settings;
 
         RefCounter _refCounter;
     };
