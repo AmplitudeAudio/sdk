@@ -1,0 +1,44 @@
+// Copyright (c) 2021-present Sparky Studios. All rights reserved.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+include "common.fbs";
+
+namespace SparkyStudios.Audio.Amplitude;
+
+table SwitchStateDefinition {
+  /// The switch state unique ID. Yhis ID is internal to the switch, and not shared outside.
+  /// This means that many switch states from the different switches can have the same ID.
+  id:uint64 = 0;
+
+  /// The name of the switch state.
+  name:string;
+}
+
+/// A switch is a collection of states which can change the sound played during the game. For example,
+/// you can have a switch named "SurfaceType" which have "wood", "grass", "metal" and "water" as states.
+table SwitchDefinition {
+  /// The unique ID for this switch.
+  id:uint64 = 0;
+
+  /// The name of this switch.
+  name:string;
+
+  /// The list of states available for this switch.
+  states:[SwitchStateDefinition];
+}
+
+root_type SwitchDefinition;
+
+file_identifier "AMSW";
+file_extension "amswitch";
