@@ -27,6 +27,7 @@
 #include "collection_definition_generated.h"
 #include "engine_config_definition_generated.h"
 #include "sound_definition_generated.h"
+#include "switch_container_definition_generated.h"
 
 #pragma region Default Codecs
 #include <Core/Codecs/OGG/Codec.h>
@@ -575,6 +576,31 @@ namespace SparkyStudios::Audio::Amplitude
         list->push_front(*channel);
     }
 
+    Channel Engine::Play(SwitchContainerHandle handle)
+    {
+        return Play(handle, AM_Vec3(0, 0, 0), 1.0f);
+    }
+
+    Channel Engine::Play(SwitchContainerHandle handle, const hmm_vec3& location)
+    {
+        return Play(handle, location, 1.0f);
+    }
+
+    Channel Engine::Play(SwitchContainerHandle handle, const hmm_vec3& location, const float userGain)
+    {
+        return PlayScopedSwitchContainer(handle, Entity(nullptr), location, userGain);
+    }
+
+    Channel Engine::Play(SwitchContainerHandle handle, const Entity& entity)
+    {
+        return Play(handle, entity, 1.0f);
+    }
+
+    Channel Engine::Play(SwitchContainerHandle handle, const Entity& entity, const float userGain)
+    {
+        return PlayScopedSwitchContainer(handle, entity, entity.GetLocation(), userGain);
+    }
+
     Channel Engine::Play(CollectionHandle handle)
     {
         return Play(handle, AM_Vec3(0, 0, 0), 1.0f);
@@ -647,6 +673,11 @@ namespace SparkyStudios::Audio::Amplitude
             return Play(handle, location, userGain);
         }
 
+        if (SwitchContainerHandle handle = GetSwitchContainerHandle(name))
+        {
+            return Play(handle, location, userGain);
+        }
+
         CallLogFunc("[ERROR] Cannot play object: invalid name (%s).\n", name.c_str());
         return Channel(nullptr);
     }
@@ -664,6 +695,11 @@ namespace SparkyStudios::Audio::Amplitude
         }
 
         if (CollectionHandle handle = GetCollectionHandle(name))
+        {
+            return Play(handle, entity, userGain);
+        }
+
+        if (SwitchContainerHandle handle = GetSwitchContainerHandle(name))
         {
             return Play(handle, entity, userGain);
         }
@@ -694,6 +730,11 @@ namespace SparkyStudios::Audio::Amplitude
             return Play(handle, location, userGain);
         }
 
+        if (SwitchContainerHandle handle = GetSwitchContainerHandle(id))
+        {
+            return Play(handle, location, userGain);
+        }
+
         CallLogFunc("Cannot play sound: invalid ID (%u).\n", id);
         return Channel(nullptr);
     }
@@ -715,7 +756,12 @@ namespace SparkyStudios::Audio::Amplitude
             return Play(handle, entity, userGain);
         }
 
-        CallLogFunc("Cannot play sound: invalid name (%u)\n", id);
+        if (SwitchContainerHandle handle = GetSwitchContainerHandle(id))
+        {
+            return Play(handle, entity, userGain);
+        }
+
+        CallLogFunc("Cannot play sound: invalid ID (%u)\n", id);
         return Channel(nullptr);
     }
 
@@ -743,6 +789,138 @@ namespace SparkyStudios::Audio::Amplitude
 
         CallLogFunc("Cannot trigger event: invalid name (%s).\n", name.c_str());
         return EventCanceler(nullptr);
+    }
+
+    void Engine::SetSwitchState(SwitchHandle handle, AmObjectID stateId)
+    {
+        if (!handle)
+        {
+            CallLogFunc("[ERROR] Cannot update switch state: Invalid switch handle.\n");
+            return;
+        }
+
+        handle->SetState(stateId);
+    }
+
+    void Engine::SetSwitchState(SwitchHandle handle, const std::string& stateName)
+    {
+        if (!handle)
+        {
+            CallLogFunc("[ERROR] Cannot update switch state: Invalid switch handle.\n");
+            return;
+        }
+
+        handle->SetState(stateName);
+    }
+
+    void Engine::SetSwitchState(SwitchHandle handle, const SwitchState& state)
+    {
+        if (!handle)
+        {
+            CallLogFunc("[ERROR] Cannot update switch state: Invalid switch handle.\n");
+            return;
+        }
+
+        handle->SetState(state);
+    }
+
+    void Engine::SetSwitchState(AmSwitchID id, AmObjectID stateId)
+    {
+        if (SwitchHandle handle = GetSwitchHandle(id))
+        {
+            return SetSwitchState(handle, stateId);
+        }
+
+        CallLogFunc("Cannot update switch: Invalid ID (%u).\n", id);
+    }
+
+    void Engine::SetSwitchState(AmSwitchID id, const std::string& stateName)
+    {
+        if (SwitchHandle handle = GetSwitchHandle(id))
+        {
+            return SetSwitchState(handle, stateName);
+        }
+
+        CallLogFunc("Cannot update switch: Invalid ID (%u).\n", id);
+    }
+
+    void Engine::SetSwitchState(AmSwitchID id, const SwitchState& state)
+    {
+        if (SwitchHandle handle = GetSwitchHandle(id))
+        {
+            return SetSwitchState(handle, state);
+        }
+
+        CallLogFunc("Cannot update switch: Invalid ID (%u).\n", id);
+    }
+
+    void Engine::SetSwitchState(const std::string name, AmObjectID stateId)
+    {
+        if (SwitchHandle handle = GetSwitchHandle(name))
+        {
+            return SetSwitchState(handle, stateId);
+        }
+
+        CallLogFunc("Cannot update switch: Invalid name (%s).\n", name.c_str());
+    }
+
+    void Engine::SetSwitchState(const std::string name, const std::string& stateName)
+    {
+        if (SwitchHandle handle = GetSwitchHandle(name))
+        {
+            return SetSwitchState(handle, stateName);
+        }
+
+        CallLogFunc("Cannot update switch: Invalid name (%s).\n", name.c_str());
+    }
+
+    void Engine::SetSwitchState(const std::string name, const SwitchState& state)
+    {
+        if (SwitchHandle handle = GetSwitchHandle(name))
+        {
+            return SetSwitchState(handle, state);
+        }
+
+        CallLogFunc("Cannot update switch: Invalid name (%s).\n", name.c_str());
+    }
+
+    SwitchContainerHandle Engine::GetSwitchContainerHandle(const std::string& name) const
+    {
+        const auto pair = std::find_if(
+            _state->switch_container_map.begin(), _state->switch_container_map.end(),
+            [name](const auto& item)
+            {
+                return item.second->GetName() == name;
+            });
+
+        if (pair == _state->switch_container_map.end())
+        {
+            return nullptr;
+        }
+
+        return pair->second.get();
+    }
+
+    SwitchContainerHandle Engine::GetSwitchContainerHandle(AmSwitchContainerID id) const
+    {
+        const auto pair = _state->switch_container_map.find(id);
+        if (pair == _state->switch_container_map.end())
+        {
+            return nullptr;
+        }
+
+        return pair->second.get();
+    }
+
+    SwitchContainerHandle Engine::GetSwitchContainerHandleFromFile(AmOsString filename) const
+    {
+        const auto pair = _state->switch_container_id_map.find(filename);
+        if (pair == _state->switch_container_id_map.end())
+        {
+            return nullptr;
+        }
+
+        return GetSwitchContainerHandle(pair->second);
     }
 
     CollectionHandle Engine::GetCollectionHandle(const std::string& name) const
@@ -901,6 +1079,45 @@ namespace SparkyStudios::Audio::Amplitude
         return GetAttenuationHandle(pair->second);
     }
 
+    SwitchHandle Engine::GetSwitchHandle(const std::string& name) const
+    {
+        const auto pair = std::find_if(
+            _state->switch_map.begin(), _state->switch_map.end(),
+            [name](const auto& item)
+            {
+                return item.second->GetName() == name;
+            });
+
+        if (pair == _state->switch_map.end())
+        {
+            return nullptr;
+        }
+
+        return pair->second.get();
+    }
+
+    SwitchHandle Engine::GetSwitchHandle(AmSwitchID id) const
+    {
+        const auto pair = _state->switch_map.find(id);
+        if (pair == _state->switch_map.end())
+        {
+            return nullptr;
+        }
+
+        return pair->second.get();
+    }
+
+    SwitchHandle Engine::GetSwitchHandleFromFile(AmOsString filename) const
+    {
+        const auto pair = _state->switch_id_map.find(filename);
+        if (pair == _state->switch_id_map.end())
+        {
+            return nullptr;
+        }
+
+        return GetSwitchHandle(pair->second);
+    }
+
     void Engine::SetMasterGain(const float gain)
     {
         _state->master_gain = gain;
@@ -1015,7 +1232,19 @@ namespace SparkyStudios::Audio::Amplitude
 
     static void UpdateChannel(ChannelInternalState* channel, const EngineInternalState* state)
     {
-        if (const Collection* collection = channel->GetCollection(); collection != nullptr)
+        if (const SwitchContainer* switchContainer = channel->GetSwitchContainer(); switchContainer != nullptr)
+        {
+            const SwitchContainerDefinition* definition = switchContainer->GetSwitchContainerDefinition();
+
+            float gain;
+            hmm_vec2 pan;
+            CalculateGainAndPan(
+                &gain, &pan, definition->gain(), switchContainer->GetBus(), definition->spatialization(), switchContainer->GetAttenuation(),
+                channel->GetEntity(), channel->GetLocation(), state->listener_list, channel->GetUserGain());
+            channel->SetGain(gain);
+            channel->SetPan(pan);
+        }
+        else if (const Collection* collection = channel->GetCollection(); collection != nullptr)
         {
             const CollectionDefinition* definition = collection->GetCollectionDefinition();
 
@@ -1175,6 +1404,73 @@ namespace SparkyStudios::Audio::Amplitude
     Driver* Engine::GetDriver() const
     {
         return _audioDriver;
+    }
+
+    Channel Engine::PlayScopedSwitchContainer(
+        SwitchContainerHandle handle, const Entity& entity, const hmm_vec3& location, const float userGain) const
+    {
+        if (!handle)
+        {
+            CallLogFunc("[ERROR] Cannot play switch container: Invalid switch container handle.\n");
+            return Channel(nullptr);
+        }
+
+        const SwitchContainerDefinition* definition = handle->GetSwitchContainerDefinition();
+
+        if (definition->scope() == Scope_Entity && !entity.Valid())
+        {
+            CallLogFunc("[ERROR] Cannot play a switch container in Entity scope. No entity defined.\n");
+            return Channel(nullptr);
+        }
+
+        if (entity.Valid())
+        {
+            // Process the first entity update
+            entity.GetState()->Update();
+        }
+
+        // Find where it belongs in the list.
+        float gain;
+        hmm_vec2 pan;
+        CalculateGainAndPan(
+            &gain, &pan, definition->gain(), handle->GetBus(), definition->spatialization(), handle->GetAttenuation(), entity, location,
+            _state->listener_list, userGain);
+        const float priority = gain * definition->priority();
+        const auto insertionPoint = FindInsertionPoint(&_state->playing_channel_list, priority);
+
+        // Decide which ChannelInternalState object to use.
+        ChannelInternalState* newChannel = FindFreeChannelInternalState(
+            insertionPoint, &_state->playing_channel_list, &_state->real_channel_free_list, &_state->virtual_channel_free_list,
+            _state->paused);
+
+        // The sound could not be added to the list; not high enough priority.
+        if (newChannel == nullptr)
+        {
+            return Channel(nullptr);
+        }
+
+        // Now that we have our new sound, set the data on it and update the next
+        // pointers.
+        newChannel->SetEntity(entity);
+        newChannel->SetSwitchContainer(handle);
+        newChannel->SetUserGain(userGain);
+
+        // Attempt to play the sound if the engine is not paused.
+        if (!_state->paused)
+        {
+            if (!newChannel->Play())
+            {
+                // Error playing the sound, put it back in the free list.
+                InsertIntoFreeList(_state, newChannel);
+                return Channel(nullptr);
+            }
+        }
+
+        newChannel->SetGain(gain);
+        newChannel->SetPan(pan);
+        newChannel->SetLocation(location);
+
+        return Channel(newChannel);
     }
 
     Channel Engine::PlayScopedCollection(

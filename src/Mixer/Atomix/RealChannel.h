@@ -63,46 +63,54 @@ namespace SparkyStudios::Audio::Amplitude
         void Initialize(int index);
 
         /**
+         * @brief Play all the sound instances on the real channel.
+         */
+        bool Play(const std::vector<SoundInstance*>& instances);
+
+        /**
          * @brief Play the audio on the real channel.
          */
-        bool Play(SoundInstance* sound);
+        bool Play(SoundInstance* sound, AmUInt32 layer = kAmInvalidObjectId);
 
         /**
          * @brief Halt the real channel so it may be re-used. However this virtual channel may still be considered playing.
          */
-        void Halt();
+        void Halt(AmUInt32 layer = kAmInvalidObjectId);
 
         /**
          * @brief Pause the real channel.
          */
-        void Pause();
+        void Pause(AmUInt32 layer = kAmInvalidObjectId);
 
         /**
          * @brief Resume the paused real channel.
          */
-        void Resume();
+        void Resume(AmUInt32 layer = kAmInvalidObjectId);
 
-        void Destroy();
+        void Destroy(AmUInt32 layer = kAmInvalidObjectId);
 
         /**
          * @brief Check if this channel is currently playing on a real channel.
          */
+        [[nodiscard]] bool Playing(AmUInt32 layer) const;
         [[nodiscard]] bool Playing() const;
 
         /**
          * @brief Check if this channel is currently paused on a real channel.
          */
+        [[nodiscard]] bool Paused(AmUInt32 layer) const;
         [[nodiscard]] bool Paused() const;
 
         /**
          * @brief Set the current GetGain of the real channel.
          */
         void SetGain(float gain);
+        void SetGain(float gain, AmUInt32 layer);
 
         /**
          * @brief Get the current GetGain of the real channel.
          */
-        [[nodiscard]] float GetGain() const;
+        [[nodiscard]] float GetGain(AmUInt32 layer = kAmInvalidObjectId) const;
 
         /**
          * @brief Set the pan for the sound. This should be a unit vector.
@@ -163,17 +171,19 @@ namespace SparkyStudios::Audio::Amplitude
         }
 
     private:
-        AmChannelID _channelId;
-        AmUInt32 _channelLayerId;
+        AmUInt32 FindFreeLayer(AmUInt32 layerIndex = 0) const;
 
-        bool _stream;
-        bool _loop;
+        AmChannelID _channelId;
+        std::map<AmUInt32, AmUInt32> _channelLayersId;
+
+        std::map<AmUInt32, bool> _stream;
+        std::map<AmUInt32, bool> _loop;
 
         float _pan;
-        float _gain;
+        std::map<AmUInt32, float> _gain;
 
         atomix_mixer* _mixer;
-        SoundInstance* _activeSound;
+        std::map<AmUInt32, SoundInstance*> _activeSounds;
 
         ChannelInternalState* _parentChannelState;
 

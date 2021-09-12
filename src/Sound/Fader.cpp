@@ -30,11 +30,16 @@ namespace SparkyStudios::Audio::Amplitude
 
     void Fader::Set(float from, float to, AmTime time)
     {
+        m_time = time;
+        Set(from, to);
+        Start(0.0);
+    }
+
+    void Fader::Set(float from, float to)
+    {
         m_from = from;
         m_to = to;
-        m_time = time;
         m_delta = to - from;
-        Start(0.0);
     }
 
     float Fader::GetFromTime(AmTime time)

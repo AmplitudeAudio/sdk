@@ -32,6 +32,8 @@
 #include <SparkyStudios/Audio/Amplitude/Sound/Attenuation.h>
 #include <SparkyStudios/Audio/Amplitude/Sound/Collection.h>
 #include <SparkyStudios/Audio/Amplitude/Sound/Sound.h>
+#include <SparkyStudios/Audio/Amplitude/Sound/Switch.h>
+#include <SparkyStudios/Audio/Amplitude/Sound/SwitchContainer.h>
 
 namespace SparkyStudios::Audio::Amplitude
 {
@@ -39,10 +41,12 @@ namespace SparkyStudios::Audio::Amplitude
 
     struct EngineInternalState;
 
+    typedef SwitchContainer* SwitchContainerHandle;
     typedef Collection* CollectionHandle;
     typedef Sound* SoundHandle;
     typedef Event* EventHandle;
     typedef Attenuation* AttenuationHandle;
+    typedef Switch* SwitchHandle;
 
     /**
      * @brief The central class of  the library that manages the Listeners, Entities,
@@ -126,6 +130,27 @@ namespace SparkyStudios::Audio::Amplitude
          *        StartLoadingSoundFiles() first.
          */
         bool TryFinalize();
+
+        /**
+         * @brief Get a SwitchContainerHandle given its name as defined in its JSON data.
+         *
+         * @param name The unique name as defined in the JSON data.
+         */
+        [[nodiscard]] SwitchContainerHandle GetSwitchContainerHandle(const std::string& name) const;
+
+        /**
+         * @brief Get a SwitchContainerHandle given its ID as defined in its JSON data.
+         *
+         * @param id The unique ID as defined in the JSON data.
+         */
+        [[nodiscard]] SwitchContainerHandle GetSwitchContainerHandle(AmSwitchContainerID id) const;
+
+        /**
+         * @brief Get a SwitchContainerHandle given its SwitchContainerDefinition filename.
+         *
+         * @param filename The filename containing the flatbuffer binary data.
+         */
+        [[nodiscard]] SwitchContainerHandle GetSwitchContainerHandleFromFile(AmOsString filename) const;
 
         /**
          * @brief Get a CollectionHandle given its name as defined in its JSON data.
@@ -212,6 +237,27 @@ namespace SparkyStudios::Audio::Amplitude
         [[nodiscard]] AttenuationHandle GetAttenuationHandleFromFile(AmOsString filename) const;
 
         /**
+         * @brief Get a SwitchHandle given its name as defined in its JSON data.
+         *
+         * @param name The unique name as defined in the JSON data.
+         */
+        [[nodiscard]] SwitchHandle GetSwitchHandle(const std::string& name) const;
+
+        /**
+         * @brief Get an SwitchHandle given its ID as defined in its JSON data.
+         *
+         * @param id The unique ID as defined in the JSON data.
+         */
+        [[nodiscard]] SwitchHandle GetSwitchHandle(AmSwitchID id) const;
+
+        /**
+         * @brief Get an SwitchHandle given its SwitchDefinition filename.
+         *
+         * @param filename The filename containing the flatbuffer binary data.
+         */
+        [[nodiscard]] SwitchHandle GetSwitchHandleFromFile(AmOsString filename) const;
+
+        /**
          * @brief Adjusts the gain on the master bus.
          *
          * @param gain the gain to apply to all buses.
@@ -295,6 +341,67 @@ namespace SparkyStudios::Audio::Amplitude
          * @return A valid bus if found, otherwise an invalid bus.
          */
         [[nodiscard]] Bus FindBus(AmBusID id) const;
+
+        /**
+         * @brief Play a switch container associated with the given handle in the
+         *        World scope.
+         *
+         * @param handle A handle to the switch container to play.
+         *
+         * @return The channel the switch container is played on. If the switch container could not be
+         *         played, an invalid Channel is returned.
+         */
+        Channel Play(SwitchContainerHandle handle);
+
+        /**
+         * @brief Play a switch container associated with the given handle in the
+         *        World scope at the given location.
+         *
+         * @param handle A handle to the switch container to play.
+         * @param location The location on which play the switch container.
+         *
+         * @return The channel the switch container is played on. If the switch container could not be
+         *         played, an invalid Channel is returned.
+         */
+        Channel Play(SwitchContainerHandle handle, const hmm_vec3& location);
+
+        /**
+         * @brief Play a switch container associated with the given handle in the
+         *        location with the given gain.
+         *
+         * @param handle A handle to the switch container to play.
+         * @param location The location on which play the switch container.
+         * @param userGain The gain of the sound.
+         *
+         * @return The channel the switch container is played on. If the switch container could not be
+         *         played, an invalid Channel is returned.
+         */
+        Channel Play(SwitchContainerHandle handle, const hmm_vec3& location, float userGain);
+
+        /**
+         * @brief Play a switch container associated with the given handle in the
+         *        Entity scope.
+         *
+         * @param handle A handle to the switch container to play.
+         * @param entity The entity which is playing the switch container.
+         *
+         * @return The channel the switch container is played on. If the switch container could not be
+         *         played, an invalid Channel is returned.
+         */
+        Channel Play(SwitchContainerHandle handle, const Entity& entity);
+
+        /**
+         * @brief Play a switch container associated with the given handle in an
+         *        Entity scope with the given gain.
+         *
+         * @param handle A handle to the switch container to play.
+         * @param entity The entity which is playing the switch container.
+         * @param userGain The gain of the sound.
+         *
+         * @return The channel the switch container is played on. If the switch container could not be
+         *         played, an invalid Channel is returned.
+         */
+        Channel Play(SwitchContainerHandle handle, const Entity& entity, float userGain);
 
         /**
          * @brief Play a collection associated with the given handle in the
@@ -611,6 +718,78 @@ namespace SparkyStudios::Audio::Amplitude
         EventCanceler Trigger(const std::string& name, const Entity& entity);
 
         /**
+         * @brief Set the active state of the defined Switch.
+         *
+         * @param handle The handle of the Switch.
+         * @param stateId The ID of the active state to set.
+         */
+        void SetSwitchState(SwitchHandle handle, AmObjectID stateId);
+
+        /**
+         * @brief Set the active state of the defined Switch.
+         *
+         * @param handle The handle of the Switch.
+         * @param stateName The name of the active state to set.
+         */
+        void SetSwitchState(SwitchHandle handle, const std::string& stateName);
+
+        /**
+         * @brief Set the active state of the defined Switch.
+         *
+         * @param handle The handle of the Switch.
+         * @param state The active state to set.
+         */
+        void SetSwitchState(SwitchHandle handle, const SwitchState& state);
+
+        /**
+         * @brief Set the active state of the defined Switch.
+         *
+         * @param id The ID of the Switch to update.
+         * @param stateId The ID of the active state to set.
+         */
+        void SetSwitchState(AmSwitchID id, AmObjectID stateId);
+
+        /**
+         * @brief Set the active state of the defined Switch.
+         *
+         * @param id The ID of the Switch to update.
+         * @param stateName The name of the active state to set.
+         */
+        void SetSwitchState(AmSwitchID id, const std::string& stateName);
+
+        /**
+         * @brief Set the active state of the defined Switch.
+         *
+         * @param id The ID of the Switch to update.
+         * @param state The active state to set.
+         */
+        void SetSwitchState(AmSwitchID id, const SwitchState& state);
+
+        /**
+         * @brief Set the active state of the defined Switch.
+         *
+         * @param name The name of the Switch to update.
+         * @param stateId The ID of the active state to set.
+         */
+        void SetSwitchState(const std::string name, AmObjectID stateId);
+
+        /**
+         * @brief Set the active state of the defined Switch.
+         *
+         * @param name The name of the Switch to update.
+         * @param stateName The name of the active state to set.
+         */
+        void SetSwitchState(const std::string name, const std::string& stateName);
+
+        /**
+         * @brief Set the active state of the defined Switch.
+         *
+         * @param name The name of the Switch to update.
+         * @param state The active state to set.
+         */
+        void SetSwitchState(const std::string name, const SwitchState& state);
+
+        /**
          * @brief Gets the version structure.
          *
          * @return The version string structure
@@ -639,6 +818,8 @@ namespace SparkyStudios::Audio::Amplitude
         [[nodiscard]] static Engine* GetInstance();
 
     private:
+        Channel PlayScopedSwitchContainer(
+            SwitchContainerHandle handle, const Entity& entity, const hmm_vec3& location, float userGain) const;
         Channel PlayScopedCollection(CollectionHandle handle, const Entity& entity, const hmm_vec3& location, float userGain) const;
         Channel PlayScopedSound(SoundHandle handle, const Entity& entity, const hmm_vec3& location, float userGain) const;
 

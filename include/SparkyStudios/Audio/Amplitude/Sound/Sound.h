@@ -45,6 +45,7 @@ namespace SparkyStudios::Audio::Amplitude
 
     struct SoundInstanceSettings
     {
+        AmObjectID m_id;
         SoundKind m_kind;
         AmBusID m_busID;
         AmAttenuationID m_attenuationID;

@@ -16,15 +16,6 @@ include "common.fbs";
 
 namespace SparkyStudios.Audio.Amplitude;
 
-/// Defines the settings fo a duck bus gain transition.
-table DuckBusTransitionSettings {
-  /// The transition duration in seconds.
-  duration:double = 0;
-
-  /// The fader algorithm to use during the transition.
-  fader:FaderAlgorithm = Linear;
-}
-
 /// Define the configuration for a duck bus.
 ///
 /// A duck bus is a bus referenced in another one, in a way that when
@@ -39,10 +30,10 @@ table DuckBusDefinition {
   target_gain:float = 0;
 
   /// Settings fo the fade in transition.
-  fade_in:DuckBusTransitionSettings;
+  fade_in:FadeTransitionSettings;
 
   /// Settings fo the fade out transition.
-  fade_out:DuckBusTransitionSettings;
+  fade_out:FadeTransitionSettings;
 }
 
 /// Representation of an audio bus similar to a bus on a mixing desk. Buses are

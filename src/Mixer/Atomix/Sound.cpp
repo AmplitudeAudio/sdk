@@ -39,6 +39,7 @@ namespace SparkyStudios::Audio::Amplitude
 
     Sound::~Sound()
     {
+        _decoder->Close();
         delete _decoder;
         _decoder = nullptr;
         _bus = nullptr;
@@ -93,6 +94,7 @@ namespace SparkyStudios::Audio::Amplitude
         _loop = definition->loop() ? definition->loop()->enabled() : false;
         _loopCount = definition->loop() ? definition->loop()->loop_count() : 0;
 
+        _settings.m_id = definition->id();
         _settings.m_kind = SoundKind::Standalone;
         _settings.m_busID = definition->bus();
         _settings.m_attenuationID = definition->attenuation();
@@ -340,7 +342,6 @@ namespace SparkyStudios::Audio::Amplitude
 
         if (_parent->_stream)
         {
-            _parent->_decoder->Close();
             _streamBuffer = AmAlignedReal32Buffer();
         }
     }

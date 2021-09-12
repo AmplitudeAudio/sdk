@@ -22,6 +22,8 @@
 #include "event_definition_generated.h"
 #include "sound_bank_definition_generated.h"
 #include "sound_definition_generated.h"
+#include "switch_container_definition_generated.h"
+#include "switch_definition_generated.h"
 
 namespace SparkyStudios::Audio::Amplitude
 {
@@ -31,6 +33,44 @@ namespace SparkyStudios::Audio::Amplitude
         , _refCounter()
         , _soundBankDefSource()
     {}
+
+    static bool InitializeSwitchContainer(AmOsString filename, Engine* engine)
+    {
+        // Find the ID.
+        SwitchContainerHandle handle = engine->GetSwitchContainerHandleFromFile(filename);
+        if (handle)
+        {
+            // We've seen this ID before, update it.
+            handle->GetRefCounter()->Increment();
+        }
+        else
+        {
+            // This is a new switch container, load it and update it.
+            std::unique_ptr<SwitchContainer> switch_container(new SwitchContainer());
+            if (!switch_container->LoadSwitchContainerDefinitionFromFile(filename, engine->GetState()))
+            {
+                return false;
+            }
+
+            const SwitchContainerDefinition* definition = switch_container->GetSwitchContainerDefinition();
+            AmSwitchContainerID id = definition->id();
+            if (id == kAmInvalidObjectId)
+            {
+                CallLogFunc(
+                    "[ERROR] Cannot load switch container \'" AM_OS_CHAR_FMT "\'. Invalid ID.\n",
+                    AM_STRING_TO_OS_STRING(definition->name()->c_str()));
+                return false;
+            }
+
+            switch_container->AcquireReferences(engine->GetState());
+            switch_container->GetRefCounter()->Increment();
+
+            engine->GetState()->switch_container_map[id] = std::move(switch_container);
+            engine->GetState()->switch_container_id_map[filename] = id;
+        }
+
+        return true;
+    }
 
     static bool InitializeCollection(AmOsString filename, Engine* engine)
     {
@@ -182,6 +222,43 @@ namespace SparkyStudios::Audio::Amplitude
         return true;
     }
 
+    static bool InitializeSwitch(AmOsString filename, Engine* engine)
+    {
+        // Find the ID.
+        SwitchHandle handle = engine->GetSwitchHandleFromFile(filename);
+        if (handle)
+        {
+            // We've seen this ID before, update it.
+            handle->GetRefCounter()->Increment();
+        }
+        else
+        {
+            // This is a new event, load it and update it.
+            std::unique_ptr<Switch> _switch(new Switch());
+            if (!_switch->LoadSwitchDefinitionFromFile(filename))
+            {
+                return false;
+            }
+
+            const SwitchDefinition* definition = _switch->GetSwitchDefinition();
+            AmSwitchID id = definition->id();
+            if (id == kAmInvalidObjectId)
+            {
+                CallLogFunc(
+                    "[ERROR] Cannot load switch \'" AM_OS_CHAR_FMT "\'. Invalid ID.\n",
+                    AM_STRING_TO_OS_STRING(definition->name()->c_str()));
+                return false;
+            }
+
+            _switch->GetRefCounter()->Increment();
+
+            engine->GetState()->switch_map[id] = std::move(_switch);
+            engine->GetState()->switch_id_map[filename] = id;
+        }
+
+        return true;
+    }
+
     bool SoundBank::Initialize(AmOsString filename, Engine* engine)
     {
         bool success = true;
@@ -194,6 +271,13 @@ namespace SparkyStudios::Audio::Amplitude
 
         _id = definition->id();
         _name = definition->name()->str();
+
+        // Load each Switch named in the sound bank.
+        for (flatbuffers::uoffset_t i = 0; success && i < definition->switches()->size(); ++i)
+        {
+            AmString switch_filename = definition->switches()->Get(i)->c_str();
+            success &= InitializeSwitch(AM_STRING_TO_OS_STRING(switch_filename), engine);
+        }
 
         // Load each Attenuation named in the sound bank.
         for (flatbuffers::uoffset_t i = 0; success && i < definition->attenuators()->size(); ++i)
@@ -223,7 +307,39 @@ namespace SparkyStudios::Audio::Amplitude
             success &= InitializeCollection(AM_STRING_TO_OS_STRING(sound_filename), engine);
         }
 
+        // Load each SwitchContainer named in the sound bank.
+        for (flatbuffers::uoffset_t i = 0; success && i < definition->switch_containers()->size(); ++i)
+        {
+            AmString filename = definition->switch_containers()->Get(i)->c_str();
+            success &= InitializeSwitchContainer(AM_STRING_TO_OS_STRING(filename), engine);
+        }
+
         return success;
+    }
+
+    static bool DeinitializeSwitchContainer(AmOsString filename, EngineInternalState* state)
+    {
+        auto id_iter = state->switch_container_id_map.find(filename);
+        if (id_iter == state->switch_container_id_map.end())
+        {
+            return false;
+        }
+
+        AmSwitchContainerID id = id_iter->second;
+        auto switch_container_iter = state->switch_container_map.find(id);
+        if (switch_container_iter == state->switch_container_map.end())
+        {
+            return false;
+        }
+
+        switch_container_iter->second->ReleaseReferences(state);
+
+        if (switch_container_iter->second->GetRefCounter()->Decrement() == 0)
+        {
+            state->switch_container_map.erase(switch_container_iter);
+        }
+
+        return true;
     }
 
     static bool DeinitializeCollection(AmOsString filename, EngineInternalState* state)
@@ -322,9 +438,42 @@ namespace SparkyStudios::Audio::Amplitude
         return true;
     }
 
+    static bool DeinitializeSwitch(AmOsString filename, EngineInternalState* state)
+    {
+        auto id_iter = state->switch_id_map.find(filename);
+        if (id_iter == state->switch_id_map.end())
+        {
+            return false;
+        }
+
+        AmSwitchID id = id_iter->second;
+        auto switch_iter = state->switch_map.find(id);
+        if (switch_iter == state->switch_map.end())
+        {
+            return false;
+        }
+
+        if (switch_iter->second->GetRefCounter()->Decrement() == 0)
+        {
+            state->switch_map.erase(switch_iter);
+        }
+
+        return true;
+    }
+
     void SoundBank::Deinitialize(Engine* engine)
     {
         const SoundBankDefinition* definition = GetSoundBankDefinition();
+
+        for (flatbuffers::uoffset_t i = 0; i < definition->switch_containers()->size(); ++i)
+        {
+            AmString filename = definition->switch_containers()->Get(i)->c_str();
+            if (!DeinitializeSwitchContainer(AM_STRING_TO_OS_STRING(filename), engine->GetState()))
+            {
+                CallLogFunc("Error while deinitializing switch container %s in sound bank.\n", filename);
+                AMPLITUDE_ASSERT(0);
+            }
+        }
 
         for (flatbuffers::uoffset_t i = 0; i < definition->collections()->size(); ++i)
         {
@@ -362,6 +511,16 @@ namespace SparkyStudios::Audio::Amplitude
             if (!DeinitializeAttenuation(AM_STRING_TO_OS_STRING(filename), engine->GetState()))
             {
                 CallLogFunc("Error while deinitializing attenuation %s in sound bank.\n", filename);
+                AMPLITUDE_ASSERT(0);
+            }
+        }
+
+        for (flatbuffers::uoffset_t i = 0; i < definition->switches()->size(); ++i)
+        {
+            AmString filename = definition->switches()->Get(i)->c_str();
+            if (!DeinitializeSwitch(AM_STRING_TO_OS_STRING(filename), engine->GetState()))
+            {
+                CallLogFunc("Error while deinitializing switch %s in sound bank.\n", filename);
                 AMPLITUDE_ASSERT(0);
             }
         }

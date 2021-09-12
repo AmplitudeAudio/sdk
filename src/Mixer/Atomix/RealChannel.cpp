@@ -34,13 +34,13 @@ namespace SparkyStudios::Audio::Amplitude
 
     RealChannel::RealChannel(ChannelInternalState* parent)
         : _channelId(kAmInvalidObjectId)
-        , _channelLayerId(kAmInvalidObjectId)
-        , _stream(false)
-        , _loop(false)
-        , _pan(0.0f)
-        , _gain(1.0f)
+        , _channelLayersId()
+        , _stream()
+        , _loop()
+        , _pan()
+        , _gain()
         , _mixer(nullptr)
-        , _activeSound(nullptr)
+        , _activeSounds()
         , _parentChannelState(parent)
     {}
 
@@ -79,110 +79,193 @@ namespace SparkyStudios::Audio::Amplitude
         return _channelId != kAmInvalidObjectId && _mixer != nullptr && _parentChannelState != nullptr;
     }
 
-    bool RealChannel::Play(SoundInstance* sound)
+    bool RealChannel::Play(const std::vector<SoundInstance*>& instances)
     {
-        AMPLITUDE_ASSERT(sound != nullptr);
-
-        _activeSound = sound;
-        _activeSound->SetChannel(this);
-        _activeSound->Load();
-
-        if (!_activeSound->GetUserData())
+        if (instances.empty())
         {
-            _channelId = kAmInvalidObjectId;
-            _channelLayerId = kAmInvalidObjectId;
-
-            CallLogFunc("[ERROR] The sound was not loaded successfully.");
             return false;
         }
 
-        _loop = _activeSound->GetSound()->IsLoop();
-        _stream = _activeSound->GetSound()->IsStream();
+        bool success = true;
+        AmUInt32 layer = FindFreeLayer(_channelLayersId.empty() ? 1 : _channelLayersId.rbegin()->first);
+        std::vector<AmUInt32> layers;
 
-        const AmUInt8 loops = _loop ? ATOMIX_LOOP : ATOMIX_PLAY;
-
-        _channelLayerId = atomixMixerPlay(
-            _mixer, static_cast<atomix_sound*>(_activeSound->GetUserData()), loops, _gain, _pan, _channelId, _channelLayerId);
-
-        // Check if playing the sound was successful, and display the error if it was not.
-        const bool success = _channelLayerId != kAmInvalidObjectId;
-        if (!success)
+        for (auto& instance : instances)
         {
-            _channelId = kAmInvalidObjectId;
-            _channelLayerId = kAmInvalidObjectId;
+            success &= Play(instance, layer);
+            layers.push_back(layer);
 
-            CallLogFunc("[ERROR] Could not play sound " AM_OS_CHAR_FMT "\n", _activeSound->GetSound()->GetFilename());
+            if (!success)
+            {
+                for (auto&& layer : layers)
+                {
+                    Destroy(layer);
+                }
+                return false;
+            }
+
+            layer = FindFreeLayer(layer);
         }
 
         return success;
     }
 
-    void RealChannel::Destroy()
+    bool RealChannel::Play(SoundInstance* sound, AmUInt32 layer)
     {
-        AMPLITUDE_ASSERT(Valid() && _channelLayerId != kAmInvalidObjectId);
-        atomixMixerSetState(_mixer, _channelId, _channelLayerId, 0);
+        AMPLITUDE_ASSERT(sound != nullptr);
+
+        _activeSounds[layer] = sound;
+        _activeSounds[layer]->SetChannel(this);
+        _activeSounds[layer]->Load();
+
+        if (!_activeSounds[layer]->GetUserData())
+        {
+            _channelLayersId[layer] = kAmInvalidObjectId;
+            CallLogFunc("[ERROR] The sound was not loaded successfully.");
+            return false;
+        }
+
+        _loop[layer] = _activeSounds[layer]->GetSound()->IsLoop();
+        _stream[layer] = _activeSounds[layer]->GetSound()->IsStream();
+
+        const AmUInt8 loops = _loop[layer] ? ATOMIX_LOOP : ATOMIX_PLAY;
+
+        _channelLayersId[layer] = atomixMixerPlay(
+            _mixer, static_cast<atomix_sound*>(_activeSounds[layer]->GetUserData()), loops, _gain[layer], _pan, _channelId, 0);
+
+        // Check if playing the sound was successful, and display the error if it was not.
+        const bool success = _channelLayersId[layer] != kAmInvalidObjectId;
+        if (!success)
+        {
+            _channelLayersId[layer] = kAmInvalidObjectId;
+            CallLogFunc("[ERROR] Could not play sound " AM_OS_CHAR_FMT "\n", _activeSounds[layer]->GetSound()->GetFilename());
+        }
+
+        return success;
+    }
+
+    void RealChannel::Destroy(AmUInt32 layer)
+    {
+        AMPLITUDE_ASSERT(Valid() && _channelLayersId[layer] != kAmInvalidObjectId);
+        atomixMixerSetState(_mixer, _channelId, _channelLayersId[layer], 0);
+
+        _channelLayersId.erase(layer);
+        delete _activeSounds[layer];
+        _activeSounds.erase(layer);
     }
 
     bool RealChannel::Playing() const
     {
         AMPLITUDE_ASSERT(Valid());
-        const AmUInt32 state = atomixMixerGetState(_mixer, _channelId, _channelLayerId);
+        bool playing = true;
+        for (auto&& layer : _channelLayersId)
+        {
+            playing &= Playing(layer.first);
+        }
+
+        return playing;
+    }
+
+    bool RealChannel::Playing(AmUInt32 layer) const
+    {
+        AMPLITUDE_ASSERT(Valid());
+        const AmUInt32 state = atomixMixerGetState(_mixer, _channelId, _channelLayersId.at(layer));
 
         if (const auto* collection = _parentChannelState->GetCollection(); collection == nullptr)
         {
-            return !_loop && state == ATOMIX_PLAY || _loop && state == ATOMIX_LOOP;
+            return !_loop.at(layer) && state == ATOMIX_PLAY || _loop.at(layer) && state == ATOMIX_LOOP;
         }
         else
         {
             const CollectionPlayMode mode = collection->GetCollectionDefinition()->play_mode();
 
-            return mode == CollectionPlayMode_PlayOne && !_loop ? state == ATOMIX_PLAY
-                : mode == CollectionPlayMode_PlayOne && _loop   ? state == ATOMIX_LOOP
-                                                                : _channelId != kAmInvalidObjectId;
+            return mode == CollectionPlayMode_PlayOne && !_loop.at(layer) ? state == ATOMIX_PLAY
+                : mode == CollectionPlayMode_PlayOne && _loop.at(layer)   ? state == ATOMIX_LOOP
+                                                                          : _channelId != kAmInvalidObjectId;
         }
     }
 
     bool RealChannel::Paused() const
     {
         AMPLITUDE_ASSERT(Valid());
-        return atomixMixerGetState(_mixer, _channelId, _channelLayerId) == ATOMIX_HALT;
+        bool paused = true;
+        for (auto&& layer : _channelLayersId)
+        {
+            paused &= Paused(layer.first);
+        }
+
+        return paused;
+    }
+
+    bool RealChannel::Paused(AmUInt32 layer) const
+    {
+        AMPLITUDE_ASSERT(Valid());
+        return atomixMixerGetState(_mixer, _channelId, _channelLayersId.at(layer)) == ATOMIX_HALT;
     }
 
     void RealChannel::SetGain(const float gain)
     {
         AMPLITUDE_ASSERT(Valid());
-        atomixMixerSetGainPan(_mixer, _channelId, _channelLayerId, gain * _activeSound->GetSettings().m_gain, _pan);
-        _gain = gain;
+        for (auto&& layer : _channelLayersId)
+        {
+            if (layer.second != 0)
+            {
+                SetGain(gain, layer.first);
+            }
+        }
     }
 
-    float RealChannel::GetGain() const
+    void RealChannel::SetGain(float gain, AmUInt32 layer)
     {
-        AMPLITUDE_ASSERT(Valid());
-        return _gain;
+        atomixMixerSetGainPan(_mixer, _channelId, _channelLayersId[layer], gain * _activeSounds[layer]->GetSettings().m_gain, _pan);
+        _gain[layer] = gain;
     }
 
-    void RealChannel::Halt()
+    float RealChannel::GetGain(AmUInt32 layer) const
     {
         AMPLITUDE_ASSERT(Valid());
-        atomixMixerSetState(_mixer, _channelId, _channelLayerId, ATOMIX_STOP);
+        return _gain.count(layer) > 0 ? _gain.at(layer) : 0.0f;
     }
 
-    void RealChannel::Pause()
+    void RealChannel::Halt(AmUInt32 layer)
     {
         AMPLITUDE_ASSERT(Valid());
-        atomixMixerSetState(_mixer, _channelId, _channelLayerId, ATOMIX_HALT);
+        atomixMixerSetState(_mixer, _channelId, _channelLayersId[layer], ATOMIX_STOP);
     }
 
-    void RealChannel::Resume()
+    void RealChannel::Pause(AmUInt32 layer)
     {
         AMPLITUDE_ASSERT(Valid());
-        atomixMixerSetState(_mixer, _channelId, _channelLayerId, _loop ? ATOMIX_LOOP : ATOMIX_PLAY);
+        atomixMixerSetState(_mixer, _channelId, _channelLayersId[layer], ATOMIX_HALT);
+    }
+
+    void RealChannel::Resume(AmUInt32 layer)
+    {
+        AMPLITUDE_ASSERT(Valid());
+        atomixMixerSetState(_mixer, _channelId, _channelLayersId[layer], _loop[layer] ? ATOMIX_LOOP : ATOMIX_PLAY);
     }
 
     void RealChannel::SetPan(const hmm_vec2& pan)
     {
         AMPLITUDE_ASSERT(Valid());
-        atomixMixerSetGainPan(_mixer, _channelId, _channelLayerId, _gain * _activeSound->GetSettings().m_gain, pan.X);
+        for (auto&& layer : _channelLayersId)
+        {
+            if (layer.second != 0)
+            {
+                atomixMixerSetGainPan(
+                    _mixer, _channelId, layer.second, _gain[layer.first] * _activeSounds[layer.first]->GetSettings().m_gain, pan.X);
+            }
+        }
         _pan = pan.X;
+    }
+
+    AmUInt32 RealChannel::FindFreeLayer(AmUInt32 layerIndex) const
+    {
+        while (_channelLayersId.count(layerIndex) > 0)
+        {
+            layerIndex++;
+        }
+
+        return layerIndex;
     }
 } // namespace SparkyStudios::Audio::Amplitude
