@@ -85,6 +85,9 @@ set(SA_SOURCE
     include/SparkyStudios/Audio/Amplitude/Sound/SwitchContainer.h
     include/SparkyStudios/Audio/Amplitude/Amplitude.h
 
+    src/Core/Codecs/FLAC/Codec.cpp
+    src/Core/Codecs/FLAC/Codec.h
+    src/Core/Codecs/FLAC/dr_flac.h
 
     src/Core/Codecs/MP3/Codec.cpp
     src/Core/Codecs/MP3/Codec.h
