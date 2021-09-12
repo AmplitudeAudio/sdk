@@ -19,16 +19,16 @@
 
 #include <SparkyStudios/Audio/Amplitude/Core/Common.h>
 
-#include <SparkyStudios/Audio/Amplitude/Core/RefCounter.h>
 #include <SparkyStudios/Audio/Amplitude/Core/Entity.h>
 #include <SparkyStudios/Audio/Amplitude/Core/Listener.h>
+#include <SparkyStudios/Audio/Amplitude/Core/RefCounter.h>
 
 #include <SparkyStudios/Audio/Amplitude/Math/Curve.h>
 
 namespace SparkyStudios::Audio::Amplitude
 {
-    class AttenuationDefinition;
-    class AttenuationShapeDefinition;
+    struct AttenuationDefinition;
+    struct AttenuationShapeDefinition;
 
     class Attenuation;
 
@@ -52,7 +52,8 @@ namespace SparkyStudios::Audio::Amplitude
          *
          * @return The attenuation factor.
          */
-        virtual float GetAttenuationFactor(const Attenuation* attenuation, const hmm_vec3& soundLocation, const ListenerInternalState* listener);
+        virtual float GetAttenuationFactor(
+            const Attenuation* attenuation, const hmm_vec3& soundLocation, const ListenerInternalState* listener);
 
         /**
          * @brief Returns the attenuation factor.
@@ -65,7 +66,8 @@ namespace SparkyStudios::Audio::Amplitude
          *
          * @return The attenuation factor.
          */
-        virtual float GetAttenuationFactor(const Attenuation* attenuation, const EntityInternalState* entity, const ListenerInternalState* listener);
+        virtual float GetAttenuationFactor(
+            const Attenuation* attenuation, const EntityInternalState* entity, const ListenerInternalState* listener);
 
         /**
          * @brief Creates an AttenuationShape object from the definition.
