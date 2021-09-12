@@ -14,8 +14,8 @@
 
 #pragma once
 
-#ifndef SPARK_AUDIO_SPARK_AUDIO_H
-#define SPARK_AUDIO_SPARK_AUDIO_H
+#ifndef SS_AMPLITUDE_AUDIO_AMPLITUDE_H
+#define SS_AMPLITUDE_AUDIO_AMPLITUDE_H
 
 #include <SparkyStudios/Audio/Amplitude/Core/Common.h>
 
@@ -34,15 +34,19 @@
 
 #include <SparkyStudios/Audio/Amplitude/IO/FileLoader.h>
 
+#include <SparkyStudios/Audio/Amplitude/Math/Curve.h>
 #include <SparkyStudios/Audio/Amplitude/Math/HandmadeMath.h>
 
 #include <SparkyStudios/Audio/Amplitude/Sound/Schedulers/RandomScheduler.h>
 #include <SparkyStudios/Audio/Amplitude/Sound/Schedulers/SequenceScheduler.h>
 
+#include <SparkyStudios/Audio/Amplitude/Sound/Attenuation.h>
 #include <SparkyStudios/Audio/Amplitude/Sound/Collection.h>
 #include <SparkyStudios/Audio/Amplitude/Sound/Fader.h>
 #include <SparkyStudios/Audio/Amplitude/Sound/Scheduler.h>
 #include <SparkyStudios/Audio/Amplitude/Sound/Sound.h>
 #include <SparkyStudios/Audio/Amplitude/Sound/SoundBank.h>
+#include <SparkyStudios/Audio/Amplitude/Sound/Switch.h>
+#include <SparkyStudios/Audio/Amplitude/Sound/SwitchContainer.h>
 
-#endif // SPARK_AUDIO_SPARK_AUDIO_H
+#endif // SS_AMPLITUDE_AUDIO_AMPLITUDE_H
