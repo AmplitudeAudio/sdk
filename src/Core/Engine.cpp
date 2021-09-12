@@ -30,6 +30,7 @@
 #include "switch_container_definition_generated.h"
 
 #pragma region Default Codecs
+#include <Core/Codecs/MP3/Codec.h>
 #include <Core/Codecs/OGG/Codec.h>
 #include <Core/Codecs/WAV/Codec.h>
 #pragma endregion
