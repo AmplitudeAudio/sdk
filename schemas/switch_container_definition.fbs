@@ -49,7 +49,7 @@ table SwitchContainerEntry {
   gain:float;
 
   /// The list of switch states where this object is assigned.
-  switch_states:[uint64];
+  switch_states:[uint64] (required);
 }
 
 /// A SwitchContainer group Sound or Collection objects into switch states. All the objects inside
@@ -90,7 +90,7 @@ table SwitchContainerDefinition {
   update_behavior:SwitchContainerUpdateBehavior;
 
   /// The ID of the switch to use for this SwitchContainer.
-  switch_goup:uint64;
+  switch_group:uint64;
 
   /// The default switch state ID.
   default_switch_state:uint64;

@@ -69,6 +69,14 @@ namespace SparkyStudios::Audio::Amplitude
         void Set(float from, float to, AmTime time);
 
         /**
+         * @brief Set up fader.
+         *
+         * @param from The start value.
+         * @param to The target value.
+         */
+        void Set(float from, float to);
+
+        /**
          * @brief Get the current fading value.
          *
          * To use this method you need to define the fading stat time using

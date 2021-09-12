@@ -23,6 +23,11 @@ table SoundBankDefinition {
   /// The name of this sound bank.
   name:string;
 
+  /// The list of SwitchContainer files to load. A SwitchContainer
+  /// may be present in more than one SoundBank and can only be played once it
+  /// has been loaded by at least one SoundBank.
+  switch_containers:[string];
+
   /// The list of Collection files to load. A Collection
   /// may be present in more than one SoundBank and can only be played once it
   /// has been loaded by at least one SoundBank.

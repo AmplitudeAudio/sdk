@@ -125,6 +125,13 @@ namespace SparkyStudios::Audio::Amplitude
          */
         void SetState(const std::string& name);
 
+        /**
+         * @brief Get the list of available SwitchStates in this Switch.
+         *
+         * @return The list of available SwitchStates.
+         */
+        [[nodiscard]] const std::vector<SwitchState>& GetSwitchStates() const;
+
         RefCounter* GetRefCounter();
 
     private:
@@ -133,7 +140,7 @@ namespace SparkyStudios::Audio::Amplitude
         AmSwitchID _id;
         std::string _name;
 
-        SwitchState& _activeState;
+        SwitchState _activeState;
         std::vector<SwitchState> _states;
 
         RefCounter _refCounter;

@@ -39,7 +39,7 @@ namespace SparkyStudios::Audio::Amplitude
         : _source()
         , _id(kAmInvalidObjectId)
         , _name()
-        , _activeState(SwitchState())
+        , _activeState()
         , _states()
         , _refCounter()
     {}
@@ -137,6 +137,11 @@ namespace SparkyStudios::Audio::Amplitude
         {
             _activeState = *findIt;
         }
+    }
+
+    const std::vector<SwitchState>& Switch::GetSwitchStates() const
+    {
+        return _states;
     }
 
     RefCounter* Switch::GetRefCounter()

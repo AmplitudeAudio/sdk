@@ -33,6 +33,7 @@
 #include <SparkyStudios/Audio/Amplitude/Sound/Collection.h>
 #include <SparkyStudios/Audio/Amplitude/Sound/Sound.h>
 #include <SparkyStudios/Audio/Amplitude/Sound/Switch.h>
+#include <SparkyStudios/Audio/Amplitude/Sound/SwitchContainer.h>
 
 namespace SparkyStudios::Audio::Amplitude
 {
@@ -40,6 +41,7 @@ namespace SparkyStudios::Audio::Amplitude
 
     struct EngineInternalState;
 
+    typedef SwitchContainer* SwitchContainerHandle;
     typedef Collection* CollectionHandle;
     typedef Sound* SoundHandle;
     typedef Event* EventHandle;
@@ -128,6 +130,27 @@ namespace SparkyStudios::Audio::Amplitude
          *        StartLoadingSoundFiles() first.
          */
         bool TryFinalize();
+
+        /**
+         * @brief Get a SwitchContainerHandle given its name as defined in its JSON data.
+         *
+         * @param name The unique name as defined in the JSON data.
+         */
+        [[nodiscard]] SwitchContainerHandle GetSwitchContainerHandle(const std::string& name) const;
+
+        /**
+         * @brief Get a SwitchContainerHandle given its ID as defined in its JSON data.
+         *
+         * @param id The unique ID as defined in the JSON data.
+         */
+        [[nodiscard]] SwitchContainerHandle GetSwitchContainerHandle(AmSwitchContainerID id) const;
+
+        /**
+         * @brief Get a SwitchContainerHandle given its SwitchContainerDefinition filename.
+         *
+         * @param filename The filename containing the flatbuffer binary data.
+         */
+        [[nodiscard]] SwitchContainerHandle GetSwitchContainerHandleFromFile(AmOsString filename) const;
 
         /**
          * @brief Get a CollectionHandle given its name as defined in its JSON data.
@@ -318,6 +341,67 @@ namespace SparkyStudios::Audio::Amplitude
          * @return A valid bus if found, otherwise an invalid bus.
          */
         [[nodiscard]] Bus FindBus(AmBusID id) const;
+
+        /**
+         * @brief Play a switch container associated with the given handle in the
+         *        World scope.
+         *
+         * @param handle A handle to the switch container to play.
+         *
+         * @return The channel the switch container is played on. If the switch container could not be
+         *         played, an invalid Channel is returned.
+         */
+        Channel Play(SwitchContainerHandle handle);
+
+        /**
+         * @brief Play a switch container associated with the given handle in the
+         *        World scope at the given location.
+         *
+         * @param handle A handle to the switch container to play.
+         * @param location The location on which play the switch container.
+         *
+         * @return The channel the switch container is played on. If the switch container could not be
+         *         played, an invalid Channel is returned.
+         */
+        Channel Play(SwitchContainerHandle handle, const hmm_vec3& location);
+
+        /**
+         * @brief Play a switch container associated with the given handle in the
+         *        location with the given gain.
+         *
+         * @param handle A handle to the switch container to play.
+         * @param location The location on which play the switch container.
+         * @param userGain The gain of the sound.
+         *
+         * @return The channel the switch container is played on. If the switch container could not be
+         *         played, an invalid Channel is returned.
+         */
+        Channel Play(SwitchContainerHandle handle, const hmm_vec3& location, float userGain);
+
+        /**
+         * @brief Play a switch container associated with the given handle in the
+         *        Entity scope.
+         *
+         * @param handle A handle to the switch container to play.
+         * @param entity The entity which is playing the switch container.
+         *
+         * @return The channel the switch container is played on. If the switch container could not be
+         *         played, an invalid Channel is returned.
+         */
+        Channel Play(SwitchContainerHandle handle, const Entity& entity);
+
+        /**
+         * @brief Play a switch container associated with the given handle in an
+         *        Entity scope with the given gain.
+         *
+         * @param handle A handle to the switch container to play.
+         * @param entity The entity which is playing the switch container.
+         * @param userGain The gain of the sound.
+         *
+         * @return The channel the switch container is played on. If the switch container could not be
+         *         played, an invalid Channel is returned.
+         */
+        Channel Play(SwitchContainerHandle handle, const Entity& entity, float userGain);
 
         /**
          * @brief Play a collection associated with the given handle in the
@@ -734,6 +818,8 @@ namespace SparkyStudios::Audio::Amplitude
         [[nodiscard]] static Engine* GetInstance();
 
     private:
+        Channel PlayScopedSwitchContainer(
+            SwitchContainerHandle handle, const Entity& entity, const hmm_vec3& location, float userGain) const;
         Channel PlayScopedCollection(CollectionHandle handle, const Entity& entity, const hmm_vec3& location, float userGain) const;
         Channel PlayScopedSound(SoundHandle handle, const Entity& entity, const hmm_vec3& location, float userGain) const;
 

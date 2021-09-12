@@ -40,6 +40,7 @@ namespace SparkyStudios::Audio::Amplitude
     typedef std::map<std::wstring, AmSwitchID> SwitchIdMap;
     typedef std::map<std::wstring, AmAttenuationID> AttenuationIdMap;
     typedef std::map<std::wstring, AmCollectionID> CollectionIdMap;
+    typedef std::map<std::wstring, AmSwitchContainerID> SwitchContainerIdMap;
     typedef std::map<std::wstring, AmSoundID> SoundIdMap;
     typedef std::map<std::wstring, AmEventID> EventIdMap;
     typedef std::map<std::wstring, std::unique_ptr<SoundBank>> SoundBankMap;
@@ -47,10 +48,13 @@ namespace SparkyStudios::Audio::Amplitude
     typedef std::map<std::string, AmSwitchID> SwitchIdMap;
     typedef std::map<std::string, AmAttenuationID> AttenuationIdMap;
     typedef std::map<std::string, AmCollectionID> CollectionIdMap;
+    typedef std::map<std::string, AmSwitchContainerID> SwitchContainerIdMap;
     typedef std::map<std::string, AmSoundID> SoundIdMap;
     typedef std::map<std::string, std::string> EventIdMap;
     typedef std::map<std::string, std::unique_ptr<SoundBank>> SoundBankMap;
 #endif
+
+    typedef std::map<AmSwitchContainerID, std::unique_ptr<SwitchContainer>> SwitchContainerMap;
 
     typedef std::map<AmCollectionID, std::unique_ptr<Collection>> CollectionMap;
 
@@ -86,6 +90,8 @@ namespace SparkyStudios::Audio::Amplitude
             , mute(true)
             , paused(true)
             , stopping(false)
+            , switch_container_map()
+            , switch_container_id_map()
             , collection_map()
             , collection_id_map()
             , event_map()
@@ -93,6 +99,8 @@ namespace SparkyStudios::Audio::Amplitude
             , running_events()
             , attenuation_map()
             , attenuation_id_map()
+            , switch_map()
+            , switch_id_map()
             , sound_bank_map()
             , channel_state_memory()
             , playing_channel_list(&ChannelInternalState::priority_node)
@@ -132,6 +140,12 @@ namespace SparkyStudios::Audio::Amplitude
 
         // If true, the engine is in the process of shutting down.
         bool stopping;
+
+        // A map of sound names to SoundCollections.
+        SwitchContainerMap switch_container_map;
+
+        // A map of file names to sound ids to determine if a file needs to be loaded.
+        SwitchContainerIdMap switch_container_id_map;
 
         // A map of sound names to SoundCollections.
         CollectionMap collection_map;

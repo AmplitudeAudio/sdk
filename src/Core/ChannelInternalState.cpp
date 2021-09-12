@@ -30,17 +30,10 @@
 
 #include "collection_definition_generated.h"
 #include "sound_definition_generated.h"
+#include "switch_container_definition_generated.h"
 
 namespace SparkyStudios::Audio::Amplitude
 {
-    bool ChannelInternalState::IsStream() const
-    {
-        if (_sound != nullptr)
-            return _sound->IsStream();
-
-        return false;
-    }
-
     // Removes this channel state from all lists.
     void ChannelInternalState::Remove()
     {
@@ -52,16 +45,31 @@ namespace SparkyStudios::Audio::Amplitude
 
     void ChannelInternalState::Reset()
     {
-        _realChannel._channelLayerId = kAmInvalidObjectId;
+        _realChannel._channelLayersId.clear();
+
         _channelState = ChannelState::Stopped;
+        _switchContainer = nullptr;
         _collection = nullptr;
+        _sound = nullptr;
         _fader = nullptr;
         _targetFadeOutState = ChannelState::Stopped;
         _entity = Entity();
-        _sound = nullptr;
         _userGain = 0.0f;
         _gain = 0.0f;
         _location = AM_Vec3(0, 0, 0);
+    }
+
+    void ChannelInternalState::SetSwitchContainer(SwitchContainer* switchContainer)
+    {
+        if (_switchContainer && _switchContainer->GetBus())
+        {
+            bus_node.remove();
+        }
+        _switchContainer = switchContainer;
+        if (_switchContainer && _switchContainer->GetBus())
+        {
+            _switchContainer->GetBus()->GetPlayingSoundList().push_front(*this);
+        }
     }
 
     void ChannelInternalState::SetCollection(Collection* collection)
@@ -110,6 +118,11 @@ namespace SparkyStudios::Audio::Amplitude
 
     bool ChannelInternalState::Play()
     {
+        if (_switchContainer != nullptr)
+        {
+            return PlaySwitchContainer();
+        }
+
         if (_collection != nullptr)
         {
             return PlayCollection();
@@ -198,6 +211,8 @@ namespace SparkyStudios::Audio::Amplitude
 
         if (_realChannel.Valid())
         {
+            _realChannel.SetGain(_gain);
+
             _fader->Set(_gain, 0.0f, duration / kAmSecond);
             _fader->Start(Engine::GetInstance()->GetTotalTime());
         }
@@ -217,7 +232,8 @@ namespace SparkyStudios::Audio::Amplitude
 
     void ChannelInternalState::SetGain(const float gain)
     {
-        if (_channelState == ChannelState::FadingOut || _channelState == ChannelState::FadingIn)
+        if (_channelState == ChannelState::FadingOut || _channelState == ChannelState::FadingIn ||
+            _channelState == ChannelState::SwitchingState)
             // Do not update gain when fading...
             return;
 
@@ -241,9 +257,9 @@ namespace SparkyStudios::Audio::Amplitude
         if (Playing())
         {
             // Resume playing the audio.
-            if (_realChannel._channelLayerId == kAmInvalidObjectId)
+            if (!_realChannel._channelLayersId.empty())
             {
-                _realChannel.Play(_sound->CreateInstance(_collection));
+                Play();
             }
             else
             {
@@ -258,6 +274,11 @@ namespace SparkyStudios::Audio::Amplitude
 
     float ChannelInternalState::Priority() const
     {
+        if (_switchContainer != nullptr)
+        {
+            return GetGain() * _switchContainer->GetSwitchContainerDefinition()->priority();
+        }
+
         if (_collection != nullptr)
         {
             return GetGain() * _collection->GetCollectionDefinition()->priority();
@@ -278,6 +299,189 @@ namespace SparkyStudios::Audio::Amplitude
         if (_entity.Valid())
         {
             _entity.Update();
+        }
+
+        if (_channelState == ChannelState::Paused || _channelState == ChannelState::Stopped)
+            return;
+
+        // Update sounds if playing a switch container
+        // TODO: This part should probably be optimized
+        if (_switchContainer != nullptr && _channelState != ChannelState::FadingIn && _channelState != ChannelState::FadingOut)
+        {
+            const SwitchContainerDefinition* definition = _switchContainer->GetSwitchContainerDefinition();
+            if (_switch->GetState().m_id != kAmInvalidObjectId && _switch->GetState().m_id != _playingSwitchContainerStateId &&
+                definition->update_behavior() == SwitchContainerUpdateBehavior_UpdateOnChange)
+            {
+                const std::vector<SwitchContainerItem>& previousItems = _switchContainer->GetSoundObjects(_playingSwitchContainerStateId);
+                const std::vector<SwitchContainerItem>& nextItems = _switchContainer->GetSoundObjects(_switch->GetState().m_id);
+
+                for (const auto& item : previousItems)
+                {
+                    bool shouldSkip = false;
+                    for (const auto& next : nextItems)
+                    {
+                        if (next.m_id == item.m_id)
+                        {
+                            shouldSkip = item.m_continueBetweenStates;
+                        }
+                    }
+
+                    if (shouldSkip)
+                    {
+                        continue;
+                    }
+
+                    Fader* out = _switchContainer->GetFaderOut(item.m_id);
+                    out->Set(_gain, 0.0f);
+                    out->Start(Engine::GetInstance()->GetTotalTime());
+                }
+
+                for (const auto& item : nextItems)
+                {
+                    bool shouldSkip = false;
+                    for (const auto& previous : previousItems)
+                    {
+                        if (previous.m_id == item.m_id)
+                        {
+                            shouldSkip = item.m_continueBetweenStates;
+                        }
+                    }
+
+                    if (shouldSkip)
+                    {
+                        continue;
+                    }
+
+                    Fader* in = _switchContainer->GetFaderIn(item.m_id);
+                    in->Set(0.0f, _gain);
+                    in->Start(Engine::GetInstance()->GetTotalTime());
+                }
+
+                _previousSwitchContainerStateId = _playingSwitchContainerStateId;
+                PlaySwitchContainerStateUpdate(previousItems, nextItems);
+                _playingSwitchContainerStateId = _switch->GetState().m_id;
+
+                _channelState = ChannelState::SwitchingState;
+            }
+
+            if (_channelState == ChannelState::SwitchingState)
+            {
+                const std::vector<SwitchContainerItem>& previousItems = _switchContainer->GetSoundObjects(_previousSwitchContainerStateId);
+                const std::vector<SwitchContainerItem>& nextItems = _switchContainer->GetSoundObjects(_playingSwitchContainerStateId);
+
+                bool isAtLeastOneFadeInRunning = false;
+                bool isAtLeastOneFadeOutRunning = false;
+
+                for (const auto& item : previousItems)
+                {
+                    bool shouldSkip = false;
+                    for (const auto& next : nextItems)
+                    {
+                        if (next.m_id == item.m_id)
+                        {
+                            shouldSkip = item.m_continueBetweenStates;
+                        }
+                    }
+
+                    if (shouldSkip)
+                    {
+                        continue;
+                    }
+
+                    AmUInt32 layer = 0;
+                    for (auto it = _realChannel._activeSounds.begin(); it != _realChannel._activeSounds.end(); ++it)
+                    {
+                        if (it->second->GetSettings().m_id == item.m_id)
+                        {
+                            layer = it->first;
+                            break;
+                        }
+                    }
+
+                    if (layer == 0)
+                    {
+                        continue;
+                    }
+
+                    Fader* out = _switchContainer->GetFaderOut(item.m_id);
+                    if (out->GetState() == AM_FADER_STATE_STOPPED)
+                    {
+                        continue;
+                    }
+
+                    const float gain = out->GetFromTime(Engine::GetInstance()->GetTotalTime());
+                    isAtLeastOneFadeOutRunning = true;
+
+                    if (_realChannel.Valid())
+                    {
+                        _realChannel.SetGain(gain, layer);
+                    }
+
+                    if (gain == 0.0f)
+                    {
+                        out->SetState(AM_FADER_STATE_STOPPED);
+                        // Fading in transition complete. Now we can destoy the channel layer
+                        _realChannel.Destroy(layer);
+                    }
+                }
+
+                for (const auto& item : nextItems)
+                {
+                    bool shouldSkip = false;
+                    for (const auto& previous : previousItems)
+                    {
+                        if (previous.m_id == item.m_id)
+                        {
+                            shouldSkip = item.m_continueBetweenStates;
+                        }
+                    }
+
+                    if (shouldSkip)
+                    {
+                        continue;
+                    }
+
+                    AmUInt32 layer = 0;
+                    for (auto it = _realChannel._activeSounds.rbegin(); it != _realChannel._activeSounds.rend(); ++it)
+                    {
+                        if (it->second->GetSettings().m_id == item.m_id)
+                        {
+                            layer = it->first;
+                            break;
+                        }
+                    }
+
+                    if (layer == 0)
+                    {
+                        continue;
+                    }
+
+                    Fader* in = _switchContainer->GetFaderIn(item.m_id);
+                    if (in->GetState() == AM_FADER_STATE_STOPPED)
+                    {
+                        continue;
+                    }
+
+                    const float gain = in->GetFromTime(Engine::GetInstance()->GetTotalTime());
+                    isAtLeastOneFadeInRunning = true;
+
+                    if (_realChannel.Valid())
+                    {
+                        _realChannel.SetGain(gain, layer);
+                    }
+
+                    if (_gain - gain <= kEpsilon)
+                    {
+                        in->SetState(AM_FADER_STATE_STOPPED);
+                    }
+                }
+
+                if (!isAtLeastOneFadeInRunning && !isAtLeastOneFadeOutRunning)
+                {
+                    _channelState = ChannelState::Playing;
+                    _previousSwitchContainerStateId = _playingSwitchContainerStateId;
+                }
+            }
         }
 
         // Update the fading in animation if necessary
@@ -361,6 +565,7 @@ namespace SparkyStudios::Audio::Amplitude
     {
         switch (_channelState)
         {
+        case ChannelState::SwitchingState:
         case ChannelState::Paused:
         case ChannelState::Stopped:
             break;
@@ -382,19 +587,100 @@ namespace SparkyStudios::Audio::Amplitude
         }
     }
 
+    bool ChannelInternalState::PlaySwitchContainerStateUpdate(
+        const std::vector<SwitchContainerItem>& previous, const std::vector<SwitchContainerItem>& next)
+    {
+        Engine* engine = Engine::GetInstance();
+        const SwitchContainerDefinition* definition = _switchContainer->GetSwitchContainerDefinition();
+
+        std::vector<SoundInstance*> instances;
+        for (const auto& item : next)
+        {
+            bool shouldSkip = false;
+            for (const auto& prev : previous)
+            {
+                if (prev.m_id == item.m_id)
+                {
+                    shouldSkip = item.m_continueBetweenStates;
+                }
+            }
+
+            if (shouldSkip)
+            {
+                continue;
+            }
+
+            Sound* sound = nullptr;
+
+            if (Collection* collection = engine->GetCollectionHandle(item.m_id); collection != nullptr)
+            {
+                sound = _entity.Valid() ? collection->SelectFromEntity(_entity, _realChannel._playedSounds)
+                                        : collection->SelectFromWorld(_realChannel._playedSounds);
+            }
+            else
+            {
+                sound = engine->GetSoundHandle(item.m_id);
+            }
+
+            if (!sound)
+            {
+                CallLogFunc("[ERROR] Unable to find a sound object with id: %u", item.m_id);
+                return false;
+            }
+
+            SoundInstanceSettings settings;
+            settings.m_id = item.m_id;
+            settings.m_kind = SoundKind::Standalone;
+            settings.m_busID = definition->bus();
+            settings.m_attenuationID = definition->attenuation();
+            settings.m_spatialization = definition->spatialization();
+            settings.m_priority = definition->priority();
+            settings.m_gain = item.m_gain;
+            settings.m_loop = sound->IsLoop();
+            settings.m_loopCount = sound->GetSoundDefinition()->loop()->loop_count();
+
+            instances.push_back(new SoundInstance(sound, settings));
+        }
+
+        return _realChannel.Play(instances);
+    }
+
+    bool ChannelInternalState::PlaySwitchContainer()
+    {
+        AMPLITUDE_ASSERT(_switchContainer != nullptr);
+
+        Engine* engine = Engine::GetInstance();
+        const SwitchContainerDefinition* definition = _switchContainer->GetSwitchContainerDefinition();
+
+        _switch = _switchContainer->GetSwitch();
+        _fader = Fader::Create(static_cast<Fader::FADER_ALGORITHM>(definition->fader()));
+        _channelState = ChannelState::Playing;
+
+        if (_realChannel.Valid())
+        {
+            const SwitchState& state = _switch->GetState();
+            _playingSwitchContainerStateId = state.m_id != kAmInvalidObjectId ? state.m_id : definition->default_switch_state();
+            const std::vector<SwitchContainerItem>& items = _switchContainer->GetSoundObjects(_playingSwitchContainerStateId);
+
+            return PlaySwitchContainerStateUpdate({}, items);
+        }
+
+        return true;
+    }
+
     bool ChannelInternalState::PlayCollection()
     {
         AMPLITUDE_ASSERT(_collection != nullptr);
 
         const CollectionDefinition* definition = _collection->GetCollectionDefinition();
 
-        _sound = _entity.Valid() ? _collection->SelectFromEntity(_entity, _realChannel._playedSounds)
-                                 : _collection->SelectFromWorld(_realChannel._playedSounds);
+        Sound* sound = _entity.Valid() ? _collection->SelectFromEntity(_entity, _realChannel._playedSounds)
+                                       : _collection->SelectFromWorld(_realChannel._playedSounds);
 
         _fader = Fader::Create(static_cast<Fader::FADER_ALGORITHM>(definition->fader()));
 
         _channelState = ChannelState::Playing;
-        return _realChannel.Valid() ? _realChannel.Play(_sound->CreateInstance(_collection)) : true;
+        return _realChannel.Valid() ? _realChannel.Play(sound->CreateInstance(_collection)) : true;
     }
 
     bool ChannelInternalState::PlaySound()

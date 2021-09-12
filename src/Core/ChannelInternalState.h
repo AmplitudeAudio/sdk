@@ -23,7 +23,10 @@
 
 #include <SparkyStudios/Audio/Amplitude/Core/Channel.h>
 #include <SparkyStudios/Audio/Amplitude/Core/Entity.h>
+#include <SparkyStudios/Audio/Amplitude/Sound/Collection.h>
 #include <SparkyStudios/Audio/Amplitude/Sound/Sound.h>
+#include <SparkyStudios/Audio/Amplitude/Sound/Switch.h>
+#include <SparkyStudios/Audio/Amplitude/Sound/SwitchContainer.h>
 
 #include "RealChannel.h"
 
@@ -37,6 +40,7 @@ namespace SparkyStudios::Audio::Amplitude
         Playing,
         FadingIn,
         FadingOut,
+        SwitchingState,
         Paused,
     };
 
@@ -47,11 +51,15 @@ namespace SparkyStudios::Audio::Amplitude
         ChannelInternalState()
             : _realChannel(this)
             , _channelState(ChannelState::Stopped)
+            , _switchContainer(nullptr)
             , _collection(nullptr)
+            , _sound(nullptr)
+            , _switch(nullptr)
+            , _playingSwitchContainerStateId(kAmInvalidObjectId)
+            , _previousSwitchContainerStateId(kAmInvalidObjectId)
             , _fader(nullptr)
             , _targetFadeOutState(ChannelState::Stopped)
             , _entity()
-            , _sound(nullptr)
             , _userGain(1.0f)
             , _gain(1.0f)
             , _pan()
@@ -62,9 +70,6 @@ namespace SparkyStudios::Audio::Amplitude
         // etc.
         void UpdateState();
 
-        // Returns true if this channel holds streaming data.
-        [[nodiscard]] bool IsStream() const;
-
         // Remove this channel from all lists that it is a part of.
         void Remove();
 
@@ -72,6 +77,11 @@ namespace SparkyStudios::Audio::Amplitude
          * @brief Resets this channel to its initial state.
          */
         void Reset();
+
+        // Set the switch container playing on this channel. Note that when you set
+        // the switch container, you also add this channel to the bus list that
+        // corresponds to that switch container.
+        void SetSwitchContainer(SwitchContainer* switchContainer);
 
         // Get or set the collection playing on this channel. Note that when you set
         // the collection, you also add this channel to the bus list that
@@ -82,6 +92,11 @@ namespace SparkyStudios::Audio::Amplitude
         // the sound, you also add this channel to the bus list that
         // corresponds to that sound.
         void SetSound(Sound* sound);
+
+        [[nodiscard]] SwitchContainer* GetSwitchContainer() const
+        {
+            return _switchContainer;
+        }
 
         [[nodiscard]] Collection* GetCollection() const
         {
@@ -241,6 +256,8 @@ namespace SparkyStudios::Audio::Amplitude
         fplutil::intrusive_list_node entity_node;
 
     private:
+        bool PlaySwitchContainerStateUpdate(const std::vector<SwitchContainerItem>& previous, const std::vector<SwitchContainerItem>& next);
+        bool PlaySwitchContainer();
         bool PlayCollection();
         bool PlaySound();
 
@@ -250,7 +267,17 @@ namespace SparkyStudios::Audio::Amplitude
         ChannelState _channelState;
 
         // The collection of the sound being played on this channel.
+        SwitchContainer* _switchContainer;
+
+        // The collection of the sound being played on this channel.
         Collection* _collection;
+
+        // The sound source that was chosen from the sound collection.
+        Sound* _sound;
+
+        const Switch* _switch;
+        AmObjectID _playingSwitchContainerStateId;
+        AmObjectID _previousSwitchContainerStateId;
 
         // The sound fade of this channel. This is updated by the current sound collection.
         Fader* _fader;
@@ -260,9 +287,6 @@ namespace SparkyStudios::Audio::Amplitude
 
         // The entity which is playing the sound of this channel.
         Entity _entity;
-
-        // The sound source that was chosen from the sound collection.
-        Sound* _sound;
 
         // The gain set by the user.
         float _userGain;

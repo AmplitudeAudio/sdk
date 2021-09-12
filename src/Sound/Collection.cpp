@@ -109,6 +109,7 @@ namespace SparkyStudios::Audio::Amplitude
             else
             {
                 SoundInstanceSettings settings;
+                settings.m_id = def->id();
                 settings.m_kind = SoundKind::Contained;
                 settings.m_busID = def->bus();
                 settings.m_attenuationID = def->attenuation();
