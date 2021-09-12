@@ -27,7 +27,11 @@ namespace SparkyStudios::Audio::Amplitude::Codecs
             return false;
         }
 
-        if (drwav_init_file(&_wav, AM_OS_STRING_TO_STRING(filePath), nullptr) == DRWAV_FALSE)
+#if defined(AM_WCHAR_SUPPORTED)
+        if (drwav_init_file_w(&_wav, filePath, nullptr) == DRWAV_FALSE)
+#else
+        if (drwav_init_file(&_wav, filePath, nullptr) == DRWAV_FALSE)
+#endif
         {
             CallLogFunc("Cannot load the WAV file: '%s'\n.", filePath);
             return false;
@@ -128,8 +132,16 @@ namespace SparkyStudios::Audio::Amplitude::Codecs
         // TODO: Maybe check by extension instead?
 
         drwav dummy;
-        bool can = drwav_init_file(&dummy, AM_OS_STRING_TO_STRING(filePath), nullptr) == DRWAV_TRUE;
-        drwav_uninit(&dummy);
+#if defined(AM_WCHAR_SUPPORTED)
+        bool can = drwav_init_file_w(&dummy, filePath, nullptr) == DRWAV_TRUE;
+#else
+        bool can = drwav_init_file(&dummy, filePath, nullptr) == DRWAV_TRUE;
+#endif
+
+        if (can)
+        {
+            drwav_uninit(&dummy);
+        }
 
         return can;
     }
