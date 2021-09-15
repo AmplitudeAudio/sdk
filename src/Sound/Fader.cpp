@@ -28,9 +28,9 @@ namespace SparkyStudios::Audio::Amplitude
         m_state = AM_FADER_STATE_DISABLED;
     }
 
-    void Fader::Set(float from, float to, AmTime time)
+    void Fader::Set(float from, float to, AmTime duration)
     {
-        m_time = time;
+        SetDuration(duration);
         Set(from, to);
         Start(0.0);
     }
@@ -40,6 +40,11 @@ namespace SparkyStudios::Audio::Amplitude
         m_from = from;
         m_to = to;
         m_delta = to - from;
+    }
+
+    void Fader::SetDuration(AmTime duration)
+    {
+        m_time = duration;
     }
 
     float Fader::GetFromTime(AmTime time)
