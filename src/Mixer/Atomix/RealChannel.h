@@ -171,6 +171,7 @@ namespace SparkyStudios::Audio::Amplitude
         }
 
     private:
+        void SetGainPan(float gain, float pan, AmUInt32 layer);
         AmUInt32 FindFreeLayer(AmUInt32 layerIndex = 0) const;
 
         AmChannelID _channelId;

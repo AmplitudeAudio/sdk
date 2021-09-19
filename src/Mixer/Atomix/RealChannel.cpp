@@ -217,8 +217,7 @@ namespace SparkyStudios::Audio::Amplitude
 
     void RealChannel::SetGain(float gain, AmUInt32 layer)
     {
-        atomixMixerSetGainPan(_mixer, _channelId, _channelLayersId[layer], gain * _activeSounds[layer]->GetSettings().m_gain, _pan);
-        _gain[layer] = gain;
+        SetGainPan(gain, _pan, layer);
     }
 
     float RealChannel::GetGain(AmUInt32 layer) const
@@ -252,11 +251,25 @@ namespace SparkyStudios::Audio::Amplitude
         {
             if (layer.second != 0)
             {
-                atomixMixerSetGainPan(
-                    _mixer, _channelId, layer.second, _gain[layer.first] * _activeSounds[layer.first]->GetSettings().m_gain, pan.X);
+                SetGainPan(_gain[layer.first], pan.X, layer.first);
             }
         }
+
         _pan = pan.X;
+    }
+
+    void RealChannel::SetGainPan(float gain, float pan, AmUInt32 layer)
+    {
+        float finalGain = gain;
+        if (_activeSounds[layer]->GetSettings().m_kind != SoundKind::Standalone)
+        {
+            finalGain = gain * _activeSounds[layer]->GetSettings().m_gain.GetValue();
+        }
+
+        atomixMixerSetGainPan(_mixer, _channelId, _channelLayersId[layer], finalGain, pan);
+
+        _gain[layer] = gain;
+        _pan = pan;
     }
 
     AmUInt32 RealChannel::FindFreeLayer(AmUInt32 layerIndex) const
