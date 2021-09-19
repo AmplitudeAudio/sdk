@@ -58,10 +58,14 @@ namespace SparkyStudios::Audio::Amplitude
         if (const Engine* engine = Engine::GetInstance(); engine->GetState()->stopping)
             goto Delete;
 
+        RealChannel* channel = sound->GetChannel();
+
         if (sound->GetSettings().m_kind == SoundKind::Standalone)
+            goto Stop;
+
+        if (sound->GetSettings().m_kind == SoundKind::Switched)
             goto Delete;
 
-        RealChannel* channel = sound->GetChannel();
         const Collection* collection = sound->GetCollection();
         AMPLITUDE_ASSERT(collection != nullptr); // Should always have a collection for contained sound instances.
         const CollectionDefinition* config = collection->GetCollectionDefinition();
