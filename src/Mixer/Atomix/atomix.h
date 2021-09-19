@@ -644,6 +644,9 @@ static void atmxMixLayer(struct atmx_layer* lay, __m128 vol, __m128* align, uint
             // update flag value
             flag = ATMX_LOAD(&lay->flag);
 
+            if (flag == 0)
+                break;
+
             uint64_t chunkSize = AM_MIN(ATOMIX_MAX_STREAM_BUFFER_SIZE, c);
             uint64_t aChunkSize = ATOMIX_ALIGN(chunkSize) >> 1;
             uint64_t len = atmxSoundStreamUpdate(lay->snd, cur, chunkSize);
