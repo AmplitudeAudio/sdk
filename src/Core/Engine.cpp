@@ -1305,6 +1305,9 @@ namespace SparkyStudios::Audio::Amplitude
 
     static void UpdateChannel(ChannelInternalState* channel, const EngineInternalState* state)
     {
+        if (channel->Stopped())
+            return;
+
         if (const SwitchContainer* switchContainer = channel->GetSwitchContainer(); switchContainer != nullptr)
         {
             const SwitchContainerDefinition* definition = switchContainer->GetSwitchContainerDefinition();
