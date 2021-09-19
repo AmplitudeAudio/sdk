@@ -1312,8 +1312,9 @@ namespace SparkyStudios::Audio::Amplitude
             float gain;
             hmm_vec2 pan;
             CalculateGainAndPan(
-                &gain, &pan, definition->gain(), switchContainer->GetBus(), definition->spatialization(), switchContainer->GetAttenuation(),
-                channel->GetEntity(), channel->GetLocation(), state->listener_list, channel->GetUserGain());
+                &gain, &pan, switchContainer->GetGain().GetValue(), switchContainer->GetBus(), definition->spatialization(),
+                switchContainer->GetAttenuation(), channel->GetEntity(), channel->GetLocation(), state->listener_list,
+                channel->GetUserGain());
             channel->SetGain(gain);
             channel->SetPan(pan);
         }
@@ -1511,9 +1512,9 @@ namespace SparkyStudios::Audio::Amplitude
         float gain;
         hmm_vec2 pan;
         CalculateGainAndPan(
-            &gain, &pan, definition->gain(), handle->GetBus(), definition->spatialization(), handle->GetAttenuation(), entity, location,
-            _state->listener_list, userGain);
-        const float priority = gain * definition->priority();
+            &gain, &pan, handle->GetGain().GetValue(), handle->GetBus(), definition->spatialization(), handle->GetAttenuation(), entity,
+            location, _state->listener_list, userGain);
+        const float priority = gain * handle->GetPriority().GetValue();
         const auto insertionPoint = FindInsertionPoint(&_state->playing_channel_list, priority);
 
         // Decide which ChannelInternalState object to use.
