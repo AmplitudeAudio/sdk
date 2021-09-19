@@ -121,7 +121,7 @@ namespace SparkyStudios::Audio::Amplitude
 
     void Rtpc::SetValue(double value)
     {
-        _targetValue = value;
+        _targetValue = AM_CLAMP(value, _minValue, _maxValue);
 
         if (_faderAttack == nullptr || _faderRelease == nullptr)
         {
