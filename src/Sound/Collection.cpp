@@ -32,6 +32,8 @@ namespace SparkyStudios::Audio::Amplitude
         , _soundSettings()
         , _id(kAmInvalidObjectId)
         , _name()
+        , _gain()
+        , _priority()
         , _attenuation(nullptr)
         , _refCounter()
     {}
@@ -85,6 +87,9 @@ namespace SparkyStudios::Audio::Amplitude
         _id = def->id();
         _name = def->name()->str();
 
+        _gain = RtpcValue(def->gain());
+        _priority = RtpcValue(def->priority());
+
         flatbuffers::uoffset_t sample_count = def->sounds() ? def->sounds()->size() : 0;
 
         _sounds.resize(sample_count);
@@ -114,8 +119,8 @@ namespace SparkyStudios::Audio::Amplitude
                 settings.m_busID = def->bus();
                 settings.m_attenuationID = def->attenuation();
                 settings.m_spatialization = def->spatialization();
-                settings.m_priority = def->priority();
-                settings.m_gain = entry->gain();
+                settings.m_priority = _priority;
+                settings.m_gain = RtpcValue(entry->gain());
                 settings.m_loop = findIt->second->_loop;
                 settings.m_loopCount = findIt->second->_loopCount;
 
@@ -235,6 +240,16 @@ namespace SparkyStudios::Audio::Amplitude
         scheduler->Init(definition);
 
         return scheduler;
+    }
+
+    const RtpcValue& Collection::GetGain() const
+    {
+        return _gain;
+    }
+
+    const RtpcValue& Collection::GetPriority() const
+    {
+        return _priority;
     }
 
     AmBankID Collection::GetId() const

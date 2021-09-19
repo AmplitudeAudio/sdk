@@ -22,9 +22,10 @@
 #include <SparkyStudios/Audio/Amplitude/Core/Codec.h>
 #include <SparkyStudios/Audio/Amplitude/Core/RefCounter.h>
 
-#include <SparkyStudios/Audio/Amplitude/Sound/Attenuation.h>
-
 #include <SparkyStudios/Audio/Amplitude/IO/FileLoader.h>
+
+#include <SparkyStudios/Audio/Amplitude/Sound/Attenuation.h>
+#include <SparkyStudios/Audio/Amplitude/Sound/Rtpc.h>
 
 namespace SparkyStudios::Audio::Amplitude
 {
@@ -39,6 +40,7 @@ namespace SparkyStudios::Audio::Amplitude
 
     enum class SoundKind
     {
+        Switched,
         Contained,
         Standalone,
     };

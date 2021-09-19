@@ -281,7 +281,7 @@ namespace SparkyStudios::Audio::Amplitude
 
         if (_collection != nullptr)
         {
-            return GetGain() * _collection->GetCollectionDefinition()->priority();
+            return GetGain() * _collection->GetPriority().GetValue();
         }
 
         if (_sound != nullptr)
