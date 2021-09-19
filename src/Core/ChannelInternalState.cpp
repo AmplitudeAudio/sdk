@@ -286,7 +286,7 @@ namespace SparkyStudios::Audio::Amplitude
 
         if (_sound != nullptr)
         {
-            return GetGain() * _sound->GetSoundDefinition()->priority();
+            return GetGain() * _sound->GetPriority().GetValue();
         }
 
         AMPLITUDE_ASSERT(false); // Should never fall in this case...

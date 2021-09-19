@@ -50,8 +50,8 @@ namespace SparkyStudios::Audio::Amplitude
         AmBusID m_busID;
         AmAttenuationID m_attenuationID;
         AmUInt8 m_spatialization;
-        AmReal32 m_priority;
-        AmReal32 m_gain;
+        RtpcValue m_priority;
+        RtpcValue m_gain;
         bool m_loop;
         AmUInt32 m_loopCount;
     };
@@ -141,9 +141,24 @@ namespace SparkyStudios::Audio::Amplitude
 
         /**
          * @brief Gets the format of this Sound.
+         *
          * @return The format of this Sound.
          */
         [[nodiscard]] const SoundFormat& GetFormat() const;
+
+        /**
+         * @brief Gets the actual gain of the sound.
+         *
+         * @return The Sound gain.
+         */
+        const RtpcValue& GetGain() const;
+
+        /**
+         * @brief Gets the actual priority of the sound.
+         *
+         * @return The Sound priority.
+         */
+        const RtpcValue& GetPriority() const;
 
         /**
          * @brief Get the unique ID of this Sound.
@@ -205,6 +220,9 @@ namespace SparkyStudios::Audio::Amplitude
         bool _stream;
         bool _loop;
         AmUInt32 _loopCount;
+
+        RtpcValue _gain;
+        RtpcValue _priority;
 
         std::string _source;
         SoundInstanceSettings _settings;

@@ -13,6 +13,7 @@
 // limitations under the License.
 
 include "common.fbs";
+include "rtpc_definition.fbs";
 
 namespace SparkyStudios.Audio.Amplitude;
 
@@ -36,16 +37,15 @@ table SoundDefinition {
   name:string;
 
   /// Linear gain (0.0 .. 1.0) of the sound when played back by the audio system.
-  gain:float = 1.0;
+  gain:RtpcCompatibleValue;
 
   /// ID of the bus this sound should be played on.
   bus:uint64;
 
-  /// Priority of this collection relative to all other Collection objects. If the
+  /// Priority of this sound relative to all other Collection objects. If the
   /// application requests the playback of more Collection objects than playback
-  /// channels available in the system, only the highest priority collections are
-  /// played.
-  priority:float = 1.0;
+  /// channels available in the system, only the highest priority sounds are played.
+  priority:RtpcCompatibleValue;
 
   /// Whether this sound should be streamed or loaded into a buffer.
   /// Generally music is streamed and sound effects are loaded into a buffer.
@@ -72,7 +72,6 @@ table SoundDefinition {
   /// Path to the audio sample file.
   path:string;
 }
-
 
 root_type SoundDefinition;
 

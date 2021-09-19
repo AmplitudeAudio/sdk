@@ -32,6 +32,8 @@ namespace SparkyStudios::Audio::Amplitude
         , _stream(false)
         , _loop(false)
         , _loopCount(0)
+        , _gain()
+        , _priority()
         , _source()
         , _settings()
         , _refCounter()
@@ -94,13 +96,16 @@ namespace SparkyStudios::Audio::Amplitude
         _loop = definition->loop() ? definition->loop()->enabled() : false;
         _loopCount = definition->loop() ? definition->loop()->loop_count() : 0;
 
+        _gain = RtpcValue(definition->gain());
+        _priority = RtpcValue(definition->priority());
+
         _settings.m_id = definition->id();
         _settings.m_kind = SoundKind::Standalone;
         _settings.m_busID = definition->bus();
         _settings.m_attenuationID = definition->attenuation();
         _settings.m_spatialization = definition->spatialization();
-        _settings.m_priority = definition->priority();
-        _settings.m_gain = definition->gain();
+        _settings.m_priority = _priority;
+        _settings.m_gain = _gain;
         _settings.m_loop = _loop;
         _settings.m_loopCount = _loopCount;
 
@@ -191,6 +196,16 @@ namespace SparkyStudios::Audio::Amplitude
     const SoundFormat& Sound::GetFormat() const
     {
         return m_format;
+    }
+
+    const RtpcValue& Sound::GetGain() const
+    {
+        return _gain;
+    }
+
+    const RtpcValue& Sound::GetPriority() const
+    {
+        return _priority;
     }
 
     AmSoundID Sound::GetId() const
