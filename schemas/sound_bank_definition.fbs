@@ -52,6 +52,11 @@ table SoundBankDefinition {
   /// one SoundBank and can only be used by SwitchContainer once it has been
   /// loaded by at least one SoundBank.
   switches:[string];
+
+  /// The list of RTPC files to load. A RTPC may be present in more than
+  /// one SoundBank and can only be used in parameters once it has been
+  /// loaded by at least one SoundBank.
+  rtpc:[string];
 }
 
 root_type SoundBankDefinition;

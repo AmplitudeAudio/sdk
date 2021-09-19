@@ -14,6 +14,19 @@
 
 namespace SparkyStudios.Audio.Amplitude;
 
+/// The type of value a parameter have.
+enum ValueKind: byte {
+  /// The parameter doesn't have a value yet. This is an internal case used by the SDK
+  /// during initialization. Having this case in runtime is surely due to an error.
+  None,
+
+  /// The parameter has a static value which never changes.
+  Static,
+
+  /// The parameter has a value that changes dynamically following a curve and a RTPC object.
+  RTPC,
+}
+
 /// Specifies the 3D spatialization to apply on the sound.
 enum Spatialization: byte {
   /// Sounds are always played at their regular gain.
