@@ -243,6 +243,16 @@ namespace SparkyStudios::Audio::Amplitude
             return kAmInvalidObjectId;
         }
 
+        [[nodiscard]] AmUInt32 GetChannelStateId() const
+        {
+            return _channelStateId;
+        }
+
+        void SetChannelStateId(AmUInt64 id)
+        {
+            _channelStateId = id;
+        }
+
         // The node that tracks the location in the priority list.
         fplutil::intrusive_list_node priority_node;
 
@@ -299,6 +309,8 @@ namespace SparkyStudios::Audio::Amplitude
 
         // The location of this channel's sound.
         hmm_vec3 _location;
+
+        AmUInt64 _channelStateId;
     };
 } // namespace SparkyStudios::Audio::Amplitude
 

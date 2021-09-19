@@ -20,88 +20,133 @@
 
 namespace SparkyStudios::Audio::Amplitude
 {
+    static AmUInt64 globalStateId = 0;
+
     Channel::Channel()
         : _state(nullptr)
+        , _stateId(0)
     {}
 
     Channel::Channel(ChannelInternalState* state)
         : _state(state)
-    {}
+        , _stateId(++globalStateId)
+    {
+        if (_state != nullptr)
+        {
+            _state->SetChannelStateId(_stateId);
+        }
+    }
 
     void Channel::Clear()
     {
         _state = nullptr;
+        _stateId = 0;
     }
 
     bool Channel::Valid() const
     {
-        return _state != nullptr;
+        return _state != nullptr && _stateId != 0;
     }
 
     bool Channel::Playing() const
     {
         AMPLITUDE_ASSERT(Valid());
-        return _state->Playing();
+        if (IsValidStateId())
+        {
+            return _state->Playing();
+        }
+
+        return false;
     }
 
     void Channel::Stop(AmTime duration)
     {
         AMPLITUDE_ASSERT(Valid());
-        if (!_state->IsReal() || _state->GetRealChannel().GetGain() == 0.0f)
+        if (IsValidStateId())
         {
-            _state->Halt();
-        }
-        else
-        {
-            _state->FadeOut(duration, ChannelState::Stopped);
+            if (!_state->IsReal() || _state->GetRealChannel().GetGain() == 0.0f)
+            {
+                _state->Halt();
+            }
+            else
+            {
+                _state->FadeOut(duration, ChannelState::Stopped);
+            }
         }
     }
 
     void Channel::Pause(AmTime duration)
     {
         AMPLITUDE_ASSERT(Valid());
-        if (!_state->IsReal() || _state->GetRealChannel().GetGain() == 0.0f)
+        if (IsValidStateId())
         {
-            _state->Pause();
-        }
-        else
-        {
-            _state->FadeOut(duration, ChannelState::Paused);
+            if (!_state->IsReal() || _state->GetRealChannel().GetGain() == 0.0f)
+            {
+                _state->Pause();
+            }
+            else
+            {
+                _state->FadeOut(duration, ChannelState::Paused);
+            }
         }
     }
 
     void Channel::Resume(AmTime duration)
     {
         AMPLITUDE_ASSERT(Valid());
-        _state->FadeIn(duration);
+        if (IsValidStateId())
+        {
+            _state->FadeIn(duration);
+        }
     }
 
     const hmm_vec3& Channel::GetLocation() const
     {
         AMPLITUDE_ASSERT(Valid());
-        return _state->GetLocation();
+        if (IsValidStateId())
+        {
+            return _state->GetLocation();
+        }
+
+        return AM_Vec3(0, 0, 0);
     }
 
     void Channel::SetLocation(const hmm_vec3& location)
     {
         AMPLITUDE_ASSERT(Valid());
-        _state->SetLocation(location);
+        if (IsValidStateId())
+        {
+            _state->SetLocation(location);
+        }
     }
 
     void Channel::SetGain(const float gain)
     {
         AMPLITUDE_ASSERT(Valid());
-        return _state->SetUserGain(gain);
+        if (IsValidStateId())
+        {
+            return _state->SetUserGain(gain);
+        }
     }
 
     float Channel::GetGain() const
     {
         AMPLITUDE_ASSERT(Valid());
-        return _state->GetUserGain();
+        if (IsValidStateId())
+        {
+            return _state->GetUserGain();
+        }
+
+        return 0.0f;
     }
 
     ChannelInternalState* Channel::GetState() const
     {
         return _state;
+    }
+
+    bool Channel::IsValidStateId() const
+    {
+        return _state->GetChannelStateId() == _stateId;
     }
 } // namespace SparkyStudios::Audio::Amplitude

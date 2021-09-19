@@ -136,7 +136,11 @@ namespace SparkyStudios::Audio::Amplitude
         [[nodiscard]] ChannelInternalState* GetState() const;
 
     private:
+        bool IsValidStateId() const;
+
         ChannelInternalState* _state;
+
+        AmUInt64 _stateId;
     };
 } // namespace SparkyStudios::Audio::Amplitude
 
