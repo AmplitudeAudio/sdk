@@ -24,6 +24,7 @@
 #include <SparkyStudios/Audio/Amplitude/Core/RefCounter.h>
 
 #include <SparkyStudios/Audio/Amplitude/Sound/Attenuation.h>
+#include <SparkyStudios/Audio/Amplitude/Sound/Rtpc.h>
 #include <SparkyStudios/Audio/Amplitude/Sound/Scheduler.h>
 #include <SparkyStudios/Audio/Amplitude/Sound/Sound.h>
 
@@ -91,7 +92,7 @@ namespace SparkyStudios::Audio::Amplitude
         /**
          * @brief Returns a Sound from this collection from the World scope.
          *
-         * @param toSkip The list of sound instance to skip fom the selection.
+         * @param toSkip The list of Sound IDs to skip fom the selection.
          *
          * @return The selected Sound.
          */
@@ -101,7 +102,7 @@ namespace SparkyStudios::Audio::Amplitude
          * @brief Returns a Sound from this collection from an Entity scope.
          *
          * @param entity The entity from which pick the sound.
-         * @param toSkip The list of sound instance to skip fom the selection.
+         * @param toSkip The list of Sound IDs to skip fom the selection.
          *
          * @return The selected Sound.
          */
@@ -113,6 +114,20 @@ namespace SparkyStudios::Audio::Amplitude
          * @param entity The entity to reset the scheduler for.
          */
         void ResetEntityScopeScheduler(const Entity& entity);
+
+        /**
+         * @brief Gets the actual gain of the collection.
+         *
+         * @return The Collection gain.
+         */
+        const RtpcValue& GetGain() const;
+
+        /**
+         * @brief Gets the actual priority of the collection.
+         *
+         * @return The Collection priority.
+         */
+        const RtpcValue& GetPriority() const;
 
         /**
          * @brief Returns the unique ID of this Collection.
@@ -174,6 +189,9 @@ namespace SparkyStudios::Audio::Amplitude
 
         AmCollectionID _id;
         std::string _name;
+
+        RtpcValue _gain;
+        RtpcValue _priority;
 
         Attenuation* _attenuation;
 

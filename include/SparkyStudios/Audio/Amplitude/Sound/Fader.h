@@ -64,9 +64,9 @@ namespace SparkyStudios::Audio::Amplitude
          *
          * @param from The start value.
          * @param to The target value.
-         * @param time The duration of transition.
+         * @param duration The duration of transition.
          */
-        void Set(float from, float to, AmTime time);
+        void Set(float from, float to, AmTime duration);
 
         /**
          * @brief Set up fader.
@@ -75,6 +75,13 @@ namespace SparkyStudios::Audio::Amplitude
          * @param to The target value.
          */
         void Set(float from, float to);
+
+        /**
+         * @brief Set the duration of the transition.
+         *
+         * @param duration The transition duration.
+         */
+        void SetDuration(AmTime duration);
 
         /**
          * @brief Get the current fading value.

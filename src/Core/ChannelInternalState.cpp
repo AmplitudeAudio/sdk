@@ -276,17 +276,17 @@ namespace SparkyStudios::Audio::Amplitude
     {
         if (_switchContainer != nullptr)
         {
-            return GetGain() * _switchContainer->GetSwitchContainerDefinition()->priority();
+            return GetGain() * _switchContainer->GetPriority().GetValue();
         }
 
         if (_collection != nullptr)
         {
-            return GetGain() * _collection->GetCollectionDefinition()->priority();
+            return GetGain() * _collection->GetPriority().GetValue();
         }
 
         if (_sound != nullptr)
         {
-            return GetGain() * _sound->GetSoundDefinition()->priority();
+            return GetGain() * _sound->GetPriority().GetValue();
         }
 
         AMPLITUDE_ASSERT(false); // Should never fall in this case...
@@ -634,7 +634,7 @@ namespace SparkyStudios::Audio::Amplitude
             settings.m_busID = definition->bus();
             settings.m_attenuationID = definition->attenuation();
             settings.m_spatialization = definition->spatialization();
-            settings.m_priority = definition->priority();
+            settings.m_priority = _switchContainer->GetPriority();
             settings.m_gain = item.m_gain;
             settings.m_loop = sound->IsLoop();
             settings.m_loopCount = sound->GetSoundDefinition()->loop()->loop_count();

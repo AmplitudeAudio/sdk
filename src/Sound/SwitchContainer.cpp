@@ -89,6 +89,9 @@ namespace SparkyStudios::Audio::Amplitude
         _id = definition->id();
         _name = definition->name()->str();
 
+        _gain = RtpcValue(definition->gain());
+        _priority = RtpcValue(definition->priority());
+
         const auto& states = _switch->GetSwitchStates();
         for (const auto& state : states)
         {
@@ -122,8 +125,8 @@ namespace SparkyStudios::Audio::Amplitude
             _fadersIn[id] = Fader::Create(static_cast<Fader::FADER_ALGORITHM>(entry->fade_in()->fader()));
             _fadersOut[id] = Fader::Create(static_cast<Fader::FADER_ALGORITHM>(entry->fade_out()->fader()));
 
-            _fadersIn[id]->Set(0.0f, entry->gain(), entry->fade_in()->duration());
-            _fadersOut[id]->Set(entry->gain(), 0.0f, entry->fade_out()->duration());
+            _fadersIn[id]->SetDuration(entry->fade_in()->duration());
+            _fadersOut[id]->SetDuration(entry->fade_out()->duration());
 
             SwitchContainerItem item;
             item.m_id = id;
@@ -132,7 +135,7 @@ namespace SparkyStudios::Audio::Amplitude
             item.m_fadeOutDuration = entry->fade_out()->duration();
             item.m_fadeInAlgorithm = entry->fade_in()->fader();
             item.m_fadeOutAlgorithm = entry->fade_out()->fader();
-            item.m_gain = entry->gain();
+            item.m_gain = RtpcValue(entry->gain());
 
             flatbuffers::uoffset_t statesCount = entry->switch_states()->size();
             for (flatbuffers::uoffset_t j = 0; j < statesCount; ++j)
@@ -202,6 +205,16 @@ namespace SparkyStudios::Audio::Amplitude
     const SwitchContainerDefinition* SwitchContainer::GetSwitchContainerDefinition() const
     {
         return Amplitude::GetSwitchContainerDefinition(_source.c_str());
+    }
+
+    const RtpcValue& SwitchContainer::GetGain() const
+    {
+        return _gain;
+    }
+
+    const RtpcValue& SwitchContainer::GetPriority() const
+    {
+        return _priority;
     }
 
     AmCollectionID SwitchContainer::GetId() const

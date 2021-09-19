@@ -13,6 +13,7 @@
 // limitations under the License.
 
 include "common.fbs";
+include "rtpc_definition.fbs";
 
 namespace SparkyStudios.Audio.Amplitude;
 
@@ -84,7 +85,7 @@ table DefaultCollectionEntry {
   sound:uint64;
 
   /// Special gain to apply only to this entry.
-  gain:float = 1.0;
+  gain:RtpcCompatibleValue;
 }
 
 /// A Sound entry for a Collection which uses a Random scheduler.
@@ -93,7 +94,7 @@ table RandomSchedulerCollectionEntry {
   sound:uint64;
 
   /// Special gain to apply only to this entry.
-  gain:float = 1.0;
+  gain:RtpcCompatibleValue;
 
   /// Probability of this sample being selected to relative to others in a set.
   /// Only used when the "Random" scheduler is used.
@@ -106,7 +107,7 @@ table SequenceSchedulerCollectionEntry {
   sound:uint64;
 
   /// Special gain to apply only to this entry.
-  gain:float = 1.0;
+  gain:RtpcCompatibleValue;
 }
 
 /// Union type for collection entries.
@@ -128,10 +129,10 @@ table CollectionDefinition {
   /// application requests the playback of more Collection objects than playback
   /// channels available in the system, only the highest priority collections are
   /// played.
-  priority:float = 1.0;
+  priority:RtpcCompatibleValue;
 
   /// Overall linear gain (0.0 .. 1.0) of the collection when played back by the audio system.
-  gain:float = 1.0;
+  gain:RtpcCompatibleValue;
 
   /// ID of the bus this collection should be played on.
   bus:uint64;

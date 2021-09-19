@@ -22,6 +22,7 @@
 
 #include <SparkyStudios/Audio/Amplitude/Sound/Attenuation.h>
 #include <SparkyStudios/Audio/Amplitude/Sound/Fader.h>
+#include <SparkyStudios/Audio/Amplitude/Sound/Rtpc.h>
 #include <SparkyStudios/Audio/Amplitude/Sound/Switch.h>
 
 namespace SparkyStudios::Audio::Amplitude
@@ -39,7 +40,7 @@ namespace SparkyStudios::Audio::Amplitude
         AmUInt8 m_fadeInAlgorithm;
         AmTime m_fadeOutDuration;
         AmUInt8 m_fadeOutAlgorithm;
-        AmReal32 m_gain;
+        RtpcValue m_gain;
     };
 
     class SwitchContainer
@@ -53,6 +54,20 @@ namespace SparkyStudios::Audio::Amplitude
         void AcquireReferences(EngineInternalState* state);
         void ReleaseReferences(EngineInternalState* state);
         [[nodiscard]] const SwitchContainerDefinition* GetSwitchContainerDefinition() const;
+
+        /**
+         * @brief Gets the actual gain of the switch container.
+         *
+         * @return The SwitchContainer gain.
+         */
+        const RtpcValue& GetGain() const;
+
+        /**
+         * @brief Gets the actual priority of the switch container.
+         *
+         * @return The SwitchContainer priority.
+         */
+        const RtpcValue& GetPriority() const;
 
         /**
          * @brief Returns the unique ID of this SwitchContainer.
@@ -137,6 +152,9 @@ namespace SparkyStudios::Audio::Amplitude
 
         AmSwitchContainerID _id;
         std::string _name;
+
+        RtpcValue _gain;
+        RtpcValue _priority;
 
         Attenuation* _attenuation;
 

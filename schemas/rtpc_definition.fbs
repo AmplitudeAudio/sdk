@@ -1,0 +1,73 @@
+// Copyright (c) 2021-present Sparky Studios. All rights reserved.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+include "common.fbs";
+
+namespace SparkyStudios.Audio.Amplitude;
+
+/// The settings used fo the RTPC value fading.
+table RtpcFadingSettings {
+  /// Defines if the RTPC value should fade o go straight to the target value.
+  enabled:bool = false;
+
+  /// The fade transition settings when the RTPC value is increased.
+  fade_attack:FadeTransitionSettings;
+
+  /// The fade transition settings when the RTPC value is decreased.
+  fade_release:FadeTransitionSettings;
+}
+
+/// A Real Time Parameter Control is a floating-point variable that is updated over time by the game logic.
+table RtpcDefinition {
+  /// The unique ID of the RTPC.
+  id:uint64;
+
+  /// The name of the RTPC.
+  name:string;
+
+  /// The minimum value the RTPC should have.
+  min_value:double;
+
+  /// The maximum value the RTPC can have.
+  max_value:double;
+
+  /// The fade transition settings of the RTPC.
+  fade_settings:RtpcFadingSettings;
+}
+
+/// The parameter used to create RTPC compatible values.
+table RtpcParameter {
+  /// The ID of the RTPC object.
+  id:uint64 = 0;
+
+  /// The curve to apply on the value.
+  curve:CurveDefinition;
+}
+
+/// A value which can hold a static value or RTPC compatible calue.
+table RtpcCompatibleValue {
+  /// The type of the value.
+  kind:ValueKind = Static;
+
+  /// The static value.
+  value:float;
+
+  /// The RTPC compatible value.
+  rtpc:RtpcParameter;
+}
+
+root_type RtpcDefinition;
+
+file_identifier "AMPC";
+file_extension "amrtpc";

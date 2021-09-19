@@ -13,6 +13,7 @@
 // limitations under the License.
 
 include "common.fbs";
+include "rtpc_definition.fbs";
 
 namespace SparkyStudios.Audio.Amplitude;
 
@@ -46,7 +47,7 @@ table SwitchContainerEntry {
   fade_out:FadeTransitionSettings;
 
   /// A custom gain to apply only on this object.
-  gain:float;
+  gain:RtpcCompatibleValue;
 
   /// The list of switch states where this object is assigned.
   switch_states:[uint64] (required);
@@ -66,10 +67,10 @@ table SwitchContainerDefinition {
   /// application requests the playback of more objects than playback
   /// channels available in the system, only the highest priority objects are
   /// played.
-  priority:float = 1.0;
+  priority:RtpcCompatibleValue;
 
   /// Overall linear gain (0.0 .. 1.0) of the switch container when played back by the audio system.
-  gain:float = 1.0;
+  gain:RtpcCompatibleValue;
 
   /// ID of the bus this switch container should be played on.
   bus:uint64;
