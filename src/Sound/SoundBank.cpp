@@ -20,6 +20,7 @@
 #include "attenuation_definition_generated.h"
 #include "collection_definition_generated.h"
 #include "event_definition_generated.h"
+#include "rtpc_definition_generated.h"
 #include "sound_bank_definition_generated.h"
 #include "sound_definition_generated.h"
 #include "switch_container_definition_generated.h"
@@ -259,6 +260,42 @@ namespace SparkyStudios::Audio::Amplitude
         return true;
     }
 
+    static bool InitializeRtpc(AmOsString filename, Engine* engine)
+    {
+        // Find the ID.
+        RtpcHandle handle = engine->GetRtpcHandleFromFile(filename);
+        if (handle)
+        {
+            // We've seen this ID before, update it.
+            handle->GetRefCounter()->Increment();
+        }
+        else
+        {
+            // This is a new event, load it and update it.
+            std::unique_ptr<Rtpc> rtpc(new Rtpc());
+            if (!rtpc->LoadRtpcDefinitionFromFile(filename))
+            {
+                return false;
+            }
+
+            const RtpcDefinition* definition = rtpc->GetRtpcDefinition();
+            AmRtpcID id = definition->id();
+            if (id == kAmInvalidObjectId)
+            {
+                CallLogFunc(
+                    "[ERROR] Cannot load RTPC \'" AM_OS_CHAR_FMT "\'. Invalid ID.\n", AM_STRING_TO_OS_STRING(definition->name()->c_str()));
+                return false;
+            }
+
+            rtpc->GetRefCounter()->Increment();
+
+            engine->GetState()->rtpc_map[id] = std::move(rtpc);
+            engine->GetState()->rtpc_id_map[filename] = id;
+        }
+
+        return true;
+    }
+
     bool SoundBank::Initialize(AmOsString filename, Engine* engine)
     {
         bool success = true;
@@ -271,6 +308,13 @@ namespace SparkyStudios::Audio::Amplitude
 
         _id = definition->id();
         _name = definition->name()->str();
+
+        // Load each Rtpc named in the sound bank.
+        for (flatbuffers::uoffset_t i = 0; success && i < definition->rtpc()->size(); ++i)
+        {
+            AmString filename = definition->rtpc()->Get(i)->c_str();
+            success &= InitializeRtpc(AM_STRING_TO_OS_STRING(filename), engine);
+        }
 
         // Load each Switch named in the sound bank.
         for (flatbuffers::uoffset_t i = 0; success && i < definition->switches()->size(); ++i)
@@ -461,6 +505,29 @@ namespace SparkyStudios::Audio::Amplitude
         return true;
     }
 
+    static bool DeinitializeRtpc(AmOsString filename, EngineInternalState* state)
+    {
+        auto id_iter = state->rtpc_id_map.find(filename);
+        if (id_iter == state->rtpc_id_map.end())
+        {
+            return false;
+        }
+
+        AmSwitchID id = id_iter->second;
+        auto rtpc_iter = state->rtpc_map.find(id);
+        if (rtpc_iter == state->rtpc_map.end())
+        {
+            return false;
+        }
+
+        if (rtpc_iter->second->GetRefCounter()->Decrement() == 0)
+        {
+            state->rtpc_map.erase(rtpc_iter);
+        }
+
+        return true;
+    }
+
     void SoundBank::Deinitialize(Engine* engine)
     {
         const SoundBankDefinition* definition = GetSoundBankDefinition();
@@ -521,6 +588,16 @@ namespace SparkyStudios::Audio::Amplitude
             if (!DeinitializeSwitch(AM_STRING_TO_OS_STRING(filename), engine->GetState()))
             {
                 CallLogFunc("Error while deinitializing switch %s in sound bank.\n", filename);
+                AMPLITUDE_ASSERT(0);
+            }
+        }
+
+        for (flatbuffers::uoffset_t i = 0; i < definition->rtpc()->size(); ++i)
+        {
+            AmString filename = definition->rtpc()->Get(i)->c_str();
+            if (!DeinitializeRtpc(AM_STRING_TO_OS_STRING(filename), engine->GetState()))
+            {
+                CallLogFunc("Error while deinitializing RTPC %s in sound bank.\n", filename);
                 AMPLITUDE_ASSERT(0);
             }
         }

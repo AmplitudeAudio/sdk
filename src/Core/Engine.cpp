@@ -26,6 +26,7 @@
 #include "buses_definition_generated.h"
 #include "collection_definition_generated.h"
 #include "engine_config_definition_generated.h"
+#include "rtpc_definition_generated.h"
 #include "sound_definition_generated.h"
 #include "switch_container_definition_generated.h"
 
@@ -886,6 +887,37 @@ namespace SparkyStudios::Audio::Amplitude
         CallLogFunc("Cannot update switch: Invalid name (%s).\n", name.c_str());
     }
 
+    void Engine::SetRtpcValue(RtpcHandle handle, double value)
+    {
+        if (!handle)
+        {
+            CallLogFunc("[ERROR] Cannot update RTPC value: Invalid RTPC handle.\n");
+            return;
+        }
+
+        handle->SetValue(value);
+    }
+
+    void Engine::SetRtpcValue(AmRtpcID id, double value)
+    {
+        if (RtpcHandle handle = GetRtpcHandle(id))
+        {
+            return SetRtpcValue(handle, value);
+        }
+
+        CallLogFunc("[ERROR] Cannot update RTPC value: Invalid RTPC ID (%u).\n", id);
+    }
+
+    void Engine::SetRtpcValue(const std::string& name, double value)
+    {
+        if (RtpcHandle handle = GetRtpcHandle(name))
+        {
+            return SetRtpcValue(handle, value);
+        }
+
+        CallLogFunc("Cannot update RTPC value: Invalid RTPC name (%s).\n", name.c_str());
+    }
+
     SwitchContainerHandle Engine::GetSwitchContainerHandle(const std::string& name) const
     {
         const auto pair = std::find_if(
@@ -1120,6 +1152,45 @@ namespace SparkyStudios::Audio::Amplitude
         return GetSwitchHandle(pair->second);
     }
 
+    RtpcHandle Engine::GetRtpcHandle(const std::string& name) const
+    {
+        const auto pair = std::find_if(
+            _state->rtpc_map.begin(), _state->rtpc_map.end(),
+            [name](const auto& item)
+            {
+                return item.second->GetName() == name;
+            });
+
+        if (pair == _state->rtpc_map.end())
+        {
+            return nullptr;
+        }
+
+        return pair->second.get();
+    }
+
+    RtpcHandle Engine::GetRtpcHandle(AmRtpcID id) const
+    {
+        const auto pair = _state->rtpc_map.find(id);
+        if (pair == _state->rtpc_map.end())
+        {
+            return nullptr;
+        }
+
+        return pair->second.get();
+    }
+
+    RtpcHandle Engine::GetRtpcHandleFromFile(AmOsString filename) const
+    {
+        const auto pair = _state->rtpc_id_map.find(filename);
+        if (pair == _state->rtpc_id_map.end())
+        {
+            return nullptr;
+        }
+
+        return GetRtpcHandle(pair->second);
+    }
+
     void Engine::SetMasterGain(const float gain)
     {
         _state->master_gain = gain;
@@ -1327,6 +1398,11 @@ namespace SparkyStudios::Audio::Amplitude
     void Engine::AdvanceFrame(AmTime delta)
     {
         EraseFinishedSounds(_state);
+
+        for (auto&& rtpc : _state->rtpc_map)
+        {
+            rtpc.second->Update(delta);
+        }
 
         for (auto&& bus : _state->buses)
         {

@@ -31,6 +31,7 @@
 
 #include <SparkyStudios/Audio/Amplitude/Sound/Attenuation.h>
 #include <SparkyStudios/Audio/Amplitude/Sound/Collection.h>
+#include <SparkyStudios/Audio/Amplitude/Sound/Rtpc.h>
 #include <SparkyStudios/Audio/Amplitude/Sound/Sound.h>
 #include <SparkyStudios/Audio/Amplitude/Sound/Switch.h>
 #include <SparkyStudios/Audio/Amplitude/Sound/SwitchContainer.h>
@@ -47,6 +48,7 @@ namespace SparkyStudios::Audio::Amplitude
     typedef Event* EventHandle;
     typedef Attenuation* AttenuationHandle;
     typedef Switch* SwitchHandle;
+    typedef Rtpc* RtpcHandle;
 
     /**
      * @brief The central class of  the library that manages the Listeners, Entities,
@@ -256,6 +258,27 @@ namespace SparkyStudios::Audio::Amplitude
          * @param filename The filename containing the flatbuffer binary data.
          */
         [[nodiscard]] SwitchHandle GetSwitchHandleFromFile(AmOsString filename) const;
+
+        /**
+         * @brief Get a RtpcHandle given its name as defined in its JSON data.
+         *
+         * @param name The unique name as defined in the JSON data.
+         */
+        [[nodiscard]] RtpcHandle GetRtpcHandle(const std::string& name) const;
+
+        /**
+         * @brief Get an RtpcHandle given its ID as defined in its JSON data.
+         *
+         * @param id The unique ID as defined in the JSON data.
+         */
+        [[nodiscard]] RtpcHandle GetRtpcHandle(AmRtpcID id) const;
+
+        /**
+         * @brief Get an RtpcHandle given its RtpcDefinition filename.
+         *
+         * @param filename The filename containing the flatbuffer binary data.
+         */
+        [[nodiscard]] RtpcHandle GetRtpcHandleFromFile(AmOsString filename) const;
 
         /**
          * @brief Adjusts the gain on the master bus.
@@ -788,6 +811,30 @@ namespace SparkyStudios::Audio::Amplitude
          * @param state The active state to set.
          */
         void SetSwitchState(const std::string name, const SwitchState& state);
+
+        /**
+         * @brief Set the value of a RTPC.
+         *
+         * @param handle The RTPC handle to update.
+         * @param value The value to set to the RTPC.
+         */
+        void SetRtpcValue(RtpcHandle handle, double value);
+
+        /**
+         * @brief Set the value of a RTPC.
+         *
+         * @param id The ID of the RTPC to update.
+         * @param value The value to set to the RTPC.
+         */
+        void SetRtpcValue(AmRtpcID id, double value);
+
+        /**
+         * @brief Set the value of a RTPC.
+         *
+         * @param name THe name of the RTPC to update.
+         * @param value The value to set to the RTPC.
+         */
+        void SetRtpcValue(const std::string& name, double value);
 
         /**
          * @brief Gets the version structure.
