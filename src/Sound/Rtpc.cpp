@@ -197,7 +197,6 @@ namespace SparkyStudios::Audio::Amplitude
             return _value;
         }
 
-        AMPLITUDE_ASSERT(false); // Should not happen
         return 0.0f;
     }
 } // namespace SparkyStudios::Audio::Amplitude
