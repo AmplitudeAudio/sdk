@@ -160,7 +160,10 @@ namespace SparkyStudios::Audio::Amplitude
         bool playing = true;
         for (auto&& layer : _channelLayersId)
         {
-            playing &= Playing(layer.first);
+            if (layer.second != 0)
+            {
+                playing &= Playing(layer.first);
+            }
         }
 
         return playing;
@@ -191,7 +194,10 @@ namespace SparkyStudios::Audio::Amplitude
         bool paused = true;
         for (auto&& layer : _channelLayersId)
         {
-            paused &= Paused(layer.first);
+            if (layer.second != 0)
+            {
+                paused &= Paused(layer.first);
+            }
         }
 
         return paused;
