@@ -1408,6 +1408,11 @@ namespace SparkyStudios::Audio::Amplitude
             rtpc.second->Update(delta);
         }
 
+        for (auto&& state : _state->listener_list)
+        {
+            state.Update();
+        }
+
         for (auto&& bus : _state->buses)
         {
             bus.ResetDuckGain();
@@ -1452,11 +1457,6 @@ namespace SparkyStudios::Audio::Amplitude
             }
 
             event->AdvanceFrame(delta);
-        }
-
-        for (auto&& state : _state->listener_list)
-        {
-            state.Update();
         }
 
         ++_state->current_frame;
