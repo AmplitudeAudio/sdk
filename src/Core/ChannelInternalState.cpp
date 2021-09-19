@@ -46,6 +46,11 @@ namespace SparkyStudios::Audio::Amplitude
     void ChannelInternalState::Reset()
     {
         _realChannel._channelLayersId.clear();
+        _realChannel._activeSounds.clear();
+        _realChannel._playedSounds.clear();
+        _realChannel._stream.clear();
+        _realChannel._loop.clear();
+        _realChannel._gain.clear();
 
         _channelState = ChannelState::Stopped;
         _switchContainer = nullptr;
@@ -133,7 +138,7 @@ namespace SparkyStudios::Audio::Amplitude
             return PlaySound();
         }
 
-        CallLogFunc("[ERROR] Cannot play a channel. Neither a sound nor a collection was defined.\n");
+        CallLogFunc("[ERROR] Cannot play a channel. Neither a sound, a collection, nor a switch container was defined.\n");
         return false;
     }
 
@@ -154,7 +159,7 @@ namespace SparkyStudios::Audio::Amplitude
 
     void ChannelInternalState::Halt()
     {
-        if (_realChannel.Valid())
+        if (Valid())
         {
             _realChannel.Halt();
         }
@@ -169,7 +174,7 @@ namespace SparkyStudios::Audio::Amplitude
 
     void ChannelInternalState::Pause()
     {
-        if (_realChannel.Valid())
+        if (Valid())
         {
             _realChannel.Pause();
         }
@@ -179,7 +184,7 @@ namespace SparkyStudios::Audio::Amplitude
 
     void ChannelInternalState::Resume()
     {
-        if (_realChannel.Valid())
+        if (Valid())
         {
             _realChannel.Resume();
         }
@@ -192,7 +197,7 @@ namespace SparkyStudios::Audio::Amplitude
         if (Playing())
             return;
 
-        if (_realChannel.Valid())
+        if (Valid())
         {
             _fader->Set(0.0f, _gain, duration / kAmSecond);
             _fader->Start(Engine::GetInstance()->GetTotalTime());
@@ -209,7 +214,7 @@ namespace SparkyStudios::Audio::Amplitude
         if (Stopped() || Paused())
             return;
 
-        if (_realChannel.Valid())
+        if (Valid())
         {
             _realChannel.SetGain(_gain);
 
@@ -224,7 +229,7 @@ namespace SparkyStudios::Audio::Amplitude
     void ChannelInternalState::SetPan(const hmm_vec2& pan)
     {
         _pan = pan;
-        if (_realChannel.Valid())
+        if (Valid())
         {
             _realChannel.SetPan(pan);
         }
@@ -238,7 +243,7 @@ namespace SparkyStudios::Audio::Amplitude
             return;
 
         _gain = gain;
-        if (_realChannel.Valid())
+        if (Valid())
         {
             _realChannel.SetGain(gain);
         }
@@ -412,7 +417,7 @@ namespace SparkyStudios::Audio::Amplitude
                     const float gain = out->GetFromTime(Engine::GetInstance()->GetTotalTime());
                     isAtLeastOneFadeOutRunning = true;
 
-                    if (_realChannel.Valid())
+                    if (IsReal())
                     {
                         _realChannel.SetGain(gain, layer);
                     }
@@ -465,7 +470,7 @@ namespace SparkyStudios::Audio::Amplitude
                     const float gain = in->GetFromTime(Engine::GetInstance()->GetTotalTime());
                     isAtLeastOneFadeInRunning = true;
 
-                    if (_realChannel.Valid())
+                    if (IsReal())
                     {
                         _realChannel.SetGain(gain, layer);
                     }
@@ -491,7 +496,7 @@ namespace SparkyStudios::Audio::Amplitude
             {
                 const float gain = _fader->GetFromTime(Engine::GetInstance()->GetTotalTime());
 
-                if (_realChannel.Valid())
+                if (IsReal())
                 {
                     _realChannel.SetGain(gain);
                 }
@@ -506,7 +511,7 @@ namespace SparkyStudios::Audio::Amplitude
             else
             {
                 // No fader is defined, no fading occurs
-                if (_realChannel.Valid())
+                if (IsReal())
                 {
                     _realChannel.SetGain(_gain);
                 }
@@ -522,7 +527,7 @@ namespace SparkyStudios::Audio::Amplitude
             {
                 _gain = _fader->GetFromTime(Engine::GetInstance()->GetTotalTime());
 
-                if (_realChannel.Valid())
+                if (IsReal())
                 {
                     _realChannel.SetGain(_gain);
                 }
@@ -544,7 +549,7 @@ namespace SparkyStudios::Audio::Amplitude
             else
             {
                 // No fader is defined, no fading occurs
-                if (_realChannel.Valid())
+                if (IsReal())
                 {
                     _realChannel.SetGain(0.0f);
                 }
@@ -571,13 +576,13 @@ namespace SparkyStudios::Audio::Amplitude
             break;
         case ChannelState::FadingIn:
         case ChannelState::Playing:
-            if (_realChannel.Valid() && !_realChannel.Playing())
+            if (IsReal() && !_realChannel.Playing())
             {
                 _channelState = ChannelState::Stopped;
             }
             break;
         case ChannelState::FadingOut:
-            if (!_realChannel.Valid() || !_realChannel.Playing())
+            if (!IsReal() || !_realChannel.Playing())
             {
                 _channelState = ChannelState::Stopped;
             }
@@ -630,7 +635,7 @@ namespace SparkyStudios::Audio::Amplitude
 
             SoundInstanceSettings settings;
             settings.m_id = item.m_id;
-            settings.m_kind = SoundKind::Standalone;
+            settings.m_kind = SoundKind::Switched;
             settings.m_busID = definition->bus();
             settings.m_attenuationID = definition->attenuation();
             settings.m_spatialization = definition->spatialization();
@@ -656,7 +661,7 @@ namespace SparkyStudios::Audio::Amplitude
         _fader = Fader::Create(static_cast<Fader::FADER_ALGORITHM>(definition->fader()));
         _channelState = ChannelState::Playing;
 
-        if (_realChannel.Valid())
+        if (IsReal())
         {
             const SwitchState& state = _switch->GetState();
             _playingSwitchContainerStateId = state.m_id != kAmInvalidObjectId ? state.m_id : definition->default_switch_state();
@@ -680,7 +685,7 @@ namespace SparkyStudios::Audio::Amplitude
         _fader = Fader::Create(static_cast<Fader::FADER_ALGORITHM>(definition->fader()));
 
         _channelState = ChannelState::Playing;
-        return _realChannel.Valid() ? _realChannel.Play(sound->CreateInstance(_collection)) : true;
+        return IsReal() ? _realChannel.Play(sound->CreateInstance(_collection)) : true;
     }
 
     bool ChannelInternalState::PlaySound()
@@ -692,6 +697,6 @@ namespace SparkyStudios::Audio::Amplitude
         _fader = Fader::Create(static_cast<Fader::FADER_ALGORITHM>(definition->fader()));
 
         _channelState = ChannelState::Playing;
-        return _realChannel.Valid() ? _realChannel.Play(_sound->CreateInstance()) : true;
+        return IsReal() ? _realChannel.Play(_sound->CreateInstance()) : true;
     }
 } // namespace SparkyStudios::Audio::Amplitude

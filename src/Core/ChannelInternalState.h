@@ -227,6 +227,16 @@ namespace SparkyStudios::Audio::Amplitude
             return _realChannel;
         }
 
+        [[nodiscard]] bool Valid() const
+        {
+            return IsAlive() && IsReal();
+        }
+
+        [[nodiscard]] bool IsAlive() const
+        {
+            return _sound != nullptr || _collection != nullptr || _switchContainer != nullptr;
+        }
+
         // Returns true if the real channel is valid.
         [[nodiscard]] bool IsReal() const
         {
@@ -235,6 +245,8 @@ namespace SparkyStudios::Audio::Amplitude
 
         [[nodiscard]] AmObjectID GetPlayingObjectId() const
         {
+            if (_switchContainer)
+                return _switchContainer->GetId();
             if (_collection)
                 return _collection->GetId();
             if (_sound)
