@@ -1,4 +1,4 @@
 [submodule "dependencies/flatbuffers"]
 	path = dependencies/flatbuffers
 	url = https://github.com/google/flatbuffers.git
-	branch = v2.0.0
+	branch = tag/v2.0.0
