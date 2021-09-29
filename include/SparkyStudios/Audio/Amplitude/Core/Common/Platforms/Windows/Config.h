@@ -41,7 +41,7 @@
 
 // Alignment required for SIMD data processing
 #define AM_SIMD_ALIGNMENT 16
-#define AM_ALIGN_SIMD(_declaration_) AM_ALIGN(_declaration_, AM_SIMD_ALIGNMENT)
+#define AM_TYPE_ALIGN_SIMD(_declaration_) AM_TYPE_ALIGN(_declaration_, AM_SIMD_ALIGNMENT)
 #define AM_BUFFER_ALIGNMENT AM_SIMD_ALIGNMENT
 
 // Windows platforms support wchar_t

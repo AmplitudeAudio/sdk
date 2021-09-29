@@ -17,12 +17,16 @@
 #ifndef SS_AMPLITUDE_AUDIO_CONFIG_H
 #define SS_AMPLITUDE_AUDIO_CONFIG_H
 
-#ifndef AM_ALIGN
+#ifndef AM_TYPE_ALIGN
 #if defined(_MSC_VER)
-#define AM_ALIGN(_declaration_, _alignment_) __declspec(align(_alignment_)) _declaration_
+#define AM_TYPE_ALIGN(_declaration_, _alignment_) __declspec(align(_alignment_)) _declaration_
 #else
-#define AK_ALIGN(_declaration_, _alignment_) _declaration_ __attribute__((aligned(_alignment_)))
+#define AM_TYPE_ALIGN(_declaration_, _alignment_) _declaration_ __attribute__((aligned(_alignment_)))
 #endif
+#endif
+
+#ifndef AM_VALUE_ALIGN
+#define AM_VALUE_ALIGN(v) ((v + 3) & ~0x03)
 #endif
 
 #if defined(_WIN32) || defined(_WIN64) || defined(WINAPI_FAMILY)
