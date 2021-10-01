@@ -278,7 +278,7 @@ namespace SparkyStudios::Audio::Amplitude
         }
 
         // Initialize audio mixer
-        if (!_state->mixer.Initialize(config))
+        if (!_state->mixer.Init(config))
         {
             CallLogFunc("[ERROR] Could not initialize the audio mixer.\n");
             return false;
@@ -1194,6 +1194,7 @@ namespace SparkyStudios::Audio::Amplitude
     void Engine::SetMasterGain(const float gain)
     {
         _state->master_gain = gain;
+        _state->mixer.SetMasterGain(gain);
     }
 
     float Engine::GetMasterGain() const

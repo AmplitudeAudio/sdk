@@ -19,8 +19,8 @@
 
 #include <SparkyStudios/Audio/Amplitude/Amplitude.h>
 
-#include "Mixer.h"
 #include <Core/Drivers/MiniAudio/Driver.h>
+#include <Mixer/Mixer.h>
 
 #include "engine_config_definition_generated.h"
 
@@ -28,7 +28,7 @@ namespace SparkyStudios::Audio::Amplitude::Drivers
 {
     static void miniaudio_mixer(ma_device* pDevice, AmVoidPtr pOutput, const void* pInput, ma_uint32 frameCount)
     {
-        auto* mixer = (Mixer*)pDevice->pUserData;
+        auto* mixer = static_cast<Mixer*>(pDevice->pUserData);
         mixer->Mix(pOutput, frameCount);
     }
 
@@ -71,7 +71,7 @@ namespace SparkyStudios::Audio::Amplitude::Drivers
             deviceConfig.playback.channels = config->output()->channels();
             deviceConfig.sampleRate = config->output()->frequency();
             deviceConfig.dataCallback = miniaudio_mixer;
-            deviceConfig.pUserData = (void*)m_mixer;
+            deviceConfig.pUserData = static_cast<void*>(m_mixer);
 
             _initialized = ma_device_init(nullptr, &deviceConfig, &_device) == MA_SUCCESS;
             if (!_initialized)

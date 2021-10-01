@@ -39,9 +39,9 @@ namespace SparkyStudios::Audio::Amplitude::Codecs
 
             bool Close() final;
 
-            AmUInt64 Load(AmReal32Buffer out) final;
+            AmUInt64 Load(AmVoidPtr out) final;
 
-            AmUInt64 Stream(AmReal32Buffer out, AmUInt64 offset, AmUInt64 length) final;
+            AmUInt64 Stream(AmVoidPtr out, AmUInt64 offset, AmUInt64 length) final;
 
             bool Seek(AmUInt64 offset) final;
 
@@ -63,7 +63,7 @@ namespace SparkyStudios::Audio::Amplitude::Codecs
 
             bool Close() final;
 
-            AmUInt64 Write(const float* in, AmUInt64 offset, AmUInt64 length) final;
+            AmUInt64 Write(AudioBuffer in, AmUInt64 offset, AmUInt64 length) final;
 
         private:
             bool _initialized;

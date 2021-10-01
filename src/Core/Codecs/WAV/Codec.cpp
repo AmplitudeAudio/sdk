@@ -38,8 +38,8 @@ namespace SparkyStudios::Audio::Amplitude::Codecs
         }
 
         m_format.SetAll(
-            _wav.sampleRate, _wav.channels, _wav.bitsPerSample, _wav.totalPCMFrameCount, _wav.channels * sizeof(float),
-            AM_SAMPLE_FORMAT_FLOAT, // This codec always read frames as float32 values
+            _wav.sampleRate, _wav.channels, _wav.bitsPerSample, _wav.totalPCMFrameCount, _wav.channels * sizeof(AmInt16),
+            AM_SAMPLE_FORMAT_INT, // This codec always read frames as int16 values
             AM_SAMPLE_INTERLEAVED // dr_wav always read interleaved frames
         );
 
@@ -61,7 +61,7 @@ namespace SparkyStudios::Audio::Amplitude::Codecs
         return true;
     }
 
-    AmUInt64 WAVCodec::WAVDecoder::Load(AmReal32Buffer out)
+    AmUInt64 WAVCodec::WAVDecoder::Load(AmVoidPtr out)
     {
         if (!_initialized)
         {
@@ -73,10 +73,10 @@ namespace SparkyStudios::Audio::Amplitude::Codecs
             return 0;
         }
 
-        return drwav_read_pcm_frames_f32(&_wav, _wav.totalPCMFrameCount, out);
+        return drwav_read_pcm_frames_s16(&_wav, _wav.totalPCMFrameCount, static_cast<AmInt16Buffer>(out));
     }
 
-    AmUInt64 WAVCodec::WAVDecoder::Stream(AmReal32Buffer out, AmUInt64 offset, AmUInt64 length)
+    AmUInt64 WAVCodec::WAVDecoder::Stream(AmVoidPtr out, AmUInt64 offset, AmUInt64 length)
     {
         if (!_initialized)
         {
@@ -88,7 +88,7 @@ namespace SparkyStudios::Audio::Amplitude::Codecs
             return 0;
         }
 
-        return drwav_read_pcm_frames_f32(&_wav, length, out);
+        return drwav_read_pcm_frames_s16(&_wav, length, static_cast<AmInt16Buffer>(out));
     }
 
     bool WAVCodec::WAVDecoder::Seek(AmUInt64 offset)
@@ -112,7 +112,7 @@ namespace SparkyStudios::Audio::Amplitude::Codecs
         return true;
     }
 
-    AmUInt64 WAVCodec::WAVEncoder::Write(const float* in, AmUInt64 offset, AmUInt64 length)
+    AmUInt64 WAVCodec::WAVEncoder::Write(AudioBuffer in, AmUInt64 offset, AmUInt64 length)
     {
         return 0;
     }
@@ -133,9 +133,9 @@ namespace SparkyStudios::Audio::Amplitude::Codecs
 
         drwav dummy;
 #if defined(AM_WCHAR_SUPPORTED)
-        bool can = drwav_init_file_w(&dummy, filePath, nullptr) == DRWAV_TRUE;
+        const bool can = drwav_init_file_w(&dummy, filePath, nullptr) == DRWAV_TRUE;
 #else
-        bool can = drwav_init_file(&dummy, filePath, nullptr) == DRWAV_TRUE;
+        const bool can = drwav_init_file(&dummy, filePath, nullptr) == DRWAV_TRUE;
 #endif
 
         if (can)

@@ -28,6 +28,9 @@ if(NOT TARGET flatc)
     set(FLATC_INCLUDE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/dependencies/flatbuffers/include)
 endif()
 
+# Include VC in this project.
+find_package(Vc CONFIG REQUIRED)
+
 # Generate source files for all FlatBuffers schema files under the src
 # directory.
 set(SPARK_AUDIO_FLATBUFFERS_GENERATED_INCLUDES_DIR ${OBJ_DIR}/include/SparkyStudios/Audio/Amplitude)
@@ -134,13 +137,13 @@ set(SA_SOURCE
     src/Math/Curve.cpp
     src/Math/HMM_Impl.cpp
 
-    src/Mixer/Atomix/atomix.h
-    src/Mixer/Atomix/Mixer.cpp
-    src/Mixer/Atomix/Mixer.h
-    src/Mixer/Atomix/RealChannel.cpp
-    src/Mixer/Atomix/RealChannel.h
-    src/Mixer/Atomix/Sound.cpp
-
+    src/Mixer/Mixer.cpp
+    src/Mixer/Mixer.h
+    src/Mixer/RealChannel.cpp
+    src/Mixer/RealChannel.h
+    src/Mixer/SoundData.cpp
+    src/Mixer/SoundData.h
+    
     src/Sound/Faders/ConstantFader.cpp
     src/Sound/Faders/ConstantFader.h
     src/Sound/Faders/ExponentialFader.cpp
@@ -157,11 +160,16 @@ set(SA_SOURCE
     src/Sound/Collection.cpp
     src/Sound/Fader.cpp
     src/Sound/Rtpc.cpp
+    src/Sound/Sound.cpp
     src/Sound/SoundBank.cpp
     src/Sound/Switch.cpp
     src/Sound/SwitchContainer.cpp
     src/Sound/RefCounter.cpp
 
+    src/Utils/SmMalloc/smmalloc_generic.cpp
+    src/Utils/SmMalloc/smmalloc_tls.cpp
+    src/Utils/SmMalloc/smmalloc.cpp
+    src/Utils/SmMalloc/smmalloc.h
     src/Utils/intrusive_list.h
 
     src/IO/File.h
@@ -171,12 +179,14 @@ set(SA_SOURCE
 # Includes for this project
 include_directories(src
     include
-    src/Mixer/Atomix
     ${FLATC_INCLUDE_DIR}
+    ${Vc_INCLUDE_DIR}
     ${SPARK_AUDIO_FLATBUFFERS_GENERATED_INCLUDES_DIR}
 )
 
 add_library(ss_amplitude_audio ${SA_SOURCE})
+
+target_link_libraries(ss_amplitude_audio PRIVATE Vc::Vc)
 
 add_dependencies(ss_amplitude_audio
     generated_includes

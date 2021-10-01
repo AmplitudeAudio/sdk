@@ -39,8 +39,8 @@ namespace SparkyStudios::Audio::Amplitude::Codecs
         }
 
         m_format.SetAll(
-            _flac->sampleRate, _flac->channels, _flac->bitsPerSample, _flac->totalPCMFrameCount, _flac->channels * sizeof(float),
-            AM_SAMPLE_FORMAT_FLOAT, // This codec always read frames as float32 values
+            _flac->sampleRate, _flac->channels, _flac->bitsPerSample, _flac->totalPCMFrameCount, _flac->channels * sizeof(AmInt16),
+            AM_SAMPLE_FORMAT_INT, // This codec always read frames as int16 values
             AM_SAMPLE_INTERLEAVED // dr_flac always read interleaved frames
         );
 
@@ -63,7 +63,7 @@ namespace SparkyStudios::Audio::Amplitude::Codecs
         return true;
     }
 
-    AmUInt64 FLACCodec::FLACDecoder::Load(AmReal32Buffer out)
+    AmUInt64 FLACCodec::FLACDecoder::Load(AmVoidPtr out)
     {
         if (!_initialized)
         {
@@ -75,10 +75,10 @@ namespace SparkyStudios::Audio::Amplitude::Codecs
             return 0;
         }
 
-        return drflac_read_pcm_frames_f32(_flac, _flac->totalPCMFrameCount, out);
+        return drflac_read_pcm_frames_s16(_flac, _flac->totalPCMFrameCount, static_cast<AmInt16Buffer>(out));
     }
 
-    AmUInt64 FLACCodec::FLACDecoder::Stream(AmReal32Buffer out, AmUInt64 offset, AmUInt64 length)
+    AmUInt64 FLACCodec::FLACDecoder::Stream(AmVoidPtr out, AmUInt64 offset, AmUInt64 length)
     {
         if (!_initialized)
         {
@@ -90,7 +90,7 @@ namespace SparkyStudios::Audio::Amplitude::Codecs
             return 0;
         }
 
-        return drflac_read_pcm_frames_f32(_flac, length, out);
+        return drflac_read_pcm_frames_s16(_flac, length, static_cast<AmInt16Buffer>(out));
     }
 
     bool FLACCodec::FLACDecoder::Seek(AmUInt64 offset)
@@ -114,7 +114,7 @@ namespace SparkyStudios::Audio::Amplitude::Codecs
         return true;
     }
 
-    AmUInt64 FLACCodec::FLACEncoder::Write(const float* in, AmUInt64 offset, AmUInt64 length)
+    AmUInt64 FLACCodec::FLACEncoder::Write(AudioBuffer in, AmUInt64 offset, AmUInt64 length)
     {
         return 0;
     }

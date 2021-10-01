@@ -14,8 +14,8 @@
 
 #pragma once
 
-#ifndef SPARK_AUDIO_REAL_CHANNEL_H
-#define SPARK_AUDIO_REAL_CHANNEL_H
+#ifndef SS_AMPLITUDE_AUDIO_REAL_CHANNEL_H
+#define SS_AMPLITUDE_AUDIO_REAL_CHANNEL_H
 
 #include <vector>
 
@@ -26,8 +26,6 @@
 #include <SparkyStudios/Audio/Amplitude/Sound/Collection.h>
 #include <SparkyStudios/Audio/Amplitude/Sound/Fader.h>
 #include <SparkyStudios/Audio/Amplitude/Sound/Sound.h>
-
-#include "atomix.h"
 
 namespace SparkyStudios::Audio::Amplitude
 {
@@ -183,7 +181,7 @@ namespace SparkyStudios::Audio::Amplitude
         float _pan;
         std::map<AmUInt32, float> _gain;
 
-        atomix_mixer* _mixer;
+        Mixer* _mixer;
         std::map<AmUInt32, SoundInstance*> _activeSounds;
 
         ChannelInternalState* _parentChannelState;
@@ -192,4 +190,4 @@ namespace SparkyStudios::Audio::Amplitude
     };
 } // namespace SparkyStudios::Audio::Amplitude
 
-#endif // SPARK_AUDIO_REAL_CHANNEL_H
+#endif // SS_AMPLITUDE_AUDIO_REAL_CHANNEL_H
