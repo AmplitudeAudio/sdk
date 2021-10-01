@@ -162,6 +162,10 @@ set(SA_SOURCE
     src/Sound/SwitchContainer.cpp
     src/Sound/RefCounter.cpp
 
+    src/Utils/SmMalloc/smmalloc_generic.cpp
+    src/Utils/SmMalloc/smmalloc_tls.cpp
+    src/Utils/SmMalloc/smmalloc.cpp
+    src/Utils/SmMalloc/smmalloc.h
     src/Utils/intrusive_list.h
 
     src/IO/File.h
