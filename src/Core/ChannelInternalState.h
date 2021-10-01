@@ -28,8 +28,7 @@
 #include <SparkyStudios/Audio/Amplitude/Sound/Switch.h>
 #include <SparkyStudios/Audio/Amplitude/Sound/SwitchContainer.h>
 
-#include "RealChannel.h"
-
+#include <Mixer/RealChannel.h>
 #include <Utils/intrusive_list.h>
 
 namespace SparkyStudios::Audio::Amplitude

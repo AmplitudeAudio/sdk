@@ -137,13 +137,13 @@ set(SA_SOURCE
     src/Math/Curve.cpp
     src/Math/HMM_Impl.cpp
 
-    src/Mixer/Atomix/atomix.h
-    src/Mixer/Atomix/Mixer.cpp
-    src/Mixer/Atomix/Mixer.h
-    src/Mixer/Atomix/RealChannel.cpp
-    src/Mixer/Atomix/RealChannel.h
-    src/Mixer/Atomix/Sound.cpp
-
+    src/Mixer/Mixer.cpp
+    src/Mixer/Mixer.h
+    src/Mixer/RealChannel.cpp
+    src/Mixer/RealChannel.h
+    src/Mixer/SoundData.cpp
+    src/Mixer/SoundData.h
+    
     src/Sound/Faders/ConstantFader.cpp
     src/Sound/Faders/ConstantFader.h
     src/Sound/Faders/ExponentialFader.cpp
@@ -160,6 +160,7 @@ set(SA_SOURCE
     src/Sound/Collection.cpp
     src/Sound/Fader.cpp
     src/Sound/Rtpc.cpp
+    src/Sound/Sound.cpp
     src/Sound/SoundBank.cpp
     src/Sound/Switch.cpp
     src/Sound/SwitchContainer.cpp
@@ -178,7 +179,6 @@ set(SA_SOURCE
 # Includes for this project
 include_directories(src
     include
-    src/Mixer/Atomix
     ${FLATC_INCLUDE_DIR}
     ${Vc_INCLUDE_DIR}
     ${SPARK_AUDIO_FLATBUFFERS_GENERATED_INCLUDES_DIR}

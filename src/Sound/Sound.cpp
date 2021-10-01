@@ -15,8 +15,8 @@
 #include <SparkyStudios/Audio/Amplitude/Amplitude.h>
 
 #include <Core/EngineInternalState.h>
+#include <Mixer/SoundData.h>
 
-#include "atomix.h"
 #include "collection_definition_generated.h"
 #include "sound_definition_generated.h"
 
@@ -245,20 +245,19 @@ namespace SparkyStudios::Audio::Amplitude
 
     SoundInstance::SoundInstance(const Sound* parent, const SoundInstanceSettings& settings)
         : _userData(nullptr)
-        , _streamBuffer()
         , _channel(nullptr)
         , _parent(parent)
+        , _collection(nullptr)
         , _settings(settings)
         , _currentLoopCount(0)
     {}
 
     SoundInstance::~SoundInstance()
     {
-        if (_userData)
-        {
-            atomixSoundDestroy(static_cast<atomix_sound*>(_userData));
-            _userData = nullptr;
-        }
+        Destroy();
+
+        delete _userData;
+        _userData = nullptr;
 
         _parent = nullptr;
     }
@@ -267,42 +266,41 @@ namespace SparkyStudios::Audio::Amplitude
     {
         AMPLITUDE_ASSERT(Valid());
 
-        AmUInt16 channels = _parent->m_format.GetNumChannels();
-        AmUInt32 frames = _parent->m_format.GetFramesCount();
+        const AmUInt16 channels = _parent->m_format.GetNumChannels();
+        const AmUInt32 frames = _parent->m_format.GetFramesCount();
 
         if (_parent->_stream)
         {
-            _streamBuffer.Init(ATOMIX_MAX_STREAM_BUFFER_SIZE * _parent->m_format.GetNumChannels());
+            SoundChunk* chunk = SoundChunk::CreateChunk(512, channels);
+            SoundData* data = SoundData::CreateMusic(_parent->m_format, chunk, this);
 
-            atomix_sound* sound = atomixSoundNew(channels, _streamBuffer.GetBuffer(), frames, true, this);
-            if (!sound)
+            if (!data)
             {
                 CallLogFunc("Could not load a sound instance. Unable to read data from the parent sound.\n");
                 return;
             }
 
-            SetUserData(sound);
+            SetUserData(data);
         }
         else
         {
-            AmAlignedReal32Buffer buffer;
-            buffer.Init(frames * channels);
+            SoundChunk* chunk = SoundChunk::CreateChunk(frames, channels);
 
-            if (_parent->_decoder->Load(buffer.GetBuffer()) != frames)
+            if (_parent->_decoder->Load((AmInt16Buffer)chunk->buffer) != frames)
             {
                 CallLogFunc("Could not load a sound instance. Unable to read data from the parent sound.\n");
                 return;
             }
 
-            atomix_sound* sound = atomixSoundNew(channels, buffer.GetBuffer(), frames, false, this);
+            SoundData* data = SoundData::CreateSound(_parent->m_format, chunk, this);
 
-            if (!sound)
+            if (!data)
             {
                 CallLogFunc("Could not load a sound instance. Unable to read data from the parent sound.\n");
                 return;
             }
 
-            SetUserData(sound);
+            SetUserData(data);
         }
     }
 
@@ -325,12 +323,12 @@ namespace SparkyStudios::Audio::Amplitude
     {
         AMPLITUDE_ASSERT(Valid());
 
-        if (_parent->_stream)
+        if (_parent->_stream && _userData != nullptr)
         {
-            _streamBuffer.Clear();
+            SoundData* data = static_cast<SoundData*>(_userData);
 
             AmUInt64 n, l = frames, o = offset, r = 0;
-            AmReal32Buffer b = _streamBuffer.GetBuffer();
+            AmInt16Buffer b = (AmInt16Buffer)data->chunk->buffer;
 
         Fill:
             n = _parent->_decoder->Stream(b, o, l);
@@ -355,9 +353,9 @@ namespace SparkyStudios::Audio::Amplitude
     {
         AMPLITUDE_ASSERT(Valid());
 
-        if (_parent->_stream)
+        if (_userData != nullptr)
         {
-            _streamBuffer = AmAlignedReal32Buffer();
+            static_cast<SoundData*>(_userData)->Destroy();
         }
     }
 

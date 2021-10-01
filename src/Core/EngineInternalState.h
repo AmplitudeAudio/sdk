@@ -24,9 +24,8 @@
 #include <Core/ChannelInternalState.h>
 #include <Core/EntityInternalState.h>
 #include <Core/ListenerInternalState.h>
+#include <Mixer/Mixer.h>
 #include <Utils/intrusive_list.h>
-
-#include "Mixer.h"
 
 #include "collection_definition_generated.h"
 
@@ -86,7 +85,7 @@ namespace SparkyStudios::Audio::Amplitude
     struct EngineInternalState
     {
         explicit EngineInternalState()
-            : mixer(this)
+            : mixer(1.0f)
             , buses_source()
             , buses()
             , master_bus(nullptr)
