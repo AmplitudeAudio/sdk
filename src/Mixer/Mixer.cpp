@@ -39,15 +39,16 @@ namespace SparkyStudios::Audio::Amplitude
         // Convert gain and pan to left and right gain and store it atomically
         // This formula is explained in the following paper:
         // http://www.rs-met.com/documents/tutorials/PanRules.pdf
-        float p = (static_cast<float>(M_PI) * (pan + 1.0f)) / 4.0f;
-        float left = std::cosf(p) * gain;
-        float right = std::sinf(p) * gain;
+        const float p = (static_cast<float>(M_PI) * (pan + 1.0f)) / 4.0f;
+        const float left = std::cosf(p) * gain;
+        const float right = std::sinf(p) * gain;
 
         return { left, right };
     }
 
     Mixer::Mixer(float masterGain)
         : _initialized(false)
+        , _commandsStack()
         , _audioThreadMutex(nullptr)
         , _insideAudioThreadMutex(false)
         , _requestedBufferSize(0)
@@ -57,7 +58,9 @@ namespace SparkyStudios::Audio::Amplitude
         , _deviceSampleRate(0)
         , _deviceChannels(0)
         , _nextId(0)
+        , _layers{}
         , _remainingFrames(0)
+        , _oldFrames{}
     {
         AMPLIMIX_STORE(&_masterGain, masterGain);
     }
@@ -81,7 +84,7 @@ namespace SparkyStudios::Audio::Amplitude
     {
         if (_initialized)
         {
-            CallLogFunc("Atomix Mixer has already been initialized.\n");
+            CallLogFunc("Amplimix has already been initialized.\n");
             return false;
         }
 
@@ -107,7 +110,7 @@ namespace SparkyStudios::Audio::Amplitude
     {
         LockAudioMutex();
 
-        AmInt32 numChannels = _deviceChannels;
+        AmUInt32 numChannels = _deviceChannels;
 
         auto* buffer = static_cast<AmInt16Buffer>(mixBuffer);
         memset(buffer, 0, frameCount * numChannels * sizeof(AmInt16));
@@ -116,7 +119,7 @@ namespace SparkyStudios::Audio::Amplitude
         AmUInt32 rnum = frameCount;
 
         // only do this if there are old frames
-        if (_remainingFrames > 0)
+        if (_remainingFrames)
         {
             if (rnum > _remainingFrames)
             {
@@ -147,10 +150,10 @@ namespace SparkyStudios::Audio::Amplitude
 #else
         // aSize in AmInt16
         AmUInt32 aSize = rnum * numChannels;
-#endif
+#endif // AM_SSE_INTRINSICS
 
         // dynamically sized aligned buffer
-        auto* align = new AudioDataUnit[aSize];
+        AudioBuffer align = new AudioDataUnit[aSize];
 
         // clear the aligned buffer using SSE assignment
         for (AmUInt32 i = 0; i < aSize; i++)
@@ -177,15 +180,17 @@ namespace SparkyStudios::Audio::Amplitude
         _remainingFrames = aSize * 8 - rnum;
 #else
         _remainingFrames = 0; // Should not have remaining frames without SSE optimization
-#endif
+#endif // AM_SSE_INTRINSICS
 
         // copy remaining frames to buffer inside the mixer struct
-        if (_remainingFrames > 0)
+        if (_remainingFrames)
             memcpy(_oldFrames, reinterpret_cast<AmInt16*>(align) + rnum * numChannels, _remainingFrames * numChannels * sizeof(AmInt16));
 
         delete[] align;
 
         UnlockAudioMutex();
+
+        ExecuteCommands();
 
         return frameCount;
     }
@@ -196,7 +201,7 @@ namespace SparkyStudios::Audio::Amplitude
     }
 
     AmUInt32 Mixer::PlayAdvanced(
-        SoundData* sound, PlayStateFlag flag, float gain, float pan, AmInt32 startFrame, AmInt32 endFrame, AmUInt32 id, AmUInt32 layer)
+        SoundData* sound, PlayStateFlag flag, float gain, float pan, AmUInt32 startFrame, AmUInt32 endFrame, AmUInt32 id, AmUInt32 layer)
     {
         if (flag <= PLAY_STATE_FLAG_MIN || flag >= PLAY_STATE_FLAG_MAX)
             return 0; // invalid flag
@@ -204,20 +209,21 @@ namespace SparkyStudios::Audio::Amplitude
         if (endFrame - startFrame < 16 || endFrame < 16)
             return 0; // invalid frame range
 
-        LockAudioMutex();
+        // define a layer id
+        layer = layer == 0 ? ++_nextId : layer;
 
-        for (size_t i = 0; i < AMPLIMIX_LAYERS; i++)
+        // skip 0 as it is special
+        if (id == 0)
+            id = kAmplimixLayersCount;
+
+        MixerCommandCallback callback = [=]() -> bool
         {
             // get layer for next sound handle id
-            auto* lay = &_layers[(layer = layer == 0 ? ++_nextId : layer) & AMPLIMIX_LMASK];
+            auto* lay = GetLayer(layer);
 
             // check if corresponding layer is free
-            if (AMPLIMIX_LOAD(&lay->flag) == 0)
+            if (AMPLIMIX_LOAD(&lay->flag) == PLAY_STATE_FLAG_MIN)
             {
-                // skip 0 as it is special
-                if (id == 0)
-                    id = AMPLIMIX_LAYERS;
-
                 // fill in non-atomic layer data along with truncating start and end
                 lay->id = id;
                 lay->snd = sound;
@@ -232,11 +238,20 @@ namespace SparkyStudios::Audio::Amplitude
                 AMPLIMIX_STORE(&lay->flag, flag);
 
                 // return success
-                return layer;
+                return true;
             }
+
+            return false;
+        };
+
+        if (_insideAudioThreadMutex)
+        {
+            PushCommand({ callback });
+            return layer;
         }
 
-        UnlockAudioMutex();
+        if (callback())
+            return layer;
 
         return 0;
     }
@@ -258,15 +273,15 @@ namespace SparkyStudios::Audio::Amplitude
         return false;
     }
 
-    bool Mixer::SetCursor(AmUInt32 id, AmUInt32 layer, AmInt32 cursor)
+    bool Mixer::SetCursor(AmUInt32 id, AmUInt32 layer, AmUInt32 cursor)
     {
         auto* lay = GetLayer(layer);
 
         // check id and state flag to make sure the id is valid
         if ((id == lay->id) && (AMPLIMIX_LOAD(&lay->flag) > PLAY_STATE_FLAG_STOP))
         {
-            // clamp cursor and truncate to multiple of 4 before storing
-            AMPLIMIX_STORE(&lay->cursor, (cursor < lay->start) ? lay->start : (cursor > lay->end) ? lay->end : cursor & ~3);
+            // clamp cursor and truncate to multiple of 16 before storing
+            AMPLIMIX_STORE(&lay->cursor, AM_CLAMP(cursor, lay->start, lay->end) & ~15);
             // return success
             return true;
         }
@@ -279,36 +294,46 @@ namespace SparkyStudios::Audio::Amplitude
     {
         // return failure if given flag invalid
         if (flag >= PLAY_STATE_FLAG_MAX)
-            return 0;
+            return false;
 
-        // get layer based on the lowest bits of id
-        auto* lay = GetLayer(layer);
-
-        PlayStateFlag prev = PLAY_STATE_FLAG_MIN;
-        // check id and state flag to make sure the id is valid
-        if ((id == lay->id) && ((prev = AMPLIMIX_LOAD(&lay->flag)) > PLAY_STATE_FLAG_STOP))
+        MixerCommandCallback callback = [=]() -> bool
         {
-            // return success if already in desired state
-            if (prev == flag)
-                return true;
+            // get layer based on the lowest bits of id
+            auto* lay = GetLayer(layer);
 
-            // run appropriate callback
-            if (prev == PLAY_STATE_FLAG_STOP && (flag == PLAY_STATE_FLAG_PLAY || flag == PLAY_STATE_FLAG_LOOP))
-                OnSoundStarted(lay->snd);
-            else if ((prev == PLAY_STATE_FLAG_PLAY || prev == PLAY_STATE_FLAG_LOOP) && flag == PLAY_STATE_FLAG_HALT)
-                OnSoundPaused(lay->snd);
-            else if (prev == PLAY_STATE_FLAG_HALT && (flag == PLAY_STATE_FLAG_PLAY || flag == PLAY_STATE_FLAG_LOOP))
-                OnSoundResumed(lay->snd);
-            else if ((prev == PLAY_STATE_FLAG_PLAY || prev == PLAY_STATE_FLAG_LOOP) && flag == PLAY_STATE_FLAG_STOP)
-                OnSoundStopped(lay->snd);
+            // check id and state flag to make sure the id is valid
+            if (PlayStateFlag prev; (id == lay->id) && ((prev = AMPLIMIX_LOAD(&lay->flag)) >= PLAY_STATE_FLAG_STOP))
+            {
+                // return success if already in desired state
+                if (prev == flag)
+                    return true;
 
-            // swap if flag has not changed and return if successful
-            if (AMPLIMIX_CSWAP(&lay->flag, &prev, flag))
-                return true;
+                // run appropriate callback
+                if (prev == PLAY_STATE_FLAG_STOP && (flag == PLAY_STATE_FLAG_PLAY || flag == PLAY_STATE_FLAG_LOOP))
+                    OnSoundStarted(lay->snd);
+                else if ((prev == PLAY_STATE_FLAG_PLAY || prev == PLAY_STATE_FLAG_LOOP) && flag == PLAY_STATE_FLAG_HALT)
+                    OnSoundPaused(lay->snd);
+                else if (prev == PLAY_STATE_FLAG_HALT && (flag == PLAY_STATE_FLAG_PLAY || flag == PLAY_STATE_FLAG_LOOP))
+                    OnSoundResumed(lay->snd);
+                else if ((prev == PLAY_STATE_FLAG_PLAY || prev == PLAY_STATE_FLAG_LOOP) && flag == PLAY_STATE_FLAG_STOP)
+                    OnSoundStopped(lay->snd);
+
+                // swap if flag has not changed and return if successful
+                if (AMPLIMIX_CSWAP(&lay->flag, &prev, flag))
+                    return true;
+            }
+
+            // return failure
+            return false;
+        };
+
+        if (_insideAudioThreadMutex)
+        {
+            PushCommand({ callback });
+            return true;
         }
 
-        // return failure
-        return false;
+        return callback();
     }
 
     PlayStateFlag Mixer::GetPlayState(AmUInt32 id, AmUInt32 layer)
@@ -316,10 +341,8 @@ namespace SparkyStudios::Audio::Amplitude
         // get layer based on the lowest bits of id
         auto* lay = GetLayer(layer);
 
-        PlayStateFlag flag = PLAY_STATE_FLAG_MIN;
-
         // check id and state flag to make sure the id is valid
-        if ((id == lay->id) && ((flag = AMPLIMIX_LOAD(&lay->flag)) > PLAY_STATE_FLAG_STOP))
+        if (PlayStateFlag flag; (id == lay->id) && ((flag = AMPLIMIX_LOAD(&lay->flag)) > PLAY_STATE_FLAG_STOP))
         {
             // return the found flag
             return flag;
@@ -331,42 +354,35 @@ namespace SparkyStudios::Audio::Amplitude
 
     void Mixer::SetMasterGain(float gain)
     {
-        AMPLIMIX_STORE(&_masterGain, AMPLIMIX_FX_FROM_FLOAT(gain));
+        AMPLIMIX_STORE(&_masterGain, gain);
     }
 
     void Mixer::StopAll()
     {
         // go through all active layers and set their states to the stop state
-        for (int i = 0; i < AMPLIMIX_LAYERS; i++)
+        for (auto&& lay : _layers)
         {
-            // pointer to this layer for cleaner code
-            auto* lay = GetLayer(i);
-
             // check if active and set to stop if true
-            if (AMPLIMIX_LOAD(&lay->flag) > PLAY_STATE_FLAG_STOP)
-                AMPLIMIX_STORE(&lay->flag, PLAY_STATE_FLAG_STOP);
+            if (AMPLIMIX_LOAD(&lay.flag) > PLAY_STATE_FLAG_STOP)
+                AMPLIMIX_STORE(&lay.flag, PLAY_STATE_FLAG_STOP);
         }
     }
 
     void Mixer::HaltAll()
     {
         // go through all playing layers and set their states to halt
-        for (int i = 0; i < AMPLIMIX_LAYERS; i++)
+        for (auto&& lay : _layers)
         {
-            // pointer to this layer for cleaner code
-            auto* lay = GetLayer(i);
-
-            PlayStateFlag flag;
             // check if playing or looping and try to swap
-            if ((flag = AMPLIMIX_LOAD(&lay->flag)) > 2)
-                AMPLIMIX_CSWAP(&lay->flag, &flag, PLAY_STATE_FLAG_HALT);
+            if (PlayStateFlag flag; (flag = AMPLIMIX_LOAD(&lay.flag)) > PLAY_STATE_FLAG_HALT)
+                AMPLIMIX_CSWAP(&lay.flag, &flag, PLAY_STATE_FLAG_HALT);
         }
     }
 
     void Mixer::PlayAll()
     {
         // go through all halted layers and set their states to play
-        for (auto& lay : _layers)
+        for (auto&& lay : _layers)
         {
             // need to reset each time
             PlayStateFlag flag = PLAY_STATE_FLAG_HALT;
@@ -375,33 +391,53 @@ namespace SparkyStudios::Audio::Amplitude
         }
     }
 
-    void Mixer::OnSoundStarted(SoundData* snd)
+    bool Mixer::IsInsideThreadMutex() const
     {
-        auto* sound = static_cast<SoundInstance*>(snd->userData);
+        return _insideAudioThreadMutex;
+    }
+
+    void Mixer::PushCommand(const MixerCommand& command)
+    {
+        _commandsStack.push(command);
+    }
+
+    void Mixer::ExecuteCommands()
+    {
+        while (!_commandsStack.empty())
+        {
+            const auto& command = _commandsStack.front();
+            command.callback();
+            _commandsStack.pop();
+        }
+    }
+
+    void Mixer::OnSoundStarted(const SoundData* data)
+    {
+        const auto* sound = static_cast<SoundInstance*>(data->userData);
         CallLogFunc("Started sound: " AM_OS_CHAR_FMT "\n", sound->GetSound()->GetFilename());
     }
 
-    void Mixer::OnSoundPaused(SoundData* snd)
+    void Mixer::OnSoundPaused(const SoundData* data)
     {
-        auto* sound = static_cast<SoundInstance*>(snd->userData);
+        const auto* sound = static_cast<SoundInstance*>(data->userData);
         CallLogFunc("Paused sound: " AM_OS_CHAR_FMT "\n", sound->GetSound()->GetFilename());
     }
 
-    void Mixer::OnSoundResumed(SoundData* snd)
+    void Mixer::OnSoundResumed(const SoundData* data)
     {
-        auto* sound = static_cast<SoundInstance*>(snd->userData);
+        const auto* sound = static_cast<SoundInstance*>(data->userData);
         CallLogFunc("Resumed sound: " AM_OS_CHAR_FMT "\n", sound->GetSound()->GetFilename());
     }
 
-    void Mixer::OnSoundStopped(SoundData* snd)
+    void Mixer::OnSoundStopped(const SoundData* data)
     {
-        auto* sound = static_cast<SoundInstance*>(snd->userData);
+        const auto* sound = static_cast<SoundInstance*>(data->userData);
         CallLogFunc("Stopped sound: " AM_OS_CHAR_FMT "\n", sound->GetSound()->GetFilename());
     }
 
-    bool Mixer::OnSoundLooped(SoundData* snd)
+    bool Mixer::OnSoundLooped(const SoundData* data)
     {
-        auto* sound = static_cast<SoundInstance*>(snd->userData);
+        auto* sound = static_cast<SoundInstance*>(data->userData);
         CallLogFunc("Looped sound: " AM_OS_CHAR_FMT "\n", sound->GetSound()->GetFilename());
 
         ++sound->_currentLoopCount;
@@ -416,20 +452,20 @@ namespace SparkyStudios::Audio::Amplitude
         return true;
     }
 
-    AmUInt64 Mixer::OnSoundStream(SoundData* sound, AmUInt64 offset, AmUInt64 frames)
+    AmUInt64 Mixer::OnSoundStream(const SoundData* data, AmUInt64 offset, AmUInt64 frames)
     {
-        if (sound->stream)
+        if (data->stream)
         {
-            auto* snd = static_cast<SoundInstance*>(sound->userData);
-            return snd->GetAudio(offset, frames);
+            const auto* sound = static_cast<SoundInstance*>(data->userData);
+            return sound->GetAudio(offset, frames);
         }
 
         return 0;
     }
 
-    void Mixer::OnSoundEnded(SoundData* snd)
+    void Mixer::OnSoundEnded(const SoundData* data)
     {
-        const auto* sound = static_cast<SoundInstance*>(snd->userData);
+        const auto* sound = static_cast<SoundInstance*>(data->userData);
         CallLogFunc("Ended sound: " AM_OS_CHAR_FMT "\n", sound->GetSound()->GetFilename());
 
         if (const Engine* engine = Engine::GetInstance(); engine->GetState()->stopping)
@@ -447,9 +483,9 @@ namespace SparkyStudios::Audio::Amplitude
         {
             const Collection* collection = sound->GetCollection();
             AMPLITUDE_ASSERT(collection != nullptr); // Should always have a collection for contained sound instances.
-            const CollectionDefinition* config = collection->GetCollectionDefinition();
 
-            if (config->play_mode() == CollectionPlayMode_PlayAll)
+            if (const CollectionDefinition* config = collection->GetCollectionDefinition();
+                config->play_mode() == CollectionPlayMode_PlayAll)
             {
                 if (channel->Valid())
                 {
@@ -487,19 +523,27 @@ namespace SparkyStudios::Audio::Amplitude
         delete sound;
     }
 
-    void Mixer::OnSoundDestroyed(SoundData* snd)
+    void Mixer::OnSoundDestroyed(const SoundData* data)
     {
-        LockAudioMutex();
+        MixerCommandCallback callback = [data]() -> bool
+        {
+            auto* sound = static_cast<SoundInstance*>(data->userData);
+            sound->Destroy();
+            return true;
+        };
 
-        auto* sound = static_cast<SoundInstance*>(snd->userData);
-        sound->Destroy();
+        if (_insideAudioThreadMutex)
+        {
+            PushCommand({ callback });
+            return;
+        }
 
-        UnlockAudioMutex();
+        callback();
     }
 
     void Mixer::MixLayer(MixerLayer* layer, AudioBuffer buffer, AmUInt32 bufferSize, AmUInt32 samples)
     {
-        AmInt32 numChannels = _deviceChannels;
+        AmUInt32 numChannels = _deviceChannels;
 
         // load flag value atomically first
         PlayStateFlag flag = AMPLIMIX_LOAD(&layer->flag);
@@ -509,10 +553,10 @@ namespace SparkyStudios::Audio::Amplitude
             return;
 
         // atomically load cursor
-        AmInt32 cursor = AMPLIMIX_LOAD(&layer->cursor);
+        AmUInt32 cursor = AMPLIMIX_LOAD(&layer->cursor);
 
         // atomically load left and right gain
-        hmm_vec2 g = AMPLIMIX_LOAD(&layer->gain);
+        const hmm_vec2 g = AMPLIMIX_LOAD(&layer->gain);
         const float gain = AMPLIMIX_LOAD(&_masterGain);
         const auto lGain = AudioDataUnit(AMPLIMIX_FX_FROM_FLOAT(g.X * gain));
         const auto rGain = AudioDataUnit(AMPLIMIX_FX_FROM_FLOAT(g.Y * gain));
@@ -521,7 +565,7 @@ namespace SparkyStudios::Audio::Amplitude
         if (layer->snd != nullptr && layer->snd->stream)
         {
             // mix sound per chunk of streamed data
-            AmInt32 c = samples;
+            AmUInt32 c = samples;
             while (c > 0 && flag != PLAY_STATE_FLAG_MIN)
             {
                 // update flag value
@@ -535,7 +579,7 @@ namespace SparkyStudios::Audio::Amplitude
                 AmUInt64 aChunkSize = AM_VALUE_ALIGN(chunkSize, 4) >> 3;
 #else
                 AmUInt64 aChunkSize = chunkSize * numChannels;
-#endif
+#endif // AM_SSE_INTRINSICS
                 AmUInt64 len = OnSoundStream(layer->snd, cursor, chunkSize);
 
                 // having 0 here mainly means that we have reached
@@ -582,16 +626,11 @@ namespace SparkyStudios::Audio::Amplitude
             OnSoundEnded(layer->snd);
     }
 
-    static AmInt16 ProcessSample(size_t i)
-    {
-        return 0;
-    }
-
-    AmInt32 Mixer::MixMono(
-        MixerLayer* layer, bool loop, AmInt32 cursor, AudioDataUnit lGain, AudioDataUnit rGain, AudioBuffer buffer, AmUInt32 bufferSize)
+    AmUInt32 Mixer::MixMono(
+        MixerLayer* layer, bool loop, AmUInt32 cursor, AudioDataUnit lGain, AudioDataUnit rGain, AudioBuffer buffer, AmUInt32 bufferSize)
     {
         // cache cursor
-        AmInt32 old = cursor;
+        AmUInt32 old = cursor;
 
         // regular playback
         for (AmUInt32 i = 0; i < bufferSize; i += 2)
@@ -616,56 +655,52 @@ namespace SparkyStudios::Audio::Amplitude
                 }
             }
 
-            // mix if cursor within sound
-            if (cursor >= 0)
+            AmUInt32 off;
+
+            if (layer->snd->stream)
             {
-                AmUInt32 off;
-
-                if (layer->snd->stream)
-                {
-                    // when streaming we always fit the data buffer,
-                    // otherwise something is wrong
-                    off = i / 2;
-                }
-                else
-                {
-#if defined(AM_SSE_INTRINSICS)
-                    off = (cursor % layer->snd->length) >> 4;
-#else
-                    off = (cursor % layer->snd->length);
-#endif // AM_SSE_INTRINSICS
-                }
-
-                AudioDataUnit sample = layer->snd->chunk->buffer[off];
-
-#if defined(AM_SSE_INTRINSICS)
-                auto gain = lGain.interleaveLow(rGain);
-                AmInt32 j = 0;
-                // buffer[i] = std::fma(sample.interleaveLow(sample), gain, buffer[i]);
-                // buffer[i + 1] = std::fma(sample.interleaveHigh(sample), gain, buffer[i + 1]);
-                buffer[i] += sample.interleaveLow(sample).apply(
-                    [gain, &j](AmInt16 sample) -> AmInt16
-                    {
-                        return (sample * gain[j++]) >> AMPLIMIX_FX_BITS;
-                    });
-                j = 0;
-                buffer[i + 1] += sample.interleaveHigh(sample).apply(
-                    [gain, &j](AmInt16 sample) -> AmInt16
-                    {
-                        return (sample * gain[j++]) >> AMPLIMIX_FX_BITS;
-                    });
-#else
-                buffer[i] += (sample * lGain) >> AMPLIMIX_FX_BITS;
-                buffer[i + 1] += (sample * rGain) >> AMPLIMIX_FX_BITS;
-#endif
+                // when streaming we always fit the data buffer,
+                // otherwise something is wrong
+                off = i / 2;
             }
+            else
+            {
+#if defined(AM_SSE_INTRINSICS)
+                off = (cursor % layer->snd->length) >> 4;
+#else
+                off = (cursor % layer->snd->length);
+#endif // AM_SSE_INTRINSICS
+            }
+
+            AudioDataUnit sample = layer->snd->chunk->buffer[off];
+
+#if defined(AM_SSE_INTRINSICS)
+            auto gain = lGain.interleaveLow(rGain);
+            AmInt32 j = 0;
+            // buffer[i] = std::fma(sample.interleaveLow(sample), gain, buffer[i]);
+            // buffer[i + 1] = std::fma(sample.interleaveHigh(sample), gain, buffer[i + 1]);
+            buffer[i] += sample.interleaveLow(sample).apply(
+                [gain, &j](AmInt16 sample) -> AmInt16
+                {
+                    return (sample * gain[j++]) >> AMPLIMIX_FX_BITS;
+                });
+            j = 0;
+            buffer[i + 1] += sample.interleaveHigh(sample).apply(
+                [gain, &j](AmInt16 sample) -> AmInt16
+                {
+                    return (sample * gain[j++]) >> AMPLIMIX_FX_BITS;
+                });
+#else
+            buffer[i] += (sample * lGain) >> AMPLIMIX_FX_BITS;
+            buffer[i + 1] += (sample * rGain) >> AMPLIMIX_FX_BITS;
+#endif // AM_SSE_INTRINSICS
 
             // advance cursor
 #if defined(AM_SSE_INTRINSICS)
             cursor += 16;
 #else
             cursor++;
-#endif
+#endif // AM_SSE_INTRINSICS
         }
 
         // swap back cursor if unchanged
@@ -676,11 +711,11 @@ namespace SparkyStudios::Audio::Amplitude
         return cursor;
     }
 
-    AmInt32 Mixer::MixStereo(
-        MixerLayer* layer, bool loop, AmInt32 cursor, AudioDataUnit lGain, AudioDataUnit rGain, AudioBuffer buffer, AmUInt32 bufferSize)
+    AmUInt32 Mixer::MixStereo(
+        MixerLayer* layer, bool loop, AmUInt32 cursor, AudioDataUnit lGain, AudioDataUnit rGain, AudioBuffer buffer, AmUInt32 bufferSize)
     {
         // cache cursor
-        AmInt32 old = cursor;
+        AmUInt32 old = cursor;
 
         // regular playback
         for (AmUInt32 i = 0; i < bufferSize; i += 2)
@@ -705,54 +740,50 @@ namespace SparkyStudios::Audio::Amplitude
                 }
             }
 
-            // mix if cursor within sound
-            if (cursor >= 0)
+            AmUInt32 off;
+
+            if (layer->snd->stream)
             {
-                AmUInt32 off;
-
-                if (layer->snd->stream)
-                {
-                    // when streaming we always fit the data buffer,
-                    // otherwise something is wrong
-                    off = i;
-                }
-                else
-                {
-#if defined(AM_SSE_INTRINSICS)
-                    off = (cursor % layer->snd->length) >> 3;
-#else
-                    off = (cursor % layer->snd->length) << 1;
-#endif // AM_SSE_INTRINSICS
-                }
-
-#if defined(AM_SSE_INTRINSICS)
-                auto gain = lGain.interleaveLow(rGain);
-                AmInt32 j = 0;
-                // buffer[i] = std::fma(layer->snd->chunk->buffer[off], gain, buffer[i]);
-                // buffer[i + 1] = std::fma(layer->snd->chunk->buffer[off + 1], gain, buffer[i + 1]);
-                buffer[i] += layer->snd->chunk->buffer[off].apply(
-                    [gain, &j](AmInt16 sample) -> AmInt16
-                    {
-                        return (sample * gain[j++]) >> AMPLIMIX_FX_BITS;
-                    });
-                j = 0;
-                buffer[i + 1] += layer->snd->chunk->buffer[off + 1].apply(
-                    [gain, &j](AmInt16 sample) -> AmInt16
-                    {
-                        return (sample * gain[j++]) >> AMPLIMIX_FX_BITS;
-                    });
-#else
-                buffer[i] += (layer->snd->chunk->buffer[off] * lGain) >> AMPLIMIX_FX_BITS;
-                buffer[i + 1] += (layer->snd->chunk->buffer[off + 1] * rGain) >> AMPLIMIX_FX_BITS;
-#endif
+                // when streaming we always fit the data buffer,
+                // otherwise something is wrong
+                off = i;
             }
+            else
+            {
+#if defined(AM_SSE_INTRINSICS)
+                off = (cursor % layer->snd->length) >> 3;
+#else
+                off = (cursor % layer->snd->length) << 1;
+#endif // AM_SSE_INTRINSICS
+            }
+
+#if defined(AM_SSE_INTRINSICS)
+            auto gain = lGain.interleaveLow(rGain);
+            AmInt32 j = 0;
+            // buffer[i] = std::fma(layer->snd->chunk->buffer[off], gain, buffer[i]);
+            // buffer[i + 1] = std::fma(layer->snd->chunk->buffer[off + 1], gain, buffer[i + 1]);
+            buffer[i] += layer->snd->chunk->buffer[off].apply(
+                [gain, &j](AmInt16 sample) -> AmInt16
+                {
+                    return (sample * gain[j++]) >> AMPLIMIX_FX_BITS;
+                });
+            j = 0;
+            buffer[i + 1] += layer->snd->chunk->buffer[off + 1].apply(
+                [gain, &j](AmInt16 sample) -> AmInt16
+                {
+                    return (sample * gain[j++]) >> AMPLIMIX_FX_BITS;
+                });
+#else
+            buffer[i] += (layer->snd->chunk->buffer[off] * lGain) >> AMPLIMIX_FX_BITS;
+            buffer[i + 1] += (layer->snd->chunk->buffer[off + 1] * rGain) >> AMPLIMIX_FX_BITS;
+#endif // AM_SSE_INTRINSICS
 
             // advance cursor
 #if defined(AM_SSE_INTRINSICS)
             cursor += 16;
 #else
             cursor++;
-#endif
+#endif // AM_SSE_INTRINSICS
         }
 
         // swap back cursor if unchanged
@@ -766,13 +797,12 @@ namespace SparkyStudios::Audio::Amplitude
     MixerLayer* Mixer::GetLayer(AmUInt32 layer)
     {
         // get layer based on the lowest bits of layer id
-        return &_layers[layer & AMPLIMIX_LMASK];
+        return &_layers[layer & kAmplimixLayersMask];
     }
 
     void Mixer::LockAudioMutex()
     {
-        if (_insideAudioThreadMutex)
-            return;
+        AMPLITUDE_ASSERT(!_insideAudioThreadMutex);
 
         if (_audioThreadMutex)
         {
@@ -784,8 +814,7 @@ namespace SparkyStudios::Audio::Amplitude
 
     void Mixer::UnlockAudioMutex()
     {
-        if (!_insideAudioThreadMutex)
-            return;
+        AMPLITUDE_ASSERT(_insideAudioThreadMutex);
 
         if (_audioThreadMutex)
         {
