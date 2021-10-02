@@ -81,6 +81,7 @@ set(SA_SOURCE
     include/SparkyStudios/Audio/Amplitude/Sound/Attenuation.h
     include/SparkyStudios/Audio/Amplitude/Sound/Collection.h
     include/SparkyStudios/Audio/Amplitude/Sound/Fader.h
+    include/SparkyStudios/Audio/Amplitude/Sound/Filter.h
     include/SparkyStudios/Audio/Amplitude/Sound/RTPC.h
     include/SparkyStudios/Audio/Amplitude/Sound/Scheduler.h
     include/SparkyStudios/Audio/Amplitude/Sound/Sound.h
@@ -159,12 +160,13 @@ set(SA_SOURCE
     src/Sound/AttenuationShapes.h
     src/Sound/Collection.cpp
     src/Sound/Fader.cpp
+    src/Sound/Filter.cpp
+    src/Sound/RefCounter.cpp
     src/Sound/Rtpc.cpp
     src/Sound/Sound.cpp
     src/Sound/SoundBank.cpp
     src/Sound/Switch.cpp
     src/Sound/SwitchContainer.cpp
-    src/Sound/RefCounter.cpp
 
     src/Utils/SmMalloc/smmalloc_generic.cpp
     src/Utils/SmMalloc/smmalloc_tls.cpp
