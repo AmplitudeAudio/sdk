@@ -255,7 +255,7 @@ namespace SparkyStudios::Audio::Amplitude
 
         // Create the internal engine state
         _state = new EngineInternalState();
-        _state->version = Version();
+        _state->version = &Amplitude::Version();
 
         // Load the audio driver
         if (config->driver())

@@ -24,25 +24,18 @@ namespace SparkyStudios::Audio::Amplitude
 #define AM_STRING_EXPAND(X) #X
 #define AM_STRING(X) AM_STRING_EXPAND(X)
 
-    /// @var kVersion
-    /// @brief String which identifies the current version of Amplitude.
-    ///
-    /// @ref kVersion is used by Google developers to identify which applications
-    /// uploaded to Google Play are using this library. This allows the development
-    /// team at Google to determine the popularity of the library.
-    /// How it works: Applications that are uploaded to the Google Play Store are
-    /// scanned for this version string. We track which applications are using it
-    /// to measure popularity. You are free to remove it (of course) but we would
-    /// appreciate if you left it in.
+    /**
+     * @brief String which identifies the current version of Amplitude.
+     */
     // clang-format off
     static const struct Version kVersion = {
         AM_VERSION_MAJOR,
         AM_VERSION_MINOR,
         AM_VERSION_REVISION,
-        "Amplitude "
-        AM_STRING(SA_VERSION_MAJOR) "."
-        AM_STRING(SA_VERSION_MINOR) "."
-        AM_STRING(SA_VERSION_REVISION)
+        "Amplitude Audio"
+        AM_STRING(AM_VERSION_MAJOR) "."
+        AM_STRING(AM_VERSION_MINOR) "."
+        AM_STRING(AM_VERSION_REVISION)
     };
     // clang-format on
 
