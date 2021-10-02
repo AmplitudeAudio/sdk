@@ -99,45 +99,45 @@ namespace SparkyStudios::Audio::Amplitude
         return true;
     }
 
-    void Mixer::PostInit(AmUInt32 bufferSize, AmUInt32 sampleRate, AmUInt32 channels)
+    void Mixer::PostInit(AmUInt32 bufferSize, AmUInt32 sampleRate, AmUInt16 channels)
     {
         _deviceBufferSize = bufferSize;
         _deviceSampleRate = sampleRate;
         _deviceChannels = channels;
     }
 
-    AmUInt32 Mixer::Mix(AmVoidPtr mixBuffer, AmUInt32 frameCount)
+    AmUInt64 Mixer::Mix(AmVoidPtr mixBuffer, AmUInt64 frameCount)
     {
         LockAudioMutex();
 
-        AmUInt32 numChannels = _deviceChannels;
+        const AmUInt16 numChannels = _deviceChannels;
 
         auto* buffer = static_cast<AmInt16Buffer>(mixBuffer);
         memset(buffer, 0, frameCount * numChannels * sizeof(AmInt16));
 
         // output remaining frames in buffer before mixing new ones
-        AmUInt32 rnum = frameCount;
+        AmUInt64 frames = frameCount;
 
         // only do this if there are old frames
         if (_remainingFrames)
         {
-            if (rnum > _remainingFrames)
+            if (frames > _remainingFrames)
             {
-                // rnum bigger than remaining frames (usual case)
+                // frames bigger than remaining frames (usual case)
                 memcpy(buffer, _oldFrames, _remainingFrames * numChannels * sizeof(AmInt16));
-                rnum -= _remainingFrames;
+                frames -= _remainingFrames;
                 buffer += _remainingFrames * numChannels;
                 _remainingFrames = 0;
             }
             else
             {
-                // rnum smaller equal remaining frames (rare case)
-                memcpy(buffer, _oldFrames, rnum * numChannels * sizeof(AmInt16));
-                _remainingFrames -= rnum;
+                // frames smaller equal remaining frames (rare case)
+                memcpy(buffer, _oldFrames, frames * numChannels * sizeof(AmInt16));
+                _remainingFrames -= frames;
 
                 // move back remaining old frames if any
                 if (_remainingFrames)
-                    memmove(_oldFrames, _oldFrames + rnum * numChannels, (3 - rnum) * numChannels * sizeof(AmInt16));
+                    memmove(_oldFrames, _oldFrames + frames * numChannels, (3 - frames) * numChannels * sizeof(AmInt16));
 
                 // return
                 return frameCount;
@@ -146,45 +146,45 @@ namespace SparkyStudios::Audio::Amplitude
 
 #if defined(AM_SSE_INTRINSICS)
         // aSize in Vc::int16_v and multiple of 4
-        AmUInt32 aSize = AM_VALUE_ALIGN(rnum, 4) >> 3;
+        const AmUInt64 aSize = AM_VALUE_ALIGN(frames, 4) >> 3;
 #else
         // aSize in AmInt16
-        AmUInt32 aSize = rnum * numChannels;
+        const AmUInt64 aSize = frames * numChannels;
 #endif // AM_SSE_INTRINSICS
 
-        // dynamically sized aligned buffer
-        AudioBuffer align = new AudioDataUnit[aSize];
+        // dynamically sized buffer
+        auto* align = new AudioDataUnit[aSize];
 
-        // clear the aligned buffer using SSE assignment
+        // clear the aligned buffer
         for (AmUInt32 i = 0; i < aSize; i++)
             align[i] = AudioDataUnit(0);
 
         // begin actual mixing, caching the volume first
-        for (auto& layer : _layers)
+        for (auto&& layer : _layers)
         {
-            MixLayer(&layer, align, aSize, rnum);
+            MixLayer(&layer, align, aSize, frames);
         }
 
-        // perform clipping using SSE min and max
-        auto neg1 = AudioDataUnit(INT16_MIN), pos1 = AudioDataUnit(INT16_MAX);
+        // perform clipping using min and max
+        const auto lower = AudioDataUnit(INT16_MIN), upper = AudioDataUnit(INT16_MAX);
         for (AmUInt32 i = 0; i < aSize; i++)
         {
-            align[i] = (std::min)((std::max)(align[i], neg1), pos1);
+            align[i] = (std::min)((std::max)(align[i], lower), upper);
         }
 
-        // copy rnum frames, leaving possible remainder
-        memcpy(buffer, reinterpret_cast<AmInt16*>(align), rnum * numChannels * sizeof(AmInt16));
+        // copy frames, leaving possible remainder
+        memcpy(buffer, reinterpret_cast<AmInt16*>(align), frames * numChannels * sizeof(AmInt16));
 
         // determine remaining number of frames
 #if defined(AM_SSE_INTRINSICS)
-        _remainingFrames = aSize * 8 - rnum;
+        _remainingFrames = aSize * 8 - frames;
 #else
         _remainingFrames = 0; // Should not have remaining frames without SSE optimization
 #endif // AM_SSE_INTRINSICS
 
         // copy remaining frames to buffer inside the mixer struct
         if (_remainingFrames)
-            memcpy(_oldFrames, reinterpret_cast<AmInt16*>(align) + rnum * numChannels, _remainingFrames * numChannels * sizeof(AmInt16));
+            memcpy(_oldFrames, reinterpret_cast<AmInt16*>(align) + frames * numChannels, _remainingFrames * numChannels * sizeof(AmInt16));
 
         delete[] align;
 
@@ -201,7 +201,7 @@ namespace SparkyStudios::Audio::Amplitude
     }
 
     AmUInt32 Mixer::PlayAdvanced(
-        SoundData* sound, PlayStateFlag flag, float gain, float pan, AmUInt32 startFrame, AmUInt32 endFrame, AmUInt32 id, AmUInt32 layer)
+        SoundData* sound, PlayStateFlag flag, float gain, float pan, AmUInt64 startFrame, AmUInt64 endFrame, AmUInt32 id, AmUInt32 layer)
     {
         if (flag <= PLAY_STATE_FLAG_MIN || flag >= PLAY_STATE_FLAG_MAX)
             return 0; // invalid flag
@@ -273,7 +273,7 @@ namespace SparkyStudios::Audio::Amplitude
         return false;
     }
 
-    bool Mixer::SetCursor(AmUInt32 id, AmUInt32 layer, AmUInt32 cursor)
+    bool Mixer::SetCursor(AmUInt32 id, AmUInt32 layer, AmUInt64 cursor)
     {
         auto* lay = GetLayer(layer);
 
@@ -442,8 +442,7 @@ namespace SparkyStudios::Audio::Amplitude
 
         ++sound->_currentLoopCount;
 
-        const AmUInt32 loopCount = sound->GetSettings().m_loopCount;
-        if (sound->_currentLoopCount == loopCount)
+        if (const AmUInt32 loopCount = sound->GetSettings().m_loopCount; sound->_currentLoopCount == loopCount)
         {
             sound->GetChannel()->Halt();
             return false;
@@ -541,9 +540,9 @@ namespace SparkyStudios::Audio::Amplitude
         callback();
     }
 
-    void Mixer::MixLayer(MixerLayer* layer, AudioBuffer buffer, AmUInt32 bufferSize, AmUInt32 samples)
+    void Mixer::MixLayer(MixerLayer* layer, AudioBuffer buffer, AmUInt64 bufferSize, AmUInt64 samples)
     {
-        AmUInt32 numChannels = _deviceChannels;
+        const AmUInt16 numChannels = _deviceChannels;
 
         // load flag value atomically first
         PlayStateFlag flag = AMPLIMIX_LOAD(&layer->flag);
@@ -553,7 +552,7 @@ namespace SparkyStudios::Audio::Amplitude
             return;
 
         // atomically load cursor
-        AmUInt32 cursor = AMPLIMIX_LOAD(&layer->cursor);
+        AmUInt64 cursor = AMPLIMIX_LOAD(&layer->cursor);
 
         // atomically load left and right gain
         const hmm_vec2 g = AMPLIMIX_LOAD(&layer->gain);
@@ -565,7 +564,7 @@ namespace SparkyStudios::Audio::Amplitude
         if (layer->snd != nullptr && layer->snd->stream)
         {
             // mix sound per chunk of streamed data
-            AmUInt32 c = samples;
+            AmUInt64 c = samples;
             while (c > 0 && flag != PLAY_STATE_FLAG_MIN)
             {
                 // update flag value
@@ -574,13 +573,13 @@ namespace SparkyStudios::Audio::Amplitude
                 if (flag == PLAY_STATE_FLAG_MIN)
                     break;
 
-                AmUInt64 chunkSize = AM_MIN(layer->snd->chunk->frames, c);
+                const AmUInt64 chunkSize = AM_MIN(layer->snd->chunk->frames, c);
 #if defined(AM_SSE_INTRINSICS)
-                AmUInt64 aChunkSize = AM_VALUE_ALIGN(chunkSize, 4) >> 3;
+                const AmUInt64 aChunkSize = AM_VALUE_ALIGN(chunkSize, 4) >> 3;
 #else
-                AmUInt64 aChunkSize = chunkSize * numChannels;
+                const AmUInt64 aChunkSize = chunkSize * numChannels;
 #endif // AM_SSE_INTRINSICS
-                AmUInt64 len = OnSoundStream(layer->snd, cursor, chunkSize);
+                const AmUInt64 len = OnSoundStream(layer->snd, cursor, chunkSize);
 
                 // having 0 here mainly means that we have reached
                 // the end of the stream and the audio is not looping.
@@ -626,14 +625,14 @@ namespace SparkyStudios::Audio::Amplitude
             OnSoundEnded(layer->snd);
     }
 
-    AmUInt32 Mixer::MixMono(
-        MixerLayer* layer, bool loop, AmUInt32 cursor, AudioDataUnit lGain, AudioDataUnit rGain, AudioBuffer buffer, AmUInt32 bufferSize)
+    AmUInt64 Mixer::MixMono(
+        MixerLayer* layer, bool loop, AmUInt64 cursor, AudioDataUnit lGain, AudioDataUnit rGain, AudioBuffer buffer, AmUInt64 bufferSize)
     {
         // cache cursor
-        AmUInt32 old = cursor;
+        AmUInt64 old = cursor;
 
         // regular playback
-        for (AmUInt32 i = 0; i < bufferSize; i += 2)
+        for (AmUInt64 i = 0; i < bufferSize; i += 2)
         {
             // check if cursor at end
             if (cursor == layer->end)
@@ -655,7 +654,7 @@ namespace SparkyStudios::Audio::Amplitude
                 }
             }
 
-            AmUInt32 off;
+            AmUInt64 off;
 
             if (layer->snd->stream)
             {
@@ -682,17 +681,17 @@ namespace SparkyStudios::Audio::Amplitude
             buffer[i] += sample.interleaveLow(sample).apply(
                 [gain, &j](AmInt16 sample) -> AmInt16
                 {
-                    return (sample * gain[j++]) >> AMPLIMIX_FX_BITS;
+                    return static_cast<AmInt16>((sample * gain[j++]) >> AMPLIMIX_FX_BITS);
                 });
             j = 0;
             buffer[i + 1] += sample.interleaveHigh(sample).apply(
                 [gain, &j](AmInt16 sample) -> AmInt16
                 {
-                    return (sample * gain[j++]) >> AMPLIMIX_FX_BITS;
+                    return static_cast<AmInt16>((sample * gain[j++]) >> AMPLIMIX_FX_BITS);
                 });
 #else
-            buffer[i] += (sample * lGain) >> AMPLIMIX_FX_BITS;
-            buffer[i + 1] += (sample * rGain) >> AMPLIMIX_FX_BITS;
+            buffer[i] += static_cast<AmInt16>((sample * lGain) >> AMPLIMIX_FX_BITS);
+            buffer[i + 1] += static_cast<AmInt16>((sample * rGain) >> AMPLIMIX_FX_BITS);
 #endif // AM_SSE_INTRINSICS
 
             // advance cursor
@@ -711,14 +710,14 @@ namespace SparkyStudios::Audio::Amplitude
         return cursor;
     }
 
-    AmUInt32 Mixer::MixStereo(
-        MixerLayer* layer, bool loop, AmUInt32 cursor, AudioDataUnit lGain, AudioDataUnit rGain, AudioBuffer buffer, AmUInt32 bufferSize)
+    AmUInt64 Mixer::MixStereo(
+        MixerLayer* layer, bool loop, AmUInt64 cursor, AudioDataUnit lGain, AudioDataUnit rGain, AudioBuffer buffer, AmUInt64 bufferSize)
     {
         // cache cursor
-        AmUInt32 old = cursor;
+        AmUInt64 old = cursor;
 
         // regular playback
-        for (AmUInt32 i = 0; i < bufferSize; i += 2)
+        for (AmUInt64 i = 0; i < bufferSize; i += 2)
         {
             // check if cursor at end
             if (cursor == layer->end)
@@ -740,7 +739,7 @@ namespace SparkyStudios::Audio::Amplitude
                 }
             }
 
-            AmUInt32 off;
+            AmUInt64 off;
 
             if (layer->snd->stream)
             {
@@ -765,17 +764,17 @@ namespace SparkyStudios::Audio::Amplitude
             buffer[i] += layer->snd->chunk->buffer[off].apply(
                 [gain, &j](AmInt16 sample) -> AmInt16
                 {
-                    return (sample * gain[j++]) >> AMPLIMIX_FX_BITS;
+                    return static_cast<AmInt16>((sample * gain[j++]) >> AMPLIMIX_FX_BITS);
                 });
             j = 0;
             buffer[i + 1] += layer->snd->chunk->buffer[off + 1].apply(
                 [gain, &j](AmInt16 sample) -> AmInt16
                 {
-                    return (sample * gain[j++]) >> AMPLIMIX_FX_BITS;
+                    return static_cast<AmInt16>((sample * gain[j++]) >> AMPLIMIX_FX_BITS);
                 });
 #else
-            buffer[i] += (layer->snd->chunk->buffer[off] * lGain) >> AMPLIMIX_FX_BITS;
-            buffer[i + 1] += (layer->snd->chunk->buffer[off + 1] * rGain) >> AMPLIMIX_FX_BITS;
+            buffer[i] += static_cast<AmInt16>((layer->snd->chunk->buffer[off] * lGain) >> AMPLIMIX_FX_BITS);
+            buffer[i + 1] += static_cast<AmInt16>((layer->snd->chunk->buffer[off + 1] * rGain) >> AMPLIMIX_FX_BITS);
 #endif // AM_SSE_INTRINSICS
 
             // advance cursor

@@ -26,7 +26,7 @@
 
 namespace SparkyStudios::Audio::Amplitude::Drivers
 {
-    static void miniaudio_mixer(ma_device* pDevice, AmVoidPtr pOutput, const void* pInput, ma_uint32 frameCount)
+    static void miniaudio_mixer(ma_device* pDevice, AmVoidPtr pOutput, AmConstVoidPtr pInput, ma_uint32 frameCount)
     {
         auto* mixer = static_cast<Mixer*>(pDevice->pUserData);
         mixer->Mix(pOutput, frameCount);
@@ -81,7 +81,7 @@ namespace SparkyStudios::Audio::Amplitude::Drivers
             }
 
             m_mixer->PostInit(
-                _device.playback.internalPeriodSizeInFrames, _device.playback.internalSampleRate, _device.playback.internalChannels);
+                _device.playback.internalPeriodSizeInFrames, _device.playback.internalSampleRate, static_cast<AmUInt16>(_device.playback.internalChannels));
         }
 
         if (ma_device_is_started(&_device) == MA_FALSE && ma_device_start(&_device) != MA_SUCCESS)

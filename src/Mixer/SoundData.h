@@ -23,19 +23,19 @@ namespace SparkyStudios::Audio::Amplitude
 {
     struct SoundChunk
     {
-        AmInt32 length;
-        AmInt32 frames;
+        AmUInt64 length;
+        AmUInt64 frames;
 
         AudioBuffer buffer;
 
-        static SoundChunk* CreateChunk(AmInt32 frames, AmInt32 channels);
+        static SoundChunk* CreateChunk(AmUInt64 frames, AmUInt16 channels);
         static void DestroyChunk(SoundChunk* chunk);
     };
 
     struct SoundData
     {
         SoundChunk* chunk;
-        AmInt32 length;
+        AmUInt64 length;
         AmVoidPtr userData;
         SoundFormat format;
         bool stream;

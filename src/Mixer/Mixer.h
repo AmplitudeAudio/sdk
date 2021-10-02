@@ -67,10 +67,10 @@ namespace SparkyStudios::Audio::Amplitude
 
         AmUInt32 id; // playing id
         _Atomic(PlayStateFlag) flag; // state
-        _Atomic(AmUInt32) cursor; // cursor
+        _Atomic(AmUInt64) cursor; // cursor
         _Atomic(hmm_vec2) gain; // gain
         SoundData* snd; // sound data
-        AmUInt32 start, end; // start and end frames
+        AmUInt64 start, end; // start and end frames
     };
 
     struct MixerCommand
@@ -106,9 +106,9 @@ namespace SparkyStudios::Audio::Amplitude
          * @param sampleRate The sample rate accepted bu the playback device.
          * @param channels The number of channels the playback device will output.
          */
-        void PostInit(AmUInt32 bufferSize, AmUInt32 sampleRate, AmUInt32 channels);
+        void PostInit(AmUInt32 bufferSize, AmUInt32 sampleRate, AmUInt16 channels);
 
-        AmUInt32 Mix(AmVoidPtr mixBuffer, AmUInt32 frameCount);
+        AmUInt64 Mix(AmVoidPtr mixBuffer, AmUInt64 frameCount);
 
         AmUInt32 Play(SoundData* sound, PlayStateFlag flag, float gain, float pan, AmUInt32 id, AmUInt32 layer);
 
@@ -117,14 +117,14 @@ namespace SparkyStudios::Audio::Amplitude
             PlayStateFlag flag,
             float gain,
             float pan,
-            AmUInt32 startFrame,
-            AmUInt32 endFrame,
+            AmUInt64 startFrame,
+            AmUInt64 endFrame,
             AmUInt32 id,
             AmUInt32 layer);
 
         bool SetGainPan(AmUInt32 id, AmUInt32 layer, float gain, float pan);
 
-        bool SetCursor(AmUInt32 id, AmUInt32 layer, AmUInt32 cursor);
+        bool SetCursor(AmUInt32 id, AmUInt32 layer, AmUInt64 cursor);
 
         bool SetPlayState(AmUInt32 id, AmUInt32 layer, PlayStateFlag flag);
 
@@ -152,23 +152,23 @@ namespace SparkyStudios::Audio::Amplitude
         AmUInt64 OnSoundStream(const SoundData* data, AmUInt64 offset, AmUInt64 frames);
         void OnSoundEnded(const SoundData* data);
         void OnSoundDestroyed(const SoundData* data);
-        void MixLayer(MixerLayer* layer, AudioBuffer buffer, AmUInt32 bufferSize, AmUInt32 samples);
-        AmUInt32 MixMono(
+        void MixLayer(MixerLayer* layer, AudioBuffer buffer, AmUInt64 bufferSize, AmUInt64 samples);
+        AmUInt64 MixMono(
             MixerLayer* layer,
             bool loop,
-            AmUInt32 cursor,
+            AmUInt64 cursor,
             AudioDataUnit lGain,
             AudioDataUnit rGain,
             AudioBuffer buffer,
-            AmUInt32 bufferSize);
-        AmUInt32 MixStereo(
+            AmUInt64 bufferSize);
+        AmUInt64 MixStereo(
             MixerLayer* layer,
             bool loop,
-            AmUInt32 cursor,
+            AmUInt64 cursor,
             AudioDataUnit lGain,
             AudioDataUnit rGain,
             AudioBuffer buffer,
-            AmUInt32 bufferSize);
+            AmUInt64 bufferSize);
         MixerLayer* GetLayer(AmUInt32 layer);
         void LockAudioMutex();
         void UnlockAudioMutex();
@@ -182,16 +182,16 @@ namespace SparkyStudios::Audio::Amplitude
 
         AmUInt32 _requestedBufferSize;
         AmUInt32 _requestedSampleRate;
-        AmUInt32 _requestedChannels;
+        AmUInt16 _requestedChannels;
 
         AmUInt32 _deviceBufferSize;
         AmUInt32 _deviceSampleRate;
-        AmUInt32 _deviceChannels;
+        AmUInt16 _deviceChannels;
 
         AmUInt32 _nextId;
         _Atomic(float) _masterGain;
         MixerLayer _layers[kAmplimixLayersCount];
-        AmUInt32 _remainingFrames;
+        AmUInt64 _remainingFrames;
         AmInt16 _oldFrames[6];
     };
 } // namespace SparkyStudios::Audio::Amplitude

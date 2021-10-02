@@ -21,12 +21,12 @@ namespace SparkyStudios::Audio::Amplitude
 {
     static sm_allocator soundChunkAllocator = _sm_allocator_create(1, (16 * 1024 * 1024));
 
-    static SoundData* CreateSoundData(const SoundFormat& format, SoundChunk* chunk, AmVoidPtr userData, AmInt32 length, bool stream)
+    static SoundData* CreateSoundData(const SoundFormat& format, SoundChunk* chunk, AmVoidPtr userData, AmUInt64 length, bool stream)
     {
         if (format.GetNumChannels() < 1 || format.GetNumChannels() > 2 || length < 1)
             return nullptr;
 
-        AmInt32 alignedLength = AM_VALUE_ALIGN(length, 4);
+        AmUInt64 alignedLength = AM_VALUE_ALIGN(length, 4);
         auto* sound = new SoundData();
 
         sound->chunk = chunk;
@@ -38,15 +38,15 @@ namespace SparkyStudios::Audio::Amplitude
         return sound;
     }
 
-    SoundChunk* SoundChunk::CreateChunk(AmInt32 frames, AmInt32 channels)
+    SoundChunk* SoundChunk::CreateChunk(AmUInt64 frames, AmUInt16 channels)
     {
-        AmInt32 alignedLength = AM_VALUE_ALIGN(frames * channels, 4);
+        AmUInt64 alignedLength = AM_VALUE_ALIGN(frames * channels, 4);
 
         auto* chunk = new SoundChunk();
 
         chunk->frames = frames;
         chunk->length = alignedLength;
-        chunk->buffer = (AudioBuffer)_sm_malloc(soundChunkAllocator, alignedLength * sizeof(AmInt16), AM_SIMD_ALIGNMENT);
+        chunk->buffer = static_cast<AudioBuffer>(_sm_malloc(soundChunkAllocator, alignedLength * sizeof(AmInt16), AM_SIMD_ALIGNMENT));
 
         return chunk;
     }
