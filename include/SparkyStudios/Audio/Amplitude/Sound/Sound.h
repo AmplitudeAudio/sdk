@@ -282,7 +282,7 @@ namespace SparkyStudios::Audio::Amplitude
          *
          * @return The number of frames read.
          */
-        AmUInt64 GetAudio(AmUInt64 offset, AmUInt64 frames);
+        [[nodiscard]] AmUInt64 GetAudio(AmUInt64 offset, AmUInt64 frames) const;
 
         /**
          * @brief Destroys the audio sample loaded by this Sound and

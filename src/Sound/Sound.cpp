@@ -319,16 +319,16 @@ namespace SparkyStudios::Audio::Amplitude
         _userData = userData;
     }
 
-    AmUInt64 SoundInstance::GetAudio(AmUInt64 offset, AmUInt64 frames)
+    AmUInt64 SoundInstance::GetAudio(AmUInt64 offset, AmUInt64 frames) const
     {
         AMPLITUDE_ASSERT(Valid());
 
         if (_parent->_stream && _userData != nullptr)
         {
-            SoundData* data = static_cast<SoundData*>(_userData);
+            const auto* data = static_cast<SoundData*>(_userData);
 
             AmUInt64 n, l = frames, o = offset, r = 0;
-            AmInt16Buffer b = (AmInt16Buffer)data->chunk->buffer;
+            auto* b = reinterpret_cast<AmInt16Buffer>(data->chunk->buffer);
 
         Fill:
             n = _parent->_decoder->Stream(b, o, l);
