@@ -39,6 +39,7 @@ namespace SparkyStudios::Audio::Amplitude
             ATTRIBUTE_TYPE,
             ATTRIBUTE_FREQUENCY,
             ATTRIBUTE_RESONANCE,
+            ATTRIBUTE_GAIN,
             ATTRIBUTE_LAST
         };
 
@@ -47,13 +48,14 @@ namespace SparkyStudios::Audio::Amplitude
             TYPE_LOW_PASS = 0,
             TYPE_HIGH_PASS,
             TYPE_BAND_PASS,
+            TYPE_PEAK,
             TYPE_LAST
         };
 
         BiquadResonantFilter();
         ~BiquadResonantFilter() override = default;
 
-        AmResult Init(TYPE type, float frequency, float resonance);
+        AmResult Init(TYPE type, float frequency, float resonance, float gain);
 
         AmUInt32 GetParamCount() override;
 
@@ -71,6 +73,7 @@ namespace SparkyStudios::Audio::Amplitude
         AmInt32 _filterType;
         float _frequency;
         float _resonance;
+        float _gain;
     };
 
     class BiquadResonantFilterInstance : public FilterInstance

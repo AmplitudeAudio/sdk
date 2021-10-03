@@ -26,17 +26,19 @@ namespace SparkyStudios::Audio::Amplitude
     BiquadResonantFilter::BiquadResonantFilter()
         : _filterType(TYPE_LOW_PASS)
         , _frequency(1000.0f)
-        , _resonance(2.0f)
+        , _resonance(0.707107f)
+        , _gain(1.0f)
     {}
 
-    AmResult BiquadResonantFilter::Init(TYPE type, float frequency, float resonance)
+    AmResult BiquadResonantFilter::Init(TYPE type, float frequency, float resonance, float gain)
     {
-        if (type < 0 || type >= TYPE_LAST || frequency <= 0 || resonance <= 0)
+        if (type < 0 || type >= TYPE_LAST || frequency <= 0 || resonance <= 0 || gain <= 0)
             return AM_ERROR_INVALID_PARAMETER;
 
         _filterType = type;
         _frequency = frequency;
         _resonance = resonance;
+        _gain = gain;
 
         return AM_ERROR_NO_ERROR;
     }
@@ -76,6 +78,8 @@ namespace SparkyStudios::Audio::Amplitude
             return 8000.0f;
         case ATTRIBUTE_RESONANCE:
             return 20.0f;
+        case ATTRIBUTE_GAIN:
+            return 1.0f;
         default:
             return 1.0f;
         }
@@ -88,7 +92,7 @@ namespace SparkyStudios::Audio::Amplitude
         case ATTRIBUTE_FREQUENCY:
             return 10.0f;
         case ATTRIBUTE_RESONANCE:
-            return 0.1f;
+            return 0.707107f;
         default:
             return 0.0f;
         }
@@ -117,8 +121,9 @@ namespace SparkyStudios::Audio::Amplitude
             i.y2 = 0;
         }
 
-        Init(4);
+        Init(5);
 
+        m_parameters[BiquadResonantFilter::ATTRIBUTE_GAIN] = parent->_gain;
         m_parameters[BiquadResonantFilter::ATTRIBUTE_RESONANCE] = parent->_resonance;
         m_parameters[BiquadResonantFilter::ATTRIBUTE_FREQUENCY] = parent->_frequency;
         m_parameters[BiquadResonantFilter::ATTRIBUTE_TYPE] = static_cast<float>(parent->_filterType);
@@ -147,7 +152,7 @@ namespace SparkyStudios::Audio::Amplitude
     {
         if (m_numParamsChanged &
                 (1 << BiquadResonantFilter::ATTRIBUTE_FREQUENCY | 1 << BiquadResonantFilter::ATTRIBUTE_RESONANCE |
-                 1 << BiquadResonantFilter::ATTRIBUTE_TYPE) ||
+                 1 << BiquadResonantFilter::ATTRIBUTE_GAIN | 1 << BiquadResonantFilter::ATTRIBUTE_TYPE) ||
             sampleRate != _sampleRate)
         {
             _sampleRate = sampleRate;
@@ -182,16 +187,20 @@ namespace SparkyStudios::Audio::Amplitude
     {
         _isDirty = false;
 
+        const float q = m_parameters[BiquadResonantFilter::ATTRIBUTE_RESONANCE];
         const float omega = 2.0f * M_PI * m_parameters[BiquadResonantFilter::ATTRIBUTE_FREQUENCY] / static_cast<float>(_sampleRate);
         const float sinOmega = sinf(omega);
         const float cosOmega = cosf(omega);
-        const float alpha = sinOmega / (2.0f * m_parameters[BiquadResonantFilter::ATTRIBUTE_RESONANCE]);
-        const float scalar = 1.0f / (1.0f + alpha);
+        const float alpha = sinOmega / (2.0f * q);
+        const float mu = std::powf(10, (m_parameters[BiquadResonantFilter::ATTRIBUTE_GAIN] / 40));
+
+        float scalar;
 
         switch (static_cast<AmUInt32>(m_parameters[BiquadResonantFilter::ATTRIBUTE_TYPE]))
         {
         default:
         case BiquadResonantFilter::TYPE_LOW_PASS:
+            scalar = 1.0f / (1.0f + alpha);
             _a0 = AmBiquadFloatToFP(0.5f * (1.0f - cosOmega) * scalar);
             _a1 = AmBiquadFloatToFP((1.0f - cosOmega) * scalar);
             _a2 = _a0;
@@ -199,6 +208,7 @@ namespace SparkyStudios::Audio::Amplitude
             _b2 = AmBiquadFloatToFP((1.0f - alpha) * scalar);
             break;
         case BiquadResonantFilter::TYPE_HIGH_PASS:
+            scalar = 1.0f / (1.0f + alpha);
             _a0 = AmBiquadFloatToFP(0.5f * (1.0f + cosOmega) * scalar);
             _a1 = AmBiquadFloatToFP(-(1.0f + cosOmega) * scalar);
             _a2 = _a0;
@@ -206,11 +216,20 @@ namespace SparkyStudios::Audio::Amplitude
             _b2 = AmBiquadFloatToFP((1.0f - alpha) * scalar);
             break;
         case BiquadResonantFilter::TYPE_BAND_PASS:
-            _a0 = AmBiquadFloatToFP(alpha * scalar);
+            scalar = 1.0f / (1.0f + alpha);
+            _a0 = AmBiquadFloatToFP(q * alpha * scalar);
             _a1 = AmBiquadFloatToFP(0);
             _a2 = -_a0;
             _b1 = AmBiquadFloatToFP(-2.0f * cosOmega * scalar);
             _b2 = AmBiquadFloatToFP((1.0f - alpha) * scalar);
+            break;
+        case BiquadResonantFilter::TYPE_PEAK:
+            scalar = 1.0f / (1.0f + (alpha / mu));
+            _a0 = AmBiquadFloatToFP((1.0f + (alpha * mu)) * scalar);
+            _a1 = AmBiquadFloatToFP(-2.0f * cosOmega * scalar);
+            _a2 = AmBiquadFloatToFP((1.0f - (alpha * mu)) * scalar);
+            _b1 = AmBiquadFloatToFP(-2.0f * cosOmega * scalar);
+            _b2 = AmBiquadFloatToFP((1.0f - (alpha / mu)) * scalar);
             break;
         }
     }
