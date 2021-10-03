@@ -49,6 +49,7 @@ namespace SparkyStudios::Audio::Amplitude
             TYPE_HIGH_PASS,
             TYPE_BAND_PASS,
             TYPE_PEAK,
+            TYPE_NOTCHING,
             TYPE_LAST
         };
 

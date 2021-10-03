@@ -231,6 +231,14 @@ namespace SparkyStudios::Audio::Amplitude
             _b1 = AmBiquadFloatToFP(-2.0f * cosOmega * scalar);
             _b2 = AmBiquadFloatToFP((1.0f - (alpha / mu)) * scalar);
             break;
+        case BiquadResonantFilter::TYPE_NOTCHING:
+            scalar = 1.0f / (1.0f + alpha);
+            _a0 = AmBiquadFloatToFP(1.0f * scalar);
+            _a1 = AmBiquadFloatToFP(-2.0f * cosOmega * scalar);
+            _a2 = _a0;
+            _b1 = AmBiquadFloatToFP(-2.0f * cosOmega * scalar);
+            _b2 = AmBiquadFloatToFP((1.0f - alpha) * scalar);
+            break;
         }
     }
 } // namespace SparkyStudios::Audio::Amplitude
