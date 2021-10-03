@@ -43,6 +43,12 @@ namespace SparkyStudios::Audio::Amplitude
      * @brief The minimum fade duration in milliseconds.
      */
     constexpr AmTime kMinFadeDuration = 10.0;
+
+    /**
+     * @brief The number of bits to shift when processing audio data with floating point values.
+     */
+    constexpr AmInt32 kAmFixedPointShift = 14;
+
 } // namespace SparkyStudios::Audio::Amplitude
 
 #endif // SS_AMPLITUDE_AUDIO_CONSTANTS_H

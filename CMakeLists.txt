@@ -173,6 +173,7 @@ set(SA_SOURCE
     src/Utils/SmMalloc/smmalloc.cpp
     src/Utils/SmMalloc/smmalloc.h
     src/Utils/intrusive_list.h
+    src/Utils/Utils.h
 
     src/IO/File.h
     src/IO/File.cpp
