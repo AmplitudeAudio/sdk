@@ -172,7 +172,7 @@ namespace SparkyStudios::Audio::Amplitude
             const AmInt32 y2 = _state[c].y2;
 
             y = _a0 * x + _a1 * x1 + _a2 * x2 - _b1 * y1 - _b2 * y2 >> kAmBiquadFixedPointShift;
-            y = x + ((y - x) * AmBiquadFloatToFP(m_parameters[BiquadResonantFilter::ATTRIBUTE_WET]) >> kAmBiquadFixedPointShift);
+            // y = x + ((y - x) * AmBiquadFloatToFP(m_parameters[BiquadResonantFilter::ATTRIBUTE_WET]) >> kAmBiquadFixedPointShift);
 
             frame[c] = static_cast<AmInt16>(AM_CLAMP(y, INT16_MIN, INT16_MAX));
 
@@ -191,15 +191,15 @@ namespace SparkyStudios::Audio::Amplitude
         const float omega = 2.0f * M_PI * m_parameters[BiquadResonantFilter::ATTRIBUTE_FREQUENCY] / static_cast<float>(_sampleRate);
         const float sinOmega = sinf(omega);
         const float cosOmega = cosf(omega);
-        const float alpha = sinOmega / (2.0f * q);
-        const float mu = std::powf(10, (m_parameters[BiquadResonantFilter::ATTRIBUTE_GAIN] / 40));
+        const float A = std::powf(10, (m_parameters[BiquadResonantFilter::ATTRIBUTE_GAIN] / 40));
 
-        float scalar;
+        float scalar, alpha, beta;
 
         switch (static_cast<AmUInt32>(m_parameters[BiquadResonantFilter::ATTRIBUTE_TYPE]))
         {
         default:
         case BiquadResonantFilter::TYPE_LOW_PASS:
+            alpha = sinOmega / (2.0f * q);
             scalar = 1.0f / (1.0f + alpha);
             _a0 = AmBiquadFloatToFP(0.5f * (1.0f - cosOmega) * scalar);
             _a1 = AmBiquadFloatToFP((1.0f - cosOmega) * scalar);
@@ -208,6 +208,7 @@ namespace SparkyStudios::Audio::Amplitude
             _b2 = AmBiquadFloatToFP((1.0f - alpha) * scalar);
             break;
         case BiquadResonantFilter::TYPE_HIGH_PASS:
+            alpha = sinOmega / (2.0f * q);
             scalar = 1.0f / (1.0f + alpha);
             _a0 = AmBiquadFloatToFP(0.5f * (1.0f + cosOmega) * scalar);
             _a1 = AmBiquadFloatToFP(-(1.0f + cosOmega) * scalar);
@@ -216,6 +217,7 @@ namespace SparkyStudios::Audio::Amplitude
             _b2 = AmBiquadFloatToFP((1.0f - alpha) * scalar);
             break;
         case BiquadResonantFilter::TYPE_BAND_PASS:
+            alpha = sinOmega / (2.0f * q);
             scalar = 1.0f / (1.0f + alpha);
             _a0 = AmBiquadFloatToFP(q * alpha * scalar);
             _a1 = AmBiquadFloatToFP(0);
@@ -224,20 +226,42 @@ namespace SparkyStudios::Audio::Amplitude
             _b2 = AmBiquadFloatToFP((1.0f - alpha) * scalar);
             break;
         case BiquadResonantFilter::TYPE_PEAK:
-            scalar = 1.0f / (1.0f + (alpha / mu));
-            _a0 = AmBiquadFloatToFP((1.0f + (alpha * mu)) * scalar);
+            alpha = sinOmega / (2.0f * q);
+            scalar = 1.0f / (1.0f + (alpha / A));
+            _a0 = AmBiquadFloatToFP((1.0f + (alpha * A)) * scalar);
             _a1 = AmBiquadFloatToFP(-2.0f * cosOmega * scalar);
-            _a2 = AmBiquadFloatToFP((1.0f - (alpha * mu)) * scalar);
+            _a2 = AmBiquadFloatToFP((1.0f - (alpha * A)) * scalar);
             _b1 = AmBiquadFloatToFP(-2.0f * cosOmega * scalar);
-            _b2 = AmBiquadFloatToFP((1.0f - (alpha / mu)) * scalar);
+            _b2 = AmBiquadFloatToFP((1.0f - (alpha / A)) * scalar);
             break;
         case BiquadResonantFilter::TYPE_NOTCHING:
+            alpha = sinOmega / (2.0f * q);
             scalar = 1.0f / (1.0f + alpha);
             _a0 = AmBiquadFloatToFP(1.0f * scalar);
             _a1 = AmBiquadFloatToFP(-2.0f * cosOmega * scalar);
             _a2 = _a0;
             _b1 = AmBiquadFloatToFP(-2.0f * cosOmega * scalar);
             _b2 = AmBiquadFloatToFP((1.0f - alpha) * scalar);
+            break;
+        case BiquadResonantFilter::TYPE_LOW_SHELF:
+            alpha = sinOmega / (2.0f * std::sqrtf((A + 1.0f / A) * (1.0f / q - 1.0f) + 2.0f));
+            beta = 2.0f * std::sqrtf(A) * alpha;
+            scalar = 1.0f / ((A + 1.0f) + (A - 1.0f) * cosOmega + beta);
+            _a0 = AmBiquadFloatToFP((A * ((A + 1.0f) - (A - 1.0f) * cosOmega + beta)) * scalar);
+            _a1 = AmBiquadFloatToFP((2.0f * A * ((A - 1.0f) - (A + 1.0f) * cosOmega)) * scalar);
+            _a2 = AmBiquadFloatToFP((A * ((A + 1.0f) - (A - 1.0f) * cosOmega - beta)) * scalar);
+            _b1 = AmBiquadFloatToFP((-2.0f * ((A - 1.0f) + (A + 1.0f) * cosOmega)) * scalar);
+            _b2 = AmBiquadFloatToFP(((A + 1.0f) + (A - 1.0f) * cosOmega - beta) * scalar);
+            break;
+        case BiquadResonantFilter::TYPE_HIGH_SHELF:
+            alpha = sinOmega / (2.0f * std::sqrtf((A + 1.0f / A) * (1.0f / q - 1.0f) + 2.0f));
+            beta = 2.0f * std::sqrtf(A) * alpha;
+            scalar = 1.0f / ((A + 1.0f) - (A - 1.0f) * cosOmega + beta);
+            _a0 = AmBiquadFloatToFP((A * ((A + 1.0f) + (A - 1.0f) * cosOmega + beta)) * scalar);
+            _a1 = AmBiquadFloatToFP((-2.0f * A * ((A - 1.0f) + (A + 1.0f) * cosOmega)) * scalar);
+            _a2 = AmBiquadFloatToFP((A * ((A + 1.0f) + (A - 1.0f) * cosOmega - beta)) * scalar);
+            _b1 = AmBiquadFloatToFP((2.0f * ((A - 1.0f) - (A + 1.0f) * cosOmega)) * scalar);
+            _b2 = AmBiquadFloatToFP(((A + 1.0f) - (A - 1.0f) * cosOmega - beta) * scalar);
             break;
         }
     }
