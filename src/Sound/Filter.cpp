@@ -86,17 +86,33 @@ namespace SparkyStudios::Audio::Amplitude
 
     void FilterInstance::Process(AmInt16Buffer buffer, AmUInt64 frames, AmUInt64 bufferSize, AmUInt16 channels, AmUInt32 sampleRate)
     {
+        if (buffer == nullptr)
+            return;
+
         AmInt16Buffer frame = buffer;
 
-        for (AmUInt32 i = 0; i < frames; i++)
+        for (AmUInt64 i = 0; i < frames; i++)
         {
             ProcessFrame(frame, channels, sampleRate);
-            frames += channels;
+            frame += channels;
         }
     }
 
     void FilterInstance::ProcessFrame(AmInt16Buffer frame, AmUInt16 channels, AmUInt32 sampleRate)
-    {}
+    {
+        if (frame == nullptr)
+            return;
+
+        for (AmUInt16 c = 0; c < channels; c++)
+        {
+            frame[c] = ProcessSample(frame[c], c, sampleRate);
+        }
+    }
+
+    AmInt16 FilterInstance::ProcessSample(AmInt16 sample, AmUInt16 channel, AmUInt32 sampleRate)
+    {
+        return sample;
+    }
 
     float FilterInstance::GetFilterParameter(AmUInt32 attributeId)
     {

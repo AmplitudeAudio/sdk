@@ -99,9 +99,9 @@ namespace SparkyStudios::Audio::Amplitude
         explicit BiquadResonantFilterInstance(BiquadResonantFilter* parent);
         ~BiquadResonantFilterInstance() override = default;
 
-        void Process(AmInt16Buffer buffer, AmUInt64 samples, AmUInt64 bufferSize, AmUInt16 channels, AmUInt32 sampleRate) override;
-
         void ProcessFrame(AmInt16Buffer frame, AmUInt16 channels, AmUInt32 sampleRate) override;
+
+        AmInt16 ProcessSample(AmInt16 sample, AmUInt16 channel, AmUInt32 sampleRate) override;
 
     private:
         void ComputeBiquadResonantParams();

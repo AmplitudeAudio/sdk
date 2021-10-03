@@ -67,6 +67,8 @@ namespace SparkyStudios::Audio::Amplitude
 
         virtual void ProcessFrame(AmInt16Buffer frame, AmUInt16 channels, AmUInt32 sampleRate);
 
+        virtual AmInt16 ProcessSample(AmInt16 sample, AmUInt16 channel, AmUInt32 sampleRate);
+
         virtual float GetFilterParameter(AmUInt32 attributeId);
 
         virtual void SetFilterParameter(AmUInt32 attributeId, float value);

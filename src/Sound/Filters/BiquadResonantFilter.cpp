@@ -116,11 +116,11 @@ namespace SparkyStudios::Audio::Amplitude
         case ATTRIBUTE_TYPE:
             return TYPE_LAST - 1;
         case ATTRIBUTE_FREQUENCY:
-            return 8000.0f;
+            return 30000.0f;
         case ATTRIBUTE_RESONANCE:
-            return 20.0f;
+            return 40.0f;
         case ATTRIBUTE_GAIN:
-            return 1.0f;
+            return 30.0f;
         default:
             return 1.0f;
         }
@@ -133,7 +133,9 @@ namespace SparkyStudios::Audio::Amplitude
         case ATTRIBUTE_FREQUENCY:
             return 10.0f;
         case ATTRIBUTE_RESONANCE:
-            return 0.707107f;
+            return 0.025f;
+        case ATTRIBUTE_GAIN:
+            return -30.0f;
         default:
             return 0.0f;
         }
@@ -174,21 +176,6 @@ namespace SparkyStudios::Audio::Amplitude
         ComputeBiquadResonantParams();
     }
 
-    void BiquadResonantFilterInstance::Process(
-        AmInt16Buffer buffer, AmUInt64 samples, AmUInt64 bufferSize, AmUInt16 channels, AmUInt32 sampleRate)
-    {
-        if (buffer == nullptr)
-            return;
-
-        AmInt16Buffer pY = buffer;
-
-        for (AmUInt32 n = 0; n < samples; n += 1)
-        {
-            ProcessFrame(pY, channels, sampleRate);
-            pY += channels;
-        }
-    }
-
     void BiquadResonantFilterInstance::ProcessFrame(AmInt16Buffer frame, AmUInt16 channels, AmUInt32 sampleRate)
     {
         if (m_numParamsChanged &
@@ -202,26 +189,30 @@ namespace SparkyStudios::Audio::Amplitude
 
         m_numParamsChanged = 0;
 
-        for (AmUInt32 c = 0; c < channels; c++)
-        {
-            const AmInt32 x = frame[c];
-            /* */ AmInt32 y;
+        FilterInstance::ProcessFrame(frame, channels, sampleRate);
+    }
 
-            const AmInt32 x1 = _state[c].x1;
-            const AmInt32 x2 = _state[c].x2;
-            const AmInt32 y1 = _state[c].y1;
-            const AmInt32 y2 = _state[c].y2;
+    AmInt16 BiquadResonantFilterInstance::ProcessSample(AmInt16 sample, AmUInt16 channel, AmUInt32 sampleRate)
+    {
+        const AmInt32 x = sample;
+        /* */ AmInt32 y;
 
-            y = _a0 * x + _a1 * x1 + _a2 * x2 - _b1 * y1 - _b2 * y2 >> kAmBiquadFixedPointShift;
-            // y = x + ((y - x) * AmBiquadFloatToFP(m_parameters[BiquadResonantFilter::ATTRIBUTE_WET]) >> kAmBiquadFixedPointShift);
+        const AmInt32 x1 = _state[channel].x1;
+        const AmInt32 x2 = _state[channel].x2;
+        const AmInt32 y1 = _state[channel].y1;
+        const AmInt32 y2 = _state[channel].y2;
 
-            frame[c] = static_cast<AmInt16>(AM_CLAMP(y, INT16_MIN, INT16_MAX));
+        y = _a0 * x + _a1 * x1 + _a2 * x2 - _b1 * y1 - _b2 * y2 >> kAmBiquadFixedPointShift;
 
-            _state[c].x1 = x;
-            _state[c].x2 = x1;
-            _state[c].y1 = y;
-            _state[c].y2 = y1;
-        }
+        _state[channel].x1 = x;
+        _state[channel].x2 = x1;
+        _state[channel].y1 = y;
+        _state[channel].y2 = y1;
+
+        y = x + ((y - x) * AmBiquadFloatToFP(m_parameters[BiquadResonantFilter::ATTRIBUTE_WET]) >> kAmBiquadFixedPointShift);
+        y = static_cast<AmInt16>(AM_CLAMP(y, INT16_MIN, INT16_MAX));
+
+        return y;
     }
 
     void BiquadResonantFilterInstance::ComputeBiquadResonantParams()
