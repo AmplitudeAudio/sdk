@@ -49,7 +49,7 @@ namespace SparkyStudios::Audio::Amplitude
             TYPE_HIGH_PASS,
             TYPE_BAND_PASS,
             TYPE_PEAK,
-            TYPE_NOTCHING,
+            TYPE_NOTCH,
             TYPE_LOW_SHELF,
             TYPE_HIGH_SHELF,
             TYPE_LAST
@@ -58,7 +58,21 @@ namespace SparkyStudios::Audio::Amplitude
         BiquadResonantFilter();
         ~BiquadResonantFilter() override = default;
 
-        AmResult Init(TYPE type, float frequency, float resonance, float gain);
+        AmResult Init(TYPE type, float frequency, float qOrS, float gain);
+
+        AmResult InitLowPass(float frequency, float q);
+
+        AmResult InitHighPass(float frequency, float q);
+
+        AmResult InitBandPass(float frequency, float q);
+
+        AmResult InitPeaking(float frequency, float q, float gain);
+
+        AmResult InitNotching(float frequency, float q);
+
+        AmResult InitLowShelf(float frequency, float s, float gain);
+
+        AmResult InitHighShelf(float frequency, float s, float gain);
 
         AmUInt32 GetParamCount() override;
 

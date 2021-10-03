@@ -27,12 +27,12 @@ namespace SparkyStudios::Audio::Amplitude
         : _filterType(TYPE_LOW_PASS)
         , _frequency(1000.0f)
         , _resonance(0.707107f)
-        , _gain(1.0f)
+        , _gain(0.0f)
     {}
 
     AmResult BiquadResonantFilter::Init(TYPE type, float frequency, float resonance, float gain)
     {
-        if (type < 0 || type >= TYPE_LAST || frequency <= 0 || resonance <= 0 || gain <= 0)
+        if (type < 0 || type >= TYPE_LAST || frequency <= 0 || resonance <= 0)
             return AM_ERROR_INVALID_PARAMETER;
 
         _filterType = type;
@@ -41,6 +41,41 @@ namespace SparkyStudios::Audio::Amplitude
         _gain = gain;
 
         return AM_ERROR_NO_ERROR;
+    }
+
+    AmResult BiquadResonantFilter::InitLowPass(float frequency, float q)
+    {
+        return Init(TYPE_LOW_PASS, frequency, q, 0.0f);
+    }
+
+    AmResult BiquadResonantFilter::InitHighPass(float frequency, float q)
+    {
+        return Init(TYPE_HIGH_PASS, frequency, q, 0.0f);
+    }
+
+    AmResult BiquadResonantFilter::InitBandPass(float frequency, float q)
+    {
+        return Init(TYPE_BAND_PASS, frequency, q, 0.0f);
+    }
+
+    AmResult BiquadResonantFilter::InitPeaking(float frequency, float q, float gain)
+    {
+        return Init(TYPE_PEAK, frequency, q, gain);
+    }
+
+    AmResult BiquadResonantFilter::InitNotching(float frequency, float q)
+    {
+        return Init(TYPE_NOTCH, frequency, q, 0.0);
+    }
+
+    AmResult BiquadResonantFilter::InitLowShelf(float frequency, float s, float gain)
+    {
+        return Init(TYPE_LOW_SHELF, frequency, s, gain);
+    }
+
+    AmResult BiquadResonantFilter::InitHighShelf(float frequency, float s, float gain)
+    {
+        return Init(TYPE_HIGH_SHELF, frequency, s, gain);
     }
 
     AmUInt32 BiquadResonantFilter::GetParamCount()
@@ -53,7 +88,13 @@ namespace SparkyStudios::Audio::Amplitude
         if (index >= ATTRIBUTE_LAST)
             return nullptr;
 
-        AmString names[ATTRIBUTE_LAST] = { "Wet", "Type", "Frequency", "Latency" };
+        // clang-format off
+        AmString names[ATTRIBUTE_LAST] = {
+            "Wet", "Type", "Frequency",
+            _filterType == TYPE_LOW_SHELF || _filterType == TYPE_HIGH_SHELF ? "S" : "Q",
+            "Gain"
+        };
+        // clang-format on
 
         return names[index];
     }
@@ -234,7 +275,7 @@ namespace SparkyStudios::Audio::Amplitude
             _b1 = AmBiquadFloatToFP(-2.0f * cosOmega * scalar);
             _b2 = AmBiquadFloatToFP((1.0f - (alpha / A)) * scalar);
             break;
-        case BiquadResonantFilter::TYPE_NOTCHING:
+        case BiquadResonantFilter::TYPE_NOTCH:
             alpha = sinOmega / (2.0f * q);
             scalar = 1.0f / (1.0f + alpha);
             _a0 = AmBiquadFloatToFP(1.0f * scalar);
