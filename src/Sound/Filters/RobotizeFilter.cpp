@@ -93,21 +93,22 @@ namespace SparkyStudios::Audio::Amplitude
     void RobotizeFilterInstance::Process(
         AmInt16Buffer buffer, AmUInt64 samples, AmUInt64 bufferSize, AmUInt16 channels, AmUInt32 sampleRate)
     {
-        for (AmUInt64 c = 0; c < channels; c++)
+        for (AmUInt16 c = 0; c < channels; c++)
         {
             const auto period = static_cast<AmInt32>(static_cast<float>(sampleRate) / m_parameters[RobotizeFilter::ATTRIBUTE_FREQUENCY]);
             const auto start = static_cast<AmInt32>(_duration * sampleRate) % period;
 
-            for (AmUInt32 i = c; i < samples * channels; i += channels)
+            for (AmUInt64 i = c, s = 0; i < samples * channels; i += channels, s++)
             {
                 const AmInt32 x = buffer[i];
                 /* */ AmInt32 y;
 
-                const float wPos = static_cast<float>((start + i) % period) / static_cast<float>(period);
+                const float wPos = static_cast<float>((start + s) % period) / static_cast<float>(period);
 
                 // clang-format off
                 y = x * AmFloatToFixedPoint(GenerateWaveform(static_cast<AmInt32>(m_parameters[RobotizeFilter::ATTRIBUTE_WAVEFORM]), wPos)) + AmFloatToFixedPoint(0.5f) >> kAmFixedPointShift;
                 // clang-format on
+
                 y = x + ((y - x) * AmFloatToFixedPoint(m_parameters[RobotizeFilter::ATTRIBUTE_WET]) >> kAmFixedPointShift);
                 y = AM_CLAMP(y, INT16_MIN, INT16_MAX);
 
