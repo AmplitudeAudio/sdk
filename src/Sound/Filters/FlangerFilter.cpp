@@ -122,6 +122,8 @@ namespace SparkyStudios::Audio::Amplitude
 
         for (AmUInt16 c = 0; c < channels; c++)
         {
+            const AmUInt64 o = c * _bufferLength;
+
             for (AmUInt64 i = c; i < samples * channels; i += channels)
             {
                 _index += inc;
@@ -131,10 +133,10 @@ namespace SparkyStudios::Audio::Amplitude
                 const AmInt32 x = buffer[i];
                 /* */ AmInt32 y;
 
-                _buffer[c + _offset % _bufferLength] = x;
+                _buffer[o + _offset % _bufferLength] = x;
 
                 // clang-format off
-                y = AmFloatToFixedPoint(0.5f) * (x + _buffer[c + (_bufferLength - delay + _offset) % _bufferLength]) >> kAmFixedPointShift;
+                y = AmFloatToFixedPoint(0.5f) * (x + _buffer[o + (_bufferLength - delay + _offset) % _bufferLength]) >> kAmFixedPointShift;
                 _offset++;
 
                 y = x + ((y - x) * AmFloatToFixedPoint(m_parameters[FlangerFilter::ATTRIBUTE_WET]) >> kAmFixedPointShift);
