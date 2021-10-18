@@ -58,21 +58,21 @@ namespace SparkyStudios::Audio::Amplitude
         BiquadResonantFilter();
         ~BiquadResonantFilter() override = default;
 
-        AmResult Init(TYPE type, float frequency, float qOrS, float gain);
+        AmResult Init(TYPE type, AmReal32 frequency, AmReal32 qOrS, AmReal32 gain);
 
-        AmResult InitLowPass(float frequency, float q);
+        AmResult InitLowPass(AmReal32 frequency, AmReal32 q);
 
-        AmResult InitHighPass(float frequency, float q);
+        AmResult InitHighPass(AmReal32 frequency, AmReal32 q);
 
-        AmResult InitBandPass(float frequency, float q);
+        AmResult InitBandPass(AmReal32 frequency, AmReal32 q);
 
-        AmResult InitPeaking(float frequency, float q, float gain);
+        AmResult InitPeaking(AmReal32 frequency, AmReal32 q, AmReal32 gain);
 
-        AmResult InitNotching(float frequency, float q);
+        AmResult InitNotching(AmReal32 frequency, AmReal32 q);
 
-        AmResult InitLowShelf(float frequency, float s, float gain);
+        AmResult InitLowShelf(AmReal32 frequency, AmReal32 s, AmReal32 gain);
 
-        AmResult InitHighShelf(float frequency, float s, float gain);
+        AmResult InitHighShelf(AmReal32 frequency, AmReal32 s, AmReal32 gain);
 
         AmUInt32 GetParamCount() override;
 
@@ -80,17 +80,17 @@ namespace SparkyStudios::Audio::Amplitude
 
         AmUInt32 GetParamType(AmUInt32 index) override;
 
-        float GetParamMax(AmUInt32 index) override;
+        AmReal32 GetParamMax(AmUInt32 index) override;
 
-        float GetParamMin(AmUInt32 index) override;
+        AmReal32 GetParamMin(AmUInt32 index) override;
 
         FilterInstance* CreateInstance() override;
 
     private:
         AmInt32 _filterType;
-        float _frequency;
-        float _resonance;
-        float _gain;
+        AmReal32 _frequency;
+        AmReal32 _resonance;
+        AmReal32 _gain;
     };
 
     class BiquadResonantFilterInstance : public FilterInstance
@@ -99,7 +99,8 @@ namespace SparkyStudios::Audio::Amplitude
         explicit BiquadResonantFilterInstance(BiquadResonantFilter* parent);
         ~BiquadResonantFilterInstance() override = default;
 
-        void ProcessFrame(AmInt16Buffer frame, AmUInt16 channels, AmUInt32 sampleRate) override;
+        void ProcessChannel(
+            AmInt16Buffer buffer, AmUInt16 channel, AmUInt64 frames, AmUInt16 channels, AmUInt32 sampleRate, bool isInterleaved) override;
 
         AmInt16 ProcessSample(AmInt16 sample, AmUInt16 channel, AmUInt32 sampleRate) override;
 

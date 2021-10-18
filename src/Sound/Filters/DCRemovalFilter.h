@@ -36,12 +36,12 @@ namespace SparkyStudios::Audio::Amplitude
 
         DCRemovalFilter();
 
-        AmResult Init(float length = 0.1f);
+        AmResult Init(AmReal32 length = 0.1f);
 
         FilterInstance* CreateInstance() override;
 
     private:
-        float _length;
+        AmReal32 _length;
     };
 
     class DCRemovalFilterInstance : public FilterInstance
@@ -51,8 +51,14 @@ namespace SparkyStudios::Audio::Amplitude
         ~DCRemovalFilterInstance() override;
 
         void Process(AmInt16Buffer buffer, AmUInt64 frames, AmUInt64 bufferSize, AmUInt16 channels, AmUInt32 sampleRate) override;
+        void ProcessInterleaved(
+            AmInt16Buffer buffer, AmUInt64 frames, AmUInt64 bufferSize, AmUInt16 channels, AmUInt32 sampleRate) override;
+
+        AmInt16 ProcessSample(AmInt16 sample, AmUInt16 channel, AmUInt32 sampleRate) override;
 
     private:
+        void InitBuffer(AmUInt16 channels, AmUInt32 sampleRate);
+
         AmInt32Buffer _buffer;
         AmInt32Buffer _totals;
         AmUInt64 _bufferLength;

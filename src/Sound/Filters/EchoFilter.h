@@ -67,11 +67,18 @@ namespace SparkyStudios::Audio::Amplitude
         ~EchoFilterInstance() override;
 
         void Process(AmInt16Buffer buffer, AmUInt64 samples, AmUInt64 bufferSize, AmUInt16 channels, AmUInt32 sampleRate) override;
+        void ProcessInterleaved(
+            AmInt16Buffer buffer, AmUInt64 frames, AmUInt64 bufferSize, AmUInt16 channels, AmUInt32 sampleRate) override;
+
+        AmInt16 ProcessSample(AmInt16 sample, AmUInt16 channel, AmUInt32 sampleRate) override;
 
     private:
+        void InitBuffer(AmUInt16 channels, AmUInt32 sampleRate);
+
         AmInt32Buffer _buffer;
         AmUInt32 _bufferLength;
         AmUInt32 _bufferMaxLength;
+        AmUInt32 _prevOffset;
         AmUInt32 _offset;
     };
 } // namespace SparkyStudios::Audio::Amplitude

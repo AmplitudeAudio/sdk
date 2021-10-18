@@ -90,7 +90,72 @@ namespace SparkyStudios::Audio::Amplitude
         m_parameters[EchoFilter::ATTRIBUTE_FILTER] = parent->_filter;
     }
 
-    void EchoFilterInstance::Process(AmInt16Buffer buffer, AmUInt64 samples, AmUInt64 bufferSize, AmUInt16 channels, AmUInt32 sampleRate)
+    EchoFilterInstance::~EchoFilterInstance()
+    {
+        delete[] _buffer;
+    }
+
+    void EchoFilterInstance::Process(AmInt16Buffer buffer, AmUInt64 frames, AmUInt64 bufferSize, AmUInt16 channels, AmUInt32 sampleRate)
+    {
+        InitBuffer(channels, sampleRate);
+
+        _prevOffset = (_offset + _bufferLength - 1) % _bufferLength;
+
+        for (AmInt64 i = 0; i < frames; i++)
+        {
+            for (AmUInt16 c = 0; c < channels; c++)
+            {
+                buffer[i + c * frames] = ProcessSample(buffer[i + c * frames], c, sampleRate);
+            }
+
+            _prevOffset = _offset;
+            _offset = (_offset + 1) % _bufferLength;
+        }
+    }
+
+    void EchoFilterInstance::ProcessInterleaved(
+        AmInt16Buffer buffer, AmUInt64 frames, AmUInt64 bufferSize, AmUInt16 channels, AmUInt32 sampleRate)
+    {
+        InitBuffer(channels, sampleRate);
+
+        _prevOffset = (_offset + _bufferLength - 1) % _bufferLength;
+
+        for (AmInt64 i = 0; i < frames; i++)
+        {
+            for (AmUInt16 c = 0; c < channels; c++)
+            {
+                buffer[i * channels + c] = ProcessSample(buffer[i * channels + c], c, sampleRate);
+            }
+
+            _prevOffset = _offset;
+            _offset = (_offset + 1) % _bufferLength;
+        }
+    }
+
+    AmInt16 EchoFilterInstance::ProcessSample(AmInt16 sample, AmUInt16 channel, AmUInt32 sampleRate)
+    {
+        const AmUInt32 o = channel * _bufferLength;
+
+        const AmInt32 x = sample;
+        /* */ AmInt32 y;
+
+        // clang-format off
+        const AmInt32 p = AmFloatToFixedPoint(m_parameters[EchoFilter::ATTRIBUTE_FILTER]) * _buffer[_prevOffset + o] >> kAmFixedPointShift;
+        const AmInt32 q = AmFloatToFixedPoint(1.0f - m_parameters[EchoFilter::ATTRIBUTE_FILTER]) * _buffer[_offset + o] >> kAmFixedPointShift;
+
+        y = p + q;
+        y = x + (y * AmFloatToFixedPoint(m_parameters[EchoFilter::ATTRIBUTE_DECAY]) >> kAmFixedPointShift);
+        // clang-format on
+
+        _buffer[_offset + o] = y;
+
+        y = x + ((y - x) * AmFloatToFixedPoint(m_parameters[EchoFilter::ATTRIBUTE_WET]) >> kAmFixedPointShift);
+        y = AM_CLAMP(y, INT16_MIN, INT16_MAX);
+
+        return static_cast<AmInt16>(y);
+    }
+
+    void EchoFilterInstance::InitBuffer(AmUInt16 channels, AmUInt32 sampleRate)
     {
         const auto maxSamples =
             static_cast<AmUInt32>(std::ceilf(m_parameters[EchoFilter::ATTRIBUTE_DELAY] * static_cast<AmReal32>(sampleRate)));
@@ -108,42 +173,6 @@ namespace SparkyStudios::Audio::Amplitude
         _bufferLength = maxSamples;
         if (_bufferLength > _bufferMaxLength)
             _bufferLength = _bufferMaxLength;
-
-        AmUInt32 prevOffset = (_offset + _bufferLength - 1) % _bufferLength;
-
-        for (AmUInt64 i = 0; i < samples; i++)
-        {
-            for (AmUInt16 c = 0; c < channels; c++)
-            {
-                const AmUInt32 channelOffset = _offset * channels + c;
-                const AmUInt32 bufferChannelOffset = i * channels + c;
-
-                const AmInt32 x = buffer[bufferChannelOffset];
-                /* */ AmInt32 y;
-
-                // clang-format off
-                const AmInt32 p = AmFloatToFixedPoint(m_parameters[EchoFilter::ATTRIBUTE_FILTER]) * _buffer[prevOffset * channels + c] >> kAmFixedPointShift;
-                const AmInt32 q = AmFloatToFixedPoint(1.0f - m_parameters[EchoFilter::ATTRIBUTE_FILTER]) * _buffer[channelOffset] >> kAmFixedPointShift;
-
-                y = p + q;
-                y = buffer[bufferChannelOffset] + (y * AmFloatToFixedPoint(m_parameters[EchoFilter::ATTRIBUTE_DECAY]) >> kAmFixedPointShift);
-                // clang-format on
-
-                _buffer[channelOffset] = y;
-
-                y = x + ((y - x) * AmFloatToFixedPoint(m_parameters[EchoFilter::ATTRIBUTE_WET]) >> kAmFixedPointShift);
-                y = AM_CLAMP(y, INT16_MIN, INT16_MAX);
-
-                buffer[bufferChannelOffset] = static_cast<AmInt16>(y);
-            }
-
-            prevOffset = _offset;
-            _offset = (_offset + 1) % _bufferLength;
-        }
     }
 
-    EchoFilterInstance::~EchoFilterInstance()
-    {
-        delete[] _buffer;
-    }
 } // namespace SparkyStudios::Audio::Amplitude

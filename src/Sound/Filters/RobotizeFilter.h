@@ -52,7 +52,7 @@ namespace SparkyStudios::Audio::Amplitude
 
         RobotizeFilter();
 
-        AmResult Init(float frequency, AmInt32 waveform);
+        AmResult Init(AmReal32 frequency, AmInt32 waveform);
 
         AmUInt32 GetParamCount() override;
 
@@ -60,14 +60,14 @@ namespace SparkyStudios::Audio::Amplitude
 
         AmUInt32 GetParamType(AmUInt32 index) override;
 
-        float GetParamMax(AmUInt32 index) override;
+        AmReal32 GetParamMax(AmUInt32 index) override;
 
-        float GetParamMin(AmUInt32 index) override;
+        AmReal32 GetParamMin(AmUInt32 index) override;
 
         FilterInstance* CreateInstance() override;
 
     protected:
-        float m_frequency;
+        AmReal32 m_frequency;
         AmInt32 m_waveform;
     };
 
@@ -78,10 +78,11 @@ namespace SparkyStudios::Audio::Amplitude
 
         void AdvanceFrame(AmTime deltaTime) override;
 
-        void Process(AmInt16Buffer buffer, AmUInt64 samples, AmUInt64 bufferSize, AmUInt16 channels, AmUInt32 sampleRate) override;
+        void ProcessChannel(
+            AmInt16Buffer buffer, AmUInt16 channel, AmUInt64 frames, AmUInt16 channels, AmUInt32 sampleRate, bool isInterleaved) override;
 
     private:
-        static float GenerateWaveform(AmInt32 waveform, float p);
+        static AmReal32 GenerateWaveform(AmInt32 waveform, AmReal32 p);
 
         AmTime _duration;
     };

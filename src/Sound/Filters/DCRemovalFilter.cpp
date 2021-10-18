@@ -21,7 +21,7 @@ namespace SparkyStudios::Audio::Amplitude
         : _length(0.1f)
     {}
 
-    AmResult DCRemovalFilter::Init(float length)
+    AmResult DCRemovalFilter::Init(AmReal32 length)
     {
         if (length <= 0)
             return AM_ERROR_INVALID_PARAMETER;
@@ -57,40 +57,67 @@ namespace SparkyStudios::Audio::Amplitude
     {
         if (_buffer == nullptr)
         {
-            _bufferLength = static_cast<AmUInt64>(
-                AmFloatToFixedPoint(dynamic_cast<DCRemovalFilter*>(m_parent)->_length) * sampleRate >> kAmFixedPointShift);
-            _buffer = new AmInt32[_bufferLength * channels];
-            _totals = new AmInt32[channels];
-
-            memset(_buffer, 0, _bufferLength * channels * sizeof(AmInt32));
-            memset(_totals, 0, channels * sizeof(AmInt32));
+            InitBuffer(channels, sampleRate);
         }
 
-        AmUInt64 prevOffset = (_offset + _bufferLength - 1) % _bufferLength;
-        for (AmInt64 i = 0; i < frames * channels; i++)
+        for (AmInt64 i = 0; i < frames; i++)
         {
-            const AmInt32 x = buffer[i];
-            /* */ AmInt32 y;
-
-            const AmUInt64 c = i % channels;
-            const AmUInt64 o = _offset + c * _bufferLength;
-
-            _totals[c] -= _buffer[o];
-            _totals[c] += x;
-
-            _buffer[o] = x;
-
-            y = x - (AmFloatToFixedPoint(static_cast<AmReal32>(_totals[c]) / _bufferLength) >> kAmFixedPointShift);
-            y = x + ((y - x) * AmFloatToFixedPoint(m_parameters[DCRemovalFilter::ATTRIBUTE_WET]) >> kAmFixedPointShift);
-            y = AM_CLAMP(y, INT16_MIN, INT16_MAX);
-
-            buffer[i] = static_cast<AmInt16>(y);
-
-            if (c == channels - 1)
+            for (AmUInt16 c = 0; c < channels; c++)
             {
-                prevOffset = _offset;
-                _offset = (_offset + 1) % _bufferLength;
+                buffer[i + c * frames] = ProcessSample(buffer[i + c * frames], c, sampleRate);
             }
+
+            _offset = (_offset + 1) % _bufferLength;
         }
+    }
+
+    void DCRemovalFilterInstance::ProcessInterleaved(
+        AmInt16Buffer buffer, AmUInt64 frames, AmUInt64 bufferSize, AmUInt16 channels, AmUInt32 sampleRate)
+    {
+        if (_buffer == nullptr)
+        {
+            InitBuffer(channels, sampleRate);
+        }
+
+        for (AmInt64 i = 0; i < frames; i++)
+        {
+            for (AmUInt16 c = 0; c < channels; c++)
+            {
+                buffer[i * channels + c] = ProcessSample(buffer[i * channels + c], c, sampleRate);
+            }
+
+            _offset = (_offset + 1) % _bufferLength;
+        }
+    }
+
+    AmInt16 DCRemovalFilterInstance::ProcessSample(AmInt16 sample, AmUInt16 channel, AmUInt32 sampleRate)
+    {
+        const AmUInt64 o = _offset + channel * _bufferLength;
+
+        const AmInt32 x = sample;
+        /* */ AmInt32 y;
+
+        _totals[channel] -= _buffer[o];
+        _totals[channel] += x;
+
+        _buffer[o] = x;
+
+        y = x - (AmFloatToFixedPoint(static_cast<AmReal32>(_totals[channel]) / _bufferLength) >> kAmFixedPointShift);
+        y = x + ((y - x) * AmFloatToFixedPoint(m_parameters[DCRemovalFilter::ATTRIBUTE_WET]) >> kAmFixedPointShift);
+        y = AM_CLAMP(y, INT16_MIN, INT16_MAX);
+
+        return static_cast<AmInt16>(y);
+    }
+
+    void DCRemovalFilterInstance::InitBuffer(AmUInt16 channels, AmUInt32 sampleRate)
+    {
+        _bufferLength = static_cast<AmUInt64>(
+            AmFloatToFixedPoint(dynamic_cast<DCRemovalFilter*>(m_parent)->_length) * sampleRate >> kAmFixedPointShift);
+
+        _buffer = new AmInt32[_bufferLength * channels];
+        _totals = new AmInt32[channels];
+
+        memset(_buffer, 0, _bufferLength * channels * sizeof(AmInt32));
+        memset(_totals, 0, channels * sizeof(AmInt32));
     }
 } // namespace SparkyStudios::Audio::Amplitude

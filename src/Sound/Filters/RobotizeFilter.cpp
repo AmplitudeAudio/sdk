@@ -22,7 +22,7 @@ namespace SparkyStudios::Audio::Amplitude
         , m_waveform(0)
     {}
 
-    AmResult RobotizeFilter::Init(float frequency, AmInt32 waveform)
+    AmResult RobotizeFilter::Init(AmReal32 frequency, AmInt32 waveform)
     {
         m_frequency = frequency;
         m_waveform = waveform;
@@ -52,7 +52,7 @@ namespace SparkyStudios::Audio::Amplitude
         return PARAM_FLOAT;
     }
 
-    float RobotizeFilter::GetParamMax(AmUInt32 index)
+    AmReal32 RobotizeFilter::GetParamMax(AmUInt32 index)
     {
         if (index == ATTRIBUTE_WAVEFORM)
             return WAVE_LAST - 1;
@@ -62,7 +62,7 @@ namespace SparkyStudios::Audio::Amplitude
         return 1.0f;
     }
 
-    float RobotizeFilter::GetParamMin(AmUInt32 index)
+    AmReal32 RobotizeFilter::GetParamMin(AmUInt32 index)
     {
         if (index == ATTRIBUTE_FREQUENCY)
             return 0.1f;
@@ -78,10 +78,11 @@ namespace SparkyStudios::Audio::Amplitude
     RobotizeFilterInstance::RobotizeFilterInstance(RobotizeFilter* parent)
         : FilterInstance(parent)
     {
-        Init(3);
+        Init(RobotizeFilter::ATTRIBUTE_LAST);
+
         _duration = 0.0;
         m_parameters[RobotizeFilter::ATTRIBUTE_FREQUENCY] = parent->m_frequency;
-        m_parameters[RobotizeFilter::ATTRIBUTE_WAVEFORM] = static_cast<float>(parent->m_waveform);
+        m_parameters[RobotizeFilter::ATTRIBUTE_WAVEFORM] = static_cast<AmReal32>(parent->m_waveform);
     }
 
     void RobotizeFilterInstance::AdvanceFrame(AmTime deltaTime)
@@ -90,34 +91,33 @@ namespace SparkyStudios::Audio::Amplitude
         FilterInstance::AdvanceFrame(deltaTime);
     }
 
-    void RobotizeFilterInstance::Process(
-        AmInt16Buffer buffer, AmUInt64 samples, AmUInt64 bufferSize, AmUInt16 channels, AmUInt32 sampleRate)
+    void RobotizeFilterInstance::ProcessChannel(
+        AmInt16Buffer buffer, AmUInt16 channel, AmUInt64 frames, AmUInt16 channels, AmUInt32 sampleRate, bool isInterleaved)
     {
-        for (AmUInt16 c = 0; c < channels; c++)
+        const auto period = static_cast<AmInt32>(static_cast<AmReal32>(sampleRate) / m_parameters[RobotizeFilter::ATTRIBUTE_FREQUENCY]);
+        const auto start = static_cast<AmInt32>(_duration * sampleRate) % period;
+
+        for (AmUInt64 f = 0; f < frames; f++)
         {
-            const auto period = static_cast<AmInt32>(static_cast<float>(sampleRate) / m_parameters[RobotizeFilter::ATTRIBUTE_FREQUENCY]);
-            const auto start = static_cast<AmInt32>(_duration * sampleRate) % period;
+            const AmUInt64 s = isInterleaved ? f * channels + channel : f + channel * channels;
 
-            for (AmUInt64 i = c, s = 0; i < samples * channels; i += channels, s++)
-            {
-                const AmInt32 x = buffer[i];
-                /* */ AmInt32 y;
+            const AmInt32 x = buffer[s];
+            /* */ AmInt32 y;
 
-                const float wPos = static_cast<float>((start + s) % period) / static_cast<float>(period);
+            const AmReal32 wPos = static_cast<AmReal32>((start + s) % period) / static_cast<AmReal32>(period);
 
-                // clang-format off
-                y = x * AmFloatToFixedPoint(GenerateWaveform(static_cast<AmInt32>(m_parameters[RobotizeFilter::ATTRIBUTE_WAVEFORM]), wPos)) + AmFloatToFixedPoint(0.5f) >> kAmFixedPointShift;
-                // clang-format on
+            // clang-format off
+            y = x * AmFloatToFixedPoint(GenerateWaveform(static_cast<AmInt32>(m_parameters[RobotizeFilter::ATTRIBUTE_WAVEFORM]), wPos) + 0.5f) >> kAmFixedPointShift;
+            // clang-format on
 
-                y = x + ((y - x) * AmFloatToFixedPoint(m_parameters[RobotizeFilter::ATTRIBUTE_WET]) >> kAmFixedPointShift);
-                y = AM_CLAMP(y, INT16_MIN, INT16_MAX);
+            y = x + ((y - x) * AmFloatToFixedPoint(m_parameters[RobotizeFilter::ATTRIBUTE_WET]) >> kAmFixedPointShift);
+            y = AM_CLAMP(y, INT16_MIN, INT16_MAX);
 
-                buffer[i] = static_cast<AmInt16>(y);
-            }
+            buffer[s] = static_cast<AmInt16>(y);
         }
     }
 
-    float RobotizeFilterInstance::GenerateWaveform(AmInt32 waveform, float p)
+    AmReal32 RobotizeFilterInstance::GenerateWaveform(AmInt32 waveform, AmReal32 p)
     {
         switch (waveform)
         {
@@ -138,22 +138,22 @@ namespace SparkyStudios::Audio::Amplitude
             return (p < 0.5f ? std::sinf(p * M_PI * 2.0f) * 0.5f : 0) - 0.5f;
         case RobotizeFilter::WAVE_FSQUARE:
             {
-                float f = 0;
-                for (int i = 1; i < 22; i += 2)
+                AmReal32 f = 0;
+                for (AmInt32 i = 1; i < 22; i += 2)
                 {
-                    f += 4.0f / (M_PI * i) * std::sinf(2 * M_PI * i * p);
+                    f += 4.0f / (M_PI * i) * std::sinf(2.0f * M_PI * i * p);
                 }
                 return f * 0.5f;
             }
         case RobotizeFilter::WAVE_FSAW:
             {
-                float f = 0;
-                for (int i = 1; i < 15; i++)
+                AmReal32 f = 0;
+                for (AmInt32 i = 1; i < 15; i++)
                 {
                     if (i & 1)
-                        f += 1.0f / (M_PI * i) * std::sinf(p * 2 * M_PI * i);
+                        f += 1.0f / (M_PI * i) * std::sinf(p * 2.0f * M_PI * i);
                     else
-                        f -= 1.0f / (M_PI * i) * std::sinf(p * 2 * M_PI * i);
+                        f -= 1.0f / (M_PI * i) * std::sinf(p * 2.0f * M_PI * i);
                 }
                 return f;
             }

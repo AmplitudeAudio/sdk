@@ -102,7 +102,7 @@ namespace SparkyStudios::Audio::Amplitude
         m_parameters[FlangerFilter::ATTRIBUTE_FREQUENCY] = parent->_frequency;
     }
 
-    void FlangerFilterInstance::Process(AmInt16Buffer buffer, AmUInt64 samples, AmUInt64 bufferSize, AmUInt16 channels, AmUInt32 sampleRate)
+    void FlangerFilterInstance::Process(AmInt16Buffer buffer, AmUInt64 frames, AmUInt64 bufferSize, AmUInt16 channels, AmUInt32 sampleRate)
     {
         const auto maxSamples =
             static_cast<AmUInt32>(std::ceilf(m_parameters[FlangerFilter::ATTRIBUTE_DELAY] * static_cast<AmReal32>(sampleRate)));
@@ -118,39 +118,68 @@ namespace SparkyStudios::Audio::Amplitude
             memset(_buffer, 0, length * sizeof(AmInt32));
         }
 
-        AmReal64 inc = m_parameters[FlangerFilter::ATTRIBUTE_FREQUENCY] * M_PI * 2 / static_cast<AmReal64>(sampleRate);
+        FilterInstance::Process(buffer, frames, bufferSize, channels, sampleRate);
 
-        for (AmUInt16 c = 0; c < channels; c++)
+        _offset += frames;
+        _offset %= _bufferLength;
+    }
+
+    void FlangerFilterInstance::ProcessInterleaved(
+        AmInt16Buffer buffer, AmUInt64 frames, AmUInt64 bufferSize, AmUInt16 channels, AmUInt32 sampleRate)
+    {
+        const auto maxSamples =
+            static_cast<AmUInt32>(std::ceilf(m_parameters[FlangerFilter::ATTRIBUTE_DELAY] * static_cast<AmReal32>(sampleRate)));
+
+        if (_bufferLength < maxSamples)
         {
-            const AmUInt64 o = c * _bufferLength;
+            delete[] _buffer;
 
-            for (AmUInt64 i = c; i < samples * channels; i += channels)
-            {
-                _index += inc;
+            _bufferLength = maxSamples;
+            const AmUInt32 length = _bufferLength * channels;
 
-                const auto delay = static_cast<AmInt32>(std::floor(static_cast<AmReal64>(maxSamples) * (1 + std::cos(_index))) / 2);
-
-                const AmInt32 x = buffer[i];
-                /* */ AmInt32 y;
-
-                _buffer[o + _offset % _bufferLength] = x;
-
-                // clang-format off
-                y = AmFloatToFixedPoint(0.5f) * (x + _buffer[o + (_bufferLength - delay + _offset) % _bufferLength]) >> kAmFixedPointShift;
-                _offset++;
-
-                y = x + ((y - x) * AmFloatToFixedPoint(m_parameters[FlangerFilter::ATTRIBUTE_WET]) >> kAmFixedPointShift);
-                y = AM_CLAMP(y, INT16_MIN, INT16_MAX);
-                // clang-format on
-
-                buffer[i] = static_cast<AmInt16>(y);
-            }
-
-            _offset -= samples;
+            _buffer = new AmInt32[length];
+            memset(_buffer, 0, length * sizeof(AmInt32));
         }
 
-        _offset += samples;
+        FilterInstance::ProcessInterleaved(buffer, frames, bufferSize, channels, sampleRate);
+
+        _offset += frames;
         _offset %= _bufferLength;
+    }
+
+    void FlangerFilterInstance::ProcessChannel(
+        AmInt16Buffer buffer, AmUInt16 channel, AmUInt64 frames, AmUInt16 channels, AmUInt32 sampleRate, bool isInterleaved)
+    {
+        const auto maxSamples =
+            static_cast<AmUInt32>(std::ceilf(m_parameters[FlangerFilter::ATTRIBUTE_DELAY] * static_cast<AmReal32>(sampleRate)));
+
+        const AmUInt64 o = channel * _bufferLength;
+        const AmReal64 i = m_parameters[FlangerFilter::ATTRIBUTE_FREQUENCY] * M_PI * 2 / static_cast<AmReal64>(sampleRate);
+
+        for (AmUInt64 f = 0; f < frames; f++)
+        {
+            const AmUInt64 s = isInterleaved ? f * channels + channel : f + channel * channels;
+
+            const auto delay = static_cast<AmInt32>(std::floor(static_cast<AmReal64>(maxSamples) * (1 + std::cos(_index))) / 2);
+            _index += i;
+
+            const AmInt32 x = buffer[s];
+            /* */ AmInt32 y;
+
+            _buffer[o + _offset % _bufferLength] = x;
+
+            // clang-format off
+            y = AmFloatToFixedPoint(0.5f) * (x + _buffer[o + (_bufferLength - delay + _offset) % _bufferLength]) >> kAmFixedPointShift;
+            _offset++;
+
+            y = x + ((y - x) * AmFloatToFixedPoint(m_parameters[FlangerFilter::ATTRIBUTE_WET]) >> kAmFixedPointShift);
+            y = AM_CLAMP(y, INT16_MIN, INT16_MAX);
+            // clang-format on
+
+            buffer[s] = static_cast<AmInt16>(y);
+        }
+
+        _offset -= frames;
     }
 
     FlangerFilterInstance::~FlangerFilterInstance()

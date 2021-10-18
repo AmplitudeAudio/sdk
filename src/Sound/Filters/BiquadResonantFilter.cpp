@@ -24,7 +24,7 @@ namespace SparkyStudios::Audio::Amplitude
         , _gain(0.0f)
     {}
 
-    AmResult BiquadResonantFilter::Init(TYPE type, float frequency, float resonance, float gain)
+    AmResult BiquadResonantFilter::Init(TYPE type, AmReal32 frequency, AmReal32 resonance, AmReal32 gain)
     {
         if (type < 0 || type >= TYPE_LAST || frequency <= 0 || resonance <= 0)
             return AM_ERROR_INVALID_PARAMETER;
@@ -37,37 +37,37 @@ namespace SparkyStudios::Audio::Amplitude
         return AM_ERROR_NO_ERROR;
     }
 
-    AmResult BiquadResonantFilter::InitLowPass(float frequency, float q)
+    AmResult BiquadResonantFilter::InitLowPass(AmReal32 frequency, AmReal32 q)
     {
         return Init(TYPE_LOW_PASS, frequency, q, 0.0f);
     }
 
-    AmResult BiquadResonantFilter::InitHighPass(float frequency, float q)
+    AmResult BiquadResonantFilter::InitHighPass(AmReal32 frequency, AmReal32 q)
     {
         return Init(TYPE_HIGH_PASS, frequency, q, 0.0f);
     }
 
-    AmResult BiquadResonantFilter::InitBandPass(float frequency, float q)
+    AmResult BiquadResonantFilter::InitBandPass(AmReal32 frequency, AmReal32 q)
     {
         return Init(TYPE_BAND_PASS, frequency, q, 0.0f);
     }
 
-    AmResult BiquadResonantFilter::InitPeaking(float frequency, float q, float gain)
+    AmResult BiquadResonantFilter::InitPeaking(AmReal32 frequency, AmReal32 q, AmReal32 gain)
     {
         return Init(TYPE_PEAK, frequency, q, gain);
     }
 
-    AmResult BiquadResonantFilter::InitNotching(float frequency, float q)
+    AmResult BiquadResonantFilter::InitNotching(AmReal32 frequency, AmReal32 q)
     {
         return Init(TYPE_NOTCH, frequency, q, 0.0);
     }
 
-    AmResult BiquadResonantFilter::InitLowShelf(float frequency, float s, float gain)
+    AmResult BiquadResonantFilter::InitLowShelf(AmReal32 frequency, AmReal32 s, AmReal32 gain)
     {
         return Init(TYPE_LOW_SHELF, frequency, s, gain);
     }
 
-    AmResult BiquadResonantFilter::InitHighShelf(float frequency, float s, float gain)
+    AmResult BiquadResonantFilter::InitHighShelf(AmReal32 frequency, AmReal32 s, AmReal32 gain)
     {
         return Init(TYPE_HIGH_SHELF, frequency, s, gain);
     }
@@ -101,7 +101,7 @@ namespace SparkyStudios::Audio::Amplitude
         return PARAM_FLOAT;
     }
 
-    float BiquadResonantFilter::GetParamMax(AmUInt32 index)
+    AmReal32 BiquadResonantFilter::GetParamMax(AmUInt32 index)
     {
         switch (index)
         {
@@ -120,7 +120,7 @@ namespace SparkyStudios::Audio::Amplitude
         }
     }
 
-    float BiquadResonantFilter::GetParamMin(AmUInt32 index)
+    AmReal32 BiquadResonantFilter::GetParamMin(AmUInt32 index)
     {
         switch (index)
         {
@@ -158,19 +158,20 @@ namespace SparkyStudios::Audio::Amplitude
             i.y2 = 0;
         }
 
-        Init(5);
+        Init(BiquadResonantFilter::ATTRIBUTE_LAST);
 
         m_parameters[BiquadResonantFilter::ATTRIBUTE_GAIN] = parent->_gain;
         m_parameters[BiquadResonantFilter::ATTRIBUTE_RESONANCE] = parent->_resonance;
         m_parameters[BiquadResonantFilter::ATTRIBUTE_FREQUENCY] = parent->_frequency;
-        m_parameters[BiquadResonantFilter::ATTRIBUTE_TYPE] = static_cast<float>(parent->_filterType);
+        m_parameters[BiquadResonantFilter::ATTRIBUTE_TYPE] = static_cast<AmReal32>(parent->_filterType);
 
         _sampleRate = 44100;
 
         ComputeBiquadResonantParams();
     }
 
-    void BiquadResonantFilterInstance::ProcessFrame(AmInt16Buffer frame, AmUInt16 channels, AmUInt32 sampleRate)
+    void BiquadResonantFilterInstance::ProcessChannel(
+        AmInt16Buffer buffer, AmUInt16 channel, AmUInt64 frames, AmUInt16 channels, AmUInt32 sampleRate, bool isInterleaved)
     {
         if (m_numParamsChanged &
                 (1 << BiquadResonantFilter::ATTRIBUTE_FREQUENCY | 1 << BiquadResonantFilter::ATTRIBUTE_RESONANCE |
@@ -183,7 +184,7 @@ namespace SparkyStudios::Audio::Amplitude
 
         m_numParamsChanged = 0;
 
-        FilterInstance::ProcessFrame(frame, channels, sampleRate);
+        FilterInstance::ProcessChannel(buffer, channel, frames, channels, sampleRate, isInterleaved);
     }
 
     AmInt16 BiquadResonantFilterInstance::ProcessSample(AmInt16 sample, AmUInt16 channel, AmUInt32 sampleRate)
@@ -213,13 +214,13 @@ namespace SparkyStudios::Audio::Amplitude
     {
         _isDirty = false;
 
-        const float q = m_parameters[BiquadResonantFilter::ATTRIBUTE_RESONANCE];
-        const float omega = 2.0f * M_PI * m_parameters[BiquadResonantFilter::ATTRIBUTE_FREQUENCY] / static_cast<float>(_sampleRate);
-        const float sinOmega = sinf(omega);
-        const float cosOmega = cosf(omega);
-        const float A = std::powf(10, (m_parameters[BiquadResonantFilter::ATTRIBUTE_GAIN] / 40));
+        const AmReal32 q = m_parameters[BiquadResonantFilter::ATTRIBUTE_RESONANCE];
+        const AmReal32 omega = 2.0f * M_PI * m_parameters[BiquadResonantFilter::ATTRIBUTE_FREQUENCY] / static_cast<AmReal32>(_sampleRate);
+        const AmReal32 sinOmega = std::sinf(omega);
+        const AmReal32 cosOmega = std::cosf(omega);
+        const AmReal32 A = std::powf(10, (m_parameters[BiquadResonantFilter::ATTRIBUTE_GAIN] / 40));
 
-        float scalar, alpha, beta;
+        AmReal32 scalar, alpha, beta;
 
         switch (static_cast<AmUInt32>(m_parameters[BiquadResonantFilter::ATTRIBUTE_TYPE]))
         {

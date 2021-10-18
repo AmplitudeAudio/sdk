@@ -64,8 +64,10 @@ namespace SparkyStudios::Audio::Amplitude
         virtual void AdvanceFrame(AmTime delta_time);
 
         virtual void Process(AmInt16Buffer buffer, AmUInt64 frames, AmUInt64 bufferSize, AmUInt16 channels, AmUInt32 sampleRate);
+        virtual void ProcessInterleaved(AmInt16Buffer buffer, AmUInt64 frames, AmUInt64 bufferSize, AmUInt16 channels, AmUInt32 sampleRate);
 
-        virtual void ProcessFrame(AmInt16Buffer frame, AmUInt16 channels, AmUInt32 sampleRate);
+        virtual void ProcessChannel(
+            AmInt16Buffer buffer, AmUInt16 channel, AmUInt64 frames, AmUInt16 channels, AmUInt32 sampleRate, bool isInterleaved);
 
         virtual AmInt16 ProcessSample(AmInt16 sample, AmUInt16 channel, AmUInt32 sampleRate);
 

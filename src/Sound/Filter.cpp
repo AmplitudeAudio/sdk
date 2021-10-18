@@ -32,12 +32,12 @@ namespace SparkyStudios::Audio::Amplitude
         return Filter::PARAM_FLOAT;
     }
 
-    float Filter::GetParamMax(AmUInt32 index)
+    AmReal32 Filter::GetParamMax(AmUInt32 index)
     {
         return 1.0f;
     }
 
-    float Filter::GetParamMin(AmUInt32 index)
+    AmReal32 Filter::GetParamMin(AmUInt32 index)
     {
         return 0.0f;
     }
@@ -59,7 +59,7 @@ namespace SparkyStudios::Audio::Amplitude
         delete[] m_parameters;
 
         m_numParams = numParams;
-        m_parameters = new float[numParams];
+        m_parameters = new AmReal32[numParams];
 
         if (m_parameters == nullptr)
         {
@@ -71,10 +71,7 @@ namespace SparkyStudios::Audio::Amplitude
             return AM_ERROR_OUT_OF_MEMORY;
         }
 
-        for (AmUInt32 i = 0; i < m_numParams; i++)
-        {
-            m_parameters[i] = 0;
-        }
+        memset(m_parameters, 0, m_numParams * sizeof(AmReal32));
 
         m_parameters[0] = 1; // Set 'Wet' to 1
 
@@ -89,23 +86,43 @@ namespace SparkyStudios::Audio::Amplitude
         if (buffer == nullptr)
             return;
 
-        AmInt16Buffer frame = buffer;
-
-        for (AmUInt64 i = 0; i < frames; i++)
+        for (AmUInt16 c = 0; c < channels; c++)
         {
-            ProcessFrame(frame, channels, sampleRate);
-            frame += channels;
+            ProcessChannel(buffer, c, frames, channels, sampleRate, false);
         }
     }
 
-    void FilterInstance::ProcessFrame(AmInt16Buffer frame, AmUInt16 channels, AmUInt32 sampleRate)
+    void FilterInstance::ProcessInterleaved(
+        AmInt16Buffer buffer, AmUInt64 frames, AmUInt64 bufferSize, AmUInt16 channels, AmUInt32 sampleRate)
     {
-        if (frame == nullptr)
+        if (buffer == nullptr)
             return;
 
         for (AmUInt16 c = 0; c < channels; c++)
         {
-            frame[c] = ProcessSample(frame[c], c, sampleRate);
+            ProcessChannel(buffer, c, frames, channels, sampleRate, true);
+        }
+    }
+
+    void FilterInstance::ProcessChannel(
+        AmInt16Buffer buffer, AmUInt16 channel, AmUInt64 frames, AmUInt16 channels, AmUInt32 sampleRate, bool isInterleaved)
+    {
+        if (buffer == nullptr)
+            return;
+
+        if (isInterleaved)
+        {
+            for (AmUInt16 i = channel; i < frames * channels; i += channels)
+            {
+                buffer[i] = ProcessSample(buffer[i], channel, sampleRate);
+            }
+        }
+        else
+        {
+            for (AmUInt16 i = channel * frames; i < frames; i++)
+            {
+                buffer[i] = ProcessSample(buffer[i], channel, sampleRate);
+            }
         }
     }
 
@@ -114,7 +131,7 @@ namespace SparkyStudios::Audio::Amplitude
         return sample;
     }
 
-    float FilterInstance::GetFilterParameter(AmUInt32 attributeId)
+    AmReal32 FilterInstance::GetFilterParameter(AmUInt32 attributeId)
     {
         if (attributeId >= m_numParams)
             return 0;
@@ -122,7 +139,7 @@ namespace SparkyStudios::Audio::Amplitude
         return m_parameters[attributeId];
     }
 
-    void FilterInstance::SetFilterParameter(AmUInt32 attributeId, float value)
+    void FilterInstance::SetFilterParameter(AmUInt32 attributeId, AmReal32 value)
     {
         if (attributeId >= m_numParams)
             return;
