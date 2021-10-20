@@ -168,6 +168,8 @@ set(SA_SOURCE
     src/Sound/Switch.cpp
     src/Sound/SwitchContainer.cpp
 
+    src/Utils/pffft/pffft.cpp
+    src/Utils/pffft/pffft.h
     src/Utils/SmMalloc/smmalloc_generic.cpp
     src/Utils/SmMalloc/smmalloc_tls.cpp
     src/Utils/SmMalloc/smmalloc.cpp

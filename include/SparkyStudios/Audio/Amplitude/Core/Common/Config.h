@@ -42,6 +42,8 @@
 #define AM_SSE_INTRINSICS
 #include <Vc/Vc>
 #endif // AM_CPU_X86 || AM_CPU_X86_64 || AM_CPU_ARM_NEON
+#else
+#define PFFFT_SIMD_DISABLE
 #endif // AMPLITUDE_DISABLE_SIMD
 
 // Define the value of Pi if the platform doesn't do that
