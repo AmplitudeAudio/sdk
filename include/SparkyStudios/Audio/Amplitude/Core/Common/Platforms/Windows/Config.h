@@ -43,6 +43,10 @@
 #define AM_SIMD_ALIGNMENT 16
 #define AM_TYPE_ALIGN_SIMD(_declaration_) AM_TYPE_ALIGN(_declaration_, AM_SIMD_ALIGNMENT)
 #define AM_BUFFER_ALIGNMENT AM_SIMD_ALIGNMENT
+#define AM_ALIGNED_ALLOC(_size_, _alignment_) _aligned_malloc(_size_, _alignment_)
+#define AM_ALIGNED_REALLOC(_ptr_, _size_, _alignment_) _aligned_realloc(_ptr_, _size_, _alignment_)
+#define AM_ALIGNED_MSIZE(_ptr_, _alignment_) _aligned_msize(_ptr_, _alignment_, 0)
+#define AM_ALIGNED_FREE(_ptr_) _aligned_free(_ptr_)
 
 // Windows platforms support wchar_t
 #define AM_WCHAR_SUPPORTED
