@@ -21,12 +21,12 @@
 
 namespace SparkyStudios::Audio::Amplitude
 {
-    static AM_INLINE AmInt32 AmFloatToFixedPoint(const float x)
+    static AM_INLINE(AmInt32) AmFloatToFixedPoint(const AmReal32 x)
     {
         return static_cast<AmInt32>(x * (1 << kAmFixedPointShift));
     }
 
-    static AM_INLINE AmReal32 AmInt16ToReal32(const AmInt16 x)
+    static AM_INLINE(AmReal32) AmInt16ToReal32(const AmInt16 x)
     {
         AmReal32 y = static_cast<AmReal32>(x);
 
@@ -43,7 +43,7 @@ namespace SparkyStudios::Audio::Amplitude
         return y;
     }
 
-    static AM_INLINE AmInt16 AmReal32ToInt16(const AmReal32 x)
+    static AM_INLINE(AmInt16) AmReal32ToInt16(const AmReal32 x)
     {
         AmReal32 y = AM_CLAMP(x, -1.0f, 1.0f);
 
@@ -58,6 +58,18 @@ namespace SparkyStudios::Audio::Amplitude
 #endif
 
         return static_cast<AmInt16>(y);
+    }
+
+    static AM_INLINE(AmReal32) CatmullRom(const AmReal32 t, const AmReal32 p0, const AmReal32 p1, const AmReal32 p2, const AmReal32 p3)
+    {
+        // clang-format off
+        return 0.5f * (
+            (2 * p1) +
+            (-p0 + p2) * t +
+            (2 * p0 - 5 * p1 + 4 * p2 - p3) * t * t +
+            (-p0 + 3 * p1 - 3 * p2 + p3) * t * t * t
+        );
+        // clang-format on
     }
 } // namespace SparkyStudios::Audio::Amplitude
 

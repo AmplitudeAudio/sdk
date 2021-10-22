@@ -36,8 +36,8 @@
 #endif
 
 // Function inline
-#define AM_INLINE __forceinline
-#define AM_NO_INLINE __declspec(noinline)
+#define AM_INLINE(_return_type_) __forceinline _return_type_
+#define AM_NO_INLINE(_return_type_) __declspec(noinline) _return_type_
 
 // Alignment required for SIMD data processing
 #define AM_SIMD_ALIGNMENT 16
@@ -57,7 +57,7 @@
 // Macro used to convert a string literal to an AmOsString string at compile-time
 #define AM_OS_STRING(s) L##s
 
-AM_INLINE std::wstring am_string_widen(const std::string& str)
+static AM_INLINE(std::wstring) am_string_widen(const std::string& str)
 {
     std::wostringstream wstm;
     const auto& ctfacet = std::use_facet<std::ctype<wchar_t>>(wstm.getloc());
@@ -66,7 +66,7 @@ AM_INLINE std::wstring am_string_widen(const std::string& str)
     return wstm.str();
 }
 
-AM_INLINE std::string am_wstring_narrow(const std::wstring& str)
+static AM_INLINE(std::string) am_wstring_narrow(const std::wstring& str)
 {
     std::ostringstream stm;
     const auto& ctfacet = std::use_facet<std::ctype<wchar_t>>(stm.getloc());

@@ -18,8 +18,8 @@
 #define SS_AMPLITUDE_AUDIO_UNIX_CONFIG_H
 
 // Function inline
-#define AM_INLINE inline
-#define AM_NO_INLINE __attribute__((noinline))
+#define AM_INLINE(_return_type_) inline _return_type_ __attribute__((always_inline))
+#define AM_NO_INLINE(_return_type_) _return_type_ __attribute__((noinline))
 
 // Alignment required for SIMD data processing
 #include <cstdlib>
@@ -73,7 +73,7 @@ static AM_INLINE(size_t) am_aligned_msize(void* ptr, size_t alignment)
 // Macro used to convert a string literal to an AmOsString string at compile-time
 #define AM_OS_STRING(s) L##s
 
-AM_INLINE std::wstring am_string_widen(const std::string& str)
+static AM_INLINE(std::wstring) am_string_widen(const std::string& str)
 {
     std::wostringstream wstm;
     const auto& ctfacet = std::use_facet<std::ctype<wchar_t>>(wstm.getloc());
@@ -82,7 +82,7 @@ AM_INLINE std::wstring am_string_widen(const std::string& str)
     return wstm.str();
 }
 
-AM_INLINE std::string am_wstring_narrow(const std::wstring& str)
+static AM_INLINE(std::string) am_wstring_narrow(const std::wstring& str)
 {
     std::ostringstream stm;
     const auto& ctfacet = std::use_facet<std::ctype<wchar_t>>(stm.getloc());
