@@ -48,7 +48,7 @@ namespace Freeverb
 
     // Big to inline - but crucial for speed
 
-    inline AM_INLINE(AmReal32) AllPass::Process(AmReal32 input)
+    AM_INLINE(AmReal32) AllPass::Process(AmReal32 input)
     {
         AmReal32 output;
         AmReal32 bufout;
