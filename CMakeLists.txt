@@ -168,6 +168,14 @@ set(SA_SOURCE
     src/Sound/Switch.cpp
     src/Sound/SwitchContainer.cpp
 
+    src/Utils/Freeverb/AllPass.cpp
+    src/Utils/Freeverb/AllPass.h
+    src/Utils/Freeverb/Comb.cpp
+    src/Utils/Freeverb/Comb.h
+    src/Utils/Freeverb/denormals.h
+    src/Utils/Freeverb/ReverbModel.cpp
+    src/Utils/Freeverb/ReverbModel.h
+    src/Utils/Freeverb/tuning.h
     src/Utils/pffft/pffft.cpp
     src/Utils/pffft/pffft.h
     src/Utils/SmMalloc/smmalloc_generic.cpp
