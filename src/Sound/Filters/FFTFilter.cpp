@@ -45,9 +45,10 @@ namespace SparkyStudios::Audio::Amplitude
 
     void FFTFilterInstance::InitFFT()
     {
+        _temp = static_cast<AmReal32*>(pffft_aligned_malloc(STFT_WINDOW_SIZE));
+
         _inputBuffer = nullptr;
         _mixBuffer = nullptr;
-        _temp = nullptr;
         _lastPhase = nullptr;
         _sumPhase = nullptr;
 
@@ -66,8 +67,6 @@ namespace SparkyStudios::Audio::Amplitude
         // Could allocate max_channels but that would potentially waste a lot of memory.
         if (_inputBuffer == nullptr)
         {
-            _temp = static_cast<AmReal32*>(pffft_aligned_malloc(STFT_WINDOW_SIZE));
-
             _inputBuffer = new AmReal32[STFT_WINDOW_TWICE * channels];
             _mixBuffer = new AmReal32[STFT_WINDOW_TWICE * channels];
             _lastPhase = new AmReal32[STFT_WINDOW_SIZE * channels];
