@@ -35,22 +35,22 @@ namespace sm
             uint32_t* pCacheStack, uint32_t maxElementsNum, CacheWarmupOptions warmupOptions, Allocator* alloc, size_t bucketIndex)
         {
             // assume thread_local variable always initialized with zeroes
-            SM_ASSERT(numElementsL0 == 0);
-            SM_ASSERT(numElementsL1 == 0);
-            SM_ASSERT(pBucket == nullptr);
-            SM_ASSERT(pBucketData == nullptr);
-            SM_ASSERT(pStorageL1 == nullptr);
-            SM_ASSERT(maxElementsCount == 0);
+            AMPLITUDE_ASSERT(numElementsL0 == 0);
+            AMPLITUDE_ASSERT(numElementsL1 == 0);
+            AMPLITUDE_ASSERT(pBucket == nullptr);
+            AMPLITUDE_ASSERT(pBucketData == nullptr);
+            AMPLITUDE_ASSERT(pStorageL1 == nullptr);
+            AMPLITUDE_ASSERT(maxElementsCount == 0);
 
             Allocator::PoolBucket* poolBucket = alloc->GetBucketByIndex(bucketIndex);
 
-            SM_ASSERT(maxElementsNum >= SMM_MAX_CACHE_ITEMS_COUNT + 2);
+            AMPLITUDE_ASSERT(maxElementsNum >= SMM_MAX_CACHE_ITEMS_COUNT + 2);
             pStorageL1 = pCacheStack;
             numElementsL1 = 0;
             numElementsL0 = 0;
             maxElementsCount = (maxElementsNum - SMM_MAX_CACHE_ITEMS_COUNT);
             pBucket = poolBucket;
-            SM_ASSERT(pBucket);
+            AMPLITUDE_ASSERT(pBucket);
             pBucketData = pBucket->pData;
 
             if (warmupOptions == CACHE_COLD)
@@ -92,11 +92,11 @@ namespace sm
                 CacheWarmupLink* pNext = pCurrent->pNext;
                 bool r = alloc->ReleaseToCache<false>(this, pCurrent);
                 SMMALLOC_USED_IN_ASSERT(r);
-                SM_ASSERT(r);
+                AMPLITUDE_ASSERT(r);
                 pCurrent = pNext;
             }
 
-            SM_ASSERT(GetElementsCount() == num);
+            AMPLITUDE_ASSERT(GetElementsCount() == num);
         }
 
         uint32_t* TlsPoolBucket::Destroy()
@@ -128,7 +128,7 @@ namespace sm
 
     void Allocator::CreateThreadCache(CacheWarmupOptions warmupOptions, std::initializer_list<uint32_t> options)
     {
-        SM_ASSERT(bucketsCount >= options.size());
+        AMPLITUDE_ASSERT(bucketsCount >= options.size());
 
         size_t i = 0;
         for (uint32_t _elementsNum : options)
@@ -161,7 +161,7 @@ namespace sm
 
     void Allocator::PoolBucket::Create(size_t elementSize)
     {
-        SM_ASSERT(elementSize >= 16 && "Invalid element size");
+        AMPLITUDE_ASSERT(elementSize >= 16 && "Invalid element size");
 
         // build inplace single linked list
         globalTag.store(0, std::memory_order_relaxed);
@@ -231,7 +231,7 @@ namespace sm
             return;
         }
 
-        SM_ASSERT(_bucketsCount > 0 && _bucketsCount <= 64);
+        AMPLITUDE_ASSERT(_bucketsCount > 0 && _bucketsCount <= 64);
         if (_bucketsCount == 0)
         {
             return;
@@ -256,7 +256,7 @@ namespace sm
         {
             PoolBucket& bucket = buckets[i];
             bucket.pData = pBuffer.get() + i * bucketSizeInBytes;
-            SM_ASSERT(IsAligned((size_t)bucket.pData, GetNextPow2(elementSize)) && "Alignment failed");
+            AMPLITUDE_ASSERT(IsAligned((size_t)bucket.pData, GetNextPow2(elementSize)) && "Alignment failed");
             bucket.pBufferEnd = bucket.pData + bucketSizeInBytes;
             bucket.Create(elementSize);
             elementSize += 16;

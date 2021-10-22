@@ -87,10 +87,10 @@ static AM_INLINE(std::string) am_wstring_narrow(const std::wstring& str)
 #include <cstdio> // for sprintf in asserts
 #ifndef VC_EXTRALEAN
 #define VC_EXTRALEAN
-#endif
+#endif // VC_EXTRALEAN
 #ifndef WIN32_LEAN_AND_MEAN
 #define WIN32_LEAN_AND_MEAN
-#endif
+#endif // WIN32_LEAN_AND_MEAN
 #include <Windows.h> // only needed for OutputDebugStringA, should be solved somehow.
 #define AMPLITUDE_ASSERT(x)                                                                                                                \
     if (!(x))                                                                                                                              \
@@ -103,7 +103,7 @@ static AM_INLINE(std::string) am_wstring_narrow(const std::wstring& str)
 #else
 #include <cassert> // assert
 #define AMPLITUDE_ASSERT(x) assert(x)
-#endif
-#endif
+#endif // _MSC_VER
+#endif // AMPLITUDE_NO_ASSERTS
 
 #endif // SS_AMPLITUDE_AUDIO_WINDOWS_CONFIG_H

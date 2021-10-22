@@ -112,6 +112,6 @@ static AM_INLINE(std::string) am_wstring_narrow(const std::wstring& str)
 #else
 #include <cassert> // assert
 #define AMPLITUDE_ASSERT(x) assert(x)
-#endif
+#endif // AMPLITUDE_NO_ASSERTS
 
 #endif // SS_AMPLITUDE_AUDIO_UNIX_CONFIG_H
