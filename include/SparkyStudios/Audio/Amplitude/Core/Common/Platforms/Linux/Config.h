@@ -37,9 +37,6 @@
 #endif
 #endif
 
-// Linux platforms support wchar_t
-#define AM_WCHAR_SUPPORTED
-
 #include <SparkyStudios/Audio/Amplitude/Core/Common/Platforms/UNIX/Config.h>
 
 #endif // SS_AMPLITUDE_AUDIO_LINUX_CONFIG_H
