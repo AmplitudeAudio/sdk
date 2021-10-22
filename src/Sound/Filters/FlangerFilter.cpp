@@ -158,7 +158,7 @@ namespace SparkyStudios::Audio::Amplitude
 
         for (AmUInt64 f = 0; f < frames; f++)
         {
-            const AmUInt64 s = isInterleaved ? f * channels + channel : f + channel * channels;
+            const AmUInt64 s = isInterleaved ? f * channels + channel : f + channel * frames;
 
             const auto delay = static_cast<AmInt32>(std::floor(static_cast<AmReal64>(maxSamples) * (1 + std::cos(_index))) / 2);
             _index += i;

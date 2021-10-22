@@ -99,7 +99,7 @@ namespace SparkyStudios::Audio::Amplitude
 
         for (AmUInt64 f = 0; f < frames; f++)
         {
-            const AmUInt64 s = isInterleaved ? f * channels + channel : f + channel * channels;
+            const AmUInt64 s = isInterleaved ? f * channels + channel : f + channel * frames;
 
             const AmInt32 x = buffer[s];
             /* */ AmInt32 y;
