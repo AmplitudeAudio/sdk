@@ -153,6 +153,26 @@ set(SA_SOURCE
     src/Sound/Faders/LinearFader.h
     src/Sound/Faders/SCurveFader.cpp
     src/Sound/Faders/SCurveFader.h
+    src/Sound/Filters/BassBoostFilter.cpp
+    src/Sound/Filters/BassBoostFilter.h
+    src/Sound/Filters/BiquadResonantFilter.cpp
+    src/Sound/Filters/BiquadResonantFilter.h
+    src/Sound/Filters/DCRemovalFilter.cpp
+    src/Sound/Filters/DCRemovalFilter.h
+    src/Sound/Filters/EchoFilter.cpp
+    src/Sound/Filters/EchoFilter.h
+    src/Sound/Filters/EqualizerFilter.cpp
+    src/Sound/Filters/EqualizerFilter.h
+    src/Sound/Filters/FFTFilter.cpp
+    src/Sound/Filters/FFTFilter.h
+    src/Sound/Filters/FlangerFilter.cpp
+    src/Sound/Filters/FlangerFilter.h
+    src/Sound/Filters/FreeverbFilter.cpp
+    src/Sound/Filters/FreeverbFilter.h
+    src/Sound/Filters/RobotizeFilter.cpp
+    src/Sound/Filters/RobotizeFilter.h
+    src/Sound/Filters/WaveShaperFilter.cpp
+    src/Sound/Filters/WaveShaperFilter.h
     src/Sound/Schedulers/SequenceScheduler.cpp
     src/Sound/Schedulers/RandomScheduler.cpp
     src/Sound/Attenuation.cpp
