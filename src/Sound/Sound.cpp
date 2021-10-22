@@ -256,7 +256,7 @@ namespace SparkyStudios::Audio::Amplitude
     {
         Destroy();
 
-        delete _userData;
+        delete static_cast<SoundData*>(_userData);
         _userData = nullptr;
 
         _parent = nullptr;
