@@ -81,6 +81,7 @@ set(SA_SOURCE
     include/SparkyStudios/Audio/Amplitude/Sound/Attenuation.h
     include/SparkyStudios/Audio/Amplitude/Sound/Collection.h
     include/SparkyStudios/Audio/Amplitude/Sound/Fader.h
+    include/SparkyStudios/Audio/Amplitude/Sound/Filter.h
     include/SparkyStudios/Audio/Amplitude/Sound/RTPC.h
     include/SparkyStudios/Audio/Amplitude/Sound/Scheduler.h
     include/SparkyStudios/Audio/Amplitude/Sound/Sound.h
@@ -152,6 +153,26 @@ set(SA_SOURCE
     src/Sound/Faders/LinearFader.h
     src/Sound/Faders/SCurveFader.cpp
     src/Sound/Faders/SCurveFader.h
+    src/Sound/Filters/BassBoostFilter.cpp
+    src/Sound/Filters/BassBoostFilter.h
+    src/Sound/Filters/BiquadResonantFilter.cpp
+    src/Sound/Filters/BiquadResonantFilter.h
+    src/Sound/Filters/DCRemovalFilter.cpp
+    src/Sound/Filters/DCRemovalFilter.h
+    src/Sound/Filters/EchoFilter.cpp
+    src/Sound/Filters/EchoFilter.h
+    src/Sound/Filters/EqualizerFilter.cpp
+    src/Sound/Filters/EqualizerFilter.h
+    src/Sound/Filters/FFTFilter.cpp
+    src/Sound/Filters/FFTFilter.h
+    src/Sound/Filters/FlangerFilter.cpp
+    src/Sound/Filters/FlangerFilter.h
+    src/Sound/Filters/FreeverbFilter.cpp
+    src/Sound/Filters/FreeverbFilter.h
+    src/Sound/Filters/RobotizeFilter.cpp
+    src/Sound/Filters/RobotizeFilter.h
+    src/Sound/Filters/WaveShaperFilter.cpp
+    src/Sound/Filters/WaveShaperFilter.h
     src/Sound/Schedulers/SequenceScheduler.cpp
     src/Sound/Schedulers/RandomScheduler.cpp
     src/Sound/Attenuation.cpp
@@ -159,18 +180,30 @@ set(SA_SOURCE
     src/Sound/AttenuationShapes.h
     src/Sound/Collection.cpp
     src/Sound/Fader.cpp
+    src/Sound/Filter.cpp
+    src/Sound/RefCounter.cpp
     src/Sound/Rtpc.cpp
     src/Sound/Sound.cpp
     src/Sound/SoundBank.cpp
     src/Sound/Switch.cpp
     src/Sound/SwitchContainer.cpp
-    src/Sound/RefCounter.cpp
 
+    src/Utils/Freeverb/AllPass.cpp
+    src/Utils/Freeverb/AllPass.h
+    src/Utils/Freeverb/Comb.cpp
+    src/Utils/Freeverb/Comb.h
+    src/Utils/Freeverb/denormals.h
+    src/Utils/Freeverb/ReverbModel.cpp
+    src/Utils/Freeverb/ReverbModel.h
+    src/Utils/Freeverb/tuning.h
+    src/Utils/pffft/pffft.cpp
+    src/Utils/pffft/pffft.h
     src/Utils/SmMalloc/smmalloc_generic.cpp
     src/Utils/SmMalloc/smmalloc_tls.cpp
     src/Utils/SmMalloc/smmalloc.cpp
     src/Utils/SmMalloc/smmalloc.h
     src/Utils/intrusive_list.h
+    src/Utils/Utils.h
 
     src/IO/File.h
     src/IO/File.cpp

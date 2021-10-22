@@ -16,18 +16,13 @@
 
 #include <Core/EngineInternalState.h>
 #include <Mixer/Mixer.h>
+#include <Utils/Utils.h>
 
 #include "engine_config_definition_generated.h"
 
 #define AMPLIMIX_STORE(A, C) std::atomic_store_explicit(A, C, std::memory_order_release)
 #define AMPLIMIX_LOAD(A) std::atomic_load_explicit(A, std::memory_order_acquire)
 #define AMPLIMIX_CSWAP(A, E, C) std::atomic_compare_exchange_strong_explicit(A, E, C, std::memory_order_acq_rel, std::memory_order_acquire)
-
-#define AMPLIMIX_FX_BITS (16)
-#define AMPLIMIX_FX_UNIT (1 << AMPLIMIX_FX_BITS)
-#define AMPLIMIX_FX_MASK (AMPLIMIX_FX_UNIT - 1)
-
-#define AMPLIMIX_FX_FROM_FLOAT(f) (AmInt16((f)*AMPLIMIX_FX_UNIT))
 
 namespace SparkyStudios::Audio::Amplitude
 {
@@ -557,8 +552,8 @@ namespace SparkyStudios::Audio::Amplitude
         // atomically load left and right gain
         const hmm_vec2 g = AMPLIMIX_LOAD(&layer->gain);
         const float gain = AMPLIMIX_LOAD(&_masterGain);
-        const auto lGain = AudioDataUnit(AMPLIMIX_FX_FROM_FLOAT(g.X * gain));
-        const auto rGain = AudioDataUnit(AMPLIMIX_FX_FROM_FLOAT(g.Y * gain));
+        const auto lGain = AudioDataUnit(AmFloatToFixedPoint(g.X * gain));
+        const auto rGain = AudioDataUnit(AmFloatToFixedPoint(g.Y * gain));
 
         // if this sound is streaming and we have a stream event callback
         if (layer->snd != nullptr && layer->snd->stream)
@@ -681,17 +676,17 @@ namespace SparkyStudios::Audio::Amplitude
             buffer[i] += sample.interleaveLow(sample).apply(
                 [gain, &j](AmInt16 sample) -> AmInt16
                 {
-                    return static_cast<AmInt16>((sample * gain[j++]) >> AMPLIMIX_FX_BITS);
+                    return static_cast<AmInt16>((sample * gain[j++]) >> kAmFixedPointShift);
                 });
             j = 0;
             buffer[i + 1] += sample.interleaveHigh(sample).apply(
                 [gain, &j](AmInt16 sample) -> AmInt16
                 {
-                    return static_cast<AmInt16>((sample * gain[j++]) >> AMPLIMIX_FX_BITS);
+                    return static_cast<AmInt16>((sample * gain[j++]) >> kAmFixedPointShift);
                 });
 #else
-            buffer[i] += static_cast<AmInt16>((sample * lGain) >> AMPLIMIX_FX_BITS);
-            buffer[i + 1] += static_cast<AmInt16>((sample * rGain) >> AMPLIMIX_FX_BITS);
+            buffer[i] += static_cast<AmInt16>((sample * lGain) >> kAmFixedPointShift);
+            buffer[i + 1] += static_cast<AmInt16>((sample * rGain) >> kAmFixedPointShift);
 #endif // AM_SSE_INTRINSICS
 
             // advance cursor
@@ -764,17 +759,17 @@ namespace SparkyStudios::Audio::Amplitude
             buffer[i] += layer->snd->chunk->buffer[off].apply(
                 [gain, &j](AmInt16 sample) -> AmInt16
                 {
-                    return static_cast<AmInt16>((sample * gain[j++]) >> AMPLIMIX_FX_BITS);
+                    return static_cast<AmInt16>((sample * gain[j++]) >> kAmFixedPointShift);
                 });
             j = 0;
             buffer[i + 1] += layer->snd->chunk->buffer[off + 1].apply(
                 [gain, &j](AmInt16 sample) -> AmInt16
                 {
-                    return static_cast<AmInt16>((sample * gain[j++]) >> AMPLIMIX_FX_BITS);
+                    return static_cast<AmInt16>((sample * gain[j++]) >> kAmFixedPointShift);
                 });
 #else
-            buffer[i] += static_cast<AmInt16>((layer->snd->chunk->buffer[off] * lGain) >> AMPLIMIX_FX_BITS);
-            buffer[i + 1] += static_cast<AmInt16>((layer->snd->chunk->buffer[off + 1] * rGain) >> AMPLIMIX_FX_BITS);
+            buffer[i] += static_cast<AmInt16>((layer->snd->chunk->buffer[off] * lGain) >> kAmFixedPointShift);
+            buffer[i + 1] += static_cast<AmInt16>((layer->snd->chunk->buffer[off + 1] * rGain) >> kAmFixedPointShift);
 #endif // AM_SSE_INTRINSICS
 
             // advance cursor
