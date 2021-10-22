@@ -127,21 +127,21 @@ namespace SparkyStudios::Audio::Amplitude
         case RobotizeFilter::WAVE_SAW:
             return p - 0.5f;
         case RobotizeFilter::WAVE_SIN:
-            return std::sinf(p * M_PI * 2.0f) * 0.5f;
+            return std::sin(p * M_PI * 2.0f) * 0.5f;
         case RobotizeFilter::WAVE_TRIANGLE:
             return (p > 0.5f ? (1.0f - (p - 0.5f) * 2) : p * 2.0f) - 0.5f;
         case RobotizeFilter::WAVE_BOUNCE:
-            return (p < 0.5f ? std::sinf(p * M_PI * 2.0f) * 0.5f : -std::sinf(p * M_PI * 2.0f) * 0.5f) - 0.5f;
+            return (p < 0.5f ? std::sin(p * M_PI * 2.0f) * 0.5f : -std::sin(p * M_PI * 2.0f) * 0.5f) - 0.5f;
         case RobotizeFilter::WAVE_JAWS:
-            return (p < 0.25f ? std::sinf(p * M_PI * 2.0f) * 0.5f : 0) - 0.5f;
+            return (p < 0.25f ? std::sin(p * M_PI * 2.0f) * 0.5f : 0) - 0.5f;
         case RobotizeFilter::WAVE_HUMPS:
-            return (p < 0.5f ? std::sinf(p * M_PI * 2.0f) * 0.5f : 0) - 0.5f;
+            return (p < 0.5f ? std::sin(p * M_PI * 2.0f) * 0.5f : 0) - 0.5f;
         case RobotizeFilter::WAVE_FSQUARE:
             {
                 AmReal32 f = 0;
                 for (AmInt32 i = 1; i < 22; i += 2)
                 {
-                    f += 4.0f / (M_PI * i) * std::sinf(2.0f * M_PI * i * p);
+                    f += 4.0f / (M_PI * i) * std::sin(2.0f * M_PI * i * p);
                 }
                 return f * 0.5f;
             }
@@ -151,9 +151,9 @@ namespace SparkyStudios::Audio::Amplitude
                 for (AmInt32 i = 1; i < 15; i++)
                 {
                     if (i & 1)
-                        f += 1.0f / (M_PI * i) * std::sinf(p * 2.0f * M_PI * i);
+                        f += 1.0f / (M_PI * i) * std::sin(p * 2.0f * M_PI * i);
                     else
-                        f -= 1.0f / (M_PI * i) * std::sinf(p * 2.0f * M_PI * i);
+                        f -= 1.0f / (M_PI * i) * std::sin(p * 2.0f * M_PI * i);
                 }
                 return f;
             }

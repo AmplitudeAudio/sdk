@@ -41,6 +41,7 @@ namespace SparkyStudios::Audio::Amplitude
         , _mixer(nullptr)
         , _activeSounds()
         , _parentChannelState(parent)
+        , _playedSounds()
     {}
 
     void RealChannel::Initialize(int i)

@@ -51,7 +51,7 @@ namespace SparkyStudios::Audio::Amplitude
     typedef std::map<std::string, AmCollectionID> CollectionIdMap;
     typedef std::map<std::string, AmSwitchContainerID> SwitchContainerIdMap;
     typedef std::map<std::string, AmSoundID> SoundIdMap;
-    typedef std::map<std::string, std::string> EventIdMap;
+    typedef std::map<std::string, AmEventID> EventIdMap;
     typedef std::map<std::string, std::unique_ptr<SoundBank>> SoundBankMap;
 #endif
 

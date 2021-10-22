@@ -158,7 +158,7 @@ namespace SparkyStudios::Audio::Amplitude
     void EchoFilterInstance::InitBuffer(AmUInt16 channels, AmUInt32 sampleRate)
     {
         const auto maxSamples =
-            static_cast<AmUInt32>(std::ceilf(m_parameters[EchoFilter::ATTRIBUTE_DELAY] * static_cast<AmReal32>(sampleRate)));
+            static_cast<AmUInt32>(std::ceil(m_parameters[EchoFilter::ATTRIBUTE_DELAY] * static_cast<AmReal32>(sampleRate)));
 
         if (_buffer == nullptr)
         {

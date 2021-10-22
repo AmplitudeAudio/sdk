@@ -216,9 +216,9 @@ namespace SparkyStudios::Audio::Amplitude
 
         const AmReal32 q = m_parameters[BiquadResonantFilter::ATTRIBUTE_RESONANCE];
         const AmReal32 omega = 2.0f * M_PI * m_parameters[BiquadResonantFilter::ATTRIBUTE_FREQUENCY] / static_cast<AmReal32>(_sampleRate);
-        const AmReal32 sinOmega = std::sinf(omega);
-        const AmReal32 cosOmega = std::cosf(omega);
-        const AmReal32 A = std::powf(10, (m_parameters[BiquadResonantFilter::ATTRIBUTE_GAIN] / 40));
+        const AmReal32 sinOmega = std::sin(omega);
+        const AmReal32 cosOmega = std::cos(omega);
+        const AmReal32 A = std::pow(10, (m_parameters[BiquadResonantFilter::ATTRIBUTE_GAIN] / 40));
 
         AmReal32 scalar, alpha, beta;
 
@@ -271,8 +271,8 @@ namespace SparkyStudios::Audio::Amplitude
             _b2 = AmFloatToFixedPoint((1.0f - alpha) * scalar);
             break;
         case BiquadResonantFilter::TYPE_LOW_SHELF:
-            alpha = sinOmega / (2.0f * std::sqrtf((A + 1.0f / A) * (1.0f / q - 1.0f) + 2.0f));
-            beta = 2.0f * std::sqrtf(A) * alpha;
+            alpha = sinOmega / (2.0f * std::sqrt((A + 1.0f / A) * (1.0f / q - 1.0f) + 2.0f));
+            beta = 2.0f * std::sqrt(A) * alpha;
             scalar = 1.0f / ((A + 1.0f) + (A - 1.0f) * cosOmega + beta);
             _a0 = AmFloatToFixedPoint((A * ((A + 1.0f) - (A - 1.0f) * cosOmega + beta)) * scalar);
             _a1 = AmFloatToFixedPoint((2.0f * A * ((A - 1.0f) - (A + 1.0f) * cosOmega)) * scalar);
@@ -281,8 +281,8 @@ namespace SparkyStudios::Audio::Amplitude
             _b2 = AmFloatToFixedPoint(((A + 1.0f) + (A - 1.0f) * cosOmega - beta) * scalar);
             break;
         case BiquadResonantFilter::TYPE_HIGH_SHELF:
-            alpha = sinOmega / (2.0f * std::sqrtf((A + 1.0f / A) * (1.0f / q - 1.0f) + 2.0f));
-            beta = 2.0f * std::sqrtf(A) * alpha;
+            alpha = sinOmega / (2.0f * std::sqrt((A + 1.0f / A) * (1.0f / q - 1.0f) + 2.0f));
+            beta = 2.0f * std::sqrt(A) * alpha;
             scalar = 1.0f / ((A + 1.0f) - (A - 1.0f) * cosOmega + beta);
             _a0 = AmFloatToFixedPoint((A * ((A + 1.0f) + (A - 1.0f) * cosOmega + beta)) * scalar);
             _a1 = AmFloatToFixedPoint((-2.0f * A * ((A - 1.0f) + (A + 1.0f) * cosOmega)) * scalar);

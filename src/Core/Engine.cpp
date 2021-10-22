@@ -468,7 +468,7 @@ namespace SparkyStudios::Audio::Amplitude
                 {
                     if (spatialization == Spatialization_PositionOrientation)
                     {
-                        AMPLITUDE_ASSERT(entity.Valid())
+                        AMPLITUDE_ASSERT(entity.Valid());
                         *gain *= attenuation->GetGain(entity.GetState(), &*listener);
                     }
                     else

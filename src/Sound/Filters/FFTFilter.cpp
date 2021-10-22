@@ -78,7 +78,6 @@ namespace SparkyStudios::Audio::Amplitude
             memset(_sumPhase, 0, sizeof(AmReal32) * STFT_WINDOW_SIZE * channels);
         }
 
-        AmInt32 i;
         AmUInt32 offset = 0;
         AmUInt32 channelOffset = STFT_WINDOW_TWICE * channel;
         AmUInt32 inputOffset = _inputOffset[channel];
@@ -87,12 +86,13 @@ namespace SparkyStudios::Audio::Amplitude
 
         while (offset < (isInterleaved ? frames * channels : frames))
         {
-            AmInt32 samples = STFT_WINDOW_HALF - (inputOffset & (STFT_WINDOW_HALF - 1));
+            AmUInt32 samples = STFT_WINDOW_HALF - (inputOffset & (STFT_WINDOW_HALF - 1));
 
-            if ((offset + (isInterleaved ? samples * channels : samples)) > (isInterleaved ? frames * channels : frames))
+            if ((offset + static_cast<AmUInt64>(isInterleaved ? samples * channels : samples)) >
+                (isInterleaved ? frames * channels : frames))
                 samples = frames - (isInterleaved ? offset / channels : offset);
 
-            for (i = 0; i < samples; i++)
+            for (AmUInt32 i = 0; i < samples; i++)
             {
                 const AmUInt64 s = isInterleaved ? i * channels + channel : i + channel * frames;
 
@@ -106,7 +106,7 @@ namespace SparkyStudios::Audio::Amplitude
 
             if ((inputOffset & (STFT_WINDOW_HALF - 1)) == 0)
             {
-                for (i = 0; i < STFT_WINDOW_SIZE; i++)
+                for (AmUInt32 i = 0; i < STFT_WINDOW_SIZE; i++)
                 {
                     _temp[i] =
                         _inputBuffer[channelOffset + ((inputOffset + STFT_WINDOW_TWICE - STFT_WINDOW_HALF + i) & (STFT_WINDOW_TWICE - 1))];
@@ -123,12 +123,13 @@ namespace SparkyStudios::Audio::Amplitude
 
                 pffft_destroy_setup(_pffft_setup);
 
-                for (i = 0; i < STFT_WINDOW_SIZE; i++)
+                for (AmUInt32 i = 0; i < STFT_WINDOW_SIZE; i++)
                 {
                     _temp[i] *= 1.0f / STFT_WINDOW_HALF;
 
-                    _mixBuffer[channelOffset + (mixOffset & (STFT_WINDOW_TWICE - 1))] +=
-                        _temp[i] * ((AmReal32)STFT_WINDOW_HALF - std::abs(STFT_WINDOW_HALF - i)) * (1.0f / (AmReal32)STFT_WINDOW_HALF);
+                    _mixBuffer[channelOffset + (mixOffset & (STFT_WINDOW_TWICE - 1))] += _temp[i] *
+                        (static_cast<AmReal32>(STFT_WINDOW_HALF) - std::abs(static_cast<AmInt32>(STFT_WINDOW_HALF - i))) *
+                        (1.0f / static_cast<AmReal32>(STFT_WINDOW_HALF));
 
                     mixOffset++;
                 }
@@ -136,7 +137,7 @@ namespace SparkyStudios::Audio::Amplitude
                 mixOffset -= STFT_WINDOW_HALF;
             }
 
-            for (i = 0; i < samples; i++)
+            for (AmUInt32 i = 0; i < samples; i++)
             {
                 const AmUInt64 s = isInterleaved ? i * channels + channel : i + channel * frames;
 
@@ -166,8 +167,8 @@ namespace SparkyStudios::Audio::Amplitude
             AmReal32 re = buffer[i * 2];
             AmReal32 im = buffer[i * 2 + 1];
 
-            buffer[i * 2] = std::sqrtf(re * re + im * im) * 2.0f;
-            buffer[i * 2 + 1] = std::atan2f(im, re);
+            buffer[i * 2] = std::sqrt(re * re + im * im) * 2.0f;
+            buffer[i * 2 + 1] = std::atan2(im, re);
         }
     }
 
@@ -247,8 +248,8 @@ namespace SparkyStudios::Audio::Amplitude
             const AmReal32 mag = buffer[i * 2];
             const AmReal32 pha = buffer[i * 2 + 1];
 
-            buffer[i * 2] = std::cosf(pha) * mag;
-            buffer[i * 2 + 1] = std::sinf(pha) * mag;
+            buffer[i * 2] = std::cos(pha) * mag;
+            buffer[i * 2 + 1] = std::sin(pha) * mag;
         }
     }
 
