@@ -568,6 +568,9 @@ namespace SparkyStudios::Audio::Amplitude
         const auto lGain = AudioDataUnit(AmFloatToFixedPoint(g.X * gain));
         const auto rGain = AudioDataUnit(AmFloatToFixedPoint(g.Y * gain));
 
+        // loop state
+        const bool loop = (flag == PLAY_STATE_FLAG_LOOP);
+
         // if this sound is streaming and we have a stream event callback
         if (layer->snd != nullptr && layer->snd->stream == true)
         {
@@ -601,9 +604,8 @@ namespace SparkyStudios::Audio::Amplitude
                 if (flag >= PLAY_STATE_FLAG_PLAY)
                 {
                     // PLAY_STATE_FLAG_PLAY or PLAY_STATE_FLAG_LOOP, play including fade in
-                    cursor = layer->snd->format.GetNumChannels() == 1
-                        ? MixMono(layer, (flag == PLAY_STATE_FLAG_LOOP), cursor, lGain, rGain, buf, aChunkSize)
-                        : MixStereo(layer, (flag == PLAY_STATE_FLAG_LOOP), cursor, lGain, rGain, buf, aChunkSize);
+                    cursor = layer->snd->format.GetNumChannels() == 1 ? MixMono(layer, loop, cursor, lGain, rGain, buf, aChunkSize)
+                                                                      : MixStereo(layer, loop, cursor, lGain, rGain, buf, aChunkSize);
 
                     // clear flag if PLAY_STATE_FLAG_PLAY and the cursor has reached the end
                     if ((flag == PLAY_STATE_FLAG_PLAY) && (cursor == layer->end))
@@ -619,9 +621,8 @@ namespace SparkyStudios::Audio::Amplitude
             if (flag >= PLAY_STATE_FLAG_PLAY)
             {
                 // PLAY_STATE_FLAG_PLAY or PLAY_STATE_FLAG_LOOP, play including fade in
-                cursor = layer->snd->format.GetNumChannels() == 1
-                    ? MixMono(layer, (flag == PLAY_STATE_FLAG_LOOP), cursor, lGain, rGain, buffer, bufferSize)
-                    : MixStereo(layer, (flag == PLAY_STATE_FLAG_LOOP), cursor, lGain, rGain, buffer, bufferSize);
+                cursor = layer->snd->format.GetNumChannels() == 1 ? MixMono(layer, loop, cursor, lGain, rGain, buffer, bufferSize)
+                                                                  : MixStereo(layer, loop, cursor, lGain, rGain, buffer, bufferSize);
 
                 // clear flag if PLAY_STATE_FLAG_PLAY and the cursor has reached the end
                 if ((flag == PLAY_STATE_FLAG_PLAY) && (cursor == layer->end))
@@ -635,7 +636,22 @@ namespace SparkyStudios::Audio::Amplitude
             // We are in the audio thread mutex here
             MixerCommandCallback callback = [=]() -> bool
             {
-                OnSoundEnded(layer->snd);
+                // stop playback unless looping
+                if (!loop)
+                    OnSoundEnded(layer->snd);
+
+                // call the onLoop callback
+                if (OnSoundLooped(layer->snd))
+                {
+                    // wrap around if allowed to loop again
+                    AMPLIMIX_CSWAP(&layer->cursor, &layer->end, layer->start);
+                }
+                else
+                {
+                    // stop playback
+                    OnSoundEnded(layer->snd);
+                }
+
                 return true;
             };
 
