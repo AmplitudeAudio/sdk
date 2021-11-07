@@ -128,7 +128,6 @@ namespace SparkyStudios::Audio::Amplitude
             return;
 
         _effectsList.erase(std::find(_effectsList.begin(), _effectsList.end(), instance));
-        delete instance;
     }
 
     void Effect::Update()
@@ -158,7 +157,7 @@ namespace SparkyStudios::Audio::Amplitude
         return &_refCounter;
     }
 
-    EffectInstance::EffectInstance(const Effect* parent)
+    EffectInstance::EffectInstance(Effect* parent)
         : _parent(parent)
     {
         _filterInstance = parent->_filter->CreateInstance();
@@ -166,6 +165,7 @@ namespace SparkyStudios::Audio::Amplitude
 
     EffectInstance::~EffectInstance()
     {
+        _parent->DeleteInstance(this);
         _parent = nullptr;
 
         delete _filterInstance;

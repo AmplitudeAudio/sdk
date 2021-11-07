@@ -146,7 +146,7 @@ namespace SparkyStudios::Audio::Amplitude
     class EffectInstance
     {
     public:
-        explicit EffectInstance(const Effect* parent);
+        explicit EffectInstance(Effect* parent);
         ~EffectInstance();
 
         /**
@@ -157,7 +157,7 @@ namespace SparkyStudios::Audio::Amplitude
         FilterInstance* GetFilter() const;
 
     private:
-        const Effect* _parent;
+        Effect* _parent;
         FilterInstance* _filterInstance;
     };
 } // namespace SparkyStudios::Audio::Amplitude
