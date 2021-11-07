@@ -200,7 +200,7 @@ namespace SparkyStudios::Audio::Amplitude
     SoundInstance* Sound::CreateInstance() const
     {
         AMPLITUDE_ASSERT(_id != kAmInvalidObjectId);
-        return new SoundInstance(this, _settings);
+        return new SoundInstance(this, _settings, _effect);
     }
 
     SoundInstance* Sound::CreateInstance(const Collection* collection) const
@@ -209,7 +209,8 @@ namespace SparkyStudios::Audio::Amplitude
             return CreateInstance();
 
         AMPLITUDE_ASSERT(_id != kAmInvalidObjectId);
-        auto* sound = new SoundInstance(this, collection->_soundSettings.at(_id));
+
+        auto* sound = new SoundInstance(this, collection->_soundSettings.at(_id), collection->_effect);
         sound->_collection = collection;
 
         return sound;
@@ -275,19 +276,15 @@ namespace SparkyStudios::Audio::Amplitude
         return &_refCounter;
     }
 
-    SoundInstance::SoundInstance(const Sound* parent, const SoundInstanceSettings& settings)
+    SoundInstance::SoundInstance(const Sound* parent, const SoundInstanceSettings& settings, Effect* effect)
         : _userData(nullptr)
         , _channel(nullptr)
         , _parent(parent)
         , _collection(nullptr)
         , _settings(settings)
         , _currentLoopCount(0)
-    {
-        if (parent->_effect != nullptr)
-        {
-            _effectInstance = parent->_effect->CreateInstance();
-        }
-    }
+        , _effectInstance(effect->CreateInstance())
+    {}
 
     SoundInstance::~SoundInstance()
     {
@@ -296,11 +293,8 @@ namespace SparkyStudios::Audio::Amplitude
         delete static_cast<SoundData*>(_userData);
         _userData = nullptr;
 
-        if (_parent->_effect != nullptr)
-        {
-            _parent->_effect->DeleteInstance(_effectInstance);
-            _effectInstance = nullptr;
-        }
+        delete _effectInstance;
+        _effectInstance = nullptr;
 
         _parent = nullptr;
     }

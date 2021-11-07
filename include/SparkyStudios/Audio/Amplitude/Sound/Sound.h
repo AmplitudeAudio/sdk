@@ -254,7 +254,7 @@ namespace SparkyStudios::Audio::Amplitude
          * @param parent The parent Sound from which to create an instance.
          * @param settings The settings of the Sound instance.
          */
-        SoundInstance(const Sound* parent, const SoundInstanceSettings& settings);
+        SoundInstance(const Sound* parent, const SoundInstanceSettings& settings, Effect* effect = nullptr);
         ~SoundInstance();
 
         /**
