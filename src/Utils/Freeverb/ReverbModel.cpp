@@ -114,8 +114,8 @@ namespace Freeverb
             }
 
             // Calculate output REPLACING anything already there
-            *outputL = AmReal32ToInt16(outL * _wet1 + outR * _wet2 + *inputL * _dry);
-            *outputR = AmReal32ToInt16(outR * _wet1 + outL * _wet2 + *inputR * _dry);
+            *outputL = AmReal32ToInt16(outL * _wet1 + outR * _wet2 + AmInt16ToReal32(*inputL) * _dry);
+            *outputR = AmReal32ToInt16(outR * _wet1 + outL * _wet2 + AmInt16ToReal32(*inputR) * _dry);
 
             // Increment sample pointers, allowing for interleave (if any)
             inputL += skip;
@@ -153,8 +153,8 @@ namespace Freeverb
             }
 
             // Calculate output MIXING with anything already there
-            *outputL += AmReal32ToInt16(outL * _wet1 + outR * _wet2 + *inputL * _dry);
-            *outputR += AmReal32ToInt16(outR * _wet1 + outL * _wet2 + *inputR * _dry);
+            *outputL += AmReal32ToInt16(outL * _wet1 + outR * _wet2 + AmInt16ToReal32(*inputL) * _dry);
+            *outputR += AmReal32ToInt16(outR * _wet1 + outL * _wet2 + AmInt16ToReal32(*inputR) * _dry);
 
             // Increment sample pointers, allowing for interleave (if any)
             inputL += skip;
@@ -208,6 +208,9 @@ namespace Freeverb
 
     void ReverbModel::SetRoomSize(AmReal32 value)
     {
+        if (GetRoomSize() == value)
+            return;
+
         _roomSize = (value * kScaleRoom) + kOffsetRoom;
         _dirty = true;
     }
@@ -219,6 +222,9 @@ namespace Freeverb
 
     void ReverbModel::SetDamp(AmReal32 value)
     {
+        if (GetDamp() == value)
+            return;
+
         _damp = value * kScaleDamp;
         _dirty = true;
     }
@@ -230,6 +236,9 @@ namespace Freeverb
 
     void ReverbModel::SetWet(AmReal32 value)
     {
+        if (GetWet() == value)
+            return;
+
         _wet = value * kScaleWet;
         _dirty = true;
     }
@@ -241,6 +250,9 @@ namespace Freeverb
 
     void ReverbModel::SetDry(AmReal32 value)
     {
+        if (GetDry() == value)
+            return;
+
         _dry = value * kScaleDry;
     }
 
@@ -251,6 +263,9 @@ namespace Freeverb
 
     void ReverbModel::SetWidth(AmReal32 value)
     {
+        if (GetWidth() == value)
+            return;
+
         _width = value;
         _dirty = true;
     }
@@ -262,6 +277,9 @@ namespace Freeverb
 
     void ReverbModel::SetMode(AmReal32 value)
     {
+        if (GetMode() == value)
+            return;
+
         _mode = value;
         _dirty = true;
     }
