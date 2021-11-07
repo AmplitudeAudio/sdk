@@ -33,6 +33,7 @@ namespace SparkyStudios::Audio::Amplitude
         enum ATTRIBUTE
         {
             ATTRIBUTE_WET = 0,
+            ATTRIBUTE_DRY,
             ATTRIBUTE_ROOM_SIZE,
             ATTRIBUTE_DAMP,
             ATTRIBUTE_WIDTH,

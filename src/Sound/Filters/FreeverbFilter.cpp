@@ -47,6 +47,8 @@ namespace SparkyStudios::Audio::Amplitude
         {
         case ATTRIBUTE_WET:
             return "Wet";
+        case ATTRIBUTE_DRY:
+            return "Dry";
         case ATTRIBUTE_ROOM_SIZE:
             return "Room Size";
         case ATTRIBUTE_DAMP:
@@ -91,6 +93,7 @@ namespace SparkyStudios::Audio::Amplitude
         _model = new Freeverb::ReverbModel();
 
         m_parameters[FreeverbFilter::ATTRIBUTE_WET] = 1.0f;
+        m_parameters[FreeverbFilter::ATTRIBUTE_DRY] = 0.0f;
         m_parameters[FreeverbFilter::ATTRIBUTE_ROOM_SIZE] = parent->_roomSize;
         m_parameters[FreeverbFilter::ATTRIBUTE_DAMP] = parent->_damp;
         m_parameters[FreeverbFilter::ATTRIBUTE_WIDTH] = parent->_width;
@@ -113,7 +116,7 @@ namespace SparkyStudios::Audio::Amplitude
             _model->SetRoomSize(m_parameters[FreeverbFilter::ATTRIBUTE_ROOM_SIZE]);
             _model->SetWidth(m_parameters[FreeverbFilter::ATTRIBUTE_WIDTH]);
             _model->SetWet(m_parameters[FreeverbFilter::ATTRIBUTE_WET]);
-            _model->SetDry(1 - m_parameters[FreeverbFilter::ATTRIBUTE_WET]);
+            _model->SetDry(m_parameters[FreeverbFilter::ATTRIBUTE_DRY]);
             m_numParamsChanged = 0;
         }
 
@@ -135,7 +138,7 @@ namespace SparkyStudios::Audio::Amplitude
             _model->SetRoomSize(m_parameters[FreeverbFilter::ATTRIBUTE_ROOM_SIZE]);
             _model->SetWidth(m_parameters[FreeverbFilter::ATTRIBUTE_WIDTH]);
             _model->SetWet(m_parameters[FreeverbFilter::ATTRIBUTE_WET]);
-            _model->SetDry(1 - m_parameters[FreeverbFilter::ATTRIBUTE_WET]);
+            _model->SetDry(m_parameters[FreeverbFilter::ATTRIBUTE_DRY]);
             m_numParamsChanged = 0;
         }
 
