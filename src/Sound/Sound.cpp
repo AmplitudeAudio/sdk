@@ -28,6 +28,7 @@ namespace SparkyStudios::Audio::Amplitude
         , _bus(nullptr)
         , _id(kAmInvalidObjectId)
         , _name()
+        , _effect(nullptr)
         , _attenuation(nullptr)
         , _stream(false)
         , _loop(false)
@@ -44,7 +45,9 @@ namespace SparkyStudios::Audio::Amplitude
         _decoder->Close();
         delete _decoder;
         _decoder = nullptr;
+
         _bus = nullptr;
+        _effect = nullptr;
         _attenuation = nullptr;
     }
 
@@ -75,6 +78,19 @@ namespace SparkyStudios::Audio::Amplitude
             return false;
         }
 
+        if (definition->effect() != kAmInvalidObjectId)
+        {
+            if (const auto findIt = state->effect_map.find(definition->effect()); findIt != state->effect_map.end())
+            {
+                _effect = findIt->second.get();
+            }
+            else
+            {
+                CallLogFunc("[ERROR] Sound definition is invalid: invalid effect ID \"%u\"", definition->effect());
+                return false;
+            }
+        }
+
         if (definition->attenuation() != kAmInvalidObjectId)
         {
             if (const auto findIt = state->attenuation_map.find(definition->attenuation()); findIt != state->attenuation_map.end())
@@ -102,6 +118,7 @@ namespace SparkyStudios::Audio::Amplitude
         _settings.m_id = definition->id();
         _settings.m_kind = SoundKind::Standalone;
         _settings.m_busID = definition->bus();
+        _settings.m_effectID = definition->effect();
         _settings.m_attenuationID = definition->attenuation();
         _settings.m_spatialization = definition->spatialization();
         _settings.m_priority = _priority;
@@ -122,6 +139,11 @@ namespace SparkyStudios::Audio::Amplitude
     {
         AMPLITUDE_ASSERT(_id != kAmInvalidObjectId);
 
+        if (_effect)
+        {
+            _effect->GetRefCounter()->Increment();
+        }
+
         if (_attenuation)
         {
             _attenuation->GetRefCounter()->Increment();
@@ -131,6 +153,11 @@ namespace SparkyStudios::Audio::Amplitude
     void Sound::ReleaseReferences(EngineInternalState* state)
     {
         AMPLITUDE_ASSERT(_id != kAmInvalidObjectId);
+
+        if (_effect)
+        {
+            _effect->GetRefCounter()->Decrement();
+        }
 
         if (_attenuation)
         {
@@ -218,6 +245,11 @@ namespace SparkyStudios::Audio::Amplitude
         return _name;
     }
 
+    const Effect* Sound::GetEffect() const
+    {
+        return _effect;
+    }
+
     const Attenuation* Sound::GetAttenuation() const
     {
         return _attenuation;
@@ -250,7 +282,12 @@ namespace SparkyStudios::Audio::Amplitude
         , _collection(nullptr)
         , _settings(settings)
         , _currentLoopCount(0)
-    {}
+    {
+        if (parent->_effect != nullptr)
+        {
+            _effectInstance = parent->_effect->CreateInstance();
+        }
+    }
 
     SoundInstance::~SoundInstance()
     {
@@ -258,6 +295,12 @@ namespace SparkyStudios::Audio::Amplitude
 
         delete static_cast<SoundData*>(_userData);
         _userData = nullptr;
+
+        if (_parent->_effect != nullptr)
+        {
+            _parent->_effect->DeleteInstance(_effectInstance);
+            _effectInstance = nullptr;
+        }
 
         _parent = nullptr;
     }
@@ -267,7 +310,8 @@ namespace SparkyStudios::Audio::Amplitude
         AMPLITUDE_ASSERT(Valid());
 
         const AmUInt16 channels = _parent->m_format.GetNumChannels();
-        const AmUInt32 frames = _parent->m_format.GetFramesCount();
+        const AmUInt32 sampleRate = _parent->m_format.GetSampleRate();
+        const AmUInt64 frames = _parent->m_format.GetFramesCount();
 
         if (_parent->_stream)
         {
@@ -290,6 +334,24 @@ namespace SparkyStudios::Audio::Amplitude
             {
                 CallLogFunc("Could not load a sound instance. Unable to read data from the parent sound.\n");
                 return;
+            }
+
+            if (_effectInstance != nullptr)
+            {
+                switch (_parent->m_format.GetInterleaveType())
+                {
+                case AM_SAMPLE_INTERLEAVED:
+                    _effectInstance->GetFilter()->ProcessInterleaved(
+                        reinterpret_cast<AmInt16Buffer>(chunk->buffer), chunk->frames, chunk->length, channels, sampleRate);
+                    break;
+                case AM_SAMPLE_NON_INTERLEAVED:
+                    _effectInstance->GetFilter()->Process(
+                        reinterpret_cast<AmInt16Buffer>(chunk->buffer), chunk->frames, chunk->length, channels, sampleRate);
+                    break;
+                default:
+                    CallLogFunc("Could not load a sound instance. A bad sound data interleave type was encountered.\n");
+                    break;
+                }
             }
 
             SoundData* data = SoundData::CreateSound(_parent->m_format, chunk, this);
@@ -323,30 +385,49 @@ namespace SparkyStudios::Audio::Amplitude
     {
         AMPLITUDE_ASSERT(Valid());
 
-        if (_parent->_stream && _userData != nullptr)
+        if (!_parent->_stream || _userData == nullptr)
+            return 0;
+
+        const auto* data = static_cast<SoundData*>(_userData);
+
+        const AmUInt16 channels = _parent->m_format.GetNumChannels();
+        const AmUInt32 sampleRate = _parent->m_format.GetSampleRate();
+
+        AmUInt64 n, l = frames, o = offset, r = 0;
+        auto* b = reinterpret_cast<AmInt16Buffer>(data->chunk->buffer);
+
+    Fill:
+        n = _parent->_decoder->Stream(b, o, l);
+        r += n;
+
+        // If we reached the end of the file but looping is enabled, then
+        // seek back to the beginning of the file and fill the remaining part of the buffer.
+        if (n < l && _parent->_loop && _parent->_decoder->Seek(0))
         {
-            const auto* data = static_cast<SoundData*>(_userData);
-
-            AmUInt64 n, l = frames, o = offset, r = 0;
-            auto* b = reinterpret_cast<AmInt16Buffer>(data->chunk->buffer);
-
-        Fill:
-            n = _parent->_decoder->Stream(b, o, l);
-            r += n;
-
-            // If we reached the end of the file but looping is enabled, then
-            // seek back to the beginning of the file and fill the remaining part of the buffer.
-            if (n < l && _parent->_loop && _parent->_decoder->Seek(0))
-            {
-                b += n * _parent->m_format.GetNumChannels();
-                l -= n;
-                goto Fill;
-            }
-
-            return r;
+            b += n * _parent->m_format.GetNumChannels();
+            l -= n;
+            goto Fill;
         }
 
-        return 0;
+        if (_effectInstance != nullptr)
+        {
+            switch (_parent->m_format.GetInterleaveType())
+            {
+            case AM_SAMPLE_INTERLEAVED:
+                _effectInstance->GetFilter()->ProcessInterleaved(
+                    reinterpret_cast<AmInt16Buffer>(data->chunk->buffer), frames, data->chunk->length, channels, sampleRate);
+                break;
+            case AM_SAMPLE_NON_INTERLEAVED:
+                _effectInstance->GetFilter()->Process(
+                    reinterpret_cast<AmInt16Buffer>(data->chunk->buffer), frames, data->chunk->length, channels, sampleRate);
+                break;
+            default:
+                CallLogFunc("Could not load a sound instance. A bad sound data interleave type was encountered.\n");
+                break;
+            }
+        }
+
+        return r;
     }
 
     void SoundInstance::Destroy()
