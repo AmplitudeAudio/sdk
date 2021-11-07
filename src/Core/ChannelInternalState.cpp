@@ -644,7 +644,7 @@ namespace SparkyStudios::Audio::Amplitude
             settings.m_loop = sound->IsLoop();
             settings.m_loopCount = sound->GetSoundDefinition()->loop()->loop_count();
 
-            instances.push_back(new SoundInstance(sound, settings));
+            instances.push_back(new SoundInstance(sound, settings, _switchContainer->GetEffect()));
         }
 
         return _realChannel.Play(instances);
