@@ -1191,6 +1191,45 @@ namespace SparkyStudios::Audio::Amplitude
         return GetRtpcHandle(pair->second);
     }
 
+    EffectHandle Engine::GetEffectHandle(const std::string& name) const
+    {
+        const auto pair = std::find_if(
+            _state->effect_map.begin(), _state->effect_map.end(),
+            [name](const auto& item)
+            {
+                return item.second->GetName() == name;
+            });
+
+        if (pair == _state->effect_map.end())
+        {
+            return nullptr;
+        }
+
+        return pair->second.get();
+    }
+
+    EffectHandle Engine::GetEffectHandle(AmEffectID id) const
+    {
+        const auto pair = _state->effect_map.find(id);
+        if (pair == _state->effect_map.end())
+        {
+            return nullptr;
+        }
+
+        return pair->second.get();
+    }
+
+    EffectHandle Engine::GetEffectHandleFromFile(AmOsString filename) const
+    {
+        const auto pair = _state->effect_id_map.find(filename);
+        if (pair == _state->effect_id_map.end())
+        {
+            return nullptr;
+        }
+
+        return GetEffectHandle(pair->second);
+    }
+
     void Engine::SetMasterGain(const float gain)
     {
         _state->master_gain = gain;
