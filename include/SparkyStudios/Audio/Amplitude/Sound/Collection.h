@@ -24,6 +24,7 @@
 #include <SparkyStudios/Audio/Amplitude/Core/RefCounter.h>
 
 #include <SparkyStudios/Audio/Amplitude/Sound/Attenuation.h>
+#include <SparkyStudios/Audio/Amplitude/Sound/Effect.h>
 #include <SparkyStudios/Audio/Amplitude/Sound/Rtpc.h>
 #include <SparkyStudios/Audio/Amplitude/Sound/Scheduler.h>
 #include <SparkyStudios/Audio/Amplitude/Sound/Sound.h>
@@ -193,6 +194,7 @@ namespace SparkyStudios::Audio::Amplitude
         RtpcValue _gain;
         RtpcValue _priority;
 
+        Effect* _effect;
         Attenuation* _attenuation;
 
         RefCounter _refCounter;

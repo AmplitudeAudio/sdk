@@ -34,6 +34,7 @@ namespace SparkyStudios::Audio::Amplitude
         , _name()
         , _gain()
         , _priority()
+        , _effect(nullptr)
         , _attenuation(nullptr)
         , _refCounter()
     {}
@@ -43,6 +44,7 @@ namespace SparkyStudios::Audio::Amplitude
         delete _worldScopeScheduler;
         _worldScopeScheduler = nullptr;
         _entityScopeSchedulers.clear();
+        _effect = nullptr;
         _attenuation = nullptr;
     }
 
@@ -67,6 +69,19 @@ namespace SparkyStudios::Audio::Amplitude
             {
                 CallLogFunc("Collection %s specifies an unknown bus ID: %u.\n", def->name(), def->bus());
                 return false;
+            }
+
+            if (def->effect() != kAmInvalidObjectId)
+            {
+                if (const auto findIt = state->effect_map.find(def->effect()); findIt != state->effect_map.end())
+                {
+                    _effect = findIt->second.get();
+                }
+                else
+                {
+                    CallLogFunc("[ERROR] Sound definition is invalid: invalid effect ID \"%u\"", def->effect());
+                    return false;
+                }
             }
 
             if (def->attenuation() != kAmInvalidObjectId)
@@ -117,6 +132,7 @@ namespace SparkyStudios::Audio::Amplitude
                 settings.m_id = def->id();
                 settings.m_kind = SoundKind::Contained;
                 settings.m_busID = def->bus();
+                settings.m_effectID = def->effect();
                 settings.m_attenuationID = def->attenuation();
                 settings.m_spatialization = def->spatialization();
                 settings.m_priority = _priority;
@@ -144,6 +160,11 @@ namespace SparkyStudios::Audio::Amplitude
     {
         AMPLITUDE_ASSERT(_id != kAmInvalidObjectId);
 
+        if (_effect)
+        {
+            _effect->GetRefCounter()->Increment();
+        }
+
         if (_attenuation)
         {
             _attenuation->GetRefCounter()->Increment();
@@ -161,6 +182,11 @@ namespace SparkyStudios::Audio::Amplitude
     void Collection::ReleaseReferences(EngineInternalState* state)
     {
         AMPLITUDE_ASSERT(_id != kAmInvalidObjectId);
+
+        if (_effect)
+        {
+            _effect->GetRefCounter()->Decrement();
+        }
 
         if (_attenuation)
         {
