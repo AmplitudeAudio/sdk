@@ -276,7 +276,7 @@ namespace SparkyStudios::Audio::Amplitude
         return &_refCounter;
     }
 
-    SoundInstance::SoundInstance(const Sound* parent, const SoundInstanceSettings& settings, Effect* effect)
+    SoundInstance::SoundInstance(const Sound* parent, const SoundInstanceSettings& settings, const Effect* effect)
         : _userData(nullptr)
         , _channel(nullptr)
         , _parent(parent)

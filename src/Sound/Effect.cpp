@@ -27,6 +27,8 @@
 
 namespace SparkyStudios::Audio::Amplitude
 {
+    static std::vector<EffectInstance*> gEffectsList = {};
+
     Effect::Effect()
         : _source()
         , _id(kAmInvalidObjectId)
@@ -34,7 +36,6 @@ namespace SparkyStudios::Audio::Amplitude
         , _parameters()
         , _refCounter()
         , _filter(nullptr)
-        , _effectsList()
     {}
 
     Effect::~Effect()
@@ -115,25 +116,25 @@ namespace SparkyStudios::Audio::Amplitude
         return Amplitude::GetEffectDefinition(_source.c_str());
     }
 
-    EffectInstance* Effect::CreateInstance()
+    EffectInstance* Effect::CreateInstance() const
     {
         auto* effect = new EffectInstance(this);
-        _effectsList.push_back(effect);
+        gEffectsList.push_back(effect);
         return effect;
     }
 
-    void Effect::DeleteInstance(EffectInstance* instance)
+    void Effect::DeleteInstance(EffectInstance* instance) const
     {
         if (instance == nullptr)
             return;
 
-        _effectsList.erase(std::find(_effectsList.begin(), _effectsList.end(), instance));
+        gEffectsList.erase(std::find(gEffectsList.begin(), gEffectsList.end(), instance));
     }
 
     void Effect::Update()
     {
         // Update effect parameters
-        for (auto&& instance : _effectsList)
+        for (auto&& instance : gEffectsList)
         {
             for (AmUInt32 i = 0; i < _parameters.size(); ++i)
             {
@@ -157,7 +158,7 @@ namespace SparkyStudios::Audio::Amplitude
         return &_refCounter;
     }
 
-    EffectInstance::EffectInstance(Effect* parent)
+    EffectInstance::EffectInstance(const Effect* parent)
         : _parent(parent)
     {
         _filterInstance = parent->_filter->CreateInstance();

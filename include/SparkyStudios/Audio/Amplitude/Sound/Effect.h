@@ -90,14 +90,14 @@ namespace SparkyStudios::Audio::Amplitude
          *
          * @return The effect instance.
          */
-        EffectInstance* CreateInstance();
+        EffectInstance* CreateInstance() const;
 
         /**
          * @brief Deletes an instance of this effect.
          *
          * @param instance The effect instance to delete.
          */
-        void DeleteInstance(EffectInstance* instance);
+        void DeleteInstance(EffectInstance* instance) const;
 
         /**
          * @brief Updates parameters on each frames.
@@ -136,8 +136,6 @@ namespace SparkyStudios::Audio::Amplitude
         RefCounter _refCounter;
 
         Filter* _filter;
-
-        std::vector<EffectInstance*> _effectsList;
     };
 
     /**
@@ -146,7 +144,7 @@ namespace SparkyStudios::Audio::Amplitude
     class EffectInstance
     {
     public:
-        explicit EffectInstance(Effect* parent);
+        explicit EffectInstance(const Effect* parent);
         ~EffectInstance();
 
         /**
@@ -157,7 +155,7 @@ namespace SparkyStudios::Audio::Amplitude
         FilterInstance* GetFilter() const;
 
     private:
-        Effect* _parent;
+        const Effect* _parent;
         FilterInstance* _filterInstance;
     };
 } // namespace SparkyStudios::Audio::Amplitude
