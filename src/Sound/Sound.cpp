@@ -283,8 +283,11 @@ namespace SparkyStudios::Audio::Amplitude
         , _collection(nullptr)
         , _settings(settings)
         , _currentLoopCount(0)
-        , _effectInstance(effect->CreateInstance())
-    {}
+        , _effectInstance()
+    {
+        if (effect != nullptr)
+            _effectInstance = effect->CreateInstance();
+    }
 
     SoundInstance::~SoundInstance()
     {
