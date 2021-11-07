@@ -90,7 +90,19 @@ namespace SparkyStudios::Audio::Amplitude
          *
          * @return The effect instance.
          */
-        EffectInstance* CreateInstance() const;
+        EffectInstance* CreateInstance();
+
+        /**
+         * @brief Deletes an instance of this effect.
+         *
+         * @param instance The effect instance to delete.
+         */
+        void DeleteInstance(EffectInstance* instance);
+
+        /**
+         * @brief Updates parameters on each frames.
+         */
+        void Update();
 
         /**
          * @brief Returns the unique ID of this Effect.
@@ -124,6 +136,8 @@ namespace SparkyStudios::Audio::Amplitude
         RefCounter _refCounter;
 
         Filter* _filter;
+
+        std::vector<EffectInstance*> _effectsList;
     };
 
     /**
@@ -134,13 +148,6 @@ namespace SparkyStudios::Audio::Amplitude
     public:
         explicit EffectInstance(const Effect* parent);
         ~EffectInstance();
-
-        /**
-         * @brief Updates filter parameters.
-         *
-         * @param deltaTime The amount on time elapsed since the last frame.
-         */
-        void AdvanceFrame(AmTime deltaTime);
 
         /**
          * @brief Get the filter instance wrapped by this effect.

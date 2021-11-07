@@ -1448,6 +1448,11 @@ namespace SparkyStudios::Audio::Amplitude
             rtpc.second->Update(delta);
         }
 
+        for (auto&& effect : _state->effect_map)
+        {
+            effect.second->Update();
+        }
+
         for (auto&& state : _state->listener_list)
         {
             state.Update();

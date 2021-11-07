@@ -34,6 +34,7 @@ namespace SparkyStudios::Audio::Amplitude
         , _parameters()
         , _refCounter()
         , _filter(nullptr)
+        , _effectsList()
     {}
 
     Effect::~Effect()
@@ -114,9 +115,32 @@ namespace SparkyStudios::Audio::Amplitude
         return Amplitude::GetEffectDefinition(_source.c_str());
     }
 
-    EffectInstance* Effect::CreateInstance() const
+    EffectInstance* Effect::CreateInstance()
     {
-        return new EffectInstance(this);
+        auto* effect = new EffectInstance(this);
+        _effectsList.push_back(effect);
+        return effect;
+    }
+
+    void Effect::DeleteInstance(EffectInstance* instance)
+    {
+        if (instance == nullptr)
+            return;
+
+        _effectsList.erase(std::find(_effectsList.begin(), _effectsList.end(), instance));
+        delete instance;
+    }
+
+    void Effect::Update()
+    {
+        // Update effect parameters
+        for (auto&& instance : _effectsList)
+        {
+            for (AmUInt32 i = 0; i < _parameters.size(); ++i)
+            {
+                instance->GetFilter()->SetFilterParameter(i, _parameters[i].GetValue());
+            }
+        }
     }
 
     AmEffectID Effect::GetId() const
@@ -146,15 +170,6 @@ namespace SparkyStudios::Audio::Amplitude
 
         delete _filterInstance;
         _filterInstance = nullptr;
-    }
-
-    void EffectInstance::AdvanceFrame(AmTime deltaTime)
-    {
-        // Update effect parameters
-        for (AmUInt32 i = 0; i < _parent->_parameters.size(); ++i)
-        {
-            _filterInstance->SetFilterParameter(i, _parent->_parameters[i].GetValue());
-        }
     }
 
     FilterInstance* EffectInstance::GetFilter() const
