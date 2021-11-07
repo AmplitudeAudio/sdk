@@ -155,7 +155,7 @@ namespace SparkyStudios::Audio::Amplitude
     };
 
     // Enumerates the list of possible channel types handled by SoLoud
-    enum AM_SPEAKER_CONFIG : AmUInt32
+    enum AM_SPEAKER_CONFIG : AmUInt8
     {
         // Mono channel
         AM_SPEAKER_MONO,
@@ -170,7 +170,7 @@ namespace SparkyStudios::Audio::Amplitude
     };
 
     // Enumerates the list of possible sample formats handled by Amplitude
-    enum AM_SAMPLE_FORMAT : AmUInt32
+    enum AM_SAMPLE_FORMAT : AmUInt8
     {
         // floating point
         AM_SAMPLE_FORMAT_FLOAT,
@@ -180,13 +180,13 @@ namespace SparkyStudios::Audio::Amplitude
         AM_SAMPLE_FORMAT_UNKNOWN,
     };
 
-    enum AM_INTERLEAVE_TYPE : AmUInt32
+    enum AM_INTERLEAVE_TYPE : AmUInt8
     {
         AM_SAMPLE_INTERLEAVED,
         AM_SAMPLE_NON_INTERLEAVED,
     };
 
-    enum AM_FADER_STATE : AmInt32
+    enum AM_FADER_STATE : AmInt8
     {
         AM_FADER_STATE_STOPPED = -1,
         AM_FADER_STATE_DISABLED = 0,
