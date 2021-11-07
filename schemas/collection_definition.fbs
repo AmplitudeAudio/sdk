@@ -13,7 +13,6 @@
 // limitations under the License.
 
 include "common.fbs";
-include "rtpc_definition.fbs";
 
 namespace SparkyStudios.Audio.Amplitude;
 
@@ -124,6 +123,9 @@ table CollectionDefinition {
 
   /// Collection name.
   name:string;
+
+  /// The effect to apply to this sound on playback.
+  effect:uint64 = 0;
 
   /// Priority of this collection relative to all other Collection objects. If the
   /// application requests the playback of more Collection objects than playback

@@ -27,6 +27,8 @@
 
 namespace SparkyStudios::Audio::Amplitude
 {
+    // clang-format off
+
     typedef AmUInt64            AmObjectID;
 
     typedef AmObjectID          AmBankID;
@@ -41,6 +43,7 @@ namespace SparkyStudios::Audio::Amplitude
     typedef AmObjectID          AmAttenuationID;
     typedef AmObjectID          AmSwitchID;
     typedef AmObjectID          AmRtpcID;
+    typedef AmObjectID          AmEffectID;
 
     typedef AmUInt8             AmResult;
     typedef AmUInt64            AmHandle;
@@ -53,6 +56,8 @@ namespace SparkyStudios::Audio::Amplitude
 #endif
 
     typedef AudioDataUnit*      AudioBuffer;
+
+    // clang-format on
 } // namespace SparkyStudios::Audio::Amplitude
 
 #endif // SS_AMPLITUDE_AUDIO_TYPES_H

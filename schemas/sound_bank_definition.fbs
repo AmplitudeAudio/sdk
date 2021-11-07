@@ -57,6 +57,11 @@ table SoundBankDefinition {
   /// one SoundBank and can only be used in parameters once it has been
   /// loaded by at least one SoundBank.
   rtpc:[string];
+
+  /// The list of Effect files to load. An Effect may be present in more than
+  /// one SoundBank and can only be used in parameters once it has been
+  /// loaded by at least one SoundBank.
+  effects:[string];
 }
 
 root_type SoundBankDefinition;

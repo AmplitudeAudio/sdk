@@ -25,6 +25,7 @@
 #include <SparkyStudios/Audio/Amplitude/IO/FileLoader.h>
 
 #include <SparkyStudios/Audio/Amplitude/Sound/Attenuation.h>
+#include <SparkyStudios/Audio/Amplitude/Sound/Effect.h>
 #include <SparkyStudios/Audio/Amplitude/Sound/Rtpc.h>
 
 namespace SparkyStudios::Audio::Amplitude
@@ -51,6 +52,7 @@ namespace SparkyStudios::Audio::Amplitude
         SoundKind m_kind;
         AmBusID m_busID;
         AmAttenuationID m_attenuationID;
+        AmEffectID m_effectID;
         AmUInt8 m_spatialization;
         RtpcValue m_priority;
         RtpcValue m_gain;
@@ -177,6 +179,13 @@ namespace SparkyStudios::Audio::Amplitude
         [[nodiscard]] const std::string& GetName() const;
 
         /**
+         * @brief Get the Effect object associated with this Sound.
+         *
+         * @return The Effect object.
+         */
+        [[nodiscard]] const Effect* GetEffect() const;
+
+        /**
          * @brief Get the Attenuation object associated with this Sound.
          *
          * @return The Attenuation object.
@@ -218,6 +227,7 @@ namespace SparkyStudios::Audio::Amplitude
         AmSoundID _id;
         std::string _name;
 
+        Effect* _effect;
         Attenuation* _attenuation;
         bool _stream;
         bool _loop;
@@ -243,8 +253,9 @@ namespace SparkyStudios::Audio::Amplitude
          *
          * @param parent The parent Sound from which to create an instance.
          * @param settings The settings of the Sound instance.
+         * @param effect The sound effect to apply on playback.
          */
-        SoundInstance(const Sound* parent, const SoundInstanceSettings& settings);
+        SoundInstance(const Sound* parent, const SoundInstanceSettings& settings, const Effect* effect = nullptr);
         ~SoundInstance();
 
         /**
@@ -339,6 +350,7 @@ namespace SparkyStudios::Audio::Amplitude
         RealChannel* _channel;
         const Sound* _parent;
         const Collection* _collection;
+        EffectInstance* _effectInstance;
 
         SoundInstanceSettings _settings;
 

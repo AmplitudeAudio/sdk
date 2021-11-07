@@ -13,7 +13,6 @@
 // limitations under the License.
 
 include "common.fbs";
-include "rtpc_definition.fbs";
 
 namespace SparkyStudios.Audio.Amplitude;
 
@@ -35,6 +34,9 @@ table SoundDefinition {
 
   /// The name of the sound.
   name:string;
+
+  /// The effect to apply to this sound on playback.
+  effect:uint64 = 0;
 
   /// Linear gain (0.0 .. 1.0) of the sound when played back by the audio system.
   gain:RtpcCompatibleValue;

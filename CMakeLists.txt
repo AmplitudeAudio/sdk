@@ -80,6 +80,7 @@ set(SA_SOURCE
     include/SparkyStudios/Audio/Amplitude/Sound/Schedulers/RandomScheduler.h
     include/SparkyStudios/Audio/Amplitude/Sound/Attenuation.h
     include/SparkyStudios/Audio/Amplitude/Sound/Collection.h
+    include/SparkyStudios/Audio/Amplitude/Sound/Effect.h
     include/SparkyStudios/Audio/Amplitude/Sound/Fader.h
     include/SparkyStudios/Audio/Amplitude/Sound/Filter.h
     include/SparkyStudios/Audio/Amplitude/Sound/RTPC.h
@@ -179,6 +180,7 @@ set(SA_SOURCE
     src/Sound/AttenuationShapes.cpp
     src/Sound/AttenuationShapes.h
     src/Sound/Collection.cpp
+    src/Sound/Effect.cpp
     src/Sound/Fader.cpp
     src/Sound/Filter.cpp
     src/Sound/RefCounter.cpp
