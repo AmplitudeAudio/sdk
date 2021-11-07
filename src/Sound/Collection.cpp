@@ -303,6 +303,11 @@ namespace SparkyStudios::Audio::Amplitude
         return _sounds;
     }
 
+    const Effect* Collection::GetEffect() const
+    {
+        return _effect;
+    }
+
     const Attenuation* Collection::GetAttenuation() const
     {
         return _attenuation;
