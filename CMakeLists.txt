@@ -83,7 +83,7 @@ set(SA_SOURCE
     include/SparkyStudios/Audio/Amplitude/Sound/Effect.h
     include/SparkyStudios/Audio/Amplitude/Sound/Fader.h
     include/SparkyStudios/Audio/Amplitude/Sound/Filter.h
-    include/SparkyStudios/Audio/Amplitude/Sound/RTPC.h
+    include/SparkyStudios/Audio/Amplitude/Sound/Rtpc.h
     include/SparkyStudios/Audio/Amplitude/Sound/Scheduler.h
     include/SparkyStudios/Audio/Amplitude/Sound/Sound.h
     include/SparkyStudios/Audio/Amplitude/Sound/SoundBank.h
