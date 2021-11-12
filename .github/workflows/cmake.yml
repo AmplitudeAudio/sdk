@@ -106,7 +106,7 @@ jobs:
           cmake --version
           gcc --version
 
-      - name: Install dependencies on Ubuntu
+      - name: Install dependencies on Ubuntu (GCC9)
         if: startsWith(matrix.config.name, 'Ubuntu_GCC_9')
         run: |
           echo Update gcc-9 =======================================================================
@@ -156,7 +156,7 @@ jobs:
           mkdir lib
           cmake \
             -S . \
-            -B . \
+            -B build \
             -DCMAKE_BUILD_TYPE=${{ matrix.config.build_type }} \
             -G "${{ matrix.config.generator }}" \
             -DCMAKE_INSTALL_PREFIX:PATH=lib \
@@ -166,10 +166,12 @@ jobs:
 
       - name: Build
         shell: bash
+        working-directory: build
         run: cmake --build . --config ${{ matrix.config.build_type }}
 
       - name: Install Strip
         shell: bash
+        working-directory: build
         run: cmake --install . --strip
 
       - name: Pack
