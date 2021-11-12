@@ -1,4 +1,5 @@
 # Binary
+lib/
 libs/
 bin/
 obj/
@@ -44,10 +45,13 @@ cmake-*/
 *.cbp
 
 # Misc generated files
-tags
+tags/
 docs/html/
 docs/linklint_results/
 gen/
+
+# VCPKG
+vcpkg_installed/
 
 samples/
 scripts/

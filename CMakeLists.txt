@@ -13,7 +13,7 @@
 # limitations under the License.
 
 cmake_minimum_required(VERSION 3.20)
-project(ss_amplitude_audio)
+project(Amplitude)
 
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_MODULE_PATH ${CMAKE_CURRENT_SOURCE_DIR}/cmake)
@@ -23,7 +23,7 @@ set(OBJ_DIR ${CMAKE_CURRENT_BINARY_DIR}/obj)
 # Include FlatBuffers in this project.
 set(FLATBUFFERS_BUILD_TESTS OFF CACHE BOOL "")
 if(NOT TARGET flatc)
-    add_subdirectory("dependencies/flatbuffers" ${OBJ_DIR}/flatbuffers)
+    add_subdirectory("dependencies/flatbuffers" ${OBJ_DIR}/flatbuffers EXCLUDE_FROM_ALL)
     set(FLATC_LIBRARY flatc)
     set(FLATC_INCLUDE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/dependencies/flatbuffers/include)
 endif()
@@ -219,21 +219,81 @@ include_directories(src
     ${SPARK_AUDIO_FLATBUFFERS_GENERATED_INCLUDES_DIR}
 )
 
-add_library(ss_amplitude_audio ${SA_SOURCE})
+add_library(${PROJECT_NAME} ${SA_SOURCE})
 
-target_link_libraries(ss_amplitude_audio PRIVATE Vc::Vc)
+target_link_libraries(${PROJECT_NAME} PRIVATE Vc::Vc)
+target_link_libraries(${PROJECT_NAME} PRIVATE flatbuffers)
 
-add_dependencies(ss_amplitude_audio
+add_dependencies(${PROJECT_NAME}
     generated_includes
 )
 
 if(UNIX)
   find_package(Threads REQUIRED)
 
-  target_link_libraries(ss_amplitude_audio
+  target_link_libraries(${PROJECT_NAME}
     PUBLIC Threads::Threads
     ${CMAKE_DL_LIBS}
   )
 endif()
 
-add_subdirectory(samples)
+option(BUILD_SAMPLES "Build samples" OFF)
+if(BUILD_SAMPLES)
+  list(APPEND VCPKG_MANIFEST_FEATURES "samples")
+  add_subdirectory(samples)
+endif()
+
+######################################################
+# INSTALL
+
+if(MSVC)
+    set( RUNTIME_OUTPUT_DIRECTORY "win" )
+elseif(APPLE)
+    set( RUNTIME_OUTPUT_DIRECTORY "osx" )
+else()
+    set( RUNTIME_OUTPUT_DIRECTORY "linux" )
+endif()
+
+set( AM_LIB_DESTINATION   "lib/${RUNTIME_OUTPUT_DIRECTORY}" )
+set( AM_INC_DESTINATION   "lib/${RUNTIME_OUTPUT_DIRECTORY}/include" )
+set( AM_BIN_DESTINATION   "bin/${RUNTIME_OUTPUT_DIRECTORY}" )
+
+set(CMAKE_RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/${AM_BIN_DESTINATION}" )
+set(CMAKE_LIBRARY_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/${AM_LIB_DESTINATION}" )
+set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/${AM_BIN_DESTINATION}" )
+
+set(CMAKE_INSTALL_PREFIX ${CMAKE_CURRENT_LIST_DIR})
+
+install(
+    TARGETS ${PROJECT_NAME}
+    EXPORT AmplitudeAudioSDKConfig
+    ARCHIVE DESTINATION ${AM_LIB_DESTINATION}
+    LIBRARY DESTINATION ${AM_LIB_DESTINATION}
+    RUNTIME DESTINATION ${AM_BIN_DESTINATION}
+)
+
+install(
+    DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/include/
+    DESTINATION ${AM_INC_DESTINATION}
+    FILES_MATCHING PATTERN "*.h*"
+)
+
+install(
+    EXPORT AmplitudeAudioSDKConfig
+    DESTINATION "${AM_LIB_DESTINATION}/cmake"
+    NAMESPACE SparkyStudios::Audio::
+)
+
+export(
+    TARGETS flatbuffers
+    NAMESPACE flatbuffers::
+    FILE "${CMAKE_CURRENT_BINARY_DIR}/FlatbuffersConfig.cmake"
+)
+
+export(
+    TARGETS ${PROJECT_NAME}
+    NAMESPACE SparkyStudios::Audio::
+    FILE "${CMAKE_CURRENT_BINARY_DIR}/AmplitudeAudioSDKConfig.cmake"
+)
+
+export(PACKAGE ${PROJECT_NAME})
