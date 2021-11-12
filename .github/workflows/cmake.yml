@@ -1,0 +1,71 @@
+name: CMake
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  build:
+    strategy:
+      matrix:
+        include:
+          - os: ubuntu-latest
+            build_type: Debug
+            atifact_name: amplitude_audio_sdk_linux_x64_debug.zip
+            target_triplet: x64-linux
+            platform: linux
+          - os: windows-latest
+            build_type: Debug
+            atifact_name: amplitude_audio_sdk_windows_x64_debug.zip          
+            target_triplet: x64-windows
+            platform: win
+          - os: ubuntu-latest
+            build_type: Release
+            atifact_name: amplitude_audio_sdk_linux_x64_release.zip
+            target_triplet: x64-linux
+            platform: linux
+          - os: windows-latest
+            build_type: Release
+            atifact_name: amplitude_audio_sdk_windows_x64_release.zip          
+            target_triplet: x64-windows
+            platform: win
+
+    runs-on: ${{ matrix.os }}
+
+    steps:
+    - uses: actions/checkout@v2
+
+    - name: run-vcpkg
+      uses: lukka/run-vcpkg@v10.0
+      with:
+        runVcpkgInstall: true
+  
+    - name: install-cmake
+      uses: Symbitic/install-cmake@v0.1.0
+      with:
+        cmake: 3.21.2
+        platform: ${{ matrix.platform }}
+  
+    - name: Configure CMake
+      run: cmake -B ${{ github.workspace }}/build -DCMAKE_BUILD_TYPE=${{ matrix.build_type }} -DCMAKE_TOOLCHAIN_FILE:STRING=${{ github.workspace }}/vcpkg/scripts/buildsystems/vcpkg.cmake -DVCPKG_TARGET_TRIPLET:STRING=${{ matrix.target_triplet }} -DCMAKE_EXPORT_COMPILE_COMMANDS:BOOL=TRUE -G Ninja
+
+    - name: Build
+      run: cmake --build ${{ github.workspace }}/build --config ${{ matrix.build_type }} --target install
+
+    - name: Zip Release
+      uses: TheDoctor0/zip-release@0.6.0
+      with:
+        filename: ${{ matrix.artifact_name }}
+        directory: ${{ github.workspace }}/lib/${{ github.platform }}
+        
+    - name: Release file
+      uses: djnicholson/release-action@v2.10
+      with:
+        token: ${{ secrets.GITHUB_TOKEN }}
+        release-name: ${{ github.ref }}
+        tag-name: ${{ github.ref }}
+        asset-name: ${{ matrix.artifact_name }}
+        file: ${{ github.workspace }}/${{ matrix.artifact_name }}
+    
