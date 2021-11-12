@@ -44,10 +44,7 @@ jobs:
           vcpkgGitCommitId: 5568f110b509a9fd90711978a7cb76bae75bb092
 
       - name: install-cmake
-        uses: Symbitic/install-cmake@v0.1.0
-        with:
-          cmake: 3.21.2
-          platform: ${{ matrix.platform }}
+        uses: lukka/get-cmake@v3.21.2
 
       - name: Configure CMake
         run: cmake -B ${{ github.workspace }}/build -DCMAKE_BUILD_TYPE=${{ matrix.build_type }} -DCMAKE_TOOLCHAIN_FILE:STRING=${{ github.workspace }}/vcpkg/scripts/buildsystems/vcpkg.cmake -DVCPKG_TARGET_TRIPLET:STRING=${{ matrix.target_triplet }} -DCMAKE_EXPORT_COMPILE_COMMANDS:BOOL=TRUE -G Ninja
