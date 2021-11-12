@@ -425,7 +425,7 @@ namespace SparkyStudios::Audio::Amplitude
                     if (gain == 0.0f)
                     {
                         out->SetState(AM_FADER_STATE_STOPPED);
-                        // Fading in transition complete. Now we can destoy the channel layer
+                        // Fading in transition complete. Now we can destroy the channel layer
                         _realChannel.Destroy(layer);
                     }
                 }
@@ -644,7 +644,7 @@ namespace SparkyStudios::Audio::Amplitude
             settings.m_loop = sound->IsLoop();
             settings.m_loopCount = sound->GetSoundDefinition()->loop()->loop_count();
 
-            instances.push_back(new SoundInstance(sound, settings));
+            instances.push_back(new SoundInstance(sound, settings, _switchContainer->GetEffect()));
         }
 
         return _realChannel.Play(instances);

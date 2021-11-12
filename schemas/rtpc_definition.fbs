@@ -46,27 +46,6 @@ table RtpcDefinition {
   fade_settings:RtpcFadingSettings;
 }
 
-/// The parameter used to create RTPC compatible values.
-table RtpcParameter {
-  /// The ID of the RTPC object.
-  id:uint64 = 0;
-
-  /// The curve to apply on the value.
-  curve:CurveDefinition;
-}
-
-/// A value which can hold a static value or RTPC compatible calue.
-table RtpcCompatibleValue {
-  /// The type of the value.
-  kind:ValueKind = Static;
-
-  /// The static value.
-  value:float;
-
-  /// The RTPC compatible value.
-  rtpc:RtpcParameter;
-}
-
 root_type RtpcDefinition;
 
 file_identifier "AMPC";

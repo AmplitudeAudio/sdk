@@ -24,6 +24,7 @@
 #include <SparkyStudios/Audio/Amplitude/Core/RefCounter.h>
 
 #include <SparkyStudios/Audio/Amplitude/Sound/Attenuation.h>
+#include <SparkyStudios/Audio/Amplitude/Sound/Effect.h>
 #include <SparkyStudios/Audio/Amplitude/Sound/Rtpc.h>
 #include <SparkyStudios/Audio/Amplitude/Sound/Scheduler.h>
 #include <SparkyStudios/Audio/Amplitude/Sound/Sound.h>
@@ -151,6 +152,13 @@ namespace SparkyStudios::Audio::Amplitude
         [[nodiscard]] BusInternalState* GetBus() const;
 
         /**
+         * @brief Returns the effect attached to this Collection.
+         *
+         * @return The effect of this Collection if available or nullptr.
+         */
+        [[nodiscard]] const Effect* GetEffect() const;
+
+        /**
          * @brief Returns the attenuation attached to this Collection.
          *
          * @return The attenuation of this Collection if available or nullptr.
@@ -193,6 +201,7 @@ namespace SparkyStudios::Audio::Amplitude
         RtpcValue _gain;
         RtpcValue _priority;
 
+        Effect* _effect;
         Attenuation* _attenuation;
 
         RefCounter _refCounter;

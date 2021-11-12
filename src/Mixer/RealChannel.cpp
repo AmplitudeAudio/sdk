@@ -41,6 +41,7 @@ namespace SparkyStudios::Audio::Amplitude
         , _mixer(nullptr)
         , _activeSounds()
         , _parentChannelState(parent)
+        , _playedSounds()
     {}
 
     void RealChannel::Initialize(int i)
@@ -146,11 +147,24 @@ namespace SparkyStudios::Audio::Amplitude
     void RealChannel::Destroy(AmUInt32 layer)
     {
         AMPLITUDE_ASSERT(Valid() && _channelLayersId[layer] != kAmInvalidObjectId);
-        _mixer->SetPlayState(_channelId, _channelLayersId[layer], PLAY_STATE_FLAG_MIN);
 
-        _channelLayersId.erase(layer);
-        delete _activeSounds[layer];
-        _activeSounds.erase(layer);
+        MixerCommandCallback callback = [=]() -> bool
+        {
+            _mixer->SetPlayState(_channelId, _channelLayersId[layer], PLAY_STATE_FLAG_MIN);
+
+            _channelLayersId.erase(layer);
+            delete _activeSounds[layer];
+            _activeSounds.erase(layer);
+            return true;
+        };
+
+        if (_mixer->IsInsideThreadMutex())
+        {
+            _mixer->PushCommand({ callback });
+            return;
+        }
+
+        callback();
     }
 
     bool RealChannel::Playing() const

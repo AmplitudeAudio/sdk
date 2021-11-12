@@ -36,13 +36,17 @@
 #endif
 
 // Function inline
-#define AM_INLINE __forceinline
-#define AM_NO_INLINE __declspec(noinline)
+#define AM_INLINE(_return_type_) __forceinline _return_type_
+#define AM_NO_INLINE(_return_type_) __declspec(noinline) _return_type_
 
 // Alignment required for SIMD data processing
 #define AM_SIMD_ALIGNMENT 16
 #define AM_TYPE_ALIGN_SIMD(_declaration_) AM_TYPE_ALIGN(_declaration_, AM_SIMD_ALIGNMENT)
 #define AM_BUFFER_ALIGNMENT AM_SIMD_ALIGNMENT
+#define AM_ALIGNED_ALLOC(_size_, _alignment_) _aligned_malloc(_size_, _alignment_)
+#define AM_ALIGNED_REALLOC(_ptr_, _size_, _alignment_) _aligned_realloc(_ptr_, _size_, _alignment_)
+#define AM_ALIGNED_MSIZE(_ptr_, _alignment_) _aligned_msize(_ptr_, _alignment_, 0)
+#define AM_ALIGNED_FREE(_ptr_) _aligned_free(_ptr_)
 
 // Windows platforms support wchar_t
 #define AM_WCHAR_SUPPORTED
@@ -53,7 +57,7 @@
 // Macro used to convert a string literal to an AmOsString string at compile-time
 #define AM_OS_STRING(s) L##s
 
-AM_INLINE std::wstring am_string_widen(const std::string& str)
+static AM_INLINE(std::wstring) am_string_widen(const std::string& str)
 {
     std::wostringstream wstm;
     const auto& ctfacet = std::use_facet<std::ctype<wchar_t>>(wstm.getloc());
@@ -62,7 +66,7 @@ AM_INLINE std::wstring am_string_widen(const std::string& str)
     return wstm.str();
 }
 
-AM_INLINE std::string am_wstring_narrow(const std::wstring& str)
+static AM_INLINE(std::string) am_wstring_narrow(const std::wstring& str)
 {
     std::ostringstream stm;
     const auto& ctfacet = std::use_facet<std::ctype<wchar_t>>(stm.getloc());
@@ -83,10 +87,10 @@ AM_INLINE std::string am_wstring_narrow(const std::wstring& str)
 #include <cstdio> // for sprintf in asserts
 #ifndef VC_EXTRALEAN
 #define VC_EXTRALEAN
-#endif
+#endif // VC_EXTRALEAN
 #ifndef WIN32_LEAN_AND_MEAN
 #define WIN32_LEAN_AND_MEAN
-#endif
+#endif // WIN32_LEAN_AND_MEAN
 #include <Windows.h> // only needed for OutputDebugStringA, should be solved somehow.
 #define AMPLITUDE_ASSERT(x)                                                                                                                \
     if (!(x))                                                                                                                              \
@@ -99,7 +103,7 @@ AM_INLINE std::string am_wstring_narrow(const std::wstring& str)
 #else
 #include <cassert> // assert
 #define AMPLITUDE_ASSERT(x) assert(x)
-#endif
-#endif
+#endif // _MSC_VER
+#endif // AMPLITUDE_NO_ASSERTS
 
 #endif // SS_AMPLITUDE_AUDIO_WINDOWS_CONFIG_H

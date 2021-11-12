@@ -21,6 +21,7 @@
 #include <SparkyStudios/Audio/Amplitude/Core/RefCounter.h>
 
 #include <SparkyStudios/Audio/Amplitude/Sound/Attenuation.h>
+#include <SparkyStudios/Audio/Amplitude/Sound/Effect.h>
 #include <SparkyStudios/Audio/Amplitude/Sound/Fader.h>
 #include <SparkyStudios/Audio/Amplitude/Sound/Rtpc.h>
 #include <SparkyStudios/Audio/Amplitude/Sound/Switch.h>
@@ -91,6 +92,13 @@ namespace SparkyStudios::Audio::Amplitude
         [[nodiscard]] BusInternalState* GetBus() const;
 
         /**
+         * @brief Returns the effect attached to this SwitchContainer.
+         *
+         * @return The effect of this SwitchContainer if available or nullptr.
+         */
+        [[nodiscard]] const Effect* GetEffect() const;
+
+        /**
          * @brief Returns the attenuation attached to this SwitchContainer.
          *
          * @return The attenuation of this SwitchContainer if available or nullptr.
@@ -156,6 +164,7 @@ namespace SparkyStudios::Audio::Amplitude
         RtpcValue _gain;
         RtpcValue _priority;
 
+        Effect* _effect;
         Attenuation* _attenuation;
 
         RefCounter _refCounter;

@@ -19,6 +19,7 @@
 
 #include "attenuation_definition_generated.h"
 #include "collection_definition_generated.h"
+#include "effect_definition_generated.h"
 #include "event_definition_generated.h"
 #include "rtpc_definition_generated.h"
 #include "sound_bank_definition_generated.h"
@@ -296,6 +297,43 @@ namespace SparkyStudios::Audio::Amplitude
         return true;
     }
 
+    static bool InitializeEffect(AmOsString filename, Engine* engine)
+    {
+        // Find the ID.
+        EffectHandle handle = engine->GetEffectHandleFromFile(filename);
+        if (handle)
+        {
+            // We've seen this ID before, update it.
+            handle->GetRefCounter()->Increment();
+        }
+        else
+        {
+            // This is a new event, load it and update it.
+            std::unique_ptr<Effect> effect(new Effect());
+            if (!effect->LoadEffectDefinitionFromFile(filename))
+            {
+                return false;
+            }
+
+            const EffectDefinition* definition = effect->GetEffectDefinition();
+            AmEffectID id = definition->id();
+            if (id == kAmInvalidObjectId)
+            {
+                CallLogFunc(
+                    "[ERROR] Cannot load effect \'" AM_OS_CHAR_FMT "\'. Invalid ID.\n",
+                    AM_STRING_TO_OS_STRING(definition->name()->c_str()));
+                return false;
+            }
+
+            effect->GetRefCounter()->Increment();
+
+            engine->GetState()->effect_map[id] = std::move(effect);
+            engine->GetState()->effect_id_map[filename] = id;
+        }
+
+        return true;
+    }
+
     bool SoundBank::Initialize(AmOsString filename, Engine* engine)
     {
         bool success = true;
@@ -314,6 +352,13 @@ namespace SparkyStudios::Audio::Amplitude
         {
             AmString filename = definition->rtpc()->Get(i)->c_str();
             success &= InitializeRtpc(AM_STRING_TO_OS_STRING(filename), engine);
+        }
+
+        // Load each effect named in the sound bank.
+        for (flatbuffers::uoffset_t i = 0; success && i < definition->effects()->size(); ++i)
+        {
+            AmString filename = definition->effects()->Get(i)->c_str();
+            success &= InitializeEffect(AM_STRING_TO_OS_STRING(filename), engine);
         }
 
         // Load each Switch named in the sound bank.
@@ -505,6 +550,29 @@ namespace SparkyStudios::Audio::Amplitude
         return true;
     }
 
+    static bool DeinitializeEffect(AmOsString filename, EngineInternalState* state)
+    {
+        auto id_iter = state->effect_id_map.find(filename);
+        if (id_iter == state->effect_id_map.end())
+        {
+            return false;
+        }
+
+        AmSwitchID id = id_iter->second;
+        auto effect_iter = state->effect_map.find(id);
+        if (effect_iter == state->effect_map.end())
+        {
+            return false;
+        }
+
+        if (effect_iter->second->GetRefCounter()->Decrement() == 0)
+        {
+            state->effect_map.erase(effect_iter);
+        }
+
+        return true;
+    }
+
     static bool DeinitializeRtpc(AmOsString filename, EngineInternalState* state)
     {
         auto id_iter = state->rtpc_id_map.find(filename);
@@ -538,7 +606,7 @@ namespace SparkyStudios::Audio::Amplitude
             if (!DeinitializeSwitchContainer(AM_STRING_TO_OS_STRING(filename), engine->GetState()))
             {
                 CallLogFunc("Error while deinitializing switch container %s in sound bank.\n", filename);
-                AMPLITUDE_ASSERT(0);
+                AMPLITUDE_ASSERT(false);
             }
         }
 
@@ -548,7 +616,7 @@ namespace SparkyStudios::Audio::Amplitude
             if (!DeinitializeCollection(AM_STRING_TO_OS_STRING(filename), engine->GetState()))
             {
                 CallLogFunc("Error while deinitializing collection %s in sound bank.\n", filename);
-                AMPLITUDE_ASSERT(0);
+                AMPLITUDE_ASSERT(false);
             }
         }
 
@@ -558,7 +626,7 @@ namespace SparkyStudios::Audio::Amplitude
             if (!DeinitializeSound(AM_STRING_TO_OS_STRING(filename), engine->GetState()))
             {
                 CallLogFunc("Error while deinitializing sound %s in sound bank.\n", filename);
-                AMPLITUDE_ASSERT(0);
+                AMPLITUDE_ASSERT(false);
             }
         }
 
@@ -568,7 +636,7 @@ namespace SparkyStudios::Audio::Amplitude
             if (!DeinitializeEvent(AM_STRING_TO_OS_STRING(filename), engine->GetState()))
             {
                 CallLogFunc("Error while deinitializing event %s in sound bank.\n", filename);
-                AMPLITUDE_ASSERT(0);
+                AMPLITUDE_ASSERT(false);
             }
         }
 
@@ -578,7 +646,7 @@ namespace SparkyStudios::Audio::Amplitude
             if (!DeinitializeAttenuation(AM_STRING_TO_OS_STRING(filename), engine->GetState()))
             {
                 CallLogFunc("Error while deinitializing attenuation %s in sound bank.\n", filename);
-                AMPLITUDE_ASSERT(0);
+                AMPLITUDE_ASSERT(false);
             }
         }
 
@@ -588,7 +656,17 @@ namespace SparkyStudios::Audio::Amplitude
             if (!DeinitializeSwitch(AM_STRING_TO_OS_STRING(filename), engine->GetState()))
             {
                 CallLogFunc("Error while deinitializing switch %s in sound bank.\n", filename);
-                AMPLITUDE_ASSERT(0);
+                AMPLITUDE_ASSERT(false);
+            }
+        }
+
+        for (flatbuffers::uoffset_t i = 0; i < definition->effects()->size(); ++i)
+        {
+            AmString filename = definition->effects()->Get(i)->c_str();
+            if (!DeinitializeEffect(AM_STRING_TO_OS_STRING(filename), engine->GetState()))
+            {
+                CallLogFunc("Error while deinitializing effect %s in sound bank.\n", filename);
+                AMPLITUDE_ASSERT(false);
             }
         }
 
@@ -598,7 +676,7 @@ namespace SparkyStudios::Audio::Amplitude
             if (!DeinitializeRtpc(AM_STRING_TO_OS_STRING(filename), engine->GetState()))
             {
                 CallLogFunc("Error while deinitializing RTPC %s in sound bank.\n", filename);
-                AMPLITUDE_ASSERT(0);
+                AMPLITUDE_ASSERT(false);
             }
         }
     }

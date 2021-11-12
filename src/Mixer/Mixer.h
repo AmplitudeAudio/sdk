@@ -17,26 +17,23 @@
 #ifndef SS_AMPLITUDE_AUDIO_MIXER_H
 #define SS_AMPLITUDE_AUDIO_MIXER_H
 
-#ifndef __cplusplus
-#include <stdatomic.h> //atomics
-#else
-#include <atomic> //atomics
+#include <atomic>
+#include <queue>
 #define _Atomic(X) std::atomic<X>
-#endif
-#include <cstring> //memcpy
-
-#define AMPLIMIX_LBITS 16
-#define AMPLIMIX_LAYERS (1 << AMPLIMIX_LBITS)
-#define AMPLIMIX_LMASK (AMPLIMIX_LAYERS - 1)
 
 #include <SparkyStudios/Audio/Amplitude/Core/Common.h>
 
 #include <Mixer/SoundData.h>
+#include <Utils/SmMalloc/smmalloc.h>
 
 #include "engine_config_definition_generated.h"
 
 namespace SparkyStudios::Audio::Amplitude
 {
+    static constexpr AmUInt32 kAmplimixLayersBits = 12;
+    static constexpr AmUInt32 kAmplimixLayersCount = (1 << kAmplimixLayersBits);
+    static constexpr AmUInt32 kAmplimixLayersMask = (kAmplimixLayersCount - 1);
+
     class Mixer;
 
     /**
@@ -48,6 +45,11 @@ namespace SparkyStudios::Audio::Amplitude
      * @brief Called just after the mixer process audio data.
      */
     typedef void (*AfterMixCallback)(Mixer* mixer, AudioBuffer audio, AmUInt32 frames);
+
+    /**
+     * @brief The callback to execute when running a mixer command.
+     */
+    typedef std::function<bool()> MixerCommandCallback;
 
     enum PlayStateFlag : AmUInt8
     {
@@ -66,25 +68,24 @@ namespace SparkyStudios::Audio::Amplitude
 
         AmUInt32 id; // playing id
         _Atomic(PlayStateFlag) flag; // state
-        _Atomic(AmInt32) cursor; // cursor
+        _Atomic(AmUInt64) cursor; // cursor
         _Atomic(hmm_vec2) gain; // gain
         SoundData* snd; // sound data
-        AmInt32 start, end; // start and end frames
+        AmUInt64 start, end; // start and end frames
+    };
+
+    struct MixerCommand
+    {
+        MixerCommandCallback callback; // command callback
     };
 
     /**
-     * @brief Amplitude Mixer
+     * @brief Amplimix - The Amplitude Audio Mixer
      */
     class Mixer
     {
     public:
-        /**
-         * @brief Defines the SoundEndedCallback to use in the mixer.
-         *
-         * @param callback The sound ended callback.
-         */
-
-        Mixer(float masterGain);
+        explicit Mixer(float masterGain);
 
         ~Mixer();
 
@@ -103,19 +104,28 @@ namespace SparkyStudios::Audio::Amplitude
          * and before it is started.
          *
          * @param bufferSize The buffer size accepted by the playback device.
+         * @param sampleRate The sample rate accepted bu the playback device.
+         * @param channels The number of channels the playback device will output.
          */
-        void PostInit(AmUInt32 bufferSize, AmUInt32 sampleRate, AmUInt32 channels);
+        void PostInit(AmUInt32 bufferSize, AmUInt32 sampleRate, AmUInt16 channels);
 
-        AmUInt32 Mix(AmVoidPtr mixBuffer, AmUInt32 frameCount);
+        AmUInt64 Mix(AmVoidPtr mixBuffer, AmUInt64 frameCount);
 
         AmUInt32 Play(SoundData* sound, PlayStateFlag flag, float gain, float pan, AmUInt32 id, AmUInt32 layer);
 
         AmUInt32 PlayAdvanced(
-            SoundData* sound, PlayStateFlag flag, float gain, float pan, AmInt32 startFrame, AmInt32 endFrame, AmUInt32 id, AmUInt32 layer);
+            SoundData* sound,
+            PlayStateFlag flag,
+            float gain,
+            float pan,
+            AmUInt64 startFrame,
+            AmUInt64 endFrame,
+            AmUInt32 id,
+            AmUInt32 layer);
 
         bool SetGainPan(AmUInt32 id, AmUInt32 layer, float gain, float pan);
 
-        bool SetCursor(AmUInt32 id, AmUInt32 layer, AmInt32 cursor);
+        bool SetCursor(AmUInt32 id, AmUInt32 layer, AmUInt64 cursor);
 
         bool SetPlayState(AmUInt32 id, AmUInt32 layer, PlayStateFlag flag);
 
@@ -129,54 +139,63 @@ namespace SparkyStudios::Audio::Amplitude
 
         void PlayAll();
 
+        [[nodiscard]] bool IsInsideThreadMutex() const;
+
+        void PushCommand(const MixerCommand& command);
+
     private:
-        void OnSoundStarted(SoundData* data);
-        void OnSoundPaused(SoundData* data);
-        void OnSoundResumed(SoundData* data);
-        void OnSoundStopped(SoundData* data);
-        bool OnSoundLooped(SoundData* data);
-        AmUInt64 OnSoundStream(SoundData* sound, AmUInt64 offset, AmUInt64 frames);
-        void OnSoundEnded(SoundData* snd);
-        void OnSoundDestroyed(SoundData* snd);
-        void MixLayer(MixerLayer* layer, AudioBuffer buffer, AmUInt32 bufferSize, AmUInt32 samples);
-        AmInt32 MixMono(
+        void ExecuteCommands();
+        void OnSoundStarted(const SoundData* data);
+        void OnSoundPaused(const SoundData* data);
+        void OnSoundResumed(const SoundData* data);
+        void OnSoundStopped(const SoundData* data);
+        bool OnSoundLooped(const SoundData* data);
+        AmUInt64 OnSoundStream(const SoundData* data, AmUInt64 offset, AmUInt64 frames);
+        void OnSoundEnded(const SoundData* data);
+        void OnSoundDestroyed(const SoundData* data);
+        void MixLayer(MixerLayer* layer, AudioBuffer buffer, AmUInt64 bufferSize, AmUInt64 samples);
+        AmUInt64 MixMono(
             MixerLayer* layer,
             bool loop,
-            AmInt32 cursor,
+            AmUInt64 cursor,
             AudioDataUnit lGain,
             AudioDataUnit rGain,
             AudioBuffer buffer,
-            AmUInt32 bufferSize);
-        AmInt32 MixStereo(
+            AmUInt64 bufferSize);
+        AmUInt64 MixStereo(
             MixerLayer* layer,
             bool loop,
-            AmInt32 cursor,
+            AmUInt64 cursor,
             AudioDataUnit lGain,
             AudioDataUnit rGain,
             AudioBuffer buffer,
-            AmUInt32 bufferSize);
+            AmUInt64 bufferSize);
         MixerLayer* GetLayer(AmUInt32 layer);
+        bool ShouldMix(MixerLayer* layer);
         void LockAudioMutex();
         void UnlockAudioMutex();
 
         bool _initialized;
+
+        std::queue<MixerCommand> _commandsStack;
 
         AmVoidPtr _audioThreadMutex;
         bool _insideAudioThreadMutex;
 
         AmUInt32 _requestedBufferSize;
         AmUInt32 _requestedSampleRate;
-        AmUInt32 _requestedChannels;
+        AmUInt16 _requestedChannels;
 
         AmUInt32 _deviceBufferSize;
         AmUInt32 _deviceSampleRate;
-        AmUInt32 _deviceChannels;
+        AmUInt16 _deviceChannels;
 
         AmUInt32 _nextId;
         _Atomic(float) _masterGain;
-        MixerLayer _layers[AMPLIMIX_LAYERS];
-        AmInt32 _remainingFrames;
-        AmInt16 _oldFrames[6];
+        MixerLayer _layers[kAmplimixLayersCount];
+        AmUInt64 _remainingFrames;
+
+        sm_allocator _mixBufferAllocator;
     };
 } // namespace SparkyStudios::Audio::Amplitude
 

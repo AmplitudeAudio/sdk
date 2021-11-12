@@ -28,6 +28,7 @@ namespace SparkyStudios::Audio::Amplitude
         , _sounds()
         , _id(kAmInvalidObjectId)
         , _name()
+        , _effect(nullptr)
         , _attenuation(nullptr)
         , _refCounter()
     {}
@@ -36,6 +37,7 @@ namespace SparkyStudios::Audio::Amplitude
     {
         _switch = nullptr;
         _sounds.clear();
+        _effect = nullptr;
         _attenuation = nullptr;
     }
 
@@ -68,6 +70,19 @@ namespace SparkyStudios::Audio::Amplitude
         if (auto findIt = state->switch_map.find(definition->switch_group()); findIt != state->switch_map.end())
         {
             _switch = findIt->second.get();
+        }
+
+        if (definition->effect() != kAmInvalidObjectId)
+        {
+            if (const auto findIt = state->effect_map.find(definition->effect()); findIt != state->effect_map.end())
+            {
+                _effect = findIt->second.get();
+            }
+            else
+            {
+                CallLogFunc("[ERROR] Sound definition is invalid: invalid effect ID \"%u\"", definition->effect());
+                return false;
+            }
         }
 
         if (definition->attenuation() != kAmInvalidObjectId)
@@ -160,6 +175,11 @@ namespace SparkyStudios::Audio::Amplitude
 
         _switch->GetRefCounter()->Increment();
 
+        if (_effect)
+        {
+            _effect->GetRefCounter()->Increment();
+        }
+
         if (_attenuation)
         {
             _attenuation->GetRefCounter()->Increment();
@@ -183,6 +203,11 @@ namespace SparkyStudios::Audio::Amplitude
         AMPLITUDE_ASSERT(_id != kAmInvalidObjectId);
 
         _switch->GetRefCounter()->Decrement();
+
+        if (_effect)
+        {
+            _effect->GetRefCounter()->Decrement();
+        }
 
         if (_attenuation)
         {
@@ -260,6 +285,11 @@ namespace SparkyStudios::Audio::Amplitude
     const std::vector<SwitchContainerItem>& SwitchContainer::GetSoundObjects(AmObjectID stateId) const
     {
         return _sounds.at(stateId);
+    }
+
+    const Effect* SwitchContainer::GetEffect() const
+    {
+        return _effect;
     }
 
     const Attenuation* SwitchContainer::GetAttenuation() const

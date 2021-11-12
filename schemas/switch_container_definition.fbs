@@ -13,7 +13,6 @@
 // limitations under the License.
 
 include "common.fbs";
-include "rtpc_definition.fbs";
 
 namespace SparkyStudios.Audio.Amplitude;
 
@@ -62,6 +61,9 @@ table SwitchContainerDefinition {
 
   /// The name of the switch container.
   name:string;
+
+  /// The effect to apply to this sound on playback.
+  effect:uint64 = 0;
 
   /// Priority of this container relative to all other objects. If the
   /// application requests the playback of more objects than playback

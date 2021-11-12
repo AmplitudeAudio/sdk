@@ -21,7 +21,6 @@
 // 	THE SOFTWARE.
 
 #include "smmalloc.h"
-#include <malloc.h>
 
 sm::GenericAllocator::TInstance sm::GenericAllocator::Invalid()
 {
@@ -51,19 +50,19 @@ void* sm::GenericAllocator::Alloc(sm::GenericAllocator::TInstance instance, size
     {
         alignment = 16;
     }
-    return _aligned_malloc(bytesCount, alignment);
+    return AM_ALIGNED_ALLOC(bytesCount, alignment);
 }
 
 void sm::GenericAllocator::Free(sm::GenericAllocator::TInstance instance, void* p)
 {
     SMMALLOC_UNUSED(instance);
-    _aligned_free(p);
+    AM_ALIGNED_FREE(p);
 }
 
 void* sm::GenericAllocator::Realloc(sm::GenericAllocator::TInstance instance, void* p, size_t bytesCount, size_t alignment)
 {
     SMMALLOC_UNUSED(instance);
-    return _aligned_realloc(p, bytesCount, alignment);
+    return AM_ALIGNED_REALLOC(p, bytesCount, alignment);
 }
 
 size_t sm::GenericAllocator::GetUsableSpace(sm::GenericAllocator::TInstance instance, void* p)
@@ -71,12 +70,5 @@ size_t sm::GenericAllocator::GetUsableSpace(sm::GenericAllocator::TInstance inst
     SMMALLOC_UNUSED(instance);
     size_t alignment = DetectAlignment(p);
 
-#ifdef __GNUC__
-    if (alignment < sizeof(void*))
-        alignment = sizeof(void*);
-
-    return _msize(p) - alignment - sizeof(void*);
-#else
-    return _aligned_msize(p, alignment, 0);
-#endif
+    return AM_ALIGNED_MSIZE(p, alignment);
 }

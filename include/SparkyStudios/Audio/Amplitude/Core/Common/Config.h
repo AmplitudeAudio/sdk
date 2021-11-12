@@ -26,7 +26,7 @@
 #endif
 
 #ifndef AM_VALUE_ALIGN
-#define AM_VALUE_ALIGN(_value_, _alignment_) ((_value_ + (_alignment_ - 1)) & ~(_alignment_ - 1))
+#define AM_VALUE_ALIGN(_value_, _alignment_) (((_value_) + ((_alignment_) - 1)) & ~((_alignment_) - 1))
 #endif
 
 #if defined(_WIN32) || defined(_WIN64) || defined(WINAPI_FAMILY)
@@ -42,6 +42,8 @@
 #define AM_SSE_INTRINSICS
 #include <Vc/Vc>
 #endif // AM_CPU_X86 || AM_CPU_X86_64 || AM_CPU_ARM_NEON
+#else
+#define PFFFT_SIMD_DISABLE
 #endif // AMPLITUDE_DISABLE_SIMD
 
 // Define the value of Pi if the platform doesn't do that

@@ -52,7 +52,7 @@ namespace SparkyStudios::Audio::Amplitude
      *
      * @return The version.
      */
-    const Version& Version();
+    const struct Version& Version();
 } // namespace SparkyStudios::Audio::Amplitude
 
 #endif // SPARK_AUDIO_VERSION_H

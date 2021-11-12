@@ -20,6 +20,8 @@
 #include <SparkyStudios/Audio/Amplitude/Core/Common.h>
 #include <SparkyStudios/Audio/Amplitude/Core/RefCounter.h>
 
+#include <SparkyStudios/Audio/Amplitude/Math/Curve.h>
+
 #include <SparkyStudios/Audio/Amplitude/Sound/Fader.h>
 
 namespace SparkyStudios::Audio::Amplitude

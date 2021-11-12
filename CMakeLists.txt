@@ -13,7 +13,7 @@
 # limitations under the License.
 
 cmake_minimum_required(VERSION 3.20)
-project(ss_amplitude_audio)
+project(Amplitude)
 
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_MODULE_PATH ${CMAKE_CURRENT_SOURCE_DIR}/cmake)
@@ -23,7 +23,7 @@ set(OBJ_DIR ${CMAKE_CURRENT_BINARY_DIR}/obj)
 # Include FlatBuffers in this project.
 set(FLATBUFFERS_BUILD_TESTS OFF CACHE BOOL "")
 if(NOT TARGET flatc)
-    add_subdirectory("dependencies/flatbuffers" ${OBJ_DIR}/flatbuffers)
+    add_subdirectory("dependencies/flatbuffers" ${OBJ_DIR}/flatbuffers EXCLUDE_FROM_ALL)
     set(FLATC_LIBRARY flatc)
     set(FLATC_INCLUDE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/dependencies/flatbuffers/include)
 endif()
@@ -80,7 +80,9 @@ set(SA_SOURCE
     include/SparkyStudios/Audio/Amplitude/Sound/Schedulers/RandomScheduler.h
     include/SparkyStudios/Audio/Amplitude/Sound/Attenuation.h
     include/SparkyStudios/Audio/Amplitude/Sound/Collection.h
+    include/SparkyStudios/Audio/Amplitude/Sound/Effect.h
     include/SparkyStudios/Audio/Amplitude/Sound/Fader.h
+    include/SparkyStudios/Audio/Amplitude/Sound/Filter.h
     include/SparkyStudios/Audio/Amplitude/Sound/RTPC.h
     include/SparkyStudios/Audio/Amplitude/Sound/Scheduler.h
     include/SparkyStudios/Audio/Amplitude/Sound/Sound.h
@@ -152,25 +154,58 @@ set(SA_SOURCE
     src/Sound/Faders/LinearFader.h
     src/Sound/Faders/SCurveFader.cpp
     src/Sound/Faders/SCurveFader.h
+    src/Sound/Filters/BassBoostFilter.cpp
+    src/Sound/Filters/BassBoostFilter.h
+    src/Sound/Filters/BiquadResonantFilter.cpp
+    src/Sound/Filters/BiquadResonantFilter.h
+    src/Sound/Filters/DCRemovalFilter.cpp
+    src/Sound/Filters/DCRemovalFilter.h
+    src/Sound/Filters/EchoFilter.cpp
+    src/Sound/Filters/EchoFilter.h
+    src/Sound/Filters/EqualizerFilter.cpp
+    src/Sound/Filters/EqualizerFilter.h
+    src/Sound/Filters/FFTFilter.cpp
+    src/Sound/Filters/FFTFilter.h
+    src/Sound/Filters/FlangerFilter.cpp
+    src/Sound/Filters/FlangerFilter.h
+    src/Sound/Filters/FreeverbFilter.cpp
+    src/Sound/Filters/FreeverbFilter.h
+    src/Sound/Filters/RobotizeFilter.cpp
+    src/Sound/Filters/RobotizeFilter.h
+    src/Sound/Filters/WaveShaperFilter.cpp
+    src/Sound/Filters/WaveShaperFilter.h
     src/Sound/Schedulers/SequenceScheduler.cpp
     src/Sound/Schedulers/RandomScheduler.cpp
     src/Sound/Attenuation.cpp
     src/Sound/AttenuationShapes.cpp
     src/Sound/AttenuationShapes.h
     src/Sound/Collection.cpp
+    src/Sound/Effect.cpp
     src/Sound/Fader.cpp
+    src/Sound/Filter.cpp
+    src/Sound/RefCounter.cpp
     src/Sound/Rtpc.cpp
     src/Sound/Sound.cpp
     src/Sound/SoundBank.cpp
     src/Sound/Switch.cpp
     src/Sound/SwitchContainer.cpp
-    src/Sound/RefCounter.cpp
 
+    src/Utils/Freeverb/AllPass.cpp
+    src/Utils/Freeverb/AllPass.h
+    src/Utils/Freeverb/Comb.cpp
+    src/Utils/Freeverb/Comb.h
+    src/Utils/Freeverb/denormals.h
+    src/Utils/Freeverb/ReverbModel.cpp
+    src/Utils/Freeverb/ReverbModel.h
+    src/Utils/Freeverb/tuning.h
+    src/Utils/pffft/pffft.cpp
+    src/Utils/pffft/pffft.h
     src/Utils/SmMalloc/smmalloc_generic.cpp
     src/Utils/SmMalloc/smmalloc_tls.cpp
     src/Utils/SmMalloc/smmalloc.cpp
     src/Utils/SmMalloc/smmalloc.h
     src/Utils/intrusive_list.h
+    src/Utils/Utils.h
 
     src/IO/File.h
     src/IO/File.cpp
@@ -184,21 +219,81 @@ include_directories(src
     ${SPARK_AUDIO_FLATBUFFERS_GENERATED_INCLUDES_DIR}
 )
 
-add_library(ss_amplitude_audio ${SA_SOURCE})
+add_library(${PROJECT_NAME} ${SA_SOURCE})
 
-target_link_libraries(ss_amplitude_audio PRIVATE Vc::Vc)
+target_link_libraries(${PROJECT_NAME} PRIVATE Vc::Vc)
+target_link_libraries(${PROJECT_NAME} PRIVATE flatbuffers)
 
-add_dependencies(ss_amplitude_audio
+add_dependencies(${PROJECT_NAME}
     generated_includes
 )
 
 if(UNIX)
   find_package(Threads REQUIRED)
 
-  target_link_libraries(ss_amplitude_audio
+  target_link_libraries(${PROJECT_NAME}
     PUBLIC Threads::Threads
     ${CMAKE_DL_LIBS}
   )
 endif()
 
-add_subdirectory(samples)
+option(BUILD_SAMPLES "Build samples" OFF)
+if(BUILD_SAMPLES)
+  list(APPEND VCPKG_MANIFEST_FEATURES "samples")
+  add_subdirectory(samples)
+endif()
+
+######################################################
+# INSTALL
+
+if(MSVC)
+    set( RUNTIME_OUTPUT_DIRECTORY "win" )
+elseif(APPLE)
+    set( RUNTIME_OUTPUT_DIRECTORY "osx" )
+else()
+    set( RUNTIME_OUTPUT_DIRECTORY "linux" )
+endif()
+
+set( AM_LIB_DESTINATION   "lib/${RUNTIME_OUTPUT_DIRECTORY}" )
+set( AM_INC_DESTINATION   "lib/${RUNTIME_OUTPUT_DIRECTORY}/include" )
+set( AM_BIN_DESTINATION   "bin/${RUNTIME_OUTPUT_DIRECTORY}" )
+
+set(CMAKE_RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/${AM_BIN_DESTINATION}" )
+set(CMAKE_LIBRARY_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/${AM_LIB_DESTINATION}" )
+set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/${AM_BIN_DESTINATION}" )
+
+set(CMAKE_INSTALL_PREFIX ${CMAKE_CURRENT_LIST_DIR})
+
+install(
+    TARGETS ${PROJECT_NAME}
+    EXPORT AmplitudeAudioSDKConfig
+    ARCHIVE DESTINATION ${AM_LIB_DESTINATION}
+    LIBRARY DESTINATION ${AM_LIB_DESTINATION}
+    RUNTIME DESTINATION ${AM_BIN_DESTINATION}
+)
+
+install(
+    DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/include/
+    DESTINATION ${AM_INC_DESTINATION}
+    FILES_MATCHING PATTERN "*.h*"
+)
+
+install(
+    EXPORT AmplitudeAudioSDKConfig
+    DESTINATION "${AM_LIB_DESTINATION}/cmake"
+    NAMESPACE SparkyStudios::Audio::
+)
+
+export(
+    TARGETS flatbuffers
+    NAMESPACE flatbuffers::
+    FILE "${CMAKE_CURRENT_BINARY_DIR}/FlatbuffersConfig.cmake"
+)
+
+export(
+    TARGETS ${PROJECT_NAME}
+    NAMESPACE SparkyStudios::Audio::
+    FILE "${CMAKE_CURRENT_BINARY_DIR}/AmplitudeAudioSDKConfig.cmake"
+)
+
+export(PACKAGE ${PROJECT_NAME})

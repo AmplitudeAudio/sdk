@@ -31,6 +31,7 @@
 
 #include <SparkyStudios/Audio/Amplitude/Sound/Attenuation.h>
 #include <SparkyStudios/Audio/Amplitude/Sound/Collection.h>
+#include <SparkyStudios/Audio/Amplitude/Sound/Effect.h>
 #include <SparkyStudios/Audio/Amplitude/Sound/Rtpc.h>
 #include <SparkyStudios/Audio/Amplitude/Sound/Sound.h>
 #include <SparkyStudios/Audio/Amplitude/Sound/Switch.h>
@@ -49,6 +50,7 @@ namespace SparkyStudios::Audio::Amplitude
     typedef Attenuation* AttenuationHandle;
     typedef Switch* SwitchHandle;
     typedef Rtpc* RtpcHandle;
+    typedef Effect* EffectHandle;
 
     /**
      * @brief The central class of  the library that manages the Listeners, Entities,
@@ -279,6 +281,27 @@ namespace SparkyStudios::Audio::Amplitude
          * @param filename The filename containing the flatbuffer binary data.
          */
         [[nodiscard]] RtpcHandle GetRtpcHandleFromFile(AmOsString filename) const;
+
+        /**
+         * @brief Get a EffectHandle given its name as defined in its JSON data.
+         *
+         * @param name The unique name as defined in the JSON data.
+         */
+        [[nodiscard]] EffectHandle GetEffectHandle(const std::string& name) const;
+
+        /**
+         * @brief Get an EffectHandle given its ID as defined in its JSON data.
+         *
+         * @param id The unique ID as defined in the JSON data.
+         */
+        [[nodiscard]] EffectHandle GetEffectHandle(AmEffectID id) const;
+
+        /**
+         * @brief Get an EffectHandle given its EffectDefinition filename.
+         *
+         * @param filename The filename containing the flatbuffer binary data.
+         */
+        [[nodiscard]] EffectHandle GetEffectHandleFromFile(AmOsString filename) const;
 
         /**
          * @brief Adjusts the gain on the master bus.

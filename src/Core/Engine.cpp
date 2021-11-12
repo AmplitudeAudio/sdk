@@ -255,7 +255,7 @@ namespace SparkyStudios::Audio::Amplitude
 
         // Create the internal engine state
         _state = new EngineInternalState();
-        _state->version = Version();
+        _state->version = &Amplitude::Version();
 
         // Load the audio driver
         if (config->driver())
@@ -468,7 +468,7 @@ namespace SparkyStudios::Audio::Amplitude
                 {
                     if (spatialization == Spatialization_PositionOrientation)
                     {
-                        AMPLITUDE_ASSERT(entity.Valid())
+                        AMPLITUDE_ASSERT(entity.Valid());
                         *gain *= attenuation->GetGain(entity.GetState(), &*listener);
                     }
                     else
@@ -1191,6 +1191,45 @@ namespace SparkyStudios::Audio::Amplitude
         return GetRtpcHandle(pair->second);
     }
 
+    EffectHandle Engine::GetEffectHandle(const std::string& name) const
+    {
+        const auto pair = std::find_if(
+            _state->effect_map.begin(), _state->effect_map.end(),
+            [name](const auto& item)
+            {
+                return item.second->GetName() == name;
+            });
+
+        if (pair == _state->effect_map.end())
+        {
+            return nullptr;
+        }
+
+        return pair->second.get();
+    }
+
+    EffectHandle Engine::GetEffectHandle(AmEffectID id) const
+    {
+        const auto pair = _state->effect_map.find(id);
+        if (pair == _state->effect_map.end())
+        {
+            return nullptr;
+        }
+
+        return pair->second.get();
+    }
+
+    EffectHandle Engine::GetEffectHandleFromFile(AmOsString filename) const
+    {
+        const auto pair = _state->effect_id_map.find(filename);
+        if (pair == _state->effect_id_map.end())
+        {
+            return nullptr;
+        }
+
+        return GetEffectHandle(pair->second);
+    }
+
     void Engine::SetMasterGain(const float gain)
     {
         _state->master_gain = gain;
@@ -1407,6 +1446,11 @@ namespace SparkyStudios::Audio::Amplitude
         for (auto&& rtpc : _state->rtpc_map)
         {
             rtpc.second->Update(delta);
+        }
+
+        for (auto&& effect : _state->effect_map)
+        {
+            effect.second->Update();
         }
 
         for (auto&& state : _state->listener_list)

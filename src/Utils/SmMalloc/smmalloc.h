@@ -30,6 +30,8 @@
 #include <memory>
 #include <stdint.h>
 
+#include <SparkyStudios/Audio/Amplitude/Core/Common.h>
+
 //#define SMMALLOC_STATS_SUPPORT
 
 #if __GNUC__ || __INTEL_COMPILER
@@ -44,11 +46,7 @@
 
 #endif
 
-#ifdef _DEBUG
-#define SMMALLOC_ENABLE_ASSERTS
-#endif
-
-#if defined(_M_X64) || _LP64
+#if defined(AM_CPU_X86_64) || defined(AM_CPU_ARM_64)
 #define SMMMALLOC_X64
 #define SMM_MAX_CACHE_ITEMS_COUNT (7)
 #else
@@ -61,33 +59,6 @@
 
 #define SMMALLOC_UNUSED(x) (void)(x)
 #define SMMALLOC_USED_IN_ASSERT(x) (void)(x)
-
-#ifdef _MSC_VER
-#define INLINE __forceinline
-//#define INLINE inline
-#else
-//#define INLINE inline __attribute__((always_inline))
-#define INLINE inline
-#endif
-
-#ifdef _MSC_VER
-#define NOINLINE __declspec(noinline)
-#else
-#define NOINLINE __attribute__((__noinline__))
-#endif
-
-#ifdef SMMALLOC_ENABLE_ASSERTS
-#include <assert.h>
-//#define SM_ASSERT(x) assert(x)
-#define SM_ASSERT(cond)                                                                                                                    \
-    do                                                                                                                                     \
-    {                                                                                                                                      \
-        if (!(cond))                                                                                                                       \
-            __debugbreak();                                                                                                                \
-    } while (0)
-#else
-#define SM_ASSERT(x)
-#endif
 
 namespace sm
 {
@@ -124,21 +95,21 @@ namespace sm
 
     internal::TlsPoolBucket* __restrict GetTlsBucket(size_t index);
 
-    INLINE bool IsAligned(size_t v, size_t alignment)
+    AM_INLINE(bool) IsAligned(size_t v, size_t alignment)
     {
         size_t lowBits = v & (alignment - 1);
         return (lowBits == 0);
     }
 
-    INLINE size_t Align(size_t val, size_t alignment)
+    AM_INLINE(size_t) Align(size_t val, size_t alignment)
     {
-        SM_ASSERT((alignment & (alignment - 1)) == 0 && "Invalid alignment. Must be power of two.");
+        AMPLITUDE_ASSERT((alignment & (alignment - 1)) == 0 && "Invalid alignment. Must be power of two.");
         size_t r = (val + (alignment - 1)) & ~(alignment - 1);
-        SM_ASSERT(IsAligned(r, alignment) && "Alignment failed.");
+        AMPLITUDE_ASSERT(IsAligned(r, alignment) && "Alignment failed.");
         return r;
     }
 
-    INLINE size_t DetectAlignment(void* p)
+    AM_INLINE(size_t) DetectAlignment(void* p)
     {
         uintptr_t v = (uintptr_t)p;
 
@@ -176,7 +147,7 @@ namespace sm
                 : instance(_instance)
             {}
 
-            INLINE void operator()(uint8_t* p)
+            AM_INLINE(void) operator()(uint8_t* p)
             {
                 GenericAllocator::Free(instance, p);
             }
@@ -191,7 +162,7 @@ namespace sm
 
         friend struct internal::TlsPoolBucket;
 
-        INLINE bool IsReadable(void* p) const
+        AM_INLINE(bool) IsReadable(void* p) const
         {
             return (uintptr_t(p) > MaxValidAlignment);
         }
@@ -226,7 +197,7 @@ namespace sm
 
             void Create(size_t elementSize);
 
-            INLINE void* Alloc()
+            AM_INLINE(void*) Alloc()
             {
                 uint8_t* p = nullptr;
                 TaggedIndex headValue;
@@ -279,7 +250,7 @@ namespace sm
                 return p;
             }
 
-            INLINE void FreeInterval(void* _pHead, void* _pTail)
+            AM_INLINE(void) FreeInterval(void* _pHead, void* _pTail)
             {
                 uint8_t* pHead = (uint8_t*)_pHead;
                 uint8_t* pTail = (uint8_t*)_pTail;
@@ -322,7 +293,7 @@ namespace sm
                 }
             }
 
-            INLINE bool IsMyAlloc(void* p) const
+            AM_INLINE(bool) IsMyAlloc(void* p) const
             {
                 return (p >= pData && p < pBufferEnd);
             }
@@ -345,12 +316,13 @@ namespace sm
         std::atomic<size_t> globalMissCount;
 #endif
 
-        INLINE void* AllocFromCache(internal::TlsPoolBucket* __restrict _self) const;
+        AM_INLINE(void*) AllocFromCache(internal::TlsPoolBucket* __restrict _self) const;
 
         template<bool useCacheL0>
-        INLINE bool ReleaseToCache(internal::TlsPoolBucket* __restrict _self, void* _p);
+        AM_INLINE(bool)
+        ReleaseToCache(internal::TlsPoolBucket* __restrict _self, void* _p);
 
-        INLINE size_t FindBucket(const void* p) const
+        AM_INLINE(size_t) FindBucket(const void* p) const
         {
             // if p is our pointer it located inside pBuffer and pBufferEnd
             // pBuffer and bucketsDataBegin[0] the same pointers
@@ -363,7 +335,7 @@ namespace sm
             return r;
         }
 
-        INLINE PoolBucket* GetBucketByIndex(size_t bucketIndex)
+        AM_INLINE(PoolBucket*) GetBucketByIndex(size_t bucketIndex)
         {
             if (bucketIndex >= bucketsCount)
             {
@@ -372,7 +344,7 @@ namespace sm
             return &buckets[bucketIndex];
         }
 
-        INLINE const PoolBucket* GetBucketByIndex(size_t bucketIndex) const
+        AM_INLINE(const PoolBucket*) GetBucketByIndex(size_t bucketIndex) const
         {
             if (bucketIndex >= bucketsCount)
             {
@@ -382,9 +354,10 @@ namespace sm
         }
 
         template<bool enableStatistic>
-        INLINE void* Allocate(size_t _bytesCount, size_t alignment)
+        AM_INLINE(void*)
+        Allocate(size_t _bytesCount, size_t alignment)
         {
-            SM_ASSERT(alignment <= MaxValidAlignment);
+            AMPLITUDE_ASSERT(alignment <= MaxValidAlignment);
 
             // http://www.cplusplus.com/reference/cstdlib/malloc/
             // If size is zero, the return value depends on the particular library implementation (it may or may not be a null pointer),
@@ -455,12 +428,12 @@ namespace sm
 
         void Init(uint32_t bucketsCount, size_t bucketSizeInBytes);
 
-        INLINE void* Alloc(size_t _bytesCount, size_t alignment)
+        AM_INLINE(void*) Alloc(size_t _bytesCount, size_t alignment)
         {
             return Allocate<true>(_bytesCount, alignment);
         }
 
-        INLINE void Free(void* p)
+        AM_INLINE(void) Free(void* p)
         {
             // Assume that p is the pointer that is allocated by passing the zero size.
             if (SM_UNLIKELY(!IsReadable(p)))
@@ -489,7 +462,7 @@ namespace sm
             GenericAllocator::Free(gAllocator, (uint8_t*)p);
         }
 
-        INLINE void* Realloc(void* p, size_t bytesCount, size_t alignment)
+        AM_INLINE(void*) Realloc(void* p, size_t bytesCount, size_t alignment)
         {
             if (!IsReadable(p))
             {
@@ -549,7 +522,7 @@ namespace sm
             return GenericAllocator::Realloc(gAllocator, p, bytesCount, alignment);
         }
 
-        INLINE size_t GetUsableSize(void* p)
+        AM_INLINE(size_t) GetUsableSize(void* p)
         {
             // Assume that p is the pointer that is allocated by passing the zero size.
             if (!IsReadable(p))
@@ -567,7 +540,7 @@ namespace sm
             return GenericAllocator::GetUsableSpace(gAllocator, p);
         }
 
-        INLINE int32_t GetBucketIndex(void* _p)
+        AM_INLINE(int32_t) GetBucketIndex(void* _p)
         {
             if (!IsMyAlloc(_p))
             {
@@ -583,22 +556,22 @@ namespace sm
             return (int32_t)bucketIndex;
         }
 
-        INLINE bool IsMyAlloc(const void* p) const
+        AM_INLINE(bool) IsMyAlloc(const void* p) const
         {
             return (p >= pBuffer.get() && p < pBufferEnd);
         }
 
-        INLINE size_t GetBucketsCount() const
+        AM_INLINE(size_t) GetBucketsCount() const
         {
             return bucketsCount;
         }
 
-        INLINE uint32_t GetBucketElementSize(size_t bucketIndex) const
+        AM_INLINE(uint32_t) GetBucketElementSize(size_t bucketIndex) const
         {
             return (uint32_t)((bucketIndex + 1) * 16);
         }
 
-        INLINE uint32_t GetBucketElementsCount(size_t bucketIndex) const
+        AM_INLINE(uint32_t) GetBucketElementsCount(size_t bucketIndex) const
         {
             if (bucketIndex >= bucketsCount)
             {
@@ -650,7 +623,7 @@ namespace sm
 
             // sizeof(storageL0) + 33 bytes
 
-            INLINE uint32_t GetElementsCount() const
+            AM_INLINE(uint32_t) GetElementsCount() const
             {
                 return numElementsL1 + numElementsL0;
             }
@@ -659,14 +632,14 @@ namespace sm
                 uint32_t* pCacheStack, uint32_t maxElementsNum, CacheWarmupOptions warmupOptions, Allocator* alloc, size_t bucketIndex);
             uint32_t* Destroy();
 
-            INLINE void ReturnL1CacheToMaster(uint32_t count)
+            AM_INLINE(void) ReturnL1CacheToMaster(uint32_t count)
             {
                 if (count == 0)
                 {
                     return;
                 }
 
-                SM_ASSERT(pBucket != nullptr);
+                AMPLITUDE_ASSERT(pBucket != nullptr);
                 if (numElementsL1 == 0)
                 {
                     return;
@@ -703,11 +676,11 @@ namespace sm
         static_assert(sizeof(TlsPoolBucket) <= 64, "TlsPoolBucket sizeof must be less than CPU cache line");
     } // namespace internal
 
-    INLINE void* Allocator::AllocFromCache(internal::TlsPoolBucket* __restrict _self) const
+    AM_INLINE(void*) Allocator::AllocFromCache(internal::TlsPoolBucket* __restrict _self) const
     {
         if (_self->numElementsL0 > 0)
         {
-            SM_ASSERT(_self->pBucketData != nullptr);
+            AMPLITUDE_ASSERT(_self->pBucketData != nullptr);
             _self->numElementsL0--;
             uint32_t offset = _self->storageL0[_self->numElementsL0];
             return _self->pBucketData + offset;
@@ -715,8 +688,8 @@ namespace sm
 
         if (_self->numElementsL1 > 0)
         {
-            SM_ASSERT(_self->pBucketData != nullptr);
-            SM_ASSERT(_self->numElementsL0 == 0);
+            AMPLITUDE_ASSERT(_self->pBucketData != nullptr);
+            AMPLITUDE_ASSERT(_self->numElementsL0 == 0);
             _self->numElementsL1--;
             uint32_t offset = _self->pStorageL1[_self->numElementsL1];
             return _self->pBucketData + offset;
@@ -725,7 +698,8 @@ namespace sm
     }
 
     template<bool useCacheL0>
-    INLINE bool Allocator::ReleaseToCache(internal::TlsPoolBucket* __restrict _self, void* _p)
+    AM_INLINE(bool)
+    Allocator::ReleaseToCache(internal::TlsPoolBucket* __restrict _self, void* _p)
     {
         if (_self->maxElementsCount == 0)
         {
@@ -733,12 +707,12 @@ namespace sm
             return false;
         }
 
-        SM_ASSERT(_self->pBucket != nullptr);
-        SM_ASSERT(_self->pBucketData != nullptr);
+        AMPLITUDE_ASSERT(_self->pBucket != nullptr);
+        AMPLITUDE_ASSERT(_self->pBucketData != nullptr);
 
         // get offset
         uint8_t* p = (uint8_t*)_p;
-        SM_ASSERT(p >= _self->pBucketData && p < _self->pBucket->pBufferEnd);
+        AMPLITUDE_ASSERT(p >= _self->pBucketData && p < _self->pBucket->pBufferEnd);
         uint32_t offset = (uint32_t)(p - _self->pBucketData);
 
         if (useCacheL0)
@@ -782,7 +756,7 @@ namespace sm
 
 #define SMMALLOC_DLL
 
-#if defined(_WIN32) && defined(SMMALLOC_DLL)
+#if defined(AM_WINDOWS_VERSION) && defined(SMMALLOC_DLL)
 #define SMMALLOC_API __declspec(dllexport)
 #else
 #define SMMALLOC_API extern
@@ -800,7 +774,7 @@ extern "C"
 
 typedef sm::Allocator* sm_allocator;
 
-SMMALLOC_API INLINE sm_allocator _sm_allocator_create(uint32_t bucketsCount, size_t bucketSizeInBytes)
+SMMALLOC_API AM_INLINE(sm_allocator) _sm_allocator_create(uint32_t bucketsCount, size_t bucketSizeInBytes)
 {
     sm::GenericAllocator::TInstance instance = sm::GenericAllocator::Create();
     if (!sm::GenericAllocator::IsValid(instance))
@@ -823,7 +797,7 @@ SMMALLOC_API INLINE sm_allocator _sm_allocator_create(uint32_t bucketsCount, siz
     return allocator;
 }
 
-SMMALLOC_API INLINE void _sm_allocator_destroy(sm_allocator allocator)
+SMMALLOC_API AM_INLINE(void) _sm_allocator_destroy(sm_allocator allocator)
 {
     if (allocator == nullptr)
     {
@@ -842,8 +816,8 @@ SMMALLOC_API INLINE void _sm_allocator_destroy(sm_allocator allocator)
     sm::GenericAllocator::Destroy(instance);
 }
 
-SMMALLOC_API INLINE void _sm_allocator_thread_cache_create(
-    sm_allocator allocator, sm::CacheWarmupOptions warmupOptions, std::initializer_list<uint32_t> options)
+SMMALLOC_API AM_INLINE(void)
+    _sm_allocator_thread_cache_create(sm_allocator allocator, sm::CacheWarmupOptions warmupOptions, std::initializer_list<uint32_t> options)
 {
     if (allocator == nullptr)
     {
@@ -853,7 +827,7 @@ SMMALLOC_API INLINE void _sm_allocator_thread_cache_create(
     allocator->CreateThreadCache(warmupOptions, options);
 }
 
-SMMALLOC_API INLINE void _sm_allocator_thread_cache_destroy(sm_allocator allocator)
+SMMALLOC_API AM_INLINE(void) _sm_allocator_thread_cache_destroy(sm_allocator allocator)
 {
     if (allocator == nullptr)
     {
@@ -863,27 +837,27 @@ SMMALLOC_API INLINE void _sm_allocator_thread_cache_destroy(sm_allocator allocat
     allocator->DestroyThreadCache();
 }
 
-SMMALLOC_API INLINE void* _sm_malloc(sm_allocator allocator, size_t bytesCount, size_t alignment)
+SMMALLOC_API AM_INLINE(void*) _sm_malloc(sm_allocator allocator, size_t bytesCount, size_t alignment)
 {
     return allocator->Alloc(bytesCount, alignment);
 }
 
-SMMALLOC_API INLINE void _sm_free(sm_allocator allocator, void* p)
+SMMALLOC_API AM_INLINE(void) _sm_free(sm_allocator allocator, void* p)
 {
     return allocator->Free(p);
 }
 
-SMMALLOC_API INLINE void* _sm_realloc(sm_allocator allocator, void* p, size_t bytesCount, size_t alignment)
+SMMALLOC_API AM_INLINE(void*) _sm_realloc(sm_allocator allocator, void* p, size_t bytesCount, size_t alignment)
 {
     return allocator->Realloc(p, bytesCount, alignment);
 }
 
-SMMALLOC_API INLINE size_t _sm_msize(sm_allocator allocator, void* p)
+SMMALLOC_API AM_INLINE(size_t) _sm_msize(sm_allocator allocator, void* p)
 {
     return allocator->GetUsableSize(p);
 }
 
-SMMALLOC_API INLINE int32_t _sm_mbucket(sm_allocator allocator, void* p)
+SMMALLOC_API AM_INLINE(int32_t) _sm_mbucket(sm_allocator allocator, void* p)
 {
     return allocator->GetBucketIndex(p);
 }
