@@ -16,7 +16,7 @@ namespace SparkyStudios.Audio.Amplitude;
 
 // The supported output channels.
 enum PlaybackOutputChannels : ushort {
-  None = 0,
+  Default = 0,
   Mono = 1,
   Stereo = 2,
   Quad = 4,
