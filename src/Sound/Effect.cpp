@@ -27,7 +27,7 @@
 
 namespace SparkyStudios::Audio::Amplitude
 {
-    static std::vector<EffectInstance*> gEffectsList = {};
+    static std::map<const Effect*, std::vector<EffectInstance*>> gEffectsList = {};
 
     Effect::Effect()
         : _source()
@@ -43,6 +43,11 @@ namespace SparkyStudios::Audio::Amplitude
         delete _filter;
         _filter = nullptr;
         _parameters.clear();
+
+        for (auto&& instance : gEffectsList[this])
+            DeleteInstance(instance);
+
+        gEffectsList.erase(this);
     }
 
     bool Effect::LoadEffectDefinition(const std::string& source)
@@ -119,7 +124,8 @@ namespace SparkyStudios::Audio::Amplitude
     EffectInstance* Effect::CreateInstance() const
     {
         auto* effect = new EffectInstance(this);
-        gEffectsList.push_back(effect);
+        auto& list = gEffectsList[this];
+        list.push_back(effect);
         return effect;
     }
 
@@ -128,13 +134,14 @@ namespace SparkyStudios::Audio::Amplitude
         if (instance == nullptr)
             return;
 
-        gEffectsList.erase(std::find(gEffectsList.begin(), gEffectsList.end(), instance));
+        auto& list = gEffectsList[this];
+        list.erase(std::find(list.begin(), list.end(), instance));
     }
 
     void Effect::Update()
     {
         // Update effect parameters
-        for (auto&& instance : gEffectsList)
+        for (auto&& instance : gEffectsList[this])
         {
             for (AmUInt32 i = 0; i < _parameters.size(); ++i)
             {
