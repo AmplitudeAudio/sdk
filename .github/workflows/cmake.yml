@@ -1,4 +1,4 @@
-name: CMake
+name: Build
 
 on:
   push:
@@ -166,7 +166,7 @@ jobs:
       - name: Install Strip
         shell: bash
         working-directory: build
-        run: cmake --install . --strip
+        run: cmake --install . --strip --config ${{ matrix.build_type }}
 
       - name: Pack
         shell: bash
