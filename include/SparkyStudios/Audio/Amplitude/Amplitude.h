@@ -37,13 +37,11 @@
 #include <SparkyStudios/Audio/Amplitude/Math/Curve.h>
 #include <SparkyStudios/Audio/Amplitude/Math/HandmadeMath.h>
 
-#include <SparkyStudios/Audio/Amplitude/Sound/Schedulers/RandomScheduler.h>
-#include <SparkyStudios/Audio/Amplitude/Sound/Schedulers/SequenceScheduler.h>
-
 #include <SparkyStudios/Audio/Amplitude/Sound/Attenuation.h>
 #include <SparkyStudios/Audio/Amplitude/Sound/Collection.h>
 #include <SparkyStudios/Audio/Amplitude/Sound/Effect.h>
 #include <SparkyStudios/Audio/Amplitude/Sound/Fader.h>
+#include <SparkyStudios/Audio/Amplitude/Sound/Filter.h>
 #include <SparkyStudios/Audio/Amplitude/Sound/Rtpc.h>
 #include <SparkyStudios/Audio/Amplitude/Sound/Scheduler.h>
 #include <SparkyStudios/Audio/Amplitude/Sound/Sound.h>

@@ -14,8 +14,9 @@
 
 #include <SparkyStudios/Audio/Amplitude/Core/Engine.h>
 
-#include <SparkyStudios/Audio/Amplitude/Sound/Schedulers/SequenceScheduler.h>
 #include <SparkyStudios/Audio/Amplitude/Sound/Sound.h>
+
+#include <Sound/Schedulers/SequenceScheduler.h>
 
 #include "collection_definition_generated.h"
 
