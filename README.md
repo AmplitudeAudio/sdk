@@ -1,16 +1,24 @@
-<center>
-<img src="./docs/static/images/logo.png" width="50%">
-</center>
+<p align="center">
+  <a href="https://sparkystudios.github.io/AmplitudeAudioSDK">
+    <img src="./docs/static/images/logo_trimmed.png" width="320">
+  </a>
+</p>
 
+<div align="center">
+  
 # Amplitude Audio SDK
+
+</div>
 
 Amplitude is a full-featured and cross-platform audio engine designed with the needs of games in mind. Apart from his efficient audio mixer, it also adjusts gain based on user-defined attenuation models, plays spatialized sounds in 3D environments, manages prioritization, buses, and a lot more. With all those features, Amplitude is still easy to use, thanks to its data-driven way. All you need is to write configuration files and let Amplitude do the magic for you.
 
-<center>
+<div align="center">
+  <br/>
 
-[Developer's Guide](https://sparkystudios.github.io/AmplitudeAudioSDK/docs/guide/) | [API Documentation](https://sparkystudios.github.io/AmplitudeAudioSDK/docs/api/) | [JSON Schemas](https://sparkystudios.github.io/AmplitudeAudioSDK/docs/schema/)
+  [Developer's Guide](https://sparkystudios.github.io/AmplitudeAudioSDK/docs/guide/) | [API Documentation](https://sparkystudios.github.io/AmplitudeAudioSDK/docs/api/) | [JSON Schemas](https://sparkystudios.github.io/AmplitudeAudioSDK/docs/schema/)
 
-</center>
+  <br/>
+</div>
 
 > Amplitude is still in beta and has not been fully battle-tested. So feel free to raise an [issue](https://github.com/SparkyStudios/AmplitudeAudioSDK/issues/new/choose "Open a Github Issue") or open a [PR](https://github.com/SparkyStudios/AmplitudeAudioSDK/pulls), by following our [Contributor Guidelines](https://github.com/SparkyStudios/AmplitudeAudioSDK/blob/main/CODE_OF_CONDUCT.md).
 
