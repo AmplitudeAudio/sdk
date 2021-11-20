@@ -9,7 +9,7 @@ on:
 
 jobs:
   build:
-    name: ${{ matrix.config.name }}
+    name: "[${{ matrix.build_type }}] ${{ matrix.config.name }}"
     runs-on: ${{ matrix.config.os }}
     strategy:
       fail-fast: false
@@ -22,7 +22,6 @@ jobs:
               artifact: "amplitude_audio_sdk_windows_msvc_x64_release.7z",
               cc: "cl",
               cxx: "cl",
-              environment_script: "C:/Program Files (x86)/Microsoft Visual Studio/2019/Enterprise/VC/Auxiliary/Build/vcvars64.bat",
               archiver: "7z a",
               generator: "Visual Studio 16 2019",
               target_triplet: x64-windows,
