@@ -1,0 +1,9 @@
+[[main]]
+  name = "Features"
+  weight = 2
+  url = "/features"
+
+[[main]]
+  name = "Docs"
+  weight = 3
+  url = "docs/"
