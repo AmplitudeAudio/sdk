@@ -12,7 +12,7 @@ jobs:
 
     concurrency:
       group: ${{ github.workflow }}-${{ github.ref }}
-    
+
     steps:
       - uses: actions/checkout@v2
         with:
@@ -21,6 +21,8 @@ jobs:
 
       - name: Setup Hugo
         uses: peaceiris/actions-hugo@v2
+        with:
+          extended: true
 
       - name: Build
         shell: bash
