@@ -393,18 +393,20 @@ namespace SparkyStudios::Audio::Amplitude
         AmUInt64 n, l = frames, o = offset, r = 0;
         auto* b = reinterpret_cast<AmInt16Buffer>(data->chunk->buffer);
 
-    Fill:
-        n = _parent->_decoder->Stream(b, o, l);
-        r += n;
-
-        // If we reached the end of the file but looping is enabled, then
-        // seek back to the beginning of the file and fill the remaining part of the buffer.
-        if (n < l && _parent->_loop && _parent->_decoder->Seek(0))
+        bool needFill = true;
+        do
         {
-            b += n * _parent->m_format.GetNumChannels();
-            l -= n;
-            goto Fill;
-        }
+            n = _parent->_decoder->Stream(b, o, l);
+            r += n;
+
+            // If we reached the end of the file but looping is enabled, then
+            // seek back to the beginning of the file and fill the remaining part of the buffer.
+            if (needFill = n < l && _parent->_loop && _parent->_decoder->Seek(0); needFill)
+            {
+                b += n * _parent->m_format.GetNumChannels();
+                l -= n;
+            }
+        } while (needFill);
 
         if (_effectInstance != nullptr)
         {

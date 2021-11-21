@@ -193,7 +193,7 @@ namespace SparkyStudios::Audio::Amplitude
         // A map of file names to RTPC ids to determine if a file needs to be loaded.
         RtpcIdMap rtpc_id_map;
 
-        // A map of effect ids to Rtpc
+        // A map of effect ids to Effect
         EffectMap effect_map;
 
         // A map of file names to effect ids to determine if a file needs to be loaded.

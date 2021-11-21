@@ -18,6 +18,8 @@
 #include <SparkyStudios/Audio/Amplitude/Amplitude.h>
 
 #include <Core/EngineInternalState.h>
+#include <Sound/Schedulers/RandomScheduler.h>
+#include <Sound/Schedulers/SequenceScheduler.h>
 
 #include "collection_definition_generated.h"
 

@@ -1,0 +1,14 @@
+baseURL = "https://sparkystudios.github.io/AmplitudeAudioSDK/"
+
+title = "Amplitude Audio SDK"
+
+enableRobotsTXT = true
+publishdir = "../docs/"
+
+theme = ["github.com/onweru/compose"]
+enableGitInfo = true
+
+disableKinds = ["taxonomy", "taxonomyTerm"]
+
+[outputs]
+  home = ["HTML", "RSS","JSON"]

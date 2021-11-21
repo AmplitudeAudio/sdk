@@ -48,7 +48,7 @@
 #define AM_ALIGNED_MSIZE(_ptr_, _alignment_) _aligned_msize(_ptr_, _alignment_, 0)
 #define AM_ALIGNED_FREE(_ptr_) _aligned_free(_ptr_)
 
-// Windows platforms support wchar_t
+// Windows platforms supports wchar_t
 #define AM_WCHAR_SUPPORTED
 
 // Defines the format used to print AmOsString text
