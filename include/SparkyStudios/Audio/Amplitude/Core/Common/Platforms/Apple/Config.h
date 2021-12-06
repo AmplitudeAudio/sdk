@@ -14,8 +14,8 @@
 
 #pragma once
 
-#ifndef SS_AMPLITUDE_AUDIO_LINUX_CONFIG_H
-#define SS_AMPLITUDE_AUDIO_LINUX_CONFIG_H
+#ifndef SS_AMPLITUDE_AUDIO_APPLE_CONFIG_H
+#define SS_AMPLITUDE_AUDIO_APPLE_CONFIG_H
 
 #include <TargetConditionals.h>
 

@@ -119,7 +119,7 @@ namespace SparkyStudios::Audio::Amplitude::Codecs
         return true;
     }
 
-    AmUInt64 MP3Codec::MP3Encoder::Write(AudioBuffer in, AmUInt64 offset, AmUInt64 length)
+    AmUInt64 MP3Codec::MP3Encoder::Write(AmVoidPtr in, AmUInt64 offset, AmUInt64 length)
     {
         return 0;
     }
