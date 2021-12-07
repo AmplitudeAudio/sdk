@@ -19,6 +19,8 @@
 
 #include <SparkyStudios/Audio/Amplitude/Core/Common.h>
 
+#include <Utils/Utils.h>
+
 namespace SparkyStudios::Audio::Amplitude
 {
     struct SoundChunk

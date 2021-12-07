@@ -12,15 +12,13 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+#include <SparkyStudios/Audio/Amplitude/Core/Memory.h>
+
 #include <Mixer/Mixer.h>
 #include <Mixer/SoundData.h>
 
-#include <Utils/SmMalloc/smmalloc.h>
-
 namespace SparkyStudios::Audio::Amplitude
 {
-    static sm_allocator soundChunkAllocator = _sm_allocator_create(4, (1 * 1024 * 1024));
-
     static SoundData* CreateSoundData(const SoundFormat& format, SoundChunk* chunk, AmVoidPtr userData, AmUInt64 frames, bool stream)
     {
         if (format.GetNumChannels() < 1 || format.GetNumChannels() > 2 || frames < 1)
@@ -49,7 +47,7 @@ namespace SparkyStudios::Audio::Amplitude
 
         chunk->frames = frames;
         chunk->length = alignedLength;
-        chunk->buffer = static_cast<AudioBuffer>(_sm_malloc(soundChunkAllocator, alignedLength * sizeof(AmInt16), AM_SIMD_ALIGNMENT));
+        chunk->buffer = static_cast<AudioBuffer>(amMemory->Malign(MemoryPoolKind::SoundData, alignedLength * sizeof(AmInt16), AM_SIMD_ALIGNMENT));
 
         return chunk;
     }
@@ -57,7 +55,7 @@ namespace SparkyStudios::Audio::Amplitude
     void SoundChunk::DestroyChunk(SoundChunk* chunk)
     {
         // Mixer::OnSoundDestroyed(chunk);
-        _sm_free(soundChunkAllocator, chunk->buffer);
+        amMemory->Free(MemoryPoolKind::SoundData, chunk->buffer);
     }
 
     SoundData* SoundData::CreateMusic(const SoundFormat& format, SoundChunk* chunk, AmVoidPtr userData)

@@ -12,6 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+#include <SparkyStudios/Audio/Amplitude/Core/Memory.h>
+
 #include <Sound/Filters/FFTFilter.h>
 #include <Utils/Utils.h>
 
@@ -35,7 +37,7 @@ namespace SparkyStudios::Audio::Amplitude
 
     FFTFilterInstance::~FFTFilterInstance()
     {
-        pffft_aligned_free(_temp);
+        amMemory->Free(MemoryPoolKind::Filtering, _temp);
 
         delete[] _inputBuffer;
         delete[] _mixBuffer;
@@ -45,7 +47,7 @@ namespace SparkyStudios::Audio::Amplitude
 
     void FFTFilterInstance::InitFFT()
     {
-        _temp = static_cast<AmReal32*>(pffft_aligned_malloc(STFT_WINDOW_SIZE));
+        _temp = static_cast<AmReal32*>(amMemory->Malign(MemoryPoolKind::Filtering, STFT_WINDOW_SIZE, 64));
 
         _inputBuffer = nullptr;
         _mixBuffer = nullptr;

@@ -76,8 +76,6 @@ namespace SparkyStudios::Audio::Amplitude
                 Thread::DestroyMutex(_audioThreadMutex);
 
             _audioThreadMutex = nullptr;
-
-            _sm_allocator_destroy(_mixBufferAllocator);
         }
     }
 
@@ -105,8 +103,6 @@ namespace SparkyStudios::Audio::Amplitude
         _deviceBufferSize = bufferSize;
         _deviceSampleRate = sampleRate;
         _deviceChannels = channels;
-
-        _mixBufferAllocator = _sm_allocator_create(1, _deviceBufferSize * sizeof(AmInt16));
     }
 
     AmUInt64 Mixer::Mix(AmVoidPtr mixBuffer, AmUInt64 frameCount)
@@ -138,11 +134,11 @@ namespace SparkyStudios::Audio::Amplitude
 
 #if defined(AM_SSE_INTRINSICS)
         // dynamically sized buffer
-        auto* align =
-            static_cast<AudioBuffer>(_sm_malloc(_mixBufferAllocator, aSize * Vc::int16_v::Size * sizeof(AmInt16), AM_SIMD_ALIGNMENT));
+        auto* align = static_cast<AudioBuffer>(
+            amMemory->Malign(MemoryPoolKind::Amplimix, aSize * Vc::int16_v::Size * sizeof(AmInt16), AM_SIMD_ALIGNMENT));
 #else
         // dynamically sized buffer
-        auto* align = static_cast<AudioBuffer>(_sm_malloc(_mixBufferAllocator, aSize * sizeof(AmInt16), AM_SIMD_ALIGNMENT));
+        auto* align = static_cast<AudioBuffer>(amMemory->Malign(MemoryPoolKind::Amplimix, aSize * sizeof(AmInt16), AM_SIMD_ALIGNMENT));
 #endif // AM_SSE_INTRINSICS
 
         // clear the aligned buffer
@@ -181,7 +177,7 @@ namespace SparkyStudios::Audio::Amplitude
         memcpy(buffer, reinterpret_cast<AmInt16*>(align), frames * numChannels * sizeof(AmInt16));
 
     Cleanup:
-        _sm_free(_mixBufferAllocator, align);
+        amMemory->Free(MemoryPoolKind::Amplimix, align);
 
         UnlockAudioMutex();
 

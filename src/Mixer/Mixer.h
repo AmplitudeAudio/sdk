@@ -24,7 +24,7 @@
 #include <SparkyStudios/Audio/Amplitude/Core/Common.h>
 
 #include <Mixer/SoundData.h>
-#include <Utils/SmMalloc/smmalloc.h>
+#include <Utils/Utils.h>
 
 #include "engine_config_definition_generated.h"
 
@@ -194,8 +194,6 @@ namespace SparkyStudios::Audio::Amplitude
         _Atomic(float) _masterGain;
         MixerLayer _layers[kAmplimixLayersCount];
         AmUInt64 _remainingFrames;
-
-        sm_allocator _mixBufferAllocator;
     };
 } // namespace SparkyStudios::Audio::Amplitude
 
