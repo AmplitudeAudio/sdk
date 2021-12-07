@@ -47,6 +47,11 @@ namespace SparkyStudios::Audio::Amplitude
          * @brief Filters related allocations.
          */
         Filtering,
+
+        /**
+         * @brief The total number of memory pools.
+         */
+        COUNT,
     };
 
     AM_CALLBACK(AmVoidPtr, AmMemoryMallocCallback)(MemoryPoolKind pool, AmSize size);
