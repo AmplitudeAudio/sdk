@@ -93,6 +93,13 @@ namespace SparkyStudios::Audio::Amplitude
         bool Deinitialize();
 
         /**
+         * @brief Checks if the audio engine has been initialized.
+         *
+         * @return Whether the audio engine is initialized.
+         */
+        bool IsInitialized();
+
+        /**
          * @brief Update audio volume per channel each frame.
          *
          * @param delta The number of elapsed seconds since the last frame.

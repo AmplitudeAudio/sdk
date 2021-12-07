@@ -354,8 +354,17 @@ namespace SparkyStudios::Audio::Amplitude
         for (const auto& item : _state->sound_bank_map)
             item.second->Deinitialize(this);
 
+        delete _state;
+        _state = nullptr;
+
         // Close the audio device through the driver
         return _audioDriver->Close();
+    }
+
+    bool Engine::IsInitialized()
+    {
+        // An initialized engine have a running state
+        return _state != nullptr && _state->stopping == false;
     }
 
     bool Engine::LoadSoundBank(AmOsString filename)
