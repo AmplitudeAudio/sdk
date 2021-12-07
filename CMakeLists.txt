@@ -70,6 +70,7 @@ set(SA_SOURCE
     include/SparkyStudios/Audio/Amplitude/Core/Event.h
     include/SparkyStudios/Audio/Amplitude/Core/Listener.h
     include/SparkyStudios/Audio/Amplitude/Core/Log.h
+    include/SparkyStudios/Audio/Amplitude/Core/Memory.h
     include/SparkyStudios/Audio/Amplitude/Core/RefCounter.h
     include/SparkyStudios/Audio/Amplitude/Core/Thread.h
     include/SparkyStudios/Audio/Amplitude/Core/Version.h
@@ -129,6 +130,7 @@ set(SA_SOURCE
     src/Core/ListenerInternalState.h
     src/Core/Listener.cpp
     src/Core/Log.cpp
+    src/Core/Memory.cpp
     src/Core/Thread.cpp
     src/Core/Version.cpp
 
