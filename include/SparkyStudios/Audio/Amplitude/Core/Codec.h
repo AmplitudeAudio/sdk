@@ -172,7 +172,7 @@ namespace SparkyStudios::Audio::Amplitude
              *
              * @return The number of frames written.
              */
-            virtual AmUInt64 Write(AudioBuffer in, AmUInt64 offset, AmUInt64 length) = 0;
+            virtual AmUInt64 Write(AmVoidPtr in, AmUInt64 offset, AmUInt64 length) = 0;
 
         protected:
             /**

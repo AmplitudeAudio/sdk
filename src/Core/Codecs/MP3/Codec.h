@@ -63,7 +63,7 @@ namespace SparkyStudios::Audio::Amplitude::Codecs
 
             bool Close() final;
 
-            AmUInt64 Write(AudioBuffer in, AmUInt64 offset, AmUInt64 length) final;
+            AmUInt64 Write(AmVoidPtr in, AmUInt64 offset, AmUInt64 length) final;
 
         private:
             bool _initialized;

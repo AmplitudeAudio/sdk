@@ -19,8 +19,20 @@
 
 #include <SparkyStudios/Audio/Amplitude/Core/Common.h>
 
+#if defined(AM_SSE_INTRINSICS)
+#include <Vc/Vc>
+#endif // defined(AM_SSE_INTRINSICS)
+
 namespace SparkyStudios::Audio::Amplitude
 {
+#if defined(AM_SSE_INTRINSICS)
+    typedef Vc::int16_v AudioDataUnit;
+#else
+    typedef AmInt16 AudioDataUnit;
+#endif
+
+    typedef AudioDataUnit* AudioBuffer;
+
     static AM_INLINE(AmInt32) AmFloatToFixedPoint(const AmReal32 x)
     {
         return static_cast<AmInt32>(x * (1 << kAmFixedPointShift));

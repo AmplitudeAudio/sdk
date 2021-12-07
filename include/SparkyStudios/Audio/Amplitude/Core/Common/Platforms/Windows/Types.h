@@ -31,6 +31,8 @@ namespace SparkyStudios::Audio::Amplitude
     typedef uint16_t                AmUInt16;
     typedef uint32_t                AmUInt32;
     typedef uint64_t                AmUInt64;
+    
+    typedef size_t                  AmSize;
 
     typedef float                   AmReal32;
     typedef double                  AmReal64;

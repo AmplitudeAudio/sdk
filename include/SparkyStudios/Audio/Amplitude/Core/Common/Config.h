@@ -36,13 +36,16 @@
 #elif defined(__linux__)
 #include <SparkyStudios/Audio/Amplitude/Core/Common/Platforms/Linux/Config.h>
 #elif defined(__APPLE__)
-#include <SparkyStudios/Audio/Amplitude/Core/Common/Platforms/Mac/Config.h>
+#include <SparkyStudios/Audio/Amplitude/Core/Common/Platforms/Apple/Config.h>
+#endif
+
+#if !defined(AM_CALL_POLICY)
+#define AM_CALL_POLICY
 #endif
 
 #if !defined(AMPLITUDE_DISABLE_SIMD)
 #if defined(AM_CPU_X86) || defined(AM_CPU_X86_64) || defined(AM_CPU_ARM_NEON)
 #define AM_SSE_INTRINSICS
-#include <Vc/Vc>
 #endif // AM_CPU_X86 || AM_CPU_X86_64 || AM_CPU_ARM_NEON
 #else
 #define PFFFT_SIMD_DISABLE

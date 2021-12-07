@@ -63,6 +63,14 @@
 // Checks if a value is between a and b
 #define AM_BETWEEN(v, a, b) (v >= AM_MIN(a, b) && v <= AM_MAX(a, b))
 
+/**
+ * @brief Declare a callback function type
+ * @param _type_ Return type of the function
+ * @param _name_ Name of the function
+ * @remarks This must be followed by the parentheses containing the function arguments declaration
+ */
+#define AM_CALLBACK(_type_, _name_) typedef _type_(AM_CALL_POLICY* _name_)
+
 // Typedefs have to be made before the includes, as the
 // includes depend on them.
 

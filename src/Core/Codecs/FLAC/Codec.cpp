@@ -114,7 +114,7 @@ namespace SparkyStudios::Audio::Amplitude::Codecs
         return true;
     }
 
-    AmUInt64 FLACCodec::FLACEncoder::Write(AudioBuffer in, AmUInt64 offset, AmUInt64 length)
+    AmUInt64 FLACCodec::FLACEncoder::Write(AmVoidPtr in, AmUInt64 offset, AmUInt64 length)
     {
         return 0;
     }
