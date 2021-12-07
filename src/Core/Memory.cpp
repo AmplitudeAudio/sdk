@@ -47,6 +47,7 @@ namespace SparkyStudios::Audio::Amplitude
 
     MemoryManager* MemoryManager::GetInstance()
     {
+        AMPLITUDE_ASSERT(gMemManager != nullptr);
         return gMemManager;
     }
 
