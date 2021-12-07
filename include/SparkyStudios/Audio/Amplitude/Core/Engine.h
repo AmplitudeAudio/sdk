@@ -124,6 +124,13 @@ namespace SparkyStudios::Audio::Amplitude
         void UnloadSoundBank(AmOsString filename);
 
         /**
+         * @brief Unload a sound bank.
+         *
+         * @param id The soundbank id to unload.
+         */
+        void UnloadSoundBank(AmBankID id);
+
+        /**
          * @brief Kick off loading thread to load all sound files queued with
          *        LoadSoundBank().
          */

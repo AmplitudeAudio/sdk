@@ -361,29 +361,42 @@ namespace SparkyStudios::Audio::Amplitude
     bool Engine::LoadSoundBank(AmOsString filename)
     {
         bool success = true;
-        if (const auto findIt = _state->sound_bank_map.find(filename); findIt == _state->sound_bank_map.end())
+        if (const auto findIt = _state->sound_bank_id_map.find(filename); findIt == _state->sound_bank_id_map.end())
         {
-            auto& soundBank = _state->sound_bank_map[filename];
-            soundBank = std::make_unique<SoundBank>();
+            auto soundBank = std::make_unique<SoundBank>();
             success = soundBank->Initialize(filename, this);
+
             if (success)
             {
+                _state->sound_bank_id_map[filename] = soundBank->GetId();
                 soundBank->GetRefCounter()->Increment();
             }
         }
         else
         {
-            findIt->second->GetRefCounter()->Increment();
+            _state->sound_bank_map[findIt->second]->GetRefCounter()->Increment();
         }
+
         return success;
     }
 
     void Engine::UnloadSoundBank(AmOsString filename)
     {
-        const auto findIt = _state->sound_bank_map.find(filename);
-        if (findIt == _state->sound_bank_map.end())
+        const auto findIt = _state->sound_bank_id_map.find(filename);
+        if (findIt == _state->sound_bank_id_map.end())
         {
             CallLogFunc("[ERROR] Error while deinitializing SoundBank " AM_OS_CHAR_FMT " - sound bank not loaded.\n", filename);
+            AMPLITUDE_ASSERT(0);
+        }
+        UnloadSoundBank(findIt->second);
+    }
+
+    void Engine::UnloadSoundBank(AmBankID id)
+    {
+        const auto findIt = _state->sound_bank_map.find(id);
+        if (findIt == _state->sound_bank_map.end())
+        {
+            CallLogFunc("[ERROR] Error while deinitializing SoundBank with ID %d - sound bank not loaded.\n", id);
             AMPLITUDE_ASSERT(0);
         }
         if (findIt->second->GetRefCounter()->Decrement() == 0)

@@ -44,7 +44,7 @@ namespace SparkyStudios::Audio::Amplitude
     typedef std::map<std::wstring, AmSwitchContainerID> SwitchContainerIdMap;
     typedef std::map<std::wstring, AmSoundID> SoundIdMap;
     typedef std::map<std::wstring, AmEventID> EventIdMap;
-    typedef std::map<std::wstring, std::unique_ptr<SoundBank>> SoundBankMap;
+    typedef std::map<std::wstring, AmBankID> SoundBankIdMap;
 #else
     typedef std::map<std::string, AmEffectID> EffectIdMap;
     typedef std::map<std::string, AmRtpcID> RtpcIdMap;
@@ -54,7 +54,7 @@ namespace SparkyStudios::Audio::Amplitude
     typedef std::map<std::string, AmSwitchContainerID> SwitchContainerIdMap;
     typedef std::map<std::string, AmSoundID> SoundIdMap;
     typedef std::map<std::string, AmEventID> EventIdMap;
-    typedef std::map<std::string, std::unique_ptr<SoundBank>> SoundBankMap;
+    typedef std::map<std::string, AmBankID> SoundBankIdMap;
 #endif
 
     typedef std::map<AmSwitchContainerID, std::unique_ptr<SwitchContainer>> SwitchContainerMap;
@@ -72,6 +72,9 @@ namespace SparkyStudios::Audio::Amplitude
     typedef std::map<AmEffectID, std::unique_ptr<Effect>> EffectMap;
 
     typedef std::map<AmEventID, std::unique_ptr<Event>> EventMap;
+
+    typedef std::map<AmBankID, std::unique_ptr<SoundBank>> SoundBankMap;
+
     typedef std::vector<EventInstance> EventInstanceVector;
 
     typedef std::vector<ChannelInternalState> ChannelStateVector;
@@ -198,6 +201,9 @@ namespace SparkyStudios::Audio::Amplitude
 
         // A map of file names to effect ids to determine if a file needs to be loaded.
         EffectIdMap effect_id_map;
+
+        // A map of sound banks id to SoundBank.
+        SoundBankIdMap sound_bank_id_map;
 
         // Hold the sounds banks.
         SoundBankMap sound_bank_map;
