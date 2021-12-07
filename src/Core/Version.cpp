@@ -32,7 +32,7 @@ namespace SparkyStudios::Audio::Amplitude
         AM_VERSION_MAJOR,
         AM_VERSION_MINOR,
         AM_VERSION_REVISION,
-        "Amplitude Audio"
+        "Amplitude "
         AM_STRING(AM_VERSION_MAJOR) "."
         AM_STRING(AM_VERSION_MINOR) "."
         AM_STRING(AM_VERSION_REVISION)
