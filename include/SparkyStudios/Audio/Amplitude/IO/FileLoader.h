@@ -18,6 +18,7 @@
 #define SPARK_AUDIO_FILE_LOADER_H
 
 #include <string>
+#include <filesystem>
 
 #include <SparkyStudios/Audio/Amplitude/Core/Common.h>
 
@@ -26,13 +27,18 @@ namespace SparkyStudios::Audio::Amplitude
     class FileLoader
     {
     public:
-        void StartLoading()
-        {}
+        FileLoader();
 
-        bool TryFinalize()
-        {
-            return true;
-        }
+        void SetBasePath(const std::filesystem::path& basePath);
+
+        [[nodiscard]] std::filesystem::path ResolvePath(const std::filesystem::path& path) const;
+
+        void StartLoading();
+
+        bool TryFinalize();
+
+    private:
+        std::filesystem::path _basePath;
     };
 
     class Resource
@@ -40,26 +46,16 @@ namespace SparkyStudios::Audio::Amplitude
     public:
         virtual ~Resource() = default;
 
-        void LoadFile(AmOsString filename, FileLoader* loader);
+        void LoadFile(const std::filesystem::path& filename, const FileLoader* loader);
 
-        void SetFilename(AmOsString filename)
-        {
-            _filename = filename;
-        }
+        void SetFilename(const std::filesystem::path& filename);
 
-        [[nodiscard]] AmOsString GetFilename() const
-        {
-            return _filename.c_str();
-        }
+        [[nodiscard]] const std::filesystem::path& GetFilename() const;
 
     private:
-        virtual void Load(FileLoader* loader) = 0;
+        virtual void Load(const FileLoader* loader) = 0;
 
-#if defined(AM_WCHAR_SUPPORTED)
-        std::wstring _filename;
-#else
-        std::string _filename;
-#endif
+        std::filesystem::path _filename;
     };
 } // namespace SparkyStudios::Audio::Amplitude
 
