@@ -354,8 +354,10 @@ namespace SparkyStudios::Audio::Amplitude
 
     bool SoundBank::Initialize(AmOsString filename, Engine* engine)
     {
+        std::filesystem::path filePath = engine->GetFileLoader()->ResolvePath(std::filesystem::path("soundbanks") / filename);
+
         bool success = true;
-        if (!LoadFile(filename, &_soundBankDefSource))
+        if (!LoadFile(filePath.c_str(), &_soundBankDefSource))
         {
             return false;
         }
