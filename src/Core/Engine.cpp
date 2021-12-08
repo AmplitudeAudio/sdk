@@ -240,7 +240,8 @@ namespace SparkyStudios::Audio::Amplitude
 
     bool Engine::Initialize(AmOsString configFile)
     {
-        if (!LoadFile(configFile, &_configSrc))
+        std::filesystem::path configFilePath = _loader.ResolvePath(configFile);
+        if (!LoadFile(configFilePath.c_str(), &_configSrc))
         {
             CallLogFunc("[ERROR] Could not load audio config file at path '" AM_OS_CHAR_FMT "'.\n", configFile);
             return false;
