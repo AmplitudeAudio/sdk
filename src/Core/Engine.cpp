@@ -80,6 +80,7 @@ namespace SparkyStudios::Audio::Amplitude
         : _configSrc()
         , _state(nullptr)
         , _audioDriver(nullptr)
+        , _loader()
     {}
 
     Engine::~Engine()
@@ -367,6 +368,16 @@ namespace SparkyStudios::Audio::Amplitude
         return _state != nullptr && _state->stopping == false;
     }
 
+    void Engine::SetFileLoader(const FileLoader& loader)
+    {
+        _loader = loader;
+    }
+
+    const FileLoader* Engine::GetFileLoader() const
+    {
+        return &_loader;
+    }
+
     bool Engine::LoadSoundBank(AmOsString filename)
     {
         bool success = true;
@@ -416,12 +427,12 @@ namespace SparkyStudios::Audio::Amplitude
 
     void Engine::StartLoadingSoundFiles()
     {
-        _state->loader.StartLoading();
+        _loader.StartLoading();
     }
 
-    bool Engine::TryFinalize()
+    bool Engine::TryFinalizeLoadingSoundFiles()
     {
-        return _state->loader.TryFinalize();
+        return _loader.TryFinalize();
     }
 
     bool BestListener(

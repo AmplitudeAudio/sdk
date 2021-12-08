@@ -100,6 +100,20 @@ namespace SparkyStudios::Audio::Amplitude
         bool IsInitialized();
 
         /**
+         * @brief Set the File Loader used by the engine.
+         *
+         * @param loader A FileLoader implementation.
+         */
+        void SetFileLoader(const FileLoader& loader);
+
+        /**
+         * @brief Get the File Loader used by the engine.
+         * 
+         * @return The file loader.
+         */
+        [[nodiscard]] const FileLoader* GetFileLoader() const;
+
+        /**
          * @brief Update audio volume per channel each frame.
          *
          * @param delta The number of elapsed seconds since the last frame.
@@ -147,7 +161,7 @@ namespace SparkyStudios::Audio::Amplitude
          * @brief Return true if all sound files have been loaded. Must call
          *        StartLoadingSoundFiles() first.
          */
-        bool TryFinalize();
+        bool TryFinalizeLoadingSoundFiles();
 
         /**
          * @brief Get a SwitchContainerHandle given its name as defined in its JSON data.
@@ -912,6 +926,9 @@ namespace SparkyStudios::Audio::Amplitude
 
         // The current state of the engine.
         EngineInternalState* _state;
+
+        // The file loader implementation
+        FileLoader _loader;
 
         // The audio driver used by the engine.
         Driver* _audioDriver;

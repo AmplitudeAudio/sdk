@@ -122,7 +122,6 @@ namespace SparkyStudios::Audio::Amplitude
             , entity_list(&EntityInternalState::node)
             , entity_state_memory()
             , entity_state_free_list()
-            , loader()
             , current_frame(0)
             , total_time(0.0)
             , version(nullptr)
@@ -225,9 +224,6 @@ namespace SparkyStudios::Audio::Amplitude
         EntityList entity_list;
         EntityStateVector entity_state_memory;
         std::vector<EntityInternalState*> entity_state_free_list;
-
-        // Loads the sound files.
-        FileLoader loader;
 
         // The current frame, i.e. the number of times AdvanceFrame has been called.
         AmUInt64 current_frame;
