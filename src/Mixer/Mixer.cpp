@@ -634,18 +634,22 @@ namespace SparkyStudios::Audio::Amplitude
             {
                 // stop playback unless looping
                 if (!loop)
-                    OnSoundEnded(layer->snd);
-
-                // call the onLoop callback
-                if (OnSoundLooped(layer->snd))
                 {
-                    // wrap around if allowed to loop again
-                    AMPLIMIX_CSWAP(&layer->cursor, &layer->end, layer->start);
+                    OnSoundEnded(layer->snd);
                 }
                 else
                 {
-                    // stop playback
-                    OnSoundEnded(layer->snd);
+                    // call the onLoop callback
+                    if (OnSoundLooped(layer->snd))
+                    {
+                        // wrap around if allowed to loop again
+                        AMPLIMIX_CSWAP(&layer->cursor, &layer->end, layer->start);
+                    }
+                    else
+                    {
+                        // stop playback
+                        OnSoundEnded(layer->snd);
+                    }
                 }
 
                 return true;
