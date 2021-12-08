@@ -47,9 +47,11 @@ namespace SparkyStudios::Audio::Amplitude
         }
         else
         {
+            std::filesystem::path filePath = engine->GetFileLoader()->ResolvePath(std::filesystem::path("switch_containers") / filename);
+
             // This is a new switch container, load it and update it.
             std::unique_ptr<SwitchContainer> switch_container(new SwitchContainer());
-            if (!switch_container->LoadSwitchContainerDefinitionFromFile(filename, engine->GetState()))
+            if (!switch_container->LoadSwitchContainerDefinitionFromFile(filePath.c_str(), engine->GetState()))
             {
                 return false;
             }
@@ -85,9 +87,11 @@ namespace SparkyStudios::Audio::Amplitude
         }
         else
         {
+            std::filesystem::path filePath = engine->GetFileLoader()->ResolvePath(std::filesystem::path("collections") / filename);
+
             // This is a new collection, load it and update it.
             std::unique_ptr<Collection> collection(new Collection());
-            if (!collection->LoadCollectionDefinitionFromFile(filename, engine->GetState()))
+            if (!collection->LoadCollectionDefinitionFromFile(filePath.c_str(), engine->GetState()))
             {
                 return false;
             }
@@ -123,9 +127,11 @@ namespace SparkyStudios::Audio::Amplitude
         }
         else
         {
+            std::filesystem::path filePath = engine->GetFileLoader()->ResolvePath(std::filesystem::path("sounds") / filename);
+
             // This is a new sound, load it and update it.
             std::unique_ptr<Sound> sound(new Sound());
-            if (!sound->LoadSoundDefinitionFromFile(filename, engine->GetState()))
+            if (!sound->LoadSoundDefinitionFromFile(filePath.c_str(), engine->GetState()))
             {
                 return false;
             }
@@ -139,7 +145,9 @@ namespace SparkyStudios::Audio::Amplitude
                 return false;
             }
 
-            sound->Load(&engine->GetState()->loader);
+            sound->LoadFile(
+                engine->GetFileLoader()->ResolvePath(std::filesystem::path("sounds") / std::filesystem::path(definition->path()->c_str())),
+                engine->GetFileLoader());
 
             sound->AcquireReferences(engine->GetState());
             sound->GetRefCounter()->Increment();
@@ -162,9 +170,11 @@ namespace SparkyStudios::Audio::Amplitude
         }
         else
         {
+            std::filesystem::path filePath = engine->GetFileLoader()->ResolvePath(std::filesystem::path("events") / filename);
+
             // This is a new event, load it and update it.
             std::unique_ptr<Event> event(new Event());
-            if (!event->LoadEventDefinitionFromFile(filename))
+            if (!event->LoadEventDefinitionFromFile(filePath.c_str()))
             {
                 return false;
             }
@@ -198,9 +208,11 @@ namespace SparkyStudios::Audio::Amplitude
         }
         else
         {
+            std::filesystem::path filePath = engine->GetFileLoader()->ResolvePath(std::filesystem::path("attenuators") / filename);
+
             // This is a new event, load it and update it.
             std::unique_ptr<Attenuation> attenuation(new Attenuation());
-            if (!attenuation->LoadAttenuationDefinitionFromFile(filename))
+            if (!attenuation->LoadAttenuationDefinitionFromFile(filePath.c_str()))
             {
                 return false;
             }
@@ -235,9 +247,11 @@ namespace SparkyStudios::Audio::Amplitude
         }
         else
         {
+            std::filesystem::path filePath = engine->GetFileLoader()->ResolvePath(std::filesystem::path("switches") / filename);
+
             // This is a new event, load it and update it.
             std::unique_ptr<Switch> _switch(new Switch());
-            if (!_switch->LoadSwitchDefinitionFromFile(filename))
+            if (!_switch->LoadSwitchDefinitionFromFile(filePath.c_str()))
             {
                 return false;
             }
@@ -272,9 +286,11 @@ namespace SparkyStudios::Audio::Amplitude
         }
         else
         {
+            std::filesystem::path filePath = engine->GetFileLoader()->ResolvePath(std::filesystem::path("rtpc") / filename);
+
             // This is a new event, load it and update it.
             std::unique_ptr<Rtpc> rtpc(new Rtpc());
-            if (!rtpc->LoadRtpcDefinitionFromFile(filename))
+            if (!rtpc->LoadRtpcDefinitionFromFile(filePath.c_str()))
             {
                 return false;
             }
@@ -308,9 +324,11 @@ namespace SparkyStudios::Audio::Amplitude
         }
         else
         {
+            std::filesystem::path filePath = engine->GetFileLoader()->ResolvePath(std::filesystem::path("effects") / filename);
+
             // This is a new event, load it and update it.
             std::unique_ptr<Effect> effect(new Effect());
-            if (!effect->LoadEffectDefinitionFromFile(filename))
+            if (!effect->LoadEffectDefinitionFromFile(filePath.c_str()))
             {
                 return false;
             }
@@ -336,8 +354,10 @@ namespace SparkyStudios::Audio::Amplitude
 
     bool SoundBank::Initialize(AmOsString filename, Engine* engine)
     {
+        std::filesystem::path filePath = engine->GetFileLoader()->ResolvePath(std::filesystem::path("soundbanks") / filename);
+
         bool success = true;
-        if (!LoadFile(filename, &_soundBankDefSource))
+        if (!LoadFile(filePath.c_str(), &_soundBankDefSource))
         {
             return false;
         }

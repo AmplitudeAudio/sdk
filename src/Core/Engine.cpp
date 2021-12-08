@@ -80,6 +80,7 @@ namespace SparkyStudios::Audio::Amplitude
         : _configSrc()
         , _state(nullptr)
         , _audioDriver(nullptr)
+        , _loader()
     {}
 
     Engine::~Engine()
@@ -239,7 +240,8 @@ namespace SparkyStudios::Audio::Amplitude
 
     bool Engine::Initialize(AmOsString configFile)
     {
-        if (!LoadFile(configFile, &_configSrc))
+        std::filesystem::path configFilePath = _loader.ResolvePath(configFile);
+        if (!LoadFile(configFilePath.c_str(), &_configSrc))
         {
             CallLogFunc("[ERROR] Could not load audio config file at path '" AM_OS_CHAR_FMT "'.\n", configFile);
             return false;
@@ -367,6 +369,16 @@ namespace SparkyStudios::Audio::Amplitude
         return _state != nullptr && _state->stopping == false;
     }
 
+    void Engine::SetFileLoader(const FileLoader& loader)
+    {
+        _loader = loader;
+    }
+
+    const FileLoader* Engine::GetFileLoader() const
+    {
+        return &_loader;
+    }
+
     bool Engine::LoadSoundBank(AmOsString filename)
     {
         bool success = true;
@@ -416,12 +428,12 @@ namespace SparkyStudios::Audio::Amplitude
 
     void Engine::StartLoadingSoundFiles()
     {
-        _state->loader.StartLoading();
+        _loader.StartLoading();
     }
 
-    bool Engine::TryFinalize()
+    bool Engine::TryFinalizeLoadingSoundFiles()
     {
-        return _state->loader.TryFinalize();
+        return _loader.TryFinalize();
     }
 
     bool BestListener(

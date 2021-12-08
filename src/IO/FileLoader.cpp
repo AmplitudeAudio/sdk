@@ -16,9 +16,47 @@
 
 namespace SparkyStudios::Audio::Amplitude
 {
-    void Resource::LoadFile(AmOsString filename, FileLoader* loader)
+    FileLoader::FileLoader()
+        : _basePath(std::filesystem::current_path())
+    {}
+
+    void FileLoader::SetBasePath(const std::filesystem::path& basePath)
     {
-        SetFilename(filename);
+        if (basePath.is_relative())
+            _basePath = (std::filesystem::current_path() / basePath).make_preferred();
+        else
+            _basePath = basePath;
+    }
+
+    std::filesystem::path FileLoader::ResolvePath(const std::filesystem::path& path) const
+    {
+        if (path.is_relative())
+            return (_basePath / path).make_preferred();
+        else
+            return path;
+    }
+
+    void FileLoader::StartLoading()
+    {}
+
+    bool FileLoader::TryFinalize()
+    {
+        return true;
+    }
+
+    void Resource::LoadFile(const std::filesystem::path& filename, const FileLoader* loader)
+    {
+        SetFilename(loader->ResolvePath(filename));
         Load(loader);
+    }
+
+    void Resource::SetFilename(const std::filesystem::path& filename)
+    {
+        _filename = filename;
+    }
+
+    const std::filesystem::path& Resource::GetFilename() const
+    {
+        return _filename;
     }
 } // namespace SparkyStudios::Audio::Amplitude

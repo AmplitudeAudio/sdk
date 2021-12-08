@@ -107,7 +107,6 @@ namespace SparkyStudios::Audio::Amplitude
         _id = definition->id();
         _name = definition->name()->str();
 
-        SetFilename(AM_STRING_TO_OS_STRING(definition->path()->c_str()));
         _stream = definition->stream();
         _loop = definition->loop() ? definition->loop()->enabled() : false;
         _loopCount = definition->loop() ? definition->loop()->loop_count() : 0;
@@ -170,17 +169,17 @@ namespace SparkyStudios::Audio::Amplitude
         return Amplitude::GetSoundDefinition(_source.c_str());
     }
 
-    void Sound::Load(FileLoader* loader)
+    void Sound::Load(const FileLoader* loader)
     {
-        if (GetFilename() == nullptr)
+        if (GetFilename().empty())
         {
             CallLogFunc("[ERROR] Cannot load the sound: the filename is empty.\n");
             return;
         }
 
-        AmOsString filename = GetFilename();
+        const std::filesystem::path& filename = GetFilename();
 
-        Codec* codec = Codec::FindCodecForFile(filename);
+        Codec* codec = Codec::FindCodecForFile(filename.c_str());
         if (codec == nullptr)
         {
             CallLogFunc("[ERROR] Cannot load the sound: unable to find codec for '" AM_OS_CHAR_FMT "'.\n", filename);
@@ -188,7 +187,7 @@ namespace SparkyStudios::Audio::Amplitude
         }
 
         _decoder = codec->CreateDecoder();
-        if (!_decoder->Open(filename))
+        if (!_decoder->Open(filename.c_str()))
         {
             CallLogFunc("[ERROR] Cannot load the sound: unable to initialize a decoder for '" AM_OS_CHAR_FMT "'.\n", filename);
             return;
