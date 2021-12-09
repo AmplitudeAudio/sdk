@@ -810,6 +810,17 @@ namespace SparkyStudios::Audio::Amplitude
         return Channel(nullptr);
     }
 
+    void Engine::StopAll()
+    {
+        for (auto&& channel : _state->channel_state_memory)
+        {
+            if (channel.Valid() && channel.Playing())
+            {
+                channel.Halt();
+            }
+        }
+    }
+
     EventCanceler Engine::Trigger(EventHandle handle, const Entity& entity)
     {
         EventHandle event = handle;

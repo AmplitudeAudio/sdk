@@ -772,6 +772,11 @@ namespace SparkyStudios::Audio::Amplitude
         Channel Play(AmObjectID id, const Entity& entity, float userGain);
 
         /**
+         * @brief Stops all playing sound objects.
+         */
+        void StopAll();
+
+        /**
          * @brief Trigger the event associated with the given sound handle at the
          *        given location.
          *
