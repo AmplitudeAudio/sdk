@@ -37,12 +37,26 @@ namespace SparkyStudios::Audio::Amplitude
         , bucketsSizeInBytes(16 * 1024 * 1024)
     {}
 
-    void MemoryManager::Init(const MemoryManagerConfig& config)
+    void MemoryManager::Initialize(const MemoryManagerConfig& config)
     {
         if (gMemManager == nullptr)
         {
             gMemManager = new MemoryManager(config);
         }
+    }
+
+    void MemoryManager::Deinitialize()
+    {
+        if (gMemManager != nullptr)
+        {
+            delete gMemManager;
+            gMemManager = nullptr;
+        }
+    }
+
+    bool MemoryManager::IsInitialized()
+    {
+        return gMemManager != nullptr;
     }
 
     MemoryManager* MemoryManager::GetInstance()

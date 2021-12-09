@@ -144,7 +144,19 @@ namespace SparkyStudios::Audio::Amplitude
          *
          * @remarks This should be done prior to any call of GetInstance().
          */
-        static void Init(const MemoryManagerConfig& config);
+        static void Initialize(const MemoryManagerConfig& config);
+
+        /**
+         * @brief Unloads the memory manager.
+         */
+        static void Deinitialize();
+
+        /**
+         * @brief Checks whether the memory manager is initialized.
+         * 
+         * @return Whether the memory manager is initialized.
+         */
+        static bool IsInitialized();
 
         /**
          * @brief Gets the actual instance of the memory manager.
