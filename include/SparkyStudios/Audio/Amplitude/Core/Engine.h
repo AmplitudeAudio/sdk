@@ -108,7 +108,7 @@ namespace SparkyStudios::Audio::Amplitude
 
         /**
          * @brief Get the File Loader used by the engine.
-         * 
+         *
          * @return The file loader.
          */
         [[nodiscard]] const FileLoader* GetFileLoader() const;
@@ -150,6 +150,11 @@ namespace SparkyStudios::Audio::Amplitude
          * @param id The soundbank id to unload.
          */
         void UnloadSoundBank(AmBankID id);
+
+        /**
+         * @brief Unload all loaded sound banks
+         */
+        void UnloadSoundBanks();
 
         /**
          * @brief Kick off loading thread to load all sound files queued with

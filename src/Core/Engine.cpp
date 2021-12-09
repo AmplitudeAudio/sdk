@@ -426,6 +426,14 @@ namespace SparkyStudios::Audio::Amplitude
         }
     }
 
+    void Engine::UnloadSoundBanks()
+    {
+        for (auto&& soundbank : _state->sound_bank_id_map)
+        {
+            UnloadSoundBank(soundbank.second);
+        }
+    }
+
     void Engine::StartLoadingSoundFiles()
     {
         _loader.StartLoading();
