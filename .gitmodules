@@ -2,3 +2,6 @@
 	path = dependencies/flatbuffers
 	url = https://github.com/google/flatbuffers.git
 	branch = tag/v2.0.0
+[submodule "dependencies/libsimdpp"]
+	path = dependencies/libsimdpp
+	url = https://github.com/p12tic/libsimdpp.git
