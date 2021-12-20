@@ -158,18 +158,18 @@ namespace SparkyStudios::Audio::Amplitude
             MixerLayer* layer,
             bool loop,
             AmUInt64 cursor,
-            AudioDataUnit lGain,
-            AudioDataUnit rGain,
+            const AudioDataUnit& lGain,
+            const AudioDataUnit& rGain,
             AudioBuffer buffer,
-            AmUInt64 bufferSize);
+            const AmUInt64& bufferSize);
         AmUInt64 MixStereo(
             MixerLayer* layer,
             bool loop,
             AmUInt64 cursor,
-            AudioDataUnit lGain,
-            AudioDataUnit rGain,
+            const AudioDataUnit& lGain,
+            const AudioDataUnit& rGain,
             AudioBuffer buffer,
-            AmUInt64 bufferSize);
+            const AmUInt64& bufferSize);
         MixerLayer* GetLayer(AmUInt32 layer);
         bool ShouldMix(MixerLayer* layer);
         void LockAudioMutex();
