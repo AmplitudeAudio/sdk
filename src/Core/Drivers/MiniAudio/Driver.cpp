@@ -15,6 +15,7 @@
 #define MINIAUDIO_IMPLEMENTATION
 #define MA_NO_DECODING
 #define MA_NO_ENCODING
+#define NOMINMAX
 #include "miniaudio.h"
 
 #include <SparkyStudios/Audio/Amplitude/Amplitude.h>
