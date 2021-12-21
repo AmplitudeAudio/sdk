@@ -27,7 +27,7 @@
 namespace SparkyStudios::Audio::Amplitude
 {
 #if defined(AM_SSE_INTRINSICS)
-    constexpr AmUInt32 kSimdProcessedFramesCount = (Vc::int16_v::Size);
+    constexpr AmUInt32 kSimdProcessedFramesCount = (AudioDataUnit::length);
     constexpr AmUInt32 kSimdProcessedFramesCountHalf = (kSimdProcessedFramesCount / 2);
 #endif // AM_SSE_INTRINSINCS
 
@@ -110,7 +110,11 @@ namespace SparkyStudios::Audio::Amplitude
         LockAudioMutex();
 
         const AmUInt16 numChannels = _deviceChannels;
-        const auto lower = AudioDataUnit(INT16_MIN), upper = AudioDataUnit(INT16_MAX);
+#if defined(AM_SSE_INTRINSICS)
+        const AudioDataUnit lower = simdpp::make_int<AudioDataUnit>(INT16_MIN), upper = simdpp::make_int<AudioDataUnit>(INT16_MAX);
+#else
+        const AudioDataUnit lower = INT16_MIN, upper = INT16_MAX;
+#endif // AM_SSE_INTRINSICS
 
         auto* buffer = static_cast<AmInt16Buffer>(mixBuffer);
         memset(buffer, 0, frameCount * numChannels * sizeof(AmInt16));
@@ -135,7 +139,7 @@ namespace SparkyStudios::Audio::Amplitude
 #if defined(AM_SSE_INTRINSICS)
         // dynamically sized buffer
         auto* align = static_cast<AudioBuffer>(
-            amMemory->Malign(MemoryPoolKind::Amplimix, aSize * Vc::int16_v::Size * sizeof(AmInt16), AM_SIMD_ALIGNMENT));
+            amMemory->Malign(MemoryPoolKind::Amplimix, aSize * AudioDataUnit::length * sizeof(AmInt16), AM_SIMD_ALIGNMENT));
 #else
         // dynamically sized buffer
         auto* align = static_cast<AudioBuffer>(amMemory->Malign(MemoryPoolKind::Amplimix, aSize * sizeof(AmInt16), AM_SIMD_ALIGNMENT));
@@ -143,7 +147,13 @@ namespace SparkyStudios::Audio::Amplitude
 
         // clear the aligned buffer
         for (AmUInt32 i = 0; i < aSize; i++)
-            align[i] = AudioDataUnit(0);
+        {
+#if defined(AM_SSE_INTRINSICS)
+            align[i] = simdpp::make_zero<AudioDataUnit>();
+#else
+            align[i] = 0;
+#endif // AM_SSE_INTRINSICS
+        }
 
         // begin actual mixing
         bool hasMixedAtLeastOneLayer = false;
@@ -170,7 +180,11 @@ namespace SparkyStudios::Audio::Amplitude
         // perform clipping using min and max
         for (AmUInt32 i = 0; i < aSize; i++)
         {
-            align[i] = (std::min)((std::max)(align[i], lower), upper);
+#if defined(AM_SSE_INTRINSICS)
+            align[i] = simdpp::min(simdpp::max(align[i].eval(), lower).eval(), upper).eval();
+#else
+            align[i] = std::min(std::max(align[i], lower), upper);
+#endif // AM_SSE_INTRINSICS
         }
 
         // copy frames, leaving possible remainder
@@ -561,8 +575,14 @@ namespace SparkyStudios::Audio::Amplitude
         // atomically load left and right gain
         const hmm_vec2 g = AMPLIMIX_LOAD(&layer->gain);
         const float gain = AMPLIMIX_LOAD(&_masterGain);
-        const auto lGain = AudioDataUnit(AmFloatToFixedPoint(g.X * gain));
-        const auto rGain = AudioDataUnit(AmFloatToFixedPoint(g.Y * gain));
+#if defined(AM_SSE_INTRINSICS)
+        const auto mxGain = simdpp::make_int<AudioDataUnit>(AmFloatToFixedPoint(g.X * gain), AmFloatToFixedPoint(g.Y * gain));
+        const auto& lGain = mxGain;
+        const auto& rGain = mxGain;
+#else
+        const auto lGain = AmFloatToFixedPoint(g.X * gain);
+        const auto rGain = AmFloatToFixedPoint(g.Y * gain);
+#endif // AM_SSE_INTRINSICS
 
         // loop state
         const bool loop = (flag == PLAY_STATE_FLAG_LOOP);
@@ -661,7 +681,13 @@ namespace SparkyStudios::Audio::Amplitude
     }
 
     AmUInt64 Mixer::MixMono(
-        MixerLayer* layer, bool loop, AmUInt64 cursor, AudioDataUnit lGain, AudioDataUnit rGain, AudioBuffer buffer, AmUInt64 bufferSize)
+        MixerLayer* layer,
+        bool loop,
+        AmUInt64 cursor,
+        const AudioDataUnit& lGain,
+        const AudioDataUnit& rGain,
+        AudioBuffer buffer,
+        const AmUInt64& bufferSize)
     {
         // cache cursor
         AmUInt64 old = cursor;
@@ -709,21 +735,20 @@ namespace SparkyStudios::Audio::Amplitude
             AudioDataUnit sample = layer->snd->chunk->buffer[off];
 
 #if defined(AM_SSE_INTRINSICS)
-            auto gain = lGain.interleaveLow(rGain);
-            AmInt32 j = 0;
-            // buffer[i] = std::fma(sample.interleaveLow(sample), gain, buffer[i]);
-            // buffer[i + 1] = std::fma(sample.interleaveHigh(sample), gain, buffer[i + 1]);
-            buffer[i] += sample.interleaveLow(sample).apply(
-                [gain, &j](AmInt16 sample) -> AmInt16
-                {
-                    return static_cast<AmInt16>((sample * gain[j++]) >> kAmFixedPointShift);
-                });
-            j = 0;
-            buffer[i + 1] += sample.interleaveHigh(sample).apply(
-                [gain, &j](AmInt16 sample) -> AmInt16
-                {
-                    return static_cast<AmInt16>((sample * gain[j++]) >> kAmFixedPointShift);
-                });
+            buffer[i + 0] =
+                simdpp::add(
+                    buffer[i + 0],
+                    simdpp::to_int16(
+                        simdpp::shift_r(simdpp::mull(simdpp::zip_lo(sample, sample).eval(), lGain).eval(), kAmFixedPointShift).eval())
+                        .eval())
+                    .eval();
+            buffer[i + 1] =
+                simdpp::add(
+                    buffer[i + 1],
+                    simdpp::to_int16(
+                        simdpp::shift_r(simdpp::mull(simdpp::zip_hi(sample, sample).eval(), rGain).eval(), kAmFixedPointShift).eval())
+                        .eval())
+                    .eval();
 #else
             buffer[i] += static_cast<AmInt16>((sample * lGain) >> kAmFixedPointShift);
             buffer[i + 1] += static_cast<AmInt16>((sample * rGain) >> kAmFixedPointShift);
@@ -746,7 +771,13 @@ namespace SparkyStudios::Audio::Amplitude
     }
 
     AmUInt64 Mixer::MixStereo(
-        MixerLayer* layer, bool loop, AmUInt64 cursor, AudioDataUnit lGain, AudioDataUnit rGain, AudioBuffer buffer, AmUInt64 bufferSize)
+        MixerLayer* layer,
+        bool loop,
+        AmUInt64 cursor,
+        const AudioDataUnit& lGain,
+        const AudioDataUnit& rGain,
+        AudioBuffer buffer,
+        const AmUInt64& bufferSize)
     {
         // cache cursor
         AmUInt64 old = cursor;
@@ -792,21 +823,20 @@ namespace SparkyStudios::Audio::Amplitude
             }
 
 #if defined(AM_SSE_INTRINSICS)
-            auto gain = lGain.interleaveLow(rGain);
-            AmInt32 j = 0;
-            // buffer[i] = std::fma(layer->snd->chunk->buffer[off], gain, buffer[i]);
-            // buffer[i + 1] = std::fma(layer->snd->chunk->buffer[off + 1], gain, buffer[i + 1]);
-            buffer[i] += layer->snd->chunk->buffer[off].apply(
-                [gain, &j](AmInt16 sample) -> AmInt16
-                {
-                    return static_cast<AmInt16>((sample * gain[j++]) >> kAmFixedPointShift);
-                });
-            j = 0;
-            buffer[i + 1] += layer->snd->chunk->buffer[off + 1].apply(
-                [gain, &j](AmInt16 sample) -> AmInt16
-                {
-                    return static_cast<AmInt16>((sample * gain[j++]) >> kAmFixedPointShift);
-                });
+            buffer[i + 0] =
+                simdpp::add(
+                    buffer[i + 0],
+                    simdpp::to_int16(
+                        simdpp::shift_r(simdpp::mull(layer->snd->chunk->buffer[off + 0], lGain).eval(), kAmFixedPointShift).eval())
+                        .eval())
+                    .eval();
+            buffer[i + 1] =
+                simdpp::add(
+                    buffer[i + 1],
+                    simdpp::to_int16(
+                        simdpp::shift_r(simdpp::mull(layer->snd->chunk->buffer[off + 1], rGain).eval(), kAmFixedPointShift).eval())
+                        .eval())
+                    .eval();
 #else
             buffer[i] += static_cast<AmInt16>((layer->snd->chunk->buffer[off] * lGain) >> kAmFixedPointShift);
             buffer[i + 1] += static_cast<AmInt16>((layer->snd->chunk->buffer[off + 1] * rGain) >> kAmFixedPointShift);

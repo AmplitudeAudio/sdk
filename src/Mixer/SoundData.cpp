@@ -38,7 +38,7 @@ namespace SparkyStudios::Audio::Amplitude
     SoundChunk* SoundChunk::CreateChunk(AmUInt64 frames, AmUInt16 channels)
     {
 #if defined(AM_SSE_INTRINSICS)
-        AmUInt64 alignedLength = AM_VALUE_ALIGN(frames * channels, Vc::int16_v::Size);
+        AmUInt64 alignedLength = AM_VALUE_ALIGN(frames * channels, AudioDataUnit::length);
 #else
         AmUInt64 alignedLength = frames * channels;
 #endif // AM_SSE_INTRINSICS

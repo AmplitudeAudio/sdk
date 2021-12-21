@@ -30,8 +30,16 @@ if(NOT TARGET flatc)
     set(FLATC_INCLUDE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/dependencies/flatbuffers/include)
 endif()
 
-# Include VC in this project.
-find_package(Vc CONFIG REQUIRED)
+# Setup libsimdpp
+# ------------------------------------------------------------------------------
+# Check what instruction sets the current host supports. Use them for testing
+include("dependencies/libsimdpp/cmake/SimdppMultiarch.cmake")
+message(STATUS "Checking instruction set support in the compiler...")
+simdpp_get_compilable_archs(COMPILABLE_ARCHS)
+message(STATUS "Checking instruction sets to run tests for on this host...")
+simdpp_get_runnable_archs(NATIVE_ARCHS)
+# ------------------------------------------------------------------------------
+set(SIMDPP_INCLUDE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/dependencies/libsimdpp)
 
 # Generate source files for all FlatBuffers schema files under the src
 # directory.
@@ -219,13 +227,12 @@ set(SA_SOURCE
 include_directories(src
     include
     ${FLATC_INCLUDE_DIR}
-    ${Vc_INCLUDE_DIR}
+    ${SIMDPP_INCLUDE_DIR}
     ${SPARK_AUDIO_FLATBUFFERS_GENERATED_INCLUDES_DIR}
 )
 
-add_library(${PROJECT_NAME} ${SA_SOURCE})
+add_library(${PROJECT_NAME} STATIC ${SA_SOURCE})
 
-target_link_libraries(${PROJECT_NAME} PRIVATE Vc::Vc)
 target_link_libraries(${PROJECT_NAME} PRIVATE flatbuffers)
 
 add_dependencies(${PROJECT_NAME}

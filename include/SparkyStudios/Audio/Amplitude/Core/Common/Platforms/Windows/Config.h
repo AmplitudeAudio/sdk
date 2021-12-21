@@ -25,7 +25,7 @@
 // Detect the platform CPU type
 #if defined(_M_IX86)
 #define AM_CPU_X86
-#elif defined(_M_AMD64)
+#elif defined(_M_AMD64) || defined(_M_X64)
 #define AM_CPU_X86_64
 #elif defined(_M_ARM)
 #define AM_CPU_ARM
@@ -90,6 +90,7 @@ static AM_INLINE(std::string) am_wstring_narrow(const std::wstring& str)
 #ifndef WIN32_LEAN_AND_MEAN
 #define WIN32_LEAN_AND_MEAN
 #endif // WIN32_LEAN_AND_MEAN
+#define NOMINMAX // No need of min and max macros
 #include <Windows.h> // only needed for OutputDebugStringA, should be solved somehow.
 #define AMPLITUDE_ASSERT(x)                                                                                                                \
     if (!(x))                                                                                                                              \

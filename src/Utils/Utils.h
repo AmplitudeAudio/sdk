@@ -20,13 +20,13 @@
 #include <SparkyStudios/Audio/Amplitude/Core/Common.h>
 
 #if defined(AM_SSE_INTRINSICS)
-#include <Vc/Vc>
+#include <simdpp/simd.h>
 #endif // defined(AM_SSE_INTRINSICS)
 
 namespace SparkyStudios::Audio::Amplitude
 {
 #if defined(AM_SSE_INTRINSICS)
-    typedef Vc::int16_v AudioDataUnit;
+    typedef simdpp::int16v AudioDataUnit;
 #else
     typedef AmInt16 AudioDataUnit;
 #endif
@@ -84,5 +84,27 @@ namespace SparkyStudios::Audio::Amplitude
         // clang-format on
     }
 } // namespace SparkyStudios::Audio::Amplitude
+
+#if defined(AM_SSE_INTRINSICS)
+
+namespace simdpp
+{
+    namespace SIMDPP_ARCH_NAMESPACE
+    {
+        template<unsigned N, class V1, class V2>
+        SIMDPP_INL typename detail::get_expr2_nomask<V1, V2>::empty zip_lo(const any_vec16<N, V1>& a, const any_vec16<N, V2>& b)
+        {
+            return zip8_lo(a, b);
+        }
+
+        template<unsigned N, class V1, class V2>
+        SIMDPP_INL typename detail::get_expr2_nomask<V1, V2>::empty zip_hi(const any_vec16<N, V1>& a, const any_vec16<N, V2>& b)
+        {
+            return zip8_hi(a, b);
+        }
+    } // namespace SIMDPP_ARCH_NAMESPACE
+} // namespace simdpp
+
+#endif // AM_SSE_INTRINSICS
 
 #endif // SS_AMPLITUDE_AUDIO_UTILS_H
