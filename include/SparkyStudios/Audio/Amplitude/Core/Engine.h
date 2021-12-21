@@ -404,6 +404,13 @@ namespace SparkyStudios::Audio::Amplitude
         void RemoveEntity(const Entity* entity);
 
         /**
+         * @brief Remove an Entity given its ID.
+         * 
+         * @param id The ID of the Entity to be removed.
+         */
+        void RemoveEntity(AmEntityID id);
+
+        /**
          * @brief Returns the bus with the specified name.
          *
          * @param name The name of the bus.

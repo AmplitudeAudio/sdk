@@ -108,7 +108,7 @@ namespace SparkyStudios::Audio::Amplitude
     {
         if (const auto it = std::find_if(
                 state->buses.begin(), state->buses.end(),
-                [id](const BusInternalState& bus)
+                [&id](const BusInternalState& bus)
                 {
                     return bus.GetId() == id;
                 });
@@ -124,7 +124,7 @@ namespace SparkyStudios::Audio::Amplitude
     {
         if (const auto it = std::find_if(
                 state->buses.begin(), state->buses.end(),
-                [name](const BusInternalState& bus)
+                [&name](const BusInternalState& bus)
                 {
                     return bus.GetName() == name;
                 });
@@ -975,7 +975,7 @@ namespace SparkyStudios::Audio::Amplitude
     {
         const auto pair = std::find_if(
             _state->switch_container_map.begin(), _state->switch_container_map.end(),
-            [name](const auto& item)
+            [&name](const auto& item)
             {
                 return item.second->GetName() == name;
             });
@@ -1014,7 +1014,7 @@ namespace SparkyStudios::Audio::Amplitude
     {
         const auto pair = std::find_if(
             _state->collection_map.begin(), _state->collection_map.end(),
-            [name](const auto& item)
+            [&name](const auto& item)
             {
                 return item.second->GetName() == name;
             });
@@ -1053,7 +1053,7 @@ namespace SparkyStudios::Audio::Amplitude
     {
         const auto pair = std::find_if(
             _state->sound_map.begin(), _state->sound_map.end(),
-            [name](const auto& item)
+            [&name](const auto& item)
             {
                 return item.second->GetName() == name;
             });
@@ -1092,7 +1092,7 @@ namespace SparkyStudios::Audio::Amplitude
     {
         const auto pair = std::find_if(
             _state->event_map.begin(), _state->event_map.end(),
-            [name](const auto& item)
+            [&name](const auto& item)
             {
                 return item.second->GetName() == name;
             });
@@ -1131,7 +1131,7 @@ namespace SparkyStudios::Audio::Amplitude
     {
         const auto pair = std::find_if(
             _state->attenuation_map.begin(), _state->attenuation_map.end(),
-            [name](const auto& item)
+            [&name](const auto& item)
             {
                 return item.second->GetName() == name;
             });
@@ -1170,7 +1170,7 @@ namespace SparkyStudios::Audio::Amplitude
     {
         const auto pair = std::find_if(
             _state->switch_map.begin(), _state->switch_map.end(),
-            [name](const auto& item)
+            [&name](const auto& item)
             {
                 return item.second->GetName() == name;
             });
@@ -1209,7 +1209,7 @@ namespace SparkyStudios::Audio::Amplitude
     {
         const auto pair = std::find_if(
             _state->rtpc_map.begin(), _state->rtpc_map.end(),
-            [name](const auto& item)
+            [&name](const auto& item)
             {
                 return item.second->GetName() == name;
             });
@@ -1248,7 +1248,7 @@ namespace SparkyStudios::Audio::Amplitude
     {
         const auto pair = std::find_if(
             _state->effect_map.begin(), _state->effect_map.end(),
-            [name](const auto& item)
+            [&name](const auto& item)
             {
                 return item.second->GetName() == name;
             });
@@ -1344,6 +1344,22 @@ namespace SparkyStudios::Audio::Amplitude
         entity->GetState()->SetId(kAmInvalidObjectId);
         entity->GetState()->node.remove();
         _state->entity_state_free_list.push_back(entity->GetState());
+    }
+
+    void Engine::RemoveEntity(AmEntityID id)
+    {
+        if (const auto findIt = std::find_if(
+                _state->entity_state_memory.begin(), _state->entity_state_memory.end(),
+                [&id](const EntityInternalState& state)
+                {
+                    return state.GetId() == id;
+                });
+            findIt == _state->entity_state_memory.end())
+        {
+            findIt->SetId(kAmInvalidObjectId);
+            findIt->node.remove();
+            _state->entity_state_free_list.push_back(&*findIt);
+        }
     }
 
     Bus Engine::FindBus(AmString name) const
