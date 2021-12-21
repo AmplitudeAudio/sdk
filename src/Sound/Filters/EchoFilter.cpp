@@ -105,7 +105,8 @@ namespace SparkyStudios::Audio::Amplitude
         {
             for (AmUInt16 c = 0; c < channels; c++)
             {
-                buffer[i + c * frames] = ProcessSample(buffer[i + c * frames], c, sampleRate);
+                const AmUInt64 o = i + c * frames;
+                buffer[o] = ProcessSample(buffer[o], c, sampleRate);
             }
 
             _prevOffset = _offset;
@@ -124,7 +125,8 @@ namespace SparkyStudios::Audio::Amplitude
         {
             for (AmUInt16 c = 0; c < channels; c++)
             {
-                buffer[i * channels + c] = ProcessSample(buffer[i * channels + c], c, sampleRate);
+                const AmUInt64 o = i * channels + c;
+                buffer[o] = ProcessSample(buffer[o], c, sampleRate);
             }
 
             _prevOffset = _offset;
