@@ -47,7 +47,7 @@ namespace SparkyStudios::Audio::Amplitude
     /**
      * @brief The number of bits to shift when processing audio data with floating point values.
      */
-    constexpr AmInt32 kAmFixedPointShift = 14;
+    constexpr AmInt32 kAmFixedPointShift = 12;
 
 } // namespace SparkyStudios::Audio::Amplitude
 
