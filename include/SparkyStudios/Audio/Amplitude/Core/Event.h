@@ -181,7 +181,7 @@ namespace SparkyStudios::Audio::Amplitude
         /**
          * @brief Cancels and abort the wrapped Event.
          */
-        void Cancel();
+        void Cancel() const;
 
         /**
          * @brief Returns the Event wrapped by this EventCanceler.

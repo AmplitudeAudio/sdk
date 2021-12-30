@@ -266,7 +266,7 @@ namespace SparkyStudios::Audio::Amplitude
         return _event != nullptr;
     }
 
-    void EventCanceler::Cancel()
+    void EventCanceler::Cancel() const
     {
         AMPLITUDE_ASSERT(Valid());
         _event->Abort();
