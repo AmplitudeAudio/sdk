@@ -158,7 +158,7 @@ namespace SparkyStudios::Audio::Amplitude
              *
              * @param format The audio sample format.
              */
-            void SetFormat(const SoundFormat& format)
+            virtual void SetFormat(const SoundFormat& format)
             {
                 m_format = format;
             }
