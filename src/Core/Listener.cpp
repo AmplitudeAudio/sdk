@@ -35,7 +35,7 @@ namespace SparkyStudios::Audio::Amplitude
 
     bool Listener::Valid() const
     {
-        return _state != nullptr && _state->node.in_list();
+        return _state != nullptr && _state->GetId() != kAmInvalidObjectId && _state->node.in_list();
     }
 
     AmListenerID Listener::GetId() const
