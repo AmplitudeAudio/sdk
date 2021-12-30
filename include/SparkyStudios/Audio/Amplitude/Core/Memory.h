@@ -49,6 +49,12 @@ namespace SparkyStudios::Audio::Amplitude
         Filtering,
 
         /**
+         * @brief Encoding/Decoding allocations.
+         * 
+         */
+        Codec,
+
+        /**
          * @brief The total number of memory pools.
          */
         COUNT,

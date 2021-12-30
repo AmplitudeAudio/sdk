@@ -19,6 +19,30 @@
 
 namespace SparkyStudios::Audio::Amplitude::Codecs
 {
+    static void* onMalloc(size_t sz, void* pUserData)
+    {
+        return amMemory->Malloc(MemoryPoolKind::Codec, sz);
+    }
+
+    static void* onRealloc(void* p, size_t sz, void* pUserData)
+    {
+        return amMemory->Realloc(MemoryPoolKind::Codec, p, sz);
+    }
+
+    static void onFree(void* p, void* pUserData)
+    {
+        amMemory->Free(MemoryPoolKind::Codec, p);
+    }
+
+    WAVCodec::WAVCodec()
+        : Codec("wav")
+        , m_allocationCallbacks()
+    {
+        m_allocationCallbacks.onFree = onFree;
+        m_allocationCallbacks.onMalloc = onMalloc;
+        m_allocationCallbacks.onRealloc = onRealloc;
+    }
+
     bool WAVCodec::WAVDecoder::Open(AmOsString filePath)
     {
         if (!m_codec->CanHandleFile(filePath))
@@ -27,10 +51,12 @@ namespace SparkyStudios::Audio::Amplitude::Codecs
             return false;
         }
 
+        const auto* codec = static_cast<const WAVCodec*>(m_codec);
+
 #if defined(AM_WCHAR_SUPPORTED)
-        if (drwav_init_file_w(&_wav, filePath, nullptr) == DRWAV_FALSE)
+        if (drwav_init_file_w(&_wav, filePath, &codec->m_allocationCallbacks) == DRWAV_FALSE)
 #else
-        if (drwav_init_file(&_wav, filePath, nullptr) == DRWAV_FALSE)
+        if (drwav_init_file(&_wav, filePath, &codec->m_allocationCallbacks) == DRWAV_FALSE)
 #endif
         {
             CallLogFunc("Cannot load the WAV file: '%s'\n.", filePath);
@@ -68,7 +94,7 @@ namespace SparkyStudios::Audio::Amplitude::Codecs
             return 0;
         }
 
-        if (drwav_seek_to_pcm_frame(&_wav, 0) != DRWAV_TRUE)
+        if (!Seek(0))
         {
             return 0;
         }
@@ -133,9 +159,9 @@ namespace SparkyStudios::Audio::Amplitude::Codecs
 
         drwav dummy;
 #if defined(AM_WCHAR_SUPPORTED)
-        const bool can = drwav_init_file_w(&dummy, filePath, nullptr) == DRWAV_TRUE;
+        const bool can = drwav_init_file_w(&dummy, filePath, &m_allocationCallbacks) == DRWAV_TRUE;
 #else
-        const bool can = drwav_init_file(&dummy, filePath, nullptr) == DRWAV_TRUE;
+        const bool can = drwav_init_file(&dummy, filePath, &m_allocationCallbacks) == DRWAV_TRUE;
 #endif
 
         if (can)

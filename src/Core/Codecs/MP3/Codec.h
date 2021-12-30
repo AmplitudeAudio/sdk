@@ -70,9 +70,7 @@ namespace SparkyStudios::Audio::Amplitude::Codecs
             drmp3 _mp3;
         };
 
-        MP3Codec()
-            : Codec("mp3")
-        {}
+        MP3Codec();
 
         ~MP3Codec() final = default;
 
@@ -81,6 +79,8 @@ namespace SparkyStudios::Audio::Amplitude::Codecs
         [[nodiscard]] Encoder* CreateEncoder() const final;
 
         bool CanHandleFile(AmOsString filePath) const final;
+
+        drmp3_allocation_callbacks m_allocationCallbacks;
     } mp3_codec; // NOLINT(cert-err58-cpp)
 } // namespace SparkyStudios::Audio::Amplitude::Codecs
 

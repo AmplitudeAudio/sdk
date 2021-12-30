@@ -67,12 +67,11 @@ namespace SparkyStudios::Audio::Amplitude::Codecs
 
         private:
             bool _initialized;
+            bool _isFormatSet;
             drwav _wav;
         };
 
-        WAVCodec()
-            : Codec("wav")
-        {}
+        WAVCodec();
 
         ~WAVCodec() final = default;
 
@@ -81,6 +80,8 @@ namespace SparkyStudios::Audio::Amplitude::Codecs
         [[nodiscard]] Encoder* CreateEncoder() const final;
 
         bool CanHandleFile(AmOsString filePath) const final;
+
+        drwav_allocation_callbacks m_allocationCallbacks;
     } wav_codec; // NOLINT(cert-err58-cpp)
 } // namespace SparkyStudios::Audio::Amplitude::Codecs
 
