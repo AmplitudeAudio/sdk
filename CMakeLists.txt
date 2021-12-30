@@ -34,10 +34,16 @@ endif()
 # ------------------------------------------------------------------------------
 # Check what instruction sets the current host supports. Use them for testing
 include("dependencies/libsimdpp/cmake/SimdppMultiarch.cmake")
-message(STATUS "Checking instruction set support in the compiler...")
-simdpp_get_compilable_archs(COMPILABLE_ARCHS)
 message(STATUS "Checking instruction sets to run tests for on this host...")
 simdpp_get_runnable_archs(NATIVE_ARCHS)
+
+foreach(ARCH ${NATIVE_ARCHS})
+    simdpp_get_arch_info(CXX_FLAGS DEFINES_LIST SUFFIX ${ARCH})
+
+    separate_arguments(CXX_FLAGS)
+    add_compile_options(${CXX_FLAGS})
+endforeach()
+
 # ------------------------------------------------------------------------------
 set(SIMDPP_INCLUDE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/dependencies/libsimdpp)
 

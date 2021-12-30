@@ -17,27 +17,27 @@
 #ifndef SS_AMPLITUDE_AUDIO_SIMD_H
 #define SS_AMPLITUDE_AUDIO_SIMD_H
 
-#if defined(__AVX2__)
+#if defined(__AVX2__) && !defined(SIMDPP_ARCH_X86_AVX2)
 #define SIMDPP_ARCH_X86_AVX2
-#elif defined(__AVX__)
+#elif defined(__AVX__) && !defined(SIMDPP_ARCH_X86_AVX)
 #define SIMDPP_ARCH_X86_AVX
 #endif
 
-#if defined(__SSE4_2__) || defined(__SSE4_1__) || defined(__SSE4A__)
+#if (defined(__SSE4_2__) || defined(__SSE4_1__) || defined(__SSE4A__)) && !defined(SIMDPP_ARCH_X86_SSE4_1)
 #define SIMDPP_ARCH_X86_SSE4_1
-#elif defined(__SSSE3__)
+#elif defined(__SSSE3__) && !defined(SIMDPP_ARCH_X86_SSSE3)
 #define SIMDPP_ARCH_X86_SSSE3
-#elif defined(__SSE3__)
+#elif defined(__SSE3__) && !defined(SIMDPP_ARCH_X86_SSE3)
 #define SIMDPP_ARCH_X86_SSE3
-#elif defined(__SSE2__)
+#elif defined(__SSE2__) && !defined(SIMDPP_ARCH_X86_SSE2)
 #define SIMDPP_ARCH_X86_SSE2
 #endif
 
-#if defined(__FMA__)
+#if defined(__FMA__) && !defined(SIMDPP_ARCH_X86_FMA3)
 #define SIMDPP_ARCH_X86_FMA3
 #endif
 
-#if defined(AM_CPU_ARM_NEON)
+#if defined(AM_CPU_ARM_NEON) && !defined(SIMDPP_ARCH_ARM_NEON)
 #define SIMDPP_ARCH_ARM_NEON
 #endif
 
