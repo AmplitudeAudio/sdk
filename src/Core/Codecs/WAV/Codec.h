@@ -61,6 +61,8 @@ namespace SparkyStudios::Audio::Amplitude::Codecs
 
             bool Open(AmOsString filePath) final;
 
+            void SetFormat(const SoundFormat& format) final;
+
             bool Close() final;
 
             AmUInt64 Write(AmVoidPtr in, AmUInt64 offset, AmUInt64 length) final;
