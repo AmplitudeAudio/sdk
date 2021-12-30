@@ -1328,11 +1328,25 @@ namespace SparkyStudios::Audio::Amplitude
         {
             return Listener(nullptr);
         }
-        ListenerInternalState* listener = _state->listener_state_free_list.back();
-        listener->SetId(id);
-        _state->listener_state_free_list.pop_back();
-        _state->listener_list.push_back(*listener);
-        return Listener(listener);
+
+        if (const auto findIt = std::find_if(
+                _state->listener_state_memory.begin(), _state->listener_state_memory.end(),
+                [&id](const ListenerInternalState& state)
+                {
+                    return state.GetId() == id;
+                });
+            findIt != _state->listener_state_memory.end())
+        {
+            return Listener(&*findIt);
+        }
+        else
+        {
+            ListenerInternalState* listener = _state->listener_state_free_list.back();
+            listener->SetId(id);
+            _state->listener_state_free_list.pop_back();
+            _state->listener_list.push_back(*listener);
+            return Listener(listener);
+        }
     }
 
     void Engine::RemoveListener(AmListenerID id)
@@ -1353,10 +1367,12 @@ namespace SparkyStudios::Audio::Amplitude
 
     void Engine::RemoveListener(const Listener* listener)
     {
-        AMPLITUDE_ASSERT(listener->Valid());
-        listener->GetState()->SetId(kAmInvalidObjectId);
-        listener->GetState()->node.remove();
-        _state->listener_state_free_list.push_back(listener->GetState());
+        if (listener->Valid())
+        {
+            listener->GetState()->SetId(kAmInvalidObjectId);
+            listener->GetState()->node.remove();
+            _state->listener_state_free_list.push_back(listener->GetState());
+        }
     }
 
     Entity Engine::AddEntity(AmEntityID id)
@@ -1365,19 +1381,35 @@ namespace SparkyStudios::Audio::Amplitude
         {
             return Entity(nullptr);
         }
-        EntityInternalState* entity = _state->entity_state_free_list.back();
-        entity->SetId(id);
-        _state->entity_state_free_list.pop_back();
-        _state->entity_list.push_back(*entity);
-        return Entity(entity);
+
+        if (const auto findIt = std::find_if(
+                _state->entity_state_memory.begin(), _state->entity_state_memory.end(),
+                [&id](const EntityInternalState& state)
+                {
+                    return state.GetId() == id;
+                });
+            findIt != _state->entity_state_memory.end())
+        {
+            return Entity(&*findIt);
+        }
+        else
+        {
+            EntityInternalState* entity = _state->entity_state_free_list.back();
+            entity->SetId(id);
+            _state->entity_state_free_list.pop_back();
+            _state->entity_list.push_back(*entity);
+            return Entity(entity);
+        }
     }
 
     void Engine::RemoveEntity(const Entity* entity)
     {
-        AMPLITUDE_ASSERT(entity->Valid());
-        entity->GetState()->SetId(kAmInvalidObjectId);
-        entity->GetState()->node.remove();
-        _state->entity_state_free_list.push_back(entity->GetState());
+        if (entity->Valid())
+        {
+            entity->GetState()->SetId(kAmInvalidObjectId);
+            entity->GetState()->node.remove();
+            _state->entity_state_free_list.push_back(entity->GetState());
+        }
     }
 
     void Engine::RemoveEntity(AmEntityID id)
