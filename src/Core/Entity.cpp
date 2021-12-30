@@ -80,7 +80,6 @@ namespace SparkyStudios::Audio::Amplitude
 
     EntityInternalState* Entity::GetState() const
     {
-        AMPLITUDE_ASSERT(Valid());
         return _state;
     }
 } // namespace SparkyStudios::Audio::Amplitude
