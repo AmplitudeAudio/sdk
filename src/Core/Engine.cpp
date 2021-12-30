@@ -391,7 +391,15 @@ namespace SparkyStudios::Audio::Amplitude
 
     bool Engine::LoadSoundBank(AmOsString filename)
     {
+        AmBankID outID = kAmInvalidObjectId;
+        return LoadSoundBank(filename, outID);
+    }
+
+    bool Engine::LoadSoundBank(AmOsString filename, AmBankID& outID)
+    {
+        outID = kAmInvalidObjectId;
         bool success = true;
+
         if (const auto findIt = _state->sound_bank_id_map.find(filename); findIt == _state->sound_bank_id_map.end() ||
             (findIt != _state->sound_bank_id_map.end() && _state->sound_bank_map.find(findIt->second) == _state->sound_bank_map.end()))
         {
@@ -405,6 +413,91 @@ namespace SparkyStudios::Audio::Amplitude
                 AmBankID id = soundBank->GetId();
                 _state->sound_bank_id_map[filename] = id;
                 _state->sound_bank_map[id] = std::move(soundBank);
+                outID = id;
+            }
+        }
+        else
+        {
+            _state->sound_bank_map[findIt->second]->GetRefCounter()->Increment();
+        }
+
+        return success;
+    }
+
+    bool Engine::LoadSoundBankFromMemory(const char* fileData)
+    {
+        AmBankID outID = kAmInvalidObjectId;
+        return LoadSoundBankFromMemory(fileData, outID);
+    }
+
+    bool Engine::LoadSoundBankFromMemory(const char* fileData, AmBankID& outID)
+    {
+        outID = kAmInvalidObjectId;
+        bool success = true;
+
+        auto soundBank = std::make_unique<SoundBank>(fileData);
+        AmOsString filename = AM_STRING_TO_OS_STRING(soundBank->GetName().c_str());
+        if (const auto findIt = _state->sound_bank_id_map.find(filename); findIt == _state->sound_bank_id_map.end() ||
+            (findIt != _state->sound_bank_id_map.end() && _state->sound_bank_map.find(findIt->second) == _state->sound_bank_map.end()))
+        {
+            success = soundBank->InitializeFromMemory(fileData, this);
+
+            if (success)
+            {
+                soundBank->GetRefCounter()->Increment();
+
+                AmBankID id = soundBank->GetId();
+                _state->sound_bank_id_map[filename] = id;
+                _state->sound_bank_map[id] = std::move(soundBank);
+                outID = id;
+            }
+        }
+        else
+        {
+            _state->sound_bank_map[findIt->second]->GetRefCounter()->Increment();
+        }
+
+        return success;
+    }
+
+    bool Engine::LoadSoundBankFromMemoryView(void* ptr, AmSize size)
+    {
+        AmBankID outID = kAmInvalidObjectId;
+        return LoadSoundBankFromMemoryView(ptr, size, outID);
+    }
+
+    bool Engine::LoadSoundBankFromMemoryView(void* ptr, AmSize size, AmBankID& outID)
+    {
+        outID = kAmInvalidObjectId;
+        bool success = true;
+
+        MemoryFile mf;
+        std::string dst;
+
+        mf.OpenMem(reinterpret_cast<AmConstUInt8Buffer>(ptr), size, false, false);
+        dst.assign(size + 1, 0);
+
+        const AmUInt32 len = mf.Read(reinterpret_cast<AmUInt8Buffer>(&dst[0]), mf.Length());
+        if (len != size)
+        {
+            return false;
+        }
+
+        auto soundBank = std::make_unique<SoundBank>(dst);
+        AmOsString filename = AM_STRING_TO_OS_STRING(soundBank->GetName().c_str());
+        if (const auto findIt = _state->sound_bank_id_map.find(filename); findIt == _state->sound_bank_id_map.end() ||
+            (findIt != _state->sound_bank_id_map.end() && _state->sound_bank_map.find(findIt->second) == _state->sound_bank_map.end()))
+        {
+            success = soundBank->InitializeFromMemory(dst.c_str(), this);
+
+            if (success)
+            {
+                soundBank->GetRefCounter()->Increment();
+
+                AmBankID id = soundBank->GetId();
+                _state->sound_bank_id_map[filename] = id;
+                _state->sound_bank_map[id] = std::move(soundBank);
+                outID = id;
             }
         }
         else

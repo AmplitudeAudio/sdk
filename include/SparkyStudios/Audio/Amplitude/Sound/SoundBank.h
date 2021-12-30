@@ -38,6 +38,7 @@ namespace SparkyStudios::Audio::Amplitude
     {
     public:
         SoundBank();
+        explicit SoundBank(const std::string& source);
 
         /**
          * @brief Initializes the sound bank by loading all the packed data.
@@ -48,6 +49,16 @@ namespace SparkyStudios::Audio::Amplitude
          * @return true when the operation succeeds, false otherwise.
          */
         bool Initialize(AmOsString filename, Engine* engine);
+
+        /**
+         * @brief Initializes the sound bank by loading all the packed data.
+         *
+         * @param fileData The sound bank file content.
+         * @param engine The engine in which load the sound bank.
+         *
+         * @return true when the operation succeeds, false otherwise.
+         */
+        bool InitializeFromMemory(const char* fileData, Engine* engine);
 
         /**
          * @brief Unloads the sound bank from the Engine.
@@ -85,6 +96,8 @@ namespace SparkyStudios::Audio::Amplitude
         RefCounter* GetRefCounter();
 
     private:
+        bool InitializeInternal(Engine* engine);
+
         RefCounter _refCounter;
         std::string _soundBankDefSource;
 

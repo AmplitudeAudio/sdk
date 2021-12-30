@@ -133,9 +133,68 @@ namespace SparkyStudios::Audio::Amplitude
          *        of the sound files on a separate thread.
          *
          * @param filename The file containing the SoundBank flatbuffer binary data.
+         *
          * @return true Returns true on success
          */
         bool LoadSoundBank(AmOsString filename);
+
+        /**
+         * @brief Load a sound bank from a file. Queue the sound files in that sound
+         *        bank for loading. Call StartLoadingSoundFiles() to trigger loading
+         *        of the sound files on a separate thread.
+         *
+         * @param filename The file containing the SoundBank flatbuffer binary data.
+         * @param outID The ID of the loaded soundbank.
+         *
+         * @return true Returns true on success
+         */
+        bool LoadSoundBank(AmOsString filename, AmBankID& outID);
+
+        /**
+         * @brief Load a sound bank from memory. Queue the sound files in that sound
+         *        bank for loading. Call StartLoadingSoundFiles() to trigger loading
+         *        of the sound files on a separate thread.
+         *
+         * @param fileData The SoundBank flatbuffer binary data.
+         *
+         * @return true Returns true on success
+         */
+        bool LoadSoundBankFromMemory(const char* fileData);
+
+        /**
+         * @brief Load a sound bank from memory. Queue the sound files in that sound
+         *        bank for loading. Call StartLoadingSoundFiles() to trigger loading
+         *        of the sound files on a separate thread.
+         *
+         * @param fileData The SoundBank flatbuffer binary data.
+         * @param outID The ID of the loaded soundbank.
+         *
+         * @return true Returns true on success
+         */
+        bool LoadSoundBankFromMemory(const char* fileData, AmBankID& outID);
+
+        /**
+         * @brief Load a sound bank from memory. Queue the sound files in that sound
+         *        bank for loading. Call StartLoadingSoundFiles() to trigger loading
+         *        of the sound files on a separate thread.
+         *
+         * @param fileData The SoundBank flatbuffer binary data.
+         *
+         * @return true Returns true on success
+         */
+        bool LoadSoundBankFromMemoryView(void* ptr, AmSize size);
+
+        /**
+         * @brief Load a sound bank from memory. Queue the sound files in that sound
+         *        bank for loading. Call StartLoadingSoundFiles() to trigger loading
+         *        of the sound files on a separate thread.
+         *
+         * @param fileData The SoundBank flatbuffer binary data.
+         * @param outID The ID of the loaded soundbank.
+         *
+         * @return true Returns true on success
+         */
+        bool LoadSoundBankFromMemoryView(void* ptr, AmSize size, AmBankID& outID);
 
         /**
          * @brief Unload a sound bank.
