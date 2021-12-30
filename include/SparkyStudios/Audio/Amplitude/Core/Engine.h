@@ -381,6 +381,13 @@ namespace SparkyStudios::Audio::Amplitude
         Listener AddListener(AmListenerID id);
 
         /**
+         * @brief Remove a Listener given its ID.
+         *
+         * @param id The ID of the Listener to be removed.
+         */
+        void RemoveListener(AmListenerID id);
+
+        /**
          * @brief Remove a Listener.
          *
          * @param listener The Listener to be removed.
@@ -405,7 +412,7 @@ namespace SparkyStudios::Audio::Amplitude
 
         /**
          * @brief Remove an Entity given its ID.
-         * 
+         *
          * @param id The ID of the Entity to be removed.
          */
         void RemoveEntity(AmEntityID id);

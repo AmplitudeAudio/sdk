@@ -1335,6 +1335,22 @@ namespace SparkyStudios::Audio::Amplitude
         return Listener(listener);
     }
 
+    void Engine::RemoveListener(AmListenerID id)
+    {
+        if (const auto findIt = std::find_if(
+                _state->listener_state_memory.begin(), _state->listener_state_memory.end(),
+                [&id](const ListenerInternalState& state)
+                {
+                    return state.GetId() == id;
+                });
+            findIt == _state->listener_state_memory.end())
+        {
+            findIt->SetId(kAmInvalidObjectId);
+            findIt->node.remove();
+            _state->listener_state_free_list.push_back(&*findIt);
+        }
+    }
+
     void Engine::RemoveListener(const Listener* listener)
     {
         AMPLITUDE_ASSERT(listener->Valid());
