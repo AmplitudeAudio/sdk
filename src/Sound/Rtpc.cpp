@@ -83,12 +83,12 @@ namespace SparkyStudios::Audio::Amplitude
 
     void Rtpc::Update(AmTime deltaTime)
     {
-        if (_currentValue > _targetValue)
+        if (_faderRelease && _currentValue > _targetValue)
         {
             _currentValue = _faderRelease->GetFromTime(Engine::GetInstance()->GetTotalTime());
         }
 
-        if (_currentValue < _targetValue)
+        if (_faderAttack && _currentValue < _targetValue)
         {
             _currentValue = _faderAttack->GetFromTime(Engine::GetInstance()->GetTotalTime());
         }
