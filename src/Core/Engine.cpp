@@ -58,7 +58,7 @@ namespace SparkyStudios::Audio::Amplitude
         MemoryFile mf;
         if (const AmResult result = mf.OpenToMem(filename); result != AM_ERROR_NO_ERROR)
         {
-            CallLogFunc("[ERROR] LoadFile fail on %s", filename);
+            CallLogFunc("[ERROR] LoadFile fail on '" AM_OS_CHAR_FMT "'", filename);
             return false;
         }
 
@@ -276,6 +276,7 @@ namespace SparkyStudios::Audio::Amplitude
         if (_audioDriver == nullptr)
         {
             CallLogFunc("[ERROR] Could not load the audio driver.\n");
+            Deinitialize();
             return false;
         }
 
@@ -283,6 +284,7 @@ namespace SparkyStudios::Audio::Amplitude
         if (!_state->mixer.Init(config))
         {
             CallLogFunc("[ERROR] Could not initialize the audio mixer.\n");
+            Deinitialize();
             return false;
         }
 
@@ -301,9 +303,11 @@ namespace SparkyStudios::Audio::Amplitude
         InitializeEntityFreeList(&_state->entity_state_free_list, &_state->entity_state_memory, config->entities());
 
         // Load the audio buses.
-        if (!LoadFile(AM_STRING_TO_OS_STRING(config->buses_file()->c_str()), &_state->buses_source))
+        std::filesystem::path busesFilePath = _loader.ResolvePath(config->buses_file()->c_str());
+        if (!LoadFile(busesFilePath.c_str(), &_state->buses_source))
         {
             CallLogFunc("[ERROR] Could not load audio bus file.\n");
+            Deinitialize();
             return false;
         }
         const BusDefinitionList* busDefList = Amplitude::GetBusDefinitionList(_state->buses_source.c_str());
@@ -319,10 +323,12 @@ namespace SparkyStudios::Audio::Amplitude
             const BusDefinition* def = bus.GetBusDefinition();
             if (!PopulateChildBuses(_state, &bus, def->child_buses()))
             {
+                Deinitialize();
                 return false;
             }
             if (!PopulateDuckBuses(_state, &bus, def->duck_buses()))
             {
+                Deinitialize();
                 return false;
             }
         }
@@ -336,6 +342,7 @@ namespace SparkyStudios::Audio::Amplitude
             if (!_state->master_bus)
             {
                 CallLogFunc("[ERROR] Unable to find a master bus.\n");
+                Deinitialize();
                 return false;
             }
         }
@@ -359,8 +366,11 @@ namespace SparkyStudios::Audio::Amplitude
         delete _state;
         _state = nullptr;
 
-        // Close the audio device through the driver
-        return _audioDriver->Close();
+        if (_audioDriver)
+            // Close the audio device through the driver
+            return _audioDriver->Close();
+        else
+            return true;
     }
 
     bool Engine::IsInitialized()
