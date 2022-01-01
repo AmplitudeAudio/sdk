@@ -221,8 +221,15 @@ set(SA_SOURCE
     src/Utils/Freeverb/ReverbModel.cpp
     src/Utils/Freeverb/ReverbModel.h
     src/Utils/Freeverb/tuning.h
-    src/Utils/pffft/pffft.cpp
-    src/Utils/pffft/pffft.h
+    src/Utils/pffft/simd/pf_avx_double.h
+    src/Utils/pffft/simd/pf_double.h
+    src/Utils/pffft/simd/pf_neon_double_from_avx.h
+    src/Utils/pffft/simd/pf_neon_double.h
+    src/Utils/pffft/simd/pf_scalar_double.h
+    src/Utils/pffft/simd/pf_sse2_double.h
+    src/Utils/pffft/pffft_double.cpp
+    src/Utils/pffft/pffft_double.h
+    src/Utils/pffft/pffft_private_impl.h
     src/Utils/SmMalloc/smmalloc_generic.cpp
     src/Utils/SmMalloc/smmalloc_tls.cpp
     src/Utils/SmMalloc/smmalloc.cpp

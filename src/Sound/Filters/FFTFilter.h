@@ -19,7 +19,7 @@
 
 #include <SparkyStudios/Audio/Amplitude/Sound/Filter.h>
 
-#include <Utils/pffft/pffft.h>
+#include <Utils/pffft/pffft_double.h>
 
 namespace SparkyStudios::Audio::Amplitude
 {
@@ -45,20 +45,20 @@ namespace SparkyStudios::Audio::Amplitude
         void ProcessChannel(
             AmInt16Buffer buffer, AmUInt16 channel, AmUInt64 frames, AmUInt16 channels, AmUInt32 sampleRate, bool isInterleaved) override;
 
-        virtual void ProcessFFTChannel(AmReal32Buffer buffer, AmUInt16 channel, AmUInt64 frames, AmUInt16 channels, AmUInt32 sampleRate);
+        virtual void ProcessFFTChannel(AmReal64Buffer buffer, AmUInt16 channel, AmUInt64 frames, AmUInt16 channels, AmUInt32 sampleRate);
 
-        void Comp2MagPhase(AmReal32Buffer buffer, AmUInt32 samples);
-        void MagPhase2MagFreq(AmReal32Buffer buffer, AmUInt32 samples, AmUInt32 sampleRate, AmUInt16 channel);
-        void MagFreq2MagPhase(AmReal32Buffer buffer, AmUInt32 samples, AmUInt32 sampleRate, AmUInt16 channel);
+        void Comp2MagPhase(AmReal64Buffer buffer, AmUInt32 samples);
+        void MagPhase2MagFreq(AmReal64Buffer buffer, AmUInt32 samples, AmUInt32 sampleRate, AmUInt16 channel);
+        void MagFreq2MagPhase(AmReal64Buffer buffer, AmUInt32 samples, AmUInt32 sampleRate, AmUInt16 channel);
 
-        static void MagPhase2Comp(AmReal32Buffer buffer, AmUInt32 samples);
+        static void MagPhase2Comp(AmReal64Buffer buffer, AmUInt32 samples);
 
         void InitFFT();
 
     private:
-        PFFFT_Setup* _pffft_setup;
+        PFFFTD_Setup* _pffft_setup;
 
-        AmReal32Buffer _temp;
+        AmReal64Buffer _temp;
         AmReal32Buffer _inputBuffer;
         AmReal32Buffer _mixBuffer;
         AmReal32Buffer _lastPhase;
