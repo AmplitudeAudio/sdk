@@ -19,7 +19,7 @@ jobs:
           - {
               name: "Windows Latest MSVC",
               os: windows-latest,
-              artifact: "amplitude_audio_sdk_windows_msvc_x64_${{ matrix.build_type }}.7z",
+              artifact: "amplitude_audio_sdk_windows_msvc_x64.7z",
               cc: "cl",
               cxx: "cl",
               archiver: "7z a",
@@ -29,7 +29,7 @@ jobs:
           # - {
           #     name: "Windows Latest MinGW",
           #     os: windows-latest,
-          #     artifact: "amplitude_audio_sdk_windows_mingw_x64_${{ matrix.build_type }}.7z",
+          #     artifact: "amplitude_audio_sdk_windows_mingw_x64.7z",
           #     cc: "gcc",
           #     cxx: "g++",
           #     archiver: "7z a",
@@ -39,7 +39,7 @@ jobs:
           - {
               name: "Ubuntu_Latest_GCC",
               os: ubuntu-latest,
-              artifact: "amplitude_audio_sdk_linux_gcc_x64_${{ matrix.build_type }}.7z",
+              artifact: "amplitude_audio_sdk_linux_gcc_x64.7z",
               cc: "gcc",
               cxx: "g++",
               archiver: "7z a",
@@ -49,7 +49,7 @@ jobs:
           - {
               name: "Ubuntu_GCC_9",
               os: ubuntu-latest,
-              artifact: "amplitude_audio_sdk_linux_gcc9_x64_${{ matrix.build_type }}.7z",
+              artifact: "amplitude_audio_sdk_linux_gcc9_x64.7z",
               cc: "gcc",
               cxx: "g++",
               archiver: "7z a",
@@ -59,7 +59,7 @@ jobs:
           # - {
           #     name: "macOS Latest Clang",
           #     os: macos-latest,
-          #     artifact: "amplitude_audio_sdk_macos_gcc_x64_${{ matrix.build_type }}.7z",
+          #     artifact: "amplitude_audio_sdk_macos_gcc_x64.7z",
           #     cc: "clang",
           #     cxx: "clang++",
           #     archiver: "7za a",
@@ -170,15 +170,13 @@ jobs:
 
       - name: Pack
         shell: bash
-        run: |
-          ls -laR
-          ${{ matrix.config.archiver }} ../${{ matrix.config.artifact }} LICENSE sdk
+        run: ${{ matrix.config.archiver }} ./${{ matrix.build_type }}_${{ matrix.config.artifact }} LICENSE sdk
 
       - name: Upload
         uses: actions/upload-artifact@v1
         with:
-          path: ./${{ matrix.config.artifact }}
-          name: ${{ matrix.config.artifact }}
+          path: ./${{ matrix.build_type }}_${{ matrix.config.artifact }}
+          name: ${{ matrix.build_type }}_${{ matrix.config.artifact }}
 
       - name: Upload release asset
         if: github.event_name == 'release' && (github.event.action == 'published' || github.event.action == 'created')
@@ -187,6 +185,6 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           upload_url: ${{ github.event.release.upload_url }}
-          asset_path: ./${{ matrix.config.artifact }}
-          asset_name: ${{ matrix.config.artifact }}.zip
+          asset_path: ./${{ matrix.build_type }}_${{ matrix.config.artifact }}
+          asset_name: ${{ matrix.build_type }}_${{ matrix.config.artifact }}.zip
           asset_content_type: application/zip
