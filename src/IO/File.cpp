@@ -16,16 +16,16 @@
 
 namespace SparkyStudios::Audio::Amplitude
 {
-    AmUInt32 File::Read8()
+    AmUInt8 File::Read8()
     {
         AmUInt8 d = 0;
         Read((AmUInt8Buffer)&d, 1);
         return d;
     }
 
-    AmUInt32 File::Read16()
+    AmUInt16 File::Read16()
     {
-        AmUInt8 d = 0;
+        AmUInt16 d = 0;
         Read((AmUInt8Buffer)&d, 2);
         return d;
     }
@@ -41,12 +41,17 @@ namespace SparkyStudios::Audio::Amplitude
         : mFileHandle(fp)
     {}
 
-    AmUInt32 DiskFile::Read(AmUInt8Buffer dst, AmUInt32 bytes)
+    AmSize DiskFile::Read(AmUInt8Buffer dst, AmSize bytes)
     {
-        return (AmUInt32)fread(dst, 1, bytes, mFileHandle);
+        return (AmSize)fread(dst, 1, bytes, mFileHandle);
     }
 
-    AmUInt32 DiskFile::Length()
+    AmSize DiskFile::Write(AmConstUInt8Buffer src, AmSize bytes)
+    {
+        return (AmSize)fwrite(src, 1, bytes, mFileHandle);
+    }
+
+    AmSize DiskFile::Length()
     {
         if (!mFileHandle)
             return 0;
@@ -64,9 +69,9 @@ namespace SparkyStudios::Audio::Amplitude
         fseek(mFileHandle, offset, SEEK_SET);
     }
 
-    AmUInt32 DiskFile::Pos()
+    AmSize DiskFile::Pos()
     {
-        return (AmUInt32)ftell(mFileHandle);
+        return (AmSize)ftell(mFileHandle);
     }
 
     AmFileHandle DiskFile::GetFilePtr()
@@ -85,15 +90,38 @@ namespace SparkyStudios::Audio::Amplitude
         mFileHandle = nullptr;
     }
 
-    AmResult DiskFile::Open(AmOsString fileName)
+    AmResult DiskFile::Open(AmOsString fileName, FileOpenMode mode, FileOpenKind kind)
     {
         if (!fileName)
             return AM_ERROR_INVALID_PARAMETER;
 
-#if defined(AM_WINDOWS_VERSION)
-        _wfopen_s(&mFileHandle, fileName, AM_OS_STRING("rb"));
+#if defined(AM_WCHAR_SUPPORTED)
+        std::wstring op{};
 #else
-        mFileHandle = fopen(AM_OS_STRING_TO_STRING(fileName), "rb");
+        std::string op{};
+#endif
+
+        switch (mode)
+        {
+            case eFOM_READ:
+                op = kind == eFOK_TEXT ? AM_OS_STRING("r") : AM_OS_STRING("rb");
+                break;
+            case eFOM_WRITE:
+                op = kind == eFOK_TEXT ? AM_OS_STRING("w") : AM_OS_STRING("wb");
+            case eFOM_APPEND:
+                op = kind == eFOK_TEXT ? AM_OS_STRING("a") : AM_OS_STRING("ab");
+            case eFOM_READWRITE:
+                op = kind == eFOK_TEXT ? AM_OS_STRING("w+") : AM_OS_STRING("wb+");
+                break;
+            case eFOM_READAPPEND:
+                op = kind == eFOK_TEXT ? AM_OS_STRING("a+") : AM_OS_STRING("ab+");
+                break;
+        }
+
+#if defined(AM_WINDOWS_VERSION)
+        _wfopen_s(&mFileHandle, fileName, op.c_str());
+#else
+        mFileHandle = fopen(fileName, op.c_str());
 #endif
 
         if (!mFileHandle)
@@ -107,7 +135,7 @@ namespace SparkyStudios::Audio::Amplitude
         return feof(mFileHandle) != 0;
     }
 
-    AmUInt32 MemoryFile::Read(AmUInt8Buffer dst, AmUInt32 bytes)
+    AmSize MemoryFile::Read(AmUInt8Buffer dst, AmSize bytes)
     {
         if (mOffset + bytes >= mDataLength)
             bytes = mDataLength - mOffset;
@@ -118,7 +146,13 @@ namespace SparkyStudios::Audio::Amplitude
         return bytes;
     }
 
-    AmUInt32 MemoryFile::Length()
+    AmSize MemoryFile::Write(AmConstUInt8Buffer src, AmSize bytes)
+    {
+        // Not available on memory files
+        return 0;
+    }
+
+    AmSize MemoryFile::Length()
     {
         return mDataLength;
     }
@@ -134,7 +168,7 @@ namespace SparkyStudios::Audio::Amplitude
             mOffset = mDataLength - 1;
     }
 
-    AmUInt32 MemoryFile::Pos()
+    AmSize MemoryFile::Pos()
     {
         return mOffset;
     }
@@ -158,7 +192,7 @@ namespace SparkyStudios::Audio::Amplitude
         mDataOwned = false;
     }
 
-    AmResult MemoryFile::OpenMem(AmConstUInt8Buffer data, AmUInt32 dataLength, bool copy, bool takeOwnership)
+    AmResult MemoryFile::OpenMem(AmConstUInt8Buffer data, AmSize dataLength, bool copy, bool takeOwnership)
     {
         if (data == nullptr || dataLength == 0)
             return AM_ERROR_INVALID_PARAMETER;
