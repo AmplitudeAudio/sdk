@@ -101,7 +101,7 @@ namespace SparkyStudios::Audio::Amplitude::Codecs
             return 0;
         }
 
-        if (drmp3_seek_to_pcm_frame(&_mp3, 0) != DRMP3_TRUE)
+        if (!Seek(0))
         {
             return 0;
         }
