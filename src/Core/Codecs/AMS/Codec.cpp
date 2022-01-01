@@ -18,14 +18,15 @@ using namespace SparkyStudios::Audio::Amplitude::Compression::ADPCM;
 
 namespace SparkyStudios::Audio::Amplitude::Codecs
 {
-    static void little_endian_to_native(void* data, char* format)
+    static void little_endian_to_native(void* data, const char* format)
     {
+        const char* i = format;
         unsigned char* cp = (unsigned char*)data;
         AmInt32 temp;
 
-        while (*format)
+        while (*i)
         {
-            switch (*format)
+            switch (*i)
             {
             case 'L':
                 temp = cp[0] + ((AmInt32)cp[1] << 8) + ((AmInt32)cp[2] << 16) + ((AmInt32)cp[3] << 24);
@@ -40,24 +41,25 @@ namespace SparkyStudios::Audio::Amplitude::Codecs
                 break;
 
             default:
-                if (isdigit((unsigned char)*format))
-                    cp += *format - '0';
+                if (isdigit((unsigned char)*i))
+                    cp += *i - '0';
 
                 break;
             }
 
-            format++;
+            i = format + 1;
         }
     }
 
-    static void native_to_little_endian(void* data, char* format)
+    static void native_to_little_endian(void* data, const char* format)
     {
+        const char* i = format;
         unsigned char* cp = (unsigned char*)data;
         AmInt32 temp;
 
-        while (*format)
+        while (*i)
         {
-            switch (*format)
+            switch (*i)
             {
             case 'L':
                 temp = *(AmInt32*)cp;
@@ -74,13 +76,13 @@ namespace SparkyStudios::Audio::Amplitude::Codecs
                 break;
 
             default:
-                if (isdigit((unsigned char)*format))
-                    cp += *format - '0';
+                if (isdigit((unsigned char)*i))
+                    cp += *i - '0';
 
                 break;
             }
 
-            format++;
+            i = format + 1;
         }
     }
 
