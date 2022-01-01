@@ -80,7 +80,7 @@ namespace SparkyStudios::Audio::Amplitude::Codecs
         {
             m_format = SoundFormat();
             _initialized = false;
-            return drwav_uninit(&_wav) == DRWAV_TRUE;
+            return drwav_uninit(&_wav) == DRWAV_SUCCESS;
         }
 
         // true because it is already closed
@@ -124,12 +124,6 @@ namespace SparkyStudios::Audio::Amplitude::Codecs
 
     bool WAVCodec::WAVEncoder::Open(AmOsString filePath)
     {
-        if (!m_codec->CanHandleFile(filePath))
-        {
-            CallLogFunc("The WAV codec cannot handle the file: '%s'\n", filePath);
-            return false;
-        }
-
         if (!_isFormatSet)
         {
             CallLogFunc("The WAV codec cannot open the file '%s' without a format set. Have you missed to call SetFormat()?\n", filePath);
@@ -181,7 +175,7 @@ namespace SparkyStudios::Audio::Amplitude::Codecs
             m_format = SoundFormat();
             _isFormatSet = false;
             _initialized = false;
-            return drwav_uninit(&_wav) == DRWAV_TRUE;
+            return drwav_uninit(&_wav) == DRWAV_SUCCESS;
         }
 
         return true;

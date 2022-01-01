@@ -24,26 +24,43 @@
 
 namespace SparkyStudios::Audio::Amplitude
 {
+    enum FileOpenMode
+    {
+        eFOM_READ = 0,
+        eFOM_WRITE = 1,
+        eFOM_APPEND = 2,
+        eFOM_READWRITE = 3,
+        eFOM_READAPPEND = 4,
+    };
+
+    enum FileOpenKind
+    {
+        eFOK_BINARY = 0,
+        eFOK_TEXT = 1,
+    };
+
     class File
     {
     public:
         virtual ~File() = default;
 
-        AmUInt32 Read8();
+        AmUInt8 Read8();
 
-        AmUInt32 Read16();
+        AmUInt16 Read16();
 
         AmUInt32 Read32();
 
         virtual bool Eof() = 0;
 
-        virtual AmUInt32 Read(AmUInt8Buffer dst, AmUInt32 bytes) = 0;
+        virtual AmSize Read(AmUInt8Buffer dst, AmSize bytes) = 0;
 
-        virtual AmUInt32 Length() = 0;
+        virtual AmSize Write(AmConstUInt8Buffer src, AmSize bytes) = 0;
+
+        virtual AmSize Length() = 0;
 
         virtual void Seek(AmInt32 offset) = 0;
 
-        virtual AmUInt32 Pos() = 0;
+        virtual AmSize Pos() = 0;
 
         virtual AmFileHandle GetFilePtr()
         {
@@ -66,15 +83,17 @@ namespace SparkyStudios::Audio::Amplitude
 
         bool Eof() override;
 
-        AmUInt32 Read(AmUInt8Buffer dst, AmUInt32 bytes) override;
+        AmSize Read(AmUInt8Buffer dst, AmSize bytes) override;
 
-        AmUInt32 Length() override;
+        AmSize Write(AmConstUInt8Buffer src, AmSize bytes) override;
+
+        AmSize Length() override;
 
         void Seek(AmInt32 offset) override;
 
-        AmUInt32 Pos() override;
+        AmSize Pos() override;
 
-        AmResult Open(AmOsString fileName);
+        AmResult Open(AmOsString fileName, FileOpenMode mode = eFOM_READ, FileOpenKind kind = eFOK_BINARY);
 
         AmFileHandle GetFilePtr() override;
 
@@ -91,21 +110,23 @@ namespace SparkyStudios::Audio::Amplitude
 
         bool Eof() override;
 
-        AmUInt32 Read(AmUInt8Buffer dst, AmUInt32 bytes) override;
+        AmSize Read(AmUInt8Buffer dst, AmSize bytes) override;
 
-        AmUInt32 Length() override;
+        AmSize Write(AmConstUInt8Buffer src, AmSize bytes) override;
+
+        AmSize Length() override;
 
         void Seek(AmInt32 offset) override;
-        AmUInt32 Pos() override;
+        AmSize Pos() override;
         AmConstUInt8Buffer GetMemPtr() override;
-        AmResult OpenMem(AmConstUInt8Buffer data, AmUInt32 dataLength, bool copy = false, bool takeOwnership = true);
+        AmResult OpenMem(AmConstUInt8Buffer data, AmSize dataLength, bool copy = false, bool takeOwnership = true);
         AmResult OpenToMem(AmOsString fileName);
         AmResult OpenFileToMem(File* aFile);
 
     private:
         AmConstUInt8Buffer mDataPtr;
-        AmUInt32 mDataLength;
-        AmUInt32 mOffset;
+        AmSize mDataLength;
+        AmSize mOffset;
         bool mDataOwned;
     };
 }; // namespace SparkyStudios::Audio::Amplitude

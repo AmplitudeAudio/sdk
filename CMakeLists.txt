@@ -106,6 +106,9 @@ set(SA_SOURCE
     include/SparkyStudios/Audio/Amplitude/Sound/SwitchContainer.h
     include/SparkyStudios/Audio/Amplitude/Amplitude.h
 
+    src/Core/Codecs/AMS/Codec.cpp
+    src/Core/Codecs/AMS/Codec.h
+
     src/Core/Codecs/FLAC/Codec.cpp
     src/Core/Codecs/FLAC/Codec.h
     src/Core/Codecs/FLAC/dr_flac.h
@@ -208,6 +211,8 @@ set(SA_SOURCE
     src/Sound/Switch.cpp
     src/Sound/SwitchContainer.cpp
 
+    src/Utils/Audio/Compression/ADPCM/ADPCM.cpp
+    src/Utils/Audio/Compression/ADPCM/ADPCM.h
     src/Utils/Freeverb/AllPass.cpp
     src/Utils/Freeverb/AllPass.h
     src/Utils/Freeverb/Comb.cpp
@@ -254,6 +259,8 @@ if(UNIX)
   )
 endif()
 
+add_subdirectory(tools/amc)
+
 option(BUILD_SAMPLES "Build samples" OFF)
 if(BUILD_SAMPLES)
   list(APPEND VCPKG_MANIFEST_FEATURES "samples")
@@ -271,9 +278,10 @@ else()
     set( RUNTIME_OUTPUT_DIRECTORY "linux" )
 endif()
 
-set( AM_LIB_DESTINATION   "lib/${RUNTIME_OUTPUT_DIRECTORY}" )
-set( AM_INC_DESTINATION   "lib/sdk/include" )
-set( AM_BIN_DESTINATION   "bin/${RUNTIME_OUTPUT_DIRECTORY}" )
+set( AM_LIB_DESTINATION   "sdk/lib/${RUNTIME_OUTPUT_DIRECTORY}" )
+set( AM_INC_DESTINATION   "sdk/include" )
+set( AM_SHM_DESTINATION   "sdk/schemas" )
+set( AM_BIN_DESTINATION   "sdk/bin/${RUNTIME_OUTPUT_DIRECTORY}" )
 
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/${AM_BIN_DESTINATION}" )
 set(CMAKE_LIBRARY_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/${AM_LIB_DESTINATION}" )
@@ -282,7 +290,7 @@ set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/${AM_BIN_DESTINATION}" )
 set(CMAKE_INSTALL_PREFIX ${CMAKE_CURRENT_LIST_DIR})
 
 install(
-    TARGETS ${PROJECT_NAME}
+    TARGETS ${PROJECT_NAME} amc
     EXPORT AmplitudeAudioSDKConfig
     ARCHIVE DESTINATION ${AM_LIB_DESTINATION}
     LIBRARY DESTINATION ${AM_LIB_DESTINATION}
@@ -293,6 +301,12 @@ install(
     DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/include/
     DESTINATION ${AM_INC_DESTINATION}
     FILES_MATCHING PATTERN "*.h*"
+)
+
+install(
+    DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/schemas/
+    DESTINATION ${AM_SHM_DESTINATION}
+    FILES_MATCHING PATTERN "*.fbs"
 )
 
 install(
