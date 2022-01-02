@@ -425,7 +425,10 @@ namespace SparkyStudios::Audio::Amplitude
         while (!_commandsStack.empty())
         {
             const auto& command = _commandsStack.front();
-            command.callback();
+            if (command.callback)
+            {
+                command.callback();
+            }
             _commandsStack.pop();
         }
     }
@@ -602,17 +605,25 @@ namespace SparkyStudios::Audio::Amplitude
 
                 const AmUInt64 chunkSize = AM_MIN(layer->snd->chunk->frames, c);
 #if defined(AM_SSE_INTRINSICS)
-                const AmUInt64 aChunkSize =
-                    AM_VALUE_ALIGN(chunkSize, kSimdProcessedFramesCount) >> static_cast<AmUInt32>(std::log2(kSimdProcessedFramesCountHalf));
+                /* */ AmUInt64 readLen = AM_VALUE_ALIGN(chunkSize, kSimdProcessedFramesCount);
 #else
-                const AmUInt64 aChunkSize = chunkSize * numChannels;
+                /* */ AmUInt64 readLen = chunkSize;
 #endif // AM_SSE_INTRINSICS
-                const AmUInt64 len = OnSoundStream(layer->snd, cursor, chunkSize);
+
+                readLen = OnSoundStream(layer->snd, cursor, readLen);
+                readLen = AM_MIN(readLen, chunkSize);
 
                 // having 0 here mainly means that we have reached
                 // the end of the stream and the audio is not looping.
-                if (len == 0)
+                if (readLen == 0)
                     break;
+
+#if defined(AM_SSE_INTRINSICS)
+                const AmUInt64 aChunkSize =
+                    AM_VALUE_ALIGN(readLen, kSimdProcessedFramesCount) >> static_cast<AmUInt32>(std::log2(kSimdProcessedFramesCountHalf));
+#else
+                const AmUInt64 aChunkSize = readLen * numChannels;
+#endif // AM_SSE_INTRINSICS
 
                 auto* buf = reinterpret_cast<AudioBuffer>(reinterpret_cast<AmInt16*>(buffer) + (samples - c) * numChannels);
 
@@ -628,7 +639,7 @@ namespace SparkyStudios::Audio::Amplitude
                         AMPLIMIX_CSWAP(&layer->flag, &flag, PLAY_STATE_FLAG_MIN);
                 }
 
-                c -= len;
+                c -= readLen;
             }
         }
         else if (layer->snd != nullptr && !layer->snd->stream)
