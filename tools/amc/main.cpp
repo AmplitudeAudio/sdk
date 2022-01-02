@@ -20,6 +20,8 @@
 #include "../src/Core/Codecs/WAV/Codec.h"
 #include "../src/IO/File.h"
 #include "../src/Utils/Audio/Compression/ADPCM/ADPCM.h"
+#include "../src/Utils/Audio/Resampling/CDSPResampler.h"
+#include "../src/Utils/Utils.h"
 
 #define AM_FLAG_NOISE_SHAPING 0x1
 
@@ -65,6 +67,15 @@ struct ProcessingState
      * @brief Used to determine the encoded ADPCM block size.
      */
     AmUInt32 blockSizeShift = 0;
+
+    /**
+     * @brief Configures the resampler for the encoded ADPCM file.
+     */
+    struct
+    {
+        bool enabled = false;
+        AmUInt32 targetSampleRate;
+    } resampling;
 };
 
 /**
@@ -111,6 +122,7 @@ static int process(AmOsString inFileName, AmOsString outFileName, const Processi
         AmUInt16 numChannels = format.GetNumChannels();
         AmUInt32 sampleRate = format.GetSampleRate(), blockSize, samplesPerBlock;
         AmUInt64 numSamples = format.GetFramesCount();
+        AmUInt64 framesSize = format.GetFrameSize();
 
         auto* encoder = static_cast<Codecs::AMSCodec::AMSEncoder*>(Codecs::ams_codec.CreateEncoder());
 
@@ -121,26 +133,13 @@ static int process(AmOsString inFileName, AmOsString outFileName, const Processi
 
         samplesPerBlock = (blockSize - numChannels * 4) * (numChannels ^ 3) + 1;
 
-        encoder->SetFormat(format);
-        encoder->SetEncodingParams(
-            blockSize, samplesPerBlock, state.lookAhead,
-            state.noiseShaping ? (sampleRate > 64000 ? Compression::ADPCM::eNSM_STATIC : Compression::ADPCM::eNSM_DYNAMIC)
-                               : Compression::ADPCM::eNSM_OFF);
-
-        if (!encoder->Open(outFileName))
-        {
-            fprintf(stderr, "Unable to open file \"" AM_OS_CHAR_FMT "\" for writing.\n", outFileName);
-            return EXIT_FAILURE;
-        }
-
         if (state.verbose)
         {
             CallLogFunc("Each %d byte ADPCM block will contain %d samples * %d channels.\n", blockSize, samplesPerBlock, numChannels);
             CallLogFunc("Encoding PCM file \"" AM_OS_CHAR_FMT "\" to ADPCM file \"" AM_OS_CHAR_FMT "\"...\n", inFileName, outFileName);
         }
 
-        auto* pcmData =
-            static_cast<AmInt16Buffer>(amMemory->Malloc(MemoryPoolKind::Codec, numSamples * decoder->GetFormat().GetFrameSize()));
+        auto* pcmData = static_cast<AmInt16Buffer>(amMemory->Malloc(MemoryPoolKind::Codec, numSamples * framesSize));
 
         if (decoder->Load(pcmData) != numSamples || !decoder->Close())
         {
@@ -149,11 +148,101 @@ static int process(AmOsString inFileName, AmOsString outFileName, const Processi
             return EXIT_FAILURE;
         }
 
-        if (encoder->Write(pcmData, 0, numSamples) != numSamples || !encoder->Close())
+        encoder->SetEncodingParams(
+            blockSize, samplesPerBlock, state.lookAhead,
+            state.noiseShaping ? (sampleRate > 64000 ? Compression::ADPCM::eNSM_STATIC : Compression::ADPCM::eNSM_DYNAMIC)
+                               : Compression::ADPCM::eNSM_OFF);
+
+        if (state.resampling.enabled)
         {
-            amMemory->Free(MemoryPoolKind::Codec, pcmData);
-            fprintf(stderr, "Error while encoding ADPCM file \"" AM_OS_CHAR_FMT "\".\n", outFileName);
-            return EXIT_FAILURE;
+            AmUInt64 f = std::ceil(static_cast<AmReal32>(numSamples * state.resampling.targetSampleRate) / sampleRate);
+
+            auto* output16 = static_cast<AmInt16Buffer>(amMemory->Malign(MemoryPoolKind::SoundData, f * framesSize, AM_SIMD_ALIGNMENT));
+
+            std::vector<r8b::CDSPResampler16*> resamplers;
+            for (AmInt16 c = 0; c < numChannels; c++)
+            {
+                resamplers.push_back(new r8b::CDSPResampler16(sampleRate, state.resampling.targetSampleRate, numSamples));
+            }
+
+            auto* input64 = static_cast<AmReal64Buffer>(
+                amMemory->Malign(MemoryPoolKind::SoundData, numSamples * numChannels * sizeof(AmReal64), AM_SIMD_ALIGNMENT));
+
+            for (AmUInt16 c = 0; c < numChannels; c++)
+            {
+                auto* resampler = static_cast<r8b::CDSPResampler16*>(resamplers[c]);
+
+                if (format.GetInterleaveType() == AM_SAMPLE_INTERLEAVED)
+                {
+                    for (AmUInt64 i = 0; i < numSamples; i++)
+                    {
+                        input64[i] = static_cast<AmReal64>(AmInt16ToReal32(pcmData[i * numChannels + c]));
+                    }
+                }
+                else
+                {
+                    for (AmUInt64 i = numSamples * c, m = numSamples * (c + 1); i < m; i++)
+                    {
+                        input64[i] = static_cast<AmReal64>(AmInt16ToReal32(pcmData[i]));
+                    }
+                }
+
+                AmReal64Buffer output = nullptr;
+                f = resampler->process(input64, numSamples, output);
+                resampler->clear();
+
+                for (AmUInt64 i = 0; i < f; i++)
+                {
+                    output16[i * numChannels + c] = AmReal32ToInt16(static_cast<AmReal32>(output[i]), true);
+                }
+            }
+
+            amMemory->Free(MemoryPoolKind::SoundData, input64);
+
+            sampleRate = state.resampling.targetSampleRate;
+            numSamples = f;
+
+            SoundFormat encodeFormat;
+            encodeFormat.SetAll(
+                sampleRate, numChannels, format.GetBitsPerSample(), numSamples, framesSize, AM_SAMPLE_FORMAT_INT, AM_SAMPLE_INTERLEAVED);
+
+            encoder->SetFormat(encodeFormat);
+            if (!encoder->Open(outFileName))
+            {
+                fprintf(stderr, "Unable to open file \"" AM_OS_CHAR_FMT "\" for writing.\n", outFileName);
+                return EXIT_FAILURE;
+            }
+
+            if (encoder->Write(output16, 0, numSamples) != numSamples || !encoder->Close())
+            {
+                amMemory->Free(MemoryPoolKind::Codec, pcmData);
+                amMemory->Free(MemoryPoolKind::SoundData, output16);
+                fprintf(stderr, "Error while encoding ADPCM file \"" AM_OS_CHAR_FMT "\".\n", outFileName);
+                return EXIT_FAILURE;
+            }
+
+            for (AmInt16 c = 0; c < numChannels; c++)
+            {
+                delete resamplers[c];
+            }
+
+            amMemory->Free(MemoryPoolKind::SoundData, output16);
+        }
+        else
+        {
+            encoder->SetFormat(format);
+            if (!encoder->Open(outFileName))
+            {
+                fprintf(stderr, "Unable to open file \"" AM_OS_CHAR_FMT "\" for writing.\n", outFileName);
+                return EXIT_FAILURE;
+            }
+
+            if (encoder->Write(pcmData, 0, numSamples) != numSamples || !encoder->Close())
+            {
+                amMemory->Free(MemoryPoolKind::Codec, pcmData);
+                fprintf(stderr, "Error while encoding ADPCM file \"" AM_OS_CHAR_FMT "\".\n", outFileName);
+                return EXIT_FAILURE;
+            }
         }
 
         if (state.verbose)
@@ -180,14 +269,11 @@ static int process(AmOsString inFileName, AmOsString outFileName, const Processi
 
         SoundFormat wavFormat;
         wavFormat.SetAll(
-            amsFormat.GetSampleRate(),
-            amsFormat.GetNumChannels(),
+            amsFormat.GetSampleRate(), amsFormat.GetNumChannels(),
             16, // always decode in 16 bits per sample
             amsFormat.GetFramesCount(),
             amsFormat.GetNumChannels() * sizeof(AmInt16), // Always decode in 16 bits signed integers
-            AM_SAMPLE_FORMAT_INT,
-            AM_SAMPLE_INTERLEAVED
-        );
+            AM_SAMPLE_FORMAT_INT, AM_SAMPLE_INTERLEAVED);
 
         encoder->SetFormat(wavFormat);
         if (!encoder->Open(outFileName))
@@ -317,6 +403,23 @@ int main(int argc, char* argv[])
                     state.noiseShaping = false;
                     break;
 
+                case 'R':
+                case 'r':
+                    ++*argv;
+
+                    state.resampling.enabled = true;
+                    state.resampling.targetSampleRate = strtol(++*argv, argv, 10);
+
+                    if (state.resampling.targetSampleRate < 8000 || state.blockSizeShift > 384000)
+                    {
+                        fprintf(stderr, "\nInvalid sample rate provided. Please give a value between 8000 and 384000.\n");
+                        return EXIT_FAILURE;
+                    }
+
+                    --*argv;
+                    --argc;
+                    break;
+
                 case 'D':
                 case 'd':
                     state.mode = ePM_DECODE;
@@ -345,7 +448,12 @@ int main(int argc, char* argv[])
         }
     }
 
-    if (state.verbose || !noLogo)
+    if (!inFileName || !outFileName)
+    {
+        needHelp = true;
+    }
+
+    if (state.verbose || !noLogo || needHelp)
     {
         RegisterLogFunc(log);
     }
@@ -376,13 +484,14 @@ int main(int argc, char* argv[])
         CallLogFunc("    -[bB] [8-15]: \tThe block size shift.\n");
         CallLogFunc("                  \tIf not defined, the block size will be calculated based on the number of channels and the sample rate.\n");
         CallLogFunc("    -[fF]:        \tDisable noise shaping. Only used for compression.\n");
+        CallLogFunc("    -[rR] freq:   \tResamples input data to the target frequency.\n");
         CallLogFunc("\n");
         CallLogFunc("Decompression options:\n");
         CallLogFunc("    -[dD]:        \tDecompress the input file into the output file.\n");
         CallLogFunc("\n");
         CallLogFunc("Example: amc -c -4 -b 12 input_pcm.wav output_adpcm.ams\n");
         CallLogFunc("\n");
-        
+
         return EXIT_SUCCESS;
     }
 
