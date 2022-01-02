@@ -128,7 +128,6 @@ set(SA_SOURCE
 
     src/Core/Drivers/MiniAudio/Driver.cpp
     src/Core/Drivers/MiniAudio/Driver.h
-    src/Core/Drivers/MiniAudio/miniaudio.h
 
     src/Core/Bus.cpp
     src/Core/BusInternalState.cpp
@@ -213,6 +212,19 @@ set(SA_SOURCE
 
     src/Utils/Audio/Compression/ADPCM/ADPCM.cpp
     src/Utils/Audio/Compression/ADPCM/ADPCM.h
+    src/Utils/Audio/Resampling/CDSPBlockConvolver.h
+    src/Utils/Audio/Resampling/CDSPFIRFilter.h
+    src/Utils/Audio/Resampling/CDSPFracInterpolator.h
+    src/Utils/Audio/Resampling/CDSPHBDownsampler.h
+    src/Utils/Audio/Resampling/CDSPHBUpsampler.h
+    src/Utils/Audio/Resampling/CDSPProcessor.h
+    src/Utils/Audio/Resampling/CDSPRealFFT.h
+    src/Utils/Audio/Resampling/CDSPResampler.h
+    src/Utils/Audio/Resampling/CDSPSincFilterGen.h
+    src/Utils/Audio/Resampling/r8bbase.cpp
+    src/Utils/Audio/Resampling/r8bbase.h
+    src/Utils/Audio/Resampling/r8bconf.h
+    src/Utils/Audio/Resampling/r8butil.h
     src/Utils/Freeverb/AllPass.cpp
     src/Utils/Freeverb/AllPass.h
     src/Utils/Freeverb/Comb.cpp
@@ -221,6 +233,8 @@ set(SA_SOURCE
     src/Utils/Freeverb/ReverbModel.cpp
     src/Utils/Freeverb/ReverbModel.h
     src/Utils/Freeverb/tuning.h
+    src/Utils/miniaudio/miniaudio.cpp
+    src/Utils/miniaudio/miniaudio.h
     src/Utils/pffft/simd/pf_avx_double.h
     src/Utils/pffft/simd/pf_double.h
     src/Utils/pffft/simd/pf_neon_double_from_avx.h
