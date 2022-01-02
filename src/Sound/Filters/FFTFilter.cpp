@@ -37,7 +37,7 @@ namespace SparkyStudios::Audio::Amplitude
 
     FFTFilterInstance::~FFTFilterInstance()
     {
-        amMemory->Free(MemoryPoolKind::Filtering, _temp);
+        pffftd_aligned_free(_temp);
 
         delete[] _inputBuffer;
         delete[] _mixBuffer;
@@ -47,7 +47,7 @@ namespace SparkyStudios::Audio::Amplitude
 
     void FFTFilterInstance::InitFFT()
     {
-        _temp = static_cast<AmReal64*>(amMemory->Malign(MemoryPoolKind::Filtering, STFT_WINDOW_SIZE, AM_SIMD_ALIGNMENT));
+        _temp = static_cast<AmReal64*>(pffftd_aligned_malloc(STFT_WINDOW_SIZE));
 
         _inputBuffer = nullptr;
         _mixBuffer = nullptr;
