@@ -73,7 +73,7 @@ namespace SparkyStudios::Audio::Amplitude
     }
 
     void BassBoostFilterInstance::ProcessFFTChannel(
-        AmReal32Buffer buffer, AmUInt16 channel, AmUInt64 frames, AmUInt16 channels, AmUInt32 sampleRate)
+        AmReal64Buffer buffer, AmUInt16 channel, AmUInt64 frames, AmUInt16 channels, AmUInt32 sampleRate)
     {
         Comp2MagPhase(buffer, 2);
 

@@ -312,7 +312,7 @@ namespace SparkyStudios::Audio::Amplitude
         if (_parent->_stream)
         {
             SoundChunk* chunk = SoundChunk::CreateChunk(512, channels);
-            SoundData* data = SoundData::CreateMusic(_parent->m_format, chunk, this);
+            SoundData* data = SoundData::CreateMusic(_parent->m_format, chunk, frames, this);
 
             if (!data)
             {
@@ -350,7 +350,7 @@ namespace SparkyStudios::Audio::Amplitude
                 }
             }
 
-            SoundData* data = SoundData::CreateSound(_parent->m_format, chunk, this);
+            SoundData* data = SoundData::CreateSound(_parent->m_format, chunk, frames, this);
 
             if (!data)
             {
@@ -413,11 +413,11 @@ namespace SparkyStudios::Audio::Amplitude
             {
             case AM_SAMPLE_INTERLEAVED:
                 _effectInstance->GetFilter()->ProcessInterleaved(
-                    reinterpret_cast<AmInt16Buffer>(data->chunk->buffer), frames, data->chunk->length, channels, sampleRate);
+                    reinterpret_cast<AmInt16Buffer>(data->chunk->buffer), r, data->chunk->length, channels, sampleRate);
                 break;
             case AM_SAMPLE_NON_INTERLEAVED:
                 _effectInstance->GetFilter()->Process(
-                    reinterpret_cast<AmInt16Buffer>(data->chunk->buffer), frames, data->chunk->length, channels, sampleRate);
+                    reinterpret_cast<AmInt16Buffer>(data->chunk->buffer), r, data->chunk->length, channels, sampleRate);
                 break;
             default:
                 CallLogFunc("Could not load a sound instance. A bad sound data interleave type was encountered.\n");

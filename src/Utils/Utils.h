@@ -23,6 +23,10 @@
 #include <simdpp/simd.h>
 #endif // defined(AM_SSE_INTRINSICS)
 
+#define AM_LCG_M 2147483647
+#define AM_LCG_A 48271
+#define AM_LCG_C 0
+
 namespace SparkyStudios::Audio::Amplitude
 {
 #if defined(AM_SSE_INTRINSICS)
@@ -32,6 +36,18 @@ namespace SparkyStudios::Audio::Amplitude
 #endif
 
     typedef AudioDataUnit* AudioBuffer;
+
+    static struct
+    {
+        AmInt32 state;
+    } gLCG = { 4321 };
+
+    static AM_INLINE(float) AmDitherReal32(const AmReal32 ditherMin, const AmReal32 ditherMax)
+    {
+        gLCG.state = (AM_LCG_A * gLCG.state + AM_LCG_C) % AM_LCG_M;
+        AmReal32 x = gLCG.state / (double)0x7FFFFFFF;
+        return ditherMin + x * (ditherMax - ditherMin);
+    }
 
     static AM_INLINE(AmInt32) AmFloatToFixedPoint(const AmReal32 x)
     {
@@ -55,9 +71,17 @@ namespace SparkyStudios::Audio::Amplitude
         return y;
     }
 
-    static AM_INLINE(AmInt16) AmReal32ToInt16(const AmReal32 x)
+    static AM_INLINE(AmInt16) AmReal32ToInt16(const AmReal32 x, bool dithering = false)
     {
-        AmReal32 y = AM_CLAMP(x, -1.0f, 1.0f);
+        AmReal32 y = x;
+
+        if (dithering)
+        {
+            // Performs a rectangular dithering
+            y += AmDitherReal32(1.0f / INT16_MIN, 1.0f / INT16_MAX);
+        }
+
+        y = AM_CLAMP(x, -1.0f, 1.0f);
 
 #if defined(AM_ACCURATE_CONVERSION)
         // The accurate way.

@@ -37,6 +37,11 @@
 #include <SparkyStudios/Audio/Amplitude/Sound/Switch.h>
 #include <SparkyStudios/Audio/Amplitude/Sound/SwitchContainer.h>
 
+/**
+ * @brief Macro to get the current Amplitude engine instance.
+ */
+#define amEngine SparkyStudios::Audio::Amplitude::Engine::GetInstance()
+
 namespace SparkyStudios::Audio::Amplitude
 {
     struct EngineConfigDefinition;

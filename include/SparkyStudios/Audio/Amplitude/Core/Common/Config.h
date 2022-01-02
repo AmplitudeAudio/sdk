@@ -67,4 +67,7 @@
 // 1) Mono, 2) Stereo, 4) Quad, 6) 5.1, 8) 7.1
 #define AM_MAX_CHANNELS 8
 
+// Instructs miniaudio to use stdint.h
+#define MA_USE_STDINT
+
 #endif // SS_AMPLITUDE_AUDIO_CONFIG_H

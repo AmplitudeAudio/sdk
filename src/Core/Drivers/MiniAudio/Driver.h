@@ -17,7 +17,7 @@
 
 #include <SparkyStudios/Audio/Amplitude/Amplitude.h>
 
-#include "miniaudio.h"
+#include <Utils/miniaudio/miniaudio.h>
 
 namespace SparkyStudios::Audio::Amplitude::Drivers
 {

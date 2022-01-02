@@ -27,6 +27,7 @@ namespace SparkyStudios::Audio::Amplitude
     {
         AmUInt64 length;
         AmUInt64 frames;
+        AmSize size;
 
         AudioBuffer buffer;
 
@@ -42,8 +43,8 @@ namespace SparkyStudios::Audio::Amplitude
         SoundFormat format;
         bool stream;
 
-        static SoundData* CreateMusic(const SoundFormat& format, SoundChunk* chunk, AmVoidPtr userData);
-        static SoundData* CreateSound(const SoundFormat& format, SoundChunk* chunk, AmVoidPtr userData);
+        static SoundData* CreateMusic(const SoundFormat& format, SoundChunk* chunk, AmUInt64 frames, AmVoidPtr userData);
+        static SoundData* CreateSound(const SoundFormat& format, SoundChunk* chunk, AmUInt64 frames, AmVoidPtr userData);
 
         void Destroy();
     };

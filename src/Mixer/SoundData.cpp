@@ -38,16 +38,19 @@ namespace SparkyStudios::Audio::Amplitude
     SoundChunk* SoundChunk::CreateChunk(AmUInt64 frames, AmUInt16 channels)
     {
 #if defined(AM_SSE_INTRINSICS)
-        AmUInt64 alignedLength = AM_VALUE_ALIGN(frames * channels, AudioDataUnit::length);
+        const AmUInt64 alignedLength = AM_VALUE_ALIGN(frames * channels, AudioDataUnit::length);
+        const AmUInt64 alignedFrames = AM_VALUE_ALIGN(frames, AudioDataUnit::length);
 #else
-        AmUInt64 alignedLength = frames * channels;
+        const AmUInt64 alignedLength = frames * channels;
+        const AmUInt64 alignedFrames = frames;
 #endif // AM_SSE_INTRINSICS
 
         auto* chunk = new SoundChunk();
 
-        chunk->frames = frames;
+        chunk->frames = alignedFrames;
         chunk->length = alignedLength;
-        chunk->buffer = static_cast<AudioBuffer>(amMemory->Malign(MemoryPoolKind::SoundData, alignedLength * sizeof(AmInt16), AM_SIMD_ALIGNMENT));
+        chunk->size = alignedLength * sizeof(AmInt16);
+        chunk->buffer = static_cast<AudioBuffer>(amMemory->Malign(MemoryPoolKind::SoundData, chunk->size, AM_SIMD_ALIGNMENT));
 
         return chunk;
     }
@@ -58,14 +61,14 @@ namespace SparkyStudios::Audio::Amplitude
         amMemory->Free(MemoryPoolKind::SoundData, chunk->buffer);
     }
 
-    SoundData* SoundData::CreateMusic(const SoundFormat& format, SoundChunk* chunk, AmVoidPtr userData)
+    SoundData* SoundData::CreateMusic(const SoundFormat& format, SoundChunk* chunk, AmUInt64 frames, AmVoidPtr userData)
     {
-        return CreateSoundData(format, chunk, userData, format.GetFramesCount(), true);
+        return CreateSoundData(format, chunk, userData, frames, true);
     }
 
-    SoundData* SoundData::CreateSound(const SoundFormat& format, SoundChunk* chunk, AmVoidPtr userData)
+    SoundData* SoundData::CreateSound(const SoundFormat& format, SoundChunk* chunk, AmUInt64 frames, AmVoidPtr userData)
     {
-        return CreateSoundData(format, chunk, userData, format.GetFramesCount(), false);
+        return CreateSoundData(format, chunk, userData, frames, false);
     }
 
     void SoundData::Destroy()
