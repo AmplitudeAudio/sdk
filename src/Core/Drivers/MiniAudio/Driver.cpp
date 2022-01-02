@@ -12,12 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#define MINIAUDIO_IMPLEMENTATION
-#define MA_NO_DECODING
-#define MA_NO_ENCODING
-#define NOMINMAX
-#include "miniaudio.h"
-
 #include <SparkyStudios/Audio/Amplitude/Amplitude.h>
 
 #include <Core/Drivers/MiniAudio/Driver.h>
@@ -82,7 +76,8 @@ namespace SparkyStudios::Audio::Amplitude::Drivers
             }
 
             m_mixer->PostInit(
-                _device.playback.internalPeriodSizeInFrames, _device.playback.internalSampleRate, static_cast<AmUInt16>(_device.playback.internalChannels));
+                _device.playback.internalPeriodSizeInFrames, _device.playback.internalSampleRate,
+                static_cast<AmUInt16>(_device.playback.internalChannels));
         }
 
         if (ma_device_is_started(&_device) == MA_FALSE && ma_device_start(&_device) != MA_SUCCESS)
