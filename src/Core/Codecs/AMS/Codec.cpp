@@ -20,7 +20,7 @@ namespace SparkyStudios::Audio::Amplitude::Codecs
 {
     static void little_endian_to_native(void* data, const char* format)
     {
-        const char* i = format;
+        char* i = const_cast<char*>(format);
         unsigned char* cp = (unsigned char*)data;
         AmInt32 temp;
 
@@ -47,13 +47,13 @@ namespace SparkyStudios::Audio::Amplitude::Codecs
                 break;
             }
 
-            i = format + 1;
+            i += 1;
         }
     }
 
     static void native_to_little_endian(void* data, const char* format)
     {
-        const char* i = format;
+        char* i = const_cast<char*>(format);
         unsigned char* cp = (unsigned char*)data;
         AmInt32 temp;
 
@@ -82,7 +82,7 @@ namespace SparkyStudios::Audio::Amplitude::Codecs
                 break;
             }
 
-            i = format + 1;
+            i += 1;
         }
     }
 
