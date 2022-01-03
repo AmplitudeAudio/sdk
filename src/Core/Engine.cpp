@@ -1442,6 +1442,22 @@ namespace SparkyStudios::Audio::Amplitude
         }
     }
 
+    Listener Engine::GetListener(AmListenerID id)
+    {
+        if (const auto findIt = std::find_if(
+                _state->listener_state_memory.begin(), _state->listener_state_memory.end(),
+                [&id](const ListenerInternalState& state)
+                {
+                    return state.GetId() == id;
+                });
+            findIt != _state->listener_state_memory.end())
+        {
+            return Listener(&*findIt);
+        }
+
+        return Listener(nullptr);
+    }
+
     void Engine::RemoveListener(AmListenerID id)
     {
         if (const auto findIt = std::find_if(
@@ -1493,6 +1509,22 @@ namespace SparkyStudios::Audio::Amplitude
             _state->entity_list.push_back(*entity);
             return Entity(entity);
         }
+    }
+
+    Entity Engine::GetEntity(AmEntityID id)
+    {
+        if (const auto findIt = std::find_if(
+                _state->entity_state_memory.begin(), _state->entity_state_memory.end(),
+                [&id](const EntityInternalState& state)
+                {
+                    return state.GetId() == id;
+                });
+            findIt != _state->entity_state_memory.end())
+        {
+            return Entity(&*findIt);
+        }
+
+        return Entity(nullptr);
     }
 
     void Engine::RemoveEntity(const Entity* entity)

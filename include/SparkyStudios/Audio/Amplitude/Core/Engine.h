@@ -445,6 +445,16 @@ namespace SparkyStudios::Audio::Amplitude
         Listener AddListener(AmListenerID id);
 
         /**
+         * @brief Return the Listener with the given ID.
+         *
+         * @param id The game Listener ID.
+         *
+         * @return An initialized Listener if that one has been registered before,
+         * otherwise an unitialized Listener.
+         */
+        Listener GetListener(AmListenerID id);
+
+        /**
          * @brief Remove a Listener given its ID.
          *
          * @param id The ID of the Listener to be removed.
@@ -466,6 +476,16 @@ namespace SparkyStudios::Audio::Amplitude
          * @return An initialized Entity.
          */
         Entity AddEntity(AmEntityID id);
+
+        /**
+         * @brief Return the Entity with the given ID.
+         *
+         * @param id The game Entity ID.
+         *
+         * @return An initialized Entity if that one has been registered before,
+         * otherwise an unitialized Entity.
+         */
+        Entity GetEntity(AmEntityID id);
 
         /**
          * @brief Remove an Entity.
