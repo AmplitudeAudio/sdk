@@ -28,6 +28,7 @@ namespace SparkyStudios::Audio::Amplitude
         , _name()
         , _minValue(0.0)
         , _maxValue(1.0)
+        , _defValue(0.0)
         , _faderAttack(nullptr)
         , _faderRelease(nullptr)
         , _refCounter()
@@ -57,6 +58,7 @@ namespace SparkyStudios::Audio::Amplitude
 
         _minValue = definition->min_value();
         _maxValue = definition->max_value();
+        _defValue = definition->default_value();
 
         if (definition->fade_settings() && definition->fade_settings()->enabled())
         {
@@ -137,6 +139,16 @@ namespace SparkyStudios::Audio::Amplitude
         }
     }
 
+    AmReal64 Rtpc::GetDefaultValue() const
+    {
+        return _defValue;
+    }
+
+    void Rtpc::Reset()
+    {
+        SetValue(_defValue);
+    }
+
     RefCounter* Rtpc::GetRefCounter()
     {
         return &_refCounter;
@@ -169,10 +181,9 @@ namespace SparkyStudios::Audio::Amplitude
         , _rtpc(nullptr)
         , _curve(nullptr)
     {
-        Engine* engine = Engine::GetInstance();
         if (definition->kind() == ValueKind_RTPC)
         {
-            _rtpc = engine->GetRtpcHandle(definition->rtpc()->id());
+            _rtpc = amEngine->GetRtpcHandle(definition->rtpc()->id());
 
             if (_rtpc == nullptr)
             {
