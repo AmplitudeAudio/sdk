@@ -34,6 +34,37 @@ enum PlaybackOutputFormat : ushort {
   Float32 = 5,
 }
 
+/// Defines how the engine should fetch for the best listener.
+enum ListenerFetchMode : ushort {
+  /// Do not fetch for listeners. This mute all audio, but keeps processing data.
+  None = 0,
+
+  /// Fetches for the nearest listener to the currently processed sound. This imply
+  /// that different listeners can be returned for different sounds.
+  Nearest,
+
+  /// Fetches for the farest listener to the currently processed sound. This imply
+  /// that different listeners can be returned for different sounds.
+  Farest,
+
+  /// Fetches for the default listener set by the engine. This ensures
+  /// that only one listener is used everytime.
+  ///
+  /// The default listener should be set using Engine::SetDefaultListener().
+  /// If no listener is set to default, the behavior is the same as ListenerFetchMode::None.
+  /// If the listener set as default is next removed, the behavior will be the same as
+  /// ListenerFetchMode::None, until another default listener is set.
+  Default,
+
+  /// Fetches for the first available listener. This ensures
+  /// that only one listener is used everytime.
+  First,
+
+  /// Fetches for the last available listener. This ensures
+  /// that only one listener is used everytime.
+  Last,
+}
+
 // Playback device configuration
 table PlaybackOutputConfig {
   // Output sampling frequency in samples per second.
@@ -61,6 +92,18 @@ table AudioMixerConfig {
   virtual_channels:uint;
 }
 
+/// Game synchronization configuration
+table GameSyncConfig {
+  /// Defines how the engine should fetch the best listener for an audio.
+  listener_fetch_mode:ListenerFetchMode = Nearest;
+
+  /// The number of listeners to allocate.
+  listeners:uint = 1;
+
+  /// The number of entities to allocate.
+  entities:uint = 4096;
+}
+
 table EngineConfigDefinition {
   // Configures the playback device.
   output:PlaybackOutputConfig;
@@ -68,11 +111,8 @@ table EngineConfigDefinition {
   // Configures the audio mixer.
   mixer:AudioMixerConfig;
 
-  // The number of listeners to allocate.
-  listeners:uint = 1;
-
-  // The number of entities to allocate.
-  entities:uint = 4096;
+  /// Configures the game sync.
+  game:GameSyncConfig;
 
   // The location of the buses definition file.
   buses_file:string;
@@ -87,4 +127,3 @@ root_type EngineConfigDefinition;
 
 file_identifier "AMEC";
 file_extension "amconfig";
-

@@ -436,6 +436,29 @@ namespace SparkyStudios::Audio::Amplitude
         void Pause(bool pause);
 
         /**
+         * @brief Sets the default sound listener.
+         *
+         * @param listener A valid and initialized Listener instance.
+         */
+        void SetDefaultListener(const Listener* listener);
+
+        /**
+         * @brief Sets the default sound listener.
+         *
+         * @param id A valid Listener ID.
+         */
+        void SetDefaultListener(AmListenerID id);
+
+        /**
+         * @brief Returns a Listener object storing the state of the default
+         * audio listener.
+         *
+         * @return An initialized Listener object if a default listener was set,
+         * otherwise an unitialized Listener object.
+         */
+        [[nodiscard]] Listener GetDefaultListener();
+
+        /**
          * @brief Initialize and return a Listener.
          *
          * @param id The game Listener ID.
@@ -1034,6 +1057,9 @@ namespace SparkyStudios::Audio::Amplitude
 
         // The current state of the engine.
         EngineInternalState* _state;
+
+        // The default audio listener
+        ListenerInternalState* _defaultListener;
 
         // The file loader implementation
         FileLoader _loader;

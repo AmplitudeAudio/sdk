@@ -297,10 +297,10 @@ namespace SparkyStudios::Audio::Amplitude
             config->mixer()->virtual_channels(), config->mixer()->active_channels());
 
         // Initialize the listener internal data.
-        InitializeListenerFreeList(&_state->listener_state_free_list, &_state->listener_state_memory, config->listeners());
+        InitializeListenerFreeList(&_state->listener_state_free_list, &_state->listener_state_memory, config->game()->listeners());
 
         // Initialize the entity internal data.
-        InitializeEntityFreeList(&_state->entity_state_free_list, &_state->entity_state_memory, config->entities());
+        InitializeEntityFreeList(&_state->entity_state_free_list, &_state->entity_state_memory, config->game()->entities());
 
         // Load the audio buses.
         std::filesystem::path busesFilePath = _loader.ResolvePath(config->buses_file()->c_str());
@@ -346,6 +346,9 @@ namespace SparkyStudios::Audio::Amplitude
                 return false;
             }
         }
+
+        // Set the listener fetch mode
+        _state->listener_fetch_mode = config->game()->listener_fetch_mode();
 
         _state->paused = false;
         _state->mute = false;
@@ -560,27 +563,89 @@ namespace SparkyStudios::Audio::Amplitude
         float* distanceSquared,
         hmm_vec3* listenerSpaceLocation,
         const ListenerList& listeners,
-        const hmm_vec3& location)
+        const hmm_vec3& location,
+        ListenerFetchMode fetchMode)
     {
         if (listeners.empty())
         {
             return false;
         }
 
-        auto listener = listeners.cbegin();
-        const hmm_mat4& mat = listener->GetInverseMatrix();
-        *listenerSpaceLocation = AM_Multiply(mat, AM_Vec4v(location, 1.0f)).XYZ;
-        *distanceSquared = AM_LengthSquared(*listenerSpaceLocation);
-        *bestListener = listener;
-        for (++listener; listener != listeners.cend(); ++listener)
+        switch (fetchMode)
         {
-            const hmm_vec3 transformedLocation = AM_Multiply(listener->GetInverseMatrix(), AM_Vec4v(location, 1.0f)).XYZ;
-            if (const float magnitudeSquared = AM_LengthSquared(transformedLocation); magnitudeSquared < *distanceSquared)
+        default:
+            [[fallthrough]];
+        case ListenerFetchMode_None:
+            return false;
+
+        case ListenerFetchMode_Nearest:
+            [[fallthrough]];
+        case ListenerFetchMode_Farest:
             {
+                auto listener = listeners.cbegin();
+                const hmm_mat4& mat = listener->GetInverseMatrix();
+                *listenerSpaceLocation = AM_Multiply(mat, AM_Vec4v(location, 1.0f)).XYZ;
+                *distanceSquared = AM_LengthSquared(*listenerSpaceLocation);
                 *bestListener = listener;
-                *distanceSquared = magnitudeSquared;
-                *listenerSpaceLocation = transformedLocation;
+
+                for (++listener; listener != listeners.cend(); ++listener)
+                {
+                    const hmm_vec3 transformedLocation = AM_Multiply(listener->GetInverseMatrix(), AM_Vec4v(location, 1.0f)).XYZ;
+                    if (const float magnitudeSquared = AM_LengthSquared(transformedLocation);
+                        fetchMode == ListenerFetchMode_Nearest ? magnitudeSquared < *distanceSquared : magnitudeSquared > *distanceSquared)
+                    {
+                        *bestListener = listener;
+                        *distanceSquared = magnitudeSquared;
+                        *listenerSpaceLocation = transformedLocation;
+                    }
+                }
             }
+            break;
+
+        case ListenerFetchMode_First:
+            {
+                auto listener = listeners.cbegin();
+                const hmm_mat4& mat = listener->GetInverseMatrix();
+                *listenerSpaceLocation = AM_Multiply(mat, AM_Vec4v(location, 1.0f)).XYZ;
+                *distanceSquared = AM_LengthSquared(*listenerSpaceLocation);
+                *bestListener = listener;
+            }
+            break;
+
+        case ListenerFetchMode_Last:
+            {
+                auto listener = listeners.cend();
+                const hmm_mat4& mat = listener->GetInverseMatrix();
+                *listenerSpaceLocation = AM_Multiply(mat, AM_Vec4v(location, 1.0f)).XYZ;
+                *distanceSquared = AM_LengthSquared(*listenerSpaceLocation);
+                *bestListener = listener;
+            }
+            break;
+
+        case ListenerFetchMode_Default:
+            {
+                ListenerInternalState* state = Engine::GetInstance()->GetDefaultListener().GetState();
+                if (state == nullptr)
+                {
+                    return false;
+                }
+
+                auto listener = listeners.cbegin();
+                for (; listener != listeners.cend(); ++listener)
+                {
+                    if (listener->GetId() == state->GetId())
+                    {
+                        const hmm_mat4& mat = state->GetInverseMatrix();
+                        *listenerSpaceLocation = AM_Multiply(mat, AM_Vec4v(location, 1.0f)).XYZ;
+                        *distanceSquared = AM_LengthSquared(*listenerSpaceLocation);
+                        *bestListener = listener;
+                        return true;
+                    }
+                }
+
+                return false;
+            }
+            break;
         }
 
         return true;
@@ -607,7 +672,8 @@ namespace SparkyStudios::Audio::Amplitude
         const Entity& entity,
         const hmm_vec3& location,
         const ListenerList& listeners,
-        const float userGain)
+        const float userGain,
+        ListenerFetchMode fetchMode)
     {
         *gain = soundGain * bus->GetGain() * userGain;
         if (spatialization == Spatialization_Position || spatialization == Spatialization_PositionOrientation)
@@ -615,7 +681,7 @@ namespace SparkyStudios::Audio::Amplitude
             ListenerList::const_iterator listener;
             float distanceSquared;
             hmm_vec3 listenerSpaceLocation;
-            if (BestListener(&listener, &distanceSquared, &listenerSpaceLocation, listeners, location))
+            if (BestListener(&listener, &distanceSquared, &listenerSpaceLocation, listeners, location, fetchMode))
             {
                 if (attenuation != nullptr)
                 {
@@ -1415,6 +1481,36 @@ namespace SparkyStudios::Audio::Amplitude
         return _state->mute;
     }
 
+    void Engine::SetDefaultListener(const Listener* listener)
+    {
+        if (listener->Valid())
+        {
+            _defaultListener = listener->GetState();
+        }
+    }
+
+    void Engine::SetDefaultListener(AmListenerID id)
+    {
+        if (id != kAmInvalidObjectId)
+        {
+            if (const auto findIt = std::find_if(
+                    _state->listener_state_memory.begin(), _state->listener_state_memory.end(),
+                    [&id](const ListenerInternalState& state)
+                    {
+                        return state.GetId() == id;
+                    });
+                findIt != _state->listener_state_memory.end())
+            {
+                _defaultListener = (&*findIt);
+            }
+        }
+    }
+
+    Listener Engine::GetDefaultListener()
+    {
+        return Listener(_defaultListener);
+    }
+
     Listener Engine::AddListener(AmListenerID id)
     {
         if (_state->listener_state_free_list.empty())
@@ -1617,7 +1713,7 @@ namespace SparkyStudios::Audio::Amplitude
             CalculateGainAndPan(
                 &gain, &pan, switchContainer->GetGain().GetValue(), switchContainer->GetBus(), definition->spatialization(),
                 switchContainer->GetAttenuation(), channel->GetEntity(), channel->GetLocation(), state->listener_list,
-                channel->GetUserGain());
+                channel->GetUserGain(), state->listener_fetch_mode);
             channel->SetGain(gain);
             channel->SetPan(pan);
         }
@@ -1629,7 +1725,8 @@ namespace SparkyStudios::Audio::Amplitude
             hmm_vec2 pan;
             CalculateGainAndPan(
                 &gain, &pan, collection->GetGain().GetValue(), collection->GetBus(), definition->spatialization(),
-                collection->GetAttenuation(), channel->GetEntity(), channel->GetLocation(), state->listener_list, channel->GetUserGain());
+                collection->GetAttenuation(), channel->GetEntity(), channel->GetLocation(), state->listener_list, channel->GetUserGain(),
+                state->listener_fetch_mode);
             channel->SetGain(gain);
             channel->SetPan(pan);
         }
@@ -1641,7 +1738,7 @@ namespace SparkyStudios::Audio::Amplitude
             hmm_vec2 pan;
             CalculateGainAndPan(
                 &gain, &pan, sound->GetGain().GetValue(), sound->GetBus(), definition->spatialization(), sound->GetAttenuation(),
-                channel->GetEntity(), channel->GetLocation(), state->listener_list, channel->GetUserGain());
+                channel->GetEntity(), channel->GetLocation(), state->listener_list, channel->GetUserGain(), state->listener_fetch_mode);
             channel->SetGain(gain);
             channel->SetPan(pan);
         }
@@ -1821,7 +1918,7 @@ namespace SparkyStudios::Audio::Amplitude
         hmm_vec2 pan;
         CalculateGainAndPan(
             &gain, &pan, handle->GetGain().GetValue(), handle->GetBus(), definition->spatialization(), handle->GetAttenuation(), entity,
-            location, _state->listener_list, userGain);
+            location, _state->listener_list, userGain, _state->listener_fetch_mode);
         const float priority = gain * handle->GetPriority().GetValue();
         const auto insertionPoint = FindInsertionPoint(&_state->playing_channel_list, priority);
 
@@ -1888,7 +1985,7 @@ namespace SparkyStudios::Audio::Amplitude
         hmm_vec2 pan;
         CalculateGainAndPan(
             &gain, &pan, handle->GetGain().GetValue(), handle->GetBus(), definition->spatialization(), handle->GetAttenuation(), entity,
-            location, _state->listener_list, userGain);
+            location, _state->listener_list, userGain, _state->listener_fetch_mode);
         const float priority = gain * handle->GetPriority().GetValue();
         const auto insertionPoint = FindInsertionPoint(&_state->playing_channel_list, priority);
 
@@ -1954,7 +2051,7 @@ namespace SparkyStudios::Audio::Amplitude
         hmm_vec2 pan;
         CalculateGainAndPan(
             &gain, &pan, handle->GetGain().GetValue(), handle->GetBus(), definition->spatialization(), handle->GetAttenuation(), entity,
-            location, _state->listener_list, userGain);
+            location, _state->listener_list, userGain, _state->listener_fetch_mode);
         const float priority = gain * handle->GetPriority().GetValue();
         const auto insertionPoint = FindInsertionPoint(&_state->playing_channel_list, priority);
 

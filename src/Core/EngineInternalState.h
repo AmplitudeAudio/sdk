@@ -125,6 +125,7 @@ namespace SparkyStudios::Audio::Amplitude
             , current_frame(0)
             , total_time(0.0)
             , version(nullptr)
+            , listener_fetch_mode(ListenerFetchMode_None)
         {}
 
         Mixer mixer;
@@ -232,6 +233,8 @@ namespace SparkyStudios::Audio::Amplitude
         AmTime total_time;
 
         const struct Version* version;
+
+        ListenerFetchMode listener_fetch_mode;
     };
 
     /**
