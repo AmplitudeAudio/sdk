@@ -363,8 +363,7 @@ namespace SparkyStudios::Audio::Amplitude
         _state->stopping = true;
 
         // Auto deinitialize loaded sound banks
-        for (const auto& item : _state->sound_bank_map)
-            item.second->Deinitialize(this);
+        UnloadSoundBanks();
 
         delete _state;
         _state = nullptr;
@@ -542,9 +541,9 @@ namespace SparkyStudios::Audio::Amplitude
 
     void Engine::UnloadSoundBanks()
     {
-        for (auto&& soundbank : _state->sound_bank_id_map)
+        for (const auto& item : _state->sound_bank_map)
         {
-            UnloadSoundBank(soundbank.second);
+            item.second->Deinitialize(this);
         }
     }
 
