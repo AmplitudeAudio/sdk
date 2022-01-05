@@ -50,7 +50,7 @@ namespace SparkyStudios::Audio::Amplitude
 
         /**
          * @brief Encoding/Decoding allocations.
-         * 
+         *
          */
         Codec,
 
@@ -140,6 +140,33 @@ namespace SparkyStudios::Audio::Amplitude
     };
 
     /**
+     * @brief Collects the statistics about the memory allocations
+     * for a specific pool
+     */
+    struct MemoryPoolStats
+    {
+        /**
+         * @brief The pool for which this statistics is for.
+         */
+        MemoryPoolKind pool;
+
+        /**
+         * @brief The maximum total memory used by this pool.
+         */
+        AmSize maxMemoryUsed;
+
+        /**
+         * @brief The total count of allocations made on this pool.
+         */
+        AmUInt32 allocCount;
+
+        /**
+         * @brief The total count of frees made on this pool.
+         */
+        AmUInt32 freeCount;
+    };
+
+    /**
      * @brief Manages memory allocations inside the engine.
      */
     class MemoryManager
@@ -159,7 +186,7 @@ namespace SparkyStudios::Audio::Amplitude
 
         /**
          * @brief Checks whether the memory manager is initialized.
-         * 
+         *
          * @return Whether the memory manager is initialized.
          */
         static bool IsInitialized();
@@ -204,6 +231,15 @@ namespace SparkyStudios::Audio::Amplitude
          * @brief Gets the size of the given memory block.
          */
         AmSize SizeOf(MemoryPoolKind pool, AmVoidPtr address);
+
+#if !defined(AM_NO_MEMORY_STATS)
+        /**
+         * @brief Returns the memory allocation statistics for the given pool.
+         * 
+         * @param pool The pool to get the statistics for.
+         */
+        [[nodiscard]] const MemoryPoolStats& GetStats(MemoryPoolKind pool) const;
+#endif
 
     private:
         MemoryManager(MemoryManagerConfig config);

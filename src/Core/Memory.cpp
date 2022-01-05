@@ -25,6 +25,10 @@ namespace SparkyStudios::Audio::Amplitude
 
     static std::map<MemoryPoolKind, std::set<AmVoidPtr>> gMemPoolsData = {};
 
+#if !defined(AM_NO_MEMORY_STATS)
+    static std::map<MemoryPoolKind, MemoryPoolStats> gMemPoolsStats = {};
+#endif
+
     MemoryManagerConfig::MemoryManagerConfig()
         : malloc(nullptr)
         , realloc(nullptr)
@@ -83,7 +87,7 @@ namespace SparkyStudios::Audio::Amplitude
 
     MemoryManager::~MemoryManager()
     {
-        if (_config.malloc == nullptr)
+        if (gMemAllocator != nullptr)
         {
             _sm_allocator_destroy(gMemAllocator);
         }
@@ -91,6 +95,11 @@ namespace SparkyStudios::Audio::Amplitude
 
     AmVoidPtr MemoryManager::Malloc(MemoryPoolKind pool, AmSize size)
     {
+#if !defined(AM_NO_MEMORY_STATS)
+        gMemPoolsStats[pool].maxMemoryUsed += size;
+        gMemPoolsStats[pool].allocCount++;
+#endif
+
         if (_config.malloc != nullptr)
         {
             return _config.malloc(pool, size);
@@ -105,6 +114,11 @@ namespace SparkyStudios::Audio::Amplitude
 
     AmVoidPtr MemoryManager::Malign(MemoryPoolKind pool, AmSize size, AmUInt32 alignment)
     {
+#if !defined(AM_NO_MEMORY_STATS)
+        gMemPoolsStats[pool].maxMemoryUsed += size;
+        gMemPoolsStats[pool].allocCount++;
+#endif
+
         if (_config.alignedMalloc != nullptr)
         {
             return _config.alignedMalloc(pool, size, alignment);
@@ -155,6 +169,11 @@ namespace SparkyStudios::Audio::Amplitude
 
     void MemoryManager::Free(MemoryPoolKind pool, AmVoidPtr address)
     {
+#if !defined(AM_NO_MEMORY_STATS)
+        gMemPoolsStats[pool].maxMemoryUsed;
+        gMemPoolsStats[pool].allocCount--;
+#endif
+
         if (_config.free != nullptr)
         {
             _config.free(pool, address);
@@ -201,4 +220,11 @@ namespace SparkyStudios::Audio::Amplitude
             return _sm_msize(gMemAllocator, address);
         }
     }
+
+#if !defined(AM_NO_MEMORY_STATS)
+    const MemoryPoolStats& MemoryManager::GetStats(MemoryPoolKind pool) const
+    {
+        return gMemPoolsStats[pool];
+    }
+#endif
 } // namespace SparkyStudios::Audio::Amplitude
