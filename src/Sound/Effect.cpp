@@ -17,6 +17,7 @@
 #include <Core/EngineInternalState.h>
 
 #include <Sound/Filters/BassBoostFilter.h>
+#include <Sound/Filters/BiquadResonantFilter.h>
 #include <Sound/Filters/EchoFilter.h>
 #include <Sound/Filters/EqualizerFilter.h>
 #include <Sound/Filters/FlangerFilter.h>
@@ -85,6 +86,10 @@ namespace SparkyStudios::Audio::Amplitude
 
         case EffectKind_Robotize:
             _filter = new RobotizeFilter();
+            break;
+
+        case EffectKind_BiquadResonant:
+            _filter = new BiquadResonantFilter();
             break;
 
         default:
@@ -169,6 +174,12 @@ namespace SparkyStudios::Audio::Amplitude
         : _parent(parent)
     {
         _filterInstance = parent->_filter->CreateInstance();
+
+        // First initialization of filter parameters
+        for (AmUInt32 i = 0; i < _parent->_parameters.size(); ++i)
+        {
+            _filterInstance->SetFilterParameter(i, _parent->_parameters[i].GetValue());
+        }
     }
 
     EffectInstance::~EffectInstance()
