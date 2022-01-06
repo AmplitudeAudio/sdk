@@ -42,9 +42,12 @@ namespace SparkyStudios::Audio::Amplitude
 
     Sound::~Sound()
     {
-        _decoder->Close();
-        delete _decoder;
-        _decoder = nullptr;
+        if (_decoder != nullptr)
+        {
+            _decoder->Close();
+            delete _decoder;
+            _decoder = nullptr;
+        }
 
         _bus = nullptr;
         _effect = nullptr;
@@ -338,11 +341,11 @@ namespace SparkyStudios::Audio::Amplitude
                 {
                 case AM_SAMPLE_INTERLEAVED:
                     _effectInstance->GetFilter()->ProcessInterleaved(
-                        reinterpret_cast<AmInt16Buffer>(chunk->buffer), chunk->frames, chunk->length, channels, sampleRate);
+                        reinterpret_cast<AmInt16Buffer>(chunk->buffer), frames, frames * channels, channels, sampleRate);
                     break;
                 case AM_SAMPLE_NON_INTERLEAVED:
                     _effectInstance->GetFilter()->Process(
-                        reinterpret_cast<AmInt16Buffer>(chunk->buffer), chunk->frames, chunk->length, channels, sampleRate);
+                        reinterpret_cast<AmInt16Buffer>(chunk->buffer), frames, frames * channels, channels, sampleRate);
                     break;
                 default:
                     CallLogFunc("Could not load a sound instance. A bad sound data interleave type was encountered.\n");
@@ -413,11 +416,11 @@ namespace SparkyStudios::Audio::Amplitude
             {
             case AM_SAMPLE_INTERLEAVED:
                 _effectInstance->GetFilter()->ProcessInterleaved(
-                    reinterpret_cast<AmInt16Buffer>(data->chunk->buffer), r, data->chunk->length, channels, sampleRate);
+                    reinterpret_cast<AmInt16Buffer>(data->chunk->buffer), r, r * channels, channels, sampleRate);
                 break;
             case AM_SAMPLE_NON_INTERLEAVED:
                 _effectInstance->GetFilter()->Process(
-                    reinterpret_cast<AmInt16Buffer>(data->chunk->buffer), r, data->chunk->length, channels, sampleRate);
+                    reinterpret_cast<AmInt16Buffer>(data->chunk->buffer), r, r * channels, channels, sampleRate);
                 break;
             default:
                 CallLogFunc("Could not load a sound instance. A bad sound data interleave type was encountered.\n");
