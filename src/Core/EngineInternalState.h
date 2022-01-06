@@ -126,6 +126,7 @@ namespace SparkyStudios::Audio::Amplitude
             , total_time(0.0)
             , version(nullptr)
             , listener_fetch_mode(ListenerFetchMode_None)
+            , up_axis(GameEngineUpAxis_Y)
         {}
 
         Mixer mixer;
@@ -232,9 +233,13 @@ namespace SparkyStudios::Audio::Amplitude
         // The total elapsed time since the start of the game.
         AmTime total_time;
 
-        const struct Version* version;
-
+        // The way Amplitude should fetch the best listener for an audio source.
         ListenerFetchMode listener_fetch_mode;
+
+        // The up axis of the game engine.
+        GameEngineUpAxis up_axis;
+
+        const struct Version* version;
     };
 
     /**
@@ -243,8 +248,8 @@ namespace SparkyStudios::Audio::Amplitude
      */
     void EraseFinishedSounds(EngineInternalState* state);
 
-    // Find a bus with the given ID.
     BusInternalState* FindBusInternalState(EngineInternalState* state, AmBusID id);
+    // Find a bus with the given ID.
 
     // Find a bus with the given name.
     BusInternalState* FindBusInternalState(EngineInternalState* state, AmString id);

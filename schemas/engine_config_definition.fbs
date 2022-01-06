@@ -65,6 +65,17 @@ enum ListenerFetchMode : ushort {
   Last,
 }
 
+/// Specifies which axis is the up axis in the game engine.
+/// This is used in Amplitude to align with game 3D environment when computing
+/// spatialized values like the attenuation.
+enum GameEngineUpAxis : ushort {
+  /// The Y axis.
+  Y = 0,
+
+  /// The Z axis.
+  Z = 1,
+}
+
 // Playback device configuration
 table PlaybackOutputConfig {
   // Output sampling frequency in samples per second.
@@ -102,6 +113,9 @@ table GameSyncConfig {
 
   /// The number of entities to allocate.
   entities:uint = 4096;
+
+  /// The up axis of the game engine.
+  up_axis:GameEngineUpAxis = Y;
 }
 
 table EngineConfigDefinition {

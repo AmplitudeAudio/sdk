@@ -13,7 +13,11 @@
 // limitations under the License.
 
 #include <Sound/AttenuationShapes.h>
+
+#include <SparkyStudios/Audio/Amplitude/Core/Engine.h>
 #include <SparkyStudios/Audio/Amplitude/Core/Log.h>
+
+#include <Core/EngineInternalState.h>
 
 namespace SparkyStudios::Audio::Amplitude
 {
@@ -178,19 +182,39 @@ namespace SparkyStudios::Audio::Amplitude
 
         const hmm_vec3& x = listener->GetLocation();
 
-        hmm_vec3 iP1 = AM_Multiply(lookAt, AM_Vec4(-_innerHalfWidth, -_innerHalfHeight, -_innerHalfDepth, 1.0f)).XYZ;
-        hmm_vec3 iP2 = AM_Multiply(lookAt, AM_Vec4(-_innerHalfWidth, -_innerHalfHeight, _innerHalfDepth, 1.0f)).XYZ;
-        hmm_vec3 iP3 = AM_Multiply(lookAt, AM_Vec4(_innerHalfWidth, -_innerHalfHeight, -_innerHalfDepth, 1.0f)).XYZ;
-        hmm_vec3 iP4 = AM_Multiply(lookAt, AM_Vec4(-_innerHalfWidth, _innerHalfHeight, -_innerHalfDepth, 1.0f)).XYZ;
+        hmm_vec3 iP1, iP2, iP3, iP4, oP1, oP2, oP3, oP4;
+
+        switch (amEngine->GetState()->up_axis)
+        {
+        default:
+        case GameEngineUpAxis_Y:
+            iP1 = AM_Multiply(lookAt, AM_Vec4(-_innerHalfWidth, -_innerHalfHeight, -_innerHalfDepth, 1.0f)).XYZ;
+            iP2 = AM_Multiply(lookAt, AM_Vec4(-_innerHalfWidth, -_innerHalfHeight, _innerHalfDepth, 1.0f)).XYZ;
+            iP3 = AM_Multiply(lookAt, AM_Vec4(_innerHalfWidth, -_innerHalfHeight, -_innerHalfDepth, 1.0f)).XYZ;
+            iP4 = AM_Multiply(lookAt, AM_Vec4(-_innerHalfWidth, _innerHalfHeight, -_innerHalfDepth, 1.0f)).XYZ;
+
+            oP1 = AM_Multiply(lookAt, AM_Vec4(-_outerHalfWidth, -_outerHalfHeight, -_outerHalfDepth, 1.0f)).XYZ;
+            oP2 = AM_Multiply(lookAt, AM_Vec4(-_outerHalfWidth, -_outerHalfHeight, _outerHalfDepth, 1.0f)).XYZ;
+            oP3 = AM_Multiply(lookAt, AM_Vec4(_outerHalfWidth, -_outerHalfHeight, -_outerHalfDepth, 1.0f)).XYZ;
+            oP4 = AM_Multiply(lookAt, AM_Vec4(-_outerHalfWidth, _outerHalfHeight, -_outerHalfDepth, 1.0f)).XYZ;
+            break;
+
+        case GameEngineUpAxis_Z:
+            iP1 = AM_Multiply(lookAt, AM_Vec4(-_innerHalfWidth, -_innerHalfDepth, -_innerHalfHeight, 1.0f)).XYZ;
+            iP2 = AM_Multiply(lookAt, AM_Vec4(-_innerHalfWidth, _innerHalfDepth, -_innerHalfHeight, 1.0f)).XYZ;
+            iP3 = AM_Multiply(lookAt, AM_Vec4(_innerHalfWidth, -_innerHalfDepth, -_innerHalfHeight, 1.0f)).XYZ;
+            iP4 = AM_Multiply(lookAt, AM_Vec4(-_innerHalfWidth, -_innerHalfDepth, _innerHalfHeight, 1.0f)).XYZ;
+
+            oP1 = AM_Multiply(lookAt, AM_Vec4(-_outerHalfWidth, -_outerHalfDepth, -_outerHalfHeight, 1.0f)).XYZ;
+            oP2 = AM_Multiply(lookAt, AM_Vec4(-_outerHalfWidth, _outerHalfDepth, -_outerHalfHeight, 1.0f)).XYZ;
+            oP3 = AM_Multiply(lookAt, AM_Vec4(_outerHalfWidth, -_outerHalfDepth, -_outerHalfHeight, 1.0f)).XYZ;
+            oP4 = AM_Multiply(lookAt, AM_Vec4(-_outerHalfWidth, -_outerHalfDepth, _outerHalfHeight, 1.0f)).XYZ;
+            break;
+        }
 
         hmm_vec3 iU = AM_Normalize(iP2 - iP1);
         hmm_vec3 iV = AM_Normalize(iP3 - iP1);
         hmm_vec3 iW = AM_Normalize(iP4 - iP1);
-
-        hmm_vec3 oP1 = AM_Multiply(lookAt, AM_Vec4(-_outerHalfWidth, -_outerHalfHeight, -_outerHalfDepth, 1.0f)).XYZ;
-        hmm_vec3 oP2 = AM_Multiply(lookAt, AM_Vec4(-_outerHalfWidth, -_outerHalfHeight, _outerHalfDepth, 1.0f)).XYZ;
-        hmm_vec3 oP3 = AM_Multiply(lookAt, AM_Vec4(_outerHalfWidth, -_outerHalfHeight, -_outerHalfDepth, 1.0f)).XYZ;
-        hmm_vec3 oP4 = AM_Multiply(lookAt, AM_Vec4(-_outerHalfWidth, _outerHalfHeight, -_outerHalfDepth, 1.0f)).XYZ;
 
         hmm_vec3 oU = AM_Normalize(oP2 - oP1);
         hmm_vec3 oV = AM_Normalize(oP3 - oP1);
@@ -263,11 +287,27 @@ namespace SparkyStudios::Audio::Amplitude
         const float innerHalfHeight = _innerHalfHeight - _innerRadius;
         const float outerHalfHeight = _outerHalfHeight - _outerRadius;
 
-        hmm_vec3 iA = AM_Multiply(lookAt, AM_Vec4(0.0f, innerHalfHeight, 0.0f, 1.0f)).XYZ;
-        hmm_vec3 iB = AM_Multiply(lookAt, AM_Vec4(0.0f, -innerHalfHeight, 0.0f, 1.0f)).XYZ;
+        hmm_vec3 iA, iB, oA, oB;
 
-        hmm_vec3 oA = AM_Multiply(lookAt, AM_Vec4(0.0f, outerHalfHeight, 0.0f, 1.0f)).XYZ;
-        hmm_vec3 oB = AM_Multiply(lookAt, AM_Vec4(0.0f, -outerHalfHeight, 0.0f, 1.0f)).XYZ;
+        switch (amEngine->GetState()->up_axis)
+        {
+        default:
+        case GameEngineUpAxis_Y:
+            iA = AM_Multiply(lookAt, AM_Vec4(0.0f, innerHalfHeight, 0.0f, 1.0f)).XYZ;
+            iB = AM_Multiply(lookAt, AM_Vec4(0.0f, -innerHalfHeight, 0.0f, 1.0f)).XYZ;
+
+            oA = AM_Multiply(lookAt, AM_Vec4(0.0f, outerHalfHeight, 0.0f, 1.0f)).XYZ;
+            oB = AM_Multiply(lookAt, AM_Vec4(0.0f, -outerHalfHeight, 0.0f, 1.0f)).XYZ;
+            break;
+
+        case GameEngineUpAxis_Z:
+            iA = AM_Multiply(lookAt, AM_Vec4(0.0f, 0.0f, innerHalfHeight, 1.0f)).XYZ;
+            iB = AM_Multiply(lookAt, AM_Vec4(0.0f, 0.0f, -innerHalfHeight, 1.0f)).XYZ;
+
+            oA = AM_Multiply(lookAt, AM_Vec4(0.0f, 0.0f, outerHalfHeight, 1.0f)).XYZ;
+            oB = AM_Multiply(lookAt, AM_Vec4(0.0f, 0.0f, -outerHalfHeight, 1.0f)).XYZ;
+            break;
+        }
 
         hmm_vec3 iE = iB - iA;
         hmm_vec3 iM = AM_Cross(iA, iB);

@@ -350,6 +350,9 @@ namespace SparkyStudios::Audio::Amplitude
         // Set the listener fetch mode
         _state->listener_fetch_mode = config->game()->listener_fetch_mode();
 
+        // Set the game engine up axis
+        _state->up_axis = config->game()->up_axis();
+
         _state->paused = false;
         _state->mute = false;
         _state->master_gain = 1.0f;
@@ -658,7 +661,16 @@ namespace SparkyStudios::Audio::Amplitude
         }
 
         const hmm_vec3 direction = AM_Normalize(listenerSpaceLocation);
-        return AM_Vec2(AM_Dot(AM_Vec3(1, 0, 0), direction), AM_Dot(AM_Vec3(0, 0, 1), direction));
+
+        switch (amEngine->GetState()->up_axis)
+        {
+        default:
+        case GameEngineUpAxis_Y:
+            return AM_Vec2(AM_Dot(AM_Vec3(1, 0, 0), direction), AM_Dot(AM_Vec3(0, 0, 1), direction));
+
+        case GameEngineUpAxis_Z:
+            return AM_Vec2(AM_Dot(AM_Vec3(1, 0, 0), direction), AM_Dot(AM_Vec3(0, 1, 0), direction));
+        }
     }
 
     static void CalculateGainAndPan(
