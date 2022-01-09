@@ -41,6 +41,11 @@
 #include <Core/Drivers/MiniAudio/Driver.h>
 #pragma endregion
 
+#pragma region Default Sound Processors
+#include <Mixer/SoundProcessors/EffectProcessor.h>
+#include <Mixer/SoundProcessors/PassThroughProcessor.h>
+#pragma endregion
+
 namespace SparkyStudios::Audio::Amplitude
 {
     typedef flatbuffers::Vector<uint64_t> BusIdList;
@@ -251,9 +256,10 @@ namespace SparkyStudios::Audio::Amplitude
 
     bool Engine::Initialize(const EngineConfigDefinition* config)
     {
-        // Lock drivers and codecs registry
+        // Lock drivers, codecs and processors registries
         Driver::LockRegistry();
         Codec::LockRegistry();
+        SoundProcessor::LockRegistry();
 
         // Create the internal engine state
         _state = new EngineInternalState();
