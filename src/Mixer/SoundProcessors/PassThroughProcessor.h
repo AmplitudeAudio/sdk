@@ -39,7 +39,7 @@ namespace SparkyStudios::Audio::Amplitude
         {
             if (out != in)
             {
-                memcpy(out, in, bufferSize * sizeof(AmInt16));
+                memcpy(out, in, bufferSize);
             }
         }
 
@@ -54,7 +54,7 @@ namespace SparkyStudios::Audio::Amplitude
         {
             if (out != in)
             {
-                memcpy(out, in, bufferSize * sizeof(AmInt16));
+                memcpy(out, in, bufferSize);
             }
         }
     } gPassThroughProcessor; // NOLINT(cert-err58-cpp)
