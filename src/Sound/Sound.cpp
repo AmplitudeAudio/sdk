@@ -470,4 +470,9 @@ namespace SparkyStudios::Audio::Amplitude
     {
         return _currentLoopCount;
     }
+
+    const EffectInstance* SoundInstance::GetEffect() const
+    {
+        return _effectInstance;
+    }
 } // namespace SparkyStudios::Audio::Amplitude
