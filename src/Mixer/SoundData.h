@@ -31,7 +31,9 @@ namespace SparkyStudios::Audio::Amplitude
 
         AudioBuffer buffer;
 
-        static SoundChunk* CreateChunk(AmUInt64 frames, AmUInt16 channels);
+        MemoryPoolKind memoryPool;
+
+        static SoundChunk* CreateChunk(AmUInt64 frames, AmUInt16 channels, MemoryPoolKind pool = MemoryPoolKind::SoundData);
         static void DestroyChunk(SoundChunk* chunk);
     };
 
