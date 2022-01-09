@@ -142,10 +142,17 @@ namespace SparkyStudios::Audio::Amplitude
 
         for (AmUInt64 i = 0, l = frames * channels; i < l; i++)
         {
-            // clang-format off
-            out[i] = (dryOut[i] * AmFloatToFixedPoint(_dry) >> kAmFixedPointShift) + ((wetOut[i] - dryOut[i]) * AmFloatToFixedPoint(_wet) >> kAmFixedPointShift);
-            out[i] = AM_CLAMP(out[i], INT16_MIN, INT16_MAX);
-            // clang-format on
+            if (dryOut[i] != wetOut[i])
+            {
+                // clang-format off
+                out[i] = (dryOut[i] * AmFloatToFixedPoint(_dry) >> kAmFixedPointShift) + ((wetOut[i] - dryOut[i]) * AmFloatToFixedPoint(_wet) >> kAmFixedPointShift);
+                out[i] = AM_CLAMP(out[i], INT16_MIN, INT16_MAX);
+                // clang-format on
+            }
+            else
+            {
+                out[i] = AM_CLAMP(dryOut[i] * AmFloatToFixedPoint(_dry) >> kAmFixedPointShift, INT16_MIN, INT16_MAX);
+            }
         }
 
         amMemory->Free(MemoryPoolKind::Amplimix, dryOut);
@@ -191,7 +198,7 @@ namespace SparkyStudios::Audio::Amplitude
             }
             else
             {
-                out[i] = AM_CLAMP(dryOut[i], INT16_MIN, INT16_MAX);
+                out[i] = AM_CLAMP(dryOut[i] * AmFloatToFixedPoint(_dry) >> kAmFixedPointShift, INT16_MIN, INT16_MAX);
             }
         }
 
