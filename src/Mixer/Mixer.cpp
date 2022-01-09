@@ -105,21 +105,21 @@ namespace SparkyStudios::Audio::Amplitude
                 case AudioMixerPipelineItem_AudioProcessorMixer:
                     {
                         const AudioProcessorMixer* p = pipeline->GetAs<AudioProcessorMixer>(i);
-                        SoundProcessor* dryProcessor = SoundProcessor::Find(p->dry_processor()->c_str());
-                        SoundProcessor* wetProcessor = SoundProcessor::Find(p->wet_processor()->c_str());
+                        SoundProcessor* dryProcessor = SoundProcessor::Find(p->dry_processor()->str());
+                        SoundProcessor* wetProcessor = SoundProcessor::Find(p->wet_processor()->str());
 
                         if (dryProcessor == nullptr)
                         {
                             CallLogFunc(
                                 "[WARNING] Unable to find a registered sound processor with name: %s\n", p->dry_processor()->c_str());
-                            return false;
+                            continue;
                         }
 
                         if (wetProcessor == nullptr)
                         {
                             CallLogFunc(
                                 "[WARNING] Unable to find a registered sound processor with name: %s\n", p->wet_processor()->c_str());
-                            return false;
+                            continue;
                         }
 
                         ProcessorMixer* mixer = new ProcessorMixer();
@@ -133,11 +133,11 @@ namespace SparkyStudios::Audio::Amplitude
                 case AudioMixerPipelineItem_AudioSoundProcessor:
                     {
                         const AudioSoundProcessor* p = pipeline->GetAs<AudioSoundProcessor>(i);
-                        SoundProcessor* soundProcessor = SoundProcessor::Find(p->processor()->c_str());
+                        SoundProcessor* soundProcessor = SoundProcessor::Find(p->processor()->str());
                         if (soundProcessor == nullptr)
                         {
                             CallLogFunc("[WARNING] Unable to find a registered sound processor with name: %s\n", p->processor()->c_str());
-                            return false;
+                            continue;
                         }
 
                         _pipeline->Append(soundProcessor);
