@@ -579,6 +579,8 @@ namespace SparkyStudios::Audio::Amplitude
             return false;
         }
 
+        const hmm_vec4 location4 = AM_Vec4v(location, 1.0f);
+
         switch (fetchMode)
         {
         default:
@@ -591,14 +593,13 @@ namespace SparkyStudios::Audio::Amplitude
         case ListenerFetchMode_Farest:
             {
                 auto listener = listeners.cbegin();
-                const hmm_mat4& mat = listener->GetInverseMatrix();
-                *listenerSpaceLocation = AM_Multiply(mat, AM_Vec4v(location, 1.0f)).XYZ;
+                *listenerSpaceLocation = AM_Multiply(listener->GetInverseMatrix(), location4).XYZ;
                 *distanceSquared = AM_LengthSquared(*listenerSpaceLocation);
                 *bestListener = listener;
 
                 for (++listener; listener != listeners.cend(); ++listener)
                 {
-                    const hmm_vec3 transformedLocation = AM_Multiply(listener->GetInverseMatrix(), AM_Vec4v(location, 1.0f)).XYZ;
+                    const hmm_vec3 transformedLocation = AM_Multiply(listener->GetInverseMatrix(), location4).XYZ;
                     if (const float magnitudeSquared = AM_LengthSquared(transformedLocation);
                         fetchMode == ListenerFetchMode_Nearest ? magnitudeSquared < *distanceSquared : magnitudeSquared > *distanceSquared)
                     {
@@ -614,7 +615,7 @@ namespace SparkyStudios::Audio::Amplitude
             {
                 auto listener = listeners.cbegin();
                 const hmm_mat4& mat = listener->GetInverseMatrix();
-                *listenerSpaceLocation = AM_Multiply(mat, AM_Vec4v(location, 1.0f)).XYZ;
+                *listenerSpaceLocation = AM_Multiply(mat, location4).XYZ;
                 *distanceSquared = AM_LengthSquared(*listenerSpaceLocation);
                 *bestListener = listener;
             }
@@ -624,7 +625,7 @@ namespace SparkyStudios::Audio::Amplitude
             {
                 auto listener = listeners.cend();
                 const hmm_mat4& mat = listener->GetInverseMatrix();
-                *listenerSpaceLocation = AM_Multiply(mat, AM_Vec4v(location, 1.0f)).XYZ;
+                *listenerSpaceLocation = AM_Multiply(mat, location4).XYZ;
                 *distanceSquared = AM_LengthSquared(*listenerSpaceLocation);
                 *bestListener = listener;
             }
@@ -639,12 +640,13 @@ namespace SparkyStudios::Audio::Amplitude
                 }
 
                 auto listener = listeners.cbegin();
+
                 for (; listener != listeners.cend(); ++listener)
                 {
                     if (listener->GetId() == state->GetId())
                     {
                         const hmm_mat4& mat = state->GetInverseMatrix();
-                        *listenerSpaceLocation = AM_Multiply(mat, AM_Vec4v(location, 1.0f)).XYZ;
+                        *listenerSpaceLocation = AM_Multiply(mat, location4).XYZ;
                         *distanceSquared = AM_LengthSquared(*listenerSpaceLocation);
                         *bestListener = listener;
                         return true;
