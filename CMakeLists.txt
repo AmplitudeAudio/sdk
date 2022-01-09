@@ -158,8 +158,12 @@ set(SA_SOURCE
     src/Math/Curve.cpp
     src/Math/HMM_Impl.cpp
 
+    src/Mixer/SoundProcessors/EffectProcessor.h
+    src/Mixer/SoundProcessors/PassThroughProcessor.h
     src/Mixer/Mixer.cpp
     src/Mixer/Mixer.h
+    src/Mixer/ProcessorPipeline.cpp
+    src/Mixer/ProcessorPipeline.h
     src/Mixer/RealChannel.cpp
     src/Mixer/RealChannel.h
     src/Mixer/SoundData.cpp
