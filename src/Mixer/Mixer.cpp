@@ -773,47 +773,51 @@ namespace SparkyStudios::Audio::Amplitude
         }
 
         // Process pipeline
-        SoundChunk* out = layer->snd->chunk;
-        if (_pipeline != nullptr)
+        SoundChunk* out = nullptr;
+        if (_pipeline == nullptr)
         {
-            const AmUInt16 channels = layer->snd->format.GetNumChannels();
-            const AmUInt64 sampleRate = layer->snd->format.GetSampleRate();
-
-            SoundChunk* in = SoundChunk::CreateChunk(samples, channels, MemoryPoolKind::Amplimix);
-            out = SoundChunk::CreateChunk(samples, channels, MemoryPoolKind::Amplimix);
-
-            if (const AmUInt64 remaining = layer->snd->chunk->frames - cursor; remaining < in->frames)
-            {
-                const AmUInt64 size = remaining * layer->snd->format.GetFrameSize();
-                memcpy(in->buffer, &layer->snd->chunk->buffer[offset], size);
-                memcpy(reinterpret_cast<AmInt16Buffer>(in->buffer) + (remaining * channels), layer->snd->chunk->buffer, in->size - size);
-            }
-            else
-            {
-                memcpy(in->buffer, &layer->snd->chunk->buffer[offset], in->size);
-            }
-
-            memcpy(out->buffer, in->buffer, out->size);
-
-            switch (layer->snd->format.GetInterleaveType())
-            {
-            case AM_SAMPLE_INTERLEAVED:
-                _pipeline->ProcessInterleaved(
-                    reinterpret_cast<AmInt16Buffer>(out->buffer), reinterpret_cast<AmInt16Buffer>(in->buffer), samples, out->size, channels,
-                    sampleRate, static_cast<SoundInstance*>(layer->snd->userData));
-                break;
-            case AM_SAMPLE_NON_INTERLEAVED:
-                _pipeline->Process(
-                    reinterpret_cast<AmInt16Buffer>(out->buffer), reinterpret_cast<AmInt16Buffer>(in->buffer), samples, out->size, channels,
-                    sampleRate, static_cast<SoundInstance*>(layer->snd->userData));
-                break;
-            default:
-                CallLogFunc("[WARNING] A bad sound data interleave type was encountered.\n");
-                break;
-            }
-
-            SoundChunk::DestroyChunk(in);
+            CallLogFunc("[WARNING] No active pipeline is set, this means no sound will be rendered. You should configure the Amplimix "
+                        "pipeline in your engine configuration file.\n");
+            return old;
         }
+
+        const AmUInt16 channels = layer->snd->format.GetNumChannels();
+        const AmUInt64 sampleRate = layer->snd->format.GetSampleRate();
+
+        SoundChunk* in = SoundChunk::CreateChunk(samples, channels, MemoryPoolKind::Amplimix);
+        out = SoundChunk::CreateChunk(samples, channels, MemoryPoolKind::Amplimix);
+
+        if (const AmUInt64 remaining = layer->snd->chunk->frames - cursor; remaining < in->frames)
+        {
+            const AmUInt64 size = remaining * layer->snd->format.GetFrameSize();
+            memcpy(in->buffer, &layer->snd->chunk->buffer[offset], size);
+            memcpy(reinterpret_cast<AmInt16Buffer>(in->buffer) + (remaining * channels), layer->snd->chunk->buffer, in->size - size);
+        }
+        else
+        {
+            memcpy(in->buffer, &layer->snd->chunk->buffer[offset], in->size);
+        }
+
+        memcpy(out->buffer, in->buffer, out->size);
+
+        switch (layer->snd->format.GetInterleaveType())
+        {
+        case AM_SAMPLE_INTERLEAVED:
+            _pipeline->ProcessInterleaved(
+                reinterpret_cast<AmInt16Buffer>(out->buffer), reinterpret_cast<AmInt16Buffer>(in->buffer), samples, out->size, channels,
+                sampleRate, static_cast<SoundInstance*>(layer->snd->userData));
+            break;
+        case AM_SAMPLE_NON_INTERLEAVED:
+            _pipeline->Process(
+                reinterpret_cast<AmInt16Buffer>(out->buffer), reinterpret_cast<AmInt16Buffer>(in->buffer), samples, out->size, channels,
+                sampleRate, static_cast<SoundInstance*>(layer->snd->userData));
+            break;
+        default:
+            CallLogFunc("[WARNING] A bad sound data interleave type was encountered.\n");
+            break;
+        }
+
+        SoundChunk::DestroyChunk(in);
 
         // regular playback
         for (AmUInt64 i = 0; i < bufferSize; i += 2)
@@ -862,11 +866,7 @@ namespace SparkyStudios::Audio::Amplitude
         if (!AMPLIMIX_CSWAP(&layer->cursor, &old, cursor))
             cursor = old;
 
-        // Clean pipeline buffer if any
-        if (_pipeline != nullptr)
-        {
-            SoundChunk::DestroyChunk(out);
-        }
+        SoundChunk::DestroyChunk(out);
 
         // return new cursor
         return cursor;
@@ -898,47 +898,51 @@ namespace SparkyStudios::Audio::Amplitude
         }
 
         // Process pipeline
-        SoundChunk* out = layer->snd->chunk;
-        if (_pipeline != nullptr)
+        SoundChunk* out = nullptr;
+        if (_pipeline == nullptr)
         {
-            const AmUInt16 channels = layer->snd->format.GetNumChannels();
-            const AmUInt64 sampleRate = layer->snd->format.GetSampleRate();
-
-            SoundChunk* in = SoundChunk::CreateChunk(samples, channels, MemoryPoolKind::Amplimix);
-            out = SoundChunk::CreateChunk(samples, channels, MemoryPoolKind::Amplimix);
-
-            if (const AmUInt64 remaining = layer->snd->chunk->frames - cursor; remaining < in->frames)
-            {
-                const AmUInt64 size = remaining * layer->snd->format.GetFrameSize();
-                memcpy(in->buffer, &layer->snd->chunk->buffer[offset], size);
-                memcpy(reinterpret_cast<AmInt16Buffer>(in->buffer) + (remaining * channels), layer->snd->chunk->buffer, in->size - size);
-            }
-            else
-            {
-                memcpy(in->buffer, &layer->snd->chunk->buffer[offset], in->size);
-            }
-
-            memcpy(out->buffer, in->buffer, out->size);
-
-            switch (layer->snd->format.GetInterleaveType())
-            {
-            case AM_SAMPLE_INTERLEAVED:
-                _pipeline->ProcessInterleaved(
-                    reinterpret_cast<AmInt16Buffer>(out->buffer), reinterpret_cast<AmInt16Buffer>(in->buffer), samples, out->size, channels,
-                    sampleRate, static_cast<SoundInstance*>(layer->snd->userData));
-                break;
-            case AM_SAMPLE_NON_INTERLEAVED:
-                _pipeline->Process(
-                    reinterpret_cast<AmInt16Buffer>(out->buffer), reinterpret_cast<AmInt16Buffer>(in->buffer), samples, out->size, channels,
-                    sampleRate, static_cast<SoundInstance*>(layer->snd->userData));
-                break;
-            default:
-                CallLogFunc("[WARNING] A bad sound data interleave type was encountered.\n");
-                break;
-            }
-
-            SoundChunk::DestroyChunk(in);
+            CallLogFunc("[WARNING] No active pipeline is set, this means no sound will be rendered. You should configure the Amplimix "
+                        "pipeline in your engine configuration file.\n");
+            return old;
         }
+
+        const AmUInt16 channels = layer->snd->format.GetNumChannels();
+        const AmUInt64 sampleRate = layer->snd->format.GetSampleRate();
+
+        SoundChunk* in = SoundChunk::CreateChunk(samples, channels, MemoryPoolKind::Amplimix);
+        out = SoundChunk::CreateChunk(samples, channels, MemoryPoolKind::Amplimix);
+
+        if (const AmUInt64 remaining = layer->snd->chunk->frames - cursor; remaining < in->frames)
+        {
+            const AmUInt64 size = remaining * layer->snd->format.GetFrameSize();
+            memcpy(in->buffer, &layer->snd->chunk->buffer[offset], size);
+            memcpy(reinterpret_cast<AmInt16Buffer>(in->buffer) + (remaining * channels), layer->snd->chunk->buffer, in->size - size);
+        }
+        else
+        {
+            memcpy(in->buffer, &layer->snd->chunk->buffer[offset], in->size);
+        }
+
+        memcpy(out->buffer, in->buffer, out->size);
+
+        switch (layer->snd->format.GetInterleaveType())
+        {
+        case AM_SAMPLE_INTERLEAVED:
+            _pipeline->ProcessInterleaved(
+                reinterpret_cast<AmInt16Buffer>(out->buffer), reinterpret_cast<AmInt16Buffer>(in->buffer), samples, out->size, channels,
+                sampleRate, static_cast<SoundInstance*>(layer->snd->userData));
+            break;
+        case AM_SAMPLE_NON_INTERLEAVED:
+            _pipeline->Process(
+                reinterpret_cast<AmInt16Buffer>(out->buffer), reinterpret_cast<AmInt16Buffer>(in->buffer), samples, out->size, channels,
+                sampleRate, static_cast<SoundInstance*>(layer->snd->userData));
+            break;
+        default:
+            CallLogFunc("[WARNING] A bad sound data interleave type was encountered.\n");
+            break;
+        }
+
+        SoundChunk::DestroyChunk(in);
 
         // regular playback
         for (AmUInt64 i = 0; i < bufferSize; i += 2)
@@ -986,10 +990,7 @@ namespace SparkyStudios::Audio::Amplitude
             cursor = old;
 
         // Clean pipeline buffer if any
-        if (_pipeline != nullptr)
-        {
-            SoundChunk::DestroyChunk(out);
-        }
+        SoundChunk::DestroyChunk(out);
 
         // return new cursor
         return cursor;
