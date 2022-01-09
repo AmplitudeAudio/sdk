@@ -86,6 +86,7 @@ namespace SparkyStudios::Audio::Amplitude
         , _state(nullptr)
         , _audioDriver(nullptr)
         , _loader()
+        , _defaultListener(nullptr)
     {}
 
     Engine::~Engine()
