@@ -344,6 +344,14 @@ namespace SparkyStudios::Audio::Amplitude
          */
         [[nodiscard]] AmUInt32 GetCurrentLoopCount() const;
 
+        /**
+         * @brief Gets the effect applied to this SoundInstance, if any.
+         * 
+         * @return An EffectInstance object if an effect was applied to the sound which have
+         * generated this SoundInstance, or nullptr otherwise.
+         */
+        [[nodiscard]] const EffectInstance* GetEffect() const;
+
     private:
         AmVoidPtr _userData;
 

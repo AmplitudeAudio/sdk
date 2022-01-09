@@ -35,7 +35,7 @@ namespace SparkyStudios::Audio::Amplitude
         return sound;
     }
 
-    SoundChunk* SoundChunk::CreateChunk(AmUInt64 frames, AmUInt16 channels)
+    SoundChunk* SoundChunk::CreateChunk(AmUInt64 frames, AmUInt16 channels, MemoryPoolKind pool)
     {
 #if defined(AM_SSE_INTRINSICS)
         const AmUInt64 alignedLength = AM_VALUE_ALIGN(frames * channels, AudioDataUnit::length);
@@ -50,7 +50,8 @@ namespace SparkyStudios::Audio::Amplitude
         chunk->frames = alignedFrames;
         chunk->length = alignedLength;
         chunk->size = alignedLength * sizeof(AmInt16);
-        chunk->buffer = static_cast<AudioBuffer>(amMemory->Malign(MemoryPoolKind::SoundData, chunk->size, AM_SIMD_ALIGNMENT));
+        chunk->memoryPool = pool;
+        chunk->buffer = static_cast<AudioBuffer>(amMemory->Malign(pool, chunk->size, AM_SIMD_ALIGNMENT));
 
         return chunk;
     }
@@ -58,7 +59,7 @@ namespace SparkyStudios::Audio::Amplitude
     void SoundChunk::DestroyChunk(SoundChunk* chunk)
     {
         // Mixer::OnSoundDestroyed(chunk);
-        amMemory->Free(MemoryPoolKind::SoundData, chunk->buffer);
+        amMemory->Free(chunk->memoryPool, chunk->buffer);
     }
 
     SoundData* SoundData::CreateMusic(const SoundFormat& format, SoundChunk* chunk, AmUInt64 frames, AmVoidPtr userData)

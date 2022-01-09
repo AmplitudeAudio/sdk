@@ -23,6 +23,7 @@
 
 #include <SparkyStudios/Audio/Amplitude/Core/Common.h>
 
+#include <Mixer/ProcessorPipeline.h>
 #include <Mixer/SoundData.h>
 #include <Utils/Utils.h>
 
@@ -161,7 +162,8 @@ namespace SparkyStudios::Audio::Amplitude
             const AudioDataUnit& lGain,
             const AudioDataUnit& rGain,
             AudioBuffer buffer,
-            const AmUInt64& bufferSize);
+            const AmUInt64& bufferSize,
+            const AmUInt64& samples);
         AmUInt64 MixStereo(
             MixerLayer* layer,
             bool loop,
@@ -169,7 +171,8 @@ namespace SparkyStudios::Audio::Amplitude
             const AudioDataUnit& lGain,
             const AudioDataUnit& rGain,
             AudioBuffer buffer,
-            const AmUInt64& bufferSize);
+            const AmUInt64& bufferSize,
+            const AmUInt64& samples);
         MixerLayer* GetLayer(AmUInt32 layer);
         bool ShouldMix(MixerLayer* layer);
         void LockAudioMutex();
@@ -194,6 +197,8 @@ namespace SparkyStudios::Audio::Amplitude
         _Atomic(float) _masterGain;
         MixerLayer _layers[kAmplimixLayersCount];
         AmUInt64 _remainingFrames;
+
+        ProcessorPipeline* _pipeline;
     };
 } // namespace SparkyStudios::Audio::Amplitude
 

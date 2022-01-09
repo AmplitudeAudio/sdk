@@ -335,24 +335,6 @@ namespace SparkyStudios::Audio::Amplitude
                 return;
             }
 
-            if (_effectInstance != nullptr)
-            {
-                switch (_parent->m_format.GetInterleaveType())
-                {
-                case AM_SAMPLE_INTERLEAVED:
-                    _effectInstance->GetFilter()->ProcessInterleaved(
-                        reinterpret_cast<AmInt16Buffer>(chunk->buffer), frames, frames * channels, channels, sampleRate);
-                    break;
-                case AM_SAMPLE_NON_INTERLEAVED:
-                    _effectInstance->GetFilter()->Process(
-                        reinterpret_cast<AmInt16Buffer>(chunk->buffer), frames, frames * channels, channels, sampleRate);
-                    break;
-                default:
-                    CallLogFunc("Could not load a sound instance. A bad sound data interleave type was encountered.\n");
-                    break;
-                }
-            }
-
             SoundData* data = SoundData::CreateSound(_parent->m_format, chunk, frames, this);
 
             if (!data)
@@ -410,24 +392,6 @@ namespace SparkyStudios::Audio::Amplitude
             }
         } while (needFill);
 
-        if (_effectInstance != nullptr)
-        {
-            switch (_parent->m_format.GetInterleaveType())
-            {
-            case AM_SAMPLE_INTERLEAVED:
-                _effectInstance->GetFilter()->ProcessInterleaved(
-                    reinterpret_cast<AmInt16Buffer>(data->chunk->buffer), r, r * channels, channels, sampleRate);
-                break;
-            case AM_SAMPLE_NON_INTERLEAVED:
-                _effectInstance->GetFilter()->Process(
-                    reinterpret_cast<AmInt16Buffer>(data->chunk->buffer), r, r * channels, channels, sampleRate);
-                break;
-            default:
-                CallLogFunc("Could not load a sound instance. A bad sound data interleave type was encountered.\n");
-                break;
-            }
-        }
-
         return r;
     }
 
@@ -469,5 +433,10 @@ namespace SparkyStudios::Audio::Amplitude
     AmUInt32 SoundInstance::GetCurrentLoopCount() const
     {
         return _currentLoopCount;
+    }
+
+    const EffectInstance* SoundInstance::GetEffect() const
+    {
+        return _effectInstance;
     }
 } // namespace SparkyStudios::Audio::Amplitude

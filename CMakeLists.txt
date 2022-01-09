@@ -102,6 +102,7 @@ set(SA_SOURCE
     include/SparkyStudios/Audio/Amplitude/Sound/Scheduler.h
     include/SparkyStudios/Audio/Amplitude/Sound/Sound.h
     include/SparkyStudios/Audio/Amplitude/Sound/SoundBank.h
+    include/SparkyStudios/Audio/Amplitude/Sound/SoundProcessor.h
     include/SparkyStudios/Audio/Amplitude/Sound/Switch.h
     include/SparkyStudios/Audio/Amplitude/Sound/SwitchContainer.h
     include/SparkyStudios/Audio/Amplitude/Amplitude.h
@@ -157,12 +158,17 @@ set(SA_SOURCE
     src/Math/Curve.cpp
     src/Math/HMM_Impl.cpp
 
+    src/Mixer/SoundProcessors/EffectProcessor.h
+    src/Mixer/SoundProcessors/PassThroughProcessor.h
     src/Mixer/Mixer.cpp
     src/Mixer/Mixer.h
+    src/Mixer/ProcessorPipeline.cpp
+    src/Mixer/ProcessorPipeline.h
     src/Mixer/RealChannel.cpp
     src/Mixer/RealChannel.h
     src/Mixer/SoundData.cpp
     src/Mixer/SoundData.h
+    src/Mixer/SoundProcessor.cpp
     
     src/Sound/Faders/ConstantFader.cpp
     src/Sound/Faders/ConstantFader.h

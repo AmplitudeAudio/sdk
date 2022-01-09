@@ -60,6 +60,7 @@ namespace SparkyStudios::Audio::Amplitude
         , _nextId(0)
         , _layers{}
         , _remainingFrames(0)
+        , _pipeline(nullptr)
     {
         AMPLIMIX_STORE(&_masterGain, masterGain);
     }
@@ -92,6 +93,59 @@ namespace SparkyStudios::Audio::Amplitude
         _requestedChannels = config->output()->channels();
 
         _audioThreadMutex = Thread::CreateMutexAm();
+
+        if (const auto* pipeline = config->mixer()->pipeline(); pipeline != nullptr && pipeline->size() > 0)
+        {
+            _pipeline = new ProcessorPipeline();
+
+            for (flatbuffers::uoffset_t i = 0; i < pipeline->size(); ++i)
+            {
+                switch (config->mixer()->pipeline_type()->Get(i))
+                {
+                case AudioMixerPipelineItem_AudioProcessorMixer:
+                    {
+                        const AudioProcessorMixer* p = pipeline->GetAs<AudioProcessorMixer>(i);
+                        SoundProcessor* dryProcessor = SoundProcessor::Find(p->dry_processor()->str());
+                        SoundProcessor* wetProcessor = SoundProcessor::Find(p->wet_processor()->str());
+
+                        if (dryProcessor == nullptr)
+                        {
+                            CallLogFunc(
+                                "[WARNING] Unable to find a registered sound processor with name: %s\n", p->dry_processor()->c_str());
+                            continue;
+                        }
+
+                        if (wetProcessor == nullptr)
+                        {
+                            CallLogFunc(
+                                "[WARNING] Unable to find a registered sound processor with name: %s\n", p->wet_processor()->c_str());
+                            continue;
+                        }
+
+                        ProcessorMixer* mixer = new ProcessorMixer();
+                        mixer->SetDryProcessor(dryProcessor, p->dry());
+                        mixer->SetWetProcessor(wetProcessor, p->wet());
+
+                        _pipeline->Append(mixer);
+                    }
+                    break;
+
+                case AudioMixerPipelineItem_AudioSoundProcessor:
+                    {
+                        const AudioSoundProcessor* p = pipeline->GetAs<AudioSoundProcessor>(i);
+                        SoundProcessor* soundProcessor = SoundProcessor::Find(p->processor()->str());
+                        if (soundProcessor == nullptr)
+                        {
+                            CallLogFunc("[WARNING] Unable to find a registered sound processor with name: %s\n", p->processor()->c_str());
+                            continue;
+                        }
+
+                        _pipeline->Append(soundProcessor);
+                    }
+                    break;
+                }
+            }
+        }
 
         _initialized = true;
 
@@ -625,14 +679,15 @@ namespace SparkyStudios::Audio::Amplitude
                 const AmUInt64 aChunkSize = readLen * numChannels;
 #endif // AM_SSE_INTRINSICS
 
-                auto* buf = reinterpret_cast<AudioBuffer>(reinterpret_cast<AmInt16*>(buffer) + (samples - c) * numChannels);
+                auto* buf = reinterpret_cast<AudioBuffer>(reinterpret_cast<AmInt16Buffer>(buffer) + (samples - c) * numChannels);
 
                 // action based on flag
                 if (flag >= PLAY_STATE_FLAG_PLAY)
                 {
                     // PLAY_STATE_FLAG_PLAY or PLAY_STATE_FLAG_LOOP, play including fade in
-                    cursor = layer->snd->format.GetNumChannels() == 1 ? MixMono(layer, loop, cursor, lGain, rGain, buf, aChunkSize)
-                                                                      : MixStereo(layer, loop, cursor, lGain, rGain, buf, aChunkSize);
+                    cursor = layer->snd->format.GetNumChannels() == 1
+                        ? MixMono(layer, loop, cursor, lGain, rGain, buf, aChunkSize, readLen)
+                        : MixStereo(layer, loop, cursor, lGain, rGain, buf, aChunkSize, readLen);
 
                     // clear flag if PLAY_STATE_FLAG_PLAY and the cursor has reached the end
                     if ((flag == PLAY_STATE_FLAG_PLAY) && (cursor == layer->end))
@@ -648,8 +703,9 @@ namespace SparkyStudios::Audio::Amplitude
             if (flag >= PLAY_STATE_FLAG_PLAY)
             {
                 // PLAY_STATE_FLAG_PLAY or PLAY_STATE_FLAG_LOOP, play including fade in
-                cursor = layer->snd->format.GetNumChannels() == 1 ? MixMono(layer, loop, cursor, lGain, rGain, buffer, bufferSize)
-                                                                  : MixStereo(layer, loop, cursor, lGain, rGain, buffer, bufferSize);
+                cursor = layer->snd->format.GetNumChannels() == 1
+                    ? MixMono(layer, loop, cursor, lGain, rGain, buffer, bufferSize, samples)
+                    : MixStereo(layer, loop, cursor, lGain, rGain, buffer, bufferSize, samples);
 
                 // clear flag if PLAY_STATE_FLAG_PLAY and the cursor has reached the end
                 if ((flag == PLAY_STATE_FLAG_PLAY) && (cursor == layer->end))
@@ -698,10 +754,70 @@ namespace SparkyStudios::Audio::Amplitude
         const AudioDataUnit& lGain,
         const AudioDataUnit& rGain,
         AudioBuffer buffer,
-        const AmUInt64& bufferSize)
+        const AmUInt64& bufferSize,
+        const AmUInt64& samples)
     {
         // cache cursor
         AmUInt64 old = cursor;
+
+        // Compute offset
+        AmUInt64 offset = 0;
+
+        if (!layer->snd->stream)
+        {
+#if defined(AM_SSE_INTRINSICS)
+            offset = (cursor % layer->snd->length) >> static_cast<AmUInt32>(std::log2(kSimdProcessedFramesCountHalf) + 1);
+#else
+            offset = (cursor % layer->snd->length);
+#endif // AM_SSE_INTRINSICS
+        }
+
+        // Process pipeline
+        SoundChunk* out = nullptr;
+        if (_pipeline == nullptr)
+        {
+            CallLogFunc("[WARNING] No active pipeline is set, this means no sound will be rendered. You should configure the Amplimix "
+                        "pipeline in your engine configuration file.\n");
+            return old;
+        }
+
+        const AmUInt16 channels = layer->snd->format.GetNumChannels();
+        const AmUInt64 sampleRate = layer->snd->format.GetSampleRate();
+
+        SoundChunk* in = SoundChunk::CreateChunk(samples, channels, MemoryPoolKind::Amplimix);
+        out = SoundChunk::CreateChunk(samples, channels, MemoryPoolKind::Amplimix);
+
+        if (const AmUInt64 remaining = layer->snd->chunk->frames - cursor; remaining < in->frames)
+        {
+            const AmUInt64 size = remaining * layer->snd->format.GetFrameSize();
+            memcpy(in->buffer, &layer->snd->chunk->buffer[offset], size);
+            memcpy(reinterpret_cast<AmInt16Buffer>(in->buffer) + (remaining * channels), layer->snd->chunk->buffer, in->size - size);
+        }
+        else
+        {
+            memcpy(in->buffer, &layer->snd->chunk->buffer[offset], in->size);
+        }
+
+        memcpy(out->buffer, in->buffer, out->size);
+
+        switch (layer->snd->format.GetInterleaveType())
+        {
+        case AM_SAMPLE_INTERLEAVED:
+            _pipeline->ProcessInterleaved(
+                reinterpret_cast<AmInt16Buffer>(out->buffer), reinterpret_cast<AmInt16Buffer>(in->buffer), samples, out->size, channels,
+                sampleRate, static_cast<SoundInstance*>(layer->snd->userData));
+            break;
+        case AM_SAMPLE_NON_INTERLEAVED:
+            _pipeline->Process(
+                reinterpret_cast<AmInt16Buffer>(out->buffer), reinterpret_cast<AmInt16Buffer>(in->buffer), samples, out->size, channels,
+                sampleRate, static_cast<SoundInstance*>(layer->snd->userData));
+            break;
+        default:
+            CallLogFunc("[WARNING] A bad sound data interleave type was encountered.\n");
+            break;
+        }
+
+        SoundChunk::DestroyChunk(in);
 
         // regular playback
         for (AmUInt64 i = 0; i < bufferSize; i += 2)
@@ -726,42 +842,15 @@ namespace SparkyStudios::Audio::Amplitude
                 }
             }
 
-            AmUInt64 off;
-
-            if (layer->snd->stream)
-            {
-                // when streaming we always fit the data buffer,
-                // otherwise something is wrong
-                off = i / 2;
-            }
-            else
-            {
-#if defined(AM_SSE_INTRINSICS)
-                off = (cursor % layer->snd->length) >> static_cast<AmUInt32>(std::log2(kSimdProcessedFramesCountHalf) + 1);
-#else
-                off = (cursor % layer->snd->length);
-#endif // AM_SSE_INTRINSICS
-            }
-
-            AudioDataUnit sample = layer->snd->chunk->buffer[off];
+            AudioDataUnit sample = out->buffer[i / 2];
 
 #if defined(AM_SSE_INTRINSICS)
-            buffer[i + 0] =
-                simdpp::add(
-                    buffer[i + 0],
-                    simdpp::to_int16(
-                        simdpp::shift_r(simdpp::mull(simdpp::zip_lo(sample, sample).eval(), lGain).eval(), kAmFixedPointShift).eval())
-                        .eval())
-                    .eval();
-            buffer[i + 1] =
-                simdpp::add(
-                    buffer[i + 1],
-                    simdpp::to_int16(
-                        simdpp::shift_r(simdpp::mull(simdpp::zip_hi(sample, sample).eval(), rGain).eval(), kAmFixedPointShift).eval())
-                        .eval())
-                    .eval();
+            buffer[i + 0] = simdpp::add(
+                buffer[i + 0], simdpp::to_int16(simdpp::shift_r(simdpp::mull(simdpp::zip_lo(sample, sample), lGain), kAmFixedPointShift)));
+            buffer[i + 1] = simdpp::add(
+                buffer[i + 1], simdpp::to_int16(simdpp::shift_r(simdpp::mull(simdpp::zip_hi(sample, sample), rGain), kAmFixedPointShift)));
 #else
-            buffer[i] += static_cast<AmInt16>((sample * lGain) >> kAmFixedPointShift);
+            buffer[i + 0] += static_cast<AmInt16>((sample * lGain) >> kAmFixedPointShift);
             buffer[i + 1] += static_cast<AmInt16>((sample * rGain) >> kAmFixedPointShift);
 #endif // AM_SSE_INTRINSICS
 
@@ -777,6 +866,8 @@ namespace SparkyStudios::Audio::Amplitude
         if (!AMPLIMIX_CSWAP(&layer->cursor, &old, cursor))
             cursor = old;
 
+        SoundChunk::DestroyChunk(out);
+
         // return new cursor
         return cursor;
     }
@@ -788,10 +879,70 @@ namespace SparkyStudios::Audio::Amplitude
         const AudioDataUnit& lGain,
         const AudioDataUnit& rGain,
         AudioBuffer buffer,
-        const AmUInt64& bufferSize)
+        const AmUInt64& bufferSize,
+        const AmUInt64& samples)
     {
-        // cache cursor
+        // Cache cursor
         AmUInt64 old = cursor;
+
+        // Compute offset
+        AmUInt64 offset = 0;
+
+        if (!layer->snd->stream)
+        {
+#if defined(AM_SSE_INTRINSICS)
+            offset = (cursor % layer->snd->length) >> static_cast<AmUInt32>(std::log2(kSimdProcessedFramesCountHalf));
+#else
+            offset = (cursor % layer->snd->length) << 1;
+#endif // AM_SSE_INTRINSICS
+        }
+
+        // Process pipeline
+        SoundChunk* out = nullptr;
+        if (_pipeline == nullptr)
+        {
+            CallLogFunc("[WARNING] No active pipeline is set, this means no sound will be rendered. You should configure the Amplimix "
+                        "pipeline in your engine configuration file.\n");
+            return old;
+        }
+
+        const AmUInt16 channels = layer->snd->format.GetNumChannels();
+        const AmUInt64 sampleRate = layer->snd->format.GetSampleRate();
+
+        SoundChunk* in = SoundChunk::CreateChunk(samples, channels, MemoryPoolKind::Amplimix);
+        out = SoundChunk::CreateChunk(samples, channels, MemoryPoolKind::Amplimix);
+
+        if (const AmUInt64 remaining = layer->snd->chunk->frames - cursor; remaining < in->frames)
+        {
+            const AmUInt64 size = remaining * layer->snd->format.GetFrameSize();
+            memcpy(in->buffer, &layer->snd->chunk->buffer[offset], size);
+            memcpy(reinterpret_cast<AmInt16Buffer>(in->buffer) + (remaining * channels), layer->snd->chunk->buffer, in->size - size);
+        }
+        else
+        {
+            memcpy(in->buffer, &layer->snd->chunk->buffer[offset], in->size);
+        }
+
+        memcpy(out->buffer, in->buffer, out->size);
+
+        switch (layer->snd->format.GetInterleaveType())
+        {
+        case AM_SAMPLE_INTERLEAVED:
+            _pipeline->ProcessInterleaved(
+                reinterpret_cast<AmInt16Buffer>(out->buffer), reinterpret_cast<AmInt16Buffer>(in->buffer), samples, out->size, channels,
+                sampleRate, static_cast<SoundInstance*>(layer->snd->userData));
+            break;
+        case AM_SAMPLE_NON_INTERLEAVED:
+            _pipeline->Process(
+                reinterpret_cast<AmInt16Buffer>(out->buffer), reinterpret_cast<AmInt16Buffer>(in->buffer), samples, out->size, channels,
+                sampleRate, static_cast<SoundInstance*>(layer->snd->userData));
+            break;
+        default:
+            CallLogFunc("[WARNING] A bad sound data interleave type was encountered.\n");
+            break;
+        }
+
+        SoundChunk::DestroyChunk(in);
 
         // regular playback
         for (AmUInt64 i = 0; i < bufferSize; i += 2)
@@ -816,41 +967,14 @@ namespace SparkyStudios::Audio::Amplitude
                 }
             }
 
-            AmUInt64 off;
-
-            if (layer->snd->stream)
-            {
-                // when streaming we always fit the data buffer,
-                // otherwise something is wrong
-                off = i;
-            }
-            else
-            {
-#if defined(AM_SSE_INTRINSICS)
-                off = (cursor % layer->snd->length) >> static_cast<AmUInt32>(std::log2(kSimdProcessedFramesCountHalf));
-#else
-                off = (cursor % layer->snd->length) << 1;
-#endif // AM_SSE_INTRINSICS
-            }
-
 #if defined(AM_SSE_INTRINSICS)
             buffer[i + 0] =
-                simdpp::add(
-                    buffer[i + 0],
-                    simdpp::to_int16(
-                        simdpp::shift_r(simdpp::mull(layer->snd->chunk->buffer[off + 0], lGain).eval(), kAmFixedPointShift).eval())
-                        .eval())
-                    .eval();
+                simdpp::add(buffer[i + 0], simdpp::to_int16(simdpp::shift_r(simdpp::mull(out->buffer[i + 0], lGain), kAmFixedPointShift)));
             buffer[i + 1] =
-                simdpp::add(
-                    buffer[i + 1],
-                    simdpp::to_int16(
-                        simdpp::shift_r(simdpp::mull(layer->snd->chunk->buffer[off + 1], rGain).eval(), kAmFixedPointShift).eval())
-                        .eval())
-                    .eval();
+                simdpp::add(buffer[i + 1], simdpp::to_int16(simdpp::shift_r(simdpp::mull(out->buffer[i + 1], rGain), kAmFixedPointShift)));
 #else
-            buffer[i] += static_cast<AmInt16>((layer->snd->chunk->buffer[off] * lGain) >> kAmFixedPointShift);
-            buffer[i + 1] += static_cast<AmInt16>((layer->snd->chunk->buffer[off + 1] * rGain) >> kAmFixedPointShift);
+            buffer[i] += static_cast<AmInt16>((out->buffer[i + 0] * lGain) >> kAmFixedPointShift);
+            buffer[i + 1] += static_cast<AmInt16>((out->buffer[i + 1] * rGain) >> kAmFixedPointShift);
 #endif // AM_SSE_INTRINSICS
 
             // advance cursor
@@ -864,6 +988,9 @@ namespace SparkyStudios::Audio::Amplitude
         // swap back cursor if unchanged
         if (!AMPLIMIX_CSWAP(&layer->cursor, &old, cursor))
             cursor = old;
+
+        // Clean pipeline buffer if any
+        SoundChunk::DestroyChunk(out);
 
         // return new cursor
         return cursor;
