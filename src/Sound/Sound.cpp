@@ -22,6 +22,8 @@
 
 namespace SparkyStudios::Audio::Amplitude
 {
+    static AmObjectID gLastSoundInstanceID = 0;
+
     Sound::Sound()
         : m_format()
         , _decoder(nullptr)
@@ -288,6 +290,7 @@ namespace SparkyStudios::Audio::Amplitude
         , _effectInstance()
         , _obstruction(0.0f)
         , _occlusion(0.0f)
+        , _id(++gLastSoundInstanceID)
     {
         if (effect != nullptr)
             _effectInstance = effect->CreateInstance();
@@ -460,5 +463,10 @@ namespace SparkyStudios::Audio::Amplitude
     AmReal32 SoundInstance::GetOcclusion() const
     {
         return _occlusion;
+    }
+
+    AmObjectID SoundInstance::GetId() const
+    {
+        return _id;
     }
 } // namespace SparkyStudios::Audio::Amplitude

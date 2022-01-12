@@ -382,6 +382,16 @@ namespace SparkyStudios::Audio::Amplitude
          */
         [[nodiscard]] AmReal32 GetOcclusion() const;
 
+        /**
+         * @brief Get the generated sound instance ID.
+         * 
+         * This generated ID is ensured to be unique within all the sound instances
+         * created within the engine.
+         * 
+         * @return A generated sound instance ID.
+         */
+        [[nodiscard]] AmObjectID GetId() const;
+
     private:
         AmVoidPtr _userData;
 
@@ -396,6 +406,8 @@ namespace SparkyStudios::Audio::Amplitude
 
         AmReal32 _obstruction;
         AmReal32 _occlusion;
+
+        AmObjectID _id;
     };
 } // namespace SparkyStudios::Audio::Amplitude
 
