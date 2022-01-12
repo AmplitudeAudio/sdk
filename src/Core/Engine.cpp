@@ -43,7 +43,10 @@
 
 #pragma region Default Sound Processors
 #include <Mixer/SoundProcessors/EffectProcessor.h>
+#include <Mixer/SoundProcessors/ObstructionProcessor.h>
+#include <Mixer/SoundProcessors/OcclusionProcessor.h>
 #include <Mixer/SoundProcessors/PassThroughProcessor.h>
+
 #pragma endregion
 
 namespace SparkyStudios::Audio::Amplitude
