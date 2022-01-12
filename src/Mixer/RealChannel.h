@@ -168,6 +168,22 @@ namespace SparkyStudios::Audio::Amplitude
             return _parentChannelState;
         }
 
+        /**
+         * @brief Set the obstruction level of sounds played by this Entity.
+         *
+         * @param obstruction The obstruction amount. This is provided by the
+         * game engine.
+         */
+        void SetObstruction(AmReal32 obstruction);
+
+        /**
+         * @brief Set the occlusion level of sounds played by this Entity.
+         *
+         * @param occlusion The occlusion amount. This is provided by the
+         * game engine.
+         */
+        void SetOcclusion(AmReal32 occlusion);
+
     private:
         void SetGainPan(float gain, float pan, AmUInt32 layer);
         AmUInt32 FindFreeLayer(AmUInt32 layerIndex = 0) const;

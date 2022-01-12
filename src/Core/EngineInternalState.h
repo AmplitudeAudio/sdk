@@ -89,6 +89,21 @@ namespace SparkyStudios::Audio::Amplitude
     typedef std::vector<ListenerInternalState> ListenerStateVector;
     typedef fplutil::intrusive_list<ListenerInternalState> ListenerList;
 
+    struct ObstructionOcclusionState
+    {
+        Curve lpf;
+        Curve gain;
+
+        void Init(const ObstructionOcclusionConfig* config)
+        {
+            lpf = Curve();
+            lpf.Initialize(config->lpf_curve());
+
+            gain = Curve();
+            gain.Initialize(config->gain_curve());
+        }
+    };
+
     struct EngineInternalState
     {
         explicit EngineInternalState()
@@ -127,6 +142,8 @@ namespace SparkyStudios::Audio::Amplitude
             , version(nullptr)
             , listener_fetch_mode(ListenerFetchMode_None)
             , up_axis(GameEngineUpAxis_Y)
+            , obstruction_config()
+            , occlusion_config()
         {}
 
         Mixer mixer;
@@ -238,6 +255,10 @@ namespace SparkyStudios::Audio::Amplitude
 
         // The up axis of the game engine.
         GameEngineUpAxis up_axis;
+
+        ObstructionOcclusionState obstruction_config;
+
+        ObstructionOcclusionState occlusion_config;
 
         const struct Version* version;
     };

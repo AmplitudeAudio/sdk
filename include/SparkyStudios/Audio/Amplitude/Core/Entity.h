@@ -112,6 +112,36 @@ namespace SparkyStudios::Audio::Amplitude
         void Update();
 
         /**
+         * @brief Set the obstruction level of sounds played by this Entity.
+         *
+         * @param obstruction The obstruction amount. This is provided by the
+         * game engine.
+         */
+        void SetObstruction(AmReal32 obstruction);
+
+        /**
+         * @brief Set the occlusion level of sounds played by this Entity.
+         *
+         * @param occlusion The occlusion amount. This is provided by the
+         * game engine.
+         */
+        void SetOcclusion(AmReal32 occlusion);
+
+        /**
+         * @brief Get the obstruction level of sounds played by this Entity.
+         *
+         * @return The obstruction amount.
+         */
+        [[nodiscard]] AmReal32 GetObstruction() const;
+
+        /**
+         * @brief Get the occlusion level of sounds played by this Entity.
+         *
+         * @return The occlusion amount.
+         */
+        [[nodiscard]] AmReal32 GetOcclusion() const;
+
+        /**
          * @brief Returns the internal state of this Entity.
          *
          * @return The Entity internal state.

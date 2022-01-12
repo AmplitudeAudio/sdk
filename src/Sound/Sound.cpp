@@ -286,6 +286,8 @@ namespace SparkyStudios::Audio::Amplitude
         , _settings(settings)
         , _currentLoopCount(0)
         , _effectInstance()
+        , _obstruction(0.0f)
+        , _occlusion(0.0f)
     {
         if (effect != nullptr)
             _effectInstance = effect->CreateInstance();
@@ -438,5 +440,25 @@ namespace SparkyStudios::Audio::Amplitude
     const EffectInstance* SoundInstance::GetEffect() const
     {
         return _effectInstance;
+    }
+
+    void SoundInstance::SetObstruction(AmReal32 obstruction)
+    {
+        _obstruction = obstruction;
+    }
+
+    void SoundInstance::SetOcclusion(AmReal32 occlusion)
+    {
+        _occlusion = occlusion;
+    }
+
+    AmReal32 SoundInstance::GetObstruction() const
+    {
+        return _obstruction;
+    }
+
+    AmReal32 SoundInstance::GetOcclusion() const
+    {
+        return _occlusion;
     }
 } // namespace SparkyStudios::Audio::Amplitude

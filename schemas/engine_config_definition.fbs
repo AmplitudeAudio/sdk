@@ -136,6 +136,18 @@ table AudioMixerConfig {
   pipeline:[AudioMixerPipelineItem];
 }
 
+/// The default obstruction/occlusion curve applied on sound's
+/// gain/low pass filters.
+table ObstructionOcclusionConfig {
+  /// The curve to use on the low pass filter applied
+  /// to the played sound to mimic occlusion/onstruction.
+  lpf_curve:CurveDefinition;
+
+  /// The curve to use on the gain applied to the played
+  /// sound to mimic occlusion/onstruction.
+  gain_curve:CurveDefinition;
+}
+
 /// Game synchronization configuration
 table GameSyncConfig {
   /// Defines how the engine should fetch the best listener for an audio.
@@ -149,6 +161,12 @@ table GameSyncConfig {
 
   /// The up axis of the game engine.
   up_axis:GameEngineUpAxis = Y;
+
+  /// The default obstruction curves settings.
+  obstruction:ObstructionOcclusionConfig;
+
+  /// The default occlusion curves settings.
+  occlusion:ObstructionOcclusionConfig;
 }
 
 table EngineConfigDefinition {

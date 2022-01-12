@@ -159,6 +159,8 @@ set(SA_SOURCE
     src/Math/HMM_Impl.cpp
 
     src/Mixer/SoundProcessors/EffectProcessor.h
+    src/Mixer/SoundProcessors/ObstructionProcessor.h
+    src/Mixer/SoundProcessors/OcclusionProcessor.h
     src/Mixer/SoundProcessors/PassThroughProcessor.h
     src/Mixer/Mixer.cpp
     src/Mixer/Mixer.h

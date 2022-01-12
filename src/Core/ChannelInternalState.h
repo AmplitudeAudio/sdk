@@ -264,6 +264,22 @@ namespace SparkyStudios::Audio::Amplitude
             _channelStateId = id;
         }
 
+        /**
+         * @brief Set the obstruction level of sounds played by this Channel.
+         *
+         * @param obstruction The obstruction amount. This is provided by the
+         * game engine.
+         */
+        void SetObstruction(AmReal32 obstruction);
+
+        /**
+         * @brief Set the occlusion level of sounds played by this Channel.
+         *
+         * @param occlusion The occlusion amount. This is provided by the
+         * game engine.
+         */
+        void SetOcclusion(AmReal32 occlusion);
+
         // The node that tracks the location in the priority list.
         fplutil::intrusive_list_node priority_node;
 
