@@ -277,6 +277,36 @@ namespace SparkyStudios::Audio::Amplitude
         _pan = pan.X;
     }
 
+    void RealChannel::SetObstruction(AmReal32 obstruction)
+    {
+        AMPLITUDE_ASSERT(Valid());
+        for (auto&& layer : _channelLayersId)
+        {
+            if (layer.second != 0)
+            {
+                if (_activeSounds[layer.first] != nullptr)
+                {
+                    _activeSounds[layer.first]->SetObstruction(obstruction);
+                }
+            }
+        }
+    }
+
+    void RealChannel::SetOcclusion(AmReal32 occlusion)
+    {
+        AMPLITUDE_ASSERT(Valid());
+        for (auto&& layer : _channelLayersId)
+        {
+            if (layer.second != 0)
+            {
+                if (_activeSounds[layer.first] != nullptr)
+                {
+                    _activeSounds[layer.first]->SetOcclusion(occlusion);
+                }
+            }
+        }
+    }
+
     void RealChannel::SetGainPan(float gain, float pan, AmUInt32 layer)
     {
         float finalGain = gain;

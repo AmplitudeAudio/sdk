@@ -566,6 +566,16 @@ namespace SparkyStudios::Audio::Amplitude
         }
     }
 
+    void ChannelInternalState::SetObstruction(AmReal32 obstruction)
+    {
+        _realChannel.SetObstruction(obstruction);
+    }
+
+    void ChannelInternalState::SetOcclusion(AmReal32 occlusion)
+    {
+        _realChannel.SetOcclusion(occlusion);
+    }
+
     void ChannelInternalState::UpdateState()
     {
         switch (_channelState)

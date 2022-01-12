@@ -346,11 +346,41 @@ namespace SparkyStudios::Audio::Amplitude
 
         /**
          * @brief Gets the effect applied to this SoundInstance, if any.
-         * 
+         *
          * @return An EffectInstance object if an effect was applied to the sound which have
          * generated this SoundInstance, or nullptr otherwise.
          */
         [[nodiscard]] const EffectInstance* GetEffect() const;
+
+        /**
+         * @brief Set the obstruction level of sounds played by this Entity.
+         *
+         * @param obstruction The obstruction amount. This is provided by the
+         * game engine.
+         */
+        void SetObstruction(AmReal32 obstruction);
+
+        /**
+         * @brief Set the occlusion level of sounds played by this Entity.
+         *
+         * @param occlusion The occlusion amount. This is provided by the
+         * game engine.
+         */
+        void SetOcclusion(AmReal32 occlusion);
+
+        /**
+         * @brief Get the obstruction level of sounds played by this Entity.
+         *
+         * @return The obstruction amount.
+         */
+        [[nodiscard]] AmReal32 GetObstruction() const;
+
+        /**
+         * @brief Get the occlusion level of sounds played by this Entity.
+         *
+         * @return The occlusion amount.
+         */
+        [[nodiscard]] AmReal32 GetOcclusion() const;
 
     private:
         AmVoidPtr _userData;
@@ -363,6 +393,9 @@ namespace SparkyStudios::Audio::Amplitude
         SoundInstanceSettings _settings;
 
         AmUInt32 _currentLoopCount;
+
+        AmReal32 _obstruction;
+        AmReal32 _occlusion;
     };
 } // namespace SparkyStudios::Audio::Amplitude
 

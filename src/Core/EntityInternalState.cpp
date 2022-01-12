@@ -76,11 +76,19 @@ namespace SparkyStudios::Audio::Amplitude
     void EntityInternalState::SetObstruction(AmReal32 obstruction)
     {
         _obstruction = obstruction;
+        for (auto&& sound : _playingSoundList)
+        {
+            sound.SetObstruction(obstruction);
+        }
     }
 
     void EntityInternalState::SetOcclusion(AmReal32 occlusion)
     {
         _occlusion = occlusion;
+        for (auto&& sound : _playingSoundList)
+        {
+            sound.SetOcclusion(occlusion);
+        }
     }
 
     AmReal32 EntityInternalState::GetObstruction() const
