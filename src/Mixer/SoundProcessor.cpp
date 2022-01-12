@@ -151,7 +151,8 @@ namespace SparkyStudios::Audio::Amplitude
             }
             else
             {
-                out[i] = AM_CLAMP(dryOut[i] * AmFloatToFixedPoint(_dry) >> kAmFixedPointShift, INT16_MIN, INT16_MAX);
+                out[i] = dryOut[i] * AmFloatToFixedPoint(_dry) >> kAmFixedPointShift;
+                out[i] = AM_CLAMP(out[i], INT16_MIN, INT16_MAX);
             }
         }
 
@@ -198,7 +199,8 @@ namespace SparkyStudios::Audio::Amplitude
             }
             else
             {
-                out[i] = AM_CLAMP(dryOut[i] * AmFloatToFixedPoint(_dry) >> kAmFixedPointShift, INT16_MIN, INT16_MAX);
+                out[i] = dryOut[i] * AmFloatToFixedPoint(_dry) >> kAmFixedPointShift;
+                out[i] = AM_CLAMP(out[i], INT16_MIN, INT16_MAX);
             }
         }
 
