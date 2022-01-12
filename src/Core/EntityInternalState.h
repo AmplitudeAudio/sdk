@@ -89,6 +89,36 @@ namespace SparkyStudios::Audio::Amplitude
         [[nodiscard]] const hmm_mat4& GetInverseMatrix() const;
 
         /**
+         * @brief Set the obstruction level of sounds played by this Entity.
+         *
+         * @param obstruction The obstruction amount. This is provided by the
+         * game engine.
+         */
+        void SetObstruction(AmReal32 obstruction);
+
+        /**
+         * @brief Set the occlusion level of sounds played by this Entity.
+         *
+         * @param occlusion The occlusion amount. This is provided by the
+         * game engine.
+         */
+        void SetOcclusion(AmReal32 occlusion);
+
+        /**
+         * @brief Get the obstruction level of sounds played by this Entity.
+         *
+         * @return The obstruction amount.
+         */
+        [[nodiscard]] AmReal32 GetObstruction() const;
+
+        /**
+         * @brief Get the occlusion level of sounds played by this Entity.
+         *
+         * @return The occlusion amount.
+         */
+        [[nodiscard]] AmReal32 GetOcclusion() const;
+
+        /**
          * @brief Updates the inverse matrix of this Entity.
          *
          * This method is called automatically by the Engine on
@@ -116,6 +146,9 @@ namespace SparkyStudios::Audio::Amplitude
         hmm_vec3 _up;
 
         hmm_mat4 _inverseMatrix;
+
+        AmReal32 _obstruction;
+        AmReal32 _occlusion;
 
         // Keeps track of how many sounds are being played on this entity.
         ChannelList _playingSoundList;

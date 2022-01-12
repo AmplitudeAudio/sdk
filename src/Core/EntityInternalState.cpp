@@ -23,6 +23,8 @@ namespace SparkyStudios::Audio::Amplitude
         , _direction()
         , _up()
         , _inverseMatrix(AM_Mat4d(1.0f))
+        , _obstruction(0.0f)
+        , _occlusion(0.0f)
     {}
 
     AmEntityID EntityInternalState::GetId() const
@@ -69,5 +71,25 @@ namespace SparkyStudios::Audio::Amplitude
     void EntityInternalState::Update()
     {
         _inverseMatrix = AM_LookAt(_location, _location + _direction, _up);
+    }
+
+    void EntityInternalState::SetObstruction(AmReal32 obstruction)
+    {
+        _obstruction = obstruction;
+    }
+
+    void EntityInternalState::SetOcclusion(AmReal32 occlusion)
+    {
+        _occlusion = occlusion;
+    }
+
+    AmReal32 EntityInternalState::GetObstruction() const
+    {
+        return _obstruction;
+    }
+
+    AmReal32 EntityInternalState::GetOcclusion() const
+    {
+        return _occlusion;
     }
 } // namespace SparkyStudios::Audio::Amplitude

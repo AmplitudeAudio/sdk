@@ -38,7 +38,6 @@ namespace SparkyStudios::Audio::Amplitude
 
     AmEntityID Entity::GetId() const
     {
-        AMPLITUDE_ASSERT(Valid());
         return _state->GetId();
     }
 
@@ -76,6 +75,30 @@ namespace SparkyStudios::Audio::Amplitude
     {
         AMPLITUDE_ASSERT(Valid());
         _state->Update();
+    }
+
+    void Entity::SetObstruction(AmReal32 obstruction)
+    {
+        AMPLITUDE_ASSERT(Valid());
+        _state->SetObstruction(obstruction);
+    }
+
+    void Entity::SetOcclusion(AmReal32 occlusion)
+    {
+        AMPLITUDE_ASSERT(Valid());
+        _state->SetOcclusion(occlusion);
+    }
+
+    AmReal32 Entity::GetObstruction() const
+    {
+        AMPLITUDE_ASSERT(Valid());
+        return _state->GetObstruction();
+    }
+
+    AmReal32 Entity::GetOcclusion() const
+    {
+        AMPLITUDE_ASSERT(Valid());
+        return _state->GetOcclusion();
     }
 
     EntityInternalState* Entity::GetState() const
