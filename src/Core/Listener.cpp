@@ -40,7 +40,6 @@ namespace SparkyStudios::Audio::Amplitude
 
     AmListenerID Listener::GetId() const
     {
-        AMPLITUDE_ASSERT(Valid());
         return _state->GetId();
     }
 
@@ -61,5 +60,4 @@ namespace SparkyStudios::Audio::Amplitude
         AMPLITUDE_ASSERT(Valid());
         _state->SetLocation(location);
     }
-
 } // namespace SparkyStudios::Audio::Amplitude
