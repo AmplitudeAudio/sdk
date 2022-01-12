@@ -360,6 +360,10 @@ namespace SparkyStudios::Audio::Amplitude
         // Set the game engine up axis
         _state->up_axis = config->game()->up_axis();
 
+        // Save obstruction/occlusion configurations
+        _state->obstruction_config.Init(config->game()->obstruction());
+        _state->occlusion_config.Init(config->game()->occlusion());
+
         _state->paused = false;
         _state->mute = false;
         _state->master_gain = 1.0f;
