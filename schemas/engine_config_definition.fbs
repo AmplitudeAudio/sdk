@@ -81,16 +81,16 @@ enum GameEngineUpAxis : ushort {
 // Playback device configuration
 table PlaybackOutputConfig {
   // Output sampling frequency in samples per second.
-  frequency:uint;
+  frequency:uint = 48000;
 
   // The number of output channels to support.
   channels:PlaybackOutputChannels = Stereo;
 
   // Bytes used per output sample.
-  buffer_size:uint;
+  buffer_size:uint = 2048;
 
   // The output buffer format.
-  format:PlaybackOutputFormat = Default;
+  format:PlaybackOutputFormat = Int16;
 }
 
 /// A single processor in the audio mixer pipeline.
@@ -171,16 +171,16 @@ table GameSyncConfig {
 
 table EngineConfigDefinition {
   // Configures the playback device.
-  output:PlaybackOutputConfig;
+  output:PlaybackOutputConfig (required);
 
   // Configures the audio mixer.
-  mixer:AudioMixerConfig;
+  mixer:AudioMixerConfig (required);
 
   /// Configures the game sync.
-  game:GameSyncConfig;
+  game:GameSyncConfig (required);
 
   // The location of the buses definition file.
-  buses_file:string;
+  buses_file:string (required);
 
   // The name of the audio driver to use.
   // If empty, or the given driver name is not registered,
