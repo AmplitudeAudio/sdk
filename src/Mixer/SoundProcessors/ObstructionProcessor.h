@@ -62,7 +62,7 @@ namespace SparkyStudios::Audio::Amplitude
                 if (gObstructionFilters.find(sound->GetId()) == gObstructionFilters.end())
                 {
                     auto lpFilter = BiquadResonantFilter();
-                    lpFilter.InitLowPass(std::ceilf(_lpfCurve.Get(lpf)), 0.5f);
+                    lpFilter.InitLowPass(std::ceil(_lpfCurve.Get(lpf)), 0.5f);
                     gObstructionFilters[sound->GetId()] = lpFilter.CreateInstance();
                 }
 
@@ -109,7 +109,7 @@ namespace SparkyStudios::Audio::Amplitude
                 if (gObstructionFilters.find(sound->GetId()) == gObstructionFilters.end())
                 {
                     auto lpFilter = BiquadResonantFilter();
-                    lpFilter.InitLowPass(std::ceilf(_lpfCurve.Get(lpf)), 0.5f);
+                    lpFilter.InitLowPass(std::ceil(_lpfCurve.Get(lpf)), 0.5f);
                     gObstructionFilters[sound->GetId()] = lpFilter.CreateInstance();
                 }
 
