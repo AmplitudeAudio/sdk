@@ -54,6 +54,9 @@ namespace SparkyStudios::Audio::Amplitude
     void CurvePart::SetStart(const CurvePoint& start)
     {
         _start = start;
+
+        if (_fader != nullptr)
+            _fader->Set(_start.y, _end.y, 0.0);
     }
 
     const CurvePoint& CurvePart::GetEnd() const
@@ -64,6 +67,9 @@ namespace SparkyStudios::Audio::Amplitude
     void CurvePart::SetEnd(const CurvePoint& end)
     {
         _end = end;
+
+        if (_fader != nullptr)
+            _fader->Set(_start.y, _end.y, 0.0);
     }
 
     Fader* CurvePart::GetFader() const
@@ -74,6 +80,7 @@ namespace SparkyStudios::Audio::Amplitude
     void CurvePart::SetFader(Fader::FADER_ALGORITHM fader)
     {
         _fader = Fader::Create(fader);
+        _fader->Set(_start.y, _end.y, 0.0);
     }
 
     float CurvePart::Get(double x) const
