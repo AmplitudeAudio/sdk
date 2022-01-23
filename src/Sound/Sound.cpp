@@ -187,14 +187,14 @@ namespace SparkyStudios::Audio::Amplitude
         Codec* codec = Codec::FindCodecForFile(filename.c_str());
         if (codec == nullptr)
         {
-            CallLogFunc("[ERROR] Cannot load the sound: unable to find codec for '" AM_OS_CHAR_FMT "'.\n", filename);
+            CallLogFunc("[ERROR] Cannot load the sound: unable to find codec for '" AM_OS_CHAR_FMT "'.\n", filename.c_str());
             return;
         }
 
         _decoder = codec->CreateDecoder();
         if (!_decoder->Open(filename.c_str()))
         {
-            CallLogFunc("[ERROR] Cannot load the sound: unable to initialize a decoder for '" AM_OS_CHAR_FMT "'.\n", filename);
+            CallLogFunc("[ERROR] Cannot load the sound: unable to initialize a decoder for '" AM_OS_CHAR_FMT "'.\n", filename.c_str());
             return;
         }
 

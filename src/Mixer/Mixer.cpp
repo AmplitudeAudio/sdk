@@ -490,31 +490,31 @@ namespace SparkyStudios::Audio::Amplitude
     void Mixer::OnSoundStarted(const SoundData* data)
     {
         const auto* sound = static_cast<SoundInstance*>(data->userData);
-        CallLogFunc("Started sound: " AM_OS_CHAR_FMT "\n", sound->GetSound()->GetFilename());
+        CallLogFunc("Started sound: " AM_OS_CHAR_FMT "\n", sound->GetSound()->GetFilename().c_str());
     }
 
     void Mixer::OnSoundPaused(const SoundData* data)
     {
         const auto* sound = static_cast<SoundInstance*>(data->userData);
-        CallLogFunc("Paused sound: " AM_OS_CHAR_FMT "\n", sound->GetSound()->GetFilename());
+        CallLogFunc("Paused sound: " AM_OS_CHAR_FMT "\n", sound->GetSound()->GetFilename().c_str());
     }
 
     void Mixer::OnSoundResumed(const SoundData* data)
     {
         const auto* sound = static_cast<SoundInstance*>(data->userData);
-        CallLogFunc("Resumed sound: " AM_OS_CHAR_FMT "\n", sound->GetSound()->GetFilename());
+        CallLogFunc("Resumed sound: " AM_OS_CHAR_FMT "\n", sound->GetSound()->GetFilename().c_str());
     }
 
     void Mixer::OnSoundStopped(const SoundData* data)
     {
         const auto* sound = static_cast<SoundInstance*>(data->userData);
-        CallLogFunc("Stopped sound: " AM_OS_CHAR_FMT "\n", sound->GetSound()->GetFilename());
+        CallLogFunc("Stopped sound: " AM_OS_CHAR_FMT "\n", sound->GetSound()->GetFilename().c_str());
     }
 
     bool Mixer::OnSoundLooped(const SoundData* data)
     {
         auto* sound = static_cast<SoundInstance*>(data->userData);
-        CallLogFunc("Looped sound: " AM_OS_CHAR_FMT "\n", sound->GetSound()->GetFilename());
+        CallLogFunc("Looped sound: " AM_OS_CHAR_FMT "\n", sound->GetSound()->GetFilename().c_str());
 
         ++sound->_currentLoopCount;
 
@@ -541,7 +541,7 @@ namespace SparkyStudios::Audio::Amplitude
     void Mixer::OnSoundEnded(const SoundData* data)
     {
         const auto* sound = static_cast<SoundInstance*>(data->userData);
-        CallLogFunc("Ended sound: " AM_OS_CHAR_FMT "\n", sound->GetSound()->GetFilename());
+        CallLogFunc("Ended sound: " AM_OS_CHAR_FMT "\n", sound->GetSound()->GetFilename().c_str());
 
         RealChannel* channel = sound->GetChannel();
 
