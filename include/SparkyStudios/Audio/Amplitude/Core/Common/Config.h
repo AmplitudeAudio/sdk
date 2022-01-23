@@ -42,6 +42,7 @@
 #endif // AM_CPU_X86 || AM_CPU_X86_64 || AM_CPU_ARM_NEON
 #else
 #define PFFFT_SIMD_DISABLE
+#define HANDMADE_MATH_NO_SSE
 #endif // AMPLITUDE_DISABLE_SIMD
 
 // Define the value of Pi if the platform doesn't do that
