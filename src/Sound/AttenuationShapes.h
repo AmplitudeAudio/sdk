@@ -79,7 +79,7 @@ namespace SparkyStudios::Audio::Amplitude
         float GetAttenuationFactor(const Attenuation*, const hmm_vec3& soundLocation, const Listener& listener) override;
         float GetAttenuationFactor(const Attenuation*, const Entity& entity, const Listener& listener) override;
 
-        float GetFactor(const hmm_vec3& soundLocation, const Listener& listener, hmm_mat4& lookAt);
+        float GetFactor(const hmm_vec3& soundLocation, const Listener& listener, hmm_mat4 lookAt);
     };
 
     class CapsuleAttenuationShape : public AttenuationShape
@@ -98,7 +98,7 @@ namespace SparkyStudios::Audio::Amplitude
         float GetAttenuationFactor(const Attenuation*, const hmm_vec3& soundLocation, const Listener& listener) override;
         float GetAttenuationFactor(const Attenuation*, const Entity& entity, const Listener& listener) override;
 
-        float GetFactor(const Attenuation* attenuation, const hmm_vec3& soundLocation, const Listener& listener, hmm_mat4& lookAt);
+        float GetFactor(const Attenuation* attenuation, const hmm_vec3& soundLocation, const Listener& listener, hmm_mat4 lookAt);
     };
 } // namespace SparkyStudios::Audio::Amplitude
 

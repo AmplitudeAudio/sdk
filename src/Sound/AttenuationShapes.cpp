@@ -155,7 +155,7 @@ namespace SparkyStudios::Audio::Amplitude
         return gain * GetFactor(entity.GetLocation(), listener, AM_LookAt(AM_Vec3(0, 0, 0), entity.GetDirection(), entity.GetUp()));
     }
 
-    AmReal32 BoxAttenuationShape::GetFactor(const hmm_vec3& soundLocation, const Listener& listener, hmm_mat4& lookAt)
+    AmReal32 BoxAttenuationShape::GetFactor(const hmm_vec3& soundLocation, const Listener& listener, hmm_mat4 lookAt)
     {
         const auto* inner = static_cast<BoxShape*>(m_innerShape);
         const auto* outer = static_cast<BoxShape*>(m_outerShape);
@@ -278,7 +278,7 @@ namespace SparkyStudios::Audio::Amplitude
     }
 
     AmReal32 CapsuleAttenuationShape::GetFactor(
-        const Attenuation* attenuation, const hmm_vec3& soundLocation, const Listener& listener, hmm_mat4& lookAt)
+        const Attenuation* attenuation, const hmm_vec3& soundLocation, const Listener& listener, hmm_mat4 lookAt)
     {
         const auto* inner = static_cast<CapsuleShape*>(m_innerShape);
         const auto* outer = static_cast<CapsuleShape*>(m_outerShape);
