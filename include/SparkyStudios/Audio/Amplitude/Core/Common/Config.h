@@ -17,18 +17,6 @@
 #ifndef SS_AMPLITUDE_AUDIO_CONFIG_H
 #define SS_AMPLITUDE_AUDIO_CONFIG_H
 
-#ifndef AM_TYPE_ALIGN
-#if defined(_MSC_VER)
-#define AM_TYPE_ALIGN(_declaration_, _alignment_) __declspec(align(_alignment_)) _declaration_
-#else
-#define AM_TYPE_ALIGN(_declaration_, _alignment_) _declaration_ __attribute__((aligned(_alignment_)))
-#endif
-#endif
-
-#ifndef AM_VALUE_ALIGN
-#define AM_VALUE_ALIGN(_value_, _alignment_) (((_value_) + ((_alignment_)-1)) & ~((_alignment_)-1))
-#endif
-
 #if defined(_WIN32) || defined(_WIN64) || defined(WINAPI_FAMILY)
 #include <SparkyStudios/Audio/Amplitude/Core/Common/Platforms/Windows/Config.h>
 #elif defined(__ANDROID__)
@@ -37,6 +25,10 @@
 #include <SparkyStudios/Audio/Amplitude/Core/Common/Platforms/Linux/Config.h>
 #elif defined(__APPLE__)
 #include <SparkyStudios/Audio/Amplitude/Core/Common/Platforms/Apple/Config.h>
+#endif
+
+#if !defined(AM_VALUE_ALIGN)
+#define AM_VALUE_ALIGN(_value_, _alignment_) (((_value_) + ((_alignment_)-1)) & ~((_alignment_)-1))
 #endif
 
 #if !defined(AM_CALL_POLICY)
