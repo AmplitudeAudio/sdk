@@ -715,11 +715,11 @@ namespace SparkyStudios::Audio::Amplitude
                     if (spatialization == Spatialization_PositionOrientation)
                     {
                         AMPLITUDE_ASSERT(entity.Valid());
-                        *gain *= attenuation->GetGain(entity.GetState(), &*listener);
+                        *gain *= attenuation->GetGain(entity, Listener(const_cast<ListenerInternalState*>(&*listener)));
                     }
                     else
                     {
-                        *gain *= attenuation->GetGain(location, &*listener);
+                        *gain *= attenuation->GetGain(location, Listener(const_cast<ListenerInternalState*>(&*listener)));
                     }
                 }
 
