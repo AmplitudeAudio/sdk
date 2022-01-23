@@ -71,7 +71,7 @@ namespace SparkyStudios::Audio::Amplitude
          *
          * @return hmm_vec3 The location of this Listener.
          */
-        [[nodiscard]] hmm_vec3 GetLocation() const;
+        [[nodiscard]] const hmm_vec3& GetLocation() const;
 
         /**
          * @brief Set the location of this Listener.
