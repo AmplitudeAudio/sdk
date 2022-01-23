@@ -93,6 +93,7 @@ set(SA_SOURCE
     include/SparkyStudios/Audio/Amplitude/IO/FileLoader.h
     include/SparkyStudios/Audio/Amplitude/Math/Curve.h
     include/SparkyStudios/Audio/Amplitude/Math/HandmadeMath.h
+    include/SparkyStudios/Audio/Amplitude/Math/Shape.h
     include/SparkyStudios/Audio/Amplitude/Sound/Attenuation.h
     include/SparkyStudios/Audio/Amplitude/Sound/Collection.h
     include/SparkyStudios/Audio/Amplitude/Sound/Effect.h
@@ -157,6 +158,7 @@ set(SA_SOURCE
 
     src/Math/Curve.cpp
     src/Math/HMM_Impl.cpp
+    src/Math/Shape.cpp
 
     src/Mixer/SoundProcessors/EffectProcessor.h
     src/Mixer/SoundProcessors/ObstructionProcessor.h
