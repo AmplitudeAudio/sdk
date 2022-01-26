@@ -114,6 +114,14 @@ namespace SparkyStudios::Audio::Amplitude
     {
     public:
         /**
+         * @brief Creates a new BoxShape from a definition.
+         *
+         * @param definition The definition of the box shape generated
+         *                   from a flatbuffer binary.
+         */
+        static BoxShape* Create(const BoxShapeDefinition* definition);
+
+        /**
          * @brief Construct a new Box Shape.
          *
          * @param halfWidth The half width of the box shape.
@@ -213,6 +221,14 @@ namespace SparkyStudios::Audio::Amplitude
     {
     public:
         /**
+         * @brief Creates a new CapsuleShape from a definition.
+         *
+         * @param definition The definition of the capsule shape generated
+         *                   from a flatbuffer binary.
+         */
+        static CapsuleShape* Create(const CapsuleShapeDefinition* definition);
+
+        /**
          * @brief Construct a new Capsule Shape.
          *
          * @param radius The capsule radius.
@@ -283,6 +299,14 @@ namespace SparkyStudios::Audio::Amplitude
     {
     public:
         /**
+         * @brief Creates a new ConeShape from a definition.
+         *
+         * @param definition The definition of the cone shape generated
+         *                   from a flatbuffer binary.
+         */
+        static ConeShape* Create(const ConeShapeDefinition* definition);
+
+        /**
          * @brief Construct a new Cone Shape.
          *
          * @param radius The radius of the cone's base.
@@ -346,8 +370,16 @@ namespace SparkyStudios::Audio::Amplitude
     {
     public:
         /**
+         * @brief Creates a new SphereShape from a definition.
+         *
+         * @param definition The definition of the sphere shape generated
+         *                   from a flatbuffer binary.
+         */
+        static SphereShape* Create(const SphereShapeDefinition* definition);
+
+        /**
          * @brief Construct a new Sphere Shape.
-         * 
+         *
          * @param radius The sphere's radius.
          */
         explicit SphereShape(AmReal32 radius);

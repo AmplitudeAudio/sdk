@@ -78,6 +78,11 @@ namespace SparkyStudios::Audio::Amplitude
         return m_lookAtMatrix;
     }
 
+    BoxShape* BoxShape::Create(const BoxShapeDefinition* definition)
+    {
+        return new BoxShape(definition->half_width(), definition->half_height(), definition->half_depth());
+    }
+
     BoxShape::BoxShape(AmReal32 halfWidth, AmReal32 halfHeight, AmReal32 halfDepth)
         : Shape()
         , _halfWidth(halfWidth)
@@ -191,6 +196,11 @@ namespace SparkyStudios::Audio::Amplitude
         return false;
     }
 
+    CapsuleShape* CapsuleShape::Create(const CapsuleShapeDefinition* definition)
+    {
+        return new CapsuleShape(definition->radius(), definition->half_height());
+    }
+
     CapsuleShape::CapsuleShape(AmReal32 radius, AmReal32 halfHeight)
         : Shape()
         , _radius(0.0)
@@ -269,6 +279,11 @@ namespace SparkyStudios::Audio::Amplitude
         return false;
     }
 
+    ConeShape* ConeShape::Create(const ConeShapeDefinition* definition)
+    {
+        return new ConeShape(definition->radius(), definition->height());
+    }
+
     ConeShape::ConeShape(AmReal32 radius, AmReal32 height)
         : Shape()
         , _radius(radius)
@@ -317,6 +332,11 @@ namespace SparkyStudios::Audio::Amplitude
             return true;
 
         return false;
+    }
+
+    SphereShape* SphereShape::Create(const SphereShapeDefinition* definition)
+    {
+        return new SphereShape(definition->radius());
     }
 
     SphereShape::SphereShape(AmReal32 radius)
