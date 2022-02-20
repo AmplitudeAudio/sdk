@@ -1563,7 +1563,7 @@ namespace SparkyStudios::Audio::Amplitude
             return Listener(nullptr);
         }
 
-        if (Listener& item = GetListener(id); item.Valid())
+        if (Listener item = GetListener(id); item.Valid())
         {
             return item;
         }
@@ -1626,7 +1626,7 @@ namespace SparkyStudios::Audio::Amplitude
             return Entity(nullptr);
         }
 
-        if (Entity& item = GetEntity(id); item.Valid())
+        if (Entity item = GetEntity(id); item.Valid())
         {
             return item;
         }
@@ -1689,7 +1689,7 @@ namespace SparkyStudios::Audio::Amplitude
             return Environment(nullptr);
         }
 
-        if (Environment& item = GetEnvironment(id); item.Valid())
+        if (Environment item = GetEnvironment(id); item.Valid())
         {
             return item;
         }
