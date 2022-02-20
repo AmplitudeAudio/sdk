@@ -540,10 +540,13 @@ namespace SparkyStudios::Audio::Amplitude
 
     void Mixer::OnSoundEnded(const SoundData* data)
     {
-        const auto* sound = static_cast<SoundInstance*>(data->userData);
+        auto* sound = static_cast<SoundInstance*>(data->userData);
         CallLogFunc("Ended sound: " AM_OS_CHAR_FMT "\n", sound->GetSound()->GetFilename().c_str());
 
         RealChannel* channel = sound->GetChannel();
+
+        // Clean up the pipeline
+        _pipeline->Cleanup(sound);
 
         if (const Engine* engine = Engine::GetInstance(); engine->GetState()->stopping)
             goto Delete;

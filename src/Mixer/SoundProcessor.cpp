@@ -59,6 +59,11 @@ namespace SparkyStudios::Audio::Amplitude
         return bufferSize;
     }
 
+    void SoundProcessor::Cleanup(SoundInstance* sound)
+    {
+        // Do nothing in base class
+    }
+
     const std::string& SoundProcessor::GetName() const
     {
         return m_name;
@@ -142,7 +147,7 @@ namespace SparkyStudios::Audio::Amplitude
 
         for (AmUInt64 i = 0, l = frames * channels; i < l; i++)
         {
-            if (dryOut[i] != wetOut[i])
+            if (dryOut[i] != wetOut[i] && _wet > 0.0f)
             {
                 // clang-format off
                 out[i] = (dryOut[i] * AmFloatToFixedPoint(_dry) >> kAmFixedPointShift) + ((wetOut[i] - dryOut[i]) * AmFloatToFixedPoint(_wet) >> kAmFixedPointShift);
@@ -190,7 +195,7 @@ namespace SparkyStudios::Audio::Amplitude
 
         for (AmUInt64 i = 0, l = frames * channels; i < l; i++)
         {
-            if (dryOut[i] != wetOut[i])
+            if (dryOut[i] != wetOut[i] && _wet > 0.0f)
             {
                 // clang-format off
                 out[i] = (dryOut[i] * AmFloatToFixedPoint(_dry) >> kAmFixedPointShift) + ((wetOut[i] - dryOut[i]) * AmFloatToFixedPoint(_wet) >> kAmFixedPointShift);

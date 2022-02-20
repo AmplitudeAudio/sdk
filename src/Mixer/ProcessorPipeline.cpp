@@ -77,4 +77,12 @@ namespace SparkyStudios::Audio::Amplitude
             cIn = out;
         }
     }
+
+    void ProcessorPipeline::Cleanup(SoundInstance* sound)
+    {
+        for (auto&& p : _processors)
+        {
+            p->Cleanup(sound);
+        }
+    }
 } // namespace SparkyStudios::Audio::Amplitude

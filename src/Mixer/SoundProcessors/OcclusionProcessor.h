@@ -130,6 +130,15 @@ namespace SparkyStudios::Audio::Amplitude
             }
         }
 
+        void Cleanup(SoundInstance* sound) override
+        {
+            if (gOcclusionFilters.find(sound->GetId()) == gOcclusionFilters.end())
+                return;
+            
+            delete gOcclusionFilters[sound->GetId()];
+            gOcclusionFilters.erase(sound->GetId());
+        }
+
     private:
         CurvePart _lpfCurve;
     } gOcclusionProcessor; // NOLINT(cert-err58-cpp)
