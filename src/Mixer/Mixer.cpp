@@ -760,7 +760,16 @@ namespace SparkyStudios::Audio::Amplitude
         const AmUInt64& bufferSize,
         const AmUInt64& samples)
     {
-        // cache cursor
+        // Process pipeline
+        SoundChunk* out = nullptr;
+        if (_pipeline == nullptr)
+        {
+            CallLogFunc("[WARNING] No active pipeline is set, this means no sound will be rendered. You should configure the Amplimix "
+                        "pipeline in your engine configuration file.\n");
+            return cursor;
+        }
+
+        // Cache cursor
         AmUInt64 old = cursor;
 
         // Compute offset
@@ -773,15 +782,6 @@ namespace SparkyStudios::Audio::Amplitude
 #else
             offset = (cursor % layer->snd->length);
 #endif // AM_SSE_INTRINSICS
-        }
-
-        // Process pipeline
-        SoundChunk* out = nullptr;
-        if (_pipeline == nullptr)
-        {
-            CallLogFunc("[WARNING] No active pipeline is set, this means no sound will be rendered. You should configure the Amplimix "
-                        "pipeline in your engine configuration file.\n");
-            return old;
         }
 
         const AmUInt16 channels = layer->snd->format.GetNumChannels();
@@ -885,6 +885,15 @@ namespace SparkyStudios::Audio::Amplitude
         const AmUInt64& bufferSize,
         const AmUInt64& samples)
     {
+        // Process pipeline
+        SoundChunk* out = nullptr;
+        if (_pipeline == nullptr)
+        {
+            CallLogFunc("[WARNING] No active pipeline is set, this means no sound will be rendered. You should configure the Amplimix "
+                        "pipeline in your engine configuration file.\n");
+            return cursor;
+        }
+
         // Cache cursor
         AmUInt64 old = cursor;
 
@@ -898,15 +907,6 @@ namespace SparkyStudios::Audio::Amplitude
 #else
             offset = (cursor % layer->snd->length) << 1;
 #endif // AM_SSE_INTRINSICS
-        }
-
-        // Process pipeline
-        SoundChunk* out = nullptr;
-        if (_pipeline == nullptr)
-        {
-            CallLogFunc("[WARNING] No active pipeline is set, this means no sound will be rendered. You should configure the Amplimix "
-                        "pipeline in your engine configuration file.\n");
-            return old;
         }
 
         const AmUInt16 channels = layer->snd->format.GetNumChannels();
