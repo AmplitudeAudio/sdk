@@ -66,7 +66,7 @@ namespace SparkyStudios::Audio::Amplitude
         return Contains(x);
     }
 
-    void Shape::SetPosition(const hmm_vec3& location)
+    void Shape::SetLocation(const hmm_vec3& location)
     {
         m_location = location;
 
@@ -98,15 +98,35 @@ namespace SparkyStudios::Audio::Amplitude
         return m_direction;
     }
 
+    const hmm_vec3& Shape::GetUp() const
+    {
+        return m_up;
+    }
+
     Zone::Zone(Shape* inner, Shape* outer)
         : m_innerShape(inner)
         , m_outerShape(outer)
     {}
 
-    void Zone::SetPosition(const hmm_vec3& location)
+    void Zone::SetLocation(const hmm_vec3& location)
     {
-        m_innerShape->SetPosition(location);
-        m_outerShape->SetPosition(location);
+        m_innerShape->SetLocation(location);
+        m_outerShape->SetLocation(location);
+    }
+
+    const hmm_vec3& Zone::GetLocation() const
+    {
+        return m_innerShape->GetLocation();
+    }
+
+    const hmm_vec3& Zone::GetDirection() const
+    {
+        return m_innerShape->GetDirection();
+    }
+
+    const hmm_vec3& Zone::GetUp() const
+    {
+        return m_innerShape->GetUp();
     }
 
     void Zone::SetOrientation(const hmm_vec3& direction, const hmm_vec3& up)

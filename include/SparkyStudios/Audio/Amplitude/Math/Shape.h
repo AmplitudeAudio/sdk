@@ -114,7 +114,7 @@ namespace SparkyStudios::Audio::Amplitude
          *
          * @param location The shape location.
          */
-        void SetPosition(const hmm_vec3& location);
+        void SetLocation(const hmm_vec3& location);
 
         /**
          * @brief Set the orientation of this shape.
@@ -144,6 +144,13 @@ namespace SparkyStudios::Audio::Amplitude
          * @return The shape's position.
          */
         [[nodiscard]] const hmm_vec3& GetDirection() const;
+
+        /**
+         * @brief Get the up vector of the zone.
+         *
+         * @return The up vector.
+         */
+        [[nodiscard]] const hmm_vec3& GetUp() const;
 
     protected:
         hmm_vec3 m_location;
@@ -206,11 +213,18 @@ namespace SparkyStudios::Audio::Amplitude
         [[nodiscard]] virtual AmReal32 GetFactor(const hmm_vec3& position) = 0;
 
         /**
-         * @brief Set the location of this shape in the 3D environment.
+         * @brief Set the location of this zone in the 3D environment.
          *
-         * @param location The shape location.
+         * @param location The zone location.
          */
-        void SetPosition(const hmm_vec3& location);
+        void SetLocation(const hmm_vec3& location);
+
+        /**
+         * @brief Gets the current location of this zone.
+         *
+         * @return The current location of this zone.
+         */
+        [[nodiscard]] const hmm_vec3& GetLocation() const;
 
         /**
          * @brief Set the orientation of this shape.
@@ -219,6 +233,20 @@ namespace SparkyStudios::Audio::Amplitude
          * @param up The shape up vector.
          */
         void SetOrientation(const hmm_vec3& direction, const hmm_vec3& up);
+
+        /**
+         * @brief Get the direction vector of the zone.
+         *
+         * @return The direction vector.
+         */
+        [[nodiscard]] const hmm_vec3& GetDirection() const;
+
+        /**
+         * @brief Get the up vector of the zone.
+         *
+         * @return The up vector.
+         */
+        [[nodiscard]] const hmm_vec3& GetUp() const;
 
     protected:
         /**

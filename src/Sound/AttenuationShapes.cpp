@@ -67,10 +67,10 @@ namespace SparkyStudios::Audio::Amplitude
     AmReal32 ConeAttenuationZone::GetAttenuationFactor(
         const Attenuation* attenuation, const hmm_vec3& soundLocation, const Listener& listener)
     {
-        m_innerShape->SetPosition(soundLocation);
+        m_innerShape->SetLocation(soundLocation);
         m_innerShape->SetOrientation(AM_Vec3(0, 0, 0), AM_Vec3(0, 0, 0));
 
-        m_outerShape->SetPosition(soundLocation);
+        m_outerShape->SetLocation(soundLocation);
         m_outerShape->SetOrientation(AM_Vec3(0, 0, 0), AM_Vec3(0, 0, 0));
 
         if (const hmm_vec3& soundToListener = listener.GetLocation() - soundLocation;
@@ -83,10 +83,10 @@ namespace SparkyStudios::Audio::Amplitude
 
     AmReal32 ConeAttenuationZone::GetAttenuationFactor(const Attenuation* attenuation, const Entity& entity, const Listener& listener)
     {
-        m_innerShape->SetPosition(entity.GetLocation());
+        m_innerShape->SetLocation(entity.GetLocation());
         m_innerShape->SetOrientation(entity.GetDirection(), entity.GetUp());
 
-        m_outerShape->SetPosition(entity.GetLocation());
+        m_outerShape->SetLocation(entity.GetLocation());
         m_outerShape->SetOrientation(entity.GetDirection(), entity.GetUp());
 
         const hmm_vec3& soundToListener = listener.GetLocation() - entity.GetLocation();
@@ -105,10 +105,10 @@ namespace SparkyStudios::Audio::Amplitude
     AmReal32 SphereAttenuationZone::GetAttenuationFactor(
         const Attenuation* attenuation, const hmm_vec3& soundLocation, const Listener& listener)
     {
-        m_innerShape->SetPosition(soundLocation);
+        m_innerShape->SetLocation(soundLocation);
         m_innerShape->SetOrientation(AM_Vec3(0, 0, 0), AM_Vec3(0, 0, 0));
 
-        m_outerShape->SetPosition(soundLocation);
+        m_outerShape->SetLocation(soundLocation);
         m_outerShape->SetOrientation(AM_Vec3(0, 0, 0), AM_Vec3(0, 0, 0));
 
         const hmm_vec3& soundToListener = listener.GetLocation() - soundLocation;
@@ -129,10 +129,10 @@ namespace SparkyStudios::Audio::Amplitude
     AmReal32 BoxAttenuationZone::GetAttenuationFactor(
         const Attenuation* attenuation, const hmm_vec3& soundLocation, const Listener& listener)
     {
-        m_innerShape->SetPosition(soundLocation);
+        m_innerShape->SetLocation(soundLocation);
         m_innerShape->SetOrientation(AM_Vec3(0, 0, 0), AM_Vec3(0, 0, 0));
 
-        m_outerShape->SetPosition(soundLocation);
+        m_outerShape->SetLocation(soundLocation);
         m_outerShape->SetOrientation(AM_Vec3(0, 0, 0), AM_Vec3(0, 0, 0));
 
         const hmm_vec3& soundToListener = listener.GetLocation() - soundLocation;
@@ -147,10 +147,10 @@ namespace SparkyStudios::Audio::Amplitude
 
     AmReal32 BoxAttenuationZone::GetAttenuationFactor(const Attenuation* attenuation, const Entity& entity, const Listener& listener)
     {
-        m_innerShape->SetPosition(entity.GetLocation());
+        m_innerShape->SetLocation(entity.GetLocation());
         m_innerShape->SetOrientation(entity.GetDirection(), entity.GetUp());
 
-        m_outerShape->SetPosition(entity.GetLocation());
+        m_outerShape->SetLocation(entity.GetLocation());
         m_outerShape->SetOrientation(entity.GetDirection(), entity.GetUp());
 
         const hmm_vec3& soundToListener = listener.GetLocation() - entity.GetLocation();
@@ -279,10 +279,10 @@ namespace SparkyStudios::Audio::Amplitude
     AmReal32 CapsuleAttenuationZone::GetAttenuationFactor(
         const Attenuation* attenuation, const hmm_vec3& soundLocation, const Listener& listener)
     {
-        m_innerShape->SetPosition(soundLocation);
+        m_innerShape->SetLocation(soundLocation);
         m_innerShape->SetOrientation(AM_Vec3(0, 0, 0), AM_Vec3(0, 0, 0));
 
-        m_outerShape->SetPosition(soundLocation);
+        m_outerShape->SetLocation(soundLocation);
         m_outerShape->SetOrientation(AM_Vec3(0, 0, 0), AM_Vec3(0, 0, 0));
 
         return GetFactor(attenuation, soundLocation, listener, AM_Mat4d(1.0f));
@@ -290,10 +290,10 @@ namespace SparkyStudios::Audio::Amplitude
 
     AmReal32 CapsuleAttenuationZone::GetAttenuationFactor(const Attenuation* attenuation, const Entity& entity, const Listener& listener)
     {
-        m_innerShape->SetPosition(entity.GetLocation());
+        m_innerShape->SetLocation(entity.GetLocation());
         m_innerShape->SetOrientation(entity.GetDirection(), entity.GetUp());
 
-        m_outerShape->SetPosition(entity.GetLocation());
+        m_outerShape->SetLocation(entity.GetLocation());
         m_outerShape->SetOrientation(entity.GetDirection(), entity.GetUp());
 
         return GetFactor(attenuation, entity.GetLocation(), listener, AM_LookAt(AM_Vec3(0, 0, 0), entity.GetDirection(), entity.GetUp()));
