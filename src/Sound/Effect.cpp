@@ -28,7 +28,7 @@
 
 namespace SparkyStudios::Audio::Amplitude
 {
-    static std::map<const Effect*, std::vector<EffectInstance*>> gEffectsList = {};
+    static std::unordered_map<AmEffectID, std::vector<EffectInstance*>> gEffectsList = {};
 
     Effect::Effect()
         : _source()
@@ -45,10 +45,10 @@ namespace SparkyStudios::Audio::Amplitude
         _filter = nullptr;
         _parameters.clear();
 
-        for (auto&& instance : gEffectsList[this])
+        for (auto&& instance : gEffectsList[_id])
             DeleteInstance(instance);
 
-        gEffectsList.erase(this);
+        gEffectsList.erase(_id);
     }
 
     bool Effect::LoadEffectDefinition(const std::string& source)
@@ -129,7 +129,7 @@ namespace SparkyStudios::Audio::Amplitude
     EffectInstance* Effect::CreateInstance() const
     {
         auto* effect = new EffectInstance(this);
-        auto& list = gEffectsList[this];
+        auto& list = gEffectsList[_id];
         list.push_back(effect);
         return effect;
     }
@@ -139,16 +139,16 @@ namespace SparkyStudios::Audio::Amplitude
         if (instance == nullptr)
             return;
 
-        auto& list = gEffectsList[this];
+        auto& list = gEffectsList[_id];
         list.erase(std::find(list.begin(), list.end(), instance));
     }
 
     void Effect::Update()
     {
         // Update effect parameters
-        for (auto&& instance : gEffectsList[this])
+        for (auto&& instance : gEffectsList[_id])
         {
-            for (AmUInt32 i = 0; i < _parameters.size(); ++i)
+            for (AmSize i = 0, l = _parameters.size(); i < l; ++i)
             {
                 instance->GetFilter()->SetFilterParameter(i, _parameters[i].GetValue());
             }
@@ -170,10 +170,15 @@ namespace SparkyStudios::Audio::Amplitude
         return &_refCounter;
     }
 
+    const RefCounter* Effect::GetRefCounter() const
+    {
+        return &_refCounter;
+    }
+
     EffectInstance::EffectInstance(const Effect* parent)
         : _parent(parent)
     {
-        _filterInstance = parent->_filter->CreateInstance();
+        _filterInstance = _parent->_filter->CreateInstance();
 
         // First initialization of filter parameters
         for (AmUInt32 i = 0; i < _parent->_parameters.size(); ++i)
