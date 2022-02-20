@@ -39,7 +39,7 @@ namespace SparkyStudios::Audio::Amplitude
      * This allows to increase the attenuation according to the shape of
      * the sound propagation.
      */
-    class AttenuationShape
+    class AttenuationZone
     {
     public:
         /**
@@ -69,31 +69,21 @@ namespace SparkyStudios::Audio::Amplitude
         virtual float GetAttenuationFactor(const Attenuation* attenuation, const Entity& entity, const Listener& listener);
 
         /**
-         * @brief Creates an AttenuationShape object from the definition.
+         * @brief Creates an AttenuationZone object from the definition.
          *
          * @param definition The attenuation shape definition.
          *
-         * @return An AttenuationShape object.
+         * @return An AttenuationZone object.
          */
-        static AttenuationShape* Create(const AttenuationShapeDefinition* definition);
+        static AttenuationZone* Create(const AttenuationShapeDefinition* definition);
 
     protected:
-        AttenuationShape();
+        AttenuationZone();
 
         /**
          * @brief The maximum attenuation factor to apply to the sound gain.
          */
         float m_maxAttenuationFactor;
-
-        /**
-         * @brief The inner shape of the sound propagation.
-         */
-        Shape* m_innerShape;
-
-        /**
-         * @brief The outer shape of the sound propagation.
-         */
-        Shape* m_outerShape;
     };
 
     /**
@@ -157,7 +147,7 @@ namespace SparkyStudios::Audio::Amplitude
          *
          * @return The Attenuation shape.
          */
-        [[nodiscard]] AttenuationShape* GetShape() const;
+        [[nodiscard]] AttenuationZone* GetShape() const;
 
         /**
          * @brief Returns the gain curve attached to this Attenuation.
@@ -190,7 +180,7 @@ namespace SparkyStudios::Audio::Amplitude
 
         double _maxDistance;
 
-        AttenuationShape* _shape;
+        AttenuationZone* _shape;
 
         Curve _gainCurve;
 
