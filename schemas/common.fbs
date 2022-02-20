@@ -160,6 +160,50 @@ union AbstractShapeDefinition {
 }
 
 table ShapeDefinition {
-  /// The shape definition. The 
+  /// The shape definition. The
   shape: AbstractShapeDefinition;
+}
+
+/// Available settings for a cone zones shape.
+table ConeZoneSettings {
+  /// The inner cone.
+  inner:ConeShapeDefinition;
+
+  /// The outer cone.
+  outer:ConeShapeDefinition;
+}
+
+/// Available settings for a spherical zone shape.
+table SphereZoneSettings {
+  /// The inner sphere.
+  inner:SphereShapeDefinition;
+
+  /// The outer sphere.
+  outer:SphereShapeDefinition;
+}
+
+/// Available settings for a box zone shape.
+table BoxZoneSettings {
+  /// The inner box.
+  inner:BoxShapeDefinition;
+
+  /// The outer box.
+  outer:BoxShapeDefinition;
+}
+
+/// Available settings for a capsule zone shape.
+table CapsuleZoneSettings {
+  /// The inner capsule.
+  inner:CapsuleShapeDefinition;
+
+  /// The outer capsule.
+  outer:CapsuleShapeDefinition;
+}
+
+/// Merges the settings from Zone shapes.
+union ZoneDefinition {
+  Box:BoxZoneSettings,
+  Capsule:CapsuleZoneSettings,
+  Cone:ConeZoneSettings,
+  Sphere:SphereZoneSettings,
 }
