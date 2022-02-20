@@ -21,8 +21,6 @@
 
 namespace SparkyStudios::Audio::Amplitude
 {
-    class Fader;
-
     class FilterInstance;
 
     class Filter

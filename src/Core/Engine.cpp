@@ -43,6 +43,7 @@
 
 #pragma region Default Sound Processors
 #include <Mixer/SoundProcessors/EffectProcessor.h>
+#include <Mixer/SoundProcessors/EnvironmentProcessor.h>
 #include <Mixer/SoundProcessors/ObstructionProcessor.h>
 #include <Mixer/SoundProcessors/OcclusionProcessor.h>
 #include <Mixer/SoundProcessors/PassThroughProcessor.h>
@@ -247,6 +248,18 @@ namespace SparkyStudios::Audio::Amplitude
         }
     }
 
+    static void InitializeEnvironmentFreeList(
+        std::vector<EnvironmentInternalState*>* environmentStateFreeList, EnvironmentStateVector* environmentList, const AmUInt32 listSize)
+    {
+        environmentList->resize(listSize);
+        environmentStateFreeList->reserve(listSize);
+        for (size_t i = 0; i < listSize; ++i)
+        {
+            EnvironmentInternalState& environment = (*environmentList)[i];
+            environmentStateFreeList->push_back(&environment);
+        }
+    }
+
     bool Engine::Initialize(AmOsString configFile)
     {
         std::filesystem::path configFilePath = _loader.ResolvePath(configFile);
@@ -312,6 +325,10 @@ namespace SparkyStudios::Audio::Amplitude
         // Initialize the entity internal data.
         InitializeEntityFreeList(&_state->entity_state_free_list, &_state->entity_state_memory, config->game()->entities());
 
+        // Initialize the environment internal data.
+        InitializeEnvironmentFreeList(
+            &_state->environment_state_free_list, &_state->environment_state_memory, config->game()->environments());
+
         // Load the audio buses.
         std::filesystem::path busesFilePath = _loader.ResolvePath(config->buses_file()->c_str());
         if (!LoadFile(busesFilePath.c_str(), &_state->buses_source))
@@ -321,8 +338,9 @@ namespace SparkyStudios::Audio::Amplitude
             return false;
         }
         const BusDefinitionList* busDefList = Amplitude::GetBusDefinitionList(_state->buses_source.c_str());
-        _state->buses.resize(busDefList->buses()->size());
-        for (flatbuffers::uoffset_t i = 0; i < busDefList->buses()->size(); ++i)
+        const auto busCount = busDefList->buses()->size();
+        _state->buses.resize(busCount);
+        for (flatbuffers::uoffset_t i = 0; i < busCount; ++i)
         {
             _state->buses[i].Initialize(busDefList->buses()->Get(i));
         }
@@ -1545,15 +1563,9 @@ namespace SparkyStudios::Audio::Amplitude
             return Listener(nullptr);
         }
 
-        if (const auto findIt = std::find_if(
-                _state->listener_state_memory.begin(), _state->listener_state_memory.end(),
-                [&id](const ListenerInternalState& state)
-                {
-                    return state.GetId() == id;
-                });
-            findIt != _state->listener_state_memory.end())
+        if (Listener& item = GetListener(id); item.Valid())
         {
-            return Listener(&*findIt);
+            return item;
         }
         else
         {
@@ -1614,15 +1626,9 @@ namespace SparkyStudios::Audio::Amplitude
             return Entity(nullptr);
         }
 
-        if (const auto findIt = std::find_if(
-                _state->entity_state_memory.begin(), _state->entity_state_memory.end(),
-                [&id](const EntityInternalState& state)
-                {
-                    return state.GetId() == id;
-                });
-            findIt != _state->entity_state_memory.end())
+        if (Entity& item = GetEntity(id); item.Valid())
         {
-            return Entity(&*findIt);
+            return item;
         }
         else
         {
@@ -1673,6 +1679,69 @@ namespace SparkyStudios::Audio::Amplitude
             findIt->SetId(kAmInvalidObjectId);
             findIt->node.remove();
             _state->entity_state_free_list.push_back(&*findIt);
+        }
+    }
+
+    Environment Engine::AddEnvironment(AmEnvironmentID id)
+    {
+        if (_state->environment_state_free_list.empty())
+        {
+            return Environment(nullptr);
+        }
+
+        if (Environment& item = GetEnvironment(id); item.Valid())
+        {
+            return item;
+        }
+        else
+        {
+            EnvironmentInternalState* environment = _state->environment_state_free_list.back();
+            environment->SetId(id);
+            _state->environment_state_free_list.pop_back();
+            _state->environment_list.push_back(*environment);
+            return Environment(environment);
+        }
+    }
+
+    Environment Engine::GetEnvironment(AmEnvironmentID id)
+    {
+        if (const auto findIt = std::find_if(
+                _state->environment_state_memory.begin(), _state->environment_state_memory.end(),
+                [&id](const EnvironmentInternalState& state)
+                {
+                    return state.GetId() == id;
+                });
+            findIt != _state->environment_state_memory.end())
+        {
+            return Environment(&*findIt);
+        }
+
+        return Environment(nullptr);
+    }
+
+    void Engine::RemoveEnvironment(const Environment* environment)
+    {
+        if (environment->Valid())
+        {
+            environment->GetState()->SetId(kAmInvalidObjectId);
+            environment->GetState()->node.remove();
+            _state->environment_state_free_list.push_back(environment->GetState());
+        }
+    }
+
+    void Engine::RemoveEnvironment(AmEnvironmentID id)
+    {
+        if (const auto findIt = std::find_if(
+                _state->environment_state_memory.begin(), _state->environment_state_memory.end(),
+                [&id](const EnvironmentInternalState& state)
+                {
+                    return state.GetId() == id;
+                });
+            findIt == _state->environment_state_memory.end())
+        {
+            findIt->SetId(kAmInvalidObjectId);
+            findIt->node.remove();
+            _state->environment_state_free_list.push_back(&*findIt);
         }
     }
 
@@ -1842,6 +1911,24 @@ namespace SparkyStudios::Audio::Amplitude
             state.Update();
         }
 
+        for (auto&& state : _state->environment_list)
+        {
+            state.Update();
+        }
+
+        for (auto&& state : _state->entity_list)
+        {
+            state.Update();
+
+            if (!_state->track_environments)
+            {
+                for (auto&& env : _state->environment_list)
+                {
+                    state.SetEnvironmentFactor(env.GetId(), env.GetFactor(Entity(&state)));
+                }
+            }
+        }
+
         for (auto&& bus : _state->buses)
         {
             bus.ResetDuckGain();
@@ -1902,11 +1989,6 @@ namespace SparkyStudios::Audio::Amplitude
         return _state->version;
     }
 
-    EngineInternalState* Engine::GetState() const
-    {
-        return _state;
-    }
-
     const EngineConfigDefinition* Engine::GetEngineConfigDefinition() const
     {
         return Amplitude::GetEngineConfigDefinition(_configSrc.c_str());
@@ -1916,6 +1998,20 @@ namespace SparkyStudios::Audio::Amplitude
     {
         return _audioDriver;
     }
+
+#pragma region Engine State
+
+    EngineInternalState* Engine::GetState() const
+    {
+        return _state;
+    }
+
+    bool Engine::IsGameTrackingEnvironmentAmounts() const
+    {
+        return _state->track_environments;
+    }
+
+#pragma endregion
 
     Channel Engine::PlayScopedSwitchContainer(
         SwitchContainerHandle handle, const Entity& entity, const hmm_vec3& location, const float userGain) const

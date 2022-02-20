@@ -142,6 +142,30 @@ namespace SparkyStudios::Audio::Amplitude
         [[nodiscard]] AmReal32 GetOcclusion() const;
 
         /**
+         * @brief Sets the environment factor for this Entity in the given environment.
+         *
+         * @param environment The environment ID.
+         * @param factor The environment factor.
+         */
+        void SetEnvironmentFactor(AmEnvironmentID environment, AmReal32 factor);
+
+        /**
+         * @brief Gets the environment factor of this Entity for the given environment.
+         *
+         * @param environment The environment ID.
+         *
+         * @return The environment factor.
+         */
+        [[nodiscard]] AmReal32 GetEnvironmentFactor(AmEnvironmentID environment) const;
+
+        /**
+         * @brief Get the list of environments where this Entity belongs or has visited.
+         * 
+         * @return The list of environments where this Entity belongs or has visited.
+         */
+        [[nodiscard]] const std::map<AmEnvironmentID, AmReal32>& GetEnvironments() const;
+
+        /**
          * @brief Returns the internal state of this Entity.
          *
          * @return The Entity internal state.

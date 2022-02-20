@@ -83,6 +83,7 @@ set(SA_SOURCE
     include/SparkyStudios/Audio/Amplitude/Core/Driver.h
     include/SparkyStudios/Audio/Amplitude/Core/Engine.h
     include/SparkyStudios/Audio/Amplitude/Core/Entity.h
+    include/SparkyStudios/Audio/Amplitude/Core/Environment.h
     include/SparkyStudios/Audio/Amplitude/Core/Event.h
     include/SparkyStudios/Audio/Amplitude/Core/Listener.h
     include/SparkyStudios/Audio/Amplitude/Core/Log.h
@@ -145,6 +146,9 @@ set(SA_SOURCE
     src/Core/Entity.cpp
     src/Core/EntityInternalState.cpp
     src/Core/EntityInternalState.h
+    src/Core/Environment.cpp
+    src/Core/EnvironmentInternalState.cpp
+    src/Core/EnvironmentInternalState.h
     src/Core/Event.cpp
     src/Core/ListenerInternalState.cpp
     src/Core/ListenerInternalState.h
@@ -161,6 +165,7 @@ set(SA_SOURCE
     src/Math/Shape.cpp
 
     src/Mixer/SoundProcessors/EffectProcessor.h
+    src/Mixer/SoundProcessors/EnvironmentProcessor.h
     src/Mixer/SoundProcessors/ObstructionProcessor.h
     src/Mixer/SoundProcessors/OcclusionProcessor.h
     src/Mixer/SoundProcessors/PassThroughProcessor.h

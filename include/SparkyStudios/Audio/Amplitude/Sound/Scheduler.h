@@ -31,6 +31,8 @@ namespace SparkyStudios::Audio::Amplitude
     class Scheduler
     {
     public:
+        virtual ~Scheduler() = default;
+
         /**
          * @brief Returns whether this scheduler has a valid state.
          *

@@ -64,6 +64,17 @@ namespace SparkyStudios::Audio::Amplitude
         virtual AmSize GetOutputBufferSize(AmUInt64 frames, AmUInt64 bufferSize, AmUInt16 channels, AmUInt32 sampleRate);
 
         /**
+         * @brief Cleans up all the memory allocated when the given
+         * sound instance was processed.
+         * 
+         * @note This means that the sound instance is stopped and will
+         * be removed from the Engine.
+         * 
+         * @param sound The sound instance to clean up.
+         */
+        virtual void Cleanup(SoundInstance* sound);
+
+        /**
          * @brief Gets the name of this sound processor.
          *
          * @return The name of this sound processor.

@@ -12,114 +12,115 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include <SparkyStudios/Audio/Amplitude/Core/Entity.h>
+#include <SparkyStudios/Audio/Amplitude/Core/Environment.h>
 
-#include <Core/EntityInternalState.h>
+#include <Core/EngineInternalState.h>
+#include <Core/EnvironmentInternalState.h>
 
 namespace SparkyStudios::Audio::Amplitude
 {
-    Entity::Entity()
+    Environment::Environment()
         : _state(nullptr)
     {}
 
-    Entity::Entity(EntityInternalState* state)
+    Environment::Environment(EnvironmentInternalState* state)
         : _state(state)
     {}
 
-    void Entity::Clear()
+    void Environment::Clear()
     {
         _state = nullptr;
     }
 
-    bool Entity::Valid() const
+    bool Environment::Valid() const
     {
         return _state != nullptr && _state->GetId() != kAmInvalidObjectId && _state->node.in_list();
     }
 
-    AmEntityID Entity::GetId() const
+    AmEnvironmentID Environment::GetId() const
     {
         return _state != nullptr ? _state->GetId() : kAmInvalidObjectId;
     }
 
-    void Entity::SetLocation(const hmm_vec3& location)
+    void Environment::SetLocation(const hmm_vec3& location)
     {
         AMPLITUDE_ASSERT(Valid());
         _state->SetLocation(location);
     }
 
-    const hmm_vec3& Entity::GetLocation() const
+    const hmm_vec3& Environment::GetLocation() const
     {
         AMPLITUDE_ASSERT(Valid());
         return _state->GetLocation();
     }
 
-    void Entity::SetOrientation(const hmm_vec3& direction, const hmm_vec3& up)
+    void Environment::SetOrientation(const hmm_vec3& direction, const hmm_vec3& up)
     {
         AMPLITUDE_ASSERT(Valid());
-        _state->SetOrientation(direction, up);
+        return _state->SetOrientation(direction, up);
     }
 
-    const hmm_vec3& Entity::GetDirection() const
+    const hmm_vec3& Environment::GetDirection() const
     {
         AMPLITUDE_ASSERT(Valid());
         return _state->GetDirection();
     }
 
-    const hmm_vec3& Entity::GetUp() const
+    const hmm_vec3& Environment::GetUp() const
     {
         AMPLITUDE_ASSERT(Valid());
         return _state->GetUp();
     }
 
-    void Entity::Update()
+    AmReal32 Environment::GetFactor(const hmm_vec3& location) const
     {
         AMPLITUDE_ASSERT(Valid());
-        _state->Update();
+        return _state->GetFactor(location);
     }
 
-    void Entity::SetObstruction(AmReal32 obstruction)
+    AmReal32 Environment::GetFactor(const Entity& entity) const
     {
         AMPLITUDE_ASSERT(Valid());
-        _state->SetObstruction(obstruction);
+        return _state->GetFactor(entity);
     }
 
-    void Entity::SetOcclusion(AmReal32 occlusion)
+    void Environment::SetEffect(AmEffectID effect)
     {
         AMPLITUDE_ASSERT(Valid());
-        _state->SetOcclusion(occlusion);
+        _state->SetEffect(effect);
     }
 
-    AmReal32 Entity::GetObstruction() const
+    void Environment::SetEffect(const std::string& effect)
     {
         AMPLITUDE_ASSERT(Valid());
-        return _state->GetObstruction();
+        _state->SetEffect(effect);
     }
 
-    AmReal32 Entity::GetOcclusion() const
+    void Environment::SetEffect(const Effect* effect)
     {
         AMPLITUDE_ASSERT(Valid());
-        return _state->GetOcclusion();
+        _state->SetEffect(effect);
     }
 
-    void Entity::SetEnvironmentFactor(AmEnvironmentID environment, AmReal32 factor)
+    const Effect* Environment::GetEffect() const
     {
         AMPLITUDE_ASSERT(Valid());
-        _state->SetEnvironmentFactor(environment, factor);
+        return _state->GetEffect();
     }
 
-    AmReal32 Entity::GetEnvironmentFactor(AmEnvironmentID environment) const
+    void Environment::SetZone(Zone* zone)
     {
         AMPLITUDE_ASSERT(Valid());
-        return _state->GetEnvironmentFactor(environment);
+        _state->SetZone(zone);
     }
 
-    const std::map<AmEnvironmentID, AmReal32>& Entity::GetEnvironments() const
+    Zone* Environment::GetZone() const
     {
         AMPLITUDE_ASSERT(Valid());
-        return _state->GetEnvironments();
+        return _state->GetZone();
     }
 
-    EntityInternalState* Entity::GetState() const
+    EnvironmentInternalState* Environment::GetState() const
     {
         return _state;
     }

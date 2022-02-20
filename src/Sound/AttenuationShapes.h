@@ -29,71 +29,63 @@
 
 namespace SparkyStudios::Audio::Amplitude
 {
-    class ConeAttenuationShape : public AttenuationShape
+    class ConeAttenuationZone
+        : public AttenuationZone
+        , public ConeZone
     {
     public:
-        explicit ConeAttenuationShape(const ConeAttenuationSettings* settings)
-            : AttenuationShape()
-        {
-            const auto* inner = settings->inner();
-            const auto* outer = settings->outer();
-
-            m_innerShape = new ConeShape(inner->radius(), inner->height());
-            m_outerShape = new ConeShape(outer->radius(), outer->height());
-        }
+        explicit ConeAttenuationZone(const ConeZoneSettings* settings)
+            : AttenuationZone()
+            , ConeZone(
+                  new ConeShape(settings->inner()->radius(), settings->inner()->height()),
+                  new ConeShape(settings->outer()->radius(), settings->outer()->height()))
+        {}
 
         float GetAttenuationFactor(const Attenuation*, const hmm_vec3& soundLocation, const Listener& listener) override;
         float GetAttenuationFactor(const Attenuation*, const Entity& entity, const Listener& listener) override;
     };
 
-    class SphereAttenuationShape : public AttenuationShape
+    class SphereAttenuationZone
+        : public AttenuationZone
+        , public SphereZone
     {
     public:
-        explicit SphereAttenuationShape(const SphereAttenuationSettings* settings)
-            : AttenuationShape()
-        {
-            const auto* inner = settings->inner();
-            const auto* outer = settings->outer();
-
-            m_innerShape = new SphereShape(inner->radius());
-            m_outerShape = new SphereShape(outer->radius());
-        }
+        explicit SphereAttenuationZone(const SphereZoneSettings* settings)
+            : AttenuationZone()
+            , SphereZone(new SphereShape(settings->inner()->radius()), new SphereShape(settings->outer()->radius()))
+        {}
 
         float GetAttenuationFactor(const Attenuation*, const hmm_vec3& soundLocation, const Listener& listener) override;
         float GetAttenuationFactor(const Attenuation*, const Entity& entity, const Listener& listener) override;
     };
 
-    class BoxAttenuationShape : public AttenuationShape
+    class BoxAttenuationZone
+        : public AttenuationZone
+        , public BoxZone
     {
     public:
-        explicit BoxAttenuationShape(const BoxAttenuationSettings* settings)
-            : AttenuationShape()
-        {
-            const auto* inner = settings->inner();
-            const auto* outer = settings->outer();
-
-            m_innerShape = new BoxShape(inner->half_width(), inner->half_height(), inner->half_depth());
-            m_outerShape = new BoxShape(outer->half_width(), outer->half_height(), outer->half_depth());
-        }
+        explicit BoxAttenuationZone(const BoxZoneSettings* settings)
+            : AttenuationZone()
+            , BoxZone(
+                  new BoxShape(settings->inner()->half_width(), settings->inner()->half_height(), settings->inner()->half_depth()),
+                  new BoxShape(settings->outer()->half_width(), settings->outer()->half_height(), settings->outer()->half_depth()))
+        {}
 
         float GetAttenuationFactor(const Attenuation*, const hmm_vec3& soundLocation, const Listener& listener) override;
         float GetAttenuationFactor(const Attenuation*, const Entity& entity, const Listener& listener) override;
-
-        float GetFactor(const hmm_vec3& soundLocation, const Listener& listener, hmm_mat4 lookAt);
     };
 
-    class CapsuleAttenuationShape : public AttenuationShape
+    class CapsuleAttenuationZone
+        : public AttenuationZone
+        , public CapsuleZone
     {
     public:
-        explicit CapsuleAttenuationShape(const CapsuleAttenuationSettings* settings)
-            : AttenuationShape()
-        {
-            const auto* inner = settings->inner();
-            const auto* outer = settings->outer();
-
-            m_innerShape = new CapsuleShape(inner->radius(), inner->half_height());
-            m_outerShape = new CapsuleShape(outer->radius(), outer->half_height());
-        }
+        explicit CapsuleAttenuationZone(const CapsuleZoneSettings* settings)
+            : AttenuationZone()
+            , CapsuleZone(
+                  new CapsuleShape(settings->inner()->radius(), settings->inner()->half_height()),
+                  new CapsuleShape(settings->outer()->radius(), settings->outer()->half_height()))
+        {}
 
         float GetAttenuationFactor(const Attenuation*, const hmm_vec3& soundLocation, const Listener& listener) override;
         float GetAttenuationFactor(const Attenuation*, const Entity& entity, const Listener& listener) override;

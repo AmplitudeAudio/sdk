@@ -50,6 +50,8 @@ namespace SparkyStudios::Audio::Amplitude
             AmUInt32 sampleRate,
             SoundInstance* sound) override;
 
+        void Cleanup(SoundInstance* sound) override;
+
     private:
         std::vector<SoundProcessor*> _processors;
     };

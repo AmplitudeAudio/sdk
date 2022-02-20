@@ -25,6 +25,7 @@ namespace SparkyStudios::Audio::Amplitude
         , _inverseMatrix(AM_Mat4d(1.0f))
         , _obstruction(0.0f)
         , _occlusion(0.0f)
+        , _environmentFactors()
     {}
 
     AmEntityID EntityInternalState::GetId() const
@@ -99,5 +100,25 @@ namespace SparkyStudios::Audio::Amplitude
     AmReal32 EntityInternalState::GetOcclusion() const
     {
         return _occlusion;
+    }
+
+    void EntityInternalState::SetEnvironmentFactor(AmEnvironmentID environment, AmReal32 factor)
+    {
+        _environmentFactors[environment] = factor;
+    }
+
+    AmReal32 EntityInternalState::GetEnvironmentFactor(AmEnvironmentID environment)
+    {
+        if (auto findIt = _environmentFactors.find(environment); findIt == _environmentFactors.end())
+        {
+            _environmentFactors[environment] = 0.0f;
+        }
+
+        return _environmentFactors[environment];
+    }
+
+    const std::map<AmEnvironmentID, AmReal32>& EntityInternalState::GetEnvironments() const
+    {
+        return _environmentFactors;
     }
 } // namespace SparkyStudios::Audio::Amplitude

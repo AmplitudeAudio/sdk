@@ -16,54 +16,10 @@ include "common.fbs";
 
 namespace SparkyStudios.Audio.Amplitude;
 
-/// Available settings for a cone attenuations shape.
-table ConeAttenuationSettings {
-  /// The inner cone.
-  inner:ConeShapeDefinition;
-
-  /// The outer cone.
-  outer:ConeShapeDefinition;
-}
-
-/// Available settings for a spherical attenuation shape.
-table SphereAttenuationSettings {
-  /// The inner sphere.
-  inner:SphereShapeDefinition;
-
-  /// The outer sphere.
-  outer:SphereShapeDefinition;
-}
-
-/// Available settings for a box attenuation shape.
-table BoxAttenuationSettings {
-  /// The inner box.
-  inner:BoxShapeDefinition;
-
-  /// The outer box.
-  outer:BoxShapeDefinition;
-}
-
-/// Available settings for a capsule attenuation shape.
-table CapsuleAttenuationSettings {
-  /// The inner capsule.
-  inner:CapsuleShapeDefinition;
-
-  /// The outer capsule.
-  outer:CapsuleShapeDefinition;
-}
-
-/// Merges the settings from Attenuation shapes.
-union AttenuationShapeSettings {
-  Box:BoxAttenuationSettings,
-  Capsule:CapsuleAttenuationSettings,
-  Cone:ConeAttenuationSettings,
-  Sphere:SphereAttenuationSettings,
-}
-
 /// Schema definition for an attenuation shape configuration.
 table AttenuationShapeDefinition {
   /// The attenuation shape settings.
-  settings:AttenuationShapeSettings;
+  zone:ZoneDefinition;
 
   /// The maximum attenuation factor to apply on the sound.
   /// This value should be in the range [0..1].

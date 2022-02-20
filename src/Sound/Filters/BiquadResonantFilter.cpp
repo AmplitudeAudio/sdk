@@ -197,7 +197,7 @@ namespace SparkyStudios::Audio::Amplitude
         const AmInt32 y1 = _state[channel].y1;
         const AmInt32 y2 = _state[channel].y2;
 
-        y = _a0 * x + _a1 * x1 + _a2 * x2 - _b1 * y1 - _b2 * y2 >> kAmFixedPointShift;
+        y = (_a0 * x + _a1 * x1 + _a2 * x2 - _b1 * y1 - _b2 * y2) >> kAmFixedPointShift;
 
         _state[channel].x1 = x;
         _state[channel].x2 = x1;
