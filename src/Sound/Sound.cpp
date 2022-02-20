@@ -113,7 +113,7 @@ namespace SparkyStudios::Audio::Amplitude
         _name = definition->name()->str();
 
         _stream = definition->stream();
-        _loop = definition->loop() ? definition->loop()->enabled() : false;
+        _loop = definition->loop() != nullptr && definition->loop()->enabled();
         _loopCount = definition->loop() ? definition->loop()->loop_count() : 0;
 
         _gain = RtpcValue(definition->gain());
