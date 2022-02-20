@@ -24,7 +24,7 @@
 
 namespace SparkyStudios::Audio::Amplitude
 {
-    static std::map<AmObjectID, FilterInstance*> gOcclusionFilters = {};
+    static std::unordered_map<AmObjectID, FilterInstance*> gOcclusionFilters = {};
 
     [[maybe_unused]] static class OcclusionProcessor final : public SoundProcessor
     {
@@ -49,7 +49,14 @@ namespace SparkyStudios::Audio::Amplitude
 
             // Nothing to do if no occlusion
             if (occlusion == 0)
+            {
+                if (out != in)
+                {
+                    memcpy(out, in, bufferSize);
+                }
+
                 return;
+            }
 
             _lpfCurve.SetStart({ 0, sampleRate / 2.0f });
             _lpfCurve.SetEnd({ 1, sampleRate / 2000.0f });
@@ -96,7 +103,14 @@ namespace SparkyStudios::Audio::Amplitude
 
             // Nothing to do if no occlusion
             if (occlusion == 0)
+            {
+                if (out != in)
+                {
+                    memcpy(out, in, bufferSize);
+                }
+
                 return;
+            }
 
             _lpfCurve.SetStart({ 0, sampleRate / 2.0f });
             _lpfCurve.SetEnd({ 1, sampleRate / 2000.0f });

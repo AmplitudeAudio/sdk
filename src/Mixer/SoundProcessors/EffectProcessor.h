@@ -40,6 +40,11 @@ namespace SparkyStudios::Audio::Amplitude
             const EffectInstance* effect = sound->GetEffect();
             if (effect == nullptr)
             {
+                if (out != in)
+                {
+                    memcpy(out, in, bufferSize);
+                }
+
                 return;
             }
 
@@ -58,6 +63,11 @@ namespace SparkyStudios::Audio::Amplitude
             const EffectInstance* effect = sound->GetEffect();
             if (effect == nullptr)
             {
+                if (out != in)
+                {
+                    memcpy(out, in, bufferSize);
+                }
+
                 return;
             }
 
