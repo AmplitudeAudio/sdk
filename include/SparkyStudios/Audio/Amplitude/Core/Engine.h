@@ -25,6 +25,7 @@
 #include <SparkyStudios/Audio/Amplitude/Core/Channel.h>
 #include <SparkyStudios/Audio/Amplitude/Core/Driver.h>
 #include <SparkyStudios/Audio/Amplitude/Core/Entity.h>
+#include <SparkyStudios/Audio/Amplitude/Core/Environment.h>
 #include <SparkyStudios/Audio/Amplitude/Core/Event.h>
 #include <SparkyStudios/Audio/Amplitude/Core/Listener.h>
 #include <SparkyStudios/Audio/Amplitude/Core/Version.h>
@@ -506,7 +507,7 @@ namespace SparkyStudios::Audio::Amplitude
          * @param id The game Entity ID.
          *
          * @return An initialized Entity if that one has been registered before,
-         * otherwise an unitialized Entity.
+         * otherwise an uninitialized Entity.
          */
         Entity GetEntity(AmEntityID id);
 
@@ -523,6 +524,39 @@ namespace SparkyStudios::Audio::Amplitude
          * @param id The ID of the Entity to be removed.
          */
         void RemoveEntity(AmEntityID id);
+
+        /**
+         * @brief Initialize and return an Environment.
+         *
+         * @param id The game Environment ID.
+         *
+         * @return An initialized Environment.
+         */
+        Environment AddEnvironment(AmEnvironmentID id);
+
+        /**
+         * @brief Return the Environment with the given ID.
+         *
+         * @param id The game Environment ID.
+         *
+         * @return An initialized Environment if that one has been registered before,
+         * otherwise an uninitialized Environment.
+         */
+        Environment GetEnvironment(AmEnvironmentID id);
+
+        /**
+         * @brief Remove an Environment.
+         *
+         * @param Environment The Environment to be removed.
+         */
+        void RemoveEnvironment(const Environment* Environment);
+
+        /**
+         * @brief Remove an Environment given its ID.
+         *
+         * @param id The ID of the Environment to be removed.
+         */
+        void RemoveEnvironment(AmEnvironmentID id);
 
         /**
          * @brief Returns the bus with the specified name.
@@ -1025,13 +1059,6 @@ namespace SparkyStudios::Audio::Amplitude
          */
         [[nodiscard]] const struct Version* Version() const;
 
-        /**
-         * @brief Gets the current state of this Engine.
-         *
-         * @return The current state of this Engine.
-         */
-        [[nodiscard]] EngineInternalState* GetState() const;
-
         [[nodiscard]] const EngineConfigDefinition* GetEngineConfigDefinition() const;
 
         /**
@@ -1045,6 +1072,25 @@ namespace SparkyStudios::Audio::Amplitude
          * @brief Returns an unique instance of the Amplitude Engine.
          */
         [[nodiscard]] static Engine* GetInstance();
+
+#pragma region Engine State
+
+        /**
+         * @brief Gets the current state of this Engine.
+         *
+         * @return The current state of this Engine.
+         */
+        [[nodiscard]] EngineInternalState* GetState() const;
+
+        /**
+         * @brief Checks whether the game is tracking environment amounts
+         * himself. This is useful for engines like O3DE.
+         * 
+         * @return Whether the game is tracking environment amounts.
+         */
+        [[nodiscard]] bool IsGameTrackingEnvironmentAmounts() const;
+
+#pragma endregion
 
     private:
         Channel PlayScopedSwitchContainer(

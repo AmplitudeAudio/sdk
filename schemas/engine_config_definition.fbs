@@ -16,7 +16,7 @@ include "common.fbs";
 
 namespace SparkyStudios.Audio.Amplitude;
 
-// The supported output channels.
+/// The supported output channels.
 enum PlaybackOutputChannels : ushort {
   Default = 0,
   Mono = 1,
@@ -26,7 +26,7 @@ enum PlaybackOutputChannels : ushort {
   Surround_7_1 = 8
 }
 
-// The supported output formats.
+/// The supported output formats.
 enum PlaybackOutputFormat : ushort {
   Default = 0,
   UInt8 = 1,
@@ -78,18 +78,18 @@ enum GameEngineUpAxis : ushort {
   Z = 1,
 }
 
-// Playback device configuration
+/// Playback device configuration
 table PlaybackOutputConfig {
-  // Output sampling frequency in samples per second.
+  /// Output sampling frequency in samples per second.
   frequency:uint = 48000;
 
-  // The number of output channels to support.
+  /// The number of output channels to support.
   channels:PlaybackOutputChannels = Stereo;
 
-  // Bytes used per output sample.
+  /// Bytes used per output sample.
   buffer_size:uint = 2048;
 
-  // The output buffer format.
+  /// The output buffer format.
   format:PlaybackOutputFormat = Int16;
 }
 
@@ -120,15 +120,15 @@ union AudioMixerPipelineItem {
   AudioProcessorMixer,
 }
 
-// Audio mixer configuration
+/// Audio mixer configuration
 table AudioMixerConfig {
-  // The number of active audio mixer channels to allocate.
+  /// The number of active audio mixer channels to allocate.
   active_channels:uint;
 
-  // The number of virtuals audio mixer channels to allocate
-  // in addition to the active channels. Mixing does not occur
-  // on virtual channels, but information about the channel is
-  // still tracked.
+  /// The number of virtuals audio mixer channels to allocate
+  /// in addition to the active channels. Mixing does not occur
+  /// on virtual channels, but information about the channel is
+  /// still tracked.
   virtual_channels:uint;
 
   /// Configures the mixer pipeline. The pipeline is responsible to
@@ -159,6 +159,9 @@ table GameSyncConfig {
   /// The number of entities to allocate.
   entities:uint = 4096;
 
+  /// The number of environments to allocate.
+  environments:uint = 64;
+
   /// The up axis of the game engine.
   up_axis:GameEngineUpAxis = Y;
 
@@ -167,24 +170,30 @@ table GameSyncConfig {
 
   /// The default occlusion curves settings.
   occlusion:ObstructionOcclusionConfig;
+
+  /// Defines if the game is tracking environments or not.
+  /// This means that the game will compute and send the environment
+  /// levels to the engine.
+  /// This implies that the shapes defined in environments (if any) will not be used.
+  track_environments:bool = true;
 }
 
 table EngineConfigDefinition {
-  // Configures the playback device.
+  /// Configures the playback device.
   output:PlaybackOutputConfig (required);
 
-  // Configures the audio mixer.
+  /// Configures the audio mixer.
   mixer:AudioMixerConfig (required);
 
   /// Configures the game sync.
   game:GameSyncConfig (required);
 
-  // The location of the buses definition file.
+  /// The location of the buses definition file.
   buses_file:string (required);
 
-  // The name of the audio driver to use.
-  // If empty, or the given driver name is not registered,
-  // the default driver will be used instead.
+  /// The name of the audio driver to use.
+  /// If empty, or the given driver name is not registered,
+  /// the default driver will be used instead.
   driver:string;
 }
 

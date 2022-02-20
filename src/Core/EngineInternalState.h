@@ -23,8 +23,11 @@
 #include <Core/BusInternalState.h>
 #include <Core/ChannelInternalState.h>
 #include <Core/EntityInternalState.h>
+#include <Core/EnvironmentInternalState.h>
 #include <Core/ListenerInternalState.h>
+
 #include <Mixer/Mixer.h>
+
 #include <Utils/intrusive_list.h>
 
 #include "collection_definition_generated.h"
@@ -89,6 +92,9 @@ namespace SparkyStudios::Audio::Amplitude
     typedef std::vector<ListenerInternalState> ListenerStateVector;
     typedef fplutil::intrusive_list<ListenerInternalState> ListenerList;
 
+    typedef std::vector<EnvironmentInternalState> EnvironmentStateVector;
+    typedef fplutil::intrusive_list<EnvironmentInternalState> EnvironmentList;
+
     struct ObstructionOcclusionState
     {
         Curve lpf;
@@ -127,6 +133,7 @@ namespace SparkyStudios::Audio::Amplitude
             , switch_map()
             , switch_id_map()
             , sound_bank_map()
+            , sound_bank_id_map()
             , channel_state_memory()
             , playing_channel_list(&ChannelInternalState::priority_node)
             , real_channel_free_list(&ChannelInternalState::free_node)
@@ -137,6 +144,9 @@ namespace SparkyStudios::Audio::Amplitude
             , entity_list(&EntityInternalState::node)
             , entity_state_memory()
             , entity_state_free_list()
+            , environment_list(&EnvironmentInternalState::node)
+            , environment_state_memory()
+            , environment_state_free_list()
             , current_frame(0)
             , total_time(0.0)
             , version(nullptr)
@@ -144,6 +154,7 @@ namespace SparkyStudios::Audio::Amplitude
             , up_axis(GameEngineUpAxis_Y)
             , obstruction_config()
             , occlusion_config()
+            , track_environments(false)
         {}
 
         Mixer mixer;
@@ -244,6 +255,11 @@ namespace SparkyStudios::Audio::Amplitude
         EntityStateVector entity_state_memory;
         std::vector<EntityInternalState*> entity_state_free_list;
 
+        // The list of environments.
+        EnvironmentList environment_list;
+        EnvironmentStateVector environment_state_memory;
+        std::vector<EnvironmentInternalState*> environment_state_free_list;
+
         // The current frame, i.e. the number of times AdvanceFrame has been called.
         AmUInt64 current_frame;
 
@@ -259,6 +275,8 @@ namespace SparkyStudios::Audio::Amplitude
         ObstructionOcclusionState obstruction_config;
 
         ObstructionOcclusionState occlusion_config;
+
+        bool track_environments;
 
         const struct Version* version;
     };

@@ -119,6 +119,30 @@ namespace SparkyStudios::Audio::Amplitude
         [[nodiscard]] AmReal32 GetOcclusion() const;
 
         /**
+         * @brief Sets the environment factor for this Entity in the given environment.
+         *
+         * @param environment The environment ID.
+         * @param factor The environment factor.
+         */
+        void SetEnvironmentFactor(AmEnvironmentID environment, AmReal32 factor);
+
+        /**
+         * @brief Gets the environment factor of this Entity for the given environment.
+         *
+         * @param environment The environment ID.
+         *
+         * @return The environment factor.
+         */
+        [[nodiscard]] AmReal32 GetEnvironmentFactor(AmEnvironmentID environment);
+
+        /**
+         * @brief Get the list of environments where this Entity belongs or has visited.
+         *
+         * @return The list of environments where this Entity belongs or has visited.
+         */
+        [[nodiscard]] const std::map<AmEnvironmentID, AmReal32>& GetEnvironments() const;
+
+        /**
          * @brief Updates the inverse matrix of this Entity.
          *
          * This method is called automatically by the Engine on
@@ -149,6 +173,8 @@ namespace SparkyStudios::Audio::Amplitude
 
         AmReal32 _obstruction;
         AmReal32 _occlusion;
+
+        std::map<AmEnvironmentID, AmReal32> _environmentFactors;
 
         // Keeps track of how many sounds are being played on this entity.
         ChannelList _playingSoundList;
