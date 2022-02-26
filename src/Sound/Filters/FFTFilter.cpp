@@ -146,7 +146,7 @@ namespace SparkyStudios::Audio::Amplitude
                 const AmInt32 x = buffer[offset + s];
                 /* */ AmInt32 y = AmReal32ToInt16(_mixBuffer[channelOffset + (readOffset & (STFT_WINDOW_TWICE - 1))]);
 
-                y = x + ((y - x) * AmFloatToFixedPoint(m_parameters[0]) >> kAmFixedPointShift);
+                y = x + ((y - x) * AmFloatToFixedPoint(m_parameters[0]) >> kAmFixedPointBits);
                 y = AM_CLAMP(y, INT16_MIN, INT16_MAX);
 
                 buffer[offset + s] = static_cast<AmInt16>(y);

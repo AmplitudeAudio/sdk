@@ -107,10 +107,10 @@ namespace SparkyStudios::Audio::Amplitude
             const AmReal32 wPos = static_cast<AmReal32>((start + s) % period) / static_cast<AmReal32>(period);
 
             // clang-format off
-            y = x * AmFloatToFixedPoint(GenerateWaveform(static_cast<AmInt32>(m_parameters[RobotizeFilter::ATTRIBUTE_WAVEFORM]), wPos) + 0.5f) >> kAmFixedPointShift;
+            y = x * AmFloatToFixedPoint(GenerateWaveform(static_cast<AmInt32>(m_parameters[RobotizeFilter::ATTRIBUTE_WAVEFORM]), wPos) + 0.5f) >> kAmFixedPointBits;
             // clang-format on
 
-            y = x + ((y - x) * AmFloatToFixedPoint(m_parameters[RobotizeFilter::ATTRIBUTE_WET]) >> kAmFixedPointShift);
+            y = x + ((y - x) * AmFloatToFixedPoint(m_parameters[RobotizeFilter::ATTRIBUTE_WET]) >> kAmFixedPointBits);
             y = AM_CLAMP(y, INT16_MIN, INT16_MAX);
 
             buffer[s] = static_cast<AmInt16>(y);

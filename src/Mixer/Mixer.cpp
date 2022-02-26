@@ -849,12 +849,12 @@ namespace SparkyStudios::Audio::Amplitude
 
 #if defined(AM_SSE_INTRINSICS)
             buffer[i + 0] = simdpp::add(
-                buffer[i + 0], simdpp::to_int16(simdpp::shift_r(simdpp::mull(simdpp::zip_lo(sample, sample), lGain), kAmFixedPointShift)));
+                buffer[i + 0], simdpp::to_int16(simdpp::shift_r(simdpp::mull(simdpp::zip_lo(sample, sample), lGain), kAmFixedPointBits)));
             buffer[i + 1] = simdpp::add(
-                buffer[i + 1], simdpp::to_int16(simdpp::shift_r(simdpp::mull(simdpp::zip_hi(sample, sample), rGain), kAmFixedPointShift)));
+                buffer[i + 1], simdpp::to_int16(simdpp::shift_r(simdpp::mull(simdpp::zip_hi(sample, sample), rGain), kAmFixedPointBits)));
 #else
-            buffer[i + 0] += static_cast<AmInt16>((sample * lGain) >> kAmFixedPointShift);
-            buffer[i + 1] += static_cast<AmInt16>((sample * rGain) >> kAmFixedPointShift);
+            buffer[i + 0] += static_cast<AmInt16>((sample * lGain) >> kAmFixedPointBits);
+            buffer[i + 1] += static_cast<AmInt16>((sample * rGain) >> kAmFixedPointBits);
 #endif // AM_SSE_INTRINSICS
 
             // advance cursor
@@ -972,12 +972,12 @@ namespace SparkyStudios::Audio::Amplitude
 
 #if defined(AM_SSE_INTRINSICS)
             buffer[i + 0] =
-                simdpp::add(buffer[i + 0], simdpp::to_int16(simdpp::shift_r(simdpp::mull(out->buffer[i + 0], lGain), kAmFixedPointShift)));
+                simdpp::add(buffer[i + 0], simdpp::to_int16(simdpp::shift_r(simdpp::mull(out->buffer[i + 0], lGain), kAmFixedPointBits)));
             buffer[i + 1] =
-                simdpp::add(buffer[i + 1], simdpp::to_int16(simdpp::shift_r(simdpp::mull(out->buffer[i + 1], rGain), kAmFixedPointShift)));
+                simdpp::add(buffer[i + 1], simdpp::to_int16(simdpp::shift_r(simdpp::mull(out->buffer[i + 1], rGain), kAmFixedPointBits)));
 #else
-            buffer[i] += static_cast<AmInt16>((out->buffer[i + 0] * lGain) >> kAmFixedPointShift);
-            buffer[i + 1] += static_cast<AmInt16>((out->buffer[i + 1] * rGain) >> kAmFixedPointShift);
+            buffer[i] += static_cast<AmInt16>((out->buffer[i + 0] * lGain) >> kAmFixedPointBits);
+            buffer[i + 1] += static_cast<AmInt16>((out->buffer[i + 1] * rGain) >> kAmFixedPointBits);
 #endif // AM_SSE_INTRINSICS
 
             // advance cursor

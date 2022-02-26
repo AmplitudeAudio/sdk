@@ -85,7 +85,7 @@ namespace SparkyStudios::Audio::Amplitude
             // Apply Gain
             for (AmUInt64 i = 0, l = frames * channels; i < l; i++)
             {
-                out[i] = out[i] * AmFloatToFixedPoint(gain) >> kAmFixedPointShift;
+                out[i] = out[i] * AmFloatToFixedPoint(gain) >> kAmFixedPointBits;
                 out[i] = AM_CLAMP(out[i], INT16_MIN, INT16_MAX);
             }
         }
@@ -139,7 +139,7 @@ namespace SparkyStudios::Audio::Amplitude
             // Apply Gain
             for (AmUInt64 i = 0, l = frames * channels; i < l; i++)
             {
-                out[i] = out[i] * AmFloatToFixedPoint(gain) >> kAmFixedPointShift;
+                out[i] = out[i] * AmFloatToFixedPoint(gain) >> kAmFixedPointBits;
                 out[i] = AM_CLAMP(out[i], INT16_MIN, INT16_MAX);
             }
         }

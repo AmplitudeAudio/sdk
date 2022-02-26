@@ -150,13 +150,13 @@ namespace SparkyStudios::Audio::Amplitude
             if (dryOut[i] != wetOut[i] && _wet > 0.0f)
             {
                 // clang-format off
-                out[i] = (dryOut[i] * AmFloatToFixedPoint(_dry) >> kAmFixedPointShift) + ((wetOut[i] - dryOut[i]) * AmFloatToFixedPoint(_wet) >> kAmFixedPointShift);
+                out[i] = (dryOut[i] * AmFloatToFixedPoint(_dry) >> kAmFixedPointBits) + ((wetOut[i] - dryOut[i]) * AmFloatToFixedPoint(_wet) >> kAmFixedPointBits);
                 out[i] = AM_CLAMP(out[i], INT16_MIN, INT16_MAX);
                 // clang-format on
             }
             else
             {
-                out[i] = dryOut[i] * AmFloatToFixedPoint(_dry) >> kAmFixedPointShift;
+                out[i] = dryOut[i] * AmFloatToFixedPoint(_dry) >> kAmFixedPointBits;
                 out[i] = AM_CLAMP(out[i], INT16_MIN, INT16_MAX);
             }
         }
@@ -198,13 +198,13 @@ namespace SparkyStudios::Audio::Amplitude
             if (dryOut[i] != wetOut[i] && _wet > 0.0f)
             {
                 // clang-format off
-                out[i] = (dryOut[i] * AmFloatToFixedPoint(_dry) >> kAmFixedPointShift) + ((wetOut[i] - dryOut[i]) * AmFloatToFixedPoint(_wet) >> kAmFixedPointShift);
+                out[i] = (dryOut[i] * AmFloatToFixedPoint(_dry) >> kAmFixedPointBits) + ((wetOut[i] - dryOut[i]) * AmFloatToFixedPoint(_wet) >> kAmFixedPointBits);
                 out[i] = AM_CLAMP(out[i], INT16_MIN, INT16_MAX);
                 // clang-format on
             }
             else
             {
-                out[i] = dryOut[i] * AmFloatToFixedPoint(_dry) >> kAmFixedPointShift;
+                out[i] = dryOut[i] * AmFloatToFixedPoint(_dry) >> kAmFixedPointBits;
                 out[i] = AM_CLAMP(out[i], INT16_MIN, INT16_MAX);
             }
         }

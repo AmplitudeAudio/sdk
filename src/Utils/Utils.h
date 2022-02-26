@@ -51,7 +51,7 @@ namespace SparkyStudios::Audio::Amplitude
 
     static AM_INLINE(AmInt32) AmFloatToFixedPoint(const AmReal32 x)
     {
-        return static_cast<AmInt32>(x * (1 << kAmFixedPointShift));
+        return static_cast<AmInt32>(x * (1 << kAmFixedPointBits));
     }
 
     static AM_INLINE(AmReal32) AmInt16ToReal32(const AmInt16 x)

@@ -142,16 +142,16 @@ namespace SparkyStudios::Audio::Amplitude
         /* */ AmInt32 y;
 
         // clang-format off
-        const AmInt32 p = AmFloatToFixedPoint(m_parameters[EchoFilter::ATTRIBUTE_FILTER]) * _buffer[_prevOffset + o] >> kAmFixedPointShift;
-        const AmInt32 q = AmFloatToFixedPoint(1.0f - m_parameters[EchoFilter::ATTRIBUTE_FILTER]) * _buffer[_offset + o] >> kAmFixedPointShift;
+        const AmInt32 p = AmFloatToFixedPoint(m_parameters[EchoFilter::ATTRIBUTE_FILTER]) * _buffer[_prevOffset + o] >> kAmFixedPointBits;
+        const AmInt32 q = AmFloatToFixedPoint(1.0f - m_parameters[EchoFilter::ATTRIBUTE_FILTER]) * _buffer[_offset + o] >> kAmFixedPointBits;
 
         y = p + q;
-        y = x + (y * AmFloatToFixedPoint(m_parameters[EchoFilter::ATTRIBUTE_DECAY]) >> kAmFixedPointShift);
+        y = x + (y * AmFloatToFixedPoint(m_parameters[EchoFilter::ATTRIBUTE_DECAY]) >> kAmFixedPointBits);
         // clang-format on
 
         _buffer[_offset + o] = y;
 
-        y = x + ((y - x) * AmFloatToFixedPoint(m_parameters[EchoFilter::ATTRIBUTE_WET]) >> kAmFixedPointShift);
+        y = x + ((y - x) * AmFloatToFixedPoint(m_parameters[EchoFilter::ATTRIBUTE_WET]) >> kAmFixedPointBits);
         y = AM_CLAMP(y, INT16_MIN, INT16_MAX);
 
         return static_cast<AmInt16>(y);

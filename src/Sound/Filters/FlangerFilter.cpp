@@ -169,10 +169,10 @@ namespace SparkyStudios::Audio::Amplitude
             _buffer[o + _offset % _bufferLength] = x;
 
             // clang-format off
-            y = AmFloatToFixedPoint(0.5f) * (x + _buffer[o + (_bufferLength - delay + _offset) % _bufferLength]) >> kAmFixedPointShift;
+            y = AmFloatToFixedPoint(0.5f) * (x + _buffer[o + (_bufferLength - delay + _offset) % _bufferLength]) >> kAmFixedPointBits;
             _offset++;
 
-            y = x + ((y - x) * AmFloatToFixedPoint(m_parameters[FlangerFilter::ATTRIBUTE_WET]) >> kAmFixedPointShift);
+            y = x + ((y - x) * AmFloatToFixedPoint(m_parameters[FlangerFilter::ATTRIBUTE_WET]) >> kAmFixedPointBits);
             y = AM_CLAMP(y, INT16_MIN, INT16_MAX);
             // clang-format on
 
