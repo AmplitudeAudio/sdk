@@ -377,7 +377,6 @@ namespace SparkyStudios::Audio::Amplitude
         const auto* data = static_cast<SoundData*>(_userData);
 
         const AmUInt16 channels = _parent->m_format.GetNumChannels();
-        const AmUInt32 sampleRate = _parent->m_format.GetSampleRate();
 
         AmUInt64 n, l = frames, o = offset, r = 0;
         auto* b = reinterpret_cast<AmInt16Buffer>(data->chunk->buffer);
@@ -392,8 +391,9 @@ namespace SparkyStudios::Audio::Amplitude
             // seek back to the beginning of the file and fill the remaining part of the buffer.
             if (needFill = n < l && _parent->_loop && _parent->_decoder->Seek(0); needFill)
             {
-                b += n * _parent->m_format.GetNumChannels();
+                b += n * channels;
                 l -= n;
+                o = 0;
             }
         } while (needFill);
 
