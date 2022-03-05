@@ -48,7 +48,7 @@ namespace SparkyStudios::Audio::Amplitude
         static SoundData* CreateMusic(const SoundFormat& format, SoundChunk* chunk, AmUInt64 frames, AmVoidPtr userData);
         static SoundData* CreateSound(const SoundFormat& format, SoundChunk* chunk, AmUInt64 frames, AmVoidPtr userData);
 
-        void Destroy();
+        void Destroy() const;
     };
 } // namespace SparkyStudios::Audio::Amplitude
 

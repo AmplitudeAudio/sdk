@@ -38,12 +38,11 @@ namespace SparkyStudios::Audio::Amplitude
     SoundChunk* SoundChunk::CreateChunk(AmUInt64 frames, AmUInt16 channels, MemoryPoolKind pool)
     {
 #if defined(AM_SSE_INTRINSICS)
-        const AmUInt64 alignedLength = AM_VALUE_ALIGN(frames * channels, AudioDataUnit::length);
         const AmUInt64 alignedFrames = AM_VALUE_ALIGN(frames, AudioDataUnit::length);
 #else
-        const AmUInt64 alignedLength = frames * channels;
         const AmUInt64 alignedFrames = frames;
 #endif // AM_SSE_INTRINSICS
+        const AmUInt64 alignedLength = alignedFrames * channels;
 
         auto* chunk = new SoundChunk();
 
@@ -52,6 +51,8 @@ namespace SparkyStudios::Audio::Amplitude
         chunk->size = alignedLength * sizeof(AmInt16);
         chunk->memoryPool = pool;
         chunk->buffer = static_cast<AudioBuffer>(amMemory->Malign(pool, chunk->size, AM_SIMD_ALIGNMENT));
+
+        memset(chunk->buffer, 0, chunk->size);
 
         return chunk;
     }
@@ -72,7 +73,7 @@ namespace SparkyStudios::Audio::Amplitude
         return CreateSoundData(format, chunk, userData, frames, false);
     }
 
-    void SoundData::Destroy()
+    void SoundData::Destroy() const
     {
         SoundChunk::DestroyChunk(chunk);
     }
