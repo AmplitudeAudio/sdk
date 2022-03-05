@@ -78,6 +78,29 @@ enum GameEngineUpAxis : ushort {
   Z = 1,
 }
 
+/// The list of sample rate conversion quality levels.
+enum SampleRateConversionQuality : ushort {
+  /// This is a bandlimited interpolator derived from the mathematical sinc function
+  /// and this is the highest quality sinc based converter, providing a worst case
+  /// Signal-to-Noise Ratio (SNR) of 97 decibels (dB) at a bandwidth of 97%.
+  SINC_Best       = 0,
+
+  /// This is another bandlimited interpolator much like SINC_Best. It has an SNR of
+  // 97dB and a bandwidth of 90%. The speed of the conversion is much faster than SINC_Best.
+  SINC_Medium     = 1,
+
+  /// This is the fastest bandlimited interpolator and has an SNR of 97dB and a bandwidth of 80%.
+  SINC_Fastest    = 2,
+
+  /// A Zero Order Hold converter (interpolated value is equal to the last value). The quality is
+  /// poor but the conversion speed is blindlingly fast.
+  ZeroOrderHold   = 3,
+
+  /// A linear converter. Again the quality is poor, but the conversion speed is blindingly fast.
+  /// This is the default value.
+  Linear          = 4
+}
+
 /// Playback device configuration
 table PlaybackOutputConfig {
   /// Output sampling frequency in samples per second.
@@ -131,6 +154,9 @@ table AudioMixerConfig {
   /// still tracked.
   virtual_channels:uint;
 
+  /// Configures the samplerate conversion quality.
+  sample_rate_conversion_quality:SampleRateConversionQuality = Linear;
+
   /// Configures the mixer pipeline. The pipeline is responsible to
   /// process the sound (apply effects) before it is sent to the audio device.
   pipeline:[AudioMixerPipelineItem];
@@ -161,6 +187,13 @@ table GameSyncConfig {
 
   /// The number of environments to allocate.
   environments:uint = 64;
+
+  /// The maximum speed of sound in the game.
+  sound_speed:float = 333.0;
+
+  /// The Doppler factor. Set 1.0 to normal Doppler effect,
+  /// set 0.0 to disable Doppler effect.
+  doppler_factor:float = 1.0;
 
   /// The up axis of the game engine.
   up_axis:GameEngineUpAxis = Y;

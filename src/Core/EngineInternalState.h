@@ -31,6 +31,7 @@
 #include <Utils/intrusive_list.h>
 
 #include "collection_definition_generated.h"
+#include "engine_config_definition_generated.h"
 
 namespace SparkyStudios::Audio::Amplitude
 {
@@ -151,10 +152,13 @@ namespace SparkyStudios::Audio::Amplitude
             , total_time(0.0)
             , version(nullptr)
             , listener_fetch_mode(ListenerFetchMode_None)
+            , sound_speed(0.0)
+            , doppler_factor(0.0)
             , up_axis(GameEngineUpAxis_Y)
             , obstruction_config()
             , occlusion_config()
             , track_environments(false)
+            , sample_rate_conversion_quality(SampleRateConversionQuality_Linear)
         {}
 
         Mixer mixer;
@@ -269,6 +273,10 @@ namespace SparkyStudios::Audio::Amplitude
         // The way Amplitude should fetch the best listener for an audio source.
         ListenerFetchMode listener_fetch_mode;
 
+        AmReal32 sound_speed;
+
+        AmReal32 doppler_factor;
+
         // The up axis of the game engine.
         GameEngineUpAxis up_axis;
 
@@ -277,6 +285,8 @@ namespace SparkyStudios::Audio::Amplitude
         ObstructionOcclusionState occlusion_config;
 
         bool track_environments;
+
+        SampleRateConversionQuality sample_rate_conversion_quality;
 
         const struct Version* version;
     };

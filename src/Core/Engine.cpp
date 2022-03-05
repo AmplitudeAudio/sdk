@@ -378,6 +378,13 @@ namespace SparkyStudios::Audio::Amplitude
         // Set the listener fetch mode
         _state->listener_fetch_mode = config->game()->listener_fetch_mode();
 
+        // Doppler effect settings
+        _state->sound_speed = config->game()->sound_speed();
+        _state->doppler_factor = config->game()->doppler_factor();
+
+        // Dynamic sample rate conversion
+        _state->sample_rate_conversion_quality = config->mixer()->sample_rate_conversion_quality();
+
         // Set the game engine up axis
         _state->up_axis = config->game()->up_axis();
 
@@ -2004,6 +2011,21 @@ namespace SparkyStudios::Audio::Amplitude
     EngineInternalState* Engine::GetState() const
     {
         return _state;
+    }
+
+    AmReal32 Engine::GetSoundSpeed() const
+    {
+        return _state->sound_speed;
+    }
+
+    AmReal32 Engine::GetDopplerFactor() const
+    {
+        return _state->doppler_factor;
+    }
+
+    AmUInt16 Engine::GetSampleRateConversionQuality() const
+    {
+        return static_cast<AmUInt16>(_state->sample_rate_conversion_quality);
     }
 
     bool Engine::IsGameTrackingEnvironmentAmounts() const
