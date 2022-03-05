@@ -68,6 +68,13 @@ namespace SparkyStudios::Audio::Amplitude
         [[nodiscard]] AmEntityID GetId() const;
 
         /**
+         * @brief Gets the velocity of the Entity.
+         *
+         * @return The Entity's velocity.
+         */
+        [[nodiscard]] const hmm_vec3& GetVelocity() const;
+
+        /**
          * @brief Sets the location of this Entity.
          *
          * @param location The new location.

@@ -67,6 +67,13 @@ namespace SparkyStudios::Audio::Amplitude
         [[nodiscard]] AmListenerID GetId() const;
 
         /**
+         * @brief Gets the velocity of the Listener.
+         *
+         * @return The Listener's velocity.
+         */
+        [[nodiscard]] const hmm_vec3& GetVelocity() const;
+
+        /**
          * @brief Returns the location of this Listener.
          *
          * @return hmm_vec3 The location of this Listener.
@@ -87,6 +94,14 @@ namespace SparkyStudios::Audio::Amplitude
          * @param up THe up vector of this Listener.
          */
         void SetOrientation(const hmm_vec3& direction, const hmm_vec3& up);
+
+        /**
+         * @brief Update the state of this Listener.
+         *
+         * This method is called automatically by the Engine
+         * on each frames.
+         */
+        void Update();
 
         /**
          * @brief Returns the internal state of this Listener.

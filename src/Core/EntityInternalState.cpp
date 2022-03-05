@@ -38,8 +38,14 @@ namespace SparkyStudios::Audio::Amplitude
         _id = id;
     }
 
+    const hmm_vec3& EntityInternalState::GetVelocity() const
+    {
+        return _velocity;
+    }
+
     void EntityInternalState::SetLocation(const hmm_vec3& location)
     {
+        _lastLocation = _location;
         _location = location;
     }
 
@@ -71,6 +77,7 @@ namespace SparkyStudios::Audio::Amplitude
 
     void EntityInternalState::Update()
     {
+        _velocity = _location - _lastLocation;
         _inverseMatrix = AM_LookAt(_location, _location + _direction, _up);
     }
 
