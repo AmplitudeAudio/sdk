@@ -25,7 +25,10 @@
 
 #include <Core/BusInternalState.h>
 #include <Core/ChannelInternalState.h>
+#include <Core/EngineInternalState.h>
 #include <Core/EntityInternalState.h>
+
+#include <Utils/Utils.h>
 #include <Utils/intrusive_list.h>
 
 #include "collection_definition_generated.h"
@@ -249,6 +252,20 @@ namespace SparkyStudios::Audio::Amplitude
         }
     }
 
+    void ChannelInternalState::SetPitch(AmReal32 pitch)
+    {
+        _pitch = pitch;
+        if (Valid())
+        {
+            _realChannel.SetPitch(pitch);
+        }
+    }
+
+    AmReal32 ChannelInternalState::GetPitch() const
+    {
+        return _pitch;
+    }
+
     void ChannelInternalState::Devirtualize(ChannelInternalState* other)
     {
         AMPLITUDE_ASSERT(!_realChannel.Valid());
@@ -300,14 +317,22 @@ namespace SparkyStudios::Audio::Amplitude
 
     void ChannelInternalState::AdvanceFrame([[maybe_unused]] AmTime deltaTime)
     {
-        // Update attached entity if any
-        if (_entity.Valid())
-        {
-            _entity.Update();
-        }
-
         if (_channelState == ChannelState::Paused || _channelState == ChannelState::Stopped)
             return;
+
+        // Update Doppler factors
+        if (_entity.Valid())
+        {
+            for (auto&& listener : amEngine->GetState()->listener_list)
+            {
+                if (listener.GetId() == kAmInvalidObjectId)
+                    continue;
+
+                _dopplerFactors[listener.GetId()] = ComputeDopplerFactor(
+                    _entity.GetLocation() - listener.GetLocation(), _entity.GetVelocity(), listener.GetVelocity(),
+                    amEngine->GetSoundSpeed(), amEngine->GetDopplerFactor());
+            }
+        }
 
         // Update sounds if playing a switch container
         // TODO: This part should probably be optimized
@@ -574,6 +599,11 @@ namespace SparkyStudios::Audio::Amplitude
     void ChannelInternalState::SetOcclusion(AmReal32 occlusion)
     {
         _realChannel.SetOcclusion(occlusion);
+    }
+
+    AmReal32 ChannelInternalState::GetDopplerFactor(AmListenerID listener) const
+    {
+        return _dopplerFactors.at(listener);
     }
 
     void ChannelInternalState::UpdateState()
