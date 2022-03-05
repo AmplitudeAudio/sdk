@@ -107,6 +107,28 @@ namespace SparkyStudios::Audio::Amplitude
         );
         // clang-format on
     }
+
+    static AM_INLINE(AmReal32) ComputeDopplerFactor(
+        const hmm_vec3& locationDelta,
+        const hmm_vec3& sourceVelocity,
+        const hmm_vec3& listenerVelocity,
+        AmReal32 soundSpeed,
+        AmReal32 dopplerFactor)
+    {
+        const AmReal32 deltaLength = AM_Length(locationDelta);
+
+        if (deltaLength == 0.0f)
+            return 1.0f;
+
+        AmReal32 vss = AM_Dot(locationDelta, sourceVelocity) / deltaLength;
+        AmReal32 vls = AM_Dot(locationDelta, listenerVelocity) / deltaLength;
+
+        const AmReal32 maxspeed = soundSpeed / dopplerFactor;
+        vss = AM_MIN(vss, maxspeed);
+        vls = AM_MIN(vls, maxspeed);
+
+        return (soundSpeed - vls * dopplerFactor) / (soundSpeed - vss * dopplerFactor);
+    }
 } // namespace SparkyStudios::Audio::Amplitude
 
 #if defined(AM_SSE_INTRINSICS)
