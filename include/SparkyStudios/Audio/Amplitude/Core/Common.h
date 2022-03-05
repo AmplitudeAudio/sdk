@@ -59,7 +59,7 @@
 #define AM_MAX(a, b) (((a) > (b)) ? (a) : (b))
 
 // Clamps a value between a and b
-#define AM_CLAMP(v, a, b) ((v < a) ? a : (v > b) ? b : v)
+#define AM_CLAMP(v, a, b) (((v) < (a)) ? (a) : ((v) > (b)) ? (b) : (v))
 
 // Checks if a value is between a and b
 #define AM_BETWEEN(v, a, b) (v >= AM_MIN(a, b) && v <= AM_MAX(a, b))

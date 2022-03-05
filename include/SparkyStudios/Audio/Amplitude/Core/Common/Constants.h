@@ -49,6 +49,9 @@ namespace SparkyStudios::Audio::Amplitude
      */
     constexpr AmInt32 kAmFixedPointBits = 15;
 
+    constexpr AmInt32 kAmFixedPointUnit = (1 << kAmFixedPointBits);
+
+    constexpr AmInt32 kAmFixedPointMask = (kAmFixedPointBits - 1);
 } // namespace SparkyStudios::Audio::Amplitude
 
 #endif // SS_AMPLITUDE_AUDIO_CONSTANTS_H
