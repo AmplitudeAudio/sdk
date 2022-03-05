@@ -22,13 +22,26 @@ set(CMAKE_DEBUG_POSTFIX "_d")
 set(BIN_DIR ${CMAKE_CURRENT_BINARY_DIR})
 set(OBJ_DIR ${CMAKE_CURRENT_BINARY_DIR}/obj)
 
-# Include FlatBuffers in this project.
+# Setup flatbuffers
+# ------------------------------------------------------------------------------
 set(FLATBUFFERS_BUILD_TESTS OFF CACHE BOOL "")
 if(NOT TARGET flatc)
     add_subdirectory("dependencies/flatbuffers" ${OBJ_DIR}/flatbuffers EXCLUDE_FROM_ALL)
     set(FLATC_LIBRARY flatc)
     set(FLATC_INCLUDE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/dependencies/flatbuffers/include)
 endif()
+# ------------------------------------------------------------------------------
+
+# Setup libsamplerate
+# ------------------------------------------------------------------------------
+if (NOT TARGET samplerate)
+    set(LIBSAMPLERATE_EXAMPLES OFF)
+    set(LIBSAMPLERATE_INSTALL ON)
+    list(APPEND CMAKE_MODULE_PATH ${CMAKE_CURRENT_SOURCE_DIR}/dependencies/libsamplerate/cmake)
+    add_subdirectory("dependencies/libsamplerate" ${OBJ_DIR}/libsamplerate EXCLUDE_FROM_ALL)
+    set(LIBSAMPLERATE_INCLUDE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/dependencies/libsamplerate/include)
+endif()
+# ------------------------------------------------------------------------------
 
 # Setup libsimdpp
 # ------------------------------------------------------------------------------
@@ -178,7 +191,7 @@ set(SA_SOURCE
     src/Mixer/SoundData.cpp
     src/Mixer/SoundData.h
     src/Mixer/SoundProcessor.cpp
-    
+
     src/Sound/Faders/ConstantFader.cpp
     src/Sound/Faders/ConstantFader.h
     src/Sound/Faders/ExponentialFader.cpp
@@ -275,12 +288,14 @@ include_directories(src
     include
     ${FLATC_INCLUDE_DIR}
     ${SIMDPP_INCLUDE_DIR}
+    ${LIBSAMPLERATE_INCLUDE_DIR}
     ${SPARK_AUDIO_FLATBUFFERS_GENERATED_INCLUDES_DIR}
 )
 
 add_library(${PROJECT_NAME} STATIC ${SA_SOURCE})
 
 target_link_libraries(${PROJECT_NAME} PRIVATE flatbuffers)
+target_link_libraries(${PROJECT_NAME} PRIVATE samplerate)
 
 add_dependencies(${PROJECT_NAME}
     generated_includes
