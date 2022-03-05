@@ -31,7 +31,7 @@ namespace SparkyStudios::Audio::Amplitude
          * @param name The sound processor name. Recommended names are "xyzProcessor".
          * eg. "EnvironmentProcessor".
          */
-        explicit SoundProcessor(const std::string& name);
+        explicit SoundProcessor(std::string  name);
 
         /**
          * @brief Default SoundProcessor constructor.
@@ -66,10 +66,10 @@ namespace SparkyStudios::Audio::Amplitude
         /**
          * @brief Cleans up all the memory allocated when the given
          * sound instance was processed.
-         * 
+         *
          * @note This means that the sound instance is stopped and will
          * be removed from the Engine.
-         * 
+         *
          * @param sound The sound instance to clean up.
          */
         virtual void Cleanup(SoundInstance* sound);

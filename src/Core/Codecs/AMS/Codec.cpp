@@ -21,7 +21,7 @@ namespace SparkyStudios::Audio::Amplitude::Codecs
     static void little_endian_to_native(void* data, const char* format)
     {
         char* i = const_cast<char*>(format);
-        unsigned char* cp = (unsigned char*)data;
+        auto* cp = (unsigned char*)data;
         AmInt32 temp;
 
         while (*i)
@@ -54,7 +54,7 @@ namespace SparkyStudios::Audio::Amplitude::Codecs
     static void native_to_little_endian(void* data, const char* format)
     {
         char* i = const_cast<char*>(format);
-        unsigned char* cp = (unsigned char*)data;
+        auto* cp = (unsigned char*)data;
         AmInt32 temp;
 
         while (*i)
@@ -99,7 +99,7 @@ namespace SparkyStudios::Audio::Amplitude::Codecs
         // read initial RIFF form header
 
         if (file.Read((AmUInt8Buffer)&riff_chunk_header, sizeof(RIFFHeader)) != sizeof(RIFFHeader) ||
-            strncmp((char*)riff_chunk_header.chunkID, "RIFF", 4) || strncmp((char*)riff_chunk_header.chunkFormat, "WAVE", 4))
+            strncmp((char*)riff_chunk_header.chunkID, "RIFF", 4) != 0 || strncmp((char*)riff_chunk_header.chunkFormat, "WAVE", 4) != 0)
         {
             return false;
         }
@@ -161,7 +161,7 @@ namespace SparkyStudios::Audio::Amplitude::Codecs
                 }
                 else
                 {
-                    // Unknow format
+                    // Unknown format
                     supported = false;
                 }
 
@@ -348,8 +348,8 @@ namespace SparkyStudios::Audio::Amplitude::Codecs
         const AmUInt32 frameSize = format.GetFrameSize();
         const AmUInt32 samplesPerBlock = (blockSize - numChannels * 4) * (numChannels ^ 3) + 1;
 
-        AmInt16Buffer pcm_block = static_cast<AmInt16Buffer>(amMemory->Malloc(MemoryPoolKind::Codec, samplesPerBlock * frameSize));
-        AmUInt8Buffer adpcm_block = static_cast<AmUInt8Buffer>(amMemory->Malloc(MemoryPoolKind::Codec, blockSize));
+        auto* pcm_block = static_cast<AmInt16Buffer>(amMemory->Malloc(MemoryPoolKind::Codec, samplesPerBlock * frameSize));
+        auto* adpcm_block = static_cast<AmUInt8Buffer>(amMemory->Malloc(MemoryPoolKind::Codec, blockSize));
 
         if (!pcm_block || !adpcm_block)
         {
@@ -416,7 +416,7 @@ namespace SparkyStudios::Audio::Amplitude::Codecs
         const AmUInt32 numChannels = format.GetNumChannels();
         AmUInt32 blockSize = (samplesPerBlock - 1) / (numChannels ^ 3) + (numChannels * 4);
 
-        AmUInt8Buffer adpcm_block = static_cast<AmUInt8Buffer>(amMemory->Malloc(MemoryPoolKind::Codec, blockSize));
+        auto* adpcm_block = static_cast<AmUInt8Buffer>(amMemory->Malloc(MemoryPoolKind::Codec, blockSize));
 
         Context* ctx = nullptr;
 
@@ -441,7 +441,7 @@ namespace SparkyStudios::Audio::Amplitude::Codecs
 
             AmInt16Buffer pcm_block = static_cast<AmInt16Buffer>(in) + offset * numChannels;
 
-            // if this is the last block and it's not full, duplicate the last sample(s) so we don't
+            // if this is the last block, and it's not full, duplicate the last sample(s) so we don't
             // create problems for the lookAhead
 
             if (this_block_adpcm_samples > this_block_pcm_samples)
@@ -456,7 +456,7 @@ namespace SparkyStudios::Audio::Amplitude::Codecs
             }
 
             // if this is the first block, compute a decaying average (in reverse) so that we can let the
-            // encoder know what kind of initial deltas to expect (helps initializing index)
+            // encoder know what kind of initial deltas to expect (helps to initialize index)
 
             if (!ctx)
             {

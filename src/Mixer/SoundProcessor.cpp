@@ -14,11 +14,11 @@
 
 #include <cstring>
 #include <map>
+#include <utility>
 
 #include <SparkyStudios/Audio/Amplitude/Core/Memory.h>
 #include <SparkyStudios/Audio/Amplitude/Sound/SoundProcessor.h>
 
-#include <Mixer/SoundData.h>
 #include <Utils/Utils.h>
 
 namespace SparkyStudios::Audio::Amplitude
@@ -44,8 +44,8 @@ namespace SparkyStudios::Audio::Amplitude
         return c;
     }
 
-    SoundProcessor::SoundProcessor(const std::string& name)
-        : m_name(name)
+    SoundProcessor::SoundProcessor(std::string  name)
+        : m_name(std::move(name))
     {
         SoundProcessor::Register(this);
     }
@@ -87,7 +87,7 @@ namespace SparkyStudios::Audio::Amplitude
         SoundProcessorRegistry& processors = soundProcessorRegistry();
         for (auto&& processor : processors)
         {
-            if (processor.second->m_name.compare(name) == 0)
+            if (processor.second->m_name == name)
                 return processor.second;
         }
         return nullptr;
@@ -136,8 +136,8 @@ namespace SparkyStudios::Audio::Amplitude
             return;
         }
 
-        AmInt16Buffer dryOut = static_cast<AmInt16Buffer>(amMemory->Malign(MemoryPoolKind::Amplimix, bufferSize, AM_SIMD_ALIGNMENT));
-        AmInt16Buffer wetOut = static_cast<AmInt16Buffer>(amMemory->Malign(MemoryPoolKind::Amplimix, bufferSize, AM_SIMD_ALIGNMENT));
+        auto* dryOut = static_cast<AmInt16Buffer>(amMemory->Malign(MemoryPoolKind::Amplimix, bufferSize, AM_SIMD_ALIGNMENT));
+        auto* wetOut = static_cast<AmInt16Buffer>(amMemory->Malign(MemoryPoolKind::Amplimix, bufferSize, AM_SIMD_ALIGNMENT));
 
         memcpy(dryOut, in, bufferSize);
         memcpy(wetOut, in, bufferSize);
@@ -184,8 +184,8 @@ namespace SparkyStudios::Audio::Amplitude
             return;
         }
 
-        AmInt16Buffer dryOut = static_cast<AmInt16Buffer>(amMemory->Malign(MemoryPoolKind::Amplimix, bufferSize, AM_SIMD_ALIGNMENT));
-        AmInt16Buffer wetOut = static_cast<AmInt16Buffer>(amMemory->Malign(MemoryPoolKind::Amplimix, bufferSize, AM_SIMD_ALIGNMENT));
+        auto* dryOut = static_cast<AmInt16Buffer>(amMemory->Malign(MemoryPoolKind::Amplimix, bufferSize, AM_SIMD_ALIGNMENT));
+        auto* wetOut = static_cast<AmInt16Buffer>(amMemory->Malign(MemoryPoolKind::Amplimix, bufferSize, AM_SIMD_ALIGNMENT));
 
         memcpy(dryOut, in, bufferSize);
         memcpy(wetOut, in, bufferSize);

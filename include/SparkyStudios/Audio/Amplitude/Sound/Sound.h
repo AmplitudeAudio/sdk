@@ -155,14 +155,14 @@ namespace SparkyStudios::Audio::Amplitude
          *
          * @return The Sound gain.
          */
-        const RtpcValue& GetGain() const;
+        [[nodiscard]] const RtpcValue& GetGain() const;
 
         /**
          * @brief Gets the actual priority of the sound.
          *
          * @return The Sound priority.
          */
-        const RtpcValue& GetPriority() const;
+        [[nodiscard]] const RtpcValue& GetPriority() const;
 
         /**
          * @brief Get the unique ID of this Sound.
@@ -384,10 +384,10 @@ namespace SparkyStudios::Audio::Amplitude
 
         /**
          * @brief Get the generated sound instance ID.
-         * 
+         *
          * This generated ID is ensured to be unique within all the sound instances
          * created within the engine.
-         * 
+         *
          * @return A generated sound instance ID.
          */
         [[nodiscard]] AmObjectID GetId() const;
