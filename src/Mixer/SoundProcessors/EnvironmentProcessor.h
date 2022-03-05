@@ -44,8 +44,8 @@ namespace SparkyStudios::Audio::Amplitude
             AmUInt32 sampleRate,
             SoundInstance* sound) override
         {
-            const auto* definition = sound->GetSound()->GetSoundDefinition();
-            if (definition->spatialization() != Spatialization_None)
+            const auto& settings = sound->GetSettings();
+            if (settings.m_spatialization != Spatialization_None)
             {
                 const Entity& entity = sound->GetChannel()->GetParentChannelState()->GetEntity();
                 if (entity.Valid())
@@ -109,8 +109,8 @@ namespace SparkyStudios::Audio::Amplitude
             AmUInt32 sampleRate,
             SoundInstance* sound) override
         {
-            const auto* definition = sound->GetSound()->GetSoundDefinition();
-            if (definition->spatialization() != Spatialization_None)
+            const auto& settings = sound->GetSettings();
+            if (settings.m_spatialization != Spatialization_None)
             {
                 const Entity& entity = sound->GetChannel()->GetParentChannelState()->GetEntity();
                 if (entity.Valid())
