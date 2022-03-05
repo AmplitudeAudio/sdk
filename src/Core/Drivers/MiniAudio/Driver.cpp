@@ -61,7 +61,8 @@ namespace SparkyStudios::Audio::Amplitude::Drivers
         if (!_initialized)
         {
             ma_device_config deviceConfig = ma_device_config_init(ma_device_type_playback);
-            deviceConfig.periodSizeInFrames = config->output()->buffer_size();
+            deviceConfig.noPreSilencedOutputBuffer = true;
+            deviceConfig.periodSizeInFrames = config->output()->buffer_size() / config->output()->channels();
             deviceConfig.playback.format = ma_format_from_amplitude(config->output()->format());
             deviceConfig.playback.channels = config->output()->channels();
             deviceConfig.sampleRate = config->output()->frequency();
