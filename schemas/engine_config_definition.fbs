@@ -154,11 +154,17 @@ table AudioMixerConfig {
   /// still tracked.
   virtual_channels:uint;
 
+  /// Specify the number of samples to process per stream. This is
+  /// used on sound assets where stream is set to true. Modifying this
+  /// value don't impact to processing speed, but the memory used by
+  /// the mixer for each streamed audio (an higher value means more memory allocated).
+  samples_per_stream:uint = 512;
+
   /// Configures the samplerate conversion quality.
   sample_rate_conversion_quality:SampleRateConversionQuality = Linear;
 
   /// Configures the mixer pipeline. The pipeline is responsible to
-  /// process the sound (apply effects) before it is sent to the audio device.
+  /// process the sound (ie. apply effects) before it is sent to the audio device.
   pipeline:[AudioMixerPipelineItem];
 }
 

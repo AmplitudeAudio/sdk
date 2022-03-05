@@ -158,6 +158,7 @@ namespace SparkyStudios::Audio::Amplitude
             , obstruction_config()
             , occlusion_config()
             , track_environments(false)
+            , samples_per_stream(512)
             , sample_rate_conversion_quality(SampleRateConversionQuality_Linear)
         {}
 
@@ -285,6 +286,8 @@ namespace SparkyStudios::Audio::Amplitude
         ObstructionOcclusionState occlusion_config;
 
         bool track_environments;
+
+        AmUInt32 samples_per_stream;
 
         SampleRateConversionQuality sample_rate_conversion_quality;
 

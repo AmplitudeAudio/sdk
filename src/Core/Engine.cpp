@@ -382,6 +382,9 @@ namespace SparkyStudios::Audio::Amplitude
         _state->sound_speed = config->game()->sound_speed();
         _state->doppler_factor = config->game()->doppler_factor();
 
+        // Samples per streams
+        _state->samples_per_stream = config->mixer()->samples_per_stream();
+
         // Dynamic sample rate conversion
         _state->sample_rate_conversion_quality = config->mixer()->sample_rate_conversion_quality();
 
@@ -2033,6 +2036,11 @@ namespace SparkyStudios::Audio::Amplitude
     AmReal32 Engine::GetDopplerFactor() const
     {
         return _state->doppler_factor;
+    }
+
+    AmUInt32 Engine::GetSamplesPerStream() const
+    {
+        return _state->samples_per_stream;
     }
 
     AmUInt16 Engine::GetSampleRateConversionQuality() const

@@ -314,12 +314,11 @@ namespace SparkyStudios::Audio::Amplitude
         AMPLITUDE_ASSERT(Valid());
 
         const AmUInt16 channels = _parent->m_format.GetNumChannels();
-        const AmUInt32 sampleRate = _parent->m_format.GetSampleRate();
         const AmUInt64 frames = _parent->m_format.GetFramesCount();
 
         if (_parent->_stream)
         {
-            SoundChunk* chunk = SoundChunk::CreateChunk(512, channels);
+            SoundChunk* chunk = SoundChunk::CreateChunk(amEngine->GetSamplesPerStream(), channels);
             SoundData* data = SoundData::CreateMusic(_parent->m_format, chunk, frames, this);
 
             if (!data)

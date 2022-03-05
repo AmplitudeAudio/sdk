@@ -1097,6 +1097,13 @@ namespace SparkyStudios::Audio::Amplitude
         [[nodiscard]] AmReal32 GetDopplerFactor() const;
 
         /**
+         * @brief Get the number of samples to process in one stream.
+         *
+         * @return The number of samples per stream.
+         */
+        [[nodiscard]] AmUInt32 GetSamplesPerStream() const;
+
+        /**
          * @brief Get the mixer sample rate conversion quality.
          *
          * @return The sample rate conversion quality.
