@@ -18,8 +18,7 @@
 
 #include "../src/Core/Codecs/AMS/Codec.h"
 #include "../src/Core/Codecs/WAV/Codec.h"
-#include "../src/IO/File.h"
-#include "../src/Utils/Audio/Compression/ADPCM/ADPCM.h"
+
 #include "../src/Utils/Audio/Resampling/CDSPResampler.h"
 #include "../src/Utils/Utils.h"
 
@@ -74,7 +73,7 @@ struct ProcessingState
     struct
     {
         bool enabled = false;
-        AmUInt32 targetSampleRate;
+        AmUInt32 targetSampleRate = 48000;
     } resampling;
 };
 
@@ -95,9 +94,7 @@ static void log(AmString fmt, va_list args)
 
 static int process(AmOsString inFileName, AmOsString outFileName, const ProcessingState& state)
 {
-    AmInt32 res = 0;
-
-    auto* engine = Engine::GetInstance();
+    AmInt32 res;
 
     if (state.mode == ePM_ENCODE)
     {
@@ -124,7 +121,7 @@ static int process(AmOsString inFileName, AmOsString outFileName, const Processi
         AmUInt64 numSamples = format.GetFramesCount();
         AmUInt64 framesSize = format.GetFrameSize();
 
-        auto* encoder = static_cast<Codecs::AMSCodec::AMSEncoder*>(Codecs::ams_codec.CreateEncoder());
+        auto* encoder = dynamic_cast<Codecs::AMSCodec::AMSEncoder*>(Codecs::ams_codec.CreateEncoder());
 
         if (state.blockSizeShift > 0)
             blockSize = 1 << state.blockSizeShift;
@@ -160,7 +157,7 @@ static int process(AmOsString inFileName, AmOsString outFileName, const Processi
             auto* output16 = static_cast<AmInt16Buffer>(amMemory->Malign(MemoryPoolKind::SoundData, f * framesSize, AM_SIMD_ALIGNMENT));
 
             std::vector<r8b::CDSPResampler16*> resamplers;
-            for (AmInt16 c = 0; c < numChannels; c++)
+            for (AmUInt16 c = 0; c < numChannels; c++)
             {
                 resamplers.push_back(new r8b::CDSPResampler16(sampleRate, state.resampling.targetSampleRate, numSamples));
             }
@@ -202,7 +199,7 @@ static int process(AmOsString inFileName, AmOsString outFileName, const Processi
             sampleRate = state.resampling.targetSampleRate;
             numSamples = f;
 
-            SoundFormat encodeFormat;
+            SoundFormat encodeFormat{};
             encodeFormat.SetAll(
                 sampleRate, numChannels, format.GetBitsPerSample(), numSamples, framesSize, AM_SAMPLE_FORMAT_INT, AM_SAMPLE_INTERLEAVED);
 
@@ -267,7 +264,7 @@ static int process(AmOsString inFileName, AmOsString outFileName, const Processi
 
         const SoundFormat& amsFormat = decoder->GetFormat();
 
-        SoundFormat wavFormat;
+        SoundFormat wavFormat{};
         wavFormat.SetAll(
             amsFormat.GetSampleRate(), amsFormat.GetNumChannels(),
             16, // always decode in 16 bits per sample
@@ -482,7 +479,8 @@ int main(int argc, char* argv[])
         CallLogFunc("    -[0-8]:       \tThe look ahead level.\n");
         CallLogFunc("                  \tDefaults to 3.\n");
         CallLogFunc("    -[bB] [8-15]: \tThe block size shift.\n");
-        CallLogFunc("                  \tIf not defined, the block size will be calculated based on the number of channels and the sample rate.\n");
+        CallLogFunc(
+            "                  \tIf not defined, the block size will be calculated based on the number of channels and the sample rate.\n");
         CallLogFunc("    -[fF]:        \tDisable noise shaping. Only used for compression.\n");
         CallLogFunc("    -[rR] freq:   \tResamples input data to the target frequency.\n");
         CallLogFunc("\n");
