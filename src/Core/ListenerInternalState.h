@@ -43,23 +43,23 @@ namespace SparkyStudios::Audio::Amplitude
         void SetId(AmListenerID id);
 
         /**
-         * @brief Sets the location of this Entity.
+         * @brief Sets the location of this Listener.
          *
          * @param location The new location.
          */
         void SetLocation(const hmm_vec3& location);
 
         /**
-         * @brief Gets the current location of this Entity.
+         * @brief Gets the current location of this Listener.
          *
-         * @return The current location of this Entity.
+         * @return The current location of this Listener.
          */
         [[nodiscard]] const hmm_vec3& GetLocation() const;
 
         /**
-         * @brief Sets the orientation of this Entity.
+         * @brief Sets the orientation of this Listener.
          *
-         * @param direction The direction towards the Entity.
+         * @param direction The direction towards the Listener.
          * @param up The up vector.
          */
         void SetOrientation(const hmm_vec3& direction, const hmm_vec3& up);
@@ -83,7 +83,14 @@ namespace SparkyStudios::Audio::Amplitude
         [[nodiscard]] const hmm_mat4& GetInverseMatrix() const;
 
         /**
-         * @brief Updates the inverse matrix of this Entity.
+         * @brief Gets the velocity of the Listener.
+         *
+         * @return The Listener's velocity.
+         */
+        [[nodiscard]] const hmm_vec3& GetVelocity() const;
+
+        /**
+         * @brief Updates the inverse matrix of this Listener.
          *
          * This method is called automatically by the Engine on
          * each frame update.
@@ -98,6 +105,9 @@ namespace SparkyStudios::Audio::Amplitude
         hmm_vec3 _location;
         hmm_vec3 _direction;
         hmm_vec3 _up;
+
+        hmm_vec3 _lastLocation;
+        hmm_vec3 _velocity;
 
         hmm_mat4 _inverseMatrix;
     };

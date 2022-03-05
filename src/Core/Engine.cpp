@@ -378,6 +378,13 @@ namespace SparkyStudios::Audio::Amplitude
         // Set the listener fetch mode
         _state->listener_fetch_mode = config->game()->listener_fetch_mode();
 
+        // Doppler effect settings
+        _state->sound_speed = config->game()->sound_speed();
+        _state->doppler_factor = config->game()->doppler_factor();
+
+        // Dynamic sample rate conversion
+        _state->sample_rate_conversion_quality = config->mixer()->sample_rate_conversion_quality();
+
         // Set the game engine up axis
         _state->up_axis = config->game()->up_axis();
 
@@ -707,9 +714,11 @@ namespace SparkyStudios::Audio::Amplitude
         }
     }
 
-    static void CalculateGainAndPan(
+    static void CalculateGainPanPitch(
         float* gain,
         hmm_vec2* pan,
+        AmReal32* pitch,
+        const ChannelInternalState* channel,
         const float soundGain,
         const BusInternalState* bus,
         const Spatialization spatialization,
@@ -742,16 +751,19 @@ namespace SparkyStudios::Audio::Amplitude
                 }
 
                 *pan = CalculatePan(listenerSpaceLocation);
+                *pitch = channel != nullptr ? channel->GetDopplerFactor(listener->GetId()) : 1.0f;
             }
             else
             {
                 *gain = 0.0f;
                 *pan = AM_Vec2(0, 0);
+                *pitch = 1.0f;
             }
         }
         else
         {
             *pan = AM_Vec2(0, 0);
+            *pitch = 1.0f;
         }
     }
 
@@ -1806,12 +1818,14 @@ namespace SparkyStudios::Audio::Amplitude
 
             float gain;
             hmm_vec2 pan;
-            CalculateGainAndPan(
-                &gain, &pan, switchContainer->GetGain().GetValue(), switchContainer->GetBus(), definition->spatialization(),
-                switchContainer->GetAttenuation(), channel->GetEntity(), channel->GetLocation(), state->listener_list,
-                channel->GetUserGain(), state->listener_fetch_mode);
+            AmReal32 pitch;
+            CalculateGainPanPitch(
+                &gain, &pan, &pitch, channel, switchContainer->GetGain().GetValue(), switchContainer->GetBus(),
+                definition->spatialization(), switchContainer->GetAttenuation(), channel->GetEntity(), channel->GetLocation(),
+                state->listener_list, channel->GetUserGain(), state->listener_fetch_mode);
             channel->SetGain(gain);
             channel->SetPan(pan);
+            channel->SetPitch(pitch);
         }
         else if (const Collection* collection = channel->GetCollection(); collection != nullptr)
         {
@@ -1819,12 +1833,14 @@ namespace SparkyStudios::Audio::Amplitude
 
             float gain;
             hmm_vec2 pan;
-            CalculateGainAndPan(
-                &gain, &pan, collection->GetGain().GetValue(), collection->GetBus(), definition->spatialization(),
+            AmReal32 pitch;
+            CalculateGainPanPitch(
+                &gain, &pan, &pitch, channel, collection->GetGain().GetValue(), collection->GetBus(), definition->spatialization(),
                 collection->GetAttenuation(), channel->GetEntity(), channel->GetLocation(), state->listener_list, channel->GetUserGain(),
                 state->listener_fetch_mode);
             channel->SetGain(gain);
             channel->SetPan(pan);
+            channel->SetPitch(pitch);
         }
         else if (const Sound* sound = channel->GetSound(); sound != nullptr)
         {
@@ -1832,11 +1848,14 @@ namespace SparkyStudios::Audio::Amplitude
 
             float gain;
             hmm_vec2 pan;
-            CalculateGainAndPan(
-                &gain, &pan, sound->GetGain().GetValue(), sound->GetBus(), definition->spatialization(), sound->GetAttenuation(),
-                channel->GetEntity(), channel->GetLocation(), state->listener_list, channel->GetUserGain(), state->listener_fetch_mode);
+            AmReal32 pitch;
+            CalculateGainPanPitch(
+                &gain, &pan, &pitch, channel, sound->GetGain().GetValue(), sound->GetBus(), definition->spatialization(),
+                sound->GetAttenuation(), channel->GetEntity(), channel->GetLocation(), state->listener_list, channel->GetUserGain(),
+                state->listener_fetch_mode);
             channel->SetGain(gain);
             channel->SetPan(pan);
+            channel->SetPitch(pitch);
         }
         else
         {
@@ -2006,6 +2025,21 @@ namespace SparkyStudios::Audio::Amplitude
         return _state;
     }
 
+    AmReal32 Engine::GetSoundSpeed() const
+    {
+        return _state->sound_speed;
+    }
+
+    AmReal32 Engine::GetDopplerFactor() const
+    {
+        return _state->doppler_factor;
+    }
+
+    AmUInt16 Engine::GetSampleRateConversionQuality() const
+    {
+        return static_cast<AmUInt16>(_state->sample_rate_conversion_quality);
+    }
+
     bool Engine::IsGameTrackingEnvironmentAmounts() const
     {
         return _state->track_environments;
@@ -2039,9 +2073,10 @@ namespace SparkyStudios::Audio::Amplitude
         // Find where it belongs in the list.
         float gain;
         hmm_vec2 pan;
-        CalculateGainAndPan(
-            &gain, &pan, handle->GetGain().GetValue(), handle->GetBus(), definition->spatialization(), handle->GetAttenuation(), entity,
-            location, _state->listener_list, userGain, _state->listener_fetch_mode);
+        AmReal32 pitch;
+        CalculateGainPanPitch(
+            &gain, &pan, &pitch, nullptr, handle->GetGain().GetValue(), handle->GetBus(), definition->spatialization(),
+            handle->GetAttenuation(), entity, location, _state->listener_list, userGain, _state->listener_fetch_mode);
         const float priority = gain * handle->GetPriority().GetValue();
         const auto insertionPoint = FindInsertionPoint(&_state->playing_channel_list, priority);
 
@@ -2075,6 +2110,7 @@ namespace SparkyStudios::Audio::Amplitude
 
         newChannel->SetGain(gain);
         newChannel->SetPan(pan);
+        newChannel->SetPitch(pitch);
         newChannel->SetLocation(location);
 
         return Channel(newChannel);
@@ -2106,9 +2142,10 @@ namespace SparkyStudios::Audio::Amplitude
         // Find where it belongs in the list.
         float gain;
         hmm_vec2 pan;
-        CalculateGainAndPan(
-            &gain, &pan, handle->GetGain().GetValue(), handle->GetBus(), definition->spatialization(), handle->GetAttenuation(), entity,
-            location, _state->listener_list, userGain, _state->listener_fetch_mode);
+        AmReal32 pitch;
+        CalculateGainPanPitch(
+            &gain, &pan, &pitch, nullptr, handle->GetGain().GetValue(), handle->GetBus(), definition->spatialization(),
+            handle->GetAttenuation(), entity, location, _state->listener_list, userGain, _state->listener_fetch_mode);
         const float priority = gain * handle->GetPriority().GetValue();
         const auto insertionPoint = FindInsertionPoint(&_state->playing_channel_list, priority);
 
@@ -2142,6 +2179,7 @@ namespace SparkyStudios::Audio::Amplitude
 
         newChannel->SetGain(gain);
         newChannel->SetPan(pan);
+        newChannel->SetPitch(pitch);
         newChannel->SetLocation(location);
 
         return Channel(newChannel);
@@ -2172,9 +2210,10 @@ namespace SparkyStudios::Audio::Amplitude
         // Find where it belongs in the list.
         float gain;
         hmm_vec2 pan;
-        CalculateGainAndPan(
-            &gain, &pan, handle->GetGain().GetValue(), handle->GetBus(), definition->spatialization(), handle->GetAttenuation(), entity,
-            location, _state->listener_list, userGain, _state->listener_fetch_mode);
+        AmReal32 pitch;
+        CalculateGainPanPitch(
+            &gain, &pan, &pitch, nullptr, handle->GetGain().GetValue(), handle->GetBus(), definition->spatialization(),
+            handle->GetAttenuation(), entity, location, _state->listener_list, userGain, _state->listener_fetch_mode);
         const float priority = gain * handle->GetPriority().GetValue();
         const auto insertionPoint = FindInsertionPoint(&_state->playing_channel_list, priority);
 
@@ -2208,6 +2247,7 @@ namespace SparkyStudios::Audio::Amplitude
 
         newChannel->SetGain(gain);
         newChannel->SetPan(pan);
+        newChannel->SetPitch(pitch);
         newChannel->SetLocation(location);
 
         return Channel(newChannel);

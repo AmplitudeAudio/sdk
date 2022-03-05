@@ -27,6 +27,8 @@
 #include <Mixer/SoundData.h>
 #include <Utils/Utils.h>
 
+#include <samplerate.h>
+
 #include "engine_config_definition_generated.h"
 
 namespace SparkyStudios::Audio::Amplitude
@@ -71,8 +73,15 @@ namespace SparkyStudios::Audio::Amplitude
         _Atomic(PlayStateFlag) flag; // state
         _Atomic(AmUInt64) cursor; // cursor
         _Atomic(hmm_vec2) gain; // gain
+        _Atomic(AmReal32) pitch; // pitch
         SoundData* snd; // sound data
         AmUInt64 start, end; // start and end frames
+
+        _Atomic(AmReal32) userPlaySpeed; // user-defined sound playback speed
+        _Atomic(AmReal32) playSpeed; // computed (real) sound playback speed
+        _Atomic(AmUInt32) sampleRate; // sample rate
+
+        SRC_STATE* sampleRateConverter; // source sample rate converter
     };
 
     struct MixerCommand
@@ -112,13 +121,16 @@ namespace SparkyStudios::Audio::Amplitude
 
         AmUInt64 Mix(AmVoidPtr mixBuffer, AmUInt64 frameCount);
 
-        AmUInt32 Play(SoundData* sound, PlayStateFlag flag, float gain, float pan, AmUInt32 id, AmUInt32 layer);
+        AmUInt32 Play(
+            SoundData* sound, PlayStateFlag flag, float gain, float pan, AmReal32 pitch, AmReal32 speed, AmUInt32 id, AmUInt32 layer);
 
         AmUInt32 PlayAdvanced(
             SoundData* sound,
             PlayStateFlag flag,
             float gain,
             float pan,
+            AmReal32 pitch,
+            AmReal32 speed,
             AmUInt64 startFrame,
             AmUInt64 endFrame,
             AmUInt32 id,
@@ -126,9 +138,13 @@ namespace SparkyStudios::Audio::Amplitude
 
         bool SetGainPan(AmUInt32 id, AmUInt32 layer, float gain, float pan);
 
+        bool SetPitch(AmUInt32 id, AmUInt32 layer, AmReal32 pitch);
+
         bool SetCursor(AmUInt32 id, AmUInt32 layer, AmUInt64 cursor);
 
         bool SetPlayState(AmUInt32 id, AmUInt32 layer, PlayStateFlag flag);
+
+        bool SetPlaySpeed(AmUInt32 id, AmUInt32 layer, AmReal32 speed);
 
         PlayStateFlag GetPlayState(AmUInt32 id, AmUInt32 layer);
 
@@ -161,20 +177,27 @@ namespace SparkyStudios::Audio::Amplitude
             AmUInt64 cursor,
             const AudioDataUnit& lGain,
             const AudioDataUnit& rGain,
-            AudioBuffer buffer,
-            const AmUInt64& bufferSize,
-            const AmUInt64& samples);
+            AudioBuffer inBuffer,
+            const AmUInt64& inBufferSize,
+            const AmUInt64& inSamples,
+            AudioBuffer outBuffer,
+            const AmUInt64& outBufferSize,
+            const AmUInt64& outSamples);
         AmUInt64 MixStereo(
             MixerLayer* layer,
             bool loop,
             AmUInt64 cursor,
             const AudioDataUnit& lGain,
             const AudioDataUnit& rGain,
-            AudioBuffer buffer,
-            const AmUInt64& bufferSize,
-            const AmUInt64& samples);
+            AudioBuffer inBuffer,
+            const AmUInt64& inBufferSize,
+            const AmUInt64& inSamples,
+            AudioBuffer outBuffer,
+            const AmUInt64& outBufferSize,
+            const AmUInt64& outSamples);
         MixerLayer* GetLayer(AmUInt32 layer);
         bool ShouldMix(MixerLayer* layer);
+        void UpdatePitch(MixerLayer* layer);
         void LockAudioMutex();
         void UnlockAudioMutex();
 
