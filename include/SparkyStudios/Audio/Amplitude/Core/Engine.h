@@ -1083,9 +1083,30 @@ namespace SparkyStudios::Audio::Amplitude
         [[nodiscard]] EngineInternalState* GetState() const;
 
         /**
+         * @brief Get the current speed of sound.
+         *
+         * @return The speed of sound.
+         */
+        [[nodiscard]] AmReal32 GetSoundSpeed() const;
+
+        /**
+         * @brief Get the engine Doppler factor.
+         *
+         * @return The Doppler factor.
+         */
+        [[nodiscard]] AmReal32 GetDopplerFactor() const;
+
+        /**
+         * @brief Get the mixer sample rate conversion quality.
+         *
+         * @return The sample rate conversion quality.
+         */
+        [[nodiscard]] AmUInt16 GetSampleRateConversionQuality() const;
+
+        /**
          * @brief Checks whether the game is tracking environment amounts
          * himself. This is useful for engines like O3DE.
-         * 
+         *
          * @return Whether the game is tracking environment amounts.
          */
         [[nodiscard]] bool IsGameTrackingEnvironmentAmounts() const;
