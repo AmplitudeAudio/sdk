@@ -76,7 +76,11 @@
 #endif
 #include <malloc.h>
 #else
+#if defined(__MINGW32__)
+#include <malloc.h>
+#else
 #include <alloca.h>
+#endif
 #endif
 
 #include <assert.h>
