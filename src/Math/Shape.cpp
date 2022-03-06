@@ -213,13 +213,13 @@ namespace SparkyStudios::Audio::Amplitude
         if (m_needUpdate)
             _update();
 
-        const GameEngineUpAxis upAxis = amEngine->GetState()->up_axis;
+        const eGameEngineUpAxis upAxis = amEngine->GetState()->up_axis;
 
         switch (upAxis)
         {
         default:
             [[fallthrough]];
-        case GameEngineUpAxis_Y:
+        case eGameEngineUpAxis_Y:
             {
                 const AmReal32 dP1 = AM_Dot(location - _p1, AM_Normalize(_p2 - _p1));
                 const AmReal32 dP2 = AM_Dot(location - _p2, AM_Normalize(_p1 - _p2));
@@ -231,7 +231,7 @@ namespace SparkyStudios::Audio::Amplitude
                 return AM_MIN(dP1, AM_MIN(dP2, AM_MIN(dP3, AM_MIN(dP4, AM_MIN(dP5, dP6)))));
             }
 
-        case GameEngineUpAxis_Z:
+        case eGameEngineUpAxis_Z:
             {
                 const AmReal32 dP1 = AM_Dot(location - _p1, AM_Normalize(_p2 - _p1));
                 const AmReal32 dP2 = AM_Dot(location - _p2, AM_Normalize(_p1 - _p2));
@@ -265,14 +265,14 @@ namespace SparkyStudios::Audio::Amplitude
         switch (amEngine->GetState()->up_axis)
         {
         default:
-        case GameEngineUpAxis_Y:
+        case eGameEngineUpAxis_Y:
             _p1 = AM_Multiply(m_lookAtMatrix, AM_Vec4(-_halfWidth, -_halfHeight, -_halfDepth, 1.0f)).XYZ;
             _p2 = AM_Multiply(m_lookAtMatrix, AM_Vec4(-_halfWidth, -_halfHeight, _halfDepth, 1.0f)).XYZ;
             _p3 = AM_Multiply(m_lookAtMatrix, AM_Vec4(_halfWidth, -_halfHeight, -_halfDepth, 1.0f)).XYZ;
             _p4 = AM_Multiply(m_lookAtMatrix, AM_Vec4(-_halfWidth, _halfHeight, -_halfDepth, 1.0f)).XYZ;
             break;
 
-        case GameEngineUpAxis_Z:
+        case eGameEngineUpAxis_Z:
             _p1 = AM_Multiply(m_lookAtMatrix, AM_Vec4(-_halfWidth, -_halfDepth, -_halfHeight, 1.0f)).XYZ;
             _p2 = AM_Multiply(m_lookAtMatrix, AM_Vec4(-_halfWidth, _halfDepth, -_halfHeight, 1.0f)).XYZ;
             _p3 = AM_Multiply(m_lookAtMatrix, AM_Vec4(_halfWidth, -_halfDepth, -_halfHeight, 1.0f)).XYZ;
@@ -399,12 +399,12 @@ namespace SparkyStudios::Audio::Amplitude
         switch (amEngine->GetState()->up_axis)
         {
         default:
-        case GameEngineUpAxis_Y:
+        case eGameEngineUpAxis_Y:
             _a = AM_Multiply(m_lookAtMatrix, AM_Vec4(0.0f, halfHeight, 0.0f, 1.0f)).XYZ;
             _b = AM_Multiply(m_lookAtMatrix, AM_Vec4(0.0f, -halfHeight, 0.0f, 1.0f)).XYZ;
             break;
 
-        case GameEngineUpAxis_Z:
+        case eGameEngineUpAxis_Z:
             _a = AM_Multiply(m_lookAtMatrix, AM_Vec4(0.0f, 0.0f, halfHeight, 1.0f)).XYZ;
             _b = AM_Multiply(m_lookAtMatrix, AM_Vec4(0.0f, 0.0f, -halfHeight, 1.0f)).XYZ;
             break;
@@ -562,7 +562,7 @@ namespace SparkyStudios::Audio::Amplitude
         if (outer->m_needUpdate)
             outer->_update();
 
-        const GameEngineUpAxis upAxis = amEngine->GetState()->up_axis;
+        const eGameEngineUpAxis upAxis = amEngine->GetState()->up_axis;
 
         const hmm_vec3& x = position;
 
@@ -585,7 +585,7 @@ namespace SparkyStudios::Audio::Amplitude
         switch (upAxis)
         {
         default:
-        case GameEngineUpAxis_Y:
+        case eGameEngineUpAxis_Y:
             {
                 const AmReal32 dP1 = HMM_ABS(AM_Dot(x - outer->_p1, AM_Normalize(outer->_p2 - outer->_p1))) /
                     (outer->GetHalfDepth() - inner->GetHalfDepth());
@@ -605,7 +605,7 @@ namespace SparkyStudios::Audio::Amplitude
                 return AM_CLAMP(shortestPath, 0.0f, 1.0f);
             }
 
-        case GameEngineUpAxis_Z:
+        case eGameEngineUpAxis_Z:
             {
                 const AmReal32 dP1 = HMM_ABS(AM_Dot(x - outer->_p1, AM_Normalize(outer->_p2 - outer->_p1))) /
                     (outer->GetHalfHeight() - inner->GetHalfHeight());
@@ -644,7 +644,7 @@ namespace SparkyStudios::Audio::Amplitude
         if (outer->m_needUpdate)
             outer->_update();
 
-        const GameEngineUpAxis upAxis = amEngine->GetState()->up_axis;
+        const eGameEngineUpAxis upAxis = amEngine->GetState()->up_axis;
 
         const hmm_vec3& x = position;
 
@@ -700,7 +700,7 @@ namespace SparkyStudios::Audio::Amplitude
         if (outer->m_needUpdate)
             outer->_update();
 
-        const GameEngineUpAxis upAxis = amEngine->GetState()->up_axis;
+        const eGameEngineUpAxis upAxis = amEngine->GetState()->up_axis;
 
         const hmm_vec3& soundToListener = position - inner->GetLocation();
         const AmReal32 distance = AM_Length(soundToListener);
