@@ -13,10 +13,14 @@
 # limitations under the License.
 
 cmake_minimum_required(VERSION 3.20)
-project(Amplitude)
+
+list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake")
+
+include(DetectAmplitudeVersion)
+
+project(Amplitude VERSION ${DETECTED_AM_VERSION})
 
 set(CMAKE_CXX_STANDARD 17)
-set(CMAKE_MODULE_PATH ${CMAKE_CURRENT_SOURCE_DIR}/cmake)
 set(CMAKE_DEBUG_POSTFIX "_d")
 
 set(BIN_DIR ${CMAKE_CURRENT_BINARY_DIR})
