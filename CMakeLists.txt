@@ -38,9 +38,9 @@ endif()
 
 # Setup libsamplerate
 # ------------------------------------------------------------------------------
+set(LIBSAMPLERATE_EXAMPLES OFF CACHE BOOL "")
+set(LIBSAMPLERATE_INSTALL ON CACHE BOOL "")
 if (NOT TARGET samplerate)
-    set(LIBSAMPLERATE_EXAMPLES OFF)
-    set(LIBSAMPLERATE_INSTALL ON)
     list(APPEND CMAKE_MODULE_PATH ${CMAKE_CURRENT_SOURCE_DIR}/dependencies/libsamplerate/cmake)
     add_subdirectory("dependencies/libsamplerate" ${OBJ_DIR}/libsamplerate EXCLUDE_FROM_ALL)
     set(LIBSAMPLERATE_INCLUDE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/dependencies/libsamplerate/include)
@@ -66,7 +66,7 @@ set(SIMDPP_INCLUDE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/dependencies/libsimdpp)
 
 # Generate source files for all FlatBuffers schema files under the src
 # directory.
-set(SPARK_AUDIO_FLATBUFFERS_GENERATED_INCLUDES_DIR ${OBJ_DIR}/include/SparkyStudios/Audio/Amplitude)
+set(AM_FLATBUFFERS_GENERATED_INCLUDES_DIR ${OBJ_DIR}/include/SparkyStudios/Audio/Amplitude)
 file(GLOB_RECURSE FLATBUFFERS_SCHEMAS ${CMAKE_CURRENT_SOURCE_DIR}/schemas/*.fbs)
 
 # Generate rules to build the set of output files from the set of input
@@ -75,7 +75,7 @@ build_flatbuffers("${FLATBUFFERS_SCHEMAS}"
     ""
     generated_includes
     ""
-    ${SPARK_AUDIO_FLATBUFFERS_GENERATED_INCLUDES_DIR}
+    ${AM_FLATBUFFERS_GENERATED_INCLUDES_DIR}
     ""
     ""
 )
@@ -293,7 +293,7 @@ include_directories(src
     ${FLATC_INCLUDE_DIR}
     ${SIMDPP_INCLUDE_DIR}
     ${LIBSAMPLERATE_INCLUDE_DIR}
-    ${SPARK_AUDIO_FLATBUFFERS_GENERATED_INCLUDES_DIR}
+    ${AM_FLATBUFFERS_GENERATED_INCLUDES_DIR}
 )
 
 add_library(${PROJECT_NAME} STATIC ${SA_SOURCE})
@@ -326,21 +326,21 @@ endif()
 # INSTALL
 
 if(MSVC)
-    set( RUNTIME_OUTPUT_DIRECTORY "win" )
+    set(RUNTIME_OUTPUT_DIRECTORY "win")
 elseif(APPLE)
-    set( RUNTIME_OUTPUT_DIRECTORY "osx" )
+    set(RUNTIME_OUTPUT_DIRECTORY "osx")
 else()
-    set( RUNTIME_OUTPUT_DIRECTORY "linux" )
+    set(RUNTIME_OUTPUT_DIRECTORY "linux")
 endif()
 
-set( AM_LIB_DESTINATION   "sdk/lib/${RUNTIME_OUTPUT_DIRECTORY}" )
-set( AM_INC_DESTINATION   "sdk/include" )
-set( AM_SHM_DESTINATION   "sdk/schemas" )
-set( AM_BIN_DESTINATION   "sdk/bin/${RUNTIME_OUTPUT_DIRECTORY}" )
+set(AM_LIB_DESTINATION   "sdk/lib/${RUNTIME_OUTPUT_DIRECTORY}")
+set(AM_INC_DESTINATION   "sdk/include")
+set(AM_SHM_DESTINATION   "sdk/schemas")
+set(AM_BIN_DESTINATION   "sdk/bin/${RUNTIME_OUTPUT_DIRECTORY}")
 
-set(CMAKE_RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/${AM_BIN_DESTINATION}" )
-set(CMAKE_LIBRARY_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/${AM_LIB_DESTINATION}" )
-set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/${AM_BIN_DESTINATION}" )
+set(CMAKE_RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/${AM_BIN_DESTINATION}")
+set(CMAKE_LIBRARY_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/${AM_LIB_DESTINATION}")
+set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/${AM_BIN_DESTINATION}")
 
 set(CMAKE_INSTALL_PREFIX ${CMAKE_CURRENT_LIST_DIR})
 
@@ -374,6 +374,12 @@ export(
     TARGETS flatbuffers
     NAMESPACE flatbuffers::
     FILE "${CMAKE_CURRENT_BINARY_DIR}/FlatbuffersConfig.cmake"
+)
+
+export(
+    TARGETS samplerate
+    NAMESPACE SampleRate::
+    FILE "${CMAKE_CURRENT_BINARY_DIR}/SampleRateConfig.cmake"
 )
 
 export(
