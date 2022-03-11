@@ -49,6 +49,9 @@ namespace SparkyStudios::Audio::Amplitude
         chunk->frames = alignedFrames;
         chunk->length = alignedLength;
         chunk->size = alignedLength * sizeof(AmInt16);
+#if defined(AM_SSE_INTRINSICS)
+        chunk->samplesPerVector = AudioDataUnit::length / channels;
+#endif // AM_SSE_INTRINSICS
         chunk->memoryPool = pool;
         chunk->buffer = static_cast<AudioBuffer>(amMemory->Malign(pool, chunk->size, AM_SIMD_ALIGNMENT));
 
