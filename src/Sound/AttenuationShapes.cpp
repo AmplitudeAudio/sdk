@@ -167,7 +167,7 @@ namespace SparkyStudios::Audio::Amplitude
     // {
     //     const auto* inner = static_cast<BoxShape*>(m_innerShape);
     //     const auto* outer = static_cast<BoxShape*>(m_outerShape);
-    //     const GameEngineUpAxis upAxis = amEngine->GetState()->up_axis;
+    //     const eGameEngineUpAxis upAxis = amEngine->GetState()->up_axis;
 
     //     lookAt = AM_Multiply(AM_Translate(soundLocation), lookAt);
 
@@ -178,7 +178,7 @@ namespace SparkyStudios::Audio::Amplitude
     //     switch (upAxis)
     //     {
     //     default:
-    //     case GameEngineUpAxis_Y:
+    //     case eGameEngineUpAxis_Y:
     //         iP1 = AM_Multiply(lookAt, AM_Vec4(-inner->GetHalfWidth(), -inner->GetHalfHeight(), -inner->GetHalfDepth(), 1.0f)).XYZ;
     //         iP2 = AM_Multiply(lookAt, AM_Vec4(-inner->GetHalfWidth(), -inner->GetHalfHeight(), inner->GetHalfDepth(), 1.0f)).XYZ;
     //         iP3 = AM_Multiply(lookAt, AM_Vec4(inner->GetHalfWidth(), -inner->GetHalfHeight(), -inner->GetHalfDepth(), 1.0f)).XYZ;
@@ -190,7 +190,7 @@ namespace SparkyStudios::Audio::Amplitude
     //         oP4 = AM_Multiply(lookAt, AM_Vec4(-outer->GetHalfWidth(), outer->GetHalfHeight(), -outer->GetHalfDepth(), 1.0f)).XYZ;
     //         break;
 
-    //     case GameEngineUpAxis_Z:
+    //     case eGameEngineUpAxis_Z:
     //         iP1 = AM_Multiply(lookAt, AM_Vec4(-inner->GetHalfWidth(), -inner->GetHalfDepth(), -inner->GetHalfHeight(), 1.0f)).XYZ;
     //         iP2 = AM_Multiply(lookAt, AM_Vec4(-inner->GetHalfWidth(), inner->GetHalfDepth(), -inner->GetHalfHeight(), 1.0f)).XYZ;
     //         iP3 = AM_Multiply(lookAt, AM_Vec4(inner->GetHalfWidth(), -inner->GetHalfDepth(), -inner->GetHalfHeight(), 1.0f)).XYZ;
@@ -244,7 +244,7 @@ namespace SparkyStudios::Audio::Amplitude
     //     switch (upAxis)
     //     {
     //     default:
-    //     case GameEngineUpAxis_Y:
+    //     case eGameEngineUpAxis_Y:
     //         {
     //             const AmReal32 dP1 = HMM_ABS(AM_Dot(x - oP1, AM_Normalize(oP2 - oP1))) / (outer->GetHalfDepth() - inner->GetHalfDepth());
     //             const AmReal32 dP2 = HMM_ABS(AM_Dot(x - oP2, AM_Normalize(oP1 - oP2))) / (outer->GetHalfDepth() - inner->GetHalfDepth());
@@ -259,7 +259,7 @@ namespace SparkyStudios::Audio::Amplitude
     //             return AM_Lerp(m_maxAttenuationFactor, AM_CLAMP(shortestRoad, 0.0f, 1.0f), 1.0f);
     //         }
 
-    //     case GameEngineUpAxis_Z:
+    //     case eGameEngineUpAxis_Z:
     //         {
     //             const AmReal32 dP1 = HMM_ABS(AM_Dot(x - oP1, AM_Normalize(oP2 - oP1))) / (outer->GetHalfHeight() -
     //             inner->GetHalfHeight()); const AmReal32 dP2 = HMM_ABS(AM_Dot(x - oP2, AM_Normalize(oP1 - oP2))) / (outer->GetHalfHeight()
@@ -319,7 +319,7 @@ namespace SparkyStudios::Audio::Amplitude
         switch (amEngine->GetState()->up_axis)
         {
         default:
-        case GameEngineUpAxis_Y:
+        case eGameEngineUpAxis_Y:
             iA = AM_Multiply(lookAt, AM_Vec4(0.0f, innerHalfHeight, 0.0f, 1.0f)).XYZ;
             iB = AM_Multiply(lookAt, AM_Vec4(0.0f, -innerHalfHeight, 0.0f, 1.0f)).XYZ;
 
@@ -327,7 +327,7 @@ namespace SparkyStudios::Audio::Amplitude
             oB = AM_Multiply(lookAt, AM_Vec4(0.0f, -outerHalfHeight, 0.0f, 1.0f)).XYZ;
             break;
 
-        case GameEngineUpAxis_Z:
+        case eGameEngineUpAxis_Z:
             iA = AM_Multiply(lookAt, AM_Vec4(0.0f, 0.0f, innerHalfHeight, 1.0f)).XYZ;
             iB = AM_Multiply(lookAt, AM_Vec4(0.0f, 0.0f, -innerHalfHeight, 1.0f)).XYZ;
 

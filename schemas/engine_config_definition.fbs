@@ -17,7 +17,7 @@ include "common.fbs";
 namespace SparkyStudios.Audio.Amplitude;
 
 /// The supported output channels.
-enum PlaybackOutputChannels : ushort {
+enum ePlaybackOutputChannels : ushort {
   Default = 0,
   Mono = 1,
   Stereo = 2,
@@ -27,7 +27,7 @@ enum PlaybackOutputChannels : ushort {
 }
 
 /// The supported output formats.
-enum PlaybackOutputFormat : ushort {
+enum ePlaybackOutputFormat : ushort {
   Default = 0,
   UInt8 = 1,
   Int16 = 2,
@@ -37,7 +37,7 @@ enum PlaybackOutputFormat : ushort {
 }
 
 /// Defines how the engine should fetch for the best listener.
-enum ListenerFetchMode : ushort {
+enum eListenerFetchMode : ushort {
   /// Do not fetch for listeners. This mute all audio, but keeps processing data.
   None = 0,
 
@@ -70,7 +70,7 @@ enum ListenerFetchMode : ushort {
 /// Specifies which axis is the up axis in the game engine.
 /// This is used in Amplitude to align with game 3D environment when computing
 /// spatialized values like the attenuation.
-enum GameEngineUpAxis : ushort {
+enum eGameEngineUpAxis : ushort {
   /// The Y axis.
   Y = 0,
 
@@ -79,7 +79,7 @@ enum GameEngineUpAxis : ushort {
 }
 
 /// The list of sample rate conversion quality levels.
-enum SampleRateConversionQuality : ushort {
+enum eSampleRateConversionQuality : ushort {
   /// This is a bandlimited interpolator derived from the mathematical sinc function
   /// and this is the highest quality sinc based converter, providing a worst case
   /// Signal-to-Noise Ratio (SNR) of 97 decibels (dB) at a bandwidth of 97%.
@@ -107,13 +107,16 @@ table PlaybackOutputConfig {
   frequency:uint = 48000;
 
   /// The number of output channels to support.
-  channels:PlaybackOutputChannels = Stereo;
+  channels:ePlaybackOutputChannels = Stereo;
 
   /// Bytes used per output sample.
-  buffer_size:uint = 2048;
+  /// The number of processed samples is equal to this value
+  /// divided by the number of channels.
+  /// It's highly recommended to use a multiple of 2 for this value.
+  buffer_size:uint = 1024;
 
   /// The output buffer format.
-  format:PlaybackOutputFormat = Int16;
+  format:ePlaybackOutputFormat = Int16;
 }
 
 /// A single processor in the audio mixer pipeline.
@@ -161,7 +164,7 @@ table AudioMixerConfig {
   samples_per_stream:uint = 512;
 
   /// Configures the samplerate conversion quality.
-  sample_rate_conversion_quality:SampleRateConversionQuality = Linear;
+  sample_rate_conversion_quality:eSampleRateConversionQuality = Linear;
 
   /// Configures the mixer pipeline. The pipeline is responsible to
   /// process the sound (ie. apply effects) before it is sent to the audio device.
@@ -183,7 +186,7 @@ table ObstructionOcclusionConfig {
 /// Game synchronization configuration
 table GameSyncConfig {
   /// Defines how the engine should fetch the best listener for an audio.
-  listener_fetch_mode:ListenerFetchMode = Nearest;
+  listener_fetch_mode:eListenerFetchMode = Nearest;
 
   /// The number of listeners to allocate.
   listeners:uint = 1;
@@ -202,7 +205,7 @@ table GameSyncConfig {
   doppler_factor:float = 1.0;
 
   /// The up axis of the game engine.
-  up_axis:GameEngineUpAxis = Y;
+  up_axis:eGameEngineUpAxis = Y;
 
   /// The default obstruction curves settings.
   obstruction:ObstructionOcclusionConfig;

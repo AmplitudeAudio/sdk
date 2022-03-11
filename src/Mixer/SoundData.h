@@ -31,6 +31,10 @@ namespace SparkyStudios::Audio::Amplitude
 
         AudioBuffer buffer;
 
+#if defined(AM_SSE_INTRINSICS)
+        AmUInt64 samplesPerVector;
+#endif // AM_SSE_INTRINSICS
+
         MemoryPoolKind memoryPool;
 
         static SoundChunk* CreateChunk(AmUInt64 frames, AmUInt16 channels, MemoryPoolKind pool = MemoryPoolKind::SoundData);

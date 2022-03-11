@@ -17,7 +17,7 @@
 
 #include <SparkyStudios/Audio/Amplitude/Amplitude.h>
 
-#include <Utils/miniaudio/miniaudio.h>
+#include <Utils/miniaudio/miniaudio_utils.h>
 
 namespace SparkyStudios::Audio::Amplitude::Drivers
 {
@@ -32,7 +32,7 @@ namespace SparkyStudios::Audio::Amplitude::Drivers
 
         ~MiniAudioDriver() final;
 
-        bool Open(const EngineConfigDefinition* config) final;
+        bool Open(const DeviceDescription& device) final;
 
         bool Close() final;
 

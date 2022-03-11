@@ -400,7 +400,7 @@ namespace SparkyStudios::Audio::Amplitude
         _state->master_gain = 1.0f;
 
         // Open the audio device through the driver
-        return _audioDriver->Open(config);
+        return _audioDriver->Open(_state->mixer.GetDeviceDescription());
     }
 
     bool Engine::Deinitialize()
@@ -608,7 +608,7 @@ namespace SparkyStudios::Audio::Amplitude
         hmm_vec3* listenerSpaceLocation,
         const ListenerList& listeners,
         const hmm_vec3& location,
-        ListenerFetchMode fetchMode)
+        eListenerFetchMode fetchMode)
     {
         if (listeners.empty())
         {
@@ -621,12 +621,12 @@ namespace SparkyStudios::Audio::Amplitude
         {
         default:
             [[fallthrough]];
-        case ListenerFetchMode_None:
+        case eListenerFetchMode_None:
             return false;
 
-        case ListenerFetchMode_Nearest:
+        case eListenerFetchMode_Nearest:
             [[fallthrough]];
-        case ListenerFetchMode_Farest:
+        case eListenerFetchMode_Farest:
             {
                 auto listener = listeners.cbegin();
                 *listenerSpaceLocation = AM_Multiply(listener->GetInverseMatrix(), location4).XYZ;
@@ -637,7 +637,7 @@ namespace SparkyStudios::Audio::Amplitude
                 {
                     const hmm_vec3 transformedLocation = AM_Multiply(listener->GetInverseMatrix(), location4).XYZ;
                     if (const float magnitudeSquared = AM_LengthSquared(transformedLocation);
-                        fetchMode == ListenerFetchMode_Nearest ? magnitudeSquared < *distanceSquared : magnitudeSquared > *distanceSquared)
+                        fetchMode == eListenerFetchMode_Nearest ? magnitudeSquared < *distanceSquared : magnitudeSquared > *distanceSquared)
                     {
                         *bestListener = listener;
                         *distanceSquared = magnitudeSquared;
@@ -647,7 +647,7 @@ namespace SparkyStudios::Audio::Amplitude
             }
             break;
 
-        case ListenerFetchMode_First:
+        case eListenerFetchMode_First:
             {
                 auto listener = listeners.cbegin();
                 const hmm_mat4& mat = listener->GetInverseMatrix();
@@ -657,7 +657,7 @@ namespace SparkyStudios::Audio::Amplitude
             }
             break;
 
-        case ListenerFetchMode_Last:
+        case eListenerFetchMode_Last:
             {
                 auto listener = listeners.cend();
                 const hmm_mat4& mat = listener->GetInverseMatrix();
@@ -667,7 +667,7 @@ namespace SparkyStudios::Audio::Amplitude
             }
             break;
 
-        case ListenerFetchMode_Default:
+        case eListenerFetchMode_Default:
             {
                 ListenerInternalState* state = Engine::GetInstance()->GetDefaultListener().GetState();
                 if (state == nullptr)
@@ -709,10 +709,10 @@ namespace SparkyStudios::Audio::Amplitude
         switch (amEngine->GetState()->up_axis)
         {
         default:
-        case GameEngineUpAxis_Y:
+        case eGameEngineUpAxis_Y:
             return AM_Vec2(AM_Dot(AM_Vec3(1, 0, 0), direction), AM_Dot(AM_Vec3(0, 0, 1), direction));
 
-        case GameEngineUpAxis_Z:
+        case eGameEngineUpAxis_Z:
             return AM_Vec2(AM_Dot(AM_Vec3(1, 0, 0), direction), AM_Dot(AM_Vec3(0, 1, 0), direction));
         }
     }
@@ -730,7 +730,7 @@ namespace SparkyStudios::Audio::Amplitude
         const hmm_vec3& location,
         const ListenerList& listeners,
         const float userGain,
-        ListenerFetchMode fetchMode)
+        eListenerFetchMode fetchMode)
     {
         *gain = soundGain * bus->GetGain() * userGain;
         if (spatialization == Spatialization_Position || spatialization == Spatialization_PositionOrientation)

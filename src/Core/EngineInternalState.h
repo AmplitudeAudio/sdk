@@ -151,15 +151,15 @@ namespace SparkyStudios::Audio::Amplitude
             , current_frame(0)
             , total_time(0.0)
             , version(nullptr)
-            , listener_fetch_mode(ListenerFetchMode_None)
+            , listener_fetch_mode(eListenerFetchMode_None)
             , sound_speed(333.0)
             , doppler_factor(1.0)
-            , up_axis(GameEngineUpAxis_Y)
+            , up_axis(eGameEngineUpAxis_Y)
             , obstruction_config()
             , occlusion_config()
             , track_environments(false)
             , samples_per_stream(512)
-            , sample_rate_conversion_quality(SampleRateConversionQuality_Linear)
+            , sample_rate_conversion_quality(eSampleRateConversionQuality_Linear)
         {}
 
         Mixer mixer;
@@ -272,14 +272,14 @@ namespace SparkyStudios::Audio::Amplitude
         AmTime total_time;
 
         // The way Amplitude should fetch the best listener for an audio source.
-        ListenerFetchMode listener_fetch_mode;
+        eListenerFetchMode listener_fetch_mode;
 
         AmReal32 sound_speed;
 
         AmReal32 doppler_factor;
 
         // The up axis of the game engine.
-        GameEngineUpAxis up_axis;
+        eGameEngineUpAxis up_axis;
 
         ObstructionOcclusionState obstruction_config;
 
@@ -289,7 +289,7 @@ namespace SparkyStudios::Audio::Amplitude
 
         AmUInt32 samples_per_stream;
 
-        SampleRateConversionQuality sample_rate_conversion_quality;
+        eSampleRateConversionQuality sample_rate_conversion_quality;
 
         const struct Version* version;
     };
