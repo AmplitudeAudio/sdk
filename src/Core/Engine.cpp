@@ -400,7 +400,7 @@ namespace SparkyStudios::Audio::Amplitude
         _state->master_gain = 1.0f;
 
         // Open the audio device through the driver
-        return _audioDriver->Open(config);
+        return _audioDriver->Open(_state->mixer.GetDeviceDescription());
     }
 
     bool Engine::Deinitialize()

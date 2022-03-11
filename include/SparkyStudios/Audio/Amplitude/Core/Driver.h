@@ -18,11 +18,10 @@
 #define SS_AMPLITUDE_AUDIO_DRIVER_H
 
 #include <SparkyStudios/Audio/Amplitude/Core/Common.h>
+#include <SparkyStudios/Audio/Amplitude/Core/Device.h>
 
 namespace SparkyStudios::Audio::Amplitude
 {
-    struct EngineConfigDefinition;
-
     class Mixer;
 
     /**
@@ -38,7 +37,7 @@ namespace SparkyStudios::Audio::Amplitude
          * @brief Creates a new AudioDriver with an unique name.
          *
          * @param name The driver name. Recommended names are "APIName".
-         * eg. "MiniAudio" or "PortAudio".
+         * eg. "MiniAudio" or "PortAudio" or "SDL", etc...
          */
         explicit Driver(AmString name);
 
@@ -47,22 +46,20 @@ namespace SparkyStudios::Audio::Amplitude
         /**
          * @brief Initializes the audio driver.
          *
-         * @param mixer The audio mixer object backed by the engine.
+         * @param mixer The running Amplimix instance.
          */
-        void Initialize(Mixer* mixer)
-        {
-            m_mixer = mixer;
-        }
+        void Initialize(Mixer* mixer);
 
         /**
          * @brief Open and start using the audio device.
          *
-         * @param config The audio engine configuration used when initializing Amplitude.
+         * @param device The audio device to use description to use for
+         * initializing the physical device.
          */
-        virtual bool Open(const EngineConfigDefinition* config) = 0;
+        virtual bool Open(const DeviceDescription& device) = 0;
 
         /**
-         * @brief CLoses the audio device.
+         * @brief Closes the audio device.
          */
         virtual bool Close() = 0;
 
@@ -71,10 +68,7 @@ namespace SparkyStudios::Audio::Amplitude
          *
          * @return The name of this driver.
          */
-        [[nodiscard]] AmString GetName() const
-        {
-            return m_name;
-        }
+        [[nodiscard]] AmString GetName() const;
 
         /**
          * @brief Registers a new audio driver.

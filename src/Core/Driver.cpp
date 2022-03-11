@@ -47,6 +47,16 @@ namespace SparkyStudios::Audio::Amplitude
         Driver::Register(this);
     }
 
+    void Driver::Initialize(Mixer* mixer)
+    {
+        m_mixer = mixer;
+    }
+
+    AmString Driver::GetName() const
+    {
+        return m_name;
+    }
+
     void Driver::Register(Driver* driver)
     {
         if (lockDrivers())
