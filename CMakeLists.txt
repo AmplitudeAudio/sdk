@@ -97,6 +97,7 @@ set(SA_SOURCE
     include/SparkyStudios/Audio/Amplitude/Core/Channel.h
     include/SparkyStudios/Audio/Amplitude/Core/Codec.h
     include/SparkyStudios/Audio/Amplitude/Core/Common.h
+    include/SparkyStudios/Audio/Amplitude/Core/Device.h
     include/SparkyStudios/Audio/Amplitude/Core/Driver.h
     include/SparkyStudios/Audio/Amplitude/Core/Engine.h
     include/SparkyStudios/Audio/Amplitude/Core/Entity.h
@@ -267,6 +268,7 @@ set(SA_SOURCE
     src/Utils/Freeverb/tuning.h
     src/Utils/miniaudio/miniaudio.cpp
     src/Utils/miniaudio/miniaudio.h
+    src/Utils/miniaudio/miniaudio_utils.h
     src/Utils/pffft/simd/pf_avx_double.h
     src/Utils/pffft/simd/pf_double.h
     src/Utils/pffft/simd/pf_neon_double_from_avx.h

@@ -22,4 +22,23 @@
 #define NOMINMAX
 #endif
 
-#include "miniaudio.h"
+#include "miniaudio_utils.h"
+
+ma_format ma_format_from_amplitude(SparkyStudios::Audio::Amplitude::PlaybackOutputFormat format)
+{
+    switch (format)
+    {
+    default:
+        return ma_format_unknown;
+    case SparkyStudios::Audio::Amplitude::PlaybackOutputFormat::UInt8:
+        return ma_format_u8;
+    case SparkyStudios::Audio::Amplitude::PlaybackOutputFormat::Int16:
+        return ma_format_s16;
+    case SparkyStudios::Audio::Amplitude::PlaybackOutputFormat::Int24:
+        return ma_format_s24;
+    case SparkyStudios::Audio::Amplitude::PlaybackOutputFormat::Int32:
+        return ma_format_s32;
+    case SparkyStudios::Audio::Amplitude::PlaybackOutputFormat::Float32:
+        return ma_format_f32;
+    }
+}
