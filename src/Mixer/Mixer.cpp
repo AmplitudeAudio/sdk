@@ -30,7 +30,7 @@ namespace SparkyStudios::Audio::Amplitude
     constexpr AmUInt32 kSimdProcessedFramesCountHalf = (kSimdProcessedFramesCount / 2);
 #endif // AM_SSE_INTRINSICS
 
-    static void OnSoundDestroyed(Mixer* mixer, const MixerLayer* layer);
+    static void OnSoundDestroyed(Mixer* mixer, MixerLayer* layer);
 
     static void* ma_malloc(size_t sz, void* pUserData)
     {
@@ -62,31 +62,34 @@ namespace SparkyStudios::Audio::Amplitude
         return { left, right };
     }
 
-    static void OnSoundStarted(Mixer* mixer, const MixerLayer* layer)
+    static void OnSoundStarted(Mixer* mixer, MixerLayer* layer)
     {
         const auto* sound = static_cast<SoundInstance*>(layer->snd->userData);
         CallLogFunc("Started sound: " AM_OS_CHAR_FMT "\n", sound->GetSound()->GetFilename().c_str());
     }
 
-    static void OnSoundPaused(Mixer* mixer, const MixerLayer* layer)
+    static void OnSoundPaused(Mixer* mixer, MixerLayer* layer)
     {
         const auto* sound = static_cast<SoundInstance*>(layer->snd->userData);
         CallLogFunc("Paused sound: " AM_OS_CHAR_FMT "\n", sound->GetSound()->GetFilename().c_str());
     }
 
-    static void OnSoundResumed(Mixer* mixer, const MixerLayer* layer)
+    static void OnSoundResumed(Mixer* mixer, MixerLayer* layer)
     {
         const auto* sound = static_cast<SoundInstance*>(layer->snd->userData);
         CallLogFunc("Resumed sound: " AM_OS_CHAR_FMT "\n", sound->GetSound()->GetFilename().c_str());
     }
 
-    static void OnSoundStopped(Mixer* mixer, const MixerLayer* layer)
+    static void OnSoundStopped(Mixer* mixer, MixerLayer* layer)
     {
         const auto* sound = static_cast<SoundInstance*>(layer->snd->userData);
         CallLogFunc("Stopped sound: " AM_OS_CHAR_FMT "\n", sound->GetSound()->GetFilename().c_str());
+
+        // Destroy the sound instance on stop
+        OnSoundDestroyed(mixer, layer);
     }
 
-    static bool OnSoundLooped(Mixer* mixer, const MixerLayer* layer)
+    static bool OnSoundLooped(Mixer* mixer, MixerLayer* layer)
     {
         auto* sound = static_cast<SoundInstance*>(layer->snd->userData);
         CallLogFunc("Looped sound: " AM_OS_CHAR_FMT "\n", sound->GetSound()->GetFilename().c_str());
@@ -102,7 +105,7 @@ namespace SparkyStudios::Audio::Amplitude
         return true;
     }
 
-    static AmUInt64 OnSoundStream(Mixer* mixer, const MixerLayer* layer, AmUInt64 offset, AmUInt64 frames)
+    static AmUInt64 OnSoundStream(Mixer* mixer, MixerLayer* layer, AmUInt64 offset, AmUInt64 frames)
     {
         if (layer->snd->stream)
         {
@@ -113,7 +116,7 @@ namespace SparkyStudios::Audio::Amplitude
         return 0;
     }
 
-    static void OnSoundEnded(Mixer* mixer, const MixerLayer* layer)
+    static void OnSoundEnded(Mixer* mixer, MixerLayer* layer)
     {
         auto* sound = static_cast<SoundInstance*>(layer->snd->userData);
         CallLogFunc("Ended sound: " AM_OS_CHAR_FMT "\n", sound->GetSound()->GetFilename().c_str());
@@ -124,15 +127,18 @@ namespace SparkyStudios::Audio::Amplitude
         mixer->GetPipeline()->Cleanup(sound);
 
         if (const Engine* engine = Engine::GetInstance(); engine->GetState()->stopping)
-            goto Delete;
+        {
+            OnSoundDestroyed(mixer, layer);
+        }
 
         if (sound->GetSettings().m_kind == SoundKind::Standalone)
         {
-            goto Stop;
+            // Stop playing the sound
+            channel->GetParentChannelState()->Halt();
         }
         else if (sound->GetSettings().m_kind == SoundKind::Switched)
         {
-            goto Delete;
+            OnSoundDestroyed(mixer, layer);
         }
         else if (sound->GetSettings().m_kind == SoundKind::Contained)
         {
@@ -150,7 +156,8 @@ namespace SparkyStudios::Audio::Amplitude
                         channel->ClearPlayedSounds();
                         if (config->play_mode() == CollectionPlayMode_PlayAll)
                         {
-                            goto Stop;
+                            // Stop playing the sound
+                            channel->GetParentChannelState()->Halt();
                         }
                     }
 
@@ -162,39 +169,21 @@ namespace SparkyStudios::Audio::Amplitude
                 }
 
                 // Delete the current sound instance.
-                goto Delete;
+                OnSoundDestroyed(mixer, layer);
             }
         }
         else
         {
             AMPLITUDE_ASSERT(false); // Should never fall in this case.
         }
-
-    Stop:
-        // Stop playing the sound
-        channel->GetParentChannelState()->Halt();
-
-    Delete:
-        // Delete the sound instance at the end of the playback
-        OnSoundDestroyed(mixer, layer);
     }
 
-    static void OnSoundDestroyed(Mixer* mixer, const MixerLayer* layer)
+    static void OnSoundDestroyed(Mixer* mixer, MixerLayer* layer)
     {
-        MixerCommandCallback callback = [layer]() -> bool
-        {
-            auto* sound = static_cast<SoundInstance*>(layer->snd->userData);
-            delete sound;
-            return true;
-        };
+        auto* sound = static_cast<SoundInstance*>(layer->snd->userData);
+        delete sound;
 
-        if (mixer->IsInsideThreadMutex())
-        {
-            mixer->PushCommand({ callback });
-            return;
-        }
-
-        callback();
+        layer->snd = nullptr;
     }
 
     static void MixMono(Mixer* mixer, AmUInt64 index, const AudioDataUnit& gain, SoundChunk* in, AudioBuffer outBuffer)
@@ -452,6 +441,8 @@ namespace SparkyStudios::Audio::Amplitude
 
         MixerCommandCallback callback = [=]() -> bool
         {
+            LockAudioMutex();
+
             // get layer for next sound handle id
             auto* lay = GetLayer(layer);
 
@@ -478,7 +469,10 @@ namespace SparkyStudios::Audio::Amplitude
                     src_new(amEngine->GetSampleRateConversionQuality(), static_cast<AmUInt16>(_device.mRequestedOutputChannels), nullptr);
 
                 if (lay->sampleRateConverter == nullptr)
+                {
+                    UnlockAudioMutex();
                     return false;
+                }
 
                 // convert gain and pan to left and right gain and store it atomically
                 AMPLIMIX_STORE(&lay->gain, LRGain(gain, pan));
@@ -492,9 +486,11 @@ namespace SparkyStudios::Audio::Amplitude
                 AMPLIMIX_STORE(&lay->flag, flag);
 
                 // return success
+                UnlockAudioMutex();
                 return true;
             }
 
+            UnlockAudioMutex();
             return false;
         };
 
@@ -578,6 +574,8 @@ namespace SparkyStudios::Audio::Amplitude
 
         MixerCommandCallback callback = [=]() -> bool
         {
+            LockAudioMutex();
+
             // get layer based on the lowest bits of id
             auto* lay = GetLayer(layer);
 
@@ -586,7 +584,10 @@ namespace SparkyStudios::Audio::Amplitude
             {
                 // return success if already in desired state
                 if (prev == flag)
+                {
+                    UnlockAudioMutex();
                     return true;
+                }
 
                 // run appropriate callback
                 if (prev == PLAY_STATE_FLAG_STOP && (flag == PLAY_STATE_FLAG_PLAY || flag == PLAY_STATE_FLAG_LOOP))
@@ -600,10 +601,14 @@ namespace SparkyStudios::Audio::Amplitude
 
                 // swap if flag has not changed and return if successful
                 if (AMPLIMIX_CSWAP(&lay->flag, &prev, flag))
+                {
+                    UnlockAudioMutex();
                     return true;
+                }
             }
 
             // return failure
+            UnlockAudioMutex();
             return false;
         };
 
@@ -1068,6 +1073,9 @@ namespace SparkyStudios::Audio::Amplitude
 
     bool Mixer::ShouldMix(MixerLayer* layer)
     {
+        if (layer->snd == nullptr)
+            return false;
+
         // load flag value
         PlayStateFlag flag = AMPLIMIX_LOAD(&layer->flag);
 
@@ -1096,8 +1104,6 @@ namespace SparkyStudios::Audio::Amplitude
 
     void Mixer::LockAudioMutex()
     {
-        AMPLITUDE_ASSERT(!_insideAudioThreadMutex);
-
         if (_audioThreadMutex)
         {
             Thread::LockMutex(_audioThreadMutex);
