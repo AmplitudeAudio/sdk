@@ -12,10 +12,11 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+#include <set>
+
 #include <SparkyStudios/Audio/Amplitude/Core/Memory.h>
 
 #include <Utils/SmMalloc/smmalloc.h>
-#include <set>
 
 namespace SparkyStudios::Audio::Amplitude
 {
@@ -26,7 +27,13 @@ namespace SparkyStudios::Audio::Amplitude
     static std::map<MemoryPoolKind, std::set<AmVoidPtr>> gMemPoolsData = {};
 
 #if !defined(AM_NO_MEMORY_STATS)
-    static std::map<MemoryPoolKind, MemoryPoolStats> gMemPoolsStats = {};
+    static std::map<MemoryPoolKind, MemoryPoolStats> gMemPoolsStats = {
+        { MemoryPoolKind::Amplimix, { MemoryPoolKind::Amplimix, 0, 0, 0 } },
+        { MemoryPoolKind::Codec, { MemoryPoolKind::Codec, 0, 0, 0 } },
+        { MemoryPoolKind::Engine, { MemoryPoolKind::Engine, 0, 0, 0 } },
+        { MemoryPoolKind::Filtering, { MemoryPoolKind::Filtering, 0, 0, 0 } },
+        { MemoryPoolKind::SoundData, { MemoryPoolKind::SoundData, 0, 0, 0 } },
+    };
 #endif
 
     MemoryManagerConfig::MemoryManagerConfig()
