@@ -362,11 +362,11 @@ namespace SparkyStudios::Audio::Amplitude
         }
 
         // Fetch the master bus with name
-        _state->master_bus = FindBusInternalState(_state, "master");
+        _state->master_bus = FindBusInternalState(_state, kAmMasterBusId);
         if (!_state->master_bus)
         {
             // Fetch the master bus by ID
-            _state->master_bus = FindBusInternalState(_state, kAmMasterBusId);
+            _state->master_bus = FindBusInternalState(_state, "master");
             if (!_state->master_bus)
             {
                 CallLogFunc("[ERROR] Unable to find a master bus.\n");
