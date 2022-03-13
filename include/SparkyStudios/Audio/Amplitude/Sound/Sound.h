@@ -124,7 +124,7 @@ namespace SparkyStudios::Audio::Amplitude
          *
          * @return SoundInstance* A sound instance which can be played.
          */
-        [[nodiscard]] SoundInstance* CreateInstance() const;
+        [[nodiscard]] SoundInstance* CreateInstance();
 
         /**
          * @brief Create a new SoundInstance from this Sound.
@@ -136,7 +136,7 @@ namespace SparkyStudios::Audio::Amplitude
          *
          * @return SoundInstance* A sound instance which can be played.
          */
-        [[nodiscard]] SoundInstance* CreateInstance(const Collection* collection) const;
+        [[nodiscard]] SoundInstance* CreateInstance(const Collection* collection);
 
         /**
          * @brief Sets the format of this Sound.
@@ -215,9 +215,39 @@ namespace SparkyStudios::Audio::Amplitude
          */
         [[nodiscard]] bool IsLoop() const;
 
+        /**
+         * @brief Get the reference counter of this Sound.
+         *
+         * @return The Sound's references counter.
+         */
         RefCounter* GetRefCounter();
 
     protected:
+        /**
+         * @brief Returns the SoundChunk associated with this Sound
+         * and increment its reference counter.
+         *
+         * If the reference equals 0, the SoundChunk is created.
+         * 
+         * This methods is used by the SoundInstance to get the SoundChunk
+         * only when the audio file is not streamed.
+         *
+         * @return The SoundChunk of this sound.
+         */
+        SoundChunk* AcquireSoundData();
+
+        /**
+         * @brief Decrements the SoundChunk's reference counter.
+         *
+         * If the reference counter reaches 0, the SoundChunk is deleted.
+         *
+         * This methods is used by the SoundInstance to get the SoundChunk
+         * only when the audio file is not streamed.
+         *
+         * @return The SoundChunk of this sound.
+         */
+        void ReleaseSoundData();
+
         SoundFormat m_format;
 
     private:
@@ -241,7 +271,8 @@ namespace SparkyStudios::Audio::Amplitude
         std::string _source;
         SoundInstanceSettings _settings;
 
-        SoundChunk* _data;
+        SoundChunk* _soundData;
+        RefCounter _soundDataRefCounter;
 
         RefCounter _refCounter;
     };
@@ -259,7 +290,7 @@ namespace SparkyStudios::Audio::Amplitude
          * @param settings The settings of the Sound instance.
          * @param effect The sound effect to apply on playback.
          */
-        SoundInstance(const Sound* parent, const SoundInstanceSettings& settings, const Effect* effect = nullptr);
+        SoundInstance(Sound* parent, const SoundInstanceSettings& settings, const Effect* effect = nullptr);
         ~SoundInstance();
 
         /**
@@ -400,7 +431,7 @@ namespace SparkyStudios::Audio::Amplitude
         AmVoidPtr _userData;
 
         RealChannel* _channel;
-        const Sound* _parent;
+        Sound* _parent;
         const Collection* _collection;
         EffectInstance* _effectInstance;
 
