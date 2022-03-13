@@ -12,6 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+#include <SparkyStudios/Audio/Amplitude/Core/Log.h>
 #include <SparkyStudios/Audio/Amplitude/Core/Memory.h>
 
 #include <Mixer/Mixer.h>
@@ -53,7 +54,19 @@ namespace SparkyStudios::Audio::Amplitude
         chunk->samplesPerVector = AudioDataUnit::length / channels;
 #endif // AM_SSE_INTRINSICS
         chunk->memoryPool = pool;
+#if defined(AM_SSE_INTRINSICS)
         chunk->buffer = static_cast<AudioBuffer>(amMemory->Malign(pool, chunk->size, AM_SIMD_ALIGNMENT));
+#else
+        chunk->buffer = static_cast<AudioBuffer>(amMemory->Malloc(pool, chunk->size));
+#endif // AM_SSE_INTRINSICS
+
+        if (chunk->buffer == nullptr)
+        {
+            CallLogFunc("[ERROR] Failed to allocate memory for sound chunk.");
+
+            delete chunk;
+            return nullptr;
+        }
 
         memset(chunk->buffer, 0, chunk->size);
 
@@ -76,8 +89,9 @@ namespace SparkyStudios::Audio::Amplitude
         return CreateSoundData(format, chunk, userData, frames, false);
     }
 
-    void SoundData::Destroy() const
+    void SoundData::Destroy(bool destroyChunk) const
     {
-        SoundChunk::DestroyChunk(chunk);
+        if (destroyChunk)
+            SoundChunk::DestroyChunk(chunk);
     }
 } // namespace SparkyStudios::Audio::Amplitude
