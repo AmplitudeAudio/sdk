@@ -39,6 +39,8 @@ namespace SparkyStudios::Audio::Amplitude
     class SoundInstance;
     class RealChannel;
 
+    class SoundChunk;
+
     enum class SoundKind
     {
         Switched,
@@ -238,6 +240,8 @@ namespace SparkyStudios::Audio::Amplitude
 
         std::string _source;
         SoundInstanceSettings _settings;
+
+        SoundChunk* _data;
 
         RefCounter _refCounter;
     };
