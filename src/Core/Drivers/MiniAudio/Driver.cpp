@@ -67,6 +67,8 @@ namespace SparkyStudios::Audio::Amplitude::Drivers
                 _device.playback.name, _device.playback.internalSampleRate,
                 static_cast<PlaybackOutputChannels>(_device.playback.internalChannels),
                 static_cast<PlaybackOutputFormat>(_device.playback.internalFormat));
+
+            amMemory->Free(MemoryPoolKind::Engine, deviceConfig.playback.pChannelMap);
         }
 
         if (ma_device_is_started(&_device) == MA_FALSE && ma_device_start(&_device) != MA_SUCCESS)
