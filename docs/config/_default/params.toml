@@ -1,6 +1,9 @@
 # Blog page section
 mainSections = ["posts"]
 
+# Documentation pages
+docSections = ["docs", "api", "tutorials"]
+
 # Ensure that no sidebar is added to the home page
 uniqueHomePage = true
 

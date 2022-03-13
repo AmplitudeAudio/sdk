@@ -1,6 +1,6 @@
 ---
 title: JSON Schema
-weight: 3
+weight: 999
 ---
 
 The following pages will give you the flatbuffer schemas for available asset files in an Amplitude project. You can write assets files in any format compilable with flatbuffer, but Amplitude recommends the usage of JSON files.
