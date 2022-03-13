@@ -22,6 +22,8 @@
 
 namespace SparkyStudios::Audio::Amplitude
 {
+    static AmObjectID gLastSoundInstanceID = 0;
+
     Sound::Sound()
         : m_format()
         , _decoder(nullptr)
@@ -37,14 +39,25 @@ namespace SparkyStudios::Audio::Amplitude
         , _priority()
         , _source()
         , _settings()
+        , _soundData(nullptr)
+        , _soundDataRefCounter()
         , _refCounter()
     {}
 
     Sound::~Sound()
     {
-        _decoder->Close();
-        delete _decoder;
-        _decoder = nullptr;
+        if (_decoder != nullptr)
+        {
+            _decoder->Close();
+            delete _decoder;
+            _decoder = nullptr;
+        }
+
+        if (_soundData != nullptr)
+        {
+            SoundChunk::DestroyChunk(_soundData);
+            _soundData = nullptr;
+        }
 
         _bus = nullptr;
         _effect = nullptr;
@@ -107,9 +120,8 @@ namespace SparkyStudios::Audio::Amplitude
         _id = definition->id();
         _name = definition->name()->str();
 
-        SetFilename(AM_STRING_TO_OS_STRING(definition->path()->c_str()));
         _stream = definition->stream();
-        _loop = definition->loop() ? definition->loop()->enabled() : false;
+        _loop = definition->loop() != nullptr && definition->loop()->enabled();
         _loopCount = definition->loop() ? definition->loop()->loop_count() : 0;
 
         _gain = RtpcValue(definition->gain());
@@ -170,40 +182,40 @@ namespace SparkyStudios::Audio::Amplitude
         return Amplitude::GetSoundDefinition(_source.c_str());
     }
 
-    void Sound::Load(FileLoader* loader)
+    void Sound::Load(const FileLoader* loader)
     {
-        if (GetFilename() == nullptr)
+        if (GetFilename().empty())
         {
             CallLogFunc("[ERROR] Cannot load the sound: the filename is empty.\n");
             return;
         }
 
-        AmOsString filename = GetFilename();
+        const std::filesystem::path& filename = GetFilename();
 
-        Codec* codec = Codec::FindCodecForFile(filename);
+        Codec* codec = Codec::FindCodecForFile(filename.c_str());
         if (codec == nullptr)
         {
-            CallLogFunc("[ERROR] Cannot load the sound: unable to find codec for '" AM_OS_CHAR_FMT "'.\n", filename);
+            CallLogFunc("[ERROR] Cannot load the sound: unable to find codec for '" AM_OS_CHAR_FMT "'.\n", filename.c_str());
             return;
         }
 
         _decoder = codec->CreateDecoder();
-        if (!_decoder->Open(filename))
+        if (!_decoder->Open(filename.c_str()))
         {
-            CallLogFunc("[ERROR] Cannot load the sound: unable to initialize a decoder for '" AM_OS_CHAR_FMT "'.\n", filename);
+            CallLogFunc("[ERROR] Cannot load the sound: unable to initialize a decoder for '" AM_OS_CHAR_FMT "'.\n", filename.c_str());
             return;
         }
 
         m_format = _decoder->GetFormat();
     }
 
-    SoundInstance* Sound::CreateInstance() const
+    SoundInstance* Sound::CreateInstance()
     {
         AMPLITUDE_ASSERT(_id != kAmInvalidObjectId);
         return new SoundInstance(this, _settings, _effect);
     }
 
-    SoundInstance* Sound::CreateInstance(const Collection* collection) const
+    SoundInstance* Sound::CreateInstance(const Collection* collection)
     {
         if (collection == nullptr)
             return CreateInstance();
@@ -276,7 +288,41 @@ namespace SparkyStudios::Audio::Amplitude
         return &_refCounter;
     }
 
-    SoundInstance::SoundInstance(const Sound* parent, const SoundInstanceSettings& settings, const Effect* effect)
+    SoundChunk* Sound::AcquireSoundData()
+    {
+        if (_stream)
+            return nullptr;
+
+        if (_soundDataRefCounter.GetCount() == 0)
+        {
+            _soundData = SoundChunk::CreateChunk(m_format.GetFramesCount(), m_format.GetNumChannels());
+
+            if (_decoder->Load(reinterpret_cast<AmInt16Buffer>(_soundData->buffer)) != m_format.GetFramesCount())
+            {
+                CallLogFunc("Could not load a sound instance. Unable to read data from the parent sound.\n");
+                return nullptr;
+            }
+        }
+
+        _soundDataRefCounter.Increment();
+        return _soundData;
+    }
+
+    void Sound::ReleaseSoundData()
+    {
+        if (_stream)
+            return;
+
+        _soundDataRefCounter.Decrement();
+
+        if (_soundDataRefCounter.GetCount() == 0)
+        {
+            SoundChunk::DestroyChunk(_soundData);
+            _soundData = nullptr;
+        }
+    }
+
+    SoundInstance::SoundInstance(Sound* parent, const SoundInstanceSettings& settings, const Effect* effect)
         : _userData(nullptr)
         , _channel(nullptr)
         , _parent(parent)
@@ -284,6 +330,9 @@ namespace SparkyStudios::Audio::Amplitude
         , _settings(settings)
         , _currentLoopCount(0)
         , _effectInstance()
+        , _obstruction(0.0f)
+        , _occlusion(0.0f)
+        , _id(++gLastSoundInstanceID)
     {
         if (effect != nullptr)
             _effectInstance = effect->CreateInstance();
@@ -307,13 +356,12 @@ namespace SparkyStudios::Audio::Amplitude
         AMPLITUDE_ASSERT(Valid());
 
         const AmUInt16 channels = _parent->m_format.GetNumChannels();
-        const AmUInt32 sampleRate = _parent->m_format.GetSampleRate();
         const AmUInt64 frames = _parent->m_format.GetFramesCount();
 
         if (_parent->_stream)
         {
-            SoundChunk* chunk = SoundChunk::CreateChunk(512, channels);
-            SoundData* data = SoundData::CreateMusic(_parent->m_format, chunk, this);
+            SoundChunk* chunk = SoundChunk::CreateChunk(amEngine->GetSamplesPerStream(), channels);
+            SoundData* data = SoundData::CreateMusic(_parent->m_format, chunk, frames, this);
 
             if (!data)
             {
@@ -325,33 +373,8 @@ namespace SparkyStudios::Audio::Amplitude
         }
         else
         {
-            SoundChunk* chunk = SoundChunk::CreateChunk(frames, channels);
-
-            if (_parent->_decoder->Load((AmInt16Buffer)chunk->buffer) != frames)
-            {
-                CallLogFunc("Could not load a sound instance. Unable to read data from the parent sound.\n");
-                return;
-            }
-
-            if (_effectInstance != nullptr)
-            {
-                switch (_parent->m_format.GetInterleaveType())
-                {
-                case AM_SAMPLE_INTERLEAVED:
-                    _effectInstance->GetFilter()->ProcessInterleaved(
-                        reinterpret_cast<AmInt16Buffer>(chunk->buffer), chunk->frames, chunk->length, channels, sampleRate);
-                    break;
-                case AM_SAMPLE_NON_INTERLEAVED:
-                    _effectInstance->GetFilter()->Process(
-                        reinterpret_cast<AmInt16Buffer>(chunk->buffer), chunk->frames, chunk->length, channels, sampleRate);
-                    break;
-                default:
-                    CallLogFunc("Could not load a sound instance. A bad sound data interleave type was encountered.\n");
-                    break;
-                }
-            }
-
-            SoundData* data = SoundData::CreateSound(_parent->m_format, chunk, this);
+            SoundChunk* chunk = _parent->AcquireSoundData();
+            SoundData* data = SoundData::CreateSound(_parent->m_format, chunk, frames, this);
 
             if (!data)
             {
@@ -388,7 +411,6 @@ namespace SparkyStudios::Audio::Amplitude
         const auto* data = static_cast<SoundData*>(_userData);
 
         const AmUInt16 channels = _parent->m_format.GetNumChannels();
-        const AmUInt32 sampleRate = _parent->m_format.GetSampleRate();
 
         AmUInt64 n, l = frames, o = offset, r = 0;
         auto* b = reinterpret_cast<AmInt16Buffer>(data->chunk->buffer);
@@ -403,28 +425,11 @@ namespace SparkyStudios::Audio::Amplitude
             // seek back to the beginning of the file and fill the remaining part of the buffer.
             if (needFill = n < l && _parent->_loop && _parent->_decoder->Seek(0); needFill)
             {
-                b += n * _parent->m_format.GetNumChannels();
+                b += n * channels;
                 l -= n;
+                o = 0;
             }
         } while (needFill);
-
-        if (_effectInstance != nullptr)
-        {
-            switch (_parent->m_format.GetInterleaveType())
-            {
-            case AM_SAMPLE_INTERLEAVED:
-                _effectInstance->GetFilter()->ProcessInterleaved(
-                    reinterpret_cast<AmInt16Buffer>(data->chunk->buffer), frames, data->chunk->length, channels, sampleRate);
-                break;
-            case AM_SAMPLE_NON_INTERLEAVED:
-                _effectInstance->GetFilter()->Process(
-                    reinterpret_cast<AmInt16Buffer>(data->chunk->buffer), frames, data->chunk->length, channels, sampleRate);
-                break;
-            default:
-                CallLogFunc("Could not load a sound instance. A bad sound data interleave type was encountered.\n");
-                break;
-            }
-        }
 
         return r;
     }
@@ -435,7 +440,11 @@ namespace SparkyStudios::Audio::Amplitude
 
         if (_userData != nullptr)
         {
-            static_cast<SoundData*>(_userData)->Destroy();
+            static_cast<SoundData*>(_userData)->Destroy(_parent->_stream);
+            if (!_parent->_stream)
+            {
+                _parent->ReleaseSoundData();
+            }
         }
     }
 
@@ -467,5 +476,35 @@ namespace SparkyStudios::Audio::Amplitude
     AmUInt32 SoundInstance::GetCurrentLoopCount() const
     {
         return _currentLoopCount;
+    }
+
+    const EffectInstance* SoundInstance::GetEffect() const
+    {
+        return _effectInstance;
+    }
+
+    void SoundInstance::SetObstruction(AmReal32 obstruction)
+    {
+        _obstruction = obstruction;
+    }
+
+    void SoundInstance::SetOcclusion(AmReal32 occlusion)
+    {
+        _occlusion = occlusion;
+    }
+
+    AmReal32 SoundInstance::GetObstruction() const
+    {
+        return _obstruction;
+    }
+
+    AmReal32 SoundInstance::GetOcclusion() const
+    {
+        return _occlusion;
+    }
+
+    AmObjectID SoundInstance::GetId() const
+    {
+        return _id;
     }
 } // namespace SparkyStudios::Audio::Amplitude

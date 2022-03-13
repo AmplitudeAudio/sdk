@@ -112,14 +112,14 @@ namespace SparkyStudios::Audio::Amplitude
 
         if (isInterleaved)
         {
-            for (AmUInt16 i = channel; i < frames * channels; i += channels)
+            for (AmUInt64 i = channel; i < frames * channels; i += channels)
             {
                 buffer[i] = ProcessSample(buffer[i], channel, sampleRate);
             }
         }
         else
         {
-            for (AmUInt16 i = channel * frames; i < frames; i++)
+            for (AmUInt64 i = channel * frames; i < frames; i++)
             {
                 buffer[i] = ProcessSample(buffer[i], channel, sampleRate);
             }

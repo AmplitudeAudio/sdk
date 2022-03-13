@@ -17,52 +17,18 @@
 #ifndef SS_AMPLITUDE_AUDIO_UNIX_CONFIG_H
 #define SS_AMPLITUDE_AUDIO_UNIX_CONFIG_H
 
+// Call policy
+#define AM_CALL_POLICY
+
 // Function inline
 #define AM_INLINE(_return_type_) inline _return_type_ __attribute__((always_inline))
 #define AM_NO_INLINE(_return_type_) _return_type_ __attribute__((noinline))
 
 // Alignment required for SIMD data processing
-#include <cstdlib>
-#include <malloc.h>
-#include <string.h>
-
-static AM_INLINE(void*) am_aligned_realloc(void* ptr, size_t alignment, size_t size)
-{
-    if (!ptr)
-        return std::aligned_alloc(alignment, size);
-
-    size_t usable = malloc_usable_size(ptr);
-    if (!((uintptr_t)ptr & (alignment - 1)))
-    {
-        if (usable >= size)
-            return ptr;
-    }
-
-    void* newptr = std::aligned_alloc(alignment, size);
-    if (!newptr)
-        return nullptr;
-
-    memcpy(newptr, ptr, usable < size ? usable : size);
-    std::free(ptr);
-
-    return newptr;
-}
-
-static AM_INLINE(size_t) am_aligned_msize(void* ptr, size_t alignment)
-{
-    if (alignment < sizeof(void*))
-        alignment = sizeof(void*);
-
-    return malloc_usable_size(ptr) - alignment - sizeof(void*);
-}
-
 #define AM_SIMD_ALIGNMENT 16
+#define AM_TYPE_ALIGN(_declaration_, _alignment_) _declaration_ __attribute__((aligned(_alignment_)))
 #define AM_TYPE_ALIGN_SIMD(_declaration_) AM_TYPE_ALIGN(_declaration_, AM_SIMD_ALIGNMENT)
 #define AM_BUFFER_ALIGNMENT AM_SIMD_ALIGNMENT
-#define AM_ALIGNED_ALLOC(_size_, _alignment_) std::aligned_alloc(_alignment_, _size_)
-#define AM_ALIGNED_REALLOC(_ptr_, _size_, _alignment_) am_aligned_realloc(_ptr_, _size_, _alignment_)
-#define AM_ALIGNED_MSIZE(_ptr_, _alignment_) am_aligned_msize(_ptr_, _alignment_)
-#define AM_ALIGNED_FREE(_ptr_) std::free(_ptr_)
 
 #if defined(AM_WCHAR_SUPPORTED)
 #include <sstream>

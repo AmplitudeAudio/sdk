@@ -33,13 +33,18 @@ namespace SparkyStudios::Audio::Amplitude
 
     bool Entity::Valid() const
     {
-        return _state != nullptr && _state->node.in_list();
+        return _state != nullptr && _state->GetId() != kAmInvalidObjectId && _state->node.in_list();
     }
 
     AmEntityID Entity::GetId() const
     {
+        return _state != nullptr ? _state->GetId() : kAmInvalidObjectId;
+    }
+
+    const hmm_vec3& Entity::GetVelocity() const
+    {
         AMPLITUDE_ASSERT(Valid());
-        return _state->GetId();
+        return _state->GetVelocity();
     }
 
     void Entity::SetLocation(const hmm_vec3& location)
@@ -78,9 +83,50 @@ namespace SparkyStudios::Audio::Amplitude
         _state->Update();
     }
 
-    EntityInternalState* Entity::GetState() const
+    void Entity::SetObstruction(AmReal32 obstruction)
     {
         AMPLITUDE_ASSERT(Valid());
+        _state->SetObstruction(obstruction);
+    }
+
+    void Entity::SetOcclusion(AmReal32 occlusion)
+    {
+        AMPLITUDE_ASSERT(Valid());
+        _state->SetOcclusion(occlusion);
+    }
+
+    AmReal32 Entity::GetObstruction() const
+    {
+        AMPLITUDE_ASSERT(Valid());
+        return _state->GetObstruction();
+    }
+
+    AmReal32 Entity::GetOcclusion() const
+    {
+        AMPLITUDE_ASSERT(Valid());
+        return _state->GetOcclusion();
+    }
+
+    void Entity::SetEnvironmentFactor(AmEnvironmentID environment, AmReal32 factor)
+    {
+        AMPLITUDE_ASSERT(Valid());
+        _state->SetEnvironmentFactor(environment, factor);
+    }
+
+    AmReal32 Entity::GetEnvironmentFactor(AmEnvironmentID environment) const
+    {
+        AMPLITUDE_ASSERT(Valid());
+        return _state->GetEnvironmentFactor(environment);
+    }
+
+    const std::map<AmEnvironmentID, AmReal32>& Entity::GetEnvironments() const
+    {
+        AMPLITUDE_ASSERT(Valid());
+        return _state->GetEnvironments();
+    }
+
+    EntityInternalState* Entity::GetState() const
+    {
         return _state;
     }
 } // namespace SparkyStudios::Audio::Amplitude

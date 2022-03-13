@@ -74,7 +74,7 @@ namespace SparkyStudios::Audio::Amplitude
         explicit EqualizerFilterInstance(EqualizerFilter* parent);
         ~EqualizerFilterInstance() override = default;
 
-        void ProcessFFTChannel(AmReal32Buffer buffer, AmUInt16 channel, AmUInt64 frames, AmUInt16 channels, AmUInt32 sampleRate) override;
+        void ProcessFFTChannel(AmReal64Buffer buffer, AmUInt16 channel, AmUInt64 frames, AmUInt16 channels, AmUInt32 sampleRate) override;
     };
 } // namespace SparkyStudios::Audio::Amplitude
 

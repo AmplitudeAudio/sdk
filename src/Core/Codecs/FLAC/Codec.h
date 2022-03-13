@@ -63,16 +63,14 @@ namespace SparkyStudios::Audio::Amplitude::Codecs
 
             bool Close() final;
 
-            AmUInt64 Write(AudioBuffer in, AmUInt64 offset, AmUInt64 length) final;
+            AmUInt64 Write(AmVoidPtr in, AmUInt64 offset, AmUInt64 length) final;
 
         private:
             bool _initialized;
             drflac* _flac;
         };
 
-        FLACCodec()
-            : Codec("flac")
-        {}
+        FLACCodec();
 
         ~FLACCodec() final = default;
 
@@ -81,6 +79,8 @@ namespace SparkyStudios::Audio::Amplitude::Codecs
         [[nodiscard]] Encoder* CreateEncoder() const final;
 
         bool CanHandleFile(AmOsString filePath) const final;
+
+        drflac_allocation_callbacks m_allocationCallbacks;
     } flac_codec; // NOLINT(cert-err58-cpp)
 } // namespace SparkyStudios::Audio::Amplitude::Codecs
 

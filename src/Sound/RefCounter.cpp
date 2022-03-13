@@ -25,7 +25,6 @@ namespace SparkyStudios::Audio::Amplitude
 
     int RefCounter::Decrement()
     {
-        AMPLITUDE_ASSERT(_count);
-        return --_count;
+        return (_count >= 1) ? --_count : 0;
     }
 } // namespace SparkyStudios::Audio::Amplitude

@@ -68,6 +68,13 @@ namespace SparkyStudios::Audio::Amplitude
         [[nodiscard]] AmEntityID GetId() const;
 
         /**
+         * @brief Gets the velocity of the Entity.
+         *
+         * @return The Entity's velocity.
+         */
+        [[nodiscard]] const hmm_vec3& GetVelocity() const;
+
+        /**
          * @brief Sets the location of this Entity.
          *
          * @param location The new location.
@@ -110,6 +117,60 @@ namespace SparkyStudios::Audio::Amplitude
          * on each frames.
          */
         void Update();
+
+        /**
+         * @brief Set the obstruction level of sounds played by this Entity.
+         *
+         * @param obstruction The obstruction amount. This is provided by the
+         * game engine.
+         */
+        void SetObstruction(AmReal32 obstruction);
+
+        /**
+         * @brief Set the occlusion level of sounds played by this Entity.
+         *
+         * @param occlusion The occlusion amount. This is provided by the
+         * game engine.
+         */
+        void SetOcclusion(AmReal32 occlusion);
+
+        /**
+         * @brief Get the obstruction level of sounds played by this Entity.
+         *
+         * @return The obstruction amount.
+         */
+        [[nodiscard]] AmReal32 GetObstruction() const;
+
+        /**
+         * @brief Get the occlusion level of sounds played by this Entity.
+         *
+         * @return The occlusion amount.
+         */
+        [[nodiscard]] AmReal32 GetOcclusion() const;
+
+        /**
+         * @brief Sets the environment factor for this Entity in the given environment.
+         *
+         * @param environment The environment ID.
+         * @param factor The environment factor.
+         */
+        void SetEnvironmentFactor(AmEnvironmentID environment, AmReal32 factor);
+
+        /**
+         * @brief Gets the environment factor of this Entity for the given environment.
+         *
+         * @param environment The environment ID.
+         *
+         * @return The environment factor.
+         */
+        [[nodiscard]] AmReal32 GetEnvironmentFactor(AmEnvironmentID environment) const;
+
+        /**
+         * @brief Get the list of environments where this Entity belongs or has visited.
+         * 
+         * @return The list of environments where this Entity belongs or has visited.
+         */
+        [[nodiscard]] const std::map<AmEnvironmentID, AmReal32>& GetEnvironments() const;
 
         /**
          * @brief Returns the internal state of this Entity.

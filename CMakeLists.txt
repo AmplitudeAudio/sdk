@@ -13,27 +13,60 @@
 # limitations under the License.
 
 cmake_minimum_required(VERSION 3.20)
-project(Amplitude)
+
+list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake")
+
+include(DetectAmplitudeVersion)
+
+project(Amplitude VERSION ${DETECTED_AM_VERSION})
 
 set(CMAKE_CXX_STANDARD 17)
-set(CMAKE_MODULE_PATH ${CMAKE_CURRENT_SOURCE_DIR}/cmake)
+set(CMAKE_DEBUG_POSTFIX "_d")
+
 set(BIN_DIR ${CMAKE_CURRENT_BINARY_DIR})
 set(OBJ_DIR ${CMAKE_CURRENT_BINARY_DIR}/obj)
 
-# Include FlatBuffers in this project.
+# Setup flatbuffers
+# ------------------------------------------------------------------------------
 set(FLATBUFFERS_BUILD_TESTS OFF CACHE BOOL "")
 if(NOT TARGET flatc)
     add_subdirectory("dependencies/flatbuffers" ${OBJ_DIR}/flatbuffers EXCLUDE_FROM_ALL)
     set(FLATC_LIBRARY flatc)
     set(FLATC_INCLUDE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/dependencies/flatbuffers/include)
 endif()
+# ------------------------------------------------------------------------------
 
-# Include VC in this project.
-find_package(Vc CONFIG REQUIRED)
+# Setup libsamplerate
+# ------------------------------------------------------------------------------
+set(LIBSAMPLERATE_EXAMPLES OFF CACHE BOOL "")
+set(LIBSAMPLERATE_INSTALL ON CACHE BOOL "")
+if (NOT TARGET samplerate)
+    list(APPEND CMAKE_MODULE_PATH ${CMAKE_CURRENT_SOURCE_DIR}/dependencies/libsamplerate/cmake)
+    add_subdirectory("dependencies/libsamplerate" ${OBJ_DIR}/libsamplerate EXCLUDE_FROM_ALL)
+    set(LIBSAMPLERATE_INCLUDE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/dependencies/libsamplerate/include)
+endif()
+# ------------------------------------------------------------------------------
+
+# Setup libsimdpp
+# ------------------------------------------------------------------------------
+# Check what instruction sets the current host supports. Use them for testing
+include("dependencies/libsimdpp/cmake/SimdppMultiarch.cmake")
+message(STATUS "Checking instruction sets to run tests for on this host...")
+simdpp_get_runnable_archs(NATIVE_ARCHS)
+
+foreach(ARCH ${NATIVE_ARCHS})
+    simdpp_get_arch_info(CXX_FLAGS DEFINES_LIST SUFFIX ${ARCH})
+
+    separate_arguments(CXX_FLAGS)
+    add_compile_options(${CXX_FLAGS})
+endforeach()
+
+# ------------------------------------------------------------------------------
+set(SIMDPP_INCLUDE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/dependencies/libsimdpp)
 
 # Generate source files for all FlatBuffers schema files under the src
 # directory.
-set(SPARK_AUDIO_FLATBUFFERS_GENERATED_INCLUDES_DIR ${OBJ_DIR}/include/SparkyStudios/Audio/Amplitude)
+set(AM_FLATBUFFERS_GENERATED_INCLUDES_DIR ${OBJ_DIR}/include/SparkyStudios/Audio/Amplitude)
 file(GLOB_RECURSE FLATBUFFERS_SCHEMAS ${CMAKE_CURRENT_SOURCE_DIR}/schemas/*.fbs)
 
 # Generate rules to build the set of output files from the set of input
@@ -42,7 +75,7 @@ build_flatbuffers("${FLATBUFFERS_SCHEMAS}"
     ""
     generated_includes
     ""
-    ${SPARK_AUDIO_FLATBUFFERS_GENERATED_INCLUDES_DIR}
+    ${AM_FLATBUFFERS_GENERATED_INCLUDES_DIR}
     ""
     ""
 )
@@ -64,18 +97,22 @@ set(SA_SOURCE
     include/SparkyStudios/Audio/Amplitude/Core/Channel.h
     include/SparkyStudios/Audio/Amplitude/Core/Codec.h
     include/SparkyStudios/Audio/Amplitude/Core/Common.h
+    include/SparkyStudios/Audio/Amplitude/Core/Device.h
     include/SparkyStudios/Audio/Amplitude/Core/Driver.h
     include/SparkyStudios/Audio/Amplitude/Core/Engine.h
     include/SparkyStudios/Audio/Amplitude/Core/Entity.h
+    include/SparkyStudios/Audio/Amplitude/Core/Environment.h
     include/SparkyStudios/Audio/Amplitude/Core/Event.h
     include/SparkyStudios/Audio/Amplitude/Core/Listener.h
     include/SparkyStudios/Audio/Amplitude/Core/Log.h
+    include/SparkyStudios/Audio/Amplitude/Core/Memory.h
     include/SparkyStudios/Audio/Amplitude/Core/RefCounter.h
     include/SparkyStudios/Audio/Amplitude/Core/Thread.h
     include/SparkyStudios/Audio/Amplitude/Core/Version.h
     include/SparkyStudios/Audio/Amplitude/IO/FileLoader.h
     include/SparkyStudios/Audio/Amplitude/Math/Curve.h
     include/SparkyStudios/Audio/Amplitude/Math/HandmadeMath.h
+    include/SparkyStudios/Audio/Amplitude/Math/Shape.h
     include/SparkyStudios/Audio/Amplitude/Sound/Attenuation.h
     include/SparkyStudios/Audio/Amplitude/Sound/Collection.h
     include/SparkyStudios/Audio/Amplitude/Sound/Effect.h
@@ -85,9 +122,13 @@ set(SA_SOURCE
     include/SparkyStudios/Audio/Amplitude/Sound/Scheduler.h
     include/SparkyStudios/Audio/Amplitude/Sound/Sound.h
     include/SparkyStudios/Audio/Amplitude/Sound/SoundBank.h
+    include/SparkyStudios/Audio/Amplitude/Sound/SoundProcessor.h
     include/SparkyStudios/Audio/Amplitude/Sound/Switch.h
     include/SparkyStudios/Audio/Amplitude/Sound/SwitchContainer.h
     include/SparkyStudios/Audio/Amplitude/Amplitude.h
+
+    src/Core/Codecs/AMS/Codec.cpp
+    src/Core/Codecs/AMS/Codec.h
 
     src/Core/Codecs/FLAC/Codec.cpp
     src/Core/Codecs/FLAC/Codec.h
@@ -108,7 +149,6 @@ set(SA_SOURCE
 
     src/Core/Drivers/MiniAudio/Driver.cpp
     src/Core/Drivers/MiniAudio/Driver.h
-    src/Core/Drivers/MiniAudio/miniaudio.h
 
     src/Core/Bus.cpp
     src/Core/BusInternalState.cpp
@@ -124,11 +164,15 @@ set(SA_SOURCE
     src/Core/Entity.cpp
     src/Core/EntityInternalState.cpp
     src/Core/EntityInternalState.h
+    src/Core/Environment.cpp
+    src/Core/EnvironmentInternalState.cpp
+    src/Core/EnvironmentInternalState.h
     src/Core/Event.cpp
     src/Core/ListenerInternalState.cpp
     src/Core/ListenerInternalState.h
     src/Core/Listener.cpp
     src/Core/Log.cpp
+    src/Core/Memory.cpp
     src/Core/Thread.cpp
     src/Core/Version.cpp
 
@@ -136,14 +180,23 @@ set(SA_SOURCE
 
     src/Math/Curve.cpp
     src/Math/HMM_Impl.cpp
+    src/Math/Shape.cpp
 
+    src/Mixer/SoundProcessors/EffectProcessor.h
+    src/Mixer/SoundProcessors/EnvironmentProcessor.h
+    src/Mixer/SoundProcessors/ObstructionProcessor.h
+    src/Mixer/SoundProcessors/OcclusionProcessor.h
+    src/Mixer/SoundProcessors/PassThroughProcessor.h
     src/Mixer/Mixer.cpp
     src/Mixer/Mixer.h
+    src/Mixer/ProcessorPipeline.cpp
+    src/Mixer/ProcessorPipeline.h
     src/Mixer/RealChannel.cpp
     src/Mixer/RealChannel.h
     src/Mixer/SoundData.cpp
     src/Mixer/SoundData.h
-    
+    src/Mixer/SoundProcessor.cpp
+
     src/Sound/Faders/ConstantFader.cpp
     src/Sound/Faders/ConstantFader.h
     src/Sound/Faders/ExponentialFader.cpp
@@ -190,6 +243,21 @@ set(SA_SOURCE
     src/Sound/Switch.cpp
     src/Sound/SwitchContainer.cpp
 
+    src/Utils/Audio/Compression/ADPCM/ADPCM.cpp
+    src/Utils/Audio/Compression/ADPCM/ADPCM.h
+    src/Utils/Audio/Resampling/CDSPBlockConvolver.h
+    src/Utils/Audio/Resampling/CDSPFIRFilter.h
+    src/Utils/Audio/Resampling/CDSPFracInterpolator.h
+    src/Utils/Audio/Resampling/CDSPHBDownsampler.h
+    src/Utils/Audio/Resampling/CDSPHBUpsampler.h
+    src/Utils/Audio/Resampling/CDSPProcessor.h
+    src/Utils/Audio/Resampling/CDSPRealFFT.h
+    src/Utils/Audio/Resampling/CDSPResampler.h
+    src/Utils/Audio/Resampling/CDSPSincFilterGen.h
+    src/Utils/Audio/Resampling/r8bbase.cpp
+    src/Utils/Audio/Resampling/r8bbase.h
+    src/Utils/Audio/Resampling/r8bconf.h
+    src/Utils/Audio/Resampling/r8butil.h
     src/Utils/Freeverb/AllPass.cpp
     src/Utils/Freeverb/AllPass.h
     src/Utils/Freeverb/Comb.cpp
@@ -198,8 +266,18 @@ set(SA_SOURCE
     src/Utils/Freeverb/ReverbModel.cpp
     src/Utils/Freeverb/ReverbModel.h
     src/Utils/Freeverb/tuning.h
-    src/Utils/pffft/pffft.cpp
-    src/Utils/pffft/pffft.h
+    src/Utils/miniaudio/miniaudio.cpp
+    src/Utils/miniaudio/miniaudio.h
+    src/Utils/miniaudio/miniaudio_utils.h
+    src/Utils/pffft/simd/pf_avx_double.h
+    src/Utils/pffft/simd/pf_double.h
+    src/Utils/pffft/simd/pf_neon_double_from_avx.h
+    src/Utils/pffft/simd/pf_neon_double.h
+    src/Utils/pffft/simd/pf_scalar_double.h
+    src/Utils/pffft/simd/pf_sse2_double.h
+    src/Utils/pffft/pffft_double.cpp
+    src/Utils/pffft/pffft_double.h
+    src/Utils/pffft/pffft_private_impl.h
     src/Utils/SmMalloc/smmalloc_generic.cpp
     src/Utils/SmMalloc/smmalloc_tls.cpp
     src/Utils/SmMalloc/smmalloc.cpp
@@ -215,14 +293,15 @@ set(SA_SOURCE
 include_directories(src
     include
     ${FLATC_INCLUDE_DIR}
-    ${Vc_INCLUDE_DIR}
-    ${SPARK_AUDIO_FLATBUFFERS_GENERATED_INCLUDES_DIR}
+    ${SIMDPP_INCLUDE_DIR}
+    ${LIBSAMPLERATE_INCLUDE_DIR}
+    ${AM_FLATBUFFERS_GENERATED_INCLUDES_DIR}
 )
 
-add_library(${PROJECT_NAME} ${SA_SOURCE})
+add_library(${PROJECT_NAME} STATIC ${SA_SOURCE})
 
-target_link_libraries(${PROJECT_NAME} PRIVATE Vc::Vc)
 target_link_libraries(${PROJECT_NAME} PRIVATE flatbuffers)
+target_link_libraries(${PROJECT_NAME} PRIVATE samplerate)
 
 add_dependencies(${PROJECT_NAME}
     generated_includes
@@ -237,6 +316,8 @@ if(UNIX)
   )
 endif()
 
+add_subdirectory(tools/amc)
+
 option(BUILD_SAMPLES "Build samples" OFF)
 if(BUILD_SAMPLES)
   list(APPEND VCPKG_MANIFEST_FEATURES "samples")
@@ -247,25 +328,26 @@ endif()
 # INSTALL
 
 if(MSVC)
-    set( RUNTIME_OUTPUT_DIRECTORY "win" )
+    set(RUNTIME_OUTPUT_DIRECTORY "win")
 elseif(APPLE)
-    set( RUNTIME_OUTPUT_DIRECTORY "osx" )
+    set(RUNTIME_OUTPUT_DIRECTORY "osx")
 else()
-    set( RUNTIME_OUTPUT_DIRECTORY "linux" )
+    set(RUNTIME_OUTPUT_DIRECTORY "linux")
 endif()
 
-set( AM_LIB_DESTINATION   "lib/${RUNTIME_OUTPUT_DIRECTORY}" )
-set( AM_INC_DESTINATION   "lib/${RUNTIME_OUTPUT_DIRECTORY}/include" )
-set( AM_BIN_DESTINATION   "bin/${RUNTIME_OUTPUT_DIRECTORY}" )
+set(AM_LIB_DESTINATION   "sdk/lib/${RUNTIME_OUTPUT_DIRECTORY}")
+set(AM_INC_DESTINATION   "sdk/include")
+set(AM_SHM_DESTINATION   "sdk/schemas")
+set(AM_BIN_DESTINATION   "sdk/bin/${RUNTIME_OUTPUT_DIRECTORY}")
 
-set(CMAKE_RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/${AM_BIN_DESTINATION}" )
-set(CMAKE_LIBRARY_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/${AM_LIB_DESTINATION}" )
-set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/${AM_BIN_DESTINATION}" )
+set(CMAKE_RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/${AM_BIN_DESTINATION}")
+set(CMAKE_LIBRARY_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/${AM_LIB_DESTINATION}")
+set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/${AM_BIN_DESTINATION}")
 
 set(CMAKE_INSTALL_PREFIX ${CMAKE_CURRENT_LIST_DIR})
 
 install(
-    TARGETS ${PROJECT_NAME}
+    TARGETS ${PROJECT_NAME} amc
     EXPORT AmplitudeAudioSDKConfig
     ARCHIVE DESTINATION ${AM_LIB_DESTINATION}
     LIBRARY DESTINATION ${AM_LIB_DESTINATION}
@@ -279,6 +361,12 @@ install(
 )
 
 install(
+    DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/schemas/
+    DESTINATION ${AM_SHM_DESTINATION}
+    FILES_MATCHING PATTERN "*.fbs"
+)
+
+install(
     EXPORT AmplitudeAudioSDKConfig
     DESTINATION "${AM_LIB_DESTINATION}/cmake"
     NAMESPACE SparkyStudios::Audio::
@@ -288,6 +376,12 @@ export(
     TARGETS flatbuffers
     NAMESPACE flatbuffers::
     FILE "${CMAKE_CURRENT_BINARY_DIR}/FlatbuffersConfig.cmake"
+)
+
+export(
+    TARGETS samplerate
+    NAMESPACE SampleRate::
+    FILE "${CMAKE_CURRENT_BINARY_DIR}/SampleRateConfig.cmake"
 )
 
 export(

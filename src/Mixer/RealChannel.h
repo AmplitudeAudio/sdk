@@ -116,6 +116,20 @@ namespace SparkyStudios::Audio::Amplitude
         void SetPan(const hmm_vec2& pan);
 
         /**
+         * @brief Set the pitch of the sound.
+         * 
+         * @param pitch The sound's pitch.
+         */
+        void SetPitch(AmReal32 pitch);
+
+        /**
+         * @brief Set the playback speed of the sound.
+         * 
+         * @param speed The playback speed. Set to 1 for normal speed.
+         */
+        void SetSpeed(AmReal32 speed);
+
+        /**
          * @brief Return true if this is a valid real channel.
          */
         [[nodiscard]] bool Valid() const;
@@ -168,6 +182,22 @@ namespace SparkyStudios::Audio::Amplitude
             return _parentChannelState;
         }
 
+        /**
+         * @brief Set the obstruction level of sounds played by this Entity.
+         *
+         * @param obstruction The obstruction amount. This is provided by the
+         * game engine.
+         */
+        void SetObstruction(AmReal32 obstruction);
+
+        /**
+         * @brief Set the occlusion level of sounds played by this Entity.
+         *
+         * @param occlusion The occlusion amount. This is provided by the
+         * game engine.
+         */
+        void SetOcclusion(AmReal32 occlusion);
+
     private:
         void SetGainPan(float gain, float pan, AmUInt32 layer);
         AmUInt32 FindFreeLayer(AmUInt32 layerIndex = 0) const;
@@ -180,6 +210,8 @@ namespace SparkyStudios::Audio::Amplitude
 
         float _pan;
         std::map<AmUInt32, float> _gain;
+        AmReal32 _pitch;
+        AmReal32 _playSpeed;
 
         Mixer* _mixer;
         std::map<AmUInt32, SoundInstance*> _activeSounds;

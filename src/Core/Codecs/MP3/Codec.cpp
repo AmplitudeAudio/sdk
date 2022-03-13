@@ -19,6 +19,30 @@
 
 namespace SparkyStudios::Audio::Amplitude::Codecs
 {
+    static void* onMalloc(size_t sz, void* pUserData)
+    {
+        return amMemory->Malloc(MemoryPoolKind::Codec, sz);
+    }
+
+    static void* onRealloc(void* p, size_t sz, void* pUserData)
+    {
+        return amMemory->Realloc(MemoryPoolKind::Codec, p, sz);
+    }
+
+    static void onFree(void* p, void* pUserData)
+    {
+        amMemory->Free(MemoryPoolKind::Codec, p);
+    }
+
+    MP3Codec::MP3Codec()
+        : Codec("mp3")
+        , m_allocationCallbacks()
+    {
+        m_allocationCallbacks.onFree = onFree;
+        m_allocationCallbacks.onMalloc = onMalloc;
+        m_allocationCallbacks.onRealloc = onRealloc;
+    }
+
     bool MP3Codec::MP3Decoder::Open(AmOsString filePath)
     {
         if (!m_codec->CanHandleFile(filePath))
@@ -27,10 +51,12 @@ namespace SparkyStudios::Audio::Amplitude::Codecs
             return false;
         }
 
+        const auto* codec = static_cast<const MP3Codec*>(m_codec);
+
 #if defined(AM_WCHAR_SUPPORTED)
-        if (drmp3_init_file_w(&_mp3, filePath, nullptr) == DRMP3_FALSE)
+        if (drmp3_init_file_w(&_mp3, filePath, &codec->m_allocationCallbacks) == DRMP3_FALSE)
 #else
-        if (drmp3_init_file(&_mp3, filePath, nullptr) == DRMP3_FALSE)
+        if (drmp3_init_file(&_mp3, filePath, &codec->m_allocationCallbacks) == DRMP3_FALSE)
 #endif
         {
             CallLogFunc("[ERROR] Cannot load the MP3 file: '%s'\n.", filePath);
@@ -75,7 +101,7 @@ namespace SparkyStudios::Audio::Amplitude::Codecs
             return 0;
         }
 
-        if (drmp3_seek_to_pcm_frame(&_mp3, 0) != DRMP3_TRUE)
+        if (!Seek(0))
         {
             return 0;
         }
@@ -119,7 +145,7 @@ namespace SparkyStudios::Audio::Amplitude::Codecs
         return true;
     }
 
-    AmUInt64 MP3Codec::MP3Encoder::Write(AudioBuffer in, AmUInt64 offset, AmUInt64 length)
+    AmUInt64 MP3Codec::MP3Encoder::Write(AmVoidPtr in, AmUInt64 offset, AmUInt64 length)
     {
         return 0;
     }
@@ -140,9 +166,9 @@ namespace SparkyStudios::Audio::Amplitude::Codecs
 
         drmp3 dummy;
 #if defined(AM_WCHAR_SUPPORTED)
-        const bool can = drmp3_init_file_w(&dummy, filePath, nullptr) == DRMP3_TRUE;
+        const bool can = drmp3_init_file_w(&dummy, filePath, &m_allocationCallbacks) == DRMP3_TRUE;
 #else
-        const bool can = drmp3_init_file(&dummy, filePath, nullptr) == DRMP3_TRUE;
+        const bool can = drmp3_init_file(&dummy, filePath, &m_allocationCallbacks) == DRMP3_TRUE;
 #endif
 
         if (can)

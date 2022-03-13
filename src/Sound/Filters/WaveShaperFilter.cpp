@@ -85,11 +85,11 @@ namespace SparkyStudios::Audio::Amplitude
         const AmInt32 x = sample;
         /* */ AmInt32 y;
 
-        const AmReal32 p = std::abs(x) * AmFloatToFixedPoint(k) + AmFloatToFixedPoint(1.0f) >> kAmFixedPointShift;
-        const AmReal32 q = AmFloatToFixedPoint(1.0f + k) * x >> kAmFixedPointShift;
+        const AmReal32 p = (std::abs(x) * AmFloatToFixedPoint(k) + AmFloatToFixedPoint(1.0f)) >> kAmFixedPointBits;
+        const AmReal32 q = (AmFloatToFixedPoint(1.0f + k) * x) >> kAmFixedPointBits;
 
-        y = x * AmFloatToFixedPoint(q / p) >> kAmFixedPointShift;
-        y = x + ((y - x) * AmFloatToFixedPoint(m_parameters[WaveShaperFilter::ATTRIBUTE_WET]) >> kAmFixedPointShift);
+        y = x * AmFloatToFixedPoint(q / p) >> kAmFixedPointBits;
+        y = x + ((y - x) * AmFloatToFixedPoint(m_parameters[WaveShaperFilter::ATTRIBUTE_WET]) >> kAmFixedPointBits);
         y = AM_CLAMP(y, INT16_MIN, INT16_MAX);
 
         return static_cast<AmInt16>(y);

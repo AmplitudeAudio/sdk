@@ -62,7 +62,9 @@ namespace SparkyStudios::Audio::Amplitude
             , _userGain(1.0f)
             , _gain(1.0f)
             , _pan()
+            , _pitch(1.0f)
             , _location()
+            , _dopplerFactors()
         {}
 
         // Updates the state enum based on whether this channel is stopped, playing,
@@ -158,23 +160,27 @@ namespace SparkyStudios::Audio::Amplitude
         [[nodiscard]] bool Paused() const;
 
         // Set and query the user gain of this channel.
-        void SetUserGain(const float user_gain)
+        void SetUserGain(const AmReal32 user_gain)
         {
             _userGain = user_gain;
         }
 
-        [[nodiscard]] float GetUserGain() const
+        [[nodiscard]] AmReal32 GetUserGain() const
         {
             return _userGain;
         }
 
         // Set and query the current gain of this channel.
-        void SetGain(float gain);
+        void SetGain(AmReal32 gain);
 
-        [[nodiscard]] float GetGain() const
+        [[nodiscard]] AmReal32 GetGain() const
         {
             return _gain;
         }
+
+        void SetPitch(AmReal32 pitch);
+
+        [[nodiscard]] AmReal32 GetPitch() const;
 
         // Immediately stop the audio. May cause clicking.
         void Halt();
@@ -206,7 +212,7 @@ namespace SparkyStudios::Audio::Amplitude
 
         // Returns the priority of this channel based on its gain and priority
         // multiplier on the sound collection definition.
-        [[nodiscard]] float Priority() const;
+        [[nodiscard]] AmReal32 Priority() const;
 
         /**
          * @brief Update this channel data per frames.
@@ -264,6 +270,31 @@ namespace SparkyStudios::Audio::Amplitude
             _channelStateId = id;
         }
 
+        /**
+         * @brief Set the obstruction level of sounds played by this Channel.
+         *
+         * @param obstruction The obstruction amount. This is provided by the
+         * game engine.
+         */
+        void SetObstruction(AmReal32 obstruction);
+
+        /**
+         * @brief Set the occlusion level of sounds played by this Channel.
+         *
+         * @param occlusion The occlusion amount. This is provided by the
+         * game engine.
+         */
+        void SetOcclusion(AmReal32 occlusion);
+
+        /**
+         * @brief Get the Doppler factor of this sound for the given Listener.
+         *
+         * @param listener The listener to get the Doppler factor for.
+         *
+         * @return A Doppler factor value for the given Listener.
+         */
+        [[nodiscard]] AmReal32 GetDopplerFactor(AmListenerID listener) const;
+
         // The node that tracks the location in the priority list.
         fplutil::intrusive_list_node priority_node;
 
@@ -310,18 +341,23 @@ namespace SparkyStudios::Audio::Amplitude
         Entity _entity;
 
         // The gain set by the user.
-        float _userGain;
+        AmReal32 _userGain;
 
         // The gain of this channel.
-        float _gain;
+        AmReal32 _gain;
 
         // The pan of this channel.
         hmm_vec2 _pan;
+
+        // The pitch of this channel.
+        AmReal32 _pitch;
 
         // The location of this channel's sound.
         hmm_vec3 _location;
 
         AmUInt64 _channelStateId;
+
+        std::map<AmListenerID, AmReal32> _dopplerFactors;
     };
 } // namespace SparkyStudios::Audio::Amplitude
 

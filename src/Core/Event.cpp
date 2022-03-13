@@ -54,27 +54,23 @@ namespace SparkyStudios::Audio::Amplitude
         switch (_type)
         {
         default:
+            [[fallthrough]];
         case EventActionType_None:
             return;
 
-        case EventActionType_PlayCollection:
-        case EventActionType_PlaySound:
+        case EventActionType_Play:
             return _executePlay(entity);
 
-        case EventActionType_PauseCollection:
-        case EventActionType_PauseSound:
+        case EventActionType_Pause:
             return _executePause(entity);
 
-        case EventActionType_ResumeCollection:
-        case EventActionType_ResumeSound:
+        case EventActionType_Resume:
             return _executeResume(entity);
 
-        case EventActionType_StopCollection:
-        case EventActionType_StopSound:
+        case EventActionType_Stop:
             return _executeStop(entity);
 
-        case EventActionType_SeekCollection:
-        case EventActionType_SeekSound:
+        case EventActionType_Seek:
             return _executeSeek(entity);
 
         case EventActionType_MuteBus:
@@ -85,6 +81,17 @@ namespace SparkyStudios::Audio::Amplitude
         }
     }
 
+    void EventAction::Run()
+    {
+        if (_scope == Scope_Entity)
+        {
+            AMPLITUDE_ASSERT(false);
+            CallLogFunc("[WARNING] Running an entity scoped event action without an entity.");
+        }
+
+        Run(Entity(nullptr));
+    }
+
     bool EventAction::AdvanceFrame(AmTime delta_time)
     {
         // TODO
@@ -93,21 +100,27 @@ namespace SparkyStudios::Audio::Amplitude
 
     void EventAction::_executePlay(const Entity& entity)
     {
-        auto* engine = Engine::GetInstance();
-
-        for (auto&& target : _targets)
+        if (entity.Valid())
         {
-            engine->Play(target, entity);
+            for (auto&& target : _targets)
+            {
+                amEngine->Play(target, entity);
+            }
+        }
+        else
+        {
+            for (auto&& target : _targets)
+            {
+                amEngine->Play(target);
+            }
         }
     }
 
     void EventAction::_executePause(const Entity& entity)
     {
-        auto* engine = Engine::GetInstance();
-
-        for (auto&& target : _targets)
+        if (_scope == Scope_Entity)
         {
-            if (_scope == Scope_Entity)
+            for (auto&& target : _targets)
             {
                 for (auto&& item : entity.GetState()->GetPlayingSoundList())
                 {
@@ -117,20 +130,27 @@ namespace SparkyStudios::Audio::Amplitude
                     }
                 }
             }
-            else
+        }
+        else
+        {
+            for (auto&& target : _targets)
             {
-                // TODO
+                for (auto&& item : amEngine->GetState()->playing_channel_list)
+                {
+                    if (target == item.GetPlayingObjectId())
+                    {
+                        item.Pause();
+                    }
+                }
             }
         }
     }
 
     void EventAction::_executeResume(const Entity& entity)
     {
-        auto* engine = Engine::GetInstance();
-
-        for (auto&& target : _targets)
+        if (_scope == Scope_Entity)
         {
-            if (_scope == Scope_Entity)
+            for (auto&& target : _targets)
             {
                 for (auto&& item : entity.GetState()->GetPlayingSoundList())
                 {
@@ -140,20 +160,27 @@ namespace SparkyStudios::Audio::Amplitude
                     }
                 }
             }
-            else
+        }
+        else
+        {
+            for (auto&& target : _targets)
             {
-                // TODO
+                for (auto&& item : amEngine->GetState()->playing_channel_list)
+                {
+                    if (target == item.GetPlayingObjectId())
+                    {
+                        item.Resume();
+                    }
+                }
             }
         }
     }
 
     void EventAction::_executeStop(const Entity& entity)
     {
-        auto* engine = Engine::GetInstance();
-
-        for (auto&& target : _targets)
+        if (_scope == Scope_Entity)
         {
-            if (_scope == Scope_Entity)
+            for (auto&& target : _targets)
             {
                 for (auto&& item : entity.GetState()->GetPlayingSoundList())
                 {
@@ -163,9 +190,18 @@ namespace SparkyStudios::Audio::Amplitude
                     }
                 }
             }
-            else
+        }
+        else
+        {
+            for (auto&& target : _targets)
             {
-                // TODO
+                for (auto&& item : amEngine->GetState()->playing_channel_list)
+                {
+                    if (target == item.GetPlayingObjectId())
+                    {
+                        item.Halt();
+                    }
+                }
             }
         }
     }
@@ -175,11 +211,10 @@ namespace SparkyStudios::Audio::Amplitude
 
     void EventAction::_executeMute(const Entity& entity, bool mute)
     {
-        auto* engine = Engine::GetInstance();
-
         for (auto&& target : _targets)
         {
-            Bus bus = engine->FindBus(target);
+            Bus bus = amEngine->FindBus(target);
+
             if (bus.Valid())
             {
                 bus.SetMute(mute);
@@ -266,7 +301,7 @@ namespace SparkyStudios::Audio::Amplitude
         return _event != nullptr;
     }
 
-    void EventCanceler::Cancel()
+    void EventCanceler::Cancel() const
     {
         AMPLITUDE_ASSERT(Valid());
         _event->Abort();

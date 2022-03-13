@@ -42,6 +42,9 @@ table RtpcDefinition {
   /// The maximum value the RTPC can have.
   max_value:double;
 
+  /// The default value of the RTPC.
+  default_value:double = 0;
+
   /// The fade transition settings of the RTPC.
   fade_settings:RtpcFadingSettings;
 }

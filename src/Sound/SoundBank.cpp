@@ -36,6 +36,17 @@ namespace SparkyStudios::Audio::Amplitude
         , _soundBankDefSource()
     {}
 
+    SoundBank::SoundBank(const std::string& source)
+        : SoundBank()
+    {
+        _soundBankDefSource = source;
+
+        const SoundBankDefinition* definition = GetSoundBankDefinition();
+
+        _id = definition->id();
+        _name = definition->name()->str();
+    }
+
     static bool InitializeSwitchContainer(AmOsString filename, Engine* engine)
     {
         // Find the ID.
@@ -47,9 +58,11 @@ namespace SparkyStudios::Audio::Amplitude
         }
         else
         {
+            std::filesystem::path filePath = engine->GetFileLoader()->ResolvePath(std::filesystem::path("switch_containers") / filename);
+
             // This is a new switch container, load it and update it.
             std::unique_ptr<SwitchContainer> switch_container(new SwitchContainer());
-            if (!switch_container->LoadSwitchContainerDefinitionFromFile(filename, engine->GetState()))
+            if (!switch_container->LoadSwitchContainerDefinitionFromFile(filePath.c_str(), engine->GetState()))
             {
                 return false;
             }
@@ -85,9 +98,11 @@ namespace SparkyStudios::Audio::Amplitude
         }
         else
         {
+            std::filesystem::path filePath = engine->GetFileLoader()->ResolvePath(std::filesystem::path("collections") / filename);
+
             // This is a new collection, load it and update it.
             std::unique_ptr<Collection> collection(new Collection());
-            if (!collection->LoadCollectionDefinitionFromFile(filename, engine->GetState()))
+            if (!collection->LoadCollectionDefinitionFromFile(filePath.c_str(), engine->GetState()))
             {
                 return false;
             }
@@ -123,9 +138,11 @@ namespace SparkyStudios::Audio::Amplitude
         }
         else
         {
+            std::filesystem::path filePath = engine->GetFileLoader()->ResolvePath(std::filesystem::path("sounds") / filename);
+
             // This is a new sound, load it and update it.
             std::unique_ptr<Sound> sound(new Sound());
-            if (!sound->LoadSoundDefinitionFromFile(filename, engine->GetState()))
+            if (!sound->LoadSoundDefinitionFromFile(filePath.c_str(), engine->GetState()))
             {
                 return false;
             }
@@ -139,7 +156,9 @@ namespace SparkyStudios::Audio::Amplitude
                 return false;
             }
 
-            sound->Load(&engine->GetState()->loader);
+            sound->LoadFile(
+                engine->GetFileLoader()->ResolvePath(std::filesystem::path("sounds") / std::filesystem::path(definition->path()->c_str())),
+                engine->GetFileLoader());
 
             sound->AcquireReferences(engine->GetState());
             sound->GetRefCounter()->Increment();
@@ -162,9 +181,11 @@ namespace SparkyStudios::Audio::Amplitude
         }
         else
         {
+            std::filesystem::path filePath = engine->GetFileLoader()->ResolvePath(std::filesystem::path("events") / filename);
+
             // This is a new event, load it and update it.
             std::unique_ptr<Event> event(new Event());
-            if (!event->LoadEventDefinitionFromFile(filename))
+            if (!event->LoadEventDefinitionFromFile(filePath.c_str()))
             {
                 return false;
             }
@@ -198,9 +219,11 @@ namespace SparkyStudios::Audio::Amplitude
         }
         else
         {
+            std::filesystem::path filePath = engine->GetFileLoader()->ResolvePath(std::filesystem::path("attenuators") / filename);
+
             // This is a new event, load it and update it.
             std::unique_ptr<Attenuation> attenuation(new Attenuation());
-            if (!attenuation->LoadAttenuationDefinitionFromFile(filename))
+            if (!attenuation->LoadAttenuationDefinitionFromFile(filePath.c_str()))
             {
                 return false;
             }
@@ -235,9 +258,11 @@ namespace SparkyStudios::Audio::Amplitude
         }
         else
         {
+            std::filesystem::path filePath = engine->GetFileLoader()->ResolvePath(std::filesystem::path("switches") / filename);
+
             // This is a new event, load it and update it.
             std::unique_ptr<Switch> _switch(new Switch());
-            if (!_switch->LoadSwitchDefinitionFromFile(filename))
+            if (!_switch->LoadSwitchDefinitionFromFile(filePath.c_str()))
             {
                 return false;
             }
@@ -272,9 +297,11 @@ namespace SparkyStudios::Audio::Amplitude
         }
         else
         {
+            std::filesystem::path filePath = engine->GetFileLoader()->ResolvePath(std::filesystem::path("rtpc") / filename);
+
             // This is a new event, load it and update it.
             std::unique_ptr<Rtpc> rtpc(new Rtpc());
-            if (!rtpc->LoadRtpcDefinitionFromFile(filename))
+            if (!rtpc->LoadRtpcDefinitionFromFile(filePath.c_str()))
             {
                 return false;
             }
@@ -308,9 +335,11 @@ namespace SparkyStudios::Audio::Amplitude
         }
         else
         {
+            std::filesystem::path filePath = engine->GetFileLoader()->ResolvePath(std::filesystem::path("effects") / filename);
+
             // This is a new event, load it and update it.
             std::unique_ptr<Effect> effect(new Effect());
-            if (!effect->LoadEffectDefinitionFromFile(filename))
+            if (!effect->LoadEffectDefinitionFromFile(filePath.c_str()))
             {
                 return false;
             }
@@ -336,74 +365,26 @@ namespace SparkyStudios::Audio::Amplitude
 
     bool SoundBank::Initialize(AmOsString filename, Engine* engine)
     {
-        bool success = true;
-        if (!LoadFile(filename, &_soundBankDefSource))
+        std::filesystem::path filePath = engine->GetFileLoader()->ResolvePath(std::filesystem::path("soundbanks") / filename);
+
+        if (!LoadFile(filePath.c_str(), &_soundBankDefSource))
         {
             return false;
         }
 
-        const SoundBankDefinition* definition = GetSoundBankDefinition();
+        return InitializeInternal(engine);
+    }
 
-        _id = definition->id();
-        _name = definition->name()->str();
-
-        // Load each Rtpc named in the sound bank.
-        for (flatbuffers::uoffset_t i = 0; success && i < definition->rtpc()->size(); ++i)
+    bool SoundBank::InitializeFromMemory(const char* fileData, Engine* engine)
+    {
+        if (!fileData)
         {
-            AmString filename = definition->rtpc()->Get(i)->c_str();
-            success &= InitializeRtpc(AM_STRING_TO_OS_STRING(filename), engine);
+            return false;
         }
 
-        // Load each effect named in the sound bank.
-        for (flatbuffers::uoffset_t i = 0; success && i < definition->effects()->size(); ++i)
-        {
-            AmString filename = definition->effects()->Get(i)->c_str();
-            success &= InitializeEffect(AM_STRING_TO_OS_STRING(filename), engine);
-        }
+        _soundBankDefSource = fileData;
 
-        // Load each Switch named in the sound bank.
-        for (flatbuffers::uoffset_t i = 0; success && i < definition->switches()->size(); ++i)
-        {
-            AmString switch_filename = definition->switches()->Get(i)->c_str();
-            success &= InitializeSwitch(AM_STRING_TO_OS_STRING(switch_filename), engine);
-        }
-
-        // Load each Attenuation named in the sound bank.
-        for (flatbuffers::uoffset_t i = 0; success && i < definition->attenuators()->size(); ++i)
-        {
-            AmString attenuation_filename = definition->attenuators()->Get(i)->c_str();
-            success &= InitializeAttenuation(AM_STRING_TO_OS_STRING(attenuation_filename), engine);
-        }
-
-        // Load each Event named in the sound bank.
-        for (flatbuffers::uoffset_t i = 0; success && i < definition->events()->size(); ++i)
-        {
-            AmString event_filename = definition->events()->Get(i)->c_str();
-            success &= InitializeEvent(AM_STRING_TO_OS_STRING(event_filename), engine);
-        }
-
-        // Load each Sound named in the sound bank.
-        for (flatbuffers::uoffset_t i = 0; success && i < definition->sounds()->size(); ++i)
-        {
-            AmString filename = definition->sounds()->Get(i)->c_str();
-            success &= InitializeSound(AM_STRING_TO_OS_STRING(filename), engine);
-        }
-
-        // Load each Collection named in the sound bank.
-        for (flatbuffers::uoffset_t i = 0; success && i < definition->collections()->size(); ++i)
-        {
-            AmString sound_filename = definition->collections()->Get(i)->c_str();
-            success &= InitializeCollection(AM_STRING_TO_OS_STRING(sound_filename), engine);
-        }
-
-        // Load each SwitchContainer named in the sound bank.
-        for (flatbuffers::uoffset_t i = 0; success && i < definition->switch_containers()->size(); ++i)
-        {
-            AmString filename = definition->switch_containers()->Get(i)->c_str();
-            success &= InitializeSwitchContainer(AM_STRING_TO_OS_STRING(filename), engine);
-        }
-
-        return success;
+        return InitializeInternal(engine);
     }
 
     static bool DeinitializeSwitchContainer(AmOsString filename, EngineInternalState* state)
@@ -699,5 +680,72 @@ namespace SparkyStudios::Audio::Amplitude
     RefCounter* SoundBank::GetRefCounter()
     {
         return &_refCounter;
+    }
+
+    bool SoundBank::InitializeInternal(Engine* engine)
+    {
+        bool success = true;
+        const SoundBankDefinition* definition = GetSoundBankDefinition();
+
+        _id = definition->id();
+        _name = definition->name()->str();
+
+        // Load each Rtpc named in the sound bank.
+        for (flatbuffers::uoffset_t i = 0; success && i < definition->rtpc()->size(); ++i)
+        {
+            AmString filename = definition->rtpc()->Get(i)->c_str();
+            success &= InitializeRtpc(AM_STRING_TO_OS_STRING(filename), engine);
+        }
+
+        // Load each effect named in the sound bank.
+        for (flatbuffers::uoffset_t i = 0; success && i < definition->effects()->size(); ++i)
+        {
+            AmString filename = definition->effects()->Get(i)->c_str();
+            success &= InitializeEffect(AM_STRING_TO_OS_STRING(filename), engine);
+        }
+
+        // Load each Switch named in the sound bank.
+        for (flatbuffers::uoffset_t i = 0; success && i < definition->switches()->size(); ++i)
+        {
+            AmString switch_filename = definition->switches()->Get(i)->c_str();
+            success &= InitializeSwitch(AM_STRING_TO_OS_STRING(switch_filename), engine);
+        }
+
+        // Load each Attenuation named in the sound bank.
+        for (flatbuffers::uoffset_t i = 0; success && i < definition->attenuators()->size(); ++i)
+        {
+            AmString attenuation_filename = definition->attenuators()->Get(i)->c_str();
+            success &= InitializeAttenuation(AM_STRING_TO_OS_STRING(attenuation_filename), engine);
+        }
+
+        // Load each Event named in the sound bank.
+        for (flatbuffers::uoffset_t i = 0; success && i < definition->events()->size(); ++i)
+        {
+            AmString event_filename = definition->events()->Get(i)->c_str();
+            success &= InitializeEvent(AM_STRING_TO_OS_STRING(event_filename), engine);
+        }
+
+        // Load each Sound named in the sound bank.
+        for (flatbuffers::uoffset_t i = 0; success && i < definition->sounds()->size(); ++i)
+        {
+            AmString filename = definition->sounds()->Get(i)->c_str();
+            success &= InitializeSound(AM_STRING_TO_OS_STRING(filename), engine);
+        }
+
+        // Load each Collection named in the sound bank.
+        for (flatbuffers::uoffset_t i = 0; success && i < definition->collections()->size(); ++i)
+        {
+            AmString sound_filename = definition->collections()->Get(i)->c_str();
+            success &= InitializeCollection(AM_STRING_TO_OS_STRING(sound_filename), engine);
+        }
+
+        // Load each SwitchContainer named in the sound bank.
+        for (flatbuffers::uoffset_t i = 0; success && i < definition->switch_containers()->size(); ++i)
+        {
+            AmString filename = definition->switch_containers()->Get(i)->c_str();
+            success &= InitializeSwitchContainer(AM_STRING_TO_OS_STRING(filename), engine);
+        }
+
+        return success;
     }
 } // namespace SparkyStudios::Audio::Amplitude

@@ -48,11 +48,16 @@ namespace SparkyStudios::Audio::Amplitude
         void Initialize(const EventActionDefinition* definition);
 
         /**
-         * @brief Run the action using the given engine state.
+         * @brief Runs the action in entity scope.
          *
-         * @param entity The which trigger the event.
+         * @param entity The entity which trigger the event.
          */
         void Run(const Entity& entity);
+
+        /**
+         * @brief Runs the action in world scope.
+         */
+        void Run();
 
         /**
          * @brief Apply a frame update on this EventAction.
@@ -181,7 +186,7 @@ namespace SparkyStudios::Audio::Amplitude
         /**
          * @brief Cancels and abort the wrapped Event.
          */
-        void Cancel();
+        void Cancel() const;
 
         /**
          * @brief Returns the Event wrapped by this EventCanceler.

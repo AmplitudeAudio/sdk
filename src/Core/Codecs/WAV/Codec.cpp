@@ -19,6 +19,30 @@
 
 namespace SparkyStudios::Audio::Amplitude::Codecs
 {
+    static void* onMalloc(size_t sz, void* pUserData)
+    {
+        return amMemory->Malloc(MemoryPoolKind::Codec, sz);
+    }
+
+    static void* onRealloc(void* p, size_t sz, void* pUserData)
+    {
+        return amMemory->Realloc(MemoryPoolKind::Codec, p, sz);
+    }
+
+    static void onFree(void* p, void* pUserData)
+    {
+        amMemory->Free(MemoryPoolKind::Codec, p);
+    }
+
+    WAVCodec::WAVCodec()
+        : Codec("wav")
+        , m_allocationCallbacks()
+    {
+        m_allocationCallbacks.onFree = onFree;
+        m_allocationCallbacks.onMalloc = onMalloc;
+        m_allocationCallbacks.onRealloc = onRealloc;
+    }
+
     bool WAVCodec::WAVDecoder::Open(AmOsString filePath)
     {
         if (!m_codec->CanHandleFile(filePath))
@@ -27,10 +51,12 @@ namespace SparkyStudios::Audio::Amplitude::Codecs
             return false;
         }
 
+        const auto* codec = static_cast<const WAVCodec*>(m_codec);
+
 #if defined(AM_WCHAR_SUPPORTED)
-        if (drwav_init_file_w(&_wav, filePath, nullptr) == DRWAV_FALSE)
+        if (drwav_init_file_w(&_wav, filePath, &codec->m_allocationCallbacks) == DRWAV_FALSE)
 #else
-        if (drwav_init_file(&_wav, filePath, nullptr) == DRWAV_FALSE)
+        if (drwav_init_file(&_wav, filePath, &codec->m_allocationCallbacks) == DRWAV_FALSE)
 #endif
         {
             CallLogFunc("Cannot load the WAV file: '%s'\n.", filePath);
@@ -54,7 +80,7 @@ namespace SparkyStudios::Audio::Amplitude::Codecs
         {
             m_format = SoundFormat();
             _initialized = false;
-            return drwav_uninit(&_wav) == DRWAV_TRUE;
+            return drwav_uninit(&_wav) == DRWAV_SUCCESS;
         }
 
         // true because it is already closed
@@ -68,7 +94,7 @@ namespace SparkyStudios::Audio::Amplitude::Codecs
             return 0;
         }
 
-        if (drwav_seek_to_pcm_frame(&_wav, 0) != DRWAV_TRUE)
+        if (!Seek(0))
         {
             return 0;
         }
@@ -98,23 +124,71 @@ namespace SparkyStudios::Audio::Amplitude::Codecs
 
     bool WAVCodec::WAVEncoder::Open(AmOsString filePath)
     {
+        if (!_isFormatSet)
+        {
+            CallLogFunc("The WAV codec cannot open the file '%s' without a format set. Have you missed to call SetFormat()?\n", filePath);
+            return false;
+        }
+
+        drwav_data_format format;
+        format.container = drwav_container_riff; // <-- drwav_container_riff = normal WAV files, drwav_container_w64 = Sony Wave64.
+        format.format = DR_WAVE_FORMAT_PCM; // <-- Any of the DR_WAVE_FORMAT_* codes.
+        format.channels = m_format.GetNumChannels(); // <-- Only 2 channels are supported for now.
+        format.sampleRate = m_format.GetSampleRate();
+        format.bitsPerSample = m_format.GetBitsPerSample();
+
+        const auto* codec = static_cast<const WAVCodec*>(m_codec);
+
+#if defined(AM_WCHAR_SUPPORTED)
+        if (drwav_init_file_write_sequential_pcm_frames_w(
+                &_wav, filePath, &format, m_format.GetFramesCount(), &codec->m_allocationCallbacks) == DRWAV_FALSE)
+#else
+        if (drwav_init_file_write_sequential_pcm_frames(
+                &_wav, filePath, &format, m_format.GetFramesCount(), &codec->m_allocationCallbacks) == DRWAV_FALSE)
+#endif
+        {
+            CallLogFunc("Cannot load the WAV file: '%s'\n.", filePath);
+            return false;
+        }
+
         _initialized = true;
-        return false;
+
+        return true;
+    }
+
+    void WAVCodec::WAVEncoder::SetFormat(const SoundFormat& format)
+    {
+        if (_initialized)
+        {
+            CallLogFunc("Cannot set the format on an initialized decoder.\n");
+            return;
+        }
+
+        m_format = format;
+        _isFormatSet = true;
     }
 
     bool WAVCodec::WAVEncoder::Close()
     {
         if (_initialized)
         {
-            return true;
+            m_format = SoundFormat();
+            _isFormatSet = false;
+            _initialized = false;
+            return drwav_uninit(&_wav) == DRWAV_SUCCESS;
         }
 
         return true;
     }
 
-    AmUInt64 WAVCodec::WAVEncoder::Write(AudioBuffer in, AmUInt64 offset, AmUInt64 length)
+    AmUInt64 WAVCodec::WAVEncoder::Write(AmVoidPtr in, AmUInt64 offset, AmUInt64 length)
     {
-        return 0;
+        if (!_initialized)
+        {
+            return 0;
+        }
+
+        return drwav_write_pcm_frames(&_wav, length, in);
     }
 
     Codec::Decoder* WAVCodec::CreateDecoder() const
@@ -133,9 +207,9 @@ namespace SparkyStudios::Audio::Amplitude::Codecs
 
         drwav dummy;
 #if defined(AM_WCHAR_SUPPORTED)
-        const bool can = drwav_init_file_w(&dummy, filePath, nullptr) == DRWAV_TRUE;
+        const bool can = drwav_init_file_w(&dummy, filePath, &m_allocationCallbacks) == DRWAV_TRUE;
 #else
-        const bool can = drwav_init_file(&dummy, filePath, nullptr) == DRWAV_TRUE;
+        const bool can = drwav_init_file(&dummy, filePath, &m_allocationCallbacks) == DRWAV_TRUE;
 #endif
 
         if (can)

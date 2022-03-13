@@ -8,6 +8,15 @@ The Amplitude Audio SDK documentation consists of three parts.
 {{< block >}}
 
 {{< column >}}
+## Amplitude Concepts
+
+It's highly recommended to start here if you are new to Amplitude. In this section you will discover the different elements and terms used in the SDK, and see how to bring them together in your project.
+
+▶️ [Learn the concepts](concepts)
+
+{{< /column >}}
+
+{{< column "mt-1" >}}
 ## Developer's Guide
 
 The developer's guide will give you the needed steps to set up an Amplitude project and configure audio assets.

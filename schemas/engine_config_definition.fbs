@@ -12,10 +12,12 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+include "common.fbs";
+
 namespace SparkyStudios.Audio.Amplitude;
 
-// The supported output channels.
-enum PlaybackOutputChannels : ushort {
+/// The supported output channels.
+enum ePlaybackOutputChannels : ushort {
   Default = 0,
   Mono = 1,
   Stereo = 2,
@@ -24,8 +26,8 @@ enum PlaybackOutputChannels : ushort {
   Surround_7_1 = 8
 }
 
-// The supported output formats.
-enum PlaybackOutputFormat : ushort {
+/// The supported output formats.
+enum ePlaybackOutputFormat : ushort {
   Default = 0,
   UInt8 = 1,
   Int16 = 2,
@@ -34,52 +36,206 @@ enum PlaybackOutputFormat : ushort {
   Float32 = 5,
 }
 
-// Playback device configuration
-table PlaybackOutputConfig {
-  // Output sampling frequency in samples per second.
-  frequency:uint;
+/// Defines how the engine should fetch for the best listener.
+enum eListenerFetchMode : ushort {
+  /// Do not fetch for listeners. This mute all audio, but keeps processing data.
+  None = 0,
 
-  // The number of output channels to support.
-  channels:PlaybackOutputChannels = Stereo;
+  /// Fetches for the nearest listener to the currently processed sound. This imply
+  /// that different listeners can be returned for different sounds.
+  Nearest,
 
-  // Bytes used per output sample.
-  buffer_size:uint;
+  /// Fetches for the farest listener to the currently processed sound. This imply
+  /// that different listeners can be returned for different sounds.
+  Farest,
 
-  // The output buffer format.
-  format:PlaybackOutputFormat = Default;
+  /// Fetches for the default listener set by the engine. This ensures
+  /// that only one listener is used everytime.
+  ///
+  /// The default listener should be set using Engine::SetDefaultListener().
+  /// If no listener is set to default, the behavior is the same as ListenerFetchMode::None.
+  /// If the listener set as default is next removed, the behavior will be the same as
+  /// ListenerFetchMode::None, until another default listener is set.
+  Default,
+
+  /// Fetches for the first available listener. This ensures
+  /// that only one listener is used everytime.
+  First,
+
+  /// Fetches for the last available listener. This ensures
+  /// that only one listener is used everytime.
+  Last,
 }
 
-// Audio mixer configuration
+/// Specifies which axis is the up axis in the game engine.
+/// This is used in Amplitude to align with game 3D environment when computing
+/// spatialized values like the attenuation.
+enum eGameEngineUpAxis : ushort {
+  /// The Y axis.
+  Y = 0,
+
+  /// The Z axis.
+  Z = 1,
+}
+
+/// The list of sample rate conversion quality levels.
+enum eSampleRateConversionQuality : ushort {
+  /// This is a bandlimited interpolator derived from the mathematical sinc function
+  /// and this is the highest quality sinc based converter, providing a worst case
+  /// Signal-to-Noise Ratio (SNR) of 97 decibels (dB) at a bandwidth of 97%.
+  SINC_Best       = 0,
+
+  /// This is another bandlimited interpolator much like SINC_Best. It has an SNR of
+  // 97dB and a bandwidth of 90%. The speed of the conversion is much faster than SINC_Best.
+  SINC_Medium     = 1,
+
+  /// This is the fastest bandlimited interpolator and has an SNR of 97dB and a bandwidth of 80%.
+  SINC_Fastest    = 2,
+
+  /// A Zero Order Hold converter (interpolated value is equal to the last value). The quality is
+  /// poor but the conversion speed is blindlingly fast.
+  ZeroOrderHold   = 3,
+
+  /// A linear converter. Again the quality is poor, but the conversion speed is blindingly fast.
+  /// This is the default value.
+  Linear          = 4
+}
+
+/// Playback device configuration
+table PlaybackOutputConfig {
+  /// Output sampling frequency in samples per second.
+  frequency:uint = 48000;
+
+  /// The number of output channels to support.
+  channels:ePlaybackOutputChannels = Stereo;
+
+  /// Bytes used per output sample.
+  /// The number of processed samples is equal to this value
+  /// divided by the number of channels.
+  /// It's highly recommended to use a multiple of 2 for this value.
+  buffer_size:uint = 1024;
+
+  /// The output buffer format.
+  format:ePlaybackOutputFormat = Int16;
+}
+
+/// A single processor in the audio mixer pipeline.
+table AudioSoundProcessor {
+  /// The sound processor to use at this stage of the pipeline.
+  processor:string (required);
+}
+
+/// A processor mixer in the audio mixer pipeline.
+table AudioProcessorMixer {
+  /// The sound processor to use in the wet mix.
+  wet_processor:string (required);
+
+  /// The sound processor to use in the dry mix.
+  dry_processor:string (required);
+
+  /// The wet level, between the range 0..1.
+  wet:float = 1;
+
+  /// The dry level, between the range 0..1.
+  dry:float = 1;
+}
+
+/// An item in the audio mixer pipeline.
+union AudioMixerPipelineItem {
+  AudioSoundProcessor,
+  AudioProcessorMixer,
+}
+
+/// Audio mixer configuration
 table AudioMixerConfig {
-  // The number of active audio mixer channels to allocate.
+  /// The number of active audio mixer channels to allocate.
   active_channels:uint;
 
-  // The number of virtuals audio mixer channels to allocate
-  // in addition to the active channels. Mixing does not occur
-  // on virtual channels, but information about the channel is
-  // still tracked.
+  /// The number of virtuals audio mixer channels to allocate
+  /// in addition to the active channels. Mixing does not occur
+  /// on virtual channels, but information about the channel is
+  /// still tracked.
   virtual_channels:uint;
+
+  /// Specify the number of samples to process per stream. This is
+  /// used on sound assets where stream is set to true. Modifying this
+  /// value don't impact to processing speed, but the memory used by
+  /// the mixer for each streamed audio (an higher value means more memory allocated).
+  samples_per_stream:uint = 512;
+
+  /// Configures the samplerate conversion quality.
+  sample_rate_conversion_quality:eSampleRateConversionQuality = Linear;
+
+  /// Configures the mixer pipeline. The pipeline is responsible to
+  /// process the sound (ie. apply effects) before it is sent to the audio device.
+  pipeline:[AudioMixerPipelineItem];
+}
+
+/// The default obstruction/occlusion curve applied on sound's
+/// gain/low pass filters.
+table ObstructionOcclusionConfig {
+  /// The curve to use on the low pass filter applied
+  /// to the played sound to mimic occlusion/onstruction.
+  lpf_curve:CurveDefinition;
+
+  /// The curve to use on the gain applied to the played
+  /// sound to mimic occlusion/onstruction.
+  gain_curve:CurveDefinition;
+}
+
+/// Game synchronization configuration
+table GameSyncConfig {
+  /// Defines how the engine should fetch the best listener for an audio.
+  listener_fetch_mode:eListenerFetchMode = Nearest;
+
+  /// The number of listeners to allocate.
+  listeners:uint = 1;
+
+  /// The number of entities to allocate.
+  entities:uint = 4096;
+
+  /// The number of environments to allocate.
+  environments:uint = 64;
+
+  /// The maximum speed of sound in the game.
+  sound_speed:float = 333.0;
+
+  /// The Doppler factor. Set 1.0 to normal Doppler effect,
+  /// set 0.0 to disable Doppler effect.
+  doppler_factor:float = 1.0;
+
+  /// The up axis of the game engine.
+  up_axis:eGameEngineUpAxis = Y;
+
+  /// The default obstruction curves settings.
+  obstruction:ObstructionOcclusionConfig;
+
+  /// The default occlusion curves settings.
+  occlusion:ObstructionOcclusionConfig;
+
+  /// Defines if the game is tracking environments or not.
+  /// This means that the game will compute and send the environment
+  /// levels to the engine.
+  /// This implies that the shapes defined in environments (if any) will not be used.
+  track_environments:bool = true;
 }
 
 table EngineConfigDefinition {
-  // Configures the playback device.
-  output:PlaybackOutputConfig;
+  /// Configures the playback device.
+  output:PlaybackOutputConfig (required);
 
-  // Configures the audio mixer.
-  mixer:AudioMixerConfig;
+  /// Configures the audio mixer.
+  mixer:AudioMixerConfig (required);
 
-  // The number of listeners to allocate.
-  listeners:uint = 1;
+  /// Configures the game sync.
+  game:GameSyncConfig (required);
 
-  // The number of entities to allocate.
-  entities:uint = 4096;
+  /// The location of the buses definition file.
+  buses_file:string (required);
 
-  // The location of the buses definition file.
-  buses_file:string;
-
-  // The name of the audio driver to use.
-  // If empty, or the given driver name is not registered,
-  // the default driver will be used instead.
+  /// The name of the audio driver to use.
+  /// If empty, or the given driver name is not registered,
+  /// the default driver will be used instead.
   driver:string;
 }
 
@@ -87,4 +243,3 @@ root_type EngineConfigDefinition;
 
 file_identifier "AMEC";
 file_extension "amconfig";
-

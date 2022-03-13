@@ -13,4 +13,5 @@
 // limitations under the License.
 
 #define HANDMADE_MATH_IMPLEMENTATION
+#include <SparkyStudios/Audio/Amplitude/Core/Common.h>
 #include <SparkyStudios/Audio/Amplitude/Math/HandmadeMath.h>

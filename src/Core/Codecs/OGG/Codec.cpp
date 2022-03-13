@@ -73,7 +73,8 @@ namespace SparkyStudios::Audio::Amplitude::Codecs
         }
 
         return stb_vorbis_get_samples_short_interleaved(
-            _ogg, m_format.GetNumChannels(), static_cast<AmInt16Buffer>(out), static_cast<int>(m_format.GetFramesCount() * m_format.GetNumChannels()));
+            _ogg, m_format.GetNumChannels(), static_cast<AmInt16Buffer>(out),
+            static_cast<int>(m_format.GetFramesCount() * m_format.GetNumChannels()));
     }
 
     AmUInt64 OGGCodec::OGGDecoder::Stream(AmVoidPtr out, AmUInt64 offset, AmUInt64 length)
@@ -88,7 +89,8 @@ namespace SparkyStudios::Audio::Amplitude::Codecs
             return 0;
         }
 
-        return stb_vorbis_get_samples_short_interleaved(_ogg, m_format.GetNumChannels(), static_cast<AmInt16Buffer>(out), static_cast<int>(length * m_format.GetNumChannels()));
+        return stb_vorbis_get_samples_short_interleaved(
+            _ogg, m_format.GetNumChannels(), static_cast<AmInt16Buffer>(out), static_cast<int>(length * m_format.GetNumChannels()));
     }
 
     bool OGGCodec::OGGDecoder::Seek(AmUInt64 offset)
@@ -112,7 +114,7 @@ namespace SparkyStudios::Audio::Amplitude::Codecs
         return true;
     }
 
-    AmUInt64 OGGCodec::OGGEncoder::Write(AudioBuffer in, AmUInt64 offset, AmUInt64 length)
+    AmUInt64 OGGCodec::OGGEncoder::Write(AmVoidPtr in, AmUInt64 offset, AmUInt64 length)
     {
         return 0;
     }

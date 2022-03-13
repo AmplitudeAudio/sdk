@@ -12,6 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+#include <SparkyStudios/Audio/Amplitude/Core/Memory.h>
+
 #include <Sound/Filters/FFTFilter.h>
 #include <Utils/Utils.h>
 
@@ -35,7 +37,7 @@ namespace SparkyStudios::Audio::Amplitude
 
     FFTFilterInstance::~FFTFilterInstance()
     {
-        pffft_aligned_free(_temp);
+        pffftd_aligned_free(_temp);
 
         delete[] _inputBuffer;
         delete[] _mixBuffer;
@@ -45,7 +47,7 @@ namespace SparkyStudios::Audio::Amplitude
 
     void FFTFilterInstance::InitFFT()
     {
-        _temp = static_cast<AmReal32*>(pffft_aligned_malloc(STFT_WINDOW_SIZE));
+        _temp = static_cast<AmReal64*>(pffftd_aligned_malloc(STFT_WINDOW_SIZE));
 
         _inputBuffer = nullptr;
         _mixBuffer = nullptr;
@@ -112,16 +114,16 @@ namespace SparkyStudios::Audio::Amplitude
                         _inputBuffer[channelOffset + ((inputOffset + STFT_WINDOW_TWICE - STFT_WINDOW_HALF + i) & (STFT_WINDOW_TWICE - 1))];
                 }
 
-                _pffft_setup = pffft_new_setup(STFT_WINDOW_HALF, PFFFT_COMPLEX);
+                _pffft_setup = pffftd_new_setup(STFT_WINDOW_HALF, PFFFT_COMPLEX);
 
-                pffft_transform_ordered(_pffft_setup, _temp, _temp, nullptr, PFFFT_FORWARD);
+                pffftd_transform_ordered(_pffft_setup, _temp, _temp, nullptr, PFFFT_FORWARD);
 
                 // do magic
                 ProcessFFTChannel(_temp, channel, STFT_WINDOW_HALF, channels, sampleRate);
 
-                pffft_transform_ordered(_pffft_setup, _temp, _temp, nullptr, PFFFT_BACKWARD);
+                pffftd_transform_ordered(_pffft_setup, _temp, _temp, nullptr, PFFFT_BACKWARD);
 
-                pffft_destroy_setup(_pffft_setup);
+                pffftd_destroy_setup(_pffft_setup);
 
                 for (AmUInt32 i = 0; i < STFT_WINDOW_SIZE; i++)
                 {
@@ -144,7 +146,7 @@ namespace SparkyStudios::Audio::Amplitude
                 const AmInt32 x = buffer[offset + s];
                 /* */ AmInt32 y = AmReal32ToInt16(_mixBuffer[channelOffset + (readOffset & (STFT_WINDOW_TWICE - 1))]);
 
-                y = x + ((y - x) * AmFloatToFixedPoint(m_parameters[0]) >> kAmFixedPointShift);
+                y = x + ((y - x) * AmFloatToFixedPoint(m_parameters[0]) >> kAmFixedPointBits);
                 y = AM_CLAMP(y, INT16_MIN, INT16_MAX);
 
                 buffer[offset + s] = static_cast<AmInt16>(y);
@@ -160,38 +162,38 @@ namespace SparkyStudios::Audio::Amplitude
         _mixOffset[channel] = mixOffset;
     }
 
-    void FFTFilterInstance::Comp2MagPhase(AmReal32Buffer buffer, AmUInt32 samples)
+    void FFTFilterInstance::Comp2MagPhase(AmReal64Buffer buffer, AmUInt32 samples)
     {
         for (AmUInt32 i = 0; i < samples; i++)
         {
-            AmReal32 re = buffer[i * 2];
-            AmReal32 im = buffer[i * 2 + 1];
+            AmReal64 re = buffer[i * 2];
+            AmReal64 im = buffer[i * 2 + 1];
 
-            buffer[i * 2] = std::sqrt(re * re + im * im) * 2.0f;
+            buffer[i * 2] = std::sqrt(re * re + im * im) * 2.0;
             buffer[i * 2 + 1] = std::atan2(im, re);
         }
     }
 
-    void FFTFilterInstance::MagPhase2MagFreq(AmReal32Buffer buffer, AmUInt32 samples, AmUInt32 sampleRate, AmUInt16 channel)
+    void FFTFilterInstance::MagPhase2MagFreq(AmReal64Buffer buffer, AmUInt32 samples, AmUInt32 sampleRate, AmUInt16 channel)
     {
-        const AmReal32 stepsize = static_cast<AmReal32>(samples) / sampleRate;
-        const AmReal32 expect = (stepsize / samples) * 2.0f * M_PI;
-        const AmReal32 freqPerBin = static_cast<AmReal32>(sampleRate) / samples;
+        const AmReal64 stepsize = static_cast<AmReal64>(samples) / sampleRate;
+        const AmReal64 expect = (stepsize / samples) * 2.0f * M_PI;
+        const AmReal64 freqPerBin = static_cast<AmReal64>(sampleRate) / samples;
 
         for (AmUInt32 i = 0; i < samples; i++)
         {
-            AmReal32 mag = buffer[i * 2];
-            AmReal32 pha = buffer[i * 2 + 1];
+            AmReal64 mag = buffer[i * 2];
+            AmReal64 pha = buffer[i * 2 + 1];
 
             /* compute phase difference */
-            AmReal32 freq = pha - _lastPhase[i + channel * STFT_WINDOW_SIZE];
+            AmReal64 freq = pha - _lastPhase[i + channel * STFT_WINDOW_SIZE];
             _lastPhase[i + channel * STFT_WINDOW_SIZE] = pha;
 
             /* subtract expected phase difference */
-            freq -= static_cast<AmReal32>(i) * expect;
+            freq -= static_cast<AmReal64>(i) * expect;
 
             /* map delta phase into +/- Pi interval */
-            AmInt32 qpd = static_cast<AmInt32>(std::floor(freq / M_PI));
+            AmInt32 qpd = static_cast<AmInt32>(std::floor(freq / static_cast<AmReal64>(M_PI)));
             if (qpd >= 0)
                 qpd += qpd & 1;
             else
@@ -200,39 +202,39 @@ namespace SparkyStudios::Audio::Amplitude
             freq -= M_PI * qpd;
 
             /* get deviation from bin frequency from the +/- Pi interval */
-            freq = samples * freq / (2.0f * M_PI);
+            freq = samples * freq / (2.0 * static_cast<AmReal64>(M_PI));
 
             /* compute the k-th partials' true frequency */
-            freq = static_cast<AmReal32>(i) * freqPerBin + freq * freqPerBin;
+            freq = static_cast<AmReal64>(i) * freqPerBin + freq * freqPerBin;
 
             /* store magnitude and true frequency in analysis arrays */
             buffer[i * 2 + 1] = freq;
         }
     }
 
-    void FFTFilterInstance::MagFreq2MagPhase(AmReal32Buffer buffer, AmUInt32 samples, AmUInt32 sampleRate, AmUInt16 channel)
+    void FFTFilterInstance::MagFreq2MagPhase(AmReal64Buffer buffer, AmUInt32 samples, AmUInt32 sampleRate, AmUInt16 channel)
     {
-        const AmReal32 stepsize = static_cast<AmReal32>(samples) / sampleRate;
-        const AmReal32 expect = (stepsize / samples) * 2.0f * static_cast<AmReal32>(M_PI);
-        const AmReal32 freqPerBin = static_cast<AmReal32>(sampleRate) / samples;
+        const AmReal64 stepsize = static_cast<AmReal64>(samples) / sampleRate;
+        const AmReal64 expect = (stepsize / samples) * 2.0f * static_cast<AmReal64>(M_PI);
+        const AmReal64 freqPerBin = static_cast<AmReal64>(sampleRate) / samples;
 
         for (AmUInt32 i = 0; i < samples; i++)
         {
             /* get magnitude and true frequency from synthesis arrays */
-            AmReal32 mag = buffer[i * 2];
-            AmReal32 freq = buffer[i * 2 + 1];
+            AmReal64 mag = buffer[i * 2];
+            AmReal64 freq = buffer[i * 2 + 1];
 
             /* subtract bin mid frequency */
-            freq -= static_cast<AmReal32>(i) * freqPerBin;
+            freq -= static_cast<AmReal64>(i) * freqPerBin;
 
             /* get bin deviation from freq deviation */
             freq /= freqPerBin;
 
             /* take osamp into account */
-            freq = (freq / samples) * static_cast<AmReal32>(M_PI) * 2.0f;
+            freq = (freq / samples) * static_cast<AmReal64>(M_PI) * 2.0;
 
             /* add the overlap phase advance back in */
-            freq += static_cast<AmReal32>(i) * expect;
+            freq += static_cast<AmReal64>(i) * expect;
 
             /* accumulate delta phase to get bin phase */
 
@@ -241,12 +243,12 @@ namespace SparkyStudios::Audio::Amplitude
         }
     }
 
-    void FFTFilterInstance::MagPhase2Comp(AmReal32Buffer buffer, AmUInt32 samples)
+    void FFTFilterInstance::MagPhase2Comp(AmReal64Buffer buffer, AmUInt32 samples)
     {
         for (AmUInt32 i = 0; i < samples; i++)
         {
-            const AmReal32 mag = buffer[i * 2];
-            const AmReal32 pha = buffer[i * 2 + 1];
+            const AmReal64 mag = buffer[i * 2];
+            const AmReal64 pha = buffer[i * 2 + 1];
 
             buffer[i * 2] = std::cos(pha) * mag;
             buffer[i * 2 + 1] = std::sin(pha) * mag;
@@ -254,14 +256,14 @@ namespace SparkyStudios::Audio::Amplitude
     }
 
     void FFTFilterInstance::ProcessFFTChannel(
-        AmReal32Buffer buffer, AmUInt16 channel, AmUInt64 frames, AmUInt16 channels, AmUInt32 sampleRate)
+        AmReal64Buffer buffer, AmUInt16 channel, AmUInt64 frames, AmUInt16 channels, AmUInt32 sampleRate)
     {
         Comp2MagPhase(buffer, frames);
         MagPhase2MagFreq(buffer, frames, sampleRate, channel);
 
-        AmReal32 t[STFT_WINDOW_TWICE];
-        memcpy(t, buffer, sizeof(AmReal32) * frames);
-        memset(buffer, 0, sizeof(AmReal32) * frames * 2);
+        AmReal64 t[STFT_WINDOW_TWICE];
+        memcpy(t, buffer, sizeof(AmReal64) * frames);
+        memset(buffer, 0, sizeof(AmReal64) * frames * 2);
 
         for (AmUInt32 i = 0; i < frames / 4; i++)
         {

@@ -93,7 +93,7 @@ namespace sm
         struct TlsPoolBucket;
     }
 
-    internal::TlsPoolBucket* __restrict GetTlsBucket(size_t index);
+    internal::TlsPoolBucket* GetTlsBucket(size_t index);
 
     AM_INLINE(bool) IsAligned(size_t v, size_t alignment)
     {
@@ -107,23 +107,6 @@ namespace sm
         size_t r = (val + (alignment - 1)) & ~(alignment - 1);
         AMPLITUDE_ASSERT(IsAligned(r, alignment) && "Alignment failed.");
         return r;
-    }
-
-    AM_INLINE(size_t) DetectAlignment(void* p)
-    {
-        uintptr_t v = (uintptr_t)p;
-
-        size_t ptrBitsCount = sizeof(void*) * 8;
-        size_t i;
-        for (i = 0; i < ptrBitsCount; i++)
-        {
-            if (v & 1)
-            {
-                break;
-            }
-            v = v >> 1;
-        }
-        return (size_t(1) << i);
     }
 
     struct GenericAllocator
@@ -157,14 +140,17 @@ namespace sm
 
     class Allocator
     {
+    public:
+        static const size_t kMinValidAlignment = 16;
+
     private:
-        static const size_t MaxValidAlignment = 16384;
+        static const size_t kMaxValidAlignment = 16384;
 
         friend struct internal::TlsPoolBucket;
 
         AM_INLINE(bool) IsReadable(void* p) const
         {
-            return (uintptr_t(p) > MaxValidAlignment);
+            return (uintptr_t(p) > kMaxValidAlignment);
         }
 
         struct PoolBucket
@@ -357,7 +343,7 @@ namespace sm
         AM_INLINE(void*)
         Allocate(size_t _bytesCount, size_t alignment)
         {
-            AMPLITUDE_ASSERT(alignment <= MaxValidAlignment);
+            AMPLITUDE_ASSERT(alignment <= kMaxValidAlignment);
 
             // http://www.cplusplus.com/reference/cstdlib/malloc/
             // If size is zero, the return value depends on the particular library implementation (it may or may not be a null pointer),
@@ -464,6 +450,7 @@ namespace sm
 
         AM_INLINE(void*) Realloc(void* p, size_t bytesCount, size_t alignment)
         {
+            // Assume that p is the pointer that is allocated by passing the zero size. So no real reallocation required.
             if (!IsReadable(p))
             {
                 return Alloc(bytesCount, alignment);
@@ -472,7 +459,7 @@ namespace sm
             if (bytesCount == 0)
             {
                 Free(p);
-                return (void*)alignment;
+                return nullptr;
             }
 
             size_t bucketIndex = FindBucket(p);
@@ -510,15 +497,29 @@ namespace sm
                     GenericAllocator::Free(gAllocator, p);
                 }
 
-                return (void*)alignment;
+                return nullptr;
             }
 
-            // Assume that p is the pointer that is allocated by passing the zero size. So no real reallocation required.
-            if (!IsReadable(p))
+            // check if we need to realloc from generic allocator to smmalloc
+            size_t __bytesCount = (bytesCount < alignment) ? alignment : bytesCount;
+            size_t __bucketIndex = ((__bytesCount - 1) >> 4);
+            if (__bucketIndex < bucketsCount)
             {
-                return GenericAllocator::Alloc(gAllocator, bytesCount, alignment);
+                void* p2 = Alloc(bytesCount, alignment);
+
+                // Assume that p is the pointer that is allocated by passing the zero size. No preserve memory conents is requried.
+                if (IsReadable(p))
+                {
+                    size_t numBytes = GenericAllocator::GetUsableSpace(gAllocator, p);
+                    // move the memory block to the new location
+                    std::memmove(p2, p, (std::min)(numBytes, bytesCount));
+                }
+
+                GenericAllocator::Free(gAllocator, p);
+                return p2;
             }
 
+            AMPLITUDE_ASSERT(IsReadable(p));
             return GenericAllocator::Realloc(gAllocator, p, bytesCount, alignment);
         }
 

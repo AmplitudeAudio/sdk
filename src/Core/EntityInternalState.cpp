@@ -23,6 +23,9 @@ namespace SparkyStudios::Audio::Amplitude
         , _direction()
         , _up()
         , _inverseMatrix(AM_Mat4d(1.0f))
+        , _obstruction(0.0f)
+        , _occlusion(0.0f)
+        , _environmentFactors()
     {}
 
     AmEntityID EntityInternalState::GetId() const
@@ -35,8 +38,14 @@ namespace SparkyStudios::Audio::Amplitude
         _id = id;
     }
 
+    const hmm_vec3& EntityInternalState::GetVelocity() const
+    {
+        return _velocity;
+    }
+
     void EntityInternalState::SetLocation(const hmm_vec3& location)
     {
+        _lastLocation = _location;
         _location = location;
     }
 
@@ -68,6 +77,55 @@ namespace SparkyStudios::Audio::Amplitude
 
     void EntityInternalState::Update()
     {
+        _velocity = _location - _lastLocation;
         _inverseMatrix = AM_LookAt(_location, _location + _direction, _up);
+    }
+
+    void EntityInternalState::SetObstruction(AmReal32 obstruction)
+    {
+        _obstruction = obstruction;
+        for (auto&& sound : _playingSoundList)
+        {
+            sound.SetObstruction(obstruction);
+        }
+    }
+
+    void EntityInternalState::SetOcclusion(AmReal32 occlusion)
+    {
+        _occlusion = occlusion;
+        for (auto&& sound : _playingSoundList)
+        {
+            sound.SetOcclusion(occlusion);
+        }
+    }
+
+    AmReal32 EntityInternalState::GetObstruction() const
+    {
+        return _obstruction;
+    }
+
+    AmReal32 EntityInternalState::GetOcclusion() const
+    {
+        return _occlusion;
+    }
+
+    void EntityInternalState::SetEnvironmentFactor(AmEnvironmentID environment, AmReal32 factor)
+    {
+        _environmentFactors[environment] = factor;
+    }
+
+    AmReal32 EntityInternalState::GetEnvironmentFactor(AmEnvironmentID environment)
+    {
+        if (auto findIt = _environmentFactors.find(environment); findIt == _environmentFactors.end())
+        {
+            _environmentFactors[environment] = 0.0f;
+        }
+
+        return _environmentFactors[environment];
+    }
+
+    const std::map<AmEnvironmentID, AmReal32>& EntityInternalState::GetEnvironments() const
+    {
+        return _environmentFactors;
     }
 } // namespace SparkyStudios::Audio::Amplitude

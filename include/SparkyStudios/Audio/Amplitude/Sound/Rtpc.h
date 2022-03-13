@@ -64,28 +64,40 @@ namespace SparkyStudios::Audio::Amplitude
          *
          * @return The RTPC minimum value.
          */
-        [[nodiscard]] double GetMinValue() const;
+        [[nodiscard]] AmReal64 GetMinValue() const;
 
         /**
          * @brief Get the maximum value of this RTPC.
          *
          * @return The RTPC maximum value.
          */
-        [[nodiscard]] double GetMaxValue() const;
+        [[nodiscard]] AmReal64 GetMaxValue() const;
 
         /**
          * @brief Get the current value of this RTPC.
          *
          * @return The current RTPC value.
          */
-        [[nodiscard]] double GetValue() const;
+        [[nodiscard]] AmReal64 GetValue() const;
 
         /**
          * @brief Set the current value of this RTPC.
          *
          * @param value The value to set.
          */
-        void SetValue(double value);
+        void SetValue(AmReal64 value);
+
+        /**
+         * @brief Get the default value of this RTPC.
+         * 
+         * @return The default RTPC value.
+         */
+        [[nodiscard]] AmReal64 GetDefaultValue() const;
+
+        /**
+         * @brief Resets the current RTPC value to the default value.
+         */
+        void Reset();
 
         /**
          * @brief Get the references counter of this instance.
@@ -100,11 +112,12 @@ namespace SparkyStudios::Audio::Amplitude
         AmRtpcID _id;
         std::string _name;
 
-        double _minValue;
-        double _maxValue;
+        AmReal64 _minValue;
+        AmReal64 _maxValue;
+        AmReal64 _defValue;
 
-        double _currentValue;
-        double _targetValue;
+        AmReal64 _currentValue;
+        AmReal64 _targetValue;
 
         Fader* _faderAttack;
         Fader* _faderRelease;
@@ -124,7 +137,7 @@ namespace SparkyStudios::Audio::Amplitude
 
     private:
         AmInt8 _valueKind;
-        double _value;
+        AmReal64 _value;
         const Rtpc* _rtpc;
         const Curve* _curve;
     };

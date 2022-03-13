@@ -19,11 +19,39 @@
 
 #include <SparkyStudios/Audio/Amplitude/Core/Common.h>
 
+#if defined(AM_SSE_INTRINSICS)
+#include <simdpp/simd.h>
+#endif // defined(AM_SSE_INTRINSICS)
+
+#define AM_LCG_M 2147483647
+#define AM_LCG_A 48271
+#define AM_LCG_C 0
+
 namespace SparkyStudios::Audio::Amplitude
 {
+#if defined(AM_SSE_INTRINSICS)
+    typedef simdpp::int16v AudioDataUnit;
+#else
+    typedef AmInt16 AudioDataUnit;
+#endif
+
+    typedef AudioDataUnit* AudioBuffer;
+
+    static struct
+    {
+        AmInt32 state;
+    } gLCG = { 4321 };
+
+    static AM_INLINE(float) AmDitherReal32(const AmReal32 ditherMin, const AmReal32 ditherMax)
+    {
+        gLCG.state = (AM_LCG_A * gLCG.state + AM_LCG_C) % AM_LCG_M;
+        AmReal32 x = gLCG.state / (double)0x7FFFFFFF;
+        return ditherMin + x * (ditherMax - ditherMin);
+    }
+
     static AM_INLINE(AmInt32) AmFloatToFixedPoint(const AmReal32 x)
     {
-        return static_cast<AmInt32>(x * (1 << kAmFixedPointShift));
+        return static_cast<AmInt32>(x * kAmFixedPointUnit);
     }
 
     static AM_INLINE(AmReal32) AmInt16ToReal32(const AmInt16 x)
@@ -43,9 +71,17 @@ namespace SparkyStudios::Audio::Amplitude
         return y;
     }
 
-    static AM_INLINE(AmInt16) AmReal32ToInt16(const AmReal32 x)
+    static AM_INLINE(AmInt16) AmReal32ToInt16(const AmReal32 x, bool dithering = false)
     {
-        AmReal32 y = AM_CLAMP(x, -1.0f, 1.0f);
+        AmReal32 y = x;
+
+        if (dithering)
+        {
+            // Performs a rectangular dithering
+            y += AmDitherReal32(1.0f / INT16_MIN, 1.0f / INT16_MAX);
+        }
+
+        y = AM_CLAMP(x, -1.0f, 1.0f);
 
 #if defined(AM_ACCURATE_CONVERSION)
         // The accurate way.
@@ -71,6 +107,50 @@ namespace SparkyStudios::Audio::Amplitude
         );
         // clang-format on
     }
+
+    static AM_INLINE(AmReal32) ComputeDopplerFactor(
+        const hmm_vec3& locationDelta,
+        const hmm_vec3& sourceVelocity,
+        const hmm_vec3& listenerVelocity,
+        AmReal32 soundSpeed,
+        AmReal32 dopplerFactor)
+    {
+        const AmReal32 deltaLength = AM_Length(locationDelta);
+
+        if (deltaLength == 0.0f)
+            return 1.0f;
+
+        AmReal32 vss = AM_Dot(locationDelta, sourceVelocity) / deltaLength;
+        AmReal32 vls = AM_Dot(locationDelta, listenerVelocity) / deltaLength;
+
+        const AmReal32 maxspeed = soundSpeed / dopplerFactor;
+        vss = AM_MIN(vss, maxspeed);
+        vls = AM_MIN(vls, maxspeed);
+
+        return (soundSpeed - vls * dopplerFactor) / (soundSpeed - vss * dopplerFactor);
+    }
 } // namespace SparkyStudios::Audio::Amplitude
+
+#if defined(AM_SSE_INTRINSICS)
+
+namespace simdpp
+{
+    namespace SIMDPP_ARCH_NAMESPACE
+    {
+        template<unsigned N, class V1, class V2>
+        SIMDPP_INL typename detail::get_expr2_nomask<V1, V2>::empty zip_lo(const any_vec16<N, V1>& a, const any_vec16<N, V2>& b)
+        {
+            return zip8_lo(a, b);
+        }
+
+        template<unsigned N, class V1, class V2>
+        SIMDPP_INL typename detail::get_expr2_nomask<V1, V2>::empty zip_hi(const any_vec16<N, V1>& a, const any_vec16<N, V2>& b)
+        {
+            return zip8_hi(a, b);
+        }
+    } // namespace SIMDPP_ARCH_NAMESPACE
+} // namespace simdpp
+
+#endif // AM_SSE_INTRINSICS
 
 #endif // SS_AMPLITUDE_AUDIO_UTILS_H

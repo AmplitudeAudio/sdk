@@ -39,6 +39,8 @@ namespace SparkyStudios::Audio::Amplitude
     class SoundInstance;
     class RealChannel;
 
+    class SoundChunk;
+
     enum class SoundKind
     {
         Switched,
@@ -113,7 +115,7 @@ namespace SparkyStudios::Audio::Amplitude
         /**
          * @brief Loads the audio file.
          */
-        void Load(FileLoader* loader) override;
+        void Load(const FileLoader* loader) override;
 
         /**
          * @brief Create a new SoundInstance from this Sound.
@@ -122,7 +124,7 @@ namespace SparkyStudios::Audio::Amplitude
          *
          * @return SoundInstance* A sound instance which can be played.
          */
-        [[nodiscard]] SoundInstance* CreateInstance() const;
+        [[nodiscard]] SoundInstance* CreateInstance();
 
         /**
          * @brief Create a new SoundInstance from this Sound.
@@ -134,7 +136,7 @@ namespace SparkyStudios::Audio::Amplitude
          *
          * @return SoundInstance* A sound instance which can be played.
          */
-        [[nodiscard]] SoundInstance* CreateInstance(const Collection* collection) const;
+        [[nodiscard]] SoundInstance* CreateInstance(const Collection* collection);
 
         /**
          * @brief Sets the format of this Sound.
@@ -155,14 +157,14 @@ namespace SparkyStudios::Audio::Amplitude
          *
          * @return The Sound gain.
          */
-        const RtpcValue& GetGain() const;
+        [[nodiscard]] const RtpcValue& GetGain() const;
 
         /**
          * @brief Gets the actual priority of the sound.
          *
          * @return The Sound priority.
          */
-        const RtpcValue& GetPriority() const;
+        [[nodiscard]] const RtpcValue& GetPriority() const;
 
         /**
          * @brief Get the unique ID of this Sound.
@@ -213,9 +215,39 @@ namespace SparkyStudios::Audio::Amplitude
          */
         [[nodiscard]] bool IsLoop() const;
 
+        /**
+         * @brief Get the reference counter of this Sound.
+         *
+         * @return The Sound's references counter.
+         */
         RefCounter* GetRefCounter();
 
     protected:
+        /**
+         * @brief Returns the SoundChunk associated with this Sound
+         * and increment its reference counter.
+         *
+         * If the reference equals 0, the SoundChunk is created.
+         * 
+         * This methods is used by the SoundInstance to get the SoundChunk
+         * only when the audio file is not streamed.
+         *
+         * @return The SoundChunk of this sound.
+         */
+        SoundChunk* AcquireSoundData();
+
+        /**
+         * @brief Decrements the SoundChunk's reference counter.
+         *
+         * If the reference counter reaches 0, the SoundChunk is deleted.
+         *
+         * This methods is used by the SoundInstance to get the SoundChunk
+         * only when the audio file is not streamed.
+         *
+         * @return The SoundChunk of this sound.
+         */
+        void ReleaseSoundData();
+
         SoundFormat m_format;
 
     private:
@@ -239,6 +271,9 @@ namespace SparkyStudios::Audio::Amplitude
         std::string _source;
         SoundInstanceSettings _settings;
 
+        SoundChunk* _soundData;
+        RefCounter _soundDataRefCounter;
+
         RefCounter _refCounter;
     };
 
@@ -255,7 +290,7 @@ namespace SparkyStudios::Audio::Amplitude
          * @param settings The settings of the Sound instance.
          * @param effect The sound effect to apply on playback.
          */
-        SoundInstance(const Sound* parent, const SoundInstanceSettings& settings, const Effect* effect = nullptr);
+        SoundInstance(Sound* parent, const SoundInstanceSettings& settings, const Effect* effect = nullptr);
         ~SoundInstance();
 
         /**
@@ -344,17 +379,70 @@ namespace SparkyStudios::Audio::Amplitude
          */
         [[nodiscard]] AmUInt32 GetCurrentLoopCount() const;
 
+        /**
+         * @brief Gets the effect applied to this SoundInstance, if any.
+         *
+         * @return An EffectInstance object if an effect was applied to the sound which have
+         * generated this SoundInstance, or nullptr otherwise.
+         */
+        [[nodiscard]] const EffectInstance* GetEffect() const;
+
+        /**
+         * @brief Set the obstruction level of sounds played by this Entity.
+         *
+         * @param obstruction The obstruction amount. This is provided by the
+         * game engine.
+         */
+        void SetObstruction(AmReal32 obstruction);
+
+        /**
+         * @brief Set the occlusion level of sounds played by this Entity.
+         *
+         * @param occlusion The occlusion amount. This is provided by the
+         * game engine.
+         */
+        void SetOcclusion(AmReal32 occlusion);
+
+        /**
+         * @brief Get the obstruction level of sounds played by this Entity.
+         *
+         * @return The obstruction amount.
+         */
+        [[nodiscard]] AmReal32 GetObstruction() const;
+
+        /**
+         * @brief Get the occlusion level of sounds played by this Entity.
+         *
+         * @return The occlusion amount.
+         */
+        [[nodiscard]] AmReal32 GetOcclusion() const;
+
+        /**
+         * @brief Get the generated sound instance ID.
+         *
+         * This generated ID is ensured to be unique within all the sound instances
+         * created within the engine.
+         *
+         * @return A generated sound instance ID.
+         */
+        [[nodiscard]] AmObjectID GetId() const;
+
     private:
         AmVoidPtr _userData;
 
         RealChannel* _channel;
-        const Sound* _parent;
+        Sound* _parent;
         const Collection* _collection;
         EffectInstance* _effectInstance;
 
         SoundInstanceSettings _settings;
 
         AmUInt32 _currentLoopCount;
+
+        AmReal32 _obstruction;
+        AmReal32 _occlusion;
+
+        AmObjectID _id;
     };
 } // namespace SparkyStudios::Audio::Amplitude
 

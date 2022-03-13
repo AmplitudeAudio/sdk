@@ -44,18 +44,11 @@ namespace SparkyStudios::Audio::Amplitude
     typedef AmObjectID          AmSwitchID;
     typedef AmObjectID          AmRtpcID;
     typedef AmObjectID          AmEffectID;
+    typedef AmObjectID          AmEnvironmentID;
 
     typedef AmUInt8             AmResult;
     typedef AmUInt64            AmHandle;
     typedef AmReal64            AmTime;
-
-#if defined(AM_SSE_INTRINSICS)
-    typedef Vc::int16_v         AudioDataUnit;
-#else
-    typedef AmInt16             AudioDataUnit;
-#endif
-
-    typedef AudioDataUnit*      AudioBuffer;
 
     // clang-format on
 } // namespace SparkyStudios::Audio::Amplitude

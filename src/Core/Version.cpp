@@ -18,7 +18,7 @@ namespace SparkyStudios::Audio::Amplitude
 {
 #define AM_VERSION_MAJOR 1
 #define AM_VERSION_MINOR 0
-#define AM_VERSION_REVISION 0
+#define AM_VERSION_PATCH 0
 
 // Turn X into a string literal.
 #define AM_STRING_EXPAND(X) #X
@@ -31,11 +31,11 @@ namespace SparkyStudios::Audio::Amplitude
     static const struct Version kVersion = {
         AM_VERSION_MAJOR,
         AM_VERSION_MINOR,
-        AM_VERSION_REVISION,
-        "Amplitude Audio"
+        AM_VERSION_PATCH,
+        "Amplitude "
         AM_STRING(AM_VERSION_MAJOR) "."
         AM_STRING(AM_VERSION_MINOR) "."
-        AM_STRING(AM_VERSION_REVISION)
+        AM_STRING(AM_VERSION_PATCH)
     };
     // clang-format on
 

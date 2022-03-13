@@ -1,7 +1,5 @@
 {
     "name": "amplitude-audio-sdk",
     "version": "1.0",
-    "dependencies": [
-        "vc"
-    ]
+    "dependencies": []
 }

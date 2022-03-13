@@ -3,6 +3,7 @@ lib/
 libs/
 bin/
 obj/
+sdk/
 tests/*_test
 *.ambank
 *.ambus

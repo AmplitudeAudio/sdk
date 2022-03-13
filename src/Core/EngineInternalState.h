@@ -23,11 +23,15 @@
 #include <Core/BusInternalState.h>
 #include <Core/ChannelInternalState.h>
 #include <Core/EntityInternalState.h>
+#include <Core/EnvironmentInternalState.h>
 #include <Core/ListenerInternalState.h>
+
 #include <Mixer/Mixer.h>
+
 #include <Utils/intrusive_list.h>
 
 #include "collection_definition_generated.h"
+#include "engine_config_definition_generated.h"
 
 namespace SparkyStudios::Audio::Amplitude
 {
@@ -44,7 +48,7 @@ namespace SparkyStudios::Audio::Amplitude
     typedef std::map<std::wstring, AmSwitchContainerID> SwitchContainerIdMap;
     typedef std::map<std::wstring, AmSoundID> SoundIdMap;
     typedef std::map<std::wstring, AmEventID> EventIdMap;
-    typedef std::map<std::wstring, std::unique_ptr<SoundBank>> SoundBankMap;
+    typedef std::map<std::wstring, AmBankID> SoundBankIdMap;
 #else
     typedef std::map<std::string, AmEffectID> EffectIdMap;
     typedef std::map<std::string, AmRtpcID> RtpcIdMap;
@@ -54,7 +58,7 @@ namespace SparkyStudios::Audio::Amplitude
     typedef std::map<std::string, AmSwitchContainerID> SwitchContainerIdMap;
     typedef std::map<std::string, AmSoundID> SoundIdMap;
     typedef std::map<std::string, AmEventID> EventIdMap;
-    typedef std::map<std::string, std::unique_ptr<SoundBank>> SoundBankMap;
+    typedef std::map<std::string, AmBankID> SoundBankIdMap;
 #endif
 
     typedef std::map<AmSwitchContainerID, std::unique_ptr<SwitchContainer>> SwitchContainerMap;
@@ -72,6 +76,9 @@ namespace SparkyStudios::Audio::Amplitude
     typedef std::map<AmEffectID, std::unique_ptr<Effect>> EffectMap;
 
     typedef std::map<AmEventID, std::unique_ptr<Event>> EventMap;
+
+    typedef std::map<AmBankID, std::unique_ptr<SoundBank>> SoundBankMap;
+
     typedef std::vector<EventInstance> EventInstanceVector;
 
     typedef std::vector<ChannelInternalState> ChannelStateVector;
@@ -85,6 +92,24 @@ namespace SparkyStudios::Audio::Amplitude
 
     typedef std::vector<ListenerInternalState> ListenerStateVector;
     typedef fplutil::intrusive_list<ListenerInternalState> ListenerList;
+
+    typedef std::vector<EnvironmentInternalState> EnvironmentStateVector;
+    typedef fplutil::intrusive_list<EnvironmentInternalState> EnvironmentList;
+
+    struct ObstructionOcclusionState
+    {
+        Curve lpf;
+        Curve gain;
+
+        void Init(const ObstructionOcclusionConfig* config)
+        {
+            lpf = Curve();
+            lpf.Initialize(config->lpf_curve());
+
+            gain = Curve();
+            gain.Initialize(config->gain_curve());
+        }
+    };
 
     struct EngineInternalState
     {
@@ -109,6 +134,7 @@ namespace SparkyStudios::Audio::Amplitude
             , switch_map()
             , switch_id_map()
             , sound_bank_map()
+            , sound_bank_id_map()
             , channel_state_memory()
             , playing_channel_list(&ChannelInternalState::priority_node)
             , real_channel_free_list(&ChannelInternalState::free_node)
@@ -119,10 +145,21 @@ namespace SparkyStudios::Audio::Amplitude
             , entity_list(&EntityInternalState::node)
             , entity_state_memory()
             , entity_state_free_list()
-            , loader()
+            , environment_list(&EnvironmentInternalState::node)
+            , environment_state_memory()
+            , environment_state_free_list()
             , current_frame(0)
             , total_time(0.0)
             , version(nullptr)
+            , listener_fetch_mode(eListenerFetchMode_None)
+            , sound_speed(333.0)
+            , doppler_factor(1.0)
+            , up_axis(eGameEngineUpAxis_Y)
+            , obstruction_config()
+            , occlusion_config()
+            , track_environments(false)
+            , samples_per_stream(512)
+            , sample_rate_conversion_quality(eSampleRateConversionQuality_Linear)
         {}
 
         Mixer mixer;
@@ -199,6 +236,9 @@ namespace SparkyStudios::Audio::Amplitude
         // A map of file names to effect ids to determine if a file needs to be loaded.
         EffectIdMap effect_id_map;
 
+        // A map of sound banks id to SoundBank.
+        SoundBankIdMap sound_bank_id_map;
+
         // Hold the sounds banks.
         SoundBankMap sound_bank_map;
 
@@ -220,14 +260,36 @@ namespace SparkyStudios::Audio::Amplitude
         EntityStateVector entity_state_memory;
         std::vector<EntityInternalState*> entity_state_free_list;
 
-        // Loads the sound files.
-        FileLoader loader;
+        // The list of environments.
+        EnvironmentList environment_list;
+        EnvironmentStateVector environment_state_memory;
+        std::vector<EnvironmentInternalState*> environment_state_free_list;
 
         // The current frame, i.e. the number of times AdvanceFrame has been called.
         AmUInt64 current_frame;
 
         // The total elapsed time since the start of the game.
         AmTime total_time;
+
+        // The way Amplitude should fetch the best listener for an audio source.
+        eListenerFetchMode listener_fetch_mode;
+
+        AmReal32 sound_speed;
+
+        AmReal32 doppler_factor;
+
+        // The up axis of the game engine.
+        eGameEngineUpAxis up_axis;
+
+        ObstructionOcclusionState obstruction_config;
+
+        ObstructionOcclusionState occlusion_config;
+
+        bool track_environments;
+
+        AmUInt32 samples_per_stream;
+
+        eSampleRateConversionQuality sample_rate_conversion_quality;
 
         const struct Version* version;
     };
@@ -238,8 +300,8 @@ namespace SparkyStudios::Audio::Amplitude
      */
     void EraseFinishedSounds(EngineInternalState* state);
 
-    // Find a bus with the given ID.
     BusInternalState* FindBusInternalState(EngineInternalState* state, AmBusID id);
+    // Find a bus with the given ID.
 
     // Find a bus with the given name.
     BusInternalState* FindBusInternalState(EngineInternalState* state, AmString id);

@@ -17,7 +17,19 @@
 #ifndef SS_AMPLITUDE_AUDIO_WINDOWS_TYPES_H
 #define SS_AMPLITUDE_AUDIO_WINDOWS_TYPES_H
 
+#if defined(_MSC_VER) && _MSC_VER < 1600
+    typedef unsigned __int64        uint64_t;
+    typedef unsigned __int32        uint32_t;
+    typedef unsigned __int16        uint16_t;
+    typedef unsigned __int8         uint8_t;
+    typedef __int64                 int64_t;
+    typedef __int32                 int32_t;
+    typedef __int16                 int16_t;
+    typedef __int8                  int8_t;
+#else
 #include <cstdint>
+#endif
+
 #include <string>
 
 namespace SparkyStudios::Audio::Amplitude
@@ -31,6 +43,8 @@ namespace SparkyStudios::Audio::Amplitude
     typedef uint16_t                AmUInt16;
     typedef uint32_t                AmUInt32;
     typedef uint64_t                AmUInt64;
+    
+    typedef size_t                  AmSize;
 
     typedef float                   AmReal32;
     typedef double                  AmReal64;

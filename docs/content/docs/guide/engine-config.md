@@ -27,7 +27,7 @@ You can change the behavior of Amplitude by tweaking the project's configuration
 
 ## output
 
-The `output` property helps you to define how Amplitude should communicate with the physical audio device. It takes as value a map with the following properties.
+The `output` property helps you define how Amplitude should communicate with the physical audio device. It takes as value a map with the following properties.
 
 #### frequency
 
@@ -50,13 +50,30 @@ The `channels` property sets the number of channels Amplitude will output. It ca
 At the moment, Amplitude only supports **Stereo** channels. Setting the engine to use something other than Stereo will result in errors.
 {{< /tip >}}
 
+#### format
+
+The `format` property defines the format Amplitude should process audio data. It can take as value the name of the format or the format ID:
+
+| ID | Name | Description |
+|-|-|-|
+| 0 | Default | Uses the default format available on the audio device. |
+| 1 | UInt8 | Process and send data as `unsigned 8 bytes fixed-point numbers` to the audio device. |
+| 2 | Int16 | Process and send data as `signed 16 bytes fixed-point numbers` to the audio device. |
+| 3 | Int24 | Process and send data as `signed 24 bytes fixed-point numbers` to the audio device. |
+| 4 | Int32 | Process and send data as `signed 32 bytes fixed-point numbers` to the audio device. |
+| 5 | Float32 | Process and send data as `signed 32 bytes floating-point numbers` to the audio device. |
+
+{{< tip "warning" >}}
+At the moment, Amplitude only supports **Int16** format.
+{{< /tip >}}
+
 ## mixer
 
-The `mixer` property is used to configure the Amplitude Mixer (Amplimix). It takes as value an object with the following properties:
+The `mixer` property configures the Amplitude Mixer (Amplimix). It takes as value an object with the following properties:
 
 #### active_channels
 
-Specifies the maximum number of channels to process during mixing. It is equal to the number of audio samples simultaneously playing in the game. If the maximum number of channels is reached, Amplitude will prioritize the most important channels and virtualize the others.
+Specifies the maximum number of channels to process during mixing. It equals the number of audio samples simultaneously playing in the game. If the maximum number of channels is reached, Amplitude will prioritize the most important channels and virtualize the others.
 
 #### virtual_channels
 
@@ -80,5 +97,26 @@ This property is mandatory and should be defined.
 
 ## driver
 
-The `driver` property indicates the name of the audio [Driver] implementation. It is used for communicating with the physical audio device. You can implement multiple audio drivers as needed and register them in the engine, read the [Writing Drivers](../../advanced/writing-drivers) page to learn more about them.
+The `driver` property indicates the name of the audio [Driver] implementation communicating with the physical audio device. You can implement multiple audio drivers as needed and register them in the engine. Read the [Writing Drivers](../../advanced/writing-drivers) page to learn more about them.
 
+## Example
+
+The following example describes a simple engine configuration file:
+
+```json
+{
+  "output": {
+    "frequency": 48000,
+    "channels": "Stereo",
+    "buffer_size": 2048,
+    "format": "Int16"
+  },
+  "mixer": {
+    "active_channels": 50,
+    "virtual_channels": 100
+  },
+  "listeners": 1,
+  "entities": 10,
+  "buses_file": "assets/buses.ambus"
+}
+```

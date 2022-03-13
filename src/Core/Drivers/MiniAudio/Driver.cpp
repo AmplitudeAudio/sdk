@@ -12,17 +12,10 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#define MINIAUDIO_IMPLEMENTATION
-#define MA_NO_DECODING
-#define MA_NO_ENCODING
-#include "miniaudio.h"
-
 #include <SparkyStudios/Audio/Amplitude/Amplitude.h>
 
 #include <Core/Drivers/MiniAudio/Driver.h>
 #include <Mixer/Mixer.h>
-
-#include "engine_config_definition_generated.h"
 
 namespace SparkyStudios::Audio::Amplitude::Drivers
 {
@@ -30,26 +23,6 @@ namespace SparkyStudios::Audio::Amplitude::Drivers
     {
         auto* mixer = static_cast<Mixer*>(pDevice->pUserData);
         mixer->Mix(pOutput, frameCount);
-    }
-
-    static ma_format ma_format_from_amplitude(PlaybackOutputFormat format)
-    {
-        switch (format)
-        {
-        default:
-        case PlaybackOutputFormat_Default:
-            return ma_format_unknown;
-        case PlaybackOutputFormat_UInt8:
-            return ma_format_u8;
-        case PlaybackOutputFormat_Int16:
-            return ma_format_s16;
-        case PlaybackOutputFormat_Int24:
-            return ma_format_s24;
-        case PlaybackOutputFormat_Int32:
-            return ma_format_s32;
-        case PlaybackOutputFormat_Float32:
-            return ma_format_f32;
-        }
     }
 
     MiniAudioDriver::~MiniAudioDriver()
@@ -61,17 +34,26 @@ namespace SparkyStudios::Audio::Amplitude::Drivers
         }
     }
 
-    bool MiniAudioDriver::Open(const EngineConfigDefinition* config)
+    bool MiniAudioDriver::Open(const DeviceDescription& device)
     {
         if (!_initialized)
         {
+            const auto channelsCount = static_cast<AmInt16>(device.mRequestedOutputChannels);
+
             ma_device_config deviceConfig = ma_device_config_init(ma_device_type_playback);
-            deviceConfig.periodSizeInFrames = config->output()->buffer_size();
-            deviceConfig.playback.format = ma_format_from_amplitude(config->output()->format());
-            deviceConfig.playback.channels = config->output()->channels();
-            deviceConfig.sampleRate = config->output()->frequency();
+            deviceConfig.noClip = true;
+            deviceConfig.noPreSilencedOutputBuffer = true;
+            deviceConfig.periodSizeInFrames = device.mOutputBufferSize / channelsCount;
+            deviceConfig.playback.format = ma_format_from_amplitude(device.mRequestedOutputFormat);
+            deviceConfig.playback.channels = channelsCount;
+            deviceConfig.playback.pChannelMap =
+                static_cast<ma_channel*>(amMemory->Malloc(MemoryPoolKind::Engine, channelsCount * sizeof(ma_channel)));
+            deviceConfig.playback.channelMixMode = ma_channel_mix_mode_rectangular;
+            deviceConfig.sampleRate = device.mRequestedOutputSampleRate;
             deviceConfig.dataCallback = miniaudio_mixer;
             deviceConfig.pUserData = static_cast<void*>(m_mixer);
+
+            ma_channel_map_init_standard(ma_standard_channel_map_vorbis, deviceConfig.playback.pChannelMap, channelsCount, channelsCount);
 
             _initialized = ma_device_init(nullptr, &deviceConfig, &_device) == MA_SUCCESS;
             if (!_initialized)
@@ -81,7 +63,12 @@ namespace SparkyStudios::Audio::Amplitude::Drivers
             }
 
             m_mixer->PostInit(
-                _device.playback.internalPeriodSizeInFrames, _device.playback.internalSampleRate, static_cast<AmUInt16>(_device.playback.internalChannels));
+                0, // TODO: Compute a proper device ID
+                _device.playback.name, _device.playback.internalSampleRate,
+                static_cast<PlaybackOutputChannels>(_device.playback.internalChannels),
+                static_cast<PlaybackOutputFormat>(_device.playback.internalFormat));
+
+            amMemory->Free(MemoryPoolKind::Engine, deviceConfig.playback.pChannelMap);
         }
 
         if (ma_device_is_started(&_device) == MA_FALSE && ma_device_start(&_device) != MA_SUCCESS)

@@ -31,6 +31,9 @@ namespace SparkyStudios::Audio::Amplitude
 
     bool Attenuation::LoadAttenuationDefinition(const std::string& attenuation)
     {
+        // Ensure we do not load the attenuation more than once
+        AMPLITUDE_ASSERT(_id == kAmInvalidObjectId);
+
         _source = attenuation;
         const AttenuationDefinition* definition = GetAttenuationDefinition();
 
@@ -41,7 +44,7 @@ namespace SparkyStudios::Audio::Amplitude
 
         _gainCurve.Initialize(definition->gain_curve());
 
-        _shape = AttenuationShape::Create(definition->shape());
+        _shape = AttenuationZone::Create(definition->shape());
 
         return true;
     }
@@ -52,12 +55,12 @@ namespace SparkyStudios::Audio::Amplitude
         return LoadFile(filename, &source) && LoadAttenuationDefinition(source);
     }
 
-    float Attenuation::GetGain(const hmm_vec3& soundLocation, const ListenerInternalState* listener) const
+    AmReal32 Attenuation::GetGain(const hmm_vec3& soundLocation, const Listener& listener) const
     {
         return _shape->GetAttenuationFactor(this, soundLocation, listener);
     }
 
-    float Attenuation::GetGain(const EntityInternalState* entity, const ListenerInternalState* listener) const
+    AmReal32 Attenuation::GetGain(const Entity& entity, const Listener& listener) const
     {
         return _shape->GetAttenuationFactor(this, entity, listener);
     }
@@ -82,7 +85,7 @@ namespace SparkyStudios::Audio::Amplitude
         return &_refCounter;
     }
 
-    AttenuationShape* Attenuation::GetShape() const
+    AttenuationZone* Attenuation::GetShape() const
     {
         return _shape;
     }

@@ -17,18 +17,6 @@
 #ifndef SS_AMPLITUDE_AUDIO_CONFIG_H
 #define SS_AMPLITUDE_AUDIO_CONFIG_H
 
-#ifndef AM_TYPE_ALIGN
-#if defined(_MSC_VER)
-#define AM_TYPE_ALIGN(_declaration_, _alignment_) __declspec(align(_alignment_)) _declaration_
-#else
-#define AM_TYPE_ALIGN(_declaration_, _alignment_) _declaration_ __attribute__((aligned(_alignment_)))
-#endif
-#endif
-
-#ifndef AM_VALUE_ALIGN
-#define AM_VALUE_ALIGN(_value_, _alignment_) (((_value_) + ((_alignment_)-1)) & ~((_alignment_)-1))
-#endif
-
 #if defined(_WIN32) || defined(_WIN64) || defined(WINAPI_FAMILY)
 #include <SparkyStudios/Audio/Amplitude/Core/Common/Platforms/Windows/Config.h>
 #elif defined(__ANDROID__)
@@ -36,16 +24,25 @@
 #elif defined(__linux__)
 #include <SparkyStudios/Audio/Amplitude/Core/Common/Platforms/Linux/Config.h>
 #elif defined(__APPLE__)
-#include <SparkyStudios/Audio/Amplitude/Core/Common/Platforms/Mac/Config.h>
+#include <SparkyStudios/Audio/Amplitude/Core/Common/Platforms/Apple/Config.h>
+#endif
+
+#if !defined(AM_VALUE_ALIGN)
+#define AM_VALUE_ALIGN(_value_, _alignment_) (((_value_) + ((_alignment_)-1)) & ~((_alignment_)-1))
+#endif
+
+#if !defined(AM_CALL_POLICY)
+#define AM_CALL_POLICY
 #endif
 
 #if !defined(AMPLITUDE_DISABLE_SIMD)
 #if defined(AM_CPU_X86) || defined(AM_CPU_X86_64) || defined(AM_CPU_ARM_NEON)
 #define AM_SSE_INTRINSICS
-#include <Vc/Vc>
+#include <SparkyStudios/Audio/Amplitude/Core/Common/SIMD.h>
 #endif // AM_CPU_X86 || AM_CPU_X86_64 || AM_CPU_ARM_NEON
 #else
 #define PFFFT_SIMD_DISABLE
+#define HANDMADE_MATH_NO_SSE
 #endif // AMPLITUDE_DISABLE_SIMD
 
 // Define the value of Pi if the platform doesn't do that
@@ -62,5 +59,8 @@
 
 // 1) Mono, 2) Stereo, 4) Quad, 6) 5.1, 8) 7.1
 #define AM_MAX_CHANNELS 8
+
+// Instructs miniaudio to use stdint.h
+#define MA_USE_STDINT
 
 #endif // SS_AMPLITUDE_AUDIO_CONFIG_H

@@ -38,6 +38,8 @@ namespace SparkyStudios::Audio::Amplitude
         , _loop()
         , _pan()
         , _gain()
+        , _pitch(1.0f)
+        , _playSpeed(1.0f)
         , _mixer(nullptr)
         , _activeSounds()
         , _parentChannelState(parent)
@@ -130,15 +132,15 @@ namespace SparkyStudios::Audio::Amplitude
 
         const PlayStateFlag loops = _loop[layer] ? PLAY_STATE_FLAG_LOOP : PLAY_STATE_FLAG_PLAY;
 
-        _channelLayersId[layer] =
-            _mixer->Play(static_cast<SoundData*>(_activeSounds[layer]->GetUserData()), loops, _gain[layer], _pan, _channelId, 0);
+        _channelLayersId[layer] = _mixer->Play(
+            static_cast<SoundData*>(_activeSounds[layer]->GetUserData()), loops, _gain[layer], _pan, _pitch, _playSpeed, _channelId, 0);
 
         // Check if playing the sound was successful, and display the error if it was not.
         const bool success = _channelLayersId[layer] != kAmInvalidObjectId;
         if (!success)
         {
             _channelLayersId[layer] = kAmInvalidObjectId;
-            CallLogFunc("[ERROR] Could not play sound " AM_OS_CHAR_FMT "\n", _activeSounds[layer]->GetSound()->GetFilename());
+            CallLogFunc("[ERROR] Could not play sound " AM_OS_CHAR_FMT "\n", _activeSounds[layer]->GetSound()->GetFilename().c_str());
         }
 
         return success;
@@ -275,6 +277,64 @@ namespace SparkyStudios::Audio::Amplitude
         }
 
         _pan = pan.X;
+    }
+
+    void RealChannel::SetPitch(AmReal32 pitch)
+    {
+        AMPLITUDE_ASSERT(Valid());
+        for (auto&& layer : _channelLayersId)
+        {
+            if (layer.second != 0)
+            {
+                _mixer->SetPitch(_channelId, _channelLayersId[layer.first], pitch);
+            }
+        }
+
+        _pitch = pitch;
+    }
+
+    void RealChannel::SetSpeed(AmReal32 speed)
+    {
+        AMPLITUDE_ASSERT(Valid());
+        for (auto&& layer : _channelLayersId)
+        {
+            if (layer.second != 0)
+            {
+                _mixer->SetPlaySpeed(_channelId, _channelLayersId[layer.first], speed);
+            }
+        }
+
+        _playSpeed = speed;
+    }
+
+    void RealChannel::SetObstruction(AmReal32 obstruction)
+    {
+        AMPLITUDE_ASSERT(Valid());
+        for (auto&& layer : _channelLayersId)
+        {
+            if (layer.second != 0)
+            {
+                if (_activeSounds[layer.first] != nullptr)
+                {
+                    _activeSounds[layer.first]->SetObstruction(obstruction);
+                }
+            }
+        }
+    }
+
+    void RealChannel::SetOcclusion(AmReal32 occlusion)
+    {
+        AMPLITUDE_ASSERT(Valid());
+        for (auto&& layer : _channelLayersId)
+        {
+            if (layer.second != 0)
+            {
+                if (_activeSounds[layer.first] != nullptr)
+                {
+                    _activeSounds[layer.first]->SetOcclusion(occlusion);
+                }
+            }
+        }
     }
 
     void RealChannel::SetGainPan(float gain, float pan, AmUInt32 layer)

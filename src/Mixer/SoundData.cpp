@@ -12,15 +12,14 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+#include <SparkyStudios/Audio/Amplitude/Core/Log.h>
+#include <SparkyStudios/Audio/Amplitude/Core/Memory.h>
+
 #include <Mixer/Mixer.h>
 #include <Mixer/SoundData.h>
 
-#include <Utils/SmMalloc/smmalloc.h>
-
 namespace SparkyStudios::Audio::Amplitude
 {
-    static sm_allocator soundChunkAllocator = _sm_allocator_create(4, (1 * 1024 * 1024));
-
     static SoundData* CreateSoundData(const SoundFormat& format, SoundChunk* chunk, AmVoidPtr userData, AmUInt64 frames, bool stream)
     {
         if (format.GetNumChannels() < 1 || format.GetNumChannels() > 2 || frames < 1)
@@ -37,19 +36,39 @@ namespace SparkyStudios::Audio::Amplitude
         return sound;
     }
 
-    SoundChunk* SoundChunk::CreateChunk(AmUInt64 frames, AmUInt16 channels)
+    SoundChunk* SoundChunk::CreateChunk(AmUInt64 frames, AmUInt16 channels, MemoryPoolKind pool)
     {
 #if defined(AM_SSE_INTRINSICS)
-        AmUInt64 alignedLength = AM_VALUE_ALIGN(frames * channels, Vc::int16_v::Size);
+        const AmUInt64 alignedFrames = AM_VALUE_ALIGN(frames, AudioDataUnit::length);
 #else
-        AmUInt64 alignedLength = frames * channels;
+        const AmUInt64 alignedFrames = frames;
 #endif // AM_SSE_INTRINSICS
+        const AmUInt64 alignedLength = alignedFrames * channels;
 
         auto* chunk = new SoundChunk();
 
-        chunk->frames = frames;
+        chunk->frames = alignedFrames;
         chunk->length = alignedLength;
-        chunk->buffer = static_cast<AudioBuffer>(_sm_malloc(soundChunkAllocator, alignedLength * sizeof(AmInt16), AM_SIMD_ALIGNMENT));
+        chunk->size = alignedLength * sizeof(AmInt16);
+#if defined(AM_SSE_INTRINSICS)
+        chunk->samplesPerVector = AudioDataUnit::length / channels;
+#endif // AM_SSE_INTRINSICS
+        chunk->memoryPool = pool;
+#if defined(AM_SSE_INTRINSICS)
+        chunk->buffer = static_cast<AudioBuffer>(amMemory->Malign(pool, chunk->size, AM_SIMD_ALIGNMENT));
+#else
+        chunk->buffer = static_cast<AudioBuffer>(amMemory->Malloc(pool, chunk->size));
+#endif // AM_SSE_INTRINSICS
+
+        if (chunk->buffer == nullptr)
+        {
+            CallLogFunc("[ERROR] Failed to allocate memory for sound chunk.");
+
+            delete chunk;
+            return nullptr;
+        }
+
+        memset(chunk->buffer, 0, chunk->size);
 
         return chunk;
     }
@@ -57,21 +76,22 @@ namespace SparkyStudios::Audio::Amplitude
     void SoundChunk::DestroyChunk(SoundChunk* chunk)
     {
         // Mixer::OnSoundDestroyed(chunk);
-        _sm_free(soundChunkAllocator, chunk->buffer);
+        amMemory->Free(chunk->memoryPool, chunk->buffer);
     }
 
-    SoundData* SoundData::CreateMusic(const SoundFormat& format, SoundChunk* chunk, AmVoidPtr userData)
+    SoundData* SoundData::CreateMusic(const SoundFormat& format, SoundChunk* chunk, AmUInt64 frames, AmVoidPtr userData)
     {
-        return CreateSoundData(format, chunk, userData, format.GetFramesCount(), true);
+        return CreateSoundData(format, chunk, userData, frames, true);
     }
 
-    SoundData* SoundData::CreateSound(const SoundFormat& format, SoundChunk* chunk, AmVoidPtr userData)
+    SoundData* SoundData::CreateSound(const SoundFormat& format, SoundChunk* chunk, AmUInt64 frames, AmVoidPtr userData)
     {
-        return CreateSoundData(format, chunk, userData, format.GetFramesCount(), false);
+        return CreateSoundData(format, chunk, userData, frames, false);
     }
 
-    void SoundData::Destroy()
+    void SoundData::Destroy(bool destroyChunk) const
     {
-        SoundChunk::DestroyChunk(chunk);
+        if (destroyChunk)
+            SoundChunk::DestroyChunk(chunk);
     }
 } // namespace SparkyStudios::Audio::Amplitude

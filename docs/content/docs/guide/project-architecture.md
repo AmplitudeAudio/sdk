@@ -1,6 +1,6 @@
 ---
 title: Project Architecture
-weight: 5
+weight: 4
 ---
 
 An Amplitude project is resumed to a set of `.json` files organized in dedicated directories. The complete architecture of an Amplitude project can be described by:
@@ -10,6 +10,7 @@ An Amplitude project is resumed to a set of `.json` files organized in dedicated
 |--📁 attenuators/
 |--📁 collections/
 |--📁 effects/
+|--📁 environments/
 |--📁 events/
 |--📁 rtpc/
 |--📁 soundbanks/

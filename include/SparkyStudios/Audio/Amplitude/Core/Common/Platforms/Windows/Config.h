@@ -25,7 +25,7 @@
 // Detect the platform CPU type
 #if defined(_M_IX86)
 #define AM_CPU_X86
-#elif defined(_M_AMD64)
+#elif defined(_M_AMD64) || defined(_M_X64)
 #define AM_CPU_X86_64
 #elif defined(_M_ARM)
 #define AM_CPU_ARM
@@ -35,18 +35,18 @@
 #define AM_CPU_ARM_NEON
 #endif
 
+// Call policy
+#define AM_CALL_POLICY __cdecl
+
 // Function inline
 #define AM_INLINE(_return_type_) __forceinline _return_type_
 #define AM_NO_INLINE(_return_type_) __declspec(noinline) _return_type_
 
 // Alignment required for SIMD data processing
 #define AM_SIMD_ALIGNMENT 16
+#define AM_TYPE_ALIGN(_declaration_, _alignment_) __declspec(align(_alignment_)) _declaration_
 #define AM_TYPE_ALIGN_SIMD(_declaration_) AM_TYPE_ALIGN(_declaration_, AM_SIMD_ALIGNMENT)
 #define AM_BUFFER_ALIGNMENT AM_SIMD_ALIGNMENT
-#define AM_ALIGNED_ALLOC(_size_, _alignment_) _aligned_malloc(_size_, _alignment_)
-#define AM_ALIGNED_REALLOC(_ptr_, _size_, _alignment_) _aligned_realloc(_ptr_, _size_, _alignment_)
-#define AM_ALIGNED_MSIZE(_ptr_, _alignment_) _aligned_msize(_ptr_, _alignment_, 0)
-#define AM_ALIGNED_FREE(_ptr_) _aligned_free(_ptr_)
 
 // Windows platforms supports wchar_t
 #define AM_WCHAR_SUPPORTED
@@ -91,6 +91,7 @@ static AM_INLINE(std::string) am_wstring_narrow(const std::wstring& str)
 #ifndef WIN32_LEAN_AND_MEAN
 #define WIN32_LEAN_AND_MEAN
 #endif // WIN32_LEAN_AND_MEAN
+#define NOMINMAX // No need of min and max macros
 #include <Windows.h> // only needed for OutputDebugStringA, should be solved somehow.
 #define AMPLITUDE_ASSERT(x)                                                                                                                \
     if (!(x))                                                                                                                              \

@@ -115,3 +115,95 @@ table RtpcCompatibleValue {
   /// The RTPC compatible value.
   rtpc:RtpcParameter;
 }
+
+/// Available settings for a cone shape.
+struct ConeShapeDefinition {
+  /// The radius of the cone.
+  radius:float;
+
+  /// The height of the cone.
+  height:float;
+}
+
+/// Available settings for a spherical attenuation shape.
+struct SphereShapeDefinition {
+  /// The sphere radius.
+  radius:float;
+}
+
+/// Available settings for a box shape.
+struct BoxShapeDefinition {
+  /// The box width.
+  half_width:float;
+
+  /// The box height.
+  half_height:float;
+
+  /// The box depth.
+  half_depth:float;
+}
+
+/// Available settings for a capsule shape.
+struct CapsuleShapeDefinition {
+  /// The capsule radius.
+  radius:float;
+
+  /// The capsule height.
+  half_height:float;
+}
+
+union AbstractShapeDefinition {
+  Box:BoxShapeDefinition,
+  Capsule:CapsuleShapeDefinition,
+  Cone:ConeShapeDefinition,
+  Sphere:SphereShapeDefinition,
+}
+
+table ShapeDefinition {
+  /// The shape definition. The
+  shape: AbstractShapeDefinition;
+}
+
+/// Available settings for a cone zones shape.
+table ConeZoneSettings {
+  /// The inner cone.
+  inner:ConeShapeDefinition;
+
+  /// The outer cone.
+  outer:ConeShapeDefinition;
+}
+
+/// Available settings for a spherical zone shape.
+table SphereZoneSettings {
+  /// The inner sphere.
+  inner:SphereShapeDefinition;
+
+  /// The outer sphere.
+  outer:SphereShapeDefinition;
+}
+
+/// Available settings for a box zone shape.
+table BoxZoneSettings {
+  /// The inner box.
+  inner:BoxShapeDefinition;
+
+  /// The outer box.
+  outer:BoxShapeDefinition;
+}
+
+/// Available settings for a capsule zone shape.
+table CapsuleZoneSettings {
+  /// The inner capsule.
+  inner:CapsuleShapeDefinition;
+
+  /// The outer capsule.
+  outer:CapsuleShapeDefinition;
+}
+
+/// Merges the settings from Zone shapes.
+union ZoneDefinition {
+  Box:BoxZoneSettings,
+  Capsule:CapsuleZoneSettings,
+  Cone:ConeZoneSettings,
+  Sphere:SphereZoneSettings,
+}

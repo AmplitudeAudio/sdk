@@ -125,6 +125,13 @@ namespace SparkyStudios::Audio::Amplitude
          */
         RefCounter* GetRefCounter();
 
+        /**
+         * @brief Get the references counter for this object.
+         *
+         * @return The references counter.
+         */
+        [[nodiscard]] const RefCounter* GetRefCounter() const;
+
     private:
         std::string _source;
 

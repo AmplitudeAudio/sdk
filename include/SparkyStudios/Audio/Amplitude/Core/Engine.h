@@ -23,8 +23,10 @@
 
 #include <SparkyStudios/Audio/Amplitude/Core/Bus.h>
 #include <SparkyStudios/Audio/Amplitude/Core/Channel.h>
+#include <SparkyStudios/Audio/Amplitude/Core/Device.h>
 #include <SparkyStudios/Audio/Amplitude/Core/Driver.h>
 #include <SparkyStudios/Audio/Amplitude/Core/Entity.h>
+#include <SparkyStudios/Audio/Amplitude/Core/Environment.h>
 #include <SparkyStudios/Audio/Amplitude/Core/Event.h>
 #include <SparkyStudios/Audio/Amplitude/Core/Listener.h>
 #include <SparkyStudios/Audio/Amplitude/Core/Version.h>
@@ -36,6 +38,11 @@
 #include <SparkyStudios/Audio/Amplitude/Sound/Sound.h>
 #include <SparkyStudios/Audio/Amplitude/Sound/Switch.h>
 #include <SparkyStudios/Audio/Amplitude/Sound/SwitchContainer.h>
+
+/**
+ * @brief Macro to get the current Amplitude engine instance.
+ */
+#define amEngine SparkyStudios::Audio::Amplitude::Engine::GetInstance()
 
 namespace SparkyStudios::Audio::Amplitude
 {
@@ -93,6 +100,27 @@ namespace SparkyStudios::Audio::Amplitude
         bool Deinitialize();
 
         /**
+         * @brief Checks if the audio engine has been initialized.
+         *
+         * @return Whether the audio engine is initialized.
+         */
+        bool IsInitialized();
+
+        /**
+         * @brief Set the File Loader used by the engine.
+         *
+         * @param loader A FileLoader implementation.
+         */
+        void SetFileLoader(const FileLoader& loader);
+
+        /**
+         * @brief Get the File Loader used by the engine.
+         *
+         * @return The file loader.
+         */
+        [[nodiscard]] const FileLoader* GetFileLoader() const;
+
+        /**
          * @brief Update audio volume per channel each frame.
          *
          * @param delta The number of elapsed seconds since the last frame.
@@ -112,9 +140,68 @@ namespace SparkyStudios::Audio::Amplitude
          *        of the sound files on a separate thread.
          *
          * @param filename The file containing the SoundBank flatbuffer binary data.
+         *
          * @return true Returns true on success
          */
         bool LoadSoundBank(AmOsString filename);
+
+        /**
+         * @brief Load a sound bank from a file. Queue the sound files in that sound
+         *        bank for loading. Call StartLoadingSoundFiles() to trigger loading
+         *        of the sound files on a separate thread.
+         *
+         * @param filename The file containing the SoundBank flatbuffer binary data.
+         * @param outID The ID of the loaded soundbank.
+         *
+         * @return true Returns true on success
+         */
+        bool LoadSoundBank(AmOsString filename, AmBankID& outID);
+
+        /**
+         * @brief Load a sound bank from memory. Queue the sound files in that sound
+         *        bank for loading. Call StartLoadingSoundFiles() to trigger loading
+         *        of the sound files on a separate thread.
+         *
+         * @param fileData The SoundBank flatbuffer binary data.
+         *
+         * @return true Returns true on success
+         */
+        bool LoadSoundBankFromMemory(const char* fileData);
+
+        /**
+         * @brief Load a sound bank from memory. Queue the sound files in that sound
+         *        bank for loading. Call StartLoadingSoundFiles() to trigger loading
+         *        of the sound files on a separate thread.
+         *
+         * @param fileData The SoundBank flatbuffer binary data.
+         * @param outID The ID of the loaded soundbank.
+         *
+         * @return true Returns true on success
+         */
+        bool LoadSoundBankFromMemory(const char* fileData, AmBankID& outID);
+
+        /**
+         * @brief Load a sound bank from memory. Queue the sound files in that sound
+         *        bank for loading. Call StartLoadingSoundFiles() to trigger loading
+         *        of the sound files on a separate thread.
+         *
+         * @param fileData The SoundBank flatbuffer binary data.
+         *
+         * @return true Returns true on success
+         */
+        bool LoadSoundBankFromMemoryView(void* ptr, AmSize size);
+
+        /**
+         * @brief Load a sound bank from memory. Queue the sound files in that sound
+         *        bank for loading. Call StartLoadingSoundFiles() to trigger loading
+         *        of the sound files on a separate thread.
+         *
+         * @param fileData The SoundBank flatbuffer binary data.
+         * @param outID The ID of the loaded soundbank.
+         *
+         * @return true Returns true on success
+         */
+        bool LoadSoundBankFromMemoryView(void* ptr, AmSize size, AmBankID& outID);
 
         /**
          * @brief Unload a sound bank.
@@ -122,6 +209,18 @@ namespace SparkyStudios::Audio::Amplitude
          * @param filename The file to unload.
          */
         void UnloadSoundBank(AmOsString filename);
+
+        /**
+         * @brief Unload a sound bank.
+         *
+         * @param id The soundbank id to unload.
+         */
+        void UnloadSoundBank(AmBankID id);
+
+        /**
+         * @brief Unload all loaded sound banks
+         */
+        void UnloadSoundBanks();
 
         /**
          * @brief Kick off loading thread to load all sound files queued with
@@ -133,7 +232,7 @@ namespace SparkyStudios::Audio::Amplitude
          * @brief Return true if all sound files have been loaded. Must call
          *        StartLoadingSoundFiles() first.
          */
-        bool TryFinalize();
+        bool TryFinalizeLoadingSoundFiles();
 
         /**
          * @brief Get a SwitchContainerHandle given its name as defined in its JSON data.
@@ -339,6 +438,29 @@ namespace SparkyStudios::Audio::Amplitude
         void Pause(bool pause);
 
         /**
+         * @brief Sets the default sound listener.
+         *
+         * @param listener A valid and initialized Listener instance.
+         */
+        void SetDefaultListener(const Listener* listener);
+
+        /**
+         * @brief Sets the default sound listener.
+         *
+         * @param id A valid Listener ID.
+         */
+        void SetDefaultListener(AmListenerID id);
+
+        /**
+         * @brief Returns a Listener object storing the state of the default
+         * audio listener.
+         *
+         * @return An initialized Listener object if a default listener was set,
+         * otherwise an unitialized Listener object.
+         */
+        [[nodiscard]] Listener GetDefaultListener();
+
+        /**
          * @brief Initialize and return a Listener.
          *
          * @param id The game Listener ID.
@@ -346,6 +468,23 @@ namespace SparkyStudios::Audio::Amplitude
          * @return An initialized Listener.
          */
         Listener AddListener(AmListenerID id);
+
+        /**
+         * @brief Return the Listener with the given ID.
+         *
+         * @param id The game Listener ID.
+         *
+         * @return An initialized Listener if that one has been registered before,
+         * otherwise an unitialized Listener.
+         */
+        Listener GetListener(AmListenerID id);
+
+        /**
+         * @brief Remove a Listener given its ID.
+         *
+         * @param id The ID of the Listener to be removed.
+         */
+        void RemoveListener(AmListenerID id);
 
         /**
          * @brief Remove a Listener.
@@ -364,11 +503,61 @@ namespace SparkyStudios::Audio::Amplitude
         Entity AddEntity(AmEntityID id);
 
         /**
+         * @brief Return the Entity with the given ID.
+         *
+         * @param id The game Entity ID.
+         *
+         * @return An initialized Entity if that one has been registered before,
+         * otherwise an uninitialized Entity.
+         */
+        Entity GetEntity(AmEntityID id);
+
+        /**
          * @brief Remove an Entity.
          *
          * @param entity The Entity to be removed.
          */
         void RemoveEntity(const Entity* entity);
+
+        /**
+         * @brief Remove an Entity given its ID.
+         *
+         * @param id The ID of the Entity to be removed.
+         */
+        void RemoveEntity(AmEntityID id);
+
+        /**
+         * @brief Initialize and return an Environment.
+         *
+         * @param id The game Environment ID.
+         *
+         * @return An initialized Environment.
+         */
+        Environment AddEnvironment(AmEnvironmentID id);
+
+        /**
+         * @brief Return the Environment with the given ID.
+         *
+         * @param id The game Environment ID.
+         *
+         * @return An initialized Environment if that one has been registered before,
+         * otherwise an uninitialized Environment.
+         */
+        Environment GetEnvironment(AmEnvironmentID id);
+
+        /**
+         * @brief Remove an Environment.
+         *
+         * @param Environment The Environment to be removed.
+         */
+        void RemoveEnvironment(const Environment* Environment);
+
+        /**
+         * @brief Remove an Environment given its ID.
+         *
+         * @param id The ID of the Environment to be removed.
+         */
+        void RemoveEnvironment(AmEnvironmentID id);
 
         /**
          * @brief Returns the bus with the specified name.
@@ -739,6 +928,11 @@ namespace SparkyStudios::Audio::Amplitude
         Channel Play(AmObjectID id, const Entity& entity, float userGain);
 
         /**
+         * @brief Stops all playing sound objects.
+         */
+        void StopAll();
+
+        /**
          * @brief Trigger the event associated with the given sound handle at the
          *        given location.
          *
@@ -866,13 +1060,6 @@ namespace SparkyStudios::Audio::Amplitude
          */
         [[nodiscard]] const struct Version* Version() const;
 
-        /**
-         * @brief Gets the current state of this Engine.
-         *
-         * @return The current state of this Engine.
-         */
-        [[nodiscard]] EngineInternalState* GetState() const;
-
         [[nodiscard]] const EngineConfigDefinition* GetEngineConfigDefinition() const;
 
         /**
@@ -887,6 +1074,53 @@ namespace SparkyStudios::Audio::Amplitude
          */
         [[nodiscard]] static Engine* GetInstance();
 
+#pragma region Engine State
+
+        /**
+         * @brief Gets the current state of this Engine.
+         *
+         * @return The current state of this Engine.
+         */
+        [[nodiscard]] EngineInternalState* GetState() const;
+
+        /**
+         * @brief Get the current speed of sound.
+         *
+         * @return The speed of sound.
+         */
+        [[nodiscard]] AmReal32 GetSoundSpeed() const;
+
+        /**
+         * @brief Get the engine Doppler factor.
+         *
+         * @return The Doppler factor.
+         */
+        [[nodiscard]] AmReal32 GetDopplerFactor() const;
+
+        /**
+         * @brief Get the number of samples to process in one stream.
+         *
+         * @return The number of samples per stream.
+         */
+        [[nodiscard]] AmUInt32 GetSamplesPerStream() const;
+
+        /**
+         * @brief Get the mixer sample rate conversion quality.
+         *
+         * @return The sample rate conversion quality.
+         */
+        [[nodiscard]] AmUInt16 GetSampleRateConversionQuality() const;
+
+        /**
+         * @brief Checks whether the game is tracking environment amounts
+         * himself. This is useful for engines like O3DE.
+         *
+         * @return Whether the game is tracking environment amounts.
+         */
+        [[nodiscard]] bool IsGameTrackingEnvironmentAmounts() const;
+
+#pragma endregion
+
     private:
         Channel PlayScopedSwitchContainer(
             SwitchContainerHandle handle, const Entity& entity, const hmm_vec3& location, float userGain) const;
@@ -898,6 +1132,12 @@ namespace SparkyStudios::Audio::Amplitude
 
         // The current state of the engine.
         EngineInternalState* _state;
+
+        // The default audio listener
+        ListenerInternalState* _defaultListener;
+
+        // The file loader implementation
+        FileLoader _loader;
 
         // The audio driver used by the engine.
         Driver* _audioDriver;

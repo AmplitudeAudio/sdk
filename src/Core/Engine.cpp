@@ -41,6 +41,15 @@
 #include <Core/Drivers/MiniAudio/Driver.h>
 #pragma endregion
 
+#pragma region Default Sound Processors
+#include <Mixer/SoundProcessors/EffectProcessor.h>
+#include <Mixer/SoundProcessors/EnvironmentProcessor.h>
+#include <Mixer/SoundProcessors/ObstructionProcessor.h>
+#include <Mixer/SoundProcessors/OcclusionProcessor.h>
+#include <Mixer/SoundProcessors/PassThroughProcessor.h>
+
+#pragma endregion
+
 namespace SparkyStudios::Audio::Amplitude
 {
     typedef flatbuffers::Vector<uint64_t> BusIdList;
@@ -58,7 +67,7 @@ namespace SparkyStudios::Audio::Amplitude
         MemoryFile mf;
         if (const AmResult result = mf.OpenToMem(filename); result != AM_ERROR_NO_ERROR)
         {
-            CallLogFunc("[ERROR] LoadFile fail on %s", filename);
+            CallLogFunc("[ERROR] LoadFile fail on '" AM_OS_CHAR_FMT "'", filename);
             return false;
         }
 
@@ -80,6 +89,8 @@ namespace SparkyStudios::Audio::Amplitude
         : _configSrc()
         , _state(nullptr)
         , _audioDriver(nullptr)
+        , _loader()
+        , _defaultListener(nullptr)
     {}
 
     Engine::~Engine()
@@ -107,7 +118,7 @@ namespace SparkyStudios::Audio::Amplitude
     {
         if (const auto it = std::find_if(
                 state->buses.begin(), state->buses.end(),
-                [id](const BusInternalState& bus)
+                [&id](const BusInternalState& bus)
                 {
                     return bus.GetId() == id;
                 });
@@ -123,7 +134,7 @@ namespace SparkyStudios::Audio::Amplitude
     {
         if (const auto it = std::find_if(
                 state->buses.begin(), state->buses.end(),
-                [name](const BusInternalState& bus)
+                [&name](const BusInternalState& bus)
                 {
                     return bus.GetName() == name;
                 });
@@ -237,9 +248,22 @@ namespace SparkyStudios::Audio::Amplitude
         }
     }
 
+    static void InitializeEnvironmentFreeList(
+        std::vector<EnvironmentInternalState*>* environmentStateFreeList, EnvironmentStateVector* environmentList, const AmUInt32 listSize)
+    {
+        environmentList->resize(listSize);
+        environmentStateFreeList->reserve(listSize);
+        for (size_t i = 0; i < listSize; ++i)
+        {
+            EnvironmentInternalState& environment = (*environmentList)[i];
+            environmentStateFreeList->push_back(&environment);
+        }
+    }
+
     bool Engine::Initialize(AmOsString configFile)
     {
-        if (!LoadFile(configFile, &_configSrc))
+        std::filesystem::path configFilePath = _loader.ResolvePath(configFile);
+        if (!LoadFile(configFilePath.c_str(), &_configSrc))
         {
             CallLogFunc("[ERROR] Could not load audio config file at path '" AM_OS_CHAR_FMT "'.\n", configFile);
             return false;
@@ -249,9 +273,10 @@ namespace SparkyStudios::Audio::Amplitude
 
     bool Engine::Initialize(const EngineConfigDefinition* config)
     {
-        // Lock drivers and codecs registry
+        // Lock drivers, codecs and processors registries
         Driver::LockRegistry();
         Codec::LockRegistry();
+        SoundProcessor::LockRegistry();
 
         // Create the internal engine state
         _state = new EngineInternalState();
@@ -274,6 +299,7 @@ namespace SparkyStudios::Audio::Amplitude
         if (_audioDriver == nullptr)
         {
             CallLogFunc("[ERROR] Could not load the audio driver.\n");
+            Deinitialize();
             return false;
         }
 
@@ -281,6 +307,7 @@ namespace SparkyStudios::Audio::Amplitude
         if (!_state->mixer.Init(config))
         {
             CallLogFunc("[ERROR] Could not initialize the audio mixer.\n");
+            Deinitialize();
             return false;
         }
 
@@ -293,20 +320,27 @@ namespace SparkyStudios::Audio::Amplitude
             config->mixer()->virtual_channels(), config->mixer()->active_channels());
 
         // Initialize the listener internal data.
-        InitializeListenerFreeList(&_state->listener_state_free_list, &_state->listener_state_memory, config->listeners());
+        InitializeListenerFreeList(&_state->listener_state_free_list, &_state->listener_state_memory, config->game()->listeners());
 
         // Initialize the entity internal data.
-        InitializeEntityFreeList(&_state->entity_state_free_list, &_state->entity_state_memory, config->entities());
+        InitializeEntityFreeList(&_state->entity_state_free_list, &_state->entity_state_memory, config->game()->entities());
+
+        // Initialize the environment internal data.
+        InitializeEnvironmentFreeList(
+            &_state->environment_state_free_list, &_state->environment_state_memory, config->game()->environments());
 
         // Load the audio buses.
-        if (!LoadFile(AM_STRING_TO_OS_STRING(config->buses_file()->c_str()), &_state->buses_source))
+        std::filesystem::path busesFilePath = _loader.ResolvePath(config->buses_file()->c_str());
+        if (!LoadFile(busesFilePath.c_str(), &_state->buses_source))
         {
             CallLogFunc("[ERROR] Could not load audio bus file.\n");
+            Deinitialize();
             return false;
         }
         const BusDefinitionList* busDefList = Amplitude::GetBusDefinitionList(_state->buses_source.c_str());
-        _state->buses.resize(busDefList->buses()->size());
-        for (flatbuffers::uoffset_t i = 0; i < busDefList->buses()->size(); ++i)
+        const auto busCount = busDefList->buses()->size();
+        _state->buses.resize(busCount);
+        for (flatbuffers::uoffset_t i = 0; i < busCount; ++i)
         {
             _state->buses[i].Initialize(busDefList->buses()->Get(i));
         }
@@ -317,33 +351,56 @@ namespace SparkyStudios::Audio::Amplitude
             const BusDefinition* def = bus.GetBusDefinition();
             if (!PopulateChildBuses(_state, &bus, def->child_buses()))
             {
+                Deinitialize();
                 return false;
             }
             if (!PopulateDuckBuses(_state, &bus, def->duck_buses()))
             {
+                Deinitialize();
                 return false;
             }
         }
 
         // Fetch the master bus with name
-        _state->master_bus = FindBusInternalState(_state, "master");
+        _state->master_bus = FindBusInternalState(_state, kAmMasterBusId);
         if (!_state->master_bus)
         {
             // Fetch the master bus by ID
-            _state->master_bus = FindBusInternalState(_state, kAmMasterBusId);
+            _state->master_bus = FindBusInternalState(_state, "master");
             if (!_state->master_bus)
             {
                 CallLogFunc("[ERROR] Unable to find a master bus.\n");
+                Deinitialize();
                 return false;
             }
         }
+
+        // Set the listener fetch mode
+        _state->listener_fetch_mode = config->game()->listener_fetch_mode();
+
+        // Doppler effect settings
+        _state->sound_speed = config->game()->sound_speed();
+        _state->doppler_factor = config->game()->doppler_factor();
+
+        // Samples per streams
+        _state->samples_per_stream = config->mixer()->samples_per_stream();
+
+        // Dynamic sample rate conversion
+        _state->sample_rate_conversion_quality = config->mixer()->sample_rate_conversion_quality();
+
+        // Set the game engine up axis
+        _state->up_axis = config->game()->up_axis();
+
+        // Save obstruction/occlusion configurations
+        _state->obstruction_config.Init(config->game()->obstruction());
+        _state->occlusion_config.Init(config->game()->occlusion());
 
         _state->paused = false;
         _state->mute = false;
         _state->master_gain = 1.0f;
 
         // Open the audio device through the driver
-        return _audioDriver->Open(config);
+        return _audioDriver->Open(_state->mixer.GetDeviceDescription());
     }
 
     bool Engine::Deinitialize()
@@ -351,55 +408,198 @@ namespace SparkyStudios::Audio::Amplitude
         _state->stopping = true;
 
         // Auto deinitialize loaded sound banks
-        for (const auto& item : _state->sound_bank_map)
-            item.second->Deinitialize(this);
+        UnloadSoundBanks();
 
-        // Close the audio device through the driver
-        return _audioDriver->Close();
+        delete _state;
+        _state = nullptr;
+
+        if (_audioDriver)
+            // Close the audio device through the driver
+            return _audioDriver->Close();
+        else
+            return true;
+    }
+
+    bool Engine::IsInitialized()
+    {
+        // An initialized engine have a running state
+        return _state != nullptr && _state->stopping == false;
+    }
+
+    void Engine::SetFileLoader(const FileLoader& loader)
+    {
+        _loader = loader;
+    }
+
+    const FileLoader* Engine::GetFileLoader() const
+    {
+        return &_loader;
     }
 
     bool Engine::LoadSoundBank(AmOsString filename)
     {
+        AmBankID outID = kAmInvalidObjectId;
+        return LoadSoundBank(filename, outID);
+    }
+
+    bool Engine::LoadSoundBank(AmOsString filename, AmBankID& outID)
+    {
+        outID = kAmInvalidObjectId;
         bool success = true;
-        if (const auto findIt = _state->sound_bank_map.find(filename); findIt == _state->sound_bank_map.end())
+
+        if (const auto findIt = _state->sound_bank_id_map.find(filename); findIt == _state->sound_bank_id_map.end() ||
+            (findIt != _state->sound_bank_id_map.end() && _state->sound_bank_map.find(findIt->second) == _state->sound_bank_map.end()))
         {
-            auto& soundBank = _state->sound_bank_map[filename];
-            soundBank = std::make_unique<SoundBank>();
+            auto soundBank = std::make_unique<SoundBank>();
             success = soundBank->Initialize(filename, this);
+
             if (success)
             {
                 soundBank->GetRefCounter()->Increment();
+
+                AmBankID id = soundBank->GetId();
+                _state->sound_bank_id_map[filename] = id;
+                _state->sound_bank_map[id] = std::move(soundBank);
+                outID = id;
             }
         }
         else
         {
-            findIt->second->GetRefCounter()->Increment();
+            _state->sound_bank_map[findIt->second]->GetRefCounter()->Increment();
         }
+
+        return success;
+    }
+
+    bool Engine::LoadSoundBankFromMemory(const char* fileData)
+    {
+        AmBankID outID = kAmInvalidObjectId;
+        return LoadSoundBankFromMemory(fileData, outID);
+    }
+
+    bool Engine::LoadSoundBankFromMemory(const char* fileData, AmBankID& outID)
+    {
+        outID = kAmInvalidObjectId;
+        bool success = true;
+
+        auto soundBank = std::make_unique<SoundBank>(fileData);
+        AmOsString filename = AM_STRING_TO_OS_STRING(soundBank->GetName().c_str());
+        if (const auto findIt = _state->sound_bank_id_map.find(filename); findIt == _state->sound_bank_id_map.end() ||
+            (findIt != _state->sound_bank_id_map.end() && _state->sound_bank_map.find(findIt->second) == _state->sound_bank_map.end()))
+        {
+            success = soundBank->InitializeFromMemory(fileData, this);
+
+            if (success)
+            {
+                soundBank->GetRefCounter()->Increment();
+
+                AmBankID id = soundBank->GetId();
+                _state->sound_bank_id_map[filename] = id;
+                _state->sound_bank_map[id] = std::move(soundBank);
+                outID = id;
+            }
+        }
+        else
+        {
+            _state->sound_bank_map[findIt->second]->GetRefCounter()->Increment();
+        }
+
+        return success;
+    }
+
+    bool Engine::LoadSoundBankFromMemoryView(void* ptr, AmSize size)
+    {
+        AmBankID outID = kAmInvalidObjectId;
+        return LoadSoundBankFromMemoryView(ptr, size, outID);
+    }
+
+    bool Engine::LoadSoundBankFromMemoryView(void* ptr, AmSize size, AmBankID& outID)
+    {
+        outID = kAmInvalidObjectId;
+        bool success = true;
+
+        MemoryFile mf;
+        std::string dst;
+
+        mf.OpenMem(reinterpret_cast<AmConstUInt8Buffer>(ptr), size, false, false);
+        dst.assign(size + 1, 0);
+
+        const AmUInt32 len = mf.Read(reinterpret_cast<AmUInt8Buffer>(&dst[0]), mf.Length());
+        if (len != size)
+        {
+            return false;
+        }
+
+        auto soundBank = std::make_unique<SoundBank>(dst);
+        AmOsString filename = AM_STRING_TO_OS_STRING(soundBank->GetName().c_str());
+        if (const auto findIt = _state->sound_bank_id_map.find(filename); findIt == _state->sound_bank_id_map.end() ||
+            (findIt != _state->sound_bank_id_map.end() && _state->sound_bank_map.find(findIt->second) == _state->sound_bank_map.end()))
+        {
+            success = soundBank->InitializeFromMemory(dst.c_str(), this);
+
+            if (success)
+            {
+                soundBank->GetRefCounter()->Increment();
+
+                AmBankID id = soundBank->GetId();
+                _state->sound_bank_id_map[filename] = id;
+                _state->sound_bank_map[id] = std::move(soundBank);
+                outID = id;
+            }
+        }
+        else
+        {
+            _state->sound_bank_map[findIt->second]->GetRefCounter()->Increment();
+        }
+
         return success;
     }
 
     void Engine::UnloadSoundBank(AmOsString filename)
     {
-        const auto findIt = _state->sound_bank_map.find(filename);
-        if (findIt == _state->sound_bank_map.end())
+        const auto findIt = _state->sound_bank_id_map.find(filename);
+        if (findIt == _state->sound_bank_id_map.end())
         {
             CallLogFunc("[ERROR] Error while deinitializing SoundBank " AM_OS_CHAR_FMT " - sound bank not loaded.\n", filename);
             AMPLITUDE_ASSERT(0);
         }
-        if (findIt->second->GetRefCounter()->Decrement() == 0)
+        else
+        {
+            UnloadSoundBank(findIt->second);
+        }
+    }
+
+    void Engine::UnloadSoundBank(AmBankID id)
+    {
+        const auto findIt = _state->sound_bank_map.find(id);
+        if (findIt == _state->sound_bank_map.end())
+        {
+            CallLogFunc("[ERROR] Error while deinitializing SoundBank with ID %d - sound bank not loaded.\n", id);
+            AMPLITUDE_ASSERT(0);
+        }
+        else if (findIt->second->GetRefCounter()->Decrement() == 0)
         {
             findIt->second->Deinitialize(this);
+            _state->sound_bank_map.erase(id);
+        }
+    }
+
+    void Engine::UnloadSoundBanks()
+    {
+        for (const auto& item : _state->sound_bank_map)
+        {
+            item.second->Deinitialize(this);
         }
     }
 
     void Engine::StartLoadingSoundFiles()
     {
-        _state->loader.StartLoading();
+        _loader.StartLoading();
     }
 
-    bool Engine::TryFinalize()
+    bool Engine::TryFinalizeLoadingSoundFiles()
     {
-        return _state->loader.TryFinalize();
+        return _loader.TryFinalize();
     }
 
     bool BestListener(
@@ -407,27 +607,91 @@ namespace SparkyStudios::Audio::Amplitude
         float* distanceSquared,
         hmm_vec3* listenerSpaceLocation,
         const ListenerList& listeners,
-        const hmm_vec3& location)
+        const hmm_vec3& location,
+        eListenerFetchMode fetchMode)
     {
         if (listeners.empty())
         {
             return false;
         }
 
-        auto listener = listeners.cbegin();
-        const hmm_mat4& mat = listener->GetInverseMatrix();
-        *listenerSpaceLocation = AM_Multiply(mat, AM_Vec4v(location, 1.0f)).XYZ;
-        *distanceSquared = AM_LengthSquared(*listenerSpaceLocation);
-        *bestListener = listener;
-        for (++listener; listener != listeners.cend(); ++listener)
+        const hmm_vec4 location4 = AM_Vec4v(location, 1.0f);
+
+        switch (fetchMode)
         {
-            const hmm_vec3 transformedLocation = AM_Multiply(listener->GetInverseMatrix(), AM_Vec4v(location, 1.0f)).XYZ;
-            if (const float magnitudeSquared = AM_LengthSquared(transformedLocation); magnitudeSquared < *distanceSquared)
+        default:
+            [[fallthrough]];
+        case eListenerFetchMode_None:
+            return false;
+
+        case eListenerFetchMode_Nearest:
+            [[fallthrough]];
+        case eListenerFetchMode_Farest:
             {
+                auto listener = listeners.cbegin();
+                *listenerSpaceLocation = AM_Multiply(listener->GetInverseMatrix(), location4).XYZ;
+                *distanceSquared = AM_LengthSquared(*listenerSpaceLocation);
                 *bestListener = listener;
-                *distanceSquared = magnitudeSquared;
-                *listenerSpaceLocation = transformedLocation;
+
+                for (++listener; listener != listeners.cend(); ++listener)
+                {
+                    const hmm_vec3 transformedLocation = AM_Multiply(listener->GetInverseMatrix(), location4).XYZ;
+                    if (const float magnitudeSquared = AM_LengthSquared(transformedLocation);
+                        fetchMode == eListenerFetchMode_Nearest ? magnitudeSquared < *distanceSquared : magnitudeSquared > *distanceSquared)
+                    {
+                        *bestListener = listener;
+                        *distanceSquared = magnitudeSquared;
+                        *listenerSpaceLocation = transformedLocation;
+                    }
+                }
             }
+            break;
+
+        case eListenerFetchMode_First:
+            {
+                auto listener = listeners.cbegin();
+                const hmm_mat4& mat = listener->GetInverseMatrix();
+                *listenerSpaceLocation = AM_Multiply(mat, location4).XYZ;
+                *distanceSquared = AM_LengthSquared(*listenerSpaceLocation);
+                *bestListener = listener;
+            }
+            break;
+
+        case eListenerFetchMode_Last:
+            {
+                auto listener = listeners.cend();
+                const hmm_mat4& mat = listener->GetInverseMatrix();
+                *listenerSpaceLocation = AM_Multiply(mat, location4).XYZ;
+                *distanceSquared = AM_LengthSquared(*listenerSpaceLocation);
+                *bestListener = listener;
+            }
+            break;
+
+        case eListenerFetchMode_Default:
+            {
+                ListenerInternalState* state = Engine::GetInstance()->GetDefaultListener().GetState();
+                if (state == nullptr)
+                {
+                    return false;
+                }
+
+                auto listener = listeners.cbegin();
+
+                for (; listener != listeners.cend(); ++listener)
+                {
+                    if (listener->GetId() == state->GetId())
+                    {
+                        const hmm_mat4& mat = state->GetInverseMatrix();
+                        *listenerSpaceLocation = AM_Multiply(mat, location4).XYZ;
+                        *distanceSquared = AM_LengthSquared(*listenerSpaceLocation);
+                        *bestListener = listener;
+                        return true;
+                    }
+                }
+
+                return false;
+            }
+            break;
         }
 
         return true;
@@ -441,12 +705,23 @@ namespace SparkyStudios::Audio::Amplitude
         }
 
         const hmm_vec3 direction = AM_Normalize(listenerSpaceLocation);
-        return AM_Vec2(AM_Dot(AM_Vec3(1, 0, 0), direction), AM_Dot(AM_Vec3(0, 0, 1), direction));
+
+        switch (amEngine->GetState()->up_axis)
+        {
+        default:
+        case eGameEngineUpAxis_Y:
+            return AM_Vec2(AM_Dot(AM_Vec3(1, 0, 0), direction), AM_Dot(AM_Vec3(0, 0, 1), direction));
+
+        case eGameEngineUpAxis_Z:
+            return AM_Vec2(AM_Dot(AM_Vec3(1, 0, 0), direction), AM_Dot(AM_Vec3(0, 1, 0), direction));
+        }
     }
 
-    static void CalculateGainAndPan(
+    static void CalculateGainPanPitch(
         float* gain,
         hmm_vec2* pan,
+        AmReal32* pitch,
+        const ChannelInternalState* channel,
         const float soundGain,
         const BusInternalState* bus,
         const Spatialization spatialization,
@@ -454,7 +729,8 @@ namespace SparkyStudios::Audio::Amplitude
         const Entity& entity,
         const hmm_vec3& location,
         const ListenerList& listeners,
-        const float userGain)
+        const float userGain,
+        eListenerFetchMode fetchMode)
     {
         *gain = soundGain * bus->GetGain() * userGain;
         if (spatialization == Spatialization_Position || spatialization == Spatialization_PositionOrientation)
@@ -462,32 +738,35 @@ namespace SparkyStudios::Audio::Amplitude
             ListenerList::const_iterator listener;
             float distanceSquared;
             hmm_vec3 listenerSpaceLocation;
-            if (BestListener(&listener, &distanceSquared, &listenerSpaceLocation, listeners, location))
+            if (BestListener(&listener, &distanceSquared, &listenerSpaceLocation, listeners, location, fetchMode))
             {
                 if (attenuation != nullptr)
                 {
                     if (spatialization == Spatialization_PositionOrientation)
                     {
                         AMPLITUDE_ASSERT(entity.Valid());
-                        *gain *= attenuation->GetGain(entity.GetState(), &*listener);
+                        *gain *= attenuation->GetGain(entity, Listener(const_cast<ListenerInternalState*>(&*listener)));
                     }
                     else
                     {
-                        *gain *= attenuation->GetGain(location, &*listener);
+                        *gain *= attenuation->GetGain(location, Listener(const_cast<ListenerInternalState*>(&*listener)));
                     }
                 }
 
                 *pan = CalculatePan(listenerSpaceLocation);
+                *pitch = channel != nullptr ? channel->GetDopplerFactor(listener->GetId()) : 1.0f;
             }
             else
             {
                 *gain = 0.0f;
                 *pan = AM_Vec2(0, 0);
+                *pitch = 1.0f;
             }
         }
         else
         {
             *pan = AM_Vec2(0, 0);
+            *pitch = 1.0f;
         }
     }
 
@@ -768,6 +1047,17 @@ namespace SparkyStudios::Audio::Amplitude
         return Channel(nullptr);
     }
 
+    void Engine::StopAll()
+    {
+        for (auto&& channel : _state->channel_state_memory)
+        {
+            if (channel.Valid() && channel.Playing())
+            {
+                channel.Halt();
+            }
+        }
+    }
+
     EventCanceler Engine::Trigger(EventHandle handle, const Entity& entity)
     {
         EventHandle event = handle;
@@ -922,7 +1212,7 @@ namespace SparkyStudios::Audio::Amplitude
     {
         const auto pair = std::find_if(
             _state->switch_container_map.begin(), _state->switch_container_map.end(),
-            [name](const auto& item)
+            [&name](const auto& item)
             {
                 return item.second->GetName() == name;
             });
@@ -961,7 +1251,7 @@ namespace SparkyStudios::Audio::Amplitude
     {
         const auto pair = std::find_if(
             _state->collection_map.begin(), _state->collection_map.end(),
-            [name](const auto& item)
+            [&name](const auto& item)
             {
                 return item.second->GetName() == name;
             });
@@ -1000,7 +1290,7 @@ namespace SparkyStudios::Audio::Amplitude
     {
         const auto pair = std::find_if(
             _state->sound_map.begin(), _state->sound_map.end(),
-            [name](const auto& item)
+            [&name](const auto& item)
             {
                 return item.second->GetName() == name;
             });
@@ -1039,7 +1329,7 @@ namespace SparkyStudios::Audio::Amplitude
     {
         const auto pair = std::find_if(
             _state->event_map.begin(), _state->event_map.end(),
-            [name](const auto& item)
+            [&name](const auto& item)
             {
                 return item.second->GetName() == name;
             });
@@ -1078,7 +1368,7 @@ namespace SparkyStudios::Audio::Amplitude
     {
         const auto pair = std::find_if(
             _state->attenuation_map.begin(), _state->attenuation_map.end(),
-            [name](const auto& item)
+            [&name](const auto& item)
             {
                 return item.second->GetName() == name;
             });
@@ -1117,7 +1407,7 @@ namespace SparkyStudios::Audio::Amplitude
     {
         const auto pair = std::find_if(
             _state->switch_map.begin(), _state->switch_map.end(),
-            [name](const auto& item)
+            [&name](const auto& item)
             {
                 return item.second->GetName() == name;
             });
@@ -1156,7 +1446,7 @@ namespace SparkyStudios::Audio::Amplitude
     {
         const auto pair = std::find_if(
             _state->rtpc_map.begin(), _state->rtpc_map.end(),
-            [name](const auto& item)
+            [&name](const auto& item)
             {
                 return item.second->GetName() == name;
             });
@@ -1195,7 +1485,7 @@ namespace SparkyStudios::Audio::Amplitude
     {
         const auto pair = std::find_if(
             _state->effect_map.begin(), _state->effect_map.end(),
-            [name](const auto& item)
+            [&name](const auto& item)
             {
                 return item.second->GetName() == name;
             });
@@ -1251,25 +1541,97 @@ namespace SparkyStudios::Audio::Amplitude
         return _state->mute;
     }
 
+    void Engine::SetDefaultListener(const Listener* listener)
+    {
+        if (listener->Valid())
+        {
+            _defaultListener = listener->GetState();
+        }
+    }
+
+    void Engine::SetDefaultListener(AmListenerID id)
+    {
+        if (id != kAmInvalidObjectId)
+        {
+            if (const auto findIt = std::find_if(
+                    _state->listener_state_memory.begin(), _state->listener_state_memory.end(),
+                    [&id](const ListenerInternalState& state)
+                    {
+                        return state.GetId() == id;
+                    });
+                findIt != _state->listener_state_memory.end())
+            {
+                _defaultListener = (&*findIt);
+            }
+        }
+    }
+
+    Listener Engine::GetDefaultListener()
+    {
+        return Listener(_defaultListener);
+    }
+
     Listener Engine::AddListener(AmListenerID id)
     {
         if (_state->listener_state_free_list.empty())
         {
             return Listener(nullptr);
         }
-        ListenerInternalState* listener = _state->listener_state_free_list.back();
-        listener->SetId(id);
-        _state->listener_state_free_list.pop_back();
-        _state->listener_list.push_back(*listener);
-        return Listener(listener);
+
+        if (Listener item = GetListener(id); item.Valid())
+        {
+            return item;
+        }
+        else
+        {
+            ListenerInternalState* listener = _state->listener_state_free_list.back();
+            listener->SetId(id);
+            _state->listener_state_free_list.pop_back();
+            _state->listener_list.push_back(*listener);
+            return Listener(listener);
+        }
+    }
+
+    Listener Engine::GetListener(AmListenerID id)
+    {
+        if (const auto findIt = std::find_if(
+                _state->listener_state_memory.begin(), _state->listener_state_memory.end(),
+                [&id](const ListenerInternalState& state)
+                {
+                    return state.GetId() == id;
+                });
+            findIt != _state->listener_state_memory.end())
+        {
+            return Listener(&*findIt);
+        }
+
+        return Listener(nullptr);
+    }
+
+    void Engine::RemoveListener(AmListenerID id)
+    {
+        if (const auto findIt = std::find_if(
+                _state->listener_state_memory.begin(), _state->listener_state_memory.end(),
+                [&id](const ListenerInternalState& state)
+                {
+                    return state.GetId() == id;
+                });
+            findIt == _state->listener_state_memory.end())
+        {
+            findIt->SetId(kAmInvalidObjectId);
+            findIt->node.remove();
+            _state->listener_state_free_list.push_back(&*findIt);
+        }
     }
 
     void Engine::RemoveListener(const Listener* listener)
     {
-        AMPLITUDE_ASSERT(listener->Valid());
-        listener->GetState()->SetId(kAmInvalidObjectId);
-        listener->GetState()->node.remove();
-        _state->listener_state_free_list.push_back(listener->GetState());
+        if (listener->Valid())
+        {
+            listener->GetState()->SetId(kAmInvalidObjectId);
+            listener->GetState()->node.remove();
+            _state->listener_state_free_list.push_back(listener->GetState());
+        }
     }
 
     Entity Engine::AddEntity(AmEntityID id)
@@ -1278,19 +1640,124 @@ namespace SparkyStudios::Audio::Amplitude
         {
             return Entity(nullptr);
         }
-        EntityInternalState* entity = _state->entity_state_free_list.back();
-        entity->SetId(id);
-        _state->entity_state_free_list.pop_back();
-        _state->entity_list.push_back(*entity);
-        return Entity(entity);
+
+        if (Entity item = GetEntity(id); item.Valid())
+        {
+            return item;
+        }
+        else
+        {
+            EntityInternalState* entity = _state->entity_state_free_list.back();
+            entity->SetId(id);
+            _state->entity_state_free_list.pop_back();
+            _state->entity_list.push_back(*entity);
+            return Entity(entity);
+        }
+    }
+
+    Entity Engine::GetEntity(AmEntityID id)
+    {
+        if (const auto findIt = std::find_if(
+                _state->entity_state_memory.begin(), _state->entity_state_memory.end(),
+                [&id](const EntityInternalState& state)
+                {
+                    return state.GetId() == id;
+                });
+            findIt != _state->entity_state_memory.end())
+        {
+            return Entity(&*findIt);
+        }
+
+        return Entity(nullptr);
     }
 
     void Engine::RemoveEntity(const Entity* entity)
     {
-        AMPLITUDE_ASSERT(entity->Valid());
-        entity->GetState()->SetId(kAmInvalidObjectId);
-        entity->GetState()->node.remove();
-        _state->entity_state_free_list.push_back(entity->GetState());
+        if (entity->Valid())
+        {
+            entity->GetState()->SetId(kAmInvalidObjectId);
+            entity->GetState()->node.remove();
+            _state->entity_state_free_list.push_back(entity->GetState());
+        }
+    }
+
+    void Engine::RemoveEntity(AmEntityID id)
+    {
+        if (const auto findIt = std::find_if(
+                _state->entity_state_memory.begin(), _state->entity_state_memory.end(),
+                [&id](const EntityInternalState& state)
+                {
+                    return state.GetId() == id;
+                });
+            findIt == _state->entity_state_memory.end())
+        {
+            findIt->SetId(kAmInvalidObjectId);
+            findIt->node.remove();
+            _state->entity_state_free_list.push_back(&*findIt);
+        }
+    }
+
+    Environment Engine::AddEnvironment(AmEnvironmentID id)
+    {
+        if (_state->environment_state_free_list.empty())
+        {
+            return Environment(nullptr);
+        }
+
+        if (Environment item = GetEnvironment(id); item.Valid())
+        {
+            return item;
+        }
+        else
+        {
+            EnvironmentInternalState* environment = _state->environment_state_free_list.back();
+            environment->SetId(id);
+            _state->environment_state_free_list.pop_back();
+            _state->environment_list.push_back(*environment);
+            return Environment(environment);
+        }
+    }
+
+    Environment Engine::GetEnvironment(AmEnvironmentID id)
+    {
+        if (const auto findIt = std::find_if(
+                _state->environment_state_memory.begin(), _state->environment_state_memory.end(),
+                [&id](const EnvironmentInternalState& state)
+                {
+                    return state.GetId() == id;
+                });
+            findIt != _state->environment_state_memory.end())
+        {
+            return Environment(&*findIt);
+        }
+
+        return Environment(nullptr);
+    }
+
+    void Engine::RemoveEnvironment(const Environment* environment)
+    {
+        if (environment->Valid())
+        {
+            environment->GetState()->SetId(kAmInvalidObjectId);
+            environment->GetState()->node.remove();
+            _state->environment_state_free_list.push_back(environment->GetState());
+        }
+    }
+
+    void Engine::RemoveEnvironment(AmEnvironmentID id)
+    {
+        if (const auto findIt = std::find_if(
+                _state->environment_state_memory.begin(), _state->environment_state_memory.end(),
+                [&id](const EnvironmentInternalState& state)
+                {
+                    return state.GetId() == id;
+                });
+            findIt == _state->environment_state_memory.end())
+        {
+            findIt->SetId(kAmInvalidObjectId);
+            findIt->node.remove();
+            _state->environment_state_free_list.push_back(&*findIt);
+        }
     }
 
     Bus Engine::FindBus(AmString name) const
@@ -1354,12 +1821,14 @@ namespace SparkyStudios::Audio::Amplitude
 
             float gain;
             hmm_vec2 pan;
-            CalculateGainAndPan(
-                &gain, &pan, switchContainer->GetGain().GetValue(), switchContainer->GetBus(), definition->spatialization(),
-                switchContainer->GetAttenuation(), channel->GetEntity(), channel->GetLocation(), state->listener_list,
-                channel->GetUserGain());
+            AmReal32 pitch;
+            CalculateGainPanPitch(
+                &gain, &pan, &pitch, channel, switchContainer->GetGain().GetValue(), switchContainer->GetBus(),
+                definition->spatialization(), switchContainer->GetAttenuation(), channel->GetEntity(), channel->GetLocation(),
+                state->listener_list, channel->GetUserGain(), state->listener_fetch_mode);
             channel->SetGain(gain);
             channel->SetPan(pan);
+            channel->SetPitch(pitch);
         }
         else if (const Collection* collection = channel->GetCollection(); collection != nullptr)
         {
@@ -1367,11 +1836,14 @@ namespace SparkyStudios::Audio::Amplitude
 
             float gain;
             hmm_vec2 pan;
-            CalculateGainAndPan(
-                &gain, &pan, collection->GetGain().GetValue(), collection->GetBus(), definition->spatialization(),
-                collection->GetAttenuation(), channel->GetEntity(), channel->GetLocation(), state->listener_list, channel->GetUserGain());
+            AmReal32 pitch;
+            CalculateGainPanPitch(
+                &gain, &pan, &pitch, channel, collection->GetGain().GetValue(), collection->GetBus(), definition->spatialization(),
+                collection->GetAttenuation(), channel->GetEntity(), channel->GetLocation(), state->listener_list, channel->GetUserGain(),
+                state->listener_fetch_mode);
             channel->SetGain(gain);
             channel->SetPan(pan);
+            channel->SetPitch(pitch);
         }
         else if (const Sound* sound = channel->GetSound(); sound != nullptr)
         {
@@ -1379,11 +1851,14 @@ namespace SparkyStudios::Audio::Amplitude
 
             float gain;
             hmm_vec2 pan;
-            CalculateGainAndPan(
-                &gain, &pan, sound->GetGain().GetValue(), sound->GetBus(), definition->spatialization(), sound->GetAttenuation(),
-                channel->GetEntity(), channel->GetLocation(), state->listener_list, channel->GetUserGain());
+            AmReal32 pitch;
+            CalculateGainPanPitch(
+                &gain, &pan, &pitch, channel, sound->GetGain().GetValue(), sound->GetBus(), definition->spatialization(),
+                sound->GetAttenuation(), channel->GetEntity(), channel->GetLocation(), state->listener_list, channel->GetUserGain(),
+                state->listener_fetch_mode);
             channel->SetGain(gain);
             channel->SetPan(pan);
+            channel->SetPitch(pitch);
         }
         else
         {
@@ -1458,6 +1933,24 @@ namespace SparkyStudios::Audio::Amplitude
             state.Update();
         }
 
+        for (auto&& state : _state->environment_list)
+        {
+            state.Update();
+        }
+
+        for (auto&& state : _state->entity_list)
+        {
+            state.Update();
+
+            if (!_state->track_environments)
+            {
+                for (auto&& env : _state->environment_list)
+                {
+                    state.SetEnvironmentFactor(env.GetId(), env.GetFactor(Entity(&state)));
+                }
+            }
+        }
+
         for (auto&& bus : _state->buses)
         {
             bus.ResetDuckGain();
@@ -1518,11 +2011,6 @@ namespace SparkyStudios::Audio::Amplitude
         return _state->version;
     }
 
-    EngineInternalState* Engine::GetState() const
-    {
-        return _state;
-    }
-
     const EngineConfigDefinition* Engine::GetEngineConfigDefinition() const
     {
         return Amplitude::GetEngineConfigDefinition(_configSrc.c_str());
@@ -1532,6 +2020,40 @@ namespace SparkyStudios::Audio::Amplitude
     {
         return _audioDriver;
     }
+
+#pragma region Engine State
+
+    EngineInternalState* Engine::GetState() const
+    {
+        return _state;
+    }
+
+    AmReal32 Engine::GetSoundSpeed() const
+    {
+        return _state->sound_speed;
+    }
+
+    AmReal32 Engine::GetDopplerFactor() const
+    {
+        return _state->doppler_factor;
+    }
+
+    AmUInt32 Engine::GetSamplesPerStream() const
+    {
+        return _state->samples_per_stream;
+    }
+
+    AmUInt16 Engine::GetSampleRateConversionQuality() const
+    {
+        return static_cast<AmUInt16>(_state->sample_rate_conversion_quality);
+    }
+
+    bool Engine::IsGameTrackingEnvironmentAmounts() const
+    {
+        return _state->track_environments;
+    }
+
+#pragma endregion
 
     Channel Engine::PlayScopedSwitchContainer(
         SwitchContainerHandle handle, const Entity& entity, const hmm_vec3& location, const float userGain) const
@@ -1559,9 +2081,10 @@ namespace SparkyStudios::Audio::Amplitude
         // Find where it belongs in the list.
         float gain;
         hmm_vec2 pan;
-        CalculateGainAndPan(
-            &gain, &pan, handle->GetGain().GetValue(), handle->GetBus(), definition->spatialization(), handle->GetAttenuation(), entity,
-            location, _state->listener_list, userGain);
+        AmReal32 pitch;
+        CalculateGainPanPitch(
+            &gain, &pan, &pitch, nullptr, handle->GetGain().GetValue(), handle->GetBus(), definition->spatialization(),
+            handle->GetAttenuation(), entity, location, _state->listener_list, userGain, _state->listener_fetch_mode);
         const float priority = gain * handle->GetPriority().GetValue();
         const auto insertionPoint = FindInsertionPoint(&_state->playing_channel_list, priority);
 
@@ -1595,6 +2118,7 @@ namespace SparkyStudios::Audio::Amplitude
 
         newChannel->SetGain(gain);
         newChannel->SetPan(pan);
+        newChannel->SetPitch(pitch);
         newChannel->SetLocation(location);
 
         return Channel(newChannel);
@@ -1626,9 +2150,10 @@ namespace SparkyStudios::Audio::Amplitude
         // Find where it belongs in the list.
         float gain;
         hmm_vec2 pan;
-        CalculateGainAndPan(
-            &gain, &pan, handle->GetGain().GetValue(), handle->GetBus(), definition->spatialization(), handle->GetAttenuation(), entity,
-            location, _state->listener_list, userGain);
+        AmReal32 pitch;
+        CalculateGainPanPitch(
+            &gain, &pan, &pitch, nullptr, handle->GetGain().GetValue(), handle->GetBus(), definition->spatialization(),
+            handle->GetAttenuation(), entity, location, _state->listener_list, userGain, _state->listener_fetch_mode);
         const float priority = gain * handle->GetPriority().GetValue();
         const auto insertionPoint = FindInsertionPoint(&_state->playing_channel_list, priority);
 
@@ -1662,6 +2187,7 @@ namespace SparkyStudios::Audio::Amplitude
 
         newChannel->SetGain(gain);
         newChannel->SetPan(pan);
+        newChannel->SetPitch(pitch);
         newChannel->SetLocation(location);
 
         return Channel(newChannel);
@@ -1692,9 +2218,10 @@ namespace SparkyStudios::Audio::Amplitude
         // Find where it belongs in the list.
         float gain;
         hmm_vec2 pan;
-        CalculateGainAndPan(
-            &gain, &pan, handle->GetGain().GetValue(), handle->GetBus(), definition->spatialization(), handle->GetAttenuation(), entity,
-            location, _state->listener_list, userGain);
+        AmReal32 pitch;
+        CalculateGainPanPitch(
+            &gain, &pan, &pitch, nullptr, handle->GetGain().GetValue(), handle->GetBus(), definition->spatialization(),
+            handle->GetAttenuation(), entity, location, _state->listener_list, userGain, _state->listener_fetch_mode);
         const float priority = gain * handle->GetPriority().GetValue();
         const auto insertionPoint = FindInsertionPoint(&_state->playing_channel_list, priority);
 
@@ -1728,6 +2255,7 @@ namespace SparkyStudios::Audio::Amplitude
 
         newChannel->SetGain(gain);
         newChannel->SetPan(pan);
+        newChannel->SetPitch(pitch);
         newChannel->SetLocation(location);
 
         return Channel(newChannel);

@@ -105,7 +105,8 @@ namespace SparkyStudios::Audio::Amplitude
         {
             for (AmUInt16 c = 0; c < channels; c++)
             {
-                buffer[i + c * frames] = ProcessSample(buffer[i + c * frames], c, sampleRate);
+                const AmUInt64 o = i + c * frames;
+                buffer[o] = ProcessSample(buffer[o], c, sampleRate);
             }
 
             _prevOffset = _offset;
@@ -124,7 +125,8 @@ namespace SparkyStudios::Audio::Amplitude
         {
             for (AmUInt16 c = 0; c < channels; c++)
             {
-                buffer[i * channels + c] = ProcessSample(buffer[i * channels + c], c, sampleRate);
+                const AmUInt64 o = i * channels + c;
+                buffer[o] = ProcessSample(buffer[o], c, sampleRate);
             }
 
             _prevOffset = _offset;
@@ -140,16 +142,16 @@ namespace SparkyStudios::Audio::Amplitude
         /* */ AmInt32 y;
 
         // clang-format off
-        const AmInt32 p = AmFloatToFixedPoint(m_parameters[EchoFilter::ATTRIBUTE_FILTER]) * _buffer[_prevOffset + o] >> kAmFixedPointShift;
-        const AmInt32 q = AmFloatToFixedPoint(1.0f - m_parameters[EchoFilter::ATTRIBUTE_FILTER]) * _buffer[_offset + o] >> kAmFixedPointShift;
+        const AmInt32 p = AmFloatToFixedPoint(m_parameters[EchoFilter::ATTRIBUTE_FILTER]) * _buffer[_prevOffset + o] >> kAmFixedPointBits;
+        const AmInt32 q = AmFloatToFixedPoint(1.0f - m_parameters[EchoFilter::ATTRIBUTE_FILTER]) * _buffer[_offset + o] >> kAmFixedPointBits;
 
         y = p + q;
-        y = x + (y * AmFloatToFixedPoint(m_parameters[EchoFilter::ATTRIBUTE_DECAY]) >> kAmFixedPointShift);
+        y = x + (y * AmFloatToFixedPoint(m_parameters[EchoFilter::ATTRIBUTE_DECAY]) >> kAmFixedPointBits);
         // clang-format on
 
         _buffer[_offset + o] = y;
 
-        y = x + ((y - x) * AmFloatToFixedPoint(m_parameters[EchoFilter::ATTRIBUTE_WET]) >> kAmFixedPointShift);
+        y = x + ((y - x) * AmFloatToFixedPoint(m_parameters[EchoFilter::ATTRIBUTE_WET]) >> kAmFixedPointBits);
         y = AM_CLAMP(y, INT16_MIN, INT16_MAX);
 
         return static_cast<AmInt16>(y);

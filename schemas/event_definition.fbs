@@ -20,26 +20,16 @@ namespace SparkyStudios.Audio.Amplitude;
 enum EventActionType: byte {
   /// Do nothing.
   None,
-  /// Plays the sound with the given ID.
-  PlaySound,
-  /// Pauses the sound with the given ID.
-  PauseSound,
-  /// Resumes the sound with the given ID.
-  ResumeSound,
-  /// Stops the sound with the given ID.
-  StopSound,
-  /// Seeks the sound with the given ID at the given position.
-  SeekSound,
-  /// Plays the collection with the given ID.
-  PlayCollection,
-  /// Pauses the collection with the given ID.
-  PauseCollection,
-  /// Resumes the collection with the given ID.
-  ResumeCollection,
-  /// Stops the collection with the given ID.
-  StopCollection,
-  /// Seeks the collection with the given ID at the given position.
-  SeekCollection,
+  /// Plays the sound object with the given ID.
+  Play,
+  /// Pauses the sound object with the given ID.
+  Pause,
+  /// Resumes the sound object with the given ID.
+  Resume,
+  /// Stops playing the sound object with the given ID.
+  Stop,
+  /// Seeks the sound object with the given ID at the given position.
+  Seek,
   /// Mutes the bus with the given ID.
   MuteBus,
   /// Unmutes the bus with the given ID.

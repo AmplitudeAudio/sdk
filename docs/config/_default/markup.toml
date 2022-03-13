@@ -11,7 +11,7 @@
   lineNos = true
   lineNumbersInTable = false
   noClasses = false
-  style = "monokai"
+  style = "onedark"
   tabWidth = 2
 [tableOfContents]
   endLevel = 4

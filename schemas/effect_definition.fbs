@@ -30,6 +30,9 @@ enum EffectKind: byte {
     Freeverb,
     /// Applies the RobotizeFilter.
     Robotize,
+    /// Applies BiquadResonant filters, such as Low Pass
+    /// High Pass, or Band Pass filter.
+    BiquadResonant,
 }
 
 /// An effect to apply on the sound during playback.

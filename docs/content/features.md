@@ -11,6 +11,7 @@ description = "Browse the main features of the Amplitude Audio SDK and discover 
 - [Summary](#summary)
 - [Data-driven Development](#data-driven-development)
 - [Drivers and Codecs](#drivers-and-codecs)
+- [Customizable Pipeline](#customizable-pipeline)
 - [Soundbanks Management](#soundbanks-management)
 - [Sound Objects](#sound-objects)
 - [Game and Engine Synchronization](#game-and-engine-synchronization)
@@ -21,6 +22,7 @@ description = "Browse the main features of the Amplitude Audio SDK and discover 
 - [Sound Events](#sound-events)
 - [Buses Management and Auto-ducking](#buses-management-and-auto-ducking)
 - [Channel Priority](#channel-priority)
+- [ADPCM Compression and sample rate conversion](#adpcm-compression-and-sample-rate-conversion)
 
 {{< /column >}}
 
@@ -37,6 +39,14 @@ Amplitude uses `.json` files to define everything, from a simple sound file to a
 ## Drivers and Codecs
 
 Amplitude allows you to have total control over how to communicate with the physical audio device (using an [Driver] implementation) and how to decode/encode audio samples (using [Codec] implementations). The library provides you a default [Driver] implementation using [MiniAudio](http://miniaud.io) for cross-platform support, and by default decodes FLAC, MP3, OGG, and WAV audio samples.
+
+{{< /column >}}
+
+{{< column "mt-1" >}}
+
+## Customizable Pipeline
+
+The Amplimix Pipeline define how and when Amplitude process effects, environmental sounds, obstruction, occlusion, and more. With Amplitude, you can create your own custom Pipeline to tweak how the engine is processing the audio. You have the ability to create and register custom processors in the Engine using the [Pipeline] API.
 
 {{< /column >}}
 
@@ -121,7 +131,7 @@ Sound events are a way to trigger a set of actions in the game at runtime. For e
 - **Pause**: Pause sound objects, you can specify the list of sound objects to pause using their ID.
 - **Resume**: Resume sound objects previously paused, you can specify the list of sound objects to resume using their ID.
 - **Stop**: Stop sound objects, you can specify the list of sound objects to stop using their ID. Already stopped sound objects will be skipped.
-- Seek: Seeks sound objects playback to the specified position. You can specify the list of sound objects to seek using their ID.
+- **Seek**: Seeks sound objects playback to the specified position. You can specify the list of sound objects to seek using their ID.
 - **MuteBus**: Completely mute a bus. You can specify the list of buses to mute using their ID.
 - **UnmuteBus**: Unmute previously muted buses. You can specify the list of buses to unmute using their ID.
 
@@ -142,4 +152,13 @@ When you play a sound object, a channel is produced. That channel is sent to a b
 In your game you may have multiple sound object playing at the same time, which can be more than what the game can handle. Amplitude will manage the priority of each audio channel and only drop the least important channels when too many simultaneous streams play at once. The number of simultaneous active and virtual channels can be configured for the Engine.
 
 {{< /column >}}
+
+{{< column "mt-1" >}}
+
+## ADPCM Compression and sample rate conversion
+
+Amplitude gives you a command line tool called **amac** (**Am**plitude **A**udio **C**ompressor). It allows to compress an audio sample with an high-quality ADPCM compression, and can optionally convert the sample rate. It's highly recommended to use **amac** when releasing a project running Amplitude.
+
+{{< /column >}}
+
 {{< /block >}}

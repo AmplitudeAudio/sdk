@@ -19,6 +19,30 @@
 
 namespace SparkyStudios::Audio::Amplitude::Codecs
 {
+    static void* onMalloc(size_t sz, void* pUserData)
+    {
+        return amMemory->Malloc(MemoryPoolKind::Codec, sz);
+    }
+
+    static void* onRealloc(void* p, size_t sz, void* pUserData)
+    {
+        return amMemory->Realloc(MemoryPoolKind::Codec, p, sz);
+    }
+
+    static void onFree(void* p, void* pUserData)
+    {
+        amMemory->Free(MemoryPoolKind::Codec, p);
+    }
+
+    FLACCodec::FLACCodec()
+        : Codec("flac")
+        , m_allocationCallbacks()
+    {
+        m_allocationCallbacks.onFree = onFree;
+        m_allocationCallbacks.onMalloc = onMalloc;
+        m_allocationCallbacks.onRealloc = onRealloc;
+    }
+
     bool FLACCodec::FLACDecoder::Open(AmOsString filePath)
     {
         if (!m_codec->CanHandleFile(filePath))
@@ -27,10 +51,12 @@ namespace SparkyStudios::Audio::Amplitude::Codecs
             return false;
         }
 
+        const auto* codec = static_cast<const FLACCodec*>(m_codec);
+
 #if defined(AM_WCHAR_SUPPORTED)
-        _flac = drflac_open_file_w(filePath, nullptr);
+        _flac = drflac_open_file_w(filePath, &codec->m_allocationCallbacks);
 #else
-        _flac = drflac_open_file(filePath, nullptr);
+        _flac = drflac_open_file(filePath, &codec->m_allocationCallbacks);
 #endif
         if (_flac == nullptr)
         {
@@ -70,7 +96,7 @@ namespace SparkyStudios::Audio::Amplitude::Codecs
             return 0;
         }
 
-        if (drflac_seek_to_pcm_frame(_flac, 0) != DRFLAC_TRUE)
+        if (!Seek(0))
         {
             return 0;
         }
@@ -114,7 +140,7 @@ namespace SparkyStudios::Audio::Amplitude::Codecs
         return true;
     }
 
-    AmUInt64 FLACCodec::FLACEncoder::Write(AudioBuffer in, AmUInt64 offset, AmUInt64 length)
+    AmUInt64 FLACCodec::FLACEncoder::Write(AmVoidPtr in, AmUInt64 offset, AmUInt64 length)
     {
         return 0;
     }
@@ -134,9 +160,9 @@ namespace SparkyStudios::Audio::Amplitude::Codecs
         // TODO: Maybe check by extension instead?
 
 #if defined(AM_WCHAR_SUPPORTED)
-        drflac* flac = drflac_open_file_w(filePath, nullptr);
+        drflac* flac = drflac_open_file_w(filePath, &m_allocationCallbacks);
 #else
-        drflac* flac = drflac_open_file(filePath, nullptr);
+        drflac* flac = drflac_open_file(filePath, &m_allocationCallbacks);
 #endif
 
         if (flac != nullptr)

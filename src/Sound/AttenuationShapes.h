@@ -19,171 +19,78 @@
 
 #include <SparkyStudios/Audio/Amplitude/Core/Common.h>
 
+#include <SparkyStudios/Audio/Amplitude/Core/Entity.h>
 #include <SparkyStudios/Audio/Amplitude/Core/Listener.h>
 #include <SparkyStudios/Audio/Amplitude/Sound/Attenuation.h>
 
-#include <Core/EntityInternalState.h>
-#include <Core/ListenerInternalState.h>
 #include <SparkyStudios/Audio/Amplitude/Math/Curve.h>
 
 #include "attenuation_definition_generated.h"
 
 namespace SparkyStudios::Audio::Amplitude
 {
-    class ConeAttenuationShape : public AttenuationShape
+    class ConeAttenuationZone
+        : public AttenuationZone
+        , public ConeZone
     {
     public:
-        explicit ConeAttenuationShape(const ConeAttenuationSettings* settings)
-            : AttenuationShape()
-        {
-            _innerRadius = settings->inner_radius();
-            _outerRadius = settings->outer_radius();
-            _innerHeight = settings->inner_height();
-            _outerHeight = settings->outer_height();
-        }
+        explicit ConeAttenuationZone(const ConeZoneSettings* settings)
+            : AttenuationZone()
+            , ConeZone(
+                  new ConeShape(settings->inner()->radius(), settings->inner()->height()),
+                  new ConeShape(settings->outer()->radius(), settings->outer()->height()))
+        {}
 
-        float GetAttenuationFactor(const Attenuation*, const hmm_vec3& soundLocation, const ListenerInternalState* listener) override;
-        float GetAttenuationFactor(const Attenuation*, const EntityInternalState* entity, const ListenerInternalState* listener) override;
-        [[nodiscard]] float GetInnerRadius() const;
-        [[nodiscard]] float GetOuterRadius() const;
-        [[nodiscard]] float GetInnerHeight() const;
-        [[nodiscard]] float GetOuterHeight() const;
-
-    private:
-        float _innerRadius;
-        float _outerRadius;
-        float _innerHeight;
-        float _outerHeight;
+        float GetAttenuationFactor(const Attenuation*, const hmm_vec3& soundLocation, const Listener& listener) override;
+        float GetAttenuationFactor(const Attenuation*, const Entity& entity, const Listener& listener) override;
     };
 
-    class SphereAttenuationShape : public AttenuationShape
+    class SphereAttenuationZone
+        : public AttenuationZone
+        , public SphereZone
     {
     public:
-        explicit SphereAttenuationShape(const SphereAttenuationSettings* settings)
-            : AttenuationShape()
-        {
-            _innerRadius = settings->inner_radius();
-            _outerRadius = settings->outer_radius();
-        }
+        explicit SphereAttenuationZone(const SphereZoneSettings* settings)
+            : AttenuationZone()
+            , SphereZone(new SphereShape(settings->inner()->radius()), new SphereShape(settings->outer()->radius()))
+        {}
 
-        float GetAttenuationFactor(const Attenuation*, const hmm_vec3& soundLocation, const ListenerInternalState* listener) override;
-        float GetAttenuationFactor(const Attenuation*, const EntityInternalState* entity, const ListenerInternalState* listener) override;
-
-        [[nodiscard]] float GetInnerRadius() const
-        {
-            return _innerRadius;
-        }
-
-        [[nodiscard]] float GetOuterRadius() const
-        {
-            return _outerRadius;
-        }
-
-    private:
-        float _innerRadius;
-        float _outerRadius;
+        float GetAttenuationFactor(const Attenuation*, const hmm_vec3& soundLocation, const Listener& listener) override;
+        float GetAttenuationFactor(const Attenuation*, const Entity& entity, const Listener& listener) override;
     };
 
-    class BoxAttenuationShape : public AttenuationShape
+    class BoxAttenuationZone
+        : public AttenuationZone
+        , public BoxZone
     {
     public:
-        explicit BoxAttenuationShape(const BoxAttenuationSettings* settings)
-            : AttenuationShape()
-        {
-            _innerHalfHeight = settings->inner_half_height();
-            _outerHalfHeight = settings->outer_half_height();
-            _innerHalfWidth = settings->inner_half_width();
-            _outerHalfWidth = settings->outer_half_width();
-            _innerHalfDepth = settings->inner_half_depth();
-            _outerHalfDepth = settings->outer_half_depth();
-        }
+        explicit BoxAttenuationZone(const BoxZoneSettings* settings)
+            : AttenuationZone()
+            , BoxZone(
+                  new BoxShape(settings->inner()->half_width(), settings->inner()->half_height(), settings->inner()->half_depth()),
+                  new BoxShape(settings->outer()->half_width(), settings->outer()->half_height(), settings->outer()->half_depth()))
+        {}
 
-        float GetAttenuationFactor(const Attenuation*, const hmm_vec3& soundLocation, const ListenerInternalState* listener) override;
-        float GetAttenuationFactor(const Attenuation*, const EntityInternalState* entity, const ListenerInternalState* listener) override;
-
-        [[nodiscard]] float GetInnerHalfHeight() const
-        {
-            return _innerHalfHeight;
-        }
-
-        [[nodiscard]] float GetOuterHalfHeight() const
-        {
-            return _outerHalfHeight;
-        }
-
-        [[nodiscard]] float GetInnerHalfWidth() const
-        {
-            return _innerHalfWidth;
-        }
-
-        [[nodiscard]] float GetOuterHalfWidth() const
-        {
-            return _outerHalfWidth;
-        }
-
-        [[nodiscard]] float GetInnerHalfDepth() const
-        {
-            return _innerHalfDepth;
-        }
-
-        [[nodiscard]] float GetOuterHalfDepth() const
-        {
-            return _outerHalfDepth;
-        }
-
-    private:
-        float _getFactor(const hmm_vec3& soundLocation, const ListenerInternalState* listener, hmm_mat4 lookAt);
-
-        float _innerHalfHeight;
-        float _outerHalfHeight;
-        float _innerHalfWidth;
-        float _outerHalfWidth;
-        float _innerHalfDepth;
-        float _outerHalfDepth;
+        float GetAttenuationFactor(const Attenuation*, const hmm_vec3& soundLocation, const Listener& listener) override;
+        float GetAttenuationFactor(const Attenuation*, const Entity& entity, const Listener& listener) override;
     };
 
-    class CapsuleAttenuationShape : public AttenuationShape
+    class CapsuleAttenuationZone
+        : public AttenuationZone
+        , public CapsuleZone
     {
     public:
-        explicit CapsuleAttenuationShape(const CapsuleAttenuationSettings* settings)
-            : AttenuationShape()
-        {
-            _innerRadius = settings->inner_radius();
-            _outerRadius = settings->outer_radius();
-            _innerHalfHeight = settings->inner_half_height();
-            _outerHalfHeight = settings->outer_half_height();
-        }
+        explicit CapsuleAttenuationZone(const CapsuleZoneSettings* settings)
+            : AttenuationZone()
+            , CapsuleZone(
+                  new CapsuleShape(settings->inner()->radius(), settings->inner()->half_height()),
+                  new CapsuleShape(settings->outer()->radius(), settings->outer()->half_height()))
+        {}
 
-        float GetAttenuationFactor(const Attenuation*, const hmm_vec3& soundLocation, const ListenerInternalState* listener) override;
-        float GetAttenuationFactor(const Attenuation*, const EntityInternalState* entity, const ListenerInternalState* listener) override;
+        float GetAttenuationFactor(const Attenuation*, const hmm_vec3& soundLocation, const Listener& listener) override;
+        float GetAttenuationFactor(const Attenuation*, const Entity& entity, const Listener& listener) override;
 
-        [[nodiscard]] float GetInnerRadius() const
-        {
-            return _innerRadius;
-        }
-
-        [[nodiscard]] float GetOuterRadius() const
-        {
-            return _outerRadius;
-        }
-
-        [[nodiscard]] float GetInnerHalfHeight() const
-        {
-            return _innerHalfHeight;
-        }
-
-        [[nodiscard]] float GetOuterHalfHeight() const
-        {
-            return _outerHalfHeight;
-        }
-
-    private:
-        float _getFactor(const Attenuation* attenuation, const hmm_vec3& soundLocation, const ListenerInternalState* listener, hmm_mat4 lookAt);
-
-        float _innerRadius;
-        float _outerRadius;
-        float _innerHalfHeight;
-        float _outerHalfHeight;
+        float GetFactor(const Attenuation* attenuation, const hmm_vec3& soundLocation, const Listener& listener, hmm_mat4 lookAt);
     };
 } // namespace SparkyStudios::Audio::Amplitude
 

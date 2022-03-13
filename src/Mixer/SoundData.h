@@ -19,16 +19,25 @@
 
 #include <SparkyStudios/Audio/Amplitude/Core/Common.h>
 
+#include <Utils/Utils.h>
+
 namespace SparkyStudios::Audio::Amplitude
 {
     struct SoundChunk
     {
         AmUInt64 length;
         AmUInt64 frames;
+        AmSize size;
 
         AudioBuffer buffer;
 
-        static SoundChunk* CreateChunk(AmUInt64 frames, AmUInt16 channels);
+#if defined(AM_SSE_INTRINSICS)
+        AmUInt64 samplesPerVector;
+#endif // AM_SSE_INTRINSICS
+
+        MemoryPoolKind memoryPool;
+
+        static SoundChunk* CreateChunk(AmUInt64 frames, AmUInt16 channels, MemoryPoolKind pool = MemoryPoolKind::SoundData);
         static void DestroyChunk(SoundChunk* chunk);
     };
 
@@ -40,10 +49,10 @@ namespace SparkyStudios::Audio::Amplitude
         SoundFormat format;
         bool stream;
 
-        static SoundData* CreateMusic(const SoundFormat& format, SoundChunk* chunk, AmVoidPtr userData);
-        static SoundData* CreateSound(const SoundFormat& format, SoundChunk* chunk, AmVoidPtr userData);
+        static SoundData* CreateMusic(const SoundFormat& format, SoundChunk* chunk, AmUInt64 frames, AmVoidPtr userData);
+        static SoundData* CreateSound(const SoundFormat& format, SoundChunk* chunk, AmUInt64 frames, AmVoidPtr userData);
 
-        void Destroy();
+        void Destroy(bool destroyChunk = true) const;
     };
 } // namespace SparkyStudios::Audio::Amplitude
 

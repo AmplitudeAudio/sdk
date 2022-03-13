@@ -64,7 +64,8 @@ namespace SparkyStudios::Audio::Amplitude
         {
             for (AmUInt16 c = 0; c < channels; c++)
             {
-                buffer[i + c * frames] = ProcessSample(buffer[i + c * frames], c, sampleRate);
+                const AmUInt64 o = i + c * frames;
+                buffer[o] = ProcessSample(buffer[o], c, sampleRate);
             }
 
             _offset = (_offset + 1) % _bufferLength;
@@ -83,7 +84,8 @@ namespace SparkyStudios::Audio::Amplitude
         {
             for (AmUInt16 c = 0; c < channels; c++)
             {
-                buffer[i * channels + c] = ProcessSample(buffer[i * channels + c], c, sampleRate);
+                const AmUInt64 o = i * channels + c;
+                buffer[o] = ProcessSample(buffer[o], c, sampleRate);
             }
 
             _offset = (_offset + 1) % _bufferLength;
@@ -102,8 +104,8 @@ namespace SparkyStudios::Audio::Amplitude
 
         _buffer[o] = x;
 
-        y = x - (AmFloatToFixedPoint(static_cast<AmReal32>(_totals[channel]) / _bufferLength) >> kAmFixedPointShift);
-        y = x + ((y - x) * AmFloatToFixedPoint(m_parameters[DCRemovalFilter::ATTRIBUTE_WET]) >> kAmFixedPointShift);
+        y = x - (AmFloatToFixedPoint(static_cast<AmReal32>(_totals[channel]) / _bufferLength) >> kAmFixedPointBits);
+        y = x + ((y - x) * AmFloatToFixedPoint(m_parameters[DCRemovalFilter::ATTRIBUTE_WET]) >> kAmFixedPointBits);
         y = AM_CLAMP(y, INT16_MIN, INT16_MAX);
 
         return static_cast<AmInt16>(y);
@@ -112,7 +114,7 @@ namespace SparkyStudios::Audio::Amplitude
     void DCRemovalFilterInstance::InitBuffer(AmUInt16 channels, AmUInt32 sampleRate)
     {
         _bufferLength = static_cast<AmUInt64>(
-            AmFloatToFixedPoint(dynamic_cast<DCRemovalFilter*>(m_parent)->_length) * sampleRate >> kAmFixedPointShift);
+            AmFloatToFixedPoint(dynamic_cast<DCRemovalFilter*>(m_parent)->_length) * sampleRate >> kAmFixedPointBits);
 
         _buffer = new AmInt32[_bufferLength * channels];
         _totals = new AmInt32[channels];

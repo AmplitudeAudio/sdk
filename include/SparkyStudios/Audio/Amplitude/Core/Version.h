@@ -19,6 +19,11 @@
 
 #include <SparkyStudios/Audio/Amplitude/Core/Common.h>
 
+/**
+ * @brief Gets the current Amplitude SDK version.
+ */
+#define amVersion SparkyStudios::Audio::Amplitude::Version()
+
 namespace SparkyStudios::Audio::Amplitude
 {
     /**
