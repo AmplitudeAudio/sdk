@@ -180,6 +180,9 @@ namespace SparkyStudios::Audio::Amplitude
 
     static void OnSoundDestroyed(Mixer* mixer, MixerLayer* layer)
     {
+        if (layer->snd == nullptr)
+            return;
+
         auto* sound = static_cast<SoundInstance*>(layer->snd->userData);
         delete sound;
 
