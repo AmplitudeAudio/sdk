@@ -255,7 +255,7 @@ namespace SparkyStudios::Audio::Amplitude
         _device.mRequestedOutputChannels = static_cast<PlaybackOutputChannels>(config->output()->channels());
         _device.mRequestedOutputFormat = static_cast<PlaybackOutputFormat>(config->output()->format());
 
-        _audioThreadMutex = Thread::CreateMutexAm();
+        _audioThreadMutex = Thread::CreateMutex();
 
         if (const auto* pipeline = config->mixer()->pipeline(); pipeline != nullptr && pipeline->size() > 0)
         {

@@ -60,7 +60,7 @@
 // 1) Mono, 2) Stereo, 4) Quad, 6) 5.1, 8) 7.1
 #define AM_MAX_CHANNELS 8
 
-// Instructs miniaudio to use stdint.h
-#define MA_USE_STDINT
+// Maximum number of tasks in a single pool
+#define AM_MAX_THREAD_POOL_TASKS 1024
 
 #endif // SS_AMPLITUDE_AUDIO_CONFIG_H

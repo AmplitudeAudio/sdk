@@ -23,6 +23,7 @@
 
 #include <SparkyStudios/Audio/Amplitude/Core/Common.h>
 #include <SparkyStudios/Audio/Amplitude/Core/Device.h>
+#include <SparkyStudios/Audio/Amplitude/Core/Thread.h>
 
 #include <Mixer/ProcessorPipeline.h>
 #include <Mixer/SoundData.h>
@@ -187,7 +188,7 @@ namespace SparkyStudios::Audio::Amplitude
 
         std::queue<MixerCommand> _commandsStack;
 
-        AmVoidPtr _audioThreadMutex;
+        AmMutexHandle _audioThreadMutex;
         bool _insideAudioThreadMutex;
 
         AmUInt32 _nextId;
