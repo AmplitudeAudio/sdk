@@ -26,7 +26,7 @@ namespace SparkyStudios::Audio::Amplitude
 #endif
 
     /**
-     * @brief The AmThreadFunction siganture is used to create threads.
+     * @brief The AmThreadFunction signature is used to create threads.
      */
     typedef void (*AmThreadFunction)(AmVoidPtr param);
 
@@ -45,7 +45,7 @@ namespace SparkyStudios::Audio::Amplitude
          * the mutex handle as parameter. To release the ownership, use UnlockMutex()
          * with the mutex handle as parameter.
          */
-        AmMutexHandle CreateMutex();
+        AmMutexHandle CreateMutex(AmUInt64 spinCount = 100);
 
         /**
          * @brief Destroys a mutex object.
@@ -164,12 +164,12 @@ namespace SparkyStudios::Audio::Amplitude
             /**
              * @brief Gets the number of threads this pool is using.
              */
-            AmUInt32 GetThreadCount();
+            [[nodiscard]] AmUInt32 GetThreadCount() const;
 
             /**
              * @brief Indicates that the pool is running.
              */
-            bool IsRunning();
+            [[nodiscard]] bool IsRunning() const;
 
         private:
             AmUInt32 _threadCount; // number of threads
