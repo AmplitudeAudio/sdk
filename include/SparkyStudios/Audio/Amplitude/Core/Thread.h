@@ -19,56 +19,168 @@
 
 #include <SparkyStudios/Audio/Amplitude/Core/Common.h>
 
-namespace SparkyStudios::Audio::Amplitude::Thread
+namespace SparkyStudios::Audio::Amplitude
 {
+#if defined(AM_WINDOWS_VERSION)
+#undef CreateMutex
+#endif
+
+    /**
+     * @brief The AmThreadFunction signature is used to create threads.
+     */
     typedef void (*AmThreadFunction)(AmVoidPtr param);
 
-    struct AmThreadHandleData;
-    typedef AmThreadHandleData* AmThreadHandle;
+    typedef AmVoidPtr AmThreadHandle;
+    typedef AmVoidPtr AmMutexHandle;
 
-    AmVoidPtr CreateMutexAm();
-    void DestroyMutex(AmVoidPtr handle);
-    void LockMutex(AmVoidPtr handle);
-    void UnlockMutex(AmVoidPtr handle);
-
-    AmThreadHandle CreateThread(AmThreadFunction threadFunction, AmVoidPtr parameter);
-
-    void Sleep(AmInt32 milliseconds);
-    void Wait(AmThreadHandle threadHandle);
-    void Release(AmThreadHandle threadHandle);
-    AmInt64 GetTimeMillis();
-
-#define MAX_THREAD_POOL_TASKS 1024
-
-    class PoolTask
+    namespace Thread
     {
-    public:
-        virtual void Work() = 0;
-    };
+        /**
+         * @brief Creates a mutex object.
+         *
+         * A mutex is an object that a thread can acquire, preventing other
+         * threads from acquiring it.
+         *
+         * To acquire the mutex ownership, you should use LockMutex() with
+         * the mutex handle as parameter. To release the ownership, use UnlockMutex()
+         * with the mutex handle as parameter.
+         */
+        AmMutexHandle CreateMutex(AmUInt64 spinCount = 100);
 
-    class Pool
-    {
-    public:
-        Pool();
-        // Waits for the threads to finish. Work may be unfinished.
-        ~Pool();
+        /**
+         * @brief Destroys a mutex object.
+         *
+         * @param handle The mutex object handle.
+         */
+        void DestroyMutex(AmMutexHandle handle);
 
-        // Initialize and run thread pool. For thread count 0, Work is done at AddWork call.
-        void Init(AmInt32 threadCount);
-        // Add work to work list. Object is not automatically deleted when Work is done.
-        void AddWork(PoolTask* task);
-        // Called from worker thread to Get a new task. Returns null if no Work available.
-        PoolTask* GetWork();
+        /**
+         * @brief Takes ownership of a mutex.
+         *
+         * @param handle The mutex object handle.
+         */
+        void LockMutex(AmMutexHandle handle);
 
-    public:
-        AmInt32 mThreadCount; // number of threads
-        AmThreadHandle* mThread; // array of thread handles
-        AmVoidPtr mWorkMutex; // mutex to protect task array/max task
-        PoolTask* mTaskArray[MAX_THREAD_POOL_TASKS]{}; // pointers to tasks
-        AmInt32 mMaxTask; // how many tasks are pending
-        AmInt32 mRobin; // cyclic counter, used to pick jobs for threads
-        volatile AmInt32 mRunning; // running flag, used to flag threads to Stop
-    };
-} // namespace SparkyStudios::Audio::Amplitude::Thread
+        /**
+         * @brief Releases ownership of a mutex.
+         *
+         * @param handle The mutex object handle.
+         */
+        void UnlockMutex(AmMutexHandle handle);
+
+        /**
+         * @brief Creates a new thread.
+         *
+         * @param threadFunction The function to run in the thread.
+         * @param parameter An optional shared data to pass to the thread
+         */
+        AmThreadHandle CreateThread(AmThreadFunction threadFunction, AmVoidPtr parameter = nullptr);
+
+        /**
+         * @brief Makes the calling thread sleep for the given amount of milliseconds.
+         *
+         * @param milliseconds The amount of time the calling thread should sleep.
+         */
+        void Sleep(AmInt32 milliseconds);
+
+        /**
+         * @brief Waits for the given thread to stop.
+         *
+         * @param thread The handle of the thread to wait.
+         */
+        void Wait(AmThreadHandle thread);
+
+        /**
+         * @brief Manually stops a thread execution.
+         *
+         * @param thread The handle of the thread to wait.
+         */
+        void Release(AmThreadHandle thread);
+
+        /**
+         * @brief Gets the total execution time in milliseconds for the calling thread.
+         */
+        AmUInt64 GetTimeMillis();
+
+        /**
+         * @brief Base class for pool tasks.
+         */
+        class PoolTask
+        {
+        public:
+            /**
+             * @brief Main pool task execution function.
+             *
+             * When this task will be picked by the pool scheduler, this method
+             * will be called to execute the task.
+             */
+            virtual void Work() = 0;
+        };
+
+        /**
+         * @brief Pool tasks scheduler class.
+         *
+         * The Pool tasks scheduler can pick and run pool tasks on several multiple
+         * threads. The number of threads is defined at initialization.
+         *
+         * The maximum number of tasks the pool can manage is defined by the AM_MAX_THREAD_POOL_TASKS
+         * macro. The default value is 1024.
+         */
+        class Pool
+        {
+        public:
+            /**
+             * @brief Creates a new pool tasks scheduler instance.
+             */
+            Pool();
+
+            // Waits for the threads to finish. Work may be unfinished.
+            ~Pool();
+
+            /**
+             * @brief Initialize and run thread pool.
+             *
+             * @param threadCount The number of thread in the pool. For thread count 0, work is done
+             * at AddTask() call in the calling thread.
+             */
+            void Init(AmUInt32 threadCount);
+
+            /**
+             * @brief Add a task to the tasks list.
+             *
+             * @param task The PoolTask to add. The task is not automatically deleted when the work is done.
+             */
+            void AddTask(PoolTask* task);
+
+            /**
+             * @brief Called from worker thread to get a new task.
+             *
+             * @note This method is called internally, and should not be called in user code.
+             *
+             * @return The next PoolTask to execute, or nullptr if no task is available.
+             */
+            PoolTask* GetWork();
+
+            /**
+             * @brief Gets the number of threads this pool is using.
+             */
+            [[nodiscard]] AmUInt32 GetThreadCount() const;
+
+            /**
+             * @brief Indicates that the pool is running.
+             */
+            [[nodiscard]] bool IsRunning() const;
+
+        private:
+            AmUInt32 _threadCount; // number of threads
+            AmThreadHandle* _thread; // array of thread handles
+            AmMutexHandle _workMutex; // mutex to protect task array/max task
+            PoolTask* _taskArray[AM_MAX_THREAD_POOL_TASKS]{}; // pointers to tasks
+            AmInt32 _taskCount; // how many tasks are pending
+            AmInt32 _robin; // cyclic counter, used to pick jobs for threads
+            volatile bool _running; // running flag, used to flag threads to Stop
+        };
+    } // namespace Thread
+} // namespace SparkyStudios::Audio::Amplitude
 
 #endif // SS_AMPLITUDE_AUDIO_THREAD_H

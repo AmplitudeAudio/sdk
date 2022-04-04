@@ -139,6 +139,7 @@ namespace SparkyStudios::Audio::Amplitude
         MemoryManagerConfig();
     };
 
+#if !defined(AM_NO_MEMORY_STATS)
     /**
      * @brief Collects the statistics about the memory allocations
      * for a specific pool
@@ -153,18 +154,35 @@ namespace SparkyStudios::Audio::Amplitude
         /**
          * @brief The maximum total memory used by this pool.
          */
-        AmSize maxMemoryUsed;
+        std::atomic<AmSize> maxMemoryUsed;
 
         /**
          * @brief The total count of allocations made on this pool.
          */
-        AmUInt32 allocCount;
+        std::atomic<AmUInt64> allocCount;
 
         /**
          * @brief The total count of frees made on this pool.
          */
-        AmUInt32 freeCount;
+        std::atomic<AmUInt64> freeCount;
+
+		/**
+         * @brief Default constructor.
+         */
+        MemoryPoolStats()
+            : MemoryPoolStats(MemoryPoolKind::COUNT)
+        {}
+
+        /**
+         * @brief Creates a new MemoryPoolStats object.
+         *
+         * @param pool The pool to get the statistics for.
+         */
+        explicit MemoryPoolStats(MemoryPoolKind pool);
+
+        MemoryPoolStats& operator=(const MemoryPoolStats& other);
     };
+#endif
 
     /**
      * @brief Manages memory allocations inside the engine.
@@ -199,50 +217,50 @@ namespace SparkyStudios::Audio::Amplitude
         /**
          * @brief Allocates a block of memory with the given size in the given pool.
          */
-        AmVoidPtr Malloc(MemoryPoolKind pool, AmSize size);
+        [[nodiscard]] AmVoidPtr Malloc(MemoryPoolKind pool, AmSize size) const;
 
         /**
          * @brief Allocates a block of memory with the given size and the given alignment,
          * in the given pool.
          */
-        AmVoidPtr Malign(MemoryPoolKind pool, AmSize size, AmUInt32 alignment);
+        [[nodiscard]] AmVoidPtr Malign(MemoryPoolKind pool, AmSize size, AmUInt32 alignment) const;
 
         /**
          * @brief Updates the size of a previously allocated memory.
          */
-        AmVoidPtr Realloc(MemoryPoolKind pool, AmVoidPtr address, AmSize size);
+        [[nodiscard]] AmVoidPtr Realloc(MemoryPoolKind pool, AmVoidPtr address, AmSize size) const;
 
         /**
          * @brief Updates the size of a previously allocated aligned memory.
          */
-        AmVoidPtr Realign(MemoryPoolKind pool, AmVoidPtr address, AmSize size, AmUInt32 alignment);
+        [[nodiscard]] AmVoidPtr Realign(MemoryPoolKind pool, AmVoidPtr address, AmSize size, AmUInt32 alignment) const;
 
         /**
          * @brief Releases an allocated memory block.
          */
-        void Free(MemoryPoolKind pool, AmVoidPtr address);
+        void Free(MemoryPoolKind pool, AmVoidPtr address) const;
 
         /**
          * @brief Gets the total allocated size.
          */
-        AmSize TotalReservedMemorySize();
+        [[nodiscard]] AmSize TotalReservedMemorySize() const;
 
         /**
          * @brief Gets the size of the given memory block.
          */
-        AmSize SizeOf(MemoryPoolKind pool, AmVoidPtr address);
+        [[nodiscard]] AmSize SizeOf(MemoryPoolKind pool, AmVoidPtr address) const;
 
 #if !defined(AM_NO_MEMORY_STATS)
         /**
          * @brief Returns the memory allocation statistics for the given pool.
-         * 
+         *
          * @param pool The pool to get the statistics for.
          */
         [[nodiscard]] const MemoryPoolStats& GetStats(MemoryPoolKind pool) const;
 #endif
 
     private:
-        MemoryManager(MemoryManagerConfig config);
+        explicit MemoryManager(MemoryManagerConfig config);
         ~MemoryManager();
 
         MemoryManagerConfig _config;
