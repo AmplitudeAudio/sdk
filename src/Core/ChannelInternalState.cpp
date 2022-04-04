@@ -603,7 +603,7 @@ namespace SparkyStudios::Audio::Amplitude
 
     AmReal32 ChannelInternalState::GetDopplerFactor(AmListenerID listener) const
     {
-        return _dopplerFactors.at(listener);
+        return _dopplerFactors.find(listener) != _dopplerFactors.end() ? _dopplerFactors.at(listener) : 1.0f;
     }
 
     void ChannelInternalState::UpdateState()
