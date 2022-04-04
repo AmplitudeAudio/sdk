@@ -59,25 +59,25 @@ namespace SparkyStudios::Audio::Amplitude
             return;
 
         case EventActionType_Play:
-            return _executePlay(entity);
+            return ExecutePlay(entity);
 
         case EventActionType_Pause:
-            return _executePause(entity);
+            return ExecutePause(entity);
 
         case EventActionType_Resume:
-            return _executeResume(entity);
+            return ExecuteResume(entity);
 
         case EventActionType_Stop:
-            return _executeStop(entity);
+            return ExecuteStop(entity);
 
         case EventActionType_Seek:
-            return _executeSeek(entity);
+            return ExecuteSeek(entity);
 
         case EventActionType_MuteBus:
-            return _executeMute(entity, true);
+            return ExecuteMute(entity, true);
 
         case EventActionType_UnmuteBus:
-            return _executeMute(entity, false);
+            return ExecuteMute(entity, false);
         }
     }
 
@@ -98,25 +98,25 @@ namespace SparkyStudios::Audio::Amplitude
         return false;
     }
 
-    void EventAction::_executePlay(const Entity& entity)
+    void EventAction::ExecutePlay(const Entity& entity)
     {
         if (entity.Valid())
         {
             for (auto&& target : _targets)
             {
-                amEngine->Play(target, entity);
+                (void)amEngine->Play(target, entity);
             }
         }
         else
         {
             for (auto&& target : _targets)
             {
-                amEngine->Play(target);
+                (void)amEngine->Play(target);
             }
         }
     }
 
-    void EventAction::_executePause(const Entity& entity)
+    void EventAction::ExecutePause(const Entity& entity)
     {
         if (_scope == Scope_Entity)
         {
@@ -146,7 +146,7 @@ namespace SparkyStudios::Audio::Amplitude
         }
     }
 
-    void EventAction::_executeResume(const Entity& entity)
+    void EventAction::ExecuteResume(const Entity& entity)
     {
         if (_scope == Scope_Entity)
         {
@@ -176,7 +176,7 @@ namespace SparkyStudios::Audio::Amplitude
         }
     }
 
-    void EventAction::_executeStop(const Entity& entity)
+    void EventAction::ExecuteStop(const Entity& entity)
     {
         if (_scope == Scope_Entity)
         {
@@ -206,10 +206,10 @@ namespace SparkyStudios::Audio::Amplitude
         }
     }
 
-    void EventAction::_executeSeek(const Entity& entity)
+    void EventAction::ExecuteSeek(const Entity& entity)
     {}
 
-    void EventAction::_executeMute(const Entity& entity, bool mute)
+    void EventAction::ExecuteMute(const Entity& entity, bool mute)
     {
         for (auto&& target : _targets)
         {
@@ -258,9 +258,9 @@ namespace SparkyStudios::Audio::Amplitude
         return LoadFile(filename, &source) && LoadEventDefinition(source);
     }
 
-    EventInstance Event::Trigger(const Entity& entity)
+    EventInstance Event::Trigger(const Entity& entity) const
     {
-        CallLogFunc("[Debug] Event " AM_OS_CHAR_FMT " triggered.\n", AM_STRING_TO_OS_STRING(_name));
+        CallLogFunc("[Debug] Event " AM_OS_CHAR_FMT " triggered.\n", AM_STRING_TO_OS_STRING(_name.c_str()));
 
         auto event = EventInstance(this);
         event.Start(entity);
@@ -313,13 +313,13 @@ namespace SparkyStudios::Audio::Amplitude
     }
 
     EventInstance::EventInstance()
-        : _running(false)
-        , _actions()
+        : _actions()
+        , _running(false)
     {}
 
-    EventInstance::EventInstance(Event* parent)
-        : _running(false)
-        , _actions(parent->_actions)
+    EventInstance::EventInstance(const Event* parent)
+        : _actions(parent->_actions)
+        , _running(false)
     {}
 
     void EventInstance::Start(const Entity& entity)

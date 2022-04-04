@@ -343,7 +343,7 @@ namespace SparkyStudios::Audio::Amplitude
     AmReal32 CapsuleShape::GetShortestDistanceToEdge(const hmm_vec3& location)
     {
         if (m_needUpdate)
-            _update();
+            Update();
 
         const hmm_vec3 e = _b - _a;
         const hmm_vec3 m = AM_Cross(_a, _b);
@@ -368,7 +368,7 @@ namespace SparkyStudios::Audio::Amplitude
     bool CapsuleShape::Contains(const hmm_vec3& location)
     {
         if (m_needUpdate)
-            _update();
+            Update();
 
         const AmReal32 distanceToOrigin = AM_Length(location - m_location);
         const AmReal32 halfHeight = _halfHeight - _radius;
@@ -392,7 +392,7 @@ namespace SparkyStudios::Audio::Amplitude
         return false;
     }
 
-    void CapsuleShape::_update()
+    void CapsuleShape::Update()
     {
         const AmReal32 halfHeight = _halfHeight - _radius;
 
@@ -452,7 +452,7 @@ namespace SparkyStudios::Audio::Amplitude
     AmReal32 ConeShape::GetShortestDistanceToEdge(const hmm_vec3& location)
     {
         if (m_needUpdate)
-            _update();
+            Update();
 
         const hmm_vec3& shapeToLocation = location - m_location;
         const AmReal32 coneDist = AM_Dot(shapeToLocation, m_direction);
@@ -469,7 +469,7 @@ namespace SparkyStudios::Audio::Amplitude
     bool ConeShape::Contains(const hmm_vec3& location)
     {
         if (m_needUpdate)
-            _update();
+            Update();
 
         const hmm_vec3& shapeToLocation = location - m_location;
         const AmReal32 coneDist = AM_Dot(shapeToLocation, m_direction);
@@ -486,7 +486,7 @@ namespace SparkyStudios::Audio::Amplitude
         return false;
     }
 
-    void ConeShape::_update()
+    void ConeShape::Update()
     {
         m_needUpdate = false;
     }
@@ -520,7 +520,7 @@ namespace SparkyStudios::Audio::Amplitude
     AmReal32 SphereShape::GetShortestDistanceToEdge(const hmm_vec3& location)
     {
         if (m_needUpdate)
-            _update();
+            Update();
 
         const hmm_vec3& shapeToLocation = location - m_location;
         const AmReal32 distance = AM_Length(shapeToLocation);
@@ -531,7 +531,7 @@ namespace SparkyStudios::Audio::Amplitude
     bool SphereShape::Contains(const hmm_vec3& location)
     {
         if (m_needUpdate)
-            _update();
+            Update();
 
         const hmm_vec3& shapeToLocation = location - m_location;
         const AmReal32 distance = AM_Length(shapeToLocation);
@@ -542,7 +542,7 @@ namespace SparkyStudios::Audio::Amplitude
         return true;
     }
 
-    void SphereShape::_update()
+    void SphereShape::Update()
     {
         m_needUpdate = false;
     }
@@ -639,10 +639,10 @@ namespace SparkyStudios::Audio::Amplitude
         auto* outer = dynamic_cast<CapsuleShape*>(m_outerShape);
 
         if (inner->m_needUpdate)
-            inner->_update();
+            inner->Update();
 
         if (outer->m_needUpdate)
-            outer->_update();
+            outer->Update();
 
         const eGameEngineUpAxis upAxis = amEngine->GetState()->up_axis;
 
@@ -695,10 +695,10 @@ namespace SparkyStudios::Audio::Amplitude
         auto* outer = dynamic_cast<ConeShape*>(m_outerShape);
 
         if (inner->m_needUpdate)
-            inner->_update();
+            inner->Update();
 
         if (outer->m_needUpdate)
-            outer->_update();
+            outer->Update();
 
         const eGameEngineUpAxis upAxis = amEngine->GetState()->up_axis;
 
@@ -736,10 +736,10 @@ namespace SparkyStudios::Audio::Amplitude
         auto* outer = dynamic_cast<SphereShape*>(m_outerShape);
 
         if (inner->m_needUpdate)
-            inner->_update();
+            inner->Update();
 
         if (outer->m_needUpdate)
-            outer->_update();
+            outer->Update();
 
         const hmm_vec3& soundToListener = position - inner->GetLocation();
         const AmReal32 distance = AM_Length(soundToListener);

@@ -175,6 +175,7 @@ namespace SparkyStudios::Audio::Amplitude
     {
     public:
         explicit Zone(Shape* inner, Shape* outer);
+        virtual ~Zone() = default;
 
         /**
          * @brief Get the factor (a value in the range [0, 1]) according to the position
@@ -337,14 +338,14 @@ namespace SparkyStudios::Audio::Amplitude
         /**
          * @brief Set the half height of the box shape.
          *
-         * @param halfWidth The new box shape's half height.
+         * @param halfHeight The new box shape's half height.
          */
         void SetHalfHeight(AmReal32 halfHeight);
 
         /**
          * @brief Set the half depth of the box shape.
          *
-         * @param halfWidth The new box shape's half depth.
+         * @param halfDepth The new box shape's half depth.
          */
         void SetHalfDepth(AmReal32 halfDepth);
 
@@ -468,7 +469,7 @@ namespace SparkyStudios::Audio::Amplitude
         [[nodiscard]] bool Contains(const hmm_vec3& location) final;
 
     private:
-        void _update();
+        void Update();
 
         AmReal32 _radius;
         AmReal32 _halfHeight;
@@ -555,7 +556,7 @@ namespace SparkyStudios::Audio::Amplitude
         [[nodiscard]] bool Contains(const hmm_vec3& location) final;
 
     private:
-        void _update();
+        void Update();
 
         AmReal32 _radius;
         AmReal32 _height;
@@ -625,7 +626,7 @@ namespace SparkyStudios::Audio::Amplitude
         [[nodiscard]] bool Contains(const hmm_vec3& location) final;
 
     private:
-        void _update();
+        void Update();
 
         AmReal32 _radius;
     };

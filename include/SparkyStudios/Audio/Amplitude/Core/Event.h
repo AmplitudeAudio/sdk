@@ -18,6 +18,7 @@
 #define SS_AMPLITUDE_AUDIO_EVENT_H
 
 #include <SparkyStudios/Audio/Amplitude/Core/Common.h>
+#include <SparkyStudios/Audio/Amplitude/Core/Entity.h>
 #include <SparkyStudios/Audio/Amplitude/Core/RefCounter.h>
 
 namespace SparkyStudios::Audio::Amplitude
@@ -69,12 +70,12 @@ namespace SparkyStudios::Audio::Amplitude
         bool AdvanceFrame(AmTime delta_time);
 
     private:
-        void _executePlay(const Entity& entity);
-        void _executePause(const Entity& entity);
-        void _executeResume(const Entity& entity);
-        void _executeStop(const Entity& entity);
-        void _executeSeek(const Entity& entity);
-        void _executeMute(const Entity& entity, bool mute);
+        void ExecutePlay(const Entity& entity);
+        void ExecutePause(const Entity& entity);
+        void ExecuteResume(const Entity& entity);
+        void ExecuteStop(const Entity& entity);
+        void ExecuteSeek(const Entity& entity);
+        void ExecuteMute(const Entity& entity, bool mute);
 
         bool _active;
         AmInt8 _type;
@@ -121,7 +122,7 @@ namespace SparkyStudios::Audio::Amplitude
          *
          * @param entity The which trigger the event.
          */
-        EventInstance Trigger(const Entity& entity);
+        EventInstance Trigger(const Entity& entity) const;
 
         /**
          * @brief Returns the ID of this event.
@@ -209,7 +210,7 @@ namespace SparkyStudios::Audio::Amplitude
     {
     public:
         EventInstance();
-        explicit EventInstance(Event* parent);
+        explicit EventInstance(const Event* parent);
 
         /**
          * @brief Starts this Event.
