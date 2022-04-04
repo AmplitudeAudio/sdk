@@ -19,6 +19,14 @@
 
 #include <SparkyStudios/Audio/Amplitude/Core/Device.h>
 
+#define MA_NO_DECODING
+#define MA_NO_ENCODING
+#define MA_USE_STDINT
+
+#if !defined(NOMINMAX)
+#define NOMINMAX
+#endif
+
 #include "miniaudio.h"
 
 ma_format ma_format_from_amplitude(SparkyStudios::Audio::Amplitude::PlaybackOutputFormat format);
