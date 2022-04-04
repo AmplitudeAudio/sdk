@@ -104,7 +104,7 @@ namespace SparkyStudios::Audio::Amplitude
          *
          * @return Whether the audio engine is initialized.
          */
-        bool IsInitialized();
+        [[nodiscard]] bool IsInitialized() const;
 
         /**
          * @brief Set the File Loader used by the engine.
@@ -125,7 +125,7 @@ namespace SparkyStudios::Audio::Amplitude
          *
          * @param delta The number of elapsed seconds since the last frame.
          */
-        void AdvanceFrame(AmTime delta);
+        void AdvanceFrame(AmTime delta) const;
 
         /**
          * @brief Gets the total elapsed time since the start of the game.
@@ -407,7 +407,7 @@ namespace SparkyStudios::Audio::Amplitude
          *
          * @param gain the gain to apply to all buses.
          */
-        void SetMasterGain(float gain);
+        void SetMasterGain(float gain) const;
 
         /**
          * @brief Get the master bus's current gain.
@@ -421,7 +421,7 @@ namespace SparkyStudios::Audio::Amplitude
          *
          * @param mute whether to mute or unmute the Engine.
          */
-        void SetMute(bool mute);
+        void SetMute(bool mute) const;
 
         /**
          * @brief Whether the Engine is currently muted.
@@ -435,7 +435,7 @@ namespace SparkyStudios::Audio::Amplitude
          *
          * @param pause Whether to pause or resume the Engine.
          */
-        void Pause(bool pause);
+        void Pause(bool pause) const;
 
         /**
          * @brief Sets the default sound listener.
@@ -458,7 +458,7 @@ namespace SparkyStudios::Audio::Amplitude
          * @return An initialized Listener object if a default listener was set,
          * otherwise an unitialized Listener object.
          */
-        [[nodiscard]] Listener GetDefaultListener();
+        [[nodiscard]] Listener GetDefaultListener() const;
 
         /**
          * @brief Initialize and return a Listener.
@@ -467,7 +467,7 @@ namespace SparkyStudios::Audio::Amplitude
          *
          * @return An initialized Listener.
          */
-        Listener AddListener(AmListenerID id);
+        [[nodiscard]] Listener AddListener(AmListenerID id) const;
 
         /**
          * @brief Return the Listener with the given ID.
@@ -477,21 +477,21 @@ namespace SparkyStudios::Audio::Amplitude
          * @return An initialized Listener if that one has been registered before,
          * otherwise an unitialized Listener.
          */
-        Listener GetListener(AmListenerID id);
+        [[nodiscard]] Listener GetListener(AmListenerID id) const;
 
         /**
          * @brief Remove a Listener given its ID.
          *
          * @param id The ID of the Listener to be removed.
          */
-        void RemoveListener(AmListenerID id);
+        void RemoveListener(AmListenerID id) const;
 
         /**
          * @brief Remove a Listener.
          *
          * @param listener The Listener to be removed.
          */
-        void RemoveListener(const Listener* listener);
+        void RemoveListener(const Listener* listener) const;
 
         /**
          * @brief Initialize and return an Entity.
@@ -500,7 +500,7 @@ namespace SparkyStudios::Audio::Amplitude
          *
          * @return An initialized Entity.
          */
-        Entity AddEntity(AmEntityID id);
+        [[nodiscard]] Entity AddEntity(AmEntityID id) const;
 
         /**
          * @brief Return the Entity with the given ID.
@@ -510,21 +510,21 @@ namespace SparkyStudios::Audio::Amplitude
          * @return An initialized Entity if that one has been registered before,
          * otherwise an uninitialized Entity.
          */
-        Entity GetEntity(AmEntityID id);
+        [[nodiscard]] Entity GetEntity(AmEntityID id) const;
 
         /**
          * @brief Remove an Entity.
          *
          * @param entity The Entity to be removed.
          */
-        void RemoveEntity(const Entity* entity);
+        void RemoveEntity(const Entity* entity) const;
 
         /**
          * @brief Remove an Entity given its ID.
          *
          * @param id The ID of the Entity to be removed.
          */
-        void RemoveEntity(AmEntityID id);
+        void RemoveEntity(AmEntityID id) const;
 
         /**
          * @brief Initialize and return an Environment.
@@ -533,7 +533,7 @@ namespace SparkyStudios::Audio::Amplitude
          *
          * @return An initialized Environment.
          */
-        Environment AddEnvironment(AmEnvironmentID id);
+        [[nodiscard]] Environment AddEnvironment(AmEnvironmentID id) const;
 
         /**
          * @brief Return the Environment with the given ID.
@@ -543,21 +543,21 @@ namespace SparkyStudios::Audio::Amplitude
          * @return An initialized Environment if that one has been registered before,
          * otherwise an uninitialized Environment.
          */
-        Environment GetEnvironment(AmEnvironmentID id);
+        [[nodiscard]] Environment GetEnvironment(AmEnvironmentID id) const;
 
         /**
          * @brief Remove an Environment.
          *
          * @param Environment The Environment to be removed.
          */
-        void RemoveEnvironment(const Environment* Environment);
+        void RemoveEnvironment(const Environment* Environment) const;
 
         /**
          * @brief Remove an Environment given its ID.
          *
          * @param id The ID of the Environment to be removed.
          */
-        void RemoveEnvironment(AmEnvironmentID id);
+        void RemoveEnvironment(AmEnvironmentID id) const;
 
         /**
          * @brief Returns the bus with the specified name.
@@ -586,7 +586,7 @@ namespace SparkyStudios::Audio::Amplitude
          * @return The channel the switch container is played on. If the switch container could not be
          *         played, an invalid Channel is returned.
          */
-        Channel Play(SwitchContainerHandle handle);
+        Channel Play(SwitchContainerHandle handle) const;
 
         /**
          * @brief Play a switch container associated with the given handle in the
@@ -598,7 +598,7 @@ namespace SparkyStudios::Audio::Amplitude
          * @return The channel the switch container is played on. If the switch container could not be
          *         played, an invalid Channel is returned.
          */
-        Channel Play(SwitchContainerHandle handle, const hmm_vec3& location);
+        Channel Play(SwitchContainerHandle handle, const hmm_vec3& location) const;
 
         /**
          * @brief Play a switch container associated with the given handle in the
@@ -611,7 +611,7 @@ namespace SparkyStudios::Audio::Amplitude
          * @return The channel the switch container is played on. If the switch container could not be
          *         played, an invalid Channel is returned.
          */
-        Channel Play(SwitchContainerHandle handle, const hmm_vec3& location, float userGain);
+        Channel Play(SwitchContainerHandle handle, const hmm_vec3& location, float userGain) const;
 
         /**
          * @brief Play a switch container associated with the given handle in the
@@ -623,7 +623,7 @@ namespace SparkyStudios::Audio::Amplitude
          * @return The channel the switch container is played on. If the switch container could not be
          *         played, an invalid Channel is returned.
          */
-        Channel Play(SwitchContainerHandle handle, const Entity& entity);
+        Channel Play(SwitchContainerHandle handle, const Entity& entity) const;
 
         /**
          * @brief Play a switch container associated with the given handle in an
@@ -636,7 +636,7 @@ namespace SparkyStudios::Audio::Amplitude
          * @return The channel the switch container is played on. If the switch container could not be
          *         played, an invalid Channel is returned.
          */
-        Channel Play(SwitchContainerHandle handle, const Entity& entity, float userGain);
+        Channel Play(SwitchContainerHandle handle, const Entity& entity, float userGain) const;
 
         /**
          * @brief Play a collection associated with the given handle in the
@@ -647,7 +647,7 @@ namespace SparkyStudios::Audio::Amplitude
          * @return The channel the collection is played on. If the collection could not be
          *         played, an invalid Channel is returned.
          */
-        Channel Play(CollectionHandle handle);
+        Channel Play(CollectionHandle handle) const;
 
         /**
          * @brief Play a collection associated with the given handle in the
@@ -659,7 +659,7 @@ namespace SparkyStudios::Audio::Amplitude
          * @return The channel the collection is played on. If the collection could not be
          *         played, an invalid Channel is returned.
          */
-        Channel Play(CollectionHandle handle, const hmm_vec3& location);
+        Channel Play(CollectionHandle handle, const hmm_vec3& location) const;
 
         /**
          * @brief Play a collection associated with the given handle in the
@@ -672,7 +672,7 @@ namespace SparkyStudios::Audio::Amplitude
          * @return The channel the collection is played on. If the collection could not be
          *         played, an invalid Channel is returned.
          */
-        Channel Play(CollectionHandle handle, const hmm_vec3& location, float userGain);
+        Channel Play(CollectionHandle handle, const hmm_vec3& location, float userGain) const;
 
         /**
          * @brief Play a collection associated with the given handle in the
@@ -684,7 +684,7 @@ namespace SparkyStudios::Audio::Amplitude
          * @return The channel the collection is played on. If the collection could not be
          *         played, an invalid Channel is returned.
          */
-        Channel Play(CollectionHandle handle, const Entity& entity);
+        Channel Play(CollectionHandle handle, const Entity& entity) const;
 
         /**
          * @brief Play a collection associated with the given handle in an
@@ -697,7 +697,7 @@ namespace SparkyStudios::Audio::Amplitude
          * @return The channel the collection is played on. If the collection could not be
          *         played, an invalid Channel is returned.
          */
-        Channel Play(CollectionHandle handle, const Entity& entity, float userGain);
+        Channel Play(CollectionHandle handle, const Entity& entity, float userGain) const;
 
         /**
          * @brief Play a sound associated with the given handle in the
@@ -708,7 +708,7 @@ namespace SparkyStudios::Audio::Amplitude
          * @return The channel the sound is played on. If the sound could not be
          *         played, an invalid Channel is returned.
          */
-        Channel Play(SoundHandle handle);
+        Channel Play(SoundHandle handle) const;
 
         /**
          * @brief Play a sound associated with the given handle in the
@@ -720,7 +720,7 @@ namespace SparkyStudios::Audio::Amplitude
          * @return The channel the sound is played on. If the sound could not be
          *         played, an invalid Channel is returned.
          */
-        Channel Play(SoundHandle handle, const hmm_vec3& location);
+        Channel Play(SoundHandle handle, const hmm_vec3& location) const;
 
         /**
          * @brief Play a sound associated with the given handle in the
@@ -733,7 +733,7 @@ namespace SparkyStudios::Audio::Amplitude
          * @return The channel the sound is played on. If the sound could not be
          *         played, an invalid Channel is returned.
          */
-        Channel Play(SoundHandle handle, const hmm_vec3& location, float userGain);
+        Channel Play(SoundHandle handle, const hmm_vec3& location, float userGain) const;
 
         /**
          * @brief Play a sound associated with the given sound handle in an
@@ -745,7 +745,7 @@ namespace SparkyStudios::Audio::Amplitude
          * @return The channel the sound is played on. If the sound could not be
          *         played, an invalid Channel is returned.
          */
-        Channel Play(SoundHandle handle, const Entity& entity);
+        Channel Play(SoundHandle handle, const Entity& entity) const;
 
         /**
          * @brief Play a sound associated with the given sound handle in an
@@ -758,7 +758,7 @@ namespace SparkyStudios::Audio::Amplitude
          * @return The channel the sound is played on. If the sound could not be
          *         played, an invalid Channel is returned.
          */
-        Channel Play(SoundHandle handle, const Entity& entity, float userGain);
+        Channel Play(SoundHandle handle, const Entity& entity, float userGain) const;
 
         /**
          * @brief Play a sound or a collection associated with the given name.
@@ -773,7 +773,7 @@ namespace SparkyStudios::Audio::Amplitude
          * @return The channel the sound is played on. If the object could not be
          *         played, an invalid Channel is returned.
          */
-        Channel Play(const std::string& name);
+        [[nodiscard]] Channel Play(const std::string& name) const;
 
         /**
          * @brief Play a sound or a collection associated with the given name.
@@ -789,7 +789,7 @@ namespace SparkyStudios::Audio::Amplitude
          * @return The channel the sound is played on. If the object could not be
          *         played, an invalid Channel is returned.
          */
-        Channel Play(const std::string& name, const hmm_vec3& location);
+        [[nodiscard]] Channel Play(const std::string& name, const hmm_vec3& location) const;
 
         /**
          * @brief Play a sound or a collection associated with the given name.
@@ -806,7 +806,7 @@ namespace SparkyStudios::Audio::Amplitude
          * @return The channel the sound is played on. If the object could not be
          *         played, an invalid Channel is returned.
          */
-        Channel Play(const std::string& name, const hmm_vec3& location, float userGain);
+        [[nodiscard]] Channel Play(const std::string& name, const hmm_vec3& location, float userGain) const;
 
         /**
          * @brief Play a sound or a collection associated with the given name.
@@ -822,7 +822,7 @@ namespace SparkyStudios::Audio::Amplitude
          * @return The channel the sound is played on. If the object could not be
          *         played, an invalid Channel is returned.
          */
-        Channel Play(const std::string& name, const Entity& entity);
+        [[nodiscard]] Channel Play(const std::string& name, const Entity& entity) const;
 
         /**
          * @brief Play a sound or a collection associated with the given name.
@@ -839,7 +839,7 @@ namespace SparkyStudios::Audio::Amplitude
          * @return The channel the sound is played on. If the object could not be
          *         played, an invalid Channel is returned.
          */
-        Channel Play(const std::string& name, const Entity& entity, float userGain);
+        [[nodiscard]] Channel Play(const std::string& name, const Entity& entity, float userGain) const;
 
         /**
          * @brief Play a sound or a collection associated with the given ID in the
@@ -855,7 +855,7 @@ namespace SparkyStudios::Audio::Amplitude
          * @return The channel the sound is played on. If the object could not be
          *         played, an invalid Channel is returned.
          */
-        Channel Play(AmObjectID id);
+        [[nodiscard]] Channel Play(AmObjectID id) const;
 
         /**
          * @brief Play a sound or a collection associated with the given ID in the
@@ -872,7 +872,7 @@ namespace SparkyStudios::Audio::Amplitude
          * @return The channel the sound is played on. If the sound could not be
          *         played, an invalid Channel is returned.
          */
-        Channel Play(AmObjectID id, const hmm_vec3& location);
+        [[nodiscard]] Channel Play(AmObjectID id, const hmm_vec3& location) const;
 
         /**
          * @brief Play a sound or a collection associated with the given ID in the
@@ -890,7 +890,7 @@ namespace SparkyStudios::Audio::Amplitude
          * @return The channel the sound is played on. If the sound could not be
          *         played, an invalid Channel is returned.
          */
-        Channel Play(AmObjectID id, const hmm_vec3& location, float userGain);
+        [[nodiscard]] Channel Play(AmObjectID id, const hmm_vec3& location, float userGain) const;
 
         /**
          * @brief Play a sound or a collection associated with the given ID in an
@@ -907,7 +907,7 @@ namespace SparkyStudios::Audio::Amplitude
          * @return The channel the sound is played on. If the sound could not be
          *         played, an invalid Channel is returned.
          */
-        Channel Play(AmObjectID id, const Entity& entity);
+        [[nodiscard]] Channel Play(AmObjectID id, const Entity& entity) const;
 
         /**
          * @brief Play a sound or a collection associated with the given ID in an
@@ -925,12 +925,12 @@ namespace SparkyStudios::Audio::Amplitude
          * @return The channel the sound is played on. If the sound could not be
          *         played, an invalid Channel is returned.
          */
-        Channel Play(AmObjectID id, const Entity& entity, float userGain);
+        [[nodiscard]] Channel Play(AmObjectID id, const Entity& entity, float userGain) const;
 
         /**
          * @brief Stops all playing sound objects.
          */
-        void StopAll();
+        void StopAll() const;
 
         /**
          * @brief Trigger the event associated with the given sound handle at the
@@ -941,7 +941,7 @@ namespace SparkyStudios::Audio::Amplitude
          *
          * @return The triggered event.
          */
-        EventCanceler Trigger(EventHandle handle, const Entity& entity);
+        [[nodiscard]] EventCanceler Trigger(EventHandle handle, const Entity& entity) const;
 
         /**
          * @brief Trigger the event associated with the specified event name at
@@ -955,7 +955,7 @@ namespace SparkyStudios::Audio::Amplitude
          *
          * @return The triggered event.
          */
-        EventCanceler Trigger(const std::string& name, const Entity& entity);
+        [[nodiscard]] EventCanceler Trigger(const std::string& name, const Entity& entity) const;
 
         /**
          * @brief Set the active state of the defined Switch.
@@ -963,7 +963,7 @@ namespace SparkyStudios::Audio::Amplitude
          * @param handle The handle of the Switch.
          * @param stateId The ID of the active state to set.
          */
-        void SetSwitchState(SwitchHandle handle, AmObjectID stateId);
+        void SetSwitchState(SwitchHandle handle, AmObjectID stateId) const;
 
         /**
          * @brief Set the active state of the defined Switch.
@@ -971,7 +971,7 @@ namespace SparkyStudios::Audio::Amplitude
          * @param handle The handle of the Switch.
          * @param stateName The name of the active state to set.
          */
-        void SetSwitchState(SwitchHandle handle, const std::string& stateName);
+        void SetSwitchState(SwitchHandle handle, const std::string& stateName) const;
 
         /**
          * @brief Set the active state of the defined Switch.
@@ -979,7 +979,7 @@ namespace SparkyStudios::Audio::Amplitude
          * @param handle The handle of the Switch.
          * @param state The active state to set.
          */
-        void SetSwitchState(SwitchHandle handle, const SwitchState& state);
+        void SetSwitchState(SwitchHandle handle, const SwitchState& state) const;
 
         /**
          * @brief Set the active state of the defined Switch.
@@ -987,7 +987,7 @@ namespace SparkyStudios::Audio::Amplitude
          * @param id The ID of the Switch to update.
          * @param stateId The ID of the active state to set.
          */
-        void SetSwitchState(AmSwitchID id, AmObjectID stateId);
+        void SetSwitchState(AmSwitchID id, AmObjectID stateId) const;
 
         /**
          * @brief Set the active state of the defined Switch.
@@ -995,7 +995,7 @@ namespace SparkyStudios::Audio::Amplitude
          * @param id The ID of the Switch to update.
          * @param stateName The name of the active state to set.
          */
-        void SetSwitchState(AmSwitchID id, const std::string& stateName);
+        void SetSwitchState(AmSwitchID id, const std::string& stateName) const;
 
         /**
          * @brief Set the active state of the defined Switch.
@@ -1003,7 +1003,7 @@ namespace SparkyStudios::Audio::Amplitude
          * @param id The ID of the Switch to update.
          * @param state The active state to set.
          */
-        void SetSwitchState(AmSwitchID id, const SwitchState& state);
+        void SetSwitchState(AmSwitchID id, const SwitchState& state) const;
 
         /**
          * @brief Set the active state of the defined Switch.
@@ -1011,7 +1011,7 @@ namespace SparkyStudios::Audio::Amplitude
          * @param name The name of the Switch to update.
          * @param stateId The ID of the active state to set.
          */
-        void SetSwitchState(const std::string name, AmObjectID stateId);
+        void SetSwitchState(const std::string& name, AmObjectID stateId) const;
 
         /**
          * @brief Set the active state of the defined Switch.
@@ -1019,7 +1019,7 @@ namespace SparkyStudios::Audio::Amplitude
          * @param name The name of the Switch to update.
          * @param stateName The name of the active state to set.
          */
-        void SetSwitchState(const std::string name, const std::string& stateName);
+        void SetSwitchState(const std::string& name, const std::string& stateName) const;
 
         /**
          * @brief Set the active state of the defined Switch.
@@ -1027,7 +1027,7 @@ namespace SparkyStudios::Audio::Amplitude
          * @param name The name of the Switch to update.
          * @param state The active state to set.
          */
-        void SetSwitchState(const std::string name, const SwitchState& state);
+        void SetSwitchState(const std::string& name, const SwitchState& state) const;
 
         /**
          * @brief Set the value of a RTPC.
@@ -1035,7 +1035,7 @@ namespace SparkyStudios::Audio::Amplitude
          * @param handle The RTPC handle to update.
          * @param value The value to set to the RTPC.
          */
-        void SetRtpcValue(RtpcHandle handle, double value);
+        void SetRtpcValue(RtpcHandle handle, double value) const;
 
         /**
          * @brief Set the value of a RTPC.
@@ -1043,7 +1043,7 @@ namespace SparkyStudios::Audio::Amplitude
          * @param id The ID of the RTPC to update.
          * @param value The value to set to the RTPC.
          */
-        void SetRtpcValue(AmRtpcID id, double value);
+        void SetRtpcValue(AmRtpcID id, double value) const;
 
         /**
          * @brief Set the value of a RTPC.
@@ -1051,7 +1051,7 @@ namespace SparkyStudios::Audio::Amplitude
          * @param name THe name of the RTPC to update.
          * @param value The value to set to the RTPC.
          */
-        void SetRtpcValue(const std::string& name, double value);
+        void SetRtpcValue(const std::string& name, double value) const;
 
         /**
          * @brief Gets the version structure.
