@@ -21,10 +21,12 @@
 /////////////////////////////////////////////////////////////////////
 // Standard Library
 
+#include <atomic>
 #include <cmath>
 #include <cstdlib>
 #include <cstring>
 #include <map>
+#include <unordered_map>
 #include <string>
 #include <vector>
 

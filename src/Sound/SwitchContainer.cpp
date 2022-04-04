@@ -96,7 +96,7 @@ namespace SparkyStudios::Audio::Amplitude
             {
                 CallLogFunc(
                     "[ERROR] SwitchContainer " AM_OS_CHAR_FMT " specifies an unknown attenuation ID: %u.\n",
-                    AM_STRING_TO_OS_STRING(definition->name()->str()), definition->attenuation());
+                    AM_STRING_TO_OS_STRING(definition->name()->c_str()), definition->attenuation());
                 return false;
             }
         }

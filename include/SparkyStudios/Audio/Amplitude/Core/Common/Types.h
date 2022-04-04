@@ -17,12 +17,16 @@
 #ifndef SS_AMPLITUDE_AUDIO_TYPES_H
 #define SS_AMPLITUDE_AUDIO_TYPES_H
 
+#include <SparkyStudios/Audio/Amplitude/Core/Common/Config.h>
+
 #if defined(AM_WINDOWS_VERSION)
 #include <SparkyStudios/Audio/Amplitude/Core/Common/Platforms/Windows/Types.h>
 #elif defined(AM_ANDROID_VERSION)
 #include <SparkyStudios/Audio/Amplitude/Core/Common/Platforms/Android/Types.h>
 #elif defined(AM_LINUX_VERSION)
 #include <SparkyStudios/Audio/Amplitude/Core/Common/Platforms/Linux/Types.h>
+#elif defined(AM_OSX_VERSION) || defined(AM_IOS_VERSION)
+#include <SparkyStudios/Audio/Amplitude/Core/Common/Platforms/Apple/Types.h>
 #endif
 
 namespace SparkyStudios::Audio::Amplitude
