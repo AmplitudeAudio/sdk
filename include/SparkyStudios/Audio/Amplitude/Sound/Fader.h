@@ -58,6 +58,7 @@ namespace SparkyStudios::Audio::Amplitude
         };
 
         Fader();
+        virtual ~Fader() = default;
 
         /**
          * @brief Set up fader.
