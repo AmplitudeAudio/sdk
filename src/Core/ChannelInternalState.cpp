@@ -219,6 +219,10 @@ namespace SparkyStudios::Audio::Amplitude
 
         if (Valid())
         {
+            // If the sound is muted, no need to fade out
+            if (_gain == 0.0f)
+                return Halt();
+
             _realChannel.SetGain(_gain);
 
             _fader->Set(_gain, 0.0f, duration / kAmSecond);
@@ -317,6 +321,7 @@ namespace SparkyStudios::Audio::Amplitude
 
     void ChannelInternalState::AdvanceFrame([[maybe_unused]] AmTime deltaTime)
     {
+        // Skip paused and stopped channels
         if (_channelState == ChannelState::Paused || _channelState == ChannelState::Stopped)
             return;
 
