@@ -26,23 +26,23 @@
 namespace SparkyStudios::Audio::Amplitude
 {
 #if defined(AM_SSE_INTRINSICS)
-    constexpr AmUInt32 kSimdProcessedFramesCount = (AudioDataUnit::length);
+    constexpr AmUInt32 kSimdProcessedFramesCount = AudioDataUnit::length;
     constexpr AmUInt32 kSimdProcessedFramesCountHalf = (kSimdProcessedFramesCount / 2);
 #endif // AM_SSE_INTRINSICS
 
     static void OnSoundDestroyed(Mixer* mixer, MixerLayer* layer);
 
-    static void* ma_malloc(size_t sz, void* pUserData)
+    static void* ma_malloc(size_t sz, void*)
     {
         return amMemory->Malloc(MemoryPoolKind::Amplimix, sz);
     }
 
-    static void* ma_realloc(void* p, size_t sz, void* pUserData)
+    static void* ma_realloc(void* p, size_t sz, void*)
     {
         return amMemory->Realloc(MemoryPoolKind::Amplimix, p, sz);
     }
 
-    static void ma_free(void* p, void* pUserData)
+    static void ma_free(void* p, void*)
     {
         amMemory->Free(MemoryPoolKind::Amplimix, p);
     }
@@ -55,7 +55,7 @@ namespace SparkyStudios::Audio::Amplitude
         // Convert gain and pan to left and right gain and store it atomically
         // This formula is explained in the following paper:
         // http://www.rs-met.com/documents/tutorials/PanRules.pdf
-        const float p = (static_cast<float>(M_PI) * (pan + 1.0f)) / 4.0f;
+        const float p = static_cast<float>(M_PI) * (pan + 1.0f) / 4.0f;
         const float left = std::cos(p) * gain;
         const float right = std::sin(p) * gain;
 
@@ -183,33 +183,29 @@ namespace SparkyStudios::Audio::Amplitude
         if (layer->snd == nullptr)
             return;
 
-        auto* sound = static_cast<SoundInstance*>(layer->snd->userData);
+        const auto* sound = static_cast<SoundInstance*>(layer->snd->userData);
         delete sound;
 
         layer->snd = nullptr;
     }
 
-    static void MixMono(Mixer* mixer, AmUInt64 index, const AudioDataUnit& gain, SoundChunk* in, AudioBuffer outBuffer)
+    static void MixMono(AmUInt64 index, const AudioDataUnit& gain, const SoundChunk* in, AudioBuffer out)
     {
 #if defined(AM_SSE_INTRINSICS)
-        outBuffer[index] =
-            simdpp::add(outBuffer[index], simdpp::to_int16(simdpp::shift_r(simdpp::mull(in->buffer[index], gain), kAmFixedPointBits)));
+        out[index] = add(out[index], to_int16(shift_r(mull(in->buffer[index], gain), kAmFixedPointBits)));
 #else
-        outBuffer[index] += static_cast<AmInt16>((in->buffer[index] * lGain) >> kAmFixedPointBits);
+        out[index] += static_cast<AmInt16>((in->buffer[index] * lGain) >> kAmFixedPointBits);
 #endif // AM_SSE_INTRINSICS
     }
 
-    static void MixStereo(
-        Mixer* mixer, AmUInt64 index, const AudioDataUnit& lGain, const AudioDataUnit& rGain, SoundChunk* in, AudioBuffer outBuffer)
+    static void MixStereo(AmUInt64 index, const AudioDataUnit& lGain, const AudioDataUnit& rGain, const SoundChunk* in, AudioBuffer out)
     {
 #if defined(AM_SSE_INTRINSICS)
-        outBuffer[index + 0] = simdpp::add(
-            outBuffer[index + 0], simdpp::to_int16(simdpp::shift_r(simdpp::mull(in->buffer[index + 0], lGain), kAmFixedPointBits)));
-        outBuffer[index + 1] = simdpp::add(
-            outBuffer[index + 1], simdpp::to_int16(simdpp::shift_r(simdpp::mull(in->buffer[index + 1], rGain), kAmFixedPointBits)));
+        out[index + 0] = add(out[index + 0], to_int16(shift_r(mull(in->buffer[index + 0], lGain), kAmFixedPointBits)));
+        out[index + 1] = add(out[index + 1], to_int16(shift_r(mull(in->buffer[index + 1], rGain), kAmFixedPointBits)));
 #else
-        outBuffer[index + 0] += static_cast<AmInt16>((in->buffer[index + 0] * lGain) >> kAmFixedPointBits);
-        outBuffer[index + 1] += static_cast<AmInt16>((in->buffer[index + 1] * rGain) >> kAmFixedPointBits);
+        out[index + 0] += static_cast<AmInt16>((in->buffer[index + 0] * lGain) >> kAmFixedPointBits);
+        out[index + 1] += static_cast<AmInt16>((in->buffer[index + 1] * rGain) >> kAmFixedPointBits);
 #endif // AM_SSE_INTRINSICS
     }
 
@@ -255,7 +251,7 @@ namespace SparkyStudios::Audio::Amplitude
         _device.mRequestedOutputChannels = static_cast<PlaybackOutputChannels>(config->output()->channels());
         _device.mRequestedOutputFormat = static_cast<PlaybackOutputFormat>(config->output()->format());
 
-        _audioThreadMutex = Thread::CreateMutex();
+        _audioThreadMutex = Thread::CreateMutex(500);
 
         if (const auto* pipeline = config->mixer()->pipeline(); pipeline != nullptr && pipeline->size() > 0)
         {
@@ -306,6 +302,10 @@ namespace SparkyStudios::Audio::Amplitude
                         _pipeline->Append(soundProcessor);
                     }
                     break;
+
+                default:
+                    AMPLITUDE_ASSERT(false);
+                    break;
                 }
             }
         }
@@ -329,8 +329,16 @@ namespace SparkyStudios::Audio::Amplitude
         _device.mDeviceOutputFormat = deviceOutputFormat;
     }
 
+    bool Mixer::IsInitialized() const
+    {
+        return _initialized;
+    }
+
     AmUInt64 Mixer::Mix(AmVoidPtr mixBuffer, AmUInt64 frameCount)
     {
+        if (amEngine->GetState()->stopping || amEngine->GetState()->paused)
+            return 0;
+
         LockAudioMutex();
 
         const auto numChannels = static_cast<AmUInt16>(_device.mRequestedOutputChannels);
@@ -344,7 +352,7 @@ namespace SparkyStudios::Audio::Amplitude
         memset(buffer, 0, frameCount * numChannels * sizeof(AmInt16));
 
         // output remaining frames in buffer before mixing new ones
-        AmUInt64 frames = frameCount;
+        const AmUInt64 frames = frameCount;
 
         // dynamically sized buffer
         auto* align = SoundChunk::CreateChunk(frames, numChannels, MemoryPoolKind::Amplimix);
@@ -390,7 +398,7 @@ namespace SparkyStudios::Audio::Amplitude
         for (AmUInt32 i = 0; i < aSize; i++)
         {
 #if defined(AM_SSE_INTRINSICS)
-            align->buffer[i] = simdpp::min(simdpp::max(align->buffer[i].eval(), lower).eval(), upper).eval();
+            align->buffer[i] = min(max(align->buffer[i], lower), upper);
 #else
             align->buffer[i] = std::min(std::max(align[i], lower), upper);
 #endif // AM_SSE_INTRINSICS
@@ -442,71 +450,56 @@ namespace SparkyStudios::Audio::Amplitude
         if (id == 0)
             id = kAmplimixLayersCount;
 
-        MixerCommandCallback callback = [=]() -> bool
+        LockAudioMutex();
+
+        // get layer for next sound handle id
+        auto* lay = GetLayer(layer);
+
+        // check if corresponding layer is free
+        if (AMPLIMIX_LOAD(&lay->flag) == PLAY_STATE_FLAG_MIN)
         {
-            LockAudioMutex();
-
-            // get layer for next sound handle id
-            auto* lay = GetLayer(layer);
-
-            // check if corresponding layer is free
-            if (AMPLIMIX_LOAD(&lay->flag) == PLAY_STATE_FLAG_MIN)
+            // Initialize the sample rate converter
+            if (lay->sampleRateConverter != nullptr)
             {
-                // fill in non-atomic layer data along with truncating start and end
-                lay->id = id;
-                lay->snd = sound;
-
-#if defined(AM_SSE_INTRINSICS)
-                lay->start = startFrame & ~(kSimdProcessedFramesCount - 1);
-                lay->end = endFrame & ~(kSimdProcessedFramesCount - 1);
-#else
-                lay->start = startFrame;
-                lay->end = endFrame;
-#endif // AM_SSE_INTRINSICS
-
-                // Initialize the sample rate converter
-                if (lay->sampleRateConverter != nullptr)
-                    src_delete(lay->sampleRateConverter);
-
+                src_reset(lay->sampleRateConverter);
+            }
+            else
+            {
                 lay->sampleRateConverter =
                     src_new(amEngine->GetSampleRateConversionQuality(), static_cast<AmUInt16>(_device.mRequestedOutputChannels), nullptr);
 
                 if (lay->sampleRateConverter == nullptr)
                 {
-                    UnlockAudioMutex();
-                    return false;
+                    return 0;
                 }
-
-                // convert gain and pan to left and right gain and store it atomically
-                AMPLIMIX_STORE(&lay->gain, LRGain(gain, pan));
-                // store the pitch
-                AMPLIMIX_STORE(&lay->pitch, pitch);
-                // store the playback speed
-                AMPLIMIX_STORE(&lay->userPlaySpeed, speed);
-                // atomically set cursor to start position based on given argument
-                AMPLIMIX_STORE(&lay->cursor, lay->start);
-                // store flag last, releasing the layer to the mixer thread
-                AMPLIMIX_STORE(&lay->flag, flag);
-
-                // return success
-                UnlockAudioMutex();
-                return true;
             }
 
-            UnlockAudioMutex();
-            return false;
-        };
+            // fill in non-atomic layer data along with truncating start and end
+            lay->id = id;
+            lay->snd = sound;
 
-        if (_insideAudioThreadMutex)
-        {
-            PushCommand({ callback });
-            return layer;
+#if defined(AM_SSE_INTRINSICS)
+            lay->start = startFrame & ~(kSimdProcessedFramesCount - 1);
+            lay->end = endFrame & ~(kSimdProcessedFramesCount - 1);
+#else
+            lay->start = startFrame;
+            lay->end = endFrame;
+#endif // AM_SSE_INTRINSICS
+
+            // convert gain and pan to left and right gain and store it atomically
+            AMPLIMIX_STORE(&lay->gain, LRGain(gain, pan));
+            // store the pitch
+            AMPLIMIX_STORE(&lay->pitch, pitch);
+            // store the playback speed
+            AMPLIMIX_STORE(&lay->userPlaySpeed, speed);
+            // atomically set cursor to start position based on given argument
+            AMPLIMIX_STORE(&lay->cursor, lay->start);
+            // store flag last, releasing the layer to the mixer thread
+            AMPLIMIX_STORE(&lay->flag, flag);
         }
 
-        if (callback())
-            return layer;
-
-        return 0;
+        UnlockAudioMutex();
+        return layer;
     }
 
     bool Mixer::SetGainPan(AmUInt32 id, AmUInt32 layer, float gain, float pan)
@@ -575,53 +568,42 @@ namespace SparkyStudios::Audio::Amplitude
         if (flag >= PLAY_STATE_FLAG_MAX)
             return false;
 
-        MixerCommandCallback callback = [=]() -> bool
+        LockAudioMutex();
+
+        // get layer based on the lowest bits of id
+        auto* lay = GetLayer(layer);
+
+        // check id and state flag to make sure the id is valid
+        if (PlayStateFlag prev; (id == lay->id) && ((prev = AMPLIMIX_LOAD(&lay->flag)) >= PLAY_STATE_FLAG_STOP))
         {
-            LockAudioMutex();
-
-            // get layer based on the lowest bits of id
-            auto* lay = GetLayer(layer);
-
-            // check id and state flag to make sure the id is valid
-            if (PlayStateFlag prev; (id == lay->id) && ((prev = AMPLIMIX_LOAD(&lay->flag)) >= PLAY_STATE_FLAG_STOP))
+            // return success if already in desired state
+            if (prev == flag)
             {
-                // return success if already in desired state
-                if (prev == flag)
-                {
-                    UnlockAudioMutex();
-                    return true;
-                }
-
-                // run appropriate callback
-                if (prev == PLAY_STATE_FLAG_STOP && (flag == PLAY_STATE_FLAG_PLAY || flag == PLAY_STATE_FLAG_LOOP))
-                    OnSoundStarted(this, lay);
-                else if ((prev == PLAY_STATE_FLAG_PLAY || prev == PLAY_STATE_FLAG_LOOP) && flag == PLAY_STATE_FLAG_HALT)
-                    OnSoundPaused(this, lay);
-                else if (prev == PLAY_STATE_FLAG_HALT && (flag == PLAY_STATE_FLAG_PLAY || flag == PLAY_STATE_FLAG_LOOP))
-                    OnSoundResumed(this, lay);
-                else if ((prev == PLAY_STATE_FLAG_PLAY || prev == PLAY_STATE_FLAG_LOOP) && flag == PLAY_STATE_FLAG_STOP)
-                    OnSoundStopped(this, lay);
-
-                // swap if flag has not changed and return if successful
-                if (AMPLIMIX_CSWAP(&lay->flag, &prev, flag))
-                {
-                    UnlockAudioMutex();
-                    return true;
-                }
+                UnlockAudioMutex();
+                return true;
             }
 
-            // return failure
-            UnlockAudioMutex();
-            return false;
-        };
+            // run appropriate callback
+            if (prev == PLAY_STATE_FLAG_STOP && (flag == PLAY_STATE_FLAG_PLAY || flag == PLAY_STATE_FLAG_LOOP))
+                OnSoundStarted(this, lay);
+            else if ((prev == PLAY_STATE_FLAG_PLAY || prev == PLAY_STATE_FLAG_LOOP) && flag == PLAY_STATE_FLAG_HALT)
+                OnSoundPaused(this, lay);
+            else if (prev == PLAY_STATE_FLAG_HALT && (flag == PLAY_STATE_FLAG_PLAY || flag == PLAY_STATE_FLAG_LOOP))
+                OnSoundResumed(this, lay);
+            else if ((prev == PLAY_STATE_FLAG_PLAY || prev == PLAY_STATE_FLAG_LOOP) && flag == PLAY_STATE_FLAG_STOP)
+                OnSoundStopped(this, lay);
 
-        if (_insideAudioThreadMutex)
-        {
-            PushCommand({ callback });
-            return true;
+            // swap if flag has not changed and return if successful
+            if (AMPLIMIX_CSWAP(&lay->flag, &prev, flag))
+            {
+                UnlockAudioMutex();
+                return true;
+            }
         }
 
-        return callback();
+        // return failure
+        UnlockAudioMutex();
+        return false;
     }
 
     PlayStateFlag Mixer::GetPlayState(AmUInt32 id, AmUInt32 layer)
@@ -664,6 +646,8 @@ namespace SparkyStudios::Audio::Amplitude
 
     void Mixer::StopAll()
     {
+        LockAudioMutex();
+
         // go through all active layers and set their states to the stop state
         for (auto&& lay : _layers)
         {
@@ -671,10 +655,14 @@ namespace SparkyStudios::Audio::Amplitude
             if (AMPLIMIX_LOAD(&lay.flag) > PLAY_STATE_FLAG_STOP)
                 AMPLIMIX_STORE(&lay.flag, PLAY_STATE_FLAG_STOP);
         }
+
+        UnlockAudioMutex();
     }
 
     void Mixer::HaltAll()
     {
+        LockAudioMutex();
+
         // go through all playing layers and set their states to halt
         for (auto&& lay : _layers)
         {
@@ -682,10 +670,14 @@ namespace SparkyStudios::Audio::Amplitude
             if (PlayStateFlag flag; (flag = AMPLIMIX_LOAD(&lay.flag)) > PLAY_STATE_FLAG_HALT)
                 AMPLIMIX_CSWAP(&lay.flag, &flag, PLAY_STATE_FLAG_HALT);
         }
+
+        UnlockAudioMutex();
     }
 
     void Mixer::PlayAll()
     {
+        LockAudioMutex();
+
         // go through all halted layers and set their states to play
         for (auto&& lay : _layers)
         {
@@ -694,6 +686,8 @@ namespace SparkyStudios::Audio::Amplitude
             // swap the flag to play if it is on halt
             AMPLIMIX_CSWAP(&lay.flag, &flag, PLAY_STATE_FLAG_PLAY);
         }
+
+        UnlockAudioMutex();
     }
 
     bool Mixer::IsInsideThreadMutex() const
@@ -741,6 +735,12 @@ namespace SparkyStudios::Audio::Amplitude
 
     void Mixer::MixLayer(MixerLayer* layer, AudioBuffer buffer, AmUInt64 bufferSize, AmUInt64 samples)
     {
+        if (layer->snd == nullptr)
+        {
+            AMPLITUDE_ASSERT(false); // This should technically never appear
+            return;
+        }
+
         if (_pipeline == nullptr)
         {
             CallLogFunc("[WARNING] No active pipeline is set, this means no sound will be rendered. You should configure the Amplimix "
@@ -789,7 +789,7 @@ namespace SparkyStudios::Audio::Amplitude
         SoundChunk* in = SoundChunk::CreateChunk(inSamples, soundChannels, MemoryPoolKind::Amplimix);
 
         // if this sound is streaming, and we have a stream event callback
-        if (layer->snd != nullptr && layer->snd->stream)
+        if (layer->snd->stream)
         {
             // mix sound per chunk of streamed data
             AmUInt64 c = inSamples;
@@ -823,7 +823,7 @@ namespace SparkyStudios::Audio::Amplitude
                 c -= readLen;
             }
         }
-        else if (layer->snd != nullptr && !layer->snd->stream)
+        else
         {
             // Compute offset
             const AmUInt64 offset = (cursor % layer->snd->length) * soundChannels;
@@ -972,8 +972,10 @@ namespace SparkyStudios::Audio::Amplitude
             // regular playback
             for (AmUInt64 i = 0; i < bufferSize; i += reqChannels)
             {
+                position = AM_CLAMP(position, start, end);
+
                 // check if cursor at end
-                if (position >= end)
+                if (position == end)
                 {
                     // quit unless looping
                     if (!loop)
@@ -997,14 +999,15 @@ namespace SparkyStudios::Audio::Amplitude
                 {
                 case PlaybackOutputChannels::Mono:
                     // lGain is always equal to rGain on mono
-                    MixMono(this, i, lGain, out, buffer);
+                    MixMono(i, lGain, out, buffer);
                     break;
 
                 case PlaybackOutputChannels::Stereo:
-                    MixStereo(this, i, lGain, rGain, out, buffer);
+                    MixStereo(i, lGain, rGain, out, buffer);
                     break;
 
                 default:
+                    CallLogFunc("The mixer cannot handle the requested output channels");
                     break;
                 }
 
@@ -1021,6 +1024,8 @@ namespace SparkyStudios::Audio::Amplitude
             cursor = AM_VALUE_ALIGN(cursor, kSimdProcessedFramesCount);
 #endif // AM_SSE_INTRINSICS
 
+            cursor = AM_CLAMP(cursor, layer->start, layer->end);
+
             // swap back cursor if unchanged
             if (!AMPLIMIX_CSWAP(&layer->cursor, &oldCursor, cursor))
                 cursor = oldCursor;
@@ -1035,7 +1040,7 @@ namespace SparkyStudios::Audio::Amplitude
         SoundChunk::DestroyChunk(in);
 
         // run callback if reached the end
-        if (cursor >= layer->end)
+        if (cursor == layer->end)
         {
             // We are in the audio thread mutex here
             MixerCommandCallback callback = [=]() -> bool

@@ -18,6 +18,7 @@
 #define SS_AMPLITUDE_AUDIO_SOUNDDATA_H
 
 #include <SparkyStudios/Audio/Amplitude/Core/Common.h>
+#include <SparkyStudios/Audio/Amplitude/Core/Memory.h>
 
 #include <Utils/Utils.h>
 

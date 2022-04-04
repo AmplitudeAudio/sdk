@@ -17,9 +17,7 @@
 #ifndef SS_AMPLITUDE_AUDIO_MIXER_H
 #define SS_AMPLITUDE_AUDIO_MIXER_H
 
-#include <atomic>
 #include <queue>
-#define _Atomic(X) std::atomic<X>
 
 #include <SparkyStudios/Audio/Amplitude/Core/Common.h>
 #include <SparkyStudios/Audio/Amplitude/Core/Device.h>
@@ -32,6 +30,8 @@
 #include <samplerate.h>
 
 #include "engine_config_definition_generated.h"
+
+#define _Atomic(X) std::atomic<X>
 
 namespace SparkyStudios::Audio::Amplitude
 {
@@ -125,6 +125,8 @@ namespace SparkyStudios::Audio::Amplitude
             AmUInt32 deviceOutputSampleRate,
             PlaybackOutputChannels deviceOutputChannels,
             PlaybackOutputFormat deviceOutputFormat);
+
+        [[nodiscard]] bool IsInitialized() const;
 
         AmUInt64 Mix(AmVoidPtr mixBuffer, AmUInt64 frameCount);
 

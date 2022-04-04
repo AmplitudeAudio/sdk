@@ -103,7 +103,7 @@ namespace SparkyStudios::Audio::Amplitude
             return;
         }
 
-        if (auto findIt = std::find(_states.begin(), _states.end(), state); findIt != _states.end())
+        if (const auto findIt = std::find(_states.begin(), _states.end(), state); findIt != _states.end())
         {
             _activeState = state;
         }
