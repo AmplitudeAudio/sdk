@@ -13,18 +13,18 @@
 # limitations under the License.
 
 cmake_minimum_required(VERSION 3.20)
-project(amc)
+project(amac)
 
 set(AMC_SRC
     main.cpp
 )
 
-add_executable(amc ${AMC_SRC})
+add_executable(amac ${AMC_SRC})
 
-target_link_libraries(amc
+target_link_libraries(amac
     Amplitude
 )
 
-add_dependencies(amc
+add_dependencies(amac
     Amplitude
 )

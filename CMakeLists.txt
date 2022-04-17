@@ -316,7 +316,7 @@ if(UNIX)
   )
 endif()
 
-add_subdirectory(tools/amc)
+add_subdirectory(tools/amac)
 
 option(BUILD_SAMPLES "Build samples" OFF)
 if(BUILD_SAMPLES)
@@ -347,7 +347,7 @@ set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/${AM_BIN_DESTINATION}")
 set(CMAKE_INSTALL_PREFIX ${CMAKE_CURRENT_LIST_DIR})
 
 install(
-    TARGETS ${PROJECT_NAME} amc samplerate
+    TARGETS ${PROJECT_NAME} amac samplerate
     EXPORT AmplitudeAudioSDKConfig
     ARCHIVE DESTINATION ${AM_LIB_DESTINATION}
     LIBRARY DESTINATION ${AM_LIB_DESTINATION}
