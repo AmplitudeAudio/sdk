@@ -35,7 +35,7 @@ namespace SparkyStudios::Audio::Amplitude::Codecs
                 , _ogg(nullptr)
             {}
 
-            bool Open(AmOsString filePath) final;
+            bool Open(const AmOsString& filePath) final;
 
             bool Close() final;
 
@@ -59,7 +59,7 @@ namespace SparkyStudios::Audio::Amplitude::Codecs
                 , _ogg(nullptr)
             {}
 
-            bool Open(AmOsString filePath) final;
+            bool Open(const AmOsString& filePath) final;
 
             bool Close() final;
 
@@ -80,7 +80,7 @@ namespace SparkyStudios::Audio::Amplitude::Codecs
 
         [[nodiscard]] Encoder* CreateEncoder() const final;
 
-        bool CanHandleFile(AmOsString filePath) const final;
+        [[nodiscard]] bool CanHandleFile(const AmOsString& filePath) const final;
     } ogg_codec; // NOLINT(cert-err58-cpp)
 } // namespace SparkyStudios::Audio::Amplitude::Codecs
 

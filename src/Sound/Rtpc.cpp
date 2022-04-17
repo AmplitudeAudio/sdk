@@ -72,7 +72,7 @@ namespace SparkyStudios::Audio::Amplitude
         return true;
     }
 
-    bool Rtpc::LoadRtpcDefinitionFromFile(AmOsString filename)
+    bool Rtpc::LoadRtpcDefinitionFromFile(const AmOsString& filename)
     {
         std::string source;
         return Amplitude::LoadFile(filename, &source) && LoadRtpcDefinition(source);

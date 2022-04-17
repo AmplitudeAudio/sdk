@@ -38,7 +38,7 @@ namespace SparkyStudios::Audio::Amplitude
     AmString RobotizeFilter::GetParamName(AmUInt32 index)
     {
         if (index >= ATTRIBUTE_LAST)
-            return nullptr;
+            return "";
 
         AmString names[3] = { "Wet", "Frequency", "Waveform" };
         return names[index];

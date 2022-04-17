@@ -12,8 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include <cstring>
 #include <map>
+#include <utility>
 
 #include <SparkyStudios/Audio/Amplitude/Core/Driver.h>
 
@@ -41,7 +41,7 @@ namespace SparkyStudios::Audio::Amplitude
     }
 
     Driver::Driver(AmString name)
-        : m_name(name)
+        : m_name(std::move(name))
         , m_mixer(nullptr)
     {
         Driver::Register(this);
@@ -52,7 +52,7 @@ namespace SparkyStudios::Audio::Amplitude
         m_mixer = mixer;
     }
 
-    AmString Driver::GetName() const
+    const AmString& Driver::GetName() const
     {
         return m_name;
     }
@@ -72,29 +72,29 @@ namespace SparkyStudios::Audio::Amplitude
 
     Driver* Driver::Default()
     {
-        DriverRegistry& drivers = driverRegistry();
-        if (!drivers.empty())
+        if (const DriverRegistry& drivers = driverRegistry(); !drivers.empty())
             return drivers.rbegin()->second;
+
         return nullptr;
     }
 
-    Driver* Driver::Find(AmString name)
+    Driver* Driver::Find(const AmString& name)
     {
-        DriverRegistry& drivers = driverRegistry();
-        for (auto&& driver : drivers)
+        const DriverRegistry& drivers = driverRegistry();
+        for (const auto& [_, driver] : drivers)
         {
-            if (strcmp(driver.second->m_name, name) == 0)
-                return driver.second;
+            if (driver->m_name == name)
+                return driver;
         }
         return nullptr;
     }
 
-    void Driver::SetDefault(AmString name)
+    void Driver::SetDefault(const AmString& name)
     {
         DriverRegistry& drivers = driverRegistry();
         for (auto i = drivers.cbegin(), e = drivers.cend(); i != e; ++i)
         {
-            if (strcmp(i->second->m_name, name) == 0)
+            if (i->second->m_name == name)
             {
                 std::pair<AmString, Driver*> node = DriverImpl(i->first, i->second);
                 drivers.erase(i);

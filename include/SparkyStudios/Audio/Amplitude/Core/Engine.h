@@ -81,7 +81,7 @@ namespace SparkyStudios::Audio::Amplitude
          *
          * @return Whether initialization was successful.
          */
-        bool Initialize(AmOsString configFile);
+        bool Initialize(const AmOsString& configFile);
 
         /**
          * @brief Initialize the audio engine.
@@ -143,7 +143,7 @@ namespace SparkyStudios::Audio::Amplitude
          *
          * @return true Returns true on success
          */
-        bool LoadSoundBank(AmOsString filename);
+        bool LoadSoundBank(const AmOsString& filename);
 
         /**
          * @brief Load a sound bank from a file. Queue the sound files in that sound
@@ -155,7 +155,7 @@ namespace SparkyStudios::Audio::Amplitude
          *
          * @return true Returns true on success
          */
-        bool LoadSoundBank(AmOsString filename, AmBankID& outID);
+        bool LoadSoundBank(const AmOsString& filename, AmBankID& outID);
 
         /**
          * @brief Load a sound bank from memory. Queue the sound files in that sound
@@ -208,7 +208,7 @@ namespace SparkyStudios::Audio::Amplitude
          *
          * @param filename The file to unload.
          */
-        void UnloadSoundBank(AmOsString filename);
+        void UnloadSoundBank(const AmOsString& filename);
 
         /**
          * @brief Unload a sound bank.
@@ -239,7 +239,7 @@ namespace SparkyStudios::Audio::Amplitude
          *
          * @param name The unique name as defined in the JSON data.
          */
-        [[nodiscard]] SwitchContainerHandle GetSwitchContainerHandle(const std::string& name) const;
+        [[nodiscard]] SwitchContainerHandle GetSwitchContainerHandle(const AmString& name) const;
 
         /**
          * @brief Get a SwitchContainerHandle given its ID as defined in its JSON data.
@@ -253,14 +253,14 @@ namespace SparkyStudios::Audio::Amplitude
          *
          * @param filename The filename containing the flatbuffer binary data.
          */
-        [[nodiscard]] SwitchContainerHandle GetSwitchContainerHandleFromFile(AmOsString filename) const;
+        [[nodiscard]] SwitchContainerHandle GetSwitchContainerHandleFromFile(const AmOsString& filename) const;
 
         /**
          * @brief Get a CollectionHandle given its name as defined in its JSON data.
          *
          * @param name The unique name as defined in the JSON data.
          */
-        [[nodiscard]] CollectionHandle GetCollectionHandle(const std::string& name) const;
+        [[nodiscard]] CollectionHandle GetCollectionHandle(const AmString& name) const;
 
         /**
          * @brief Get a CollectionHandle given its ID as defined in its JSON data.
@@ -274,14 +274,14 @@ namespace SparkyStudios::Audio::Amplitude
          *
          * @param filename The filename containing the flatbuffer binary data.
          */
-        [[nodiscard]] CollectionHandle GetCollectionHandleFromFile(AmOsString filename) const;
+        [[nodiscard]] CollectionHandle GetCollectionHandleFromFile(const AmOsString& filename) const;
 
         /**
          * @brief Get a SoundHandle given its name as defined in its JSON data.
          *
          * @param name The unique name as defined in the JSON data.
          */
-        [[nodiscard]] SoundHandle GetSoundHandle(const std::string& name) const;
+        [[nodiscard]] SoundHandle GetSoundHandle(const AmString& name) const;
 
         /**
          * @brief Get a SoundHandle given its ID as defined in its JSON data.
@@ -295,14 +295,14 @@ namespace SparkyStudios::Audio::Amplitude
          *
          * @param filename The filename containing the flatbuffer binary data.
          */
-        [[nodiscard]] SoundHandle GetSoundHandleFromFile(AmOsString filename) const;
+        [[nodiscard]] SoundHandle GetSoundHandleFromFile(const AmOsString& filename) const;
 
         /**
          * @brief Get an EventHandle given its name as defined in its JSON data.
          *
          * @param name The unique name as defined in the JSON data.
          */
-        [[nodiscard]] EventHandle GetEventHandle(const std::string& name) const;
+        [[nodiscard]] EventHandle GetEventHandle(const AmString& name) const;
 
         /**
          * @brief Get an EventHandle given its ID as defined in its JSON data.
@@ -316,14 +316,14 @@ namespace SparkyStudios::Audio::Amplitude
          *
          * @param filename The filename containing the flatbuffer binary data.
          */
-        [[nodiscard]] EventHandle GetEventHandleFromFile(AmOsString filename) const;
+        [[nodiscard]] EventHandle GetEventHandleFromFile(const AmOsString& filename) const;
 
         /**
          * @brief Get an AttenuationHandle given its name as defined in its JSON data.
          *
          * @param name The unique name as defined in the JSON data.
          */
-        [[nodiscard]] AttenuationHandle GetAttenuationHandle(const std::string& name) const;
+        [[nodiscard]] AttenuationHandle GetAttenuationHandle(const AmString& name) const;
 
         /**
          * @brief Get an AttenuationHandle given its ID as defined in its JSON data.
@@ -344,7 +344,7 @@ namespace SparkyStudios::Audio::Amplitude
          *
          * @param name The unique name as defined in the JSON data.
          */
-        [[nodiscard]] SwitchHandle GetSwitchHandle(const std::string& name) const;
+        [[nodiscard]] SwitchHandle GetSwitchHandle(const AmString& name) const;
 
         /**
          * @brief Get an SwitchHandle given its ID as defined in its JSON data.
@@ -365,7 +365,7 @@ namespace SparkyStudios::Audio::Amplitude
          *
          * @param name The unique name as defined in the JSON data.
          */
-        [[nodiscard]] RtpcHandle GetRtpcHandle(const std::string& name) const;
+        [[nodiscard]] RtpcHandle GetRtpcHandle(const AmString& name) const;
 
         /**
          * @brief Get an RtpcHandle given its ID as defined in its JSON data.
@@ -386,7 +386,7 @@ namespace SparkyStudios::Audio::Amplitude
          *
          * @param name The unique name as defined in the JSON data.
          */
-        [[nodiscard]] EffectHandle GetEffectHandle(const std::string& name) const;
+        [[nodiscard]] EffectHandle GetEffectHandle(const AmString& name) const;
 
         /**
          * @brief Get an EffectHandle given its ID as defined in its JSON data.
@@ -566,7 +566,7 @@ namespace SparkyStudios::Audio::Amplitude
          *
          * @return A valid bus if found, otherwise an invalid bus.
          */
-        [[nodiscard]] Bus FindBus(AmString name) const;
+        [[nodiscard]] Bus FindBus(const AmString& name) const;
 
         /**
          * @brief Returns the bus with the given ID.
@@ -773,7 +773,7 @@ namespace SparkyStudios::Audio::Amplitude
          * @return The channel the sound is played on. If the object could not be
          *         played, an invalid Channel is returned.
          */
-        [[nodiscard]] Channel Play(const std::string& name) const;
+        [[nodiscard]] Channel Play(const AmString& name) const;
 
         /**
          * @brief Play a sound or a collection associated with the given name.
@@ -789,7 +789,7 @@ namespace SparkyStudios::Audio::Amplitude
          * @return The channel the sound is played on. If the object could not be
          *         played, an invalid Channel is returned.
          */
-        [[nodiscard]] Channel Play(const std::string& name, const hmm_vec3& location) const;
+        [[nodiscard]] Channel Play(const AmString& name, const hmm_vec3& location) const;
 
         /**
          * @brief Play a sound or a collection associated with the given name.
@@ -806,7 +806,7 @@ namespace SparkyStudios::Audio::Amplitude
          * @return The channel the sound is played on. If the object could not be
          *         played, an invalid Channel is returned.
          */
-        [[nodiscard]] Channel Play(const std::string& name, const hmm_vec3& location, float userGain) const;
+        [[nodiscard]] Channel Play(const AmString& name, const hmm_vec3& location, float userGain) const;
 
         /**
          * @brief Play a sound or a collection associated with the given name.
@@ -822,7 +822,7 @@ namespace SparkyStudios::Audio::Amplitude
          * @return The channel the sound is played on. If the object could not be
          *         played, an invalid Channel is returned.
          */
-        [[nodiscard]] Channel Play(const std::string& name, const Entity& entity) const;
+        [[nodiscard]] Channel Play(const AmString& name, const Entity& entity) const;
 
         /**
          * @brief Play a sound or a collection associated with the given name.
@@ -839,7 +839,7 @@ namespace SparkyStudios::Audio::Amplitude
          * @return The channel the sound is played on. If the object could not be
          *         played, an invalid Channel is returned.
          */
-        [[nodiscard]] Channel Play(const std::string& name, const Entity& entity, float userGain) const;
+        [[nodiscard]] Channel Play(const AmString& name, const Entity& entity, float userGain) const;
 
         /**
          * @brief Play a sound or a collection associated with the given ID in the
@@ -955,7 +955,7 @@ namespace SparkyStudios::Audio::Amplitude
          *
          * @return The triggered event.
          */
-        [[nodiscard]] EventCanceler Trigger(const std::string& name, const Entity& entity) const;
+        [[nodiscard]] EventCanceler Trigger(const AmString& name, const Entity& entity) const;
 
         /**
          * @brief Set the active state of the defined Switch.
@@ -971,7 +971,7 @@ namespace SparkyStudios::Audio::Amplitude
          * @param handle The handle of the Switch.
          * @param stateName The name of the active state to set.
          */
-        void SetSwitchState(SwitchHandle handle, const std::string& stateName) const;
+        void SetSwitchState(SwitchHandle handle, const AmString& stateName) const;
 
         /**
          * @brief Set the active state of the defined Switch.
@@ -995,7 +995,7 @@ namespace SparkyStudios::Audio::Amplitude
          * @param id The ID of the Switch to update.
          * @param stateName The name of the active state to set.
          */
-        void SetSwitchState(AmSwitchID id, const std::string& stateName) const;
+        void SetSwitchState(AmSwitchID id, const AmString& stateName) const;
 
         /**
          * @brief Set the active state of the defined Switch.
@@ -1011,7 +1011,7 @@ namespace SparkyStudios::Audio::Amplitude
          * @param name The name of the Switch to update.
          * @param stateId The ID of the active state to set.
          */
-        void SetSwitchState(const std::string& name, AmObjectID stateId) const;
+        void SetSwitchState(const AmString& name, AmObjectID stateId) const;
 
         /**
          * @brief Set the active state of the defined Switch.
@@ -1019,7 +1019,7 @@ namespace SparkyStudios::Audio::Amplitude
          * @param name The name of the Switch to update.
          * @param stateName The name of the active state to set.
          */
-        void SetSwitchState(const std::string& name, const std::string& stateName) const;
+        void SetSwitchState(const AmString& name, const AmString& stateName) const;
 
         /**
          * @brief Set the active state of the defined Switch.
@@ -1027,7 +1027,7 @@ namespace SparkyStudios::Audio::Amplitude
          * @param name The name of the Switch to update.
          * @param state The active state to set.
          */
-        void SetSwitchState(const std::string& name, const SwitchState& state) const;
+        void SetSwitchState(const AmString& name, const SwitchState& state) const;
 
         /**
          * @brief Set the value of a RTPC.
@@ -1051,7 +1051,7 @@ namespace SparkyStudios::Audio::Amplitude
          * @param name THe name of the RTPC to update.
          * @param value The value to set to the RTPC.
          */
-        void SetRtpcValue(const std::string& name, double value) const;
+        void SetRtpcValue(const AmString& name, double value) const;
 
         /**
          * @brief Gets the version structure.
@@ -1128,7 +1128,7 @@ namespace SparkyStudios::Audio::Amplitude
         Channel PlayScopedSound(SoundHandle handle, const Entity& entity, const hmm_vec3& location, float userGain) const;
 
         // Hold the engine config file contents.
-        std::string _configSrc;
+        AmString _configSrc;
 
         // The current state of the engine.
         EngineInternalState* _state;

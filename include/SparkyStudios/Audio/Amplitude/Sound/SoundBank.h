@@ -48,7 +48,7 @@ namespace SparkyStudios::Audio::Amplitude
          *
          * @return true when the operation succeeds, false otherwise.
          */
-        bool Initialize(AmOsString filename, Engine* engine);
+        bool Initialize(const AmOsString& filename, Engine* engine);
 
         /**
          * @brief Initializes the sound bank by loading all the packed data.

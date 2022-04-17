@@ -43,30 +43,30 @@ namespace SparkyStudios::Audio::Amplitude::Codecs
         m_allocationCallbacks.onRealloc = onRealloc;
     }
 
-    bool MP3Codec::MP3Decoder::Open(AmOsString filePath)
+    bool MP3Codec::MP3Decoder::Open(const AmOsString& filePath)
     {
         if (!m_codec->CanHandleFile(filePath))
         {
-            CallLogFunc("The MP3 codec cannot handle the file: '%s'\n", filePath);
+            CallLogFunc("The MP3 codec cannot handle the file: '" AM_OS_CHAR_FMT "'\n", filePath.c_str());
             return false;
         }
 
         const auto* codec = static_cast<const MP3Codec*>(m_codec);
 
 #if defined(AM_WCHAR_SUPPORTED)
-        if (drmp3_init_file_w(&_mp3, filePath, &codec->m_allocationCallbacks) == DRMP3_FALSE)
+        if (drmp3_init_file_w(&_mp3, filePath.c_str(), &codec->m_allocationCallbacks) == DRMP3_FALSE)
 #else
-        if (drmp3_init_file(&_mp3, filePath, &codec->m_allocationCallbacks) == DRMP3_FALSE)
+        if (drmp3_init_file(&_mp3, filePath.c_str(), &codec->m_allocationCallbacks) == DRMP3_FALSE)
 #endif
         {
-            CallLogFunc("[ERROR] Cannot load the MP3 file: '%s'\n.", filePath);
+            CallLogFunc("[ERROR] Cannot load the MP3 file: '" AM_OS_CHAR_FMT "'\n", filePath.c_str());
             return false;
         }
 
         const drmp3_uint64 framesCount = drmp3_get_pcm_frame_count(&_mp3);
         if (framesCount == DRMP3_FALSE)
         {
-            CallLogFunc("[ERROR] Cannot load the MP3 file: '%s'\n.", filePath);
+            CallLogFunc("[ERROR] Cannot load the MP3 file: '" AM_OS_CHAR_FMT "'\n.", filePath.c_str());
             return false;
         }
 
@@ -129,7 +129,7 @@ namespace SparkyStudios::Audio::Amplitude::Codecs
         return drmp3_seek_to_pcm_frame(&_mp3, offset) == DRMP3_TRUE;
     }
 
-    bool MP3Codec::MP3Encoder::Open(AmOsString filePath)
+    bool MP3Codec::MP3Encoder::Open(const AmOsString& filePath)
     {
         _initialized = true;
         return false;
@@ -160,15 +160,15 @@ namespace SparkyStudios::Audio::Amplitude::Codecs
         return new MP3Encoder(this);
     }
 
-    bool MP3Codec::CanHandleFile(AmOsString filePath) const
+    bool MP3Codec::CanHandleFile(const AmOsString& filePath) const
     {
         // TODO: Maybe check by extension instead?
 
         drmp3 dummy;
 #if defined(AM_WCHAR_SUPPORTED)
-        const bool can = drmp3_init_file_w(&dummy, filePath, &m_allocationCallbacks) == DRMP3_TRUE;
+        const bool can = drmp3_init_file_w(&dummy, filePath.c_str(), &m_allocationCallbacks) == DRMP3_TRUE;
 #else
-        const bool can = drmp3_init_file(&dummy, filePath, &m_allocationCallbacks) == DRMP3_TRUE;
+        const bool can = drmp3_init_file(&dummy, filePath.c_str(), &m_allocationCallbacks) == DRMP3_TRUE;
 #endif
 
         if (can)

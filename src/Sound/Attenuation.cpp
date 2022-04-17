@@ -49,7 +49,7 @@ namespace SparkyStudios::Audio::Amplitude
         return true;
     }
 
-    bool Attenuation::LoadAttenuationDefinitionFromFile(AmOsString filename)
+    bool Attenuation::LoadAttenuationDefinitionFromFile(const AmOsString& filename)
     {
         std::string source;
         return LoadFile(filename, &source) && LoadAttenuationDefinition(source);

@@ -12,8 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include <cstring>
 #include <map>
+#include <utility>
 
 #include <SparkyStudios/Audio/Amplitude/Core/Codec.h>
 
@@ -41,7 +41,7 @@ namespace SparkyStudios::Audio::Amplitude
     }
 
     Codec::Codec(AmString name)
-        : m_name(name)
+        : m_name(std::move(name))
     {
         Codec::Register(this);
     }
@@ -59,24 +59,24 @@ namespace SparkyStudios::Audio::Amplitude
         }
     }
 
-    Codec* Codec::Find(AmString name)
+    Codec* Codec::Find(const AmString& name)
     {
-        CodecRegistry& codecs = codecRegistry();
-        for (auto&& codec : codecs)
+        const CodecRegistry& codecs = codecRegistry();
+        for (const auto& [_, snd] : codecs)
         {
-            if (strcmp(codec.second->m_name, name) == 0)
-                return codec.second;
+            if (snd->m_name == name)
+                return snd;
         }
         return nullptr;
     }
 
-    Codec* Codec::FindCodecForFile(AmOsString filePath)
+    Codec* Codec::FindCodecForFile(const AmOsString& filePath)
     {
-        CodecRegistry& codecs = codecRegistry();
-        for (auto&& codec : codecs)
+        const CodecRegistry& codecs = codecRegistry();
+        for (const auto& [_, codec] : codecs)
         {
-            if (codec.second->CanHandleFile(filePath))
-                return codec.second;
+            if (codec->CanHandleFile(filePath))
+                return codec;
         }
         return nullptr;
     }

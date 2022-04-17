@@ -141,7 +141,7 @@ namespace SparkyStudios::Audio::Amplitude
         return true;
     }
 
-    bool Sound::LoadSoundDefinitionFromFile(AmOsString filename, EngineInternalState* state)
+    bool Sound::LoadSoundDefinitionFromFile(const AmOsString& filename, EngineInternalState* state)
     {
         std::string source;
         return Amplitude::LoadFile(filename, &source) && LoadSoundDefinition(source, state);

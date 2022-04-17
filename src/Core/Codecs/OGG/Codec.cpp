@@ -18,17 +18,17 @@
 
 namespace SparkyStudios::Audio::Amplitude::Codecs
 {
-    bool OGGCodec::OGGDecoder::Open(AmOsString filePath)
+    bool OGGCodec::OGGDecoder::Open(const AmOsString& filePath)
     {
         if (!m_codec->CanHandleFile(filePath))
         {
-            CallLogFunc("The OGG codec cannot handle the file: '" AM_OS_CHAR_FMT "'.\n", filePath);
+            CallLogFunc("The OGG codec cannot handle the file: '" AM_OS_CHAR_FMT "'.\n", filePath.c_str());
             return false;
         }
 
         if (_ogg = stb_vorbis_open_filename(AM_OS_STRING_TO_STRING(filePath), nullptr, nullptr); _ogg == nullptr)
         {
-            CallLogFunc("Cannot load the OGG file: '" AM_OS_CHAR_FMT "'.\n", filePath);
+            CallLogFunc("Cannot load the OGG file: '" AM_OS_CHAR_FMT "'.\n", filePath.c_str());
             return false;
         }
 
@@ -98,7 +98,7 @@ namespace SparkyStudios::Audio::Amplitude::Codecs
         return stb_vorbis_seek(_ogg, offset) != 0;
     }
 
-    bool OGGCodec::OGGEncoder::Open(AmOsString filePath)
+    bool OGGCodec::OGGEncoder::Open(const AmOsString& filePath)
     {
         _initialized = true;
         return false;
@@ -129,7 +129,7 @@ namespace SparkyStudios::Audio::Amplitude::Codecs
         return new OGGEncoder(this);
     }
 
-    bool OGGCodec::CanHandleFile(AmOsString filePath) const
+    bool OGGCodec::CanHandleFile(const AmOsString& filePath) const
     {
         // TODO: Maybe check by extension instead?
 

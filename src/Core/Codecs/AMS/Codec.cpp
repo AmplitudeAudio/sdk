@@ -514,17 +514,17 @@ namespace SparkyStudios::Audio::Amplitude::Codecs
         : Codec("ams")
     {}
 
-    bool AMSCodec::AMSDecoder::Open(AmOsString filePath)
+    bool AMSCodec::AMSDecoder::Open(const AmOsString& filePath)
     {
         if (_file.Open(filePath) != AM_ERROR_NO_ERROR)
         {
-            CallLogFunc("The AMS codec cannot open the file: '%s'\n", filePath);
+            CallLogFunc("The AMS codec cannot open the file: '" AM_OS_CHAR_FMT "'\n", filePath.c_str());
             return false;
         }
 
         if (!ReadHeader(_file, m_format, _blockSize))
         {
-            CallLogFunc("The AMS codec cannot handle the file: '%s'\n", filePath);
+            CallLogFunc("The AMS codec cannot handle the file: '" AM_OS_CHAR_FMT "'\n", filePath.c_str());
             return false;
         }
 
@@ -587,17 +587,17 @@ namespace SparkyStudios::Audio::Amplitude::Codecs
         return true;
     }
 
-    bool AMSCodec::AMSEncoder::Open(AmOsString filePath)
+    bool AMSCodec::AMSEncoder::Open(const AmOsString& filePath)
     {
         if (_file.Open(filePath, eFOM_WRITE, eFOK_BINARY) != AM_ERROR_NO_ERROR)
         {
-            CallLogFunc("The AMS codec cannot open the file: '%s'\n", filePath);
+            CallLogFunc("The AMS codec cannot open the file: '" AM_OS_CHAR_FMT "'\n", filePath.c_str());
             return false;
         }
 
         if (!WriteHeader(_file, m_format, _samplesPerBlock))
         {
-            CallLogFunc("The AMS codec was unable to write the file: '%s'\n", filePath);
+            CallLogFunc("The AMS codec was unable to write the file: '" AM_OS_CHAR_FMT "'\n", filePath.c_str());
             return false;
         }
 
@@ -641,7 +641,7 @@ namespace SparkyStudios::Audio::Amplitude::Codecs
         return new AMSEncoder(this);
     }
 
-    bool AMSCodec::CanHandleFile(AmOsString filePath) const
+    bool AMSCodec::CanHandleFile(const AmOsString& filePath) const
     {
         DiskFile file;
 

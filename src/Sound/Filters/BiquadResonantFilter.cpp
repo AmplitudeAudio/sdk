@@ -80,7 +80,7 @@ namespace SparkyStudios::Audio::Amplitude
     AmString BiquadResonantFilter::GetParamName(AmUInt32 index)
     {
         if (index >= ATTRIBUTE_LAST)
-            return nullptr;
+            return "";
 
         // clang-format off
         AmString names[ATTRIBUTE_LAST] = {

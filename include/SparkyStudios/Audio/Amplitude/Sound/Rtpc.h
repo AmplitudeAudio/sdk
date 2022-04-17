@@ -39,7 +39,7 @@ namespace SparkyStudios::Audio::Amplitude
 
         bool LoadRtpcDefinition(const std::string& source);
 
-        bool LoadRtpcDefinitionFromFile(AmOsString filename);
+        bool LoadRtpcDefinitionFromFile(const AmOsString& filename);
 
         [[nodiscard]] const RtpcDefinition* GetRtpcDefinition() const;
 

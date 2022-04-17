@@ -17,10 +17,11 @@
 #ifndef SS_AMPLITUDE_AUDIO_UNIX_TYPES_H
 #define SS_AMPLITUDE_AUDIO_UNIX_TYPES_H
 
-#include <sys/types.h>
-#include <cstring>
 #include <cstdint>
 #include <cstdio>
+#include <cstring>
+#include <sys/types.h>
+
 
 namespace SparkyStudios::Audio::Amplitude
 {
@@ -72,28 +73,16 @@ namespace SparkyStudios::Audio::Amplitude
     typedef intptr_t                AmIntPtr;
     typedef uintptr_t               AmUIntPtr;
 
-    typedef const char*             AmString;
+    typedef std::string             AmString;
 #if defined(AM_WCHAR_SUPPORTED)
     typedef wchar_t                 AmOsChar;
-    typedef const wchar_t*          AmOsString;
+    typedef std::wstring            AmOsString;
 #else
     typedef char                    AmOsChar;
-    typedef const char*             AmOsString;
+    typedef std::string             AmString;
 #endif
 
     typedef FILE*                   AmFileHandle;
-
-    struct AmOsStringComparator
-    {
-        bool operator()(AmOsString a, AmOsString b) const
-        {
-#if defined(AM_WCHAR_SUPPORTED)
-            return std::wstring(a).compare(b) < 0;
-#else
-            return std::strcmp(a, b) < 0;
-#endif
-        }
-    };
 } // namespace SparkyStudios::Audio::Amplitude
 
 #endif // SS_AMPLITUDE_AUDIO_UNIX_TYPES_H

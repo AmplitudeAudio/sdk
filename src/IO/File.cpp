@@ -90,16 +90,12 @@ namespace SparkyStudios::Audio::Amplitude
         mFileHandle = nullptr;
     }
 
-    AmResult DiskFile::Open(AmOsString fileName, FileOpenMode mode, FileOpenKind kind)
+    AmResult DiskFile::Open(const AmOsString& fileName, FileOpenMode mode, FileOpenKind kind)
     {
-        if (!fileName)
+        if (fileName.empty())
             return AM_ERROR_INVALID_PARAMETER;
 
-#if defined(AM_WCHAR_SUPPORTED)
-        std::wstring op{};
-#else
-        std::string op{};
-#endif
+        AmOsString op{};
 
         switch (mode)
         {
@@ -119,9 +115,9 @@ namespace SparkyStudios::Audio::Amplitude
         }
 
 #if defined(AM_WINDOWS_VERSION)
-        _wfopen_s(&mFileHandle, fileName, op.c_str());
+        _wfopen_s(&mFileHandle, fileName.c_str(), op.c_str());
 #else
-        mFileHandle = fopen(fileName, op.c_str());
+        mFileHandle = fopen(fileName.c_str(), op.c_str());
 #endif
 
         if (!mFileHandle)
@@ -221,9 +217,9 @@ namespace SparkyStudios::Audio::Amplitude
         return AM_ERROR_NO_ERROR;
     }
 
-    AmResult MemoryFile::OpenToMem(AmOsString fileName)
+    AmResult MemoryFile::OpenToMem(const AmOsString& fileName)
     {
-        if (!fileName)
+        if (fileName.empty())
             return AM_ERROR_INVALID_PARAMETER;
         if (mDataOwned)
             delete[] mDataPtr;

@@ -35,7 +35,7 @@ namespace SparkyStudios::Audio::Amplitude::Codecs
                 , _wav()
             {}
 
-            bool Open(AmOsString filePath) final;
+            bool Open(const AmOsString& filePath) final;
 
             bool Close() final;
 
@@ -59,7 +59,7 @@ namespace SparkyStudios::Audio::Amplitude::Codecs
                 , _wav()
             {}
 
-            bool Open(AmOsString filePath) final;
+            bool Open(const AmOsString& filePath) final;
 
             void SetFormat(const SoundFormat& format) final;
 
@@ -81,7 +81,7 @@ namespace SparkyStudios::Audio::Amplitude::Codecs
 
         [[nodiscard]] Encoder* CreateEncoder() const final;
 
-        bool CanHandleFile(AmOsString filePath) const final;
+        [[nodiscard]] bool CanHandleFile(const AmOsString& filePath) const final;
 
         drwav_allocation_callbacks m_allocationCallbacks;
     } wav_codec; // NOLINT(cert-err58-cpp)

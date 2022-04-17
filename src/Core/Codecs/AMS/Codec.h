@@ -36,7 +36,7 @@ namespace SparkyStudios::Audio::Amplitude::Codecs
                 , _blockSize(0)
             {}
 
-            bool Open(AmOsString filePath) final;
+            bool Open(const AmOsString& filePath) final;
 
             bool Close() final;
 
@@ -65,7 +65,7 @@ namespace SparkyStudios::Audio::Amplitude::Codecs
                 , _noiseShaping(Compression::ADPCM::eNSM_OFF)
             {}
 
-            bool Open(AmOsString filePath) final;
+            bool Open(const AmOsString& filePath) final;
 
             bool Close() final;
 
@@ -90,7 +90,7 @@ namespace SparkyStudios::Audio::Amplitude::Codecs
 
         [[nodiscard]] Encoder* CreateEncoder() const final;
 
-        bool CanHandleFile(AmOsString filePath) const final;
+        [[nodiscard]] bool CanHandleFile(const AmOsString& filePath) const final;
     } ams_codec; // NOLINT(cert-err58-cpp)
 } // namespace SparkyStudios::Audio::Amplitude::Codecs
 

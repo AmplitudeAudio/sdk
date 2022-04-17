@@ -89,7 +89,7 @@ namespace SparkyStudios::Audio::Amplitude
          *
          * @return true if the sound was loaded successfully, false otherwise.
          */
-        bool LoadSoundDefinitionFromFile(AmOsString filename, EngineInternalState* state);
+        bool LoadSoundDefinitionFromFile(const AmOsString& filename, EngineInternalState* state);
 
         /**
          * @brief Acquires referenced objects in this Sound.

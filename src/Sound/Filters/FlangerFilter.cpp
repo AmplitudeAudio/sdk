@@ -41,7 +41,7 @@ namespace SparkyStudios::Audio::Amplitude
     AmString FlangerFilter::GetParamName(AmUInt32 index)
     {
         if (index >= ATTRIBUTE_LAST)
-            return nullptr;
+            return "";
 
         static AmString names[ATTRIBUTE_LAST] = { "Wet", "Delay", "Frequency" };
 

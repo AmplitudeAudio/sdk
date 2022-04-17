@@ -44,7 +44,7 @@ namespace SparkyStudios::Audio::Amplitude
         , _refCounter()
     {}
 
-    bool Switch::LoadSwitchDefinition(const std::string& switchDefinition)
+    bool Switch::LoadSwitchDefinition(const AmString& switchDefinition)
     {
         AMPLITUDE_ASSERT(_id == kAmInvalidObjectId);
 
@@ -66,7 +66,7 @@ namespace SparkyStudios::Audio::Amplitude
         return true;
     }
 
-    bool Switch::LoadSwitchDefinitionFromFile(AmOsString filename)
+    bool Switch::LoadSwitchDefinitionFromFile(const AmOsString& filename)
     {
         std::string source;
         return Amplitude::LoadFile(filename, &source) && LoadSwitchDefinition(source);

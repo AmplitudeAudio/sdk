@@ -39,27 +39,15 @@ namespace SparkyStudios::Audio::Amplitude
     struct BusDefinitionList;
     struct SoundBankDefinition;
 
-#if defined(AM_WCHAR_SUPPORTED)
-    typedef std::map<std::wstring, AmEffectID> EffectIdMap;
-    typedef std::map<std::wstring, AmRtpcID> RtpcIdMap;
-    typedef std::map<std::wstring, AmSwitchID> SwitchIdMap;
-    typedef std::map<std::wstring, AmAttenuationID> AttenuationIdMap;
-    typedef std::map<std::wstring, AmCollectionID> CollectionIdMap;
-    typedef std::map<std::wstring, AmSwitchContainerID> SwitchContainerIdMap;
-    typedef std::map<std::wstring, AmSoundID> SoundIdMap;
-    typedef std::map<std::wstring, AmEventID> EventIdMap;
-    typedef std::map<std::wstring, AmBankID> SoundBankIdMap;
-#else
-    typedef std::map<std::string, AmEffectID> EffectIdMap;
-    typedef std::map<std::string, AmRtpcID> RtpcIdMap;
-    typedef std::map<std::string, AmSwitchID> SwitchIdMap;
-    typedef std::map<std::string, AmAttenuationID> AttenuationIdMap;
-    typedef std::map<std::string, AmCollectionID> CollectionIdMap;
-    typedef std::map<std::string, AmSwitchContainerID> SwitchContainerIdMap;
-    typedef std::map<std::string, AmSoundID> SoundIdMap;
-    typedef std::map<std::string, AmEventID> EventIdMap;
-    typedef std::map<std::string, AmBankID> SoundBankIdMap;
-#endif
+    typedef std::map<AmOsString, AmEffectID> EffectIdMap;
+    typedef std::map<AmOsString, AmRtpcID> RtpcIdMap;
+    typedef std::map<AmOsString, AmSwitchID> SwitchIdMap;
+    typedef std::map<AmOsString, AmAttenuationID> AttenuationIdMap;
+    typedef std::map<AmOsString, AmCollectionID> CollectionIdMap;
+    typedef std::map<AmOsString, AmSwitchContainerID> SwitchContainerIdMap;
+    typedef std::map<AmOsString, AmSoundID> SoundIdMap;
+    typedef std::map<AmOsString, AmEventID> EventIdMap;
+    typedef std::map<AmOsString, AmBankID> SoundBankIdMap;
 
     typedef std::map<AmSwitchContainerID, std::unique_ptr<SwitchContainer>> SwitchContainerMap;
 
@@ -304,7 +292,7 @@ namespace SparkyStudios::Audio::Amplitude
     // Find a bus with the given ID.
 
     // Find a bus with the given name.
-    BusInternalState* FindBusInternalState(EngineInternalState* state, AmString id);
+    BusInternalState* FindBusInternalState(EngineInternalState* state, const AmString& name);
 
     // Given a playing sound, find where a new sound with the given priority should
     // be inserted into the list.
@@ -329,7 +317,7 @@ namespace SparkyStudios::Audio::Amplitude
     // listener, respectively.
     hmm_vec2 CalculatePan(const hmm_vec3& listenerSpaceLocation);
 
-    bool LoadFile(AmOsString filename, std::string* dest);
+    bool LoadFile(const AmOsString& filename, std::string* dest);
 
     AmUInt32 GetMaxNumberOfChannels(const EngineConfigDefinition* config);
 } // namespace SparkyStudios::Audio::Amplitude

@@ -43,7 +43,7 @@ namespace SparkyStudios::Audio::Amplitude
     AmString EchoFilter::GetParamName(AmUInt32 index)
     {
         if (index >= ATTRIBUTE_LAST)
-            return nullptr;
+            return "";
 
         AmString names[ATTRIBUTE_LAST] = { "Wet", "Delay", "Decay", "Filter" };
 

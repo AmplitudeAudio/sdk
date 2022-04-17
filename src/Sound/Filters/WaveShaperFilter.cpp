@@ -38,7 +38,7 @@ namespace SparkyStudios::Audio::Amplitude
     AmString WaveShaperFilter::GetParamName(AmUInt32 index)
     {
         if (index >= ATTRIBUTE_LAST)
-            return nullptr;
+            return "";
 
         AmString names[] = { "Wet", "Amount" };
         return names[index];

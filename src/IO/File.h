@@ -93,7 +93,7 @@ namespace SparkyStudios::Audio::Amplitude
 
         AmSize Pos() override;
 
-        AmResult Open(AmOsString fileName, FileOpenMode mode = eFOM_READ, FileOpenKind kind = eFOK_BINARY);
+        AmResult Open(const AmOsString& fileName, FileOpenMode mode = eFOM_READ, FileOpenKind kind = eFOK_BINARY);
 
         AmFileHandle GetFilePtr() override;
 
@@ -120,7 +120,7 @@ namespace SparkyStudios::Audio::Amplitude
         AmSize Pos() override;
         AmConstUInt8Buffer GetMemPtr() override;
         AmResult OpenMem(AmConstUInt8Buffer data, AmSize dataLength, bool copy = false, bool takeOwnership = true);
-        AmResult OpenToMem(AmOsString fileName);
+        AmResult OpenToMem(const AmOsString& fileName);
         AmResult OpenFileToMem(File* aFile);
 
     private:

@@ -41,7 +41,7 @@ namespace SparkyStudios::Audio::Amplitude
         _attenuation = nullptr;
     }
 
-    bool SwitchContainer::LoadSwitchContainerDefinition(const std::string& source, EngineInternalState* state)
+    bool SwitchContainer::LoadSwitchContainerDefinition(const AmString& source, EngineInternalState* state)
     {
         AMPLITUDE_ASSERT(_id == kAmInvalidObjectId);
 
@@ -163,7 +163,7 @@ namespace SparkyStudios::Audio::Amplitude
         return true;
     }
 
-    bool SwitchContainer::LoadSwitchContainerDefinitionFromFile(AmOsString filename, EngineInternalState* state)
+    bool SwitchContainer::LoadSwitchContainerDefinitionFromFile(const AmOsString& filename, EngineInternalState* state)
     {
         std::string source;
         return Amplitude::LoadFile(filename, &source) && LoadSwitchContainerDefinition(source, state);

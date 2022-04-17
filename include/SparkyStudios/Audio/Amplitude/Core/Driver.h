@@ -68,7 +68,7 @@ namespace SparkyStudios::Audio::Amplitude
          *
          * @return The name of this driver.
          */
-        [[nodiscard]] AmString GetName() const;
+        [[nodiscard]] const AmString& GetName() const;
 
         /**
          * @brief Registers a new audio driver.
@@ -89,14 +89,14 @@ namespace SparkyStudios::Audio::Amplitude
          *
          * @return The audio driver with the given name, or NULL if none.
          */
-        static Driver* Find(AmString name);
+        static Driver* Find(const AmString& name);
 
         /**
          * @brief Set the default diver to use in the engine.
          *
          * @param name The name of the audio driver. Must be registered before.
          */
-        static void SetDefault(AmString name);
+        static void SetDefault(const AmString& name);
 
         /**
          * @brief Locks the drivers registry.

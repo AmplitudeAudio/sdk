@@ -106,7 +106,7 @@ namespace SparkyStudios::Audio::Amplitude
         Attenuation();
 
         bool LoadAttenuationDefinition(const std::string& attenuation);
-        bool LoadAttenuationDefinitionFromFile(AmOsString filename);
+        bool LoadAttenuationDefinitionFromFile(const AmOsString& filename);
 
         /**
          * @brief Returns the gain of the sound from the given distance to the listener.

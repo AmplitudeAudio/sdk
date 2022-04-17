@@ -71,8 +71,8 @@ namespace SparkyStudios::Audio::Amplitude
          */
         Switch();
 
-        bool LoadSwitchDefinition(const std::string& switchDefinition);
-        bool LoadSwitchDefinitionFromFile(AmOsString filename);
+        bool LoadSwitchDefinition(const AmString& switchDefinition);
+        bool LoadSwitchDefinitionFromFile(const AmOsString& filename);
 
         /**
          * @brief Get the switch definition which generated this Switch.

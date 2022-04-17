@@ -27,7 +27,7 @@ namespace SparkyStudios::Audio::Amplitude
      * In order to perform logging, the library needs to be provided with a logging
      * function that fits this type signature.
      */
-    typedef void (*LogFunc)(AmString fmt, va_list args);
+    typedef void (*LogFunc)(const char* fmt, va_list args);
 
     /**
      * @brief Register a logging function with the library.
@@ -44,7 +44,7 @@ namespace SparkyStudios::Audio::Amplitude
      * @param[in] format The format string to print.
      * @param[in] ... The arguments to format.
      */
-    void CallLogFunc(AmString format, ...);
+    void CallLogFunc(const char* format, ...);
 } // namespace SparkyStudios::Audio::Amplitude
 
 #endif // SPARK_AUDIO_LOG_H

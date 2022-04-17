@@ -35,7 +35,7 @@ namespace SparkyStudios::Audio::Amplitude::Codecs
                 , _flac()
             {}
 
-            bool Open(AmOsString filePath) final;
+            bool Open(const AmOsString& filePath) final;
 
             bool Close() final;
 
@@ -59,7 +59,7 @@ namespace SparkyStudios::Audio::Amplitude::Codecs
                 , _flac()
             {}
 
-            bool Open(AmOsString filePath) final;
+            bool Open(const AmOsString& filePath) final;
 
             bool Close() final;
 
@@ -78,7 +78,7 @@ namespace SparkyStudios::Audio::Amplitude::Codecs
 
         [[nodiscard]] Encoder* CreateEncoder() const final;
 
-        bool CanHandleFile(AmOsString filePath) const final;
+        [[nodiscard]] bool CanHandleFile(const AmOsString& filePath) const final;
 
         drflac_allocation_callbacks m_allocationCallbacks;
     } flac_codec; // NOLINT(cert-err58-cpp)

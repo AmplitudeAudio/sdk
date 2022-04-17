@@ -100,7 +100,7 @@ namespace SparkyStudios::Audio::Amplitude
         case ATTRIBUTE_BAND_8:
             return "Band 8";
         default:
-            return nullptr;
+            return "";
         }
     }
 

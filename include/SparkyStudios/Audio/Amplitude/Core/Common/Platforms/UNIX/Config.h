@@ -68,8 +68,8 @@ static AM_INLINE(std::string) am_wstring_narrow(const std::wstring& str)
 #define AM_OS_STRING(s) s
 
 // Conversion between OS strings and default strings
-#define AM_OS_STRING_TO_STRING(s) s
-#define AM_STRING_TO_OS_STRING(s) s
+#define AM_OS_STRING_TO_STRING(s) std::string(s).c_str()
+#define AM_STRING_TO_OS_STRING(s) std::string(s).c_str()
 #endif
 
 // AMPLITUDE_ASSERT Config

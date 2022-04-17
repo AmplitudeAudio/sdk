@@ -58,7 +58,7 @@ namespace SparkyStudios::Audio::Amplitude
         case ATTRIBUTE_MODE:
             return "Freeze";
         default:
-            return nullptr;
+            return "";
         }
     }
 

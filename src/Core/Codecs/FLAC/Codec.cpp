@@ -43,24 +43,24 @@ namespace SparkyStudios::Audio::Amplitude::Codecs
         m_allocationCallbacks.onRealloc = onRealloc;
     }
 
-    bool FLACCodec::FLACDecoder::Open(AmOsString filePath)
+    bool FLACCodec::FLACDecoder::Open(const AmOsString& filePath)
     {
         if (!m_codec->CanHandleFile(filePath))
         {
-            CallLogFunc("The FLAC codec cannot handle the file: '%s'\n", filePath);
+            CallLogFunc("The FLAC codec cannot handle the file: '" AM_OS_CHAR_FMT "'\n", filePath.c_str());
             return false;
         }
 
         const auto* codec = static_cast<const FLACCodec*>(m_codec);
 
 #if defined(AM_WCHAR_SUPPORTED)
-        _flac = drflac_open_file_w(filePath, &codec->m_allocationCallbacks);
+        _flac = drflac_open_file_w(filePath.c_str(), &codec->m_allocationCallbacks);
 #else
-        _flac = drflac_open_file(filePath, &codec->m_allocationCallbacks);
+        _flac = drflac_open_file(filePath.c_str(), &codec->m_allocationCallbacks);
 #endif
         if (_flac == nullptr)
         {
-            CallLogFunc("Cannot load the FLAC file: '%s'\n.", filePath);
+            CallLogFunc("Cannot load the FLAC file: '" AM_OS_CHAR_FMT "'\n", filePath.c_str());
             return false;
         }
 
@@ -124,7 +124,7 @@ namespace SparkyStudios::Audio::Amplitude::Codecs
         return drflac_seek_to_pcm_frame(_flac, offset) == DRFLAC_TRUE;
     }
 
-    bool FLACCodec::FLACEncoder::Open(AmOsString filePath)
+    bool FLACCodec::FLACEncoder::Open(const AmOsString& filePath)
     {
         _initialized = true;
         return false;
@@ -155,14 +155,14 @@ namespace SparkyStudios::Audio::Amplitude::Codecs
         return new FLACEncoder(this);
     }
 
-    bool FLACCodec::CanHandleFile(AmOsString filePath) const
+    bool FLACCodec::CanHandleFile(const AmOsString& filePath) const
     {
         // TODO: Maybe check by extension instead?
 
 #if defined(AM_WCHAR_SUPPORTED)
-        drflac* flac = drflac_open_file_w(filePath, &m_allocationCallbacks);
+        drflac* flac = drflac_open_file_w(filePath.c_str(), &m_allocationCallbacks);
 #else
-        drflac* flac = drflac_open_file(filePath, &m_allocationCallbacks);
+        drflac* flac = drflac_open_file(filePath.c_str(), &m_allocationCallbacks);
 #endif
 
         if (flac != nullptr)

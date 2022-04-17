@@ -67,7 +67,7 @@ namespace SparkyStudios::Audio::Amplitude
          *
          * @return true if the collection was loaded successfully, false otherwise.
          */
-        bool LoadCollectionDefinitionFromFile(AmOsString filename, EngineInternalState* state);
+        bool LoadCollectionDefinitionFromFile(const AmOsString& filename, EngineInternalState* state);
 
         /**
          * @brief Acquires referenced objects in this Collection.

@@ -55,7 +55,7 @@ namespace SparkyStudios::Audio::Amplitude
              *
              * @param filePath The path to the file to read.
              */
-            virtual bool Open(AmOsString filePath) = 0;
+            virtual bool Open(const AmOsString& filePath) = 0;
 
             /**
              * @brief Closes the file previously opened.
@@ -144,7 +144,7 @@ namespace SparkyStudios::Audio::Amplitude
              *
              * @param filePath The path to the file to write.
              */
-            virtual bool Open(AmOsString filePath) = 0;
+            virtual bool Open(const AmOsString& filePath) = 0;
 
             /**
              * @brief Closes the opened file.
@@ -225,14 +225,14 @@ namespace SparkyStudios::Audio::Amplitude
          *
          * @return Whether this Codec can handle a file.
          */
-        virtual bool CanHandleFile(AmOsString filePath) const = 0;
+        [[nodiscard]] virtual bool CanHandleFile(const AmOsString& filePath) const = 0;
 
         /**
          * @brief Gets the name of this codec.
          *
          * @return The name of this codec.
          */
-        [[nodiscard]] AmString GetName() const
+        [[nodiscard]] const AmString& GetName() const
         {
             return m_name;
         }
@@ -249,7 +249,7 @@ namespace SparkyStudios::Audio::Amplitude
          *
          * @return The codec with the given name, or NULL if none.
          */
-        static Codec* Find(AmString name);
+        static Codec* Find(const AmString& name);
 
         /**
          * @brief Finds the codec which can handle the given file.
@@ -257,7 +257,7 @@ namespace SparkyStudios::Audio::Amplitude
          * @param filePath The path to the file.
          * @return The codec which can handle the given file.
          */
-        static Codec* FindCodecForFile(AmOsString filePath);
+        static Codec* FindCodecForFile(const AmOsString& filePath);
 
         /**
          * @brief Locks the codecs registry.

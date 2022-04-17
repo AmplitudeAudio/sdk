@@ -50,8 +50,8 @@ namespace SparkyStudios::Audio::Amplitude
         SwitchContainer();
         ~SwitchContainer();
 
-        bool LoadSwitchContainerDefinition(const std::string& source, EngineInternalState* state);
-        bool LoadSwitchContainerDefinitionFromFile(AmOsString filename, EngineInternalState* state);
+        bool LoadSwitchContainerDefinition(const AmString& source, EngineInternalState* state);
+        bool LoadSwitchContainerDefinitionFromFile(const AmOsString& filename, EngineInternalState* state);
         void AcquireReferences(EngineInternalState* state);
         void ReleaseReferences(EngineInternalState* state);
         [[nodiscard]] const SwitchContainerDefinition* GetSwitchContainerDefinition() const;

@@ -43,7 +43,7 @@ namespace SparkyStudios::Audio::Amplitude
     typedef uint16_t                AmUInt16;
     typedef uint32_t                AmUInt32;
     typedef uint64_t                AmUInt64;
-    
+
     typedef size_t                  AmSize;
 
     typedef float                   AmReal32;
@@ -82,19 +82,11 @@ namespace SparkyStudios::Audio::Amplitude
     typedef intptr_t                AmIntPtr;
     typedef uintptr_t               AmUIntPtr;
 
-    typedef const char*             AmString;
+    typedef std::string             AmString;
     typedef wchar_t                 AmOsChar;
-    typedef const wchar_t*          AmOsString;
+    typedef std::wstring            AmOsString;
 
     typedef FILE*                   AmFileHandle;
-
-    struct AmOsStringComparator
-    {
-        bool operator()(AmOsString a, AmOsString b) const
-        {
-            return std::wstring(a).compare(b) < 0;
-        }
-    };
 } // namespace SparkyStudios::Audio::Amplitude
 
 #endif // SS_AMPLITUDE_AUDIO_WINDOWS_TYPES_H
