@@ -122,7 +122,7 @@ namespace SparkyStudios::Audio::Amplitude
          *
          * @param entity The which trigger the event.
          */
-        EventInstance Trigger(const Entity& entity) const;
+        [[nodiscard]] EventInstance Trigger(const Entity& entity) const;
 
         /**
          * @brief Returns the ID of this event.

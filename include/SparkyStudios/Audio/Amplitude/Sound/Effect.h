@@ -90,7 +90,7 @@ namespace SparkyStudios::Audio::Amplitude
          *
          * @return The effect instance.
          */
-        EffectInstance* CreateInstance() const;
+        [[nodiscard]] EffectInstance* CreateInstance() const;
 
         /**
          * @brief Deletes an instance of this effect.
@@ -159,7 +159,7 @@ namespace SparkyStudios::Audio::Amplitude
          *
          * @return The filter instance.
          */
-        FilterInstance* GetFilter() const;
+        [[nodiscard]] FilterInstance* GetFilter() const;
 
     private:
         const Effect* _parent;

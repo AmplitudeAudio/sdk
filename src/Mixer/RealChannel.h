@@ -117,14 +117,14 @@ namespace SparkyStudios::Audio::Amplitude
 
         /**
          * @brief Set the pitch of the sound.
-         * 
+         *
          * @param pitch The sound's pitch.
          */
         void SetPitch(AmReal32 pitch);
 
         /**
          * @brief Set the playback speed of the sound.
-         * 
+         *
          * @param speed The playback speed. Set to 1 for normal speed.
          */
         void SetSpeed(AmReal32 speed);
@@ -200,7 +200,7 @@ namespace SparkyStudios::Audio::Amplitude
 
     private:
         void SetGainPan(float gain, float pan, AmUInt32 layer);
-        AmUInt32 FindFreeLayer(AmUInt32 layerIndex = 0) const;
+        [[nodiscard]] AmUInt32 FindFreeLayer(AmUInt32 layerIndex = 0) const;
 
         AmChannelID _channelId;
         std::map<AmUInt32, AmUInt32> _channelLayersId;
