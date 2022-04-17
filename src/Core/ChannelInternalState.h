@@ -65,6 +65,7 @@ namespace SparkyStudios::Audio::Amplitude
             , _pitch(1.0f)
             , _location()
             , _dopplerFactors()
+            , _channelStateId(kAmInvalidObjectId)
         {}
 
         // Updates the state enum based on whether this channel is stopped, playing,

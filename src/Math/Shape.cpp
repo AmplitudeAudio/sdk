@@ -42,6 +42,9 @@ namespace SparkyStudios::Audio::Amplitude
     Shape::Shape()
         : m_lookAtMatrix(AM_Mat4d(1.0f))
         , m_needUpdate(true)
+        , m_location()
+        , m_direction()
+        , m_up()
     {}
 
     AmReal32 Shape::GetShortestDistanceToEdge(const Entity& entity)

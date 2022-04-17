@@ -26,6 +26,8 @@ namespace SparkyStudios::Audio::Amplitude
         , _obstruction(0.0f)
         , _occlusion(0.0f)
         , _environmentFactors()
+        , _lastLocation()
+        , _velocity()
     {}
 
     AmEntityID EntityInternalState::GetId() const

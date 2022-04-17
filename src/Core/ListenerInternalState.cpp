@@ -22,6 +22,8 @@ namespace SparkyStudios::Audio::Amplitude
         , _direction()
         , _up()
         , _id(kAmInvalidObjectId)
+        , _lastLocation()
+        , _velocity()
     {}
 
     AmListenerID ListenerInternalState::GetId() const
