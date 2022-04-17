@@ -79,7 +79,7 @@ namespace SparkyStudios::Audio::Amplitude
     typedef std::wstring            AmOsString;
 #else
     typedef char                    AmOsChar;
-    typedef std::string             AmString;
+    typedef std::string             AmOsString;
 #endif
 
     typedef FILE*                   AmFileHandle;
