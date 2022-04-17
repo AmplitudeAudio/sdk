@@ -100,7 +100,8 @@ static AM_INLINE(std::string) am_wstring_narrow(const std::wstring& str)
         sprintf(temp, "%s(%d): assert(%s) failed.\n", __FILE__, __LINE__, #x);                                                             \
         OutputDebugStringA(temp);                                                                                                          \
         __debugbreak();                                                                                                                    \
-    }
+    }                                                                                                                                      \
+    (void)0
 #else
 #include <cassert> // assert
 #define AMPLITUDE_ASSERT(x) assert(x)
