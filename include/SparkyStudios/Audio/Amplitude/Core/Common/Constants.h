@@ -17,6 +17,8 @@
 #ifndef SS_AMPLITUDE_AUDIO_CONSTANTS_H
 #define SS_AMPLITUDE_AUDIO_CONSTANTS_H
 
+#include <SparkyStudios/Audio/Amplitude/Core/Common/Types.h>
+
 namespace SparkyStudios::Audio::Amplitude
 {
     /**
