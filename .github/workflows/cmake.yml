@@ -14,7 +14,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        build_type: ["release", "debug"]
+        build_type: [ "release", "debug" ]
         config:
           - name: "Windows Latest MSVC"
             os: windows-latest
@@ -52,16 +52,14 @@ jobs:
             generator: "Ninja"
             target_triplet: x64-linux
 
-          # - {
-          #     name: "macOS Latest Clang",
-          #     os: macos-latest,
-          #     artifact: "amplitude_audio_sdk_macos_gcc_x64.7z",
-          #     cc: "clang",
-          #     cxx: "clang++",
-          #     archiver: "7za a",
-          #     generator: "Ninja",
-          #     target_triplet: x64-osx,
-          #   }
+          - name: "macOS Latest Clang"
+            os: macos-latest
+            artifact: "amplitude_audio_sdk_macos_gcc_x64.7z"
+            cc: "clang"
+            cxx: "clang++"
+            archiver: "7za a"
+            generator: "Ninja"
+            target_triplet: x64-osx
 
     steps:
       # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
