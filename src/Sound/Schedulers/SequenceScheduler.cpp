@@ -44,7 +44,7 @@ namespace SparkyStudios::Audio::Amplitude
 
         for (size_t i = 0; i < definition->sounds()->size(); ++i)
         {
-            const SequenceSchedulerCollectionEntry* entry = definition->sounds()->GetAs<SequenceSchedulerCollectionEntry>(i);
+            const auto* entry = definition->sounds()->GetAs<SequenceSchedulerCollectionEntry>(i);
             _sounds.push_back(engine->GetSoundHandle(entry->sound()));
         }
     }
@@ -79,7 +79,7 @@ namespace SparkyStudios::Audio::Amplitude
         }
 
         Sound* sound = _sounds[_lastIndex];
-        _lastIndex = AM_Clamp(0, _stepMode == MODE_INCREMENT ? _lastIndex + 1 : _lastIndex - 1, _sounds.size());
+        _lastIndex = AM_CLAMP(0, _stepMode == MODE_INCREMENT ? _lastIndex + 1 : _lastIndex - 1, _sounds.size());
 
         return sound;
     }

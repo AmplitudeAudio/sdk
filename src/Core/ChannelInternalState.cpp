@@ -424,11 +424,11 @@ namespace SparkyStudios::Audio::Amplitude
                     }
 
                     AmUInt32 layer = 0;
-                    for (auto it = _realChannel._activeSounds.begin(); it != _realChannel._activeSounds.end(); ++it)
+                    for (auto&& _activeSound : _realChannel._activeSounds)
                     {
-                        if (it->second->GetSettings().m_id == item.m_id)
+                        if (_activeSound.second->GetSettings().m_id == item.m_id)
                         {
-                            layer = it->first;
+                            layer = _activeSound.first;
                             break;
                         }
                     }
@@ -730,7 +730,7 @@ namespace SparkyStudios::Audio::Amplitude
         _fader = Fader::Create(static_cast<Fader::FADER_ALGORITHM>(definition->fader()));
 
         _channelState = ChannelState::Playing;
-        return IsReal() ? _realChannel.Play(sound->CreateInstance(_collection)) : true;
+        return !IsReal() || _realChannel.Play(sound->CreateInstance(_collection));
     }
 
     bool ChannelInternalState::PlaySound()
@@ -742,6 +742,6 @@ namespace SparkyStudios::Audio::Amplitude
         _fader = Fader::Create(static_cast<Fader::FADER_ALGORITHM>(definition->fader()));
 
         _channelState = ChannelState::Playing;
-        return IsReal() ? _realChannel.Play(_sound->CreateInstance()) : true;
+        return !IsReal() || _realChannel.Play(_sound->CreateInstance());
     }
 } // namespace SparkyStudios::Audio::Amplitude

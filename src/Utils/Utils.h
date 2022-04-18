@@ -45,7 +45,7 @@ namespace SparkyStudios::Audio::Amplitude
     static AM_INLINE(float) AmDitherReal32(const AmReal32 ditherMin, const AmReal32 ditherMax)
     {
         gLCG.state = (AM_LCG_A * gLCG.state + AM_LCG_C) % AM_LCG_M;
-        AmReal32 x = gLCG.state / (double)0x7FFFFFFF;
+        const AmReal32 x = gLCG.state / (double)0x7FFFFFFF;
         return ditherMin + x * (ditherMax - ditherMin);
     }
 
@@ -56,7 +56,7 @@ namespace SparkyStudios::Audio::Amplitude
 
     static AM_INLINE(AmReal32) AmInt16ToReal32(const AmInt16 x)
     {
-        AmReal32 y = static_cast<AmReal32>(x);
+        auto y = static_cast<AmReal32>(x);
 
 #if defined(AM_ACCURATE_CONVERSION)
         // The accurate way.

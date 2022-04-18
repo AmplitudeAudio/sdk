@@ -51,7 +51,7 @@ namespace SparkyStudios::Audio::Amplitude
 
         for (flatbuffers::uoffset_t i = 0; i < sample_count; ++i)
         {
-            const RandomSchedulerCollectionEntry* entry = definition->sounds()->GetAs<RandomSchedulerCollectionEntry>(i);
+            const auto* entry = definition->sounds()->GetAs<RandomSchedulerCollectionEntry>(i);
             _probabilitiesSum += entry->weight();
             _sounds.push_back(engine->GetSoundHandle(entry->sound()));
         }
@@ -63,7 +63,7 @@ namespace SparkyStudios::Audio::Amplitude
         float selection = std::rand() / static_cast<float>(RAND_MAX) * _probabilitiesSum;
         for (flatbuffers::uoffset_t i = 0; i < _sounds.size(); ++i)
         {
-            const RandomSchedulerCollectionEntry* entry = _definition->sounds()->GetAs<RandomSchedulerCollectionEntry>(i);
+            const auto* entry = _definition->sounds()->GetAs<RandomSchedulerCollectionEntry>(i);
             selection -= entry->weight();
 
             if (selection <= 0)

@@ -157,6 +157,6 @@ namespace SparkyStudios::Audio::Amplitude
         // Active flag; 0 means disabled, 1 is active, -1 means was active, but stopped
         AM_FADER_STATE m_state;
     };
-}; // namespace SparkyStudios::Audio::Amplitude
+} // namespace SparkyStudios::Audio::Amplitude
 
 #endif // SS_AMPLITUDE_AUDIO_FADER_H

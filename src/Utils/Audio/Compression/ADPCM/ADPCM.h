@@ -17,8 +17,8 @@
 
 #pragma once
 
-#ifndef SS_AMPLITUDE_AUDIO_COMPRESSION_ADPC
-#define SS_AMPLITUDE_AUDIO_COMPRESSION_ADPC
+#ifndef SS_AMPLITUDE_AUDIO_COMPRESSION_ADPCM_H
+#define SS_AMPLITUDE_AUDIO_COMPRESSION_ADPCM_H
 
 #include <SparkyStudios/Audio/Amplitude/Amplitude.h>
 

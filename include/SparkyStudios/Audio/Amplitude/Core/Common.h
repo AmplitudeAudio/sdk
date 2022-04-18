@@ -49,10 +49,10 @@
 #define AM_INVALID_HANDLE 0
 
 // Check for handle validity
-#define AM_IS_VALID_HANDLE(handle) (handle != AM_INVALID_HANDLE)
+#define AM_IS_VALID_HANDLE(handle) ((handle) != AM_INVALID_HANDLE)
 
 // Check for channels value validity
-#define AM_IS_VALID_CHANNELS_VALUE(channels) (channels == 1 || channels == 2 || channels == 4 || channels == 6 || channels == 8)
+#define AM_IS_VALID_CHANNELS_VALUE(channels) ((channels) == 1 || (channels) == 2 || (channels) == 4 || (channels) == 6 || (channels) == 8)
 
 // Returns the minimum value between a and b
 #define AM_MIN(a, b) (((a) < (b)) ? (a) : (b))
@@ -64,7 +64,7 @@
 #define AM_CLAMP(v, a, b) (((v) < (a)) ? (a) : ((v) > (b)) ? (b) : (v))
 
 // Checks if a value is between a and b
-#define AM_BETWEEN(v, a, b) (v >= AM_MIN(a, b) && v <= AM_MAX(a, b))
+#define AM_BETWEEN(v, a, b) ((v) >= AM_MIN(a, b) && (v) <= AM_MAX(a, b))
 
 /**
  * @brief Declare a callback function type
