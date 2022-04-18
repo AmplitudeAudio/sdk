@@ -112,7 +112,7 @@ namespace SparkyStudios::Audio::Amplitude::Thread
     {
         auto* threadHandleData = static_cast<AmThreadHandleData*>(threadHandle);
         ::CloseHandle(threadHandleData->thread);
-        delete threadHandle;
+        delete threadHandleData;
     }
 
     AmUInt64 GetTimeMillis()
