@@ -26,7 +26,7 @@ namespace SparkyStudios::Audio::Amplitude
     {
     public:
         ProcessorPipeline();
-        ~ProcessorPipeline();
+        ~ProcessorPipeline() override;
 
         void Append(SoundProcessor* processor);
 
