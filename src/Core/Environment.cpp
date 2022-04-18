@@ -124,4 +124,10 @@ namespace SparkyStudios::Audio::Amplitude
     {
         return _state;
     }
+
+    void Environment::Update()
+    {
+        AMPLITUDE_ASSERT(Valid());
+        _state->Update();
+    }
 } // namespace SparkyStudios::Audio::Amplitude
