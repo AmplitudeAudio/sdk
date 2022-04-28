@@ -318,9 +318,6 @@ namespace SparkyStudios::Audio::Amplitude
             return false;
         }
 
-        // Initialize the audio driver
-        _audioDriver->Initialize(&_state->mixer);
-
         // Initialize the channel internal data.
         InitializeChannelFreeLists(
             &_state->real_channel_free_list, &_state->virtual_channel_free_list, &_state->channel_state_memory,
@@ -417,7 +414,7 @@ namespace SparkyStudios::Audio::Amplitude
         if (_state->mixer.IsInitialized())
             _state->mixer.StopAll();
 
-        // Auto deinitialize loaded sound banks
+        // Unload sound banks
         UnloadSoundBanks();
 
         delete _state;
@@ -2023,6 +2020,15 @@ namespace SparkyStudios::Audio::Amplitude
     {
         return _audioDriver;
     }
+
+#pragma region Amplimix
+
+    Mixer* Engine::GetMixer() const
+    {
+        return &_state->mixer;
+    }
+
+#pragma endregion
 
 #pragma region Engine State
 

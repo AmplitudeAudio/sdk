@@ -1069,10 +1069,16 @@ namespace SparkyStudios::Audio::Amplitude
          */
         [[nodiscard]] Driver* GetDriver() const;
 
+#pragma region Amplimix
+
         /**
-         * @brief Returns an unique instance of the Amplitude Engine.
+         * @brief Gets the mixer instance.
+         *
+         * @return The Amplimix mixer instance.
          */
-        [[nodiscard]] static Engine* GetInstance();
+        [[nodiscard]] Mixer* GetMixer() const;
+
+#pragma endregion
 
 #pragma region Engine State
 
@@ -1120,6 +1126,11 @@ namespace SparkyStudios::Audio::Amplitude
         [[nodiscard]] bool IsGameTrackingEnvironmentAmounts() const;
 
 #pragma endregion
+
+        /**
+         * @brief Returns an unique instance of the Amplitude Engine.
+         */
+        [[nodiscard]] static Engine* GetInstance();
 
     private:
         Channel PlayScopedSwitchContainer(

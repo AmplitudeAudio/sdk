@@ -21,6 +21,8 @@
 
 namespace SparkyStudios::Audio::Amplitude
 {
+    class Driver;
+
     /**
      * @brief The playback output format of the device.
      */
@@ -103,6 +105,68 @@ namespace SparkyStudios::Audio::Amplitude
     };
 
     /**
+     * @brief The device state.
+     */
+    enum class DeviceState : AmUInt8
+    {
+        /**
+         * @brief The device is opened, but not yet started.
+         */
+        Opened,
+
+        /**
+         * @brief The device is started and running.
+         */
+        Started,
+
+        /**
+         * @brief The device is paused.
+         */
+        Paused,
+
+        /**
+         * @brief The device is stopped.
+         */
+        Stopped,
+
+        /**
+         * @brief The device is closed.
+         */
+        Closed
+    };
+
+    /**
+     * @brief The possible device notification types.
+     */
+    enum class DeviceNotification : AmUInt8
+    {
+        /**
+         * @brief The device is opened, but not yet started.
+         */
+        Opened,
+
+        /**
+         * @brief The device is started.
+         */
+        Started,
+
+        /**
+         * @brief The device is paused.
+         */
+        Rerouted,
+
+        /**
+         * @brief The device is stopped.
+         */
+        Stopped,
+
+        /**
+         * @brief The device is closed.
+         */
+        Closed
+    };
+
+    /**
      * @brief The device description.
      *
      * This stores the settings requested from the engine configuration
@@ -157,7 +221,37 @@ namespace SparkyStudios::Audio::Amplitude
          * @brief The device output buffer size.
          */
         AmUInt32 mOutputBufferSize;
+
+        /**
+         * @brief The device state.
+         */
+        DeviceState mDeviceState;
     };
+
+    /**
+     * @brief The device notification callback.
+     *
+     * @param notification The notification type.
+     * @param device The device description.
+     * @param driver The driver which triggered the device notification.
+     */
+    typedef void (*DeviceNotificationCallback)(DeviceNotification notification, const DeviceDescription& device, Driver* driver);
+
+    /**
+     * @brief Registers a callback to listen to device state changes.
+     *
+     * @param callback The callback to register.
+     */
+    void RegisterDeviceNotificationCallback(DeviceNotificationCallback callback);
+
+    /**
+     * @brief Calls the registered device notification callback.
+     *
+     * @param notification The notification type.
+     * @param device The device description.
+     * @param driver The driver which triggered the device notification.
+     */
+    void CallDeviceNotificationCallback(DeviceNotification notification, const DeviceDescription& device, Driver* driver);
 } // namespace SparkyStudios::Audio::Amplitude
 
 #endif // SS_AMPLITUDE_AUDIO_MIXER_DEVICE_DESCRIPTION_H

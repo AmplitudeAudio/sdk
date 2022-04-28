@@ -44,13 +44,6 @@ namespace SparkyStudios::Audio::Amplitude
         virtual ~Driver() = default;
 
         /**
-         * @brief Initializes the audio driver.
-         *
-         * @param mixer The running Amplimix instance.
-         */
-        void Initialize(Mixer* mixer);
-
-        /**
          * @brief Open and start using the audio device.
          *
          * @param device The audio device to use description to use for
@@ -71,11 +64,11 @@ namespace SparkyStudios::Audio::Amplitude
         [[nodiscard]] const AmString& GetName() const;
 
         /**
-         * @brief Gets the mixer instance associated to this driver.
+         * @brief Gets the description of the device currently managed by this driver.
          *
-         * @return The Amplitude mixer instance.
+         * @return The device description.
          */
-        [[nodiscard]] Mixer* GetMixer() const;
+        [[nodiscard]] const DeviceDescription& GetDeviceDescription() const;
 
         /**
          * @brief Registers a new audio driver.
@@ -121,9 +114,9 @@ namespace SparkyStudios::Audio::Amplitude
         AmString m_name;
 
         /**
-         * @brief The mixer instance provided by the engine.
+         * @brief The device description.
          */
-        Mixer* m_mixer;
+        DeviceDescription m_deviceDescription;
     };
 } // namespace SparkyStudios::Audio::Amplitude
 

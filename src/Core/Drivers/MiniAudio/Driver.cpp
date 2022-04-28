@@ -12,8 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include <SparkyStudios/Audio/Amplitude/Amplitude.h>
-
 #include <Core/Drivers/MiniAudio/Driver.h>
 #include <Mixer/Mixer.h>
 
@@ -21,8 +19,30 @@ namespace SparkyStudios::Audio::Amplitude::Drivers
 {
     static void miniaudio_mixer(ma_device* pDevice, AmVoidPtr pOutput, AmConstVoidPtr pInput, ma_uint32 frameCount)
     {
-        auto* mixer = static_cast<Mixer*>(pDevice->pUserData);
-        mixer->Mix(pOutput, frameCount);
+        amEngine->GetMixer()->Mix(pOutput, frameCount);
+    }
+
+    static void miniaudio_device_notification(const ma_device_notification* pNotification)
+    {
+        auto* driver = static_cast<Driver*>(pNotification->pDevice->pUserData);
+        switch (pNotification->type)
+        {
+        case ma_device_notification_type_started:
+            CallDeviceNotificationCallback(DeviceNotification::Started, driver->GetDeviceDescription(), driver);
+            break;
+        case ma_device_notification_type_stopped:
+            CallDeviceNotificationCallback(DeviceNotification::Stopped, driver->GetDeviceDescription(), driver);
+            break;
+        case ma_device_notification_type_rerouted:
+            CallDeviceNotificationCallback(DeviceNotification::Rerouted, driver->GetDeviceDescription(), driver);
+            break;
+        case ma_device_notification_type_interruption_began:
+            CallLogFunc("Device interruption began");
+            break;
+        case ma_device_notification_type_interruption_ended:
+            CallLogFunc("Device interruption ended");
+            break;
+        }
     }
 
     MiniAudioDriver::~MiniAudioDriver()
@@ -51,7 +71,8 @@ namespace SparkyStudios::Audio::Amplitude::Drivers
             deviceConfig.playback.channelMixMode = ma_channel_mix_mode_rectangular;
             deviceConfig.sampleRate = device.mRequestedOutputSampleRate;
             deviceConfig.dataCallback = miniaudio_mixer;
-            deviceConfig.pUserData = static_cast<void*>(m_mixer);
+            deviceConfig.notificationCallback = miniaudio_device_notification;
+            deviceConfig.pUserData = static_cast<void*>(this);
 
             ma_channel_map_init_standard(ma_standard_channel_map_vorbis, deviceConfig.playback.pChannelMap, channelsCount, channelsCount);
 
@@ -62,7 +83,16 @@ namespace SparkyStudios::Audio::Amplitude::Drivers
                 return false;
             }
 
-            m_mixer->PostInit(
+            m_deviceDescription.mDeviceID = 0;
+            m_deviceDescription.mDeviceName = std::string(_device.playback.name);
+            m_deviceDescription.mDeviceOutputSampleRate = _device.playback.internalSampleRate;
+            m_deviceDescription.mDeviceOutputChannels = static_cast<PlaybackOutputChannels>(_device.playback.internalChannels);
+            m_deviceDescription.mDeviceOutputFormat = static_cast<PlaybackOutputFormat>(_device.playback.internalFormat);
+            m_deviceDescription.mDeviceState = DeviceState::Opened;
+
+            CallDeviceNotificationCallback(DeviceNotification::Opened, m_deviceDescription, this);
+
+            amEngine->GetMixer()->PostInit(
                 0, // TODO: Compute a proper device ID
                 _device.playback.name, _device.playback.internalSampleRate,
                 static_cast<PlaybackOutputChannels>(_device.playback.internalChannels),
@@ -77,6 +107,7 @@ namespace SparkyStudios::Audio::Amplitude::Drivers
             return false;
         }
 
+        m_deviceDescription.mDeviceState = DeviceState::Started;
         return true;
     }
 
@@ -94,6 +125,10 @@ namespace SparkyStudios::Audio::Amplitude::Drivers
             return false;
         }
 
+        _initialized = false;
+        m_deviceDescription.mDeviceState = DeviceState::Closed;
+
+        CallDeviceNotificationCallback(DeviceNotification::Closed, m_deviceDescription, this);
         return true;
     }
 } // namespace SparkyStudios::Audio::Amplitude::Drivers

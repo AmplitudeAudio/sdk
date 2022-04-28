@@ -42,14 +42,9 @@ namespace SparkyStudios::Audio::Amplitude
 
     Driver::Driver(AmString name)
         : m_name(std::move(name))
-        , m_mixer(nullptr)
+        , m_deviceDescription()
     {
         Driver::Register(this);
-    }
-
-    void Driver::Initialize(Mixer* mixer)
-    {
-        m_mixer = mixer;
     }
 
     const AmString& Driver::GetName() const
@@ -57,9 +52,9 @@ namespace SparkyStudios::Audio::Amplitude
         return m_name;
     }
 
-    Mixer* Driver::GetMixer() const
+    const DeviceDescription& Driver::GetDeviceDescription() const
     {
-        return m_mixer;
+        return m_deviceDescription;
     }
 
     void Driver::Register(Driver* driver)
