@@ -127,7 +127,9 @@ namespace SparkyStudios::Audio::Amplitude::Thread
 
     struct AmSpinLockData
     {
+#if !defined(AM_NO_PTHREAD_SPINLOCK)
         pthread_spinlock_t lock;
+#endif
         AmUInt64 count;
         pthread_mutex_t fallBackMutex;
         bool spinLocked;
@@ -145,8 +147,11 @@ namespace SparkyStudios::Audio::Amplitude::Thread
     {
         AmSpinLockData* lock;
         lock = new AmSpinLockData;
+
+#if !defined(AM_NO_PTHREAD_SPINLOCK)
         pthread_spin_init(&lock->lock, 0);
         lock->count = spinCount;
+#endif
 
         pthread_mutexattr_t attr;
         pthread_mutexattr_init(&attr);
@@ -163,7 +168,10 @@ namespace SparkyStudios::Audio::Amplitude::Thread
 
         auto* lock = static_cast<AmSpinLockData*>(handle);
 
+#if !defined(AM_NO_PTHREAD_SPINLOCK)
         pthread_spin_destroy(&lock->lock);
+#endif
+
         pthread_mutex_destroy(&lock->fallBackMutex);
 
         delete lock;
@@ -176,6 +184,7 @@ namespace SparkyStudios::Audio::Amplitude::Thread
 
         auto* lock = static_cast<AmSpinLockData*>(handle);
 
+#if !defined(AM_NO_PTHREAD_SPINLOCK)
         AmUInt64 count = 0;
         while (count++ < lock->count)
         {
@@ -185,6 +194,7 @@ namespace SparkyStudios::Audio::Amplitude::Thread
                 return;
             }
         }
+#endif
 
         if (!lock->spinLocked)
             pthread_mutex_lock(&lock->fallBackMutex);
@@ -197,10 +207,14 @@ namespace SparkyStudios::Audio::Amplitude::Thread
 
         auto* lock = static_cast<AmSpinLockData*>(handle);
 
+#if !defined(AM_NO_PTHREAD_SPINLOCK)
         if (lock->spinLocked)
             pthread_spin_unlock(&lock->lock);
         else
             pthread_mutex_unlock(&lock->fallBackMutex);
+#else
+        pthread_mutex_unlock(&lock->fallBackMutex);
+#endif
 
         lock->spinLocked = false;
     }

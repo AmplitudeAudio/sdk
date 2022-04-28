@@ -44,6 +44,9 @@
 #endif
 #endif
 
+// Spinlock isn't available on Apple CLang
+#define AM_NO_PTHREAD_SPINLOCK
+
 #include <SparkyStudios/Audio/Amplitude/Core/Common/Platforms/UNIX/Config.h>
 
 #endif // SS_AMPLITUDE_AUDIO_LINUX_CONFIG_H
