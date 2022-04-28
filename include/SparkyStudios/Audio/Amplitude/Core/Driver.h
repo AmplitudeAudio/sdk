@@ -71,6 +71,13 @@ namespace SparkyStudios::Audio::Amplitude
         [[nodiscard]] const AmString& GetName() const;
 
         /**
+         * @brief Gets the mixer instance associated to this driver.
+         *
+         * @return The Amplitude mixer instance.
+         */
+        [[nodiscard]] Mixer* GetMixer() const;
+
+        /**
          * @brief Registers a new audio driver.
          *
          * @param driver The audio driver to add in the registry.
