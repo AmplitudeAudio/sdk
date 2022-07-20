@@ -1325,6 +1325,60 @@ namespace SparkyStudios::Audio::Amplitude
         return GetSoundHandle(pair->second);
     }
 
+    SoundObjectHandle Engine::GetSoundObjectHandle(const AmString& name) const
+    {
+        if (const SoundHandle handle = GetSoundHandle(name))
+        {
+            return handle;
+        }
+
+        if (const CollectionHandle handle = GetCollectionHandle(name))
+        {
+            return handle;
+        }
+
+        if (const SwitchContainerHandle handle = GetSwitchContainerHandle(name))
+        {
+            return handle;
+        }
+    }
+
+    SoundObjectHandle Engine::GetSoundObjectHandle(AmSoundID id) const
+    {
+        if (const SoundHandle handle = GetSoundHandle(id))
+        {
+            return handle;
+        }
+
+        if (const CollectionHandle handle = GetCollectionHandle(id))
+        {
+            return handle;
+        }
+
+        if (const SwitchContainerHandle handle = GetSwitchContainerHandle(id))
+        {
+            return handle;
+        }
+    }
+
+    SoundObjectHandle Engine::GetSoundObjectHandleFromFile(const AmOsString& filename) const
+    {
+        if (const SoundHandle handle = GetSoundHandleFromFile(filename))
+        {
+            return handle;
+        }
+
+        if (const CollectionHandle handle = GetCollectionHandleFromFile(filename))
+        {
+            return handle;
+        }
+
+        if (const SwitchContainerHandle handle = GetSwitchContainerHandleFromFile(filename))
+        {
+            return handle;
+        }
+    }
+
     EventHandle Engine::GetEventHandle(const AmString& name) const
     {
         const auto pair = std::find_if(
@@ -1796,6 +1850,11 @@ namespace SparkyStudios::Audio::Amplitude
         }
     }
 
+    bool Engine::IsPaused() const
+    {
+        return _state->paused;
+    }
+
     void EraseFinishedSounds(EngineInternalState* state)
     {
         PriorityList& list = state->playing_channel_list;
@@ -1823,7 +1882,7 @@ namespace SparkyStudios::Audio::Amplitude
             hmm_vec2 pan;
             AmReal32 pitch;
             CalculateGainPanPitch(
-                &gain, &pan, &pitch, channel, switchContainer->GetGain().GetValue(), switchContainer->GetBus(),
+                &gain, &pan, &pitch, channel, switchContainer->GetGain().GetValue(), switchContainer->GetBus().GetState(),
                 definition->spatialization(), switchContainer->GetAttenuation(), channel->GetEntity(), channel->GetLocation(),
                 state->listener_list, channel->GetUserGain(), state->listener_fetch_mode);
             channel->SetGain(gain);
@@ -1838,9 +1897,9 @@ namespace SparkyStudios::Audio::Amplitude
             hmm_vec2 pan;
             AmReal32 pitch;
             CalculateGainPanPitch(
-                &gain, &pan, &pitch, channel, collection->GetGain().GetValue(), collection->GetBus(), definition->spatialization(),
-                collection->GetAttenuation(), channel->GetEntity(), channel->GetLocation(), state->listener_list, channel->GetUserGain(),
-                state->listener_fetch_mode);
+                &gain, &pan, &pitch, channel, collection->GetGain().GetValue(), collection->GetBus().GetState(),
+                definition->spatialization(), collection->GetAttenuation(), channel->GetEntity(), channel->GetLocation(),
+                state->listener_list, channel->GetUserGain(), state->listener_fetch_mode);
             channel->SetGain(gain);
             channel->SetPan(pan);
             channel->SetPitch(pitch);
@@ -1853,7 +1912,7 @@ namespace SparkyStudios::Audio::Amplitude
             hmm_vec2 pan;
             AmReal32 pitch;
             CalculateGainPanPitch(
-                &gain, &pan, &pitch, channel, sound->GetGain().GetValue(), sound->GetBus(), definition->spatialization(),
+                &gain, &pan, &pitch, channel, sound->GetGain().GetValue(), sound->GetBus().GetState(), definition->spatialization(),
                 sound->GetAttenuation(), channel->GetEntity(), channel->GetLocation(), state->listener_list, channel->GetUserGain(),
                 state->listener_fetch_mode);
             channel->SetGain(gain);
@@ -2062,6 +2121,16 @@ namespace SparkyStudios::Audio::Amplitude
         return _state->track_environments;
     }
 
+    AmUInt32 Engine::GetMaxListenersCount() const
+    {
+        return GetEngineConfigDefinition()->game()->listeners();
+    }
+
+    AmUInt32 Engine::GetMaxEntitiesCount() const
+    {
+        return GetEngineConfigDefinition()->game()->entities();
+    }
+
 #pragma endregion
 
     Channel Engine::PlayScopedSwitchContainer(
@@ -2092,7 +2161,7 @@ namespace SparkyStudios::Audio::Amplitude
         hmm_vec2 pan;
         AmReal32 pitch;
         CalculateGainPanPitch(
-            &gain, &pan, &pitch, nullptr, handle->GetGain().GetValue(), handle->GetBus(), definition->spatialization(),
+            &gain, &pan, &pitch, nullptr, handle->GetGain().GetValue(), handle->GetBus().GetState(), definition->spatialization(),
             handle->GetAttenuation(), entity, location, _state->listener_list, userGain, _state->listener_fetch_mode);
         const float priority = gain * handle->GetPriority().GetValue();
         const auto insertionPoint = FindInsertionPoint(&_state->playing_channel_list, priority);
@@ -2161,7 +2230,7 @@ namespace SparkyStudios::Audio::Amplitude
         hmm_vec2 pan;
         AmReal32 pitch;
         CalculateGainPanPitch(
-            &gain, &pan, &pitch, nullptr, handle->GetGain().GetValue(), handle->GetBus(), definition->spatialization(),
+            &gain, &pan, &pitch, nullptr, handle->GetGain().GetValue(), handle->GetBus().GetState(), definition->spatialization(),
             handle->GetAttenuation(), entity, location, _state->listener_list, userGain, _state->listener_fetch_mode);
         const float priority = gain * handle->GetPriority().GetValue();
         const auto insertionPoint = FindInsertionPoint(&_state->playing_channel_list, priority);
@@ -2229,7 +2298,7 @@ namespace SparkyStudios::Audio::Amplitude
         hmm_vec2 pan;
         AmReal32 pitch;
         CalculateGainPanPitch(
-            &gain, &pan, &pitch, nullptr, handle->GetGain().GetValue(), handle->GetBus(), definition->spatialization(),
+            &gain, &pan, &pitch, nullptr, handle->GetGain().GetValue(), handle->GetBus().GetState(), definition->spatialization(),
             handle->GetAttenuation(), entity, location, _state->listener_list, userGain, _state->listener_fetch_mode);
         const float priority = gain * handle->GetPriority().GetValue();
         const auto insertionPoint = FindInsertionPoint(&_state->playing_channel_list, priority);

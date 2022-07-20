@@ -17,13 +17,8 @@
 #ifndef SS_AMPLITUDE_AUDIO_SWITCHCONTAINER_H
 #define SS_AMPLITUDE_AUDIO_SWITCHCONTAINER_H
 
-#include <SparkyStudios/Audio/Amplitude/Core/Common.h>
-#include <SparkyStudios/Audio/Amplitude/Core/RefCounter.h>
-
-#include <SparkyStudios/Audio/Amplitude/Sound/Attenuation.h>
-#include <SparkyStudios/Audio/Amplitude/Sound/Effect.h>
 #include <SparkyStudios/Audio/Amplitude/Sound/Fader.h>
-#include <SparkyStudios/Audio/Amplitude/Sound/Rtpc.h>
+#include <SparkyStudios/Audio/Amplitude/Sound/SoundObject.h>
 #include <SparkyStudios/Audio/Amplitude/Sound/Switch.h>
 
 namespace SparkyStudios::Audio::Amplitude
@@ -44,66 +39,17 @@ namespace SparkyStudios::Audio::Amplitude
         RtpcValue m_gain;
     };
 
-    class SwitchContainer
+    class SwitchContainer : public SoundObject
     {
     public:
         SwitchContainer();
         ~SwitchContainer();
 
-        bool LoadSwitchContainerDefinition(const AmString& source, EngineInternalState* state);
-        bool LoadSwitchContainerDefinitionFromFile(const AmOsString& filename, EngineInternalState* state);
-        void AcquireReferences(EngineInternalState* state);
-        void ReleaseReferences(EngineInternalState* state);
+        bool LoadDefinition(const AmString& source, EngineInternalState* state) override;
+        bool LoadDefinitionFromFile(const AmOsString& filename, EngineInternalState* state) override;
+        void AcquireReferences(EngineInternalState* state) override;
+        void ReleaseReferences(EngineInternalState* state) override;
         [[nodiscard]] const SwitchContainerDefinition* GetSwitchContainerDefinition() const;
-
-        /**
-         * @brief Gets the actual gain of the switch container.
-         *
-         * @return The SwitchContainer gain.
-         */
-        const RtpcValue& GetGain() const;
-
-        /**
-         * @brief Gets the actual priority of the switch container.
-         *
-         * @return The SwitchContainer priority.
-         */
-        const RtpcValue& GetPriority() const;
-
-        /**
-         * @brief Returns the unique ID of this SwitchContainer.
-         *
-         * @return The SwitchContainer unique ID.
-         */
-        [[nodiscard]] AmCollectionID GetId() const;
-
-        /**
-         * @brief Returns the name of this SwitchContainer.
-         *
-         * @return The SwitchContainer name.
-         */
-        [[nodiscard]] const std::string& GetName() const;
-
-        /**
-         * @brief Return the bus this SwitchContainer will play on.
-         *
-         * @return The bus this SwitchContainer will play on.
-         */
-        [[nodiscard]] BusInternalState* GetBus() const;
-
-        /**
-         * @brief Returns the effect attached to this SwitchContainer.
-         *
-         * @return The effect of this SwitchContainer if available or nullptr.
-         */
-        [[nodiscard]] const Effect* GetEffect() const;
-
-        /**
-         * @brief Returns the attenuation attached to this SwitchContainer.
-         *
-         * @return The attenuation of this SwitchContainer if available or nullptr.
-         */
-        [[nodiscard]] const Attenuation* GetAttenuation() const;
 
         /**
          * @brief Returns the switch attached to this SwitchContainer.
@@ -131,25 +77,15 @@ namespace SparkyStudios::Audio::Amplitude
         Fader* GetFaderOut(AmObjectID id) const;
 
         /**
-         * @brief Get the references counter of this instance.
-         *
-         * @return The references counter.
-         */
-        RefCounter* GetRefCounter();
-
-        /**
          * @brief Returns the list of sound objects referenced in this SwitchContainer for the given state.
          *
-         * @param state The switch state to get the objects for.
+         * @param stateId The switch state to get the objects for.
          *
          * @return The list of sound object IDs.
          */
         [[nodiscard]] const std::vector<SwitchContainerItem>& GetSoundObjects(AmObjectID stateId) const;
 
     private:
-        // The bus this SwitchContainer will play on.
-        BusInternalState* _bus;
-
         // The World scope sound scheduler
         Switch* _switch;
 
@@ -157,17 +93,6 @@ namespace SparkyStudios::Audio::Amplitude
         std::map<AmObjectID, std::vector<SwitchContainerItem>> _sounds;
         std::map<AmObjectID, Fader*> _fadersIn;
         std::map<AmObjectID, Fader*> _fadersOut;
-
-        AmSwitchContainerID _id;
-        std::string _name;
-
-        RtpcValue _gain;
-        RtpcValue _priority;
-
-        Effect* _effect;
-        Attenuation* _attenuation;
-
-        RefCounter _refCounter;
     };
 } // namespace SparkyStudios::Audio::Amplitude
 

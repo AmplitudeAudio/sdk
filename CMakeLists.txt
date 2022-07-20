@@ -122,6 +122,7 @@ set(SA_SOURCE
     include/SparkyStudios/Audio/Amplitude/Sound/Scheduler.h
     include/SparkyStudios/Audio/Amplitude/Sound/Sound.h
     include/SparkyStudios/Audio/Amplitude/Sound/SoundBank.h
+    include/SparkyStudios/Audio/Amplitude/Sound/SoundObject.h
     include/SparkyStudios/Audio/Amplitude/Sound/SoundProcessor.h
     include/SparkyStudios/Audio/Amplitude/Sound/Switch.h
     include/SparkyStudios/Audio/Amplitude/Sound/SwitchContainer.h
@@ -241,6 +242,7 @@ set(SA_SOURCE
     src/Sound/Rtpc.cpp
     src/Sound/Sound.cpp
     src/Sound/SoundBank.cpp
+    src/Sound/SoundObject.cpp
     src/Sound/Switch.cpp
     src/Sound/SwitchContainer.cpp
 

@@ -36,6 +36,7 @@
 #include <SparkyStudios/Audio/Amplitude/Sound/Effect.h>
 #include <SparkyStudios/Audio/Amplitude/Sound/Rtpc.h>
 #include <SparkyStudios/Audio/Amplitude/Sound/Sound.h>
+#include <SparkyStudios/Audio/Amplitude/Sound/SoundObject.h>
 #include <SparkyStudios/Audio/Amplitude/Sound/Switch.h>
 #include <SparkyStudios/Audio/Amplitude/Sound/SwitchContainer.h>
 
@@ -53,6 +54,7 @@ namespace SparkyStudios::Audio::Amplitude
     typedef SwitchContainer* SwitchContainerHandle;
     typedef Collection* CollectionHandle;
     typedef Sound* SoundHandle;
+    typedef SoundObject* SoundObjectHandle;
     typedef Event* EventHandle;
     typedef Attenuation* AttenuationHandle;
     typedef Switch* SwitchHandle;
@@ -298,6 +300,33 @@ namespace SparkyStudios::Audio::Amplitude
         [[nodiscard]] SoundHandle GetSoundHandleFromFile(const AmOsString& filename) const;
 
         /**
+         * @brief Get a SoundObjectHandle given its name as defined in its JSON data.
+         *
+         * Can be a SwitchContainerHandle, CollectionHandle, or SoundHandle.
+         *
+         * @param name The unique name as defined in the JSON data.
+         */
+        [[nodiscard]] SoundObjectHandle GetSoundObjectHandle(const AmString& name) const;
+
+        /**
+         * @brief Get a SoundObjectHandle given its ID as defined in its JSON data.
+         *
+         * Can be a SwitchContainerHandle, CollectionHandle, or SoundHandle.
+         *
+         * @param id The unique ID as defined in the JSON data.
+         */
+        [[nodiscard]] SoundObjectHandle GetSoundObjectHandle(AmSoundID id) const;
+
+        /**
+         * @brief Get a SoundObjectHandle given its definition filename.
+         *
+         * Can be a SwitchContainerHandle, CollectionHandle, or SoundHandle.
+         *
+         * @param filename The filename containing the flatbuffer binary data.
+         */
+        [[nodiscard]] SoundObjectHandle GetSoundObjectHandleFromFile(const AmOsString& filename) const;
+
+        /**
          * @brief Get an EventHandle given its name as defined in its JSON data.
          *
          * @param name The unique name as defined in the JSON data.
@@ -436,6 +465,11 @@ namespace SparkyStudios::Audio::Amplitude
          * @param pause Whether to pause or resume the Engine.
          */
         void Pause(bool pause) const;
+
+        /**
+         * @brief Whether the Engine is currently paused.
+         */
+        [[nodiscard]] bool IsPaused() const;
 
         /**
          * @brief Sets the default sound listener.
@@ -1124,6 +1158,21 @@ namespace SparkyStudios::Audio::Amplitude
          * @return Whether the game is tracking environment amounts.
          */
         [[nodiscard]] bool IsGameTrackingEnvironmentAmounts() const;
+
+        /**
+         * @brief Gets the maximum number of listeners handled by the engine.
+         *
+         * @return The maximum number of listeners.
+         */
+        [[nodiscard]] AmUInt32 GetMaxListenersCount() const;
+
+        /**
+         * @brief Gets the maximum number of game entities handled by the engine. This value
+         * does not reflect the maximum number of simultaneous sound handled by the engine.
+         *
+         * @return The maximum number of game entities.
+         */
+        [[nodiscard]] AmUInt32 GetMaxEntitiesCount() const;
 
 #pragma endregion
 

@@ -26,19 +26,12 @@
 namespace SparkyStudios::Audio::Amplitude
 {
     Collection::Collection()
-        : _bus(nullptr)
+        : SoundObject()
         , _worldScopeScheduler(nullptr)
         , _entityScopeSchedulers()
         , _source()
         , _sounds()
         , _soundSettings()
-        , _id(kAmInvalidObjectId)
-        , _name()
-        , _gain()
-        , _priority()
-        , _effect(nullptr)
-        , _attenuation(nullptr)
-        , _refCounter()
     {}
 
     Collection::~Collection()
@@ -46,14 +39,14 @@ namespace SparkyStudios::Audio::Amplitude
         delete _worldScopeScheduler;
         _worldScopeScheduler = nullptr;
         _entityScopeSchedulers.clear();
-        _effect = nullptr;
-        _attenuation = nullptr;
+        m_effect = nullptr;
+        m_attenuation = nullptr;
     }
 
-    bool Collection::LoadCollectionDefinition(const std::string& source, EngineInternalState* state)
+    bool Collection::LoadDefinition(const std::string& source, EngineInternalState* state)
     {
         // Ensure we do not load the collection more than once
-        AMPLITUDE_ASSERT(_id == kAmInvalidObjectId);
+        AMPLITUDE_ASSERT(m_id == kAmInvalidObjectId);
 
         _source = source;
         const CollectionDefinition* def = GetCollectionDefinition();
@@ -66,8 +59,8 @@ namespace SparkyStudios::Audio::Amplitude
 
         if (state)
         {
-            _bus = FindBusInternalState(state, def->bus());
-            if (!_bus)
+            m_bus = FindBusInternalState(state, def->bus());
+            if (!m_bus)
             {
                 CallLogFunc("Collection %s specifies an unknown bus ID: %u.\n", def->name(), def->bus());
                 return false;
@@ -77,7 +70,7 @@ namespace SparkyStudios::Audio::Amplitude
             {
                 if (const auto findIt = state->effect_map.find(def->effect()); findIt != state->effect_map.end())
                 {
-                    _effect = findIt->second.get();
+                    m_effect = findIt->second.get();
                 }
                 else
                 {
@@ -88,12 +81,12 @@ namespace SparkyStudios::Audio::Amplitude
 
             if (def->attenuation() != kAmInvalidObjectId)
             {
-                if (auto findIt = state->attenuation_map.find(def->attenuation()); findIt != state->attenuation_map.end())
+                if (const auto findIt = state->attenuation_map.find(def->attenuation()); findIt != state->attenuation_map.end())
                 {
-                    _attenuation = findIt->second.get();
+                    m_attenuation = findIt->second.get();
                 }
 
-                if (!_attenuation)
+                if (!m_attenuation)
                 {
                     CallLogFunc("Collection %s specifies an unknown attenuation ID: %u.\n", def->name(), def->attenuation());
                     return false;
@@ -101,18 +94,18 @@ namespace SparkyStudios::Audio::Amplitude
             }
         }
 
-        _id = def->id();
-        _name = def->name()->str();
+        m_id = def->id();
+        m_name = def->name()->str();
 
-        _gain = RtpcValue(def->gain());
-        _priority = RtpcValue(def->priority());
+        m_gain = RtpcValue(def->gain());
+        m_priority = RtpcValue(def->priority());
 
-        flatbuffers::uoffset_t sample_count = def->sounds() ? def->sounds()->size() : 0;
+        const flatbuffers::uoffset_t sampleCount = def->sounds() ? def->sounds()->size() : 0;
 
-        _sounds.resize(sample_count);
+        _sounds.resize(sampleCount);
         _soundSettings.clear();
 
-        for (flatbuffers::uoffset_t i = 0; i < sample_count; ++i)
+        for (flatbuffers::uoffset_t i = 0; i < sampleCount; ++i)
         {
             const DefaultCollectionEntry* entry = def->sounds()->GetAs<DefaultCollectionEntry>(i);
             AmSoundID id = entry->sound();
@@ -137,7 +130,7 @@ namespace SparkyStudios::Audio::Amplitude
                 settings.m_effectID = def->effect();
                 settings.m_attenuationID = def->attenuation();
                 settings.m_spatialization = def->spatialization();
-                settings.m_priority = _priority;
+                settings.m_priority = m_priority;
                 settings.m_gain = RtpcValue(entry->gain());
                 settings.m_loop = findIt->second->_loop;
                 settings.m_loopCount = findIt->second->_loopCount;
@@ -152,24 +145,24 @@ namespace SparkyStudios::Audio::Amplitude
         return true;
     }
 
-    bool Collection::LoadCollectionDefinitionFromFile(const AmOsString& filename, EngineInternalState* state)
+    bool Collection::LoadDefinitionFromFile(const AmOsString& filename, EngineInternalState* state)
     {
         std::string source;
-        return Amplitude::LoadFile(filename, &source) && LoadCollectionDefinition(source, state);
+        return Amplitude::LoadFile(filename, &source) && LoadDefinition(source, state);
     }
 
     void Collection::AcquireReferences(EngineInternalState* state)
     {
-        AMPLITUDE_ASSERT(_id != kAmInvalidObjectId);
+        AMPLITUDE_ASSERT(m_id != kAmInvalidObjectId);
 
-        if (_effect)
+        if (m_effect)
         {
-            _effect->GetRefCounter()->Increment();
+            m_effect->GetRefCounter()->Increment();
         }
 
-        if (_attenuation)
+        if (m_attenuation)
         {
-            _attenuation->GetRefCounter()->Increment();
+            m_attenuation->GetRefCounter()->Increment();
         }
 
         for (auto&& sound : _sounds)
@@ -183,16 +176,16 @@ namespace SparkyStudios::Audio::Amplitude
 
     void Collection::ReleaseReferences(EngineInternalState* state)
     {
-        AMPLITUDE_ASSERT(_id != kAmInvalidObjectId);
+        AMPLITUDE_ASSERT(m_id != kAmInvalidObjectId);
 
-        if (_effect)
+        if (m_effect)
         {
-            _effect->GetRefCounter()->Decrement();
+            m_effect->GetRefCounter()->Decrement();
         }
 
-        if (_attenuation)
+        if (m_attenuation)
         {
-            _attenuation->GetRefCounter()->Decrement();
+            m_attenuation->GetRefCounter()->Decrement();
         }
 
         for (auto&& sound : _sounds)
@@ -223,10 +216,10 @@ namespace SparkyStudios::Audio::Amplitude
 
     Sound* Collection::SelectFromEntity(const Entity& entity, const std::vector<AmSoundID>& toSkip)
     {
-        const CollectionDefinition* sound_def = GetCollectionDefinition();
-        if (auto findIt = _entityScopeSchedulers.find(entity.GetId()); findIt == _entityScopeSchedulers.end())
+        const CollectionDefinition* soundDef = GetCollectionDefinition();
+        if (const auto findIt = _entityScopeSchedulers.find(entity.GetId()); findIt == _entityScopeSchedulers.end())
         {
-            _entityScopeSchedulers.insert({ entity.GetId(), CreateScheduler(sound_def) });
+            _entityScopeSchedulers.insert({ entity.GetId(), CreateScheduler(soundDef) });
         }
 
         return _entityScopeSchedulers[entity.GetId()]->Select(toSkip);
@@ -234,7 +227,7 @@ namespace SparkyStudios::Audio::Amplitude
 
     void Collection::ResetEntityScopeScheduler(const Entity& entity)
     {
-        if (auto findIt = _entityScopeSchedulers.find(entity.GetId()); findIt != _entityScopeSchedulers.end())
+        if (const auto findIt = _entityScopeSchedulers.find(entity.GetId()); findIt != _entityScopeSchedulers.end())
         {
             findIt->second->Reset();
         }
@@ -270,48 +263,8 @@ namespace SparkyStudios::Audio::Amplitude
         return scheduler;
     }
 
-    const RtpcValue& Collection::GetGain() const
-    {
-        return _gain;
-    }
-
-    const RtpcValue& Collection::GetPriority() const
-    {
-        return _priority;
-    }
-
-    AmBankID Collection::GetId() const
-    {
-        return _id;
-    }
-
-    const std::string& Collection::GetName() const
-    {
-        return _name;
-    }
-
-    BusInternalState* Collection::GetBus() const
-    {
-        return _bus;
-    }
-
-    RefCounter* Collection::GetRefCounter()
-    {
-        return &_refCounter;
-    }
-
     const std::vector<AmSoundID>& Collection::GetAudioSamples() const
     {
         return _sounds;
-    }
-
-    const Effect* Collection::GetEffect() const
-    {
-        return _effect;
-    }
-
-    const Attenuation* Collection::GetAttenuation() const
-    {
-        return _attenuation;
     }
 } // namespace SparkyStudios::Audio::Amplitude

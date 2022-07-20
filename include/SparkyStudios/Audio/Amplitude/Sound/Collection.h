@@ -19,13 +19,8 @@
 
 #include <vector>
 
-#include <SparkyStudios/Audio/Amplitude/Core/Common.h>
 #include <SparkyStudios/Audio/Amplitude/Core/Entity.h>
-#include <SparkyStudios/Audio/Amplitude/Core/RefCounter.h>
 
-#include <SparkyStudios/Audio/Amplitude/Sound/Attenuation.h>
-#include <SparkyStudios/Audio/Amplitude/Sound/Effect.h>
-#include <SparkyStudios/Audio/Amplitude/Sound/Rtpc.h>
 #include <SparkyStudios/Audio/Amplitude/Sound/Scheduler.h>
 #include <SparkyStudios/Audio/Amplitude/Sound/Sound.h>
 
@@ -41,13 +36,13 @@ namespace SparkyStudios::Audio::Amplitude
      * @brief Collection represent an abstract sound (like a 'whoosh'), which contains
      *        a number of pieces of audio which are selected through the configured Scheduler.
      */
-    class Collection
+    class Collection : public SoundObject
     {
         friend class Sound;
 
     public:
         Collection();
-        ~Collection();
+        ~Collection() override;
 
         /**
          * @brief Loads the collection from the given source.
@@ -57,7 +52,7 @@ namespace SparkyStudios::Audio::Amplitude
          *
          * @return true if the collection was loaded successfully, false otherwise.
          */
-        bool LoadCollectionDefinition(const std::string& source, EngineInternalState* state);
+        bool LoadDefinition(const std::string& source, EngineInternalState* state) override;
 
         /**
          * @brief Loads the collection from the given file path.
@@ -67,21 +62,21 @@ namespace SparkyStudios::Audio::Amplitude
          *
          * @return true if the collection was loaded successfully, false otherwise.
          */
-        bool LoadCollectionDefinitionFromFile(const AmOsString& filename, EngineInternalState* state);
+        bool LoadDefinitionFromFile(const AmOsString& filename, EngineInternalState* state) override;
 
         /**
          * @brief Acquires referenced objects in this Collection.
          *
          * @param state The engine state used while loading the collection.
          */
-        void AcquireReferences(EngineInternalState* state);
+        void AcquireReferences(EngineInternalState* state) override;
 
         /**
          * @brief Releases the references acquired when loading the collection.
          *
          * @param state The engine state used while loading the collection.
          */
-        void ReleaseReferences(EngineInternalState* state);
+        void ReleaseReferences(EngineInternalState* state) override;
 
         /**
          * @brief Returns the loaded collection definition.
@@ -117,62 +112,6 @@ namespace SparkyStudios::Audio::Amplitude
         void ResetEntityScopeScheduler(const Entity& entity);
 
         /**
-         * @brief Gets the actual gain of the collection.
-         *
-         * @return The Collection gain.
-         */
-        const RtpcValue& GetGain() const;
-
-        /**
-         * @brief Gets the actual priority of the collection.
-         *
-         * @return The Collection priority.
-         */
-        const RtpcValue& GetPriority() const;
-
-        /**
-         * @brief Returns the unique ID of this Collection.
-         *
-         * @return The Collection unique ID.
-         */
-        [[nodiscard]] AmCollectionID GetId() const;
-
-        /**
-         * @brief Returns the name of this Collection.
-         *
-         * @return The Collection name.
-         */
-        [[nodiscard]] const std::string& GetName() const;
-
-        /**
-         * @brief Return the bus this Collection will play on.
-         *
-         * @return The bus this Collection will play on.
-         */
-        [[nodiscard]] BusInternalState* GetBus() const;
-
-        /**
-         * @brief Returns the effect attached to this Collection.
-         *
-         * @return The effect of this Collection if available or nullptr.
-         */
-        [[nodiscard]] const Effect* GetEffect() const;
-
-        /**
-         * @brief Returns the attenuation attached to this Collection.
-         *
-         * @return The attenuation of this Collection if available or nullptr.
-         */
-        [[nodiscard]] const Attenuation* GetAttenuation() const;
-
-        /**
-         * @brief Get the references counter of this instance.
-         *
-         * @return The references counter.
-         */
-        RefCounter* GetRefCounter();
-
-        /**
          * @brief Returns the list of Sound objects referenced in this collection.
          *
          * @return The list of Sound IDs.
@@ -181,9 +120,6 @@ namespace SparkyStudios::Audio::Amplitude
 
     private:
         static Scheduler* CreateScheduler(const CollectionDefinition* definition);
-
-        // The bus this Collection will play on.
-        BusInternalState* _bus;
 
         // The World scope sound scheduler
         Scheduler* _worldScopeScheduler;
@@ -194,17 +130,6 @@ namespace SparkyStudios::Audio::Amplitude
         std::string _source;
         std::vector<AmSoundID> _sounds;
         std::map<AmSoundID, SoundInstanceSettings> _soundSettings;
-
-        AmCollectionID _id;
-        std::string _name;
-
-        RtpcValue _gain;
-        RtpcValue _priority;
-
-        Effect* _effect;
-        Attenuation* _attenuation;
-
-        RefCounter _refCounter;
     };
 } // namespace SparkyStudios::Audio::Amplitude
 

@@ -70,7 +70,7 @@ namespace SparkyStudios::Audio::Amplitude
             }
             else
             {
-                _state->FadeOut(duration, ChannelState::Stopped);
+                _state->FadeOut(duration, ChannelPlaybackState::Stopped);
             }
         }
     }
@@ -86,7 +86,7 @@ namespace SparkyStudios::Audio::Amplitude
             }
             else
             {
-                _state->FadeOut(duration, ChannelState::Paused);
+                _state->FadeOut(duration, ChannelPlaybackState::Paused);
             }
         }
     }
@@ -138,6 +138,11 @@ namespace SparkyStudios::Audio::Amplitude
         }
 
         return 0.0f;
+    }
+
+    ChannelPlaybackState Channel::GetPlaybackState() const
+    {
+        return _state->GetChannelState();
     }
 
     ChannelInternalState* Channel::GetState() const

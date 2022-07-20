@@ -23,6 +23,16 @@ namespace SparkyStudios::Audio::Amplitude
 {
     class ChannelInternalState;
 
+    enum class ChannelPlaybackState
+    {
+        Stopped,
+        Playing,
+        FadingIn,
+        FadingOut,
+        SwitchingState,
+        Paused,
+    };
+
     /**
      * @brief An object that represents a single channel of audio.
      *
@@ -127,6 +137,11 @@ namespace SparkyStudios::Audio::Amplitude
          * @return Returns the gain.
          */
         [[nodiscard]] float GetGain() const;
+
+        /**
+         * @brief Returns the playback state of this Channel.
+         */
+        [[nodiscard]] ChannelPlaybackState GetPlaybackState() const;
 
         /**
          * @brief Returns the internal state of this Channel.

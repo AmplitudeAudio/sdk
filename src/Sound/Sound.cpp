@@ -25,23 +25,16 @@ namespace SparkyStudios::Audio::Amplitude
     static AmObjectID gLastSoundInstanceID = 0;
 
     Sound::Sound()
-        : m_format()
+        : SoundObject()
+        , m_format()
         , _decoder(nullptr)
-        , _bus(nullptr)
-        , _id(kAmInvalidObjectId)
-        , _name()
-        , _effect(nullptr)
-        , _attenuation(nullptr)
         , _stream(false)
         , _loop(false)
         , _loopCount(0)
-        , _gain()
-        , _priority()
         , _source()
         , _settings()
         , _soundData(nullptr)
         , _soundDataRefCounter()
-        , _refCounter()
     {}
 
     Sound::~Sound()
@@ -59,15 +52,15 @@ namespace SparkyStudios::Audio::Amplitude
             _soundData = nullptr;
         }
 
-        _bus = nullptr;
-        _effect = nullptr;
-        _attenuation = nullptr;
+        m_bus = nullptr;
+        m_effect = nullptr;
+        m_attenuation = nullptr;
     }
 
-    bool Sound::LoadSoundDefinition(const std::string& source, EngineInternalState* state)
+    bool Sound::LoadDefinition(const std::string& source, EngineInternalState* state)
     {
         // Ensure we don't load the sound more than once
-        AMPLITUDE_ASSERT(_id == kAmInvalidObjectId);
+        AMPLITUDE_ASSERT(m_id == kAmInvalidObjectId);
 
         _source = source;
         const SoundDefinition* definition = GetSoundDefinition();
@@ -84,8 +77,8 @@ namespace SparkyStudios::Audio::Amplitude
             return false;
         }
 
-        _bus = FindBusInternalState(state, definition->bus());
-        if (!_bus)
+        m_bus = FindBusInternalState(state, definition->bus());
+        if (!m_bus)
         {
             CallLogFunc("[ERROR] Sound %s specifies an unknown bus ID: %u.\n", definition->name(), definition->bus());
             return false;
@@ -95,7 +88,7 @@ namespace SparkyStudios::Audio::Amplitude
         {
             if (const auto findIt = state->effect_map.find(definition->effect()); findIt != state->effect_map.end())
             {
-                _effect = findIt->second.get();
+                m_effect = findIt->second.get();
             }
             else
             {
@@ -108,7 +101,7 @@ namespace SparkyStudios::Audio::Amplitude
         {
             if (const auto findIt = state->attenuation_map.find(definition->attenuation()); findIt != state->attenuation_map.end())
             {
-                _attenuation = findIt->second.get();
+                m_attenuation = findIt->second.get();
             }
             else
             {
@@ -117,15 +110,15 @@ namespace SparkyStudios::Audio::Amplitude
             }
         }
 
-        _id = definition->id();
-        _name = definition->name()->str();
+        m_id = definition->id();
+        m_name = definition->name()->str();
 
         _stream = definition->stream();
         _loop = definition->loop() != nullptr && definition->loop()->enabled();
         _loopCount = definition->loop() ? definition->loop()->loop_count() : 0;
 
-        _gain = RtpcValue(definition->gain());
-        _priority = RtpcValue(definition->priority());
+        m_gain = RtpcValue(definition->gain());
+        m_priority = RtpcValue(definition->priority());
 
         _settings.m_id = definition->id();
         _settings.m_kind = SoundKind::Standalone;
@@ -133,47 +126,47 @@ namespace SparkyStudios::Audio::Amplitude
         _settings.m_effectID = definition->effect();
         _settings.m_attenuationID = definition->attenuation();
         _settings.m_spatialization = definition->spatialization();
-        _settings.m_priority = _priority;
-        _settings.m_gain = _gain;
+        _settings.m_priority = m_priority;
+        _settings.m_gain = m_gain;
         _settings.m_loop = _loop;
         _settings.m_loopCount = _loopCount;
 
         return true;
     }
 
-    bool Sound::LoadSoundDefinitionFromFile(const AmOsString& filename, EngineInternalState* state)
+    bool Sound::LoadDefinitionFromFile(const AmOsString& filename, EngineInternalState* state)
     {
         std::string source;
-        return Amplitude::LoadFile(filename, &source) && LoadSoundDefinition(source, state);
+        return Amplitude::LoadFile(filename, &source) && LoadDefinition(source, state);
     }
 
     void Sound::AcquireReferences(EngineInternalState* state)
     {
-        AMPLITUDE_ASSERT(_id != kAmInvalidObjectId);
+        AMPLITUDE_ASSERT(m_id != kAmInvalidObjectId);
 
-        if (_effect)
+        if (m_effect)
         {
-            _effect->GetRefCounter()->Increment();
+            m_effect->GetRefCounter()->Increment();
         }
 
-        if (_attenuation)
+        if (m_attenuation)
         {
-            _attenuation->GetRefCounter()->Increment();
+            m_attenuation->GetRefCounter()->Increment();
         }
     }
 
     void Sound::ReleaseReferences(EngineInternalState* state)
     {
-        AMPLITUDE_ASSERT(_id != kAmInvalidObjectId);
+        AMPLITUDE_ASSERT(m_id != kAmInvalidObjectId);
 
-        if (_effect)
+        if (m_effect)
         {
-            _effect->GetRefCounter()->Decrement();
+            m_effect->GetRefCounter()->Decrement();
         }
 
-        if (_attenuation)
+        if (m_attenuation)
         {
-            _attenuation->GetRefCounter()->Decrement();
+            m_attenuation->GetRefCounter()->Decrement();
         }
     }
 
@@ -192,7 +185,7 @@ namespace SparkyStudios::Audio::Amplitude
 
         const std::filesystem::path& filename = GetFilename();
 
-        Codec* codec = Codec::FindCodecForFile(filename.c_str());
+        const Codec* codec = Codec::FindCodecForFile(filename.c_str());
         if (codec == nullptr)
         {
             CallLogFunc("[ERROR] Cannot load the sound: unable to find codec for '" AM_OS_CHAR_FMT "'.\n", filename.c_str());
@@ -211,8 +204,8 @@ namespace SparkyStudios::Audio::Amplitude
 
     SoundInstance* Sound::CreateInstance()
     {
-        AMPLITUDE_ASSERT(_id != kAmInvalidObjectId);
-        return new SoundInstance(this, _settings, _effect);
+        AMPLITUDE_ASSERT(m_id != kAmInvalidObjectId);
+        return new SoundInstance(this, _settings, m_effect);
     }
 
     SoundInstance* Sound::CreateInstance(const Collection* collection)
@@ -220,9 +213,9 @@ namespace SparkyStudios::Audio::Amplitude
         if (collection == nullptr)
             return CreateInstance();
 
-        AMPLITUDE_ASSERT(_id != kAmInvalidObjectId);
+        AMPLITUDE_ASSERT(m_id != kAmInvalidObjectId);
 
-        auto* sound = new SoundInstance(this, collection->_soundSettings.at(_id), collection->_effect);
+        auto* sound = new SoundInstance(this, collection->_soundSettings.at(m_id), collection->m_effect);
         sound->_collection = collection;
 
         return sound;
@@ -238,41 +231,6 @@ namespace SparkyStudios::Audio::Amplitude
         return m_format;
     }
 
-    const RtpcValue& Sound::GetGain() const
-    {
-        return _gain;
-    }
-
-    const RtpcValue& Sound::GetPriority() const
-    {
-        return _priority;
-    }
-
-    AmSoundID Sound::GetId() const
-    {
-        return _id;
-    }
-
-    const std::string& Sound::GetName() const
-    {
-        return _name;
-    }
-
-    const Effect* Sound::GetEffect() const
-    {
-        return _effect;
-    }
-
-    const Attenuation* Sound::GetAttenuation() const
-    {
-        return _attenuation;
-    }
-
-    BusInternalState* Sound::GetBus() const
-    {
-        return _bus;
-    }
-
     bool Sound::IsLoop() const
     {
         return _loop;
@@ -281,11 +239,6 @@ namespace SparkyStudios::Audio::Amplitude
     bool Sound::IsStream() const
     {
         return _stream;
-    }
-
-    RefCounter* Sound::GetRefCounter()
-    {
-        return &_refCounter;
     }
 
     SoundChunk* Sound::AcquireSoundData()

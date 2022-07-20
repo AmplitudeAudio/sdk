@@ -62,7 +62,7 @@ namespace SparkyStudios::Audio::Amplitude
 
             // This is a new switch container, load it and update it.
             std::unique_ptr<SwitchContainer> switch_container(new SwitchContainer());
-            if (!switch_container->LoadSwitchContainerDefinitionFromFile(filePath.c_str(), engine->GetState()))
+            if (!switch_container->LoadDefinitionFromFile(filePath.c_str(), engine->GetState()))
             {
                 return false;
             }
@@ -102,7 +102,7 @@ namespace SparkyStudios::Audio::Amplitude
 
             // This is a new collection, load it and update it.
             std::unique_ptr<Collection> collection(new Collection());
-            if (!collection->LoadCollectionDefinitionFromFile(filePath.c_str(), engine->GetState()))
+            if (!collection->LoadDefinitionFromFile(filePath.c_str(), engine->GetState()))
             {
                 return false;
             }
@@ -142,7 +142,7 @@ namespace SparkyStudios::Audio::Amplitude
 
             // This is a new sound, load it and update it.
             std::unique_ptr<Sound> sound(new Sound());
-            if (!sound->LoadSoundDefinitionFromFile(filePath.c_str(), engine->GetState()))
+            if (!sound->LoadDefinitionFromFile(filePath.c_str(), engine->GetState()))
             {
                 return false;
             }

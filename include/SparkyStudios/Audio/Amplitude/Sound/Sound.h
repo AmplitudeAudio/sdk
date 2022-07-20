@@ -20,13 +20,8 @@
 #include <SparkyStudios/Audio/Amplitude/Core/Common.h>
 
 #include <SparkyStudios/Audio/Amplitude/Core/Codec.h>
-#include <SparkyStudios/Audio/Amplitude/Core/RefCounter.h>
 
-#include <SparkyStudios/Audio/Amplitude/IO/FileLoader.h>
-
-#include <SparkyStudios/Audio/Amplitude/Sound/Attenuation.h>
-#include <SparkyStudios/Audio/Amplitude/Sound/Effect.h>
-#include <SparkyStudios/Audio/Amplitude/Sound/Rtpc.h>
+#include <SparkyStudios/Audio/Amplitude/Sound/SoundObject.h>
 
 namespace SparkyStudios::Audio::Amplitude
 {
@@ -62,7 +57,9 @@ namespace SparkyStudios::Audio::Amplitude
         AmUInt32 m_loopCount;
     };
 
-    class Sound : public Resource
+    class Sound
+        : public SoundObject
+        , public Resource
     {
         friend class Collection;
         friend class SoundInstance;
@@ -79,7 +76,7 @@ namespace SparkyStudios::Audio::Amplitude
          *
          * @return true if the sound was loaded successfully, false otherwise.
          */
-        bool LoadSoundDefinition(const std::string& source, EngineInternalState* state);
+        bool LoadDefinition(const std::string& source, EngineInternalState* state) override;
 
         /**
          * @brief Loads the sound from the given file path.
@@ -89,21 +86,21 @@ namespace SparkyStudios::Audio::Amplitude
          *
          * @return true if the sound was loaded successfully, false otherwise.
          */
-        bool LoadSoundDefinitionFromFile(const AmOsString& filename, EngineInternalState* state);
+        bool LoadDefinitionFromFile(const AmOsString& filename, EngineInternalState* state) override;
 
         /**
          * @brief Acquires referenced objects in this Sound.
          *
          * @param state The engine state used while loading the sound.
          */
-        void AcquireReferences(EngineInternalState* state);
+        void AcquireReferences(EngineInternalState* state) override;
 
         /**
          * @brief Releases the references acquired when loading the sound.
          *
          * @param state The engine state used while loading the sound.
          */
-        void ReleaseReferences(EngineInternalState* state);
+        void ReleaseReferences(EngineInternalState* state) override;
 
         /**
          * @brief Returns the loaded sound definition.
@@ -153,55 +150,6 @@ namespace SparkyStudios::Audio::Amplitude
         [[nodiscard]] const SoundFormat& GetFormat() const;
 
         /**
-         * @brief Gets the actual gain of the sound.
-         *
-         * @return The Sound gain.
-         */
-        [[nodiscard]] const RtpcValue& GetGain() const;
-
-        /**
-         * @brief Gets the actual priority of the sound.
-         *
-         * @return The Sound priority.
-         */
-        [[nodiscard]] const RtpcValue& GetPriority() const;
-
-        /**
-         * @brief Get the unique ID of this Sound.
-         *
-         * @return The unique sound ID.
-         */
-        [[nodiscard]] AmSoundID GetId() const;
-
-        /**
-         * @brief Get the name of this Sound.
-         *
-         * @return The sound name.
-         */
-        [[nodiscard]] const std::string& GetName() const;
-
-        /**
-         * @brief Get the Effect object associated with this Sound.
-         *
-         * @return The Effect object.
-         */
-        [[nodiscard]] const Effect* GetEffect() const;
-
-        /**
-         * @brief Get the Attenuation object associated with this Sound.
-         *
-         * @return The Attenuation object.
-         */
-        [[nodiscard]] const Attenuation* GetAttenuation() const;
-
-        /**
-         * @brief Return the bus this Sound will play on.
-         *
-         * @return The bus this Sound will play on.
-         */
-        [[nodiscard]] BusInternalState* GetBus() const;
-
-        /**
          * @brief Checks streaming is enabled for this Sound.
          *
          * @return true if streaming is enabled, false otherwise.
@@ -215,20 +163,13 @@ namespace SparkyStudios::Audio::Amplitude
          */
         [[nodiscard]] bool IsLoop() const;
 
-        /**
-         * @brief Get the reference counter of this Sound.
-         *
-         * @return The Sound's references counter.
-         */
-        RefCounter* GetRefCounter();
-
     protected:
         /**
          * @brief Returns the SoundChunk associated with this Sound
          * and increment its reference counter.
          *
          * If the reference equals 0, the SoundChunk is created.
-         * 
+         *
          * This methods is used by the SoundInstance to get the SoundChunk
          * only when the audio file is not streamed.
          *
@@ -253,28 +194,15 @@ namespace SparkyStudios::Audio::Amplitude
     private:
         Codec::Decoder* _decoder;
 
-        // The bus this Sound will play on.
-        BusInternalState* _bus;
-
-        AmSoundID _id;
-        std::string _name;
-
-        Effect* _effect;
-        Attenuation* _attenuation;
         bool _stream;
         bool _loop;
         AmUInt32 _loopCount;
-
-        RtpcValue _gain;
-        RtpcValue _priority;
 
         std::string _source;
         SoundInstanceSettings _settings;
 
         SoundChunk* _soundData;
         RefCounter _soundDataRefCounter;
-
-        RefCounter _refCounter;
     };
 
     class SoundInstance

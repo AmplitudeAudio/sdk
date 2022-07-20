@@ -22,28 +22,23 @@
 namespace SparkyStudios::Audio::Amplitude
 {
     SwitchContainer::SwitchContainer()
-        : _bus(nullptr)
+        : SoundObject()
         , _switch(nullptr)
         , _source()
         , _sounds()
-        , _id(kAmInvalidObjectId)
-        , _name()
-        , _effect(nullptr)
-        , _attenuation(nullptr)
-        , _refCounter()
     {}
 
     SwitchContainer::~SwitchContainer()
     {
         _switch = nullptr;
         _sounds.clear();
-        _effect = nullptr;
-        _attenuation = nullptr;
+        m_effect = nullptr;
+        m_attenuation = nullptr;
     }
 
-    bool SwitchContainer::LoadSwitchContainerDefinition(const AmString& source, EngineInternalState* state)
+    bool SwitchContainer::LoadDefinition(const AmString& source, EngineInternalState* state)
     {
-        AMPLITUDE_ASSERT(_id == kAmInvalidObjectId);
+        AMPLITUDE_ASSERT(m_id == kAmInvalidObjectId);
 
         _source = source;
         const SwitchContainerDefinition* definition = GetSwitchContainerDefinition();
@@ -60,14 +55,14 @@ namespace SparkyStudios::Audio::Amplitude
             return false;
         }
 
-        _bus = FindBusInternalState(state, definition->bus());
-        if (!_bus)
+        m_bus = FindBusInternalState(state, definition->bus());
+        if (!m_bus)
         {
             CallLogFunc("[ERROR] SwitchContainer %s specifies an unknown bus ID: %u.\n", definition->name(), definition->bus());
             return false;
         }
 
-        if (auto findIt = state->switch_map.find(definition->switch_group()); findIt != state->switch_map.end())
+        if (const auto findIt = state->switch_map.find(definition->switch_group()); findIt != state->switch_map.end())
         {
             _switch = findIt->second.get();
         }
@@ -76,7 +71,7 @@ namespace SparkyStudios::Audio::Amplitude
         {
             if (const auto findIt = state->effect_map.find(definition->effect()); findIt != state->effect_map.end())
             {
-                _effect = findIt->second.get();
+                m_effect = findIt->second.get();
             }
             else
             {
@@ -87,12 +82,12 @@ namespace SparkyStudios::Audio::Amplitude
 
         if (definition->attenuation() != kAmInvalidObjectId)
         {
-            if (auto findIt = state->attenuation_map.find(definition->attenuation()); findIt != state->attenuation_map.end())
+            if (const auto findIt = state->attenuation_map.find(definition->attenuation()); findIt != state->attenuation_map.end())
             {
-                _attenuation = findIt->second.get();
+                m_attenuation = findIt->second.get();
             }
 
-            if (!_attenuation)
+            if (!m_attenuation)
             {
                 CallLogFunc(
                     "[ERROR] SwitchContainer " AM_OS_CHAR_FMT " specifies an unknown attenuation ID: %u.\n",
@@ -101,11 +96,11 @@ namespace SparkyStudios::Audio::Amplitude
             }
         }
 
-        _id = definition->id();
-        _name = definition->name()->str();
+        m_id = definition->id();
+        m_name = definition->name()->str();
 
-        _gain = RtpcValue(definition->gain());
-        _priority = RtpcValue(definition->priority());
+        m_gain = RtpcValue(definition->gain());
+        m_priority = RtpcValue(definition->priority());
 
         const auto& states = _switch->GetSwitchStates();
         for (const auto& state : states)
@@ -116,7 +111,7 @@ namespace SparkyStudios::Audio::Amplitude
             }
         }
 
-        flatbuffers::uoffset_t count = definition->entries() ? definition->entries()->size() : 0;
+        const flatbuffers::uoffset_t count = definition->entries() ? definition->entries()->size() : 0;
         for (flatbuffers::uoffset_t i = 0; i < count; ++i)
         {
             const SwitchContainerEntry* entry = definition->entries()->Get(i);
@@ -152,7 +147,7 @@ namespace SparkyStudios::Audio::Amplitude
             item.m_fadeOutAlgorithm = entry->fade_out()->fader();
             item.m_gain = RtpcValue(entry->gain());
 
-            flatbuffers::uoffset_t statesCount = entry->switch_states()->size();
+            const flatbuffers::uoffset_t statesCount = entry->switch_states()->size();
             for (flatbuffers::uoffset_t j = 0; j < statesCount; ++j)
             {
                 AmObjectID stateId = entry->switch_states()->Get(j);
@@ -163,26 +158,26 @@ namespace SparkyStudios::Audio::Amplitude
         return true;
     }
 
-    bool SwitchContainer::LoadSwitchContainerDefinitionFromFile(const AmOsString& filename, EngineInternalState* state)
+    bool SwitchContainer::LoadDefinitionFromFile(const AmOsString& filename, EngineInternalState* state)
     {
         std::string source;
-        return Amplitude::LoadFile(filename, &source) && LoadSwitchContainerDefinition(source, state);
+        return Amplitude::LoadFile(filename, &source) && LoadDefinition(source, state);
     }
 
     void SwitchContainer::AcquireReferences(EngineInternalState* state)
     {
-        AMPLITUDE_ASSERT(_id != kAmInvalidObjectId);
+        AMPLITUDE_ASSERT(m_id != kAmInvalidObjectId);
 
         _switch->GetRefCounter()->Increment();
 
-        if (_effect)
+        if (m_effect)
         {
-            _effect->GetRefCounter()->Increment();
+            m_effect->GetRefCounter()->Increment();
         }
 
-        if (_attenuation)
+        if (m_attenuation)
         {
-            _attenuation->GetRefCounter()->Increment();
+            m_attenuation->GetRefCounter()->Increment();
         }
 
         for (auto&& sound : _sounds)
@@ -200,18 +195,18 @@ namespace SparkyStudios::Audio::Amplitude
 
     void SwitchContainer::ReleaseReferences(EngineInternalState* state)
     {
-        AMPLITUDE_ASSERT(_id != kAmInvalidObjectId);
+        AMPLITUDE_ASSERT(m_id != kAmInvalidObjectId);
 
         _switch->GetRefCounter()->Decrement();
 
-        if (_effect)
+        if (m_effect)
         {
-            _effect->GetRefCounter()->Decrement();
+            m_effect->GetRefCounter()->Decrement();
         }
 
-        if (_attenuation)
+        if (m_attenuation)
         {
-            _attenuation->GetRefCounter()->Decrement();
+            m_attenuation->GetRefCounter()->Decrement();
         }
 
         for (auto&& sound : _sounds)
@@ -230,31 +225,6 @@ namespace SparkyStudios::Audio::Amplitude
     const SwitchContainerDefinition* SwitchContainer::GetSwitchContainerDefinition() const
     {
         return Amplitude::GetSwitchContainerDefinition(_source.c_str());
-    }
-
-    const RtpcValue& SwitchContainer::GetGain() const
-    {
-        return _gain;
-    }
-
-    const RtpcValue& SwitchContainer::GetPriority() const
-    {
-        return _priority;
-    }
-
-    AmCollectionID SwitchContainer::GetId() const
-    {
-        return _id;
-    }
-
-    const std::string& SwitchContainer::GetName() const
-    {
-        return _name;
-    }
-
-    BusInternalState* SwitchContainer::GetBus() const
-    {
-        return _bus;
     }
 
     Fader* SwitchContainer::GetFaderIn(AmObjectID id) const
@@ -277,24 +247,9 @@ namespace SparkyStudios::Audio::Amplitude
         return nullptr;
     }
 
-    RefCounter* SwitchContainer::GetRefCounter()
-    {
-        return &_refCounter;
-    }
-
     const std::vector<SwitchContainerItem>& SwitchContainer::GetSoundObjects(AmObjectID stateId) const
     {
         return _sounds.at(stateId);
-    }
-
-    const Effect* SwitchContainer::GetEffect() const
-    {
-        return _effect;
-    }
-
-    const Attenuation* SwitchContainer::GetAttenuation() const
-    {
-        return _attenuation;
     }
 
     const Switch* SwitchContainer::GetSwitch() const
