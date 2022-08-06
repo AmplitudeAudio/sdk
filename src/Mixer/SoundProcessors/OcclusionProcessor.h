@@ -48,7 +48,7 @@ namespace SparkyStudios::Audio::Amplitude
             const float occlusion = sound->GetOcclusion();
 
             // Nothing to do if no occlusion
-            if (occlusion == 0)
+            if (occlusion < kEpsilon)
             {
                 if (out != in)
                 {
@@ -102,7 +102,7 @@ namespace SparkyStudios::Audio::Amplitude
             const float occlusion = sound->GetOcclusion();
 
             // Nothing to do if no occlusion
-            if (occlusion == 0)
+            if (occlusion < kEpsilon)
             {
                 if (out != in)
                 {

@@ -48,7 +48,7 @@ namespace SparkyStudios::Audio::Amplitude
             const float obstruction = sound->GetObstruction();
 
             // Nothing to do if no obstruction
-            if (obstruction == 0)
+            if (obstruction < kEpsilon)
             {
                 if (out != in)
                 {
@@ -102,7 +102,7 @@ namespace SparkyStudios::Audio::Amplitude
             const float obstruction = sound->GetObstruction();
 
             // Nothing to do if no obstruction
-            if (obstruction == 0)
+            if (obstruction < kEpsilon)
             {
                 if (out != in)
                 {
