@@ -110,6 +110,11 @@ namespace SparkyStudios::Audio::Amplitude
         bool Init(const EngineConfigDefinition* config);
 
         /**
+         * @brief Deinitializes the audio mixer.
+         */
+        void Deinit();
+
+        /**
          * @brief Mixer post initialization.
          *
          * This method is called once, just after the playback device is initialized

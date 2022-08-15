@@ -411,8 +411,14 @@ namespace SparkyStudios::Audio::Amplitude
     {
         _state->stopping = true;
 
+        // Stop all sounds
+        StopAll();
+
+        // Close the audio device through the driver
+        _audioDriver->Close();
+
         if (_state->mixer.IsInitialized())
-            _state->mixer.StopAll();
+            _state->mixer.Deinit();
 
         // Unload sound banks
         UnloadSoundBanks();
@@ -420,11 +426,7 @@ namespace SparkyStudios::Audio::Amplitude
         delete _state;
         _state = nullptr;
 
-        if (_audioDriver)
-            // Close the audio device through the driver
-            return _audioDriver->Close();
-        else
-            return true;
+        return true;
     }
 
     bool Engine::IsInitialized() const
@@ -593,7 +595,10 @@ namespace SparkyStudios::Audio::Amplitude
     {
         for (const auto& item : _state->sound_bank_map)
         {
-            item.second->Deinitialize(this);
+            if (item.second->GetRefCounter()->Decrement() == 0)
+            {
+                item.second->Deinitialize(this);
+            }
         }
     }
 
@@ -1341,6 +1346,8 @@ namespace SparkyStudios::Audio::Amplitude
         {
             return handle;
         }
+
+        return nullptr;
     }
 
     SoundObjectHandle Engine::GetSoundObjectHandle(AmSoundID id) const
@@ -1359,6 +1366,8 @@ namespace SparkyStudios::Audio::Amplitude
         {
             return handle;
         }
+
+        return nullptr;
     }
 
     SoundObjectHandle Engine::GetSoundObjectHandleFromFile(const AmOsString& filename) const
@@ -1377,6 +1386,8 @@ namespace SparkyStudios::Audio::Amplitude
         {
             return handle;
         }
+
+        return nullptr;
     }
 
     EventHandle Engine::GetEventHandle(const AmString& name) const

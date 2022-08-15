@@ -225,17 +225,7 @@ namespace SparkyStudios::Audio::Amplitude
 
     Mixer::~Mixer()
     {
-        AMPLITUDE_ASSERT(!_insideAudioThreadMutex);
-
-        if (_initialized)
-        {
-            _initialized = false;
-
-            if (_audioThreadMutex)
-                Thread::DestroyMutex(_audioThreadMutex);
-
-            _audioThreadMutex = nullptr;
-        }
+        Deinit(); // Ensures Deinit is called
     }
 
     bool Mixer::Init(const EngineConfigDefinition* config)
@@ -315,6 +305,24 @@ namespace SparkyStudios::Audio::Amplitude
         return true;
     }
 
+    void Mixer::Deinit()
+    {
+        if (!_initialized)
+            return;
+
+        AMPLITUDE_ASSERT(!_insideAudioThreadMutex);
+
+        _initialized = false;
+
+        if (_audioThreadMutex)
+            Thread::DestroyMutex(_audioThreadMutex);
+
+        _audioThreadMutex = nullptr;
+
+        delete _pipeline;
+        _pipeline = nullptr;
+    }
+
     void Mixer::UpdateDevice(
         AmObjectID deviceID,
         std::string deviceName,
@@ -336,7 +344,7 @@ namespace SparkyStudios::Audio::Amplitude
 
     AmUInt64 Mixer::Mix(AmVoidPtr mixBuffer, AmUInt64 frameCount)
     {
-        if (amEngine->GetState()->stopping || amEngine->GetState()->paused)
+        if (!_initialized || amEngine->GetState() == nullptr || amEngine->GetState()->stopping || amEngine->GetState()->paused)
             return 0;
 
         LockAudioMutex();
