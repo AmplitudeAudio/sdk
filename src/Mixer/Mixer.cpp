@@ -315,7 +315,7 @@ namespace SparkyStudios::Audio::Amplitude
         return true;
     }
 
-    void Mixer::PostInit(
+    void Mixer::UpdateDevice(
         AmObjectID deviceID,
         std::string deviceName,
         AmUInt32 deviceOutputSampleRate,

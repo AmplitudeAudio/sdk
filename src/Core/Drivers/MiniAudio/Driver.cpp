@@ -24,13 +24,32 @@ namespace SparkyStudios::Audio::Amplitude::Drivers
 
     static void miniaudio_device_notification(const ma_device_notification* pNotification)
     {
-        auto* driver = static_cast<Driver*>(pNotification->pDevice->pUserData);
+        auto* driver = static_cast<MiniAudioDriver*>(pNotification->pDevice->pUserData);
+
+        driver->m_deviceDescription.mDeviceID = 0;
+        driver->m_deviceDescription.mDeviceName = std::string(pNotification->pDevice->playback.name);
+        driver->m_deviceDescription.mDeviceOutputSampleRate = pNotification->pDevice->playback.internalSampleRate;
+        driver->m_deviceDescription.mDeviceOutputChannels =
+            static_cast<PlaybackOutputChannels>(pNotification->pDevice->playback.internalChannels);
+        driver->m_deviceDescription.mDeviceOutputFormat =
+            static_cast<PlaybackOutputFormat>(pNotification->pDevice->playback.internalFormat);
+
+        if (auto* mixer = amEngine->GetMixer(); mixer != nullptr)
+        {
+            mixer->UpdateDevice(
+                0, // TODO: Compute a proper device ID
+                driver->m_deviceDescription.mDeviceName, driver->m_deviceDescription.mDeviceOutputSampleRate,
+                driver->m_deviceDescription.mDeviceOutputChannels, driver->m_deviceDescription.mDeviceOutputFormat);
+        }
+
         switch (pNotification->type)
         {
         case ma_device_notification_type_started:
+            driver->m_deviceDescription.mDeviceState = DeviceState::Started;
             CallDeviceNotificationCallback(DeviceNotification::Started, driver->GetDeviceDescription(), driver);
             break;
         case ma_device_notification_type_stopped:
+            driver->m_deviceDescription.mDeviceState = DeviceState::Stopped;
             CallDeviceNotificationCallback(DeviceNotification::Stopped, driver->GetDeviceDescription(), driver);
             break;
         case ma_device_notification_type_rerouted:
@@ -92,7 +111,7 @@ namespace SparkyStudios::Audio::Amplitude::Drivers
 
             CallDeviceNotificationCallback(DeviceNotification::Opened, m_deviceDescription, this);
 
-            amEngine->GetMixer()->PostInit(
+            amEngine->GetMixer()->UpdateDevice(
                 0, // TODO: Compute a proper device ID
                 _device.playback.name, _device.playback.internalSampleRate,
                 static_cast<PlaybackOutputChannels>(_device.playback.internalChannels),

@@ -119,7 +119,7 @@ namespace SparkyStudios::Audio::Amplitude
          * @param sampleRate The sample rate accepted bu the playback device.
          * @param channels The number of channels the playback device will output.
          */
-        void PostInit(
+        void UpdateDevice(
             AmObjectID deviceID,
             std::string deviceName,
             AmUInt32 deviceOutputSampleRate,
