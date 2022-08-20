@@ -38,7 +38,7 @@ namespace SparkyStudios::Audio::Amplitude
         return _state->GetName();
     }
 
-    void Bus::SetGain(float gain)
+    void Bus::SetGain(float gain) const
     {
         return _state->SetUserGain(gain);
     }
@@ -48,7 +48,7 @@ namespace SparkyStudios::Audio::Amplitude
         return _state->GetUserGain();
     }
 
-    void Bus::FadeTo(float gain, AmTime duration)
+    void Bus::FadeTo(float gain, AmTime duration) const
     {
         _state->FadeTo(gain, duration);
     }
@@ -58,7 +58,7 @@ namespace SparkyStudios::Audio::Amplitude
         return _state->GetGain();
     }
 
-    void Bus::SetMute(bool mute)
+    void Bus::SetMute(bool mute) const
     {
         _state->SetMute(mute);
     }

@@ -47,7 +47,7 @@ namespace SparkyStudios::Audio::Amplitude
         return _state->GetVelocity();
     }
 
-    void Entity::SetLocation(const hmm_vec3& location)
+    void Entity::SetLocation(const hmm_vec3& location) const
     {
         AMPLITUDE_ASSERT(Valid());
         _state->SetLocation(location);
@@ -59,7 +59,7 @@ namespace SparkyStudios::Audio::Amplitude
         return _state->GetLocation();
     }
 
-    void Entity::SetOrientation(const hmm_vec3& direction, const hmm_vec3& up)
+    void Entity::SetOrientation(const hmm_vec3& direction, const hmm_vec3& up) const
     {
         AMPLITUDE_ASSERT(Valid());
         _state->SetOrientation(direction, up);
@@ -77,19 +77,19 @@ namespace SparkyStudios::Audio::Amplitude
         return _state->GetUp();
     }
 
-    void Entity::Update()
+    void Entity::Update() const
     {
         AMPLITUDE_ASSERT(Valid());
         _state->Update();
     }
 
-    void Entity::SetObstruction(AmReal32 obstruction)
+    void Entity::SetObstruction(AmReal32 obstruction) const
     {
         AMPLITUDE_ASSERT(Valid());
         _state->SetObstruction(obstruction);
     }
 
-    void Entity::SetOcclusion(AmReal32 occlusion)
+    void Entity::SetOcclusion(AmReal32 occlusion) const
     {
         AMPLITUDE_ASSERT(Valid());
         _state->SetOcclusion(occlusion);
@@ -107,7 +107,7 @@ namespace SparkyStudios::Audio::Amplitude
         return _state->GetOcclusion();
     }
 
-    void Entity::SetEnvironmentFactor(AmEnvironmentID environment, AmReal32 factor)
+    void Entity::SetEnvironmentFactor(AmEnvironmentID environment, AmReal32 factor) const
     {
         AMPLITUDE_ASSERT(Valid());
         _state->SetEnvironmentFactor(environment, factor);

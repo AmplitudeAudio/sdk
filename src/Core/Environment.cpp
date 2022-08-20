@@ -42,7 +42,7 @@ namespace SparkyStudios::Audio::Amplitude
         return _state != nullptr ? _state->GetId() : kAmInvalidObjectId;
     }
 
-    void Environment::SetLocation(const hmm_vec3& location)
+    void Environment::SetLocation(const hmm_vec3& location) const
     {
         AMPLITUDE_ASSERT(Valid());
         _state->SetLocation(location);
@@ -54,7 +54,7 @@ namespace SparkyStudios::Audio::Amplitude
         return _state->GetLocation();
     }
 
-    void Environment::SetOrientation(const hmm_vec3& direction, const hmm_vec3& up)
+    void Environment::SetOrientation(const hmm_vec3& direction, const hmm_vec3& up) const
     {
         AMPLITUDE_ASSERT(Valid());
         return _state->SetOrientation(direction, up);
@@ -84,19 +84,19 @@ namespace SparkyStudios::Audio::Amplitude
         return _state->GetFactor(entity);
     }
 
-    void Environment::SetEffect(AmEffectID effect)
+    void Environment::SetEffect(AmEffectID effect) const
     {
         AMPLITUDE_ASSERT(Valid());
         _state->SetEffect(effect);
     }
 
-    void Environment::SetEffect(const std::string& effect)
+    void Environment::SetEffect(const std::string& effect) const
     {
         AMPLITUDE_ASSERT(Valid());
         _state->SetEffect(effect);
     }
 
-    void Environment::SetEffect(const Effect* effect)
+    void Environment::SetEffect(const Effect* effect) const
     {
         AMPLITUDE_ASSERT(Valid());
         _state->SetEffect(effect);
@@ -108,7 +108,7 @@ namespace SparkyStudios::Audio::Amplitude
         return _state->GetEffect();
     }
 
-    void Environment::SetZone(Zone* zone)
+    void Environment::SetZone(Zone* zone) const
     {
         AMPLITUDE_ASSERT(Valid());
         _state->SetZone(zone);
@@ -125,7 +125,7 @@ namespace SparkyStudios::Audio::Amplitude
         return _state;
     }
 
-    void Environment::Update()
+    void Environment::Update() const
     {
         AMPLITUDE_ASSERT(Valid());
         _state->Update();

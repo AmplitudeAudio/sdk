@@ -79,7 +79,7 @@ namespace SparkyStudios::Audio::Amplitude
          *
          * @param location The new location.
          */
-        void SetLocation(const hmm_vec3& location);
+        void SetLocation(const hmm_vec3& location) const;
 
         /**
          * @brief Gets the current location of this Entity.
@@ -94,7 +94,7 @@ namespace SparkyStudios::Audio::Amplitude
          * @param direction The direction towards the Entity.
          * @param up The up vector.
          */
-        void SetOrientation(const hmm_vec3& direction, const hmm_vec3& up);
+        void SetOrientation(const hmm_vec3& direction, const hmm_vec3& up) const;
 
         /**
          * @brief Get the direction vector of the Entity.
@@ -116,7 +116,7 @@ namespace SparkyStudios::Audio::Amplitude
          * This method is called automatically by the Engine
          * on each frames.
          */
-        void Update();
+        void Update() const;
 
         /**
          * @brief Set the obstruction level of sounds played by this Entity.
@@ -124,7 +124,7 @@ namespace SparkyStudios::Audio::Amplitude
          * @param obstruction The obstruction amount. This is provided by the
          * game engine.
          */
-        void SetObstruction(AmReal32 obstruction);
+        void SetObstruction(AmReal32 obstruction) const;
 
         /**
          * @brief Set the occlusion level of sounds played by this Entity.
@@ -132,7 +132,7 @@ namespace SparkyStudios::Audio::Amplitude
          * @param occlusion The occlusion amount. This is provided by the
          * game engine.
          */
-        void SetOcclusion(AmReal32 occlusion);
+        void SetOcclusion(AmReal32 occlusion) const;
 
         /**
          * @brief Get the obstruction level of sounds played by this Entity.
@@ -154,7 +154,7 @@ namespace SparkyStudios::Audio::Amplitude
          * @param environment The environment ID.
          * @param factor The environment factor.
          */
-        void SetEnvironmentFactor(AmEnvironmentID environment, AmReal32 factor);
+        void SetEnvironmentFactor(AmEnvironmentID environment, AmReal32 factor) const;
 
         /**
          * @brief Gets the environment factor of this Entity for the given environment.

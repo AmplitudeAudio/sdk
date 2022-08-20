@@ -85,7 +85,7 @@ namespace SparkyStudios::Audio::Amplitude
          *
          * @param location The new location of this Listener.
          */
-        void SetLocation(const hmm_vec3& location);
+        void SetLocation(const hmm_vec3& location) const;
 
         /**
          * @brief Set the location, direction and up vector of this Listener.
@@ -93,7 +93,7 @@ namespace SparkyStudios::Audio::Amplitude
          * @param direction The direction of this Listener.
          * @param up THe up vector of this Listener.
          */
-        void SetOrientation(const hmm_vec3& direction, const hmm_vec3& up);
+        void SetOrientation(const hmm_vec3& direction, const hmm_vec3& up) const;
 
         /**
          * @brief Update the state of this Listener.
@@ -101,7 +101,7 @@ namespace SparkyStudios::Audio::Amplitude
          * This method is called automatically by the Engine
          * on each frames.
          */
-        void Update();
+        void Update() const;
 
         /**
          * @brief Returns the internal state of this Listener.

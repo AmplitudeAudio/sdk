@@ -83,7 +83,7 @@ namespace SparkyStudios::Audio::Amplitude
          *
          * @param gain The new gain value.
          */
-        void SetGain(float gain);
+        void SetGain(float gain) const;
 
         /**
          * @brief Returns the user specified fain on this Bus.
@@ -98,7 +98,7 @@ namespace SparkyStudios::Audio::Amplitude
          * @param gain The gain value to fade to.
          * @param duration The amount of time in seconds to take to reach the desired gain.
          */
-        void FadeTo(float gain, AmTime duration);
+        void FadeTo(float gain, AmTime duration) const;
 
         /**
          * @brief Returns the final calculated gain on this Bus.
@@ -116,7 +116,7 @@ namespace SparkyStudios::Audio::Amplitude
          *
          * @param mute The muted state.
          */
-        void SetMute(bool mute);
+        void SetMute(bool mute) const;
 
         /**
          * @brief Returns whether this Bus is muted.

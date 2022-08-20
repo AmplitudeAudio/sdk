@@ -59,7 +59,7 @@ namespace SparkyStudios::Audio::Amplitude
         return false;
     }
 
-    void Channel::Stop(AmTime duration)
+    void Channel::Stop(AmTime duration) const
     {
         AMPLITUDE_ASSERT(Valid());
         if (IsValidStateId())
@@ -75,7 +75,7 @@ namespace SparkyStudios::Audio::Amplitude
         }
     }
 
-    void Channel::Pause(AmTime duration)
+    void Channel::Pause(AmTime duration) const
     {
         AMPLITUDE_ASSERT(Valid());
         if (IsValidStateId())
@@ -91,7 +91,7 @@ namespace SparkyStudios::Audio::Amplitude
         }
     }
 
-    void Channel::Resume(AmTime duration)
+    void Channel::Resume(AmTime duration) const
     {
         AMPLITUDE_ASSERT(Valid());
         if (IsValidStateId())
@@ -111,7 +111,7 @@ namespace SparkyStudios::Audio::Amplitude
         return AM_Vec3(0, 0, 0);
     }
 
-    void Channel::SetLocation(const hmm_vec3& location)
+    void Channel::SetLocation(const hmm_vec3& location) const
     {
         AMPLITUDE_ASSERT(Valid());
         if (IsValidStateId())
@@ -120,7 +120,7 @@ namespace SparkyStudios::Audio::Amplitude
         }
     }
 
-    void Channel::SetGain(const float gain)
+    void Channel::SetGain(const float gain) const
     {
         AMPLITUDE_ASSERT(Valid());
         if (IsValidStateId())

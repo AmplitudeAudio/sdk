@@ -84,7 +84,7 @@ namespace SparkyStudios::Audio::Amplitude
          *
          * @param duration The fade out duration before to stop the channel.
          */
-        void Stop(AmTime duration = kMinFadeDuration);
+        void Stop(AmTime duration = kMinFadeDuration) const;
 
         /**
          * @brief Pause a channel.
@@ -93,7 +93,7 @@ namespace SparkyStudios::Audio::Amplitude
          *
          * @param duration The fade out duration before to pause the channel.
          */
-        void Pause(AmTime duration = kMinFadeDuration);
+        void Pause(AmTime duration = kMinFadeDuration) const;
 
         /**
          * @brief Resumes a paused channel.
@@ -103,7 +103,7 @@ namespace SparkyStudios::Audio::Amplitude
          *
          * @param duration The fade in duration after resuming the channel.
          */
-        void Resume(AmTime duration = kMinFadeDuration);
+        void Resume(AmTime duration = kMinFadeDuration) const;
 
         /**
          * @brief Get the location of this Channel.
@@ -122,14 +122,14 @@ namespace SparkyStudios::Audio::Amplitude
          *
          * @param location The new location of the Channel.
          */
-        void SetLocation(const hmm_vec3& location);
+        void SetLocation(const hmm_vec3& location) const;
 
         /**
          * @brief Sets the gain on this Channel.
          *
          * @param gain The new gain value.
          */
-        void SetGain(float gain);
+        void SetGain(float gain) const;
 
         /**
          * @brief Returns the gain on this Channel.

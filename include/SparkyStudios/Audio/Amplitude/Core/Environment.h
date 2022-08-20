@@ -74,7 +74,7 @@ namespace SparkyStudios::Audio::Amplitude
          *
          * @param location The new location.
          */
-        void SetLocation(const hmm_vec3& location);
+        void SetLocation(const hmm_vec3& location) const;
 
         /**
          * @brief Gets the current location of this Environment.
@@ -89,7 +89,7 @@ namespace SparkyStudios::Audio::Amplitude
          * @param direction The direction towards the Environment.
          * @param up The up vector.
          */
-        void SetOrientation(const hmm_vec3& direction, const hmm_vec3& up);
+        void SetOrientation(const hmm_vec3& direction, const hmm_vec3& up) const;
 
         /**
          * @brief Get the direction vector of the Environment.
@@ -128,21 +128,21 @@ namespace SparkyStudios::Audio::Amplitude
          *
          * @param effect The effect to apply in the Environment.
          */
-        void SetEffect(AmEffectID effect);
+        void SetEffect(AmEffectID effect) const;
 
         /**
          * @brief Set the Effect applied in the Environment.
          *
          * @param effect The effect to apply in the Environment.
          */
-        void SetEffect(const std::string& effect);
+        void SetEffect(const std::string& effect) const;
 
         /**
          * @brief Set the Effect applied in the Environment.
          *
          * @param effect The effect to apply in the Environment.
          */
-        void SetEffect(const Effect* effect);
+        void SetEffect(const Effect* effect) const;
 
         /**
          * @brief Get the Effect linked to this environment.
@@ -156,7 +156,7 @@ namespace SparkyStudios::Audio::Amplitude
          * 
          * @param zone The environment's zone.
          */
-        void SetZone(Zone* zone);
+        void SetZone(Zone* zone) const;
 
         /**
          * @brief Get the Zone linked to this environment.
@@ -178,7 +178,7 @@ namespace SparkyStudios::Audio::Amplitude
          * This method is called automatically by the Engine
          * on each frames.
          */
-        void Update();
+        void Update() const;
 
     private:
         EnvironmentInternalState* _state;
