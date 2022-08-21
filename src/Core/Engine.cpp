@@ -399,6 +399,10 @@ namespace SparkyStudios::Audio::Amplitude
         _state->obstruction_config.Init(config->game()->obstruction());
         _state->occlusion_config.Init(config->game()->occlusion());
 
+        // Environment Amounts
+        _state->track_environments = config->game()->track_environments();
+
+        // Engine state
         _state->paused = false;
         _state->mute = false;
         _state->master_gain = 1.0f;
