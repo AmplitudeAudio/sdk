@@ -377,7 +377,7 @@ install(
 )
 
 export(
-    TARGETS flatbuffers
+    TARGETS flatbuffers ProjectConfig
     NAMESPACE flatbuffers::
     FILE "${CMAKE_CURRENT_BINARY_DIR}/FlatbuffersConfig.cmake"
 )
