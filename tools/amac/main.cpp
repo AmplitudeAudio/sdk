@@ -315,6 +315,9 @@ static int process(const AmOsString& inFileName, const AmOsString& outFileName, 
 
         amMemory->Free(MemoryPoolKind::Codec, adpcmData);
 
+        delete decoder;
+        delete encoder;
+
         res = EXIT_SUCCESS;
     }
     else

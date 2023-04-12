@@ -14,6 +14,8 @@
 
 cmake_minimum_required(VERSION 3.20)
 
+cmake_policy(SET CMP0048 NEW)
+
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake")
 
 include(DetectAmplitudeVersion)
@@ -181,7 +183,6 @@ set(SA_SOURCE
     src/IO/FileLoader.cpp
 
     src/Math/Curve.cpp
-    src/Math/HMM_Impl.cpp
     src/Math/Shape.cpp
 
     src/Mixer/SoundProcessors/EffectProcessor.h

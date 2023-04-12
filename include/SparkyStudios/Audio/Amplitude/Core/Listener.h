@@ -71,21 +71,21 @@ namespace SparkyStudios::Audio::Amplitude
          *
          * @return The Listener's velocity.
          */
-        [[nodiscard]] const hmm_vec3& GetVelocity() const;
+        [[nodiscard]] const AmVec3& GetVelocity() const;
 
         /**
          * @brief Returns the location of this Listener.
          *
-         * @return hmm_vec3 The location of this Listener.
+         * @return AmVec3 The location of this Listener.
          */
-        [[nodiscard]] const hmm_vec3& GetLocation() const;
+        [[nodiscard]] const AmVec3& GetLocation() const;
 
         /**
          * @brief Set the location of this Listener.
          *
          * @param location The new location of this Listener.
          */
-        void SetLocation(const hmm_vec3& location) const;
+        void SetLocation(const AmVec3& location) const;
 
         /**
          * @brief Set the location, direction and up vector of this Listener.
@@ -93,7 +93,7 @@ namespace SparkyStudios::Audio::Amplitude
          * @param direction The direction of this Listener.
          * @param up THe up vector of this Listener.
          */
-        void SetOrientation(const hmm_vec3& direction, const hmm_vec3& up) const;
+        void SetOrientation(const AmVec3& direction, const AmVec3& up) const;
 
         /**
          * @brief Update the state of this Listener.

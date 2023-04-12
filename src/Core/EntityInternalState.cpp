@@ -22,7 +22,7 @@ namespace SparkyStudios::Audio::Amplitude
         , _location()
         , _direction()
         , _up()
-        , _inverseMatrix(AM_Mat4d(1.0f))
+        , _inverseMatrix(AM_M4D(1.0f))
         , _obstruction(0.0f)
         , _occlusion(0.0f)
         , _environmentFactors()
@@ -40,39 +40,39 @@ namespace SparkyStudios::Audio::Amplitude
         _id = id;
     }
 
-    const hmm_vec3& EntityInternalState::GetVelocity() const
+    const AmVec3& EntityInternalState::GetVelocity() const
     {
         return _velocity;
     }
 
-    void EntityInternalState::SetLocation(const hmm_vec3& location)
+    void EntityInternalState::SetLocation(const AmVec3& location)
     {
         _lastLocation = _location;
         _location = location;
     }
 
-    const hmm_vec3& EntityInternalState::GetLocation() const
+    const AmVec3& EntityInternalState::GetLocation() const
     {
         return _location;
     }
 
-    void EntityInternalState::SetOrientation(const hmm_vec3& direction, const hmm_vec3& up)
+    void EntityInternalState::SetOrientation(const AmVec3& direction, const AmVec3& up)
     {
         _direction = direction;
         _up = up;
     }
 
-    const hmm_vec3& EntityInternalState::GetDirection() const
+    const AmVec3& EntityInternalState::GetDirection() const
     {
         return _direction;
     }
 
-    const hmm_vec3& EntityInternalState::GetUp() const
+    const AmVec3& EntityInternalState::GetUp() const
     {
         return _up;
     }
 
-    const hmm_mat4& EntityInternalState::GetInverseMatrix() const
+    const AmMat4& EntityInternalState::GetInverseMatrix() const
     {
         return _inverseMatrix;
     }
@@ -80,7 +80,7 @@ namespace SparkyStudios::Audio::Amplitude
     void EntityInternalState::Update()
     {
         _velocity = _location - _lastLocation;
-        _inverseMatrix = AM_LookAt(_location, _location + _direction, _up);
+        _inverseMatrix = AM_LookAt_RH(_location, _location + _direction, _up);
     }
 
     void EntityInternalState::SetObstruction(AmReal32 obstruction)

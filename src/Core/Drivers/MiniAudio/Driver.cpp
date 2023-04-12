@@ -17,12 +17,12 @@
 
 namespace SparkyStudios::Audio::Amplitude::Drivers
 {
-    static void miniaudio_mixer(ma_device* pDevice, AmVoidPtr pOutput, AmConstVoidPtr pInput, ma_uint32 frameCount)
+    void miniaudio_mixer(ma_device* pDevice, AmVoidPtr pOutput, AmConstVoidPtr pInput, ma_uint32 frameCount)
     {
         amEngine->GetMixer()->Mix(pOutput, frameCount);
     }
 
-    static void miniaudio_device_notification(const ma_device_notification* pNotification)
+    void miniaudio_device_notification(const ma_device_notification* pNotification)
     {
         auto* driver = static_cast<MiniAudioDriver*>(pNotification->pDevice->pUserData);
 

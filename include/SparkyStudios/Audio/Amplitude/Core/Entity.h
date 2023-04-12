@@ -72,21 +72,21 @@ namespace SparkyStudios::Audio::Amplitude
          *
          * @return The Entity's velocity.
          */
-        [[nodiscard]] const hmm_vec3& GetVelocity() const;
+        [[nodiscard]] const AmVec3& GetVelocity() const;
 
         /**
          * @brief Sets the location of this Entity.
          *
          * @param location The new location.
          */
-        void SetLocation(const hmm_vec3& location) const;
+        void SetLocation(const AmVec3& location) const;
 
         /**
          * @brief Gets the current location of this Entity.
          *
          * @return The current location of this Entity.
          */
-        [[nodiscard]] const hmm_vec3& GetLocation() const;
+        [[nodiscard]] const AmVec3& GetLocation() const;
 
         /**
          * @brief Sets the orientation of this Entity.
@@ -94,21 +94,21 @@ namespace SparkyStudios::Audio::Amplitude
          * @param direction The direction towards the Entity.
          * @param up The up vector.
          */
-        void SetOrientation(const hmm_vec3& direction, const hmm_vec3& up) const;
+        void SetOrientation(const AmVec3& direction, const AmVec3& up) const;
 
         /**
          * @brief Get the direction vector of the Entity.
          *
          * @return The direction vector.
          */
-        [[nodiscard]] const hmm_vec3& GetDirection() const;
+        [[nodiscard]] const AmVec3& GetDirection() const;
 
         /**
          * @brief Get the up vector of the Entity.
          *
          * @return The up vector.
          */
-        [[nodiscard]] const hmm_vec3& GetUp() const;
+        [[nodiscard]] const AmVec3& GetUp() const;
 
         /**
          * @brief Update the state of this Entity.
@@ -167,7 +167,7 @@ namespace SparkyStudios::Audio::Amplitude
 
         /**
          * @brief Get the list of environments where this Entity belongs or has visited.
-         * 
+         *
          * @return The list of environments where this Entity belongs or has visited.
          */
         [[nodiscard]] const std::map<AmEnvironmentID, AmReal32>& GetEnvironments() const;

@@ -49,12 +49,14 @@ namespace SparkyStudios::Audio::Amplitude
         return ditherMin + x * (ditherMax - ditherMin);
     }
 
-    static AM_INLINE(AmInt32) AmFloatToFixedPoint(const AmReal32 x)
+    static AM_INLINE(AmInt32)
+    AmFloatToFixedPoint(const AmReal32 x)
     {
         return static_cast<AmInt32>(x * kAmFixedPointUnit);
     }
 
-    static AM_INLINE(AmReal32) AmInt16ToReal32(const AmInt16 x)
+    static AM_INLINE(AmReal32)
+    AmInt16ToReal32(const AmInt16 x)
     {
         auto y = static_cast<AmReal32>(x);
 
@@ -71,7 +73,8 @@ namespace SparkyStudios::Audio::Amplitude
         return y;
     }
 
-    static AM_INLINE(AmInt16) AmReal32ToInt16(const AmReal32 x, bool dithering = false)
+    static AM_INLINE(AmInt16)
+    AmReal32ToInt16(const AmReal32 x, bool dithering = false)
     {
         AmReal32 y = x;
 
@@ -96,7 +99,8 @@ namespace SparkyStudios::Audio::Amplitude
         return static_cast<AmInt16>(y);
     }
 
-    static AM_INLINE(AmReal32) CatmullRom(const AmReal32 t, const AmReal32 p0, const AmReal32 p1, const AmReal32 p2, const AmReal32 p3)
+    static AM_INLINE(AmReal32)
+    CatmullRom(const AmReal32 t, const AmReal32 p0, const AmReal32 p1, const AmReal32 p2, const AmReal32 p3)
     {
         // clang-format off
         return 0.5f * (
@@ -108,14 +112,15 @@ namespace SparkyStudios::Audio::Amplitude
         // clang-format on
     }
 
-    static AM_INLINE(AmReal32) ComputeDopplerFactor(
-        const hmm_vec3& locationDelta,
-        const hmm_vec3& sourceVelocity,
-        const hmm_vec3& listenerVelocity,
+    static AM_INLINE(AmReal32)
+    ComputeDopplerFactor(
+        const AmVec3& locationDelta,
+        const AmVec3& sourceVelocity,
+        const AmVec3& listenerVelocity,
         AmReal32 soundSpeed,
         AmReal32 dopplerFactor)
     {
-        const AmReal32 deltaLength = AM_Length(locationDelta);
+        const AmReal32 deltaLength = AM_Len(locationDelta);
 
         if (deltaLength == 0.0f)
             return 1.0f;

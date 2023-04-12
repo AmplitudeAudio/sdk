@@ -21,6 +21,7 @@
 namespace SparkyStudios::Audio::Amplitude
 {
     static AmUInt64 globalStateId = 0;
+    static AmVec3 globalPosition = { 0.0f, 0.0f, 0.0f };
 
     Channel::Channel()
         : _state(nullptr)
@@ -100,7 +101,7 @@ namespace SparkyStudios::Audio::Amplitude
         }
     }
 
-    const hmm_vec3& Channel::GetLocation() const
+    const AmVec3& Channel::GetLocation() const
     {
         AMPLITUDE_ASSERT(Valid());
         if (IsValidStateId())
@@ -108,10 +109,10 @@ namespace SparkyStudios::Audio::Amplitude
             return _state->GetLocation();
         }
 
-        return AM_Vec3(0, 0, 0);
+        return globalPosition;
     }
 
-    void Channel::SetLocation(const hmm_vec3& location) const
+    void Channel::SetLocation(const AmVec3& location) const
     {
         AMPLITUDE_ASSERT(Valid());
         if (IsValidStateId())

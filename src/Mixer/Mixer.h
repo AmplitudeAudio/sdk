@@ -74,7 +74,7 @@ namespace SparkyStudios::Audio::Amplitude
         AmUInt32 id; // playing id
         _Atomic(PlayStateFlag) flag; // state
         _Atomic(AmUInt64) cursor; // cursor
-        _Atomic(hmm_vec2) gain; // gain
+        _Atomic(AmVec2) gain; // gain
         _Atomic(AmReal32) pitch; // pitch
         SoundData* snd; // sound data
         AmUInt64 start, end; // start and end frames

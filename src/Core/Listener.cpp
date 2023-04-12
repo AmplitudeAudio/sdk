@@ -43,25 +43,25 @@ namespace SparkyStudios::Audio::Amplitude
         return _state->GetId();
     }
 
-    const hmm_vec3& Listener::GetVelocity() const
+    const AmVec3& Listener::GetVelocity() const
     {
         AMPLITUDE_ASSERT(Valid());
         return _state->GetVelocity();
     }
 
-    void Listener::SetOrientation(const hmm_vec3& direction, const hmm_vec3& up) const
+    void Listener::SetOrientation(const AmVec3& direction, const AmVec3& up) const
     {
         AMPLITUDE_ASSERT(Valid());
         _state->SetOrientation(direction, up);
     }
 
-    const hmm_vec3& Listener::GetLocation() const
+    const AmVec3& Listener::GetLocation() const
     {
         AMPLITUDE_ASSERT(Valid());
         return _state->GetLocation();
     }
 
-    void Listener::SetLocation(const hmm_vec3& location) const
+    void Listener::SetLocation(const AmVec3& location) const
     {
         AMPLITUDE_ASSERT(Valid());
         _state->SetLocation(location);

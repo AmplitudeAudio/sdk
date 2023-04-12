@@ -64,7 +64,7 @@ namespace SparkyStudios::Audio::Amplitude
         _entity = Entity();
         _userGain = 0.0f;
         _gain = 0.0f;
-        _location = AM_Vec3(0, 0, 0);
+        _location = AM_V3(0, 0, 0);
     }
 
     void ChannelInternalState::SetSwitchContainer(SwitchContainer* switchContainer)
@@ -233,7 +233,7 @@ namespace SparkyStudios::Audio::Amplitude
         _targetFadeOutState = targetState;
     }
 
-    void ChannelInternalState::SetPan(const hmm_vec2& pan)
+    void ChannelInternalState::SetPan(const AmVec2& pan)
     {
         _pan = pan;
         if (Valid())
@@ -341,7 +341,8 @@ namespace SparkyStudios::Audio::Amplitude
 
         // Update sounds if playing a switch container
         // TODO: This part should probably be optimized
-        if (_switchContainer != nullptr && _channelState != ChannelPlaybackState::FadingIn && _channelState != ChannelPlaybackState::FadingOut)
+        if (_switchContainer != nullptr && _channelState != ChannelPlaybackState::FadingIn &&
+            _channelState != ChannelPlaybackState::FadingOut)
         {
             const SwitchContainerDefinition* definition = _switchContainer->GetSwitchContainerDefinition();
             if (_switch->GetState().m_id != kAmInvalidObjectId && _switch->GetState().m_id != _playingSwitchContainerStateId &&

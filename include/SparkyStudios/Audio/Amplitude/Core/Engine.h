@@ -632,7 +632,7 @@ namespace SparkyStudios::Audio::Amplitude
          * @return The channel the switch container is played on. If the switch container could not be
          *         played, an invalid Channel is returned.
          */
-        Channel Play(SwitchContainerHandle handle, const hmm_vec3& location) const;
+        Channel Play(SwitchContainerHandle handle, const AmVec3& location) const;
 
         /**
          * @brief Play a switch container associated with the given handle in the
@@ -645,7 +645,7 @@ namespace SparkyStudios::Audio::Amplitude
          * @return The channel the switch container is played on. If the switch container could not be
          *         played, an invalid Channel is returned.
          */
-        Channel Play(SwitchContainerHandle handle, const hmm_vec3& location, float userGain) const;
+        Channel Play(SwitchContainerHandle handle, const AmVec3& location, float userGain) const;
 
         /**
          * @brief Play a switch container associated with the given handle in the
@@ -693,7 +693,7 @@ namespace SparkyStudios::Audio::Amplitude
          * @return The channel the collection is played on. If the collection could not be
          *         played, an invalid Channel is returned.
          */
-        Channel Play(CollectionHandle handle, const hmm_vec3& location) const;
+        Channel Play(CollectionHandle handle, const AmVec3& location) const;
 
         /**
          * @brief Play a collection associated with the given handle in the
@@ -706,7 +706,7 @@ namespace SparkyStudios::Audio::Amplitude
          * @return The channel the collection is played on. If the collection could not be
          *         played, an invalid Channel is returned.
          */
-        Channel Play(CollectionHandle handle, const hmm_vec3& location, float userGain) const;
+        Channel Play(CollectionHandle handle, const AmVec3& location, float userGain) const;
 
         /**
          * @brief Play a collection associated with the given handle in the
@@ -754,7 +754,7 @@ namespace SparkyStudios::Audio::Amplitude
          * @return The channel the sound is played on. If the sound could not be
          *         played, an invalid Channel is returned.
          */
-        Channel Play(SoundHandle handle, const hmm_vec3& location) const;
+        Channel Play(SoundHandle handle, const AmVec3& location) const;
 
         /**
          * @brief Play a sound associated with the given handle in the
@@ -767,7 +767,7 @@ namespace SparkyStudios::Audio::Amplitude
          * @return The channel the sound is played on. If the sound could not be
          *         played, an invalid Channel is returned.
          */
-        Channel Play(SoundHandle handle, const hmm_vec3& location, float userGain) const;
+        Channel Play(SoundHandle handle, const AmVec3& location, float userGain) const;
 
         /**
          * @brief Play a sound associated with the given sound handle in an
@@ -823,7 +823,7 @@ namespace SparkyStudios::Audio::Amplitude
          * @return The channel the sound is played on. If the object could not be
          *         played, an invalid Channel is returned.
          */
-        [[nodiscard]] Channel Play(const AmString& name, const hmm_vec3& location) const;
+        [[nodiscard]] Channel Play(const AmString& name, const AmVec3& location) const;
 
         /**
          * @brief Play a sound or a collection associated with the given name.
@@ -840,7 +840,7 @@ namespace SparkyStudios::Audio::Amplitude
          * @return The channel the sound is played on. If the object could not be
          *         played, an invalid Channel is returned.
          */
-        [[nodiscard]] Channel Play(const AmString& name, const hmm_vec3& location, float userGain) const;
+        [[nodiscard]] Channel Play(const AmString& name, const AmVec3& location, float userGain) const;
 
         /**
          * @brief Play a sound or a collection associated with the given name.
@@ -906,7 +906,7 @@ namespace SparkyStudios::Audio::Amplitude
          * @return The channel the sound is played on. If the sound could not be
          *         played, an invalid Channel is returned.
          */
-        [[nodiscard]] Channel Play(AmObjectID id, const hmm_vec3& location) const;
+        [[nodiscard]] Channel Play(AmObjectID id, const AmVec3& location) const;
 
         /**
          * @brief Play a sound or a collection associated with the given ID in the
@@ -924,7 +924,7 @@ namespace SparkyStudios::Audio::Amplitude
          * @return The channel the sound is played on. If the sound could not be
          *         played, an invalid Channel is returned.
          */
-        [[nodiscard]] Channel Play(AmObjectID id, const hmm_vec3& location, float userGain) const;
+        [[nodiscard]] Channel Play(AmObjectID id, const AmVec3& location, float userGain) const;
 
         /**
          * @brief Play a sound or a collection associated with the given ID in an
@@ -1182,10 +1182,9 @@ namespace SparkyStudios::Audio::Amplitude
         [[nodiscard]] static Engine* GetInstance();
 
     private:
-        Channel PlayScopedSwitchContainer(
-            SwitchContainerHandle handle, const Entity& entity, const hmm_vec3& location, float userGain) const;
-        Channel PlayScopedCollection(CollectionHandle handle, const Entity& entity, const hmm_vec3& location, float userGain) const;
-        Channel PlayScopedSound(SoundHandle handle, const Entity& entity, const hmm_vec3& location, float userGain) const;
+        Channel PlayScopedSwitchContainer(SwitchContainerHandle handle, const Entity& entity, const AmVec3& location, float userGain) const;
+        Channel PlayScopedCollection(CollectionHandle handle, const Entity& entity, const AmVec3& location, float userGain) const;
+        Channel PlayScopedSound(SoundHandle handle, const Entity& entity, const AmVec3& location, float userGain) const;
 
         // Hold the engine config file contents.
         AmString _configSrc;

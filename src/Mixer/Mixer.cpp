@@ -47,7 +47,7 @@ namespace SparkyStudios::Audio::Amplitude
         amMemory->Free(MemoryPoolKind::Amplimix, p);
     }
 
-    static hmm_vec2 LRGain(float gain, float pan)
+    static AmVec2 LRGain(float gain, float pan)
     {
         // Clamp pan to its valid range of -1.0f to 1.0f inclusive
         pan = AM_CLAMP(pan, -1.0f, 1.0f);
@@ -765,7 +765,7 @@ namespace SparkyStudios::Audio::Amplitude
         AmUInt64 cursor = AMPLIMIX_LOAD(&layer->cursor);
 
         // atomically load left and right gain
-        const hmm_vec2 g = AMPLIMIX_LOAD(&layer->gain);
+        const AmVec2 g = AMPLIMIX_LOAD(&layer->gain);
         const float gain = AMPLIMIX_LOAD(&_masterGain);
 #if defined(AM_SSE_INTRINSICS)
         const auto mxGain = simdpp::make_int<AudioDataUnit>(AmFloatToFixedPoint(g.X * gain), AmFloatToFixedPoint(g.Y * gain));

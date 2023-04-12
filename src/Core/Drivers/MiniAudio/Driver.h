@@ -37,7 +37,7 @@ namespace SparkyStudios::Audio::Amplitude::Drivers
         bool Close() final;
 
     protected:
-        friend static void miniaudio_device_notification(const ma_device_notification* pNotification);
+        friend void miniaudio_device_notification(const ma_device_notification* pNotification);
 
     private:
         bool _initialized;

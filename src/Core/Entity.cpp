@@ -41,37 +41,37 @@ namespace SparkyStudios::Audio::Amplitude
         return _state != nullptr ? _state->GetId() : kAmInvalidObjectId;
     }
 
-    const hmm_vec3& Entity::GetVelocity() const
+    const AmVec3& Entity::GetVelocity() const
     {
         AMPLITUDE_ASSERT(Valid());
         return _state->GetVelocity();
     }
 
-    void Entity::SetLocation(const hmm_vec3& location) const
+    void Entity::SetLocation(const AmVec3& location) const
     {
         AMPLITUDE_ASSERT(Valid());
         _state->SetLocation(location);
     }
 
-    const hmm_vec3& Entity::GetLocation() const
+    const AmVec3& Entity::GetLocation() const
     {
         AMPLITUDE_ASSERT(Valid());
         return _state->GetLocation();
     }
 
-    void Entity::SetOrientation(const hmm_vec3& direction, const hmm_vec3& up) const
+    void Entity::SetOrientation(const AmVec3& direction, const AmVec3& up) const
     {
         AMPLITUDE_ASSERT(Valid());
         _state->SetOrientation(direction, up);
     }
 
-    const hmm_vec3& Entity::GetDirection() const
+    const AmVec3& Entity::GetDirection() const
     {
         AMPLITUDE_ASSERT(Valid());
         return _state->GetDirection();
     }
 
-    const hmm_vec3& Entity::GetUp() const
+    const AmVec3& Entity::GetUp() const
     {
         AMPLITUDE_ASSERT(Valid());
         return _state->GetUp();

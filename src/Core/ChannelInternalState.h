@@ -118,7 +118,7 @@ namespace SparkyStudios::Audio::Amplitude
         }
 
         // Get or set the location of this channel
-        void SetLocation(const hmm_vec3& location)
+        void SetLocation(const AmVec3& location)
         {
             // Entity scoped channel
             if (_entity.Valid())
@@ -128,7 +128,7 @@ namespace SparkyStudios::Audio::Amplitude
             _location = location;
         }
 
-        [[nodiscard]] const hmm_vec3& GetLocation() const
+        [[nodiscard]] const AmVec3& GetLocation() const
         {
             // Entity scoped channel
             if (_entity.Valid())
@@ -189,10 +189,10 @@ namespace SparkyStudios::Audio::Amplitude
         void FadeOut(AmTime duration, ChannelPlaybackState targetState = ChannelPlaybackState::Stopped);
 
         // Sets the pan based on a position in a unit circle.
-        void SetPan(const hmm_vec2& pan);
+        void SetPan(const AmVec2& pan);
 
         // Returns the pan of this channel.
-        [[nodiscard]] const hmm_vec2& GetPan() const
+        [[nodiscard]] const AmVec2& GetPan() const
         {
             return _pan;
         }
@@ -338,13 +338,13 @@ namespace SparkyStudios::Audio::Amplitude
         AmReal32 _gain;
 
         // The pan of this channel.
-        hmm_vec2 _pan;
+        AmVec2 _pan;
 
         // The pitch of this channel.
         AmReal32 _pitch;
 
         // The location of this channel's sound.
-        hmm_vec3 _location;
+        AmVec3 _location;
 
         AmUInt64 _channelStateId;
 

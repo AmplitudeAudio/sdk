@@ -265,7 +265,7 @@ namespace SparkyStudios::Audio::Amplitude
         _mixer->SetPlayState(_channelId, _channelLayersId[layer], _loop[layer] ? PLAY_STATE_FLAG_LOOP : PLAY_STATE_FLAG_PLAY);
     }
 
-    void RealChannel::SetPan(const hmm_vec2& pan)
+    void RealChannel::SetPan(const AmVec2& pan)
     {
         AMPLITUDE_ASSERT(Valid());
         for (auto&& layer : _channelLayersId)

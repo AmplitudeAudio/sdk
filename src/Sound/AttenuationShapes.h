@@ -41,7 +41,7 @@ namespace SparkyStudios::Audio::Amplitude
                   new ConeShape(settings->outer()->radius(), settings->outer()->height()))
         {}
 
-        float GetAttenuationFactor(const Attenuation*, const hmm_vec3& soundLocation, const Listener& listener) override;
+        float GetAttenuationFactor(const Attenuation*, const AmVec3& soundLocation, const Listener& listener) override;
         float GetAttenuationFactor(const Attenuation*, const Entity& entity, const Listener& listener) override;
     };
 
@@ -55,7 +55,7 @@ namespace SparkyStudios::Audio::Amplitude
             , SphereZone(new SphereShape(settings->inner()->radius()), new SphereShape(settings->outer()->radius()))
         {}
 
-        float GetAttenuationFactor(const Attenuation*, const hmm_vec3& soundLocation, const Listener& listener) override;
+        float GetAttenuationFactor(const Attenuation*, const AmVec3& soundLocation, const Listener& listener) override;
         float GetAttenuationFactor(const Attenuation*, const Entity& entity, const Listener& listener) override;
     };
 
@@ -71,7 +71,7 @@ namespace SparkyStudios::Audio::Amplitude
                   new BoxShape(settings->outer()->half_width(), settings->outer()->half_height(), settings->outer()->half_depth()))
         {}
 
-        float GetAttenuationFactor(const Attenuation*, const hmm_vec3& soundLocation, const Listener& listener) override;
+        float GetAttenuationFactor(const Attenuation*, const AmVec3& soundLocation, const Listener& listener) override;
         float GetAttenuationFactor(const Attenuation*, const Entity& entity, const Listener& listener) override;
     };
 
@@ -87,10 +87,10 @@ namespace SparkyStudios::Audio::Amplitude
                   new CapsuleShape(settings->outer()->radius(), settings->outer()->half_height()))
         {}
 
-        float GetAttenuationFactor(const Attenuation*, const hmm_vec3& soundLocation, const Listener& listener) override;
+        float GetAttenuationFactor(const Attenuation*, const AmVec3& soundLocation, const Listener& listener) override;
         float GetAttenuationFactor(const Attenuation*, const Entity& entity, const Listener& listener) override;
 
-        float GetFactor(const Attenuation* attenuation, const hmm_vec3& soundLocation, const Listener& listener, hmm_mat4 lookAt);
+        float GetFactor(const Attenuation* attenuation, const AmVec3& soundLocation, const Listener& listener, AmMat4 lookAt);
     };
 } // namespace SparkyStudios::Audio::Amplitude
 

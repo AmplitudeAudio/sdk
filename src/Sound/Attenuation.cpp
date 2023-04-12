@@ -55,7 +55,7 @@ namespace SparkyStudios::Audio::Amplitude
         return LoadFile(filename, &source) && LoadAttenuationDefinition(source);
     }
 
-    AmReal32 Attenuation::GetGain(const hmm_vec3& soundLocation, const Listener& listener) const
+    AmReal32 Attenuation::GetGain(const AmVec3& soundLocation, const Listener& listener) const
     {
         return _shape->GetAttenuationFactor(this, soundLocation, listener);
     }

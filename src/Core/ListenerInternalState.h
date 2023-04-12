@@ -47,14 +47,14 @@ namespace SparkyStudios::Audio::Amplitude
          *
          * @param location The new location.
          */
-        void SetLocation(const hmm_vec3& location);
+        void SetLocation(const AmVec3& location);
 
         /**
          * @brief Gets the current location of this Listener.
          *
          * @return The current location of this Listener.
          */
-        [[nodiscard]] const hmm_vec3& GetLocation() const;
+        [[nodiscard]] const AmVec3& GetLocation() const;
 
         /**
          * @brief Sets the orientation of this Listener.
@@ -62,32 +62,32 @@ namespace SparkyStudios::Audio::Amplitude
          * @param direction The direction towards the Listener.
          * @param up The up vector.
          */
-        void SetOrientation(const hmm_vec3& direction, const hmm_vec3& up);
+        void SetOrientation(const AmVec3& direction, const AmVec3& up);
 
         /**
          * @brief Get the direction vector of the Listener.
          *
          * @return The direction vector.
          */
-        [[nodiscard]] const hmm_vec3& GetDirection() const;
+        [[nodiscard]] const AmVec3& GetDirection() const;
 
         /**
          * @brief Get the up vector of the Listener.
          *
          * @return The up vector.
          */
-        [[nodiscard]] const hmm_vec3& GetUp() const;
+        [[nodiscard]] const AmVec3& GetUp() const;
 
-        hmm_mat4& GetInverseMatrix();
+        AmMat4& GetInverseMatrix();
 
-        [[nodiscard]] const hmm_mat4& GetInverseMatrix() const;
+        [[nodiscard]] const AmMat4& GetInverseMatrix() const;
 
         /**
          * @brief Gets the velocity of the Listener.
          *
          * @return The Listener's velocity.
          */
-        [[nodiscard]] const hmm_vec3& GetVelocity() const;
+        [[nodiscard]] const AmVec3& GetVelocity() const;
 
         /**
          * @brief Updates the inverse matrix of this Listener.
@@ -102,14 +102,14 @@ namespace SparkyStudios::Audio::Amplitude
     private:
         AmListenerID _id;
 
-        hmm_vec3 _location;
-        hmm_vec3 _direction;
-        hmm_vec3 _up;
+        AmVec3 _location;
+        AmVec3 _direction;
+        AmVec3 _up;
 
-        hmm_vec3 _lastLocation;
-        hmm_vec3 _velocity;
+        AmVec3 _lastLocation;
+        AmVec3 _velocity;
 
-        hmm_mat4 _inverseMatrix;
+        AmMat4 _inverseMatrix;
     };
 } // namespace SparkyStudios::Audio::Amplitude
 

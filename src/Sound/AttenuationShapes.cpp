@@ -25,7 +25,7 @@ namespace SparkyStudios::Audio::Amplitude
         : m_maxAttenuationFactor(1.0f)
     {}
 
-    AmReal32 AttenuationZone::GetAttenuationFactor(const Attenuation* attenuation, const hmm_vec3& soundLocation, const Listener& listener)
+    AmReal32 AttenuationZone::GetAttenuationFactor(const Attenuation* attenuation, const AmVec3& soundLocation, const Listener& listener)
     {
         return m_maxAttenuationFactor;
     }
@@ -65,16 +65,16 @@ namespace SparkyStudios::Audio::Amplitude
     }
 
     AmReal32 ConeAttenuationZone::GetAttenuationFactor(
-        const Attenuation* attenuation, const hmm_vec3& soundLocation, const Listener& listener)
+        const Attenuation* attenuation, const AmVec3& soundLocation, const Listener& listener)
     {
         m_innerShape->SetLocation(soundLocation);
-        m_innerShape->SetOrientation(AM_Vec3(0, 0, 0), AM_Vec3(0, 0, 0));
+        m_innerShape->SetOrientation(AM_V3(0, 0, 0), AM_V3(0, 0, 0));
 
         m_outerShape->SetLocation(soundLocation);
-        m_outerShape->SetOrientation(AM_Vec3(0, 0, 0), AM_Vec3(0, 0, 0));
+        m_outerShape->SetOrientation(AM_V3(0, 0, 0), AM_V3(0, 0, 0));
 
-        if (const hmm_vec3& soundToListener = listener.GetLocation() - soundLocation;
-            AM_Length(soundToListener) >= attenuation->GetMaxDistance())
+        if (const AmVec3& soundToListener = listener.GetLocation() - soundLocation;
+            AM_Len(soundToListener) >= attenuation->GetMaxDistance())
             return 0.0f;
 
         // Cone attenuation works only with PositionOrientation spatial sounds
@@ -89,8 +89,8 @@ namespace SparkyStudios::Audio::Amplitude
         m_outerShape->SetLocation(entity.GetLocation());
         m_outerShape->SetOrientation(entity.GetDirection(), entity.GetUp());
 
-        const hmm_vec3& soundToListener = listener.GetLocation() - entity.GetLocation();
-        const AmReal32 distance = AM_Length(soundToListener);
+        const AmVec3& soundToListener = listener.GetLocation() - entity.GetLocation();
+        const AmReal32 distance = AM_Len(soundToListener);
         if (distance >= attenuation->GetMaxDistance())
             return 0.0f;
 
@@ -103,16 +103,16 @@ namespace SparkyStudios::Audio::Amplitude
     }
 
     AmReal32 SphereAttenuationZone::GetAttenuationFactor(
-        const Attenuation* attenuation, const hmm_vec3& soundLocation, const Listener& listener)
+        const Attenuation* attenuation, const AmVec3& soundLocation, const Listener& listener)
     {
         m_innerShape->SetLocation(soundLocation);
-        m_innerShape->SetOrientation(AM_Vec3(0, 0, 0), AM_Vec3(0, 0, 0));
+        m_innerShape->SetOrientation(AM_V3(0, 0, 0), AM_V3(0, 0, 0));
 
         m_outerShape->SetLocation(soundLocation);
-        m_outerShape->SetOrientation(AM_Vec3(0, 0, 0), AM_Vec3(0, 0, 0));
+        m_outerShape->SetOrientation(AM_V3(0, 0, 0), AM_V3(0, 0, 0));
 
-        const hmm_vec3& soundToListener = listener.GetLocation() - soundLocation;
-        const AmReal32 distance = AM_Length(soundToListener);
+        const AmVec3& soundToListener = listener.GetLocation() - soundLocation;
+        const AmReal32 distance = AM_Len(soundToListener);
         if (distance >= attenuation->GetMaxDistance())
             return 0.0f;
 
@@ -126,17 +126,16 @@ namespace SparkyStudios::Audio::Amplitude
         return GetAttenuationFactor(attenuation, entity.GetLocation(), listener);
     }
 
-    AmReal32 BoxAttenuationZone::GetAttenuationFactor(
-        const Attenuation* attenuation, const hmm_vec3& soundLocation, const Listener& listener)
+    AmReal32 BoxAttenuationZone::GetAttenuationFactor(const Attenuation* attenuation, const AmVec3& soundLocation, const Listener& listener)
     {
         m_innerShape->SetLocation(soundLocation);
-        m_innerShape->SetOrientation(AM_Vec3(0, 0, 0), AM_Vec3(0, 0, 0));
+        m_innerShape->SetOrientation(AM_V3(0, 0, 0), AM_V3(0, 0, 0));
 
         m_outerShape->SetLocation(soundLocation);
-        m_outerShape->SetOrientation(AM_Vec3(0, 0, 0), AM_Vec3(0, 0, 0));
+        m_outerShape->SetOrientation(AM_V3(0, 0, 0), AM_V3(0, 0, 0));
 
-        const hmm_vec3& soundToListener = listener.GetLocation() - soundLocation;
-        const AmReal32 distance = AM_Length(soundToListener);
+        const AmVec3& soundToListener = listener.GetLocation() - soundLocation;
+        const AmReal32 distance = AM_Len(soundToListener);
         if (distance >= attenuation->GetMaxDistance())
             return 0.0f;
 
@@ -153,8 +152,8 @@ namespace SparkyStudios::Audio::Amplitude
         m_outerShape->SetLocation(entity.GetLocation());
         m_outerShape->SetOrientation(entity.GetDirection(), entity.GetUp());
 
-        const hmm_vec3& soundToListener = listener.GetLocation() - entity.GetLocation();
-        const AmReal32 distance = AM_Length(soundToListener);
+        const AmVec3& soundToListener = listener.GetLocation() - entity.GetLocation();
+        const AmReal32 distance = AM_Len(soundToListener);
         if (distance >= attenuation->GetMaxDistance())
             return 0.0f;
 
@@ -163,53 +162,53 @@ namespace SparkyStudios::Audio::Amplitude
         return gain * AM_Lerp(m_maxAttenuationFactor, Zone::GetFactor(listener), 1.0f);
     }
 
-    // AmReal32 BoxAttenuationZone::GetFactor(const hmm_vec3& soundLocation, const Listener& listener, hmm_mat4 lookAt)
+    // AmReal32 BoxAttenuationZone::GetFactor(const AmVec3& soundLocation, const Listener& listener, AmMat4 lookAt)
     // {
     //     const auto* inner = static_cast<BoxShape*>(m_innerShape);
     //     const auto* outer = static_cast<BoxShape*>(m_outerShape);
     //     const eGameEngineUpAxis upAxis = amEngine->GetState()->up_axis;
 
-    //     lookAt = AM_Multiply(AM_Translate(soundLocation), lookAt);
+    //     lookAt = AM_Mul(AM_Translate(soundLocation), lookAt);
 
-    //     const hmm_vec3& x = listener.GetLocation();
+    //     const AmVec3& x = listener.GetLocation();
 
-    //     hmm_vec3 iP1, iP2, iP3, iP4, oP1, oP2, oP3, oP4;
+    //     AmVec3 iP1, iP2, iP3, iP4, oP1, oP2, oP3, oP4;
 
     //     switch (upAxis)
     //     {
     //     default:
     //     case eGameEngineUpAxis_Y:
-    //         iP1 = AM_Multiply(lookAt, AM_Vec4(-inner->GetHalfWidth(), -inner->GetHalfHeight(), -inner->GetHalfDepth(), 1.0f)).XYZ;
-    //         iP2 = AM_Multiply(lookAt, AM_Vec4(-inner->GetHalfWidth(), -inner->GetHalfHeight(), inner->GetHalfDepth(), 1.0f)).XYZ;
-    //         iP3 = AM_Multiply(lookAt, AM_Vec4(inner->GetHalfWidth(), -inner->GetHalfHeight(), -inner->GetHalfDepth(), 1.0f)).XYZ;
-    //         iP4 = AM_Multiply(lookAt, AM_Vec4(-inner->GetHalfWidth(), inner->GetHalfHeight(), -inner->GetHalfDepth(), 1.0f)).XYZ;
+    //         iP1 = AM_Mul(lookAt, AM_V4(-inner->GetHalfWidth(), -inner->GetHalfHeight(), -inner->GetHalfDepth(), 1.0f)).XYZ;
+    //         iP2 = AM_Mul(lookAt, AM_V4(-inner->GetHalfWidth(), -inner->GetHalfHeight(), inner->GetHalfDepth(), 1.0f)).XYZ;
+    //         iP3 = AM_Mul(lookAt, AM_V4(inner->GetHalfWidth(), -inner->GetHalfHeight(), -inner->GetHalfDepth(), 1.0f)).XYZ;
+    //         iP4 = AM_Mul(lookAt, AM_V4(-inner->GetHalfWidth(), inner->GetHalfHeight(), -inner->GetHalfDepth(), 1.0f)).XYZ;
 
-    //         oP1 = AM_Multiply(lookAt, AM_Vec4(-outer->GetHalfWidth(), -outer->GetHalfHeight(), -outer->GetHalfDepth(), 1.0f)).XYZ;
-    //         oP2 = AM_Multiply(lookAt, AM_Vec4(-outer->GetHalfWidth(), -outer->GetHalfHeight(), outer->GetHalfDepth(), 1.0f)).XYZ;
-    //         oP3 = AM_Multiply(lookAt, AM_Vec4(outer->GetHalfWidth(), -outer->GetHalfHeight(), -outer->GetHalfDepth(), 1.0f)).XYZ;
-    //         oP4 = AM_Multiply(lookAt, AM_Vec4(-outer->GetHalfWidth(), outer->GetHalfHeight(), -outer->GetHalfDepth(), 1.0f)).XYZ;
+    //         oP1 = AM_Mul(lookAt, AM_V4(-outer->GetHalfWidth(), -outer->GetHalfHeight(), -outer->GetHalfDepth(), 1.0f)).XYZ;
+    //         oP2 = AM_Mul(lookAt, AM_V4(-outer->GetHalfWidth(), -outer->GetHalfHeight(), outer->GetHalfDepth(), 1.0f)).XYZ;
+    //         oP3 = AM_Mul(lookAt, AM_V4(outer->GetHalfWidth(), -outer->GetHalfHeight(), -outer->GetHalfDepth(), 1.0f)).XYZ;
+    //         oP4 = AM_Mul(lookAt, AM_V4(-outer->GetHalfWidth(), outer->GetHalfHeight(), -outer->GetHalfDepth(), 1.0f)).XYZ;
     //         break;
 
     //     case eGameEngineUpAxis_Z:
-    //         iP1 = AM_Multiply(lookAt, AM_Vec4(-inner->GetHalfWidth(), -inner->GetHalfDepth(), -inner->GetHalfHeight(), 1.0f)).XYZ;
-    //         iP2 = AM_Multiply(lookAt, AM_Vec4(-inner->GetHalfWidth(), inner->GetHalfDepth(), -inner->GetHalfHeight(), 1.0f)).XYZ;
-    //         iP3 = AM_Multiply(lookAt, AM_Vec4(inner->GetHalfWidth(), -inner->GetHalfDepth(), -inner->GetHalfHeight(), 1.0f)).XYZ;
-    //         iP4 = AM_Multiply(lookAt, AM_Vec4(-inner->GetHalfWidth(), -inner->GetHalfDepth(), inner->GetHalfHeight(), 1.0f)).XYZ;
+    //         iP1 = AM_Mul(lookAt, AM_V4(-inner->GetHalfWidth(), -inner->GetHalfDepth(), -inner->GetHalfHeight(), 1.0f)).XYZ;
+    //         iP2 = AM_Mul(lookAt, AM_V4(-inner->GetHalfWidth(), inner->GetHalfDepth(), -inner->GetHalfHeight(), 1.0f)).XYZ;
+    //         iP3 = AM_Mul(lookAt, AM_V4(inner->GetHalfWidth(), -inner->GetHalfDepth(), -inner->GetHalfHeight(), 1.0f)).XYZ;
+    //         iP4 = AM_Mul(lookAt, AM_V4(-inner->GetHalfWidth(), -inner->GetHalfDepth(), inner->GetHalfHeight(), 1.0f)).XYZ;
 
-    //         oP1 = AM_Multiply(lookAt, AM_Vec4(-outer->GetHalfWidth(), -outer->GetHalfDepth(), -outer->GetHalfHeight(), 1.0f)).XYZ;
-    //         oP2 = AM_Multiply(lookAt, AM_Vec4(-outer->GetHalfWidth(), outer->GetHalfDepth(), -outer->GetHalfHeight(), 1.0f)).XYZ;
-    //         oP3 = AM_Multiply(lookAt, AM_Vec4(outer->GetHalfWidth(), -outer->GetHalfDepth(), -outer->GetHalfHeight(), 1.0f)).XYZ;
-    //         oP4 = AM_Multiply(lookAt, AM_Vec4(-outer->GetHalfWidth(), -outer->GetHalfDepth(), outer->GetHalfHeight(), 1.0f)).XYZ;
+    //         oP1 = AM_Mul(lookAt, AM_V4(-outer->GetHalfWidth(), -outer->GetHalfDepth(), -outer->GetHalfHeight(), 1.0f)).XYZ;
+    //         oP2 = AM_Mul(lookAt, AM_V4(-outer->GetHalfWidth(), outer->GetHalfDepth(), -outer->GetHalfHeight(), 1.0f)).XYZ;
+    //         oP3 = AM_Mul(lookAt, AM_V4(outer->GetHalfWidth(), -outer->GetHalfDepth(), -outer->GetHalfHeight(), 1.0f)).XYZ;
+    //         oP4 = AM_Mul(lookAt, AM_V4(-outer->GetHalfWidth(), -outer->GetHalfDepth(), outer->GetHalfHeight(), 1.0f)).XYZ;
     //         break;
     //     }
 
-    //     hmm_vec3 iU = AM_Normalize(iP2 - iP1);
-    //     hmm_vec3 iV = AM_Normalize(iP3 - iP1);
-    //     hmm_vec3 iW = AM_Normalize(iP4 - iP1);
+    //     AmVec3 iU = AM_Norm(iP2 - iP1);
+    //     AmVec3 iV = AM_Norm(iP3 - iP1);
+    //     AmVec3 iW = AM_Norm(iP4 - iP1);
 
-    //     hmm_vec3 oU = AM_Normalize(oP2 - oP1);
-    //     hmm_vec3 oV = AM_Normalize(oP3 - oP1);
-    //     hmm_vec3 oW = AM_Normalize(oP4 - oP1);
+    //     AmVec3 oU = AM_Norm(oP2 - oP1);
+    //     AmVec3 oV = AM_Norm(oP3 - oP1);
+    //     AmVec3 oW = AM_Norm(oP4 - oP1);
 
     //     const AmReal32 iUX = AM_Dot(iU, x);
     //     const AmReal32 iVX = AM_Dot(iV, x);
@@ -246,12 +245,12 @@ namespace SparkyStudios::Audio::Amplitude
     //     default:
     //     case eGameEngineUpAxis_Y:
     //         {
-    //             const AmReal32 dP1 = HMM_ABS(AM_Dot(x - oP1, AM_Normalize(oP2 - oP1))) / (outer->GetHalfDepth() - inner->GetHalfDepth());
-    //             const AmReal32 dP2 = HMM_ABS(AM_Dot(x - oP2, AM_Normalize(oP1 - oP2))) / (outer->GetHalfDepth() - inner->GetHalfDepth());
-    //             const AmReal32 dP3 = HMM_ABS(AM_Dot(x - oP3, AM_Normalize(oP1 - oP3))) / (outer->GetHalfWidth() - inner->GetHalfWidth());
-    //             const AmReal32 dP4 = HMM_ABS(AM_Dot(x - oP4, AM_Normalize(oP1 - oP4))) / (outer->GetHalfHeight() -
-    //             inner->GetHalfHeight()); const AmReal32 dP5 = HMM_ABS(AM_Dot(x - oP1, AM_Normalize(oP3 - oP1))) / (outer->GetHalfWidth()
-    //             - inner->GetHalfWidth()); const AmReal32 dP6 = HMM_ABS(AM_Dot(x - oP1, AM_Normalize(oP4 - oP1))) /
+    //             const AmReal32 dP1 = AM_ABS(AM_Dot(x - oP1, AM_Norm(oP2 - oP1))) / (outer->GetHalfDepth() - inner->GetHalfDepth());
+    //             const AmReal32 dP2 = AM_ABS(AM_Dot(x - oP2, AM_Norm(oP1 - oP2))) / (outer->GetHalfDepth() - inner->GetHalfDepth());
+    //             const AmReal32 dP3 = AM_ABS(AM_Dot(x - oP3, AM_Norm(oP1 - oP3))) / (outer->GetHalfWidth() - inner->GetHalfWidth());
+    //             const AmReal32 dP4 = AM_ABS(AM_Dot(x - oP4, AM_Norm(oP1 - oP4))) / (outer->GetHalfHeight() -
+    //             inner->GetHalfHeight()); const AmReal32 dP5 = AM_ABS(AM_Dot(x - oP1, AM_Norm(oP3 - oP1))) / (outer->GetHalfWidth()
+    //             - inner->GetHalfWidth()); const AmReal32 dP6 = AM_ABS(AM_Dot(x - oP1, AM_Norm(oP4 - oP1))) /
     //             (outer->GetHalfHeight() - inner->GetHalfHeight());
 
     //             const AmReal32 shortestRoad = AM_MIN(dP1, AM_MIN(dP2, AM_MIN(dP3, AM_MIN(dP4, AM_MIN(dP5, dP6)))));
@@ -261,12 +260,12 @@ namespace SparkyStudios::Audio::Amplitude
 
     //     case eGameEngineUpAxis_Z:
     //         {
-    //             const AmReal32 dP1 = HMM_ABS(AM_Dot(x - oP1, AM_Normalize(oP2 - oP1))) / (outer->GetHalfHeight() -
-    //             inner->GetHalfHeight()); const AmReal32 dP2 = HMM_ABS(AM_Dot(x - oP2, AM_Normalize(oP1 - oP2))) / (outer->GetHalfHeight()
-    //             - inner->GetHalfHeight()); const AmReal32 dP3 = HMM_ABS(AM_Dot(x - oP3, AM_Normalize(oP1 - oP3))) /
-    //             (outer->GetHalfWidth() - inner->GetHalfWidth()); const AmReal32 dP4 = HMM_ABS(AM_Dot(x - oP4, AM_Normalize(oP1 - oP4))) /
-    //             (outer->GetHalfDepth() - inner->GetHalfDepth()); const AmReal32 dP5 = HMM_ABS(AM_Dot(x - oP1, AM_Normalize(oP3 - oP1))) /
-    //             (outer->GetHalfWidth() - inner->GetHalfWidth()); const AmReal32 dP6 = HMM_ABS(AM_Dot(x - oP1, AM_Normalize(oP4 - oP1))) /
+    //             const AmReal32 dP1 = AM_ABS(AM_Dot(x - oP1, AM_Norm(oP2 - oP1))) / (outer->GetHalfHeight() -
+    //             inner->GetHalfHeight()); const AmReal32 dP2 = AM_ABS(AM_Dot(x - oP2, AM_Norm(oP1 - oP2))) / (outer->GetHalfHeight()
+    //             - inner->GetHalfHeight()); const AmReal32 dP3 = AM_ABS(AM_Dot(x - oP3, AM_Norm(oP1 - oP3))) /
+    //             (outer->GetHalfWidth() - inner->GetHalfWidth()); const AmReal32 dP4 = AM_ABS(AM_Dot(x - oP4, AM_Norm(oP1 - oP4))) /
+    //             (outer->GetHalfDepth() - inner->GetHalfDepth()); const AmReal32 dP5 = AM_ABS(AM_Dot(x - oP1, AM_Norm(oP3 - oP1))) /
+    //             (outer->GetHalfWidth() - inner->GetHalfWidth()); const AmReal32 dP6 = AM_ABS(AM_Dot(x - oP1, AM_Norm(oP4 - oP1))) /
     //             (outer->GetHalfDepth() - inner->GetHalfDepth());
 
     //             const AmReal32 shortestRoad = AM_MIN(dP1, AM_MIN(dP2, AM_MIN(dP3, AM_MIN(dP4, AM_MIN(dP5, dP6)))));
@@ -277,15 +276,15 @@ namespace SparkyStudios::Audio::Amplitude
     // }
 
     AmReal32 CapsuleAttenuationZone::GetAttenuationFactor(
-        const Attenuation* attenuation, const hmm_vec3& soundLocation, const Listener& listener)
+        const Attenuation* attenuation, const AmVec3& soundLocation, const Listener& listener)
     {
         m_innerShape->SetLocation(soundLocation);
-        m_innerShape->SetOrientation(AM_Vec3(0, 0, 0), AM_Vec3(0, 0, 0));
+        m_innerShape->SetOrientation(AM_V3(0, 0, 0), AM_V3(0, 0, 0));
 
         m_outerShape->SetLocation(soundLocation);
-        m_outerShape->SetOrientation(AM_Vec3(0, 0, 0), AM_Vec3(0, 0, 0));
+        m_outerShape->SetOrientation(AM_V3(0, 0, 0), AM_V3(0, 0, 0));
 
-        return GetFactor(attenuation, soundLocation, listener, AM_Mat4d(1.0f));
+        return GetFactor(attenuation, soundLocation, listener, AM_M4D(1.0f));
     }
 
     AmReal32 CapsuleAttenuationZone::GetAttenuationFactor(const Attenuation* attenuation, const Entity& entity, const Listener& listener)
@@ -296,62 +295,62 @@ namespace SparkyStudios::Audio::Amplitude
         m_outerShape->SetLocation(entity.GetLocation());
         m_outerShape->SetOrientation(entity.GetDirection(), entity.GetUp());
 
-        return GetFactor(attenuation, entity.GetLocation(), listener, AM_LookAt(AM_Vec3(0, 0, 0), entity.GetDirection(), entity.GetUp()));
+        return GetFactor(attenuation, entity.GetLocation(), listener, AM_LookAt_RH(AM_V3(0, 0, 0), entity.GetDirection(), entity.GetUp()));
     }
 
     AmReal32 CapsuleAttenuationZone::GetFactor(
-        const Attenuation* attenuation, const hmm_vec3& soundLocation, const Listener& listener, hmm_mat4 lookAt)
+        const Attenuation* attenuation, const AmVec3& soundLocation, const Listener& listener, AmMat4 lookAt)
     {
         const auto* inner = dynamic_cast<CapsuleShape*>(m_innerShape);
         const auto* outer = dynamic_cast<CapsuleShape*>(m_outerShape);
 
-        lookAt = AM_Multiply(AM_Translate(soundLocation), lookAt);
+        lookAt = AM_Mul(AM_Translate(soundLocation), lookAt);
 
-        const hmm_vec3& x = listener.GetLocation();
+        const AmVec3& x = listener.GetLocation();
 
-        const AmReal32 distanceToOrigin = AM_Length(x - soundLocation);
+        const AmReal32 distanceToOrigin = AM_Len(x - soundLocation);
 
         const AmReal32 innerHalfHeight = inner->GetHalfHeight() - inner->GetRadius();
         const AmReal32 outerHalfHeight = outer->GetHalfHeight() - outer->GetRadius();
 
-        hmm_vec3 iA, iB, oA, oB;
+        AmVec3 iA, iB, oA, oB;
 
         switch (amEngine->GetState()->up_axis)
         {
         default:
         case eGameEngineUpAxis_Y:
-            iA = AM_Multiply(lookAt, AM_Vec4(0.0f, innerHalfHeight, 0.0f, 1.0f)).XYZ;
-            iB = AM_Multiply(lookAt, AM_Vec4(0.0f, -innerHalfHeight, 0.0f, 1.0f)).XYZ;
+            iA = AM_Mul(lookAt, AM_V4(0.0f, innerHalfHeight, 0.0f, 1.0f)).XYZ;
+            iB = AM_Mul(lookAt, AM_V4(0.0f, -innerHalfHeight, 0.0f, 1.0f)).XYZ;
 
-            oA = AM_Multiply(lookAt, AM_Vec4(0.0f, outerHalfHeight, 0.0f, 1.0f)).XYZ;
-            oB = AM_Multiply(lookAt, AM_Vec4(0.0f, -outerHalfHeight, 0.0f, 1.0f)).XYZ;
+            oA = AM_Mul(lookAt, AM_V4(0.0f, outerHalfHeight, 0.0f, 1.0f)).XYZ;
+            oB = AM_Mul(lookAt, AM_V4(0.0f, -outerHalfHeight, 0.0f, 1.0f)).XYZ;
             break;
 
         case eGameEngineUpAxis_Z:
-            iA = AM_Multiply(lookAt, AM_Vec4(0.0f, 0.0f, innerHalfHeight, 1.0f)).XYZ;
-            iB = AM_Multiply(lookAt, AM_Vec4(0.0f, 0.0f, -innerHalfHeight, 1.0f)).XYZ;
+            iA = AM_Mul(lookAt, AM_V4(0.0f, 0.0f, innerHalfHeight, 1.0f)).XYZ;
+            iB = AM_Mul(lookAt, AM_V4(0.0f, 0.0f, -innerHalfHeight, 1.0f)).XYZ;
 
-            oA = AM_Multiply(lookAt, AM_Vec4(0.0f, 0.0f, outerHalfHeight, 1.0f)).XYZ;
-            oB = AM_Multiply(lookAt, AM_Vec4(0.0f, 0.0f, -outerHalfHeight, 1.0f)).XYZ;
+            oA = AM_Mul(lookAt, AM_V4(0.0f, 0.0f, outerHalfHeight, 1.0f)).XYZ;
+            oB = AM_Mul(lookAt, AM_V4(0.0f, 0.0f, -outerHalfHeight, 1.0f)).XYZ;
             break;
         }
 
-        hmm_vec3 iE = iB - iA;
-        hmm_vec3 iM = AM_Cross(iA, iB);
+        AmVec3 iE = iB - iA;
+        AmVec3 iM = AM_Cross(iA, iB);
 
-        hmm_vec3 oE = oB - oA;
-        hmm_vec3 oM = AM_Cross(oA, oB);
+        AmVec3 oE = oB - oA;
+        AmVec3 oM = AM_Cross(oA, oB);
 
-        const AmReal32 iDistanceToAxis = AM_Length(iM + AM_Cross(iE, x)) / AM_Length(iE);
-        const AmReal32 oDistanceToAxis = AM_Length(oM + AM_Cross(oE, x)) / AM_Length(oE);
+        const AmReal32 iDistanceToAxis = AM_Len(iM + AM_Cross(iE, x)) / AM_Len(iE);
+        const AmReal32 oDistanceToAxis = AM_Len(oM + AM_Cross(oE, x)) / AM_Len(oE);
 
         if (oDistanceToAxis >= attenuation->GetMaxDistance())
             return 0.0f;
 
         const AmReal32 gain = attenuation->GetGainCurve().Get(iDistanceToAxis);
 
-        const AmReal32 iDistanceToA = AM_Length(x - iA);
-        const AmReal32 iDistanceToB = AM_Length(x - iB);
+        const AmReal32 iDistanceToA = AM_Len(x - iA);
+        const AmReal32 iDistanceToB = AM_Len(x - iB);
 
         if (iDistanceToAxis <= inner->GetRadius() && distanceToOrigin <= innerHalfHeight)
             return gain * 1.0f;

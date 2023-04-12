@@ -112,7 +112,7 @@ namespace SparkyStudios::Audio::Amplitude
          *
          * @return The location of this Channel.
          */
-        [[nodiscard]] const hmm_vec3& GetLocation() const;
+        [[nodiscard]] const AmVec3& GetLocation() const;
 
         /**
          * @brief Set the location of this Channel.
@@ -122,7 +122,7 @@ namespace SparkyStudios::Audio::Amplitude
          *
          * @param location The new location of the Channel.
          */
-        void SetLocation(const hmm_vec3& location) const;
+        void SetLocation(const AmVec3& location) const;
 
         /**
          * @brief Sets the gain on this Channel.

@@ -53,7 +53,7 @@ namespace SparkyStudios::Audio::Amplitude
          *
          * @return The attenuation factor.
          */
-        virtual float GetAttenuationFactor(const Attenuation* attenuation, const hmm_vec3& soundLocation, const Listener& listener);
+        virtual float GetAttenuationFactor(const Attenuation* attenuation, const AmVec3& soundLocation, const Listener& listener);
 
         /**
          * @brief Returns the attenuation factor.
@@ -116,7 +116,7 @@ namespace SparkyStudios::Audio::Amplitude
          *
          * @return The computed gain value fom the curve.
          */
-        float GetGain(const hmm_vec3& soundLocation, const Listener& listener) const;
+        float GetGain(const AmVec3& soundLocation, const Listener& listener) const;
 
         /**
          * @brief Returns the gain of the sound from the given distance to the listener.

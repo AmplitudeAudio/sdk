@@ -80,7 +80,7 @@ namespace SparkyStudios::Audio::Amplitude
          * @return The shortest distance from the location to the edge
          * of this shape. If negative, the given location in outside the shape.
          */
-        [[nodiscard]] virtual AmReal32 GetShortestDistanceToEdge(const hmm_vec3& location) = 0;
+        [[nodiscard]] virtual AmReal32 GetShortestDistanceToEdge(const AmVec3& location) = 0;
 
         /**
          * @brief Checks if the given entity is contained in this shape.
@@ -107,14 +107,14 @@ namespace SparkyStudios::Audio::Amplitude
          *
          * @return true if the shape contains the given position, false otherwise.
          */
-        [[nodiscard]] virtual bool Contains(const hmm_vec3& location) = 0;
+        [[nodiscard]] virtual bool Contains(const AmVec3& location) = 0;
 
         /**
          * @brief Set the location of this shape in the 3D environment.
          *
          * @param location The shape location.
          */
-        void SetLocation(const hmm_vec3& location);
+        void SetLocation(const AmVec3& location);
 
         /**
          * @brief Set the orientation of this shape.
@@ -122,42 +122,42 @@ namespace SparkyStudios::Audio::Amplitude
          * @param direction The shape direction.
          * @param up The shape up vector.
          */
-        void SetOrientation(const hmm_vec3& direction, const hmm_vec3& up);
+        void SetOrientation(const AmVec3& direction, const AmVec3& up);
 
         /**
          * @brief Get the LookAt transformation matrix for this shape.
          *
          * @return The lookAt transformation matrix.
          */
-        [[nodiscard]] const hmm_mat4& GetLookAt() const;
+        [[nodiscard]] const AmMat4& GetLookAt() const;
 
         /**
          * @brief Get the position of this shape in the 3D environment.
          *
          * @return The shape's position.
          */
-        [[nodiscard]] const hmm_vec3& GetLocation() const;
+        [[nodiscard]] const AmVec3& GetLocation() const;
 
         /**
          * @brief Get the position of this shape in the 3D environment.
          *
          * @return The shape's position.
          */
-        [[nodiscard]] const hmm_vec3& GetDirection() const;
+        [[nodiscard]] const AmVec3& GetDirection() const;
 
         /**
          * @brief Get the up vector of the zone.
          *
          * @return The up vector.
          */
-        [[nodiscard]] const hmm_vec3& GetUp() const;
+        [[nodiscard]] const AmVec3& GetUp() const;
 
     protected:
-        hmm_vec3 m_location;
-        hmm_vec3 m_direction;
-        hmm_vec3 m_up;
+        AmVec3 m_location;
+        AmVec3 m_direction;
+        AmVec3 m_up;
 
-        hmm_mat4 m_lookAtMatrix;
+        AmMat4 m_lookAtMatrix;
 
         bool m_needUpdate;
     };
@@ -211,21 +211,21 @@ namespace SparkyStudios::Audio::Amplitude
          *
          * @return The factor.
          */
-        [[nodiscard]] virtual AmReal32 GetFactor(const hmm_vec3& position) = 0;
+        [[nodiscard]] virtual AmReal32 GetFactor(const AmVec3& position) = 0;
 
         /**
          * @brief Set the location of this zone in the 3D environment.
          *
          * @param location The zone location.
          */
-        void SetLocation(const hmm_vec3& location);
+        void SetLocation(const AmVec3& location);
 
         /**
          * @brief Gets the current location of this zone.
          *
          * @return The current location of this zone.
          */
-        [[nodiscard]] const hmm_vec3& GetLocation() const;
+        [[nodiscard]] const AmVec3& GetLocation() const;
 
         /**
          * @brief Set the orientation of this shape.
@@ -233,21 +233,21 @@ namespace SparkyStudios::Audio::Amplitude
          * @param direction The shape direction.
          * @param up The shape up vector.
          */
-        void SetOrientation(const hmm_vec3& direction, const hmm_vec3& up);
+        void SetOrientation(const AmVec3& direction, const AmVec3& up);
 
         /**
          * @brief Get the direction vector of the zone.
          *
          * @return The direction vector.
          */
-        [[nodiscard]] const hmm_vec3& GetDirection() const;
+        [[nodiscard]] const AmVec3& GetDirection() const;
 
         /**
          * @brief Get the up vector of the zone.
          *
          * @return The up vector.
          */
-        [[nodiscard]] const hmm_vec3& GetUp() const;
+        [[nodiscard]] const AmVec3& GetUp() const;
 
     protected:
         /**
@@ -357,7 +357,7 @@ namespace SparkyStudios::Audio::Amplitude
          * @return The shortest distance from the location to the edge
          * of this shape. If negative, the given location in outside the shape.
          */
-        [[nodiscard]] AmReal32 GetShortestDistanceToEdge(const hmm_vec3& location) final;
+        [[nodiscard]] AmReal32 GetShortestDistanceToEdge(const AmVec3& location) final;
 
         /**
          * @brief Checks if the given position is contained in this shape.
@@ -366,7 +366,7 @@ namespace SparkyStudios::Audio::Amplitude
          *
          * @return true if the shape contains the given position, false otherwise.
          */
-        [[nodiscard]] bool Contains(const hmm_vec3& location) final;
+        [[nodiscard]] bool Contains(const AmVec3& location) final;
 
     private:
         void _update();
@@ -375,11 +375,11 @@ namespace SparkyStudios::Audio::Amplitude
         AmReal32 _halfHeight;
         AmReal32 _halfDepth;
 
-        hmm_vec3 _u;
-        hmm_vec3 _v;
-        hmm_vec3 _w;
+        AmVec3 _u;
+        AmVec3 _v;
+        AmVec3 _w;
 
-        hmm_vec3 _p1, _p2, _p3, _p4;
+        AmVec3 _p1, _p2, _p3, _p4;
         AmReal32 _uP1, _vP1, _wP1, _uP2, _vP3, _wP4;
     };
 
@@ -457,7 +457,7 @@ namespace SparkyStudios::Audio::Amplitude
          * @return The shortest distance from the location to the edge
          * of this shape. If negative, the given location in outside the shape.
          */
-        [[nodiscard]] AmReal32 GetShortestDistanceToEdge(const hmm_vec3& location) final;
+        [[nodiscard]] AmReal32 GetShortestDistanceToEdge(const AmVec3& location) final;
 
         /**
          * @brief Checks if the given position is contained in this shape.
@@ -466,7 +466,7 @@ namespace SparkyStudios::Audio::Amplitude
          *
          * @return true if the shape contains the given position, false otherwise.
          */
-        [[nodiscard]] bool Contains(const hmm_vec3& location) final;
+        [[nodiscard]] bool Contains(const AmVec3& location) final;
 
     private:
         void Update();
@@ -474,7 +474,7 @@ namespace SparkyStudios::Audio::Amplitude
         AmReal32 _radius;
         AmReal32 _halfHeight;
 
-        hmm_vec3 _a, _b;
+        AmVec3 _a, _b;
     };
 
     /**
@@ -544,7 +544,7 @@ namespace SparkyStudios::Audio::Amplitude
          * @return The shortest distance from the location to the edge
          * of this shape. If negative, the given location in outside the shape.
          */
-        [[nodiscard]] AmReal32 GetShortestDistanceToEdge(const hmm_vec3& location) final;
+        [[nodiscard]] AmReal32 GetShortestDistanceToEdge(const AmVec3& location) final;
 
         /**
          * @brief Checks if the given position is contained in this shape.
@@ -553,7 +553,7 @@ namespace SparkyStudios::Audio::Amplitude
          *
          * @return true if the shape contains the given position, false otherwise.
          */
-        [[nodiscard]] bool Contains(const hmm_vec3& location) final;
+        [[nodiscard]] bool Contains(const AmVec3& location) final;
 
     private:
         void Update();
@@ -614,7 +614,7 @@ namespace SparkyStudios::Audio::Amplitude
          * @return The shortest distance from the location to the edge
          * of this shape. If negative, the given location in outside the shape.
          */
-        [[nodiscard]] AmReal32 GetShortestDistanceToEdge(const hmm_vec3& location) final;
+        [[nodiscard]] AmReal32 GetShortestDistanceToEdge(const AmVec3& location) final;
 
         /**
          * @brief Checks if the given position is contained in this shape.
@@ -623,7 +623,7 @@ namespace SparkyStudios::Audio::Amplitude
          *
          * @return true if the shape contains the given position, false otherwise.
          */
-        [[nodiscard]] bool Contains(const hmm_vec3& location) final;
+        [[nodiscard]] bool Contains(const AmVec3& location) final;
 
     private:
         void Update();
@@ -636,7 +636,7 @@ namespace SparkyStudios::Audio::Amplitude
     public:
         BoxZone(BoxShape* inner, BoxShape* outer);
 
-        [[nodiscard]] AmReal32 GetFactor(const hmm_vec3& position) final;
+        [[nodiscard]] AmReal32 GetFactor(const AmVec3& position) final;
     };
 
     class CapsuleZone : public Zone
@@ -644,7 +644,7 @@ namespace SparkyStudios::Audio::Amplitude
     public:
         CapsuleZone(CapsuleShape* inner, CapsuleShape* outer);
 
-        [[nodiscard]] AmReal32 GetFactor(const hmm_vec3& position) final;
+        [[nodiscard]] AmReal32 GetFactor(const AmVec3& position) final;
     };
 
     class ConeZone : public Zone
@@ -652,7 +652,7 @@ namespace SparkyStudios::Audio::Amplitude
     public:
         ConeZone(ConeShape* inner, ConeShape* outer);
 
-        [[nodiscard]] AmReal32 GetFactor(const hmm_vec3& position) final;
+        [[nodiscard]] AmReal32 GetFactor(const AmVec3& position) final;
     };
 
     class SphereZone : public Zone
@@ -660,7 +660,7 @@ namespace SparkyStudios::Audio::Amplitude
     public:
         SphereZone(SphereShape* inner, SphereShape* outer);
 
-        [[nodiscard]] AmReal32 GetFactor(const hmm_vec3& position) final;
+        [[nodiscard]] AmReal32 GetFactor(const AmVec3& position) final;
     };
 } // namespace SparkyStudios::Audio::Amplitude
 

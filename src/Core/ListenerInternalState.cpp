@@ -17,7 +17,7 @@
 namespace SparkyStudios::Audio::Amplitude
 {
     ListenerInternalState::ListenerInternalState()
-        : _inverseMatrix(AM_Mat4d(1))
+        : _inverseMatrix(AM_M4D(1))
         , _location()
         , _direction()
         , _up()
@@ -36,44 +36,44 @@ namespace SparkyStudios::Audio::Amplitude
         _id = id;
     }
 
-    void ListenerInternalState::SetLocation(const hmm_vec3& location)
+    void ListenerInternalState::SetLocation(const AmVec3& location)
     {
         _lastLocation = _location;
         _location = location;
     }
 
-    const hmm_vec3& ListenerInternalState::GetLocation() const
+    const AmVec3& ListenerInternalState::GetLocation() const
     {
         return _location;
     }
 
-    void ListenerInternalState::SetOrientation(const hmm_vec3& direction, const hmm_vec3& up)
+    void ListenerInternalState::SetOrientation(const AmVec3& direction, const AmVec3& up)
     {
         _direction = direction;
         _up = up;
     }
 
-    const hmm_vec3& ListenerInternalState::GetDirection() const
+    const AmVec3& ListenerInternalState::GetDirection() const
     {
         return _direction;
     }
 
-    const hmm_vec3& ListenerInternalState::GetUp() const
+    const AmVec3& ListenerInternalState::GetUp() const
     {
         return _up;
     }
 
-    hmm_mat4& ListenerInternalState::GetInverseMatrix()
+    AmMat4& ListenerInternalState::GetInverseMatrix()
     {
         return _inverseMatrix;
     }
 
-    const hmm_mat4& ListenerInternalState::GetInverseMatrix() const
+    const AmMat4& ListenerInternalState::GetInverseMatrix() const
     {
         return _inverseMatrix;
     }
 
-    const hmm_vec3& ListenerInternalState::GetVelocity() const
+    const AmVec3& ListenerInternalState::GetVelocity() const
     {
         return _velocity;
     }
@@ -81,6 +81,6 @@ namespace SparkyStudios::Audio::Amplitude
     void ListenerInternalState::Update()
     {
         _velocity = _location - _lastLocation;
-        _inverseMatrix = AM_LookAt(_location, _location + _direction, _up);
+        _inverseMatrix = AM_LookAt_RH(_location, _location + _direction, _up);
     }
 } // namespace SparkyStudios::Audio::Amplitude

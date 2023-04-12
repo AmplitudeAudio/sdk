@@ -51,6 +51,9 @@ docs/html/
 docs/linklint_results/
 gen/
 
+# CLangd cache
+.cache/
+
 # VCPKG
 vcpkg_installed/
 
