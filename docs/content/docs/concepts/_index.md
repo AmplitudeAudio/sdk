@@ -107,7 +107,7 @@ flowchart TB
 
 Through its [Codec] API, Amplitude is able to read any audio file and to convert it to a [Sound object]. An audio file can be read only if the Engine have a registered codec supporting it.
 
-According the [sound object definition], audio files can streamed at runtime or preloaded. Each codec implementation must always read audio samples as **16-bit signed integer** (`AmInt16`), since is the default sample format used in the Engine.
+According to the [sound object definition], audio files can be streamed at runtime or preloaded. Each codec implementation must always read audio samples as **16-bit signed integer** (`AmInt16`), since is the default sample format used in the Engine.
 
 At the moment, Amplitude comes shipped with the following codecs:
 - [FLAC](https://xiph.org/flac/), a lossless audio codec.
@@ -132,7 +132,7 @@ Amplitude can synchronize with the game using game objects. The list of availabl
 - [SwitchState]: a game object that represents the state of a [SwitchContainer].
 - [RTPC]: a game object that represents a real-time parameter control.
 - [Entity]: a game object that represents an entity in the game. An Entity is used to place a [sound object](#sound-objects) in the 3D environment of the game, and then provide position, velocity, orientation and other information to the sound object.
-- [Listener]: a game object that represents the listener of the game. The listener is the object that is able to hear the sound objects in the 3D environment of the game. A game should have at least one Listener to let Amplitude render spatial audio.
+- [Listener]: a game object that represents a listener in the game. A listener is an object that is able to hear the sound objects in the 3D environment of the game. A game should have at least one Listener to let Amplitude render spatial audio.
 
 {{< /column >}}
 
@@ -157,7 +157,7 @@ Each sound object is created through a JSON configuration file which should matc
 
 ## Channels
 
-A channel is the user bridge between the sound objects and [Amplimix](#amplimix). When playing a sound object, the Engine will return a Channel. That Channel will then internally instantiate a [SoundInstance], and will be linked to a [Bus]. It's through a Channel that you can play, pause and stop a sound object, and also control its properties, like the gain, or the location (for world scoped sound objects).
+A channel is the user interface between sound objects and [Amplimix](#amplimix). When playing a sound object, the Engine will return a Channel. That Channel will then internally instantiate a [SoundInstance], and will be linked to a [Bus]. It's through a Channel that you can play, pause and stop a sound object, and also control its properties, like the gain, or the location (for world scoped sound objects).
 
 In Amplitude, the number of channels is determined at the Engine initialization. The total number of channels is the sum of the number of **active channels** and the number of **virtual channels**, which are both defined in the engine configuration file.
 
@@ -173,7 +173,7 @@ When requesting to play a sound object, the Engine will pick a channel in the li
 
 The [SoundInstance] is the real place where the Engine is consuming audio data for mixing. When playing the same sound object multiple times, multiple sound instances will be created for each play request, but all of them will share the same data since it belong to the same sound object. Sound instances only share audio data, and not properties like gain, pan, pitch, location, or priority which are instead managed through the Channel in which they are playing.
 
-It's only in cases of streamed audio that each sound instances own the data.
+It's only in cases of streamed audio that each sound instances own the audio data.
 
 {{< /column >}}
 
@@ -187,7 +187,7 @@ It's inside the sound object definition file that you specify on which bus they 
 
 A bus have the particularity to optionally have other buses as child buses, which means that all changes to that bus' gain level affect all children of that bus as well. There should always be a single master bus, with name `master`, and with ID `1`. This is the root bus from which all other buses descend. The engine will fail to initialize if the master bus is not found.
 
-A bus may also define duck_buses, which are buses that will lower in volume when a sound is played on that bus. For example, a designer might want to have background sound effects and music lower in volume when an important dialog is playing. To do this the `sound_effect` and `music` buses would be added in the list of children of the `dialog` bus.
+A bus may also define `duck_buses`, which are buses that will lower in volume when a sound is played on that bus. For example, a designer might want to have background sound effects and music lower in volume when an important dialog is playing. To do this the `sound_effect` and `music` buses would be added in the list of `duck_buses` children of the `dialog` bus.
 
 {{< /column >}}
 
@@ -203,6 +203,8 @@ Real Channels are internally managed channels which communicate directly with Am
 
 ## Amplimix
 
+Amplimix is the part of Amplitude doing sound mixing. It is composed of two (02) components linked together to render audio: the mixer layers, and the pipeline.
+
 {{< /column >}}
 
 {{< column "mt-1" >}}
@@ -211,7 +213,7 @@ Real Channels are internally managed channels which communicate directly with Am
 
 A Mixer Layer is responsible to consume audio data from sound instances and provide it to the Amplimix Pipeline. A mixer layer stores, for an unique sound instance, the related state for its playback, like the current position of the cursor, the current gain, the current pan, the current pitch, and the current sample rate converter.
 
-Amplitude have a maximum of 4096 mixer layers, which is the maximum number of sound instances that can be played simultaneously.
+Amplimix have a maximum of 4096 mixer layers, which is the maximum number of sound instances that can be played simultaneously.
 
 {{< /column >}}
 
@@ -219,7 +221,11 @@ Amplitude have a maximum of 4096 mixer layers, which is the maximum number of so
 
 ### Pipeline
 
-The Pipeline is used to process the sound before the get the final output to render on the device. It's in the pipeline that Amplitude process effects, environmental sounds, obstruction, occlusion and more. The default pipeline is the following:
+The Pipeline is used to process the sound before the mixer get the final output to render on the device. It's in the pipeline that Amplitude process effects, environmental sounds, obstruction, occlusion and more.
+
+The pipeline is built like a node-graph where each node is a [SoundProcessor] instance. Each sound processor takes as input the sound data and outputs the processed audio to the next node.
+
+The default pipeline is the following:
 
 {{< mermaid >}}
 %%{init: {'theme': 'base', 'themeVariables': { 'primaryColor': '#74D0F1', 'fontFamily': 'Open Sans' }}}%%
@@ -235,7 +241,7 @@ graph LR
   E -.-> 1[/Audio Device/]
 {{< /mermaid >}}
 
-You can create your own set of custom [SoundProcessor]s and register them in the Engine to build a custom Pipeline. The Pipeline Amplimix should use is defined in the [engine configuration file](../guide/project-architecture/#audio_configjson).
+You can create your own set of custom [SoundProcessor]s and register them in the Engine to build a custom Pipeline. The Pipeline is configured through the [engine configuration file](../guide/project-architecture/#audio_configjson).
 
 {{< /column >}}
 
@@ -253,7 +259,7 @@ The default driver provided by Amplitude is built on top of the [MiniAudio](http
 
 ## Audio Device
 
-The audio Device renders audio. Amplitude have a copy of the current audio device description in the [DeviceDescription] stored in Amplimix. The device description gives the user requested audio format, and the actual audio format that the device is actually using. Its to the Driver implementation to fill the device description with the obtained values from the audio device.
+The audio Device renders audio. Amplitude have a copy of the current audio device description in the [DeviceDescription] stored in Amplimix. The device description gives the user requested audio format, and the actual audio format that the device is using. Its to the Driver implementation to fill the device description in Amplimix with the obtained values from the audio device.
 
 Amplimix will process the audio using the user requested format, and let to the driver the responsibility to convert the data to the device audio format.
 

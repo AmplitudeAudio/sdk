@@ -49,7 +49,7 @@ Amplitude can support the following platforms:
 - ❌ [Android](https://www.android.com/) devices
 - ❌ [iOS](https://www.apple.com/ios) devices
 - ✔️ [Linux](https://www.kernel.org/)
-- ⚠️ [OS X](https://www.apple.com/osx/)
+- ✔️ [OS X](https://www.apple.com/osx/)
 - ✔️ [Windows](https://www.microsoft.com/windows/)
 
 Amplitude uses [MiniAudio](http://miniaud.io/) as the default audio device implementation for cross-platform support. You still can change that by implementing a [custom driver](docs/advanced/custom-driver).
