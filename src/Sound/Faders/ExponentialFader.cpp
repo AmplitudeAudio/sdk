@@ -16,22 +16,18 @@
 
 namespace SparkyStudios::Audio::Amplitude
 {
-    /**
-     * @brief Offset used to avoid NaN results.
-     */
-    const float kOffset = 0.5f;
+    ExponentialFader::ExponentialFader(AmReal64 k)
+        : _k(k)
+    {}
 
     float ExponentialFader::GetFromPercentage(double percentage)
     {
         percentage = AM_CLAMP(percentage, 0.0, 1.0);
 
-        float from = m_from + kOffset;
-        float to = m_to + kOffset;
-        float factor = percentage == 0.0 ? 1 : AM_PowerF(to / from, (float)percentage);
+        const AmReal64 a = m_delta * (percentage - percentage * _k);
+        const AmReal64 b = _k * (1.0 - percentage * 2.0) + 1.0;
+        const AmReal64 c = a / b + m_from;
 
-        float lower = AM_MIN(m_from, m_to);
-        float greater = AM_MAX(m_from, m_to);
-
-        return AM_CLAMP(from * factor - kOffset, lower, greater);
+        return static_cast<AmReal32>(c);
     }
 } // namespace SparkyStudios::Audio::Amplitude

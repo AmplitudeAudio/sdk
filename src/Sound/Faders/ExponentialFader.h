@@ -23,7 +23,13 @@ namespace SparkyStudios::Audio::Amplitude
 {
     class ExponentialFader : public Fader
     {
+    public:
+        explicit ExponentialFader(AmReal64 k);
+
         float GetFromPercentage(double percentage) override;
+
+    private:
+        AmReal64 _k;
     };
 } // namespace SparkyStudios::Audio::Amplitude
 

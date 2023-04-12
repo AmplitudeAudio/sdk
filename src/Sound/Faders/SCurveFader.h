@@ -23,7 +23,13 @@ namespace SparkyStudios::Audio::Amplitude
 {
     class SCurveFader : public Fader
     {
+    public:
+        explicit SCurveFader(AmReal64 k);
+
         float GetFromPercentage(double percentage) override;
+
+    private:
+        AmReal64 _k;
     };
 } // namespace SparkyStudios::Audio::Amplitude
 

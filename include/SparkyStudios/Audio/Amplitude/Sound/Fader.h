@@ -26,8 +26,8 @@ namespace SparkyStudios::Audio::Amplitude
     /**
      * @brief Helper class to process faders.
      *
-     * A fader is use to move a value to a specific target value
-     * during an amount of time.
+     * A fader is used to move a value to a specific target value
+     * during an amount of time and according to a fading algorithm.
      */
     class Fader
     {
@@ -49,12 +49,24 @@ namespace SparkyStudios::Audio::Amplitude
             /**
              * @brief Returns values using an S-shaped curve from the initial value to the final value.
              */
-            ALGORITHM_S_CURVE = 2,
+            ALGORITHM_S_CURVE_SMOOTH = 2,
 
             /**
              * @brief Returns values using an exponential growth algorithm from the initial value to the final value.
              */
-            ALGORITHM_EXPONENTIAL = 3,
+            ALGORITHM_EXPONENTIAL_SMOOTH = 3,
+
+            /**
+             * @brief Returns values using an S-shaped curve from the initial value to the final value with
+             * sharper transitions.
+             */
+            ALGORITHM_S_CURVE_SHARP = 4,
+
+            /**
+             * @brief Returns values using an exponential growth algorithm from the initial value to the final value
+             * with sharper transitions.
+             */
+            ALGORITHM_EXPONENTIAL_SHARP = 5,
         };
 
         Fader();

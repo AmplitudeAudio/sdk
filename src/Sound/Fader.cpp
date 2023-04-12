@@ -77,10 +77,14 @@ namespace SparkyStudios::Audio::Amplitude
             return new LinearFader();
         case Fader::ALGORITHM_CONSTANT:
             return new ConstantFader();
-        case Fader::ALGORITHM_S_CURVE:
-            return new SCurveFader();
-        case Fader::ALGORITHM_EXPONENTIAL:
-            return new ExponentialFader();
+        case Fader::ALGORITHM_S_CURVE_SMOOTH:
+            return new SCurveFader(0.5);
+        case Fader::ALGORITHM_EXPONENTIAL_SMOOTH:
+            return new ExponentialFader(0.5);
+        case Fader::ALGORITHM_S_CURVE_SHARP:
+            return new SCurveFader(0.9);
+        case Fader::ALGORITHM_EXPONENTIAL_SHARP:
+            return new ExponentialFader(0.9);
         }
     }
 } // namespace SparkyStudios::Audio::Amplitude

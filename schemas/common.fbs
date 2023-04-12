@@ -55,10 +55,14 @@ enum FaderAlgorithm: byte {
   Linear = 0,
   /// Keeps returning the initial value until the transition is complete.
   Constant = 1,
-  /// Returns values using an S-shaped curve from the initial value to the final value.
-  S_Curve = 2,
-  /// Returns values using an exponential growth algorithm from the initial value to the final value.
-  Exponential = 3,
+  /// Returns values using an S-shaped curve from the initial value to the final value with a smooth transition.
+  S_Curve_Smooth = 2,
+  /// Returns values using an exponential growth algorithm from the initial value to the final value with a smooth transition.
+  Exponential_Smooth = 3,
+  /// Returns values using an S-shaped curve from the initial value to the final value with a sharp transition.
+  S_Curve_Sharp = 4,
+  /// Returns values using an exponential growth algorithm from the initial value to the final value with a sharp transition.
+  Exponential_Sharp = 5,
 }
 
 /// A point coordinates in a curve.
