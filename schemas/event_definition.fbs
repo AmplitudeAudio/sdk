@@ -32,7 +32,7 @@ enum EventActionType: byte {
   Seek,
   /// Mutes the bus with the given ID.
   MuteBus,
-  /// Unmutes the bus with the given ID.
+  /// Unmute the bus with the given ID.
   UnmuteBus,
 }
 

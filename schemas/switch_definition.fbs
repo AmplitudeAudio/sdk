@@ -17,7 +17,7 @@ include "common.fbs";
 namespace SparkyStudios.Audio.Amplitude;
 
 table SwitchStateDefinition {
-  /// The switch state unique ID. Yhis ID is internal to the switch, and not shared outside.
+  /// The switch state unique ID. This ID is internal to the switch, and not shared outside.
   /// This means that many switch states from the different switches can have the same ID.
   id:uint64 = 0;
 

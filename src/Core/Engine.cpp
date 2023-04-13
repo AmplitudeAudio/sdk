@@ -638,7 +638,7 @@ namespace SparkyStudios::Audio::Amplitude
 
         case eListenerFetchMode_Nearest:
             [[fallthrough]];
-        case eListenerFetchMode_Farest:
+        case eListenerFetchMode_Farthest:
             {
                 auto listener = listeners.cbegin();
                 *listenerSpaceLocation = AM_Mul(listener->GetInverseMatrix(), location4).XYZ;

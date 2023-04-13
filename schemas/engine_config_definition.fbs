@@ -45,9 +45,9 @@ enum eListenerFetchMode : ushort {
   /// that different listeners can be returned for different sounds.
   Nearest,
 
-  /// Fetches for the farest listener to the currently processed sound. This imply
+  /// Fetches for the farthest listener to the currently processed sound. This imply
   /// that different listeners can be returned for different sounds.
-  Farest,
+  Farthest,
 
   /// Fetches for the default listener set by the engine. This ensures
   /// that only one listener is used everytime.

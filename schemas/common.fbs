@@ -108,7 +108,7 @@ table RtpcParameter {
   curve:CurveDefinition;
 }
 
-/// A value which can hold a static value or RTPC compatible calue.
+/// A value which can hold a static value or RTPC compatible value.
 table RtpcCompatibleValue {
   /// The type of the value.
   kind:ValueKind = Static;

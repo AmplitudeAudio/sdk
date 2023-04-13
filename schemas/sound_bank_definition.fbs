@@ -39,7 +39,7 @@ table SoundBankDefinition {
   sounds:[string];
 
   /// The list of Event files to load. An Event may be present in
-  /// more that one SoundBanck and can only be triggered once it
+  /// more that one SoundBank and can only be triggered once it
   /// has been loaded by at least one SoundBank.
   events:[string];
 

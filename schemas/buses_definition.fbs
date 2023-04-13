@@ -23,7 +23,7 @@ namespace SparkyStudios.Audio.Amplitude;
 /// him have their gain faded out. When the parent bus stops playing
 /// all duck buses have their gain faded in.
 table DuckBusDefinition {
-  /// The bus ID. This ID should correspond to an eisting bus.
+  /// The bus ID. This ID should correspond to an existing bus.
   id:uint64;
 
   /// The targeted gain value when the parent bus starts playing.
@@ -45,7 +45,7 @@ table BusDefinition {
 
   /// Name of the bus that can be referenced by other Bus objects. A bus
   /// called "master" must be defined as the root playback bus. Names should
-  /// be unique accross buses.
+  /// be unique across buses.
   name:string;
 
   /// Linear gain that is applied to all Sound objects played on this bus.

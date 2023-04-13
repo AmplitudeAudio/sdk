@@ -133,16 +133,16 @@ This setting is used by Amplitude to understand how it should synchronize with t
 
 Since Amplitude allows you to define many listeners at the same time, but only one can actually render data for a single sound object, this setting allows you to define how the engine will pick the right listener for each rendered sound object. Available values are:
 
-| ID  | Name    | Description                                                                      |
-| --- | ------- | -------------------------------------------------------------------------------- |
-| 0   | None    | Do not fetch for listeners. This mute all audio, but keeps processing data.      |
-| 1   | Nearest | Fetches for the listener nearest to the currently processed sound.               |
-| 2   | Farest  | Fetches for the listener farest to the currently processed sound.                |
-| 2   | Default | Always use the default listener set in the engine at runtine for every playback. |
-| 2   | First   | Always use the first available listener of the list for every playback.          |
-| 2   | Last    | Always use the last available listener of the list for every playback.           |
+| ID | Name     | Description                                                                      |
+|----|----------|----------------------------------------------------------------------------------|
+| 0  | None     | Do not fetch for listeners. This mute all audio, but keeps processing data.      |
+| 1  | Nearest  | Fetches for the listener nearest to the currently processed sound.               |
+| 2  | Farthest | Fetches for the listener farest to the currently processed sound.                |
+| 2  | Default  | Always use the default listener set in the engine at runtine for every playback. |
+| 2  | First    | Always use the first available listener of the list for every playback.          |
+| 2  | Last     | Always use the last available listener of the list for every playback.           |
 
-By using `Nearest` or `Farest`, different listeners may be used at the same time for each playback. Using `Default`, `First`, or `Last` ensure that only one listener is used for every playback.
+By using `Nearest` or `Farthest`, different listeners may be used at the same time for each playback. Using `Default`, `First`, or `Last` ensure that only one listener is used for every playback.
 
 #### listeners
 
