@@ -162,6 +162,9 @@ namespace SparkyStudios::Audio::Amplitude
 
     void ChannelInternalState::Halt()
     {
+        if (Stopped())
+            return;
+
         if (Valid())
         {
             _realChannel.Halt();
@@ -177,6 +180,9 @@ namespace SparkyStudios::Audio::Amplitude
 
     void ChannelInternalState::Pause()
     {
+        if (Paused())
+            return;
+
         if (Valid())
         {
             _realChannel.Pause();
@@ -187,6 +193,9 @@ namespace SparkyStudios::Audio::Amplitude
 
     void ChannelInternalState::Resume()
     {
+        if (Playing())
+            return;
+
         if (Valid())
         {
             _realChannel.Resume();
@@ -197,7 +206,7 @@ namespace SparkyStudios::Audio::Amplitude
 
     void ChannelInternalState::FadeIn(AmTime duration)
     {
-        if (Playing())
+        if (Playing() || _channelState == ChannelPlaybackState::FadingIn)
             return;
 
         if (Valid())
@@ -214,7 +223,7 @@ namespace SparkyStudios::Audio::Amplitude
 
     void ChannelInternalState::FadeOut(AmTime duration, ChannelPlaybackState targetState)
     {
-        if (Stopped() || Paused())
+        if (Stopped() || Paused() || _channelState == ChannelPlaybackState::FadingOut)
             return;
 
         if (Valid())
@@ -236,6 +245,7 @@ namespace SparkyStudios::Audio::Amplitude
     void ChannelInternalState::SetPan(const AmVec2& pan)
     {
         _pan = pan;
+
         if (Valid())
         {
             _realChannel.SetPan(pan);
@@ -250,6 +260,7 @@ namespace SparkyStudios::Audio::Amplitude
             return;
 
         _gain = gain;
+
         if (Valid())
         {
             _realChannel.SetGain(gain);
@@ -259,6 +270,7 @@ namespace SparkyStudios::Audio::Amplitude
     void ChannelInternalState::SetPitch(AmReal32 pitch)
     {
         _pitch = pitch;
+
         if (Valid())
         {
             _realChannel.SetPitch(pitch);

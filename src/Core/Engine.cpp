@@ -1841,6 +1841,9 @@ namespace SparkyStudios::Audio::Amplitude
 
     void Engine::Pause(bool pause) const
     {
+        if (_state->paused == pause)
+            return;
+
         _state->paused = pause;
 
         PriorityList& list = _state->playing_channel_list;

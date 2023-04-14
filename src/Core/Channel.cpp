@@ -65,6 +65,9 @@ namespace SparkyStudios::Audio::Amplitude
         AMPLITUDE_ASSERT(Valid());
         if (IsValidStateId())
         {
+            if (_state->Stopped())
+                return;
+
             if (!_state->IsReal() || _state->GetRealChannel().GetGain() == 0.0f)
             {
                 _state->Halt();
@@ -81,6 +84,9 @@ namespace SparkyStudios::Audio::Amplitude
         AMPLITUDE_ASSERT(Valid());
         if (IsValidStateId())
         {
+            if (_state->Paused())
+                return;
+
             if (!_state->IsReal() || _state->GetRealChannel().GetGain() == 0.0f)
             {
                 _state->Pause();
@@ -97,6 +103,9 @@ namespace SparkyStudios::Audio::Amplitude
         AMPLITUDE_ASSERT(Valid());
         if (IsValidStateId())
         {
+            if (_state->Playing())
+                return;
+
             _state->FadeIn(duration);
         }
     }
