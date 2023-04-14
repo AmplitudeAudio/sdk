@@ -16,8 +16,8 @@
 
 #include <Core/EngineInternalState.h>
 #include <Mixer/Mixer.h>
-#include <Utils/Utils.h>
 #include <Utils/miniaudio/miniaudio_utils.h>
+#include <Utils/Utils.h>
 
 #define AMPLIMIX_STORE(A, C) std::atomic_store_explicit(A, C, std::memory_order_release)
 #define AMPLIMIX_LOAD(A) std::atomic_load_explicit(A, std::memory_order_acquire)
@@ -213,7 +213,8 @@ namespace SparkyStudios::Audio::Amplitude
         : _initialized(false)
         , _commandsStack()
         , _audioThreadMutex(nullptr)
-        , _insideAudioThreadMutex(false)
+        , _insideAudioThreadMutex()
+        , _masterGain()
         , _nextId(0)
         , _layers{}
         , _remainingFrames(0)
@@ -310,7 +311,7 @@ namespace SparkyStudios::Audio::Amplitude
         if (!_initialized)
             return;
 
-        AMPLITUDE_ASSERT(!_insideAudioThreadMutex);
+        AMPLITUDE_ASSERT(!IsInsideThreadMutex());
 
         _initialized = false;
 
@@ -700,7 +701,10 @@ namespace SparkyStudios::Audio::Amplitude
 
     bool Mixer::IsInsideThreadMutex() const
     {
-        return _insideAudioThreadMutex;
+        if (_insideAudioThreadMutex.find(Thread::GetCurrentThreadId()) != _insideAudioThreadMutex.end())
+            return _insideAudioThreadMutex.at(Thread::GetCurrentThreadId());
+
+        return false;
     }
 
     void Mixer::PushCommand(const MixerCommand& command)
@@ -1125,18 +1129,18 @@ namespace SparkyStudios::Audio::Amplitude
             Thread::LockMutex(_audioThreadMutex);
         }
 
-        _insideAudioThreadMutex = true;
+        _insideAudioThreadMutex[Thread::GetCurrentThreadId()] = true;
     }
 
     void Mixer::UnlockAudioMutex()
     {
-        AMPLITUDE_ASSERT(_insideAudioThreadMutex);
+        AMPLITUDE_ASSERT(IsInsideThreadMutex());
 
         if (_audioThreadMutex)
         {
             Thread::UnlockMutex(_audioThreadMutex);
         }
 
-        _insideAudioThreadMutex = false;
+        _insideAudioThreadMutex[Thread::GetCurrentThreadId()] = false;
     }
 } // namespace SparkyStudios::Audio::Amplitude

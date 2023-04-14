@@ -196,10 +196,10 @@ namespace SparkyStudios::Audio::Amplitude
         std::queue<MixerCommand> _commandsStack;
 
         AmMutexHandle _audioThreadMutex;
-        bool _insideAudioThreadMutex;
+        std::unordered_map<AmThreadID, bool> _insideAudioThreadMutex;
 
         AmUInt32 _nextId;
-        _Atomic(float) _masterGain;
+        _Atomic(float) _masterGain{};
         MixerLayer _layers[kAmplimixLayersCount];
         AmUInt64 _remainingFrames;
 
