@@ -196,7 +196,7 @@ namespace SparkyStudios::Audio::Amplitude
 #if defined(AM_SSE_INTRINSICS)
         out[index] = add(out[index], to_int16(shift_r(mull(in->buffer[index], gain), kAmFixedPointBits)));
 #else
-        out[index] += static_cast<AmInt16>((in->buffer[index] * lGain) >> kAmFixedPointBits);
+        out[index] += static_cast<AmInt16>((in->buffer[index] * gain) >> kAmFixedPointBits);
 #endif // AM_SSE_INTRINSICS
     }
 
@@ -411,7 +411,7 @@ namespace SparkyStudios::Audio::Amplitude
 #if defined(AM_SSE_INTRINSICS)
             align->buffer[i] = min(max(align->buffer[i], lower), upper);
 #else
-            align->buffer[i] = std::min(std::max(align[i], lower), upper);
+            align->buffer[i] = std::min(std::max(align->buffer[i], lower), upper);
 #endif // AM_SSE_INTRINSICS
         }
 
