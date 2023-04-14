@@ -62,6 +62,14 @@ namespace SparkyStudios::Audio::Amplitude
         return { left, right };
     }
 
+    static bool ShouldLoopSound(Mixer* mixer, MixerLayer* layer)
+    {
+        auto* sound = static_cast<SoundInstance*>(layer->snd->userData);
+        const AmUInt32 loopCount = sound->GetSettings().m_loopCount;
+
+        return sound->GetCurrentLoopCount() != loopCount;
+    }
+
     static void OnSoundStarted(Mixer* mixer, MixerLayer* layer)
     {
         const auto* sound = static_cast<SoundInstance*>(layer->snd->userData);
@@ -96,13 +104,7 @@ namespace SparkyStudios::Audio::Amplitude
 
         Mixer::IncrementSoundLoopCount(sound);
 
-        if (const AmUInt32 loopCount = sound->GetSettings().m_loopCount; sound->GetCurrentLoopCount() == loopCount)
-        {
-            sound->GetChannel()->Halt();
-            return false;
-        }
-
-        return true;
+        return ShouldLoopSound(mixer, layer);
     }
 
     static AmUInt64 OnSoundStream(Mixer* mixer, MixerLayer* layer, AmUInt64 offset, AmUInt64 frames)
@@ -1065,7 +1067,7 @@ namespace SparkyStudios::Audio::Amplitude
                 else
                 {
                     // call the onLoop callback
-                    if (OnSoundLooped(this, layer))
+                    if (ShouldLoopSound(this, layer))
                     {
                         // wrap around if allowed looping again
                         AMPLIMIX_CSWAP(&layer->cursor, &layer->end, layer->start);
