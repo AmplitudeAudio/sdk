@@ -32,6 +32,7 @@ namespace SparkyStudios::Audio::Amplitude
 
     typedef AmVoidPtr AmThreadHandle;
     typedef AmVoidPtr AmMutexHandle;
+    typedef AmUInt64 AmThreadID;
 
     namespace Thread
     {
@@ -101,6 +102,11 @@ namespace SparkyStudios::Audio::Amplitude
          * @brief Gets the total execution time in milliseconds for the calling thread.
          */
         AmUInt64 GetTimeMillis();
+
+        /**
+         * @brief Gets the handle of the calling thread.
+         */
+        AmThreadID GetCurrentThreadId();
 
         /**
          * @brief Base class for pool tasks.

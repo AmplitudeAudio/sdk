@@ -15,8 +15,8 @@
 #include <SparkyStudios/Audio/Amplitude/Core/Thread.h>
 
 #if defined(AM_WINDOWS_VERSION)
-#include <Windows.h>
 #include <processthreadsapi.h>
+#include <Windows.h>
 #undef CreateMutex
 #else
 #include <ctime>
@@ -119,6 +119,11 @@ namespace SparkyStudios::Audio::Amplitude::Thread
     {
         return ::GetTickCount64();
     }
+
+    AmThreadID GetCurrentThreadID()
+    {
+        return ::GetCurrentThreadId();
+    }
 #else // pthreads
     struct AmThreadHandleData
     {
@@ -147,6 +152,7 @@ namespace SparkyStudios::Audio::Amplitude::Thread
     {
         AmSpinLockData* lock;
         lock = new AmSpinLockData;
+        lock->spinLocked = false;
 
 #if !defined(AM_NO_PTHREAD_SPINLOCK)
         pthread_spin_init(&lock->lock, 0);
@@ -258,6 +264,17 @@ namespace SparkyStudios::Audio::Amplitude::Thread
         struct timespec spec = { 0 };
         clock_gettime(CLOCK_REALTIME, &spec);
         return spec.tv_sec * 1000 + (spec.tv_nsec / 1.0e6);
+    }
+
+    AmThreadID GetCurrentThreadId()
+    {
+#if defined(AM_APPLE_VERSION)
+        AmUInt64 tid = 0;
+        pthread_threadid_np(pthread_self(), &tid);
+        return tid;
+#else
+        return gettid();
+#endif
     }
 #endif
 
