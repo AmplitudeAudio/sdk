@@ -468,8 +468,8 @@ namespace SparkyStudios::Audio::Amplitude
                     if (gain == 0.0f)
                     {
                         out->SetState(AM_FADER_STATE_STOPPED);
-                        // Fading in transition complete. Now we can destroy the channel layer
-                        _realChannel.Destroy(layer);
+                        // Fading in transition complete. Now we can halt the channel layer
+                        _realChannel.Halt(layer);
                     }
                 }
 
