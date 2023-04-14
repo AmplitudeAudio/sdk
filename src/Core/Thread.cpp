@@ -280,11 +280,11 @@ namespace SparkyStudios::Audio::Amplitude::Thread
 
     static void PoolWorker(AmVoidPtr param)
     {
-        Pool* myPool = static_cast<Pool*>(param);
+        Pool* pPool = static_cast<Pool*>(param);
 
-        while (myPool->IsRunning())
+        while (pPool->IsRunning())
         {
-            PoolTask* t = myPool->GetWork();
+            std::shared_ptr<PoolTask> t = pPool->GetWork();
 
             if (t == nullptr)
             {
@@ -342,7 +342,7 @@ namespace SparkyStudios::Audio::Amplitude::Thread
         }
     }
 
-    void Pool::AddTask(PoolTask* task)
+    void Pool::AddTask(const std::shared_ptr<PoolTask>& task)
     {
         if (_threadCount == 0)
         {
@@ -373,9 +373,9 @@ namespace SparkyStudios::Audio::Amplitude::Thread
         }
     }
 
-    PoolTask* Pool::GetWork()
+    std::shared_ptr<PoolTask> Pool::GetWork()
     {
-        PoolTask* t = nullptr;
+        std::shared_ptr<PoolTask> t = nullptr;
 
         if (_workMutex)
             LockMutex(_workMutex);
@@ -403,5 +403,10 @@ namespace SparkyStudios::Audio::Amplitude::Thread
     bool Pool::IsRunning() const
     {
         return _running;
+    }
+
+    bool Pool::HasTasks() const
+    {
+        return _taskCount > 0;
     }
 } // namespace SparkyStudios::Audio::Amplitude::Thread

@@ -114,6 +114,8 @@ namespace SparkyStudios::Audio::Amplitude
         class PoolTask
         {
         public:
+            virtual ~PoolTask() = default;
+
             /**
              * @brief Main pool task execution function.
              *
@@ -156,7 +158,7 @@ namespace SparkyStudios::Audio::Amplitude
              *
              * @param task The PoolTask to add. The task is not automatically deleted when the work is done.
              */
-            void AddTask(PoolTask* task);
+            void AddTask(const std::shared_ptr<PoolTask>& task);
 
             /**
              * @brief Called from worker thread to get a new task.
@@ -165,7 +167,7 @@ namespace SparkyStudios::Audio::Amplitude
              *
              * @return The next PoolTask to execute, or nullptr if no task is available.
              */
-            PoolTask* GetWork();
+            std::shared_ptr<PoolTask> GetWork();
 
             /**
              * @brief Gets the number of threads this pool is using.
@@ -177,11 +179,16 @@ namespace SparkyStudios::Audio::Amplitude
              */
             [[nodiscard]] bool IsRunning() const;
 
+            /**
+             * @brief Indicates that has tasks pending.
+             */
+            [[nodiscard]] bool HasTasks() const;
+
         private:
             AmUInt32 _threadCount; // number of threads
             AmThreadHandle* _thread; // array of thread handles
             AmMutexHandle _workMutex; // mutex to protect task array/max task
-            PoolTask* _taskArray[AM_MAX_THREAD_POOL_TASKS]{}; // pointers to tasks
+            std::shared_ptr<PoolTask> _taskArray[AM_MAX_THREAD_POOL_TASKS]{}; // pointers to tasks
             AmInt32 _taskCount; // how many tasks are pending
             AmInt32 _robin; // cyclic counter, used to pick jobs for threads
             volatile bool _running; // running flag, used to flag threads to Stop
