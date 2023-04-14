@@ -28,8 +28,8 @@
 #include <Core/EngineInternalState.h>
 #include <Core/EntityInternalState.h>
 
-#include <Utils/Utils.h>
 #include <Utils/intrusive_list.h>
+#include <Utils/Utils.h>
 
 #include "collection_definition_generated.h"
 #include "sound_definition_generated.h"
@@ -716,7 +716,10 @@ namespace SparkyStudios::Audio::Amplitude
         const SwitchContainerDefinition* definition = _switchContainer->GetSwitchContainerDefinition();
 
         _switch = _switchContainer->GetSwitch();
+
+        delete _fader;
         _fader = Fader::Create(static_cast<Fader::FADER_ALGORITHM>(definition->fader()));
+
         _channelState = ChannelPlaybackState::Playing;
 
         if (IsReal())
@@ -740,9 +743,12 @@ namespace SparkyStudios::Audio::Amplitude
         Sound* sound = _entity.Valid() ? _collection->SelectFromEntity(_entity, _realChannel._playedSounds)
                                        : _collection->SelectFromWorld(_realChannel._playedSounds);
 
+        delete _fader;
         _fader = Fader::Create(static_cast<Fader::FADER_ALGORITHM>(definition->fader()));
 
-        _channelState = ChannelPlaybackState::Playing;
+        if (_channelState != ChannelPlaybackState::FadingIn && _channelState != ChannelPlaybackState::FadingOut)
+            _channelState = ChannelPlaybackState::Playing;
+
         return !IsReal() || _realChannel.Play(sound->CreateInstance(_collection));
     }
 
@@ -752,6 +758,7 @@ namespace SparkyStudios::Audio::Amplitude
 
         const SoundDefinition* definition = _sound->GetSoundDefinition();
 
+        delete _fader;
         _fader = Fader::Create(static_cast<Fader::FADER_ALGORITHM>(definition->fader()));
 
         _channelState = ChannelPlaybackState::Playing;
