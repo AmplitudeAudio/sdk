@@ -26,37 +26,32 @@ namespace SparkyStudios::Audio::Amplitude
 {
     static std::unordered_map<AmObjectID, FilterInstance*> gObstructionFilters = {};
 
-    [[maybe_unused]] static class ObstructionProcessor final : public SoundProcessor
+    class ObstructionProcessorInstance final : public SoundProcessorInstance
     {
     public:
-        ObstructionProcessor()
-            : SoundProcessor("ObstructionProcessor")
-            , _lpfCurve()
+        ObstructionProcessorInstance()
+            : _lpfCurve()
         {
             _lpfCurve.SetFader(Fader::ALGORITHM_EXPONENTIAL_SMOOTH);
         }
 
         void Process(
-            AmInt16Buffer out,
-            AmInt16Buffer in,
+            AmAudioSampleBuffer out,
+            AmConstAudioSampleBuffer in,
             AmUInt64 frames,
-            AmUInt64 bufferSize,
+            AmSize bufferSize,
             AmUInt16 channels,
             AmUInt32 sampleRate,
             SoundInstance* sound) override
         {
             const float obstruction = sound->GetObstruction();
 
+            if (out != in)
+                std::memcpy(out, in, bufferSize);
+
             // Nothing to do if no obstruction
             if (obstruction < kEpsilon)
-            {
-                if (out != in)
-                {
-                    memcpy(out, in, bufferSize);
-                }
-
                 return;
-            }
 
             _lpfCurve.SetStart({ 0, sampleRate / 2.0f });
             _lpfCurve.SetEnd({ 1, sampleRate / 2000.0f });
@@ -85,32 +80,28 @@ namespace SparkyStudios::Audio::Amplitude
             // Apply Gain
             for (AmUInt64 i = 0, l = frames * channels; i < l; i++)
             {
-                out[i] = out[i] * AmFloatToFixedPoint(gain) >> kAmFixedPointBits;
-                out[i] = AM_CLAMP(out[i], INT16_MIN, INT16_MAX);
+                out[i] = out[i] * gain;
+                out[i] = AM_CLAMP_AUDIO_SAMPLE(out[i]);
             }
         }
 
         void ProcessInterleaved(
-            AmInt16Buffer out,
-            AmInt16Buffer in,
+            AmAudioSampleBuffer out,
+            AmConstAudioSampleBuffer in,
             AmUInt64 frames,
-            AmUInt64 bufferSize,
+            AmSize bufferSize,
             AmUInt16 channels,
             AmUInt32 sampleRate,
             SoundInstance* sound) override
         {
             const float obstruction = sound->GetObstruction();
 
+            if (out != in)
+                std::memcpy(out, in, bufferSize);
+
             // Nothing to do if no obstruction
             if (obstruction < kEpsilon)
-            {
-                if (out != in)
-                {
-                    memcpy(out, in, bufferSize);
-                }
-
                 return;
-            }
 
             _lpfCurve.SetStart({ 0, sampleRate / 2.0f });
             _lpfCurve.SetEnd({ 1, sampleRate / 2000.0f });
@@ -139,8 +130,8 @@ namespace SparkyStudios::Audio::Amplitude
             // Apply Gain
             for (AmUInt64 i = 0, l = frames * channels; i < l; i++)
             {
-                out[i] = out[i] * AmFloatToFixedPoint(gain) >> kAmFixedPointBits;
-                out[i] = AM_CLAMP(out[i], INT16_MIN, INT16_MAX);
+                out[i] = out[i] * gain;
+                out[i] = AM_CLAMP_AUDIO_SAMPLE(out[i]);
             }
         }
 
@@ -155,6 +146,24 @@ namespace SparkyStudios::Audio::Amplitude
 
     private:
         CurvePart _lpfCurve;
+    };
+
+    [[maybe_unused]] static class ObstructionProcessor final : public SoundProcessor
+    {
+    public:
+        ObstructionProcessor()
+            : SoundProcessor("ObstructionProcessor")
+        {}
+
+        SoundProcessorInstance* CreateInstance() override
+        {
+            return amnew(ObstructionProcessorInstance);
+        }
+
+        void DestroyInstance(SoundProcessorInstance* instance) override
+        {
+            amdelete(ObstructionProcessorInstance, (ObstructionProcessorInstance*)instance);
+        }
     } gObstructionProcessor; // NOLINT(cert-err58-cpp)
 } // namespace SparkyStudios::Audio::Amplitude
 

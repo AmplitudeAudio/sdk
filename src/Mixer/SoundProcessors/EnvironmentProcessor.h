@@ -28,18 +28,14 @@ namespace SparkyStudios::Audio::Amplitude
 {
     static std::unordered_map<AmEnvironmentID, std::unordered_map<AmObjectID, EffectInstance*>> gEnvironmentFilters = {};
 
-    [[maybe_unused]] static class EnvironmentProcessor final : public SoundProcessor
+    class EnvironmentProcessorInstance final : public SoundProcessorInstance
     {
     public:
-        EnvironmentProcessor()
-            : SoundProcessor("EnvironmentProcessor")
-        {}
-
         void Process(
-            AmInt16Buffer out,
-            AmInt16Buffer in,
+            AmAudioSampleBuffer out,
+            AmConstAudioSampleBuffer in,
             AmUInt64 frames,
-            AmUInt64 bufferSize,
+            AmSize bufferSize,
             AmUInt16 channels,
             AmUInt32 sampleRate,
             SoundInstance* sound) override
@@ -74,19 +70,21 @@ namespace SparkyStudios::Audio::Amplitude
                             std::unordered_map<AmSoundID, EffectInstance*> map{};
                             gEnvironmentFilters[environment.first] = map;
                         }
+
                         if (gEnvironmentFilters[environment.first].find(sound->GetId()) == gEnvironmentFilters[environment.first].end())
                         {
                             gEnvironmentFilters[environment.first][sound->GetId()] = effect->CreateInstance();
                         }
 
                         SoundChunk* scratch = SoundChunk::CreateChunk(frames, channels, MemoryPoolKind::Amplimix);
-                        memcpy(scratch->buffer, in, bufferSize);
+                        std::memcpy(scratch->buffer, in, bufferSize);
 
                         FilterInstance* filterInstance = gEnvironmentFilters[environment.first][sound->GetId()]->GetFilter();
                         filterInstance->SetFilterParameter(0, environment.second);
-                        filterInstance->Process(reinterpret_cast<AmInt16Buffer>(scratch->buffer), frames, bufferSize, channels, sampleRate);
+                        filterInstance->Process(
+                            reinterpret_cast<AmAudioSampleBuffer>(scratch->buffer), frames, bufferSize, channels, sampleRate);
 
-                        memcpy(out, scratch->buffer, bufferSize);
+                        std::memcpy(out, reinterpret_cast<AmAudioSampleBuffer>(scratch->buffer), bufferSize);
                         SoundChunk::DestroyChunk(scratch);
 
                         return;
@@ -95,16 +93,14 @@ namespace SparkyStudios::Audio::Amplitude
             }
 
             if (out != in)
-            {
-                memcpy(out, in, bufferSize);
-            }
+                std::memcpy(out, in, bufferSize);
         }
 
         void ProcessInterleaved(
-            AmInt16Buffer out,
-            AmInt16Buffer in,
+            AmAudioSampleBuffer out,
+            AmConstAudioSampleBuffer in,
             AmUInt64 frames,
-            AmUInt64 bufferSize,
+            AmSize bufferSize,
             AmUInt16 channels,
             AmUInt32 sampleRate,
             SoundInstance* sound) override
@@ -139,21 +135,21 @@ namespace SparkyStudios::Audio::Amplitude
                             std::unordered_map<AmSoundID, EffectInstance*> map{};
                             gEnvironmentFilters[environment.first] = map;
                         }
+
                         if (gEnvironmentFilters[environment.first].find(sound->GetId()) == gEnvironmentFilters[environment.first].end())
                         {
                             gEnvironmentFilters[environment.first][sound->GetId()] = effect->CreateInstance();
                         }
 
                         SoundChunk* scratch = SoundChunk::CreateChunk(frames, channels, MemoryPoolKind::Amplimix);
-                        memcpy(reinterpret_cast<AmInt16Buffer>(scratch->buffer), in, bufferSize);
+                        std::memcpy(reinterpret_cast<AmAudioSampleBuffer>(scratch->buffer), in, bufferSize);
 
                         FilterInstance* filterInstance = gEnvironmentFilters[environment.first][sound->GetId()]->GetFilter();
                         filterInstance->SetFilterParameter(0, environment.second);
-                        CallLogFunc("%d -> %f\n", environment.first, environment.second);
                         filterInstance->ProcessInterleaved(
-                            reinterpret_cast<AmInt16Buffer>(scratch->buffer), frames, bufferSize, channels, sampleRate);
+                            reinterpret_cast<AmAudioSampleBuffer>(scratch->buffer), frames, bufferSize, channels, sampleRate);
 
-                        memcpy(out, reinterpret_cast<AmInt16Buffer>(scratch->buffer), bufferSize);
+                        std::memcpy(out, reinterpret_cast<AmAudioSampleBuffer>(scratch->buffer), bufferSize);
                         SoundChunk::DestroyChunk(scratch);
 
                         return;
@@ -162,9 +158,7 @@ namespace SparkyStudios::Audio::Amplitude
             }
 
             if (out != in)
-            {
-                memcpy(out, in, bufferSize);
-            }
+                std::memcpy(out, in, bufferSize);
         }
 
         void Cleanup(SoundInstance* sound) override
@@ -174,13 +168,27 @@ namespace SparkyStudios::Audio::Amplitude
             {
                 auto environments = entity.GetEnvironments();
                 for (auto&& environment : environments)
-                {
                     if (gEnvironmentFilters.find(environment.first) != gEnvironmentFilters.end())
-                    {
                         gEnvironmentFilters[environment.first].erase(sound->GetId());
-                    }
-                }
             }
+        }
+    };
+
+    [[maybe_unused]] static class EnvironmentProcessor final : public SoundProcessor
+    {
+    public:
+        EnvironmentProcessor()
+            : SoundProcessor("EnvironmentProcessor")
+        {}
+
+        SoundProcessorInstance* CreateInstance() override
+        {
+            return amnew(EnvironmentProcessorInstance);
+        }
+
+        void DestroyInstance(SoundProcessorInstance* instance) override
+        {
+            amdelete(EnvironmentProcessorInstance, (EnvironmentProcessorInstance*)instance);
         }
     } gEnvironmentProcessor; // NOLINT(cert-err58-cpp)
 } // namespace SparkyStudios::Audio::Amplitude

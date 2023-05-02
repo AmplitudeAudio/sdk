@@ -21,6 +21,50 @@
 
 namespace SparkyStudios::Audio::Amplitude
 {
+    class EffectProcessorInstance final : public SoundProcessorInstance
+    {
+    public:
+        void Process(
+            AmAudioSampleBuffer out,
+            AmConstAudioSampleBuffer in,
+            AmUInt64 frames,
+            AmSize bufferSize,
+            AmUInt16 channels,
+            AmUInt32 sampleRate,
+            SoundInstance* sound) override
+        {
+            const EffectInstance* effect = sound->GetEffect();
+
+            if (out != in)
+                std::memcpy(out, in, bufferSize);
+
+            if (effect == nullptr)
+                return;
+
+            effect->GetFilter()->Process(out, frames, bufferSize, channels, sampleRate);
+        }
+
+        void ProcessInterleaved(
+            AmAudioSampleBuffer out,
+            AmConstAudioSampleBuffer in,
+            AmUInt64 frames,
+            AmSize bufferSize,
+            AmUInt16 channels,
+            AmUInt32 sampleRate,
+            SoundInstance* sound) override
+        {
+            const EffectInstance* effect = sound->GetEffect();
+
+            if (out != in)
+                std::memcpy(out, in, bufferSize);
+
+            if (effect == nullptr)
+                return;
+
+            effect->GetFilter()->ProcessInterleaved(out, frames, bufferSize, channels, sampleRate);
+        }
+    };
+
     [[maybe_unused]] static class EffectProcessor final : public SoundProcessor
     {
     public:
@@ -28,50 +72,14 @@ namespace SparkyStudios::Audio::Amplitude
             : SoundProcessor("EffectProcessor")
         {}
 
-        void Process(
-            AmInt16Buffer out,
-            AmInt16Buffer in,
-            AmUInt64 frames,
-            AmUInt64 bufferSize,
-            AmUInt16 channels,
-            AmUInt32 sampleRate,
-            SoundInstance* sound) override
+        SoundProcessorInstance* CreateInstance() override
         {
-            const EffectInstance* effect = sound->GetEffect();
-            if (effect == nullptr)
-            {
-                if (out != in)
-                {
-                    memcpy(out, in, bufferSize);
-                }
-
-                return;
-            }
-
-            effect->GetFilter()->Process(out, frames, bufferSize, channels, sampleRate);
+            return amnew(EffectProcessorInstance);
         }
 
-        void ProcessInterleaved(
-            AmInt16Buffer out,
-            AmInt16Buffer in,
-            AmUInt64 frames,
-            AmUInt64 bufferSize,
-            AmUInt16 channels,
-            AmUInt32 sampleRate,
-            SoundInstance* sound) override
+        void DestroyInstance(SoundProcessorInstance* instance) override
         {
-            const EffectInstance* effect = sound->GetEffect();
-            if (effect == nullptr)
-            {
-                if (out != in)
-                {
-                    memcpy(out, in, bufferSize);
-                }
-
-                return;
-            }
-
-            effect->GetFilter()->ProcessInterleaved(out, frames, bufferSize, channels, sampleRate);
+            amdelete(EffectProcessorInstance, (EffectProcessorInstance*)instance);
         }
     } gEffectProcessor; // NOLINT(cert-err58-cpp)
 } // namespace SparkyStudios::Audio::Amplitude

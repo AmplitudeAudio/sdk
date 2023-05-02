@@ -115,6 +115,7 @@ set(SA_SOURCE
     include/SparkyStudios/Audio/Amplitude/Math/Curve.h
     include/SparkyStudios/Audio/Amplitude/Math/HandmadeMath.h
     include/SparkyStudios/Audio/Amplitude/Math/Shape.h
+    include/SparkyStudios/Audio/Amplitude/Mixer/SoundProcessor.h
     include/SparkyStudios/Audio/Amplitude/Sound/Attenuation.h
     include/SparkyStudios/Audio/Amplitude/Sound/Collection.h
     include/SparkyStudios/Audio/Amplitude/Sound/Effect.h
@@ -125,7 +126,6 @@ set(SA_SOURCE
     include/SparkyStudios/Audio/Amplitude/Sound/Sound.h
     include/SparkyStudios/Audio/Amplitude/Sound/SoundBank.h
     include/SparkyStudios/Audio/Amplitude/Sound/SoundObject.h
-    include/SparkyStudios/Audio/Amplitude/Sound/SoundProcessor.h
     include/SparkyStudios/Audio/Amplitude/Sound/Switch.h
     include/SparkyStudios/Audio/Amplitude/Sound/SwitchContainer.h
     include/SparkyStudios/Audio/Amplitude/Amplitude.h

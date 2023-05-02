@@ -248,7 +248,7 @@ namespace SparkyStudios::Audio::Amplitude
 
         if (const auto* pipeline = config->mixer()->pipeline(); pipeline != nullptr && pipeline->size() > 0)
         {
-            _pipeline = new ProcessorPipeline();
+            _pipeline = amnew(ProcessorPipeline);
 
             for (flatbuffers::uoffset_t i = 0, l = pipeline->size(); i < l; ++i)
             {
@@ -257,8 +257,8 @@ namespace SparkyStudios::Audio::Amplitude
                 case AudioMixerPipelineItem_AudioProcessorMixer:
                     {
                         const auto* p = pipeline->GetAs<AudioProcessorMixer>(i);
-                        SoundProcessor* dryProcessor = SoundProcessor::Find(p->dry_processor()->str());
-                        SoundProcessor* wetProcessor = SoundProcessor::Find(p->wet_processor()->str());
+                        SoundProcessorInstance* dryProcessor = SoundProcessor::Construct(p->dry_processor()->str());
+                        SoundProcessorInstance* wetProcessor = SoundProcessor::Construct(p->wet_processor()->str());
 
                         if (dryProcessor == nullptr)
                         {
@@ -274,7 +274,7 @@ namespace SparkyStudios::Audio::Amplitude
                             continue;
                         }
 
-                        auto* mixer = new ProcessorMixer();
+                        auto* mixer = amnew(ProcessorMixer);
                         mixer->SetDryProcessor(dryProcessor, p->dry());
                         mixer->SetWetProcessor(wetProcessor, p->wet());
 
@@ -285,7 +285,7 @@ namespace SparkyStudios::Audio::Amplitude
                 case AudioMixerPipelineItem_AudioSoundProcessor:
                     {
                         const auto* p = pipeline->GetAs<AudioSoundProcessor>(i);
-                        SoundProcessor* soundProcessor = SoundProcessor::Find(p->processor()->str());
+                        SoundProcessorInstance* soundProcessor = SoundProcessor::Construct(p->processor()->str());
                         if (soundProcessor == nullptr)
                         {
                             CallLogFunc("[WARNING] Unable to find a registered sound processor with name: %s\n", p->processor()->c_str());
@@ -322,7 +322,7 @@ namespace SparkyStudios::Audio::Amplitude
 
         _audioThreadMutex = nullptr;
 
-        delete _pipeline;
+        amdelete(ProcessorPipeline, _pipeline);
         _pipeline = nullptr;
     }
 

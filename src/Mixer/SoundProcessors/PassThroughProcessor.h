@@ -21,6 +21,36 @@
 
 namespace SparkyStudios::Audio::Amplitude
 {
+    class PassThroughProcessorInstance : public SoundProcessorInstance
+    {
+    public:
+        void Process(
+            AmAudioSampleBuffer out,
+            AmConstAudioSampleBuffer in,
+            AmUInt64 frames,
+            AmSize bufferSize,
+            AmUInt16 channels,
+            AmUInt32 sampleRate,
+            SoundInstance* sound) override
+        {
+            if (out != in)
+                std::memcpy(out, in, bufferSize);
+        }
+
+        void ProcessInterleaved(
+            AmAudioSampleBuffer out,
+            AmConstAudioSampleBuffer in,
+            AmUInt64 frames,
+            AmSize bufferSize,
+            AmUInt16 channels,
+            AmUInt32 sampleRate,
+            SoundInstance* sound) override
+        {
+            if (out != in)
+                std::memcpy(out, in, bufferSize);
+        }
+    };
+
     [[maybe_unused]] static class PassThroughProcessor final : public SoundProcessor
     {
     public:
@@ -28,34 +58,14 @@ namespace SparkyStudios::Audio::Amplitude
             : SoundProcessor("PassThroughProcessor")
         {}
 
-        void Process(
-            AmInt16Buffer out,
-            AmInt16Buffer in,
-            AmUInt64 frames,
-            AmUInt64 bufferSize,
-            AmUInt16 channels,
-            AmUInt32 sampleRate,
-            SoundInstance* sound) override
+        SoundProcessorInstance* CreateInstance() override
         {
-            if (out != in)
-            {
-                memcpy(out, in, bufferSize);
-            }
+            return amnew(PassThroughProcessorInstance);
         }
 
-        void ProcessInterleaved(
-            AmInt16Buffer out,
-            AmInt16Buffer in,
-            AmUInt64 frames,
-            AmUInt64 bufferSize,
-            AmUInt16 channels,
-            AmUInt32 sampleRate,
-            SoundInstance* sound) override
+        void DestroyInstance(SoundProcessorInstance* instance) override
         {
-            if (out != in)
-            {
-                memcpy(out, in, bufferSize);
-            }
+            amdelete(PassThroughProcessorInstance, (PassThroughProcessorInstance*)instance);
         }
     } gPassThroughProcessor; // NOLINT(cert-err58-cpp)
 } // namespace SparkyStudios::Audio::Amplitude
