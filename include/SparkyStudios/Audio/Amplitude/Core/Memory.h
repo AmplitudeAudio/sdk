@@ -19,7 +19,34 @@
 
 #include <SparkyStudios/Audio/Amplitude/Core/Common.h>
 
+/**
+ * @brief Shortcut access to the Amplitude's memory manager instance.
+ */
 #define amMemory SparkyStudios::Audio::Amplitude::MemoryManager::GetInstance()
+
+/**
+ * @brief Allocates memory for a new object using the memory manager.
+ *
+ * This will create a new memory allocation in the Default pool. The allocated
+ * memory will be freed when the object is destroyed using @a amdelete.
+ *
+ * @see amdelete
+ */
+#define amnew(_type_, ...)                                                                                                                 \
+    new (amMemory->Malign(SparkyStudios::Audio::Amplitude::MemoryPoolKind::Default, sizeof(_type_), alignof(_type_))) _type_(__VA_ARGS__)
+
+/**
+ * @brief Deallocates a memory allocated with @a amnew.
+ *
+ * This will call the object's destructor before the memory is freed.
+ *
+ * @see amnew
+ */
+#define amdelete(_type_, _ptr_)                                                                                                            \
+    {                                                                                                                                      \
+        (_ptr_)->~_type_();                                                                                                                \
+        amMemory->Free(SparkyStudios::Audio::Amplitude::MemoryPoolKind::Default, (_ptr_));                                                 \
+    }
 
 namespace SparkyStudios::Audio::Amplitude
 {
@@ -53,6 +80,12 @@ namespace SparkyStudios::Audio::Amplitude
          *
          */
         Codec,
+
+        /**
+         * @brief Default allocations pool. Use this when the allocated memory pool is not available.
+         * @note amneww use this pool to allocate memory from the memory manager.
+         */
+        Default,
 
         /**
          * @brief The total number of memory pools.
@@ -166,7 +199,7 @@ namespace SparkyStudios::Audio::Amplitude
          */
         std::atomic<AmUInt64> freeCount;
 
-		/**
+        /**
          * @brief Default constructor.
          */
         MemoryPoolStats()
