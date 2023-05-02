@@ -7,3 +7,6 @@
 [submodule "dependencies/libsamplerate"]
 	path = dependencies/libsamplerate
 	url = https://github.com/libsndfile/libsamplerate.git
+[submodule "dependencies/zita-resampler"]
+	path = dependencies/zita-resampler
+	url = https://github.com/digital-stage/zita-resampler.git

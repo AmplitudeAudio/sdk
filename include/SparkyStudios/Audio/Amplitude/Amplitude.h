@@ -40,6 +40,7 @@
 #include <SparkyStudios/Audio/Amplitude/Math/Curve.h>
 #include <SparkyStudios/Audio/Amplitude/Math/HandmadeMath.h>
 
+#include <SparkyStudios/Audio/Amplitude/Mixer/Resampler.h>
 #include <SparkyStudios/Audio/Amplitude/Mixer/SoundProcessor.h>
 
 #include <SparkyStudios/Audio/Amplitude/Sound/Attenuation.h>

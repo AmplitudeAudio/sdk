@@ -31,22 +31,36 @@ set(OBJ_DIR ${CMAKE_CURRENT_BINARY_DIR}/obj)
 # Setup flatbuffers
 # ------------------------------------------------------------------------------
 set(FLATBUFFERS_BUILD_TESTS OFF CACHE BOOL "")
+
 if(NOT TARGET flatc)
     add_subdirectory("dependencies/flatbuffers" ${OBJ_DIR}/flatbuffers EXCLUDE_FROM_ALL)
     set(FLATC_LIBRARY flatc)
     set(FLATC_INCLUDE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/dependencies/flatbuffers/include)
 endif()
+
 # ------------------------------------------------------------------------------
 
 # Setup libsamplerate
 # ------------------------------------------------------------------------------
 set(LIBSAMPLERATE_EXAMPLES OFF CACHE BOOL "")
 set(LIBSAMPLERATE_INSTALL ON CACHE BOOL "")
-if (NOT TARGET samplerate)
+
+if(NOT TARGET samplerate)
     list(APPEND CMAKE_MODULE_PATH ${CMAKE_CURRENT_SOURCE_DIR}/dependencies/libsamplerate/cmake)
     add_subdirectory("dependencies/libsamplerate" ${OBJ_DIR}/libsamplerate EXCLUDE_FROM_ALL)
     set(LIBSAMPLERATE_INCLUDE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/dependencies/libsamplerate/include)
 endif()
+
+# ------------------------------------------------------------------------------
+
+# Setup libzita-resampler
+# ------------------------------------------------------------------------------
+if(NOT TARGET zita-resampler)
+    list(APPEND CMAKE_MODULE_PATH ${CMAKE_CURRENT_SOURCE_DIR}/dependencies/zita-resampler/cmake)
+    add_subdirectory("dependencies/zita-resampler" ${OBJ_DIR}/zita-resampler EXCLUDE_FROM_ALL)
+    set(LIBZITA_INCLUDE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/dependencies/zita-resampler/source)
+endif()
+
 # ------------------------------------------------------------------------------
 
 # Setup libsimdpp
@@ -115,6 +129,7 @@ set(SA_SOURCE
     include/SparkyStudios/Audio/Amplitude/Math/Curve.h
     include/SparkyStudios/Audio/Amplitude/Math/HandmadeMath.h
     include/SparkyStudios/Audio/Amplitude/Math/Shape.h
+    include/SparkyStudios/Audio/Amplitude/Mixer/Resampler.h
     include/SparkyStudios/Audio/Amplitude/Mixer/SoundProcessor.h
     include/SparkyStudios/Audio/Amplitude/Sound/Attenuation.h
     include/SparkyStudios/Audio/Amplitude/Sound/Collection.h
@@ -185,6 +200,8 @@ set(SA_SOURCE
     src/Math/Curve.cpp
     src/Math/Shape.cpp
 
+    src/Mixer/Resamplers/R8BrainResampler.h
+    src/Mixer/Resamplers/LibzitaResampler.h
     src/Mixer/SoundProcessors/EffectProcessor.h
     src/Mixer/SoundProcessors/EnvironmentProcessor.h
     src/Mixer/SoundProcessors/ObstructionProcessor.h
@@ -196,6 +213,7 @@ set(SA_SOURCE
     src/Mixer/ProcessorPipeline.h
     src/Mixer/RealChannel.cpp
     src/Mixer/RealChannel.h
+    src/Mixer/Resampler.cpp
     src/Mixer/SoundData.cpp
     src/Mixer/SoundData.h
     src/Mixer/SoundProcessor.cpp
@@ -299,6 +317,7 @@ include_directories(src
     ${FLATC_INCLUDE_DIR}
     ${SIMDPP_INCLUDE_DIR}
     ${LIBSAMPLERATE_INCLUDE_DIR}
+    ${LIBZITA_INCLUDE_DIR}
     ${AM_FLATBUFFERS_GENERATED_INCLUDES_DIR}
 )
 
@@ -306,18 +325,19 @@ add_library(${PROJECT_NAME} STATIC ${SA_SOURCE})
 
 target_link_libraries(${PROJECT_NAME} PRIVATE flatbuffers)
 target_link_libraries(${PROJECT_NAME} PRIVATE samplerate)
+target_link_libraries(${PROJECT_NAME} PRIVATE zita-resampler)
 
 add_dependencies(${PROJECT_NAME}
     generated_includes
 )
 
 if(UNIX)
-  find_package(Threads REQUIRED)
+    find_package(Threads REQUIRED)
 
-  target_link_libraries(${PROJECT_NAME}
-    PUBLIC Threads::Threads
-    ${CMAKE_DL_LIBS}
-  )
+    target_link_libraries(${PROJECT_NAME}
+        PUBLIC Threads::Threads
+        ${CMAKE_DL_LIBS}
+    )
 endif()
 
 add_subdirectory(tools/amac)
@@ -328,7 +348,7 @@ if(BUILD_SAMPLES)
   add_subdirectory(samples)
 endif()
 
-######################################################
+# #####################################################
 # INSTALL
 
 if(MSVC)
@@ -339,10 +359,10 @@ else()
     set(RUNTIME_OUTPUT_DIRECTORY "linux")
 endif()
 
-set(AM_LIB_DESTINATION   "sdk/lib/${RUNTIME_OUTPUT_DIRECTORY}")
-set(AM_INC_DESTINATION   "sdk/include")
-set(AM_SHM_DESTINATION   "sdk/schemas")
-set(AM_BIN_DESTINATION   "sdk/bin/${RUNTIME_OUTPUT_DIRECTORY}")
+set(AM_LIB_DESTINATION "sdk/lib/${RUNTIME_OUTPUT_DIRECTORY}")
+set(AM_INC_DESTINATION "sdk/include")
+set(AM_SHM_DESTINATION "sdk/schemas")
+set(AM_BIN_DESTINATION "sdk/bin/${RUNTIME_OUTPUT_DIRECTORY}")
 
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/${AM_BIN_DESTINATION}")
 set(CMAKE_LIBRARY_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/${AM_LIB_DESTINATION}")
@@ -351,7 +371,7 @@ set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/${AM_BIN_DESTINATION}")
 set(CMAKE_INSTALL_PREFIX ${CMAKE_CURRENT_LIST_DIR})
 
 install(
-    TARGETS ${PROJECT_NAME} amac samplerate
+    TARGETS ${PROJECT_NAME} amac samplerate zita-resampler
     EXPORT AmplitudeAudioSDKConfig
     ARCHIVE DESTINATION ${AM_LIB_DESTINATION}
     LIBRARY DESTINATION ${AM_LIB_DESTINATION}
@@ -386,6 +406,12 @@ export(
     TARGETS samplerate
     NAMESPACE SampleRate::
     FILE "${CMAKE_CURRENT_BINARY_DIR}/SampleRateConfig.cmake"
+)
+
+export(
+    TARGETS zita-resampler
+    NAMESPACE zita-resampler::
+    FILE "${CMAKE_CURRENT_BINARY_DIR}/zita-resamplerConfig.cmake"
 )
 
 export(
