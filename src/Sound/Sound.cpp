@@ -250,7 +250,7 @@ namespace SparkyStudios::Audio::Amplitude
         {
             _soundData = SoundChunk::CreateChunk(m_format.GetFramesCount(), m_format.GetNumChannels());
 
-            if (_decoder->Load(reinterpret_cast<AmInt16Buffer>(_soundData->buffer)) != m_format.GetFramesCount())
+            if (_decoder->Load(reinterpret_cast<AmAudioSampleBuffer>(_soundData->buffer)) != m_format.GetFramesCount())
             {
                 CallLogFunc("Could not load a sound instance. Unable to read data from the parent sound.\n");
                 return nullptr;
@@ -295,7 +295,7 @@ namespace SparkyStudios::Audio::Amplitude
     {
         Destroy();
 
-        delete static_cast<SoundData*>(_userData);
+        amdelete(SoundData, (SoundData*)_userData);
         _userData = nullptr;
 
         delete _effectInstance;
@@ -311,32 +311,26 @@ namespace SparkyStudios::Audio::Amplitude
         const AmUInt16 channels = _parent->m_format.GetNumChannels();
         const AmUInt64 frames = _parent->m_format.GetFramesCount();
 
+        SoundData* data = nullptr;
+
         if (_parent->_stream)
         {
             SoundChunk* chunk = SoundChunk::CreateChunk(amEngine->GetSamplesPerStream(), channels);
-            SoundData* data = SoundData::CreateMusic(_parent->m_format, chunk, frames, this);
-
-            if (!data)
-            {
-                CallLogFunc("Could not load a sound instance. Unable to read data from the parent sound.\n");
-                return;
-            }
-
-            SetUserData(data);
+            data = SoundData::CreateMusic(_parent->m_format, chunk, frames, this);
         }
         else
         {
             SoundChunk* chunk = _parent->AcquireSoundData();
-            SoundData* data = SoundData::CreateSound(_parent->m_format, chunk, frames, this);
-
-            if (!data)
-            {
-                CallLogFunc("Could not load a sound instance. Unable to read data from the parent sound.\n");
-                return;
-            }
-
-            SetUserData(data);
+            data = SoundData::CreateSound(_parent->m_format, chunk, frames, this);
         }
+
+        if (data == nullptr)
+        {
+            CallLogFunc("Could not load a sound instance. Unable to read data from the parent sound.\n");
+            return;
+        }
+
+        SetUserData(data);
     }
 
     const SoundInstanceSettings& SoundInstance::GetSettings() const
@@ -366,7 +360,7 @@ namespace SparkyStudios::Audio::Amplitude
         const AmUInt16 channels = _parent->m_format.GetNumChannels();
 
         AmUInt64 n, l = frames, o = offset, r = 0;
-        auto* b = reinterpret_cast<AmInt16Buffer>(data->chunk->buffer);
+        auto b = reinterpret_cast<AmAudioSampleBuffer>(data->chunk->buffer);
 
         bool needFill = true;
         do
@@ -395,9 +389,7 @@ namespace SparkyStudios::Audio::Amplitude
         {
             static_cast<SoundData*>(_userData)->Destroy(_parent->_stream);
             if (!_parent->_stream)
-            {
                 _parent->ReleaseSoundData();
-            }
         }
     }
 

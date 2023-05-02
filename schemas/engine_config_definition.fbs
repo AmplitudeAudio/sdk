@@ -78,29 +78,6 @@ enum eGameEngineUpAxis : ushort {
   Z = 1,
 }
 
-/// The list of sample rate conversion quality levels.
-enum eSampleRateConversionQuality : ushort {
-  /// This is a bandlimited interpolator derived from the mathematical sinc function
-  /// and this is the highest quality sinc based converter, providing a worst case
-  /// Signal-to-Noise Ratio (SNR) of 97 decibels (dB) at a bandwidth of 97%.
-  SINC_Best       = 0,
-
-  /// This is another bandlimited interpolator much like SINC_Best. It has an SNR of
-  // 97dB and a bandwidth of 90%. The speed of the conversion is much faster than SINC_Best.
-  SINC_Medium     = 1,
-
-  /// This is the fastest bandlimited interpolator and has an SNR of 97dB and a bandwidth of 80%.
-  SINC_Fastest    = 2,
-
-  /// A Zero Order Hold converter (interpolated value is equal to the last value). The quality is
-  /// poor but the conversion speed is blindlingly fast.
-  ZeroOrderHold   = 3,
-
-  /// A linear converter. Again the quality is poor, but the conversion speed is blindingly fast.
-  /// This is the default value.
-  Linear          = 4
-}
-
 /// Playback device configuration
 table PlaybackOutputConfig {
   /// Output sampling frequency in samples per second.
@@ -156,15 +133,6 @@ table AudioMixerConfig {
   /// on virtual channels, but information about the channel is
   /// still tracked.
   virtual_channels:uint;
-
-  /// Specify the number of samples to process per stream. This is
-  /// used on sound assets where stream is set to true. Modifying this
-  /// value don't impact to processing speed, but the memory used by
-  /// the mixer for each streamed audio (an higher value means more memory allocated).
-  samples_per_stream:uint = 512;
-
-  /// Configures the samplerate conversion quality.
-  sample_rate_conversion_quality:eSampleRateConversionQuality = Linear;
 
   /// Configures the mixer pipeline. The pipeline is responsible to
   /// process the sound (ie. apply effects) before it is sent to the audio device.

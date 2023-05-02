@@ -79,7 +79,7 @@ namespace SparkyStudios::Audio::Amplitude
         void AdvanceFrame(AmTime deltaTime) override;
 
         void ProcessChannel(
-            AmInt16Buffer buffer, AmUInt16 channel, AmUInt64 frames, AmUInt16 channels, AmUInt32 sampleRate, bool isInterleaved) override;
+            AmAudioSampleBuffer buffer, AmUInt16 channel, AmUInt64 frames, AmUInt16 channels, AmUInt32 sampleRate, bool isInterleaved) override;
 
     private:
         static AmReal32 GenerateWaveform(AmInt32 waveform, AmReal32 p);

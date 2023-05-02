@@ -55,6 +55,7 @@ namespace SparkyStudios::Audio::Amplitude
         _realChannel._loop.clear();
         _realChannel._gain.clear();
 
+        _dopplerFactors.clear();
         _channelState = ChannelPlaybackState::Stopped;
         _switchContainer = nullptr;
         _collection = nullptr;

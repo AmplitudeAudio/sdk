@@ -25,7 +25,7 @@ namespace SparkyStudios::Audio::Amplitude
 
     struct BiquadResonantStateData
     {
-        AmInt32 y1, y2, x1, x2;
+        AmReal32 y1, y2, x1, x2;
     };
 
     class BiquadResonantFilter : public Filter
@@ -100,15 +100,15 @@ namespace SparkyStudios::Audio::Amplitude
         ~BiquadResonantFilterInstance() override = default;
 
         void ProcessChannel(
-            AmInt16Buffer buffer, AmUInt16 channel, AmUInt64 frames, AmUInt16 channels, AmUInt32 sampleRate, bool isInterleaved) override;
+            AmAudioSampleBuffer buffer, AmUInt16 channel, AmUInt64 frames, AmUInt16 channels, AmUInt32 sampleRate, bool isInterleaved) override;
 
-        AmInt16 ProcessSample(AmInt16 sample, AmUInt16 channel, AmUInt32 sampleRate) override;
+        AmAudioSample ProcessSample(AmAudioSample sample, AmUInt16 channel, AmUInt32 sampleRate) override;
 
     private:
         void ComputeBiquadResonantParams();
 
         BiquadResonantStateData _state[AM_MAX_CHANNELS];
-        AmInt32 _a0, _a1, _a2, _b1, _b2;
+        AmReal32 _a0, _a1, _a2, _b1, _b2;
         bool _isDirty;
         AmUInt32 _sampleRate;
     };

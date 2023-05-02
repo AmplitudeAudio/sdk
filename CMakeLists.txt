@@ -232,8 +232,8 @@ set(SA_SOURCE
     src/Sound/Filters/BiquadResonantFilter.h
     src/Sound/Filters/DCRemovalFilter.cpp
     src/Sound/Filters/DCRemovalFilter.h
-    src/Sound/Filters/EchoFilter.cpp
-    src/Sound/Filters/EchoFilter.h
+    src/Sound/Filters/DelayFilter.cpp
+    src/Sound/Filters/DelayFilter.h
     src/Sound/Filters/EqualizerFilter.cpp
     src/Sound/Filters/EqualizerFilter.h
     src/Sound/Filters/FFTFilter.cpp

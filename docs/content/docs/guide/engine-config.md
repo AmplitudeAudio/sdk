@@ -91,30 +91,6 @@ Specifies the maximum number of channels to render by Amplimix. It equals the nu
 
 Specifies the maximum number of virtual channels to use in addition to active channels. Amplimix doesn't render virtual channels, but all the information about them are still tracked.
 
-#### samples_per_stream
-
-`type: uint`<br/>`default: 512`
-
-Specifies the maximum number of samples to process per audio stream. This is used on streamed sound assets. Modifying this value won't highly increase the processing speed, but will need more memory for higher values.
-
-#### sample_rate_conversion_quality
-
-`type: enum`<br/>`default: Linear`
-
-Speccifies the quality for sample rate conversions. This setting can take five (05) different values:
-
-| ID  | Name          |
-| --- | ------------- |
-| 0   | SINC_Best     |
-| 1   | SINC_Medium   |
-| 2   | SINC_Fastest  |
-| 3   | ZeroOrderHold |
-| 4   | Linear        |
-
-{{< tip "info" >}}
-Amplitude uses [libsamplerate](https://github.com/libsndfile/libsamplerate) as the sample rate conversion library. You can read its documentation for more information about the different conversion quality settings.
-{{< /tip >}}
-
 #### pipeline
 
 `type: array`<br/>`required`

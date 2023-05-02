@@ -18,42 +18,44 @@
 #define SS_AMPLITUDE_AUDIO_MIXERPIPELINE_H
 
 #include <SparkyStudios/Audio/Amplitude/Core/Common.h>
-#include <SparkyStudios/Audio/Amplitude/Sound/SoundProcessor.h>
+#include <SparkyStudios/Audio/Amplitude/Mixer/SoundProcessor.h>
 
 namespace SparkyStudios::Audio::Amplitude
 {
-    class ProcessorPipeline : SoundProcessor
+    class ProcessorPipeline : SoundProcessorInstance
     {
     public:
         ProcessorPipeline();
         ~ProcessorPipeline() override;
 
-        void Append(SoundProcessor* processor);
+        void Append(SoundProcessorInstance* processor);
 
-        void Insert(SoundProcessor* processor, AmSize index);
+        void Insert(SoundProcessorInstance* processor, AmSize index);
 
         void Process(
-            AmInt16Buffer out,
-            AmInt16Buffer in,
+            AmAudioSampleBuffer out,
+            AmConstAudioSampleBuffer in,
             AmUInt64 frames,
-            AmUInt64 bufferSize,
+            AmSize bufferSize,
             AmUInt16 channels,
             AmUInt32 sampleRate,
             SoundInstance* sound) override;
 
         void ProcessInterleaved(
-            AmInt16Buffer out,
-            AmInt16Buffer in,
+            AmAudioSampleBuffer out,
+            AmConstAudioSampleBuffer in,
             AmUInt64 frames,
-            AmUInt64 bufferSize,
+            AmSize bufferSize,
             AmUInt16 channels,
             AmUInt32 sampleRate,
             SoundInstance* sound) override;
 
         void Cleanup(SoundInstance* sound) override;
 
+        AmSize GetOutputBufferSize(AmUInt64 frames, AmSize bufferSize, AmUInt16 channels, AmUInt32 sampleRate) override;
+
     private:
-        std::vector<SoundProcessor*> _processors;
+        std::vector<SoundProcessorInstance*> _processors;
     };
 } // namespace SparkyStudios::Audio::Amplitude
 

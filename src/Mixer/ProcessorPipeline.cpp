@@ -12,6 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+#include <SparkyStudios/Audio/Amplitude/Core/Memory.h>
+
 #include <Mixer/ProcessorPipeline.h>
 
 namespace SparkyStudios::Audio::Amplitude
@@ -22,15 +24,18 @@ namespace SparkyStudios::Audio::Amplitude
 
     ProcessorPipeline::~ProcessorPipeline()
     {
+        for (auto& processor : _processors)
+            amdelete(SoundProcessorInstance, processor);
+
         _processors.clear();
     }
 
-    void ProcessorPipeline::Append(SoundProcessor* processor)
+    void ProcessorPipeline::Append(SoundProcessorInstance* processor)
     {
         _processors.push_back(processor);
     }
 
-    void ProcessorPipeline::Insert(SoundProcessor* processor, AmSize index)
+    void ProcessorPipeline::Insert(SoundProcessorInstance* processor, AmSize index)
     {
         if (index >= _processors.size())
         {
@@ -43,15 +48,15 @@ namespace SparkyStudios::Audio::Amplitude
     }
 
     void ProcessorPipeline::Process(
-        AmInt16Buffer out,
-        AmInt16Buffer in,
+        AmAudioSampleBuffer out,
+        AmConstAudioSampleBuffer in,
         AmUInt64 frames,
-        AmUInt64 bufferSize,
+        AmSize bufferSize,
         AmUInt16 channels,
         AmUInt32 sampleRate,
         SoundInstance* sound)
     {
-        AmInt16Buffer cIn = in;
+        AmConstAudioSampleBuffer cIn = in;
 
         for (auto&& p : _processors)
         {
@@ -61,15 +66,15 @@ namespace SparkyStudios::Audio::Amplitude
     }
 
     void ProcessorPipeline::ProcessInterleaved(
-        AmInt16Buffer out,
-        AmInt16Buffer in,
+        AmAudioSampleBuffer out,
+        AmConstAudioSampleBuffer in,
         AmUInt64 frames,
-        AmUInt64 bufferSize,
+        AmSize bufferSize,
         AmUInt16 channels,
         AmUInt32 sampleRate,
         SoundInstance* sound)
     {
-        AmInt16Buffer cIn = in;
+        AmConstAudioSampleBuffer cIn = in;
 
         for (auto&& p : _processors)
         {
@@ -81,8 +86,15 @@ namespace SparkyStudios::Audio::Amplitude
     void ProcessorPipeline::Cleanup(SoundInstance* sound)
     {
         for (auto&& p : _processors)
-        {
             p->Cleanup(sound);
-        }
+    }
+
+    AmSize ProcessorPipeline::GetOutputBufferSize(AmUInt64 frames, AmSize bufferSize, AmUInt16 channels, AmUInt32 sampleRate)
+    {
+        AmSize outputSize = 0;
+        for (auto&& p : _processors)
+            outputSize = AM_MAX(p->GetOutputBufferSize(frames, bufferSize, channels, sampleRate), outputSize);
+
+        return outputSize;
     }
 } // namespace SparkyStudios::Audio::Amplitude

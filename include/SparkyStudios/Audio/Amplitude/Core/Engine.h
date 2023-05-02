@@ -366,7 +366,7 @@ namespace SparkyStudios::Audio::Amplitude
          *
          * @param filename The filename containing the flatbuffer binary data.
          */
-        [[nodiscard]] AttenuationHandle GetAttenuationHandleFromFile(AmOsString filename) const;
+        [[nodiscard]] AttenuationHandle GetAttenuationHandleFromFile(const AmOsString& filename) const;
 
         /**
          * @brief Get a SwitchHandle given its name as defined in its JSON data.
@@ -387,7 +387,7 @@ namespace SparkyStudios::Audio::Amplitude
          *
          * @param filename The filename containing the flatbuffer binary data.
          */
-        [[nodiscard]] SwitchHandle GetSwitchHandleFromFile(AmOsString filename) const;
+        [[nodiscard]] SwitchHandle GetSwitchHandleFromFile(const AmOsString& filename) const;
 
         /**
          * @brief Get a RtpcHandle given its name as defined in its JSON data.
@@ -408,7 +408,7 @@ namespace SparkyStudios::Audio::Amplitude
          *
          * @param filename The filename containing the flatbuffer binary data.
          */
-        [[nodiscard]] RtpcHandle GetRtpcHandleFromFile(AmOsString filename) const;
+        [[nodiscard]] RtpcHandle GetRtpcHandleFromFile(const AmOsString& filename) const;
 
         /**
          * @brief Get a EffectHandle given its name as defined in its JSON data.
@@ -429,7 +429,7 @@ namespace SparkyStudios::Audio::Amplitude
          *
          * @param filename The filename containing the flatbuffer binary data.
          */
-        [[nodiscard]] EffectHandle GetEffectHandleFromFile(AmOsString filename) const;
+        [[nodiscard]] EffectHandle GetEffectHandleFromFile(const AmOsString& filename) const;
 
         /**
          * @brief Adjusts the gain on the master bus.
@@ -1143,13 +1143,6 @@ namespace SparkyStudios::Audio::Amplitude
          * @return The number of samples per stream.
          */
         [[nodiscard]] AmUInt32 GetSamplesPerStream() const;
-
-        /**
-         * @brief Get the mixer sample rate conversion quality.
-         *
-         * @return The sample rate conversion quality.
-         */
-        [[nodiscard]] AmUInt16 GetSampleRateConversionQuality() const;
 
         /**
          * @brief Checks whether the game is tracking environment amounts

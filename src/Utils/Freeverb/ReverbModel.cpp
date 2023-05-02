@@ -87,7 +87,7 @@ namespace Freeverb
     }
 
     void ReverbModel::ProcessReplace(
-        AmInt16Buffer inputL, AmInt16Buffer inputR, AmInt16Buffer outputL, AmInt16Buffer outputR, AmUInt64 frames, AmUInt32 skip)
+        AmAudioSampleBuffer inputL, AmAudioSampleBuffer inputR, AmAudioSampleBuffer outputL, AmAudioSampleBuffer outputR, AmUInt64 frames, AmUInt32 skip)
     {
         AmReal32 outL, outR, input;
 
@@ -97,7 +97,7 @@ namespace Freeverb
         while (frames-- > 0)
         {
             outL = outR = 0;
-            input = (AmInt16ToReal32(*inputL) + AmInt16ToReal32(*inputR)) * _gain;
+            input = (*inputL + *inputR) * _gain;
 
             // Accumulate comb filters in parallel
             for (AmUInt32 i = 0; i < kNumCombs; i++)
@@ -114,8 +114,14 @@ namespace Freeverb
             }
 
             // Calculate output REPLACING anything already there
-            *outputL = AmReal32ToInt16(outL * _wet1 + outR * _wet2 + AmInt16ToReal32(*inputL) * _dry);
-            *outputR = AmReal32ToInt16(outR * _wet1 + outL * _wet2 + AmInt16ToReal32(*inputR) * _dry);
+            outL = outL * _wet1 + outR * _wet2 + *inputL * _dry;
+            outR = outR * _wet1 + outL * _wet2 + *inputR * _dry;
+
+            undenormalise(outL);
+            undenormalise(outR);
+
+            *outputL = outL;
+            *outputR = outR;
 
             // Increment sample pointers, allowing for interleave (if any)
             inputL += skip;
@@ -126,7 +132,7 @@ namespace Freeverb
     }
 
     void ReverbModel::ProcessMix(
-        AmInt16Buffer inputL, AmInt16Buffer inputR, AmInt16Buffer outputL, AmInt16Buffer outputR, AmUInt64 frames, AmUInt32 skip)
+        AmAudioSampleBuffer inputL, AmAudioSampleBuffer inputR, AmAudioSampleBuffer outputL, AmAudioSampleBuffer outputR, AmUInt64 frames, AmUInt32 skip)
     {
         AmReal32 outL, outR, input;
 
@@ -136,7 +142,7 @@ namespace Freeverb
         while (frames-- > 0)
         {
             outL = outR = 0;
-            input = (AmInt16ToReal32(*inputL) + AmInt16ToReal32(*inputR)) * _gain;
+            input = (*inputL + *inputR) * _gain;
 
             // Accumulate comb filters in parallel
             for (AmUInt32 i = 0; i < kNumCombs; i++)
@@ -153,8 +159,8 @@ namespace Freeverb
             }
 
             // Calculate output MIXING with anything already there
-            *outputL += AmReal32ToInt16(outL * _wet1 + outR * _wet2 + AmInt16ToReal32(*inputL) * _dry);
-            *outputR += AmReal32ToInt16(outR * _wet1 + outL * _wet2 + AmInt16ToReal32(*inputR) * _dry);
+            *outputL += outL * _wet1 + outR * _wet2 + *inputL * _dry;
+            *outputR += outR * _wet1 + outL * _wet2 + *inputR * _dry;
 
             // Increment sample pointers, allowing for interleave (if any)
             inputL += skip;
@@ -190,10 +196,7 @@ namespace Freeverb
         {
             _combL[i].SetFeedback(_roomSize1);
             _combR[i].SetFeedback(_roomSize1);
-        }
 
-        for (i = 0; i < kNumCombs; i++)
-        {
             _combL[i].SetDamp(_damp1);
             _combR[i].SetDamp(_damp1);
         }
@@ -215,7 +218,7 @@ namespace Freeverb
         _dirty = true;
     }
 
-    AmReal32 ReverbModel::GetRoomSize()
+    AmReal32 ReverbModel::GetRoomSize() const
     {
         return (_roomSize - kOffsetRoom) / kScaleRoom;
     }
@@ -229,7 +232,7 @@ namespace Freeverb
         _dirty = true;
     }
 
-    AmReal32 ReverbModel::GetDamp()
+    AmReal32 ReverbModel::GetDamp() const
     {
         return _damp / kScaleDamp;
     }
@@ -243,7 +246,7 @@ namespace Freeverb
         _dirty = true;
     }
 
-    AmReal32 ReverbModel::GetWet()
+    AmReal32 ReverbModel::GetWet() const
     {
         return _wet / kScaleWet;
     }
@@ -256,7 +259,7 @@ namespace Freeverb
         _dry = value * kScaleDry;
     }
 
-    AmReal32 ReverbModel::GetDry()
+    AmReal32 ReverbModel::GetDry() const
     {
         return _dry / kScaleDry;
     }
@@ -270,7 +273,7 @@ namespace Freeverb
         _dirty = true;
     }
 
-    AmReal32 ReverbModel::GetWidth()
+    AmReal32 ReverbModel::GetWidth() const
     {
         return _width;
     }
@@ -284,11 +287,8 @@ namespace Freeverb
         _dirty = true;
     }
 
-    AmReal32 ReverbModel::GetMode()
+    AmReal32 ReverbModel::GetMode() const
     {
-        if (_mode >= kFreezeMode)
-            return 1;
-        else
-            return 0;
+        return _mode >= kFreezeMode ? 1 : 0;
     }
 } // namespace Freeverb

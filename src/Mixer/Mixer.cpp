@@ -16,7 +16,6 @@
 
 #include <Core/EngineInternalState.h>
 #include <Mixer/Mixer.h>
-#include <Utils/miniaudio/miniaudio_utils.h>
 #include <Utils/Utils.h>
 
 #define AMPLIMIX_STORE(A, C) std::atomic_store_explicit(A, C, std::memory_order_release)
@@ -25,10 +24,11 @@
 
 namespace SparkyStudios::Audio::Amplitude
 {
-#if defined(AM_SSE_INTRINSICS)
-    constexpr AmUInt32 kSimdProcessedFramesCount = AudioDataUnit::length;
-    constexpr AmUInt32 kSimdProcessedFramesCountHalf = (kSimdProcessedFramesCount / 2);
-#endif // AM_SSE_INTRINSICS
+#if defined(AM_SIMD_INTRINSICS)
+    constexpr AmUInt32 kProcessedFramesCount = AmAudioFrame::length;
+#else
+    constexpr AmUInt32 kProcessedFramesCount = 1;
+#endif // AM_SIMD_INTRINSICS
 
     static void OnSoundDestroyed(Mixer* mixer, MixerLayer* layer);
 
@@ -45,6 +45,136 @@ namespace SparkyStudios::Audio::Amplitude
     static void ma_free(void* p, void*)
     {
         amMemory->Free(MemoryPoolKind::Amplimix, p);
+    }
+
+    static ma_result ma_resampling_backend_get_heap_size_ls(void* pUserData, const ma_resampler_config* pConfig, size_t* pHeapSizeInBytes)
+    {
+        (void)pConfig;
+        (void)pUserData;
+
+        *pHeapSizeInBytes = 0;
+        return MA_SUCCESS;
+    }
+
+    static ma_result ma_resampling_backend_init_ls(
+        void* pUserData, const ma_resampler_config* pConfig, void* pHeap, ma_resampling_backend** ppBackend)
+    {
+        (void)pHeap;
+
+        auto* pResampler = Resampler::Construct("libzita");
+        auto* pMixerLayer = static_cast<MixerLayer*>(pUserData);
+
+        AmUInt64 maxFramesIn = pMixerLayer->end - pMixerLayer->start;
+        pResampler->Init(pConfig->channels, pConfig->sampleRateIn, pConfig->sampleRateOut, maxFramesIn);
+
+        *ppBackend = pResampler;
+
+        return MA_SUCCESS;
+    }
+
+    static void ma_resampling_backend_uninit_ls(
+        void* pUserData, ma_resampling_backend* pBackend, const ma_allocation_callbacks* pAllocationCallbacks)
+    {
+        (void)pUserData;
+        auto* pResampler = static_cast<ResamplerInstance*>(pBackend);
+
+        pResampler->Clear();
+
+        Resampler::Destruct("libzita", pResampler);
+    }
+
+    static ma_result ma_resampling_backend_process_ls(
+        void* pUserData,
+        ma_resampling_backend* pBackend,
+        const void* pFramesIn,
+        ma_uint64* pFrameCountIn,
+        void* pFramesOut,
+        ma_uint64* pFrameCountOut)
+    {
+        (void)pUserData;
+        auto* pResampler = static_cast<ResamplerInstance*>(pBackend);
+
+        if (pResampler == nullptr)
+            return MA_INVALID_ARGS;
+
+        if (pResampler->GetSampleRateIn() == pResampler->GetSampleRateOut())
+        {
+            std::memcpy(pFramesOut, pFramesIn, *pFrameCountIn * pResampler->GetChannelCount() * sizeof(AmAudioSample));
+            return MA_SUCCESS;
+        }
+
+        bool result = pResampler->Process(
+            (AmAudioSampleBuffer)pFramesIn, *pFrameCountIn, static_cast<AmAudioSampleBuffer>(pFramesOut), *pFrameCountOut);
+
+        return result ? MA_SUCCESS : MA_ERROR;
+    }
+
+    static ma_result ma_resampling_backend_set_rate_ls(
+        void* pUserData, ma_resampling_backend* pBackend, ma_uint32 sampleRateIn, ma_uint32 sampleRateOut)
+    {
+        (void)pUserData;
+        auto* pResampler = static_cast<ResamplerInstance*>(pBackend);
+
+        if (pResampler->GetSampleRateIn() != sampleRateIn || pResampler->GetSampleRateOut() != sampleRateOut)
+            pResampler->SetSampleRate(sampleRateIn, sampleRateOut);
+
+        return MA_SUCCESS;
+    }
+
+    static ma_uint64 ma_resampling_backend_get_input_latency_ls(void* pUserData, const ma_resampling_backend* pBackend)
+    {
+        (void)pUserData;
+        const auto* pResampler = static_cast<const ResamplerInstance*>(pBackend);
+
+        return pResampler->GetLatencyInFrames();
+    }
+
+    static ma_uint64 ma_resampling_backend_get_output_latency_ls(void* pUserData, const ma_resampling_backend* pBackend)
+    {
+        (void)pUserData;
+        const auto* pResampler = static_cast<const ResamplerInstance*>(pBackend);
+
+        return pResampler->GetLatencyInFrames();
+    }
+
+    static ma_result ma_resampling_backend_get_required_input_frame_count_ls(
+        void* pUserData, const ma_resampling_backend* pBackend, ma_uint64 outputFrameCount, ma_uint64* pInputFrameCount)
+    {
+        (void)pUserData;
+        const auto* pResampler = static_cast<const ResamplerInstance*>(pBackend);
+
+        // Sample rate is the same, so ratio is 1:1
+        if (pResampler->GetSampleRateIn() == pResampler->GetSampleRateOut())
+            *pInputFrameCount = outputFrameCount;
+        else
+            *pInputFrameCount = pResampler->GetRequiredInputFrameCount(outputFrameCount);
+
+        return MA_SUCCESS;
+    }
+
+    static ma_result ma_resampling_backend_get_expected_output_frame_count_ls(
+        void* pUserData, const ma_resampling_backend* pBackend, ma_uint64 inputFrameCount, ma_uint64* pOutputFrameCount)
+    {
+        (void)pUserData;
+        const auto* pResampler = static_cast<const ResamplerInstance*>(pBackend);
+
+        // Sample rate is the same, so ratio is 1:1
+        if (pResampler->GetSampleRateIn() == pResampler->GetSampleRateOut())
+            *pOutputFrameCount = inputFrameCount;
+        else
+            *pOutputFrameCount = pResampler->GetExpectedOutputFrameCount(inputFrameCount);
+
+        return MA_SUCCESS;
+    }
+
+    static ma_result ma_resampling_backend_reset_ls(void* pUserData, ma_resampling_backend* pBackend)
+    {
+        (void)pUserData;
+        auto* pResampler = static_cast<ResamplerInstance*>(pBackend);
+
+        pResampler->Reset();
+
+        return MA_SUCCESS;
     }
 
     static AmVec2 LRGain(float gain, float pan)
@@ -191,25 +321,49 @@ namespace SparkyStudios::Audio::Amplitude
         layer->snd = nullptr;
     }
 
-    static void MixMono(AmUInt64 index, const AudioDataUnit& gain, const SoundChunk* in, AudioBuffer out)
+    static void MixMono(AmUInt64 index, const AmAudioFrame& gain, const SoundChunk* in, AmAudioFrameBuffer out)
     {
-#if defined(AM_SSE_INTRINSICS)
-        out[index] = add(out[index], to_int16(shift_r(mull(in->buffer[index], gain), kAmFixedPointBits)));
+#if defined(AM_SIMD_INTRINSICS)
+#if defined(AM_SIMD_ARCH_FMA3)
+        out[index] = simdpp::fmadd(in->buffer[index], gain, out[index]);
 #else
-        out[index] += static_cast<AmInt16>((in->buffer[index] * gain) >> kAmFixedPointBits);
-#endif // AM_SSE_INTRINSICS
+        out[index] = simdpp::add(out[index], simdpp::mul(in->buffer[index], gain));
+#endif // AM_SIMD_ARCH_FMA3
+#else
+        out[index] = out[index] + in->buffer[index] * gain;
+#endif // AM_SIMD_INTRINSICS
     }
 
-    static void MixStereo(AmUInt64 index, const AudioDataUnit& lGain, const AudioDataUnit& rGain, const SoundChunk* in, AudioBuffer out)
+    static void MixStereo(
+        AmUInt64 index, const AmAudioFrame& lGain, const AmAudioFrame& rGain, const SoundChunk* in, AmAudioFrameBuffer out)
     {
-#if defined(AM_SSE_INTRINSICS)
-        out[index + 0] = add(out[index + 0], to_int16(shift_r(mull(in->buffer[index + 0], lGain), kAmFixedPointBits)));
-        out[index + 1] = add(out[index + 1], to_int16(shift_r(mull(in->buffer[index + 1], rGain), kAmFixedPointBits)));
+#if defined(AM_SIMD_INTRINSICS)
+#if defined(AM_SIMD_ARCH_FMA3)
+        out[index + 0] = simdpp::fmadd(in->buffer[index + 0], lGain, out[index + 0]);
+        out[index + 1] = simdpp::fmadd(in->buffer[index + 1], lGain, out[index + 1]);
 #else
-        out[index + 0] += static_cast<AmInt16>((in->buffer[index + 0] * lGain) >> kAmFixedPointBits);
-        out[index + 1] += static_cast<AmInt16>((in->buffer[index + 1] * rGain) >> kAmFixedPointBits);
-#endif // AM_SSE_INTRINSICS
+        out[index + 0] = simdpp::add(out[index + 0], simdpp::mul(in->buffer[index + 0], lGain));
+        out[index + 1] = simdpp::add(out[index + 1], simdpp::mul(in->buffer[index + 1], rGain));
+#endif // AM_SIMD_ARCH_FMA3
+#else
+        out[index + 0] = out[index + 0] + in->buffer[index + 0] * lGain;
+        out[index + 1] = out[index + 1] + in->buffer[index + 1] * rGain;
+#endif // AM_SIMD_INTRINSICS
     }
+
+    // Setup MiniAudio allocation callbacks for this frame
+    static ma_allocation_callbacks gAllocationCallbacks = { nullptr, ma_malloc, ma_realloc, ma_free };
+
+    static ma_resampling_backend_vtable gResamplerVTable = { ma_resampling_backend_get_heap_size_ls,
+                                                             ma_resampling_backend_init_ls,
+                                                             ma_resampling_backend_uninit_ls,
+                                                             ma_resampling_backend_process_ls,
+                                                             ma_resampling_backend_set_rate_ls,
+                                                             ma_resampling_backend_get_input_latency_ls,
+                                                             ma_resampling_backend_get_output_latency_ls,
+                                                             ma_resampling_backend_get_required_input_frame_count_ls,
+                                                             ma_resampling_backend_get_expected_output_frame_count_ls,
+                                                             ma_resampling_backend_reset_ls };
 
     Mixer::Mixer(float masterGain)
         : _initialized(false)
@@ -218,7 +372,7 @@ namespace SparkyStudios::Audio::Amplitude
         , _insideAudioThreadMutex()
         , _masterGain()
         , _nextId(0)
-        , _layers{}
+        , _layers()
         , _remainingFrames(0)
         , _pipeline(nullptr)
         , _device()
@@ -324,6 +478,9 @@ namespace SparkyStudios::Audio::Amplitude
 
         amdelete(ProcessorPipeline, _pipeline);
         _pipeline = nullptr;
+
+        for (auto& layer : _layers)
+            layer.Reset();
     }
 
     void Mixer::UpdateDevice(
@@ -353,23 +510,24 @@ namespace SparkyStudios::Audio::Amplitude
         LockAudioMutex();
 
         const auto numChannels = static_cast<AmUInt16>(_device.mRequestedOutputChannels);
-#if defined(AM_SSE_INTRINSICS)
-        const auto lower = simdpp::make_int<AudioDataUnit>(INT16_MIN), upper = simdpp::make_int<AudioDataUnit>(INT16_MAX);
+#if defined(AM_SIMD_INTRINSICS)
+        const auto lower = simdpp::make_float<AmAudioFrame>(AM_AUDIO_SAMPLE_MIN),
+                   upper = simdpp::make_float<AmAudioFrame>(AM_AUDIO_SAMPLE_MAX);
 #else
-        const AudioDataUnit lower = INT16_MIN, upper = INT16_MAX;
-#endif // AM_SSE_INTRINSICS
+        const AmAudioFrame lower = AM_AUDIO_SAMPLE_MIN, upper = AM_AUDIO_SAMPLE_MAX;
+#endif // AM_SIMD_INTRINSICS
 
-        auto* buffer = static_cast<AmInt16Buffer>(mixBuffer);
-        memset(buffer, 0, frameCount * numChannels * sizeof(AmInt16));
+        auto buffer = static_cast<AmAudioSampleBuffer>(mixBuffer);
+        std::memset(buffer, 0, frameCount * numChannels * sizeof(AmAudioSample));
 
         // output remaining frames in buffer before mixing new ones
         const AmUInt64 frames = frameCount;
 
         // dynamically sized buffer
-        auto* align = SoundChunk::CreateChunk(frames, numChannels, MemoryPoolKind::Amplimix);
+        SoundChunk* align = SoundChunk::CreateChunk(frames, numChannels, MemoryPoolKind::Amplimix);
 
-#if defined(AM_SSE_INTRINSICS)
-        // aSize in Vc::int16_v and multiple of kSimdProcessedFramesCountHalf
+#if defined(AM_SIMD_INTRINSICS)
+        // aSize in Vc::int16_v and multiple of kProcessedFramesCountHalf
         const AmUInt64 aSize = frames / align->samplesPerVector;
 
         // determine remaining number of frames
@@ -378,8 +536,8 @@ namespace SparkyStudios::Audio::Amplitude
         // aSize in AmInt16
         const AmUInt64 aSize = frames * numChannels;
 
-        _remainingFrames = 0; // Should not have remaining frames without SSE optimization
-#endif // AM_SSE_INTRINSICS
+        _remainingFrames = 0; // Should not have remaining frames without SIMD optimization
+#endif // AM_SIMD_INTRINSICS
 
         // begin actual mixing
         bool hasMixedAtLeastOneLayer = false;
@@ -408,15 +566,15 @@ namespace SparkyStudios::Audio::Amplitude
         // perform clipping using min and max
         for (AmUInt32 i = 0; i < aSize; i++)
         {
-#if defined(AM_SSE_INTRINSICS)
-            align->buffer[i] = min(max(align->buffer[i], lower), upper);
+#if defined(AM_SIMD_INTRINSICS)
+            align->buffer[i] = simdpp::min(simdpp::max(align->buffer[i], lower), upper);
 #else
             align->buffer[i] = std::min(std::max(align->buffer[i], lower), upper);
-#endif // AM_SSE_INTRINSICS
+#endif // AM_SIMD_INTRINSICS
         }
 
         // copy frames, leaving possible remainder
-        memcpy(buffer, reinterpret_cast<AmInt16Buffer>(align->buffer), frames * numChannels * sizeof(AmInt16));
+        std::memcpy(buffer, reinterpret_cast<AmAudioSampleBuffer>(align->buffer), frames * numChannels * sizeof(AmAudioSample));
 
     Cleanup:
         SoundChunk::DestroyChunk(align);
@@ -449,10 +607,8 @@ namespace SparkyStudios::Audio::Amplitude
         if (flag <= PLAY_STATE_FLAG_MIN || flag >= PLAY_STATE_FLAG_MAX)
             return 0; // invalid flag
 
-#if defined(AM_SSE_INTRINSICS)
-        if (endFrame - startFrame < kSimdProcessedFramesCount || endFrame < kSimdProcessedFramesCount)
+        if (endFrame - startFrame < kProcessedFramesCount || endFrame < kProcessedFramesCount)
             return 0; // invalid frame range
-#endif // AM_SSE_INTRINSICS
 
         // define a layer id
         layer = layer == 0 ? ++_nextId : layer;
@@ -469,33 +625,17 @@ namespace SparkyStudios::Audio::Amplitude
         // check if corresponding layer is free
         if (AMPLIMIX_LOAD(&lay->flag) == PLAY_STATE_FLAG_MIN)
         {
-            // Initialize the sample rate converter
-            if (lay->sampleRateConverter != nullptr)
-            {
-                src_reset(lay->sampleRateConverter);
-            }
-            else
-            {
-                lay->sampleRateConverter =
-                    src_new(amEngine->GetSampleRateConversionQuality(), static_cast<AmUInt16>(_device.mRequestedOutputChannels), nullptr);
-
-                if (lay->sampleRateConverter == nullptr)
-                {
-                    return 0;
-                }
-            }
-
             // fill in non-atomic layer data along with truncating start and end
             lay->id = id;
             lay->snd = sound;
 
-#if defined(AM_SSE_INTRINSICS)
-            lay->start = startFrame & ~(kSimdProcessedFramesCount - 1);
-            lay->end = endFrame & ~(kSimdProcessedFramesCount - 1);
+#if defined(AM_SIMD_INTRINSICS)
+            lay->start = startFrame & ~(kProcessedFramesCount - 1);
+            lay->end = endFrame & ~(kProcessedFramesCount - 1);
 #else
             lay->start = startFrame;
             lay->end = endFrame;
-#endif // AM_SSE_INTRINSICS
+#endif // AM_SIMD_INTRINSICS
 
             // convert gain and pan to left and right gain and store it atomically
             AMPLIMIX_STORE(&lay->gain, LRGain(gain, pan));
@@ -507,6 +647,50 @@ namespace SparkyStudios::Audio::Amplitude
             AMPLIMIX_STORE(&lay->cursor, lay->start);
             // store flag last, releasing the layer to the mixer thread
             AMPLIMIX_STORE(&lay->flag, flag);
+
+            // Initialize the resampler
+            ma_data_converter_uninit(&lay->dataConverter, &gAllocationCallbacks);
+
+            const auto soundChannels = static_cast<AmUInt32>(sound->format.GetNumChannels());
+            const auto reqChannels = static_cast<AmUInt32>(_device.mRequestedOutputChannels);
+
+            const AmUInt32 soundSampleRate = lay->snd->format.GetSampleRate();
+            const AmUInt32 reqSampleRate = _device.mRequestedOutputSampleRate;
+
+            ma_data_converter_config converterConfig = ma_data_converter_config_init_default();
+
+            converterConfig.formatIn = ma_format_f32;
+            converterConfig.formatOut = ma_format_from_amplitude(_device.mDeviceOutputFormat);
+
+            converterConfig.channelsIn = soundChannels;
+            converterConfig.channelsOut = reqChannels;
+            converterConfig.channelMixMode = ma_channel_mix_mode_rectangular;
+
+            converterConfig.sampleRateIn = soundSampleRate;
+            converterConfig.sampleRateOut = reqSampleRate;
+
+            converterConfig.resampling.algorithm = ma_resample_algorithm_custom;
+            converterConfig.resampling.pBackendUserData = lay;
+            converterConfig.resampling.pBackendVTable = &gResamplerVTable;
+
+            converterConfig.allowDynamicSampleRate = true;
+            converterConfig.calculateLFEFromSpatialChannels = true;
+            converterConfig.ditherMode = ma_dither_mode_rectangle;
+
+            ma_channel_map_init_standard(
+                ma_standard_channel_map_default, converterConfig.pChannelMapIn, soundChannels, converterConfig.channelsIn);
+
+            ma_channel_map_init_standard(
+                ma_standard_channel_map_default, converterConfig.pChannelMapOut, reqChannels, converterConfig.channelsOut);
+
+            if (ma_data_converter_init(&converterConfig, &gAllocationCallbacks, &lay->dataConverter) != MA_SUCCESS)
+            {
+                ma_data_converter_uninit(&lay->dataConverter, &gAllocationCallbacks);
+
+                CallLogFunc("[ERROR] Cannot process frames. Unable to initialize the samples data converter.");
+
+                return 0;
+            }
         }
 
         UnlockAudioMutex();
@@ -540,7 +724,7 @@ namespace SparkyStudios::Audio::Amplitude
         // check id and state flag to make sure the id is valid
         if ((id == lay->id) && (AMPLIMIX_LOAD(&lay->flag) > PLAY_STATE_FLAG_STOP))
         {
-            // convert gain and pan to left and right gain and store it atomically
+            // store the pitch value atomically
             AMPLIMIX_STORE(&lay->pitch, pitch);
             // return success
             return true;
@@ -557,13 +741,13 @@ namespace SparkyStudios::Audio::Amplitude
         // check id and state flag to make sure the id is valid
         if ((id == lay->id) && (AMPLIMIX_LOAD(&lay->flag) > PLAY_STATE_FLAG_STOP))
         {
-#if defined(AM_SSE_INTRINSICS)
+#if defined(AM_SIMD_INTRINSICS)
             // clamp cursor and truncate to multiple of 16 before storing
-            AMPLIMIX_STORE(&lay->cursor, AM_CLAMP(cursor, lay->start, lay->end) & ~(kSimdProcessedFramesCount - 1));
+            AMPLIMIX_STORE(&lay->cursor, AM_CLAMP(cursor, lay->start, lay->end) & ~(kProcessedFramesCount - 1));
 #else
             // clamp cursor and store it
             AMPLIMIX_STORE(&lay->cursor, AM_CLAMP(cursor, lay->start, lay->end));
-#endif // AM_SSE_INTRINSICS
+#endif // AM_SIMD_INTRINSICS
 
             // return success
             return true;
@@ -747,7 +931,7 @@ namespace SparkyStudios::Audio::Amplitude
         }
     }
 
-    void Mixer::MixLayer(MixerLayer* layer, AudioBuffer buffer, AmUInt64 bufferSize, AmUInt64 samples)
+    void Mixer::MixLayer(MixerLayer* layer, AmAudioFrameBuffer buffer, AmUInt64 bufferSize, AmUInt64 samples)
     {
         if (layer->snd == nullptr)
         {
@@ -773,32 +957,36 @@ namespace SparkyStudios::Audio::Amplitude
         // atomically load left and right gain
         const AmVec2 g = AMPLIMIX_LOAD(&layer->gain);
         const float gain = AMPLIMIX_LOAD(&_masterGain);
-#if defined(AM_SSE_INTRINSICS)
-        const auto mxGain = simdpp::make_int<AudioDataUnit>(AmFloatToFixedPoint(g.X * gain), AmFloatToFixedPoint(g.Y * gain));
+#if defined(AM_SIMD_INTRINSICS)
+        const auto mxGain = simdpp::make_float<AmAudioFrame>(g.X * gain, g.Y * gain);
         const auto& lGain = mxGain;
         const auto& rGain = mxGain;
 #else
-        const auto lGain = AmFloatToFixedPoint(g.X * gain);
-        const auto rGain = AmFloatToFixedPoint(g.Y * gain);
-#endif // AM_SSE_INTRINSICS
+        const auto lGain = g.X * gain;
+        const auto rGain = g.Y * gain;
+#endif // AM_SIMD_INTRINSICS
 
         // loop state
         const bool loop = (flag == PLAY_STATE_FLAG_LOOP);
 
         const AmUInt16 soundChannels = layer->snd->format.GetNumChannels();
         const AmUInt32 baseSampleRate = layer->snd->format.GetSampleRate();
-        const AmUInt32 sampleRate = AMPLIMIX_LOAD(&layer->sampleRate);
-        /* */ AmReal32 step = static_cast<AmReal32>(baseSampleRate) / static_cast<AmReal32>(sampleRate);
+        const AmReal32 sampleRateRatio = AMPLIMIX_LOAD(&layer->sampleRateRatio);
 
-        // avoid step overflow
-        if (step > (1 << (32 - kAmFixedPointBits)))
-            step = 0;
+        AmUInt64 outSamples = samples;
+        AmUInt64 inSamples = samples;
 
-        const AmUInt64 outSamples = samples;
-        /* */ AmUInt64 inSamples = std::ceil(step * static_cast<AmReal32>(outSamples));
-#if defined(AM_SSE_INTRINSICS)
-        inSamples = AM_VALUE_ALIGN(inSamples, kSimdProcessedFramesCount);
-#endif // AM_SSE_INTRINSICS
+        if (sampleRateRatio != 1.0f)
+        {
+            ma_data_converter_get_required_input_frame_count(&layer->dataConverter, outSamples, &inSamples);
+
+            if (cursor > 0)
+                inSamples -= ma_data_converter_get_output_latency(&layer->dataConverter);
+        }
+
+#if defined(AM_SIMD_INTRINSICS)
+        inSamples = AM_VALUE_ALIGN(inSamples, kProcessedFramesCount);
+#endif // AM_SIMD_INTRINSICS
 
         SoundChunk* in = SoundChunk::CreateChunk(inSamples, soundChannels, MemoryPoolKind::Amplimix);
 
@@ -818,9 +1006,9 @@ namespace SparkyStudios::Audio::Amplitude
                 const AmUInt64 chunkSize = AM_MIN(layer->snd->chunk->frames, c);
                 /* */ AmUInt64 readLen = chunkSize;
 
-#if defined(AM_SSE_INTRINSICS)
-                readLen = AM_VALUE_ALIGN(readLen, kSimdProcessedFramesCount);
-#endif // AM_SSE_INTRINSICS
+#if defined(AM_SIMD_INTRINSICS)
+                readLen = AM_VALUE_ALIGN(readLen, kProcessedFramesCount);
+#endif // AM_SIMD_INTRINSICS
 
                 readLen = OnSoundStream(this, layer, (cursor + (inSamples - c)) % layer->snd->length, readLen);
                 readLen = AM_MIN(readLen, chunkSize);
@@ -831,8 +1019,8 @@ namespace SparkyStudios::Audio::Amplitude
                     break;
 
                 memcpy(
-                    reinterpret_cast<AmInt16Buffer>(in->buffer) + ((inSamples - c) * soundChannels),
-                    reinterpret_cast<AmInt16Buffer>(layer->snd->chunk->buffer), readLen * soundChannels * sizeof(AmInt16));
+                    reinterpret_cast<AmAudioSampleBuffer>(in->buffer) + ((inSamples - c) * soundChannels),
+                    reinterpret_cast<AmAudioSampleBuffer>(layer->snd->chunk->buffer), readLen * soundChannels * sizeof(AmAudioSample));
 
                 c -= readLen;
             }
@@ -848,17 +1036,18 @@ namespace SparkyStudios::Audio::Amplitude
                 const AmUInt64 size = remaining * layer->snd->format.GetFrameSize();
 
                 memcpy(
-                    reinterpret_cast<AmInt16Buffer>(in->buffer), reinterpret_cast<AmInt16Buffer>(layer->snd->chunk->buffer) + offset, size);
+                    reinterpret_cast<AmAudioSampleBuffer>(in->buffer),
+                    reinterpret_cast<AmAudioSampleBuffer>(layer->snd->chunk->buffer) + offset, size);
 
                 memcpy(
-                    reinterpret_cast<AmInt16Buffer>(in->buffer) + (remaining * soundChannels),
-                    reinterpret_cast<AmInt16Buffer>(layer->snd->chunk->buffer), in->size - size);
+                    reinterpret_cast<AmAudioSampleBuffer>(in->buffer) + (remaining * soundChannels),
+                    reinterpret_cast<AmAudioSampleBuffer>(layer->snd->chunk->buffer), in->size - size);
             }
             else
             {
                 memcpy(
-                    reinterpret_cast<AmInt16Buffer>(in->buffer), reinterpret_cast<AmInt16Buffer>(layer->snd->chunk->buffer) + offset,
-                    in->size);
+                    reinterpret_cast<AmAudioSampleBuffer>(in->buffer),
+                    reinterpret_cast<AmAudioSampleBuffer>(layer->snd->chunk->buffer) + offset, in->size);
             }
         }
 
@@ -868,120 +1057,44 @@ namespace SparkyStudios::Audio::Amplitude
             // Cache cursor
             AmUInt64 oldCursor = cursor;
 
-            const AmInt32 stepFixed = AmFloatToFixedPoint(step);
-
             SoundChunk* out = SoundChunk::CreateChunk(AM_MAX(inSamples, outSamples), reqChannels, MemoryPoolKind::Amplimix);
 
-            if (reqChannels != soundChannels)
+            if (ma_data_converter_process_pcm_frames(
+                    &layer->dataConverter, reinterpret_cast<AmAudioSampleBuffer>(in->buffer), &inSamples,
+                    reinterpret_cast<AmAudioSampleBuffer>(out->buffer), &outSamples) != MA_SUCCESS)
             {
-                auto* channelMap = static_cast<ma_channel*>(amMemory->Malloc(MemoryPoolKind::Amplimix, reqChannels * sizeof(ma_channel)));
-                ma_channel_map_init_standard(ma_standard_channel_map_vorbis, channelMap, reqChannels, reqChannels);
+                SoundChunk::DestroyChunk(out);
+                SoundChunk::DestroyChunk(in);
 
-                ma_channel_converter converter{};
+                CallLogFunc("[ERROR] Cannot process frames. Unable to resample the audio input.");
 
-                ma_channel_converter_config config = ma_channel_converter_config_init(
-                    ma_format_from_amplitude(_device.mRequestedOutputFormat), soundChannels, nullptr, reqChannels, channelMap,
-                    ma_channel_mix_mode_default);
-
-                ma_allocation_callbacks allocationCallbacks{};
-                allocationCallbacks.onFree = ma_free;
-                allocationCallbacks.onMalloc = ma_malloc;
-                allocationCallbacks.onRealloc = ma_realloc;
-
-                ma_result result = ma_channel_converter_init(&config, &allocationCallbacks, &converter);
-                if (result != MA_SUCCESS)
-                {
-                    ma_channel_converter_uninit(&converter, &allocationCallbacks);
-                    amMemory->Free(MemoryPoolKind::Amplimix, channelMap);
-
-                    SoundChunk::DestroyChunk(out);
-                    SoundChunk::DestroyChunk(in);
-
-                    CallLogFunc("[ERROR] Cannot process frames. Unable to initialize the channel converter.");
-
-                    return;
-                }
-
-                result = ma_channel_converter_process_pcm_frames(
-                    &converter, reinterpret_cast<AmInt16Buffer>(out->buffer), reinterpret_cast<AmInt16Buffer>(in->buffer), in->frames);
-                if (result != MA_SUCCESS)
-                {
-                    ma_channel_converter_uninit(&converter, &allocationCallbacks);
-                    amMemory->Free(MemoryPoolKind::Amplimix, channelMap);
-
-                    SoundChunk::DestroyChunk(out);
-                    SoundChunk::DestroyChunk(in);
-
-                    CallLogFunc("[ERROR] Cannot process frames. Unable to process the channel conversion.");
-
-                    return;
-                }
-
-                ma_channel_converter_uninit(&converter, &allocationCallbacks);
-                amMemory->Free(MemoryPoolKind::Amplimix, channelMap);
-            }
-            else
-            {
-                memcpy(out->buffer, in->buffer, out->size);
+                return;
             }
 
-            if (sampleRate != baseSampleRate)
-            {
-                const AmUInt64 inputL = inSamples * reqChannels;
-                const AmUInt64 outputL = outSamples * reqChannels;
-
-                auto* inputI16 = reinterpret_cast<AmInt16Buffer>(out->buffer);
-                auto* outputI16 = reinterpret_cast<AmInt16Buffer>(out->buffer);
-
-                auto* inputR32 = static_cast<AmReal32Buffer>(amMemory->Malloc(MemoryPoolKind::Amplimix, inputL * sizeof(AmReal32)));
-                auto* outputR32 = static_cast<AmReal32Buffer>(amMemory->Malloc(MemoryPoolKind::Amplimix, outputL * sizeof(AmReal32)));
-
-                memset(outputR32, 0, outputL * sizeof(AmReal32));
-
-                for (AmUInt64 i = 0; i < inputL; i++)
-                {
-                    inputR32[i] = AmInt16ToReal32(inputI16[i]);
-                }
-
-                SRC_DATA data;
-                data.data_in = inputR32;
-                data.data_out = outputR32;
-                data.end_of_input = 0;
-                data.input_frames = inSamples;
-                data.output_frames = outSamples;
-                data.src_ratio = static_cast<AmReal64>(sampleRate) / baseSampleRate;
-
-                src_process(layer->sampleRateConverter, &data);
-
-                for (AmUInt64 i = 0; i < outputL; i++)
-                {
-                    outputI16[i] = AmReal32ToInt16(outputR32[i], true);
-                }
-
-                amMemory->Free(MemoryPoolKind::Amplimix, inputR32);
-                amMemory->Free(MemoryPoolKind::Amplimix, outputR32);
-            }
+            const auto sampleRate = static_cast<AmUInt32>(std::ceil(sampleRateRatio * layer->snd->format.GetSampleRate()));
 
             switch (layer->snd->format.GetInterleaveType())
             {
             case AM_SAMPLE_INTERLEAVED:
                 _pipeline->ProcessInterleaved(
-                    reinterpret_cast<AmInt16Buffer>(out->buffer), reinterpret_cast<AmInt16Buffer>(out->buffer), samples, out->size,
-                    reqChannels, sampleRate, static_cast<SoundInstance*>(layer->snd->userData));
+                    reinterpret_cast<AmAudioSampleBuffer>(out->buffer), reinterpret_cast<AmAudioSampleBuffer>(out->buffer), samples,
+                    out->size, reqChannels, sampleRate, static_cast<SoundInstance*>(layer->snd->userData));
                 break;
             case AM_SAMPLE_NON_INTERLEAVED:
                 _pipeline->Process(
-                    reinterpret_cast<AmInt16Buffer>(out->buffer), reinterpret_cast<AmInt16Buffer>(out->buffer), samples, out->size,
-                    reqChannels, sampleRate, static_cast<SoundInstance*>(layer->snd->userData));
+                    reinterpret_cast<AmAudioSampleBuffer>(out->buffer), reinterpret_cast<AmAudioSampleBuffer>(out->buffer), samples,
+                    out->size, reqChannels, sampleRate, static_cast<SoundInstance*>(layer->snd->userData));
                 break;
             default:
                 CallLogFunc("[WARNING] A bad sound data interleave type was encountered.\n");
                 break;
             }
 
-            /* */ AmUInt64 position = cursor << kAmFixedPointBits;
-            const AmUInt64 start = layer->start << kAmFixedPointBits;
-            const AmUInt64 end = layer->end << kAmFixedPointBits;
+            /* */ AmReal32 position = cursor;
+            const AmUInt64 start = layer->start;
+            const AmUInt64 end = layer->end;
+
+            const auto step = static_cast<AmReal32>(inSamples) / static_cast<AmReal32>(outSamples);
 
             // regular playback
             for (AmUInt64 i = 0; i < bufferSize; i += reqChannels)
@@ -989,7 +1102,7 @@ namespace SparkyStudios::Audio::Amplitude
                 position = AM_CLAMP(position, start, end);
 
                 // check if cursor at end
-                if (position == end)
+                if (std::ceil(position) == end)
                 {
                     // quit unless looping
                     if (!loop)
@@ -998,12 +1111,13 @@ namespace SparkyStudios::Audio::Amplitude
                     // call the onLoop callback
                     if (OnSoundLooped(this, layer))
                     {
-                        src_reset(layer->sampleRateConverter);
                         // wrap around if allowed looping again
                         position = start;
                     }
                     else
                     {
+                        ma_data_converter_reset(&layer->dataConverter);
+
                         // stop playback
                         break;
                     }
@@ -1025,18 +1139,14 @@ namespace SparkyStudios::Audio::Amplitude
                     break;
                 }
 
-#if defined(AM_SSE_INTRINSICS)
-                position += stepFixed * kSimdProcessedFramesCount;
-#else
-                position += stepFixed;
-#endif // AM_SSE_INTRINSICS
+                position += step * kProcessedFramesCount;
             }
 
-            cursor = position >> kAmFixedPointBits;
+            cursor += inSamples;
 
-#if defined(AM_SSE_INTRINSICS)
-            cursor = AM_VALUE_ALIGN(cursor, kSimdProcessedFramesCount);
-#endif // AM_SSE_INTRINSICS
+#if defined(AM_SIMD_INTRINSICS)
+            cursor = AM_VALUE_ALIGN(cursor, kProcessedFramesCount);
+#endif // AM_SIMD_INTRINSICS
 
             cursor = AM_CLAMP(cursor, layer->start, layer->end);
 
@@ -1110,17 +1220,19 @@ namespace SparkyStudios::Audio::Amplitude
         const AmReal32 pitch = AMPLIMIX_LOAD(&layer->pitch);
         const AmReal32 speed = AMPLIMIX_LOAD(&layer->userPlaySpeed);
 
-        if (pitch > 0)
+        const AmReal32 oldSpeed = AMPLIMIX_LOAD(&layer->playSpeed);
+        const AmReal32 playSpeed = pitch > 0 ? pitch * speed : 0.001f;
+
+        if (playSpeed != oldSpeed)
         {
-            const AmReal32 playSpeed = pitch * speed;
+            const AmReal32 basePitch =
+                static_cast<AmReal32>(layer->snd->format.GetSampleRate()) / static_cast<AmReal32>(_device.mRequestedOutputSampleRate);
+            const AmReal32 sampleRateRatio = basePitch * playSpeed;
+
             AMPLIMIX_STORE(&layer->playSpeed, playSpeed);
-            AMPLIMIX_STORE(&layer->sampleRate, playSpeed * _device.mDeviceOutputSampleRate);
-        }
-        else
-        {
-            constexpr AmReal32 playSpeed = 0.001f;
-            AMPLIMIX_STORE(&layer->playSpeed, playSpeed);
-            AMPLIMIX_STORE(&layer->sampleRate, playSpeed * _device.mDeviceOutputSampleRate);
+            AMPLIMIX_STORE(&layer->sampleRateRatio, sampleRateRatio);
+
+            ma_data_converter_set_rate_ratio(&layer->dataConverter, sampleRateRatio);
         }
     }
 
@@ -1144,5 +1256,10 @@ namespace SparkyStudios::Audio::Amplitude
         }
 
         _insideAudioThreadMutex[Thread::GetCurrentThreadId()] = false;
+    }
+
+    void MixerLayer::Reset()
+    {
+        ma_data_converter_uninit(&dataConverter, &gAllocationCallbacks);
     }
 } // namespace SparkyStudios::Audio::Amplitude

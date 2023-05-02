@@ -19,6 +19,14 @@
 
 #include <SparkyStudios/Audio/Amplitude/Amplitude.h>
 
+#if !defined(AM_SIMD_INTRINSINCS)
+#define DR_FLAC_NO_SIMD
+#endif
+
+#if !defined(AM_WCHAR_SUPPORTED)
+#define DR_FLAC_NO_WCHAR
+#endif
+
 #include "dr_flac.h"
 
 namespace SparkyStudios::Audio::Amplitude::Codecs

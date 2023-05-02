@@ -17,6 +17,10 @@
 #ifndef SS_AMPLITUDE_AUDIO_THREAD_H
 #define SS_AMPLITUDE_AUDIO_THREAD_H
 
+#include <condition_variable>
+#include <mutex>
+#include <thread>
+
 #include <SparkyStudios/Audio/Amplitude/Core/Common.h>
 
 namespace SparkyStudios::Audio::Amplitude
@@ -123,6 +127,44 @@ namespace SparkyStudios::Audio::Amplitude
              * will be called to execute the task.
              */
             virtual void Work() = 0;
+
+            /**
+             * @brief Checks if the task is ready to be picked by the pool scheduler.
+             * @return @c true if the task is ready @c false otherwise.
+             */
+            virtual bool Ready();
+        };
+
+        /**
+         * @brief A pool task that allows the a thread to wait until it finishes.
+         */
+        class AwaitablePoolTask : public PoolTask
+        {
+        public:
+            AwaitablePoolTask();
+            ~AwaitablePoolTask() override = default;
+
+            void Work() override;
+
+            /**
+             * @bbrief Pool task execution function.
+             */
+            virtual void AwaitableWork() = 0;
+
+            /**
+             * @brief Makes the calling thread wait for this task to finish.
+             */
+            void Await();
+
+            /**
+             * @brief Makes the calling thread wait for this task to finish.
+             * @param duration The maximum amount of time to wait in milliseconds.
+             */
+            bool Await(AmUInt64 duration);
+
+        private:
+            std::condition_variable _condition;
+            std::mutex _mutex;
         };
 
         /**

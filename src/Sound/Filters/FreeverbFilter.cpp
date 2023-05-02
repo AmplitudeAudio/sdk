@@ -105,7 +105,7 @@ namespace SparkyStudios::Audio::Amplitude
         delete _model;
     }
 
-    void FreeverbFilterInstance::Process(AmInt16Buffer buffer, AmUInt64 frames, AmUInt64 bufferSize, AmUInt16 channels, AmUInt32 sampleRate)
+    void FreeverbFilterInstance::Process(AmAudioSampleBuffer buffer, AmUInt64 frames, AmUInt64 bufferSize, AmUInt16 channels, AmUInt32 sampleRate)
     {
         AMPLITUDE_ASSERT(channels == 2); // Only stereo supported
 
@@ -127,7 +127,7 @@ namespace SparkyStudios::Audio::Amplitude
     }
 
     void FreeverbFilterInstance::ProcessInterleaved(
-        AmInt16Buffer buffer, AmUInt64 frames, AmUInt64 bufferSize, AmUInt16 channels, AmUInt32 sampleRate)
+        AmAudioSampleBuffer buffer, AmUInt64 frames, AmUInt64 bufferSize, AmUInt16 channels, AmUInt32 sampleRate)
     {
         AMPLITUDE_ASSERT(channels == 2); // Only stereo supported
 
@@ -145,6 +145,6 @@ namespace SparkyStudios::Audio::Amplitude
         auto* input = buffer;
         auto* output = buffer;
 
-        _model->ProcessReplace(input, input + 1, output, output + 1, frames, 2);
+        _model->ProcessReplace(input, input + 1, output, output + 1, frames, channels);
     }
 } // namespace SparkyStudios::Audio::Amplitude

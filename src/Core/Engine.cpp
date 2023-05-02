@@ -57,6 +57,13 @@
 
 #pragma endregion
 
+#pragma region Default Resamplers
+
+#include <Mixer/Resamplers/LibzitaResampler.h>
+#include <Mixer/Resamplers/R8BrainResampler.h>
+
+#pragma endregion
+
 namespace SparkyStudios::Audio::Amplitude
 {
     typedef flatbuffers::Vector<uint64_t> BusIdList;
@@ -182,7 +189,7 @@ namespace SparkyStudios::Audio::Amplitude
         {
             const DuckBusDefinition* duck = duckBusDefinitionList->Get(i);
 
-            if (auto* bus = new DuckBusInternalState(parent); bus->Initialize(duck))
+            if (auto* bus = amnew(DuckBusInternalState, parent); bus->Initialize(duck))
             {
                 output->push_back(bus);
             }
@@ -280,13 +287,14 @@ namespace SparkyStudios::Audio::Amplitude
 
     bool Engine::Initialize(const EngineConfigDefinition* config)
     {
-        // Lock drivers, codecs and processors registries
+        // Lock drivers, codecs, processors and resamplers registries
         Driver::LockRegistry();
         Codec::LockRegistry();
         SoundProcessor::LockRegistry();
+        Resampler::LockRegistry();
 
         // Create the internal engine state
-        _state = new EngineInternalState();
+        _state = amnew(EngineInternalState);
         _state->version = &Amplitude::Version();
 
         // Load the audio driver
@@ -387,10 +395,7 @@ namespace SparkyStudios::Audio::Amplitude
         _state->doppler_factor = config->game()->doppler_factor();
 
         // Samples per streams
-        _state->samples_per_stream = config->mixer()->samples_per_stream();
-
-        // Dynamic sample rate conversion
-        _state->sample_rate_conversion_quality = config->mixer()->sample_rate_conversion_quality();
+        _state->samples_per_stream = config->output()->buffer_size() / config->output()->channels();
 
         // Set the game engine up axis
         _state->up_axis = config->game()->up_axis();
@@ -427,7 +432,7 @@ namespace SparkyStudios::Audio::Amplitude
         // Unload sound banks
         UnloadSoundBanks();
 
-        delete _state;
+        amdelete(EngineInternalState, _state);
         _state = nullptr;
 
         return true;
@@ -1461,7 +1466,7 @@ namespace SparkyStudios::Audio::Amplitude
         return pair->second.get();
     }
 
-    AttenuationHandle Engine::GetAttenuationHandleFromFile(AmOsString filename) const
+    AttenuationHandle Engine::GetAttenuationHandleFromFile(const AmOsString& filename) const
     {
         const auto pair = _state->attenuation_id_map.find(filename);
         if (pair == _state->attenuation_id_map.end())
@@ -1500,7 +1505,7 @@ namespace SparkyStudios::Audio::Amplitude
         return pair->second.get();
     }
 
-    SwitchHandle Engine::GetSwitchHandleFromFile(AmOsString filename) const
+    SwitchHandle Engine::GetSwitchHandleFromFile(const AmOsString& filename) const
     {
         const auto pair = _state->switch_id_map.find(filename);
         if (pair == _state->switch_id_map.end())
@@ -1539,7 +1544,7 @@ namespace SparkyStudios::Audio::Amplitude
         return pair->second.get();
     }
 
-    RtpcHandle Engine::GetRtpcHandleFromFile(AmOsString filename) const
+    RtpcHandle Engine::GetRtpcHandleFromFile(const AmOsString& filename) const
     {
         const auto pair = _state->rtpc_id_map.find(filename);
         if (pair == _state->rtpc_id_map.end())
@@ -1578,7 +1583,7 @@ namespace SparkyStudios::Audio::Amplitude
         return pair->second.get();
     }
 
-    EffectHandle Engine::GetEffectHandleFromFile(AmOsString filename) const
+    EffectHandle Engine::GetEffectHandleFromFile(const AmOsString& filename) const
     {
         const auto pair = _state->effect_id_map.find(filename);
         if (pair == _state->effect_id_map.end())
@@ -2127,11 +2132,6 @@ namespace SparkyStudios::Audio::Amplitude
     AmUInt32 Engine::GetSamplesPerStream() const
     {
         return _state->samples_per_stream;
-    }
-
-    AmUInt16 Engine::GetSampleRateConversionQuality() const
-    {
-        return static_cast<AmUInt16>(_state->sample_rate_conversion_quality);
     }
 
     bool Engine::IsGameTrackingEnvironmentAmounts() const

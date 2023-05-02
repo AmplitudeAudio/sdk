@@ -59,6 +59,9 @@ namespace SparkyStudios::Audio::Amplitude
 
     bool RealChannel::AllSoundsHasPlayed() const
     {
+        if (_parentChannelState->GetCollection() == nullptr)
+            return false;
+
         bool result = true;
         for (auto&& sound : _parentChannelState->GetCollection()->GetAudioSamples())
         {

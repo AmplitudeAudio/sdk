@@ -30,7 +30,7 @@ description = "Browse the main features of the Amplitude Audio SDK and discover 
 
 ## Data-driven Development
 
-Amplitude uses `.json` files to define everything, from a simple sound file to a complex switch container. Each `.json` file is in a dedicated directory according to its usage (`events`, `effects`, `sounds`, `collections`, etc.). Amplitude will compile them into binary files, which can now be registered into [soundbanks](#soundbanks-management) and loaded in the game.
+Amplitude uses `.json` files to define everything, from a simple sound file to a complex switch container. Each `.json` file is in a dedicated directory according to its usage (`events`, `effects`, `sounds`, `collections`, etc.). Amplitude will compile them into binary files, which can now be registered into [soundbanks](#soundbanks-management) and loaded in the game at runtime.
 
 {{< /column >}}
 
@@ -38,7 +38,7 @@ Amplitude uses `.json` files to define everything, from a simple sound file to a
 
 ## Drivers and Codecs
 
-Amplitude allows you to have total control over how to communicate with the physical audio device (using an [Driver] implementation) and how to decode/encode audio samples (using [Codec] implementations). The library provides you a default [Driver] implementation using [MiniAudio](http://miniaud.io) for cross-platform support, and by default decodes FLAC, MP3, OGG, and WAV audio samples.
+Amplitude allows you to have total control over how to communicate with the physical audio device (using a [Driver] implementation) and how to decode/encode audio samples (using [Codec] implementations). The library provides you a default [Driver] implementation using [MiniAudio](http://miniaud.io) for cross-platform support, and by default decodes FLAC, MP3, OGG, and WAV audio samples.
 
 {{< /column >}}
 
@@ -74,7 +74,7 @@ Amplitude supports a variety of sound objects which have different properties an
 ## Game and Engine Synchronization
 
 You can synchronize the Amplitude [Engine] with your game state using two approaches:
-- [RTPC]: RTPC stands for Real-time Parameter Control. It allows you to adjust values in the Amplitude Engine (`gain`, `priority`, `effect parameters`, etc.) from the game at runtime. For example, think about a character who climbs a mountain. You can create an RTPC which synchronizes the player altitude (the distance from the ground) with the Amplitude Engine to slightly fade between environment sounds, from a calm river (at the ground) to strong winds (at the summit).
+- [RTPC]: RTPC stands for Real-Time Parameter Control. It allows you to adjust values in the Amplitude Engine (`gain`, `priority`, `effect parameters`, etc.) from the game at runtime. For example, think about a character who climbs a mountain. You can create an RTPC which synchronizes the player altitude (the distance from the ground) with the Amplitude Engine to slightly fade between environment sounds, from a calm river (at the ground) to strong winds (at the summit).
 - [Switch]: A switch is helpful in cases where you want to let the Amplitude Engine know about one state at a time. For example, your character is walking in a forest. A switch can be applied to the terrain to let the Amplitude Engine know about the surface the character is walking on, and then play the right footstep sound.
 
 {{< /column >}}

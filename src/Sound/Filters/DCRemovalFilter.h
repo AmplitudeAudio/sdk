@@ -50,17 +50,17 @@ namespace SparkyStudios::Audio::Amplitude
         explicit DCRemovalFilterInstance(DCRemovalFilter* parent);
         ~DCRemovalFilterInstance() override;
 
-        void Process(AmInt16Buffer buffer, AmUInt64 frames, AmUInt64 bufferSize, AmUInt16 channels, AmUInt32 sampleRate) override;
+        void Process(AmAudioSampleBuffer buffer, AmUInt64 frames, AmUInt64 bufferSize, AmUInt16 channels, AmUInt32 sampleRate) override;
         void ProcessInterleaved(
-            AmInt16Buffer buffer, AmUInt64 frames, AmUInt64 bufferSize, AmUInt16 channels, AmUInt32 sampleRate) override;
+            AmAudioSampleBuffer buffer, AmUInt64 frames, AmUInt64 bufferSize, AmUInt16 channels, AmUInt32 sampleRate) override;
 
-        AmInt16 ProcessSample(AmInt16 sample, AmUInt16 channel, AmUInt32 sampleRate) override;
+        AmAudioSample ProcessSample(AmAudioSample sample, AmUInt16 channel, AmUInt32 sampleRate) override;
 
     private:
         void InitBuffer(AmUInt16 channels, AmUInt32 sampleRate);
 
-        AmInt32Buffer _buffer;
-        AmInt32Buffer _totals;
+        AmReal32Buffer _buffer;
+        AmReal32Buffer _totals;
         AmUInt64 _bufferLength;
         AmUInt64 _offset;
     };

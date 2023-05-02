@@ -19,24 +19,12 @@
 
 #include <SparkyStudios/Audio/Amplitude/Core/Common.h>
 
-#if defined(AM_SSE_INTRINSICS)
-#include <simdpp/simd.h>
-#endif // defined(AM_SSE_INTRINSICS)
-
 #define AM_LCG_M 2147483647
 #define AM_LCG_A 48271
 #define AM_LCG_C 0
 
 namespace SparkyStudios::Audio::Amplitude
 {
-#if defined(AM_SSE_INTRINSICS)
-    typedef simdpp::int16v AudioDataUnit;
-#else
-    typedef AmInt16 AudioDataUnit;
-#endif
-
-    typedef AudioDataUnit* AudioBuffer;
-
     static struct
     {
         AmInt32 state;
@@ -125,18 +113,18 @@ namespace SparkyStudios::Audio::Amplitude
         if (deltaLength == 0.0f)
             return 1.0f;
 
-        AmReal32 vss = AM_Dot(locationDelta, sourceVelocity) / deltaLength;
-        AmReal32 vls = AM_Dot(locationDelta, listenerVelocity) / deltaLength;
+        AmReal32 vss = AM_Dot(sourceVelocity, locationDelta) / deltaLength;
+        AmReal32 vls = AM_Dot(listenerVelocity, locationDelta) / deltaLength;
 
-        const AmReal32 maxspeed = soundSpeed / dopplerFactor;
-        vss = AM_MIN(vss, maxspeed);
-        vls = AM_MIN(vls, maxspeed);
+        const AmReal32 maxSpeed = soundSpeed / dopplerFactor;
+        vss = AM_MIN(vss, maxSpeed);
+        vls = AM_MIN(vls, maxSpeed);
 
         return (soundSpeed - vls * dopplerFactor) / (soundSpeed - vss * dopplerFactor);
     }
 } // namespace SparkyStudios::Audio::Amplitude
 
-#if defined(AM_SSE_INTRINSICS)
+#if defined(AM_SIMD_INTRINSICS)
 
 namespace simdpp
 {
@@ -156,6 +144,6 @@ namespace simdpp
     } // namespace SIMDPP_ARCH_NAMESPACE
 } // namespace simdpp
 
-#endif // AM_SSE_INTRINSICS
+#endif // AM_SIMD_INTRINSICS
 
 #endif // SS_AMPLITUDE_AUDIO_UTILS_H

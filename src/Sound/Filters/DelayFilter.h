@@ -14,18 +14,18 @@
 
 #pragma once
 
-#ifndef SS_AMPLITUDE_AUDIO_ECHO_FILTER_H
-#define SS_AMPLITUDE_AUDIO_ECHO_FILTER_H
+#ifndef SS_AMPLITUDE_AUDIO_DELAY_FILTER_H
+#define SS_AMPLITUDE_AUDIO_DELAY_FILTER_H
 
 #include <SparkyStudios/Audio/Amplitude/Sound/Filter.h>
 
 namespace SparkyStudios::Audio::Amplitude
 {
-    class EchoFilterInstance;
+    class DelayFilterInstance;
 
-    class EchoFilter : public Filter
+    class DelayFilter : public Filter
     {
-        friend class EchoFilterInstance;
+        friend class DelayFilterInstance;
 
     public:
         enum ATTRIBUTE
@@ -33,14 +33,14 @@ namespace SparkyStudios::Audio::Amplitude
             ATTRIBUTE_WET = 0,
             ATTRIBUTE_DELAY,
             ATTRIBUTE_DECAY,
-            ATTRIBUTE_FILTER,
+            ATTRIBUTE_DELAY_START,
             ATTRIBUTE_LAST
         };
 
-        EchoFilter();
-        ~EchoFilter() override = default;
+        DelayFilter();
+        ~DelayFilter() override = default;
 
-        AmResult Init(AmReal32 delay, AmReal32 decay = 0.7f, AmReal32 filter = 0.0f);
+        AmResult Init(AmReal32 delay, AmReal32 decay = 0.7f, AmReal32 delayStart = 0.0f);
 
         AmUInt32 GetParamCount() override;
 
@@ -54,33 +54,33 @@ namespace SparkyStudios::Audio::Amplitude
 
         FilterInstance* CreateInstance() override;
 
-    private:
+    protected:
         AmReal32 _delay;
         AmReal32 _decay;
-        AmReal32 _filter;
+        AmReal32 _delayStart; // Set this to false to produce echo
     };
 
-    class EchoFilterInstance : public FilterInstance
+    class DelayFilterInstance : public FilterInstance
     {
     public:
-        explicit EchoFilterInstance(EchoFilter* parent);
-        ~EchoFilterInstance() override;
+        explicit DelayFilterInstance(DelayFilter* parent);
+        ~DelayFilterInstance() override;
 
-        void Process(AmInt16Buffer buffer, AmUInt64 samples, AmUInt64 bufferSize, AmUInt16 channels, AmUInt32 sampleRate) override;
+        void Process(AmAudioSampleBuffer buffer, AmUInt64 samples, AmUInt64 bufferSize, AmUInt16 channels, AmUInt32 sampleRate) override;
         void ProcessInterleaved(
-            AmInt16Buffer buffer, AmUInt64 frames, AmUInt64 bufferSize, AmUInt16 channels, AmUInt32 sampleRate) override;
+            AmAudioSampleBuffer buffer, AmUInt64 frames, AmUInt64 bufferSize, AmUInt16 channels, AmUInt32 sampleRate) override;
 
-        AmInt16 ProcessSample(AmInt16 sample, AmUInt16 channel, AmUInt32 sampleRate) override;
+        AmAudioSample ProcessSample(AmAudioSample sample, AmUInt16 channel, AmUInt32 sampleRate) override;
 
     private:
         void InitBuffer(AmUInt16 channels, AmUInt32 sampleRate);
 
-        AmInt32Buffer _buffer;
+        AmReal32Buffer _buffer;
         AmUInt32 _bufferLength;
         AmUInt32 _bufferMaxLength;
-        AmUInt32 _prevOffset;
+        AmUInt32 _bufferOffset;
         AmUInt32 _offset;
     };
 } // namespace SparkyStudios::Audio::Amplitude
 
-#endif // SS_AMPLITUDE_AUDIO_ECHO_FILTER_H
+#endif // SS_AMPLITUDE_AUDIO_DELAY_FILTER_H

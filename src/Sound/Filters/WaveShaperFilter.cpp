@@ -74,7 +74,7 @@ namespace SparkyStudios::Audio::Amplitude
         m_parameters[WaveShaperFilter::ATTRIBUTE_AMOUNT] = parent->_amount;
     }
 
-    AmInt16 WaveShaperFilterInstance::ProcessSample(AmInt16 sample, AmUInt16 channel, AmUInt32 sampleRate)
+    AmAudioSample WaveShaperFilterInstance::ProcessSample(AmAudioSample sample, AmUInt16 channel, AmUInt32 sampleRate)
     {
         AmReal32 k;
         if (std::abs(m_parameters[WaveShaperFilter::ATTRIBUTE_AMOUNT] - 1.0f) < kEpsilon)
@@ -82,16 +82,16 @@ namespace SparkyStudios::Audio::Amplitude
         else
             k = 2 * m_parameters[WaveShaperFilter::ATTRIBUTE_AMOUNT] / (1 - m_parameters[WaveShaperFilter::ATTRIBUTE_AMOUNT]);
 
-        const AmInt32 x = sample;
-        /* */ AmInt32 y;
+        const AmReal32 x = sample;
+        /* */ AmReal32 y;
 
-        const AmReal32 p = (std::abs(x) * AmFloatToFixedPoint(k) + AmFloatToFixedPoint(1.0f)) >> kAmFixedPointBits;
-        const AmReal32 q = (AmFloatToFixedPoint(1.0f + k) * x) >> kAmFixedPointBits;
+        const AmReal32 p = std::abs(x) * k + 1.0f;
+        const AmReal32 q = (1.0f + k) * x;
 
-        y = x * AmFloatToFixedPoint(q / p) >> kAmFixedPointBits;
-        y = x + ((y - x) * AmFloatToFixedPoint(m_parameters[WaveShaperFilter::ATTRIBUTE_WET]) >> kAmFixedPointBits);
-        y = AM_CLAMP(y, INT16_MIN, INT16_MAX);
+        y = x * (q / p);
+        y = x + (y - x) * m_parameters[WaveShaperFilter::ATTRIBUTE_WET];
+        y = AM_CLAMP_AUDIO_SAMPLE(y);
 
-        return static_cast<AmInt16>(y);
+        return static_cast<AmAudioSample>(y);
     }
 } // namespace SparkyStudios::Audio::Amplitude

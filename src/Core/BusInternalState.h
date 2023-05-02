@@ -85,24 +85,24 @@ namespace SparkyStudios::Audio::Amplitude
         void Initialize(const BusDefinition* bus_def);
 
         // Return the bus definition.
-        [[nodiscard]] const BusDefinition* GetBusDefinition() const
+        [[nodiscard]] AM_INLINE(const BusDefinition*) GetBusDefinition() const
         {
             return _busDefinition;
         }
 
-        [[nodiscard]] AmBusID GetId() const
+        [[nodiscard]] AM_INLINE(AmBusID) GetId() const
         {
             return _id;
         }
 
-        [[nodiscard]] const std::string& GetName() const
+        [[nodiscard]] AM_INLINE(const std::string&) GetName() const
         {
             return _name;
         }
 
         // Return the final gain after all modifiers have been applied (parent gain,
         // duck gain, bus gain, user gain).
-        [[nodiscard]] float GetGain() const
+        [[nodiscard]] AM_INLINE(float) GetGain() const
         {
             return _muted ? 0.0f : _gain;
         }
@@ -116,7 +116,7 @@ namespace SparkyStudios::Audio::Amplitude
         }
 
         // Return the user gain.
-        [[nodiscard]] float GetUserGain() const
+        [[nodiscard]] AM_INLINE(float) GetUserGain() const
         {
             return _userGain;
         }
@@ -161,7 +161,7 @@ namespace SparkyStudios::Audio::Amplitude
             return _playingSoundList;
         }
 
-        [[nodiscard]] const ChannelList& GetPlayingSoundList() const
+        [[nodiscard]] AM_INLINE(const ChannelList&) GetPlayingSoundList() const
         {
             return _playingSoundList;
         }

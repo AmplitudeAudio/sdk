@@ -16,8 +16,7 @@
 // https://github.com/dbry/adpcm-xq
 
 #include <Utils/Audio/Compression/ADPCM/ADPCM.h>
-#include <stdlib.h>
-#include <string.h>
+#include <cstring>
 
 #define CLIP(v, a, b) v = AM_CLAMP(v, a, b)
 
@@ -40,7 +39,7 @@ namespace SparkyStudios::Audio::Amplitude::Compression::ADPCM
         -1, -1, -1, -1, 2, 4, 6, 8
     };
 
-    static void set_decode_parameters(Context* ctx, AmInt32* init_pcmdata, AmInt8* init_index)
+    static void set_decode_parameters(Context* ctx, AmConstInt32Buffer init_pcmdata, AmConstInt8Buffer init_index)
     {
         int ch;
 
@@ -62,7 +61,7 @@ namespace SparkyStudios::Audio::Amplitude::Compression::ADPCM
         }
     }
 
-    static double minimum_error(const Channel* pchan, int nch, AmInt32 csample, const AmInt16* sample, int depth, int* best_nibble)
+    static double minimum_error(const Channel* pchan, int nch, AmInt32 csample, AmConstInt16Buffer sample, int depth, int* best_nibble)
     {
         AmInt32 delta = csample - pchan->pcmData;
         Channel chan = *pchan;
@@ -101,7 +100,7 @@ namespace SparkyStudios::Audio::Amplitude::Compression::ADPCM
         {
             chan.index += indexTable[nibble & 0x07];
             CLIP(chan.index, 0, 88);
-            min_error += minimum_error(&chan, nch, sample[nch], sample + nch, depth - 1, NULL);
+            min_error += minimum_error(&chan, nch, sample[nch], sample + nch, depth - 1, nullptr);
         }
         else
             return min_error;
@@ -134,7 +133,7 @@ namespace SparkyStudios::Audio::Amplitude::Compression::ADPCM
             {
                 chan.index += indexTable[nibble2 & 0x07];
                 CLIP(chan.index, 0, 88);
-                error += minimum_error(&chan, nch, sample[nch], sample + nch, depth - 1, NULL);
+                error += minimum_error(&chan, nch, sample[nch], sample + nch, depth - 1, nullptr);
 
                 if (error < min_error)
                 {

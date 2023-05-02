@@ -13,7 +13,6 @@
 // limitations under the License.
 
 #define DR_FLAC_IMPLEMENTATION
-#include "dr_flac.h"
 
 #include <Core/Codecs/FLAC/Codec.h>
 
@@ -65,8 +64,8 @@ namespace SparkyStudios::Audio::Amplitude::Codecs
         }
 
         m_format.SetAll(
-            _flac->sampleRate, _flac->channels, _flac->bitsPerSample, _flac->totalPCMFrameCount, _flac->channels * sizeof(AmInt16),
-            AM_SAMPLE_FORMAT_INT, // This codec always read frames as int16 values
+            _flac->sampleRate, _flac->channels, _flac->bitsPerSample, _flac->totalPCMFrameCount, _flac->channels * sizeof(AmAudioSample),
+            AM_SAMPLE_FORMAT_FLOAT, // This codec always read frames as float32 values
             AM_SAMPLE_INTERLEAVED // dr_flac always read interleaved frames
         );
 
@@ -92,31 +91,23 @@ namespace SparkyStudios::Audio::Amplitude::Codecs
     AmUInt64 FLACCodec::FLACDecoder::Load(AmVoidPtr out)
     {
         if (!_initialized)
-        {
             return 0;
-        }
 
         if (!Seek(0))
-        {
             return 0;
-        }
 
-        return drflac_read_pcm_frames_s16(_flac, _flac->totalPCMFrameCount, static_cast<AmInt16Buffer>(out));
+        return drflac_read_pcm_frames_f32(_flac, _flac->totalPCMFrameCount, static_cast<AmAudioSampleBuffer>(out));
     }
 
     AmUInt64 FLACCodec::FLACDecoder::Stream(AmVoidPtr out, AmUInt64 offset, AmUInt64 length)
     {
         if (!_initialized)
-        {
             return 0;
-        }
 
         if (!Seek(offset))
-        {
             return 0;
-        }
 
-        return drflac_read_pcm_frames_s16(_flac, length, static_cast<AmInt16Buffer>(out));
+        return drflac_read_pcm_frames_f32(_flac, length, static_cast<AmAudioSampleBuffer>(out));
     }
 
     bool FLACCodec::FLACDecoder::Seek(AmUInt64 offset)
@@ -133,9 +124,7 @@ namespace SparkyStudios::Audio::Amplitude::Codecs
     bool FLACCodec::FLACEncoder::Close()
     {
         if (_initialized)
-        {
             return true;
-        }
 
         return true;
     }

@@ -21,9 +21,7 @@ namespace SparkyStudios::Audio::Amplitude
         : _volume{}
     {
         for (AmUInt32 i = 0; i < 8; i++)
-        {
             _volume[i] = 1.0f;
-        }
     }
 
     AmResult EqualizerFilter::Init(
@@ -157,7 +155,7 @@ namespace SparkyStudios::Audio::Amplitude
 
         for (AmUInt32 p = 0; p < frames / 2; p++)
         {
-            const AmInt32 i = static_cast<AmInt32>(std::floor(std::sqrt(p / (frames / 2.0f)) * (frames / 2)));
+            const auto i = static_cast<AmInt32>(std::floor(std::sqrt(p / (AmReal32)(frames / 2)) * (frames / 2)));
 
             AmInt32 p2 = (i / (frames / 16));
             AmInt32 p1 = p2 - 1;
@@ -171,12 +169,11 @@ namespace SparkyStudios::Audio::Amplitude
             if (p3 > 7)
                 p3 = 7;
 
-            const AmReal32 v = static_cast<AmReal32>((i % (frames / 16))) / (frames / 16.0f);
+            const AmReal32 v = static_cast<AmReal32>((i % (frames / 16))) / (AmReal32)(frames / 16);
             buffer[p * 2] *= CatmullRom(v, m_parameters[p0 + 1], m_parameters[p1 + 1], m_parameters[p2 + 1], m_parameters[p3 + 1]);
         }
 
-        memset(buffer + frames, 0, sizeof(AmReal32) * frames);
-
+        memset(buffer + frames, 0, sizeof(AmReal64) * frames);
         MagPhase2Comp(buffer, frames / 2);
     }
 } // namespace SparkyStudios::Audio::Amplitude

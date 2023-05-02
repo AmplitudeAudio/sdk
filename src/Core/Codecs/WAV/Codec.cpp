@@ -64,8 +64,8 @@ namespace SparkyStudios::Audio::Amplitude::Codecs
         }
 
         m_format.SetAll(
-            _wav.sampleRate, _wav.channels, _wav.bitsPerSample, _wav.totalPCMFrameCount, _wav.channels * sizeof(AmInt16),
-            AM_SAMPLE_FORMAT_INT, // This codec always read frames as int16 values
+            _wav.sampleRate, _wav.channels, _wav.bitsPerSample, _wav.totalPCMFrameCount, _wav.channels * sizeof(AmAudioSample),
+            AM_SAMPLE_FORMAT_FLOAT, // This codec always read frames as float32 values
             AM_SAMPLE_INTERLEAVED // dr_wav always read interleaved frames
         );
 
@@ -90,31 +90,23 @@ namespace SparkyStudios::Audio::Amplitude::Codecs
     AmUInt64 WAVCodec::WAVDecoder::Load(AmVoidPtr out)
     {
         if (!_initialized)
-        {
             return 0;
-        }
 
         if (!Seek(0))
-        {
             return 0;
-        }
 
-        return drwav_read_pcm_frames_s16(&_wav, _wav.totalPCMFrameCount, static_cast<AmInt16Buffer>(out));
+        return drwav_read_pcm_frames_f32(&_wav, _wav.totalPCMFrameCount, static_cast<AmAudioSampleBuffer>(out));
     }
 
     AmUInt64 WAVCodec::WAVDecoder::Stream(AmVoidPtr out, AmUInt64 offset, AmUInt64 length)
     {
         if (!_initialized)
-        {
             return 0;
-        }
 
         if (!Seek(offset))
-        {
             return 0;
-        }
 
-        return drwav_read_pcm_frames_s16(&_wav, length, static_cast<AmInt16Buffer>(out));
+        return drwav_read_pcm_frames_f32(&_wav, length, static_cast<AmAudioSampleBuffer>(out));
     }
 
     bool WAVCodec::WAVDecoder::Seek(AmUInt64 offset)
@@ -126,7 +118,9 @@ namespace SparkyStudios::Audio::Amplitude::Codecs
     {
         if (!_isFormatSet)
         {
-            CallLogFunc("The WAV codec cannot open the file '" AM_OS_CHAR_FMT "' without a format set. Have you missed to call SetFormat()?\n", filePath.c_str());
+            CallLogFunc(
+                "The WAV codec cannot open the file '" AM_OS_CHAR_FMT "' without a format set. Have you missed to call SetFormat()?\n",
+                filePath.c_str());
             return false;
         }
 
@@ -184,9 +178,7 @@ namespace SparkyStudios::Audio::Amplitude::Codecs
     AmUInt64 WAVCodec::WAVEncoder::Write(AmVoidPtr in, AmUInt64 offset, AmUInt64 length)
     {
         if (!_initialized)
-        {
             return 0;
-        }
 
         return drwav_write_pcm_frames(&_wav, length, in);
     }
@@ -213,9 +205,7 @@ namespace SparkyStudios::Audio::Amplitude::Codecs
 #endif
 
         if (can)
-        {
             drwav_uninit(&dummy);
-        }
 
         return can;
     }

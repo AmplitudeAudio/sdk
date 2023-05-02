@@ -9,7 +9,7 @@
  * This file includes the base virtual class for DSP processing algorithm
  * classes like FIR filtering and interpolation.
  *
- * r8brain-free-src Copyright (c) 2013-2021 Aleksey Vaneev
+ * r8brain-free-src Copyright (c) 2013-2022 Aleksey Vaneev
  * See the "LICENSE" file for license.
  */
 
@@ -20,62 +20,81 @@
 
 namespace r8b {
 
-/**
+    /**
  * @brief The base virtual class for DSP processing algorithms.
  *
  * This class can be used as a base class for various DSP processing
  * algorithms (processors). DSP processors that are derived from this class
  * can be seamlessly integrated into various DSP processing graphs.
- */
+     */
 
-class CDSPProcessor : public R8B_BASECLASS
-{
-	R8BNOCTOR( CDSPProcessor );
+    class CDSPProcessor : public R8B_BASECLASS
+    {
+        R8BNOCTOR( CDSPProcessor );
 
-public:
-	CDSPProcessor()
-	{
-	}
+    public:
+        CDSPProcessor()
+        {
+        }
 
-	virtual ~CDSPProcessor()
-	{
-	}
+        virtual ~CDSPProcessor()
+        {
+        }
 
-	/**
+        /**
+	 * Function returns the number of input samples required to advance to
+	 * the specified output sample position (so that the next process() call
+	 * passes this output position), starting at the cleared or
+	 * after-construction state of *this object.
+	 *
+	 * Note that the implementation of this function assumes the caller only
+	 * needs to estimate an initial buffering requirement; passing a full
+	 * sample length value (e.g., greater than 100000) may overflow the
+	 * calculation or cause rounding errors.
+	 *
+	 * @param ReqOutPos The required output position. Set to 0 to obtain
+	 * "input length before output start" latency. Must be a non-negative
+	 * value.
+	 * @return The number of input samples required.
+         */
+
+        virtual int getInLenBeforeOutPos( const int ReqOutPos ) const = 0;
+
+        /**
 	 * @return The latency, in samples, which is present in the output signal.
 	 * This value is usually zero if the DSP processor "consumes" the latency
 	 * automatically.
-	 */
+         */
 
-	virtual int getLatency() const = 0;
+        virtual int getLatency() const = 0;
 
-	/**
+        /**
 	 * @return Fractional latency, in samples, which is present in the output
 	 * signal. This value is usually zero if a linear-phase filtering is used.
 	 * With minimum-phase filters in use, this value can be non-zero even if
 	 * the getLatency() function returns zero.
-	 */
+         */
 
-	virtual double getLatencyFrac() const = 0;
+        virtual double getLatencyFrac() const = 0;
 
-	/**
+        /**
 	 * @param MaxInLen The number of samples planned to process at once, at
 	 * most.
 	 * @return The maximal length of the output buffer required when
 	 * processing the "MaxInLen" number of input samples.
-	 */
+         */
 
-	virtual int getMaxOutLen( const int MaxInLen ) const = 0;
+        virtual int getMaxOutLen( const int MaxInLen ) const = 0;
 
-	/**
+        /**
 	 * Function clears (resets) the state of *this object and returns it to
 	 * the state after construction. All input data accumulated in the
 	 * internal buffer so far will be discarded.
-	 */
+         */
 
-	virtual void clear() = 0;
+        virtual void clear() = 0;
 
-	/**
+        /**
 	 * Function performs DSP processing.
 	 *
 	 * @param ip Input data pointer.
@@ -93,10 +112,10 @@ public:
 	 * comparison to the original "l0" value due to processing and filter's
 	 * latency compensation that took place, and due to resampling if it was
 	 * performed.
-	 */
+         */
 
-	virtual int process( double* ip, int l0, double*& op0 ) = 0;
-};
+        virtual int process( double* ip, int l0, double*& op0 ) = 0;
+    };
 
 } // namespace r8b
 

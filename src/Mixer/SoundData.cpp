@@ -25,7 +25,7 @@ namespace SparkyStudios::Audio::Amplitude
         if (format.GetNumChannels() < 1 || format.GetNumChannels() > 2 || frames < 1)
             return nullptr;
 
-        auto* sound = new SoundData();
+        auto* sound = amnew(SoundData);
 
         sound->chunk = chunk;
         sound->length = frames;
@@ -38,45 +38,53 @@ namespace SparkyStudios::Audio::Amplitude
 
     SoundChunk* SoundChunk::CreateChunk(AmUInt64 frames, AmUInt16 channels, MemoryPoolKind pool)
     {
-#if defined(AM_SSE_INTRINSICS)
-        const AmUInt64 alignedFrames = AM_VALUE_ALIGN(frames, AudioDataUnit::length);
+#if defined(AM_SIMD_INTRINSICS)
+        const AmUInt64 alignedFrames = AM_VALUE_ALIGN(frames, AmAudioFrame::length);
 #else
         const AmUInt64 alignedFrames = frames;
-#endif // AM_SSE_INTRINSICS
+#endif // AM_SIMD_INTRINSICS
         const AmUInt64 alignedLength = alignedFrames * channels;
 
-        auto* chunk = new SoundChunk();
+        auto* chunk = amnew(SoundChunk);
 
         chunk->frames = alignedFrames;
         chunk->length = alignedLength;
-        chunk->size = alignedLength * sizeof(AmInt16);
-#if defined(AM_SSE_INTRINSICS)
-        chunk->samplesPerVector = AudioDataUnit::length / channels;
-#endif // AM_SSE_INTRINSICS
+        chunk->size = alignedLength * sizeof(AmReal32);
+#if defined(AM_SIMD_INTRINSICS)
+        chunk->samplesPerVector = AmAudioFrame::length / channels;
+#endif // AM_SIMD_INTRINSICS
         chunk->memoryPool = pool;
-#if defined(AM_SSE_INTRINSICS)
-        chunk->buffer = static_cast<AudioBuffer>(amMemory->Malign(pool, chunk->size, AM_SIMD_ALIGNMENT));
+#if defined(AM_SIMD_INTRINSICS)
+        chunk->buffer = static_cast<AmAudioFrameBuffer>(amMemory->Malign(pool, chunk->size, AM_SIMD_ALIGNMENT));
 #else
-        chunk->buffer = static_cast<AudioBuffer>(amMemory->Malloc(pool, chunk->size));
-#endif // AM_SSE_INTRINSICS
+        chunk->buffer = static_cast<AmAudioFrameBuffer>(amMemory->Malloc(pool, chunk->size));
+#endif // AM_SIMD_INTRINSICS
 
         if (chunk->buffer == nullptr)
         {
             CallLogFunc("[ERROR] Failed to allocate memory for sound chunk.");
 
-            delete chunk;
+            amdelete(SoundChunk, chunk);
             return nullptr;
         }
 
-        memset(chunk->buffer, 0, chunk->size);
+        std::memset(chunk->buffer, 0, chunk->size);
 
         return chunk;
     }
 
     void SoundChunk::DestroyChunk(SoundChunk* chunk)
     {
-        // Mixer::OnSoundDestroyed(chunk);
-        amMemory->Free(chunk->memoryPool, chunk->buffer);
+        amdelete(SoundChunk, chunk);
+    }
+
+    SoundChunk::~SoundChunk()
+    {
+        if (buffer != nullptr)
+        {
+            amMemory->Free(memoryPool, buffer);
+            buffer = nullptr;
+        }
     }
 
     SoundData* SoundData::CreateMusic(const SoundFormat& format, SoundChunk* chunk, AmUInt64 frames, AmVoidPtr userData)

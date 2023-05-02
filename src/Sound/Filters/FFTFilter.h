@@ -21,6 +21,27 @@
 
 #include <Utils/pffft/pffft_double.h>
 
+namespace SoLoud
+{
+    namespace FFT
+    {
+        // Perform 1024 unit FFT. Buffer must have 1024 floats, and will be overwritten
+        void fft1024(float* aBuffer);
+
+        // Perform 256 unit FFT. Buffer must have 256 floats, and will be overwritten
+        void fft256(float* aBuffer);
+
+        // Perform 256 unit IFFT. Buffer must have 256 floats, and will be overwritten
+        void ifft256(float* aBuffer);
+
+        // Generic (slower) power of two FFT. Buffer is overwritten.
+        void fft(float* aBuffer, unsigned int aBufferLength);
+
+        // Generic (slower) power of two IFFT. Buffer is overwritten.
+        void ifft(float* aBuffer, unsigned int aBufferLength);
+    }; // namespace FFT
+}; // namespace SoLoud
+
 namespace SparkyStudios::Audio::Amplitude
 {
     class FFTFilterInstance;
@@ -43,7 +64,8 @@ namespace SparkyStudios::Audio::Amplitude
         ~FFTFilterInstance() override;
 
         void ProcessChannel(
-            AmInt16Buffer buffer, AmUInt16 channel, AmUInt64 frames, AmUInt16 channels, AmUInt32 sampleRate, bool isInterleaved) override;
+            AmAudioSampleBuffer buffer, AmUInt16 channel, AmUInt64 frames, AmUInt16 channels, AmUInt32 sampleRate, bool isInterleaved)
+            override;
 
         virtual void ProcessFFTChannel(AmReal64Buffer buffer, AmUInt16 channel, AmUInt64 frames, AmUInt16 channels, AmUInt32 sampleRate);
 
@@ -59,10 +81,10 @@ namespace SparkyStudios::Audio::Amplitude
         PFFFTD_Setup* _pffft_setup;
 
         AmReal64Buffer _temp;
-        AmReal32Buffer _inputBuffer;
-        AmReal32Buffer _mixBuffer;
-        AmReal32Buffer _lastPhase;
-        AmReal32Buffer _sumPhase;
+        AmReal64Buffer _inputBuffer;
+        AmReal64Buffer _mixBuffer;
+        AmReal64Buffer _lastPhase;
+        AmReal64Buffer _sumPhase;
 
         AmUInt32 _inputOffset[AM_MAX_CHANNELS];
         AmUInt32 _mixOffset[AM_MAX_CHANNELS];

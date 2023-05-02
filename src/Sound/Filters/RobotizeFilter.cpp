@@ -92,7 +92,7 @@ namespace SparkyStudios::Audio::Amplitude
     }
 
     void RobotizeFilterInstance::ProcessChannel(
-        AmInt16Buffer buffer, AmUInt16 channel, AmUInt64 frames, AmUInt16 channels, AmUInt32 sampleRate, bool isInterleaved)
+        AmAudioSampleBuffer buffer, AmUInt16 channel, AmUInt64 frames, AmUInt16 channels, AmUInt32 sampleRate, bool isInterleaved)
     {
         const auto period = static_cast<AmInt32>(static_cast<AmReal32>(sampleRate) / m_parameters[RobotizeFilter::ATTRIBUTE_FREQUENCY]);
         const auto start = static_cast<AmInt32>(_duration * sampleRate) % period;
@@ -101,19 +101,17 @@ namespace SparkyStudios::Audio::Amplitude
         {
             const AmUInt64 s = isInterleaved ? f * channels + channel : f + channel * frames;
 
-            const AmInt32 x = buffer[s];
-            /* */ AmInt32 y;
+            const AmReal32 x = buffer[s];
+            /* */ AmReal32 y;
 
             const AmReal32 wPos = static_cast<AmReal32>((start + s) % period) / static_cast<AmReal32>(period);
 
-            // clang-format off
-            y = x * AmFloatToFixedPoint(GenerateWaveform(static_cast<AmInt32>(m_parameters[RobotizeFilter::ATTRIBUTE_WAVEFORM]), wPos) + 0.5f) >> kAmFixedPointBits;
-            // clang-format on
+            y = x * (GenerateWaveform(static_cast<AmInt32>(m_parameters[RobotizeFilter::ATTRIBUTE_WAVEFORM]), wPos) + 0.5f);
 
-            y = x + ((y - x) * AmFloatToFixedPoint(m_parameters[RobotizeFilter::ATTRIBUTE_WET]) >> kAmFixedPointBits);
-            y = AM_CLAMP(y, INT16_MIN, INT16_MAX);
+            y = x + (y - x) * m_parameters[RobotizeFilter::ATTRIBUTE_WET];
+            y = AM_CLAMP_AUDIO_SAMPLE(y);
 
-            buffer[s] = static_cast<AmInt16>(y);
+            buffer[s] = static_cast<AmAudioSample>(y);
         }
     }
 

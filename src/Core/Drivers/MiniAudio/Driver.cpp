@@ -64,6 +64,147 @@ namespace SparkyStudios::Audio::Amplitude::Drivers
         }
     }
 
+    static ma_result ma_resampling_backend_get_heap_size_ls(void* pUserData, const ma_resampler_config* pConfig, size_t* pHeapSizeInBytes)
+    {
+        (void)pConfig;
+        (void)pUserData;
+
+        *pHeapSizeInBytes = 0;
+        return MA_SUCCESS;
+    }
+
+    static ma_result ma_resampling_backend_init_ls(
+        void* pUserData, const ma_resampler_config* pConfig, void* pHeap, ma_resampling_backend** ppBackend)
+    {
+        (void)pHeap;
+
+        auto* pResampler = Resampler::Construct("libzita");
+        auto* pDeviceDescription = static_cast<DeviceDescription*>(pUserData);
+
+        AmUInt64 maxFramesIn = pDeviceDescription->mOutputBufferSize / pConfig->channels;
+        pResampler->Init(pConfig->channels, pConfig->sampleRateIn, pConfig->sampleRateOut, maxFramesIn);
+
+        *ppBackend = pResampler;
+
+        return MA_SUCCESS;
+    }
+
+    static void ma_resampling_backend_uninit_ls(
+        void* pUserData, ma_resampling_backend* pBackend, const ma_allocation_callbacks* pAllocationCallbacks)
+    {
+        (void)pUserData;
+        auto* pResampler = static_cast<ResamplerInstance*>(pBackend);
+
+        pResampler->Clear();
+
+        Resampler::Destruct("libzita", pResampler);
+    }
+
+    static ma_result ma_resampling_backend_process_ls(
+        void* pUserData,
+        ma_resampling_backend* pBackend,
+        const void* pFramesIn,
+        ma_uint64* pFrameCountIn,
+        void* pFramesOut,
+        ma_uint64* pFrameCountOut)
+    {
+        (void)pUserData;
+        auto* pResampler = static_cast<ResamplerInstance*>(pBackend);
+
+        if (pResampler == nullptr)
+            return MA_INVALID_ARGS;
+
+        if (pResampler->GetSampleRateIn() == pResampler->GetSampleRateOut())
+        {
+            std::memcpy(pFramesOut, pFramesIn, *pFrameCountIn * pResampler->GetChannelCount() * sizeof(AmAudioSample));
+            return MA_SUCCESS;
+        }
+
+        bool result = pResampler->Process(
+            (AmAudioSampleBuffer)pFramesIn, *pFrameCountIn, (AmAudioSampleBuffer)pFramesOut, *pFrameCountOut);
+
+        return result ? MA_SUCCESS : MA_ERROR;
+    }
+
+    static ma_result ma_resampling_backend_set_rate_ls(
+        void* pUserData, ma_resampling_backend* pBackend, ma_uint32 sampleRateIn, ma_uint32 sampleRateOut)
+    {
+        (void)pUserData;
+        auto* pResampler = static_cast<ResamplerInstance*>(pBackend);
+
+        if (pResampler->GetSampleRateIn() != sampleRateIn || pResampler->GetSampleRateOut() != sampleRateOut)
+            pResampler->SetSampleRate(sampleRateIn, sampleRateOut);
+
+        return MA_SUCCESS;
+    }
+
+    static ma_uint64 ma_resampling_backend_get_input_latency_ls(void* pUserData, const ma_resampling_backend* pBackend)
+    {
+        (void)pUserData;
+        const auto* pResampler = static_cast<const ResamplerInstance*>(pBackend);
+
+        return pResampler->GetLatencyInFrames();
+    }
+
+    static ma_uint64 ma_resampling_backend_get_output_latency_ls(void* pUserData, const ma_resampling_backend* pBackend)
+    {
+        (void)pUserData;
+        const auto* pResampler = static_cast<const ResamplerInstance*>(pBackend);
+
+        return pResampler->GetLatencyInFrames();
+    }
+
+    static ma_result ma_resampling_backend_get_required_input_frame_count_ls(
+        void* pUserData, const ma_resampling_backend* pBackend, ma_uint64 outputFrameCount, ma_uint64* pInputFrameCount)
+    {
+        (void)pUserData;
+        const auto* pResampler = static_cast<const ResamplerInstance*>(pBackend);
+
+        // Sample rate is the same, so ratio is 1:1
+        if (pResampler->GetSampleRateIn() == pResampler->GetSampleRateOut())
+            *pInputFrameCount = outputFrameCount;
+        else
+            *pInputFrameCount = pResampler->GetRequiredInputFrameCount(outputFrameCount);
+
+        return MA_SUCCESS;
+    }
+
+    static ma_result ma_resampling_backend_get_expected_output_frame_count_ls(
+        void* pUserData, const ma_resampling_backend* pBackend, ma_uint64 inputFrameCount, ma_uint64* pOutputFrameCount)
+    {
+        (void)pUserData;
+        const auto* pResampler = static_cast<const ResamplerInstance*>(pBackend);
+
+        // Sample rate is the same, so ratio is 1:1
+        if (pResampler->GetSampleRateIn() == pResampler->GetSampleRateOut())
+            *pOutputFrameCount = inputFrameCount;
+        else
+            *pOutputFrameCount = pResampler->GetExpectedOutputFrameCount(inputFrameCount);
+
+        return MA_SUCCESS;
+    }
+
+    static ma_result ma_resampling_backend_reset_ls(void* pUserData, ma_resampling_backend* pBackend)
+    {
+        (void)pUserData;
+        auto* pResampler = static_cast<ResamplerInstance*>(pBackend);
+
+        pResampler->Reset();
+
+        return MA_SUCCESS;
+    }
+
+    static ma_resampling_backend_vtable gResamplerVTable = { ma_resampling_backend_get_heap_size_ls,
+                                                             ma_resampling_backend_init_ls,
+                                                             ma_resampling_backend_uninit_ls,
+                                                             ma_resampling_backend_process_ls,
+                                                             ma_resampling_backend_set_rate_ls,
+                                                             ma_resampling_backend_get_input_latency_ls,
+                                                             ma_resampling_backend_get_output_latency_ls,
+                                                             ma_resampling_backend_get_required_input_frame_count_ls,
+                                                             ma_resampling_backend_get_expected_output_frame_count_ls,
+                                                             ma_resampling_backend_reset_ls };
+
     MiniAudioDriver::~MiniAudioDriver()
     {
         if (_initialized)
@@ -92,6 +233,9 @@ namespace SparkyStudios::Audio::Amplitude::Drivers
             deviceConfig.dataCallback = miniaudio_mixer;
             deviceConfig.notificationCallback = miniaudio_device_notification;
             deviceConfig.pUserData = static_cast<void*>(this);
+            deviceConfig.resampling.algorithm = ma_resample_algorithm_custom;
+            deviceConfig.resampling.pBackendVTable = &gResamplerVTable;
+            deviceConfig.resampling.pBackendUserData = static_cast<void*>(&m_deviceDescription);
 
             ma_channel_map_init_standard(ma_standard_channel_map_vorbis, deviceConfig.playback.pChannelMap, channelsCount, channelsCount);
 
@@ -101,6 +245,8 @@ namespace SparkyStudios::Audio::Amplitude::Drivers
                 CallLogFunc("The miniaudio driver was not initialized successfully.");
                 return false;
             }
+
+            m_deviceDescription = device;
 
             m_deviceDescription.mDeviceID = 0;
             m_deviceDescription.mDeviceName = std::string(_device.playback.name);
@@ -144,7 +290,6 @@ namespace SparkyStudios::Audio::Amplitude::Drivers
             return false;
         }
 
-        _initialized = false;
         m_deviceDescription.mDeviceState = DeviceState::Closed;
 
         CallDeviceNotificationCallback(DeviceNotification::Closed, m_deviceDescription, this);

@@ -1,0 +1,119 @@
+// Copyright (c) 2021-present Sparky Studios. All rights reserved.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+#include <Sound/Filters/LofiFilter.h>
+#include <Utils/Utils.h>
+
+namespace SparkyStudios::Audio::Amplitude
+{
+    LofiFilter::LofiFilter()
+        : _sampleRate(4000)
+        , _bitDepth(3)
+    {}
+
+    AmResult LofiFilter::Init(AmReal32 sampleRate, AmReal32 bitdDepth)
+    {
+        if (sampleRate <= 0 || bitdDepth <= 0)
+            return AM_ERROR_INVALID_PARAMETER;
+
+        _sampleRate = sampleRate;
+        _bitDepth = bitdDepth;
+
+        return AM_ERROR_NO_ERROR;
+    }
+
+    AmUInt32 LofiFilter::GetParamCount()
+    {
+        return ATTRIBUTE_LAST;
+    }
+
+    AmReal32 LofiFilter::GetParamMax(AmUInt32 index)
+    {
+        switch (index)
+        {
+        case ATTRIBUTE_SAMPLERATE:
+            return 22000;
+        case ATTRIBUTE_BITDEPTH:
+            return 16;
+        default:
+            return 1;
+        }
+    }
+
+    AmReal32 LofiFilter::GetParamMin(AmUInt32 index)
+    {
+        switch (index)
+        {
+        case ATTRIBUTE_SAMPLERATE:
+            return 100;
+        case ATTRIBUTE_BITDEPTH:
+            return 0.5;
+        default:
+            return 0;
+        }
+    }
+
+    AmString LofiFilter::GetParamName(AmUInt32 index)
+    {
+        if (index >= ATTRIBUTE_LAST)
+            return nullptr;
+
+        AmString names[ATTRIBUTE_LAST] = { "Wet", "Samplerate", "BitDepth" };
+
+        return names[index];
+    }
+
+    AmUInt32 LofiFilter::GetParamType(AmUInt32 index)
+    {
+        return PARAM_FLOAT;
+    }
+
+    FilterInstance* LofiFilter::CreateInstance()
+    {
+        return new LofiFilterInstance(this);
+    }
+
+    LofiFilterInstance::LofiFilterInstance(LofiFilter* parent)
+        : FilterInstance(parent)
+    {
+        Init(LofiFilter::ATTRIBUTE_LAST);
+
+        m_parameters[LofiFilter::ATTRIBUTE_SAMPLERATE] = parent->_sampleRate;
+        m_parameters[LofiFilter::ATTRIBUTE_BITDEPTH] = parent->_bitDepth;
+
+        for (AmUInt32 i = 0; i < AM_MAX_CHANNELS; ++i)
+        {
+            _channelData[i].m_sample = 0;
+            _channelData[i].m_samplesToSkip = 0;
+        }
+    }
+
+    AmAudioSample LofiFilterInstance::ProcessSample(AmAudioSample sample, AmUInt16 channel, AmUInt32 sampleRate)
+    {
+        if (_channelData[channel].m_samplesToSkip <= 0)
+        {
+            _channelData[channel].m_samplesToSkip += (sampleRate / m_parameters[LofiFilter::ATTRIBUTE_SAMPLERATE]) - 1;
+            AmReal32 q = std::pow(2, m_parameters[LofiFilter::ATTRIBUTE_BITDEPTH]);
+            _channelData[channel].m_sample = std::floor(q * sample) / q;
+        }
+        else
+        {
+            _channelData[channel].m_samplesToSkip--;
+        }
+
+        AmReal32 y = sample + (_channelData[channel].m_sample - sample) * m_parameters[LofiFilter::ATTRIBUTE_WET];
+
+        return AM_CLAMP_AUDIO_SAMPLE(y);
+    }
+} // namespace SparkyStudios::Audio::Amplitude

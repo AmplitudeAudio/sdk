@@ -44,9 +44,9 @@ namespace SparkyStudios::Audio::Amplitude
 
         virtual AmUInt32 GetParamType(AmUInt32 index);
 
-        virtual float GetParamMax(AmUInt32 index);
+        virtual AmReal32 GetParamMax(AmUInt32 index);
 
-        virtual float GetParamMin(AmUInt32 index);
+        virtual AmReal32 GetParamMin(AmUInt32 index);
 
         virtual FilterInstance* CreateInstance() = 0;
     };
@@ -57,21 +57,21 @@ namespace SparkyStudios::Audio::Amplitude
         explicit FilterInstance(Filter* parent);
         virtual ~FilterInstance();
 
-        AmResult Init(AmInt32 numParams);
+        AmResult Init(AmUInt32 numParams);
 
         virtual void AdvanceFrame(AmTime delta_time);
 
-        virtual void Process(AmInt16Buffer buffer, AmUInt64 frames, AmUInt64 bufferSize, AmUInt16 channels, AmUInt32 sampleRate);
-        virtual void ProcessInterleaved(AmInt16Buffer buffer, AmUInt64 frames, AmUInt64 bufferSize, AmUInt16 channels, AmUInt32 sampleRate);
+        virtual void Process(AmAudioSampleBuffer buffer, AmUInt64 frames, AmUInt64 bufferSize, AmUInt16 channels, AmUInt32 sampleRate);
+        virtual void ProcessInterleaved(AmAudioSampleBuffer buffer, AmUInt64 frames, AmUInt64 bufferSize, AmUInt16 channels, AmUInt32 sampleRate);
 
         virtual void ProcessChannel(
-            AmInt16Buffer buffer, AmUInt16 channel, AmUInt64 frames, AmUInt16 channels, AmUInt32 sampleRate, bool isInterleaved);
+            AmAudioSampleBuffer buffer, AmUInt16 channel, AmUInt64 frames, AmUInt16 channels, AmUInt32 sampleRate, bool isInterleaved);
 
-        virtual AmInt16 ProcessSample(AmInt16 sample, AmUInt16 channel, AmUInt32 sampleRate);
+        virtual AmAudioSample ProcessSample(AmAudioSample sample, AmUInt16 channel, AmUInt32 sampleRate);
 
-        virtual float GetFilterParameter(AmUInt32 attributeId);
+        virtual AmReal32 GetFilterParameter(AmUInt32 attributeId);
 
-        virtual void SetFilterParameter(AmUInt32 attributeId, float value);
+        virtual void SetFilterParameter(AmUInt32 attributeId, AmReal32 value);
 
     protected:
         class Filter* m_parent;

@@ -54,7 +54,7 @@ namespace SparkyStudios::Audio::Amplitude
         delete[] m_parameters;
     }
 
-    AmResult FilterInstance::Init(int numParams)
+    AmResult FilterInstance::Init(AmUInt32 numParams)
     {
         delete[] m_parameters;
 
@@ -71,7 +71,7 @@ namespace SparkyStudios::Audio::Amplitude
             return AM_ERROR_OUT_OF_MEMORY;
         }
 
-        memset(m_parameters, 0, m_numParams * sizeof(AmReal32));
+        std::memset(m_parameters, 0, m_numParams * sizeof(AmReal32));
 
         m_parameters[0] = 1; // Set 'Wet' to 1
 
@@ -81,31 +81,27 @@ namespace SparkyStudios::Audio::Amplitude
     void FilterInstance::AdvanceFrame(AmTime delta_time)
     {}
 
-    void FilterInstance::Process(AmInt16Buffer buffer, AmUInt64 frames, AmUInt64 bufferSize, AmUInt16 channels, AmUInt32 sampleRate)
+    void FilterInstance::Process(AmAudioSampleBuffer buffer, AmUInt64 frames, AmUInt64 bufferSize, AmUInt16 channels, AmUInt32 sampleRate)
     {
         if (buffer == nullptr)
             return;
 
         for (AmUInt16 c = 0; c < channels; c++)
-        {
             ProcessChannel(buffer, c, frames, channels, sampleRate, false);
-        }
     }
 
     void FilterInstance::ProcessInterleaved(
-        AmInt16Buffer buffer, AmUInt64 frames, AmUInt64 bufferSize, AmUInt16 channels, AmUInt32 sampleRate)
+        AmAudioSampleBuffer buffer, AmUInt64 frames, AmUInt64 bufferSize, AmUInt16 channels, AmUInt32 sampleRate)
     {
         if (buffer == nullptr)
             return;
 
         for (AmUInt16 c = 0; c < channels; c++)
-        {
             ProcessChannel(buffer, c, frames, channels, sampleRate, true);
-        }
     }
 
     void FilterInstance::ProcessChannel(
-        AmInt16Buffer buffer, AmUInt16 channel, AmUInt64 frames, AmUInt16 channels, AmUInt32 sampleRate, bool isInterleaved)
+        AmAudioSampleBuffer buffer, AmUInt16 channel, AmUInt64 frames, AmUInt16 channels, AmUInt32 sampleRate, bool isInterleaved)
     {
         if (buffer == nullptr)
             return;
@@ -113,20 +109,16 @@ namespace SparkyStudios::Audio::Amplitude
         if (isInterleaved)
         {
             for (AmUInt64 i = channel; i < frames * channels; i += channels)
-            {
                 buffer[i] = ProcessSample(buffer[i], channel, sampleRate);
-            }
         }
         else
         {
             for (AmUInt64 i = channel * frames; i < frames; i++)
-            {
                 buffer[i] = ProcessSample(buffer[i], channel, sampleRate);
-            }
         }
     }
 
-    AmInt16 FilterInstance::ProcessSample(AmInt16 sample, AmUInt16 channel, AmUInt32 sampleRate)
+    AmAudioSample FilterInstance::ProcessSample(AmAudioSample sample, AmUInt16 channel, AmUInt32 sampleRate)
     {
         return sample;
     }
@@ -142,6 +134,9 @@ namespace SparkyStudios::Audio::Amplitude
     void FilterInstance::SetFilterParameter(AmUInt32 attributeId, AmReal32 value)
     {
         if (attributeId >= m_numParams)
+            return;
+
+        if (m_parameters[attributeId] == value)
             return;
 
         m_parameters[attributeId] = value;

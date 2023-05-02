@@ -18,7 +18,7 @@
 
 #include <Sound/Filters/BassBoostFilter.h>
 #include <Sound/Filters/BiquadResonantFilter.h>
-#include <Sound/Filters/EchoFilter.h>
+#include <Sound/Filters/DelayFilter.h>
 #include <Sound/Filters/EqualizerFilter.h>
 #include <Sound/Filters/FlangerFilter.h>
 #include <Sound/Filters/FreeverbFilter.h>
@@ -41,7 +41,9 @@ namespace SparkyStudios::Audio::Amplitude
 
     Effect::~Effect()
     {
-        delete _filter;
+        if (_filter != nullptr)
+            amdelete(Filter, _filter);
+
         _filter = nullptr;
         _parameters.clear();
 
@@ -65,31 +67,31 @@ namespace SparkyStudios::Audio::Amplitude
         switch (def->effect())
         {
         case EffectKind_BassBoost:
-            _filter = new BassBoostFilter();
+            _filter = amnew(BassBoostFilter);
             break;
 
         case EffectKind_Echo:
-            _filter = new EchoFilter();
+            _filter = amnew(DelayFilter);
             break;
 
         case EffectKind_Equalizer:
-            _filter = new EqualizerFilter();
+            _filter = amnew(EqualizerFilter);
             break;
 
         case EffectKind_Flanger:
-            _filter = new FlangerFilter();
+            _filter = amnew(FlangerFilter);
             break;
 
         case EffectKind_Freeverb:
-            _filter = new FreeverbFilter();
+            _filter = amnew(FreeverbFilter);
             break;
 
         case EffectKind_Robotize:
-            _filter = new RobotizeFilter();
+            _filter = amnew(RobotizeFilter);
             break;
 
         case EffectKind_BiquadResonant:
-            _filter = new BiquadResonantFilter();
+            _filter = amnew(BiquadResonantFilter);
             break;
 
         default:

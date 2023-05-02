@@ -17,7 +17,7 @@
 #include <utility>
 
 #include <SparkyStudios/Audio/Amplitude/Core/Memory.h>
-#include <SparkyStudios/Audio/Amplitude/Sound/SoundProcessor.h>
+#include <SparkyStudios/Audio/Amplitude/Mixer/SoundProcessor.h>
 
 #include <Utils/Utils.h>
 
@@ -38,13 +38,23 @@ namespace SparkyStudios::Audio::Amplitude
         return b;
     }
 
-    static AmUInt32& soundProcessorsCount()
+    static AmUInt32& resamplersCount()
     {
         static AmUInt32 c = 0;
         return c;
     }
 
-    SoundProcessor::SoundProcessor(std::string  name)
+    AmSize SoundProcessorInstance::GetOutputBufferSize(AmUInt64 frames, AmSize bufferSize, AmUInt16 channels, AmUInt32 sampleRate)
+    {
+        return bufferSize;
+    }
+
+    void SoundProcessorInstance::Cleanup(SoundInstance* sound)
+    {
+        // Do nothing in base class
+    }
+
+    SoundProcessor::SoundProcessor(std::string name)
         : m_name(std::move(name))
     {
         SoundProcessor::Register(this);
@@ -53,16 +63,6 @@ namespace SparkyStudios::Audio::Amplitude
     SoundProcessor::SoundProcessor()
         : m_name()
     {}
-
-    AmSize SoundProcessor::GetOutputBufferSize(AmUInt64 frames, AmUInt64 bufferSize, AmUInt16 channels, AmUInt32 sampleRate)
-    {
-        return bufferSize;
-    }
-
-    void SoundProcessor::Cleanup(SoundInstance* sound)
-    {
-        // Do nothing in base class
-    }
 
     const std::string& SoundProcessor::GetName() const
     {
@@ -78,7 +78,7 @@ namespace SparkyStudios::Audio::Amplitude
         {
             SoundProcessorRegistry& processors = soundProcessorRegistry();
             processors.insert(SoundProcessorImpl(codec->GetName(), codec));
-            soundProcessorsCount()++;
+            resamplersCount()++;
         }
     }
 
@@ -93,6 +93,24 @@ namespace SparkyStudios::Audio::Amplitude
         return nullptr;
     }
 
+    SoundProcessorInstance* SoundProcessor::Construct(const AmString& name)
+    {
+        SoundProcessor* processor = Find(name);
+        if (processor == nullptr)
+            return nullptr;
+
+        return processor->CreateInstance();
+    }
+
+    void SoundProcessor::Destruct(const std::string& name, SoundProcessorInstance* instance)
+    {
+        SoundProcessor* processor = Find(name);
+        if (processor == nullptr)
+            return;
+
+        processor->DestroyInstance(instance);
+    }
+
     void SoundProcessor::LockRegistry()
     {
         lockSoundProcessors() = true;
@@ -105,23 +123,32 @@ namespace SparkyStudios::Audio::Amplitude
         , _wet(0)
     {}
 
-    void ProcessorMixer::SetDryProcessor(SoundProcessor* processor, AmReal32 dry)
+    ProcessorMixer::~ProcessorMixer()
+    {
+        if (_dryProcessor != nullptr)
+            amdelete(SoundProcessorInstance, _dryProcessor);
+
+        if (_wetProcessor != nullptr)
+            amdelete(SoundProcessorInstance, _wetProcessor);
+    }
+
+    void ProcessorMixer::SetDryProcessor(SoundProcessorInstance* processor, AmReal32 dry)
     {
         _dryProcessor = processor;
         _dry = AM_CLAMP(dry, 0, 1);
     }
 
-    void ProcessorMixer::SetWetProcessor(SoundProcessor* processor, AmReal32 wet)
+    void ProcessorMixer::SetWetProcessor(SoundProcessorInstance* processor, AmReal32 wet)
     {
         _wetProcessor = processor;
         _wet = AM_CLAMP(wet, 0, 1);
     }
 
     void ProcessorMixer::Process(
-        AmInt16Buffer out,
-        AmInt16Buffer in,
+        AmAudioSampleBuffer out,
+        AmConstAudioSampleBuffer in,
         AmUInt64 frames,
-        AmUInt64 bufferSize,
+        AmSize bufferSize,
         AmUInt16 channels,
         AmUInt32 sampleRate,
         SoundInstance* sound)
@@ -129,36 +156,24 @@ namespace SparkyStudios::Audio::Amplitude
         if (_dryProcessor == nullptr || _wetProcessor == nullptr)
         {
             if (out != in)
-            {
-                memcpy(out, in, bufferSize);
-            }
+                std::memcpy(out, in, bufferSize);
 
             return;
         }
 
-        auto* dryOut = static_cast<AmInt16Buffer>(amMemory->Malign(MemoryPoolKind::Amplimix, bufferSize, AM_SIMD_ALIGNMENT));
-        auto* wetOut = static_cast<AmInt16Buffer>(amMemory->Malign(MemoryPoolKind::Amplimix, bufferSize, AM_SIMD_ALIGNMENT));
+        auto dryOut = static_cast<AmAudioSampleBuffer>(amMemory->Malign(MemoryPoolKind::Amplimix, bufferSize, AM_SIMD_ALIGNMENT));
+        auto wetOut = static_cast<AmAudioSampleBuffer>(amMemory->Malign(MemoryPoolKind::Amplimix, bufferSize, AM_SIMD_ALIGNMENT));
 
-        memcpy(dryOut, in, bufferSize);
-        memcpy(wetOut, in, bufferSize);
+        std::memcpy(dryOut, in, bufferSize);
+        std::memcpy(wetOut, in, bufferSize);
 
         _dryProcessor->Process(dryOut, in, frames, bufferSize, channels, sampleRate, sound);
         _wetProcessor->Process(wetOut, in, frames, bufferSize, channels, sampleRate, sound);
 
         for (AmUInt64 i = 0, l = frames * channels; i < l; i++)
         {
-            if (dryOut[i] != wetOut[i] && _wet > 0.0f)
-            {
-                // clang-format off
-                out[i] = (dryOut[i] * AmFloatToFixedPoint(_dry) >> kAmFixedPointBits) + ((wetOut[i] - dryOut[i]) * AmFloatToFixedPoint(_wet) >> kAmFixedPointBits);
-                out[i] = AM_CLAMP(out[i], INT16_MIN, INT16_MAX);
-                // clang-format on
-            }
-            else
-            {
-                out[i] = dryOut[i] * AmFloatToFixedPoint(_dry) >> kAmFixedPointBits;
-                out[i] = AM_CLAMP(out[i], INT16_MIN, INT16_MAX);
-            }
+            out[i] = dryOut[i] * _dry + (wetOut[i] - dryOut[i]) * _wet;
+            out[i] = AM_CLAMP_AUDIO_SAMPLE(out[i]);
         }
 
         amMemory->Free(MemoryPoolKind::Amplimix, dryOut);
@@ -166,10 +181,10 @@ namespace SparkyStudios::Audio::Amplitude
     }
 
     void ProcessorMixer::ProcessInterleaved(
-        AmInt16Buffer out,
-        AmInt16Buffer in,
+        AmAudioSampleBuffer out,
+        AmConstAudioSampleBuffer in,
         AmUInt64 frames,
-        AmUInt64 bufferSize,
+        AmSize bufferSize,
         AmUInt16 channels,
         AmUInt32 sampleRate,
         SoundInstance* sound)
@@ -177,36 +192,24 @@ namespace SparkyStudios::Audio::Amplitude
         if (_dryProcessor == nullptr || _wetProcessor == nullptr)
         {
             if (out != in)
-            {
-                memcpy(out, in, bufferSize);
-            }
+                std::memcpy(out, in, bufferSize);
 
             return;
         }
 
-        auto* dryOut = static_cast<AmInt16Buffer>(amMemory->Malign(MemoryPoolKind::Amplimix, bufferSize, AM_SIMD_ALIGNMENT));
-        auto* wetOut = static_cast<AmInt16Buffer>(amMemory->Malign(MemoryPoolKind::Amplimix, bufferSize, AM_SIMD_ALIGNMENT));
+        auto dryOut = static_cast<AmAudioSampleBuffer>(amMemory->Malign(MemoryPoolKind::Amplimix, bufferSize, AM_SIMD_ALIGNMENT));
+        auto wetOut = static_cast<AmAudioSampleBuffer>(amMemory->Malign(MemoryPoolKind::Amplimix, bufferSize, AM_SIMD_ALIGNMENT));
 
-        memcpy(dryOut, in, bufferSize);
-        memcpy(wetOut, in, bufferSize);
+        std::memcpy(dryOut, in, bufferSize);
+        std::memcpy(wetOut, in, bufferSize);
 
         _dryProcessor->ProcessInterleaved(dryOut, in, frames, bufferSize, channels, sampleRate, sound);
         _wetProcessor->ProcessInterleaved(wetOut, in, frames, bufferSize, channels, sampleRate, sound);
 
         for (AmUInt64 i = 0, l = frames * channels; i < l; i++)
         {
-            if (dryOut[i] != wetOut[i] && _wet > 0.0f)
-            {
-                // clang-format off
-                out[i] = (dryOut[i] * AmFloatToFixedPoint(_dry) >> kAmFixedPointBits) + ((wetOut[i] - dryOut[i]) * AmFloatToFixedPoint(_wet) >> kAmFixedPointBits);
-                out[i] = AM_CLAMP(out[i], INT16_MIN, INT16_MAX);
-                // clang-format on
-            }
-            else
-            {
-                out[i] = dryOut[i] * AmFloatToFixedPoint(_dry) >> kAmFixedPointBits;
-                out[i] = AM_CLAMP(out[i], INT16_MIN, INT16_MAX);
-            }
+            out[i] = dryOut[i] * _dry + (wetOut[i] - dryOut[i]) * _wet;
+            out[i] = AM_CLAMP_AUDIO_SAMPLE(out[i]);
         }
 
         amMemory->Free(MemoryPoolKind::Amplimix, dryOut);

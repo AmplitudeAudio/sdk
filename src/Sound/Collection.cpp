@@ -36,9 +36,14 @@ namespace SparkyStudios::Audio::Amplitude
 
     Collection::~Collection()
     {
-        delete _worldScopeScheduler;
+        amdelete(Scheduler, _worldScopeScheduler);
         _worldScopeScheduler = nullptr;
+
+        for (auto& scheduler : _entityScopeSchedulers)
+            amdelete(Scheduler, scheduler.second);
+
         _entityScopeSchedulers.clear();
+
         m_effect = nullptr;
         m_attenuation = nullptr;
     }
@@ -218,9 +223,7 @@ namespace SparkyStudios::Audio::Amplitude
     {
         const CollectionDefinition* soundDef = GetCollectionDefinition();
         if (const auto findIt = _entityScopeSchedulers.find(entity.GetId()); findIt == _entityScopeSchedulers.end())
-        {
             _entityScopeSchedulers.insert({ entity.GetId(), CreateScheduler(soundDef) });
-        }
 
         return _entityScopeSchedulers[entity.GetId()]->Select(toSkip);
     }
@@ -241,7 +244,7 @@ namespace SparkyStudios::Audio::Amplitude
         {
             CallLogFunc(
                 "[Debug] Collection %s does not specify a scheduler, using the RandomScheduler by default.\n", definition->name()->c_str());
-            scheduler = new RandomScheduler(nullptr);
+            scheduler = amnew(RandomScheduler, nullptr);
         }
         else
         {
@@ -250,10 +253,10 @@ namespace SparkyStudios::Audio::Amplitude
             {
             default:
             case SoundSchedulerMode_Random:
-                scheduler = new RandomScheduler(schedulerSettings->config_as_Random());
+                scheduler = amnew(RandomScheduler, schedulerSettings->config_as_Random());
                 break;
             case SoundSchedulerMode_Sequence:
-                scheduler = new SequenceScheduler(schedulerSettings->config_as_Sequence());
+                scheduler = amnew(SequenceScheduler, schedulerSettings->config_as_Sequence());
                 break;
             }
         }

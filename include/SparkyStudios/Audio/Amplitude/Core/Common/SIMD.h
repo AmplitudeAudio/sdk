@@ -17,7 +17,7 @@
 #ifndef SS_AMPLITUDE_AUDIO_SIMD_H
 #define SS_AMPLITUDE_AUDIO_SIMD_H
 
-#if defined(AM_SSE_INTRINSICS)
+#if defined(AM_SIMD_INTRINSICS)
 
 #if defined(__AVX2__) || defined(SIMDPP_ARCH_X86_AVX2)
 #if !defined(SIMDPP_ARCH_X86_AVX2)

@@ -147,7 +147,6 @@ namespace SparkyStudios::Audio::Amplitude
             , occlusion_config()
             , track_environments(false)
             , samples_per_stream(512)
-            , sample_rate_conversion_quality(eSampleRateConversionQuality_Linear)
         {}
 
         Mixer mixer;
@@ -276,8 +275,6 @@ namespace SparkyStudios::Audio::Amplitude
         bool track_environments;
 
         AmUInt32 samples_per_stream;
-
-        eSampleRateConversionQuality sample_rate_conversion_quality;
 
         const struct Version* version;
     };

@@ -22,9 +22,12 @@
 #include <SparkyStudios/Audio/Amplitude/Core/Common.h>
 #include <SparkyStudios/Audio/Amplitude/Core/Device.h>
 #include <SparkyStudios/Audio/Amplitude/Core/Thread.h>
+#include <SparkyStudios/Audio/Amplitude/Mixer/Resampler.h>
 
 #include <Mixer/ProcessorPipeline.h>
 #include <Mixer/SoundData.h>
+
+#include <Utils/miniaudio/miniaudio_utils.h>
 #include <Utils/Utils.h>
 
 #include <samplerate.h>
@@ -44,12 +47,12 @@ namespace SparkyStudios::Audio::Amplitude
     /**
      * @brief Called just before the mixer process audio data.
      */
-    typedef void (*BeforeMixCallback)(Mixer* mixer, AudioBuffer audio, AmUInt32 frames);
+    typedef void (*BeforeMixCallback)(Mixer* mixer, AmAudioFrameBuffer audio, AmUInt32 frames);
 
     /**
      * @brief Called just after the mixer process audio data.
      */
-    typedef void (*AfterMixCallback)(Mixer* mixer, AudioBuffer audio, AmUInt32 frames);
+    typedef void (*AfterMixCallback)(Mixer* mixer, AmAudioFrameBuffer audio, AmUInt32 frames);
 
     /**
      * @brief The callback to execute when running a mixer command.
@@ -81,9 +84,11 @@ namespace SparkyStudios::Audio::Amplitude
 
         _Atomic(AmReal32) userPlaySpeed; // user-defined sound playback speed
         _Atomic(AmReal32) playSpeed; // computed (real) sound playback speed
-        _Atomic(AmUInt32) sampleRate; // sample rate
+        _Atomic(AmReal32) sampleRateRatio; // sample rate
 
-        SRC_STATE* sampleRateConverter; // source sample rate converter
+        ma_data_converter dataConverter; // miniaudio resampler
+
+        void Reset();
     };
 
     struct MixerCommand
@@ -184,7 +189,7 @@ namespace SparkyStudios::Audio::Amplitude
 
     private:
         void ExecuteCommands();
-        void MixLayer(MixerLayer* layer, AudioBuffer buffer, AmUInt64 bufferSize, AmUInt64 samples);
+        void MixLayer(MixerLayer* layer, AmAudioFrameBuffer buffer, AmUInt64 bufferSize, AmUInt64 samples);
         MixerLayer* GetLayer(AmUInt32 layer);
         bool ShouldMix(MixerLayer* layer);
         void UpdatePitch(MixerLayer* layer);

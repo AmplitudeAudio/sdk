@@ -14,31 +14,38 @@
 
 #pragma once
 
-#ifndef SS_AMPLITUDE_AUDIO_WAVESHARPERFILTER_H
-#define SS_AMPLITUDE_AUDIO_WAVESHARPERFILTER_H
+#ifndef SS_AMPLITUDE_AUDIO_LOFIFILTER_H
+#define SS_AMPLITUDE_AUDIO_LOFIFILTER_H
 
 #include <SparkyStudios/Audio/Amplitude/Sound/Filter.h>
 
 namespace SparkyStudios::Audio::Amplitude
 {
-    class WaveShaperFilterInstance;
+    class LofiFilterInstance;
 
-    class WaveShaperFilter : public Filter
+    struct LofiChannelData
     {
-        friend class WaveShaperFilterInstance;
+        AmAudioSample m_sample;
+        AmReal32 m_samplesToSkip;
+    };
+
+    class LofiFilter : public Filter
+    {
+        friend class LofiFilterInstance;
 
     public:
         enum ATTRIBUTE
         {
-            ATTRIBUTE_WET = 0,
-            ATTRIBUTE_AMOUNT,
+            ATTRIBUTE_WET,
+            ATTRIBUTE_SAMPLERATE,
+            ATTRIBUTE_BITDEPTH,
             ATTRIBUTE_LAST
         };
 
-        WaveShaperFilter();
-        ~WaveShaperFilter() override = default;
+        LofiFilter();
+        ~LofiFilter() override = default;
 
-        AmResult Init(AmReal32 amount);
+        AmResult Init(AmReal32 sampleRate, AmReal32 bitdDepth);
 
         AmUInt32 GetParamCount() override;
 
@@ -53,17 +60,21 @@ namespace SparkyStudios::Audio::Amplitude
         FilterInstance* CreateInstance() override;
 
     private:
-        AmReal32 _amount;
+        AmReal32 _sampleRate;
+        AmReal32 _bitDepth;
     };
 
-    class WaveShaperFilterInstance : public FilterInstance
+    class LofiFilterInstance : public FilterInstance
     {
     public:
-        explicit WaveShaperFilterInstance(WaveShaperFilter* parent);
-        ~WaveShaperFilterInstance() override = default;
+        explicit LofiFilterInstance(LofiFilter* parent);
+        ~LofiFilterInstance() override = default;
 
         AmAudioSample ProcessSample(AmAudioSample sample, AmUInt16 channel, AmUInt32 sampleRate) override;
+
+    private:
+        LofiChannelData _channelData[AM_MAX_CHANNELS];
     };
 } // namespace SparkyStudios::Audio::Amplitude
 
-#endif // SS_AMPLITUDE_AUDIO_WAVESHARPERFILTER_H
+#endif // SS_AMPLITUDE_AUDIO_LOFIFILTER_H

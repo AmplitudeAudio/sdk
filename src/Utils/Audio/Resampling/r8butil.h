@@ -20,19 +20,19 @@
 
 namespace r8b {
 
-/**
+    /**
  * @param re Real part of the frequency response.
  * @param im Imaginary part of the frequency response.
  * @return A magnitude response value converted from the linear scale to the
  * logarithmic scale.
- */
+     */
 
-inline double convertResponseToLog( const double re, const double im )
-{
-	return( 4.34294481903251828 * log( re * re + im * im + 1e-100 ));
-}
+    inline double convertResponseToLog( const double re, const double im )
+    {
+        return( 4.34294481903251828 * log( re * re + im * im + 1e-100 ));
+    }
 
-/**
+    /**
  * An utility function that performs frequency response scanning step update
  * based on the current magnitude response's slope.
  *
@@ -44,26 +44,26 @@ inline double convertResponseToLog( const double re, const double im )
  * @param prec Precision multiplier, affects the size of the step.
  * @param maxstep The maximal allowed step.
  * @param minstep The minimal allowed step.
- */
+     */
 
-inline void updateScanStep( double& step, const double curg,
-	double& prevg_log, const double prec, const double maxstep,
-	const double minstep = 1e-11 )
-{
-	double curg_log = 4.34294481903251828 * log( curg + 1e-100 );
-	curg_log += ( prevg_log - curg_log ) * 0.7;
+    inline void updateScanStep( double& step, const double curg,
+                               double& prevg_log, const double prec, const double maxstep,
+                               const double minstep = 1e-11 )
+    {
+        double curg_log = 4.34294481903251828 * log( curg + 1e-100 );
+        curg_log += ( prevg_log - curg_log ) * 0.7;
 
-	const double slope = fabs( curg_log - prevg_log );
-	prevg_log = curg_log;
+        const double slope = fabs( curg_log - prevg_log );
+        prevg_log = curg_log;
 
-	if( slope > 0.0 )
-	{
-		step /= prec * slope;
-		step = max( min( step, maxstep ), minstep );
-	}
-}
+        if( slope > 0.0 )
+        {
+            step /= prec * slope;
+            step = max( min( step, maxstep ), minstep );
+        }
+    }
 
-/**
+    /**
  * Function locates normalized frequency at which the minimum filter gain
  * is reached. The scanning is performed from lower (left) to higher
  * (right) frequencies, the whole range is scanned.
@@ -79,46 +79,46 @@ inline void updateScanStep( double& step, const double curg,
  * currently at. On function's return will point to the normalized frequency
  * where the new minimum was found.
  * @param thend The ending frequency, inclusive.
- */
+     */
 
-inline void findFIRFilterResponseMinLtoR( const double* const flt,
-	const int fltlen, double& ming, double& minth, const double thend )
-{
-	const double maxstep = minth * 2e-3;
-	double curth = minth;
-	double re;
-	double im;
-	calcFIRFilterResponse( flt, fltlen, R8B_PI * curth, re, im );
-	double prevg_log = convertResponseToLog( re, im );
-	double step = 1e-11;
+    inline void findFIRFilterResponseMinLtoR( const double* const flt,
+                                             const int fltlen, double& ming, double& minth, const double thend )
+    {
+        const double maxstep = minth * 2e-3;
+        double curth = minth;
+        double re;
+        double im;
+        calcFIRFilterResponse( flt, fltlen, R8B_PI * curth, re, im );
+        double prevg_log = convertResponseToLog( re, im );
+        double step = 1e-11;
 
-	while( true )
-	{
-		curth += step;
+        while( true )
+        {
+            curth += step;
 
-		if( curth > thend )
-		{
-			break;
-		}
+            if( curth > thend )
+            {
+                break;
+            }
 
-		calcFIRFilterResponse( flt, fltlen, R8B_PI * curth, re, im );
-		const double curg = re * re + im * im;
+            calcFIRFilterResponse( flt, fltlen, R8B_PI * curth, re, im );
+            const double curg = re * re + im * im;
 
-		if( curg > ming )
-		{
-			ming = curg;
-			minth = curth;
-			break;
-		}
+            if( curg > ming )
+            {
+                ming = curg;
+                minth = curth;
+                break;
+            }
 
-		ming = curg;
-		minth = curth;
+            ming = curg;
+            minth = curth;
 
-		updateScanStep( step, curg, prevg_log, 0.31, maxstep );
-	}
-}
+            updateScanStep( step, curg, prevg_log, 0.31, maxstep );
+        }
+    }
 
-/**
+    /**
  * Function locates normalized frequency at which the maximal filter gain
  * is reached. The scanning is performed from lower (left) to higher
  * (right) frequencies, the whole range is scanned.
@@ -135,123 +135,123 @@ inline void findFIRFilterResponseMinLtoR( const double* const flt,
  * currently at. On function's return will point to the normalized frequency
  * where the maximum was reached.
  * @param thend The ending frequency, inclusive.
- */
+     */
 
-inline void findFIRFilterResponseMaxLtoR( const double* const flt,
-	const int fltlen, double& maxg, double& maxth, const double thend )
-{
-	const double maxstep = maxth * 1e-4;
-	double premaxth = maxth;
-	double premaxg = maxg;
-	double postmaxth = maxth;
-	double postmaxg = maxg;
+    inline void findFIRFilterResponseMaxLtoR( const double* const flt,
+                                             const int fltlen, double& maxg, double& maxth, const double thend )
+    {
+        const double maxstep = maxth * 1e-4;
+        double premaxth = maxth;
+        double premaxg = maxg;
+        double postmaxth = maxth;
+        double postmaxg = maxg;
 
-	double prevth = maxth;
-	double prevg = maxg;
-	double curth = maxth;
-	double re;
-	double im;
-	calcFIRFilterResponse( flt, fltlen, R8B_PI * curth, re, im );
-	double prevg_log = convertResponseToLog( re, im );
-	double step = 1e-11;
+        double prevth = maxth;
+        double prevg = maxg;
+        double curth = maxth;
+        double re;
+        double im;
+        calcFIRFilterResponse( flt, fltlen, R8B_PI * curth, re, im );
+        double prevg_log = convertResponseToLog( re, im );
+        double step = 1e-11;
 
-	bool WasPeak = false;
-	int AfterPeakCount = 0;
+        bool WasPeak = false;
+        int AfterPeakCount = 0;
 
-	while( true )
-	{
-		curth += step;
+        while( true )
+        {
+            curth += step;
 
-		if( curth > thend )
-		{
-			break;
-		}
+            if( curth > thend )
+            {
+                break;
+            }
 
-		calcFIRFilterResponse( flt, fltlen, R8B_PI * curth, re, im );
-		const double curg = re * re + im * im;
+            calcFIRFilterResponse( flt, fltlen, R8B_PI * curth, re, im );
+            const double curg = re * re + im * im;
 
-		if( curg > maxg )
-		{
-			premaxth = prevth;
-			premaxg = prevg;
-			maxg = curg;
-			maxth = curth;
-			WasPeak = true;
-			AfterPeakCount = 0;
-		}
-		else
-		if( WasPeak )
-		{
-			if( AfterPeakCount == 0 )
-			{
-				postmaxth = curth;
-				postmaxg = curg;
-			}
+            if( curg > maxg )
+            {
+                premaxth = prevth;
+                premaxg = prevg;
+                maxg = curg;
+                maxth = curth;
+                WasPeak = true;
+                AfterPeakCount = 0;
+            }
+            else
+                if( WasPeak )
+            {
+                if( AfterPeakCount == 0 )
+                {
+                    postmaxth = curth;
+                    postmaxg = curg;
+                }
 
-			if( AfterPeakCount == 5 )
-			{
-				// Perform 2 approximate binary searches.
+                if( AfterPeakCount == 5 )
+                {
+                    // Perform 2 approximate binary searches.
 
-				int k;
+                    int k;
 
-				for( k = 0; k < 2; k++ )
-				{
-					double l = ( k == 0 ? premaxth : maxth );
-					double curgl = ( k == 0 ? premaxg : maxg );
-					double r = ( k == 0 ? maxth : postmaxth );
-					double curgr = ( k == 0 ? maxg : postmaxg );
+                    for( k = 0; k < 2; k++ )
+                    {
+                        double l = ( k == 0 ? premaxth : maxth );
+                        double curgl = ( k == 0 ? premaxg : maxg );
+                        double r = ( k == 0 ? maxth : postmaxth );
+                        double curgr = ( k == 0 ? maxg : postmaxg );
 
-					while( true )
-					{
-						const double c = ( l + r ) * 0.5;
-						calcFIRFilterResponse( flt, fltlen, R8B_PI * c,
-							re, im );
+                        while( true )
+                        {
+                            const double c = ( l + r ) * 0.5;
+                            calcFIRFilterResponse( flt, fltlen, R8B_PI * c,
+                                                  re, im );
 
-						const double curg = re * re + im * im;
+                            const double curg = re * re + im * im;
 
-						if( curgl > curgr )
-						{
-							r = c;
-							curgr = curg;
-						}
-						else
-						{
-							l = c;
-							curgl = curg;
-						}
+                            if( curgl > curgr )
+                            {
+                                r = c;
+                                curgr = curg;
+                            }
+                            else
+                            {
+                                l = c;
+                                curgl = curg;
+                            }
 
-						if( r - l < 1e-11 )
-						{
-							if( curgl > curgr )
-							{
-								maxth = l;
-								maxg = curgl;
-							}
-							else
-							{
-								maxth = r;
-								maxg = curgr;
-							}
+                            if( r - l < 1e-11 )
+                            {
+                                if( curgl > curgr )
+                                {
+                                    maxth = l;
+                                    maxg = curgl;
+                                }
+                                else
+                                {
+                                    maxth = r;
+                                    maxg = curgr;
+                                }
 
-							break;
-						}
-					}
-				}
+                                break;
+                            }
+                        }
+                    }
 
-				break;
-			}
+                    break;
+                }
 
-			AfterPeakCount++;
-		}
+                AfterPeakCount++;
+            }
 
-		prevth = curth;
-		prevg = curg;
+            prevth = curth;
+            prevg = curg;
 
-		updateScanStep( step, curg, prevg_log, 1.0, maxstep );
-	}
-}
+            updateScanStep( step, curg, prevg_log, 1.0, maxstep );
+        }
+    }
 
-/**
+    /**
  * Function locates normalized frequency at which the specified maximum
  * filter gain is reached. The scanning is performed from higher (right)
  * to lower (left) frequencies, scanning stops when the required gain
@@ -265,41 +265,41 @@ inline void findFIRFilterResponseMaxLtoR( const double* const flt,
  * @param[out] th The current normalized frequency. On function's return will
  * point to the normalized frequency where "maxg" is reached.
  * @param thend The leftmost frequency to scan, inclusive.
- */
+     */
 
-inline void findFIRFilterResponseLevelRtoL( const double* const flt,
-	const int fltlen, const double maxg, double& th, const double thend )
-{
-	// Perform exact binary search.
+    inline void findFIRFilterResponseLevelRtoL( const double* const flt,
+                                               const int fltlen, const double maxg, double& th, const double thend )
+    {
+        // Perform exact binary search.
 
-	double l = thend;
-	double r = th;
+        double l = thend;
+        double r = th;
 
-	while( true )
-	{
-		const double c = ( l + r ) * 0.5;
+        while( true )
+        {
+            const double c = ( l + r ) * 0.5;
 
-		if( r - l < 1e-14 )
-		{
-			th = c;
-			break;
-		}
+            if( r - l < 1e-14 )
+            {
+                th = c;
+                break;
+            }
 
-		double re;
-		double im;
-		calcFIRFilterResponse( flt, fltlen, R8B_PI * c, re, im );
-		const double curg = re * re + im * im;
+            double re;
+            double im;
+            calcFIRFilterResponse( flt, fltlen, R8B_PI * c, re, im );
+            const double curg = re * re + im * im;
 
-		if( curg > maxg )
-		{
-			l = c;
-		}
-		else
-		{
-			r = c;
-		}
-	}
-}
+            if( curg > maxg )
+            {
+                l = c;
+            }
+            else
+            {
+                r = c;
+            }
+        }
+    }
 
 } // namespace r8b
 

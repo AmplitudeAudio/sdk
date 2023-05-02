@@ -14,6 +14,7 @@
 
 #include <SparkyStudios/Audio/Amplitude/Core/Engine.h>
 #include <SparkyStudios/Audio/Amplitude/Core/Log.h>
+#include <SparkyStudios/Audio/Amplitude/Core/Memory.h>
 
 #include <Core/BusInternalState.h>
 
@@ -131,6 +132,9 @@ namespace SparkyStudios::Audio::Amplitude
         _gain = _busDefinition->gain();
 
         _gainFader = Fader::Create(static_cast<Fader::FADER_ALGORITHM>(_busDefinition->fader()));
+
+        for (auto& bus : _duckBuses)
+            amdelete(DuckBusInternalState, bus);
 
         _childBuses.clear();
         _duckBuses.clear();

@@ -297,6 +297,35 @@ namespace SparkyStudios::Audio::Amplitude::Thread
         }
     }
 
+    bool PoolTask::Ready()
+    {
+        return true;
+    }
+
+    AwaitablePoolTask::AwaitablePoolTask()
+        : _condition()
+        , _mutex()
+    {}
+
+    void AwaitablePoolTask::Work()
+    {
+        std::lock_guard lock(_mutex);
+        AwaitableWork();
+        _condition.notify_all();
+    }
+
+    void AwaitablePoolTask::Await()
+    {
+        std::unique_lock lock(_mutex);
+        _condition.wait(lock);
+    }
+
+    bool AwaitablePoolTask::Await(AmUInt64 duration)
+    {
+        std::unique_lock lock(_mutex);
+        return _condition.wait_for(lock, std::chrono::milliseconds(duration)) == std::cv_status::no_timeout;
+    }
+
     Pool::Pool()
         : _threadCount(0)
         , _thread(nullptr)
@@ -382,11 +411,29 @@ namespace SparkyStudios::Audio::Amplitude::Thread
 
         if (_taskCount > 0)
         {
-            AmInt32 r = _robin % _taskCount;
-            _robin++;
-            t = _taskArray[r];
-            _taskArray[r] = _taskArray[_taskCount - 1];
-            _taskCount--;
+            AmInt32 r;
+            AmInt32 c = 0;
+
+            do
+            {
+                r = _robin % _taskCount;
+                _robin++;
+                t = _taskArray[r];
+
+                if (t->Ready())
+                {
+                    _taskArray[r] = _taskArray[_taskCount - 1];
+                    _taskCount--;
+
+                    break;
+                }
+                else
+                {
+                    t = nullptr;
+                }
+
+                c++;
+            } while (c < _taskCount);
         }
 
         if (_workMutex)

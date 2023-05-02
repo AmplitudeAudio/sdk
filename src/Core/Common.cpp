@@ -31,7 +31,7 @@ namespace SparkyStudios::Audio::Amplitude
         m_basePtr = nullptr;
         m_data = nullptr;
         m_floats = size;
-#ifndef AM_SSE_INTRINSICS
+#ifndef AM_SIMD_INTRINSICS
         m_basePtr = new AmUInt8[size * sizeof(float)];
         if (m_basePtr == nullptr)
             return AM_ERROR_OUT_OF_MEMORY;

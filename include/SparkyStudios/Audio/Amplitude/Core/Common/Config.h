@@ -37,7 +37,7 @@
 
 #if !defined(AMPLITUDE_DISABLE_SIMD)
 #if defined(AM_CPU_X86) || defined(AM_CPU_X86_64) || defined(AM_CPU_ARM_NEON)
-#define AM_SSE_INTRINSICS
+#define AM_SIMD_INTRINSICS
 #include <SparkyStudios/Audio/Amplitude/Core/Common/SIMD.h>
 #endif // AM_CPU_X86 || AM_CPU_X86_64 || AM_CPU_ARM_NEON
 #else

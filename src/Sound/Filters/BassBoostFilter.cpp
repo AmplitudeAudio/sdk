@@ -78,9 +78,7 @@ namespace SparkyStudios::Audio::Amplitude
         Comp2MagPhase(buffer, 2);
 
         for (AmUInt32 i = 0; i < 2; i++)
-        {
             buffer[i * 2] *= m_parameters[BassBoostFilter::ATTRIBUTE_BOOST];
-        }
 
         MagPhase2Comp(buffer, 2);
     }

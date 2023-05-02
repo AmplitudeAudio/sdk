@@ -71,8 +71,8 @@ namespace SparkyStudios::Audio::Amplitude::Codecs
         }
 
         m_format.SetAll(
-            _mp3.sampleRate, _mp3.channels, 0, framesCount, _mp3.channels * sizeof(AmInt16),
-            AM_SAMPLE_FORMAT_INT, // This codec always read frames as int16 values
+            _mp3.sampleRate, _mp3.channels, 0, framesCount, _mp3.channels * sizeof(AmAudioSample),
+            AM_SAMPLE_FORMAT_FLOAT, // This codec always read frames as float32 values
             AM_SAMPLE_INTERLEAVED // dr_mp3 always read interleaved frames
         );
 
@@ -97,31 +97,23 @@ namespace SparkyStudios::Audio::Amplitude::Codecs
     AmUInt64 MP3Codec::MP3Decoder::Load(AmVoidPtr out)
     {
         if (!_initialized)
-        {
             return 0;
-        }
 
         if (!Seek(0))
-        {
             return 0;
-        }
 
-        return drmp3_read_pcm_frames_s16(&_mp3, m_format.GetFramesCount(), static_cast<AmInt16Buffer>(out));
+        return drmp3_read_pcm_frames_f32(&_mp3, m_format.GetFramesCount(), static_cast<AmAudioSampleBuffer>(out));
     }
 
     AmUInt64 MP3Codec::MP3Decoder::Stream(AmVoidPtr out, AmUInt64 offset, AmUInt64 length)
     {
         if (!_initialized)
-        {
             return 0;
-        }
 
         if (!Seek(offset))
-        {
             return 0;
-        }
 
-        return drmp3_read_pcm_frames_s16(&_mp3, length, static_cast<AmInt16Buffer>(out));
+        return drmp3_read_pcm_frames_f32(&_mp3, length, static_cast<AmAudioSampleBuffer>(out));
     }
 
     bool MP3Codec::MP3Decoder::Seek(AmUInt64 offset)
@@ -138,9 +130,7 @@ namespace SparkyStudios::Audio::Amplitude::Codecs
     bool MP3Codec::MP3Encoder::Close()
     {
         if (_initialized)
-        {
             return true;
-        }
 
         return true;
     }
@@ -172,9 +162,7 @@ namespace SparkyStudios::Audio::Amplitude::Codecs
 #endif
 
         if (can)
-        {
             drmp3_uninit(&dummy);
-        }
 
         return can;
     }

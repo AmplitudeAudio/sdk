@@ -68,6 +68,21 @@
  */
 #define AM_CALLBACK(_type_, _name_) typedef _type_(AM_CALL_POLICY* _name_)
 
+/**
+ * @brief The minimum value for an audio sample.
+ */
+#define AM_AUDIO_SAMPLE_MIN (-1.0f)
+
+/**
+ * @brief The maximum value for an audio sample.
+ */
+#define AM_AUDIO_SAMPLE_MAX (+1.0f)
+
+/**
+ * @brief Clamps an audio sample value between AM_AUDIO_SAMPLE_MIN and AM_AUDIO_SAMPLE_MAX.
+ */
+#define AM_CLAMP_AUDIO_SAMPLE(v) ((v) <= -1.65f) ? -0.9862875f : ((v) >= 1.65f) ? 0.9862875f : (0.87f * (v)-0.1f * (v) * (v) * (v))
+
 // Typedefs have to be made before the includes, as the
 // includes depend on them.
 

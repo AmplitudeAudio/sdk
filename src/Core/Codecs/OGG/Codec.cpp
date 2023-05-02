@@ -36,9 +36,9 @@ namespace SparkyStudios::Audio::Amplitude::Codecs
         const AmUInt32 framesCount = stb_vorbis_stream_length_in_samples(_ogg);
 
         m_format.SetAll(
-            info.sample_rate, info.channels, info.max_frame_size, framesCount, info.channels * sizeof(AmInt16),
-            AM_SAMPLE_FORMAT_INT, // This codec always read frames as int16 values
-            AM_SAMPLE_INTERLEAVED // stb_vorbis always read interleaved frames
+            info.sample_rate, info.channels, info.max_frame_size, framesCount, info.channels * sizeof(AmAudioSample),
+            AM_SAMPLE_FORMAT_FLOAT, // This codec always read frames as float32 values
+            AM_SAMPLE_INTERLEAVED // This codec always read interleaved frames
         );
 
         _initialized = true;
@@ -63,34 +63,26 @@ namespace SparkyStudios::Audio::Amplitude::Codecs
     AmUInt64 OGGCodec::OGGDecoder::Load(AmVoidPtr out)
     {
         if (!_initialized)
-        {
             return 0;
-        }
 
         if (stb_vorbis_seek_start(_ogg) == 0)
-        {
             return 0;
-        }
 
-        return stb_vorbis_get_samples_short_interleaved(
-            _ogg, m_format.GetNumChannels(), static_cast<AmInt16Buffer>(out),
+        return stb_vorbis_get_samples_float_interleaved(
+            _ogg, m_format.GetNumChannels(), static_cast<AmAudioSampleBuffer>(out),
             static_cast<int>(m_format.GetFramesCount() * m_format.GetNumChannels()));
     }
 
     AmUInt64 OGGCodec::OGGDecoder::Stream(AmVoidPtr out, AmUInt64 offset, AmUInt64 length)
     {
         if (!_initialized)
-        {
             return 0;
-        }
 
         if (!Seek(offset))
-        {
             return 0;
-        }
 
-        return stb_vorbis_get_samples_short_interleaved(
-            _ogg, m_format.GetNumChannels(), static_cast<AmInt16Buffer>(out), static_cast<int>(length * m_format.GetNumChannels()));
+        return stb_vorbis_get_samples_float_interleaved(
+            _ogg, m_format.GetNumChannels(), static_cast<AmAudioSampleBuffer>(out), static_cast<int>(length * m_format.GetNumChannels()));
     }
 
     bool OGGCodec::OGGDecoder::Seek(AmUInt64 offset)
@@ -107,9 +99,7 @@ namespace SparkyStudios::Audio::Amplitude::Codecs
     bool OGGCodec::OGGEncoder::Close()
     {
         if (_initialized)
-        {
             return true;
-        }
 
         return true;
     }

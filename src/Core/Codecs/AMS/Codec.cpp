@@ -304,12 +304,26 @@ namespace SparkyStudios::Audio::Amplitude::Codecs
         memset(&header, 0, sizeof(header));
 
         // ========== RIFF HEADER
+#if defined(AM_WINDOWS_VERSION)
+        strncpy_s((char*)header.riff.chunkID, 4, "RIFF", sizeof(header.riff.chunkID));
+#else
         strncpy((char*)header.riff.chunkID, "RIFF", sizeof(header.riff.chunkID));
+#endif
         header.riff.chunkSize = sizeof(RIFFHeader) + sizeof(WAVEHeader) + sizeof(DATAHeader) + totalDataBytes;
+
+#if defined(AM_WINDOWS_VERSION)
+        strncpy_s((char*)header.riff.chunkFormat, 4, "WAVE", sizeof(header.riff.chunkFormat));
+#else
         strncpy((char*)header.riff.chunkFormat, "WAVE", sizeof(header.riff.chunkFormat));
+#endif
 
         // ========== FORMAT HEADER
+#if defined(AM_WINDOWS_VERSION)
+        strncpy_s((char*)header.fmt.chunkID, 4, "fmt ", sizeof(header.fmt.chunkID));
+#else
         strncpy((char*)header.fmt.chunkID, "fmt ", sizeof(header.fmt.chunkID));
+#endif
+
         header.fmt.chunkSize = sizeof(WAVEHeader);
 
         // ========== WAVE HEADER
@@ -323,12 +337,22 @@ namespace SparkyStudios::Audio::Amplitude::Codecs
         header.wave.validBitsPerSample = samplesPerBlock;
 
         // ========== FACT HEADER
+#if defined(AM_WINDOWS_VERSION)
+        strncpy_s((char*)header.fact.chunkID, 4, "fact", sizeof(header.fact.chunkID));
+#else
         strncpy((char*)header.fact.chunkID, "fact", sizeof(header.fact.chunkID));
+#endif
+
         header.fact.totalSamples = format.GetFramesCount();
         header.fact.chunkSize = 4;
 
         // ========== DATA HEADER
+#if defined(AM_WINDOWS_VERSION)
+        strncpy_s((char*)header.data.chunkID, 4, "data", sizeof(header.data.chunkID));
+#else
         strncpy((char*)header.data.chunkID, "data", sizeof(header.data.chunkID));
+#endif
+
         header.data.chunkSize = totalDataBytes;
 
         // write the RIFF chunks up to just before the data starts
@@ -348,60 +372,36 @@ namespace SparkyStudios::Audio::Amplitude::Codecs
         const AmUInt32 frameSize = format.GetFrameSize();
         const AmUInt32 samplesPerBlock = (blockSize - numChannels * 4) * (numChannels ^ 3) + 1;
 
-        auto* pcm_block = static_cast<AmInt16Buffer>(amMemory->Malloc(MemoryPoolKind::Codec, samplesPerBlock * frameSize));
-        auto* adpcm_block = static_cast<AmUInt8Buffer>(amMemory->Malloc(MemoryPoolKind::Codec, blockSize));
+        auto pcm_block = static_cast<AmInt16Buffer>(amMemory->Malloc(MemoryPoolKind::Codec, samplesPerBlock * frameSize));
+        auto adpcm_block = static_cast<AmUInt8Buffer>(amMemory->Malloc(MemoryPoolKind::Codec, blockSize));
 
         if (!pcm_block || !adpcm_block)
         {
             return 0;
         }
 
-        AmUInt64 processed = 0;
-        while (length)
+        if (file.Read(adpcm_block, blockSize) != blockSize)
         {
-            AmUInt32 this_block_adpcm_samples = samplesPerBlock;
-            AmUInt32 this_block_pcm_samples = samplesPerBlock;
-
-            if (this_block_adpcm_samples > length && processed > 0 && offset == 0)
-            {
-                this_block_adpcm_samples = ((length + 6) & ~7) + 1;
-                blockSize = (this_block_adpcm_samples - 1) / (numChannels ^ 3) + (numChannels * 4);
-                this_block_pcm_samples = length;
-            }
-
-            if (file.Read(adpcm_block, blockSize) != blockSize)
-            {
-                amMemory->Free(MemoryPoolKind::Codec, pcm_block);
-                amMemory->Free(MemoryPoolKind::Codec, adpcm_block);
-                return 0;
-            }
-
-            if (this_block_adpcm_samples > length)
-            {
-                this_block_adpcm_samples = ((length + 6) & ~7) + 1;
-                blockSize = (this_block_adpcm_samples - 1) / (numChannels ^ 3) + (numChannels * 4);
-                this_block_pcm_samples = length;
-            }
-
-            if (Compression::ADPCM::Decompress(pcm_block, adpcm_block, blockSize, numChannels) != this_block_adpcm_samples)
-            {
-                amMemory->Free(MemoryPoolKind::Codec, pcm_block);
-                amMemory->Free(MemoryPoolKind::Codec, adpcm_block);
-                return 0;
-            }
-
-            const AmUInt64 io = processed * numChannels, oo = (offset / blockSize) * numChannels;
-
-            memcpy(static_cast<AmInt16Buffer>(out) + io, pcm_block + oo, this_block_pcm_samples * frameSize);
-
-            length -= this_block_pcm_samples;
-            processed += this_block_pcm_samples;
+            amMemory->Free(MemoryPoolKind::Codec, pcm_block);
+            amMemory->Free(MemoryPoolKind::Codec, adpcm_block);
+            return 0;
         }
+
+        if (Compression::ADPCM::Decompress(pcm_block, adpcm_block, blockSize, numChannels) != samplesPerBlock)
+        {
+            amMemory->Free(MemoryPoolKind::Codec, pcm_block);
+            amMemory->Free(MemoryPoolKind::Codec, adpcm_block);
+            return 0;
+        }
+
+        const AmUInt64 oo = (offset % blockSize) * numChannels;
+
+        memcpy(out, pcm_block + oo, length * frameSize);
 
         amMemory->Free(MemoryPoolKind::Codec, pcm_block);
         amMemory->Free(MemoryPoolKind::Codec, adpcm_block);
 
-        return processed;
+        return length;
     }
 
     static AmUInt64 Encode(
@@ -416,7 +416,7 @@ namespace SparkyStudios::Audio::Amplitude::Codecs
         const AmUInt32 numChannels = format.GetNumChannels();
         AmUInt32 blockSize = (samplesPerBlock - 1) / (numChannels ^ 3) + (numChannels * 4);
 
-        auto* adpcm_block = static_cast<AmUInt8Buffer>(amMemory->Malloc(MemoryPoolKind::Codec, blockSize));
+        auto adpcm_block = static_cast<AmUInt8Buffer>(amMemory->Malloc(MemoryPoolKind::Codec, blockSize));
 
         Context* ctx = nullptr;
 
