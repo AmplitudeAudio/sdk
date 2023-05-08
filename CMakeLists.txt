@@ -20,6 +20,12 @@ list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake")
 
 include(DetectAmplitudeVersion)
 
+option(BUILD_SAMPLES "Build samples" OFF)
+
+if(BUILD_SAMPLES)
+    list(APPEND VCPKG_MANIFEST_FEATURES "samples")
+endif()
+
 project(Amplitude VERSION ${DETECTED_AM_VERSION})
 
 set(CMAKE_CXX_STANDARD 17)
@@ -342,15 +348,12 @@ endif()
 
 add_subdirectory(tools/amac)
 
-option(BUILD_SAMPLES "Build samples" OFF)
 if(BUILD_SAMPLES)
-  list(APPEND VCPKG_MANIFEST_FEATURES "samples")
   add_subdirectory(samples)
 endif()
 
 # #####################################################
 # INSTALL
-
 if(MSVC)
     set(RUNTIME_OUTPUT_DIRECTORY "win")
 elseif(APPLE)

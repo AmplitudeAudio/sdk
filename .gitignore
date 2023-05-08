@@ -5,6 +5,8 @@ bin/
 obj/
 sdk/
 tests/*_test
+schemas/*.bfbs
+
 *.ambank
 *.ambus
 *.amconfig
@@ -49,14 +51,13 @@ cmake-*/
 tags/
 docs/html/
 docs/linklint_results/
+docs/resources/_gen/
+docs/.hugo_build.lock
 gen/
+.DS_Store
 
 # CLangd cache
 .cache/
 
 # VCPKG
 vcpkg_installed/
-
-samples/
-scripts/
-assets/

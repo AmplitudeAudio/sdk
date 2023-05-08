@@ -3,5 +3,13 @@
     "name": "amplitude-audio-sdk",
     "description": "A powerful and cross-platform audio engine, optimized for games.",
     "version": "1.0",
+    "features": {
+        "samples": {
+            "description": "Amplitude Audio SDK Samples",
+            "dependencies": [
+                "sdl2"
+            ]
+        }
+    },
     "dependencies": []
 }
