@@ -44,8 +44,11 @@
  */
 #define amdelete(_type_, _ptr_)                                                                                                            \
     {                                                                                                                                      \
-        (_ptr_)->~_type_();                                                                                                                \
-        amMemory->Free(SparkyStudios::Audio::Amplitude::MemoryPoolKind::Default, (_ptr_));                                                 \
+        if (_ptr_ != nullptr)                                                                                                              \
+        {                                                                                                                                  \
+            (_ptr_)->~_type_();                                                                                                            \
+            amMemory->Free(SparkyStudios::Audio::Amplitude::MemoryPoolKind::Default, (_ptr_));                                             \
+        }                                                                                                                                  \
     }
 
 namespace SparkyStudios::Audio::Amplitude
