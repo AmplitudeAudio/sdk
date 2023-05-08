@@ -17,9 +17,13 @@
 #include <SparkyStudios/Audio/Amplitude/Amplitude.h>
 
 #include "../src/Core/Codecs/AMS/Codec.h"
+#include "../src/Core/Codecs/FLAC/Codec.h"
+#include "../src/Core/Codecs/MP3/Codec.h"
+#include "../src/Core/Codecs/OGG/Codec.h"
 #include "../src/Core/Codecs/WAV/Codec.h"
 
 #include "../src/Utils/Audio/Resampling/CDSPResampler.h"
+#include "../src/Utils/miniaudio/miniaudio_utils.h"
 #include "../src/Utils/Utils.h"
 
 #define AM_FLAG_NOISE_SHAPING 0x1
@@ -139,7 +143,7 @@ static int process(const AmOsString& inFileName, const AmOsString& outFileName, 
                 outFileName.c_str());
         }
 
-        auto* pcmData = static_cast<AmInt16Buffer>(amMemory->Malloc(MemoryPoolKind::Codec, numSamples * framesSize));
+        auto pcmData = static_cast<AmAudioSampleBuffer>(amMemory->Malloc(MemoryPoolKind::Codec, numSamples * framesSize));
 
         if (decoder->Load(pcmData) != numSamples || !decoder->Close())
         {
@@ -153,20 +157,19 @@ static int process(const AmOsString& inFileName, const AmOsString& outFileName, 
             state.noiseShaping ? (sampleRate > 64000 ? Compression::ADPCM::eNSM_STATIC : Compression::ADPCM::eNSM_DYNAMIC)
                                : Compression::ADPCM::eNSM_OFF);
 
+        auto* output16 = static_cast<AmInt16Buffer>(
+            amMemory->Malign(MemoryPoolKind::SoundData, numSamples * numChannels * sizeof(AmInt16), AM_SIMD_ALIGNMENT));
+
         if (state.resampling.enabled)
         {
             AmUInt64 f = std::ceil(static_cast<AmReal32>(numSamples * state.resampling.targetSampleRate) / sampleRate);
 
-            auto* output16 = static_cast<AmInt16Buffer>(amMemory->Malign(MemoryPoolKind::SoundData, f * framesSize, AM_SIMD_ALIGNMENT));
-
             std::vector<r8b::CDSPResampler16*> resamplers;
             for (AmUInt16 c = 0; c < numChannels; c++)
-            {
                 resamplers.push_back(new r8b::CDSPResampler16(sampleRate, state.resampling.targetSampleRate, numSamples));
-            }
 
-            auto* input64 = static_cast<AmReal64Buffer>(
-                amMemory->Malign(MemoryPoolKind::SoundData, numSamples * numChannels * sizeof(AmReal64), AM_SIMD_ALIGNMENT));
+            auto* input64 =
+                static_cast<AmReal64Buffer>(amMemory->Malign(MemoryPoolKind::SoundData, numSamples * sizeof(AmReal64), AM_SIMD_ALIGNMENT));
 
             for (AmUInt16 c = 0; c < numChannels; c++)
             {
@@ -176,14 +179,14 @@ static int process(const AmOsString& inFileName, const AmOsString& outFileName, 
                 {
                     for (AmUInt64 i = 0; i < numSamples; i++)
                     {
-                        input64[i] = static_cast<AmReal64>(AmInt16ToReal32(pcmData[i * numChannels + c]));
+                        input64[i] = static_cast<AmReal64>(pcmData[i * numChannels + c]);
                     }
                 }
                 else
                 {
                     for (AmUInt64 i = numSamples * c, m = numSamples * (c + 1); i < m; i++)
                     {
-                        input64[i] = static_cast<AmReal64>(AmInt16ToReal32(pcmData[i]));
+                        input64[i] = static_cast<AmReal64>(pcmData[i]);
                     }
                 }
 
@@ -209,7 +212,10 @@ static int process(const AmOsString& inFileName, const AmOsString& outFileName, 
             encoder->SetFormat(encodeFormat);
             if (!encoder->Open(outFileName))
             {
+                amMemory->Free(MemoryPoolKind::SoundData, output16);
+
                 fprintf(stderr, "Unable to open file \"" AM_OS_CHAR_FMT "\" for writing.\n", outFileName.c_str());
+
                 return EXIT_FAILURE;
             }
 
@@ -217,33 +223,41 @@ static int process(const AmOsString& inFileName, const AmOsString& outFileName, 
             {
                 amMemory->Free(MemoryPoolKind::Codec, pcmData);
                 amMemory->Free(MemoryPoolKind::SoundData, output16);
+
                 fprintf(stderr, "Error while encoding ADPCM file \"" AM_OS_CHAR_FMT "\".\n", outFileName.c_str());
+
                 return EXIT_FAILURE;
             }
 
-            for (AmInt16 c = 0; c < numChannels; c++)
-            {
+            for (AmUInt16 c = 0; c < numChannels; c++)
                 delete resamplers[c];
-            }
-
-            amMemory->Free(MemoryPoolKind::SoundData, output16);
         }
         else
         {
+            ma_pcm_f32_to_s16(output16, pcmData, numSamples * numChannels, ma_dither_mode_rectangle);
+
             encoder->SetFormat(format);
             if (!encoder->Open(outFileName))
             {
+                amMemory->Free(MemoryPoolKind::SoundData, output16);
+
                 fprintf(stderr, "Unable to open file \"" AM_OS_CHAR_FMT "\" for writing.\n", outFileName.c_str());
+
                 return EXIT_FAILURE;
             }
 
-            if (encoder->Write(pcmData, 0, numSamples) != numSamples || !encoder->Close())
+            if (encoder->Write(output16, 0, numSamples) != numSamples || !encoder->Close())
             {
+                amMemory->Free(MemoryPoolKind::SoundData, output16);
                 amMemory->Free(MemoryPoolKind::Codec, pcmData);
+
                 fprintf(stderr, "Error while encoding ADPCM file \"" AM_OS_CHAR_FMT "\".\n", outFileName.c_str());
+
                 return EXIT_FAILURE;
             }
         }
+
+        amMemory->Free(MemoryPoolKind::SoundData, output16);
 
         if (state.verbose)
         {
@@ -337,114 +351,113 @@ int main(int argc, char* argv[])
     bool noLogo = false, needHelp = false;
     ProcessingState state;
 
-    while (--argc)
+    for (int i = 1; i < argc; i++)
     {
-#if defined(_WIN32)
-        if ((**++argv == '-' || **argv == '/') && (*argv)[1])
+#if defined(AM_WINDOWS_VERSION)
+        if (*argv[i] == '-' || *argv[i] == '/')
 #else
-        if ((**++argv == '-') && (*argv)[1])
-#endif
+        if (*argv[i] == '-')
+#endif // AM_WINDOWS_VERSION
         {
-            while (*++*argv)
+            switch (argv[i][1])
             {
-                switch (**argv)
+            case 'H':
+            case 'h':
+                needHelp = true;
+                state.verbose = true;
+                break;
+
+            case 'O':
+            case 'o':
+                noLogo = true;
+                break;
+
+            case 'Q':
+            case 'q':
+                state.verbose = false;
+                noLogo = true;
+                break;
+
+            case 'V':
+            case 'v':
+                state.verbose = true;
+                break;
+
+            case 'C':
+            case 'c':
+                state.mode = ePM_ENCODE;
+                break;
+
+            case '0':
+            case '1':
+            case '2':
+            case '3':
+            case '4':
+            case '5':
+            case '6':
+            case '7':
+            case '8':
+                state.lookAhead = argv[i][1] - '0';
+                break;
+
+            case 'B':
+            case 'b':
+                state.blockSizeShift = strtol(argv[++i], argv, 10);
+
+                if (state.blockSizeShift < 8 || state.blockSizeShift > 15)
                 {
-                case 'H':
-                case 'h':
-                    needHelp = true;
-                    state.verbose = true;
-                    break;
-
-                case 'O':
-                case 'o':
-                    noLogo = true;
-                    break;
-
-                case 'Q':
-                case 'q':
-                    state.verbose = false;
-                    noLogo = true;
-                    break;
-
-                case 'V':
-                case 'v':
-                    state.verbose = true;
-                    break;
-
-                case 'C':
-                case 'c':
-                    state.mode = ePM_ENCODE;
-                    break;
-
-                case '0':
-                case '1':
-                case '2':
-                case '3':
-                case '4':
-                case '5':
-                case '6':
-                case '7':
-                case '8':
-                    state.lookAhead = **argv - '0';
-                    break;
-
-                case 'B':
-                case 'b':
-                    ++*argv;
-                    state.blockSizeShift = strtol(++*argv, argv, 10);
-
-                    if (state.blockSizeShift < 8 || state.blockSizeShift > 15)
-                    {
-                        fprintf(stderr, "\nblock size power must be 8 to 15!\n");
-                        return EXIT_FAILURE;
-                    }
-
-                    --*argv;
-                    --argc;
-                    break;
-
-                case 'F':
-                case 'f':
-                    state.noiseShaping = false;
-                    break;
-
-                case 'R':
-                case 'r':
-                    ++*argv;
-
-                    state.resampling.enabled = true;
-                    state.resampling.targetSampleRate = strtol(++*argv, argv, 10);
-
-                    if (state.resampling.targetSampleRate < 8000 || state.blockSizeShift > 384000)
-                    {
-                        fprintf(stderr, "\nInvalid sample rate provided. Please give a value between 8000 and 384000.\n");
-                        return EXIT_FAILURE;
-                    }
-
-                    --*argv;
-                    --argc;
-                    break;
-
-                case 'D':
-                case 'd':
-                    state.mode = ePM_DECODE;
-                    break;
-
-                default:
-                    fprintf(stderr, "\nInvalid option: -%c. Use -h for help.\n", **argv);
+                    fprintf(stderr, "\nblock size power must be 8 to 15!\n");
                     return EXIT_FAILURE;
                 }
+                break;
+
+            case 'F':
+            case 'f':
+                state.noiseShaping = false;
+                break;
+
+            case 'R':
+            case 'r':
+                state.resampling.enabled = true;
+                state.resampling.targetSampleRate = strtol(argv[++i], argv, 10);
+
+                if (state.resampling.targetSampleRate < 8000 || state.blockSizeShift > 384000)
+                {
+                    fprintf(stderr, "\nInvalid sample rate provided. Please give a value between 8000 and 384000.\n");
+                    return EXIT_FAILURE;
+                }
+                break;
+
+            case 'D':
+            case 'd':
+                state.mode = ePM_DECODE;
+                break;
+
+            default:
+                fprintf(stderr, "\nInvalid option: -%c. Use -h for help.\n", **argv);
+                return EXIT_FAILURE;
             }
         }
         else if (!inFileName)
         {
-            inFileName = static_cast<char*>(amMemory->Malloc(MemoryPoolKind::Codec, strlen(*argv) + 10));
-            strcpy(inFileName, *argv);
+            inFileName = static_cast<char*>(amMemory->Malloc(MemoryPoolKind::Codec, strlen(argv[i]) + 10));
+
+#if defined(AM_WINDOWS_VERSION)
+            strcpy_s(inFileName, strlen(argv[i]) + 10, *argv);
+#else
+            strcpy(inFileName, argv[i]);
+#endif
         }
         else if (!outFileName)
         {
-            outFileName = static_cast<char*>(amMemory->Malloc(MemoryPoolKind::Codec, strlen(*argv) + 10));
-            strcpy(outFileName, *argv);
+            std::cout << "out ";
+            outFileName = static_cast<char*>(amMemory->Malloc(MemoryPoolKind::Codec, strlen(argv[i]) + 10));
+
+#if defined(AM_WINDOWS_VERSION)
+            strcpy_s(outFileName, strlen(argv[i]) + 10, *argv);
+#else
+            strcpy(outFileName, argv[i]);
+#endif
         }
         else
         {
