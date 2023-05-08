@@ -1031,7 +1031,7 @@ namespace SparkyStudios::Audio::Amplitude
             const AmUInt64 offset = (cursor % layer->snd->length) * soundChannels;
             const AmUInt64 remaining = layer->snd->chunk->frames - cursor;
 
-            if (cursor < layer->snd->chunk->frames && remaining < outSamples)
+            if (cursor < layer->snd->chunk->frames && remaining < inSamples)
             {
                 const AmUInt64 size = remaining * layer->snd->format.GetFrameSize();
 
