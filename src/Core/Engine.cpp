@@ -59,7 +59,7 @@
 
 #pragma region Default Resamplers
 
-#include <Mixer/Resamplers/LibzitaResampler.h>
+#include <Mixer/Resamplers/LibsamplerateResampler.h>
 #include <Mixer/Resamplers/R8BrainResampler.h>
 
 #pragma endregion

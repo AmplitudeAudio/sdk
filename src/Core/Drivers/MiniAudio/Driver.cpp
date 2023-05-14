@@ -78,7 +78,7 @@ namespace SparkyStudios::Audio::Amplitude::Drivers
     {
         (void)pHeap;
 
-        auto* pResampler = Resampler::Construct("libzita");
+        auto* pResampler = Resampler::Construct("libsamplerate");
         auto* pDeviceDescription = static_cast<DeviceDescription*>(pUserData);
 
         AmUInt64 maxFramesIn = pDeviceDescription->mOutputBufferSize / pConfig->channels;
@@ -97,7 +97,7 @@ namespace SparkyStudios::Audio::Amplitude::Drivers
 
         pResampler->Clear();
 
-        Resampler::Destruct("libzita", pResampler);
+        Resampler::Destruct("libsamplerate", pResampler);
     }
 
     static ma_result ma_resampling_backend_process_ls(

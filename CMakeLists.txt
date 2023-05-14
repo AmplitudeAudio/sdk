@@ -59,16 +59,6 @@ endif()
 
 # ------------------------------------------------------------------------------
 
-# Setup libzita-resampler
-# ------------------------------------------------------------------------------
-if(NOT TARGET zita-resampler)
-    list(APPEND CMAKE_MODULE_PATH ${CMAKE_CURRENT_SOURCE_DIR}/dependencies/zita-resampler/cmake)
-    add_subdirectory("dependencies/zita-resampler" ${OBJ_DIR}/zita-resampler EXCLUDE_FROM_ALL)
-    set(LIBZITA_INCLUDE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/dependencies/zita-resampler/source)
-endif()
-
-# ------------------------------------------------------------------------------
-
 # Setup libsimdpp
 # ------------------------------------------------------------------------------
 # Check what instruction sets the current host supports. Use them for testing
@@ -207,7 +197,7 @@ set(SA_SOURCE
     src/Math/Shape.cpp
 
     src/Mixer/Resamplers/R8BrainResampler.h
-    src/Mixer/Resamplers/LibzitaResampler.h
+    src/Mixer/Resamplers/LibsamplerateResampler.h
     src/Mixer/SoundProcessors/EffectProcessor.h
     src/Mixer/SoundProcessors/EnvironmentProcessor.h
     src/Mixer/SoundProcessors/ObstructionProcessor.h
@@ -323,7 +313,6 @@ include_directories(src
     ${FLATC_INCLUDE_DIR}
     ${SIMDPP_INCLUDE_DIR}
     ${LIBSAMPLERATE_INCLUDE_DIR}
-    ${LIBZITA_INCLUDE_DIR}
     ${AM_FLATBUFFERS_GENERATED_INCLUDES_DIR}
 )
 
@@ -331,7 +320,6 @@ add_library(${PROJECT_NAME} STATIC ${SA_SOURCE})
 
 target_link_libraries(${PROJECT_NAME} PRIVATE flatbuffers)
 target_link_libraries(${PROJECT_NAME} PRIVATE samplerate)
-target_link_libraries(${PROJECT_NAME} PRIVATE zita-resampler)
 
 add_dependencies(${PROJECT_NAME}
     generated_includes
@@ -374,7 +362,7 @@ set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/${AM_BIN_DESTINATION}")
 set(CMAKE_INSTALL_PREFIX ${CMAKE_CURRENT_LIST_DIR})
 
 install(
-    TARGETS ${PROJECT_NAME} amac samplerate zita-resampler
+    TARGETS ${PROJECT_NAME} amac samplerate
     EXPORT AmplitudeAudioSDKConfig
     ARCHIVE DESTINATION ${AM_LIB_DESTINATION}
     LIBRARY DESTINATION ${AM_LIB_DESTINATION}
@@ -409,12 +397,6 @@ export(
     TARGETS samplerate
     NAMESPACE SampleRate::
     FILE "${CMAKE_CURRENT_BINARY_DIR}/SampleRateConfig.cmake"
-)
-
-export(
-    TARGETS zita-resampler
-    NAMESPACE zita-resampler::
-    FILE "${CMAKE_CURRENT_BINARY_DIR}/zita-resamplerConfig.cmake"
 )
 
 export(

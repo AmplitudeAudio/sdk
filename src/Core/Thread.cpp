@@ -21,6 +21,9 @@
 #else
 #include <ctime>
 #include <pthread.h>
+#include <sys/types.h>
+#include <unistd.h>
+#include <sys/syscall.h>
 #endif
 
 namespace SparkyStudios::Audio::Amplitude::Thread
@@ -120,7 +123,7 @@ namespace SparkyStudios::Audio::Amplitude::Thread
         return ::GetTickCount64();
     }
 
-    AmThreadID GetCurrentThreadID()
+    AmThreadID GetCurrentThreadId()
     {
         return ::GetCurrentThreadId();
     }
@@ -269,11 +272,12 @@ namespace SparkyStudios::Audio::Amplitude::Thread
     AmThreadID GetCurrentThreadId()
     {
 #if defined(AM_APPLE_VERSION)
-        AmUInt64 tid = 0;
+        AmThreadID tid = 0;
         pthread_threadid_np(pthread_self(), &tid);
         return tid;
 #else
-        return gettid();
+        pid_t tid = syscall(__NR_gettid);
+        return (AmThreadID) tid;
 #endif
     }
 #endif

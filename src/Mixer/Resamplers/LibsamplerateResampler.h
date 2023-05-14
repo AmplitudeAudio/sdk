@@ -19,16 +19,16 @@
 
 #include <SparkyStudios/Audio/Amplitude/Amplitude.h>
 
-#include <zita-resampler/vresampler.h>
+#include "samplerate.h"
 
 namespace SparkyStudios::Audio::Amplitude
 {
-    class ZitaResamplerInstance final : public ResamplerInstance
+    class LibsamplerateResamplerInstance final : public ResamplerInstance
     {
     public:
         void Init(AmUInt16 channelCount, AmUInt32 sampleRateIn, AmUInt32 sampleRateOut, AmUInt64 frameCount) override
         {
-            _resampler = amnew(VResampler);
+            _resampler = src_new(SRC_SINC_FASTEST, channelCount, nullptr);
 
             _numChannels = channelCount;
             _frameCount = frameCount;
@@ -36,27 +36,24 @@ namespace SparkyStudios::Audio::Amplitude
             _sampleRateIn = sampleRateIn;
             _sampleRateOut = sampleRateOut;
             _sampleRatio = static_cast<AmReal64>(sampleRateOut) / static_cast<AmReal64>(sampleRateIn);
-
-            _resampler->setup(_sampleRatio, channelCount, 48);
         }
 
         bool Process(AmAudioSampleBuffer input, AmUInt64& inputFrames, AmAudioSampleBuffer output, AmUInt64& outputFrames) override
         {
-            _resampler->out_count = outputFrames;
-            _resampler->out_data = output;
+            SRC_DATA data;
+            data.data_in = input;
+            data.data_out = output;
+            data.end_of_input = 0;
+            data.input_frames = inputFrames;
+            data.output_frames = outputFrames;
+            data.src_ratio = _sampleRatio;
 
-            _resampler->inp_count = inputFrames;
-            _resampler->inp_data = input;
+            int err = src_process(_resampler, &data);
 
-            _resampler->process();
+            inputFrames = data.input_frames_used;
+            outputFrames = data.output_frames_gen;
 
-            if (_resampler->inp_count > 0)
-                inputFrames -= _resampler->inp_count;
-
-            if (_resampler->out_count > 0)
-                outputFrames -= _resampler->out_count;
-
-            return true;
+            return err == 0;
         }
 
         void SetSampleRate(AmUInt32 sampleRateIn, AmUInt32 sampleRateOut) override
@@ -64,11 +61,9 @@ namespace SparkyStudios::Audio::Amplitude
             _sampleRateIn = sampleRateIn;
             _sampleRateOut = sampleRateOut;
 
-            const AmReal64 ratio = static_cast<AmReal64>(sampleRateOut) / static_cast<AmReal64>(sampleRateIn);
+            _sampleRatio = static_cast<AmReal64>(sampleRateOut) / static_cast<AmReal64>(sampleRateIn);
 
-            _resampler->set_rratio(ratio / _sampleRatio);
-
-            _sampleRatio = ratio;
+            src_set_ratio(_resampler, _sampleRatio);
         }
 
         [[nodiscard]] AmUInt32 GetSampleRateIn() const override
@@ -88,53 +83,22 @@ namespace SparkyStudios::Audio::Amplitude
 
         [[nodiscard]] AmUInt64 GetRequiredInputFrameCount(AmUInt64 outputFrameCount) const override
         {
-            VResampler temp;
-
-            temp.setup(_sampleRatio, _numChannels, 48);
-
-            AmUInt64 step = temp.inpsize() - 1;
-
-            temp.inp_count = step;
-            temp.inp_data = nullptr;
-            temp.out_count = outputFrameCount;
-            temp.out_data = nullptr;
-
-            AmUInt64 inputFrameCount = 0;
-            while (temp.out_count > 0)
-            {
-                temp.process();
-
-                if (temp.out_count == 0)
-                {
-                    if (temp.inp_count > 0)
-                        inputFrameCount += step - temp.inp_count;
-
-                    break;
-                }
-
-                if (temp.inp_count == 0)
-                {
-                    temp.inp_count = step;
-                    inputFrameCount += step;
-                }
-            }
-
-            return inputFrameCount - GetLatencyInFrames();
+            return std::ceil(static_cast<AmReal32>(outputFrameCount) / _sampleRatio);
         }
 
         [[nodiscard]] AmUInt64 GetExpectedOutputFrameCount(AmUInt64 inputFrameCount) const override
         {
-            return 0;
+            return std::ceil(_sampleRatio * static_cast<AmReal32>(inputFrameCount));
         }
 
         [[nodiscard]] AmUInt64 GetLatencyInFrames() const override
         {
-            return _resampler->inpsize() - 1;
+            return 0;
         }
 
         void Reset() override
         {
-            _resampler->reset();
+            src_reset(_resampler);
         }
 
         void Clear() override
@@ -142,8 +106,7 @@ namespace SparkyStudios::Audio::Amplitude
             if (_resampler == nullptr)
                 return;
 
-            _resampler->clear();
-            amdelete(VResampler, _resampler);
+            src_delete(_resampler);
             _resampler = nullptr;
         }
 
@@ -155,26 +118,26 @@ namespace SparkyStudios::Audio::Amplitude
         AmUInt32 _sampleRateOut = 0;
         AmReal64 _sampleRatio = 0.0;
 
-        VResampler* _resampler = nullptr;
+        SRC_STATE* _resampler;
     };
 
-    [[maybe_unused]] static class ZitaResampler final : public Resampler
+    [[maybe_unused]] static class LibsamplerateResampler final : public Resampler
     {
     public:
-        ZitaResampler()
-            : Resampler("libzita")
+        LibsamplerateResampler()
+            : Resampler("libsamplerate")
         {}
 
         ResamplerInstance* CreateInstance() override
         {
-            return amnew(ZitaResamplerInstance);
+            return amnew(LibsamplerateResamplerInstance);
         }
 
         void DestroyInstance(ResamplerInstance* instance) override
         {
-            amdelete(ZitaResamplerInstance, (ZitaResamplerInstance*)instance);
+            amdelete(LibsamplerateResamplerInstance, (LibsamplerateResamplerInstance*)instance);
         }
-    } gZitaResampler; // NOLINT(cert-err58-cpp)
+    } gLibsamplerateResampler; // NOLINT(cert-err58-cpp)
 } // namespace SparkyStudios::Audio::Amplitude
 
 #endif // SS_AMPLITUDE_AUDIO_LIBSAMPLERATE_RESAMPLER_H

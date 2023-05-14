@@ -61,7 +61,7 @@ namespace SparkyStudios::Audio::Amplitude
     {
         (void)pHeap;
 
-        auto* pResampler = Resampler::Construct("libzita");
+        auto* pResampler = Resampler::Construct("libsamplerate");
         auto* pMixerLayer = static_cast<MixerLayer*>(pUserData);
 
         AmUInt64 maxFramesIn = pMixerLayer->end - pMixerLayer->start;
@@ -80,7 +80,7 @@ namespace SparkyStudios::Audio::Amplitude
 
         pResampler->Clear();
 
-        Resampler::Destruct("libzita", pResampler);
+        Resampler::Destruct("libsamplerate", pResampler);
     }
 
     static ma_result ma_resampling_backend_process_ls(
@@ -976,92 +976,89 @@ namespace SparkyStudios::Audio::Amplitude
         AmUInt64 outSamples = samples;
         AmUInt64 inSamples = samples;
 
-        if (sampleRateRatio != 1.0f)
-        {
-            ma_data_converter_get_required_input_frame_count(&layer->dataConverter, outSamples, &inSamples);
+        AmUInt64 producedSamples = 0;
+        AmUInt64 consumedSamples = 0;
 
-            if (cursor > 0)
-                inSamples -= ma_data_converter_get_output_latency(&layer->dataConverter);
-        }
+        if (sampleRateRatio != 1.0f)
+            ma_data_converter_get_required_input_frame_count(&layer->dataConverter, outSamples, &inSamples);
 
 #if defined(AM_SIMD_INTRINSICS)
         inSamples = AM_VALUE_ALIGN(inSamples, kProcessedFramesCount);
 #endif // AM_SIMD_INTRINSICS
 
         SoundChunk* in = SoundChunk::CreateChunk(inSamples, soundChannels, MemoryPoolKind::Amplimix);
+        SoundChunk* out = SoundChunk::CreateChunk(AM_MAX(inSamples, outSamples), reqChannels, MemoryPoolKind::Amplimix);
 
-        // if this sound is streaming, and we have a stream event callback
-        if (layer->snd->stream)
+        while (true)
         {
-            // mix sound per chunk of streamed data
-            AmUInt64 c = inSamples;
-            while (c > 0 && flag != PLAY_STATE_FLAG_MIN)
+            const AmUInt64 currentCursor = cursor + consumedSamples;
+
+            // if this sound is streaming, and we have a stream event callback
+            if (layer->snd->stream)
             {
-                // update flag value
-                flag = AMPLIMIX_LOAD(&layer->flag);
+                // mix sound per chunk of streamed data
+                AmUInt64 c = inSamples;
+                while (c > 0 && flag != PLAY_STATE_FLAG_MIN)
+                {
+                    // update flag value
+                    flag = AMPLIMIX_LOAD(&layer->flag);
 
-                if (flag == PLAY_STATE_FLAG_MIN)
-                    break;
+                    if (flag == PLAY_STATE_FLAG_MIN)
+                        break;
 
-                const AmUInt64 chunkSize = AM_MIN(layer->snd->chunk->frames, c);
-                /* */ AmUInt64 readLen = chunkSize;
+                    const AmUInt64 chunkSize = AM_MIN(layer->snd->chunk->frames, c);
+                    /* */ AmUInt64 readLen = chunkSize;
 
 #if defined(AM_SIMD_INTRINSICS)
-                readLen = AM_VALUE_ALIGN(readLen, kProcessedFramesCount);
+                    readLen = AM_VALUE_ALIGN(readLen, kProcessedFramesCount);
 #endif // AM_SIMD_INTRINSICS
 
-                readLen = OnSoundStream(this, layer, (cursor + (inSamples - c)) % layer->snd->length, readLen);
-                readLen = AM_MIN(readLen, chunkSize);
+                    readLen = OnSoundStream(this, layer, (currentCursor + (inSamples - c)) % layer->snd->length, readLen);
+                    readLen = AM_MIN(readLen, chunkSize);
 
-                // having 0 here mainly means that we have reached
-                // the end of the stream and the audio is not looping.
-                if (readLen == 0)
-                    break;
+                    // having 0 here mainly means that we have reached
+                    // the end of the stream and the audio is not looping.
+                    if (readLen == 0)
+                        break;
 
-                memcpy(
-                    reinterpret_cast<AmAudioSampleBuffer>(in->buffer) + ((inSamples - c) * soundChannels),
-                    reinterpret_cast<AmAudioSampleBuffer>(layer->snd->chunk->buffer), readLen * soundChannels * sizeof(AmAudioSample));
+                    memcpy(
+                        reinterpret_cast<AmAudioSampleBuffer>(in->buffer) + ((inSamples - c) * soundChannels),
+                        reinterpret_cast<AmAudioSampleBuffer>(layer->snd->chunk->buffer), readLen * soundChannels * sizeof(AmAudioSample));
 
-                c -= readLen;
-            }
-        }
-        else
-        {
-            // Compute offset
-            const AmUInt64 offset = (cursor % layer->snd->length) * soundChannels;
-            const AmUInt64 remaining = layer->snd->chunk->frames - cursor;
-
-            if (cursor < layer->snd->chunk->frames && remaining < inSamples)
-            {
-                const AmUInt64 size = remaining * layer->snd->format.GetFrameSize();
-
-                memcpy(
-                    reinterpret_cast<AmAudioSampleBuffer>(in->buffer),
-                    reinterpret_cast<AmAudioSampleBuffer>(layer->snd->chunk->buffer) + offset, size);
-
-                memcpy(
-                    reinterpret_cast<AmAudioSampleBuffer>(in->buffer) + (remaining * soundChannels),
-                    reinterpret_cast<AmAudioSampleBuffer>(layer->snd->chunk->buffer), in->size - size);
+                    c -= readLen;
+                }
             }
             else
             {
-                memcpy(
-                    reinterpret_cast<AmAudioSampleBuffer>(in->buffer),
-                    reinterpret_cast<AmAudioSampleBuffer>(layer->snd->chunk->buffer) + offset, in->size);
+                // Compute offset
+                const AmUInt64 offset = (currentCursor % layer->snd->length) * soundChannels;
+                const AmUInt64 remaining = layer->snd->chunk->frames - currentCursor;
+
+                if (currentCursor < layer->snd->chunk->frames && remaining < inSamples)
+                {
+                    const AmUInt64 size = remaining * layer->snd->format.GetFrameSize();
+
+                    memcpy(
+                        reinterpret_cast<AmAudioSampleBuffer>(in->buffer),
+                        reinterpret_cast<AmAudioSampleBuffer>(layer->snd->chunk->buffer) + offset, size);
+
+                    memcpy(
+                        reinterpret_cast<AmAudioSampleBuffer>(in->buffer) + (remaining * soundChannels),
+                        reinterpret_cast<AmAudioSampleBuffer>(layer->snd->chunk->buffer), in->size - size);
+                }
+                else
+                {
+                    memcpy(
+                        reinterpret_cast<AmAudioSampleBuffer>(in->buffer),
+                        reinterpret_cast<AmAudioSampleBuffer>(layer->snd->chunk->buffer) + offset, in->size);
+                }
             }
-        }
 
-        // action based on flag
-        if (flag >= PLAY_STATE_FLAG_PLAY)
-        {
-            // Cache cursor
-            AmUInt64 oldCursor = cursor;
-
-            SoundChunk* out = SoundChunk::CreateChunk(AM_MAX(inSamples, outSamples), reqChannels, MemoryPoolKind::Amplimix);
+            AmUInt64 currentOutSamples = outSamples - producedSamples;
 
             if (ma_data_converter_process_pcm_frames(
                     &layer->dataConverter, reinterpret_cast<AmAudioSampleBuffer>(in->buffer), &inSamples,
-                    reinterpret_cast<AmAudioSampleBuffer>(out->buffer), &outSamples) != MA_SUCCESS)
+                    reinterpret_cast<AmAudioSampleBuffer>(out->buffer) + (producedSamples * reqChannels), &currentOutSamples) != MA_SUCCESS)
             {
                 SoundChunk::DestroyChunk(out);
                 SoundChunk::DestroyChunk(in);
@@ -1071,7 +1068,19 @@ namespace SparkyStudios::Audio::Amplitude
                 return;
             }
 
-            const auto sampleRate = static_cast<AmUInt32>(std::ceil(sampleRateRatio * layer->snd->format.GetSampleRate()));
+            producedSamples += currentOutSamples;
+            consumedSamples += inSamples;
+
+            if (producedSamples >= outSamples)
+                break;
+        }
+
+        if (flag >= PLAY_STATE_FLAG_PLAY)
+        {
+            // Cache cursor
+            AmUInt64 oldCursor = cursor;
+
+            const auto sampleRate = static_cast<AmUInt32>(std::ceil(layer->snd->format.GetSampleRate() / sampleRateRatio));
 
             switch (layer->snd->format.GetInterleaveType())
             {
@@ -1142,7 +1151,7 @@ namespace SparkyStudios::Audio::Amplitude
                 position += step * kProcessedFramesCount;
             }
 
-            cursor += inSamples;
+            cursor += consumedSamples;
 
 #if defined(AM_SIMD_INTRINSICS)
             cursor = AM_VALUE_ALIGN(cursor, kProcessedFramesCount);
@@ -1154,13 +1163,12 @@ namespace SparkyStudios::Audio::Amplitude
             if (!AMPLIMIX_CSWAP(&layer->cursor, &oldCursor, cursor))
                 cursor = oldCursor;
 
-            SoundChunk::DestroyChunk(out);
-
             // clear flag if PLAY_STATE_FLAG_PLAY and the cursor has reached the end
             if ((flag == PLAY_STATE_FLAG_PLAY) && (cursor == layer->end))
                 AMPLIMIX_CSWAP(&layer->flag, &flag, PLAY_STATE_FLAG_MIN);
         }
 
+        SoundChunk::DestroyChunk(out);
         SoundChunk::DestroyChunk(in);
 
         // run callback if reached the end
