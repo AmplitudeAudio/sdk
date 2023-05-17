@@ -19,12 +19,24 @@
 
 #include <SparkyStudios/Audio/Amplitude/Core/Common.h>
 
+#if defined(AM_SIMD_INTRINSICS)
+#include <simdpp/simd.h>
+#endif // defined(AM_SIMD_INTRINSICS)
+
 #define AM_LCG_M 2147483647
 #define AM_LCG_A 48271
 #define AM_LCG_C 0
 
 namespace SparkyStudios::Audio::Amplitude
 {
+#if defined(AM_SIMD_INTRINSICS)
+    typedef simdpp::float32v AmAudioFrame;
+#else
+    typedef AmReal32 AmAudioFrame;
+#endif // AM_SIMD_INTRINSICS
+
+    typedef AmAudioFrame* AmAudioFrameBuffer;
+
     static struct
     {
         AmInt32 state;
@@ -37,14 +49,12 @@ namespace SparkyStudios::Audio::Amplitude
         return ditherMin + x * (ditherMax - ditherMin);
     }
 
-    static AM_INLINE(AmInt32)
-    AmFloatToFixedPoint(const AmReal32 x)
+    static AM_INLINE(AmInt32) AmFloatToFixedPoint(const AmReal32 x)
     {
         return static_cast<AmInt32>(x * kAmFixedPointUnit);
     }
 
-    static AM_INLINE(AmReal32)
-    AmInt16ToReal32(const AmInt16 x)
+    static AM_INLINE(AmReal32) AmInt16ToReal32(const AmInt16 x)
     {
         auto y = static_cast<AmReal32>(x);
 
@@ -61,8 +71,7 @@ namespace SparkyStudios::Audio::Amplitude
         return y;
     }
 
-    static AM_INLINE(AmInt16)
-    AmReal32ToInt16(const AmReal32 x, bool dithering = false)
+    static AM_INLINE(AmInt16) AmReal32ToInt16(const AmReal32 x, bool dithering = false)
     {
         AmReal32 y = x;
 
@@ -87,8 +96,7 @@ namespace SparkyStudios::Audio::Amplitude
         return static_cast<AmInt16>(y);
     }
 
-    static AM_INLINE(AmReal32)
-    CatmullRom(const AmReal32 t, const AmReal32 p0, const AmReal32 p1, const AmReal32 p2, const AmReal32 p3)
+    static AM_INLINE(AmReal32) CatmullRom(const AmReal32 t, const AmReal32 p0, const AmReal32 p1, const AmReal32 p2, const AmReal32 p3)
     {
         // clang-format off
         return 0.5f * (
@@ -100,8 +108,7 @@ namespace SparkyStudios::Audio::Amplitude
         // clang-format on
     }
 
-    static AM_INLINE(AmReal32)
-    ComputeDopplerFactor(
+    static AM_INLINE(AmReal32) ComputeDopplerFactor(
         const AmVec3& locationDelta,
         const AmVec3& sourceVelocity,
         const AmVec3& listenerVelocity,

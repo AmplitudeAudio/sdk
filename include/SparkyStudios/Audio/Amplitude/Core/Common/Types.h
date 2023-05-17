@@ -29,10 +29,6 @@
 #include <SparkyStudios/Audio/Amplitude/Core/Common/Platforms/Apple/Types.h>
 #endif
 
-#if defined(AM_SIMD_INTRINSICS)
-#include <simdpp/simd.h>
-#endif // defined(AM_SIMD_INTRINSICS)
-
 namespace SparkyStudios::Audio::Amplitude
 {
     // clang-format off
@@ -57,14 +53,6 @@ namespace SparkyStudios::Audio::Amplitude
     typedef AmUInt8             AmResult;
     typedef AmUInt64            AmHandle;
     typedef AmReal64            AmTime;
-
-#if defined(AM_SIMD_INTRINSICS)
-    typedef simdpp::float32v    AmAudioFrame;
-#else
-    typedef AmReal32            AmAudioFrame;
-#endif // AM_SIMD_INTRINSICS
-
-    typedef AmAudioFrame*       AmAudioFrameBuffer;
 
     typedef AmReal32            AmAudioSample;
     typedef AmReal32*           AmAudioSampleBuffer;
