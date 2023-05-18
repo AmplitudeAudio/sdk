@@ -12,16 +12,19 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+#include <SparkyStudios/Audio/Amplitude/Core/Memory.h>
+
 #include <Sound/Filters/EqualizerFilter.h>
 #include <Utils/Utils.h>
 
 namespace SparkyStudios::Audio::Amplitude
 {
     EqualizerFilter::EqualizerFilter()
-        : _volume{}
+        : FFTFilter("Equalizer")
+        , _volume{}
     {
-        for (AmUInt32 i = 0; i < 8; i++)
-            _volume[i] = 1.0f;
+        for (float& i : _volume)
+            i = 1.0f;
     }
 
     AmResult EqualizerFilter::Init(
@@ -122,7 +125,12 @@ namespace SparkyStudios::Audio::Amplitude
 
     FilterInstance* EqualizerFilter::CreateInstance()
     {
-        return new EqualizerFilterInstance(this);
+        return amnew(EqualizerFilterInstance, this);
+    }
+
+    void EqualizerFilter::DestroyInstance(FilterInstance* instance)
+    {
+        amdelete(EqualizerFilterInstance, (EqualizerFilterInstance*)instance);
     }
 
     EqualizerFilterInstance::EqualizerFilterInstance(EqualizerFilter* parent)

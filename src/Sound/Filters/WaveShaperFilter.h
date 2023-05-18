@@ -21,9 +21,18 @@
 
 namespace SparkyStudios::Audio::Amplitude
 {
-    class WaveShaperFilterInstance;
+    class WaveShaperFilter;
 
-    class WaveShaperFilter : public Filter
+    class WaveShaperFilterInstance : public FilterInstance
+    {
+    public:
+        explicit WaveShaperFilterInstance(WaveShaperFilter* parent);
+        ~WaveShaperFilterInstance() override = default;
+
+        AmAudioSample ProcessSample(AmAudioSample sample, AmUInt16 channel, AmUInt32 sampleRate) override;
+    };
+
+    [[maybe_unused]] static class WaveShaperFilter final : public Filter
     {
         friend class WaveShaperFilterInstance;
 
@@ -52,18 +61,11 @@ namespace SparkyStudios::Audio::Amplitude
 
         FilterInstance* CreateInstance() override;
 
+        void DestroyInstance(FilterInstance* instance) override;
+
     private:
         AmReal32 _amount;
-    };
-
-    class WaveShaperFilterInstance : public FilterInstance
-    {
-    public:
-        explicit WaveShaperFilterInstance(WaveShaperFilter* parent);
-        ~WaveShaperFilterInstance() override = default;
-
-        AmAudioSample ProcessSample(AmAudioSample sample, AmUInt16 channel, AmUInt32 sampleRate) override;
-    };
+    } gWaveShaperFilter; // NOLINT(cert-err58-cpp)
 } // namespace SparkyStudios::Audio::Amplitude
 
 #endif // SS_AMPLITUDE_AUDIO_WAVESHARPERFILTER_H

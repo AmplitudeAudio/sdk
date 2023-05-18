@@ -21,7 +21,18 @@
 
 namespace SparkyStudios::Audio::Amplitude
 {
-    class EqualizerFilter : public FFTFilter
+    class EqualizerFilter;
+
+    class EqualizerFilterInstance : public FFTFilterInstance
+    {
+    public:
+        explicit EqualizerFilterInstance(EqualizerFilter* parent);
+        ~EqualizerFilterInstance() override = default;
+
+        void ProcessFFTChannel(AmReal64Buffer buffer, AmUInt16 channel, AmUInt64 frames, AmUInt16 channels, AmUInt32 sampleRate) override;
+    };
+
+    [[maybe_unused]] static class EqualizerFilter final : public FFTFilter
     {
         friend class EqualizerFilterInstance;
 
@@ -64,18 +75,11 @@ namespace SparkyStudios::Audio::Amplitude
 
         FilterInstance* CreateInstance() override;
 
+        void DestroyInstance(FilterInstance* instance) override;
+
     private:
         AmReal32 _volume[8];
-    };
-
-    class EqualizerFilterInstance : public FFTFilterInstance
-    {
-    public:
-        explicit EqualizerFilterInstance(EqualizerFilter* parent);
-        ~EqualizerFilterInstance() override = default;
-
-        void ProcessFFTChannel(AmReal64Buffer buffer, AmUInt16 channel, AmUInt64 frames, AmUInt16 channels, AmUInt32 sampleRate) override;
-    };
+    } gEqualizerFilter; // NOLINT(cert-err58-cpp)
 } // namespace SparkyStudios::Audio::Amplitude
 
 #endif // SS_AMPLITUDE_AUDIO_EQUALIZERFILTER_H

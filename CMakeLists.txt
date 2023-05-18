@@ -238,6 +238,8 @@ set(SA_SOURCE
     src/Sound/Filters/FlangerFilter.h
     src/Sound/Filters/FreeverbFilter.cpp
     src/Sound/Filters/FreeverbFilter.h
+    src/Sound/Filters/LofiFilter.cpp
+    src/Sound/Filters/LofiFilter.h
     src/Sound/Filters/RobotizeFilter.cpp
     src/Sound/Filters/RobotizeFilter.h
     src/Sound/Filters/WaveShaperFilter.cpp

@@ -12,13 +12,16 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+#include <SparkyStudios/Audio/Amplitude/Core/Memory.h>
+
 #include <Sound/Filters/RobotizeFilter.h>
 #include <Utils/Utils.h>
 
 namespace SparkyStudios::Audio::Amplitude
 {
     RobotizeFilter::RobotizeFilter()
-        : m_frequency(30)
+        : Filter("Robotize")
+        , m_frequency(30)
         , m_waveform(0)
     {}
 
@@ -72,7 +75,12 @@ namespace SparkyStudios::Audio::Amplitude
 
     FilterInstance* RobotizeFilter::CreateInstance()
     {
-        return new RobotizeFilterInstance(this);
+        return amnew(RobotizeFilterInstance, this);
+    }
+
+    void RobotizeFilter::DestroyInstance(FilterInstance* instance)
+    {
+        amdelete(RobotizeFilterInstance, (RobotizeFilterInstance*)instance);
     }
 
     RobotizeFilterInstance::RobotizeFilterInstance(RobotizeFilter* parent)

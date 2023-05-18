@@ -19,7 +19,8 @@
 namespace SparkyStudios::Audio::Amplitude
 {
     DCRemovalFilter::DCRemovalFilter()
-        : _length(0.1f)
+        : Filter("DCRemoval")
+        , _length(0.1f)
     {}
 
     AmResult DCRemovalFilter::Init(AmReal32 length)
@@ -34,7 +35,12 @@ namespace SparkyStudios::Audio::Amplitude
 
     FilterInstance* DCRemovalFilter::CreateInstance()
     {
-        return new DCRemovalFilterInstance(this);
+        return amnew(DCRemovalFilterInstance, this);
+    }
+
+    void DCRemovalFilter::DestroyInstance(FilterInstance* instance)
+    {
+        amdelete(DCRemovalFilterInstance, (DCRemovalFilterInstance*)instance);
     }
 
     DCRemovalFilterInstance::DCRemovalFilterInstance(DCRemovalFilter* parent)
@@ -119,7 +125,7 @@ namespace SparkyStudios::Audio::Amplitude
         _buffer = static_cast<AmReal32Buffer>(amMemory->Malloc(MemoryPoolKind::Filtering, _bufferLength * channels * sizeof(AmReal32)));
         _totals = static_cast<AmReal32Buffer>(amMemory->Malloc(MemoryPoolKind::Filtering, channels * sizeof(AmReal32)));
 
-        memset(_buffer, 0, _bufferLength * channels * sizeof(AmReal32));
-        memset(_totals, 0, channels * sizeof(AmReal32));
+        std::memset(_buffer, 0, _bufferLength * channels * sizeof(AmReal32));
+        std::memset(_totals, 0, channels * sizeof(AmReal32));
     }
 } // namespace SparkyStudios::Audio::Amplitude

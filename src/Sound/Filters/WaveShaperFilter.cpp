@@ -12,13 +12,16 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+#include <SparkyStudios/Audio/Amplitude/Core/Memory.h>
+
 #include <Sound/Filters/WaveShaperFilter.h>
 #include <Utils/Utils.h>
 
 namespace SparkyStudios::Audio::Amplitude
 {
     WaveShaperFilter::WaveShaperFilter()
-        : _amount(0.0f)
+        : Filter("WaveShaper")
+        , _amount(0.0f)
     {}
 
     AmResult WaveShaperFilter::Init(AmReal32 amount)
@@ -64,7 +67,12 @@ namespace SparkyStudios::Audio::Amplitude
 
     FilterInstance* WaveShaperFilter::CreateInstance()
     {
-        return new WaveShaperFilterInstance(this);
+        return amnew(WaveShaperFilterInstance, this);
+    }
+
+    void WaveShaperFilter::DestroyInstance(FilterInstance* instance)
+    {
+        amdelete(WaveShaperFilterInstance, (WaveShaperFilterInstance*)instance);
     }
 
     WaveShaperFilterInstance::WaveShaperFilterInstance(WaveShaperFilter* parent)

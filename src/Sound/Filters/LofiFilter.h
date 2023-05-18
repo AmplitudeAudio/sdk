@@ -21,7 +21,7 @@
 
 namespace SparkyStudios::Audio::Amplitude
 {
-    class LofiFilterInstance;
+    class LofiFilter;
 
     struct LofiChannelData
     {
@@ -29,7 +29,19 @@ namespace SparkyStudios::Audio::Amplitude
         AmReal32 m_samplesToSkip;
     };
 
-    class LofiFilter : public Filter
+    class LofiFilterInstance : public FilterInstance
+    {
+    public:
+        explicit LofiFilterInstance(LofiFilter* parent);
+        ~LofiFilterInstance() override = default;
+
+        AmAudioSample ProcessSample(AmAudioSample sample, AmUInt16 channel, AmUInt32 sampleRate) override;
+
+    private:
+        LofiChannelData _channelData[AM_MAX_CHANNELS]{};
+    };
+
+    [[maybe_unused]] static class LofiFilter final : public Filter
     {
         friend class LofiFilterInstance;
 
@@ -45,7 +57,7 @@ namespace SparkyStudios::Audio::Amplitude
         LofiFilter();
         ~LofiFilter() override = default;
 
-        AmResult Init(AmReal32 sampleRate, AmReal32 bitdDepth);
+        AmResult Init(AmReal32 sampleRate, AmReal32 bitDepth);
 
         AmUInt32 GetParamCount() override;
 
@@ -59,22 +71,12 @@ namespace SparkyStudios::Audio::Amplitude
 
         FilterInstance* CreateInstance() override;
 
+        void DestroyInstance(FilterInstance* instance) override;
+
     private:
         AmReal32 _sampleRate;
         AmReal32 _bitDepth;
-    };
-
-    class LofiFilterInstance : public FilterInstance
-    {
-    public:
-        explicit LofiFilterInstance(LofiFilter* parent);
-        ~LofiFilterInstance() override = default;
-
-        AmAudioSample ProcessSample(AmAudioSample sample, AmUInt16 channel, AmUInt32 sampleRate) override;
-
-    private:
-        LofiChannelData _channelData[AM_MAX_CHANNELS];
-    };
+    } gLofiFilter; // NOLINT(cert-err58-cpp)
 } // namespace SparkyStudios::Audio::Amplitude
 
 #endif // SS_AMPLITUDE_AUDIO_LOFIFILTER_H

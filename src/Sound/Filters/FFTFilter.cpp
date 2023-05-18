@@ -22,9 +22,18 @@
 
 namespace SparkyStudios::Audio::Amplitude
 {
+    FFTFilter::FFTFilter(const std::string& name)
+        : Filter(name)
+    {}
+
     FilterInstance* FFTFilter::CreateInstance()
     {
-        return new FFTFilterInstance(this);
+        return amnew(FFTFilterInstance, this);
+    }
+
+    void FFTFilter::DestroyInstance(FilterInstance* instance)
+    {
+        amdelete(FFTFilterInstance, (FFTFilterInstance*)instance);
     }
 
     FFTFilterInstance::FFTFilterInstance(FFTFilter* parent)

@@ -17,6 +17,33 @@
 
 namespace SparkyStudios::Audio::Amplitude
 {
+    typedef std::map<std::string, Filter*> FilterRegistry;
+    typedef FilterRegistry::value_type FilterImpl;
+
+    static FilterRegistry& filterRegistry()
+    {
+        static FilterRegistry r;
+        return r;
+    }
+
+    static bool& lockFilters()
+    {
+        static bool b = false;
+        return b;
+    }
+
+    static AmUInt32& filtersCount()
+    {
+        static AmUInt32 c = 0;
+        return c;
+    }
+
+    Filter::Filter(std::string name)
+        : m_name(std::move(name))
+    {
+        Filter::Register(this);
+    }
+
     AmUInt32 Filter::GetParamCount()
     {
         return 1;
@@ -40,6 +67,60 @@ namespace SparkyStudios::Audio::Amplitude
     AmReal32 Filter::GetParamMin(AmUInt32 index)
     {
         return 0.0f;
+    }
+
+    const std::string& Filter::GetName() const
+    {
+        return m_name;
+    }
+
+    void Filter::Register(Filter* codec)
+    {
+        if (lockFilters())
+            return;
+
+        if (Find(codec->GetName()) != nullptr)
+            return;
+
+        FilterRegistry& filters = filterRegistry();
+        filters.insert(FilterImpl(codec->GetName(), codec));
+        filtersCount()++;
+    }
+
+    Filter* Filter::Find(const std::string& name)
+    {
+        FilterRegistry& filters = filterRegistry();
+        for (auto&& filter : filters)
+            if (filter.second->m_name == name)
+                return filter.second;
+
+        return nullptr;
+    }
+
+    FilterInstance* Filter::Construct(const std::string& name)
+    {
+        Filter* filter = Find(name);
+        if (filter == nullptr)
+            return nullptr;
+
+        return filter->CreateInstance();
+    }
+
+    void Filter::Destruct(const std::string& name, FilterInstance* instance)
+    {
+        if (instance == nullptr)
+            return;
+
+        Filter* filter = Find(name);
+        if (filter == nullptr)
+            return;
+
+        filter->DestroyInstance(instance);
+    }
+
+    void Filter::LockRegistry()
+    {
+        lockFilters() = true;
     }
 
     FilterInstance::FilterInstance(Filter* parent)

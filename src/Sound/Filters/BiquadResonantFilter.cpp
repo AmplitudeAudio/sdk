@@ -12,13 +12,16 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+#include <SparkyStudios/Audio/Amplitude/Core/Memory.h>
+
 #include <Sound/Filters/BiquadResonantFilter.h>
 #include <Utils/Utils.h>
 
 namespace SparkyStudios::Audio::Amplitude
 {
     BiquadResonantFilter::BiquadResonantFilter()
-        : _filterType(TYPE_LOW_PASS)
+        : Filter("BiquadResonant")
+        , _filterType(TYPE_LOW_PASS)
         , _frequency(1000.0f)
         , _resonance(0.707107f)
         , _gain(0.0f)
@@ -137,7 +140,12 @@ namespace SparkyStudios::Audio::Amplitude
 
     FilterInstance* BiquadResonantFilter::CreateInstance()
     {
-        return new BiquadResonantFilterInstance(this);
+        return amnew(BiquadResonantFilterInstance, this);
+    }
+
+    void BiquadResonantFilter::DestroyInstance(FilterInstance* instance)
+    {
+        amdelete(BiquadResonantFilterInstance, (BiquadResonantFilterInstance*)instance);
     }
 
     BiquadResonantFilterInstance::BiquadResonantFilterInstance(BiquadResonantFilter* parent)
@@ -148,7 +156,6 @@ namespace SparkyStudios::Audio::Amplitude
         , _a2(0)
         , _b1(0)
         , _b2(0)
-        , _isDirty(false)
     {
         for (auto&& i : _state)
         {
@@ -214,13 +221,11 @@ namespace SparkyStudios::Audio::Amplitude
 
     void BiquadResonantFilterInstance::ComputeBiquadResonantParams()
     {
-        _isDirty = false;
-
         const AmReal32 q = m_parameters[BiquadResonantFilter::ATTRIBUTE_RESONANCE];
         const AmReal32 omega = 2.0f * M_PI * m_parameters[BiquadResonantFilter::ATTRIBUTE_FREQUENCY] / static_cast<AmReal32>(_sampleRate);
         const AmReal32 sinOmega = std::sin(omega);
         const AmReal32 cosOmega = std::cos(omega);
-        const AmReal32 A = std::pow(10, (m_parameters[BiquadResonantFilter::ATTRIBUTE_GAIN] / 40));
+        const AmReal32 A = std::pow(10.0f, (m_parameters[BiquadResonantFilter::ATTRIBUTE_GAIN] / 40.0f));
 
         AmReal32 scalar, alpha, beta;
 

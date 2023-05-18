@@ -21,9 +21,31 @@
 
 namespace SparkyStudios::Audio::Amplitude
 {
-    class DelayFilterInstance;
+    class DelayFilter;
 
-    class DelayFilter : public Filter
+    class DelayFilterInstance : public FilterInstance
+    {
+    public:
+        explicit DelayFilterInstance(DelayFilter* parent);
+        ~DelayFilterInstance() override;
+
+        void Process(AmAudioSampleBuffer buffer, AmUInt64 samples, AmUInt64 bufferSize, AmUInt16 channels, AmUInt32 sampleRate) override;
+        void ProcessInterleaved(
+            AmAudioSampleBuffer buffer, AmUInt64 frames, AmUInt64 bufferSize, AmUInt16 channels, AmUInt32 sampleRate) override;
+
+        AmAudioSample ProcessSample(AmAudioSample sample, AmUInt16 channel, AmUInt32 sampleRate) override;
+
+    private:
+        void InitBuffer(AmUInt16 channels, AmUInt32 sampleRate);
+
+        AmReal32Buffer _buffer;
+        AmUInt32 _bufferLength;
+        AmUInt32 _bufferMaxLength;
+        AmUInt32 _bufferOffset;
+        AmUInt32 _offset;
+    };
+
+    [[maybe_unused]] static class DelayFilter final : public Filter
     {
         friend class DelayFilterInstance;
 
@@ -54,33 +76,13 @@ namespace SparkyStudios::Audio::Amplitude
 
         FilterInstance* CreateInstance() override;
 
+        void DestroyInstance(FilterInstance* instance) override;
+
     protected:
         AmReal32 _delay;
         AmReal32 _decay;
         AmReal32 _delayStart; // Set this to false to produce echo
-    };
-
-    class DelayFilterInstance : public FilterInstance
-    {
-    public:
-        explicit DelayFilterInstance(DelayFilter* parent);
-        ~DelayFilterInstance() override;
-
-        void Process(AmAudioSampleBuffer buffer, AmUInt64 samples, AmUInt64 bufferSize, AmUInt16 channels, AmUInt32 sampleRate) override;
-        void ProcessInterleaved(
-            AmAudioSampleBuffer buffer, AmUInt64 frames, AmUInt64 bufferSize, AmUInt16 channels, AmUInt32 sampleRate) override;
-
-        AmAudioSample ProcessSample(AmAudioSample sample, AmUInt16 channel, AmUInt32 sampleRate) override;
-
-    private:
-        void InitBuffer(AmUInt16 channels, AmUInt32 sampleRate);
-
-        AmReal32Buffer _buffer;
-        AmUInt32 _bufferLength;
-        AmUInt32 _bufferMaxLength;
-        AmUInt32 _bufferOffset;
-        AmUInt32 _offset;
-    };
+    } gDelayFilter; // NOLINT(cert-err58-cpp)
 } // namespace SparkyStudios::Audio::Amplitude
 
 #endif // SS_AMPLITUDE_AUDIO_DELAY_FILTER_H

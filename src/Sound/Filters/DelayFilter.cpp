@@ -19,7 +19,8 @@
 namespace SparkyStudios::Audio::Amplitude
 {
     DelayFilter::DelayFilter()
-        : _delay(0.3f)
+        : Filter("Delay")
+        , _delay(0.3f)
         , _decay(0.7f)
         , _delayStart(0.0f)
     {}
@@ -71,7 +72,12 @@ namespace SparkyStudios::Audio::Amplitude
 
     FilterInstance* DelayFilter::CreateInstance()
     {
-        return new DelayFilterInstance(this);
+        return amnew(DelayFilterInstance, this);
+    }
+
+    void DelayFilter::DestroyInstance(FilterInstance* instance)
+    {
+        amdelete(DelayFilterInstance, (DelayFilterInstance*)instance);
     }
 
     DelayFilterInstance::DelayFilterInstance(DelayFilter* parent)

@@ -19,7 +19,8 @@
 namespace SparkyStudios::Audio::Amplitude
 {
     FlangerFilter::FlangerFilter()
-        : _delay(0.05f)
+        : Filter("Flanger")
+        , _delay(0.05f)
         , _frequency(10.0f)
     {}
 
@@ -78,7 +79,12 @@ namespace SparkyStudios::Audio::Amplitude
 
     FilterInstance* FlangerFilter::CreateInstance()
     {
-        return new FlangerFilterInstance(this);
+        return amnew(FlangerFilterInstance, this);
+    }
+
+    void FlangerFilter::DestroyInstance(FilterInstance* instance)
+    {
+        amdelete(FlangerFilterInstance, (FlangerFilterInstance*)instance);
     }
 
     FlangerFilterInstance::FlangerFilterInstance(FlangerFilter* parent)

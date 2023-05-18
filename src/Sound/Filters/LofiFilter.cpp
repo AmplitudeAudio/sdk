@@ -12,23 +12,26 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+#include <SparkyStudios/Audio/Amplitude/Core/Memory.h>
+
 #include <Sound/Filters/LofiFilter.h>
 #include <Utils/Utils.h>
 
 namespace SparkyStudios::Audio::Amplitude
 {
     LofiFilter::LofiFilter()
-        : _sampleRate(4000)
+        : Filter("Lofi")
+        , _sampleRate(4000)
         , _bitDepth(3)
     {}
 
-    AmResult LofiFilter::Init(AmReal32 sampleRate, AmReal32 bitdDepth)
+    AmResult LofiFilter::Init(AmReal32 sampleRate, AmReal32 bitDepth)
     {
-        if (sampleRate <= 0 || bitdDepth <= 0)
+        if (sampleRate <= 0 || bitDepth <= 0)
             return AM_ERROR_INVALID_PARAMETER;
 
         _sampleRate = sampleRate;
-        _bitDepth = bitdDepth;
+        _bitDepth = bitDepth;
 
         return AM_ERROR_NO_ERROR;
     }
@@ -67,7 +70,7 @@ namespace SparkyStudios::Audio::Amplitude
     AmString LofiFilter::GetParamName(AmUInt32 index)
     {
         if (index >= ATTRIBUTE_LAST)
-            return nullptr;
+            return "";
 
         AmString names[ATTRIBUTE_LAST] = { "Wet", "Samplerate", "BitDepth" };
 
@@ -81,7 +84,12 @@ namespace SparkyStudios::Audio::Amplitude
 
     FilterInstance* LofiFilter::CreateInstance()
     {
-        return new LofiFilterInstance(this);
+        return amnew(LofiFilterInstance, this);
+    }
+
+    void LofiFilter::DestroyInstance(FilterInstance* instance)
+    {
+        amdelete(LofiFilterInstance, (LofiFilterInstance*)instance);
     }
 
     LofiFilterInstance::LofiFilterInstance(LofiFilter* parent)
@@ -92,10 +100,10 @@ namespace SparkyStudios::Audio::Amplitude
         m_parameters[LofiFilter::ATTRIBUTE_SAMPLERATE] = parent->_sampleRate;
         m_parameters[LofiFilter::ATTRIBUTE_BITDEPTH] = parent->_bitDepth;
 
-        for (AmUInt32 i = 0; i < AM_MAX_CHANNELS; ++i)
+        for (LofiChannelData& i : _channelData)
         {
-            _channelData[i].m_sample = 0;
-            _channelData[i].m_samplesToSkip = 0;
+            i.m_sample = 0;
+            i.m_samplesToSkip = 0;
         }
     }
 
@@ -104,7 +112,7 @@ namespace SparkyStudios::Audio::Amplitude
         if (_channelData[channel].m_samplesToSkip <= 0)
         {
             _channelData[channel].m_samplesToSkip += (sampleRate / m_parameters[LofiFilter::ATTRIBUTE_SAMPLERATE]) - 1;
-            AmReal32 q = std::pow(2, m_parameters[LofiFilter::ATTRIBUTE_BITDEPTH]);
+            AmReal32 q = std::pow(2.0f, m_parameters[LofiFilter::ATTRIBUTE_BITDEPTH]);
             _channelData[channel].m_sample = std::floor(q * sample) / q;
         }
         else

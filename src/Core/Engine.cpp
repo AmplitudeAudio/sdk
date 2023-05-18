@@ -64,6 +64,21 @@
 
 #pragma endregion
 
+#pragma region Default Filters
+
+#include <Sound/Filters/BassBoostFilter.h>
+#include <Sound/Filters/BiquadResonantFilter.h>
+#include <Sound/Filters/DCRemovalFilter.h>
+#include <Sound/Filters/DelayFilter.h>
+#include <Sound/Filters/EqualizerFilter.h>
+#include <Sound/Filters/FlangerFilter.h>
+#include <Sound/Filters/FreeverbFilter.h>
+#include <Sound/Filters/LofiFilter.h>
+#include <Sound/Filters/RobotizeFilter.h>
+#include <Sound/Filters/WaveShaperFilter.h>
+
+#pragma endregion
+
 namespace SparkyStudios::Audio::Amplitude
 {
     typedef flatbuffers::Vector<uint64_t> BusIdList;
@@ -292,6 +307,7 @@ namespace SparkyStudios::Audio::Amplitude
         Codec::LockRegistry();
         SoundProcessor::LockRegistry();
         Resampler::LockRegistry();
+        Filter::LockRegistry();
 
         // Create the internal engine state
         _state = amnew(EngineInternalState);

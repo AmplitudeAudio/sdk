@@ -12,12 +12,15 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+#include <SparkyStudios/Audio/Amplitude/Core/Memory.h>
+
 #include <Sound/Filters/BassBoostFilter.h>
 
 namespace SparkyStudios::Audio::Amplitude
 {
     BassBoostFilter::BassBoostFilter()
-        : m_boost(2.0f)
+        : FFTFilter("BassBoost")
+        , m_boost(2.0f)
     {}
 
     AmResult BassBoostFilter::Init(AmReal32 aBoost)
@@ -62,7 +65,12 @@ namespace SparkyStudios::Audio::Amplitude
 
     FilterInstance* BassBoostFilter::CreateInstance()
     {
-        return new BassBoostFilterInstance(this);
+        return amnew(BassBoostFilterInstance, this);
+    }
+
+    void BassBoostFilter::DestroyInstance(FilterInstance* instance)
+    {
+        amdelete(BassBoostFilterInstance, (BassBoostFilterInstance*)instance);
     }
 
     BassBoostFilterInstance::BassBoostFilterInstance(BassBoostFilter* parent)

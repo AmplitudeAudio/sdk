@@ -23,9 +23,23 @@
 
 namespace SparkyStudios::Audio::Amplitude
 {
-    class FreeverbFilterInstance;
+    class FreeverbFilter;
 
-    class FreeverbFilter : public Filter
+    class FreeverbFilterInstance : public FilterInstance
+    {
+    public:
+        explicit FreeverbFilterInstance(FreeverbFilter* parent);
+        ~FreeverbFilterInstance() override;
+
+        void Process(AmAudioSampleBuffer buffer, AmUInt64 frames, AmUInt64 bufferSize, AmUInt16 channels, AmUInt32 sampleRate) override;
+        void ProcessInterleaved(
+            AmAudioSampleBuffer buffer, AmUInt64 frames, AmUInt64 bufferSize, AmUInt16 channels, AmUInt32 sampleRate) override;
+
+    private:
+        Freeverb::ReverbModel* _model;
+    };
+
+    [[maybe_unused]] static class FreeverbFilter final : public Filter
     {
         friend class FreeverbFilterInstance;
 
@@ -58,26 +72,14 @@ namespace SparkyStudios::Audio::Amplitude
 
         FilterInstance* CreateInstance() override;
 
+        void DestroyInstance(FilterInstance* instance) override;
+
     private:
         AmReal32 _roomSize;
         AmReal32 _damp;
         AmReal32 _width;
         AmReal32 _mode;
-    };
-
-    class FreeverbFilterInstance : public FilterInstance
-    {
-    public:
-        explicit FreeverbFilterInstance(FreeverbFilter* parent);
-        ~FreeverbFilterInstance() override;
-
-        void Process(AmAudioSampleBuffer buffer, AmUInt64 frames, AmUInt64 bufferSize, AmUInt16 channels, AmUInt32 sampleRate) override;
-        void ProcessInterleaved(
-            AmAudioSampleBuffer buffer, AmUInt64 frames, AmUInt64 bufferSize, AmUInt16 channels, AmUInt32 sampleRate) override;
-
-    private:
-        Freeverb::ReverbModel* _model;
-    };
+    } gFreeverbFilter; // NOLINT(cert-err58-cpp)
 } // namespace SparkyStudios::Audio::Amplitude
 
 #endif // SS_AMPLITUDE_AUDIO_FREEVERBFILTER_H

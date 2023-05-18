@@ -16,14 +16,6 @@
 
 #include <Core/EngineInternalState.h>
 
-#include <Sound/Filters/BassBoostFilter.h>
-#include <Sound/Filters/BiquadResonantFilter.h>
-#include <Sound/Filters/DelayFilter.h>
-#include <Sound/Filters/EqualizerFilter.h>
-#include <Sound/Filters/FlangerFilter.h>
-#include <Sound/Filters/FreeverbFilter.h>
-#include <Sound/Filters/RobotizeFilter.h>
-
 #include "effect_definition_generated.h"
 
 namespace SparkyStudios::Audio::Amplitude
@@ -41,14 +33,11 @@ namespace SparkyStudios::Audio::Amplitude
 
     Effect::~Effect()
     {
-        if (_filter != nullptr)
-            amdelete(Filter, _filter);
-
         _filter = nullptr;
         _parameters.clear();
 
         for (auto&& instance : gEffectsList[_id])
-            DeleteInstance(instance);
+            DestroyInstance(instance);
 
         gEffectsList.erase(_id);
     }
@@ -64,38 +53,11 @@ namespace SparkyStudios::Audio::Amplitude
         _id = def->id();
         _name = def->name()->str();
 
-        switch (def->effect())
+        _filter = Filter::Find(def->effect()->str());
+
+        if (_filter == nullptr)
         {
-        case EffectKind_BassBoost:
-            _filter = amnew(BassBoostFilter);
-            break;
-
-        case EffectKind_Echo:
-            _filter = amnew(DelayFilter);
-            break;
-
-        case EffectKind_Equalizer:
-            _filter = amnew(EqualizerFilter);
-            break;
-
-        case EffectKind_Flanger:
-            _filter = amnew(FlangerFilter);
-            break;
-
-        case EffectKind_Freeverb:
-            _filter = amnew(FreeverbFilter);
-            break;
-
-        case EffectKind_Robotize:
-            _filter = amnew(RobotizeFilter);
-            break;
-
-        case EffectKind_BiquadResonant:
-            _filter = amnew(BiquadResonantFilter);
-            break;
-
-        default:
-            CallLogFunc("[ERROR] Effect %s specifies an invalid effect type: %s.", def->name()->c_str(), EnumNameEffectKind(def->effect()));
+            CallLogFunc("[ERROR] Effect %s specifies an invalid effect type: %s.", def->name()->c_str(), def->effect()->c_str());
             return false;
         }
 
@@ -136,7 +98,7 @@ namespace SparkyStudios::Audio::Amplitude
         return effect;
     }
 
-    void Effect::DeleteInstance(EffectInstance* instance) const
+    void Effect::DestroyInstance(EffectInstance* instance) const
     {
         if (instance == nullptr)
             return;
@@ -191,11 +153,11 @@ namespace SparkyStudios::Audio::Amplitude
 
     EffectInstance::~EffectInstance()
     {
-        _parent->DeleteInstance(this);
-        _parent = nullptr;
-
-        delete _filterInstance;
+        _parent->_filter->DestroyInstance(_filterInstance);
         _filterInstance = nullptr;
+
+        _parent->DestroyInstance(this);
+        _parent = nullptr;
     }
 
     FilterInstance* EffectInstance::GetFilter() const

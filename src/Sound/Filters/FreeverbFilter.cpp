@@ -12,12 +12,15 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+#include <SparkyStudios/Audio/Amplitude/Core/Memory.h>
+
 #include <Sound/Filters/FreeverbFilter.h>
 
 namespace SparkyStudios::Audio::Amplitude
 {
     FreeverbFilter::FreeverbFilter()
-        : _roomSize(0.5f)
+        : Filter("Freeverb")
+        , _roomSize(0.5f)
         , _damp(0.5f)
         , _width(1.0f)
         , _mode(0.0f)
@@ -82,7 +85,12 @@ namespace SparkyStudios::Audio::Amplitude
 
     FilterInstance* FreeverbFilter::CreateInstance()
     {
-        return new FreeverbFilterInstance(this);
+        return amnew(FreeverbFilterInstance, this);
+    }
+
+    void FreeverbFilter::DestroyInstance(FilterInstance* instance)
+    {
+        amdelete(FreeverbFilterInstance, (FreeverbFilterInstance*)instance);
     }
 
     FreeverbFilterInstance::FreeverbFilterInstance(FreeverbFilter* parent)
@@ -105,7 +113,8 @@ namespace SparkyStudios::Audio::Amplitude
         delete _model;
     }
 
-    void FreeverbFilterInstance::Process(AmAudioSampleBuffer buffer, AmUInt64 frames, AmUInt64 bufferSize, AmUInt16 channels, AmUInt32 sampleRate)
+    void FreeverbFilterInstance::Process(
+        AmAudioSampleBuffer buffer, AmUInt64 frames, AmUInt64 bufferSize, AmUInt16 channels, AmUInt32 sampleRate)
     {
         AMPLITUDE_ASSERT(channels == 2); // Only stereo supported
 

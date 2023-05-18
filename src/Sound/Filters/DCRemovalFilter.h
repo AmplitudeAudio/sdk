@@ -21,28 +21,7 @@
 
 namespace SparkyStudios::Audio::Amplitude
 {
-    class DCRemovalFilterInstance;
-
-    class DCRemovalFilter : public Filter
-    {
-        friend class DCRemovalFilterInstance;
-
-    public:
-        enum ATTRIBUTE
-        {
-            ATTRIBUTE_WET = 0,
-            ATTRIBUTE_LAST
-        };
-
-        DCRemovalFilter();
-
-        AmResult Init(AmReal32 length = 0.1f);
-
-        FilterInstance* CreateInstance() override;
-
-    private:
-        AmReal32 _length;
-    };
+    class DCRemovalFilter;
 
     class DCRemovalFilterInstance : public FilterInstance
     {
@@ -64,6 +43,29 @@ namespace SparkyStudios::Audio::Amplitude
         AmUInt64 _bufferLength;
         AmUInt64 _offset;
     };
+
+    [[maybe_unused]] static class DCRemovalFilter final : public Filter
+    {
+        friend class DCRemovalFilterInstance;
+
+    public:
+        enum ATTRIBUTE
+        {
+            ATTRIBUTE_WET = 0,
+            ATTRIBUTE_LAST
+        };
+
+        DCRemovalFilter();
+
+        AmResult Init(AmReal32 length = 0.1f);
+
+        FilterInstance* CreateInstance() override;
+
+        void DestroyInstance(FilterInstance* instance) override;
+
+    private:
+        AmReal32 _length;
+    } gDCRemovalFilter; // NOLINT(cert-err58-cpp)
 } // namespace SparkyStudios::Audio::Amplitude
 
 #endif // SS_AMPLITUDE_AUDIO_DCREMOVALFILTER_H

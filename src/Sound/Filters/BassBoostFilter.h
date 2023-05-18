@@ -21,9 +21,18 @@
 
 namespace SparkyStudios::Audio::Amplitude
 {
-    class BassBoostFilterInstance;
+    class BassBoostFilter;
 
-    class BassBoostFilter : public FFTFilter
+    class BassBoostFilterInstance : public FFTFilterInstance
+    {
+    public:
+        explicit BassBoostFilterInstance(BassBoostFilter* parent);
+        ~BassBoostFilterInstance() override = default;
+
+        void ProcessFFTChannel(AmReal64Buffer buffer, AmUInt16 channel, AmUInt64 frames, AmUInt16 channels, AmUInt32 sampleRate) override;
+    };
+
+    [[maybe_unused]] static class BassBoostFilter final : public FFTFilter
     {
         friend class BassBoostFilterInstance;
 
@@ -51,18 +60,11 @@ namespace SparkyStudios::Audio::Amplitude
 
         FilterInstance* CreateInstance() override;
 
+        void DestroyInstance(FilterInstance* instance) override;
+
     protected:
         AmReal32 m_boost;
-    };
-
-    class BassBoostFilterInstance : public FFTFilterInstance
-    {
-    public:
-        explicit BassBoostFilterInstance(BassBoostFilter* parent);
-        ~BassBoostFilterInstance() override = default;
-
-        void ProcessFFTChannel(AmReal64Buffer buffer, AmUInt16 channel, AmUInt64 frames, AmUInt16 channels, AmUInt32 sampleRate) override;
-    };
+    } gBassBoostFilter; // NOLINT(cert-err58-cpp)
 } // namespace SparkyStudios::Audio::Amplitude
 
 #endif // SS_AMPLITUDE_AUDIO_BASS_BOOST_FILTER_H

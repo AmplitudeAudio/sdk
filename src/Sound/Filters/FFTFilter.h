@@ -21,27 +21,6 @@
 
 #include <Utils/pffft/pffft_double.h>
 
-namespace SoLoud
-{
-    namespace FFT
-    {
-        // Perform 1024 unit FFT. Buffer must have 1024 floats, and will be overwritten
-        void fft1024(float* aBuffer);
-
-        // Perform 256 unit FFT. Buffer must have 256 floats, and will be overwritten
-        void fft256(float* aBuffer);
-
-        // Perform 256 unit IFFT. Buffer must have 256 floats, and will be overwritten
-        void ifft256(float* aBuffer);
-
-        // Generic (slower) power of two FFT. Buffer is overwritten.
-        void fft(float* aBuffer, unsigned int aBufferLength);
-
-        // Generic (slower) power of two IFFT. Buffer is overwritten.
-        void ifft(float* aBuffer, unsigned int aBufferLength);
-    }; // namespace FFT
-}; // namespace SoLoud
-
 namespace SparkyStudios::Audio::Amplitude
 {
     class FFTFilterInstance;
@@ -51,10 +30,11 @@ namespace SparkyStudios::Audio::Amplitude
         friend class FFTFilterInstance;
 
     public:
-        FFTFilter() = default;
+        explicit FFTFilter(const std::string& name);
         ~FFTFilter() override = default;
 
         FilterInstance* CreateInstance() override;
+        void DestroyInstance(FilterInstance* instance) override;
     };
 
     class FFTFilterInstance : public FilterInstance
@@ -78,17 +58,17 @@ namespace SparkyStudios::Audio::Amplitude
         void InitFFT();
 
     private:
-        PFFFTD_Setup* _pffft_setup;
+        PFFFTD_Setup* _pffft_setup = nullptr;
 
-        AmReal64Buffer _temp;
-        AmReal64Buffer _inputBuffer;
-        AmReal64Buffer _mixBuffer;
-        AmReal64Buffer _lastPhase;
-        AmReal64Buffer _sumPhase;
+        AmReal64Buffer _temp = nullptr;
+        AmReal64Buffer _inputBuffer = nullptr;
+        AmReal64Buffer _mixBuffer = nullptr;
+        AmReal64Buffer _lastPhase = nullptr;
+        AmReal64Buffer _sumPhase = nullptr;
 
-        AmUInt32 _inputOffset[AM_MAX_CHANNELS];
-        AmUInt32 _mixOffset[AM_MAX_CHANNELS];
-        AmUInt32 _readOffset[AM_MAX_CHANNELS];
+        AmUInt32 _inputOffset[AM_MAX_CHANNELS]{};
+        AmUInt32 _mixOffset[AM_MAX_CHANNELS]{};
+        AmUInt32 _readOffset[AM_MAX_CHANNELS]{};
     };
 } // namespace SparkyStudios::Audio::Amplitude
 

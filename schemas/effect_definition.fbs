@@ -16,25 +16,6 @@ include "common.fbs";
 
 namespace SparkyStudios.Audio.Amplitude;
 
-/// The type of effect to apply to the sound.
-enum EffectKind: byte {
-    /// Applies the BassBoostFilter.
-    BassBoost,
-    /// Applies the EchoFilter.
-    Echo,
-    /// Applies the EqualizerFilter.
-    Equalizer,
-    /// Applies the FlangerFilter.
-    Flanger,
-    /// Applies the FreeverbFilter.
-    Freeverb,
-    /// Applies the RobotizeFilter.
-    Robotize,
-    /// Applies BiquadResonant filters, such as Low Pass
-    /// High Pass, or Band Pass filter.
-    BiquadResonant,
-}
-
 /// An effect to apply on the sound during playback.
 table EffectDefinition {
   /// The unique ID of the effect.
@@ -43,10 +24,11 @@ table EffectDefinition {
   /// The name of the effect.
   name:string;
 
-  /// The type of effect to apply to the sound.
-  effect:EffectKind;
+  /// The effect to apply to the sound. This value has to be a valid registered
+  /// instance through the Effect API.
+  effect:string;
 
-  /// The effect setting values. These values are ordered following same
+  /// The effect settings values. These values are ordered in the same
   /// parameters order in the selected effect.
   parameters:[RtpcCompatibleValue];
 }

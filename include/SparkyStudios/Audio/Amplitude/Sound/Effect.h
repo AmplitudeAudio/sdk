@@ -97,7 +97,7 @@ namespace SparkyStudios::Audio::Amplitude
          *
          * @param instance The effect instance to delete.
          */
-        void DeleteInstance(EffectInstance* instance) const;
+        void DestroyInstance(EffectInstance* instance) const;
 
         /**
          * @brief Updates parameters on each frames.

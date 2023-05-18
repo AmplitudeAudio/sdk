@@ -35,7 +35,13 @@ namespace SparkyStudios::Audio::Amplitude
             PARAM_BOOL
         };
 
-        Filter() = default;
+        /**
+         * @brief Create a new Filter instance.
+         *
+         * @param name The filter name. eg. "MiniAudioLinear".
+         */
+        explicit Filter(std::string name);
+
         virtual ~Filter() = default;
 
         virtual AmUInt32 GetParamCount();
@@ -48,7 +54,72 @@ namespace SparkyStudios::Audio::Amplitude
 
         virtual AmReal32 GetParamMin(AmUInt32 index);
 
+        /**
+         * @brief Creates a new instance of the filter.
+         * @return A new instance of the filter.
+         */
         virtual FilterInstance* CreateInstance() = 0;
+
+        /**
+         * @brief Destroys an instance of the filter. The instance should have
+         * been created with CreateInstance().
+         * @param instance The filter instance to be destroyed.
+         */
+        virtual void DestroyInstance(FilterInstance* instance) = 0;
+
+        /**
+         * @brief Gets the name of this filter.
+         *
+         * @return The name of this filter.
+         */
+        [[nodiscard]] const std::string& GetName() const;
+
+        /**
+         * @brief Registers a new filter.
+         *
+         * @param filter The filter to add in the registry.
+         */
+        static void Register(Filter* filter);
+
+        /**
+         * @brief Look up a filter by name.
+         *
+         * @return The filter with the given name, or NULL if none.
+         */
+        static Filter* Find(const std::string& name);
+
+        /**
+         * @brief Creates a new instance of the the filter with the given name
+         * and returns its pointer. The returned pointer should be deleted using Filter::Destruct().
+         *
+         * @param name The name of the filter.
+         *
+         * @return The filter with the given name, or NULL if none.
+         */
+        static FilterInstance* Construct(const std::string& name);
+
+        /**
+         * @brief Destroys the given filter instance.
+         *
+         * @param name The name of the filter.
+         * @param instance The filter instance to destroy.
+         */
+        static void Destruct(const std::string& name, FilterInstance* instance);
+
+        /**
+         * @brief Locks the filters registry.
+         *
+         * This function is mainly used for internal purposes. Its
+         * called before the Engine initialization, to discard the
+         * registration of new filters after the engine is fully loaded.
+         */
+        static void LockRegistry();
+
+    protected:
+        /**
+         * @brief The name of this filter.
+         */
+        std::string m_name;
     };
 
     class FilterInstance
@@ -62,7 +133,8 @@ namespace SparkyStudios::Audio::Amplitude
         virtual void AdvanceFrame(AmTime delta_time);
 
         virtual void Process(AmAudioSampleBuffer buffer, AmUInt64 frames, AmUInt64 bufferSize, AmUInt16 channels, AmUInt32 sampleRate);
-        virtual void ProcessInterleaved(AmAudioSampleBuffer buffer, AmUInt64 frames, AmUInt64 bufferSize, AmUInt16 channels, AmUInt32 sampleRate);
+        virtual void ProcessInterleaved(
+            AmAudioSampleBuffer buffer, AmUInt64 frames, AmUInt64 bufferSize, AmUInt16 channels, AmUInt32 sampleRate);
 
         virtual void ProcessChannel(
             AmAudioSampleBuffer buffer, AmUInt16 channel, AmUInt64 frames, AmUInt16 channels, AmUInt32 sampleRate, bool isInterleaved);
