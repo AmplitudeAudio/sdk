@@ -323,8 +323,14 @@ add_library(${PROJECT_NAME} STATIC ${SA_SOURCE})
 target_link_libraries(${PROJECT_NAME} PRIVATE flatbuffers)
 target_link_libraries(${PROJECT_NAME} PRIVATE samplerate)
 
+add_custom_target(amplitude_build_binary_schemas
+    COMMAND python3 ${CMAKE_CURRENT_SOURCE_DIR}/scripts/build_schemas.py --flatc $<TARGET_FILE:flatc> --output ${CMAKE_CURRENT_SOURCE_DIR}/schemas
+    DEPENDS flatc
+)
+
 add_dependencies(${PROJECT_NAME}
     generated_includes
+    amplitude_build_binary_schemas
 )
 
 if(UNIX)
@@ -339,7 +345,7 @@ endif()
 add_subdirectory(tools/amac)
 
 if(BUILD_SAMPLES)
-  add_subdirectory(samples)
+    add_subdirectory(samples)
 endif()
 
 # #####################################################
@@ -380,7 +386,7 @@ install(
 install(
     DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/schemas/
     DESTINATION ${AM_SHM_DESTINATION}
-    FILES_MATCHING PATTERN "*.fbs"
+    FILES_MATCHING PATTERN "*.bfbs"
 )
 
 install(

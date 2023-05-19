@@ -112,37 +112,37 @@ def find_in_paths(name, paths):
 # by the flatbuffer compiler.
 FLATBUFFERS_CONVERSION_DATA = [
     FlatbuffersConversionData(
-        schema=find_in_paths('engine_config_definition.fbs', SCHEMA_PATHS),
+        schema=find_in_paths('engine_config_definition.bfbs', SCHEMA_PATHS),
         input_files=[os.path.join(RAW_ASSETS_PATH, 'audio_config.json')]),
     FlatbuffersConversionData(
-        schema=find_in_paths('buses_definition.fbs', SCHEMA_PATHS),
+        schema=find_in_paths('buses_definition.bfbs', SCHEMA_PATHS),
         input_files=[os.path.join(RAW_ASSETS_PATH, 'buses.json')]),
     FlatbuffersConversionData(
-        schema=find_in_paths('sound_bank_definition.fbs', SCHEMA_PATHS),
+        schema=find_in_paths('sound_bank_definition.bfbs', SCHEMA_PATHS),
         input_files=glob.glob(os.path.join(RAW_SOUND_BANK_PATH, '**/*.json'), recursive=True)),
     FlatbuffersConversionData(
-        schema=find_in_paths('collection_definition.fbs', SCHEMA_PATHS),
+        schema=find_in_paths('collection_definition.bfbs', SCHEMA_PATHS),
         input_files=glob.glob(os.path.join(RAW_COLLECTION_PATH, '**/*.json'), recursive=True)),
     FlatbuffersConversionData(
-        schema=find_in_paths('sound_definition.fbs', SCHEMA_PATHS),
+        schema=find_in_paths('sound_definition.bfbs', SCHEMA_PATHS),
         input_files=glob.glob(os.path.join(RAW_SOUND_PATH, '**/*.json'), recursive=True)),
     FlatbuffersConversionData(
-        schema=find_in_paths('event_definition.fbs', SCHEMA_PATHS),
+        schema=find_in_paths('event_definition.bfbs', SCHEMA_PATHS),
         input_files=glob.glob(os.path.join(RAW_EVENT_PATH, '**/*.json'), recursive=True)),
     FlatbuffersConversionData(
-        schema=find_in_paths('attenuation_definition.fbs', SCHEMA_PATHS),
+        schema=find_in_paths('attenuation_definition.bfbs', SCHEMA_PATHS),
         input_files=glob.glob(os.path.join(RAW_ATTENUATION_PATH, '**/*.json'), recursive=True)),
     FlatbuffersConversionData(
-        schema=find_in_paths('switch_definition.fbs', SCHEMA_PATHS),
+        schema=find_in_paths('switch_definition.bfbs', SCHEMA_PATHS),
         input_files=glob.glob(os.path.join(RAW_SWITCHES_PATH, '**/*.json'), recursive=True)),
     FlatbuffersConversionData(
-        schema=find_in_paths('switch_container_definition.fbs', SCHEMA_PATHS),
+        schema=find_in_paths('switch_container_definition.bfbs', SCHEMA_PATHS),
         input_files=glob.glob(os.path.join(RAW_SWITCH_CONTAINERS_PATH, '**/*.json'), recursive=True)),
     FlatbuffersConversionData(
-        schema=find_in_paths('rtpc_definition.fbs', SCHEMA_PATHS),
+        schema=find_in_paths('rtpc_definition.bfbs', SCHEMA_PATHS),
         input_files=glob.glob(os.path.join(RAW_RTPC_CONTAINERS_PATH, '**/*.json'), recursive=True)),
     FlatbuffersConversionData(
-        schema=find_in_paths('effect_definition.fbs', SCHEMA_PATHS),
+        schema=find_in_paths('effect_definition.bfbs', SCHEMA_PATHS),
         input_files=glob.glob(os.path.join(RAW_EFFECT_CONTAINERS_PATH, '**/*.json'), recursive=True)),
 ]
 
