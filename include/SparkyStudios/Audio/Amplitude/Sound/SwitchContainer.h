@@ -30,12 +30,12 @@ namespace SparkyStudios::Audio::Amplitude
 
     struct SwitchContainerItem
     {
-        AmObjectID m_id;
-        bool m_continueBetweenStates;
-        AmTime m_fadeInDuration;
-        AmUInt8 m_fadeInAlgorithm;
-        AmTime m_fadeOutDuration;
-        AmUInt8 m_fadeOutAlgorithm;
+        AmObjectID m_id{};
+        bool m_continueBetweenStates{};
+        AmTime m_fadeInDuration{};
+        AmString m_fadeInAlgorithm{};
+        AmTime m_fadeOutDuration{};
+        AmString m_fadeOutAlgorithm{};
         RtpcValue m_gain;
     };
 
@@ -43,7 +43,7 @@ namespace SparkyStudios::Audio::Amplitude
     {
     public:
         SwitchContainer();
-        ~SwitchContainer();
+        ~SwitchContainer() override;
 
         bool LoadDefinition(const AmString& source, EngineInternalState* state) override;
         bool LoadDefinitionFromFile(const AmOsString& filename, EngineInternalState* state) override;
@@ -65,7 +65,7 @@ namespace SparkyStudios::Audio::Amplitude
          *
          * @return The fade in Fader.
          */
-        Fader* GetFaderIn(AmObjectID id) const;
+        [[nodiscard]] FaderInstance* GetFaderIn(AmObjectID id) const;
 
         /**
          * @brief Get the fade out Fader for the given sound object ID.
@@ -74,7 +74,7 @@ namespace SparkyStudios::Audio::Amplitude
          *
          * @return The fade out Fader.
          */
-        Fader* GetFaderOut(AmObjectID id) const;
+        [[nodiscard]] FaderInstance* GetFaderOut(AmObjectID id) const;
 
         /**
          * @brief Returns the list of sound objects referenced in this SwitchContainer for the given state.
@@ -91,8 +91,8 @@ namespace SparkyStudios::Audio::Amplitude
 
         std::string _source;
         std::map<AmObjectID, std::vector<SwitchContainerItem>> _sounds;
-        std::map<AmObjectID, Fader*> _fadersIn;
-        std::map<AmObjectID, Fader*> _fadersOut;
+        std::map<AmObjectID, std::tuple<Fader*, FaderInstance*>> _fadersIn;
+        std::map<AmObjectID, std::tuple<Fader*, FaderInstance*>> _fadersOut;
     };
 } // namespace SparkyStudios::Audio::Amplitude
 

@@ -26,9 +26,13 @@ namespace SparkyStudios::Audio::Amplitude
         : _source()
         , _id(kAmInvalidObjectId)
         , _name()
+        , _currentValue(0.0)
+        , _targetValue(0.0)
         , _minValue(0.0)
         , _maxValue(1.0)
         , _defValue(0.0)
+        , _faderAttackFactory(nullptr)
+        , _faderReleaseFactory(nullptr)
         , _faderAttack(nullptr)
         , _faderRelease(nullptr)
         , _refCounter()
@@ -36,8 +40,14 @@ namespace SparkyStudios::Audio::Amplitude
 
     Rtpc::~Rtpc()
     {
-        delete _faderAttack;
-        delete _faderRelease;
+        if (_faderAttackFactory != nullptr)
+            _faderAttackFactory->DestroyInstance(_faderAttack);
+
+        if (_faderReleaseFactory != nullptr)
+            _faderReleaseFactory->DestroyInstance(_faderRelease);
+
+        _faderAttackFactory = nullptr;
+        _faderReleaseFactory = nullptr;
 
         _faderAttack = nullptr;
         _faderRelease = nullptr;
@@ -62,10 +72,13 @@ namespace SparkyStudios::Audio::Amplitude
 
         if (definition->fade_settings() && definition->fade_settings()->enabled())
         {
-            _faderAttack = Fader::Create(static_cast<Fader::FADER_ALGORITHM>(definition->fade_settings()->fade_attack()->fader()));
+            _faderAttackFactory = Fader::Find(definition->fade_settings()->fade_attack()->fader()->str());
+            _faderReleaseFactory = Fader::Find(definition->fade_settings()->fade_release()->fader()->str());
+
+            _faderAttack = _faderAttackFactory->CreateInstance();
             _faderAttack->SetDuration(definition->fade_settings()->fade_attack()->duration());
 
-            _faderRelease = Fader::Create(static_cast<Fader::FADER_ALGORITHM>(definition->fade_settings()->fade_release()->fader()));
+            _faderRelease = _faderReleaseFactory->CreateInstance();
             _faderRelease->SetDuration(definition->fade_settings()->fade_release()->duration());
         }
 

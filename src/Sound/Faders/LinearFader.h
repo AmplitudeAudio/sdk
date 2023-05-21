@@ -17,15 +17,34 @@
 #ifndef SS_AMPLITUDE_AUDIO_LINEAR_FADER_H
 #define SS_AMPLITUDE_AUDIO_LINEAR_FADER_H
 
+#include <SparkyStudios/Audio/Amplitude/Core/Memory.h>
 #include <SparkyStudios/Audio/Amplitude/Sound/Fader.h>
 
 namespace SparkyStudios::Audio::Amplitude
 {
-    class LinearFader : public Fader
+    class LinearFaderInstance final : public FaderInstance
     {
     public:
-        float GetFromPercentage(double percentage) override;
+        AmReal64 GetFromPercentage(AmReal64 percentage) override;
     };
+
+    [[maybe_unused]] static class LinearFader final : public Fader
+    {
+    public:
+        LinearFader()
+            : Fader("Linear")
+        {}
+
+        FaderInstance* CreateInstance() override
+        {
+            return amnew(LinearFaderInstance);
+        }
+
+        void DestroyInstance(FaderInstance* instance) override
+        {
+            amdelete(LinearFaderInstance, (LinearFaderInstance*)instance);
+        }
+    } gLinearFader; // NOLINT(cert-err58-cpp)
 } // namespace SparkyStudios::Audio::Amplitude
 
 #endif // SS_AMPLITUDE_AUDIO_LINEAR_FADER_H

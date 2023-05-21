@@ -22,6 +22,21 @@
 
 namespace SparkyStudios::Audio::Amplitude
 {
+    DuckBusInternalState::~DuckBusInternalState()
+    {
+        if (_faderInFactory != nullptr)
+            _faderInFactory->DestroyInstance(_faderIn);
+
+        if (_faderOutFactory != nullptr)
+            _faderOutFactory->DestroyInstance(_faderOut);
+
+        _faderIn = nullptr;
+        _faderOut = nullptr;
+
+        _faderInFactory = nullptr;
+        _faderOutFactory = nullptr;
+    }
+
     bool DuckBusInternalState::Initialize(const DuckBusDefinition* definition)
     {
         if (definition == nullptr)
@@ -46,10 +61,12 @@ namespace SparkyStudios::Audio::Amplitude
         _fadeInDuration = definition->fade_in()->duration();
         _fadeOutDuration = definition->fade_out()->duration();
 
-        _faderIn = Fader::Create(static_cast<Fader::FADER_ALGORITHM>(definition->fade_in()->fader()));
+        _faderInFactory = Fader::Find(definition->fade_in()->fader()->str());
+        _faderIn = _faderInFactory->CreateInstance();
         _faderIn->Set(1.0f, _targetGain, _fadeInDuration);
 
-        _faderOut = Fader::Create(static_cast<Fader::FADER_ALGORITHM>(definition->fade_out()->fader()));
+        _faderOutFactory = Fader::Find(definition->fade_out()->fader()->str());
+        _faderOut = _faderOutFactory->CreateInstance();
         _faderOut->Set(_targetGain, 1.0f, _fadeOutDuration);
 
         _initialized = true;
@@ -98,6 +115,44 @@ namespace SparkyStudios::Audio::Amplitude
         _bus.GetState()->_duckGain = duckGain;
     }
 
+    BusInternalState::~BusInternalState()
+    {
+        if (_gainFaderFactory != nullptr)
+            _gainFaderFactory->DestroyInstance(_gainFader);
+
+        _gainFader = nullptr;
+        _gainFaderFactory = nullptr;
+
+        for (auto& bus : _duckBuses)
+            amdelete(DuckBusInternalState, bus);
+
+        _childBuses.clear();
+        _duckBuses.clear();
+    }
+
+    void BusInternalState::Initialize(const BusDefinition* bus_def)
+    {
+        // Make sure we only initialize once.
+        AMPLITUDE_ASSERT(_busDefinition == nullptr);
+        _busDefinition = bus_def;
+
+        // Initialize the ID with the value specified by the definition file.
+        _id = _busDefinition->id();
+        // Initialize the name with the value specified by the definition file.
+        _name = _busDefinition->name()->str();
+        // Initialize the gain with the value specified by the definition file.
+        _gain = _busDefinition->gain();
+
+        _gainFaderFactory = Fader::Find(_busDefinition->fader()->str());
+        _gainFader = _gainFaderFactory->CreateInstance();
+
+        for (auto& bus : _duckBuses)
+            amdelete(DuckBusInternalState, bus);
+
+        _childBuses.clear();
+        _duckBuses.clear();
+    }
+
     void BusInternalState::SetMute(bool mute)
     {
         _muted = mute;
@@ -118,28 +173,6 @@ namespace SparkyStudios::Audio::Amplitude
         _gainFader->Start(Engine::GetInstance()->GetTotalTime());
     }
 
-    void BusInternalState::Initialize(const BusDefinition* bus_def)
-    {
-        // Make sure we only initialize once.
-        AMPLITUDE_ASSERT(_busDefinition == nullptr);
-        _busDefinition = bus_def;
-
-        // Initialize the ID with the value specified by the definition file.
-        _id = _busDefinition->id();
-        // Initialize the name with the value specified by the definition file.
-        _name = _busDefinition->name()->str();
-        // Initialize the gain with the value specified by the definition file.
-        _gain = _busDefinition->gain();
-
-        _gainFader = Fader::Create(static_cast<Fader::FADER_ALGORITHM>(_busDefinition->fader()));
-
-        for (auto& bus : _duckBuses)
-            amdelete(DuckBusInternalState, bus);
-
-        _childBuses.clear();
-        _duckBuses.clear();
-    }
-
     void BusInternalState::UpdateDuckGain(AmTime delta_time)
     {
         for (auto&& bus : _duckBuses)
@@ -148,7 +181,7 @@ namespace SparkyStudios::Audio::Amplitude
         }
     }
 
-    void BusInternalState::AdvanceFrame(AmTime delta_time, float parent_gain)
+    void BusInternalState::AdvanceFrame(AmTime delta_time, float parent_gain) // NOLINT(misc-no-recursion)
     {
         if (_gainFader->GetState() == AM_FADER_STATE_ACTIVE)
         {

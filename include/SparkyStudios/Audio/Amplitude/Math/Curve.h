@@ -58,6 +58,7 @@ namespace SparkyStudios::Audio::Amplitude
          * @brief Creates an empty CurvePart.
          */
         CurvePart();
+        ~CurvePart();
 
         /**
          * @brief Initializes this CurvePart from a definition.
@@ -100,14 +101,14 @@ namespace SparkyStudios::Audio::Amplitude
          *
          * @return The Fader of this CurvePart.
          */
-        [[nodiscard]] Fader* GetFader() const;
+        [[nodiscard]] FaderInstance* GetFader() const;
 
         /**
          * @brief Sets the Fader of this CurvePart.
          *
          * @param fader The new Fader.
          */
-        void SetFader(Fader::FADER_ALGORITHM fader);
+        void SetFader(const AmString& fader);
 
         /**
          * @brief Gets the Y coordinates of a point given its coordinates over the X axis.
@@ -121,7 +122,9 @@ namespace SparkyStudios::Audio::Amplitude
     private:
         CurvePoint _start;
         CurvePoint _end;
-        Fader* _fader;
+
+        Fader* _faderFactory;
+        FaderInstance* _fader;
     };
 
     /**

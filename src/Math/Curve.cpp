@@ -28,14 +28,32 @@ namespace SparkyStudios::Audio::Amplitude
         return !(rhs == *this);
     }
 
+    CurvePart::CurvePart()
+        : _start()
+        , _end()
+        , _faderFactory(nullptr)
+        , _fader(nullptr)
+    {}
+
+    CurvePart::~CurvePart()
+    {
+        if (_faderFactory != nullptr)
+            _faderFactory->DestroyInstance(_fader);
+
+        _fader = nullptr;
+        _faderFactory = nullptr;
+    }
+
     void CurvePart::Initialize(const CurvePartDefinition* definition)
     {
         if (definition == nullptr)
             return;
 
-        _start = { definition->start().x(), definition->start().y() };
-        _end = { definition->end().x(), definition->end().y() };
-        _fader = Fader::Create(static_cast<Fader::FADER_ALGORITHM>(definition->fader()));
+        _start = { definition->start()->x(), definition->start()->y() };
+        _end = { definition->end()->x(), definition->end()->y() };
+
+        _faderFactory = Fader::Find(definition->fader()->str());
+        _fader = _faderFactory->CreateInstance();
 
         _fader->Set(_start.y, _end.y, 0.0);
     }
@@ -44,12 +62,6 @@ namespace SparkyStudios::Audio::Amplitude
     {
         return _start;
     }
-
-    CurvePart::CurvePart()
-        : _start()
-        , _end()
-        , _fader(nullptr)
-    {}
 
     void CurvePart::SetStart(const CurvePoint& start)
     {
@@ -72,14 +84,18 @@ namespace SparkyStudios::Audio::Amplitude
             _fader->Set(_start.y, _end.y, 0.0);
     }
 
-    Fader* CurvePart::GetFader() const
+    FaderInstance* CurvePart::GetFader() const
     {
         return _fader;
     }
 
-    void CurvePart::SetFader(Fader::FADER_ALGORITHM fader)
+    void CurvePart::SetFader(const AmString& fader)
     {
-        _fader = Fader::Create(fader);
+        if (_faderFactory != nullptr)
+            _faderFactory->DestroyInstance(_fader);
+
+        _faderFactory = Fader::Find(fader);
+        _fader = _faderFactory->CreateInstance();
         _fader->Set(_start.y, _end.y, 0.0);
     }
 
@@ -126,4 +142,4 @@ namespace SparkyStudios::Audio::Amplitude
 
         return nullptr;
     }
-}; // namespace SparkyStudios::Audio::Amplitude
+} // namespace SparkyStudios::Audio::Amplitude

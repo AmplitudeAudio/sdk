@@ -26,13 +26,13 @@ namespace SparkyStudios::Audio::Amplitude
 {
     static std::unordered_map<AmObjectID, FilterInstance*> gOcclusionFilters = {};
 
-    class OcclusionProcessorInstannce : public SoundProcessorInstance
+    class OcclusionProcessorInstance : public SoundProcessorInstance
     {
     public:
-        OcclusionProcessorInstannce()
+        OcclusionProcessorInstance()
             : _lpfCurve()
         {
-            _lpfCurve.SetFader(Fader::ALGORITHM_EXPONENTIAL_SMOOTH);
+            _lpfCurve.SetFader("ExponentialSmooth");
         }
 
         void Process(
@@ -157,12 +157,12 @@ namespace SparkyStudios::Audio::Amplitude
 
         SoundProcessorInstance* CreateInstance() override
         {
-            return amnew(OcclusionProcessorInstannce);
+            return amnew(OcclusionProcessorInstance);
         }
 
         void DestroyInstance(SoundProcessorInstance* instance) override
         {
-            amdelete(OcclusionProcessorInstannce, (OcclusionProcessorInstannce*)instance);
+            amdelete(OcclusionProcessorInstance, (OcclusionProcessorInstance*)instance);
         }
     } gOcclusionProcessor; // NOLINT(cert-err58-cpp)
 } // namespace SparkyStudios::Audio::Amplitude

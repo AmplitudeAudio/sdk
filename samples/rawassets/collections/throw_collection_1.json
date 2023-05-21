@@ -88,5 +88,6 @@
       "end_behavior": "Reverse"
     }
   },
-  "scope": "World"
+  "scope": "World",
+  "fader": "Linear"
 }

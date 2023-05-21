@@ -323,7 +323,7 @@ namespace SparkyStudios::Audio::Amplitude
         AmObjectID _previousSwitchContainerStateId;
 
         // The sound fade of this channel. This is updated by the current sound collection.
-        Fader* _fader;
+        FaderInstance* _fader;
 
         // The target state of the fade out transition. Must be either Paused or Stopped.
         ChannelPlaybackState _targetFadeOutState;

@@ -107,10 +107,10 @@ namespace SparkyStudios::Audio::Amplitude
         RefCounter* GetRefCounter();
 
     private:
-        std::string _source;
+        AmString _source;
 
         AmRtpcID _id;
-        std::string _name;
+        AmString _name;
 
         AmReal64 _minValue;
         AmReal64 _maxValue;
@@ -119,8 +119,11 @@ namespace SparkyStudios::Audio::Amplitude
         AmReal64 _currentValue;
         AmReal64 _targetValue;
 
-        Fader* _faderAttack;
-        Fader* _faderRelease;
+        Fader* _faderAttackFactory;
+        Fader* _faderReleaseFactory;
+
+        FaderInstance* _faderAttack;
+        FaderInstance* _faderRelease;
 
         RefCounter _refCounter;
     };
@@ -133,7 +136,7 @@ namespace SparkyStudios::Audio::Amplitude
         explicit RtpcValue(const Rtpc* rtpc, const Curve* curve);
         explicit RtpcValue(const RtpcCompatibleValue* definition);
 
-        float GetValue() const;
+        [[nodiscard]] AmReal32 GetValue() const;
 
     private:
         AmInt8 _valueKind;

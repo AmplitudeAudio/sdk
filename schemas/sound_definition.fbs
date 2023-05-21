@@ -69,7 +69,7 @@ table SoundDefinition {
   scope:Scope = World;
 
   /// The fader algorithm used by this sound.
-  fader:FaderAlgorithm = Linear;
+  fader:string;
 
   /// Path to the audio sample file.
   path:string;

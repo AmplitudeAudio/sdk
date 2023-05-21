@@ -17,20 +17,57 @@
 #ifndef SS_AMPLITUDE_AUDIO_S_CURVE_FADER_H
 #define SS_AMPLITUDE_AUDIO_S_CURVE_FADER_H
 
+#include <SparkyStudios/Audio/Amplitude/Core/Memory.h>
 #include <SparkyStudios/Audio/Amplitude/Sound/Fader.h>
 
 namespace SparkyStudios::Audio::Amplitude
 {
-    class SCurveFader : public Fader
+    class SCurveFaderInstance final : public FaderInstance
     {
     public:
-        explicit SCurveFader(AmReal64 k);
+        explicit SCurveFaderInstance(AmReal64 k);
 
-        float GetFromPercentage(double percentage) override;
+        AmReal64 GetFromPercentage(AmReal64 percentage) override;
 
     private:
         AmReal64 _k;
     };
+
+    [[maybe_unused]] static class SCurveSmoothFader final : public Fader
+    {
+    public:
+        SCurveSmoothFader()
+            : Fader("SCurveSmooth")
+        {}
+
+        FaderInstance* CreateInstance() override
+        {
+            return amnew(SCurveFaderInstance, 0.5);
+        }
+
+        void DestroyInstance(FaderInstance* instance) override
+        {
+            amdelete(SCurveFaderInstance, (SCurveFaderInstance*)instance);
+        }
+    } gSCurveSmoothFader; // NOLINT(cert-err58-cpp)
+
+    [[maybe_unused]] static class SCurveSharpFader final : public Fader
+    {
+    public:
+        SCurveSharpFader()
+            : Fader("SCurveSharp")
+        {}
+
+        FaderInstance* CreateInstance() override
+        {
+            return amnew(SCurveFaderInstance, 0.9);
+        }
+
+        void DestroyInstance(FaderInstance* instance) override
+        {
+            amdelete(SCurveFaderInstance, (SCurveFaderInstance*)instance);
+        }
+    } gSCurveSharpFader; // NOLINT(cert-err58-cpp)
 } // namespace SparkyStudios::Audio::Amplitude
 
 #endif // SS_AMPLITUDE_AUDIO_S_CURVE_FADER_H

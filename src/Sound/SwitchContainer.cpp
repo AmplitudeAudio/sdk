@@ -103,11 +103,11 @@ namespace SparkyStudios::Audio::Amplitude
         m_priority = RtpcValue(definition->priority());
 
         const auto& states = _switch->GetSwitchStates();
-        for (const auto& state : states)
+        for (const auto& switchState : states)
         {
-            if (_sounds.count(state.m_id) == 0)
+            if (_sounds.count(switchState.m_id) == 0)
             {
-                _sounds.insert({ state.m_id, std::vector<SwitchContainerItem>() });
+                _sounds.insert({ switchState.m_id, std::vector<SwitchContainerItem>() });
             }
         }
 
@@ -132,19 +132,25 @@ namespace SparkyStudios::Audio::Amplitude
             }
 
             // Setup entry Faders
-            _fadersIn[id] = Fader::Create(static_cast<Fader::FADER_ALGORITHM>(entry->fade_in()->fader()));
-            _fadersOut[id] = Fader::Create(static_cast<Fader::FADER_ALGORITHM>(entry->fade_out()->fader()));
+            Fader* fader = Fader::Find(entry->fade_in()->fader()->str());
+            FaderInstance* faderInstance = fader->CreateInstance();
+            faderInstance->SetDuration(entry->fade_in()->duration());
 
-            _fadersIn[id]->SetDuration(entry->fade_in()->duration());
-            _fadersOut[id]->SetDuration(entry->fade_out()->duration());
+            _fadersIn[id] = std::make_tuple(fader, faderInstance);
+
+            fader = Fader::Find(entry->fade_out()->fader()->str());
+            faderInstance = fader->CreateInstance();
+            faderInstance->SetDuration(entry->fade_out()->duration());
+
+            _fadersOut[id] = std::make_tuple(fader, faderInstance);
 
             SwitchContainerItem item;
             item.m_id = id;
             item.m_continueBetweenStates = entry->continue_between_states();
             item.m_fadeInDuration = entry->fade_in()->duration();
             item.m_fadeOutDuration = entry->fade_out()->duration();
-            item.m_fadeInAlgorithm = entry->fade_in()->fader();
-            item.m_fadeOutAlgorithm = entry->fade_out()->fader();
+            item.m_fadeInAlgorithm = entry->fade_in()->fader()->str();
+            item.m_fadeOutAlgorithm = entry->fade_out()->fader()->str();
             item.m_gain = RtpcValue(entry->gain());
 
             const flatbuffers::uoffset_t statesCount = entry->switch_states()->size();
@@ -185,10 +191,13 @@ namespace SparkyStudios::Audio::Amplitude
             if (auto findIt = state->sound_map.find(sound.first); findIt != state->sound_map.end())
             {
                 findIt->second->GetRefCounter()->Increment();
+                continue;
             }
-            else if (auto findIt = state->collection_map.find(sound.first); findIt != state->collection_map.end())
+
+            if (auto findIt = state->collection_map.find(sound.first); findIt != state->collection_map.end())
             {
                 findIt->second->GetRefCounter()->Increment();
+                continue;
             }
         }
     }
@@ -214,10 +223,13 @@ namespace SparkyStudios::Audio::Amplitude
             if (auto findIt = state->sound_map.find(sound.first); findIt != state->sound_map.end())
             {
                 findIt->second->GetRefCounter()->Decrement();
+                continue;
             }
-            else if (auto findIt = state->collection_map.find(sound.first); findIt != state->collection_map.end())
+
+            if (auto findIt = state->collection_map.find(sound.first); findIt != state->collection_map.end())
             {
                 findIt->second->GetRefCounter()->Decrement();
+                continue;
             }
         }
     }
@@ -227,22 +239,18 @@ namespace SparkyStudios::Audio::Amplitude
         return Amplitude::GetSwitchContainerDefinition(_source.c_str());
     }
 
-    Fader* SwitchContainer::GetFaderIn(AmObjectID id) const
+    FaderInstance* SwitchContainer::GetFaderIn(AmObjectID id) const
     {
         if (_fadersIn.find(id) != _fadersIn.end())
-        {
-            return _fadersIn.at(id);
-        }
+            return std::get<1>(_fadersIn.at(id));
 
         return nullptr;
     }
 
-    Fader* SwitchContainer::GetFaderOut(AmObjectID id) const
+    FaderInstance* SwitchContainer::GetFaderOut(AmObjectID id) const
     {
         if (_fadersOut.find(id) != _fadersOut.end())
-        {
-            return _fadersOut.at(id);
-        }
+            return std::get<1>(_fadersOut.at(id));
 
         return nullptr;
     }

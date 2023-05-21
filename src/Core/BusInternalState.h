@@ -41,11 +41,15 @@ namespace SparkyStudios::Audio::Amplitude
             , _targetGain(0.0f)
             , _fadeInDuration(0.0)
             , _fadeOutDuration(0.0)
+            , _faderInFactory(nullptr)
+            , _faderOutFactory(nullptr)
             , _faderIn(nullptr)
             , _faderOut(nullptr)
             , _initialized(false)
             , _transitionPercentage(0.0)
         {}
+
+        ~DuckBusInternalState();
 
         bool Initialize(const DuckBusDefinition* definition);
         void Update(AmTime deltaTime);
@@ -58,8 +62,12 @@ namespace SparkyStudios::Audio::Amplitude
         AmReal32 _targetGain;
         AmTime _fadeInDuration;
         AmTime _fadeOutDuration;
-        Fader* _faderIn;
-        Fader* _faderOut;
+
+        Fader* _faderInFactory;
+        Fader* _faderOutFactory;
+
+        FaderInstance* _faderIn;
+        FaderInstance* _faderOut;
 
         AmTime _transitionPercentage;
     };
@@ -79,8 +87,11 @@ namespace SparkyStudios::Audio::Amplitude
             , _duckGain(1.0f)
             , _playingSoundList(&ChannelInternalState::bus_node)
             , _muted(false)
+            , _gainFaderFactory(nullptr)
             , _gainFader(nullptr)
         {}
+
+        ~BusInternalState();
 
         void Initialize(const BusDefinition* bus_def);
 
@@ -135,20 +146,20 @@ namespace SparkyStudios::Audio::Amplitude
 
         // Resets the duck gain to 1.0f. Duck gain must be reset each frame before
         // modifying it.
-        void ResetDuckGain()
+        AM_INLINE(void) ResetDuckGain()
         {
             _duckGain = 1.0f;
         }
 
         // Return the vector of child buses.
-        std::vector<BusInternalState*>& GetChildBuses()
+        AM_INLINE(std::vector<BusInternalState*>&) GetChildBuses()
         {
             return _childBuses;
         }
 
         // Return the vector of duck buses, the buses to be ducked when a sound is
         // playing on this bus.
-        std::vector<DuckBusInternalState*>& GetDuckBuses()
+        AM_INLINE(std::vector<DuckBusInternalState*>&) GetDuckBuses()
         {
             return _duckBuses;
         }
@@ -156,7 +167,7 @@ namespace SparkyStudios::Audio::Amplitude
         // When a sound begins playing or finishes playing, the sound counter should
         // be incremented or decremented appropriately to track whether to
         // apply the duck gain.
-        ChannelList& GetPlayingSoundList()
+        AM_INLINE(ChannelList&) GetPlayingSoundList()
         {
             return _playingSoundList;
         }
@@ -195,8 +206,10 @@ namespace SparkyStudios::Audio::Amplitude
         // The target user gain of this bus (used for fading).
         float _targetUserGain;
 
+        Fader* _gainFaderFactory;
+
         // The bus gain fader.
-        Fader* _gainFader;
+        FaderInstance* _gainFader;
 
         // The current _duckGain of this bus to be applied to all buses in
         // _duckBuses.

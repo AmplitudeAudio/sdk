@@ -17,14 +17,33 @@
 #ifndef SS_AMPLITUDE_AUDIO_CONSTANT_FADER_H
 #define SS_AMPLITUDE_AUDIO_CONSTANT_FADER_H
 
+#include <SparkyStudios/Audio/Amplitude/Core/Memory.h>
 #include <SparkyStudios/Audio/Amplitude/Sound/Fader.h>
 
 namespace SparkyStudios::Audio::Amplitude
 {
-    class ConstantFader : public Fader
+    class ConstantFaderInstance final : public FaderInstance
     {
-        float GetFromPercentage(double percentage) override;
+        AmReal64 GetFromPercentage(AmReal64 percentage) override;
     };
+
+    [[maybe_unused]] static class ConstantFader final : public Fader
+    {
+    public:
+        ConstantFader()
+            : Fader("Constant")
+        {}
+
+        FaderInstance* CreateInstance() override
+        {
+            return amnew(ConstantFaderInstance);
+        }
+
+        void DestroyInstance(FaderInstance* instance) override
+        {
+            amdelete(ConstantFaderInstance, (ConstantFaderInstance*)instance);
+        }
+    } gConstantFader; // NOLINT(cert-err58-cpp)
 } // namespace SparkyStudios::Audio::Amplitude
 
 #endif // SS_AMPLITUDE_AUDIO_CONSTANT_FADER_H

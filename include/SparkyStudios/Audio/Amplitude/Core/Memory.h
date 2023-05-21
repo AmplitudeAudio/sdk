@@ -86,7 +86,7 @@ namespace SparkyStudios::Audio::Amplitude
 
         /**
          * @brief Default allocations pool. Use this when the allocated memory pool is not available.
-         * @note amneww use this pool to allocate memory from the memory manager.
+         * @note amnew use this pool to allocate memory from the memory manager.
          */
         Default,
 
@@ -143,7 +143,7 @@ namespace SparkyStudios::Audio::Amplitude
         AmMemoryFreeCallback free;
 
         /**
-         * @brief Callback to get the total size of the memory allocated accross memory pools
+         * @brief Callback to get the total size of the memory allocated across memory pools
          *
          */
         AmMemoryTotalReservedMemorySizeCallback totalReservedMemorySize;
@@ -156,7 +156,7 @@ namespace SparkyStudios::Audio::Amplitude
         /**
          * @brief Sets the number of buckets for the allocator.
          *
-         * @remarks This is used only when allocation functions are not overriden,
+         * @remarks This is used only when allocation functions are not overridden,
          * to set up the internal memory allocator.
          */
         AmUInt32 bucketsCount;
@@ -164,7 +164,7 @@ namespace SparkyStudios::Audio::Amplitude
         /**
          * @brief Sets the size of each buckets.
          *
-         * @remarks This is used only when allocation functions are not overriden,
+         * @remarks This is used only when allocation functions are not overridden,
          * to set up the internal memory allocator.
          */
         AmSize bucketsSizeInBytes;
@@ -236,14 +236,14 @@ namespace SparkyStudios::Audio::Amplitude
         /**
          * @brief Unloads the memory manager.
          */
-        static void Deinitialize();
+        [[maybe_unused]] static void Deinitialize();
 
         /**
          * @brief Checks whether the memory manager is initialized.
          *
          * @return Whether the memory manager is initialized.
          */
-        static bool IsInitialized();
+        [[maybe_unused]] static bool IsInitialized();
 
         /**
          * @brief Gets the actual instance of the memory manager.

@@ -16,18 +16,17 @@
 
 namespace SparkyStudios::Audio::Amplitude
 {
-    SCurveFader::SCurveFader(AmReal64 k)
+    SCurveFaderInstance::SCurveFaderInstance(AmReal64 k)
         : _k(k)
     {}
 
-    float SCurveFader::GetFromPercentage(double percentage)
+    AmReal64 SCurveFaderInstance::GetFromPercentage(AmReal64 percentage)
     {
         percentage = AM_CLAMP(percentage, 0.0, 1.0);
 
         const AmReal64 a = (_k - 1) * (2 * percentage - 1);
         const AmReal64 b = (2 / m_delta) * (4 * _k * AM_ABS(percentage - 0.5) - _k - 1);
-        const AmReal64 c = (a / b) + (m_delta / 2);
 
-        return static_cast<AmReal32>(c);
+        return (a / b) + (m_delta / 2);
     }
 } // namespace SparkyStudios::Audio::Amplitude

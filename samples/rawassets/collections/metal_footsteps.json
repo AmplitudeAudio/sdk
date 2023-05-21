@@ -41,5 +41,6 @@
       "repeat_count": 1
     }
   },
-  "scope": "Entity"
+  "scope": "Entity",
+  "fader": "Linear"
 }

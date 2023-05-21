@@ -24,53 +24,20 @@ namespace SparkyStudios::Audio::Amplitude
     class Mixer;
 
     /**
-     * @brief Helper class to process faders.
-     *
-     * A fader is used to move a value to a specific target value
-     * during an amount of time and according to a fading algorithm.
+     * @brief A Fader instance. An object of this class will be created each time
+     * a Fader is requested.
      */
-    class Fader
+    class FaderInstance
     {
-        friend class Mixer;
-
     public:
-        enum FADER_ALGORITHM : AmInt8
-        {
-            /**
-             * @brief Fades linearly from the initial value to the final value.
-             */
-            ALGORITHM_LINEAR = 0,
+        /**
+         * @brief Construct a new FaderInstance object.
+         *
+         * This will initialize the fader instance state to default values.
+         */
+        FaderInstance();
 
-            /**
-             * @brief Keeps returning the initial value until the transition is complete.
-             */
-            ALGORITHM_CONSTANT = 1,
-
-            /**
-             * @brief Returns values using an S-shaped curve from the initial value to the final value.
-             */
-            ALGORITHM_S_CURVE_SMOOTH = 2,
-
-            /**
-             * @brief Returns values using an exponential growth algorithm from the initial value to the final value.
-             */
-            ALGORITHM_EXPONENTIAL_SMOOTH = 3,
-
-            /**
-             * @brief Returns values using an S-shaped curve from the initial value to the final value with
-             * sharper transitions.
-             */
-            ALGORITHM_S_CURVE_SHARP = 4,
-
-            /**
-             * @brief Returns values using an exponential growth algorithm from the initial value to the final value
-             * with sharper transitions.
-             */
-            ALGORITHM_EXPONENTIAL_SHARP = 5,
-        };
-
-        Fader();
-        virtual ~Fader() = default;
+        virtual ~FaderInstance() = default;
 
         /**
          * @brief Set up fader.
@@ -79,7 +46,7 @@ namespace SparkyStudios::Audio::Amplitude
          * @param to The target value.
          * @param duration The duration of transition.
          */
-        void Set(float from, float to, AmTime duration);
+        void Set(AmReal64 from, AmReal64 to, AmTime duration);
 
         /**
          * @brief Set up fader.
@@ -87,7 +54,7 @@ namespace SparkyStudios::Audio::Amplitude
          * @param from The start value.
          * @param to The target value.
          */
-        void Set(float from, float to);
+        void Set(AmReal64 from, AmReal64 to);
 
         /**
          * @brief Set the duration of the transition.
@@ -106,7 +73,7 @@ namespace SparkyStudios::Audio::Amplitude
          *
          * @return The current value.
          */
-        virtual float GetFromTime(AmTime time);
+        virtual AmReal64 GetFromTime(AmTime time);
 
         /**
          * @brief Get the current fading value.
@@ -115,14 +82,14 @@ namespace SparkyStudios::Audio::Amplitude
          *
          * @return The current value.
          */
-        virtual float GetFromPercentage(double percentage) = 0;
+        virtual AmReal64 GetFromPercentage(AmReal64 percentage) = 0;
 
         /**
          * @brief Get the state of this Fader.
          *
          * @return The Fader state.
          */
-        [[nodiscard]] AM_FADER_STATE GetState() const
+        [[nodiscard]] AM_INLINE(AM_FADER_STATE) GetState() const
         {
             return m_state;
         }
@@ -132,7 +99,7 @@ namespace SparkyStudios::Audio::Amplitude
          *
          * @param state The state to set.
          */
-        void SetState(AM_FADER_STATE state)
+        AM_INLINE(void) SetState(AM_FADER_STATE state)
         {
             m_state = state;
         }
@@ -142,24 +109,15 @@ namespace SparkyStudios::Audio::Amplitude
          *
          * @param time The fading start time.
          */
-        void Start(AmTime time);
-
-        /**
-         * @brief Creates a fader from the provided algorithm.
-         *
-         * @param algorithm The fader algorithm.
-         *
-         * @return A fader instance which matches the provided algorithm.
-         */
-        static Fader* Create(FADER_ALGORITHM algorithm);
+        void Start(AmTime time = 0.0);
 
     protected:
         // Value to fade from
-        float m_from;
+        AmReal64 m_from;
         // Value to fade to
-        float m_to;
+        AmReal64 m_to;
         // Delta between from and to
-        float m_delta;
+        AmReal64 m_delta;
         // Total AmTime to fade
         AmTime m_time;
         // Time fading started
@@ -168,6 +126,101 @@ namespace SparkyStudios::Audio::Amplitude
         AmTime m_endTime;
         // Active flag; 0 means disabled, 1 is active, -1 means was active, but stopped
         AM_FADER_STATE m_state;
+    };
+
+    /**
+     * @brief Helper class to process faders.
+     *
+     * A fader is used to move a value to a specific target value
+     * during an amount of time and according to a fading algorithm.
+     */
+    class Fader
+    {
+        friend class Mixer;
+
+    public:
+        /**
+         * @brief Create a new Fader instance.
+         *
+         * @param name The Fader name. eg. "MiniAudioLinear".
+         */
+        explicit Fader(std::string name);
+
+        /**
+         * @brief Default Fader constructor.
+         *
+         * This will not automatically register the Fader. It's meant for internal Faders only.
+         */
+        Fader();
+
+        virtual ~Fader() = default;
+
+        /**
+         * @brief Creates a new instance of the Fader.
+         * @return A new instance of the Fader.
+         */
+        virtual FaderInstance* CreateInstance() = 0;
+
+        /**
+         * @brief Destroys an instance of the Fader. The instance should have
+         * been created with CreateInstance().
+         * @param instance The Fader instance to be destroyed.
+         */
+        virtual void DestroyInstance(FaderInstance* instance) = 0;
+
+        /**
+         * @brief Gets the name of this Fader.
+         *
+         * @return The name of this Fader.
+         */
+        [[nodiscard]] const std::string& GetName() const;
+
+        /**
+         * @brief Registers a new Fader.
+         *
+         * @param Fader The Fader to add in the registry.
+         */
+        static void Register(Fader* Fader);
+
+        /**
+         * @brief Creates a new instance of the the Fader with the given name
+         * and returns its pointer. The returned pointer should be deleted using Fader::Destruct().
+         *
+         * @param name The name of the Fader.
+         *
+         * @return The Fader with the given name, or NULL if none.
+         */
+        static FaderInstance* Construct(const std::string& name);
+
+        /**
+         * @brief Destroys the given Fader instance.
+         *
+         * @param name The name of the Fader.
+         * @param instance The Fader instance to destroy.
+         */
+        static void Destruct(const std::string& name, FaderInstance* instance);
+
+        /**
+         * @brief Locks the Faders registry.
+         *
+         * This function is mainly used for internal purposes. Its
+         * called before the Engine initialization, to discard the
+         * registration of new Faders after the engine is fully loaded.
+         */
+        static void LockRegistry();
+
+        /**
+         * @brief Look up a Fader by name.
+         *
+         * @return The Fader with the given name, or NULL if none.
+         */
+        static Fader* Find(const std::string& name);
+
+    protected:
+        /**
+         * @brief The name of this Fader.
+         */
+        std::string m_name;
     };
 } // namespace SparkyStudios::Audio::Amplitude
 

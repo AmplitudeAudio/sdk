@@ -16,7 +16,7 @@
 
 namespace SparkyStudios::Audio::Amplitude
 {
-    float ConstantFader::GetFromPercentage(double percentage)
+    AmReal64 ConstantFaderInstance::GetFromPercentage(AmReal64 percentage)
     {
         percentage = AM_CLAMP(percentage, 0.0, 1.0);
         return percentage == 1.0 ? m_to : m_from;

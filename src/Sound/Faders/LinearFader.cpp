@@ -16,8 +16,9 @@
 
 namespace SparkyStudios::Audio::Amplitude
 {
-    float LinearFader::GetFromPercentage(double percentage)
+    AmReal64 LinearFaderInstance::GetFromPercentage(AmReal64 percentage)
     {
-        return AM_Lerp(m_from, AM_CLAMP(percentage, 0.0, 1.0), m_to);
+        percentage = AM_CLAMP(percentage, 0.0, 1.0);
+        return (1.0 - percentage) * m_from + percentage * m_to;
     }
 } // namespace SparkyStudios::Audio::Amplitude

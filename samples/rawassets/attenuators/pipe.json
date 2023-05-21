@@ -27,7 +27,7 @@
           "x": 20,
           "y": 0
         },
-        "fader": "Exponential_Smooth"
+        "fader": "ExponentialSmooth"
       }
     ]
   }

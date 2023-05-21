@@ -380,7 +380,7 @@ namespace SparkyStudios::Audio::Amplitude
                         continue;
                     }
 
-                    Fader* out = _switchContainer->GetFaderOut(item.m_id);
+                    FaderInstance* out = _switchContainer->GetFaderOut(item.m_id);
                     out->Set(_gain, 0.0f);
                     out->Start(Engine::GetInstance()->GetTotalTime());
                 }
@@ -401,7 +401,7 @@ namespace SparkyStudios::Audio::Amplitude
                         continue;
                     }
 
-                    Fader* in = _switchContainer->GetFaderIn(item.m_id);
+                    FaderInstance* in = _switchContainer->GetFaderIn(item.m_id);
                     in->Set(0.0f, _gain);
                     in->Start(Engine::GetInstance()->GetTotalTime());
                 }
@@ -452,7 +452,7 @@ namespace SparkyStudios::Audio::Amplitude
                         continue;
                     }
 
-                    Fader* out = _switchContainer->GetFaderOut(item.m_id);
+                    FaderInstance* out = _switchContainer->GetFaderOut(item.m_id);
                     if (out->GetState() == AM_FADER_STATE_STOPPED)
                     {
                         continue;
@@ -505,7 +505,7 @@ namespace SparkyStudios::Audio::Amplitude
                         continue;
                     }
 
-                    Fader* in = _switchContainer->GetFaderIn(item.m_id);
+                    FaderInstance* in = _switchContainer->GetFaderIn(item.m_id);
                     if (in->GetState() == AM_FADER_STATE_STOPPED)
                     {
                         continue;
@@ -713,13 +713,14 @@ namespace SparkyStudios::Audio::Amplitude
     {
         AMPLITUDE_ASSERT(_switchContainer != nullptr);
 
-        Engine* engine = Engine::GetInstance();
         const SwitchContainerDefinition* definition = _switchContainer->GetSwitchContainerDefinition();
 
         _switch = _switchContainer->GetSwitch();
 
-        delete _fader;
-        _fader = Fader::Create(static_cast<Fader::FADER_ALGORITHM>(definition->fader()));
+        const AmString name = definition->fader()->str();
+
+        Fader::Destruct(name, _fader);
+        _fader = Fader::Construct(name);
 
         _channelState = ChannelPlaybackState::Playing;
 
@@ -744,8 +745,10 @@ namespace SparkyStudios::Audio::Amplitude
         Sound* sound = _entity.Valid() ? _collection->SelectFromEntity(_entity, _realChannel._playedSounds)
                                        : _collection->SelectFromWorld(_realChannel._playedSounds);
 
-        delete _fader;
-        _fader = Fader::Create(static_cast<Fader::FADER_ALGORITHM>(definition->fader()));
+        const AmString name = definition->fader()->str();
+
+        Fader::Destruct(name, _fader);
+        _fader = Fader::Construct(name);
 
         if (_channelState != ChannelPlaybackState::FadingIn && _channelState != ChannelPlaybackState::FadingOut)
             _channelState = ChannelPlaybackState::Playing;
@@ -759,8 +762,10 @@ namespace SparkyStudios::Audio::Amplitude
 
         const SoundDefinition* definition = _sound->GetSoundDefinition();
 
-        delete _fader;
-        _fader = Fader::Create(static_cast<Fader::FADER_ALGORITHM>(definition->fader()));
+        const AmString name = definition->fader()->str();
+
+        Fader::Destruct(name, _fader);
+        _fader = Fader::Construct(name);
 
         _channelState = ChannelPlaybackState::Playing;
         return !IsReal() || _realChannel.Play(_sound->CreateInstance());

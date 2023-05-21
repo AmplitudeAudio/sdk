@@ -16,18 +16,17 @@
 
 namespace SparkyStudios::Audio::Amplitude
 {
-    ExponentialFader::ExponentialFader(AmReal64 k)
+    ExponentialFaderInstance::ExponentialFaderInstance(AmReal64 k)
         : _k(k)
     {}
 
-    float ExponentialFader::GetFromPercentage(double percentage)
+    AmReal64 ExponentialFaderInstance::GetFromPercentage(AmReal64 percentage)
     {
         percentage = AM_CLAMP(percentage, 0.0, 1.0);
 
         const AmReal64 a = m_delta * (percentage - percentage * _k);
         const AmReal64 b = _k * (1.0 - percentage * 2.0) + 1.0;
-        const AmReal64 c = a / b + m_from;
 
-        return static_cast<AmReal32>(c);
+        return a / b + m_from;
     }
 } // namespace SparkyStudios::Audio::Amplitude

@@ -29,7 +29,7 @@
           "x": 40,
           "y": 0
         },
-        "fader": "Exponential_Smooth"
+        "fader": "ExponentialSmooth"
       }
     ]
   }

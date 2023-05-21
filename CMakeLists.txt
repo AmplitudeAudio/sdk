@@ -172,6 +172,7 @@ set(SA_SOURCE
     src/Core/ChannelInternalState.h
     src/Core/Codec.cpp
     src/Core/Common.cpp
+    src/Core/DefaultPlugins.h
     src/Core/Device.cpp
     src/Core/Driver.cpp
     src/Core/Engine.cpp

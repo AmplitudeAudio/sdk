@@ -14,77 +14,137 @@
 
 #include <SparkyStudios/Audio/Amplitude/Sound/Fader.h>
 
-#include <Sound/Faders/ConstantFader.h>
-#include <Sound/Faders/ExponentialFader.h>
-#include <Sound/Faders/LinearFader.h>
-#include <Sound/Faders/SCurveFader.h>
-
 namespace SparkyStudios::Audio::Amplitude
 {
-    Fader::Fader()
+    typedef std::map<std::string, Fader*> FaderRegistry;
+    typedef FaderRegistry::value_type FaderImpl;
+
+    FaderInstance::FaderInstance()
     {
         m_from = m_to = m_delta = 0;
         m_time = m_startTime = m_endTime = 0;
         m_state = AM_FADER_STATE_DISABLED;
     }
 
-    void Fader::Set(float from, float to, AmTime duration)
+    void FaderInstance::Set(AmReal64 from, AmReal64 to, AmTime duration)
     {
         SetDuration(duration);
         Set(from, to);
         Start(0.0);
     }
 
-    void Fader::Set(float from, float to)
+    void FaderInstance::Set(AmReal64 from, AmReal64 to)
     {
         m_from = from;
         m_to = to;
         m_delta = to - from;
     }
 
-    void Fader::SetDuration(AmTime duration)
+    void FaderInstance::SetDuration(AmTime duration)
     {
         m_time = duration;
     }
 
-    float Fader::GetFromTime(AmTime time)
+    AmReal64 FaderInstance::GetFromTime(AmTime time)
     {
         if (m_state != AM_FADER_STATE_ACTIVE)
             return 0.0f;
 
-        if (m_startTime > time)
+        if (m_startTime >= time)
             return m_from;
 
-        if (time > m_endTime)
+        if (time >= m_endTime)
             return m_to;
 
         return GetFromPercentage((time - m_startTime) / (m_endTime - m_startTime));
     }
 
-    void Fader::Start(AmTime time)
+    void FaderInstance::Start(AmTime time)
     {
         m_startTime = time;
         m_endTime = m_startTime + m_time;
         m_state = AM_FADER_STATE_ACTIVE;
     }
 
-    Fader* Fader::Create(Fader::FADER_ALGORITHM algorithm)
+    static FaderRegistry& faderRegistry()
     {
-        switch (algorithm)
-        {
-        default:
-        case Fader::ALGORITHM_LINEAR:
-            return new LinearFader();
-        case Fader::ALGORITHM_CONSTANT:
-            return new ConstantFader();
-        case Fader::ALGORITHM_S_CURVE_SMOOTH:
-            return new SCurveFader(0.5);
-        case Fader::ALGORITHM_EXPONENTIAL_SMOOTH:
-            return new ExponentialFader(0.5);
-        case Fader::ALGORITHM_S_CURVE_SHARP:
-            return new SCurveFader(0.9);
-        case Fader::ALGORITHM_EXPONENTIAL_SHARP:
-            return new ExponentialFader(0.9);
-        }
+        static FaderRegistry r;
+        return r;
+    }
+
+    static bool& lockFaders()
+    {
+        static bool b = false;
+        return b;
+    }
+
+    static AmUInt32& fadersCount()
+    {
+        static AmUInt32 c = 0;
+        return c;
+    }
+
+    Fader::Fader(std::string name)
+        : m_name(std::move(name))
+    {
+        Fader::Register(this);
+    }
+
+    Fader::Fader()
+        : m_name()
+    {}
+
+    const std::string& Fader::GetName() const
+    {
+        return m_name;
+    }
+
+    void Fader::Register(Fader* codec)
+    {
+        if (lockFaders())
+            return;
+
+        if (Find(codec->GetName()) != nullptr)
+            return;
+
+        FaderRegistry& faders = faderRegistry();
+        faders.insert(FaderImpl(codec->GetName(), codec));
+        fadersCount()++;
+    }
+
+    Fader* Fader::Find(const std::string& name)
+    {
+        FaderRegistry& faders = faderRegistry();
+        for (auto&& fader : faders)
+            if (fader.second->m_name == name)
+                return fader.second;
+
+        return nullptr;
+    }
+
+    FaderInstance* Fader::Construct(const std::string& name)
+    {
+        Fader* fader = Find(name);
+        if (fader == nullptr)
+            return nullptr;
+
+        return fader->CreateInstance();
+    }
+
+    void Fader::Destruct(const std::string& name, FaderInstance* instance)
+    {
+        if (instance == nullptr)
+            return;
+
+        Fader* fader = Find(name);
+        if (fader == nullptr)
+            return;
+
+        fader->DestroyInstance(instance);
+    }
+
+    void Fader::LockRegistry()
+    {
+        lockFaders() = true;
     }
 } // namespace SparkyStudios::Audio::Amplitude

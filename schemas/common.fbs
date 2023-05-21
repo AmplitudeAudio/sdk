@@ -48,23 +48,6 @@ enum Scope: byte {
   Entity,
 }
 
-/// Faders allow to progressively update a value
-/// to a given target during the specified period of time.
-enum FaderAlgorithm: byte {
-  /// Fades linearly from the initial value to the final value.
-  Linear = 0,
-  /// Keeps returning the initial value until the transition is complete.
-  Constant = 1,
-  /// Returns values using an S-shaped curve from the initial value to the final value with a smooth transition.
-  S_Curve_Smooth = 2,
-  /// Returns values using an exponential growth algorithm from the initial value to the final value with a smooth transition.
-  Exponential_Smooth = 3,
-  /// Returns values using an S-shaped curve from the initial value to the final value with a sharp transition.
-  S_Curve_Sharp = 4,
-  /// Returns values using an exponential growth algorithm from the initial value to the final value with a sharp transition.
-  Exponential_Sharp = 5,
-}
-
 /// A point coordinates in a curve.
 struct CurvePointDefinition {
   x:double;
@@ -73,7 +56,7 @@ struct CurvePointDefinition {
 
 /// A part of a curve. This is materialized by a start point, an end point,
 /// and the fader algorithm between them.
-struct CurvePartDefinition {
+table CurvePartDefinition {
   /// The curve part start point.
   start:CurvePointDefinition;
 
@@ -81,7 +64,7 @@ struct CurvePartDefinition {
   end:CurvePointDefinition;
 
   /// The fader algorithm.
-  fader:FaderAlgorithm = Linear;
+  fader:string;
 }
 
 /// A curve. Mainly used by attenuators.
@@ -96,7 +79,7 @@ table FadeTransitionSettings {
   duration:double = 0;
 
   /// The fader algorithm to use during the transition.
-  fader:FaderAlgorithm = Linear;
+  fader:string;
 }
 
 /// The parameter used to create RTPC compatible values.

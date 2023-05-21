@@ -160,7 +160,7 @@ table CollectionDefinition {
   scope:Scope = World;
 
   /// The fader algorithm used by this collection.
-  fader:FaderAlgorithm = Linear;
+  fader:string;
 }
 
 root_type CollectionDefinition;

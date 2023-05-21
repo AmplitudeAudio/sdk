@@ -7,7 +7,8 @@
       "child_buses": [
         2,
         7678456242523
-      ]
+      ],
+      "fader": "Linear"
     },
     {
       "id": 2,
@@ -19,19 +20,21 @@
           "target_gain": 0.5,
           "fade_in": {
             "duration": 3,
-            "fader": "S_Curve_Smooth"
+            "fader": "SCurveSmooth"
           },
           "fade_out": {
             "duration": 3,
             "fader": "Linear"
           }
         }
-      ]
+      ],
+      "fader": "Linear"
     },
     {
       "id": 7678456242523,
       "name": "environment",
-      "gain": 0.25
+      "gain": 0.25,
+      "fader": "Linear"
     }
   ]
 }

@@ -89,5 +89,6 @@
       "repeat_count": 5
     }
   },
-  "scope": "World"
+  "scope": "World",
+  "fader": "Linear"
 }

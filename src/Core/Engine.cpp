@@ -30,54 +30,7 @@
 #include "sound_definition_generated.h"
 #include "switch_container_definition_generated.h"
 
-#pragma region Default Codecs
-
-// clang-format off
-#include <Core/Codecs/WAV/Codec.h>
-#include <Core/Codecs/OGG/Codec.h>
-#include <Core/Codecs/FLAC/Codec.h>
-#include <Core/Codecs/MP3/Codec.h>
-// clang-format on
-
-#pragma endregion
-
-#pragma region Default Drivers
-
-#include <Core/Drivers/MiniAudio/Driver.h>
-
-#pragma endregion
-
-#pragma region Default Sound Processors
-
-#include <Mixer/SoundProcessors/EffectProcessor.h>
-#include <Mixer/SoundProcessors/EnvironmentProcessor.h>
-#include <Mixer/SoundProcessors/ObstructionProcessor.h>
-#include <Mixer/SoundProcessors/OcclusionProcessor.h>
-#include <Mixer/SoundProcessors/PassThroughProcessor.h>
-
-#pragma endregion
-
-#pragma region Default Resamplers
-
-#include <Mixer/Resamplers/LibsamplerateResampler.h>
-#include <Mixer/Resamplers/R8BrainResampler.h>
-
-#pragma endregion
-
-#pragma region Default Filters
-
-#include <Sound/Filters/BassBoostFilter.h>
-#include <Sound/Filters/BiquadResonantFilter.h>
-#include <Sound/Filters/DCRemovalFilter.h>
-#include <Sound/Filters/DelayFilter.h>
-#include <Sound/Filters/EqualizerFilter.h>
-#include <Sound/Filters/FlangerFilter.h>
-#include <Sound/Filters/FreeverbFilter.h>
-#include <Sound/Filters/LofiFilter.h>
-#include <Sound/Filters/RobotizeFilter.h>
-#include <Sound/Filters/WaveShaperFilter.h>
-
-#pragma endregion
+#include <Core/DefaultPlugins.h>
 
 namespace SparkyStudios::Audio::Amplitude
 {
@@ -210,6 +163,7 @@ namespace SparkyStudios::Audio::Amplitude
             }
             else
             {
+                amdelete(DuckBusInternalState, bus);
                 CallLogFunc("[ERROR] Unknown bus with ID \"%u\" listed in duck buses.\n", duck->id());
                 return false;
             }
@@ -302,12 +256,13 @@ namespace SparkyStudios::Audio::Amplitude
 
     bool Engine::Initialize(const EngineConfigDefinition* config)
     {
-        // Lock drivers, codecs, processors and resamplers registries
+        // Lock plugins registries
         Driver::LockRegistry();
         Codec::LockRegistry();
         SoundProcessor::LockRegistry();
         Resampler::LockRegistry();
         Filter::LockRegistry();
+        Fader::LockRegistry();
 
         // Create the internal engine state
         _state = amnew(EngineInternalState);

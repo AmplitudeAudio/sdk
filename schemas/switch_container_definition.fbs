@@ -87,7 +87,7 @@ table SwitchContainerDefinition {
   scope:Scope = World;
 
   /// The fader algorithm used by this collection.
-  fader:FaderAlgorithm = Linear;
+  fader:string;
 
   /// Specifies the behavior of the SwitchContainer when the switch state is updated.
   update_behavior:SwitchContainerUpdateBehavior;

@@ -32,7 +32,7 @@ namespace SparkyStudios::Audio::Amplitude
         ObstructionProcessorInstance()
             : _lpfCurve()
         {
-            _lpfCurve.SetFader(Fader::ALGORITHM_EXPONENTIAL_SMOOTH);
+            _lpfCurve.SetFader("ExponentialSmooth");
         }
 
         void Process(

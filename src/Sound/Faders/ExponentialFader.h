@@ -17,20 +17,57 @@
 #ifndef SS_AMPLITUDE_AUDIO_EXPONENTIAL_FADER_H
 #define SS_AMPLITUDE_AUDIO_EXPONENTIAL_FADER_H
 
+#include <SparkyStudios/Audio/Amplitude/Core/Memory.h>
 #include <SparkyStudios/Audio/Amplitude/Sound/Fader.h>
 
 namespace SparkyStudios::Audio::Amplitude
 {
-    class ExponentialFader : public Fader
+    class ExponentialFaderInstance final : public FaderInstance
     {
     public:
-        explicit ExponentialFader(AmReal64 k);
+        explicit ExponentialFaderInstance(AmReal64 k);
 
-        float GetFromPercentage(double percentage) override;
+        AmReal64 GetFromPercentage(AmReal64 percentage) override;
 
     private:
         AmReal64 _k;
     };
+
+    [[maybe_unused]] static class ExponentialSmoothFader final : public Fader
+    {
+    public:
+        ExponentialSmoothFader()
+            : Fader("ExponentialSmooth")
+        {}
+
+        FaderInstance* CreateInstance() override
+        {
+            return amnew(ExponentialFaderInstance, 0.5);
+        }
+
+        void DestroyInstance(FaderInstance* instance) override
+        {
+            amdelete(ExponentialFaderInstance, (ExponentialFaderInstance*)instance);
+        }
+    } gExponentialSmoothFader; // NOLINT(cert-err58-cpp)
+
+    [[maybe_unused]] static class ExponentialSharpFader final : public Fader
+    {
+    public:
+        ExponentialSharpFader()
+            : Fader("ExponentialSharp")
+        {}
+
+        FaderInstance* CreateInstance() override
+        {
+            return amnew(ExponentialFaderInstance, 0.9);
+        }
+
+        void DestroyInstance(FaderInstance* instance) override
+        {
+            amdelete(ExponentialFaderInstance, (ExponentialFaderInstance*)instance);
+        }
+    } gExponentialSharpFader; // NOLINT(cert-err58-cpp)
 } // namespace SparkyStudios::Audio::Amplitude
 
 #endif // SS_AMPLITUDE_AUDIO_EXPONENTIAL_FADER_H
