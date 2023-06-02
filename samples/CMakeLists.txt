@@ -19,8 +19,7 @@ set(PROJECT_NAME ss_amplitude_audio_samples)
 project(${PROJECT_NAME})
 
 add_custom_target(ss_amplitude_audio_sample_assets
-    COMMAND python3 ${CMAKE_CURRENT_SOURCE_DIR}/../scripts/build_assets.py --flatc $<TARGET_FILE:flatc> --output ${CMAKE_BINARY_DIR}/samples/assets
-    DEPENDS flatc
+    COMMAND python3 ${CMAKE_CURRENT_SOURCE_DIR}/../scripts/build_assets.py --output ${CMAKE_BINARY_DIR}/samples/assets
 )
 
 add_subdirectory(sample_01)

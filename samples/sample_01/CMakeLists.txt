@@ -14,7 +14,6 @@
 
 cmake_minimum_required(VERSION 3.3.1)
 
-
 set(PROJECT_NAME ss_amplitude_audio_sample_01)
 
 project(${PROJECT_NAME})

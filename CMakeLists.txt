@@ -36,26 +36,13 @@ set(OBJ_DIR ${CMAKE_CURRENT_BINARY_DIR}/obj)
 
 # Setup flatbuffers
 # ------------------------------------------------------------------------------
-set(FLATBUFFERS_BUILD_TESTS OFF CACHE BOOL "")
-
-if(NOT TARGET flatc)
-    add_subdirectory("dependencies/flatbuffers" ${OBJ_DIR}/flatbuffers EXCLUDE_FROM_ALL)
-    set(FLATC_LIBRARY flatc)
-    set(FLATC_INCLUDE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/dependencies/flatbuffers/include)
-endif()
+find_package(flatbuffers CONFIG REQUIRED)
 
 # ------------------------------------------------------------------------------
 
 # Setup libsamplerate
 # ------------------------------------------------------------------------------
-set(LIBSAMPLERATE_EXAMPLES OFF CACHE BOOL "")
-set(LIBSAMPLERATE_INSTALL ON CACHE BOOL "")
-
-if(NOT TARGET samplerate)
-    list(APPEND CMAKE_MODULE_PATH ${CMAKE_CURRENT_SOURCE_DIR}/dependencies/libsamplerate/cmake)
-    add_subdirectory("dependencies/libsamplerate" ${OBJ_DIR}/libsamplerate EXCLUDE_FROM_ALL)
-    set(LIBSAMPLERATE_INCLUDE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/dependencies/libsamplerate/include)
-endif()
+find_package(SampleRate CONFIG REQUIRED)
 
 # ------------------------------------------------------------------------------
 
@@ -313,20 +300,17 @@ set(SA_SOURCE
 # Includes for this project
 include_directories(src
     include
-    ${FLATC_INCLUDE_DIR}
     ${SIMDPP_INCLUDE_DIR}
-    ${LIBSAMPLERATE_INCLUDE_DIR}
     ${AM_FLATBUFFERS_GENERATED_INCLUDES_DIR}
 )
 
 add_library(${PROJECT_NAME} STATIC ${SA_SOURCE})
 
-target_link_libraries(${PROJECT_NAME} PRIVATE flatbuffers)
-target_link_libraries(${PROJECT_NAME} PRIVATE samplerate)
+target_link_libraries(${PROJECT_NAME} PRIVATE flatbuffers::flatbuffers)
+target_link_libraries(${PROJECT_NAME} PRIVATE SampleRate::samplerate)
 
 add_custom_target(amplitude_build_binary_schemas
-    COMMAND python3 ${CMAKE_CURRENT_SOURCE_DIR}/scripts/build_schemas.py --flatc $<TARGET_FILE:flatc> --output ${CMAKE_CURRENT_SOURCE_DIR}/schemas
-    DEPENDS flatc
+    COMMAND python3 ${CMAKE_CURRENT_SOURCE_DIR}/scripts/build_schemas.py --output ${CMAKE_CURRENT_SOURCE_DIR}/schemas
 )
 
 add_dependencies(${PROJECT_NAME}
@@ -371,7 +355,7 @@ set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/${AM_BIN_DESTINATION}")
 set(CMAKE_INSTALL_PREFIX ${CMAKE_CURRENT_LIST_DIR})
 
 install(
-    TARGETS ${PROJECT_NAME} amac samplerate
+    TARGETS ${PROJECT_NAME} amac
     EXPORT AmplitudeAudioSDKConfig
     ARCHIVE DESTINATION ${AM_LIB_DESTINATION}
     LIBRARY DESTINATION ${AM_LIB_DESTINATION}
@@ -394,18 +378,6 @@ install(
     EXPORT AmplitudeAudioSDKConfig
     DESTINATION "${AM_LIB_DESTINATION}/cmake"
     NAMESPACE SparkyStudios::Audio::
-)
-
-export(
-    TARGETS flatbuffers ProjectConfig
-    NAMESPACE flatbuffers::
-    FILE "${CMAKE_CURRENT_BINARY_DIR}/FlatbuffersConfig.cmake"
-)
-
-export(
-    TARGETS samplerate
-    NAMESPACE SampleRate::
-    FILE "${CMAKE_CURRENT_BINARY_DIR}/SampleRateConfig.cmake"
 )
 
 export(

@@ -1,8 +1,11 @@
 {
-    "$schema": "https://raw.githubusercontent.com/microsoft/vcpkg/master/scripts/vcpkg.schema.json",
+    "$schema": "https://raw.githubusercontent.com/microsoft/vcpkg-tool/master/docs/vcpkg.schema.json",
+    "builtin-baseline": "1c5a340f6e10985e2d92af174a68dbd15c1fa4e1",
     "name": "amplitude-audio-sdk",
     "description": "A powerful and cross-platform audio engine, optimized for games.",
     "version": "1.0",
+    "license": "Apache-2.0",
+    "homepage": "https://github.com/SparkyStudios/AmplitudeAudioSDK",
     "features": {
         "samples": {
             "description": "Amplitude Audio SDK Samples",
@@ -11,5 +14,14 @@
             ]
         }
     },
-    "dependencies": []
+    "dependencies": [
+        {
+            "name": "flatbuffers",
+            "version>=": "23.5.9"
+        },
+        {
+            "name": "libsamplerate",
+            "version>=": "0.2.2#1"
+        }
+    ]
 }
