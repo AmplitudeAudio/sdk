@@ -76,15 +76,28 @@ jobs:
         uses: lukka/run-vcpkg@v10.0
         with:
           runVcpkgInstall: true
-          vcpkgGitCommitId: 5568f110b509a9fd90711978a7cb76bae75bb092
+          vcpkgGitCommitId: 1c5a340f6e10985e2d92af174a68dbd15c1fa4e1
+
+      - name: Find flatc version
+        if: startsWith(matrix.config.os, 'ubuntu') || startsWith(matrix.config.os, 'macos')
+        id: flatc_version
+        uses: tdemin/find-latest-tag@v1
+        with:
+          repo: https://github.com/google/flatbuffers.git
 
       - name: Install dependencies on Windows
         if: startsWith(matrix.config.os, 'windows')
         run: |
-          choco install ninja cmake
+          choco install ninja cmake curl
           choco upgrade mingw 
           ninja --version
           cmake --version
+          $FLATC_VERSION = "$(curl "https://api.github.com/repos/google/flatbuffers/releases/latest" --ssl-no-revoke --silent | Select-String -Pattern '"tag_name":\s*"(.+)"')" -replace '.*"v(.+)".*','$1'
+          echo "flatc download latest v$FLATC_VERSION version"
+          iwr -Uri https://github.com/google/flatbuffers/releases/download/v$FLATC_VERSION/Windows.flatc.binary.zip -OutFile flatc.zip
+          mkdir bin
+          Expand-Archive -Force flatc.zip .\bin\
+          .\bin\flatc --version
 
       - name: Install dependencies on Ubuntu
         if: startsWith(matrix.config.name, 'Ubuntu_Latest_GCC')
@@ -94,6 +107,10 @@ jobs:
           ninja --version
           cmake --version
           gcc --version
+          wget https://github.com/google/flatbuffers/releases/download/${{ steps.flatc_version.outputs.tag }}/Linux.flatc.binary.g++-10.zip
+          mkdir bin
+          sudo unzip Linux.flatc.binary.g++-10.zip -d bin
+          ./bin/flatc --version
 
       - name: Install dependencies on Ubuntu (GCC9)
         if: startsWith(matrix.config.name, 'Ubuntu_GCC_9')
@@ -130,6 +147,10 @@ jobs:
           sudo update-alternatives --install /usr/bin/cmake cmake /opt/cmake/bin/cmake 1 --force
           echo cmake version after
           cmake --version
+          wget https://github.com/google/flatbuffers/releases/download/${{ steps.flatc_version.outputs.tag }}/Linux.flatc.binary.g++-10.zip
+          mkdir bin
+          sudo unzip Linux.flatc.binary.g++-10.zip -d bin
+          ./bin/flatc --version
 
       - name: Install dependencies on MacOS
         if: startsWith(matrix.config.os, 'macos')
@@ -137,6 +158,10 @@ jobs:
           brew install p7zip cmake ninja
           ninja --version
           cmake --version
+          wget https://github.com/google/flatbuffers/releases/download/${{ steps.flatc_version.outputs.tag }}/Mac.flatc.binary.zip
+          mkdir bin
+          sudo unzip Mac.flatc.binary.zip -d bin
+          ./bin/flatc --version
 
       - name: Configure
         shell: bash
