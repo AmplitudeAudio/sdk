@@ -76,3 +76,50 @@ This property stores the name of the fader algorithm that will be used when the 
 {{< alert context="info" >}}
 Fader and fader settings helps you to control how a property should move from one value to another. You can learn more about faders in the [Faders] guide.
 {{< /alert >}}
+
+## Example
+
+An example of a bus configuration file may looks like:
+
+```json
+{
+  "buses": [
+    {
+      "id": 1,
+      "name": "master",
+      "gain": 1.0,
+      "child_buses": [
+        2,
+        7678456242523
+      ],
+      "fader": "Linear"
+    },
+    {
+      "id": 2,
+      "name": "voices",
+      "gain": 1,
+      "duck_buses": [
+        {
+          "id": 7678456242523,
+          "target_gain": 0.25,
+          "fade_in": {
+            "duration": 3,
+            "fader": "SCurveSmooth"
+          },
+          "fade_out": {
+            "duration": 3,
+            "fader": "Linear"
+          }
+        }
+      ],
+      "fader": "Linear"
+    },
+    {
+      "id": 7678456242523,
+      "name": "environment",
+      "gain": 0.75,
+      "fader": "Linear"
+    }
+  ]
+}
+```
