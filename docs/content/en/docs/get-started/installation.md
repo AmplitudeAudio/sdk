@@ -9,7 +9,7 @@ images: []
 menu:
   docs:
     parent: "get-started"
-weight: 120
+weight: 102
 toc: true
 ---
 
@@ -48,7 +48,7 @@ cmake -DCMAKE_TOOLCHAIN_FILE:STRING=C:\vcpkg\scripts\buildsystems\vcpkg.cmake  -
 You may need to change the `CMAKE_TOOLCHAIN_FILE` CMake variable to point to your installation of vcpkg. Feel free to customize the command as needed, to include for example custom generators like `Ninja`.
 
 {{< details "Build with samples" >}}
-You can optionally build the SDK with the provided samples. Not that by enabling the samples, the sources will depend on `SDL2`, which will be automatically fetched by vcpkg for you.
+You can optionally build the SDK with the provided samples. Note that by enabling the samples, the sources will depend on `SDL2`, which will be automatically fetched by vcpkg for you.
 
 To enable the samples, add `-DBUILD_SAMPLES:BOOL=TRUE` to the previous CMake command.
 {{< /details >}}

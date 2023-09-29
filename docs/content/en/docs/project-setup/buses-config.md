@@ -1,7 +1,7 @@
 ---
 title: Buses Configuration
 description: Buses are the places where sound object are routed before to be processed by the mixer. This page contains details about how to configure buses for your project.
-lead: This configuration file allows you to set up the list of buses Amplitude will use in the engine. For each bus, you can configure settings for auto-ducking between them.
+lead: This configuration file allows you to register the list of buses Amplitude will use in the engine. For each bus, you can configure settings for auto-ducking between them.
 date: 2023-06-01T00:39:09+01:00
 lastmod: 2023-06-01T00:39:09+01:00
 draft: false
@@ -9,7 +9,7 @@ images: []
 menu:
   docs:
     parent: project-setup
-weight: 230
+weight: 203
 toc: true
 ---
 

@@ -9,7 +9,7 @@ images: []
 menu:
   docs:
     parent: project-setup
-weight: 210
+weight: 201
 toc: true
 ---
 
@@ -17,27 +17,27 @@ An Amplitude project is resumed to a set of `.json` files organized in dedicated
 
 ```text
 📁 amplitude_project_name/
-|--📁 attenuators/
-|--📁 collections/
-|--📁 effects/
-|--📁 environments/
-|--📁 events/
-|--📁 rtpc/
-|--📁 soundbanks/
-|--📁 sounds/
-|--📁 switch_containers/
-|--📁 switches/
-|--📄 config.pc.json
-|--📄 config.mobile.json
-|--📄 buses.json
-|--📄 .amproject
+├ 📁 attenuators/
+├ 📁 collections/
+├ 📁 effects/
+├ 📁 environments/
+├ 📁 events/
+├ 📁 rtpc/
+├ 📁 soundbanks/
+├ 📁 sounds/
+├ 📁 switch_containers/
+├ 📁 switches/
+├ 📄 config.pc.json
+├ 📄 config.mobile.json
+├ 📄 buses.json
+└ 📄 .amproject
 ```
 
 ## Engine configuration files
 
 The Amplitude engine settings are provided through a json file at the root of the project. In our previous example, we had two engine configuration files according to the runtime platform: `config.pc.json` and `config.mobile.json`. The config file to use should be given when initializing Amplitude.
 
-The config files stores all the needed settings for the audio device setup, memory allocation, and mixer configuration. Learn more about those settings on the [Engine Configuration]({{< relref "docs/project-setup/engine-config" >}}) page.
+The config files stores all the needed settings for the audio device setup, memory allocation, and mixer configuration. Learn more on how to configure the engine on the [Engine Configuration]({{< relref "docs/project-setup/engine-config" >}}) page.
 
 {{< alert >}}
 At least one engine configuration file should exist in an Amplitude project directory, and should match this [flatbuffer schema](https://github.com/SparkyStudios/AmplitudeAudioSDK/blob/main/schemas/engine_config_definition.fbs).
@@ -47,7 +47,7 @@ At least one engine configuration file should exist in an Amplitude project dire
 
 An Amplitude project should have a file (or files) where the different buses used at runtime are defined. In our previous example, the `buses.json` file plays this role.
 
-You can only use one bus file per engine instance, and you should give his path in the engine configuration file selected at runtime. Learn more about those settings on the [Creating Buses]({{< relref "docs/project-setup/buses-config" >}}) page.
+You can only use one bus file per engine instance, and you should give his path in the engine configuration file selected at runtime. Learn more on how to configure buses on the [Creating Buses]({{< relref "docs/project-setup/buses-config" >}}) page.
 
 {{< alert >}}
 At least one buses file is expected in an Amplitude project. If no file is specified in the engine settings, the default expected path is `./buses.json`. If the buses file is not found during the engine initialization, the library will throw an exception. The `.json` file of the buses definition should match this [flatbuffer schema](https://github.com/SparkyStudios/AmplitudeAudioSDK/blob/main/schemas/buses_definition.fbs).
@@ -79,7 +79,7 @@ The `soundbanks` directory is the place where you define all of your game sound 
 
 ## sounds/
 
-The `sounds` directory contains the definition files for [Sound] objects. Those files are used to describe raw audio sample assets to make them usable as standalone objects or in Collections and Switch Containers. Each `.json` file of this directory should match this [flatbuffer schema](https://github.com/SparkyStudios/AmplitudeAudioSDK/blob/main/schemas/sound_definition.fbs). Learn more about sounds on the [Sounds](../sounds) guide.
+The `sounds` directory contains the definition files for [Sound] objects. Those files are used to describe raw audio sample assets to make them usable as standalone objects or in Collections and Switch Containers. Each `.json` file of this directory should match this [flatbuffer schema](https://github.com/SparkyStudios/AmplitudeAudioSDK/blob/main/schemas/sound_definition.fbs). Learn more on how to create sounds on the [Sounds]({{< relref "docs/project-setup/sound" >}}) guide.
 
 ## switch_containers/
 

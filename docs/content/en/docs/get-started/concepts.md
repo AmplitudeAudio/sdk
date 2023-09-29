@@ -7,18 +7,16 @@ images: []
 menu:
   docs:
     parent: "get-started"
-weight: 110
+weight: 101
 toc: true
 mermaid: true
 ---
-
-A resume of the entire Amplitude's concept can be drawn in this image:
 
 {{< mermaid >}}
 %%{init: {'theme': 'base', 'themeVariables': { 'primaryColor': '#74D0F1', 'fontFamily': 'Open Sans' }}}%%
 flowchart TB
   subgraph sources[Audio Files]
-    source1(sunshine.ams)
+    source1(gun_fire_01.ams)
   end
   subgraph codecs[Audio Codecs]
     codec1[[Codec]]

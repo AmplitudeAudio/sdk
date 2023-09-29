@@ -1,7 +1,7 @@
 ---
 title : "Engine Configuration"
-description: "Amplitude has been built in a way to let you have complete freedom on the behavior of the engine at runtime. You can create several configuration file per device (pc, mobile, console), per platform (Windows, Android, XBox, PlayStation), or any other criteria your project have to suit with, then pick and load the right settings file at runtime."
-lead: "Amplitude has been built in a way to let you have complete freedom on the behavior of the engine at runtime. You can create several configuration file per device (pc, mobile, console), per platform (Windows, Android, XBox, PlayStation), or any other criteria your project have to suit with, then pick and load the right settings file at runtime."
+description: "Amplitude has been built in a way to let you have complete freedom on the behavior of the engine at runtime. You can create several configuration file per device (pc, mobile, console), per platform (Windows, Android, XBOX, PlayStation), or any other criteria your project have to suit with, then pick and load the right settings file at runtime."
+lead: "Amplitude has been built in a way to let you have complete freedom on the behavior of the engine at runtime. You can create several configuration file per device (pc, mobile, console), per platform (Windows, Android, XBOX, PlayStation), or any other criteria your project have to suit with, then pick and load the right settings file at runtime."
 date: 2023-06-01T00:39:09+01:00
 lastmod: 2023-06-01T00:39:09+01:00
 draft: false
@@ -9,7 +9,7 @@ images: []
 menu:
   docs:
     parent: "project-setup"
-weight: 220
+weight: 202
 toc: true
 ---
 
@@ -21,7 +21,7 @@ The config file will let you customize:
 
 - The playback device ([output])
 - The Amplitude Mixer, called **Amplimix** ([mixer])
-- The game synchronization ([game])
+- The synchronization with the game/engine ([game])
 - The path to the buses file ([buses_file])
 - The name of the driver implementation to use ([driver])
 
@@ -50,7 +50,7 @@ The `frequency` property defines the audio frequency in Hertz (`Hz`) of the audi
 The `channels` property sets the number of channels Amplitude will output. It can take as value the name of that channel or the number of channels. Possible values are:
 
 | Channel Type | Description                                                                           | Mapping                                                                                                                                                                                                          | Value                                        |
-| ------------ | ------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------- |
+|--------------|---------------------------------------------------------------------------------------|------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|----------------------------------------------|
 | Default      | Takes the default value from the [Driver]. In most cases the default value is Stereo. | According to the default value.                                                                                                                                                                                  | Number:&nbsp;0<br/>String:&nbsp;Default      |
 | Mono         | Compute and output audio data in one channel.                                         | 0:&nbsp;FRONT&nbsp;CENTER                                                                                                                                                                                        | Number:&nbsp;1<br/>String:&nbsp;Mono         |
 | Stereo       | Compute and output audio data in 2 channels.                                          | 0:&nbsp;FRONT&nbsp;LEFT<br/>1:&nbsp;FRONT&nbsp;RIGHT                                                                                                                                                             | Number:&nbsp;2<br/>String:&nbsp;Stereo       |
@@ -74,14 +74,14 @@ This value defines the number of audio bytes used per output. The number of samp
 
 The `format` property specifies the audio format in which Amplitude will send the audio data to the output device. It can take as value the name of the audio format or the audio format ID:
 
-| ID  | Name    | Description                                                                          |
-| --- | ------- | ------------------------------------------------------------------------------------ |
-| 0   | Default | Uses the default format available on the audio device.                               |
-| 1   | UInt8   | Process and send data as `unsigned 8-bit fixed-point numbers` to the audio device.   |
-| 2   | Int16   | Process and send data as `signed 16-bit fixed-point numbers` to the audio device.    |
-| 3   | Int24   | Process and send data as `signed 24-bit fixed-point numbers` to the audio device.    |
-| 4   | Int32   | Process and send data as `signed 32-bit fixed-point numbers` to the audio device.    |
-| 5   | Float32 | Process and send data as `signed 32-bit floating-point numbers` to the audio device. |
+| ID | Name    | Description                                                                          |
+|----|---------|--------------------------------------------------------------------------------------|
+| 0  | Default | Uses the default format available on the audio device.                               |
+| 1  | UInt8   | Process and send data as `unsigned 8-bit fixed-point numbers` to the audio device.   |
+| 2  | Int16   | Process and send data as `signed 16-bit fixed-point numbers` to the audio device.    |
+| 3  | Int24   | Process and send data as `signed 24-bit fixed-point numbers` to the audio device.    |
+| 4  | Int32   | Process and send data as `signed 32-bit fixed-point numbers` to the audio device.    |
+| 5  | Float32 | Process and send data as `signed 32-bit floating-point numbers` to the audio device. |
 
 {{< alert context="info" >}}
 Amplitude internally process audio data as 32-bit floating-point numbers. The `format` setting is used only when sending audio data to the audio device. If the audio device is also set to receive float32 audio data, no conversion will be performed.
@@ -123,16 +123,16 @@ This setting is used by Amplitude to understand how it should synchronize with t
 
 Since Amplitude allows you to define many listeners at the same time, but only one can actually render data for a single sound object, this setting is used to define how the engine will pick the right listener for each rendered sound objects. Available values are:
 
-| ID  | Name     | Description                                                                      |
-| --- | -------- | -------------------------------------------------------------------------------- |
-| 0   | None     | Do not fetch for listeners. This mute all audio, but keeps processing data.      |
-| 1   | Nearest  | Fetches for the listener nearest to the currently processed sound.               |
-| 2   | Farthest | Fetches for the listener farthest to the currently processed sound.              |
-| 2   | Default  | Always use the default listener set in the engine at runtime for every playback. |
-| 2   | First    | Always use the first available listener of the list for every playback.          |
-| 2   | Last     | Always use the last available listener of the list for every playback.           |
+| ID | Name     | Description                                                                      |
+|----|----------|----------------------------------------------------------------------------------|
+| 0  | None     | Do not fetch for listeners. This mute all audio, but keeps processing data.      |
+| 1  | Nearest  | Fetches for the listener nearest to the currently processed sound.               |
+| 2  | Farthest | Fetches for the listener farthest to the currently processed sound.              |
+| 2  | Default  | Always use the default listener set in the engine at runtime for every playback. |
+| 2  | First    | Always use the first available listener of the list for every playback.          |
+| 2  | Last     | Always use the last available listener of the list for every playback.           |
 
-By using `Nearest` or `Farthest`, different listeners may be used at the same time for each playback. Using `Default`, `First`, or `Last` ensure that only one listener is used for every playback.
+By using `Nearest` or `Farthest`, different listeners may be used at the same time for each playback. Using `Default`, `First`, or `Last` may ensure that the same listener is used for every playback.
 
 ### listeners
 
@@ -170,10 +170,10 @@ This property takes a float value greater or equal to `0.0`. It will affect how 
 
 This property may help you to not perform additional math while integrating Amplitude in your game or your game engine. It specifies the up axis you use in your game. Possible values are:
 
-| ID  | Name |
-| --- | ---- |
-| 0   | Y    |
-| 1   | Z    |
+| ID | Name |
+|----|------|
+| 0  | Y    |
+| 1  | Z    |
 
 This setting will only affect how math operations on vectors and matrices are performed internally in the engine.
 
