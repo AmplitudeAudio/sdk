@@ -1,0 +1,44 @@
+[404-text]
+other = "The page you are looking for doesn't exist or has been moved."
+
+[404-title]
+other = "Page not found :("
+
+[browse]
+other = "Browse"
+
+[chapter_next]
+other = "Next"
+
+[chapter_previous]
+other = "Prev"
+
+[edit_page]
+other = "Edit this page on"
+
+[get-started]
+other = "Get Started"
+
+[last_updated]
+other = "Last updated on"
+
+[on-this-page]
+other = "On This Page"
+
+[search_loading]
+other = "Loading search index…"
+
+[search_no_recent]
+other = "No recent searches"
+
+[search_no_results]
+other = "No results"
+
+[search_placeholder]
+other = "Search"
+
+[search_title]
+other = "Search"
+
+[videoUnsupported]
+other = "Your browser doesn't support embedded videos, but don't worry, you can <a href=\"{{ .RelPermalink }}\">download it</a> and watch it with your favorite video player!"

@@ -1,0 +1,36 @@
+$primary: #61adca;
+
+$theme-colors: (
+  "primary":    $primary,
+  "secondary":  $secondary,
+  "success":    $success,
+  "info":       $info,
+  "warning":    $warning,
+  "danger":     $danger,
+  "light":      $light,
+  "dark":       $dark
+);
+
+$link-color: $primary;
+$button-color: $link-color;
+
+
+// ----- Dark Mode
+
+$body-bg-dark: #1c1c1e;
+$body-overlay-dark: darken($body-bg-dark, 2.5%);
+
+/*
+$border-dark: darken($body-bg-dark, 2.5%);
+*/
+$border-dark: $gray-800;
+$body-color-dark: $gray-300;
+$dots-dark: darken($body-color-dark, 50%);
+
+$link-color-dark: #74d0f1;
+$button-color-dark: $link-color-dark;
+$focus-color-dark: lighten($link-color-dark, 2.5%);
+
+$navbar-dark-color:                 $body-color-dark;
+$navbar-dark-hover-color:           $link-color-dark;
+$navbar-dark-active-color:          $link-color-dark;

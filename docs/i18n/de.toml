@@ -1,0 +1,44 @@
+[404-text]
+other = "Die aufgerufene Seite existiert nicht oder wurde verschoben."
+
+[404-title]
+other = "Seite nicht gefunden"
+
+[browse]
+other = "Browse"
+
+[chapter_next]
+other = "Danach"
+
+[chapter_previous]
+other = "Davor"
+
+[edit_page]
+other = "Editiere diese Seite auf"
+
+[get-started]
+other = "Loslegen"
+
+[last_updated]
+other = "Zuletzt aktualisiert am"
+
+[on-this-page]
+other = "Auf dieser Seite"
+
+[search_loading]
+other = "Suchindex wird geladen…"
+
+[search_no_recent]
+other = "Keine kürzlich durchgeführten Suchanfragen"
+
+[search_no_results]
+other = "Keine Resultate"
+
+[search_placeholder]
+other = "Suche"
+
+[search_title]
+other = "Suche"
+
+[videoUnsupported]
+other = "Ihr Browser unterstützt keine integrierten Videos, aber keine Sorge, Sie können <a href=\"{{ .RelPermalink }}\">es herunterladen</a> und mit Ihrem Lieblings-Videoplayer ansehen!"
