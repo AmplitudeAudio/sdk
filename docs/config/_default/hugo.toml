@@ -1,5 +1,5 @@
 title = "Amplitude"
-baseurl = "https://sparkystudios.github.io/AmplitudeAudioSDK/"
+baseurl = ""
 canonifyURLs = false
 disableAliases = true
 disableHugoGeneratorInject = true

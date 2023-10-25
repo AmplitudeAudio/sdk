@@ -18,8 +18,8 @@
   {{ end -}}
 
     <!-- Site title -->
-    <a class="navbar-brand me-auto me-lg-3" href="{{ "/" | relLangURL }}" aria-label="{{ .Site.Title }}}">
-      <img src="{{ "/images/logo_trimmed.png" | relLangURL }}" alt="{{ .Site.Title }}" style="height: 48px;" />
+    <a class="navbar-brand me-auto me-lg-3" href="{{ .Site.BaseURL | relLangURL }}" aria-label="{{ .Site.Title }}}">
+      <img src="{{ .Site.BaseURL | relLangURL }}images/logo_trimmed.png" alt="{{ .Site.Title }}" style="height: 48px;" />
     </a>
 
     <!-- FlexSearch mobile -->

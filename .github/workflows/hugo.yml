@@ -33,7 +33,7 @@ jobs:
   build:
     runs-on: ubuntu-latest
     env:
-      HUGO_VERSION: 0.117.0
+      HUGO_VERSION: 0.119.0
     steps:
       - name: Install Hugo CLI
         run: |
@@ -52,9 +52,28 @@ jobs:
         id: pages
         uses: actions/configure-pages@v3
 
-      - name: Install Node.js dependencies
+      - name: Install pnpm
+        uses: pnpm/action-setup@v2
+        with:
+          version: 8
+          run_install: false
+
+      - name: Get pnpm store directory
+        shell: bash
+        run: |
+          echo "STORE_PATH=$(pnpm store path --silent)" >> $GITHUB_ENV
+
+      - name: Setup pnpm cache
+        uses: actions/cache@v3
+        with:
+          path: ${{ env.STORE_PATH }}
+          key: ${{ runner.os }}-pnpm-store-${{ hashFiles('**/pnpm-lock.yaml') }}
+          restore-keys: |
+            ${{ runner.os }}-pnpm-store-
+
+      - name: Install dependencies
         working-directory: docs
-        run: "[[ -f package-lock.json || -f npm-shrinkwrap.json ]] && npm ci || true"
+        run: pnpm install
 
       - name: Build with Hugo
         working-directory: docs
@@ -62,10 +81,7 @@ jobs:
           # For maximum backward compatibility with Hugo modules
           HUGO_ENVIRONMENT: production
           HUGO_ENV: production
-        run: |
-          hugo \
-            --minify \
-            --baseURL "${{ steps.pages.outputs.base_url }}/"
+        run: pnpm run clean:build && pnpm run build
 
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v1

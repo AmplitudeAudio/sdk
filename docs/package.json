@@ -5,8 +5,8 @@
   "author": "Hyas",
   "license": "MIT",
   "scripts": {
-    "dev": "exec-bin node_modules/.bin/hugo/hugo server --bind=0.0.0.0 --disableFastRender --baseURL=http://localhost --noHTTPCache",
-    "dev:drafts": "exec-bin node_modules/.bin/hugo/hugo server --bind=0.0.0.0 --disableFastRender --baseURL=http://localhost --noHTTPCache --buildDrafts",
+    "dev": "exec-bin node_modules/.bin/hugo/hugo server --bind=0.0.0.0 --disableFastRender --noHTTPCache -e development",
+    "dev:drafts": "exec-bin node_modules/.bin/hugo/hugo server --bind=0.0.0.0 --disableFastRender --noHTTPCache --buildDrafts -e development",
     "create": "exec-bin node_modules/.bin/hugo/hugo new",
     "lint": "npm run lint:markdown",
     "lint:scripts": "eslint --cache themes/doks/assets/js",
