@@ -38,9 +38,9 @@ With this property you can specify a special [effect]({{< relref "05-effect" >}}
 
 ## gain
 
-`RTPCCompatibleValue` `required`
+`RtpcCompatibleValue` `required`
 
-The `gain` property stores the value of the gain (the volume) of the sound object. The value should match the schema of an [RTPCCompatibleValue]({{< relref "api#rtpc-compatible-value" >}}) object.
+The `gain` property stores the value of the gain (the volume) of the sound object. The value should match the schema of an [RtpcCompatibleValue] object.
 
 ## bus
 
@@ -50,9 +50,9 @@ This property stores the `id` of a bus object, on which this sound should be pla
 
 ## priority
 
-`RTPCCompatibleValue` `required`
+`RtpcCompatibleValue` `required`
 
-This property affects how the engine will prioritize this sound object relatively to all others. When the engine is out of active channels, sounds objects with low priority are muted when a play request is made with a sound object with higher priority. The value of this property should match the schema of an [RTPCCompatibleValue]({{< relref "api#rtpc-compatible-value" >}}) object.
+This property affects how the engine will prioritize this sound object relatively to all others. When the engine is out of active channels, sounds objects with low priority are muted when a play request is made with a sound object with higher priority. The value of this property should match the schema of an [RtpcCompatibleValue] object.
 
 ## spatialization
 
@@ -60,11 +60,11 @@ This property affects how the engine will prioritize this sound object relativel
 
 The `spatialization` property specifies how the sound object's gain should be adjusted based on its distance to the attached listener. It can have the following values:
 
-| ID | Name                | Description                                                                                                                                                                          |
-|----|---------------------|--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| 0  | None                | No spatialization is made, sound objects are played at their regular gain.                                                                                                           |
-| 1  | Position            | The gain is adjusted based on the distance to the attached listener.                                                                                                                 |
-| 2  | PositionOrientation | The gain is adjusted based on the distance to the attached listener and the entity's orientation. This means that the [scope](#scope) of this sound object should be set to `Entity` |
+| ID  | Name                | Description                                                                                                                                                                          |
+| --- | ------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| 0   | None                | No spatialization is made, sound objects are played at their regular gain.                                                                                                           |
+| 1   | Position            | The gain is adjusted based on the distance to the attached listener.                                                                                                                 |
+| 2   | PositionOrientation | The gain is adjusted based on the distance to the attached listener and the entity's orientation. This means that the [scope](#scope) of this sound object should be set to `Entity` |
 
 ## attenuation
 
@@ -78,10 +78,10 @@ Specifies the ID of the [Attenuation Model]({{< relref "04-attenuation-model" >}
 
 With the `scope` property you can control how the playback data is shared between each sound instances. The allowed values are:
 
-| ID | Name   | Description                                                                                                           |
-|----|--------|-----------------------------------------------------------------------------------------------------------------------|
-| 0  | World  | All sound instances will be treated as one object, so they will share the same sound data.                            |
-| 1  | Entity | Each sound instance will be treated as one object per entity, and will only share sound data within that same entity. |
+| ID  | Name   | Description                                                                                                           |
+| --- | ------ | --------------------------------------------------------------------------------------------------------------------- |
+| 0   | World  | All sound instances will be treated as one object, so they will share the same sound data.                            |
+| 1   | Entity | Each sound instance will be treated as one object per entity, and will only share sound data within that same entity. |
 
 ## fader
 
@@ -99,3 +99,5 @@ The `fader` property can be used to specify the fading animation to apply when t
 {{< alert context="info" >}}
 You can create more faders as you wish and register them in the engine as plugins. Refer to the [Custom Fader]({{< relref "/docs/guide/custom-fader" >}}) guide to learn more.
 {{< /alert >}}
+
+[RtpcCompatibleValue]: {{< relref "99-api/#rtpc-compatible-value" >}}

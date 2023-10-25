@@ -55,7 +55,7 @@ The sequence scheduler will play the sounds of the collection sequentially in th
 When the sequence scheduler reaches the end of the collection, this property specifies how it should behave on the next play request. The available values are:
 
 | ID      | Description                                                                                                                                   |
-|---------|-----------------------------------------------------------------------------------------------------------------------------------------------|
+| ------- | --------------------------------------------------------------------------------------------------------------------------------------------- |
 | Restart | The scheduler will restart the sequence from the first sound of the collection.                                                               |
 | Reverse | The scheduler will play the collection in the reverse order until the first sound is reached. The first and last sounds wont be played twice. |
 
@@ -66,7 +66,7 @@ When the sequence scheduler reaches the end of the collection, this property spe
 Specifies how the sounds in the collection are played when a play request is sent to the collection. The possible values include:
 
 | ID      | Description                                                                                                                                                                                                     |
-|---------|-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| ------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | PlayOne | On each play request, a single sound is picked by the [scheduler](#scheduler) and played                                                                                                                        |
 | PlayAll | On each play request, the [scheduler](#scheduler) will pick and play each sound of the collection, one after the other, until every sounds has played. It's guaranteed that each sounds will play exactly once. |
 
@@ -86,7 +86,7 @@ Provides the ID of a sound. That sound object should be defined as a [Sound]({{<
 
 `RtpcCompatibleValue` `required`
 
-This property is used to override the default gain of the sound object. It stores an [RtpcCompatibleValue]({{< relref "api#rtpc-compatible-value" >}}) object.
+This property is used to override the default gain of the sound object. It stores an [RtpcCompatibleValue]({{< relref "99-api/#rtpc-compatible-value" >}}) object.
 
 ### weight
 

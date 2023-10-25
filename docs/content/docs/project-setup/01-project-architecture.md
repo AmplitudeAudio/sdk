@@ -15,7 +15,6 @@ An Amplitude project is resumed to a set of `.json` files organized in dedicated
 ├ 📁 attenuators/
 ├ 📁 collections/
 ├ 📁 effects/
-├ 📁 environments/
 ├ 📁 events/
 ├ 📁 rtpc/
 ├ 📁 soundbanks/
@@ -35,7 +34,7 @@ The Amplitude engine settings are provided through a json file at the root of th
 The config files stores all the needed settings for the audio device setup, memory allocation, and mixer configuration. Learn more on how to configure the engine on the [Engine Configuration]({{< relref "02-engine-config" >}}) page.
 
 {{< alert >}}
-At least one engine configuration file should exist in an Amplitude project directory, and should match this [flatbuffer schema](https://github.com/SparkyStudios/AmplitudeAudioSDK/blob/main/schemas/engine_config_definition.fbs).
+At least one engine configuration file should exist in an Amplitude project directory, and should match this [flatbuffers schema](https://github.com/SparkyStudios/AmplitudeAudioSDK/blob/main/schemas/engine_config_definition.fbs).
 {{< /alert >}}
 
 ## Buses files
@@ -45,50 +44,50 @@ An Amplitude project should have a file (or files) where the different buses use
 You can only use one bus file per engine instance, and you should give his path in the engine configuration file selected at runtime. Learn more on how to configure buses on the [Creating Buses]({{< relref "03-buses-config" >}}) page.
 
 {{< alert >}}
-At least one buses file is expected in an Amplitude project. If no file is specified in the engine settings, the default expected path is `./buses.json`. If the buses file is not found during the engine initialization, the library will throw an exception. The `.json` file of the buses definition should match this [flatbuffer schema](https://github.com/SparkyStudios/AmplitudeAudioSDK/blob/main/schemas/buses_definition.fbs).
+At least one buses file is expected in an Amplitude project. If no file is specified in the engine settings, the default expected path is `./buses.json`. If the buses file is not found during the engine initialization, the library will throw an exception. The `.json` file of the buses definition should match this [flatbuffers schema](https://github.com/SparkyStudios/AmplitudeAudioSDK/blob/main/schemas/buses_definition.fbs).
 {{< /alert >}}
 
 ## attenuators/
 
-The `attenuators` directory stores all the configuration files for custom [Attenuation] models. Each `.json` file of this directory should match this [flatbuffer schema](https://github.com/SparkyStudios/AmplitudeAudioSDK/blob/main/schemas/attenuation_definition.fbs). Learn more about attenuators in the [Attenuation Model]({{< relref "04-attenuation-model" >}}) page.
+The `attenuators` directory stores all the configuration files for custom [Attenuation] models. Each `.json` file of this directory should match this [flatbuffers schema](https://github.com/SparkyStudios/AmplitudeAudioSDK/blob/main/schemas/attenuation_definition.fbs). Learn more about attenuators in the [Attenuation Model]({{< relref "04-attenuation-model" >}}) page.
 
 ## collections/
 
-The `collections` directory contains the configuration files for [Collection] sound objects. Each `.json` file of this directory should match this [flatbuffer schema](https://github.com/SparkyStudios/AmplitudeAudioSDK/blob/main/schemas/collection_definition.fbs). Learn more about collections in the [Sound Collections](../sound-collections) guide.
+The `collections` directory contains the configuration files for [Collection] sound objects. Each `.json` file of this directory should match this [flatbuffers schema](https://github.com/SparkyStudios/AmplitudeAudioSDK/blob/main/schemas/collection_definition.fbs). Learn more about collections in the [Sound Collections](../sound-collections) guide.
 
 ## effects/
 
-The `effects` directory contains the configuration files for sound [Effect]s. Each `.json` file should match this [flatbuffer schema](https://github.com/SparkyStudios/AmplitudeAudioSDK/blob/main/schemas/effect_definition.fbs). Learn more about effects in the [Sound Effects & Filters](../sound-effects) guide.
+The `effects` directory contains the configuration files for sound [Effect]s. Each `.json` file should match this [flatbuffers schema](https://github.com/SparkyStudios/AmplitudeAudioSDK/blob/main/schemas/effect_definition.fbs). Learn more about effects in the [Sound Effects & Filters](../sound-effects) guide.
 
 ## events/
 
-The `events` directory contains the configuration files for [Event]s. Each `.json` file of this directory should match this [flatbuffer schema](https://github.com/SparkyStudios/AmplitudeAudioSDK/blob/main/schemas/event_definition.fbs). Learn more about events on the [Sound Events](../sound-events) page.
+The `events` directory contains the configuration files for [Event]s. Each `.json` file of this directory should match this [flatbuffers schema](https://github.com/SparkyStudios/AmplitudeAudioSDK/blob/main/schemas/event_definition.fbs). Learn more about events on the [Sound Events](../sound-events) page.
 
 ## rtpc/
 
-The `rtpc` directory stores the configuration files to create [RTPC] values. Each `.json` file of this directory should match this [flatbuffer schema](https://github.com/SparkyStudios/AmplitudeAudioSDK/blob/main/schemas/rtpc_definition.fbs). Learn more about rtpc values on the [Real Time Parameter Control](../rtpc) guide.
+The `rtpc` directory stores the configuration files to create [RTPC] values. Each `.json` file of this directory should match this [flatbuffers schema](https://github.com/SparkyStudios/AmplitudeAudioSDK/blob/main/schemas/rtpc_definition.fbs). Learn more about rtpc values on the [Real Time Parameter Control](../rtpc) guide.
 
 ## soundbanks/
 
-The `soundbanks` directory is the place where you define all of your game sound banks. Each `.json` file of this directory should match this [flatbuffer schema](https://github.com/SparkyStudios/AmplitudeAudioSDK/blob/main/schemas/sound_bank_definition.fbs). Learn more about sound banks on the [Building Sound Banks](../build-sound-bank) guide.
+The `soundbanks` directory is the place where you define all of your game sound banks. Each `.json` file of this directory should match this [flatbuffers schema](https://github.com/SparkyStudios/AmplitudeAudioSDK/blob/main/schemas/sound_bank_definition.fbs). Learn more about sound banks on the [Building Sound Banks](../build-sound-bank) guide.
 
 ## sounds/
 
-The `sounds` directory contains the definition files for [Sound] objects. Those files are used to describe raw audio sample assets to make them usable as standalone objects or in Collections and Switch Containers. Each `.json` file of this directory should match this [flatbuffer schema](https://github.com/SparkyStudios/AmplitudeAudioSDK/blob/main/schemas/sound_definition.fbs). Learn more on how to create sounds on the [Sounds]({{< relref "08-sound" >}}) guide.
+The `sounds` directory contains the definition files for [Sound] objects. Those files are used to describe raw audio sample assets to make them usable as standalone objects or in Collections and Switch Containers. Each `.json` file of this directory should match this [flatbuffers schema](https://github.com/SparkyStudios/AmplitudeAudioSDK/blob/main/schemas/sound_definition.fbs). Learn more on how to create sounds on the [Sounds]({{< relref "08-sound" >}}) guide.
 
 ## switch_containers/
 
-The `switch_containers` directory contains configuration files for [SwitchContainer] sound objects. Each `.json` file of this directory should match this [flatbuffer schema](https://github.com/SparkyStudios/AmplitudeAudioSDK/blob/main/schemas/switch_container_definition.fbs). Learn more about switches and switch containers on the [Switch States & Switch Containers](../switch-states-and-switch-containers) guide.
+The `switch_containers` directory contains configuration files for [SwitchContainer] sound objects. Each `.json` file of this directory should match this [flatbuffers schema](https://github.com/SparkyStudios/AmplitudeAudioSDK/blob/main/schemas/switch_container_definition.fbs). Learn more about switches and switch containers on the [Switch States & Switch Containers](../switch-states-and-switch-containers) guide.
 
 ## switches/
 
-The `switches` directory contains configuration files for [Switch] objects, that will be used in [SwitchContainer]s. Each `.json` file of this directory should match this [flatbuffer schema](https://github.com/SparkyStudios/AmplitudeAudioSDK/blob/main/schemas/switch_definition.fbs). Learn more about switches and switch containers on the [Switch States & Switch Containers](../switch-states-and-switch-containers) guide.
+The `switches` directory contains configuration files for [Switch] objects, that will be used in [SwitchContainer]s. Each `.json` file of this directory should match this [flatbuffers schema](https://github.com/SparkyStudios/AmplitudeAudioSDK/blob/main/schemas/switch_definition.fbs). Learn more about switches and switch containers on the [Switch States & Switch Containers](../switch-states-and-switch-containers) guide.
 
-[Attenuation]: ../../api/Sound/Attenuation
-[Collection]: ../../api/Sound/Collection
-[Effect]: ../../api/Sound/Effect
-[Event]: ../../api/Sound/Event
-[RTPC]: ../../api/Sound/RTPC
-[Sound]: ../../api/Sound/Sound
-[SwitchContainer]: ../../api/Sound/SwitchContainer
-[Switch]: ../../api/Sound/Switch
+[Attenuation]: {{< relref "04-attenuation-model" >}}
+[Collection]: {{< relref "09-collection" >}}
+[Effect]: {{< relref "05-effect" >}}
+[Event]: {{< relref "12-event" >}}
+[RTPC]: {{< relref "11-rtpc" >}}
+[Sound]: {{< relref "08-sound" >}}
+[SwitchContainer]: {{< relref "10-switch-container" >}}
+[Switch]: {{< relref "06-switch" >}}

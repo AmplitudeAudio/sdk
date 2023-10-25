@@ -35,7 +35,7 @@ The initial state of the switch. This value should be one of the available state
 With this property you can specify the behavior of the switch container when the tracked [Switch] object changes his state. The accepted values are:
 
 | ID             | Description                                                                                                                                                                                                                                                                                                                                    |
-|----------------|------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| -------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | UpdateOnPlay   | The switch container will update the sounds on the next play request after the tracked switch has changed his state.                                                                                                                                                                                                                           |
 | UpdateOnChange | The switch container will update the sounds at the time the tracked switch has changed his state. That means if a sound from the container was already playing, it will be stopped and sounds registered for the new state will be played. If the currently playing sound was registered for the old and new states, it will continue playing. |
 
@@ -80,9 +80,9 @@ The fade transition to apply on the sound object when one all of the assigned st
 
 ### gain
 
-`RTPCCompatibleValue` `required`
+`RtpcCompatibleValue` `required`
 
-A custom `gain` to apply on the sound object of this entry. The value should match the schema of an [RTPCCompatibleValue]({{< relref "api#rtpc-compatible-value" >}}) object.
+A custom `gain` to apply on the sound object of this entry. The value should match the schema of an [RtpcCompatibleValue]({{< relref "99-api/#rtpc-compatible-value" >}}) object.
 
 ## Example
 
@@ -171,4 +171,4 @@ A custom `gain` to apply on the sound object of this entry. The value should mat
 [Sound]: {{< relref "08-sound" >}}
 [Collection]: {{< relref "09-collection" >}}
 [Switch]: {{< relref "06-switch" >}}
-[FadeTransitionSettings]: TODO
+[FadeTransitionSettings]: {{< relref "99-api/#fade-transition-settings" >}}
