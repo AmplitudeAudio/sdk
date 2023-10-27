@@ -14,19 +14,19 @@ An event is a set of actions Amplitude have to execute once it has been triggere
 
 `uint64` `required`
 
-An unique value across event assets that represents the ID of this object. It may be reused later to get the instance of this event from the engine at runtime.
+A unique value across event assets that represents the ID of this object. It may be reused later to get the instance of this event from the engine at runtime.
 
 ## name
 
 `string` `required`
 
-An unique value across event assets that represents the name of this object. It may be reused later to get the instance of this event from the engine at runtime.
+A unique value across event assets that represents the name of this object. It may be reused later to get the instance of this event from the engine at runtime.
 
 ## actions
 
 `EventActionDefinition[]` `required`
 
-An array of actions to execute. When this event will be triggered, each actions will be executed sequentially in the order they are defined in this array. Each object of this is defined by the given properties:
+An array of actions to execute. When this event will be triggered, each action will be executed sequentially in the order they are defined in this array. Each object of this is defined by the given properties:
 
 ### type
 

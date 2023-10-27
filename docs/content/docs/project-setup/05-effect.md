@@ -8,7 +8,7 @@ weight: 205
 toc: true
 ---
 
-Effects allows you to apply sound effects to any sound object. Effects are applied at the playback time through a pipeline processor.
+Effects allow you to apply sound effects to any sound object. Effects are applied at the playback time through a pipeline processor.
 
 {{< alert >}}
 The flatbuffers schema of this file can be found [here](https://github.com/SparkyStudios/AmplitudeAudioSDK/blob/main/schemas/effect_definition.fbs).
@@ -20,7 +20,7 @@ An effect file contains the following properties:
 
 `uint64` `required`
 
-A unique identifier for the effect. This will be used later by the engine and other sound object to get a reference to this one. This value should be different to `0`.
+A unique identifier for the effect. This will be used later by the engine and other sound objects to get a reference to this effect. This value should be different from `0`.
 
 ## name
 

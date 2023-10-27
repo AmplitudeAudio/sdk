@@ -1,6 +1,6 @@
 ---
-title : Engine Configuration
-description: Amplitude has been built in a way to let you have complete freedom on the behavior of the engine at runtime. You can create several configuration file per device (pc, mobile, console), per platform (Windows, Android, XBOX, PlayStation), or any other criteria your project have to suit with, then pick and load the right settings file at runtime.
+title: Engine Configuration
+description: Amplitude has been built in a way to let you have complete freedom on the behavior of the engine at runtime. You can create several configuration files per device (PC, mobile, console), per platform (Windows, Android, XBOX, PlayStation), or any other criteria your project has to suit, then pick and load the right settings file at runtime.
 menu:
   docs:
     parent: project-setup
@@ -8,7 +8,7 @@ weight: 202
 toc: true
 ---
 
-Amplitude has been built in a way to let you have complete freedom on the behavior of the engine at runtime. You can create several configuration file per device (pc, mobile, console), per platform (Windows, Android, XBOX, PlayStation), or any other criteria your project have to suit with, then pick and load the right settings file at runtime.
+Amplitude has been built in a way to let you have complete freedom on the behavior of the engine at runtime. You can create several configuration files per device (PC, mobile, console), per platform (Windows, Android, XBOX, PlayStation), or any other criteria your project has to suit, then pick and load the right settings file at runtime.
 
 {{< alert >}}
 The flatbuffers schema of this file can be found [here](https://github.com/SparkyStudios/AmplitudeAudioSDK/blob/main/schemas/engine_config_definition.fbs).
@@ -38,7 +38,7 @@ The `output` property helps you define how Amplitude should communicate with the
 
 `uint` `default: 48000`
 
-The `frequency` property defines the audio frequency in Hertz (`Hz`) of the audio data sent to the audio device by Amplitude. This value may differ to the frequency of the audio device, in such scenario, the audio data will be resampled from this value to the device's frequency.
+The `frequency` property defines the audio frequency in Hertz (`Hz`) of the audio data sent to the audio device by Amplitude. This value may differ from the frequency of the audio device, in such a scenario, the audio data will be resampled from this value to the device's frequency.
 
 ### channels
 
@@ -56,14 +56,14 @@ The `channels` property sets the number of channels Amplitude will output. It ca
 | 7.1          | Compute and output audio data in 8 channels.                                          | 0:&nbsp;FRONT&nbsp;LEFT<br/>1:&nbsp;FRONT&nbsp;RIGHT<br/>2:&nbsp;FRONT&nbsp;CENTER<br/>3:&nbsp;LFE<br/>4:&nbsp;BACK&nbsp;LEFT<br/>5:&nbsp;BACK&nbsp;RIGHT<br/>6:&nbsp;SIDE&nbsp;LEFT<br/>7:&nbsp;SIDE&nbsp;RIGHT | Number:&nbsp;8<br/>String:&nbsp;Surround_7_1 |
 
 {{< alert context="warning" >}}
-At the moment, Amplitude only supports **Stereo** and **Mono** channels. Setting the engine to use something else than these values will result in errors, or undefined behaviors.
+At the moment, Amplitude only supports **Stereo** and **Mono** channels. Setting the engine to use something else than these values will result in errors or undefined behaviors.
 {{< /alert >}}
 
 ### buffer_size
 
 `int` `default: 1024`
 
-This value defines the number of audio bytes used per output. The number of samples to produce for each output will be calculated automatically by dividing this value with the number of channels. It is highly recommended to use a multiple of 2 for the buffer size.
+This value defines the number of audio bytes used per output. The number of samples to produce for each output will be calculated automatically by dividing this value by the number of channels. It is highly recommended to use a multiple of 2 for the buffer size.
 
 ### format
 
@@ -94,19 +94,19 @@ The `mixer` property configures the Amplitude Mixer (Amplimix). It takes as valu
 
 `uint` `required`
 
-Specifies the maximum number of sound channels to render by Amplimix. It equals the number of sound simultaneously playing in the game. If the maximum number of channels is reached, Amplitude will prioritize the most important channels and virtualize the others.
+Specifies the maximum number of sound channels to render by Amplimix. It equals the number of sounds simultaneously playing in the game. If the maximum number of channels is reached, Amplitude will prioritize the most important channels and virtualize the others.
 
 ### virtual_channels
 
 `uint` `required`
 
-Specifies the maximum number of virtual channels to use in addition to active channels. Amplimix doesn't render virtual channels, but all the information about them are still tracked.
+Specifies the maximum number of virtual channels to use in addition to active channels. Amplimix doesn't render virtual channels, but all the information about them is still tracked.
 
 ### pipeline
 
 `array` `required`
 
-It's inside the `pipeline` setting you describe the graph in which audio data will be processed before to be sent to the audio device for rendering. This setting take as value an array of sound processor definitions that will be applied to the audio data. For further explanation about how to setup a pipeline, see the [Pipeline & Sound Processors](../pipeline-and-sound-processors) guide.
+It's inside the `pipeline` setting you describe the graph in which audio data will be processed before it is sent to the audio device for rendering. This setting takes as value an array of sound processor definitions that will be applied to the audio data. For further explanation about how to set up a pipeline, see the [Pipeline & Sound Processors](../pipeline-and-sound-processors) guide.
 
 ## game
 
@@ -118,7 +118,7 @@ This setting is used by Amplitude to understand how it should synchronize with t
 
 `enum` `default: Nearest`
 
-Since Amplitude allows you to define many listeners at the same time, but only one can actually render data for a single sound object, this setting is used to define how the engine will pick the right listener for each rendered sound objects. Available values are:
+Since Amplitude allows you to define many listeners at the same time, but only one can render data for a single sound object, this setting is used to define how the engine will pick the right listener for each rendered sound object. Available values are:
 
 | ID  | Name     | Description                                                                      |
 | --- | -------- | -------------------------------------------------------------------------------- |
@@ -153,7 +153,7 @@ The `environments` property specifies the maximum number of sound environments t
 
 `float` `default: 343.0`
 
-This property sets the speed of sound (in meters per seconds) in the game. This value will be used by the engine to process some effects like [the Doppler effect](https://en.wikipedia.org/wiki/Doppler_effect). If the value is not defined, it will default to `343.0`, which is the approximated value of the real speed of sound.
+This property sets the speed of sound (in meters per second) in the game. This value will be used by the engine to process some effects like [the Doppler effect](https://en.wikipedia.org/wiki/Doppler_effect). If the value is not defined, it will default to `343.0`, which is the approximated value of the real speed of sound.
 
 ### doppler_factor
 
@@ -165,7 +165,7 @@ This property takes a float value greater or equal to `0.0`. It will affect how 
 
 `enum` `default: Y`
 
-This property may help you to not perform additional math while integrating Amplitude in your game or your game engine. It specifies the up axis you use in your game. Possible values are:
+This property may help you to not perform additional math while integrating Amplitude in your game or your game engine. It specifies the up-axis you use in your game. Possible values are:
 
 | ID  | Name |
 | --- | ---- |
@@ -178,7 +178,7 @@ This setting will only affect how math operations on vectors and matrices are pe
 
 `object` `required`
 
-The `obstruction` property let you setup the way Amplitude will compute sound obstruction in the game. It takes as value an object with the following properties:
+The `obstruction` property lets you set up the way Amplitude will compute sound obstruction in the game. It takes as value an object with the following properties:
 
 - **lpf_curve**: Set the Low-Pass Filter curve for the obstruction sound processor.
 - **gain_curve**: Set the gain curve for the obstruction sound processor.
@@ -187,7 +187,7 @@ The `obstruction` property let you setup the way Amplitude will compute sound ob
 
 `object` `required`
 
-The `occlusion` property works exactly the same as the `obstruction` property, but it's used instead to instruct Amplitude how to process sound occlusion in the game.
+The `occlusion` property works the same as the `obstruction` property, but it's used instead to instruct Amplitude on how to process sound occlusion in the game.
 
 {{< alert >}}
 To learn more about how to create curves, you can read the [Building Curves](../building-curves) guide.
@@ -211,7 +211,7 @@ The `buses_file` property defines the path to the binary (`.ambus`) file that co
 
 `string` `required`
 
-The `driver` property indicates the name of the audio [Driver] implementation communicating with the physical audio device. You can implement multiple audio drivers as needed and register them in the engine with the plugin API. Read the [Writing Drivers](../../advanced/writing-drivers) guide to learn how to do.
+The `driver` property indicates the name of the audio [Driver] implementation communicating with the physical audio device. You can implement multiple audio drivers as needed and register them in the engine with the plugin API. Read the [Writing Drivers](../../advanced/writing-drivers) guide to learn how to do it.
 
 ## Example
 
@@ -328,5 +328,5 @@ The following example describes an engine configuration file:
 ```
 
 {{< alert >}}
-The file is written in a flatbuffers compatible format, that is why properties like **pipeline_type** are present. You may want to read the flatbuffers documentation to know more.
+The file is written in a flatbuffers-compatible format, which is why properties like **pipeline_type** are present. You may want to read the flatbuffers documentation to know more.
 {{< /alert >}}

@@ -8,7 +8,7 @@ weight: 209
 toc: true
 ---
 
-The Collection is the first container sound object, and the simplest. It organizes and schedules a list of [Sound]({{< relref "08-sound" >}}), which can then be played randomly or sequentially according to a scheduler.
+The Collection is the first container sound object and the simplest. It organizes and schedules a list of [Sound]s({{< relref "08-sound" >}}), which can then be played randomly or sequentially according to a scheduler.
 
 {{< alert >}}
 The flatbuffers schema of this file can be found [here](https://github.com/SparkyStudios/AmplitudeAudioSDK/blob/main/schemas/collection_definition.fbs).
@@ -22,7 +22,7 @@ Apart from the common properties of [sound object]({{< relref "07-sound-object" 
 
 The `scheduler` property defines the behavior of the sound scheduler of this collection. It takes as value an object with the following properties:
 
-- **`mode`**: The scheduler mode, can be either `Random` or `Sequence`.
+- **`mode`**: The scheduler mode can be either `Random` or `Sequence`.
 - **`config`**: An object containing the configuration of the selected mode.
 
 Amplitude supports 02 (two) scheduler modes for collections, and for each mode a specific configuration:
@@ -35,7 +35,7 @@ The random scheduler will randomly pick and play a sound from the collection on 
 
 `bool` `default: false`
 
-When this property is set to `true`, the scheduler will avoid to pick a sound from the collection before n different sounds are played, where n is the value defined by the `repeat_count` property.
+When this property is set to `true`, the scheduler will avoid picking a sound from the collection before `n` different sounds are played, where `n` is the value defined by the `repeat_count` property.
 
 #### repeat_count
 
@@ -54,10 +54,10 @@ The sequence scheduler will play the sounds of the collection sequentially in th
 
 When the sequence scheduler reaches the end of the collection, this property specifies how it should behave on the next play request. The available values are:
 
-| ID      | Description                                                                                                                                   |
-| ------- | --------------------------------------------------------------------------------------------------------------------------------------------- |
-| Restart | The scheduler will restart the sequence from the first sound of the collection.                                                               |
-| Reverse | The scheduler will play the collection in the reverse order until the first sound is reached. The first and last sounds wont be played twice. |
+| ID      | Description                                                                                                                                    |
+| ------- | ---------------------------------------------------------------------------------------------------------------------------------------------- |
+| Restart | The scheduler will restart the sequence from the first sound of the collection.                                                                |
+| Reverse | The scheduler will play the collection in the reverse order until the first sound is reached. The first and last sounds won't be played twice. |
 
 ## play_mode
 
@@ -65,10 +65,10 @@ When the sequence scheduler reaches the end of the collection, this property spe
 
 Specifies how the sounds in the collection are played when a play request is sent to the collection. The possible values include:
 
-| ID      | Description                                                                                                                                                                                                     |
-| ------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| PlayOne | On each play request, a single sound is picked by the [scheduler](#scheduler) and played                                                                                                                        |
-| PlayAll | On each play request, the [scheduler](#scheduler) will pick and play each sound of the collection, one after the other, until every sounds has played. It's guaranteed that each sounds will play exactly once. |
+| ID      | Description                                                                                                                                                                                                          |
+| ------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| PlayOne | On each play request, a single sound is picked by the [scheduler](#scheduler) and played                                                                                                                             |
+| PlayAll | On each play request, the [scheduler](#scheduler) will pick and play each sound of the collection, one after the other, until each of the sounds has played. It's guaranteed that all sounds will play exactly once. |
 
 ## sounds
 
@@ -80,7 +80,7 @@ This property contains the list of sounds registered to the collection. It's an 
 
 `uint64` `required`
 
-Provides the ID of a sound. That sound object should be defined as a [Sound]({{< relref "08-sound" >}}) asset first. This value should be different to `0`.
+Provides the ID of a sound. That sound object should be defined as a [Sound]({{< relref "08-sound" >}}) asset first. This value should be different from `0`.
 
 ### gain
 

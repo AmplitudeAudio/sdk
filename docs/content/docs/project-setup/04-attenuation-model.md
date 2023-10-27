@@ -8,7 +8,7 @@ weight: 204
 toc: true
 ---
 
-Attenuation models are the way to specify how the gain of a sound object is affected by its position in space (in case of spatialized sounds), and its distance from the attached listener.
+Attenuation models are a way to specify how the gain of a sound object is affected by its position in space (in the case of spatialized sounds), and its distance from the attached listener.
 
 {{< alert >}}
 The flatbuffers schema of this file can be found [here](https://github.com/SparkyStudios/AmplitudeAudioSDK/blob/main/schemas/attenuation_definition.fbs).
@@ -20,13 +20,13 @@ An attenuation model is configured with the following properties:
 
 `uint64` `required`
 
-An unique identifier for the attenuation model. This will be used later to specify the attenuation model in the sound objects. This value should be different than `0`.
+A unique identifier for the attenuation model. This will be used later to specify the attenuation model in the sound objects. This value should be different from `0`.
 
 ## name
 
 `string` `required`
 
-An unique name for the attenuation model. This may be used in runtime to access the attenuation instance from the engine.
+A unique name for the attenuation model. This may be used in runtime to access the attenuation instance from the engine.
 
 ## max_distance
 
@@ -46,7 +46,7 @@ The value of the `shape` property is an object with the following properties:
 
 `Zone` `required`
 
-This value store the definition of the type of shape you want for the attenuation model. The final attenuation behavior will depend on the specified shape. Amplitude made available the following shapes for attenuation models:
+This value stores the definition of the type of shape you want for the attenuation model. The final attenuation behavior will depend on the specified shape. Amplitude made available the following shapes for attenuation models:
 
 - Box Shape
 - Capsule Shape
@@ -67,7 +67,7 @@ The `max_attenuation_factor` value defines the maximum amount of attenuation to 
 
 `Curve` `required`
 
-This specifies the curve used to change the sound object's gain. The values over the X-axis of the curve are the distance between the sound object and the listener, and over the Y-axis of the curve are the gain of the sound object.
+This specifies the curve used to change the sound object's gain. The values over the X-axis of the curve are the distance between the sound object and the listener, and over the Y-axis of the curve is the gain of the sound object.
 For best results, the curve must fit in the range `[0, max_distance]` over the X-axis, and in the range `[0, 1]` over the Y-axis.
 
 ## Example

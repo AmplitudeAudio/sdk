@@ -76,7 +76,7 @@ The fade transition to apply on the sound object when one of the assigned states
 
 `FadeTransitionSettings` `required`
 
-The fade transition to apply on the sound object when one all of the assigned states becomes inactive. It takes as value a [FadeTransitionSettings] object.
+The fade transition to apply on the sound object when one all the assigned states becomes inactive. It takes as value a [FadeTransitionSettings] object.
 
 ### gain
 

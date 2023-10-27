@@ -8,7 +8,7 @@ weight: 208
 toc: true
 ---
 
-Sound are where you define sources for any sound objects that will be used in the runtime. They also represent the most basic form of sound objects, allowing you to trigger audio directly from a file.
+Sound is where you define sources for any sound objects that will be used in the runtime. They also represent the most basic form of sound objects, allowing you to trigger audio directly from a file.
 
 {{< alert >}}
 The flatbuffers schema of this file can be found [here](https://github.com/SparkyStudios/AmplitudeAudioSDK/blob/main/schemas/sound_definition.fbs).
@@ -20,7 +20,7 @@ Apart from the common properties of [sound object]({{< relref "07-sound-object" 
 
 `bool` `default: false`
 
-Whether this sound should be streamed from disk or entirely loaded into memory. This allows you to optimize the memory consumed by the engine. In general, sounds like background music or cinematic voices are streamed, and sound effects like gun fires or footsteps are loaded in memory. The choice can also be made to optimize the amount of time the engine will need to access/play the sound, as sounds loaded in memory plays faster than streamed sounds.
+Whether this sound should be streamed from disk or entirely loaded into memory. This allows you to optimize the memory consumed by the engine. In general, sounds like background music or cinematic voices are streamed, and sound effects like gunfire or footsteps are loaded in memory. The choice can also be made to optimize the amount of time the engine will need to access/play the sound, as sounds loaded in memory play faster than streamed sounds.
 
 ## loop
 
@@ -38,7 +38,7 @@ Defines if the engine should loop the sound or not. If this value is `false`, th
 
 `uint32` `default: 0`
 
-Specifies the number of time the sound should loop until to be automatically stopped by the engine. Set this value to `0` to loop the sound until manually stopped.
+Specifies the number of times the sound should loop until it is automatically stopped by the engine. Set this value to `0` to loop the sound until manually stopped.
 
 ## path
 

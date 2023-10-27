@@ -16,13 +16,13 @@ An RTPC object is described by the following properties:
 
 `uint64` `required`
 
-An unique value across RTPC assets that represents the ID of this object. It may be reused later to get the instance of this RTPC from the engine at runtime.
+A unique value across RTPC assets that represents the ID of this object. It may be reused later to get the instance of this RTPC from the engine at runtime.
 
 ## name
 
 `string` `required`
 
-An unique value across RTPC assets that represents the name of this object. It may be reused later to get the instance of this RTPC from the engine at runtime.
+A unique value across RTPC assets that represents the name of this object. It may be reused later to get the instance of this RTPC from the engine at runtime.
 
 ## min_value
 
@@ -40,7 +40,7 @@ The maximum value the RTPC is allowed to have.
 
 `double` `default: 0.0`
 
-The default value the RTPC have at initialization. If this value is outer of the range `[min_value, max_value]`, it will be clamped in that range.
+The default value assigned to the RTPC at initialization. If this value is outer of the range `[min_value, max_value]`, it will be clamped in that range.
 
 ## fade_settings
 

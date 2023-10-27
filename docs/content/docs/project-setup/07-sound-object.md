@@ -13,16 +13,16 @@ Sound objects are the core assets of an Amplitude project. They define the vario
 Amplitude supports 03 (three) kinds of sound objects:
 
 - [Sound]({{< relref "08-sound" >}}): The most basic sound object. It references a single audio file.
-- [Collection]({{< relref "09-collection" >}}): A container sound object. It manages a set of Sound and decides how and when to play them through a [scheduler]({{< relref "09-collection#scheduler" >}}).
+- [Collection]({{< relref "09-collection" >}}): A container sound object. It manages a set of sounds and decides how and when to play them through a [scheduler]({{< relref "09-collection#scheduler" >}}).
 - [Switch Container]({{< relref "10-switch-container" >}}): A container sound object. It can automatically play or schedule the playback of a sound object (Sound or Collection), according to the active state of a specific [switch]({{< relref "06-switch" >}}).
 
-Each of those sound object have in common the following set of properties:
+Each of those sound objects has in common the following set of properties:
 
 ## id
 
 `uint64` `required`
 
-A unique identifier for the sound object. This will be used later by the engine and other sound objects to get a reference to this one. This value should be different to `0`.
+A unique identifier for the sound object. This will be used later by the engine and other sound objects to get a reference to this one. This value should be different from `0`.
 
 ## name
 
@@ -40,25 +40,25 @@ With this property you can specify a special [effect]({{< relref "05-effect" >}}
 
 `RtpcCompatibleValue` `required`
 
-The `gain` property stores the value of the gain (the volume) of the sound object. The value should match the schema of an [RtpcCompatibleValue] object.
+The `gain` property stores the value of the gain (the volume) of the sound object. The value should match the schema of a [RtpcCompatibleValue] object.
 
 ## bus
 
 `uint64` `required`
 
-This property stores the `id` of a bus object, on which this sound should be played on. A sound object can only be played by one bus at the time.
+This property stores the `id` of a bus object, on which this sound should be played. A sound object can only be played by one bus at a time.
 
 ## priority
 
 `RtpcCompatibleValue` `required`
 
-This property affects how the engine will prioritize this sound object relatively to all others. When the engine is out of active channels, sounds objects with low priority are muted when a play request is made with a sound object with higher priority. The value of this property should match the schema of an [RtpcCompatibleValue] object.
+This property affects how the engine will prioritize this sound object relative to all others. When the engine is out of active channels, sound objects with low priority are muted when a play request is made with a sound object with higher priority. The value of this property should match the schema of an [RtpcCompatibleValue] object.
 
 ## spatialization
 
 `Spatialization` `default: None`
 
-The `spatialization` property specifies how the sound object's gain should be adjusted based on its distance to the attached listener. It can have the following values:
+The `spatialization` property specifies how the sound object's gain should be adjusted based on its distance from the attached listener. It can have the following values:
 
 | ID  | Name                | Description                                                                                                                                                                          |
 | --- | ------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
@@ -70,13 +70,13 @@ The `spatialization` property specifies how the sound object's gain should be ad
 
 `uint64` `default: 0`
 
-Specifies the ID of the [Attenuation Model]({{< relref "04-attenuation-model" >}}) to use on the sound object. This property takes effect only if the sound is spatialized (the `spatialization` property is set to a value different to `None`). A value of `0` means that no attenuation will be performed, even if the sound is spatialized.
+Specifies the ID of the [Attenuation Model]({{< relref "04-attenuation-model" >}}) to use on the sound object. This property takes effect only if the sound is spatialized (the `spatialization` property is set to a value different from `None`). A value of `0` means that no attenuation will be performed, even if the sound is spatialized.
 
 ## scope
 
 `Scope` `default: World`
 
-With the `scope` property you can control how the playback data is shared between each sound instances. The allowed values are:
+With the `scope` property, you can control how the playback data is shared between each sound instance. The allowed values are:
 
 | ID  | Name   | Description                                                                                                           |
 | --- | ------ | --------------------------------------------------------------------------------------------------------------------- |
