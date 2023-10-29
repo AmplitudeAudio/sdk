@@ -1,4 +1,4 @@
-title = "Amplitude"
+title = "Amplitude Audio SDK"
 baseurl = ""
 canonifyURLs = false
 disableAliases = true
@@ -70,13 +70,13 @@ rel  = "sitemap"
   toLower = false
     [[related.indices]]
     name = "categories"
-    weight = 100
+    weight = "100"
     [[related.indices]]
     name = "tags"
-    weight = 80
+    weight = "80"
     [[related.indices]]
     name = "date"
-    weight = 10
+    weight = "10"
 
 [imaging]
   anchor = "Smart"

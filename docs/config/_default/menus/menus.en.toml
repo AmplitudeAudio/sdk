@@ -17,10 +17,10 @@ name = "Documentation"
 url = "/docs/get-started/introduction/"
 weight = 10
 
-[[main]]
-name = "Blog"
-url = "/blog/"
-weight = 20
+#[[main]]
+#name = "Blog"
+#url = "/blog/"
+#weight = 20
 
 # -----
 
@@ -45,10 +45,10 @@ weight = 30
 
 # -----
 
-[[footer]]
-name = "Privacy Policy"
-url = "/privacy/"
-weight = 10
+#[[footer]]
+#name = "Privacy Policy"
+#url = "/privacy/"
+#weight = 10
 
 # -----
 
