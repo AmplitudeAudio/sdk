@@ -66,8 +66,8 @@ namespace SparkyStudios::Audio::Amplitude
         /**
          * @brief Get the current fading value.
          *
-         * To use this method you need to define the fading stat time using
-         * <code>Fader::Start()</code> firstly.
+         * To use this method you firstly need to define the fading start time using
+         * <code>Fader::Start()</code>.
          *
          * @param time The time at which the value should be calculated.
          *

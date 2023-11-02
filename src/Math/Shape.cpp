@@ -34,7 +34,25 @@ namespace SparkyStudios::Audio::Amplitude
         case AbstractShapeDefinition_Box:
             {
                 const BoxShapeDefinition* box = definition->shape_as_Box();
-                return new BoxShape(box->half_width(), box->half_height(), box->half_depth());
+                return BoxShape::Create(box);
+            }
+
+        case AbstractShapeDefinition_Capsule:
+            {
+                const CapsuleShapeDefinition* capsule = definition->shape_as_Capsule();
+                return CapsuleShape::Create(capsule);
+            }
+
+        case AbstractShapeDefinition_Cone:
+            {
+                const ConeShapeDefinition* cone = definition->shape_as_Cone();
+                return ConeShape::Create(cone);
+            }
+
+        case AbstractShapeDefinition_Sphere:
+            {
+                const SphereShapeDefinition* sphere = definition->shape_as_Sphere();
+                return SphereShape::Create(sphere);
             }
         }
     }

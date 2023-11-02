@@ -27,6 +27,6 @@ namespace SparkyStudios::Audio::Amplitude
         const AmReal64 a = m_delta * (percentage - percentage * _k);
         const AmReal64 b = _k * (1.0 - percentage * 2.0) + 1.0;
 
-        return a / b + m_from;
+        return (a / b) + m_from;
     }
 } // namespace SparkyStudios::Audio::Amplitude
