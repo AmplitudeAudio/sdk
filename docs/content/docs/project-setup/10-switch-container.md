@@ -1,6 +1,6 @@
 ---
 title: Switch Container
-description: A switch container is a special container sound object that automatically play or schedule sounds when a specific switch changes his state. This page will help you create switch container assets for your Amplitude project.
+description: A switch container is a special container sound object that automatically play or schedule sounds when a specific switch changes his state.
 menu:
   docs:
     parent: project-setup

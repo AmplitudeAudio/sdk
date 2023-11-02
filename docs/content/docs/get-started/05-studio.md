@@ -1,10 +1,10 @@
 ---
 title: Amplitude Studio
-description: "Amplitude Studio is the official authoring tool for your Amplitude projects."
+description: Amplitude Studio is the official authoring tool for your Amplitude projects.
 menu:
   docs:
     parent: get-started
-weight: 104
+weight: 105
 toc: true
 ---
 

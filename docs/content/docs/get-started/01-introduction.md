@@ -4,7 +4,7 @@ description: Browse the main features of the Amplitude Audio SDK and discover wh
 menu:
   docs:
     parent: get-started
-weight: 100
+weight: 101
 toc: true
 ---
 

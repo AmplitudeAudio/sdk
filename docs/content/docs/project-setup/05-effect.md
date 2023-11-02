@@ -43,7 +43,7 @@ The name of the effect to apply to the sound object. That name should have been 
 - [Robotize]
 
 {{< alert context="info" >}}
-You have the ability to create [custom effect]({{< relref "/docs/guide/custom-effect" >}}) as plugins and register them with the engine.
+You have the ability to create [custom effect]({{< relref "/guide/plugins/custom-effect" >}}) as plugins and register them with the engine.
 {{< /alert >}}
 
 ## parameters

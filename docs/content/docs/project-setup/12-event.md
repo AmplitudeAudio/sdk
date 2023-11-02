@@ -1,6 +1,6 @@
 ---
 title: Event
-description: With events, it is possible to trigger a sequence of actions at runtime. This page is a full description on how to create event assets for Amplitude.
+description: Amplitude allows you to create and trigger a sequence of actions at runtime with events.
 menu:
   docs:
     parent: project-setup

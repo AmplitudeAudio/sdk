@@ -1,10 +1,10 @@
 ---
 title: Installation
-description: Step by step process to install Amplitude in your machine and make it available to your projects.
+description: Step by step process to install Amplitude in your machine and make the SDK available for your projects.
 menu:
   docs:
     parent: get-started
-weight: 102
+weight: 103
 toc: true
 ---
 

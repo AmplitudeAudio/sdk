@@ -4,7 +4,7 @@ description: Learn the different elements and terms used in the SDK, and see how
 menu:
   docs:
     parent: get-started
-weight: 101
+weight: 102
 toc: true
 mermaid: true
 ---

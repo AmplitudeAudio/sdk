@@ -7,8 +7,8 @@ lastmod: 2023-06-05T18:50:52+01:00
 draft: false
 images: []
 menu:
-  docs:
-    parent: "guide"
-weight: 399
+  guide:
+    parent: "plugins"
+weight: 199
 toc: true
 ---

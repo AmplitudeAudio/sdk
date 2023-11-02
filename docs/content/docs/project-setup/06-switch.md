@@ -1,6 +1,6 @@
 ---
 title: Switch
-description: A switch maintains a single state at a time during the runtime. Changes to that state are tracked by switch containers, allowing them to update playing sounds accordingly. This page will give you all the details needed to create switch assets in AMplitude.
+description: A switch maintains a single state at a time during the runtime. Changes to that state are tracked by switch containers, allowing them to update playing sounds accordingly.
 menu:
   docs:
     parent: project-setup

@@ -1,6 +1,6 @@
 ---
 title: Sound Objects
-description: Sound objects are the core assets of an Amplitude project. They define the various audio samples to be played and how to play them. This page serves as an introduction to the various sound objects supported by Amplitude.
+description: Sound objects are the core assets of an Amplitude project. They define the various audio samples to be played and how to play them.
 menu:
   docs:
     parent: project-setup
@@ -97,7 +97,7 @@ The `fader` property can be used to specify the fading animation to apply when t
 - `SCurveSmooth`
 
 {{< alert context="info" >}}
-You can create more faders as you wish and register them in the engine as plugins. Refer to the [Custom Fader]({{< relref "/docs/guide/custom-fader" >}}) guide to learn more.
+You can create more faders as you wish and register them in the engine as plugins. Refer to the [Custom Fader]({{< relref "/guide/plugins/custom-fader" >}}) guide to learn more.
 {{< /alert >}}
 
 [RtpcCompatibleValue]: {{< relref "99-api/#rtpc-compatible-value" >}}

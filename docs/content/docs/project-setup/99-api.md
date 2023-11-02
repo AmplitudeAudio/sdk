@@ -1,6 +1,6 @@
 ---
 title: API
-description: ""
+description: Browse the API of common types and enumerations shared between Amplitude assets.
 menu:
   docs:
     parent: project-setup

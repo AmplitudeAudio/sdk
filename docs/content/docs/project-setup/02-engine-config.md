@@ -1,6 +1,6 @@
 ---
 title: Engine Configuration
-description: Amplitude has been built in a way to let you have complete freedom on the behavior of the engine at runtime. You can create several configuration files per device (PC, mobile, console), per platform (Windows, Android, XBOX, PlayStation), or any other criteria your project has to suit, then pick and load the right settings file at runtime.
+description: Amplitude has been built to let you have complete freedom on the behavior of the engine at runtime, and everything is specified in the configuration file.
 menu:
   docs:
     parent: project-setup

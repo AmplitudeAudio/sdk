@@ -1,9 +1,9 @@
 ---
 title : Documentation
-description: "A full-featured and cross-platform audio engine designed with the needs of games in mind. With his efficient audio mixer, you have all the controls to play spatialized sounds in 3D environments with custom attenuation models and a lot more."
+description: "Browse the Amplitude Audio SDK documentation to learn about the engine and how to create your first project."
 lead: ""
 date: 2020-10-06T08:48:23+00:00
-lastmod: 2020-10-06T08:48:23+00:00
+lastmod: 2023-11-02T11:53:14+00:00
 draft: false
 images: []
 ---

@@ -1,6 +1,6 @@
 ---
 title: Project Architecture
-description:
+description: An Amplitude project is just a set of organized JSON files. This page will break down the Amplitude project architecture.
 menu:
   docs:
     parent: project-setup

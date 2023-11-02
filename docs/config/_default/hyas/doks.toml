@@ -8,7 +8,7 @@ containerBreakpoint = "lg" # "", "sm", "md", "lg" (default), "xl", "xxl", or "fl
 
 ## Button
 navBarButton = true # false (default) or true
-navBarButtonUrl = "/docs/get-started/"
+navBarButtonUrl = "/docs/get-started/introduction"
 navBarButtonText = "Get started"
 
 # FlexSearch
@@ -30,7 +30,7 @@ alertDismissable = true # true (default) or false
 bootstrapJavascript = false # false (default) or true
 
 # Nav
-sectionNav = ["docs"] # ["docs"] (default) or list of sections (e.g. ["docs", "guides"])
+sectionNav = ["docs", "guide"] # ["docs"] (default) or list of sections (e.g. ["docs", "guides"])
 toTopButton = true # false (default) or true
 breadcrumbTrail = true # false (default) or true
 headlineHash = true # true (default) or false
