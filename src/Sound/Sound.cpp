@@ -252,6 +252,7 @@ namespace SparkyStudios::Audio::Amplitude
 
             if (_decoder->Load(reinterpret_cast<AmAudioSampleBuffer>(_soundData->buffer)) != m_format.GetFramesCount())
             {
+                SoundChunk::DestroyChunk(_soundData);
                 CallLogFunc("Could not load a sound instance. Unable to read data from the parent sound.\n");
                 return nullptr;
             }
@@ -312,21 +313,31 @@ namespace SparkyStudios::Audio::Amplitude
         const AmUInt64 frames = _parent->m_format.GetFramesCount();
 
         SoundData* data = nullptr;
+        SoundChunk* chunk = nullptr;
 
         if (_parent->_stream)
         {
-            SoundChunk* chunk = SoundChunk::CreateChunk(amEngine->GetSamplesPerStream(), channels);
+            chunk = SoundChunk::CreateChunk(amEngine->GetSamplesPerStream(), channels);
             data = SoundData::CreateMusic(_parent->m_format, chunk, frames, this);
         }
         else
         {
-            SoundChunk* chunk = _parent->AcquireSoundData();
+            chunk = _parent->AcquireSoundData();
             data = SoundData::CreateSound(_parent->m_format, chunk, frames, this);
         }
 
         if (data == nullptr)
         {
             CallLogFunc("Could not load a sound instance. Unable to read data from the parent sound.\n");
+
+            if (chunk != nullptr)
+            {
+                if (_parent->_stream)
+                    SoundChunk::DestroyChunk(chunk);
+                else
+                    _parent->ReleaseSoundData();
+            }
+
             return;
         }
 
