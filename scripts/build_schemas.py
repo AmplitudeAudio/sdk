@@ -19,11 +19,9 @@ Generates binary schema files (.bfbs) bundled in the SDK release.
 """
 
 import argparse
-import distutils.spawn
 import glob
 import os
 import platform
-import shutil
 import subprocess
 import sys
 

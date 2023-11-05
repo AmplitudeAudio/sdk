@@ -54,7 +54,7 @@ jobs:
 
           - name: "macOS Latest Clang"
             os: macos-latest
-            artifact: "amplitude_audio_sdk_macos_gcc_x64.7z"
+            artifact: "amplitude_audio_sdk_macos_clang_x64.7z"
             cc: "clang"
             cxx: "clang++"
             archiver: "7za a"

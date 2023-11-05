@@ -1,3 +1,4 @@
+
 // Copyright (c) 2021-present Sparky Studios. All rights reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
@@ -221,6 +222,8 @@ namespace SparkyStudios::Audio::Amplitude
          * @param pool The pool to get the statistics for.
          */
         explicit MemoryPoolStats(MemoryPoolKind pool);
+
+        MemoryPoolStats(const MemoryPoolStats& copy);
 
         MemoryPoolStats& operator=(const MemoryPoolStats& other);
     };

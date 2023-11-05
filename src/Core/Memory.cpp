@@ -41,6 +41,14 @@ namespace SparkyStudios::Audio::Amplitude
         freeCount.store(0);
     }
 
+    MemoryPoolStats::MemoryPoolStats(const MemoryPoolStats& copy)
+        : MemoryPoolStats(copy.pool)
+    {
+        maxMemoryUsed.store(copy.maxMemoryUsed.load());
+        allocCount.store(copy.allocCount.load());
+        freeCount.store(copy.freeCount.load());
+    }
+
     MemoryPoolStats& MemoryPoolStats::operator=(const MemoryPoolStats& other)
     {
         pool = other.pool;
