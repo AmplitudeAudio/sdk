@@ -61,7 +61,7 @@ set(AMPLITUDE_COMPILE_DEFINITIONS
 get_filename_component(AMPLITUDE_INSTALL_ROOT ${AM_SDK_PATH} DIRECTORY)
 get_filename_component(AMPLITUDE_FOLDER ${AM_SDK_PATH} NAME)
 
-if(MSVC)
+if(MSVC OR WIN32)
     set(AMPLITUDE_LIB_OS "win")
     set(AMPLITUDE_STATIC_LIB_NAME "Amplitude.lib")
     set(AMPLITUDE_STATIC_LIB_NAME_DEBUG "Amplitude_d.lib")

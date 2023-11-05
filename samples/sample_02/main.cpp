@@ -61,9 +61,9 @@ const Uint32 kDelayMilliseconds = static_cast<Uint32>(kAmSecond * 1.0 / kFramesP
 const char* kWindowTitle = "Amplitude Audio SDK Sample";
 AmOsString kAudioConfig = AM_OS_STRING("audio_config.amconfig");
 AmOsString kSoundBank = AM_OS_STRING("sample_02.ambank");
-const char* kInstructionsTexture = "../assets/textures/instructions.bmp";
-const char* kChannelTexture = "../assets/textures/channel.bmp";
-const char* kListenerTexture = "../assets/textures/listener.bmp";
+const char* kInstructionsTexture = "./assets/textures/instructions.bmp";
+const char* kChannelTexture = "./assets/textures/channel.bmp";
+const char* kListenerTexture = "./assets/textures/listener.bmp";
 const char* kSoundHandleName = "throw_collection_1";
 
 int gListenerIdCounter = 0;
@@ -225,7 +225,7 @@ bool SampleState::Initialize()
 
     MemoryManager::Initialize(MemoryManagerConfig());
 
-    _loader.SetBasePath(AM_OS_STRING("../assets"));
+    _loader.SetBasePath(AM_OS_STRING("./assets"));
     amEngine->SetFileLoader(_loader);
 
     // Initialize Amplitude.

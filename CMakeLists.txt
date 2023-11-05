@@ -34,16 +34,24 @@ set(CMAKE_DEBUG_POSTFIX "_d")
 set(BIN_DIR ${CMAKE_CURRENT_BINARY_DIR})
 set(OBJ_DIR ${CMAKE_CURRENT_BINARY_DIR}/obj)
 
-if(MSVC)
+if(MSVC OR WIN32)
     set(RUNTIME_OUTPUT_DIRECTORY "win")
 elseif(APPLE)
     set(RUNTIME_OUTPUT_DIRECTORY "osx")
-    set(CMAKE_MACOSX_RPATH 1)
-    set(CMAKE_INSTALL_RPATH "@executable_path")
 else()
     set(RUNTIME_OUTPUT_DIRECTORY "linux")
-    set(CMAKE_INSTALL_RPATH ".")
 endif()
+
+set(AM_LIB_DESTINATION "lib/${RUNTIME_OUTPUT_DIRECTORY}")
+set(AM_INC_DESTINATION "include")
+set(AM_SHM_DESTINATION "schemas")
+set(AM_BIN_DESTINATION "bin/${RUNTIME_OUTPUT_DIRECTORY}")
+
+set(CMAKE_RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/${AM_BIN_DESTINATION}")
+set(CMAKE_LIBRARY_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/${AM_LIB_DESTINATION}")
+set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/${AM_BIN_DESTINATION}")
+
+set(CMAKE_INSTALL_PREFIX "${CMAKE_CURRENT_LIST_DIR}/sdk")
 
 if(UNIX)
     find_package(Threads REQUIRED)
@@ -326,6 +334,10 @@ target_compile_definitions(Static PUBLIC AM_BUILDSYSTEM_STATIC)
 add_library(Shared SHARED ${SA_SOURCE})
 target_compile_definitions(Shared PUBLIC AM_BUILDSYSTEM_SHARED)
 
+add_custom_target(amplitude_build_binary_schemas
+    COMMAND python3 ${CMAKE_CURRENT_SOURCE_DIR}/scripts/build_schemas.py --output ${CMAKE_CURRENT_SOURCE_DIR}/schemas
+)
+
 set(AM_BUILDSYSTEM_TYPE "Static" "Shared")
 
 foreach(build_type ${AM_BUILDSYSTEM_TYPE})
@@ -351,10 +363,6 @@ foreach(build_type ${AM_BUILDSYSTEM_TYPE})
     endif()
 endforeach()
 
-add_custom_target(amplitude_build_binary_schemas
-    COMMAND python3 ${CMAKE_CURRENT_SOURCE_DIR}/scripts/build_schemas.py --output ${CMAKE_CURRENT_SOURCE_DIR}/schemas
-)
-
 add_subdirectory(tools/amac)
 
 if(BUILD_SAMPLES)
@@ -363,17 +371,6 @@ endif()
 
 # #####################################################
 # INSTALL
-
-set(AM_LIB_DESTINATION "lib/${RUNTIME_OUTPUT_DIRECTORY}")
-set(AM_INC_DESTINATION "include")
-set(AM_SHM_DESTINATION "schemas")
-set(AM_BIN_DESTINATION "bin/${RUNTIME_OUTPUT_DIRECTORY}")
-
-set(CMAKE_RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/${AM_BIN_DESTINATION}")
-set(CMAKE_LIBRARY_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/${AM_LIB_DESTINATION}")
-set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/${AM_BIN_DESTINATION}")
-
-set(CMAKE_INSTALL_PREFIX "${CMAKE_CURRENT_LIST_DIR}/sdk")
 
 install(
     TARGETS Static
@@ -387,11 +384,6 @@ install(
     ARCHIVE DESTINATION ${AM_LIB_DESTINATION}/shared
     LIBRARY DESTINATION ${AM_LIB_DESTINATION}/shared
     RUNTIME DESTINATION ${AM_LIB_DESTINATION}/shared
-)
-
-install(
-    TARGETS amac
-    RUNTIME DESTINATION ${AM_BIN_DESTINATION}
 )
 
 install(

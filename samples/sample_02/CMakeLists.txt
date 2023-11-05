@@ -26,6 +26,12 @@ set(ss_amplitude_audio_sample_SRCS
 
 add_executable(${PROJECT_NAME} ${ss_amplitude_audio_sample_SRCS})
 
+set_target_properties(ss_amplitude_audio_sample_02
+    PROPERTIES
+        OUTPUT_NAME sample_02
+        RUNTIME_OUTPUT_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/samples
+)
+
 target_link_libraries(${PROJECT_NAME}
     PRIVATE $<TARGET_NAME_IF_EXISTS:SDL2::SDL2main> $<IF:$<TARGET_EXISTS:SDL2::SDL2>,SDL2::SDL2,SDL2::SDL2-static>
     PUBLIC Static

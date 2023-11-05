@@ -70,7 +70,7 @@ static void run(AmVoidPtr param)
     MemoryManager::Initialize(MemoryManagerConfig());
 
     FileLoader loader = FileLoader();
-    loader.SetBasePath(AM_OS_STRING("../assets"));
+    loader.SetBasePath(AM_OS_STRING("./assets"));
 
     amEngine->SetFileLoader(loader);
 

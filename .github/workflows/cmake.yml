@@ -167,16 +167,15 @@ jobs:
         shell: bash
         run: |
           mkdir build
-          mkdir lib
           cmake \
             -S . \
             -B build \
-            -DCMAKE_BUILD_TYPE=${{ matrix.build_type }} \
             -G "${{ matrix.config.generator }}" \
-            -DCMAKE_INSTALL_PREFIX:PATH=lib \
+            -DCMAKE_BUILD_TYPE=${{ matrix.build_type }} \
             -DCMAKE_TOOLCHAIN_FILE:STRING="${{ github.workspace }}/vcpkg/scripts/buildsystems/vcpkg.cmake" \
             -DVCPKG_TARGET_TRIPLET:STRING="${{ matrix.config.target_triplet }}" \
-            -DCMAKE_EXPORT_COMPILE_COMMANDS:BOOL=TRUE
+            -DCMAKE_EXPORT_COMPILE_COMMANDS:BOOL=TRUE \
+            -DBUILD_SAMPLES:BOOL=TRUE
 
       - name: Build
         shell: bash
@@ -190,7 +189,7 @@ jobs:
 
       - name: Pack
         shell: bash
-        run: ${{ matrix.config.archiver }} ./${{ matrix.build_type }}_${{ matrix.config.artifact }} LICENSE sdk
+        run: ${{ matrix.config.archiver }} ./${{ matrix.build_type }}_${{ matrix.config.artifact }} LICENSE README.md sdk
 
       - name: Upload
         uses: actions/upload-artifact@v1
