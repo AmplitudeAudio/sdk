@@ -25,10 +25,10 @@ set(ss_amplitude_audio_sample_01_SRCS
 add_executable(ss_amplitude_audio_sample_01 ${ss_amplitude_audio_sample_01_SRCS})
 
 target_link_libraries(${PROJECT_NAME}
-    PUBLIC Amplitude
+    PUBLIC Static
 )
 
 add_dependencies(${PROJECT_NAME}
-    Amplitude
+    Static
     ss_amplitude_audio_sample_assets
 )

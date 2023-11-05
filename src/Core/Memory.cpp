@@ -12,23 +12,13 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include <set>
-
 #include <SparkyStudios/Audio/Amplitude/Core/Memory.h>
 
 #include <Utils/SmMalloc/smmalloc.h>
 
 namespace SparkyStudios::Audio::Amplitude
 {
-    static MemoryManager* gMemManager = nullptr;
-
-    static sm_allocator gMemAllocator = nullptr;
-
-    static std::map<MemoryPoolKind, std::set<AmVoidPtr>> gMemPoolsData = {};
-
-#if !defined(AM_NO_MEMORY_STATS)
-    static std::map<MemoryPoolKind, MemoryPoolStats> gMemPoolsStats = {};
-#endif
+    AM_API_PUBLIC MemoryManager* gMemManager = nullptr;
 
     MemoryManagerConfig::MemoryManagerConfig()
         : malloc(nullptr)
@@ -70,11 +60,11 @@ namespace SparkyStudios::Audio::Amplitude
         }
 
 #if !defined(AM_NO_MEMORY_STATS)
-        gMemPoolsStats[MemoryPoolKind::Amplimix] = MemoryPoolStats(MemoryPoolKind::Amplimix);
-        gMemPoolsStats[MemoryPoolKind::Codec] = MemoryPoolStats(MemoryPoolKind::Codec);
-        gMemPoolsStats[MemoryPoolKind::Engine] = MemoryPoolStats(MemoryPoolKind::Engine);
-        gMemPoolsStats[MemoryPoolKind::Filtering] = MemoryPoolStats(MemoryPoolKind::Filtering);
-        gMemPoolsStats[MemoryPoolKind::SoundData] = MemoryPoolStats(MemoryPoolKind::SoundData);
+        gMemManager->_memPoolsStats[MemoryPoolKind::Amplimix] = MemoryPoolStats(MemoryPoolKind::Amplimix);
+        gMemManager->_memPoolsStats[MemoryPoolKind::Codec] = MemoryPoolStats(MemoryPoolKind::Codec);
+        gMemManager->_memPoolsStats[MemoryPoolKind::Engine] = MemoryPoolStats(MemoryPoolKind::Engine);
+        gMemManager->_memPoolsStats[MemoryPoolKind::Filtering] = MemoryPoolStats(MemoryPoolKind::Filtering);
+        gMemManager->_memPoolsStats[MemoryPoolKind::SoundData] = MemoryPoolStats(MemoryPoolKind::SoundData);
 #endif
     }
 
@@ -103,30 +93,30 @@ namespace SparkyStudios::Audio::Amplitude
     {
         if (config.malloc == nullptr)
         {
-            gMemAllocator = _sm_allocator_create(config.bucketsCount, config.bucketsSizeInBytes);
+            _memAllocator = _sm_allocator_create(config.bucketsCount, config.bucketsSizeInBytes);
         }
         else
         {
             AMPLITUDE_ASSERT(
                 config.realloc != nullptr && config.free != nullptr && config.alignedMalloc != nullptr &&
                 config.alignedRealloc != nullptr && config.sizeOf != nullptr);
-            gMemAllocator = nullptr;
+            _memAllocator = nullptr;
         }
     }
 
     MemoryManager::~MemoryManager()
     {
-        if (gMemAllocator != nullptr)
+        if (_memAllocator != nullptr)
         {
-            _sm_allocator_destroy(gMemAllocator);
+            _sm_allocator_destroy((sm_allocator)_memAllocator);
         }
     }
 
-    AmVoidPtr MemoryManager::Malloc(MemoryPoolKind pool, AmSize size) const
+    AmVoidPtr MemoryManager::Malloc(MemoryPoolKind pool, AmSize size)
     {
 #if !defined(AM_NO_MEMORY_STATS)
-        gMemPoolsStats[pool].maxMemoryUsed.fetch_add(size, std::memory_order_relaxed);
-        gMemPoolsStats[pool].allocCount.fetch_add(1, std::memory_order_relaxed);
+        _memPoolsStats[pool].maxMemoryUsed.fetch_add(size, std::memory_order_relaxed);
+        _memPoolsStats[pool].allocCount.fetch_add(1, std::memory_order_relaxed);
 #endif
 
         if (_config.malloc != nullptr)
@@ -135,17 +125,17 @@ namespace SparkyStudios::Audio::Amplitude
         }
         else
         {
-            AmVoidPtr p = _sm_malloc(gMemAllocator, size, 0);
-            gMemPoolsData[pool].insert(p);
+            AmVoidPtr p = _sm_malloc((sm_allocator)_memAllocator, size, 0);
+            _memPoolsData[pool].insert(p);
             return p;
         }
     }
 
-    AmVoidPtr MemoryManager::Malign(MemoryPoolKind pool, AmSize size, AmUInt32 alignment) const
+    AmVoidPtr MemoryManager::Malign(MemoryPoolKind pool, AmSize size, AmUInt32 alignment)
     {
 #if !defined(AM_NO_MEMORY_STATS)
-        gMemPoolsStats[pool].maxMemoryUsed.fetch_add(size, std::memory_order_relaxed);
-        gMemPoolsStats[pool].allocCount.fetch_add(1, std::memory_order_relaxed);
+        _memPoolsStats[pool].maxMemoryUsed.fetch_add(size, std::memory_order_relaxed);
+        _memPoolsStats[pool].allocCount.fetch_add(1, std::memory_order_relaxed);
 #endif
 
         if (_config.alignedMalloc != nullptr)
@@ -154,19 +144,19 @@ namespace SparkyStudios::Audio::Amplitude
         }
         else
         {
-            AmVoidPtr p = _sm_malloc(gMemAllocator, size, alignment);
-            gMemPoolsData[pool].insert(p);
+            AmVoidPtr p = _sm_malloc((sm_allocator)_memAllocator, size, alignment);
+            _memPoolsData[pool].insert(p);
             return p;
         }
     }
 
-    AmVoidPtr MemoryManager::Realloc(MemoryPoolKind pool, AmVoidPtr address, AmSize size) const
+    AmVoidPtr MemoryManager::Realloc(MemoryPoolKind pool, AmVoidPtr address, AmSize size)
     {
         if (address == nullptr)
         {
 #if !defined(AM_NO_MEMORY_STATS)
-            gMemPoolsStats[pool].maxMemoryUsed.fetch_add(size, std::memory_order_relaxed);
-            gMemPoolsStats[pool].allocCount.fetch_add(1, std::memory_order_relaxed);
+            _memPoolsStats[pool].maxMemoryUsed.fetch_add(size, std::memory_order_relaxed);
+            _memPoolsStats[pool].allocCount.fetch_add(1, std::memory_order_relaxed);
 #endif
         }
 
@@ -176,23 +166,24 @@ namespace SparkyStudios::Audio::Amplitude
         }
         else
         {
-            AmVoidPtr p = _sm_realloc(gMemAllocator, address, size, 0);
-            if (auto it = gMemPoolsData[pool].find(address); it != gMemPoolsData[pool].end())
+            AmVoidPtr p = _sm_realloc((sm_allocator)_memAllocator, address, size, 0);
+            if (auto it = _memPoolsData[pool].find(address); it != _memPoolsData[pool].end())
             {
-                gMemPoolsData[pool].erase(it);
+                _memPoolsData[pool].erase(it);
             }
-            gMemPoolsData[pool].insert(p);
+
+            _memPoolsData[pool].insert(p);
             return p;
         }
     }
 
-    AmVoidPtr MemoryManager::Realign(MemoryPoolKind pool, AmVoidPtr address, AmSize size, AmUInt32 alignment) const
+    AmVoidPtr MemoryManager::Realign(MemoryPoolKind pool, AmVoidPtr address, AmSize size, AmUInt32 alignment)
     {
         if (address == nullptr)
         {
 #if !defined(AM_NO_MEMORY_STATS)
-            gMemPoolsStats[pool].maxMemoryUsed.fetch_add(size, std::memory_order_relaxed);
-            gMemPoolsStats[pool].allocCount.fetch_add(1, std::memory_order_relaxed);
+            _memPoolsStats[pool].maxMemoryUsed.fetch_add(size, std::memory_order_relaxed);
+            _memPoolsStats[pool].allocCount.fetch_add(1, std::memory_order_relaxed);
 #endif
         }
 
@@ -202,20 +193,21 @@ namespace SparkyStudios::Audio::Amplitude
         }
         else
         {
-            AmVoidPtr p = _sm_realloc(gMemAllocator, address, size, alignment);
-            if (auto it = gMemPoolsData[pool].find(address); it != gMemPoolsData[pool].end())
+            AmVoidPtr p = _sm_realloc((sm_allocator)_memAllocator, address, size, alignment);
+            if (auto it = _memPoolsData[pool].find(address); it != _memPoolsData[pool].end())
             {
-                gMemPoolsData[pool].erase(it);
+                _memPoolsData[pool].erase(it);
             }
-            gMemPoolsData[pool].insert(p);
+
+            _memPoolsData[pool].insert(p);
             return p;
         }
     }
 
-    void MemoryManager::Free(MemoryPoolKind pool, AmVoidPtr address) const
+    void MemoryManager::Free(MemoryPoolKind pool, AmVoidPtr address)
     {
 #if !defined(AM_NO_MEMORY_STATS)
-        gMemPoolsStats[pool].freeCount.fetch_add(1, std::memory_order_relaxed);
+        _memPoolsStats[pool].freeCount.fetch_add(1, std::memory_order_relaxed);
 #endif
 
         if (_config.free != nullptr)
@@ -224,10 +216,10 @@ namespace SparkyStudios::Audio::Amplitude
         }
         else
         {
-            _sm_free(gMemAllocator, address);
-            if (auto it = gMemPoolsData[pool].find(address); it != gMemPoolsData[pool].end())
+            _sm_free((sm_allocator)_memAllocator, address);
+            if (auto it = _memPoolsData[pool].find(address); it != _memPoolsData[pool].end())
             {
-                gMemPoolsData[pool].erase(it);
+                _memPoolsData[pool].erase(it);
             }
         }
     }
@@ -241,11 +233,11 @@ namespace SparkyStudios::Audio::Amplitude
         else
         {
             AmSize total = 0;
-            for (auto&& pool : gMemPoolsData)
+            for (auto&& pool : _memPoolsData)
             {
                 for (auto&& p : pool.second)
                 {
-                    total += _sm_msize(gMemAllocator, p);
+                    total += _sm_msize((sm_allocator)_memAllocator, p);
                 }
             }
 
@@ -261,14 +253,14 @@ namespace SparkyStudios::Audio::Amplitude
         }
         else
         {
-            return _sm_msize(gMemAllocator, address);
+            return _sm_msize((sm_allocator)_memAllocator, address);
         }
     }
 
 #if !defined(AM_NO_MEMORY_STATS)
     const MemoryPoolStats& MemoryManager::GetStats(MemoryPoolKind pool) const
     {
-        return gMemPoolsStats[pool];
+        return _memPoolsStats.at(pool);
     }
 #endif
 } // namespace SparkyStudios::Audio::Amplitude

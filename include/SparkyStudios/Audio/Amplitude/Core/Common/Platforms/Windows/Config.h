@@ -38,6 +38,11 @@
 // Call policy
 #define AM_CALL_POLICY __cdecl
 
+// Library export policy
+#define AM_LIB_EXPORT __declspec(dllexport)
+#define AM_LIB_IMPORT __declspec(dllimport)
+#define AM_LIB_PRIVATE static
+
 // Function inline
 #define AM_INLINE(_return_type_) __forceinline _return_type_
 #define AM_NO_INLINE(_return_type_) __declspec(noinline) _return_type_

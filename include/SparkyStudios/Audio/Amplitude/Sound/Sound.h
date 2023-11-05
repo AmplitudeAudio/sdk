@@ -57,7 +57,7 @@ namespace SparkyStudios::Audio::Amplitude
         AmUInt32 m_loopCount;
     };
 
-    class Sound
+    class AM_API_PUBLIC Sound
         : public SoundObject
         , public Resource
     {
@@ -205,7 +205,7 @@ namespace SparkyStudios::Audio::Amplitude
         RefCounter _soundDataRefCounter;
     };
 
-    class SoundInstance
+    class AM_API_PUBLIC SoundInstance
     {
         friend class Mixer;
         friend class Sound;

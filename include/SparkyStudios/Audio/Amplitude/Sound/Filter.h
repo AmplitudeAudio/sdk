@@ -23,7 +23,7 @@ namespace SparkyStudios::Audio::Amplitude
 {
     class FilterInstance;
 
-    class Filter
+    class AM_API_PUBLIC Filter
     {
         friend class FilterInstance;
 
@@ -122,7 +122,7 @@ namespace SparkyStudios::Audio::Amplitude
         std::string m_name;
     };
 
-    class FilterInstance
+    class AM_API_PUBLIC FilterInstance
     {
     public:
         explicit FilterInstance(Filter* parent);

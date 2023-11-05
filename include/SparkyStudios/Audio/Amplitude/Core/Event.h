@@ -33,7 +33,7 @@ namespace SparkyStudios::Audio::Amplitude
      * @brief An event action that will be applied when
      * the underlying event will be triggered.
      */
-    class EventAction
+    class AM_API_PUBLIC EventAction
     {
         friend class Event;
 
@@ -92,7 +92,7 @@ namespace SparkyStudios::Audio::Amplitude
      * managed by the Engine. Events can be triggered at runtime by calling the
      * <code>Engine::Trigger()</code> method using the name of the event.
      */
-    class Event
+    class AM_API_PUBLIC Event
     {
         friend class EventInstance;
 
@@ -165,7 +165,7 @@ namespace SparkyStudios::Audio::Amplitude
     /**
      * @brief A class which can cancel an Event.
      */
-    class EventCanceler
+    class AM_API_PUBLIC EventCanceler
     {
     public:
         /**
@@ -206,7 +206,7 @@ namespace SparkyStudios::Audio::Amplitude
      * EventInstance are created when an Event is effectively triggered. They represent
      * the lifetime of that event at that particular time.
      */
-    class EventInstance
+    class AM_API_PUBLIC EventInstance
     {
     public:
         EventInstance();

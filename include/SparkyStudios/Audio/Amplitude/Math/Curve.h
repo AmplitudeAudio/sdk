@@ -28,7 +28,7 @@ namespace SparkyStudios::Audio::Amplitude
     /**
      * @brief A single point in a Curve.
      */
-    struct CurvePoint
+    struct AM_API_PUBLIC CurvePoint
     {
         /**
          * @brief The coordinates of the point over the X axis.
@@ -51,7 +51,7 @@ namespace SparkyStudios::Audio::Amplitude
      * Each CurvePart has a start and end point, and the fading algorithm which moves the value
      * from the start point to the end point.
      */
-    class CurvePart
+    class AM_API_PUBLIC CurvePart
     {
     public:
         /**
@@ -130,7 +130,7 @@ namespace SparkyStudios::Audio::Amplitude
     /**
      * @brief A Curve which describe the variation of a value (on the Y-axis) according to another (on the X-axis).
      */
-    class Curve
+    class AM_API_PUBLIC Curve
     {
     public:
         Curve();

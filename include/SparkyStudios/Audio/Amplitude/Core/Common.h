@@ -81,7 +81,7 @@
 /**
  * @brief Clamps an audio sample value between AM_AUDIO_SAMPLE_MIN and AM_AUDIO_SAMPLE_MAX.
  */
-#define AM_CLAMP_AUDIO_SAMPLE(v) ((v) <= -1.65f) ? -0.9862875f : ((v) >= 1.65f) ? 0.9862875f : (0.87f * (v)-0.1f * (v) * (v) * (v))
+#define AM_CLAMP_AUDIO_SAMPLE(v) (((v) <= -1.65f) ? -0.9862875f : ((v) >= 1.65f) ? 0.9862875f : (0.87f * (v)-0.1f * (v) * (v) * (v)))
 
 // Typedefs have to be made before the includes, as the
 // includes depend on them.
@@ -158,7 +158,7 @@ namespace SparkyStudios::Audio::Amplitude
         AmReal32Buffer m_data; // aligned pointer
         AmUInt8 m_actualData[sizeof(float) * AM_SIMD_ALIGNMENT + AM_SIMD_ALIGNMENT]{};
     };
-}; // namespace SparkyStudios::Audio::Amplitude
+} // namespace SparkyStudios::Audio::Amplitude
 
 namespace SparkyStudios::Audio::Amplitude
 {

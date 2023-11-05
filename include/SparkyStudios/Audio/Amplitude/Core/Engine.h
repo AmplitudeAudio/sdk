@@ -40,10 +40,14 @@
 #include <SparkyStudios/Audio/Amplitude/Sound/Switch.h>
 #include <SparkyStudios/Audio/Amplitude/Sound/SwitchContainer.h>
 
+#ifndef AM_BUILDSYSTEM_BUILDING_PLUGIN
+
 /**
  * @brief Macro to get the current Amplitude engine instance.
  */
 #define amEngine SparkyStudios::Audio::Amplitude::Engine::GetInstance()
+
+#endif // AM_BUILDSYSTEM_BUILDING_PLUGIN
 
 namespace SparkyStudios::Audio::Amplitude
 {
@@ -65,7 +69,7 @@ namespace SparkyStudios::Audio::Amplitude
      * @brief The central class of  the library that manages the Listeners, Entities,
      * Sounds, Collections, Channels, and tracks all of the internal state.
      */
-    class Engine
+    class AM_API_PUBLIC Engine
     {
     private:
         /**
@@ -1168,6 +1172,14 @@ namespace SparkyStudios::Audio::Amplitude
         [[nodiscard]] AmUInt32 GetMaxEntitiesCount() const;
 
 #pragma endregion
+
+        /**
+         * @brief Loads a plugin library from the given path.
+         * @param pluginsDirectoryPath The path plugins directory.
+         * @param pluginLibraryName The name of the plugin library to load.
+         * @return A handle to the loaded plugin library.
+         */
+        static void* LoadPlugin(const AmOsString& pluginsDirectoryPath, const AmOsString& pluginLibraryName);
 
         /**
          * @brief Returns an unique instance of the Amplitude Engine.

@@ -39,7 +39,7 @@ namespace SparkyStudios::Audio::Amplitude
         RtpcValue m_gain;
     };
 
-    class SwitchContainer : public SoundObject
+    class AM_API_PUBLIC SwitchContainer : public SoundObject
     {
     public:
         SwitchContainer();

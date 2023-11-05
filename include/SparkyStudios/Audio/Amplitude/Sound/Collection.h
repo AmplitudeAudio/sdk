@@ -36,7 +36,7 @@ namespace SparkyStudios::Audio::Amplitude
      * @brief Collection represent an abstract sound (like a 'whoosh'), which contains
      *        a number of pieces of audio which are selected through the configured Scheduler.
      */
-    class Collection : public SoundObject
+    class AM_API_PUBLIC Collection : public SoundObject
     {
         friend class Sound;
 

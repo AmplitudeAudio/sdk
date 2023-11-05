@@ -14,7 +14,7 @@
 
 #include <SparkyStudios/Audio/Amplitude/Amplitude.h>
 
-#define MINIAUDIO_IMPLEMENTATION
+#define MA_IMPLEMENTATION
 
 #include "miniaudio_utils.h"
 

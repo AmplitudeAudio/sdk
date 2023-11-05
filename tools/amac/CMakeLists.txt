@@ -22,9 +22,9 @@ set(AMC_SRC
 add_executable(amac ${AMC_SRC})
 
 target_link_libraries(amac
-    Amplitude
+    Static
 )
 
 add_dependencies(amac
-    Amplitude
+    Static
 )

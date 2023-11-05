@@ -31,7 +31,7 @@ namespace SparkyStudios::Audio::Amplitude
     struct RtpcDefinition;
     struct RtpcCompatibleValue;
 
-    class Rtpc
+    class AM_API_PUBLIC Rtpc
     {
     public:
         Rtpc();
@@ -128,7 +128,7 @@ namespace SparkyStudios::Audio::Amplitude
         RefCounter _refCounter;
     };
 
-    struct RtpcValue
+    struct AM_API_PUBLIC RtpcValue
     {
     public:
         RtpcValue();

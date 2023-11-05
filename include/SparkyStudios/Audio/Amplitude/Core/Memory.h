@@ -17,12 +17,18 @@
 #ifndef SS_AMPLITUDE_AUDIO_MEMORY_H
 #define SS_AMPLITUDE_AUDIO_MEMORY_H
 
+#include <set>
+
 #include <SparkyStudios/Audio/Amplitude/Core/Common.h>
+
+#ifndef AM_BUILDSYSTEM_BUILDING_PLUGIN
 
 /**
  * @brief Shortcut access to the Amplitude's memory manager instance.
  */
 #define amMemory SparkyStudios::Audio::Amplitude::MemoryManager::GetInstance()
+
+#endif // AM_BUILDSYSTEM_BUILDING_PLUGIN
 
 /**
  * @brief Allocates memory for a new object using the memory manager.
@@ -113,7 +119,7 @@ namespace SparkyStudios::Audio::Amplitude
     /**
      * @brief Configures the memory management system.
      */
-    struct MemoryManagerConfig
+    struct AM_API_PUBLIC MemoryManagerConfig
     {
         /**
          * @brief Memory allocation callback. If not defined, the default malloc() function is used.
@@ -180,7 +186,7 @@ namespace SparkyStudios::Audio::Amplitude
      * @brief Collects the statistics about the memory allocations
      * for a specific pool
      */
-    struct MemoryPoolStats
+    struct AM_API_PUBLIC MemoryPoolStats
     {
         /**
          * @brief The pool for which this statistics is for.
@@ -190,17 +196,17 @@ namespace SparkyStudios::Audio::Amplitude
         /**
          * @brief The maximum total memory used by this pool.
          */
-        std::atomic<AmSize> maxMemoryUsed;
+        std::atomic<AmSize> maxMemoryUsed{};
 
         /**
          * @brief The total count of allocations made on this pool.
          */
-        std::atomic<AmUInt64> allocCount;
+        std::atomic<AmUInt64> allocCount{};
 
         /**
          * @brief The total count of frees made on this pool.
          */
-        std::atomic<AmUInt64> freeCount;
+        std::atomic<AmUInt64> freeCount{};
 
         /**
          * @brief Default constructor.
@@ -223,7 +229,7 @@ namespace SparkyStudios::Audio::Amplitude
     /**
      * @brief Manages memory allocations inside the engine.
      */
-    class MemoryManager
+    class AM_API_PUBLIC MemoryManager
     {
     public:
         /**
@@ -253,28 +259,28 @@ namespace SparkyStudios::Audio::Amplitude
         /**
          * @brief Allocates a block of memory with the given size in the given pool.
          */
-        [[nodiscard]] AmVoidPtr Malloc(MemoryPoolKind pool, AmSize size) const;
+        [[nodiscard]] AmVoidPtr Malloc(MemoryPoolKind pool, AmSize size);
 
         /**
          * @brief Allocates a block of memory with the given size and the given alignment,
          * in the given pool.
          */
-        [[nodiscard]] AmVoidPtr Malign(MemoryPoolKind pool, AmSize size, AmUInt32 alignment) const;
+        [[nodiscard]] AmVoidPtr Malign(MemoryPoolKind pool, AmSize size, AmUInt32 alignment);
 
         /**
          * @brief Updates the size of a previously allocated memory.
          */
-        [[nodiscard]] AmVoidPtr Realloc(MemoryPoolKind pool, AmVoidPtr address, AmSize size) const;
+        [[nodiscard]] AmVoidPtr Realloc(MemoryPoolKind pool, AmVoidPtr address, AmSize size);
 
         /**
          * @brief Updates the size of a previously allocated aligned memory.
          */
-        [[nodiscard]] AmVoidPtr Realign(MemoryPoolKind pool, AmVoidPtr address, AmSize size, AmUInt32 alignment) const;
+        [[nodiscard]] AmVoidPtr Realign(MemoryPoolKind pool, AmVoidPtr address, AmSize size, AmUInt32 alignment);
 
         /**
          * @brief Releases an allocated memory block.
          */
-        void Free(MemoryPoolKind pool, AmVoidPtr address) const;
+        void Free(MemoryPoolKind pool, AmVoidPtr address);
 
         /**
          * @brief Gets the total allocated size.
@@ -300,6 +306,15 @@ namespace SparkyStudios::Audio::Amplitude
         ~MemoryManager();
 
         MemoryManagerConfig _config;
+
+        void* _memAllocator = nullptr;
+
+        std::map<MemoryPoolKind, std::set<AmVoidPtr>> _memPoolsData = {};
+
+#if !defined(AM_NO_MEMORY_STATS)
+        std::map<MemoryPoolKind, MemoryPoolStats> _memPoolsStats = {};
+#endif
+
     };
 } // namespace SparkyStudios::Audio::Amplitude
 

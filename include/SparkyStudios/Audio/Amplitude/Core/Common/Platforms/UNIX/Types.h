@@ -22,7 +22,6 @@
 #include <cstring>
 #include <sys/types.h>
 
-
 namespace SparkyStudios::Audio::Amplitude
 {
     typedef int8_t                  AmInt8;

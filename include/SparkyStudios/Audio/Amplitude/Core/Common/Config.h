@@ -35,6 +35,24 @@
 #define AM_CALL_POLICY
 #endif
 
+#if defined(AM_BUILDSYSTEM_SHARED)
+#if defined(AM_BUILDSYSTEM_BUILDING_AMPLITUDE)
+#define AM_API_PUBLIC AM_LIB_EXPORT
+#else
+#define AM_API_PUBLIC AM_LIB_IMPORT
+#endif
+#define AM_API_PRIVATE AM_LIB_PRIVATE
+#if defined(AM_BUILDSYSTEM_BUILDING_PLUGIN)
+#define AM_API_PLUGIN AM_LIB_EXPORT
+#else
+#define AM_API_PLUGIN
+#endif
+#else // AM_BUILDSYSTEM_STATIC
+#define AM_API_PUBLIC
+#define AM_API_PRIVATE static
+#define AM_API_PLUGIN
+#endif
+
 #if !defined(AMPLITUDE_DISABLE_SIMD)
 #if defined(AM_CPU_X86) || defined(AM_CPU_X86_64) || defined(AM_CPU_ARM_NEON)
 #define AM_SIMD_INTRINSICS

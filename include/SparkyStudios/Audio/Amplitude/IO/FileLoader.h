@@ -24,7 +24,7 @@
 
 namespace SparkyStudios::Audio::Amplitude
 {
-    class FileLoader
+    class AM_API_PUBLIC FileLoader
     {
     public:
         FileLoader();
@@ -41,7 +41,7 @@ namespace SparkyStudios::Audio::Amplitude
         std::filesystem::path _basePath;
     };
 
-    class Resource
+    class AM_API_PUBLIC Resource
     {
     public:
         virtual ~Resource() = default;

@@ -28,10 +28,10 @@ add_executable(${PROJECT_NAME} ${ss_amplitude_audio_sample_SRCS})
 
 target_link_libraries(${PROJECT_NAME}
     PRIVATE $<TARGET_NAME_IF_EXISTS:SDL2::SDL2main> $<IF:$<TARGET_EXISTS:SDL2::SDL2>,SDL2::SDL2,SDL2::SDL2-static>
-    PUBLIC Amplitude
+    PUBLIC Static
 )
 
 add_dependencies(${PROJECT_NAME}
-    Amplitude
+    Static
     ss_amplitude_audio_sample_assets
 )

@@ -27,7 +27,7 @@ namespace SparkyStudios::Audio::Amplitude
     /**
      * @brief A switch state.
      */
-    struct SwitchState
+    struct AM_API_PUBLIC SwitchState
     {
         /**
          * @brief The ID of this switch state.
@@ -61,7 +61,7 @@ namespace SparkyStudios::Audio::Amplitude
      *
      * The Switch is a shared object between sound sources. They are used only by SwitchContainer objects.
      */
-    class Switch
+    class AM_API_PUBLIC Switch
     {
     public:
         /**

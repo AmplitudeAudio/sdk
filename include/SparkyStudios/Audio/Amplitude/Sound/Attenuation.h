@@ -39,7 +39,7 @@ namespace SparkyStudios::Audio::Amplitude
      * This allows to increase the attenuation according to the shape of
      * the sound propagation.
      */
-    class AttenuationZone
+    class AM_API_PUBLIC AttenuationZone
     {
     public:
         /**
@@ -94,7 +94,7 @@ namespace SparkyStudios::Audio::Amplitude
      * when the sound need to lower his volume due to the distance of from the listener,
      * and many other parameters.
      */
-    class Attenuation
+    class AM_API_PUBLIC Attenuation
     {
     public:
         /**

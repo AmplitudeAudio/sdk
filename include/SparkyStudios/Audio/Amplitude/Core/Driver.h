@@ -30,7 +30,7 @@ namespace SparkyStudios::Audio::Amplitude
      * A driver allows to use an audio device to output sounds and
      * receive data from the microphone.
      */
-    class Driver
+    class AM_API_PUBLIC Driver
     {
     public:
         /**

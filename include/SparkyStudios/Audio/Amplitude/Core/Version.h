@@ -14,8 +14,8 @@
 
 #pragma once
 
-#ifndef SPARK_AUDIO_VERSION_H
-#define SPARK_AUDIO_VERSION_H
+#ifndef SS_AMPLITUDE_AUDIO_VERSION_H
+#define SS_AMPLITUDE_AUDIO_VERSION_H
 
 #include <SparkyStudios/Audio/Amplitude/Core/Common.h>
 
@@ -57,7 +57,7 @@ namespace SparkyStudios::Audio::Amplitude
      *
      * @return The version.
      */
-    const struct Version& Version();
+    AM_API_PUBLIC const struct Version& Version();
 } // namespace SparkyStudios::Audio::Amplitude
 
-#endif // SPARK_AUDIO_VERSION_H
+#endif // SS_AMPLITUDE_AUDIO_VERSION_H

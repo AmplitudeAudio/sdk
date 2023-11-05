@@ -22,7 +22,7 @@
 
 namespace SparkyStudios::Audio::Amplitude
 {
-    class ResamplerInstance
+    class AM_API_PUBLIC ResamplerInstance
     {
     public:
         ResamplerInstance() = default;
@@ -98,7 +98,7 @@ namespace SparkyStudios::Audio::Amplitude
         virtual void Clear() = 0;
     };
 
-    class Resampler
+    class AM_API_PUBLIC Resampler
     {
     public:
         /**

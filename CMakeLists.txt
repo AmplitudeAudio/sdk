@@ -34,6 +34,21 @@ set(CMAKE_DEBUG_POSTFIX "_d")
 set(BIN_DIR ${CMAKE_CURRENT_BINARY_DIR})
 set(OBJ_DIR ${CMAKE_CURRENT_BINARY_DIR}/obj)
 
+if(MSVC)
+    set(RUNTIME_OUTPUT_DIRECTORY "win")
+elseif(APPLE)
+    set(RUNTIME_OUTPUT_DIRECTORY "osx")
+    set(CMAKE_MACOSX_RPATH 1)
+    set(CMAKE_INSTALL_RPATH "@executable_path")
+else()
+    set(RUNTIME_OUTPUT_DIRECTORY "linux")
+    set(CMAKE_INSTALL_RPATH ".")
+endif()
+
+if(UNIX)
+    find_package(Threads REQUIRED)
+endif()
+
 # Setup flatbuffers
 # ------------------------------------------------------------------------------
 find_package(flatbuffers CONFIG REQUIRED)
@@ -91,6 +106,7 @@ set(SA_SOURCE
     include/SparkyStudios/Audio/Amplitude/Core/Common/Platforms/Windows/Types.h
     include/SparkyStudios/Audio/Amplitude/Core/Common/Config.h
     include/SparkyStudios/Audio/Amplitude/Core/Common/Constants.h
+    include/SparkyStudios/Audio/Amplitude/Core/Common/SIMD.h
     include/SparkyStudios/Audio/Amplitude/Core/Common/Types.h
     include/SparkyStudios/Audio/Amplitude/Core/Bus.h
     include/SparkyStudios/Audio/Amplitude/Core/Channel.h
@@ -108,10 +124,12 @@ set(SA_SOURCE
     include/SparkyStudios/Audio/Amplitude/Core/RefCounter.h
     include/SparkyStudios/Audio/Amplitude/Core/Thread.h
     include/SparkyStudios/Audio/Amplitude/Core/Version.h
+    include/SparkyStudios/Audio/Amplitude/IO/File.h
     include/SparkyStudios/Audio/Amplitude/IO/FileLoader.h
     include/SparkyStudios/Audio/Amplitude/Math/Curve.h
     include/SparkyStudios/Audio/Amplitude/Math/HandmadeMath.h
     include/SparkyStudios/Audio/Amplitude/Math/Shape.h
+    include/SparkyStudios/Audio/Amplitude/Math/Utils.h
     include/SparkyStudios/Audio/Amplitude/Mixer/Resampler.h
     include/SparkyStudios/Audio/Amplitude/Mixer/SoundProcessor.h
     include/SparkyStudios/Audio/Amplitude/Sound/Attenuation.h
@@ -179,6 +197,7 @@ set(SA_SOURCE
     src/Core/Thread.cpp
     src/Core/Version.cpp
 
+    src/IO/File.cpp
     src/IO/FileLoader.cpp
 
     src/Math/Curve.cpp
@@ -292,9 +311,6 @@ set(SA_SOURCE
     src/Utils/SmMalloc/smmalloc.h
     src/Utils/intrusive_list.h
     src/Utils/Utils.h
-
-    src/IO/File.h
-    src/IO/File.cpp
 )
 
 # Includes for this project
@@ -304,28 +320,40 @@ include_directories(src
     ${AM_FLATBUFFERS_GENERATED_INCLUDES_DIR}
 )
 
-add_library(${PROJECT_NAME} STATIC ${SA_SOURCE})
+add_library(Static STATIC ${SA_SOURCE})
+target_compile_definitions(Static PUBLIC AM_BUILDSYSTEM_STATIC)
 
-target_link_libraries(${PROJECT_NAME} PRIVATE flatbuffers::flatbuffers)
-target_link_libraries(${PROJECT_NAME} PRIVATE SampleRate::samplerate)
+add_library(Shared SHARED ${SA_SOURCE})
+target_compile_definitions(Shared PUBLIC AM_BUILDSYSTEM_SHARED)
+
+set(AM_BUILDSYSTEM_TYPE "Static" "Shared")
+
+foreach(build_type ${AM_BUILDSYSTEM_TYPE})
+    string(TOLOWER ${build_type} build_type_l)
+
+    set_target_properties(${build_type}
+        PROPERTIES
+            OUTPUT_NAME ${PROJECT_NAME}
+            ARCHIVE_OUTPUT_DIRECTORY ${build_type_l}
+    )
+
+    target_compile_definitions(${build_type} PRIVATE AM_BUILDSYSTEM_BUILDING_AMPLITUDE)
+
+    target_link_libraries(${build_type} PRIVATE flatbuffers::flatbuffers SampleRate::samplerate)
+
+    add_dependencies(${build_type}
+        generated_includes
+        amplitude_build_binary_schemas
+    )
+
+    if(UNIX)
+        target_link_libraries(${build_type} PUBLIC Threads::Threads ${CMAKE_DL_LIBS})
+    endif()
+endforeach()
 
 add_custom_target(amplitude_build_binary_schemas
     COMMAND python3 ${CMAKE_CURRENT_SOURCE_DIR}/scripts/build_schemas.py --output ${CMAKE_CURRENT_SOURCE_DIR}/schemas
 )
-
-add_dependencies(${PROJECT_NAME}
-    generated_includes
-    amplitude_build_binary_schemas
-)
-
-if(UNIX)
-    find_package(Threads REQUIRED)
-
-    target_link_libraries(${PROJECT_NAME}
-        PUBLIC Threads::Threads
-        ${CMAKE_DL_LIBS}
-    )
-endif()
 
 add_subdirectory(tools/amac)
 
@@ -335,30 +363,34 @@ endif()
 
 # #####################################################
 # INSTALL
-if(MSVC)
-    set(RUNTIME_OUTPUT_DIRECTORY "win")
-elseif(APPLE)
-    set(RUNTIME_OUTPUT_DIRECTORY "osx")
-else()
-    set(RUNTIME_OUTPUT_DIRECTORY "linux")
-endif()
 
-set(AM_LIB_DESTINATION "sdk/lib/${RUNTIME_OUTPUT_DIRECTORY}")
-set(AM_INC_DESTINATION "sdk/include")
-set(AM_SHM_DESTINATION "sdk/schemas")
-set(AM_BIN_DESTINATION "sdk/bin/${RUNTIME_OUTPUT_DIRECTORY}")
+set(AM_LIB_DESTINATION "lib/${RUNTIME_OUTPUT_DIRECTORY}")
+set(AM_INC_DESTINATION "include")
+set(AM_SHM_DESTINATION "schemas")
+set(AM_BIN_DESTINATION "bin/${RUNTIME_OUTPUT_DIRECTORY}")
 
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/${AM_BIN_DESTINATION}")
 set(CMAKE_LIBRARY_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/${AM_LIB_DESTINATION}")
 set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/${AM_BIN_DESTINATION}")
 
-set(CMAKE_INSTALL_PREFIX ${CMAKE_CURRENT_LIST_DIR})
+set(CMAKE_INSTALL_PREFIX "${CMAKE_CURRENT_LIST_DIR}/sdk")
 
 install(
-    TARGETS ${PROJECT_NAME} amac
+    TARGETS Static
     EXPORT AmplitudeAudioSDKConfig
-    ARCHIVE DESTINATION ${AM_LIB_DESTINATION}
-    LIBRARY DESTINATION ${AM_LIB_DESTINATION}
+    ARCHIVE DESTINATION ${AM_LIB_DESTINATION}/static
+)
+
+install(
+    TARGETS Shared
+    EXPORT AmplitudeAudioSDKConfig
+    ARCHIVE DESTINATION ${AM_LIB_DESTINATION}/shared
+    LIBRARY DESTINATION ${AM_LIB_DESTINATION}/shared
+    RUNTIME DESTINATION ${AM_LIB_DESTINATION}/shared
+)
+
+install(
+    TARGETS amac
     RUNTIME DESTINATION ${AM_BIN_DESTINATION}
 )
 
@@ -375,14 +407,20 @@ install(
 )
 
 install(
+    DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/cmake/
+    DESTINATION "${CMAKE_INSTALL_PREFIX}/cmake"
+    FILES_MATCHING PATTERN "*.cmake"
+)
+
+install(
     EXPORT AmplitudeAudioSDKConfig
-    DESTINATION "${AM_LIB_DESTINATION}/cmake"
-    NAMESPACE SparkyStudios::Audio::
+    DESTINATION "${CMAKE_INSTALL_PREFIX}/cmake"
+    NAMESPACE SparkyStudios::Audio::Amplitude::SDK::
 )
 
 export(
-    TARGETS ${PROJECT_NAME}
-    NAMESPACE SparkyStudios::Audio::
+    TARGETS Static Shared
+    NAMESPACE SparkyStudios::Audio::Amplitude::SDK::
     FILE "${CMAKE_CURRENT_BINARY_DIR}/AmplitudeAudioSDKConfig.cmake"
 )
 

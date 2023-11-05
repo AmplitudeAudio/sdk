@@ -28,7 +28,7 @@ namespace SparkyStudios::Audio::Amplitude
      * This is the base class for all audio codecs, each implementation should
      * allow to build decoders and encoders.
      */
-    class Codec
+    class AM_API_PUBLIC Codec
     {
     public:
         /**

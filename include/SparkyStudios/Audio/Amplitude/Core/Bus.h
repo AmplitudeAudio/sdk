@@ -32,7 +32,7 @@ namespace SparkyStudios::Audio::Amplitude
      * and any number of additional buses may be defined as well. Each bus can be
      * thought as a node in the tree. The gain on a Bus is applied to all child buses as well.
      */
-    class Bus
+    class AM_API_PUBLIC Bus
     {
     public:
         /**

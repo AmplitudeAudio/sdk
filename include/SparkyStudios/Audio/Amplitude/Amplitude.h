@@ -35,10 +35,13 @@
 #include <SparkyStudios/Audio/Amplitude/Core/Thread.h>
 #include <SparkyStudios/Audio/Amplitude/Core/Version.h>
 
+#include <SparkyStudios/Audio/Amplitude/IO/File.h>
 #include <SparkyStudios/Audio/Amplitude/IO/FileLoader.h>
 
 #include <SparkyStudios/Audio/Amplitude/Math/Curve.h>
 #include <SparkyStudios/Audio/Amplitude/Math/HandmadeMath.h>
+#include <SparkyStudios/Audio/Amplitude/Math/Shape.h>
+#include <SparkyStudios/Audio/Amplitude/Math/Utils.h>
 
 #include <SparkyStudios/Audio/Amplitude/Mixer/Resampler.h>
 #include <SparkyStudios/Audio/Amplitude/Mixer/SoundProcessor.h>

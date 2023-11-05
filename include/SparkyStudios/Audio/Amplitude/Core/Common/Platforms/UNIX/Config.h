@@ -20,6 +20,17 @@
 // Call policy
 #define AM_CALL_POLICY
 
+// Library export policy
+#if defined(__GNUC__) && __GNUC__ >= 4
+#define AM_LIB_EXPORT __attribute__((visibility("default")))
+#define AM_LIB_IMPORT __attribute__((visibility("default")))
+#define AM_LIB_PRIVATE __attribute__((visibility("hidden")))
+#else
+#define AM_LIB_EXPORT
+#define AM_LIB_IMPORT
+#define AM_LIB_PRIVATE static
+#endif
+
 // Function inline
 #define AM_INLINE(_return_type_) inline _return_type_ __attribute__((always_inline))
 #define AM_NO_INLINE(_return_type_) _return_type_ __attribute__((noinline))

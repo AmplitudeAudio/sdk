@@ -24,7 +24,7 @@ namespace SparkyStudios::Audio::Amplitude
     /**
      * @brief Holds the number of references to an object.
      */
-    class RefCounter
+    class AM_API_PUBLIC RefCounter
     {
     public:
         /**

@@ -38,7 +38,7 @@ namespace SparkyStudios::Audio::Amplitude
      * Effects are customized using parameters and each parameters can be
      * updated at runtime using RTPC.
      */
-    class Effect
+    class AM_API_PUBLIC Effect
     {
         friend class EffectInstance;
 
@@ -148,7 +148,7 @@ namespace SparkyStudios::Audio::Amplitude
     /**
      * @brief The actual effect applied to a SoundInstance.
      */
-    class EffectInstance
+    class AM_API_PUBLIC EffectInstance
     {
     public:
         explicit EffectInstance(const Effect* parent);

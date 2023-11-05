@@ -240,6 +240,7 @@ static int process(const AmOsString& inFileName, const AmOsString& outFileName, 
             if (!encoder->Open(outFileName))
             {
                 amMemory->Free(MemoryPoolKind::SoundData, output16);
+                amMemory->Free(MemoryPoolKind::Codec, pcmData);
 
                 fprintf(stderr, "Unable to open file \"" AM_OS_CHAR_FMT "\" for writing.\n", outFileName.c_str());
 

@@ -27,7 +27,7 @@ namespace SparkyStudios::Audio::Amplitude
      * @brief A Fader instance. An object of this class will be created each time
      * a Fader is requested.
      */
-    class FaderInstance
+    class AM_API_PUBLIC FaderInstance
     {
     public:
         /**
@@ -134,7 +134,7 @@ namespace SparkyStudios::Audio::Amplitude
      * A fader is used to move a value to a specific target value
      * during an amount of time and according to a fading algorithm.
      */
-    class Fader
+    class AM_API_PUBLIC Fader
     {
         friend class Mixer;
 

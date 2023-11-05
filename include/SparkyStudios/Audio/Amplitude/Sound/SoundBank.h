@@ -34,7 +34,7 @@ namespace SparkyStudios::Audio::Amplitude
      * trigger events inside it. When the sound bank data should be released (ie. changing the level, closing
      * the game, etc.), you need to unload the sound bank using <code>Engine::UnloadSoundBank()</code>.
      */
-    class SoundBank
+    class AM_API_PUBLIC SoundBank
     {
     public:
         SoundBank();

@@ -21,7 +21,6 @@
 
 #include <Core/BusInternalState.h>
 #include <Core/EngineInternalState.h>
-#include <IO/File.h>
 
 #include "buses_definition_generated.h"
 #include "collection_definition_generated.h"
@@ -29,6 +28,8 @@
 #include "rtpc_definition_generated.h"
 #include "sound_definition_generated.h"
 #include "switch_container_definition_generated.h"
+
+#include <dylib.hpp>
 
 #include <Core/DefaultPlugins.h>
 
@@ -83,6 +84,47 @@ namespace SparkyStudios::Audio::Amplitude
 
         delete _state;
         _state = nullptr;
+    }
+
+    void* Engine::LoadPlugin(const AmOsString& pluginsDirectoryPath, const AmOsString& pluginLibraryName)
+    {
+        if (pluginLibraryName.empty())
+        {
+            CallLogFunc("[ERROR] The plugin library path is empty");
+            return nullptr;
+        }
+
+        dylib plugin(AM_OS_STRING_TO_STRING(pluginsDirectoryPath), AM_OS_STRING_TO_STRING(pluginLibraryName));
+
+        if (!plugin.has_symbol("RegisterPlugin"))
+        {
+            CallLogFunc("[ERROR] LoadPlugin fail on '" AM_OS_CHAR_FMT "'. The library doesn't export a RegisterPlugin symbol.", pluginLibraryName.c_str());
+            return nullptr;
+        }
+
+        if (!plugin.has_symbol("PluginName"))
+        {
+            CallLogFunc("[ERROR] LoadPlugin fail on '" AM_OS_CHAR_FMT "'. The library doesn't export a PluginName symbol.", pluginLibraryName.c_str());
+            return nullptr;
+        }
+
+        if (!plugin.has_symbol("PluginVersion"))
+        {
+            CallLogFunc("[ERROR] LoadPlugin fail on '" AM_OS_CHAR_FMT "'. The library doesn't export a PluginVersion symbol.", pluginLibraryName.c_str());
+            return nullptr;
+        }
+
+        auto pluginInstance = plugin.get_function<bool(Engine*, MemoryManager*)>("RegisterPlugin");
+        if (!pluginInstance(amEngine, amMemory)) {
+            CallLogFunc("[ERROR] LoadPlugin fail on '" AM_OS_CHAR_FMT "'. The plugin registration has failed.", pluginLibraryName.c_str());
+            return nullptr;
+        }
+
+        auto GetPluginName = plugin.get_function<const char*()>("PluginName");
+        auto GetPluginVersion = plugin.get_function<const char*()>("PluginVersion");
+        CallLogFunc("[INFO] LoadPlugin '%s' version: %s", GetPluginName(), GetPluginVersion());
+
+        return plugin.native_handle();
     }
 
     Engine* Engine::GetInstance()

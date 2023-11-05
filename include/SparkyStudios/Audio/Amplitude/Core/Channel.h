@@ -40,7 +40,7 @@ namespace SparkyStudios::Audio::Amplitude
      * which is managed by the Engine. Multiple Channel objects may point to the same
      * underlying data.
      */
-    class Channel
+    class AM_API_PUBLIC Channel
     {
     public:
         /**

@@ -34,7 +34,7 @@ namespace SparkyStudios::Audio::Amplitude
     /**
      * @brief The SoundObject class is the base class for all sound objects.
      */
-    class SoundObject
+    class AM_API_PUBLIC SoundObject
     {
     public:
         SoundObject();

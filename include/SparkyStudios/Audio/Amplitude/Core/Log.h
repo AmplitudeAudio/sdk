@@ -34,7 +34,7 @@ namespace SparkyStudios::Audio::Amplitude
      *
      * @param[in] The function to use for logging.
      */
-    void RegisterLogFunc(LogFunc log_func);
+    AM_API_PUBLIC void RegisterLogFunc(LogFunc log_func);
 
     /**
      * @brief Call the registered log function with the provided format string.
@@ -44,7 +44,7 @@ namespace SparkyStudios::Audio::Amplitude
      * @param[in] format The format string to print.
      * @param[in] ... The arguments to format.
      */
-    void CallLogFunc(const char* format, ...);
+    AM_API_PUBLIC void CallLogFunc(const char* format, ...);
 } // namespace SparkyStudios::Audio::Amplitude
 
 #endif // SPARK_AUDIO_LOG_H

@@ -18,14 +18,11 @@
 #define SS_AMPLITUDE_AUDIO_UTILS_H
 
 #include <SparkyStudios/Audio/Amplitude/Core/Common.h>
+#include <SparkyStudios/Audio/Amplitude/Math/Utils.h>
 
 #if defined(AM_SIMD_INTRINSICS)
 #include <simdpp/simd.h>
 #endif // defined(AM_SIMD_INTRINSICS)
-
-#define AM_LCG_M 2147483647
-#define AM_LCG_A 48271
-#define AM_LCG_C 0
 
 namespace SparkyStudios::Audio::Amplitude
 {
@@ -36,99 +33,6 @@ namespace SparkyStudios::Audio::Amplitude
 #endif // AM_SIMD_INTRINSICS
 
     typedef AmAudioFrame* AmAudioFrameBuffer;
-
-    static struct
-    {
-        AmInt32 state;
-    } gLCG = { 4321 };
-
-    static AM_INLINE(float) AmDitherReal32(const AmReal32 ditherMin, const AmReal32 ditherMax)
-    {
-        gLCG.state = (AM_LCG_A * gLCG.state + AM_LCG_C) % AM_LCG_M;
-        const AmReal32 x = gLCG.state / (double)0x7FFFFFFF;
-        return ditherMin + x * (ditherMax - ditherMin);
-    }
-
-    static AM_INLINE(AmInt32) AmFloatToFixedPoint(const AmReal32 x)
-    {
-        return static_cast<AmInt32>(x * kAmFixedPointUnit);
-    }
-
-    static AM_INLINE(AmReal32) AmInt16ToReal32(const AmInt16 x)
-    {
-        auto y = static_cast<AmReal32>(x);
-
-#if defined(AM_ACCURATE_CONVERSION)
-        // The accurate way.
-        y = y + 32768.0f; // -32768..32767 to 0..65535
-        y = y * 0.00003051804379339284f; // 0..65535 to 0..2
-        y = y - 1; // 0..2 to -1..1
-#else
-        // The fast way.
-        y = y * 0.000030517578125f; // -32768..32767 to -1..0.999969482421875
-#endif
-
-        return y;
-    }
-
-    static AM_INLINE(AmInt16) AmReal32ToInt16(const AmReal32 x, bool dithering = false)
-    {
-        AmReal32 y = x;
-
-        if (dithering)
-        {
-            // Performs a rectangular dithering
-            y += AmDitherReal32(1.0f / INT16_MIN, 1.0f / INT16_MAX);
-        }
-
-        y = AM_CLAMP(x, -1.0f, 1.0f);
-
-#if defined(AM_ACCURATE_CONVERSION)
-        // The accurate way.
-        y = y + 1; // -1..1 to 0..2
-        y = y * 32767.5f; // 0..2 to 0..65535
-        y = y - 32768.0f; // 0...65535 to -32768..32767
-#else
-        // The fast way.
-        y = y * 32767.0f; // -1..1 to -32767..32767
-#endif
-
-        return static_cast<AmInt16>(y);
-    }
-
-    static AM_INLINE(AmReal32) CatmullRom(const AmReal32 t, const AmReal32 p0, const AmReal32 p1, const AmReal32 p2, const AmReal32 p3)
-    {
-        // clang-format off
-        return 0.5f * (
-            (2 * p1) +
-            (-p0 + p2) * t +
-            (2 * p0 - 5 * p1 + 4 * p2 - p3) * t * t +
-            (-p0 + 3 * p1 - 3 * p2 + p3) * t * t * t
-        );
-        // clang-format on
-    }
-
-    static AM_INLINE(AmReal32) ComputeDopplerFactor(
-        const AmVec3& locationDelta,
-        const AmVec3& sourceVelocity,
-        const AmVec3& listenerVelocity,
-        AmReal32 soundSpeed,
-        AmReal32 dopplerFactor)
-    {
-        const AmReal32 deltaLength = AM_Len(locationDelta);
-
-        if (deltaLength == 0.0f)
-            return 1.0f;
-
-        AmReal32 vss = AM_Dot(sourceVelocity, locationDelta) / deltaLength;
-        AmReal32 vls = AM_Dot(listenerVelocity, locationDelta) / deltaLength;
-
-        const AmReal32 maxSpeed = soundSpeed / dopplerFactor;
-        vss = AM_MIN(vss, maxSpeed);
-        vls = AM_MIN(vls, maxSpeed);
-
-        return (soundSpeed - vls * dopplerFactor) / (soundSpeed - vss * dopplerFactor);
-    }
 } // namespace SparkyStudios::Audio::Amplitude
 
 #if defined(AM_SIMD_INTRINSICS)

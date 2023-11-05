@@ -34,7 +34,7 @@ namespace SparkyStudios::Audio::Amplitude
      * The Environment class is a lightweight reference to a EnvironmentInternalState object
      * which is managed by the Engine.
      */
-    class Environment
+    class AM_API_PUBLIC Environment
     {
     public:
         /**

@@ -22,7 +22,7 @@
 
 namespace SparkyStudios::Audio::Amplitude
 {
-    class SoundProcessorInstance
+    class AM_API_PUBLIC SoundProcessorInstance
     {
     public:
         SoundProcessorInstance() = default;
@@ -60,7 +60,7 @@ namespace SparkyStudios::Audio::Amplitude
         virtual void Cleanup(SoundInstance* sound);
     };
 
-    class SoundProcessor
+    class AM_API_PUBLIC SoundProcessor
     {
     public:
         /**
@@ -149,7 +149,7 @@ namespace SparkyStudios::Audio::Amplitude
         static SoundProcessor* Find(const std::string& name);
     };
 
-    class ProcessorMixer : public SoundProcessorInstance
+    class AM_API_PUBLIC ProcessorMixer : public SoundProcessorInstance
     {
     public:
         ProcessorMixer();
