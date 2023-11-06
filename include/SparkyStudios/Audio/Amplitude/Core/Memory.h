@@ -317,7 +317,44 @@ namespace SparkyStudios::Audio::Amplitude
 #if !defined(AM_NO_MEMORY_STATS)
         std::map<MemoryPoolKind, MemoryPoolStats> _memPoolsStats = {};
 #endif
+    };
 
+    /**
+     * @brief Allocates a block of memory with the given size in the given pool.
+     *
+     * That allocation will be restricted to the current scope, and will be freed
+     * automatically when the scope ends.
+     */
+    class AM_API_PUBLIC ScopedMemoryAllocation
+    {
+    public:
+        ScopedMemoryAllocation() = default;
+
+        ScopedMemoryAllocation(MemoryPoolKind pool, AmSize size);
+        ScopedMemoryAllocation(MemoryPoolKind pool, AmSize size, AmUInt32 alignment);
+
+        ~ScopedMemoryAllocation();
+
+        template<typename T>
+        [[nodiscard]] T* PointerOf() const
+        {
+            return reinterpret_cast<T*>(_address);
+        }
+
+        template<typename T, typename std::enable_if_t<std::is_pointer_v<T>, bool> = false>
+        [[nodiscard]] T As() const
+        {
+            return reinterpret_cast<T>(_address);
+        }
+
+        [[nodiscard]] AmVoidPtr Address() const
+        {
+            return _address;
+        }
+
+    private:
+        MemoryPoolKind _pool = MemoryPoolKind::Default;
+        void* _address = nullptr;
     };
 } // namespace SparkyStudios::Audio::Amplitude
 

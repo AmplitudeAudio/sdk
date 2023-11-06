@@ -271,4 +271,25 @@ namespace SparkyStudios::Audio::Amplitude
         return _memPoolsStats.at(pool);
     }
 #endif
+
+    ScopedMemoryAllocation::ScopedMemoryAllocation(MemoryPoolKind pool, AmSize size)
+    {
+        _pool = pool;
+        _address = amMemory->Malloc(_pool, size);
+    }
+
+    ScopedMemoryAllocation::ScopedMemoryAllocation(MemoryPoolKind pool, AmSize size, AmUInt32 alignment)
+    {
+        _pool = pool;
+        _address = amMemory->Malign(_pool, size, alignment);
+    }
+
+    ScopedMemoryAllocation::~ScopedMemoryAllocation()
+    {
+        if (_address == nullptr)
+            return;
+
+        amMemory->Free(_pool, _address);
+        _address = nullptr;
+    }
 } // namespace SparkyStudios::Audio::Amplitude
