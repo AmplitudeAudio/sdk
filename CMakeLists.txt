@@ -57,6 +57,14 @@ if(UNIX)
     find_package(Threads REQUIRED)
 endif()
 
+# Setup FFT and Accelerate Framework
+# ------------------------------------------------------------------------------
+if(APPLE)
+    find_library(ACCELERATE_FRAMEWORK Accelerate)
+endif()
+
+# ------------------------------------------------------------------------------
+
 # Setup flatbuffers
 # ------------------------------------------------------------------------------
 find_package(flatbuffers CONFIG REQUIRED)
@@ -280,6 +288,8 @@ set(SA_SOURCE
 
     src/Utils/Audio/Compression/ADPCM/ADPCM.cpp
     src/Utils/Audio/Compression/ADPCM/ADPCM.h
+    src/Utils/Audio/FFT/AudioFFT.cpp
+    src/Utils/Audio/FFT/AudioFFT.h
     src/Utils/Audio/Resampling/CDSPBlockConvolver.h
     src/Utils/Audio/Resampling/CDSPFIRFilter.h
     src/Utils/Audio/Resampling/CDSPFracInterpolator.h
@@ -360,6 +370,11 @@ foreach(build_type ${AM_BUILDSYSTEM_TYPE})
 
     if(UNIX)
         target_link_libraries(${build_type} PUBLIC Threads::Threads ${CMAKE_DL_LIBS})
+    endif()
+
+    if(APPLE)
+        target_link_libraries(${build_type} PUBLIC ${ACCELERATE_FRAMEWORK})
+        target_compile_definitions(${build_type} PUBLIC AM_FFT_APPLE_ACCELERATE)
     endif()
 endforeach()
 

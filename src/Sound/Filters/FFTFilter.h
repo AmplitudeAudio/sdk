@@ -19,8 +19,6 @@
 
 #include <SparkyStudios/Audio/Amplitude/Sound/Filter.h>
 
-#include <Utils/pffft/pffft_double.h>
-
 namespace SparkyStudios::Audio::Amplitude
 {
     class FFTFilterInstance;
@@ -47,28 +45,19 @@ namespace SparkyStudios::Audio::Amplitude
             AmAudioSampleBuffer buffer, AmUInt16 channel, AmUInt64 frames, AmUInt16 channels, AmUInt32 sampleRate, bool isInterleaved)
             override;
 
-        virtual void ProcessFFTChannel(AmReal64Buffer buffer, AmUInt16 channel, AmUInt64 frames, AmUInt16 channels, AmUInt32 sampleRate);
+        virtual void ProcessFFTChannel(
+            AmReal32Buffer re, AmReal32Buffer im, AmUInt16 channel, AmUInt64 frames, AmUInt16 channels, AmUInt32 sampleRate);
 
-        void Comp2MagPhase(AmReal64Buffer buffer, AmUInt32 samples);
-        void MagPhase2MagFreq(AmReal64Buffer buffer, AmUInt32 samples, AmUInt32 sampleRate, AmUInt16 channel);
-        void MagFreq2MagPhase(AmReal64Buffer buffer, AmUInt32 samples, AmUInt32 sampleRate, AmUInt16 channel);
+        void Comp2MagPhase(AmReal32Buffer re, AmReal32Buffer im, AmUInt32 samples);
+        void MagPhase2MagFreq(AmReal32Buffer re, AmReal32Buffer im, AmUInt32 samples, AmUInt32 sampleRate, AmUInt16 channel);
+        void MagFreq2MagPhase(AmReal32Buffer re, AmReal32Buffer im, AmUInt32 samples, AmUInt32 sampleRate, AmUInt16 channel);
 
-        static void MagPhase2Comp(AmReal64Buffer buffer, AmUInt32 samples);
+        static void MagPhase2Comp(AmReal32Buffer re, AmReal32Buffer im, AmUInt32 samples);
 
         void InitFFT();
 
     private:
-        PFFFTD_Setup* _pffft_setup = nullptr;
-
-        AmReal64Buffer _temp = nullptr;
-        AmReal64Buffer _inputBuffer = nullptr;
-        AmReal64Buffer _mixBuffer = nullptr;
-        AmReal64Buffer _lastPhase = nullptr;
-        AmReal64Buffer _sumPhase = nullptr;
-
-        AmUInt32 _inputOffset[AM_MAX_CHANNELS]{};
-        AmUInt32 _mixOffset[AM_MAX_CHANNELS]{};
-        AmUInt32 _readOffset[AM_MAX_CHANNELS]{};
+        AmReal32Buffer _temp = nullptr;
     };
 } // namespace SparkyStudios::Audio::Amplitude
 

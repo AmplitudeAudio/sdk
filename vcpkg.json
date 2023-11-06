@@ -26,10 +26,6 @@
     {
       "name": "dylib",
       "version>=": "2.2.1"
-    },
-    {
-      "name": "fftwpp",
-      "version>=": "2019-12-19#2"
     }
   ]
 }
