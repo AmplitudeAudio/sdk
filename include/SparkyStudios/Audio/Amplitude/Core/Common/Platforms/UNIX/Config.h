@@ -24,7 +24,7 @@
 #if defined(__GNUC__) && __GNUC__ >= 4
 #define AM_LIB_EXPORT __attribute__((visibility("default")))
 #define AM_LIB_IMPORT __attribute__((visibility("default")))
-#define AM_LIB_PRIVATE __attribute__((visibility("hidden")))
+#define AM_LIB_PRIVATE __attribute__((visibility("hidden"))) static
 #else
 #define AM_LIB_EXPORT
 #define AM_LIB_IMPORT

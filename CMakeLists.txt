@@ -165,10 +165,6 @@ set(SA_SOURCE
     src/Core/Codecs/AMS/Codec.cpp
     src/Core/Codecs/AMS/Codec.h
 
-    src/Core/Codecs/FLAC/Codec.cpp
-    src/Core/Codecs/FLAC/Codec.h
-    src/Core/Codecs/FLAC/dr_flac.h
-
     src/Core/Codecs/MP3/Codec.cpp
     src/Core/Codecs/MP3/Codec.h
     src/Core/Codecs/MP3/dr_mp3.h

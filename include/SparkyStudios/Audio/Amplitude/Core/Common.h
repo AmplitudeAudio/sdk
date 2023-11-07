@@ -91,7 +91,7 @@ namespace SparkyStudios::Audio::Amplitude
     /**
      * @brief Class that handles aligned allocations to support vectorized operations.
      */
-    class AmAlignedReal32Buffer
+    class AM_API_PUBLIC AmAlignedReal32Buffer
     {
     public:
         AmAlignedReal32Buffer();
@@ -149,7 +149,7 @@ namespace SparkyStudios::Audio::Amplitude
     /**
      * @brief Lightweight class that handles small aligned buffer to support vectorized operations.
      */
-    class TinyAlignedReal32Buffer
+    class AM_API_PUBLIC TinyAlignedReal32Buffer
     {
     public:
         TinyAlignedReal32Buffer();
@@ -222,7 +222,7 @@ namespace SparkyStudios::Audio::Amplitude
      * This data structure is mainly filled by a Codec
      * during the initialization time.
      */
-    struct SoundFormat
+    struct AM_API_PUBLIC SoundFormat
     {
     public:
         void SetAll(

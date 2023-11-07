@@ -61,12 +61,20 @@ set(AMPLITUDE_COMPILE_DEFINITIONS
 get_filename_component(AMPLITUDE_INSTALL_ROOT ${AM_SDK_PATH} DIRECTORY)
 get_filename_component(AMPLITUDE_FOLDER ${AM_SDK_PATH} NAME)
 
-if(MSVC OR WIN32)
+if(WIN32)
     set(AMPLITUDE_LIB_OS "win")
-    set(AMPLITUDE_STATIC_LIB_NAME "Amplitude.lib")
-    set(AMPLITUDE_STATIC_LIB_NAME_DEBUG "Amplitude_d.lib")
-    set(AMPLITUDE_SHARED_LIB_NAME "Amplitude.dll")
-    set(AMPLITUDE_SHARED_LIB_NAME_DEBUG "Amplitude_d.dll")
+
+    if(CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
+        set(AMPLITUDE_STATIC_LIB_NAME "libAmplitude.a")
+        set(AMPLITUDE_STATIC_LIB_NAME_DEBUG "libAmplitude_d.a")
+        set(AMPLITUDE_SHARED_LIB_NAME "libAmplitude.dll")
+        set(AMPLITUDE_SHARED_LIB_NAME_DEBUG "libAmplitude_d.dll")
+    else()
+        set(AMPLITUDE_STATIC_LIB_NAME "Amplitude.lib")
+        set(AMPLITUDE_STATIC_LIB_NAME_DEBUG "Amplitude_d.lib")
+        set(AMPLITUDE_SHARED_LIB_NAME "Amplitude.dll")
+        set(AMPLITUDE_SHARED_LIB_NAME_DEBUG "Amplitude_d.dll")
+    endif()
 elseif(APPLE)
     set(AMPLITUDE_LIB_OS "osx")
     set(AMPLITUDE_STATIC_LIB_NAME "libAmplitude.a")
@@ -81,6 +89,14 @@ else()
     set(AMPLITUDE_SHARED_LIB_NAME_DEBUG "libAmplitude_d.so")
 endif()
 
+add_library(SparkyStudios::Audio::Amplitude::SDK::Static STATIC IMPORTED GLOBAL)
+set_target_properties(SparkyStudios::Audio::Amplitude::SDK::Static PROPERTIES
+    IMPORTED_LOCATION "${AM_SDK_PATH}/lib/${AMPLITUDE_LIB_OS}/static/${AMPLITUDE_STATIC_LIB_NAME}"
+    IMPORTED_LOCATION_DEBUG "${AM_SDK_PATH}/lib/${AMPLITUDE_LIB_OS}/static/${AMPLITUDE_STATIC_LIB_NAME_DEBUG}"
+    INTERFACE_INCLUDE_DIRECTORIES "${AM_SDK_PATH}/include"
+    INTERFACE_COMPILE_DEFINITIONS "AM_BUILDSYSTEM_STATIC"
+)
+
 add_library(SparkyStudios::Audio::Amplitude::SDK::Shared SHARED IMPORTED GLOBAL)
 set_target_properties(SparkyStudios::Audio::Amplitude::SDK::Shared PROPERTIES
     IMPORTED_LOCATION "${AM_SDK_PATH}/lib/${AMPLITUDE_LIB_OS}/shared/${AMPLITUDE_SHARED_LIB_NAME}"
@@ -89,10 +105,14 @@ set_target_properties(SparkyStudios::Audio::Amplitude::SDK::Shared PROPERTIES
     INTERFACE_COMPILE_DEFINITIONS "AM_BUILDSYSTEM_SHARED"
 )
 
-add_library(SparkyStudios::Audio::Amplitude::SDK::Static STATIC IMPORTED GLOBAL)
-set_target_properties(SparkyStudios::Audio::Amplitude::SDK::Static PROPERTIES
-    IMPORTED_LOCATION "${AM_SDK_PATH}/lib/${AMPLITUDE_LIB_OS}/static/${AMPLITUDE_STATIC_LIB_NAME}"
-    IMPORTED_LOCATION_DEBUG "${AM_SDK_PATH}/lib/${AMPLITUDE_LIB_OS}/static/${AMPLITUDE_STATIC_LIB_NAME_DEBUG}"
-    INTERFACE_INCLUDE_DIRECTORIES "${AM_SDK_PATH}/include"
-    INTERFACE_COMPILE_DEFINITIONS "AM_BUILDSYSTEM_STATIC"
-)
+if(WIN32)
+    if(CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
+        set(AMPLITUDE_STATIC_LIB_NAME "libAmplitude.dll.a")
+        set(AMPLITUDE_STATIC_LIB_NAME_DEBUG "libAmplitude_d.dll.a")
+    endif()
+
+    set_target_properties(SparkyStudios::Audio::Amplitude::SDK::Shared PROPERTIES
+        IMPORTED_IMPLIB "${AM_SDK_PATH}/lib/${AMPLITUDE_LIB_OS}/shared/${AMPLITUDE_STATIC_LIB_NAME}"
+        IMPORTED_IMPLIB_DEBUG "${AM_SDK_PATH}/lib/${AMPLITUDE_LIB_OS}/shared/${AMPLITUDE_STATIC_LIB_NAME_DEBUG}"
+    )
+endif()

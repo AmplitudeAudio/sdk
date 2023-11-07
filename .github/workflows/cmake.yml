@@ -1,11 +1,11 @@
-name: Build
+name: Build CMake Project
 
 on:
-  push:
-  pull_request:
-  release:
-    tags:
-      - "v*"
+  workflow_call:
+    inputs:
+      project-path:
+        required: true
+        type: string
 
 jobs:
   build:
@@ -21,7 +21,6 @@ jobs:
             artifact: "amplitude_audio_sdk_windows_msvc_x64.7z"
             cc: "cl"
             cxx: "cl"
-            archiver: "7z a"
             generator: "Visual Studio 17 2022"
             target_triplet: x64-windows
 
@@ -30,16 +29,14 @@ jobs:
             artifact: "amplitude_audio_sdk_windows_mingw_x64.7z"
             cc: "gcc"
             cxx: "g++"
-            archiver: "7z a"
             generator: "Ninja"
-            target_triplet: x64-windows
+            target_triplet: x64-mingw-static
 
           - name: "Ubuntu_Latest_GCC"
             os: ubuntu-latest
             artifact: "amplitude_audio_sdk_linux_gcc_x64.7z"
             cc: "gcc"
             cxx: "g++"
-            archiver: "7z a"
             generator: "Ninja"
             target_triplet: x64-linux
 
@@ -48,7 +45,6 @@ jobs:
             artifact: "amplitude_audio_sdk_linux_gcc9_x64.7z"
             cc: "gcc"
             cxx: "g++"
-            archiver: "7z a"
             generator: "Ninja"
             target_triplet: x64-linux
 
@@ -57,13 +53,12 @@ jobs:
             artifact: "amplitude_audio_sdk_macos_clang_x64.7z"
             cc: "clang"
             cxx: "clang++"
-            archiver: "7za a"
             generator: "Ninja"
             target_triplet: x64-osx
 
     steps:
       # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
         with:
           submodules: recursive
 
@@ -73,9 +68,8 @@ jobs:
           echo github.event_name: ${{ github.event_name }}
 
       - name: Setup vcpkg
-        uses: lukka/run-vcpkg@v10.0
+        uses: lukka/run-vcpkg@v11.2
         with:
-          runVcpkgInstall: true
           vcpkgGitCommitId: 9f03078bdcbab3ad8c1e3927c40c3fb48e42501f
 
       - name: Find flatc version
@@ -163,8 +157,18 @@ jobs:
           sudo unzip Mac.flatc.binary.zip -d bin
           ./bin/flatc --version
 
+      - name: Restore SDK Cache
+        uses: actions/cache/restore@v3
+        with:
+          enableCrossOsArchive: true
+          path: sdk
+          key: ${{ matrix.build_type }}-${{ matrix.config.artifact }}-${{ hashFiles('**/sdk') }}
+          restore-keys: |
+            ${{ matrix.build_type }}-${{ matrix.config.artifact }}-
+
       - name: Configure
         shell: bash
+        working-directory: ${{ inputs.project-path }}
         run: |
           mkdir build
           cmake \
@@ -179,31 +183,18 @@ jobs:
 
       - name: Build
         shell: bash
-        working-directory: build
+        working-directory: ${{ inputs.project-path }}/build
         run: cmake --build . --config ${{ matrix.build_type }}
 
       - name: Install Strip
         shell: bash
-        working-directory: build
+        working-directory: ${{ inputs.project-path }}/build
         run: cmake --install . --strip --config ${{ matrix.build_type }}
 
-      - name: Pack
-        shell: bash
-        run: ${{ matrix.config.archiver }} ./${{ matrix.build_type }}_${{ matrix.config.artifact }} LICENSE README.md sdk
-
-      - name: Upload
-        uses: actions/upload-artifact@v1
+      - name: Save SDK Cache
+        uses: actions/cache/save@v3
+        id: cache
         with:
-          path: ./${{ matrix.build_type }}_${{ matrix.config.artifact }}
-          name: ${{ matrix.build_type }}_${{ matrix.config.artifact }}
-
-      - name: Upload release asset
-        if: github.event_name == 'release' && (github.event.action == 'published' || github.event.action == 'created')
-        uses: actions/upload-release-asset@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          upload_url: ${{ github.event.release.upload_url }}
-          asset_path: ./${{ matrix.build_type }}_${{ matrix.config.artifact }}
-          asset_name: ${{ matrix.build_type }}_${{ matrix.config.artifact }}.zip
-          asset_content_type: application/zip
+          enableCrossOsArchive: true
+          path: sdk
+          key: ${{ matrix.build_type }}-${{ matrix.config.artifact }}-${{ hashFiles('**/sdk') }}

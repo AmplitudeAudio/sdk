@@ -17,14 +17,11 @@
 #include <SparkyStudios/Audio/Amplitude/Amplitude.h>
 
 #include "../src/Core/Codecs/AMS/Codec.h"
-#include "../src/Core/Codecs/FLAC/Codec.h"
 #include "../src/Core/Codecs/MP3/Codec.h"
 #include "../src/Core/Codecs/OGG/Codec.h"
 #include "../src/Core/Codecs/WAV/Codec.h"
 
 #include "../src/Utils/Audio/Resampling/CDSPResampler.h"
-#include "../src/Utils/miniaudio/miniaudio_utils.h"
-#include "../src/Utils/Utils.h"
 
 #define AM_FLAG_NOISE_SHAPING 0x1
 
@@ -195,9 +192,7 @@ static int process(const AmOsString& inFileName, const AmOsString& outFileName, 
                 resampler->clear();
 
                 for (AmUInt64 i = 0; i < f; i++)
-                {
                     output16[i * numChannels + c] = AmReal32ToInt16(static_cast<AmReal32>(output[i]), true);
-                }
             }
 
             amMemory->Free(MemoryPoolKind::SoundData, input64);
@@ -234,7 +229,8 @@ static int process(const AmOsString& inFileName, const AmOsString& outFileName, 
         }
         else
         {
-            ma_pcm_f32_to_s16(output16, pcmData, numSamples * numChannels, ma_dither_mode_rectangle);
+            for (int i = 0; i < numSamples * numChannels; ++i)
+                output16[i] = AmReal32ToInt16(pcmData[i], true);
 
             encoder->SetFormat(format);
             if (!encoder->Open(outFileName))

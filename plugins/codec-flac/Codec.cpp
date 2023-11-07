@@ -1,0 +1,192 @@
+// Copyright (c) 2021-present Sparky Studios. All rights reserved.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+#include <Codec.h>
+
+using namespace SparkyStudios::Audio::Amplitude;
+
+void FlacCodec::FlacDecoderInternal::set_current_output_buffer(AmAudioSampleBuffer output, AmUInt64 size)
+{
+    _current_output_buffer = output;
+    _current_output_buffer_size = size;
+}
+
+::FLAC__StreamDecoderWriteStatus FlacCodec::FlacDecoderInternal::write_callback(
+    const ::FLAC__Frame* frame, const FLAC__int32* const* buffer)
+{
+    if (_current_output_buffer == nullptr)
+        return ::FLAC__STREAM_DECODER_WRITE_STATUS_ABORT;
+
+    AmUInt64 sample = _read_frame_count % _current_output_buffer_size;
+
+    _need_more_frames = true;
+
+    for (AmUInt32 i = 0; i < frame->header.blocksize; i++)
+    {
+        for (AmUInt32 j = 0; j < frame->header.channels; j++)
+        {
+            _current_output_buffer[(sample * frame->header.channels) + j] = AmInt16ToReal32(buffer[j][i]);
+        }
+
+        sample++;
+
+        if (sample >= _current_output_buffer_size)
+        {
+            _need_more_frames = false;
+            break;
+        }
+    }
+
+    _read_frame_count = sample;
+
+    return FLAC__STREAM_DECODER_WRITE_STATUS_CONTINUE;
+}
+
+void FlacCodec::FlacDecoderInternal::metadata_callback(const ::FLAC__StreamMetadata* metadata)
+{
+    if (metadata->type == FLAC__METADATA_TYPE_STREAMINFO)
+    {
+        auto total_samples = metadata->data.stream_info.total_samples;
+        auto sample_rate = metadata->data.stream_info.sample_rate;
+        auto channels = metadata->data.stream_info.channels;
+        auto bps = metadata->data.stream_info.bits_per_sample;
+        auto frame_size = metadata->data.stream_info.min_framesize;
+
+        _decoder->m_format.SetAll(
+            sample_rate, channels, bps, total_samples, channels * sizeof(AmAudioSample),
+            AM_SAMPLE_FORMAT_FLOAT, // This codec always read frames as float32 values
+            AM_SAMPLE_INTERLEAVED // dr_flac always read interleaved frames
+        );
+    }
+}
+
+void FlacCodec::FlacDecoderInternal::error_callback(::FLAC__StreamDecoderErrorStatus status)
+{
+    CallLogFunc("Got error callback: %s\n", FLAC__StreamDecoderErrorStatusString[status]);
+}
+
+FlacCodec::FlacCodec()
+    : Codec("flac")
+{}
+
+bool FlacCodec::FlacDecoder::Open(const AmOsString& filePath)
+{
+    FLAC__StreamDecoderInitStatus init_status = _flac.init(AM_OS_STRING_TO_STRING(filePath));
+    if (init_status != FLAC__STREAM_DECODER_INIT_STATUS_OK)
+    {
+        CallLogFunc("ERROR: Initializing FLAC decoder: %s\n", FLAC__StreamDecoderInitStatusString[init_status]);
+        return false;
+    }
+
+    _flac.set_md5_checking(true);
+    _flac.set_metadata_respond(::FLAC__METADATA_TYPE_STREAMINFO);
+
+    if (!_flac.process_until_end_of_metadata())
+    {
+        CallLogFunc("ERROR: Unable to read metadata for FLAC file: " AM_OS_CHAR_FMT "\n", filePath.c_str());
+        return false;
+    }
+
+    _initialized = true;
+
+    return true;
+}
+
+bool FlacCodec::FlacDecoder::Close()
+{
+    if (_initialized)
+    {
+        _flac.finish();
+
+        m_format = SoundFormat();
+        _initialized = false;
+    }
+
+    // true because it is already closed
+    return true;
+}
+
+AmUInt64 FlacCodec::FlacDecoder::Load(AmVoidPtr out)
+{
+    if (!_initialized)
+        return 0;
+
+    _flac.set_current_output_buffer(static_cast<AmAudioSampleBuffer>(out), m_format.GetFramesCount());
+
+    if (!Seek(0))
+        return 0;
+
+    if (_flac.process_until_end_of_stream())
+        return _flac.read_frame_count();
+
+    return 0;
+}
+
+AmUInt64 FlacCodec::FlacDecoder::Stream(AmVoidPtr out, AmUInt64 offset, AmUInt64 length)
+{
+    if (!_initialized)
+        return 0;
+
+    _flac.set_current_output_buffer(static_cast<AmAudioSampleBuffer>(out), length);
+
+    bool seeked = Seek(offset);
+
+    while (_flac.need_more_frames() && _flac.get_state() != FLAC__STREAM_DECODER_END_OF_STREAM)
+    {
+        _flac.process_single();
+    }
+
+    return _flac.read_frame_count();
+}
+
+bool FlacCodec::FlacDecoder::Seek(AmUInt64 offset)
+{
+    return _flac.seek_absolute(offset);
+}
+
+bool FlacCodec::FlacEncoder::Open(const AmOsString& filePath)
+{
+    _initialized = true;
+    return false;
+}
+
+bool FlacCodec::FlacEncoder::Close()
+{
+    if (_initialized)
+        return true;
+
+    return true;
+}
+
+AmUInt64 FlacCodec::FlacEncoder::Write(AmVoidPtr in, AmUInt64 offset, AmUInt64 length)
+{
+    return 0;
+}
+
+Codec::Decoder* FlacCodec::CreateDecoder() const
+{
+    return new FlacDecoder(this);
+}
+
+Codec::Encoder* FlacCodec::CreateEncoder() const
+{
+    return new FlacEncoder(this);
+}
+
+bool FlacCodec::CanHandleFile(const AmOsString& filePath) const
+{
+    const auto& path = std::filesystem::path(filePath);
+
+    return path.extension() == ".flac"; // FLAC extension
+}
