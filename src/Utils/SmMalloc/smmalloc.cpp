@@ -1,6 +1,6 @@
 // The MIT License (MIT)
 //
-// 	Copyright (c) 2017-2018 Sergey Makeev
+// 	Copyright (c) 2017-2023 Sergey Makeev
 //
 // 	Permission is hereby granted, free of charge, to any person obtaining a copy
 // 	of this software and associated documentation files (the "Software"), to deal
@@ -31,35 +31,36 @@ namespace sm
 
     namespace internal
     {
+
         void TlsPoolBucket::Init(
             uint32_t* pCacheStack, uint32_t maxElementsNum, CacheWarmupOptions warmupOptions, Allocator* alloc, size_t bucketIndex)
         {
             // assume thread_local variable always initialized with zeroes
-            AMPLITUDE_ASSERT(numElementsL0 == 0);
-            AMPLITUDE_ASSERT(numElementsL1 == 0);
-            AMPLITUDE_ASSERT(pBucket == nullptr);
-            AMPLITUDE_ASSERT(pBucketData == nullptr);
-            AMPLITUDE_ASSERT(pStorageL1 == nullptr);
-            AMPLITUDE_ASSERT(maxElementsCount == 0);
+            SM_ASSERT(numElementsL0 == 0);
+            SM_ASSERT(numElementsL1 == 0);
+            SM_ASSERT(pBucket == nullptr);
+            SM_ASSERT(pBucketData == nullptr);
+            SM_ASSERT(pStorageL1 == nullptr);
+            SM_ASSERT(maxElementsCount == 0);
 
             Allocator::PoolBucket* poolBucket = alloc->GetBucketByIndex(bucketIndex);
 
-            AMPLITUDE_ASSERT(maxElementsNum >= SMM_MAX_CACHE_ITEMS_COUNT + 2);
+            SM_ASSERT(maxElementsNum >= SMM_MAX_CACHE_ITEMS_COUNT + 2);
             pStorageL1 = pCacheStack;
             numElementsL1 = 0;
             numElementsL0 = 0;
             maxElementsCount = (maxElementsNum - SMM_MAX_CACHE_ITEMS_COUNT);
             pBucket = poolBucket;
-            AMPLITUDE_ASSERT(pBucket);
+            SM_ASSERT(pBucket);
             pBucketData = pBucket->pData;
 
+            // warmup cache
+            size_t elementSize = sm::GetBucketSizeInBytesByIndex(bucketIndex);
             if (warmupOptions == CACHE_COLD)
             {
                 return;
             }
 
-            // warmup cache
-            uint32_t elementSize = alloc->GetBucketElementSize(bucketIndex);
             uint32_t num = (warmupOptions == CACHE_WARM) ? (maxElementsCount / 2) : (maxElementsCount);
 
             CacheWarmupLink* pRoot = nullptr;
@@ -67,7 +68,7 @@ namespace sm
             for (uint32_t j = 0; j < num; j++)
             {
                 // allocate from global (pThreadCache is still nullptr)
-                void* p = alloc->Allocate<false>(elementSize, 16);
+                void* p = alloc->Allocate<false>(elementSize, Allocator::kDefaultTlsCacheAlignment);
                 if (p == nullptr)
                 {
                     break;
@@ -92,11 +93,11 @@ namespace sm
                 CacheWarmupLink* pNext = pCurrent->pNext;
                 bool r = alloc->ReleaseToCache<false>(this, pCurrent);
                 SMMALLOC_USED_IN_ASSERT(r);
-                AMPLITUDE_ASSERT(r);
+                SM_ASSERT(r);
                 pCurrent = pNext;
             }
 
-            AMPLITUDE_ASSERT(GetElementsCount() == num);
+            SM_ASSERT(GetElementsCount() == num);
         }
 
         uint32_t* TlsPoolBucket::Destroy()
@@ -128,7 +129,8 @@ namespace sm
 
     void Allocator::CreateThreadCache(CacheWarmupOptions warmupOptions, std::initializer_list<uint32_t> options)
     {
-        AMPLITUDE_ASSERT(bucketsCount >= options.size());
+        // thread cache configuration is invalid
+        SM_ASSERT(bucketsCount >= options.size());
 
         size_t i = 0;
         for (uint32_t _elementsNum : options)
@@ -140,8 +142,8 @@ namespace sm
 
             uint32_t elementsNum = _elementsNum + SMM_MAX_CACHE_ITEMS_COUNT;
 
-            // allocate stack for cache
-            uint32_t* localStack = (uint32_t*)GenericAllocator::Alloc(gAllocator, elementsNum * sizeof(uint32_t), 64);
+            // allocate stack for cache indices
+            uint32_t* localStack = (uint32_t*)GenericAllocator::Alloc(gAllocator, elementsNum * sizeof(uint32_t), SMM_CACHE_LINE_SIZE);
 
             // initialize
             GetTlsBucket(i)->Init(localStack, elementsNum, warmupOptions, this, i);
@@ -161,7 +163,7 @@ namespace sm
 
     void Allocator::PoolBucket::Create(size_t elementSize)
     {
-        AMPLITUDE_ASSERT(elementSize >= 16 && "Invalid element size");
+        SM_ASSERT(elementSize >= 16 && "Invalid element size");
 
         // build inplace single linked list
         globalTag.store(0, std::memory_order_relaxed);
@@ -179,7 +181,6 @@ namespace sm
             {
                 TaggedIndex nextVal;
                 nextVal.p.tag = globalTag.load(std::memory_order_relaxed);
-                ;
                 nextVal.p.offset = (uint32_t)(next - pData);
                 *((TaggedIndex*)(node)) = nextVal;
             }
@@ -201,16 +202,12 @@ namespace sm
         , pBufferEnd(nullptr)
         , pBuffer(nullptr, GenericAllocator::Deleter(allocator))
         , gAllocator(allocator)
-    {
-#ifdef SMMALLOC_STATS_SUPPORT
-        globalMissCount.store(0);
-#endif
-    }
+    {}
 
     // Return the next power of 2 higher than the input
     // If the input is already a power of 2, the output will be the same as the input.
     // Got this from Brian Sharp's SWEng mailing list.
-    inline int GetNextPow2(uint32_t n)
+    SMM_INLINE int GetNextPow2(uint32_t n)
     {
         n -= 1;
 
@@ -225,21 +222,33 @@ namespace sm
 
     void Allocator::Init(uint32_t _bucketsCount, size_t _bucketSizeInBytes)
     {
+        /*
+        for (size_t bucketIdx = 0; bucketIdx < 64; bucketIdx++)
+        {
+            printf("%zu->%zu, ", bucketIdx, sm::getBucketSizeInBytesByIndex(bucketIdx));
+        }
+        */
+
         if (bucketsCount > 0)
         {
             // already initialized
             return;
         }
+        SM_ASSERT(_bucketsCount > 0 && _bucketsCount <= SMM_MAX_BUCKET_COUNT);
 
-        AMPLITUDE_ASSERT(_bucketsCount > 0 && _bucketsCount <= 64);
         if (_bucketsCount == 0)
         {
             return;
         }
 
+        if (_bucketsCount >= SMM_MAX_BUCKET_COUNT)
+        {
+            _bucketsCount = SMM_MAX_BUCKET_COUNT;
+        }
+
         bucketsCount = _bucketsCount;
-        size_t alignmentMax = GetNextPow2((uint32_t)(16 * bucketsCount));
-        bucketSizeInBytes = Align(_bucketSizeInBytes, alignmentMax);
+        size_t alignmentMax = kMaxValidAlignment;
+        bucketSizeInBytes = Align(_bucketSizeInBytes, kMaxValidAlignment);
 
         size_t i = 0;
         for (i = 0; i < bucketsDataBegin.size(); i++)
@@ -251,15 +260,15 @@ namespace sm
         pBuffer.reset((uint8_t*)GenericAllocator::Alloc(gAllocator, totalBytesCount, alignmentMax));
         pBufferEnd = pBuffer.get() + totalBytesCount + 1;
 
-        size_t elementSize = 16;
         for (i = 0; i < bucketsCount; i++)
         {
             PoolBucket& bucket = buckets[i];
             bucket.pData = pBuffer.get() + i * bucketSizeInBytes;
-            AMPLITUDE_ASSERT(IsAligned((size_t)bucket.pData, GetNextPow2(elementSize)) && "Alignment failed");
             bucket.pBufferEnd = bucket.pData + bucketSizeInBytes;
-            bucket.Create(elementSize);
-            elementSize += 16;
+            size_t bucketSizeInBytes = GetBucketSizeInBytesByIndex(i);
+            SM_ASSERT(IsAligned(bucketSizeInBytes, kMinValidAlignment));
+            SM_ASSERT(IsAligned(size_t(bucket.pData), alignmentMax) && "Incorrect alignment detected!");
+            bucket.Create(bucketSizeInBytes);
             bucketsDataBegin[i] = bucket.pData;
         }
     }
