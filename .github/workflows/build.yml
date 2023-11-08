@@ -57,6 +57,8 @@ jobs:
         project:
           - name: FLAC Codec
             path: codec-flac
+          - name: Vorbis Codec
+            path: codec-vorbis
 
   release:
     needs: [ build-plugins ]
@@ -87,7 +89,7 @@ jobs:
             artifact: "amplitude_audio_sdk_linux_gcc9_x64.7z"
             archiver: "7z a"
 
-          - name: "macOS Latest Clang"
+          - name: "macOS x64 Latest Clang"
             os: macos-latest
             artifact: "amplitude_audio_sdk_macos_clang_x64.7z"
             archiver: "7za a"

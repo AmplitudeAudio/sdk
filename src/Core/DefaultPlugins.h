@@ -19,7 +19,6 @@
 
 // clang-format off
 #include <Core/Codecs/WAV/Codec.h>
-#include <Core/Codecs/OGG/Codec.h>
 #include <Core/Codecs/MP3/Codec.h>
 // clang-format on
 

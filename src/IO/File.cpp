@@ -64,9 +64,9 @@ namespace SparkyStudios::Audio::Amplitude
         return len;
     }
 
-    void DiskFile::Seek(AmInt32 offset)
+    void DiskFile::Seek(AmSize offset)
     {
-        fseek(mFileHandle, offset, SEEK_SET);
+        Seek(offset, SEEK_SET);
     }
 
     AmSize DiskFile::Pos()
@@ -81,8 +81,7 @@ namespace SparkyStudios::Audio::Amplitude
 
     DiskFile::~DiskFile()
     {
-        if (mFileHandle)
-            fclose(mFileHandle);
+        Close();
     }
 
     DiskFile::DiskFile()
@@ -99,19 +98,19 @@ namespace SparkyStudios::Audio::Amplitude
 
         switch (mode)
         {
-            case eFOM_READ:
-                op = kind == eFOK_TEXT ? AM_OS_STRING("r") : AM_OS_STRING("rb");
-                break;
-            case eFOM_WRITE:
-                op = kind == eFOK_TEXT ? AM_OS_STRING("w") : AM_OS_STRING("wb");
-            case eFOM_APPEND:
-                op = kind == eFOK_TEXT ? AM_OS_STRING("a") : AM_OS_STRING("ab");
-            case eFOM_READWRITE:
-                op = kind == eFOK_TEXT ? AM_OS_STRING("w+") : AM_OS_STRING("wb+");
-                break;
-            case eFOM_READAPPEND:
-                op = kind == eFOK_TEXT ? AM_OS_STRING("a+") : AM_OS_STRING("ab+");
-                break;
+        case eFOM_READ:
+            op = kind == eFOK_TEXT ? AM_OS_STRING("r") : AM_OS_STRING("rb");
+            break;
+        case eFOM_WRITE:
+            op = kind == eFOK_TEXT ? AM_OS_STRING("w") : AM_OS_STRING("wb");
+        case eFOM_APPEND:
+            op = kind == eFOK_TEXT ? AM_OS_STRING("a") : AM_OS_STRING("ab");
+        case eFOM_READWRITE:
+            op = kind == eFOK_TEXT ? AM_OS_STRING("w+") : AM_OS_STRING("wb+");
+            break;
+        case eFOM_READAPPEND:
+            op = kind == eFOK_TEXT ? AM_OS_STRING("a+") : AM_OS_STRING("ab+");
+            break;
         }
 
 #if defined(AM_WINDOWS_VERSION)
@@ -126,9 +125,23 @@ namespace SparkyStudios::Audio::Amplitude
         return AM_ERROR_NO_ERROR;
     }
 
+    void DiskFile::Close()
+    {
+        if (mFileHandle != nullptr)
+        {
+            fclose(mFileHandle);
+            mFileHandle = nullptr;
+        }
+    }
+
     bool DiskFile::Eof()
     {
         return feof(mFileHandle) != 0;
+    }
+
+    void DiskFile::Seek(AmSize offset, int origin)
+    {
+        fseek(mFileHandle, offset, origin);
     }
 
     AmSize MemoryFile::Read(AmUInt8Buffer dst, AmSize bytes)
@@ -153,7 +166,7 @@ namespace SparkyStudios::Audio::Amplitude
         return mDataLength;
     }
 
-    void MemoryFile::Seek(AmInt32 offset)
+    void MemoryFile::Seek(AmSize offset)
     {
         if (offset >= 0)
             mOffset = offset;

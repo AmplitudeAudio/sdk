@@ -18,7 +18,7 @@ cmake_policy(SET CMP0048 NEW)
 
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/../../sdk/cmake")
 
-project(AmplitudeFlacCodecPlugin)
+project(AmplitudeVorbisCodecPlugin)
 
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_DEBUG_POSTFIX "_d")
@@ -39,7 +39,7 @@ endif()
 
 # Setup Plugin dependencies
 # ------------------------------------------------------------------------------
-find_package(FLAC CONFIG REQUIRED)
+find_package(Vorbis CONFIG REQUIRED)
 
 # Setup Amplitude
 # ------------------------------------------------------------------------------
@@ -63,7 +63,7 @@ add_library(${PROJECT_NAME} SHARED ${PLUGIN_SOURCE})
 target_compile_definitions(${PROJECT_NAME} PRIVATE AM_BUILDSYSTEM_BUILDING_PLUGIN)
 
 target_link_libraries(${PROJECT_NAME}
-    PRIVATE SparkyStudios::Audio::Amplitude::SDK::Shared FLAC::FLAC++
+    PRIVATE SparkyStudios::Audio::Amplitude::SDK::Shared Vorbis::vorbis Vorbis::vorbisfile
 )
 
 # #####################################################
@@ -74,7 +74,7 @@ set(AM_INC_DESTINATION "include")
 
 set(CMAKE_LIBRARY_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/${AM_LIB_DESTINATION}")
 
-set(CMAKE_INSTALL_PREFIX "${AM_SDK_PATH}")
+set(CMAKE_INSTALL_PREFIX ${AM_SDK_PATH})
 
 install(
     TARGETS ${PROJECT_NAME}

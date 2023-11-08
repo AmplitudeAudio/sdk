@@ -39,7 +39,7 @@ namespace SparkyStudios::Audio::Amplitude
         eFOK_TEXT = 1,
     };
 
-    class File
+    class AM_API_PUBLIC File
     {
     public:
         virtual ~File() = default;
@@ -58,7 +58,7 @@ namespace SparkyStudios::Audio::Amplitude
 
         virtual AmSize Length() = 0;
 
-        virtual void Seek(AmInt32 offset) = 0;
+        virtual void Seek(AmSize offset) = 0;
 
         virtual AmSize Pos() = 0;
 
@@ -73,7 +73,7 @@ namespace SparkyStudios::Audio::Amplitude
         }
     };
 
-    class DiskFile : public File
+    class AM_API_PUBLIC DiskFile : public File
     {
     public:
         DiskFile();
@@ -89,11 +89,15 @@ namespace SparkyStudios::Audio::Amplitude
 
         AmSize Length() override;
 
-        void Seek(AmInt32 offset) override;
+        void Seek(AmSize offset) override;
+
+        void Seek(AmSize offset, int origin);
 
         AmSize Pos() override;
 
         AmResult Open(const AmOsString& fileName, FileOpenMode mode = eFOM_READ, FileOpenKind kind = eFOK_BINARY);
+
+        void Close();
 
         AmFileHandle GetFilePtr() override;
 
@@ -101,7 +105,7 @@ namespace SparkyStudios::Audio::Amplitude
         AmFileHandle mFileHandle;
     };
 
-    class MemoryFile : public File
+    class AM_API_PUBLIC MemoryFile : public File
     {
     public:
         MemoryFile();
@@ -116,7 +120,7 @@ namespace SparkyStudios::Audio::Amplitude
 
         AmSize Length() override;
 
-        void Seek(AmInt32 offset) override;
+        void Seek(AmSize offset) override;
         AmSize Pos() override;
         AmConstUInt8Buffer GetMemPtr() override;
         AmResult OpenMem(AmConstUInt8Buffer data, AmSize dataLength, bool copy = false, bool takeOwnership = true);
@@ -129,6 +133,6 @@ namespace SparkyStudios::Audio::Amplitude
         AmSize mOffset;
         bool mDataOwned;
     };
-}; // namespace SparkyStudios::Audio::Amplitude
+} // namespace SparkyStudios::Audio::Amplitude
 
 #endif // SPARK_AUDIO_FILE_H

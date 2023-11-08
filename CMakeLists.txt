@@ -169,11 +169,6 @@ set(SA_SOURCE
     src/Core/Codecs/MP3/Codec.h
     src/Core/Codecs/MP3/dr_mp3.h
 
-    src/Core/Codecs/OGG/Codec.cpp
-    src/Core/Codecs/OGG/Codec.h
-    src/Core/Codecs/OGG/stb_vorbis.c
-    src/Core/Codecs/OGG/stb_vorbis.h
-
     src/Core/Codecs/WAV/Codec.cpp
     src/Core/Codecs/WAV/Codec.h
     src/Core/Codecs/WAV/dr_wav.h

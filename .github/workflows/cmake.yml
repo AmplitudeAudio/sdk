@@ -48,7 +48,7 @@ jobs:
             generator: "Ninja"
             target_triplet: x64-linux
 
-          - name: "macOS Latest Clang"
+          - name: "macOS x64 Latest Clang"
             os: macos-latest
             artifact: "amplitude_audio_sdk_macos_clang_x64.7z"
             cc: "clang"

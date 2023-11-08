@@ -18,7 +18,6 @@
 
 #include "../src/Core/Codecs/AMS/Codec.h"
 #include "../src/Core/Codecs/MP3/Codec.h"
-#include "../src/Core/Codecs/OGG/Codec.h"
 #include "../src/Core/Codecs/WAV/Codec.h"
 
 #include "../src/Utils/Audio/Resampling/CDSPResampler.h"
