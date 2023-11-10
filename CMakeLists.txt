@@ -143,6 +143,7 @@ set(SA_SOURCE
     include/SparkyStudios/Audio/Amplitude/IO/File.h
     include/SparkyStudios/Audio/Amplitude/IO/FileLoader.h
     include/SparkyStudios/Audio/Amplitude/Math/Curve.h
+    include/SparkyStudios/Audio/Amplitude/Math/FFT.h
     include/SparkyStudios/Audio/Amplitude/Math/HandmadeMath.h
     include/SparkyStudios/Audio/Amplitude/Math/Shape.h
     include/SparkyStudios/Audio/Amplitude/Math/Utils.h
@@ -208,6 +209,7 @@ set(SA_SOURCE
     src/IO/FileLoader.cpp
 
     src/Math/Curve.cpp
+    src/Math/FFT.cpp
     src/Math/Shape.cpp
 
     src/Mixer/Resamplers/R8BrainResampler.h
