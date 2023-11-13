@@ -13,11 +13,9 @@
 // limitations under the License.
 
 #include <SparkyStudios/Audio/Amplitude/Core/Memory.h>
-#include <SparkyStudios/Audio/Amplitude/Math/Utils.h>
+#include <SparkyStudios/Audio/Amplitude/Math/FFT.h>
 
 #include <Sound/Filters/FFTFilter.h>
-
-#include <Utils/Audio/FFT/AudioFFT.h>
 
 #define STFT_WINDOW_SIZE 256 // must be power of two
 #define STFT_WINDOW_HALF 128
@@ -87,17 +85,17 @@ namespace SparkyStudios::Audio::Amplitude
                 std::memset(_temp + framesToProcess, 0, sizeof(AmReal32) * (STFT_WINDOW_SIZE - framesToProcess));
 
             {
-                SparkyStudios::Audio::Amplitude::FFT::AudioFFT fft;
-                fft.init(STFT_WINDOW_SIZE);
+                FFT fft;
+                fft.Initialize(STFT_WINDOW_SIZE);
 
-                ScopedMemoryAllocation re(MemoryPoolKind::Filtering, SparkyStudios::Audio::Amplitude::FFT::AudioFFT::ComplexSize(STFT_WINDOW_SIZE) * sizeof(AmReal32));
-                ScopedMemoryAllocation im(MemoryPoolKind::Filtering, SparkyStudios::Audio::Amplitude::FFT::AudioFFT::ComplexSize(STFT_WINDOW_SIZE) * sizeof(AmReal32));
+                ScopedMemoryAllocation re(MemoryPoolKind::Filtering, FFT::GetOutputSize(STFT_WINDOW_SIZE) * sizeof(AmReal32));
+                ScopedMemoryAllocation im(MemoryPoolKind::Filtering, FFT::GetOutputSize(STFT_WINDOW_SIZE) * sizeof(AmReal32));
 
-                fft.fft(_temp, re.PointerOf<AmReal32>(), im.PointerOf<AmReal32>());
+                fft.Forward(_temp, re.PointerOf<AmReal32>(), im.PointerOf<AmReal32>());
 
                 ProcessFFTChannel(re.PointerOf<AmReal32>(), im.PointerOf<AmReal32>(), channel, STFT_WINDOW_HALF, channels, sampleRate);
 
-                fft.ifft(_temp, re.PointerOf<AmReal32>(), im.PointerOf<AmReal32>());
+                fft.Backward(_temp, re.PointerOf<AmReal32>(), im.PointerOf<AmReal32>());
             }
 
             for (AmUInt32 i = 0; i < framesToProcess; i++)
@@ -124,8 +122,8 @@ namespace SparkyStudios::Audio::Amplitude
             const AmReal32 r = re[s];
             const AmReal32 i = im[s];
 
-            re[s] = static_cast<AmReal32>(std::sqrt(r * r + i * i));
-            im[s] = static_cast<AmReal32>(std::atan2(i, r));
+            re[s] = std::sqrt(r * r + i * i);
+            im[s] = std::atan2(i, r);
         }
     }
 
@@ -138,7 +136,7 @@ namespace SparkyStudios::Audio::Amplitude
         for (AmUInt32 s = 0; s < samples; s++)
         {
             // get true frequency from synthesis arrays
-            AmReal32 pha = im[s];
+            const AmReal32 pha = im[s];
 
             AmReal32 freq = pha;
 
@@ -175,7 +173,7 @@ namespace SparkyStudios::Audio::Amplitude
         for (AmUInt32 s = 0; s < samples; s++)
         {
             // get true frequency from synthesis arrays
-            AmReal32 freq = im[s];
+            const AmReal32 freq = im[s];
 
             AmReal32 pha = freq;
 
@@ -202,8 +200,8 @@ namespace SparkyStudios::Audio::Amplitude
             const AmReal32 mag = re[s];
             const AmReal32 pha = im[s];
 
-            re[s] = static_cast<AmReal32>(std::cos(pha)) * mag;
-            im[s] = static_cast<AmReal32>(std::sin(pha)) * mag;
+            re[s] = std::cos(pha) * mag;
+            im[s] = std::sin(pha) * mag;
         }
     }
 

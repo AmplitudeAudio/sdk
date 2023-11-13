@@ -47,7 +47,7 @@
 #include <vector>
 #endif
 
-namespace SparkyStudios::Audio::Amplitude::FFT
+namespace SparkyStudios::Audio::Amplitude
 {
 
     namespace detail

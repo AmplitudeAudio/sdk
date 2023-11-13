@@ -45,7 +45,7 @@
 #include <cstddef>
 #include <memory>
 
-namespace SparkyStudios::Audio::Amplitude::FFT
+namespace SparkyStudios::Audio::Amplitude
 {
     namespace detail
     {

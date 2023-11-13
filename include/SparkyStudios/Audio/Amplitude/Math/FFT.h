@@ -62,7 +62,7 @@ namespace SparkyStudios::Audio::Amplitude
          *
          * @param size The size of the input (as a power of 2).
          */
-        void Initialize(AmUInt64 size);
+        void Initialize(AmUInt64 size) const;
 
         /**
          * @brief Performs the forward FFT operation.
@@ -72,7 +72,7 @@ namespace SparkyStudios::Audio::Amplitude
          * @param im The imaginary part of the complex output. This buffer needs to be of the same size returned by the GetOutputSize()
          * method.
          */
-        void Forward(AmConstAudioSampleBuffer input, AmReal32Buffer re, AmReal32Buffer im);
+        void Forward(AmConstAudioSampleBuffer input, AmReal32Buffer re, AmReal32Buffer im) const;
 
         /**
          * @brief Performs the inverse FFT operation.
@@ -82,7 +82,7 @@ namespace SparkyStudios::Audio::Amplitude
          * @param im The imaginary part of the complex output. This buffer needs to be of the same size returned by the GetOutputSize()
          * method.
          */
-        void Backward(AmAudioSampleBuffer output, AmConstReal32Buffer re, AmConstReal32Buffer im);
+        void Backward(AmAudioSampleBuffer output, AmConstReal32Buffer re, AmConstReal32Buffer im) const;
 
     private:
         void* _implementation;

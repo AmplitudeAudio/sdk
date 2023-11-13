@@ -17,11 +17,11 @@
 
 #include <Utils/Audio/FFT/AudioFFT.h>
 
-using namespace SparkyStudios::Audio::Amplitude::FFT;
+using namespace SparkyStudios::Audio::Amplitude;
 
 namespace SparkyStudios::Audio::Amplitude
 {
-    AmUInt64 FFT::GetOutputSize(SparkyStudios::Audio::Amplitude::AmUInt64 inputSize)
+    AmUInt64 FFT::GetOutputSize(const AmUInt64 inputSize)
     {
         return AudioFFT::ComplexSize(inputSize);
     }
@@ -36,18 +36,18 @@ namespace SparkyStudios::Audio::Amplitude
         amdelete(AudioFFT, (AudioFFT*)_implementation);
     }
 
-    void FFT::Initialize(AmUInt64 size)
+    void FFT::Initialize(const AmUInt64 size) const
     {
-        ((AudioFFT*)_implementation)->init(size);
+        static_cast<AudioFFT*>(_implementation)->init(size);
     }
 
-    void FFT::Forward(AmConstAudioSampleBuffer input, AmReal32Buffer re, AmReal32Buffer im)
+    void FFT::Forward(AmConstAudioSampleBuffer input, AmReal32Buffer re, AmReal32Buffer im) const
     {
-        ((AudioFFT*)_implementation)->fft(input, re, im);
+        static_cast<AudioFFT*>(_implementation)->fft(input, re, im);
     }
 
-    void FFT::Backward(AmAudioSampleBuffer output, AmConstReal32Buffer re, AmConstReal32Buffer im)
+    void FFT::Backward(AmAudioSampleBuffer output, AmConstReal32Buffer re, AmConstReal32Buffer im) const
     {
-        ((AudioFFT*)_implementation)->ifft(output, re, im);
+        static_cast<AudioFFT*>(_implementation)->ifft(output, re, im);
     }
 } // namespace SparkyStudios::Audio::Amplitude
