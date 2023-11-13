@@ -37,7 +37,7 @@ namespace SparkyStudios::Audio::Amplitude
             SetSampleRate(sampleRateIn, sampleRateOut);
         }
 
-        bool Process(AmAudioSampleBuffer input, AmUInt64& inputFrames, AmAudioSampleBuffer output, AmUInt64& outputFrames) override
+        bool Process(AmConstAudioSampleBuffer input, AmUInt64& inputFrames, AmAudioSampleBuffer output, AmUInt64& outputFrames) override
         {
             auto input64 = static_cast<AmReal64Buffer>(amMemory->Malloc(MemoryPoolKind::SoundData, inputFrames * sizeof(AmReal64)));
 

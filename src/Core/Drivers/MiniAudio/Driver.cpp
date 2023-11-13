@@ -79,9 +79,9 @@ namespace SparkyStudios::Audio::Amplitude::Drivers
         (void)pHeap;
 
         auto* pResampler = Resampler::Construct("libsamplerate");
-        auto* pDeviceDescription = static_cast<DeviceDescription*>(pUserData);
+        const auto* pDeviceDescription = static_cast<DeviceDescription*>(pUserData);
 
-        AmUInt64 maxFramesIn = pDeviceDescription->mOutputBufferSize / pConfig->channels;
+        const AmUInt64 maxFramesIn = pDeviceDescription->mOutputBufferSize / pConfig->channels;
         pResampler->Init(pConfig->channels, pConfig->sampleRateIn, pConfig->sampleRateOut, maxFramesIn);
 
         *ppBackend = pResampler;
@@ -120,8 +120,9 @@ namespace SparkyStudios::Audio::Amplitude::Drivers
             return MA_SUCCESS;
         }
 
-        bool result = pResampler->Process(
-            (AmAudioSampleBuffer)pFramesIn, *pFrameCountIn, (AmAudioSampleBuffer)pFramesOut, *pFrameCountOut);
+        const bool result = pResampler->Process(
+            static_cast<AmConstAudioSampleBuffer>(pFramesIn), *pFrameCountIn, static_cast<AmAudioSampleBuffer>(pFramesOut),
+            *pFrameCountOut);
 
         return result ? MA_SUCCESS : MA_ERROR;
     }
@@ -130,9 +131,9 @@ namespace SparkyStudios::Audio::Amplitude::Drivers
         void* pUserData, ma_resampling_backend* pBackend, ma_uint32 sampleRateIn, ma_uint32 sampleRateOut)
     {
         (void)pUserData;
-        auto* pResampler = static_cast<ResamplerInstance*>(pBackend);
 
-        if (pResampler->GetSampleRateIn() != sampleRateIn || pResampler->GetSampleRateOut() != sampleRateOut)
+        if (auto* pResampler = static_cast<ResamplerInstance*>(pBackend);
+            pResampler->GetSampleRateIn() != sampleRateIn || pResampler->GetSampleRateOut() != sampleRateOut)
             pResampler->SetSampleRate(sampleRateIn, sampleRateOut);
 
         return MA_SUCCESS;
@@ -158,10 +159,10 @@ namespace SparkyStudios::Audio::Amplitude::Drivers
         void* pUserData, const ma_resampling_backend* pBackend, ma_uint64 outputFrameCount, ma_uint64* pInputFrameCount)
     {
         (void)pUserData;
-        const auto* pResampler = static_cast<const ResamplerInstance*>(pBackend);
 
         // Sample rate is the same, so ratio is 1:1
-        if (pResampler->GetSampleRateIn() == pResampler->GetSampleRateOut())
+        if (const auto* pResampler = static_cast<const ResamplerInstance*>(pBackend);
+            pResampler->GetSampleRateIn() == pResampler->GetSampleRateOut())
             *pInputFrameCount = outputFrameCount;
         else
             *pInputFrameCount = pResampler->GetRequiredInputFrameCount(outputFrameCount);
@@ -173,10 +174,10 @@ namespace SparkyStudios::Audio::Amplitude::Drivers
         void* pUserData, const ma_resampling_backend* pBackend, ma_uint64 inputFrameCount, ma_uint64* pOutputFrameCount)
     {
         (void)pUserData;
-        const auto* pResampler = static_cast<const ResamplerInstance*>(pBackend);
 
         // Sample rate is the same, so ratio is 1:1
-        if (pResampler->GetSampleRateIn() == pResampler->GetSampleRateOut())
+        if (const auto* pResampler = static_cast<const ResamplerInstance*>(pBackend);
+            pResampler->GetSampleRateIn() == pResampler->GetSampleRateOut())
             *pOutputFrameCount = inputFrameCount;
         else
             *pOutputFrameCount = pResampler->GetExpectedOutputFrameCount(inputFrameCount);
@@ -210,7 +211,6 @@ namespace SparkyStudios::Audio::Amplitude::Drivers
         if (_initialized)
         {
             Close();
-            ma_device_uninit(&_device);
         }
     }
 
@@ -292,7 +292,9 @@ namespace SparkyStudios::Audio::Amplitude::Drivers
 
         m_deviceDescription.mDeviceState = DeviceState::Closed;
 
-        CallDeviceNotificationCallback(DeviceNotification::Closed, m_deviceDescription, this);
+        ma_device_uninit(&_device);
+        _initialized = false;
+
         return true;
     }
 } // namespace SparkyStudios::Audio::Amplitude::Drivers
