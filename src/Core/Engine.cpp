@@ -81,6 +81,8 @@ namespace SparkyStudios::Audio::Amplitude
 
     Engine::~Engine()
     {
+        Deinitialize();
+
         _configSrc.clear();
 
         _audioDriver = nullptr;
@@ -89,9 +91,6 @@ namespace SparkyStudios::Audio::Amplitude
             amdelete(dylib, plugin);
 
         gLoadedPlugins.clear();
-
-        delete _state;
-        _state = nullptr;
     }
 
     void* Engine::LoadPlugin(const AmOsString& pluginsDirectoryPath, const AmOsString& pluginLibraryName)
@@ -444,11 +443,21 @@ namespace SparkyStudios::Audio::Amplitude
         _state->master_gain = 1.0f;
 
         // Open the audio device through the driver
-        return _audioDriver->Open(_state->mixer.GetDeviceDescription());
+        if (!_audioDriver->Open(_state->mixer.GetDeviceDescription()))
+        {
+            CallLogFunc("[ERROR] Could not open the audio device.\n");
+            Deinitialize();
+            return false;
+        }
+
+        return true;
     }
 
     bool Engine::Deinitialize()
     {
+        if (_state == nullptr)
+            return true;
+
         _state->stopping = true;
 
         // Stop all sounds
