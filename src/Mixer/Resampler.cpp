@@ -12,14 +12,11 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include <cstring>
 #include <map>
-#include <utility>
 
+#include <SparkyStudios/Audio/Amplitude/Core/Log.h>
 #include <SparkyStudios/Audio/Amplitude/Core/Memory.h>
 #include <SparkyStudios/Audio/Amplitude/Mixer/Resampler.h>
-
-#include <Utils/Utils.h>
 
 namespace SparkyStudios::Audio::Amplitude
 {
@@ -47,7 +44,7 @@ namespace SparkyStudios::Audio::Amplitude
     Resampler::Resampler(std::string name)
         : m_name(std::move(name))
     {
-        Resampler::Register(this);
+        Register(this);
     }
 
     Resampler::Resampler()
@@ -65,7 +62,10 @@ namespace SparkyStudios::Audio::Amplitude
             return;
 
         if (Find(codec->GetName()) != nullptr)
+        {
+            CallLogFunc("Failed to register resampler '%s' as it is already registered", codec->GetName().c_str());
             return;
+        }
 
         ResamplerRegistry& resamplers = resamplerRegistry();
         resamplers.insert(ResamplerImpl(codec->GetName(), codec));
@@ -75,9 +75,8 @@ namespace SparkyStudios::Audio::Amplitude
     Resampler* Resampler::Find(const std::string& name)
     {
         ResamplerRegistry& resamplers = resamplerRegistry();
-        for (auto&& resampler : resamplers)
-            if (resampler.second->m_name == name)
-                return resampler.second;
+        if (const auto& it = resamplers.find(name); it!= resamplers.end())
+            return it->second;
 
         return nullptr;
     }

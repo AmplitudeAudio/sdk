@@ -13,9 +13,9 @@
 // limitations under the License.
 
 #include <map>
-#include <utility>
 
 #include <SparkyStudios/Audio/Amplitude/Core/Driver.h>
+#include <SparkyStudios/Audio/Amplitude/Core/Log.h>
 
 namespace SparkyStudios::Audio::Amplitude
 {
@@ -44,7 +44,7 @@ namespace SparkyStudios::Audio::Amplitude
         : m_name(std::move(name))
         , m_deviceDescription()
     {
-        Driver::Register(this);
+        Register(this);
     }
 
     const AmString& Driver::GetName() const
@@ -62,12 +62,15 @@ namespace SparkyStudios::Audio::Amplitude
         if (lockDrivers())
             return;
 
-        if (!Find(driver->GetName()))
+        if (Find(driver->GetName()) != nullptr)
         {
-            DriverRegistry& drivers = driverRegistry();
-            drivers.insert(DriverImpl(driver->GetName(), driver));
-            driversCount()++;
+            CallLogFunc("Failed to register driver '%s' as it is already registered.", driver->GetName().c_str());
+            return;
         }
+
+        DriverRegistry& drivers = driverRegistry();
+        drivers.insert(DriverImpl(driver->GetName(), driver));
+        driversCount()++;
     }
 
     Driver* Driver::Default()
@@ -81,11 +84,9 @@ namespace SparkyStudios::Audio::Amplitude
     Driver* Driver::Find(const AmString& name)
     {
         const DriverRegistry& drivers = driverRegistry();
-        for (const auto& [_, driver] : drivers)
-        {
-            if (driver->m_name == name)
-                return driver;
-        }
+        if (const auto& it = drivers.find(name); it != drivers.end())
+            return it->second;
+
         return nullptr;
     }
 

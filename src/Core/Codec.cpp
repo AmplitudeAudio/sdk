@@ -16,6 +16,7 @@
 #include <utility>
 
 #include <SparkyStudios/Audio/Amplitude/Core/Codec.h>
+#include <SparkyStudios/Audio/Amplitude/Core/Log.h>
 
 namespace SparkyStudios::Audio::Amplitude
 {
@@ -43,7 +44,7 @@ namespace SparkyStudios::Audio::Amplitude
     Codec::Codec(AmString name)
         : m_name(std::move(name))
     {
-        Codec::Register(this);
+        Register(this);
     }
 
     void Codec::Register(Codec* codec)
@@ -51,22 +52,23 @@ namespace SparkyStudios::Audio::Amplitude
         if (lockCodecs())
             return;
 
-        if (!Find(codec->GetName()))
+        if (Find(codec->GetName()) != nullptr)
         {
-            CodecRegistry& codecs = codecRegistry();
-            codecs.insert(CodecImpl(codec->GetName(), codec));
-            codecsCount()++;
+            CallLogFunc("Failed to register codec '%s' as it is already registered", codec->GetName().c_str());
+            return;
         }
+
+        CodecRegistry& codecs = codecRegistry();
+        codecs.insert(CodecImpl(codec->GetName(), codec));
+        codecsCount()++;
     }
 
     Codec* Codec::Find(const AmString& name)
     {
         const CodecRegistry& codecs = codecRegistry();
-        for (const auto& [_, snd] : codecs)
-        {
-            if (snd->m_name == name)
-                return snd;
-        }
+        if (const auto& it = codecs.find(name); it != codecs.end())
+            return it->second;
+
         return nullptr;
     }
 
@@ -74,10 +76,9 @@ namespace SparkyStudios::Audio::Amplitude
     {
         const CodecRegistry& codecs = codecRegistry();
         for (const auto& [_, codec] : codecs)
-        {
             if (codec->CanHandleFile(filePath))
                 return codec;
-        }
+
         return nullptr;
     }
 
