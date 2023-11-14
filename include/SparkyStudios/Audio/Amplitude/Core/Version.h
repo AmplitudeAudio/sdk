@@ -24,6 +24,10 @@
  */
 #define amVersion SparkyStudios::Audio::Amplitude::Version()
 
+#define AM_VERSION_MAJOR 1
+#define AM_VERSION_MINOR 0
+#define AM_VERSION_PATCH 0
+
 namespace SparkyStudios::Audio::Amplitude
 {
     /**

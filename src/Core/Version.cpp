@@ -16,10 +16,6 @@
 
 namespace SparkyStudios::Audio::Amplitude
 {
-#define AM_VERSION_MAJOR 1
-#define AM_VERSION_MINOR 0
-#define AM_VERSION_PATCH 0
-
 // Turn X into a string literal.
 #define AM_STRING_EXPAND(X) #X
 #define AM_STRING(X) AM_STRING_EXPAND(X)
