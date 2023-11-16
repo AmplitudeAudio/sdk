@@ -115,7 +115,7 @@ namespace SparkyStudios::Audio::Amplitude
          *
          * @return AmUInt32
          */
-        [[nodiscard]] AmUInt32 GetSize() const
+        [[nodiscard]] AM_INLINE(AmUInt32) GetSize() const
         {
             return m_floats;
         }
@@ -125,7 +125,7 @@ namespace SparkyStudios::Audio::Amplitude
          *
          * @return AmFloat32Buffer
          */
-        [[nodiscard]] AmReal32Buffer GetBuffer() const
+        [[nodiscard]] AM_INLINE(AmReal32Buffer) GetBuffer() const
         {
             return m_data;
         }
@@ -135,7 +135,7 @@ namespace SparkyStudios::Audio::Amplitude
          *
          * @return AmUInt8Buffer
          */
-        [[nodiscard]] AmUInt8Buffer GetPointer() const
+        [[nodiscard]] AM_INLINE(AmUInt8Buffer) GetPointer() const
         {
             return m_basePtr;
         }
@@ -152,16 +152,33 @@ namespace SparkyStudios::Audio::Amplitude
     class AM_API_PUBLIC TinyAlignedReal32Buffer
     {
     public:
+        /**
+         * @brief Construct a new TinyAlignedReal32Buffer object by allocating an aligned
+         * buffer with AM_SIMD_ALIGNMENT float values.
+         */
         TinyAlignedReal32Buffer();
+
+        /**
+         * @brief Gets the raw allocated pointer.
+         *
+         * @return AmReal32Buffer
+         */
+        [[nodiscard]] AM_INLINE(AmReal32Buffer) GetBuffer() const
+        {
+            return m_data;
+        }
 
     private:
         AmReal32Buffer m_data; // aligned pointer
-        AmUInt8 m_actualData[sizeof(float) * AM_SIMD_ALIGNMENT + AM_SIMD_ALIGNMENT]{};
+        AmUInt8 m_actualData[sizeof(AmReal32) * AM_SIMD_ALIGNMENT + AM_SIMD_ALIGNMENT]{};
     };
 } // namespace SparkyStudios::Audio::Amplitude
 
 namespace SparkyStudios::Audio::Amplitude
 {
+    /**
+     * @brief Enumerates the list of possible errors encountered by the library.
+     */
     enum AM_ERROR : AmUInt8
     {
         AM_ERROR_NO_ERROR = 0, // No error
@@ -174,48 +191,38 @@ namespace SparkyStudios::Audio::Amplitude
         AM_ERROR_UNKNOWN = 7 // Other error
     };
 
-    // Enumerates the list of possible channel types handled by SoLoud
-    enum AM_SPEAKER_CONFIG : AmUInt8
-    {
-        // Mono channel
-        AM_SPEAKER_MONO,
-        // Stereo channel
-        AM_SPEAKER_STEREO,
-        // Quad channel
-        AM_SPEAKER_QUAD,
-        // 5.1 Surround channel
-        AM_SPEAKER_5_1,
-        // 7.1 Surround channel
-        AM_SPEAKER_7_1,
-    };
-
-    // Enumerates the list of possible sample formats handled by Amplitude
+    /**
+     * @brief Enumerates the list of possible sample formats handled by Amplitude.
+     */
     enum AM_SAMPLE_FORMAT : AmUInt8
     {
-        // floating point
+        // floating point (float32)
         AM_SAMPLE_FORMAT_FLOAT,
-        // integer
+        // integer (int16)
         AM_SAMPLE_FORMAT_INT,
         // An unknown format
         AM_SAMPLE_FORMAT_UNKNOWN,
     };
 
+    /**
+     * @brief Enumerates the list of possible channel layouts.
+     */
     enum AM_INTERLEAVE_TYPE : AmUInt8
     {
         AM_SAMPLE_INTERLEAVED,
         AM_SAMPLE_NON_INTERLEAVED,
     };
 
+    /**
+     * @brief Enumerates the list of states in a fader.
+     */
     enum AM_FADER_STATE : AmInt8
     {
         AM_FADER_STATE_STOPPED = -1,
         AM_FADER_STATE_DISABLED = 0,
         AM_FADER_STATE_ACTIVE = 1,
     };
-} // namespace SparkyStudios::Audio::Amplitude
 
-namespace SparkyStudios::Audio::Amplitude
-{
     /**
      * @brief Describe the format of an audio sample.
      *
@@ -234,37 +241,72 @@ namespace SparkyStudios::Audio::Amplitude
             AM_SAMPLE_FORMAT sampleType,
             AM_INTERLEAVE_TYPE interleaveType);
 
-        [[nodiscard]] AmUInt32 GetSampleRate() const
+        /**
+         * @brief Get the sample rate.
+         *
+         * @return AmUInt32
+         */
+        [[nodiscard]] AM_INLINE(AmUInt32) GetSampleRate() const
         {
             return _sampleRate;
         }
 
-        [[nodiscard]] AmUInt16 GetNumChannels() const
+        /**
+         * @brief Get the number of channels.
+         *
+         * @return AmUInt16
+         */
+        [[nodiscard]] AM_INLINE(AmUInt16) GetNumChannels() const
         {
             return _numChannels;
         }
 
-        [[nodiscard]] AmUInt32 GetBitsPerSample() const
+        /**
+         * @brief Get the bits per sample.
+         *
+         * @return AmUInt32
+         */
+        [[nodiscard]] AM_INLINE(AmUInt32) GetBitsPerSample() const
         {
             return _bitsPerSample;
         }
 
-        [[nodiscard]] AmUInt64 GetFramesCount() const
+        /**
+         * @brief Get the number of frames.
+         *
+         * @return AmUInt64
+         */
+        [[nodiscard]] AM_INLINE(AmUInt64) GetFramesCount() const
         {
             return _framesCount;
         }
 
-        [[nodiscard]] AmUInt32 GetFrameSize() const
+        /**
+         * @brief Get the frame size.
+         *
+         * @return AmUInt32
+         */
+        [[nodiscard]] AM_INLINE(AmUInt32) GetFrameSize() const
         {
             return _frameSize;
         }
 
-        [[nodiscard]] AM_SAMPLE_FORMAT GetSampleType() const
+        /**
+         * @brief Get the sample type.
+         *
+         * @return AM_SAMPLE_FORMAT
+         */
+        [[nodiscard]] AM_INLINE(AM_SAMPLE_FORMAT) GetSampleType() const
         {
             return _sampleType;
         }
 
-        [[nodiscard]] AM_INTERLEAVE_TYPE GetInterleaveType() const
+        /**
+         * @brief Get the interleave type.
+         *
+         * @return AM_INTERLEAVE_TYPE
+         */
+        [[nodiscard]] AM_INLINE(AM_INTERLEAVE_TYPE) GetInterleaveType() const
         {
             return _interleaveType;
         }

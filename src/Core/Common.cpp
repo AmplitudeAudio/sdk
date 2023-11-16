@@ -15,6 +15,7 @@
 #include <cstring>
 
 #include <SparkyStudios/Audio/Amplitude/Core/Common.h>
+#include <SparkyStudios/Audio/Amplitude/Core/Memory.h>
 
 namespace SparkyStudios::Audio::Amplitude
 {
@@ -27,38 +28,42 @@ namespace SparkyStudios::Audio::Amplitude
 
     AmResult AmAlignedReal32Buffer::Init(AmUInt32 size)
     {
-        delete[] m_basePtr;
+        amMemory->Free(MemoryPoolKind::Default, m_basePtr);
+
         m_basePtr = nullptr;
         m_data = nullptr;
+
         m_floats = size;
+
 #ifndef AM_SIMD_INTRINSICS
-        m_basePtr = new AmUInt8[size * sizeof(float)];
+        m_basePtr = static_cast<AmUInt8Buffer>(amMemory->Malloc(MemoryPoolKind::Default, size * sizeof(AmReal32)));
         if (m_basePtr == nullptr)
             return AM_ERROR_OUT_OF_MEMORY;
-        m_data = (AmReal32Buffer)m_basePtr;
 #else
-        m_basePtr = new AmUInt8[size * sizeof(float) + AM_SIMD_ALIGNMENT];
+        m_basePtr = static_cast<AmUInt8Buffer>(amMemory->Malign(MemoryPoolKind::Default, size * sizeof(AmReal32), AM_SIMD_ALIGNMENT));
         if (m_basePtr == nullptr)
             return AM_ERROR_OUT_OF_MEMORY;
-        m_data = (AmReal32Buffer)(((size_t)m_basePtr + (AM_SIMD_ALIGNMENT - 1)) & ~(AM_SIMD_ALIGNMENT - 1));
 #endif
+
+        m_data = reinterpret_cast<AmReal32Buffer>(m_basePtr);
+
         return AM_ERROR_NO_ERROR;
     }
 
     void AmAlignedReal32Buffer::Clear() const
     {
-        memset(m_data, 0, sizeof(float) * m_floats);
+        std::memset(m_data, 0, sizeof(AmReal32) * m_floats);
     }
 
     AmAlignedReal32Buffer::~AmAlignedReal32Buffer()
     {
-        delete[] m_basePtr;
+        amMemory->Free(MemoryPoolKind::Default, m_basePtr);
     }
 
     TinyAlignedReal32Buffer::TinyAlignedReal32Buffer()
     {
         AmUInt8Buffer basePtr = &m_actualData[0];
-        m_data = (AmReal32Buffer)(((size_t)basePtr + (AM_SIMD_ALIGNMENT - 1)) & ~(AM_SIMD_ALIGNMENT - 1));
+        m_data = reinterpret_cast<AmReal32Buffer>(((size_t)basePtr + (AM_SIMD_ALIGNMENT - 1)) & ~(AM_SIMD_ALIGNMENT - 1));
     }
 
     void SoundFormat::SetAll(
