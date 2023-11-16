@@ -65,6 +65,10 @@
 #pragma region Default Faders
 
 #include <Sound/Faders/ConstantFader.h>
+#include <Sound/Faders/EaseFader.h>
+#include <Sound/Faders/EaseInFader.h>
+#include <Sound/Faders/EaseInOutFader.h>
+#include <Sound/Faders/EaseOutFader.h>
 #include <Sound/Faders/ExponentialFader.h>
 #include <Sound/Faders/LinearFader.h>
 #include <Sound/Faders/SCurveFader.h>

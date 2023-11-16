@@ -22,15 +22,16 @@
 
 namespace SparkyStudios::Audio::Amplitude
 {
+    constexpr BeizerCurveControlPoints gSCurveSmoothFaderCurveControlPoints = { 0.64f, 0.0f, 0.36f, 1.0f };
+    constexpr BeizerCurveControlPoints gSCurveSharpFaderCurveControlPoints = { 0.9f, 0.0f, 0.1f, 1.0f };
+
     class SCurveFaderInstance final : public FaderInstance
     {
     public:
-        explicit SCurveFaderInstance(AmReal64 k);
-
-        AmReal64 GetFromPercentage(AmReal64 percentage) override;
-
-    private:
-        AmReal64 _k;
+        explicit SCurveFaderInstance(const BeizerCurveControlPoints& curveControlPoints)
+        {
+            m_curve = curveControlPoints;
+        }
     };
 
     [[maybe_unused]] static class SCurveSmoothFader final : public Fader
@@ -42,13 +43,18 @@ namespace SparkyStudios::Audio::Amplitude
 
         FaderInstance* CreateInstance() override
         {
-            return amnew(SCurveFaderInstance, 0.5);
+            return amnew(SCurveFaderInstance, gSCurveSmoothFaderCurveControlPoints);
         }
 
         void DestroyInstance(FaderInstance* instance) override
         {
             amdelete(SCurveFaderInstance, (SCurveFaderInstance*)instance);
         }
+
+        // [[nodiscard]] BeizerCurveControlPoints GetControlPoints() const override
+        // {
+        //     return gSCurveSmoothFaderCurveControlPoints;
+        // }
     } gSCurveSmoothFader; // NOLINT(cert-err58-cpp)
 
     [[maybe_unused]] static class SCurveSharpFader final : public Fader
@@ -60,13 +66,18 @@ namespace SparkyStudios::Audio::Amplitude
 
         FaderInstance* CreateInstance() override
         {
-            return amnew(SCurveFaderInstance, 0.9);
+            return amnew(SCurveFaderInstance, gSCurveSharpFaderCurveControlPoints);
         }
 
         void DestroyInstance(FaderInstance* instance) override
         {
             amdelete(SCurveFaderInstance, (SCurveFaderInstance*)instance);
         }
+
+        // [[nodiscard]] BeizerCurveControlPoints GetControlPoints() const override
+        // {
+        //     return gSCurveSharpFaderCurveControlPoints;
+        // }
     } gSCurveSharpFader; // NOLINT(cert-err58-cpp)
 } // namespace SparkyStudios::Audio::Amplitude
 

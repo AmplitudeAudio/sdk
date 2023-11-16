@@ -14,47 +14,47 @@
 
 #pragma once
 
-#ifndef SS_AMPLITUDE_AUDIO_CONSTANT_FADER_H
-#define SS_AMPLITUDE_AUDIO_CONSTANT_FADER_H
+#ifndef SS_AMPLITUDE_AUDIO_EASE_OUT_FADER_H
+#define SS_AMPLITUDE_AUDIO_EASE_OUT_FADER_H
 
 #include <SparkyStudios/Audio/Amplitude/Core/Memory.h>
 #include <SparkyStudios/Audio/Amplitude/Sound/Fader.h>
 
 namespace SparkyStudios::Audio::Amplitude
 {
-    constexpr BeizerCurveControlPoints gConstantFaderCurveControlPoints = { 0.0f, 0.0f, 0.0f, 0.0f };
+    constexpr BeizerCurveControlPoints gEaseOutFaderCurveControlPoints = { 0.0f, 0.0f, 0.58f, 1.0f };
 
-    class ConstantFaderInstance final : public FaderInstance
+    class EaseOutFaderInstance final : public FaderInstance
     {
     public:
-        ConstantFaderInstance()
+        EaseOutFaderInstance()
         {
-            m_curve = gConstantFaderCurveControlPoints;
+            m_curve = gEaseOutFaderCurveControlPoints;
         }
     };
 
-    [[maybe_unused]] static class ConstantFader final : public Fader
+    [[maybe_unused]] static class EaseOutFader final : public Fader
     {
     public:
-        ConstantFader()
-            : Fader("Constant")
+        EaseOutFader()
+            : Fader("EaseOut")
         {}
 
         FaderInstance* CreateInstance() override
         {
-            return amnew(ConstantFaderInstance);
+            return amnew(EaseOutFaderInstance);
         }
 
         void DestroyInstance(FaderInstance* instance) override
         {
-            amdelete(ConstantFaderInstance, (ConstantFaderInstance*)instance);
+            amdelete(EaseOutFaderInstance, (EaseOutFaderInstance*)instance);
         }
 
         // [[nodiscard]] BeizerCurveControlPoints GetControlPoints() const override
         // {
-        //     return gConstantFaderCurveControlPoints;
+        //     return gEaseOutFaderCurveControlPoints;
         // }
-    } gConstantFader; // NOLINT(cert-err58-cpp)
+    } gEaseOutFader; // NOLINT(cert-err58-cpp)
 } // namespace SparkyStudios::Audio::Amplitude
 
-#endif // SS_AMPLITUDE_AUDIO_CONSTANT_FADER_H
+#endif // SS_AMPLITUDE_AUDIO_EASE_OUT_FADER_H

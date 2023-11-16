@@ -25,6 +25,29 @@
 
 namespace SparkyStudios::Audio::Amplitude
 {
+    struct BeizerCurveControlPoints
+    {
+        /**
+         * @brief The x coordinate of the second control point.
+         */
+        AmReal32 x1;
+
+        /**
+         * @brief The y coordinate of the second control point.
+         */
+        AmReal32 y1;
+
+        /**
+         * @brief The x coordinate of the third control point.
+         */
+        AmReal32 x2;
+
+        /**
+         * @brief The y coordinate of the third control point.
+         */
+        AmReal32 y2;
+    };
+
     AM_API_PRIVATE struct
     {
         AmInt32 state;

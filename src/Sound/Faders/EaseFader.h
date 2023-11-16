@@ -14,47 +14,47 @@
 
 #pragma once
 
-#ifndef SS_AMPLITUDE_AUDIO_CONSTANT_FADER_H
-#define SS_AMPLITUDE_AUDIO_CONSTANT_FADER_H
+#ifndef SS_AMPLITUDE_AUDIO_EASE_FADER_H
+#define SS_AMPLITUDE_AUDIO_EASE_FADER_H
 
 #include <SparkyStudios/Audio/Amplitude/Core/Memory.h>
 #include <SparkyStudios/Audio/Amplitude/Sound/Fader.h>
 
 namespace SparkyStudios::Audio::Amplitude
 {
-    constexpr BeizerCurveControlPoints gConstantFaderCurveControlPoints = { 0.0f, 0.0f, 0.0f, 0.0f };
+    constexpr BeizerCurveControlPoints gEaseFaderCurveControlPoints = { 0.25f, 0.1f, 0.25f, 1.0f };
 
-    class ConstantFaderInstance final : public FaderInstance
+    class EaseFaderInstance final : public FaderInstance
     {
     public:
-        ConstantFaderInstance()
+        EaseFaderInstance()
         {
-            m_curve = gConstantFaderCurveControlPoints;
+            m_curve = gEaseFaderCurveControlPoints;
         }
     };
 
-    [[maybe_unused]] static class ConstantFader final : public Fader
+    [[maybe_unused]] static class EaseFader final : public Fader
     {
     public:
-        ConstantFader()
-            : Fader("Constant")
+        EaseFader()
+            : Fader("Ease")
         {}
 
         FaderInstance* CreateInstance() override
         {
-            return amnew(ConstantFaderInstance);
+            return amnew(EaseFaderInstance);
         }
 
         void DestroyInstance(FaderInstance* instance) override
         {
-            amdelete(ConstantFaderInstance, (ConstantFaderInstance*)instance);
+            amdelete(EaseFaderInstance, (EaseFaderInstance*)instance);
         }
 
         // [[nodiscard]] BeizerCurveControlPoints GetControlPoints() const override
         // {
-        //     return gConstantFaderCurveControlPoints;
+        //     return gEaseFaderCurveControlPoints;
         // }
-    } gConstantFader; // NOLINT(cert-err58-cpp)
+    } gEaseFader; // NOLINT(cert-err58-cpp)
 } // namespace SparkyStudios::Audio::Amplitude
 
-#endif // SS_AMPLITUDE_AUDIO_CONSTANT_FADER_H
+#endif // SS_AMPLITUDE_AUDIO_EASE_FADER_H

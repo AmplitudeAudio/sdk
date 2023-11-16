@@ -230,14 +230,13 @@ set(SA_SOURCE
     src/Mixer/SoundData.h
     src/Mixer/SoundProcessor.cpp
 
-    src/Sound/Faders/ConstantFader.cpp
     src/Sound/Faders/ConstantFader.h
-    src/Sound/Faders/ExponentialFader.cpp
+    src/Sound/Faders/EaseFader.h
+    src/Sound/Faders/EaseInFader.h
+    src/Sound/Faders/EaseInOutFader.h
+    src/Sound/Faders/EaseOutFader.h
     src/Sound/Faders/ExponentialFader.h
-    src/Sound/Faders/LinearFader.cpp
     src/Sound/Faders/LinearFader.h
-    src/Sound/Faders/SCurveFader.cpp
-    src/Sound/Faders/SCurveFader.h
     src/Sound/Filters/BassBoostFilter.cpp
     src/Sound/Filters/BassBoostFilter.h
     src/Sound/Filters/BiquadResonantFilter.cpp
