@@ -18,6 +18,7 @@ jobs:
         config:
           - name: "Windows Latest MSVC"
             os: windows-latest
+            sdk_dir: win
             artifact: "amplitude_audio_sdk_windows_msvc_x64.7z"
             cc: "cl"
             cxx: "cl"
@@ -26,6 +27,7 @@ jobs:
 
           - name: "Windows Latest MinGW"
             os: windows-latest
+            sdk_dir: win
             artifact: "amplitude_audio_sdk_windows_mingw_x64.7z"
             cc: "gcc"
             cxx: "g++"
@@ -34,6 +36,7 @@ jobs:
 
           - name: "Ubuntu_Latest_GCC"
             os: ubuntu-latest
+            sdk_dir: linux
             artifact: "amplitude_audio_sdk_linux_gcc_x64.7z"
             cc: "gcc"
             cxx: "g++"
@@ -42,6 +45,7 @@ jobs:
 
           - name: "Ubuntu_GCC_9"
             os: ubuntu-latest
+            sdk_dir: linux
             artifact: "amplitude_audio_sdk_linux_gcc9_x64.7z"
             cc: "gcc"
             cxx: "g++"
@@ -50,6 +54,7 @@ jobs:
 
           - name: "macOS x64 Latest Clang"
             os: macos-latest
+            sdk_dir: osx
             artifact: "amplitude_audio_sdk_macos_clang_x64.7z"
             cc: "clang"
             cxx: "clang++"
@@ -190,6 +195,16 @@ jobs:
         shell: bash
         working-directory: ${{ inputs.project-path }}/build
         run: cmake --install . --strip --config ${{ matrix.build_type }}
+
+      - name: Copy flatc to SDK folder (Windows)
+        if: startsWith(matrix.config.os, 'windows')
+        run: |
+          Copy-Item .\bin\flatc.exe -Destination .\sdk\bin\${{ matrix.config.sdk_dir }}
+
+      - name: Copy flatc to SDK folder (Unix)
+        if: startsWith(matrix.config.os, 'ubuntu') || startsWith(matrix.config.os, 'macos')
+        run: |
+          cp ./bin/flatc ./sdk/bin/${{ matrix.config.sdk_dir }}
 
       - name: Save SDK Cache
         uses: actions/cache/save@v3
