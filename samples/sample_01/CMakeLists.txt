@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-cmake_minimum_required(VERSION 3.3.1)
+cmake_minimum_required(VERSION 3.10)
 
 set(PROJECT_NAME ss_amplitude_audio_sample_01)
 
