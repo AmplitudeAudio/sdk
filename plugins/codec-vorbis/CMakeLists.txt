@@ -43,6 +43,7 @@ find_package(Vorbis CONFIG REQUIRED)
 
 # Setup Amplitude
 # ------------------------------------------------------------------------------
+set(AM_SDK_PATH "${CMAKE_CURRENT_LIST_DIR}/../../" CACHE PATH "The path to Amplitude Audio SDK libraries.")
 find_package(AmplitudeAudioSDK REQUIRED)
 
 # Setup project source files.
