@@ -52,6 +52,8 @@ namespace SparkyStudios::Audio::Amplitude
          */
         Shape();
 
+        virtual ~Shape() = default;
+
         /**
          * @brief Get the shortest distance to the edge of this shape.
          *
