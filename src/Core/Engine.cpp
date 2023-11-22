@@ -304,7 +304,7 @@ namespace SparkyStudios::Audio::Amplitude
 
     bool Engine::Initialize(const AmOsString& configFile)
     {
-        const std::filesystem::path configFilePath = _loader.ResolvePath(configFile);
+        const std::filesystem::path configFilePath = _loader->ResolvePath(configFile);
         if (!LoadFile(configFilePath.c_str(), &_configSrc))
         {
             CallLogFunc("[ERROR] Could not load audio config file at path '" AM_OS_CHAR_FMT "'.\n", configFile.c_str());
@@ -372,7 +372,7 @@ namespace SparkyStudios::Audio::Amplitude
             &_state->environment_state_free_list, &_state->environment_state_memory, config->game()->environments());
 
         // Load the audio buses.
-        const std::filesystem::path busesFilePath = _loader.ResolvePath(config->buses_file()->c_str());
+        const std::filesystem::path busesFilePath = _loader->ResolvePath(config->buses_file()->c_str());
         if (!LoadFile(busesFilePath.c_str(), &_state->buses_source))
         {
             CallLogFunc("[ERROR] Could not load audio bus file.\n");
@@ -484,14 +484,14 @@ namespace SparkyStudios::Audio::Amplitude
         return _state != nullptr && !_state->stopping;
     }
 
-    void Engine::SetFileLoader(const FileLoader& loader)
+    void Engine::SetFileLoader(FileLoader* loader)
     {
         _loader = loader;
     }
 
     const FileLoader* Engine::GetFileLoader() const
     {
-        return &_loader;
+        return _loader;
     }
 
     bool Engine::LoadSoundBank(const AmOsString& filename)
@@ -653,12 +653,12 @@ namespace SparkyStudios::Audio::Amplitude
 
     void Engine::StartLoadingSoundFiles()
     {
-        _loader.StartLoading();
+        _loader->StartLoading();
     }
 
     bool Engine::TryFinalizeLoadingSoundFiles()
     {
-        return _loader.TryFinalize();
+        return _loader->TryFinalize();
     }
 
     bool BestListener(

@@ -226,7 +226,7 @@ bool SampleState::Initialize()
     MemoryManager::Initialize(MemoryManagerConfig());
 
     _loader.SetBasePath(AM_OS_STRING("./assets"));
-    amEngine->SetFileLoader(_loader);
+    amEngine->SetFileLoader(&_loader);
 
     // Initialize Amplitude.
     if (!amEngine->Initialize(kAudioConfig) || !amEngine->LoadSoundBank(kSoundBank))
@@ -237,9 +237,7 @@ bool SampleState::Initialize()
     // Wait for the sound files to complete loading.
     amEngine->StartLoadingSoundFiles();
     while (!amEngine->TryFinalizeLoadingSoundFiles())
-    {
         SDL_Delay(1);
-    }
 
     // Cache the master bus so we can demonstrate adjusting the gain.
     master_bus_ = amEngine->FindBus(kAmMasterBusId);
@@ -490,12 +488,17 @@ int main(int argc, char* argv[])
 {
     (void)argc;
     (void)argv;
+
     SampleState sample;
     if (!sample.Initialize())
     {
         fprintf(stderr, "Failed to initialize!\n");
+        amEngine->Deinitialize();
         return 1;
     }
+
     sample.Run();
+    amEngine->Deinitialize();
+
     return 0;
 }

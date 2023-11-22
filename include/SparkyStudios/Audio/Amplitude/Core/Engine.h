@@ -117,7 +117,7 @@ namespace SparkyStudios::Audio::Amplitude
          *
          * @param loader A FileLoader implementation.
          */
-        void SetFileLoader(const FileLoader& loader);
+        void SetFileLoader(FileLoader* loader);
 
         /**
          * @brief Get the File Loader used by the engine.
@@ -1201,7 +1201,7 @@ namespace SparkyStudios::Audio::Amplitude
         ListenerInternalState* _defaultListener;
 
         // The file loader implementation
-        FileLoader _loader;
+        FileLoader* _loader;
 
         // The audio driver used by the engine.
         Driver* _audioDriver;

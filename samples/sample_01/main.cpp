@@ -24,6 +24,8 @@ static constexpr AmUInt32 kAppModeSwitchContainerTest = 2;
 
 struct ExecutionContext
 {
+    FileLoader fileLoader;
+
     AmUInt32 appMode = kAppModeMainMenu;
 
     Channel mainMenuBackgroundChannel;
@@ -67,12 +69,13 @@ static void printMemoryStats()
 
 static void run(AmVoidPtr param)
 {
+    auto* ctx = static_cast<ExecutionContext*>(param);
+
     MemoryManager::Initialize(MemoryManagerConfig());
 
-    FileLoader loader = FileLoader();
-    loader.SetBasePath(AM_OS_STRING("./assets"));
+    ctx->fileLoader.SetBasePath(AM_OS_STRING("./assets"));
 
-    amEngine->SetFileLoader(loader);
+    amEngine->SetFileLoader(&ctx->fileLoader);
 
     // Initialize Amplitude.
     if (!amEngine->Initialize(AM_OS_STRING("audio_config.amconfig")))
@@ -139,8 +142,6 @@ static void run(AmVoidPtr param)
 
     while (true)
     {
-        auto* ctx = static_cast<ExecutionContext*>(param);
-
         if (ctx->stop)
             break;
 

@@ -28,14 +28,15 @@ namespace SparkyStudios::Audio::Amplitude
     {
     public:
         FileLoader();
+        virtual ~FileLoader() = default;
 
         void SetBasePath(const std::filesystem::path& basePath);
 
-        [[nodiscard]] std::filesystem::path ResolvePath(const std::filesystem::path& path) const;
+        [[nodiscard]] virtual std::filesystem::path ResolvePath(const std::filesystem::path& path) const;
 
-        void StartLoading();
+        virtual void StartLoading();
 
-        bool TryFinalize();
+        virtual bool TryFinalize();
 
     private:
         std::filesystem::path _basePath;
@@ -52,7 +53,7 @@ namespace SparkyStudios::Audio::Amplitude
 
         [[nodiscard]] const std::filesystem::path& GetFilename() const;
 
-    private:
+    protected:
         virtual void Load(const FileLoader* loader) = 0;
 
         std::filesystem::path _filename;
