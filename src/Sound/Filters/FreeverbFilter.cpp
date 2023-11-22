@@ -154,6 +154,6 @@ namespace SparkyStudios::Audio::Amplitude
         auto* input = buffer;
         auto* output = buffer;
 
-        _model->ProcessReplace(input, input + 1, output, output + 1, frames, channels);
+        _model->ProcessReplace(input, input + (channels - 1), output, output + (channels - 1), frames, channels);
     }
 } // namespace SparkyStudios::Audio::Amplitude
