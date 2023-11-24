@@ -36,7 +36,7 @@
 #include <SparkyStudios/Audio/Amplitude/Core/Version.h>
 
 #include <SparkyStudios/Audio/Amplitude/IO/File.h>
-#include <SparkyStudios/Audio/Amplitude/IO/FileLoader.h>
+#include <SparkyStudios/Audio/Amplitude/IO/FileSystem.h>
 
 #include <SparkyStudios/Audio/Amplitude/Math/Curve.h>
 #include <SparkyStudios/Audio/Amplitude/Math/HandmadeMath.h>

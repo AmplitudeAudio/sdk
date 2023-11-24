@@ -70,8 +70,10 @@ namespace SparkyStudios::Audio::Amplitude
 #if !defined(AM_NO_MEMORY_STATS)
         gMemManager->_memPoolsStats[MemoryPoolKind::Amplimix] = MemoryPoolStats(MemoryPoolKind::Amplimix);
         gMemManager->_memPoolsStats[MemoryPoolKind::Codec] = MemoryPoolStats(MemoryPoolKind::Codec);
+        gMemManager->_memPoolsStats[MemoryPoolKind::Default] = MemoryPoolStats(MemoryPoolKind::Default);
         gMemManager->_memPoolsStats[MemoryPoolKind::Engine] = MemoryPoolStats(MemoryPoolKind::Engine);
         gMemManager->_memPoolsStats[MemoryPoolKind::Filtering] = MemoryPoolStats(MemoryPoolKind::Filtering);
+        gMemManager->_memPoolsStats[MemoryPoolKind::IO] = MemoryPoolStats(MemoryPoolKind::IO);
         gMemManager->_memPoolsStats[MemoryPoolKind::SoundData] = MemoryPoolStats(MemoryPoolKind::SoundData);
 #endif
     }

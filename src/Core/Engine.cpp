@@ -58,7 +58,7 @@ namespace SparkyStudios::Audio::Amplitude
         }
 
         // get its size:
-        dest->assign(static_cast<size_t>(mf.Length()) + 1, 0);
+        dest->assign(mf.Length() + 1, 0);
 
         // read the data:
         const AmUInt32 len = mf.Read(reinterpret_cast<AmUInt8Buffer>(&(*dest)[0]), mf.Length());
@@ -75,7 +75,7 @@ namespace SparkyStudios::Audio::Amplitude
         : _configSrc()
         , _state(nullptr)
         , _audioDriver(nullptr)
-        , _loader()
+        , _fs()
         , _defaultListener(nullptr)
     {}
 
@@ -87,7 +87,7 @@ namespace SparkyStudios::Audio::Amplitude
 
         _audioDriver = nullptr;
 
-        for (auto& plugin : gLoadedPlugins)
+        for (const auto& plugin : gLoadedPlugins)
             amdelete(dylib, plugin);
 
         gLoadedPlugins.clear();
@@ -304,7 +304,7 @@ namespace SparkyStudios::Audio::Amplitude
 
     bool Engine::Initialize(const AmOsString& configFile)
     {
-        const std::filesystem::path configFilePath = _loader->ResolvePath(configFile);
+        const std::filesystem::path configFilePath = _fs->ResolvePath(configFile);
         if (!LoadFile(configFilePath.c_str(), &_configSrc))
         {
             CallLogFunc("[ERROR] Could not load audio config file at path '" AM_OS_CHAR_FMT "'.\n", configFile.c_str());
@@ -372,7 +372,7 @@ namespace SparkyStudios::Audio::Amplitude
             &_state->environment_state_free_list, &_state->environment_state_memory, config->game()->environments());
 
         // Load the audio buses.
-        const std::filesystem::path busesFilePath = _loader->ResolvePath(config->buses_file()->c_str());
+        const std::filesystem::path busesFilePath = _fs->ResolvePath(config->buses_file()->c_str());
         if (!LoadFile(busesFilePath.c_str(), &_state->buses_source))
         {
             CallLogFunc("[ERROR] Could not load audio bus file.\n");
@@ -484,14 +484,14 @@ namespace SparkyStudios::Audio::Amplitude
         return _state != nullptr && !_state->stopping;
     }
 
-    void Engine::SetFileLoader(FileLoader* loader)
+    void Engine::SetFileLoader(FileSystem* loader)
     {
-        _loader = loader;
+        _fs = loader;
     }
 
-    const FileLoader* Engine::GetFileLoader() const
+    const FileSystem* Engine::GetFileLoader() const
     {
-        return _loader;
+        return _fs;
     }
 
     bool Engine::LoadSoundBank(const AmOsString& filename)
@@ -651,14 +651,24 @@ namespace SparkyStudios::Audio::Amplitude
         }
     }
 
-    void Engine::StartLoadingSoundFiles()
+    void Engine::StartOpenFileSystem()
     {
-        _loader->StartLoading();
+        _fs->StartOpenFileSystem();
     }
 
-    bool Engine::TryFinalizeLoadingSoundFiles()
+    bool Engine::TryFinalizeOpenFileSystem()
     {
-        return _loader->TryFinalize();
+        return _fs->TryFinalizeOpenFileSystem();
+    }
+
+    void Engine::StartCloseFileSystem()
+    {
+        _fs->StartCloseFileSystem();
+    }
+
+    bool Engine::TryFinalizeCloseFileSystem()
+    {
+        return _fs->TryFinalizeCloseFileSystem();
     }
 
     bool BestListener(

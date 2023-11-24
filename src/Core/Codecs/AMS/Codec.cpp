@@ -582,7 +582,7 @@ namespace SparkyStudios::Audio::Amplitude::Codecs
         const AmUInt32 steps = offset / samplesPerBlock;
 
         offset = steps * _blockSize;
-        _file.Seek(sizeof(ADPCMHeader) + offset);
+        _file.Seek(sizeof(ADPCMHeader) + offset, SEEK_SET);
 
         return true;
     }
@@ -618,7 +618,7 @@ namespace SparkyStudios::Audio::Amplitude::Codecs
 
     AmUInt64 AMSCodec::AMSEncoder::Write(AmVoidPtr in, AmUInt64 offset, AmUInt64 length)
     {
-        _file.Seek(sizeof(ADPCMHeader) + offset);
+        _file.Seek(sizeof(ADPCMHeader) + offset, SEEK_SET);
         return Encode(_file, m_format, in, length, _samplesPerBlock, _lookAhead, _noiseShaping);
     }
 

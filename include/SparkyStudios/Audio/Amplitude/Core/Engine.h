@@ -117,14 +117,14 @@ namespace SparkyStudios::Audio::Amplitude
          *
          * @param loader A FileLoader implementation.
          */
-        void SetFileLoader(FileLoader* loader);
+        void SetFileLoader(FileSystem* loader);
 
         /**
          * @brief Get the File Loader used by the engine.
          *
          * @return The file loader.
          */
-        [[nodiscard]] const FileLoader* GetFileLoader() const;
+        [[nodiscard]] const FileSystem* GetFileLoader() const;
 
         /**
          * @brief Update audio volume per channel each frame.
@@ -229,16 +229,26 @@ namespace SparkyStudios::Audio::Amplitude
         void UnloadSoundBanks();
 
         /**
-         * @brief Kick off loading thread to load all sound files queued with
-         *        LoadSoundBank().
+         * @brief Opens the file system in a separate thread.
          */
-        void StartLoadingSoundFiles();
+        void StartOpenFileSystem();
 
         /**
-         * @brief Return true if all sound files have been loaded. Must call
-         *        StartLoadingSoundFiles() first.
+         * @brief Return true if the file system has been fully loaded. Must call
+         *        StartOpenFileSystem() first.
          */
-        bool TryFinalizeLoadingSoundFiles();
+        bool TryFinalizeOpenFileSystem();
+
+        /**
+         * @brief Closes the file system in a separate thread.
+         */
+        void StartCloseFileSystem();
+
+        /**
+         * @brief Return true if the file system has been fully loaded. Must call
+         *        StartCloseFileSystem() first.
+         */
+        bool TryFinalizeCloseFileSystem();
 
         /**
          * @brief Get a SwitchContainerHandle given its name as defined in its JSON data.
@@ -1201,7 +1211,7 @@ namespace SparkyStudios::Audio::Amplitude
         ListenerInternalState* _defaultListener;
 
         // The file loader implementation
-        FileLoader* _loader;
+        FileSystem* _fs;
 
         // The audio driver used by the engine.
         Driver* _audioDriver;

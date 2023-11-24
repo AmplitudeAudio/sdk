@@ -33,7 +33,7 @@ AM_API_PRIVATE size_t read_callback(void* ptr, size_t size, size_t nmemb, void* 
 AM_API_PRIVATE int seek_callback(void* userdata, ogg_int64_t offset, int whence)
 {
     auto* file = static_cast<DiskFile*>(userdata);
-    file->Seek((AmSize)offset, whence);
+    file->Seek(offset, whence);
     return 0;
 }
 
@@ -47,7 +47,7 @@ AM_API_PRIVATE int close_callback(void* userdata)
 AM_API_PRIVATE long tell_callback(void* userdata)
 {
     auto* file = static_cast<DiskFile*>(userdata);
-    return file->Pos();
+    return file->Position();
 }
 
 AM_API_PRIVATE ov_callbacks OV_CALLBACKS = { (size_t(*)(void*, size_t, size_t, void*))read_callback,

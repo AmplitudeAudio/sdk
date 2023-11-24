@@ -13,7 +13,6 @@
 // limitations under the License.
 
 #include <map>
-#include <utility>
 
 #include <SparkyStudios/Audio/Amplitude/Core/Codec.h>
 #include <SparkyStudios/Audio/Amplitude/Core/Log.h>

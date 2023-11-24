@@ -92,6 +92,11 @@ namespace SparkyStudios::Audio::Amplitude
         Codec,
 
         /**
+         * @brief I/O and filesystem related allocations.
+         */
+        IO,
+
+        /**
          * @brief Default allocations pool. Use this when the allocated memory pool is not available.
          * @note amnew use this pool to allocate memory from the memory manager.
          */

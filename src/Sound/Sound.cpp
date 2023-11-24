@@ -175,7 +175,7 @@ namespace SparkyStudios::Audio::Amplitude
         return Amplitude::GetSoundDefinition(_source.c_str());
     }
 
-    void Sound::Load(const FileLoader* loader)
+    void Sound::Load(const FileSystem* loader)
     {
         if (GetFilename().empty())
         {

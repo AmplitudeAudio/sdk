@@ -112,7 +112,7 @@ namespace SparkyStudios::Audio::Amplitude
         /**
          * @brief Loads the audio file.
          */
-        void Load(const FileLoader* loader) override;
+        void Load(const FileSystem* loader) override;
 
         /**
          * @brief Create a new SoundInstance from this Sound.

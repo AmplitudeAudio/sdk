@@ -154,7 +154,7 @@ private:
     SDL_Texture* listener_texture_;
     AmVec2 new_listener_location_;
 
-    FileLoader _loader;
+    DiskFileSystem _loader;
 };
 
 SampleState::~SampleState()
@@ -223,8 +223,6 @@ bool SampleState::Initialize()
     RegisterLogFunc(log);
     RegisterDeviceNotificationCallback(device_notification);
 
-    MemoryManager::Initialize(MemoryManagerConfig());
-
     _loader.SetBasePath(AM_OS_STRING("./assets"));
     amEngine->SetFileLoader(&_loader);
 
@@ -235,8 +233,8 @@ bool SampleState::Initialize()
     }
 
     // Wait for the sound files to complete loading.
-    amEngine->StartLoadingSoundFiles();
-    while (!amEngine->TryFinalizeLoadingSoundFiles())
+    amEngine->StartOpenFileSystem();
+    while (!amEngine->TryFinalizeOpenFileSystem())
         SDL_Delay(1);
 
     // Cache the master bus so we can demonstrate adjusting the gain.
@@ -481,7 +479,6 @@ void SampleState::Run()
         AmTime delta_time = (time - previous_time) / kAmSecond;
         AdvanceFrame(static_cast<AmReal32>(delta_time));
     }
-    amEngine->Deinitialize();
 }
 
 int main(int argc, char* argv[])
@@ -489,16 +486,19 @@ int main(int argc, char* argv[])
     (void)argc;
     (void)argv;
 
-    SampleState sample;
-    if (!sample.Initialize())
-    {
-        fprintf(stderr, "Failed to initialize!\n");
-        amEngine->Deinitialize();
-        return 1;
-    }
+    MemoryManager::Initialize(MemoryManagerConfig());
 
-    sample.Run();
+    if (SampleState sample; !sample.Initialize())
+        fprintf(stderr, "Failed to initialize!\n");
+    else
+        sample.Run();
+
     amEngine->Deinitialize();
+
+    // Wait for the file system to complete loading.
+    amEngine->StartCloseFileSystem();
+    while (!amEngine->TryFinalizeCloseFileSystem())
+        Thread::Sleep(1);
 
     return 0;
 }

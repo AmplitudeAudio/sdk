@@ -24,7 +24,7 @@ static constexpr AmUInt32 kAppModeSwitchContainerTest = 2;
 
 struct ExecutionContext
 {
-    FileLoader fileLoader;
+    DiskFileSystem fileLoader;
 
     AmUInt32 appMode = kAppModeMainMenu;
 
@@ -52,7 +52,8 @@ static void printMemoryStats()
 {
     std::map<MemoryPoolKind, std::string> map = {
         { MemoryPoolKind::Amplimix, "Amplimix" },   { MemoryPoolKind::Codec, "Codec" },         { MemoryPoolKind::Engine, "Engine" },
-        { MemoryPoolKind::Filtering, "Filtering" }, { MemoryPoolKind::SoundData, "SoundData" }, { MemoryPoolKind::Default, "Default" },
+        { MemoryPoolKind::Filtering, "Filtering" }, { MemoryPoolKind::SoundData, "SoundData" }, { MemoryPoolKind::IO, "IO" },
+        { MemoryPoolKind::Default, "Default" },
     };
 
     for (auto&& kind : map)
@@ -84,9 +85,9 @@ static void run(AmVoidPtr param)
     if (!amEngine->LoadSoundBank(AM_OS_STRING("sample_01.ambank")))
         return;
 
-    // Wait for the sound files to complete loading.
-    amEngine->StartLoadingSoundFiles();
-    while (!amEngine->TryFinalizeLoadingSoundFiles())
+    // Wait for the file system to complete loading.
+    amEngine->StartOpenFileSystem();
+    while (!amEngine->TryFinalizeOpenFileSystem())
         Thread::Sleep(1);
 
     // Cache the master bus, so we can adjust the gain.
@@ -213,6 +214,11 @@ static void run(AmVoidPtr param)
     }
 
     amEngine->Deinitialize();
+
+    // Wait for the file system to complete loading.
+    amEngine->StartCloseFileSystem();
+    while (!amEngine->TryFinalizeCloseFileSystem())
+        Thread::Sleep(1);
 }
 
 int main(int argc, char* argv[])

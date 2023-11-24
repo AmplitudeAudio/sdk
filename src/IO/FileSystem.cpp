@@ -1,0 +1,86 @@
+// Copyright (c) 2021-present Sparky Studios. All rights reserved.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+#include <SparkyStudios/Audio/Amplitude/IO/FileSystem.h>
+
+namespace SparkyStudios::Audio::Amplitude
+{
+    DiskFileSystem::DiskFileSystem()
+        : _basePath(std::filesystem::current_path())
+    {}
+
+    void DiskFileSystem::SetBasePath(const AmOsString& basePath)
+    {
+        const auto& p = std::filesystem::path(basePath);
+        _basePath = p.is_relative() ? (std::filesystem::current_path() / p).make_preferred() : p;
+    }
+
+    AmOsString DiskFileSystem::ResolvePath(const AmOsString& path) const
+    {
+        const auto& p = std::filesystem::path(path);
+        return p.is_relative() ? (_basePath / p).make_preferred() : p;
+    }
+
+    bool DiskFileSystem::Exists(const AmOsString& path) const
+    {
+        const auto& p = std::filesystem::path(ResolvePath(path));
+        return exists(p);
+    }
+
+    bool DiskFileSystem::IsDirectory(const AmOsString& path) const
+    {
+        const auto& p = std::filesystem::path(ResolvePath(path));
+        return is_directory(p);
+    }
+
+    std::shared_ptr<File> DiskFileSystem::OpenFile(const AmOsString& path) const
+    {
+        auto file = std::make_shared<DiskFile>();
+        file->Open(ResolvePath(path));
+
+        return file;
+    }
+
+    void DiskFileSystem::StartOpenFileSystem()
+    {}
+
+    bool DiskFileSystem::TryFinalizeOpenFileSystem()
+    {
+        return true;
+    }
+
+    void DiskFileSystem::StartCloseFileSystem()
+    {}
+
+    bool DiskFileSystem::TryFinalizeCloseFileSystem()
+    {
+        return true;
+    }
+
+    void Resource::LoadFile(const std::filesystem::path& filename, const FileSystem* loader)
+    {
+        SetFilename(loader->ResolvePath(filename));
+        Load(loader);
+    }
+
+    void Resource::SetFilename(const std::filesystem::path& filename)
+    {
+        _filename = filename;
+    }
+
+    const std::filesystem::path& Resource::GetFilename() const
+    {
+        return _filename;
+    }
+} // namespace SparkyStudios::Audio::Amplitude

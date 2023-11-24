@@ -141,7 +141,7 @@ set(SA_SOURCE
     include/SparkyStudios/Audio/Amplitude/Core/Thread.h
     include/SparkyStudios/Audio/Amplitude/Core/Version.h
     include/SparkyStudios/Audio/Amplitude/IO/File.h
-    include/SparkyStudios/Audio/Amplitude/IO/FileLoader.h
+    include/SparkyStudios/Audio/Amplitude/IO/FileSystem.h
     include/SparkyStudios/Audio/Amplitude/Math/Curve.h
     include/SparkyStudios/Audio/Amplitude/Math/FFT.h
     include/SparkyStudios/Audio/Amplitude/Math/HandmadeMath.h
@@ -206,7 +206,7 @@ set(SA_SOURCE
     src/Core/Version.cpp
 
     src/IO/File.cpp
-    src/IO/FileLoader.cpp
+    src/IO/FileSystem.cpp
 
     src/Math/Curve.cpp
     src/Math/FFT.cpp
