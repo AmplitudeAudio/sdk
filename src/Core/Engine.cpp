@@ -380,7 +380,7 @@ namespace SparkyStudios::Audio::Amplitude
             &_state->environment_state_free_list, &_state->environment_state_memory, config->game()->environments());
 
         // Load the audio buses.
-        const std::filesystem::path busesFilePath = _fs->ResolvePath(config->buses_file()->c_str());
+        const std::filesystem::path busesFilePath = _fs->ResolvePath(AM_STRING_TO_OS_STRING(config->buses_file()->c_str()));
         if (!LoadFile(busesFilePath.c_str(), &_state->buses_source))
         {
             CallLogFunc("[ERROR] Could not load audio bus file.\n");

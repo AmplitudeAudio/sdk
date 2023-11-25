@@ -175,6 +175,6 @@ namespace SparkyStudios::Audio::Amplitude::Codecs
     bool MP3Codec::CanHandleFile(std::shared_ptr<File> file) const
     {
         const auto& path = file->GetPath();
-        return path.find(".mp3") != AmOsString::npos;
+        return path.find(AM_OS_STRING(".mp3")) != AmOsString::npos;
     }
 } // namespace SparkyStudios::Audio::Amplitude::Codecs

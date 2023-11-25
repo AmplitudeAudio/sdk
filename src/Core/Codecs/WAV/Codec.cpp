@@ -221,6 +221,6 @@ namespace SparkyStudios::Audio::Amplitude::Codecs
     bool WAVCodec::CanHandleFile(std::shared_ptr<File> file) const
     {
         const auto& path = file->GetPath();
-        return path.find(".wav") != AmOsString::npos;
+        return path.find(AM_OS_STRING(".wav")) != AmOsString::npos;
     }
 } // namespace SparkyStudios::Audio::Amplitude::Codecs

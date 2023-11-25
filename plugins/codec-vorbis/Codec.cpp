@@ -194,5 +194,5 @@ void VorbisCodec::DestroyEncoder(Encoder* encoder)
 bool VorbisCodec::CanHandleFile(std::shared_ptr<File> file) const
 {
     const auto& path = file->GetPath();
-    return path.find(".ogg") != AmOsString::npos; // OGG/Vorbis extension
+    return path.find(AM_OS_STRING(".ogg")) != AmOsString::npos; // OGG/Vorbis extension
 }

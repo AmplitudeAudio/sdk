@@ -241,5 +241,5 @@ void FlacCodec::DestroyEncoder(Encoder* encoder)
 bool FlacCodec::CanHandleFile(std::shared_ptr<File> file) const
 {
     const auto& path = file->GetPath();
-    return path.find(".flac") != AmOsString::npos;
+    return path.find(AM_OS_STRING(".flac")) != AmOsString::npos;
 }

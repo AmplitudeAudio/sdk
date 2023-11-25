@@ -69,7 +69,7 @@ namespace SparkyStudios::Audio::Amplitude
 
     AmOsString DiskFile::GetPath() const
     {
-        return m_filePath.string();
+        return m_filePath.c_str();
     }
 
     bool DiskFile::Eof()
@@ -190,7 +190,7 @@ namespace SparkyStudios::Audio::Amplitude
 
     AmOsString MemoryFile::GetPath() const
     {
-        return "";
+        return AM_OS_STRING("");
     }
 
     bool MemoryFile::Eof()
