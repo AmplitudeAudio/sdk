@@ -17,9 +17,8 @@
 #ifndef SS_AMPLITUDE_AUDIO_SOUND_H
 #define SS_AMPLITUDE_AUDIO_SOUND_H
 
-#include <SparkyStudios/Audio/Amplitude/Core/Common.h>
-
 #include <SparkyStudios/Audio/Amplitude/Core/Codec.h>
+#include <SparkyStudios/Audio/Amplitude/Core/Common.h>
 
 #include <SparkyStudios/Audio/Amplitude/Sound/SoundObject.h>
 
@@ -192,6 +191,7 @@ namespace SparkyStudios::Audio::Amplitude
         SoundFormat m_format;
 
     private:
+        Codec* _codec;
         Codec::Decoder* _decoder;
 
         bool _stream;

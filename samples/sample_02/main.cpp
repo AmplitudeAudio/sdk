@@ -224,7 +224,7 @@ bool SampleState::Initialize()
     RegisterDeviceNotificationCallback(device_notification);
 
     _loader.SetBasePath(AM_OS_STRING("./assets"));
-    amEngine->SetFileLoader(&_loader);
+    amEngine->SetFileSystem(&_loader);
 
     // Initialize Amplitude.
     if (!amEngine->Initialize(kAudioConfig) || !amEngine->LoadSoundBank(kSoundBank))

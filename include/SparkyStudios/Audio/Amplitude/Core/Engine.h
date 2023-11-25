@@ -115,16 +115,16 @@ namespace SparkyStudios::Audio::Amplitude
         /**
          * @brief Set the File Loader used by the engine.
          *
-         * @param loader A FileLoader implementation.
+         * @param fs A FileLoader implementation.
          */
-        void SetFileLoader(FileSystem* loader);
+        void SetFileSystem(FileSystem* fs);
 
         /**
          * @brief Get the File Loader used by the engine.
          *
          * @return The file loader.
          */
-        [[nodiscard]] const FileSystem* GetFileLoader() const;
+        [[nodiscard]] const FileSystem* GetFileSystem() const;
 
         /**
          * @brief Update audio volume per channel each frame.
@@ -1189,7 +1189,7 @@ namespace SparkyStudios::Audio::Amplitude
          * @param pluginLibraryName The name of the plugin library to load.
          * @return A handle to the loaded plugin library.
          */
-        static void* LoadPlugin(const AmOsString& pluginsDirectoryPath, const AmOsString& pluginLibraryName);
+        static AmVoidPtr LoadPlugin(const AmOsString& pluginsDirectoryPath, const AmOsString& pluginLibraryName);
 
         /**
          * @brief Returns an unique instance of the Amplitude Engine.

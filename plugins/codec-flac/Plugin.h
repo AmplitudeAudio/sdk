@@ -19,11 +19,9 @@
 
 #include <SparkyStudios/Audio/Amplitude/Amplitude.h>
 
-using namespace SparkyStudios::Audio::Amplitude;
+SparkyStudios::Audio::Amplitude::Engine* GetEngine();
 
-AM_API_PRIVATE Engine* GetEngine();
-
-AM_API_PRIVATE MemoryManager* GetMemoryManager();
+SparkyStudios::Audio::Amplitude::MemoryManager* GetMemoryManager();
 
 #define amEngine GetEngine()
 #define amMemory GetMemoryManager()

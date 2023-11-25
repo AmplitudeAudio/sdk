@@ -17,7 +17,6 @@
 #include <Core/EngineInternalState.h>
 #include <Mixer/SoundData.h>
 
-#include "collection_definition_generated.h"
 #include "sound_definition_generated.h"
 
 namespace SparkyStudios::Audio::Amplitude
@@ -27,6 +26,7 @@ namespace SparkyStudios::Audio::Amplitude
     Sound::Sound()
         : SoundObject()
         , m_format()
+        , _codec(nullptr)
         , _decoder(nullptr)
         , _stream(false)
         , _loop(false)
@@ -42,8 +42,10 @@ namespace SparkyStudios::Audio::Amplitude
         if (_decoder != nullptr)
         {
             _decoder->Close();
-            delete _decoder;
+            _codec->DestroyDecoder(_decoder);
+
             _decoder = nullptr;
+            _codec = nullptr;
         }
 
         if (_soundData != nullptr)
@@ -113,9 +115,12 @@ namespace SparkyStudios::Audio::Amplitude
         m_id = definition->id();
         m_name = definition->name()->str();
 
+        auto* fs = amEngine->GetFileSystem();
+
         _stream = definition->stream();
         _loop = definition->loop() != nullptr && definition->loop()->enabled();
         _loopCount = definition->loop() ? definition->loop()->loop_count() : 0;
+        _filename = fs->ResolvePath(fs->Join({ AM_OS_STRING("data"), AM_STRING_TO_OS_STRING(definition->path()->str()) }));
 
         m_gain = RtpcValue(definition->gain());
         m_priority = RtpcValue(definition->priority());
@@ -177,23 +182,31 @@ namespace SparkyStudios::Audio::Amplitude
 
     void Sound::Load(const FileSystem* loader)
     {
-        if (GetFilename().empty())
+        const AmOsString& filename = GetPath();
+
+        if (filename.empty())
         {
             CallLogFunc("[ERROR] Cannot load the sound: the filename is empty.\n");
             return;
         }
 
-        const std::filesystem::path& filename = GetFilename();
+        if (!loader->Exists(filename))
+        {
+            CallLogFunc("[ERROR] Cannot load the sound: the file \"" AM_OS_CHAR_FMT "\" does not exist.\n", filename.c_str());
+            return;
+        }
 
-        const Codec* codec = Codec::FindCodecForFile(filename.c_str());
-        if (codec == nullptr)
+        const auto file = loader->OpenFile(filename);
+
+        _codec = Codec::FindCodecForFile(file);
+        if (_codec == nullptr)
         {
             CallLogFunc("[ERROR] Cannot load the sound: unable to find codec for '" AM_OS_CHAR_FMT "'.\n", filename.c_str());
             return;
         }
 
-        _decoder = codec->CreateDecoder();
-        if (!_decoder->Open(filename.c_str()))
+        _decoder = _codec->CreateDecoder();
+        if (!_decoder->Open(file))
         {
             CallLogFunc("[ERROR] Cannot load the sound: unable to initialize a decoder for '" AM_OS_CHAR_FMT "'.\n", filename.c_str());
             return;

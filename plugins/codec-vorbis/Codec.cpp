@@ -26,52 +26,39 @@ AM_API_PRIVATE void vorbis_interleave(float* dest, const float* const* src, unsi
 
 AM_API_PRIVATE size_t read_callback(void* ptr, size_t size, size_t nmemb, void* userdata)
 {
-    auto* file = static_cast<DiskFile*>(userdata);
+    auto* file = static_cast<File*>(userdata);
     return file->Read(static_cast<AmUInt8Buffer>(ptr), nmemb);
 }
 
 AM_API_PRIVATE int seek_callback(void* userdata, ogg_int64_t offset, int whence)
 {
-    auto* file = static_cast<DiskFile*>(userdata);
+    auto* file = static_cast<File*>(userdata);
     file->Seek(offset, whence);
-    return 0;
-}
-
-AM_API_PRIVATE int close_callback(void* userdata)
-{
-    auto* file = static_cast<DiskFile*>(userdata);
-    file->Close();
     return 0;
 }
 
 AM_API_PRIVATE long tell_callback(void* userdata)
 {
-    auto* file = static_cast<DiskFile*>(userdata);
+    auto* file = static_cast<File*>(userdata);
     return file->Position();
 }
 
-AM_API_PRIVATE ov_callbacks OV_CALLBACKS = { (size_t(*)(void*, size_t, size_t, void*))read_callback,
-                                             (int (*)(void*, ogg_int64_t, int))seek_callback, (int (*)(void*))close_callback,
-                                             (long (*)(void*))tell_callback };
+AM_API_PRIVATE ov_callbacks OV_CALLBACKS = { read_callback, seek_callback, nullptr, tell_callback };
 
-bool VorbisCodec::VorbisDecoder::Open(const AmOsString& filePath)
+bool VorbisCodec::VorbisDecoder::Open(std::shared_ptr<File> file)
 {
-    if (!m_codec->CanHandleFile(filePath))
+    if (!m_codec->CanHandleFile(file))
     {
-        CallLogFunc("The Vorbis codec cannot handle the file: '" AM_OS_CHAR_FMT "'.\n", filePath.c_str());
+        CallLogFunc("The Vorbis codec cannot handle the file: '" AM_OS_CHAR_FMT "'.\n", file->GetPath().c_str());
         return false;
     }
 
-    if (_file.Open(filePath) != AM_ERROR_NO_ERROR)
-    {
-        CallLogFunc("Unable to open the file: '" AM_OS_CHAR_FMT "'.\n", filePath.c_str());
-        return false;
-    }
+    _file = file;
 
-    if (ov_open_callbacks(&_file, &_vorbis, nullptr, 0, OV_CALLBACKS) < 0)
+    if (ov_open_callbacks(_file.get(), &_vorbis, nullptr, 0, OV_CALLBACKS) < 0)
     {
-        _file.Close();
-        CallLogFunc("Unable to open the file: '" AM_OS_CHAR_FMT "'.\n", filePath.c_str());
+        _file.reset();
+        CallLogFunc("Unable to open the file: '" AM_OS_CHAR_FMT "'.\n", file->GetPath().c_str());
         return false;
     }
 
@@ -93,9 +80,12 @@ bool VorbisCodec::VorbisDecoder::Close()
 {
     if (_initialized)
     {
+        _file.reset();
+
         m_format = SoundFormat();
         _initialized = false;
         ov_clear(&_vorbis);
+
         return true;
     }
 
@@ -129,12 +119,11 @@ AmUInt64 VorbisCodec::VorbisDecoder::Stream(AmVoidPtr out, AmUInt64 offset, AmUI
         const AmInt64 ret = ov_read_float(&_vorbis, &data, static_cast<AmInt32>(size), &_current_section);
 
         if (ret == 0)
-        {
             break;
-        }
-        else if (ret > 0)
+
+        if (ret > 0)
         {
-            vorbis_interleave(static_cast<AmAudioSampleBuffer>(out) + read * channels, (const float* const*)data, ret, channels);
+            vorbis_interleave(static_cast<AmAudioSampleBuffer>(out) + read * channels, data, ret, channels);
 
             size -= ret;
             read += ret;
@@ -163,7 +152,7 @@ bool VorbisCodec::VorbisDecoder::Seek(AmUInt64 offset)
     return ov_pcm_seek(&_vorbis, offset) >= 0;
 }
 
-bool VorbisCodec::VorbisEncoder::Open(const AmOsString& filePath)
+bool VorbisCodec::VorbisEncoder::Open(std::shared_ptr<File> file)
 {
     _initialized = true;
     return false;
@@ -182,19 +171,28 @@ AmUInt64 VorbisCodec::VorbisEncoder::Write(AmVoidPtr in, AmUInt64 offset, AmUInt
     return 0;
 }
 
-Codec::Decoder* VorbisCodec::CreateDecoder() const
+Codec::Decoder* VorbisCodec::CreateDecoder()
 {
-    return new VorbisDecoder(this);
+    return ampoolnew(MemoryPoolKind::Codec, VorbisDecoder, this);
 }
 
-Codec::Encoder* VorbisCodec::CreateEncoder() const
+void VorbisCodec::DestroyDecoder(Decoder* decoder)
 {
-    return new VorbisEncoder(this);
+    ampooldelete(MemoryPoolKind::Codec, VorbisDecoder, (VorbisDecoder*)decoder);
 }
 
-bool VorbisCodec::CanHandleFile(const AmOsString& filePath) const
+Codec::Encoder* VorbisCodec::CreateEncoder()
 {
-    const auto& path = std::filesystem::path(filePath);
+    return ampoolnew(MemoryPoolKind::Codec, VorbisEncoder, this);
+}
 
-    return path.extension() == ".ogg"; // OGG/Vorbis extension
+void VorbisCodec::DestroyEncoder(Encoder* encoder)
+{
+    ampooldelete(MemoryPoolKind::Codec, VorbisEncoder, (VorbisEncoder*)encoder);
+}
+
+bool VorbisCodec::CanHandleFile(std::shared_ptr<File> file) const
+{
+    const auto& path = file->GetPath();
+    return path.find(".ogg") != AmOsString::npos; // OGG/Vorbis extension
 }

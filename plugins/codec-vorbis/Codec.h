@@ -19,7 +19,6 @@
 
 #include <Plugin.h>
 
-#include <vorbis/codec.h>
 #include <vorbis/vorbisfile.h>
 
 using namespace SparkyStudios::Audio::Amplitude;
@@ -27,48 +26,48 @@ using namespace SparkyStudios::Audio::Amplitude;
 class VorbisCodec final : public Codec
 {
 public:
-    class VorbisDecoder final : public Codec::Decoder
+    class VorbisDecoder final : public Decoder
     {
     public:
         explicit VorbisDecoder(const Codec* codec)
-            : Codec::Decoder(codec)
+            : Decoder(codec)
             , _initialized(false)
-            , _file()
             , _vorbis()
+            , _file(nullptr)
             , _current_section(0)
         {}
 
-        bool Open(const AmOsString& filePath) final;
+        bool Open(std::shared_ptr<File> file) override;
 
-        bool Close() final;
+        bool Close() override;
 
-        AmUInt64 Load(AmVoidPtr out) final;
+        AmUInt64 Load(AmVoidPtr out) override;
 
-        AmUInt64 Stream(AmVoidPtr out, AmUInt64 offset, AmUInt64 length) final;
+        AmUInt64 Stream(AmVoidPtr out, AmUInt64 offset, AmUInt64 length) override;
 
-        bool Seek(AmUInt64 offset) final;
+        bool Seek(AmUInt64 offset) override;
 
     private:
         bool _initialized;
 
         OggVorbis_File _vorbis;
-        DiskFile _file;
+        std::shared_ptr<File> _file;
         AmInt32 _current_section;
     };
 
-    class VorbisEncoder final : public Codec::Encoder
+    class VorbisEncoder final : public Encoder
     {
     public:
         explicit VorbisEncoder(const Codec* codec)
-            : Codec::Encoder(codec)
+            : Encoder(codec)
             , _initialized(false)
         {}
 
-        bool Open(const AmOsString& filePath) final;
+        bool Open(std::shared_ptr<File> file) override;
 
-        bool Close() final;
+        bool Close() override;
 
-        AmUInt64 Write(AmVoidPtr in, AmUInt64 offset, AmUInt64 length) final;
+        AmUInt64 Write(AmVoidPtr in, AmUInt64 offset, AmUInt64 length) override;
 
     private:
         bool _initialized;
@@ -78,12 +77,16 @@ public:
         : Codec("vorbis")
     {}
 
-    ~VorbisCodec() final = default;
+    ~VorbisCodec() override = default;
 
-    [[nodiscard]] Decoder* CreateDecoder() const final;
+    [[nodiscard]] Decoder* CreateDecoder() override;
 
-    [[nodiscard]] Encoder* CreateEncoder() const final;
+    void DestroyDecoder(Decoder* decoder) override;
 
-    [[nodiscard]] bool CanHandleFile(const AmOsString& filePath) const final;
+    [[nodiscard]] Encoder* CreateEncoder() override;
+
+    void DestroyEncoder(Encoder* encoder) override;
+
+    [[nodiscard]] bool CanHandleFile(std::shared_ptr<File> file) const override;
 };
 #endif // SS_AMPLITUDE_AUDIO_VORBIS_CODEC_CODEC_H

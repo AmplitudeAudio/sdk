@@ -7,11 +7,11 @@
     "enabled": false,
     "fade_attack": {
       "duration": 1,
-      "fader": "ExponentialSmooth"
+      "fader": "Exponential"
     },
     "fade_release": {
       "duration": 1,
-      "fader": "ExponentialSmooth"
+      "fader": "Exponential"
     }
   }
 }

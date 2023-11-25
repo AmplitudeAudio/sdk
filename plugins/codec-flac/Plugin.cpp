@@ -20,12 +20,12 @@ AM_API_PRIVATE FlacCodec* s_flacCodec = nullptr;
 AM_API_PRIVATE Engine* s_engine = nullptr;
 AM_API_PRIVATE MemoryManager* s_memoryManager = nullptr;
 
-AM_API_PRIVATE Engine* GetEngine()
+Engine* GetEngine()
 {
     return s_engine;
 }
 
-AM_API_PRIVATE MemoryManager* GetMemoryManager()
+MemoryManager* GetMemoryManager()
 {
     return s_memoryManager;
 }
@@ -44,7 +44,7 @@ AM_API_PLUGIN const char* PluginVersion()
 
 AM_API_PLUGIN const char* PluginDescription()
 {
-    return "Amplitude plugin to encode and decode FLAC audio files.";
+    return "Official Amplitude plugin to encode and decode FLAC audio files.";
 }
 
 AM_API_PLUGIN const char* PluginAuthor()
@@ -67,14 +67,14 @@ AM_API_PLUGIN bool RegisterPlugin(Engine* engine, MemoryManager* memoryManager)
     s_engine = engine;
     s_memoryManager = memoryManager;
 
-    s_flacCodec = amnew(FlacCodec);
+    s_flacCodec = ampoolnew(MemoryPoolKind::Engine, FlacCodec);
 
     return true;
 }
 
 AM_API_PLUGIN bool UnregisterPlugin()
 {
-    amdelete(FlacCodec, s_flacCodec);
+    ampooldelete(MemoryPoolKind::Engine, FlacCodec, s_flacCodec);
     s_flacCodec = nullptr;
 
     s_engine = nullptr;

@@ -74,9 +74,9 @@ namespace SparkyStudios::Audio::Amplitude
     Engine::Engine()
         : _configSrc()
         , _state(nullptr)
-        , _audioDriver(nullptr)
-        , _fs()
         , _defaultListener(nullptr)
+        , _fs()
+        , _audioDriver(nullptr)
     {}
 
     Engine::~Engine()
@@ -88,12 +88,17 @@ namespace SparkyStudios::Audio::Amplitude
         _audioDriver = nullptr;
 
         for (const auto& plugin : gLoadedPlugins)
-            amdelete(dylib, plugin);
+        {
+            if (const auto unregisterFunc = plugin->get_function<bool()>("UnregisterPlugin"); !unregisterFunc())
+                CallLogFunc("[ERROR] An error occured while unloading the plugin", plugin->get_function<const char*()>("PluginName")());
+
+            ampooldelete(MemoryPoolKind::Engine, dylib, plugin);
+        }
 
         gLoadedPlugins.clear();
     }
 
-    void* Engine::LoadPlugin(const AmOsString& pluginsDirectoryPath, const AmOsString& pluginLibraryName)
+    AmVoidPtr Engine::LoadPlugin(const AmOsString& pluginsDirectoryPath, const AmOsString& pluginLibraryName)
     {
         if (pluginLibraryName.empty())
         {
@@ -101,7 +106,8 @@ namespace SparkyStudios::Audio::Amplitude
             return nullptr;
         }
 
-        auto* plugin = amnew(dylib, AM_OS_STRING_TO_STRING(pluginsDirectoryPath), AM_OS_STRING_TO_STRING(pluginLibraryName));
+        auto* plugin = ampoolnew(
+            MemoryPoolKind::Engine, dylib, AM_OS_STRING_TO_STRING(pluginsDirectoryPath), AM_OS_STRING_TO_STRING(pluginLibraryName));
 
         if (!plugin->has_symbol("RegisterPlugin"))
         {
@@ -127,16 +133,18 @@ namespace SparkyStudios::Audio::Amplitude
             return nullptr;
         }
 
-        auto pluginInstance = plugin->get_function<bool(Engine*, MemoryManager*)>("RegisterPlugin");
-        if (!pluginInstance(amEngine, amMemory))
+        if (const auto registerFunc = plugin->get_function<bool(Engine*, MemoryManager*)>("RegisterPlugin");
+            !registerFunc(amEngine, amMemory))
         {
             CallLogFunc("[ERROR] LoadPlugin fail on '" AM_OS_CHAR_FMT "'. The plugin registration has failed.", pluginLibraryName.c_str());
             return nullptr;
         }
 
-        auto GetPluginName = plugin->get_function<const char*()>("PluginName");
-        auto GetPluginVersion = plugin->get_function<const char*()>("PluginVersion");
-        CallLogFunc("[INFO] LoadPlugin '%s' version: %s", GetPluginName(), GetPluginVersion());
+        {
+            const auto GetPluginName = plugin->get_function<const char*()>("PluginName");
+            const auto GetPluginVersion = plugin->get_function<const char*()>("PluginVersion");
+            CallLogFunc("[INFO] LoadPlugin '%s' version: %s", GetPluginName(), GetPluginVersion());
+        }
 
         void* handle = plugin->native_handle();
         gLoadedPlugins.push_back(plugin);
@@ -147,12 +155,12 @@ namespace SparkyStudios::Audio::Amplitude
     Engine* Engine::GetInstance()
     {
         // Amplitude Engine unique instance.
-        static Engine* amplitude = nullptr;
+        static std::unique_ptr<Engine> amplitude = nullptr;
 
         if (amplitude == nullptr)
-            amplitude = new Engine();
+            amplitude.reset(new Engine());
 
-        return amplitude;
+        return amplitude.get();
     }
 
     BusInternalState* FindBusInternalState(EngineInternalState* state, AmBusID id)
@@ -216,13 +224,13 @@ namespace SparkyStudios::Audio::Amplitude
         {
             const DuckBusDefinition* duck = duckBusDefinitionList->Get(i);
 
-            if (auto* bus = amnew(DuckBusInternalState, parent); bus->Initialize(duck))
+            if (auto* bus = ampoolnew(MemoryPoolKind::Engine, DuckBusInternalState, parent); bus->Initialize(duck))
             {
                 output->push_back(bus);
             }
             else
             {
-                amdelete(DuckBusInternalState, bus);
+                ampooldelete(MemoryPoolKind::Engine, DuckBusInternalState, bus);
                 CallLogFunc("[ERROR] Unknown bus with ID \"%u\" listed in duck buses.\n", duck->id());
                 return false;
             }
@@ -324,7 +332,7 @@ namespace SparkyStudios::Audio::Amplitude
         Fader::LockRegistry();
 
         // Create the internal engine state
-        _state = amnew(EngineInternalState);
+        _state = ampoolnew(MemoryPoolKind::Engine, EngineInternalState);
         _state->version = &Amplitude::Version();
 
         // Load the audio driver
@@ -472,7 +480,7 @@ namespace SparkyStudios::Audio::Amplitude
         // Unload sound banks
         UnloadSoundBanks();
 
-        amdelete(EngineInternalState, _state);
+        ampooldelete(MemoryPoolKind::Engine, EngineInternalState, _state);
         _state = nullptr;
 
         return true;
@@ -484,12 +492,12 @@ namespace SparkyStudios::Audio::Amplitude
         return _state != nullptr && !_state->stopping;
     }
 
-    void Engine::SetFileLoader(FileSystem* loader)
+    void Engine::SetFileSystem(FileSystem* fs)
     {
-        _fs = loader;
+        _fs = fs;
     }
 
-    const FileSystem* Engine::GetFileLoader() const
+    const FileSystem* Engine::GetFileSystem() const
     {
         return _fs;
     }

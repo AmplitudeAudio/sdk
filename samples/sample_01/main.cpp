@@ -75,8 +75,7 @@ static void run(AmVoidPtr param)
     MemoryManager::Initialize(MemoryManagerConfig());
 
     ctx->fileLoader.SetBasePath(AM_OS_STRING("./assets"));
-
-    amEngine->SetFileLoader(&ctx->fileLoader);
+    amEngine->SetFileSystem(&ctx->fileLoader);
 
     // Initialize Amplitude.
     if (!amEngine->Initialize(AM_OS_STRING("audio_config.amconfig")))

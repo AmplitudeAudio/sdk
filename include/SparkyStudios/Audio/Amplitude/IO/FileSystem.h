@@ -75,6 +75,16 @@ namespace SparkyStudios::Audio::Amplitude
         [[nodiscard]] virtual bool IsDirectory(const AmOsString& path) const = 0;
 
         /**
+         * @brief Merge the given parts of the path into a single path, by joining them with the filesystem
+         * path separator.
+         *
+         * @param parts The parts of the path.
+         *
+         * @return A path concatenated with the given parts and the filesystem path separator.
+         */
+        [[nodiscard]] virtual AmOsString Join(const std::vector<AmOsString>& parts) const = 0;
+
+        /**
          * @brief Opens the file at the given path.
          *
          * @param path The path to the file to open.
@@ -142,6 +152,7 @@ namespace SparkyStudios::Audio::Amplitude
         [[nodiscard]] AmOsString ResolvePath(const AmOsString& path) const override;
         [[nodiscard]] bool Exists(const AmOsString& path) const override;
         [[nodiscard]] bool IsDirectory(const AmOsString& path) const override;
+        [[nodiscard]] AmOsString Join(const std::vector<AmOsString>& parts) const override;
         [[nodiscard]] std::shared_ptr<File> OpenFile(const AmOsString& path) const override;
         void StartOpenFileSystem() override;
         bool TryFinalizeOpenFileSystem() override;
@@ -152,21 +163,31 @@ namespace SparkyStudios::Audio::Amplitude
         std::filesystem::path _basePath;
     };
 
+    /**
+     * @brief An Amplitude resource in a FileSystem.
+     *
+     * This base class represents a resource (sound files, assets, etc.) in a FileSystem.
+     */
     class AM_API_PUBLIC Resource
     {
     public:
+        /**
+         * @brief Default virtual destructor.
+         */
         virtual ~Resource() = default;
 
-        void LoadFile(const std::filesystem::path& filename, const FileSystem* loader);
+        /**
+         * @brief Gets the path to the resource.
+         */
+        [[nodiscard]] virtual const AmOsString& GetPath() const;
 
-        void SetFilename(const std::filesystem::path& filename);
-
-        [[nodiscard]] const std::filesystem::path& GetFilename() const;
-
-    protected:
+        /**
+         * @brief Loads the resource from the given FileSystem.
+         */
         virtual void Load(const FileSystem* loader) = 0;
 
-        std::filesystem::path _filename;
+    protected:
+        AmOsString _filename;
     };
 } // namespace SparkyStudios::Audio::Amplitude
 

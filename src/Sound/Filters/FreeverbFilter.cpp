@@ -138,8 +138,6 @@ namespace SparkyStudios::Audio::Amplitude
     void FreeverbFilterInstance::ProcessInterleaved(
         AmAudioSampleBuffer buffer, AmUInt64 frames, AmUInt64 bufferSize, AmUInt16 channels, AmUInt32 sampleRate)
     {
-        AMPLITUDE_ASSERT(channels == 2); // Only stereo supported
-
         if (m_numParamsChanged > 0)
         {
             _model->SetDamp(m_parameters[FreeverbFilter::ATTRIBUTE_DAMP]);

@@ -44,6 +44,19 @@ namespace SparkyStudios::Audio::Amplitude
         return is_directory(p);
     }
 
+    AmOsString DiskFileSystem::Join(const std::vector<AmOsString>& parts) const
+    {
+        if (parts.empty())
+            return AM_OS_STRING("");
+
+        std::filesystem::path joined(parts[0]);
+
+        for (AmSize i = 1, l = parts.size(); i < l; i++)
+            joined /= parts[i];
+
+        return AM_STRING_TO_OS_STRING(joined.string());
+    }
+
     std::shared_ptr<File> DiskFileSystem::OpenFile(const AmOsString& path) const
     {
         auto file = std::make_shared<DiskFile>();
@@ -68,18 +81,7 @@ namespace SparkyStudios::Audio::Amplitude
         return true;
     }
 
-    void Resource::LoadFile(const std::filesystem::path& filename, const FileSystem* loader)
-    {
-        SetFilename(loader->ResolvePath(filename));
-        Load(loader);
-    }
-
-    void Resource::SetFilename(const std::filesystem::path& filename)
-    {
-        _filename = filename;
-    }
-
-    const std::filesystem::path& Resource::GetFilename() const
+    const AmOsString& Resource::GetPath() const
     {
         return _filename;
     }

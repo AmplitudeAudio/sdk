@@ -23,7 +23,7 @@ void FlacCodec::FlacDecoderInternal::set_current_output_buffer(AmAudioSampleBuff
 }
 
 ::FLAC__StreamDecoderWriteStatus FlacCodec::FlacDecoderInternal::write_callback(
-    const ::FLAC__Frame* frame, const FLAC__int32* const* buffer)
+    const ::FLAC__Frame* frame, const FLAC__int32* const buffer[])
 {
     if (_current_output_buffer == nullptr)
         return ::FLAC__STREAM_DECODER_WRITE_STATUS_ABORT;
@@ -66,7 +66,7 @@ void FlacCodec::FlacDecoderInternal::metadata_callback(const ::FLAC__StreamMetad
         _decoder->m_format.SetAll(
             sample_rate, channels, bps, total_samples, channels * sizeof(AmAudioSample),
             AM_SAMPLE_FORMAT_FLOAT, // This codec always read frames as float32 values
-            AM_SAMPLE_INTERLEAVED // dr_flac always read interleaved frames
+            AM_SAMPLE_INTERLEAVED // flac always read interleaved frames
         );
     }
 }
@@ -76,15 +76,59 @@ void FlacCodec::FlacDecoderInternal::error_callback(::FLAC__StreamDecoderErrorSt
     CallLogFunc("Got error callback: %s\n", FLAC__StreamDecoderErrorStatusString[status]);
 }
 
+::FLAC__StreamDecoderReadStatus FlacCodec::FlacDecoderInternal::read_callback(FLAC__byte buffer[], size_t* bytes)
+{
+    if (_decoder->_file == nullptr)
+        return ::FLAC__STREAM_DECODER_READ_STATUS_ABORT;
+
+    *bytes = _decoder->_file->Read(buffer, *bytes);
+    return _decoder->_file->Eof() ? ::FLAC__STREAM_DECODER_READ_STATUS_END_OF_STREAM : ::FLAC__STREAM_DECODER_READ_STATUS_CONTINUE;
+}
+
+::FLAC__StreamDecoderSeekStatus FlacCodec::FlacDecoderInternal::seek_callback(FLAC__uint64 absolute_byte_offset)
+{
+    if (_decoder->_file == nullptr)
+        return ::FLAC__STREAM_DECODER_SEEK_STATUS_ERROR;
+
+    _decoder->_file->Seek(absolute_byte_offset, SEEK_SET);
+    return ::FLAC__STREAM_DECODER_SEEK_STATUS_OK;
+}
+
+::FLAC__StreamDecoderTellStatus FlacCodec::FlacDecoderInternal::tell_callback(FLAC__uint64* absolute_byte_offset)
+{
+    if (_decoder->_file == nullptr)
+        return ::FLAC__STREAM_DECODER_TELL_STATUS_ERROR;
+
+    *absolute_byte_offset = _decoder->_file->Position();
+    return ::FLAC__STREAM_DECODER_TELL_STATUS_OK;
+}
+
+::FLAC__StreamDecoderLengthStatus FlacCodec::FlacDecoderInternal::length_callback(FLAC__uint64* stream_length)
+{
+    if (_decoder->_file == nullptr)
+        return ::FLAC__STREAM_DECODER_LENGTH_STATUS_ERROR;
+
+    *stream_length = _decoder->_file->Length();
+    return ::FLAC__STREAM_DECODER_LENGTH_STATUS_OK;
+}
+
+bool FlacCodec::FlacDecoderInternal::eof_callback()
+{
+    return _decoder->_file != nullptr ? _decoder->_file->Eof() : true;
+}
+
 FlacCodec::FlacCodec()
     : Codec("flac")
 {}
 
-bool FlacCodec::FlacDecoder::Open(const AmOsString& filePath)
+bool FlacCodec::FlacDecoder::Open(std::shared_ptr<File> file)
 {
-    FLAC__StreamDecoderInitStatus init_status = _flac.init(AM_OS_STRING_TO_STRING(filePath));
+    _file = file;
+
+    FLAC__StreamDecoderInitStatus init_status = _flac.init();
     if (init_status != FLAC__STREAM_DECODER_INIT_STATUS_OK)
     {
+        _file.reset();
         CallLogFunc("ERROR: Initializing FLAC decoder: %s\n", FLAC__StreamDecoderInitStatusString[init_status]);
         return false;
     }
@@ -94,7 +138,8 @@ bool FlacCodec::FlacDecoder::Open(const AmOsString& filePath)
 
     if (!_flac.process_until_end_of_metadata())
     {
-        CallLogFunc("ERROR: Unable to read metadata for FLAC file: " AM_OS_CHAR_FMT "\n", filePath.c_str());
+        _file.reset();
+        CallLogFunc("ERROR: Unable to read metadata for FLAC file: " AM_OS_CHAR_FMT "\n", file->GetPath().c_str());
         return false;
     }
 
@@ -108,6 +153,7 @@ bool FlacCodec::FlacDecoder::Close()
     if (_initialized)
     {
         _flac.finish();
+        _file.reset();
 
         m_format = SoundFormat();
         _initialized = false;
@@ -143,9 +189,7 @@ AmUInt64 FlacCodec::FlacDecoder::Stream(AmVoidPtr out, AmUInt64 offset, AmUInt64
     bool seeked = Seek(offset);
 
     while (_flac.need_more_frames() && _flac.get_state() != FLAC__STREAM_DECODER_END_OF_STREAM)
-    {
         _flac.process_single();
-    }
 
     return _flac.read_frame_count();
 }
@@ -155,7 +199,7 @@ bool FlacCodec::FlacDecoder::Seek(AmUInt64 offset)
     return _flac.seek_absolute(offset);
 }
 
-bool FlacCodec::FlacEncoder::Open(const AmOsString& filePath)
+bool FlacCodec::FlacEncoder::Open(std::shared_ptr<File> file)
 {
     _initialized = true;
     return false;
@@ -174,19 +218,28 @@ AmUInt64 FlacCodec::FlacEncoder::Write(AmVoidPtr in, AmUInt64 offset, AmUInt64 l
     return 0;
 }
 
-Codec::Decoder* FlacCodec::CreateDecoder() const
+Codec::Decoder* FlacCodec::CreateDecoder()
 {
-    return new FlacDecoder(this);
+    return ampoolnew(MemoryPoolKind::Codec, FlacDecoder, this);
 }
 
-Codec::Encoder* FlacCodec::CreateEncoder() const
+void FlacCodec::DestroyDecoder(Decoder* decoder)
 {
-    return new FlacEncoder(this);
+    ampooldelete(MemoryPoolKind::Codec, FlacDecoder, (FlacDecoder*)decoder);
 }
 
-bool FlacCodec::CanHandleFile(const AmOsString& filePath) const
+Codec::Encoder* FlacCodec::CreateEncoder()
 {
-    const auto& path = std::filesystem::path(filePath);
+    return ampoolnew(MemoryPoolKind::Codec, FlacEncoder, this);
+}
 
-    return path.extension() == ".flac"; // FLAC extension
+void FlacCodec::DestroyEncoder(Encoder* encoder)
+{
+    ampooldelete(MemoryPoolKind::Codec, FlacEncoder, (FlacEncoder*)encoder);
+}
+
+bool FlacCodec::CanHandleFile(std::shared_ptr<File> file) const
+{
+    const auto& path = file->GetPath();
+    return path.find(".flac") != AmOsString::npos;
 }

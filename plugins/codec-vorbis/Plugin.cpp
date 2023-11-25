@@ -20,12 +20,12 @@ AM_API_PRIVATE VorbisCodec* s_vorbisCodec = nullptr;
 AM_API_PRIVATE Engine* s_engine = nullptr;
 AM_API_PRIVATE MemoryManager* s_memoryManager = nullptr;
 
-AM_API_PRIVATE Engine* GetEngine()
+Engine* GetEngine()
 {
     return s_engine;
 }
 
-AM_API_PRIVATE MemoryManager* GetMemoryManager()
+MemoryManager* GetMemoryManager()
 {
     return s_memoryManager;
 }
@@ -44,7 +44,7 @@ AM_API_PLUGIN const char* PluginVersion()
 
 AM_API_PLUGIN const char* PluginDescription()
 {
-    return "Amplitude plugin to encode and decode OGG/Vorbis audio files.";
+    return "Official Amplitude plugin to encode and decode OGG/Vorbis audio files.";
 }
 
 AM_API_PLUGIN const char* PluginAuthor()
@@ -67,14 +67,14 @@ AM_API_PLUGIN bool RegisterPlugin(Engine* engine, MemoryManager* memoryManager)
     s_engine = engine;
     s_memoryManager = memoryManager;
 
-    s_vorbisCodec = amnew(VorbisCodec);
+    s_vorbisCodec = ampoolnew(MemoryPoolKind::Engine, VorbisCodec);
 
     return true;
 }
 
 AM_API_PLUGIN bool UnregisterPlugin()
 {
-    amdelete(VorbisCodec, s_vorbisCodec);
+    ampooldelete(MemoryPoolKind::Engine, VorbisCodec, s_vorbisCodec);
     s_vorbisCodec = nullptr;
 
     s_engine = nullptr;

@@ -26,48 +26,52 @@ namespace SparkyStudios::Audio::Amplitude::Codecs
     [[maybe_unused]] static class WAVCodec final : public Codec
     {
     public:
-        class WAVDecoder final : public Codec::Decoder
+        class WAVDecoder final : public Decoder
         {
         public:
             explicit WAVDecoder(const Codec* codec)
-                : Codec::Decoder(codec)
+                : Decoder(codec)
                 , _initialized(false)
                 , _wav()
             {}
 
-            bool Open(const AmOsString& filePath) final;
+            bool Open(std::shared_ptr<File> file) override;
 
-            bool Close() final;
+            bool Close() override;
 
-            AmUInt64 Load(AmVoidPtr out) final;
+            AmUInt64 Load(AmVoidPtr out) override;
 
-            AmUInt64 Stream(AmVoidPtr out, AmUInt64 offset, AmUInt64 length) final;
+            AmUInt64 Stream(AmVoidPtr out, AmUInt64 offset, AmUInt64 length) override;
 
-            bool Seek(AmUInt64 offset) final;
+            bool Seek(AmUInt64 offset) override;
 
         private:
+            std::shared_ptr<File> _file;
             bool _initialized;
             drwav _wav;
         };
 
-        class WAVEncoder final : public Codec::Encoder
+        class WAVEncoder final : public Encoder
         {
         public:
             explicit WAVEncoder(const Codec* codec)
-                : Codec::Encoder(codec)
+                : Encoder(codec)
+                , _file(nullptr)
                 , _initialized(false)
+                , _isFormatSet(false)
                 , _wav()
             {}
 
-            bool Open(const AmOsString& filePath) final;
+            bool Open(std::shared_ptr<File> file) override;
 
-            void SetFormat(const SoundFormat& format) final;
+            void SetFormat(const SoundFormat& format) override;
 
-            bool Close() final;
+            bool Close() override;
 
-            AmUInt64 Write(AmVoidPtr in, AmUInt64 offset, AmUInt64 length) final;
+            AmUInt64 Write(AmVoidPtr in, AmUInt64 offset, AmUInt64 length) override;
 
         private:
+            std::shared_ptr<File> _file;
             bool _initialized;
             bool _isFormatSet;
             drwav _wav;
@@ -75,13 +79,17 @@ namespace SparkyStudios::Audio::Amplitude::Codecs
 
         WAVCodec();
 
-        ~WAVCodec() final = default;
+        ~WAVCodec() override = default;
 
-        [[nodiscard]] Decoder* CreateDecoder() const final;
+        [[nodiscard]] Decoder* CreateDecoder() override;
 
-        [[nodiscard]] Encoder* CreateEncoder() const final;
+        void DestroyDecoder(Decoder* decoder) override;
 
-        [[nodiscard]] bool CanHandleFile(const AmOsString& filePath) const final;
+        [[nodiscard]] Encoder* CreateEncoder() override;
+
+        void DestroyEncoder(Encoder* encoder) override;
+
+        [[nodiscard]] bool CanHandleFile(std::shared_ptr<File> file) const override;
 
         drwav_allocation_callbacks m_allocationCallbacks;
     } wav_codec; // NOLINT(cert-err58-cpp)

@@ -26,44 +26,45 @@ namespace SparkyStudios::Audio::Amplitude::Codecs
     [[maybe_unused]] static class MP3Codec final : public Codec
     {
     public:
-        class MP3Decoder final : public Codec::Decoder
+        class MP3Decoder final : public Decoder
         {
         public:
             explicit MP3Decoder(const Codec* codec)
-                : Codec::Decoder(codec)
+                : Decoder(codec)
                 , _initialized(false)
                 , _mp3()
             {}
 
-            bool Open(const AmOsString& filePath) final;
+            bool Open(std::shared_ptr<File> file) override;
 
-            bool Close() final;
+            bool Close() override;
 
-            AmUInt64 Load(AmVoidPtr out) final;
+            AmUInt64 Load(AmVoidPtr out) override;
 
-            AmUInt64 Stream(AmVoidPtr out, AmUInt64 offset, AmUInt64 length) final;
+            AmUInt64 Stream(AmVoidPtr out, AmUInt64 offset, AmUInt64 length) override;
 
-            bool Seek(AmUInt64 offset) final;
+            bool Seek(AmUInt64 offset) override;
 
         private:
+            std::shared_ptr<File> _file;
             bool _initialized;
             drmp3 _mp3;
         };
 
-        class MP3Encoder final : public Codec::Encoder
+        class MP3Encoder final : public Encoder
         {
         public:
             explicit MP3Encoder(const Codec* codec)
-                : Codec::Encoder(codec)
+                : Encoder(codec)
                 , _initialized(false)
                 , _mp3()
             {}
 
-            bool Open(const AmOsString& filePath) final;
+            bool Open(std::shared_ptr<File> file) override;
 
-            bool Close() final;
+            bool Close() override;
 
-            AmUInt64 Write(AmVoidPtr in, AmUInt64 offset, AmUInt64 length) final;
+            AmUInt64 Write(AmVoidPtr in, AmUInt64 offset, AmUInt64 length) override;
 
         private:
             bool _initialized;
@@ -72,13 +73,17 @@ namespace SparkyStudios::Audio::Amplitude::Codecs
 
         MP3Codec();
 
-        ~MP3Codec() final = default;
+        ~MP3Codec() override = default;
 
-        [[nodiscard]] Decoder* CreateDecoder() const final;
+        [[nodiscard]] Decoder* CreateDecoder() override;
 
-        [[nodiscard]] Encoder* CreateEncoder() const final;
+        void DestroyDecoder(Decoder* decoder) override;
 
-        [[nodiscard]] bool CanHandleFile(const AmOsString& filePath) const final;
+        [[nodiscard]] Encoder* CreateEncoder() override;
+
+        void DestroyEncoder(Encoder* encoder) override;
+
+        [[nodiscard]] bool CanHandleFile(std::shared_ptr<File> file) const override;
 
         drmp3_allocation_callbacks m_allocationCallbacks;
     } mp3_codec; // NOLINT(cert-err58-cpp)

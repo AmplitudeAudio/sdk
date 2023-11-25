@@ -86,7 +86,7 @@ namespace SparkyStudios::Audio::Amplitude::Codecs
         }
     }
 
-    static bool ReadHeader(DiskFile& file, SoundFormat& format, AmUInt16& blockSize)
+    static bool ReadHeader(std::shared_ptr<File> file, SoundFormat& format, AmUInt16& blockSize)
     {
         AmInt32 fmt = 0, res = 0, bits_per_sample, sample_rate, num_channels;
         AmUInt32 fact_samples = 0;
@@ -98,7 +98,7 @@ namespace SparkyStudios::Audio::Amplitude::Codecs
 
         // read initial RIFF form header
 
-        if (file.Read((AmUInt8Buffer)&riff_chunk_header, sizeof(RIFFHeader)) != sizeof(RIFFHeader) ||
+        if (file->Read((AmUInt8Buffer)&riff_chunk_header, sizeof(RIFFHeader)) != sizeof(RIFFHeader) ||
             strncmp((char*)riff_chunk_header.chunkID, "RIFF", 4) != 0 || strncmp((char*)riff_chunk_header.chunkFormat, "WAVE", 4) != 0)
         {
             return false;
@@ -108,7 +108,7 @@ namespace SparkyStudios::Audio::Amplitude::Codecs
 
         while (true)
         {
-            if (file.Read((AmUInt8Buffer)&chunk_header, sizeof(FMTHeader)) != sizeof(FMTHeader))
+            if (file->Read((AmUInt8Buffer)&chunk_header, sizeof(FMTHeader)) != sizeof(FMTHeader))
             {
                 return false;
             }
@@ -123,7 +123,7 @@ namespace SparkyStudios::Audio::Amplitude::Codecs
                 bool supported = true;
 
                 if (chunk_header.chunkSize < 16 || chunk_header.chunkSize > sizeof(WAVEHeaderEx) ||
-                    file.Read((AmUInt8Buffer)&wave_header, chunk_header.chunkSize) != chunk_header.chunkSize)
+                    file->Read((AmUInt8Buffer)&wave_header, chunk_header.chunkSize) != chunk_header.chunkSize)
                 {
                     return false;
                 }
@@ -172,7 +172,7 @@ namespace SparkyStudios::Audio::Amplitude::Codecs
             }
             else if (!strncmp((char*)chunk_header.chunkID, "fact", 4))
             {
-                if (chunk_header.chunkSize < 4 || file.Read((AmUInt8Buffer)&fact_samples, sizeof(fact_samples)) != sizeof(fact_samples))
+                if (chunk_header.chunkSize < 4 || file->Read((AmUInt8Buffer)&fact_samples, sizeof(fact_samples)) != sizeof(fact_samples))
                 {
                     return false;
                 }
@@ -184,7 +184,7 @@ namespace SparkyStudios::Audio::Amplitude::Codecs
 
                     while (bytes_to_skip--)
                     {
-                        if (!file.Read((AmUInt8Buffer)&dummy, 1))
+                        if (!file->Read((AmUInt8Buffer)&dummy, 1))
                         {
                             return false;
                         }
@@ -268,7 +268,7 @@ namespace SparkyStudios::Audio::Amplitude::Codecs
 
                 while (bytes_to_eat--)
                 {
-                    if (!file.Read((AmUInt8Buffer)&dummy, 1))
+                    if (!file->Read((AmUInt8Buffer)&dummy, 1))
                     {
                         return false;
                     }
@@ -285,7 +285,7 @@ namespace SparkyStudios::Audio::Amplitude::Codecs
         return true;
     }
 
-    static bool WriteHeader(DiskFile& file, SoundFormat& format, AmUInt32 samplesPerBlock)
+    static bool WriteHeader(std::shared_ptr<File> file, SoundFormat& format, AmUInt32 samplesPerBlock)
     {
         ADPCMHeader header;
 
@@ -363,10 +363,11 @@ namespace SparkyStudios::Audio::Amplitude::Codecs
         native_to_little_endian(&header.fact, HEADER_FMT_FACT);
         native_to_little_endian(&header.data, HEADER_FMT_CHUNK);
 
-        return file.Write((AmConstUInt8Buffer)&header, sizeof(header));
+        return file->Write((AmConstUInt8Buffer)&header, sizeof(header));
     }
 
-    static AmUInt64 Decode(DiskFile& file, const SoundFormat& format, AmVoidPtr out, AmUInt64 offset, AmUInt64 length, AmUInt32 blockSize)
+    static AmUInt64 Decode(
+        std::shared_ptr<File> file, const SoundFormat& format, AmVoidPtr out, AmUInt64 offset, AmUInt64 length, AmUInt32 blockSize)
     {
         const AmUInt32 numChannels = format.GetNumChannels();
         const AmUInt32 frameSize = format.GetFrameSize();
@@ -380,14 +381,14 @@ namespace SparkyStudios::Audio::Amplitude::Codecs
             return 0;
         }
 
-        if (file.Read(adpcm_block, blockSize) != blockSize)
+        if (file->Read(adpcm_block, blockSize) != blockSize)
         {
             amMemory->Free(MemoryPoolKind::Codec, pcm_block);
             amMemory->Free(MemoryPoolKind::Codec, adpcm_block);
             return 0;
         }
 
-        if (Compression::ADPCM::Decompress(pcm_block, adpcm_block, blockSize, numChannels) != samplesPerBlock)
+        if (Decompress(pcm_block, adpcm_block, blockSize, numChannels) != samplesPerBlock)
         {
             amMemory->Free(MemoryPoolKind::Codec, pcm_block);
             amMemory->Free(MemoryPoolKind::Codec, adpcm_block);
@@ -405,7 +406,7 @@ namespace SparkyStudios::Audio::Amplitude::Codecs
     }
 
     static AmUInt64 Encode(
-        DiskFile& file,
+        std::shared_ptr<File> file,
         SoundFormat& format,
         AmVoidPtr in,
         AmUInt64 length,
@@ -421,9 +422,7 @@ namespace SparkyStudios::Audio::Amplitude::Codecs
         Context* ctx = nullptr;
 
         if (!adpcm_block)
-        {
             return 0;
-        }
 
         AmUInt64 offset = 0;
         while (length)
@@ -482,7 +481,7 @@ namespace SparkyStudios::Audio::Amplitude::Codecs
                 ctx = CreateContext(numChannels, lookAhead, noiseShaping, average_deltas);
             }
 
-            Compression::ADPCM::Compress(ctx, adpcm_block, num_bytes, pcm_block, this_block_adpcm_samples);
+            Compress(ctx, adpcm_block, num_bytes, pcm_block, this_block_adpcm_samples);
 
             if (num_bytes != blockSize)
             {
@@ -490,7 +489,7 @@ namespace SparkyStudios::Audio::Amplitude::Codecs
                 return 0;
             }
 
-            if (file.Write(adpcm_block, blockSize) != blockSize)
+            if (file->Write(adpcm_block, blockSize) != blockSize)
             {
                 amMemory->Free(MemoryPoolKind::Codec, adpcm_block);
                 return 0;
@@ -514,17 +513,13 @@ namespace SparkyStudios::Audio::Amplitude::Codecs
         : Codec("ams")
     {}
 
-    bool AMSCodec::AMSDecoder::Open(const AmOsString& filePath)
+    bool AMSCodec::AMSDecoder::Open(std::shared_ptr<File> file)
     {
-        if (_file.Open(filePath) != AM_ERROR_NO_ERROR)
-        {
-            CallLogFunc("The AMS codec cannot open the file: '" AM_OS_CHAR_FMT "'\n", filePath.c_str());
-            return false;
-        }
+        _file = file;
 
         if (!ReadHeader(_file, m_format, _blockSize))
         {
-            CallLogFunc("The AMS codec cannot handle the file: '" AM_OS_CHAR_FMT "'\n", filePath.c_str());
+            CallLogFunc("The AMS codec cannot handle the file: '" AM_OS_CHAR_FMT "'\n", file->GetPath().c_str());
             return false;
         }
 
@@ -537,6 +532,8 @@ namespace SparkyStudios::Audio::Amplitude::Codecs
     {
         if (_initialized)
         {
+            _file.reset();
+
             m_format = SoundFormat();
             _initialized = false;
         }
@@ -548,14 +545,10 @@ namespace SparkyStudios::Audio::Amplitude::Codecs
     AmUInt64 AMSCodec::AMSDecoder::Load(AmVoidPtr out)
     {
         if (!_initialized)
-        {
             return 0;
-        }
 
         if (!Seek(0))
-        {
             return 0;
-        }
 
         return Decode(_file, m_format, out, 0, m_format.GetFramesCount(), _blockSize);
     }
@@ -563,14 +556,10 @@ namespace SparkyStudios::Audio::Amplitude::Codecs
     AmUInt64 AMSCodec::AMSDecoder::Stream(AmVoidPtr out, AmUInt64 offset, AmUInt64 length)
     {
         if (!_initialized)
-        {
             return 0;
-        }
 
         if (!Seek(offset))
-        {
             return 0;
-        }
 
         return Decode(_file, m_format, out, offset, length, _blockSize);
     }
@@ -582,22 +571,18 @@ namespace SparkyStudios::Audio::Amplitude::Codecs
         const AmUInt32 steps = offset / samplesPerBlock;
 
         offset = steps * _blockSize;
-        _file.Seek(sizeof(ADPCMHeader) + offset, SEEK_SET);
+        _file->Seek(sizeof(ADPCMHeader) + offset, SEEK_SET);
 
         return true;
     }
 
-    bool AMSCodec::AMSEncoder::Open(const AmOsString& filePath)
+    bool AMSCodec::AMSEncoder::Open(std::shared_ptr<File> file)
     {
-        if (_file.Open(filePath, eFOM_WRITE, eFOK_BINARY) != AM_ERROR_NO_ERROR)
-        {
-            CallLogFunc("The AMS codec cannot open the file: '" AM_OS_CHAR_FMT "'\n", filePath.c_str());
-            return false;
-        }
+        _file = file;
 
         if (!WriteHeader(_file, m_format, _samplesPerBlock))
         {
-            CallLogFunc("The AMS codec was unable to write the file: '" AM_OS_CHAR_FMT "'\n", filePath.c_str());
+            CallLogFunc("The AMS codec was unable to write the file: '" AM_OS_CHAR_FMT "'\n", file->GetPath().c_str());
             return false;
         }
 
@@ -609,6 +594,8 @@ namespace SparkyStudios::Audio::Amplitude::Codecs
     {
         if (_initialized)
         {
+            _file.reset();
+
             m_format = SoundFormat();
             _initialized = false;
         }
@@ -618,12 +605,12 @@ namespace SparkyStudios::Audio::Amplitude::Codecs
 
     AmUInt64 AMSCodec::AMSEncoder::Write(AmVoidPtr in, AmUInt64 offset, AmUInt64 length)
     {
-        _file.Seek(sizeof(ADPCMHeader) + offset, SEEK_SET);
+        _file->Seek(sizeof(ADPCMHeader) + offset, SEEK_SET);
         return Encode(_file, m_format, in, length, _samplesPerBlock, _lookAhead, _noiseShaping);
     }
 
     void AMSCodec::AMSEncoder::SetEncodingParams(
-        AmUInt32 blockSize, AmUInt32 samplesPerBlock, AmUInt32 lookAhead, Compression::ADPCM::NoiseShapingMode noiseShaping)
+        AmUInt32 blockSize, AmUInt32 samplesPerBlock, AmUInt32 lookAhead, NoiseShapingMode noiseShaping)
     {
         _blockSize = blockSize;
         _samplesPerBlock = samplesPerBlock;
@@ -631,28 +618,29 @@ namespace SparkyStudios::Audio::Amplitude::Codecs
         _noiseShaping = noiseShaping;
     }
 
-    Codec::Decoder* AMSCodec::CreateDecoder() const
+    Codec::Decoder* AMSCodec::CreateDecoder()
     {
-        return new AMSDecoder(this);
+        return ampoolnew(MemoryPoolKind::Codec, AMSDecoder, this);
     }
 
-    Codec::Encoder* AMSCodec::CreateEncoder() const
+    void AMSCodec::DestroyDecoder(Decoder* decoder)
     {
-        return new AMSEncoder(this);
+        ampooldelete(MemoryPoolKind::Codec, AMSDecoder, (AMSDecoder*)decoder);
     }
 
-    bool AMSCodec::CanHandleFile(const AmOsString& filePath) const
+    Codec::Encoder* AMSCodec::CreateEncoder()
     {
-        DiskFile file;
+        return ampoolnew(MemoryPoolKind::Codec, AMSEncoder, this);
+    }
 
-        if (file.Open(filePath) == AM_ERROR_NO_ERROR)
-        {
-            SoundFormat f{};
-            AmUInt16 s = 0;
+    void AMSCodec::DestroyEncoder(Encoder* encoder)
+    {
+        ampooldelete(MemoryPoolKind::Codec, AMSEncoder, (AMSEncoder*)encoder);
+    }
 
-            return ReadHeader(file, f, s);
-        }
-
-        return false;
+    bool AMSCodec::CanHandleFile(std::shared_ptr<File> file) const
+    {
+        const auto& path = file->GetPath();
+        return path.find(".ams") != AmOsString::npos;
     }
 } // namespace SparkyStudios::Audio::Amplitude::Codecs

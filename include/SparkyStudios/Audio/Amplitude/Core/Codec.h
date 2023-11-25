@@ -18,6 +18,7 @@
 #define SS_AMPLITUDE_AUDIO_CODEC_H
 
 #include <SparkyStudios/Audio/Amplitude/Core/Common.h>
+#include <SparkyStudios/Audio/Amplitude/IO/FileSystem.h>
 
 namespace SparkyStudios::Audio::Amplitude
 {
@@ -36,9 +37,9 @@ namespace SparkyStudios::Audio::Amplitude
          *
          * The Decoder is built by a Codec instance. It's used to read
          * an audio file and process its data. Each implementation should
-         * allow to load the entire file into memory or stream it from disk.
+         * allow to load the entire file into memory or stream it from the file system.
          *
-         * The Stream() method of a decoder implementation should be thread safe.
+         * The Stream() method of a decoder implementation should be thread-safe.
          */
         class Decoder
         {
@@ -53,9 +54,9 @@ namespace SparkyStudios::Audio::Amplitude
             /**
              * @brief Opens the given file to start decoding.
              *
-             * @param filePath The path to the file to read.
+             * @param file The file to read.
              */
-            virtual bool Open(const AmOsString& filePath) = 0;
+            virtual bool Open(std::shared_ptr<File> file) = 0;
 
             /**
              * @brief Closes the file previously opened.
@@ -142,9 +143,9 @@ namespace SparkyStudios::Audio::Amplitude
             /**
              * @brief Opens or create a file at the given path to start encoding.
              *
-             * @param filePath The path to the file to write.
+             * @param file The file to write.
              */
-            virtual bool Open(const AmOsString& filePath) = 0;
+            virtual bool Open(std::shared_ptr<File> file) = 0;
 
             /**
              * @brief Closes the opened file.
@@ -207,7 +208,14 @@ namespace SparkyStudios::Audio::Amplitude
          *
          * @return A Decoder instance.
          */
-        [[nodiscard]] virtual Decoder* CreateDecoder() const = 0;
+        [[nodiscard]] virtual Decoder* CreateDecoder() = 0;
+
+        /**
+         * @brief Destroys the decoder associated to this codec.
+         *
+         * @param decoder The decoder instance to destroy.
+         */
+        virtual void DestroyDecoder(Decoder* decoder) = 0;
 
         /**
          * @brief Creates a new instance of the encoder associated
@@ -215,17 +223,24 @@ namespace SparkyStudios::Audio::Amplitude
          *
          * @return An Encoder instance.
          */
-        [[nodiscard]] virtual Encoder* CreateEncoder() const = 0;
+        [[nodiscard]] virtual Encoder* CreateEncoder() = 0;
+
+        /**
+         * @brief Destroys the encoder associated to this codec.
+         *
+         * @param encoder The encoder instance to destroy.
+         */
+        virtual void DestroyEncoder(Encoder* encoder) = 0;
 
         /**
          * @brief Checks whether this Codec can handle the file at
          * the given path.
          *
-         * @param filePath The path to the file to check.
+         * @param file The file to check.
          *
          * @return Whether this Codec can handle a file.
          */
-        [[nodiscard]] virtual bool CanHandleFile(const AmOsString& filePath) const = 0;
+        [[nodiscard]] virtual bool CanHandleFile(std::shared_ptr<File> file) const = 0;
 
         /**
          * @brief Gets the name of this codec.
@@ -254,10 +269,10 @@ namespace SparkyStudios::Audio::Amplitude
         /**
          * @brief Finds the codec which can handle the given file.
          *
-         * @param filePath The path to the file.
+         * @param file The file to find the codec for.
          * @return The codec which can handle the given file.
          */
-        static Codec* FindCodecForFile(const AmOsString& filePath);
+        static Codec* FindCodecForFile(std::shared_ptr<File> file);
 
         /**
          * @brief Locks the codecs registry.

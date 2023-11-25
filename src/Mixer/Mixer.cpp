@@ -203,25 +203,25 @@ namespace SparkyStudios::Audio::Amplitude
     static void OnSoundStarted(Mixer* mixer, MixerLayer* layer)
     {
         const auto* sound = static_cast<SoundInstance*>(layer->snd->userData);
-        CallLogFunc("Started sound: " AM_OS_CHAR_FMT "\n", sound->GetSound()->GetFilename().c_str());
+        CallLogFunc("Started sound: " AM_OS_CHAR_FMT "\n", sound->GetSound()->GetPath().c_str());
     }
 
     static void OnSoundPaused(Mixer* mixer, MixerLayer* layer)
     {
         const auto* sound = static_cast<SoundInstance*>(layer->snd->userData);
-        CallLogFunc("Paused sound: " AM_OS_CHAR_FMT "\n", sound->GetSound()->GetFilename().c_str());
+        CallLogFunc("Paused sound: " AM_OS_CHAR_FMT "\n", sound->GetSound()->GetPath().c_str());
     }
 
     static void OnSoundResumed(Mixer* mixer, MixerLayer* layer)
     {
         const auto* sound = static_cast<SoundInstance*>(layer->snd->userData);
-        CallLogFunc("Resumed sound: " AM_OS_CHAR_FMT "\n", sound->GetSound()->GetFilename().c_str());
+        CallLogFunc("Resumed sound: " AM_OS_CHAR_FMT "\n", sound->GetSound()->GetPath().c_str());
     }
 
     static void OnSoundStopped(Mixer* mixer, MixerLayer* layer)
     {
         const auto* sound = static_cast<SoundInstance*>(layer->snd->userData);
-        CallLogFunc("Stopped sound: " AM_OS_CHAR_FMT "\n", sound->GetSound()->GetFilename().c_str());
+        CallLogFunc("Stopped sound: " AM_OS_CHAR_FMT "\n", sound->GetSound()->GetPath().c_str());
 
         // Destroy the sound instance on stop
         OnSoundDestroyed(mixer, layer);
@@ -230,7 +230,7 @@ namespace SparkyStudios::Audio::Amplitude
     static bool OnSoundLooped(Mixer* mixer, MixerLayer* layer)
     {
         auto* sound = static_cast<SoundInstance*>(layer->snd->userData);
-        CallLogFunc("Looped sound: " AM_OS_CHAR_FMT "\n", sound->GetSound()->GetFilename().c_str());
+        CallLogFunc("Looped sound: " AM_OS_CHAR_FMT "\n", sound->GetSound()->GetPath().c_str());
 
         Mixer::IncrementSoundLoopCount(sound);
 
@@ -251,7 +251,7 @@ namespace SparkyStudios::Audio::Amplitude
     static void OnSoundEnded(Mixer* mixer, MixerLayer* layer)
     {
         auto* sound = static_cast<SoundInstance*>(layer->snd->userData);
-        CallLogFunc("Ended sound: " AM_OS_CHAR_FMT "\n", sound->GetSound()->GetFilename().c_str());
+        CallLogFunc("Ended sound: " AM_OS_CHAR_FMT "\n", sound->GetSound()->GetPath().c_str());
 
         RealChannel* channel = sound->GetChannel();
 

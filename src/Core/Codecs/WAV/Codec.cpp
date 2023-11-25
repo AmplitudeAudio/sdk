@@ -34,6 +34,25 @@ namespace SparkyStudios::Audio::Amplitude::Codecs
         amMemory->Free(MemoryPoolKind::Codec, p);
     }
 
+    static size_t onRead(void* pUserData, void* pBufferOut, size_t bytesToRead)
+    {
+        auto* file = static_cast<File*>(pUserData);
+        return file->Read(static_cast<AmUInt8Buffer>(pBufferOut), bytesToRead);
+    }
+
+    static drwav_bool32 onSeek(void* pUserData, int offset, drwav_seek_origin origin)
+    {
+        auto* file = static_cast<File*>(pUserData);
+        file->Seek(offset, origin == drwav_seek_origin_start ? SEEK_SET : origin == drwav_seek_origin_current ? SEEK_CUR : SEEK_SET);
+        return DRWAV_TRUE;
+    }
+
+    static size_t onWrite(void* pUserData, const void* pData, size_t bytesToWrite)
+    {
+        auto* file = static_cast<File*>(pUserData);
+        return file->Write(static_cast<AmConstUInt8Buffer>(pData), bytesToWrite);
+    }
+
     WAVCodec::WAVCodec()
         : Codec("wav")
         , m_allocationCallbacks()
@@ -43,23 +62,20 @@ namespace SparkyStudios::Audio::Amplitude::Codecs
         m_allocationCallbacks.onRealloc = onRealloc;
     }
 
-    bool WAVCodec::WAVDecoder::Open(const AmOsString& filePath)
+    bool WAVCodec::WAVDecoder::Open(std::shared_ptr<File> file)
     {
-        if (!m_codec->CanHandleFile(filePath))
+        if (!m_codec->CanHandleFile(file))
         {
-            CallLogFunc("The WAV codec cannot handle the file: '" AM_OS_CHAR_FMT "'\n", filePath.c_str());
+            CallLogFunc("The WAV codec cannot handle the file: '" AM_OS_CHAR_FMT "'\n", file->GetPath().c_str());
             return false;
         }
 
+        _file = file;
         const auto* codec = static_cast<const WAVCodec*>(m_codec);
 
-#if defined(AM_WCHAR_SUPPORTED)
-        if (drwav_init_file_w(&_wav, filePath.c_str(), &codec->m_allocationCallbacks) == DRWAV_FALSE)
-#else
-        if (drwav_init_file(&_wav, filePath.c_str(), &codec->m_allocationCallbacks) == DRWAV_FALSE)
-#endif
+        if (drwav_init(&_wav, onRead, onSeek, _file.get(), &codec->m_allocationCallbacks) == DRWAV_FALSE)
         {
-            CallLogFunc("Cannot load the WAV file: '" AM_OS_CHAR_FMT "'\n", filePath.c_str());
+            CallLogFunc("Cannot load the WAV file: '" AM_OS_CHAR_FMT "'\n", file->GetPath().c_str());
             return false;
         }
 
@@ -78,8 +94,11 @@ namespace SparkyStudios::Audio::Amplitude::Codecs
     {
         if (_initialized)
         {
+            _file.reset();
+
             m_format = SoundFormat();
             _initialized = false;
+
             return drwav_uninit(&_wav) == DRWAV_SUCCESS;
         }
 
@@ -114,13 +133,13 @@ namespace SparkyStudios::Audio::Amplitude::Codecs
         return drwav_seek_to_pcm_frame(&_wav, offset) == DRWAV_TRUE;
     }
 
-    bool WAVCodec::WAVEncoder::Open(const AmOsString& filePath)
+    bool WAVCodec::WAVEncoder::Open(std::shared_ptr<File> file)
     {
         if (!_isFormatSet)
         {
             CallLogFunc(
                 "The WAV codec cannot open the file '" AM_OS_CHAR_FMT "' without a format set. Have you missed to call SetFormat()?\n",
-                filePath.c_str());
+                file->GetPath().c_str());
             return false;
         }
 
@@ -131,17 +150,13 @@ namespace SparkyStudios::Audio::Amplitude::Codecs
         format.sampleRate = m_format.GetSampleRate();
         format.bitsPerSample = m_format.GetBitsPerSample();
 
+        _file = file;
         const auto* codec = static_cast<const WAVCodec*>(m_codec);
 
-#if defined(AM_WCHAR_SUPPORTED)
-        if (drwav_init_file_write_sequential_pcm_frames_w(
-                &_wav, filePath.c_str(), &format, m_format.GetFramesCount(), &codec->m_allocationCallbacks) == DRWAV_FALSE)
-#else
-        if (drwav_init_file_write_sequential_pcm_frames(
-                &_wav, filePath.c_str(), &format, m_format.GetFramesCount(), &codec->m_allocationCallbacks) == DRWAV_FALSE)
-#endif
+        if (drwav_init_write_sequential_pcm_frames(
+                &_wav, &format, m_format.GetFramesCount(), onWrite, _file.get(), &codec->m_allocationCallbacks) == DRWAV_FALSE)
         {
-            CallLogFunc("Cannot load the WAV file: '" AM_OS_CHAR_FMT "'\n", filePath.c_str());
+            CallLogFunc("Cannot load the WAV file: '" AM_OS_CHAR_FMT "'\n", file->GetPath().c_str());
             return false;
         }
 
@@ -183,30 +198,29 @@ namespace SparkyStudios::Audio::Amplitude::Codecs
         return drwav_write_pcm_frames(&_wav, length, in);
     }
 
-    Codec::Decoder* WAVCodec::CreateDecoder() const
+    Codec::Decoder* WAVCodec::CreateDecoder()
     {
-        return new WAVDecoder(this);
+        return ampoolnew(MemoryPoolKind::Codec, WAVDecoder, this);
     }
 
-    Codec::Encoder* WAVCodec::CreateEncoder() const
+    void WAVCodec::DestroyDecoder(Decoder* decoder)
     {
-        return new WAVEncoder(this);
+        ampooldelete(MemoryPoolKind::Codec, WAVDecoder, (WAVDecoder*)decoder);
     }
 
-    bool WAVCodec::CanHandleFile(const AmOsString& filePath) const
+    Codec::Encoder* WAVCodec::CreateEncoder()
     {
-        // TODO: Maybe check by extension instead?
+        return ampoolnew(MemoryPoolKind::Codec, WAVEncoder, this);
+    }
 
-        drwav dummy;
-#if defined(AM_WCHAR_SUPPORTED)
-        const bool can = drwav_init_file_w(&dummy, filePath.c_str(), &m_allocationCallbacks) == DRWAV_TRUE;
-#else
-        const bool can = drwav_init_file(&dummy, filePath.c_str(), &m_allocationCallbacks) == DRWAV_TRUE;
-#endif
+    void WAVCodec::DestroyEncoder(Encoder* encoder)
+    {
+        ampooldelete(MemoryPoolKind::Codec, WAVEncoder, (WAVEncoder*)encoder);
+    }
 
-        if (can)
-            drwav_uninit(&dummy);
-
-        return can;
+    bool WAVCodec::CanHandleFile(std::shared_ptr<File> file) const
+    {
+        const auto& path = file->GetPath();
+        return path.find(".wav") != AmOsString::npos;
     }
 } // namespace SparkyStudios::Audio::Amplitude::Codecs

@@ -32,15 +32,40 @@
 #endif // AM_BUILDSYSTEM_BUILDING_PLUGIN
 
 /**
- * @brief Allocates memory for a new object using the memory manager.
+ * @brief Allocates memory for a new object in the Default pool using the memory manager.
+ *
+ * This will create a new memory allocation in the Default pool. The allocated
+ * memory will be freed when the object is destroyed using @a amdelete.
+ *
+ * @see ampooldelete
+ */
+#define ampoolnew(_pool_, _type_, ...) new (amMemory->Malign((_pool_), sizeof(_type_), alignof(_type_))) _type_(__VA_ARGS__)
+
+/**
+ * @brief Deallocates a memory allocated with @a ampoolnew.
+ *
+ * This will call the object's destructor before the memory is freed.
+ *
+ * @see ampoolnew
+ */
+#define ampooldelete(_pool_, _type_, _ptr_)                                                                                                \
+    {                                                                                                                                      \
+        if ((_ptr_) != nullptr)                                                                                                            \
+        {                                                                                                                                  \
+            (_ptr_)->~_type_();                                                                                                            \
+            amMemory->Free((_pool_), (_ptr_));                                                                                             \
+        }                                                                                                                                  \
+    }
+
+/**
+ * @brief Allocates memory for a new object in the Default pool using the memory manager.
  *
  * This will create a new memory allocation in the Default pool. The allocated
  * memory will be freed when the object is destroyed using @a amdelete.
  *
  * @see amdelete
  */
-#define amnew(_type_, ...)                                                                                                                 \
-    new (amMemory->Malign(SparkyStudios::Audio::Amplitude::MemoryPoolKind::Default, sizeof(_type_), alignof(_type_))) _type_(__VA_ARGS__)
+#define amnew(_type_, ...) ampoolnew(SparkyStudios::Audio::Amplitude::MemoryPoolKind::Default, _type_, __VA_ARGS__)
 
 /**
  * @brief Deallocates a memory allocated with @a amnew.
@@ -49,14 +74,7 @@
  *
  * @see amnew
  */
-#define amdelete(_type_, _ptr_)                                                                                                            \
-    {                                                                                                                                      \
-        if ((_ptr_) != nullptr)                                                                                                            \
-        {                                                                                                                                  \
-            (_ptr_)->~_type_();                                                                                                            \
-            amMemory->Free(SparkyStudios::Audio::Amplitude::MemoryPoolKind::Default, (_ptr_));                                             \
-        }                                                                                                                                  \
-    }
+#define amdelete(_type_, _ptr_) ampooldelete(SparkyStudios::Audio::Amplitude::MemoryPoolKind::Default, _type_, _ptr_)
 
 namespace SparkyStudios::Audio::Amplitude
 {

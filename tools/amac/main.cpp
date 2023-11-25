@@ -96,9 +96,12 @@ static int process(const AmOsString& inFileName, const AmOsString& outFileName, 
 {
     AmInt32 res;
 
+    const auto inputFile = amEngine->GetFileSystem()->OpenFile(inFileName);
+    const auto outputFile = amEngine->GetFileSystem()->OpenFile(outFileName);
+
     if (state.mode == ePM_ENCODE)
     {
-        auto* codec = Codec::FindCodecForFile(inFileName);
+        auto* codec = Codec::FindCodecForFile(inputFile);
         if (!codec)
         {
             fprintf(
@@ -107,7 +110,7 @@ static int process(const AmOsString& inFileName, const AmOsString& outFileName, 
         }
 
         auto* decoder = codec->CreateDecoder();
-        if (!decoder->Open(inFileName))
+        if (!decoder->Open(inputFile))
         {
             fprintf(
                 stderr, "Unable to load the input file: " AM_OS_CHAR_FMT ". The found codec (%s) was not able to open the input file.\n",
@@ -115,10 +118,10 @@ static int process(const AmOsString& inFileName, const AmOsString& outFileName, 
             return EXIT_FAILURE;
         }
 
-        SoundFormat format = decoder->GetFormat();
+        const SoundFormat format = decoder->GetFormat();
 
         AmUInt16 numChannels = format.GetNumChannels();
-        AmUInt32 sampleRate = format.GetSampleRate(), blockSize, samplesPerBlock;
+        AmUInt32 sampleRate = format.GetSampleRate(), blockSize;
         AmUInt64 numSamples = format.GetFramesCount();
         AmUInt64 framesSize = format.GetFrameSize();
 
@@ -129,7 +132,7 @@ static int process(const AmOsString& inFileName, const AmOsString& outFileName, 
         else
             blockSize = 256 * numChannels * (sampleRate < 11000 ? 1 : sampleRate / 11000);
 
-        samplesPerBlock = (blockSize - numChannels * 4) * (numChannels ^ 3) + 1;
+        const AmUInt32 samplesPerBlock = (blockSize - numChannels * 4) * (numChannels ^ 3) + 1;
 
         if (state.verbose)
         {
@@ -139,7 +142,7 @@ static int process(const AmOsString& inFileName, const AmOsString& outFileName, 
                 outFileName.c_str());
         }
 
-        auto pcmData = static_cast<AmAudioSampleBuffer>(amMemory->Malloc(MemoryPoolKind::Codec, numSamples * framesSize));
+        auto const pcmData = static_cast<AmAudioSampleBuffer>(amMemory->Malloc(MemoryPoolKind::Codec, numSamples * framesSize));
 
         if (decoder->Load(pcmData) != numSamples || !decoder->Close())
         {
@@ -204,7 +207,7 @@ static int process(const AmOsString& inFileName, const AmOsString& outFileName, 
                 sampleRate, numChannels, format.GetBitsPerSample(), numSamples, framesSize, AM_SAMPLE_FORMAT_INT, AM_SAMPLE_INTERLEAVED);
 
             encoder->SetFormat(encodeFormat);
-            if (!encoder->Open(outFileName))
+            if (!encoder->Open(outputFile))
             {
                 amMemory->Free(MemoryPoolKind::SoundData, output16);
 
@@ -232,7 +235,7 @@ static int process(const AmOsString& inFileName, const AmOsString& outFileName, 
                 output16[i] = AmReal32ToInt16(pcmData[i], true);
 
             encoder->SetFormat(format);
-            if (!encoder->Open(outFileName))
+            if (!encoder->Open(outputFile))
             {
                 amMemory->Free(MemoryPoolKind::SoundData, output16);
                 amMemory->Free(MemoryPoolKind::Codec, pcmData);
@@ -269,7 +272,7 @@ static int process(const AmOsString& inFileName, const AmOsString& outFileName, 
         auto* decoder = Codecs::ams_codec.CreateDecoder();
         auto* encoder = Codecs::wav_codec.CreateEncoder();
 
-        if (!decoder->Open(inFileName))
+        if (!decoder->Open(inputFile))
         {
             fprintf(stderr, "Unable to open file \"" AM_OS_CHAR_FMT "\" for decoding.\n", inFileName.c_str());
             return EXIT_FAILURE;
@@ -286,7 +289,7 @@ static int process(const AmOsString& inFileName, const AmOsString& outFileName, 
             AM_SAMPLE_FORMAT_INT, AM_SAMPLE_INTERLEAVED);
 
         encoder->SetFormat(wavFormat);
-        if (!encoder->Open(outFileName))
+        if (!encoder->Open(outputFile))
         {
             fprintf(stderr, "Unable to open file \"" AM_OS_CHAR_FMT "\" for encoding.\n", outFileName.c_str());
             return EXIT_FAILURE;
