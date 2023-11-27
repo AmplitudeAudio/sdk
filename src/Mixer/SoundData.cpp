@@ -20,16 +20,17 @@
 
 namespace SparkyStudios::Audio::Amplitude
 {
-    static SoundData* CreateSoundData(const SoundFormat& format, SoundChunk* chunk, AmVoidPtr userData, AmUInt64 frames, bool stream)
+    static SoundData* CreateSoundData(
+        const SoundFormat& format, SoundChunk* chunk, SoundInstance* soundInstance, AmUInt64 frames, bool stream)
     {
         if (format.GetNumChannels() < 1 || format.GetNumChannels() > 2 || frames < 1)
             return nullptr;
 
-        auto* sound = amnew(SoundData);
+        auto* sound = ampoolnew(MemoryPoolKind::SoundData, SoundData);
 
         sound->chunk = chunk;
         sound->length = frames;
-        sound->userData = userData;
+        sound->sound.reset(soundInstance);
         sound->format = format;
         sound->stream = stream;
 
@@ -45,7 +46,7 @@ namespace SparkyStudios::Audio::Amplitude
 #endif // AM_SIMD_INTRINSICS
         const AmUInt64 alignedLength = alignedFrames * channels;
 
-        auto* chunk = amnew(SoundChunk);
+        auto* chunk = ampoolnew(MemoryPoolKind::SoundData, SoundChunk);
 
         chunk->frames = alignedFrames;
         chunk->length = alignedLength;
@@ -64,7 +65,7 @@ namespace SparkyStudios::Audio::Amplitude
         {
             CallLogFunc("[ERROR] Failed to allocate memory for sound chunk.");
 
-            amdelete(SoundChunk, chunk);
+            ampooldelete(MemoryPoolKind::SoundData, SoundChunk, chunk);
             return nullptr;
         }
 
@@ -75,31 +76,36 @@ namespace SparkyStudios::Audio::Amplitude
 
     void SoundChunk::DestroyChunk(SoundChunk* chunk)
     {
-        amdelete(SoundChunk, chunk);
+        ampooldelete(MemoryPoolKind::SoundData, SoundChunk, chunk);
     }
 
     SoundChunk::~SoundChunk()
     {
-        if (buffer != nullptr)
-        {
-            amMemory->Free(memoryPool, buffer);
-            buffer = nullptr;
-        }
+        if (buffer == nullptr)
+            return;
+
+        amMemory->Free(memoryPool, buffer);
+        buffer = nullptr;
     }
 
-    SoundData* SoundData::CreateMusic(const SoundFormat& format, SoundChunk* chunk, AmUInt64 frames, AmVoidPtr userData)
+    SoundData* SoundData::CreateMusic(const SoundFormat& format, SoundChunk* chunk, AmUInt64 frames, SoundInstance* soundInstance)
     {
-        return CreateSoundData(format, chunk, userData, frames, true);
+        return CreateSoundData(format, chunk, soundInstance, frames, true);
     }
 
-    SoundData* SoundData::CreateSound(const SoundFormat& format, SoundChunk* chunk, AmUInt64 frames, AmVoidPtr userData)
+    SoundData* SoundData::CreateSound(const SoundFormat& format, SoundChunk* chunk, AmUInt64 frames, SoundInstance* soundInstance)
     {
-        return CreateSoundData(format, chunk, userData, frames, false);
+        return CreateSoundData(format, chunk, soundInstance, frames, false);
     }
 
-    void SoundData::Destroy(bool destroyChunk) const
+    void SoundData::Destroy(SoundData* soundData, bool destroyChunk)
     {
+        if (soundData == nullptr)
+            return;
+
         if (destroyChunk)
-            SoundChunk::DestroyChunk(chunk);
+            SoundChunk::DestroyChunk(soundData->chunk);
+
+        ampooldelete(MemoryPoolKind::SoundData, SoundData, soundData);
     }
 } // namespace SparkyStudios::Audio::Amplitude

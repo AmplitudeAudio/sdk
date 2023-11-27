@@ -1196,6 +1196,11 @@ namespace SparkyStudios::Audio::Amplitude
          */
         [[nodiscard]] static Engine* GetInstance();
 
+        /**
+         * @brief Destroys the unique instance of the Amplitude Engine.
+         */
+        static void DestroyInstance();
+
     private:
         Channel PlayScopedSwitchContainer(SwitchContainerHandle handle, const Entity& entity, const AmVec3& location, float userGain) const;
         Channel PlayScopedCollection(CollectionHandle handle, const Entity& entity, const AmVec3& location, float userGain) const;

@@ -60,7 +60,7 @@ namespace SparkyStudios::Audio::Amplitude
         amMemory->Free(MemoryPoolKind::Default, m_basePtr);
     }
 
-    TinyAlignedReal32Buffer::TinyAlignedReal32Buffer()
+    AmTinyAlignedReal32Buffer::AmTinyAlignedReal32Buffer()
     {
         AmUInt8Buffer basePtr = &m_actualData[0];
         m_data = reinterpret_cast<AmReal32Buffer>(((size_t)basePtr + (AM_SIMD_ALIGNMENT - 1)) & ~(AM_SIMD_ALIGNMENT - 1));

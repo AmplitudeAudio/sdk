@@ -115,6 +115,11 @@ namespace SparkyStudios::Audio::Amplitude
         return m_fileHandle;
     }
 
+    bool DiskFile::IsValid() const
+    {
+        return m_fileHandle != nullptr;
+    }
+
     AmResult DiskFile::Open(const std::filesystem::path& filePath, FileOpenMode mode, FileOpenKind kind)
     {
         if (filePath.empty())
@@ -245,6 +250,11 @@ namespace SparkyStudios::Audio::Amplitude
     AmVoidPtr MemoryFile::GetPtr()
     {
         return m_dataPtr;
+    }
+
+    bool MemoryFile::IsValid() const
+    {
+        return m_dataPtr != nullptr;
     }
 
     AmResult MemoryFile::OpenMem(AmConstUInt8Buffer buffer, AmSize size, bool copy, bool takeOwnership)

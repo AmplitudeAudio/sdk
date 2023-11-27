@@ -124,6 +124,7 @@ set(SA_SOURCE
     include/SparkyStudios/Audio/Amplitude/Core/Common/Constants.h
     include/SparkyStudios/Audio/Amplitude/Core/Common/SIMD.h
     include/SparkyStudios/Audio/Amplitude/Core/Common/Types.h
+    include/SparkyStudios/Audio/Amplitude/Core/Asset.h
     include/SparkyStudios/Audio/Amplitude/Core/Bus.h
     include/SparkyStudios/Audio/Amplitude/Core/Channel.h
     include/SparkyStudios/Audio/Amplitude/Core/Codec.h
@@ -177,6 +178,7 @@ set(SA_SOURCE
     src/Core/Drivers/MiniAudio/Driver.cpp
     src/Core/Drivers/MiniAudio/Driver.h
 
+    src/Core/Asset.cpp
     src/Core/Bus.cpp
     src/Core/BusInternalState.cpp
     src/Core/BusInternalState.h

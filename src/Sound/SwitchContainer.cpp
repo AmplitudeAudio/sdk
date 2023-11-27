@@ -24,25 +24,55 @@ namespace SparkyStudios::Audio::Amplitude
     SwitchContainer::SwitchContainer()
         : SoundObject()
         , _switch(nullptr)
-        , _source()
         , _sounds()
     {}
 
     SwitchContainer::~SwitchContainer()
     {
         _switch = nullptr;
+
+        for (const auto& pair : _fadersIn)
+            std::get<0>(pair.second)->DestroyInstance(std::get<1>(pair.second));
+
+        for (const auto& pair : _fadersOut)
+            std::get<0>(pair.second)->DestroyInstance(std::get<1>(pair.second));
+
         _sounds.clear();
+        _fadersIn.clear();
+        _fadersOut.clear();
+
         m_effect = nullptr;
         m_attenuation = nullptr;
     }
 
-    bool SwitchContainer::LoadDefinition(const AmString& source, EngineInternalState* state)
+    const Switch* SwitchContainer::GetSwitch() const
     {
-        AMPLITUDE_ASSERT(m_id == kAmInvalidObjectId);
+        return _switch;
+    }
 
-        _source = source;
-        const SwitchContainerDefinition* definition = GetSwitchContainerDefinition();
+    FaderInstance* SwitchContainer::GetFaderIn(AmObjectID id) const
+    {
+        if (_fadersIn.find(id) != _fadersIn.end())
+            return std::get<1>(_fadersIn.at(id));
 
+        return nullptr;
+    }
+
+    FaderInstance* SwitchContainer::GetFaderOut(AmObjectID id) const
+    {
+        if (_fadersOut.find(id) != _fadersOut.end())
+            return std::get<1>(_fadersOut.at(id));
+
+        return nullptr;
+    }
+
+    const std::vector<SwitchContainerItem>& SwitchContainer::GetSoundObjects(AmObjectID stateId) const
+    {
+        return _sounds.at(stateId);
+    }
+
+    bool SwitchContainer::LoadDefinition(const SwitchContainerDefinition* definition, EngineInternalState* state)
+    {
         if (!definition->bus())
         {
             CallLogFunc("[ERROR] SwitchContainer %s does not specify a bus.\n", definition->name()->c_str());
@@ -96,8 +126,8 @@ namespace SparkyStudios::Audio::Amplitude
             }
         }
 
-        m_id = definition->id();
-        m_name = definition->name()->str();
+        _id = definition->id();
+        _name = definition->name()->str();
 
         m_gain = RtpcValue(definition->gain());
         m_priority = RtpcValue(definition->priority());
@@ -164,27 +194,22 @@ namespace SparkyStudios::Audio::Amplitude
         return true;
     }
 
-    bool SwitchContainer::LoadDefinitionFromFile(const AmOsString& filename, EngineInternalState* state)
+    const SwitchContainerDefinition* SwitchContainer::GetDefinition() const
     {
-        std::string source;
-        return Amplitude::LoadFile(filename, &source) && LoadDefinition(source, state);
+        return GetSwitchContainerDefinition(_source.c_str());
     }
 
     void SwitchContainer::AcquireReferences(EngineInternalState* state)
     {
-        AMPLITUDE_ASSERT(m_id != kAmInvalidObjectId);
+        AMPLITUDE_ASSERT(_id != kAmInvalidObjectId);
 
         _switch->GetRefCounter()->Increment();
 
         if (m_effect)
-        {
             m_effect->GetRefCounter()->Increment();
-        }
 
         if (m_attenuation)
-        {
             m_attenuation->GetRefCounter()->Increment();
-        }
 
         for (auto&& sound : _sounds)
         {
@@ -204,19 +229,15 @@ namespace SparkyStudios::Audio::Amplitude
 
     void SwitchContainer::ReleaseReferences(EngineInternalState* state)
     {
-        AMPLITUDE_ASSERT(m_id != kAmInvalidObjectId);
+        AMPLITUDE_ASSERT(_id != kAmInvalidObjectId);
 
         _switch->GetRefCounter()->Decrement();
 
         if (m_effect)
-        {
             m_effect->GetRefCounter()->Decrement();
-        }
 
         if (m_attenuation)
-        {
             m_attenuation->GetRefCounter()->Decrement();
-        }
 
         for (auto&& sound : _sounds)
         {
@@ -232,36 +253,5 @@ namespace SparkyStudios::Audio::Amplitude
                 continue;
             }
         }
-    }
-
-    const SwitchContainerDefinition* SwitchContainer::GetSwitchContainerDefinition() const
-    {
-        return Amplitude::GetSwitchContainerDefinition(_source.c_str());
-    }
-
-    FaderInstance* SwitchContainer::GetFaderIn(AmObjectID id) const
-    {
-        if (_fadersIn.find(id) != _fadersIn.end())
-            return std::get<1>(_fadersIn.at(id));
-
-        return nullptr;
-    }
-
-    FaderInstance* SwitchContainer::GetFaderOut(AmObjectID id) const
-    {
-        if (_fadersOut.find(id) != _fadersOut.end())
-            return std::get<1>(_fadersOut.at(id));
-
-        return nullptr;
-    }
-
-    const std::vector<SwitchContainerItem>& SwitchContainer::GetSoundObjects(AmObjectID stateId) const
-    {
-        return _sounds.at(stateId);
-    }
-
-    const Switch* SwitchContainer::GetSwitch() const
-    {
-        return _switch;
     }
 } // namespace SparkyStudios::Audio::Amplitude

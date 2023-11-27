@@ -17,11 +17,14 @@
 #ifndef SS_AMPLITUDE_AUDIO_SWITCH_H
 #define SS_AMPLITUDE_AUDIO_SWITCH_H
 
+#include <SparkyStudios/Audio/Amplitude/Core/Asset.h>
 #include <SparkyStudios/Audio/Amplitude/Core/Common.h>
 #include <SparkyStudios/Audio/Amplitude/Core/RefCounter.h>
 
 namespace SparkyStudios::Audio::Amplitude
 {
+    struct EngineInternalState;
+
     struct SwitchDefinition;
 
     /**
@@ -39,12 +42,12 @@ namespace SparkyStudios::Audio::Amplitude
         /**
          * @brief The name of this switch state.
          */
-        std::string m_name;
+        AmString m_name;
 
         /**
          * @brief Checks whether this switch state is valid.
          *
-         * @return true if the switch state is valid, false otherwise.
+         * @return @c true if the switch state is valid, @c false otherwise.
          */
         [[nodiscard]] bool Valid() const;
 
@@ -53,7 +56,9 @@ namespace SparkyStudios::Audio::Amplitude
     };
 
     /**
-     * @brief A switch is a collection of states which can change the sound played during from a SwitchContainer the game.
+     * @brief Amplitude Switch.
+     *
+     * A switch is a collection of states which can change the sound played from a SwitchContainer.
      *
      * For example, you can have a switch named "SurfaceType" which have "wood", "grass", "metal" and "water" as states. A
      * SwitchContainer using this switch can group sounds per switch states, so when a state is active, all the sounds of
@@ -61,39 +66,20 @@ namespace SparkyStudios::Audio::Amplitude
      *
      * The Switch is a shared object between sound sources. They are used only by SwitchContainer objects.
      */
-    class AM_API_PUBLIC Switch
+    class AM_API_PUBLIC Switch final : public Asset<AmSwitchID, SwitchDefinition>
     {
     public:
         /**
-         * @brief Construct an uninitialized Switch.
+         * @brief Creates an uninitialized Switch.
          *
          * An uninitialized Switch cannot set no provide the actual switch state.
          */
         Switch();
 
-        bool LoadSwitchDefinition(const AmString& switchDefinition);
-        bool LoadSwitchDefinitionFromFile(const AmOsString& filename);
-
         /**
-         * @brief Get the switch definition which generated this Switch.
-         *
-         * @return The switch definition.
+         * \brief Destroys the switch asset and releases all related resources.
          */
-        [[nodiscard]] const SwitchDefinition* GetSwitchDefinition() const;
-
-        /**
-         * @brief Get the ID of this Switch.
-         *
-         * @return The switch ID.
-         */
-        [[nodiscard]] AmSwitchID GetId() const;
-
-        /**
-         * @brief Get the name of this Switch.
-         *
-         * @return The switch name.
-         */
-        [[nodiscard]] const std::string& GetName() const;
+        ~Switch() override;
 
         /**
          * @brief Get the current state of the switch.
@@ -123,7 +109,7 @@ namespace SparkyStudios::Audio::Amplitude
          * @param name The name of the state to apply. This name should exist in the
          * list of switch states.
          */
-        void SetState(const std::string& name);
+        void SetState(const AmString& name);
 
         /**
          * @brief Get the list of available SwitchStates in this Switch.
@@ -132,14 +118,10 @@ namespace SparkyStudios::Audio::Amplitude
          */
         [[nodiscard]] const std::vector<SwitchState>& GetSwitchStates() const;
 
-        RefCounter* GetRefCounter();
+        bool LoadDefinition(const SwitchDefinition* definition, EngineInternalState* state) override;
+        [[nodiscard]] const SwitchDefinition* GetDefinition() const override;
 
     private:
-        std::string _source;
-
-        AmSwitchID _id;
-        std::string _name;
-
         SwitchState _activeState;
         std::vector<SwitchState> _states;
 

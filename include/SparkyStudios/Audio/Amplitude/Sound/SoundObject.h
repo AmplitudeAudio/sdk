@@ -19,7 +19,6 @@
 
 #include <SparkyStudios/Audio/Amplitude/Core/Bus.h>
 #include <SparkyStudios/Audio/Amplitude/Core/Common.h>
-#include <SparkyStudios/Audio/Amplitude/Core/RefCounter.h>
 
 #include <SparkyStudios/Audio/Amplitude/IO/FileSystem.h>
 
@@ -39,40 +38,6 @@ namespace SparkyStudios::Audio::Amplitude
     public:
         SoundObject();
         virtual ~SoundObject() = default;
-        
-        /**
-         * @brief Loads the sound object from the given source.
-         *
-         * @param source The sound object file content to load.
-         * @param state The engine state to use while loading the sound object.
-         *
-         * @return true if the sound object was loaded successfully, false otherwise.
-         */
-        virtual bool LoadDefinition(const std::string& source, EngineInternalState* state) = 0;
-
-        /**
-         * @brief Loads the sound object from the given file path.
-         *
-         * @param filename The path to the sound object file to load.
-         * @param state The engine state to use while loading the sound object.
-         *
-         * @return true if the sound object was loaded successfully, false otherwise.
-         */
-        virtual bool LoadDefinitionFromFile(const AmOsString& filename, EngineInternalState* state) = 0;
-
-        /**
-         * @brief Acquires referenced objects in this sound object.
-         *
-         * @param state The engine state used while loading the sound object.
-         */
-        virtual void AcquireReferences(EngineInternalState* state) = 0;
-
-        /**
-         * @brief Releases the references acquired when loading the sound object.
-         *
-         * @param state The engine state used while loading the sound object.
-         */
-        virtual void ReleaseReferences(EngineInternalState* state) = 0;
 
         /**
          * @brief Gets the actual gain of the sound object.
@@ -87,20 +52,6 @@ namespace SparkyStudios::Audio::Amplitude
          * @return The sound object priority.
          */
         [[nodiscard]] virtual const RtpcValue& GetPriority() const;
-
-        /**
-         * @brief Get the unique ID of this sound object.
-         *
-         * @return The unique sound object ID.
-         */
-        [[nodiscard]] virtual AmSoundID GetId() const;
-
-        /**
-         * @brief Get the name of this sound object.
-         *
-         * @return The sound object's name.
-         */
-        [[nodiscard]] virtual const std::string& GetName() const;
 
         /**
          * @brief Get the Effect object associated with this sound object.
@@ -123,27 +74,15 @@ namespace SparkyStudios::Audio::Amplitude
          */
         [[nodiscard]] virtual Bus GetBus() const;
 
-        /**
-         * @brief Get the references counter of this instance.
-         *
-         * @return The references counter.
-         */
-        virtual RefCounter* GetRefCounter();
-
     protected:
         // The bus this sound object will play on.
         BusInternalState* m_bus;
-
-        AmCollectionID m_id;
-        std::string m_name;
 
         RtpcValue m_gain;
         RtpcValue m_priority;
 
         Effect* m_effect;
         Attenuation* m_attenuation;
-
-        RefCounter m_refCounter;
     };
 } // namespace SparkyStudios::Audio::Amplitude
 

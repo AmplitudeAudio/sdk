@@ -24,7 +24,7 @@ namespace SparkyStudios::Audio::Amplitude
 
     ProcessorPipeline::~ProcessorPipeline()
     {
-        for (auto& processor : _processors)
+        for (const auto& processor : _processors)
             amdelete(SoundProcessorInstance, processor);
 
         _processors.clear();

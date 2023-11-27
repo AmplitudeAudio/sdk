@@ -149,6 +149,16 @@ namespace SparkyStudios::Audio::Amplitude
          * @return The internal file handle. This depends on the implementation.
          */
         virtual AmVoidPtr GetPtr();
+
+        /**
+         * @brief Checks if the file is valid.
+         *
+         * Validity of a file is determined by the underlying implementation. But this should
+         * primarily mean that the file exists AND has been opened.
+         *
+         * @return True if the file is valid, false otherwise.
+         */
+        [[nodiscard]] virtual bool IsValid() const = 0;
     };
 
     /**
@@ -191,6 +201,7 @@ namespace SparkyStudios::Audio::Amplitude
         void Seek(AmSize offset, int origin) override;
         AmSize Position() override;
         AmVoidPtr GetPtr() override;
+        [[nodiscard]] bool IsValid() const override;
 
         /**
          * @brief Opens a file at the given path.
@@ -247,6 +258,7 @@ namespace SparkyStudios::Audio::Amplitude
         void Seek(AmSize offset, int origin) override;
         AmSize Position() override;
         AmVoidPtr GetPtr() override;
+        [[nodiscard]] bool IsValid() const override;
 
         /**
          * @brief Opens a memory buffer.

@@ -55,13 +55,13 @@ namespace SparkyStudios::Audio::Amplitude
          *
          * @return The current number of references.
          */
-        [[nodiscard]] AmInt32 GetCount() const
+        [[nodiscard]] AM_INLINE(AmInt32) GetCount() const
         {
             return _count;
         }
 
     private:
-        AmInt32 _count;
+        std::atomic_int32_t _count;
     };
 } // namespace SparkyStudios::Audio::Amplitude
 

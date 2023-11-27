@@ -37,7 +37,7 @@ namespace SparkyStudios::Audio::Amplitude
 
     CurvePart::~CurvePart()
     {
-        if (_faderFactory != nullptr)
+        if (_fader != nullptr)
             _faderFactory->DestroyInstance(_fader);
 
         _fader = nullptr;
@@ -51,6 +51,9 @@ namespace SparkyStudios::Audio::Amplitude
 
         _start = { definition->start()->x(), definition->start()->y() };
         _end = { definition->end()->x(), definition->end()->y() };
+
+        if (_fader != nullptr)
+            _faderFactory->DestroyInstance(_fader);
 
         _faderFactory = Fader::Find(definition->fader()->str());
         _fader = _faderFactory->CreateInstance();
@@ -91,7 +94,7 @@ namespace SparkyStudios::Audio::Amplitude
 
     void CurvePart::SetFader(const AmString& fader)
     {
-        if (_faderFactory != nullptr)
+        if (_fader != nullptr)
             _faderFactory->DestroyInstance(_fader);
 
         _faderFactory = Fader::Find(fader);
@@ -101,7 +104,7 @@ namespace SparkyStudios::Audio::Amplitude
 
     float CurvePart::Get(double x) const
     {
-        double percentage = (x - _start.x) / (_end.x - _start.x);
+        const double percentage = (x - _start.x) / (_end.x - _start.x);
         return _fader->GetFromPercentage(percentage);
     }
 
@@ -113,10 +116,9 @@ namespace SparkyStudios::Audio::Amplitude
     {
         const flatbuffers::uoffset_t size = definition->parts() ? definition->parts()->size() : 0;
         _parts.resize(size);
+
         for (flatbuffers::uoffset_t i = 0; i < size; ++i)
-        {
             _parts[i].Initialize(definition->parts()->Get(i));
-        }
     }
 
     float Curve::Get(double x) const
@@ -135,10 +137,8 @@ namespace SparkyStudios::Audio::Amplitude
     const CurvePart* Curve::_findCurvePart(double x) const
     {
         for (const auto& item : _parts)
-        {
             if (item.GetStart().x <= x && item.GetEnd().x >= x)
                 return &item;
-        }
 
         return nullptr;
     }

@@ -17,12 +17,15 @@
 #ifndef SS_AMPLITUDE_AUDIO_EVENT_H
 #define SS_AMPLITUDE_AUDIO_EVENT_H
 
+#include <SparkyStudios/Audio/Amplitude/Core/Asset.h>
 #include <SparkyStudios/Audio/Amplitude/Core/Common.h>
 #include <SparkyStudios/Audio/Amplitude/Core/Entity.h>
 #include <SparkyStudios/Audio/Amplitude/Core/RefCounter.h>
 
 namespace SparkyStudios::Audio::Amplitude
 {
+    struct EngineInternalState;
+
     struct EventDefinition;
     struct EventActionDefinition;
 
@@ -31,7 +34,7 @@ namespace SparkyStudios::Audio::Amplitude
 
     /**
      * @brief An event action that will be applied when
-     * the underlying event will be triggered.
+     * the parent event will be triggered.
      */
     class AM_API_PUBLIC EventAction
     {
@@ -92,30 +95,20 @@ namespace SparkyStudios::Audio::Amplitude
      * managed by the Engine. Events can be triggered at runtime by calling the
      * <code>Engine::Trigger()</code> method using the name of the event.
      */
-    class AM_API_PUBLIC Event
+    class AM_API_PUBLIC Event final : public Asset<AmEventID, EventDefinition>
     {
         friend class EventInstance;
 
     public:
+        /**
+         * @brief Creates an unitialized event.
+         */
         Event();
 
         /**
-         * @brief Loads an event definition in this state.
-         *
-         * @param event The event definition to load.
-         *
-         * @return true if the event definition was successfully loaded.
+         * @brief Destroys the event asset and release all related resources.
          */
-        bool LoadEventDefinition(const std::string& event);
-
-        /**
-         * @brief Loads an event definition from the given file in this state.
-         *
-         * @param filename The event definition file to load.
-         *
-         * @return true if the event definition file was successfully loaded.
-         */
-        bool LoadEventDefinitionFromFile(AmOsString filename);
+        ~Event() override;
 
         /**
          * @brief Triggers the event for the specified engine state.
@@ -124,46 +117,15 @@ namespace SparkyStudios::Audio::Amplitude
          */
         [[nodiscard]] EventInstance Trigger(const Entity& entity) const;
 
-        /**
-         * @brief Returns the ID of this event.
-         *
-         * @return The ID of this event.
-         */
-        [[nodiscard]] AmEventID GetId() const;
-
-        /**
-         * @brief Returns the name of this event.
-         *
-         * @return The name of this event.
-         */
-        [[nodiscard]] const std::string& GetName() const;
-
-        /**
-         * @brief Get the event definition which generated this event.
-         *
-         * @return The event definition.
-         */
-        [[nodiscard]] const EventDefinition* GetEventDefinition() const;
-
-        /**
-         * @brief Get the reference counter associated to this event.
-         *
-         * @return The reference counter.
-         */
-        RefCounter* GetRefCounter();
+        bool LoadDefinition(const EventDefinition* definition, EngineInternalState* state) override;
+        [[nodiscard]] const EventDefinition* GetDefinition() const override;
 
     private:
-        std::string _source;
-
-        AmEventID _id;
-        std::string _name;
         std::vector<EventAction> _actions;
-
-        RefCounter _refCounter;
     };
 
     /**
-     * @brief A class which can cancel an Event.
+     * @brief A class which can cancel a trigerred Event.
      */
     class AM_API_PUBLIC EventCanceler
     {

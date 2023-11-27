@@ -26,6 +26,8 @@
 #include <cstdlib>
 #include <cstring>
 #include <map>
+#include <memory>
+#include <set>
 #include <string>
 #include <unordered_map>
 #include <vector>
@@ -62,8 +64,10 @@
 
 /**
  * @brief Declare a callback function type
+ *
  * @param _type_ Return type of the function
  * @param _name_ Name of the function
+ *
  * @remarks This must be followed by the parentheses containing the function arguments declaration
  */
 #define AM_CALLBACK(_type_, _name_) typedef _type_(AM_CALL_POLICY* _name_)
@@ -83,8 +87,12 @@
  */
 #define AM_CLAMP_AUDIO_SAMPLE(v) (((v) <= -1.65f) ? -0.9862875f : ((v) >= 1.65f) ? 0.9862875f : (0.87f * (v)-0.1f * (v) * (v) * (v)))
 
-// Typedefs have to be made before the includes, as the
-// includes depend on them.
+/**
+ * @brief Helps to avoid compiler warnings about unused values.
+ *
+ * @param x The statement where the return value is not used.
+ */
+#define AM_UNUSED(x) ((void)(x))
 
 namespace SparkyStudios::Audio::Amplitude
 {
@@ -149,14 +157,14 @@ namespace SparkyStudios::Audio::Amplitude
     /**
      * @brief Lightweight class that handles small aligned buffer to support vectorized operations.
      */
-    class AM_API_PUBLIC TinyAlignedReal32Buffer
+    class AM_API_PUBLIC AmTinyAlignedReal32Buffer
     {
     public:
         /**
          * @brief Construct a new TinyAlignedReal32Buffer object by allocating an aligned
          * buffer with AM_SIMD_ALIGNMENT float values.
          */
-        TinyAlignedReal32Buffer();
+        AmTinyAlignedReal32Buffer();
 
         /**
          * @brief Gets the raw allocated pointer.
@@ -172,10 +180,7 @@ namespace SparkyStudios::Audio::Amplitude
         AmReal32Buffer m_data; // aligned pointer
         AmUInt8 m_actualData[sizeof(AmReal32) * AM_SIMD_ALIGNMENT + AM_SIMD_ALIGNMENT]{};
     };
-} // namespace SparkyStudios::Audio::Amplitude
 
-namespace SparkyStudios::Audio::Amplitude
-{
     /**
      * @brief Enumerates the list of possible errors encountered by the library.
      */
@@ -312,13 +317,13 @@ namespace SparkyStudios::Audio::Amplitude
         }
 
     private:
-        AmUInt32 _sampleRate;
-        AmUInt16 _numChannels;
-        AmUInt32 _bitsPerSample;
-        AmUInt64 _framesCount;
-        AmUInt32 _frameSize;
-        AM_SAMPLE_FORMAT _sampleType;
-        AM_INTERLEAVE_TYPE _interleaveType;
+        AmUInt32 _sampleRate = 0;
+        AmUInt16 _numChannels = 0;
+        AmUInt32 _bitsPerSample = 0;
+        AmUInt64 _framesCount = 0;
+        AmUInt32 _frameSize = 0;
+        AM_SAMPLE_FORMAT _sampleType = AM_SAMPLE_FORMAT_FLOAT;
+        AM_INTERLEAVE_TYPE _interleaveType = AM_SAMPLE_INTERLEAVED;
     };
 } // namespace SparkyStudios::Audio::Amplitude
 

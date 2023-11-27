@@ -23,33 +23,82 @@
 
 namespace SparkyStudios::Audio::Amplitude
 {
+    struct EngineInternalState;
+    class BusInternalState;
+
     struct SwitchContainerDefinition;
 
-    class BusInternalState;
-    struct EngineInternalState;
-
+    /**
+     * @brief Describes a single item within a SwitchContainer.
+     */
     struct SwitchContainerItem
     {
-        AmObjectID m_id{};
-        bool m_continueBetweenStates{};
-        AmTime m_fadeInDuration{};
-        AmString m_fadeInAlgorithm{};
-        AmTime m_fadeOutDuration{};
-        AmString m_fadeOutAlgorithm{};
+        /**
+         * @brief The object ID of the item.
+         *
+         * May be a @a AmSoundID or a @a AmCollectionID.
+         */
+        AmObjectID m_id;
+
+        /**
+         * @brief Whether to continue playing this item when the SwitchContainer
+         * changes its state between one of the values where this item is registered.
+         *
+         * If this value is set to @c false, each the sound will be stopped and played again
+         * from the begginning.
+         */
+        bool m_continueBetweenStates;
+
+        /**
+         * @brief The fade duration in milliseconds when this item starts playing.
+         */
+        AmTime m_fadeInDuration;
+
+        /**
+         * @brief The name of the fading algorithm to use when this item starts playing.
+         */
+        AmString m_fadeInAlgorithm;
+
+        /**
+         * @brief The fade duration in milliseconds when this item stops playing.
+         */
+        AmTime m_fadeOutDuration;
+
+        /**
+         * @brief The name of the fading algorithm to use when this item stops playing.
+         */
+        AmString m_fadeOutAlgorithm;
+
+        /**
+         * @brief The custom gain applied on this item.
+         *
+         * The final gain will be computed with this value multiplied with the gain of the
+         * attenuation model, if any.
+         */
         RtpcValue m_gain;
     };
 
-    class AM_API_PUBLIC SwitchContainer : public SoundObject
+    /**
+     * @brief Amplitude Switch Container.
+     *
+     * A switch container is a container sound object where sounds and collections can be registered on
+     * one or multiple switches. Only one switch can be active at a time in a switch container. When a
+     * switch is active, all the sounds and collections that are registered on it will be played.
+     */
+    class AM_API_PUBLIC SwitchContainer final
+        : public Asset<AmSwitchContainerID, SwitchContainerDefinition>
+        , public SoundObject
     {
     public:
+        /**
+         * @brief Creates an uninitialized switch container.
+         */
         SwitchContainer();
-        ~SwitchContainer() override;
 
-        bool LoadDefinition(const AmString& source, EngineInternalState* state) override;
-        bool LoadDefinitionFromFile(const AmOsString& filename, EngineInternalState* state) override;
-        void AcquireReferences(EngineInternalState* state) override;
-        void ReleaseReferences(EngineInternalState* state) override;
-        [[nodiscard]] const SwitchContainerDefinition* GetSwitchContainerDefinition() const;
+        /**
+         * @brief Destroys the switch container asset and all related resources.
+         */
+        ~SwitchContainer() override;
 
         /**
          * @brief Returns the switch attached to this SwitchContainer.
@@ -81,15 +130,18 @@ namespace SparkyStudios::Audio::Amplitude
          *
          * @param stateId The switch state to get the objects for.
          *
-         * @return The list of sound object IDs.
+         * @return The list of sound object IDs registered to the given state.
          */
         [[nodiscard]] const std::vector<SwitchContainerItem>& GetSoundObjects(AmObjectID stateId) const;
 
+        bool LoadDefinition(const SwitchContainerDefinition* definition, EngineInternalState* state) override;
+        [[nodiscard]] const SwitchContainerDefinition* GetDefinition() const override;
+        void AcquireReferences(EngineInternalState* state) override;
+        void ReleaseReferences(EngineInternalState* state) override;
+
     private:
-        // The World scope sound scheduler
         Switch* _switch;
 
-        std::string _source;
         std::map<AmObjectID, std::vector<SwitchContainerItem>> _sounds;
         std::map<AmObjectID, std::tuple<Fader*, FaderInstance*>> _fadersIn;
         std::map<AmObjectID, std::tuple<Fader*, FaderInstance*>> _fadersOut;

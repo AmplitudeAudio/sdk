@@ -194,7 +194,7 @@ namespace SparkyStudios::Audio::Amplitude
 
     static bool ShouldLoopSound(Mixer* mixer, MixerLayer* layer)
     {
-        auto* sound = static_cast<SoundInstance*>(layer->snd->userData);
+        const auto* sound = layer->snd->sound.get();
         const AmUInt32 loopCount = sound->GetSettings().m_loopCount;
 
         return sound->GetCurrentLoopCount() != loopCount;
@@ -202,25 +202,25 @@ namespace SparkyStudios::Audio::Amplitude
 
     static void OnSoundStarted(Mixer* mixer, MixerLayer* layer)
     {
-        const auto* sound = static_cast<SoundInstance*>(layer->snd->userData);
+        const auto* sound = layer->snd->sound.get();
         CallLogFunc("Started sound: " AM_OS_CHAR_FMT "\n", sound->GetSound()->GetPath().c_str());
     }
 
     static void OnSoundPaused(Mixer* mixer, MixerLayer* layer)
     {
-        const auto* sound = static_cast<SoundInstance*>(layer->snd->userData);
+        const auto* sound = layer->snd->sound.get();
         CallLogFunc("Paused sound: " AM_OS_CHAR_FMT "\n", sound->GetSound()->GetPath().c_str());
     }
 
     static void OnSoundResumed(Mixer* mixer, MixerLayer* layer)
     {
-        const auto* sound = static_cast<SoundInstance*>(layer->snd->userData);
+        const auto* sound = layer->snd->sound.get();
         CallLogFunc("Resumed sound: " AM_OS_CHAR_FMT "\n", sound->GetSound()->GetPath().c_str());
     }
 
     static void OnSoundStopped(Mixer* mixer, MixerLayer* layer)
     {
-        const auto* sound = static_cast<SoundInstance*>(layer->snd->userData);
+        const auto* sound = layer->snd->sound.get();
         CallLogFunc("Stopped sound: " AM_OS_CHAR_FMT "\n", sound->GetSound()->GetPath().c_str());
 
         // Destroy the sound instance on stop
@@ -229,7 +229,7 @@ namespace SparkyStudios::Audio::Amplitude
 
     static bool OnSoundLooped(Mixer* mixer, MixerLayer* layer)
     {
-        auto* sound = static_cast<SoundInstance*>(layer->snd->userData);
+        auto* sound = layer->snd->sound.get();
         CallLogFunc("Looped sound: " AM_OS_CHAR_FMT "\n", sound->GetSound()->GetPath().c_str());
 
         Mixer::IncrementSoundLoopCount(sound);
@@ -241,7 +241,7 @@ namespace SparkyStudios::Audio::Amplitude
     {
         if (layer->snd->stream)
         {
-            const auto* sound = static_cast<SoundInstance*>(layer->snd->userData);
+            const auto* sound = layer->snd->sound.get();
             return sound->GetAudio(offset, frames);
         }
 
@@ -250,7 +250,7 @@ namespace SparkyStudios::Audio::Amplitude
 
     static void OnSoundEnded(Mixer* mixer, MixerLayer* layer)
     {
-        auto* sound = static_cast<SoundInstance*>(layer->snd->userData);
+        auto* sound = layer->snd->sound.get();
         CallLogFunc("Ended sound: " AM_OS_CHAR_FMT "\n", sound->GetSound()->GetPath().c_str());
 
         RealChannel* channel = sound->GetChannel();
@@ -277,8 +277,7 @@ namespace SparkyStudios::Audio::Amplitude
             const Collection* collection = sound->GetCollection();
             AMPLITUDE_ASSERT(collection != nullptr); // Should always have a collection for contained sound instances.
 
-            if (const CollectionDefinition* config = collection->GetCollectionDefinition();
-                config->play_mode() == CollectionPlayMode_PlayAll)
+            if (const CollectionDefinition* config = collection->GetDefinition(); config->play_mode() == CollectionPlayMode_PlayAll)
             {
                 if (channel->Valid())
                 {
@@ -315,8 +314,7 @@ namespace SparkyStudios::Audio::Amplitude
         if (layer->snd == nullptr)
             return;
 
-        const auto* sound = static_cast<SoundInstance*>(layer->snd->userData);
-        delete sound;
+        layer->snd->sound.reset();
 
         layer->snd = nullptr;
     }
@@ -654,7 +652,7 @@ namespace SparkyStudios::Audio::Amplitude
             const auto soundChannels = static_cast<AmUInt32>(sound->format.GetNumChannels());
             const auto reqChannels = static_cast<AmUInt32>(_device.mRequestedOutputChannels);
 
-            const AmUInt32 soundSampleRate = lay->snd->format.GetSampleRate();
+            const AmUInt32 soundSampleRate = sound->format.GetSampleRate();
             const AmUInt32 reqSampleRate = _device.mRequestedOutputSampleRate;
 
             ma_data_converter_config converterConfig = ma_data_converter_config_init_default();
@@ -922,11 +920,9 @@ namespace SparkyStudios::Audio::Amplitude
     {
         while (!_commandsStack.empty())
         {
-            const auto& command = _commandsStack.front();
-            if (command.callback)
-            {
-                command.callback();
-            }
+            if (const auto& command = _commandsStack.front(); command.callback)
+                AM_UNUSED(command.callback());
+
             _commandsStack.pop();
         }
     }
@@ -1023,7 +1019,7 @@ namespace SparkyStudios::Audio::Amplitude
 
                     memcpy(
                         reinterpret_cast<AmAudioSampleBuffer>(in->buffer) + ((inSamples - c) * soundChannels),
-                        reinterpret_cast<AmAudioSampleBuffer>(layer->snd->chunk->buffer), readLen * soundChannels * sizeof(AmAudioSample));
+                        reinterpret_cast<AmAudioSampleBuffer>(layer->snd->chunk->buffer), readLen * layer->snd->format.GetFrameSize());
 
                     c -= readLen;
                 }
@@ -1063,7 +1059,7 @@ namespace SparkyStudios::Audio::Amplitude
                 SoundChunk::DestroyChunk(out);
                 SoundChunk::DestroyChunk(in);
 
-                CallLogFunc("[ERROR] Cannot process frames. Unable to resample the audio input.");
+                CallLogFunc("[ERROR] Cannot process frames. Unable to convert the audio input.");
 
                 return;
             }
@@ -1087,12 +1083,12 @@ namespace SparkyStudios::Audio::Amplitude
             case AM_SAMPLE_INTERLEAVED:
                 _pipeline->ProcessInterleaved(
                     reinterpret_cast<AmAudioSampleBuffer>(out->buffer), reinterpret_cast<AmAudioSampleBuffer>(out->buffer), samples,
-                    out->size, reqChannels, sampleRate, static_cast<SoundInstance*>(layer->snd->userData));
+                    out->size, reqChannels, sampleRate, layer->snd->sound.get());
                 break;
             case AM_SAMPLE_NON_INTERLEAVED:
                 _pipeline->Process(
                     reinterpret_cast<AmAudioSampleBuffer>(out->buffer), reinterpret_cast<AmAudioSampleBuffer>(out->buffer), samples,
-                    out->size, reqChannels, sampleRate, static_cast<SoundInstance*>(layer->snd->userData));
+                    out->size, reqChannels, sampleRate, layer->snd->sound.get());
                 break;
             default:
                 CallLogFunc("[WARNING] A bad sound data interleave type was encountered.\n");
@@ -1175,7 +1171,7 @@ namespace SparkyStudios::Audio::Amplitude
         if (cursor == layer->end)
         {
             // We are in the audio thread mutex here
-            MixerCommandCallback callback = [=]() -> bool
+            const MixerCommandCallback callback = [=]() -> bool
             {
                 // stop playback unless looping
                 if (!loop)

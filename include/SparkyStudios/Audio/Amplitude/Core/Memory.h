@@ -18,8 +18,6 @@
 #ifndef SS_AMPLITUDE_AUDIO_MEMORY_H
 #define SS_AMPLITUDE_AUDIO_MEMORY_H
 
-#include <set>
-
 #include <SparkyStudios/Audio/Amplitude/Core/Common.h>
 
 #ifndef AM_BUILDSYSTEM_BUILDING_PLUGIN
@@ -379,6 +377,21 @@ namespace SparkyStudios::Audio::Amplitude
         MemoryPoolKind _pool = MemoryPoolKind::Default;
         void* _address = nullptr;
     };
+
+    template<MemoryPoolKind Pool, class T>
+    struct am_delete
+    {
+        constexpr am_delete() noexcept = default;
+
+        AM_INLINE(void) operator()(T * asset) const noexcept
+        {
+            static_assert(!std::is_void_v<T>, "Cannot delete a void pointer.");
+            ampooldelete(Pool, T, asset);
+        }
+    };
+
+    template<MemoryPoolKind Pool, class T>
+    using AmUniquePtr = std::unique_ptr<T, am_delete<Pool, T>>;
 } // namespace SparkyStudios::Audio::Amplitude
 
 #endif // SS_AMPLITUDE_AUDIO_MEMORY_H

@@ -18,9 +18,12 @@
 #define SS_AMPLITUDE_AUDIO_RTPC_H
 
 #include <SparkyStudios/Audio/Amplitude/Core/Common.h>
-#include <SparkyStudios/Audio/Amplitude/Core/RefCounter.h>
+
+#include <SparkyStudios/Audio/Amplitude/Core/Asset.h>
 
 #include <SparkyStudios/Audio/Amplitude/Math/Curve.h>
+
+#include <SparkyStudios/Audio/Amplitude/IO/File.h>
 
 #include <SparkyStudios/Audio/Amplitude/Sound/Fader.h>
 
@@ -31,33 +34,37 @@ namespace SparkyStudios::Audio::Amplitude
     struct RtpcDefinition;
     struct RtpcCompatibleValue;
 
-    class AM_API_PUBLIC Rtpc
+    /**
+     * @brief Amplitude Real-Time Parameter Control.
+     *
+     * A RTPC is a value that is updated by the game. Any update to the RTPC is
+     * listened by the engine to propagate the changes to other parameters linked to it.
+     *
+     * A Rtpc object is shared between any objects and values linked to it.
+     */
+    class AM_API_PUBLIC Rtpc final : public Asset<AmRtpcID, RtpcDefinition>
     {
     public:
+        /**
+         * @brief Creates an unitialized Rtpc object.
+         *
+         * An unitialized Rtpc object cannot be used to update values.
+         */
         Rtpc();
-        ~Rtpc();
 
-        bool LoadRtpcDefinition(const std::string& source);
+        /**
+         * @brief Destroys the Rtpc asset and releases all associated resources.
+         */
+        ~Rtpc() override;
 
-        bool LoadRtpcDefinitionFromFile(const AmOsString& filename);
-
-        [[nodiscard]] const RtpcDefinition* GetRtpcDefinition() const;
-
+        /**
+         * @brief Updates the value of the RTPC.
+         *
+         * This method is useful only for RTPCs that are using a curve to update their value.
+         *
+         * @param deltaTime The time elapsed since the last update.
+         */
         void Update(AmTime deltaTime);
-
-        /**
-         * @brief Returns the unique ID of this RTPC.
-         *
-         * @return The RTPC unique ID.
-         */
-        [[nodiscard]] AmRtpcID GetId() const;
-
-        /**
-         * @brief Returns the name of this RTPC.
-         *
-         * @return The RTPC name.
-         */
-        [[nodiscard]] const std::string& GetName() const;
 
         /**
          * @brief Get the minimum value of this RTPC.
@@ -89,7 +96,7 @@ namespace SparkyStudios::Audio::Amplitude
 
         /**
          * @brief Get the default value of this RTPC.
-         * 
+         *
          * @return The default RTPC value.
          */
         [[nodiscard]] AmReal64 GetDefaultValue() const;
@@ -99,17 +106,10 @@ namespace SparkyStudios::Audio::Amplitude
          */
         void Reset();
 
-        /**
-         * @brief Get the references counter of this instance.
-         *
-         * @return The references counter.
-         */
-        RefCounter* GetRefCounter();
+        bool LoadDefinition(const RtpcDefinition* definition, EngineInternalState* state) override;
+        [[nodiscard]] const RtpcDefinition* GetDefinition() const override;
 
     private:
-        AmString _source;
-
-        AmRtpcID _id;
         AmString _name;
 
         AmReal64 _minValue;
@@ -124,25 +124,68 @@ namespace SparkyStudios::Audio::Amplitude
 
         FaderInstance* _faderAttack;
         FaderInstance* _faderRelease;
-
-        RefCounter _refCounter;
     };
 
+    /**
+     * @brief A RTPC compatible value is used as a wrapper to hold propertiy values
+     * that can be linked to RTPCs.
+     *
+     * A property value that can be linked to a RTPC can be either a single static value
+     * that never updates, or a curve and an RTPC value that is updated by the game. The
+     * curve is used here as a function that takes the current RTPC value and returns the
+     * parameter value.
+     */
     struct AM_API_PUBLIC RtpcValue
     {
     public:
+        /**
+         * @brief Creates an unitialized RtpcValue object.
+         *
+         * An unitialized RtpcValue object cannot be used to update values.
+         */
         RtpcValue();
+
+        /**
+         * @brief Creates a RtpcValue object with a static value.
+         *
+         * @param value The static value to set.
+         */
         explicit RtpcValue(AmReal32 value);
-        explicit RtpcValue(const Rtpc* rtpc, const Curve* curve);
+
+        /**
+         * @brief Creates a RtpcValue object with a curve and an RTPC object.
+         *
+         * @param rtpc The RTPC to link to.
+         * @param curve The curve to use.
+         */
+        explicit RtpcValue(const Rtpc* rtpc, Curve* curve);
+
+        /**
+         * @brief Creates a RtpcValue object from an asset definition.
+         *
+         * @param definition The RTPC-compatible value asset definition.
+         */
         explicit RtpcValue(const RtpcCompatibleValue* definition);
 
+        /**
+         * @brief Destroys the RtpcValue object.
+         */
+        ~RtpcValue();
+
+        /**
+         * @brief Gets the current RTPC value. For static values, this will always
+         * return the value passed to the constructor or set from an asset definition.
+         *
+         * @return The current RTPC value.
+         */
         [[nodiscard]] AmReal32 GetValue() const;
 
     private:
         AmInt8 _valueKind;
-        AmReal64 _value;
+        AmReal32 _value;
+        Curve* _curve;
+        bool _ownCurve;
         const Rtpc* _rtpc;
-        const Curve* _curve;
     };
 } // namespace SparkyStudios::Audio::Amplitude
 

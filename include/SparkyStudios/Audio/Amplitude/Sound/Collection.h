@@ -17,8 +17,6 @@
 #ifndef SPARK_AUDIO_SOUND_COLLECTION_H
 #define SPARK_AUDIO_SOUND_COLLECTION_H
 
-#include <vector>
-
 #include <SparkyStudios/Audio/Amplitude/Core/Entity.h>
 
 #include <SparkyStudios/Audio/Amplitude/Sound/Scheduler.h>
@@ -27,63 +25,33 @@
 namespace SparkyStudios::Audio::Amplitude
 {
     struct EngineInternalState;
+    class BusInternalState;
+
     struct CollectionDefinition;
 
     class RealChannel;
-    class BusInternalState;
 
     /**
-     * @brief Collection represent an abstract sound (like a 'whoosh'), which contains
-     *        a number of pieces of audio which are selected through the configured Scheduler.
+     * @brief Amplitude Collection.
+     *
+     * A Collection is a container sound object that group multiple sounds over the same name. Only
+     * one sound can be playing at a time in the same collection, and the sound picked for playback
+     * is choosen by the collection's Scheduler.
      */
-    class AM_API_PUBLIC Collection : public SoundObject
+    class AM_API_PUBLIC Collection final
+        : public SoundObject
+        , public Asset<AmCollectionID, CollectionDefinition>
     {
-        friend class Sound;
-
     public:
+        /**
+         * @brief Creates an uninitialized collection.
+         */
         Collection();
+
+        /**
+         * @bref Destroys the collection asset and all related resources.
+         */
         ~Collection() override;
-
-        /**
-         * @brief Loads the collection from the given source.
-         *
-         * @param source The collection file content to load.
-         * @param state The engine state to use while loading the collection.
-         *
-         * @return true if the collection was loaded successfully, false otherwise.
-         */
-        bool LoadDefinition(const std::string& source, EngineInternalState* state) override;
-
-        /**
-         * @brief Loads the collection from the given file path.
-         *
-         * @param filename The path to the collection file to load.
-         * @param state The engine state to use while loading the collection.
-         *
-         * @return true if the collection was loaded successfully, false otherwise.
-         */
-        bool LoadDefinitionFromFile(const AmOsString& filename, EngineInternalState* state) override;
-
-        /**
-         * @brief Acquires referenced objects in this Collection.
-         *
-         * @param state The engine state used while loading the collection.
-         */
-        void AcquireReferences(EngineInternalState* state) override;
-
-        /**
-         * @brief Releases the references acquired when loading the collection.
-         *
-         * @param state The engine state used while loading the collection.
-         */
-        void ReleaseReferences(EngineInternalState* state) override;
-
-        /**
-         * @brief Returns the loaded collection definition.
-         *
-         * @return The loaded collection definition.
-         */
-        [[nodiscard]] const CollectionDefinition* GetCollectionDefinition() const;
 
         /**
          * @brief Returns a Sound from this collection from the World scope.
@@ -92,7 +60,7 @@ namespace SparkyStudios::Audio::Amplitude
          *
          * @return The selected Sound.
          */
-        Sound* SelectFromWorld(const std::vector<AmSoundID>& toSkip);
+        [[nodiscard]] Sound* SelectFromWorld(const std::vector<AmSoundID>& toSkip = {}) const;
 
         /**
          * @brief Returns a Sound from this collection from an Entity scope.
@@ -102,12 +70,12 @@ namespace SparkyStudios::Audio::Amplitude
          *
          * @return The selected Sound.
          */
-        Sound* SelectFromEntity(const Entity& entity, const std::vector<AmSoundID>& toSkip);
+        Sound* SelectFromEntity(const Entity& entity, const std::vector<AmSoundID>& toSkip = {});
 
         /**
-         * @brief Resets the internal of the scheduler running for the given Entity.
+         * @brief Resets the internal state of the scheduler running for the given Entity.
          *
-         * @param entity The entity to reset the scheduler for.
+         * @param entity The entity for which reset the scheduler state.
          */
         void ResetEntityScopeScheduler(const Entity& entity);
 
@@ -116,9 +84,16 @@ namespace SparkyStudios::Audio::Amplitude
          *
          * @return The list of Sound IDs.
          */
-        [[nodiscard]] const std::vector<AmSoundID>& GetAudioSamples() const;
+        [[nodiscard]] const std::vector<AmSoundID>& GetSounds() const;
+
+        bool LoadDefinition(const CollectionDefinition* definition, EngineInternalState* state) override;
+        [[nodiscard]] const CollectionDefinition* GetDefinition() const override;
+        void AcquireReferences(EngineInternalState* state) override;
+        void ReleaseReferences(EngineInternalState* state) override;
 
     private:
+        friend class Sound;
+
         static Scheduler* CreateScheduler(const CollectionDefinition* definition);
 
         // The World scope sound scheduler
@@ -127,7 +102,6 @@ namespace SparkyStudios::Audio::Amplitude
         // Entity scope sound schedulers
         std::map<AmUInt64, Scheduler*> _entityScopeSchedulers;
 
-        std::string _source;
         std::vector<AmSoundID> _sounds;
         std::map<AmSoundID, SoundInstanceSettings> _soundSettings;
     };

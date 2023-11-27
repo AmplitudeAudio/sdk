@@ -18,16 +18,20 @@
 #define SS_AMPLITUDE_AUDIO_ATTENUATION_H
 
 #include <SparkyStudios/Audio/Amplitude/Core/Common.h>
+#include <SparkyStudios/Audio/Amplitude/Core/Memory.h>
 
+#include <SparkyStudios/Audio/Amplitude/Core/Asset.h>
 #include <SparkyStudios/Audio/Amplitude/Core/Entity.h>
 #include <SparkyStudios/Audio/Amplitude/Core/Listener.h>
-#include <SparkyStudios/Audio/Amplitude/Core/RefCounter.h>
+
+#include <SparkyStudios/Audio/Amplitude/IO/File.h>
 
 #include <SparkyStudios/Audio/Amplitude/Math/Curve.h>
-#include <SparkyStudios/Audio/Amplitude/Math/Shape.h>
 
 namespace SparkyStudios::Audio::Amplitude
 {
+    struct EngineInternalState;
+
     struct AttenuationDefinition;
     struct AttenuationShapeDefinition;
 
@@ -42,6 +46,8 @@ namespace SparkyStudios::Audio::Amplitude
     class AM_API_PUBLIC AttenuationZone
     {
     public:
+        virtual ~AttenuationZone() = default;
+
         /**
          * @brief Returns the attenuation factor.
          *
@@ -87,14 +93,16 @@ namespace SparkyStudios::Audio::Amplitude
     };
 
     /**
-     * @brief An Attenuation materialize how the sound volume and other distance-based
+     * @brief Amplitude Attenuation.
+     *
+     * An Attenuation materializes how the sound volume and other distance-based
      * parameters are calculated following the distance of the sound source to the listener.
      *
-     * The Attenuation is an shared object between sound sources. They are used only
-     * when the sound need to lower his volume due to the distance of from the listener,
+     * The Attenuation is a shared object between sound sources. They are used only
+     * when the sound need to adjust his volume due to the distance of from the listener,
      * and many other parameters.
      */
-    class AM_API_PUBLIC Attenuation
+    class AM_API_PUBLIC Attenuation final : public Asset<AmAttenuationID, AttenuationDefinition>
     {
     public:
         /**
@@ -105,8 +113,10 @@ namespace SparkyStudios::Audio::Amplitude
          */
         Attenuation();
 
-        bool LoadAttenuationDefinition(const std::string& attenuation);
-        bool LoadAttenuationDefinitionFromFile(const AmOsString& filename);
+        /**
+         * @brief Destroys the Attenuation asset and releases all associated resources.
+         */
+        ~Attenuation() override;
 
         /**
          * @brief Returns the gain of the sound from the given distance to the listener.
@@ -116,7 +126,7 @@ namespace SparkyStudios::Audio::Amplitude
          *
          * @return The computed gain value fom the curve.
          */
-        float GetGain(const AmVec3& soundLocation, const Listener& listener) const;
+        [[nodiscard]] float GetGain(const AmVec3& soundLocation, const Listener& listener) const;
 
         /**
          * @brief Returns the gain of the sound from the given distance to the listener.
@@ -126,21 +136,7 @@ namespace SparkyStudios::Audio::Amplitude
          *
          * @return The computed gain value fom the curve.
          */
-        float GetGain(const Entity& entity, const Listener& listener) const;
-
-        /**
-         * @brief Returns the unique ID of this Attenuation.
-         *
-         * @return The Attenuation ID.
-         */
-        [[nodiscard]] AmAttenuationID GetId() const;
-
-        /**
-         * @brief Returns the name of this Attenuation.
-         *
-         * @return The Attenuation name.
-         */
-        [[nodiscard]] const std::string& GetName() const;
+        [[nodiscard]] float GetGain(const Entity& entity, const Listener& listener) const;
 
         /**
          * @brief Returns the shape object of this Attenuation.
@@ -163,28 +159,17 @@ namespace SparkyStudios::Audio::Amplitude
          */
         [[nodiscard]] double GetMaxDistance() const;
 
-        /**
-         * @brief Get the attenuation definition which generated this attenuation.
-         *
-         * @return The attenuation definition.
-         */
-        [[nodiscard]] const AttenuationDefinition* GetAttenuationDefinition() const;
-
-        RefCounter* GetRefCounter();
+        bool LoadDefinition(const AttenuationDefinition* definition, EngineInternalState* state) override;
+        [[nodiscard]] const AttenuationDefinition* GetDefinition() const override;
 
     private:
-        std::string _source;
-
-        AmAttenuationID _id;
-        std::string _name;
+        AmString _name;
 
         double _maxDistance;
 
-        AttenuationZone* _shape;
+        AmUniquePtr<MemoryPoolKind::Engine, AttenuationZone> _shape;
 
         Curve _gainCurve;
-
-        RefCounter _refCounter;
     };
 } // namespace SparkyStudios::Audio::Amplitude
 

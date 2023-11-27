@@ -19,6 +19,7 @@
 
 #include <SparkyStudios/Audio/Amplitude/Core/Common.h>
 
+#include <SparkyStudios/Audio/Amplitude/Core/Asset.h>
 #include <SparkyStudios/Audio/Amplitude/Core/Bus.h>
 #include <SparkyStudios/Audio/Amplitude/Core/Channel.h>
 #include <SparkyStudios/Audio/Amplitude/Core/Codec.h>

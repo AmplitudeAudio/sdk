@@ -30,8 +30,6 @@
 #include <Utils/miniaudio/miniaudio_utils.h>
 #include <Utils/Utils.h>
 
-#include <samplerate.h>
-
 #include "engine_config_definition_generated.h"
 
 #define _Atomic(X) std::atomic<X>

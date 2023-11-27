@@ -23,76 +23,25 @@ namespace SparkyStudios::Audio::Amplitude
     static std::unordered_map<AmEffectID, std::vector<EffectInstance*>> gEffectsList = {};
 
     Effect::Effect()
-        : _source()
-        , _id(kAmInvalidObjectId)
-        , _name()
+        : _instances()
         , _parameters()
-        , _refCounter()
         , _filter(nullptr)
     {}
 
     Effect::~Effect()
     {
-        _filter = nullptr;
-        _parameters.clear();
-
         for (auto&& instance : gEffectsList[_id])
             DestroyInstance(instance);
+
+        _filter = nullptr;
+        _parameters.clear();
 
         gEffectsList.erase(_id);
     }
 
-    bool Effect::LoadEffectDefinition(const std::string& source)
-    {
-        // Ensure we do not load the collection more than once
-        AMPLITUDE_ASSERT(_id == kAmInvalidObjectId);
-
-        _source = source;
-        const EffectDefinition* def = GetEffectDefinition();
-
-        _id = def->id();
-        _name = def->name()->str();
-
-        _filter = Filter::Find(def->effect()->str());
-
-        if (_filter == nullptr)
-        {
-            CallLogFunc("[ERROR] Effect %s specifies an invalid effect type: %s.", def->name()->c_str(), def->effect()->c_str());
-            return false;
-        }
-
-        flatbuffers::uoffset_t paramCount = def->parameters() ? def->parameters()->size() : 0;
-
-        _parameters.resize(paramCount);
-
-        for (flatbuffers::uoffset_t i = 0; i < paramCount; ++i)
-        {
-            _parameters[i] = RtpcValue(def->parameters()->Get(i));
-        }
-
-        return true;
-    }
-
-    bool Effect::LoadEffectDefinitionFromFile(AmOsString filename)
-    {
-        std::string source;
-        return Amplitude::LoadFile(filename, &source) && LoadEffectDefinition(source);
-    }
-
-    void Effect::AcquireReferences(EngineInternalState* state)
-    {}
-
-    void Effect::ReleaseReferences(EngineInternalState* state)
-    {}
-
-    const EffectDefinition* Effect::GetEffectDefinition() const
-    {
-        return Amplitude::GetEffectDefinition(_source.c_str());
-    }
-
     EffectInstance* Effect::CreateInstance() const
     {
-        auto* effect = new EffectInstance(this);
+        auto* effect = ampoolnew(MemoryPoolKind::Engine, EffectInstance, this);
         auto& list = gEffectsList[_id];
         list.push_back(effect);
         return effect;
@@ -105,6 +54,8 @@ namespace SparkyStudios::Audio::Amplitude
 
         auto& list = gEffectsList[_id];
         list.erase(std::find(list.begin(), list.end(), instance));
+
+        ampooldelete(MemoryPoolKind::Engine, EffectInstance, instance);
     }
 
     void Effect::Update()
@@ -119,24 +70,34 @@ namespace SparkyStudios::Audio::Amplitude
         }
     }
 
-    AmEffectID Effect::GetId() const
+    bool Effect::LoadDefinition(const EffectDefinition* definition, EngineInternalState* state)
     {
-        return _id;
+        _id = definition->id();
+        _name = definition->name()->str();
+
+        _filter = Filter::Find(definition->effect()->str());
+
+        if (_filter == nullptr)
+        {
+            CallLogFunc(
+                "[ERROR] Effect %s specifies an invalid effect type: %s.", definition->name()->c_str(), definition->effect()->c_str());
+            return false;
+        }
+
+        const flatbuffers::uoffset_t paramCount = definition->parameters() ? definition->parameters()->size() : 0;
+        _parameters.resize(paramCount);
+
+        for (flatbuffers::uoffset_t i = 0; i < paramCount; ++i)
+            _parameters[i] = RtpcValue(definition->parameters()->Get(i));
+
+        gEffectsList[_id] = {};
+
+        return true;
     }
 
-    const std::string& Effect::GetName() const
+    const EffectDefinition* Effect::GetDefinition() const
     {
-        return _name;
-    }
-
-    RefCounter* Effect::GetRefCounter()
-    {
-        return &_refCounter;
-    }
-
-    const RefCounter* Effect::GetRefCounter() const
-    {
-        return &_refCounter;
+        return GetEffectDefinition(_source.c_str());
     }
 
     EffectInstance::EffectInstance(const Effect* parent)
@@ -145,10 +106,8 @@ namespace SparkyStudios::Audio::Amplitude
         _filterInstance = _parent->_filter->CreateInstance();
 
         // First initialization of filter parameters
-        for (AmUInt32 i = 0; i < _parent->_parameters.size(); ++i)
-        {
+        for (AmSize i = 0, l = _parent->_parameters.size(); i < l; ++i)
             _filterInstance->SetFilterParameter(i, _parent->_parameters[i].GetValue());
-        }
     }
 
     EffectInstance::~EffectInstance()
@@ -156,7 +115,6 @@ namespace SparkyStudios::Audio::Amplitude
         _parent->_filter->DestroyInstance(_filterInstance);
         _filterInstance = nullptr;
 
-        _parent->DestroyInstance(this);
         _parent = nullptr;
     }
 

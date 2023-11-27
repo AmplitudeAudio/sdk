@@ -15,9 +15,8 @@
 #ifndef SPARK_AUDIO_BUS_INTERNAL_STATE_H
 #define SPARK_AUDIO_BUS_INTERNAL_STATE_H
 
-#include <vector>
-
 #include <SparkyStudios/Audio/Amplitude/Core/Common.h>
+#include <SparkyStudios/Audio/Amplitude/Core/Memory.h>
 
 #include <Core/ChannelInternalState.h>
 #include <Utils/intrusive_list.h>
@@ -31,6 +30,8 @@ namespace SparkyStudios::Audio::Amplitude
 
     class BusInternalState;
     class DuckBusInternalState;
+
+    typedef std::vector<AmUniquePtr<MemoryPoolKind::Engine, DuckBusInternalState>> DuckBusList;
 
     class DuckBusInternalState
     {
@@ -74,22 +75,24 @@ namespace SparkyStudios::Audio::Amplitude
 
     class BusInternalState
     {
-        friend class DuckBusInternalState;
-
     public:
         BusInternalState()
             : _busDefinition(nullptr)
             , _id(kAmInvalidObjectId)
             , _name()
+            , _duckBuses()
             , _userGain(1.0f)
-            , _gain(1.0f)
             , _targetUserGain(1.0f)
-            , _duckGain(1.0f)
-            , _playingSoundList(&ChannelInternalState::bus_node)
-            , _muted(false)
             , _gainFaderFactory(nullptr)
             , _gainFader(nullptr)
+            , _duckGain(1.0f)
+            , _gain(1.0f)
+            , _muted(false)
+            , _playingSoundList(&ChannelInternalState::bus_node)
         {}
+
+        BusInternalState(const BusInternalState&) = delete;
+        BusInternalState(BusInternalState&&) noexcept = default;
 
         ~BusInternalState();
 
@@ -159,7 +162,7 @@ namespace SparkyStudios::Audio::Amplitude
 
         // Return the vector of duck buses, the buses to be ducked when a sound is
         // playing on this bus.
-        AM_INLINE(std::vector<DuckBusInternalState*>&) GetDuckBuses()
+        AM_INLINE(DuckBusList&) GetDuckBuses()
         {
             return _duckBuses;
         }
@@ -184,6 +187,8 @@ namespace SparkyStudios::Audio::Amplitude
         void AdvanceFrame(AmTime delta_time, float parent_gain);
 
     private:
+        friend class DuckBusInternalState;
+
         const BusDefinition* _busDefinition;
 
         // The bus unique ID.
@@ -198,7 +203,7 @@ namespace SparkyStudios::Audio::Amplitude
 
         // When a sound is played on this bus, sounds played on these buses should be
         // ducked.
-        std::vector<DuckBusInternalState*> _duckBuses;
+        DuckBusList _duckBuses;
 
         // The current user gain of this bus.
         float _userGain;

@@ -18,6 +18,7 @@
 #define SS_AMPLITUDE_AUDIO_FADER_H
 
 #include <SparkyStudios/Audio/Amplitude/Core/Common.h>
+
 #include <SparkyStudios/Audio/Amplitude/Math/Utils.h>
 
 namespace SparkyStudios::Audio::Amplitude

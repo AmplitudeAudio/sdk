@@ -41,29 +41,24 @@ namespace SparkyStudios::Audio::Amplitude
     // The list of loaded plugins.
     static std::vector<dylib*> gLoadedPlugins = {};
 
-    bool LoadFile(const AmOsString& filename, AmString* dest)
+    static AmUniquePtr<MemoryPoolKind::Engine, Engine> gAmplitude = nullptr;
+
+    bool LoadFile(const std::shared_ptr<File>& file, AmString* dest)
     {
-        if (filename.empty())
+        if (!file->IsValid())
         {
-            CallLogFunc("[ERROR] The filename is empty");
+            CallLogFunc("[ERROR] The file is not valid.");
             return false;
         }
 
-        // load into memory:
-        MemoryFile mf;
-        if (const AmResult result = mf.OpenToMem(filename); result != AM_ERROR_NO_ERROR)
-        {
-            CallLogFunc("[ERROR] LoadFile fail on '" AM_OS_CHAR_FMT "'", filename.c_str());
-            return false;
-        }
+        // Get the file's size:
+        dest->assign(file->Length() + 1, 0);
 
-        // get its size:
-        dest->assign(mf.Length() + 1, 0);
+        // Read the file into the buffer
+        file->Seek(0, SEEK_SET);
+        const AmUInt32 len = file->Read(reinterpret_cast<AmUInt8Buffer>(&(*dest)[0]), file->Length());
 
-        // read the data:
-        const AmUInt32 len = mf.Read(reinterpret_cast<AmUInt8Buffer>(&(*dest)[0]), mf.Length());
-
-        return len == mf.Length() && len > 0;
+        return len == file->Length() && len > 0;
     }
 
     AmUInt32 GetMaxNumberOfChannels(const EngineConfigDefinition* config)
@@ -155,12 +150,15 @@ namespace SparkyStudios::Audio::Amplitude
     Engine* Engine::GetInstance()
     {
         // Amplitude Engine unique instance.
-        static std::unique_ptr<Engine> amplitude = nullptr;
+        if (gAmplitude == nullptr)
+            gAmplitude.reset(ampoolnew(MemoryPoolKind::Engine, Engine));
 
-        if (amplitude == nullptr)
-            amplitude.reset(new Engine());
+        return gAmplitude.get();
+    }
 
-        return amplitude.get();
+    void Engine::DestroyInstance()
+    {
+        gAmplitude.reset();
     }
 
     BusInternalState* FindBusInternalState(EngineInternalState* state, AmBusID id)
@@ -218,7 +216,7 @@ namespace SparkyStudios::Audio::Amplitude
 
     static bool PopulateDuckBuses(EngineInternalState* state, BusInternalState* parent, const DuckBusDefinitionList* duckBusDefinitionList)
     {
-        std::vector<DuckBusInternalState*>* output = &parent->GetDuckBuses();
+        DuckBusList* output = &parent->GetDuckBuses();
 
         for (flatbuffers::uoffset_t i = 0; duckBusDefinitionList && i < duckBusDefinitionList->size(); ++i)
         {
@@ -226,7 +224,7 @@ namespace SparkyStudios::Audio::Amplitude
 
             if (auto* bus = ampoolnew(MemoryPoolKind::Engine, DuckBusInternalState, parent); bus->Initialize(duck))
             {
-                output->push_back(bus);
+                output->emplace_back(bus);
             }
             else
             {
@@ -235,6 +233,7 @@ namespace SparkyStudios::Audio::Amplitude
                 return false;
             }
         }
+
         return true;
     }
 
@@ -312,12 +311,12 @@ namespace SparkyStudios::Audio::Amplitude
 
     bool Engine::Initialize(const AmOsString& configFile)
     {
-        const std::filesystem::path configFilePath = _fs->ResolvePath(configFile);
-        if (!LoadFile(configFilePath.c_str(), &_configSrc))
+        if (const AmOsString& configFilePath = _fs->ResolvePath(configFile); !LoadFile(_fs->OpenFile(configFilePath), &_configSrc))
         {
             CallLogFunc("[ERROR] Could not load audio config file at path '" AM_OS_CHAR_FMT "'.\n", configFile.c_str());
             return false;
         }
+
         return Initialize(GetEngineConfigDefinition());
     }
 
@@ -380,8 +379,8 @@ namespace SparkyStudios::Audio::Amplitude
             &_state->environment_state_free_list, &_state->environment_state_memory, config->game()->environments());
 
         // Load the audio buses.
-        const std::filesystem::path busesFilePath = _fs->ResolvePath(AM_STRING_TO_OS_STRING(config->buses_file()->c_str()));
-        if (!LoadFile(busesFilePath.c_str(), &_state->buses_source))
+        if (const AmOsString& busesFilePath = _fs->ResolvePath(AM_STRING_TO_OS_STRING(config->buses_file()->c_str()));
+            !LoadFile(_fs->OpenFile(busesFilePath), &_state->buses_source))
         {
             CallLogFunc("[ERROR] Could not load audio bus file.\n");
             Deinitialize();
@@ -1957,7 +1956,7 @@ namespace SparkyStudios::Audio::Amplitude
 
         if (const SwitchContainer* switchContainer = channel->GetSwitchContainer(); switchContainer != nullptr)
         {
-            const SwitchContainerDefinition* definition = switchContainer->GetSwitchContainerDefinition();
+            const SwitchContainerDefinition* definition = switchContainer->GetDefinition();
 
             float gain;
             AmVec2 pan;
@@ -1972,7 +1971,7 @@ namespace SparkyStudios::Audio::Amplitude
         }
         else if (const Collection* collection = channel->GetCollection(); collection != nullptr)
         {
-            const CollectionDefinition* definition = collection->GetCollectionDefinition();
+            const CollectionDefinition* definition = collection->GetDefinition();
 
             float gain;
             AmVec2 pan;
@@ -1987,7 +1986,7 @@ namespace SparkyStudios::Audio::Amplitude
         }
         else if (const Sound* sound = channel->GetSound(); sound != nullptr)
         {
-            const SoundDefinition* definition = sound->GetSoundDefinition();
+            const SoundDefinition* definition = sound->GetDefinition();
 
             float gain;
             AmVec2 pan;
@@ -2218,7 +2217,7 @@ namespace SparkyStudios::Audio::Amplitude
             return Channel(nullptr);
         }
 
-        const SwitchContainerDefinition* definition = handle->GetSwitchContainerDefinition();
+        const SwitchContainerDefinition* definition = handle->GetDefinition();
 
         if (definition->scope() == Scope_Entity && !entity.Valid())
         {
@@ -2286,7 +2285,7 @@ namespace SparkyStudios::Audio::Amplitude
             return Channel(nullptr);
         }
 
-        const CollectionDefinition* definition = handle->GetCollectionDefinition();
+        const CollectionDefinition* definition = handle->GetDefinition();
 
         if (definition->scope() == Scope_Entity && !entity.Valid())
         {
@@ -2354,7 +2353,7 @@ namespace SparkyStudios::Audio::Amplitude
             return Channel(nullptr);
         }
 
-        const SoundDefinition* definition = handle->GetSoundDefinition();
+        const SoundDefinition* definition = handle->GetDefinition();
 
         if (definition->scope() == Scope_Entity && !entity.Valid())
         {
