@@ -17,6 +17,7 @@ jobs:
         build_type: [ "release", "debug" ]
         config:
           - name: "Windows Latest MSVC"
+            key: msvc
             os: windows-latest
             sdk_dir: win
             artifact: "amplitude_audio_sdk_windows_msvc_x64.7z"
@@ -26,6 +27,7 @@ jobs:
             target_triplet: x64-windows
 
           - name: "Windows Latest MinGW"
+            key: mingw
             os: windows-latest
             sdk_dir: win
             artifact: "amplitude_audio_sdk_windows_mingw_x64.7z"
@@ -34,7 +36,8 @@ jobs:
             generator: "Ninja"
             target_triplet: x64-mingw-static
 
-          - name: "Ubuntu_Latest_GCC"
+          - name: "Ubuntu Latest GCC"
+            key: gcc
             os: ubuntu-latest
             sdk_dir: linux
             artifact: "amplitude_audio_sdk_linux_gcc_x64.7z"
@@ -43,16 +46,8 @@ jobs:
             generator: "Ninja"
             target_triplet: x64-linux
 
-          - name: "Ubuntu_GCC_9"
-            os: ubuntu-latest
-            sdk_dir: linux
-            artifact: "amplitude_audio_sdk_linux_gcc9_x64.7z"
-            cc: "gcc"
-            cxx: "g++"
-            generator: "Ninja"
-            target_triplet: x64-linux
-
           - name: "macOS x64 Latest Clang"
+            key: clang
             os: macos-latest
             sdk_dir: osx
             artifact: "amplitude_audio_sdk_macos_clang_x64.7z"
@@ -88,7 +83,6 @@ jobs:
         if: startsWith(matrix.config.os, 'windows')
         run: |
           choco install ninja cmake curl
-          choco upgrade mingw 
           ninja --version
           cmake --version
           $FLATC_VERSION = "$(curl "https://api.github.com/repos/google/flatbuffers/releases/latest" --ssl-no-revoke --silent | Select-String -Pattern '"tag_name":\s*"(.+)"')" -replace '.*"v(.+)".*','$1'
@@ -98,54 +92,18 @@ jobs:
           Expand-Archive -Force flatc.zip .\bin\
           .\bin\flatc --version
 
+      - name: Install dependencies on Windows (MingW)
+        if: startsWith(matrix.config.os, 'windows') && startsWith(matrix.config.key, 'mingw')
+        run: choco upgrade mingw
+
       - name: Install dependencies on Ubuntu
-        if: startsWith(matrix.config.name, 'Ubuntu_Latest_GCC')
+        if: startsWith(matrix.config.os, 'ubuntu')
         run: |
           sudo apt-get update
           sudo apt-get install ninja-build cmake
           ninja --version
           cmake --version
           gcc --version
-          wget https://github.com/google/flatbuffers/releases/download/${{ steps.flatc_version.outputs.tag }}/Linux.flatc.binary.g++-10.zip
-          mkdir bin
-          sudo unzip Linux.flatc.binary.g++-10.zip -d bin
-          ./bin/flatc --version
-
-      - name: Install dependencies on Ubuntu (GCC9)
-        if: startsWith(matrix.config.name, 'Ubuntu_GCC_9')
-        run: |
-          echo Update gcc-9 =======================================================================
-          echo gcc version before
-          gcc --version
-          sudo add-apt-repository ppa:ubuntu-toolchain-r/test
-          sudo apt-get update
-          sudo apt-get install ninja-build cmake gcc-9 g++-9
-          sudo update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-9 90 --slave /usr/bin/g++ g++ /usr/bin/g++-9 --slave /usr/bin/gcov gcov /usr/bin/gcov-9
-          echo gcc version after
-          gcc --version
-          echo Update ninja =======================================================================
-          echo ninja version before
-          ninja --version
-          # wget https://github.com/ninja-build/ninja/releases/download/v1.10.0/ninja-linux.zip
-          wget https://github.com/ninja-build/ninja/releases/latest/download/ninja-linux.zip
-          sudo unzip ninja-linux.zip -d /usr/local/bin/
-          sudo update-alternatives --install /usr/bin/ninja ninja /usr/local/bin/ninja 1 --force
-          echo ninja version after
-          ninja --version
-          echo Update cmake =======================================================================
-          echo cmake version before
-          cmake --version
-          # curl --silent "https://api.github.com/repos/Kitware/CMake/releases/latest" | sed -n 's/.*tag_name":\s"\(.*\)".*/\1/p' | head -2
-          # wget https://github.com/Kitware/CMake/releases/latest/download/cmake-3.16.5-Linux-x86_64.sh
-          cmake_version=$(curl --silent "https://api.github.com/repos/Kitware/CMake/releases/latest" | sed -n 's/.*tag_name":\s"\(.*\)".*/\1/p' | head -2 | cut -c 2-)
-          echo cmake download latest v$cmake_version version
-          wget https://github.com/Kitware/CMake/releases/download/v$cmake_version/cmake-$cmake_version-Linux-x86_64.sh
-          chmod +x cmake-$cmake_version-Linux-x86_64.sh
-          sudo mkdir /opt/cmake
-          sudo ./cmake-$cmake_version-Linux-x86_64.sh --prefix=/opt/cmake --skip-license
-          sudo update-alternatives --install /usr/bin/cmake cmake /opt/cmake/bin/cmake 1 --force
-          echo cmake version after
-          cmake --version
           wget https://github.com/google/flatbuffers/releases/download/${{ steps.flatc_version.outputs.tag }}/Linux.flatc.binary.g++-10.zip
           mkdir bin
           sudo unzip Linux.flatc.binary.g++-10.zip -d bin

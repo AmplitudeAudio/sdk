@@ -84,11 +84,6 @@ jobs:
             artifact: "amplitude_audio_sdk_linux_gcc_x64.7z"
             archiver: "7z a"
 
-          - name: "Ubuntu_GCC_9"
-            os: ubuntu-latest
-            artifact: "amplitude_audio_sdk_linux_gcc9_x64.7z"
-            archiver: "7z a"
-
           - name: "macOS x64 Latest Clang"
             os: macos-latest
             artifact: "amplitude_audio_sdk_macos_clang_x64.7z"
