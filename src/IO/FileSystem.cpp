@@ -56,7 +56,7 @@ namespace SparkyStudios::Audio::Amplitude
         for (AmSize i = 1, l = parts.size(); i < l; i++)
             joined /= parts[i];
 
-        return joined.string();
+        return joined.native();
     }
 
     std::shared_ptr<File> DiskFileSystem::OpenFile(const AmOsString& path) const
