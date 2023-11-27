@@ -180,7 +180,7 @@ namespace SparkyStudios::Audio::Amplitude
         /**
          * @brief The device name.
          */
-        std::string mDeviceName;
+        AmString mDeviceName;
 
         /**
          * @brief The device ID.

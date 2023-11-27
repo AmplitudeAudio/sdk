@@ -13,11 +13,33 @@
 // limitations under the License.
 
 #include <Core/Drivers/MiniAudio/Driver.h>
+
 #include <Mixer/Mixer.h>
 
 namespace SparkyStudios::Audio::Amplitude::Drivers
 {
-    void miniaudio_mixer(ma_device* pDevice, AmVoidPtr pOutput, AmConstVoidPtr pInput, ma_uint32 frameCount)
+    static void* ma_malloc(size_t sz, void* pUserData)
+    {
+        return amMemory->Malloc(MemoryPoolKind::Amplimix, sz);
+    }
+
+    static void* ma_realloc(void* p, size_t sz, void* pUserData)
+    {
+        return amMemory->Realloc(MemoryPoolKind::Amplimix, p, sz);
+    }
+
+    static void ma_free(void* p, void* pUserData)
+    {
+        amMemory->Free(MemoryPoolKind::Amplimix, p);
+    }
+
+    static void miniaudio_log(void* pUserData, ma_uint32 level, const char* pMessage)
+    {
+        // TODO: Add support for log levels.
+        CallLogFunc(pMessage);
+    }
+
+    static void miniaudio_mixer(ma_device* pDevice, AmVoidPtr pOutput, AmConstVoidPtr pInput, ma_uint32 frameCount)
     {
         amEngine->GetMixer()->Mix(pOutput, frameCount);
     }
@@ -26,8 +48,8 @@ namespace SparkyStudios::Audio::Amplitude::Drivers
     {
         auto* driver = static_cast<MiniAudioDriver*>(pNotification->pDevice->pUserData);
 
-        driver->m_deviceDescription.mDeviceID = 0;
-        driver->m_deviceDescription.mDeviceName = std::string(pNotification->pDevice->playback.name);
+        driver->m_deviceDescription.mDeviceID = 0; // TODO: Compute a proper device ID
+        driver->m_deviceDescription.mDeviceName = AmString(pNotification->pDevice->playback.name);
         driver->m_deviceDescription.mDeviceOutputSampleRate = pNotification->pDevice->playback.internalSampleRate;
         driver->m_deviceDescription.mDeviceOutputChannels =
             static_cast<PlaybackOutputChannels>(pNotification->pDevice->playback.internalChannels);
@@ -37,9 +59,9 @@ namespace SparkyStudios::Audio::Amplitude::Drivers
         if (auto* mixer = amEngine->GetMixer(); mixer != nullptr)
         {
             mixer->UpdateDevice(
-                0, // TODO: Compute a proper device ID
-                driver->m_deviceDescription.mDeviceName, driver->m_deviceDescription.mDeviceOutputSampleRate,
-                driver->m_deviceDescription.mDeviceOutputChannels, driver->m_deviceDescription.mDeviceOutputFormat);
+                driver->m_deviceDescription.mDeviceID, driver->m_deviceDescription.mDeviceName,
+                driver->m_deviceDescription.mDeviceOutputSampleRate, driver->m_deviceDescription.mDeviceOutputChannels,
+                driver->m_deviceDescription.mDeviceOutputFormat);
         }
 
         switch (pNotification->type)
@@ -66,8 +88,8 @@ namespace SparkyStudios::Audio::Amplitude::Drivers
 
     static ma_result ma_resampling_backend_get_heap_size_ls(void* pUserData, const ma_resampler_config* pConfig, size_t* pHeapSizeInBytes)
     {
-        (void)pConfig;
-        (void)pUserData;
+        AM_UNUSED(pConfig);
+        AM_UNUSED(pUserData);
 
         *pHeapSizeInBytes = 0;
         return MA_SUCCESS;
@@ -76,7 +98,7 @@ namespace SparkyStudios::Audio::Amplitude::Drivers
     static ma_result ma_resampling_backend_init_ls(
         void* pUserData, const ma_resampler_config* pConfig, void* pHeap, ma_resampling_backend** ppBackend)
     {
-        (void)pHeap;
+        AM_UNUSED(pHeap);
 
         auto* pResampler = Resampler::Construct("libsamplerate");
         const auto* pDeviceDescription = static_cast<DeviceDescription*>(pUserData);
@@ -92,9 +114,9 @@ namespace SparkyStudios::Audio::Amplitude::Drivers
     static void ma_resampling_backend_uninit_ls(
         void* pUserData, ma_resampling_backend* pBackend, const ma_allocation_callbacks* pAllocationCallbacks)
     {
-        (void)pUserData;
-        auto* pResampler = static_cast<ResamplerInstance*>(pBackend);
+        AM_UNUSED(pUserData);
 
+        auto* pResampler = static_cast<ResamplerInstance*>(pBackend);
         pResampler->Clear();
 
         Resampler::Destruct("libsamplerate", pResampler);
@@ -108,7 +130,8 @@ namespace SparkyStudios::Audio::Amplitude::Drivers
         void* pFramesOut,
         ma_uint64* pFrameCountOut)
     {
-        (void)pUserData;
+        AM_UNUSED(pUserData);
+
         auto* pResampler = static_cast<ResamplerInstance*>(pBackend);
 
         if (pResampler == nullptr)
@@ -130,7 +153,7 @@ namespace SparkyStudios::Audio::Amplitude::Drivers
     static ma_result ma_resampling_backend_set_rate_ls(
         void* pUserData, ma_resampling_backend* pBackend, ma_uint32 sampleRateIn, ma_uint32 sampleRateOut)
     {
-        (void)pUserData;
+        AM_UNUSED(pUserData);
 
         if (auto* pResampler = static_cast<ResamplerInstance*>(pBackend);
             pResampler->GetSampleRateIn() != sampleRateIn || pResampler->GetSampleRateOut() != sampleRateOut)
@@ -141,7 +164,8 @@ namespace SparkyStudios::Audio::Amplitude::Drivers
 
     static ma_uint64 ma_resampling_backend_get_input_latency_ls(void* pUserData, const ma_resampling_backend* pBackend)
     {
-        (void)pUserData;
+        AM_UNUSED(pUserData);
+
         const auto* pResampler = static_cast<const ResamplerInstance*>(pBackend);
 
         return pResampler->GetLatencyInFrames();
@@ -149,7 +173,8 @@ namespace SparkyStudios::Audio::Amplitude::Drivers
 
     static ma_uint64 ma_resampling_backend_get_output_latency_ls(void* pUserData, const ma_resampling_backend* pBackend)
     {
-        (void)pUserData;
+        AM_UNUSED(pUserData);
+
         const auto* pResampler = static_cast<const ResamplerInstance*>(pBackend);
 
         return pResampler->GetLatencyInFrames();
@@ -158,7 +183,7 @@ namespace SparkyStudios::Audio::Amplitude::Drivers
     static ma_result ma_resampling_backend_get_required_input_frame_count_ls(
         void* pUserData, const ma_resampling_backend* pBackend, ma_uint64 outputFrameCount, ma_uint64* pInputFrameCount)
     {
-        (void)pUserData;
+        AM_UNUSED(pUserData);
 
         // Sample rate is the same, so ratio is 1:1
         if (const auto* pResampler = static_cast<const ResamplerInstance*>(pBackend);
@@ -173,7 +198,7 @@ namespace SparkyStudios::Audio::Amplitude::Drivers
     static ma_result ma_resampling_backend_get_expected_output_frame_count_ls(
         void* pUserData, const ma_resampling_backend* pBackend, ma_uint64 inputFrameCount, ma_uint64* pOutputFrameCount)
     {
-        (void)pUserData;
+        AM_UNUSED(pUserData);
 
         // Sample rate is the same, so ratio is 1:1
         if (const auto* pResampler = static_cast<const ResamplerInstance*>(pBackend);
@@ -187,13 +212,15 @@ namespace SparkyStudios::Audio::Amplitude::Drivers
 
     static ma_result ma_resampling_backend_reset_ls(void* pUserData, ma_resampling_backend* pBackend)
     {
-        (void)pUserData;
-        auto* pResampler = static_cast<ResamplerInstance*>(pBackend);
+        AM_UNUSED(pUserData);
 
+        auto* pResampler = static_cast<ResamplerInstance*>(pBackend);
         pResampler->Reset();
 
         return MA_SUCCESS;
     }
+
+    static ma_allocation_callbacks gAllocationCallbacks = { nullptr, ma_malloc, ma_realloc, ma_free };
 
     static ma_resampling_backend_vtable gResamplerVTable = { ma_resampling_backend_get_heap_size_ls,
                                                              ma_resampling_backend_init_ls,
@@ -206,12 +233,45 @@ namespace SparkyStudios::Audio::Amplitude::Drivers
                                                              ma_resampling_backend_get_expected_output_frame_count_ls,
                                                              ma_resampling_backend_reset_ls };
 
+    MiniAudioDriver::MiniAudioDriver()
+        : Driver("miniaudio")
+        , _initialized(false)
+        , _device()
+        , _logCallback()
+        , _log()
+        , _context()
+        , _devices()
+    {
+        _logCallback = ma_log_callback_init(miniaudio_log, nullptr);
+        if (ma_log_init(&gAllocationCallbacks, &_log) != MA_SUCCESS)
+        {
+            CallLogFunc("Failed to initialize miniaudio log\n");
+            return;
+        }
+
+        ma_log_register_callback(&_log, _logCallback);
+
+        ma_context_config config = ma_context_config_init();
+        config.pLog = &_log;
+        config.allocationCallbacks = gAllocationCallbacks;
+        config.pUserData = this;
+
+        if (ma_context_init(nullptr, 0, &config, &_context) != MA_SUCCESS)
+        {
+            CallLogFunc("Failed to initialize miniaudio context\n");
+            return;
+        }
+    }
+
     MiniAudioDriver::~MiniAudioDriver()
     {
         if (_initialized)
-        {
             Close();
-        }
+
+        ma_log_unregister_callback(&_log, _logCallback);
+        ma_log_uninit(&_log);
+
+        ma_context_uninit(&_context);
     }
 
     bool MiniAudioDriver::Open(const DeviceDescription& device)
@@ -239,7 +299,7 @@ namespace SparkyStudios::Audio::Amplitude::Drivers
 
             ma_channel_map_init_standard(ma_standard_channel_map_vorbis, deviceConfig.playback.pChannelMap, channelsCount, channelsCount);
 
-            _initialized = ma_device_init(nullptr, &deviceConfig, &_device) == MA_SUCCESS;
+            _initialized = ma_device_init(&_context, &deviceConfig, &_device) == MA_SUCCESS;
             if (!_initialized)
             {
                 CallLogFunc("The miniaudio driver was not initialized successfully.");
@@ -248,8 +308,8 @@ namespace SparkyStudios::Audio::Amplitude::Drivers
 
             m_deviceDescription = device;
 
-            m_deviceDescription.mDeviceID = 0;
-            m_deviceDescription.mDeviceName = std::string(_device.playback.name);
+            m_deviceDescription.mDeviceID = 0; // TODO: Compute a proper device ID
+            m_deviceDescription.mDeviceName = AmString(_device.playback.name);
             m_deviceDescription.mDeviceOutputSampleRate = _device.playback.internalSampleRate;
             m_deviceDescription.mDeviceOutputChannels = static_cast<PlaybackOutputChannels>(_device.playback.internalChannels);
             m_deviceDescription.mDeviceOutputFormat = static_cast<PlaybackOutputFormat>(_device.playback.internalFormat);
@@ -258,10 +318,8 @@ namespace SparkyStudios::Audio::Amplitude::Drivers
             CallDeviceNotificationCallback(DeviceNotification::Opened, m_deviceDescription, this);
 
             amEngine->GetMixer()->UpdateDevice(
-                0, // TODO: Compute a proper device ID
-                _device.playback.name, _device.playback.internalSampleRate,
-                static_cast<PlaybackOutputChannels>(_device.playback.internalChannels),
-                static_cast<PlaybackOutputFormat>(_device.playback.internalFormat));
+                m_deviceDescription.mDeviceID, m_deviceDescription.mDeviceName, m_deviceDescription.mDeviceOutputSampleRate,
+                m_deviceDescription.mDeviceOutputChannels, m_deviceDescription.mDeviceOutputFormat);
 
             amMemory->Free(MemoryPoolKind::Engine, deviceConfig.playback.pChannelMap);
         }
@@ -294,6 +352,40 @@ namespace SparkyStudios::Audio::Amplitude::Drivers
 
         ma_device_uninit(&_device);
         _initialized = false;
+
+        return true;
+    }
+
+    bool MiniAudioDriver::EnumerateDevices(std::vector<DeviceDescription>& devices)
+    {
+        if (_devices.empty())
+        {
+            ma_device_info* pPlaybackInfos;
+            ma_uint32 playbackCount;
+            ma_device_info* pCaptureInfos;
+            ma_uint32 captureCount;
+
+            if (ma_context_get_devices(&_context, &pPlaybackInfos, &playbackCount, &pCaptureInfos, &captureCount) != MA_SUCCESS)
+            {
+                CallLogFunc("Unable to enumerate the audio devices.\n");
+                return false;
+            }
+
+            _devices.resize(playbackCount);
+            for (ma_uint32 iDevice = 0; iDevice < playbackCount; iDevice++)
+            {
+                _devices[iDevice].mDeviceID = iDevice;
+                _devices[iDevice].mDeviceName = AmString(pPlaybackInfos[iDevice].name);
+                _devices[iDevice].mDeviceOutputSampleRate = pPlaybackInfos[iDevice].nativeDataFormats[0].sampleRate;
+                _devices[iDevice].mDeviceOutputChannels =
+                    static_cast<PlaybackOutputChannels>(pPlaybackInfos[iDevice].nativeDataFormats[0].channels);
+                _devices[iDevice].mDeviceOutputFormat =
+                    static_cast<PlaybackOutputFormat>(pPlaybackInfos[iDevice].nativeDataFormats[0].format);
+                _devices[iDevice].mDeviceState = DeviceState::Closed;
+            }
+        }
+
+        devices = _devices;
 
         return true;
     }

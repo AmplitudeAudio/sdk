@@ -483,7 +483,7 @@ namespace SparkyStudios::Audio::Amplitude
 
     void Mixer::UpdateDevice(
         AmObjectID deviceID,
-        std::string deviceName,
+        AmString deviceName,
         AmUInt32 deviceOutputSampleRate,
         PlaybackOutputChannels deviceOutputChannels,
         PlaybackOutputFormat deviceOutputFormat)
