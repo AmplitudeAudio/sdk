@@ -19,11 +19,6 @@
 
 #include <SparkyStudios/Audio/Amplitude/Amplitude.h>
 
-SparkyStudios::Audio::Amplitude::Engine* GetEngine();
-
-SparkyStudios::Audio::Amplitude::MemoryManager* GetMemoryManager();
-
-#define amEngine GetEngine()
-#define amMemory GetMemoryManager()
+using namespace SparkyStudios::Audio::Amplitude;
 
 #endif // SS_AMPLITUDE_AUDIO_FLAC_CODEC_PLUGIN_H

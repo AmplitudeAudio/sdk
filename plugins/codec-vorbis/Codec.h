@@ -21,8 +21,6 @@
 
 #include <vorbis/vorbisfile.h>
 
-using namespace SparkyStudios::Audio::Amplitude;
-
 class VorbisCodec final : public Codec
 {
 public:

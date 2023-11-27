@@ -20,14 +20,14 @@
 
 #include <SparkyStudios/Audio/Amplitude/Core/Common.h>
 
-#ifndef AM_BUILDSYSTEM_BUILDING_PLUGIN
+// #ifndef AM_BUILDSYSTEM_BUILDING_PLUGIN
 
 /**
  * @brief Shortcut access to the Amplitude's memory manager instance.
  */
 #define amMemory SparkyStudios::Audio::Amplitude::MemoryManager::GetInstance()
 
-#endif // AM_BUILDSYSTEM_BUILDING_PLUGIN
+// #endif // AM_BUILDSYSTEM_BUILDING_PLUGIN
 
 /**
  * @brief Allocates memory for a new object in the Default pool using the memory manager.

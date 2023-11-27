@@ -21,8 +21,6 @@
 
 #include <FLAC++/decoder.h>
 
-using namespace SparkyStudios::Audio::Amplitude;
-
 class FlacCodec final : public Codec
 {
 public:

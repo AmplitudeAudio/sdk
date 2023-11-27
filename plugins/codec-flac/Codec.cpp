@@ -14,8 +14,6 @@
 
 #include <Codec.h>
 
-using namespace SparkyStudios::Audio::Amplitude;
-
 void FlacCodec::FlacDecoderInternal::set_current_output_buffer(AmAudioSampleBuffer output, AmUInt64 size)
 {
     _current_output_buffer = output;

@@ -72,8 +72,6 @@ static void run(AmVoidPtr param)
 {
     auto* ctx = static_cast<ExecutionContext*>(param);
 
-    MemoryManager::Initialize(MemoryManagerConfig());
-
     ctx->fileLoader.SetBasePath(AM_OS_STRING("./assets"));
     amEngine->SetFileSystem(&ctx->fileLoader);
 
@@ -218,10 +216,14 @@ static void run(AmVoidPtr param)
     amEngine->StartCloseFileSystem();
     while (!amEngine->TryFinalizeCloseFileSystem())
         Thread::Sleep(1);
+
+    amEngine->DestroyInstance();
 }
 
 int main(int argc, char* argv[])
 {
+    MemoryManager::Initialize(MemoryManagerConfig());
+
     ExecutionContext ctx{};
     auto t = Thread::CreateThread(run, &ctx);
 

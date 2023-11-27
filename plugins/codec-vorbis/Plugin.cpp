@@ -14,21 +14,9 @@
 
 #include <Codec.h>
 
-using namespace SparkyStudios::Audio::Amplitude;
-
 AM_API_PRIVATE VorbisCodec* s_vorbisCodec = nullptr;
 AM_API_PRIVATE Engine* s_engine = nullptr;
 AM_API_PRIVATE MemoryManager* s_memoryManager = nullptr;
-
-Engine* GetEngine()
-{
-    return s_engine;
-}
-
-MemoryManager* GetMemoryManager()
-{
-    return s_memoryManager;
-}
 
 extern "C" {
 

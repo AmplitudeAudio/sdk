@@ -18,6 +18,17 @@ set(PROJECT_NAME ss_amplitude_audio_sample_01)
 
 project(${PROJECT_NAME})
 
+if(WIN32)
+    set(RUNTIME_OUTPUT_DIRECTORY "win")
+elseif(APPLE)
+    set(RUNTIME_OUTPUT_DIRECTORY "osx")
+    set(CMAKE_MACOSX_RPATH 1)
+    list(APPEND CMAKE_INSTALL_RPATH "@executable_path" "@executable_path/../../../lib/${RUNTIME_OUTPUT_DIRECTORY}/shared/")
+else()
+    set(RUNTIME_OUTPUT_DIRECTORY "linux")
+    list(APPEND CMAKE_INSTALL_RPATH "${ORIGIN}" "${ORIGIN}/../../../lib/${RUNTIME_OUTPUT_DIRECTORY}/shared/")
+endif()
+
 set(ss_amplitude_audio_sample_01_SRCS
     main.cpp
 )
@@ -31,10 +42,10 @@ set_target_properties(ss_amplitude_audio_sample_01
 )
 
 target_link_libraries(${PROJECT_NAME}
-    PUBLIC Static
+    PUBLIC Shared
 )
 
 add_dependencies(${PROJECT_NAME}
-    Static
+    Shared
     ss_amplitude_audio_sample_assets
 )
