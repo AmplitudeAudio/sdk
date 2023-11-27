@@ -12,6 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+#include <SparkyStudios/Audio/Amplitude/Core/Memory.h>
+
 #include <SparkyStudios/Audio/Amplitude/IO/FileSystem.h>
 
 namespace SparkyStudios::Audio::Amplitude
@@ -54,12 +56,12 @@ namespace SparkyStudios::Audio::Amplitude
         for (AmSize i = 1, l = parts.size(); i < l; i++)
             joined /= parts[i];
 
-        return AM_STRING_TO_OS_STRING(joined.string());
+        return joined.string();
     }
 
     std::shared_ptr<File> DiskFileSystem::OpenFile(const AmOsString& path) const
     {
-        auto file = std::make_shared<DiskFile>();
+        auto file = std::shared_ptr<DiskFile>(ampoolnew(MemoryPoolKind::IO, DiskFile), am_delete<MemoryPoolKind::IO, DiskFile>{});
         file->Open(ResolvePath(path));
 
         return file;

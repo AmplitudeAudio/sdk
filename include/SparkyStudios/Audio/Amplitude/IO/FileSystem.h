@@ -18,7 +18,6 @@
 #define SPARK_AUDIO_FILESYSTEM_H
 
 #include <filesystem>
-#include <string>
 
 #include <SparkyStudios/Audio/Amplitude/Core/Common.h>
 #include <SparkyStudios/Audio/Amplitude/IO/File.h>
