@@ -97,6 +97,12 @@ namespace SparkyStudios::Audio::Amplitude
         void ifft(float* data, const float* re, const float* im);
 
         /**
+         * @brief Gets the size of the buffer.
+         * @return The buffer size.
+         */
+        [[nodiscard]] size_t size() const;
+
+        /**
          * @brief Calculates the necessary size of the real/imaginary complex arrays
          * @param size The size of the real data
          * @return The size of the real/imaginary complex arrays
@@ -105,7 +111,8 @@ namespace SparkyStudios::Audio::Amplitude
 
     private:
         std::unique_ptr<detail::AudioFFTImpl> _impl;
+        size_t _size;
     };
-} // namespace SparkyStudios::Audio::Amplitude::FFT
+} // namespace SparkyStudios::Audio::Amplitude
 
 #endif // Header guard

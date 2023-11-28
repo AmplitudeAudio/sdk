@@ -1260,6 +1260,7 @@ namespace SparkyStudios::Audio::Amplitude
     {
         assert(detail::IsPowerOf2(size));
         _impl->init(size);
+        _size = size;
     }
 
     void AudioFFT::fft(const float* data, float* re, float* im)
@@ -1272,9 +1273,14 @@ namespace SparkyStudios::Audio::Amplitude
         _impl->ifft(data, re, im);
     }
 
+    size_t AudioFFT::size() const
+    {
+        return _size;
+    }
+
     size_t AudioFFT::ComplexSize(size_t size)
     {
         return (size / 2) + 1;
     }
 
-} // namespace SparkyStudios::Audio::Amplitude::FFT
+} // namespace SparkyStudios::Audio::Amplitude

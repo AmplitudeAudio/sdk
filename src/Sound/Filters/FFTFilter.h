@@ -17,6 +17,8 @@
 #ifndef SS_AMPLITUDE_AUDIO_FFT_FILTER_H
 #define SS_AMPLITUDE_AUDIO_FFT_FILTER_H
 
+#include <SparkyStudios/Audio/Amplitude/Math/SplitComplex.h>
+
 #include <SparkyStudios/Audio/Amplitude/Sound/Filter.h>
 
 namespace SparkyStudios::Audio::Amplitude
@@ -45,14 +47,13 @@ namespace SparkyStudios::Audio::Amplitude
             AmAudioSampleBuffer buffer, AmUInt16 channel, AmUInt64 frames, AmUInt16 channels, AmUInt32 sampleRate, bool isInterleaved)
             override;
 
-        virtual void ProcessFFTChannel(
-            AmReal32Buffer re, AmReal32Buffer im, AmUInt16 channel, AmUInt64 frames, AmUInt16 channels, AmUInt32 sampleRate);
+        virtual void ProcessFFTChannel(SplitComplex& fft, AmUInt16 channel, AmUInt64 frames, AmUInt16 channels, AmUInt32 sampleRate);
 
-        void Comp2MagPhase(AmReal32Buffer re, AmReal32Buffer im, AmUInt32 samples);
-        void MagPhase2MagFreq(AmReal32Buffer re, AmReal32Buffer im, AmUInt32 samples, AmUInt32 sampleRate, AmUInt16 channel);
-        void MagFreq2MagPhase(AmReal32Buffer re, AmReal32Buffer im, AmUInt32 samples, AmUInt32 sampleRate, AmUInt16 channel);
+        void Comp2MagPhase(SplitComplex& fft, AmUInt32 samples);
+        void MagPhase2MagFreq(SplitComplex& fft, AmUInt32 samples, AmUInt32 sampleRate, AmUInt16 channel);
+        void MagFreq2MagPhase(SplitComplex& fft, AmUInt32 samples, AmUInt32 sampleRate, AmUInt16 channel);
 
-        static void MagPhase2Comp(AmReal32Buffer re, AmReal32Buffer im, AmUInt32 samples);
+        static void MagPhase2Comp(SplitComplex& fft, AmUInt32 samples);
 
         void InitFFT();
 

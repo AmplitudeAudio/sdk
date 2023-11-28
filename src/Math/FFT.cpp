@@ -41,13 +41,15 @@ namespace SparkyStudios::Audio::Amplitude
         static_cast<AudioFFT*>(_implementation)->init(size);
     }
 
-    void FFT::Forward(AmConstAudioSampleBuffer input, AmReal32Buffer re, AmReal32Buffer im) const
+    void FFT::Forward(AmConstAudioSampleBuffer input, SplitComplex& splitComplex) const
     {
-        static_cast<AudioFFT*>(_implementation)->fft(input, re, im);
+        splitComplex.Resize(GetOutputSize(static_cast<AudioFFT*>(_implementation)->size()));
+        static_cast<AudioFFT*>(_implementation)->fft(input, splitComplex.re(), splitComplex.im());
     }
 
-    void FFT::Backward(AmAudioSampleBuffer output, AmConstReal32Buffer re, AmConstReal32Buffer im) const
+    void FFT::Backward(AmAudioSampleBuffer output, SplitComplex& splitComplex) const
     {
-        static_cast<AudioFFT*>(_implementation)->ifft(output, re, im);
+        splitComplex.Resize(GetOutputSize(static_cast<AudioFFT*>(_implementation)->size()));
+        static_cast<AudioFFT*>(_implementation)->ifft(output, splitComplex.re(), splitComplex.im());
     }
 } // namespace SparkyStudios::Audio::Amplitude

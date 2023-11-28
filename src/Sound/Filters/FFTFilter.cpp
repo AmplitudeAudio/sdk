@@ -86,16 +86,15 @@ namespace SparkyStudios::Audio::Amplitude
 
             {
                 FFT fft;
+                SplitComplex sc;
+
                 fft.Initialize(STFT_WINDOW_SIZE);
 
-                ScopedMemoryAllocation re(MemoryPoolKind::Filtering, FFT::GetOutputSize(STFT_WINDOW_SIZE) * sizeof(AmReal32));
-                ScopedMemoryAllocation im(MemoryPoolKind::Filtering, FFT::GetOutputSize(STFT_WINDOW_SIZE) * sizeof(AmReal32));
+                fft.Forward(_temp, sc);
 
-                fft.Forward(_temp, re.PointerOf<AmReal32>(), im.PointerOf<AmReal32>());
+                ProcessFFTChannel(sc, channel, STFT_WINDOW_HALF, channels, sampleRate);
 
-                ProcessFFTChannel(re.PointerOf<AmReal32>(), im.PointerOf<AmReal32>(), channel, STFT_WINDOW_HALF, channels, sampleRate);
-
-                fft.Backward(_temp, re.PointerOf<AmReal32>(), im.PointerOf<AmReal32>());
+                fft.Backward(_temp, sc);
             }
 
             for (AmUInt32 i = 0; i < framesToProcess; i++)
@@ -115,19 +114,19 @@ namespace SparkyStudios::Audio::Amplitude
         }
     }
 
-    void FFTFilterInstance::Comp2MagPhase(AmReal32Buffer re, AmReal32Buffer im, AmUInt32 samples)
+    void FFTFilterInstance::Comp2MagPhase(SplitComplex& fft, AmUInt32 samples)
     {
         for (AmUInt32 s = 0; s < samples; s++)
         {
-            const AmReal32 r = re[s];
-            const AmReal32 i = im[s];
+            const AmReal32 r = fft.re()[s];
+            const AmReal32 i = fft.im()[s];
 
-            re[s] = std::sqrt(r * r + i * i);
-            im[s] = std::atan2(i, r);
+            fft.re()[s] = std::sqrt(r * r + i * i);
+            fft.im()[s] = std::atan2(i, r);
         }
     }
 
-    void FFTFilterInstance::MagPhase2MagFreq(AmReal32Buffer re, AmReal32Buffer im, AmUInt32 samples, AmUInt32 sampleRate, AmUInt16 channel)
+    void FFTFilterInstance::MagPhase2MagFreq(SplitComplex& fft, AmUInt32 samples, AmUInt32 sampleRate, AmUInt16 channel)
     {
         const AmReal32 stepSize = static_cast<AmReal32>(samples) / static_cast<AmReal32>(sampleRate);
         const AmReal32 expect = (stepSize / static_cast<AmReal32>(samples)) * 2.0f * static_cast<AmReal32>(M_PI);
@@ -136,7 +135,7 @@ namespace SparkyStudios::Audio::Amplitude
         for (AmUInt32 s = 0; s < samples; s++)
         {
             // get true frequency from synthesis arrays
-            const AmReal32 pha = im[s];
+            const AmReal32 pha = fft.im()[s];
 
             AmReal32 freq = pha;
 
@@ -160,11 +159,11 @@ namespace SparkyStudios::Audio::Amplitude
             freq = static_cast<AmReal32>(s) * freqPerBin + freq * freqPerBin;
 
             // store magnitude and true frequency in analysis arrays
-            im[s] = freq;
+            fft.im()[s] = freq;
         }
     }
 
-    void FFTFilterInstance::MagFreq2MagPhase(AmReal32Buffer re, AmReal32Buffer im, AmUInt32 samples, AmUInt32 sampleRate, AmUInt16 channel)
+    void FFTFilterInstance::MagFreq2MagPhase(SplitComplex& fft, AmUInt32 samples, AmUInt32 sampleRate, AmUInt16 channel)
     {
         const AmReal32 stepSize = static_cast<AmReal32>(samples) / static_cast<AmReal32>(sampleRate);
         const AmReal32 expect = (stepSize / static_cast<AmReal32>(samples)) * 2.0f * static_cast<AmReal32>(M_PI);
@@ -173,7 +172,7 @@ namespace SparkyStudios::Audio::Amplitude
         for (AmUInt32 s = 0; s < samples; s++)
         {
             // get true frequency from synthesis arrays
-            const AmReal32 freq = im[s];
+            const AmReal32 freq = fft.im()[s];
 
             AmReal32 pha = freq;
 
@@ -189,31 +188,30 @@ namespace SparkyStudios::Audio::Amplitude
             // add the overlap phase advance back in
             pha += static_cast<AmReal32>(s) * expect;
 
-            im[s] = pha;
+            fft.im()[s] = pha;
         }
     }
 
-    void FFTFilterInstance::MagPhase2Comp(AmReal32Buffer re, AmReal32Buffer im, AmUInt32 samples)
+    void FFTFilterInstance::MagPhase2Comp(SplitComplex& fft, AmUInt32 samples)
     {
         for (AmUInt32 s = 0; s < samples; s++)
         {
-            const AmReal32 mag = re[s];
-            const AmReal32 pha = im[s];
+            const AmReal32 mag = fft.re()[s];
+            const AmReal32 pha = fft.im()[s];
 
-            re[s] = std::cos(pha) * mag;
-            im[s] = std::sin(pha) * mag;
+            fft.re()[s] = std::cos(pha) * mag;
+            fft.im()[s] = std::sin(pha) * mag;
         }
     }
 
-    void FFTFilterInstance::ProcessFFTChannel(
-        AmReal32Buffer re, AmReal32Buffer im, AmUInt16 channel, AmUInt64 frames, AmUInt16 channels, AmUInt32 sampleRate)
+    void FFTFilterInstance::ProcessFFTChannel(SplitComplex& fft, AmUInt16 channel, AmUInt64 frames, AmUInt16 channels, AmUInt32 sampleRate)
     {
-        Comp2MagPhase(re, im, frames);
-        MagPhase2MagFreq(re, im, frames, sampleRate, channel);
+        Comp2MagPhase(fft, frames);
+        MagPhase2MagFreq(fft, frames, sampleRate, channel);
 
         // Identity transform
 
-        MagFreq2MagPhase(re, im, frames, sampleRate, channel);
-        MagPhase2Comp(re, im, frames);
+        MagFreq2MagPhase(fft, frames, sampleRate, channel);
+        MagPhase2Comp(fft, frames);
     }
 } // namespace SparkyStudios::Audio::Amplitude

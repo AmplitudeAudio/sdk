@@ -157,9 +157,9 @@ namespace SparkyStudios::Audio::Amplitude
     }
 
     void EqualizerFilterInstance::ProcessFFTChannel(
-        AmReal32Buffer re, AmReal32Buffer im, AmUInt16 channel, AmUInt64 frames, AmUInt16 channels, AmUInt32 sampleRate)
+        SplitComplex& fft, AmUInt16 channel, AmUInt64 frames, AmUInt16 channels, AmUInt32 sampleRate)
     {
-        Comp2MagPhase(re, im, frames / 2);
+        Comp2MagPhase(fft, frames / 2);
 
         for (AmUInt32 p = 0; p < frames / 2; p++)
         {
@@ -178,12 +178,12 @@ namespace SparkyStudios::Audio::Amplitude
                 p3 = 7;
 
             const AmReal32 v = static_cast<AmReal32>((i % (frames / 16))) / (AmReal32)(frames / 16);
-            re[p] *= CatmullRom(v, m_parameters[p0 + 1], m_parameters[p1 + 1], m_parameters[p2 + 1], m_parameters[p3 + 1]);
+            fft.re()[p] *= CatmullRom(v, m_parameters[p0 + 1], m_parameters[p1 + 1], m_parameters[p2 + 1], m_parameters[p3 + 1]);
         }
 
-        std::memset(re + frames / 2, 0, sizeof(AmReal32) * frames / 2);
-        std::memset(im + frames / 2, 0, sizeof(AmReal32) * frames / 2);
+        std::memset(fft.re() + frames / 2, 0, sizeof(AmReal32) * frames / 2);
+        std::memset(fft.im() + frames / 2, 0, sizeof(AmReal32) * frames / 2);
 
-        MagPhase2Comp(re, im, frames / 2);
+        MagPhase2Comp(fft, frames / 2);
     }
 } // namespace SparkyStudios::Audio::Amplitude

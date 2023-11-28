@@ -119,6 +119,11 @@ namespace SparkyStudios::Audio::Amplitude
         void Clear() const;
 
         /**
+         * @brief Releases the allocated buffer.
+         */
+        void Release();
+
+        /**
          * @brief Gets the size of the buffer.
          *
          * @return AmUInt32
@@ -146,6 +151,31 @@ namespace SparkyStudios::Audio::Amplitude
         [[nodiscard]] AM_INLINE(AmUInt8Buffer) GetPointer() const
         {
             return m_basePtr;
+        }
+
+        /**
+         * @brief Copies data from another buffer.
+         * @param other The other buffer to copy data from.
+         */
+        void CopyFrom(const AmAlignedReal32Buffer& other) const;
+
+        /**
+         * @brief Resizes the buffer to the specified size.
+         *
+         * @param size The new size of the buffer.
+         */
+        void Resize(AmUInt32 size);
+
+        AmReal32& operator[](AmSize index)
+        {
+            AMPLITUDE_ASSERT(m_data && index < m_floats);
+            return m_data[index];
+        }
+
+        const AmReal32& operator[](size_t index) const
+        {
+            AMPLITUDE_ASSERT(m_data && index < m_floats);
+            return m_data[index];
         }
 
     private:

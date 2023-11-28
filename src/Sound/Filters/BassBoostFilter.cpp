@@ -81,15 +81,15 @@ namespace SparkyStudios::Audio::Amplitude
     }
 
     void BassBoostFilterInstance::ProcessFFTChannel(
-        AmReal32Buffer re, AmReal32Buffer im, AmUInt16 channel, AmUInt64 frames, AmUInt16 channels, AmUInt32 sampleRate)
+        SplitComplex& fft, AmUInt16 channel, AmUInt64 frames, AmUInt16 channels, AmUInt32 sampleRate)
     {
         frames = 2;
 
-        Comp2MagPhase(re, im, frames);
+        Comp2MagPhase(fft, frames);
 
         for (AmUInt32 i = 0; i < frames; i++)
-            re[i] *= m_parameters[BassBoostFilter::ATTRIBUTE_BOOST];
+            fft.re()[i] *= m_parameters[BassBoostFilter::ATTRIBUTE_BOOST];
 
-        MagPhase2Comp(re, im, frames);
+        MagPhase2Comp(fft, frames);
     }
 } // namespace SparkyStudios::Audio::Amplitude

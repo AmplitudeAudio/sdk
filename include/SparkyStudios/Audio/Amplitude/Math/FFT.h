@@ -19,6 +19,8 @@
 
 #include <SparkyStudios/Audio/Amplitude/Core/Common.h>
 
+#include <SparkyStudios/Audio/Amplitude/Math/SplitComplex.h>
+
 namespace SparkyStudios::Audio::Amplitude
 {
     /**
@@ -62,27 +64,23 @@ namespace SparkyStudios::Audio::Amplitude
          *
          * @param size The size of the input (as a power of 2).
          */
-        void Initialize(AmUInt64 size) const;
+        void Initialize(AmSize size) const;
 
         /**
          * @brief Performs the forward FFT operation.
          *
          * @param input The input audio data. This buffer needs to be of the same size as the one provided to the Initialize() method.
-         * @param re The real part of the complex output. This buffer needs to be of the same size returned by the GetOutputSize() method.
-         * @param im The imaginary part of the complex output. This buffer needs to be of the same size returned by the GetOutputSize()
-         * method.
+         * @param splitComplex The complex buffer output separated into real and imaginary parts. The buffer will be resized if necessary.
          */
-        void Forward(AmConstAudioSampleBuffer input, AmReal32Buffer re, AmReal32Buffer im) const;
+        void Forward(AmConstAudioSampleBuffer input, SplitComplex& splitComplex) const;
 
         /**
          * @brief Performs the inverse FFT operation.
          *
          * @param output The output audio data. This buffer needs to be of the same size as the one provided to the Initialize() method.
-         * @param re The real part of the complex output. This buffer needs to be of the same size returned by the GetOutputSize() method.
-         * @param im The imaginary part of the complex output. This buffer needs to be of the same size returned by the GetOutputSize()
-         * method.
+         * @param splitComplex The complex buffer output separated into real and imaginary parts. The buffer will be resized if necessary.
          */
-        void Backward(AmAudioSampleBuffer output, AmConstReal32Buffer re, AmConstReal32Buffer im) const;
+        void Backward(AmAudioSampleBuffer output, SplitComplex& splitComplex) const;
 
     private:
         void* _implementation;

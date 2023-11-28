@@ -58,9 +58,53 @@ namespace SparkyStudios::Audio::Amplitude
         std::memset(m_data, 0, sizeof(AmReal32) * m_floats);
     }
 
+    void AmAlignedReal32Buffer::Release()
+    {
+        if (m_basePtr == nullptr)
+            return;
+
+        amfree(m_basePtr);
+        m_basePtr = nullptr;
+
+        m_floats = 0;
+        m_data = nullptr;
+    }
+
+    void AmAlignedReal32Buffer::CopyFrom(const AmAlignedReal32Buffer& other) const
+    {
+        AMPLITUDE_ASSERT(m_floats == other.m_floats);
+
+        if (this != &other)
+        {
+            std::memcpy(m_data, other.m_data, m_floats * sizeof(AmReal32));
+        }
+    }
+
+    void AmAlignedReal32Buffer::Resize(AmUInt32 size)
+    {
+        if (m_basePtr == nullptr)
+        {
+            Init(size);
+            return;
+        }
+
+        if (size == m_floats)
+            return;
+
+        m_floats = size;
+
+#ifndef AM_SIMD_INTRINSICS
+        m_basePtr = static_cast<AmUInt8Buffer>(amrealloc(m_basePtr, size * sizeof(AmReal32)));
+#else
+        m_basePtr = static_cast<AmUInt8Buffer>(amrealign(m_basePtr, size * sizeof(AmReal32), AM_SIMD_ALIGNMENT));
+#endif
+
+        m_data = reinterpret_cast<AmReal32Buffer>(m_basePtr);
+    }
+
     AmAlignedReal32Buffer::~AmAlignedReal32Buffer()
     {
-        amMemory->Free(MemoryPoolKind::Default, m_basePtr);
+        Release();
     }
 
     AmTinyAlignedReal32Buffer::AmTinyAlignedReal32Buffer()
