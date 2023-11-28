@@ -38,12 +38,12 @@ namespace SparkyStudios::Audio::Amplitude
 
     FilterInstance* FFTFilter::CreateInstance()
     {
-        return amnew(FFTFilterInstance, this);
+        return ampoolnew(MemoryPoolKind::Filtering, FFTFilterInstance, this);
     }
 
     void FFTFilter::DestroyInstance(FilterInstance* instance)
     {
-        amdelete(FFTFilterInstance, (FFTFilterInstance*)instance);
+        ampooldelete(MemoryPoolKind::Filtering, FFTFilterInstance, (FFTFilterInstance*)instance);
     }
 
     FFTFilterInstance::FFTFilterInstance(FFTFilter* parent)
@@ -55,12 +55,12 @@ namespace SparkyStudios::Audio::Amplitude
 
     FFTFilterInstance::~FFTFilterInstance()
     {
-        amMemory->Free(MemoryPoolKind::Filtering, _temp);
+        ampoolfree(MemoryPoolKind::Filtering, _temp);
     }
 
     void FFTFilterInstance::InitFFT()
     {
-        _temp = static_cast<AmReal32Buffer>(amMemory->Malloc(MemoryPoolKind::Filtering, STFT_WINDOW_SIZE * sizeof(AmReal32)));
+        _temp = static_cast<AmReal32Buffer>(ampoolmalloc(MemoryPoolKind::Filtering, STFT_WINDOW_SIZE * sizeof(AmReal32)));
     }
 
     void FFTFilterInstance::ProcessChannel(

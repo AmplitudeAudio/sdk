@@ -79,12 +79,12 @@ namespace SparkyStudios::Audio::Amplitude
 
     FilterInstance* FlangerFilter::CreateInstance()
     {
-        return amnew(FlangerFilterInstance, this);
+        return ampoolnew(MemoryPoolKind::Filtering, FlangerFilterInstance, this);
     }
 
     void FlangerFilter::DestroyInstance(FilterInstance* instance)
     {
-        amdelete(FlangerFilterInstance, (FlangerFilterInstance*)instance);
+        ampooldelete(MemoryPoolKind::Filtering, FlangerFilterInstance, (FlangerFilterInstance*)instance);
     }
 
     FlangerFilterInstance::FlangerFilterInstance(FlangerFilter* parent)
@@ -159,7 +159,7 @@ namespace SparkyStudios::Audio::Amplitude
 
     FlangerFilterInstance::~FlangerFilterInstance()
     {
-        amMemory->Free(MemoryPoolKind::Filtering, _buffer);
+        ampoolfree(MemoryPoolKind::Filtering, _buffer);
     }
 
     void FlangerFilterInstance::InitBuffer(AmUInt16 channels, AmUInt32 sampleRate)
@@ -169,12 +169,12 @@ namespace SparkyStudios::Audio::Amplitude
 
         if (_bufferLength < maxSamples)
         {
-            amMemory->Free(MemoryPoolKind::Filtering, _buffer);
+            ampoolfree(MemoryPoolKind::Filtering, _buffer);
 
             _bufferLength = maxSamples;
             const AmUInt32 size = _bufferLength * channels * sizeof(AmReal32);
 
-            _buffer = static_cast<AmReal32Buffer>(amMemory->Malloc(MemoryPoolKind::Filtering, size));
+            _buffer = static_cast<AmReal32Buffer>(ampoolmalloc(MemoryPoolKind::Filtering, size));
             std::memset(_buffer, 0, size);
         }
     }

@@ -72,12 +72,12 @@ namespace SparkyStudios::Audio::Amplitude
 
     FilterInstance* DelayFilter::CreateInstance()
     {
-        return amnew(DelayFilterInstance, this);
+        return ampoolnew(MemoryPoolKind::Filtering, DelayFilterInstance, this);
     }
 
     void DelayFilter::DestroyInstance(FilterInstance* instance)
     {
-        amdelete(DelayFilterInstance, (DelayFilterInstance*)instance);
+        ampooldelete(MemoryPoolKind::Filtering, DelayFilterInstance, (DelayFilterInstance*)instance);
     }
 
     DelayFilterInstance::DelayFilterInstance(DelayFilter* parent)
@@ -101,7 +101,7 @@ namespace SparkyStudios::Audio::Amplitude
         if (_buffer == nullptr)
             return;
 
-        amMemory->Free(MemoryPoolKind::Filtering, _buffer);
+        ampoolfree(MemoryPoolKind::Filtering, _buffer);
     }
 
     void DelayFilterInstance::Process(
@@ -184,7 +184,7 @@ namespace SparkyStudios::Audio::Amplitude
             _bufferMaxLength = maxSamples;
             const AmUInt32 size = _bufferMaxLength * channels * sizeof(AmReal32);
 
-            _buffer = static_cast<AmReal32Buffer>(amMemory->Malloc(MemoryPoolKind::Filtering, size));
+            _buffer = static_cast<AmReal32Buffer>(ampoolmalloc(MemoryPoolKind::Filtering, size));
             std::memset(_buffer, 0, size);
         }
 

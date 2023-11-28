@@ -16,8 +16,8 @@
 #include <map>
 #include <utility>
 
-#include <SparkyStudios/Audio/Amplitude/Core/Memory.h>
 #include <SparkyStudios/Audio/Amplitude/Core/Log.h>
+#include <SparkyStudios/Audio/Amplitude/Core/Memory.h>
 #include <SparkyStudios/Audio/Amplitude/Mixer/SoundProcessor.h>
 
 #include <Utils/Utils.h>
@@ -89,7 +89,7 @@ namespace SparkyStudios::Audio::Amplitude
     SoundProcessor* SoundProcessor::Find(const std::string& name)
     {
         SoundProcessorRegistry& processors = soundProcessorRegistry();
-        if (const auto& it = processors.find(name); it!= processors.end())
+        if (const auto& it = processors.find(name); it != processors.end())
             return it->second;
 
         return nullptr;
@@ -128,10 +128,10 @@ namespace SparkyStudios::Audio::Amplitude
     ProcessorMixer::~ProcessorMixer()
     {
         if (_dryProcessor != nullptr)
-            amdelete(SoundProcessorInstance, _dryProcessor);
+            ampooldelete(MemoryPoolKind::Filtering, SoundProcessorInstance, _dryProcessor);
 
         if (_wetProcessor != nullptr)
-            amdelete(SoundProcessorInstance, _wetProcessor);
+            ampooldelete(MemoryPoolKind::Filtering, SoundProcessorInstance, _wetProcessor);
     }
 
     void ProcessorMixer::SetDryProcessor(SoundProcessorInstance* processor, AmReal32 dry)
@@ -163,8 +163,8 @@ namespace SparkyStudios::Audio::Amplitude
             return;
         }
 
-        const auto dryOut = static_cast<AmAudioSampleBuffer>(amMemory->Malign(MemoryPoolKind::Amplimix, bufferSize, AM_SIMD_ALIGNMENT));
-        const auto wetOut = static_cast<AmAudioSampleBuffer>(amMemory->Malign(MemoryPoolKind::Amplimix, bufferSize, AM_SIMD_ALIGNMENT));
+        const auto dryOut = static_cast<AmAudioSampleBuffer>(ampoolmalign(MemoryPoolKind::Amplimix, bufferSize, AM_SIMD_ALIGNMENT));
+        const auto wetOut = static_cast<AmAudioSampleBuffer>(ampoolmalign(MemoryPoolKind::Amplimix, bufferSize, AM_SIMD_ALIGNMENT));
 
         std::memcpy(dryOut, in, bufferSize);
         std::memcpy(wetOut, in, bufferSize);
@@ -178,8 +178,8 @@ namespace SparkyStudios::Audio::Amplitude
             out[i] = AM_CLAMP_AUDIO_SAMPLE(out[i]);
         }
 
-        amMemory->Free(MemoryPoolKind::Amplimix, dryOut);
-        amMemory->Free(MemoryPoolKind::Amplimix, wetOut);
+        ampoolfree(MemoryPoolKind::Amplimix, dryOut);
+        ampoolfree(MemoryPoolKind::Amplimix, wetOut);
     }
 
     void ProcessorMixer::ProcessInterleaved(
@@ -199,8 +199,8 @@ namespace SparkyStudios::Audio::Amplitude
             return;
         }
 
-        const auto dryOut = static_cast<AmAudioSampleBuffer>(amMemory->Malign(MemoryPoolKind::Amplimix, bufferSize, AM_SIMD_ALIGNMENT));
-        const auto wetOut = static_cast<AmAudioSampleBuffer>(amMemory->Malign(MemoryPoolKind::Amplimix, bufferSize, AM_SIMD_ALIGNMENT));
+        const auto dryOut = static_cast<AmAudioSampleBuffer>(ampoolmalign(MemoryPoolKind::Amplimix, bufferSize, AM_SIMD_ALIGNMENT));
+        const auto wetOut = static_cast<AmAudioSampleBuffer>(ampoolmalign(MemoryPoolKind::Amplimix, bufferSize, AM_SIMD_ALIGNMENT));
 
         std::memcpy(dryOut, in, bufferSize);
         std::memcpy(wetOut, in, bufferSize);
@@ -214,7 +214,7 @@ namespace SparkyStudios::Audio::Amplitude
             out[i] = AM_CLAMP_AUDIO_SAMPLE(out[i]);
         }
 
-        amMemory->Free(MemoryPoolKind::Amplimix, dryOut);
-        amMemory->Free(MemoryPoolKind::Amplimix, wetOut);
+        ampoolfree(MemoryPoolKind::Amplimix, dryOut);
+        ampoolfree(MemoryPoolKind::Amplimix, wetOut);
     }
 } // namespace SparkyStudios::Audio::Amplitude

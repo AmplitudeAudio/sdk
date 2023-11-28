@@ -67,12 +67,12 @@ namespace SparkyStudios::Audio::Amplitude
 
     FilterInstance* WaveShaperFilter::CreateInstance()
     {
-        return amnew(WaveShaperFilterInstance, this);
+        return ampoolnew(MemoryPoolKind::Filtering, WaveShaperFilterInstance, this);
     }
 
     void WaveShaperFilter::DestroyInstance(FilterInstance* instance)
     {
-        amdelete(WaveShaperFilterInstance, (WaveShaperFilterInstance*)instance);
+        ampooldelete(MemoryPoolKind::Filtering, WaveShaperFilterInstance, (WaveShaperFilterInstance*)instance);
     }
 
     WaveShaperFilterInstance::WaveShaperFilterInstance(WaveShaperFilter* parent)

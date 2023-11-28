@@ -84,12 +84,12 @@ namespace SparkyStudios::Audio::Amplitude
 
     FilterInstance* LofiFilter::CreateInstance()
     {
-        return amnew(LofiFilterInstance, this);
+        return ampoolnew(MemoryPoolKind::Filtering, LofiFilterInstance, this);
     }
 
     void LofiFilter::DestroyInstance(FilterInstance* instance)
     {
-        amdelete(LofiFilterInstance, (LofiFilterInstance*)instance);
+        ampooldelete(MemoryPoolKind::Filtering, LofiFilterInstance, (LofiFilterInstance*)instance);
     }
 
     LofiFilterInstance::LofiFilterInstance(LofiFilter* parent)

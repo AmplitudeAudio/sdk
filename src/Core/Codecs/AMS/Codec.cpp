@@ -373,8 +373,8 @@ namespace SparkyStudios::Audio::Amplitude::Codecs
         const AmUInt32 frameSize = format.GetFrameSize();
         const AmUInt32 samplesPerBlock = (blockSize - numChannels * 4) * (numChannels ^ 3) + 1;
 
-        auto pcm_block = static_cast<AmInt16Buffer>(amMemory->Malloc(MemoryPoolKind::Codec, samplesPerBlock * frameSize));
-        auto adpcm_block = static_cast<AmUInt8Buffer>(amMemory->Malloc(MemoryPoolKind::Codec, blockSize));
+        auto pcm_block = static_cast<AmInt16Buffer>(ampoolmalloc(MemoryPoolKind::Codec, samplesPerBlock * frameSize));
+        auto adpcm_block = static_cast<AmUInt8Buffer>(ampoolmalloc(MemoryPoolKind::Codec, blockSize));
 
         if (!pcm_block || !adpcm_block)
         {
@@ -383,15 +383,15 @@ namespace SparkyStudios::Audio::Amplitude::Codecs
 
         if (file->Read(adpcm_block, blockSize) != blockSize)
         {
-            amMemory->Free(MemoryPoolKind::Codec, pcm_block);
-            amMemory->Free(MemoryPoolKind::Codec, adpcm_block);
+            ampoolfree(MemoryPoolKind::Codec, pcm_block);
+            ampoolfree(MemoryPoolKind::Codec, adpcm_block);
             return 0;
         }
 
         if (Decompress(pcm_block, adpcm_block, blockSize, numChannels) != samplesPerBlock)
         {
-            amMemory->Free(MemoryPoolKind::Codec, pcm_block);
-            amMemory->Free(MemoryPoolKind::Codec, adpcm_block);
+            ampoolfree(MemoryPoolKind::Codec, pcm_block);
+            ampoolfree(MemoryPoolKind::Codec, adpcm_block);
             return 0;
         }
 
@@ -399,8 +399,8 @@ namespace SparkyStudios::Audio::Amplitude::Codecs
 
         memcpy(out, pcm_block + oo, length * frameSize);
 
-        amMemory->Free(MemoryPoolKind::Codec, pcm_block);
-        amMemory->Free(MemoryPoolKind::Codec, adpcm_block);
+        ampoolfree(MemoryPoolKind::Codec, pcm_block);
+        ampoolfree(MemoryPoolKind::Codec, adpcm_block);
 
         return length;
     }
@@ -417,7 +417,7 @@ namespace SparkyStudios::Audio::Amplitude::Codecs
         const AmUInt32 numChannels = format.GetNumChannels();
         AmUInt32 blockSize = (samplesPerBlock - 1) / (numChannels ^ 3) + (numChannels * 4);
 
-        auto adpcm_block = static_cast<AmUInt8Buffer>(amMemory->Malloc(MemoryPoolKind::Codec, blockSize));
+        auto adpcm_block = static_cast<AmUInt8Buffer>(ampoolmalloc(MemoryPoolKind::Codec, blockSize));
 
         Context* ctx = nullptr;
 
@@ -485,13 +485,13 @@ namespace SparkyStudios::Audio::Amplitude::Codecs
 
             if (num_bytes != blockSize)
             {
-                amMemory->Free(MemoryPoolKind::Codec, adpcm_block);
+                ampoolfree(MemoryPoolKind::Codec, adpcm_block);
                 return 0;
             }
 
             if (file->Write(adpcm_block, blockSize) != blockSize)
             {
-                amMemory->Free(MemoryPoolKind::Codec, adpcm_block);
+                ampoolfree(MemoryPoolKind::Codec, adpcm_block);
                 return 0;
             }
 
@@ -504,7 +504,7 @@ namespace SparkyStudios::Audio::Amplitude::Codecs
             FreeContext(ctx);
         }
 
-        amMemory->Free(MemoryPoolKind::Codec, adpcm_block);
+        ampoolfree(MemoryPoolKind::Codec, adpcm_block);
 
         return offset;
     }

@@ -157,12 +157,12 @@ namespace SparkyStudios::Audio::Amplitude
 
         SoundProcessorInstance* CreateInstance() override
         {
-            return amnew(ObstructionProcessorInstance);
+            return ampoolnew(MemoryPoolKind::Filtering, ObstructionProcessorInstance);
         }
 
         void DestroyInstance(SoundProcessorInstance* instance) override
         {
-            amdelete(ObstructionProcessorInstance, (ObstructionProcessorInstance*)instance);
+            ampooldelete(MemoryPoolKind::Filtering, ObstructionProcessorInstance, (ObstructionProcessorInstance*)instance);
         }
     } gObstructionProcessor; // NOLINT(cert-err58-cpp)
 } // namespace SparkyStudios::Audio::Amplitude

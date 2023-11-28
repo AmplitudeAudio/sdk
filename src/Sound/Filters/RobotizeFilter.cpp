@@ -75,12 +75,12 @@ namespace SparkyStudios::Audio::Amplitude
 
     FilterInstance* RobotizeFilter::CreateInstance()
     {
-        return amnew(RobotizeFilterInstance, this);
+        return ampoolnew(MemoryPoolKind::Filtering, RobotizeFilterInstance, this);
     }
 
     void RobotizeFilter::DestroyInstance(FilterInstance* instance)
     {
-        amdelete(RobotizeFilterInstance, (RobotizeFilterInstance*)instance);
+        ampooldelete(MemoryPoolKind::Filtering, RobotizeFilterInstance, (RobotizeFilterInstance*)instance);
     }
 
     RobotizeFilterInstance::RobotizeFilterInstance(RobotizeFilter* parent)

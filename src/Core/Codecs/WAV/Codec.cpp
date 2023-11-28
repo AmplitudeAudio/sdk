@@ -21,17 +21,17 @@ namespace SparkyStudios::Audio::Amplitude::Codecs
 {
     static void* onMalloc(size_t sz, void* pUserData)
     {
-        return amMemory->Malloc(MemoryPoolKind::Codec, sz);
+        return ampoolmalloc(MemoryPoolKind::Codec, sz);
     }
 
     static void* onRealloc(void* p, size_t sz, void* pUserData)
     {
-        return amMemory->Realloc(MemoryPoolKind::Codec, p, sz);
+        return ampoolrealloc(MemoryPoolKind::Codec, p, sz);
     }
 
     static void onFree(void* p, void* pUserData)
     {
-        amMemory->Free(MemoryPoolKind::Codec, p);
+        ampoolfree(MemoryPoolKind::Codec, p);
     }
 
     static size_t onRead(void* pUserData, void* pBufferOut, size_t bytesToRead)

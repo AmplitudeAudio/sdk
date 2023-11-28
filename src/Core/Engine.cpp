@@ -66,6 +66,16 @@ namespace SparkyStudios::Audio::Amplitude
         return config->mixer()->virtual_channels() + config->mixer()->active_channels();
     }
 
+    // Returns this channel to the free appropriate free list based on whether it's
+    // backed by a real channel or not.
+    static void InsertIntoFreeList(EngineInternalState* state, ChannelInternalState* channel)
+    {
+        channel->Remove();
+        channel->Reset();
+        FreeList* list = channel->IsReal() ? &state->real_channel_free_list : &state->virtual_channel_free_list;
+        list->push_front(*channel);
+    }
+
     Engine::Engine()
         : _configSrc()
         , _state(nullptr)
@@ -469,6 +479,9 @@ namespace SparkyStudios::Audio::Amplitude
 
         // Stop all sounds
         StopAll();
+
+        // Release channels
+        EraseFinishedSounds(_state);
 
         // Close the audio device through the driver
         _audioDriver->Close();
@@ -917,16 +930,6 @@ namespace SparkyStudios::Audio::Amplitude
         }
 
         return newChannel;
-    }
-
-    // Returns this channel to the free appropriate free list based on whether it's
-    // backed by a real channel or not.
-    static void InsertIntoFreeList(EngineInternalState* state, ChannelInternalState* channel)
-    {
-        channel->Remove();
-        channel->Reset();
-        FreeList* list = channel->IsReal() ? &state->real_channel_free_list : &state->virtual_channel_free_list;
-        list->push_front(*channel);
     }
 
     Channel Engine::Play(SwitchContainerHandle handle) const

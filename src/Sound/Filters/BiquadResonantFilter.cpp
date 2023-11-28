@@ -140,12 +140,12 @@ namespace SparkyStudios::Audio::Amplitude
 
     FilterInstance* BiquadResonantFilter::CreateInstance()
     {
-        return amnew(BiquadResonantFilterInstance, this);
+        return ampoolnew(MemoryPoolKind::Filtering, BiquadResonantFilterInstance, this);
     }
 
     void BiquadResonantFilter::DestroyInstance(FilterInstance* instance)
     {
-        amdelete(BiquadResonantFilterInstance, (BiquadResonantFilterInstance*)instance);
+        ampooldelete(MemoryPoolKind::Filtering, BiquadResonantFilterInstance, (BiquadResonantFilterInstance*)instance);
     }
 
     BiquadResonantFilterInstance::BiquadResonantFilterInstance(BiquadResonantFilter* parent)

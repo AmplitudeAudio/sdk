@@ -85,12 +85,12 @@ namespace SparkyStudios::Audio::Amplitude
 
     FilterInstance* FreeverbFilter::CreateInstance()
     {
-        return amnew(FreeverbFilterInstance, this);
+        return ampoolnew(MemoryPoolKind::Filtering, FreeverbFilterInstance, this);
     }
 
     void FreeverbFilter::DestroyInstance(FilterInstance* instance)
     {
-        amdelete(FreeverbFilterInstance, (FreeverbFilterInstance*)instance);
+        ampooldelete(MemoryPoolKind::Filtering, FreeverbFilterInstance, (FreeverbFilterInstance*)instance);
     }
 
     FreeverbFilterInstance::FreeverbFilterInstance(FreeverbFilter* parent)

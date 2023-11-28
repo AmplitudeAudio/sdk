@@ -183,12 +183,12 @@ namespace SparkyStudios::Audio::Amplitude
 
         SoundProcessorInstance* CreateInstance() override
         {
-            return amnew(EnvironmentProcessorInstance);
+            return ampoolnew(MemoryPoolKind::Filtering, EnvironmentProcessorInstance);
         }
 
         void DestroyInstance(SoundProcessorInstance* instance) override
         {
-            amdelete(EnvironmentProcessorInstance, (EnvironmentProcessorInstance*)instance);
+            ampooldelete(MemoryPoolKind::Filtering, EnvironmentProcessorInstance, (EnvironmentProcessorInstance*)instance);
         }
     } gEnvironmentProcessor; // NOLINT(cert-err58-cpp)
 } // namespace SparkyStudios::Audio::Amplitude

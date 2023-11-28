@@ -130,12 +130,12 @@ namespace SparkyStudios::Audio::Amplitude
 
         ResamplerInstance* CreateInstance() override
         {
-            return amnew(LibsamplerateResamplerInstance);
+            return ampoolnew(MemoryPoolKind::Filtering, LibsamplerateResamplerInstance);
         }
 
         void DestroyInstance(ResamplerInstance* instance) override
         {
-            amdelete(LibsamplerateResamplerInstance, (LibsamplerateResamplerInstance*)instance);
+            ampooldelete(MemoryPoolKind::Filtering, LibsamplerateResamplerInstance, (LibsamplerateResamplerInstance*)instance);
         }
     } gLibsamplerateResampler; // NOLINT(cert-err58-cpp)
 } // namespace SparkyStudios::Audio::Amplitude

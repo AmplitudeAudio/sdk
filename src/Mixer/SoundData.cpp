@@ -56,9 +56,9 @@ namespace SparkyStudios::Audio::Amplitude
 #endif // AM_SIMD_INTRINSICS
         chunk->memoryPool = pool;
 #if defined(AM_SIMD_INTRINSICS)
-        chunk->buffer = static_cast<AmAudioFrameBuffer>(amMemory->Malign(pool, chunk->size, AM_SIMD_ALIGNMENT));
+        chunk->buffer = static_cast<AmAudioFrameBuffer>(ampoolmalign(pool, chunk->size, AM_SIMD_ALIGNMENT));
 #else
-        chunk->buffer = static_cast<AmAudioFrameBuffer>(amMemory->Malloc(pool, chunk->size));
+        chunk->buffer = static_cast<AmAudioFrameBuffer>(ampoolmalloc(pool, chunk->size));
 #endif // AM_SIMD_INTRINSICS
 
         if (chunk->buffer == nullptr)
@@ -84,7 +84,7 @@ namespace SparkyStudios::Audio::Amplitude
         if (buffer == nullptr)
             return;
 
-        amMemory->Free(memoryPool, buffer);
+        ampoolfree(memoryPool, buffer);
         buffer = nullptr;
     }
 

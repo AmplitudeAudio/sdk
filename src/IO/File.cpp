@@ -185,7 +185,7 @@ namespace SparkyStudios::Audio::Amplitude
     MemoryFile::~MemoryFile()
     {
         if (m_dataOwned && m_dataPtr != nullptr)
-            amMemory->Free(MemoryPoolKind::IO, m_dataPtr);
+            ampoolfree(MemoryPoolKind::IO, m_dataPtr);
 
         m_dataPtr = nullptr;
         m_dataSize = 0;
@@ -263,7 +263,7 @@ namespace SparkyStudios::Audio::Amplitude
             return AM_ERROR_INVALID_PARAMETER;
 
         if (m_dataOwned && m_dataPtr != nullptr)
-            amMemory->Free(MemoryPoolKind::IO, m_dataPtr);
+            ampoolfree(MemoryPoolKind::IO, m_dataPtr);
 
         m_dataPtr = nullptr;
         m_offset = 0;
@@ -273,7 +273,7 @@ namespace SparkyStudios::Audio::Amplitude
         if (copy)
         {
             m_dataOwned = true;
-            m_dataPtr = static_cast<AmUInt8Buffer>(amMemory->Malloc(MemoryPoolKind::IO, size));
+            m_dataPtr = static_cast<AmUInt8Buffer>(ampoolmalloc(MemoryPoolKind::IO, size));
 
             if (m_dataPtr == nullptr)
                 return AM_ERROR_OUT_OF_MEMORY;
@@ -294,7 +294,7 @@ namespace SparkyStudios::Audio::Amplitude
             return AM_ERROR_INVALID_PARAMETER;
 
         if (m_dataOwned && m_dataPtr != nullptr)
-            amMemory->Free(MemoryPoolKind::IO, m_dataPtr);
+            ampoolfree(MemoryPoolKind::IO, m_dataPtr);
 
         m_dataPtr = nullptr;
         m_offset = 0;
@@ -304,7 +304,7 @@ namespace SparkyStudios::Audio::Amplitude
             return res;
 
         m_dataSize = df.Length();
-        m_dataPtr = static_cast<AmUInt8Buffer>(amMemory->Malloc(MemoryPoolKind::IO, m_dataSize));
+        m_dataPtr = static_cast<AmUInt8Buffer>(ampoolmalloc(MemoryPoolKind::IO, m_dataSize));
 
         if (m_dataPtr == nullptr)
             return AM_ERROR_OUT_OF_MEMORY;
@@ -323,13 +323,13 @@ namespace SparkyStudios::Audio::Amplitude
             return AM_ERROR_INVALID_PARAMETER;
 
         if (m_dataOwned && m_dataPtr != nullptr)
-            amMemory->Free(MemoryPoolKind::IO, m_dataPtr);
+            ampoolfree(MemoryPoolKind::IO, m_dataPtr);
 
         m_dataPtr = nullptr;
         m_offset = file->Position();
 
         m_dataSize = file->Length();
-        m_dataPtr = static_cast<AmUInt8Buffer>(amMemory->Malloc(MemoryPoolKind::IO, m_dataSize));
+        m_dataPtr = static_cast<AmUInt8Buffer>(ampoolmalloc(MemoryPoolKind::IO, m_dataSize));
 
         if (m_dataPtr == nullptr)
             return AM_ERROR_OUT_OF_MEMORY;

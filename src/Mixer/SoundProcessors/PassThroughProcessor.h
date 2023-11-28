@@ -60,12 +60,12 @@ namespace SparkyStudios::Audio::Amplitude
 
         SoundProcessorInstance* CreateInstance() override
         {
-            return amnew(PassThroughProcessorInstance);
+            return ampoolnew(MemoryPoolKind::Filtering, PassThroughProcessorInstance);
         }
 
         void DestroyInstance(SoundProcessorInstance* instance) override
         {
-            amdelete(PassThroughProcessorInstance, (PassThroughProcessorInstance*)instance);
+            ampooldelete(MemoryPoolKind::Filtering, PassThroughProcessorInstance, (PassThroughProcessorInstance*)instance);
         }
     } gPassThroughProcessor; // NOLINT(cert-err58-cpp)
 } // namespace SparkyStudios::Audio::Amplitude

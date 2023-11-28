@@ -34,17 +34,17 @@ namespace SparkyStudios::Audio::Amplitude
 
     static void* ma_malloc(size_t sz, void*)
     {
-        return amMemory->Malloc(MemoryPoolKind::Amplimix, sz);
+        return ampoolmalloc(MemoryPoolKind::Amplimix, sz);
     }
 
     static void* ma_realloc(void* p, size_t sz, void*)
     {
-        return amMemory->Realloc(MemoryPoolKind::Amplimix, p, sz);
+        return ampoolrealloc(MemoryPoolKind::Amplimix, p, sz);
     }
 
     static void ma_free(void* p, void*)
     {
-        amMemory->Free(MemoryPoolKind::Amplimix, p);
+        ampoolfree(MemoryPoolKind::Amplimix, p);
     }
 
     static ma_result ma_resampling_backend_get_heap_size_ls(void* pUserData, const ma_resampler_config* pConfig, size_t* pHeapSizeInBytes)
@@ -391,7 +391,7 @@ namespace SparkyStudios::Audio::Amplitude
 
         if (const auto* pipeline = config->mixer()->pipeline(); pipeline != nullptr && pipeline->size() > 0)
         {
-            _pipeline = amnew(ProcessorPipeline);
+            _pipeline = ampoolnew(MemoryPoolKind::Filtering, ProcessorPipeline);
 
             for (flatbuffers::uoffset_t i = 0, l = pipeline->size(); i < l; ++i)
             {
@@ -417,7 +417,7 @@ namespace SparkyStudios::Audio::Amplitude
                             continue;
                         }
 
-                        auto* mixer = amnew(ProcessorMixer);
+                        auto* mixer = ampoolnew(MemoryPoolKind::Filtering, ProcessorMixer);
                         mixer->SetDryProcessor(dryProcessor, p->dry());
                         mixer->SetWetProcessor(wetProcessor, p->wet());
 
@@ -465,7 +465,7 @@ namespace SparkyStudios::Audio::Amplitude
 
         _audioThreadMutex = nullptr;
 
-        amdelete(ProcessorPipeline, _pipeline);
+        ampooldelete(MemoryPoolKind::Filtering, ProcessorPipeline, _pipeline);
         _pipeline = nullptr;
 
         for (auto& layer : _layers)

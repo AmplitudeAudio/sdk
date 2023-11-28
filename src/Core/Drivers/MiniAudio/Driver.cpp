@@ -20,17 +20,17 @@ namespace SparkyStudios::Audio::Amplitude::Drivers
 {
     static void* ma_malloc(size_t sz, void* pUserData)
     {
-        return amMemory->Malloc(MemoryPoolKind::Amplimix, sz);
+        return ampoolmalloc(MemoryPoolKind::Amplimix, sz);
     }
 
     static void* ma_realloc(void* p, size_t sz, void* pUserData)
     {
-        return amMemory->Realloc(MemoryPoolKind::Amplimix, p, sz);
+        return ampoolrealloc(MemoryPoolKind::Amplimix, p, sz);
     }
 
     static void ma_free(void* p, void* pUserData)
     {
-        amMemory->Free(MemoryPoolKind::Amplimix, p);
+        ampoolfree(MemoryPoolKind::Amplimix, p);
     }
 
     static void miniaudio_log(void* pUserData, ma_uint32 level, const char* pMessage)
@@ -287,7 +287,7 @@ namespace SparkyStudios::Audio::Amplitude::Drivers
             deviceConfig.playback.format = ma_format_from_amplitude(device.mRequestedOutputFormat);
             deviceConfig.playback.channels = channelsCount;
             deviceConfig.playback.pChannelMap =
-                static_cast<ma_channel*>(amMemory->Malloc(MemoryPoolKind::Engine, channelsCount * sizeof(ma_channel)));
+                static_cast<ma_channel*>(ampoolmalloc(MemoryPoolKind::Engine, channelsCount * sizeof(ma_channel)));
             deviceConfig.playback.channelMixMode = ma_channel_mix_mode_rectangular;
             deviceConfig.sampleRate = device.mRequestedOutputSampleRate;
             deviceConfig.dataCallback = miniaudio_mixer;
@@ -321,7 +321,7 @@ namespace SparkyStudios::Audio::Amplitude::Drivers
                 m_deviceDescription.mDeviceID, m_deviceDescription.mDeviceName, m_deviceDescription.mDeviceOutputSampleRate,
                 m_deviceDescription.mDeviceOutputChannels, m_deviceDescription.mDeviceOutputFormat);
 
-            amMemory->Free(MemoryPoolKind::Engine, deviceConfig.playback.pChannelMap);
+            ampoolfree(MemoryPoolKind::Engine, deviceConfig.playback.pChannelMap);
         }
 
         if (ma_device_is_started(&_device) == MA_FALSE && ma_device_start(&_device) != MA_SUCCESS)
