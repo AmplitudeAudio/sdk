@@ -79,7 +79,7 @@ jobs:
             artifact: "amplitude_audio_sdk_windows_mingw_x64.7z"
             archiver: "7z a"
 
-          - name: "Ubuntu_Latest_GCC"
+          - name: "Ubuntu Latest GCC"
             os: ubuntu-latest
             artifact: "amplitude_audio_sdk_linux_gcc_x64.7z"
             archiver: "7z a"

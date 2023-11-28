@@ -38,6 +38,7 @@ namespace SparkyStudios::Audio::Amplitude
     public:
         explicit DuckBusInternalState(BusInternalState* parent)
             : _parent(parent)
+            , _initialized(false)
             , _bus(nullptr)
             , _targetGain(0.0f)
             , _fadeInDuration(0.0)
@@ -46,7 +47,6 @@ namespace SparkyStudios::Audio::Amplitude
             , _faderOutFactory(nullptr)
             , _faderIn(nullptr)
             , _faderOut(nullptr)
-            , _initialized(false)
             , _transitionPercentage(0.0)
         {}
 

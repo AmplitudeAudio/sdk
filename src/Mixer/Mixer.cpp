@@ -25,7 +25,7 @@
 namespace SparkyStudios::Audio::Amplitude
 {
 #if defined(AM_SIMD_INTRINSICS)
-    constexpr AmUInt32 kProcessedFramesCount = AmAudioFrame::length;
+    constexpr AmUInt32 kProcessedFramesCount = AmAudioFrame::size;
 #else
     constexpr AmUInt32 kProcessedFramesCount = 1;
 #endif // AM_SIMD_INTRINSICS
@@ -322,11 +322,7 @@ namespace SparkyStudios::Audio::Amplitude
     static void MixMono(AmUInt64 index, const AmAudioFrame& gain, const SoundChunk* in, AmAudioFrameBuffer out)
     {
 #if defined(AM_SIMD_INTRINSICS)
-#if defined(AM_SIMD_ARCH_FMA3)
-        out[index] = simdpp::fmadd(in->buffer[index], gain, out[index]);
-#else
-        out[index] = simdpp::add(out[index], simdpp::mul(in->buffer[index], gain));
-#endif // AM_SIMD_ARCH_FMA3
+        out[index] = xsimd::fma(in->buffer[index], gain, out[index]);
 #else
         out[index] = out[index] + in->buffer[index] * gain;
 #endif // AM_SIMD_INTRINSICS
@@ -336,13 +332,8 @@ namespace SparkyStudios::Audio::Amplitude
         AmUInt64 index, const AmAudioFrame& lGain, const AmAudioFrame& rGain, const SoundChunk* in, AmAudioFrameBuffer out)
     {
 #if defined(AM_SIMD_INTRINSICS)
-#if defined(AM_SIMD_ARCH_FMA3)
-        out[index + 0] = simdpp::fmadd(in->buffer[index + 0], lGain, out[index + 0]);
-        out[index + 1] = simdpp::fmadd(in->buffer[index + 1], lGain, out[index + 1]);
-#else
-        out[index + 0] = simdpp::add(out[index + 0], simdpp::mul(in->buffer[index + 0], lGain));
-        out[index + 1] = simdpp::add(out[index + 1], simdpp::mul(in->buffer[index + 1], rGain));
-#endif // AM_SIMD_ARCH_FMA3
+        out[index + 0] = xsimd::fma(in->buffer[index + 0], lGain, out[index + 0]);
+        out[index + 1] = xsimd::fma(in->buffer[index + 1], lGain, out[index + 1]);
 #else
         out[index + 0] = out[index + 0] + in->buffer[index + 0] * lGain;
         out[index + 1] = out[index + 1] + in->buffer[index + 1] * rGain;
@@ -509,8 +500,7 @@ namespace SparkyStudios::Audio::Amplitude
 
         const auto numChannels = static_cast<AmUInt16>(_device.mRequestedOutputChannels);
 #if defined(AM_SIMD_INTRINSICS)
-        const auto lower = simdpp::make_float<AmAudioFrame>(AM_AUDIO_SAMPLE_MIN),
-                   upper = simdpp::make_float<AmAudioFrame>(AM_AUDIO_SAMPLE_MAX);
+        const auto lower = xsimd::batch(AM_AUDIO_SAMPLE_MIN), upper = xsimd::batch(AM_AUDIO_SAMPLE_MAX);
 #else
         const AmAudioFrame lower = AM_AUDIO_SAMPLE_MIN, upper = AM_AUDIO_SAMPLE_MAX;
 #endif // AM_SIMD_INTRINSICS
@@ -565,7 +555,7 @@ namespace SparkyStudios::Audio::Amplitude
         for (AmUInt32 i = 0; i < aSize; i++)
         {
 #if defined(AM_SIMD_INTRINSICS)
-            align->buffer[i] = simdpp::min(simdpp::max(align->buffer[i], lower), upper);
+            align->buffer[i] = xsimd::min(xsimd::max(align->buffer[i], lower), upper);
 #else
             align->buffer[i] = std::min(std::max(align->buffer[i], lower), upper);
 #endif // AM_SIMD_INTRINSICS
@@ -954,7 +944,7 @@ namespace SparkyStudios::Audio::Amplitude
         const AmVec2 g = AMPLIMIX_LOAD(&layer->gain);
         const float gain = AMPLIMIX_LOAD(&_masterGain);
 #if defined(AM_SIMD_INTRINSICS)
-        const auto mxGain = simdpp::make_float<AmAudioFrame>(g.X * gain, g.Y * gain);
+        const auto mxGain = xsimd::zip_hi(xsimd::batch(g.X * gain), xsimd::batch(g.Y * gain));
         const auto& lGain = mxGain;
         const auto& rGain = mxGain;
 #else

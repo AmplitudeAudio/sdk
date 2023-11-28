@@ -26,6 +26,10 @@
     {
       "name": "dylib",
       "version>=": "2.2.1"
+    },
+    {
+      "name": "xsimd",
+      "version>=": "11.1.0"
     }
   ]
 }

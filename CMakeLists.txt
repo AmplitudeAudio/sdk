@@ -77,22 +77,22 @@ find_package(SampleRate CONFIG REQUIRED)
 
 # ------------------------------------------------------------------------------
 
-# Setup libsimdpp
+# Setup xsimd
 # ------------------------------------------------------------------------------
-# Check what instruction sets the current host supports. Use them for testing
-include("dependencies/libsimdpp/cmake/SimdppMultiarch.cmake")
-message(STATUS "Checking instruction sets to run tests for on this host...")
-simdpp_get_runnable_archs(NATIVE_ARCHS)
+find_package(xsimd CONFIG REQUIRED)
+
+# Check what instruction sets the current host supports.
+include(DetectCPUArchitecture)
+am_buildsystem_get_runnable_archs(NATIVE_ARCHS)
 
 foreach(ARCH ${NATIVE_ARCHS})
-    simdpp_get_arch_info(CXX_FLAGS DEFINES_LIST SUFFIX ${ARCH})
+    am_buildsystem_get_arch_info(CXX_FLAGS DEFINES_LIST SUFFIX ${ARCH})
 
     separate_arguments(CXX_FLAGS)
     add_compile_options(${CXX_FLAGS})
 endforeach()
 
 # ------------------------------------------------------------------------------
-set(SIMDPP_INCLUDE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/dependencies/libsimdpp)
 
 # Generate source files for all FlatBuffers schema files under the src
 # directory.
@@ -328,7 +328,6 @@ set(SA_SOURCE
 # Includes for this project
 include_directories(src
     include
-    ${SIMDPP_INCLUDE_DIR}
     ${AM_FLATBUFFERS_GENERATED_INCLUDES_DIR}
 )
 
@@ -355,7 +354,7 @@ foreach(build_type ${AM_BUILDSYSTEM_TYPE})
 
     target_compile_definitions(${build_type} PRIVATE AM_BUILDSYSTEM_BUILDING_AMPLITUDE)
 
-    target_link_libraries(${build_type} PRIVATE flatbuffers::flatbuffers SampleRate::samplerate)
+    target_link_libraries(${build_type} PRIVATE flatbuffers::flatbuffers SampleRate::samplerate xsimd)
 
     add_dependencies(${build_type}
         generated_includes

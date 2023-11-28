@@ -40,7 +40,7 @@ namespace SparkyStudios::Audio::Amplitude
     SoundChunk* SoundChunk::CreateChunk(AmUInt64 frames, AmUInt16 channels, MemoryPoolKind pool)
     {
 #if defined(AM_SIMD_INTRINSICS)
-        const AmUInt64 alignedFrames = AM_VALUE_ALIGN(frames, AmAudioFrame::length);
+        const AmUInt64 alignedFrames = AM_VALUE_ALIGN(frames, AmAudioFrame::size);
 #else
         const AmUInt64 alignedFrames = frames;
 #endif // AM_SIMD_INTRINSICS
@@ -52,7 +52,7 @@ namespace SparkyStudios::Audio::Amplitude
         chunk->length = alignedLength;
         chunk->size = alignedLength * sizeof(AmReal32);
 #if defined(AM_SIMD_INTRINSICS)
-        chunk->samplesPerVector = AmAudioFrame::length / channels;
+        chunk->samplesPerVector = AmAudioFrame::size / channels;
 #endif // AM_SIMD_INTRINSICS
         chunk->memoryPool = pool;
 #if defined(AM_SIMD_INTRINSICS)
