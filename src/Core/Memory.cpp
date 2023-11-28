@@ -123,7 +123,7 @@ namespace SparkyStudios::Audio::Amplitude
         }
     }
 
-    AmVoidPtr MemoryManager::Malloc(MemoryPoolKind pool, AmSize size, const AmOsChar* file, AmUInt32 line)
+    AmVoidPtr MemoryManager::Malloc(MemoryPoolKind pool, AmSize size, const char* file, AmUInt32 line)
     {
 #if !defined(AM_NO_MEMORY_STATS)
         _memPoolsStats[pool].maxMemoryUsed.fetch_add(size, std::memory_order_relaxed);
@@ -140,7 +140,7 @@ namespace SparkyStudios::Audio::Amplitude
         return p;
     }
 
-    AmVoidPtr MemoryManager::Malign(MemoryPoolKind pool, AmSize size, AmUInt32 alignment, const AmOsChar* file, AmUInt32 line)
+    AmVoidPtr MemoryManager::Malign(MemoryPoolKind pool, AmSize size, AmUInt32 alignment, const char* file, AmUInt32 line)
     {
 #if !defined(AM_NO_MEMORY_STATS)
         _memPoolsStats[pool].maxMemoryUsed.fetch_add(size, std::memory_order_relaxed);
@@ -157,7 +157,7 @@ namespace SparkyStudios::Audio::Amplitude
         return p;
     }
 
-    AmVoidPtr MemoryManager::Realloc(MemoryPoolKind pool, AmVoidPtr address, AmSize size, const AmOsChar* file, AmUInt32 line)
+    AmVoidPtr MemoryManager::Realloc(MemoryPoolKind pool, AmVoidPtr address, AmSize size, const char* file, AmUInt32 line)
     {
         if (address == nullptr)
         {
@@ -183,7 +183,7 @@ namespace SparkyStudios::Audio::Amplitude
     }
 
     AmVoidPtr MemoryManager::Realign(
-        MemoryPoolKind pool, AmVoidPtr address, AmSize size, AmUInt32 alignment, const AmOsChar* file, AmUInt32 line)
+        MemoryPoolKind pool, AmVoidPtr address, AmSize size, AmUInt32 alignment, const char* file, AmUInt32 line)
     {
         if (address == nullptr)
         {
@@ -264,14 +264,14 @@ namespace SparkyStudios::Audio::Amplitude
     }
 #endif
 
-    ScopedMemoryAllocation::ScopedMemoryAllocation(MemoryPoolKind pool, AmSize size, const AmOsChar* file, AmUInt32 line)
+    ScopedMemoryAllocation::ScopedMemoryAllocation(MemoryPoolKind pool, AmSize size, const char* file, AmUInt32 line)
     {
         _pool = pool;
         _address = amMemory->Malloc(_pool, size, file, line);
     }
 
     ScopedMemoryAllocation::ScopedMemoryAllocation(
-        MemoryPoolKind pool, AmSize size, AmUInt32 alignment, const AmOsChar* file, AmUInt32 line)
+        MemoryPoolKind pool, AmSize size, AmUInt32 alignment, const char* file, AmUInt32 line)
     {
         _pool = pool;
         _address = amMemory->Malign(_pool, size, alignment, file, line);

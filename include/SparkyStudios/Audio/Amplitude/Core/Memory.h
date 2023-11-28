@@ -373,24 +373,24 @@ namespace SparkyStudios::Audio::Amplitude
         /**
          * @brief Allocates a block of memory with the given size in the given pool.
          */
-        [[nodiscard]] AmVoidPtr Malloc(MemoryPoolKind pool, AmSize size, const AmOsChar* file, AmUInt32 line);
+        [[nodiscard]] AmVoidPtr Malloc(MemoryPoolKind pool, AmSize size, const char* file, AmUInt32 line);
 
         /**
          * @brief Allocates a block of memory with the given size and the given alignment,
          * in the given pool.
          */
-        [[nodiscard]] AmVoidPtr Malign(MemoryPoolKind pool, AmSize size, AmUInt32 alignment, const AmOsChar* file, AmUInt32 line);
+        [[nodiscard]] AmVoidPtr Malign(MemoryPoolKind pool, AmSize size, AmUInt32 alignment, const char* file, AmUInt32 line);
 
         /**
          * @brief Updates the size of a previously allocated memory.
          */
-        [[nodiscard]] AmVoidPtr Realloc(MemoryPoolKind pool, AmVoidPtr address, AmSize size, const AmOsChar* file, AmUInt32 line);
+        [[nodiscard]] AmVoidPtr Realloc(MemoryPoolKind pool, AmVoidPtr address, AmSize size, const char* file, AmUInt32 line);
 
         /**
          * @brief Updates the size of a previously allocated aligned memory.
          */
         [[nodiscard]] AmVoidPtr Realign(
-            MemoryPoolKind pool, AmVoidPtr address, AmSize size, AmUInt32 alignment, const AmOsChar* file, AmUInt32 line);
+            MemoryPoolKind pool, AmVoidPtr address, AmSize size, AmUInt32 alignment, const char* file, AmUInt32 line);
 
         /**
          * @brief Releases an allocated memory block.
@@ -442,8 +442,8 @@ namespace SparkyStudios::Audio::Amplitude
     public:
         ScopedMemoryAllocation() = default;
 
-        ScopedMemoryAllocation(MemoryPoolKind pool, AmSize size, const AmOsChar* file, AmUInt32 line);
-        ScopedMemoryAllocation(MemoryPoolKind pool, AmSize size, AmUInt32 alignment, const AmOsChar* file, AmUInt32 line);
+        ScopedMemoryAllocation(MemoryPoolKind pool, AmSize size, const char* file, AmUInt32 line);
+        ScopedMemoryAllocation(MemoryPoolKind pool, AmSize size, AmUInt32 alignment, const char* file, AmUInt32 line);
 
         ~ScopedMemoryAllocation();
 
