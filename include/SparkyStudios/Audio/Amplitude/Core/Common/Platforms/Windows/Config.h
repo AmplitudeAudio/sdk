@@ -47,6 +47,9 @@
 #define AM_INLINE(_return_type_) __forceinline _return_type_
 #define AM_NO_INLINE(_return_type_) __declspec(noinline) _return_type_
 
+// Restrict keyword
+#define AM_RESTRICT __restrict
+
 // Alignment required for SIMD data processing
 #define AM_SIMD_ALIGNMENT 16
 #define AM_TYPE_ALIGN(_declaration_, _alignment_) __declspec(align(_alignment_)) _declaration_

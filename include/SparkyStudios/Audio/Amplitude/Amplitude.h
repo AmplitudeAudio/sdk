@@ -40,8 +40,10 @@
 #include <SparkyStudios/Audio/Amplitude/IO/FileSystem.h>
 
 #include <SparkyStudios/Audio/Amplitude/Math/Curve.h>
+#include <SparkyStudios/Audio/Amplitude/Math/FFT.h>
 #include <SparkyStudios/Audio/Amplitude/Math/HandmadeMath.h>
 #include <SparkyStudios/Audio/Amplitude/Math/Shape.h>
+#include <SparkyStudios/Audio/Amplitude/Math/SplitComplex.h>
 #include <SparkyStudios/Audio/Amplitude/Math/Utils.h>
 
 #include <SparkyStudios/Audio/Amplitude/Mixer/Resampler.h>

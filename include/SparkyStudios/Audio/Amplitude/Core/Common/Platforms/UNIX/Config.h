@@ -35,6 +35,13 @@
 #define AM_INLINE(_return_type_) inline _return_type_ __attribute__((always_inline))
 #define AM_NO_INLINE(_return_type_) _return_type_ __attribute__((noinline))
 
+// Restrict keyword
+#if defined(__GNUC__)
+#define AM_RESTRICT __restrict__
+#else
+#define AM_RESTRICT __restrict
+#endif
+
 // Alignment required for SIMD data processing
 #define AM_SIMD_ALIGNMENT 16
 #define AM_TYPE_ALIGN(_declaration_, _alignment_) _declaration_ __attribute__((aligned(_alignment_)))

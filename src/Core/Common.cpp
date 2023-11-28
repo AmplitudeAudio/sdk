@@ -102,6 +102,13 @@ namespace SparkyStudios::Audio::Amplitude
         m_data = reinterpret_cast<AmReal32Buffer>(m_basePtr);
     }
 
+    void AmAlignedReal32Buffer::Swap(AmAlignedReal32Buffer& a, AmAlignedReal32Buffer& b)
+    {
+        std::swap(a.m_floats, b.m_floats);
+        std::swap(a.m_data, b.m_data);
+        std::swap(a.m_basePtr, b.m_basePtr);
+    }
+
     AmAlignedReal32Buffer::~AmAlignedReal32Buffer()
     {
         Release();

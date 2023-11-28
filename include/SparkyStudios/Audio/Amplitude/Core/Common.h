@@ -166,6 +166,14 @@ namespace SparkyStudios::Audio::Amplitude
          */
         void Resize(AmUInt32 size);
 
+        /**
+         * @brief Swaps two buffers.
+         *
+         * @param a The first buffer.
+         * @param b The second buffer.
+         */
+        static void Swap(AmAlignedReal32Buffer& a, AmAlignedReal32Buffer& b);
+
         AmReal32& operator[](AmSize index)
         {
             AMPLITUDE_ASSERT(m_data && index < m_floats);
