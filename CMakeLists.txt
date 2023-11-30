@@ -112,6 +112,8 @@ build_flatbuffers("${FLATBUFFERS_SCHEMAS}"
 
 # Setup project source files.
 set(SA_SOURCE
+    include/SparkyStudios/Audio/Amplitude/Convolution/Convolver.h
+    include/SparkyStudios/Audio/Amplitude/Convolution/TwoStageConvolver.h
     include/SparkyStudios/Audio/Amplitude/Core/Common/Platforms/Android/Config.h
     include/SparkyStudios/Audio/Amplitude/Core/Common/Platforms/Android/Types.h
     include/SparkyStudios/Audio/Amplitude/Core/Common/Platforms/Linux/Config.h
@@ -164,6 +166,9 @@ set(SA_SOURCE
     include/SparkyStudios/Audio/Amplitude/Sound/Switch.h
     include/SparkyStudios/Audio/Amplitude/Sound/SwitchContainer.h
     include/SparkyStudios/Audio/Amplitude/Amplitude.h
+
+    src/Convolution/Convolver.cpp
+    src/Convolution/TwoStageConvolver.cpp
 
     src/Core/Codecs/AMS/Codec.cpp
     src/Core/Codecs/AMS/Codec.h

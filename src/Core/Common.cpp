@@ -55,7 +55,7 @@ namespace SparkyStudios::Audio::Amplitude
 
     void AmAlignedReal32Buffer::Clear() const
     {
-        std::memset(m_data, 0, sizeof(AmReal32) * m_floats);
+        std::memset(m_basePtr, 0, sizeof(AmReal32) * m_floats);
     }
 
     void AmAlignedReal32Buffer::Release()
@@ -76,7 +76,7 @@ namespace SparkyStudios::Audio::Amplitude
 
         if (this != &other)
         {
-            std::memcpy(m_data, other.m_data, m_floats * sizeof(AmReal32));
+            std::memcpy(m_basePtr, other.m_basePtr, m_floats * sizeof(AmReal32));
         }
     }
 

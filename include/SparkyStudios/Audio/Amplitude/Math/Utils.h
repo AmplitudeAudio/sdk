@@ -158,6 +158,23 @@ namespace SparkyStudios::Audio::Amplitude
 
         return (soundSpeed - vls * dopplerFactor) / (soundSpeed - vss * dopplerFactor);
     }
+
+    /**
+     * @brief Returns the next power of 2 of a given number.
+     *
+     * @param val The number.
+     *
+     * @return The next power of 2.
+     */
+    template<typename T>
+    AM_API_PRIVATE T NextPowerOf2(const T& val)
+    {
+        T nextPowerOf2 = 1;
+        while (nextPowerOf2 < val)
+            nextPowerOf2 *= 2;
+
+        return nextPowerOf2;
+    }
 } // namespace SparkyStudios::Audio::Amplitude
 
 #endif // SS_AMPLITUDE_AUDIO_MATH_UTILS_H

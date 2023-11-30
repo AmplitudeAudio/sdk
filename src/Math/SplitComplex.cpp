@@ -38,6 +38,9 @@ namespace SparkyStudios::Audio::Amplitude
 
     void SplitComplex::Resize(const AmSize newSize)
     {
+        if (newSize == _size)
+            return;
+
         _re.Resize(newSize);
         _im.Resize(newSize);
         _size = newSize;
