@@ -28,7 +28,7 @@ namespace SparkyStudios::Audio::Amplitude
     public:
         void Init(AmUInt16 channelCount, AmUInt32 sampleRateIn, AmUInt32 sampleRateOut, AmUInt64 frameCount) override
         {
-            _resampler = src_new(SRC_SINC_FASTEST, channelCount, nullptr);
+            _resampler = src_new(SRC_SINC_BEST_QUALITY, channelCount, nullptr);
 
             _numChannels = channelCount;
             _frameCount = frameCount;
