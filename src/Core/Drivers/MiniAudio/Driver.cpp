@@ -255,6 +255,7 @@ namespace SparkyStudios::Audio::Amplitude::Drivers
         config.pLog = &_log;
         config.allocationCallbacks = gAllocationCallbacks;
         config.pUserData = this;
+        config.threadPriority = ma_thread_priority_realtime;
 
         if (ma_context_init(nullptr, 0, &config, &_context) != MA_SUCCESS)
         {
