@@ -21,6 +21,7 @@
 /////////////////////////////////////////////////////////////////////
 // Standard Library
 
+#include <algorithm>
 #include <atomic>
 #include <cmath>
 #include <cstdlib>
