@@ -104,7 +104,7 @@ jobs:
 
       - name: Pack
         shell: bash
-        run: ${{ matrix.config.archiver }} ./${{ matrix.build_type }}_${{ matrix.config.artifact }} LICENSE README.md sdk
+        run: ${{ matrix.config.archiver }} ./${{ matrix.build_type }}_${{ matrix.config.artifact }} LICENSE NOTICE README.md sdk
 
       - name: Upload
         uses: actions/upload-artifact@v1
