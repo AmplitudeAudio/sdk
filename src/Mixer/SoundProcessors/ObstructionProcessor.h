@@ -85,56 +85,6 @@ namespace SparkyStudios::Audio::Amplitude
             }
         }
 
-        void ProcessInterleaved(
-            AmAudioSampleBuffer out,
-            AmConstAudioSampleBuffer in,
-            AmUInt64 frames,
-            AmSize bufferSize,
-            AmUInt16 channels,
-            AmUInt32 sampleRate,
-            SoundInstance* sound) override
-        {
-            const float obstruction = sound->GetObstruction();
-
-            if (out != in)
-                std::memcpy(out, in, bufferSize);
-
-            // Nothing to do if no obstruction
-            if (obstruction < kEpsilon)
-                return;
-
-            _lpfCurve.SetStart({ 0, sampleRate / 2.0f });
-            _lpfCurve.SetEnd({ 1, sampleRate / 2000.0f });
-
-            const auto& lpfCurve = amEngine->GetState()->obstruction_config.lpf;
-            const auto& gainCurve = amEngine->GetState()->obstruction_config.gain;
-
-            if (const AmReal32 lpf = lpfCurve.Get(obstruction); lpf > 0)
-            {
-                if (gObstructionFilters.find(sound->GetId()) == gObstructionFilters.end())
-                {
-                    auto lpFilter = BiquadResonantFilter();
-                    lpFilter.InitLowPass(std::ceil(_lpfCurve.Get(lpf)), 0.5f);
-                    gObstructionFilters[sound->GetId()] = lpFilter.CreateInstance();
-                }
-
-                // Update the filter coefficients
-                gObstructionFilters[sound->GetId()]->SetFilterParameter(BiquadResonantFilter::ATTRIBUTE_FREQUENCY, _lpfCurve.Get(lpf));
-
-                // Apply Low Pass Filter
-                gObstructionFilters[sound->GetId()]->ProcessInterleaved(out, frames, bufferSize, channels, sampleRate);
-            }
-
-            const AmReal32 gain = gainCurve.Get(obstruction);
-
-            // Apply Gain
-            for (AmUInt64 i = 0, l = frames * channels; i < l; i++)
-            {
-                out[i] = out[i] * gain;
-                out[i] = AM_CLAMP_AUDIO_SAMPLE(out[i]);
-            }
-        }
-
         void Cleanup(SoundInstance* sound) override
         {
             if (gObstructionFilters.find(sound->GetId()) == gObstructionFilters.end())
@@ -157,12 +107,12 @@ namespace SparkyStudios::Audio::Amplitude
 
         SoundProcessorInstance* CreateInstance() override
         {
-            return ampoolnew(MemoryPoolKind::Filtering, ObstructionProcessorInstance);
+            return ampoolnew(MemoryPoolKind::Amplimix, ObstructionProcessorInstance);
         }
 
         void DestroyInstance(SoundProcessorInstance* instance) override
         {
-            ampooldelete(MemoryPoolKind::Filtering, ObstructionProcessorInstance, (ObstructionProcessorInstance*)instance);
+            ampooldelete(MemoryPoolKind::Amplimix, ObstructionProcessorInstance, (ObstructionProcessorInstance*)instance);
         }
     } gObstructionProcessor; // NOLINT(cert-err58-cpp)
 } // namespace SparkyStudios::Audio::Amplitude

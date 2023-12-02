@@ -43,8 +43,7 @@ namespace SparkyStudios::Audio::Amplitude
         explicit FFTFilterInstance(FFTFilter* parent);
         ~FFTFilterInstance() override;
 
-        void ProcessChannel(
-            AmAudioSampleBuffer buffer, AmUInt16 channel, AmUInt64 frames, AmUInt16 channels, AmUInt32 sampleRate, bool isInterleaved)
+        void ProcessChannel(AmAudioSampleBuffer buffer, AmUInt16 channel, AmUInt64 frames, AmUInt16 channels, AmUInt32 sampleRate)
             override;
 
         virtual void ProcessFFTChannel(SplitComplex& fft, AmUInt16 channel, AmUInt64 frames, AmUInt16 channels, AmUInt32 sampleRate);

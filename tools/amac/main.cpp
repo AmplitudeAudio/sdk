@@ -174,19 +174,9 @@ static int process(const AmOsString& inFileName, const AmOsString& outFileName, 
             {
                 auto* resampler = static_cast<r8b::CDSPResampler16*>(resamplers[c]);
 
-                if (format.GetInterleaveType() == AM_SAMPLE_INTERLEAVED)
+                for (AmUInt64 i = 0; i < numSamples; i++)
                 {
-                    for (AmUInt64 i = 0; i < numSamples; i++)
-                    {
-                        input64[i] = static_cast<AmReal64>(pcmData[i * numChannels + c]);
-                    }
-                }
-                else
-                {
-                    for (AmUInt64 i = numSamples * c, m = numSamples * (c + 1); i < m; i++)
-                    {
-                        input64[i] = static_cast<AmReal64>(pcmData[i]);
-                    }
+                    input64[i] = static_cast<AmReal64>(pcmData[i * numChannels + c]);
                 }
 
                 AmReal64Buffer output = nullptr;
@@ -203,8 +193,7 @@ static int process(const AmOsString& inFileName, const AmOsString& outFileName, 
             numSamples = f;
 
             SoundFormat encodeFormat{};
-            encodeFormat.SetAll(
-                sampleRate, numChannels, format.GetBitsPerSample(), numSamples, framesSize, AM_SAMPLE_FORMAT_INT, AM_SAMPLE_INTERLEAVED);
+            encodeFormat.SetAll(sampleRate, numChannels, format.GetBitsPerSample(), numSamples, framesSize, AM_SAMPLE_FORMAT_INT);
 
             encoder->SetFormat(encodeFormat);
             if (!encoder->Open(outputFile))
@@ -286,7 +275,7 @@ static int process(const AmOsString& inFileName, const AmOsString& outFileName, 
             16, // always decode in 16 bits per sample
             amsFormat.GetFramesCount(),
             amsFormat.GetNumChannels() * sizeof(AmInt16), // Always decode in 16 bits signed integers
-            AM_SAMPLE_FORMAT_INT, AM_SAMPLE_INTERLEAVED);
+            AM_SAMPLE_FORMAT_INT);
 
         encoder->SetFormat(wavFormat);
         if (!encoder->Open(outputFile))
@@ -304,8 +293,7 @@ static int process(const AmOsString& inFileName, const AmOsString& outFileName, 
 
         AmUInt64 numSamples = decoder->GetFormat().GetFramesCount();
 
-        auto* adpcmData =
-            static_cast<AmInt16Buffer>(ampoolmalloc(MemoryPoolKind::Codec, numSamples * decoder->GetFormat().GetFrameSize()));
+        auto* adpcmData = static_cast<AmInt16Buffer>(ampoolmalloc(MemoryPoolKind::Codec, numSamples * decoder->GetFormat().GetFrameSize()));
 
         if (decoder->Load(adpcmData) != numSamples || !decoder->Close())
         {

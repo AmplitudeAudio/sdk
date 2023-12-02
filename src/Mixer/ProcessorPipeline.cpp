@@ -25,7 +25,7 @@ namespace SparkyStudios::Audio::Amplitude
     ProcessorPipeline::~ProcessorPipeline()
     {
         for (const auto& processor : _processors)
-            ampooldelete(MemoryPoolKind::Filtering, SoundProcessorInstance, processor);
+            ampooldelete(MemoryPoolKind::Amplimix, SoundProcessorInstance, processor);
 
         _processors.clear();
     }
@@ -61,24 +61,6 @@ namespace SparkyStudios::Audio::Amplitude
         for (auto&& p : _processors)
         {
             p->Process(out, cIn, frames, bufferSize, channels, sampleRate, sound);
-            cIn = out;
-        }
-    }
-
-    void ProcessorPipeline::ProcessInterleaved(
-        AmAudioSampleBuffer out,
-        AmConstAudioSampleBuffer in,
-        AmUInt64 frames,
-        AmSize bufferSize,
-        AmUInt16 channels,
-        AmUInt32 sampleRate,
-        SoundInstance* sound)
-    {
-        AmConstAudioSampleBuffer cIn = in;
-
-        for (auto&& p : _processors)
-        {
-            p->ProcessInterleaved(out, cIn, frames, bufferSize, channels, sampleRate, sound);
             cIn = out;
         }
     }

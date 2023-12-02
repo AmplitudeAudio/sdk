@@ -178,7 +178,7 @@ namespace SparkyStudios::Audio::Amplitude
     }
 
     void BiquadResonantFilterInstance::ProcessChannel(
-        AmAudioSampleBuffer buffer, AmUInt16 channel, AmUInt64 frames, AmUInt16 channels, AmUInt32 sampleRate, bool isInterleaved)
+        AmAudioSampleBuffer buffer, AmUInt16 channel, AmUInt64 frames, AmUInt16 channels, AmUInt32 sampleRate)
     {
         if (m_numParamsChanged &
                 (1 << BiquadResonantFilter::ATTRIBUTE_FREQUENCY | 1 << BiquadResonantFilter::ATTRIBUTE_RESONANCE |
@@ -191,7 +191,7 @@ namespace SparkyStudios::Audio::Amplitude
 
         m_numParamsChanged = 0;
 
-        FilterInstance::ProcessChannel(buffer, channel, frames, channels, sampleRate, isInterleaved);
+        FilterInstance::ProcessChannel(buffer, channel, frames, channels, sampleRate);
     }
 
     AmAudioSample BiquadResonantFilterInstance::ProcessSample(AmAudioSample sample, AmUInt16 channel, AmUInt32 sampleRate)

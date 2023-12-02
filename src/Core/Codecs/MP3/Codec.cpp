@@ -82,8 +82,7 @@ namespace SparkyStudios::Audio::Amplitude::Codecs
 
         m_format.SetAll(
             _mp3.sampleRate, _mp3.channels, 0, framesCount, _mp3.channels * sizeof(AmAudioSample),
-            AM_SAMPLE_FORMAT_FLOAT, // This codec always read frames as float32 values
-            AM_SAMPLE_INTERLEAVED // dr_mp3 always read interleaved frames
+            AM_SAMPLE_FORMAT_FLOAT // This codec always read frames as float32 values
         );
 
         _initialized = true;

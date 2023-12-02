@@ -248,15 +248,6 @@ namespace SparkyStudios::Audio::Amplitude
     };
 
     /**
-     * @brief Enumerates the list of possible channel layouts.
-     */
-    enum AM_INTERLEAVE_TYPE : AmUInt8
-    {
-        AM_SAMPLE_INTERLEAVED,
-        AM_SAMPLE_NON_INTERLEAVED,
-    };
-
-    /**
      * @brief Enumerates the list of states in a fader.
      */
     enum AM_FADER_STATE : AmInt8
@@ -281,8 +272,7 @@ namespace SparkyStudios::Audio::Amplitude
             AmUInt32 bitsPerSample,
             AmUInt64 framesCount,
             AmUInt32 frameSize,
-            AM_SAMPLE_FORMAT sampleType,
-            AM_INTERLEAVE_TYPE interleaveType);
+            AM_SAMPLE_FORMAT sampleType);
 
         /**
          * @brief Get the sample rate.
@@ -344,16 +334,6 @@ namespace SparkyStudios::Audio::Amplitude
             return _sampleType;
         }
 
-        /**
-         * @brief Get the interleave type.
-         *
-         * @return AM_INTERLEAVE_TYPE
-         */
-        [[nodiscard]] AM_INLINE(AM_INTERLEAVE_TYPE) GetInterleaveType() const
-        {
-            return _interleaveType;
-        }
-
     private:
         AmUInt32 _sampleRate = 0;
         AmUInt16 _numChannels = 0;
@@ -361,7 +341,6 @@ namespace SparkyStudios::Audio::Amplitude
         AmUInt64 _framesCount = 0;
         AmUInt32 _frameSize = 0;
         AM_SAMPLE_FORMAT _sampleType = AM_SAMPLE_FORMAT_FLOAT;
-        AM_INTERLEAVE_TYPE _interleaveType = AM_SAMPLE_INTERLEAVED;
     };
 } // namespace SparkyStudios::Audio::Amplitude
 

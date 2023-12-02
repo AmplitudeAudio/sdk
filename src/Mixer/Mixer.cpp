@@ -1047,22 +1047,9 @@ namespace SparkyStudios::Audio::Amplitude
 
             const auto sampleRate = static_cast<AmUInt32>(std::ceil(layer->snd->format.GetSampleRate() / sampleRateRatio));
 
-            switch (layer->snd->format.GetInterleaveType())
-            {
-            case AM_SAMPLE_INTERLEAVED:
-                _pipeline->ProcessInterleaved(
-                    reinterpret_cast<AmAudioSampleBuffer>(out->buffer), reinterpret_cast<AmAudioSampleBuffer>(out->buffer), samples,
-                    out->size, reqChannels, sampleRate, layer->snd->sound.get());
-                break;
-            case AM_SAMPLE_NON_INTERLEAVED:
-                _pipeline->Process(
-                    reinterpret_cast<AmAudioSampleBuffer>(out->buffer), reinterpret_cast<AmAudioSampleBuffer>(out->buffer), samples,
-                    out->size, reqChannels, sampleRate, layer->snd->sound.get());
-                break;
-            default:
-                CallLogFunc("[WARNING] A bad sound data interleave type was encountered.\n");
-                break;
-            }
+            _pipeline->Process(
+                reinterpret_cast<AmAudioSampleBuffer>(out->buffer), reinterpret_cast<AmAudioSampleBuffer>(out->buffer), samples, out->size,
+                reqChannels, sampleRate, layer->snd->sound.get());
 
             /* */ AmReal32 position = cursor;
             const AmUInt64 start = layer->start;

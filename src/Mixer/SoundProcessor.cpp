@@ -119,10 +119,10 @@ namespace SparkyStudios::Audio::Amplitude
     }
 
     ProcessorMixer::ProcessorMixer()
-        : _dryProcessor(nullptr)
-        , _wetProcessor(nullptr)
-        , _dry(0)
+        : _wetProcessor(nullptr)
+        , _dryProcessor(nullptr)
         , _wet(0)
+        , _dry(0)
     {}
 
     ProcessorMixer::~ProcessorMixer()
@@ -171,42 +171,6 @@ namespace SparkyStudios::Audio::Amplitude
 
         _dryProcessor->Process(dryOut, in, frames, bufferSize, channels, sampleRate, sound);
         _wetProcessor->Process(wetOut, in, frames, bufferSize, channels, sampleRate, sound);
-
-        for (AmUInt64 i = 0, l = frames * channels; i < l; i++)
-        {
-            out[i] = dryOut[i] * _dry + (wetOut[i] - dryOut[i]) * _wet;
-            out[i] = AM_CLAMP_AUDIO_SAMPLE(out[i]);
-        }
-
-        ampoolfree(MemoryPoolKind::Amplimix, dryOut);
-        ampoolfree(MemoryPoolKind::Amplimix, wetOut);
-    }
-
-    void ProcessorMixer::ProcessInterleaved(
-        AmAudioSampleBuffer out,
-        AmConstAudioSampleBuffer in,
-        AmUInt64 frames,
-        AmSize bufferSize,
-        AmUInt16 channels,
-        AmUInt32 sampleRate,
-        SoundInstance* sound)
-    {
-        if (_dryProcessor == nullptr || _wetProcessor == nullptr)
-        {
-            if (out != in)
-                std::memcpy(out, in, bufferSize);
-
-            return;
-        }
-
-        const auto dryOut = static_cast<AmAudioSampleBuffer>(ampoolmalign(MemoryPoolKind::Amplimix, bufferSize, AM_SIMD_ALIGNMENT));
-        const auto wetOut = static_cast<AmAudioSampleBuffer>(ampoolmalign(MemoryPoolKind::Amplimix, bufferSize, AM_SIMD_ALIGNMENT));
-
-        std::memcpy(dryOut, in, bufferSize);
-        std::memcpy(wetOut, in, bufferSize);
-
-        _dryProcessor->ProcessInterleaved(dryOut, in, frames, bufferSize, channels, sampleRate, sound);
-        _wetProcessor->ProcessInterleaved(wetOut, in, frames, bufferSize, channels, sampleRate, sound);
 
         for (AmUInt64 i = 0, l = frames * channels; i < l; i++)
         {

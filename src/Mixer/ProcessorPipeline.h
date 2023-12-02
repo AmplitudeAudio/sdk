@@ -41,15 +41,6 @@ namespace SparkyStudios::Audio::Amplitude
             AmUInt32 sampleRate,
             SoundInstance* sound) override;
 
-        void ProcessInterleaved(
-            AmAudioSampleBuffer out,
-            AmConstAudioSampleBuffer in,
-            AmUInt64 frames,
-            AmSize bufferSize,
-            AmUInt16 channels,
-            AmUInt32 sampleRate,
-            SoundInstance* sound) override;
-
         void Cleanup(SoundInstance* sound) override;
 
         AmSize GetOutputBufferSize(AmUInt64 frames, AmSize bufferSize, AmUInt16 channels, AmUInt32 sampleRate) override;

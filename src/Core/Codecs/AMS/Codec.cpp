@@ -276,9 +276,7 @@ namespace SparkyStudios::Audio::Amplitude::Codecs
             }
         }
 
-        format.SetAll(
-            sample_rate, num_channels, bits_per_sample, num_samples, num_channels * sizeof(AmInt16), AM_SAMPLE_FORMAT_INT,
-            AM_SAMPLE_INTERLEAVED);
+        format.SetAll(sample_rate, num_channels, bits_per_sample, num_samples, num_channels * sizeof(AmInt16), AM_SAMPLE_FORMAT_INT);
 
         blockSize = wave_header.head.blockAlign;
 

@@ -63,8 +63,7 @@ void FlacCodec::FlacDecoderInternal::metadata_callback(const ::FLAC__StreamMetad
 
         _decoder->m_format.SetAll(
             sample_rate, channels, bps, total_samples, channels * sizeof(AmAudioSample),
-            AM_SAMPLE_FORMAT_FLOAT, // This codec always read frames as float32 values
-            AM_SAMPLE_INTERLEAVED // flac always read interleaved frames
+            AM_SAMPLE_FORMAT_FLOAT
         );
     }
 }

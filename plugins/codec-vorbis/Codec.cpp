@@ -67,8 +67,7 @@ bool VorbisCodec::VorbisDecoder::Open(std::shared_ptr<File> file)
 
     m_format.SetAll(
         info->rate, info->channels, 16, framesCount, info->channels * sizeof(AmAudioSample),
-        AM_SAMPLE_FORMAT_FLOAT, // This codec always read frames as float32 values
-        AM_SAMPLE_INTERLEAVED // This codec always read interleaved frames
+        AM_SAMPLE_FORMAT_FLOAT
     );
 
     _initialized = true;

@@ -113,25 +113,6 @@ namespace SparkyStudios::Audio::Amplitude
         {
             for (AmUInt16 c = 0; c < channels; c++)
             {
-                _bufferOffset = _offset + c * _bufferLength;
-
-                const AmUInt64 o = f + c * frames;
-                buffer[o] = ProcessSample(buffer[o], c, sampleRate);
-            }
-
-            _offset = (_offset + 1) % _bufferLength;
-        }
-    }
-
-    void DelayFilterInstance::ProcessInterleaved(
-        AmAudioSampleBuffer buffer, AmUInt64 frames, AmUInt64 bufferSize, AmUInt16 channels, AmUInt32 sampleRate)
-    {
-        InitBuffer(channels, sampleRate);
-
-        for (AmUInt64 f = 0; f < frames; f++)
-        {
-            for (AmUInt16 c = 0; c < channels; c++)
-            {
                 _bufferOffset = _offset * channels + c;
 
                 const AmUInt64 o = f * channels + c;

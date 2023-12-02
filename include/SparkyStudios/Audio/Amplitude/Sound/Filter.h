@@ -133,11 +133,8 @@ namespace SparkyStudios::Audio::Amplitude
         virtual void AdvanceFrame(AmTime delta_time);
 
         virtual void Process(AmAudioSampleBuffer buffer, AmUInt64 frames, AmUInt64 bufferSize, AmUInt16 channels, AmUInt32 sampleRate);
-        virtual void ProcessInterleaved(
-            AmAudioSampleBuffer buffer, AmUInt64 frames, AmUInt64 bufferSize, AmUInt16 channels, AmUInt32 sampleRate);
 
-        virtual void ProcessChannel(
-            AmAudioSampleBuffer buffer, AmUInt16 channel, AmUInt64 frames, AmUInt16 channels, AmUInt32 sampleRate, bool isInterleaved);
+        virtual void ProcessChannel(AmAudioSampleBuffer buffer, AmUInt16 channel, AmUInt64 frames, AmUInt16 channels, AmUInt32 sampleRate);
 
         virtual AmAudioSample ProcessSample(AmAudioSample sample, AmUInt16 channel, AmUInt32 sampleRate);
 
@@ -146,7 +143,7 @@ namespace SparkyStudios::Audio::Amplitude
         virtual void SetFilterParameter(AmUInt32 attributeId, AmReal32 value);
 
     protected:
-        class Filter* m_parent;
+        Filter* m_parent;
 
         AmUInt32 m_numParams;
         AmUInt32 m_numParamsChanged;

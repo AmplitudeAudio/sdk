@@ -71,26 +71,6 @@ namespace SparkyStudios::Audio::Amplitude
         {
             for (AmUInt16 c = 0; c < channels; c++)
             {
-                const AmUInt64 o = i + c * frames;
-                buffer[o] = ProcessSample(buffer[o], c, sampleRate);
-            }
-
-            _offset = (_offset + 1) % _bufferLength;
-        }
-    }
-
-    void DCRemovalFilterInstance::ProcessInterleaved(
-        AmAudioSampleBuffer buffer, AmUInt64 frames, AmUInt64 bufferSize, AmUInt16 channels, AmUInt32 sampleRate)
-    {
-        if (_buffer == nullptr)
-        {
-            InitBuffer(channels, sampleRate);
-        }
-
-        for (AmInt64 i = 0; i < frames; i++)
-        {
-            for (AmUInt16 c = 0; c < channels; c++)
-            {
                 const AmUInt64 o = i * channels + c;
                 buffer[o] = ProcessSample(buffer[o], c, sampleRate);
             }

@@ -64,7 +64,7 @@ namespace SparkyStudios::Audio::Amplitude
     }
 
     void FFTFilterInstance::ProcessChannel(
-        AmAudioSampleBuffer buffer, AmUInt16 channel, AmUInt64 frames, AmUInt16 channels, AmUInt32 sampleRate, bool isInterleaved)
+        AmAudioSampleBuffer buffer, AmUInt16 channel, AmUInt64 frames, AmUInt16 channels, AmUInt32 sampleRate)
     {
         AmUInt32 offset = 0;
 
@@ -76,7 +76,7 @@ namespace SparkyStudios::Audio::Amplitude
 
             for (AmUInt32 i = 0; i < framesToProcess; i++)
             {
-                const AmUInt32 o = isInterleaved ? (offset + i) * channels + channel : offset + i;
+                const AmUInt32 o = (offset + i) * channels + channel;
 
                 _temp[i] = buffer[o];
             }
@@ -99,7 +99,7 @@ namespace SparkyStudios::Audio::Amplitude
 
             for (AmUInt32 i = 0; i < framesToProcess; i++)
             {
-                const AmUInt32 o = isInterleaved ? (offset + i) * channels + channel : offset + i;
+                const AmUInt32 o = (offset + i) * channels + channel;
 
                 const AmReal32 x = buffer[o];
                 /* */ AmReal32 y = _temp[i];

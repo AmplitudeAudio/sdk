@@ -113,19 +113,8 @@ namespace SparkyStudios::Audio::Amplitude
         _offset %= _bufferLength;
     }
 
-    void FlangerFilterInstance::ProcessInterleaved(
-        AmAudioSampleBuffer buffer, AmUInt64 frames, AmUInt64 bufferSize, AmUInt16 channels, AmUInt32 sampleRate)
-    {
-        InitBuffer(channels, sampleRate);
-
-        FilterInstance::ProcessInterleaved(buffer, frames, bufferSize, channels, sampleRate);
-
-        _offset += frames;
-        _offset %= _bufferLength;
-    }
-
     void FlangerFilterInstance::ProcessChannel(
-        AmAudioSampleBuffer buffer, AmUInt16 channel, AmUInt64 frames, AmUInt16 channels, AmUInt32 sampleRate, bool isInterleaved)
+        AmAudioSampleBuffer buffer, AmUInt16 channel, AmUInt64 frames, AmUInt16 channels, AmUInt32 sampleRate)
     {
         const auto maxSamples =
             static_cast<AmUInt32>(std::ceil(m_parameters[FlangerFilter::ATTRIBUTE_DELAY] * static_cast<AmReal32>(sampleRate)));
@@ -135,7 +124,7 @@ namespace SparkyStudios::Audio::Amplitude
 
         for (AmUInt64 f = 0; f < frames; f++)
         {
-            const AmUInt64 s = isInterleaved ? f * channels + channel : f + channel * frames;
+            const AmUInt64 s = f * channels + channel;
 
             const auto delay = static_cast<AmInt32>(std::floor(static_cast<AmReal64>(maxSamples) * (1 + std::cos(_index))) / 2);
             _index += i;

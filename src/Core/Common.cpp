@@ -126,8 +126,7 @@ namespace SparkyStudios::Audio::Amplitude
         AmUInt32 bitsPerSample,
         AmUInt64 framesCount,
         AmUInt32 frameSize,
-        AM_SAMPLE_FORMAT sampleType,
-        AM_INTERLEAVE_TYPE interleaveType)
+        AM_SAMPLE_FORMAT sampleType)
     {
         _sampleRate = sampleRate;
         _numChannels = numChannels;
@@ -135,6 +134,5 @@ namespace SparkyStudios::Audio::Amplitude
         _framesCount = framesCount;
         _frameSize = frameSize;
         _sampleType = sampleType;
-        _interleaveType = interleaveType;
     }
 } // namespace SparkyStudios::Audio::Amplitude

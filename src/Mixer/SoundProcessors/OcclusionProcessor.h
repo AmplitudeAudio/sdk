@@ -85,56 +85,6 @@ namespace SparkyStudios::Audio::Amplitude
             }
         }
 
-        void ProcessInterleaved(
-            AmAudioSampleBuffer out,
-            AmConstAudioSampleBuffer in,
-            AmUInt64 frames,
-            AmSize bufferSize,
-            AmUInt16 channels,
-            AmUInt32 sampleRate,
-            SoundInstance* sound) override
-        {
-            const float occlusion = sound->GetOcclusion();
-
-            if (out != in)
-                std::memcpy(out, in, bufferSize);
-
-            // Nothing to do if no occlusion
-            if (occlusion < kEpsilon)
-                return;
-
-            _lpfCurve.SetStart({ 0, sampleRate / 2.0f });
-            _lpfCurve.SetEnd({ 1, sampleRate / 2000.0f });
-
-            const auto& lpfCurve = amEngine->GetState()->occlusion_config.lpf;
-            const auto& gainCurve = amEngine->GetState()->occlusion_config.gain;
-
-            if (const AmReal32 lpf = lpfCurve.Get(occlusion); lpf > 0)
-            {
-                if (gOcclusionFilters.find(sound->GetId()) == gOcclusionFilters.end())
-                {
-                    auto lpFilter = BiquadResonantFilter();
-                    lpFilter.InitLowPass(std::ceil(_lpfCurve.Get(lpf)), 0.5f);
-                    gOcclusionFilters[sound->GetId()] = lpFilter.CreateInstance();
-                }
-
-                // Update the filter coefficients
-                gOcclusionFilters[sound->GetId()]->SetFilterParameter(BiquadResonantFilter::ATTRIBUTE_FREQUENCY, _lpfCurve.Get(lpf));
-
-                // Apply Low Pass Filter
-                gOcclusionFilters[sound->GetId()]->ProcessInterleaved(out, frames, bufferSize, channels, sampleRate);
-            }
-
-            const AmReal32 gain = gainCurve.Get(occlusion);
-
-            // Apply Gain
-            for (AmUInt64 i = 0, l = frames * channels; i < l; i++)
-            {
-                out[i] = out[i] * gain;
-                out[i] = AM_CLAMP_AUDIO_SAMPLE(out[i]);
-            }
-        }
-
         void Cleanup(SoundInstance* sound) override
         {
             if (gOcclusionFilters.find(sound->GetId()) == gOcclusionFilters.end())
@@ -157,12 +107,12 @@ namespace SparkyStudios::Audio::Amplitude
 
         SoundProcessorInstance* CreateInstance() override
         {
-            return ampoolnew(MemoryPoolKind::Filtering, OcclusionProcessorInstance);
+            return ampoolnew(MemoryPoolKind::Amplimix, OcclusionProcessorInstance);
         }
 
         void DestroyInstance(SoundProcessorInstance* instance) override
         {
-            ampooldelete(MemoryPoolKind::Filtering, OcclusionProcessorInstance, (OcclusionProcessorInstance*)instance);
+            ampooldelete(MemoryPoolKind::Amplimix, OcclusionProcessorInstance, (OcclusionProcessorInstance*)instance);
         }
     } gOcclusionProcessor; // NOLINT(cert-err58-cpp)
 } // namespace SparkyStudios::Audio::Amplitude
