@@ -27,10 +27,10 @@ namespace SparkyStudios::Audio::Amplitude
     {}
 
     SequenceScheduler::SequenceScheduler(const SequenceSoundSchedulerConfig* config)
-        : _config(config)
-        , _lastIndex(0)
+        : _lastIndex(0)
         , _stepMode(MODE_INCREMENT)
         , _definition(nullptr)
+        , _config(config)
     {}
 
     bool SequenceScheduler::Valid() const
@@ -40,12 +40,10 @@ namespace SparkyStudios::Audio::Amplitude
 
     void SequenceScheduler::Init(const CollectionDefinition* definition)
     {
-        Engine* engine = Engine::GetInstance();
-
         for (size_t i = 0; i < definition->sounds()->size(); ++i)
         {
             const auto* entry = definition->sounds()->GetAs<SequenceSchedulerCollectionEntry>(i);
-            _sounds.push_back(engine->GetSoundHandle(entry->sound()));
+            _sounds.push_back(amEngine->GetSoundHandle(entry->sound()));
         }
     }
 
@@ -53,10 +51,7 @@ namespace SparkyStudios::Audio::Amplitude
     {
         if (_lastIndex == _sounds.size() || _lastIndex == 0)
         {
-            SequenceSoundSchedulerEndBehavior onEnd =
-                _config != nullptr ? _config->end_behavior() : SequenceSoundSchedulerEndBehavior_Restart;
-
-            switch (onEnd)
+            switch (_config != nullptr ? _config->end_behavior() : SequenceSoundSchedulerEndBehavior_Restart)
             {
             default:
             case SequenceSoundSchedulerEndBehavior_Restart:

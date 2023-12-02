@@ -38,22 +38,22 @@ namespace SparkyStudios::Audio::Amplitude
         return _state->GetName();
     }
 
-    void Bus::SetGain(float gain) const
+    void Bus::SetGain(AmReal32 gain) const
     {
         return _state->SetUserGain(gain);
     }
 
-    float Bus::GetGain() const
+    AmReal32 Bus::GetGain() const
     {
         return _state->GetUserGain();
     }
 
-    void Bus::FadeTo(float gain, AmTime duration) const
+    void Bus::FadeTo(AmReal32 gain, AmTime duration) const
     {
         _state->FadeTo(gain, duration);
     }
 
-    float Bus::GetFinalGain() const
+    AmReal32 Bus::GetFinalGain() const
     {
         return _state->GetGain();
     }

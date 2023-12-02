@@ -161,7 +161,7 @@ namespace SparkyStudios::Audio::Amplitude
         BusInternalState* master_bus;
 
         // The gain applied to all buses.
-        float master_gain;
+        AmReal32 master_gain;
 
         // If true, the master gain is ignored and all channels have a gain of 0.
         bool mute;
@@ -293,7 +293,7 @@ namespace SparkyStudios::Audio::Amplitude
 
     // Given a playing sound, find where a new sound with the given priority should
     // be inserted into the list.
-    PriorityList::iterator FindInsertionPoint(PriorityList* list, float priority);
+    PriorityList::iterator FindInsertionPoint(PriorityList* list, AmReal32 priority);
 
     // Given a list of listeners and a location, find which listener is closest.
     // Additionally, return the square of the distance between the closest listener
@@ -301,7 +301,7 @@ namespace SparkyStudios::Audio::Amplitude
     // space.  Returns true on success, or false if the list was empty.
     bool BestListener(
         ListenerList::const_iterator* bestListener,
-        float* distanceSquared,
+        AmReal32* distanceSquared,
         AmVec3* listenerSpaceLocation,
         const ListenerList& listeners,
         const AmVec3& location);

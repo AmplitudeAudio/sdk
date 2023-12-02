@@ -52,7 +52,7 @@ namespace SparkyStudios::Audio::Amplitude
 
     FaderInstance* SwitchContainer::GetFaderIn(AmObjectID id) const
     {
-        if (_fadersIn.find(id) != _fadersIn.end())
+        if (_fadersIn.contains(id))
             return std::get<1>(_fadersIn.at(id));
 
         return nullptr;
@@ -60,7 +60,7 @@ namespace SparkyStudios::Audio::Amplitude
 
     FaderInstance* SwitchContainer::GetFaderOut(AmObjectID id) const
     {
-        if (_fadersOut.find(id) != _fadersOut.end())
+        if (_fadersOut.contains(id))
             return std::get<1>(_fadersOut.at(id));
 
         return nullptr;
@@ -132,10 +132,9 @@ namespace SparkyStudios::Audio::Amplitude
         m_gain = RtpcValue(definition->gain());
         m_priority = RtpcValue(definition->priority());
 
-        const auto& states = _switch->GetSwitchStates();
-        for (const auto& switchState : states)
+        for (const auto& states = _switch->GetSwitchStates(); const auto& switchState : states)
         {
-            if (_sounds.count(switchState.m_id) == 0)
+            if (!_sounds.contains(switchState.m_id))
             {
                 _sounds.insert({ switchState.m_id, std::vector<SwitchContainerItem>() });
             }
@@ -153,7 +152,7 @@ namespace SparkyStudios::Audio::Amplitude
                 return false;
             }
 
-            if (state->sound_map.count(id) == 0 && state->collection_map.count(id) == 0)
+            if (!state->sound_map.contains(id) && !state->collection_map.contains(id))
             {
                 CallLogFunc(
                     "[ERROR] SwitchContainer %s specifies an unknown sound object ID: %u. It's neither a Sound nor a Collection.",

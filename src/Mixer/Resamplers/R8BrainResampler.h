@@ -20,8 +20,6 @@
 #include <SparkyStudios/Audio/Amplitude/Amplitude.h>
 
 #include <Utils/Audio/Resampling/CDSPResampler.h>
-#include <Utils/miniaudio/miniaudio_utils.h>
-#include <Utils/Utils.h>
 
 namespace SparkyStudios::Audio::Amplitude
 {
@@ -39,14 +37,14 @@ namespace SparkyStudios::Audio::Amplitude
 
         bool Process(AmConstAudioSampleBuffer input, AmUInt64& inputFrames, AmAudioSampleBuffer output, AmUInt64& outputFrames) override
         {
-            auto input64 = static_cast<AmReal64Buffer>(ampoolmalloc(MemoryPoolKind::SoundData, inputFrames * sizeof(AmReal64)));
+            const auto input64 = static_cast<AmReal64Buffer>(ampoolmalloc(MemoryPoolKind::SoundData, inputFrames * sizeof(AmReal64)));
 
             for (AmUInt16 c = 0; c < _numChannels; c++)
             {
                 r8b::CDSPResampler16* resampler = _resamplers[c].get();
 
                 for (AmUInt64 i = 0; i < inputFrames; i++)
-                    input64[i] = (AmReal64)input[i * _numChannels + c];
+                    input64[i] = static_cast<AmReal64>(input[i * _numChannels + c]);
 
                 AmReal64Buffer output64 = nullptr;
                 outputFrames = resampler->process(input64, static_cast<AmInt32>(inputFrames), output64);
@@ -59,7 +57,7 @@ namespace SparkyStudios::Audio::Amplitude
                 }
 
                 for (AmUInt64 i = 0; i < outputFrames; i++)
-                    output[i * _numChannels + c] = (AmReal32)output64[i];
+                    output[i * _numChannels + c] = static_cast<AmReal32>(output64[i]);
             }
 
             ampoolfree(MemoryPoolKind::SoundData, input64);

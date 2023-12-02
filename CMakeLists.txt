@@ -248,6 +248,7 @@ set(SA_SOURCE
     src/Sound/Faders/EaseOutFader.h
     src/Sound/Faders/ExponentialFader.h
     src/Sound/Faders/LinearFader.h
+    src/Sound/Faders/SCurveFader.h
     src/Sound/Filters/BassBoostFilter.cpp
     src/Sound/Filters/BassBoostFilter.h
     src/Sound/Filters/BiquadResonantFilter.cpp

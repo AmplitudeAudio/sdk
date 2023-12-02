@@ -17,13 +17,13 @@
 namespace SparkyStudios::Audio::Amplitude
 {
     ListenerInternalState::ListenerInternalState()
-        : _inverseMatrix(AM_M4D(1))
+        : _id(kAmInvalidObjectId)
         , _location()
         , _direction()
         , _up()
-        , _id(kAmInvalidObjectId)
         , _lastLocation()
         , _velocity()
+        , _inverseMatrix(AM_M4D(1))
     {}
 
     AmListenerID ListenerInternalState::GetId() const

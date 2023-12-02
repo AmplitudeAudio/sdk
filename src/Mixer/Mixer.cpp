@@ -76,6 +76,7 @@ namespace SparkyStudios::Audio::Amplitude
         void* pUserData, ma_resampling_backend* pBackend, const ma_allocation_callbacks* pAllocationCallbacks)
     {
         AM_UNUSED(pUserData);
+        AM_UNUSED(pAllocationCallbacks);
 
         auto* pResampler = static_cast<ResamplerInstance*>(pBackend);
         pResampler->Clear();
@@ -334,7 +335,7 @@ namespace SparkyStudios::Audio::Amplitude
     {
 #if defined(AM_SIMD_INTRINSICS)
         out[index + 0] = xsimd::fma(in->buffer[index + 0], lGain, out[index + 0]);
-        out[index + 1] = xsimd::fma(in->buffer[index + 1], lGain, out[index + 1]);
+        out[index + 1] = xsimd::fma(in->buffer[index + 1], rGain, out[index + 1]);
 #else
         out[index + 0] = out[index + 0] + in->buffer[index + 0] * lGain;
         out[index + 1] = out[index + 1] + in->buffer[index + 1] * rGain;

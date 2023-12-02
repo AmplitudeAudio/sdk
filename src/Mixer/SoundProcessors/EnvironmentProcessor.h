@@ -48,8 +48,8 @@ namespace SparkyStudios::Audio::Amplitude
                 {
                     auto environments = entity.GetEnvironments();
                     std::vector<std::pair<AmEnvironmentID, AmReal32>> items(environments.begin(), environments.end());
-                    std::sort(
-                        items.begin(), items.end(),
+                    std::ranges::sort(
+                        items,
                         [](const std::pair<AmEnvironmentID, AmReal32>& a, const std::pair<AmEnvironmentID, AmReal32>& b) -> bool
                         {
                             return a.second > b.second;
@@ -65,13 +65,13 @@ namespace SparkyStudios::Audio::Amplitude
                             continue;
 
                         const Effect* effect = handle.GetEffect();
-                        if (gEnvironmentFilters.find(environment.first) == gEnvironmentFilters.end())
+                        if (!gEnvironmentFilters.contains(environment.first))
                         {
                             std::unordered_map<AmSoundID, EffectInstance*> map{};
                             gEnvironmentFilters[environment.first] = map;
                         }
 
-                        if (gEnvironmentFilters[environment.first].find(sound->GetId()) == gEnvironmentFilters[environment.first].end())
+                        if (!gEnvironmentFilters[environment.first].contains(sound->GetId()))
                         {
                             gEnvironmentFilters[environment.first][sound->GetId()] = effect->CreateInstance();
                         }
@@ -101,9 +101,8 @@ namespace SparkyStudios::Audio::Amplitude
             const Entity& entity = sound->GetChannel()->GetParentChannelState()->GetEntity();
             if (entity.Valid())
             {
-                auto environments = entity.GetEnvironments();
-                for (auto&& environment : environments)
-                    if (gEnvironmentFilters.find(environment.first) != gEnvironmentFilters.end())
+                for (const auto environments = entity.GetEnvironments(); auto&& environment : environments)
+                    if (gEnvironmentFilters.contains(environment.first))
                         gEnvironmentFilters[environment.first].erase(sound->GetId());
             }
         }

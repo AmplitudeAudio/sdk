@@ -102,13 +102,13 @@ namespace SparkyStudios::Audio::Amplitude
         /**
          * @brief Set the current GetGain of the real channel.
          */
-        void SetGain(float gain);
-        void SetGain(float gain, AmUInt32 layer);
+        void SetGain(AmReal32 gain);
+        void SetGain(AmReal32 gain, AmUInt32 layer);
 
         /**
          * @brief Get the current GetGain of the real channel.
          */
-        [[nodiscard]] float GetGain(AmUInt32 layer = kAmInvalidObjectId) const;
+        [[nodiscard]] AmReal32 GetGain(AmUInt32 layer = kAmInvalidObjectId) const;
 
         /**
          * @brief Set the pan for the sound. This should be a unit vector.
@@ -199,7 +199,7 @@ namespace SparkyStudios::Audio::Amplitude
         void SetOcclusion(AmReal32 occlusion);
 
     private:
-        void SetGainPan(float gain, float pan, AmUInt32 layer);
+        void SetGainPan(AmReal32 gain, AmReal32 pan, AmUInt32 layer);
         [[nodiscard]] AmUInt32 FindFreeLayer(AmUInt32 layerIndex = 0) const;
 
         AmChannelID _channelId;
@@ -208,8 +208,8 @@ namespace SparkyStudios::Audio::Amplitude
         std::map<AmUInt32, bool> _stream;
         std::map<AmUInt32, bool> _loop;
 
-        float _pan;
-        std::map<AmUInt32, float> _gain;
+        AmReal32 _pan;
+        std::map<AmUInt32, AmReal32> _gain;
         AmReal32 _pitch;
         AmReal32 _playSpeed;
 

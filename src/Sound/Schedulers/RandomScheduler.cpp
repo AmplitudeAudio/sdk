@@ -29,9 +29,9 @@ namespace SparkyStudios::Audio::Amplitude
     {}
 
     RandomScheduler::RandomScheduler(const RandomSoundSchedulerConfig* config)
-        : _config(config)
-        , _probabilitiesSum(0.0f)
+        : _probabilitiesSum(0.0f)
         , _definition(nullptr)
+        , _config(config)
         , _avoidRepeatStack()
     {}
 
@@ -42,18 +42,16 @@ namespace SparkyStudios::Audio::Amplitude
 
     void RandomScheduler::Init(const CollectionDefinition* definition)
     {
-        Engine* engine = Engine::GetInstance();
-
         _definition = definition;
         _probabilitiesSum = 0.0f;
 
-        flatbuffers::uoffset_t sample_count = definition->sounds() ? definition->sounds()->size() : 0;
+        const flatbuffers::uoffset_t sample_count = definition->sounds() ? definition->sounds()->size() : 0;
 
         for (flatbuffers::uoffset_t i = 0; i < sample_count; ++i)
         {
             const auto* entry = definition->sounds()->GetAs<RandomSchedulerCollectionEntry>(i);
             _probabilitiesSum += entry->weight();
-            _sounds.push_back(engine->GetSoundHandle(entry->sound()));
+            _sounds.push_back(amEngine->GetSoundHandle(entry->sound()));
         }
     }
 
@@ -68,14 +66,13 @@ namespace SparkyStudios::Audio::Amplitude
 
             if (selection <= 0)
             {
-                if (auto foundIt = std::find(toSkip.begin(), toSkip.end(), _sounds[i]->GetId()); foundIt != toSkip.end())
+                if (auto foundIt = std::ranges::find(toSkip, _sounds[i]->GetId()); foundIt != toSkip.end())
                     // Try to pick the next sound, since this one needs to be skipped
                     goto Pick;
 
                 if (_config->avoid_repeat())
                 {
-                    if (auto foundIt = std::find(_avoidRepeatStack.begin(), _avoidRepeatStack.end(), _sounds[i]);
-                        foundIt != _avoidRepeatStack.end())
+                    if (auto foundIt = std::ranges::find(_avoidRepeatStack, _sounds[i]); foundIt != _avoidRepeatStack.end())
                         // Try to pick the next sound, since this one has already been played
                         goto Pick;
                 }

@@ -62,7 +62,7 @@ namespace SparkyStudios::Audio::Amplitude
             return;
         }
 
-        if (const auto findIt = std::find(_states.begin(), _states.end(), state); findIt != _states.end())
+        if (const auto findIt = std::ranges::find(_states, state); findIt != _states.end())
         {
             _activeState = state;
         }
@@ -71,8 +71,8 @@ namespace SparkyStudios::Audio::Amplitude
     void Switch::SetState(AmObjectID id)
     {
         AMPLITUDE_ASSERT(_id != kAmInvalidObjectId);
-        if (const auto findIt = std::find_if(
-                _states.begin(), _states.end(),
+        if (const auto findIt = std::ranges::find_if(
+                _states,
                 [id](const SwitchState& state)
                 {
                     return state.m_id == id;
@@ -86,8 +86,8 @@ namespace SparkyStudios::Audio::Amplitude
     void Switch::SetState(const std::string& name)
     {
         AMPLITUDE_ASSERT(_id != kAmInvalidObjectId);
-        if (const auto findIt = std::find_if(
-                _states.begin(), _states.end(),
+        if (const auto findIt = std::ranges::find_if(
+                _states,
                 [name](const SwitchState& state)
                 {
                     return state.m_name == name;

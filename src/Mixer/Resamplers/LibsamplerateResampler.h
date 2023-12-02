@@ -118,7 +118,7 @@ namespace SparkyStudios::Audio::Amplitude
         AmUInt32 _sampleRateOut = 0;
         AmReal64 _sampleRatio = 0.0;
 
-        SRC_STATE* _resampler;
+        SRC_STATE* _resampler = nullptr;
     };
 
     [[maybe_unused]] static class LibsamplerateResampler final : public Resampler

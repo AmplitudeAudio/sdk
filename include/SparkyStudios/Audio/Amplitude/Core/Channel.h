@@ -129,14 +129,14 @@ namespace SparkyStudios::Audio::Amplitude
          *
          * @param gain The new gain value.
          */
-        void SetGain(float gain) const;
+        void SetGain(AmReal32 gain) const;
 
         /**
          * @brief Returns the gain on this Channel.
          *
          * @return Returns the gain.
          */
-        [[nodiscard]] float GetGain() const;
+        [[nodiscard]] AmReal32 GetGain() const;
 
         /**
          * @brief Returns the playback state of this Channel.

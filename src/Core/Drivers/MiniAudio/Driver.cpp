@@ -20,27 +20,36 @@ namespace SparkyStudios::Audio::Amplitude::Drivers
 {
     static void* ma_malloc(size_t sz, void* pUserData)
     {
+        AM_UNUSED(pUserData);
         return ampoolmalloc(MemoryPoolKind::Amplimix, sz);
     }
 
     static void* ma_realloc(void* p, size_t sz, void* pUserData)
     {
+        AM_UNUSED(pUserData);
         return ampoolrealloc(MemoryPoolKind::Amplimix, p, sz);
     }
 
     static void ma_free(void* p, void* pUserData)
     {
+        AM_UNUSED(pUserData);
         ampoolfree(MemoryPoolKind::Amplimix, p);
     }
 
     static void miniaudio_log(void* pUserData, ma_uint32 level, const char* pMessage)
     {
+        AM_UNUSED(pUserData);
+        AM_UNUSED(level);
+
         // TODO: Add support for log levels.
         CallLogFunc(pMessage);
     }
 
     static void miniaudio_mixer(ma_device* pDevice, AmVoidPtr pOutput, AmConstVoidPtr pInput, ma_uint32 frameCount)
     {
+        AM_UNUSED(pDevice);
+        AM_UNUSED(pInput);
+
         amEngine->GetMixer()->Mix(pOutput, frameCount);
     }
 
@@ -115,6 +124,7 @@ namespace SparkyStudios::Audio::Amplitude::Drivers
         void* pUserData, ma_resampling_backend* pBackend, const ma_allocation_callbacks* pAllocationCallbacks)
     {
         AM_UNUSED(pUserData);
+        AM_UNUSED(pAllocationCallbacks);
 
         auto* pResampler = static_cast<ResamplerInstance*>(pBackend);
         pResampler->Clear();

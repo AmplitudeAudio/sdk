@@ -53,7 +53,7 @@ namespace SparkyStudios::Audio::Amplitude
             return;
 
         auto& list = gEffectsList[_id];
-        list.erase(std::find(list.begin(), list.end(), instance));
+        list.erase(std::ranges::find(list, instance));
 
         ampooldelete(MemoryPoolKind::Engine, EffectInstance, instance);
     }

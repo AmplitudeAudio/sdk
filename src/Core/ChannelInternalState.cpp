@@ -256,7 +256,7 @@ namespace SparkyStudios::Audio::Amplitude
         }
     }
 
-    void ChannelInternalState::SetGain(const float gain)
+    void ChannelInternalState::SetGain(const AmReal32 gain)
     {
         if (_channelState == ChannelPlaybackState::FadingOut || _channelState == ChannelPlaybackState::FadingIn ||
             _channelState == ChannelPlaybackState::SwitchingState)
@@ -314,7 +314,7 @@ namespace SparkyStudios::Audio::Amplitude
         }
     }
 
-    float ChannelInternalState::Priority() const
+    AmReal32 ChannelInternalState::Priority() const
     {
         if (_switchContainer != nullptr)
         {
@@ -461,7 +461,7 @@ namespace SparkyStudios::Audio::Amplitude
                         continue;
                     }
 
-                    const float gain = out->GetFromTime(Engine::GetInstance()->GetTotalTime());
+                    const AmReal32 gain = out->GetFromTime(Engine::GetInstance()->GetTotalTime());
                     isAtLeastOneFadeOutRunning = true;
 
                     if (IsReal())
@@ -514,7 +514,7 @@ namespace SparkyStudios::Audio::Amplitude
                         continue;
                     }
 
-                    const float gain = in->GetFromTime(Engine::GetInstance()->GetTotalTime());
+                    const AmReal32 gain = in->GetFromTime(Engine::GetInstance()->GetTotalTime());
                     isAtLeastOneFadeInRunning = true;
 
                     if (IsReal())
@@ -541,7 +541,7 @@ namespace SparkyStudios::Audio::Amplitude
         {
             if (_fader != nullptr && _fader->GetState() == AM_FADER_STATE_ACTIVE)
             {
-                const float gain = _fader->GetFromTime(Engine::GetInstance()->GetTotalTime());
+                const AmReal32 gain = _fader->GetFromTime(Engine::GetInstance()->GetTotalTime());
 
                 if (IsReal())
                 {
@@ -625,7 +625,7 @@ namespace SparkyStudios::Audio::Amplitude
 
     AmReal32 ChannelInternalState::GetDopplerFactor(AmListenerID listener) const
     {
-        return _dopplerFactors.find(listener) != _dopplerFactors.end() ? _dopplerFactors.at(listener) : 1.0f;
+        return _dopplerFactors.contains(listener) ? _dopplerFactors.at(listener) : 1.0f;
     }
 
     void ChannelInternalState::UpdateState()

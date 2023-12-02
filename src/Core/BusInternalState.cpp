@@ -82,8 +82,8 @@ namespace SparkyStudios::Audio::Amplitude
         if (!_initialized)
             return; // Don't waste time with an uninitialized state.
 
-        bool playing = !_parent->_playingSoundList.empty();
-        float duckGain = _bus.GetState()->_duckGain;
+        const bool playing = !_parent->_playingSoundList.empty();
+        AmReal32 duckGain = _bus.GetState()->_duckGain;
 
         if (playing && _transitionPercentage <= 1.0)
         {
@@ -164,7 +164,7 @@ namespace SparkyStudios::Audio::Amplitude
         return _muted;
     }
 
-    void BusInternalState::FadeTo(float gain, AmTime duration)
+    void BusInternalState::FadeTo(AmReal32 gain, AmTime duration)
     {
         // Setup fader
         _targetUserGain = gain;
@@ -182,7 +182,7 @@ namespace SparkyStudios::Audio::Amplitude
         }
     }
 
-    void BusInternalState::AdvanceFrame(AmTime delta_time, float parent_gain) // NOLINT(misc-no-recursion)
+    void BusInternalState::AdvanceFrame(AmTime delta_time, AmReal32 parent_gain) // NOLINT(misc-no-recursion)
     {
         if (_gainFader->GetState() == AM_FADER_STATE_ACTIVE)
         {

@@ -83,14 +83,14 @@ namespace SparkyStudios::Audio::Amplitude
          *
          * @param gain The new gain value.
          */
-        void SetGain(float gain) const;
+        void SetGain(AmReal32 gain) const;
 
         /**
          * @brief Returns the user specified fain on this Bus.
          *
-         * @return float The user specified gain.
+         * @return AmReal32 The user specified gain.
          */
-        [[nodiscard]] float GetGain() const;
+        [[nodiscard]] AmReal32 GetGain() const;
 
         /**
          * @brief Fades to <code>gain</code> over <code>duration</code> seconds.
@@ -98,7 +98,7 @@ namespace SparkyStudios::Audio::Amplitude
          * @param gain The gain value to fade to.
          * @param duration The amount of time in seconds to take to reach the desired gain.
          */
-        void FadeTo(float gain, AmTime duration) const;
+        void FadeTo(AmReal32 gain, AmTime duration) const;
 
         /**
          * @brief Returns the final calculated gain on this Bus.
@@ -107,9 +107,9 @@ namespace SparkyStudios::Audio::Amplitude
          * definition file, the gain specified by the use, and the final gain of the
          * parent Bus.
          *
-         * @return float The final calculated gain.
+         * @return AmReal32 The final calculated gain.
          */
-        [[nodiscard]] float GetFinalGain() const;
+        [[nodiscard]] AmReal32 GetFinalGain() const;
 
         /**
          * @brief Sets the muted state of this Bus.

@@ -117,7 +117,7 @@ namespace SparkyStudios::Audio::Amplitude
     AmTinyAlignedReal32Buffer::AmTinyAlignedReal32Buffer()
     {
         AmUInt8Buffer basePtr = &m_actualData[0];
-        m_data = reinterpret_cast<AmReal32Buffer>(((size_t)basePtr + (AM_SIMD_ALIGNMENT - 1)) & ~(AM_SIMD_ALIGNMENT - 1));
+        m_data = reinterpret_cast<AmReal32Buffer>(reinterpret_cast<AmSize>(basePtr) + (AM_SIMD_ALIGNMENT - 1) & ~(AM_SIMD_ALIGNMENT - 1));
     }
 
     void SoundFormat::SetAll(

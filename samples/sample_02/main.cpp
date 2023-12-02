@@ -376,11 +376,10 @@ void SampleState::HandleInput()
         case SDL_MOUSEBUTTONUP:
             {
                 AmVec2 mouse_location(AM_V2(event.button.x, event.button.y));
-                SDL_Texture* texture;
 
-                texture = channel_texture_;
-                auto channel_iter = std::find_if(
-                    channel_icons_.begin(), channel_icons_.end(),
+                SDL_Texture* texture = channel_texture_;
+                auto channel_iter = std::ranges::find_if(
+                    channel_icons_,
                     [mouse_location, texture](const ChannelIcon& icon) -> bool
                     {
                         SDL_Rect rect;
@@ -395,8 +394,8 @@ void SampleState::HandleInput()
                 }
 
                 texture = listener_texture_;
-                auto listener_iter = std::find_if(
-                    listener_icons_.begin(), listener_icons_.end(),
+                auto listener_iter = std::ranges::find_if(
+                    listener_icons_,
                     [mouse_location, texture](const ListenerIcon& icon) -> bool
                     {
                         SDL_Rect rect;

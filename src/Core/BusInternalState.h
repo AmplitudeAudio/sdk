@@ -116,13 +116,13 @@ namespace SparkyStudios::Audio::Amplitude
 
         // Return the final gain after all modifiers have been applied (parent gain,
         // duck gain, bus gain, user gain).
-        [[nodiscard]] AM_INLINE(float) GetGain() const
+        [[nodiscard]] AM_INLINE(AmReal32) GetGain() const
         {
             return _muted ? 0.0f : _gain;
         }
 
         // Set the user gain.
-        void SetUserGain(const float user_gain)
+        void SetUserGain(const AmReal32 user_gain)
         {
             _userGain = user_gain;
             _targetUserGain = user_gain;
@@ -130,7 +130,7 @@ namespace SparkyStudios::Audio::Amplitude
         }
 
         // Return the user gain.
-        [[nodiscard]] AM_INLINE(float) GetUserGain() const
+        [[nodiscard]] AM_INLINE(AmReal32) GetUserGain() const
         {
             return _userGain;
         }
@@ -145,7 +145,7 @@ namespace SparkyStudios::Audio::Amplitude
         [[nodiscard]] bool IsMute() const;
 
         // Fade to the given gain over duration seconds.
-        void FadeTo(float gain, AmTime duration);
+        void FadeTo(AmReal32 gain, AmTime duration);
 
         // Resets the duck gain to 1.0f. Duck gain must be reset each frame before
         // modifying it.
@@ -184,7 +184,7 @@ namespace SparkyStudios::Audio::Amplitude
         void UpdateDuckGain(AmTime delta_time);
 
         // Recursively update the final gain of the bus.
-        void AdvanceFrame(AmTime delta_time, float parent_gain);
+        void AdvanceFrame(AmTime delta_time, AmReal32 parent_gain);
 
     private:
         friend class DuckBusInternalState;
@@ -206,10 +206,10 @@ namespace SparkyStudios::Audio::Amplitude
         DuckBusList _duckBuses;
 
         // The current user gain of this bus.
-        float _userGain;
+        AmReal32 _userGain;
 
         // The target user gain of this bus (used for fading).
-        float _targetUserGain;
+        AmReal32 _targetUserGain;
 
         Fader* _gainFaderFactory;
 
@@ -218,10 +218,10 @@ namespace SparkyStudios::Audio::Amplitude
 
         // The current _duckGain of this bus to be applied to all buses in
         // _duckBuses.
-        float _duckGain;
+        AmReal32 _duckGain;
 
         // The final gain to be applied to all sounds on this bus.
-        float _gain;
+        AmReal32 _gain;
 
         // The muted state of the bus.
         bool _muted;

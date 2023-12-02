@@ -89,8 +89,7 @@ namespace SparkyStudios::Audio::Amplitude
 
     Filter* Filter::Find(const std::string& name)
     {
-        FilterRegistry& filters = filterRegistry();
-        for (auto&& filter : filters)
+        for (const FilterRegistry& filters = filterRegistry(); auto&& filter : filters)
             if (filter.second->m_name == name)
                 return filter.second;
 

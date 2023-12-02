@@ -31,6 +31,7 @@ namespace SparkyStudios::Audio::Amplitude
     public:
         ObstructionProcessorInstance()
             : _lpfCurve()
+            , _lpFilter()
         {
             _lpfCurve.SetFader("Exponential");
         }
@@ -61,11 +62,10 @@ namespace SparkyStudios::Audio::Amplitude
 
             if (const AmReal32 lpf = lpfCurve.Get(obstruction); lpf > 0)
             {
-                if (gObstructionFilters.find(sound->GetId()) == gObstructionFilters.end())
+                if (!gObstructionFilters.contains(sound->GetId()))
                 {
-                    auto lpFilter = BiquadResonantFilter();
-                    lpFilter.InitLowPass(std::ceil(_lpfCurve.Get(lpf)), 0.5f);
-                    gObstructionFilters[sound->GetId()] = lpFilter.CreateInstance();
+                    _lpFilter.InitLowPass(std::ceil(_lpfCurve.Get(lpf)), 0.5f);
+                    gObstructionFilters[sound->GetId()] = _lpFilter.CreateInstance();
                 }
 
                 // Update the filter coefficients
@@ -87,7 +87,7 @@ namespace SparkyStudios::Audio::Amplitude
 
         void Cleanup(SoundInstance* sound) override
         {
-            if (gObstructionFilters.find(sound->GetId()) == gObstructionFilters.end())
+            if (!gObstructionFilters.contains(sound->GetId()))
                 return;
 
             delete gObstructionFilters[sound->GetId()];
@@ -96,6 +96,7 @@ namespace SparkyStudios::Audio::Amplitude
 
     private:
         CurvePart _lpfCurve;
+        BiquadResonantFilter _lpFilter;
     };
 
     [[maybe_unused]] static class ObstructionProcessor final : public SoundProcessor

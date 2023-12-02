@@ -73,8 +73,7 @@ namespace SparkyStudios::Audio::Amplitude
 
     Codec* Codec::FindCodecForFile(std::shared_ptr<File> file)
     {
-        const CodecRegistry& codecs = codecRegistry();
-        for (const auto& [_, codec] : codecs)
+        for (const CodecRegistry& codecs = codecRegistry(); const auto& [_, codec] : codecs)
             if (codec->CanHandleFile(file))
                 return codec;
 
