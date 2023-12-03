@@ -191,7 +191,8 @@ namespace SparkyStudios::Audio::Amplitude
          *        bank for loading. Call StartLoadingSoundFiles() to trigger loading
          *        of the sound files on a separate thread.
          *
-         * @param fileData The SoundBank flatbuffer binary data.
+         * @param ptr The pointer to the SoundBank flatbuffer binary data.
+         * @param size The size of the SoundBank flatbuffer binary data.
          *
          * @return true Returns true on success
          */
@@ -202,7 +203,8 @@ namespace SparkyStudios::Audio::Amplitude
          *        bank for loading. Call StartLoadingSoundFiles() to trigger loading
          *        of the sound files on a separate thread.
          *
-         * @param fileData The SoundBank flatbuffer binary data.
+         * @param ptr The pointer to the SoundBank flatbuffer binary data.
+         * @param size The size of the SoundBank flatbuffer binary data.
          * @param outID The ID of the loaded soundbank.
          *
          * @return true Returns true on success
@@ -1183,13 +1185,32 @@ namespace SparkyStudios::Audio::Amplitude
 
 #pragma endregion
 
+#pragma region Plugins Management
+
         /**
          * @brief Loads a plugin library from the given path.
-         * @param pluginsDirectoryPath The path plugins directory.
+         *
          * @param pluginLibraryName The name of the plugin library to load.
+         *
          * @return A handle to the loaded plugin library.
          */
-        static AmVoidPtr LoadPlugin(const AmOsString& pluginsDirectoryPath, const AmOsString& pluginLibraryName);
+        static AmVoidPtr LoadPlugin(const AmOsString& pluginLibraryName);
+
+        /**
+         * @brief Adds a path in the plugins search paths list.
+         *
+         * @param path The path to add in the plugins search paths list.
+         */
+        static void AddPluginSearchPath(const AmOsString& path);
+
+        /**
+         * @brief Removes a path from the plugins search paths list.
+         *
+         * @param path The path to remove from the plugins search path list.
+         */
+        static void RemovePluginSearchPath(const AmOsString& path);
+
+#pragma endregion
 
         /**
          * @brief Returns an unique instance of the Amplitude Engine.
@@ -1206,16 +1227,19 @@ namespace SparkyStudios::Audio::Amplitude
         Channel PlayScopedCollection(CollectionHandle handle, const Entity& entity, const AmVec3& location, float userGain) const;
         Channel PlayScopedSound(SoundHandle handle, const Entity& entity, const AmVec3& location, float userGain) const;
 
+        // The lis of paths in which search for plugins.
+        static std::set<AmOsString> _pluginSearchPaths;
+
         // Hold the engine config file contents.
         AmString _configSrc;
 
         // The current state of the engine.
         EngineInternalState* _state;
 
-        // The default audio listener
+        // The default audio listener.
         ListenerInternalState* _defaultListener;
 
-        // The file loader implementation
+        // The file loader implementation.
         FileSystem* _fs;
 
         // The audio driver used by the engine.

@@ -75,6 +75,25 @@ static void run(AmVoidPtr param)
     ctx->fileLoader.SetBasePath(AM_OS_STRING("./assets"));
     amEngine->SetFileSystem(&ctx->fileLoader);
 
+    const auto sdkPath = std::filesystem::path(std::getenv("AM_SDK_PATH"));
+
+    Engine::AddPluginSearchPath(AM_OS_STRING("./assets/plugins"));
+#if defined(AM_WINDOWS_VERSION)
+    Engine::AddPluginSearchPath(sdkPath / AM_OS_STRING("lib/win/plugins"));
+#elif defined(AM_LINUX_VERSION)
+    Engine::AddPluginSearchPath(sdkPath / AM_OS_STRING("lib/linux/plugins"));
+#elif defined(AM_OSX_VERSION)
+    Engine::AddPluginSearchPath(sdkPath / AM_OS_STRING("lib/osx/plugins"));
+#endif
+
+#if defined(_DEBUG) || defined(DEBUG) || (defined(__GNUC__) && !defined(__OPTIMIZE__))
+    Engine::LoadPlugin(AM_OS_STRING("AmplitudeVorbisCodecPlugin_d"));
+    Engine::LoadPlugin(AM_OS_STRING("AmplitudeFlacCodecPlugin_d"));
+#else
+    Engine::LoadPlugin(AM_OS_STRING("AmplitudeVorbisCodecPlugin"));
+    Engine::LoadPlugin(AM_OS_STRING("AmplitudeFlacCodecPlugin"));
+#endif
+
     // Initialize Amplitude.
     if (!amEngine->Initialize(AM_OS_STRING("audio_config.amconfig")))
         return;

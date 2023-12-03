@@ -43,6 +43,8 @@ namespace SparkyStudios::Audio::Amplitude
 
     static AmUniquePtr<MemoryPoolKind::Engine, Engine> gAmplitude = nullptr;
 
+    std::set<AmOsString> Engine::_pluginSearchPaths = {};
+
     bool LoadFile(const std::shared_ptr<File>& file, AmString* dest)
     {
         if (!file->IsValid())
@@ -103,7 +105,7 @@ namespace SparkyStudios::Audio::Amplitude
         gLoadedPlugins.clear();
     }
 
-    AmVoidPtr Engine::LoadPlugin(const AmOsString& pluginsDirectoryPath, const AmOsString& pluginLibraryName)
+    AmVoidPtr Engine::LoadPlugin(const AmOsString& pluginLibraryName)
     {
         if (pluginLibraryName.empty())
         {
@@ -111,8 +113,42 @@ namespace SparkyStudios::Audio::Amplitude
             return nullptr;
         }
 
+        AmOsString pluginsDirectoryPath = std::filesystem::current_path();
+        const auto& finalName = AM_STRING_TO_OS_STRING(dylib::filename_components::prefix) + pluginLibraryName +
+            AM_STRING_TO_OS_STRING(dylib::filename_components::suffix);
+
+        bool foundPath = false;
+
+        {
+            DiskFileSystem fs;
+            fs.SetBasePath(pluginsDirectoryPath);
+
+            if (const auto realPath = fs.ResolvePath(pluginsDirectoryPath); fs.Exists(fs.Join({ realPath, finalName })))
+            {
+                pluginsDirectoryPath = realPath;
+                foundPath = true;
+            }
+
+            for (const auto& path : _pluginSearchPaths)
+            {
+                if (const auto realPath = fs.ResolvePath(path); fs.Exists(fs.Join({ realPath, finalName })))
+                {
+                    pluginsDirectoryPath = realPath;
+                    foundPath = true;
+                    break;
+                }
+            }
+        }
+
+        if (!foundPath)
+        {
+            CallLogFunc("[ERROR] The plugin cannot be found in any of the search paths.");
+            return nullptr;
+        }
+
         auto* plugin = ampoolnew(
-            MemoryPoolKind::Engine, dylib, AM_OS_STRING_TO_STRING(pluginsDirectoryPath), AM_OS_STRING_TO_STRING(pluginLibraryName));
+            MemoryPoolKind::Engine, dylib, AM_OS_STRING_TO_STRING(pluginsDirectoryPath), AM_OS_STRING_TO_STRING(finalName),
+            dylib::no_filename_decorations);
 
         if (!plugin->has_symbol("RegisterPlugin"))
         {
@@ -155,6 +191,35 @@ namespace SparkyStudios::Audio::Amplitude
         gLoadedPlugins.push_back(plugin);
 
         return handle;
+    }
+
+    void Engine::AddPluginSearchPath(const AmOsString& path)
+    {
+        if (path.empty())
+        {
+            CallLogFunc("[ERROR] The plugin search path is empty");
+            return;
+        }
+
+        if (_pluginSearchPaths.contains(path))
+            return;
+
+        _pluginSearchPaths.emplace(path);
+    }
+
+    void Engine::RemovePluginSearchPath(const AmOsString& path)
+    {
+        if (path.empty())
+        {
+            CallLogFunc("[ERROR] The plugin search path is empty");
+            return;
+        }
+
+        const auto it = _pluginSearchPaths.find(path);
+        if (it == _pluginSearchPaths.cend())
+            return;
+
+        _pluginSearchPaths.erase(it);
     }
 
     Engine* Engine::GetInstance()

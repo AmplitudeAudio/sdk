@@ -231,6 +231,25 @@ bool SampleState::Initialize()
     while (!amEngine->TryFinalizeOpenFileSystem())
         SDL_Delay(1);
 
+    const auto sdkPath = std::filesystem::path(std::getenv("AM_SDK_PATH"));
+
+    Engine::AddPluginSearchPath(AM_OS_STRING("./assets/plugins"));
+#if defined(AM_WINDOWS_VERSION)
+    Engine::AddPluginSearchPath(sdkPath / AM_OS_STRING("lib/win/plugins"));
+#elif defined(AM_LINUX_VERSION)
+    Engine::AddPluginSearchPath(sdkPath / AM_OS_STRING("lib/linux/plugins"));
+#elif defined(AM_OSX_VERSION)
+    Engine::AddPluginSearchPath(sdkPath / AM_OS_STRING("lib/osx/plugins"));
+#endif
+
+#if defined(_DEBUG) || defined(DEBUG) || (defined(__GNUC__) && !defined(__OPTIMIZE__))
+    Engine::LoadPlugin(AM_OS_STRING("AmplitudeVorbisCodecPlugin_d"));
+    Engine::LoadPlugin(AM_OS_STRING("AmplitudeFlacCodecPlugin_d"));
+#else
+    Engine::LoadPlugin(AM_OS_STRING("AmplitudeVorbisCodecPlugin"));
+    Engine::LoadPlugin(AM_OS_STRING("AmplitudeFlacCodecPlugin"));
+#endif
+
     // Initialize Amplitude.
     if (!amEngine->Initialize(kAudioConfig) || !amEngine->LoadSoundBank(kSoundBank))
     {
