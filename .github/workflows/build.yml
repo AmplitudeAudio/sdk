@@ -85,7 +85,7 @@ jobs:
             archiver: "7z a"
 
           - name: "macOS x64 Latest Clang"
-            os: macos-latest
+            os: macos-13
             artifact: "amplitude_audio_sdk_macos_clang_x64.7z"
             archiver: "7za a"
 

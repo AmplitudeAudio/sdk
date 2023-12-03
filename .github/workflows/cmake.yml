@@ -48,7 +48,7 @@ jobs:
 
           - name: "macOS x64 Latest Clang"
             key: clang
-            os: macos-latest
+            os: macos-13
             sdk_dir: osx
             artifact: "amplitude_audio_sdk_macos_clang_x64.7z"
             cc: "clang"
@@ -119,6 +119,12 @@ jobs:
           mkdir bin
           sudo unzip Mac.flatc.binary.zip -d bin
           ./bin/flatc --version
+
+      - name: Setup Latest Xcode version
+        if: startsWith(matrix.config.os, 'macos')
+        uses: maxim-lobanov/setup-xcode@v1.6.0
+        with:
+          xcode-version: latest
 
       - name: Restore SDK Cache
         uses: actions/cache/restore@v3
