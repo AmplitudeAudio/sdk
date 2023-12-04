@@ -41,7 +41,7 @@ table EventActionDefinition {
   /// The action type.
   type:EventActionType = None;
 
-  /// Defines if the action is active o not.
+  /// Defines if the action is active or not.
   active:bool = true;
 
   /// The list of targets on which apply the action.

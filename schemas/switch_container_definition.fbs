@@ -42,7 +42,7 @@ table SwitchContainerEntry {
   /// Fade in transition when one of the states where this object is assigned becomes active.
   fade_in:FadeTransitionSettings;
 
-  /// Fade out transition when one of the states where this object is assigned becomes inactive.
+  /// Fade out transition when all of the states where this object is assigned becomes inactive.
   fade_out:FadeTransitionSettings;
 
   /// A custom gain to apply only on this object.

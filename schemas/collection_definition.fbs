@@ -18,7 +18,7 @@ namespace SparkyStudios.Audio.Amplitude;
 
 /// Specifies the way the collection is played when a play request is received.
 enum CollectionPlayMode: byte {
-  /// On each play request, an audio sample is picked by the scheduler and played only once.
+  /// On each play request, only one audio sample is picked by the scheduler and played.
   PlayOne,
   /// On each play request, an audio sample is picked by the scheduler and played once. This task
   /// is repeated until all the audio samples are picked.
@@ -95,7 +95,7 @@ table RandomSchedulerCollectionEntry {
   /// Special gain to apply only to this entry.
   gain:RtpcCompatibleValue;
 
-  /// Probability of this sample being selected to relative to others in a set.
+  /// Probability of this sample being selected, relative to others in the set.
   /// Only used when the "Random" scheduler is used.
   weight:float = 1.0;
 }

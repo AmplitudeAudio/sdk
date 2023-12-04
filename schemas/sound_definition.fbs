@@ -22,7 +22,7 @@ table SoundLoopConfig {
   enabled:bool;
 
   /// The number of times this sound should loop until to stop.
-  /// Set it to 0 fo an infinite loop until manually stopped.
+  /// Set it to 0 for an infinite loop until manually stopped.
   loop_count:uint = 0;
 }
 
