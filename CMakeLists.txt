@@ -225,6 +225,7 @@ set(SA_SOURCE
 
     src/Mixer/Resamplers/R8BrainResampler.h
     src/Mixer/Resamplers/LibsamplerateResampler.h
+    src/Mixer/SoundProcessors/ClipProcessor.h
     src/Mixer/SoundProcessors/EffectProcessor.h
     src/Mixer/SoundProcessors/EnvironmentProcessor.h
     src/Mixer/SoundProcessors/ObstructionProcessor.h

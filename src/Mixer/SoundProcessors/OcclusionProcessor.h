@@ -24,7 +24,7 @@
 
 namespace SparkyStudios::Audio::Amplitude
 {
-    static std::unordered_map<AmObjectID, FilterInstance*> gOcclusionFilters = {};
+    static std::map<AmObjectID, FilterInstance*> gOcclusionFilters = {};
 
     class OcclusionProcessorInstance : public SoundProcessorInstance
     {
@@ -78,11 +78,28 @@ namespace SparkyStudios::Audio::Amplitude
             const AmReal32 gain = gainCurve.Get(occlusion);
 
             // Apply Gain
-            for (AmUInt64 i = 0, l = frames * channels; i < l; i++)
+            const AmSize length = frames * channels;
+
+#if defined(AM_SIMD_INTRINSICS)
+            const AmSize end = AmAudioFrame::size * (length / AmAudioFrame::size);
+            const auto factor = xsimd::batch(gain);
+
+            for (AmSize i = 0; i < end; i += AmAudioFrame::size)
+            {
+                const auto bin = xsimd::load_aligned(&out[i]);
+                xsimd::store_aligned(&out[i], xsimd::mul(bin, factor));
+            }
+
+            for (AmSize i = end; i < length; i++)
             {
                 out[i] = out[i] * gain;
-                out[i] = AM_CLAMP_AUDIO_SAMPLE(out[i]);
             }
+#else
+            for (AmSize i = 0; i < length; i++)
+            {
+                out[i] = out[i] * gain;
+            }
+#endif // AM_SIMD_INTRINSICS
         }
 
         void Cleanup(SoundInstance* sound) override

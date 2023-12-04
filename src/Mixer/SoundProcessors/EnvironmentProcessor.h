@@ -26,7 +26,7 @@
 
 namespace SparkyStudios::Audio::Amplitude
 {
-    static std::unordered_map<AmEnvironmentID, std::unordered_map<AmObjectID, EffectInstance*>> gEnvironmentFilters = {};
+    static std::map<AmEnvironmentID, std::map<AmObjectID, EffectInstance*>> gEnvironmentFilters = {};
 
     class EnvironmentProcessorInstance final : public SoundProcessorInstance
     {
@@ -67,7 +67,7 @@ namespace SparkyStudios::Audio::Amplitude
                         const Effect* effect = handle.GetEffect();
                         if (!gEnvironmentFilters.contains(environment.first))
                         {
-                            std::unordered_map<AmSoundID, EffectInstance*> map{};
+                            const std::map<AmSoundID, EffectInstance*> map{};
                             gEnvironmentFilters[environment.first] = map;
                         }
 
@@ -99,11 +99,25 @@ namespace SparkyStudios::Audio::Amplitude
         void Cleanup(SoundInstance* sound) override
         {
             const Entity& entity = sound->GetChannel()->GetParentChannelState()->GetEntity();
-            if (entity.Valid())
+            if (!entity.Valid())
+                return;
+
+            for (const auto environments = entity.GetEnvironments(); auto&& environment : environments)
             {
-                for (const auto environments = entity.GetEnvironments(); auto&& environment : environments)
-                    if (gEnvironmentFilters.contains(environment.first))
-                        gEnvironmentFilters[environment.first].erase(sound->GetId());
+                if (!gEnvironmentFilters.contains(environment.first))
+                    continue;
+
+                if (!gEnvironmentFilters[environment.first].contains(sound->GetId()))
+                    continue;
+
+                const Environment& handle = amEngine->GetEnvironment(environment.first);
+                if (!handle.Valid())
+                    continue;
+
+                const Effect* effect = handle.GetEffect();
+                effect->DestroyInstance(gEnvironmentFilters[environment.first][sound->GetId()]);
+
+                gEnvironmentFilters[environment.first].erase(sound->GetId());
             }
         }
     };

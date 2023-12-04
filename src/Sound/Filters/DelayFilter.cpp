@@ -134,7 +134,6 @@ namespace SparkyStudios::Audio::Amplitude
         {
             // Read first
             y = _buffer[o] * m_parameters[DelayFilter::ATTRIBUTE_WET];
-            y = AM_CLAMP_AUDIO_SAMPLE(y);
 
             // Produce feedback
             _buffer[o] = _buffer[o] * m_parameters[DelayFilter::ATTRIBUTE_DECAY] + x;
@@ -146,7 +145,6 @@ namespace SparkyStudios::Audio::Amplitude
 
             // Read
             y = _buffer[o] * m_parameters[DelayFilter::ATTRIBUTE_WET];
-            y = AM_CLAMP_AUDIO_SAMPLE(y);
         }
 
         return static_cast<AmAudioSample>(y);

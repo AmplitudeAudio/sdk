@@ -122,6 +122,6 @@ namespace SparkyStudios::Audio::Amplitude
 
         AmReal32 y = sample + (_channelData[channel].m_sample - sample) * m_parameters[LofiFilter::ATTRIBUTE_WET];
 
-        return AM_CLAMP_AUDIO_SAMPLE(y);
+        return static_cast<AmAudioSample>(y);
     }
 } // namespace SparkyStudios::Audio::Amplitude

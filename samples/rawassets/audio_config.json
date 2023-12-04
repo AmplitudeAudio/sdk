@@ -11,7 +11,8 @@
     "pipeline_type": [
       "AudioSoundProcessor",
       "AudioSoundProcessor",
-      "AudioProcessorMixer"
+      "AudioProcessorMixer",
+      "AudioSoundProcessor"
     ],
     "pipeline": [
       {
@@ -25,6 +26,9 @@
         "wet_processor": "EnvironmentProcessor",
         "dry": 0.5,
         "wet": 0.5
+      },
+      {
+        "processor": "ClipProcessor"
       }
     ]
   },

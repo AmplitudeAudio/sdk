@@ -117,7 +117,6 @@ namespace SparkyStudios::Audio::Amplitude
             y = x * (GenerateWaveform(static_cast<AmInt32>(m_parameters[RobotizeFilter::ATTRIBUTE_WAVEFORM]), wPos) + 0.5f);
 
             y = x + (y - x) * m_parameters[RobotizeFilter::ATTRIBUTE_WET];
-            y = AM_CLAMP_AUDIO_SAMPLE(y);
 
             buffer[s] = static_cast<AmAudioSample>(y);
         }

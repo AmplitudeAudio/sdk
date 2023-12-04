@@ -501,11 +501,6 @@ namespace SparkyStudios::Audio::Amplitude
         LockAudioMutex();
 
         const auto numChannels = static_cast<AmUInt16>(_device.mRequestedOutputChannels);
-#if defined(AM_SIMD_INTRINSICS)
-        const auto lower = xsimd::batch(AM_AUDIO_SAMPLE_MIN), upper = xsimd::batch(AM_AUDIO_SAMPLE_MAX);
-#else
-        constexpr AmAudioFrame lower = AM_AUDIO_SAMPLE_MIN, upper = AM_AUDIO_SAMPLE_MAX;
-#endif // AM_SIMD_INTRINSICS
 
         auto buffer = static_cast<AmAudioSampleBuffer>(mixBuffer);
         std::memset(buffer, 0, frameCount * numChannels * sizeof(AmAudioSample));
@@ -552,16 +547,6 @@ namespace SparkyStudios::Audio::Amplitude
 
         if (!hasMixedAtLeastOneLayer)
             goto Cleanup;
-
-        // perform clipping using min and max
-        for (AmUInt32 i = 0; i < aSize; i++)
-        {
-#if defined(AM_SIMD_INTRINSICS)
-            align->buffer[i] = xsimd::min(xsimd::max(align->buffer[i], lower), upper);
-#else
-            align->buffer[i] = std::min(std::max(align->buffer[i], lower), upper);
-#endif // AM_SIMD_INTRINSICS
-        }
 
         // copy frames, leaving possible remainder
         std::memcpy(buffer, reinterpret_cast<AmAudioSampleBuffer>(align->buffer), frames * numChannels * sizeof(AmAudioSample));

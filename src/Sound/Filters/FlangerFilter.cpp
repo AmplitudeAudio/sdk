@@ -138,7 +138,6 @@ namespace SparkyStudios::Audio::Amplitude
             _offset++;
 
             y = x + (y - x) * m_parameters[FlangerFilter::ATTRIBUTE_WET];
-            y = AM_CLAMP_AUDIO_SAMPLE(y);
 
             buffer[s] = static_cast<AmAudioSample>(y);
         }

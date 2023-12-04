@@ -98,7 +98,6 @@ namespace SparkyStudios::Audio::Amplitude
 
         y = x * (q / p);
         y = x + (y - x) * m_parameters[WaveShaperFilter::ATTRIBUTE_WET];
-        y = AM_CLAMP_AUDIO_SAMPLE(y);
 
         return static_cast<AmAudioSample>(y);
     }

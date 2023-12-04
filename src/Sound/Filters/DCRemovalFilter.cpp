@@ -93,7 +93,6 @@ namespace SparkyStudios::Audio::Amplitude
 
         y = x - _totals[channel] / static_cast<AmReal32>(_bufferLength);
         y = x + (y - x) * m_parameters[DCRemovalFilter::ATTRIBUTE_WET];
-        y = AM_CLAMP_AUDIO_SAMPLE(y);
 
         return static_cast<AmAudioSample>(y);
     }

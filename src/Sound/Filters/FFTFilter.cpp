@@ -105,7 +105,6 @@ namespace SparkyStudios::Audio::Amplitude
                 /* */ AmReal32 y = _temp[i];
 
                 y = x + (y - x) * m_parameters[0];
-                y = AM_CLAMP_AUDIO_SAMPLE(y);
 
                 buffer[o] = static_cast<AmAudioSample>(y);
             }

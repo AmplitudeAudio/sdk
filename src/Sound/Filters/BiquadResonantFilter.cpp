@@ -214,7 +214,6 @@ namespace SparkyStudios::Audio::Amplitude
         state.y2 = y1;
 
         y = x + (y - x) * m_parameters[BiquadResonantFilter::ATTRIBUTE_WET];
-        y = AM_CLAMP_AUDIO_SAMPLE(y);
 
         return static_cast<AmAudioSample>(y);
     }

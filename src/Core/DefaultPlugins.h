@@ -32,6 +32,7 @@
 
 #pragma region Default Sound Processors
 
+#include <Mixer/SoundProcessors/ClipProcessor.h>
 #include <Mixer/SoundProcessors/EffectProcessor.h>
 #include <Mixer/SoundProcessors/EnvironmentProcessor.h>
 #include <Mixer/SoundProcessors/ObstructionProcessor.h>
