@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include <SparkyStudios/Audio/Amplitude/Sound/Fader.h>
+#include <SparkyStudios/Audio/Amplitude/Core/Memory.h>
 #include <SparkyStudios/Audio/Amplitude/Sound/Filter.h>
 
 namespace SparkyStudios::Audio::Amplitude
@@ -89,8 +89,7 @@ namespace SparkyStudios::Audio::Amplitude
 
     Filter* Filter::Find(const std::string& name)
     {
-        FilterRegistry& filters = filterRegistry();
-        for (auto&& filter : filters)
+        for (const FilterRegistry& filters = filterRegistry(); auto&& filter : filters)
             if (filter.second->m_name == name)
                 return filter.second;
 
@@ -132,19 +131,19 @@ namespace SparkyStudios::Audio::Amplitude
 
     FilterInstance::~FilterInstance()
     {
-        delete[] m_parameters;
+        ampoolfree(MemoryPoolKind::Filtering, m_parameters);
     }
 
     AmResult FilterInstance::Init(AmUInt32 numParams)
     {
-        delete[] m_parameters;
+        ampoolfree(MemoryPoolKind::Filtering, m_parameters);
 
         m_numParams = numParams;
-        m_parameters = new AmReal32[numParams];
+        m_parameters = static_cast<AmReal32Buffer>(ampoolmalloc(MemoryPoolKind::Filtering, numParams * sizeof(AmReal32)));
 
         if (m_parameters == nullptr)
         {
-            delete[] m_parameters;
+            ampoolfree(MemoryPoolKind::Filtering, m_parameters);
 
             m_parameters = nullptr;
             m_numParams = 0;
@@ -168,35 +167,17 @@ namespace SparkyStudios::Audio::Amplitude
             return;
 
         for (AmUInt16 c = 0; c < channels; c++)
-            ProcessChannel(buffer, c, frames, channels, sampleRate, false);
-    }
-
-    void FilterInstance::ProcessInterleaved(
-        AmAudioSampleBuffer buffer, AmUInt64 frames, AmUInt64 bufferSize, AmUInt16 channels, AmUInt32 sampleRate)
-    {
-        if (buffer == nullptr)
-            return;
-
-        for (AmUInt16 c = 0; c < channels; c++)
-            ProcessChannel(buffer, c, frames, channels, sampleRate, true);
+            ProcessChannel(buffer, c, frames, channels, sampleRate);
     }
 
     void FilterInstance::ProcessChannel(
-        AmAudioSampleBuffer buffer, AmUInt16 channel, AmUInt64 frames, AmUInt16 channels, AmUInt32 sampleRate, bool isInterleaved)
+        AmAudioSampleBuffer buffer, AmUInt16 channel, AmUInt64 frames, AmUInt16 channels, AmUInt32 sampleRate)
     {
         if (buffer == nullptr)
             return;
 
-        if (isInterleaved)
-        {
-            for (AmUInt64 i = channel; i < frames * channels; i += channels)
-                buffer[i] = ProcessSample(buffer[i], channel, sampleRate);
-        }
-        else
-        {
-            for (AmUInt64 i = channel * frames; i < frames; i++)
-                buffer[i] = ProcessSample(buffer[i], channel, sampleRate);
-        }
+        for (AmUInt64 i = channel; i < frames * channels; i += channels)
+            buffer[i] = ProcessSample(buffer[i], channel, sampleRate);
     }
 
     AmAudioSample FilterInstance::ProcessSample(AmAudioSample sample, AmUInt16 channel, AmUInt32 sampleRate)

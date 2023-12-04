@@ -28,7 +28,7 @@ namespace SparkyStudios::Audio::Amplitude
     public:
         void Init(AmUInt16 channelCount, AmUInt32 sampleRateIn, AmUInt32 sampleRateOut, AmUInt64 frameCount) override
         {
-            _resampler = src_new(SRC_SINC_FASTEST, channelCount, nullptr);
+            _resampler = src_new(SRC_SINC_BEST_QUALITY, channelCount, nullptr);
 
             _numChannels = channelCount;
             _frameCount = frameCount;
@@ -38,7 +38,7 @@ namespace SparkyStudios::Audio::Amplitude
             _sampleRatio = static_cast<AmReal64>(sampleRateOut) / static_cast<AmReal64>(sampleRateIn);
         }
 
-        bool Process(AmAudioSampleBuffer input, AmUInt64& inputFrames, AmAudioSampleBuffer output, AmUInt64& outputFrames) override
+        bool Process(AmConstAudioSampleBuffer input, AmUInt64& inputFrames, AmAudioSampleBuffer output, AmUInt64& outputFrames) override
         {
             SRC_DATA data;
             data.data_in = input;
@@ -118,7 +118,7 @@ namespace SparkyStudios::Audio::Amplitude
         AmUInt32 _sampleRateOut = 0;
         AmReal64 _sampleRatio = 0.0;
 
-        SRC_STATE* _resampler;
+        SRC_STATE* _resampler = nullptr;
     };
 
     [[maybe_unused]] static class LibsamplerateResampler final : public Resampler
@@ -130,12 +130,12 @@ namespace SparkyStudios::Audio::Amplitude
 
         ResamplerInstance* CreateInstance() override
         {
-            return amnew(LibsamplerateResamplerInstance);
+            return ampoolnew(MemoryPoolKind::Filtering, LibsamplerateResamplerInstance);
         }
 
         void DestroyInstance(ResamplerInstance* instance) override
         {
-            amdelete(LibsamplerateResamplerInstance, (LibsamplerateResamplerInstance*)instance);
+            ampooldelete(MemoryPoolKind::Filtering, LibsamplerateResamplerInstance, (LibsamplerateResamplerInstance*)instance);
         }
     } gLibsamplerateResampler; // NOLINT(cert-err58-cpp)
 } // namespace SparkyStudios::Audio::Amplitude

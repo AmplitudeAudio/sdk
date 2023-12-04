@@ -65,12 +65,12 @@ namespace SparkyStudios::Audio::Amplitude
 
     FilterInstance* BassBoostFilter::CreateInstance()
     {
-        return amnew(BassBoostFilterInstance, this);
+        return ampoolnew(MemoryPoolKind::Filtering, BassBoostFilterInstance, this);
     }
 
     void BassBoostFilter::DestroyInstance(FilterInstance* instance)
     {
-        amdelete(BassBoostFilterInstance, (BassBoostFilterInstance*)instance);
+        ampooldelete(MemoryPoolKind::Filtering, BassBoostFilterInstance, (BassBoostFilterInstance*)instance);
     }
 
     BassBoostFilterInstance::BassBoostFilterInstance(BassBoostFilter* parent)
@@ -81,13 +81,15 @@ namespace SparkyStudios::Audio::Amplitude
     }
 
     void BassBoostFilterInstance::ProcessFFTChannel(
-        AmReal64Buffer buffer, AmUInt16 channel, AmUInt64 frames, AmUInt16 channels, AmUInt32 sampleRate)
+        SplitComplex& fft, AmUInt16 channel, AmUInt64 frames, AmUInt16 channels, AmUInt32 sampleRate)
     {
-        Comp2MagPhase(buffer, 2);
+        frames = 2;
 
-        for (AmUInt32 i = 0; i < 2; i++)
-            buffer[i * 2] *= m_parameters[BassBoostFilter::ATTRIBUTE_BOOST];
+        Comp2MagPhase(fft, frames);
 
-        MagPhase2Comp(buffer, 2);
+        for (AmUInt32 i = 0; i < frames; i++)
+            fft.re()[i] *= m_parameters[BassBoostFilter::ATTRIBUTE_BOOST];
+
+        MagPhase2Comp(fft, frames);
     }
 } // namespace SparkyStudios::Audio::Amplitude

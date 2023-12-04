@@ -30,7 +30,7 @@ namespace SparkyStudios::Audio::Amplitude
      * which is managed by the Engine. Multiple Listener objects may point to
      * the same underlying data.
      */
-    class Listener
+    class AM_API_PUBLIC Listener
     {
     public:
         /**

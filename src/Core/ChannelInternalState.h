@@ -54,8 +54,8 @@ namespace SparkyStudios::Audio::Amplitude
             , _pan()
             , _pitch(1.0f)
             , _location()
-            , _dopplerFactors()
             , _channelStateId(kAmInvalidObjectId)
+            , _dopplerFactors()
         {}
 
         // Updates the state enum based on whether this channel is stopped, playing,
@@ -322,8 +322,9 @@ namespace SparkyStudios::Audio::Amplitude
         AmObjectID _playingSwitchContainerStateId;
         AmObjectID _previousSwitchContainerStateId;
 
-        // The sound fade of this channel. This is updated by the current sound collection.
+        // The sound fader of this channel.
         FaderInstance* _fader;
+        AmString _faderName;
 
         // The target state of the fade out transition. Must be either Paused or Stopped.
         ChannelPlaybackState _targetFadeOutState;

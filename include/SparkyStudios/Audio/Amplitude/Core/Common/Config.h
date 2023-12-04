@@ -35,14 +35,40 @@
 #define AM_CALL_POLICY
 #endif
 
+#if defined(AM_BUILDSYSTEM_SHARED)
+#if defined(AM_BUILDSYSTEM_BUILDING_AMPLITUDE)
+#define AM_API_PUBLIC AM_LIB_EXPORT
+#else
+#define AM_API_PUBLIC AM_LIB_IMPORT
+#endif
+#define AM_API_PRIVATE AM_LIB_PRIVATE
+#if defined(AM_BUILDSYSTEM_BUILDING_PLUGIN)
+#define AM_API_PLUGIN AM_LIB_EXPORT
+#else
+#define AM_API_PLUGIN
+#endif
+#else // AM_BUILDSYSTEM_STATIC
+#define AM_API_PUBLIC
+#define AM_API_PRIVATE static
+#define AM_API_PLUGIN
+#endif
+
+#if !defined(AM_RESTRICT)
+#define AM_RESTRICT
+#endif
+
 #if !defined(AMPLITUDE_DISABLE_SIMD)
-#if defined(AM_CPU_X86) || defined(AM_CPU_X86_64) || defined(AM_CPU_ARM_NEON)
+#if defined(AM_CPU_X86) || defined(AM_CPU_X86_64) || defined(AM_CPU_ARM) || defined(AM_CPU_ARM_64)
 #define AM_SIMD_INTRINSICS
 #include <SparkyStudios/Audio/Amplitude/Core/Common/SIMD.h>
 #endif // AM_CPU_X86 || AM_CPU_X86_64 || AM_CPU_ARM_NEON
 #else
 #define PFFFT_SIMD_DISABLE
 #define HANDMADE_MATH_NO_SSE
+#define MA_NO_NEON
+#define MA_NO_AVX2
+#define MA_NO_AVX
+#define MA_NO_SSE2
 #endif // AMPLITUDE_DISABLE_SIMD
 
 // Define the value of Pi if the platform doesn't do that

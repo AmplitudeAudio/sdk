@@ -46,16 +46,16 @@ namespace SparkyStudios::Audio::Amplitude
 
     struct SoundData
     {
-        SoundChunk* chunk;
-        AmUInt64 length;
-        AmVoidPtr userData;
-        SoundFormat format;
-        bool stream;
+        SoundChunk* chunk = nullptr;
+        AmUInt64 length = 0;
+        AmUniquePtr<MemoryPoolKind::Engine, SoundInstance> sound = nullptr;
+        SoundFormat format{};
+        bool stream = false;
 
-        static SoundData* CreateMusic(const SoundFormat& format, SoundChunk* chunk, AmUInt64 frames, AmVoidPtr userData);
-        static SoundData* CreateSound(const SoundFormat& format, SoundChunk* chunk, AmUInt64 frames, AmVoidPtr userData);
+        static SoundData* CreateMusic(const SoundFormat& format, SoundChunk* chunk, AmUInt64 frames, SoundInstance* soundInstance);
+        static SoundData* CreateSound(const SoundFormat& format, SoundChunk* chunk, AmUInt64 frames, SoundInstance* soundInstance);
 
-        void Destroy(bool destroyChunk = true) const;
+        static void Destroy(SoundData* soundData, bool destroyChunk = true);
     };
 } // namespace SparkyStudios::Audio::Amplitude
 

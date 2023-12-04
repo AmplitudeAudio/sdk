@@ -1,0 +1,33 @@
+Amplitude Audio SDK
+Copyright (c) 2021-present Sparky Studios. All rights reserved.
+
+---
+
+This software contains code derived from the Freeverb library by Jezar at Dreampoint (http://www.dreampoint.co.uk),
+June 2000, which was placed in public domain.
+
+This software includes the miniaudio (https://miniaud.io) library, developed by David Reid (mackron@gmail.com)
+and placed in the public domain.
+
+This software includes the pffftd library, developed by Julien Pommier ( pommier@modartt.com ), based on original
+fortran 77 code from FFTPACKv4 from NETLIB, authored by Dr Paul Swarztrauber of NCAR, in 1985. The library uses
+the same license as the original, which is the BSD-3-Clause License.
+
+This software contains code based on ADPCM-XQ (https://github.com/dbry/adpcm-xq), Copyright (c) 2015 David Bryant,
+which was licensed under the BSD-3-Clause License.
+
+This software contains code derived from AudioFFT and FFTConvolution (https://github.com/HiFi-LoFi/AudioFFT),
+Copyright (c) 2017 HiFi-LoFi, which was licensed under the MIT License.
+
+This software includes code of the r8brain-free-src library (https://github.com/avaneev/r8brain-free-src),
+Copyright (c) 2013-2022 Aleksey Vaneev, and distributed under the MIT License.
+
+This software includes code of the smmalloc library (https://github.com/SergeyMakeev/smmalloc),
+Copyright (c) 2017-2023 Sergey Makeev, and distributed under the MIT License.
+
+The Amplimix code is heavily inspired by the atomix library (https://github.com/BareRose/atomix) licensed under
+the CC0-1.0 License.
+
+The FLAC Codec plugin contains software developed by Xiph.org and licensed under the BSD-3-Clause License.
+
+The Vorbis Codec plugin contains software developed by Xiph.org and licensed under the BSD-3-Clause License.

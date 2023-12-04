@@ -48,6 +48,8 @@ namespace SparkyStudios::Audio::Amplitude
 
     void ChannelInternalState::Reset()
     {
+        Fader::Destruct(_faderName, _fader);
+
         _realChannel._channelLayersId.clear();
         _realChannel._activeSounds.clear();
         _realChannel._playedSounds.clear();
@@ -61,6 +63,7 @@ namespace SparkyStudios::Audio::Amplitude
         _collection = nullptr;
         _sound = nullptr;
         _fader = nullptr;
+        _faderName = "";
         _targetFadeOutState = ChannelPlaybackState::Stopped;
         _entity = Entity();
         _userGain = 0.0f;
@@ -253,7 +256,7 @@ namespace SparkyStudios::Audio::Amplitude
         }
     }
 
-    void ChannelInternalState::SetGain(const float gain)
+    void ChannelInternalState::SetGain(const AmReal32 gain)
     {
         if (_channelState == ChannelPlaybackState::FadingOut || _channelState == ChannelPlaybackState::FadingIn ||
             _channelState == ChannelPlaybackState::SwitchingState)
@@ -311,7 +314,7 @@ namespace SparkyStudios::Audio::Amplitude
         }
     }
 
-    float ChannelInternalState::Priority() const
+    AmReal32 ChannelInternalState::Priority() const
     {
         if (_switchContainer != nullptr)
         {
@@ -357,7 +360,7 @@ namespace SparkyStudios::Audio::Amplitude
         if (_switchContainer != nullptr && _channelState != ChannelPlaybackState::FadingIn &&
             _channelState != ChannelPlaybackState::FadingOut)
         {
-            const SwitchContainerDefinition* definition = _switchContainer->GetSwitchContainerDefinition();
+            const SwitchContainerDefinition* definition = _switchContainer->GetDefinition();
             if (_switch->GetState().m_id != kAmInvalidObjectId && _switch->GetState().m_id != _playingSwitchContainerStateId &&
                 definition->update_behavior() == SwitchContainerUpdateBehavior_UpdateOnChange)
             {
@@ -458,7 +461,7 @@ namespace SparkyStudios::Audio::Amplitude
                         continue;
                     }
 
-                    const float gain = out->GetFromTime(Engine::GetInstance()->GetTotalTime());
+                    const AmReal32 gain = out->GetFromTime(Engine::GetInstance()->GetTotalTime());
                     isAtLeastOneFadeOutRunning = true;
 
                     if (IsReal())
@@ -511,7 +514,7 @@ namespace SparkyStudios::Audio::Amplitude
                         continue;
                     }
 
-                    const float gain = in->GetFromTime(Engine::GetInstance()->GetTotalTime());
+                    const AmReal32 gain = in->GetFromTime(Engine::GetInstance()->GetTotalTime());
                     isAtLeastOneFadeInRunning = true;
 
                     if (IsReal())
@@ -538,7 +541,7 @@ namespace SparkyStudios::Audio::Amplitude
         {
             if (_fader != nullptr && _fader->GetState() == AM_FADER_STATE_ACTIVE)
             {
-                const float gain = _fader->GetFromTime(Engine::GetInstance()->GetTotalTime());
+                const AmReal32 gain = _fader->GetFromTime(Engine::GetInstance()->GetTotalTime());
 
                 if (IsReal())
                 {
@@ -622,7 +625,7 @@ namespace SparkyStudios::Audio::Amplitude
 
     AmReal32 ChannelInternalState::GetDopplerFactor(AmListenerID listener) const
     {
-        return _dopplerFactors.find(listener) != _dopplerFactors.end() ? _dopplerFactors.at(listener) : 1.0f;
+        return _dopplerFactors.contains(listener) ? _dopplerFactors.at(listener) : 1.0f;
     }
 
     void ChannelInternalState::UpdateState()
@@ -654,8 +657,7 @@ namespace SparkyStudios::Audio::Amplitude
     bool ChannelInternalState::PlaySwitchContainerStateUpdate(
         const std::vector<SwitchContainerItem>& previous, const std::vector<SwitchContainerItem>& next)
     {
-        Engine* engine = Engine::GetInstance();
-        const SwitchContainerDefinition* definition = _switchContainer->GetSwitchContainerDefinition();
+        const SwitchContainerDefinition* definition = _switchContainer->GetDefinition();
 
         std::vector<SoundInstance*> instances;
         for (const auto& item : next)
@@ -670,20 +672,18 @@ namespace SparkyStudios::Audio::Amplitude
             }
 
             if (shouldSkip)
-            {
                 continue;
-            }
 
-            Sound* sound = nullptr;
+            Sound* sound;
 
-            if (Collection* collection = engine->GetCollectionHandle(item.m_id); collection != nullptr)
+            if (Collection* collection = amEngine->GetCollectionHandle(item.m_id); collection != nullptr)
             {
                 sound = _entity.Valid() ? collection->SelectFromEntity(_entity, _realChannel._playedSounds)
                                         : collection->SelectFromWorld(_realChannel._playedSounds);
             }
             else
             {
-                sound = engine->GetSoundHandle(item.m_id);
+                sound = amEngine->GetSoundHandle(item.m_id);
             }
 
             if (!sound)
@@ -701,9 +701,10 @@ namespace SparkyStudios::Audio::Amplitude
             settings.m_priority = _switchContainer->GetPriority();
             settings.m_gain = item.m_gain;
             settings.m_loop = sound->IsLoop();
-            settings.m_loopCount = sound->GetSoundDefinition()->loop()->loop_count();
+            settings.m_loopCount = sound->GetDefinition()->loop()->loop_count();
+            settings.m_effectID = kAmInvalidObjectId;
 
-            instances.push_back(new SoundInstance(sound, settings, _switchContainer->GetEffect()));
+            instances.push_back(ampoolnew(MemoryPoolKind::Engine, SoundInstance, sound, settings, _switchContainer->GetEffect()));
         }
 
         return _realChannel.Play(instances);
@@ -713,21 +714,21 @@ namespace SparkyStudios::Audio::Amplitude
     {
         AMPLITUDE_ASSERT(_switchContainer != nullptr);
 
-        const SwitchContainerDefinition* definition = _switchContainer->GetSwitchContainerDefinition();
+        const SwitchContainerDefinition* definition = _switchContainer->GetDefinition();
 
         _switch = _switchContainer->GetSwitch();
 
-        const AmString name = definition->fader()->str();
+        Fader::Destruct(_faderName, _fader);
 
-        Fader::Destruct(name, _fader);
-        _fader = Fader::Construct(name);
+        _faderName = definition->fader()->str();
+        _fader = Fader::Construct(_faderName);
 
         _channelState = ChannelPlaybackState::Playing;
 
         if (IsReal())
         {
-            const SwitchState& state = _switch->GetState();
-            _playingSwitchContainerStateId = state.m_id != kAmInvalidObjectId ? state.m_id : definition->default_switch_state();
+            const auto& [stateId, stateName] = _switch->GetState();
+            _playingSwitchContainerStateId = stateId != kAmInvalidObjectId ? stateId : definition->default_switch_state();
             const std::vector<SwitchContainerItem>& items = _switchContainer->GetSoundObjects(_playingSwitchContainerStateId);
 
             return PlaySwitchContainerStateUpdate({}, items);
@@ -740,15 +741,15 @@ namespace SparkyStudios::Audio::Amplitude
     {
         AMPLITUDE_ASSERT(_collection != nullptr);
 
-        const CollectionDefinition* definition = _collection->GetCollectionDefinition();
+        const CollectionDefinition* definition = _collection->GetDefinition();
 
         Sound* sound = _entity.Valid() ? _collection->SelectFromEntity(_entity, _realChannel._playedSounds)
                                        : _collection->SelectFromWorld(_realChannel._playedSounds);
 
-        const AmString name = definition->fader()->str();
+        Fader::Destruct(_faderName, _fader);
 
-        Fader::Destruct(name, _fader);
-        _fader = Fader::Construct(name);
+        _faderName = definition->fader()->str();
+        _fader = Fader::Construct(_faderName);
 
         if (_channelState != ChannelPlaybackState::FadingIn && _channelState != ChannelPlaybackState::FadingOut)
             _channelState = ChannelPlaybackState::Playing;
@@ -760,12 +761,12 @@ namespace SparkyStudios::Audio::Amplitude
     {
         AMPLITUDE_ASSERT(_sound != nullptr);
 
-        const SoundDefinition* definition = _sound->GetSoundDefinition();
+        const SoundDefinition* definition = _sound->GetDefinition();
 
-        const AmString name = definition->fader()->str();
+        Fader::Destruct(_faderName, _fader);
 
-        Fader::Destruct(name, _fader);
-        _fader = Fader::Construct(name);
+        _faderName = definition->fader()->str();
+        _fader = Fader::Construct(_faderName);
 
         _channelState = ChannelPlaybackState::Playing;
         return !IsReal() || _realChannel.Play(_sound->CreateInstance());

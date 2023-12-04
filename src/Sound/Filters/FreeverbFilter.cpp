@@ -85,12 +85,12 @@ namespace SparkyStudios::Audio::Amplitude
 
     FilterInstance* FreeverbFilter::CreateInstance()
     {
-        return amnew(FreeverbFilterInstance, this);
+        return ampoolnew(MemoryPoolKind::Filtering, FreeverbFilterInstance, this);
     }
 
     void FreeverbFilter::DestroyInstance(FilterInstance* instance)
     {
-        amdelete(FreeverbFilterInstance, (FreeverbFilterInstance*)instance);
+        ampooldelete(MemoryPoolKind::Filtering, FreeverbFilterInstance, (FreeverbFilterInstance*)instance);
     }
 
     FreeverbFilterInstance::FreeverbFilterInstance(FreeverbFilter* parent)
@@ -116,8 +116,6 @@ namespace SparkyStudios::Audio::Amplitude
     void FreeverbFilterInstance::Process(
         AmAudioSampleBuffer buffer, AmUInt64 frames, AmUInt64 bufferSize, AmUInt16 channels, AmUInt32 sampleRate)
     {
-        AMPLITUDE_ASSERT(channels == 2); // Only stereo supported
-
         if (m_numParamsChanged > 0)
         {
             _model->SetDamp(m_parameters[FreeverbFilter::ATTRIBUTE_DAMP]);
@@ -132,28 +130,6 @@ namespace SparkyStudios::Audio::Amplitude
         auto* input = buffer;
         auto* output = buffer;
 
-        _model->ProcessReplace(input, input + frames, output, output + frames, frames, 1);
-    }
-
-    void FreeverbFilterInstance::ProcessInterleaved(
-        AmAudioSampleBuffer buffer, AmUInt64 frames, AmUInt64 bufferSize, AmUInt16 channels, AmUInt32 sampleRate)
-    {
-        AMPLITUDE_ASSERT(channels == 2); // Only stereo supported
-
-        if (m_numParamsChanged > 0)
-        {
-            _model->SetDamp(m_parameters[FreeverbFilter::ATTRIBUTE_DAMP]);
-            _model->SetMode(m_parameters[FreeverbFilter::ATTRIBUTE_MODE]);
-            _model->SetRoomSize(m_parameters[FreeverbFilter::ATTRIBUTE_ROOM_SIZE]);
-            _model->SetWidth(m_parameters[FreeverbFilter::ATTRIBUTE_WIDTH]);
-            _model->SetWet(m_parameters[FreeverbFilter::ATTRIBUTE_WET]);
-            _model->SetDry(m_parameters[FreeverbFilter::ATTRIBUTE_DRY]);
-            m_numParamsChanged = 0;
-        }
-
-        auto* input = buffer;
-        auto* output = buffer;
-
-        _model->ProcessReplace(input, input + 1, output, output + 1, frames, channels);
+        _model->ProcessReplace(input, input + (channels - 1), output, output + (channels - 1), frames, channels);
     }
 } // namespace SparkyStudios::Audio::Amplitude

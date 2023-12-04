@@ -43,26 +43,6 @@ namespace SparkyStudios::Audio::Amplitude
 
             effect->GetFilter()->Process(out, frames, bufferSize, channels, sampleRate);
         }
-
-        void ProcessInterleaved(
-            AmAudioSampleBuffer out,
-            AmConstAudioSampleBuffer in,
-            AmUInt64 frames,
-            AmSize bufferSize,
-            AmUInt16 channels,
-            AmUInt32 sampleRate,
-            SoundInstance* sound) override
-        {
-            const EffectInstance* effect = sound->GetEffect();
-
-            if (out != in)
-                std::memcpy(out, in, bufferSize);
-
-            if (effect == nullptr)
-                return;
-
-            effect->GetFilter()->ProcessInterleaved(out, frames, bufferSize, channels, sampleRate);
-        }
     };
 
     [[maybe_unused]] static class EffectProcessor final : public SoundProcessor
@@ -74,12 +54,12 @@ namespace SparkyStudios::Audio::Amplitude
 
         SoundProcessorInstance* CreateInstance() override
         {
-            return amnew(EffectProcessorInstance);
+            return ampoolnew(MemoryPoolKind::Amplimix, EffectProcessorInstance);
         }
 
         void DestroyInstance(SoundProcessorInstance* instance) override
         {
-            amdelete(EffectProcessorInstance, (EffectProcessorInstance*)instance);
+            ampooldelete(MemoryPoolKind::Amplimix, EffectProcessorInstance, (EffectProcessorInstance*)instance);
         }
     } gEffectProcessor; // NOLINT(cert-err58-cpp)
 } // namespace SparkyStudios::Audio::Amplitude

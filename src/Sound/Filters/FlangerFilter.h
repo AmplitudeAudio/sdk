@@ -29,12 +29,10 @@ namespace SparkyStudios::Audio::Amplitude
         explicit FlangerFilterInstance(FlangerFilter* parent);
         ~FlangerFilterInstance() override;
 
-        void Process(AmAudioSampleBuffer buffer, AmUInt64 samples, AmUInt64 bufferSize, AmUInt16 channels, AmUInt32 sampleRate) override;
-        void ProcessInterleaved(
+        void Process(
             AmAudioSampleBuffer buffer, AmUInt64 frames, AmUInt64 bufferSize, AmUInt16 channels, AmUInt32 sampleRate) override;
 
-        void ProcessChannel(
-            AmAudioSampleBuffer buffer, AmUInt16 channel, AmUInt64 frames, AmUInt16 channels, AmUInt32 sampleRate, bool isInterleaved)
+        void ProcessChannel(AmAudioSampleBuffer buffer, AmUInt16 channel, AmUInt64 frames, AmUInt16 channels, AmUInt32 sampleRate)
             override;
 
     private:

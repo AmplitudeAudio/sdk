@@ -30,8 +30,6 @@
 #include <Utils/miniaudio/miniaudio_utils.h>
 #include <Utils/Utils.h>
 
-#include <samplerate.h>
-
 #include "engine_config_definition_generated.h"
 
 #define _Atomic(X) std::atomic<X>
@@ -102,7 +100,7 @@ namespace SparkyStudios::Audio::Amplitude
     class Mixer
     {
     public:
-        explicit Mixer(float masterGain);
+        explicit Mixer(AmReal32 masterGain);
 
         ~Mixer();
 
@@ -131,7 +129,7 @@ namespace SparkyStudios::Audio::Amplitude
          */
         void UpdateDevice(
             AmObjectID deviceID,
-            std::string deviceName,
+            AmString deviceName,
             AmUInt32 deviceOutputSampleRate,
             PlaybackOutputChannels deviceOutputChannels,
             PlaybackOutputFormat deviceOutputFormat);
@@ -141,13 +139,13 @@ namespace SparkyStudios::Audio::Amplitude
         AmUInt64 Mix(AmVoidPtr mixBuffer, AmUInt64 frameCount);
 
         AmUInt32 Play(
-            SoundData* sound, PlayStateFlag flag, float gain, float pan, AmReal32 pitch, AmReal32 speed, AmUInt32 id, AmUInt32 layer);
+            SoundData* sound, PlayStateFlag flag, AmReal32 gain, AmReal32 pan, AmReal32 pitch, AmReal32 speed, AmUInt32 id, AmUInt32 layer);
 
         AmUInt32 PlayAdvanced(
             SoundData* sound,
             PlayStateFlag flag,
-            float gain,
-            float pan,
+            AmReal32 gain,
+            AmReal32 pan,
             AmReal32 pitch,
             AmReal32 speed,
             AmUInt64 startFrame,
@@ -155,7 +153,7 @@ namespace SparkyStudios::Audio::Amplitude
             AmUInt32 id,
             AmUInt32 layer);
 
-        bool SetGainPan(AmUInt32 id, AmUInt32 layer, float gain, float pan);
+        bool SetGainPan(AmUInt32 id, AmUInt32 layer, AmReal32 gain, AmReal32 pan);
 
         bool SetPitch(AmUInt32 id, AmUInt32 layer, AmReal32 pitch);
 
@@ -167,7 +165,7 @@ namespace SparkyStudios::Audio::Amplitude
 
         PlayStateFlag GetPlayState(AmUInt32 id, AmUInt32 layer);
 
-        void SetMasterGain(float gain);
+        void SetMasterGain(AmReal32 gain);
 
         void StopAll();
 
@@ -204,7 +202,7 @@ namespace SparkyStudios::Audio::Amplitude
         std::unordered_map<AmThreadID, bool> _insideAudioThreadMutex;
 
         AmUInt32 _nextId;
-        _Atomic(float) _masterGain{};
+        _Atomic(AmReal32) _masterGain{};
         MixerLayer _layers[kAmplimixLayersCount];
         AmUInt64 _remainingFrames;
 

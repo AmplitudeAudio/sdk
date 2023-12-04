@@ -28,7 +28,7 @@ namespace SparkyStudios::Audio::Amplitude
     /**
      * @brief An abstract class for Collection schedulers
      */
-    class Scheduler
+    class AM_API_PUBLIC Scheduler
     {
     public:
         virtual ~Scheduler() = default;

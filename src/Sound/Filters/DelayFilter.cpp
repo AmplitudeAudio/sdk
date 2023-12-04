@@ -72,12 +72,12 @@ namespace SparkyStudios::Audio::Amplitude
 
     FilterInstance* DelayFilter::CreateInstance()
     {
-        return amnew(DelayFilterInstance, this);
+        return ampoolnew(MemoryPoolKind::Filtering, DelayFilterInstance, this);
     }
 
     void DelayFilter::DestroyInstance(FilterInstance* instance)
     {
-        amdelete(DelayFilterInstance, (DelayFilterInstance*)instance);
+        ampooldelete(MemoryPoolKind::Filtering, DelayFilterInstance, (DelayFilterInstance*)instance);
     }
 
     DelayFilterInstance::DelayFilterInstance(DelayFilter* parent)
@@ -101,29 +101,10 @@ namespace SparkyStudios::Audio::Amplitude
         if (_buffer == nullptr)
             return;
 
-        amMemory->Free(MemoryPoolKind::Filtering, _buffer);
+        ampoolfree(MemoryPoolKind::Filtering, _buffer);
     }
 
     void DelayFilterInstance::Process(
-        AmAudioSampleBuffer buffer, AmUInt64 frames, AmUInt64 bufferSize, AmUInt16 channels, AmUInt32 sampleRate)
-    {
-        InitBuffer(channels, sampleRate);
-
-        for (AmUInt64 f = 0; f < frames; f++)
-        {
-            for (AmUInt16 c = 0; c < channels; c++)
-            {
-                _bufferOffset = _offset + c * _bufferLength;
-
-                const AmUInt64 o = f + c * frames;
-                buffer[o] = ProcessSample(buffer[o], c, sampleRate);
-            }
-
-            _offset = (_offset + 1) % _bufferLength;
-        }
-    }
-
-    void DelayFilterInstance::ProcessInterleaved(
         AmAudioSampleBuffer buffer, AmUInt64 frames, AmUInt64 bufferSize, AmUInt16 channels, AmUInt32 sampleRate)
     {
         InitBuffer(channels, sampleRate);
@@ -153,7 +134,6 @@ namespace SparkyStudios::Audio::Amplitude
         {
             // Read first
             y = _buffer[o] * m_parameters[DelayFilter::ATTRIBUTE_WET];
-            y = AM_CLAMP_AUDIO_SAMPLE(y);
 
             // Produce feedback
             _buffer[o] = _buffer[o] * m_parameters[DelayFilter::ATTRIBUTE_DECAY] + x;
@@ -165,7 +145,6 @@ namespace SparkyStudios::Audio::Amplitude
 
             // Read
             y = _buffer[o] * m_parameters[DelayFilter::ATTRIBUTE_WET];
-            y = AM_CLAMP_AUDIO_SAMPLE(y);
         }
 
         return static_cast<AmAudioSample>(y);
@@ -184,7 +163,7 @@ namespace SparkyStudios::Audio::Amplitude
             _bufferMaxLength = maxSamples;
             const AmUInt32 size = _bufferMaxLength * channels * sizeof(AmReal32);
 
-            _buffer = static_cast<AmReal32Buffer>(amMemory->Malloc(MemoryPoolKind::Filtering, size));
+            _buffer = static_cast<AmReal32Buffer>(ampoolmalloc(MemoryPoolKind::Filtering, size));
             std::memset(_buffer, 0, size);
         }
 

@@ -24,17 +24,15 @@ namespace SparkyStudios::Audio::Amplitude::Drivers
     [[maybe_unused]] static class MiniAudioDriver final : public Driver
     {
     public:
-        MiniAudioDriver()
-            : Driver("miniaudio")
-            , _initialized(false)
-            , _device()
-        {}
+        MiniAudioDriver();
 
-        ~MiniAudioDriver() final;
+        ~MiniAudioDriver() override;
 
-        bool Open(const DeviceDescription& device) final;
+        bool Open(const DeviceDescription& device) override;
 
-        bool Close() final;
+        bool Close() override;
+
+        bool EnumerateDevices(std::vector<DeviceDescription>& devices) override;
 
     protected:
         friend void miniaudio_device_notification(const ma_device_notification* pNotification);
@@ -42,6 +40,13 @@ namespace SparkyStudios::Audio::Amplitude::Drivers
     private:
         bool _initialized;
         ma_device _device;
+
+        ma_log_callback _logCallback;
+        ma_log _log;
+
+        ma_context _context;
+
+        std::vector<DeviceDescription> _devices;
     } miniaudio_driver; // NOLINT(cert-err58-cpp)
 } // namespace SparkyStudios::Audio::Amplitude::Drivers
 

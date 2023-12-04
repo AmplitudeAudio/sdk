@@ -20,8 +20,6 @@
 #include <SparkyStudios/Audio/Amplitude/Amplitude.h>
 
 #include <Utils/Audio/Resampling/CDSPResampler.h>
-#include <Utils/miniaudio/miniaudio_utils.h>
-#include <Utils/Utils.h>
 
 namespace SparkyStudios::Audio::Amplitude
 {
@@ -37,16 +35,16 @@ namespace SparkyStudios::Audio::Amplitude
             SetSampleRate(sampleRateIn, sampleRateOut);
         }
 
-        bool Process(AmAudioSampleBuffer input, AmUInt64& inputFrames, AmAudioSampleBuffer output, AmUInt64& outputFrames) override
+        bool Process(AmConstAudioSampleBuffer input, AmUInt64& inputFrames, AmAudioSampleBuffer output, AmUInt64& outputFrames) override
         {
-            auto input64 = static_cast<AmReal64Buffer>(amMemory->Malloc(MemoryPoolKind::SoundData, inputFrames * sizeof(AmReal64)));
+            const auto input64 = static_cast<AmReal64Buffer>(ampoolmalloc(MemoryPoolKind::SoundData, inputFrames * sizeof(AmReal64)));
 
             for (AmUInt16 c = 0; c < _numChannels; c++)
             {
                 r8b::CDSPResampler16* resampler = _resamplers[c].get();
 
                 for (AmUInt64 i = 0; i < inputFrames; i++)
-                    input64[i] = (AmReal64)input[i * _numChannels + c];
+                    input64[i] = static_cast<AmReal64>(input[i * _numChannels + c]);
 
                 AmReal64Buffer output64 = nullptr;
                 outputFrames = resampler->process(input64, static_cast<AmInt32>(inputFrames), output64);
@@ -54,15 +52,15 @@ namespace SparkyStudios::Audio::Amplitude
 
                 if (output64 == nullptr)
                 {
-                    amMemory->Free(MemoryPoolKind::SoundData, input64);
+                    ampoolfree(MemoryPoolKind::SoundData, input64);
                     return false;
                 }
 
                 for (AmUInt64 i = 0; i < outputFrames; i++)
-                    output[i * _numChannels + c] = (AmReal32)output64[i];
+                    output[i * _numChannels + c] = static_cast<AmReal32>(output64[i]);
             }
 
-            amMemory->Free(MemoryPoolKind::SoundData, input64);
+            ampoolfree(MemoryPoolKind::SoundData, input64);
 
             return true;
         }
@@ -155,12 +153,12 @@ namespace SparkyStudios::Audio::Amplitude
 
         ResamplerInstance* CreateInstance() override
         {
-            return amnew(R8BrainResamplerInstance);
+            return ampoolnew(MemoryPoolKind::Filtering, R8BrainResamplerInstance);
         }
 
         void DestroyInstance(ResamplerInstance* instance) override
         {
-            amdelete(R8BrainResamplerInstance, (R8BrainResamplerInstance*)instance);
+            ampooldelete(MemoryPoolKind::Filtering, R8BrainResamplerInstance, (R8BrainResamplerInstance*)instance);
         }
     } gR8BrainResampler; // NOLINT(cert-err58-cpp)
 } // namespace SparkyStudios::Audio::Amplitude

@@ -21,7 +21,6 @@ can call this script with the argument 'clean'.
 """
 
 import argparse
-import distutils.spawn
 import glob
 import os
 import platform

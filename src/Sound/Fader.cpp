@@ -12,6 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+#include <SparkyStudios/Audio/Amplitude/Core/Log.h>
 #include <SparkyStudios/Audio/Amplitude/Sound/Fader.h>
 
 namespace SparkyStudios::Audio::Amplitude
@@ -19,7 +20,143 @@ namespace SparkyStudios::Audio::Amplitude
     typedef std::map<std::string, Fader*> FaderRegistry;
     typedef FaderRegistry::value_type FaderImpl;
 
+    static constexpr AmUInt32 kNewtonIterations = 4;
+    static constexpr AmReal64 kNewtonMinSlope = 0.001;
+    static constexpr AmReal64 kSubdivisionPrecision = 0.0000001;
+    static constexpr AmUInt32 kSubdivisionMaxIterations = 10;
+
+    static constexpr AmUInt32 kSplineTableSize = 11;
+    static constexpr AmReal64 kSampleStepSize = 1.0 / (kSplineTableSize - 1.0);
+
+    static AmReal64 A(const AmReal64 a1, const AmReal64 a2)
+    {
+        return 1.0 - 3.0 * a2 + 3.0 * a1;
+    }
+
+    static AmReal64 B(const AmReal64 a1, const AmReal64 a2)
+    {
+        return 3.0 * a2 - 6.0 * a1;
+    }
+
+    static AmReal64 C(const AmReal64 a1)
+    {
+        return 3.0 * a1;
+    }
+
+    // Returns x(t) given t, x1, and x2, or y(t) given t, y1, and y2.
+    static AmReal64 CalculateBezier(const AmReal64 t, const AmReal64 a1, const AmReal64 a2)
+    {
+        return ((A(a1, a2) * t + B(a1, a2)) * t + C(a1)) * t;
+    }
+
+    // Returns dx/dt given t, x1, and x2, or dy/dt given t, y1, and y2.
+    static AmReal64 GetSlope(const AmReal64 t, const AmReal64 a1, const AmReal64 a2)
+    {
+        return 3.0 * A(a1, a2) * t * t + 2.0 * B(a1, a2) * t + C(a1);
+    }
+
+    static AmReal64 BinarySubdivide(const AmReal64 x, AmReal64 a, AmReal64 b, const AmReal64 mX1, const AmReal64 mX2)
+    {
+        AmReal64 currentX, currentT, i = 0;
+        do
+        {
+            currentT = a + (b - a) / 2.0;
+            currentX = CalculateBezier(currentT, mX1, mX2) - x;
+            if (currentX > 0.0)
+            {
+                b = currentT;
+            }
+            else
+            {
+                a = currentT;
+            }
+        } while (std::abs(currentX) > kSubdivisionPrecision && ++i < kSubdivisionMaxIterations);
+
+        return currentT;
+    }
+
+    static AmReal64 NewtonRaphsonIterate(const AmReal64 x, AmReal64 aGuessT, const AmReal64 mX1, const AmReal64 mX2)
+    {
+        for (AmUInt32 i = 0; i < kNewtonIterations; ++i)
+        {
+            const AmReal64 currentSlope = GetSlope(aGuessT, mX1, mX2);
+            if (currentSlope == 0.0)
+            {
+                return aGuessT;
+            }
+
+            const AmReal64 currentX = CalculateBezier(aGuessT, mX1, mX2) - x;
+            aGuessT -= currentX / currentSlope;
+        }
+
+        return aGuessT;
+    }
+
+    FaderInstance::Transition::Transition(const AmReal32 x1, const AmReal32 y1, const AmReal32 x2, const AmReal32 y2)
+        : m_controlPoints({ x1, y1, x2, y2 })
+        , _samples()
+    {
+        for (AmUInt32 i = 0; i < kSplineTableSize; ++i)
+        {
+            _samples[i] = CalculateBezier(i * kSampleStepSize, m_controlPoints.x1, m_controlPoints.x2);
+        }
+    }
+
+    FaderInstance::Transition::Transition(const BeizerCurveControlPoints& controlPoints)
+        : Transition(controlPoints.x1, controlPoints.y1, controlPoints.x2, controlPoints.y2)
+    {}
+
+    AmTime FaderInstance::Transition::Ease(AmTime t) const
+    {
+        // No transition (constant until the end)
+        if (m_controlPoints.x1 == m_controlPoints.x2 && m_controlPoints.y1 == m_controlPoints.y2)
+        {
+            t = AM_CLAMP(t, 0.0, 1.0);
+            return t == 1.0 ? 1.0 : 0.0;
+        }
+
+        // Linear transition
+        if (m_controlPoints.x1 == m_controlPoints.y1 && m_controlPoints.x2 == m_controlPoints.y2)
+        {
+            return t;
+        }
+
+        // Don't waste time calculating extreme values.
+        if (t <= 0.0 || t >= 1.0)
+        {
+            return t;
+        }
+
+        return CalculateBezier(GetTFromX(t), m_controlPoints.y1, m_controlPoints.y2);
+    }
+
+    AmTime FaderInstance::Transition::GetTFromX(AmReal64 x) const
+    {
+        AmReal64 intervalStart = 0.0;
+        AmUInt32 currentSample = 1;
+
+        for (constexpr AmUInt32 lastSample = kSplineTableSize - 1; currentSample != lastSample && _samples[currentSample] <= x;
+             ++currentSample)
+            intervalStart += kSampleStepSize;
+
+        --currentSample;
+
+        // Interpolate to provide an initial guess for t
+        const AmReal64 dist = (x - _samples[currentSample]) / (_samples[currentSample + 1] - _samples[currentSample]);
+        const AmReal64 guessForT = intervalStart + dist * kSampleStepSize;
+
+        const AmReal64 initialSlope = GetSlope(guessForT, m_controlPoints.x1, m_controlPoints.x2);
+        if (initialSlope >= kNewtonMinSlope)
+            return NewtonRaphsonIterate(x, guessForT, m_controlPoints.x1, m_controlPoints.x2);
+
+        if (initialSlope == 0.0)
+            return guessForT;
+
+        return BinarySubdivide(x, intervalStart, intervalStart + kSampleStepSize, m_controlPoints.x1, m_controlPoints.x2);
+    }
+
     FaderInstance::FaderInstance()
+        : m_curve(0.0f, 0.0f, 0.0f, 0.0f)
     {
         m_from = m_to = m_delta = 0;
         m_time = m_startTime = m_endTime = 0;
@@ -59,6 +196,12 @@ namespace SparkyStudios::Audio::Amplitude
         return GetFromPercentage((time - m_startTime) / (m_endTime - m_startTime));
     }
 
+    AmReal64 FaderInstance::GetFromPercentage(AmReal64 percentage)
+    {
+        percentage = m_curve.Ease(AM_CLAMP(percentage, 0.0, 1.0));
+        return (1.0 - percentage) * m_from + percentage * m_to;
+    }
+
     void FaderInstance::Start(AmTime time)
     {
         m_startTime = time;
@@ -87,7 +230,7 @@ namespace SparkyStudios::Audio::Amplitude
     Fader::Fader(std::string name)
         : m_name(std::move(name))
     {
-        Fader::Register(this);
+        Register(this);
     }
 
     Fader::Fader()
@@ -99,25 +242,27 @@ namespace SparkyStudios::Audio::Amplitude
         return m_name;
     }
 
-    void Fader::Register(Fader* codec)
+    void Fader::Register(Fader* fader)
     {
         if (lockFaders())
             return;
 
-        if (Find(codec->GetName()) != nullptr)
+        if (Find(fader->GetName()) != nullptr)
+        {
+            CallLogFunc("Failed to register fader '%s' as it is already registered", fader->GetName().c_str());
             return;
+        }
 
         FaderRegistry& faders = faderRegistry();
-        faders.insert(FaderImpl(codec->GetName(), codec));
+        faders.insert(FaderImpl(fader->GetName(), fader));
         fadersCount()++;
     }
 
     Fader* Fader::Find(const std::string& name)
     {
-        FaderRegistry& faders = faderRegistry();
-        for (auto&& fader : faders)
-            if (fader.second->m_name == name)
-                return fader.second;
+        const FaderRegistry& faders = faderRegistry();
+        if (const auto& it = faders.find(name); it != faders.end())
+            return it->second;
 
         return nullptr;
     }

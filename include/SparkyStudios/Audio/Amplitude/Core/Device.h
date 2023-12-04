@@ -180,7 +180,7 @@ namespace SparkyStudios::Audio::Amplitude
         /**
          * @brief The device name.
          */
-        std::string mDeviceName;
+        AmString mDeviceName;
 
         /**
          * @brief The device ID.
@@ -242,7 +242,7 @@ namespace SparkyStudios::Audio::Amplitude
      *
      * @param callback The callback to register.
      */
-    void RegisterDeviceNotificationCallback(DeviceNotificationCallback callback);
+    AM_API_PUBLIC void RegisterDeviceNotificationCallback(DeviceNotificationCallback callback);
 
     /**
      * @brief Calls the registered device notification callback.
@@ -251,7 +251,7 @@ namespace SparkyStudios::Audio::Amplitude
      * @param device The device description.
      * @param driver The driver which triggered the device notification.
      */
-    void CallDeviceNotificationCallback(DeviceNotification notification, const DeviceDescription& device, Driver* driver);
+    AM_API_PUBLIC void CallDeviceNotificationCallback(DeviceNotification notification, const DeviceDescription& device, Driver* driver);
 } // namespace SparkyStudios::Audio::Amplitude
 
 #endif // SS_AMPLITUDE_AUDIO_MIXER_DEVICE_DESCRIPTION_H

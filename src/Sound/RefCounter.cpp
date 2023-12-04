@@ -18,13 +18,15 @@
 
 namespace SparkyStudios::Audio::Amplitude
 {
-    int RefCounter::Increment()
+    AmInt32 RefCounter::Increment()
     {
         return ++_count;
     }
 
-    int RefCounter::Decrement()
+    AmInt32 RefCounter::Decrement()
     {
+        AMPLITUDE_ASSERT(_count > 0);
+
         return (_count >= 1) ? --_count : 0;
     }
 } // namespace SparkyStudios::Audio::Amplitude

@@ -19,6 +19,8 @@
 
 #include <SparkyStudios/Audio/Amplitude/Core/Common.h>
 
+#include <SparkyStudios/Audio/Amplitude/Math/Utils.h>
+
 namespace SparkyStudios::Audio::Amplitude
 {
     class Mixer;
@@ -27,9 +29,58 @@ namespace SparkyStudios::Audio::Amplitude
      * @brief A Fader instance. An object of this class will be created each time
      * a Fader is requested.
      */
-    class FaderInstance
+    class AM_API_PUBLIC FaderInstance
     {
     public:
+        /**
+         * @brief Create an animation transition function using
+         * a one-dimensional cubic bezier curve.
+         *
+         * This use the exact same algorithm as in CSS. The first and last
+         * control points of the cubic bezier curve are fixed to (0,0)
+         * and (1,1) respectively.
+         */
+        struct Transition
+        {
+        public:
+            /**
+             * @brief Construct a new Transition curve.
+             *
+             * @param x1 The x coordinate of the second control point.
+             * @param y1 The y coordinate of the second control point.
+             * @param x2 The x coordinate of the third control point.
+             * @param y2 The y coordinate of the third control point.
+             */
+            Transition(AmReal32 x1, AmReal32 y1, AmReal32 x2, AmReal32 y2);
+
+            /**
+             * @brief Construct a new Transition curve.
+             *
+             * @param controlPoints The control points of the curve.
+             */
+            Transition(const BeizerCurveControlPoints& controlPoints);
+
+            /**
+             * @brief Given an animation duration percentage (in the range [0, 1]),
+             * it calculates the animation progression percentage from the configured curve.
+             *
+             * @param t The animation duration percentage (in the range [0, 1]).
+             *
+             * @return The animation progress percentage (in the range [0, 1]).
+             */
+            [[nodiscard]] AmTime Ease(AmTime t) const;
+
+            /**
+             * @brief The control points.
+             */
+            BeizerCurveControlPoints m_controlPoints;
+
+        private:
+            [[nodiscard]] AmTime GetTFromX(AmReal64 x) const;
+
+            AmReal64 _samples[11];
+        };
+
         /**
          * @brief Construct a new FaderInstance object.
          *
@@ -82,7 +133,7 @@ namespace SparkyStudios::Audio::Amplitude
          *
          * @return The current value.
          */
-        virtual AmReal64 GetFromPercentage(AmReal64 percentage) = 0;
+        virtual AmReal64 GetFromPercentage(AmReal64 percentage);
 
         /**
          * @brief Get the state of this Fader.
@@ -126,6 +177,8 @@ namespace SparkyStudios::Audio::Amplitude
         AmTime m_endTime;
         // Active flag; 0 means disabled, 1 is active, -1 means was active, but stopped
         AM_FADER_STATE m_state;
+        // The transition function
+        Transition m_curve;
     };
 
     /**
@@ -134,7 +187,7 @@ namespace SparkyStudios::Audio::Amplitude
      * A fader is used to move a value to a specific target value
      * during an amount of time and according to a fading algorithm.
      */
-    class Fader
+    class AM_API_PUBLIC Fader
     {
         friend class Mixer;
 
@@ -175,12 +228,19 @@ namespace SparkyStudios::Audio::Amplitude
          */
         [[nodiscard]] const std::string& GetName() const;
 
+        // /**
+        //  * @brief Gets the control points of the transition curve used by this Fader.
+        //  *
+        //  * @return The control points of the transition curve used by this Fader.
+        //  */
+        // [[nodiscard]] virtual BeizerCurveControlPoints GetControlPoints() const = 0;
+
         /**
          * @brief Registers a new Fader.
          *
-         * @param Fader The Fader to add in the registry.
+         * @param fader The Fader to add in the registry.
          */
-        static void Register(Fader* Fader);
+        static void Register(Fader* fader);
 
         /**
          * @brief Creates a new instance of the the Fader with the given name

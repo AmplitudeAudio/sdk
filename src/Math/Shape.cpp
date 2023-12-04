@@ -58,11 +58,11 @@ namespace SparkyStudios::Audio::Amplitude
     }
 
     Shape::Shape()
-        : m_lookAtMatrix(AM_M4D(1.0f))
-        , m_needUpdate(true)
-        , m_location()
+        : m_location()
         , m_direction()
         , m_up()
+        , m_lookAtMatrix(AM_M4D(1.0f))
+        , m_needUpdate(true)
     {}
 
     AmReal32 Shape::GetShortestDistanceToEdge(const Entity& entity)
@@ -161,9 +161,8 @@ namespace SparkyStudios::Audio::Amplitude
         return new BoxShape(definition->half_width(), definition->half_height(), definition->half_depth());
     }
 
-    BoxShape::BoxShape(AmReal32 halfWidth, AmReal32 halfHeight, AmReal32 halfDepth)
-        : Shape()
-        , _halfWidth(halfWidth)
+    BoxShape::BoxShape(const AmReal32 halfWidth, const AmReal32 halfHeight, const AmReal32 halfDepth)
+        : _halfWidth(halfWidth)
         , _halfHeight(halfHeight)
         , _halfDepth(halfDepth)
         , _u()
@@ -211,19 +210,19 @@ namespace SparkyStudios::Audio::Amplitude
         return _halfDepth * 2.0f;
     }
 
-    void BoxShape::SetHalfWidth(AmReal32 halfWidth)
+    void BoxShape::SetHalfWidth(const AmReal32 halfWidth)
     {
         _halfWidth = halfWidth;
         m_needUpdate = true;
     }
 
-    void BoxShape::SetHalfHeight(AmReal32 halfHeight)
+    void BoxShape::SetHalfHeight(const AmReal32 halfHeight)
     {
         _halfHeight = halfHeight;
         m_needUpdate = true;
     }
 
-    void BoxShape::SetHalfDepth(AmReal32 halfDepth)
+    void BoxShape::SetHalfDepth(const AmReal32 halfDepth)
     {
         _halfDepth = halfDepth;
         m_needUpdate = true;
@@ -234,9 +233,7 @@ namespace SparkyStudios::Audio::Amplitude
         if (m_needUpdate)
             _update();
 
-        const eGameEngineUpAxis upAxis = amEngine->GetState()->up_axis;
-
-        switch (upAxis)
+        switch (amEngine->GetState()->up_axis)
         {
         default:
             [[fallthrough]];
@@ -321,10 +318,9 @@ namespace SparkyStudios::Audio::Amplitude
         return new CapsuleShape(definition->radius(), definition->half_height());
     }
 
-    CapsuleShape::CapsuleShape(AmReal32 radius, AmReal32 halfHeight)
-        : Shape()
-        , _radius(0.0)
-        , _halfHeight(0.0)
+    CapsuleShape::CapsuleShape(const AmReal32 radius, const AmReal32 halfHeight)
+        : _radius(radius)
+        , _halfHeight(halfHeight)
         , _a()
         , _b()
     {}
@@ -349,13 +345,13 @@ namespace SparkyStudios::Audio::Amplitude
         return _halfHeight * 2.0f;
     }
 
-    void CapsuleShape::SetRadius(AmReal32 radius)
+    void CapsuleShape::SetRadius(const AmReal32 radius)
     {
         _radius = radius;
         m_needUpdate = true;
     }
 
-    void CapsuleShape::SetHalfHeight(AmReal32 halfHeight)
+    void CapsuleShape::SetHalfHeight(const AmReal32 halfHeight)
     {
         _halfHeight = halfHeight;
         m_needUpdate = true;
@@ -437,9 +433,8 @@ namespace SparkyStudios::Audio::Amplitude
         return new ConeShape(definition->radius(), definition->height());
     }
 
-    ConeShape::ConeShape(AmReal32 radius, AmReal32 height)
-        : Shape()
-        , _radius(radius)
+    ConeShape::ConeShape(const AmReal32 radius, const AmReal32 height)
+        : _radius(radius)
         , _height(height)
     {}
 
@@ -458,13 +453,13 @@ namespace SparkyStudios::Audio::Amplitude
         return _height;
     }
 
-    void ConeShape::SetRadius(AmReal32 radius)
+    void ConeShape::SetRadius(const AmReal32 radius)
     {
         _radius = radius;
         m_needUpdate = true;
     }
 
-    void ConeShape::SetHeight(AmReal32 height)
+    void ConeShape::SetHeight(const AmReal32 height)
     {
         _height = height;
         m_needUpdate = true;
@@ -517,9 +512,8 @@ namespace SparkyStudios::Audio::Amplitude
         return new SphereShape(definition->radius());
     }
 
-    SphereShape::SphereShape(AmReal32 radius)
-        : Shape()
-        , _radius(radius)
+    SphereShape::SphereShape(const AmReal32 radius)
+        : _radius(radius)
     {}
 
     AmReal32 SphereShape::GetRadius() const
@@ -532,7 +526,7 @@ namespace SparkyStudios::Audio::Amplitude
         return _radius * 2.0f;
     }
 
-    void SphereShape::SetRadius(AmReal32 radius)
+    void SphereShape::SetRadius(const AmReal32 radius)
     {
         _radius = radius;
         m_needUpdate = true;

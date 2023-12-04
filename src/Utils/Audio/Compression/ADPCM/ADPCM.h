@@ -22,8 +22,6 @@
 
 #include <SparkyStudios/Audio/Amplitude/Amplitude.h>
 
-#include <IO/File.h>
-
 #define WAVE_FORMAT_PCM 0x1
 #define WAVE_FORMAT_IMA_ADPCM 0x11
 #define WAVE_FORMAT_EXTENSIBLE 0xfffe

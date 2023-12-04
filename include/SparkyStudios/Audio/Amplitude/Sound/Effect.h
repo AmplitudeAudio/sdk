@@ -19,12 +19,15 @@
 
 #include <SparkyStudios/Audio/Amplitude/Core/Common.h>
 
+#include <SparkyStudios/Audio/Amplitude/Core/Asset.h>
+
 #include <SparkyStudios/Audio/Amplitude/Sound/Filter.h>
 #include <SparkyStudios/Audio/Amplitude/Sound/Rtpc.h>
 
 namespace SparkyStudios::Audio::Amplitude
 {
     struct EngineInternalState;
+
     struct EffectDefinition;
 
     class EffectInstance;
@@ -36,122 +39,73 @@ namespace SparkyStudios::Audio::Amplitude
      * (sounds, collections, or switch containers) during playback.
      *
      * Effects are customized using parameters and each parameters can be
-     * updated at runtime using RTPC.
+     * updated at runtime using a RTPC.
      */
-    class Effect
+    class AM_API_PUBLIC Effect final : public Asset<AmEffectID, EffectDefinition>
     {
-        friend class EffectInstance;
-
     public:
+        /**
+         * @brief Creates an uninitialized Effect.
+         */
         Effect();
-        ~Effect();
 
         /**
-         * @brief Loads the effect from the given source.
-         *
-         * @param source The effect file content to load.
-         *
-         * @return true if the effect was loaded successfully, false otherwise.
+         * \brief Destroys the Effect asset and release all associated resources.
          */
-        bool LoadEffectDefinition(const std::string& source);
+        ~Effect() override;
 
         /**
-         * @brief Loads the effect from the given file path.
-         *
-         * @param filename The path to the effect file to load.
-         *
-         * @return true if the effect was loaded successfully, false otherwise.
-         */
-        bool LoadEffectDefinitionFromFile(AmOsString filename);
-
-        /**
-         * @brief Acquires referenced objects in this Effect.
-         *
-         * @param state The engine state used while loading the effect.
-         */
-        void AcquireReferences(EngineInternalState* state);
-
-        /**
-         * @brief Releases the references acquired when loading the effect.
-         *
-         * @param state The engine state used while loading the effect.
-         */
-        void ReleaseReferences(EngineInternalState* state);
-
-        /**
-         * @brief Returns the loaded effect definition.
-         *
-         * @return The loaded effect definition.
-         */
-        [[nodiscard]] const EffectDefinition* GetEffectDefinition() const;
-
-        /**
-         * @brief Create an instance of this effect.
+         * @brief Creates an instance of this effect.
          *
          * @return The effect instance.
          */
         [[nodiscard]] EffectInstance* CreateInstance() const;
 
         /**
-         * @brief Deletes an instance of this effect.
+         * @brief Destroys an instance of this effect.
          *
          * @param instance The effect instance to delete.
          */
         void DestroyInstance(EffectInstance* instance) const;
 
         /**
-         * @brief Updates parameters on each frames.
+         * @brief Updates the effect parameters on each frames.
          */
         void Update();
 
-        /**
-         * @brief Returns the unique ID of this Effect.
-         *
-         * @return The Effect unique ID.
-         */
-        [[nodiscard]] AmEffectID GetId() const;
-
-        /**
-         * @brief Get the name of this effect.
-         *
-         * @return The effect name.
-         */
-        [[nodiscard]] const std::string& GetName() const;
-
-        /**
-         * @brief Get the references counter for this object.
-         *
-         * @return The references counter.
-         */
-        RefCounter* GetRefCounter();
-
-        /**
-         * @brief Get the references counter for this object.
-         *
-         * @return The references counter.
-         */
-        [[nodiscard]] const RefCounter* GetRefCounter() const;
+        bool LoadDefinition(const EffectDefinition* definition, EngineInternalState* state) override;
+        [[nodiscard]] const EffectDefinition* GetDefinition() const override;
 
     private:
-        std::string _source;
+        friend class EffectInstance;
 
-        AmEffectID _id;
-        std::string _name;
+        std::vector<EffectInstance*> _instances;
 
         std::vector<RtpcValue> _parameters;
-
-        RefCounter _refCounter;
 
         Filter* _filter;
     };
 
     /**
-     * @brief The actual effect applied to a SoundInstance.
+     * @brief An instance of an Effect asset.
+     *
+     * The effect instance is the real filter applied to only one sound object
+     * at a time. It is used to not share the same state between multiple sound
+     * objects.
      */
-    class EffectInstance
+    class AM_API_PUBLIC EffectInstance
     {
     public:
+        /**
+         * @brief Creates a new EffectInstance.
+         *
+         * @param parent The parent Effect asset.
+         */
         explicit EffectInstance(const Effect* parent);
+
+        /**
+         * @brief Destroys the EffectInstance.
+         */
         ~EffectInstance();
 
         /**

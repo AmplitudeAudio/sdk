@@ -17,7 +17,6 @@
 #include <Core/EngineInternalState.h>
 #include <Core/EntityInternalState.h>
 
-#include "collection_definition_generated.h"
 #include "event_definition_generated.h"
 
 namespace SparkyStudios::Audio::Amplitude
@@ -27,11 +26,11 @@ namespace SparkyStudios::Audio::Amplitude
     {}
 
     EventAction::EventAction(Event* parent)
-        : _parent(parent)
-        , _active(false)
+        : _active(false)
         , _type(EventActionType_None)
-        , _targets()
         , _scope(Scope_Entity)
+        , _targets()
+        , _parent(parent)
     {}
 
     void EventAction::Initialize(const EventActionDefinition* definition)
@@ -39,7 +38,7 @@ namespace SparkyStudios::Audio::Amplitude
         _active = definition->active();
         _type = definition->type();
         _scope = definition->scope();
-        flatbuffers::uoffset_t targets_count = definition->targets() ? definition->targets()->size() : 0;
+        const flatbuffers::uoffset_t targets_count = definition->targets() ? definition->targets()->size() : 0;
         for (flatbuffers::uoffset_t i = 0; i < targets_count; ++i)
         {
             _targets.push_back(definition->targets()->Get(i));
@@ -213,9 +212,7 @@ namespace SparkyStudios::Audio::Amplitude
     {
         for (auto&& target : _targets)
         {
-            Bus bus = amEngine->FindBus(target);
-
-            if (bus.Valid())
+            if (Bus bus = amEngine->FindBus(target); bus.Valid())
             {
                 bus.SetMute(mute);
             }
@@ -223,39 +220,12 @@ namespace SparkyStudios::Audio::Amplitude
     }
 
     Event::Event()
-        : _source()
-        , _id(kAmInvalidObjectId)
-        , _name()
-        , _actions()
-        , _refCounter()
+        : _actions()
     {}
 
-    bool Event::LoadEventDefinition(const std::string& event)
+    Event::~Event()
     {
-        _source = event;
-        const EventDefinition* definition = GetEventDefinition();
-
-        _id = definition->id();
-        _name = definition->name()->str();
-
-        flatbuffers::uoffset_t actions_count = definition->actions() ? definition->actions()->size() : 0;
-        _actions.resize(actions_count);
-        for (flatbuffers::uoffset_t i = 0; i < actions_count; ++i)
-        {
-            const EventActionDefinition* item = definition->actions()->Get(i);
-
-            EventAction& action = _actions[i];
-            action._parent = this;
-            action.Initialize(item);
-        }
-
-        return true;
-    }
-
-    bool Event::LoadEventDefinitionFromFile(AmOsString filename)
-    {
-        std::string source;
-        return LoadFile(filename, &source) && LoadEventDefinition(source);
+        _actions.clear();
     }
 
     EventInstance Event::Trigger(const Entity& entity) const
@@ -268,28 +238,33 @@ namespace SparkyStudios::Audio::Amplitude
         return event;
     }
 
-    AmEventID Event::GetId() const
+    bool Event::LoadDefinition(const EventDefinition* definition, EngineInternalState* state)
     {
-        return _id;
+        _id = definition->id();
+        _name = definition->name()->str();
+
+        const flatbuffers::uoffset_t actions_count = definition->actions() ? definition->actions()->size() : 0;
+        _actions.resize(actions_count);
+
+        for (flatbuffers::uoffset_t i = 0; i < actions_count; ++i)
+        {
+            const EventActionDefinition* item = definition->actions()->Get(i);
+
+            EventAction& action = _actions[i];
+            action._parent = this;
+            action.Initialize(item);
+        }
+
+        return true;
     }
 
-    const std::string& Event::GetName() const
+    const EventDefinition* Event::GetDefinition() const
     {
-        return _name;
-    }
-
-    const EventDefinition* Event::GetEventDefinition() const
-    {
-        return Amplitude::GetEventDefinition(_source.c_str());
-    }
-
-    RefCounter* Event::GetRefCounter()
-    {
-        return &_refCounter;
+        return GetEventDefinition(_source.c_str());
     }
 
     EventCanceler::EventCanceler()
-        : _event(nullptr)
+        : EventCanceler(nullptr)
     {}
 
     EventCanceler::EventCanceler(EventInstance* event)
@@ -326,9 +301,7 @@ namespace SparkyStudios::Audio::Amplitude
     {
         _running = true;
         for (auto&& action : _actions)
-        {
             action.Run(entity);
-        }
     }
 
     void EventInstance::AdvanceFrame(AmTime delta_time)
@@ -338,9 +311,7 @@ namespace SparkyStudios::Audio::Amplitude
 
         _running = false;
         for (auto&& action : _actions)
-        {
             _running |= action.AdvanceFrame(delta_time);
-        }
     }
 
     bool EventInstance::IsRunning() const

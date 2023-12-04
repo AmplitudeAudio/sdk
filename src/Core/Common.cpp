@@ -15,6 +15,7 @@
 #include <cstring>
 
 #include <SparkyStudios/Audio/Amplitude/Core/Common.h>
+#include <SparkyStudios/Audio/Amplitude/Core/Memory.h>
 
 namespace SparkyStudios::Audio::Amplitude
 {
@@ -27,38 +28,96 @@ namespace SparkyStudios::Audio::Amplitude
 
     AmResult AmAlignedReal32Buffer::Init(AmUInt32 size)
     {
-        delete[] m_basePtr;
+        if (m_basePtr != nullptr)
+            ampoolfree(MemoryPoolKind::Default, m_basePtr);
+
+        if (size == 0)
+            return AM_ERROR_NO_ERROR;
+
         m_basePtr = nullptr;
         m_data = nullptr;
+
         m_floats = size;
+
 #ifndef AM_SIMD_INTRINSICS
-        m_basePtr = new AmUInt8[size * sizeof(float)];
-        if (m_basePtr == nullptr)
-            return AM_ERROR_OUT_OF_MEMORY;
-        m_data = (AmReal32Buffer)m_basePtr;
+        m_basePtr = static_cast<AmUInt8Buffer>(ammalloc(size * sizeof(AmReal32)));
 #else
-        m_basePtr = new AmUInt8[size * sizeof(float) + AM_SIMD_ALIGNMENT];
+        m_basePtr = static_cast<AmUInt8Buffer>(ammalign(size * sizeof(AmReal32), AM_SIMD_ALIGNMENT));
+#endif
+
         if (m_basePtr == nullptr)
             return AM_ERROR_OUT_OF_MEMORY;
-        m_data = (AmReal32Buffer)(((size_t)m_basePtr + (AM_SIMD_ALIGNMENT - 1)) & ~(AM_SIMD_ALIGNMENT - 1));
-#endif
+
+        m_data = reinterpret_cast<AmReal32Buffer>(m_basePtr);
+
         return AM_ERROR_NO_ERROR;
     }
 
     void AmAlignedReal32Buffer::Clear() const
     {
-        memset(m_data, 0, sizeof(float) * m_floats);
+        std::memset(m_basePtr, 0, sizeof(AmReal32) * m_floats);
+    }
+
+    void AmAlignedReal32Buffer::Release()
+    {
+        if (m_basePtr == nullptr)
+            return;
+
+        amfree(m_basePtr);
+        m_basePtr = nullptr;
+
+        m_floats = 0;
+        m_data = nullptr;
+    }
+
+    void AmAlignedReal32Buffer::CopyFrom(const AmAlignedReal32Buffer& other) const
+    {
+        AMPLITUDE_ASSERT(m_floats == other.m_floats);
+
+        if (this != &other)
+        {
+            std::memcpy(m_basePtr, other.m_basePtr, m_floats * sizeof(AmReal32));
+        }
+    }
+
+    void AmAlignedReal32Buffer::Resize(AmUInt32 size)
+    {
+        if (m_basePtr == nullptr)
+        {
+            Init(size);
+            return;
+        }
+
+        if (size == m_floats)
+            return;
+
+        m_floats = size;
+
+#ifndef AM_SIMD_INTRINSICS
+        m_basePtr = static_cast<AmUInt8Buffer>(amrealloc(m_basePtr, size * sizeof(AmReal32)));
+#else
+        m_basePtr = static_cast<AmUInt8Buffer>(amrealign(m_basePtr, size * sizeof(AmReal32), AM_SIMD_ALIGNMENT));
+#endif
+
+        m_data = reinterpret_cast<AmReal32Buffer>(m_basePtr);
+    }
+
+    void AmAlignedReal32Buffer::Swap(AmAlignedReal32Buffer& a, AmAlignedReal32Buffer& b)
+    {
+        std::swap(a.m_floats, b.m_floats);
+        std::swap(a.m_data, b.m_data);
+        std::swap(a.m_basePtr, b.m_basePtr);
     }
 
     AmAlignedReal32Buffer::~AmAlignedReal32Buffer()
     {
-        delete[] m_basePtr;
+        Release();
     }
 
-    TinyAlignedReal32Buffer::TinyAlignedReal32Buffer()
+    AmTinyAlignedReal32Buffer::AmTinyAlignedReal32Buffer()
     {
         AmUInt8Buffer basePtr = &m_actualData[0];
-        m_data = (AmReal32Buffer)(((size_t)basePtr + (AM_SIMD_ALIGNMENT - 1)) & ~(AM_SIMD_ALIGNMENT - 1));
+        m_data = reinterpret_cast<AmReal32Buffer>(reinterpret_cast<AmSize>(basePtr) + (AM_SIMD_ALIGNMENT - 1) & ~(AM_SIMD_ALIGNMENT - 1));
     }
 
     void SoundFormat::SetAll(
@@ -67,8 +126,7 @@ namespace SparkyStudios::Audio::Amplitude
         AmUInt32 bitsPerSample,
         AmUInt64 framesCount,
         AmUInt32 frameSize,
-        AM_SAMPLE_FORMAT sampleType,
-        AM_INTERLEAVE_TYPE interleaveType)
+        AM_SAMPLE_FORMAT sampleType)
     {
         _sampleRate = sampleRate;
         _numChannels = numChannels;
@@ -76,6 +134,5 @@ namespace SparkyStudios::Audio::Amplitude
         _framesCount = framesCount;
         _frameSize = frameSize;
         _sampleType = sampleType;
-        _interleaveType = interleaveType;
     }
 } // namespace SparkyStudios::Audio::Amplitude

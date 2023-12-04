@@ -17,7 +17,6 @@
 #include <Core/EngineInternalState.h>
 #include <Mixer/SoundData.h>
 
-#include "collection_definition_generated.h"
 #include "sound_definition_generated.h"
 
 namespace SparkyStudios::Audio::Amplitude
@@ -26,14 +25,14 @@ namespace SparkyStudios::Audio::Amplitude
 
     Sound::Sound()
         : SoundObject()
-        , m_format()
+        , _codec(nullptr)
         , _decoder(nullptr)
         , _stream(false)
         , _loop(false)
         , _loopCount(0)
-        , _source()
         , _settings()
         , _soundData(nullptr)
+        , _format()
         , _soundDataRefCounter()
     {}
 
@@ -42,12 +41,16 @@ namespace SparkyStudios::Audio::Amplitude
         if (_decoder != nullptr)
         {
             _decoder->Close();
-            delete _decoder;
+            _codec->DestroyDecoder(_decoder);
+
             _decoder = nullptr;
+            _codec = nullptr;
         }
 
         if (_soundData != nullptr)
         {
+            AMPLITUDE_ASSERT(_soundDataRefCounter.GetCount() == 0);
+
             SoundChunk::DestroyChunk(_soundData);
             _soundData = nullptr;
         }
@@ -57,14 +60,107 @@ namespace SparkyStudios::Audio::Amplitude
         m_attenuation = nullptr;
     }
 
-    bool Sound::LoadDefinition(const std::string& source, EngineInternalState* state)
+    SoundInstance* Sound::CreateInstance()
     {
-        // Ensure we don't load the sound more than once
-        AMPLITUDE_ASSERT(m_id == kAmInvalidObjectId);
+        AMPLITUDE_ASSERT(_id != kAmInvalidObjectId);
+        return ampoolnew(MemoryPoolKind::Engine, SoundInstance, this, _settings, m_effect);
+    }
 
-        _source = source;
-        const SoundDefinition* definition = GetSoundDefinition();
+    SoundInstance* Sound::CreateInstance(const Collection* collection)
+    {
+        if (collection == nullptr)
+            return CreateInstance();
 
+        AMPLITUDE_ASSERT(_id != kAmInvalidObjectId);
+
+        auto* sound = ampoolnew(MemoryPoolKind::Engine, SoundInstance, this, collection->_soundSettings.at(_id), collection->m_effect);
+        sound->_collection = collection;
+
+        return sound;
+    }
+
+    SoundChunk* Sound::AcquireSoundData()
+    {
+        if (_stream)
+            return nullptr;
+
+        if (_soundDataRefCounter.GetCount() == 0)
+        {
+            _soundData = SoundChunk::CreateChunk(_format.GetFramesCount(), _format.GetNumChannels());
+
+            if (_decoder->Load(reinterpret_cast<AmAudioSampleBuffer>(_soundData->buffer)) != _format.GetFramesCount())
+            {
+                SoundChunk::DestroyChunk(_soundData);
+                CallLogFunc("Could not load a sound instance. Unable to read data from the parent sound.\n");
+                return nullptr;
+            }
+        }
+
+        _soundDataRefCounter.Increment();
+        return _soundData;
+    }
+
+    void Sound::ReleaseSoundData()
+    {
+        if (_stream)
+            return;
+
+        _soundDataRefCounter.Decrement();
+
+        if (_soundDataRefCounter.GetCount() == 0)
+        {
+            SoundChunk::DestroyChunk(_soundData);
+            _soundData = nullptr;
+        }
+    }
+
+    bool Sound::IsStream() const
+    {
+        return _stream;
+    }
+
+    bool Sound::IsLoop() const
+    {
+        return _loop;
+    }
+
+    void Sound::Load(const FileSystem* loader)
+    {
+        const AmOsString& filename = GetPath();
+
+        if (filename.empty())
+        {
+            CallLogFunc("[ERROR] Cannot load the sound: the filename is empty.\n");
+            return;
+        }
+
+        if (!loader->Exists(filename))
+        {
+            CallLogFunc("[ERROR] Cannot load the sound: the file \"" AM_OS_CHAR_FMT "\" does not exist.\n", filename.c_str());
+            return;
+        }
+
+        const auto file = loader->OpenFile(filename);
+
+        _codec = Codec::FindCodecForFile(file);
+        if (_codec == nullptr)
+        {
+            CallLogFunc("[ERROR] Cannot load the sound: unable to find codec for '" AM_OS_CHAR_FMT "'.\n", filename.c_str());
+            return;
+        }
+
+        _decoder = _codec->CreateDecoder();
+        if (!_decoder->Open(file))
+        {
+            CallLogFunc("[ERROR] Cannot load the sound: unable to initialize a decoder for '" AM_OS_CHAR_FMT "'.\n", filename.c_str());
+            return;
+        }
+
+        _format = _decoder->GetFormat();
+    }
+
+    bool Sound::LoadDefinition(const SoundDefinition* definition, EngineInternalState* state)
+    {
         if (definition->id() == kAmInvalidObjectId)
         {
             CallLogFunc("[ERROR] Sound definition is invalid: no ID defined.");
@@ -110,12 +206,15 @@ namespace SparkyStudios::Audio::Amplitude
             }
         }
 
-        m_id = definition->id();
-        m_name = definition->name()->str();
+        _id = definition->id();
+        _name = definition->name()->str();
+
+        auto* fs = amEngine->GetFileSystem();
 
         _stream = definition->stream();
         _loop = definition->loop() != nullptr && definition->loop()->enabled();
         _loopCount = definition->loop() ? definition->loop()->loop_count() : 0;
+        _filename = fs->ResolvePath(fs->Join({ AM_OS_STRING("data"), AM_STRING_TO_OS_STRING(definition->path()->str()) }));
 
         m_gain = RtpcValue(definition->gain());
         m_priority = RtpcValue(definition->priority());
@@ -134,199 +233,88 @@ namespace SparkyStudios::Audio::Amplitude
         return true;
     }
 
-    bool Sound::LoadDefinitionFromFile(const AmOsString& filename, EngineInternalState* state)
+    const SoundDefinition* Sound::GetDefinition() const
     {
-        std::string source;
-        return Amplitude::LoadFile(filename, &source) && LoadDefinition(source, state);
+        return GetSoundDefinition(_source.c_str());
     }
 
     void Sound::AcquireReferences(EngineInternalState* state)
     {
-        AMPLITUDE_ASSERT(m_id != kAmInvalidObjectId);
+        AMPLITUDE_ASSERT(_id != kAmInvalidObjectId);
 
         if (m_effect)
-        {
             m_effect->GetRefCounter()->Increment();
-        }
 
         if (m_attenuation)
-        {
             m_attenuation->GetRefCounter()->Increment();
-        }
     }
 
     void Sound::ReleaseReferences(EngineInternalState* state)
     {
-        AMPLITUDE_ASSERT(m_id != kAmInvalidObjectId);
+        AMPLITUDE_ASSERT(_id != kAmInvalidObjectId);
 
         if (m_effect)
-        {
             m_effect->GetRefCounter()->Decrement();
-        }
 
         if (m_attenuation)
-        {
             m_attenuation->GetRefCounter()->Decrement();
-        }
     }
 
-    const SoundDefinition* Sound::GetSoundDefinition() const
-    {
-        return Amplitude::GetSoundDefinition(_source.c_str());
-    }
-
-    void Sound::Load(const FileLoader* loader)
-    {
-        if (GetFilename().empty())
-        {
-            CallLogFunc("[ERROR] Cannot load the sound: the filename is empty.\n");
-            return;
-        }
-
-        const std::filesystem::path& filename = GetFilename();
-
-        const Codec* codec = Codec::FindCodecForFile(filename.c_str());
-        if (codec == nullptr)
-        {
-            CallLogFunc("[ERROR] Cannot load the sound: unable to find codec for '" AM_OS_CHAR_FMT "'.\n", filename.c_str());
-            return;
-        }
-
-        _decoder = codec->CreateDecoder();
-        if (!_decoder->Open(filename.c_str()))
-        {
-            CallLogFunc("[ERROR] Cannot load the sound: unable to initialize a decoder for '" AM_OS_CHAR_FMT "'.\n", filename.c_str());
-            return;
-        }
-
-        m_format = _decoder->GetFormat();
-    }
-
-    SoundInstance* Sound::CreateInstance()
-    {
-        AMPLITUDE_ASSERT(m_id != kAmInvalidObjectId);
-        return new SoundInstance(this, _settings, m_effect);
-    }
-
-    SoundInstance* Sound::CreateInstance(const Collection* collection)
-    {
-        if (collection == nullptr)
-            return CreateInstance();
-
-        AMPLITUDE_ASSERT(m_id != kAmInvalidObjectId);
-
-        auto* sound = new SoundInstance(this, collection->_soundSettings.at(m_id), collection->m_effect);
-        sound->_collection = collection;
-
-        return sound;
-    }
-
-    void Sound::SetFormat(const SoundFormat& format)
-    {
-        m_format = format;
-    }
-
-    const SoundFormat& Sound::GetFormat() const
-    {
-        return m_format;
-    }
-
-    bool Sound::IsLoop() const
-    {
-        return _loop;
-    }
-
-    bool Sound::IsStream() const
-    {
-        return _stream;
-    }
-
-    SoundChunk* Sound::AcquireSoundData()
-    {
-        if (_stream)
-            return nullptr;
-
-        if (_soundDataRefCounter.GetCount() == 0)
-        {
-            _soundData = SoundChunk::CreateChunk(m_format.GetFramesCount(), m_format.GetNumChannels());
-
-            if (_decoder->Load(reinterpret_cast<AmAudioSampleBuffer>(_soundData->buffer)) != m_format.GetFramesCount())
-            {
-                CallLogFunc("Could not load a sound instance. Unable to read data from the parent sound.\n");
-                return nullptr;
-            }
-        }
-
-        _soundDataRefCounter.Increment();
-        return _soundData;
-    }
-
-    void Sound::ReleaseSoundData()
-    {
-        if (_stream)
-            return;
-
-        _soundDataRefCounter.Decrement();
-
-        if (_soundDataRefCounter.GetCount() == 0)
-        {
-            SoundChunk::DestroyChunk(_soundData);
-            _soundData = nullptr;
-        }
-    }
-
-    SoundInstance::SoundInstance(Sound* parent, const SoundInstanceSettings& settings, const Effect* effect)
+    SoundInstance::SoundInstance(Sound* parent, SoundInstanceSettings settings, const Effect* effect)
         : _userData(nullptr)
         , _channel(nullptr)
         , _parent(parent)
         , _collection(nullptr)
-        , _settings(settings)
-        , _currentLoopCount(0)
+        , _effect(effect)
         , _effectInstance()
+        , _settings(std::move(settings))
+        , _currentLoopCount(0)
         , _obstruction(0.0f)
         , _occlusion(0.0f)
         , _id(++gLastSoundInstanceID)
     {
-        if (effect != nullptr)
-            _effectInstance = effect->CreateInstance();
+        if (_effect != nullptr)
+            _effectInstance = _effect->CreateInstance();
     }
 
     SoundInstance::~SoundInstance()
     {
         Destroy();
-
-        amdelete(SoundData, (SoundData*)_userData);
-        _userData = nullptr;
-
-        delete _effectInstance;
-        _effectInstance = nullptr;
-
-        _parent = nullptr;
     }
 
     void SoundInstance::Load()
     {
         AMPLITUDE_ASSERT(Valid());
 
-        const AmUInt16 channels = _parent->m_format.GetNumChannels();
-        const AmUInt64 frames = _parent->m_format.GetFramesCount();
+        const AmUInt16 channels = _parent->_format.GetNumChannels();
+        const AmUInt64 frames = _parent->_format.GetFramesCount();
 
-        SoundData* data = nullptr;
+        SoundData* data;
+        SoundChunk* chunk;
 
         if (_parent->_stream)
         {
-            SoundChunk* chunk = SoundChunk::CreateChunk(amEngine->GetSamplesPerStream(), channels);
-            data = SoundData::CreateMusic(_parent->m_format, chunk, frames, this);
+            chunk = SoundChunk::CreateChunk(amEngine->GetSamplesPerStream(), channels);
+            data = SoundData::CreateMusic(_parent->_format, chunk, frames, this);
         }
         else
         {
-            SoundChunk* chunk = _parent->AcquireSoundData();
-            data = SoundData::CreateSound(_parent->m_format, chunk, frames, this);
+            chunk = _parent->AcquireSoundData();
+            data = SoundData::CreateSound(_parent->_format, chunk, frames, this);
         }
 
         if (data == nullptr)
         {
             CallLogFunc("Could not load a sound instance. Unable to read data from the parent sound.\n");
+
+            if (chunk != nullptr)
+            {
+                if (_parent->_stream)
+                    SoundChunk::DestroyChunk(chunk);
+                else
+                    _parent->ReleaseSoundData();
+            }
+
             return;
         }
 
@@ -357,15 +345,15 @@ namespace SparkyStudios::Audio::Amplitude
 
         const auto* data = static_cast<SoundData*>(_userData);
 
-        const AmUInt16 channels = _parent->m_format.GetNumChannels();
+        const AmUInt16 channels = _parent->_format.GetNumChannels();
 
-        AmUInt64 n, l = frames, o = offset, r = 0;
+        AmUInt64 l = frames, o = offset, r = 0;
         auto b = reinterpret_cast<AmAudioSampleBuffer>(data->chunk->buffer);
 
         bool needFill = true;
         do
         {
-            n = _parent->_decoder->Stream(b, o, l);
+            const AmUInt64 n = _parent->_decoder->Stream(b, o, l);
             r += n;
 
             // If we reached the end of the file but looping is enabled, then
@@ -387,10 +375,18 @@ namespace SparkyStudios::Audio::Amplitude
 
         if (_userData != nullptr)
         {
-            static_cast<SoundData*>(_userData)->Destroy(_parent->_stream);
+            SoundData::Destroy(static_cast<SoundData*>(_userData), _parent->_stream);
+
             if (!_parent->_stream)
                 _parent->ReleaseSoundData();
         }
+
+        _userData = nullptr;
+
+        _effect->DestroyInstance(_effectInstance);
+        _effectInstance = nullptr;
+
+        _parent = nullptr;
     }
 
     bool SoundInstance::Valid() const

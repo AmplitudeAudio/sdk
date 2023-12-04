@@ -17,14 +17,10 @@
 #include <SparkyStudios/Audio/Amplitude/Amplitude.h>
 
 #include "../src/Core/Codecs/AMS/Codec.h"
-#include "../src/Core/Codecs/FLAC/Codec.h"
 #include "../src/Core/Codecs/MP3/Codec.h"
-#include "../src/Core/Codecs/OGG/Codec.h"
 #include "../src/Core/Codecs/WAV/Codec.h"
 
 #include "../src/Utils/Audio/Resampling/CDSPResampler.h"
-#include "../src/Utils/miniaudio/miniaudio_utils.h"
-#include "../src/Utils/Utils.h"
 
 #define AM_FLAG_NOISE_SHAPING 0x1
 
@@ -100,9 +96,12 @@ static int process(const AmOsString& inFileName, const AmOsString& outFileName, 
 {
     AmInt32 res;
 
+    const auto inputFile = amEngine->GetFileSystem()->OpenFile(inFileName);
+    const auto outputFile = amEngine->GetFileSystem()->OpenFile(outFileName);
+
     if (state.mode == ePM_ENCODE)
     {
-        auto* codec = Codec::FindCodecForFile(inFileName);
+        auto* codec = Codec::FindCodecForFile(inputFile);
         if (!codec)
         {
             fprintf(
@@ -111,7 +110,7 @@ static int process(const AmOsString& inFileName, const AmOsString& outFileName, 
         }
 
         auto* decoder = codec->CreateDecoder();
-        if (!decoder->Open(inFileName))
+        if (!decoder->Open(inputFile))
         {
             fprintf(
                 stderr, "Unable to load the input file: " AM_OS_CHAR_FMT ". The found codec (%s) was not able to open the input file.\n",
@@ -119,10 +118,10 @@ static int process(const AmOsString& inFileName, const AmOsString& outFileName, 
             return EXIT_FAILURE;
         }
 
-        SoundFormat format = decoder->GetFormat();
+        const SoundFormat format = decoder->GetFormat();
 
         AmUInt16 numChannels = format.GetNumChannels();
-        AmUInt32 sampleRate = format.GetSampleRate(), blockSize, samplesPerBlock;
+        AmUInt32 sampleRate = format.GetSampleRate(), blockSize;
         AmUInt64 numSamples = format.GetFramesCount();
         AmUInt64 framesSize = format.GetFrameSize();
 
@@ -133,7 +132,7 @@ static int process(const AmOsString& inFileName, const AmOsString& outFileName, 
         else
             blockSize = 256 * numChannels * (sampleRate < 11000 ? 1 : sampleRate / 11000);
 
-        samplesPerBlock = (blockSize - numChannels * 4) * (numChannels ^ 3) + 1;
+        const AmUInt32 samplesPerBlock = (blockSize - numChannels * 4) * (numChannels ^ 3) + 1;
 
         if (state.verbose)
         {
@@ -143,11 +142,11 @@ static int process(const AmOsString& inFileName, const AmOsString& outFileName, 
                 outFileName.c_str());
         }
 
-        auto pcmData = static_cast<AmAudioSampleBuffer>(amMemory->Malloc(MemoryPoolKind::Codec, numSamples * framesSize));
+        auto const pcmData = static_cast<AmAudioSampleBuffer>(ampoolmalloc(MemoryPoolKind::Codec, numSamples * framesSize));
 
         if (decoder->Load(pcmData) != numSamples || !decoder->Close())
         {
-            amMemory->Free(MemoryPoolKind::Codec, pcmData);
+            ampoolfree(MemoryPoolKind::Codec, pcmData);
             fprintf(stderr, "Error while decoding PCM file \"" AM_OS_CHAR_FMT "\".\n", inFileName.c_str());
             return EXIT_FAILURE;
         }
@@ -158,7 +157,7 @@ static int process(const AmOsString& inFileName, const AmOsString& outFileName, 
                                : Compression::ADPCM::eNSM_OFF);
 
         auto* output16 = static_cast<AmInt16Buffer>(
-            amMemory->Malign(MemoryPoolKind::SoundData, numSamples * numChannels * sizeof(AmInt16), AM_SIMD_ALIGNMENT));
+            ampoolmalign(MemoryPoolKind::SoundData, numSamples * numChannels * sizeof(AmInt16), AM_SIMD_ALIGNMENT));
 
         if (state.resampling.enabled)
         {
@@ -169,25 +168,15 @@ static int process(const AmOsString& inFileName, const AmOsString& outFileName, 
                 resamplers.push_back(new r8b::CDSPResampler16(sampleRate, state.resampling.targetSampleRate, numSamples));
 
             auto* input64 =
-                static_cast<AmReal64Buffer>(amMemory->Malign(MemoryPoolKind::SoundData, numSamples * sizeof(AmReal64), AM_SIMD_ALIGNMENT));
+                static_cast<AmReal64Buffer>(ampoolmalign(MemoryPoolKind::SoundData, numSamples * sizeof(AmReal64), AM_SIMD_ALIGNMENT));
 
             for (AmUInt16 c = 0; c < numChannels; c++)
             {
                 auto* resampler = static_cast<r8b::CDSPResampler16*>(resamplers[c]);
 
-                if (format.GetInterleaveType() == AM_SAMPLE_INTERLEAVED)
+                for (AmUInt64 i = 0; i < numSamples; i++)
                 {
-                    for (AmUInt64 i = 0; i < numSamples; i++)
-                    {
-                        input64[i] = static_cast<AmReal64>(pcmData[i * numChannels + c]);
-                    }
-                }
-                else
-                {
-                    for (AmUInt64 i = numSamples * c, m = numSamples * (c + 1); i < m; i++)
-                    {
-                        input64[i] = static_cast<AmReal64>(pcmData[i]);
-                    }
+                    input64[i] = static_cast<AmReal64>(pcmData[i * numChannels + c]);
                 }
 
                 AmReal64Buffer output = nullptr;
@@ -195,24 +184,21 @@ static int process(const AmOsString& inFileName, const AmOsString& outFileName, 
                 resampler->clear();
 
                 for (AmUInt64 i = 0; i < f; i++)
-                {
                     output16[i * numChannels + c] = AmReal32ToInt16(static_cast<AmReal32>(output[i]), true);
-                }
             }
 
-            amMemory->Free(MemoryPoolKind::SoundData, input64);
+            ampoolfree(MemoryPoolKind::SoundData, input64);
 
             sampleRate = state.resampling.targetSampleRate;
             numSamples = f;
 
             SoundFormat encodeFormat{};
-            encodeFormat.SetAll(
-                sampleRate, numChannels, format.GetBitsPerSample(), numSamples, framesSize, AM_SAMPLE_FORMAT_INT, AM_SAMPLE_INTERLEAVED);
+            encodeFormat.SetAll(sampleRate, numChannels, format.GetBitsPerSample(), numSamples, framesSize, AM_SAMPLE_FORMAT_INT);
 
             encoder->SetFormat(encodeFormat);
-            if (!encoder->Open(outFileName))
+            if (!encoder->Open(outputFile))
             {
-                amMemory->Free(MemoryPoolKind::SoundData, output16);
+                ampoolfree(MemoryPoolKind::SoundData, output16);
 
                 fprintf(stderr, "Unable to open file \"" AM_OS_CHAR_FMT "\" for writing.\n", outFileName.c_str());
 
@@ -221,8 +207,8 @@ static int process(const AmOsString& inFileName, const AmOsString& outFileName, 
 
             if (encoder->Write(output16, 0, numSamples) != numSamples || !encoder->Close())
             {
-                amMemory->Free(MemoryPoolKind::Codec, pcmData);
-                amMemory->Free(MemoryPoolKind::SoundData, output16);
+                ampoolfree(MemoryPoolKind::Codec, pcmData);
+                ampoolfree(MemoryPoolKind::SoundData, output16);
 
                 fprintf(stderr, "Error while encoding ADPCM file \"" AM_OS_CHAR_FMT "\".\n", outFileName.c_str());
 
@@ -234,12 +220,14 @@ static int process(const AmOsString& inFileName, const AmOsString& outFileName, 
         }
         else
         {
-            ma_pcm_f32_to_s16(output16, pcmData, numSamples * numChannels, ma_dither_mode_rectangle);
+            for (int i = 0; i < numSamples * numChannels; ++i)
+                output16[i] = AmReal32ToInt16(pcmData[i], true);
 
             encoder->SetFormat(format);
-            if (!encoder->Open(outFileName))
+            if (!encoder->Open(outputFile))
             {
-                amMemory->Free(MemoryPoolKind::SoundData, output16);
+                ampoolfree(MemoryPoolKind::SoundData, output16);
+                ampoolfree(MemoryPoolKind::Codec, pcmData);
 
                 fprintf(stderr, "Unable to open file \"" AM_OS_CHAR_FMT "\" for writing.\n", outFileName.c_str());
 
@@ -248,8 +236,8 @@ static int process(const AmOsString& inFileName, const AmOsString& outFileName, 
 
             if (encoder->Write(output16, 0, numSamples) != numSamples || !encoder->Close())
             {
-                amMemory->Free(MemoryPoolKind::SoundData, output16);
-                amMemory->Free(MemoryPoolKind::Codec, pcmData);
+                ampoolfree(MemoryPoolKind::SoundData, output16);
+                ampoolfree(MemoryPoolKind::Codec, pcmData);
 
                 fprintf(stderr, "Error while encoding ADPCM file \"" AM_OS_CHAR_FMT "\".\n", outFileName.c_str());
 
@@ -257,14 +245,14 @@ static int process(const AmOsString& inFileName, const AmOsString& outFileName, 
             }
         }
 
-        amMemory->Free(MemoryPoolKind::SoundData, output16);
+        ampoolfree(MemoryPoolKind::SoundData, output16);
 
         if (state.verbose)
         {
             CallLogFunc("Operation completed successfully.\n");
         }
 
-        amMemory->Free(MemoryPoolKind::Codec, pcmData);
+        ampoolfree(MemoryPoolKind::Codec, pcmData);
 
         res = EXIT_SUCCESS;
     }
@@ -273,7 +261,7 @@ static int process(const AmOsString& inFileName, const AmOsString& outFileName, 
         auto* decoder = Codecs::ams_codec.CreateDecoder();
         auto* encoder = Codecs::wav_codec.CreateEncoder();
 
-        if (!decoder->Open(inFileName))
+        if (!decoder->Open(inputFile))
         {
             fprintf(stderr, "Unable to open file \"" AM_OS_CHAR_FMT "\" for decoding.\n", inFileName.c_str());
             return EXIT_FAILURE;
@@ -287,10 +275,10 @@ static int process(const AmOsString& inFileName, const AmOsString& outFileName, 
             16, // always decode in 16 bits per sample
             amsFormat.GetFramesCount(),
             amsFormat.GetNumChannels() * sizeof(AmInt16), // Always decode in 16 bits signed integers
-            AM_SAMPLE_FORMAT_INT, AM_SAMPLE_INTERLEAVED);
+            AM_SAMPLE_FORMAT_INT);
 
         encoder->SetFormat(wavFormat);
-        if (!encoder->Open(outFileName))
+        if (!encoder->Open(outputFile))
         {
             fprintf(stderr, "Unable to open file \"" AM_OS_CHAR_FMT "\" for encoding.\n", outFileName.c_str());
             return EXIT_FAILURE;
@@ -305,19 +293,18 @@ static int process(const AmOsString& inFileName, const AmOsString& outFileName, 
 
         AmUInt64 numSamples = decoder->GetFormat().GetFramesCount();
 
-        auto* adpcmData =
-            static_cast<AmInt16Buffer>(amMemory->Malloc(MemoryPoolKind::Codec, numSamples * decoder->GetFormat().GetFrameSize()));
+        auto* adpcmData = static_cast<AmInt16Buffer>(ampoolmalloc(MemoryPoolKind::Codec, numSamples * decoder->GetFormat().GetFrameSize()));
 
         if (decoder->Load(adpcmData) != numSamples || !decoder->Close())
         {
-            amMemory->Free(MemoryPoolKind::Codec, adpcmData);
+            ampoolfree(MemoryPoolKind::Codec, adpcmData);
             fprintf(stderr, "Error while decoding ADPCM file \"" AM_OS_CHAR_FMT "\".\n", inFileName.c_str());
             return EXIT_FAILURE;
         }
 
         if (encoder->Write(adpcmData, 0, numSamples) != numSamples || !encoder->Close())
         {
-            amMemory->Free(MemoryPoolKind::Codec, adpcmData);
+            ampoolfree(MemoryPoolKind::Codec, adpcmData);
             fprintf(stderr, "Error while encoding PCM file \"" AM_OS_CHAR_FMT "\".\n", outFileName.c_str());
             return EXIT_FAILURE;
         }
@@ -327,7 +314,7 @@ static int process(const AmOsString& inFileName, const AmOsString& outFileName, 
             CallLogFunc("Operation completed successfully.\n");
         }
 
-        amMemory->Free(MemoryPoolKind::Codec, adpcmData);
+        ampoolfree(MemoryPoolKind::Codec, adpcmData);
 
         delete decoder;
         delete encoder;
@@ -440,7 +427,7 @@ int main(int argc, char* argv[])
         }
         else if (!inFileName)
         {
-            inFileName = static_cast<char*>(amMemory->Malloc(MemoryPoolKind::Codec, strlen(argv[i]) + 10));
+            inFileName = static_cast<char*>(ampoolmalloc(MemoryPoolKind::Codec, strlen(argv[i]) + 10));
 
 #if defined(AM_WINDOWS_VERSION)
             strcpy_s(inFileName, strlen(argv[i]) + 10, *argv);
@@ -451,7 +438,7 @@ int main(int argc, char* argv[])
         else if (!outFileName)
         {
             std::cout << "out ";
-            outFileName = static_cast<char*>(amMemory->Malloc(MemoryPoolKind::Codec, strlen(argv[i]) + 10));
+            outFileName = static_cast<char*>(ampoolmalloc(MemoryPoolKind::Codec, strlen(argv[i]) + 10));
 
 #if defined(AM_WINDOWS_VERSION)
             strcpy_s(outFileName, strlen(argv[i]) + 10, *argv);

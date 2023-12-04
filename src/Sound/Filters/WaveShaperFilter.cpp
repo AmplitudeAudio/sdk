@@ -67,12 +67,12 @@ namespace SparkyStudios::Audio::Amplitude
 
     FilterInstance* WaveShaperFilter::CreateInstance()
     {
-        return amnew(WaveShaperFilterInstance, this);
+        return ampoolnew(MemoryPoolKind::Filtering, WaveShaperFilterInstance, this);
     }
 
     void WaveShaperFilter::DestroyInstance(FilterInstance* instance)
     {
-        amdelete(WaveShaperFilterInstance, (WaveShaperFilterInstance*)instance);
+        ampooldelete(MemoryPoolKind::Filtering, WaveShaperFilterInstance, (WaveShaperFilterInstance*)instance);
     }
 
     WaveShaperFilterInstance::WaveShaperFilterInstance(WaveShaperFilter* parent)
@@ -98,7 +98,6 @@ namespace SparkyStudios::Audio::Amplitude
 
         y = x * (q / p);
         y = x + (y - x) * m_parameters[WaveShaperFilter::ATTRIBUTE_WET];
-        y = AM_CLAMP_AUDIO_SAMPLE(y);
 
         return static_cast<AmAudioSample>(y);
     }

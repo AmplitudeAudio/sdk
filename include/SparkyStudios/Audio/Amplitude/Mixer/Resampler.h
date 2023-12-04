@@ -22,7 +22,7 @@
 
 namespace SparkyStudios::Audio::Amplitude
 {
-    class ResamplerInstance
+    class AM_API_PUBLIC ResamplerInstance
     {
     public:
         ResamplerInstance() = default;
@@ -41,7 +41,7 @@ namespace SparkyStudios::Audio::Amplitude
          * @param outputFrames The number of frames in the output buffer.
          * @return
          */
-        virtual bool Process(AmAudioSampleBuffer input, AmUInt64& inputFrames, AmAudioSampleBuffer output, AmUInt64& outputFrames) = 0;
+        virtual bool Process(AmConstAudioSampleBuffer input, AmUInt64& inputFrames, AmAudioSampleBuffer output, AmUInt64& outputFrames) = 0;
 
         /**
          * @brief Changes the input and output sample rate.
@@ -98,7 +98,7 @@ namespace SparkyStudios::Audio::Amplitude
         virtual void Clear() = 0;
     };
 
-    class Resampler
+    class AM_API_PUBLIC Resampler
     {
     public:
         /**

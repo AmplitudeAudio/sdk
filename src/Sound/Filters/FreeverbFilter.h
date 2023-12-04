@@ -31,8 +31,7 @@ namespace SparkyStudios::Audio::Amplitude
         explicit FreeverbFilterInstance(FreeverbFilter* parent);
         ~FreeverbFilterInstance() override;
 
-        void Process(AmAudioSampleBuffer buffer, AmUInt64 frames, AmUInt64 bufferSize, AmUInt16 channels, AmUInt32 sampleRate) override;
-        void ProcessInterleaved(
+        void Process(
             AmAudioSampleBuffer buffer, AmUInt64 frames, AmUInt64 bufferSize, AmUInt16 channels, AmUInt32 sampleRate) override;
 
     private:

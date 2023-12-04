@@ -21,9 +21,9 @@
 #else
 #include <ctime>
 #include <pthread.h>
+#include <sys/syscall.h>
 #include <sys/types.h>
 #include <unistd.h>
-#include <sys/syscall.h>
 #endif
 
 namespace SparkyStudios::Audio::Amplitude::Thread
@@ -145,7 +145,7 @@ namespace SparkyStudios::Audio::Amplitude::Thread
 
     static AmVoidPtr ThreadFunc(AmVoidPtr d)
     {
-        auto* p = static_cast<AmThreadData*>(d);
+        const auto* p = static_cast<AmThreadData*>(d);
         p->mFunc(p->mParam);
         delete p;
         return nullptr;
@@ -153,8 +153,7 @@ namespace SparkyStudios::Audio::Amplitude::Thread
 
     AmMutexHandle CreateMutex(AmUInt64 spinCount)
     {
-        AmSpinLockData* lock;
-        lock = new AmSpinLockData;
+        auto* lock = new AmSpinLockData;
         lock->spinLocked = false;
 
 #if !defined(AM_NO_PTHREAD_SPINLOCK)
@@ -251,13 +250,13 @@ namespace SparkyStudios::Audio::Amplitude::Thread
 
     void Wait(AmThreadHandle threadHandle)
     {
-        auto* threadHandleData = static_cast<AmThreadHandleData*>(threadHandle);
+        const auto* threadHandleData = static_cast<AmThreadHandleData*>(threadHandle);
         pthread_join(threadHandleData->thread, nullptr);
     }
 
     void Release(AmThreadHandle threadHandle)
     {
-        auto* threadHandleData = static_cast<AmThreadHandleData*>(threadHandle);
+        const auto* threadHandleData = static_cast<AmThreadHandleData*>(threadHandle);
         pthread_detach(threadHandleData->thread);
         delete threadHandleData;
     }
@@ -277,20 +276,18 @@ namespace SparkyStudios::Audio::Amplitude::Thread
         return tid;
 #else
         pid_t tid = syscall(__NR_gettid);
-        return (AmThreadID) tid;
+        return (AmThreadID)tid;
 #endif
     }
 #endif
 
     static void PoolWorker(AmVoidPtr param)
     {
-        Pool* pPool = static_cast<Pool*>(param);
+        auto* pPool = static_cast<Pool*>(param);
 
         while (pPool->IsRunning())
         {
-            std::shared_ptr<PoolTask> t = pPool->GetWork();
-
-            if (t == nullptr)
+            if (std::shared_ptr<PoolTask> t = pPool->GetWork(); t == nullptr)
             {
                 Sleep(1);
             }

@@ -22,9 +22,15 @@
 
 namespace SparkyStudios::Audio::Amplitude
 {
+    constexpr BeizerCurveControlPoints gConstantFaderCurveControlPoints = { 0.0f, 0.0f, 0.0f, 0.0f };
+
     class ConstantFaderInstance final : public FaderInstance
     {
-        AmReal64 GetFromPercentage(AmReal64 percentage) override;
+    public:
+        ConstantFaderInstance()
+        {
+            m_curve = gConstantFaderCurveControlPoints;
+        }
     };
 
     [[maybe_unused]] static class ConstantFader final : public Fader
@@ -43,6 +49,11 @@ namespace SparkyStudios::Audio::Amplitude
         {
             amdelete(ConstantFaderInstance, (ConstantFaderInstance*)instance);
         }
+
+        // [[nodiscard]] BeizerCurveControlPoints GetControlPoints() const override
+        // {
+        //     return gConstantFaderCurveControlPoints;
+        // }
     } gConstantFader; // NOLINT(cert-err58-cpp)
 } // namespace SparkyStudios::Audio::Amplitude
 

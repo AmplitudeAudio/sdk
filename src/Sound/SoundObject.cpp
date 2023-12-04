@@ -18,13 +18,10 @@ namespace SparkyStudios::Audio::Amplitude
 {
     SoundObject::SoundObject()
         : m_bus(nullptr)
-        , m_id(kAmInvalidObjectId)
-        , m_name()
         , m_gain()
         , m_priority()
         , m_effect(nullptr)
         , m_attenuation(nullptr)
-        , m_refCounter()
     {}
 
     const RtpcValue& SoundObject::GetGain() const
@@ -35,16 +32,6 @@ namespace SparkyStudios::Audio::Amplitude
     const RtpcValue& SoundObject::GetPriority() const
     {
         return m_priority;
-    }
-
-    AmSoundID SoundObject::GetId() const
-    {
-        return m_id;
-    }
-
-    const std::string& SoundObject::GetName() const
-    {
-        return m_name;
     }
 
     const Effect* SoundObject::GetEffect() const
@@ -60,10 +47,5 @@ namespace SparkyStudios::Audio::Amplitude
     Bus SoundObject::GetBus() const
     {
         return Bus(m_bus);
-    }
-
-    RefCounter* SoundObject::GetRefCounter()
-    {
-        return &m_refCounter;
     }
 } // namespace SparkyStudios::Audio::Amplitude

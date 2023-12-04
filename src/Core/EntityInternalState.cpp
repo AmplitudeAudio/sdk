@@ -17,8 +17,9 @@
 namespace SparkyStudios::Audio::Amplitude
 {
     EntityInternalState::EntityInternalState()
-        : _playingSoundList(&ChannelInternalState::entity_node)
-        , _id(kAmInvalidObjectId)
+        : _id(kAmInvalidObjectId)
+        , _lastLocation()
+        , _velocity()
         , _location()
         , _direction()
         , _up()
@@ -26,8 +27,7 @@ namespace SparkyStudios::Audio::Amplitude
         , _obstruction(0.0f)
         , _occlusion(0.0f)
         , _environmentFactors()
-        , _lastLocation()
-        , _velocity()
+        , _playingSoundList(&ChannelInternalState::entity_node)
     {}
 
     AmEntityID EntityInternalState::GetId() const
@@ -118,7 +118,7 @@ namespace SparkyStudios::Audio::Amplitude
 
     AmReal32 EntityInternalState::GetEnvironmentFactor(AmEnvironmentID environment)
     {
-        if (auto findIt = _environmentFactors.find(environment); findIt == _environmentFactors.end())
+        if (!_environmentFactors.contains(environment))
         {
             _environmentFactors[environment] = 0.0f;
         }

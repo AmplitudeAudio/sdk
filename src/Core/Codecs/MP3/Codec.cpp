@@ -21,17 +21,30 @@ namespace SparkyStudios::Audio::Amplitude::Codecs
 {
     static void* onMalloc(size_t sz, void* pUserData)
     {
-        return amMemory->Malloc(MemoryPoolKind::Codec, sz);
+        return ampoolmalloc(MemoryPoolKind::Codec, sz);
     }
 
     static void* onRealloc(void* p, size_t sz, void* pUserData)
     {
-        return amMemory->Realloc(MemoryPoolKind::Codec, p, sz);
+        return ampoolrealloc(MemoryPoolKind::Codec, p, sz);
     }
 
     static void onFree(void* p, void* pUserData)
     {
-        amMemory->Free(MemoryPoolKind::Codec, p);
+        ampoolfree(MemoryPoolKind::Codec, p);
+    }
+
+    static size_t onRead(void* pUserData, void* pBufferOut, size_t bytesToRead)
+    {
+        auto* file = static_cast<File*>(pUserData);
+        return file->Read(static_cast<AmUInt8Buffer>(pBufferOut), bytesToRead);
+    }
+
+    static drmp3_bool32 onSeek(void* pUserData, int offset, drmp3_seek_origin origin)
+    {
+        auto* file = static_cast<File*>(pUserData);
+        file->Seek(offset, origin == drmp3_seek_origin_start ? SEEK_SET : origin == drmp3_seek_origin_current ? SEEK_CUR : SEEK_SET);
+        return DRMP3_TRUE;
     }
 
     MP3Codec::MP3Codec()
@@ -43,37 +56,33 @@ namespace SparkyStudios::Audio::Amplitude::Codecs
         m_allocationCallbacks.onRealloc = onRealloc;
     }
 
-    bool MP3Codec::MP3Decoder::Open(const AmOsString& filePath)
+    bool MP3Codec::MP3Decoder::Open(std::shared_ptr<File> file)
     {
-        if (!m_codec->CanHandleFile(filePath))
+        if (!m_codec->CanHandleFile(file))
         {
-            CallLogFunc("The MP3 codec cannot handle the file: '" AM_OS_CHAR_FMT "'\n", filePath.c_str());
+            CallLogFunc("The MP3 codec cannot handle the file: '" AM_OS_CHAR_FMT "'\n", file->GetPath().c_str());
             return false;
         }
 
+        _file = file;
         const auto* codec = static_cast<const MP3Codec*>(m_codec);
 
-#if defined(AM_WCHAR_SUPPORTED)
-        if (drmp3_init_file_w(&_mp3, filePath.c_str(), &codec->m_allocationCallbacks) == DRMP3_FALSE)
-#else
-        if (drmp3_init_file(&_mp3, filePath.c_str(), &codec->m_allocationCallbacks) == DRMP3_FALSE)
-#endif
+        if (drmp3_init(&_mp3, onRead, onSeek, _file.get(), &codec->m_allocationCallbacks) == DRMP3_FALSE)
         {
-            CallLogFunc("[ERROR] Cannot load the MP3 file: '" AM_OS_CHAR_FMT "'\n", filePath.c_str());
+            CallLogFunc("[ERROR] Cannot load the MP3 file: '" AM_OS_CHAR_FMT "'\n", file->GetPath().c_str());
             return false;
         }
 
         const drmp3_uint64 framesCount = drmp3_get_pcm_frame_count(&_mp3);
         if (framesCount == DRMP3_FALSE)
         {
-            CallLogFunc("[ERROR] Cannot load the MP3 file: '" AM_OS_CHAR_FMT "'\n.", filePath.c_str());
+            CallLogFunc("[ERROR] Cannot load the MP3 file: '" AM_OS_CHAR_FMT "'\n.", file->GetPath().c_str());
             return false;
         }
 
         m_format.SetAll(
             _mp3.sampleRate, _mp3.channels, 0, framesCount, _mp3.channels * sizeof(AmAudioSample),
-            AM_SAMPLE_FORMAT_FLOAT, // This codec always read frames as float32 values
-            AM_SAMPLE_INTERLEAVED // dr_mp3 always read interleaved frames
+            AM_SAMPLE_FORMAT_FLOAT // This codec always read frames as float32 values
         );
 
         _initialized = true;
@@ -85,6 +94,8 @@ namespace SparkyStudios::Audio::Amplitude::Codecs
     {
         if (_initialized)
         {
+            _file.reset();
+
             m_format = SoundFormat();
             _initialized = false;
             drmp3_uninit(&_mp3);
@@ -121,7 +132,7 @@ namespace SparkyStudios::Audio::Amplitude::Codecs
         return drmp3_seek_to_pcm_frame(&_mp3, offset) == DRMP3_TRUE;
     }
 
-    bool MP3Codec::MP3Encoder::Open(const AmOsString& filePath)
+    bool MP3Codec::MP3Encoder::Open(std::shared_ptr<File> file)
     {
         _initialized = true;
         return false;
@@ -140,30 +151,29 @@ namespace SparkyStudios::Audio::Amplitude::Codecs
         return 0;
     }
 
-    Codec::Decoder* MP3Codec::CreateDecoder() const
+    Codec::Decoder* MP3Codec::CreateDecoder()
     {
-        return new MP3Decoder(this);
+        return ampoolnew(MemoryPoolKind::Codec, MP3Decoder, this);
     }
 
-    Codec::Encoder* MP3Codec::CreateEncoder() const
+    void MP3Codec::DestroyDecoder(Decoder* decoder)
     {
-        return new MP3Encoder(this);
+        ampooldelete(MemoryPoolKind::Codec, MP3Decoder, (MP3Decoder*)decoder);
     }
 
-    bool MP3Codec::CanHandleFile(const AmOsString& filePath) const
+    Codec::Encoder* MP3Codec::CreateEncoder()
     {
-        // TODO: Maybe check by extension instead?
+        return ampoolnew(MemoryPoolKind::Codec, MP3Encoder, this);
+    }
 
-        drmp3 dummy;
-#if defined(AM_WCHAR_SUPPORTED)
-        const bool can = drmp3_init_file_w(&dummy, filePath.c_str(), &m_allocationCallbacks) == DRMP3_TRUE;
-#else
-        const bool can = drmp3_init_file(&dummy, filePath.c_str(), &m_allocationCallbacks) == DRMP3_TRUE;
-#endif
+    void MP3Codec::DestroyEncoder(Encoder* encoder)
+    {
+        ampooldelete(MemoryPoolKind::Codec, MP3Encoder, (MP3Encoder*)encoder);
+    }
 
-        if (can)
-            drmp3_uninit(&dummy);
-
-        return can;
+    bool MP3Codec::CanHandleFile(std::shared_ptr<File> file) const
+    {
+        const auto& path = file->GetPath();
+        return path.find(AM_OS_STRING(".mp3")) != AmOsString::npos;
     }
 } // namespace SparkyStudios::Audio::Amplitude::Codecs

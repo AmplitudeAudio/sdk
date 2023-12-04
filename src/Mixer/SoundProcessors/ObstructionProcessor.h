@@ -24,15 +24,16 @@
 
 namespace SparkyStudios::Audio::Amplitude
 {
-    static std::unordered_map<AmObjectID, FilterInstance*> gObstructionFilters = {};
+    static std::map<AmObjectID, FilterInstance*> gObstructionFilters = {};
 
     class ObstructionProcessorInstance final : public SoundProcessorInstance
     {
     public:
         ObstructionProcessorInstance()
             : _lpfCurve()
+            , _lpFilter()
         {
-            _lpfCurve.SetFader("ExponentialSmooth");
+            _lpfCurve.SetFader("Exponential");
         }
 
         void Process(
@@ -61,11 +62,10 @@ namespace SparkyStudios::Audio::Amplitude
 
             if (const AmReal32 lpf = lpfCurve.Get(obstruction); lpf > 0)
             {
-                if (gObstructionFilters.find(sound->GetId()) == gObstructionFilters.end())
+                if (!gObstructionFilters.contains(sound->GetId()))
                 {
-                    auto lpFilter = BiquadResonantFilter();
-                    lpFilter.InitLowPass(std::ceil(_lpfCurve.Get(lpf)), 0.5f);
-                    gObstructionFilters[sound->GetId()] = lpFilter.CreateInstance();
+                    _lpFilter.InitLowPass(std::ceil(_lpfCurve.Get(lpf)), 0.5f);
+                    gObstructionFilters[sound->GetId()] = _lpFilter.CreateInstance();
                 }
 
                 // Update the filter coefficients
@@ -78,74 +78,42 @@ namespace SparkyStudios::Audio::Amplitude
             const AmReal32 gain = gainCurve.Get(obstruction);
 
             // Apply Gain
-            for (AmUInt64 i = 0, l = frames * channels; i < l; i++)
+            const AmSize length = frames * channels;
+
+#if defined(AM_SIMD_INTRINSICS)
+            const AmSize end = AmAudioFrame::size * (length / AmAudioFrame::size);
+            const auto factor = xsimd::batch(gain);
+
+            for (AmSize i = 0; i < end; i += AmAudioFrame::size)
+            {
+                const auto bin = xsimd::load_aligned(&out[i]);
+                xsimd::store_aligned(&out[i], xsimd::mul(bin, factor));
+            }
+
+            for (AmSize i = end; i < length; i++)
             {
                 out[i] = out[i] * gain;
-                out[i] = AM_CLAMP_AUDIO_SAMPLE(out[i]);
             }
-        }
-
-        void ProcessInterleaved(
-            AmAudioSampleBuffer out,
-            AmConstAudioSampleBuffer in,
-            AmUInt64 frames,
-            AmSize bufferSize,
-            AmUInt16 channels,
-            AmUInt32 sampleRate,
-            SoundInstance* sound) override
-        {
-            const float obstruction = sound->GetObstruction();
-
-            if (out != in)
-                std::memcpy(out, in, bufferSize);
-
-            // Nothing to do if no obstruction
-            if (obstruction < kEpsilon)
-                return;
-
-            _lpfCurve.SetStart({ 0, sampleRate / 2.0f });
-            _lpfCurve.SetEnd({ 1, sampleRate / 2000.0f });
-
-            const auto& lpfCurve = amEngine->GetState()->obstruction_config.lpf;
-            const auto& gainCurve = amEngine->GetState()->obstruction_config.gain;
-
-            if (const AmReal32 lpf = lpfCurve.Get(obstruction); lpf > 0)
-            {
-                if (gObstructionFilters.find(sound->GetId()) == gObstructionFilters.end())
-                {
-                    auto lpFilter = BiquadResonantFilter();
-                    lpFilter.InitLowPass(std::ceil(_lpfCurve.Get(lpf)), 0.5f);
-                    gObstructionFilters[sound->GetId()] = lpFilter.CreateInstance();
-                }
-
-                // Update the filter coefficients
-                gObstructionFilters[sound->GetId()]->SetFilterParameter(BiquadResonantFilter::ATTRIBUTE_FREQUENCY, _lpfCurve.Get(lpf));
-
-                // Apply Low Pass Filter
-                gObstructionFilters[sound->GetId()]->ProcessInterleaved(out, frames, bufferSize, channels, sampleRate);
-            }
-
-            const AmReal32 gain = gainCurve.Get(obstruction);
-
-            // Apply Gain
-            for (AmUInt64 i = 0, l = frames * channels; i < l; i++)
+#else
+            for (AmSize i = 0; i < length; i++)
             {
                 out[i] = out[i] * gain;
-                out[i] = AM_CLAMP_AUDIO_SAMPLE(out[i]);
             }
+#endif // AM_SIMD_INTRINSICS
         }
 
         void Cleanup(SoundInstance* sound) override
         {
-            if (gObstructionFilters.find(sound->GetId()) == gObstructionFilters.end())
+            if (!gObstructionFilters.contains(sound->GetId()))
                 return;
 
-            delete gObstructionFilters[sound->GetId()];
+            _lpFilter.DestroyInstance(gObstructionFilters[sound->GetId()]);
             gObstructionFilters.erase(sound->GetId());
         }
 
     private:
         CurvePart _lpfCurve;
+        BiquadResonantFilter _lpFilter;
     };
 
     [[maybe_unused]] static class ObstructionProcessor final : public SoundProcessor
@@ -157,12 +125,12 @@ namespace SparkyStudios::Audio::Amplitude
 
         SoundProcessorInstance* CreateInstance() override
         {
-            return amnew(ObstructionProcessorInstance);
+            return ampoolnew(MemoryPoolKind::Amplimix, ObstructionProcessorInstance);
         }
 
         void DestroyInstance(SoundProcessorInstance* instance) override
         {
-            amdelete(ObstructionProcessorInstance, (ObstructionProcessorInstance*)instance);
+            ampooldelete(MemoryPoolKind::Amplimix, ObstructionProcessorInstance, (ObstructionProcessorInstance*)instance);
         }
     } gObstructionProcessor; // NOLINT(cert-err58-cpp)
 } // namespace SparkyStudios::Audio::Amplitude

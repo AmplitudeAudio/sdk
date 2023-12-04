@@ -26,37 +26,37 @@ namespace SparkyStudios::Audio::Amplitude::Codecs
     [[maybe_unused]] static class AMSCodec final : public Codec
     {
     public:
-        class AMSDecoder final : public Codec::Decoder
+        class AMSDecoder final : public Decoder
         {
         public:
             explicit AMSDecoder(const Codec* codec)
-                : Codec::Decoder(codec)
+                : Decoder(codec)
                 , _initialized(false)
                 , _file()
                 , _blockSize(0)
             {}
 
-            bool Open(const AmOsString& filePath) final;
+            bool Open(std::shared_ptr<File> file) override;
 
-            bool Close() final;
+            bool Close() override;
 
-            AmUInt64 Load(AmVoidPtr out) final;
+            AmUInt64 Load(AmVoidPtr out) override;
 
-            AmUInt64 Stream(AmVoidPtr out, AmUInt64 offset, AmUInt64 length) final;
+            AmUInt64 Stream(AmVoidPtr out, AmUInt64 offset, AmUInt64 length) override;
 
-            bool Seek(AmUInt64 offset) final;
+            bool Seek(AmUInt64 offset) override;
 
         private:
             bool _initialized;
-            DiskFile _file;
+            std::shared_ptr<File> _file;
             AmUInt16 _blockSize;
         };
 
-        class AMSEncoder final : public Codec::Encoder
+        class AMSEncoder final : public Encoder
         {
         public:
             explicit AMSEncoder(const Codec* codec)
-                : Codec::Encoder(codec)
+                : Encoder(codec)
                 , _initialized(false)
                 , _file()
                 , _blockSize(2048)
@@ -65,17 +65,18 @@ namespace SparkyStudios::Audio::Amplitude::Codecs
                 , _noiseShaping(Compression::ADPCM::eNSM_OFF)
             {}
 
-            bool Open(const AmOsString& filePath) final;
+            bool Open(std::shared_ptr<File> file) override;
 
-            bool Close() final;
+            bool Close() override;
 
-            AmUInt64 Write(AmVoidPtr in, AmUInt64 offset, AmUInt64 length) final;
+            AmUInt64 Write(AmVoidPtr in, AmUInt64 offset, AmUInt64 length) override;
 
-            void SetEncodingParams(AmUInt32 blockSize, AmUInt32 samplesPerBlock, AmUInt32 lookAhead, Compression::ADPCM::NoiseShapingMode noiseShaping);
+            void SetEncodingParams(
+                AmUInt32 blockSize, AmUInt32 samplesPerBlock, AmUInt32 lookAhead, Compression::ADPCM::NoiseShapingMode noiseShaping);
 
         private:
             bool _initialized;
-            DiskFile _file;
+            std::shared_ptr<File> _file;
             AmUInt32 _blockSize;
             AmUInt32 _samplesPerBlock;
             AmUInt32 _lookAhead;
@@ -84,13 +85,17 @@ namespace SparkyStudios::Audio::Amplitude::Codecs
 
         AMSCodec();
 
-        ~AMSCodec() final = default;
+        ~AMSCodec() override = default;
 
-        [[nodiscard]] Decoder* CreateDecoder() const final;
+        [[nodiscard]] Decoder* CreateDecoder() override;
 
-        [[nodiscard]] Encoder* CreateEncoder() const final;
+        void DestroyDecoder(Decoder* decoder) override;
 
-        [[nodiscard]] bool CanHandleFile(const AmOsString& filePath) const final;
+        [[nodiscard]] Encoder* CreateEncoder() override;
+
+        void DestroyEncoder(Encoder* encoder) override;
+
+        [[nodiscard]] bool CanHandleFile(std::shared_ptr<File> file) const override;
     } ams_codec; // NOLINT(cert-err58-cpp)
 } // namespace SparkyStudios::Audio::Amplitude::Codecs
 

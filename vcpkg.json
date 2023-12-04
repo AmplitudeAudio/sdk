@@ -1,27 +1,35 @@
 {
-    "$schema": "https://raw.githubusercontent.com/microsoft/vcpkg-tool/master/docs/vcpkg.schema.json",
-    "builtin-baseline": "1c5a340f6e10985e2d92af174a68dbd15c1fa4e1",
-    "name": "amplitude-audio-sdk",
-    "description": "A powerful and cross-platform audio engine, optimized for games.",
-    "version": "1.0",
-    "license": "Apache-2.0",
-    "homepage": "https://github.com/SparkyStudios/AmplitudeAudioSDK",
-    "features": {
-        "samples": {
-            "description": "Amplitude Audio SDK Samples",
-            "dependencies": [
-                "sdl2"
-            ]
-        }
+  "$schema": "https://raw.githubusercontent.com/microsoft/vcpkg-tool/master/docs/vcpkg.schema.json",
+  "builtin-baseline": "9f03078bdcbab3ad8c1e3927c40c3fb48e42501f",
+  "name": "amplitude-audio-sdk",
+  "description": "A powerful and cross-platform audio engine, optimized for games.",
+  "version": "1.0",
+  "license": "Apache-2.0",
+  "homepage": "https://github.com/SparkyStudios/AmplitudeAudioSDK",
+  "features": {
+    "samples": {
+      "description": "Amplitude Audio SDK Samples",
+      "dependencies": [
+        "sdl2"
+      ]
+    }
+  },
+  "dependencies": [
+    {
+      "name": "flatbuffers",
+      "version>=": "23.5.26"
     },
-    "dependencies": [
-        {
-            "name": "flatbuffers",
-            "version>=": "23.5.9"
-        },
-        {
-            "name": "libsamplerate",
-            "version>=": "0.2.2#1"
-        }
-    ]
+    {
+      "name": "libsamplerate",
+      "version>=": "0.2.2#1"
+    },
+    {
+      "name": "dylib",
+      "version>=": "2.2.1"
+    },
+    {
+      "name": "xsimd",
+      "version>=": "11.1.0"
+    }
+  ]
 }

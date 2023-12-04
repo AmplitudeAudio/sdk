@@ -84,12 +84,12 @@ namespace SparkyStudios::Audio::Amplitude
 
     FilterInstance* LofiFilter::CreateInstance()
     {
-        return amnew(LofiFilterInstance, this);
+        return ampoolnew(MemoryPoolKind::Filtering, LofiFilterInstance, this);
     }
 
     void LofiFilter::DestroyInstance(FilterInstance* instance)
     {
-        amdelete(LofiFilterInstance, (LofiFilterInstance*)instance);
+        ampooldelete(MemoryPoolKind::Filtering, LofiFilterInstance, (LofiFilterInstance*)instance);
     }
 
     LofiFilterInstance::LofiFilterInstance(LofiFilter* parent)
@@ -122,6 +122,6 @@ namespace SparkyStudios::Audio::Amplitude
 
         AmReal32 y = sample + (_channelData[channel].m_sample - sample) * m_parameters[LofiFilter::ATTRIBUTE_WET];
 
-        return AM_CLAMP_AUDIO_SAMPLE(y);
+        return static_cast<AmAudioSample>(y);
     }
 } // namespace SparkyStudios::Audio::Amplitude

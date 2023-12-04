@@ -40,10 +40,14 @@
 #include <SparkyStudios/Audio/Amplitude/Sound/Switch.h>
 #include <SparkyStudios/Audio/Amplitude/Sound/SwitchContainer.h>
 
+#ifndef AM_BUILDSYSTEM_BUILDING_PLUGIN
+
 /**
  * @brief Macro to get the current Amplitude engine instance.
  */
 #define amEngine SparkyStudios::Audio::Amplitude::Engine::GetInstance()
+
+#endif // AM_BUILDSYSTEM_BUILDING_PLUGIN
 
 namespace SparkyStudios::Audio::Amplitude
 {
@@ -65,7 +69,7 @@ namespace SparkyStudios::Audio::Amplitude
      * @brief The central class of  the library that manages the Listeners, Entities,
      * Sounds, Collections, Channels, and tracks all of the internal state.
      */
-    class Engine
+    class AM_API_PUBLIC Engine
     {
     private:
         /**
@@ -111,16 +115,16 @@ namespace SparkyStudios::Audio::Amplitude
         /**
          * @brief Set the File Loader used by the engine.
          *
-         * @param loader A FileLoader implementation.
+         * @param fs A FileLoader implementation.
          */
-        void SetFileLoader(const FileLoader& loader);
+        void SetFileSystem(FileSystem* fs);
 
         /**
          * @brief Get the File Loader used by the engine.
          *
          * @return The file loader.
          */
-        [[nodiscard]] const FileLoader* GetFileLoader() const;
+        [[nodiscard]] const FileSystem* GetFileSystem() const;
 
         /**
          * @brief Update audio volume per channel each frame.
@@ -187,7 +191,8 @@ namespace SparkyStudios::Audio::Amplitude
          *        bank for loading. Call StartLoadingSoundFiles() to trigger loading
          *        of the sound files on a separate thread.
          *
-         * @param fileData The SoundBank flatbuffer binary data.
+         * @param ptr The pointer to the SoundBank flatbuffer binary data.
+         * @param size The size of the SoundBank flatbuffer binary data.
          *
          * @return true Returns true on success
          */
@@ -198,7 +203,8 @@ namespace SparkyStudios::Audio::Amplitude
          *        bank for loading. Call StartLoadingSoundFiles() to trigger loading
          *        of the sound files on a separate thread.
          *
-         * @param fileData The SoundBank flatbuffer binary data.
+         * @param ptr The pointer to the SoundBank flatbuffer binary data.
+         * @param size The size of the SoundBank flatbuffer binary data.
          * @param outID The ID of the loaded soundbank.
          *
          * @return true Returns true on success
@@ -225,16 +231,26 @@ namespace SparkyStudios::Audio::Amplitude
         void UnloadSoundBanks();
 
         /**
-         * @brief Kick off loading thread to load all sound files queued with
-         *        LoadSoundBank().
+         * @brief Opens the file system in a separate thread.
          */
-        void StartLoadingSoundFiles();
+        void StartOpenFileSystem();
 
         /**
-         * @brief Return true if all sound files have been loaded. Must call
-         *        StartLoadingSoundFiles() first.
+         * @brief Return true if the file system has been fully loaded. Must call
+         *        StartOpenFileSystem() first.
          */
-        bool TryFinalizeLoadingSoundFiles();
+        bool TryFinalizeOpenFileSystem();
+
+        /**
+         * @brief Closes the file system in a separate thread.
+         */
+        void StartCloseFileSystem();
+
+        /**
+         * @brief Return true if the file system has been fully loaded. Must call
+         *        StartCloseFileSystem() first.
+         */
+        bool TryFinalizeCloseFileSystem();
 
         /**
          * @brief Get a SwitchContainerHandle given its name as defined in its JSON data.
@@ -1169,15 +1185,50 @@ namespace SparkyStudios::Audio::Amplitude
 
 #pragma endregion
 
+#pragma region Plugins Management
+
+        /**
+         * @brief Loads a plugin library from the given path.
+         *
+         * @param pluginLibraryName The name of the plugin library to load.
+         *
+         * @return A handle to the loaded plugin library.
+         */
+        static AmVoidPtr LoadPlugin(const AmOsString& pluginLibraryName);
+
+        /**
+         * @brief Adds a path in the plugins search paths list.
+         *
+         * @param path The path to add in the plugins search paths list.
+         */
+        static void AddPluginSearchPath(const AmOsString& path);
+
+        /**
+         * @brief Removes a path from the plugins search paths list.
+         *
+         * @param path The path to remove from the plugins search path list.
+         */
+        static void RemovePluginSearchPath(const AmOsString& path);
+
+#pragma endregion
+
         /**
          * @brief Returns an unique instance of the Amplitude Engine.
          */
         [[nodiscard]] static Engine* GetInstance();
 
+        /**
+         * @brief Destroys the unique instance of the Amplitude Engine.
+         */
+        static void DestroyInstance();
+
     private:
         Channel PlayScopedSwitchContainer(SwitchContainerHandle handle, const Entity& entity, const AmVec3& location, float userGain) const;
         Channel PlayScopedCollection(CollectionHandle handle, const Entity& entity, const AmVec3& location, float userGain) const;
         Channel PlayScopedSound(SoundHandle handle, const Entity& entity, const AmVec3& location, float userGain) const;
+
+        // The lis of paths in which search for plugins.
+        static std::set<AmOsString> _pluginSearchPaths;
 
         // Hold the engine config file contents.
         AmString _configSrc;
@@ -1185,11 +1236,11 @@ namespace SparkyStudios::Audio::Amplitude
         // The current state of the engine.
         EngineInternalState* _state;
 
-        // The default audio listener
+        // The default audio listener.
         ListenerInternalState* _defaultListener;
 
-        // The file loader implementation
-        FileLoader _loader;
+        // The file loader implementation.
+        FileSystem* _fs;
 
         // The audio driver used by the engine.
         Driver* _audioDriver;

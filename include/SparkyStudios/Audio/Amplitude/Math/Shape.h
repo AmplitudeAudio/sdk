@@ -36,7 +36,7 @@ namespace SparkyStudios::Audio::Amplitude
      * engine to detect the position on these objects and apply a specific effect (environmental effect or
      * attenuation effect) to them.
      */
-    class Shape
+    class AM_API_PUBLIC Shape
     {
     public:
         /**
@@ -51,6 +51,8 @@ namespace SparkyStudios::Audio::Amplitude
          * @brief Construct a new Shape.
          */
         Shape();
+
+        virtual ~Shape() = default;
 
         /**
          * @brief Get the shortest distance to the edge of this shape.
@@ -171,7 +173,7 @@ namespace SparkyStudios::Audio::Amplitude
      *
      * If the game object is outside the outer shape (thus, outside the zone), the factor is zero.
      */
-    class Zone
+    class AM_API_PUBLIC Zone
     {
     public:
         explicit Zone(Shape* inner, Shape* outer);
@@ -264,7 +266,7 @@ namespace SparkyStudios::Audio::Amplitude
     /**
      * @brief A box shape, defined by a width, an height, and a depth.
      */
-    class BoxShape : public Shape
+    class AM_API_PUBLIC BoxShape : public Shape
     {
         friend class BoxZone;
 
@@ -386,7 +388,7 @@ namespace SparkyStudios::Audio::Amplitude
     /**
      * @brief A capsule shape, defined by a radius and an height.
      */
-    class CapsuleShape : public Shape
+    class AM_API_PUBLIC CapsuleShape : public Shape
     {
         friend class CapsuleZone;
 
@@ -480,7 +482,7 @@ namespace SparkyStudios::Audio::Amplitude
     /**
      * @brief A cone shape, defined by a radius and an height.
      */
-    class ConeShape : public Shape
+    class AM_API_PUBLIC ConeShape : public Shape
     {
         friend class ConeZone;
 
@@ -565,7 +567,7 @@ namespace SparkyStudios::Audio::Amplitude
     /**
      * @brief A sphere shape, defined by a radius.
      */
-    class SphereShape : public Shape
+    class AM_API_PUBLIC SphereShape : public Shape
     {
         friend class SphereZone;
 
@@ -631,7 +633,7 @@ namespace SparkyStudios::Audio::Amplitude
         AmReal32 _radius;
     };
 
-    class BoxZone : public Zone
+    class AM_API_PUBLIC BoxZone : public Zone
     {
     public:
         BoxZone(BoxShape* inner, BoxShape* outer);
@@ -639,7 +641,7 @@ namespace SparkyStudios::Audio::Amplitude
         [[nodiscard]] AmReal32 GetFactor(const AmVec3& position) final;
     };
 
-    class CapsuleZone : public Zone
+    class AM_API_PUBLIC CapsuleZone : public Zone
     {
     public:
         CapsuleZone(CapsuleShape* inner, CapsuleShape* outer);
@@ -647,7 +649,7 @@ namespace SparkyStudios::Audio::Amplitude
         [[nodiscard]] AmReal32 GetFactor(const AmVec3& position) final;
     };
 
-    class ConeZone : public Zone
+    class AM_API_PUBLIC ConeZone : public Zone
     {
     public:
         ConeZone(ConeShape* inner, ConeShape* outer);
@@ -655,7 +657,7 @@ namespace SparkyStudios::Audio::Amplitude
         [[nodiscard]] AmReal32 GetFactor(const AmVec3& position) final;
     };
 
-    class SphereZone : public Zone
+    class AM_API_PUBLIC SphereZone : public Zone
     {
     public:
         SphereZone(SphereShape* inner, SphereShape* outer);

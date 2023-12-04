@@ -12,15 +12,28 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-cmake_minimum_required(VERSION 3.3.1)
+cmake_minimum_required(VERSION 3.10)
 
 set(PROJECT_NAME ss_amplitude_audio_samples)
 
 project(${PROJECT_NAME})
 
 add_custom_target(ss_amplitude_audio_sample_assets
-    COMMAND python3 ${CMAKE_CURRENT_SOURCE_DIR}/../scripts/build_assets.py --output ${CMAKE_BINARY_DIR}/samples/assets
+    COMMAND python3 ${CMAKE_CURRENT_SOURCE_DIR}/../scripts/build_assets.py --output ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/samples/assets
+)
+
+add_dependencies(ss_amplitude_audio_sample_assets
+    amplitude_build_binary_schemas
 )
 
 add_subdirectory(sample_01)
 add_subdirectory(sample_02)
+
+install(
+    CODE "execute_process(COMMAND python3 ${CMAKE_CURRENT_SOURCE_DIR}/../scripts/build_assets.py --output ${CMAKE_INSTALL_PREFIX}/${AM_BIN_DESTINATION}/samples/assets)"
+)
+
+install(
+    TARGETS ss_amplitude_audio_sample_01 ss_amplitude_audio_sample_02
+    RUNTIME DESTINATION ${AM_BIN_DESTINATION}/samples
+)

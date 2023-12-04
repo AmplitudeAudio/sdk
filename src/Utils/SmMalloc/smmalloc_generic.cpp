@@ -1,6 +1,6 @@
 // The MIT License (MIT)
 //
-// 	Copyright (c) 2017-2018 Sergey Makeev
+// 	Copyright (c) 2017-2023 Sergey Makeev
 //
 // 	Permission is hereby granted, free of charge, to any person obtaining a copy
 // 	of this software and associated documentation files (the "Software"), to deal
@@ -54,12 +54,10 @@ void sm::GenericAllocator::Destroy(sm::GenericAllocator::TInstance instance)
 void* sm::GenericAllocator::Alloc(sm::GenericAllocator::TInstance instance, size_t bytesCount, size_t alignment)
 {
     SMMALLOC_UNUSED(instance);
-
     if (alignment < sm::Allocator::kMinValidAlignment)
     {
         alignment = sm::Allocator::kMinValidAlignment;
     }
-
     void* p;
     void** p2;
     size_t offset = alignment - 1 + sizeof(Header);
@@ -72,19 +70,16 @@ void* sm::GenericAllocator::Alloc(sm::GenericAllocator::TInstance instance, size
     Header* h = reinterpret_cast<Header*>(reinterpret_cast<char*>(p2) - sizeof(Header));
     h->p = p;
     h->size = bytesCount;
-
     return p2;
 }
 
 void sm::GenericAllocator::Free(sm::GenericAllocator::TInstance instance, void* p)
 {
     SMMALLOC_UNUSED(instance);
-
     if (!p)
     {
         return;
     }
-
     Header* h = reinterpret_cast<Header*>(reinterpret_cast<char*>(p) - sizeof(Header));
     std::free(h->p);
 }

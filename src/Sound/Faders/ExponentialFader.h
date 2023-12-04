@@ -22,52 +22,39 @@
 
 namespace SparkyStudios::Audio::Amplitude
 {
+    constexpr BeizerCurveControlPoints gExponentialFaderCurveControlPoints = { 1.0f, 0.0f, 1.0f, 1.0f };
+
     class ExponentialFaderInstance final : public FaderInstance
     {
     public:
-        explicit ExponentialFaderInstance(AmReal64 k);
-
-        AmReal64 GetFromPercentage(AmReal64 percentage) override;
-
-    private:
-        AmReal64 _k;
+        ExponentialFaderInstance()
+        {
+            m_curve = gExponentialFaderCurveControlPoints;
+        }
     };
 
-    [[maybe_unused]] static class ExponentialSmoothFader final : public Fader
+    [[maybe_unused]] static class ExponentialFader final : public Fader
     {
     public:
-        ExponentialSmoothFader()
-            : Fader("ExponentialSmooth")
+        ExponentialFader()
+            : Fader("Exponential")
         {}
 
         FaderInstance* CreateInstance() override
         {
-            return amnew(ExponentialFaderInstance, 0.5);
+            return amnew(ExponentialFaderInstance);
         }
 
         void DestroyInstance(FaderInstance* instance) override
         {
             amdelete(ExponentialFaderInstance, (ExponentialFaderInstance*)instance);
         }
-    } gExponentialSmoothFader; // NOLINT(cert-err58-cpp)
 
-    [[maybe_unused]] static class ExponentialSharpFader final : public Fader
-    {
-    public:
-        ExponentialSharpFader()
-            : Fader("ExponentialSharp")
-        {}
-
-        FaderInstance* CreateInstance() override
-        {
-            return amnew(ExponentialFaderInstance, 0.9);
-        }
-
-        void DestroyInstance(FaderInstance* instance) override
-        {
-            amdelete(ExponentialFaderInstance, (ExponentialFaderInstance*)instance);
-        }
-    } gExponentialSharpFader; // NOLINT(cert-err58-cpp)
+        // [[nodiscard]] BeizerCurveControlPoints GetControlPoints() const override
+        // {
+        //     return gExponentialFaderCurveControlPoints;
+        // }
+    } gExponentialFader; // NOLINT(cert-err58-cpp)
 } // namespace SparkyStudios::Audio::Amplitude
 
 #endif // SS_AMPLITUDE_AUDIO_EXPONENTIAL_FADER_H

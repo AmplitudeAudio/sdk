@@ -1,3 +1,0 @@
-[submodule "dependencies/libsimdpp"]
-	path = dependencies/libsimdpp
-	url = https://github.com/p12tic/libsimdpp.git

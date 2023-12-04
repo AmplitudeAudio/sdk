@@ -12,21 +12,13 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include <Sound/Faders/ExponentialFader.h>
+#pragma once
 
-namespace SparkyStudios::Audio::Amplitude
-{
-    ExponentialFaderInstance::ExponentialFaderInstance(AmReal64 k)
-        : _k(k)
-    {}
+#ifndef SS_AMPLITUDE_AUDIO_FLAC_CODEC_PLUGIN_H
+#define SS_AMPLITUDE_AUDIO_FLAC_CODEC_PLUGIN_H
 
-    AmReal64 ExponentialFaderInstance::GetFromPercentage(AmReal64 percentage)
-    {
-        percentage = AM_CLAMP(percentage, 0.0, 1.0);
+#include <SparkyStudios/Audio/Amplitude/Amplitude.h>
 
-        const AmReal64 a = m_delta * (percentage - percentage * _k);
-        const AmReal64 b = _k * (1.0 - percentage * 2.0) + 1.0;
+using namespace SparkyStudios::Audio::Amplitude;
 
-        return (a / b) + m_from;
-    }
-} // namespace SparkyStudios::Audio::Amplitude
+#endif // SS_AMPLITUDE_AUDIO_FLAC_CODEC_PLUGIN_H

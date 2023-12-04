@@ -1,0 +1,124 @@
+name: Build and release Amplitude Audio SDK
+
+on:
+  push:
+  pull_request:
+  release:
+    tags:
+      - "v*"
+
+jobs:
+  cleanup:
+    name: Cleanup
+    runs-on: ubuntu-latest
+    permissions:
+      actions: write
+      contents: read
+    steps:
+      - name: Check out code
+        uses: actions/checkout@v3
+
+      - name: Cleanup
+        run: |
+          gh extension install actions/gh-actions-cache
+          
+          REPO=${{ github.repository }}
+          BRANCH=${{ github.ref }}
+          
+          echo "Fetching list of cache key"
+          cacheKeysForPR=$(gh actions-cache list -R $REPO -B $BRANCH | cut -f 1 )
+          
+          ## Setting this to not fail the workflow while deleting cache keys. 
+          set +e
+          echo "Deleting caches..."
+          for cacheKey in $cacheKeysForPR
+          do
+              gh actions-cache delete $cacheKey -R $REPO -B $BRANCH --confirm
+          done
+          echo "Done"
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  build-sdk:
+    needs: [ cleanup ]
+    uses: ./.github/workflows/cmake.yml
+    with:
+      project-path: .
+    name: Amplitude Audio SDK
+
+  build-plugins:
+    needs: [ build-sdk ]
+    uses: ./.github/workflows/cmake.yml
+    with:
+      project-path: ./plugins/${{ matrix.project.path }}
+    name: ${{ matrix.project.name }}
+    strategy:
+      matrix:
+        project:
+          - name: FLAC Codec
+            path: codec-flac
+          - name: Vorbis Codec
+            path: codec-vorbis
+
+  release:
+    needs: [ build-plugins ]
+    runs-on: ${{ matrix.config.os }}
+    name: "[${{ matrix.build_type }}] ${{ matrix.config.name }}"
+    strategy:
+      fail-fast: false
+      matrix:
+        build_type: [ "release", "debug" ]
+        config:
+          - name: "Windows Latest MSVC"
+            os: windows-latest
+            artifact: "amplitude_audio_sdk_windows_msvc_x64.7z"
+            archiver: "7z a"
+
+          - name: "Windows Latest MinGW"
+            os: windows-latest
+            artifact: "amplitude_audio_sdk_windows_mingw_x64.7z"
+            archiver: "7z a"
+
+          - name: "Ubuntu Latest GCC"
+            os: ubuntu-latest
+            artifact: "amplitude_audio_sdk_linux_gcc_x64.7z"
+            archiver: "7z a"
+
+          - name: "macOS x64 Latest Clang"
+            os: macos-13
+            artifact: "amplitude_audio_sdk_macos_clang_x64.7z"
+            archiver: "7za a"
+
+    steps:
+      - name: Check out code
+        uses: actions/checkout@v3
+
+      - name: Restore SDK Cache
+        uses: actions/cache/restore@v3
+        with:
+          enableCrossOsArchive: true
+          path: sdk
+          key: ${{ matrix.build_type }}-${{ matrix.config.artifact }}-${{ hashFiles('**/sdk') }}
+          restore-keys: |
+            ${{ matrix.build_type }}-${{ matrix.config.artifact }}-
+
+      - name: Pack
+        shell: bash
+        run: ${{ matrix.config.archiver }} ./${{ matrix.build_type }}_${{ matrix.config.artifact }} LICENSE NOTICE README.md sdk
+
+      - name: Upload
+        uses: actions/upload-artifact@v1
+        with:
+          path: ./${{ matrix.build_type }}_${{ matrix.config.artifact }}
+          name: ${{ matrix.build_type }}_${{ matrix.config.artifact }}
+
+      - name: Upload release asset
+        if: github.event_name == 'release' && (github.event.action == 'published' || github.event.action == 'created')
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ github.event.release.upload_url }}
+          asset_path: ./${{ matrix.build_type }}_${{ matrix.config.artifact }}
+          asset_name: ${{ matrix.build_type }}_${{ matrix.config.artifact }}.zip
+          asset_content_type: application/zip

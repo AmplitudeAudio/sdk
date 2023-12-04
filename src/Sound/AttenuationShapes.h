@@ -21,15 +21,16 @@
 
 #include <SparkyStudios/Audio/Amplitude/Core/Entity.h>
 #include <SparkyStudios/Audio/Amplitude/Core/Listener.h>
-#include <SparkyStudios/Audio/Amplitude/Sound/Attenuation.h>
 
-#include <SparkyStudios/Audio/Amplitude/Math/Curve.h>
+#include <SparkyStudios/Audio/Amplitude/Math/Shape.h>
+
+#include <SparkyStudios/Audio/Amplitude/Sound/Attenuation.h>
 
 #include "attenuation_definition_generated.h"
 
 namespace SparkyStudios::Audio::Amplitude
 {
-    class ConeAttenuationZone
+    class ConeAttenuationZone final
         : public AttenuationZone
         , public ConeZone
     {
@@ -45,7 +46,7 @@ namespace SparkyStudios::Audio::Amplitude
         float GetAttenuationFactor(const Attenuation*, const Entity& entity, const Listener& listener) override;
     };
 
-    class SphereAttenuationZone
+    class SphereAttenuationZone final
         : public AttenuationZone
         , public SphereZone
     {
@@ -59,7 +60,7 @@ namespace SparkyStudios::Audio::Amplitude
         float GetAttenuationFactor(const Attenuation*, const Entity& entity, const Listener& listener) override;
     };
 
-    class BoxAttenuationZone
+    class BoxAttenuationZone final
         : public AttenuationZone
         , public BoxZone
     {
@@ -75,7 +76,7 @@ namespace SparkyStudios::Audio::Amplitude
         float GetAttenuationFactor(const Attenuation*, const Entity& entity, const Listener& listener) override;
     };
 
-    class CapsuleAttenuationZone
+    class CapsuleAttenuationZone final
         : public AttenuationZone
         , public CapsuleZone
     {

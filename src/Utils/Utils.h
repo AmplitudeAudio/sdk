@@ -18,139 +18,142 @@
 #define SS_AMPLITUDE_AUDIO_UTILS_H
 
 #include <SparkyStudios/Audio/Amplitude/Core/Common.h>
+#include <SparkyStudios/Audio/Amplitude/Math/SplitComplex.h>
+#include <SparkyStudios/Audio/Amplitude/Math/Utils.h>
 
 #if defined(AM_SIMD_INTRINSICS)
-#include <simdpp/simd.h>
+#include <xsimd/xsimd.hpp>
 #endif // defined(AM_SIMD_INTRINSICS)
-
-#define AM_LCG_M 2147483647
-#define AM_LCG_A 48271
-#define AM_LCG_C 0
 
 namespace SparkyStudios::Audio::Amplitude
 {
 #if defined(AM_SIMD_INTRINSICS)
-    typedef simdpp::float32v AmAudioFrame;
+    typedef xsimd::batch<AmReal32, xsimd::best_arch> AmAudioFrame;
 #else
     typedef AmReal32 AmAudioFrame;
 #endif // AM_SIMD_INTRINSICS
 
     typedef AmAudioFrame* AmAudioFrameBuffer;
 
-    static struct
+    AM_INLINE(void)
+    Sum(AmAudioSample* AM_RESTRICT result, const AmAudioSample* AM_RESTRICT a, const AmAudioSample* AM_RESTRICT b, const AmSize len)
     {
-        AmInt32 state;
-    } gLCG = { 4321 };
+#if defined(AM_SIMD_INTRINSICS)
+        const AmSize end = AmAudioFrame::size * (len / AmAudioFrame::size);
 
-    static AM_INLINE(float) AmDitherReal32(const AmReal32 ditherMin, const AmReal32 ditherMax)
-    {
-        gLCG.state = (AM_LCG_A * gLCG.state + AM_LCG_C) % AM_LCG_M;
-        const AmReal32 x = gLCG.state / (double)0x7FFFFFFF;
-        return ditherMin + x * (ditherMax - ditherMin);
-    }
-
-    static AM_INLINE(AmInt32) AmFloatToFixedPoint(const AmReal32 x)
-    {
-        return static_cast<AmInt32>(x * kAmFixedPointUnit);
-    }
-
-    static AM_INLINE(AmReal32) AmInt16ToReal32(const AmInt16 x)
-    {
-        auto y = static_cast<AmReal32>(x);
-
-#if defined(AM_ACCURATE_CONVERSION)
-        // The accurate way.
-        y = y + 32768.0f; // -32768..32767 to 0..65535
-        y = y * 0.00003051804379339284f; // 0..65535 to 0..2
-        y = y - 1; // 0..2 to -1..1
-#else
-        // The fast way.
-        y = y * 0.000030517578125f; // -32768..32767 to -1..0.999969482421875
-#endif
-
-        return y;
-    }
-
-    static AM_INLINE(AmInt16) AmReal32ToInt16(const AmReal32 x, bool dithering = false)
-    {
-        AmReal32 y = x;
-
-        if (dithering)
+        for (AmSize i = 0; i < end; i += AmAudioFrame::size)
         {
-            // Performs a rectangular dithering
-            y += AmDitherReal32(1.0f / INT16_MIN, 1.0f / INT16_MAX);
+            const auto ba = xsimd::load_aligned(&a[i]);
+            const auto bb = xsimd::load_aligned(&b[i]);
+
+            auto res = xsimd::add(ba, bb);
+            res.store_aligned(&result[i]);
         }
 
-        y = AM_CLAMP(x, -1.0f, 1.0f);
-
-#if defined(AM_ACCURATE_CONVERSION)
-        // The accurate way.
-        y = y + 1; // -1..1 to 0..2
-        y = y * 32767.5f; // 0..2 to 0..65535
-        y = y - 32768.0f; // 0...65535 to -32768..32767
+        for (AmSize i = end; i < len; i++)
+        {
+            result[i] = a[i] + b[i];
+        }
 #else
-        // The fast way.
-        y = y * 32767.0f; // -1..1 to -32767..32767
+        const AmSize end4 = 4 * (len / 4);
+
+        for (AmSize i = 0; i < end4; i += 4)
+        {
+            result[i + 0] = a[i + 0] + b[i + 0];
+            result[i + 1] = a[i + 1] + b[i + 1];
+            result[i + 2] = a[i + 2] + b[i + 2];
+            result[i + 3] = a[i + 3] + b[i + 3];
+        }
+
+        for (AmSize i = end4; i < len; ++i)
+        {
+            result[i] = a[i] + b[i];
+        }
 #endif
-
-        return static_cast<AmInt16>(y);
     }
 
-    static AM_INLINE(AmReal32) CatmullRom(const AmReal32 t, const AmReal32 p0, const AmReal32 p1, const AmReal32 p2, const AmReal32 p3)
+    AM_INLINE(void)
+    ComplexMultiplyAccumulate(
+        AmAudioSample* AM_RESTRICT re,
+        AmAudioSample* AM_RESTRICT im,
+        const AmAudioSample* AM_RESTRICT reA,
+        const AmAudioSample* AM_RESTRICT imA,
+        const AmAudioSample* AM_RESTRICT reB,
+        const AmAudioSample* AM_RESTRICT imB,
+        const AmSize len)
     {
-        // clang-format off
-        return 0.5f * (
-            (2 * p1) +
-            (-p0 + p2) * t +
-            (2 * p0 - 5 * p1 + 4 * p2 - p3) * t * t +
-            (-p0 + 3 * p1 - 3 * p2 + p3) * t * t * t
-        );
-        // clang-format on
+#if defined(AM_SIMD_INTRINSICS)
+        const AmSize end4 = AmAudioFrame::size * (len / AmAudioFrame::size);
+
+        for (AmSize i = 0; i < end4; i += AmAudioFrame::size)
+        {
+            const auto ra = xsimd::load_aligned(&reA[i]);
+            const auto rb = xsimd::load_aligned(&reB[i]);
+            const auto ia = xsimd::load_aligned(&imA[i]);
+            const auto ib = xsimd::load_aligned(&imB[i]);
+
+            auto real = xsimd::load_aligned(&re[i]);
+            auto imag = xsimd::load_aligned(&im[i]);
+
+            real = xsimd::fma(ra, rb, real);
+            real = xsimd::sub(real, xsimd::mul(ia, ib));
+            real.store_aligned(&re[i]);
+
+            imag = xsimd::fma(ra, ib, imag);
+            imag = xsimd::fma(ia, rb, imag);
+            imag.store_aligned(&im[i]);
+        }
+
+        for (AmSize i = end4; i < len; ++i)
+        {
+            re[i] += reA[i] * reB[i] - imA[i] * imB[i];
+            im[i] += reA[i] * imB[i] + imA[i] * reB[i];
+        }
+#else
+        const AmSize end4 = 4 * (len / 4);
+
+        for (AmSize i = 0; i < end4; i += 4)
+        {
+            re[i + 0] += reA[i + 0] * reB[i + 0] - imA[i + 0] * imB[i + 0];
+            re[i + 1] += reA[i + 1] * reB[i + 1] - imA[i + 1] * imB[i + 1];
+            re[i + 2] += reA[i + 2] * reB[i + 2] - imA[i + 2] * imB[i + 2];
+            re[i + 3] += reA[i + 3] * reB[i + 3] - imA[i + 3] * imB[i + 3];
+            im[i + 0] += reA[i + 0] * imB[i + 0] + imA[i + 0] * reB[i + 0];
+            im[i + 1] += reA[i + 1] * imB[i + 1] + imA[i + 1] * reB[i + 1];
+            im[i + 2] += reA[i + 2] * imB[i + 2] + imA[i + 2] * reB[i + 2];
+            im[i + 3] += reA[i + 3] * imB[i + 3] + imA[i + 3] * reB[i + 3];
+        }
+
+        for (AmSize i = end4; i < len; ++i)
+        {
+            re[i] += reA[i] * reB[i] - imA[i] * imB[i];
+            im[i] += reA[i] * imB[i] + imA[i] * reB[i];
+        }
+#endif
     }
 
-    static AM_INLINE(AmReal32) ComputeDopplerFactor(
-        const AmVec3& locationDelta,
-        const AmVec3& sourceVelocity,
-        const AmVec3& listenerVelocity,
-        AmReal32 soundSpeed,
-        AmReal32 dopplerFactor)
+    AM_INLINE(void) ComplexMultiplyAccumulate(SplitComplex& result, const SplitComplex& a, const SplitComplex& b)
     {
-        const AmReal32 deltaLength = AM_Len(locationDelta);
+        AMPLITUDE_ASSERT(result.GetSize() == a.GetSize());
+        AMPLITUDE_ASSERT(result.GetSize() == b.GetSize());
 
-        if (deltaLength == 0.0f)
-            return 1.0f;
+        ComplexMultiplyAccumulate(result.re(), result.im(), a.re(), a.im(), b.re(), b.im(), result.GetSize());
+    }
 
-        AmReal32 vss = AM_Dot(sourceVelocity, locationDelta) / deltaLength;
-        AmReal32 vls = AM_Dot(listenerVelocity, locationDelta) / deltaLength;
+    /**
+     * @brief Copies a source array into a destination buffer and pads the destination buffer with zeros.
+     *
+     * @param dest The destination buffer.
+     * @param src The source array.
+     * @param srcSize The size of the source array.
+     */
+    AM_INLINE(void) CopyAndPad(AmAlignedReal32Buffer& dest, const AmReal32* src, AmSize srcSize)
+    {
+        AMPLITUDE_ASSERT(dest.GetSize() >= srcSize);
 
-        const AmReal32 maxSpeed = soundSpeed / dopplerFactor;
-        vss = AM_MIN(vss, maxSpeed);
-        vls = AM_MIN(vls, maxSpeed);
-
-        return (soundSpeed - vls * dopplerFactor) / (soundSpeed - vss * dopplerFactor);
+        std::memcpy(dest.GetBuffer(), src, srcSize * sizeof(AmReal32));
+        std::memset(dest.GetBuffer() + srcSize, 0, (dest.GetSize() - srcSize) * sizeof(AmReal32));
     }
 } // namespace SparkyStudios::Audio::Amplitude
-
-#if defined(AM_SIMD_INTRINSICS)
-
-namespace simdpp
-{
-    namespace SIMDPP_ARCH_NAMESPACE
-    {
-        template<unsigned N, class V1, class V2>
-        SIMDPP_INL typename detail::get_expr2_nomask<V1, V2>::empty zip_lo(const any_vec16<N, V1>& a, const any_vec16<N, V2>& b)
-        {
-            return zip8_lo(a, b);
-        }
-
-        template<unsigned N, class V1, class V2>
-        SIMDPP_INL typename detail::get_expr2_nomask<V1, V2>::empty zip_hi(const any_vec16<N, V1>& a, const any_vec16<N, V2>& b)
-        {
-            return zip8_hi(a, b);
-        }
-    } // namespace SIMDPP_ARCH_NAMESPACE
-} // namespace simdpp
-
-#endif // AM_SIMD_INTRINSICS
 
 #endif // SS_AMPLITUDE_AUDIO_UTILS_H

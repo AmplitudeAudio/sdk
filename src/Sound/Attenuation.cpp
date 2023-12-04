@@ -21,38 +21,18 @@
 namespace SparkyStudios::Audio::Amplitude
 {
     Attenuation::Attenuation()
-        : _gainCurve()
-        , _id(kAmInvalidObjectId)
-        , _name()
+        : _name()
         , _maxDistance(0.0f)
         , _shape(nullptr)
-        , _refCounter()
+        , _gainCurve()
     {}
 
-    bool Attenuation::LoadAttenuationDefinition(const std::string& attenuation)
+    Attenuation::~Attenuation()
     {
-        // Ensure we do not load the attenuation more than once
-        AMPLITUDE_ASSERT(_id == kAmInvalidObjectId);
+        _name.clear();
+        _maxDistance = 0.0f;
 
-        _source = attenuation;
-        const AttenuationDefinition* definition = GetAttenuationDefinition();
-
-        _id = definition->id();
-        _name = definition->name()->str();
-
-        _maxDistance = definition->max_distance();
-
-        _gainCurve.Initialize(definition->gain_curve());
-
-        _shape = AttenuationZone::Create(definition->shape());
-
-        return true;
-    }
-
-    bool Attenuation::LoadAttenuationDefinitionFromFile(const AmOsString& filename)
-    {
-        std::string source;
-        return LoadFile(filename, &source) && LoadAttenuationDefinition(source);
+        _shape = nullptr;
     }
 
     AmReal32 Attenuation::GetGain(const AmVec3& soundLocation, const Listener& listener) const
@@ -65,29 +45,9 @@ namespace SparkyStudios::Audio::Amplitude
         return _shape->GetAttenuationFactor(this, entity, listener);
     }
 
-    AmAttenuationID Attenuation::GetId() const
-    {
-        return _id;
-    }
-
-    const std::string& Attenuation::GetName() const
-    {
-        return _name;
-    }
-
-    const AttenuationDefinition* Attenuation::GetAttenuationDefinition() const
-    {
-        return Amplitude::GetAttenuationDefinition(_source.c_str());
-    }
-
-    RefCounter* Attenuation::GetRefCounter()
-    {
-        return &_refCounter;
-    }
-
     AttenuationZone* Attenuation::GetShape() const
     {
-        return _shape;
+        return _shape.get();
     }
 
     const Curve& Attenuation::GetGainCurve() const
@@ -98,5 +58,24 @@ namespace SparkyStudios::Audio::Amplitude
     double Attenuation::GetMaxDistance() const
     {
         return _maxDistance;
+    }
+
+    bool Attenuation::LoadDefinition(const AttenuationDefinition* definition, EngineInternalState* state)
+    {
+        _id = definition->id();
+        _name = definition->name()->str();
+
+        _maxDistance = definition->max_distance();
+
+        _gainCurve.Initialize(definition->gain_curve());
+
+        _shape.reset(AttenuationZone::Create(definition->shape()));
+
+        return true;
+    }
+
+    const AttenuationDefinition* Attenuation::GetDefinition() const
+    {
+        return GetAttenuationDefinition(_source.c_str());
     }
 } // namespace SparkyStudios::Audio::Amplitude

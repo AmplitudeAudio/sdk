@@ -13,6 +13,7 @@
 # limitations under the License.
 
 cmake_minimum_required(VERSION 3.20)
+
 project(amac)
 
 set(AMC_SRC
@@ -22,9 +23,14 @@ set(AMC_SRC
 add_executable(amac ${AMC_SRC})
 
 target_link_libraries(amac
-    Amplitude
+    Static
 )
 
 add_dependencies(amac
-    Amplitude
+    Static
+)
+
+install(
+    TARGETS amac
+    RUNTIME DESTINATION ${AM_BIN_DESTINATION}
 )

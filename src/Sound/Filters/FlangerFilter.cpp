@@ -79,12 +79,12 @@ namespace SparkyStudios::Audio::Amplitude
 
     FilterInstance* FlangerFilter::CreateInstance()
     {
-        return amnew(FlangerFilterInstance, this);
+        return ampoolnew(MemoryPoolKind::Filtering, FlangerFilterInstance, this);
     }
 
     void FlangerFilter::DestroyInstance(FilterInstance* instance)
     {
-        amdelete(FlangerFilterInstance, (FlangerFilterInstance*)instance);
+        ampooldelete(MemoryPoolKind::Filtering, FlangerFilterInstance, (FlangerFilterInstance*)instance);
     }
 
     FlangerFilterInstance::FlangerFilterInstance(FlangerFilter* parent)
@@ -113,19 +113,8 @@ namespace SparkyStudios::Audio::Amplitude
         _offset %= _bufferLength;
     }
 
-    void FlangerFilterInstance::ProcessInterleaved(
-        AmAudioSampleBuffer buffer, AmUInt64 frames, AmUInt64 bufferSize, AmUInt16 channels, AmUInt32 sampleRate)
-    {
-        InitBuffer(channels, sampleRate);
-
-        FilterInstance::ProcessInterleaved(buffer, frames, bufferSize, channels, sampleRate);
-
-        _offset += frames;
-        _offset %= _bufferLength;
-    }
-
     void FlangerFilterInstance::ProcessChannel(
-        AmAudioSampleBuffer buffer, AmUInt16 channel, AmUInt64 frames, AmUInt16 channels, AmUInt32 sampleRate, bool isInterleaved)
+        AmAudioSampleBuffer buffer, AmUInt16 channel, AmUInt64 frames, AmUInt16 channels, AmUInt32 sampleRate)
     {
         const auto maxSamples =
             static_cast<AmUInt32>(std::ceil(m_parameters[FlangerFilter::ATTRIBUTE_DELAY] * static_cast<AmReal32>(sampleRate)));
@@ -135,7 +124,7 @@ namespace SparkyStudios::Audio::Amplitude
 
         for (AmUInt64 f = 0; f < frames; f++)
         {
-            const AmUInt64 s = isInterleaved ? f * channels + channel : f + channel * frames;
+            const AmUInt64 s = f * channels + channel;
 
             const auto delay = static_cast<AmInt32>(std::floor(static_cast<AmReal64>(maxSamples) * (1 + std::cos(_index))) / 2);
             _index += i;
@@ -149,7 +138,6 @@ namespace SparkyStudios::Audio::Amplitude
             _offset++;
 
             y = x + (y - x) * m_parameters[FlangerFilter::ATTRIBUTE_WET];
-            y = AM_CLAMP_AUDIO_SAMPLE(y);
 
             buffer[s] = static_cast<AmAudioSample>(y);
         }
@@ -159,7 +147,7 @@ namespace SparkyStudios::Audio::Amplitude
 
     FlangerFilterInstance::~FlangerFilterInstance()
     {
-        amMemory->Free(MemoryPoolKind::Filtering, _buffer);
+        ampoolfree(MemoryPoolKind::Filtering, _buffer);
     }
 
     void FlangerFilterInstance::InitBuffer(AmUInt16 channels, AmUInt32 sampleRate)
@@ -169,12 +157,12 @@ namespace SparkyStudios::Audio::Amplitude
 
         if (_bufferLength < maxSamples)
         {
-            amMemory->Free(MemoryPoolKind::Filtering, _buffer);
+            ampoolfree(MemoryPoolKind::Filtering, _buffer);
 
             _bufferLength = maxSamples;
             const AmUInt32 size = _bufferLength * channels * sizeof(AmReal32);
 
-            _buffer = static_cast<AmReal32Buffer>(amMemory->Malloc(MemoryPoolKind::Filtering, size));
+            _buffer = static_cast<AmReal32Buffer>(ampoolmalloc(MemoryPoolKind::Filtering, size));
             std::memset(_buffer, 0, size);
         }
     }

@@ -130,7 +130,7 @@ namespace SparkyStudios::Audio::Amplitude
         }
     }
 
-    void Channel::SetGain(const float gain) const
+    void Channel::SetGain(const AmReal32 gain) const
     {
         AMPLITUDE_ASSERT(Valid());
         if (IsValidStateId())
@@ -139,7 +139,7 @@ namespace SparkyStudios::Audio::Amplitude
         }
     }
 
-    float Channel::GetGain() const
+    AmReal32 Channel::GetGain() const
     {
         AMPLITUDE_ASSERT(Valid());
         if (IsValidStateId())

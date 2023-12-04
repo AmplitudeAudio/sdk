@@ -36,55 +36,14 @@ namespace SparkyStudios::Audio::Amplitude
     }
 
     Switch::Switch()
-        : _source()
-        , _id(kAmInvalidObjectId)
-        , _name()
-        , _activeState()
+        : _activeState()
         , _states()
         , _refCounter()
     {}
 
-    bool Switch::LoadSwitchDefinition(const AmString& switchDefinition)
+    Switch::~Switch()
     {
-        AMPLITUDE_ASSERT(_id == kAmInvalidObjectId);
-
-        _source = switchDefinition;
-        const SwitchDefinition* definition = GetSwitchDefinition();
-
-        _id = definition->id();
-        _name = definition->name()->str();
-
-        flatbuffers::uoffset_t size = definition->states() ? definition->states()->size() : 0;
-        _states.resize(size);
-
-        for (flatbuffers::uoffset_t i = 0; i < size; ++i)
-        {
-            _states[i].m_id = definition->states()->Get(i)->id();
-            _states[i].m_name = definition->states()->Get(i)->name()->str();
-        }
-
-        return true;
-    }
-
-    bool Switch::LoadSwitchDefinitionFromFile(const AmOsString& filename)
-    {
-        std::string source;
-        return Amplitude::LoadFile(filename, &source) && LoadSwitchDefinition(source);
-    }
-
-    const SwitchDefinition* Switch::GetSwitchDefinition() const
-    {
-        return Amplitude::GetSwitchDefinition(_source.c_str());
-    }
-
-    AmSwitchID Switch::GetId() const
-    {
-        return _id;
-    }
-
-    const std::string& Switch::GetName() const
-    {
-        return _name;
+        _states.clear();
     }
 
     const SwitchState& Switch::GetState() const
@@ -103,7 +62,7 @@ namespace SparkyStudios::Audio::Amplitude
             return;
         }
 
-        if (const auto findIt = std::find(_states.begin(), _states.end(), state); findIt != _states.end())
+        if (const auto findIt = std::ranges::find(_states, state); findIt != _states.end())
         {
             _activeState = state;
         }
@@ -112,8 +71,8 @@ namespace SparkyStudios::Audio::Amplitude
     void Switch::SetState(AmObjectID id)
     {
         AMPLITUDE_ASSERT(_id != kAmInvalidObjectId);
-        if (const auto findIt = std::find_if(
-                _states.begin(), _states.end(),
+        if (const auto findIt = std::ranges::find_if(
+                _states,
                 [id](const SwitchState& state)
                 {
                     return state.m_id == id;
@@ -127,8 +86,8 @@ namespace SparkyStudios::Audio::Amplitude
     void Switch::SetState(const std::string& name)
     {
         AMPLITUDE_ASSERT(_id != kAmInvalidObjectId);
-        if (const auto findIt = std::find_if(
-                _states.begin(), _states.end(),
+        if (const auto findIt = std::ranges::find_if(
+                _states,
                 [name](const SwitchState& state)
                 {
                     return state.m_name == name;
@@ -144,8 +103,25 @@ namespace SparkyStudios::Audio::Amplitude
         return _states;
     }
 
-    RefCounter* Switch::GetRefCounter()
+    bool Switch::LoadDefinition(const SwitchDefinition* definition, EngineInternalState* state)
     {
-        return &_refCounter;
+        _id = definition->id();
+        _name = definition->name()->str();
+
+        const flatbuffers::uoffset_t size = definition->states() ? definition->states()->size() : 0;
+        _states.resize(size);
+
+        for (flatbuffers::uoffset_t i = 0; i < size; ++i)
+        {
+            _states[i].m_id = definition->states()->Get(i)->id();
+            _states[i].m_name = definition->states()->Get(i)->name()->str();
+        }
+
+        return true;
+    }
+
+    const SwitchDefinition* Switch::GetDefinition() const
+    {
+        return GetSwitchDefinition(_source.c_str());
     }
 } // namespace SparkyStudios::Audio::Amplitude

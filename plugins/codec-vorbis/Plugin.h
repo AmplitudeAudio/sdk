@@ -12,13 +12,13 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include <Sound/Faders/ConstantFader.h>
+#pragma once
 
-namespace SparkyStudios::Audio::Amplitude
-{
-    AmReal64 ConstantFaderInstance::GetFromPercentage(AmReal64 percentage)
-    {
-        percentage = AM_CLAMP(percentage, 0.0, 1.0);
-        return percentage == 1.0 ? m_to : m_from;
-    }
-} // namespace SparkyStudios::Audio::Amplitude
+#ifndef SS_AMPLITUDE_AUDIO_VORBIS_CODEC_PLUGIN_H
+#define SS_AMPLITUDE_AUDIO_VORBIS_CODEC_PLUGIN_H
+
+#include <SparkyStudios/Audio/Amplitude/Amplitude.h>
+
+using namespace SparkyStudios::Audio::Amplitude;
+
+#endif // SS_AMPLITUDE_AUDIO_VORBIS_CODEC_PLUGIN_H

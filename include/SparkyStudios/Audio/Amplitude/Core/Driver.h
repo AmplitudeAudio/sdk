@@ -30,7 +30,7 @@ namespace SparkyStudios::Audio::Amplitude
      * A driver allows to use an audio device to output sounds and
      * receive data from the microphone.
      */
-    class Driver
+    class AM_API_PUBLIC Driver
     {
     public:
         /**
@@ -55,6 +55,15 @@ namespace SparkyStudios::Audio::Amplitude
          * @brief Closes the audio device.
          */
         virtual bool Close() = 0;
+
+        /**
+         * @brief Enumerates all the available audio devices.
+         *
+         * @param devices The vector in which to store the device descriptions.
+         *
+         * @return @c true if successful, @c false otherwise.
+         */
+        virtual bool EnumerateDevices(std::vector<DeviceDescription>& devices) = 0;
 
         /**
          * @brief Gets the name of this driver.

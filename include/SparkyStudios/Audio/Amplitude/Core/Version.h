@@ -14,8 +14,8 @@
 
 #pragma once
 
-#ifndef SPARK_AUDIO_VERSION_H
-#define SPARK_AUDIO_VERSION_H
+#ifndef SS_AMPLITUDE_AUDIO_VERSION_H
+#define SS_AMPLITUDE_AUDIO_VERSION_H
 
 #include <SparkyStudios/Audio/Amplitude/Core/Common.h>
 
@@ -23,6 +23,10 @@
  * @brief Gets the current Amplitude SDK version.
  */
 #define amVersion SparkyStudios::Audio::Amplitude::Version()
+
+#define AM_VERSION_MAJOR 1
+#define AM_VERSION_MINOR 0
+#define AM_VERSION_PATCH 0
 
 namespace SparkyStudios::Audio::Amplitude
 {
@@ -57,7 +61,7 @@ namespace SparkyStudios::Audio::Amplitude
      *
      * @return The version.
      */
-    const struct Version& Version();
+    AM_API_PUBLIC const struct Version& Version();
 } // namespace SparkyStudios::Audio::Amplitude
 
-#endif // SPARK_AUDIO_VERSION_H
+#endif // SS_AMPLITUDE_AUDIO_VERSION_H

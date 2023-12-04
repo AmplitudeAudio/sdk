@@ -21,11 +21,14 @@
 /////////////////////////////////////////////////////////////////////
 // Standard Library
 
+#include <algorithm>
 #include <atomic>
 #include <cmath>
 #include <cstdlib>
 #include <cstring>
 #include <map>
+#include <memory>
+#include <set>
 #include <string>
 #include <unordered_map>
 #include <vector>
@@ -62,8 +65,10 @@
 
 /**
  * @brief Declare a callback function type
+ *
  * @param _type_ Return type of the function
  * @param _name_ Name of the function
+ *
  * @remarks This must be followed by the parentheses containing the function arguments declaration
  */
 #define AM_CALLBACK(_type_, _name_) typedef _type_(AM_CALL_POLICY* _name_)
@@ -81,17 +86,21 @@
 /**
  * @brief Clamps an audio sample value between AM_AUDIO_SAMPLE_MIN and AM_AUDIO_SAMPLE_MAX.
  */
-#define AM_CLAMP_AUDIO_SAMPLE(v) ((v) <= -1.65f) ? -0.9862875f : ((v) >= 1.65f) ? 0.9862875f : (0.87f * (v)-0.1f * (v) * (v) * (v))
+#define AM_CLAMP_AUDIO_SAMPLE(v) (((v) <= -1.65f) ? -0.9862875f : ((v) >= 1.65f) ? 0.9862875f : (0.87f * (v)-0.1f * (v) * (v) * (v)))
 
-// Typedefs have to be made before the includes, as the
-// includes depend on them.
+/**
+ * @brief Helps to avoid compiler warnings about unused values.
+ *
+ * @param x The statement where the return value is not used.
+ */
+#define AM_UNUSED(x) ((void)(x))
 
 namespace SparkyStudios::Audio::Amplitude
 {
     /**
      * @brief Class that handles aligned allocations to support vectorized operations.
      */
-    class AmAlignedReal32Buffer
+    class AM_API_PUBLIC AmAlignedReal32Buffer
     {
     public:
         AmAlignedReal32Buffer();
@@ -111,11 +120,16 @@ namespace SparkyStudios::Audio::Amplitude
         void Clear() const;
 
         /**
+         * @brief Releases the allocated buffer.
+         */
+        void Release();
+
+        /**
          * @brief Gets the size of the buffer.
          *
          * @return AmUInt32
          */
-        [[nodiscard]] AmUInt32 GetSize() const
+        [[nodiscard]] AM_INLINE(AmUInt32) GetSize() const
         {
             return m_floats;
         }
@@ -125,7 +139,7 @@ namespace SparkyStudios::Audio::Amplitude
          *
          * @return AmFloat32Buffer
          */
-        [[nodiscard]] AmReal32Buffer GetBuffer() const
+        [[nodiscard]] AM_INLINE(AmReal32Buffer) GetBuffer() const
         {
             return m_data;
         }
@@ -135,9 +149,42 @@ namespace SparkyStudios::Audio::Amplitude
          *
          * @return AmUInt8Buffer
          */
-        [[nodiscard]] AmUInt8Buffer GetPointer() const
+        [[nodiscard]] AM_INLINE(AmUInt8Buffer) GetPointer() const
         {
             return m_basePtr;
+        }
+
+        /**
+         * @brief Copies data from another buffer.
+         * @param other The other buffer to copy data from.
+         */
+        void CopyFrom(const AmAlignedReal32Buffer& other) const;
+
+        /**
+         * @brief Resizes the buffer to the specified size.
+         *
+         * @param size The new size of the buffer.
+         */
+        void Resize(AmUInt32 size);
+
+        /**
+         * @brief Swaps two buffers.
+         *
+         * @param a The first buffer.
+         * @param b The second buffer.
+         */
+        static void Swap(AmAlignedReal32Buffer& a, AmAlignedReal32Buffer& b);
+
+        AmReal32& operator[](AmSize index)
+        {
+            AMPLITUDE_ASSERT(m_data && index < m_floats);
+            return m_data[index];
+        }
+
+        const AmReal32& operator[](size_t index) const
+        {
+            AMPLITUDE_ASSERT(m_data && index < m_floats);
+            return m_data[index];
         }
 
     private:
@@ -149,19 +196,33 @@ namespace SparkyStudios::Audio::Amplitude
     /**
      * @brief Lightweight class that handles small aligned buffer to support vectorized operations.
      */
-    class TinyAlignedReal32Buffer
+    class AM_API_PUBLIC AmTinyAlignedReal32Buffer
     {
     public:
-        TinyAlignedReal32Buffer();
+        /**
+         * @brief Construct a new TinyAlignedReal32Buffer object by allocating an aligned
+         * buffer with AM_SIMD_ALIGNMENT float values.
+         */
+        AmTinyAlignedReal32Buffer();
+
+        /**
+         * @brief Gets the raw allocated pointer.
+         *
+         * @return AmReal32Buffer
+         */
+        [[nodiscard]] AM_INLINE(AmReal32Buffer) GetBuffer() const
+        {
+            return m_data;
+        }
 
     private:
         AmReal32Buffer m_data; // aligned pointer
-        AmUInt8 m_actualData[sizeof(float) * AM_SIMD_ALIGNMENT + AM_SIMD_ALIGNMENT]{};
+        AmUInt8 m_actualData[sizeof(AmReal32) * AM_SIMD_ALIGNMENT + AM_SIMD_ALIGNMENT]{};
     };
-}; // namespace SparkyStudios::Audio::Amplitude
 
-namespace SparkyStudios::Audio::Amplitude
-{
+    /**
+     * @brief Enumerates the list of possible errors encountered by the library.
+     */
     enum AM_ERROR : AmUInt8
     {
         AM_ERROR_NO_ERROR = 0, // No error
@@ -174,55 +235,36 @@ namespace SparkyStudios::Audio::Amplitude
         AM_ERROR_UNKNOWN = 7 // Other error
     };
 
-    // Enumerates the list of possible channel types handled by SoLoud
-    enum AM_SPEAKER_CONFIG : AmUInt8
-    {
-        // Mono channel
-        AM_SPEAKER_MONO,
-        // Stereo channel
-        AM_SPEAKER_STEREO,
-        // Quad channel
-        AM_SPEAKER_QUAD,
-        // 5.1 Surround channel
-        AM_SPEAKER_5_1,
-        // 7.1 Surround channel
-        AM_SPEAKER_7_1,
-    };
-
-    // Enumerates the list of possible sample formats handled by Amplitude
+    /**
+     * @brief Enumerates the list of possible sample formats handled by Amplitude.
+     */
     enum AM_SAMPLE_FORMAT : AmUInt8
     {
-        // floating point
+        // floating point (float32)
         AM_SAMPLE_FORMAT_FLOAT,
-        // integer
+        // integer (int16)
         AM_SAMPLE_FORMAT_INT,
         // An unknown format
         AM_SAMPLE_FORMAT_UNKNOWN,
     };
 
-    enum AM_INTERLEAVE_TYPE : AmUInt8
-    {
-        AM_SAMPLE_INTERLEAVED,
-        AM_SAMPLE_NON_INTERLEAVED,
-    };
-
+    /**
+     * @brief Enumerates the list of states in a fader.
+     */
     enum AM_FADER_STATE : AmInt8
     {
         AM_FADER_STATE_STOPPED = -1,
         AM_FADER_STATE_DISABLED = 0,
         AM_FADER_STATE_ACTIVE = 1,
     };
-} // namespace SparkyStudios::Audio::Amplitude
 
-namespace SparkyStudios::Audio::Amplitude
-{
     /**
      * @brief Describe the format of an audio sample.
      *
      * This data structure is mainly filled by a Codec
      * during the initialization time.
      */
-    struct SoundFormat
+    struct AM_API_PUBLIC SoundFormat
     {
     public:
         void SetAll(
@@ -231,52 +273,75 @@ namespace SparkyStudios::Audio::Amplitude
             AmUInt32 bitsPerSample,
             AmUInt64 framesCount,
             AmUInt32 frameSize,
-            AM_SAMPLE_FORMAT sampleType,
-            AM_INTERLEAVE_TYPE interleaveType);
+            AM_SAMPLE_FORMAT sampleType);
 
-        [[nodiscard]] AmUInt32 GetSampleRate() const
+        /**
+         * @brief Get the sample rate.
+         *
+         * @return AmUInt32
+         */
+        [[nodiscard]] AM_INLINE(AmUInt32) GetSampleRate() const
         {
             return _sampleRate;
         }
 
-        [[nodiscard]] AmUInt16 GetNumChannels() const
+        /**
+         * @brief Get the number of channels.
+         *
+         * @return AmUInt16
+         */
+        [[nodiscard]] AM_INLINE(AmUInt16) GetNumChannels() const
         {
             return _numChannels;
         }
 
-        [[nodiscard]] AmUInt32 GetBitsPerSample() const
+        /**
+         * @brief Get the bits per sample.
+         *
+         * @return AmUInt32
+         */
+        [[nodiscard]] AM_INLINE(AmUInt32) GetBitsPerSample() const
         {
             return _bitsPerSample;
         }
 
-        [[nodiscard]] AmUInt64 GetFramesCount() const
+        /**
+         * @brief Get the number of frames.
+         *
+         * @return AmUInt64
+         */
+        [[nodiscard]] AM_INLINE(AmUInt64) GetFramesCount() const
         {
             return _framesCount;
         }
 
-        [[nodiscard]] AmUInt32 GetFrameSize() const
+        /**
+         * @brief Get the frame size.
+         *
+         * @return AmUInt32
+         */
+        [[nodiscard]] AM_INLINE(AmUInt32) GetFrameSize() const
         {
             return _frameSize;
         }
 
-        [[nodiscard]] AM_SAMPLE_FORMAT GetSampleType() const
+        /**
+         * @brief Get the sample type.
+         *
+         * @return AM_SAMPLE_FORMAT
+         */
+        [[nodiscard]] AM_INLINE(AM_SAMPLE_FORMAT) GetSampleType() const
         {
             return _sampleType;
         }
 
-        [[nodiscard]] AM_INTERLEAVE_TYPE GetInterleaveType() const
-        {
-            return _interleaveType;
-        }
-
     private:
-        AmUInt32 _sampleRate;
-        AmUInt16 _numChannels;
-        AmUInt32 _bitsPerSample;
-        AmUInt64 _framesCount;
-        AmUInt32 _frameSize;
-        AM_SAMPLE_FORMAT _sampleType;
-        AM_INTERLEAVE_TYPE _interleaveType;
+        AmUInt32 _sampleRate = 0;
+        AmUInt16 _numChannels = 0;
+        AmUInt32 _bitsPerSample = 0;
+        AmUInt64 _framesCount = 0;
+        AmUInt32 _frameSize = 0;
+        AM_SAMPLE_FORMAT _sampleType = AM_SAMPLE_FORMAT_FLOAT;
     };
 } // namespace SparkyStudios::Audio::Amplitude
 

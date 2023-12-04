@@ -17,32 +17,48 @@
 #ifndef SS_AMPLITUDE_AUDIO_SOUND_H
 #define SS_AMPLITUDE_AUDIO_SOUND_H
 
-#include <SparkyStudios/Audio/Amplitude/Core/Common.h>
-
 #include <SparkyStudios/Audio/Amplitude/Core/Codec.h>
+#include <SparkyStudios/Audio/Amplitude/Core/Common.h>
 
 #include <SparkyStudios/Audio/Amplitude/Sound/SoundObject.h>
 
 namespace SparkyStudios::Audio::Amplitude
 {
-    struct SoundDefinition;
-
     struct EngineInternalState;
     class BusInternalState;
+
+    struct SoundDefinition;
 
     class Collection;
     class SoundInstance;
     class RealChannel;
 
-    class SoundChunk;
+    struct SoundChunk;
 
+    /**
+     * @brief Describes the place where a Sound belongs to.
+     */
     enum class SoundKind
     {
+        /**
+         * @brief The sound is associated to a @a SwitchContainer.
+         */
         Switched,
+
+        /**
+         * @brief The sound is associated to a @a Collection.
+         */
         Contained,
+
+        /**
+         * @brief The sound is not associated to any container, and can be played directly.
+         */
         Standalone,
     };
 
+    /**
+     * @brief Stores all the information required to play a sound instance.
+     */
     struct SoundInstanceSettings
     {
         AmObjectID m_id;
@@ -57,62 +73,30 @@ namespace SparkyStudios::Audio::Amplitude
         AmUInt32 m_loopCount;
     };
 
-    class Sound
+    /**
+     * @brief Amplitude Sound.
+     *
+     * A Sound is the most basic sound object in Amplitude. It can be used to directly play an audio file,
+     * or can be contained in a @a SwitchContainer or a @a Collection for a fine-grained control.
+     *
+     * Effects can be attached to a Sound, which will be applied to all instances of the sound in the EffectProcessor
+     * of the Amplimix pipeline.
+     */
+    class AM_API_PUBLIC Sound final
         : public SoundObject
         , public Resource
+        , public Asset<AmSoundID, SoundDefinition>
     {
-        friend class Collection;
-        friend class SoundInstance;
-
     public:
+        /**
+         * @brief Creates an unitialized Sound.
+         */
         Sound();
+
+        /**
+         * @brief Destroys the Sound asset and releases all the associated resources.
+         */
         ~Sound() override;
-
-        /**
-         * @brief Loads the sound from the given source.
-         *
-         * @param source The sound file content to load.
-         * @param state The engine state to use while loading the sound.
-         *
-         * @return true if the sound was loaded successfully, false otherwise.
-         */
-        bool LoadDefinition(const std::string& source, EngineInternalState* state) override;
-
-        /**
-         * @brief Loads the sound from the given file path.
-         *
-         * @param filename The path to the sound file to load.
-         * @param state The engine state to use while loading the sound.
-         *
-         * @return true if the sound was loaded successfully, false otherwise.
-         */
-        bool LoadDefinitionFromFile(const AmOsString& filename, EngineInternalState* state) override;
-
-        /**
-         * @brief Acquires referenced objects in this Sound.
-         *
-         * @param state The engine state used while loading the sound.
-         */
-        void AcquireReferences(EngineInternalState* state) override;
-
-        /**
-         * @brief Releases the references acquired when loading the sound.
-         *
-         * @param state The engine state used while loading the sound.
-         */
-        void ReleaseReferences(EngineInternalState* state) override;
-
-        /**
-         * @brief Returns the loaded sound definition.
-         *
-         * @return The loaded sound definition.
-         */
-        [[nodiscard]] const SoundDefinition* GetSoundDefinition() const;
-
-        /**
-         * @brief Loads the audio file.
-         */
-        void Load(const FileLoader* loader) override;
 
         /**
          * @brief Create a new SoundInstance from this Sound.
@@ -135,35 +119,6 @@ namespace SparkyStudios::Audio::Amplitude
          */
         [[nodiscard]] SoundInstance* CreateInstance(const Collection* collection);
 
-        /**
-         * @brief Sets the format of this Sound.
-         *
-         * @param format The sound format.
-         */
-        void SetFormat(const SoundFormat& format);
-
-        /**
-         * @brief Gets the format of this Sound.
-         *
-         * @return The format of this Sound.
-         */
-        [[nodiscard]] const SoundFormat& GetFormat() const;
-
-        /**
-         * @brief Checks streaming is enabled for this Sound.
-         *
-         * @return true if streaming is enabled, false otherwise.
-         */
-        [[nodiscard]] bool IsStream() const;
-
-        /**
-         * @brief Checks if looping is enabled for this Sound.
-         *
-         * @return true if looping is enabled, false otherwise.
-         */
-        [[nodiscard]] bool IsLoop() const;
-
-    protected:
         /**
          * @brief Returns the SoundChunk associated with this Sound
          * and increment its reference counter.
@@ -189,36 +144,59 @@ namespace SparkyStudios::Audio::Amplitude
          */
         void ReleaseSoundData();
 
-        SoundFormat m_format;
+        /**
+         * @brief Checks streaming is enabled for this Sound.
+         *
+         * @return true if streaming is enabled, false otherwise.
+         */
+        [[nodiscard]] bool IsStream() const;
+
+        /**
+         * @brief Checks if looping is enabled for this Sound.
+         *
+         * @return true if looping is enabled, false otherwise.
+         */
+        [[nodiscard]] bool IsLoop() const;
+
+        void Load(const FileSystem* loader) override;
+
+        bool LoadDefinition(const SoundDefinition* definition, EngineInternalState* state) override;
+        [[nodiscard]] const SoundDefinition* GetDefinition() const override;
+        void AcquireReferences(EngineInternalState* state) override;
+        void ReleaseReferences(EngineInternalState* state) override;
 
     private:
+        friend class Collection;
+        friend class SoundInstance;
+
+        Codec* _codec;
         Codec::Decoder* _decoder;
 
         bool _stream;
         bool _loop;
         AmUInt32 _loopCount;
 
-        std::string _source;
         SoundInstanceSettings _settings;
 
         SoundChunk* _soundData;
+        SoundFormat _format;
         RefCounter _soundDataRefCounter;
     };
 
-    class SoundInstance
+    class AM_API_PUBLIC SoundInstance
     {
         friend class Mixer;
         friend class Sound;
 
     public:
         /**
-         * @brief Construct a new SoundInstance from the given Sound.
+         * @brief Creates a new SoundInstance from the given Sound.
          *
          * @param parent The parent Sound from which to create an instance.
          * @param settings The settings of the Sound instance.
          * @param effect The sound effect to apply on playback.
          */
-        SoundInstance(Sound* parent, const SoundInstanceSettings& settings, const Effect* effect = nullptr);
+        SoundInstance(Sound* parent, SoundInstanceSettings  settings, const Effect* effect = nullptr);
         ~SoundInstance();
 
         /**
@@ -361,6 +339,7 @@ namespace SparkyStudios::Audio::Amplitude
         RealChannel* _channel;
         Sound* _parent;
         const Collection* _collection;
+        const Effect* _effect;
         EffectInstance* _effectInstance;
 
         SoundInstanceSettings _settings;

@@ -29,7 +29,7 @@ namespace SparkyStudios::Audio::Amplitude
         explicit BassBoostFilterInstance(BassBoostFilter* parent);
         ~BassBoostFilterInstance() override = default;
 
-        void ProcessFFTChannel(AmReal64Buffer buffer, AmUInt16 channel, AmUInt64 frames, AmUInt16 channels, AmUInt32 sampleRate) override;
+        void ProcessFFTChannel(SplitComplex& fft, AmUInt16 channel, AmUInt64 frames, AmUInt16 channels, AmUInt32 sampleRate) override;
     };
 
     [[maybe_unused]] static class BassBoostFilter final : public FFTFilter

@@ -26,8 +26,6 @@
 #define MA_NO_ENGINE
 #define MA_USE_STDINT
 
-#define MA_COPY_MEMORY(dst, src, sz) std::memcpy((dst), (src), (sz))
-
 #if !defined(NOMINMAX)
 #define NOMINMAX
 #endif

@@ -50,28 +50,28 @@ namespace SparkyStudios::Audio::Amplitude
          * the mutex handle as parameter. To release the ownership, use UnlockMutex()
          * with the mutex handle as parameter.
          */
-        AmMutexHandle CreateMutex(AmUInt64 spinCount = 100);
+        AM_API_PUBLIC AmMutexHandle CreateMutex(AmUInt64 spinCount = 100);
 
         /**
          * @brief Destroys a mutex object.
          *
          * @param handle The mutex object handle.
          */
-        void DestroyMutex(AmMutexHandle handle);
+        AM_API_PUBLIC void DestroyMutex(AmMutexHandle handle);
 
         /**
          * @brief Takes ownership of a mutex.
          *
          * @param handle The mutex object handle.
          */
-        void LockMutex(AmMutexHandle handle);
+        AM_API_PUBLIC void LockMutex(AmMutexHandle handle);
 
         /**
          * @brief Releases ownership of a mutex.
          *
          * @param handle The mutex object handle.
          */
-        void UnlockMutex(AmMutexHandle handle);
+        AM_API_PUBLIC void UnlockMutex(AmMutexHandle handle);
 
         /**
          * @brief Creates a new thread.
@@ -79,43 +79,43 @@ namespace SparkyStudios::Audio::Amplitude
          * @param threadFunction The function to run in the thread.
          * @param parameter An optional shared data to pass to the thread
          */
-        AmThreadHandle CreateThread(AmThreadFunction threadFunction, AmVoidPtr parameter = nullptr);
+        AM_API_PUBLIC AmThreadHandle CreateThread(AmThreadFunction threadFunction, AmVoidPtr parameter = nullptr);
 
         /**
          * @brief Makes the calling thread sleep for the given amount of milliseconds.
          *
          * @param milliseconds The amount of time the calling thread should sleep.
          */
-        void Sleep(AmInt32 milliseconds);
+        AM_API_PUBLIC void Sleep(AmInt32 milliseconds);
 
         /**
          * @brief Waits for the given thread to stop.
          *
          * @param thread The handle of the thread to wait.
          */
-        void Wait(AmThreadHandle thread);
+        AM_API_PUBLIC void Wait(AmThreadHandle thread);
 
         /**
          * @brief Manually stops a thread execution.
          *
          * @param thread The handle of the thread to wait.
          */
-        void Release(AmThreadHandle thread);
+        AM_API_PUBLIC void Release(AmThreadHandle thread);
 
         /**
          * @brief Gets the total execution time in milliseconds for the calling thread.
          */
-        AmUInt64 GetTimeMillis();
+        AM_API_PUBLIC AmUInt64 GetTimeMillis();
 
         /**
          * @brief Gets the handle of the calling thread.
          */
-        AmThreadID GetCurrentThreadId();
+        AM_API_PUBLIC AmThreadID GetCurrentThreadId();
 
         /**
          * @brief Base class for pool tasks.
          */
-        class PoolTask
+        class AM_API_PUBLIC PoolTask
         {
         public:
             virtual ~PoolTask() = default;
@@ -138,7 +138,7 @@ namespace SparkyStudios::Audio::Amplitude
         /**
          * @brief A pool task that allows the a thread to wait until it finishes.
          */
-        class AwaitablePoolTask : public PoolTask
+        class AM_API_PUBLIC AwaitablePoolTask : public PoolTask
         {
         public:
             AwaitablePoolTask();
@@ -176,7 +176,7 @@ namespace SparkyStudios::Audio::Amplitude
          * The maximum number of tasks the pool can manage is defined by the AM_MAX_THREAD_POOL_TASKS
          * macro. The default value is 1024.
          */
-        class Pool
+        class AM_API_PUBLIC Pool
         {
         public:
             /**

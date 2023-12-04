@@ -46,16 +46,16 @@ namespace SparkyStudios::Audio::Amplitude
         {
         default:
         case ZoneDefinition_Cone:
-            shape = new ConeAttenuationZone(definition->zone_as_Cone());
+            shape = ampoolnew(MemoryPoolKind::Engine, ConeAttenuationZone, definition->zone_as_Cone());
             break;
         case ZoneDefinition_Sphere:
-            shape = new SphereAttenuationZone(definition->zone_as_Sphere());
+            shape = ampoolnew(MemoryPoolKind::Engine, SphereAttenuationZone, definition->zone_as_Sphere());
             break;
         case ZoneDefinition_Box:
-            shape = new BoxAttenuationZone(definition->zone_as_Box());
+            shape = ampoolnew(MemoryPoolKind::Engine, BoxAttenuationZone, definition->zone_as_Box());
             break;
         case ZoneDefinition_Capsule:
-            shape = new CapsuleAttenuationZone(definition->zone_as_Capsule());
+            shape = ampoolnew(MemoryPoolKind::Engine, CapsuleAttenuationZone, definition->zone_as_Capsule());
             break;
         }
 

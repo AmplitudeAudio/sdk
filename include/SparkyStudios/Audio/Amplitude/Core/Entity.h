@@ -32,7 +32,7 @@ namespace SparkyStudios::Audio::Amplitude
      * The Entity class is a lightweight reference to a EntityInternalState object
      * which is managed by the Engine.
      */
-    class Entity
+    class AM_API_PUBLIC Entity
     {
     public:
         /**

@@ -49,21 +49,21 @@ namespace SparkyStudios::Audio::Amplitude
     typedef std::map<AmOsString, AmEventID> EventIdMap;
     typedef std::map<AmOsString, AmBankID> SoundBankIdMap;
 
-    typedef std::map<AmSwitchContainerID, std::unique_ptr<SwitchContainer>> SwitchContainerMap;
+    typedef std::map<AmSwitchContainerID, AmUniquePtr<MemoryPoolKind::Engine, SwitchContainer>> SwitchContainerMap;
 
-    typedef std::map<AmCollectionID, std::unique_ptr<Collection>> CollectionMap;
+    typedef std::map<AmCollectionID, AmUniquePtr<MemoryPoolKind::Engine, Collection>> CollectionMap;
 
-    typedef std::map<AmSoundID, std::unique_ptr<Sound>> SoundMap;
+    typedef std::map<AmSoundID, AmUniquePtr<MemoryPoolKind::Engine, Sound>> SoundMap;
 
-    typedef std::map<AmAttenuationID, std::unique_ptr<Attenuation>> AttenuationMap;
+    typedef std::map<AmAttenuationID, AmUniquePtr<MemoryPoolKind::Engine, Attenuation>> AttenuationMap;
 
-    typedef std::map<AmSwitchID, std::unique_ptr<Switch>> SwitchMap;
+    typedef std::map<AmSwitchID, AmUniquePtr<MemoryPoolKind::Engine, Switch>> SwitchMap;
 
-    typedef std::map<AmRtpcID, std::unique_ptr<Rtpc>> RtpcMap;
+    typedef std::map<AmRtpcID, AmUniquePtr<MemoryPoolKind::Engine, Rtpc>> RtpcMap;
 
-    typedef std::map<AmEffectID, std::unique_ptr<Effect>> EffectMap;
+    typedef std::map<AmEffectID, AmUniquePtr<MemoryPoolKind::Engine, Effect>> EffectMap;
 
-    typedef std::map<AmEventID, std::unique_ptr<Event>> EventMap;
+    typedef std::map<AmEventID, AmUniquePtr<MemoryPoolKind::Engine, Event>> EventMap;
 
     typedef std::map<AmBankID, std::unique_ptr<SoundBank>> SoundBankMap;
 
@@ -121,8 +121,8 @@ namespace SparkyStudios::Audio::Amplitude
             , attenuation_id_map()
             , switch_map()
             , switch_id_map()
-            , sound_bank_map()
             , sound_bank_id_map()
+            , sound_bank_map()
             , channel_state_memory()
             , playing_channel_list(&ChannelInternalState::priority_node)
             , real_channel_free_list(&ChannelInternalState::free_node)
@@ -138,7 +138,6 @@ namespace SparkyStudios::Audio::Amplitude
             , environment_state_free_list()
             , current_frame(0)
             , total_time(0.0)
-            , version(nullptr)
             , listener_fetch_mode(eListenerFetchMode_None)
             , sound_speed(333.0)
             , doppler_factor(1.0)
@@ -147,6 +146,7 @@ namespace SparkyStudios::Audio::Amplitude
             , occlusion_config()
             , track_environments(false)
             , samples_per_stream(512)
+            , version(nullptr)
         {}
 
         Mixer mixer;
@@ -161,7 +161,7 @@ namespace SparkyStudios::Audio::Amplitude
         BusInternalState* master_bus;
 
         // The gain applied to all buses.
-        float master_gain;
+        AmReal32 master_gain;
 
         // If true, the master gain is ignored and all channels have a gain of 0.
         bool mute;
@@ -285,15 +285,15 @@ namespace SparkyStudios::Audio::Amplitude
      */
     void EraseFinishedSounds(EngineInternalState* state);
 
-    BusInternalState* FindBusInternalState(EngineInternalState* state, AmBusID id);
     // Find a bus with the given ID.
+    BusInternalState* FindBusInternalState(EngineInternalState* state, AmBusID id);
 
     // Find a bus with the given name.
     BusInternalState* FindBusInternalState(EngineInternalState* state, const AmString& name);
 
     // Given a playing sound, find where a new sound with the given priority should
     // be inserted into the list.
-    PriorityList::iterator FindInsertionPoint(PriorityList* list, float priority);
+    PriorityList::iterator FindInsertionPoint(PriorityList* list, AmReal32 priority);
 
     // Given a list of listeners and a location, find which listener is closest.
     // Additionally, return the square of the distance between the closest listener
@@ -301,7 +301,7 @@ namespace SparkyStudios::Audio::Amplitude
     // space.  Returns true on success, or false if the list was empty.
     bool BestListener(
         ListenerList::const_iterator* bestListener,
-        float* distanceSquared,
+        AmReal32* distanceSquared,
         AmVec3* listenerSpaceLocation,
         const ListenerList& listeners,
         const AmVec3& location);
@@ -314,7 +314,7 @@ namespace SparkyStudios::Audio::Amplitude
     // listener, respectively.
     AmVec2 CalculatePan(const AmVec3& listenerSpaceLocation);
 
-    bool LoadFile(const AmOsString& filename, std::string* dest);
+    bool LoadFile(const std::shared_ptr<File>& file, std::string* dest);
 
     AmUInt32 GetMaxNumberOfChannels(const EngineConfigDefinition* config);
 } // namespace SparkyStudios::Audio::Amplitude

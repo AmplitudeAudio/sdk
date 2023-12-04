@@ -19,8 +19,6 @@
 
 // clang-format off
 #include <Core/Codecs/WAV/Codec.h>
-#include <Core/Codecs/OGG/Codec.h>
-#include <Core/Codecs/FLAC/Codec.h>
 #include <Core/Codecs/MP3/Codec.h>
 // clang-format on
 
@@ -34,6 +32,7 @@
 
 #pragma region Default Sound Processors
 
+#include <Mixer/SoundProcessors/ClipProcessor.h>
 #include <Mixer/SoundProcessors/EffectProcessor.h>
 #include <Mixer/SoundProcessors/EnvironmentProcessor.h>
 #include <Mixer/SoundProcessors/ObstructionProcessor.h>
@@ -67,6 +66,10 @@
 #pragma region Default Faders
 
 #include <Sound/Faders/ConstantFader.h>
+#include <Sound/Faders/EaseFader.h>
+#include <Sound/Faders/EaseInFader.h>
+#include <Sound/Faders/EaseInOutFader.h>
+#include <Sound/Faders/EaseOutFader.h>
 #include <Sound/Faders/ExponentialFader.h>
 #include <Sound/Faders/LinearFader.h>
 #include <Sound/Faders/SCurveFader.h>

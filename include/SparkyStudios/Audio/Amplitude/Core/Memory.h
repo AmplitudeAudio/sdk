@@ -1,3 +1,4 @@
+
 // Copyright (c) 2021-present Sparky Studios. All rights reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
@@ -25,15 +26,134 @@
 #define amMemory SparkyStudios::Audio::Amplitude::MemoryManager::GetInstance()
 
 /**
- * @brief Allocates memory for a new object using the memory manager.
+ * @brief Allocates a block of memory from the specified memory pool.
+ *
+ * @param _pool_ The memory pool to allocate from.
+ * @param _size_ The size of the memory to allocate.
+ */
+#define ampoolmalloc(_pool_, _size_) amMemory->Malloc(_pool_, _size_, __FILE__, __LINE__)
+
+/**
+ * @brief Allocates an aligned block of memory from the specified memory pool.
+ *
+ * @param _pool_ The memory pool to deallocate from.
+ * @param _size_ The size of the memory to allocate.
+ * @param _alignment_ The alignment of the memory to allocate.
+ */
+#define ampoolmalign(_pool_, _size_, _alignment_) amMemory->Malign(_pool_, _size_, _alignment_, __FILE__, __LINE__)
+
+/**
+ * @brief Reallocates a block of memory from the specified memory pool.
+ *
+ * @param _pool_ The memory pool to reallocate from. Should be the same as the one used to allocate the memory.
+ * @param _ptr_ The pointer to reallocate.
+ * @param _size_ The new size of the memory.
+ */
+#define ampoolrealloc(_pool_, _ptr_, _size_) amMemory->Realloc(_pool_, _ptr_, _size_, __FILE__, __LINE__)
+
+/**
+ * @brief Reallocates an aligned block of memory from the specified memory pool.
+ *
+ * @param _pool_ The memory pool to reallocate from. Should be the same as the one used to allocate the memory.
+ * @param _ptr_ The pointer to reallocate.
+ * @param _size_ The new size of the memory.
+ * @param _alignment_ The alignment of the memory to allocate.
+ */
+#define ampoolrealign(_pool_, _ptr_, _size_, _alignment_) amMemory->Realign(_pool_, _ptr_, _size_, _alignment_, __FILE__, __LINE__)
+
+/**
+ * @brief Deallocates a block of memory from the specified memory pool.
+ *
+ * @param _pool_ The memory pool to deallocate from.
+ * @param _ptr_ The pointer to deallocate.
+ */
+#define ampoolfree(_pool_, _ptr_) amMemory->Free(_pool_, _ptr_)
+
+/**
+ * @brief Allocates a block of memory from the default memory pool.
+ *
+ * @param _size_ The size of the memory to allocate.
+ *
+ * @see ampoolmalloc
+ */
+#define ammalloc(_size_) ampoolmalloc(SparkyStudios::Audio::Amplitude::MemoryPoolKind::Default, _size_)
+
+/**
+ * @brief Allocates a block of memory from the default memory pool.
+ *
+ * @param _size_ The size of the memory to allocate.
+ * @param _alignment_ The alignment of the memory to allocate.
+ *
+ * @see ampoolmalign
+ */
+#define ammalign(_size_, _alignment_) ampoolmalign(SparkyStudios::Audio::Amplitude::MemoryPoolKind::Default, _size_, _alignment_)
+
+/**
+ * @brief Reallocates a block of memory from the deault memory pool.
+ *
+ * @param _ptr_ The pointer to reallocate.
+ * @param _size_ The new size of the memory.
+ *
+ * @see ampoolrealloc
+ */
+#define amrealloc(_ptr_, _size_) ampoolrealloc(SparkyStudios::Audio::Amplitude::MemoryPoolKind::Default, _ptr_, _size_)
+
+/**
+ * @brief Reallocates an aligned block of memory from the default memory pool.
+ *
+ * @param _ptr_ The pointer to reallocate.
+ * @param _size_ The new size of the memory.
+ * @param _alignment_ The alignment of the memory to allocate.
+ *
+ * @see ampoolrealign
+ */
+#define amrealign(_ptr_, _size_, _alignment_)                                                                                              \
+    ampoolrealign(SparkyStudios::Audio::Amplitude::MemoryPoolKind::Default, _ptr_, _size_, _alignment_)
+
+/**
+ * @brief Deallocates a block of memory from the default memory pool.
+ *
+ * @param _ptr_ The pointer to deallocate.
+ *
+ * @see ampoolfree
+ */
+#define amfree(_ptr_) ampoolfree(SparkyStudios::Audio::Amplitude::MemoryPoolKind::Default, _ptr_)
+
+/**
+ * @brief Allocates memory for a new object in the Default pool using the memory manager.
+ *
+ * This will create a new memory allocation in the Default pool. The allocated
+ * memory will be freed when the object is destroyed using @a amdelete.
+ *
+ * @see ampooldelete
+ */
+#define ampoolnew(_pool_, _type_, ...) new (ampoolmalign((_pool_), sizeof(_type_), alignof(_type_))) _type_(__VA_ARGS__)
+
+/**
+ * @brief Deallocates a memory allocated with @a ampoolnew.
+ *
+ * This will call the object's destructor before the memory is freed.
+ *
+ * @see ampoolnew
+ */
+#define ampooldelete(_pool_, _type_, _ptr_)                                                                                                \
+    {                                                                                                                                      \
+        if ((_ptr_) != nullptr)                                                                                                            \
+        {                                                                                                                                  \
+            (_ptr_)->~_type_();                                                                                                            \
+            ampoolfree((_pool_), (_ptr_));                                                                                                 \
+        }                                                                                                                                  \
+    }
+
+/**
+ * @brief Allocates memory for a new object in the Default pool using the memory manager.
  *
  * This will create a new memory allocation in the Default pool. The allocated
  * memory will be freed when the object is destroyed using @a amdelete.
  *
  * @see amdelete
  */
-#define amnew(_type_, ...)                                                                                                                 \
-    new (amMemory->Malign(SparkyStudios::Audio::Amplitude::MemoryPoolKind::Default, sizeof(_type_), alignof(_type_))) _type_(__VA_ARGS__)
+#define amnew(_type_, ...) ampoolnew(SparkyStudios::Audio::Amplitude::MemoryPoolKind::Default, _type_, __VA_ARGS__)
 
 /**
  * @brief Deallocates a memory allocated with @a amnew.
@@ -42,14 +162,7 @@
  *
  * @see amnew
  */
-#define amdelete(_type_, _ptr_)                                                                                                            \
-    {                                                                                                                                      \
-        if ((_ptr_) != nullptr)                                                                                                            \
-        {                                                                                                                                  \
-            (_ptr_)->~_type_();                                                                                                            \
-            amMemory->Free(SparkyStudios::Audio::Amplitude::MemoryPoolKind::Default, (_ptr_));                                             \
-        }                                                                                                                                  \
-    }
+#define amdelete(_type_, _ptr_) ampooldelete(SparkyStudios::Audio::Amplitude::MemoryPoolKind::Default, _type_, _ptr_)
 
 namespace SparkyStudios::Audio::Amplitude
 {
@@ -85,6 +198,11 @@ namespace SparkyStudios::Audio::Amplitude
         Codec,
 
         /**
+         * @brief I/O and filesystem related allocations.
+         */
+        IO,
+
+        /**
          * @brief Default allocations pool. Use this when the allocated memory pool is not available.
          * @note amnew use this pool to allocate memory from the memory manager.
          */
@@ -113,7 +231,7 @@ namespace SparkyStudios::Audio::Amplitude
     /**
      * @brief Configures the memory management system.
      */
-    struct MemoryManagerConfig
+    struct AM_API_PUBLIC MemoryManagerConfig
     {
         /**
          * @brief Memory allocation callback. If not defined, the default malloc() function is used.
@@ -180,7 +298,7 @@ namespace SparkyStudios::Audio::Amplitude
      * @brief Collects the statistics about the memory allocations
      * for a specific pool
      */
-    struct MemoryPoolStats
+    struct AM_API_PUBLIC MemoryPoolStats
     {
         /**
          * @brief The pool for which this statistics is for.
@@ -190,17 +308,17 @@ namespace SparkyStudios::Audio::Amplitude
         /**
          * @brief The maximum total memory used by this pool.
          */
-        std::atomic<AmSize> maxMemoryUsed;
+        std::atomic<AmSize> maxMemoryUsed{};
 
         /**
          * @brief The total count of allocations made on this pool.
          */
-        std::atomic<AmUInt64> allocCount;
+        std::atomic<AmUInt64> allocCount{};
 
         /**
          * @brief The total count of frees made on this pool.
          */
-        std::atomic<AmUInt64> freeCount;
+        std::atomic<AmUInt64> freeCount{};
 
         /**
          * @brief Default constructor.
@@ -216,6 +334,8 @@ namespace SparkyStudios::Audio::Amplitude
          */
         explicit MemoryPoolStats(MemoryPoolKind pool);
 
+        MemoryPoolStats(const MemoryPoolStats& copy);
+
         MemoryPoolStats& operator=(const MemoryPoolStats& other);
     };
 #endif
@@ -223,7 +343,7 @@ namespace SparkyStudios::Audio::Amplitude
     /**
      * @brief Manages memory allocations inside the engine.
      */
-    class MemoryManager
+    class AM_API_PUBLIC MemoryManager
     {
     public:
         /**
@@ -253,28 +373,29 @@ namespace SparkyStudios::Audio::Amplitude
         /**
          * @brief Allocates a block of memory with the given size in the given pool.
          */
-        [[nodiscard]] AmVoidPtr Malloc(MemoryPoolKind pool, AmSize size) const;
+        [[nodiscard]] AmVoidPtr Malloc(MemoryPoolKind pool, AmSize size, const char* file, AmUInt32 line);
 
         /**
          * @brief Allocates a block of memory with the given size and the given alignment,
          * in the given pool.
          */
-        [[nodiscard]] AmVoidPtr Malign(MemoryPoolKind pool, AmSize size, AmUInt32 alignment) const;
+        [[nodiscard]] AmVoidPtr Malign(MemoryPoolKind pool, AmSize size, AmUInt32 alignment, const char* file, AmUInt32 line);
 
         /**
          * @brief Updates the size of a previously allocated memory.
          */
-        [[nodiscard]] AmVoidPtr Realloc(MemoryPoolKind pool, AmVoidPtr address, AmSize size) const;
+        [[nodiscard]] AmVoidPtr Realloc(MemoryPoolKind pool, AmVoidPtr address, AmSize size, const char* file, AmUInt32 line);
 
         /**
          * @brief Updates the size of a previously allocated aligned memory.
          */
-        [[nodiscard]] AmVoidPtr Realign(MemoryPoolKind pool, AmVoidPtr address, AmSize size, AmUInt32 alignment) const;
+        [[nodiscard]] AmVoidPtr Realign(
+            MemoryPoolKind pool, AmVoidPtr address, AmSize size, AmUInt32 alignment, const char* file, AmUInt32 line);
 
         /**
          * @brief Releases an allocated memory block.
          */
-        void Free(MemoryPoolKind pool, AmVoidPtr address) const;
+        void Free(MemoryPoolKind pool, AmVoidPtr address);
 
         /**
          * @brief Gets the total allocated size.
@@ -300,7 +421,68 @@ namespace SparkyStudios::Audio::Amplitude
         ~MemoryManager();
 
         MemoryManagerConfig _config;
+
+        void* _memAllocator = nullptr;
+
+        std::map<MemoryPoolKind, std::set<AmVoidPtr>> _memPoolsData = {};
+
+#if !defined(AM_NO_MEMORY_STATS)
+        std::map<MemoryPoolKind, MemoryPoolStats> _memPoolsStats = {};
+#endif
     };
+
+    /**
+     * @brief Allocates a block of memory with the given size in the given pool.
+     *
+     * That allocation will be restricted to the current scope, and will be freed
+     * automatically when the scope ends.
+     */
+    class AM_API_PUBLIC ScopedMemoryAllocation
+    {
+    public:
+        ScopedMemoryAllocation() = default;
+
+        ScopedMemoryAllocation(MemoryPoolKind pool, AmSize size, const char* file, AmUInt32 line);
+        ScopedMemoryAllocation(MemoryPoolKind pool, AmSize size, AmUInt32 alignment, const char* file, AmUInt32 line);
+
+        ~ScopedMemoryAllocation();
+
+        template<typename T>
+        [[nodiscard]] T* PointerOf() const
+        {
+            return reinterpret_cast<T*>(_address);
+        }
+
+        template<typename T, typename std::enable_if_t<std::is_pointer_v<T>, bool> = false>
+        [[nodiscard]] T As() const
+        {
+            return reinterpret_cast<T>(_address);
+        }
+
+        [[nodiscard]] AmVoidPtr Address() const
+        {
+            return _address;
+        }
+
+    private:
+        MemoryPoolKind _pool = MemoryPoolKind::Default;
+        void* _address = nullptr;
+    };
+
+    template<MemoryPoolKind Pool, class T>
+    struct am_delete
+    {
+        constexpr am_delete() noexcept = default;
+
+        AM_INLINE(void) operator()(T * asset) const noexcept
+        {
+            static_assert(!std::is_void_v<T>, "Cannot delete a void pointer.");
+            ampooldelete(Pool, T, asset);
+        }
+    };
+
+    template<MemoryPoolKind Pool, class T>
+    using AmUniquePtr = std::unique_ptr<T, am_delete<Pool, T>>;
 } // namespace SparkyStudios::Audio::Amplitude
 
 #endif // SS_AMPLITUDE_AUDIO_MEMORY_H

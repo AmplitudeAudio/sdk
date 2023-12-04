@@ -75,12 +75,12 @@ namespace SparkyStudios::Audio::Amplitude
 
     FilterInstance* RobotizeFilter::CreateInstance()
     {
-        return amnew(RobotizeFilterInstance, this);
+        return ampoolnew(MemoryPoolKind::Filtering, RobotizeFilterInstance, this);
     }
 
     void RobotizeFilter::DestroyInstance(FilterInstance* instance)
     {
-        amdelete(RobotizeFilterInstance, (RobotizeFilterInstance*)instance);
+        ampooldelete(MemoryPoolKind::Filtering, RobotizeFilterInstance, (RobotizeFilterInstance*)instance);
     }
 
     RobotizeFilterInstance::RobotizeFilterInstance(RobotizeFilter* parent)
@@ -100,14 +100,14 @@ namespace SparkyStudios::Audio::Amplitude
     }
 
     void RobotizeFilterInstance::ProcessChannel(
-        AmAudioSampleBuffer buffer, AmUInt16 channel, AmUInt64 frames, AmUInt16 channels, AmUInt32 sampleRate, bool isInterleaved)
+        AmAudioSampleBuffer buffer, AmUInt16 channel, AmUInt64 frames, AmUInt16 channels, AmUInt32 sampleRate)
     {
         const auto period = static_cast<AmInt32>(static_cast<AmReal32>(sampleRate) / m_parameters[RobotizeFilter::ATTRIBUTE_FREQUENCY]);
         const auto start = static_cast<AmInt32>(_duration * sampleRate) % period;
 
         for (AmUInt64 f = 0; f < frames; f++)
         {
-            const AmUInt64 s = isInterleaved ? f * channels + channel : f + channel * frames;
+            const AmUInt64 s = f * channels + channel;
 
             const AmReal32 x = buffer[s];
             /* */ AmReal32 y;
@@ -117,7 +117,6 @@ namespace SparkyStudios::Audio::Amplitude
             y = x * (GenerateWaveform(static_cast<AmInt32>(m_parameters[RobotizeFilter::ATTRIBUTE_WAVEFORM]), wPos) + 0.5f);
 
             y = x + (y - x) * m_parameters[RobotizeFilter::ATTRIBUTE_WET];
-            y = AM_CLAMP_AUDIO_SAMPLE(y);
 
             buffer[s] = static_cast<AmAudioSample>(y);
         }

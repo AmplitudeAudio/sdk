@@ -61,9 +61,9 @@ const Uint32 kDelayMilliseconds = static_cast<Uint32>(kAmSecond * 1.0 / kFramesP
 const char* kWindowTitle = "Amplitude Audio SDK Sample";
 AmOsString kAudioConfig = AM_OS_STRING("audio_config.amconfig");
 AmOsString kSoundBank = AM_OS_STRING("sample_02.ambank");
-const char* kInstructionsTexture = "../assets/textures/instructions.bmp";
-const char* kChannelTexture = "../assets/textures/channel.bmp";
-const char* kListenerTexture = "../assets/textures/listener.bmp";
+const char* kInstructionsTexture = "./assets/textures/instructions.bmp";
+const char* kChannelTexture = "./assets/textures/channel.bmp";
+const char* kListenerTexture = "./assets/textures/listener.bmp";
 const char* kSoundHandleName = "throw_collection_1";
 
 int gListenerIdCounter = 0;
@@ -154,7 +154,7 @@ private:
     SDL_Texture* listener_texture_;
     AmVec2 new_listener_location_;
 
-    FileLoader _loader;
+    DiskFileSystem _loader;
 };
 
 SampleState::~SampleState()
@@ -223,22 +223,37 @@ bool SampleState::Initialize()
     RegisterLogFunc(log);
     RegisterDeviceNotificationCallback(device_notification);
 
-    MemoryManager::Initialize(MemoryManagerConfig());
+    _loader.SetBasePath(AM_OS_STRING("./assets"));
+    amEngine->SetFileSystem(&_loader);
 
-    _loader.SetBasePath(AM_OS_STRING("../assets"));
-    amEngine->SetFileLoader(_loader);
+    // Wait for the sound files to complete loading.
+    amEngine->StartOpenFileSystem();
+    while (!amEngine->TryFinalizeOpenFileSystem())
+        SDL_Delay(1);
+
+    const auto sdkPath = std::filesystem::path(std::getenv("AM_SDK_PATH"));
+
+    Engine::AddPluginSearchPath(AM_OS_STRING("./assets/plugins"));
+#if defined(AM_WINDOWS_VERSION)
+    Engine::AddPluginSearchPath(sdkPath / AM_OS_STRING("lib/win/plugins"));
+#elif defined(AM_LINUX_VERSION)
+    Engine::AddPluginSearchPath(sdkPath / AM_OS_STRING("lib/linux/plugins"));
+#elif defined(AM_OSX_VERSION)
+    Engine::AddPluginSearchPath(sdkPath / AM_OS_STRING("lib/osx/plugins"));
+#endif
+
+#if defined(_DEBUG) || defined(DEBUG) || (defined(__GNUC__) && !defined(__OPTIMIZE__))
+    Engine::LoadPlugin(AM_OS_STRING("AmplitudeVorbisCodecPlugin_d"));
+    Engine::LoadPlugin(AM_OS_STRING("AmplitudeFlacCodecPlugin_d"));
+#else
+    Engine::LoadPlugin(AM_OS_STRING("AmplitudeVorbisCodecPlugin"));
+    Engine::LoadPlugin(AM_OS_STRING("AmplitudeFlacCodecPlugin"));
+#endif
 
     // Initialize Amplitude.
     if (!amEngine->Initialize(kAudioConfig) || !amEngine->LoadSoundBank(kSoundBank))
     {
         return false;
-    }
-
-    // Wait for the sound files to complete loading.
-    amEngine->StartLoadingSoundFiles();
-    while (!amEngine->TryFinalizeLoadingSoundFiles())
-    {
-        SDL_Delay(1);
     }
 
     // Cache the master bus so we can demonstrate adjusting the gain.
@@ -380,11 +395,10 @@ void SampleState::HandleInput()
         case SDL_MOUSEBUTTONUP:
             {
                 AmVec2 mouse_location(AM_V2(event.button.x, event.button.y));
-                SDL_Texture* texture;
 
-                texture = channel_texture_;
-                auto channel_iter = std::find_if(
-                    channel_icons_.begin(), channel_icons_.end(),
+                SDL_Texture* texture = channel_texture_;
+                auto channel_iter = std::ranges::find_if(
+                    channel_icons_,
                     [mouse_location, texture](const ChannelIcon& icon) -> bool
                     {
                         SDL_Rect rect;
@@ -399,8 +413,8 @@ void SampleState::HandleInput()
                 }
 
                 texture = listener_texture_;
-                auto listener_iter = std::find_if(
-                    listener_icons_.begin(), listener_icons_.end(),
+                auto listener_iter = std::ranges::find_if(
+                    listener_icons_,
                     [mouse_location, texture](const ListenerIcon& icon) -> bool
                     {
                         SDL_Rect rect;
@@ -483,19 +497,28 @@ void SampleState::Run()
         AmTime delta_time = (time - previous_time) / kAmSecond;
         AdvanceFrame(static_cast<AmReal32>(delta_time));
     }
-    amEngine->Deinitialize();
 }
 
 int main(int argc, char* argv[])
 {
     (void)argc;
     (void)argv;
-    SampleState sample;
-    if (!sample.Initialize())
-    {
+
+    MemoryManager::Initialize(MemoryManagerConfig());
+
+    if (SampleState sample; !sample.Initialize())
         fprintf(stderr, "Failed to initialize!\n");
-        return 1;
-    }
-    sample.Run();
+    else
+        sample.Run();
+
+    amEngine->Deinitialize();
+
+    // Wait for the file system to complete loading.
+    amEngine->StartCloseFileSystem();
+    while (!amEngine->TryFinalizeCloseFileSystem())
+        Thread::Sleep(1);
+
+    amEngine->DestroyInstance();
+
     return 0;
 }

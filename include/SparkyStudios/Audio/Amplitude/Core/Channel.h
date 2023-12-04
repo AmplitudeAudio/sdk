@@ -40,7 +40,7 @@ namespace SparkyStudios::Audio::Amplitude
      * which is managed by the Engine. Multiple Channel objects may point to the same
      * underlying data.
      */
-    class Channel
+    class AM_API_PUBLIC Channel
     {
     public:
         /**
@@ -129,14 +129,14 @@ namespace SparkyStudios::Audio::Amplitude
          *
          * @param gain The new gain value.
          */
-        void SetGain(float gain) const;
+        void SetGain(AmReal32 gain) const;
 
         /**
          * @brief Returns the gain on this Channel.
          *
          * @return Returns the gain.
          */
-        [[nodiscard]] float GetGain() const;
+        [[nodiscard]] AmReal32 GetGain() const;
 
         /**
          * @brief Returns the playback state of this Channel.

@@ -22,22 +22,13 @@
 
 namespace SparkyStudios::Audio::Amplitude
 {
-    class SoundProcessorInstance
+    class AM_API_PUBLIC SoundProcessorInstance
     {
     public:
         SoundProcessorInstance() = default;
         virtual ~SoundProcessorInstance() = default;
 
         virtual void Process(
-            AmAudioSampleBuffer out,
-            AmConstAudioSampleBuffer in,
-            AmUInt64 frames,
-            AmSize bufferSize,
-            AmUInt16 channels,
-            AmUInt32 sampleRate,
-            SoundInstance* sound) = 0;
-
-        virtual void ProcessInterleaved(
             AmAudioSampleBuffer out,
             AmConstAudioSampleBuffer in,
             AmUInt64 frames,
@@ -60,7 +51,7 @@ namespace SparkyStudios::Audio::Amplitude
         virtual void Cleanup(SoundInstance* sound);
     };
 
-    class SoundProcessor
+    class AM_API_PUBLIC SoundProcessor
     {
     public:
         /**
@@ -69,7 +60,7 @@ namespace SparkyStudios::Audio::Amplitude
          * @param name The sound processor name. Recommended names are "xyzProcessor".
          * eg. "EnvironmentProcessor".
          */
-        explicit SoundProcessor(std::string name);
+        explicit SoundProcessor(AmString name);
 
         /**
          * @brief Default SoundProcessor constructor.
@@ -99,7 +90,7 @@ namespace SparkyStudios::Audio::Amplitude
          *
          * @return The name of this sound processor.
          */
-        [[nodiscard]] const std::string& GetName() const;
+        [[nodiscard]] const AmString& GetName() const;
 
         /**
          * @brief Registers a new sound processor.
@@ -115,7 +106,7 @@ namespace SparkyStudios::Audio::Amplitude
          *
          * @return A new sound processor instance.
          */
-        static SoundProcessorInstance* Construct(const std::string& name);
+        static SoundProcessorInstance* Construct(const AmString& name);
 
         /**
          * @brief Destructs a sound processor instance.
@@ -123,7 +114,7 @@ namespace SparkyStudios::Audio::Amplitude
          * @param name The name of the sound processor which created the instance.
          * @param instance The sound processor instance to destroy.
          */
-        static void Destruct(const std::string& name, SoundProcessorInstance* instance);
+        static void Destruct(const AmString& name, SoundProcessorInstance* instance);
 
         /**
          * @brief Locks the codecs registry.
@@ -138,7 +129,7 @@ namespace SparkyStudios::Audio::Amplitude
         /**
          * @brief The name of this processor.
          */
-        std::string m_name;
+        AmString m_name;
 
     private:
         /**
@@ -146,10 +137,10 @@ namespace SparkyStudios::Audio::Amplitude
          *
          * @return The sound processor with the given name, or NULL if none.
          */
-        static SoundProcessor* Find(const std::string& name);
+        static SoundProcessor* Find(const AmString& name);
     };
 
-    class ProcessorMixer : public SoundProcessorInstance
+    class AM_API_PUBLIC ProcessorMixer : public SoundProcessorInstance
     {
     public:
         ProcessorMixer();
@@ -160,15 +151,6 @@ namespace SparkyStudios::Audio::Amplitude
         void SetDryProcessor(SoundProcessorInstance* processor, AmReal32 dry);
 
         void Process(
-            AmAudioSampleBuffer out,
-            AmConstAudioSampleBuffer in,
-            AmUInt64 frames,
-            AmSize bufferSize,
-            AmUInt16 channels,
-            AmUInt32 sampleRate,
-            SoundInstance* sound) override;
-
-        void ProcessInterleaved(
             AmAudioSampleBuffer out,
             AmConstAudioSampleBuffer in,
             AmUInt64 frames,

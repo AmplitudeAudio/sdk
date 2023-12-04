@@ -12,11 +12,22 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-cmake_minimum_required(VERSION 3.3.1)
+cmake_minimum_required(VERSION 3.10)
 
 set(PROJECT_NAME ss_amplitude_audio_sample_01)
 
 project(${PROJECT_NAME})
+
+if(WIN32)
+    set(RUNTIME_OUTPUT_DIRECTORY "win")
+elseif(APPLE)
+    set(RUNTIME_OUTPUT_DIRECTORY "osx")
+    set(CMAKE_MACOSX_RPATH 1)
+    list(APPEND CMAKE_INSTALL_RPATH "@executable_path" "@executable_path/../../../lib/${RUNTIME_OUTPUT_DIRECTORY}/shared/")
+else()
+    set(RUNTIME_OUTPUT_DIRECTORY "linux")
+    list(APPEND CMAKE_INSTALL_RPATH "${ORIGIN}" "${ORIGIN}/../../../lib/${RUNTIME_OUTPUT_DIRECTORY}/shared/")
+endif()
 
 set(ss_amplitude_audio_sample_01_SRCS
     main.cpp
@@ -24,11 +35,17 @@ set(ss_amplitude_audio_sample_01_SRCS
 
 add_executable(ss_amplitude_audio_sample_01 ${ss_amplitude_audio_sample_01_SRCS})
 
+set_target_properties(ss_amplitude_audio_sample_01
+    PROPERTIES
+        OUTPUT_NAME sample_01
+        RUNTIME_OUTPUT_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/samples
+)
+
 target_link_libraries(${PROJECT_NAME}
-    PUBLIC Amplitude
+    PUBLIC Shared
 )
 
 add_dependencies(${PROJECT_NAME}
-    Amplitude
+    Shared
     ss_amplitude_audio_sample_assets
 )

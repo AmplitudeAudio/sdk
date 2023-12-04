@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-file(READ "${CMAKE_CURRENT_SOURCE_DIR}/src/Core/Version.cpp" AM_VERSION_CPP_CONTENT)
+file(READ "${CMAKE_CURRENT_LIST_DIR}/../include/SparkyStudios/Audio/Amplitude/Core/Version.h" AM_VERSION_CPP_CONTENT)
 
 string(REGEX REPLACE ".*#define AM_VERSION_MAJOR ([0-9]+).*" "\\1" DETECTED_AM_VERSION_MAJOR "${AM_VERSION_CPP_CONTENT}")
 string(REGEX REPLACE ".*#define AM_VERSION_MINOR ([0-9]+).*" "\\1" DETECTED_AM_VERSION_MINOR "${AM_VERSION_CPP_CONTENT}")

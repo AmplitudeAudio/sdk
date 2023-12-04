@@ -22,10 +22,15 @@
 
 namespace SparkyStudios::Audio::Amplitude
 {
+    constexpr BeizerCurveControlPoints gLinearFaderCurveControlPoints = { 0.0f, 0.0f, 1.0f, 1.0f };
+
     class LinearFaderInstance final : public FaderInstance
     {
     public:
-        AmReal64 GetFromPercentage(AmReal64 percentage) override;
+        LinearFaderInstance()
+        {
+            m_curve = gLinearFaderCurveControlPoints;
+        }
     };
 
     [[maybe_unused]] static class LinearFader final : public Fader
@@ -44,6 +49,11 @@ namespace SparkyStudios::Audio::Amplitude
         {
             amdelete(LinearFaderInstance, (LinearFaderInstance*)instance);
         }
+
+        // [[nodiscard]] BeizerCurveControlPoints GetControlPoints() const override
+        // {
+        //     return gLinearFaderCurveControlPoints;
+        // }
     } gLinearFader; // NOLINT(cert-err58-cpp)
 } // namespace SparkyStudios::Audio::Amplitude
 

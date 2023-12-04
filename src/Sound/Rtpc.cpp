@@ -23,27 +23,24 @@
 namespace SparkyStudios::Audio::Amplitude
 {
     Rtpc::Rtpc()
-        : _source()
-        , _id(kAmInvalidObjectId)
-        , _name()
-        , _currentValue(0.0)
-        , _targetValue(0.0)
+        : _name()
         , _minValue(0.0)
         , _maxValue(1.0)
         , _defValue(0.0)
+        , _currentValue(0.0)
+        , _targetValue(0.0)
         , _faderAttackFactory(nullptr)
         , _faderReleaseFactory(nullptr)
         , _faderAttack(nullptr)
         , _faderRelease(nullptr)
-        , _refCounter()
     {}
 
     Rtpc::~Rtpc()
     {
-        if (_faderAttackFactory != nullptr)
+        if (_faderAttack != nullptr)
             _faderAttackFactory->DestroyInstance(_faderAttack);
 
-        if (_faderReleaseFactory != nullptr)
+        if (_faderRelease != nullptr)
             _faderReleaseFactory->DestroyInstance(_faderRelease);
 
         _faderAttackFactory = nullptr;
@@ -52,48 +49,7 @@ namespace SparkyStudios::Audio::Amplitude
         _faderAttack = nullptr;
         _faderRelease = nullptr;
 
-        _source.clear();
         _name.clear();
-    }
-
-    bool Rtpc::LoadRtpcDefinition(const std::string& source)
-    {
-        AMPLITUDE_ASSERT(_id == kAmInvalidObjectId);
-
-        _source = source;
-        const RtpcDefinition* definition = GetRtpcDefinition();
-
-        _id = definition->id();
-        _name = definition->name()->str();
-
-        _minValue = definition->min_value();
-        _maxValue = definition->max_value();
-        _defValue = definition->default_value();
-
-        if (definition->fade_settings() && definition->fade_settings()->enabled())
-        {
-            _faderAttackFactory = Fader::Find(definition->fade_settings()->fade_attack()->fader()->str());
-            _faderReleaseFactory = Fader::Find(definition->fade_settings()->fade_release()->fader()->str());
-
-            _faderAttack = _faderAttackFactory->CreateInstance();
-            _faderAttack->SetDuration(definition->fade_settings()->fade_attack()->duration());
-
-            _faderRelease = _faderReleaseFactory->CreateInstance();
-            _faderRelease->SetDuration(definition->fade_settings()->fade_release()->duration());
-        }
-
-        return true;
-    }
-
-    bool Rtpc::LoadRtpcDefinitionFromFile(const AmOsString& filename)
-    {
-        std::string source;
-        return Amplitude::LoadFile(filename, &source) && LoadRtpcDefinition(source);
-    }
-
-    const RtpcDefinition* Rtpc::GetRtpcDefinition() const
-    {
-        return Amplitude::GetRtpcDefinition(_source.c_str());
     }
 
     void Rtpc::Update(AmTime deltaTime)
@@ -107,16 +63,6 @@ namespace SparkyStudios::Audio::Amplitude
         {
             _currentValue = _faderAttack->GetFromTime(Engine::GetInstance()->GetTotalTime());
         }
-    }
-
-    AmRtpcID Rtpc::GetId() const
-    {
-        return _id;
-    }
-
-    const std::string& Rtpc::GetName() const
-    {
-        return _name;
     }
 
     double Rtpc::GetMinValue() const
@@ -134,7 +80,7 @@ namespace SparkyStudios::Audio::Amplitude
         return _currentValue;
     }
 
-    void Rtpc::SetValue(double value)
+    void Rtpc::SetValue(AmReal64 value)
     {
         _targetValue = AM_CLAMP(value, _minValue, _maxValue);
 
@@ -162,37 +108,71 @@ namespace SparkyStudios::Audio::Amplitude
         SetValue(_defValue);
     }
 
-    RefCounter* Rtpc::GetRefCounter()
+    bool Rtpc::LoadDefinition(const RtpcDefinition* definition, EngineInternalState* state)
     {
-        return &_refCounter;
+        _id = definition->id();
+        _name = definition->name()->str();
+
+        _minValue = definition->min_value();
+        _maxValue = definition->max_value();
+        _defValue = definition->default_value();
+
+        if (definition->fade_settings() && definition->fade_settings()->enabled())
+        {
+            _faderAttackFactory = Fader::Find(definition->fade_settings()->fade_attack()->fader()->str());
+            _faderReleaseFactory = Fader::Find(definition->fade_settings()->fade_release()->fader()->str());
+
+            if (_faderAttackFactory != nullptr)
+            {
+                _faderAttack = _faderAttackFactory->CreateInstance();
+                _faderAttack->SetDuration(definition->fade_settings()->fade_attack()->duration());
+            }
+
+            if (_faderReleaseFactory != nullptr)
+            {
+                _faderRelease = _faderReleaseFactory->CreateInstance();
+                _faderRelease->SetDuration(definition->fade_settings()->fade_release()->duration());
+            }
+        }
+
+        return true;
+    }
+
+    const RtpcDefinition* Rtpc::GetDefinition() const
+    {
+        return GetRtpcDefinition(_source.c_str());
     }
 
     RtpcValue::RtpcValue()
         : _valueKind(ValueKind_None)
         , _value(0.0f)
-        , _rtpc(nullptr)
         , _curve(nullptr)
+        , _ownCurve(false)
+        , _rtpc(nullptr)
     {}
 
     RtpcValue::RtpcValue(AmReal32 value)
         : _valueKind(ValueKind_Static)
         , _value(value)
-        , _rtpc(nullptr)
         , _curve(nullptr)
+        , _ownCurve(false)
+        , _rtpc(nullptr)
     {}
 
-    RtpcValue::RtpcValue(const Rtpc* rtpc, const Curve* curve)
+    RtpcValue::RtpcValue(const Rtpc* rtpc, Curve* curve)
         : _valueKind(ValueKind_RTPC)
         , _value(0.0f)
-        , _rtpc(rtpc)
         , _curve(curve)
+        , _ownCurve(false)
+        , _rtpc(rtpc)
     {}
 
     RtpcValue::RtpcValue(const RtpcCompatibleValue* definition)
         : _valueKind(definition->kind())
         , _value(definition->value())
-        , _rtpc(nullptr)
         , _curve(nullptr)
+        , _ownCurve(true)
+        , _rtpc(nullptr)
     {
         if (definition->kind() == ValueKind_RTPC)
         {
@@ -200,26 +180,33 @@ namespace SparkyStudios::Audio::Amplitude
 
             if (_rtpc == nullptr)
             {
-                CallLogFunc("[ERROR] Linking a parameter to an invalid or uninitialized RTP handle.");
+                CallLogFunc("[ERROR] Linking a parameter to an invalid or uninitialized RTPC handle.");
             }
 
-            auto* curve = new Curve();
+            auto* curve = ampoolnew(MemoryPoolKind::Engine, Curve);
             curve->Initialize(definition->rtpc()->curve());
 
             _curve = curve;
         }
     }
 
+    RtpcValue::~RtpcValue()
+    {
+        if (_ownCurve && _curve != nullptr)
+            ampooldelete(MemoryPoolKind::Engine, Curve, _curve);
+
+        _ownCurve = false;
+        _curve = nullptr;
+        _rtpc = nullptr;
+    }
+
     float RtpcValue::GetValue() const
     {
         if (_valueKind == ValueKind_RTPC && _rtpc != nullptr)
-        {
             return _curve->Get(_rtpc->GetValue());
-        }
-        else if (_valueKind == ValueKind_Static)
-        {
+
+        if (_valueKind == ValueKind_Static)
             return _value;
-        }
 
         return 0.0f;
     }

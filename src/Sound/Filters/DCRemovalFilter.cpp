@@ -35,12 +35,12 @@ namespace SparkyStudios::Audio::Amplitude
 
     FilterInstance* DCRemovalFilter::CreateInstance()
     {
-        return amnew(DCRemovalFilterInstance, this);
+        return ampoolnew(MemoryPoolKind::Filtering, DCRemovalFilterInstance, this);
     }
 
     void DCRemovalFilter::DestroyInstance(FilterInstance* instance)
     {
-        amdelete(DCRemovalFilterInstance, (DCRemovalFilterInstance*)instance);
+        ampooldelete(MemoryPoolKind::Filtering, DCRemovalFilterInstance, (DCRemovalFilterInstance*)instance);
     }
 
     DCRemovalFilterInstance::DCRemovalFilterInstance(DCRemovalFilter* parent)
@@ -55,31 +55,11 @@ namespace SparkyStudios::Audio::Amplitude
 
     DCRemovalFilterInstance::~DCRemovalFilterInstance()
     {
-        amMemory->Free(MemoryPoolKind::Filtering, _buffer);
-        amMemory->Free(MemoryPoolKind::Filtering, _totals);
+        ampoolfree(MemoryPoolKind::Filtering, _buffer);
+        ampoolfree(MemoryPoolKind::Filtering, _totals);
     }
 
     void DCRemovalFilterInstance::Process(
-        AmAudioSampleBuffer buffer, AmUInt64 frames, AmUInt64 bufferSize, AmUInt16 channels, AmUInt32 sampleRate)
-    {
-        if (_buffer == nullptr)
-        {
-            InitBuffer(channels, sampleRate);
-        }
-
-        for (AmInt64 i = 0; i < frames; i++)
-        {
-            for (AmUInt16 c = 0; c < channels; c++)
-            {
-                const AmUInt64 o = i + c * frames;
-                buffer[o] = ProcessSample(buffer[o], c, sampleRate);
-            }
-
-            _offset = (_offset + 1) % _bufferLength;
-        }
-    }
-
-    void DCRemovalFilterInstance::ProcessInterleaved(
         AmAudioSampleBuffer buffer, AmUInt64 frames, AmUInt64 bufferSize, AmUInt16 channels, AmUInt32 sampleRate)
     {
         if (_buffer == nullptr)
@@ -113,7 +93,6 @@ namespace SparkyStudios::Audio::Amplitude
 
         y = x - _totals[channel] / static_cast<AmReal32>(_bufferLength);
         y = x + (y - x) * m_parameters[DCRemovalFilter::ATTRIBUTE_WET];
-        y = AM_CLAMP_AUDIO_SAMPLE(y);
 
         return static_cast<AmAudioSample>(y);
     }
@@ -122,8 +101,8 @@ namespace SparkyStudios::Audio::Amplitude
     {
         _bufferLength = static_cast<AmUInt64>(std::ceil(dynamic_cast<DCRemovalFilter*>(m_parent)->_length * sampleRate));
 
-        _buffer = static_cast<AmReal32Buffer>(amMemory->Malloc(MemoryPoolKind::Filtering, _bufferLength * channels * sizeof(AmReal32)));
-        _totals = static_cast<AmReal32Buffer>(amMemory->Malloc(MemoryPoolKind::Filtering, channels * sizeof(AmReal32)));
+        _buffer = static_cast<AmReal32Buffer>(ampoolmalloc(MemoryPoolKind::Filtering, _bufferLength * channels * sizeof(AmReal32)));
+        _totals = static_cast<AmReal32Buffer>(ampoolmalloc(MemoryPoolKind::Filtering, channels * sizeof(AmReal32)));
 
         std::memset(_buffer, 0, _bufferLength * channels * sizeof(AmReal32));
         std::memset(_totals, 0, channels * sizeof(AmReal32));
