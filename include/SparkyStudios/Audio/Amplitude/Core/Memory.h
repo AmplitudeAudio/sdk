@@ -226,7 +226,7 @@ namespace SparkyStudios::Audio::Amplitude
 
     AM_CALLBACK(AmSize, AmMemoryTotalReservedMemorySizeCallback)();
 
-    AM_CALLBACK(AmSize, AmMemorySizeOfCallback)(MemoryPoolKind pool, AmVoidPtr address);
+    AM_CALLBACK(AmSize, AmMemorySizeOfCallback)(MemoryPoolKind pool, AmConstVoidPtr address);
 
     /**
      * @brief Configures the memory management system.
@@ -346,6 +346,54 @@ namespace SparkyStudios::Audio::Amplitude
     class AM_API_PUBLIC MemoryManager
     {
     public:
+        struct Allocation
+        {
+            /**
+             * @brief The memory pool kind.
+             */
+            MemoryPoolKind pool;
+
+            /**
+             * @brief The address of the allocation.
+             */
+            AmVoidPtr address;
+
+            /**
+             * @brief The size of the allocation.
+             */
+            AmSize size;
+
+            /**
+             * @brief The file in which the allocation was made.
+             */
+            const char* file;
+
+            /**
+             * @brief The line in which the allocation was made.
+             */
+            AmUInt32 line;
+
+            explicit operator AmVoidPtr() const
+            {
+                return address;
+            }
+
+            bool operator==(const AmVoidPtr& ptr) const
+            {
+                return address == ptr;
+            }
+
+            bool operator==(const Allocation& other) const
+            {
+                return pool == other.pool && address == other.address;
+            }
+
+            bool operator<(const Allocation& other) const
+            {
+                return address < other.address;
+            }
+        };
+
         /**
          * @brief Initializes the memory manager.
          *
@@ -405,26 +453,43 @@ namespace SparkyStudios::Audio::Amplitude
         /**
          * @brief Gets the size of the given memory block.
          */
-        [[nodiscard]] AmSize SizeOf(MemoryPoolKind pool, AmVoidPtr address) const;
+        [[nodiscard]] AmSize SizeOf(MemoryPoolKind pool, AmConstVoidPtr address) const;
 
 #if !defined(AM_NO_MEMORY_STATS)
+        /**
+         * @brief Gets the name of the given memory pool.
+         *
+         * @param pool The memory pool to get the name for.
+         *
+         * @return The name of the memory pool.
+         */
+        static AmString GetMemoryPoolName(MemoryPoolKind pool);
+
         /**
          * @brief Returns the memory allocation statistics for the given pool.
          *
          * @param pool The pool to get the statistics for.
          */
         [[nodiscard]] const MemoryPoolStats& GetStats(MemoryPoolKind pool) const;
+
+        /**
+         * @brief Inspect the memory manager for memory leaks.
+         *
+         * @note This function is most useful after the engine has been deinitialized. Calling it before may just
+         * report a lot of false positives (allocated memories still in use).
+         *
+         * @return A string containing a report for the detected memory leaks.
+         */
+        [[nodiscard]] AmString InspectMemoryLeaks() const;
 #endif
 
     private:
-        explicit MemoryManager(MemoryManagerConfig config);
+        explicit MemoryManager(const MemoryManagerConfig& config);
         ~MemoryManager();
 
         MemoryManagerConfig _config;
 
-        void* _memAllocator = nullptr;
-
-        std::map<MemoryPoolKind, std::set<AmVoidPtr>> _memPoolsData = {};
+        std::set<Allocation> _memAllocations = {};
 
 #if !defined(AM_NO_MEMORY_STATS)
         std::map<MemoryPoolKind, MemoryPoolStats> _memPoolsStats = {};
@@ -459,7 +524,7 @@ namespace SparkyStudios::Audio::Amplitude
             return reinterpret_cast<T>(_address);
         }
 
-        [[nodiscard]] AmVoidPtr Address() const
+        [[nodiscard]] AM_INLINE(AmVoidPtr) Address() const
         {
             return _address;
         }

@@ -34,7 +34,10 @@ struct ExecutionContext
 
     AmUInt32 currentSwitchState = 3;
 
+#if !defined(AM_NO_MEMORY_STATS)
     bool printMemoryStats = false;
+#endif
+
     bool pause = false;
     bool stop = false;
 };
@@ -48,25 +51,26 @@ static void log(const char* fmt, va_list args)
 #endif
 }
 
+#if !defined(AM_NO_MEMORY_STATS)
 static void printMemoryStats()
 {
-    std::map<MemoryPoolKind, std::string> map = {
-        { MemoryPoolKind::Amplimix, "Amplimix" },   { MemoryPoolKind::Codec, "Codec" },         { MemoryPoolKind::Engine, "Engine" },
-        { MemoryPoolKind::Filtering, "Filtering" }, { MemoryPoolKind::SoundData, "SoundData" }, { MemoryPoolKind::IO, "IO" },
-        { MemoryPoolKind::Default, "Default" },
+    std::vector<MemoryPoolKind> pools = {
+        MemoryPoolKind::Amplimix,  MemoryPoolKind::Codec, MemoryPoolKind::Engine,  MemoryPoolKind::Filtering,
+        MemoryPoolKind::SoundData, MemoryPoolKind::IO,    MemoryPoolKind::Default,
     };
 
-    for (auto&& kind : map)
+    for (auto&& kind : pools)
     {
-        const auto& stats = amMemory->GetStats(kind.first);
+        const auto& stats = amMemory->GetStats(kind);
 
-        std::cout << "Pool Name - " << kind.second << std::endl;
+        std::cout << "Pool Name - " << MemoryManager::GetMemoryPoolName(kind) << std::endl;
         std::cout << "    Allocations Count: " << stats.allocCount << std::endl;
         std::cout << "    Frees Count: " << stats.freeCount << std::endl;
         std::cout << "    Total Memory used: " << stats.maxMemoryUsed << std::endl;
         std::cout << std::endl;
     }
 }
+#endif
 
 static void run(AmVoidPtr param)
 {
@@ -105,6 +109,9 @@ static void run(AmVoidPtr param)
     amEngine->StartOpenFileSystem();
     while (!amEngine->TryFinalizeOpenFileSystem())
         Thread::Sleep(1);
+
+    // Start loading sound files.
+    amEngine->StartLoadSoundFiles();
 
     // Cache the master bus, so we can adjust the gain.
     auto masterBus = amEngine->FindBus("master");
@@ -157,16 +164,22 @@ static void run(AmVoidPtr param)
 
     AmUInt32 lastSwitch = 0;
 
+    // Wait for the sound files to complete loading
+    while (!amEngine->TryFinalizeLoadSoundFiles())
+        Thread::Sleep(1);
+
     while (true)
     {
         if (ctx->stop)
             break;
 
+#if !defined(AM_NO_MEMORY_STATS)
         if (ctx->printMemoryStats)
         {
             printMemoryStats();
             ctx->printMemoryStats = false;
         }
+#endif
 
         amEngine->Pause(ctx->pause);
 
@@ -256,7 +269,13 @@ int main(int argc, char* argv[])
             std::cout << "Select a sample:" << std::endl;
             std::cout << kAppModeCollectionTest << " - Collection Sample" << std::endl;
             std::cout << kAppModeSwitchContainerTest << " - Switch Container Sample" << std::endl;
-            std::cout << "Type 0 to quit the program, and 9 to print memory stats." << std::endl << std::endl;
+            std::cout << "Press 0 to quit the program";
+
+#if !defined(AM_NO_MEMORY_STATS)
+            std::cout << ", and 9 to print memory stats";
+#endif
+
+            std::cout << "." << std::endl << std::endl;
             std::cout << "Enter a value: ";
         }
 
@@ -271,7 +290,13 @@ int main(int argc, char* argv[])
                          "using flatbuffers, and preview it here."
                       << std::endl
                       << std::endl;
-            std::cout << "Press 0 to go back to the main menu, and 9 to print memory stats: ";
+            std::cout << "Press 0 to go back to the main menu";
+
+#if !defined(AM_NO_MEMORY_STATS)
+            std::cout << ", and 9 to print memory stats";
+#endif
+
+            std::cout << ": ";
         }
 
         if (ctx.appMode == kAppModeSwitchContainerTest)
@@ -284,18 +309,26 @@ int main(int argc, char* argv[])
             std::cout << "3 - Metal" << (ctx.currentSwitchState == 3 ? " (active)" : "") << std::endl;
             std::cout << "4 - Grass" << (ctx.currentSwitchState == 4 ? " (active)" : "") << std::endl;
             std::cout << "5 - Snow" << (ctx.currentSwitchState == 5 ? " (active)" : "") << std::endl << std::endl;
-            std::cout << "Press 0 to go back to the main menu, and 9 to print memory stats: ";
+            std::cout << "Press 0 to go back to the main menu";
+
+#if !defined(AM_NO_MEMORY_STATS)
+            std::cout << ", and 9 to print memory stats";
+#endif
+
+            std::cout << ": ";
         }
 
         int input = 0;
         std::cin >> input;
 
+#if !defined(AM_NO_MEMORY_STATS)
         if (input == 9)
         {
             std::cout << std::endl;
             printMemoryStats();
             continue;
         }
+#endif
 
         if (ctx.appMode == kAppModeMainMenu)
         {
@@ -343,5 +376,11 @@ int main(int argc, char* argv[])
 
     Thread::Wait(t);
 
+#if !defined(AM_NO_MEMORY_STATS)
     printMemoryStats();
+
+    CallLogFunc(amMemory->InspectMemoryLeaks().c_str());
+#endif
+
+    MemoryManager::Deinitialize();
 }

@@ -252,9 +252,7 @@ bool SampleState::Initialize()
 
     // Initialize Amplitude.
     if (!amEngine->Initialize(kAudioConfig) || !amEngine->LoadSoundBank(kSoundBank))
-    {
         return false;
-    }
 
     // Cache the master bus so we can demonstrate adjusting the gain.
     master_bus_ = amEngine->FindBus(kAmMasterBusId);
@@ -266,6 +264,9 @@ bool SampleState::Initialize()
         fprintf(stderr, "Could not find sound handle %s\n", kSoundHandleName);
         return false;
     }
+
+    // Start loading sound files.
+    amEngine->StartLoadSoundFiles();
 
     // Success!
     return true;
@@ -488,6 +489,10 @@ void SampleState::AdvanceFrame(float delta_time)
 
 void SampleState::Run()
 {
+    // Wait for the sound files to complete loading
+    while (!amEngine->TryFinalizeLoadSoundFiles())
+        SDL_Delay(1);
+
     Uint32 previous_time = 0;
     Uint32 time = 0;
     while (!quit_)
@@ -519,6 +524,12 @@ int main(int argc, char* argv[])
         Thread::Sleep(1);
 
     amEngine->DestroyInstance();
+
+#if !defined(AM_NO_MEMORY_STATS)
+    CallLogFunc(amMemory->InspectMemoryLeaks().c_str());
+#endif
+
+    MemoryManager::Deinitialize();
 
     return 0;
 }

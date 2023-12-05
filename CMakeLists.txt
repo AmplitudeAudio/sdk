@@ -83,6 +83,12 @@ find_package(SampleRate CONFIG REQUIRED)
 # ------------------------------------------------------------------------------
 find_package(xsimd CONFIG REQUIRED)
 
+# ------------------------------------------------------------------------------
+
+# Setup mimalloc
+# ------------------------------------------------------------------------------
+find_package(mimalloc CONFIG REQUIRED)
+
 # Check what instruction sets the current host supports.
 include(DetectCPUArchitecture)
 am_buildsystem_get_runnable_archs(NATIVE_ARCHS)
@@ -328,10 +334,6 @@ set(SA_SOURCE
     src/Utils/pffft/pffft_double.cpp
     src/Utils/pffft/pffft_double.h
     src/Utils/pffft/pffft_private_impl.h
-    src/Utils/SmMalloc/smmalloc_generic.cpp
-    src/Utils/SmMalloc/smmalloc_tls.cpp
-    src/Utils/SmMalloc/smmalloc.cpp
-    src/Utils/SmMalloc/smmalloc.h
     src/Utils/intrusive_list.h
     src/Utils/Utils.h
 )
@@ -365,7 +367,12 @@ foreach(build_type ${AM_BUILDSYSTEM_TYPE})
 
     target_compile_definitions(${build_type} PRIVATE AM_BUILDSYSTEM_BUILDING_AMPLITUDE)
 
-    target_link_libraries(${build_type} PRIVATE flatbuffers::flatbuffers SampleRate::samplerate xsimd)
+    target_link_libraries(${build_type}
+        PRIVATE
+            flatbuffers::flatbuffers SampleRate::samplerate xsimd
+        PUBLIC
+            mimalloc-static
+    )
 
     add_dependencies(${build_type}
         generated_includes

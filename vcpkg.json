@@ -30,6 +30,10 @@
     {
       "name": "xsimd",
       "version>=": "11.1.0"
+    },
+    {
+      "name": "mimalloc",
+      "version>=": "2.1.2"
     }
   ]
 }
