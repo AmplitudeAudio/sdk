@@ -761,7 +761,7 @@ namespace SparkyStudios::Audio::Amplitude
                 OnSoundPaused(this, lay);
             else if (prev == PLAY_STATE_FLAG_HALT && (flag == PLAY_STATE_FLAG_PLAY || flag == PLAY_STATE_FLAG_LOOP))
                 OnSoundResumed(this, lay);
-            else if ((prev == PLAY_STATE_FLAG_PLAY || prev == PLAY_STATE_FLAG_LOOP) && flag == PLAY_STATE_FLAG_STOP)
+            else if (prev != PLAY_STATE_FLAG_STOP && flag == PLAY_STATE_FLAG_STOP)
                 OnSoundStopped(this, lay);
 
             // swap if flag has not changed and return if successful
