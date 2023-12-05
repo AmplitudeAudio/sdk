@@ -65,7 +65,7 @@ namespace SparkyStudios::Audio::Amplitude
 
     typedef std::map<AmEventID, AmUniquePtr<MemoryPoolKind::Engine, Event>> EventMap;
 
-    typedef std::map<AmBankID, std::unique_ptr<SoundBank>> SoundBankMap;
+    typedef std::map<AmBankID, AmUniquePtr<MemoryPoolKind::Engine, SoundBank>> SoundBankMap;
 
     typedef std::vector<EventInstance> EventInstanceVector;
 

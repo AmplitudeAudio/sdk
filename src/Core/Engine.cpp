@@ -45,6 +45,28 @@ namespace SparkyStudios::Audio::Amplitude
 
     std::set<AmOsString> Engine::_pluginSearchPaths = {};
 
+    class LoadSoundBankTask final : public Thread::PoolTask
+    {
+    public:
+        explicit LoadSoundBankTask(SoundBank* soundBank)
+            : PoolTask()
+            , _soundBank(soundBank)
+        {}
+
+        void Work() override
+        {
+            _soundBank->LoadSoundFiles(amEngine);
+        }
+
+        bool Ready() override
+        {
+            return _soundBank != nullptr;
+        }
+
+    private:
+        SoundBank* _soundBank = nullptr;
+    };
+
     bool LoadFile(const std::shared_ptr<File>& file, AmString* dest)
     {
         if (!file->IsValid())
@@ -593,14 +615,14 @@ namespace SparkyStudios::Audio::Amplitude
         if (const auto findIt = _state->sound_bank_id_map.find(filename); findIt == _state->sound_bank_id_map.end() ||
             (findIt != _state->sound_bank_id_map.end() && !_state->sound_bank_map.contains(findIt->second)))
         {
-            auto soundBank = std::make_unique<SoundBank>();
+            AmUniquePtr<MemoryPoolKind::Engine, SoundBank> soundBank(ampoolnew(MemoryPoolKind::Engine, SoundBank));
             success = soundBank->Initialize(filename, this);
 
             if (success)
             {
                 soundBank->GetRefCounter()->Increment();
 
-                AmBankID id = soundBank->GetId();
+                const AmBankID id = soundBank->GetId();
                 _state->sound_bank_id_map[filename] = id;
                 _state->sound_bank_map[id] = std::move(soundBank);
                 outID = id;
@@ -625,7 +647,7 @@ namespace SparkyStudios::Audio::Amplitude
         outID = kAmInvalidObjectId;
         bool success = true;
 
-        auto soundBank = std::make_unique<SoundBank>(fileData);
+        AmUniquePtr<MemoryPoolKind::Engine, SoundBank> soundBank(ampoolnew(MemoryPoolKind::Engine, SoundBank));
         const AmOsString filename = AM_STRING_TO_OS_STRING(soundBank->GetName());
         if (const auto findIt = _state->sound_bank_id_map.find(filename); findIt == _state->sound_bank_id_map.end() ||
             (findIt != _state->sound_bank_id_map.end() && !_state->sound_bank_map.contains(findIt->second)))
@@ -659,7 +681,6 @@ namespace SparkyStudios::Audio::Amplitude
     bool Engine::LoadSoundBankFromMemoryView(void* ptr, AmSize size, AmBankID& outID)
     {
         outID = kAmInvalidObjectId;
-        bool success = true;
 
         MemoryFile mf;
         AmString dst;
@@ -668,33 +689,9 @@ namespace SparkyStudios::Audio::Amplitude
         dst.assign(size + 1, 0);
 
         if (const AmUInt32 len = mf.Read(reinterpret_cast<AmUInt8Buffer>(&dst[0]), mf.Length()); len != size)
-        {
             return false;
-        }
 
-        auto soundBank = std::make_unique<SoundBank>(dst);
-        const AmOsString filename = AM_STRING_TO_OS_STRING(soundBank->GetName());
-        if (const auto findIt = _state->sound_bank_id_map.find(filename); findIt == _state->sound_bank_id_map.end() ||
-            (findIt != _state->sound_bank_id_map.end() && !_state->sound_bank_map.contains(findIt->second)))
-        {
-            success = soundBank->InitializeFromMemory(dst.c_str(), this);
-
-            if (success)
-            {
-                soundBank->GetRefCounter()->Increment();
-
-                const AmBankID id = soundBank->GetId();
-                _state->sound_bank_id_map[filename] = id;
-                _state->sound_bank_map[id] = std::move(soundBank);
-                outID = id;
-            }
-        }
-        else
-        {
-            _state->sound_bank_map[findIt->second]->GetRefCounter()->Increment();
-        }
-
-        return success;
+        return LoadSoundBankFromMemory(dst.c_str(), outID);
     }
 
     void Engine::UnloadSoundBank(const AmOsString& filename)
@@ -753,6 +750,35 @@ namespace SparkyStudios::Audio::Amplitude
     bool Engine::TryFinalizeCloseFileSystem()
     {
         return _fs->TryFinalizeCloseFileSystem();
+    }
+
+    void Engine::StartLoadSoundFiles()
+    {
+        if (_soundLoaderThreadPool == nullptr)
+            _soundLoaderThreadPool.reset(ampoolnew(MemoryPoolKind::Engine, Thread::Pool));
+
+        _soundLoaderThreadPool->Init(8);
+
+        for (const auto& item : _state->sound_bank_map)
+        {
+            auto task = std::shared_ptr<LoadSoundBankTask>(
+                ampoolnew(MemoryPoolKind::Engine, LoadSoundBankTask, item.second.get()),
+                am_delete<MemoryPoolKind::Engine, LoadSoundBankTask>{});
+
+            _soundLoaderThreadPool->AddTask(task);
+        }
+    }
+
+    bool Engine::TryFinalizeLoadSoundFiles()
+    {
+        if (_soundLoaderThreadPool == nullptr)
+            return true;
+
+        if (_soundLoaderThreadPool->HasTasks())
+            return false;
+
+        _soundLoaderThreadPool.reset(nullptr);
+        return true;
     }
 
     bool BestListener(
@@ -2343,7 +2369,8 @@ namespace SparkyStudios::Audio::Amplitude
         return Channel(newChannel);
     }
 
-    Channel Engine::PlayScopedCollection(CollectionHandle handle, const Entity& entity, const AmVec3& location, const AmReal32 userGain) const
+    Channel Engine::PlayScopedCollection(
+        CollectionHandle handle, const Entity& entity, const AmVec3& location, const AmReal32 userGain) const
     {
         if (!handle)
         {

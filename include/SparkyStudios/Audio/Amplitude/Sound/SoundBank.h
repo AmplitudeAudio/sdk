@@ -17,6 +17,8 @@
 #ifndef SPARK_AUDIO_SOUND_BANK_H
 #define SPARK_AUDIO_SOUND_BANK_H
 
+#include <queue>
+
 #include <SparkyStudios/Audio/Amplitude/Core/RefCounter.h>
 
 namespace SparkyStudios::Audio::Amplitude
@@ -30,9 +32,9 @@ namespace SparkyStudios::Audio::Amplitude
      *
      * A Sound Bank is a group of Amplitude assets, packed in a single binary. This way allows
      * you to pack the needed data for your game as you want (ie. sound banks per levels). A sound bank
-     * need to be loaded by the Engine using <code>Engine::LoadSoundBank()</code> before to play sounds and
+     * need to be loaded by the Engine using @code Engine::LoadSoundBank() @endcode before to play sounds and
      * trigger events inside it. When the sound bank data should be released (ie. changing the level, closing
-     * the game, etc.), you need to unload the sound bank using <code>Engine::UnloadSoundBank()</code>.
+     * the game, etc.), you need to unload the sound bank using @code Engine::UnloadSoundBank() @endcode.
      */
     class AM_API_PUBLIC SoundBank
     {
@@ -95,6 +97,14 @@ namespace SparkyStudios::Audio::Amplitude
          */
         RefCounter* GetRefCounter();
 
+        /**
+         * @brief Load the sound files referenced in the sound bank.
+         *
+         * This method should usually not be called directly. It is called automatically by the Engine with
+         * the @code Engine::StartLoadSoundFiles() @endcode method.
+         */
+        void LoadSoundFiles(const Engine* engine);
+
     private:
         bool InitializeInternal(Engine* engine);
 
@@ -103,6 +113,8 @@ namespace SparkyStudios::Audio::Amplitude
 
         AmString _name;
         AmBankID _id;
+
+        std::queue<AmSoundID> _pendingSoundsToLoad;
     };
 
 } // namespace SparkyStudios::Audio::Amplitude

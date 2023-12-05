@@ -125,7 +125,7 @@ namespace SparkyStudios::Audio::Amplitude
         return true;
     }
 
-    static bool InitializeSound(const AmOsString& filename, const Engine* engine)
+    static bool InitializeSound(const AmOsString& filename, const Engine* engine, AmSoundID& outId)
     {
         // Find the ID
         SoundHandle handle = engine->GetSoundHandleFromFile(filename);
@@ -153,13 +153,13 @@ namespace SparkyStudios::Audio::Amplitude
                 return false;
             }
 
-            sound->Load(fs);
-
             sound->AcquireReferences(engine->GetState());
             sound->GetRefCounter()->Increment();
 
             engine->GetState()->sound_map[id] = std::move(sound);
             engine->GetState()->sound_id_map[filename] = id;
+
+            outId = id;
         }
 
         return true;
@@ -650,6 +650,20 @@ namespace SparkyStudios::Audio::Amplitude
         return &_refCounter;
     }
 
+    void SoundBank::LoadSoundFiles(const Engine* engine)
+    {
+        while (!_pendingSoundsToLoad.empty())
+        {
+            const auto id = _pendingSoundsToLoad.front();
+            _pendingSoundsToLoad.pop();
+
+            if (!engine->GetState()->sound_map.contains(id))
+                continue;
+
+            engine->GetState()->sound_map[id]->Load(engine->GetFileSystem());
+        }
+    }
+
     bool SoundBank::InitializeInternal(Engine* engine)
     {
         bool success = true;
@@ -696,8 +710,10 @@ namespace SparkyStudios::Audio::Amplitude
         // Load each Sound named in the sound bank.
         for (flatbuffers::uoffset_t i = 0; success && i < definition->sounds()->size(); ++i)
         {
+            AmSoundID id = kAmInvalidObjectId;
             AmString filename = definition->sounds()->Get(i)->c_str();
-            success &= InitializeSound(AM_STRING_TO_OS_STRING(filename), engine);
+            success &= InitializeSound(AM_STRING_TO_OS_STRING(filename), engine, id);
+            _pendingSoundsToLoad.push(id);
         }
 
         // Load each Collection named in the sound bank.

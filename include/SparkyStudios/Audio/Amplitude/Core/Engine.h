@@ -29,6 +29,7 @@
 #include <SparkyStudios/Audio/Amplitude/Core/Environment.h>
 #include <SparkyStudios/Audio/Amplitude/Core/Event.h>
 #include <SparkyStudios/Audio/Amplitude/Core/Listener.h>
+#include <SparkyStudios/Audio/Amplitude/Core/Thread.h>
 #include <SparkyStudios/Audio/Amplitude/Core/Version.h>
 
 #include <SparkyStudios/Audio/Amplitude/Sound/Attenuation.h>
@@ -251,6 +252,21 @@ namespace SparkyStudios::Audio::Amplitude
          *        StartCloseFileSystem() first.
          */
         bool TryFinalizeCloseFileSystem();
+
+        /**
+         * @brief Starts the loading of sound files referenced in loaded sound banks.
+         *
+         * This process will run in another thread. You must call TryFinalizeLoadSoundFiles() to
+         * know when the loading has completed, and to release used resources.
+         */
+        void StartLoadSoundFiles();
+
+        /**
+         * @brief Checks if the loading of sound files has been completed, and releases used resources.
+         *
+         * @return @c true when the sound files have been successfully loaded, @c false otherwise.
+         */
+        bool TryFinalizeLoadSoundFiles();
 
         /**
          * @brief Get a SwitchContainerHandle given its name as defined in its JSON data.
@@ -1244,6 +1260,9 @@ namespace SparkyStudios::Audio::Amplitude
 
         // The audio driver used by the engine.
         Driver* _audioDriver;
+
+        // The thread pool used to load audio files.
+        AmUniquePtr<MemoryPoolKind::Engine, Thread::Pool> _soundLoaderThreadPool;
     };
 
 } // namespace SparkyStudios::Audio::Amplitude
