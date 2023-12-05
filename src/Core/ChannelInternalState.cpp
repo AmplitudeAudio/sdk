@@ -700,6 +700,7 @@ namespace SparkyStudios::Audio::Amplitude
             settings.m_spatialization = definition->spatialization();
             settings.m_priority = _switchContainer->GetPriority();
             settings.m_gain = item.m_gain;
+            settings.m_pitch = item.m_pitch;
             settings.m_loop = sound->IsLoop();
             settings.m_loopCount = sound->GetDefinition()->loop()->loop_count();
             settings.m_effectID = kAmInvalidObjectId;

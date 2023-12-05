@@ -216,8 +216,9 @@ namespace SparkyStudios::Audio::Amplitude
         _loopCount = definition->loop() ? definition->loop()->loop_count() : 0;
         _filename = fs->ResolvePath(fs->Join({ AM_OS_STRING("data"), AM_STRING_TO_OS_STRING(definition->path()->str()) }));
 
-        m_gain = RtpcValue(definition->gain());
-        m_priority = RtpcValue(definition->priority());
+        m_gain = definition->gain() == nullptr ? RtpcValue(1) : RtpcValue(definition->gain());
+        m_pitch = definition->pitch() == nullptr ? RtpcValue(1) : RtpcValue(definition->pitch());
+        m_priority =  definition->priority() == nullptr ? RtpcValue(1) : RtpcValue(definition->priority());
 
         _settings.m_id = definition->id();
         _settings.m_kind = SoundKind::Standalone;

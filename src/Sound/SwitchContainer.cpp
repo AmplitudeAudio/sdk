@@ -129,8 +129,9 @@ namespace SparkyStudios::Audio::Amplitude
         _id = definition->id();
         _name = definition->name()->str();
 
-        m_gain = RtpcValue(definition->gain());
-        m_priority = RtpcValue(definition->priority());
+        m_gain = definition->gain() == nullptr ? RtpcValue(1) : RtpcValue(definition->gain());
+        m_pitch = definition->pitch() == nullptr ? RtpcValue(1) : RtpcValue(definition->pitch());
+        m_priority =  definition->priority() == nullptr ? RtpcValue(1) : RtpcValue(definition->priority());
 
         for (const auto& states = _switch->GetSwitchStates(); const auto& switchState : states)
         {
@@ -180,7 +181,8 @@ namespace SparkyStudios::Audio::Amplitude
             item.m_fadeOutDuration = entry->fade_out()->duration();
             item.m_fadeInAlgorithm = entry->fade_in()->fader()->str();
             item.m_fadeOutAlgorithm = entry->fade_out()->fader()->str();
-            item.m_gain = RtpcValue(entry->gain());
+            item.m_gain = entry->gain() == nullptr ? RtpcValue(1) : RtpcValue(entry->gain());
+            item.m_pitch = entry->pitch() == nullptr ? RtpcValue(1) : RtpcValue(entry->pitch());
 
             const flatbuffers::uoffset_t statesCount = entry->switch_states()->size();
             for (flatbuffers::uoffset_t j = 0; j < statesCount; ++j)

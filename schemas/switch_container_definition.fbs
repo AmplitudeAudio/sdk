@@ -48,6 +48,10 @@ table SwitchContainerEntry {
   /// A custom gain to apply only on this object.
   gain:RtpcCompatibleValue;
 
+  /// Custom pitch (0.0..2.0) to apply to the sound. The final value will be computed with the
+  /// real pitch from the doppler effect.
+  pitch:RtpcCompatibleValue;
+
   /// The list of switch states where this object is assigned.
   switch_states:[uint64] (required);
 }
@@ -73,6 +77,10 @@ table SwitchContainerDefinition {
 
   /// Overall linear gain (0.0 .. 1.0) of the switch container when played back by the audio system.
   gain:RtpcCompatibleValue;
+
+  /// Custom pitch (0.0..2.0) to apply to the sound. The final value will be computed with the
+  /// real pitch from the doppler effect.
+  pitch:RtpcCompatibleValue;
 
   /// ID of the bus this switch container should be played on.
   bus:uint64;

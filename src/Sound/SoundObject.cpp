@@ -29,6 +29,11 @@ namespace SparkyStudios::Audio::Amplitude
         return m_gain;
     }
 
+    const RtpcValue& SoundObject::GetPitch() const
+    {
+        return m_pitch;
+    }
+
     const RtpcValue& SoundObject::GetPriority() const
     {
         return m_priority;

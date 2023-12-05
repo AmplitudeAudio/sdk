@@ -76,6 +76,14 @@ namespace SparkyStudios::Audio::Amplitude
          * attenuation model, if any.
          */
         RtpcValue m_gain;
+
+        /**
+         * @brief The custom pitch applied on this item.
+         *
+         * The final pitch will be computed with this value multiplied with the pitch of the
+         * doppler effect, if this switch container's spatialization mode is set to position.
+         */
+        RtpcValue m_pitch;
     };
 
     /**

@@ -69,6 +69,7 @@ namespace SparkyStudios::Audio::Amplitude
         AmUInt8 m_spatialization;
         RtpcValue m_priority;
         RtpcValue m_gain;
+        RtpcValue m_pitch;
         bool m_loop;
         AmUInt32 m_loopCount;
     };

@@ -47,6 +47,13 @@ namespace SparkyStudios::Audio::Amplitude
         [[nodiscard]] virtual const RtpcValue& GetGain() const;
 
         /**
+         * @brief Gets the actual pitch of the sound object.
+         *
+         * @return The sound object pitch.
+         */
+        [[nodiscard]] virtual const RtpcValue& GetPitch() const;
+
+        /**
          * @brief Gets the actual priority of the sound object.
          *
          * @return The sound object priority.
@@ -79,6 +86,7 @@ namespace SparkyStudios::Audio::Amplitude
         BusInternalState* m_bus;
 
         RtpcValue m_gain;
+        RtpcValue m_pitch;
         RtpcValue m_priority;
 
         Effect* m_effect;
