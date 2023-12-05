@@ -38,6 +38,7 @@
 #include <Mixer/SoundProcessors/ObstructionProcessor.h>
 #include <Mixer/SoundProcessors/OcclusionProcessor.h>
 #include <Mixer/SoundProcessors/PassThroughProcessor.h>
+#include <Mixer/SoundProcessors/SilenceProcessor.h>
 
 #pragma endregion
 

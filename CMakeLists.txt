@@ -237,6 +237,7 @@ set(SA_SOURCE
     src/Mixer/SoundProcessors/ObstructionProcessor.h
     src/Mixer/SoundProcessors/OcclusionProcessor.h
     src/Mixer/SoundProcessors/PassThroughProcessor.h
+    src/Mixer/SoundProcessors/SilenceProcessor.h
     src/Mixer/Mixer.cpp
     src/Mixer/Mixer.h
     src/Mixer/ProcessorPipeline.cpp
