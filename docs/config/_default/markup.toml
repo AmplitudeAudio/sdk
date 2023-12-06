@@ -1,19 +1,33 @@
+defaultMarkdownHandler = "goldmark"
+
 [goldmark]
+  [goldmark.extensions]
+    linkify = false
+  [goldmark.parser]
+    autoHeadingID = true
+    autoHeadingIDType = "github"
+    [goldmark.parser.attribute]
+      block = true
+      title = true
   [goldmark.renderer]
     unsafe = true
-  [goldmark.extensions]
-    typographer = false
+
 [highlight]
+  anchorLineNos = false
   codeFences = true
   guessSyntax = false
-  hl_Lines = ""
+  hl_Lines = ''
+  hl_inline = false
+  lineAnchors = ''
   lineNoStart = 1
-  lineNos = true
+  lineNos = false
   lineNumbersInTable = false
   noClasses = false
-  style = "onedark"
+  noHl = false
+  style = 'atom-one-dark'
   tabWidth = 2
+
 [tableOfContents]
-  endLevel = 4
+  endLevel = 3
   ordered = false
   startLevel = 2

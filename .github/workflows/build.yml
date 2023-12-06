@@ -4,8 +4,12 @@ on:
   push:
   pull_request:
   release:
-    tags:
-      - "v*"
+    types:
+      - created
+
+concurrency:
+  group: "build"
+  cancel-in-progress: true
 
 jobs:
   cleanup:

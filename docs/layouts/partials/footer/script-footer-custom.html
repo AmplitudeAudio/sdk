@@ -1,0 +1,5 @@
+{{ if .Page.Params.mermaid -}}
+  {{ partial "footer/esbuild" (dict "src" "js/mermaid.js" "load" "defer" "transpile" false) -}}
+{{ end -}}
+
+<script async defer src="https://buttons.github.io/buttons.js"></script>

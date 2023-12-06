@@ -1,0 +1,9 @@
+.header-bar {
+  border-image-source: linear-gradient(83.21deg, $primary 0%, $body-bg 50%, $primary 100%);
+}
+
+@include color-mode(dark) {
+  .header-bar {
+    border-image-source: linear-gradient(83.21deg, $primary 0%, $body-bg-dark 50%, $primary 100%);
+  }
+}
