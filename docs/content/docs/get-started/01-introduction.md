@@ -8,6 +8,10 @@ weight: 101
 toc: true
 ---
 
+{{< callout context="note" title="Note" icon="info-circle" >}}
+Amplitude is still in active development. While it already provides a lot of stable features, the documentation for them is not complete. If you have questions, we encourage you to join our [Discord server](https://discord.gg/QR2uBpzJ5f) to ask them in the forum.
+{{< /callout >}}
+
 Amplitude is a cross-platform audio library for games. It provides a wide set of features that will allow you to play audio files from any sources in any environments (2D or 3D). This page will give you an overview of some of the core features of the library.
 
 ## Data-driven Development
