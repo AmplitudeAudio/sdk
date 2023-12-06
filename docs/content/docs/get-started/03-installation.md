@@ -12,9 +12,15 @@ Follow these steps to install Amplitude Audio SDK from official releases or by b
 
 ## Get the SDK from releases
 
-{{< alert context="warning" text="TODO." />}}
+{{< alert context="warning">}}
+Amplitude Audio SDK is still in beta, so no official release is available yet. Please follow the **[Build the SDK from sources](#build-the-sdk-from-sources)** process instead.
+{{< /alert >}}
 
 ## Build the SDK from sources
+
+{{< callout context="caution" title="Caution" icon="alert-triangle" >}}
+Amplitude is in active development, so the installation process here may be outdated. If you are facing issues, we encourage you to [join our Discord server](https://discord.gg/QR2uBpzJ5f) and ask for support.
+{{< /callout >}}
 
 To build Amplitude from sources, you will need to first install some dependencies:
 
@@ -66,8 +72,8 @@ The SDK installs itself in the same directory as the sources, in the `sdk` folde
 
 ## Install the SDK
 
-Once you have a copy of the SDK, to install it you just need to add a `SS_AMPLITUDE_SDK_PATH` environment variable in your system, that points to the path of the directory containing the `sdk` folder.
+Once you have a copy of the SDK, to install it you just need to add a `AM_SDK_PATH` environment variable in your system, that points to the path of the directory containing the `sdk` folder.
 
-{{< alert text="By installing the SDK through the upcoming Amplitude Studio, the environment variable will be automatically set." />}}
+{{< alert context="info" text="By installing the SDK through the upcoming Amplitude Studio, the environment variable will be automatically set." />}}
 
 That's it! You can now use Amplitude Audio SDK in your projects!

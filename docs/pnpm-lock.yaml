@@ -6,11 +6,11 @@ settings:
 
 dependencies:
   '@hyas/doks-core':
-    specifier: ^1.0.7
-    version: 1.0.7(react-dom@16.14.0)(react@16.14.0)
+    specifier: ^1.1.2
+    version: 1.1.2(react-dom@16.14.0)(react@16.14.0)
   mermaid:
-    specifier: ^10.5.0
-    version: 10.5.0
+    specifier: ^10.6.1
+    version: 10.6.1
 
 packages:
 
@@ -1318,15 +1318,15 @@ packages:
     engines: {node: '>=16.12.0'}
     dev: false
 
-  /@hyas/doks-core@1.0.7(react-dom@16.14.0)(react@16.14.0):
-    resolution: {integrity: sha512-UtCuQyR6OyzlCxPxi9Rh60eu/h4G778eduIIDEa6z0l5Ysrv4GCp2bBWMxkx5gETYoQM43J7gJBsD+VbMx1MaQ==}
+  /@hyas/doks-core@1.1.2(react-dom@16.14.0)(react@16.14.0):
+    resolution: {integrity: sha512-/c2EuXX5BVo5z1NsOo0TTPk/TtPjFEojK9rn1ljL0wN2b7yJuUV2hFBfvge6OfSvEc/YsR46oIKhcap2sIj7jA==}
     engines: {node: '>=16.12.0'}
     dependencies:
       '@hyas/bootstrap': 1.0.4
-      '@hyas/images': 1.0.2
+      '@hyas/images': 2.0.3
       '@hyas/inline-svg': 1.0.5
-      '@hyas/seo': 1.0.4
-      '@tabler/icons': 2.39.0
+      '@hyas/seo': 2.1.0
+      '@tabler/icons': 2.42.0
       clipboard: 2.0.11
       flexsearch: 0.7.31
       gethyas: 2.2.2(react-dom@16.14.0)(react@16.14.0)
@@ -1339,8 +1339,8 @@ packages:
       - typescript
     dev: false
 
-  /@hyas/images@1.0.2:
-    resolution: {integrity: sha512-RuY0KY2XYZmohZFYptKEyJA7v6zgbm88t/VbANril5gCwk/BxmitPBMGMmADcYlTW/hTWucI3crQA66G/iw4hQ==}
+  /@hyas/images@2.0.3:
+    resolution: {integrity: sha512-4LqRiOZDQ3h0qyNBCRqfBD3yKwsVWmhPe0/JGuxtn6Kpr7GdTOBKNcfKunR8MATIBI15/Zulil9bYsFnCGr8Cw==}
     engines: {node: '>=16.12.0'}
     dev: false
 
@@ -1349,8 +1349,8 @@ packages:
     engines: {node: '>=16.12.0'}
     dev: false
 
-  /@hyas/seo@1.0.4:
-    resolution: {integrity: sha512-BZa8Hnz4jy2pplnjo1+9DnxoeIsduRM4skWt6OZE/1anUXkAK+Py/RNtBxJTfW3ZS1vYfKGU+HWGeabg/21vEA==}
+  /@hyas/seo@2.1.0:
+    resolution: {integrity: sha512-yeXZuK1IUXd5xbD683lYqdLl0PVafArWYHoZmqKTYBl7I7ewDYWIzU020Nzf0D447RxwzOoC76SVVmlnY6qGGQ==}
     engines: {node: '>=16.12.0'}
     dev: false
 
@@ -1427,8 +1427,8 @@ packages:
       defer-to-connect: 2.0.1
     dev: false
 
-  /@tabler/icons@2.39.0:
-    resolution: {integrity: sha512-iK3j2jIEGIUaJcbYYg5iwyG1Y/m4lzUxAUbxRpvgeXCWP29jvZaH5hajZmU3KaSealddHuJg7PSQislPHpCsoQ==}
+  /@tabler/icons@2.42.0:
+    resolution: {integrity: sha512-ynV4iaC1c1mUhuAr9HRaoq8KrWYmZ0bJEpOh7qTBE+OfdDsdvQUe+0S7FW+DHkJ4RuxQMdO8djrZK7HrUw9YMA==}
     dev: false
 
   /@types/cacheable-request@6.0.3:
@@ -3656,8 +3656,8 @@ packages:
     engines: {node: '>= 8'}
     dev: false
 
-  /mermaid@10.5.0:
-    resolution: {integrity: sha512-9l0o1uUod78D3/FVYPGSsgV+Z0tSnzLBDiC9rVzvelPxuO80HbN1oDr9ofpPETQy9XpypPQa26fr09VzEPfvWA==}
+  /mermaid@10.6.1:
+    resolution: {integrity: sha512-Hky0/RpOw/1il9X8AvzOEChfJtVvmXm+y7JML5C//ePYMy0/9jCEmW1E1g86x9oDfW9+iVEdTV/i+M6KWRNs4A==}
     dependencies:
       '@braintree/sanitize-url': 6.0.4
       '@types/d3-scale': 4.0.6

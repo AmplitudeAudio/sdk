@@ -1,11 +1,11 @@
 title = "Amplitude Audio SDK"
-baseurl = ""
+baseurl = "/"
 canonifyURLs = false
 disableAliases = true
 disableHugoGeneratorInject = true
 # disableKinds = ["taxonomy", "term"]
 enableEmoji = true
-enableGitInfo = false
+enableGitInfo = true
 enableRobotsTXT = true
 languageCode = "en-US"
 paginate = 10
@@ -17,7 +17,10 @@ defaultContentLanguage = "en"
 disableLanguages = ["de", "nl"]
 defaultContentLanguageInSubdir = false
 
-copyRight = "Copyright © 2023 Sparky Studios - Licensed under Apache-2.0"
+copyRight = "Copyright © 2023 Sparky Studios"
+
+[build.buildStats]
+  enable = true
 
 [social]
   twitter = "na2axl"
@@ -34,12 +37,12 @@ copyRight = "Copyright © 2023 Sparky Studios - Licensed under Apache-2.0"
 
 # Add output format for section sitemap.xml
 [outputFormats.SITEMAP]
-mediaType = "application/xml"
-baseName = "sitemap"
-isHTML = false
-isPlainText = true
-noUgly = true
-rel  = "sitemap"
+  mediaType = "application/xml"
+  baseName = "sitemap"
+  isHTML = false
+  isPlainText = true
+  noUgly = true
+  rel  = "sitemap"
 
 [sitemap]
   changefreq = "monthly"
