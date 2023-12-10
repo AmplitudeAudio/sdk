@@ -16,10 +16,7 @@
 
 #include <c/include/amplitude_engine.h>
 
-#define BOOL_TO_AM_BOOL(x) ((x) ? AM_TRUE : AM_FALSE)
-#define AM_BOOL_TO_BOOL(x) ((x) == AM_TRUE)
-
-using namespace SparkyStudios::Audio::Amplitude;
+#include "amplitude_internals.h"
 
 extern "C" {
 AM_API_PUBLIC am_bool am_engine_initialize(const am_oschar* config_path)
@@ -62,9 +59,9 @@ AM_API_PUBLIC am_bool am_engine_load_soundbank(const am_oschar* path)
     return BOOL_TO_AM_BOOL(amEngine->LoadSoundBank(path));
 }
 
-AM_API_PUBLIC am_bool am_engine_load_soundbank_get_id(const am_oschar* path, am_uint64& out_id)
+AM_API_PUBLIC am_bool am_engine_load_soundbank_get_id(const am_oschar* path, am_uint64* out_id)
 {
-    return BOOL_TO_AM_BOOL(amEngine->LoadSoundBank(path, out_id));
+    return BOOL_TO_AM_BOOL(amEngine->LoadSoundBank(path, *out_id));
 }
 
 AM_API_PUBLIC am_bool am_engine_load_soundbank_from_memory(const char* fileData)
@@ -72,9 +69,9 @@ AM_API_PUBLIC am_bool am_engine_load_soundbank_from_memory(const char* fileData)
     return BOOL_TO_AM_BOOL(amEngine->LoadSoundBankFromMemory(fileData));
 }
 
-AM_API_PUBLIC am_bool am_engine_load_soundbank_from_memory_get_id(const char* fileData, am_uint64& out_id)
+AM_API_PUBLIC am_bool am_engine_load_soundbank_from_memory_get_id(const char* fileData, am_uint64* out_id)
 {
-    return BOOL_TO_AM_BOOL(amEngine->LoadSoundBankFromMemory(fileData, out_id));
+    return BOOL_TO_AM_BOOL(amEngine->LoadSoundBankFromMemory(fileData, *out_id));
 }
 
 AM_API_PUBLIC am_bool am_engine_load_soundbank_from_memory_view(am_uint8* ptr, const am_size size)
@@ -82,9 +79,9 @@ AM_API_PUBLIC am_bool am_engine_load_soundbank_from_memory_view(am_uint8* ptr, c
     return BOOL_TO_AM_BOOL(amEngine->LoadSoundBankFromMemoryView(ptr, size));
 }
 
-AM_API_PUBLIC am_bool am_engine_load_soundbank_from_memory_view_get_id(am_uint8* ptr, const am_size size, am_uint64& out_id)
+AM_API_PUBLIC am_bool am_engine_load_soundbank_from_memory_view_get_id(am_uint8* ptr, const am_size size, am_uint64* out_id)
 {
-    return BOOL_TO_AM_BOOL(amEngine->LoadSoundBankFromMemoryView(ptr, size, out_id));
+    return BOOL_TO_AM_BOOL(amEngine->LoadSoundBankFromMemoryView(ptr, size, *out_id));
 }
 
 AM_API_PUBLIC void am_engine_unload_soundbank_by_name(const am_oschar* path)
@@ -387,11 +384,11 @@ AM_API_PUBLIC am_bus_handle am_engine_find_bus_by_id(const am_uint64 id)
 }
 
 AM_API_PUBLIC am_channel_handle
-am_engine_play_switch_container_world(am_switch_container_handle handle, const am_vec3& location, am_float32 user_gain)
+am_engine_play_switch_container_world(am_switch_container_handle handle, const am_vec3* location, am_float32 user_gain)
 {
     const auto h = reinterpret_cast<SwitchContainerHandle>(handle);
 
-    return reinterpret_cast<am_channel_handle>(amEngine->Play(h, location, user_gain).GetState());
+    return reinterpret_cast<am_channel_handle>(amEngine->Play(h, *location, user_gain).GetState());
 }
 
 AM_API_PUBLIC am_channel_handle
@@ -403,11 +400,11 @@ am_engine_play_switch_container_entity(am_switch_container_handle handle, am_ent
     return reinterpret_cast<am_channel_handle>(amEngine->Play(h, e, user_gain).GetState());
 }
 
-AM_API_PUBLIC am_channel_handle am_engine_play_collection_world(am_collection_handle handle, const am_vec3& location, am_float32 user_gain)
+AM_API_PUBLIC am_channel_handle am_engine_play_collection_world(am_collection_handle handle, const am_vec3* location, am_float32 user_gain)
 {
     const auto h = reinterpret_cast<CollectionHandle>(handle);
 
-    return reinterpret_cast<am_channel_handle>(amEngine->Play(h, location, user_gain).GetState());
+    return reinterpret_cast<am_channel_handle>(amEngine->Play(h, *location, user_gain).GetState());
 }
 
 AM_API_PUBLIC am_channel_handle am_engine_play_collection_entity(am_collection_handle handle, am_entity_handle entity, am_float32 user_gain)
@@ -418,11 +415,11 @@ AM_API_PUBLIC am_channel_handle am_engine_play_collection_entity(am_collection_h
     return reinterpret_cast<am_channel_handle>(amEngine->Play(h, e, user_gain).GetState());
 }
 
-AM_API_PUBLIC am_channel_handle am_engine_play_sound_world(am_sound_handle handle, const am_vec3& location, am_float32 user_gain)
+AM_API_PUBLIC am_channel_handle am_engine_play_sound_world(am_sound_handle handle, const am_vec3* location, am_float32 user_gain)
 {
     const auto h = reinterpret_cast<SoundHandle>(handle);
 
-    return reinterpret_cast<am_channel_handle>(amEngine->Play(h, location, user_gain).GetState());
+    return reinterpret_cast<am_channel_handle>(amEngine->Play(h, *location, user_gain).GetState());
 }
 
 AM_API_PUBLIC am_channel_handle am_engine_play_sound_entity(am_sound_handle handle, am_entity_handle entity, am_float32 user_gain)
@@ -433,9 +430,9 @@ AM_API_PUBLIC am_channel_handle am_engine_play_sound_entity(am_sound_handle hand
     return reinterpret_cast<am_channel_handle>(amEngine->Play(h, e, user_gain).GetState());
 }
 
-AM_API_PUBLIC am_channel_handle am_engine_play_sound_object_by_name_world(const char* name, const am_vec3& location, am_float32 user_gain)
+AM_API_PUBLIC am_channel_handle am_engine_play_sound_object_by_name_world(const char* name, const am_vec3* location, am_float32 user_gain)
 {
-    return reinterpret_cast<am_channel_handle>(amEngine->Play(name, location, user_gain).GetState());
+    return reinterpret_cast<am_channel_handle>(amEngine->Play(name, *location, user_gain).GetState());
 }
 
 AM_API_PUBLIC am_channel_handle am_engine_play_sound_object_by_name_entity(const char* name, am_entity_handle entity, am_float32 user_gain)
@@ -445,9 +442,9 @@ AM_API_PUBLIC am_channel_handle am_engine_play_sound_object_by_name_entity(const
     return reinterpret_cast<am_channel_handle>(amEngine->Play(name, e, user_gain).GetState());
 }
 
-AM_API_PUBLIC am_channel_handle am_engine_play_sound_object_by_id_world(am_uint64 id, const am_vec3& location, am_float32 user_gain)
+AM_API_PUBLIC am_channel_handle am_engine_play_sound_object_by_id_world(am_uint64 id, const am_vec3* location, am_float32 user_gain)
 {
-    return reinterpret_cast<am_channel_handle>(amEngine->Play(id, location, user_gain).GetState());
+    return reinterpret_cast<am_channel_handle>(amEngine->Play(id, *location, user_gain).GetState());
 }
 
 AM_API_PUBLIC am_channel_handle am_engine_play_sound_object_by_id_entity(am_uint64 id, am_entity_handle entity, am_float32 user_gain)

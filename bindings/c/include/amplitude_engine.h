@@ -12,8 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef SS_AMPLITUDE_AUDIO_SDK_H
-#define SS_AMPLITUDE_AUDIO_SDK_H
+#ifndef SS_AMPLITUDE_ENGINE_H
+#define SS_AMPLITUDE_ENGINE_H
 
 #include "amplitude_common.h"
 
@@ -159,7 +159,7 @@ am_bool am_engine_load_soundbank(const am_oschar* path);
  *
  * @return @c true when the sound bank is successfully loaded, @c false otherwise.
  */
-am_bool am_engine_load_soundbank_get_id(const am_oschar* path, am_uint64& out_id);
+am_bool am_engine_load_soundbank_get_id(const am_oschar* path, am_uint64* out_id);
 
 /**
  * @brief Loads a sound bank from memory. Queue the sound files in that sound
@@ -182,7 +182,7 @@ am_bool am_engine_load_soundbank_from_memory(const char* fileData);
  *
  * @return @c true when the sound bank is successfully loaded, @c false otherwise.
  */
-am_bool am_engine_load_soundbank_from_memory_get_id(const char* fileData, am_uint64& out_id);
+am_bool am_engine_load_soundbank_from_memory_get_id(const char* fileData, am_uint64* out_id);
 
 /**
  * @brief Loads a sound bank from memory. Queue the sound files in that sound
@@ -207,7 +207,7 @@ am_bool am_engine_load_soundbank_from_memory_view(am_uint8* ptr, am_size size);
  *
  * @return @c true when the sound bank is successfully loaded, @c false otherwise.
  */
-am_bool am_engine_load_soundbank_from_memory_view_get_id(am_uint8* ptr, am_size size, am_uint64& out_id);
+am_bool am_engine_load_soundbank_from_memory_view_get_id(am_uint8* ptr, am_size size, am_uint64* out_id);
 
 /**
  * @brief Unloades a sound bank.
@@ -649,7 +649,7 @@ am_bus_handle am_engine_find_bus_by_id(am_uint64 id);
  *         played, an invalid Channel is returned.
  */
 am_channel_handle am_engine_play_switch_container_world(
-    am_switch_container_handle handle, const am_vec3& location = {}, am_float32 user_gain = 1.0f);
+    am_switch_container_handle handle, const am_vec3* location, am_float32 user_gain);
 
 /**
  * @brief Plays a switch container associated with the given handle in an Entity scope with the
@@ -663,7 +663,7 @@ am_channel_handle am_engine_play_switch_container_world(
  *         played, an invalid Channel is returned.
  */
 am_channel_handle am_engine_play_switch_container_entity(
-    am_switch_container_handle handle, am_entity_handle entity, am_float32 user_gain = 1.0f);
+    am_switch_container_handle handle, am_entity_handle entity, am_float32 user_gain);
 
 /**
  * @brief Plays a collection associated with the given handle in the location with
@@ -676,7 +676,7 @@ am_channel_handle am_engine_play_switch_container_entity(
  * @return The channel the collection is played on. If the collection could not be
  * played, an invalid Channel is returned.
  */
-am_channel_handle am_engine_play_collection_world(am_collection_handle handle, const am_vec3& location = {}, am_float32 user_gain = 1.0f);
+am_channel_handle am_engine_play_collection_world(am_collection_handle handle, const am_vec3* location, am_float32 user_gain);
 
 /**
  * @brief Plays a collection associated with the given handle in an Entity scope
@@ -689,7 +689,7 @@ am_channel_handle am_engine_play_collection_world(am_collection_handle handle, c
  * @return The channel the collection is played on. If the collection could not be
  * played, an invalid Channel is returned.
  */
-am_channel_handle am_engine_play_collection_entity(am_collection_handle handle, am_entity_handle entity, am_float32 user_gain = 1.0f);
+am_channel_handle am_engine_play_collection_entity(am_collection_handle handle, am_entity_handle entity, am_float32 user_gain);
 
 /**
  * @brief Plays a sound associated with the given handle in the World scope
@@ -702,7 +702,7 @@ am_channel_handle am_engine_play_collection_entity(am_collection_handle handle, 
  * @return The channel the sound is played on. If the sound could not be
  * played, an invalid Channel is returned.
  */
-am_channel_handle am_engine_play_sound_world(am_sound_handle handle, const am_vec3& location = {}, am_float32 user_gain = 1.0f);
+am_channel_handle am_engine_play_sound_world(am_sound_handle handle, const am_vec3* location, am_float32 user_gain);
 
 /**
  * @brief Plays a sound associated with the given handle in an Entity scope
@@ -715,7 +715,7 @@ am_channel_handle am_engine_play_sound_world(am_sound_handle handle, const am_ve
  * @return The channel the sound is played on. If the sound could not be
  * played, an invalid Channel is returned.
  */
-am_channel_handle am_engine_play_sound_entity(am_sound_handle handle, am_entity_handle entity, am_float32 user_gain = 1.0f);
+am_channel_handle am_engine_play_sound_entity(am_sound_handle handle, am_entity_handle entity, am_float32 user_gain);
 
 /**
  * @brief Plays a sound object associated with the given name in the World scope.
@@ -730,7 +730,7 @@ am_channel_handle am_engine_play_sound_entity(am_sound_handle handle, am_entity_
  * @return The channel the sound is played on. If the object could not be
  * played, an invalid Channel is returned.
  */
-am_channel_handle am_engine_play_sound_object_by_name_world(const char* name, const am_vec3& location = {}, am_float32 user_gain = 1.0f);
+am_channel_handle am_engine_play_sound_object_by_name_world(const char* name, const am_vec3* location, am_float32 user_gain);
 
 /**
  * @brief Plays a sound object associated with the given name in an Entity scope.
@@ -745,7 +745,7 @@ am_channel_handle am_engine_play_sound_object_by_name_world(const char* name, co
  * @return The channel the sound is played on. If the object could not be
  * played, an invalid Channel is returned.
  */
-am_channel_handle am_engine_play_sound_object_by_name_entity(const char* name, am_entity_handle entity, am_float32 user_gain = 1.0f);
+am_channel_handle am_engine_play_sound_object_by_name_entity(const char* name, am_entity_handle entity, am_float32 user_gain);
 
 /**
  * @brief Plays a sound object associated with the given ID in the
@@ -761,7 +761,7 @@ am_channel_handle am_engine_play_sound_object_by_name_entity(const char* name, a
  * @return The channel the sound is played on. If the sound could not be
  * played, an invalid Channel is returned.
  */
-am_channel_handle am_engine_play_sound_object_by_id_world(am_uint64 id, const am_vec3& location = {}, am_float32 user_gain = 1.0f);
+am_channel_handle am_engine_play_sound_object_by_id_world(am_uint64 id, const am_vec3* location, am_float32 user_gain);
 
 /**
  * @brief Plays a sound object associated with the given ID in an Entity
@@ -777,7 +777,7 @@ am_channel_handle am_engine_play_sound_object_by_id_world(am_uint64 id, const am
  * @return The channel the sound is played on. If the sound could not be
  * played, an invalid Channel is returned.
  */
-am_channel_handle am_engine_play_sound_object_by_id_entity(am_uint64 id, am_entity_handle entity, am_float32 user_gain = 1.0f);
+am_channel_handle am_engine_play_sound_object_by_id_entity(am_uint64 id, am_entity_handle entity, am_float32 user_gain);
 
 /**
  * @brief Stops all playing sound objects.
@@ -816,4 +816,4 @@ void am_engine_destroy_instance();
 }
 #endif
 
-#endif // SS_AMPLITUDE_AUDIO_SDK_H
+#endif // SS_AMPLITUDE_ENGINE_H

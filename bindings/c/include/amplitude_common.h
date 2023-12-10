@@ -12,8 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#pragma once
-
 #ifndef SS_AMPLITUDE_COMMON_H
 #define SS_AMPLITUDE_COMMON_H
 
