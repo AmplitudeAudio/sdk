@@ -31,6 +31,7 @@ add_dependencies(ss_amplitude_audio_sample_assets
 
 add_subdirectory(sample_01)
 add_subdirectory(sample_02)
+add_subdirectory(sample_03)
 
 install(
     CODE "execute_process(COMMAND python3 ${CMAKE_CURRENT_SOURCE_DIR}/../scripts/build_project.py -p ${CMAKE_SOURCE_DIR}/samples/rawassets -b ${CMAKE_INSTALL_PREFIX}/${AM_BIN_DESTINATION}/samples/assets -f ${CMAKE_SOURCE_DIR}/bin/flatc WORKING_DIRECTORY ${CMAKE_SOURCE_DIR})"
