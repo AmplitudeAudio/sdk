@@ -1,4 +1,4 @@
-// Copyright (c) 2021-present Sparky Studios. All rights reserved.
+// Copyright (c) 2023-present Sparky Studios. All rights reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -44,33 +44,33 @@ AM_API_PUBLIC void am_memory_manager_deinitialize()
     MemoryManager::Deinitialize();
 }
 
-AM_API_PUBLIC am_bool am_memeory_manager_is_initialized()
+AM_API_PUBLIC am_bool am_memory_manager_is_initialized()
 {
     return BOOL_TO_AM_BOOL(MemoryManager::IsInitialized());
 }
 
-AM_API_PUBLIC void* am_memory_manager_malloc(am_memory_pool_kind pool, am_size size, const char* file, am_uint32 line)
+AM_API_PUBLIC am_voidptr am_memory_manager_malloc(am_memory_pool_kind pool, am_size size, const char* file, am_uint32 line)
 {
     return amMemory->Malloc(static_cast<MemoryPoolKind>(pool), size, file, line);
 }
 
-AM_API_PUBLIC void* am_memory_manager_malign(am_memory_pool_kind pool, am_size size, am_uint32 alignment, const char* file, am_uint32 line)
+AM_API_PUBLIC am_voidptr am_memory_manager_malign(am_memory_pool_kind pool, am_size size, am_uint32 alignment, const char* file, am_uint32 line)
 {
     return amMemory->Malign(static_cast<MemoryPoolKind>(pool), size, alignment, file, line);
 }
 
-AM_API_PUBLIC void* am_memory_manager_realloc(am_memory_pool_kind pool, void* address, am_size size, const char* file, am_uint32 line)
+AM_API_PUBLIC am_voidptr am_memory_manager_realloc(am_memory_pool_kind pool, am_voidptr address, am_size size, const char* file, am_uint32 line)
 {
     return amMemory->Realloc(static_cast<MemoryPoolKind>(pool), address, size, file, line);
 }
 
-AM_API_PUBLIC void* am_memory_manager_realign(
-    am_memory_pool_kind pool, void* address, am_size size, am_uint32 alignment, const char* file, am_uint32 line)
+AM_API_PUBLIC am_voidptr am_memory_manager_realign(
+    am_memory_pool_kind pool, am_voidptr address, am_size size, am_uint32 alignment, const char* file, am_uint32 line)
 {
     return amMemory->Realign(static_cast<MemoryPoolKind>(pool), address, size, alignment, file, line);
 }
 
-AM_API_PUBLIC void am_memory_manager_free(am_memory_pool_kind pool, void* address)
+AM_API_PUBLIC void am_memory_manager_free(am_memory_pool_kind pool, am_voidptr address)
 {
     amMemory->Free(static_cast<MemoryPoolKind>(pool), address);
 }
@@ -80,7 +80,7 @@ AM_API_PUBLIC am_size am_memory_manager_total_reserved_memory_size()
     return amMemory->TotalReservedMemorySize();
 }
 
-AM_API_PUBLIC am_size am_memory_manager_size_of(am_memory_pool_kind pool, const void* address)
+AM_API_PUBLIC am_size am_memory_manager_size_of(am_memory_pool_kind pool, const am_voidptr address)
 {
     return amMemory->SizeOf(static_cast<MemoryPoolKind>(pool), address);
 }

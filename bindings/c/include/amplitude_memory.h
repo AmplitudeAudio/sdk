@@ -74,19 +74,19 @@ typedef enum am_memory_pool_kind
     am_memory_pool_kind_max,
 } am_memory_pool_kind;
 
-typedef void* (*am_memory_malloc_callback)(am_memory_pool_kind pool, am_size size);
+typedef am_voidptr (*am_memory_malloc_proc)(am_memory_pool_kind pool, am_size size);
 
-typedef void* (*am_memory_realloc_callback)(am_memory_pool_kind pool, void* address, am_size size);
+typedef am_voidptr (*am_memory_realloc_proc)(am_memory_pool_kind pool, am_voidptr address, am_size size);
 
-typedef void* (*am_memory_malloc_aligned_callback)(am_memory_pool_kind pool, am_size size, am_uint32 alignment);
+typedef am_voidptr (*am_memory_malloc_aligned_proc)(am_memory_pool_kind pool, am_size size, am_uint32 alignment);
 
-typedef void* (*am_memory_realloc_aligned_callback)(am_memory_pool_kind pool, void* address, am_size size, am_uint32 alignment);
+typedef am_voidptr (*am_memory_realloc_aligned_proc)(am_memory_pool_kind pool, am_voidptr address, am_size size, am_uint32 alignment);
 
-typedef void (*am_memory_free_callback)(am_memory_pool_kind pool, void* address);
+typedef void (*am_memory_free_proc)(am_memory_pool_kind pool, am_voidptr address);
 
-typedef am_size (*am_memory_total_reserved_memory_size_callback)();
+typedef am_size (*am_memory_total_reserved_memory_size_proc)();
 
-typedef am_size (*am_memory_size_of_callback)(am_memory_pool_kind pool, const void* address);
+typedef am_size (*am_memory_size_of_proc)(am_memory_pool_kind pool, const am_voidptr address);
 
 /**
  * @brief Configures the memory management system.
@@ -96,38 +96,38 @@ typedef struct am_memory_manager_config
     /**
      * @brief Memory allocation callback.
      */
-    am_memory_malloc_callback malloc;
+    am_memory_malloc_proc malloc;
 
     /**
      * @brief Memory reallocation callback.
      */
-    am_memory_realloc_callback realloc;
+    am_memory_realloc_proc realloc;
 
     /**
      * @brief Aligned memory allocation callback.
      */
-    am_memory_malloc_aligned_callback malign;
+    am_memory_malloc_aligned_proc malign;
 
     /**
      * @brief Aligned memory reallocation callback.
      */
-    am_memory_realloc_aligned_callback realign;
+    am_memory_realloc_aligned_proc realign;
 
     /**
      * @brief Memory release callback.
      */
-    am_memory_free_callback free;
+    am_memory_free_proc free;
 
     /**
      * @brief Callback to get the total size of the memory allocated across memory pools
      *
      */
-    am_memory_total_reserved_memory_size_callback total_reserved_memory_size;
+    am_memory_total_reserved_memory_size_proc total_reserved_memory_size;
 
     /**
      * @brief Callback to get the total size of memory for a specific pool.
      */
-    am_memory_size_of_callback size_of;
+    am_memory_size_of_proc size_of;
 } am_memory_manager_config;
 
 #ifdef __cplusplus
@@ -158,7 +158,7 @@ void am_memory_manager_deinitialize();
  *
  * @return Whether the memory manager is initialized.
  */
-am_bool am_memeory_manager_is_initialized();
+am_bool am_memory_manager_is_initialized();
 
 /**
  * @brief Allocates a block of memory with the given size in the given pool.
@@ -170,7 +170,7 @@ am_bool am_memeory_manager_is_initialized();
  *
  * @return A pointer to the allocated block.
  */
-void* am_memory_manager_malloc(am_memory_pool_kind pool, am_size size, const char* file, am_uint32 line);
+am_voidptr am_memory_manager_malloc(am_memory_pool_kind pool, am_size size, const char* file, am_uint32 line);
 
 /**
  * @brief Allocates a block of memory with the given size and the given alignment,
@@ -184,7 +184,8 @@ void* am_memory_manager_malloc(am_memory_pool_kind pool, am_size size, const cha
  *
  * @return A pointer to the allocated block.
  */
-void* am_memory_manager_malign(am_memory_pool_kind pool, am_size size, am_uint32 alignment, const char* file, am_uint32 line);
+am_voidptr
+am_memory_manager_malign(am_memory_pool_kind pool, am_size size, am_uint32 alignment, const char* file, am_uint32 line);
 
 /**
  * @brief Updates the size of a previously allocated memory.
@@ -197,7 +198,7 @@ void* am_memory_manager_malign(am_memory_pool_kind pool, am_size size, am_uint32
  *
  * @return A pointer to the allocated block. Maybe equal to address if the original pointer had enough memory.
  */
-void* am_memory_manager_realloc(am_memory_pool_kind pool, void* address, am_size size, const char* file, am_uint32 line);
+am_voidptr am_memory_manager_realloc(am_memory_pool_kind pool, am_voidptr address, am_size size, const char* file, am_uint32 line);
 
 /**
  * @brief Updates the size of a previously allocated aligned memory.
@@ -211,8 +212,8 @@ void* am_memory_manager_realloc(am_memory_pool_kind pool, void* address, am_size
  *
  * @return A pointer to the allocated block. Maybe equal to address if the original pointer had enough memory.
  */
-void* am_memory_manager_realign(
-    am_memory_pool_kind pool, void* address, am_size size, am_uint32 alignment, const char* file, am_uint32 line);
+am_voidptr
+am_memory_manager_realign(am_memory_pool_kind pool, am_voidptr address, am_size size, am_uint32 alignment, const char* file, am_uint32 line);
 
 /**
  * @brief Releases an allocated memory block.
@@ -220,7 +221,7 @@ void* am_memory_manager_realign(
  * @param pool The memory pool to release from.
  * @param address The address of the memory to release.
  */
-void am_memory_manager_free(am_memory_pool_kind pool, void* address);
+void am_memory_manager_free(am_memory_pool_kind pool, am_voidptr address);
 
 /**
  * @brief Gets the total allocated size.
@@ -237,7 +238,7 @@ am_size am_memory_manager_total_reserved_memory_size();
  *
  * @return The size of the given memory block.
  */
-am_size am_memory_manager_size_of(am_memory_pool_kind pool, const void* address);
+am_size am_memory_manager_size_of(am_memory_pool_kind pool, const am_voidptr address);
 
 #ifndef AM_NO_MEMORY_STATS
 /**

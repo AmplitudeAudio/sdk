@@ -53,6 +53,8 @@ typedef unsigned long long am_uint64;
 #endif
 #endif
 
+typedef void* am_voidptr;
+
 typedef am_uint32 am_bool;
 #define AM_TRUE 1
 #define AM_FALSE 0
