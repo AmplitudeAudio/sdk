@@ -22,4 +22,17 @@
 
 using namespace SparkyStudios::Audio::Amplitude;
 
+inline const char* am_allocate_string(const char* str)
+{
+    const size_t len = strlen(str) + 1;
+    auto* result = static_cast<char*>(ammalloc(len));
+    std::memcpy(result, str, len);
+    return result;
+}
+
+inline void am_free_string(const char* str)
+{
+    amfree(const_cast<char*>(str));
+}
+
 #endif // SS_AMPLITUDE_INTERNALS_H

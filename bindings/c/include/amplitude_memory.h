@@ -184,8 +184,7 @@ am_voidptr am_memory_manager_malloc(am_memory_pool_kind pool, am_size size, cons
  *
  * @return A pointer to the allocated block.
  */
-am_voidptr
-am_memory_manager_malign(am_memory_pool_kind pool, am_size size, am_uint32 alignment, const char* file, am_uint32 line);
+am_voidptr am_memory_manager_malign(am_memory_pool_kind pool, am_size size, am_uint32 alignment, const char* file, am_uint32 line);
 
 /**
  * @brief Updates the size of a previously allocated memory.
@@ -212,8 +211,8 @@ am_voidptr am_memory_manager_realloc(am_memory_pool_kind pool, am_voidptr addres
  *
  * @return A pointer to the allocated block. Maybe equal to address if the original pointer had enough memory.
  */
-am_voidptr
-am_memory_manager_realign(am_memory_pool_kind pool, am_voidptr address, am_size size, am_uint32 alignment, const char* file, am_uint32 line);
+am_voidptr am_memory_manager_realign(
+    am_memory_pool_kind pool, am_voidptr address, am_size size, am_uint32 alignment, const char* file, am_uint32 line);
 
 /**
  * @brief Releases an allocated memory block.
@@ -239,6 +238,13 @@ am_size am_memory_manager_total_reserved_memory_size();
  * @return The size of the given memory block.
  */
 am_size am_memory_manager_size_of(am_memory_pool_kind pool, const am_voidptr address);
+
+/**
+ * @brief Frees memory for an allocated string.
+ *
+ * @param str The string to free.
+ */
+void am_memory_free_str(const char* str);
 
 #ifndef AM_NO_MEMORY_STATS
 /**

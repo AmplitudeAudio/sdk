@@ -54,18 +54,20 @@ AM_API_PUBLIC am_voidptr am_memory_manager_malloc(am_memory_pool_kind pool, am_s
     return amMemory->Malloc(static_cast<MemoryPoolKind>(pool), size, file, line);
 }
 
-AM_API_PUBLIC am_voidptr am_memory_manager_malign(am_memory_pool_kind pool, am_size size, am_uint32 alignment, const char* file, am_uint32 line)
+AM_API_PUBLIC am_voidptr
+am_memory_manager_malign(am_memory_pool_kind pool, am_size size, am_uint32 alignment, const char* file, am_uint32 line)
 {
     return amMemory->Malign(static_cast<MemoryPoolKind>(pool), size, alignment, file, line);
 }
 
-AM_API_PUBLIC am_voidptr am_memory_manager_realloc(am_memory_pool_kind pool, am_voidptr address, am_size size, const char* file, am_uint32 line)
+AM_API_PUBLIC am_voidptr
+am_memory_manager_realloc(am_memory_pool_kind pool, am_voidptr address, am_size size, const char* file, am_uint32 line)
 {
     return amMemory->Realloc(static_cast<MemoryPoolKind>(pool), address, size, file, line);
 }
 
-AM_API_PUBLIC am_voidptr am_memory_manager_realign(
-    am_memory_pool_kind pool, am_voidptr address, am_size size, am_uint32 alignment, const char* file, am_uint32 line)
+AM_API_PUBLIC am_voidptr
+am_memory_manager_realign(am_memory_pool_kind pool, am_voidptr address, am_size size, am_uint32 alignment, const char* file, am_uint32 line)
 {
     return amMemory->Realign(static_cast<MemoryPoolKind>(pool), address, size, alignment, file, line);
 }
@@ -85,10 +87,15 @@ AM_API_PUBLIC am_size am_memory_manager_size_of(am_memory_pool_kind pool, const 
     return amMemory->SizeOf(static_cast<MemoryPoolKind>(pool), address);
 }
 
+void am_memory_free_str(const char* str)
+{
+    am_free_string(str);
+}
+
 #ifndef AM_NO_MEMORY_STATS
 AM_API_PUBLIC const char* am_memory_manager_get_memory_pool_name(am_memory_pool_kind pool)
 {
-    return MemoryManager::GetMemoryPoolName(static_cast<MemoryPoolKind>(pool)).c_str();
+    return am_allocate_string(MemoryManager::GetMemoryPoolName(static_cast<MemoryPoolKind>(pool)).c_str());
 }
 
 AM_API_PUBLIC am_memory_pool_stats_handle am_memory_manager_get_stats(am_memory_pool_kind pool)
@@ -98,7 +105,7 @@ AM_API_PUBLIC am_memory_pool_stats_handle am_memory_manager_get_stats(am_memory_
 
 AM_API_PUBLIC const char* am_memory_manager_inspect_memory_leaks()
 {
-    return amMemory->InspectMemoryLeaks().c_str();
+    return am_allocate_string(amMemory->InspectMemoryLeaks().c_str());
 }
 #endif
 }

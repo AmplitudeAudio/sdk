@@ -355,10 +355,12 @@ set(SA_SOURCE
     src/Utils/intrusive_list.h
     src/Utils/Utils.h
 
+    bindings/c/include/amplitude_bus.h
     bindings/c/include/amplitude_common.h
     bindings/c/include/amplitude_engine.h
     bindings/c/include/amplitude_memory.h
     bindings/c/include/amplitude_thread.h
+    bindings/c/src/amplitude_bus.cpp
     bindings/c/src/amplitude_engine.cpp
     bindings/c/src/amplitude_memory.cpp
     bindings/c/src/amplitude_thread.cpp

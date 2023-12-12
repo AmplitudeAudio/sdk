@@ -12,7 +12,10 @@ void am_run(am_voidptr param)
 {
     printf("am_run\n");
 
-    printf("%s\n", am_memory_manager_get_memory_pool_name(am_memory_pool_kind_amplimix));
+    const char* name = am_memory_manager_get_memory_pool_name(am_memory_pool_kind_amplimix);
+    printf("%s\n", name);
+    am_memory_free_str(name);
+
     am_bool res = am_engine_is_initialized();
 
     am_engine_destroy_instance();
