@@ -1,11 +1,11 @@
 repo_name: SparkyStudios/AmplitudeAudioSDK
-report_id: 3a59b4cfebd002e2f7e0f568837d4c83
+report_id: 197fa5172b99bbbcc045ae54bcb9c4dc
 repo_type: Public
-timestamp: '2023-11-09T17:10:06+00:00'
+timestamp: '2023-12-14T09:50:51+00:00'
 requested_by: na2axl
 provider: github
 branch: develop
-detected_tools_count: 6
+detected_tools_count: 11
 tools:
 - name: C lang
   description: One of the most widely used programming languages of all time
@@ -36,6 +36,29 @@ tools:
   sub_category: Languages
   image_url: https://img.stackshare.io/service/993/pUBY5pVj.png
   detection_source: Repo Metadata
+- name: pgvector
+  description: Open-source vector similarity search for Postgres
+  website_url: https://github.com/pgvector/pgvector/
+  open_source: false
+  hosted_saas: false
+  category: Data Stores
+  sub_category: Database Tools
+  image_url: https://img.stackshare.io/service/109221/default_b888cdf5617d936aa6aacf130911906955508639.png
+  detection_source: CMakeLists.txt
+  last_updated_by: Axel Nana
+  last_updated_on: 2023-05-19 22:17:39.000000000 Z
+- name: Babel
+  description: Use next generation JavaScript, today.
+  website_url: http://babeljs.io/
+  license: MIT
+  open_source: true
+  hosted_saas: false
+  category: Build, Test, Deploy
+  sub_category: JavaScript Compilers
+  image_url: https://img.stackshare.io/service/2739/-1wfGjNw.png
+  detection_source: docs/config/babel.config.js
+  last_updated_by: Axel Nana
+  last_updated_on: 2023-06-04 18:11:06.000000000 Z
 - name: CMake
   description: 'An open-source system that manages the build process '
   website_url: http://www.cmake.org/
@@ -62,6 +85,38 @@ tools:
   category: Build, Test, Deploy
   sub_category: Continuous Integration
   image_url: https://img.stackshare.io/service/11563/actions.png
-  detection_source: ".github/workflows/docs.yml"
+  detection_source: ".github/workflows/build.yml"
   last_updated_by: Axel Nana
-  last_updated_on: 2021-11-12 15:30:12.000000000 Z
+  last_updated_on: 2023-11-07 15:20:29.000000000 Z
+- name: Netlify
+  description: Build, deploy and host your static site or app with a drag and drop
+    interface and automatic delpoys from GitHub or Bitbucket
+  website_url: https://www.netlify.com/
+  open_source: false
+  hosted_saas: true
+  category: Application Utilities
+  sub_category: Static Web Hosting
+  image_url: https://img.stackshare.io/service/2748/default_5dfbb146cf22182bca88c7d07f2515a5888fc12a.jpg
+  detection_source: docs/netlify.toml
+  last_updated_by: Axel Nana
+  last_updated_on: 2023-10-20 00:14:58.000000000 Z
+- name: HTML
+  description: Hypertext Markup Language for creating web pages.
+  website_url: http://
+  open_source: false
+  hosted_saas: false
+  image_url: https://img.stackshare.io/service/2270/no-img-open-source.png
+  detection_source: docs/layouts/index.html
+  last_updated_by: Axel Nana
+  last_updated_on: 2023-10-20 00:14:58.000000000 Z
+- name: LangChain
+  description: Build AI apps with LLMs through composability
+  website_url: https://github.com/hwchase17/langchain
+  open_source: true
+  hosted_saas: false
+  category: Communications
+  sub_category: Large Language Model Tools
+  image_url: https://img.stackshare.io/service/48790/default_5b6c6b73f1ff3775c85d2a1ba954cb87e30cbf13.jpg
+  detection_source: CMakeLists.txt
+  last_updated_by: Axel Nana
+  last_updated_on: 2021-08-15 17:22:17.000000000 Z
