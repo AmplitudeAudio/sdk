@@ -18,8 +18,6 @@
 #define _AM_CORE_THREAD_H
 
 #include <condition_variable>
-#include <mutex>
-#include <thread>
 
 #include <SparkyStudios/Audio/Amplitude/Core/Common.h>
 
@@ -242,7 +240,7 @@ namespace SparkyStudios::Audio::Amplitude
              *
              * @param[in] task The `PoolTask` to add. The task is not automatically deleted when the work is done.
              */
-            void AddTask(const std::shared_ptr<PoolTask>& task);
+            void AddTask(std::shared_ptr<PoolTask> task);
 
             /**
              * @brief Called from worker thread to get a new task.
@@ -273,6 +271,13 @@ namespace SparkyStudios::Audio::Amplitude
              * @return `true` if there are tasks pending, `false` otherwise.
              */
             [[nodiscard]] bool HasTasks() const;
+
+            /**
+             * @brief Gets the number of tasks in the pool.
+             *
+             * @return The number of tasks in the pool.
+             */
+            [[nodiscard]] AmInt32 GetTaskCount() const;
 
         private:
             AmUInt32 _threadCount; // number of threads
