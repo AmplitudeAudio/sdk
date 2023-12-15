@@ -67,7 +67,7 @@ static void run(AmVoidPtr param)
 {
     auto* ctx = static_cast<ExecutionContext*>(param);
 
-    ctx->fileLoader.SetBasePath(AM_OS_STRING("./assets"));
+    ctx->fileLoader.SetBasePath(AM_OS_STRING("../sample_project"));
     amEngine->SetFileSystem(&ctx->fileLoader);
 
     // Wait for the file system to complete loading.
