@@ -79,6 +79,11 @@ static void run(AmVoidPtr param)
     ctx->fileLoader.SetBasePath(AM_OS_STRING("./assets"));
     amEngine->SetFileSystem(&ctx->fileLoader);
 
+    // Wait for the file system to complete loading.
+    amEngine->StartOpenFileSystem();
+    while (!amEngine->TryFinalizeOpenFileSystem())
+        Thread::Sleep(1);
+
     const auto sdkPath = std::filesystem::path(std::getenv("AM_SDK_PATH"));
 
     Engine::AddPluginSearchPath(AM_OS_STRING("./assets/plugins"));
@@ -104,11 +109,6 @@ static void run(AmVoidPtr param)
 
     if (!amEngine->LoadSoundBank(AM_OS_STRING("sample_01.ambank")))
         return;
-
-    // Wait for the file system to complete loading.
-    amEngine->StartOpenFileSystem();
-    while (!amEngine->TryFinalizeOpenFileSystem())
-        Thread::Sleep(1);
 
     // Start loading sound files.
     amEngine->StartLoadSoundFiles();
@@ -384,4 +384,6 @@ int main(int argc, char* argv[])
 #endif
 
     MemoryManager::Deinitialize();
+
+    return 0;
 }

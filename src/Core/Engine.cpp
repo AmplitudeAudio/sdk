@@ -135,7 +135,7 @@ namespace SparkyStudios::Audio::Amplitude
             return nullptr;
         }
 
-        AmOsString pluginsDirectoryPath = std::filesystem::current_path();
+        AmOsString pluginsDirectoryPath = std::filesystem::current_path().native();
         const auto& finalName = AM_STRING_TO_OS_STRING(dylib::filename_components::prefix) + pluginLibraryName +
             AM_STRING_TO_OS_STRING(dylib::filename_components::suffix);
 
