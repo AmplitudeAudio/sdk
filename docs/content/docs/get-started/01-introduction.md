@@ -98,4 +98,4 @@ In your game you may have multiple sound object playing at the same time, which 
 
 ## ADPCM Compression and sample rate conversion
 
-Amplitude gives you a command line tool called **amac** (**Am**plitude **A**udio **C**ompressor). It allows to compress an audio sample with an high-quality ADPCM compression, and can optionally convert the sample rate. It's highly recommended to use **amac** when releasing a project running Amplitude.
+Amplitude gives you a command line tool called **amac** (**Am**plitude **A**udio **C**ompressor). It allows to compress an audio sample with a high-quality ADPCM compression, and can optionally convert the sample rate. It's highly recommended to use **amac** when releasing a project running Amplitude.

@@ -16,7 +16,7 @@ The flatbuffers schema of this file can be found [here](https://github.com/Spark
 
 When configuring buses, you are allowed to create as many buses as you want, but there should be at least one `master` bus. The master bus is a special bus that controls all the other buses. It should have a `id` attribute set to `1` and a `name` attribute set to `master`.
 
-{{< alert context="warning" text="If at the initialization of the engine, no master bus has been found, Amplitude will stop and you won't be able to play any audio." />}}
+{{< alert context="warning" text="If at the initialization of the engine, no master bus has been found, Amplitude will stop, and you won't be able to play any audio." />}}
 
 ## buses
 

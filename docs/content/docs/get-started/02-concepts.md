@@ -121,7 +121,7 @@ At the moment, Amplitude comes shipped with the following codecs:
 - [OGG](https://www.xiph.org/ogg/), a lossy audio codec.
 - [WAV](https://en.wikipedia.org/wiki/WAV), a lossy audio codec.
 - [MP3](https://en.wikipedia.org/wiki/MP3), a lossy audio codec.
-- [AMS] (Amplitude Audio Sample), a WAV-like codec built for Amplitude. It use an high quality [ADPCM](https://en.wikipedia.org/wiki/Adaptive_differential_pulse-code_modulation) compression.
+- [AMS] (Amplitude Audio Sample), a WAV-like codec built for Amplitude. It uses a high quality [ADPCM](https://en.wikipedia.org/wiki/Adaptive_differential_pulse-code_modulation) compression.
 
 {{< alert context="warning" text="The AMS codec implementation is subject to changes." />}}
 
@@ -154,9 +154,9 @@ A channel is the user interface between sound objects and [Amplimix](#amplimix).
 
 In Amplitude, the number of channels is determined at the Engine initialization. The total number of channels is the sum of the number of **active channels** and the number of **virtual channels**, which are both defined in the engine configuration file.
 
-Amplitude will manage the prioritization of sound objects and will automatically drop least important channels when too many sound objects are playing simultaneously. This is why the concept of active and virtual channels. The active channels are the channels which are actually playing and rendering audio, while the virtual channels are also playing audio but are not rendering it, and are only used to track low priority sounds which are still playing.
+Amplitude will manage the prioritization of sound objects and will automatically drop the least important channels when too many sound objects are playing simultaneously. This is why the concept of active and virtual channels. The active channels are the channels which are actually playing and rendering audio, while the virtual channels are also playing audio but are not rendering it, and are only used to track low priority sounds which are still playing.
 
-When requesting to play a sound object, the Engine will pick a channel in the list of free active channels. If there is no free channel, the Engine will pick a channel in the list of free virtual channels. If there is still no free channel, the Engine will drop the least important sound object. If the sound object to play is actually the one with lowest priority, it will not be played.
+When requesting to play a sound object, the Engine will pick a channel in the list of free active channels. If there is no free channel, the Engine will pick a channel in the list of free virtual channels. If there is still no free channel, the Engine will drop the least important sound object. If the sound object to play is actually the one with the lowest priority, it will not be played.
 
 ## Sound Instances
 
@@ -184,7 +184,7 @@ Amplimix is the part of Amplitude doing sound mixing. It is composed of two (02)
 
 ### Mixer Layers
 
-A Mixer Layer is responsible to consume audio data from sound instances and provide it to the Amplimix Pipeline. A mixer layer stores, for an unique sound instance, the related state for its playback, like the current position of the cursor, the current gain, the current pan, the current pitch, and the current sample rate converter.
+A Mixer Layer is responsible to consume audio data from sound instances and provide it to the Amplimix Pipeline. A mixer layer stores, for a unique sound instance, the related state for its playback, like the current position of the cursor, the current gain, the current pan, the current pitch, and the current sample rate converter.
 
 Amplimix have a maximum of 4096 mixer layers, which is the maximum number of sound instances that can be played simultaneously.
 
@@ -220,6 +220,6 @@ The default driver provided by Amplitude is built on top of the [MiniAudio](http
 
 ## Audio Device
 
-The audio Device renders audio. Amplitude have a copy of the current audio device description in the [DeviceDescription] stored in Amplimix. The device description gives the user requested audio format, and the actual audio format that the device is using. Its to the Driver implementation to fill the device description in Amplimix with the obtained values from the audio device.
+The audio Device renders audio. Amplitude have a copy of the current audio device description in the [DeviceDescription] stored in Amplimix. The device description gives the user requested audio format, and the actual audio format that the device is using. It's to the Driver implementation to fill the device description in Amplimix with the obtained values from the audio device.
 
 Amplimix will process the audio using the user requested format, and let to the driver the responsibility to convert the data to the device audio format.

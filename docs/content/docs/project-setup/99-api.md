@@ -151,7 +151,7 @@ Specifies the kind of value that should be used. The possible values are:
 | Static | The parameter is static value specified by the `value` field. |
 | RTPC   | The parameter is a RTPC value specified by the `rtpc` field.  |
 
-When the `kind` property is set to `Static`, it is required to defined a `value` field. When the `kind` property is set to `RTPC`, it is required to define a `rtpc` field.
+When the `kind` property is set to `Static`, it is required to define a `value` field. When the `kind` property is set to `RTPC`, it is required to define a `rtpc` field.
 
 The default value is `Static`.
 
