@@ -290,13 +290,11 @@ namespace SparkyStudios::Audio::Amplitude
         {
             if (layer.second != 0)
             {
-                const auto layerId = _channelLayersId[layer.first];
-
                 AmReal32 finalPitch = pitch;
-                if (_activeSounds[layerId]->GetSettings().m_kind != SoundKind::Standalone)
-                    finalPitch = pitch * _activeSounds[layerId]->GetSettings().m_pitch.GetValue();
+                if (_activeSounds[layer.first]->GetSettings().m_kind != SoundKind::Standalone)
+                    finalPitch = pitch * _activeSounds[layer.first]->GetSettings().m_pitch.GetValue();
 
-                _mixer->SetPitch(_channelId, layerId, finalPitch);
+                _mixer->SetPitch(_channelId, layer.second, finalPitch);
             }
         }
 
@@ -310,7 +308,7 @@ namespace SparkyStudios::Audio::Amplitude
         {
             if (layer.second != 0)
             {
-                _mixer->SetPlaySpeed(_channelId, _channelLayersId[layer.first], speed);
+                _mixer->SetPlaySpeed(_channelId, layer.second, speed);
             }
         }
 

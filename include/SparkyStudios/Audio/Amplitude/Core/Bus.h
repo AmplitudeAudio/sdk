@@ -123,7 +123,7 @@ namespace SparkyStudios::Audio::Amplitude
          *
          * @return true if this Bus is muted, false otherwise.
          */
-        [[nodiscard]] bool IsMute() const;
+        [[nodiscard]] bool IsMuted() const;
 
         /**
          * @brief Returns the internal state of this Bus.

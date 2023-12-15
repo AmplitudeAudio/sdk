@@ -24,7 +24,6 @@
 
 namespace SparkyStudios::Audio::Amplitude::Convolution
 {
-
     TwoStageConvolver::TwoStageConvolver()
         : _headBlockSize(0)
         , _tailBlockSize(0)
@@ -79,7 +78,7 @@ namespace SparkyStudios::Audio::Amplitude::Convolution
         }
 
         // Ignore zeros at the end of the impulse response because they only waste computation time
-        while (irLen > 0 && ::fabs(ir[irLen - 1]) < 0.000001f)
+        while (irLen > 0 && std::fabs(ir[irLen - 1]) < 0.000001f)
             --irLen;
 
         if (irLen == 0)

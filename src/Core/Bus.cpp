@@ -63,7 +63,7 @@ namespace SparkyStudios::Audio::Amplitude
         _state->SetMute(mute);
     }
 
-    bool Bus::IsMute() const
+    bool Bus::IsMuted() const
     {
         return _state->IsMute();
     }

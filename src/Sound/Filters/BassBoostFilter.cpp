@@ -25,7 +25,7 @@ namespace SparkyStudios::Audio::Amplitude
 
     AmResult BassBoostFilter::Init(AmReal32 aBoost)
     {
-        if (aBoost < ATTRIBUTE_WET)
+        if (aBoost < 0)
             return AM_ERROR_INVALID_PARAMETER;
 
         m_boost = aBoost;

@@ -375,6 +375,7 @@ int main(int argc, char* argv[])
     }
 
     Thread::Wait(t);
+    Thread::Release(t);
 
 #if !defined(AM_NO_MEMORY_STATS)
     printMemoryStats();

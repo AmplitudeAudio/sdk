@@ -489,7 +489,7 @@ namespace SparkyStudios::Audio::Amplitude
          *
          * @return Whether the Engine is currently muted.
          */
-        [[nodiscard]] bool GetMute() const;
+        [[nodiscard]] bool IsMuted() const;
 
         /**
          * @brief Pauses all playing sounds and streams.

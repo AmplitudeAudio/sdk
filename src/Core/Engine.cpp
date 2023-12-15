@@ -1762,7 +1762,7 @@ namespace SparkyStudios::Audio::Amplitude
         _state->mute = mute;
     }
 
-    bool Engine::GetMute() const
+    bool Engine::IsMuted() const
     {
         return _state->mute;
     }
