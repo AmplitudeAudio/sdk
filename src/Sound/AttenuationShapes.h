@@ -37,10 +37,14 @@ namespace SparkyStudios::Audio::Amplitude
     public:
         explicit ConeAttenuationZone(const ConeZoneSettings* settings)
             : AttenuationZone()
-            , ConeZone(
-                  new ConeShape(settings->inner()->radius(), settings->inner()->height()),
-                  new ConeShape(settings->outer()->radius(), settings->outer()->height()))
+            , ConeZone(ConeShape::Create(settings->inner()), ConeShape::Create(settings->outer()))
         {}
+
+        ~ConeAttenuationZone() override
+        {
+            amdelete(ConeShape, (ConeShape*)m_innerShape);
+            amdelete(ConeShape, (ConeShape*)m_outerShape);
+        }
 
         float GetAttenuationFactor(const Attenuation*, const AmVec3& soundLocation, const Listener& listener) override;
         float GetAttenuationFactor(const Attenuation*, const Entity& entity, const Listener& listener) override;
@@ -53,8 +57,14 @@ namespace SparkyStudios::Audio::Amplitude
     public:
         explicit SphereAttenuationZone(const SphereZoneSettings* settings)
             : AttenuationZone()
-            , SphereZone(new SphereShape(settings->inner()->radius()), new SphereShape(settings->outer()->radius()))
+            , SphereZone(SphereShape::Create(settings->inner()), SphereShape::Create(settings->outer()))
         {}
+
+        ~SphereAttenuationZone() override
+        {
+            amdelete(SphereShape, (SphereShape*)m_innerShape);
+            amdelete(SphereShape, (SphereShape*)m_outerShape);
+        }
 
         float GetAttenuationFactor(const Attenuation*, const AmVec3& soundLocation, const Listener& listener) override;
         float GetAttenuationFactor(const Attenuation*, const Entity& entity, const Listener& listener) override;
@@ -67,10 +77,14 @@ namespace SparkyStudios::Audio::Amplitude
     public:
         explicit BoxAttenuationZone(const BoxZoneSettings* settings)
             : AttenuationZone()
-            , BoxZone(
-                  new BoxShape(settings->inner()->half_width(), settings->inner()->half_height(), settings->inner()->half_depth()),
-                  new BoxShape(settings->outer()->half_width(), settings->outer()->half_height(), settings->outer()->half_depth()))
+            , BoxZone(BoxShape::Create(settings->inner()), BoxShape::Create(settings->outer()))
         {}
+
+        ~BoxAttenuationZone() override
+        {
+            amdelete(BoxShape, (BoxShape*)m_innerShape);
+            amdelete(BoxShape, (BoxShape*)m_outerShape);
+        }
 
         float GetAttenuationFactor(const Attenuation*, const AmVec3& soundLocation, const Listener& listener) override;
         float GetAttenuationFactor(const Attenuation*, const Entity& entity, const Listener& listener) override;
@@ -83,10 +97,14 @@ namespace SparkyStudios::Audio::Amplitude
     public:
         explicit CapsuleAttenuationZone(const CapsuleZoneSettings* settings)
             : AttenuationZone()
-            , CapsuleZone(
-                  new CapsuleShape(settings->inner()->radius(), settings->inner()->half_height()),
-                  new CapsuleShape(settings->outer()->radius(), settings->outer()->half_height()))
+            , CapsuleZone(CapsuleShape::Create(settings->inner()), CapsuleShape::Create(settings->outer()))
         {}
+
+        ~CapsuleAttenuationZone() override
+        {
+            amdelete(CapsuleShape, (CapsuleShape*)m_innerShape);
+            amdelete(CapsuleShape, (CapsuleShape*)m_outerShape);
+        }
 
         float GetAttenuationFactor(const Attenuation*, const AmVec3& soundLocation, const Listener& listener) override;
         float GetAttenuationFactor(const Attenuation*, const Entity& entity, const Listener& listener) override;
