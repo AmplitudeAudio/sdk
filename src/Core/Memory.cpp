@@ -19,19 +19,7 @@
 
 namespace SparkyStudios::Audio::Amplitude
 {
-    struct am_heap_delete
-    {
-        constexpr am_heap_delete() noexcept = default;
-
-        AM_INLINE(void) operator()(mi_heap_t * heap) const noexcept
-        {
-            mi_heap_destroy(heap);
-        }
-    };
-
     AM_API_PUBLIC MemoryManager* gMemManager = nullptr;
-
-    AM_API_PRIVATE std::map<MemoryPoolKind, std::unique_ptr<mi_heap_t, am_heap_delete>> gMemoryPools = {};
 
 #if !defined(AM_NO_MEMORY_STATS)
     AM_API_PRIVATE std::map<MemoryPoolKind, std::string> gMemoryPoolNames = {
@@ -49,8 +37,6 @@ namespace SparkyStudios::Audio::Amplitude
         , free(nullptr)
         , totalReservedMemorySize(nullptr)
         , sizeOf(nullptr)
-        , bucketsCount(4)
-        , bucketsSizeInBytes(16 * 1024 * 1024)
     {}
 
 #if !defined(AM_NO_MEMORY_STATS)
@@ -86,14 +72,6 @@ namespace SparkyStudios::Audio::Amplitude
         if (gMemManager == nullptr)
         {
             gMemManager = new MemoryManager(config);
-
-            gMemoryPools[MemoryPoolKind::Amplimix].reset(mi_heap_new());
-            gMemoryPools[MemoryPoolKind::Codec].reset(mi_heap_new());
-            gMemoryPools[MemoryPoolKind::Default].reset(mi_heap_new());
-            gMemoryPools[MemoryPoolKind::Engine].reset(mi_heap_new());
-            gMemoryPools[MemoryPoolKind::Filtering].reset(mi_heap_new());
-            gMemoryPools[MemoryPoolKind::IO].reset(mi_heap_new());
-            gMemoryPools[MemoryPoolKind::SoundData].reset(mi_heap_new());
         }
 
 #if !defined(AM_NO_MEMORY_STATS)
@@ -156,7 +134,7 @@ namespace SparkyStudios::Audio::Amplitude
         if (_config.malloc != nullptr)
             ptr = _config.malloc(pool, size);
         else
-            ptr = mi_heap_malloc(gMemoryPools[pool].get(), size);
+            ptr = mi_malloc(size);
 
         _memAllocations.insert({ pool, ptr, mi_malloc_size(ptr), file, line });
         return ptr;
@@ -174,7 +152,7 @@ namespace SparkyStudios::Audio::Amplitude
         if (_config.alignedMalloc != nullptr)
             ptr = _config.alignedMalloc(pool, size, alignment);
         else
-            ptr = mi_heap_malloc_aligned(gMemoryPools[pool].get(), size, alignment);
+            ptr = mi_malloc_aligned(size, alignment);
 
         _memAllocations.insert({ pool, ptr, mi_malloc_size(ptr), file, line });
 
@@ -196,7 +174,7 @@ namespace SparkyStudios::Audio::Amplitude
         if (_config.realloc != nullptr)
             ptr = _config.realloc(pool, address, size);
         else
-            ptr = mi_heap_realloc(gMemoryPools[pool].get(), address, size);
+            ptr = mi_realloc(address, size);
 
         _memAllocations.insert({ pool, ptr, mi_malloc_size(ptr), file, line });
 
@@ -219,7 +197,7 @@ namespace SparkyStudios::Audio::Amplitude
         if (_config.alignedRealloc != nullptr)
             ptr = _config.alignedRealloc(pool, address, size, alignment);
         else
-            ptr = mi_heap_realloc_aligned(gMemoryPools[pool].get(), address, size, alignment);
+            ptr = mi_realloc_aligned(address, size, alignment);
 
         _memAllocations.insert({ pool, ptr, mi_malloc_size(ptr), file, line });
 
@@ -244,12 +222,10 @@ namespace SparkyStudios::Audio::Amplitude
     AmSize MemoryManager::TotalReservedMemorySize() const
     {
         if (_config.totalReservedMemorySize != nullptr)
-        {
             return _config.totalReservedMemorySize();
-        }
 
         AmSize total = 0;
-        for (auto&& allocation : _memAllocations)
+        for (const auto& allocation : _memAllocations)
             total += allocation.size;
 
         return total;

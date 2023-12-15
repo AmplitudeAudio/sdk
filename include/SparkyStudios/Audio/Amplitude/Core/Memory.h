@@ -272,22 +272,6 @@ namespace SparkyStudios::Audio::Amplitude
         AmMemorySizeOfCallback sizeOf;
 
         /**
-         * @brief Sets the number of buckets for the allocator.
-         *
-         * @remarks This is used only when allocation functions are not overridden,
-         * to set up the internal memory allocator.
-         */
-        AmUInt32 bucketsCount;
-
-        /**
-         * @brief Sets the size of each buckets.
-         *
-         * @remarks This is used only when allocation functions are not overridden,
-         * to set up the internal memory allocator.
-         */
-        AmSize bucketsSizeInBytes;
-
-        /**
          * @brief Creates a new configuration set for the memory manager.
          */
         MemoryManagerConfig();
@@ -404,7 +388,7 @@ namespace SparkyStudios::Audio::Amplitude
         /**
          * @brief Unloads the memory manager.
          */
-        [[maybe_unused]] static void Deinitialize();
+        static void Deinitialize();
 
         /**
          * @brief Checks whether the memory manager is initialized.
