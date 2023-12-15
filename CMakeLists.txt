@@ -192,6 +192,9 @@ set(SA_SOURCE
     src/Core/Drivers/MiniAudio/Driver.cpp
     src/Core/Drivers/MiniAudio/Driver.h
 
+    src/Core/Drivers/Null/Driver.cpp
+    src/Core/Drivers/Null/Driver.h
+
     src/Core/Asset.cpp
     src/Core/Bus.cpp
     src/Core/BusInternalState.cpp

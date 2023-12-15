@@ -27,6 +27,7 @@
 #pragma region Default Drivers
 
 #include <Core/Drivers/MiniAudio/Driver.h>
+#include <Core/Drivers/Null/Driver.h>
 
 #pragma endregion
 

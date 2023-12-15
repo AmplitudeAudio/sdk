@@ -256,6 +256,8 @@ namespace SparkyStudios::Audio::Amplitude
             return "No memory leaks detected";
 
         std::stringstream ss;
+        ss << "=== Memory leaks detected ===\n\n";
+
         for (auto&& allocation : _memAllocations)
         {
             ss << "Pool: " << gMemoryPoolNames[allocation.pool] << std::endl;

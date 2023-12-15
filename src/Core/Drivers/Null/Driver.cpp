@@ -1,0 +1,86 @@
+// Copyright (c) 2021-present Sparky Studios. All rights reserved.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+#include <Core/Drivers/Null/Driver.h>
+
+#include <Mixer/Mixer.h>
+
+namespace SparkyStudios::Audio::Amplitude::Drivers
+{
+    static void null_mix(void* param)
+    {
+        const auto* data = static_cast<NullDriverDeviceData*>(param);
+
+        while (data->mRunning)
+        {
+            amEngine->GetMixer()->Mix(data->mOutputBuffer, data->mOutputBufferSize);
+            Thread::Sleep(1);
+        }
+    }
+
+    NullDriver::NullDriver()
+        : Driver("null")
+        , _initialized(false)
+        , _thread(nullptr)
+        , _deviceData()
+    {}
+
+    NullDriver::~NullDriver()
+    {
+        if (_initialized)
+            Close();
+    }
+
+    bool NullDriver::Open(const DeviceDescription& device)
+    {
+        if (_initialized)
+            return false;
+
+        _deviceData.mOutputBufferSize = device.mOutputBufferSize / static_cast<AmUInt32>(device.mRequestedOutputChannels);
+        _deviceData.mOutputBuffer = ampoolmalign(MemoryPoolKind::Amplimix, device.mOutputBufferSize * sizeof(AmReal32), AM_SIMD_ALIGNMENT);
+        _deviceData.mRunning = true;
+
+        _thread = Thread::CreateThread(null_mix, &_deviceData);
+
+        _initialized = true;
+
+        return true;
+    }
+
+    bool NullDriver::Close()
+    {
+        if (_initialized)
+        {
+            _deviceData.mRunning = false;
+
+            Thread::Wait(_thread);
+            Thread::Release(_thread);
+            _thread = nullptr;
+
+            ampoolfree(MemoryPoolKind::Amplimix, _deviceData.mOutputBuffer);
+            _deviceData.mOutputBuffer = nullptr;
+
+            _deviceData.mOutputBufferSize = 0;
+
+            _initialized = false;
+        }
+
+        return true;
+    }
+
+    bool NullDriver::EnumerateDevices(std::vector<DeviceDescription>& devices)
+    {
+        return true;
+    }
+} // namespace SparkyStudios::Audio::Amplitude::Drivers

@@ -14,21 +14,26 @@
 
 #pragma once
 
-#ifndef SS_AMPLITUDE_AUDIO_MINIAUDIO_DRIVER_H
-#define SS_AMPLITUDE_AUDIO_MINIAUDIO_DRIVER_H
+#ifndef SS_AMPLITUDE_AUDIO_NULL_DRIVER_H
+#define SS_AMPLITUDE_AUDIO_NULL_DRIVER_H
 
 #include <SparkyStudios/Audio/Amplitude/Amplitude.h>
 
-#include <Utils/miniaudio/miniaudio_utils.h>
-
 namespace SparkyStudios::Audio::Amplitude::Drivers
 {
-    [[maybe_unused]] static class MiniAudioDriver final : public Driver
+    struct NullDriverDeviceData
+    {
+        AmUInt32 mOutputBufferSize;
+        AmVoidPtr mOutputBuffer;
+        bool mRunning;
+    };
+
+    [[maybe_unused]] static class NullDriver final : public Driver
     {
     public:
-        MiniAudioDriver();
+        NullDriver();
 
-        ~MiniAudioDriver() override;
+        ~NullDriver() override;
 
         bool Open(const DeviceDescription& device) override;
 
@@ -36,20 +41,13 @@ namespace SparkyStudios::Audio::Amplitude::Drivers
 
         bool EnumerateDevices(std::vector<DeviceDescription>& devices) override;
 
-    protected:
-        friend void miniaudio_device_notification(const ma_device_notification* pNotification);
-
     private:
         bool _initialized;
-        ma_device _device;
 
-        ma_log_callback _logCallback;
-        ma_log _log;
+        AmThreadHandle _thread;
 
-        ma_context _context;
-
-        std::vector<DeviceDescription> _devices;
-    } g_driver_miniaudio; // NOLINT(cert-err58-cpp)
+        NullDriverDeviceData _deviceData;
+    } g_driver_null; // NOLINT(cert-err58-cpp)
 } // namespace SparkyStudios::Audio::Amplitude::Drivers
 
-#endif // SS_AMPLITUDE_AUDIO_MINIAUDIO_DRIVER_H
+#endif // SS_AMPLITUDE_AUDIO_NULL_DRIVER_H
