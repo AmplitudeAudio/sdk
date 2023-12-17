@@ -15,22 +15,6 @@
 #ifndef AMPLITUDE_DEFAULTPLUGINS_H
 #define AMPLITUDE_DEFAULTPLUGINS_H
 
-#pragma region Default Codecs
-
-// clang-format off
-#include <Core/Codecs/WAV/Codec.h>
-#include <Core/Codecs/MP3/Codec.h>
-// clang-format on
-
-#pragma endregion
-
-#pragma region Default Drivers
-
-#include <Core/Drivers/MiniAudio/Driver.h>
-#include <Core/Drivers/Null/Driver.h>
-
-#pragma endregion
-
 #pragma region Default Sound Processors
 
 #include <Mixer/SoundProcessors/ClipProcessor.h>
@@ -47,21 +31,6 @@
 
 #include <Mixer/Resamplers/LibsamplerateResampler.h>
 #include <Mixer/Resamplers/R8BrainResampler.h>
-
-#pragma endregion
-
-#pragma region Default Filters
-
-#include <Sound/Filters/BassBoostFilter.h>
-#include <Sound/Filters/BiquadResonantFilter.h>
-#include <Sound/Filters/DCRemovalFilter.h>
-#include <Sound/Filters/DelayFilter.h>
-#include <Sound/Filters/EqualizerFilter.h>
-#include <Sound/Filters/FlangerFilter.h>
-#include <Sound/Filters/FreeverbFilter.h>
-#include <Sound/Filters/LofiFilter.h>
-#include <Sound/Filters/RobotizeFilter.h>
-#include <Sound/Filters/WaveShaperFilter.h>
 
 #pragma endregion
 
