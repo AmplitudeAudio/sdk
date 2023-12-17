@@ -51,10 +51,10 @@ namespace SparkyStudios::Audio::Amplitude
             amdelete(SCurveFaderInstance, (SCurveFaderInstance*)instance);
         }
 
-        // [[nodiscard]] BeizerCurveControlPoints GetControlPoints() const override
-        // {
-        //     return gSCurveSmoothFaderCurveControlPoints;
-        // }
+        [[nodiscard]] BeizerCurveControlPoints GetControlPoints() const override
+        {
+            return gSCurveSmoothFaderCurveControlPoints;
+        }
     } gSCurveSmoothFader; // NOLINT(cert-err58-cpp)
 
     [[maybe_unused]] static class SCurveSharpFader final : public Fader
@@ -74,10 +74,10 @@ namespace SparkyStudios::Audio::Amplitude
             amdelete(SCurveFaderInstance, (SCurveFaderInstance*)instance);
         }
 
-        // [[nodiscard]] BeizerCurveControlPoints GetControlPoints() const override
-        // {
-        //     return gSCurveSharpFaderCurveControlPoints;
-        // }
+        [[nodiscard]] BeizerCurveControlPoints GetControlPoints() const override
+        {
+            return gSCurveSharpFaderCurveControlPoints;
+        }
     } gSCurveSharpFader; // NOLINT(cert-err58-cpp)
 } // namespace SparkyStudios::Audio::Amplitude
 

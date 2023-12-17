@@ -228,12 +228,12 @@ namespace SparkyStudios::Audio::Amplitude
          */
         [[nodiscard]] const std::string& GetName() const;
 
-        // /**
-        //  * @brief Gets the control points of the transition curve used by this Fader.
-        //  *
-        //  * @return The control points of the transition curve used by this Fader.
-        //  */
-        // [[nodiscard]] virtual BeizerCurveControlPoints GetControlPoints() const = 0;
+        /**
+         * @brief Gets the control points of the transition curve used by this Fader.
+         *
+         * @return The control points of the transition curve used by this Fader.
+         */
+        [[nodiscard]] virtual BeizerCurveControlPoints GetControlPoints() const = 0;
 
         /**
          * @brief Registers a new Fader.

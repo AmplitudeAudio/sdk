@@ -50,10 +50,10 @@ namespace SparkyStudios::Audio::Amplitude
             amdelete(ExponentialFaderInstance, (ExponentialFaderInstance*)instance);
         }
 
-        // [[nodiscard]] BeizerCurveControlPoints GetControlPoints() const override
-        // {
-        //     return gExponentialFaderCurveControlPoints;
-        // }
+        [[nodiscard]] BeizerCurveControlPoints GetControlPoints() const override
+        {
+            return gExponentialFaderCurveControlPoints;
+        }
     } gExponentialFader; // NOLINT(cert-err58-cpp)
 } // namespace SparkyStudios::Audio::Amplitude
 

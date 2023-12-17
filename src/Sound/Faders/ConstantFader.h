@@ -50,10 +50,10 @@ namespace SparkyStudios::Audio::Amplitude
             amdelete(ConstantFaderInstance, (ConstantFaderInstance*)instance);
         }
 
-        // [[nodiscard]] BeizerCurveControlPoints GetControlPoints() const override
-        // {
-        //     return gConstantFaderCurveControlPoints;
-        // }
+        [[nodiscard]] BeizerCurveControlPoints GetControlPoints() const override
+        {
+            return gConstantFaderCurveControlPoints;
+        }
     } gConstantFader; // NOLINT(cert-err58-cpp)
 } // namespace SparkyStudios::Audio::Amplitude
 

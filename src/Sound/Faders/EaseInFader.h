@@ -50,10 +50,10 @@ namespace SparkyStudios::Audio::Amplitude
             amdelete(EaseInFaderInstance, (EaseInFaderInstance*)instance);
         }
 
-        // [[nodiscard]] BeizerCurveControlPoints GetControlPoints() const override
-        // {
-        //     return gEaseInFaderCurveControlPoints;
-        // }
+        [[nodiscard]] BeizerCurveControlPoints GetControlPoints() const override
+        {
+            return gEaseInFaderCurveControlPoints;
+        }
     } gEaseInFader; // NOLINT(cert-err58-cpp)
 } // namespace SparkyStudios::Audio::Amplitude
 
