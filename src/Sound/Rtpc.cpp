@@ -143,37 +143,61 @@ namespace SparkyStudios::Audio::Amplitude
         return GetRtpcDefinition(_source.c_str());
     }
 
+    void RtpcValue::Init(RtpcValue& value, const RtpcCompatibleValue* definition, AmReal32 staticValue)
+    {
+        if (definition == nullptr)
+            value.Init(staticValue);
+        else
+            value.Init(definition);
+    }
+
     RtpcValue::RtpcValue()
         : _valueKind(ValueKind_None)
         , _value(0.0f)
         , _curve(nullptr)
         , _ownCurve(false)
         , _rtpc(nullptr)
+        , _initialized(false)
     {}
 
-    RtpcValue::RtpcValue(AmReal32 value)
-        : _valueKind(ValueKind_Static)
-        , _value(value)
-        , _curve(nullptr)
-        , _ownCurve(false)
-        , _rtpc(nullptr)
-    {}
-
-    RtpcValue::RtpcValue(const Rtpc* rtpc, Curve* curve)
-        : _valueKind(ValueKind_RTPC)
-        , _value(0.0f)
-        , _curve(curve)
-        , _ownCurve(false)
-        , _rtpc(rtpc)
-    {}
-
-    RtpcValue::RtpcValue(const RtpcCompatibleValue* definition)
-        : _valueKind(definition->kind())
-        , _value(definition->value())
-        , _curve(nullptr)
-        , _ownCurve(true)
-        , _rtpc(nullptr)
+    RtpcValue::RtpcValue(const RtpcValue& other)
     {
+        _valueKind = other._valueKind;
+        _value = other._value;
+        _curve = other._curve;
+        _ownCurve = false;
+        _rtpc = other._rtpc;
+        _initialized = true;
+    }
+
+    void RtpcValue::Init(AmReal32 value)
+    {
+        _valueKind = ValueKind_Static;
+        _value = value;
+        _curve = nullptr;
+        _ownCurve = false;
+        _rtpc = nullptr;
+        _initialized = true;
+    }
+
+    void RtpcValue::Init(const Rtpc* rtpc, Curve* curve)
+    {
+        _valueKind = ValueKind_RTPC;
+        _value = 0.0f;
+        _curve = curve;
+        _ownCurve = false;
+        _rtpc = rtpc;
+        _initialized = false;
+    }
+
+    void RtpcValue::Init(const RtpcCompatibleValue* definition)
+    {
+        _valueKind = definition->kind();
+        _value = definition->value();
+        _curve = nullptr;
+        _ownCurve = true;
+        _rtpc = nullptr;
+
         if (definition->kind() == ValueKind_RTPC)
         {
             _rtpc = amEngine->GetRtpcHandle(definition->rtpc()->id());
@@ -188,6 +212,8 @@ namespace SparkyStudios::Audio::Amplitude
 
             _curve = curve;
         }
+
+        _initialized = true;
     }
 
     RtpcValue::~RtpcValue()
@@ -209,5 +235,10 @@ namespace SparkyStudios::Audio::Amplitude
             return _value;
 
         return 0.0f;
+    }
+
+    bool RtpcValue::IsStatic() const
+    {
+        return _valueKind == ValueKind_Static;
     }
 } // namespace SparkyStudios::Audio::Amplitude

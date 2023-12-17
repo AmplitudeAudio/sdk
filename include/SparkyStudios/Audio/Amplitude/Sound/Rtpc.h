@@ -138,6 +138,8 @@ namespace SparkyStudios::Audio::Amplitude
     struct AM_API_PUBLIC RtpcValue
     {
     public:
+        static void Init(RtpcValue& value, const RtpcCompatibleValue* definition, AmReal32 staticValue);
+
         /**
          * @brief Creates an unitialized RtpcValue object.
          *
@@ -145,12 +147,19 @@ namespace SparkyStudios::Audio::Amplitude
          */
         RtpcValue();
 
+        RtpcValue(const RtpcValue& other);
+
+        /**
+         * @brief Destroys the RtpcValue object.
+         */
+        ~RtpcValue();
+
         /**
          * @brief Creates a RtpcValue object with a static value.
          *
          * @param value The static value to set.
          */
-        explicit RtpcValue(AmReal32 value);
+        void Init(AmReal32 value);
 
         /**
          * @brief Creates a RtpcValue object with a curve and an RTPC object.
@@ -158,19 +167,14 @@ namespace SparkyStudios::Audio::Amplitude
          * @param rtpc The RTPC to link to.
          * @param curve The curve to use.
          */
-        explicit RtpcValue(const Rtpc* rtpc, Curve* curve);
+        void Init(const Rtpc* rtpc, Curve* curve);
 
         /**
          * @brief Creates a RtpcValue object from an asset definition.
          *
          * @param definition The RTPC-compatible value asset definition.
          */
-        explicit RtpcValue(const RtpcCompatibleValue* definition);
-
-        /**
-         * @brief Destroys the RtpcValue object.
-         */
-        ~RtpcValue();
+        void Init(const RtpcCompatibleValue* definition);
 
         /**
          * @brief Gets the current RTPC value. For static values, this will always
@@ -180,12 +184,20 @@ namespace SparkyStudios::Audio::Amplitude
          */
         [[nodiscard]] AmReal32 GetValue() const;
 
+        /**
+         * @brief Checks if the RTPC value is static.
+         * @return @c true if the RTPC value is static, @c false otherwise.
+         */
+        [[nodiscard]] bool IsStatic() const;
+
     private:
         AmInt8 _valueKind;
         AmReal32 _value;
         Curve* _curve;
         bool _ownCurve;
         const Rtpc* _rtpc;
+
+        bool _initialized;
     };
 } // namespace SparkyStudios::Audio::Amplitude
 

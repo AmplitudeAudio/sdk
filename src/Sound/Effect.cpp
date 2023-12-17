@@ -88,7 +88,7 @@ namespace SparkyStudios::Audio::Amplitude
         _parameters.resize(paramCount);
 
         for (flatbuffers::uoffset_t i = 0; i < paramCount; ++i)
-            _parameters[i] = RtpcValue(definition->parameters()->Get(i));
+            _parameters[i].Init(definition->parameters()->Get(i));
 
         gEffectsList[_id] = {};
 

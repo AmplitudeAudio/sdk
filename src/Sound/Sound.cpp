@@ -216,9 +216,9 @@ namespace SparkyStudios::Audio::Amplitude
         _loopCount = definition->loop() ? definition->loop()->loop_count() : 0;
         _filename = fs->ResolvePath(fs->Join({ AM_OS_STRING("data"), AM_STRING_TO_OS_STRING(definition->path()->str()) }));
 
-        m_gain = definition->gain() == nullptr ? RtpcValue(1) : RtpcValue(definition->gain());
-        m_pitch = definition->pitch() == nullptr ? RtpcValue(1) : RtpcValue(definition->pitch());
-        m_priority =  definition->priority() == nullptr ? RtpcValue(1) : RtpcValue(definition->priority());
+        RtpcValue::Init(m_gain, definition->gain(), 1);
+        RtpcValue::Init(m_pitch, definition->pitch(), 1);
+        RtpcValue::Init(m_priority, definition->priority(), 1);
 
         _settings.m_id = definition->id();
         _settings.m_kind = SoundKind::Standalone;
@@ -226,8 +226,9 @@ namespace SparkyStudios::Audio::Amplitude
         _settings.m_effectID = definition->effect();
         _settings.m_attenuationID = definition->attenuation();
         _settings.m_spatialization = definition->spatialization();
-        _settings.m_priority = m_priority;
-        _settings.m_gain = m_gain;
+        _settings.m_priority = RtpcValue(m_priority);
+        _settings.m_gain = RtpcValue(m_gain);
+        _settings.m_pitch = RtpcValue(m_pitch);
         _settings.m_loop = _loop;
         _settings.m_loopCount = _loopCount;
 

@@ -150,9 +150,9 @@ namespace SparkyStudios::Audio::Amplitude
         _id = definition->id();
         _name = definition->name()->str();
 
-        m_gain = definition->gain() == nullptr ? RtpcValue(1) : RtpcValue(definition->gain());
-        m_pitch = definition->pitch() == nullptr ? RtpcValue(1) : RtpcValue(definition->pitch());
-        m_priority =  definition->priority() == nullptr ? RtpcValue(1) : RtpcValue(definition->priority());
+        RtpcValue::Init(m_gain, definition->gain(), 1);
+        RtpcValue::Init(m_pitch, definition->pitch(), 1);
+        RtpcValue::Init(m_priority, definition->priority(), 1);
 
         const flatbuffers::uoffset_t sampleCount = definition->sounds() ? definition->sounds()->size() : 0;
 
@@ -184,9 +184,9 @@ namespace SparkyStudios::Audio::Amplitude
                 settings.m_effectID = definition->effect();
                 settings.m_attenuationID = definition->attenuation();
                 settings.m_spatialization = definition->spatialization();
-                settings.m_priority = m_priority;
-                settings.m_gain = entry->gain() == nullptr ? RtpcValue(1) : RtpcValue(entry->gain());
-                settings.m_pitch = entry->pitch() == nullptr ? RtpcValue(1) : RtpcValue(entry->pitch());
+                settings.m_priority = RtpcValue(m_priority);
+                RtpcValue::Init(settings.m_gain, entry->gain(), 1);
+                RtpcValue::Init(settings.m_pitch, entry->pitch(), 1);
                 settings.m_loop = findIt->second->_loop;
                 settings.m_loopCount = findIt->second->_loopCount;
 
