@@ -253,7 +253,7 @@ namespace SparkyStudios::Audio::Amplitude::Drivers
         , _devices()
     {
         _logCallback = ma_log_callback_init(miniaudio_log, nullptr);
-        if (ma_log_init(&gAllocationCallbacks, &_log) != MA_SUCCESS)
+        if (ma_log_init(nullptr, &_log) != MA_SUCCESS)
         {
             CallLogFunc("Failed to initialize miniaudio log\n");
             return;
@@ -263,7 +263,6 @@ namespace SparkyStudios::Audio::Amplitude::Drivers
 
         ma_context_config config = ma_context_config_init();
         config.pLog = &_log;
-        config.allocationCallbacks = gAllocationCallbacks;
         config.pUserData = this;
         config.threadPriority = ma_thread_priority_realtime;
 
