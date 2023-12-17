@@ -329,15 +329,23 @@ set(SA_SOURCE
     src/Utils/miniaudio/miniaudio.cpp
     src/Utils/miniaudio/miniaudio.h
     src/Utils/miniaudio/miniaudio_utils.h
+    src/Utils/pffft/simd/pf_altivec_float.h
     src/Utils/pffft/simd/pf_avx_double.h
     src/Utils/pffft/simd/pf_double.h
-    src/Utils/pffft/simd/pf_neon_double_from_avx.h
+    src/Utils/pffft/simd/pf_float.h
     src/Utils/pffft/simd/pf_neon_double.h
+    src/Utils/pffft/simd/pf_neon_double_from_avx.h
+    src/Utils/pffft/simd/pf_neon_float.h
     src/Utils/pffft/simd/pf_scalar_double.h
+    src/Utils/pffft/simd/pf_scalar_float.h
+    src/Utils/pffft/simd/pf_sse1_float.h
     src/Utils/pffft/simd/pf_sse2_double.h
+    src/Utils/pffft/pffft.cpp
+    src/Utils/pffft/pffft.h
     src/Utils/pffft/pffft_double.cpp
     src/Utils/pffft/pffft_double.h
-    src/Utils/pffft/pffft_private_impl.h
+    src/Utils/pffft/pffft_common.cpp
+    src/Utils/pffft/pffft_priv_impl.h
     src/Utils/intrusive_list.h
     src/Utils/Utils.h
 )

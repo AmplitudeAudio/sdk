@@ -30,8 +30,8 @@
    SOFTWARE.
 */
 
-#ifndef PF_DBL_H
-#define PF_DBL_H
+#ifndef PF_FLT_H
+#define PF_FLT_H
 
 #include <assert.h>
 #include <string.h>
@@ -57,22 +57,22 @@
  *
  */
 
-typedef double vsfscalar;
+typedef float vsfscalar;
 
 #include <SparkyStudios/Audio/Amplitude/Core/Common/Config.h>
 
-#include "pf_avx_double.h"
-#include "pf_sse2_double.h"
-#include "pf_neon_double.h"
+#include "pf_sse1_float.h"
+#include "pf_neon_float.h"
+#include "pf_altivec_float.h"
 
 #ifndef SIMD_SZ
 #  if !defined(PFFFT_SIMD_DISABLE)
-#    pragma message( "building double with simd disabled !" )
+#    pragma message( "building float with simd disabled !" )
 #    define PFFFT_SIMD_DISABLE /* fallback to scalar code */
 #  endif
 #endif
 
-#include "pf_scalar_double.h"
+#include "pf_scalar_float.h"
 
 /* shortcuts for complex multiplcations */
 #define VCPLXMUL(ar,ai,br,bi) { v4sf tmp; tmp=VMUL(ar,bi); ar=VMUL(ar,br); ar=VSUB(ar,VMUL(ai,bi)); ai=VMUL(ai,br); ai=VADD(ai,tmp); }
@@ -82,4 +82,4 @@ typedef double vsfscalar;
 #define SVMUL(f,v) VMUL(LD_PS1(f),v)
 #endif
 
-#endif /* PF_DBL_H */
+#endif /* PF_FLT_H */

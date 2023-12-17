@@ -46,8 +46,7 @@
 /*
   AVX support macros
 */
-#if !defined(SIMD_SZ) && !defined(PFFFT_SIMD_DISABLE) && \
-	!defined(PFFFT_AVX_DISABLE) && defined(__AVX__)
+#if !defined(SIMD_SZ) && !defined(PFFFT_SIMD_DISABLE) && defined(__AVX__)
 #pragma message( __FILE__ ": AVX macros are defined" )
 
 #include <immintrin.h>
@@ -143,4 +142,3 @@ return [ b[0], b[1], a[2], a[3] ]
 #endif
 
 #endif /* PF_AVX_DBL_H */
-

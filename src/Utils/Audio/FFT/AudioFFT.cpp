@@ -43,7 +43,7 @@
 #define AM_FFT_PFFFT
 #endif
 #define AM_FFT_PFFFT_USED
-#include <Utils/pffft/pffft_double.h>
+#include <Utils/pffft/pffft.h>
 #include <vector>
 #endif
 
@@ -118,19 +118,19 @@ namespace SparkyStudios::Audio::Amplitude
         {
             if (_pffft_setup != nullptr)
             {
-                pffftd_destroy_setup(_pffft_setup);
+                pffft_destroy_setup(_pffft_setup);
                 _pffft_setup = nullptr;
             }
 
             if (_buffer != nullptr)
             {
-                pffftd_aligned_free(_buffer);
+                pffft_aligned_free(_buffer);
                 _buffer = nullptr;
             }
 
             if (_scratch != nullptr)
             {
-                pffftd_aligned_free(_scratch);
+                pffft_aligned_free(_scratch);
                 _scratch = nullptr;
             }
 
@@ -139,27 +139,27 @@ namespace SparkyStudios::Audio::Amplitude
             if (_size == 0)
                 return;
 
-            _pffft_setup = pffftd_new_setup(_size, PFFFT_REAL);
-            _buffer = (double*)pffftd_aligned_malloc(_size * sizeof(double));
-            _scratch = (double*)pffftd_aligned_malloc(_size * sizeof(double));
+            _pffft_setup = pffft_new_setup(_size, PFFFT_REAL);
+            _buffer = static_cast<float*>(pffft_aligned_malloc(_size * sizeof(float)));
+            _scratch = static_cast<float*>(pffft_aligned_malloc(_size * sizeof(float)));
         }
 
         void fft(const float* data, float* re, float* im) override
         {
             detail::ConvertBuffer(_buffer, data, _size);
 
-            pffftd_transform_ordered(_pffft_setup, _buffer, _buffer, _scratch, PFFFT_FORWARD);
+            pffft_transform_ordered(_pffft_setup, _buffer, _buffer, _scratch, PFFFT_FORWARD);
 
             // Convert back to split-complex
             {
-                double* b = _buffer;
-                double* bEnd = b + _size;
+                float* b = _buffer;
+                float* bEnd = b + _size;
                 float* r = re;
                 float* i = im;
                 while (b != bEnd)
                 {
-                    *(r++) = static_cast<float>(*(b++));
-                    *(i++) = static_cast<float>(*(b++));
+                    *r++ = *b++;
+                    *i++ = *b++;
                 }
             }
         }
@@ -168,29 +168,29 @@ namespace SparkyStudios::Audio::Amplitude
         {
             // Convert into the format as required by the PFFFT
             {
-                double* b = _buffer;
-                double* bEnd = b + _size;
+                float* b = _buffer;
+                float* bEnd = b + _size;
                 const float* r = re;
                 const float* i = im;
                 while (b != bEnd)
                 {
-                    *(b++) = static_cast<double>(*(r++));
-                    *(b++) = static_cast<double>(*(i++));
+                    *b++ = *r++;
+                    *b++ = *i++;
                 }
             }
 
-            pffftd_transform_ordered(_pffft_setup, _buffer, _buffer, _scratch, PFFFT_BACKWARD);
+            pffft_transform_ordered(_pffft_setup, _buffer, _buffer, _scratch, PFFFT_BACKWARD);
 
             // Convert back to split-complex
-            detail::ScaleBuffer(data, _buffer, 2.0 / static_cast<double>(_size), _size);
+            detail::ScaleBuffer(data, _buffer, 2.0f / static_cast<float>(_size), _size);
         }
 
     private:
         size_t _size = 0;
-        PFFFTD_Setup* _pffft_setup = nullptr;
+        PFFFT_Setup* _pffft_setup = nullptr;
 
-        double* _buffer = nullptr;
-        double* _scratch = nullptr;
+        float* _buffer = nullptr;
+        float* _scratch = nullptr;
     };
 
     /**

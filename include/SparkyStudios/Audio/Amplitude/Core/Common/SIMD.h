@@ -85,6 +85,7 @@
 #elif defined(AM_SIMD_ARCH_NEON)
 #define MA_SUPPORT_NEON
 #define MA_PREFER_NEON
+#define PFFFT_ENABLE_NEON
 #endif
 
 #endif

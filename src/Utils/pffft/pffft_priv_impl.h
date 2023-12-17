@@ -58,8 +58,6 @@
  * it's only for library internal use
  */
 
-#ifdef PFFFT_IMPLEMENTATION
-
 /* define own constants required to turn off g++ extensions .. */
 #ifndef M_PI
 #define M_PI 3.14159265358979323846 /* pi */
@@ -72,6 +70,50 @@
 int FUNC_SIMD_SIZE()
 {
     return SIMD_SZ;
+}
+
+int FUNC_MIN_FFT_SIZE(pffft_transform_t transform)
+{
+    /* unfortunately, the fft size must be a multiple of 16 for complex FFTs
+       and 32 for real FFTs -- a lot of stuff would need to be rewritten to
+       handle other cases (or maybe just switch to a scalar fft, I don't know..) */
+    int simdSz = FUNC_SIMD_SIZE();
+    if (transform == PFFFT_REAL)
+        return (2 * simdSz * simdSz);
+    else if (transform == PFFFT_COMPLEX)
+        return (simdSz * simdSz);
+    else
+        return 1;
+}
+
+int FUNC_IS_VALID_SIZE(int N, pffft_transform_t cplx)
+{
+    const int N_min = FUNC_MIN_FFT_SIZE(cplx);
+    int R = N;
+    while (R >= 5 * N_min && (R % 5) == 0)
+        R /= 5;
+    while (R >= 3 * N_min && (R % 3) == 0)
+        R /= 3;
+    while (R >= 2 * N_min && (R % 2) == 0)
+        R /= 2;
+    return (R == N_min) ? 1 : 0;
+}
+
+int FUNC_NEAREST_SIZE(int N, pffft_transform_t cplx, int higher)
+{
+    int d;
+    const int N_min = FUNC_MIN_FFT_SIZE(cplx);
+    if (N < N_min)
+        N = N_min;
+    d = (higher) ? N_min : -N_min;
+    if (d > 0)
+        N = N_min * ((N + N_min - 1) / N_min); /* round up */
+    else
+        N = N_min * (N / N_min); /* round down */
+
+    for (;; N += d)
+        if (FUNC_IS_VALID_SIZE(N, cplx))
+            return N;
 }
 
 const char* FUNC_SIMD_ARCH()
@@ -688,8 +730,8 @@ static void radf5_ps(
     v4sf ci2, di2, ci4, ci5, di3, di4, di5, ci3, cr2, cr3, dr2, dr3, dr4, dr5, cr5, cr4, ti2, ti3, ti5, ti4, tr2, tr3, tr4, tr5;
     int idp2;
 
-#define cc_ref(a_1, a_2, a_3) cc[((a_3)*l1 + (a_2)) * ido + a_1]
-#define ch_ref(a_1, a_2, a_3) ch[((a_3)*5 + (a_2)) * ido + a_1]
+#define cc_ref(a_1, a_2, a_3) cc[((a_3) * l1 + (a_2)) * ido + a_1]
+#define ch_ref(a_1, a_2, a_3) ch[((a_3) * 5 + (a_2)) * ido + a_1]
 
     /* Parameter adjustments */
     ch_offset = 1 + ido * 6;
@@ -780,8 +822,8 @@ static void radb5_ps(
     v4sf ci2, ci3, ci4, ci5, di3, di4, di5, di2, cr2, cr3, cr5, cr4, ti2, ti3, ti4, ti5, dr3, dr4, dr5, dr2, tr2, tr3, tr4, tr5;
     int idp2;
 
-#define cc_ref(a_1, a_2, a_3) cc[((a_3)*5 + (a_2)) * ido + a_1]
-#define ch_ref(a_1, a_2, a_3) ch[((a_3)*l1 + (a_2)) * ido + a_1]
+#define cc_ref(a_1, a_2, a_3) cc[((a_3) * 5 + (a_2)) * ido + a_1]
+#define ch_ref(a_1, a_2, a_3) ch[((a_3) * l1 + (a_2)) * ido + a_1]
 
     /* Parameter adjustments */
     ch_offset = 1 + ido * (1 + l1);
@@ -1167,19 +1209,22 @@ struct SETUP_STRUCT
 
 SETUP_STRUCT* FUNC_NEW_SETUP(int N, pffft_transform_t transform)
 {
-    SETUP_STRUCT* s = (SETUP_STRUCT*)malloc(sizeof(SETUP_STRUCT));
+    SETUP_STRUCT* s = 0;
     int k, m;
     /* unfortunately, the fft size must be a multiple of 16 for complex FFTs
        and 32 for real FFTs -- a lot of stuff would need to be rewritten to
        handle other cases (or maybe just switch to a scalar fft, I don't know..) */
     if (transform == PFFFT_REAL)
     {
-        assert((N % (2 * SIMD_SZ * SIMD_SZ)) == 0 && N > 0);
+        if ((N % (2 * SIMD_SZ * SIMD_SZ)) || N <= 0)
+            return s;
     }
     if (transform == PFFFT_COMPLEX)
     {
-        assert((N % (SIMD_SZ * SIMD_SZ)) == 0 && N > 0);
+        if ((N % (SIMD_SZ * SIMD_SZ)) || N <= 0)
+            return s;
     }
+    s = (SETUP_STRUCT*)malloc(sizeof(SETUP_STRUCT));
     /* assert((N % 32) == 0); */
     s->N = N;
     s->transform = transform;
@@ -1236,6 +1281,8 @@ SETUP_STRUCT* FUNC_NEW_SETUP(int N, pffft_transform_t transform)
 
 void FUNC_DESTROY(SETUP_STRUCT* s)
 {
+    if (!s)
+        return;
     FUNC_ALIGNED_FREE(s->data);
     free(s);
 }
@@ -2161,7 +2208,7 @@ void FUNC_VALIDATE_SIMD_A()
 
 static void pffft_assert1(float result, float ref, const char* vartxt, const char* functxt, int* numErrs, const char* f, int lineNo)
 {
-    if (!(fabs(result - ref) < 0.01))
+    if (!(fabs(result - ref) < 0.01F))
     {
         fprintf(stderr, "%s: assert for %s at %s(%d)\n  expected %f  value %f\n", functxt, vartxt, f, lineNo, ref, result);
         ++(*numErrs);
@@ -2599,7 +2646,5 @@ int FUNC_VALIDATE_SIMD_EX(FILE* DbgOut)
 {
     return -1;
 }
-
-#endif // PFFFT_IMPLEMENTATION
 
 #endif /* end if ( SIMD_SZ == 4 ) */

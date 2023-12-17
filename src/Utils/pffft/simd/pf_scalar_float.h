@@ -31,15 +31,15 @@
    SOFTWARE.
 */
 
-#ifndef PF_SCAL_DBL_H
-#define PF_SCAL_DBL_H
+#ifndef PF_SCAL_FLT_H
+#define PF_SCAL_FLT_H
 
 /*
   fallback mode(s) for situations where SSE/AVX/NEON/Altivec are not available, use scalar mode instead
 */
 
 #if !defined(SIMD_SZ) && defined(PFFFT_SCALVEC_ENABLED)
-#pragma message( __FILE__ ": double SCALAR4 macros are defined" )
+#pragma message( __FILE__ ": float SCALAR4 macros are defined" )
 
 typedef struct {
   vsfscalar a;
@@ -149,7 +149,7 @@ typedef union v4sf_union {
   }
 
 #else
-/* #pragma message( __FILE__ ": double SCALAR4 macros are not defined" ) */
+/* #pragma message( __FILE__ ": float SCALAR4 macros are not defined" ) */
 #endif
 
 
@@ -166,7 +166,7 @@ typedef union v4sf_union {
 
 #  define VARCH "Scalar"
 #  define VREQUIRES_ALIGN 0
-#  define VZERO() 0.0
+#  define VZERO() 0.f
 #  define VMUL(a,b) ((a)*(b))
 #  define VADD(a,b) ((a)+(b))
 #  define VMADD(a,b,c) ((a)*(b)+(c))
@@ -177,8 +177,8 @@ typedef union v4sf_union {
 #  define VALIGNED(ptr) ((((uintptr_t)(ptr)) & (sizeof(vsfscalar)-1) ) == 0)
 
 #else
-/* #pragma message( __FILE__ ": double SCALAR1 macros are not defined" ) */
+/* #pragma message( __FILE__ ": float SCALAR1 macros are not defined" ) */
 #endif
 
 
-#endif /* PF_SCAL_DBL_H */
+#endif /* PF_SCAL_FLT_H */

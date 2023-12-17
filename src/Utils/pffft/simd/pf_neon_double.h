@@ -39,8 +39,7 @@
 /*
   NEON 64bit support macros
 */
-#if !defined(PFFFT_SIMD_DISABLE) && ( defined(__ARM_NEON) || \
-	defined(__aarch64__) || defined(__arm64__))
+#if !defined(PFFFT_SIMD_DISABLE) && defined(PFFFT_ENABLE_NEON) && (defined(__aarch64__) || defined(__arm64__))
 
 #pragma message (__FILE__ ": NEON (from AVX) macros are defined" )
 
@@ -201,4 +200,3 @@ return [ b[0], b[1], a[2], a[3] ]
 #endif
 
 #endif /* PF_AVX_DBL_H */
-

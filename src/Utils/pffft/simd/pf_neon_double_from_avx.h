@@ -29,8 +29,8 @@
 
 #else
 
+#error "Macro name collisions may happens with unknown compiler"
 #ifdef FORCE_INLINE
-#warning PFFFT: Macro name collision happened with unknown compiler
 #undef FORCE_INLINE
 #endif
 
@@ -120,4 +120,3 @@ FORCE_INLINE __m256d _mm256_castpd128_pd256(__m128d a)
 }
 
 #endif /* PF_AVX_DBL_H */
-
