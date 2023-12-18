@@ -59,7 +59,7 @@ const AmTime kFramesPerSecond = 60.0;
 const Uint32 kDelayMilliseconds = static_cast<Uint32>(kAmSecond * 1.0 / kFramesPerSecond);
 
 const char* kWindowTitle = "Amplitude Audio SDK Sample";
-AmOsString kAudioConfig = AM_OS_STRING("audio_config.amconfig");
+AmOsString kAudioConfig = AM_OS_STRING("pc.config.amconfig");
 AmOsString kSoundBank = AM_OS_STRING("sample_02.ambank");
 const char* kInstructionsTexture = "./assets/textures/instructions.bmp";
 const char* kChannelTexture = "./assets/textures/channel.bmp";

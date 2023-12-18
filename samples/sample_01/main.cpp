@@ -104,7 +104,7 @@ static void run(AmVoidPtr param)
 #endif
 
     // Initialize Amplitude.
-    if (!amEngine->Initialize(AM_OS_STRING("audio_config.amconfig")))
+    if (!amEngine->Initialize(AM_OS_STRING("pc.config.amconfig")))
         return;
 
     if (!amEngine->LoadSoundBank(AM_OS_STRING("sample_01.ambank")))
