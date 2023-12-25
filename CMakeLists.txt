@@ -360,12 +360,14 @@ set(SA_SOURCE
     bindings/c/include/amplitude_codec.h
     bindings/c/include/amplitude_common.h
     bindings/c/include/amplitude_engine.h
+    bindings/c/include/amplitude_filesystem.h
     bindings/c/include/amplitude_memory.h
     bindings/c/include/amplitude_thread.h
     bindings/c/src/amplitude_bus.cpp
     bindings/c/src/amplitude_codec.cpp
     bindings/c/src/amplitude_channel.cpp
     bindings/c/src/amplitude_engine.cpp
+    bindings/c/src/amplitude_filesystem.cpp
     bindings/c/src/amplitude_memory.cpp
     bindings/c/src/amplitude_thread.cpp
 )

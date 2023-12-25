@@ -17,9 +17,7 @@
 
 #include "amplitude_common.h"
 
-struct am_filesystem_file;
-typedef struct am_filesystem_file am_filesystem_file;
-typedef am_filesystem_file* am_filesystem_file_handle;
+#include "amplitude_filesystem.h"
 
 struct am_codec;
 typedef struct am_codec am_codec;
@@ -35,29 +33,29 @@ typedef am_codec_encoder* am_codec_encoder_handle;
 
 typedef struct
 {
-    void (*onCreate)(am_voidptr user_data);
-    void (*onDestroy)(am_voidptr user_data);
-    am_bool (*onOpen)(am_voidptr user_data, am_filesystem_file_handle file);
-    am_bool (*onClose)(am_voidptr user_data);
-    am_uint64 (*onLoad)(am_voidptr user_data, am_voidptr out);
-    am_uint64 (*onStream)(am_voidptr user_data, am_voidptr out, am_uint64 offset, am_uint64 length);
-    am_bool (*onSeek)(am_voidptr user_data, am_uint64 offset);
+    void (*create)(am_voidptr user_data);
+    void (*destroy)(am_voidptr user_data);
+    am_bool (*open)(am_voidptr user_data, am_file_handle file);
+    am_bool (*close)(am_voidptr user_data);
+    am_uint64 (*load)(am_voidptr user_data, am_voidptr out);
+    am_uint64 (*stream)(am_voidptr user_data, am_voidptr out, am_uint64 offset, am_uint64 length);
+    am_bool (*seek)(am_voidptr user_data, am_uint64 offset);
 } am_codec_decoder_vtable;
 
 typedef struct
 {
-    void (*onCreate)(am_voidptr user_data);
-    void (*onDestroy)(am_voidptr user_data);
-    am_bool (*onOpen)(am_voidptr user_data, am_filesystem_file_handle file);
-    am_bool (*onClose)(am_voidptr user_data);
-    am_uint64 (*onWrite)(am_voidptr user_data, am_voidptr in, am_uint64 offset, am_uint64 length);
+    void (*create)(am_voidptr user_data);
+    void (*destroy)(am_voidptr user_data);
+    am_bool (*open)(am_voidptr user_data, am_file_handle file);
+    am_bool (*close)(am_voidptr user_data);
+    am_uint64 (*write)(am_voidptr user_data, am_voidptr in, am_uint64 offset, am_uint64 length);
 } am_codec_encoder_vtable;
 
 typedef struct
 {
     void (*onRegister)(am_voidptr user_data);
     void (*onUnregister)(am_voidptr user_data);
-    am_bool (*onCanHandleFile)(am_voidptr user_data, am_filesystem_file_handle file);
+    am_bool (*onCanHandleFile)(am_voidptr user_data, am_file_handle file);
 } am_codec_vtable;
 
 typedef struct
@@ -66,17 +64,17 @@ typedef struct
 
     am_voidptr user_data;
 
-    am_codec_vtable v_table;
+    am_codec_vtable* v_table;
 
     struct
     {
-        am_codec_decoder_vtable v_table;
+        am_codec_decoder_vtable* v_table;
         am_voidptr user_data;
     } decoder;
 
     struct
     {
-        am_codec_encoder_vtable v_table;
+        am_codec_encoder_vtable* v_table;
         am_voidptr user_data;
     } encoder;
 } am_codec_config;
@@ -93,13 +91,13 @@ void am_codec_unregister(const char* name);
 
 am_codec_handle am_codec_find(const char* name);
 
-am_bool am_codec_can_handle_file(am_codec_handle codec, am_filesystem_file_handle file);
+am_bool am_codec_can_handle_file(am_codec_handle codec, am_file_handle file);
 
 am_codec_decoder_handle am_codec_decoder_create(const char* name);
 
 void am_codec_decoder_destroy(const char* name, am_codec_decoder_handle handle);
 
-am_bool am_codec_decoder_open(am_codec_decoder_handle handle, am_filesystem_file_handle file);
+am_bool am_codec_decoder_open(am_codec_decoder_handle handle, am_file_handle file);
 
 am_bool am_codec_decoder_close(am_codec_decoder_handle handle);
 

@@ -29,14 +29,14 @@ public:
             , _v_table(v_table)
             , _user_data(user_data)
         {
-            if (_v_table->onCreate)
-                _v_table->onCreate(_user_data);
+            if (_v_table->create)
+                _v_table->create(_user_data);
         }
 
         ~CDecoder() override
         {
-            if (_v_table->onDestroy)
-                _v_table->onDestroy(_user_data);
+            if (_v_table->destroy)
+                _v_table->destroy(_user_data);
 
             _v_table = nullptr;
             _user_data = nullptr;
@@ -44,27 +44,27 @@ public:
 
         bool Open(std::shared_ptr<File> file) override
         {
-            return AM_BOOL_TO_BOOL(_v_table->onOpen(_user_data, reinterpret_cast<am_filesystem_file_handle>(file.get())));
+            return AM_BOOL_TO_BOOL(_v_table->open(_user_data, { am_file_type_unknown, file.get() }));
         }
 
         bool Close() override
         {
-            return AM_BOOL_TO_BOOL(_v_table->onClose(_user_data));
+            return AM_BOOL_TO_BOOL(_v_table->close(_user_data));
         }
 
         AmUInt64 Load(AmVoidPtr out) override
         {
-            return _v_table->onLoad(_user_data, out);
+            return _v_table->load(_user_data, out);
         }
 
         AmUInt64 Stream(AmVoidPtr out, AmUInt64 offset, AmUInt64 length) override
         {
-            return _v_table->onStream(_user_data, out, offset, length);
+            return _v_table->stream(_user_data, out, offset, length);
         }
 
         bool Seek(AmUInt64 offset) override
         {
-            return AM_BOOL_TO_BOOL(_v_table->onSeek(_user_data, offset));
+            return AM_BOOL_TO_BOOL(_v_table->seek(_user_data, offset));
         }
 
     private:
@@ -80,14 +80,14 @@ public:
             , _v_table(v_table)
             , _user_data(user_data)
         {
-            if (_v_table->onCreate)
-                _v_table->onCreate(_user_data);
+            if (_v_table->create)
+                _v_table->create(_user_data);
         }
 
         ~CEncoder() override
         {
-            if (_v_table->onDestroy)
-                _v_table->onDestroy(_user_data);
+            if (_v_table->destroy)
+                _v_table->destroy(_user_data);
 
             _v_table = nullptr;
             _user_data = nullptr;
@@ -95,17 +95,17 @@ public:
 
         bool Open(std::shared_ptr<File> file) override
         {
-            return AM_BOOL_TO_BOOL(_v_table->onOpen(_user_data, reinterpret_cast<am_filesystem_file_handle>(file.get())));
+            return AM_BOOL_TO_BOOL(_v_table->open(_user_data, { am_file_type_unknown, file.get() }));
         }
 
         bool Close() override
         {
-            return AM_BOOL_TO_BOOL(_v_table->onClose(_user_data));
+            return AM_BOOL_TO_BOOL(_v_table->close(_user_data));
         }
 
         AmUInt64 Write(AmVoidPtr in, AmUInt64 offset, AmUInt64 length) override
         {
-            return _v_table->onWrite(_user_data, in, offset, length);
+            return _v_table->write(_user_data, in, offset, length);
         }
 
     private:
@@ -117,19 +117,19 @@ public:
         : Codec(config.name)
         , _config(config)
     {
-        if (_config.v_table.onRegister)
-            _config.v_table.onRegister(_config.user_data);
+        if (_config.v_table->onRegister)
+            _config.v_table->onRegister(_config.user_data);
     }
 
     ~CCodec() override
     {
-        if (_config.v_table.onUnregister)
-            _config.v_table.onUnregister(_config.user_data);
+        if (_config.v_table->onUnregister)
+            _config.v_table->onUnregister(_config.user_data);
     }
 
     Decoder* CreateDecoder() override
     {
-        return ampoolnew(MemoryPoolKind::Codec, CDecoder, this, &_config.decoder.v_table, _config.decoder.user_data);
+        return ampoolnew(MemoryPoolKind::Codec, CDecoder, this, _config.decoder.v_table, _config.decoder.user_data);
     }
 
     void DestroyDecoder(Decoder* decoder) override
@@ -139,7 +139,7 @@ public:
 
     Encoder* CreateEncoder() override
     {
-        return ampoolnew(MemoryPoolKind::Codec, CEncoder, this, &_config.encoder.v_table, _config.encoder.user_data);
+        return ampoolnew(MemoryPoolKind::Codec, CEncoder, this, _config.encoder.v_table, _config.encoder.user_data);
     }
 
     void DestroyEncoder(Encoder* encoder) override
@@ -149,7 +149,7 @@ public:
 
     [[nodiscard]] bool CanHandleFile(std::shared_ptr<File> file) const override
     {
-        return AM_BOOL_TO_BOOL(_config.v_table.onCanHandleFile(_config.user_data, reinterpret_cast<am_filesystem_file_handle>(file.get())));
+        return AM_BOOL_TO_BOOL(_config.v_table->onCanHandleFile(_config.user_data, { am_file_type_unknown, file.get() }));
     }
 
 private:
@@ -165,22 +165,10 @@ AM_API_PUBLIC am_codec_config am_codec_config_init(const char* name)
 
     config.name = name;
     config.user_data = nullptr;
-    config.v_table.onRegister = nullptr;
-    config.v_table.onUnregister = nullptr;
-    config.v_table.onCanHandleFile = nullptr;
-    config.decoder.v_table.onCreate = nullptr;
-    config.decoder.v_table.onDestroy = nullptr;
-    config.decoder.v_table.onOpen = nullptr;
-    config.decoder.v_table.onClose = nullptr;
-    config.decoder.v_table.onLoad = nullptr;
-    config.decoder.v_table.onStream = nullptr;
-    config.decoder.v_table.onSeek = nullptr;
+    config.v_table = nullptr;
+    config.decoder.v_table = nullptr;
     config.decoder.user_data = nullptr;
-    config.encoder.v_table.onCreate = nullptr;
-    config.encoder.v_table.onDestroy = nullptr;
-    config.encoder.v_table.onOpen = nullptr;
-    config.encoder.v_table.onClose = nullptr;
-    config.encoder.v_table.onWrite = nullptr;
+    config.encoder.v_table = nullptr;
     config.encoder.user_data = nullptr;
 
     return config;
@@ -204,12 +192,12 @@ AM_API_PUBLIC am_codec_handle am_codec_find(const char* name)
     return reinterpret_cast<am_codec_handle>(Codec::Find(name));
 }
 
-AM_API_PUBLIC am_bool am_codec_can_handle_file(am_codec_handle codec, am_filesystem_file_handle file)
+AM_API_PUBLIC am_bool am_codec_can_handle_file(am_codec_handle codec, am_file_handle file)
 {
-    if (codec == nullptr || file == nullptr)
+    if (codec == nullptr || file.handle == nullptr)
         return AM_FALSE;
 
-    return AM_BOOL_TO_BOOL(reinterpret_cast<Codec*>(codec)->CanHandleFile(std::shared_ptr<File>(reinterpret_cast<File*>(file))));
+    return AM_BOOL_TO_BOOL(reinterpret_cast<Codec*>(codec)->CanHandleFile(std::shared_ptr<File>(static_cast<File*>(file.handle))));
 }
 
 AM_API_PUBLIC am_codec_decoder_handle am_codec_decoder_create(const char* name)
@@ -233,13 +221,13 @@ AM_API_PUBLIC void am_codec_decoder_destroy(const char* name, am_codec_decoder_h
     codec->DestroyDecoder(reinterpret_cast<Codec::Decoder*>(handle));
 }
 
-AM_API_PUBLIC am_bool am_codec_decoder_open(am_codec_decoder_handle handle, am_filesystem_file_handle file)
+AM_API_PUBLIC am_bool am_codec_decoder_open(am_codec_decoder_handle handle, am_file_handle file)
 {
-    if (handle == nullptr || file == nullptr)
+    if (handle == nullptr || file.handle == nullptr)
         return AM_FALSE;
 
     auto* codec = reinterpret_cast<Codec::Decoder*>(handle);
-    return BOOL_TO_AM_BOOL(codec->Open(std::shared_ptr<File>(reinterpret_cast<File*>(file))));
+    return BOOL_TO_AM_BOOL(codec->Open(std::shared_ptr<File>(static_cast<File*>(file.handle))));
 }
 
 AM_API_PUBLIC am_bool am_codec_decoder_close(am_codec_decoder_handle handle)

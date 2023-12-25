@@ -35,4 +35,17 @@ inline void am_free_string(const char* str)
     amfree(const_cast<char*>(str));
 }
 
+inline const am_oschar* am_allocate_osstring(const am_oschar* str)
+{
+    const size_t len = AmOsString(str).size() + 1;
+    auto* result = static_cast<am_oschar*>(ammalloc(len));
+    std::memcpy(result, str, len);
+    return result;
+}
+
+inline void am_free_osstring(const am_oschar* str)
+{
+    amfree(const_cast<am_oschar*>(str));
+}
+
 #endif // SS_AMPLITUDE_INTERNALS_H

@@ -17,11 +17,11 @@
 
 #include "amplitude_common.h"
 
+#include "amplitude_channel.h"
+#include "amplitude_filesystem.h"
+
 struct am_engine; // Opaque type for the Engine class.
 typedef struct am_engine am_engine;
-
-struct am_filesystem; // Opaque type for the FileSystem class.
-typedef struct am_filesystem am_filesystem;
 
 struct am_sound_object; // Opaque type for the SoundObject class.
 typedef struct am_sound_object am_sound_object;
@@ -74,10 +74,6 @@ typedef am_environment* am_environment_handle;
 struct am_bus; // Opaque type for the Bus class.
 typedef struct am_bus am_bus;
 typedef am_bus* am_bus_handle;
-
-struct am_channel; // Opaque type for the Channel class.
-typedef struct am_channel am_channel;
-typedef am_channel* am_channel_handle;
 
 struct am_event_canceler; // Opaque type for the EventCanceler class.
 typedef struct am_event_canceler am_event_canceler;
@@ -648,8 +644,7 @@ am_bus_handle am_engine_find_bus_by_id(am_uint64 id);
  * @return The channel the switch container is played on. If the switch container could not be
  *         played, an invalid Channel is returned.
  */
-am_channel_handle am_engine_play_switch_container_world(
-    am_switch_container_handle handle, const am_vec3* location, am_float32 user_gain);
+am_channel_handle am_engine_play_switch_container_world(am_switch_container_handle handle, const am_vec3* location, am_float32 user_gain);
 
 /**
  * @brief Plays a switch container associated with the given handle in an Entity scope with the
@@ -662,8 +657,7 @@ am_channel_handle am_engine_play_switch_container_world(
  * @return The channel the switch container is played on. If the switch container could not be
  *         played, an invalid Channel is returned.
  */
-am_channel_handle am_engine_play_switch_container_entity(
-    am_switch_container_handle handle, am_entity_handle entity, am_float32 user_gain);
+am_channel_handle am_engine_play_switch_container_entity(am_switch_container_handle handle, am_entity_handle entity, am_float32 user_gain);
 
 /**
  * @brief Plays a collection associated with the given handle in the location with
