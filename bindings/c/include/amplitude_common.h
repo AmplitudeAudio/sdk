@@ -59,7 +59,8 @@ typedef am_uint32 am_bool;
 #define AM_TRUE 1
 #define AM_FALSE 0
 
-#include <SparkyStudios/Audio/Amplitude/Math/HandmadeMath.h>
+#define AM_C_API
+#include <SparkyStudios/Audio/Amplitude/Core/Common.h>
 
 typedef AmVec2 am_vec2;
 typedef AmVec3 am_vec3;
