@@ -2,7 +2,7 @@ repo_name: SparkyStudios/AmplitudeAudioSDK
 report_id: 3a59b4cfebd002e2f7e0f568837d4c83
 version: 0.1
 repo_type: Public
-timestamp: '2024-01-11T12:35:36+00:00'
+timestamp: '2024-02-29T18:17:26+00:00'
 requested_by: na2axl
 provider: github
 branch: develop
@@ -54,7 +54,7 @@ tools:
   last_updated_by: Axel Nana
   last_updated_on: 2023-06-04 18:11:06.000000000 Z
 - name: CMake
-  description: 'An open-source system that manages the build process '
+  description: An open-source system that manages the build process
   website_url: http://www.cmake.org/
   open_source: false
   hosted_saas: false
