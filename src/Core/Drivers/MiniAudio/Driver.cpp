@@ -16,7 +16,7 @@
 
 #include <Mixer/Mixer.h>
 
-namespace SparkyStudios::Audio::Amplitude::Drivers
+namespace SparkyStudios::Audio::Amplitude
 {
     static void* ma_malloc(size_t sz, void* pUserData)
     {
@@ -399,4 +399,4 @@ namespace SparkyStudios::Audio::Amplitude::Drivers
 
         return true;
     }
-} // namespace SparkyStudios::Audio::Amplitude::Drivers
+} // namespace SparkyStudios::Audio::Amplitude

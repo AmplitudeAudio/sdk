@@ -37,7 +37,7 @@ namespace SparkyStudios::Audio::Amplitude
         }
     };
 
-    [[maybe_unused]] static class SilenceProcessor final : public SoundProcessor
+    class SilenceProcessor final : public SoundProcessor
     {
     public:
         SilenceProcessor()
@@ -53,7 +53,7 @@ namespace SparkyStudios::Audio::Amplitude
         {
             ampooldelete(MemoryPoolKind::Amplimix, SilenceProcessorInstance, (SilenceProcessorInstance*)instance);
         }
-    } gSilenceProcessor; // NOLINT(cert-err58-cpp)
+    };
 } // namespace SparkyStudios::Audio::Amplitude
 
 #endif // SS_AMPLITUDE_AUDIO_SILENCE_PROCESSOR_H

@@ -21,9 +21,9 @@
 
 #include "dr_wav.h"
 
-namespace SparkyStudios::Audio::Amplitude::Codecs
+namespace SparkyStudios::Audio::Amplitude
 {
-    [[maybe_unused]] static class WAVCodec final : public Codec
+    class WAVCodec final : public Codec
     {
     public:
         class WAVDecoder final : public Decoder
@@ -92,7 +92,7 @@ namespace SparkyStudios::Audio::Amplitude::Codecs
         [[nodiscard]] bool CanHandleFile(std::shared_ptr<File> file) const override;
 
         drwav_allocation_callbacks m_allocationCallbacks;
-    } wav_codec; // NOLINT(cert-err58-cpp)
-} // namespace SparkyStudios::Audio::Amplitude::Codecs
+    };
+} // namespace SparkyStudios::Audio::Amplitude
 
 #endif // SS_AMPLITUDE_AUDIO_WAV_CODEC_H

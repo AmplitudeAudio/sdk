@@ -45,7 +45,7 @@ namespace SparkyStudios::Audio::Amplitude
         }
     };
 
-    [[maybe_unused]] static class EffectProcessor final : public SoundProcessor
+    class EffectProcessor final : public SoundProcessor
     {
     public:
         EffectProcessor()
@@ -61,7 +61,7 @@ namespace SparkyStudios::Audio::Amplitude
         {
             ampooldelete(MemoryPoolKind::Amplimix, EffectProcessorInstance, (EffectProcessorInstance*)instance);
         }
-    } gEffectProcessor; // NOLINT(cert-err58-cpp)
+    };
 } // namespace SparkyStudios::Audio::Amplitude
 
 #endif // SS_AMPLITUDE_AUDIO_EFFECT_PROCESSOR_H

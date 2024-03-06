@@ -21,9 +21,9 @@
 
 #include <Utils/miniaudio/miniaudio_utils.h>
 
-namespace SparkyStudios::Audio::Amplitude::Drivers
+namespace SparkyStudios::Audio::Amplitude
 {
-    [[maybe_unused]] static class MiniAudioDriver final : public Driver
+    class MiniAudioDriver final : public Driver
     {
     public:
         MiniAudioDriver();
@@ -49,7 +49,7 @@ namespace SparkyStudios::Audio::Amplitude::Drivers
         ma_context _context;
 
         std::vector<DeviceDescription> _devices;
-    } g_driver_miniaudio; // NOLINT(cert-err58-cpp)
-} // namespace SparkyStudios::Audio::Amplitude::Drivers
+    };
+} // namespace SparkyStudios::Audio::Amplitude
 
 #endif // SS_AMPLITUDE_AUDIO_MINIAUDIO_DRIVER_H

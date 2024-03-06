@@ -53,6 +53,7 @@ docs/html/
 docs/linklint_results/
 docs/resources/_gen/
 docs/.hugo_build.lock
+docs/node_modules/
 gen/
 .DS_Store
 

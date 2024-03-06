@@ -121,7 +121,7 @@ namespace SparkyStudios::Audio::Amplitude
         SRC_STATE* _resampler = nullptr;
     };
 
-    [[maybe_unused]] static class LibsamplerateResampler final : public Resampler
+    class LibsamplerateResampler final : public Resampler
     {
     public:
         LibsamplerateResampler()
@@ -137,7 +137,7 @@ namespace SparkyStudios::Audio::Amplitude
         {
             ampooldelete(MemoryPoolKind::Filtering, LibsamplerateResamplerInstance, (LibsamplerateResamplerInstance*)instance);
         }
-    } gLibsamplerateResampler; // NOLINT(cert-err58-cpp)
+    };
 } // namespace SparkyStudios::Audio::Amplitude
 
 #endif // SS_AMPLITUDE_AUDIO_LIBSAMPLERATE_RESAMPLER_H

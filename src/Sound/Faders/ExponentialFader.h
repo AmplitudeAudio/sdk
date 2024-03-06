@@ -33,7 +33,7 @@ namespace SparkyStudios::Audio::Amplitude
         }
     };
 
-    [[maybe_unused]] static class ExponentialFader final : public Fader
+    class ExponentialFader final : public Fader
     {
     public:
         ExponentialFader()
@@ -54,7 +54,7 @@ namespace SparkyStudios::Audio::Amplitude
         {
             return gExponentialFaderCurveControlPoints;
         }
-    } gExponentialFader; // NOLINT(cert-err58-cpp)
+    };
 } // namespace SparkyStudios::Audio::Amplitude
 
 #endif // SS_AMPLITUDE_AUDIO_EXPONENTIAL_FADER_H

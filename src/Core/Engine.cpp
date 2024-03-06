@@ -41,6 +41,33 @@ namespace SparkyStudios::Audio::Amplitude
     // The list of loaded plugins.
     static std::vector<dylib*> gLoadedPlugins = {};
 
+    // Default Plugins instances
+    static ClipProcessor* sClipProcessorPlugin = nullptr;
+    static EffectProcessor* sEffectProcessorPlugin = nullptr;
+    static EnvironmentProcessor* sEnvironmentProcessorPlugin = nullptr;
+    static ObstructionProcessor* sObstructionProcessorPlugin = nullptr;
+    static OcclusionProcessor* sOcclusionProcessorPlugin = nullptr;
+    static PassThroughProcessor* sPassThroughProcessorPlugin = nullptr;
+    static SilenceProcessor* sSilenceProcessorPlugin = nullptr;
+    // ---
+    static LibsamplerateResampler* sLibsamplerateResamplerPlugin = nullptr;
+    static R8BrainResampler* sR8BrainResamplerPlugin = nullptr;
+    // ---
+    static ConstantFader* sConstantFaderPlugin = nullptr;
+    static EaseFader* sEaseFaderPlugin = nullptr;
+    static EaseInFader* sEaseInFaderPlugin = nullptr;
+    static EaseInOutFader* sEaseInOutFaderPlugin = nullptr;
+    static EaseOutFader* sEaseOutFaderPlugin = nullptr;
+    static ExponentialFader* sExponentialFaderPlugin = nullptr;
+    static LinearFader* sLinearFaderPlugin = nullptr;
+    static SCurveSmoothFader* sCurveSmoothFaderPlugin = nullptr;
+    static SCurveSharpFader* sCurveSharpFaderPlugin = nullptr;
+    // ---
+    static AMSCodec* sAMSCodecPlugin = nullptr;
+    // ---
+    static MiniAudioDriver* sMiniAudioDriverPlugin = nullptr;
+    static NullDriver* sNullDriverPlugin = nullptr;
+
     static AmUniquePtr<MemoryPoolKind::Engine, Engine> gAmplitude = nullptr;
 
     std::set<AmOsString> Engine::_pluginSearchPaths = {};
@@ -242,6 +269,90 @@ namespace SparkyStudios::Audio::Amplitude
             return;
 
         _pluginSearchPaths.erase(it);
+    }
+
+    void Engine::RegisterDefaultPlugins()
+    {
+        sClipProcessorPlugin = ampoolnew(MemoryPoolKind::Engine, ClipProcessor);
+        sEffectProcessorPlugin = ampoolnew(MemoryPoolKind::Engine, EffectProcessor);
+        sEnvironmentProcessorPlugin = ampoolnew(MemoryPoolKind::Engine, EnvironmentProcessor);
+        sObstructionProcessorPlugin = ampoolnew(MemoryPoolKind::Engine, ObstructionProcessor);
+        sOcclusionProcessorPlugin = ampoolnew(MemoryPoolKind::Engine, OcclusionProcessor);
+        sPassThroughProcessorPlugin = ampoolnew(MemoryPoolKind::Engine, PassThroughProcessor);
+        sSilenceProcessorPlugin = ampoolnew(MemoryPoolKind::Engine, SilenceProcessor);
+        // ---
+        sLibsamplerateResamplerPlugin = ampoolnew(MemoryPoolKind::Engine, LibsamplerateResampler);
+        sR8BrainResamplerPlugin = ampoolnew(MemoryPoolKind::Engine, R8BrainResampler);
+        // ---
+        sConstantFaderPlugin = ampoolnew(MemoryPoolKind::Engine, ConstantFader);
+        sEaseFaderPlugin = ampoolnew(MemoryPoolKind::Engine, EaseFader);
+        sEaseInFaderPlugin = ampoolnew(MemoryPoolKind::Engine, EaseInFader);
+        sEaseInOutFaderPlugin = ampoolnew(MemoryPoolKind::Engine, EaseInOutFader);
+        sEaseOutFaderPlugin = ampoolnew(MemoryPoolKind::Engine, EaseOutFader);
+        sExponentialFaderPlugin = ampoolnew(MemoryPoolKind::Engine, ExponentialFader);
+        sLinearFaderPlugin = ampoolnew(MemoryPoolKind::Engine, LinearFader);
+        sCurveSmoothFaderPlugin = ampoolnew(MemoryPoolKind::Engine, SCurveSmoothFader);
+        sCurveSharpFaderPlugin = ampoolnew(MemoryPoolKind::Engine, SCurveSharpFader);
+        // ---
+        sAMSCodecPlugin = ampoolnew(MemoryPoolKind::Engine, AMSCodec);
+        // ---
+        sMiniAudioDriverPlugin = ampoolnew(MemoryPoolKind::Engine, MiniAudioDriver);
+        sNullDriverPlugin = ampoolnew(MemoryPoolKind::Engine, NullDriver);
+    }
+
+    void Engine::UnregisterDefaultPlugins()
+    {
+        ampooldelete(MemoryPoolKind::Engine, ClipProcessor, sClipProcessorPlugin);
+        ampooldelete(MemoryPoolKind::Engine, EffectProcessor, sEffectProcessorPlugin);
+        ampooldelete(MemoryPoolKind::Engine, EnvironmentProcessor, sEnvironmentProcessorPlugin);
+        ampooldelete(MemoryPoolKind::Engine, ObstructionProcessor, sObstructionProcessorPlugin);
+        ampooldelete(MemoryPoolKind::Engine, OcclusionProcessor, sOcclusionProcessorPlugin);
+        ampooldelete(MemoryPoolKind::Engine, PassThroughProcessor, sPassThroughProcessorPlugin);
+        ampooldelete(MemoryPoolKind::Engine, SilenceProcessor, sSilenceProcessorPlugin);
+        // ---
+        ampooldelete(MemoryPoolKind::Engine, LibsamplerateResampler, sLibsamplerateResamplerPlugin);
+        ampooldelete(MemoryPoolKind::Engine, R8BrainResampler, sR8BrainResamplerPlugin);
+        // ---
+        ampooldelete(MemoryPoolKind::Engine, ConstantFader, sConstantFaderPlugin);
+        ampooldelete(MemoryPoolKind::Engine, EaseFader, sEaseFaderPlugin);
+        ampooldelete(MemoryPoolKind::Engine, EaseInFader, sEaseInFaderPlugin);
+        ampooldelete(MemoryPoolKind::Engine, EaseInOutFader, sEaseInOutFaderPlugin);
+        ampooldelete(MemoryPoolKind::Engine, EaseOutFader, sEaseOutFaderPlugin);
+        ampooldelete(MemoryPoolKind::Engine, ExponentialFader, sExponentialFaderPlugin);
+        ampooldelete(MemoryPoolKind::Engine, LinearFader, sLinearFaderPlugin);
+        ampooldelete(MemoryPoolKind::Engine, SCurveSmoothFader, sCurveSmoothFaderPlugin);
+        ampooldelete(MemoryPoolKind::Engine, SCurveSharpFader, sCurveSharpFaderPlugin);
+        // ---
+        ampooldelete(MemoryPoolKind::Engine, AMSCodec, sAMSCodecPlugin);
+        // ---
+        ampooldelete(MemoryPoolKind::Engine, MiniAudioDriver, sMiniAudioDriverPlugin);
+        ampooldelete(MemoryPoolKind::Engine, NullDriver, sNullDriverPlugin);
+
+        sClipProcessorPlugin = nullptr;
+        sEffectProcessorPlugin = nullptr;
+        sEnvironmentProcessorPlugin = nullptr;
+        sObstructionProcessorPlugin = nullptr;
+        sOcclusionProcessorPlugin = nullptr;
+        sPassThroughProcessorPlugin = nullptr;
+        sSilenceProcessorPlugin = nullptr;
+        // ---
+        sLibsamplerateResamplerPlugin = nullptr;
+        sR8BrainResamplerPlugin = nullptr;
+        // ---
+        sConstantFaderPlugin = nullptr;
+        sEaseFaderPlugin = nullptr;
+        sEaseInFaderPlugin = nullptr;
+        sEaseInOutFaderPlugin = nullptr;
+        sEaseOutFaderPlugin = nullptr;
+        sExponentialFaderPlugin = nullptr;
+        sLinearFaderPlugin = nullptr;
+        sCurveSmoothFaderPlugin = nullptr;
+        sCurveSharpFaderPlugin = nullptr;
+        // ---
+        sAMSCodecPlugin = nullptr;
+        // ---
+        sMiniAudioDriverPlugin = nullptr;
+        sNullDriverPlugin = nullptr;
     }
 
     Engine* Engine::GetInstance()

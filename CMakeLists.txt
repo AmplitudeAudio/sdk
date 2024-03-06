@@ -383,8 +383,6 @@ foreach(build_type ${AM_BUILDSYSTEM_TYPE})
     target_link_libraries(${build_type}
         PRIVATE
             flatbuffers::flatbuffers SampleRate::samplerate xsimd
-        PUBLIC
-            mimalloc-static
     )
 
     add_dependencies(${build_type}
@@ -402,6 +400,9 @@ foreach(build_type ${AM_BUILDSYSTEM_TYPE})
     endif()
 endforeach()
 
+target_link_libraries(Static PUBLIC mimalloc-static)
+target_link_libraries(Shared PUBLIC mimalloc)
+
 add_subdirectory(tools/amac)
 
 if(BUILD_SAMPLES)
@@ -415,6 +416,7 @@ install(
     TARGETS Static
     EXPORT AmplitudeAudioSDKConfig
     ARCHIVE DESTINATION ${AM_LIB_DESTINATION}/static
+    INCLUDES DESTINATION ${AM_INC_DESTINATION}
 )
 
 install(
@@ -423,7 +425,13 @@ install(
     ARCHIVE DESTINATION ${AM_LIB_DESTINATION}/shared
     LIBRARY DESTINATION ${AM_LIB_DESTINATION}/shared
     RUNTIME DESTINATION ${AM_LIB_DESTINATION}/shared
+    INCLUDES DESTINATION ${AM_INC_DESTINATION}
 )
+
+install(
+    FILES $<TARGET_RUNTIME_DLLS:Shared>
+    DESTINATION ${AM_LIB_DESTINATION}/shared
+ )
 
 install(
     DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/include/

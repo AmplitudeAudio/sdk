@@ -34,7 +34,7 @@ namespace SparkyStudios::Audio::Amplitude
         }
     };
 
-    [[maybe_unused]] static class SCurveSmoothFader final : public Fader
+    class SCurveSmoothFader final : public Fader
     {
     public:
         SCurveSmoothFader()
@@ -55,9 +55,9 @@ namespace SparkyStudios::Audio::Amplitude
         {
             return gSCurveSmoothFaderCurveControlPoints;
         }
-    } gSCurveSmoothFader; // NOLINT(cert-err58-cpp)
+    };
 
-    [[maybe_unused]] static class SCurveSharpFader final : public Fader
+    class SCurveSharpFader final : public Fader
     {
     public:
         SCurveSharpFader()
@@ -78,7 +78,7 @@ namespace SparkyStudios::Audio::Amplitude
         {
             return gSCurveSharpFaderCurveControlPoints;
         }
-    } gSCurveSharpFader; // NOLINT(cert-err58-cpp)
+    };
 } // namespace SparkyStudios::Audio::Amplitude
 
 #endif // SS_AMPLITUDE_AUDIO_S_CURVE_FADER_H

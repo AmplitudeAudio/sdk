@@ -19,7 +19,7 @@
 
 #include <SparkyStudios/Audio/Amplitude/Amplitude.h>
 
-namespace SparkyStudios::Audio::Amplitude::Drivers
+namespace SparkyStudios::Audio::Amplitude
 {
     struct NullDriverDeviceData
     {
@@ -28,7 +28,7 @@ namespace SparkyStudios::Audio::Amplitude::Drivers
         bool mRunning;
     };
 
-    [[maybe_unused]] static class NullDriver final : public Driver
+    class NullDriver final : public Driver
     {
     public:
         NullDriver();
@@ -47,7 +47,7 @@ namespace SparkyStudios::Audio::Amplitude::Drivers
         AmThreadHandle _thread;
 
         NullDriverDeviceData _deviceData;
-    } g_driver_null; // NOLINT(cert-err58-cpp)
-} // namespace SparkyStudios::Audio::Amplitude::Drivers
+    };
+} // namespace SparkyStudios::Audio::Amplitude
 
 #endif // SS_AMPLITUDE_AUDIO_NULL_DRIVER_H

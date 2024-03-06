@@ -38,7 +38,7 @@ namespace SparkyStudios::Audio::Amplitude
         }
     };
 
-    [[maybe_unused]] static class PassThroughProcessor final : public SoundProcessor
+    class PassThroughProcessor final : public SoundProcessor
     {
     public:
         PassThroughProcessor()
@@ -54,7 +54,7 @@ namespace SparkyStudios::Audio::Amplitude
         {
             ampooldelete(MemoryPoolKind::Amplimix, PassThroughProcessorInstance, (PassThroughProcessorInstance*)instance);
         }
-    } gPassThroughProcessor; // NOLINT(cert-err58-cpp)
+    };
 } // namespace SparkyStudios::Audio::Amplitude
 
 #endif // SS_AMPLITUDE_AUDIO_PASS_THROUGH_PROCESSOR_H

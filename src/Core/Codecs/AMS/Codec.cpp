@@ -16,7 +16,7 @@
 
 using namespace SparkyStudios::Audio::Amplitude::Compression::ADPCM;
 
-namespace SparkyStudios::Audio::Amplitude::Codecs
+namespace SparkyStudios::Audio::Amplitude
 {
     static void little_endian_to_native(void* data, const char* format)
     {
@@ -641,4 +641,4 @@ namespace SparkyStudios::Audio::Amplitude::Codecs
         const auto& path = file->GetPath();
         return path.find(AM_OS_STRING(".ams")) != AmOsString::npos;
     }
-} // namespace SparkyStudios::Audio::Amplitude::Codecs
+} // namespace SparkyStudios::Audio::Amplitude

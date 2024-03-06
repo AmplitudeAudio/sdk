@@ -33,7 +33,7 @@ namespace SparkyStudios::Audio::Amplitude
         }
     };
 
-    [[maybe_unused]] static class LinearFader final : public Fader
+    class LinearFader final : public Fader
     {
     public:
         LinearFader()
@@ -54,7 +54,7 @@ namespace SparkyStudios::Audio::Amplitude
         {
             return gLinearFaderCurveControlPoints;
         }
-    } gLinearFader; // NOLINT(cert-err58-cpp)
+    };
 } // namespace SparkyStudios::Audio::Amplitude
 
 #endif // SS_AMPLITUDE_AUDIO_LINEAR_FADER_H

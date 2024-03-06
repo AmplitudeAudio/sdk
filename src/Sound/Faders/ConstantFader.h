@@ -33,7 +33,7 @@ namespace SparkyStudios::Audio::Amplitude
         }
     };
 
-    [[maybe_unused]] static class ConstantFader final : public Fader
+    class ConstantFader final : public Fader
     {
     public:
         ConstantFader()
@@ -54,7 +54,7 @@ namespace SparkyStudios::Audio::Amplitude
         {
             return gConstantFaderCurveControlPoints;
         }
-    } gConstantFader; // NOLINT(cert-err58-cpp)
+    };
 } // namespace SparkyStudios::Audio::Amplitude
 
 #endif // SS_AMPLITUDE_AUDIO_CONSTANT_FADER_H

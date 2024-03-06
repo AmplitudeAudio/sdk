@@ -116,7 +116,7 @@ namespace SparkyStudios::Audio::Amplitude
         BiquadResonantFilter _lpFilter;
     };
 
-    [[maybe_unused]] static class ObstructionProcessor final : public SoundProcessor
+    class ObstructionProcessor final : public SoundProcessor
     {
     public:
         ObstructionProcessor()
@@ -132,7 +132,7 @@ namespace SparkyStudios::Audio::Amplitude
         {
             ampooldelete(MemoryPoolKind::Amplimix, ObstructionProcessorInstance, (ObstructionProcessorInstance*)instance);
         }
-    } gObstructionProcessor; // NOLINT(cert-err58-cpp)
+    };
 } // namespace SparkyStudios::Audio::Amplitude
 
 #endif // SS_AMPLITUDE_AUDIO_OBSTRUCTION_PROCESSOR_H

@@ -21,9 +21,9 @@
 
 #include "dr_mp3.h"
 
-namespace SparkyStudios::Audio::Amplitude::Codecs
+namespace SparkyStudios::Audio::Amplitude
 {
-    [[maybe_unused]] static class MP3Codec final : public Codec
+    class MP3Codec final : public Codec
     {
     public:
         class MP3Decoder final : public Decoder
@@ -86,7 +86,7 @@ namespace SparkyStudios::Audio::Amplitude::Codecs
         [[nodiscard]] bool CanHandleFile(std::shared_ptr<File> file) const override;
 
         drmp3_allocation_callbacks m_allocationCallbacks;
-    } mp3_codec; // NOLINT(cert-err58-cpp)
-} // namespace SparkyStudios::Audio::Amplitude::Codecs
+    };
+} // namespace SparkyStudios::Audio::Amplitude
 
 #endif // SS_AMPLITUDE_AUDIO_MP3_CODEC_H

@@ -144,7 +144,7 @@ namespace SparkyStudios::Audio::Amplitude
         std::vector<std::unique_ptr<r8b::CDSPResampler16>> _resamplers;
     };
 
-    [[maybe_unused]] static class R8BrainResampler final : public Resampler
+    class R8BrainResampler final : public Resampler
     {
     public:
         R8BrainResampler()
@@ -160,7 +160,7 @@ namespace SparkyStudios::Audio::Amplitude
         {
             ampooldelete(MemoryPoolKind::Filtering, R8BrainResamplerInstance, (R8BrainResamplerInstance*)instance);
         }
-    } gR8BrainResampler; // NOLINT(cert-err58-cpp)
+    };
 } // namespace SparkyStudios::Audio::Amplitude
 
 #endif // SS_AMPLITUDE_AUDIO_R8BRAIN_RESAMPLER_H

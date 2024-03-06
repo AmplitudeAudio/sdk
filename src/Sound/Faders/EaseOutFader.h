@@ -33,7 +33,7 @@ namespace SparkyStudios::Audio::Amplitude
         }
     };
 
-    [[maybe_unused]] static class EaseOutFader final : public Fader
+    class EaseOutFader final : public Fader
     {
     public:
         EaseOutFader()
@@ -54,7 +54,7 @@ namespace SparkyStudios::Audio::Amplitude
         {
             return gEaseOutFaderCurveControlPoints;
         }
-    } gEaseOutFader; // NOLINT(cert-err58-cpp)
+    };
 } // namespace SparkyStudios::Audio::Amplitude
 
 #endif // SS_AMPLITUDE_AUDIO_EASE_OUT_FADER_H

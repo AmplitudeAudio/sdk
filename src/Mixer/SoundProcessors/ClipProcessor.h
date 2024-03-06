@@ -63,7 +63,7 @@ namespace SparkyStudios::Audio::Amplitude
         }
     };
 
-    [[maybe_unused]] static class ClipProcessor final : public SoundProcessor
+    class ClipProcessor final : public SoundProcessor
     {
     public:
         ClipProcessor()
@@ -79,7 +79,7 @@ namespace SparkyStudios::Audio::Amplitude
         {
             ampooldelete(MemoryPoolKind::Amplimix, ClipProcessorInstance, (ClipProcessorInstance*)instance);
         }
-    } gClipProcessor; // NOLINT(cert-err58-cpp)
+    };
 } // namespace SparkyStudios::Audio::Amplitude
 
 #endif // SS_AMPLITUDE_AUDIO_CLIP_PROCESSOR_H

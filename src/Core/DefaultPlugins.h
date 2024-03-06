@@ -12,6 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+#pragma once
+
 #ifndef AMPLITUDE_DEFAULTPLUGINS_H
 #define AMPLITUDE_DEFAULTPLUGINS_H
 
@@ -44,6 +46,19 @@
 #include <Sound/Faders/ExponentialFader.h>
 #include <Sound/Faders/LinearFader.h>
 #include <Sound/Faders/SCurveFader.h>
+
+#pragma endregion
+
+#pragma region Default Codecs
+
+#include <Core/Codecs/AMS/Codec.h>
+
+#pragma endregion
+
+#pragma region Default Drivers
+
+#include <Core/Drivers/MiniAudio/Driver.h>
+#include <Core/Drivers/Null/Driver.h>
 
 #pragma endregion
 

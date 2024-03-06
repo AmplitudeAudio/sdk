@@ -122,7 +122,7 @@ namespace SparkyStudios::Audio::Amplitude
         }
     };
 
-    [[maybe_unused]] static class EnvironmentProcessor final : public SoundProcessor
+    class EnvironmentProcessor final : public SoundProcessor
     {
     public:
         EnvironmentProcessor()
@@ -138,7 +138,7 @@ namespace SparkyStudios::Audio::Amplitude
         {
             ampooldelete(MemoryPoolKind::Amplimix, EnvironmentProcessorInstance, (EnvironmentProcessorInstance*)instance);
         }
-    } gEnvironmentProcessor; // NOLINT(cert-err58-cpp)
+    };
 } // namespace SparkyStudios::Audio::Amplitude
 
 #endif // SS_AMPLITUDE_AUDIO_ENVIRONMENT_PROCESSOR_H

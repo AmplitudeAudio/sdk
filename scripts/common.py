@@ -28,12 +28,12 @@ SDK_PATH = os.getenv("AM_SDK_PATH") or os.getcwd()
 
 # The Amplitude Audio SDK schemas directory.
 SCHEMA_PATHS = [
-    os.path.join(SDK_PATH, "sdk", "schemas")
+    os.path.join(SDK_PATH, "schemas")
 ]
 
 # Name of the flatbuffers executable.
 FLATC = (shutil.which("flatc")
-         or os.path.join(SDK_PATH, "sdk", "bin", os.getenv("AM_SDK_PLATFORM") or "", "flatc"))
+         or os.path.join(SDK_PATH, "bin", os.getenv("AM_SDK_PLATFORM") or "", "flatc"))
 
 # Directory where unprocessed sound flatbuffers data can be found.
 SOUNDS_DIR_NAME = 'sounds'

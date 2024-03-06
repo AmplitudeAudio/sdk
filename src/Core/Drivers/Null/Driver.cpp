@@ -16,7 +16,7 @@
 
 #include <Mixer/Mixer.h>
 
-namespace SparkyStudios::Audio::Amplitude::Drivers
+namespace SparkyStudios::Audio::Amplitude
 {
     static void null_mix(void* param)
     {
@@ -83,4 +83,4 @@ namespace SparkyStudios::Audio::Amplitude::Drivers
     {
         return true;
     }
-} // namespace SparkyStudios::Audio::Amplitude::Drivers
+} // namespace SparkyStudios::Audio::Amplitude

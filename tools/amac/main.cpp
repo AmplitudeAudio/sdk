@@ -99,6 +99,9 @@ static int process(const AmOsString& inFileName, const AmOsString& outFileName, 
     const auto inputFile = amEngine->GetFileSystem()->OpenFile(inFileName);
     const auto outputFile = amEngine->GetFileSystem()->OpenFile(outFileName);
 
+    auto* ams_codec = Codec::Find("ams");
+    auto* wav_codec = Codec::Find("wav");
+
     if (state.mode == ePM_ENCODE)
     {
         auto* codec = Codec::FindCodecForFile(inputFile);
@@ -125,7 +128,7 @@ static int process(const AmOsString& inFileName, const AmOsString& outFileName, 
         AmUInt64 numSamples = format.GetFramesCount();
         AmUInt64 framesSize = format.GetFrameSize();
 
-        auto* encoder = dynamic_cast<Codecs::AMSCodec::AMSEncoder*>(Codecs::ams_codec.CreateEncoder());
+        auto* encoder = dynamic_cast<AMSCodec::AMSEncoder*>(ams_codec->CreateEncoder());
 
         if (state.blockSizeShift > 0)
             blockSize = 1 << state.blockSizeShift;
@@ -258,8 +261,8 @@ static int process(const AmOsString& inFileName, const AmOsString& outFileName, 
     }
     else if (state.mode == ePM_DECODE)
     {
-        auto* decoder = Codecs::ams_codec.CreateDecoder();
-        auto* encoder = Codecs::wav_codec.CreateEncoder();
+        auto* decoder = ams_codec->CreateDecoder();
+        auto* encoder = wav_codec->CreateEncoder();
 
         if (!decoder->Open(inputFile))
         {

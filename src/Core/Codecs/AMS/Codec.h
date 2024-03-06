@@ -21,9 +21,9 @@
 
 #include <Utils/Audio/Compression/ADPCM/ADPCM.h>
 
-namespace SparkyStudios::Audio::Amplitude::Codecs
+namespace SparkyStudios::Audio::Amplitude
 {
-    [[maybe_unused]] static class AMSCodec final : public Codec
+    class AMSCodec final : public Codec
     {
     public:
         class AMSDecoder final : public Decoder
@@ -96,7 +96,7 @@ namespace SparkyStudios::Audio::Amplitude::Codecs
         void DestroyEncoder(Encoder* encoder) override;
 
         [[nodiscard]] bool CanHandleFile(std::shared_ptr<File> file) const override;
-    } ams_codec; // NOLINT(cert-err58-cpp)
-} // namespace SparkyStudios::Audio::Amplitude::Codecs
+    };
+} // namespace SparkyStudios::Audio::Amplitude
 
 #endif // SS_AMPLITUDE_AUDIO_AMS_CODEC_H

@@ -17,7 +17,7 @@
 
 #include <Core/Codecs/MP3/Codec.h>
 
-namespace SparkyStudios::Audio::Amplitude::Codecs
+namespace SparkyStudios::Audio::Amplitude
 {
     static void* onMalloc(size_t sz, void* pUserData)
     {
@@ -176,4 +176,4 @@ namespace SparkyStudios::Audio::Amplitude::Codecs
         const auto& path = file->GetPath();
         return path.find(AM_OS_STRING(".mp3")) != AmOsString::npos;
     }
-} // namespace SparkyStudios::Audio::Amplitude::Codecs
+} // namespace SparkyStudios::Audio::Amplitude

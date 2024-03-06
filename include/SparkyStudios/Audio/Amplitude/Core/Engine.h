@@ -1226,6 +1226,16 @@ namespace SparkyStudios::Audio::Amplitude
          */
         static void RemovePluginSearchPath(const AmOsString& path);
 
+        /**
+         * @brief Register all default plugins.
+         */
+        static void RegisterDefaultPlugins();
+
+        /**
+         * @brief Unregister all default plugins.
+         */
+        static void UnregisterDefaultPlugins();
+
 #pragma endregion
 
         /**
