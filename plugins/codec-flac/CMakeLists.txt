@@ -34,9 +34,15 @@ elseif(APPLE)
     set(RUNTIME_OUTPUT_DIRECTORY "osx")
     set(CMAKE_MACOSX_RPATH 1)
     list(APPEND CMAKE_INSTALL_RPATH "@executable_path" "@loader_path/../shared/")
-else()
+elseif(UNIX AND NOT ANDROID)
     set(RUNTIME_OUTPUT_DIRECTORY "linux")
-    list(APPEND CMAKE_INSTALL_RPATH $ORIGIN $ORIGIN/../shared/)
+    if (CMAKE_CXX_COMPILER_ID MATCHES "Clang")
+        set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -Wl,-rpath,$ORIGIN/../shared/")
+        set(CMAKE_INSTALL_RPATH_USE_LINK_PATH FALSE)
+    else()
+        list(APPEND CMAKE_INSTALL_RPATH $ORIGIN $ORIGIN/../shared/)
+        set(CMAKE_INSTALL_RPATH_USE_LINK_PATH FALSE)
+    endif()
 endif()
 
 # Setup Plugin dependencies
@@ -45,7 +51,7 @@ find_package(FLAC CONFIG REQUIRED)
 
 # Setup Amplitude
 # ------------------------------------------------------------------------------
-set(AM_SDK_PATH "${CMAKE_CURRENT_LIST_DIR}/../../" CACHE PATH "The path to Amplitude Audio SDK libraries.")
+set(AM_SDK_PATH "${CMAKE_CURRENT_LIST_DIR}/../../sdk" CACHE PATH "The path to Amplitude Audio SDK libraries.")
 find_package(AmplitudeAudioSDK REQUIRED)
 
 # Setup project source files.
@@ -77,7 +83,7 @@ set(AM_INC_DESTINATION "include")
 
 set(CMAKE_LIBRARY_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/${AM_LIB_DESTINATION}")
 
-set(CMAKE_INSTALL_PREFIX "${AM_SDK_PATH}/sdk/")
+set(CMAKE_INSTALL_PREFIX ${AM_SDK_PATH})
 
 install(
     TARGETS ${PROJECT_NAME}
