@@ -270,6 +270,13 @@ namespace SparkyStudios::Audio::Amplitude
         static void LockRegistry();
 
         /**
+         * @brief Gets the list of registered Faders.
+         *
+         * @return The registry of Faders.
+         */
+        static const std::map<std::string, Fader*>& GetRegistry();
+
+        /**
          * @brief Look up a Fader by name.
          *
          * @return The Fader with the given name, or NULL if none.

@@ -292,4 +292,9 @@ namespace SparkyStudios::Audio::Amplitude
     {
         lockFaders() = true;
     }
+
+    const std::map<std::string, Fader*>& Fader::GetRegistry()
+    {
+        return faderRegistry();
+    }
 } // namespace SparkyStudios::Audio::Amplitude
