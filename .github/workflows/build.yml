@@ -93,6 +93,10 @@ jobs:
             artifact: "amplitude_audio_sdk_macos_clang_x64.7z"
             archiver: "7za a"
 
+          - name: "macOS arm64 Latest Clang"
+            os: macos-14
+            artifact: "amplitude_audio_sdk_macos_clang_arm64.7z"
+
     steps:
       - name: Check out code
         uses: actions/checkout@v3

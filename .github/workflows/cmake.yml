@@ -56,6 +56,16 @@ jobs:
             generator: "Ninja"
             target_triplet: x64-osx
 
+          - name: "macOS arm64 Latest Clang"
+            key: clang
+            os: macos-14
+            sdk_dir: osx
+            artifact: "amplitude_audio_sdk_macos_clang_arm64.7z"
+            cc: "clang"
+            cxx: "clang++"
+            generator: "Ninja"
+            target_triplet: arm64-osx
+
     steps:
       # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
       - uses: actions/checkout@v3
@@ -104,9 +114,9 @@ jobs:
           ninja --version
           cmake --version
           gcc --version
-          wget https://github.com/google/flatbuffers/releases/download/${{ steps.flatc_version.outputs.tag }}/Linux.flatc.binary.g++-10.zip
+          wget https://github.com/google/flatbuffers/releases/download/${{ steps.flatc_version.outputs.tag }}/Linux.flatc.binary.g++-13.zip
           mkdir bin
-          sudo unzip Linux.flatc.binary.g++-10.zip -d bin
+          sudo unzip Linux.flatc.binary.g++-13.zip -d bin
           ./bin/flatc --version
 
       - name: Install dependencies on MacOS
@@ -131,7 +141,7 @@ jobs:
         with:
           enableCrossOsArchive: true
           path: sdk
-          key: ${{ matrix.build_type }}-${{ matrix.config.artifact }}-${{ hashFiles('**/sdk') }}
+          key: "${{ matrix.build_type }}-${{ matrix.config.artifact }}-${{ hashFiles('**/sdk') }}"
           restore-keys: |
             ${{ matrix.build_type }}-${{ matrix.config.artifact }}-
 
