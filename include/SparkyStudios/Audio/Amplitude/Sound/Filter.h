@@ -44,18 +44,52 @@ namespace SparkyStudios::Audio::Amplitude
 
         virtual ~Filter() = default;
 
+        /**
+         * @brief Get the maximum number of parameters available for this filter.
+         *
+         * @return The maximum number of filter parameters.
+         */
         virtual AmUInt32 GetParamCount();
 
+        /**
+         * @brief Get the name of the parameter at the given index.
+         *
+         * @param index The parameter index.
+         *
+         * @return The name of the parameter at the given index.
+         */
         virtual AmString GetParamName(AmUInt32 index);
 
+        /**
+         * @brief Get the type of the parameter at the given index.
+         *
+         * @param index The parameter index.
+         *
+         * @return The type of the parameter at the given index.
+         */
         virtual AmUInt32 GetParamType(AmUInt32 index);
 
+        /**
+         * @brief Get the maximum allowed value of the parameter at the given index.
+         *
+         * @param index The parameter index.
+         *
+         * @return The maximum allowed value of the parameter at the given index.
+         */
         virtual AmReal32 GetParamMax(AmUInt32 index);
 
+        /**
+         * @brief Get the minimum allowed value of the parameter at the given index.
+         *
+         * @param index The parameter index.
+         *
+         * @return The minimum allowed value of the parameter at the given index.
+         */
         virtual AmReal32 GetParamMin(AmUInt32 index);
 
         /**
          * @brief Creates a new instance of the filter.
+         *
          * @return A new instance of the filter.
          */
         virtual FilterInstance* CreateInstance() = 0;
@@ -63,6 +97,7 @@ namespace SparkyStudios::Audio::Amplitude
         /**
          * @brief Destroys an instance of the filter. The instance should have
          * been created with CreateInstance().
+         *
          * @param instance The filter instance to be destroyed.
          */
         virtual void DestroyInstance(FilterInstance* instance) = 0;
@@ -114,6 +149,13 @@ namespace SparkyStudios::Audio::Amplitude
          * registration of new filters after the engine is fully loaded.
          */
         static void LockRegistry();
+
+        /**
+         * @brief Gets the list of registered Faders.
+         *
+         * @return The registry of Faders.
+         */
+        static const std::map<std::string, Filter*>& GetRegistry();
 
     protected:
         /**

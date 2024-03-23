@@ -122,6 +122,11 @@ namespace SparkyStudios::Audio::Amplitude
         lockFilters() = true;
     }
 
+    const std::map<std::string, Filter*>& Filter::GetRegistry()
+    {
+        return filterRegistry();
+    }
+
     FilterInstance::FilterInstance(Filter* parent)
         : m_parent(parent)
         , m_numParams(0)
