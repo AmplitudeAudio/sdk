@@ -36,12 +36,12 @@ namespace SparkyStudios::Audio::Amplitude
         return AM_ERROR_NO_ERROR;
     }
 
-    AmUInt32 LofiFilter::GetParamCount()
+    AmUInt32 LofiFilter::GetParamCount() const
     {
         return ATTRIBUTE_LAST;
     }
 
-    AmReal32 LofiFilter::GetParamMax(AmUInt32 index)
+    AmReal32 LofiFilter::GetParamMax(AmUInt32 index) const
     {
         switch (index)
         {
@@ -54,7 +54,7 @@ namespace SparkyStudios::Audio::Amplitude
         }
     }
 
-    AmReal32 LofiFilter::GetParamMin(AmUInt32 index)
+    AmReal32 LofiFilter::GetParamMin(AmUInt32 index) const
     {
         switch (index)
         {
@@ -67,7 +67,7 @@ namespace SparkyStudios::Audio::Amplitude
         }
     }
 
-    AmString LofiFilter::GetParamName(AmUInt32 index)
+    AmString LofiFilter::GetParamName(AmUInt32 index) const
     {
         if (index >= ATTRIBUTE_LAST)
             return "";
@@ -77,7 +77,7 @@ namespace SparkyStudios::Audio::Amplitude
         return names[index];
     }
 
-    AmUInt32 LofiFilter::GetParamType(AmUInt32 index)
+    AmUInt32 LofiFilter::GetParamType(AmUInt32 index) const
     {
         return PARAM_FLOAT;
     }

@@ -35,12 +35,12 @@ namespace SparkyStudios::Audio::Amplitude
         return AM_ERROR_NO_ERROR;
     }
 
-    AmUInt32 FlangerFilter::GetParamCount()
+    AmUInt32 FlangerFilter::GetParamCount() const
     {
         return ATTRIBUTE_LAST;
     }
 
-    AmString FlangerFilter::GetParamName(AmUInt32 index)
+    AmString FlangerFilter::GetParamName(AmUInt32 index) const
     {
         if (index >= ATTRIBUTE_LAST)
             return "";
@@ -50,12 +50,12 @@ namespace SparkyStudios::Audio::Amplitude
         return names[index];
     }
 
-    AmUInt32 FlangerFilter::GetParamType(AmUInt32 index)
+    AmUInt32 FlangerFilter::GetParamType(AmUInt32 index) const
     {
         return PARAM_FLOAT;
     }
 
-    AmReal32 FlangerFilter::GetParamMax(AmUInt32 index)
+    AmReal32 FlangerFilter::GetParamMax(AmUInt32 index) const
     {
         if (index == ATTRIBUTE_DELAY)
             return 0.1f;
@@ -66,7 +66,7 @@ namespace SparkyStudios::Audio::Amplitude
         return 1.0f;
     }
 
-    AmReal32 FlangerFilter::GetParamMin(AmUInt32 index)
+    AmReal32 FlangerFilter::GetParamMin(AmUInt32 index) const
     {
         if (index == ATTRIBUTE_WET)
             return 0.0f;

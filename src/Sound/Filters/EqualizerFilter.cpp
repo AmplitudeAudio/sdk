@@ -73,12 +73,12 @@ namespace SparkyStudios::Audio::Amplitude
         return AM_ERROR_NO_ERROR;
     }
 
-    AmUInt32 EqualizerFilter::GetParamCount()
+    AmUInt32 EqualizerFilter::GetParamCount() const
     {
         return ATTRIBUTE_LAST;
     }
 
-    AmString EqualizerFilter::GetParamName(AmUInt32 index)
+    AmString EqualizerFilter::GetParamName(AmUInt32 index) const
     {
         switch (index)
         {
@@ -105,12 +105,12 @@ namespace SparkyStudios::Audio::Amplitude
         }
     }
 
-    AmUInt32 EqualizerFilter::GetParamType(AmUInt32 index)
+    AmUInt32 EqualizerFilter::GetParamType(AmUInt32 index) const
     {
         return PARAM_FLOAT;
     }
 
-    AmReal32 EqualizerFilter::GetParamMax(AmUInt32 index)
+    AmReal32 EqualizerFilter::GetParamMax(AmUInt32 index) const
     {
         if (index == ATTRIBUTE_WET)
             return 1.0f;
@@ -118,7 +118,7 @@ namespace SparkyStudios::Audio::Amplitude
         return 4.0f;
     }
 
-    AmReal32 EqualizerFilter::GetParamMin(AmUInt32 index)
+    AmReal32 EqualizerFilter::GetParamMin(AmUInt32 index) const
     {
         return 0.0f;
     }

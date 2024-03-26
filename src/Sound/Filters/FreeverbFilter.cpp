@@ -39,12 +39,12 @@ namespace SparkyStudios::Audio::Amplitude
         return AM_ERROR_NO_ERROR;
     }
 
-    AmUInt32 FreeverbFilter::GetParamCount()
+    AmUInt32 FreeverbFilter::GetParamCount() const
     {
         return ATTRIBUTE_LAST;
     }
 
-    AmString FreeverbFilter::GetParamName(AmUInt32 index)
+    AmString FreeverbFilter::GetParamName(AmUInt32 index) const
     {
         switch (index)
         {
@@ -65,7 +65,7 @@ namespace SparkyStudios::Audio::Amplitude
         }
     }
 
-    AmUInt32 FreeverbFilter::GetParamType(AmUInt32 index)
+    AmUInt32 FreeverbFilter::GetParamType(AmUInt32 index) const
     {
         if (index >= ATTRIBUTE_MODE)
             return PARAM_BOOL;
@@ -73,12 +73,12 @@ namespace SparkyStudios::Audio::Amplitude
         return PARAM_FLOAT;
     }
 
-    AmReal32 FreeverbFilter::GetParamMax(AmUInt32 index)
+    AmReal32 FreeverbFilter::GetParamMax(AmUInt32 index) const
     {
         return 1.0f;
     }
 
-    AmReal32 FreeverbFilter::GetParamMin(AmUInt32 index)
+    AmReal32 FreeverbFilter::GetParamMin(AmUInt32 index) const
     {
         return 0.0f;
     }

@@ -44,27 +44,27 @@ namespace SparkyStudios::Audio::Amplitude
         Filter::Register(this);
     }
 
-    AmUInt32 Filter::GetParamCount()
+    AmUInt32 Filter::GetParamCount() const
     {
         return 1;
     }
 
-    AmString Filter::GetParamName(AmUInt32 index)
+    AmString Filter::GetParamName(AmUInt32 index) const
     {
         return "Wet";
     }
 
-    AmUInt32 Filter::GetParamType(AmUInt32 index)
+    AmUInt32 Filter::GetParamType(AmUInt32 index) const
     {
         return Filter::PARAM_FLOAT;
     }
 
-    AmReal32 Filter::GetParamMax(AmUInt32 index)
+    AmReal32 Filter::GetParamMax(AmUInt32 index) const
     {
         return 1.0f;
     }
 
-    AmReal32 Filter::GetParamMin(AmUInt32 index)
+    AmReal32 Filter::GetParamMin(AmUInt32 index) const
     {
         return 0.0f;
     }

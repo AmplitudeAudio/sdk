@@ -37,12 +37,12 @@ namespace SparkyStudios::Audio::Amplitude
         return AM_ERROR_NO_ERROR;
     }
 
-    AmUInt32 DelayFilter::GetParamCount()
+    AmUInt32 DelayFilter::GetParamCount() const
     {
         return ATTRIBUTE_LAST;
     }
 
-    AmString DelayFilter::GetParamName(AmUInt32 index)
+    AmString DelayFilter::GetParamName(AmUInt32 index) const
     {
         if (index >= ATTRIBUTE_LAST)
             return "";
@@ -52,7 +52,7 @@ namespace SparkyStudios::Audio::Amplitude
         return names[index];
     }
 
-    AmUInt32 DelayFilter::GetParamType(AmUInt32 index)
+    AmUInt32 DelayFilter::GetParamType(AmUInt32 index) const
     {
         if (index == ATTRIBUTE_DELAY_START)
             return PARAM_BOOL;
@@ -60,12 +60,12 @@ namespace SparkyStudios::Audio::Amplitude
         return PARAM_FLOAT;
     }
 
-    AmReal32 DelayFilter::GetParamMax(AmUInt32 index)
+    AmReal32 DelayFilter::GetParamMax(AmUInt32 index) const
     {
         return 1.0f;
     }
 
-    AmReal32 DelayFilter::GetParamMin(AmUInt32 index)
+    AmReal32 DelayFilter::GetParamMin(AmUInt32 index) const
     {
         return 0.0f;
     }

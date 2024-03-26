@@ -33,12 +33,12 @@ namespace SparkyStudios::Audio::Amplitude
         return AM_ERROR_NO_ERROR;
     }
 
-    AmUInt32 WaveShaperFilter::GetParamCount()
+    AmUInt32 WaveShaperFilter::GetParamCount() const
     {
         return ATTRIBUTE_LAST;
     }
 
-    AmString WaveShaperFilter::GetParamName(AmUInt32 index)
+    AmString WaveShaperFilter::GetParamName(AmUInt32 index) const
     {
         if (index >= ATTRIBUTE_LAST)
             return "";
@@ -47,17 +47,17 @@ namespace SparkyStudios::Audio::Amplitude
         return names[index];
     }
 
-    AmUInt32 WaveShaperFilter::GetParamType(AmUInt32 index)
+    AmUInt32 WaveShaperFilter::GetParamType(AmUInt32 index) const
     {
         return PARAM_FLOAT;
     }
 
-    AmReal32 WaveShaperFilter::GetParamMax(AmUInt32 index)
+    AmReal32 WaveShaperFilter::GetParamMax(AmUInt32 index) const
     {
         return 1.0f;
     }
 
-    AmReal32 WaveShaperFilter::GetParamMin(AmUInt32 index)
+    AmReal32 WaveShaperFilter::GetParamMin(AmUInt32 index) const
     {
         if (index == ATTRIBUTE_AMOUNT)
             return -1.0f;

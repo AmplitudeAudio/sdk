@@ -32,12 +32,12 @@ namespace SparkyStudios::Audio::Amplitude
         return AM_ERROR_NO_ERROR;
     }
 
-    AmUInt32 BassBoostFilter::GetParamCount()
+    AmUInt32 BassBoostFilter::GetParamCount() const
     {
         return ATTRIBUTE_LAST;
     }
 
-    AmString BassBoostFilter::GetParamName(AmUInt32 index)
+    AmString BassBoostFilter::GetParamName(AmUInt32 index) const
     {
         if (index == ATTRIBUTE_BOOST)
             return "Boost";
@@ -45,12 +45,12 @@ namespace SparkyStudios::Audio::Amplitude
         return "Wet";
     }
 
-    AmUInt32 BassBoostFilter::GetParamType(AmUInt32 index)
+    AmUInt32 BassBoostFilter::GetParamType(AmUInt32 index) const
     {
         return PARAM_FLOAT;
     }
 
-    AmReal32 BassBoostFilter::GetParamMax(AmUInt32 index)
+    AmReal32 BassBoostFilter::GetParamMax(AmUInt32 index) const
     {
         if (index == ATTRIBUTE_BOOST)
             return 10.0f;
@@ -58,7 +58,7 @@ namespace SparkyStudios::Audio::Amplitude
         return 1.0f;
     }
 
-    AmReal32 BassBoostFilter::GetParamMin(AmUInt32 index)
+    AmReal32 BassBoostFilter::GetParamMin(AmUInt32 index) const
     {
         return 0.0f;
     }
