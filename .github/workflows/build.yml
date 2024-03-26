@@ -96,6 +96,7 @@ jobs:
           - name: "macOS arm64 Latest Clang"
             os: macos-14
             artifact: "amplitude_audio_sdk_macos_clang_arm64.7z"
+            archiver: "7za a"
 
     steps:
       - name: Check out code
