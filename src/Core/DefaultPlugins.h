@@ -52,6 +52,8 @@
 #pragma region Default Codecs
 
 #include <Core/Codecs/AMS/Codec.h>
+#include <Core/Codecs/MP3/Codec.h>
+#include <Core/Codecs/WAV/Codec.h>
 
 #pragma endregion
 

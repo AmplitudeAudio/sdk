@@ -136,12 +136,14 @@ namespace SparkyStudios::Audio::Amplitude
 
     FilterInstance::~FilterInstance()
     {
-        ampoolfree(MemoryPoolKind::Filtering, m_parameters);
+        if (m_parameters != nullptr)
+            ampoolfree(MemoryPoolKind::Filtering, m_parameters);
     }
 
     AmResult FilterInstance::Init(AmUInt32 numParams)
     {
-        ampoolfree(MemoryPoolKind::Filtering, m_parameters);
+        if (m_parameters != nullptr)
+            ampoolfree(MemoryPoolKind::Filtering, m_parameters);
 
         m_numParams = numParams;
         m_parameters = static_cast<AmReal32Buffer>(ampoolmalloc(MemoryPoolKind::Filtering, numParams * sizeof(AmReal32)));

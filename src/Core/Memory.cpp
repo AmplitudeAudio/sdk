@@ -136,7 +136,7 @@ namespace SparkyStudios::Audio::Amplitude
         else
             ptr = mi_malloc(size);
 
-        _memAllocations.insert({ pool, ptr, mi_malloc_size(ptr), file, line });
+        _memAllocations.insert({ pool, ptr, SizeOf(pool, ptr), file, line });
         return ptr;
     }
 
@@ -154,7 +154,7 @@ namespace SparkyStudios::Audio::Amplitude
         else
             ptr = mi_malloc_aligned(size, alignment);
 
-        _memAllocations.insert({ pool, ptr, mi_malloc_size(ptr), file, line });
+        _memAllocations.insert({ pool, ptr, SizeOf(pool, ptr), file, line });
 
         return ptr;
     }
@@ -176,7 +176,7 @@ namespace SparkyStudios::Audio::Amplitude
         else
             ptr = mi_realloc(address, size);
 
-        _memAllocations.insert({ pool, ptr, mi_malloc_size(ptr), file, line });
+        _memAllocations.insert({ pool, ptr, SizeOf(pool, ptr), file, line });
 
         return ptr;
     }
@@ -199,7 +199,7 @@ namespace SparkyStudios::Audio::Amplitude
         else
             ptr = mi_realloc_aligned(address, size, alignment);
 
-        _memAllocations.insert({ pool, ptr, mi_malloc_size(ptr), file, line });
+        _memAllocations.insert({ pool, ptr, SizeOf(pool, ptr), file, line });
 
         return ptr;
     }

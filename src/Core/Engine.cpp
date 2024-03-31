@@ -64,6 +64,8 @@ namespace SparkyStudios::Audio::Amplitude
     static SCurveSharpFader* sCurveSharpFaderPlugin = nullptr;
     // ---
     static AMSCodec* sAMSCodecPlugin = nullptr;
+    static MP3Codec* sMP3CodecPlugin = nullptr;
+    static WAVCodec* sWAVCodecPlugin = nullptr;
     // ---
     static MiniAudioDriver* sMiniAudioDriverPlugin = nullptr;
     static NullDriver* sNullDriverPlugin = nullptr;
@@ -172,19 +174,24 @@ namespace SparkyStudios::Audio::Amplitude
             DiskFileSystem fs;
             fs.SetBasePath(pluginsDirectoryPath);
 
+            // Search for the library in the current directory
             if (const auto realPath = fs.ResolvePath(pluginsDirectoryPath); fs.Exists(fs.Join({ realPath, finalName })))
             {
                 pluginsDirectoryPath = realPath;
                 foundPath = true;
             }
 
-            for (const auto& path : _pluginSearchPaths)
+            if (!foundPath)
             {
-                if (const auto realPath = fs.ResolvePath(path); fs.Exists(fs.Join({ realPath, finalName })))
+                // Search for the library in the search paths
+                for (const auto& path : _pluginSearchPaths)
                 {
-                    pluginsDirectoryPath = realPath;
-                    foundPath = true;
-                    break;
+                    if (const auto realPath = fs.ResolvePath(path); fs.Exists(fs.Join({ realPath, finalName })))
+                    {
+                        pluginsDirectoryPath = realPath;
+                        foundPath = true;
+                        break;
+                    }
                 }
             }
         }
@@ -295,6 +302,8 @@ namespace SparkyStudios::Audio::Amplitude
         sCurveSharpFaderPlugin = ampoolnew(MemoryPoolKind::Engine, SCurveSharpFader);
         // ---
         sAMSCodecPlugin = ampoolnew(MemoryPoolKind::Engine, AMSCodec);
+        sMP3CodecPlugin = ampoolnew(MemoryPoolKind::Engine, MP3Codec);
+        sWAVCodecPlugin = ampoolnew(MemoryPoolKind::Engine, WAVCodec);
         // ---
         sMiniAudioDriverPlugin = ampoolnew(MemoryPoolKind::Engine, MiniAudioDriver);
         sNullDriverPlugin = ampoolnew(MemoryPoolKind::Engine, NullDriver);
@@ -324,6 +333,8 @@ namespace SparkyStudios::Audio::Amplitude
         ampooldelete(MemoryPoolKind::Engine, SCurveSharpFader, sCurveSharpFaderPlugin);
         // ---
         ampooldelete(MemoryPoolKind::Engine, AMSCodec, sAMSCodecPlugin);
+        ampooldelete(MemoryPoolKind::Engine, MP3Codec, sMP3CodecPlugin);
+        ampooldelete(MemoryPoolKind::Engine, WAVCodec, sWAVCodecPlugin);
         // ---
         ampooldelete(MemoryPoolKind::Engine, MiniAudioDriver, sMiniAudioDriverPlugin);
         ampooldelete(MemoryPoolKind::Engine, NullDriver, sNullDriverPlugin);
@@ -682,7 +693,8 @@ namespace SparkyStudios::Audio::Amplitude
         EraseFinishedSounds(_state);
 
         // Close the audio device through the driver
-        _audioDriver->Close();
+        if (_audioDriver != nullptr)
+            _audioDriver->Close();
 
         if (_state->mixer.IsInitialized())
             _state->mixer.Deinit();
