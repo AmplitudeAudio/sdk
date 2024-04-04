@@ -74,7 +74,7 @@ For best results, the curve must fit in the range `[0, max_distance]` over the X
 
 An example of a simple attenuation model with a box shape may be:
 
-```json
+```json {title="room.json"}
 {
   "id": 2,
   "name": "room",

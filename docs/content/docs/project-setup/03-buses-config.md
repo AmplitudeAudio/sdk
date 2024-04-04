@@ -77,7 +77,7 @@ Fader and fader settings help you to control how a property should move from one
 
 An example of a bus configuration file may look like:
 
-```json
+```json {title="pc.buses.json"}
 {
   "buses": [
     {

@@ -14,11 +14,11 @@ continue this setup. If you encounter problems, please ask for support in
 our [Discord server](https://discord.gg/QR2uBpzJ5f).
 {{< /callout >}}
 
-After the SDK has been successfully installed, it can be used into CMake-based projects. For that you should make sure
+After the SDK has been successfully installed, it can be used into CMake-based projects. You should make sure that
 the `AM_SDK_PATH` environment variable is set before to configure your project. If not, you can manually set it as a
 CMake variable using the CLI:
 
-```shell
+```bash
 cmake -DAM_SDK_PATH=/path/to/amplitude -S /path/to/sources -B /path/to/build
 ```
 

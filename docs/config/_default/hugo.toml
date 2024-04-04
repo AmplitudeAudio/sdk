@@ -17,13 +17,10 @@ defaultContentLanguage = "en"
 disableLanguages = ["de", "nl"]
 defaultContentLanguageInSubdir = false
 
-copyRight = "Copyright © 2023 Sparky Studios"
+copyRight = "Copyright © 2024 Sparky Studios"
 
 [build.buildStats]
   enable = true
-
-[social]
-  twitter = "na2axl"
 
 [outputs]
   home = ["HTML", "RSS", "searchIndex"]
@@ -52,7 +49,7 @@ copyRight = "Copyright © 2023 Sparky Studios"
 [caches]
   [caches.getjson]
     dir = ":cacheDir/:project"
-    maxAge = "30m"
+    maxAge = -1 # "30m"
 
 [taxonomies]
   contributor = "contributors"
@@ -72,18 +69,18 @@ copyRight = "Copyright © 2023 Sparky Studios"
   includeNewer = true
   toLower = false
     [[related.indices]]
-    name = "categories"
-    weight = "100"
+      name = "categories"
+      weight = "100"
     [[related.indices]]
-    name = "tags"
-    weight = "80"
+      name = "tags"
+      weight = "80"
     [[related.indices]]
-    name = "date"
-    weight = "10"
+      name = "date"
+      weight = "10"
 
 [imaging]
-  anchor = "Smart"
+  anchor = "Center"
   bgColor = "#ffffff"
   hint = "photo"
-  quality = 75
-  resampleFilter = "Box"
+  quality = 85
+  resampleFilter = "Lanczos"

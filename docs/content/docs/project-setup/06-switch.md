@@ -48,7 +48,7 @@ The name of this state. This value should be unique between the states of this s
 
 ## Example
 
-```json
+```json {title="surfaces.json"}
 {
   "id": 1,
   "name": "surface_type",

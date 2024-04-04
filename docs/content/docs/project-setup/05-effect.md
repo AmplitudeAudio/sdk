@@ -54,7 +54,7 @@ The list of parameters to pass to the effect when instantiated. These parameters
 
 ## Example
 
-```json
+```json {title="small_room.reverb.json"}
 {
   "id": 1,
   "name": "rvb_small_room",

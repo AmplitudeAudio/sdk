@@ -25,9 +25,9 @@
               <div class="card-body">
                 <header>
                   <h2 class="h5 title title-submitted mb-0"><a class="stretched-link text-decoration-none text-reset" href="#">Title here</a></h2>
-                  <div class="submitted{{ if eq site.Data.doks.showDate false }} d-none{{ end }}"><time class="created-date">Date here</time></div>
+                  <div class="submitted{{ if eq site.Params.doks.showDate false }} d-none{{ end }}"><time class="created-date">Date here</time></div>
                 </header>
-                <div class="content{{ if eq site.Data.doks.showSummary false }} d-none{{ end }}">Summary here</div>
+                <div class="content{{ if eq site.Params.doks.showSummary false }} d-none{{ end }}">Summary here</div>
               </div>
             </div>
           </article>

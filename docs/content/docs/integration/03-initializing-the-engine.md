@@ -4,14 +4,14 @@ description: Learn how to initialize the Amplitude Engine with a given project a
 menu:
   docs:
     parent: integration
-weight: 302
+weight: 303
 toc: true
 ---
 
 {{< callout context="note" title="Note" icon="info-circle" >}}
 You will need to have an Amplitude project to follow these instructions. Please read the
 [project setup]({{< relref "../project-setup/01-project-architecture" >}}) documentation to create a project. You can
-also get the [sample project](https://github.com/SparkyStudios/AmplitudeAudioSDK/tree/develop/sample_project) provided
+also get one of the [sample projects](https://github.com/SparkyStudios/AmplitudeAudioSDK/tree/develop/samples) provided
 in the GitHub repository.
 {{< /callout >}}
 
@@ -58,7 +58,17 @@ using namespace SparkyStudios::Audio::Amplitude;
 
 int main(int argc, char* argv[])
 {
-  MemoryManager::Initialize(MemoryManagerConfig()); // Using the default memory manager configuration.
+  // Initialize the memory manager
+  // Note that for custom configs, all the functions should be set if one of them is specified
+  MemoryManagerConfig config{};
+  // config.alignedMalloc = my_malign;
+  // config.alignedRealloc = my_realign;
+  // config.free = my_free;
+  // config.malloc = my_malloc;
+  // config.realloc = my_realloc;
+  // config.sizeOf = my_sizeof;
+  // config.totalReservedMemorySize = my_total_mem_size;
+  MemoryManager::Initialize(config); // Using the memory manager configuration.
 
   // ... your code ...
 
@@ -79,8 +89,8 @@ example, if you use the `DiskFileSystem` implementation, a typical usage will lo
 
 ```cpp
 DiskFileSystem fs;
+fs.SetBasePath(AM_OS_STRING("./my_project")); // Set the base path of the filesystem. Usually the path to your Amplitude project build files.
 
-fs.SetBasePath(AM_OS_STRING("./my_project")); // Set the base path of the filesystem. Usually the path to your Amplitude project.
 amEngine->SetFileSystem(&fs); // Set the filesystem implementation to use in the engine.
 ```
 
@@ -89,18 +99,44 @@ it's the case for you, it is necessary to wait for the filesystem to load before
 following code:
 
 ```cpp
-// Wait for the filesystem to complete loading.
+// Open the filesystem
 amEngine->StartOpenFileSystem();
-while (!amEngine->TryFinalizeOpenFileSystem()) // While the filesystem is still loading
-    Thread::Sleep(1); // Wait for the filesystem to load
+while (!amEngine->TryFinalizeOpenFileSystem()) // While the filesystem is still opening
+    Thread::Sleep(1); // Wait for the filesystem to open
+```
+
+The process is similar if you want to close your filesystem after the engine is being deinitialized or your application
+is being closed:
+
+```cpp
+// Close the filesystem
+amEngine->StartCloseFileSystem();
+while (!amEngine->TryFinalizeCloseFileSystem()) // While the filesystem is still closing
+    Thread::Sleep(1); // Wait for the filesystem to close
 ```
 
 ## Plugins
 
-Plugins are external dynamic libraries that allows you to extend the functionalities of the engine (eg: adding codecs,
-filters, faders, etc...), and therefore, they should be loaded before the engine itself is initialized.
+Plugins allows you to extend the functionalities of the engine (eg: adding codecs, filters, faders, etc...), and
+therefore, they should be loaded before the engine itself is initialized.
 
-The SDK allows you to set the paths in which to search for plugins:
+Amplitude comes shipped wih some default plugins you may enable if necessary. To do so, you should call the following
+function:
+
+```cpp
+// Register all the default plugins shipped with the engine
+Engine::RegisterDefaultPlugins();
+```
+
+You are also able to create custom plugins, and build them as shared libraries for use in your applications. These
+libraries are loaded dynamically at runtime by the engine.
+
+{{< alert context="warning" >}}
+If using custom/external plugins, you **must** link Amplitude as a shared library to your program. Otherwise, your
+program and plugins will not share the same memory space, and plugins won't work properly.
+{{< /alert >}}
+
+The SDK allows you to set the paths in which to search for external plugins:
 
 ```cpp
 // The path is relative to the working directory, which is usually the same path as the executable.
@@ -129,17 +165,17 @@ The Amplitude engine is initialized with a specific configuration, from the ones
 
 ```cpp
 // The path to the configuration file is relative to the base path of the filesystem
-if (!amEngine->Initialize(AM_OS_STRING("./audio_config.amconfig")))
+if (!amEngine->Initialize(AM_OS_STRING("./pc.config.amconfig")))
   return 1; // There is usually nothing more to do if the engine is not initialized...
 ```
 
-Once the engine is initialized, you can start to interact wit audio files and your loaded Amplitude project.
+Once the engine is initialized, you can start to interact with audio files and with your loaded Amplitude project.
 
 ## Wrapping Up
 
 A full example of the SDK initialization may look like this:
 
-```cpp
+```cpp {title="main.cpp"}
 #include <SparkyStudios/Audio/Amplitude/Amplitude.h>
 
 using namespace SparkyStudios::Audio::Amplitude;
@@ -160,17 +196,29 @@ int main(int argc, char* argv[])
   RegisterLogFunc(my_logger);
 
   // Initialize the memory manager
-  MemoryManager::Initialize(MemoryManagerConfig()); // Using the default memory manager configuration.
+  // Note that for custom configs, all the functions should be set if one of them is specified
+  MemoryManagerConfig config{};
+  // config.alignedMalloc = my_malign;
+  // config.alignedRealloc = my_realign;
+  // config.free = my_free;
+  // config.malloc = my_malloc;
+  // config.realloc = my_realloc;
+  // config.sizeOf = my_sizeof;
+  // config.totalReservedMemorySize = my_total_mem_size;
+  MemoryManager::Initialize(config); // Using the memory manager configuration.
 
   DiskFileSystem fs;
-
   fs.SetBasePath(AM_OS_STRING("./my_project")); // Set the base path of the filesystem. Usually the path to your Amplitude project.
+
   amEngine->SetFileSystem(&fs); // Set the filesystem implementation to use in the engine.
 
-  // Wait for the filesystem to complete loading.
+  // Open the filesystem
   amEngine->StartOpenFileSystem();
-  while (!amEngine->TryFinalizeOpenFileSystem()) // While the filesystem is still loading
-      Thread::Sleep(1); // Wait for the filesystem to load
+  while (!amEngine->TryFinalizeOpenFileSystem()) // While the filesystem is still opening
+      Thread::Sleep(1); // Wait for the filesystem to open
+
+  // Register all the default plugins shipped with the engine
+  Engine::RegisterDefaultPlugins();
 
   // The path is relative to the working directory, which is usually the same path as the executable.
   Engine::AddPluginSearchPath(AM_OS_STRING("./my_project/plugins"));
@@ -179,7 +227,7 @@ int main(int argc, char* argv[])
   Engine::LoadPlugin(AM_OS_STRING("MyCustomPlugin")); // Any other awesome plugin you will build
 
   // The path to the configuration file is relative to the base path of the filesystem
-  if (amEngine->Initialize(AM_OS_STRING("./audio_config.amconfig")))
+  if (amEngine->Initialize(AM_OS_STRING("./pc.config.amconfig")))
   {
     // ... Can now play audio files and access project data ...
 
@@ -187,13 +235,16 @@ int main(int argc, char* argv[])
     amEngine->Deinitialize();
   }
 
-  // Wait for the file system to complete unloading.
+  // Close the filesystem
   amEngine->StartCloseFileSystem();
-  while (!amEngine->TryFinalizeCloseFileSystem())
-    Thread::Sleep(1);
+  while (!amEngine->TryFinalizeCloseFileSystem()) // While the filesystem is still closing
+      Thread::Sleep(1); // Wait for the filesystem to close
 
   // Destroy the Amplitude engine instance
   amEngine->DestroyInstance();
+
+  // Unregister all default plugins
+  Amplitude::Engine::UnregisterDefaultPlugins();
 
   // Deinitialize the memory manager
   MemoryManager::Deinitialize();

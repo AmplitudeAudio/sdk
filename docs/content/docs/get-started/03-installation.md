@@ -30,22 +30,22 @@ To build Amplitude from sources, you will need to first install some dependencie
 
 Once you have installed dependencies you can clone the repository from GitHub using `git` as follows:
 
-```shell
+```bash
 git clone https://github.com/SparkyStudios/AmplitudeAudioSDK.git
 ```
 
 This will create a directory named `AmplitudeAudioSDK` at the location you cloned the repository. Enter that directory and use CMake to generate build files for your system:
 
-```shell
+```bash
 cd AmplitudeAudioSDK
 cmake -DCMAKE_TOOLCHAIN_FILE:STRING=~/vcpkg/scripts/buildsystems/vcpkg.cmake  -B ./build
 ```
 
 Windows users may generate build files using these commands:
 
-```shell
+```bash
 cd AmplitudeAudioSDK
-cmake -DCMAKE_TOOLCHAIN_FILE:STRING=C:\vcpkg\scripts\buildsystems\vcpkg.cmake  -B .\build
+cmake -DCMAKE_TOOLCHAIN_FILE:STRING=C:/vcpkg/scripts/buildsystems/vcpkg.cmake  -B .\build
 ```
 
 You may need to change the `CMAKE_TOOLCHAIN_FILE` CMake variable to point to your installation of vcpkg. Feel free to customize the command as needed, to include for example custom generators like `Ninja`.
@@ -58,13 +58,13 @@ To enable the samples, add `-DBUILD_SAMPLES:BOOL=TRUE` to the previous CMake com
 
 Once the generation is done, you can build the SDK with the following command:
 
-```shell
-cmake --build build --target Amplitude
+```bash
+cmake --build build
 ```
 
 And then install it with:
 
-```shell
+```bash
 cmake --build build --target install
 ```
 
@@ -72,7 +72,7 @@ The SDK installs itself in the same directory as the sources, in the `sdk` folde
 
 ## Install the SDK
 
-Once you have a copy of the SDK, to install it you just need to add a `AM_SDK_PATH` environment variable in your system, that points to the path of the directory containing the `sdk` folder.
+Once you have a copy of the SDK, to install it you just need to add a `AM_SDK_PATH` environment variable in your system, that points to the path of the `sdk` directory.
 
 {{< alert context="info" text="By installing the SDK through the upcoming Amplitude Studio, the environment variable will be automatically set." />}}
 

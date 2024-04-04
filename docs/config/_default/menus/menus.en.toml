@@ -10,6 +10,12 @@
   url = "/docs/project-setup/"
   weight = 20
 
+[[docs]]
+  name = "Integration"
+  identifier = "integration"
+  url = "/docs/integration/"
+  weight = 30
+
 # -----
 
 [[guide]]
@@ -21,7 +27,7 @@
 # -----
 
 [[main]]
-  name = "Documentation"
+  name = "Docs"
   url = "/docs/get-started/introduction/"
   weight = 10
 
@@ -61,17 +67,3 @@
 #name = "Privacy Policy"
 #url = "/privacy/"
 #weight = 10
-
-# -----
-
-#[[guide]]
-#name = "Lorem"
-#weight = 10
-#identifier = "lorem"
-#url = "/guide/lorem/"
-#
-#[[tutorial]]
-#name = "Lorem"
-#weight = 10
-#identifier = "lorem"
-#url = "/tutorial/lorem/"

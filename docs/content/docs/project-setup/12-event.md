@@ -69,19 +69,19 @@ Set the [Scope] in which this action will be executed. If this value is set to `
 
 ## Example
 
-```json
+```json {title="player_footstep.json"}
 {
   "name": "player_footstep",
   "id": 876,
   "actions": [
-  {
-    "type": "Play",
-    "active": true,
-    "targets": [
-    200
-    ],
-    "scope": "Entity"
-  }
+    {
+      "type": "Play",
+      "active": true,
+      "targets": [
+      200
+      ],
+      "scope": "Entity"
+    }
   ]
 }
 ```

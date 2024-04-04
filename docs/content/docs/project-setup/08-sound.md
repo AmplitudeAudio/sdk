@@ -48,7 +48,7 @@ This value points to the source file of the sound. The file may be of any format
 
 ## Example
 
-```json
+```json {title="forest.ambient.json"}
 {
   "id": 100,
   "name": "AMB_Forest",

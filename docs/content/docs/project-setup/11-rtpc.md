@@ -68,7 +68,7 @@ Settings for the fade transition to apply when RTPC value is decreased. The valu
 
 ## Example
 
-```json
+```json {title="player_height.json"}
 {
   "id": 1,
   "name": "rtpc_player_height",

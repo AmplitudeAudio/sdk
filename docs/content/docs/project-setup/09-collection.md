@@ -96,7 +96,7 @@ This property is used only when the collection scheduler [mode](#scheduler) is s
 
 ## Example
 
-```json
+```json {title="grass_footsteps.json"}
 {
   "id": 1003,
   "name": "grass_footsteps",

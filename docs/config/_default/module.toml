@@ -16,20 +16,10 @@
 [[mounts]]
   source = "node_modules/@hyas/images/assets"
   target = "assets"
-  excludeFiles = "/scss/**.scss"
 
 [[mounts]]
   source = "node_modules/@hyas/doks-core/assets"
   target = "assets"
-  excludeFiles = ["scss/common/_variables-custom.scss", "scss/common/_custom.scss"]
-
-[[mounts]]
-  source = "node_modules/flexsearch"
-  target = "assets/js/vendor/flexsearch"
-
-[[mounts]]
-  source = "node_modules/katex"
-  target = "assets/js/vendor/katex"
 
 [[mounts]]
   source = "node_modules/mermaid"
@@ -38,10 +28,6 @@
 [[mounts]]
   source = "node_modules/@tabler/icons/icons"
   target = "assets/svgs/tabler-icons"
-
-[[mounts]]
-  source = "archetypes"
-  target = "archetypes"
 
 [[mounts]]
   source = "assets"
@@ -55,10 +41,6 @@
 ## data
 [[mounts]]
   source = "node_modules/@hyas/doks-core/data"
-  target = "data"
-
-[[mounts]]
-  source = "config/_default/hyas"
   target = "data"
 
 [[mounts]]

@@ -86,7 +86,7 @@ A custom `gain` to apply on the sound object of this entry. The value should mat
 
 ## Example
 
-```json
+```json {title="footsteps.json"}
 {
   "id": 200,
   "name": "footsteps",

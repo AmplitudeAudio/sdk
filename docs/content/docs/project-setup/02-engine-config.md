@@ -217,7 +217,7 @@ The `driver` property indicates the name of the audio [Driver] implementation co
 
 The following example describes an engine configuration file:
 
-```json
+```json {title="pc.config.json"}
 {
   "output": {
     "frequency": 44100,

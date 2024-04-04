@@ -1,16 +1,5 @@
 $primary: #61adca;
 
-$theme-colors: (
-  "primary": $primary,
-  "secondary": $secondary,
-  "success": $success,
-  "info": $info,
-  "warning": $warning,
-  "danger": $danger,
-  "light": $light,
-  "dark": $dark
-);
-
 $link-color: $primary;
 $button-color: $link-color;
 
@@ -23,16 +12,21 @@ $body-overlay-dark: darken($body-bg-dark, 2.5%);
 /*
 $border-dark: darken($body-bg-dark, 2.5%);
 */
-$border-dark: $gray-800;
-$body-color-dark: $gray-300;
-$dots-dark: darken($body-color-dark, 50%);
+$body-bg-dark:           hsl(224, 10%, 10%);
+$body-overlay-dark:      hsl(224, 14%, 16%);
+$border-dark:            #343a40;
+$body-color-dark:        #dee2e6;
+$headings-color-dark:    hsl(0, 0%, 100%);
+$dots-dark:              darken($body-color-dark, 50%);
+$link-color-dark:        #74d0f1;
+$button-color-dark:      $link-color-dark;
+$focus-color-dark:       lighten($link-color-dark, 2.5%);
 
-$link-color-dark: #74d0f1;
-$button-color-dark: $link-color-dark;
-$focus-color-dark: lighten($link-color-dark, 2.5%);
+$button-color-dark:      $link-color-dark;
+$focus-color-dark:       lighten($link-color-dark, 2.5%);
 
-$navbar-dark-color: $body-color-dark;
-$navbar-dark-hover-color: $link-color-dark;
-$navbar-dark-active-color: $link-color-dark;
+$navbar-dark-color:           $body-color-dark;
+$navbar-dark-hover-color:     $link-color-dark;
+$navbar-dark-active-color:    $link-color-dark;
 
 $font-family-sans-serif: "Open Sans", system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", "Noto Sans", "Liberation Sans", Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";
