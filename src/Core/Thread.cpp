@@ -241,10 +241,19 @@ namespace SparkyStudios::Audio::Amplitude::Thread
 
     void Sleep(AmInt32 milliseconds)
     {
-        // usleep(milliseconds * 1000);
         struct timespec req = { 0 };
-        req.tv_sec = 0;
-        req.tv_nsec = milliseconds * 1000000L;
+
+        if (milliseconds < 1000)
+        {
+            req.tv_sec = 0;
+            req.tv_nsec = milliseconds * 1000000L;
+        }
+        else
+        {
+            req.tv_sec = std::floor(milliseconds / 1000);
+            req.tv_nsec = (milliseconds % 1000) * 1000000L;
+        }
+
         nanosleep(&req, nullptr);
     }
 
