@@ -7,7 +7,7 @@
     <div class="col-lg-9 col-xl-8 text-center">
       <p class="lead">{{ .Params.lead | safeHTML }}</p>
       <a class="btn btn-primary btn-cta rounded-pill btn-lg my-3"
-        href="{{ .Site.BaseURL | relLangURL }}docs/{{ if site.Data.doks.docsVersioning }}{{ site.Data.doks.docsVersion }}/{{ end }}get-started/introduction/"
+        href="{{ .Site.BaseURL | relLangURL }}docs/{{ if site.Params.doks.docsVersioning }}{{ site.Params.doks.docsVersion }}/{{ end }}get-started/introduction/"
         role="button">{{ i18n "get-started" }}</a>
       {{ .Content }}
       <p class="meta">
@@ -24,7 +24,7 @@
 {{ end }}
 
 {{ define "sidebar-prefooter" }}
-{{ if site.Data.doks.backgroundDots -}}
+{{ if site.Params.doks.backgroundDots -}}
 <div class="d-flex justify-content-center">
   <div class="flex-fill py-2"
     style="height: 200px; background-size: cover; background-position: center; background-image: url('/images/home_bg.svg');">
@@ -38,8 +38,8 @@
       <div class="col-lg-5">
         <h2 class="h4">🎮 Built for games</h2>
         <p>
-          With its entity-based architecture and its optimized API you will be able to keep your game and Amplitude in
-          sync.
+          With its entity-based architecture and its optimized API you will be able to easily integrate Amplitude in
+          your game.
         </p>
       </div>
       <div class="col-lg-5">
@@ -73,7 +73,7 @@
       <div class="col-lg-5">
         <h2 class="h4">♻️ Easy to use</h2>
         <p>
-          Amplitude follows most of the concepts of audio programming for games. Even without experience, you can
+          Amplitude follows most of the concepts in audio programming for games. Even without experience, you can
           quickly get started.
         </p>
       </div>
@@ -84,13 +84,13 @@
 {{ end }}
 
 {{ define "sidebar-footer" }}
-{{ if site.Data.doks.sectionFooter -}}
+{{ if site.Params.doks.sectionFooter -}}
 <section class="section section-md container-fluid bg-light">
   <div class="row justify-content-center text-center">
     <div class="col-lg-7">
       <h2 class="mt-2">Start your Amplitude journey</h2>
       <a class="btn btn-primary rounded-pill px-4 my-2"
-        href="{{ .Site.BaseURL | relLangURL }}docs/{{ if site.Data.doks.docsVersioning }}{{ site.Data.doks.docsVersion }}/{{ end }}get-started/introduction/"
+        href="{{ .Site.BaseURL | relLangURL }}docs/{{ if site.Params.doks.docsVersioning }}{{ site.Params.doks.docsVersion }}/{{ end }}get-started/introduction/"
         role="button">{{ i18n "get-started" }}</a>
     </div>
   </div>
