@@ -99,14 +99,19 @@ class CommandOptions(object):
 
     def __init__(self, argv, script_name: str, script_version: str):
         opts, args = getopt.getopt(argv, "hvp:b:f:",
-                                   ["help", "version", "project-path", "build-path", "flatc"])
+                                   ["help", "version", "project-path", "build-path", "flatc", "no-logo"])
+
+        no_logo = False
+        show_help = False
+        show_version = False
 
         for opt, arg in opts:
-            if opt in ("-h", "--help"):
-                print_help(False, script_name)
-                sys.exit(0)
+            if opt is "--no-logo":
+                no_logo = True
+            elif opt in ("-h", "--help"):
+                show_help = True
             elif opt in ("-v", "--version"):
-                print("{}.py {}".format(script_name, script_version))
+                show_version = True
             elif opt in ("-p", "--project-path"):
                 self.project_path = arg
             elif opt in ("-b", "--build-path"):
@@ -114,8 +119,16 @@ class CommandOptions(object):
             elif opt in ("-f", "--flatc"):
                 self.flatc_path = arg
 
+        if show_help:
+            print_help(no_logo, script_name)
+            sys.exit(0)
+
+        if show_version:
+            print("{}.py {}".format(script_name, script_version))
+            sys.exit(0)
+
         if self.project_path == '' or self.build_path == '':
-            print_help(False, script_name)
+            print_help(no_logo, script_name)
             sys.exit(1)
 
 

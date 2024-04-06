@@ -20,7 +20,6 @@ Clean generated Amplitude binary assets.
 """
 
 import common
-import os
 import sys
 
 
@@ -31,11 +30,13 @@ def main(argv):
       Returns 0 on success.
     """
 
-    project_path = common.get_amplitude_project_path()
+    options = common.CommandOptions(argv, "clean_project", "0.2.0")
 
     try:
         common.clean_flatbuffers_binaries(
-            common.get_conversion_data(os.path.join(project_path, "sources"))
+            common.get_conversion_data(options.project_path),
+            options.project_path,
+            options.build_path
         )
         print("Amplitude binary assets cleaned successfully.")
     except common.BuildError as error:
@@ -46,4 +47,4 @@ def main(argv):
 
 
 if __name__ == '__main__':
-    main(sys.argv)
+    main(sys.argv[1:])

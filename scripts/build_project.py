@@ -20,7 +20,6 @@ Compile the Amplitude project and generate Amplitude binary assets.
 """
 
 import common
-import os
 import sys
 
 
