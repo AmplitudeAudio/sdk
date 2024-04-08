@@ -342,6 +342,7 @@ namespace SparkyStudios::Audio::Amplitude
         const Collection* _collection;
         const Effect* _effect;
         EffectInstance* _effectInstance;
+        Codec::Decoder* _decoder;
 
         SoundInstanceSettings _settings;
 

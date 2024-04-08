@@ -268,7 +268,8 @@ namespace SparkyStudios::Audio::Amplitude
         , _parent(parent)
         , _collection(nullptr)
         , _effect(effect)
-        , _effectInstance()
+        , _effectInstance(nullptr)
+        , _decoder(nullptr)
         , _settings(std::move(settings))
         , _currentLoopCount(0)
         , _obstruction(0.0f)
@@ -277,6 +278,19 @@ namespace SparkyStudios::Audio::Amplitude
     {
         if (_effect != nullptr)
             _effectInstance = _effect->CreateInstance();
+
+        if (_parent->_stream)
+        {
+            const auto filename = _parent->GetPath();
+            const auto file = amEngine->GetFileSystem()->OpenFile(filename);
+
+            _decoder = _parent->_codec->CreateDecoder();
+            if (!_decoder->Open(file))
+            {
+                CallLogFunc("[ERROR] Cannot load the sound: unable to initialize a decoder for '" AM_OS_CHAR_FMT "'.\n", filename.c_str());
+                return;
+            }
+        }
     }
 
     SoundInstance::~SoundInstance()
@@ -355,12 +369,12 @@ namespace SparkyStudios::Audio::Amplitude
         bool needFill = true;
         do
         {
-            const AmUInt64 n = _parent->_decoder->Stream(b, o, l);
+            const AmUInt64 n = _decoder->Stream(b, o, l);
             r += n;
 
             // If we reached the end of the file but looping is enabled, then
             // seek back to the beginning of the file and fill the remaining part of the buffer.
-            if (needFill = n < l && _parent->_loop && _parent->_decoder->Seek(0); needFill)
+            if (needFill = n < l && _parent->_loop && _decoder->Seek(0); needFill)
             {
                 b += n * channels;
                 l -= n;
@@ -387,6 +401,14 @@ namespace SparkyStudios::Audio::Amplitude
 
         _effect->DestroyInstance(_effectInstance);
         _effectInstance = nullptr;
+
+        if (_parent->_stream)
+        {
+            _decoder->Close();
+            _parent->_codec->DestroyDecoder(_decoder);
+        }
+
+        _decoder = nullptr;
 
         _parent = nullptr;
     }
