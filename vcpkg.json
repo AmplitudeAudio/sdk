@@ -1,6 +1,6 @@
 {
   "$schema": "https://raw.githubusercontent.com/microsoft/vcpkg-tool/master/docs/vcpkg.schema.json",
-  "builtin-baseline": "5fa0f075ea51f305b627ecd5e050a363707353ff",
+  "builtin-baseline": "0bc3f04da6cb8ae1dbd5e2051032c596bb03cffa",
   "name": "amplitude-audio-sdk",
   "description": "A powerful and cross-platform audio engine, optimized for games.",
   "version": "1.0",
