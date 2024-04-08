@@ -90,6 +90,12 @@ find_package(xsimd CONFIG REQUIRED)
 # ------------------------------------------------------------------------------
 find_package(mimalloc CONFIG REQUIRED)
 
+# ------------------------------------------------------------------------------
+
+# Setup miniaudio
+# ------------------------------------------------------------------------------
+find_path(MINIAUDIO_INCLUDE_DIRS "miniaudio.h")
+
 # Check what instruction sets the current host supports.
 include(DetectCPUArchitecture)
 am_buildsystem_get_runnable_archs(NATIVE_ARCHS)
@@ -328,7 +334,6 @@ set(SA_SOURCE
     src/Utils/Freeverb/ReverbModel.h
     src/Utils/Freeverb/tuning.h
     src/Utils/miniaudio/miniaudio.cpp
-    src/Utils/miniaudio/miniaudio.h
     src/Utils/miniaudio/miniaudio_utils.h
     src/Utils/pffft/simd/pf_altivec_float.h
     src/Utils/pffft/simd/pf_avx_double.h
@@ -355,6 +360,7 @@ set(SA_SOURCE
 include_directories(src
     include
     ${AM_FLATBUFFERS_GENERATED_INCLUDES_DIR}
+    ${MINIAUDIO_INCLUDE_DIRS}
 )
 
 add_library(Static STATIC ${SA_SOURCE})
@@ -451,6 +457,7 @@ install(
     FILES_MATCHING
         PATTERN "*.py"
         PATTERN "build_schemas.py" EXCLUDE
+        PATTERN "__pycache__" EXCLUDE
 )
 
 install(

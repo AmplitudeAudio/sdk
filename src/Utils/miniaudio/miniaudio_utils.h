@@ -30,7 +30,7 @@
 #define NOMINMAX
 #endif
 
-#include "miniaudio.h"
+#include <miniaudio.h>
 
 ma_format ma_format_from_amplitude(SparkyStudios::Audio::Amplitude::PlaybackOutputFormat format);
 
