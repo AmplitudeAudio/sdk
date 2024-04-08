@@ -1,4 +1,4 @@
-name: Build and release Amplitude Audio SDK
+name: Build
 
 on:
   push:

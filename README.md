@@ -1,3 +1,6 @@
+![build badge](https://github.com/SparkyStudios/AmplitudeAudioSDK/actions/workflows/build.yml/badge.svg)
+![build badge](https://github.com/SparkyStudios/AmplitudeAudioSDK/actions/workflows/hugo.yml/badge.svg)
+
 <p align="center">
   <a href="https://amplitudeaudiosdk.com">
     <img src="./docs/static/images/logo_trimmed.png" width="320">
@@ -8,11 +11,14 @@
 
 # Amplitude Audio SDK
 
-Amplitude is a full-featured and cross-platform audio engine designed with the needs of games in mind. Apart from its efficient audio mixer, it also adjusts gain based on user-defined attenuation models, plays spatialized sounds in 3D environments, manages prioritization, buses, and a lot more. With all those features, Amplitude is still easy to use, thanks to its data-driven way. All you need is to write configuration files and let Amplitude do the magic for you.
+Amplitude is a full-featured and cross-platform audio engine designed with the needs of games in mind. Apart from its
+efficient audio mixer, it also adjusts gain based on user-defined attenuation models, plays spatialized sounds in 3D
+environments, manages prioritization, buses, and a lot more. With all those features, Amplitude is still easy to use,
+thanks to its data-driven way. All you need is to write configuration files and let Amplitude do the magic for you.
 
   <br/>
 
-[Project Setup](https://amplitudeaudiosdk.com/docs/project-setup/) | [Developer Guides](https://amplitudeaudiosdk.com/docs/guide/) | API Documentation
+[Project Setup](https://amplitudeaudiosdk.com/docs/project-setup/) | [Integration](https://amplitudeaudiosdk.com/docs/integration/) | API Documentation
 
   <br/>
 </div>

@@ -1,5 +1,5 @@
 # Sample workflow for building and deploying a Hugo site to GitHub Pages
-name: Deploy Documentation to Pages
+name: Documentation
 
 on:
   # Runs on pushes targeting the main branch
