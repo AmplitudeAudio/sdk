@@ -17,6 +17,14 @@
 #ifndef SS_AMPLITUDE_AUDIO_CONFIG_H
 #define SS_AMPLITUDE_AUDIO_CONFIG_H
 
+#if defined(__GNUC__) || defined(__clang__)
+#define AM_DEPRECATED(msg) __attribute__((deprecated(msg)))
+#elif defined(_MSC_VER)
+#define AM_DEPRECATED(msg) __declspec(deprecated(msg))
+#else
+#define AM_DEPRECATED(msg)
+#endif
+
 #if defined(_WIN32) || defined(_WIN64) || defined(WINAPI_FAMILY)
 #include <SparkyStudios/Audio/Amplitude/Core/Common/Platforms/Windows/Config.h>
 #elif defined(__ANDROID__)
@@ -64,7 +72,7 @@
 #endif // AM_CPU_X86 || AM_CPU_X86_64 || AM_CPU_ARM_NEON
 #else
 #define PFFFT_SIMD_DISABLE
-#define HANDMADE_MATH_NO_SSE
+#define HANDMADE_MATH_NO_SIMD
 #define MA_NO_NEON
 #define MA_NO_AVX2
 #define MA_NO_AVX

@@ -105,10 +105,15 @@
 #define ASSERT_COVERED(a)
 #endif
 
+#ifdef HANDMADE_MATH_NO_SSE
+#warning "HANDMADE_MATH_NO_SSE is deprecated, use HANDMADE_MATH_NO_SIMD instead"
+#define HANDMADE_MATH_NO_SIMD
+#endif
+
 /* let's figure out if SSE is really available (unless disabled anyway)
    (it isn't on non-x86/x86_64 platforms or even x86 without explicit SSE support)
    => only use "#ifdef HANDMADE_MATH__USE_SSE" to check for SSE support below this block! */
-#ifndef HANDMADE_MATH_NO_SSE
+#ifndef HANDMADE_MATH_NO_SIMD
 #ifdef _MSC_VER /* MSVC supports SSE in amd64 mode or _M_IX86_FP >= 1 (2 means SSE2) */
 #if defined(_M_AMD64) || (defined(_M_IX86_FP) && _M_IX86_FP >= 1)
 #define HANDMADE_MATH__USE_SSE 1
@@ -118,7 +123,10 @@
 #define HANDMADE_MATH__USE_SSE 1
 #endif /*  __SSE__ */
 #endif /* not _MSC_VER */
-#endif /* #ifndef HANDMADE_MATH_NO_SSE */
+#ifdef __ARM_NEON
+#define HANDMADE_MATH__USE_NEON 1
+#endif /* NEON Supported */
+#endif /* #ifndef HANDMADE_MATH_NO_SIMD */
 
 #if (!defined(__cplusplus) && defined(__STDC_VERSION__) && __STDC_VERSION__ >= 201112L)
 #define HANDMADE_MATH__USE_C11_GENERICS 1
@@ -126,6 +134,10 @@
 
 #ifdef HANDMADE_MATH__USE_SSE
 #include <xmmintrin.h>
+#endif
+
+#ifdef HANDMADE_MATH__USE_NEON
+#include <arm_neon.h>
 #endif
 
 #ifdef _MSC_VER
@@ -142,14 +154,6 @@
 #pragma GCC diagnostic ignored "-Wgnu-anonymous-struct"
 #pragma GCC diagnostic ignored "-Wmissing-field-initializers"
 #endif
-#endif
-
-#if defined(__GNUC__) || defined(__clang__)
-#define AM_DEPRECATED(msg) __attribute__((deprecated(msg)))
-#elif defined(_MSC_VER)
-#define AM_DEPRECATED(msg) __declspec(deprecated(msg))
-#else
-#define AM_DEPRECATED(msg)
 #endif
 
 #ifdef __cplusplus
@@ -175,15 +179,15 @@ extern "C" {
 
 #if defined(HANDMADE_MATH_USE_RADIANS)
 #define AM_AngleRad(a) (a)
-#define AM_AngleDeg(a) ((a)*AM_DegToRad)
-#define AM_AngleTurn(a) ((a)*AM_TurnToRad)
+#define AM_AngleDeg(a) ((a) * AM_DegToRad)
+#define AM_AngleTurn(a) ((a) * AM_TurnToRad)
 #elif defined(HANDMADE_MATH_USE_DEGREES)
-#define AM_AngleRad(a) ((a)*AM_RadToDeg)
+#define AM_AngleRad(a) ((a) * AM_RadToDeg)
 #define AM_AngleDeg(a) (a)
-#define AM_AngleTurn(a) ((a)*AM_TurnToDeg)
+#define AM_AngleTurn(a) ((a) * AM_TurnToDeg)
 #elif defined(HANDMADE_MATH_USE_TURNS)
-#define AM_AngleRad(a) ((a)*AM_RadToTurn)
-#define AM_AngleDeg(a) ((a)*AM_DegToTurn)
+#define AM_AngleRad(a) ((a) * AM_RadToTurn)
+#define AM_AngleDeg(a) ((a) * AM_DegToTurn)
 #define AM_AngleTurn(a) (a)
 #endif
 
@@ -204,9 +208,9 @@ extern "C" {
 #if defined(HANDMADE_MATH_USE_RADIANS)
 #define AM_ANGLE_INTERNAL_TO_USER(a) (a)
 #elif defined(HANDMADE_MATH_USE_DEGREES)
-#define AM_ANGLE_INTERNAL_TO_USER(a) ((a)*AM_RadToDeg)
+#define AM_ANGLE_INTERNAL_TO_USER(a) ((a) * AM_RadToDeg)
 #elif defined(HANDMADE_MATH_USE_TURNS)
-#define AM_ANGLE_INTERNAL_TO_USER(a) ((a)*AM_RadToTurn)
+#define AM_ANGLE_INTERNAL_TO_USER(a) ((a) * AM_RadToTurn)
 #endif
 #endif
 
@@ -240,7 +244,11 @@ typedef union AmVec2 {
     float Elements[2];
 
 #ifdef __cplusplus
-    inline float& operator[](const int& Index)
+    inline float& operator[](int Index)
+    {
+        return Elements[Index];
+    }
+    inline const float& operator[](int Index) const
     {
         return Elements[Index];
     }
@@ -290,7 +298,11 @@ typedef union AmVec3 {
     float Elements[3];
 
 #ifdef __cplusplus
-    inline float& operator[](const int& Index)
+    inline float& operator[](int Index)
+    {
+        return Elements[Index];
+    }
+    inline const float& operator[](int Index) const
     {
         return Elements[Index];
     }
@@ -350,8 +362,16 @@ typedef union AmVec4 {
     __m128 SSE;
 #endif
 
+#ifdef HANDMADE_MATH__USE_NEON
+    float32x4_t NEON;
+#endif
+
 #ifdef __cplusplus
-    inline float& operator[](const int& Index)
+    inline float& operator[](int Index)
+    {
+        return Elements[Index];
+    }
+    inline const float& operator[](int Index) const
     {
         return Elements[Index];
     }
@@ -363,7 +383,11 @@ typedef union AmMat2 {
     AmVec2 Columns[2];
 
 #ifdef __cplusplus
-    inline AmVec2& operator[](const int& Index)
+    inline AmVec2& operator[](int Index)
+    {
+        return Columns[Index];
+    }
+    inline const AmVec2& operator[](int Index) const
     {
         return Columns[Index];
     }
@@ -375,7 +399,11 @@ typedef union AmMat3 {
     AmVec3 Columns[3];
 
 #ifdef __cplusplus
-    inline AmVec3& operator[](const int& Index)
+    inline AmVec3& operator[](int Index)
+    {
+        return Columns[Index];
+    }
+    inline const AmVec3& operator[](int Index) const
     {
         return Columns[Index];
     }
@@ -387,7 +415,11 @@ typedef union AmMat4 {
     AmVec4 Columns[4];
 
 #ifdef __cplusplus
-    inline AmVec4& operator[](const int& Index)
+    inline AmVec4& operator[](int Index)
+    {
+        return Columns[Index];
+    }
+    inline const AmVec4& operator[](int Index) const
     {
         return Columns[Index];
     }
@@ -412,6 +444,9 @@ typedef union AmQuat {
 
 #ifdef HANDMADE_MATH__USE_SSE
     __m128 SSE;
+#endif
+#ifdef HANDMADE_MATH__USE_NEON
+    float32x4_t NEON;
 #endif
 } AmQuat;
 
@@ -502,6 +537,10 @@ static inline float AM_SqrtF(float Float)
     __m128 In = _mm_set_ss(Float);
     __m128 Out = _mm_sqrt_ss(In);
     Result = _mm_cvtss_f32(Out);
+#elif defined(HANDMADE_MATH__USE_NEON)
+    float32x4_t In = vdupq_n_f32(Float);
+    float32x4_t Out = vsqrtq_f32(In);
+    Result = vgetq_lane_f32(Out, 0);
 #else
     Result = AM_SQRTF(Float);
 #endif
@@ -590,6 +629,9 @@ static inline AmVec4 AM_V4(float X, float Y, float Z, float W)
 
 #ifdef HANDMADE_MATH__USE_SSE
     Result.SSE = _mm_setr_ps(X, Y, Z, W);
+#elif defined(HANDMADE_MATH__USE_NEON)
+    float32x4_t v = { X, Y, Z, W };
+    Result.NEON = v;
 #else
     Result.X = X;
     Result.Y = Y;
@@ -609,6 +651,9 @@ static inline AmVec4 AM_V4V(AmVec3 Vector, float W)
 
 #ifdef HANDMADE_MATH__USE_SSE
     Result.SSE = _mm_setr_ps(Vector.X, Vector.Y, Vector.Z, W);
+#elif defined(HANDMADE_MATH__USE_NEON)
+    float32x4_t v = { Vector.X, Vector.Y, Vector.Z, W };
+    Result.NEON = v;
 #else
     Result.XYZ = Vector;
     Result.W = W;
@@ -655,6 +700,8 @@ static inline AmVec4 AM_AddV4(AmVec4 Left, AmVec4 Right)
 
 #ifdef HANDMADE_MATH__USE_SSE
     Result.SSE = _mm_add_ps(Left.SSE, Right.SSE);
+#elif defined(HANDMADE_MATH__USE_NEON)
+    Result.NEON = vaddq_f32(Left.NEON, Right.NEON);
 #else
     Result.X = Left.X + Right.X;
     Result.Y = Left.Y + Right.Y;
@@ -699,6 +746,8 @@ static inline AmVec4 AM_SubV4(AmVec4 Left, AmVec4 Right)
 
 #ifdef HANDMADE_MATH__USE_SSE
     Result.SSE = _mm_sub_ps(Left.SSE, Right.SSE);
+#elif defined(HANDMADE_MATH__USE_NEON)
+    Result.NEON = vsubq_f32(Left.NEON, Right.NEON);
 #else
     Result.X = Left.X - Right.X;
     Result.Y = Left.Y - Right.Y;
@@ -768,6 +817,8 @@ static inline AmVec4 AM_MulV4(AmVec4 Left, AmVec4 Right)
 
 #ifdef HANDMADE_MATH__USE_SSE
     Result.SSE = _mm_mul_ps(Left.SSE, Right.SSE);
+#elif defined(HANDMADE_MATH__USE_NEON)
+    Result.NEON = vmulq_f32(Left.NEON, Right.NEON);
 #else
     Result.X = Left.X * Right.X;
     Result.Y = Left.Y * Right.Y;
@@ -788,6 +839,8 @@ static inline AmVec4 AM_MulV4F(AmVec4 Left, float Right)
 #ifdef HANDMADE_MATH__USE_SSE
     __m128 Scalar = _mm_set1_ps(Right);
     Result.SSE = _mm_mul_ps(Left.SSE, Scalar);
+#elif defined(HANDMADE_MATH__USE_NEON)
+    Result.NEON = vmulq_n_f32(Left.NEON, Right);
 #else
     Result.X = Left.X * Right;
     Result.Y = Left.Y * Right;
@@ -857,6 +910,8 @@ static inline AmVec4 AM_DivV4(AmVec4 Left, AmVec4 Right)
 
 #ifdef HANDMADE_MATH__USE_SSE
     Result.SSE = _mm_div_ps(Left.SSE, Right.SSE);
+#elif defined(HANDMADE_MATH__USE_NEON)
+    Result.NEON = vdivq_f32(Left.NEON, Right.NEON);
 #else
     Result.X = Left.X / Right.X;
     Result.Y = Left.Y / Right.Y;
@@ -877,6 +932,9 @@ static inline AmVec4 AM_DivV4F(AmVec4 Left, float Right)
 #ifdef HANDMADE_MATH__USE_SSE
     __m128 Scalar = _mm_set1_ps(Right);
     Result.SSE = _mm_div_ps(Left.SSE, Scalar);
+#elif defined(HANDMADE_MATH__USE_NEON)
+    float32x4_t Scalar = vdupq_n_f32(Right);
+    Result.NEON = vdivq_f32(Left.NEON, Scalar);
 #else
     Result.X = Left.X / Right;
     Result.Y = Left.Y / Right;
@@ -939,6 +997,11 @@ static inline float AM_DotV4(AmVec4 Left, AmVec4 Right)
     SSEResultTwo = _mm_shuffle_ps(SSEResultOne, SSEResultOne, _MM_SHUFFLE(0, 1, 2, 3));
     SSEResultOne = _mm_add_ps(SSEResultOne, SSEResultTwo);
     _mm_store_ss(&Result, SSEResultOne);
+#elif defined(HANDMADE_MATH__USE_NEON)
+    float32x4_t NEONMultiplyResult = vmulq_f32(Left.NEON, Right.NEON);
+    float32x4_t NEONHalfAdd = vpaddq_f32(NEONMultiplyResult, NEONMultiplyResult);
+    float32x4_t NEONFullAdd = vpaddq_f32(NEONHalfAdd, NEONHalfAdd);
+    Result = vgetq_lane_f32(NEONFullAdd, 0);
 #else
     Result = ((Left.X * Right.X) + (Left.Z * Right.Z)) + ((Left.Y * Right.Y) + (Left.W * Right.W));
 #endif
@@ -1066,6 +1129,11 @@ static inline AmVec4 AM_LinearCombineV4M4(AmVec4 Left, AmMat4 Right)
     Result.SSE = _mm_add_ps(Result.SSE, _mm_mul_ps(_mm_shuffle_ps(Left.SSE, Left.SSE, 0x55), Right.Columns[1].SSE));
     Result.SSE = _mm_add_ps(Result.SSE, _mm_mul_ps(_mm_shuffle_ps(Left.SSE, Left.SSE, 0xaa), Right.Columns[2].SSE));
     Result.SSE = _mm_add_ps(Result.SSE, _mm_mul_ps(_mm_shuffle_ps(Left.SSE, Left.SSE, 0xff), Right.Columns[3].SSE));
+#elif defined(HANDMADE_MATH__USE_NEON)
+    Result.NEON = vmulq_laneq_f32(Right.Columns[0].NEON, Left.NEON, 0);
+    Result.NEON = vfmaq_laneq_f32(Result.NEON, Right.Columns[1].NEON, Left.NEON, 1);
+    Result.NEON = vfmaq_laneq_f32(Result.NEON, Right.Columns[2].NEON, Left.NEON, 2);
+    Result.NEON = vfmaq_laneq_f32(Result.NEON, Right.Columns[3].NEON, Left.NEON, 3);
 #else
     Result.X = Left.Elements[0] * Right.Columns[0].X;
     Result.Y = Left.Elements[0] * Right.Columns[0].Y;
@@ -1459,22 +1527,33 @@ static inline AmMat4 AM_TransposeM4(AmMat4 Matrix)
 {
     ASSERT_COVERED(AM_TransposeM4);
 
-    AmMat4 Result = Matrix;
+    AmMat4 Result;
 #ifdef HANDMADE_MATH__USE_SSE
+    Result = Matrix;
     _MM_TRANSPOSE4_PS(Result.Columns[0].SSE, Result.Columns[1].SSE, Result.Columns[2].SSE, Result.Columns[3].SSE);
+#elif defined(HANDMADE_MATH__USE_NEON)
+    float32x4x4_t Transposed = vld4q_f32((float*)Matrix.Columns);
+    Result.Columns[0].NEON = Transposed.val[0];
+    Result.Columns[1].NEON = Transposed.val[1];
+    Result.Columns[2].NEON = Transposed.val[2];
+    Result.Columns[3].NEON = Transposed.val[3];
 #else
+    Result.Elements[0][0] = Matrix.Elements[0][0];
     Result.Elements[0][1] = Matrix.Elements[1][0];
     Result.Elements[0][2] = Matrix.Elements[2][0];
     Result.Elements[0][3] = Matrix.Elements[3][0];
     Result.Elements[1][0] = Matrix.Elements[0][1];
+    Result.Elements[1][1] = Matrix.Elements[1][1];
     Result.Elements[1][2] = Matrix.Elements[2][1];
     Result.Elements[1][3] = Matrix.Elements[3][1];
-    Result.Elements[2][1] = Matrix.Elements[1][2];
     Result.Elements[2][0] = Matrix.Elements[0][2];
+    Result.Elements[2][1] = Matrix.Elements[1][2];
+    Result.Elements[2][2] = Matrix.Elements[2][2];
     Result.Elements[2][3] = Matrix.Elements[3][2];
+    Result.Elements[3][0] = Matrix.Elements[0][3];
     Result.Elements[3][1] = Matrix.Elements[1][3];
     Result.Elements[3][2] = Matrix.Elements[2][3];
-    Result.Elements[3][0] = Matrix.Elements[0][3];
+    Result.Elements[3][3] = Matrix.Elements[3][3];
 #endif
 
     return Result;
@@ -1487,29 +1566,10 @@ static inline AmMat4 AM_AddM4(AmMat4 Left, AmMat4 Right)
 
     AmMat4 Result;
 
-#ifdef HANDMADE_MATH__USE_SSE
-    Result.Columns[0].SSE = _mm_add_ps(Left.Columns[0].SSE, Right.Columns[0].SSE);
-    Result.Columns[1].SSE = _mm_add_ps(Left.Columns[1].SSE, Right.Columns[1].SSE);
-    Result.Columns[2].SSE = _mm_add_ps(Left.Columns[2].SSE, Right.Columns[2].SSE);
-    Result.Columns[3].SSE = _mm_add_ps(Left.Columns[3].SSE, Right.Columns[3].SSE);
-#else
-    Result.Elements[0][0] = Left.Elements[0][0] + Right.Elements[0][0];
-    Result.Elements[0][1] = Left.Elements[0][1] + Right.Elements[0][1];
-    Result.Elements[0][2] = Left.Elements[0][2] + Right.Elements[0][2];
-    Result.Elements[0][3] = Left.Elements[0][3] + Right.Elements[0][3];
-    Result.Elements[1][0] = Left.Elements[1][0] + Right.Elements[1][0];
-    Result.Elements[1][1] = Left.Elements[1][1] + Right.Elements[1][1];
-    Result.Elements[1][2] = Left.Elements[1][2] + Right.Elements[1][2];
-    Result.Elements[1][3] = Left.Elements[1][3] + Right.Elements[1][3];
-    Result.Elements[2][0] = Left.Elements[2][0] + Right.Elements[2][0];
-    Result.Elements[2][1] = Left.Elements[2][1] + Right.Elements[2][1];
-    Result.Elements[2][2] = Left.Elements[2][2] + Right.Elements[2][2];
-    Result.Elements[2][3] = Left.Elements[2][3] + Right.Elements[2][3];
-    Result.Elements[3][0] = Left.Elements[3][0] + Right.Elements[3][0];
-    Result.Elements[3][1] = Left.Elements[3][1] + Right.Elements[3][1];
-    Result.Elements[3][2] = Left.Elements[3][2] + Right.Elements[3][2];
-    Result.Elements[3][3] = Left.Elements[3][3] + Right.Elements[3][3];
-#endif
+    Result.Columns[0] = AM_AddV4(Left.Columns[0], Right.Columns[0]);
+    Result.Columns[1] = AM_AddV4(Left.Columns[1], Right.Columns[1]);
+    Result.Columns[2] = AM_AddV4(Left.Columns[2], Right.Columns[2]);
+    Result.Columns[3] = AM_AddV4(Left.Columns[3], Right.Columns[3]);
 
     return Result;
 }
@@ -1521,29 +1581,10 @@ static inline AmMat4 AM_SubM4(AmMat4 Left, AmMat4 Right)
 
     AmMat4 Result;
 
-#ifdef HANDMADE_MATH__USE_SSE
-    Result.Columns[0].SSE = _mm_sub_ps(Left.Columns[0].SSE, Right.Columns[0].SSE);
-    Result.Columns[1].SSE = _mm_sub_ps(Left.Columns[1].SSE, Right.Columns[1].SSE);
-    Result.Columns[2].SSE = _mm_sub_ps(Left.Columns[2].SSE, Right.Columns[2].SSE);
-    Result.Columns[3].SSE = _mm_sub_ps(Left.Columns[3].SSE, Right.Columns[3].SSE);
-#else
-    Result.Elements[0][0] = Left.Elements[0][0] - Right.Elements[0][0];
-    Result.Elements[0][1] = Left.Elements[0][1] - Right.Elements[0][1];
-    Result.Elements[0][2] = Left.Elements[0][2] - Right.Elements[0][2];
-    Result.Elements[0][3] = Left.Elements[0][3] - Right.Elements[0][3];
-    Result.Elements[1][0] = Left.Elements[1][0] - Right.Elements[1][0];
-    Result.Elements[1][1] = Left.Elements[1][1] - Right.Elements[1][1];
-    Result.Elements[1][2] = Left.Elements[1][2] - Right.Elements[1][2];
-    Result.Elements[1][3] = Left.Elements[1][3] - Right.Elements[1][3];
-    Result.Elements[2][0] = Left.Elements[2][0] - Right.Elements[2][0];
-    Result.Elements[2][1] = Left.Elements[2][1] - Right.Elements[2][1];
-    Result.Elements[2][2] = Left.Elements[2][2] - Right.Elements[2][2];
-    Result.Elements[2][3] = Left.Elements[2][3] - Right.Elements[2][3];
-    Result.Elements[3][0] = Left.Elements[3][0] - Right.Elements[3][0];
-    Result.Elements[3][1] = Left.Elements[3][1] - Right.Elements[3][1];
-    Result.Elements[3][2] = Left.Elements[3][2] - Right.Elements[3][2];
-    Result.Elements[3][3] = Left.Elements[3][3] - Right.Elements[3][3];
-#endif
+    Result.Columns[0] = AM_SubV4(Left.Columns[0], Right.Columns[0]);
+    Result.Columns[1] = AM_SubV4(Left.Columns[1], Right.Columns[1]);
+    Result.Columns[2] = AM_SubV4(Left.Columns[2], Right.Columns[2]);
+    Result.Columns[3] = AM_SubV4(Left.Columns[3], Right.Columns[3]);
 
     return Result;
 }
@@ -1575,6 +1616,11 @@ static inline AmMat4 AM_MulM4F(AmMat4 Matrix, float Scalar)
     Result.Columns[1].SSE = _mm_mul_ps(Matrix.Columns[1].SSE, SSEScalar);
     Result.Columns[2].SSE = _mm_mul_ps(Matrix.Columns[2].SSE, SSEScalar);
     Result.Columns[3].SSE = _mm_mul_ps(Matrix.Columns[3].SSE, SSEScalar);
+#elif defined(HANDMADE_MATH__USE_NEON)
+    Result.Columns[0].NEON = vmulq_n_f32(Matrix.Columns[0].NEON, Scalar);
+    Result.Columns[1].NEON = vmulq_n_f32(Matrix.Columns[1].NEON, Scalar);
+    Result.Columns[2].NEON = vmulq_n_f32(Matrix.Columns[2].NEON, Scalar);
+    Result.Columns[3].NEON = vmulq_n_f32(Matrix.Columns[3].NEON, Scalar);
 #else
     Result.Elements[0][0] = Matrix.Elements[0][0] * Scalar;
     Result.Elements[0][1] = Matrix.Elements[0][1] * Scalar;
@@ -1617,6 +1663,12 @@ static inline AmMat4 AM_DivM4F(AmMat4 Matrix, float Scalar)
     Result.Columns[1].SSE = _mm_div_ps(Matrix.Columns[1].SSE, SSEScalar);
     Result.Columns[2].SSE = _mm_div_ps(Matrix.Columns[2].SSE, SSEScalar);
     Result.Columns[3].SSE = _mm_div_ps(Matrix.Columns[3].SSE, SSEScalar);
+#elif defined(HANDMADE_MATH__USE_NEON)
+    float32x4_t NEONScalar = vdupq_n_f32(Scalar);
+    Result.Columns[0].NEON = vdivq_f32(Matrix.Columns[0].NEON, NEONScalar);
+    Result.Columns[1].NEON = vdivq_f32(Matrix.Columns[1].NEON, NEONScalar);
+    Result.Columns[2].NEON = vdivq_f32(Matrix.Columns[2].NEON, NEONScalar);
+    Result.Columns[3].NEON = vdivq_f32(Matrix.Columns[3].NEON, NEONScalar);
 #else
     Result.Elements[0][0] = Matrix.Elements[0][0] / Scalar;
     Result.Elements[0][1] = Matrix.Elements[0][1] / Scalar;
@@ -1671,14 +1723,14 @@ static inline AmMat4 AM_InvGeneralM4(AmMat4 Matrix)
     B32 = AM_MulV3F(B32, InvDeterminant);
 
     AmMat4 Result;
-    Result.Columns[0] =
-        AM_V4V(AM_AddV3(AM_Cross(Matrix.Columns[1].XYZ, B32), AM_MulV3F(C23, Matrix.Columns[1].W)), -AM_DotV3(Matrix.Columns[1].XYZ, C23));
-    Result.Columns[1] =
-        AM_V4V(AM_SubV3(AM_Cross(B32, Matrix.Columns[0].XYZ), AM_MulV3F(C23, Matrix.Columns[0].W)), +AM_DotV3(Matrix.Columns[0].XYZ, C23));
-    Result.Columns[2] =
-        AM_V4V(AM_AddV3(AM_Cross(Matrix.Columns[3].XYZ, B10), AM_MulV3F(C01, Matrix.Columns[3].W)), -AM_DotV3(Matrix.Columns[3].XYZ, C01));
-    Result.Columns[3] =
-        AM_V4V(AM_SubV3(AM_Cross(B10, Matrix.Columns[2].XYZ), AM_MulV3F(C01, Matrix.Columns[2].W)), +AM_DotV3(Matrix.Columns[2].XYZ, C01));
+    Result.Columns[0] = AM_V4V(
+        AM_AddV3(AM_Cross(Matrix.Columns[1].XYZ, B32), AM_MulV3F(C23, Matrix.Columns[1].W)), -AM_DotV3(Matrix.Columns[1].XYZ, C23));
+    Result.Columns[1] = AM_V4V(
+        AM_SubV3(AM_Cross(B32, Matrix.Columns[0].XYZ), AM_MulV3F(C23, Matrix.Columns[0].W)), +AM_DotV3(Matrix.Columns[0].XYZ, C23));
+    Result.Columns[2] = AM_V4V(
+        AM_AddV3(AM_Cross(Matrix.Columns[3].XYZ, B10), AM_MulV3F(C01, Matrix.Columns[3].W)), -AM_DotV3(Matrix.Columns[3].XYZ, C01));
+    Result.Columns[3] = AM_V4V(
+        AM_SubV3(AM_Cross(B10, Matrix.Columns[2].XYZ), AM_MulV3F(C01, Matrix.Columns[2].W)), +AM_DotV3(Matrix.Columns[2].XYZ, C01));
 
     return AM_TransposeM4(Result);
 }
@@ -2060,6 +2112,9 @@ static inline AmQuat AM_Q(float X, float Y, float Z, float W)
 
 #ifdef HANDMADE_MATH__USE_SSE
     Result.SSE = _mm_setr_ps(X, Y, Z, W);
+#elif defined(HANDMADE_MATH__USE_NEON)
+    float32x4_t v = { X, Y, Z, W };
+    Result.NEON = v;
 #else
     Result.X = X;
     Result.Y = Y;
@@ -2079,6 +2134,8 @@ static inline AmQuat AM_QV4(AmVec4 Vector)
 
 #ifdef HANDMADE_MATH__USE_SSE
     Result.SSE = Vector.SSE;
+#elif defined(HANDMADE_MATH__USE_NEON)
+    Result.NEON = Vector.NEON;
 #else
     Result.X = Vector.X;
     Result.Y = Vector.Y;
@@ -2098,6 +2155,8 @@ static inline AmQuat AM_AddQ(AmQuat Left, AmQuat Right)
 
 #ifdef HANDMADE_MATH__USE_SSE
     Result.SSE = _mm_add_ps(Left.SSE, Right.SSE);
+#elif defined(HANDMADE_MATH__USE_NEON)
+    Result.NEON = vaddq_f32(Left.NEON, Right.NEON);
 #else
 
     Result.X = Left.X + Right.X;
@@ -2118,6 +2177,8 @@ static inline AmQuat AM_SubQ(AmQuat Left, AmQuat Right)
 
 #ifdef HANDMADE_MATH__USE_SSE
     Result.SSE = _mm_sub_ps(Left.SSE, Right.SSE);
+#elif defined(HANDMADE_MATH__USE_NEON)
+    Result.NEON = vsubq_f32(Left.NEON, Right.NEON);
 #else
     Result.X = Left.X - Right.X;
     Result.Y = Left.Y - Right.Y;
@@ -2151,6 +2212,19 @@ static inline AmQuat AM_MulQ(AmQuat Left, AmQuat Right)
     SSEResultOne = _mm_shuffle_ps(Left.SSE, Left.SSE, _MM_SHUFFLE(3, 3, 3, 3));
     SSEResultTwo = _mm_shuffle_ps(Right.SSE, Right.SSE, _MM_SHUFFLE(3, 2, 1, 0));
     Result.SSE = _mm_add_ps(SSEResultThree, _mm_mul_ps(SSEResultTwo, SSEResultOne));
+#elif defined(HANDMADE_MATH__USE_NEON)
+    float32x4_t Right1032 = vrev64q_f32(Right.NEON);
+    float32x4_t Right3210 = vcombine_f32(vget_high_f32(Right1032), vget_low_f32(Right1032));
+    float32x4_t Right2301 = vrev64q_f32(Right3210);
+
+    float32x4_t FirstSign = { 1.0f, -1.0f, 1.0f, -1.0f };
+    Result.NEON = vmulq_f32(Right3210, vmulq_f32(vdupq_laneq_f32(Left.NEON, 0), FirstSign));
+    float32x4_t SecondSign = { 1.0f, 1.0f, -1.0f, -1.0f };
+    Result.NEON = vfmaq_f32(Result.NEON, Right2301, vmulq_f32(vdupq_laneq_f32(Left.NEON, 1), SecondSign));
+    float32x4_t ThirdSign = { -1.0f, 1.0f, 1.0f, -1.0f };
+    Result.NEON = vfmaq_f32(Result.NEON, Right1032, vmulq_f32(vdupq_laneq_f32(Left.NEON, 2), ThirdSign));
+    Result.NEON = vfmaq_laneq_f32(Result.NEON, Right.NEON, Left.NEON, 3);
+
 #else
     Result.X = Right.Elements[3] * +Left.Elements[0];
     Result.Y = Right.Elements[2] * -Left.Elements[0];
@@ -2186,6 +2260,8 @@ static inline AmQuat AM_MulQF(AmQuat Left, float Multiplicative)
 #ifdef HANDMADE_MATH__USE_SSE
     __m128 Scalar = _mm_set1_ps(Multiplicative);
     Result.SSE = _mm_mul_ps(Left.SSE, Scalar);
+#elif defined(HANDMADE_MATH__USE_NEON)
+    Result.NEON = vmulq_n_f32(Left.NEON, Multiplicative);
 #else
     Result.X = Left.X * Multiplicative;
     Result.Y = Left.Y * Multiplicative;
@@ -2206,6 +2282,9 @@ static inline AmQuat AM_DivQF(AmQuat Left, float Divnd)
 #ifdef HANDMADE_MATH__USE_SSE
     __m128 Scalar = _mm_set1_ps(Divnd);
     Result.SSE = _mm_div_ps(Left.SSE, Scalar);
+#elif defined(HANDMADE_MATH__USE_NEON)
+    float32x4_t Scalar = vdupq_n_f32(Divnd);
+    Result.NEON = vdivq_f32(Left.NEON, Scalar);
 #else
     Result.X = Left.X / Divnd;
     Result.Y = Left.Y / Divnd;
@@ -2230,6 +2309,11 @@ static inline float AM_DotQ(AmQuat Left, AmQuat Right)
     SSEResultTwo = _mm_shuffle_ps(SSEResultOne, SSEResultOne, _MM_SHUFFLE(0, 1, 2, 3));
     SSEResultOne = _mm_add_ps(SSEResultOne, SSEResultTwo);
     _mm_store_ss(&Result, SSEResultOne);
+#elif defined(HANDMADE_MATH__USE_NEON)
+    float32x4_t NEONMultiplyResult = vmulq_f32(Left.NEON, Right.NEON);
+    float32x4_t NEONHalfAdd = vpaddq_f32(NEONMultiplyResult, NEONMultiplyResult);
+    float32x4_t NEONFullAdd = vpaddq_f32(NEONHalfAdd, NEONHalfAdd);
+    Result = vgetq_lane_f32(NEONFullAdd, 0);
 #else
     Result = ((Left.X * Right.X) + (Left.Z * Right.Z)) + ((Left.Y * Right.Y) + (Left.W * Right.W));
 #endif
@@ -2274,6 +2358,10 @@ static inline AmQuat _AM_MixQ(AmQuat Left, float MixLeft, AmQuat Right, float Mi
     __m128 SSEResultOne = _mm_mul_ps(Left.SSE, ScalarLeft);
     __m128 SSEResultTwo = _mm_mul_ps(Right.SSE, ScalarRight);
     Result.SSE = _mm_add_ps(SSEResultOne, SSEResultTwo);
+#elif defined(HANDMADE_MATH__USE_NEON)
+    float32x4_t ScaledLeft = vmulq_n_f32(Left.NEON, MixLeft);
+    float32x4_t ScaledRight = vmulq_n_f32(Right.NEON, MixRight);
+    Result.NEON = vaddq_f32(ScaledLeft, ScaledRight);
 #else
     Result.X = Left.X * MixLeft + Right.X * MixRight;
     Result.Y = Left.Y * MixLeft + Right.Y * MixRight;
@@ -2479,27 +2567,65 @@ static inline AmQuat AM_M4ToQ_LH(AmMat4 M)
 }
 
 COVERAGE(AM_QFromAxisAngle_RH, 1)
-static inline AmQuat AM_QFromAxisAngle_RH(AmVec3 Axis, float AngleOfRotation)
+static inline AmQuat AM_QFromAxisAngle_RH(AmVec3 Axis, float Angle)
 {
     ASSERT_COVERED(AM_QFromAxisAngle_RH);
 
     AmQuat Result;
 
     AmVec3 AxisNormalized = AM_NormV3(Axis);
-    float SineOfRotation = AM_SinF(AngleOfRotation / 2.0f);
+    float SineOfRotation = AM_SinF(Angle / 2.0f);
 
     Result.XYZ = AM_MulV3F(AxisNormalized, SineOfRotation);
-    Result.W = AM_CosF(AngleOfRotation / 2.0f);
+    Result.W = AM_CosF(Angle / 2.0f);
 
     return Result;
 }
 
 COVERAGE(AM_QFromAxisAngle_LH, 1)
-static inline AmQuat AM_QFromAxisAngle_LH(AmVec3 Axis, float AngleOfRotation)
+static inline AmQuat AM_QFromAxisAngle_LH(AmVec3 Axis, float Angle)
 {
     ASSERT_COVERED(AM_QFromAxisAngle_LH);
 
-    return AM_QFromAxisAngle_RH(Axis, -AngleOfRotation);
+    return AM_QFromAxisAngle_RH(Axis, -Angle);
+}
+
+COVERAGE(AM_RotateV2, 1)
+static inline AmVec2 AM_RotateV2(AmVec2 V, float Angle)
+{
+    ASSERT_COVERED(AM_RotateV2)
+
+    float sinA = AM_SinF(Angle);
+    float cosA = AM_CosF(Angle);
+
+    return AM_V2(V.X * cosA - V.Y * sinA, V.X * sinA + V.Y * cosA);
+}
+
+// implementation from
+// https://blog.molecular-matters.com/2013/05/24/a-faster-quaternion-vector-multiplication/
+COVERAGE(AM_RotateV3Q, 1)
+static inline AmVec3 AM_RotateV3Q(AmVec3 V, AmQuat Q)
+{
+    ASSERT_COVERED(AM_RotateV3Q);
+
+    AmVec3 t = AM_MulV3F(AM_Cross(Q.XYZ, V), 2);
+    return AM_AddV3(V, AM_AddV3(AM_MulV3F(t, Q.W), AM_Cross(Q.XYZ, t)));
+}
+
+COVERAGE(AM_RotateV3AxisAngle_LH, 1)
+static inline AmVec3 AM_RotateV3AxisAngle_LH(AmVec3 V, AmVec3 Axis, float Angle)
+{
+    ASSERT_COVERED(AM_RotateV3AxisAngle_LH);
+
+    return AM_RotateV3Q(V, AM_QFromAxisAngle_LH(Axis, Angle));
+}
+
+COVERAGE(AM_RotateV3AxisAngle_RH, 1)
+static inline AmVec3 AM_RotateV3AxisAngle_RH(AmVec3 V, AmVec3 Axis, float Angle)
+{
+    ASSERT_COVERED(AM_RotateV3AxisAngle_RH);
+
+    return AM_RotateV3Q(V, AM_QFromAxisAngle_RH(Axis, Angle));
 }
 
 #ifdef __cplusplus
@@ -3633,6 +3759,9 @@ static inline AmVec4 operator-(AmVec4 In)
     AmVec4 Result;
 #if HANDMADE_MATH__USE_SSE
     Result.SSE = _mm_xor_ps(In.SSE, _mm_set1_ps(-0.0f));
+#elif defined(HANDMADE_MATH__USE_NEON)
+    float32x4_t Zero = vdupq_n_f32(0.0f);
+    Result.NEON = vsubq_f32(Zero, In.NEON);
 #else
     Result.X = -In.X;
     Result.Y = -In.Y;
@@ -3646,86 +3775,88 @@ static inline AmVec4 operator-(AmVec4 In)
 #endif /* __cplusplus*/
 
 #ifdef HANDMADE_MATH__USE_C11_GENERICS
-#define AM_Add(A, B)                                                                                                                       \
-    _Generic((A), AmVec2                                                                                                                   \
-             : AM_AddV2, AmVec3                                                                                                            \
-             : AM_AddV3, AmVec4                                                                                                            \
-             : AM_AddV4, AmMat2                                                                                                            \
-             : AM_AddM2, AmMat3                                                                                                            \
-             : AM_AddM3, AmMat4                                                                                                            \
-             : AM_AddM4, AmQuat                                                                                                            \
-             : AM_AddQ)(A, B)
+#define AM_Add(A, B)                                                                                                                      \
+    _Generic(                                                                                                                              \
+        (A),                                                                                                                               \
+        AmVec2: AM_AddV2,                                                                                                               \
+        AmVec3: AM_AddV3,                                                                                                               \
+        AmVec4: AM_AddV4,                                                                                                               \
+        AmMat2: AM_AddM2,                                                                                                               \
+        AmMat3: AM_AddM3,                                                                                                               \
+        AmMat4: AM_AddM4,                                                                                                               \
+        AmQuat: AM_AddQ)(A, B)
 
-#define AM_Sub(A, B)                                                                                                                       \
-    _Generic((A), AmVec2                                                                                                                   \
-             : AM_SubV2, AmVec3                                                                                                            \
-             : AM_SubV3, AmVec4                                                                                                            \
-             : AM_SubV4, AmMat2                                                                                                            \
-             : AM_SubM2, AmMat3                                                                                                            \
-             : AM_SubM3, AmMat4                                                                                                            \
-             : AM_SubM4, AmQuat                                                                                                            \
-             : AM_SubQ)(A, B)
+#define AM_Sub(A, B)                                                                                                                      \
+    _Generic(                                                                                                                              \
+        (A),                                                                                                                               \
+        AmVec2: AM_SubV2,                                                                                                               \
+        AmVec3: AM_SubV3,                                                                                                               \
+        AmVec4: AM_SubV4,                                                                                                               \
+        AmMat2: AM_SubM2,                                                                                                               \
+        AmMat3: AM_SubM3,                                                                                                               \
+        AmMat4: AM_SubM4,                                                                                                               \
+        AmQuat: AM_SubQ)(A, B)
 
-#define AM_Mul(A, B)                                                                                                                       \
-    _Generic((B), float                                                                                                                    \
-             : _Generic((A), AmVec2                                                                                                        \
-                        : AM_MulV2F, AmVec3                                                                                                \
-                        : AM_MulV3F, AmVec4                                                                                                \
-                        : AM_MulV4F, AmMat2                                                                                                \
-                        : AM_MulM2F, AmMat3                                                                                                \
-                        : AM_MulM3F, AmMat4                                                                                                \
-                        : AM_MulM4F, AmQuat                                                                                                \
-                        : AM_MulQF),                                                                                                       \
-               AmMat2                                                                                                                      \
-             : AM_MulM2, AmMat3                                                                                                            \
-             : AM_MulM3, AmMat4                                                                                                            \
-             : AM_MulM4, AmQuat                                                                                                            \
-             : AM_MulQ, default                                                                                                            \
-             : _Generic((A), AmVec2                                                                                                        \
-                        : AM_MulV2, AmVec3                                                                                                 \
-                        : AM_MulV3, AmVec4                                                                                                 \
-                        : AM_MulV4, AmMat2                                                                                                 \
-                        : AM_MulM2V2, AmMat3                                                                                               \
-                        : AM_MulM3V3, AmMat4                                                                                               \
-                        : AM_MulM4V4))(A, B)
+#define AM_Mul(A, B)                                                                                                                      \
+    _Generic(                                                                                                                              \
+        (B),                                                                                                                               \
+        float: _Generic(                                                                                                                   \
+            (A),                                                                                                                           \
+            AmVec2: AM_MulV2F,                                                                                                          \
+            AmVec3: AM_MulV3F,                                                                                                          \
+            AmVec4: AM_MulV4F,                                                                                                          \
+            AmMat2: AM_MulM2F,                                                                                                          \
+            AmMat3: AM_MulM3F,                                                                                                          \
+            AmMat4: AM_MulM4F,                                                                                                          \
+            AmQuat: AM_MulQF),                                                                                                          \
+        AmMat2: AM_MulM2,                                                                                                               \
+        AmMat3: AM_MulM3,                                                                                                               \
+        AmMat4: AM_MulM4,                                                                                                               \
+        AmQuat: AM_MulQ,                                                                                                                \
+        default: _Generic(                                                                                                                 \
+            (A),                                                                                                                           \
+            AmVec2: AM_MulV2,                                                                                                           \
+            AmVec3: AM_MulV3,                                                                                                           \
+            AmVec4: AM_MulV4,                                                                                                           \
+            AmMat2: AM_MulM2V2,                                                                                                         \
+            AmMat3: AM_MulM3V3,                                                                                                         \
+            AmMat4: AM_MulM4V4))(A, B)
 
-#define AM_Div(A, B)                                                                                                                       \
-    _Generic((B), float                                                                                                                    \
-             : _Generic((A), AmMat2                                                                                                        \
-                        : AM_DivM2F, AmMat3                                                                                                \
-                        : AM_DivM3F, AmMat4                                                                                                \
-                        : AM_DivM4F, AmVec2                                                                                                \
-                        : AM_DivV2F, AmVec3                                                                                                \
-                        : AM_DivV3F, AmVec4                                                                                                \
-                        : AM_DivV4F, AmQuat                                                                                                \
-                        : AM_DivQF),                                                                                                       \
-               AmMat2                                                                                                                      \
-             : AM_DivM2, AmMat3                                                                                                            \
-             : AM_DivM3, AmMat4                                                                                                            \
-             : AM_DivM4, AmQuat                                                                                                            \
-             : AM_DivQ, default                                                                                                            \
-             : _Generic((A), AmVec2                                                                                                        \
-                        : AM_DivV2, AmVec3                                                                                                 \
-                        : AM_DivV3, AmVec4                                                                                                 \
-                        : AM_DivV4))(A, B)
+#define AM_Div(A, B)                                                                                                                      \
+    _Generic(                                                                                                                              \
+        (B),                                                                                                                               \
+        float: _Generic(                                                                                                                   \
+            (A),                                                                                                                           \
+            AmMat2: AM_DivM2F,                                                                                                          \
+            AmMat3: AM_DivM3F,                                                                                                          \
+            AmMat4: AM_DivM4F,                                                                                                          \
+            AmVec2: AM_DivV2F,                                                                                                          \
+            AmVec3: AM_DivV3F,                                                                                                          \
+            AmVec4: AM_DivV4F,                                                                                                          \
+            AmQuat: AM_DivQF),                                                                                                          \
+        AmMat2: AM_DivM2,                                                                                                               \
+        AmMat3: AM_DivM3,                                                                                                               \
+        AmMat4: AM_DivM4,                                                                                                               \
+        AmQuat: AM_DivQ,                                                                                                                \
+        default: _Generic((A), AmVec2: AM_DivV2, AmVec3: AM_DivV3, AmVec4: AM_DivV4))(A, B)
 
-#define AM_Len(A) _Generic((A), AmVec2 : AM_LenV2, AmVec3 : AM_LenV3, AmVec4 : AM_LenV4)(A)
+#define AM_Len(A) _Generic((A), AmVec2: AM_LenV2, AmVec3: AM_LenV3, AmVec4: AM_LenV4)(A)
 
-#define AM_LenSqr(A) _Generic((A), AmVec2 : AM_LenSqrV2, AmVec3 : AM_LenSqrV3, AmVec4 : AM_LenSqrV4)(A)
+#define AM_LenSqr(A) _Generic((A), AmVec2: AM_LenSqrV2, AmVec3: AM_LenSqrV3, AmVec4: AM_LenSqrV4)(A)
 
-#define AM_Norm(A) _Generic((A), AmVec2 : AM_NormV2, AmVec3 : AM_NormV3, AmVec4 : AM_NormV4)(A)
+#define AM_Norm(A) _Generic((A), AmVec2: AM_NormV2, AmVec3: AM_NormV3, AmVec4: AM_NormV4)(A)
 
-#define AM_Dot(A, B) _Generic((A), AmVec2 : AM_DotV2, AmVec3 : AM_DotV3, AmVec4 : AM_DotV4)(A, B)
+#define AM_Dot(A, B) _Generic((A), AmVec2: AM_DotV2, AmVec3: AM_DotV3, AmVec4: AM_DotV4)(A, B)
 
-#define AM_Lerp(A, T, B) _Generic((A), float : AM_Lerp, AmVec2 : AM_LerpV2, AmVec3 : AM_LerpV3, AmVec4 : AM_LerpV4)(A, T, B)
+#define AM_Lerp(A, T, B) _Generic((A), float: AM_Lerp, AmVec2: AM_LerpV2, AmVec3: AM_LerpV3, AmVec4: AM_LerpV4)(A, T, B)
 
-#define AM_Eq(A, B) _Generic((A), AmVec2 : AM_EqV2, AmVec3 : AM_EqV3, AmVec4 : AM_EqV4)(A, B)
+#define AM_Eq(A, B) _Generic((A), AmVec2: AM_EqV2, AmVec3: AM_EqV3, AmVec4: AM_EqV4)(A, B)
 
-#define AM_Transpose(M) _Generic((M), AmMat2 : AM_TransposeM2, AmMat3 : AM_TransposeM3, AmMat4 : AM_TransposeM4)(M)
+#define AM_Transpose(M) _Generic((M), AmMat2: AM_TransposeM2, AmMat3: AM_TransposeM3, AmMat4: AM_TransposeM4)(M)
 
-#define AM_Determinant(M) _Generic((M), AmMat2 : AM_DeterminantM2, AmMat3 : AM_DeterminantM3, AmMat4 : AM_DeterminantM4)(M)
+#define AM_Determinant(M) _Generic((M), AmMat2: AM_DeterminantM2, AmMat3: AM_DeterminantM3, AmMat4: AM_DeterminantM4)(M)
 
-#define AM_InvGeneral(M) _Generic((M), AmMat2 : AM_InvGeneralM2, AmMat3 : AM_InvGeneralM3, AmMat4 : AM_InvGeneralM4)(M)
+#define AM_InvGeneral(M) _Generic((M), AmMat2: AM_InvGeneralM2, AmMat3: AM_InvGeneralM3, AmMat4: AM_InvGeneralM4)(M)
 
 #endif
 
