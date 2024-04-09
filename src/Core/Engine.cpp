@@ -108,7 +108,7 @@ namespace SparkyStudios::Audio::Amplitude
         dest->assign(file->Length() + 1, 0);
 
         // Read the file into the buffer
-        file->Seek(0, SEEK_SET);
+        file->Seek(0, eFSO_START);
         const AmUInt32 len = file->Read(reinterpret_cast<AmUInt8Buffer>(&(*dest)[0]), file->Length());
 
         return len == file->Length() && len > 0;

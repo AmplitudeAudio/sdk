@@ -26,7 +26,7 @@ namespace SparkyStudios::Audio::Amplitude
     /**
      * @brief Describes the mode in which open the file.
      */
-    enum FileOpenMode
+    enum FileOpenMode : AmUInt8
     {
         eFOM_READ = 0,
         eFOM_WRITE = 1,
@@ -36,13 +36,22 @@ namespace SparkyStudios::Audio::Amplitude
     };
 
     /**
-     * @brief The type of file being opened. This is mainly used for
-     * DiskFile.
+     * @brief The type of file being opened.
      */
-    enum FileOpenKind
+    enum FileOpenKind : AmUInt8
     {
         eFOK_BINARY = 0,
         eFOK_TEXT = 1,
+    };
+
+    /**
+     * @brief Defines from where to seek in the file.
+     */
+    enum FileSeekOrigin : AmUInt8
+    {
+        eFSO_START = SEEK_SET,
+        eFSO_CURRENT = SEEK_CUR,
+        eFSO_END = SEEK_END,
     };
 
     /**
@@ -134,7 +143,7 @@ namespace SparkyStudios::Audio::Amplitude
          * @param offset The offset in bytes from the beginning of the file.
          * @param origin The origin from which to begin seeking.
          */
-        virtual void Seek(AmSize offset, int origin) = 0;
+        virtual void Seek(AmSize offset, FileSeekOrigin origin) = 0;
 
         /**
          * @brief Gets the current position of the read/write cursor.
@@ -198,7 +207,7 @@ namespace SparkyStudios::Audio::Amplitude
         AmSize Read(AmUInt8Buffer dst, AmSize bytes) override;
         AmSize Write(AmConstUInt8Buffer src, AmSize bytes) override;
         AmSize Length() override;
-        void Seek(AmSize offset, int origin) override;
+        void Seek(AmSize offset, FileSeekOrigin origin) override;
         AmSize Position() override;
         AmVoidPtr GetPtr() override;
         [[nodiscard]] bool IsValid() const override;
@@ -255,7 +264,7 @@ namespace SparkyStudios::Audio::Amplitude
         AmSize Read(AmUInt8Buffer dst, AmSize bytes) override;
         AmSize Write(AmConstUInt8Buffer src, AmSize bytes) override;
         AmSize Length() override;
-        void Seek(AmSize offset, int origin) override;
+        void Seek(AmSize offset, FileSeekOrigin origin) override;
         AmSize Position() override;
         AmVoidPtr GetPtr() override;
         [[nodiscard]] bool IsValid() const override;

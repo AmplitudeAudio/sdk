@@ -40,7 +40,7 @@ namespace SparkyStudios::Audio::Amplitude
 
     void File::Seek(AmSize offset)
     {
-        Seek(offset, SEEK_SET);
+        Seek(offset, eFSO_START);
     }
 
     AmVoidPtr File::GetPtr()
@@ -100,7 +100,7 @@ namespace SparkyStudios::Audio::Amplitude
         return len;
     }
 
-    void DiskFile::Seek(AmSize offset, int origin)
+    void DiskFile::Seek(AmSize offset, FileSeekOrigin origin)
     {
         fseek(m_fileHandle, offset, origin);
     }
@@ -229,13 +229,13 @@ namespace SparkyStudios::Audio::Amplitude
         return m_dataSize;
     }
 
-    void MemoryFile::Seek(AmSize offset, int origin)
+    void MemoryFile::Seek(AmSize offset, FileSeekOrigin origin)
     {
-        if (origin == SEEK_SET)
+        if (origin == eFSO_START)
             m_offset = offset;
-        else if (origin == SEEK_CUR)
+        else if (origin == eFSO_CURRENT)
             m_offset += offset;
-        else if (origin == SEEK_END)
+        else if (origin == eFSO_END)
             m_offset = m_dataSize - offset;
 
         if (m_offset > m_dataSize - 1)
@@ -334,9 +334,9 @@ namespace SparkyStudios::Audio::Amplitude
         if (m_dataPtr == nullptr)
             return AM_ERROR_OUT_OF_MEMORY;
 
-        file->Seek(0, SEEK_SET);
+        file->Seek(0, eFSO_START);
         file->Read(m_dataPtr, m_dataSize);
-        file->Seek(m_offset, SEEK_SET);
+        file->Seek(m_offset, eFSO_START);
 
         m_dataOwned = true;
 

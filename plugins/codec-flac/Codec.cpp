@@ -87,7 +87,7 @@ void FlacCodec::FlacDecoderInternal::error_callback(::FLAC__StreamDecoderErrorSt
     if (_decoder->_file == nullptr)
         return ::FLAC__STREAM_DECODER_SEEK_STATUS_ERROR;
 
-    _decoder->_file->Seek(absolute_byte_offset, SEEK_SET);
+    _decoder->_file->Seek(absolute_byte_offset, eFSO_START);
     return ::FLAC__STREAM_DECODER_SEEK_STATUS_OK;
 }
 

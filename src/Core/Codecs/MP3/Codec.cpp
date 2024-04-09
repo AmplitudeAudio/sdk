@@ -43,7 +43,7 @@ namespace SparkyStudios::Audio::Amplitude
     static drmp3_bool32 onSeek(void* pUserData, int offset, drmp3_seek_origin origin)
     {
         auto* file = static_cast<File*>(pUserData);
-        file->Seek(offset, origin == drmp3_seek_origin_start ? SEEK_SET : origin == drmp3_seek_origin_current ? SEEK_CUR : SEEK_SET);
+        file->Seek(offset, origin == drmp3_seek_origin_start ? eFSO_START : origin == drmp3_seek_origin_current ? eFSO_CURRENT : eFSO_START);
         return DRMP3_TRUE;
     }
 
