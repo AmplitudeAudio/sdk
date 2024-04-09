@@ -231,6 +231,9 @@ bool SampleState::Initialize()
     while (!amEngine->TryFinalizeOpenFileSystem())
         SDL_Delay(1);
 
+    // Register all the default plugins shipped with the engine
+    Engine::RegisterDefaultPlugins();
+
     const auto sdkPath = std::filesystem::path(std::getenv("AM_SDK_PATH"));
 
     Engine::AddPluginSearchPath(AM_OS_STRING("./assets/plugins"));
@@ -524,6 +527,9 @@ int main(int argc, char* argv[])
         Thread::Sleep(1);
 
     amEngine->DestroyInstance();
+
+    // Unregister all default plugins
+    Engine::UnregisterDefaultPlugins();
 
 #if !defined(AM_NO_MEMORY_STATS)
     CallLogFunc(amMemory->InspectMemoryLeaks().c_str());

@@ -244,7 +244,7 @@ int main(int argc, char* argv[])
   amEngine->DestroyInstance();
 
   // Unregister all default plugins
-  Amplitude::Engine::UnregisterDefaultPlugins();
+  Engine::UnregisterDefaultPlugins();
 
   // Deinitialize the memory manager
   MemoryManager::Deinitialize();

@@ -86,6 +86,9 @@ static void run(AmVoidPtr param)
 
     const auto sdkPath = std::filesystem::path(std::getenv("AM_SDK_PATH"));
 
+    // Register all the default plugins shipped with the engine
+    Engine::RegisterDefaultPlugins();
+
     Engine::AddPluginSearchPath(AM_OS_STRING("./assets/plugins"));
 #if defined(AM_WINDOWS_VERSION)
     Engine::AddPluginSearchPath(sdkPath / AM_OS_STRING("lib/win/plugins"));
@@ -250,6 +253,9 @@ static void run(AmVoidPtr param)
         Thread::Sleep(1);
 
     amEngine->DestroyInstance();
+
+    // Unregister all default plugins
+    Engine::UnregisterDefaultPlugins();
 }
 
 int main(int argc, char* argv[])
