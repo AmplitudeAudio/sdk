@@ -71,6 +71,14 @@ namespace SparkyStudios::Audio::Amplitude
             findIt->second->Reset();
     }
 
+    void Collection::ResetWorldScopeScheduler()
+    {
+        if (_worldScopeScheduler == nullptr || !_worldScopeScheduler->Valid())
+            return;
+
+        _worldScopeScheduler->Reset();
+    }
+
     Scheduler* Collection::CreateScheduler(const CollectionDefinition* definition)
     {
         Scheduler* scheduler;

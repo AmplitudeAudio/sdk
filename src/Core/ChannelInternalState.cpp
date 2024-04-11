@@ -169,16 +169,14 @@ namespace SparkyStudios::Audio::Amplitude
         if (Stopped())
             return;
 
-        if (Valid())
-        {
-            _realChannel.Halt();
-        }
+        HaltInternal();
 
-        _channelState = ChannelPlaybackState::Stopped;
-
-        if (_entity.Valid() && _collection != nullptr)
+        if (_collection != nullptr)
         {
-            _collection->ResetEntityScopeScheduler(_entity);
+            if (_entity.Valid())
+                _collection->ResetEntityScopeScheduler(_entity);
+            else
+                _collection->ResetWorldScopeScheduler();
         }
     }
 
@@ -652,6 +650,16 @@ namespace SparkyStudios::Audio::Amplitude
         default:
             AMPLITUDE_ASSERT(false);
         }
+    }
+
+    void ChannelInternalState::HaltInternal()
+    {
+        if (Valid())
+        {
+            _realChannel.Halt();
+        }
+
+        _channelState = ChannelPlaybackState::Stopped;
     }
 
     bool ChannelInternalState::PlaySwitchContainerStateUpdate(

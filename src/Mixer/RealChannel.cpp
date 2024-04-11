@@ -81,6 +81,16 @@ namespace SparkyStudios::Audio::Amplitude
         _playedSounds.clear();
     }
 
+    ChannelInternalState* RealChannel::GetParentChannelState() const
+    {
+        return _parentChannelState;
+    }
+
+    AmChannelID RealChannel::GetID() const
+    {
+        return _channelId;
+    }
+
     bool RealChannel::Valid() const
     {
         return _channelId != kAmInvalidObjectId && _mixer != nullptr && _parentChannelState != nullptr;
@@ -132,7 +142,7 @@ namespace SparkyStudios::Audio::Amplitude
         _loop[layer] = _activeSounds[layer]->GetSound()->IsLoop();
         _stream[layer] = _activeSounds[layer]->GetSound()->IsStream();
 
-        const PlayStateFlag loops = _loop[layer] ? PLAY_STATE_FLAG_LOOP : PLAY_STATE_FLAG_PLAY;
+        const PlayStateFlag loops = _loop[layer] ? ePSF_LOOP : ePSF_PLAY;
 
         _channelLayersId[layer] = _mixer->Play(
             static_cast<SoundData*>(_activeSounds[layer]->GetUserData()), loops, _gain[layer], _pan, _pitch, _playSpeed, _channelId, 0);
@@ -154,7 +164,7 @@ namespace SparkyStudios::Audio::Amplitude
 
         const MixerCommandCallback callback = [&, layer]() -> bool
         {
-            _mixer->SetPlayState(_channelId, _channelLayersId[layer], PLAY_STATE_FLAG_MIN);
+            _mixer->SetPlayState(_channelId, _channelLayersId[layer], ePSF_MIN);
 
             _channelLayersId.erase(layer);
 
@@ -192,17 +202,19 @@ namespace SparkyStudios::Audio::Amplitude
     {
         AMPLITUDE_ASSERT(Valid());
         const AmUInt32 state = _mixer->GetPlayState(_channelId, _channelLayersId.at(layer));
+        if (state < ePSF_PLAY)
+            return false;
 
         if (const auto* collection = _parentChannelState->GetCollection(); collection == nullptr)
         {
-            return !_loop.at(layer) && state == PLAY_STATE_FLAG_PLAY || _loop.at(layer) && state == PLAY_STATE_FLAG_LOOP;
+            return !_loop.at(layer) && state == ePSF_PLAY || _loop.at(layer) && state == ePSF_LOOP;
         }
         else
         {
             const CollectionPlayMode mode = collection->GetDefinition()->play_mode();
 
-            return mode == CollectionPlayMode_PlayOne && !_loop.at(layer) ? state == PLAY_STATE_FLAG_PLAY
-                : mode == CollectionPlayMode_PlayOne && _loop.at(layer)   ? state == PLAY_STATE_FLAG_LOOP
+            return mode == CollectionPlayMode_PlayOne && !_loop.at(layer) ? state == ePSF_PLAY
+                : mode == CollectionPlayMode_PlayOne && _loop.at(layer)   ? state == ePSF_LOOP
                                                                           : _channelId != kAmInvalidObjectId;
         }
     }
@@ -225,7 +237,7 @@ namespace SparkyStudios::Audio::Amplitude
     bool RealChannel::Paused(AmUInt32 layer) const
     {
         AMPLITUDE_ASSERT(Valid());
-        return _mixer->GetPlayState(_channelId, _channelLayersId.at(layer)) == PLAY_STATE_FLAG_HALT;
+        return _mixer->GetPlayState(_channelId, _channelLayersId.at(layer)) == ePSF_HALT;
     }
 
     void RealChannel::SetGain(const AmReal32 gain)
@@ -254,19 +266,19 @@ namespace SparkyStudios::Audio::Amplitude
     void RealChannel::Halt(AmUInt32 layer)
     {
         AMPLITUDE_ASSERT(Valid());
-        _mixer->SetPlayState(_channelId, _channelLayersId[layer], PLAY_STATE_FLAG_STOP);
+        _mixer->SetPlayState(_channelId, _channelLayersId[layer], ePSF_STOP);
     }
 
     void RealChannel::Pause(AmUInt32 layer)
     {
         AMPLITUDE_ASSERT(Valid());
-        _mixer->SetPlayState(_channelId, _channelLayersId[layer], PLAY_STATE_FLAG_HALT);
+        _mixer->SetPlayState(_channelId, _channelLayersId[layer], ePSF_HALT);
     }
 
     void RealChannel::Resume(AmUInt32 layer)
     {
         AMPLITUDE_ASSERT(Valid());
-        _mixer->SetPlayState(_channelId, _channelLayersId[layer], _loop[layer] ? PLAY_STATE_FLAG_LOOP : PLAY_STATE_FLAG_PLAY);
+        _mixer->SetPlayState(_channelId, _channelLayersId[layer], _loop[layer] ? ePSF_LOOP : ePSF_PLAY);
     }
 
     void RealChannel::SetPan(const AmVec2& pan)

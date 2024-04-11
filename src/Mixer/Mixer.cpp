@@ -263,15 +263,23 @@ namespace SparkyStudios::Audio::Amplitude
         if (const Engine* engine = Engine::GetInstance(); engine->GetState()->stopping)
         {
             OnSoundDestroyed(mixer, layer);
+            return;
         }
 
         if (sound->GetSettings().m_kind == SoundKind::Standalone)
         {
             // Stop playing the sound
-            channel->GetParentChannelState()->Halt();
+            channel->GetParentChannelState()->HaltInternal();
+
+            // Destroy the sound instance on end
+            OnSoundDestroyed(mixer, layer);
         }
         else if (sound->GetSettings().m_kind == SoundKind::Switched)
         {
+            // Stop playing the sound
+            channel->GetParentChannelState()->HaltInternal();
+
+            // Destroy the sound instance on stop
             OnSoundDestroyed(mixer, layer);
         }
         else if (sound->GetSettings().m_kind == SoundKind::Contained)
@@ -289,8 +297,8 @@ namespace SparkyStudios::Audio::Amplitude
                         channel->ClearPlayedSounds();
                         if (config->play_mode() == CollectionPlayMode_PlayAll)
                         {
-                            // Stop playing the sound
-                            channel->GetParentChannelState()->Halt();
+                            // Stop playing the collection
+                            channel->GetParentChannelState()->HaltInternal();
                         }
                     }
 
@@ -319,6 +327,8 @@ namespace SparkyStudios::Audio::Amplitude
         layer->snd->sound.reset();
 
         layer->snd = nullptr;
+
+        AMPLIMIX_STORE(&layer->flag, ePSF_MIN);
     }
 
     static void MixMono(AmUInt64 index, const AmAudioFrame& gain, const SoundChunk* in, AmAudioFrameBuffer out)
@@ -579,7 +589,7 @@ namespace SparkyStudios::Audio::Amplitude
         AmUInt32 id,
         AmUInt32 layer)
     {
-        if (flag <= PLAY_STATE_FLAG_MIN || flag >= PLAY_STATE_FLAG_MAX)
+        if (flag <= ePSF_MIN || flag >= ePSF_MAX)
             return 0; // invalid flag
 
         if (endFrame - startFrame < kProcessedFramesCount || endFrame < kProcessedFramesCount)
@@ -598,7 +608,7 @@ namespace SparkyStudios::Audio::Amplitude
         auto* lay = GetLayer(layer);
 
         // check if corresponding layer is free
-        if (AMPLIMIX_LOAD(&lay->flag) == PLAY_STATE_FLAG_MIN)
+        if (AMPLIMIX_LOAD(&lay->flag) == ePSF_MIN)
         {
             // fill in non-atomic layer data along with truncating start and end
             lay->id = id;
@@ -678,7 +688,7 @@ namespace SparkyStudios::Audio::Amplitude
         auto* lay = GetLayer(layer);
 
         // check id and state flag to make sure the id is valid
-        if ((id == lay->id) && (AMPLIMIX_LOAD(&lay->flag) > PLAY_STATE_FLAG_STOP))
+        if ((id == lay->id) && (AMPLIMIX_LOAD(&lay->flag) > ePSF_STOP))
         {
             if (lay->snd != nullptr && lay->snd->format.GetNumChannels() == 1)
                 pan = 0.0f;
@@ -698,7 +708,7 @@ namespace SparkyStudios::Audio::Amplitude
         auto* lay = GetLayer(layer);
 
         // check id and state flag to make sure the id is valid
-        if ((id == lay->id) && (AMPLIMIX_LOAD(&lay->flag) > PLAY_STATE_FLAG_STOP))
+        if ((id == lay->id) && (AMPLIMIX_LOAD(&lay->flag) > ePSF_STOP))
         {
             // store the pitch value atomically
             AMPLIMIX_STORE(&lay->pitch, pitch);
@@ -715,7 +725,7 @@ namespace SparkyStudios::Audio::Amplitude
         auto* lay = GetLayer(layer);
 
         // check id and state flag to make sure the id is valid
-        if ((id == lay->id) && (AMPLIMIX_LOAD(&lay->flag) > PLAY_STATE_FLAG_STOP))
+        if ((id == lay->id) && (AMPLIMIX_LOAD(&lay->flag) > ePSF_STOP))
         {
 #if defined(AM_SIMD_INTRINSICS)
             // clamp cursor and truncate to multiple of 16 before storing
@@ -736,7 +746,7 @@ namespace SparkyStudios::Audio::Amplitude
     bool Mixer::SetPlayState(AmUInt32 id, AmUInt32 layer, PlayStateFlag flag)
     {
         // return failure if given flag invalid
-        if (flag >= PLAY_STATE_FLAG_MAX)
+        if (flag >= ePSF_MAX)
             return false;
 
         LockAudioMutex();
@@ -745,7 +755,7 @@ namespace SparkyStudios::Audio::Amplitude
         auto* lay = GetLayer(layer);
 
         // check id and state flag to make sure the id is valid
-        if (PlayStateFlag prev; (id == lay->id) && ((prev = AMPLIMIX_LOAD(&lay->flag)) >= PLAY_STATE_FLAG_STOP))
+        if (PlayStateFlag prev; (id == lay->id) && ((prev = AMPLIMIX_LOAD(&lay->flag)) >= ePSF_STOP))
         {
             // return success if already in desired state
             if (prev == flag)
@@ -755,13 +765,13 @@ namespace SparkyStudios::Audio::Amplitude
             }
 
             // run appropriate callback
-            if (prev == PLAY_STATE_FLAG_STOP && (flag == PLAY_STATE_FLAG_PLAY || flag == PLAY_STATE_FLAG_LOOP))
+            if (prev == ePSF_STOP && (flag == ePSF_PLAY || flag == ePSF_LOOP))
                 OnSoundStarted(this, lay);
-            else if ((prev == PLAY_STATE_FLAG_PLAY || prev == PLAY_STATE_FLAG_LOOP) && flag == PLAY_STATE_FLAG_HALT)
+            else if ((prev == ePSF_PLAY || prev == ePSF_LOOP) && flag == ePSF_HALT)
                 OnSoundPaused(this, lay);
-            else if (prev == PLAY_STATE_FLAG_HALT && (flag == PLAY_STATE_FLAG_PLAY || flag == PLAY_STATE_FLAG_LOOP))
+            else if (prev == ePSF_HALT && (flag == ePSF_PLAY || flag == ePSF_LOOP))
                 OnSoundResumed(this, lay);
-            else if (prev != PLAY_STATE_FLAG_STOP && flag == PLAY_STATE_FLAG_STOP)
+            else if (prev != ePSF_STOP && flag == ePSF_STOP)
                 OnSoundStopped(this, lay);
 
             // swap if flag has not changed and return if successful
@@ -783,14 +793,14 @@ namespace SparkyStudios::Audio::Amplitude
         auto* lay = GetLayer(layer);
 
         // check id and state flag to make sure the id is valid
-        if (PlayStateFlag flag; (id == lay->id) && ((flag = AMPLIMIX_LOAD(&lay->flag)) > PLAY_STATE_FLAG_STOP))
+        if (PlayStateFlag flag; (id == lay->id) && ((flag = AMPLIMIX_LOAD(&lay->flag)) > ePSF_STOP))
         {
             // return the found flag
             return flag;
         }
 
         // return failure
-        return PLAY_STATE_FLAG_MIN;
+        return ePSF_MIN;
     }
 
     bool Mixer::SetPlaySpeed(AmUInt32 id, AmUInt32 layer, AmReal32 speed)
@@ -798,7 +808,7 @@ namespace SparkyStudios::Audio::Amplitude
         auto* lay = GetLayer(layer);
 
         // check id and state flag to make sure the id is valid
-        if ((id == lay->id) && (AMPLIMIX_LOAD(&lay->flag) > PLAY_STATE_FLAG_STOP))
+        if ((id == lay->id) && (AMPLIMIX_LOAD(&lay->flag) > ePSF_STOP))
         {
             // convert gain and pan to left and right gain and store it atomically
             AMPLIMIX_STORE(&lay->userPlaySpeed, speed);
@@ -823,8 +833,8 @@ namespace SparkyStudios::Audio::Amplitude
         for (auto&& lay : _layers)
         {
             // check if active and set to stop if true
-            if (AMPLIMIX_LOAD(&lay.flag) > PLAY_STATE_FLAG_STOP)
-                AMPLIMIX_STORE(&lay.flag, PLAY_STATE_FLAG_STOP);
+            if (AMPLIMIX_LOAD(&lay.flag) > ePSF_STOP)
+                AMPLIMIX_STORE(&lay.flag, ePSF_STOP);
         }
 
         UnlockAudioMutex();
@@ -838,8 +848,8 @@ namespace SparkyStudios::Audio::Amplitude
         for (auto&& lay : _layers)
         {
             // check if playing or looping and try to swap
-            if (PlayStateFlag flag; (flag = AMPLIMIX_LOAD(&lay.flag)) > PLAY_STATE_FLAG_HALT)
-                AMPLIMIX_CSWAP(&lay.flag, &flag, PLAY_STATE_FLAG_HALT);
+            if (PlayStateFlag flag; (flag = AMPLIMIX_LOAD(&lay.flag)) > ePSF_HALT)
+                AMPLIMIX_CSWAP(&lay.flag, &flag, ePSF_HALT);
         }
 
         UnlockAudioMutex();
@@ -853,9 +863,9 @@ namespace SparkyStudios::Audio::Amplitude
         for (auto&& lay : _layers)
         {
             // need to reset each time
-            PlayStateFlag flag = PLAY_STATE_FLAG_HALT;
+            PlayStateFlag flag = ePSF_HALT;
             // swap the flag to play if it is on halt
-            AMPLIMIX_CSWAP(&lay.flag, &flag, PLAY_STATE_FLAG_PLAY);
+            AMPLIMIX_CSWAP(&lay.flag, &flag, ePSF_PLAY);
         }
 
         UnlockAudioMutex();
@@ -941,7 +951,7 @@ namespace SparkyStudios::Audio::Amplitude
 #endif // AM_SIMD_INTRINSICS
 
         // loop state
-        const bool loop = (flag == PLAY_STATE_FLAG_LOOP);
+        const bool loop = (flag == ePSF_LOOP);
 
         const AmUInt16 soundChannels = layer->snd->format.GetNumChannels();
         const AmReal32 sampleRateRatio = AMPLIMIX_LOAD(&layer->sampleRateRatio);
@@ -964,12 +974,12 @@ namespace SparkyStudios::Audio::Amplitude
         {
             // mix sound per chunk of streamed data
             AmUInt64 c = inSamples;
-            while (c > 0 && flag != PLAY_STATE_FLAG_MIN)
+            while (c > 0 && flag != ePSF_MIN)
             {
                 // update flag value
                 flag = AMPLIMIX_LOAD(&layer->flag);
 
-                if (flag == PLAY_STATE_FLAG_MIN)
+                if (flag == ePSF_MIN)
                     break;
 
                 const AmUInt64 chunkSize = AM_MIN(layer->snd->chunk->frames, c);
@@ -1026,7 +1036,7 @@ namespace SparkyStudios::Audio::Amplitude
             return;
         }
 
-        if (flag >= PLAY_STATE_FLAG_PLAY)
+        if (flag >= ePSF_PLAY)
         {
             // Cache cursor
             AmUInt64 oldCursor = cursor;
@@ -1034,8 +1044,8 @@ namespace SparkyStudios::Audio::Amplitude
             const auto sampleRate = static_cast<AmUInt32>(std::ceil(layer->snd->format.GetSampleRate() / sampleRateRatio));
 
             _pipeline->Process(
-                reinterpret_cast<AmAudioSampleBuffer>(out->buffer), reinterpret_cast<AmAudioSampleBuffer>(out->buffer), samples, out->size,
-                reqChannels, sampleRate, layer->snd->sound.get());
+                reinterpret_cast<AmAudioSampleBuffer>(out->buffer), reinterpret_cast<AmAudioSampleBuffer>(out->buffer), out->frames,
+                out->size, reqChannels, sampleRate, layer->snd->sound.get());
 
             /* */ AmReal32 position = cursor;
             const AmUInt64 start = layer->start;
@@ -1100,10 +1110,6 @@ namespace SparkyStudios::Audio::Amplitude
             // swap back cursor if unchanged
             if (!AMPLIMIX_CSWAP(&layer->cursor, &oldCursor, cursor))
                 cursor = oldCursor;
-
-            // clear flag if PLAY_STATE_FLAG_PLAY and the cursor has reached the end
-            if ((flag == PLAY_STATE_FLAG_PLAY) && (cursor == layer->end))
-                AMPLIMIX_CSWAP(&layer->flag, &flag, PLAY_STATE_FLAG_MIN);
         }
 
         SoundChunk::DestroyChunk(out);
@@ -1158,7 +1164,7 @@ namespace SparkyStudios::Audio::Amplitude
         PlayStateFlag flag = AMPLIMIX_LOAD(&layer->flag);
 
         // return if flag is not cleared
-        return (flag > PLAY_STATE_FLAG_HALT);
+        return (flag > ePSF_HALT);
     }
 
     void Mixer::UpdatePitch(MixerLayer* layer)

@@ -286,6 +286,8 @@ namespace SparkyStudios::Audio::Amplitude
          */
         [[nodiscard]] AmReal32 GetDopplerFactor(AmListenerID listener) const;
 
+        void HaltInternal();
+
         // The node that tracks the location in the priority list.
         fplutil::intrusive_list_node priority_node;
 

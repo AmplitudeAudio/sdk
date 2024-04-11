@@ -59,12 +59,12 @@ namespace SparkyStudios::Audio::Amplitude
 
     enum PlayStateFlag : AmUInt8
     {
-        PLAY_STATE_FLAG_MIN = 0,
-        PLAY_STATE_FLAG_STOP = 1,
-        PLAY_STATE_FLAG_HALT = 2,
-        PLAY_STATE_FLAG_PLAY = 3,
-        PLAY_STATE_FLAG_LOOP = 4,
-        PLAY_STATE_FLAG_MAX,
+        ePSF_MIN = 0,
+        ePSF_STOP = 1,
+        ePSF_HALT = 2,
+        ePSF_PLAY = 3,
+        ePSF_LOOP = 4,
+        ePSF_MAX,
     };
 
     struct MixerLayer

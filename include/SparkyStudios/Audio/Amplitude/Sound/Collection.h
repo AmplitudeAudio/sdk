@@ -36,7 +36,7 @@ namespace SparkyStudios::Audio::Amplitude
      *
      * A Collection is a container sound object that group multiple sounds over the same name. Only
      * one sound can be playing at a time in the same collection, and the sound picked for playback
-     * is choosen by the collection's Scheduler.
+     * is chosen by the collection's Scheduler.
      */
     class AM_API_PUBLIC Collection final
         : public SoundObject
@@ -78,6 +78,11 @@ namespace SparkyStudios::Audio::Amplitude
          * @param entity The entity for which reset the scheduler state.
          */
         void ResetEntityScopeScheduler(const Entity& entity);
+
+        /**
+         * @brief Resets the internal state of the scheduler running for the World.
+         */
+        void ResetWorldScopeScheduler();
 
         /**
          * @brief Returns the list of Sound objects referenced in this collection.

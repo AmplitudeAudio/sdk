@@ -27,8 +27,8 @@ namespace SparkyStudios::Audio::Amplitude
     {}
 
     SequenceScheduler::SequenceScheduler(const SequenceSoundSchedulerConfig* config)
-        : _lastIndex(0)
-        , _stepMode(MODE_INCREMENT)
+        : _nextIndex(0)
+        , _step(1)
         , _definition(nullptr)
         , _config(config)
     {}
@@ -49,39 +49,41 @@ namespace SparkyStudios::Audio::Amplitude
 
     Sound* SequenceScheduler::Select(const std::vector<AmSoundID>& toSkip)
     {
-        if (_lastIndex == _sounds.size() || _lastIndex == 0)
+        const auto count = static_cast<AmInt32>(_sounds.size());
+
+        if (_nextIndex == count || _nextIndex == -1)
         {
             switch (_config != nullptr ? _config->end_behavior() : SequenceSoundSchedulerEndBehavior_Restart)
             {
             default:
             case SequenceSoundSchedulerEndBehavior_Restart:
-                _lastIndex = 0;
-                _stepMode = MODE_INCREMENT;
+                _nextIndex = 0;
+                _step = 1;
                 break;
             case SequenceSoundSchedulerEndBehavior_Reverse:
-                if (_lastIndex == _sounds.size())
+                if (_nextIndex == count)
                 {
-                    _lastIndex = _sounds.size() - 2; // Do not play the last sound twice
-                    _stepMode = MODE_DECREMENT;
+                    _nextIndex = count - 1;
+                    _step = -1;
                 }
                 else
                 {
-                    _lastIndex = 0;
-                    _stepMode = MODE_INCREMENT;
+                    _nextIndex = 0;
+                    _step = 1;
                 }
                 break;
             }
         }
 
-        Sound* sound = _sounds[_lastIndex];
-        _lastIndex = AM_CLAMP(0, _stepMode == MODE_INCREMENT ? _lastIndex + 1 : _lastIndex - 1, _sounds.size());
+        Sound* sound = _sounds[_nextIndex];
+        _nextIndex = AM_CLAMP(_nextIndex + _step, -1, count);
 
         return sound;
     }
 
     void SequenceScheduler::Reset()
     {
-        _lastIndex = 0;
-        _stepMode = MODE_INCREMENT;
+        _nextIndex = 0;
+        _step = 1;
     }
 } // namespace SparkyStudios::Audio::Amplitude

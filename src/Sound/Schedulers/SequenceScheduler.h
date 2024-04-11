@@ -37,14 +37,8 @@ namespace SparkyStudios::Audio::Amplitude
         void Reset() override;
 
     private:
-        enum STEP_MODE : AmUInt8
-        {
-            MODE_INCREMENT,
-            MODE_DECREMENT
-        };
-
-        AmUInt32 _lastIndex;
-        STEP_MODE _stepMode;
+        AmInt32 _nextIndex;
+        AmInt32 _step;
         const CollectionDefinition* _definition;
         const SequenceSoundSchedulerConfig* _config;
         std::vector<Sound*> _sounds;

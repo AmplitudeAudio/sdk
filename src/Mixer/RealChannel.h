@@ -177,10 +177,14 @@ namespace SparkyStudios::Audio::Amplitude
          *
          * @return Channel*
          */
-        [[nodiscard]] ChannelInternalState* GetParentChannelState() const
-        {
-            return _parentChannelState;
-        }
+        [[nodiscard]] ChannelInternalState* GetParentChannelState() const;
+
+        /**
+         * @brief Gets the ID of this channel.
+         *
+         * @return AmChannelID
+         */
+        [[nodiscard]] AmChannelID GetID() const;
 
         /**
          * @brief Set the obstruction level of sounds played by this Entity.
