@@ -33,7 +33,7 @@ AM_API_PRIVATE size_t read_callback(void* ptr, size_t size, size_t nmemb, void* 
 AM_API_PRIVATE int seek_callback(void* userdata, ogg_int64_t offset, int whence)
 {
     auto* file = static_cast<File*>(userdata);
-    file->Seek(offset, whence);
+    file->Seek(offset, static_cast<FileSeekOrigin>(whence));
     return 0;
 }
 
