@@ -77,6 +77,9 @@ namespace SparkyStudios::Audio::Amplitude
 
         case EventActionType_UnmuteBus:
             return ExecuteMute(entity, false);
+
+        case EventActionType_Wait:
+            return ExecuteWait(entity);
         }
     }
 
@@ -91,74 +94,21 @@ namespace SparkyStudios::Audio::Amplitude
         Run(Entity(nullptr));
     }
 
-    bool EventAction::AdvanceFrame(AmTime delta_time)
+    void EventAction::AdvanceFrame(AmTime delta_time)
     {
+        if (!_active)
+            return;
+
         switch (_type)
         {
+        default:
+            [[fallthrough]];
         case EventActionType_None:
-            return false;
+            return;
 
-        case EventActionType_Play:
-            {
-                bool active = false;
-                for (auto&& channel : _playingChannels)
-                    active |= channel.GetPlaybackState() == ChannelPlaybackState::Playing;
-
-                return active;
-            }
-
-        case EventActionType_Pause:
-            {
-                bool active = false;
-                for (auto&& channel : _playingChannels)
-                    active |= channel.GetPlaybackState() == ChannelPlaybackState::Paused;
-
-                return active;
-            }
-
-        case EventActionType_Resume:
-            {
-                bool active = false;
-                for (auto&& channel : _playingChannels)
-                    active |= channel.GetPlaybackState() == ChannelPlaybackState::Playing;
-
-                return active;
-            }
-
-        case EventActionType_Stop:
-            {
-                bool active = false;
-                for (auto&& channel : _playingChannels)
-                    active |= channel.GetPlaybackState() == ChannelPlaybackState::Stopped;
-
-                return active;
-            }
-
-        case EventActionType_Seek:
-            return false;
-
-        case EventActionType_MuteBus:
-            {
-                bool active = false;
-                for (auto&& target : _targets)
-                    if (Bus bus = amEngine->FindBus(target); bus.Valid())
-                        active |= bus.IsMuted();
-
-                return active;
-            }
-
-        case EventActionType_UnmuteBus:
-            {
-                bool active = false;
-                for (auto&& target : _targets)
-                    if (Bus bus = amEngine->FindBus(target); bus.Valid())
-                        active |= !bus.IsMuted();
-
-                return active;
-            }
+        case EventActionType_Wait:
+            _accumulatedTime += delta_time * kAmSecond;
         }
-
-        return false;
     }
 
     void EventAction::ExecutePlay(const Entity& entity)
@@ -270,7 +220,9 @@ namespace SparkyStudios::Audio::Amplitude
     }
 
     void EventAction::ExecuteSeek(const Entity& entity)
-    {}
+    {
+        // noop
+    }
 
     void EventAction::ExecuteMute(const Entity& entity, bool mute)
     {
@@ -281,6 +233,87 @@ namespace SparkyStudios::Audio::Amplitude
                 bus.SetMute(mute);
             }
         }
+    }
+
+    void EventAction::ExecuteWait(const Entity& entity)
+    {
+        _accumulatedTime = 0.0;
+    }
+
+    bool EventAction::IsExecuting() const
+    {
+        if (!_active)
+            return false;
+
+        switch (_type)
+        {
+        case EventActionType_None:
+            return false;
+
+        case EventActionType_Play:
+            {
+                bool active = false;
+                for (auto&& channel : _playingChannels)
+                    active |= channel.GetPlaybackState() == ChannelPlaybackState::Playing;
+
+                return active;
+            }
+
+        case EventActionType_Pause:
+            {
+                bool active = false;
+                for (auto&& channel : _playingChannels)
+                    active |= channel.GetPlaybackState() == ChannelPlaybackState::Paused;
+
+                return active;
+            }
+
+        case EventActionType_Resume:
+            {
+                bool active = false;
+                for (auto&& channel : _playingChannels)
+                    active |= channel.GetPlaybackState() == ChannelPlaybackState::Playing;
+
+                return active;
+            }
+
+        case EventActionType_Stop:
+            {
+                bool active = false;
+                for (auto&& channel : _playingChannels)
+                    active |= channel.GetPlaybackState() == ChannelPlaybackState::Stopped;
+
+                return active;
+            }
+
+        case EventActionType_Seek:
+            return false;
+
+        case EventActionType_MuteBus:
+            {
+                bool active = false;
+                for (auto&& target : _targets)
+                    if (Bus bus = amEngine->FindBus(target); bus.Valid())
+                        active |= bus.IsMuted();
+
+                return active;
+            }
+
+        case EventActionType_UnmuteBus:
+            {
+                bool active = false;
+                for (auto&& target : _targets)
+                    if (Bus bus = amEngine->FindBus(target); bus.Valid())
+                        active |= !bus.IsMuted();
+
+                return active;
+            }
+
+        case EventActionType_Wait:
+            return _accumulatedTime < static_cast<AmTime>(_targets[0]);
+        }
+
+        return false;
     }
 
     Event::Event()
@@ -380,16 +413,26 @@ namespace SparkyStudios::Audio::Amplitude
             _running = false;
 
             for (auto&& action : _actions)
-                _running |= action.AdvanceFrame(delta_time);
+            {
+                if (action.IsExecuting())
+                {
+                    _running = true;
+                    action.AdvanceFrame(delta_time);
+                }
+            }
         }
         else if (_runMode == EventActionRunningMode_Sequential)
         {
             if (_runningActionIndex < _actions.size())
             {
-                if (!_actions[_runningActionIndex].AdvanceFrame(delta_time))
+                if (!_actions[_runningActionIndex].IsExecuting())
                 {
                     ++_runningActionIndex;
                     _actions[_runningActionIndex].Run(_entity);
+                }
+                else
+                {
+                    _actions[_runningActionIndex].AdvanceFrame(delta_time);
                 }
             }
             else

@@ -34,6 +34,9 @@ enum EventActionType: byte {
   MuteBus,
   /// Unmute the bus with the given ID.
   UnmuteBus,
+  /// Wait for the given milliseconds. The targets property of the action should contain a single value which represents
+  /// the amount of milliseconds to wait.
+  Wait,
 }
 
 /// Specifies the way actions of this event are launched.

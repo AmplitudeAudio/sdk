@@ -70,7 +70,14 @@ namespace SparkyStudios::Audio::Amplitude
          *
          * @return true if the event action should be updated on the next frame, false otherwise.
          */
-        bool AdvanceFrame(AmTime delta_time);
+        void AdvanceFrame(AmTime delta_time);
+
+        /**
+         * @brief Checks if the event action is active and currently executing.
+         *
+         * @return true if the event action is active and currently executing, false otherwise.
+         */
+        [[nodiscard]] bool IsExecuting() const;
 
     private:
         void ExecutePlay(const Entity& entity);
@@ -79,6 +86,7 @@ namespace SparkyStudios::Audio::Amplitude
         void ExecuteStop(const Entity& entity);
         void ExecuteSeek(const Entity& entity);
         void ExecuteMute(const Entity& entity, bool mute);
+        void ExecuteWait(const Entity& entity);
 
         bool _active;
         AmInt8 _type;
@@ -86,6 +94,7 @@ namespace SparkyStudios::Audio::Amplitude
         std::vector<AmObjectID> _targets;
 
         std::vector<Channel> _playingChannels;
+        AmTime _accumulatedTime;
 
         Event* _parent;
     };
