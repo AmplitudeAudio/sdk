@@ -85,6 +85,8 @@ namespace SparkyStudios::Audio::Amplitude
         AmInt8 _scope;
         std::vector<AmObjectID> _targets;
 
+        std::vector<Channel> _playingChannels;
+
         Event* _parent;
     };
 
@@ -121,11 +123,12 @@ namespace SparkyStudios::Audio::Amplitude
         [[nodiscard]] const EventDefinition* GetDefinition() const override;
 
     private:
+        AmInt8 _runMode;
         std::vector<EventAction> _actions;
     };
 
     /**
-     * @brief A class which can cancel a trigerred Event.
+     * @brief A class which can cancel a triggered Event.
      */
     class AM_API_PUBLIC EventCanceler
     {
@@ -170,14 +173,11 @@ namespace SparkyStudios::Audio::Amplitude
      */
     class AM_API_PUBLIC EventInstance
     {
+        friend class Event;
+
     public:
         EventInstance();
         explicit EventInstance(const Event* parent);
-
-        /**
-         * @brief Starts this Event.
-         */
-        void Start(const Entity& entity);
 
         /**
          * @brief Apply a frame update on this Event.
@@ -199,8 +199,17 @@ namespace SparkyStudios::Audio::Amplitude
         void Abort();
 
     private:
+        /**
+         * @brief Starts this Event.
+         */
+        void Start(const Entity& entity);
+
+        AmInt8 _runMode;
         std::vector<EventAction> _actions;
         bool _running;
+
+        size_t _runningActionIndex;
+        Entity _entity;
     };
 } // namespace SparkyStudios::Audio::Amplitude
 

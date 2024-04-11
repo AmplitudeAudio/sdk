@@ -1357,9 +1357,9 @@ namespace SparkyStudios::Audio::Amplitude
         }
 
         EventInstance instance = event->Trigger(entity);
-        _state->running_events.push_back(instance);
+        _state->running_events.push_back(std::move(instance));
 
-        return EventCanceler(&instance);
+        return EventCanceler(&_state->running_events.back());
     }
 
     EventCanceler Engine::Trigger(const AmString& name, const Entity& entity) const

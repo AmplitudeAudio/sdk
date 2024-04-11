@@ -36,6 +36,14 @@ enum EventActionType: byte {
   UnmuteBus,
 }
 
+/// Specifies the way actions of this event are launched.
+enum EventActionRunningMode: byte {
+  /// Executes all actions at once in parallel.
+  Parallel,
+  /// Executes each action one by one in a sequential order.
+  Sequential
+}
+
 /// An action in an event. Actions are applied when an event is triggered.
 table EventActionDefinition {
   /// The action type.
@@ -61,6 +69,9 @@ table EventDefinition {
 
   /// The name of the event.
   name:string;
+
+  /// How to run actions in this event.
+  run_mode:EventActionRunningMode = Parallel;
 
   /// The list of actions to apply when this event is triggered.
   actions:[EventActionDefinition];

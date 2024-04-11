@@ -93,7 +93,71 @@ namespace SparkyStudios::Audio::Amplitude
 
     bool EventAction::AdvanceFrame(AmTime delta_time)
     {
-        // TODO
+        switch (_type)
+        {
+        case EventActionType_None:
+            return false;
+
+        case EventActionType_Play:
+            {
+                bool active = false;
+                for (auto&& channel : _playingChannels)
+                    active |= channel.GetPlaybackState() == ChannelPlaybackState::Playing;
+
+                return active;
+            }
+
+        case EventActionType_Pause:
+            {
+                bool active = false;
+                for (auto&& channel : _playingChannels)
+                    active |= channel.GetPlaybackState() == ChannelPlaybackState::Paused;
+
+                return active;
+            }
+
+        case EventActionType_Resume:
+            {
+                bool active = false;
+                for (auto&& channel : _playingChannels)
+                    active |= channel.GetPlaybackState() == ChannelPlaybackState::Playing;
+
+                return active;
+            }
+
+        case EventActionType_Stop:
+            {
+                bool active = false;
+                for (auto&& channel : _playingChannels)
+                    active |= channel.GetPlaybackState() == ChannelPlaybackState::Stopped;
+
+                return active;
+            }
+
+        case EventActionType_Seek:
+            return false;
+
+        case EventActionType_MuteBus:
+            {
+                bool active = false;
+                for (auto&& target : _targets)
+                    if (Bus bus = amEngine->FindBus(target); bus.Valid())
+                        active |= bus.IsMuted();
+
+                return active;
+            }
+
+        case EventActionType_UnmuteBus:
+            {
+                bool active = false;
+                for (auto&& target : _targets)
+                    if (Bus bus = amEngine->FindBus(target); bus.Valid())
+                        active |= !bus.IsMuted();
+
+                return active;
+            }
+        }
+
         return false;
     }
 
@@ -103,14 +167,14 @@ namespace SparkyStudios::Audio::Amplitude
         {
             for (auto&& target : _targets)
             {
-                (void)amEngine->Play(target, entity);
+                _playingChannels.push_back(amEngine->Play(target, entity));
             }
         }
         else
         {
             for (auto&& target : _targets)
             {
-                (void)amEngine->Play(target);
+                _playingChannels.push_back(amEngine->Play(target));
             }
         }
     }
@@ -220,7 +284,8 @@ namespace SparkyStudios::Audio::Amplitude
     }
 
     Event::Event()
-        : _actions()
+        : _runMode(EventActionRunningMode_Parallel)
+        , _actions()
     {}
 
     Event::~Event()
@@ -230,7 +295,7 @@ namespace SparkyStudios::Audio::Amplitude
 
     EventInstance Event::Trigger(const Entity& entity) const
     {
-        CallLogFunc("[Debug] Event " AM_OS_CHAR_FMT " triggered.\n", AM_STRING_TO_OS_STRING(_name.c_str()));
+        CallLogFunc("[Debug] Event " AM_OS_CHAR_FMT " triggered.\n", AM_STRING_TO_OS_STRING(_name));
 
         auto event = EventInstance(this);
         event.Start(entity);
@@ -242,6 +307,8 @@ namespace SparkyStudios::Audio::Amplitude
     {
         _id = definition->id();
         _name = definition->name()->str();
+
+        _runMode = definition->run_mode();
 
         const flatbuffers::uoffset_t actions_count = definition->actions() ? definition->actions()->size() : 0;
         _actions.resize(actions_count);
@@ -288,30 +355,48 @@ namespace SparkyStudios::Audio::Amplitude
     }
 
     EventInstance::EventInstance()
-        : _actions()
+        : _runMode(EventActionRunningMode_Parallel)
+        , _actions()
         , _running(false)
+        , _runningActionIndex(0)
+        , _entity(nullptr)
     {}
 
     EventInstance::EventInstance(const Event* parent)
-        : _actions(parent->_actions)
+        : _runMode(parent->_runMode)
+        , _actions(parent->_actions)
         , _running(false)
+        , _runningActionIndex(0)
+        , _entity(nullptr)
     {}
-
-    void EventInstance::Start(const Entity& entity)
-    {
-        _running = true;
-        for (auto&& action : _actions)
-            action.Run(entity);
-    }
 
     void EventInstance::AdvanceFrame(AmTime delta_time)
     {
         if (!_running)
             return;
 
-        _running = false;
-        for (auto&& action : _actions)
-            _running |= action.AdvanceFrame(delta_time);
+        if (_runMode == EventActionRunningMode_Parallel)
+        {
+            _running = false;
+
+            for (auto&& action : _actions)
+                _running |= action.AdvanceFrame(delta_time);
+        }
+        else if (_runMode == EventActionRunningMode_Sequential)
+        {
+            if (_runningActionIndex < _actions.size())
+            {
+                if (!_actions[_runningActionIndex].AdvanceFrame(delta_time))
+                {
+                    ++_runningActionIndex;
+                    _actions[_runningActionIndex].Run(_entity);
+                }
+            }
+            else
+            {
+                _running = false;
+            }
+        }
     }
 
     bool EventInstance::IsRunning() const
@@ -322,5 +407,25 @@ namespace SparkyStudios::Audio::Amplitude
     void EventInstance::Abort()
     {
         _running = false;
+    }
+
+    void EventInstance::Start(const Entity& entity)
+    {
+        if (_running)
+            return;
+
+        _running = true;
+        _entity = entity;
+
+        if (_runMode == EventActionRunningMode_Parallel)
+        {
+            for (auto&& action : _actions)
+                action.Run(_entity);
+        }
+        else if (_runMode == EventActionRunningMode_Sequential)
+        {
+            _runningActionIndex = 0;
+            _actions[_runningActionIndex].Run(_entity);
+        }
     }
 } // namespace SparkyStudios::Audio::Amplitude
