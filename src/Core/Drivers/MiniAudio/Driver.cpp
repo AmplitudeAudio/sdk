@@ -92,6 +92,9 @@ namespace SparkyStudios::Audio::Amplitude
         case ma_device_notification_type_interruption_ended:
             CallLogFunc("Device interruption ended");
             break;
+        case ma_device_notification_type_unlocked:
+            CallLogFunc("Device unlocked");
+            break;
         }
     }
 
