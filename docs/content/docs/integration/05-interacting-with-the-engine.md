@@ -9,7 +9,8 @@ toc: true
 ---
 
 {{< callout context="caution" title="Warning" icon="alert-triangle" >}}
-This documentation page is WIP and not yet complete.
+This documentation page is WIP and not yet complete. You can have a complete demo on how to interact with the engine
+through the official [sample projects](https://github.com/SparkyStudios/AmplitudeAudioSDK/blob/develop/samples).
 {{< /callout >}}
 
 ## The rendering loop
@@ -36,3 +37,7 @@ while (true)
 ```
 
 This will help Amplitude to correctly process various timed updates like fading transitions and RTPC curves.
+
+## Handles
+
+When it's time to interact with audio, you need to have an instance of each sound objects you want to play
