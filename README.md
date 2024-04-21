@@ -1,5 +1,6 @@
-![build badge](https://github.com/SparkyStudios/AmplitudeAudioSDK/actions/workflows/build.yml/badge.svg)
-![build badge](https://github.com/SparkyStudios/AmplitudeAudioSDK/actions/workflows/hugo.yml/badge.svg)
+![build](https://github.com/SparkyStudios/AmplitudeAudioSDK/actions/workflows/build.yml/badge.svg)
+![documentation](https://github.com/SparkyStudios/AmplitudeAudioSDK/actions/workflows/hugo.yml/badge.svg)
+[![discord server](https://dcbadge.vercel.app/api/server/q8eT8Mq6du?style=flat)](https://discord.gg/q8eT8Mq6du)
 
 <p align="center">
   <a href="https://amplitudeaudiosdk.com">
@@ -23,7 +24,11 @@ thanks to its data-driven way. All you need is to write configuration files and 
   <br/>
 </div>
 
-> Amplitude is still in beta and has not been fully battle-tested. So feel free to raise an [issue](https://github.com/SparkyStudios/AmplitudeAudioSDK/issues/new/choose "Open a Github Issue") or open a [PR](https://github.com/SparkyStudios/AmplitudeAudioSDK/pulls), by following our [Contributor Guidelines](https://github.com/SparkyStudios/AmplitudeAudioSDK/blob/main/CODE_OF_CONDUCT.md).
+> Amplitude is still in active development, and no official release is made yet. However, the API is stable and no breaking changes will be introduced until the first release. To get a copy of the SDK, you should [build it from sources](https://amplitudeaudiosdk.com/docs/get-started/installation/#build-the-sdk-from-sources). Feel free to raise an [issue](https://github.com/SparkyStudios/AmplitudeAudioSDK/issues/new/choose "Open a Github Issue") or open a [PR](https://github.com/SparkyStudios/AmplitudeAudioSDK/pulls), by following our [Contributor Guidelines](https://github.com/SparkyStudios/AmplitudeAudioSDK/blob/main/CODE_OF_CONDUCT.md).
+
+## Sample Projects
+
+The quickest way to get started with the SDK is to have a look on the [sample projects](https://github.com/SparkyStudios/AmplitudeAudioSDK/blob/develop/samples).
 
 ## Features
 
