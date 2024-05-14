@@ -19,7 +19,7 @@ the `AM_SDK_PATH` environment variable is set before to configure your project. 
 CMake variable using the CLI:
 
 ```bash
-cmake -DAM_SDK_PATH=/path/to/amplitude -S /path/to/sources -B /path/to/build
+cmake -DAM_SDK_PATH=/path/to/amplitude/sdk -S /path/to/sources -B /path/to/build
 ```
 
 Or directly in your `CMakeLists.txt` file:
@@ -33,10 +33,10 @@ current `CMAKE_MODULE_PATH` variable. For example:
 
 ```cmake
 # If using the environment variable
-list(APPEND CMAKE_MODULE_PATH "$ENV{AM_SDK_PATH}/sdk/cmake")
+list(APPEND CMAKE_MODULE_PATH "$ENV{AM_SDK_PATH}/cmake")
 
 # If using the CMake variable
-list(APPEND CMAKE_MODULE_PATH "${AM_SDK_PATH}/sdk/cmake")
+list(APPEND CMAKE_MODULE_PATH "${AM_SDK_PATH}/cmake")
 ```
 
 This will make available the `FindAmplitudeAudioSDK.cmake` and the `DetectAmplitudeVersion.cmake` scripts.

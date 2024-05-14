@@ -68,7 +68,7 @@ And then install it with:
 cmake --build build --target install
 ```
 
-The SDK installs itself in the same directory as the sources, in the `sdk` folder.
+The SDK installs itself in the same folder as the sources, in the `sdk` directory.
 
 ## Install the SDK
 
