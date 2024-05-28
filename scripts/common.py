@@ -106,7 +106,7 @@ class CommandOptions(object):
         show_version = False
 
         for opt, arg in opts:
-            if opt is "--no-logo":
+            if opt == "--no-logo":
                 no_logo = True
             elif opt in ("-h", "--help"):
                 show_help = True
