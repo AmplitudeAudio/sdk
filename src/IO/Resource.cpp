@@ -12,38 +12,12 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include <SparkyStudios/Audio/Amplitude/IO/File.h>
+#include <SparkyStudios/Audio/Amplitude/IO/Resource.h>
 
 namespace SparkyStudios::Audio::Amplitude
 {
-    AmUInt8 File::Read8()
+    const AmOsString& Resource::GetPath() const
     {
-        AmUInt8 d = 0;
-        Read(&d, 1);
-        return d;
+        return _filename;
     }
-
-    AmUInt16 File::Read16()
-    {
-        AmUInt16 d = 0;
-        Read(reinterpret_cast<AmUInt8Buffer>(&d), 2);
-        return d;
-    }
-
-    AmUInt32 File::Read32()
-    {
-        AmUInt32 d = 0;
-        Read(reinterpret_cast<AmUInt8Buffer>(&d), 4);
-        return d;
-    }
-
-    void File::Seek(AmSize offset)
-    {
-        Seek(offset, eFSO_START);
-    }
-
-    AmVoidPtr File::GetPtr()
-    {
-        return nullptr;
-    }
-} // namespace SparkyStudios::Audio::Amplitude
+}

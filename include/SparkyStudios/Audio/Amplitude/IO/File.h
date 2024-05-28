@@ -14,8 +14,8 @@
 
 #pragma once
 
-#ifndef SPARK_AUDIO_FILE_H
-#define SPARK_AUDIO_FILE_H
+#ifndef SS_AMPLITUDE_AUDIO_IO_FILE_H
+#define SS_AMPLITUDE_AUDIO_IO_FILE_H
 
 #include <filesystem>
 
@@ -169,142 +169,6 @@ namespace SparkyStudios::Audio::Amplitude
          */
         [[nodiscard]] virtual bool IsValid() const = 0;
     };
-
-    /**
-     * @brief A File implementation that reads and writes a file on disk.
-     */
-    class AM_API_PUBLIC DiskFile : public File
-    {
-    public:
-        /**
-         * @brief Creates a new DiskFile instance.
-         */
-        DiskFile();
-
-        /**
-         * @brief Creates a new DiskFile instance from a file handle.
-         *
-         * @param fp The file handle to manage in this instance.
-         */
-        explicit DiskFile(AmFileHandle fp);
-
-        /**
-         * @brief Creates a new DiskFile instance by opening a file at the given path.
-         *
-         * @param fileName The path to the file to open.
-         * @param mode The open mode to use.
-         * @param kind The type of file to open.
-         */
-        explicit DiskFile(const std::filesystem::path& fileName, FileOpenMode mode = eFOM_READ, FileOpenKind kind = eFOK_BINARY);
-
-        /**
-         * @brief Destroys the instance and release the file handler.
-         */
-        ~DiskFile() override;
-
-        [[nodiscard]] AmOsString GetPath() const override;
-        bool Eof() override;
-        AmSize Read(AmUInt8Buffer dst, AmSize bytes) override;
-        AmSize Write(AmConstUInt8Buffer src, AmSize bytes) override;
-        AmSize Length() override;
-        void Seek(AmSize offset, FileSeekOrigin origin) override;
-        AmSize Position() override;
-        AmVoidPtr GetPtr() override;
-        [[nodiscard]] bool IsValid() const override;
-
-        /**
-         * @brief Opens a file at the given path.
-         *
-         * @param filePath The path to the file to open.
-         * @param mode The open mode to use.
-         * @param kind The type of file to open.
-         *
-         * @return The result of the operation.
-         */
-        AmResult Open(const std::filesystem::path& filePath, FileOpenMode mode = eFOM_READ, FileOpenKind kind = eFOK_BINARY);
-
-        /**
-         * @brief Closes the file.
-         */
-        void Close();
-
-    private:
-        std::filesystem::path m_filePath;
-        AmFileHandle m_fileHandle;
-    };
-
-    /**
-     * @brief A File implementation that reads and writes a memory buffer.
-     */
-    class AM_API_PUBLIC MemoryFile : public File
-    {
-    public:
-        /**
-         * @brief Creates a new MemoryFile instance.
-         */
-        MemoryFile();
-
-        /**
-         * @brief Creates a new MemoryFile instance from a memory buffer.
-         *
-         * @param buffer The memory buffer to manage in this instance.
-         * @param size The size of the memory buffer.
-         * @param copy If true, the memory buffer will be copied.
-         * @param takeOwnership If true, the memory buffer will be owned by this instance, and released when this instance is destroyed.
-         */
-        MemoryFile(AmUInt8Buffer buffer, AmSize size, bool copy = false, bool takeOwnership = true);
-
-        /**
-         * @brief Destroys the instance and release the memory buffer if owned.
-         */
-        ~MemoryFile() override;
-
-        [[nodiscard]] AmOsString GetPath() const override;
-        bool Eof() override;
-        AmSize Read(AmUInt8Buffer dst, AmSize bytes) override;
-        AmSize Write(AmConstUInt8Buffer src, AmSize bytes) override;
-        AmSize Length() override;
-        void Seek(AmSize offset, FileSeekOrigin origin) override;
-        AmSize Position() override;
-        AmVoidPtr GetPtr() override;
-        [[nodiscard]] bool IsValid() const override;
-
-        /**
-         * @brief Opens a memory buffer.
-         *
-         * @param buffer The memory buffer to open.
-         * @param size The size of the memory buffer.
-         * @param copy If true, the memory buffer will be copied.
-         * @param takeOwnership If true, the memory buffer will be owned by this instance, and released when this instance is destroyed.
-         *
-         * @return The result of the operation.
-         */
-        AmResult OpenMem(AmConstUInt8Buffer buffer, AmSize size, bool copy = false, bool takeOwnership = true);
-
-        /**
-         * @brief Opens a memory buffer from a file content.
-         *
-         * @param fileName The path to the file to open.
-         *
-         * @return The result of the operation.
-         */
-        AmResult OpenToMem(const std::filesystem::path& fileName);
-
-        /**
-         * @brief Copies data from a file instance to a memory buffer. The file content is entirely copied.
-         *
-         * @param file The file isntance to copy data from.
-         *
-         * @return The result of the operation.
-         */
-        AmResult OpenFileToMem(File* file);
-
-    private:
-        AmUInt8Buffer m_dataPtr;
-        AmSize m_dataSize;
-        AmSize m_offset;
-        bool m_dataOwned;
-    };
 } // namespace SparkyStudios::Audio::Amplitude
 
-#endif // SPARK_AUDIO_FILE_H
+#endif // SS_AMPLITUDE_AUDIO_IO_FILE_H

@@ -14,10 +14,8 @@
 
 #pragma once
 
-#ifndef SPARK_AUDIO_FILESYSTEM_H
-#define SPARK_AUDIO_FILESYSTEM_H
-
-#include <filesystem>
+#ifndef SS_AMPLITUDE_AUDIO_IO_FILESYSTEM_H
+#define SS_AMPLITUDE_AUDIO_IO_FILESYSTEM_H
 
 #include <SparkyStudios/Audio/Amplitude/Core/Common.h>
 #include <SparkyStudios/Audio/Amplitude/IO/File.h>
@@ -134,60 +132,6 @@ namespace SparkyStudios::Audio::Amplitude
          */
         virtual bool TryFinalizeCloseFileSystem() = 0;
     };
-
-    /**
-     * @brief A FileSystem implementation that reads and write files
-     * from disk.
-     */
-    class AM_API_PUBLIC DiskFileSystem : public FileSystem
-    {
-    public:
-        /**
-         * @brief Create a new instance of the DiskFileSystem class.
-         */
-        DiskFileSystem();
-
-        void SetBasePath(const AmOsString& basePath) override;
-        [[nodiscard]] AmOsString ResolvePath(const AmOsString& path) const override;
-        [[nodiscard]] bool Exists(const AmOsString& path) const override;
-        [[nodiscard]] bool IsDirectory(const AmOsString& path) const override;
-        [[nodiscard]] AmOsString Join(const std::vector<AmOsString>& parts) const override;
-        [[nodiscard]] std::shared_ptr<File> OpenFile(const AmOsString& path) const override;
-        void StartOpenFileSystem() override;
-        bool TryFinalizeOpenFileSystem() override;
-        void StartCloseFileSystem() override;
-        bool TryFinalizeCloseFileSystem() override;
-
-    private:
-        std::filesystem::path _basePath;
-    };
-
-    /**
-     * @brief An Amplitude resource in a FileSystem.
-     *
-     * This base class represents a resource (sound files, assets, etc.) in a FileSystem.
-     */
-    class AM_API_PUBLIC Resource
-    {
-    public:
-        /**
-         * @brief Default virtual destructor.
-         */
-        virtual ~Resource() = default;
-
-        /**
-         * @brief Gets the path to the resource.
-         */
-        [[nodiscard]] virtual const AmOsString& GetPath() const;
-
-        /**
-         * @brief Loads the resource from the given FileSystem.
-         */
-        virtual void Load(const FileSystem* loader) = 0;
-
-    protected:
-        AmOsString _filename;
-    };
 } // namespace SparkyStudios::Audio::Amplitude
 
-#endif // SPARK_AUDIO_FILESYSTEM_H
+#endif // SS_AMPLITUDE_AUDIO_IO_FILESYSTEM_H

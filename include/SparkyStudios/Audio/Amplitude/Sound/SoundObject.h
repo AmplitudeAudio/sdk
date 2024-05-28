@@ -20,7 +20,7 @@
 #include <SparkyStudios/Audio/Amplitude/Core/Bus.h>
 #include <SparkyStudios/Audio/Amplitude/Core/Common.h>
 
-#include <SparkyStudios/Audio/Amplitude/IO/FileSystem.h>
+#include <SparkyStudios/Audio/Amplitude/IO/Resource.h>
 
 #include <SparkyStudios/Audio/Amplitude/Sound/Attenuation.h>
 #include <SparkyStudios/Audio/Amplitude/Sound/Effect.h>

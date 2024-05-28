@@ -14,7 +14,8 @@
 
 #include <SparkyStudios/Audio/Amplitude/Core/Memory.h>
 
-#include <SparkyStudios/Audio/Amplitude/IO/FileSystem.h>
+#include <SparkyStudios/Audio/Amplitude/IO/DiskFile.h>
+#include <SparkyStudios/Audio/Amplitude/IO/DiskFileSystem.h>
 
 namespace SparkyStudios::Audio::Amplitude
 {
@@ -81,10 +82,5 @@ namespace SparkyStudios::Audio::Amplitude
     bool DiskFileSystem::TryFinalizeCloseFileSystem()
     {
         return true;
-    }
-
-    const AmOsString& Resource::GetPath() const
-    {
-        return _filename;
     }
 } // namespace SparkyStudios::Audio::Amplitude
