@@ -27,7 +27,7 @@ namespace SparkyStudios::Audio::Amplitude
 
     AmOsString PackageItemFile::GetPath() const
     {
-        return _description->m_Name;
+        return AM_STRING_TO_OS_STRING(_description->m_Name);
     }
 
     bool PackageItemFile::Eof()
@@ -52,29 +52,33 @@ namespace SparkyStudios::Audio::Amplitude
         return _description->m_Size;
     }
 
-    void PackageItemFile::Seek(AmSize offset, FileSeekOrigin origin)
+    void PackageItemFile::Seek(AmInt64 offset, FileSeekOrigin origin)
     {
         if (origin == eFSO_START && Position() == offset)
             return;
 
-        AmSize finalOffset;
+        if (origin == eFSO_END && Position() == (Length() + offset))
+            return;
+
+        if (origin == eFSO_CURRENT && offset == 0)
+            return;
+
+        AmInt64 finalOffset = _headerSize + _description->m_Offset;
 
         switch (origin)
         {
         case eFSO_START:
-            finalOffset = _headerSize + _description->m_Offset + AM_MIN(offset, Length());
+            finalOffset += offset;
             break;
         case eFSO_END:
-            finalOffset = AM_MIN(offset, Length()) + (DiskFile::Length() - (_headerSize + _description->m_Offset + Length()));
+            finalOffset += Length() + offset;
             break;
         case eFSO_CURRENT:
-            finalOffset = AM_MIN(offset, Length() - Position());
-        default:
-            finalOffset = offset;
+            finalOffset += Position() + offset;
             break;
         }
 
-        DiskFile::Seek(finalOffset, origin);
+        DiskFile::Seek(finalOffset, eFSO_START);
     }
 
     AmSize PackageItemFile::Position()

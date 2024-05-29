@@ -50,6 +50,11 @@ namespace SparkyStudios::Audio::Amplitude
         _packagePath = p.is_relative() ? (std::filesystem::current_path() / p).make_preferred() : p;
     }
 
+    const AmOsString& PackageFileSystem::GetBasePath() const
+    {
+        return _packagePath.native();
+    }
+
     AmOsString PackageFileSystem::ResolvePath(const AmOsString& path) const
     {
         return path;

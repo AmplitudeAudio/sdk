@@ -109,12 +109,17 @@ namespace SparkyStudios::Audio::Amplitude
          */
         PackageFileSystem();
 
-        ~PackageFileSystem();
+        ~PackageFileSystem() override;
 
         /**
          * @copydoc FileSystem::SetBasePath
          */
         void SetBasePath(const AmOsString& basePath) override;
+
+        /**
+         * @copydoc FileSystem::GetBasePath
+         */
+        [[nodiscard]] const AmOsString& GetBasePath() const override;
 
         /**
          * @copydoc FileSystem::ResolvePath

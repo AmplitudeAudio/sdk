@@ -75,7 +75,7 @@ namespace SparkyStudios::Audio::Amplitude
         /**
          * @copydoc File::Seek
          */
-        void Seek(AmSize offset, FileSeekOrigin origin) override;
+        void Seek(AmInt64 offset, FileSeekOrigin origin) override;
 
         /**
          * @copydoc File::Position
@@ -91,6 +91,15 @@ namespace SparkyStudios::Audio::Amplitude
          * @copydoc File::IsValid
          */
         [[nodiscard]] bool IsValid() const override;
+
+        /**
+         * @brief Opens a new memory buffer with the specified size.
+         *
+         * @param size The size of the buffer.
+         *
+         * @return The result of the operation.
+         */
+        AmResult Open(AmSize size);
 
         /**
          * @brief Opens a memory buffer.
@@ -121,6 +130,11 @@ namespace SparkyStudios::Audio::Amplitude
          * @return The result of the operation.
          */
         AmResult OpenFileToMem(File* file);
+
+        /**
+         * @brief Closes the memory buffer and releases associated resources.
+         */
+        void Close();
 
     private:
         AmUInt8Buffer m_dataPtr;

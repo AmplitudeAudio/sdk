@@ -112,35 +112,35 @@ namespace SparkyStudios::Audio::Amplitude
          *
          * @param value The value to write.
          */
-        void Write8(AmUInt8 value);
+        AmSize Write8(AmUInt8 value);
 
         /**
          * @brief Writes two bytes to the file from an @c AmUInt16.
          *
          * @param value The value to write.
          */
-        void Write16(AmUInt16 value);
+        AmSize Write16(AmUInt16 value);
 
         /**
          * @brief Writes four bytes to the file from an @c AmUInt32.
          *
          * @param value The value to write.
          */
-        void Write32(AmUInt32 value);
+        AmSize Write32(AmUInt32 value);
 
         /**
          * @brief Writes eight bytes to the file from an @c AmUInt64.
          *
          * @param value The value to write.
          */
-        void Write64(AmUInt64 value);
+        AmSize Write64(AmUInt64 value);
 
         /**
          * @brief Writes a string to the file.
          *
          * @param value The value to write.
          */
-        void WriteString(const AmString& value);
+        AmSize WriteString(const AmString& value);
 
         /**
          * @brief Check if the read cursor is at the end of the file.
@@ -192,7 +192,7 @@ namespace SparkyStudios::Audio::Amplitude
          * @param offset The offset in bytes from the beginning of the file.
          * @param origin The origin from which to begin seeking.
          */
-        virtual void Seek(AmSize offset, FileSeekOrigin origin) = 0;
+        virtual void Seek(AmInt64 offset, FileSeekOrigin origin) = 0;
 
         /**
          * @brief Gets the current position of the read/write cursor.

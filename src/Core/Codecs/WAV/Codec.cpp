@@ -43,7 +43,11 @@ namespace SparkyStudios::Audio::Amplitude
     static drwav_bool32 onSeek(void* pUserData, int offset, drwav_seek_origin origin)
     {
         auto* file = static_cast<File*>(pUserData);
-        file->Seek(offset, origin == drwav_seek_origin_start ? eFSO_START : origin == drwav_seek_origin_current ? eFSO_CURRENT : eFSO_START);
+        file->Seek(
+            offset,
+            origin == drwav_seek_origin_start         ? eFSO_START
+                : origin == drwav_seek_origin_current ? eFSO_CURRENT
+                                                      : eFSO_START);
         return DRWAV_TRUE;
     }
 

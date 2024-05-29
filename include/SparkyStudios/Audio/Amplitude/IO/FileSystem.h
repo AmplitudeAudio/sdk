@@ -47,6 +47,13 @@ namespace SparkyStudios::Audio::Amplitude
         virtual void SetBasePath(const AmOsString& basePath) = 0;
 
         /**
+         * @brief Returns the base path of the filesystem.
+         *
+         * @return The base path for resolving relative paths from which the engine will load resources.
+         */
+        [[nodiscard]] virtual const AmOsString& GetBasePath() const = 0;
+
+        /**
          * @brief Resolves a relative path from the filesystem base path.
          *
          * @return The resolved path.

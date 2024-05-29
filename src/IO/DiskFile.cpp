@@ -68,7 +68,7 @@ namespace SparkyStudios::Audio::Amplitude
         return len;
     }
 
-    void DiskFile::Seek(AmSize offset, FileSeekOrigin origin)
+    void DiskFile::Seek(AmInt64 offset, FileSeekOrigin origin)
     {
         fseek(m_fileHandle, offset, origin);
     }

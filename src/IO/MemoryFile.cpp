@@ -35,13 +35,7 @@ namespace SparkyStudios::Audio::Amplitude
 
     MemoryFile::~MemoryFile()
     {
-        if (m_dataOwned && m_dataPtr != nullptr)
-            ampoolfree(MemoryPoolKind::IO, m_dataPtr);
-
-        m_dataPtr = nullptr;
-        m_dataSize = 0;
-        m_offset = 0;
-        m_dataOwned = false;
+        Close();
     }
 
     AmOsString MemoryFile::GetPath() const
@@ -80,14 +74,14 @@ namespace SparkyStudios::Audio::Amplitude
         return m_dataSize;
     }
 
-    void MemoryFile::Seek(AmSize offset, FileSeekOrigin origin)
+    void MemoryFile::Seek(AmInt64 offset, FileSeekOrigin origin)
     {
         if (origin == eFSO_START)
             m_offset = offset;
         else if (origin == eFSO_CURRENT)
             m_offset += offset;
         else if (origin == eFSO_END)
-            m_offset = m_dataSize - offset;
+            m_offset = m_dataSize + offset;
 
         if (m_offset > m_dataSize - 1)
             m_offset = m_dataSize - 1;
@@ -108,16 +102,17 @@ namespace SparkyStudios::Audio::Amplitude
         return m_dataPtr != nullptr;
     }
 
+    AmResult MemoryFile::Open(AmSize size)
+    {
+        return OpenMem(static_cast<AmConstUInt8Buffer>(ampoolmalloc(MemoryPoolKind::IO, size)), size, false, true);
+    }
+
     AmResult MemoryFile::OpenMem(AmConstUInt8Buffer buffer, AmSize size, bool copy, bool takeOwnership)
     {
         if (buffer == nullptr || size == 0)
             return AM_ERROR_INVALID_PARAMETER;
 
-        if (m_dataOwned && m_dataPtr != nullptr)
-            ampoolfree(MemoryPoolKind::IO, m_dataPtr);
-
-        m_dataPtr = nullptr;
-        m_offset = 0;
+        Close();
 
         m_dataSize = size;
 
@@ -144,11 +139,7 @@ namespace SparkyStudios::Audio::Amplitude
         if (fileName.empty())
             return AM_ERROR_INVALID_PARAMETER;
 
-        if (m_dataOwned && m_dataPtr != nullptr)
-            ampoolfree(MemoryPoolKind::IO, m_dataPtr);
-
-        m_dataPtr = nullptr;
-        m_offset = 0;
+        Close();
 
         DiskFile df;
         if (const AmResult res = df.Open(fileName); res != AM_ERROR_NO_ERROR)
@@ -173,10 +164,7 @@ namespace SparkyStudios::Audio::Amplitude
         if (!file)
             return AM_ERROR_INVALID_PARAMETER;
 
-        if (m_dataOwned && m_dataPtr != nullptr)
-            ampoolfree(MemoryPoolKind::IO, m_dataPtr);
-
-        m_dataPtr = nullptr;
+        Close();
         m_offset = file->Position();
 
         m_dataSize = file->Length();
@@ -193,4 +181,15 @@ namespace SparkyStudios::Audio::Amplitude
 
         return AM_ERROR_NO_ERROR;
     }
-}
+
+    void MemoryFile::Close()
+    {
+        if (m_dataOwned && m_dataPtr != nullptr)
+            ampoolfree(MemoryPoolKind::IO, m_dataPtr);
+
+        m_dataPtr = nullptr;
+        m_dataSize = 0;
+        m_offset = 0;
+        m_dataOwned = false;
+    }
+} // namespace SparkyStudios::Audio::Amplitude

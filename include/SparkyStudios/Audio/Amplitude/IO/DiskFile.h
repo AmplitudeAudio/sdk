@@ -81,7 +81,7 @@ namespace SparkyStudios::Audio::Amplitude
         /**
          * @copydoc File::Seek
          */
-        void Seek(AmSize offset, FileSeekOrigin origin) override;
+        void Seek(AmInt64 offset, FileSeekOrigin origin) override;
 
         /**
          * @copydoc File::Position
