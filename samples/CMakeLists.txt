@@ -25,6 +25,11 @@ add_custom_target(ss_amplitude_audio_sample_assets
         ${CMAKE_SOURCE_DIR}
 )
 
+add_custom_command(
+    TARGET ss_amplitude_audio_sample_assets POST_BUILD
+    COMMAND ${CMAKE_COMMAND} -E copy_directory ${CMAKE_CURRENT_SOURCE_DIR}/../assets ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/samples/assets
+)
+
 add_dependencies(ss_amplitude_audio_sample_assets
     amplitude_build_binary_schemas
 )
