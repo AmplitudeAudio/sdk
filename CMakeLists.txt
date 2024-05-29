@@ -526,7 +526,13 @@ add_subdirectory(tools/amir)
 
 if (BUILD_SAMPLES OR UNIT_TESTS)
     add_custom_target(ss_amplitude_audio_sample_project
-        COMMAND python3 ${CMAKE_CURRENT_SOURCE_DIR}/scripts/build_assets.py --output ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/sample_project
+        COMMAND python3 ${CMAKE_CURRENT_SOURCE_DIR}/scripts/build_project.py -p ${CMAKE_SOURCE_DIR}/sample_project -b ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/samples/assets -f ${CMAKE_SOURCE_DIR}/bin/flatc
+        WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
+    )
+
+    add_custom_command(
+        TARGET ss_amplitude_audio_sample_project POST_BUILD
+        COMMAND ${CMAKE_COMMAND} -E copy_directory ${CMAKE_CURRENT_SOURCE_DIR}/assets ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/samples/assets
     )
 
     add_dependencies(ss_amplitude_audio_sample_project

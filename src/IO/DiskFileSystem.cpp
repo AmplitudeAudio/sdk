@@ -34,11 +34,6 @@ namespace SparkyStudios::Audio::Amplitude
         return _basePath.native();
     }
 
-    const AmOsString& DiskFileSystem::GetBasePath() const
-    {
-        return _basePath.native();
-    }
-
     AmOsString DiskFileSystem::ResolvePath(const AmOsString& path) const
     {
         const auto& p = std::filesystem::path(path);

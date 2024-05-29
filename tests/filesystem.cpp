@@ -21,9 +21,9 @@ using namespace SparkyStudios::Audio::Amplitude;
 TEST_CASE("DiskFileSystem Tests", "[filesystem][amplitude]")
 {
     DiskFileSystem fileSystem;
-    fileSystem.SetBasePath(AM_OS_STRING("./sample_project"));
+    fileSystem.SetBasePath(AM_OS_STRING("./samples/assets"));
 
-    const auto& cp = std::filesystem::current_path() / AM_OS_STRING("sample_project");
+    const auto& cp = std::filesystem::current_path() / AM_OS_STRING("samples/assets");
 
     SECTION("can sets the base path")
     {
@@ -36,7 +36,7 @@ TEST_CASE("DiskFileSystem Tests", "[filesystem][amplitude]")
             fileSystem.ResolvePath(AM_OS_STRING("sounds/test.wav")) ==
             (cp / AM_OS_STRING("sounds/test.wav")).lexically_normal().make_preferred().native());
         REQUIRE(
-            fileSystem.ResolvePath(AM_OS_STRING("../sample_project/sounds/../test.wav")) ==
+            fileSystem.ResolvePath(AM_OS_STRING("../../samples/assets/sounds/../test.wav")) ==
             (cp / AM_OS_STRING("test.wav")).lexically_normal().make_preferred().native());
         REQUIRE(
             fileSystem.ResolvePath(AM_OS_STRING("./sounds/../sounds/./test.wav")) ==
@@ -45,14 +45,14 @@ TEST_CASE("DiskFileSystem Tests", "[filesystem][amplitude]")
 
     SECTION("can check if files exists")
     {
-        REQUIRE(fileSystem.Exists(AM_OS_STRING("audio_config.amconfig")));
+        REQUIRE(fileSystem.Exists(AM_OS_STRING("tests.config.amconfig")));
         REQUIRE_FALSE(fileSystem.Exists(AM_OS_STRING("some_random_file.ext")));
     }
 
     SECTION("can detect if a file is a directory")
     {
         REQUIRE(fileSystem.IsDirectory(AM_OS_STRING("sounds")));
-        REQUIRE_FALSE(fileSystem.IsDirectory(AM_OS_STRING("audio_config.amconfig")));
+        REQUIRE_FALSE(fileSystem.IsDirectory(AM_OS_STRING("tests.config.amconfig")));
     }
 
     SECTION("can join paths")
@@ -70,7 +70,7 @@ TEST_CASE("DiskFileSystem Tests", "[filesystem][amplitude]")
 
     SECTION("can open files")
     {
-        REQUIRE(fileSystem.OpenFile(AM_OS_STRING("audio_config.amconfig"))->IsValid());
+        REQUIRE(fileSystem.OpenFile(AM_OS_STRING("tests.config.amconfig"))->IsValid());
         REQUIRE_FALSE(fileSystem.OpenFile(AM_OS_STRING("some_random_file.ext"))->IsValid());
     }
 }
@@ -78,7 +78,7 @@ TEST_CASE("DiskFileSystem Tests", "[filesystem][amplitude]")
 TEST_CASE("DiskFileSystem DiskFile Tests", "[filesystem][amplitude]")
 {
     DiskFileSystem fileSystem;
-    fileSystem.SetBasePath(AM_OS_STRING("./sample_project"));
+    fileSystem.SetBasePath(AM_OS_STRING("./samples/assets"));
 
     const auto& file = fileSystem.OpenFile(AM_OS_STRING("test_data/diskfile_read_test.txt"));
 
@@ -105,13 +105,13 @@ TEST_CASE("DiskFileSystem DiskFile Tests", "[filesystem][amplitude]")
 
     SECTION("can seek the file")
     {
-        file->Seek(1, SEEK_SET);
+        file->Seek(1, eFSO_START);
         REQUIRE(file->Position() == 1);
         REQUIRE(file->Read8() == 'K');
-        file->Seek(-2, SEEK_END);
+        file->Seek(-2, eFSO_END);
         REQUIRE(file->Position() == 0);
         REQUIRE(file->Read8() == 'O');
-        file->Seek(-1, SEEK_CUR);
+        file->Seek(-1, eFSO_CURRENT);
         REQUIRE(file->Position() == 0);
         REQUIRE(file->Read8() == 'O');
     }
@@ -137,7 +137,7 @@ TEST_CASE("DiskFileSystem DiskFile Tests", "[filesystem][amplitude]")
 TEST_CASE("Native DiskFile Tests", "[filesystem][amplitude]")
 {
     DiskFileSystem fileSystem;
-    fileSystem.SetBasePath(AM_OS_STRING("./sample_project"));
+    fileSystem.SetBasePath(AM_OS_STRING("./samples/assets"));
 
     DiskFile file(fileSystem.ResolvePath(AM_OS_STRING("test_data/diskfile_read_test.txt")), eFOM_READWRITE, eFOK_BINARY);
 
@@ -158,20 +158,20 @@ TEST_CASE("Native DiskFile Tests", "[filesystem][amplitude]")
 
     SECTION("can write the file")
     {
-        file.Seek(0, SEEK_SET);
+        file.Seek(0, eFSO_START);
         REQUIRE(file.Write8('K') == 1);
         REQUIRE(file.Write8('O') == 1);
 
         SECTION("can seek the file")
         {
-            file.Seek(1, SEEK_SET);
+            file.Seek(1, eFSO_START);
             REQUIRE(file.Position() == 1);
             REQUIRE(file.Read8() == 'O');
         }
 
         SECTION("can read the entire file")
         {
-            file.Seek(0, SEEK_SET);
+            file.Seek(0, eFSO_START);
             auto* content = static_cast<AmUInt8Buffer>(ammalloc(2));
             REQUIRE(file.Read(content, 2) == 2);
             REQUIRE(content[0] == 'K');
@@ -182,7 +182,7 @@ TEST_CASE("Native DiskFile Tests", "[filesystem][amplitude]")
 
         SECTION("can write the entire file")
         {
-            file.Seek(0, SEEK_SET);
+            file.Seek(0, eFSO_START);
             auto* content = static_cast<AmUInt8Buffer>(ammalloc(2));
             content[0] = 'O';
             content[1] = 'K';
@@ -194,7 +194,7 @@ TEST_CASE("Native DiskFile Tests", "[filesystem][amplitude]")
 
     SECTION("can close files")
     {
-        file.Seek(0, SEEK_SET);
+        file.Seek(0, eFSO_START);
         REQUIRE(file.Write8('O') == 1);
         REQUIRE(file.Write8('K') == 1);
 
@@ -208,15 +208,15 @@ TEST_CASE("MemoryFile Tests", "[filesystem][amplitude]")
     MemoryFile file;
     file.Open(2);
 
-    file.Seek(0, SEEK_SET);
+    file.Seek(0, eFSO_START);
     file.Write8('O');
     file.Write8('K');
-    file.Seek(0, SEEK_SET);
+    file.Seek(0, eFSO_START);
 
     SECTION("can open files")
     {
         DiskFileSystem fileSystem;
-        fileSystem.SetBasePath(AM_OS_STRING("./sample_project"));
+        fileSystem.SetBasePath(AM_OS_STRING("./samples/assets"));
 
         REQUIRE(file.IsValid());
 
@@ -276,23 +276,23 @@ TEST_CASE("MemoryFile Tests", "[filesystem][amplitude]")
 
     SECTION("can seek the file")
     {
-        file.Seek(1, SEEK_SET);
+        file.Seek(1, eFSO_START);
         REQUIRE(file.Position() == 1);
         REQUIRE(file.Read8() == 'K');
-        file.Seek(-2, SEEK_END);
+        file.Seek(-2, eFSO_END);
         REQUIRE(file.Position() == 0);
         REQUIRE(file.Read8() == 'O');
-        file.Seek(-1, SEEK_CUR);
+        file.Seek(-1, eFSO_CURRENT);
         REQUIRE(file.Position() == 0);
         REQUIRE(file.Read8() == 'O');
-        file.Seek(1234, SEEK_SET);
-        REQUIRE(file.Position() == 1234);
-        REQUIRE(file.Read8() == 0);
+        file.Seek(1234, eFSO_START);
+        REQUIRE(file.Position() == 1);
+        REQUIRE(file.Read8() == 'K');
     }
 
     SECTION("can read the entire file")
     {
-        file.Seek(0, SEEK_SET);
+        file.Seek(0, eFSO_START);
         auto* content = static_cast<AmUInt8Buffer>(ammalloc(2));
         REQUIRE(file.Read(content, 2) == 2);
         REQUIRE(content[0] == 'O');

@@ -18,27 +18,11 @@ set(PROJECT_NAME ss_amplitude_audio_samples)
 
 project(${PROJECT_NAME})
 
-add_custom_target(ss_amplitude_audio_sample_assets
-    COMMAND
-        python3 ${CMAKE_CURRENT_SOURCE_DIR}/../scripts/build_project.py -p ${CMAKE_SOURCE_DIR}/samples/rawassets -b ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/samples/assets -f ${CMAKE_SOURCE_DIR}/bin/flatc
-    WORKING_DIRECTORY
-        ${CMAKE_SOURCE_DIR}
-)
-
-add_custom_command(
-    TARGET ss_amplitude_audio_sample_assets POST_BUILD
-    COMMAND ${CMAKE_COMMAND} -E copy_directory ${CMAKE_CURRENT_SOURCE_DIR}/../assets ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/samples/assets
-)
-
-add_dependencies(ss_amplitude_audio_sample_assets
-    amplitude_build_binary_schemas
-)
-
 add_subdirectory(sample_01)
 add_subdirectory(sample_02)
 
 install(
-    CODE "execute_process(COMMAND python3 ${CMAKE_CURRENT_SOURCE_DIR}/../scripts/build_project.py -p ${CMAKE_SOURCE_DIR}/samples/rawassets -b ${CMAKE_INSTALL_PREFIX}/${AM_BIN_DESTINATION}/samples/assets -f ${CMAKE_SOURCE_DIR}/bin/flatc WORKING_DIRECTORY ${CMAKE_SOURCE_DIR})"
+    CODE "execute_process(COMMAND python3 ${CMAKE_CURRENT_SOURCE_DIR}/../scripts/build_project.py -p ${CMAKE_SOURCE_DIR}/sample_project -b ${CMAKE_INSTALL_PREFIX}/${AM_BIN_DESTINATION}/samples/assets -f ${CMAKE_SOURCE_DIR}/bin/flatc WORKING_DIRECTORY ${CMAKE_SOURCE_DIR})"
 )
 
 install(

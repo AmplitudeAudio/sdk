@@ -19,7 +19,10 @@ set(PROJECT_NAME ss_amplitude_audio_tests)
 project(${PROJECT_NAME})
 
 find_package(Catch2 CONFIG REQUIRED)
-add_executable(${PROJECT_NAME} version.cpp filesystem.cpp main.cpp
+add_executable(${PROJECT_NAME}
+        version.cpp
+        filesystem.cpp
+        main.cpp
         thread.cpp
         listener.cpp
         entity.cpp)
