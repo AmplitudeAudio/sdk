@@ -60,7 +60,7 @@ static int process(const AmOsString& inFileName, const AmOsString& outFileName, 
 
     if (!exists(projectPath))
     {
-        fprintf(stderr, "The path " AM_OS_CHAR_FMT " does not exist.\n", projectPath.string().c_str());
+        fprintf(stderr, "The path " AM_OS_CHAR_FMT " does not exist.\n", projectPath.native().c_str());
         return EXIT_FAILURE;
     }
 
@@ -92,7 +92,7 @@ static int process(const AmOsString& inFileName, const AmOsString& outFileName, 
         DiskFile diskFile(absolute(file));
 
         PackageFileItemDescription item;
-        item.m_Name = relative(absolute(file), projectPath);
+        item.m_Name = relative(absolute(file), projectPath).string();
         item.m_Offset = lastOffset;
         item.m_Size = diskFile.Length();
 
