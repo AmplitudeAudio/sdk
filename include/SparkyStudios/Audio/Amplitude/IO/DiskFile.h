@@ -24,7 +24,7 @@ namespace SparkyStudios::Audio::Amplitude
     /**
      * @brief A File implementation that reads and writes a file on disk.
      */
-    class AM_API_PUBLIC DiskFile final : public File
+    class AM_API_PUBLIC DiskFile : public File
     {
     public:
         /**

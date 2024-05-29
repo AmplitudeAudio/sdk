@@ -73,25 +73,74 @@ namespace SparkyStudios::Audio::Amplitude
         [[nodiscard]] virtual AmOsString GetPath() const = 0;
 
         /**
-         * @brief Read a single byte from the file in an AmUInt8.
+         * @brief Reads a single byte from the file in an @c AmUInt8.
          *
          * @return The read value.
          */
         AmUInt8 Read8();
 
         /**
-         * @brief Read two bytes from the file in an AmUInt16.
+         * @brief Reads two bytes from the file in an @c AmUInt16.
          *
          * @return The read value.
          */
         AmUInt16 Read16();
 
         /**
-         * @brief Read four bytes from the file in an AmUInt32.
+         * @brief Reads four bytes from the file in an @c AmUInt32.
          *
          * @return The read value.
          */
         AmUInt32 Read32();
+
+        /**
+         * @brief Reads eight bytes from the file in an @c AmUInt64.
+         *
+         * @return The read value.
+         */
+        AmUInt64 Read64();
+
+        /**
+         * @brief Reads a string from the file.
+         *
+         * @return The read value.
+         */
+        AmString ReadString();
+
+        /**
+         * @brief Writes a single byte to the file from an @c AmUInt8.
+         *
+         * @param value The value to write.
+         */
+        void Write8(AmUInt8 value);
+
+        /**
+         * @brief Writes two bytes to the file from an @c AmUInt16.
+         *
+         * @param value The value to write.
+         */
+        void Write16(AmUInt16 value);
+
+        /**
+         * @brief Writes four bytes to the file from an @c AmUInt32.
+         *
+         * @param value The value to write.
+         */
+        void Write32(AmUInt32 value);
+
+        /**
+         * @brief Writes eight bytes to the file from an @c AmUInt64.
+         *
+         * @param value The value to write.
+         */
+        void Write64(AmUInt64 value);
+
+        /**
+         * @brief Writes a string to the file.
+         *
+         * @param value The value to write.
+         */
+        void WriteString(const AmString& value);
 
         /**
          * @brief Check if the read cursor is at the end of the file.
