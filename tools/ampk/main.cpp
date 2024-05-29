@@ -81,7 +81,7 @@ static int process(const AmOsString& inFileName, const AmOsString& outFileName, 
 
     packageFile.Write(reinterpret_cast<AmConstUInt8Buffer>("AMPK"), 4);
     packageFile.Write16(kCurrentVersion);
-    packageFile.Write8(state.compression);
+    packageFile.Write8(ePCA_None); // TODO: state.compression
 
     AmSize lastOffset = 0;
     std::vector<AmUInt8> buffer;
