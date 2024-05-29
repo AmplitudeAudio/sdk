@@ -20,17 +20,24 @@ project(${PROJECT_NAME})
 
 find_package(Catch2 CONFIG REQUIRED)
 add_executable(${PROJECT_NAME}
-        version.cpp
-        filesystem.cpp
-        main.cpp
-        thread.cpp
-        listener.cpp
-        entity.cpp)
+    version.cpp
+    filesystem.cpp
+    main.cpp
+    thread.cpp
+    listener.cpp
+    entity.cpp)
 target_link_libraries(${PROJECT_NAME} PRIVATE Catch2::Catch2 Static)
+
+add_custom_command(
+    TARGET ${PROJECT_NAME} POST_BUILD
+    COMMAND $<TARGET_FILE:ampk> -q -c 0 ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/samples/assets ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/samples/assets.ampk
+)
 
 add_dependencies(${PROJECT_NAME}
     Static
     ss_amplitude_audio_sample_project
+    amac
+    ampk
 )
 
 include(CTest)

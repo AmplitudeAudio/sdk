@@ -47,7 +47,7 @@ namespace SparkyStudios::Audio::Amplitude
     void PackageFileSystem::SetBasePath(const AmOsString& basePath)
     {
         const auto& p = std::filesystem::path(basePath);
-        _packagePath = p.is_relative() ? (std::filesystem::current_path() / p).make_preferred() : p;
+        _packagePath = p.is_relative() ? (std::filesystem::current_path() / p).lexically_normal().make_preferred() : p;
     }
 
     const AmOsString& PackageFileSystem::GetBasePath() const
@@ -57,12 +57,12 @@ namespace SparkyStudios::Audio::Amplitude
 
     AmOsString PackageFileSystem::ResolvePath(const AmOsString& path) const
     {
-        return path;
+        return std::filesystem::path(path).lexically_normal().native();
     }
 
     bool PackageFileSystem::Exists(const AmOsString& path) const
     {
-        if (!_valid)
+        if (!IsValid())
             return false;
 
         const auto it = std::ranges::find_if(
@@ -85,17 +85,17 @@ namespace SparkyStudios::Audio::Amplitude
         if (parts.empty())
             return AM_OS_STRING("");
 
-        AmOsString joined(parts[0]);
+        std::filesystem::path joined(parts[0]);
 
         for (AmSize i = 1, l = parts.size(); i < l; i++)
             joined += AM_OS_STRING("/") + parts[i];
 
-        return joined;
+        return joined.lexically_normal().native();
     }
 
     std::shared_ptr<File> PackageFileSystem::OpenFile(const AmOsString& path, eFileOpenMode mode) const
     {
-        if (!_valid)
+        if (!IsValid())
             return nullptr;
 
         const auto it = std::ranges::find_if(
@@ -118,6 +118,9 @@ namespace SparkyStudios::Audio::Amplitude
         if (_loadingThreadHandle != nullptr)
             Thread::Release(_loadingThreadHandle);
 
+        if (_packageFile != nullptr)
+            StartCloseFileSystem();
+
         _loadingThreadHandle = Thread::CreateThread(&PackageFileSystem::LoadPackage, this);
     }
 
@@ -135,6 +138,11 @@ namespace SparkyStudios::Audio::Amplitude
     bool PackageFileSystem::TryFinalizeCloseFileSystem()
     {
         return _packageFile == nullptr;
+    }
+
+    bool PackageFileSystem::IsValid() const
+    {
+        return _valid;
     }
 
     void PackageFileSystem::LoadPackage(AmVoidPtr pParam)

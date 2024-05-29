@@ -182,6 +182,13 @@ namespace SparkyStudios::Audio::Amplitude
          */
         bool TryFinalizeCloseFileSystem() override;
 
+        /**
+         * @brief Returns if the package file is valid and loaded.
+         *
+         * @return @c true if the package file is valid and loaded, @c false otherwise.
+         */
+        [[nodiscard]] bool IsValid() const;
+
     private:
         /**
          * @brief Loads the package in a background thread.

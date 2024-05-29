@@ -309,3 +309,108 @@ TEST_CASE("MemoryFile Tests", "[filesystem][amplitude]")
         REQUIRE(file.GetPtr() == nullptr);
     }
 }
+
+TEST_CASE("PackageFileSystem Tests", "[filesystem][amplitude]")
+{
+    PackageFileSystem fileSystem;
+
+    SECTION("can resolve paths")
+    {
+        REQUIRE(fileSystem.ResolvePath(AM_OS_STRING("sounds/test.wav")) == AM_OS_STRING("sounds/test.wav"));
+        REQUIRE(
+            fileSystem.ResolvePath(AM_OS_STRING("../../samples/assets/sounds/../test.wav")) ==
+            AM_OS_STRING("../../samples/assets/test.wav"));
+        REQUIRE(fileSystem.ResolvePath(AM_OS_STRING("./sounds/../sounds/./test.wav")) == "sounds/test.wav");
+    }
+
+    SECTION("cannot detect directories")
+    {
+        REQUIRE_FALSE(fileSystem.IsDirectory(AM_OS_STRING("sounds")));
+        REQUIRE_FALSE(fileSystem.IsDirectory(AM_OS_STRING("tests.config.amconfig")));
+    }
+
+    SECTION("can join paths")
+    {
+        REQUIRE(
+            fileSystem.Join({ AM_OS_STRING("sounds"), AM_OS_STRING("test.wav") }) ==
+            std::filesystem::path(AM_OS_STRING("sounds/test.wav")).lexically_normal().make_preferred().native());
+        REQUIRE(
+            fileSystem.Join({ AM_OS_STRING("../sample_project/sounds/../test.wav") }) ==
+            std::filesystem::path(AM_OS_STRING("../sample_project/test.wav")).lexically_normal().make_preferred().native());
+        REQUIRE(
+            fileSystem.Join({ AM_OS_STRING("./sounds"), AM_OS_STRING("../sounds/"), AM_OS_STRING("./test.wav") }) ==
+            std::filesystem::path(AM_OS_STRING("sounds/test.wav")).lexically_normal().make_preferred().native());
+    }
+
+    SECTION("cannot use an initialized filesystem")
+    {
+        SECTION("cannot check if files exists")
+        {
+            REQUIRE_FALSE(fileSystem.Exists(AM_OS_STRING("tests.config.amconfig")));
+            REQUIRE_FALSE(fileSystem.Exists(AM_OS_STRING("some_random_file.ext")));
+        }
+
+        SECTION("cannot open files")
+        {
+            REQUIRE(fileSystem.OpenFile(AM_OS_STRING("tests.config.amconfig")) == nullptr);
+            REQUIRE(fileSystem.OpenFile(AM_OS_STRING("some_random_file.ext")) == nullptr);
+        }
+    }
+
+    SECTION("cannot load an invalid package")
+    {
+        fileSystem.SetBasePath(AM_OS_STRING("./samples/invalid.ampk"));
+
+        fileSystem.StartOpenFileSystem();
+        while (!fileSystem.TryFinalizeOpenFileSystem())
+            Thread::Sleep(1);
+
+        REQUIRE_FALSE(fileSystem.IsValid());
+    }
+
+    SECTION("can use an initialized filesystem")
+    {
+        fileSystem.SetBasePath(AM_OS_STRING("./samples/assets.ampk"));
+
+        fileSystem.StartOpenFileSystem();
+        while (!fileSystem.TryFinalizeOpenFileSystem())
+            Thread::Sleep(1);
+
+        SECTION("can sets the base path")
+        {
+            REQUIRE(fileSystem.GetBasePath() == std::filesystem::current_path() / AM_OS_STRING("samples/assets.ampk"));
+        }
+
+        SECTION("can reopen already opened filesystem")
+        {
+            REQUIRE(fileSystem.TryFinalizeOpenFileSystem());
+
+            fileSystem.StartOpenFileSystem();
+            while (!fileSystem.TryFinalizeOpenFileSystem())
+                Thread::Sleep(1);
+
+            REQUIRE(fileSystem.TryFinalizeOpenFileSystem());
+        }
+
+        SECTION("can check if files exists")
+        {
+            REQUIRE(fileSystem.Exists(AM_OS_STRING("tests.config.amconfig")));
+            REQUIRE_FALSE(fileSystem.Exists(AM_OS_STRING("some_random_file.ext")));
+        }
+
+        SECTION("can open files")
+        {
+            REQUIRE(fileSystem.OpenFile(AM_OS_STRING("tests.config.amconfig"))->IsValid());
+            REQUIRE(fileSystem.OpenFile(AM_OS_STRING("some_random_file.ext")) == nullptr);
+        }
+
+        SECTION("can close filesystem")
+        {
+            fileSystem.StartCloseFileSystem();
+            while (!fileSystem.TryFinalizeCloseFileSystem())
+                Thread::Sleep(1);
+
+            REQUIRE(fileSystem.TryFinalizeCloseFileSystem());
+        }
+    }
+}
