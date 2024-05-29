@@ -69,7 +69,7 @@ namespace SparkyStudios::Audio::Amplitude
             _header.m_Items,
             [&path](const PackageFileItemDescription& item)
             {
-                return item.m_Name == path;
+                return AM_STRING_TO_OS_STRING(item.m_Name) == path;
             });
 
         return it != _header.m_Items.end();
@@ -88,7 +88,7 @@ namespace SparkyStudios::Audio::Amplitude
         AmOsString joined(parts[0]);
 
         for (AmSize i = 1, l = parts.size(); i < l; i++)
-            joined += "/" + parts[i];
+            joined += AM_OS_STRING("/") + parts[i];
 
         return joined;
     }
@@ -102,7 +102,7 @@ namespace SparkyStudios::Audio::Amplitude
             _header.m_Items,
             [&path](const PackageFileItemDescription& item)
             {
-                return item.m_Name == path;
+                return AM_STRING_TO_OS_STRING(item.m_Name) == path;
             });
 
         if (it == _header.m_Items.end())
