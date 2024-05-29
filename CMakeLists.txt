@@ -417,6 +417,7 @@ target_link_libraries(Static PUBLIC mimalloc-static)
 target_link_libraries(Shared PUBLIC mimalloc)
 
 add_subdirectory(tools/amac)
+add_subdirectory(tools/ampk)
 
 if(BUILD_SAMPLES)
     add_subdirectory(samples)
