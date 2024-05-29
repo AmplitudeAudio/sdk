@@ -133,6 +133,7 @@ namespace SparkyStudios::Audio::Amplitude
     {
         _packageFile->Close();
         _packageFile.reset(nullptr);
+        _initialized = false;
     }
 
     bool PackageFileSystem::TryFinalizeCloseFileSystem()

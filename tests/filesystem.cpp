@@ -320,7 +320,7 @@ TEST_CASE("PackageFileSystem Tests", "[filesystem][amplitude]")
         REQUIRE(
             fileSystem.ResolvePath(AM_OS_STRING("../../samples/assets/sounds/../test.wav")) ==
             AM_OS_STRING("../../samples/assets/test.wav"));
-        REQUIRE(fileSystem.ResolvePath(AM_OS_STRING("./sounds/../sounds/./test.wav")) == "sounds/test.wav");
+        REQUIRE(fileSystem.ResolvePath(AM_OS_STRING("./sounds/../sounds/./test.wav")) == AM_OS_STRING("sounds/test.wav"));
     }
 
     SECTION("cannot detect directories")
@@ -370,47 +370,48 @@ TEST_CASE("PackageFileSystem Tests", "[filesystem][amplitude]")
 
     SECTION("can use an initialized filesystem")
     {
-        fileSystem.SetBasePath(AM_OS_STRING("./samples/assets.ampk"));
+        PackageFileSystem fs;
+        fs.SetBasePath(AM_OS_STRING("./samples/assets.ampk"));
 
-        fileSystem.StartOpenFileSystem();
-        while (!fileSystem.TryFinalizeOpenFileSystem())
+        fs.StartOpenFileSystem();
+        while (!fs.TryFinalizeOpenFileSystem())
             Thread::Sleep(1);
 
         SECTION("can sets the base path")
         {
-            REQUIRE(fileSystem.GetBasePath() == std::filesystem::current_path() / AM_OS_STRING("samples/assets.ampk"));
-        }
-
-        SECTION("can reopen already opened filesystem")
-        {
-            REQUIRE(fileSystem.TryFinalizeOpenFileSystem());
-
-            fileSystem.StartOpenFileSystem();
-            while (!fileSystem.TryFinalizeOpenFileSystem())
-                Thread::Sleep(1);
-
-            REQUIRE(fileSystem.TryFinalizeOpenFileSystem());
+            REQUIRE(fs.GetBasePath() == std::filesystem::current_path() / AM_OS_STRING("samples/assets.ampk"));
         }
 
         SECTION("can check if files exists")
         {
-            REQUIRE(fileSystem.Exists(AM_OS_STRING("tests.config.amconfig")));
-            REQUIRE_FALSE(fileSystem.Exists(AM_OS_STRING("some_random_file.ext")));
+            REQUIRE(fs.Exists(AM_OS_STRING("tests.config.amconfig")));
+            REQUIRE_FALSE(fs.Exists(AM_OS_STRING("some_random_file.ext")));
         }
 
         SECTION("can open files")
         {
-            REQUIRE(fileSystem.OpenFile(AM_OS_STRING("tests.config.amconfig"))->IsValid());
-            REQUIRE(fileSystem.OpenFile(AM_OS_STRING("some_random_file.ext")) == nullptr);
+            REQUIRE(fs.OpenFile(AM_OS_STRING("tests.config.amconfig"))->IsValid());
+            REQUIRE(fs.OpenFile(AM_OS_STRING("some_random_file.ext")) == nullptr);
         }
 
         SECTION("can close filesystem")
         {
-            fileSystem.StartCloseFileSystem();
-            while (!fileSystem.TryFinalizeCloseFileSystem())
+            fs.StartCloseFileSystem();
+            while (!fs.TryFinalizeCloseFileSystem())
                 Thread::Sleep(1);
 
-            REQUIRE(fileSystem.TryFinalizeCloseFileSystem());
+            REQUIRE(fs.TryFinalizeCloseFileSystem());
+        }
+
+        SECTION("can reopen already opened filesystem")
+        {
+            REQUIRE(fs.TryFinalizeOpenFileSystem());
+
+            fs.StartOpenFileSystem();
+            while (!fs.TryFinalizeOpenFileSystem())
+                Thread::Sleep(1);
+
+            REQUIRE(fs.TryFinalizeOpenFileSystem());
         }
     }
 }
