@@ -104,14 +104,16 @@ namespace SparkyStudios::Audio::Amplitude
             return false;
         }
 
+        const AmSize bytes = file->Length();
+
         // Get the file's size:
-        dest->assign(file->Length() + 1, 0);
+        dest->assign(bytes + 1, 0);
 
         // Read the file into the buffer
         file->Seek(0, eFSO_START);
-        const AmUInt32 len = file->Read(reinterpret_cast<AmUInt8Buffer>(&(*dest)[0]), file->Length());
+        const AmUInt32 len = file->Read(reinterpret_cast<AmUInt8Buffer>(&(*dest)[0]), bytes);
 
-        return len == file->Length() && len > 0;
+        return len == bytes && len > 0;
     }
 
     AmUInt32 GetMaxNumberOfChannels(const EngineConfigDefinition* config)

@@ -43,7 +43,11 @@ namespace SparkyStudios::Audio::Amplitude
     static drmp3_bool32 onSeek(void* pUserData, int offset, drmp3_seek_origin origin)
     {
         auto* file = static_cast<File*>(pUserData);
-        file->Seek(offset, origin == drmp3_seek_origin_start ? eFSO_START : origin == drmp3_seek_origin_current ? eFSO_CURRENT : eFSO_START);
+        file->Seek(
+            offset,
+            origin == drmp3_seek_origin_start         ? eFSO_START
+                : origin == drmp3_seek_origin_current ? eFSO_CURRENT
+                                                      : eFSO_START);
         return DRMP3_TRUE;
     }
 
@@ -107,13 +111,7 @@ namespace SparkyStudios::Audio::Amplitude
 
     AmUInt64 MP3Codec::MP3Decoder::Load(AmVoidPtr out)
     {
-        if (!_initialized)
-            return 0;
-
-        if (!Seek(0))
-            return 0;
-
-        return drmp3_read_pcm_frames_f32(&_mp3, m_format.GetFramesCount(), static_cast<AmAudioSampleBuffer>(out));
+        return Stream(out, 0, m_format.GetFramesCount());
     }
 
     AmUInt64 MP3Codec::MP3Decoder::Stream(AmVoidPtr out, AmUInt64 offset, AmUInt64 length)

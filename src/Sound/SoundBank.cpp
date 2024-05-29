@@ -50,8 +50,7 @@ namespace SparkyStudios::Audio::Amplitude
     static bool InitializeSwitchContainer(const AmOsString& filename, const Engine* engine)
     {
         // Find the ID.
-        SwitchContainerHandle handle = engine->GetSwitchContainerHandleFromFile(filename);
-        if (handle)
+        if (SwitchContainerHandle handle = engine->GetSwitchContainerHandleFromFile(filename))
         {
             // We've seen this ID before, update it.
             handle->GetRefCounter()->Increment();
@@ -89,8 +88,7 @@ namespace SparkyStudios::Audio::Amplitude
     static bool InitializeCollection(const AmOsString& filename, const Engine* engine)
     {
         // Find the ID.
-        CollectionHandle handle = engine->GetCollectionHandleFromFile(filename);
-        if (handle)
+        if (CollectionHandle handle = engine->GetCollectionHandleFromFile(filename))
         {
             // We've seen this ID before, update it.
             handle->GetRefCounter()->Increment();
@@ -128,8 +126,7 @@ namespace SparkyStudios::Audio::Amplitude
     static bool InitializeSound(const AmOsString& filename, const Engine* engine, AmSoundID& outId)
     {
         // Find the ID
-        SoundHandle handle = engine->GetSoundHandleFromFile(filename);
-        if (handle)
+        if (SoundHandle handle = engine->GetSoundHandleFromFile(filename))
         {
             // We've seen this id before, update it
             handle->GetRefCounter()->Increment();
@@ -168,8 +165,7 @@ namespace SparkyStudios::Audio::Amplitude
     static bool InitializeEvent(const AmOsString& filename, const Engine* engine)
     {
         // Find the ID.
-        EventHandle handle = engine->GetEventHandleFromFile(filename);
-        if (handle)
+        if (EventHandle handle = engine->GetEventHandleFromFile(filename))
         {
             // We've seen this ID before, update it.
             handle->GetRefCounter()->Increment();
@@ -206,8 +202,7 @@ namespace SparkyStudios::Audio::Amplitude
     static bool InitializeAttenuation(const AmOsString& filename, const Engine* engine)
     {
         // Find the ID.
-        AttenuationHandle handle = engine->GetAttenuationHandleFromFile(filename);
-        if (handle)
+        if (AttenuationHandle handle = engine->GetAttenuationHandleFromFile(filename))
         {
             // We've seen this ID before, update it.
             handle->GetRefCounter()->Increment();

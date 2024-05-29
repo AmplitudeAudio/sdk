@@ -98,9 +98,9 @@ namespace SparkyStudios::Audio::Amplitude
         /**
          * @brief Manually stops a thread execution.
          *
-         * @param thread The handle of the thread to wait.
+         * @param thread The handle of the thread to stop.
          */
-        AM_API_PUBLIC void Release(AmThreadHandle thread);
+        AM_API_PUBLIC void Release(AmThreadHandle& thread);
 
         /**
          * @brief Gets the total execution time in milliseconds for the calling thread.
@@ -136,7 +136,7 @@ namespace SparkyStudios::Audio::Amplitude
         };
 
         /**
-         * @brief A pool task that allows the a thread to wait until it finishes.
+         * @brief A pool task that allows a thread to wait until it finishes.
          */
         class AM_API_PUBLIC AwaitablePoolTask : public PoolTask
         {
@@ -144,7 +144,10 @@ namespace SparkyStudios::Audio::Amplitude
             AwaitablePoolTask();
             ~AwaitablePoolTask() override = default;
 
-            void Work() override;
+            /**
+             * @copydoc PoolTask::Work
+             */
+            void Work() final;
 
             /**
              * @bbrief Pool task execution function.
@@ -173,8 +176,8 @@ namespace SparkyStudios::Audio::Amplitude
          * The Pool tasks scheduler can pick and run pool tasks on several multiple
          * threads. The number of threads is defined at initialization.
          *
-         * The maximum number of tasks the pool can manage is defined by the AM_MAX_THREAD_POOL_TASKS
-         * macro. The default value is 1024.
+         * The maximum number of tasks the pool can manage is defined by the @c AM_MAX_THREAD_POOL_TASKS
+         * macro. The default value is @c 1024
          */
         class AM_API_PUBLIC Pool
         {
@@ -191,7 +194,7 @@ namespace SparkyStudios::Audio::Amplitude
              * @brief Initialize and run thread pool.
              *
              * @param threadCount The number of thread in the pool. For thread count 0, work is done
-             * at AddTask() call in the calling thread.
+             * at @c AddTask call in the calling thread.
              */
             void Init(AmUInt32 threadCount);
 

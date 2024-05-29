@@ -111,11 +111,12 @@ namespace SparkyStudios::Audio::Amplitude::Thread
         ::WaitForSingleObject(threadHandleData->thread, INFINITE);
     }
 
-    void Release(AmThreadHandle threadHandle)
+    void Release(AmThreadHandle& threadHandle)
     {
         auto* threadHandleData = static_cast<AmThreadHandleData*>(threadHandle);
         ::CloseHandle(threadHandleData->thread);
         delete threadHandleData;
+        threadHandle = nullptr;
     }
 
     AmUInt64 GetTimeMillis()
@@ -263,11 +264,12 @@ namespace SparkyStudios::Audio::Amplitude::Thread
         pthread_join(threadHandleData->thread, nullptr);
     }
 
-    void Release(AmThreadHandle threadHandle)
+    void Release(AmThreadHandle& threadHandle)
     {
         const auto* threadHandleData = static_cast<AmThreadHandleData*>(threadHandle);
         pthread_detach(threadHandleData->thread);
         delete threadHandleData;
+        threadHandle = nullptr;
     }
 
     AmUInt64 GetTimeMillis()
@@ -376,9 +378,7 @@ namespace SparkyStudios::Audio::Amplitude::Thread
         _thread = new AmThreadHandle[threadCount];
 
         for (AmUInt32 i = 0; i < _threadCount; i++)
-        {
             _thread[i] = CreateThread(PoolWorker, this);
-        }
     }
 
     void Pool::AddTask(const std::shared_ptr<PoolTask>& task)
