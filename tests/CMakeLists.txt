@@ -25,8 +25,10 @@ add_executable(${PROJECT_NAME}
     main.cpp
     thread.cpp
     listener.cpp
-    entity.cpp)
-target_link_libraries(${PROJECT_NAME} PRIVATE Catch2::Catch2 Static)
+    entity.cpp
+    engine.cpp
+    environment.cpp)
+target_link_libraries(${PROJECT_NAME} PRIVATE Catch2::Catch2 Shared)
 
 add_custom_command(
     TARGET ${PROJECT_NAME} POST_BUILD
@@ -34,13 +36,12 @@ add_custom_command(
 )
 
 add_dependencies(${PROJECT_NAME}
-    Static
+    Shared
     ss_amplitude_audio_sample_project
     amac
     ampk
 )
 
-include(CTest)
 include(Catch)
 catch_discover_tests(${PROJECT_NAME}
     WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}

@@ -1,5 +1,5 @@
 {
-  "driver": "null",
+  "driver": "unknown",
   "output": {
     "frequency": 44100,
     "channels": 2,

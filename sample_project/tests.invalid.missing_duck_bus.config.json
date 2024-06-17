@@ -107,5 +107,5 @@
       }
     }
   },
-  "buses_file": "pc.buses.ambus"
+  "buses_file": "tests.invalid.missing_duck_bus.buses.ambus"
 }

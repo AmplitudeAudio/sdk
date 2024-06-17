@@ -25,6 +25,12 @@ TEST_CASE("DiskFileSystem Tests", "[filesystem][amplitude]")
 
     const auto& cp = std::filesystem::current_path() / AM_OS_STRING("samples/assets");
 
+    SECTION("can open filesystem")
+    {
+        fileSystem.StartOpenFileSystem();
+        REQUIRE(fileSystem.TryFinalizeOpenFileSystem());
+    }
+
     SECTION("can sets the base path")
     {
         REQUIRE(fileSystem.GetBasePath() == cp);
@@ -57,6 +63,7 @@ TEST_CASE("DiskFileSystem Tests", "[filesystem][amplitude]")
 
     SECTION("can join paths")
     {
+        REQUIRE(fileSystem.Join({}).empty());
         REQUIRE(
             fileSystem.Join({ AM_OS_STRING("sounds"), AM_OS_STRING("test.wav") }) ==
             std::filesystem::path(AM_OS_STRING("sounds/test.wav")).lexically_normal().make_preferred().native());
@@ -72,6 +79,12 @@ TEST_CASE("DiskFileSystem Tests", "[filesystem][amplitude]")
     {
         REQUIRE(fileSystem.OpenFile(AM_OS_STRING("tests.config.amconfig"))->IsValid());
         REQUIRE_FALSE(fileSystem.OpenFile(AM_OS_STRING("some_random_file.ext"))->IsValid());
+    }
+
+    SECTION("can close filesystem")
+    {
+        fileSystem.StartCloseFileSystem();
+        REQUIRE(fileSystem.TryFinalizeCloseFileSystem());
     }
 }
 
@@ -120,10 +133,11 @@ TEST_CASE("DiskFileSystem DiskFile Tests", "[filesystem][amplitude]")
     {
         file->Seek(0);
         auto* content = static_cast<AmUInt8Buffer>(ammalloc(2));
-        REQUIRE(file->Read(content, 2) == 2);
+        REQUIRE(file->Read(content, file->Length()) == file->Length());
         REQUIRE(content[0] == 'O');
         REQUIRE(content[1] == 'K');
         REQUIRE(file->Position() == file->Length());
+        REQUIRE(file->Eof());
         amfree(content);
     }
 
@@ -131,6 +145,8 @@ TEST_CASE("DiskFileSystem DiskFile Tests", "[filesystem][amplitude]")
     {
         static_cast<DiskFile*>(file.get())->Close();
         REQUIRE_FALSE(file->IsValid());
+        REQUIRE(file->Length() == 0);
+        REQUIRE(file->GetPtr() == nullptr);
     }
 }
 
@@ -144,6 +160,12 @@ TEST_CASE("Native DiskFile Tests", "[filesystem][amplitude]")
     SECTION("can open files")
     {
         REQUIRE(file.IsValid());
+    }
+
+    SECTION("cannot open empty paths")
+    {
+        DiskFile temp;
+        REQUIRE(temp.Open(AM_OS_STRING(""), eFOM_READWRITE, eFOK_BINARY) == AM_ERROR_INVALID_PARAMETER);
     }
 
     SECTION("can return the correct file path")
@@ -177,6 +199,7 @@ TEST_CASE("Native DiskFile Tests", "[filesystem][amplitude]")
             REQUIRE(content[0] == 'K');
             REQUIRE(content[1] == 'O');
             REQUIRE(file.Position() == file.Length());
+            REQUIRE(file.Eof());
             amfree(content);
         }
 
@@ -188,6 +211,7 @@ TEST_CASE("Native DiskFile Tests", "[filesystem][amplitude]")
             content[1] = 'K';
             REQUIRE(file.Write(content, 2) == 2);
             REQUIRE(file.Position() == file.Length());
+            REQUIRE(file.Eof());
             amfree(content);
         }
     }
@@ -200,6 +224,8 @@ TEST_CASE("Native DiskFile Tests", "[filesystem][amplitude]")
 
         file.Close();
         REQUIRE_FALSE(file.IsValid());
+        REQUIRE(file.Length() == 0);
+        REQUIRE(file.GetPtr() == nullptr);
     }
 }
 
@@ -397,9 +423,6 @@ TEST_CASE("PackageFileSystem Tests", "[filesystem][amplitude]")
         SECTION("can close filesystem")
         {
             fs.StartCloseFileSystem();
-            while (!fs.TryFinalizeCloseFileSystem())
-                Thread::Sleep(1);
-
             REQUIRE(fs.TryFinalizeCloseFileSystem());
         }
 

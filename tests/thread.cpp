@@ -23,6 +23,7 @@ class DummyPoolTask : public Thread::PoolTask
 public:
     void Work() override
     {
+        Thread::Sleep(100);
         _isExecuted = true;
         _executingThreadId = Thread::GetCurrentThreadId();
     }
@@ -129,7 +130,7 @@ TEST_CASE("Thread Pool Tests", "[thread][amplitude]")
 
             THEN("the task is executed")
             {
-                Thread::Sleep(10); // Wait for the task to execute
+                Thread::Sleep(110); // Wait for the task to execute
                 REQUIRE(task->IsExecuted());
 
                 AND_THEN("the task is removed from the pool")
@@ -152,6 +153,7 @@ TEST_CASE("Thread Pool Tests", "[thread][amplitude]")
 
                 if (willExecuteWorkInCallerThread)
                 {
+                    Thread::Sleep(100);
                     REQUIRE(task->IsExecuted());
                     REQUIRE(task->GetExecutingThreadId() == Thread::GetCurrentThreadId());
                 }

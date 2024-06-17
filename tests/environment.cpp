@@ -16,17 +16,17 @@
 
 #include <SparkyStudios/Audio/Amplitude/Amplitude.h>
 
-#include <Core/EntityInternalState.h>
+#include <Core/EnvironmentInternalState.h>
 
 using namespace SparkyStudios::Audio::Amplitude;
 
-TEST_CASE("Entity Tests", "[entity][core][amplitude]")
+TEST_CASE("Environment Tests", "[entity][core][amplitude]")
 {
-    EntityInternalState state;
+    EnvironmentInternalState state;
     state.SetId(1);
 
-    fplutil::intrusive_list entity_list(&EntityInternalState::node);
-    entity_list.push_back(state);
+    fplutil::intrusive_list environment_list(&EnvironmentInternalState::node);
+    environment_list.push_back(state);
 
     SECTION("can be used without a wrapper")
     {
@@ -42,7 +42,12 @@ TEST_CASE("Entity Tests", "[entity][core][amplitude]")
 
         WHEN("the location changes")
         {
-            const auto lastLocation = state.GetLocation();
+            SphereShape inner(10);
+            SphereShape outer(20);
+            SphereZone zone(&inner, &outer);
+
+            state.SetZone(&zone);
+
             const auto location = AM_V3(10, 20, 30);
             state.SetLocation(location);
 
@@ -55,17 +60,21 @@ TEST_CASE("Entity Tests", "[entity][core][amplitude]")
             {
                 state.Update();
 
-                THEN("It updates the velocity")
+                THEN("the location stays the same")
                 {
-                    const auto& velocity = location - lastLocation;
-
-                    REQUIRE(AM_EqV3(state.GetVelocity(), velocity));
+                    REQUIRE(AM_EqV3(state.GetLocation(), location));
                 }
             }
         }
 
         WHEN("the orientation changes")
         {
+            SphereShape inner(10);
+            SphereShape outer(20);
+            SphereZone zone(&inner, &outer);
+
+            state.SetZone(&zone);
+
             const auto direction = AM_V3(1, 0, 0);
             const auto up = AM_V3(0, 0, 1);
             state.SetOrientation(direction, up);
@@ -77,49 +86,24 @@ TEST_CASE("Entity Tests", "[entity][core][amplitude]")
             }
         }
 
-        WHEN("the obstruction changes")
+        WHEN("the zone changes")
         {
-            constexpr AmReal32 obstruction = 0.67f;
-            state.SetObstruction(obstruction);
+            SphereShape inner(10);
+            SphereShape outer(20);
+            SphereZone zone(&inner, &outer);
 
-            THEN("it returns the new obstruction")
+            state.SetZone(&zone);
+
+            THEN("it returns the new zone")
             {
-                REQUIRE(state.GetObstruction() == obstruction);
+                REQUIRE(state.GetZone() == &zone);
             }
-        }
-
-        WHEN("the occlusion changes")
-        {
-            constexpr AmReal32 occlusion = 0.43f;
-            state.SetOcclusion(occlusion);
-
-            THEN("it returns the new obstruction")
-            {
-                REQUIRE(state.GetOcclusion() == occlusion);
-            }
-        }
-
-        WHEN("an environment factor changes")
-        {
-            constexpr AmEnvironmentID environment = 1;
-            constexpr AmReal32 factor = 0.56f;
-            state.SetEnvironmentFactor(environment, factor);
-
-            THEN("it returns the new environment factor")
-            {
-                REQUIRE(state.GetEnvironmentFactor(environment) == factor);
-            }
-        }
-
-        SECTION("returns 0 as the environment factor for an unregistered environment ID")
-        {
-            REQUIRE(state.GetEnvironmentFactor(12345) == 0.0f);
         }
     }
 
     SECTION("can be used with a wrapper")
     {
-        Entity wrapper(&state);
+        Environment wrapper(&state);
         REQUIRE(wrapper.GetState() == &state);
 
         SECTION("can return the correct ID")
@@ -129,7 +113,12 @@ TEST_CASE("Entity Tests", "[entity][core][amplitude]")
 
         WHEN("the location changes")
         {
-            const auto lastLocation = state.GetLocation();
+            SphereShape inner(10);
+            SphereShape outer(20);
+            SphereZone zone(&inner, &outer);
+
+            wrapper.SetZone(&zone);
+
             const auto location = AM_V3(10, 20, 30);
             wrapper.SetLocation(location);
 
@@ -142,17 +131,21 @@ TEST_CASE("Entity Tests", "[entity][core][amplitude]")
             {
                 wrapper.Update();
 
-                THEN("It updates the velocity")
+                THEN("the location stays the same")
                 {
-                    const auto& velocity = location - lastLocation;
-
-                    REQUIRE(AM_EqV3(wrapper.GetVelocity(), velocity));
+                    REQUIRE(AM_EqV3(wrapper.GetLocation(), location));
                 }
             }
         }
 
         WHEN("the orientation changes")
         {
+            SphereShape inner(10);
+            SphereShape outer(20);
+            SphereZone zone(&inner, &outer);
+
+            wrapper.SetZone(&zone);
+
             const auto direction = AM_V3(1, 0, 0);
             const auto up = AM_V3(0, 0, 1);
             wrapper.SetOrientation(direction, up);
@@ -164,25 +157,17 @@ TEST_CASE("Entity Tests", "[entity][core][amplitude]")
             }
         }
 
-        WHEN("the obstruction changes")
+        WHEN("the zone changes")
         {
-            constexpr AmReal32 obstruction = 0.67f;
-            wrapper.SetObstruction(obstruction);
+            SphereShape inner(10);
+            SphereShape outer(20);
+            SphereZone zone(&inner, &outer);
 
-            THEN("it returns the new obstruction")
+            wrapper.SetZone(&zone);
+
+            THEN("it returns the new zone")
             {
-                REQUIRE(wrapper.GetObstruction() == obstruction);
-            }
-        }
-
-        WHEN("the occlusion changes")
-        {
-            constexpr AmReal32 occlusion = 0.43f;
-            wrapper.SetOcclusion(occlusion);
-
-            THEN("it returns the new obstruction")
-            {
-                REQUIRE(wrapper.GetOcclusion() == occlusion);
+                REQUIRE(wrapper.GetZone() == &zone);
             }
         }
 
@@ -195,37 +180,14 @@ TEST_CASE("Entity Tests", "[entity][core][amplitude]")
                 REQUIRE_FALSE(wrapper.Valid());
             }
         }
-
-        WHEN("an environment factor changes")
-        {
-            constexpr AmEnvironmentID environment = 1;
-            constexpr AmReal32 factor = 0.56f;
-            wrapper.SetEnvironmentFactor(environment, factor);
-
-            THEN("it returns the new environment factor")
-            {
-                REQUIRE(wrapper.GetEnvironmentFactor(environment) == factor);
-            }
-
-            THEN("the list of environment factors is updated")
-            {
-                REQUIRE(wrapper.GetEnvironments().size() == 1);
-                REQUIRE(wrapper.GetEnvironments().at(environment) == factor);
-            }
-        }
-
-        SECTION("returns 0 as the environment factor for an unregistered environment ID")
-        {
-            REQUIRE(wrapper.GetEnvironmentFactor(12345) == 0.0f);
-        }
     }
 
     SECTION("cannot create a valid wrapper with a null state")
     {
-        Entity wrapper2(nullptr);
+        Environment wrapper2(nullptr);
         REQUIRE_FALSE(wrapper2.Valid());
 
-        Entity wrapper3;
+        Environment wrapper3;
         REQUIRE_FALSE(wrapper3.Valid());
     }
 }

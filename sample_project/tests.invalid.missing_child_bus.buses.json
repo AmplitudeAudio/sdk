@@ -6,7 +6,8 @@
       "gain": 1.0,
       "child_buses": [
         2,
-        7678456242523
+        3,
+        4
       ],
       "fader": "Linear"
     },
@@ -16,7 +17,7 @@
       "gain": 1,
       "duck_buses": [
         {
-          "id": 7678456242523,
+          "id": 3,
           "target_gain": 0.5,
           "fade_in": {
             "duration": 3,
@@ -31,7 +32,7 @@
       "fader": "Linear"
     },
     {
-      "id": 7678456242523,
+      "id": 3,
       "name": "environment",
       "gain": 0.25,
       "fader": "Linear"
