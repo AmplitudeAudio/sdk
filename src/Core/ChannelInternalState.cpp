@@ -208,6 +208,9 @@ namespace SparkyStudios::Audio::Amplitude
 
     void ChannelInternalState::FadeIn(AmTime duration)
     {
+        if (duration == 0.0)
+            return Resume();
+
         if (Playing() || _channelState == ChannelPlaybackState::FadingIn)
             return;
 
@@ -218,9 +221,9 @@ namespace SparkyStudios::Audio::Amplitude
 
             _realChannel.SetGain(0.0f);
             _realChannel.Resume();
-        }
 
-        _channelState = ChannelPlaybackState::FadingIn;
+            _channelState = ChannelPlaybackState::FadingIn;
+        }
     }
 
     void ChannelInternalState::FadeOut(AmTime duration, ChannelPlaybackState targetState)
@@ -231,8 +234,14 @@ namespace SparkyStudios::Audio::Amplitude
         if (Valid())
         {
             // If the sound is muted, no need to fade out
-            if (_gain == 0.0f)
-                return Halt();
+            if (_gain == 0.0f || duration == 0.0)
+            {
+                if (targetState == ChannelPlaybackState::Stopped)
+                    return Halt();
+
+                if (targetState == ChannelPlaybackState::Paused)
+                    return Pause();
+            }
 
             _realChannel.SetGain(_gain);
 
@@ -711,7 +720,7 @@ namespace SparkyStudios::Audio::Amplitude
             settings.m_pitch = item.m_pitch;
             settings.m_loop = sound->IsLoop();
             settings.m_loopCount = sound->GetDefinition()->loop()->loop_count();
-            settings.m_effectID = kAmInvalidObjectId;
+            settings.m_effectID = definition->effect();
 
             instances.push_back(ampoolnew(MemoryPoolKind::Engine, SoundInstance, sound, settings, _switchContainer->GetEffect()));
         }
