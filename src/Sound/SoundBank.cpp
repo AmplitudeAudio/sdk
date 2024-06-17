@@ -292,7 +292,7 @@ namespace SparkyStudios::Audio::Amplitude
             const FileSystem* fs = engine->GetFileSystem();
             const AmOsString& filePath = fs->ResolvePath(fs->Join({ AM_OS_STRING("rtpc"), filename }));
 
-            // This is a new event, load it and update it.
+            // This is a new rtpc, load it and update it.
             AmUniquePtr<MemoryPoolKind::Engine, Rtpc> rtpc(ampoolnew(MemoryPoolKind::Engine, Rtpc));
             if (!rtpc->LoadDefinitionFromPath(filePath, engine->GetState()))
             {
@@ -332,7 +332,7 @@ namespace SparkyStudios::Audio::Amplitude
             const FileSystem* fs = engine->GetFileSystem();
             const AmOsString& filePath = fs->ResolvePath(fs->Join({ AM_OS_STRING("effects"), filename }));
 
-            // This is a new event, load it and update it.
+            // This is a new effect, load it and update it.
             AmUniquePtr<MemoryPoolKind::Engine, Effect> effect(ampoolnew(MemoryPoolKind::Engine, Effect));
             if (!effect->LoadDefinitionFromPath(filePath, engine->GetState()))
             {
@@ -392,10 +392,11 @@ namespace SparkyStudios::Audio::Amplitude
         if (switch_container_iter == state->switch_container_map.end())
             return false;
 
-        switch_container_iter->second->ReleaseReferences(state);
-
         if (switch_container_iter->second->GetRefCounter()->Decrement() == 0)
+        {
+            switch_container_iter->second->ReleaseReferences(state);
             state->switch_container_map.erase(switch_container_iter);
+        }
 
         return true;
     }
@@ -412,10 +413,11 @@ namespace SparkyStudios::Audio::Amplitude
         if (collection_iter == state->collection_map.end())
             return false;
 
-        collection_iter->second->ReleaseReferences(state);
-
         if (collection_iter->second->GetRefCounter()->Decrement() == 0)
+        {
+            collection_iter->second->ReleaseReferences(state);
             state->collection_map.erase(collection_iter);
+        }
 
         return true;
     }
@@ -432,10 +434,11 @@ namespace SparkyStudios::Audio::Amplitude
         if (sound_iter == state->sound_map.end())
             return false;
 
-        sound_iter->second->ReleaseReferences(state);
-
         if (sound_iter->second->GetRefCounter()->Decrement() == 0)
+        {
+            sound_iter->second->ReleaseReferences(state);
             state->sound_map.erase(sound_iter);
+        }
 
         return true;
     }
@@ -452,10 +455,11 @@ namespace SparkyStudios::Audio::Amplitude
         if (event_iter == state->event_map.end())
             return false;
 
-        event_iter->second->ReleaseReferences(state);
-
         if (event_iter->second->GetRefCounter()->Decrement() == 0)
+        {
+            event_iter->second->ReleaseReferences(state);
             state->event_map.erase(event_iter);
+        }
 
         return true;
     }
@@ -472,10 +476,11 @@ namespace SparkyStudios::Audio::Amplitude
         if (attenuation_iter == state->attenuation_map.end())
             return false;
 
-        attenuation_iter->second->ReleaseReferences(state);
-
         if (attenuation_iter->second->GetRefCounter()->Decrement() == 0)
+        {
+            attenuation_iter->second->ReleaseReferences(state);
             state->attenuation_map.erase(attenuation_iter);
+        }
 
         return true;
     }
@@ -492,10 +497,11 @@ namespace SparkyStudios::Audio::Amplitude
         if (switch_iter == state->switch_map.end())
             return false;
 
-        switch_iter->second->ReleaseReferences(state);
-
         if (switch_iter->second->GetRefCounter()->Decrement() == 0)
+        {
+            switch_iter->second->ReleaseReferences(state);
             state->switch_map.erase(switch_iter);
+        }
 
         return true;
     }
@@ -512,10 +518,11 @@ namespace SparkyStudios::Audio::Amplitude
         if (effect_iter == state->effect_map.end())
             return false;
 
-        effect_iter->second->ReleaseReferences(state);
-
         if (effect_iter->second->GetRefCounter()->Decrement() == 0)
+        {
+            effect_iter->second->ReleaseReferences(state);
             state->effect_map.erase(effect_iter);
+        }
 
         return true;
     }
@@ -532,10 +539,11 @@ namespace SparkyStudios::Audio::Amplitude
         if (rtpc_iter == state->rtpc_map.end())
             return false;
 
-        rtpc_iter->second->ReleaseReferences(state);
-
         if (rtpc_iter->second->GetRefCounter()->Decrement() == 0)
+        {
+            rtpc_iter->second->ReleaseReferences(state);
             state->rtpc_map.erase(rtpc_iter);
+        }
 
         return true;
     }
