@@ -115,7 +115,7 @@ namespace SparkyStudios::Audio::Amplitude
          */
         Resampler();
 
-        virtual ~Resampler() = default;
+        virtual ~Resampler();
 
         /**
          * @brief Creates a new instance of the resampler.
@@ -145,6 +145,13 @@ namespace SparkyStudios::Audio::Amplitude
         static void Register(Resampler* resampler);
 
         /**
+         * @brief Unregisters a resampler.
+         *
+         * @param resampler The resampler to remove from the registry.
+         */
+        static void Unregister(const Resampler* resampler);
+
+        /**
          * @brief Creates a new instance of the the resampler with the given name
          * and returns its pointer. The returned pointer should be deleted using Resampler::Destruct().
          *
@@ -170,6 +177,15 @@ namespace SparkyStudios::Audio::Amplitude
          * registration of new resamplers after the engine is fully loaded.
          */
         static void LockRegistry();
+
+        /**
+         * @brief Unlocks the resamplers registry.
+         *
+         * This function is mainly used for internal purposes. Its
+         * called after the Engine deinitialization, to allow the
+         * registration of new divers after the engine is fully unloaded.
+         */
+        static void UnlockRegistry();
 
     protected:
         /**

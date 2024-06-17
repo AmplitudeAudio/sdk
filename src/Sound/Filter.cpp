@@ -44,6 +44,11 @@ namespace SparkyStudios::Audio::Amplitude
         Filter::Register(this);
     }
 
+    Filter::~Filter()
+    {
+        Unregister(this);
+    }
+
     AmUInt32 Filter::GetParamCount() const
     {
         return 1;
@@ -87,6 +92,19 @@ namespace SparkyStudios::Audio::Amplitude
         filtersCount()++;
     }
 
+    void Filter::Unregister(const Filter* filter)
+    {
+        if (lockFilters())
+            return;
+
+        FilterRegistry& filters = filterRegistry();
+        if (const auto& it = filters.find(filter->GetName()); it != filters.end())
+        {
+            filters.erase(it);
+            filtersCount()--;
+        }
+    }
+
     Filter* Filter::Find(const std::string& name)
     {
         for (const FilterRegistry& filters = filterRegistry(); auto&& filter : filters)
@@ -120,6 +138,11 @@ namespace SparkyStudios::Audio::Amplitude
     void Filter::LockRegistry()
     {
         lockFilters() = true;
+    }
+
+    void Filter::UnlockRegistry()
+    {
+        lockFilters() = false;
     }
 
     const std::map<std::string, Filter*>& Filter::GetRegistry()

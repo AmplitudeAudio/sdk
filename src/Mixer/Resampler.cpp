@@ -35,7 +35,7 @@ namespace SparkyStudios::Audio::Amplitude
         return b;
     }
 
-    static AmUInt32& resamplersCount()
+    static AmUInt32& soundProcessorsCount()
     {
         static AmUInt32 c = 0;
         return c;
@@ -51,31 +51,49 @@ namespace SparkyStudios::Audio::Amplitude
         : m_name()
     {}
 
+    Resampler::~Resampler()
+    {
+        Unregister(this);
+    }
+
     const std::string& Resampler::GetName() const
     {
         return m_name;
     }
 
-    void Resampler::Register(Resampler* codec)
+    void Resampler::Register(Resampler* resampler)
     {
         if (lockResamplers())
             return;
 
-        if (Find(codec->GetName()) != nullptr)
+        if (Find(resampler->GetName()) != nullptr)
         {
-            CallLogFunc("Failed to register resampler '%s' as it is already registered", codec->GetName().c_str());
+            CallLogFunc("Failed to register resampler '%s' as it is already registered", resampler->GetName().c_str());
             return;
         }
 
         ResamplerRegistry& resamplers = resamplerRegistry();
-        resamplers.insert(ResamplerImpl(codec->GetName(), codec));
-        resamplersCount()++;
+        resamplers.insert(ResamplerImpl(resampler->GetName(), resampler));
+        soundProcessorsCount()++;
+    }
+
+    void Resampler::Unregister(const Resampler* resampler)
+    {
+        if (lockResamplers())
+            return;
+
+        ResamplerRegistry& resamplers = resamplerRegistry();
+        if (const auto& it = resamplers.find(resampler->GetName()); it != resamplers.end())
+        {
+            resamplers.erase(it);
+            soundProcessorsCount()--;
+        }
     }
 
     Resampler* Resampler::Find(const std::string& name)
     {
         ResamplerRegistry& resamplers = resamplerRegistry();
-        if (const auto& it = resamplers.find(name); it!= resamplers.end())
+        if (const auto& it = resamplers.find(name); it != resamplers.end())
             return it->second;
 
         return nullptr;
@@ -105,5 +123,10 @@ namespace SparkyStudios::Audio::Amplitude
     void Resampler::LockRegistry()
     {
         lockResamplers() = true;
+    }
+
+    void Resampler::UnlockRegistry()
+    {
+        lockResamplers() = false;
     }
 } // namespace SparkyStudios::Audio::Amplitude

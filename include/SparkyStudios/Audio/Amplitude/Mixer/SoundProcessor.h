@@ -70,7 +70,7 @@ namespace SparkyStudios::Audio::Amplitude
          */
         SoundProcessor();
 
-        virtual ~SoundProcessor() = default;
+        virtual ~SoundProcessor();
 
         /**
          * @brief Creates a new instance of the sound processor.
@@ -100,6 +100,13 @@ namespace SparkyStudios::Audio::Amplitude
         static void Register(SoundProcessor* processor);
 
         /**
+         * @brief  Unregisters a sound processor.
+         *
+         * @param processor The sound processor to unregister.
+         */
+        static void Unregister(const SoundProcessor* processor);
+
+        /**
          * @brief Constructs a new sound processor instance.
          *
          * @param name The name of the sound processor to instantiate.
@@ -117,13 +124,22 @@ namespace SparkyStudios::Audio::Amplitude
         static void Destruct(const AmString& name, SoundProcessorInstance* instance);
 
         /**
-         * @brief Locks the codecs registry.
+         * @brief Locks the sound processors registry.
          *
          * This function is mainly used for internal purposes. Its
          * called before the Engine initialization, to discard the
          * registration of new codecs after the engine is fully loaded.
          */
         static void LockRegistry();
+
+        /**
+         * @brief Unlocks the sound processors registry.
+         *
+         * This function is mainly used for internal purposes. Its
+         * called after the Engine deinitialization, to allow the
+         * registration of new divers after the engine is fully unloaded.
+         */
+        static void UnlockRegistry();
 
     protected:
         /**

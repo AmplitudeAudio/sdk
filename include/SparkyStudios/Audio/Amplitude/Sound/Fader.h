@@ -206,7 +206,7 @@ namespace SparkyStudios::Audio::Amplitude
          */
         Fader();
 
-        virtual ~Fader() = default;
+        virtual ~Fader();
 
         /**
          * @brief Creates a new instance of the Fader.
@@ -243,6 +243,13 @@ namespace SparkyStudios::Audio::Amplitude
         static void Register(Fader* fader);
 
         /**
+         * @brief Unregister a fader.
+         *
+         * @param fader The Fader to remove from the registry.
+         */
+        static void Unregister(const Fader* fader);
+
+        /**
          * @brief Creates a new instance of the the Fader with the given name
          * and returns its pointer. The returned pointer should be deleted using Fader::Destruct().
          *
@@ -261,13 +268,22 @@ namespace SparkyStudios::Audio::Amplitude
         static void Destruct(const std::string& name, FaderInstance* instance);
 
         /**
-         * @brief Locks the Faders registry.
+         * @brief Locks the faders registry.
          *
          * This function is mainly used for internal purposes. Its
          * called before the Engine initialization, to discard the
          * registration of new Faders after the engine is fully loaded.
          */
         static void LockRegistry();
+
+        /**
+         * @brief Unlocks the faders registry.
+         *
+         * This function is mainly used for internal purposes. Its
+         * called after the Engine deinitialization, to allow the
+         * registration of new divers after the engine is fully unloaded.
+         */
+        static void UnlockRegistry();
 
         /**
          * @brief Gets the list of registered Faders.

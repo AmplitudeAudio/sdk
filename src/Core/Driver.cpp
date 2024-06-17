@@ -47,6 +47,11 @@ namespace SparkyStudios::Audio::Amplitude
         Register(this);
     }
 
+    Driver::~Driver()
+    {
+        Unregister(this);
+    }
+
     const AmString& Driver::GetName() const
     {
         return m_name;
@@ -71,6 +76,19 @@ namespace SparkyStudios::Audio::Amplitude
         DriverRegistry& drivers = driverRegistry();
         drivers.insert(DriverImpl(driver->GetName(), driver));
         driversCount()++;
+    }
+
+    void Driver::Unregister(const Driver* driver)
+    {
+        if (lockDrivers())
+            return;
+
+        DriverRegistry& drivers = driverRegistry();
+        if (const auto& it = drivers.find(driver->GetName()); it != drivers.end())
+        {
+            drivers.erase(it);
+            driversCount()--;
+        }
     }
 
     Driver* Driver::Default()
@@ -108,5 +126,10 @@ namespace SparkyStudios::Audio::Amplitude
     void Driver::LockRegistry()
     {
         lockDrivers() = true;
+    }
+
+    void Driver::UnlockRegistry()
+    {
+        lockDrivers() = false;
     }
 } // namespace SparkyStudios::Audio::Amplitude

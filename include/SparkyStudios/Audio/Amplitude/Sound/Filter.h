@@ -42,7 +42,7 @@ namespace SparkyStudios::Audio::Amplitude
          */
         explicit Filter(std::string name);
 
-        virtual ~Filter() = default;
+        virtual ~Filter();
 
         /**
          * @brief Get the maximum number of parameters available for this filter.
@@ -117,6 +117,13 @@ namespace SparkyStudios::Audio::Amplitude
         static void Register(Filter* filter);
 
         /**
+         * @brief Unregisters a filter.
+         *
+         * @param filter The filter to remove from the registry.
+         */
+        static void Unregister(const Filter* filter);
+
+        /**
          * @brief Look up a filter by name.
          *
          * @return The filter with the given name, or NULL if none.
@@ -149,6 +156,15 @@ namespace SparkyStudios::Audio::Amplitude
          * registration of new filters after the engine is fully loaded.
          */
         static void LockRegistry();
+
+        /**
+         * @brief Unlocks the filters registry.
+         *
+         * This function is mainly used for internal purposes. Its
+         * called after the Engine deinitialization, to allow the
+         * registration of new divers after the engine is fully unloaded.
+         */
+        static void UnlockRegistry();
 
         /**
          * @brief Gets the list of registered Faders.

@@ -40,7 +40,7 @@ namespace SparkyStudios::Audio::Amplitude
         return b;
     }
 
-    static AmUInt32& resamplersCount()
+    static AmUInt32& soundProcessorsCount()
     {
         static AmUInt32 c = 0;
         return c;
@@ -66,25 +66,43 @@ namespace SparkyStudios::Audio::Amplitude
         : m_name()
     {}
 
+    SoundProcessor::~SoundProcessor()
+    {
+        Unregister(this);
+    }
+
     const std::string& SoundProcessor::GetName() const
     {
         return m_name;
     }
 
-    void SoundProcessor::Register(SoundProcessor* codec)
+    void SoundProcessor::Register(SoundProcessor* processor)
     {
         if (lockSoundProcessors())
             return;
 
-        if (Find(codec->GetName()) != nullptr)
+        if (Find(processor->GetName()) != nullptr)
         {
-            CallLogFunc("Failed to register sound processor '%s' as it is already registered", codec->GetName().c_str());
+            CallLogFunc("Failed to register sound processor '%s' as it is already registered", processor->GetName().c_str());
             return;
         }
 
         SoundProcessorRegistry& processors = soundProcessorRegistry();
-        processors.insert(SoundProcessorImpl(codec->GetName(), codec));
-        resamplersCount()++;
+        processors.insert(SoundProcessorImpl(processor->GetName(), processor));
+        soundProcessorsCount()++;
+    }
+
+    void SoundProcessor::Unregister(const SoundProcessor* processor)
+    {
+        if (lockSoundProcessors())
+            return;
+
+        SoundProcessorRegistry& processors = soundProcessorRegistry();
+        if (const auto& it = processors.find(processor->GetName()); it != processors.end())
+        {
+            processors.erase(it);
+            soundProcessorsCount()--;
+        }
     }
 
     SoundProcessor* SoundProcessor::Find(const std::string& name)
@@ -117,6 +135,11 @@ namespace SparkyStudios::Audio::Amplitude
     void SoundProcessor::LockRegistry()
     {
         lockSoundProcessors() = true;
+    }
+
+    void SoundProcessor::UnlockRegistry()
+    {
+        lockSoundProcessors() = false;
     }
 
     ProcessorMixer::ProcessorMixer()

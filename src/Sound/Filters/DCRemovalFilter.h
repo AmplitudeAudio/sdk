@@ -43,7 +43,7 @@ namespace SparkyStudios::Audio::Amplitude
         AmUInt64 _offset;
     };
 
-    [[maybe_unused]] static class DCRemovalFilter final : public Filter
+    class DCRemovalFilter final : public Filter
     {
         friend class DCRemovalFilterInstance;
 
@@ -64,7 +64,7 @@ namespace SparkyStudios::Audio::Amplitude
 
     private:
         AmReal32 _length;
-    } gDCRemovalFilter; // NOLINT(cert-err58-cpp)
+    };
 } // namespace SparkyStudios::Audio::Amplitude
 
 #endif // SS_AMPLITUDE_AUDIO_DCREMOVALFILTER_H

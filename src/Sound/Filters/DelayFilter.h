@@ -29,8 +29,7 @@ namespace SparkyStudios::Audio::Amplitude
         explicit DelayFilterInstance(DelayFilter* parent);
         ~DelayFilterInstance() override;
 
-        void Process(
-            AmAudioSampleBuffer buffer, AmUInt64 frames, AmUInt64 bufferSize, AmUInt16 channels, AmUInt32 sampleRate) override;
+        void Process(AmAudioSampleBuffer buffer, AmUInt64 frames, AmUInt64 bufferSize, AmUInt16 channels, AmUInt32 sampleRate) override;
 
         AmAudioSample ProcessSample(AmAudioSample sample, AmUInt16 channel, AmUInt32 sampleRate) override;
 
@@ -44,7 +43,7 @@ namespace SparkyStudios::Audio::Amplitude
         AmUInt32 _offset;
     };
 
-    [[maybe_unused]] static class DelayFilter final : public Filter
+    class DelayFilter final : public Filter
     {
         friend class DelayFilterInstance;
 
@@ -81,7 +80,7 @@ namespace SparkyStudios::Audio::Amplitude
         AmReal32 _delay;
         AmReal32 _decay;
         AmReal32 _delayStart; // Set this to false to produce echo
-    } gDelayFilter; // NOLINT(cert-err58-cpp)
+    };
 } // namespace SparkyStudios::Audio::Amplitude
 
 #endif // SS_AMPLITUDE_AUDIO_DELAY_FILTER_H

@@ -30,8 +30,7 @@ namespace SparkyStudios::Audio::Amplitude
 
         void AdvanceFrame(AmTime deltaTime) override;
 
-        void ProcessChannel(AmAudioSampleBuffer buffer, AmUInt16 channel, AmUInt64 frames, AmUInt16 channels, AmUInt32 sampleRate)
-            override;
+        void ProcessChannel(AmAudioSampleBuffer buffer, AmUInt16 channel, AmUInt64 frames, AmUInt16 channels, AmUInt32 sampleRate) override;
 
     private:
         static AmReal32 GenerateWaveform(AmInt32 waveform, AmReal32 p);
@@ -39,7 +38,7 @@ namespace SparkyStudios::Audio::Amplitude
         AmTime _duration;
     };
 
-    [[maybe_unused]] static class RobotizeFilter final : public Filter
+    class RobotizeFilter final : public Filter
     {
         friend class RobotizeFilterInstance;
 
@@ -87,7 +86,7 @@ namespace SparkyStudios::Audio::Amplitude
     protected:
         AmReal32 m_frequency;
         AmInt32 m_waveform;
-    } gRobotizeFilter; // NOLINT(cert-err58-cpp)
+    };
 } // namespace SparkyStudios::Audio::Amplitude
 
 #endif // SS_AMPLITUDE_AUDIO_ROBOTIZE_FILTER_H

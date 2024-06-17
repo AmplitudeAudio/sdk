@@ -29,11 +29,9 @@ namespace SparkyStudios::Audio::Amplitude
         explicit FlangerFilterInstance(FlangerFilter* parent);
         ~FlangerFilterInstance() override;
 
-        void Process(
-            AmAudioSampleBuffer buffer, AmUInt64 frames, AmUInt64 bufferSize, AmUInt16 channels, AmUInt32 sampleRate) override;
+        void Process(AmAudioSampleBuffer buffer, AmUInt64 frames, AmUInt64 bufferSize, AmUInt16 channels, AmUInt32 sampleRate) override;
 
-        void ProcessChannel(AmAudioSampleBuffer buffer, AmUInt16 channel, AmUInt64 frames, AmUInt16 channels, AmUInt32 sampleRate)
-            override;
+        void ProcessChannel(AmAudioSampleBuffer buffer, AmUInt16 channel, AmUInt64 frames, AmUInt16 channels, AmUInt32 sampleRate) override;
 
     private:
         void InitBuffer(AmUInt16 channels, AmUInt32 sampleRate);
@@ -45,7 +43,7 @@ namespace SparkyStudios::Audio::Amplitude
         AmReal64 _index;
     };
 
-    [[maybe_unused]] static class FlangerFilter final : public Filter
+    class FlangerFilter final : public Filter
     {
         friend class FlangerFilterInstance;
 
@@ -80,7 +78,7 @@ namespace SparkyStudios::Audio::Amplitude
     private:
         AmReal32 _delay;
         AmReal32 _frequency;
-    } gFlangerFilter; // NOLINT(cert-err58-cpp)
+    };
 } // namespace SparkyStudios::Audio::Amplitude
 
 #endif // SS_AMPLITUDE_AUDIO_FLANGERFILTER_H

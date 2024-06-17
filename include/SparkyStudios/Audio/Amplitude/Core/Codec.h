@@ -200,7 +200,7 @@ namespace SparkyStudios::Audio::Amplitude
          */
         explicit Codec(AmString name);
 
-        virtual ~Codec() = default;
+        virtual ~Codec();
 
         /**
          * @brief Creates a new instance of the decoder associated
@@ -260,6 +260,13 @@ namespace SparkyStudios::Audio::Amplitude
         static void Register(Codec* codec);
 
         /**
+         * @brief Unregisters a audio codec.
+         *
+         * @param codec The audio codec to remove from the registry.
+         */
+        static void Unregister(const Codec* codec);
+
+        /**
          * @brief Look up a codec by name.
          *
          * @return The codec with the given name, or NULL if none.
@@ -282,6 +289,15 @@ namespace SparkyStudios::Audio::Amplitude
          * registration of new codecs after the engine is fully loaded.
          */
         static void LockRegistry();
+
+        /**
+         * @brief Unlocks the codecs registry.
+         *
+         * This function is mainly used for internal purposes. Its
+         * called after the Engine deinitialization, to allow the
+         * registration of new divers after the engine is fully unloaded.
+         */
+        static void UnlockRegistry();
 
     protected:
         /**

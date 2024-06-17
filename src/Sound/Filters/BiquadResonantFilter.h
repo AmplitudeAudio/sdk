@@ -34,8 +34,7 @@ namespace SparkyStudios::Audio::Amplitude
         explicit BiquadResonantFilterInstance(BiquadResonantFilter* parent);
         ~BiquadResonantFilterInstance() override = default;
 
-        void ProcessChannel(AmAudioSampleBuffer buffer, AmUInt16 channel, AmUInt64 frames, AmUInt16 channels, AmUInt32 sampleRate)
-            override;
+        void ProcessChannel(AmAudioSampleBuffer buffer, AmUInt16 channel, AmUInt64 frames, AmUInt16 channels, AmUInt32 sampleRate) override;
 
         AmAudioSample ProcessSample(AmAudioSample sample, AmUInt16 channel, AmUInt32 sampleRate) override;
 
@@ -47,7 +46,7 @@ namespace SparkyStudios::Audio::Amplitude
         AmUInt32 _sampleRate;
     };
 
-    [[maybe_unused]] static class BiquadResonantFilter final : public Filter
+    class BiquadResonantFilter final : public Filter
     {
         friend class BiquadResonantFilterInstance;
 
@@ -112,7 +111,7 @@ namespace SparkyStudios::Audio::Amplitude
         AmReal32 _frequency;
         AmReal32 _resonance;
         AmReal32 _gain;
-    } gBiquadResonantFilter; // NOLINT(cert-err58-cpp)
+    };
 } // namespace SparkyStudios::Audio::Amplitude
 
 #endif // SS_AMPLITUDE_AUDIO_BIQUAD_RESONANT_FILTER_H

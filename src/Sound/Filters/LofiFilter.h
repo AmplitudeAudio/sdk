@@ -41,7 +41,7 @@ namespace SparkyStudios::Audio::Amplitude
         LofiChannelData _channelData[AM_MAX_CHANNELS]{};
     };
 
-    [[maybe_unused]] static class LofiFilter final : public Filter
+    class LofiFilter final : public Filter
     {
         friend class LofiFilterInstance;
 
@@ -76,7 +76,7 @@ namespace SparkyStudios::Audio::Amplitude
     private:
         AmReal32 _sampleRate;
         AmReal32 _bitDepth;
-    } gLofiFilter; // NOLINT(cert-err58-cpp)
+    };
 } // namespace SparkyStudios::Audio::Amplitude
 
 #endif // SS_AMPLITUDE_AUDIO_LOFIFILTER_H

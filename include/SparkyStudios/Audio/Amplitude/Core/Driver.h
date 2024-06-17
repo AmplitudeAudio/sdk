@@ -41,7 +41,7 @@ namespace SparkyStudios::Audio::Amplitude
          */
         explicit Driver(AmString name);
 
-        virtual ~Driver() = default;
+        virtual ~Driver();
 
         /**
          * @brief Open and start using the audio device.
@@ -87,6 +87,13 @@ namespace SparkyStudios::Audio::Amplitude
         static void Register(Driver* driver);
 
         /**
+         * @brief Unregisters an audio driver.
+         *
+         * @param driver The audio driver to remove from the registry.
+         */
+        static void Unregister(const Driver* driver);
+
+        /**
          * @brief Choose the most preferred audio driver.
          *
          * @return The default audio driver.
@@ -115,6 +122,15 @@ namespace SparkyStudios::Audio::Amplitude
          * registration of new divers after the engine is fully loaded.
          */
         static void LockRegistry();
+
+        /**
+         * @brief Unlocks the drivers registry.
+         *
+         * This function is mainly used for internal purposes. Its
+         * called after the Engine deinitialization, to allow the
+         * registration of new divers after the engine is fully unloaded.
+         */
+        static void UnlockRegistry();
 
     protected:
         /**

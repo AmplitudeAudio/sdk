@@ -32,7 +32,7 @@ namespace SparkyStudios::Audio::Amplitude
         AmAudioSample ProcessSample(AmAudioSample sample, AmUInt16 channel, AmUInt32 sampleRate) override;
     };
 
-    [[maybe_unused]] static class WaveShaperFilter final : public Filter
+    class WaveShaperFilter final : public Filter
     {
         friend class WaveShaperFilterInstance;
 
@@ -65,7 +65,7 @@ namespace SparkyStudios::Audio::Amplitude
 
     private:
         AmReal32 _amount;
-    } gWaveShaperFilter; // NOLINT(cert-err58-cpp)
+    };
 } // namespace SparkyStudios::Audio::Amplitude
 
 #endif // SS_AMPLITUDE_AUDIO_WAVESHARPERFILTER_H

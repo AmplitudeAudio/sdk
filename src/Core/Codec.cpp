@@ -46,6 +46,11 @@ namespace SparkyStudios::Audio::Amplitude
         Register(this);
     }
 
+    Codec::~Codec()
+    {
+        Unregister(this);
+    }
+
     void Codec::Register(Codec* codec)
     {
         if (lockCodecs())
@@ -60,6 +65,19 @@ namespace SparkyStudios::Audio::Amplitude
         CodecRegistry& codecs = codecRegistry();
         codecs.insert(CodecImpl(codec->GetName(), codec));
         codecsCount()++;
+    }
+
+    void Codec::Unregister(const Codec* codec)
+    {
+        if (lockCodecs())
+            return;
+
+        CodecRegistry& codecs = codecRegistry();
+        if (const auto& it = codecs.find(codec->GetName()); it != codecs.end())
+        {
+            codecs.erase(it);
+            codecsCount()--;
+        }
     }
 
     Codec* Codec::Find(const AmString& name)
@@ -83,5 +101,10 @@ namespace SparkyStudios::Audio::Amplitude
     void Codec::LockRegistry()
     {
         lockCodecs() = true;
+    }
+
+    void Codec::UnlockRegistry()
+    {
+        lockCodecs() = false;
     }
 } // namespace SparkyStudios::Audio::Amplitude

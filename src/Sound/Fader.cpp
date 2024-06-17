@@ -237,6 +237,11 @@ namespace SparkyStudios::Audio::Amplitude
         : m_name()
     {}
 
+    Fader::~Fader()
+    {
+        Unregister(this);
+    }
+
     const std::string& Fader::GetName() const
     {
         return m_name;
@@ -256,6 +261,19 @@ namespace SparkyStudios::Audio::Amplitude
         FaderRegistry& faders = faderRegistry();
         faders.insert(FaderImpl(fader->GetName(), fader));
         fadersCount()++;
+    }
+
+    void Fader::Unregister(const Fader* fader)
+    {
+        if (lockFaders())
+            return;
+
+        FaderRegistry& faders = faderRegistry();
+        if (const auto& it = faders.find(fader->GetName()); it != faders.end())
+        {
+            faders.erase(it);
+            fadersCount()--;
+        }
     }
 
     Fader* Fader::Find(const std::string& name)
@@ -291,6 +309,11 @@ namespace SparkyStudios::Audio::Amplitude
     void Fader::LockRegistry()
     {
         lockFaders() = true;
+    }
+
+    void Fader::UnlockRegistry()
+    {
+        lockFaders() = false;
     }
 
     const std::map<std::string, Fader*>& Fader::GetRegistry()
