@@ -6,9 +6,6 @@ Copyright (c) 2021-present Sparky Studios. All rights reserved.
 This software contains code derived from the Freeverb library by Jezar at Dreampoint (http://www.dreampoint.co.uk),
 June 2000, which was placed in public domain.
 
-This software includes the miniaudio (https://miniaud.io) library, developed by David Reid (mackron@gmail.com)
-and placed in the public domain.
-
 This software includes the pffftd library, developed by Julien Pommier ( pommier@modartt.com ), based on original
 fortran 77 code from FFTPACKv4 from NETLIB, authored by Dr Paul Swarztrauber of NCAR, in 1985. The library uses
 the same license as the original, which is the BSD-3-Clause License.
