@@ -1,6 +1,6 @@
 {
   "$schema": "https://raw.githubusercontent.com/microsoft/vcpkg-tool/master/docs/vcpkg.schema.json",
-  "builtin-baseline": "1b2372fdd420185c6f516541b81228c55061dca4",
+  "builtin-baseline": "f7423ee180c4b7f40d43402c2feb3859161ef625",
   "name": "amplitude-audio-sdk",
   "description": "A powerful and cross-platform audio engine, optimized for games.",
   "version": "1.0",
@@ -17,7 +17,7 @@
   "dependencies": [
     {
       "name": "flatbuffers",
-      "version>=": "23.5.26"
+      "version>=": "24.3.25"
     },
     {
       "name": "libsamplerate",
@@ -29,11 +29,11 @@
     },
     {
       "name": "xsimd",
-      "version>=": "12.0.0"
+      "version>=": "12.1.1"
     },
     {
       "name": "mimalloc",
-      "version>=": "2.1.2#1"
+      "version>=": "2.1.2#2"
     },
     {
       "name": "miniaudio",
