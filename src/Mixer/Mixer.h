@@ -82,9 +82,9 @@ namespace SparkyStudios::Audio::Amplitude
 
         _Atomic(AmReal32) userPlaySpeed; // user-defined sound playback speed
         _Atomic(AmReal32) playSpeed; // computed (real) sound playback speed
-        _Atomic(AmReal32) sampleRateRatio; // sample rate
+        _Atomic(AmReal32) sampleRateRatio; // sample rate ratio
 
-        ma_data_converter dataConverter; // miniaudio resampler
+        ma_data_converter dataConverter; // miniaudio resampler & channel converter
 
         void Reset();
     };
@@ -206,7 +206,7 @@ namespace SparkyStudios::Audio::Amplitude
         MixerLayer _layers[kAmplimixLayersCount];
         AmUInt64 _remainingFrames;
 
-        ProcessorPipeline* _pipeline;
+        AmUniquePtr<MemoryPoolKind::Amplimix, ProcessorPipeline> _pipeline = nullptr;
 
         DeviceDescription _device;
     };

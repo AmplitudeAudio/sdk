@@ -390,20 +390,13 @@ namespace SparkyStudios::Audio::Amplitude
     {
         if (_initialized)
         {
-            CallLogFunc("Amplimix has already been initialized.\n");
+            CallLogFunc("[ERROR] Amplimix has already been initialized.\n");
             return false;
         }
 
-        _device.mOutputBufferSize = config->output()->buffer_size();
-        _device.mRequestedOutputSampleRate = config->output()->frequency();
-        _device.mRequestedOutputChannels = static_cast<PlaybackOutputChannels>(config->output()->channels());
-        _device.mRequestedOutputFormat = static_cast<PlaybackOutputFormat>(config->output()->format());
-
-        _audioThreadMutex = Thread::CreateMutex(500);
-
         if (const auto* pipeline = config->mixer()->pipeline(); pipeline != nullptr && pipeline->size() > 0)
         {
-            _pipeline = ampoolnew(MemoryPoolKind::Amplimix, ProcessorPipeline);
+            _pipeline.reset(ampoolnew(MemoryPoolKind::Amplimix, ProcessorPipeline));
 
             for (flatbuffers::uoffset_t i = 0, l = pipeline->size(); i < l; ++i)
             {
@@ -417,16 +410,16 @@ namespace SparkyStudios::Audio::Amplitude
 
                         if (dryProcessor == nullptr)
                         {
-                            CallLogFunc(
-                                "[WARNING] Unable to find a registered sound processor with name: %s\n", p->dry_processor()->c_str());
-                            continue;
+                            CallLogFunc("[ERROR] Unable to find a registered sound processor with name: %s\n", p->dry_processor()->c_str());
+                            _pipeline.reset(nullptr);
+                            return false;
                         }
 
                         if (wetProcessor == nullptr)
                         {
-                            CallLogFunc(
-                                "[WARNING] Unable to find a registered sound processor with name: %s\n", p->wet_processor()->c_str());
-                            continue;
+                            CallLogFunc("[ERROR] Unable to find a registered sound processor with name: %s\n", p->wet_processor()->c_str());
+                            _pipeline.reset(nullptr);
+                            return false;
                         }
 
                         auto* mixer = ampoolnew(MemoryPoolKind::Amplimix, ProcessorMixer);
@@ -443,8 +436,9 @@ namespace SparkyStudios::Audio::Amplitude
                         SoundProcessorInstance* soundProcessor = SoundProcessor::Construct(p->processor()->str());
                         if (soundProcessor == nullptr)
                         {
-                            CallLogFunc("[WARNING] Unable to find a registered sound processor with name: %s\n", p->processor()->c_str());
-                            continue;
+                            CallLogFunc("[ERROR] Unable to find a registered sound processor with name: %s\n", p->processor()->c_str());
+                            _pipeline.reset(nullptr);
+                            return false;
                         }
 
                         _pipeline->Append(soundProcessor);
@@ -457,6 +451,19 @@ namespace SparkyStudios::Audio::Amplitude
                 }
             }
         }
+
+        if (_pipeline == nullptr)
+        {
+            CallLogFunc("[ERROR] Invalid pipeline configuration.\n");
+            return false;
+        }
+
+        _device.mOutputBufferSize = config->output()->buffer_size();
+        _device.mRequestedOutputSampleRate = config->output()->frequency();
+        _device.mRequestedOutputChannels = static_cast<PlaybackOutputChannels>(config->output()->channels());
+        _device.mRequestedOutputFormat = static_cast<PlaybackOutputFormat>(config->output()->format());
+
+        _audioThreadMutex = Thread::CreateMutex(500);
 
         _initialized = true;
 
@@ -477,8 +484,7 @@ namespace SparkyStudios::Audio::Amplitude
 
         _audioThreadMutex = nullptr;
 
-        ampooldelete(MemoryPoolKind::Amplimix, ProcessorPipeline, _pipeline);
-        _pipeline = nullptr;
+        _pipeline.reset(nullptr);
 
         for (auto& layer : _layers)
             layer.Reset();
@@ -630,8 +636,6 @@ namespace SparkyStudios::Audio::Amplitude
             AMPLIMIX_STORE(&lay->userPlaySpeed, speed);
             // atomically set cursor to start position based on given argument
             AMPLIMIX_STORE(&lay->cursor, lay->start);
-            // store flag last, releasing the layer to the mixer thread
-            AMPLIMIX_STORE(&lay->flag, flag);
 
             // Initialize the resampler
             ma_data_converter_uninit(&lay->dataConverter, &gAllocationCallbacks);
@@ -677,6 +681,9 @@ namespace SparkyStudios::Audio::Amplitude
                 UnlockAudioMutex();
                 return 0;
             }
+
+            // store flag last, releasing the layer to the mixer thread
+            AMPLIMIX_STORE(&lay->flag, flag);
         }
 
         UnlockAudioMutex();
@@ -886,12 +893,12 @@ namespace SparkyStudios::Audio::Amplitude
 
     const ProcessorPipeline* Mixer::GetPipeline() const
     {
-        return _pipeline;
+        return _pipeline.get();
     }
 
     ProcessorPipeline* Mixer::GetPipeline()
     {
-        return _pipeline;
+        return _pipeline.get();
     }
 
     void Mixer::IncrementSoundLoopCount(SoundInstance* sound)
