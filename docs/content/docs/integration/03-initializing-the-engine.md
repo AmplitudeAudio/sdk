@@ -161,7 +161,7 @@ extension (eg: `.dll` on Windows platforms). Amplitude will add them for you aut
 
 ## Amplitude Engine
 
-The Amplitude engine is initialized with a specific configuration, from the ones available in you Amplitude project:
+The Amplitude engine is initialized with a specific configuration, from the ones available in your Amplitude project:
 
 ```cpp
 // The path to the configuration file is relative to the base path of the filesystem

@@ -23,8 +23,8 @@ if (!amEngine->LoadSoundBank(AM_OS_STRING("init.ambank"), bankId))
 At this point, the engine has only preloaded sound objects associated to the soundbank. The process of loading sound files
 is done manually, in another thread, so the main thread is ensured to not hang during this time.
 
-During this process, only sound files with streaming enabled will be read from the filesystem, other files will be read
-and stored in memory.
+During this process, only sound files with streaming disabled will be read and stored in memory. Other sound files will
+read from the filesystem on playback.
 
 ```cpp
 // Load audio files
