@@ -842,7 +842,7 @@ namespace SparkyStudios::Audio::Amplitude
     {
         if (const auto findIt = _state->sound_bank_id_map.find(filename); findIt == _state->sound_bank_id_map.end())
         {
-            CallLogFunc("[ERROR] Error while deinitializing SoundBank " AM_OS_CHAR_FMT " - sound bank not loaded.\n", filename.c_str());
+            CallLogFunc("[WARNING] Cannot deinitialize SoundBank " AM_OS_CHAR_FMT " - sound bank not loaded.\n", filename.c_str());
             AMPLITUDE_ASSERT(0);
         }
         else
@@ -855,7 +855,7 @@ namespace SparkyStudios::Audio::Amplitude
     {
         if (const auto findIt = _state->sound_bank_map.find(id); findIt == _state->sound_bank_map.end())
         {
-            CallLogFunc("[ERROR] Error while deinitializing SoundBank with ID %d - sound bank not loaded.\n", id);
+            CallLogFunc("[WARNING] Cannot deinitialize SoundBank with ID %d - sound bank not loaded.\n", id);
             AMPLITUDE_ASSERT(0);
         }
         else if (findIt->second->GetRefCounter()->Decrement() == 0)
@@ -867,13 +867,9 @@ namespace SparkyStudios::Audio::Amplitude
 
     void Engine::UnloadSoundBanks()
     {
-        for (const auto& item : _state->sound_bank_map)
-        {
-            if (item.second->GetRefCounter()->Decrement() == 0)
-            {
-                item.second->Deinitialize(this);
-            }
-        }
+        for (const auto& item : _state->sound_bank_map | std::ranges::views::values)
+            if (RefCounter* ref = item->GetRefCounter(); ref->GetCount() > 0 && ref->Decrement() == 0)
+                item->Deinitialize(this);
     }
 
     void Engine::StartOpenFileSystem()
@@ -1986,7 +1982,7 @@ namespace SparkyStudios::Audio::Amplitude
                 {
                     return state.GetId() == id;
                 });
-            findIt == _state->listener_state_memory.end())
+            findIt != _state->listener_state_memory.end())
         {
             findIt->SetId(kAmInvalidObjectId);
             findIt->node.remove();
@@ -2059,7 +2055,7 @@ namespace SparkyStudios::Audio::Amplitude
                 {
                     return state.GetId() == id;
                 });
-            findIt == _state->entity_state_memory.end())
+            findIt != _state->entity_state_memory.end())
         {
             findIt->SetId(kAmInvalidObjectId);
             findIt->node.remove();
@@ -2122,7 +2118,7 @@ namespace SparkyStudios::Audio::Amplitude
                 {
                     return state.GetId() == id;
                 });
-            findIt == _state->environment_state_memory.end())
+            findIt != _state->environment_state_memory.end())
         {
             findIt->SetId(kAmInvalidObjectId);
             findIt->node.remove();
@@ -2293,6 +2289,9 @@ namespace SparkyStudios::Audio::Amplitude
 
     void Engine::AdvanceFrame(AmTime delta) const
     {
+        if (_state == nullptr)
+            return;
+
         if (_state->paused)
             return;
 
