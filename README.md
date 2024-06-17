@@ -1,6 +1,7 @@
 ![build](https://github.com/SparkyStudios/AmplitudeAudioSDK/actions/workflows/build.yml/badge.svg)
 ![documentation](https://github.com/SparkyStudios/AmplitudeAudioSDK/actions/workflows/hugo.yml/badge.svg)
 [![discord server](https://dcbadge.vercel.app/api/server/q8eT8Mq6du?style=flat)](https://discord.gg/q8eT8Mq6du)
+[![X (formerly Twitter) Follow](https://img.shields.io/twitter/follow/amaudiosdk?style=social&logo=x&label=%40amaudiosdk)](https://x.com/@amaudiosdk)
 
 <p align="center">
   <a href="https://amplitudeaudiosdk.com">
