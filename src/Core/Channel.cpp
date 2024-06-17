@@ -29,14 +29,10 @@ namespace SparkyStudios::Audio::Amplitude
     {}
 
     Channel::Channel(ChannelInternalState* state)
-        : _state(state)
-        , _stateId(++globalStateId)
-    {
-        if (_state != nullptr)
-        {
-            _state->SetChannelStateId(_stateId);
-        }
-    }
+        : Channel(state, ++globalStateId)
+    {}
+
+    Channel::Channel(const Channel& other) = default;
 
     void Channel::Clear()
     {
@@ -158,6 +154,16 @@ namespace SparkyStudios::Audio::Amplitude
     ChannelInternalState* Channel::GetState() const
     {
         return _state;
+    }
+
+    Channel::Channel(ChannelInternalState* state, const AmUInt64 id)
+        : _state(state)
+        , _stateId(id)
+    {
+        if (_state != nullptr)
+        {
+            _state->SetChannelStateId(_stateId);
+        }
     }
 
     bool Channel::IsValidStateId() const

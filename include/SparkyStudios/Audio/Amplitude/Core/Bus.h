@@ -36,7 +36,7 @@ namespace SparkyStudios::Audio::Amplitude
     {
     public:
         /**
-         * @brief Creates an uninitialized Bus.
+         * @brief Creates an uninitialized @c Bus.
          *
          * An uninitialized Bus cannot set or get any of it's fields.
          * To initialize the Listener, use <code>Engine::AddListener();</code>.
@@ -50,7 +50,7 @@ namespace SparkyStudios::Audio::Amplitude
         {}
 
         /**
-         * @brief Uninitializes this Bus.
+         * @brief Uninitializes this @c Bus.
          *
          * Note that this does not destroy the internal state it references,
          * it just removes this reference to it.
@@ -58,37 +58,37 @@ namespace SparkyStudios::Audio::Amplitude
         void Clear();
 
         /**
-         * @brief Checks whether this Bus has been initialized.
+         * @brief Checks whether this @c Bus has been initialized.
          *
-         * @return boolean true if this Bus has been initialized.
+         * @return @c true if this @c Bus has been initialized.
          */
         [[nodiscard]] bool Valid() const;
 
         /**
-         * @brief Gets the unique ID of this Bus.
+         * @brief Gets the unique ID of this @c Bus.
          *
-         * @return The Bus unique ID.
+         * @return The bus unique ID.
          */
         [[nodiscard]] AmBusID GetId() const;
 
         /**
-         * @brief Gets the name of this Bus.
+         * @brief Gets the name of this @c Bus.
          *
          * @return The bus name.
          */
         [[nodiscard]] const std::string& GetName() const;
 
         /**
-         * @brief Sets the gain on this Bus.
+         * @brief Sets the gain of this @c Bus.
          *
          * @param gain The new gain value.
          */
         void SetGain(AmReal32 gain) const;
 
         /**
-         * @brief Returns the user specified fain on this Bus.
+         * @brief Returns the user specified gain on this @c Bus.
          *
-         * @return AmReal32 The user specified gain.
+         * @return The user specified gain.
          */
         [[nodiscard]] AmReal32 GetGain() const;
 
@@ -101,34 +101,36 @@ namespace SparkyStudios::Audio::Amplitude
         void FadeTo(AmReal32 gain, AmTime duration) const;
 
         /**
-         * @brief Returns the final calculated gain on this Bus.
+         * @brief Returns the final calculated gain on this @c Bus.
          *
-         * The final gain of a Bus is the product of the gain specified in the Bus
-         * definition file, the gain specified by the use, and the final gain of the
-         * parent Bus.
+         * @note The final gain of a bus is the product of the gain specified in the bus
+         * definition file, the gain specified by the user, and the final gain of the
+         * parent bus.
          *
-         * @return AmReal32 The final calculated gain.
+         * @return The final calculated gain.
          */
         [[nodiscard]] AmReal32 GetFinalGain() const;
 
         /**
-         * @brief Sets the muted state of this Bus.
+         * @brief Sets the muted state of this @c Bus.
          *
          * @param mute The muted state.
          */
         void SetMute(bool mute) const;
 
         /**
-         * @brief Returns whether this Bus is muted.
+         * @brief Returns whether this @c Bus is muted.
          *
-         * @return true if this Bus is muted, false otherwise.
+         * @return @c true if this Bus is muted, @c false otherwise.
          */
         [[nodiscard]] bool IsMuted() const;
 
         /**
-         * @brief Returns the internal state of this Bus.
+         * @brief Returns the internal state of this @c Bus.
          *
-         * @return BusInternalState*
+         * @note This is not meant to be used by the user.
+         *
+         * @return The bus internal state.
          */
         [[nodiscard]] BusInternalState* GetState() const;
 

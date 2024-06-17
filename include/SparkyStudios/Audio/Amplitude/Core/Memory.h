@@ -234,29 +234,27 @@ namespace SparkyStudios::Audio::Amplitude
     struct AM_API_PUBLIC MemoryManagerConfig
     {
         /**
-         * @brief Memory allocation callback. If not defined, the default malloc() function is used.
+         * @brief Memory allocation callback.
          */
         AmMemoryMallocCallback malloc;
 
         /**
-         * @brief Memory reallocation callback. If not defined, the default realloc() function is used.
+         * @brief Memory reallocation callback.
          */
         AmMemoryReallocCallback realloc;
 
         /**
-         * @brief Aligned memory allocation callback. If not defined, the default platform specific
-         * function is used. Check the AM_ALIGNED_ALLOC macro to know more.
+         * @brief Aligned memory allocation callback.
          */
         AmMemoryMallocAlignedCallback alignedMalloc;
 
         /**
-         * @brief Aligned memory reallocation callback. If not defined, the default platform specific
-         * function is used. Check the AM_ALIGNED_REALLOC macro to know more.
+         * @brief Aligned memory reallocation callback.
          */
         AmMemoryReallocAlignedCallback alignedRealloc;
 
         /**
-         * @brief Memory release callback. If not defined, the default free() function is used.
+         * @brief Memory release callback.
          */
         AmMemoryFreeCallback free;
 
@@ -404,38 +402,80 @@ namespace SparkyStudios::Audio::Amplitude
 
         /**
          * @brief Allocates a block of memory with the given size in the given pool.
+         *
+         * @param pool The memory pool to allocate from.
+         * @param size The size of the block to allocate.
+         * @param file The file in which the allocation was made.
+         * @param line The line in which the allocation was made.
+         *
+         * @return A pointer to the allocated block.
          */
         [[nodiscard]] AmVoidPtr Malloc(MemoryPoolKind pool, AmSize size, const char* file, AmUInt32 line);
 
         /**
          * @brief Allocates a block of memory with the given size and the given alignment,
          * in the given pool.
+         *
+         * @param pool The memory pool to allocate from.
+         * @param size The size of the block to allocate.
+         * @param alignment The alignment of the block to allocate.
+         * @param file The file in which the allocation was made.
+         * @param line The line in which the allocation was made.
+         *
+         * @return A pointer to the allocated block.
          */
         [[nodiscard]] AmVoidPtr Malign(MemoryPoolKind pool, AmSize size, AmUInt32 alignment, const char* file, AmUInt32 line);
 
         /**
          * @brief Updates the size of a previously allocated memory.
+         *
+         * @param pool The memory pool to update.
+         * @param address The address of the memory to update.
+         * @param size The new size of the memory.
+         * @param file The file in which the allocation was made.
+         * @param line The line in which the allocation was made.
+         *
+         * @return A pointer to the allocated block. Maybe equal to address if the original pointer had enough memory.
          */
         [[nodiscard]] AmVoidPtr Realloc(MemoryPoolKind pool, AmVoidPtr address, AmSize size, const char* file, AmUInt32 line);
 
         /**
          * @brief Updates the size of a previously allocated aligned memory.
+         *
+         * @param pool The memory pool to update.
+         * @param address The address of the aligned memory to update.
+         * @param size The new size of the aligned memory.
+         * @param alignment The new alignment of the aligned memory.
+         * @param file The file in which the allocation was made.
+         * @param line The line in which the allocation was made.
+         *
+         * @return A pointer to the allocated block. Maybe equal to address if the original pointer had enough memory.
          */
         [[nodiscard]] AmVoidPtr Realign(
             MemoryPoolKind pool, AmVoidPtr address, AmSize size, AmUInt32 alignment, const char* file, AmUInt32 line);
 
         /**
          * @brief Releases an allocated memory block.
+         *
+         * @param pool The memory pool to release from.
+         * @param address The address of the memory to release.
          */
         void Free(MemoryPoolKind pool, AmVoidPtr address);
 
         /**
          * @brief Gets the total allocated size.
+         *
+         * @return The total currently allocated size.
          */
         [[nodiscard]] AmSize TotalReservedMemorySize() const;
 
         /**
          * @brief Gets the size of the given memory block.
+         *
+         * @param pool The memory pool to get the size from.
+         * @param address The address of the memory block.
+         *
+         * @return The size of the given memory block.
          */
         [[nodiscard]] AmSize SizeOf(MemoryPoolKind pool, AmConstVoidPtr address) const;
 

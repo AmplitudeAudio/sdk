@@ -23,14 +23,24 @@ namespace SparkyStudios::Audio::Amplitude
 {
     class ChannelInternalState;
 
-    enum class ChannelPlaybackState
+    enum class ChannelPlaybackState : AmUInt8
     {
-        Stopped,
-        Playing,
-        FadingIn,
-        FadingOut,
-        SwitchingState,
-        Paused,
+        Stopped = 0,
+        Playing = 1,
+        FadingIn = 2,
+        FadingOut = 3,
+        SwitchingState = 4,
+        Paused = 5,
+    };
+
+    enum class ChannelEvent : AmUInt8
+    {
+        Begin = 0,
+        End = 1,
+        Resume = 2,
+        Pause = 3,
+        Stop = 4,
+        Loop = 5
     };
 
     /**
@@ -53,6 +63,8 @@ namespace SparkyStudios::Audio::Amplitude
 
         explicit Channel(ChannelInternalState* state);
 
+        Channel(const Channel& other);
+
         /**
          * @brief Uninitializes this Channel.
          *
@@ -70,16 +82,16 @@ namespace SparkyStudios::Audio::Amplitude
         [[nodiscard]] bool Valid() const;
 
         /**
-         * @brief Checks if the sound playing on a given Channel is playing.
+         * @brief Checks if the sound associated to this @c Channel is playing.
          *
-         * @return Whether the Channel is currently playing.
+         * @return Whether the channel is currently playing.
          */
         [[nodiscard]] bool Playing() const;
 
         /**
-         * @brief Stop a channel.
+         * @brief Stops a channel.
          *
-         * Stop this channel from playing. A sound will stop on its own if it not set
+         * Stops this channel from playing. A sound will stop on its own if its not set
          * to loop. Looped audio must be explicitly stopped.
          *
          * @param duration The fade out duration before to stop the channel.
@@ -87,9 +99,9 @@ namespace SparkyStudios::Audio::Amplitude
         void Stop(AmTime duration = kMinFadeDuration) const;
 
         /**
-         * @brief Pause a channel.
+         * @brief Pauses a channel.
          *
-         * Pause this channel. A paused channel may be resumed where it left off.
+         * Pauses this channel. A paused channel may be resumed where it left off.
          *
          * @param duration The fade out duration before to pause the channel.
          */
@@ -98,7 +110,7 @@ namespace SparkyStudios::Audio::Amplitude
         /**
          * @brief Resumes a paused channel.
          *
-         * Resume this channel. If this channel was paused it will continue where it
+         * Resumes this channel. If this channel was paused it will continue where it
          * left off.
          *
          * @param duration The fade in duration after resuming the channel.
@@ -106,18 +118,19 @@ namespace SparkyStudios::Audio::Amplitude
         void Resume(AmTime duration = kMinFadeDuration) const;
 
         /**
-         * @brief Get the location of this Channel.
-         * If the audio on this channel is not set to be Positional this property
-         * does nothing.
+         * @brief Gets the location of this Channel.
+         *
+         * If the audio on this channel is not set to be Positional, this method will
+         * return an invalid location.
          *
          * @return The location of this Channel.
          */
         [[nodiscard]] const AmVec3& GetLocation() const;
 
         /**
-         * @brief Set the location of this Channel.
+         * @brief Sets the location of this Channel.
          *
-         * If the audio on this channel is not set to be Positional this property
+         * If the audio on this channel is not set to be Positional, this method
          * does nothing.
          *
          * @param location The new location of the Channel.
@@ -151,6 +164,8 @@ namespace SparkyStudios::Audio::Amplitude
         [[nodiscard]] ChannelInternalState* GetState() const;
 
     private:
+        Channel(ChannelInternalState* state, AmUInt64 id);
+
         [[nodiscard]] bool IsValidStateId() const;
 
         ChannelInternalState* _state;

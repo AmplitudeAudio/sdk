@@ -55,6 +55,8 @@ namespace SparkyStudios::Audio::Amplitude
              * @brief Opens the given file to start decoding.
              *
              * @param file The file to read.
+             *
+             * @return Whether the operation is successful.
              */
             virtual bool Open(std::shared_ptr<File> file) = 0;
 
@@ -144,6 +146,8 @@ namespace SparkyStudios::Audio::Amplitude
              * @brief Opens or create a file at the given path to start encoding.
              *
              * @param file The file to write.
+             *
+             * @return Whether the operation is successful.
              */
             virtual bool Open(std::shared_ptr<File> file) = 0;
 
@@ -238,7 +242,7 @@ namespace SparkyStudios::Audio::Amplitude
          *
          * @param file The file to check.
          *
-         * @return Whether this Codec can handle a file.
+         * @return Whether this Codec can handle the given file.
          */
         [[nodiscard]] virtual bool CanHandleFile(std::shared_ptr<File> file) const = 0;
 

@@ -236,7 +236,7 @@ namespace SparkyStudios::Audio::Amplitude
         [[nodiscard]] virtual BeizerCurveControlPoints GetControlPoints() const = 0;
 
         /**
-         * @brief Registers a new Fader.
+         * @brief Registers a new fader.
          *
          * @param fader The Fader to add in the registry.
          */

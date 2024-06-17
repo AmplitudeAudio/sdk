@@ -82,173 +82,173 @@ namespace SparkyStudios::Audio::Amplitude
         ~Engine();
 
         /**
-         * @brief Initialize the audio engine.
+         * @brief Initializes the Amplitude engine.
          *
-         * @param configFile The path to the file containing an EngineConfigDefinition flatbuffer binary.
+         * @param configFile The path to the configuration file.
          *
-         * @return Whether initialization was successful.
+         * @return Whether the engine has been successfully initialized.
          */
         bool Initialize(const AmOsString& configFile);
 
         /**
-         * @brief Initialize the audio engine.
+         * @brief Initializes the Amplitude engine.
          *
          * @param config A pointer to a loaded EngineConfigDefinition object.
          *
-         * @return Whether initialization was successful.
+         * @return Whether the engine has been successfully initialized.
          */
         bool Initialize(const EngineConfigDefinition* config);
 
         /**
-         * @brief Deinitialize the audio engine.
+         * @brief Deinitializes the Amplitude engine.
          *
-         * @return Whether the engine was successfully deinitialized.
+         * @return \c true when the engine has been successfully deinitialized, \c false otherwise.
          */
         bool Deinitialize();
 
         /**
-         * @brief Checks if the audio engine has been initialized.
+         * @brief Checks if the Amplitude engine has been successfully initialized.
          *
-         * @return Whether the audio engine is initialized.
+         * @return @c true if the engine has been successfully initialized, @c false otherwise.
          */
         [[nodiscard]] bool IsInitialized() const;
 
         /**
-         * @brief Set the File Loader used by the engine.
+         * @brief Set a file system implementation to be used by the engine.
          *
-         * @param fs A FileLoader implementation.
+         * @param fs The file system implementation.
          */
         void SetFileSystem(FileSystem* fs);
 
         /**
-         * @brief Get the File Loader used by the engine.
+         * @brief Gets the file system implementation used by the engine.
          *
-         * @return The file loader.
+         * @return The file system implementation used by the engine.
          */
         [[nodiscard]] const FileSystem* GetFileSystem() const;
 
         /**
-         * @brief Update audio volume per channel each frame.
+         * @brief Updates the engine state for the given number of seconds.
          *
-         * @param delta The number of elapsed seconds since the last frame.
+         * @param delta The number of seconds since the last frame.
          */
         void AdvanceFrame(AmTime delta) const;
 
         /**
-         * @brief Gets the total elapsed time since the start of the game.
+         * @brief Gets the total elapsed time since the start of the engine.
          *
-         * @return The total elapsed time since the start of the game.
+         * @return The total elapsed time since the start of the engine.
          */
         [[nodiscard]] AmTime GetTotalTime() const;
 
         /**
-         * @brief Load a sound bank from a file. Queue the sound files in that sound
-         *        bank for loading. Call StartLoadingSoundFiles() to trigger loading
+         * @brief Loads a sound bank from a file. Queue the sound files in that sound
+         *        bank for loading. Call StartLoadSoundFiles() to trigger loading
          *        of the sound files on a separate thread.
          *
-         * @param filename The file containing the SoundBank flatbuffer binary data.
+         * @param filename The path to the sound bank file.
          *
-         * @return true Returns true on success
+         * @return @c true when the sound bank is successfully loaded, @c false otherwise.
          */
         bool LoadSoundBank(const AmOsString& filename);
 
         /**
-         * @brief Load a sound bank from a file. Queue the sound files in that sound
-         *        bank for loading. Call StartLoadingSoundFiles() to trigger loading
+         * @brief Loads a sound bank from a file. Queue the sound files in that sound
+         *        bank for loading. Call StartLoadSoundFiles() to trigger loading
          *        of the sound files on a separate thread.
          *
-         * @param filename The file containing the SoundBank flatbuffer binary data.
-         * @param outID The ID of the loaded soundbank.
+         * @param filename The path to the sound bank file.
+         * @param outID The ID of the loaded sound bank.
          *
-         * @return true Returns true on success
+         * @return @c true when the sound bank is successfully loaded, @c false otherwise.
          */
         bool LoadSoundBank(const AmOsString& filename, AmBankID& outID);
 
         /**
-         * @brief Load a sound bank from memory. Queue the sound files in that sound
-         *        bank for loading. Call StartLoadingSoundFiles() to trigger loading
+         * @brief Loads a sound bank from memory. Queue the sound files in that sound
+         *        bank for loading. Call StartLoadSoundFiles() to trigger loading
          *        of the sound files on a separate thread.
          *
-         * @param fileData The SoundBank flatbuffer binary data.
+         * @param fileData The sound bank data to be loaded.
          *
-         * @return true Returns true on success
+         * @return @c true when the sound bank is successfully loaded, @c false otherwise.
          */
         bool LoadSoundBankFromMemory(const char* fileData);
 
         /**
-         * @brief Load a sound bank from memory. Queue the sound files in that sound
-         *        bank for loading. Call StartLoadingSoundFiles() to trigger loading
+         * @brief Loads a sound bank from memory. Queue the sound files in that sound
+         *        bank for loading. Call StartLoadSoundFiles() to trigger loading
          *        of the sound files on a separate thread.
          *
-         * @param fileData The SoundBank flatbuffer binary data.
-         * @param outID The ID of the loaded soundbank.
+         * @param fileData The sound bank data to be loaded.
+         * @param outID The ID of the loaded sound bank.
          *
-         * @return true Returns true on success
+         * @return @c true when the sound bank is successfully loaded, @c false otherwise.
          */
         bool LoadSoundBankFromMemory(const char* fileData, AmBankID& outID);
 
         /**
-         * @brief Load a sound bank from memory. Queue the sound files in that sound
-         *        bank for loading. Call StartLoadingSoundFiles() to trigger loading
+         * @brief Loads a sound bank from memory. Queue the sound files in that sound
+         *        bank for loading. Call StartLoadSoundFiles() to trigger loading
          *        of the sound files on a separate thread.
          *
-         * @param ptr The pointer to the SoundBank flatbuffer binary data.
-         * @param size The size of the SoundBank flatbuffer binary data.
+         * @param ptr The pointer to the sound bank data to be loaded.
+         * @param size The size of the memory to read.
          *
-         * @return true Returns true on success
+         * @return @c true when the sound bank is successfully loaded, @c false otherwise.
          */
         bool LoadSoundBankFromMemoryView(void* ptr, AmSize size);
 
         /**
-         * @brief Load a sound bank from memory. Queue the sound files in that sound
-         *        bank for loading. Call StartLoadingSoundFiles() to trigger loading
+         * @brief Loads a sound bank from memory. Queue the sound files in that sound
+         *        bank for loading. Call StartLoadSoundFiles() to trigger loading
          *        of the sound files on a separate thread.
          *
-         * @param ptr The pointer to the SoundBank flatbuffer binary data.
-         * @param size The size of the SoundBank flatbuffer binary data.
-         * @param outID The ID of the loaded soundbank.
+         * @param ptr The pointer to the sound bank data to be loaded.
+         * @param size The size of the memory to read.
+         * @param outID The ID of the loaded sound bank.
          *
-         * @return true Returns true on success
+         * @return @c true when the sound bank is successfully loaded, @c false otherwise.
          */
         bool LoadSoundBankFromMemoryView(void* ptr, AmSize size, AmBankID& outID);
 
         /**
-         * @brief Unload a sound bank.
+         * @brief Unloads a sound bank.
          *
          * @param filename The file to unload.
          */
         void UnloadSoundBank(const AmOsString& filename);
 
         /**
-         * @brief Unload a sound bank.
+         * @brief Unloads a sound bank.
          *
-         * @param id The soundbank id to unload.
+         * @param id The sound bank id to unload.
          */
         void UnloadSoundBank(AmBankID id);
 
         /**
-         * @brief Unload all loaded sound banks
+         * @brief Unloads all the loaded sound banks.
          */
         void UnloadSoundBanks();
 
         /**
-         * @brief Opens the file system in a separate thread.
+         * @brief Opens the file system, usually in a separate thread.
          */
         void StartOpenFileSystem();
 
         /**
-         * @brief Return true if the file system has been fully loaded. Must call
+         * @brief Returns @c true if the file system has been fully loaded. Must call
          *        StartOpenFileSystem() first.
          */
         bool TryFinalizeOpenFileSystem();
 
         /**
-         * @brief Closes the file system in a separate thread.
+         * @brief Closes the file system, usually in a separate thread.
          */
         void StartCloseFileSystem();
 
         /**
-         * @brief Return true if the file system has been fully loaded. Must call
+         * @brief Return @c true if the file system has been fully closed. Must call
          *        StartCloseFileSystem() first.
          */
         bool TryFinalizeCloseFileSystem();
@@ -269,237 +269,239 @@ namespace SparkyStudios::Audio::Amplitude
         bool TryFinalizeLoadSoundFiles();
 
         /**
-         * @brief Get a SwitchContainerHandle given its name as defined in its JSON data.
+         * @brief Gets a @c SwitchContainerHandle given its name as defined in its JSON data.
          *
          * @param name The unique name as defined in the JSON data.
          */
         [[nodiscard]] SwitchContainerHandle GetSwitchContainerHandle(const AmString& name) const;
 
         /**
-         * @brief Get a SwitchContainerHandle given its ID as defined in its JSON data.
+         * @brief Gets a @C SwitchContainerHandle given its ID as defined in its JSON data.
          *
          * @param id The unique ID as defined in the JSON data.
          */
         [[nodiscard]] SwitchContainerHandle GetSwitchContainerHandle(AmSwitchContainerID id) const;
 
         /**
-         * @brief Get a SwitchContainerHandle given its SwitchContainerDefinition filename.
+         * @brief Gets a @c SwitchContainerHandle given its SwitchContainerDefinition filename.
          *
          * @param filename The filename containing the flatbuffer binary data.
          */
         [[nodiscard]] SwitchContainerHandle GetSwitchContainerHandleFromFile(const AmOsString& filename) const;
 
         /**
-         * @brief Get a CollectionHandle given its name as defined in its JSON data.
+         * @brief Gets a @c CollectionHandle given its name as defined in its JSON data.
          *
          * @param name The unique name as defined in the JSON data.
          */
         [[nodiscard]] CollectionHandle GetCollectionHandle(const AmString& name) const;
 
         /**
-         * @brief Get a CollectionHandle given its ID as defined in its JSON data.
+         * @brief Gets a @c CollectionHandle given its ID as defined in its JSON data.
          *
          * @param id The unique ID as defined in the JSON data.
          */
         [[nodiscard]] CollectionHandle GetCollectionHandle(AmCollectionID id) const;
 
         /**
-         * @brief Get a CollectionHandle given its CollectionDefinition filename.
+         * @brief Gets a @c CollectionHandle given its CollectionDefinition filename.
          *
          * @param filename The filename containing the flatbuffer binary data.
          */
         [[nodiscard]] CollectionHandle GetCollectionHandleFromFile(const AmOsString& filename) const;
 
         /**
-         * @brief Get a SoundHandle given its name as defined in its JSON data.
+         * @brief Gets a @c SoundHandle given its name as defined in its JSON data.
          *
          * @param name The unique name as defined in the JSON data.
          */
         [[nodiscard]] SoundHandle GetSoundHandle(const AmString& name) const;
 
         /**
-         * @brief Get a SoundHandle given its ID as defined in its JSON data.
+         * @brief Gets a @c SoundHandle given its ID as defined in its JSON data.
          *
          * @param id The unique ID as defined in the JSON data.
          */
         [[nodiscard]] SoundHandle GetSoundHandle(AmSoundID id) const;
 
         /**
-         * @brief Get a SoundHandle given its SoundDefinition filename.
+         * @brief Gets a @c SoundHandle given its SoundDefinition filename.
          *
          * @param filename The filename containing the flatbuffer binary data.
          */
         [[nodiscard]] SoundHandle GetSoundHandleFromFile(const AmOsString& filename) const;
 
         /**
-         * @brief Get a SoundObjectHandle given its name as defined in its JSON data.
+         * @brief Gets a @c SoundObjectHandle given its name as defined in its JSON data.
          *
-         * Can be a SwitchContainerHandle, CollectionHandle, or SoundHandle.
+         * Can be a @c SwitchContainerHandle, @c CollectionHandle, or @c SoundHandle.
          *
          * @param name The unique name as defined in the JSON data.
          */
         [[nodiscard]] SoundObjectHandle GetSoundObjectHandle(const AmString& name) const;
 
         /**
-         * @brief Get a SoundObjectHandle given its ID as defined in its JSON data.
+         * @brief Gets a @c SoundObjectHandle given its ID as defined in its JSON data.
          *
-         * Can be a SwitchContainerHandle, CollectionHandle, or SoundHandle.
+         * Can be a @c SwitchContainerHandle, @c CollectionHandle, or @c SoundHandle.
          *
          * @param id The unique ID as defined in the JSON data.
          */
         [[nodiscard]] SoundObjectHandle GetSoundObjectHandle(AmSoundID id) const;
 
         /**
-         * @brief Get a SoundObjectHandle given its definition filename.
+         * @brief Gets a @c SoundObjectHandle given its definition filename.
          *
-         * Can be a SwitchContainerHandle, CollectionHandle, or SoundHandle.
+         * Can be a @c SwitchContainerHandle, @c CollectionHandle, or @c SoundHandle.
          *
          * @param filename The filename containing the flatbuffer binary data.
          */
         [[nodiscard]] SoundObjectHandle GetSoundObjectHandleFromFile(const AmOsString& filename) const;
 
         /**
-         * @brief Get an EventHandle given its name as defined in its JSON data.
+         * @brief Gets an @c EventHandle given its name as defined in its JSON data.
          *
          * @param name The unique name as defined in the JSON data.
          */
         [[nodiscard]] EventHandle GetEventHandle(const AmString& name) const;
 
         /**
-         * @brief Get an EventHandle given its ID as defined in its JSON data.
+         * @brief Gets an @c EventHandle given its ID as defined in its JSON data.
          *
          * @param id The unique ID as defined in the JSON data.
          */
         [[nodiscard]] EventHandle GetEventHandle(AmEventID id) const;
 
         /**
-         * @brief Get an EventHandle given its EventDefinition filename.
+         * @brief Gets an @c EventHandle given its EventDefinition filename.
          *
          * @param filename The filename containing the flatbuffer binary data.
          */
         [[nodiscard]] EventHandle GetEventHandleFromFile(const AmOsString& filename) const;
 
         /**
-         * @brief Get an AttenuationHandle given its name as defined in its JSON data.
+         * @brief Gets an @c AttenuationHandle given its name as defined in its JSON data.
          *
          * @param name The unique name as defined in the JSON data.
          */
         [[nodiscard]] AttenuationHandle GetAttenuationHandle(const AmString& name) const;
 
         /**
-         * @brief Get an AttenuationHandle given its ID as defined in its JSON data.
+         * @brief Gets an @c AttenuationHandle given its ID as defined in its JSON data.
          *
          * @param id The unique ID as defined in the JSON data.
          */
         [[nodiscard]] AttenuationHandle GetAttenuationHandle(AmAttenuationID id) const;
 
         /**
-         * @brief Get an AttenuationHandle given its AttenuationDefinition filename.
+         * @brief Gets an @c AttenuationHandle given its AttenuationDefinition filename.
          *
          * @param filename The filename containing the flatbuffer binary data.
          */
         [[nodiscard]] AttenuationHandle GetAttenuationHandleFromFile(const AmOsString& filename) const;
 
         /**
-         * @brief Get a SwitchHandle given its name as defined in its JSON data.
+         * @brief Gets a @c SwitchHandle given its name as defined in its JSON data.
          *
          * @param name The unique name as defined in the JSON data.
          */
         [[nodiscard]] SwitchHandle GetSwitchHandle(const AmString& name) const;
 
         /**
-         * @brief Get an SwitchHandle given its ID as defined in its JSON data.
+         * @brief Gets a @c SwitchHandle given its ID as defined in its JSON data.
          *
          * @param id The unique ID as defined in the JSON data.
          */
         [[nodiscard]] SwitchHandle GetSwitchHandle(AmSwitchID id) const;
 
         /**
-         * @brief Get an SwitchHandle given its SwitchDefinition filename.
+         * @brief Gets a @c SwitchHandle given its SwitchDefinition filename.
          *
          * @param filename The filename containing the flatbuffer binary data.
          */
         [[nodiscard]] SwitchHandle GetSwitchHandleFromFile(const AmOsString& filename) const;
 
         /**
-         * @brief Get a RtpcHandle given its name as defined in its JSON data.
+         * @brief Gets a @c RtpcHandle given its name as defined in its JSON data.
          *
          * @param name The unique name as defined in the JSON data.
          */
         [[nodiscard]] RtpcHandle GetRtpcHandle(const AmString& name) const;
 
         /**
-         * @brief Get an RtpcHandle given its ID as defined in its JSON data.
+         * @brief Gets an @c RtpcHandle given its ID as defined in its JSON data.
          *
          * @param id The unique ID as defined in the JSON data.
          */
         [[nodiscard]] RtpcHandle GetRtpcHandle(AmRtpcID id) const;
 
         /**
-         * @brief Get an RtpcHandle given its RtpcDefinition filename.
+         * @brief Gets an @c RtpcHandle given its RtpcDefinition filename.
          *
          * @param filename The filename containing the flatbuffer binary data.
          */
         [[nodiscard]] RtpcHandle GetRtpcHandleFromFile(const AmOsString& filename) const;
 
         /**
-         * @brief Get a EffectHandle given its name as defined in its JSON data.
+         * @brief Gets an @c EffectHandle given its name as defined in its JSON data.
          *
          * @param name The unique name as defined in the JSON data.
          */
         [[nodiscard]] EffectHandle GetEffectHandle(const AmString& name) const;
 
         /**
-         * @brief Get an EffectHandle given its ID as defined in its JSON data.
+         * @brief Gets an @c EffectHandle given its ID as defined in its JSON data.
          *
          * @param id The unique ID as defined in the JSON data.
          */
         [[nodiscard]] EffectHandle GetEffectHandle(AmEffectID id) const;
 
         /**
-         * @brief Get an EffectHandle given its EffectDefinition filename.
+         * @brief Gets an @c EffectHandle given its EffectDefinition filename.
          *
          * @param filename The filename containing the flatbuffer binary data.
          */
         [[nodiscard]] EffectHandle GetEffectHandleFromFile(const AmOsString& filename) const;
 
         /**
-         * @brief Adjusts the gain on the master bus.
+         * @brief Adjusts the master gain of the mixer.
          *
-         * @param gain the gain to apply to all buses.
+         * @param gain The master gain.
          */
-        void SetMasterGain(float gain) const;
+        void SetMasterGain(AmReal32 gain) const;
 
         /**
-         * @brief Get the master bus's current gain.
+         * @brief Gets the mixer master gain.
          *
-         * @return the master bus's current gain.
+         * @return The mixer master gain.
          */
-        [[nodiscard]] float GetMasterGain() const;
+        [[nodiscard]] AmReal32 GetMasterGain() const;
 
         /**
-         * @brief Mutes the Engine completely.
+         * @brief Mutes the engine, but keep processing audio.
          *
-         * @param mute whether to mute or unmute the Engine.
+         * @param mute Whether to mute or unmute the engine.
          */
         void SetMute(bool mute) const;
 
         /**
-         * @brief Whether the Engine is currently muted.
+         * @brief Whether the engine is currently muted.
          *
-         * @return Whether the Engine is currently muted.
+         * @return @c true if the engine is muted, @c false otherwise.
          */
         [[nodiscard]] bool IsMuted() const;
 
         /**
-         * @brief Pauses all playing sounds and streams.
+         * @brief Pauses or resumes all playing sounds and streams.
          *
-         * @param pause Whether to pause or resume the Engine.
+         * @param pause Whether to pause or resume the engine.
          */
         void Pause(bool pause) const;
 
         /**
-         * @brief Whether the Engine is currently paused.
+         * @brief Whether the engine is currently paused.
+         *
+         * @return @c true if the engine is currently paused, @c false otherwise.
          */
         [[nodiscard]] bool IsPaused() const;
 
@@ -518,7 +520,7 @@ namespace SparkyStudios::Audio::Amplitude
         void SetDefaultListener(AmListenerID id);
 
         /**
-         * @brief Returns a Listener object storing the state of the default
+         * @brief Returns a @c Listener object storing the state of the default
          * audio listener.
          *
          * @return An initialized Listener object if a default listener was set,
@@ -527,18 +529,18 @@ namespace SparkyStudios::Audio::Amplitude
         [[nodiscard]] Listener GetDefaultListener() const;
 
         /**
-         * @brief Initialize and return a Listener.
+         * @brief Initializes and returns a @c Listener.
          *
-         * @param id The game Listener ID.
+         * @param id The sound listener ID.
          *
          * @return An initialized Listener.
          */
         [[nodiscard]] Listener AddListener(AmListenerID id) const;
 
         /**
-         * @brief Return the Listener with the given ID.
+         * @brief Returns the @c Listener with the given ID.
          *
-         * @param id The game Listener ID.
+         * @param id The sound listener ID.
          *
          * @return An initialized Listener if that one has been registered before,
          * otherwise an unitialized Listener.
@@ -546,32 +548,32 @@ namespace SparkyStudios::Audio::Amplitude
         [[nodiscard]] Listener GetListener(AmListenerID id) const;
 
         /**
-         * @brief Remove a Listener given its ID.
+         * @brief Removes a @c Listener given its ID.
          *
          * @param id The ID of the Listener to be removed.
          */
         void RemoveListener(AmListenerID id) const;
 
         /**
-         * @brief Remove a Listener.
+         * @brief Removes a @c Listener given its handle.
          *
          * @param listener The Listener to be removed.
          */
         void RemoveListener(const Listener* listener) const;
 
         /**
-         * @brief Initialize and return an Entity.
+         * @brief Initializes and returns an @c Entity.
          *
-         * @param id The game Entity ID.
+         * @param id The game entity ID.
          *
          * @return An initialized Entity.
          */
         [[nodiscard]] Entity AddEntity(AmEntityID id) const;
 
         /**
-         * @brief Return the Entity with the given ID.
+         * @brief Returns the @c Entity with the given ID.
          *
-         * @param id The game Entity ID.
+         * @param id The game entity ID.
          *
          * @return An initialized Entity if that one has been registered before,
          * otherwise an uninitialized Entity.
@@ -579,32 +581,32 @@ namespace SparkyStudios::Audio::Amplitude
         [[nodiscard]] Entity GetEntity(AmEntityID id) const;
 
         /**
-         * @brief Remove an Entity.
+         * @brief Removes an @c Entity.
          *
-         * @param entity The Entity to be removed.
+         * @param entity The game entity to be removed.
          */
         void RemoveEntity(const Entity* entity) const;
 
         /**
-         * @brief Remove an Entity given its ID.
+         * @brief Removes an @c Entity given its ID.
          *
-         * @param id The ID of the Entity to be removed.
+         * @param id The ID of the game entity to be removed.
          */
         void RemoveEntity(AmEntityID id) const;
 
         /**
-         * @brief Initialize and return an Environment.
+         * @brief Initializes and return an @c Environment.
          *
-         * @param id The game Environment ID.
+         * @param id The game environment ID.
          *
          * @return An initialized Environment.
          */
         [[nodiscard]] Environment AddEnvironment(AmEnvironmentID id) const;
 
         /**
-         * @brief Return the Environment with the given ID.
+         * @brief Returns the @c Environment with the given ID.
          *
-         * @param id The game Environment ID.
+         * @param id The game environment ID.
          *
          * @return An initialized Environment if that one has been registered before,
          * otherwise an uninitialized Environment.
@@ -612,21 +614,21 @@ namespace SparkyStudios::Audio::Amplitude
         [[nodiscard]] Environment GetEnvironment(AmEnvironmentID id) const;
 
         /**
-         * @brief Remove an Environment.
+         * @brief Removes an @c Environment.
          *
-         * @param Environment The Environment to be removed.
+         * @param Environment The game environment to be removed.
          */
         void RemoveEnvironment(const Environment* Environment) const;
 
         /**
-         * @brief Remove an Environment given its ID.
+         * @brief Removes an @c Environment given its ID.
          *
-         * @param id The ID of the Environment to be removed.
+         * @param id The ID of the game environment to be removed.
          */
         void RemoveEnvironment(AmEnvironmentID id) const;
 
         /**
-         * @brief Returns the bus with the specified name.
+         * @brief Returns the @c Bus with the specified name.
          *
          * @param name The name of the bus.
          *
@@ -635,7 +637,7 @@ namespace SparkyStudios::Audio::Amplitude
         [[nodiscard]] Bus FindBus(const AmString& name) const;
 
         /**
-         * @brief Returns the bus with the given ID.
+         * @brief Returns the @c Bus with the given ID.
          *
          * @param id The ID of the bus.
          *
@@ -644,8 +646,7 @@ namespace SparkyStudios::Audio::Amplitude
         [[nodiscard]] Bus FindBus(AmBusID id) const;
 
         /**
-         * @brief Play a switch container associated with the given handle in the
-         *        World scope.
+         * @brief Plays a switch container associated with the given handle in the World scope.
          *
          * @param handle A handle to the switch container to play.
          *
@@ -655,8 +656,8 @@ namespace SparkyStudios::Audio::Amplitude
         Channel Play(SwitchContainerHandle handle) const;
 
         /**
-         * @brief Play a switch container associated with the given handle in the
-         *        World scope at the given location.
+         * @brief Plays a switch container associated with the given handle in the World scope at the
+         * given location.
          *
          * @param handle A handle to the switch container to play.
          * @param location The location on which play the switch container.
@@ -667,8 +668,8 @@ namespace SparkyStudios::Audio::Amplitude
         Channel Play(SwitchContainerHandle handle, const AmVec3& location) const;
 
         /**
-         * @brief Play a switch container associated with the given handle in the
-         *        location with the given gain.
+         * @brief Plays a switch container associated with the given handle in the World scope at the
+         * given location with the given gain.
          *
          * @param handle A handle to the switch container to play.
          * @param location The location on which play the switch container.
@@ -677,11 +678,10 @@ namespace SparkyStudios::Audio::Amplitude
          * @return The channel the switch container is played on. If the switch container could not be
          *         played, an invalid Channel is returned.
          */
-        Channel Play(SwitchContainerHandle handle, const AmVec3& location, float userGain) const;
+        Channel Play(SwitchContainerHandle handle, const AmVec3& location, AmReal32 userGain) const;
 
         /**
-         * @brief Play a switch container associated with the given handle in the
-         *        Entity scope.
+         * @brief Plays a switch container associated with the given handle in an Entity scope.
          *
          * @param handle A handle to the switch container to play.
          * @param entity The entity which is playing the switch container.
@@ -692,8 +692,8 @@ namespace SparkyStudios::Audio::Amplitude
         Channel Play(SwitchContainerHandle handle, const Entity& entity) const;
 
         /**
-         * @brief Play a switch container associated with the given handle in an
-         *        Entity scope with the given gain.
+         * @brief Plays a switch container associated with the given handle in an Entity scope with the
+         * given gain.
          *
          * @param handle A handle to the switch container to play.
          * @param entity The entity which is playing the switch container.
@@ -702,11 +702,10 @@ namespace SparkyStudios::Audio::Amplitude
          * @return The channel the switch container is played on. If the switch container could not be
          *         played, an invalid Channel is returned.
          */
-        Channel Play(SwitchContainerHandle handle, const Entity& entity, float userGain) const;
+        Channel Play(SwitchContainerHandle handle, const Entity& entity, AmReal32 userGain) const;
 
         /**
-         * @brief Play a collection associated with the given handle in the
-         *        World scope.
+         * @brief Plays a collection associated with the given handle in the World scope.
          *
          * @param handle A handle to the collection to play.
          *
@@ -716,8 +715,8 @@ namespace SparkyStudios::Audio::Amplitude
         Channel Play(CollectionHandle handle) const;
 
         /**
-         * @brief Play a collection associated with the given handle in the
-         *        World scope at the given location.
+         * @brief Plays a collection associated with the given handle in the World scope at
+         * the given location.
          *
          * @param handle A handle to the collection to play.
          * @param location The location on which play the collection.
@@ -728,8 +727,8 @@ namespace SparkyStudios::Audio::Amplitude
         Channel Play(CollectionHandle handle, const AmVec3& location) const;
 
         /**
-         * @brief Play a collection associated with the given handle in the
-         *        location with the given gain.
+         * @brief Plays a collection associated with the given handle in the location with
+         * the given gain.
          *
          * @param handle A handle to the collection to play.
          * @param location The location on which play the collection.
@@ -738,260 +737,236 @@ namespace SparkyStudios::Audio::Amplitude
          * @return The channel the collection is played on. If the collection could not be
          *         played, an invalid Channel is returned.
          */
-        Channel Play(CollectionHandle handle, const AmVec3& location, float userGain) const;
+        Channel Play(CollectionHandle handle, const AmVec3& location, AmReal32 userGain) const;
 
         /**
-         * @brief Play a collection associated with the given handle in the
-         *        Entity scope.
+         * @brief Plays a collection associated with the given handle in the Entity scope.
          *
          * @param handle A handle to the collection to play.
          * @param entity The entity which is playing the collection.
          *
          * @return The channel the collection is played on. If the collection could not be
-         *         played, an invalid Channel is returned.
+         * played, an invalid Channel is returned.
          */
         Channel Play(CollectionHandle handle, const Entity& entity) const;
 
         /**
-         * @brief Play a collection associated with the given handle in an
-         *        Entity scope with the given gain.
+         * @brief Plays a collection associated with the given handle in an Entity scope
+         * with the given gain.
          *
          * @param handle A handle to the collection to play.
          * @param entity The entity which is playing the collection.
          * @param userGain The gain of the sound.
          *
          * @return The channel the collection is played on. If the collection could not be
-         *         played, an invalid Channel is returned.
+         * played, an invalid Channel is returned.
          */
-        Channel Play(CollectionHandle handle, const Entity& entity, float userGain) const;
+        Channel Play(CollectionHandle handle, const Entity& entity, AmReal32 userGain) const;
 
         /**
-         * @brief Play a sound associated with the given handle in the
-         *        World scope.
+         * @brief Plays a sound associated with the given handle in the World scope.
          *
          * @param handle A handle to the sound to play.
          *
          * @return The channel the sound is played on. If the sound could not be
-         *         played, an invalid Channel is returned.
+         * played, an invalid Channel is returned.
          */
         Channel Play(SoundHandle handle) const;
 
         /**
-         * @brief Play a sound associated with the given handle in the
-         *        World scope at the given location.
+         * @brief Plays a sound associated with the given handle in the World scope
+         * at the given location.
          *
          * @param handle A handle to the sound to play.
          * @param location The location on which play the sound.
          *
          * @return The channel the sound is played on. If the sound could not be
-         *         played, an invalid Channel is returned.
+         * played, an invalid Channel is returned.
          */
         Channel Play(SoundHandle handle, const AmVec3& location) const;
 
         /**
-         * @brief Play a sound associated with the given handle in the
-         *        World scope at the given location with the given gain.
+         * @brief Plays a sound associated with the given handle in the World scope
+         * at the given location with the given gain.
          *
          * @param handle A handle to the sound to play.
          * @param location The location on which play the sound.
          * @param userGain The gain of the sound.
          *
          * @return The channel the sound is played on. If the sound could not be
-         *         played, an invalid Channel is returned.
+         * played, an invalid Channel is returned.
          */
-        Channel Play(SoundHandle handle, const AmVec3& location, float userGain) const;
+        Channel Play(SoundHandle handle, const AmVec3& location, AmReal32 userGain) const;
 
         /**
-         * @brief Play a sound associated with the given sound handle in an
-         *        Entity scope.
+         * @brief Plays a sound associated with the given sound handle in an Entity scope.
          *
          * @param handle A handle to the sound to play.
          * @param entity The entity which is playing the sound.
          *
          * @return The channel the sound is played on. If the sound could not be
-         *         played, an invalid Channel is returned.
+         * played, an invalid Channel is returned.
          */
         Channel Play(SoundHandle handle, const Entity& entity) const;
 
         /**
-         * @brief Play a sound associated with the given sound handle in an
-         *        Entity scope with the given gain.
+         * @brief Plays a sound associated with the given sound handle in an Entity
+         * scope with the given gain.
          *
          * @param handle A handle to the sound to play.
          * @param entity The entity which is playing the sound.
          * @param userGain The gain of the sound.
          *
          * @return The channel the sound is played on. If the sound could not be
-         *         played, an invalid Channel is returned.
+         * played, an invalid Channel is returned.
          */
-        Channel Play(SoundHandle handle, const Entity& entity, float userGain) const;
+        Channel Play(SoundHandle handle, const Entity& entity, AmReal32 userGain) const;
 
         /**
-         * @brief Play a sound or a collection associated with the given name.
+         * @brief Plays a sound object associated with the given name in the World scope.
          *
-         * Sound objects will have the priority on collection objects.
-         *
-         * Note: Playing an object with its handle is faster than using the
+         * @note Playing a sound object with its handle is faster than using the
          * name as using the name requires a map lookup internally.
          *
-         * @param name The name of the object to play.
+         * @param name The name of the sound object to play.
          *
          * @return The channel the sound is played on. If the object could not be
-         *         played, an invalid Channel is returned.
+         * played, an invalid Channel is returned.
          */
         [[nodiscard]] Channel Play(const AmString& name) const;
 
         /**
-         * @brief Play a sound or a collection associated with the given name.
+         * @brief Plays a sound object associated with the given name in the World scope.
          *
-         * Sound objects will have the priority on collection objects.
-         *
-         * Note: Playing an object with its handle is faster than using the
+         * @note Playing a sound object with its handle is faster than using the
          * name as using the name requires a map lookup internally.
          *
-         * @param name The name of the object to play.
+         * @param name The name of the sound object to play.
          * @param location The location of the sound.
          *
          * @return The channel the sound is played on. If the object could not be
-         *         played, an invalid Channel is returned.
+         * played, an invalid Channel is returned.
          */
         [[nodiscard]] Channel Play(const AmString& name, const AmVec3& location) const;
 
         /**
-         * @brief Play a sound or a collection associated with the given name.
+         * @brief Plays a sound object associated with the given name in the World scope.
          *
-         * Sound objects will have the priority on collection objects.
-         *
-         * Note: Playing an object with its handle is faster than using the
+         * @note Playing a sound object with its handle is faster than using the
          * name as using the name requires a map lookup internally.
          *
-         * @param name The name of the object to play.
+         * @param name The name of the sound object to play.
          * @param location The location of the sound.
          * @param userGain The gain of the sound.
          *
          * @return The channel the sound is played on. If the object could not be
-         *         played, an invalid Channel is returned.
+         * played, an invalid Channel is returned.
          */
-        [[nodiscard]] Channel Play(const AmString& name, const AmVec3& location, float userGain) const;
+        [[nodiscard]] Channel Play(const AmString& name, const AmVec3& location, AmReal32 userGain) const;
 
         /**
-         * @brief Play a sound or a collection associated with the given name.
+         * @brief Plays a sound object associated with the given name in an Entity scope.
          *
-         * Sound objects will have the priority on collection objects.
-         *
-         * Note: Playing an object with its handle is faster than using the
+         * @note Playing a sound object with its handle is faster than using the
          * name as using the name requires a map lookup internally.
          *
-         * @param name The name of the object to play.
+         * @param name The name of the sound object to play.
          * @param entity The entity which is playing the sound.
          *
          * @return The channel the sound is played on. If the object could not be
-         *         played, an invalid Channel is returned.
+         * played, an invalid Channel is returned.
          */
         [[nodiscard]] Channel Play(const AmString& name, const Entity& entity) const;
 
         /**
-         * @brief Play a sound or a collection associated with the given name.
+         * @brief Plays a sound object associated with the given name in an Entity scope.
          *
-         * Sound objects will have the priority on collection objects.
-         *
-         * Note: Playing an object with its handle is faster than using the
+         * @note Playing a sound object with its handle is faster than using the
          * name as using the name requires a map lookup internally.
          *
-         * @param name The name of the object to play.
+         * @param name The name of the sound object to play.
          * @param entity The entity which is playing the sound.
          * @param userGain The gain of the sound.
          *
          * @return The channel the sound is played on. If the object could not be
-         *         played, an invalid Channel is returned.
+         * played, an invalid Channel is returned.
          */
-        [[nodiscard]] Channel Play(const AmString& name, const Entity& entity, float userGain) const;
+        [[nodiscard]] Channel Play(const AmString& name, const Entity& entity, AmReal32 userGain) const;
 
         /**
-         * @brief Play a sound or a collection associated with the given ID in the
+         * @brief Plays a sound object associated with the given ID in the
          * World scope, at the origin of the world.
          *
-         * Sound objects will have the priority on collection objects.
-         *
-         * Note: Playing an object with its handle is faster than using the
+         * @note Playing a sound object with its handle is faster than using the
          * ID as using the ID requires a map lookup internally.
          *
-         * @param id The ID of the object to play.
+         * @param id The ID of the sound object to play.
          *
          * @return The channel the sound is played on. If the object could not be
-         *         played, an invalid Channel is returned.
+         * played, an invalid Channel is returned.
          */
         [[nodiscard]] Channel Play(AmObjectID id) const;
 
         /**
-         * @brief Play a sound or a collection associated with the given ID in the
+         * @brief Plays a sound object associated with the given ID in the
          * World scope, at the given location.
          *
-         * Sound objects will have the priority on collection objects.
-         *
-         * Note: Playing an object with its handle is faster than using the
+         * @note Playing a sound object with its handle is faster than using the
          * ID as using the ID requires a map lookup internally.
          *
-         * @param id The ID of the object to play.
+         * @param id The ID of the sound object to play.
          * @param location The location of the sound.
          *
          * @return The channel the sound is played on. If the sound could not be
-         *         played, an invalid Channel is returned.
+         * played, an invalid Channel is returned.
          */
         [[nodiscard]] Channel Play(AmObjectID id, const AmVec3& location) const;
 
         /**
-         * @brief Play a sound or a collection associated with the given ID in the
+         * @brief Plays a sound object associated with the given ID in the
          * World scope, at the given location, and with the given gain.
          *
-         * Sound objects will have the priority on collection objects.
-         *
-         * Note: Playing an object with its handle is faster than using the
+         * @note Playing an object with its handle is faster than using the
          * ID as using the ID requires a map lookup internally.
          *
-         * @param id The ID of the object to play.
+         * @param id The ID of the sound object to play.
          * @param location The location of the sound.
          * @param userGain The gain of the sound.
          *
          * @return The channel the sound is played on. If the sound could not be
-         *         played, an invalid Channel is returned.
+         * played, an invalid Channel is returned.
          */
-        [[nodiscard]] Channel Play(AmObjectID id, const AmVec3& location, float userGain) const;
+        [[nodiscard]] Channel Play(AmObjectID id, const AmVec3& location, AmReal32 userGain) const;
 
         /**
-         * @brief Play a sound or a collection associated with the given ID in an
-         * Entity scope.
+         * @brief Plays a sound or a collection associated with the given ID in an Entity scope.
          *
-         * Sound objects will have the priority on collection objects.
-         *
-         * Note: Playing an object with its handle is faster than using the
+         * @note Playing an object with its handle is faster than using the
          * ID as using the ID requires a map lookup internally.
          *
-         * @param id The ID of the object to play.
+         * @param id The ID of the sound object to play.
          * @param entity The entity which is playing the sound.
          *
          * @return The channel the sound is played on. If the sound could not be
-         *         played, an invalid Channel is returned.
+         * played, an invalid Channel is returned.
          */
         [[nodiscard]] Channel Play(AmObjectID id, const Entity& entity) const;
 
         /**
-         * @brief Play a sound or a collection associated with the given ID in an
-         * Entity scope with the given gain.
+         * @brief Plays a sound object associated with the given ID in an Entity
+         * scope with the given gain.
          *
-         * Sound objects will have the priority on collection objects.
-         *
-         * Note: Playing an object with its handle is faster than using the
+         * @note Playing an object with its handle is faster than using the
          * ID as using the ID requires a map lookup internally.
          *
-         * @param id The ID of the object to play.
+         * @param id The ID of the sound object to play.
          * @param entity The entity which is playing the sound.
          * @param userGain The gain of the sound.
          *
          * @return The channel the sound is played on. If the sound could not be
-         *         played, an invalid Channel is returned.
+         * played, an invalid Channel is returned.
          */
-        [[nodiscard]] Channel Play(AmObjectID id, const Entity& entity, float userGain) const;
+        [[nodiscard]] Channel Play(AmObjectID id, const Entity& entity, AmReal32 userGain) const;
 
         /**
          * @brief Stops all playing sound objects.
@@ -999,27 +974,25 @@ namespace SparkyStudios::Audio::Amplitude
         void StopAll() const;
 
         /**
-         * @brief Trigger the event associated with the given sound handle at the
-         *        given location.
+         * @brief Triggers the event associated to the given handle.
          *
-         * @param handle A handle of the event to trigger.
-         * @param entity The which trigger the event.
+         * @param handle The handle of the event to trigger.
+         * @param entity The entity in which trigger the event.
          *
-         * @return The triggered event.
+         * @return An @c EventCanceler object which may be used to cancel the execution of the event..
          */
         [[nodiscard]] EventCanceler Trigger(EventHandle handle, const Entity& entity) const;
 
         /**
-         * @brief Trigger the event associated with the specified event name at
-         *        the given location.
+         * @brief Triggers the event associated to the given handle.
          *
-         * Note: Triggering an event with its EventHandle is faster than using the
+         * @note Triggering an event with its EventHandle is faster than using the
          * event name as using the name requires a map lookup internally.
          *
          * @param name The name of event to trigger.
-         * @param entity The which trigger the event.
+         * @param entity The entity in which trigger the event.
          *
-         * @return The triggered event.
+         * @return An @c EventCanceler object which may be used to cancel the execution of the event..
          */
         [[nodiscard]] EventCanceler Trigger(const AmString& name, const Entity& entity) const;
 
@@ -1249,9 +1222,10 @@ namespace SparkyStudios::Audio::Amplitude
         static void DestroyInstance();
 
     private:
-        Channel PlayScopedSwitchContainer(SwitchContainerHandle handle, const Entity& entity, const AmVec3& location, float userGain) const;
-        Channel PlayScopedCollection(CollectionHandle handle, const Entity& entity, const AmVec3& location, float userGain) const;
-        Channel PlayScopedSound(SoundHandle handle, const Entity& entity, const AmVec3& location, float userGain) const;
+        Channel PlayScopedSwitchContainer(
+            SwitchContainerHandle handle, const Entity& entity, const AmVec3& location, AmReal32 userGain) const;
+        Channel PlayScopedCollection(CollectionHandle handle, const Entity& entity, const AmVec3& location, AmReal32 userGain) const;
+        Channel PlayScopedSound(SoundHandle handle, const Entity& entity, const AmVec3& location, AmReal32 userGain) const;
 
         // The lis of paths in which search for plugins.
         static std::set<AmOsString> _pluginSearchPaths;
