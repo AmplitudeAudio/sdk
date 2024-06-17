@@ -42,7 +42,10 @@ namespace SparkyStudios::Audio::Amplitude
 
     bool DiskFile::Eof()
     {
-        return feof(m_fileHandle) != 0;
+        const long pos = ftell(m_fileHandle);
+        const bool value = fgetc(m_fileHandle) == EOF;
+        fseek(m_fileHandle, pos, SEEK_SET);
+        return value;
     }
 
     AmSize DiskFile::Read(AmUInt8Buffer dst, AmSize bytes)
