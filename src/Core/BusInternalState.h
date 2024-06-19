@@ -144,7 +144,7 @@ namespace SparkyStudios::Audio::Amplitude
          */
         [[nodiscard]] bool IsMute() const;
 
-        // Fade to the given gain over duration seconds.
+        // Fade to the given gain over duration milliseconds.
         void FadeTo(AmReal32 gain, AmTime duration);
 
         // Resets the duck gain to 1.0f. Duck gain must be reset each frame before

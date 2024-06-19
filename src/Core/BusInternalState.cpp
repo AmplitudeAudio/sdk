@@ -170,7 +170,7 @@ namespace SparkyStudios::Audio::Amplitude
         _targetUserGain = gain;
         _gainFader->Set(_userGain, _targetUserGain, duration);
 
-        // Set now as the stat time of the transition
+        // Set now as the start time of the transition
         _gainFader->Start(Engine::GetInstance()->GetTotalTime());
     }
 

@@ -107,7 +107,7 @@ namespace SparkyStudios::Audio::Amplitude
             return;
 
         case EventActionType_Wait:
-            _accumulatedTime += delta_time * kAmSecond;
+            _accumulatedTime += delta_time;
         }
     }
 

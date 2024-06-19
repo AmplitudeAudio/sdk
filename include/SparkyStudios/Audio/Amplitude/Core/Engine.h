@@ -128,16 +128,16 @@ namespace SparkyStudios::Audio::Amplitude
         [[nodiscard]] const FileSystem* GetFileSystem() const;
 
         /**
-         * @brief Updates the engine state for the given number of seconds.
+         * @brief Updates the engine state for the given number of milliseconds.
          *
-         * @param delta The number of seconds since the last frame.
+         * @param delta The number of milliseconds since the last frame.
          */
         void AdvanceFrame(AmTime delta) const;
 
         /**
-         * @brief Gets the total elapsed time since the start of the engine.
+         * @brief Gets the total elapsed time in milliseconds since the start of the engine.
          *
-         * @return The total elapsed time since the start of the engine.
+         * @return The total elapsed time in milliseconds since the start of the engine.
          */
         [[nodiscard]] AmTime GetTotalTime() const;
 
@@ -1202,12 +1202,12 @@ namespace SparkyStudios::Audio::Amplitude
         /**
          * @brief Register all default plugins.
          */
-        static void RegisterDefaultPlugins();
+        static bool RegisterDefaultPlugins();
 
         /**
          * @brief Unregister all default plugins.
          */
-        static void UnregisterDefaultPlugins();
+        static bool UnregisterDefaultPlugins();
 
 #pragma endregion
 

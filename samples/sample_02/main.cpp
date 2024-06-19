@@ -502,7 +502,7 @@ void SampleState::Run()
     {
         previous_time = time;
         time = SDL_GetTicks();
-        AmTime delta_time = (time - previous_time) / kAmSecond;
+        const AmTime delta_time = time - previous_time;
         AdvanceFrame(static_cast<AmReal32>(delta_time));
     }
 }

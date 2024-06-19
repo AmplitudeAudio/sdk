@@ -255,7 +255,7 @@ namespace SparkyStudios::Audio::Amplitude
         // The current frame, i.e. the number of times AdvanceFrame has been called.
         AmUInt64 current_frame;
 
-        // The total elapsed time since the start of the game.
+        // The total elapsed time in milliseconds since the start of the game.
         AmTime total_time;
 
         // The way Amplitude should fetch the best listener for an audio source.

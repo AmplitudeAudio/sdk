@@ -292,8 +292,14 @@ namespace SparkyStudios::Audio::Amplitude
         _pluginSearchPaths.erase(it);
     }
 
-    void Engine::RegisterDefaultPlugins()
+    bool Engine::RegisterDefaultPlugins()
     {
+        if (gAmplitude != nullptr && gAmplitude->_state != nullptr)
+            return false; // Cannot register the default plugins when the engine is already initialized.
+
+        // Ensure to cleanup registries
+        UnregisterDefaultPlugins();
+
         sClipProcessorPlugin.reset(ampoolnew(MemoryPoolKind::Engine, ClipProcessor));
         sEffectProcessorPlugin.reset(ampoolnew(MemoryPoolKind::Engine, EffectProcessor));
         sEnvironmentProcessorPlugin.reset(ampoolnew(MemoryPoolKind::Engine, EnvironmentProcessor));
@@ -332,10 +338,15 @@ namespace SparkyStudios::Audio::Amplitude
         sLofiFilterPlugin.reset(ampoolnew(MemoryPoolKind::Engine, LofiFilter));
         sRobotizeFilterPlugin.reset(ampoolnew(MemoryPoolKind::Engine, RobotizeFilter));
         sWaveShaperFilterPlugin.reset(ampoolnew(MemoryPoolKind::Engine, WaveShaperFilter));
+
+        return true;
     }
 
-    void Engine::UnregisterDefaultPlugins()
+    bool Engine::UnregisterDefaultPlugins()
     {
+        if (gAmplitude != nullptr && gAmplitude->_state != nullptr)
+            return false; // Cannot unregister the default plugins when the engine is already initialized.
+
         sClipProcessorPlugin.reset(nullptr);
         sEffectProcessorPlugin.reset(nullptr);
         sEnvironmentProcessorPlugin.reset(nullptr);
@@ -374,6 +385,8 @@ namespace SparkyStudios::Audio::Amplitude
         sLofiFilterPlugin.reset(nullptr);
         sRobotizeFilterPlugin.reset(nullptr);
         sWaveShaperFilterPlugin.reset(nullptr);
+
+        return true;
     }
 
     Engine* Engine::GetInstance()
@@ -2297,47 +2310,32 @@ namespace SparkyStudios::Audio::Amplitude
 
         EraseFinishedSounds(_state);
 
-        for (auto&& rtpc : _state->rtpc_map)
-        {
-            rtpc.second->Update(delta);
-        }
+        for (const auto& rtpc : _state->rtpc_map | std::views::values)
+            rtpc->Update(delta);
 
-        for (auto&& effect : _state->effect_map)
-        {
-            effect.second->Update();
-        }
+        for (const auto& effect : _state->effect_map | std::views::values)
+            effect->Update();
 
         for (auto&& state : _state->listener_list)
-        {
             state.Update();
-        }
 
         for (auto&& state : _state->environment_list)
-        {
             state.Update();
-        }
 
         for (auto&& state : _state->entity_list)
         {
             state.Update();
 
             if (!_state->track_environments)
-            {
                 for (auto&& env : _state->environment_list)
-                {
                     state.SetEnvironmentFactor(env.GetId(), env.GetFactor(Entity(&state)));
-                }
-            }
         }
 
         for (auto&& bus : _state->buses)
-        {
             bus.ResetDuckGain();
-        }
+
         for (auto&& bus : _state->buses)
-        {
             bus.UpdateDuckGain(delta);
-        }
 
         if (_state->master_bus)
         {
@@ -2346,10 +2344,10 @@ namespace SparkyStudios::Audio::Amplitude
         }
 
         PriorityList& list = _state->playing_channel_list;
+
         for (auto&& state : list)
-        {
             UpdateChannel(&state, _state);
-        }
+
         list.sort(
             [](const ChannelInternalState& a, const ChannelInternalState& b) -> bool
             {

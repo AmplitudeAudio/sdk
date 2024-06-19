@@ -240,9 +240,10 @@ static void run(AmVoidPtr param)
             }
         }
 
-        amEngine->AdvanceFrame(1.0 / 60);
+        constexpr AmTime delta = kAmSecond / 60.0;
 
-        Thread::Sleep(static_cast<AmInt32>(kAmSecond / 60.0));
+        amEngine->AdvanceFrame(delta);
+        Thread::Sleep(static_cast<AmInt32>(delta));
     }
 
     amEngine->Deinitialize();

@@ -93,10 +93,10 @@ namespace SparkyStudios::Audio::Amplitude
         [[nodiscard]] AmReal32 GetGain() const;
 
         /**
-         * @brief Fades to <code>gain</code> over <code>duration</code> seconds.
+         * @brief Fades to \c gain over \c duration milliseconds.
          *
          * @param gain The gain value to fade to.
-         * @param duration The amount of time in seconds to take to reach the desired gain.
+         * @param duration The amount of time in milliseconds to take to reach the desired gain.
          */
         void FadeTo(AmReal32 gain, AmTime duration) const;
 
