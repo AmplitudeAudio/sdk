@@ -86,6 +86,9 @@ namespace SparkyStudios::Audio::Amplitude
 
         ma_data_converter dataConverter; // miniaudio resampler & channel converter
 
+        /**
+         * @brief Resets the layer.
+         */
         void Reset();
     };
 
@@ -99,6 +102,8 @@ namespace SparkyStudios::Audio::Amplitude
      */
     class Mixer
     {
+        friend struct AmplimixMutexLocker;
+
     public:
         explicit Mixer(AmReal32 masterGain);
 

@@ -24,6 +24,47 @@
 
 namespace SparkyStudios::Audio::Amplitude
 {
+    struct AmplimixMutexLocker
+    {
+        explicit AmplimixMutexLocker(Mixer* mixer)
+            : m_mixer(mixer)
+        {
+            Lock();
+        }
+
+        ~AmplimixMutexLocker()
+        {
+            Unlock();
+        }
+
+        [[nodiscard]] bool IsLocked() const
+        {
+            return m_locked;
+        }
+
+        void Lock()
+        {
+            if (IsLocked())
+                return;
+
+            m_mixer->LockAudioMutex();
+            m_locked = true;
+        }
+
+        void Unlock()
+        {
+            if (!IsLocked())
+                return;
+
+            m_mixer->UnlockAudioMutex();
+            m_locked = false;
+        }
+
+    private:
+        Mixer* m_mixer;
+        bool m_locked = false;
+    };
+
 #if defined(AM_SIMD_INTRINSICS)
     constexpr AmUInt32 kProcessedFramesCount = AmAudioFrame::size;
 #else
@@ -551,7 +592,7 @@ namespace SparkyStudios::Audio::Amplitude
         if (!_initialized || amEngine->GetState() == nullptr || amEngine->GetState()->stopping || amEngine->GetState()->paused)
             return 0;
 
-        LockAudioMutex();
+        AmplimixMutexLocker lock(this);
 
         const auto numChannels = static_cast<AmUInt16>(_device.mRequestedOutputChannels);
 
@@ -607,7 +648,7 @@ namespace SparkyStudios::Audio::Amplitude
     Cleanup:
         SoundChunk::DestroyChunk(align);
 
-        UnlockAudioMutex();
+        lock.Unlock();
 
         ExecuteCommands();
 
@@ -645,7 +686,7 @@ namespace SparkyStudios::Audio::Amplitude
         if (id == 0)
             id = kAmplimixLayersCount;
 
-        LockAudioMutex();
+        AmplimixMutexLocker lock(this);
 
         // get layer for next sound handle id
         auto* lay = GetLayer(layer);
@@ -715,7 +756,6 @@ namespace SparkyStudios::Audio::Amplitude
 
                 CallLogFunc("[ERROR] Cannot process frames. Unable to initialize the samples data converter.");
 
-                UnlockAudioMutex();
                 return 0;
             }
 
@@ -723,7 +763,6 @@ namespace SparkyStudios::Audio::Amplitude
             AMPLIMIX_STORE(&lay->flag, flag);
         }
 
-        UnlockAudioMutex();
         return layer;
     }
 
@@ -793,7 +832,7 @@ namespace SparkyStudios::Audio::Amplitude
         if (flag >= ePSF_MAX)
             return false;
 
-        LockAudioMutex();
+        AmplimixMutexLocker lock(this);
 
         // get layer based on the lowest bits of id
         auto* lay = GetLayer(layer);
@@ -801,12 +840,9 @@ namespace SparkyStudios::Audio::Amplitude
         // check id and state flag to make sure the id is valid
         if (PlayStateFlag prev; (id == lay->id) && ((prev = AMPLIMIX_LOAD(&lay->flag)) >= ePSF_STOP))
         {
-            // return success if already in desired state
+            // return failure if already in desired state
             if (prev == flag)
-            {
-                UnlockAudioMutex();
-                return true;
-            }
+                return false;
 
             // run appropriate callback
             if (prev == ePSF_STOP && (flag == ePSF_PLAY || flag == ePSF_LOOP))
@@ -821,20 +857,18 @@ namespace SparkyStudios::Audio::Amplitude
             // swap if flag has not changed and return if successful
             if (AMPLIMIX_CSWAP(&lay->flag, &prev, flag))
             {
-                UnlockAudioMutex();
                 return true;
             }
         }
 
         // return failure
-        UnlockAudioMutex();
         return false;
     }
 
     PlayStateFlag Mixer::GetPlayState(AmUInt32 id, AmUInt32 layer)
     {
         // get layer based on the lowest bits of id
-        auto* lay = GetLayer(layer);
+        const auto* lay = GetLayer(layer);
 
         // check id and state flag to make sure the id is valid
         if (PlayStateFlag flag; (id == lay->id) && ((flag = AMPLIMIX_LOAD(&lay->flag)) > ePSF_STOP))
@@ -871,7 +905,7 @@ namespace SparkyStudios::Audio::Amplitude
 
     void Mixer::StopAll()
     {
-        LockAudioMutex();
+        AmplimixMutexLocker lock(this);
 
         // go through all active layers and set their states to the stop state
         for (auto&& lay : _layers)
@@ -880,13 +914,11 @@ namespace SparkyStudios::Audio::Amplitude
             if (AMPLIMIX_LOAD(&lay.flag) > ePSF_STOP)
                 AMPLIMIX_STORE(&lay.flag, ePSF_STOP);
         }
-
-        UnlockAudioMutex();
     }
 
     void Mixer::HaltAll()
     {
-        LockAudioMutex();
+        AmplimixMutexLocker lock(this);
 
         // go through all playing layers and set their states to halt
         for (auto&& lay : _layers)
@@ -895,13 +927,11 @@ namespace SparkyStudios::Audio::Amplitude
             if (PlayStateFlag flag; (flag = AMPLIMIX_LOAD(&lay.flag)) > ePSF_HALT)
                 AMPLIMIX_CSWAP(&lay.flag, &flag, ePSF_HALT);
         }
-
-        UnlockAudioMutex();
     }
 
     void Mixer::PlayAll()
     {
-        LockAudioMutex();
+        AmplimixMutexLocker lock(this);
 
         // go through all halted layers and set their states to play
         for (auto&& lay : _layers)
@@ -911,8 +941,6 @@ namespace SparkyStudios::Audio::Amplitude
             // swap the flag to play if it is on halt
             AMPLIMIX_CSWAP(&lay.flag, &flag, ePSF_PLAY);
         }
-
-        UnlockAudioMutex();
     }
 
     bool Mixer::IsInsideThreadMutex() const
@@ -1235,9 +1263,7 @@ namespace SparkyStudios::Audio::Amplitude
     void Mixer::LockAudioMutex()
     {
         if (_audioThreadMutex)
-        {
             Thread::LockMutex(_audioThreadMutex);
-        }
 
         _insideAudioThreadMutex[Thread::GetCurrentThreadId()] = true;
     }
@@ -1247,9 +1273,7 @@ namespace SparkyStudios::Audio::Amplitude
         AMPLITUDE_ASSERT(IsInsideThreadMutex());
 
         if (_audioThreadMutex)
-        {
             Thread::UnlockMutex(_audioThreadMutex);
-        }
 
         _insideAudioThreadMutex[Thread::GetCurrentThreadId()] = false;
     }
