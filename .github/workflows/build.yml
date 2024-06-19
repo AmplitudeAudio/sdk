@@ -20,7 +20,7 @@ jobs:
       contents: read
     steps:
       - name: Check out code
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
       - name: Cleanup
         run: |
@@ -100,10 +100,10 @@ jobs:
 
     steps:
       - name: Check out code
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
       - name: Restore SDK Cache
-        uses: actions/cache/restore@v3
+        uses: actions/cache/restore@v4
         with:
           enableCrossOsArchive: true
           path: sdk

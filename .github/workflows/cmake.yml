@@ -68,7 +68,7 @@ jobs:
 
     steps:
       # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
         with:
           submodules: recursive
 
@@ -137,7 +137,7 @@ jobs:
           xcode-version: latest
 
       - name: Restore SDK Cache
-        uses: actions/cache/restore@v3
+        uses: actions/cache/restore@v4
         with:
           enableCrossOsArchive: true
           path: sdk
@@ -181,7 +181,7 @@ jobs:
           cp ./bin/flatc ./sdk/bin/${{ matrix.config.sdk_dir }}
 
       - name: Save SDK Cache
-        uses: actions/cache/save@v3
+        uses: actions/cache/save@v4
         id: cache
         with:
           enableCrossOsArchive: true
