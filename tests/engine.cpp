@@ -64,9 +64,12 @@ TEST_CASE("Engine Tests", "[engine][core][amplitude]")
     {
         THEN("it can be initialized with a default driver")
         {
+            Driver::SetDefault("null");
+
             REQUIRE(amEngine->Deinitialize());
             REQUIRE(amEngine->Initialize(AM_OS_STRING("tests.invalid.unknown_driver.config.amconfig")));
             REQUIRE(amEngine->GetDriver()->GetName() != "unknown");
+            REQUIRE(amEngine->GetDriver()->GetName() == "null");
             REQUIRE(amEngine->Deinitialize());
         }
 
@@ -84,9 +87,12 @@ TEST_CASE("Engine Tests", "[engine][core][amplitude]")
     {
         THEN("it can be initialized with a default driver")
         {
+            Driver::SetDefault("null");
+
             REQUIRE(amEngine->Deinitialize());
             REQUIRE(amEngine->Initialize(AM_OS_STRING("tests.invalid.unset_driver.config.amconfig")));
             REQUIRE(amEngine->GetDriver()->GetName() != "unknown");
+            REQUIRE(amEngine->GetDriver()->GetName() == "null");
             REQUIRE(amEngine->Deinitialize());
         }
 
@@ -168,6 +174,16 @@ TEST_CASE("Engine Tests", "[engine][core][amplitude]")
     {
         REQUIRE(amEngine->Initialize(AM_OS_STRING("tests.config.amconfig")));
         REQUIRE(amEngine->IsInitialized());
+
+        SECTION("cannot register default plugins after initialization")
+        {
+            REQUIRE_FALSE(Engine::RegisterDefaultPlugins());
+        }
+
+        SECTION("cannot unregister default plugins after initialization")
+        {
+            REQUIRE_FALSE(Engine::UnregisterDefaultPlugins());
+        }
 
         THEN("it can be paused and resumed")
         {
@@ -414,7 +430,7 @@ TEST_CASE("Engine Tests", "[engine][core][amplitude]")
                     REQUIRE(channel.Playing());
                 }
 
-                THEN("it can be paused")
+                THEN("it can be paused with delay")
                 {
                     channel.Pause();
                     REQUIRE(channel.GetPlaybackState() == ChannelPlaybackState::FadingOut);
@@ -431,7 +447,22 @@ TEST_CASE("Engine Tests", "[engine][core][amplitude]")
                     channel.Stop(0);
                 }
 
-                THEN("it can be stopped")
+                THEN("it can be paused without delay")
+                {
+                    channel.Pause(0);
+                    REQUIRE(channel.GetPlaybackState() == ChannelPlaybackState::Paused);
+                    REQUIRE_FALSE(channel.Playing());
+
+                    Thread::Sleep(kAmSecond); // wait for sixty frames
+
+                    channel.Resume(0);
+                    REQUIRE(channel.GetPlaybackState() == ChannelPlaybackState::Playing);
+                    REQUIRE(channel.Playing());
+
+                    channel.Stop(0);
+                }
+
+                THEN("it can be stopped with delay")
                 {
                     channel.Stop();
                     REQUIRE(channel.GetPlaybackState() == ChannelPlaybackState::FadingOut);
@@ -443,6 +474,22 @@ TEST_CASE("Engine Tests", "[engine][core][amplitude]")
                     Thread::Sleep(kAmSecond); // wait for sixty frames
                     REQUIRE_FALSE(channel.GetPlaybackState() == ChannelPlaybackState::FadingIn);
                     REQUIRE(channel.GetPlaybackState() == ChannelPlaybackState::Stopped);
+
+                    channel.Stop(0);
+                }
+
+                THEN("it can be stopped without delay")
+                {
+                    channel.Stop(0);
+                    REQUIRE(channel.GetPlaybackState() == ChannelPlaybackState::Stopped);
+                    REQUIRE_FALSE(channel.Playing());
+
+                    Thread::Sleep(kAmSecond); // wait for sixty frames
+
+                    channel.Resume(0);
+                    REQUIRE_FALSE(channel.GetPlaybackState() == ChannelPlaybackState::Playing);
+                    REQUIRE(channel.GetPlaybackState() == ChannelPlaybackState::Stopped);
+                    REQUIRE_FALSE(channel.Playing());
 
                     channel.Stop(0);
                 }
@@ -497,6 +544,74 @@ TEST_CASE("Engine Tests", "[engine][core][amplitude]")
 
                 if (channel.Valid())
                     channel.Stop(0);
+
+                amEngine->UnloadSoundBank("init.ambank");
+            }
+
+            GIVEN("a registered bus")
+            {
+                Bus bus = amEngine->FindBus(kAmMasterBusId);
+                REQUIRE(bus.Valid());
+
+                THEN("its id is correct")
+                {
+                    REQUIRE(bus.GetId() == kAmMasterBusId);
+                }
+
+                THEN("its name is correct")
+                {
+                    REQUIRE(bus.GetName() == "master");
+                }
+
+                THEN("its user gain can be updated")
+                {
+                    AmReal32 newGain = 0.5f;
+                    bus.SetGain(newGain);
+
+                    AmReal32 result = bus.GetGain();
+                    REQUIRE(result == newGain);
+
+                    bus.SetGain(1.0f);
+                }
+
+                THEN("its final gain is correct")
+                {
+                    REQUIRE(bus.GetFinalGain() == 1.0f);
+
+                    bus.SetGain(0.5f);
+                    Thread::Sleep(kAmSecond);
+                    REQUIRE(bus.GetFinalGain() == 0.5f);
+
+                    bus.SetGain(1.0f);
+                }
+
+                THEN("it can be muted")
+                {
+                    bus.SetMute(true);
+                    REQUIRE(bus.IsMuted());
+
+                    bus.SetMute(false);
+                    REQUIRE_FALSE(bus.IsMuted());
+                }
+
+                THEN("its gain can be faded to a lower/higher value")
+                {
+                    bus.SetGain(1.0f);
+
+                    bus.FadeTo(0.5f, kMinFadeDuration);
+                    Thread::Sleep(kAmSecond);
+                    REQUIRE(bus.GetGain() == 0.5f);
+
+                    bus.FadeTo(1.0f, kMinFadeDuration);
+                    Thread::Sleep(kAmSecond);
+                    REQUIRE(bus.GetGain() == 1.0f);
+                }
+
+                THEN("it can cleared")
+                {
+                    bus.Clear();
+                    REQUIRE_FALSE(bus.Valid());
+                }
 
                 amEngine->UnloadSoundBank("init.ambank");
             }

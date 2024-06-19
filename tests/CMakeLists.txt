@@ -27,7 +27,8 @@ add_executable(${PROJECT_NAME}
     listener.cpp
     entity.cpp
     engine.cpp
-    environment.cpp)
+    environment.cpp
+    common.cpp)
 target_link_libraries(${PROJECT_NAME} PRIVATE Catch2::Catch2 Shared)
 
 add_custom_command(

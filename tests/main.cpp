@@ -34,16 +34,16 @@ struct MyListener : Catch::EventListenerBase
 
         while (self->running)
         {
-            amEngine->AdvanceFrame(1.0 / 60);
-            Thread::Sleep(static_cast<AmInt32>(kAmSecond / 60.0));
+            constexpr AmTime delta = kAmSecond / 60.0;
+
+            amEngine->AdvanceFrame(delta);
+            Thread::Sleep(static_cast<AmInt32>(delta));
         }
     }
 
     // The whole test run starting
     void testRunStarting(Catch::TestRunInfo const& testRunInfo) override
     {
-        MemoryManager::Initialize({});
-
         fileSystem.SetBasePath(AM_OS_STRING("./samples/assets"));
 
         amEngine->SetFileSystem(&fileSystem);
@@ -93,14 +93,12 @@ struct MyListener : Catch::EventListenerBase
             amEngine->StartCloseFileSystem();
             while (!amEngine->TryFinalizeCloseFileSystem())
                 Thread::Sleep(1);
-
-            amEngine->DestroyInstance();
         }
 
         // Unregister all default plugins
         Engine::UnregisterDefaultPlugins();
 
-        MemoryManager::Deinitialize();
+        amEngine->DestroyInstance();
     }
 
     AmThreadHandle threadHandle;
@@ -112,7 +110,11 @@ CATCH_REGISTER_LISTENER(MyListener)
 
 int main(int argc, char* argv[])
 {
+    MemoryManager::Initialize({});
+
     const auto res = Catch::Session().run(argc, argv);
+
+    MemoryManager::Deinitialize();
 
     return res;
 }
