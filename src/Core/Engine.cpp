@@ -20,8 +20,8 @@
 
 #include <SparkyStudios/Audio/Amplitude/Amplitude.h>
 
-#include <Core/BusInternalState.h>
 #include <Core/EngineInternalState.h>
+#include <Core/Playback/BusInternalState.h>
 
 #include "buses_definition_generated.h"
 #include "collection_definition_generated.h"

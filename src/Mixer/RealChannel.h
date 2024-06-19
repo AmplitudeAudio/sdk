@@ -19,7 +19,7 @@
 
 #include <vector>
 
-#include <SparkyStudios/Audio/Amplitude/Core/Channel.h>
+#include <SparkyStudios/Audio/Amplitude/Core/Playback/Channel.h>
 
 #include <SparkyStudios/Audio/Amplitude/Math/HandmadeMath.h>
 

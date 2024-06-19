@@ -18,7 +18,7 @@
 #include <SparkyStudios/Audio/Amplitude/Core/Common.h>
 #include <SparkyStudios/Audio/Amplitude/Core/Memory.h>
 
-#include <Core/ChannelInternalState.h>
+#include <Core/Playback/ChannelInternalState.h>
 #include <Utils/intrusive_list.h>
 
 namespace SparkyStudios::Audio::Amplitude

@@ -18,6 +18,7 @@
 #define SS_AMPLITUDE_AUDIO_CHANNEL_H
 
 #include <SparkyStudios/Audio/Amplitude/Core/Common.h>
+#include <SparkyStudios/Audio/Amplitude/Core/Playback/ChannelEventListener.h>
 
 namespace SparkyStudios::Audio::Amplitude
 {
@@ -162,6 +163,15 @@ namespace SparkyStudios::Audio::Amplitude
          * @return The internal state of this Channel.
          */
         [[nodiscard]] ChannelInternalState* GetState() const;
+
+        /**
+         * @brief Registers a callback for a channel event.
+         *
+         * @param event The channel event.
+         * @param callback The callback function.
+         * @param userData The user data to pass to the callback.
+         */
+        void On(ChannelEvent event, ChannelEventCallback callback, void* userData = nullptr) const;
 
     private:
         Channel(ChannelInternalState* state, AmUInt64 id);

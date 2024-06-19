@@ -21,8 +21,9 @@
 
 #include <SparkyStudios/Audio/Amplitude/Core/Common.h>
 
-#include <SparkyStudios/Audio/Amplitude/Core/Channel.h>
 #include <SparkyStudios/Audio/Amplitude/Core/Entity.h>
+#include <SparkyStudios/Audio/Amplitude/Core/Playback/Channel.h>
+#include <SparkyStudios/Audio/Amplitude/Core/Playback/ChannelEventListener.h>
 #include <SparkyStudios/Audio/Amplitude/Sound/Collection.h>
 #include <SparkyStudios/Audio/Amplitude/Sound/Sound.h>
 #include <SparkyStudios/Audio/Amplitude/Sound/Switch.h>
@@ -288,6 +289,17 @@ namespace SparkyStudios::Audio::Amplitude
 
         void HaltInternal();
 
+        /**
+         * @brief Registers a callback for a channel event.
+         *
+         * @param event The channel event.
+         * @param callback The callback function.
+         * @param userData The user data to pass to the callback.
+         */
+        void On(ChannelEvent event, ChannelEventCallback callback, void* userData = nullptr);
+
+        void Trigger(ChannelEvent event);
+
         // The node that tracks the location in the priority list.
         fplutil::intrusive_list_node priority_node;
 
@@ -352,6 +364,8 @@ namespace SparkyStudios::Audio::Amplitude
         AmUInt64 _channelStateId;
 
         std::map<AmListenerID, AmReal32> _dopplerFactors;
+
+        std::map<ChannelEvent, ChannelEventListener*> _eventsMap;
     };
 } // namespace SparkyStudios::Audio::Amplitude
 

@@ -17,8 +17,8 @@
 #ifndef SS_AMPLITUDE_AUDIO_SOUND_OBJECT_H
 #define SS_AMPLITUDE_AUDIO_SOUND_OBJECT_H
 
-#include <SparkyStudios/Audio/Amplitude/Core/Bus.h>
 #include <SparkyStudios/Audio/Amplitude/Core/Common.h>
+#include <SparkyStudios/Audio/Amplitude/Core/Playback/Bus.h>
 
 #include <SparkyStudios/Audio/Amplitude/IO/Resource.h>
 

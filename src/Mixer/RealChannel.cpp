@@ -15,12 +15,12 @@
 #include <cassert>
 #include <cmath>
 
-#include <SparkyStudios/Audio/Amplitude/Core/Channel.h>
+#include <SparkyStudios/Audio/Amplitude/Core/Playback/Channel.h>
 #include <SparkyStudios/Audio/Amplitude/Core/Log.h>
 
 #include <SparkyStudios/Audio/Amplitude/Sound/Collection.h>
 
-#include <Core/ChannelInternalState.h>
+#include <Core/Playback/ChannelInternalState.h>
 #include <Core/EngineInternalState.h>
 
 #include <Mixer/RealChannel.h>
@@ -132,7 +132,7 @@ namespace SparkyStudios::Audio::Amplitude
         _activeSounds[layer]->SetChannel(this);
         _activeSounds[layer]->Load();
 
-        if (!_activeSounds[layer]->GetUserData())
+        if (_activeSounds[layer]->GetUserData() == nullptr)
         {
             _channelLayersId[layer] = kAmInvalidObjectId;
             CallLogFunc("[ERROR] The sound was not loaded successfully.");
@@ -186,13 +186,14 @@ namespace SparkyStudios::Audio::Amplitude
     bool RealChannel::Playing() const
     {
         AMPLITUDE_ASSERT(Valid());
+
         bool playing = true;
         for (auto&& layer : _channelLayersId)
         {
-            if (layer.second != 0)
-            {
-                playing &= Playing(layer.first);
-            }
+            if (layer.second == 0)
+                continue;
+
+            playing &= Playing(layer.first);
         }
 
         return playing;
@@ -201,6 +202,7 @@ namespace SparkyStudios::Audio::Amplitude
     bool RealChannel::Playing(AmUInt32 layer) const
     {
         AMPLITUDE_ASSERT(Valid());
+
         const AmUInt32 state = _mixer->GetPlayState(_channelId, _channelLayersId.at(layer));
         if (state < ePSF_PLAY)
             return false;
@@ -222,13 +224,14 @@ namespace SparkyStudios::Audio::Amplitude
     bool RealChannel::Paused() const
     {
         AMPLITUDE_ASSERT(Valid());
+
         bool paused = true;
         for (auto&& layer : _channelLayersId)
         {
-            if (layer.second != 0)
-            {
-                paused &= Paused(layer.first);
-            }
+            if (layer.second == 0)
+                continue;
+
+            paused &= Paused(layer.first);
         }
 
         return paused;
@@ -243,12 +246,13 @@ namespace SparkyStudios::Audio::Amplitude
     void RealChannel::SetGain(const AmReal32 gain)
     {
         AMPLITUDE_ASSERT(Valid());
+
         for (auto&& layer : _channelLayersId)
         {
-            if (layer.second != 0)
-            {
-                SetGain(gain, layer.first);
-            }
+            if (layer.second == 0)
+                continue;
+
+            SetGain(gain, layer.first);
         }
     }
 
@@ -284,12 +288,13 @@ namespace SparkyStudios::Audio::Amplitude
     void RealChannel::SetPan(const AmVec2& pan)
     {
         AMPLITUDE_ASSERT(Valid());
+
         for (auto&& layer : _channelLayersId)
         {
-            if (layer.second != 0)
-            {
-                SetGainPan(_gain[layer.first], pan.X, layer.first);
-            }
+            if (layer.second == 0)
+                continue;
+
+            SetGainPan(_gain[layer.first], pan.X, layer.first);
         }
 
         _pan = pan.X;
@@ -298,16 +303,17 @@ namespace SparkyStudios::Audio::Amplitude
     void RealChannel::SetPitch(AmReal32 pitch)
     {
         AMPLITUDE_ASSERT(Valid());
+
         for (auto&& layer : _channelLayersId)
         {
-            if (layer.second != 0)
-            {
-                AmReal32 finalPitch = pitch;
-                if (_activeSounds[layer.first]->GetSettings().m_kind != SoundKind::Standalone)
-                    finalPitch = pitch * _activeSounds[layer.first]->GetSettings().m_pitch.GetValue();
+            if (layer.second == 0)
+                continue;
 
-                _mixer->SetPitch(_channelId, layer.second, finalPitch);
-            }
+            AmReal32 finalPitch = pitch;
+            if (_activeSounds[layer.first]->GetSettings().m_kind != SoundKind::Standalone)
+                finalPitch = pitch * _activeSounds[layer.first]->GetSettings().m_pitch.GetValue();
+
+            _mixer->SetPitch(_channelId, layer.second, finalPitch);
         }
 
         _pitch = pitch;
@@ -316,12 +322,13 @@ namespace SparkyStudios::Audio::Amplitude
     void RealChannel::SetSpeed(AmReal32 speed)
     {
         AMPLITUDE_ASSERT(Valid());
+
         for (auto&& layer : _channelLayersId)
         {
-            if (layer.second != 0)
-            {
-                _mixer->SetPlaySpeed(_channelId, layer.second, speed);
-            }
+            if (layer.second == 0)
+                continue;
+
+            _mixer->SetPlaySpeed(_channelId, layer.second, speed);
         }
 
         _playSpeed = speed;
@@ -330,30 +337,26 @@ namespace SparkyStudios::Audio::Amplitude
     void RealChannel::SetObstruction(AmReal32 obstruction)
     {
         AMPLITUDE_ASSERT(Valid());
+
         for (auto&& layer : _channelLayersId)
         {
-            if (layer.second != 0)
-            {
-                if (_activeSounds[layer.first] != nullptr)
-                {
-                    _activeSounds[layer.first]->SetObstruction(obstruction);
-                }
-            }
+            if (layer.second == 0 || _activeSounds[layer.first] == nullptr)
+                continue;
+
+            _activeSounds[layer.first]->SetObstruction(obstruction);
         }
     }
 
     void RealChannel::SetOcclusion(AmReal32 occlusion)
     {
         AMPLITUDE_ASSERT(Valid());
+
         for (auto&& layer : _channelLayersId)
         {
-            if (layer.second != 0)
-            {
-                if (_activeSounds[layer.first] != nullptr)
-                {
-                    _activeSounds[layer.first]->SetOcclusion(occlusion);
-                }
-            }
+            if (layer.second == 0 || _activeSounds[layer.first] == nullptr)
+                continue;
+
+            _activeSounds[layer.first]->SetOcclusion(occlusion);
         }
     }
 
@@ -361,9 +364,7 @@ namespace SparkyStudios::Audio::Amplitude
     {
         AmReal32 finalGain = gain;
         if (_activeSounds[layer]->GetSettings().m_kind != SoundKind::Standalone)
-        {
             finalGain = gain * _activeSounds[layer]->GetSettings().m_gain.GetValue();
-        }
 
         _mixer->SetGainPan(_channelId, _channelLayersId[layer], finalGain, pan);
 
@@ -374,9 +375,7 @@ namespace SparkyStudios::Audio::Amplitude
     AmUInt32 RealChannel::FindFreeLayer(AmUInt32 layerIndex) const
     {
         while (_channelLayersId.contains(layerIndex))
-        {
             layerIndex++;
-        }
 
         return layerIndex;
     }

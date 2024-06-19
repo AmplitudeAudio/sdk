@@ -12,11 +12,12 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+#include <utility>
+
 #include <SparkyStudios/Audio/Amplitude/Core/Common.h>
+#include <SparkyStudios/Audio/Amplitude/Core/Playback/Channel.h>
 
-#include <SparkyStudios/Audio/Amplitude/Core/Channel.h>
-
-#include <Core/ChannelInternalState.h>
+#include <Core/Playback/ChannelInternalState.h>
 
 namespace SparkyStudios::Audio::Amplitude
 {
@@ -139,6 +140,16 @@ namespace SparkyStudios::Audio::Amplitude
     ChannelInternalState* Channel::GetState() const
     {
         return _state;
+    }
+
+    void Channel::On(const ChannelEvent event, ChannelEventCallback callback, void* userData) const
+    {
+        AMPLITUDE_ASSERT(Valid());
+
+        if (!IsValidStateId())
+            return;
+
+        _state->On(event, std::move(callback), userData);
     }
 
     Channel::Channel(ChannelInternalState* state, const AmUInt64 id)

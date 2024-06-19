@@ -12,9 +12,9 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include <SparkyStudios/Audio/Amplitude/Core/Bus.h>
+#include <SparkyStudios/Audio/Amplitude/Core/Playback/Bus.h>
 
-#include <Core/BusInternalState.h>
+#include <Core/Playback/BusInternalState.h>
 
 namespace SparkyStudios::Audio::Amplitude
 {

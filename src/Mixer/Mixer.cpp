@@ -206,24 +206,44 @@ namespace SparkyStudios::Audio::Amplitude
     {
         const auto* sound = layer->snd->sound.get();
         CallLogFunc("Started sound: " AM_OS_CHAR_FMT "\n", sound->GetSound()->GetPath().c_str());
+
+        const auto* channel = sound->GetChannel();
+        auto* channelState = channel->GetParentChannelState();
+
+        channelState->Trigger(ChannelEvent::Begin);
     }
 
     static void OnSoundPaused(Mixer* mixer, MixerLayer* layer)
     {
         const auto* sound = layer->snd->sound.get();
         CallLogFunc("Paused sound: " AM_OS_CHAR_FMT "\n", sound->GetSound()->GetPath().c_str());
+
+        const auto* channel = sound->GetChannel();
+        auto* channelState = channel->GetParentChannelState();
+
+        channelState->Trigger(ChannelEvent::Pause);
     }
 
     static void OnSoundResumed(Mixer* mixer, MixerLayer* layer)
     {
         const auto* sound = layer->snd->sound.get();
         CallLogFunc("Resumed sound: " AM_OS_CHAR_FMT "\n", sound->GetSound()->GetPath().c_str());
+
+        const auto* channel = sound->GetChannel();
+        auto* channelState = channel->GetParentChannelState();
+
+        channelState->Trigger(ChannelEvent::Resume);
     }
 
     static void OnSoundStopped(Mixer* mixer, MixerLayer* layer)
     {
         const auto* sound = layer->snd->sound.get();
         CallLogFunc("Stopped sound: " AM_OS_CHAR_FMT "\n", sound->GetSound()->GetPath().c_str());
+
+        const auto* channel = sound->GetChannel();
+        auto* channelState = channel->GetParentChannelState();
+
+        channelState->Trigger(ChannelEvent::Stop);
 
         // Destroy the sound instance on stop
         OnSoundDestroyed(mixer, layer);
@@ -236,18 +256,26 @@ namespace SparkyStudios::Audio::Amplitude
 
         Mixer::IncrementSoundLoopCount(sound);
 
-        return ShouldLoopSound(mixer, layer);
+        const bool shouldLoop = ShouldLoopSound(mixer, layer);
+
+        if (shouldLoop)
+        {
+            const auto* channel = sound->GetChannel();
+            auto* channelState = channel->GetParentChannelState();
+
+            channelState->Trigger(ChannelEvent::Loop);
+        }
+
+        return shouldLoop;
     }
 
     static AmUInt64 OnSoundStream(Mixer* mixer, MixerLayer* layer, AmUInt64 offset, AmUInt64 frames)
     {
-        if (layer->snd->stream)
-        {
-            const auto* sound = layer->snd->sound.get();
-            return sound->GetAudio(offset, frames);
-        }
+        if (!layer->snd->stream)
+            return 0;
 
-        return 0;
+        const auto* sound = layer->snd->sound.get();
+        return sound->GetAudio(offset, frames);
     }
 
     static void OnSoundEnded(Mixer* mixer, MixerLayer* layer)
@@ -256,12 +284,15 @@ namespace SparkyStudios::Audio::Amplitude
         CallLogFunc("Ended sound: " AM_OS_CHAR_FMT "\n", sound->GetSound()->GetPath().c_str());
 
         RealChannel* channel = sound->GetChannel();
+        auto* channelState = channel->GetParentChannelState();
 
         // Clean up the pipeline
         mixer->GetPipeline()->Cleanup(sound);
 
         if (const Engine* engine = Engine::GetInstance(); engine->GetState()->stopping)
         {
+            channelState->Trigger(ChannelEvent::End);
+
             OnSoundDestroyed(mixer, layer);
             return;
         }
@@ -271,6 +302,8 @@ namespace SparkyStudios::Audio::Amplitude
             // Stop playing the sound
             channel->GetParentChannelState()->HaltInternal();
 
+            channelState->Trigger(ChannelEvent::End);
+
             // Destroy the sound instance on end
             OnSoundDestroyed(mixer, layer);
         }
@@ -278,6 +311,8 @@ namespace SparkyStudios::Audio::Amplitude
         {
             // Stop playing the sound
             channel->GetParentChannelState()->HaltInternal();
+
+            channelState->Trigger(ChannelEvent::End);
 
             // Destroy the sound instance on stop
             OnSoundDestroyed(mixer, layer);
@@ -299,6 +334,8 @@ namespace SparkyStudios::Audio::Amplitude
                         {
                             // Stop playing the collection
                             channel->GetParentChannelState()->HaltInternal();
+
+                            channelState->Trigger(ChannelEvent::End);
                         }
                     }
 

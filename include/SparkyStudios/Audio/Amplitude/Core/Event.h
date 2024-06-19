@@ -32,6 +32,8 @@ namespace SparkyStudios::Audio::Amplitude
     class Event;
     class EventInstance;
 
+    class Channel;
+
     /**
      * @brief An event action that will be applied when
      * the parent event will be triggered.

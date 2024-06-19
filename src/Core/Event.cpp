@@ -30,6 +30,7 @@ namespace SparkyStudios::Audio::Amplitude
         , _type(EventActionType_None)
         , _scope(Scope_Entity)
         , _targets()
+        , _accumulatedTime(0.0)
         , _parent(parent)
     {}
 

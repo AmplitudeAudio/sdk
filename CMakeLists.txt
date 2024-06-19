@@ -22,9 +22,9 @@ include(DetectAmplitudeVersion)
 
 option(BUILD_SAMPLES "Build samples" OFF)
 
-if(BUILD_SAMPLES)
+if (BUILD_SAMPLES)
     list(APPEND VCPKG_MANIFEST_FEATURES "samples")
-endif()
+endif ()
 
 project(Amplitude VERSION ${DETECTED_AM_VERSION})
 
@@ -36,13 +36,13 @@ set(CMAKE_DEBUG_POSTFIX "_d")
 set(BIN_DIR ${CMAKE_CURRENT_BINARY_DIR})
 set(OBJ_DIR ${CMAKE_CURRENT_BINARY_DIR}/obj)
 
-if(MSVC OR WIN32)
+if (MSVC OR WIN32)
     set(RUNTIME_OUTPUT_DIRECTORY "win")
-elseif(APPLE)
+elseif (APPLE)
     set(RUNTIME_OUTPUT_DIRECTORY "osx")
-else()
+else ()
     set(RUNTIME_OUTPUT_DIRECTORY "linux")
-endif()
+endif ()
 
 set(AM_LIB_DESTINATION "lib/${RUNTIME_OUTPUT_DIRECTORY}")
 set(AM_INC_DESTINATION "include")
@@ -56,15 +56,15 @@ set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/${AM_BIN_DESTINATION}")
 
 set(CMAKE_INSTALL_PREFIX "${CMAKE_CURRENT_LIST_DIR}/sdk")
 
-if(UNIX)
+if (UNIX)
     find_package(Threads REQUIRED)
-endif()
+endif ()
 
 # Setup FFT and Accelerate Framework
 # ------------------------------------------------------------------------------
-if(APPLE)
+if (APPLE)
     find_library(ACCELERATE_FRAMEWORK Accelerate)
-endif()
+endif ()
 
 # ------------------------------------------------------------------------------
 
@@ -100,12 +100,12 @@ find_path(MINIAUDIO_INCLUDE_DIRS "miniaudio.h")
 include(DetectCPUArchitecture)
 am_buildsystem_get_runnable_archs(NATIVE_ARCHS)
 
-foreach(ARCH ${NATIVE_ARCHS})
+foreach (ARCH ${NATIVE_ARCHS})
     am_buildsystem_get_arch_info(CXX_FLAGS DEFINES_LIST SUFFIX ${ARCH})
 
     separate_arguments(CXX_FLAGS)
     add_compile_options(${CXX_FLAGS})
-endforeach()
+endforeach ()
 
 # ------------------------------------------------------------------------------
 
@@ -141,9 +141,10 @@ set(SA_SOURCE
     include/SparkyStudios/Audio/Amplitude/Core/Common/Constants.h
     include/SparkyStudios/Audio/Amplitude/Core/Common/SIMD.h
     include/SparkyStudios/Audio/Amplitude/Core/Common/Types.h
+    include/SparkyStudios/Audio/Amplitude/Core/Playback/Bus.h
+    include/SparkyStudios/Audio/Amplitude/Core/Playback/Channel.h
+    include/SparkyStudios/Audio/Amplitude/Core/Playback/ChannelEventListener.h
     include/SparkyStudios/Audio/Amplitude/Core/Asset.h
-    include/SparkyStudios/Audio/Amplitude/Core/Bus.h
-    include/SparkyStudios/Audio/Amplitude/Core/Channel.h
     include/SparkyStudios/Audio/Amplitude/Core/Codec.h
     include/SparkyStudios/Audio/Amplitude/Core/Common.h
     include/SparkyStudios/Audio/Amplitude/Core/Device.h
@@ -208,13 +209,15 @@ set(SA_SOURCE
     src/Core/Drivers/Null/Driver.cpp
     src/Core/Drivers/Null/Driver.h
 
+    src/Core/Playback/Bus.cpp
+    src/Core/Playback/BusInternalState.cpp
+    src/Core/Playback/BusInternalState.h
+    src/Core/Playback/Channel.cpp
+    src/Core/Playback/ChannelEventListener.cpp
+    src/Core/Playback/ChannelInternalState.cpp
+    src/Core/Playback/ChannelInternalState.h
+
     src/Core/Asset.cpp
-    src/Core/Bus.cpp
-    src/Core/BusInternalState.cpp
-    src/Core/BusInternalState.h
-    src/Core/Channel.cpp
-    src/Core/ChannelInternalState.cpp
-    src/Core/ChannelInternalState.h
     src/Core/Codec.cpp
     src/Core/Common.cpp
     src/Core/DefaultPlugins.h
@@ -386,20 +389,20 @@ add_custom_target(amplitude_build_binary_schemas
 
 set(AM_BUILDSYSTEM_TYPE "Static" "Shared")
 
-foreach(build_type ${AM_BUILDSYSTEM_TYPE})
+foreach (build_type ${AM_BUILDSYSTEM_TYPE})
     string(TOLOWER ${build_type} build_type_l)
 
     set_target_properties(${build_type}
         PROPERTIES
-            OUTPUT_NAME ${PROJECT_NAME}
-            ARCHIVE_OUTPUT_DIRECTORY ${build_type_l}
+        OUTPUT_NAME ${PROJECT_NAME}
+        ARCHIVE_OUTPUT_DIRECTORY ${build_type_l}
     )
 
     target_compile_definitions(${build_type} PRIVATE AM_BUILDSYSTEM_BUILDING_AMPLITUDE)
 
     target_link_libraries(${build_type}
         PRIVATE
-            flatbuffers::flatbuffers SampleRate::samplerate xsimd
+        flatbuffers::flatbuffers SampleRate::samplerate xsimd
     )
 
     add_dependencies(${build_type}
@@ -407,15 +410,15 @@ foreach(build_type ${AM_BUILDSYSTEM_TYPE})
         amplitude_build_binary_schemas
     )
 
-    if(UNIX)
+    if (UNIX)
         target_link_libraries(${build_type} PUBLIC Threads::Threads ${CMAKE_DL_LIBS})
-    endif()
+    endif ()
 
-    if(APPLE)
+    if (APPLE)
         target_link_libraries(${build_type} PUBLIC ${ACCELERATE_FRAMEWORK})
         target_compile_definitions(${build_type} PUBLIC AM_FFT_APPLE_ACCELERATE)
-    endif()
-endforeach()
+    endif ()
+endforeach ()
 
 target_link_libraries(Static PUBLIC mimalloc-static)
 target_link_libraries(Shared PUBLIC mimalloc)
@@ -423,9 +426,9 @@ target_link_libraries(Shared PUBLIC mimalloc)
 add_subdirectory(tools/amac)
 add_subdirectory(tools/ampk)
 
-if(BUILD_SAMPLES)
+if (BUILD_SAMPLES)
     add_subdirectory(samples)
-endif()
+endif ()
 
 # #####################################################
 # INSTALL
@@ -449,7 +452,7 @@ install(
 install(
     FILES $<TARGET_RUNTIME_DLLS:Shared>
     DESTINATION ${AM_LIB_DESTINATION}/shared
- )
+)
 
 install(
     DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/include/
@@ -467,9 +470,9 @@ install(
     DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/scripts/
     DESTINATION ${AM_PYS_DESTINATION}
     FILES_MATCHING
-        PATTERN "*.py"
-        PATTERN "build_schemas.py" EXCLUDE
-        PATTERN "__pycache__" EXCLUDE
+    PATTERN "*.py"
+    PATTERN "build_schemas.py" EXCLUDE
+    PATTERN "__pycache__" EXCLUDE
 )
 
 install(

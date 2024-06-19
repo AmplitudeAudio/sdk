@@ -20,13 +20,14 @@
 
 #include <algorithm>
 #include <cmath>
+#include <ranges>
 
 #include <SparkyStudios/Audio/Amplitude/Amplitude.h>
 
-#include <Core/BusInternalState.h>
-#include <Core/ChannelInternalState.h>
 #include <Core/EngineInternalState.h>
 #include <Core/EntityInternalState.h>
+#include <Core/Playback/BusInternalState.h>
+#include <Core/Playback/ChannelInternalState.h>
 
 #include <Utils/intrusive_list.h>
 #include <Utils/Utils.h>
@@ -69,45 +70,44 @@ namespace SparkyStudios::Audio::Amplitude
         _userGain = 0.0f;
         _gain = 0.0f;
         _location = AM_V3(0, 0, 0);
+
+        for (const auto& sound : _eventsMap | std::views::values)
+            ampooldelete(MemoryPoolKind::Engine, ChannelEventListener, sound);
+
+        _eventsMap.clear();
     }
 
     void ChannelInternalState::SetSwitchContainer(SwitchContainer* switchContainer)
     {
         if (_switchContainer && _switchContainer->GetBus().Valid())
-        {
             bus_node.remove();
-        }
+
         _switchContainer = switchContainer;
+
         if (_switchContainer && _switchContainer->GetBus().Valid())
-        {
             _switchContainer->GetBus().GetState()->GetPlayingSoundList().push_front(*this);
-        }
     }
 
     void ChannelInternalState::SetCollection(Collection* collection)
     {
         if (_collection && _collection->GetBus().Valid())
-        {
             bus_node.remove();
-        }
+
         _collection = collection;
+
         if (_collection && _collection->GetBus().Valid())
-        {
             _collection->GetBus().GetState()->GetPlayingSoundList().push_front(*this);
-        }
     }
 
     void ChannelInternalState::SetSound(Sound* sound)
     {
         if (_sound && _sound->GetBus().Valid())
-        {
             bus_node.remove();
-        }
+
         _sound = sound;
+
         if (_sound && _sound->GetBus().Valid())
-        {
             _sound->GetBus().GetState()->GetPlayingSoundList().push_front(*this);
-        }
     }
 
     Sound* ChannelInternalState::GetSound() const
@@ -118,32 +118,24 @@ namespace SparkyStudios::Audio::Amplitude
     void ChannelInternalState::SetEntity(const Entity& entity)
     {
         if (_entity.Valid())
-        {
             entity_node.remove();
-        }
+
         _entity = entity;
+
         if (_entity.Valid())
-        {
             _entity.GetState()->GetPlayingSoundList().push_front(*this);
-        }
     }
 
     bool ChannelInternalState::Play()
     {
         if (_switchContainer != nullptr)
-        {
             return PlaySwitchContainer();
-        }
 
         if (_collection != nullptr)
-        {
             return PlayCollection();
-        }
 
         if (_sound != nullptr)
-        {
             return PlaySound();
-        }
 
         CallLogFunc("[ERROR] Cannot play a channel. Neither a sound, a collection, nor a switch container was defined.\n");
         return false;
@@ -171,13 +163,13 @@ namespace SparkyStudios::Audio::Amplitude
 
         HaltInternal();
 
-        if (_collection != nullptr)
-        {
-            if (_entity.Valid())
-                _collection->ResetEntityScopeScheduler(_entity);
-            else
-                _collection->ResetWorldScopeScheduler();
-        }
+        if (_collection == nullptr)
+            return;
+
+        if (_entity.Valid())
+            _collection->ResetEntityScopeScheduler(_entity);
+        else
+            _collection->ResetWorldScopeScheduler();
     }
 
     void ChannelInternalState::Pause()
@@ -243,10 +235,10 @@ namespace SparkyStudios::Audio::Amplitude
     {
         _pan = pan;
 
-        if (Valid())
-        {
-            _realChannel.SetPan(pan);
-        }
+        if (!Valid())
+            return;
+
+        _realChannel.SetPan(pan);
     }
 
     void ChannelInternalState::SetGain(const AmReal32 gain)
@@ -258,20 +250,20 @@ namespace SparkyStudios::Audio::Amplitude
 
         _gain = gain;
 
-        if (Valid())
-        {
-            _realChannel.SetGain(gain);
-        }
+        if (!Valid())
+            return;
+
+        _realChannel.SetGain(gain);
     }
 
     void ChannelInternalState::SetPitch(AmReal32 pitch)
     {
         _pitch = pitch;
 
-        if (Valid())
-        {
-            _realChannel.SetPitch(pitch);
-        }
+        if (!Valid())
+            return;
+
+        _realChannel.SetPitch(pitch);
     }
 
     AmReal32 ChannelInternalState::GetPitch() const
@@ -310,19 +302,13 @@ namespace SparkyStudios::Audio::Amplitude
     AmReal32 ChannelInternalState::Priority() const
     {
         if (_switchContainer != nullptr)
-        {
             return GetGain() * _switchContainer->GetPriority().GetValue();
-        }
 
         if (_collection != nullptr)
-        {
             return GetGain() * _collection->GetPriority().GetValue();
-        }
 
         if (_sound != nullptr)
-        {
             return GetGain() * _sound->GetPriority().GetValue();
-        }
 
         AMPLITUDE_ASSERT(false); // Should never fall in this case...
         return 0.0f;
@@ -363,18 +349,13 @@ namespace SparkyStudios::Audio::Amplitude
                 for (const auto& item : previousItems)
                 {
                     bool shouldSkip = false;
+
                     for (const auto& next : nextItems)
-                    {
                         if (next.m_id == item.m_id)
-                        {
                             shouldSkip = item.m_continueBetweenStates;
-                        }
-                    }
 
                     if (shouldSkip)
-                    {
                         continue;
-                    }
 
                     FaderInstance* out = _switchContainer->GetFaderOut(item.m_id);
                     out->Set(_gain, 0.0f);
@@ -384,18 +365,13 @@ namespace SparkyStudios::Audio::Amplitude
                 for (const auto& item : nextItems)
                 {
                     bool shouldSkip = false;
+
                     for (const auto& previous : previousItems)
-                    {
                         if (previous.m_id == item.m_id)
-                        {
                             shouldSkip = item.m_continueBetweenStates;
-                        }
-                    }
 
                     if (shouldSkip)
-                    {
                         continue;
-                    }
 
                     FaderInstance* in = _switchContainer->GetFaderIn(item.m_id);
                     in->Set(0.0f, _gain);
@@ -420,18 +396,13 @@ namespace SparkyStudios::Audio::Amplitude
                 for (const auto& item : previousItems)
                 {
                     bool shouldSkip = false;
+
                     for (const auto& next : nextItems)
-                    {
                         if (next.m_id == item.m_id)
-                        {
                             shouldSkip = item.m_continueBetweenStates;
-                        }
-                    }
 
                     if (shouldSkip)
-                    {
                         continue;
-                    }
 
                     AmUInt32 layer = 0;
                     for (auto&& _activeSound : _realChannel._activeSounds)
@@ -444,23 +415,17 @@ namespace SparkyStudios::Audio::Amplitude
                     }
 
                     if (layer == 0)
-                    {
                         continue;
-                    }
 
                     FaderInstance* out = _switchContainer->GetFaderOut(item.m_id);
                     if (out->GetState() == AM_FADER_STATE_STOPPED)
-                    {
                         continue;
-                    }
 
                     const AmReal32 gain = out->GetFromTime(Engine::GetInstance()->GetTotalTime());
                     isAtLeastOneFadeOutRunning = true;
 
                     if (IsReal())
-                    {
                         _realChannel.SetGain(gain, layer);
-                    }
 
                     if (gain == 0.0f)
                     {
@@ -474,51 +439,37 @@ namespace SparkyStudios::Audio::Amplitude
                 {
                     bool shouldSkip = false;
                     for (const auto& previous : previousItems)
-                    {
                         if (previous.m_id == item.m_id)
-                        {
                             shouldSkip = item.m_continueBetweenStates;
-                        }
-                    }
 
                     if (shouldSkip)
-                    {
                         continue;
-                    }
 
                     AmUInt32 layer = 0;
-                    for (auto it = _realChannel._activeSounds.rbegin(); it != _realChannel._activeSounds.rend(); ++it)
+                    for (const auto& _activeSound : std::ranges::reverse_view(_realChannel._activeSounds))
                     {
-                        if (it->second->GetSettings().m_id == item.m_id)
+                        if (_activeSound.second->GetSettings().m_id == item.m_id)
                         {
-                            layer = it->first;
+                            layer = _activeSound.first;
                             break;
                         }
                     }
 
                     if (layer == 0)
-                    {
                         continue;
-                    }
 
                     FaderInstance* in = _switchContainer->GetFaderIn(item.m_id);
                     if (in->GetState() == AM_FADER_STATE_STOPPED)
-                    {
                         continue;
-                    }
 
                     const AmReal32 gain = in->GetFromTime(Engine::GetInstance()->GetTotalTime());
                     isAtLeastOneFadeInRunning = true;
 
                     if (IsReal())
-                    {
                         _realChannel.SetGain(gain, layer);
-                    }
 
                     if (_gain - gain <= kEpsilon)
-                    {
                         in->SetState(AM_FADER_STATE_STOPPED);
-                    }
                 }
 
                 if (!isAtLeastOneFadeInRunning && !isAtLeastOneFadeOutRunning)
@@ -590,35 +541,57 @@ namespace SparkyStudios::Audio::Amplitude
             {
                 // No fader is defined, no fading occurs
                 if (IsReal())
-                {
                     _realChannel.SetGain(0.0f);
-                }
 
                 if (_targetFadeOutState == ChannelPlaybackState::Stopped)
-                {
                     Halt();
-                }
                 else if (_targetFadeOutState == ChannelPlaybackState::Paused)
-                {
                     Pause();
-                }
             }
         }
     }
 
     void ChannelInternalState::SetObstruction(AmReal32 obstruction)
     {
+        if (!Valid())
+            return;
+
         _realChannel.SetObstruction(obstruction);
     }
 
     void ChannelInternalState::SetOcclusion(AmReal32 occlusion)
     {
+        if (!Valid())
+            return;
+
         _realChannel.SetOcclusion(occlusion);
     }
 
     AmReal32 ChannelInternalState::GetDopplerFactor(AmListenerID listener) const
     {
         return _dopplerFactors.contains(listener) ? _dopplerFactors.at(listener) : 1.0f;
+    }
+
+    void ChannelInternalState::On(const ChannelEvent event, ChannelEventCallback callback, void* userData)
+    {
+        if (!Valid())
+            return;
+
+        if (_eventsMap[event] == nullptr)
+            _eventsMap[event] = ampoolnew(MemoryPoolKind::Engine, ChannelEventListener);
+
+        _eventsMap[event]->Add(callback, userData);
+    }
+
+    void ChannelInternalState::Trigger(ChannelEvent event)
+    {
+        if (!Valid())
+            return;
+
+        if (_eventsMap[event] == nullptr)
+            _eventsMap[event] = ampoolnew(MemoryPoolKind::Engine, ChannelEventListener);
+
+        _eventsMap[event]->Call(this);
     }
 
     void ChannelInternalState::UpdateState()

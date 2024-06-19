@@ -19,7 +19,7 @@
 
 #include <SparkyStudios/Audio/Amplitude/Amplitude.h>
 
-#include <Core/ChannelInternalState.h>
+#include <Core/Playback/ChannelInternalState.h>
 #include <Mixer/RealChannel.h>
 
 #include "sound_definition_generated.h"

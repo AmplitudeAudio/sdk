@@ -16,7 +16,7 @@
 #include <SparkyStudios/Audio/Amplitude/Core/Log.h>
 #include <SparkyStudios/Audio/Amplitude/Core/Memory.h>
 
-#include <Core/BusInternalState.h>
+#include <Core/Playback/BusInternalState.h>
 
 #include "buses_definition_generated.h"
 
