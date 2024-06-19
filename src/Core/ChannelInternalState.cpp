@@ -182,48 +182,34 @@ namespace SparkyStudios::Audio::Amplitude
 
     void ChannelInternalState::Pause()
     {
-        if (Paused())
+        if (Paused() || !Valid())
             return;
 
-        if (Valid())
-        {
-            _realChannel.Pause();
-        }
-
+        _realChannel.Pause();
         _channelState = ChannelPlaybackState::Paused;
     }
 
     void ChannelInternalState::Resume()
     {
-        if (Playing())
+        if (Playing() || !Valid())
             return;
 
-        if (Valid())
-        {
-            _realChannel.Resume();
-        }
-
+        _realChannel.Resume();
         _channelState = ChannelPlaybackState::Playing;
     }
 
     void ChannelInternalState::FadeIn(AmTime duration)
     {
-        if (duration == 0.0)
-            return Resume();
-
-        if (Playing() || _channelState == ChannelPlaybackState::FadingIn)
+        if (Playing() || !Valid() || _channelState == ChannelPlaybackState::FadingIn)
             return;
 
-        if (Valid())
-        {
-            _fader->Set(0.0f, _gain, duration / kAmSecond);
-            _fader->Start(Engine::GetInstance()->GetTotalTime());
+        _fader->Set(0.0f, _gain, duration);
+        _fader->Start(Engine::GetInstance()->GetTotalTime());
 
-            _realChannel.SetGain(0.0f);
-            _realChannel.Resume();
+        _realChannel.SetGain(0.0f);
+        _realChannel.Resume();
 
-            _channelState = ChannelPlaybackState::FadingIn;
-        }
+        _channelState = ChannelPlaybackState::FadingIn;
     }
 
     void ChannelInternalState::FadeOut(AmTime duration, ChannelPlaybackState targetState)
@@ -231,23 +217,23 @@ namespace SparkyStudios::Audio::Amplitude
         if (Stopped() || Paused() || _channelState == ChannelPlaybackState::FadingOut)
             return;
 
-        if (Valid())
+        // If the sound is muted, no need to fade out
+        if (_gain == 0.0f)
         {
-            // If the sound is muted, no need to fade out
-            if (_gain == 0.0f || duration == 0.0)
-            {
-                if (targetState == ChannelPlaybackState::Stopped)
-                    return Halt();
+            if (targetState == ChannelPlaybackState::Stopped)
+                return Halt();
 
-                if (targetState == ChannelPlaybackState::Paused)
-                    return Pause();
-            }
-
-            _realChannel.SetGain(_gain);
-
-            _fader->Set(_gain, 0.0f, duration / kAmSecond);
-            _fader->Start(Engine::GetInstance()->GetTotalTime());
+            if (targetState == ChannelPlaybackState::Paused)
+                return Pause();
         }
+
+        if (!Valid())
+            return;
+
+        _realChannel.SetGain(_gain);
+
+        _fader->Set(_gain, 0.0f, duration);
+        _fader->Start(Engine::GetInstance()->GetTotalTime());
 
         _channelState = ChannelPlaybackState::FadingOut;
         _targetFadeOutState = targetState;
@@ -645,13 +631,8 @@ namespace SparkyStudios::Audio::Amplitude
             break;
         case ChannelPlaybackState::FadingIn:
         case ChannelPlaybackState::Playing:
-            if (IsReal() && !_realChannel.Playing())
-            {
-                _channelState = ChannelPlaybackState::Stopped;
-            }
-            break;
         case ChannelPlaybackState::FadingOut:
-            if (!IsReal() || !_realChannel.Playing())
+            if (!Valid() || !_realChannel.Playing())
             {
                 _channelState = ChannelPlaybackState::Stopped;
             }
@@ -663,11 +644,10 @@ namespace SparkyStudios::Audio::Amplitude
 
     void ChannelInternalState::HaltInternal()
     {
-        if (Valid())
-        {
-            _realChannel.Halt();
-        }
+        if (!Valid())
+            return;
 
+        _realChannel.Halt();
         _channelState = ChannelPlaybackState::Stopped;
     }
 

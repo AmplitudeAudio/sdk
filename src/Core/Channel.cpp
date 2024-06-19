@@ -49,9 +49,7 @@ namespace SparkyStudios::Audio::Amplitude
     {
         AMPLITUDE_ASSERT(Valid());
         if (IsValidStateId())
-        {
             return _state->Playing();
-        }
 
         return false;
     }
@@ -59,60 +57,53 @@ namespace SparkyStudios::Audio::Amplitude
     void Channel::Stop(AmTime duration) const
     {
         AMPLITUDE_ASSERT(Valid());
-        if (IsValidStateId())
-        {
-            if (_state->Stopped())
-                return;
+        if (!IsValidStateId())
+            return;
 
-            if (!_state->IsReal() || _state->GetRealChannel().GetGain() == 0.0f)
-            {
-                _state->Halt();
-            }
-            else
-            {
-                _state->FadeOut(duration, ChannelPlaybackState::Stopped);
-            }
-        }
+        if (_state->Stopped())
+            return;
+
+        if (duration == 0.0)
+            _state->Halt();
+        else
+            _state->FadeOut(duration, ChannelPlaybackState::Stopped);
     }
 
     void Channel::Pause(AmTime duration) const
     {
         AMPLITUDE_ASSERT(Valid());
-        if (IsValidStateId())
-        {
-            if (_state->Paused())
-                return;
+        if (!IsValidStateId())
+            return;
 
-            if (!_state->IsReal() || _state->GetRealChannel().GetGain() == 0.0f)
-            {
-                _state->Pause();
-            }
-            else
-            {
-                _state->FadeOut(duration, ChannelPlaybackState::Paused);
-            }
-        }
+        if (_state->Paused())
+            return;
+
+        if (duration == 0.0)
+            _state->Pause();
+        else
+            _state->FadeOut(duration, ChannelPlaybackState::Paused);
     }
 
     void Channel::Resume(AmTime duration) const
     {
         AMPLITUDE_ASSERT(Valid());
-        if (IsValidStateId())
-        {
-            if (_state->Playing())
-                return;
+        if (!IsValidStateId())
+            return;
 
+        if (_state->Playing())
+            return;
+
+        if (duration == 0.0)
+            _state->Resume();
+        else
             _state->FadeIn(duration);
-        }
     }
 
     const AmVec3& Channel::GetLocation() const
     {
         AMPLITUDE_ASSERT(Valid());
         if (IsValidStateId())
-        {
             return _state->GetLocation();
-        }
 
         return globalPosition;
     }
@@ -121,27 +112,21 @@ namespace SparkyStudios::Audio::Amplitude
     {
         AMPLITUDE_ASSERT(Valid());
         if (IsValidStateId())
-        {
             _state->SetLocation(location);
-        }
     }
 
     void Channel::SetGain(const AmReal32 gain) const
     {
         AMPLITUDE_ASSERT(Valid());
         if (IsValidStateId())
-        {
-            return _state->SetUserGain(gain);
-        }
+            _state->SetUserGain(gain);
     }
 
     AmReal32 Channel::GetGain() const
     {
         AMPLITUDE_ASSERT(Valid());
         if (IsValidStateId())
-        {
             return _state->GetUserGain();
-        }
 
         return 0.0f;
     }
@@ -161,9 +146,7 @@ namespace SparkyStudios::Audio::Amplitude
         , _stateId(id)
     {
         if (_state != nullptr)
-        {
             _state->SetChannelStateId(_stateId);
-        }
     }
 
     bool Channel::IsValidStateId() const
