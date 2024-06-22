@@ -116,7 +116,7 @@ jobs:
         run: ${{ matrix.config.archiver }} ./${{ matrix.build_type }}_${{ matrix.config.artifact }} LICENSE NOTICE README.md sdk
 
       - name: Upload
-        uses: actions/upload-artifact@v1
+        uses: actions/upload-artifact@v4
         with:
           path: ./${{ matrix.build_type }}_${{ matrix.config.artifact }}
           name: ${{ matrix.build_type }}_${{ matrix.config.artifact }}
