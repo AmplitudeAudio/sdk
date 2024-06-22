@@ -414,20 +414,15 @@ namespace SparkyStudios::Audio::Amplitude
 #if defined(AM_SIMD_INTRINSICS)
         out[index] = xsimd::fma(in->buffer[index], gain, out[index]);
 #else
-        out[index] = out[index] + in->buffer[index] * gain;
+        out[index] = in->buffer[index] * gain + out[index];
 #endif // AM_SIMD_INTRINSICS
     }
 
     static void MixStereo(
         AmUInt64 index, const AmAudioFrame& lGain, const AmAudioFrame& rGain, const SoundChunk* in, AmAudioFrameBuffer out)
     {
-#if defined(AM_SIMD_INTRINSICS)
-        out[index + 0] = xsimd::fma(in->buffer[index + 0], lGain, out[index + 0]);
-        out[index + 1] = xsimd::fma(in->buffer[index + 1], rGain, out[index + 1]);
-#else
-        out[index + 0] = out[index + 0] + in->buffer[index + 0] * lGain;
-        out[index + 1] = out[index + 1] + in->buffer[index + 1] * rGain;
-#endif // AM_SIMD_INTRINSICS
+        MixMono(index + 0, lGain, in, out);
+        MixMono(index + 1, rGain, in, out);
     }
 
     // Setup MiniAudio allocation callbacks for this frame
@@ -1191,7 +1186,7 @@ namespace SparkyStudios::Audio::Amplitude
         if (cursor == layer->end)
         {
             // We are in the audio thread mutex here
-            const MixerCommandCallback callback = [=]() -> bool
+            const MixerCommandCallback callback = [this, layer, loop]() -> bool
             {
                 // stop playback unless looping
                 if (!loop)
