@@ -15,11 +15,9 @@
 #ifndef SPARK_AUDIO_LOG_H
 #define SPARK_AUDIO_LOG_H
 
-#include <format>
+#include <fmt/format.h>
 
 #include <SparkyStudios/Audio/Amplitude/Core/Common.h>
-
-#define CHECK_VARARGS_HAS_VALUES(...) ((sizeof((char[]){ #__VA_ARGS__ }) / sizeof(char)) > 1)
 
 /**
  * @brief The global logger instance.
@@ -36,10 +34,7 @@
 #define amLog(_level_, _message_, ...)                                                                                                     \
     if (amLogger != nullptr)                                                                                                               \
     {                                                                                                                                      \
-        if constexpr (CHECK_VARARGS_HAS_VALUES(__VA_ARGS__))                                                                               \
-            amLogger->_level_(std::vformat(_message_, std::make_format_args(__VA_ARGS__)), __FILE__, __LINE__);                                                  \
-        else                                                                                                                               \
-            amLogger->_level_(_message_, __FILE__, __LINE__);                                                                              \
+        amLogger->_level_(fmt::format(_message_, ##__VA_ARGS__), __FILE__, __LINE__);                                                      \
     }                                                                                                                                      \
     (void)0
 
@@ -49,7 +44,7 @@
  * @param _message_ The message to log.
  * @param ... The arguments to format the message with.
  */
-#define amLogDebug(_message_, ...) amLog(Debug, _message_, __VA_ARGS__)
+#define amLogDebug(_message_, ...) amLog(Debug, _message_, ##__VA_ARGS__)
 
 /**
  * @brief Logs an informational message.
@@ -57,7 +52,7 @@
  * @param _message_ The message to log.
  * @param ... The arguments to format the message with.
  */
-#define amLogInfo(_message_, ...) amLog(Info, _message_, __VA_ARGS__)
+#define amLogInfo(_message_, ...) amLog(Info, _message_, ##__VA_ARGS__)
 
 /**
  * @brief Logs a warning message.
@@ -65,7 +60,7 @@
  * @param _message_ The message to log.
  * @param ... The arguments to format the message with.
  */
-#define amLogWarning(_message_, ...) amLog(Warning, _message_, __VA_ARGS__)
+#define amLogWarning(_message_, ...) amLog(Warning, _message_, ##__VA_ARGS__)
 
 /**
  * @brief Logs an error message.
@@ -73,7 +68,7 @@
  * @param _message_ The message to log.
  * @param ... The arguments to format the message with.
  */
-#define amLogError(_message_, ...) amLog(Error, _message_, __VA_ARGS__)
+#define amLogError(_message_, ...) amLog(Error, _message_, ##__VA_ARGS__)
 
 /**
  * @brief Logs a critical message.
@@ -81,7 +76,7 @@
  * @param _message_ The message to log.
  * @param ... The arguments to format the message with.
  */
-#define amLogCritical(_message_, ...) amLog(Critical, _message_, __VA_ARGS__)
+#define amLogCritical(_message_, ...) amLog(Critical, _message_, ##__VA_ARGS__)
 
 namespace SparkyStudios::Audio::Amplitude
 {

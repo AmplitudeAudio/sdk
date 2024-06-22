@@ -381,7 +381,7 @@ int main(int argc, char* argv[])
 #if !defined(AM_NO_MEMORY_STATS)
     printMemoryStats();
 
-    amLogInfo(amMemory->InspectMemoryLeaks());
+    amLogInfo("{}", amMemory->InspectMemoryLeaks());
 #endif
 
     MemoryManager::Deinitialize();

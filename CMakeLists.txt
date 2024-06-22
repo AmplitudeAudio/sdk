@@ -96,6 +96,12 @@ find_package(mimalloc CONFIG REQUIRED)
 # ------------------------------------------------------------------------------
 find_path(MINIAUDIO_INCLUDE_DIRS "miniaudio.h")
 
+# ------------------------------------------------------------------------------
+
+# Setup fmt
+# ------------------------------------------------------------------------------
+find_package(fmt CONFIG REQUIRED)
+
 # Check what instruction sets the current host supports.
 include(DetectCPUArchitecture)
 am_buildsystem_get_runnable_archs(NATIVE_ARCHS)
@@ -405,6 +411,8 @@ foreach (build_type ${AM_BUILDSYSTEM_TYPE})
     target_link_libraries(${build_type}
         PRIVATE
         flatbuffers::flatbuffers SampleRate::samplerate xsimd
+        PUBLIC
+        fmt::fmt-header-only
     )
 
     add_dependencies(${build_type}

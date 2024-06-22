@@ -531,7 +531,7 @@ int main(int argc, char* argv[])
     Engine::UnregisterDefaultPlugins();
 
 #if !defined(AM_NO_MEMORY_STATS)
-    amLogInfo(amMemory->InspectMemoryLeaks());
+    amLogInfo("{}", amMemory->InspectMemoryLeaks());
 #endif
 
     MemoryManager::Deinitialize();
