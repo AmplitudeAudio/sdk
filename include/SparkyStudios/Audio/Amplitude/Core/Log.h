@@ -15,7 +15,9 @@
 #ifndef SPARK_AUDIO_LOG_H
 #define SPARK_AUDIO_LOG_H
 
-#include <fmt/format.h>
+#include <fmt/chrono.h>
+#include <fmt/std.h>
+#include <fmt/xchar.h>
 
 #include <SparkyStudios/Audio/Amplitude/Core/Common.h>
 
@@ -34,7 +36,7 @@
 #define amLog(_level_, _message_, ...)                                                                                                     \
     if (amLogger != nullptr)                                                                                                               \
     {                                                                                                                                      \
-        amLogger->_level_(fmt::format(_message_, ##__VA_ARGS__), __FILE__, __LINE__);                                                      \
+        amLogger->_level_(fmt::format((_message_), ##__VA_ARGS__), __FILE__, __LINE__);                                                    \
     }                                                                                                                                      \
     (void)0
 

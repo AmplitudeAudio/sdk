@@ -136,7 +136,7 @@ namespace SparkyStudios::Audio::Amplitude
 
         if (!loader->Exists(filename))
         {
-            amLogError("Cannot load the sound: the file \"{}\" does not exist.", filename);
+            amLogError("Cannot load the sound: the file \"{}\" does not exist.", AM_OS_STRING_TO_STRING(filename));
             return;
         }
 
@@ -145,14 +145,14 @@ namespace SparkyStudios::Audio::Amplitude
         _codec = Codec::FindCodecForFile(file);
         if (_codec == nullptr)
         {
-            amLogError("Cannot load the sound: unable to find codec for '{}'.", filename);
+            amLogError("Cannot load the sound: unable to find codec for '{}'.", AM_OS_STRING_TO_STRING(filename));
             return;
         }
 
         _decoder = _codec->CreateDecoder();
         if (!_decoder->Open(file))
         {
-            amLogError("Cannot load the sound: unable to initialize a decoder for '{}'.", filename);
+            amLogError("Cannot load the sound: unable to initialize a decoder for '{}'.", AM_OS_STRING_TO_STRING(filename));
             return;
         }
 
@@ -287,7 +287,7 @@ namespace SparkyStudios::Audio::Amplitude
             _decoder = _parent->_codec->CreateDecoder();
             if (!_decoder->Open(file))
             {
-                amLogError("Cannot load the sound: unable to initialize a decoder for '{}'.", filename);
+                amLogError("Cannot load the sound: unable to initialize a decoder for '{}'.", AM_OS_STRING_TO_STRING(filename));
                 return;
             }
         }

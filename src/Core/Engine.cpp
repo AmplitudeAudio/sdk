@@ -222,26 +222,26 @@ namespace SparkyStudios::Audio::Amplitude
 
         if (!plugin->has_symbol("RegisterPlugin"))
         {
-            amLogError("LoadPlugin fail on '{}'. The library doesn't export a RegisterPlugin symbol.", pluginLibraryName);
+            amLogError("LoadPlugin fail on '{}'. The library doesn't export a RegisterPlugin symbol.", AM_OS_STRING_TO_STRING(pluginLibraryName));
             return nullptr;
         }
 
         if (!plugin->has_symbol("PluginName"))
         {
-            amLogError("LoadPlugin fail on '{}'. The library doesn't export a PluginName symbol.", pluginLibraryName);
+            amLogError("LoadPlugin fail on '{}'. The library doesn't export a PluginName symbol.", AM_OS_STRING_TO_STRING(pluginLibraryName));
             return nullptr;
         }
 
         if (!plugin->has_symbol("PluginVersion"))
         {
-            amLogError("LoadPlugin fail on '{}'. The library doesn't export a PluginVersion symbol.", pluginLibraryName);
+            amLogError("LoadPlugin fail on '{}'. The library doesn't export a PluginVersion symbol.", AM_OS_STRING_TO_STRING(pluginLibraryName));
             return nullptr;
         }
 
         if (const auto registerFunc = plugin->get_function<bool(Engine*, MemoryManager*)>("RegisterPlugin");
             !registerFunc(amEngine, amMemory))
         {
-            amLogError("LoadPlugin fail on '{}'. The plugin registration has failed.", pluginLibraryName);
+            amLogError("LoadPlugin fail on '{}'. The plugin registration has failed.", AM_OS_STRING_TO_STRING(pluginLibraryName));
             return nullptr;
         }
 
@@ -550,7 +550,7 @@ namespace SparkyStudios::Audio::Amplitude
     {
         if (const AmOsString& configFilePath = _fs->ResolvePath(configFile); !LoadFile(_fs->OpenFile(configFilePath), &_configSrc))
         {
-            amLogError("Could not load audio config file at path '{}'.", configFile);
+            amLogError("Could not load audio config file at path '{}'.", AM_OS_STRING_TO_STRING(configFile));
             return false;
         }
 
@@ -850,7 +850,7 @@ namespace SparkyStudios::Audio::Amplitude
     {
         if (const auto findIt = _state->sound_bank_id_map.find(filename); findIt == _state->sound_bank_id_map.end())
         {
-            amLogWarning("Cannot deinitialize Soundbank '{}'. Soundbank not loaded.", filename);
+            amLogWarning("Cannot deinitialize Soundbank '{}'. Soundbank not loaded.", AM_OS_STRING_TO_STRING(filename));
             AMPLITUDE_ASSERT(0);
         }
         else

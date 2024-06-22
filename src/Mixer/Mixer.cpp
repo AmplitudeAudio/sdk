@@ -246,7 +246,7 @@ namespace SparkyStudios::Audio::Amplitude
     static void OnSoundStarted(Mixer* mixer, MixerLayer* layer)
     {
         const auto* sound = layer->snd->sound.get();
-        amLogDebug("Started sound: {}.", sound->GetSound()->GetPath());
+        amLogDebug("Started sound: {}.", AM_OS_STRING_TO_STRING(sound->GetSound()->GetPath()));
 
         const auto* channel = sound->GetChannel();
         auto* channelState = channel->GetParentChannelState();
@@ -257,7 +257,7 @@ namespace SparkyStudios::Audio::Amplitude
     static void OnSoundPaused(Mixer* mixer, MixerLayer* layer)
     {
         const auto* sound = layer->snd->sound.get();
-        amLogDebug("Paused sound: {}.", sound->GetSound()->GetPath());
+        amLogDebug("Paused sound: {}.", AM_OS_STRING_TO_STRING(sound->GetSound()->GetPath()));
 
         const auto* channel = sound->GetChannel();
         auto* channelState = channel->GetParentChannelState();
@@ -268,7 +268,7 @@ namespace SparkyStudios::Audio::Amplitude
     static void OnSoundResumed(Mixer* mixer, MixerLayer* layer)
     {
         const auto* sound = layer->snd->sound.get();
-        amLogDebug("Resumed sound: {}.", sound->GetSound()->GetPath());
+        amLogDebug("Resumed sound: {}.", AM_OS_STRING_TO_STRING(sound->GetSound()->GetPath()));
 
         const auto* channel = sound->GetChannel();
         auto* channelState = channel->GetParentChannelState();
@@ -279,7 +279,7 @@ namespace SparkyStudios::Audio::Amplitude
     static void OnSoundStopped(Mixer* mixer, MixerLayer* layer)
     {
         const auto* sound = layer->snd->sound.get();
-        amLogDebug("Stopped sound: {}.", sound->GetSound()->GetPath());
+        amLogDebug("Stopped sound: {}.", AM_OS_STRING_TO_STRING(sound->GetSound()->GetPath()));
 
         const auto* channel = sound->GetChannel();
         auto* channelState = channel->GetParentChannelState();
@@ -293,7 +293,7 @@ namespace SparkyStudios::Audio::Amplitude
     static bool OnSoundLooped(Mixer* mixer, MixerLayer* layer)
     {
         auto* sound = layer->snd->sound.get();
-        amLogDebug("Looped sound: {}.", sound->GetSound()->GetPath());
+        amLogDebug("Looped sound: {}.", AM_OS_STRING_TO_STRING(sound->GetSound()->GetPath()));
 
         Mixer::IncrementSoundLoopCount(sound);
 
@@ -322,7 +322,7 @@ namespace SparkyStudios::Audio::Amplitude
     static void OnSoundEnded(Mixer* mixer, MixerLayer* layer)
     {
         auto* sound = layer->snd->sound.get();
-        amLogDebug("Ended sound: {}.", sound->GetSound()->GetPath());
+        amLogDebug("Ended sound: {}.", AM_OS_STRING_TO_STRING(sound->GetSound()->GetPath()));
 
         RealChannel* channel = sound->GetChannel();
         auto* channelState = channel->GetParentChannelState();

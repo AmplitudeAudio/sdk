@@ -70,7 +70,7 @@ namespace SparkyStudios::Audio::Amplitude
     {
         if (!m_codec->CanHandleFile(file))
         {
-            amLogError("The WAV codec cannot handle the file: '{}'.", file->GetPath());
+            amLogError("The WAV codec cannot handle the file: '{}'.", AM_OS_STRING_TO_STRING(file->GetPath()));
             return false;
         }
 
@@ -79,7 +79,7 @@ namespace SparkyStudios::Audio::Amplitude
 
         if (drwav_init(&_wav, onRead, onSeek, _file.get(), &codec->m_allocationCallbacks) == DRWAV_FALSE)
         {
-            amLogError("Cannot load the WAV file: '{}'.", file->GetPath());
+            amLogError("Cannot load the WAV file: '{}'.", AM_OS_STRING_TO_STRING(file->GetPath()));
             return false;
         }
 
@@ -141,7 +141,8 @@ namespace SparkyStudios::Audio::Amplitude
         if (!_isFormatSet)
         {
             amLogError(
-                "The WAV codec cannot open the file '{}' without a format set. Have you missed to call SetFormat()?", file->GetPath());
+                "The WAV codec cannot open the file '{}' without a format set. Have you missed to call SetFormat()?",
+                AM_OS_STRING_TO_STRING(file->GetPath()));
             return false;
         }
 
@@ -158,7 +159,7 @@ namespace SparkyStudios::Audio::Amplitude
         if (drwav_init_write_sequential_pcm_frames(
                 &_wav, &format, m_format.GetFramesCount(), onWrite, _file.get(), &codec->m_allocationCallbacks) == DRWAV_FALSE)
         {
-            amLogError("Cannot load the WAV file: '{}'.", file->GetPath());
+            amLogError("Cannot load the WAV file: '{}'.", AM_OS_STRING_TO_STRING(file->GetPath()));
             return false;
         }
 
