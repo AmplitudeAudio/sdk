@@ -19,6 +19,8 @@
 
 #include <SparkyStudios/Audio/Amplitude/Core/Common.h>
 
+#define CHECK_VARARGS_HAS_VALUES(...) ((sizeof((char[]){ #__VA_ARGS__ }) / sizeof(char)) > 1)
+
 /**
  * @brief The global logger instance.
  */
@@ -34,7 +36,10 @@
 #define amLog(_level_, _message_, ...)                                                                                                     \
     if (amLogger != nullptr)                                                                                                               \
     {                                                                                                                                      \
-        amLogger->_level_(std::vformat(_message_, std::make_format_args(__VA_ARGS__)), __FILE_NAME__, __LINE__);                           \
+        if constexpr (CHECK_VARARGS_HAS_VALUES(__VA_ARGS__))                                                                               \
+            amLogger->_level_(std::vformat(_message_, std::make_format_args(__VA_ARGS__)), __FILE__, __LINE__);                                                  \
+        else                                                                                                                               \
+            amLogger->_level_(_message_, __FILE__, __LINE__);                                                                              \
     }                                                                                                                                      \
     (void)0
 

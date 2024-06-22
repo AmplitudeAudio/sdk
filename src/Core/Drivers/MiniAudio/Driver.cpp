@@ -44,19 +44,19 @@ namespace SparkyStudios::Audio::Amplitude
         switch (level)
         {
         case MA_LOG_LEVEL_DEBUG:
-            amLogger->Debug(pMessage, __FILE_NAME__, __LINE__);
+            amLogger->Debug(pMessage, __FILE__, __LINE__);
             break;
         case MA_LOG_LEVEL_INFO:
-            amLogger->Info(pMessage, __FILE_NAME__, __LINE__);
+            amLogger->Info(pMessage, __FILE__, __LINE__);
             break;
         case MA_LOG_LEVEL_WARNING:
-            amLogger->Warning(pMessage, __FILE_NAME__, __LINE__);
+            amLogger->Warning(pMessage, __FILE__, __LINE__);
             break;
         case MA_LOG_LEVEL_ERROR:
-            amLogger->Error(pMessage, __FILE_NAME__, __LINE__);
+            amLogger->Error(pMessage, __FILE__, __LINE__);
             break;
         default:
-            amLogger->Critical(pMessage, __FILE_NAME__, __LINE__);
+            amLogger->Critical(pMessage, __FILE__, __LINE__);
             break;
         }
     }
