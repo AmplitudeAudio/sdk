@@ -137,7 +137,7 @@ namespace SparkyStudios::Audio::Amplitude
         if (_sound != nullptr)
             return PlaySound();
 
-        CallLogFunc("[ERROR] Cannot play a channel. Neither a sound, a collection, nor a switch container was defined.\n");
+        amLogError("Cannot play a channel. Neither a sound, a collection, nor a switch container was defined.");
         return false;
     }
 
@@ -658,7 +658,7 @@ namespace SparkyStudios::Audio::Amplitude
 
             if (!sound)
             {
-                CallLogFunc("[ERROR] Unable to find a sound object with id: %u", item.m_id);
+                amLogError("Unable to find a sound object with id: {}", item.m_id);
                 return false;
             }
 

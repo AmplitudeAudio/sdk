@@ -69,7 +69,7 @@ namespace SparkyStudios::Audio::Amplitude
 
         if (Find(driver->GetName()) != nullptr)
         {
-            CallLogFunc("Failed to register driver '%s' as it is already registered.", driver->GetName().c_str());
+            amLogWarning("Failed to register driver '{}' as it is already registered.", driver->GetName());
             return;
         }
 

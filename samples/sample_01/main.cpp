@@ -42,15 +42,6 @@ struct ExecutionContext
     bool stop = false;
 };
 
-static void log(const char* fmt, va_list args)
-{
-#if defined(AM_WCHAR_SUPPORTED)
-    vfwprintf(stdout, AM_STRING_TO_OS_STRING(fmt), args);
-#else
-    vfprintf(stdout, fmt, args);
-#endif
-}
-
 #if !defined(AM_NO_MEMORY_STATS)
 static void printMemoryStats()
 {
@@ -217,19 +208,19 @@ static void run(AmVoidPtr param)
             {
                 if (ctx->currentSwitchState == 3 && lastSwitch != ctx->currentSwitchState)
                 {
-                    CallLogFunc("Walking on metal\n");
+                    amLogInfo("Walking on metal");
                     amEngine->SetSwitchState("surface_type", "metal");
                 }
 
                 if (ctx->currentSwitchState == 4 && lastSwitch != ctx->currentSwitchState)
                 {
-                    CallLogFunc("Walking on grass\n");
+                    amLogInfo("Walking on grass");
                     amEngine->SetSwitchState("surface_type", "grass");
                 }
 
                 if (ctx->currentSwitchState == 5 && lastSwitch != ctx->currentSwitchState)
                 {
-                    CallLogFunc("Walking on snow\n");
+                    amLogInfo("Walking on snow");
                     amEngine->SetSwitchState("surface_type", "snow");
                 }
 
@@ -261,6 +252,9 @@ static void run(AmVoidPtr param)
 
 int main(int argc, char* argv[])
 {
+    ConsoleLogger logger;
+    Logger::SetLogger(&logger);
+
     MemoryManager::Initialize(MemoryManagerConfig());
 
     ExecutionContext ctx{};
@@ -387,7 +381,7 @@ int main(int argc, char* argv[])
 #if !defined(AM_NO_MEMORY_STATS)
     printMemoryStats();
 
-    CallLogFunc(amMemory->InspectMemoryLeaks().c_str());
+    amLogInfo(amMemory->InspectMemoryLeaks());
 #endif
 
     MemoryManager::Deinitialize();

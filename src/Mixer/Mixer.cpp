@@ -246,7 +246,7 @@ namespace SparkyStudios::Audio::Amplitude
     static void OnSoundStarted(Mixer* mixer, MixerLayer* layer)
     {
         const auto* sound = layer->snd->sound.get();
-        CallLogFunc("Started sound: " AM_OS_CHAR_FMT "\n", sound->GetSound()->GetPath().c_str());
+        amLogDebug("Started sound: {}.", sound->GetSound()->GetPath());
 
         const auto* channel = sound->GetChannel();
         auto* channelState = channel->GetParentChannelState();
@@ -257,7 +257,7 @@ namespace SparkyStudios::Audio::Amplitude
     static void OnSoundPaused(Mixer* mixer, MixerLayer* layer)
     {
         const auto* sound = layer->snd->sound.get();
-        CallLogFunc("Paused sound: " AM_OS_CHAR_FMT "\n", sound->GetSound()->GetPath().c_str());
+        amLogDebug("Paused sound: {}.", sound->GetSound()->GetPath());
 
         const auto* channel = sound->GetChannel();
         auto* channelState = channel->GetParentChannelState();
@@ -268,7 +268,7 @@ namespace SparkyStudios::Audio::Amplitude
     static void OnSoundResumed(Mixer* mixer, MixerLayer* layer)
     {
         const auto* sound = layer->snd->sound.get();
-        CallLogFunc("Resumed sound: " AM_OS_CHAR_FMT "\n", sound->GetSound()->GetPath().c_str());
+        amLogDebug("Resumed sound: {}.", sound->GetSound()->GetPath());
 
         const auto* channel = sound->GetChannel();
         auto* channelState = channel->GetParentChannelState();
@@ -279,7 +279,7 @@ namespace SparkyStudios::Audio::Amplitude
     static void OnSoundStopped(Mixer* mixer, MixerLayer* layer)
     {
         const auto* sound = layer->snd->sound.get();
-        CallLogFunc("Stopped sound: " AM_OS_CHAR_FMT "\n", sound->GetSound()->GetPath().c_str());
+        amLogDebug("Stopped sound: {}.", sound->GetSound()->GetPath());
 
         const auto* channel = sound->GetChannel();
         auto* channelState = channel->GetParentChannelState();
@@ -293,7 +293,7 @@ namespace SparkyStudios::Audio::Amplitude
     static bool OnSoundLooped(Mixer* mixer, MixerLayer* layer)
     {
         auto* sound = layer->snd->sound.get();
-        CallLogFunc("Looped sound: " AM_OS_CHAR_FMT "\n", sound->GetSound()->GetPath().c_str());
+        amLogDebug("Looped sound: {}.", sound->GetSound()->GetPath());
 
         Mixer::IncrementSoundLoopCount(sound);
 
@@ -322,7 +322,7 @@ namespace SparkyStudios::Audio::Amplitude
     static void OnSoundEnded(Mixer* mixer, MixerLayer* layer)
     {
         auto* sound = layer->snd->sound.get();
-        CallLogFunc("Ended sound: " AM_OS_CHAR_FMT "\n", sound->GetSound()->GetPath().c_str());
+        amLogDebug("Ended sound: {}.", sound->GetSound()->GetPath());
 
         RealChannel* channel = sound->GetChannel();
         auto* channelState = channel->GetParentChannelState();
@@ -468,7 +468,7 @@ namespace SparkyStudios::Audio::Amplitude
     {
         if (_initialized)
         {
-            CallLogFunc("[ERROR] Amplimix has already been initialized.\n");
+            amLogError("Amplimix has already been initialized.");
             return false;
         }
 
@@ -488,14 +488,14 @@ namespace SparkyStudios::Audio::Amplitude
 
                         if (dryProcessor == nullptr)
                         {
-                            CallLogFunc("[ERROR] Unable to find a registered sound processor with name: %s\n", p->dry_processor()->c_str());
+                            amLogError("Unable to find a registered sound processor with name: {}.", p->dry_processor()->str());
                             _pipeline.reset(nullptr);
                             return false;
                         }
 
                         if (wetProcessor == nullptr)
                         {
-                            CallLogFunc("[ERROR] Unable to find a registered sound processor with name: %s\n", p->wet_processor()->c_str());
+                            amLogError("Unable to find a registered sound processor with name: {}.", p->wet_processor()->str());
                             _pipeline.reset(nullptr);
                             return false;
                         }
@@ -514,7 +514,7 @@ namespace SparkyStudios::Audio::Amplitude
                         SoundProcessorInstance* soundProcessor = SoundProcessor::Construct(p->processor()->str());
                         if (soundProcessor == nullptr)
                         {
-                            CallLogFunc("[ERROR] Unable to find a registered sound processor with name: %s\n", p->processor()->c_str());
+                            amLogError("Unable to find a registered sound processor with name: {}.", p->processor()->str());
                             _pipeline.reset(nullptr);
                             return false;
                         }
@@ -532,7 +532,7 @@ namespace SparkyStudios::Audio::Amplitude
 
         if (_pipeline == nullptr)
         {
-            CallLogFunc("[ERROR] Invalid pipeline configuration.\n");
+            amLogError("Invalid pipeline configuration.");
             return false;
         }
 
@@ -754,7 +754,7 @@ namespace SparkyStudios::Audio::Amplitude
             {
                 ma_data_converter_uninit(&lay->dataConverter, &gAllocationCallbacks);
 
-                CallLogFunc("[ERROR] Cannot process frames. Unable to initialize the samples data converter.");
+                amLogError("Cannot process frames. Unable to initialize the samples data converter.");
 
                 return 0;
             }
@@ -997,8 +997,8 @@ namespace SparkyStudios::Audio::Amplitude
 
         if (_pipeline == nullptr)
         {
-            CallLogFunc("[WARNING] No active pipeline is set, this means no sound will be rendered. You should configure the Amplimix "
-                        "pipeline in your engine configuration file.\n");
+            amLogWarning("No active pipeline is set, this means no sound will be rendered. You should configure the Amplimix "
+                         "pipeline in your engine configuration file.");
             return;
         }
 
@@ -1103,7 +1103,7 @@ namespace SparkyStudios::Audio::Amplitude
             SoundChunk::DestroyChunk(out);
             SoundChunk::DestroyChunk(in);
 
-            CallLogFunc("[ERROR] Cannot process frames. Unable to convert the audio input.");
+            amLogError("Cannot process frames. Unable to convert the audio input.");
 
             return;
         }
@@ -1164,7 +1164,7 @@ namespace SparkyStudios::Audio::Amplitude
                     break;
 
                 default:
-                    CallLogFunc("The mixer cannot handle the requested output channels");
+                    amLogWarning("The mixer cannot handle the requested output channels.");
                     break;
                 }
 

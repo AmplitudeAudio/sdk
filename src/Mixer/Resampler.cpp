@@ -68,7 +68,7 @@ namespace SparkyStudios::Audio::Amplitude
 
         if (Find(resampler->GetName()) != nullptr)
         {
-            CallLogFunc("Failed to register resampler '%s' as it is already registered", resampler->GetName().c_str());
+            amLogWarning("Failed to register resampler '%s' as it is already registered", resampler->GetName());
             return;
         }
 

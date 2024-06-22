@@ -44,14 +44,14 @@ namespace SparkyStudios::Audio::Amplitude
 
         if (definition->id() == kAmInvalidObjectId)
         {
-            CallLogFunc("[ERROR] Cannot initialize duck-bus internal state: the duck-bus ID is invalid.");
+            amLogError("Cannot initialize duck-bus internal state: the duck-bus ID is invalid.");
             return false;
         }
 
         _bus = amEngine->FindBus(definition->id());
         if (!_bus.Valid())
         {
-            CallLogFunc("[ERROR] Cannot initialize duck-bus internal state: unable to find a duck-bus with ID %u.", definition->id());
+            amLogError("Cannot initialize duck-bus internal state: unable to find a duck-bus with ID {}.", definition->id());
             return false;
         }
 

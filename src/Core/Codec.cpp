@@ -58,7 +58,7 @@ namespace SparkyStudios::Audio::Amplitude
 
         if (Find(codec->GetName()) != nullptr)
         {
-            CallLogFunc("Failed to register codec '%s' as it is already registered", codec->GetName().c_str());
+            amLogWarning("Failed to register codec '{}' as it is already registered", codec->GetName());
             return;
         }
 

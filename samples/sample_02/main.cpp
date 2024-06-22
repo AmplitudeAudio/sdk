@@ -36,19 +36,19 @@ static void device_notification(DeviceNotification notification, const DeviceDes
     switch (notification)
     {
     case DeviceNotification::Opened:
-        CallLogFunc("Device opened: " AM_OS_CHAR_FMT "\n", AM_STRING_TO_OS_STRING(device.mDeviceName));
+        amLogInfo("Device opened: {}", device.mDeviceName);
         break;
     case DeviceNotification::Started:
-        CallLogFunc("Device started: " AM_OS_CHAR_FMT "\n", AM_STRING_TO_OS_STRING(device.mDeviceName));
+        amLogInfo("Device started: {}", device.mDeviceName);
         break;
     case DeviceNotification::Stopped:
-        CallLogFunc("Device stopped: " AM_OS_CHAR_FMT "\n", AM_STRING_TO_OS_STRING(device.mDeviceName));
+        amLogInfo("Device stopped: {}", device.mDeviceName);
         break;
     case DeviceNotification::Rerouted:
-        CallLogFunc("Device rerouted: " AM_OS_CHAR_FMT "\n", AM_STRING_TO_OS_STRING(device.mDeviceName));
+        amLogInfo("Device rerouted: {}", device.mDeviceName);
         break;
     case DeviceNotification::Closed:
-        CallLogFunc("Device closed: " AM_OS_CHAR_FMT "\n", AM_STRING_TO_OS_STRING(device.mDeviceName));
+        amLogInfo("Device closed: {}", device.mDeviceName);
         break;
     }
 }
@@ -220,7 +220,6 @@ bool SampleState::Initialize()
         return false;
     }
 
-    RegisterLogFunc(log);
     RegisterDeviceNotificationCallback(device_notification);
 
     _loader.SetBasePath(AM_OS_STRING("./assets"));
@@ -532,7 +531,7 @@ int main(int argc, char* argv[])
     Engine::UnregisterDefaultPlugins();
 
 #if !defined(AM_NO_MEMORY_STATS)
-    CallLogFunc(amMemory->InspectMemoryLeaks().c_str());
+    amLogInfo(amMemory->InspectMemoryLeaks());
 #endif
 
     MemoryManager::Deinitialize();

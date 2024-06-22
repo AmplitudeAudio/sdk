@@ -79,8 +79,7 @@ namespace SparkyStudios::Audio::Amplitude
 
         if (_filter == nullptr)
         {
-            CallLogFunc(
-                "[ERROR] Effect %s specifies an invalid effect type: %s.", definition->name()->c_str(), definition->effect()->c_str());
+            amLogError("Effect {} specifies an invalid effect type: {}.", definition->name()->str(), definition->effect()->str());
             return false;
         }
 

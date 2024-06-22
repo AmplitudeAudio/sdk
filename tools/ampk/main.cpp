@@ -41,16 +41,20 @@ static constexpr char kProjectDirSwitches[] = "switches";
 /**
  * @brief The log function, used in verbose mode.
  *
+ * @param output The output stream.
  * @param fmt The message format.
- * @param args The arguments.
+ * @param ... The arguments.
  */
-static void log(const char* fmt, va_list args)
+static void log(FILE* output, const char* fmt, ...)
 {
+    va_list args;
+    va_start(args, fmt);
 #if defined(AM_WCHAR_SUPPORTED)
-    vfwprintf(stdout, AM_STRING_TO_OS_STRING(fmt), args);
+    vfwprintf(output, AM_STRING_TO_OS_STRING(fmt), args);
 #else
-    vfprintf(stdout, fmt, args);
+    vfprintf(output, fmt, args);
 #endif
+    va_end(args);
 }
 
 static int process(const AmOsString& inFileName, const AmOsString& outFileName, const ProcessingState& state)
@@ -60,7 +64,7 @@ static int process(const AmOsString& inFileName, const AmOsString& outFileName, 
 
     if (!exists(projectPath))
     {
-        fprintf(stderr, "The path " AM_OS_CHAR_FMT " does not exist.\n", projectPath.native().c_str());
+        log(stderr, "The path " AM_OS_CHAR_FMT " does not exist.\n", projectPath.native().c_str());
         return EXIT_FAILURE;
     }
 
@@ -72,7 +76,7 @@ static int process(const AmOsString& inFileName, const AmOsString& outFileName, 
     {
         if (!exists(projectPath / directory) || !is_directory(projectPath / directory))
         {
-            fprintf(stderr, "Invalid project path. The \"attenuators\" directory is missing.\n");
+            log(stderr, "Invalid project path. The \"attenuators\" directory is missing.\n");
             return EXIT_FAILURE;
         }
     }
@@ -182,13 +186,13 @@ int main(int argc, char* argv[])
 
                 if (state.compression < ePCA_None || state.compression >= ePCA_Invalid)
                 {
-                    fprintf(stderr, "\nInvalid compression algorithm!\n");
+                    log(stderr, "\nInvalid compression algorithm!\n");
                     return EXIT_FAILURE;
                 }
                 break;
 
             default:
-                fprintf(stderr, "\nInvalid option: -%c. Use -h for help.\n", **argv);
+                log(stderr, "\nInvalid option: -%c. Use -h for help.\n", **argv);
                 return EXIT_FAILURE;
             }
         }
@@ -214,7 +218,7 @@ int main(int argc, char* argv[])
         }
         else
         {
-            fprintf(stderr, "\nUnknown extra argument: %s !\n", *argv);
+            log(stderr, "\nUnknown extra argument: %s !\n", *argv);
             return EXIT_FAILURE;
         }
     }
@@ -224,39 +228,34 @@ int main(int argc, char* argv[])
         needHelp = true;
     }
 
-    if (state.verbose || !noLogo || needHelp)
-    {
-        RegisterLogFunc(log);
-    }
-
     if (!noLogo)
     {
         // clang-format off
-        CallLogFunc("\n");
-        CallLogFunc("Amplitude Packager (ampk)\n");
-        CallLogFunc("Copyright (c) 2024-present Sparky Studios - Licensed under Apache 2.0\n");
-        CallLogFunc("=====================================================================\n");
-        CallLogFunc("\n");
+        log(stdout, "\n");
+        log(stdout, "Amplitude Packager (ampk)\n");
+        log(stdout, "Copyright (c) 2024-present Sparky Studios - Licensed under Apache 2.0\n");
+        log(stdout, "=====================================================================\n");
+        log(stdout, "\n");
         // clang-format on
     }
 
     if (needHelp)
     {
         // clang-format off
-        CallLogFunc("Usage: ampk [OPTIONS] PROJECT_DIR OUTPUT_FILE\n");
-        CallLogFunc("\n");
-        CallLogFunc("Options:\n");
-        CallLogFunc("    -[hH]:        \tDisplay this help message.\n");
-        CallLogFunc("    -[oO]:        \tHide logo and copyright notice.\n");
-        CallLogFunc("    -[qQ]:        \tQuiet mode. Shutdown all messages.\n");
-        CallLogFunc("    -[vV]:        \tVerbose mode. Display all messages.\n");
-        CallLogFunc("    -[cC]:        \tThe compression algorithm to use.\n");
-        CallLogFunc("                  \tIf not defined, the resulting package will not be compressed. The available values are:\n");
-        CallLogFunc("           0:     \tNo compression.\n");
-        CallLogFunc("           1:     \tZLib compression.\n");
-        CallLogFunc("\n");
-        CallLogFunc("Example: ampk -c 1 /path/to/project/ output_package.ampk\n");
-        CallLogFunc("\n");
+        log(stdout, "Usage: ampk [OPTIONS] PROJECT_DIR OUTPUT_FILE\n");
+        log(stdout, "\n");
+        log(stdout, "Options:\n");
+        log(stdout, "    -[hH]:        \tDisplay this help message.\n");
+        log(stdout, "    -[oO]:        \tHide logo and copyright notice.\n");
+        log(stdout, "    -[qQ]:        \tQuiet mode. Shutdown all messages.\n");
+        log(stdout, "    -[vV]:        \tVerbose mode. Display all messages.\n");
+        log(stdout, "    -[cC]:        \tThe compression algorithm to use.\n");
+        log(stdout, "                  \tIf not defined, the resulting package will not be compressed. The available values are:\n");
+        log(stdout, "           0:     \tNo compression.\n");
+        log(stdout, "           1:     \tZLib compression.\n");
+        log(stdout, "\n");
+        log(stdout, "Example: ampk -c 1 /path/to/project/ output_package.ampk\n");
+        log(stdout, "\n");
         // clang-format on
 
         return EXIT_SUCCESS;

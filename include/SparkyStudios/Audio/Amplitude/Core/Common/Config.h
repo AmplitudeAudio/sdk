@@ -65,6 +65,10 @@
 #define AM_RESTRICT
 #endif
 
+#if defined(_DEBUG) || defined(DEBUG) || (defined(__GNUC__) && !defined(__OPTIMIZE__))
+#define AM_DEBUG
+#endif
+
 #if !defined(AMPLITUDE_DISABLE_SIMD)
 #if defined(AM_CPU_X86) || defined(AM_CPU_X86_64) || defined(AM_CPU_ARM) || defined(AM_CPU_ARM_64)
 #define AM_SIMD_INTRINSICS

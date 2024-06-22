@@ -75,20 +75,20 @@ namespace SparkyStudios::Audio::Amplitude
     {
         if (!definition->bus())
         {
-            CallLogFunc("[ERROR] SwitchContainer %s does not specify a bus.\n", definition->name()->c_str());
+            amLogError("SwitchContainer {} does not specify a bus.", definition->name()->str());
             return false;
         }
 
         if (!definition->switch_group())
         {
-            CallLogFunc("[ERROR] SwitchContainer %s does not specify a switch.\n", definition->name()->c_str());
+            amLogError("SwitchContainer {} does not specify a switch.", definition->name()->str());
             return false;
         }
 
         m_bus = FindBusInternalState(state, definition->bus());
         if (!m_bus)
         {
-            CallLogFunc("[ERROR] SwitchContainer %s specifies an unknown bus ID: %u.\n", definition->name(), definition->bus());
+            amLogError("SwitchContainer {} specifies an unknown bus ID: %u.", definition->name()->str(), definition->bus());
             return false;
         }
 
@@ -105,7 +105,7 @@ namespace SparkyStudios::Audio::Amplitude
             }
             else
             {
-                CallLogFunc("[ERROR] Sound definition is invalid: invalid effect ID \"%u\"", definition->effect());
+                amLogError("Sound definition is invalid: invalid effect ID \"%u\"", definition->effect());
                 return false;
             }
         }
@@ -119,9 +119,8 @@ namespace SparkyStudios::Audio::Amplitude
 
             if (!m_attenuation)
             {
-                CallLogFunc(
-                    "[ERROR] SwitchContainer " AM_OS_CHAR_FMT " specifies an unknown attenuation ID: %u.\n",
-                    AM_STRING_TO_OS_STRING(definition->name()->c_str()), definition->attenuation());
+                amLogError(
+                    "SwitchContainer {} specifies an unknown attenuation ID: {}.", definition->name()->str(), definition->attenuation());
                 return false;
             }
         }
@@ -149,15 +148,15 @@ namespace SparkyStudios::Audio::Amplitude
 
             if (id == kAmInvalidObjectId)
             {
-                CallLogFunc("[ERROR] SwitchContainer %s specifies an invalid sound object ID: %u.", definition->name()->c_str(), id);
+                amLogError("SwitchContainer {} specifies an invalid sound object ID: {}.", definition->name()->str(), id);
                 return false;
             }
 
             if (!state->sound_map.contains(id) && !state->collection_map.contains(id))
             {
-                CallLogFunc(
-                    "[ERROR] SwitchContainer %s specifies an unknown sound object ID: %u. It's neither a Sound nor a Collection.",
-                    definition->name()->c_str(), id);
+                amLogError(
+                    "SwitchContainer {} specifies an unknown sound object ID: {}. It's neither a Sound nor a Collection.",
+                    definition->name()->str(), id);
                 return false;
             }
 

@@ -16,6 +16,11 @@
 
 using namespace SparkyStudios::Audio::Amplitude::Compression::ADPCM;
 
+// This runtime macro is not strictly needed because the code is endian-safe,
+// but including it improves performance on little-endian systems because we
+// can avoid a couple loops through the audio.
+#define IS_BIG_ENDIAN (*(uint16_t*)"\0\xff" < 0x0100)
+
 namespace SparkyStudios::Audio::Amplitude
 {
     static void little_endian_to_native(void* data, const char* format)
@@ -438,6 +443,19 @@ namespace SparkyStudios::Audio::Amplitude
 
             AmInt16Buffer pcm_block = static_cast<AmInt16Buffer>(in) + offset * numChannels;
 
+            if (IS_BIG_ENDIAN)
+            {
+                AmUInt32 count = this_block_pcm_samples * numChannels;
+                auto* cp = (unsigned char*)pcm_block;
+
+                while (count--)
+                {
+                    int16_t temp = cp[0] + (cp[1] << 8);
+                    *(int16_t*)cp = temp;
+                    cp += 2;
+                }
+            }
+
             // if this is the last block, and it's not full, duplicate the last sample(s) so we don't
             // create problems for the lookAhead
 
@@ -517,7 +535,7 @@ namespace SparkyStudios::Audio::Amplitude
 
         if (!ReadHeader(_file, m_format, _blockSize))
         {
-            CallLogFunc("The AMS codec cannot handle the file: '" AM_OS_CHAR_FMT "'\n", file->GetPath().c_str());
+            amLogError("The AMS codec cannot handle the file: '{}'", file->GetPath());
             return false;
         }
 
@@ -580,7 +598,7 @@ namespace SparkyStudios::Audio::Amplitude
 
         if (!WriteHeader(_file, m_format, _samplesPerBlock))
         {
-            CallLogFunc("The AMS codec was unable to write the file: '" AM_OS_CHAR_FMT "'\n", file->GetPath().c_str());
+            amLogError("The AMS codec was unable to write the file: '{}'", file->GetPath());
             return false;
         }
 

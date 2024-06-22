@@ -58,7 +58,7 @@ namespace SparkyStudios::Audio::Amplitude
 
         if (!state.Valid())
         {
-            CallLogFunc("[ERROR] Invalid switch state provided.");
+            amLogError("Invalid switch state provided.");
             return;
         }
 

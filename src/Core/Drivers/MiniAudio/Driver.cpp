@@ -41,8 +41,24 @@ namespace SparkyStudios::Audio::Amplitude
         AM_UNUSED(pUserData);
         AM_UNUSED(level);
 
-        // TODO: Add support for log levels.
-        CallLogFunc(pMessage);
+        switch (level)
+        {
+        case MA_LOG_LEVEL_DEBUG:
+            amLogger->Debug(pMessage, __FILE_NAME__, __LINE__);
+            break;
+        case MA_LOG_LEVEL_INFO:
+            amLogger->Info(pMessage, __FILE_NAME__, __LINE__);
+            break;
+        case MA_LOG_LEVEL_WARNING:
+            amLogger->Warning(pMessage, __FILE_NAME__, __LINE__);
+            break;
+        case MA_LOG_LEVEL_ERROR:
+            amLogger->Error(pMessage, __FILE_NAME__, __LINE__);
+            break;
+        default:
+            amLogger->Critical(pMessage, __FILE_NAME__, __LINE__);
+            break;
+        }
     }
 
     static void miniaudio_mixer(ma_device* pDevice, AmVoidPtr pOutput, AmConstVoidPtr pInput, ma_uint32 frameCount)
@@ -87,13 +103,13 @@ namespace SparkyStudios::Audio::Amplitude
             CallDeviceNotificationCallback(DeviceNotification::Rerouted, driver->GetDeviceDescription(), driver);
             break;
         case ma_device_notification_type_interruption_began:
-            CallLogFunc("Device interruption began");
+            amLogDebug("Device interruption began");
             break;
         case ma_device_notification_type_interruption_ended:
-            CallLogFunc("Device interruption ended");
+            amLogDebug("Device interruption ended");
             break;
         case ma_device_notification_type_unlocked:
-            CallLogFunc("Device unlocked");
+            amLogDebug("Device unlocked");
             break;
         }
     }
@@ -258,7 +274,7 @@ namespace SparkyStudios::Audio::Amplitude
         _logCallback = ma_log_callback_init(miniaudio_log, nullptr);
         if (ma_log_init(nullptr, &_log) != MA_SUCCESS)
         {
-            CallLogFunc("Failed to initialize miniaudio log\n");
+            amLogCritical("Failed to initialize miniaudio log.");
             return;
         }
 
@@ -271,7 +287,7 @@ namespace SparkyStudios::Audio::Amplitude
 
         if (ma_context_init(nullptr, 0, &config, &_context) != MA_SUCCESS)
         {
-            CallLogFunc("Failed to initialize miniaudio context\n");
+            amLogCritical("Failed to initialize miniaudio context");
             return;
         }
     }
@@ -315,7 +331,7 @@ namespace SparkyStudios::Audio::Amplitude
             _initialized = ma_device_init(&_context, &deviceConfig, &_device) == MA_SUCCESS;
             if (!_initialized)
             {
-                CallLogFunc("The miniaudio driver was not initialized successfully.");
+                amLogCritical("The miniaudio driver was not initialized successfully.");
                 return false;
             }
 
@@ -339,7 +355,7 @@ namespace SparkyStudios::Audio::Amplitude
 
         if (ma_device_is_started(&_device) == MA_FALSE && ma_device_start(&_device) != MA_SUCCESS)
         {
-            CallLogFunc("Unable to open the audio device.");
+            amLogCritical("Unable to open the audio device.");
             return false;
         }
 
@@ -351,13 +367,13 @@ namespace SparkyStudios::Audio::Amplitude
     {
         if (!_initialized)
         {
-            CallLogFunc("Cannot close an uninitialized audio device.");
+            amLogCritical("Cannot close an uninitialized audio device.");
             return false;
         }
 
         if (ma_device_is_started(&_device) == MA_TRUE && ma_device_stop(&_device) != MA_SUCCESS)
         {
-            CallLogFunc("Unable to close the audio device.");
+            amLogCritical("Unable to close the audio device.");
             return false;
         }
 
@@ -380,7 +396,7 @@ namespace SparkyStudios::Audio::Amplitude
 
             if (ma_context_get_devices(&_context, &pPlaybackInfos, &playbackCount, &pCaptureInfos, &captureCount) != MA_SUCCESS)
             {
-                CallLogFunc("Unable to enumerate the audio devices.\n");
+                amLogError("Unable to enumerate the audio devices.\n");
                 return false;
             }
 

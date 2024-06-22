@@ -204,7 +204,7 @@ namespace SparkyStudios::Audio::Amplitude
 
             if (_rtpc == nullptr)
             {
-                CallLogFunc("[ERROR] Linking a parameter to an invalid or uninitialized RTPC handle.");
+                amLogError("Linking a parameter to an invalid or uninitialized RTPC handle.");
             }
 
             auto* curve = ampoolnew(MemoryPoolKind::Engine, Curve);

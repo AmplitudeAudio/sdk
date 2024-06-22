@@ -91,7 +91,7 @@ namespace SparkyStudios::Audio::Amplitude
             if (_decoder->Load(reinterpret_cast<AmAudioSampleBuffer>(_soundData->buffer)) != _format.GetFramesCount())
             {
                 SoundChunk::DestroyChunk(_soundData);
-                CallLogFunc("Could not load a sound instance. Unable to read data from the parent sound.\n");
+                amLogError("Could not load a sound instance. Unable to read data from the parent sound.");
                 return nullptr;
             }
         }
@@ -130,13 +130,13 @@ namespace SparkyStudios::Audio::Amplitude
 
         if (filename.empty())
         {
-            CallLogFunc("[ERROR] Cannot load the sound: the filename is empty.\n");
+            amLogError("Cannot load the sound: the filename is empty.");
             return;
         }
 
         if (!loader->Exists(filename))
         {
-            CallLogFunc("[ERROR] Cannot load the sound: the file \"" AM_OS_CHAR_FMT "\" does not exist.\n", filename.c_str());
+            amLogError("Cannot load the sound: the file \"{}\" does not exist.", filename);
             return;
         }
 
@@ -145,14 +145,14 @@ namespace SparkyStudios::Audio::Amplitude
         _codec = Codec::FindCodecForFile(file);
         if (_codec == nullptr)
         {
-            CallLogFunc("[ERROR] Cannot load the sound: unable to find codec for '" AM_OS_CHAR_FMT "'.\n", filename.c_str());
+            amLogError("Cannot load the sound: unable to find codec for '{}'.", filename);
             return;
         }
 
         _decoder = _codec->CreateDecoder();
         if (!_decoder->Open(file))
         {
-            CallLogFunc("[ERROR] Cannot load the sound: unable to initialize a decoder for '" AM_OS_CHAR_FMT "'.\n", filename.c_str());
+            amLogError("Cannot load the sound: unable to initialize a decoder for '{}'.", filename);
             return;
         }
 
@@ -163,20 +163,20 @@ namespace SparkyStudios::Audio::Amplitude
     {
         if (definition->id() == kAmInvalidObjectId)
         {
-            CallLogFunc("[ERROR] Sound definition is invalid: no ID defined.");
+            amLogError("Sound definition is invalid: no ID defined.");
             return false;
         }
 
         if (definition->bus() == kAmInvalidObjectId)
         {
-            CallLogFunc("[ERROR] Sound definition is invalid: no bus ID defined.");
+            amLogError("Sound definition is invalid: no bus ID defined.");
             return false;
         }
 
         m_bus = FindBusInternalState(state, definition->bus());
         if (!m_bus)
         {
-            CallLogFunc("[ERROR] Sound %s specifies an unknown bus ID: %u.\n", definition->name(), definition->bus());
+            amLogError("Sound {} specifies an unknown bus ID: {}.", definition->name()->str(), definition->bus());
             return false;
         }
 
@@ -188,7 +188,7 @@ namespace SparkyStudios::Audio::Amplitude
             }
             else
             {
-                CallLogFunc("[ERROR] Sound definition is invalid: invalid effect ID \"%u\"", definition->effect());
+                amLogError("Sound definition is invalid: invalid effect ID \"{}\"", definition->effect());
                 return false;
             }
         }
@@ -201,7 +201,7 @@ namespace SparkyStudios::Audio::Amplitude
             }
             else
             {
-                CallLogFunc("[ERROR] Sound definition is invalid: invalid attenuation ID \"%u\"", definition->attenuation());
+                amLogError("Sound definition is invalid: invalid attenuation ID \"{}\"", definition->attenuation());
                 return false;
             }
         }
@@ -287,7 +287,7 @@ namespace SparkyStudios::Audio::Amplitude
             _decoder = _parent->_codec->CreateDecoder();
             if (!_decoder->Open(file))
             {
-                CallLogFunc("[ERROR] Cannot load the sound: unable to initialize a decoder for '" AM_OS_CHAR_FMT "'.\n", filename.c_str());
+                amLogError("Cannot load the sound: unable to initialize a decoder for '{}'.", filename);
                 return;
             }
         }
@@ -321,7 +321,7 @@ namespace SparkyStudios::Audio::Amplitude
 
         if (data == nullptr)
         {
-            CallLogFunc("Could not load a sound instance. Unable to read data from the parent sound.\n");
+            amLogError("Could not load a sound instance. Unable to read data from the parent sound.");
 
             if (chunk != nullptr)
             {

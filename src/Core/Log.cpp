@@ -12,28 +12,82 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+#include <iostream>
+
 #include <SparkyStudios/Audio/Amplitude/Core/Log.h>
 
 namespace SparkyStudios::Audio::Amplitude
 {
-    LogFunc g_log_func;
+    static Logger* gLogger = nullptr;
 
-    // Register a logging function with the library.
-    void RegisterLogFunc(LogFunc log_func)
+    void Logger::SetLogger(Logger* loggerInstance)
     {
-        g_log_func = log_func;
+        gLogger = loggerInstance;
     }
 
-    // Call the registered log function with the provided format string. This does
-    // nothing if no logging function has been registered.
-    void CallLogFunc(const char* format, ...)
+    Logger* Logger::GetLogger()
     {
-        if (g_log_func)
+        return gLogger;
+    }
+
+    void Logger::Debug(const std::string& message, const char* file, int line)
+    {
+#ifdef AM_DEBUG
+        Log(eLML_DEBUG, message, file, line);
+#endif
+    }
+
+    void Logger::Info(const std::string& message, const char* file, int line)
+    {
+        Log(eLML_INFO, message, file, line);
+    }
+
+    void Logger::Warning(const std::string& message, const char* file, int line)
+    {
+        Log(eLML_WARNING, message, file, line);
+    }
+
+    void Logger::Error(const std::string& message, const char* file, int line)
+    {
+        Log(eLML_ERROR, message, file, line);
+    }
+
+    void Logger::Critical(const std::string& message, const char* file, int line)
+    {
+        Log(eLML_CRITICAL, message, file, line);
+    }
+
+    ConsoleLogger::ConsoleLogger(bool displayFileAndLine)
+        : m_displayFileAndLine(displayFileAndLine)
+    {}
+
+    void ConsoleLogger::Log(LogMessageLevel level, const std::string& message, const char* file, int line)
+    {
+        switch (level)
         {
-            va_list args;
-            va_start(args, format);
-            g_log_func(format, args);
-            va_end(args);
+        case eLML_DEBUG:
+            std::cout << "[DEBUG] ";
+            break;
+        case eLML_INFO:
+            std::cout << "[INFO] ";
+            break;
+        case eLML_WARNING:
+            std::cout << "[WARNING] ";
+            break;
+        case eLML_ERROR:
+            std::cout << "[ERROR] ";
+            break;
+        case eLML_CRITICAL:
+            std::cout << "[CRITICAL] ";
+            break;
         }
+
+        if (m_displayFileAndLine)
+            std::cout << "(" << file << ":" << line << ") ";
+
+        std::cout << message;
+
+        if (message.back() != '\n')
+            std::cout << std::endl;
     }
 } // namespace SparkyStudios::Audio::Amplitude

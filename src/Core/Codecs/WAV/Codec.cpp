@@ -70,7 +70,7 @@ namespace SparkyStudios::Audio::Amplitude
     {
         if (!m_codec->CanHandleFile(file))
         {
-            CallLogFunc("The WAV codec cannot handle the file: '" AM_OS_CHAR_FMT "'\n", file->GetPath().c_str());
+            amLogError("The WAV codec cannot handle the file: '{}'.", file->GetPath());
             return false;
         }
 
@@ -79,7 +79,7 @@ namespace SparkyStudios::Audio::Amplitude
 
         if (drwav_init(&_wav, onRead, onSeek, _file.get(), &codec->m_allocationCallbacks) == DRWAV_FALSE)
         {
-            CallLogFunc("Cannot load the WAV file: '" AM_OS_CHAR_FMT "'\n", file->GetPath().c_str());
+            amLogError("Cannot load the WAV file: '{}'.", file->GetPath());
             return false;
         }
 
@@ -140,9 +140,8 @@ namespace SparkyStudios::Audio::Amplitude
     {
         if (!_isFormatSet)
         {
-            CallLogFunc(
-                "The WAV codec cannot open the file '" AM_OS_CHAR_FMT "' without a format set. Have you missed to call SetFormat()?\n",
-                file->GetPath().c_str());
+            amLogError(
+                "The WAV codec cannot open the file '{}' without a format set. Have you missed to call SetFormat()?", file->GetPath());
             return false;
         }
 
@@ -159,7 +158,7 @@ namespace SparkyStudios::Audio::Amplitude
         if (drwav_init_write_sequential_pcm_frames(
                 &_wav, &format, m_format.GetFramesCount(), onWrite, _file.get(), &codec->m_allocationCallbacks) == DRWAV_FALSE)
         {
-            CallLogFunc("Cannot load the WAV file: '" AM_OS_CHAR_FMT "'\n", file->GetPath().c_str());
+            amLogError("Cannot load the WAV file: '{}'.", file->GetPath());
             return false;
         }
 
@@ -172,7 +171,7 @@ namespace SparkyStudios::Audio::Amplitude
     {
         if (_initialized)
         {
-            CallLogFunc("Cannot set the format on an initialized decoder.\n");
+            amLogError("Cannot set the format on an initialized decoder.");
             return;
         }
 

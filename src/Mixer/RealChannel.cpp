@@ -135,7 +135,7 @@ namespace SparkyStudios::Audio::Amplitude
         if (_activeSounds[layer]->GetUserData() == nullptr)
         {
             _channelLayersId[layer] = kAmInvalidObjectId;
-            CallLogFunc("[ERROR] The sound was not loaded successfully.");
+            amLogError("The sound was not loaded successfully.");
             return false;
         }
 
@@ -152,7 +152,7 @@ namespace SparkyStudios::Audio::Amplitude
         if (!success)
         {
             _channelLayersId[layer] = kAmInvalidObjectId;
-            CallLogFunc("[ERROR] Could not play sound " AM_OS_CHAR_FMT "\n", _activeSounds[layer]->GetSound()->GetPath().c_str());
+            amLogError("Could not play sound '{}'.", _activeSounds[layer]->GetSound()->GetPath());
         }
 
         return success;

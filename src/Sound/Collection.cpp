@@ -49,7 +49,7 @@ namespace SparkyStudios::Audio::Amplitude
         const CollectionDefinition* definition = GetDefinition();
         if (_worldScopeScheduler == nullptr || !_worldScopeScheduler->Valid())
         {
-            CallLogFunc("Collection %s does not have a valid scheduler.\n", definition->name()->c_str());
+            amLogWarning("Collection {} does not have a valid scheduler.", definition->name()->str());
             return nullptr;
         }
 
@@ -85,8 +85,7 @@ namespace SparkyStudios::Audio::Amplitude
 
         if (!definition->scheduler())
         {
-            CallLogFunc(
-                "[Debug] Collection %s does not specify a scheduler, using the RandomScheduler by default.\n", definition->name()->c_str());
+            amLogDebug("Collection {} does not specify a scheduler, using the RandomScheduler by default.", definition->name()->str());
             scheduler = ampoolnew(MemoryPoolKind::Engine, RandomScheduler, nullptr);
         }
         else
@@ -117,14 +116,14 @@ namespace SparkyStudios::Audio::Amplitude
     {
         if (!definition->bus())
         {
-            CallLogFunc("Collection %s does not specify a bus.\n", definition->name()->c_str());
+            amLogError("Collection {} does not specify a bus.", definition->name()->str());
             return false;
         }
 
         m_bus = FindBusInternalState(state, definition->bus());
         if (!m_bus)
         {
-            CallLogFunc("Collection %s specifies an unknown bus ID: %u.\n", definition->name(), definition->bus());
+            amLogError("Collection {} specifies an unknown bus ID: {}.", definition->name()->str(), definition->bus());
             return false;
         }
 
@@ -136,7 +135,7 @@ namespace SparkyStudios::Audio::Amplitude
             }
             else
             {
-                CallLogFunc("[ERROR] Sound definition is invalid: invalid effect ID \"%u\"", definition->effect());
+                amLogError("Sound definition is invalid: invalid effect ID \"{}\".", definition->effect());
                 return false;
             }
         }
@@ -150,7 +149,7 @@ namespace SparkyStudios::Audio::Amplitude
 
             if (!m_attenuation)
             {
-                CallLogFunc("Collection %s specifies an unknown attenuation ID: %u.\n", definition->name(), definition->attenuation());
+                amLogError("Collection {} specifies an unknown attenuation ID: {}.", definition->name()->str(), definition->attenuation());
                 return false;
             }
         }
@@ -174,13 +173,13 @@ namespace SparkyStudios::Audio::Amplitude
 
             if (id == kAmInvalidObjectId)
             {
-                CallLogFunc("[ERROR] Collection %s specifies an invalid sound ID: %u.", definition->name()->c_str(), id);
+                amLogError("Collection {} specifies an invalid sound ID: {}.", definition->name()->str(), id);
                 return false;
             }
 
             if (auto findIt = state->sound_map.find(id); findIt == state->sound_map.end())
             {
-                CallLogFunc("[ERROR] Collection %s specifies an unknown sound ID: %u", definition->name()->c_str(), id);
+                amLogError("Collection {} specifies an unknown sound ID: {}", definition->name()->str(), id);
                 return false;
             }
             else

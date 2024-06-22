@@ -15,36 +15,186 @@
 #ifndef SPARK_AUDIO_LOG_H
 #define SPARK_AUDIO_LOG_H
 
-#include <cstdarg>
+#include <format>
 
 #include <SparkyStudios/Audio/Amplitude/Core/Common.h>
+
+/**
+ * @brief The global logger instance.
+ */
+#define amLogger SparkyStudios::Audio::Amplitude::Logger::GetLogger()
+
+/**
+ * @brief Logs a message with the given level.
+ *
+ * @param _level_ The level of the log message.
+ * @param _message_ The message to log.
+ * @param ... The arguments to format the message with.
+ */
+#define amLog(_level_, _message_, ...)                                                                                                     \
+    if (amLogger != nullptr)                                                                                                               \
+    {                                                                                                                                      \
+        amLogger->_level_(std::vformat(_message_, std::make_format_args(__VA_ARGS__)), __FILE_NAME__, __LINE__);                           \
+    }                                                                                                                                      \
+    (void)0
+
+/**
+ * @brief Logs a debug message.
+ *
+ * @param _message_ The message to log.
+ * @param ... The arguments to format the message with.
+ */
+#define amLogDebug(_message_, ...) amLog(Debug, _message_, __VA_ARGS__)
+
+/**
+ * @brief Logs an informational message.
+ *
+ * @param _message_ The message to log.
+ * @param ... The arguments to format the message with.
+ */
+#define amLogInfo(_message_, ...) amLog(Info, _message_, __VA_ARGS__)
+
+/**
+ * @brief Logs a warning message.
+ *
+ * @param _message_ The message to log.
+ * @param ... The arguments to format the message with.
+ */
+#define amLogWarning(_message_, ...) amLog(Warning, _message_, __VA_ARGS__)
+
+/**
+ * @brief Logs an error message.
+ *
+ * @param _message_ The message to log.
+ * @param ... The arguments to format the message with.
+ */
+#define amLogError(_message_, ...) amLog(Error, _message_, __VA_ARGS__)
+
+/**
+ * @brief Logs a critical message.
+ *
+ * @param _message_ The message to log.
+ * @param ... The arguments to format the message with.
+ */
+#define amLogCritical(_message_, ...) amLog(Critical, _message_, __VA_ARGS__)
 
 namespace SparkyStudios::Audio::Amplitude
 {
     /**
-     * @brief The function signature of the logging function.
+     * @brief The level of a log message.
      *
-     * In order to perform logging, the library needs to be provided with a logging
-     * function that fits this type signature.
+     * This is used to determine the importance of a log message.
      */
-    typedef void (*LogFunc)(const char* fmt, va_list args);
+    enum LogMessageLevel : AmUInt8
+    {
+        eLML_DEBUG = 0,
+        eLML_INFO = 1,
+        eLML_WARNING = 2,
+        eLML_ERROR = 3,
+        eLML_CRITICAL = 4,
+    };
 
     /**
-     * @brief Register a logging function with the library.
+     * @brief The logger class.
      *
-     * @param[in] The function to use for logging.
+     * Base class used to perform logging. Implementations of this class have the ability to display or store
+     * log messages wherever they are needed.
      */
-    AM_API_PUBLIC void RegisterLogFunc(LogFunc log_func);
+    class AM_API_PUBLIC Logger
+    {
+    public:
+        virtual ~Logger() = default;
+
+        /**
+         * @brief Sets the logger instance to use when calling @c amLogger
+         *
+         * @param loggerInstance The logger instance.
+         */
+        static void SetLogger(Logger* loggerInstance);
+
+        /**
+         * @brief Gets the logger instance to use when calling @c amLogger
+         *
+         * @return The logger instance.
+         */
+        static Logger* GetLogger();
+
+        /**
+         * @brief Logs a debug message.
+         *
+         * @param message The message to log.
+         * @param file The file where the message was logged.
+         * @param line The line where the message was logged.
+         */
+        void Debug(const std::string& message, const char* file, int line);
+
+        /**
+         * @brief Logs an informational message.
+         *
+         * @param message The message to log.
+         * @param file The file where the message was logged.
+         * @param line The line where the message was logged.
+         */
+        void Info(const std::string& message, const char* file, int line);
+
+        /**
+         * @brief Logs a warning message.
+         *
+         * @param message The message to log.
+         * @param file The file where the message was logged.
+         * @param line The line where the message was logged.
+         */
+        void Warning(const std::string& message, const char* file, int line);
+
+        /**
+         * @brief Logs an error message.
+         *
+         * @param message The message to log.
+         * @param file The file where the message was logged.
+         * @param line The line where the message was logged.
+         */
+        void Error(const std::string& message, const char* file, int line);
+
+        /**
+         * @brief Logs a critical message.
+         *
+         * @param message The message to log.
+         * @param file The file where the message was logged.
+         * @param line The line where the message was logged.
+         */
+        void Critical(const std::string& message, const char* file, int line);
+
+    protected:
+        /**
+         * @brief Logs a message with the given level.
+         *
+         * @param level The level of the log message.
+         * @param message The message to log.
+         * @param file The file where the message was logged.
+         * @param line The line where the message was logged.
+         */
+        virtual void Log(LogMessageLevel level, const std::string& message, const char* file, int line) = 0;
+    };
 
     /**
-     * @brief Call the registered log function with the provided format string.
+     * @brief The console logger class.
      *
-     * This does nothing if no logging function has been registered.
-     *
-     * @param[in] format The format string to print.
-     * @param[in] ... The arguments to format.
+     * This class logs messages to the console.
      */
-    AM_API_PUBLIC void CallLogFunc(const char* format, ...);
+    class AM_API_PUBLIC ConsoleLogger final : public Logger
+    {
+    public:
+        explicit ConsoleLogger(bool displayFileAndLine = true);
+        ~ConsoleLogger() override = default;
+
+        /**
+         * @copydoc Logger::Log
+         */
+        void Log(LogMessageLevel level, const std::string& message, const char* file, int line) override;
+
+    private:
+        bool m_displayFileAndLine = true;
+    };
 } // namespace SparkyStudios::Audio::Amplitude
 
 #endif // SPARK_AUDIO_LOG_H

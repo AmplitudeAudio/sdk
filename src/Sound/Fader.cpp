@@ -254,7 +254,7 @@ namespace SparkyStudios::Audio::Amplitude
 
         if (Find(fader->GetName()) != nullptr)
         {
-            CallLogFunc("Failed to register fader '%s' as it is already registered", fader->GetName().c_str());
+            amLogWarning("Failed to register fader '{}' as it is already registered", fader->GetName());
             return;
         }
 

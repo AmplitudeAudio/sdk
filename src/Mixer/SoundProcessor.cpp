@@ -83,7 +83,7 @@ namespace SparkyStudios::Audio::Amplitude
 
         if (Find(processor->GetName()) != nullptr)
         {
-            CallLogFunc("Failed to register sound processor '%s' as it is already registered", processor->GetName().c_str());
+            amLogWarning("Failed to register sound processor '{}' as it is already registered", processor->GetName());
             return;
         }
 

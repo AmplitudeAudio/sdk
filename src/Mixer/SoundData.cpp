@@ -63,7 +63,7 @@ namespace SparkyStudios::Audio::Amplitude
 
         if (chunk->buffer == nullptr)
         {
-            CallLogFunc("[ERROR] Failed to allocate memory for sound chunk.");
+            amLogError("Failed to allocate memory for sound chunk.");
 
             ampooldelete(MemoryPoolKind::SoundData, SoundChunk, chunk);
             return nullptr;

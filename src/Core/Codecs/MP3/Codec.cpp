@@ -64,7 +64,7 @@ namespace SparkyStudios::Audio::Amplitude
     {
         if (!m_codec->CanHandleFile(file))
         {
-            CallLogFunc("The MP3 codec cannot handle the file: '" AM_OS_CHAR_FMT "'\n", file->GetPath().c_str());
+            amLogError("The MP3 codec cannot handle the file: '{}'", file->GetPath());
             return false;
         }
 
@@ -73,14 +73,14 @@ namespace SparkyStudios::Audio::Amplitude
 
         if (drmp3_init(&_mp3, onRead, onSeek, _file.get(), &codec->m_allocationCallbacks) == DRMP3_FALSE)
         {
-            CallLogFunc("[ERROR] Cannot load the MP3 file: '" AM_OS_CHAR_FMT "'\n", file->GetPath().c_str());
+            amLogError("Cannot load the MP3 file: '{}'", file->GetPath());
             return false;
         }
 
         const drmp3_uint64 framesCount = drmp3_get_pcm_frame_count(&_mp3);
         if (framesCount == DRMP3_FALSE)
         {
-            CallLogFunc("[ERROR] Cannot load the MP3 file: '" AM_OS_CHAR_FMT "'\n.", file->GetPath().c_str());
+            amLogError("Cannot load the MP3 file: '{}'.", file->GetPath());
             return false;
         }
 

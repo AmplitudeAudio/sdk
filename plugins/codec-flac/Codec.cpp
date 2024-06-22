@@ -61,16 +61,13 @@ void FlacCodec::FlacDecoderInternal::metadata_callback(const ::FLAC__StreamMetad
         auto bps = metadata->data.stream_info.bits_per_sample;
         auto frame_size = metadata->data.stream_info.min_framesize;
 
-        _decoder->m_format.SetAll(
-            sample_rate, channels, bps, total_samples, channels * sizeof(AmAudioSample),
-            AM_SAMPLE_FORMAT_FLOAT
-        );
+        _decoder->m_format.SetAll(sample_rate, channels, bps, total_samples, channels * sizeof(AmAudioSample), AM_SAMPLE_FORMAT_FLOAT);
     }
 }
 
 void FlacCodec::FlacDecoderInternal::error_callback(::FLAC__StreamDecoderErrorStatus status)
 {
-    CallLogFunc("Got error callback: %s\n", FLAC__StreamDecoderErrorStatusString[status]);
+    amLogError("Got error callback: {}", FLAC__StreamDecoderErrorStatusString[status]);
 }
 
 ::FLAC__StreamDecoderReadStatus FlacCodec::FlacDecoderInternal::read_callback(FLAC__byte buffer[], size_t* bytes)
@@ -126,7 +123,7 @@ bool FlacCodec::FlacDecoder::Open(std::shared_ptr<File> file)
     if (init_status != FLAC__STREAM_DECODER_INIT_STATUS_OK)
     {
         _file.reset();
-        CallLogFunc("ERROR: Initializing FLAC decoder: %s\n", FLAC__StreamDecoderInitStatusString[init_status]);
+        amLogError("Initializing FLAC decoder: {}", FLAC__StreamDecoderInitStatusString[init_status]);
         return false;
     }
 
@@ -136,7 +133,7 @@ bool FlacCodec::FlacDecoder::Open(std::shared_ptr<File> file)
     if (!_flac.process_until_end_of_metadata())
     {
         _file.reset();
-        CallLogFunc("ERROR: Unable to read metadata for FLAC file: " AM_OS_CHAR_FMT "\n", file->GetPath().c_str());
+        amLogError("Unable to read metadata for FLAC file: {}", file->GetPath().c_str());
         return false;
     }
 

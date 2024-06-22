@@ -41,9 +41,7 @@ namespace SparkyStudios::Audio::Amplitude
         _scope = definition->scope();
         const flatbuffers::uoffset_t targets_count = definition->targets() ? definition->targets()->size() : 0;
         for (flatbuffers::uoffset_t i = 0; i < targets_count; ++i)
-        {
             _targets.push_back(definition->targets()->Get(i));
-        }
     }
 
     void EventAction::Run(const Entity& entity)
@@ -89,7 +87,7 @@ namespace SparkyStudios::Audio::Amplitude
         if (_scope == Scope_Entity)
         {
             AMPLITUDE_ASSERT(false);
-            CallLogFunc("[WARNING] Running an entity scoped event action without an entity.");
+            amLogWarning("Running an entity scoped event action without an entity.");
         }
 
         Run(Entity(nullptr));
@@ -329,7 +327,7 @@ namespace SparkyStudios::Audio::Amplitude
 
     EventInstance Event::Trigger(const Entity& entity) const
     {
-        CallLogFunc("[Debug] Event " AM_OS_CHAR_FMT " triggered.\n", AM_STRING_TO_OS_STRING(_name));
+        amLogDebug("Event '{}' triggered.", _name);
 
         auto event = EventInstance(this);
         event.Start(entity);

@@ -161,13 +161,13 @@ namespace SparkyStudios::Audio::Amplitude
 
     AmVoidPtr MemoryManager::Realloc(MemoryPoolKind pool, AmVoidPtr address, AmSize size, const char* file, AmUInt32 line)
     {
+#if !defined(AM_NO_MEMORY_STATS)
         if (address == nullptr)
         {
-#if !defined(AM_NO_MEMORY_STATS)
             _memPoolsStats[pool].maxMemoryUsed.fetch_add(size, std::memory_order_relaxed);
             _memPoolsStats[pool].allocCount.fetch_add(1, std::memory_order_relaxed);
-#endif
         }
+#endif
 
         AmVoidPtr ptr;
 
@@ -184,13 +184,13 @@ namespace SparkyStudios::Audio::Amplitude
     AmVoidPtr MemoryManager::Realign(
         MemoryPoolKind pool, AmVoidPtr address, AmSize size, AmUInt32 alignment, const char* file, AmUInt32 line)
     {
+#if !defined(AM_NO_MEMORY_STATS)
         if (address == nullptr)
         {
-#if !defined(AM_NO_MEMORY_STATS)
             _memPoolsStats[pool].maxMemoryUsed.fetch_add(size, std::memory_order_relaxed);
             _memPoolsStats[pool].allocCount.fetch_add(1, std::memory_order_relaxed);
-#endif
         }
+#endif
 
         AmVoidPtr ptr;
 

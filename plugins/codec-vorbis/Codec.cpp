@@ -49,7 +49,7 @@ bool VorbisCodec::VorbisDecoder::Open(std::shared_ptr<File> file)
 {
     if (!m_codec->CanHandleFile(file))
     {
-        CallLogFunc("The Vorbis codec cannot handle the file: '" AM_OS_CHAR_FMT "'.\n", file->GetPath().c_str());
+        amLogError("The Vorbis codec cannot handle the file: '{}'.", file->GetPath());
         return false;
     }
 
@@ -58,7 +58,7 @@ bool VorbisCodec::VorbisDecoder::Open(std::shared_ptr<File> file)
     if (ov_open_callbacks(_file.get(), &_vorbis, nullptr, 0, OV_CALLBACKS) < 0)
     {
         _file.reset();
-        CallLogFunc("Unable to open the file: '" AM_OS_CHAR_FMT "'.\n", file->GetPath().c_str());
+        amLogError("Unable to open the file: '{}'.", file->GetPath());
         return false;
     }
 
@@ -79,11 +79,12 @@ bool VorbisCodec::VorbisDecoder::Close()
 {
     if (_initialized)
     {
+        ov_clear(&_vorbis);
+
         _file.reset();
 
         m_format = SoundFormat();
         _initialized = false;
-        ov_clear(&_vorbis);
 
         return true;
     }
@@ -102,20 +103,19 @@ AmUInt64 VorbisCodec::VorbisDecoder::Stream(AmVoidPtr out, AmUInt64 offset, AmUI
     if (!_initialized)
         return 0;
 
-    if (!Seek(offset))
-        return 0;
-
     const AmUInt16 channels = m_format.GetNumChannels();
 
-    AmUInt64 size = length;
+    AmInt64 size = length;
     AmUInt64 read = 0;
 
-    float** data;
+    AmReal32** data;
 
     while (size > 0)
     {
-        _current_section = 0;
-        const AmInt64 ret = ov_read_float(&_vorbis, &data, static_cast<AmInt32>(size), &_current_section);
+        if (!Seek(offset + read))
+            return 0;
+
+        const AmInt64 ret = ov_read_float(&_vorbis, &data, static_cast<AmInt32>(size), nullptr);
 
         if (ret == 0)
             break;
@@ -131,13 +131,13 @@ AmUInt64 VorbisCodec::VorbisDecoder::Stream(AmVoidPtr out, AmUInt64 offset, AmUI
         {
             if (ret == OV_EBADLINK)
             {
-                CallLogFunc("Corrupt bitstream section!.\n");
+                amLogError("Corrupt bitstream section!.");
                 return 0;
             }
 
             if (ret == OV_EINVAL)
             {
-                CallLogFunc("Invalid bitstream section!.\n");
+                amLogError("Invalid bitstream section!.");
                 return 0;
             }
         }
@@ -159,9 +159,6 @@ bool VorbisCodec::VorbisEncoder::Open(std::shared_ptr<File> file)
 
 bool VorbisCodec::VorbisEncoder::Close()
 {
-    if (_initialized)
-        return true;
-
     return true;
 }
 

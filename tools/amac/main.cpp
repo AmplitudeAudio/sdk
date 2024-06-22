@@ -80,16 +80,20 @@ struct ProcessingState
 /**
  * @brief The log function, used in verbose mode.
  *
+ * @param output The output stream.
  * @param fmt The message format.
- * @param args The arguments.
+ * @param ... The arguments.
  */
-static void log(const char* fmt, va_list args)
+static void log(FILE* output, const char* fmt, ...)
 {
+    va_list args;
+    va_start(args, fmt);
 #if defined(AM_WCHAR_SUPPORTED)
-    vfwprintf(stdout, AM_STRING_TO_OS_STRING(fmt), args);
+    vfwprintf(output, AM_STRING_TO_OS_STRING(fmt), args);
 #else
-    vfprintf(stdout, fmt, args);
+    vfprintf(output, fmt, args);
 #endif
+    va_end(args);
 }
 
 static int process(const AmOsString& inFileName, const AmOsString& outFileName, const ProcessingState& state)
@@ -107,16 +111,14 @@ static int process(const AmOsString& inFileName, const AmOsString& outFileName, 
         auto* codec = Codec::FindCodecForFile(inputFile);
         if (!codec)
         {
-            fprintf(
-                stderr, "Unable to load the input file: " AM_OS_CHAR_FMT ". File not found or codec unavailable.\n", inFileName.c_str());
+            log(stderr, "Unable to load the input file: " AM_OS_CHAR_FMT ". File not found or codec unavailable.\n", inFileName.c_str());
             return EXIT_FAILURE;
         }
 
         auto* decoder = codec->CreateDecoder();
         if (!decoder->Open(inputFile))
         {
-            fprintf(
-                stderr, "Unable to load the input file: " AM_OS_CHAR_FMT ". The found codec (%s) was not able to open the input file.\n",
+            log(stderr, "Unable to load the input file: " AM_OS_CHAR_FMT ". The found codec (%s) was not able to open the input file.\n",
                 inFileName.c_str(), codec->GetName().c_str());
             return EXIT_FAILURE;
         }
@@ -139,9 +141,8 @@ static int process(const AmOsString& inFileName, const AmOsString& outFileName, 
 
         if (state.verbose)
         {
-            CallLogFunc("Each %d byte ADPCM block will contain %d samples * %d channels.\n", blockSize, samplesPerBlock, numChannels);
-            CallLogFunc(
-                "Encoding PCM file \"" AM_OS_CHAR_FMT "\" to ADPCM file \"" AM_OS_CHAR_FMT "\"...\n", inFileName.c_str(),
+            log(stdout, "Each %d byte ADPCM block will contain %d samples * %d channels.\n", blockSize, samplesPerBlock, numChannels);
+            log(stdout, "Encoding PCM file \"" AM_OS_CHAR_FMT "\" to ADPCM file \"" AM_OS_CHAR_FMT "\"...\n", inFileName.c_str(),
                 outFileName.c_str());
         }
 
@@ -150,7 +151,7 @@ static int process(const AmOsString& inFileName, const AmOsString& outFileName, 
         if (decoder->Load(pcmData) != numSamples || !decoder->Close())
         {
             ampoolfree(MemoryPoolKind::Codec, pcmData);
-            fprintf(stderr, "Error while decoding PCM file \"" AM_OS_CHAR_FMT "\".\n", inFileName.c_str());
+            log(stderr, "Error while decoding PCM file \"" AM_OS_CHAR_FMT "\".\n", inFileName.c_str());
             return EXIT_FAILURE;
         }
 
@@ -203,7 +204,7 @@ static int process(const AmOsString& inFileName, const AmOsString& outFileName, 
             {
                 ampoolfree(MemoryPoolKind::SoundData, output16);
 
-                fprintf(stderr, "Unable to open file \"" AM_OS_CHAR_FMT "\" for writing.\n", outFileName.c_str());
+                log(stderr, "Unable to open file \"" AM_OS_CHAR_FMT "\" for writing.\n", outFileName.c_str());
 
                 return EXIT_FAILURE;
             }
@@ -213,7 +214,7 @@ static int process(const AmOsString& inFileName, const AmOsString& outFileName, 
                 ampoolfree(MemoryPoolKind::Codec, pcmData);
                 ampoolfree(MemoryPoolKind::SoundData, output16);
 
-                fprintf(stderr, "Error while encoding ADPCM file \"" AM_OS_CHAR_FMT "\".\n", outFileName.c_str());
+                log(stderr, "Error while encoding ADPCM file \"" AM_OS_CHAR_FMT "\".\n", outFileName.c_str());
 
                 return EXIT_FAILURE;
             }
@@ -232,7 +233,7 @@ static int process(const AmOsString& inFileName, const AmOsString& outFileName, 
                 ampoolfree(MemoryPoolKind::SoundData, output16);
                 ampoolfree(MemoryPoolKind::Codec, pcmData);
 
-                fprintf(stderr, "Unable to open file \"" AM_OS_CHAR_FMT "\" for writing.\n", outFileName.c_str());
+                log(stderr, "Unable to open file \"" AM_OS_CHAR_FMT "\" for writing.\n", outFileName.c_str());
 
                 return EXIT_FAILURE;
             }
@@ -242,7 +243,7 @@ static int process(const AmOsString& inFileName, const AmOsString& outFileName, 
                 ampoolfree(MemoryPoolKind::SoundData, output16);
                 ampoolfree(MemoryPoolKind::Codec, pcmData);
 
-                fprintf(stderr, "Error while encoding ADPCM file \"" AM_OS_CHAR_FMT "\".\n", outFileName.c_str());
+                log(stderr, "Error while encoding ADPCM file \"" AM_OS_CHAR_FMT "\".\n", outFileName.c_str());
 
                 return EXIT_FAILURE;
             }
@@ -252,7 +253,7 @@ static int process(const AmOsString& inFileName, const AmOsString& outFileName, 
 
         if (state.verbose)
         {
-            CallLogFunc("Operation completed successfully.\n");
+            log(stdout, "Operation completed successfully.\n");
         }
 
         ampoolfree(MemoryPoolKind::Codec, pcmData);
@@ -266,7 +267,7 @@ static int process(const AmOsString& inFileName, const AmOsString& outFileName, 
 
         if (!decoder->Open(inputFile))
         {
-            fprintf(stderr, "Unable to open file \"" AM_OS_CHAR_FMT "\" for decoding.\n", inFileName.c_str());
+            log(stderr, "Unable to open file \"" AM_OS_CHAR_FMT "\" for decoding.\n", inFileName.c_str());
             return EXIT_FAILURE;
         }
 
@@ -283,14 +284,13 @@ static int process(const AmOsString& inFileName, const AmOsString& outFileName, 
         encoder->SetFormat(wavFormat);
         if (!encoder->Open(outputFile))
         {
-            fprintf(stderr, "Unable to open file \"" AM_OS_CHAR_FMT "\" for encoding.\n", outFileName.c_str());
+            log(stderr, "Unable to open file \"" AM_OS_CHAR_FMT "\" for encoding.\n", outFileName.c_str());
             return EXIT_FAILURE;
         }
 
         if (state.verbose)
         {
-            CallLogFunc(
-                "Decoding ADPCM file \"" AM_OS_CHAR_FMT "\" to PCM file \"" AM_OS_CHAR_FMT "\"...\n", inFileName.c_str(),
+            log(stdout, "Decoding ADPCM file \"" AM_OS_CHAR_FMT "\" to PCM file \"" AM_OS_CHAR_FMT "\"...\n", inFileName.c_str(),
                 outFileName.c_str());
         }
 
@@ -301,20 +301,20 @@ static int process(const AmOsString& inFileName, const AmOsString& outFileName, 
         if (decoder->Load(adpcmData) != numSamples || !decoder->Close())
         {
             ampoolfree(MemoryPoolKind::Codec, adpcmData);
-            fprintf(stderr, "Error while decoding ADPCM file \"" AM_OS_CHAR_FMT "\".\n", inFileName.c_str());
+            log(stderr, "Error while decoding ADPCM file \"" AM_OS_CHAR_FMT "\".\n", inFileName.c_str());
             return EXIT_FAILURE;
         }
 
         if (encoder->Write(adpcmData, 0, numSamples) != numSamples || !encoder->Close())
         {
             ampoolfree(MemoryPoolKind::Codec, adpcmData);
-            fprintf(stderr, "Error while encoding PCM file \"" AM_OS_CHAR_FMT "\".\n", outFileName.c_str());
+            log(stderr, "Error while encoding PCM file \"" AM_OS_CHAR_FMT "\".\n", outFileName.c_str());
             return EXIT_FAILURE;
         }
 
         if (state.verbose)
         {
-            CallLogFunc("Operation completed successfully.\n");
+            log(stdout, "Operation completed successfully.\n");
         }
 
         ampoolfree(MemoryPoolKind::Codec, adpcmData);
@@ -326,7 +326,7 @@ static int process(const AmOsString& inFileName, const AmOsString& outFileName, 
     }
     else
     {
-        fprintf(stderr, "No encode/decode mode selected. Either add -e (encode) or -d (decode). Use -h for help.\n");
+        log(stderr, "No encode/decode mode selected. Either add -e (encode) or -d (decode). Use -h for help.\n");
         return EXIT_FAILURE;
     }
 
@@ -396,7 +396,7 @@ int main(int argc, char* argv[])
 
                 if (state.blockSizeShift < 8 || state.blockSizeShift > 15)
                 {
-                    fprintf(stderr, "\nblock size power must be 8 to 15!\n");
+                    log(stderr, "\nblock size power must be 8 to 15!\n");
                     return EXIT_FAILURE;
                 }
                 break;
@@ -413,7 +413,7 @@ int main(int argc, char* argv[])
 
                 if (state.resampling.targetSampleRate < 8000 || state.blockSizeShift > 384000)
                 {
-                    fprintf(stderr, "\nInvalid sample rate provided. Please give a value between 8000 and 384000.\n");
+                    log(stderr, "\nInvalid sample rate provided. Please give a value between 8000 and 384000.\n");
                     return EXIT_FAILURE;
                 }
                 break;
@@ -424,7 +424,7 @@ int main(int argc, char* argv[])
                 break;
 
             default:
-                fprintf(stderr, "\nInvalid option: -%c. Use -h for help.\n", **argv);
+                log(stderr, "\nInvalid option: -%c. Use -h for help.\n", **argv);
                 return EXIT_FAILURE;
             }
         }
@@ -451,7 +451,7 @@ int main(int argc, char* argv[])
         }
         else
         {
-            fprintf(stderr, "\nUnknown extra argument: %s !\n", *argv);
+            log(stderr, "\nUnknown extra argument: %s !\n", *argv);
             return EXIT_FAILURE;
         }
     }
@@ -461,47 +461,42 @@ int main(int argc, char* argv[])
         needHelp = true;
     }
 
-    if (state.verbose || !noLogo || needHelp)
-    {
-        RegisterLogFunc(log);
-    }
-
     if (!noLogo)
     {
         // clang-format off
-        CallLogFunc("\n");
-        CallLogFunc("Amplitude Audio Compressor (amac)\n");
-        CallLogFunc("Copyright (c) 2021-present Sparky Studios - Licensed under Apache 2.0\n");
-        CallLogFunc("=====================================================================\n");
-        CallLogFunc("\n");
+        log(stdout, "\n");
+        log(stdout, "Amplitude Audio Compressor (amac)\n");
+        log(stdout, "Copyright (c) 2021-present Sparky Studios - Licensed under Apache 2.0\n");
+        log(stdout, "=====================================================================\n");
+        log(stdout, "\n");
         // clang-format on
     }
 
     if (needHelp)
     {
         // clang-format off
-        CallLogFunc("Usage: amac [OPTIONS] INPUT_FILE OUTPUT_FILE\n");
-        CallLogFunc("\n");
-        CallLogFunc("Global options:\n");
-        CallLogFunc("    -[hH]:        \tDisplay this help message.\n");
-        CallLogFunc("    -[oO]:        \tHide logo and copyright notice.\n");
-        CallLogFunc("    -[qQ]:        \tQuiet mode. Shutdown all messages.\n");
-        CallLogFunc("    -[vV]:        \tVerbose mode. Display all messages.\n");
-        CallLogFunc("\n");
-        CallLogFunc("Compression options:\n");
-        CallLogFunc("    -[cC]:        \tCompress the input file into the output file.\n");
-        CallLogFunc("    -[0-8]:       \tThe look ahead level.\n");
-        CallLogFunc("                  \tDefaults to 3.\n");
-        CallLogFunc("    -[bB] [8-15]: \tThe block size shift.\n");
-        CallLogFunc("                  \tIf not defined, the block size will be calculated based on the number of channels and the sample rate.\n");
-        CallLogFunc("    -[fF]:        \tDisable noise shaping. Only used for compression.\n");
-        CallLogFunc("    -[rR] freq:   \tResamples input data to the target frequency.\n");
-        CallLogFunc("\n");
-        CallLogFunc("Decompression options:\n");
-        CallLogFunc("    -[dD]:        \tDecompress the input file into the output file.\n");
-        CallLogFunc("\n");
-        CallLogFunc("Example: amac -c -4 -b 12 input_pcm.wav output_adpcm.ams\n");
-        CallLogFunc("\n");
+        log(stdout, "Usage: amac [OPTIONS] INPUT_FILE OUTPUT_FILE\n");
+        log(stdout, "\n");
+        log(stdout, "Global options:\n");
+        log(stdout, "    -[hH]:        \tDisplay this help message.\n");
+        log(stdout, "    -[oO]:        \tHide logo and copyright notice.\n");
+        log(stdout, "    -[qQ]:        \tQuiet mode. Shutdown all messages.\n");
+        log(stdout, "    -[vV]:        \tVerbose mode. Display all messages.\n");
+        log(stdout, "\n");
+        log(stdout, "Compression options:\n");
+        log(stdout, "    -[cC]:        \tCompress the input file into the output file.\n");
+        log(stdout, "    -[0-8]:       \tThe look ahead level.\n");
+        log(stdout, "                  \tDefaults to 3.\n");
+        log(stdout, "    -[bB] [8-15]: \tThe block size shift.\n");
+        log(stdout, "                  \tIf not defined, the block size will be calculated based on the number of channels and the sample rate.\n");
+        log(stdout, "    -[fF]:        \tDisable noise shaping. Only used for compression.\n");
+        log(stdout, "    -[rR] freq:   \tResamples input data to the target frequency.\n");
+        log(stdout, "\n");
+        log(stdout, "Decompression options:\n");
+        log(stdout, "    -[dD]:        \tDecompress the input file into the output file.\n");
+        log(stdout, "\n");
+        log(stdout, "Example: amac -c -4 -b 12 input_pcm.wav output_adpcm.ams\n");
+        log(stdout, "\n");
         // clang-format on
 
         return EXIT_SUCCESS;

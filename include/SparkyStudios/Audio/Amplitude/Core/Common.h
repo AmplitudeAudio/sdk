@@ -84,11 +84,6 @@
 #define AM_AUDIO_SAMPLE_MAX (+1.0f)
 
 /**
- * @brief Clamps an audio sample value between AM_AUDIO_SAMPLE_MIN and AM_AUDIO_SAMPLE_MAX.
- */
-#define AM_CLAMP_AUDIO_SAMPLE(v) (((v) <= -1.65f) ? -0.9862875f : ((v) >= 1.65f) ? 0.9862875f : (0.87f * (v)-0.1f * (v) * (v) * (v)))
-
-/**
  * @brief Helps to avoid compiler warnings about unused values.
  *
  * @param x The statement where the return value is not used.
@@ -177,13 +172,13 @@ namespace SparkyStudios::Audio::Amplitude
 
         AmReal32& operator[](AmSize index)
         {
-            AMPLITUDE_ASSERT(m_data && index < m_floats);
+            AMPLITUDE_ASSERT(m_data != nullptr && index < m_floats);
             return m_data[index];
         }
 
         const AmReal32& operator[](size_t index) const
         {
-            AMPLITUDE_ASSERT(m_data && index < m_floats);
+            AMPLITUDE_ASSERT(m_data != nullptr && index < m_floats);
             return m_data[index];
         }
 

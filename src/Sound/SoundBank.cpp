@@ -69,9 +69,7 @@ namespace SparkyStudios::Audio::Amplitude
             const AmSwitchContainerID id = definition->id();
             if (id == kAmInvalidObjectId)
             {
-                CallLogFunc(
-                    "[ERROR] Cannot load switch container \'" AM_OS_CHAR_FMT "\'. Invalid ID.\n",
-                    AM_STRING_TO_OS_STRING(definition->name()->c_str()));
+                amLogError("Cannot load switch container '{}'. Invalid ID.", definition->name()->str());
                 return false;
             }
 
@@ -107,9 +105,7 @@ namespace SparkyStudios::Audio::Amplitude
             const AmCollectionID id = definition->id();
             if (id == kAmInvalidObjectId)
             {
-                CallLogFunc(
-                    "[ERROR] Cannot load collection \'" AM_OS_CHAR_FMT "\'. Invalid ID.\n",
-                    AM_STRING_TO_OS_STRING(definition->name()->c_str()));
+                amLogError("Cannot load collection '{}'. Invalid ID.", definition->name()->str());
                 return false;
             }
 
@@ -145,8 +141,7 @@ namespace SparkyStudios::Audio::Amplitude
             const AmSoundID id = definition->id();
             if (id == kAmInvalidObjectId)
             {
-                CallLogFunc(
-                    "[ERROR] Cannot load sound \'" AM_OS_CHAR_FMT "'. Invalid ID.\n", AM_STRING_TO_OS_STRING(definition->name()->c_str()));
+                amLogError("Cannot load sound '{}'. Invalid ID.", definition->name()->str());
                 return false;
             }
 
@@ -184,8 +179,7 @@ namespace SparkyStudios::Audio::Amplitude
             const AmEventID id = definition->id();
             if (id == kAmInvalidObjectId)
             {
-                CallLogFunc(
-                    "[ERROR] Cannot load event \'" AM_OS_CHAR_FMT "\'. Invalid ID.\n", AM_STRING_TO_OS_STRING(definition->name()->c_str()));
+                amLogError("Cannot load event '{}'. Invalid ID.", definition->name()->str());
                 return false;
             }
 
@@ -221,9 +215,7 @@ namespace SparkyStudios::Audio::Amplitude
             const AmAttenuationID id = definition->id();
             if (id == kAmInvalidObjectId)
             {
-                CallLogFunc(
-                    "[ERROR] Cannot load attenuation \'" AM_OS_CHAR_FMT "\'. Invalid ID.\n",
-                    AM_STRING_TO_OS_STRING(definition->name()->c_str()));
+                amLogError("Cannot load attenuation '{}'. Invalid ID.", definition->name()->str());
                 return false;
             }
 
@@ -262,9 +254,7 @@ namespace SparkyStudios::Audio::Amplitude
             const AmSwitchID id = definition->id();
             if (id == kAmInvalidObjectId)
             {
-                CallLogFunc(
-                    "[ERROR] Cannot load switch \'" AM_OS_CHAR_FMT "\'. Invalid ID.\n",
-                    AM_STRING_TO_OS_STRING(definition->name()->c_str()));
+                amLogError("Cannot load switch '{}'. Invalid ID.", definition->name()->str());
                 return false;
             }
 
@@ -303,8 +293,7 @@ namespace SparkyStudios::Audio::Amplitude
             const AmRtpcID id = definition->id();
             if (id == kAmInvalidObjectId)
             {
-                CallLogFunc(
-                    "[ERROR] Cannot load RTPC \'" AM_OS_CHAR_FMT "\'. Invalid ID.\n", AM_STRING_TO_OS_STRING(definition->name()->c_str()));
+                amLogError("Cannot load RTPC '{}'. Invalid ID.", definition->name()->str());
                 return false;
             }
 
@@ -343,9 +332,7 @@ namespace SparkyStudios::Audio::Amplitude
             const AmEffectID id = definition->id();
             if (id == kAmInvalidObjectId)
             {
-                CallLogFunc(
-                    "[ERROR] Cannot load effect \'" AM_OS_CHAR_FMT "\'. Invalid ID.\n",
-                    AM_STRING_TO_OS_STRING(definition->name()->c_str()));
+                amLogError("Cannot load effect '{}'. Invalid ID.", definition->name()->str());
                 return false;
             }
 
@@ -557,7 +544,7 @@ namespace SparkyStudios::Audio::Amplitude
             AmString filename = definition->switch_containers()->Get(i)->c_str();
             if (!DeinitializeSwitchContainer(AM_STRING_TO_OS_STRING(filename), engine->GetState()))
             {
-                CallLogFunc("Error while deinitializing switch container " AM_OS_CHAR_FMT " in sound bank.\n", filename.c_str());
+                amLogError("Error while deinitializing switch container {} in sound bank.", filename);
                 AMPLITUDE_ASSERT(false);
             }
         }
@@ -567,7 +554,7 @@ namespace SparkyStudios::Audio::Amplitude
             AmString filename = definition->collections()->Get(i)->c_str();
             if (!DeinitializeCollection(AM_STRING_TO_OS_STRING(filename), engine->GetState()))
             {
-                CallLogFunc("Error while deinitializing collection " AM_OS_CHAR_FMT " in sound bank.\n", filename.c_str());
+                amLogError("Error while deinitializing collection {} in sound bank.", filename);
                 AMPLITUDE_ASSERT(false);
             }
         }
@@ -577,7 +564,7 @@ namespace SparkyStudios::Audio::Amplitude
             AmString filename = definition->sounds()->Get(i)->c_str();
             if (!DeinitializeSound(AM_STRING_TO_OS_STRING(filename), engine->GetState()))
             {
-                CallLogFunc("Error while deinitializing sound " AM_OS_CHAR_FMT " in sound bank.\n", filename.c_str());
+                amLogError("Error while deinitializing sound {} in sound bank.", filename);
                 AMPLITUDE_ASSERT(false);
             }
         }
@@ -587,7 +574,7 @@ namespace SparkyStudios::Audio::Amplitude
             AmString filename = definition->events()->Get(i)->c_str();
             if (!DeinitializeEvent(AM_STRING_TO_OS_STRING(filename), engine->GetState()))
             {
-                CallLogFunc("Error while deinitializing event " AM_OS_CHAR_FMT " in sound bank.\n", filename.c_str());
+                amLogError("Error while deinitializing event {} in sound bank.", filename);
                 AMPLITUDE_ASSERT(false);
             }
         }
@@ -597,7 +584,7 @@ namespace SparkyStudios::Audio::Amplitude
             AmString filename = definition->attenuators()->Get(i)->c_str();
             if (!DeinitializeAttenuation(AM_STRING_TO_OS_STRING(filename), engine->GetState()))
             {
-                CallLogFunc("Error while deinitializing attenuation " AM_OS_CHAR_FMT " in sound bank.\n", filename.c_str());
+                amLogError("Error while deinitializing attenuation {} in sound bank.", filename);
                 AMPLITUDE_ASSERT(false);
             }
         }
@@ -607,7 +594,7 @@ namespace SparkyStudios::Audio::Amplitude
             AmString filename = definition->switches()->Get(i)->c_str();
             if (!DeinitializeSwitch(AM_STRING_TO_OS_STRING(filename), engine->GetState()))
             {
-                CallLogFunc("Error while deinitializing switch " AM_OS_CHAR_FMT " in sound bank.\n", filename.c_str());
+                amLogError("Error while deinitializing switch {} in sound bank.", filename);
                 AMPLITUDE_ASSERT(false);
             }
         }
@@ -617,7 +604,7 @@ namespace SparkyStudios::Audio::Amplitude
             AmString filename = definition->effects()->Get(i)->c_str();
             if (!DeinitializeEffect(AM_STRING_TO_OS_STRING(filename), engine->GetState()))
             {
-                CallLogFunc("Error while deinitializing effect " AM_OS_CHAR_FMT " in sound bank.\n", filename.c_str());
+                amLogError("Error while deinitializing effect {} in sound bank.", filename);
                 AMPLITUDE_ASSERT(false);
             }
         }
@@ -627,7 +614,7 @@ namespace SparkyStudios::Audio::Amplitude
             AmString filename = definition->rtpc()->Get(i)->c_str();
             if (!DeinitializeRtpc(AM_STRING_TO_OS_STRING(filename), engine->GetState()))
             {
-                CallLogFunc("Error while deinitializing RTPC " AM_OS_CHAR_FMT " in sound bank.\n", filename.c_str());
+                amLogError("Error while deinitializing RTPC {} in sound bank.", filename);
                 AMPLITUDE_ASSERT(false);
             }
         }
