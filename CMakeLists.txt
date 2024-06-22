@@ -131,6 +131,8 @@ set(SA_SOURCE
     include/SparkyStudios/Audio/Amplitude/Convolution/TwoStageConvolver.h
     include/SparkyStudios/Audio/Amplitude/Core/Common/Platforms/Android/Config.h
     include/SparkyStudios/Audio/Amplitude/Core/Common/Platforms/Android/Types.h
+    include/SparkyStudios/Audio/Amplitude/Core/Common/Platforms/Apple/Config.h
+    include/SparkyStudios/Audio/Amplitude/Core/Common/Platforms/Apple/Types.h
     include/SparkyStudios/Audio/Amplitude/Core/Common/Platforms/Linux/Config.h
     include/SparkyStudios/Audio/Amplitude/Core/Common/Platforms/Linux/Types.h
     include/SparkyStudios/Audio/Amplitude/Core/Common/Platforms/UNIX/Config.h
