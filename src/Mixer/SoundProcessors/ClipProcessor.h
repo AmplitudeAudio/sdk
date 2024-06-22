@@ -37,29 +37,8 @@ namespace SparkyStudios::Audio::Amplitude
         {
             const AmSize length = frames * channels;
 
-#if defined(AM_SIMD_INTRINSICS)
-            const AmSize end = AmAudioFrame::size * (length / AmAudioFrame::size);
-            const auto lower = xsimd::batch(AM_AUDIO_SAMPLE_MIN), upper = xsimd::batch(AM_AUDIO_SAMPLE_MAX);
-
-            for (AmSize i = 0; i < end; i += AmAudioFrame::size)
-            {
-                const auto bin = xsimd::load_aligned(&in[i]);
-
-                xsimd::store_aligned(&out[i], xsimd::min(xsimd::max(bin, lower), upper));
-            }
-
-            for (AmSize i = end; i < length; i++)
-            {
-                out[i] = std::min(std::max(in[i], AM_AUDIO_SAMPLE_MIN), AM_AUDIO_SAMPLE_MAX);
-            }
-#else
-            constexpr auto lower = AM_AUDIO_SAMPLE_MIN, upper = AM_AUDIO_SAMPLE_MAX;
-
             for (AmSize i = 0; i < length; i++)
-            {
-                out[i] = std::min(std::max(in[i], lower), upper);
-            }
-#endif // AM_SIMD_INTRINSICS
+                out[i] = in[i] <= -1.65f ? -0.9862875f : in[i] >= 1.65f ? 0.9862875f : 0.87f * in[i] - 0.1f * in[i] * in[i] * in[i];
         }
     };
 
