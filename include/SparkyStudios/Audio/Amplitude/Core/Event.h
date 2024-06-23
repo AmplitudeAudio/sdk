@@ -20,6 +20,7 @@
 #include <SparkyStudios/Audio/Amplitude/Core/Asset.h>
 #include <SparkyStudios/Audio/Amplitude/Core/Common.h>
 #include <SparkyStudios/Audio/Amplitude/Core/Entity.h>
+#include <SparkyStudios/Audio/Amplitude/Core/Playback/Channel.h>
 #include <SparkyStudios/Audio/Amplitude/Core/RefCounter.h>
 
 namespace SparkyStudios::Audio::Amplitude
@@ -31,8 +32,6 @@ namespace SparkyStudios::Audio::Amplitude
 
     class Event;
     class EventInstance;
-
-    class Channel;
 
     /**
      * @brief An event action that will be applied when
