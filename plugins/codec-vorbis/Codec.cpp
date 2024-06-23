@@ -49,7 +49,7 @@ bool VorbisCodec::VorbisDecoder::Open(std::shared_ptr<File> file)
 {
     if (!m_codec->CanHandleFile(file))
     {
-        amLogError("The Vorbis codec cannot handle the file: '{}'.", AM_OS_STRING_TO_STRING(file->GetPath()));
+        amLogError("The Vorbis codec cannot handle the file: '" AM_OS_CHAR_FMT "'.", file->GetPath().c_str());
         return false;
     }
 
@@ -58,7 +58,7 @@ bool VorbisCodec::VorbisDecoder::Open(std::shared_ptr<File> file)
     if (ov_open_callbacks(_file.get(), &_vorbis, nullptr, 0, OV_CALLBACKS) < 0)
     {
         _file.reset();
-        amLogError("Unable to open the file: '{}'.", AM_OS_STRING_TO_STRING(file->GetPath()));
+        amLogError("Unable to open the file: '" AM_OS_CHAR_FMT "'.", file->GetPath().c_str());
         return false;
     }
 

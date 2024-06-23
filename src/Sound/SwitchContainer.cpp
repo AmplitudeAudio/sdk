@@ -75,20 +75,20 @@ namespace SparkyStudios::Audio::Amplitude
     {
         if (!definition->bus())
         {
-            amLogError("SwitchContainer {} does not specify a bus.", definition->name()->str());
+            amLogError("SwitchContainer %s does not specify a bus.", definition->name()->c_str());
             return false;
         }
 
         if (!definition->switch_group())
         {
-            amLogError("SwitchContainer {} does not specify a switch.", definition->name()->str());
+            amLogError("SwitchContainer %s does not specify a switch.", definition->name()->c_str());
             return false;
         }
 
         m_bus = FindBusInternalState(state, definition->bus());
         if (!m_bus)
         {
-            amLogError("SwitchContainer {} specifies an unknown bus ID: %u.", definition->name()->str(), definition->bus());
+            amLogError("SwitchContainer %s specifies an unknown bus ID: %llu.", definition->name()->c_str(), definition->bus());
             return false;
         }
 
@@ -105,7 +105,7 @@ namespace SparkyStudios::Audio::Amplitude
             }
             else
             {
-                amLogError("Sound definition is invalid: invalid effect ID \"%u\"", definition->effect());
+                amLogError("Sound definition is invalid: invalid effect ID '%llu'", definition->effect());
                 return false;
             }
         }
@@ -120,7 +120,8 @@ namespace SparkyStudios::Audio::Amplitude
             if (!m_attenuation)
             {
                 amLogError(
-                    "SwitchContainer {} specifies an unknown attenuation ID: {}.", definition->name()->str(), definition->attenuation());
+                    "SwitchContainer %s specifies an unknown attenuation ID: %llu.", definition->name()->c_str(),
+                    definition->attenuation());
                 return false;
             }
         }
@@ -148,15 +149,15 @@ namespace SparkyStudios::Audio::Amplitude
 
             if (id == kAmInvalidObjectId)
             {
-                amLogError("SwitchContainer {} specifies an invalid sound object ID: {}.", definition->name()->str(), id);
+                amLogError("SwitchContainer %s specifies an invalid sound object ID: %llu.", definition->name()->c_str(), id);
                 return false;
             }
 
             if (!state->sound_map.contains(id) && !state->collection_map.contains(id))
             {
                 amLogError(
-                    "SwitchContainer {} specifies an unknown sound object ID: {}. It's neither a Sound nor a Collection.",
-                    definition->name()->str(), id);
+                    "SwitchContainer %s specifies an unknown sound object ID: %llu. It's neither a Sound nor a Collection.",
+                    definition->name()->c_str(), id);
                 return false;
             }
 

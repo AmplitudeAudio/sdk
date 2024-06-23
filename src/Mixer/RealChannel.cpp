@@ -152,7 +152,7 @@ namespace SparkyStudios::Audio::Amplitude
         if (!success)
         {
             _channelLayersId[layer] = kAmInvalidObjectId;
-            amLogError("Could not play sound '{}'.", AM_OS_STRING_TO_STRING(_activeSounds[layer]->GetSound()->GetPath()));
+            amLogError("Could not play sound '" AM_OS_CHAR_FMT "'.", _activeSounds[layer]->GetSound()->GetPath().c_str());
         }
 
         return success;

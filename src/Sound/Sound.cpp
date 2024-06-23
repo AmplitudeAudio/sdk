@@ -136,7 +136,7 @@ namespace SparkyStudios::Audio::Amplitude
 
         if (!loader->Exists(filename))
         {
-            amLogError("Cannot load the sound: the file \"{}\" does not exist.", AM_OS_STRING_TO_STRING(filename));
+            amLogError("Cannot load the sound: the file '" AM_OS_CHAR_FMT "' does not exist.", filename.c_str());
             return;
         }
 
@@ -145,14 +145,14 @@ namespace SparkyStudios::Audio::Amplitude
         _codec = Codec::FindCodecForFile(file);
         if (_codec == nullptr)
         {
-            amLogError("Cannot load the sound: unable to find codec for '{}'.", AM_OS_STRING_TO_STRING(filename));
+            amLogError("Cannot load the sound: unable to find codec for '" AM_OS_CHAR_FMT "'.", filename.c_str());
             return;
         }
 
         _decoder = _codec->CreateDecoder();
         if (!_decoder->Open(file))
         {
-            amLogError("Cannot load the sound: unable to initialize a decoder for '{}'.", AM_OS_STRING_TO_STRING(filename));
+            amLogError("Cannot load the sound: unable to initialize a decoder for '" AM_OS_CHAR_FMT "'.", filename.c_str());
             return;
         }
 
@@ -176,7 +176,7 @@ namespace SparkyStudios::Audio::Amplitude
         m_bus = FindBusInternalState(state, definition->bus());
         if (!m_bus)
         {
-            amLogError("Sound {} specifies an unknown bus ID: {}.", definition->name()->str(), definition->bus());
+            amLogError("Sound %s specifies an unknown bus ID: %llu.", definition->name()->c_str(), definition->bus());
             return false;
         }
 
@@ -188,7 +188,7 @@ namespace SparkyStudios::Audio::Amplitude
             }
             else
             {
-                amLogError("Sound definition is invalid: invalid effect ID \"{}\"", definition->effect());
+                amLogError("Sound definition is invalid: invalid effect ID '%llu'", definition->effect());
                 return false;
             }
         }
@@ -201,7 +201,7 @@ namespace SparkyStudios::Audio::Amplitude
             }
             else
             {
-                amLogError("Sound definition is invalid: invalid attenuation ID \"{}\"", definition->attenuation());
+                amLogError("Sound definition is invalid: invalid attenuation ID '%llu'", definition->attenuation());
                 return false;
             }
         }
@@ -287,7 +287,7 @@ namespace SparkyStudios::Audio::Amplitude
             _decoder = _parent->_codec->CreateDecoder();
             if (!_decoder->Open(file))
             {
-                amLogError("Cannot load the sound: unable to initialize a decoder for '{}'.", AM_OS_STRING_TO_STRING(filename));
+                amLogError("Cannot load the sound: unable to initialize a decoder for '" AM_OS_CHAR_FMT "'.", filename.c_str());
                 return;
             }
         }

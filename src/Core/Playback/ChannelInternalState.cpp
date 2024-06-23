@@ -658,7 +658,7 @@ namespace SparkyStudios::Audio::Amplitude
 
             if (!sound)
             {
-                amLogError("Unable to find a sound object with id: {}", item.m_id);
+                amLogError("Unable to find a sound object with id: %llu", item.m_id);
                 return false;
             }
 

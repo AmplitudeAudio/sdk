@@ -69,7 +69,7 @@ namespace SparkyStudios::Audio::Amplitude
             const AmSwitchContainerID id = definition->id();
             if (id == kAmInvalidObjectId)
             {
-                amLogError("Cannot load switch container '{}'. Invalid ID.", definition->name()->str());
+                amLogError("Cannot load switch container '%s'. Invalid ID.", definition->name()->c_str());
                 return false;
             }
 
@@ -105,7 +105,7 @@ namespace SparkyStudios::Audio::Amplitude
             const AmCollectionID id = definition->id();
             if (id == kAmInvalidObjectId)
             {
-                amLogError("Cannot load collection '{}'. Invalid ID.", definition->name()->str());
+                amLogError("Cannot load collection '%s'. Invalid ID.", definition->name()->c_str());
                 return false;
             }
 
@@ -141,7 +141,7 @@ namespace SparkyStudios::Audio::Amplitude
             const AmSoundID id = definition->id();
             if (id == kAmInvalidObjectId)
             {
-                amLogError("Cannot load sound '{}'. Invalid ID.", definition->name()->str());
+                amLogError("Cannot load sound '%s'. Invalid ID.", definition->name()->c_str());
                 return false;
             }
 
@@ -179,7 +179,7 @@ namespace SparkyStudios::Audio::Amplitude
             const AmEventID id = definition->id();
             if (id == kAmInvalidObjectId)
             {
-                amLogError("Cannot load event '{}'. Invalid ID.", definition->name()->str());
+                amLogError("Cannot load event '%s'. Invalid ID.", definition->name()->c_str());
                 return false;
             }
 
@@ -215,7 +215,7 @@ namespace SparkyStudios::Audio::Amplitude
             const AmAttenuationID id = definition->id();
             if (id == kAmInvalidObjectId)
             {
-                amLogError("Cannot load attenuation '{}'. Invalid ID.", definition->name()->str());
+                amLogError("Cannot load attenuation '%s'. Invalid ID.", definition->name()->c_str());
                 return false;
             }
 
@@ -254,7 +254,7 @@ namespace SparkyStudios::Audio::Amplitude
             const AmSwitchID id = definition->id();
             if (id == kAmInvalidObjectId)
             {
-                amLogError("Cannot load switch '{}'. Invalid ID.", definition->name()->str());
+                amLogError("Cannot load switch '%s'. Invalid ID.", definition->name()->c_str());
                 return false;
             }
 
@@ -293,7 +293,7 @@ namespace SparkyStudios::Audio::Amplitude
             const AmRtpcID id = definition->id();
             if (id == kAmInvalidObjectId)
             {
-                amLogError("Cannot load RTPC '{}'. Invalid ID.", definition->name()->str());
+                amLogError("Cannot load RTPC '%s'. Invalid ID.", definition->name()->c_str());
                 return false;
             }
 
@@ -332,7 +332,7 @@ namespace SparkyStudios::Audio::Amplitude
             const AmEffectID id = definition->id();
             if (id == kAmInvalidObjectId)
             {
-                amLogError("Cannot load effect '{}'. Invalid ID.", definition->name()->str());
+                amLogError("Cannot load effect '%s'. Invalid ID.", definition->name()->c_str());
                 return false;
             }
 
@@ -544,7 +544,7 @@ namespace SparkyStudios::Audio::Amplitude
             AmString filename = definition->switch_containers()->Get(i)->str();
             if (!DeinitializeSwitchContainer(AM_STRING_TO_OS_STRING(filename), engine->GetState()))
             {
-                amLogError("Error while deinitializing switch container {} in sound bank.", filename);
+                amLogError("Error while deinitializing switch container %s in sound bank.", filename.c_str());
                 AMPLITUDE_ASSERT(false);
             }
         }
@@ -554,7 +554,7 @@ namespace SparkyStudios::Audio::Amplitude
             AmString filename = definition->collections()->Get(i)->str();
             if (!DeinitializeCollection(AM_STRING_TO_OS_STRING(filename), engine->GetState()))
             {
-                amLogError("Error while deinitializing collection {} in sound bank.", filename);
+                amLogError("Error while deinitializing collection %s in sound bank.", filename.c_str());
                 AMPLITUDE_ASSERT(false);
             }
         }
@@ -564,7 +564,7 @@ namespace SparkyStudios::Audio::Amplitude
             AmString filename = definition->sounds()->Get(i)->str();
             if (!DeinitializeSound(AM_STRING_TO_OS_STRING(filename), engine->GetState()))
             {
-                amLogError("Error while deinitializing sound {} in sound bank.", filename);
+                amLogError("Error while deinitializing sound %s in sound bank.", filename.c_str());
                 AMPLITUDE_ASSERT(false);
             }
         }
@@ -574,7 +574,7 @@ namespace SparkyStudios::Audio::Amplitude
             AmString filename = definition->events()->Get(i)->str();
             if (!DeinitializeEvent(AM_STRING_TO_OS_STRING(filename), engine->GetState()))
             {
-                amLogError("Error while deinitializing event {} in sound bank.", filename);
+                amLogError("Error while deinitializing event %s in sound bank.", filename.c_str());
                 AMPLITUDE_ASSERT(false);
             }
         }
@@ -584,7 +584,7 @@ namespace SparkyStudios::Audio::Amplitude
             AmString filename = definition->attenuators()->Get(i)->str();
             if (!DeinitializeAttenuation(AM_STRING_TO_OS_STRING(filename), engine->GetState()))
             {
-                amLogError("Error while deinitializing attenuation {} in sound bank.", filename);
+                amLogError("Error while deinitializing attenuation %s in sound bank.", filename.c_str());
                 AMPLITUDE_ASSERT(false);
             }
         }
@@ -594,7 +594,7 @@ namespace SparkyStudios::Audio::Amplitude
             AmString filename = definition->switches()->Get(i)->str();
             if (!DeinitializeSwitch(AM_STRING_TO_OS_STRING(filename), engine->GetState()))
             {
-                amLogError("Error while deinitializing switch {} in sound bank.", filename);
+                amLogError("Error while deinitializing switch %s in sound bank.", filename.c_str());
                 AMPLITUDE_ASSERT(false);
             }
         }
@@ -604,7 +604,7 @@ namespace SparkyStudios::Audio::Amplitude
             AmString filename = definition->effects()->Get(i)->str();
             if (!DeinitializeEffect(AM_STRING_TO_OS_STRING(filename), engine->GetState()))
             {
-                amLogError("Error while deinitializing effect {} in sound bank.", filename);
+                amLogError("Error while deinitializing effect %s in sound bank.", filename.c_str());
                 AMPLITUDE_ASSERT(false);
             }
         }
@@ -614,7 +614,7 @@ namespace SparkyStudios::Audio::Amplitude
             AmString filename = definition->rtpc()->Get(i)->str();
             if (!DeinitializeRtpc(AM_STRING_TO_OS_STRING(filename), engine->GetState()))
             {
-                amLogError("Error while deinitializing RTPC {} in sound bank.", filename);
+                amLogError("Error while deinitializing RTPC %s in sound bank.", filename.c_str());
                 AMPLITUDE_ASSERT(false);
             }
         }

@@ -15,14 +15,18 @@
 #ifndef SPARK_AUDIO_LOG_H
 #define SPARK_AUDIO_LOG_H
 
-#include <format>
-
 #include <SparkyStudios/Audio/Amplitude/Core/Common.h>
 
 /**
  * @brief The global logger instance.
  */
 #define amLogger SparkyStudios::Audio::Amplitude::Logger::GetLogger()
+
+#if defined(AM_WCHAR_SUPPORTED)
+#define amLogFormat std::swprintf
+#else
+#define amLogFormat std::snprintf
+#endif
 
 /**
  * @brief Logs a message with the given level.
@@ -34,7 +38,10 @@
 #define amLog(_level_, _message_, ...)                                                                                                     \
     if (amLogger != nullptr)                                                                                                               \
     {                                                                                                                                      \
-        amLogger->_level_(__FILE__, __LINE__, std::format((_message_), ##__VA_ARGS__));                                                    \
+        constexpr size_t bufferLen = 2048;                                                                                                 \
+        AmOsChar buffer[bufferLen];                                                                                                        \
+        int formatted = amLogFormat(buffer, bufferLen, AM_OS_STRING(_message_), ##__VA_ARGS__);                                            \
+        amLogger->_level_(__FILE__, __LINE__, AmOsString(buffer).substr(0, formatted));                                                   \
     }                                                                                                                                      \
     (void)0
 
@@ -126,7 +133,7 @@ namespace SparkyStudios::Audio::Amplitude
          * @param line The line where the message was logged.
          * @param message The message to log.
          */
-        void Debug(const char* file, int line, const AmString& message);
+        void Debug(const char* file, int line, const AmOsString& message);
 
         /**
          * @brief Logs an informational message.
@@ -135,7 +142,7 @@ namespace SparkyStudios::Audio::Amplitude
          * @param line The line where the message was logged.
          * @param message The message to log.
          */
-        void Info(const char* file, int line, const AmString& message);
+        void Info(const char* file, int line, const AmOsString& message);
 
         /**
          * @brief Logs a warning message.
@@ -144,7 +151,7 @@ namespace SparkyStudios::Audio::Amplitude
          * @param line The line where the message was logged.
          * @param message The message to log.
          */
-        void Warning(const char* file, int line, const AmString& message);
+        void Warning(const char* file, int line, const AmOsString& message);
 
         /**
          * @brief Logs an error message.
@@ -153,7 +160,7 @@ namespace SparkyStudios::Audio::Amplitude
          * @param line The line where the message was logged.
          * @param message The message to log.
          */
-        void Error(const char* file, int line, const AmString& message);
+        void Error(const char* file, int line, const AmOsString& message);
 
         /**
          * @brief Logs a critical message.
@@ -162,7 +169,7 @@ namespace SparkyStudios::Audio::Amplitude
          * @param line The line where the message was logged.
          * @param message The message to log.
          */
-        void Critical(const char* file, int line, const AmString& message);
+        void Critical(const char* file, int line, const AmOsString& message);
 
     protected:
         /**
@@ -173,7 +180,7 @@ namespace SparkyStudios::Audio::Amplitude
          * @param line The line where the message was logged.
          * @param message The message to log.
          */
-        virtual void Log(LogMessageLevel level, const char* file, int line, const AmString& message) = 0;
+        virtual void Log(LogMessageLevel level, const char* file, int line, const AmOsString& message) = 0;
     };
 
     /**
@@ -190,7 +197,7 @@ namespace SparkyStudios::Audio::Amplitude
         /**
          * @copydoc Logger::Log
          */
-        void Log(LogMessageLevel level, const char* file, int line, const AmString& message) override;
+        void Log(LogMessageLevel level, const char* file, int line, const AmOsString& message) override;
 
     private:
         bool m_displayFileAndLine = true;

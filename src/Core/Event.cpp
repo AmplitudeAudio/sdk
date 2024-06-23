@@ -327,7 +327,7 @@ namespace SparkyStudios::Audio::Amplitude
 
     EventInstance Event::Trigger(const Entity& entity) const
     {
-        amLogDebug("Event '{}' triggered.", _name);
+        amLogDebug("Event '%s' triggered.", _name.c_str());
 
         auto event = EventInstance(this);
         event.Start(entity);

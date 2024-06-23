@@ -36,19 +36,19 @@ static void device_notification(DeviceNotification notification, const DeviceDes
     switch (notification)
     {
     case DeviceNotification::Opened:
-        amLogInfo("Device opened: {}", device.mDeviceName);
+        amLogInfo("Device opened: %s", device.mDeviceName.c_str());
         break;
     case DeviceNotification::Started:
-        amLogInfo("Device started: {}", device.mDeviceName);
+        amLogInfo("Device started: %s", device.mDeviceName.c_str());
         break;
     case DeviceNotification::Stopped:
-        amLogInfo("Device stopped: {}", device.mDeviceName);
+        amLogInfo("Device stopped: %s", device.mDeviceName.c_str());
         break;
     case DeviceNotification::Rerouted:
-        amLogInfo("Device rerouted: {}", device.mDeviceName);
+        amLogInfo("Device rerouted: %s", device.mDeviceName.c_str());
         break;
     case DeviceNotification::Closed:
-        amLogInfo("Device closed: {}", device.mDeviceName);
+        amLogInfo("Device closed: %s", device.mDeviceName.c_str());
         break;
     }
 }
@@ -531,7 +531,7 @@ int main(int argc, char* argv[])
     Engine::UnregisterDefaultPlugins();
 
 #if !defined(AM_NO_MEMORY_STATS)
-    amLogInfo("{}", amMemory->InspectMemoryLeaks());
+    amLogInfo("%s", amMemory->InspectMemoryLeaks().c_str());
 #endif
 
     MemoryManager::Deinitialize();

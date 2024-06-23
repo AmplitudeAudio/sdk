@@ -246,7 +246,7 @@ namespace SparkyStudios::Audio::Amplitude
     static void OnSoundStarted(Mixer* mixer, MixerLayer* layer)
     {
         const auto* sound = layer->snd->sound.get();
-        amLogDebug("Started sound: '{}'.", AM_OS_STRING_TO_STRING(sound->GetSound()->GetPath()));
+        amLogDebug("Started sound: '" AM_OS_CHAR_FMT "'.", sound->GetSound()->GetPath().c_str());
 
         const auto* channel = sound->GetChannel();
         auto* channelState = channel->GetParentChannelState();
@@ -257,7 +257,7 @@ namespace SparkyStudios::Audio::Amplitude
     static void OnSoundPaused(Mixer* mixer, MixerLayer* layer)
     {
         const auto* sound = layer->snd->sound.get();
-        amLogDebug("Paused sound: '{}'.", AM_OS_STRING_TO_STRING(sound->GetSound()->GetPath()));
+        amLogDebug("Paused sound: '" AM_OS_CHAR_FMT "'.", sound->GetSound()->GetPath().c_str());
 
         const auto* channel = sound->GetChannel();
         auto* channelState = channel->GetParentChannelState();
@@ -268,7 +268,7 @@ namespace SparkyStudios::Audio::Amplitude
     static void OnSoundResumed(Mixer* mixer, MixerLayer* layer)
     {
         const auto* sound = layer->snd->sound.get();
-        amLogDebug("Resumed sound: '{}'.", AM_OS_STRING_TO_STRING(sound->GetSound()->GetPath()));
+        amLogDebug("Resumed sound: '" AM_OS_CHAR_FMT "'.", sound->GetSound()->GetPath().c_str());
 
         const auto* channel = sound->GetChannel();
         auto* channelState = channel->GetParentChannelState();
@@ -279,7 +279,7 @@ namespace SparkyStudios::Audio::Amplitude
     static void OnSoundStopped(Mixer* mixer, MixerLayer* layer)
     {
         const auto* sound = layer->snd->sound.get();
-        amLogDebug("Stopped sound: '{}'.", AM_OS_STRING_TO_STRING(sound->GetSound()->GetPath()));
+        amLogDebug("Stopped sound: '" AM_OS_CHAR_FMT "'.", sound->GetSound()->GetPath().c_str());
 
         const auto* channel = sound->GetChannel();
         auto* channelState = channel->GetParentChannelState();
@@ -293,7 +293,7 @@ namespace SparkyStudios::Audio::Amplitude
     static bool OnSoundLooped(Mixer* mixer, MixerLayer* layer)
     {
         auto* sound = layer->snd->sound.get();
-        amLogDebug("Looped sound: '{}'.", AM_OS_STRING_TO_STRING(sound->GetSound()->GetPath()));
+        amLogDebug("Looped sound: '" AM_OS_CHAR_FMT "'.", sound->GetSound()->GetPath().c_str());
 
         Mixer::IncrementSoundLoopCount(sound);
 
@@ -322,7 +322,7 @@ namespace SparkyStudios::Audio::Amplitude
     static void OnSoundEnded(Mixer* mixer, MixerLayer* layer)
     {
         auto* sound = layer->snd->sound.get();
-        amLogDebug("Ended sound: '{}'.", AM_OS_STRING_TO_STRING(sound->GetSound()->GetPath()));
+        amLogDebug("Ended sound: '" AM_OS_CHAR_FMT "'.", sound->GetSound()->GetPath().c_str());
 
         RealChannel* channel = sound->GetChannel();
         auto* channelState = channel->GetParentChannelState();
@@ -483,14 +483,14 @@ namespace SparkyStudios::Audio::Amplitude
 
                         if (dryProcessor == nullptr)
                         {
-                            amLogError("Unable to find a registered sound processor with name: {}.", p->dry_processor()->str());
+                            amLogError("Unable to find a registered sound processor with name: %s.", p->dry_processor()->c_str());
                             _pipeline.reset(nullptr);
                             return false;
                         }
 
                         if (wetProcessor == nullptr)
                         {
-                            amLogError("Unable to find a registered sound processor with name: {}.", p->wet_processor()->str());
+                            amLogError("Unable to find a registered sound processor with name: %s.", p->wet_processor()->c_str());
                             _pipeline.reset(nullptr);
                             return false;
                         }
@@ -509,7 +509,7 @@ namespace SparkyStudios::Audio::Amplitude
                         SoundProcessorInstance* soundProcessor = SoundProcessor::Construct(p->processor()->str());
                         if (soundProcessor == nullptr)
                         {
-                            amLogError("Unable to find a registered sound processor with name: {}.", p->processor()->str());
+                            amLogError("Unable to find a registered sound processor with name: %s.", p->processor()->c_str());
                             _pipeline.reset(nullptr);
                             return false;
                         }

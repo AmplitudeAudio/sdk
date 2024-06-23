@@ -162,7 +162,7 @@ namespace SparkyStudios::Audio::Amplitude
         for (const auto& plugin : gLoadedPlugins)
         {
             if (const auto unregisterFunc = plugin->get_function<bool()>("UnregisterPlugin"); !unregisterFunc())
-                amLogError("An error occured while unloading the plugin '{}'", plugin->get_function<const char*()>("PluginName")());
+                amLogError("An error occured while unloading the plugin '%s'", plugin->get_function<const char*()>("PluginName")());
 
             ampooldelete(MemoryPoolKind::Engine, dylib, plugin);
         }
@@ -222,33 +222,36 @@ namespace SparkyStudios::Audio::Amplitude
 
         if (!plugin->has_symbol("RegisterPlugin"))
         {
-            amLogError("LoadPlugin fail on '{}'. The library doesn't export a RegisterPlugin symbol.", AM_OS_STRING_TO_STRING(pluginLibraryName));
+            amLogError(
+                "LoadPlugin fail on '" AM_OS_CHAR_FMT "'. The library doesn't export a RegisterPlugin symbol.", pluginLibraryName.c_str());
             return nullptr;
         }
 
         if (!plugin->has_symbol("PluginName"))
         {
-            amLogError("LoadPlugin fail on '{}'. The library doesn't export a PluginName symbol.", AM_OS_STRING_TO_STRING(pluginLibraryName));
+            amLogError(
+                "LoadPlugin fail on '" AM_OS_CHAR_FMT "'. The library doesn't export a PluginName symbol.", pluginLibraryName.c_str());
             return nullptr;
         }
 
         if (!plugin->has_symbol("PluginVersion"))
         {
-            amLogError("LoadPlugin fail on '{}'. The library doesn't export a PluginVersion symbol.", AM_OS_STRING_TO_STRING(pluginLibraryName));
+            amLogError(
+                "LoadPlugin fail on '" AM_OS_CHAR_FMT "'. The library doesn't export a PluginVersion symbol.", pluginLibraryName.c_str());
             return nullptr;
         }
 
         if (const auto registerFunc = plugin->get_function<bool(Engine*, MemoryManager*)>("RegisterPlugin");
             !registerFunc(amEngine, amMemory))
         {
-            amLogError("LoadPlugin fail on '{}'. The plugin registration has failed.", AM_OS_STRING_TO_STRING(pluginLibraryName));
+            amLogError("LoadPlugin fail on '" AM_OS_CHAR_FMT "'. The plugin registration has failed.", pluginLibraryName.c_str());
             return nullptr;
         }
 
         {
             const auto GetPluginName = plugin->get_function<const char*()>("PluginName");
             const auto GetPluginVersion = plugin->get_function<const char*()>("PluginVersion");
-            amLogInfo("LoadPlugin '{}' version: {}", GetPluginName(), GetPluginVersion());
+            amLogInfo("LoadPlugin '%s' version: %s", GetPluginName(), GetPluginVersion());
         }
 
         void* handle = plugin->native_handle();
@@ -443,7 +446,7 @@ namespace SparkyStudios::Audio::Amplitude
             }
             else
             {
-                amLogError("Unknown bus with ID \"{}\" listed in child buses.", busId);
+                amLogError("Unknown bus with ID '%llu' listed in child buses.", busId);
                 return false;
             }
         }
@@ -466,7 +469,7 @@ namespace SparkyStudios::Audio::Amplitude
             else
             {
                 ampooldelete(MemoryPoolKind::Engine, DuckBusInternalState, bus);
-                amLogError("Unknown bus with ID \"{}\" listed in duck buses.", duck->id());
+                amLogError("Unknown bus with ID '%llu' listed in duck buses.", duck->id());
                 return false;
             }
         }
@@ -550,7 +553,7 @@ namespace SparkyStudios::Audio::Amplitude
     {
         if (const AmOsString& configFilePath = _fs->ResolvePath(configFile); !LoadFile(_fs->OpenFile(configFilePath), &_configSrc))
         {
-            amLogError("Could not load audio config file at path '{}'.", AM_OS_STRING_TO_STRING(configFile));
+            amLogError("Could not load audio config file at path '" AM_OS_CHAR_FMT "'.", configFile.c_str());
             return false;
         }
 
@@ -579,7 +582,7 @@ namespace SparkyStudios::Audio::Amplitude
         {
             if (_audioDriver = Driver::Find(config->driver()->str()); _audioDriver == nullptr)
             {
-                amLogWarning("Could load the audio driver '{}'. Loading the default driver.", config->driver()->str());
+                amLogWarning("Could load the audio driver '%s'. Loading the default driver.", config->driver()->c_str());
                 _audioDriver = Driver::Default();
             }
         }
@@ -850,7 +853,7 @@ namespace SparkyStudios::Audio::Amplitude
     {
         if (const auto findIt = _state->sound_bank_id_map.find(filename); findIt == _state->sound_bank_id_map.end())
         {
-            amLogWarning("Cannot deinitialize Soundbank '{}'. Soundbank not loaded.", AM_OS_STRING_TO_STRING(filename));
+            amLogWarning("Cannot deinitialize Soundbank '" AM_OS_CHAR_FMT "'. Soundbank not loaded.", filename.c_str());
             AMPLITUDE_ASSERT(0);
         }
         else
@@ -863,7 +866,7 @@ namespace SparkyStudios::Audio::Amplitude
     {
         if (const auto findIt = _state->sound_bank_map.find(id); findIt == _state->sound_bank_map.end())
         {
-            amLogWarning("Cannot deinitialize Soundbank with ID '{}'. Soundbank not loaded.", id);
+            amLogWarning("Cannot deinitialize Soundbank with ID '%llu'. Soundbank not loaded.", id);
             AMPLITUDE_ASSERT(0);
         }
         else if (findIt->second->GetRefCounter()->Decrement() == 0)
@@ -1268,7 +1271,7 @@ namespace SparkyStudios::Audio::Amplitude
         if (SwitchContainerHandle handle = GetSwitchContainerHandle(name))
             return Play(handle, location, userGain);
 
-        amLogError("Cannot play object: invalid name ({}).", name);
+        amLogError("Cannot play object: invalid name (%s).", name.c_str());
         return Channel(nullptr);
     }
 
@@ -1288,7 +1291,7 @@ namespace SparkyStudios::Audio::Amplitude
         if (SwitchContainerHandle handle = GetSwitchContainerHandle(name))
             return Play(handle, entity, userGain);
 
-        amLogError("Cannot play sound: invalid name ({}).", name);
+        amLogError("Cannot play sound: invalid name (%s).", name.c_str());
         return Channel(nullptr);
     }
 
@@ -1313,7 +1316,7 @@ namespace SparkyStudios::Audio::Amplitude
         if (SwitchContainerHandle handle = GetSwitchContainerHandle(id))
             return Play(handle, location, userGain);
 
-        amLogError("Cannot play sound: invalid ID ({}).", id);
+        amLogError("Cannot play sound: invalid ID (%llu).", id);
         return Channel(nullptr);
     }
 
@@ -1333,7 +1336,7 @@ namespace SparkyStudios::Audio::Amplitude
         if (SwitchContainerHandle handle = GetSwitchContainerHandle(id))
             return Play(handle, entity, userGain);
 
-        amLogError("Cannot play sound: invalid ID ({}).", id);
+        amLogError("Cannot play sound: invalid ID (%llu).", id);
         return Channel(nullptr);
     }
 
@@ -1363,7 +1366,7 @@ namespace SparkyStudios::Audio::Amplitude
         if (EventHandle handle = GetEventHandle(name))
             return Trigger(handle, entity);
 
-        amLogError("Cannot trigger event: invalid name ({}).", name);
+        amLogError("Cannot trigger event: invalid name (%s).", name.c_str());
         return EventCanceler(nullptr);
     }
 
@@ -1405,7 +1408,7 @@ namespace SparkyStudios::Audio::Amplitude
         if (SwitchHandle handle = GetSwitchHandle(id))
             return SetSwitchState(handle, stateId);
 
-        amLogError("Cannot update switch: Invalid ID ({}).", id);
+        amLogError("Cannot update switch: Invalid ID (%llu).", id);
     }
 
     void Engine::SetSwitchState(AmSwitchID id, const AmString& stateName) const
@@ -1413,7 +1416,7 @@ namespace SparkyStudios::Audio::Amplitude
         if (SwitchHandle handle = GetSwitchHandle(id))
             return SetSwitchState(handle, stateName);
 
-        amLogError("Cannot update switch: Invalid ID ({}).", id);
+        amLogError("Cannot update switch: Invalid ID (%llu).", id);
     }
 
     void Engine::SetSwitchState(AmSwitchID id, const SwitchState& state) const
@@ -1421,7 +1424,7 @@ namespace SparkyStudios::Audio::Amplitude
         if (SwitchHandle handle = GetSwitchHandle(id))
             return SetSwitchState(handle, state);
 
-        amLogError("Cannot update switch: Invalid ID ({}).", id);
+        amLogError("Cannot update switch: Invalid ID (%llu).", id);
     }
 
     void Engine::SetSwitchState(const AmString& name, AmObjectID stateId) const
@@ -1429,7 +1432,7 @@ namespace SparkyStudios::Audio::Amplitude
         if (SwitchHandle handle = GetSwitchHandle(name))
             return SetSwitchState(handle, stateId);
 
-        amLogError("Cannot update switch: Invalid name ({}).", name);
+        amLogError("Cannot update switch: Invalid name (%s).", name.c_str());
     }
 
     void Engine::SetSwitchState(const AmString& name, const AmString& stateName) const
@@ -1437,7 +1440,7 @@ namespace SparkyStudios::Audio::Amplitude
         if (SwitchHandle handle = GetSwitchHandle(name))
             return SetSwitchState(handle, stateName);
 
-        amLogError("Cannot update switch: Invalid name ({}).", name);
+        amLogError("Cannot update switch: Invalid name (%s).", name.c_str());
     }
 
     void Engine::SetSwitchState(const AmString& name, const SwitchState& state) const
@@ -1445,7 +1448,7 @@ namespace SparkyStudios::Audio::Amplitude
         if (SwitchHandle handle = GetSwitchHandle(name))
             return SetSwitchState(handle, state);
 
-        amLogError("Cannot update switch: Invalid name ({}).", name);
+        amLogError("Cannot update switch: Invalid name (%s).", name.c_str());
     }
 
     void Engine::SetRtpcValue(RtpcHandle handle, double value) const
@@ -1464,7 +1467,7 @@ namespace SparkyStudios::Audio::Amplitude
         if (RtpcHandle handle = GetRtpcHandle(id))
             return SetRtpcValue(handle, value);
 
-        amLogError("Cannot update RTPC value: Invalid RTPC ID ({}).", id);
+        amLogError("Cannot update RTPC value: Invalid RTPC ID (%llu).", id);
     }
 
     void Engine::SetRtpcValue(const AmString& name, double value) const
@@ -1472,7 +1475,7 @@ namespace SparkyStudios::Audio::Amplitude
         if (RtpcHandle handle = GetRtpcHandle(name))
             return SetRtpcValue(handle, value);
 
-        amLogError("Cannot update RTPC value: Invalid RTPC name ({}).", name);
+        amLogError("Cannot update RTPC value: Invalid RTPC name (%s).", name.c_str());
     }
 
     SwitchContainerHandle Engine::GetSwitchContainerHandle(const AmString& name) const
