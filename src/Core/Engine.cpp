@@ -144,7 +144,8 @@ namespace SparkyStudios::Audio::Amplitude
     }
 
     Engine::Engine()
-        : _configSrc()
+        : _frameThreadMutex(nullptr)
+        , _configSrc()
         , _state(nullptr)
         , _defaultListener(nullptr)
         , _fs()
@@ -573,6 +574,8 @@ namespace SparkyStudios::Audio::Amplitude
         Filter::LockRegistry();
         Fader::LockRegistry();
 
+        _frameThreadMutex = Thread::CreateMutex(500);
+
         // Create the internal engine state
         _state = ampoolnew(MemoryPoolKind::Engine, EngineInternalState);
         _state->version = &Amplitude::Version();
@@ -728,6 +731,8 @@ namespace SparkyStudios::Audio::Amplitude
 
         ampooldelete(MemoryPoolKind::Engine, EngineInternalState, _state);
         _state = nullptr;
+
+        Thread::DestroyMutex(_frameThreadMutex);
 
         // Unlock registries
         Driver::UnlockRegistry();
@@ -2092,6 +2097,19 @@ namespace SparkyStudios::Audio::Amplitude
         if (_state->paused)
             return;
 
+        // Executre pending frame callbacks.
+        Thread::LockMutex(_frameThreadMutex);
+        {
+            while (!_nextFrameCallbacks.empty())
+            {
+                const auto& callback = _nextFrameCallbacks.front();
+                callback(delta);
+
+                _nextFrameCallbacks.pop();
+            }
+        }
+        Thread::UnlockMutex(_frameThreadMutex);
+
         EraseFinishedSounds(_state);
 
         for (const auto& rtpc : _state->rtpc_map | std::views::values)
@@ -2157,6 +2175,15 @@ namespace SparkyStudios::Audio::Amplitude
 
         ++_state->current_frame;
         _state->total_time += delta;
+    }
+
+    void Engine::NextFrame(std::function<void(AmTime delta)> callback) const
+    {
+        Thread::LockMutex(_frameThreadMutex);
+        {
+            _nextFrameCallbacks.push(std::move(callback));
+        }
+        Thread::UnlockMutex(_frameThreadMutex);
     }
 
     AmTime Engine::GetTotalTime() const
@@ -2266,26 +2293,30 @@ namespace SparkyStudios::Audio::Amplitude
             insertionPoint, &_state->playing_channel_list, &_state->real_channel_free_list, &_state->virtual_channel_free_list,
             _state->paused);
 
-        // The sound could not be added to the list; not high enough priority.
+        // The channel could not be added to the list; not high enough priority.
         if (newChannel == nullptr)
+        {
+            amLogDebug("Cannot play switch container: Not high enough priority.");
             return Channel(nullptr);
+        }
 
-        // Now that we have our new sound, set the data on it and update the next
-        // pointers.
+        // Now that we have our new channel, set the data on it and update the next pointers.
         newChannel->SetEntity(entity);
         newChannel->SetSwitchContainer(handle);
         newChannel->SetUserGain(userGain);
 
-        // Attempt to play the sound if the engine is not paused.
-        if (!_state->paused)
-        {
-            if (!newChannel->Play())
+        // Attempt to play the channel, if the engine is paused, the channel will be played later.
+        NextFrame(
+            [this, newChannel, handle](AmTime delta)
             {
-                // Error playing the sound, put it back in the free list.
-                InsertIntoFreeList(_state, newChannel);
-                return Channel(nullptr);
-            }
-        }
+                if (!newChannel->Play())
+                {
+                    amLogError("Failed to play switch container: %s.", handle->GetName().c_str());
+
+                    // Error playing the sound, put it back in the free list.
+                    InsertIntoFreeList(_state, newChannel);
+                }
+            });
 
         newChannel->SetGain(gain);
         newChannel->SetPan(pan);
@@ -2334,26 +2365,30 @@ namespace SparkyStudios::Audio::Amplitude
             insertionPoint, &_state->playing_channel_list, &_state->real_channel_free_list, &_state->virtual_channel_free_list,
             _state->paused);
 
-        // The sound could not be added to the list; not high enough priority.
+        // The channel could not be added to the list; not high enough priority.
         if (newChannel == nullptr)
+        {
+            amLogDebug("Cannot play collection: Not high enough priority.");
             return Channel(nullptr);
+        }
 
-        // Now that we have our new sound, set the data on it and update the next
-        // pointers.
+        // Now that we have our new channel, set the data on it and update the next pointers.
         newChannel->SetEntity(entity);
         newChannel->SetCollection(handle);
         newChannel->SetUserGain(userGain);
 
-        // Attempt to play the sound if the engine is not paused.
-        if (!_state->paused)
-        {
-            if (!newChannel->Play())
+        // Attempt to play the channel, if the engine is paused, the channel will be played later.
+        NextFrame(
+            [this, newChannel, handle](AmTime delta)
             {
-                // Error playing the sound, put it back in the free list.
-                InsertIntoFreeList(_state, newChannel);
-                return Channel(nullptr);
-            }
-        }
+                if (!newChannel->Play())
+                {
+                    amLogError("Failed to play collection: %s.", handle->GetName().c_str());
+
+                    // Error playing the sound, put it back in the free list.
+                    InsertIntoFreeList(_state, newChannel);
+                }
+            });
 
         newChannel->SetGain(gain);
         newChannel->SetPan(pan);
@@ -2403,24 +2438,28 @@ namespace SparkyStudios::Audio::Amplitude
 
         // The sound could not be added to the list; not high enough priority.
         if (newChannel == nullptr)
+        {
+            amLogDebug("Cannot play sound: Not high enough priority.");
             return Channel(nullptr);
+        }
 
-        // Now that we have our new sound, set the data on it and update the next
-        // pointers.
+        // Now that we have our new channel, set the data on it and update the next pointers.
         newChannel->SetEntity(entity);
         newChannel->SetSound(handle);
         newChannel->SetUserGain(userGain);
 
-        // Attempt to play the sound if the engine is not paused.
-        if (!_state->paused)
-        {
-            if (!newChannel->Play())
+        // Attempt to play the channel, if the engine is paused, the channel will be played later.
+        NextFrame(
+            [this, newChannel, handle](AmTime delta)
             {
-                // Error playing the sound, put it back in the free list.
-                InsertIntoFreeList(_state, newChannel);
-                return Channel(nullptr);
-            }
-        }
+                if (!newChannel->Play())
+                {
+                    amLogError("Failed to play sound: %s.", handle->GetName().c_str());
+
+                    // Error playing the sound, put it back in the free list.
+                    InsertIntoFreeList(_state, newChannel);
+                }
+            });
 
         newChannel->SetGain(gain);
         newChannel->SetPan(pan);

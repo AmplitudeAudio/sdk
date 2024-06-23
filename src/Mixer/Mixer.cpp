@@ -756,6 +756,7 @@ namespace SparkyStudios::Audio::Amplitude
 
             // store flag last, releasing the layer to the mixer thread
             AMPLIMIX_STORE(&lay->flag, flag);
+            OnSoundStarted(this, lay);
         }
 
         return layer;

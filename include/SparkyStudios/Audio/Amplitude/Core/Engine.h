@@ -17,6 +17,7 @@
 #ifndef SS_AMPLITUDE_AUDIO_ENGINE_H
 #define SS_AMPLITUDE_AUDIO_ENGINE_H
 
+#include <queue>
 #include <string>
 
 #include <SparkyStudios/Audio/Amplitude/Core/Common.h>
@@ -133,6 +134,13 @@ namespace SparkyStudios::Audio::Amplitude
          * @param delta The number of milliseconds since the last frame.
          */
         void AdvanceFrame(AmTime delta) const;
+
+        /**
+         * @brief Executes the given callback on the next frame.
+         *
+         * @param callback The callback to be called when the next frame is ready.
+         */
+        void NextFrame(std::function<void(AmTime delta)> callback) const;
 
         /**
          * @brief Gets the total elapsed time in milliseconds since the start of the engine.
@@ -1229,6 +1237,10 @@ namespace SparkyStudios::Audio::Amplitude
 
         // The lis of paths in which search for plugins.
         static std::set<AmOsString> _pluginSearchPaths;
+
+        AmMutexHandle _frameThreadMutex;
+        // The list of pending next frame callbacks.
+        mutable std::queue<std::function<void(AmTime)>> _nextFrameCallbacks;
 
         // Hold the engine config file contents.
         AmString _configSrc;
