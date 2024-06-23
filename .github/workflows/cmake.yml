@@ -38,7 +38,7 @@ jobs:
 
           - name: "Ubuntu Latest GCC"
             key: gcc
-            os: ubuntu-latest
+            os: ubuntu-24.04
             sdk_dir: linux
             artifact: "amplitude_audio_sdk_linux_gcc_x64.7z"
             cc: "gcc"
@@ -110,7 +110,8 @@ jobs:
         if: startsWith(matrix.config.os, 'ubuntu')
         run: |
           sudo apt-get update
-          sudo apt-get install ninja-build cmake
+          sudo apt-get install cpanminus autoconf automake libtool pkg-config libltdl-dev ninja-build cmake
+          sudo cpanm open
           ninja --version
           cmake --version
           gcc --version
@@ -146,6 +147,7 @@ jobs:
             ${{ matrix.build_type }}-${{ matrix.config.artifact }}-
 
       - name: Configure
+        id: configure
         shell: bash
         working-directory: ${{ inputs.project-path }}
         run: |
@@ -159,6 +161,11 @@ jobs:
             -DVCPKG_TARGET_TRIPLET:STRING="${{ matrix.config.target_triplet }}" \
             -DCMAKE_EXPORT_COMPILE_COMMANDS:BOOL=TRUE \
             -DBUILD_SAMPLES:BOOL=TRUE
+
+      - name: Inspect vcpkg errors
+        if: failure() && steps.configure.outcome != 'success'
+        run: |
+          cat ${{ github.workspace }}/build/vcpkg_installed/vcpkg/issue_body.md
 
       - name: Build
         shell: bash
