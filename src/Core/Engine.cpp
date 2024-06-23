@@ -30,9 +30,13 @@
 #include "sound_definition_generated.h"
 #include "switch_container_definition_generated.h"
 
+#include <Core/DefaultPlugins.h>
+
 #include <dylib.hpp>
 
-#include <Core/DefaultPlugins.h>
+#if defined(AM_WINDOWS_VERSION)
+#undef CreateMutex
+#endif
 
 namespace SparkyStudios::Audio::Amplitude
 {
