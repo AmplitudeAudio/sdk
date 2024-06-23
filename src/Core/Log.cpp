@@ -30,29 +30,29 @@ namespace SparkyStudios::Audio::Amplitude
         return gLogger;
     }
 
-    void Logger::Debug(const char* file, int line, const AmOsString& message)
+    void Logger::Debug(const char* file, int line, const AmString& message)
     {
 #ifdef AM_DEBUG
         Log(eLML_DEBUG, file, line, message);
 #endif
     }
 
-    void Logger::Info(const char* file, int line, const AmOsString& message)
+    void Logger::Info(const char* file, int line, const AmString& message)
     {
         Log(eLML_INFO, file, line, message);
     }
 
-    void Logger::Warning(const char* file, int line, const AmOsString& message)
+    void Logger::Warning(const char* file, int line, const AmString& message)
     {
         Log(eLML_WARNING, file, line, message);
     }
 
-    void Logger::Error(const char* file, int line, const AmOsString& message)
+    void Logger::Error(const char* file, int line, const AmString& message)
     {
         Log(eLML_ERROR, file, line, message);
     }
 
-    void Logger::Critical(const char* file, int line, const AmOsString& message)
+    void Logger::Critical(const char* file, int line, const AmString& message)
     {
         Log(eLML_CRITICAL, file, line, message);
     }
@@ -61,7 +61,7 @@ namespace SparkyStudios::Audio::Amplitude
         : m_displayFileAndLine(displayFileAndLine)
     {}
 
-    void ConsoleLogger::Log(LogMessageLevel level, const char* file, int line, const AmOsString& message)
+    void ConsoleLogger::Log(LogMessageLevel level, const char* file, int line, const AmString& message)
     {
         switch (level)
         {
@@ -85,11 +85,7 @@ namespace SparkyStudios::Audio::Amplitude
         if (m_displayFileAndLine)
             std::cout << "(" << file << ":" << line << ") ";
 
-#if defined(AM_WCHAR_SUPPORTED)
-        std::wcout << message;
-#else
         std::cout << message;
-#endif
 
         if (message.back() != '\n')
             std::cout << std::endl;

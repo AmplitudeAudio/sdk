@@ -535,7 +535,7 @@ namespace SparkyStudios::Audio::Amplitude
 
         if (!ReadHeader(_file, m_format, _blockSize))
         {
-            amLogError("The AMS codec cannot handle the file: '" AM_OS_CHAR_FMT "'", AM_OS_STRING_TO_STRING(file->GetPath()));
+            amLogError("The AMS codec cannot handle the file: '" AM_OS_CHAR_FMT "'", file->GetPath().c_str());
             return false;
         }
 
@@ -598,7 +598,7 @@ namespace SparkyStudios::Audio::Amplitude
 
         if (!WriteHeader(_file, m_format, _samplesPerBlock))
         {
-            amLogError("The AMS codec was unable to write the file: '" AM_OS_CHAR_FMT "'", AM_OS_STRING_TO_STRING(file->GetPath()));
+            amLogError("The AMS codec was unable to write the file: '" AM_OS_CHAR_FMT "'", file->GetPath().c_str());
             return false;
         }
 
