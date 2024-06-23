@@ -396,7 +396,7 @@ namespace SparkyStudios::Audio::Amplitude
 
             if (ma_context_get_devices(&_context, &pPlaybackInfos, &playbackCount, &pCaptureInfos, &captureCount) != MA_SUCCESS)
             {
-                amLogError("Unable to enumerate the audio devices.\n");
+                amLogError("Unable to enumerate the audio devices.");
                 return false;
             }
 

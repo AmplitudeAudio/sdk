@@ -30,38 +30,38 @@ namespace SparkyStudios::Audio::Amplitude
         return gLogger;
     }
 
-    void Logger::Debug(const std::string& message, const char* file, int line)
+    void Logger::Debug(const char* file, int line, const AmString& message)
     {
 #ifdef AM_DEBUG
-        Log(eLML_DEBUG, message, file, line);
+        Log(eLML_DEBUG, file, line, message);
 #endif
     }
 
-    void Logger::Info(const std::string& message, const char* file, int line)
+    void Logger::Info(const char* file, int line, const AmString& message)
     {
-        Log(eLML_INFO, message, file, line);
+        Log(eLML_INFO, file, line, message);
     }
 
-    void Logger::Warning(const std::string& message, const char* file, int line)
+    void Logger::Warning(const char* file, int line, const AmString& message)
     {
-        Log(eLML_WARNING, message, file, line);
+        Log(eLML_WARNING, file, line, message);
     }
 
-    void Logger::Error(const std::string& message, const char* file, int line)
+    void Logger::Error(const char* file, int line, const AmString& message)
     {
-        Log(eLML_ERROR, message, file, line);
+        Log(eLML_ERROR, file, line, message);
     }
 
-    void Logger::Critical(const std::string& message, const char* file, int line)
+    void Logger::Critical(const char* file, int line, const AmString& message)
     {
-        Log(eLML_CRITICAL, message, file, line);
+        Log(eLML_CRITICAL, file, line, message);
     }
 
     ConsoleLogger::ConsoleLogger(bool displayFileAndLine)
         : m_displayFileAndLine(displayFileAndLine)
     {}
 
-    void ConsoleLogger::Log(LogMessageLevel level, const std::string& message, const char* file, int line)
+    void ConsoleLogger::Log(LogMessageLevel level, const char* file, int line, const AmString& message)
     {
         switch (level)
         {

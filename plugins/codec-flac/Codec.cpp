@@ -133,7 +133,7 @@ bool FlacCodec::FlacDecoder::Open(std::shared_ptr<File> file)
     if (!_flac.process_until_end_of_metadata())
     {
         _file.reset();
-        amLogError("Unable to read metadata for FLAC file: {}", file->GetPath().c_str());
+        amLogError("Unable to read metadata for FLAC file: {}", AM_OS_STRING_TO_STRING(file->GetPath()));
         return false;
     }
 

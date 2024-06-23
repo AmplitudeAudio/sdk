@@ -577,7 +577,7 @@ namespace SparkyStudios::Audio::Amplitude
         // Load the audio driver
         if (config->driver())
         {
-            if (_audioDriver = Driver::Find(config->driver()->c_str()); _audioDriver == nullptr)
+            if (_audioDriver = Driver::Find(config->driver()->str()); _audioDriver == nullptr)
             {
                 amLogWarning("Could load the audio driver '{}'. Loading the default driver.", config->driver()->str());
                 _audioDriver = Driver::Default();
