@@ -37,6 +37,8 @@
 #include <SparkyStudios/Audio/Amplitude/Core/Thread.h>
 #include <SparkyStudios/Audio/Amplitude/Core/Version.h>
 
+#include <SparkyStudios/Audio/Amplitude/HRTF/HRIRSphere.h>
+
 #include <SparkyStudios/Audio/Amplitude/IO/DiskFile.h>
 #include <SparkyStudios/Audio/Amplitude/IO/DiskFileSystem.h>
 #include <SparkyStudios/Audio/Amplitude/IO/File.h>

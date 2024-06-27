@@ -118,6 +118,7 @@ namespace SparkyStudios::Audio::Amplitude
             re[i + 1] += reA[i + 1] * reB[i + 1] - imA[i + 1] * imB[i + 1];
             re[i + 2] += reA[i + 2] * reB[i + 2] - imA[i + 2] * imB[i + 2];
             re[i + 3] += reA[i + 3] * reB[i + 3] - imA[i + 3] * imB[i + 3];
+
             im[i + 0] += reA[i + 0] * imB[i + 0] + imA[i + 0] * reB[i + 0];
             im[i + 1] += reA[i + 1] * imB[i + 1] + imA[i + 1] * reB[i + 1];
             im[i + 2] += reA[i + 2] * imB[i + 2] + imA[i + 2] * reB[i + 2];
@@ -153,6 +154,16 @@ namespace SparkyStudios::Audio::Amplitude
 
         std::memcpy(dest.GetBuffer(), src, srcSize * sizeof(AmReal32));
         std::memset(dest.GetBuffer() + srcSize, 0, (dest.GetSize() - srcSize) * sizeof(AmReal32));
+    }
+
+    AM_INLINE(AmVec3) SphericalToCartesian(AmReal32 azimuth, AmReal32 elevation, AmReal32 radius)
+    {
+        // Translates spherical to cartesian, where Y - up, Z - forward, X - right
+        const AmReal32 x = +radius * std::cos(elevation) * std::cos(azimuth);
+        const AmReal32 y = +radius * std::sin(elevation);
+        const AmReal32 z = -radius * std::cos(elevation) * std::sin(azimuth);
+
+        return AM_V3(x, y, z);
     }
 } // namespace SparkyStudios::Audio::Amplitude
 

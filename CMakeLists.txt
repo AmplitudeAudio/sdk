@@ -161,6 +161,7 @@ set(SA_SOURCE
     include/SparkyStudios/Audio/Amplitude/Core/RefCounter.h
     include/SparkyStudios/Audio/Amplitude/Core/Thread.h
     include/SparkyStudios/Audio/Amplitude/Core/Version.h
+    include/SparkyStudios/Audio/Amplitude/HRTF/HRIRSphere.h
     include/SparkyStudios/Audio/Amplitude/IO/DiskFile.h
     include/SparkyStudios/Audio/Amplitude/IO/DiskFileSystem.h
     include/SparkyStudios/Audio/Amplitude/IO/File.h
@@ -242,6 +243,7 @@ set(SA_SOURCE
     src/Core/Thread.cpp
     src/Core/Version.cpp
 
+    src/HRTF/HRIRSphere.cpp
     src/IO/DiskFile.cpp
     src/IO/DiskFileSystem.cpp
     src/IO/File.cpp
@@ -427,6 +429,7 @@ target_link_libraries(Shared PUBLIC mimalloc)
 
 add_subdirectory(tools/amac)
 add_subdirectory(tools/ampk)
+add_subdirectory(tools/amir)
 
 if (BUILD_SAMPLES)
     add_subdirectory(samples)
