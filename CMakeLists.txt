@@ -173,6 +173,7 @@ set(SA_SOURCE
     include/SparkyStudios/Audio/Amplitude/Math/Curve.h
     include/SparkyStudios/Audio/Amplitude/Math/FFT.h
     include/SparkyStudios/Audio/Amplitude/Math/HandmadeMath.h
+    include/SparkyStudios/Audio/Amplitude/Math/PolarPosition.h
     include/SparkyStudios/Audio/Amplitude/Math/Shape.h
     include/SparkyStudios/Audio/Amplitude/Math/SplitComplex.h
     include/SparkyStudios/Audio/Amplitude/Math/Utils.h
@@ -254,6 +255,7 @@ set(SA_SOURCE
 
     src/Math/Curve.cpp
     src/Math/FFT.cpp
+    src/Math/PolarPosition.cpp
     src/Math/Shape.cpp
     src/Math/SplitComplex.cpp
 

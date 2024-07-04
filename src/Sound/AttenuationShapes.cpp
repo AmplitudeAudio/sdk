@@ -318,7 +318,7 @@ namespace SparkyStudios::Audio::Amplitude
         switch (amEngine->GetState()->up_axis)
         {
         default:
-        case eGameEngineUpAxis_Y:
+        case eUpAxis_Y:
             iA = AM_Mul(lookAt, AM_V4(0.0f, innerHalfHeight, 0.0f, 1.0f)).XYZ;
             iB = AM_Mul(lookAt, AM_V4(0.0f, -innerHalfHeight, 0.0f, 1.0f)).XYZ;
 
@@ -326,7 +326,7 @@ namespace SparkyStudios::Audio::Amplitude
             oB = AM_Mul(lookAt, AM_V4(0.0f, -outerHalfHeight, 0.0f, 1.0f)).XYZ;
             break;
 
-        case eGameEngineUpAxis_Z:
+        case eUpAxis_Z:
             iA = AM_Mul(lookAt, AM_V4(0.0f, 0.0f, innerHalfHeight, 1.0f)).XYZ;
             iB = AM_Mul(lookAt, AM_V4(0.0f, 0.0f, -innerHalfHeight, 1.0f)).XYZ;
 

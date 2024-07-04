@@ -685,7 +685,7 @@ namespace SparkyStudios::Audio::Amplitude
         _state->samples_per_stream = config->output()->buffer_size() / config->output()->channels();
 
         // Set the game engine up axis
-        _state->up_axis = config->game()->up_axis();
+        _state->up_axis = static_cast<GameEngineUpAxis>(config->game()->up_axis());
 
         // Save obstruction/occlusion configurations
         _state->obstruction_config.Init(config->game()->obstruction());
@@ -1043,10 +1043,10 @@ namespace SparkyStudios::Audio::Amplitude
         switch (amEngine->GetState()->up_axis)
         {
         default:
-        case eGameEngineUpAxis_Y:
+        case eUpAxis_Y:
             return AM_V2(AM_Dot(AM_V3(1, 0, 0), direction), AM_Dot(AM_V3(0, 0, 1), direction));
 
-        case eGameEngineUpAxis_Z:
+        case eUpAxis_Z:
             return AM_V2(AM_Dot(AM_V3(1, 0, 0), direction), AM_Dot(AM_V3(0, 1, 0), direction));
         }
     }

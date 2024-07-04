@@ -237,7 +237,7 @@ namespace SparkyStudios::Audio::Amplitude
         {
         default:
             [[fallthrough]];
-        case eGameEngineUpAxis_Y:
+        case eUpAxis_Y:
             {
                 const AmReal32 dP1 = AM_Dot(location - _p1, AM_Norm(_p2 - _p1));
                 const AmReal32 dP2 = AM_Dot(location - _p2, AM_Norm(_p1 - _p2));
@@ -249,7 +249,7 @@ namespace SparkyStudios::Audio::Amplitude
                 return AM_MIN(dP1, AM_MIN(dP2, AM_MIN(dP3, AM_MIN(dP4, AM_MIN(dP5, dP6)))));
             }
 
-        case eGameEngineUpAxis_Z:
+        case eUpAxis_Z:
             {
                 const AmReal32 dP1 = AM_Dot(location - _p1, AM_Norm(_p2 - _p1));
                 const AmReal32 dP2 = AM_Dot(location - _p2, AM_Norm(_p1 - _p2));
@@ -283,14 +283,14 @@ namespace SparkyStudios::Audio::Amplitude
         switch (amEngine->GetState()->up_axis)
         {
         default:
-        case eGameEngineUpAxis_Y:
+        case eUpAxis_Y:
             _p1 = AM_Mul(m_lookAtMatrix, AM_V4(-_halfWidth, -_halfHeight, -_halfDepth, 1.0f)).XYZ;
             _p2 = AM_Mul(m_lookAtMatrix, AM_V4(-_halfWidth, -_halfHeight, _halfDepth, 1.0f)).XYZ;
             _p3 = AM_Mul(m_lookAtMatrix, AM_V4(_halfWidth, -_halfHeight, -_halfDepth, 1.0f)).XYZ;
             _p4 = AM_Mul(m_lookAtMatrix, AM_V4(-_halfWidth, _halfHeight, -_halfDepth, 1.0f)).XYZ;
             break;
 
-        case eGameEngineUpAxis_Z:
+        case eUpAxis_Z:
             _p1 = AM_Mul(m_lookAtMatrix, AM_V4(-_halfWidth, -_halfDepth, -_halfHeight, 1.0f)).XYZ;
             _p2 = AM_Mul(m_lookAtMatrix, AM_V4(-_halfWidth, _halfDepth, -_halfHeight, 1.0f)).XYZ;
             _p3 = AM_Mul(m_lookAtMatrix, AM_V4(_halfWidth, -_halfDepth, -_halfHeight, 1.0f)).XYZ;
@@ -416,12 +416,12 @@ namespace SparkyStudios::Audio::Amplitude
         switch (amEngine->GetState()->up_axis)
         {
         default:
-        case eGameEngineUpAxis_Y:
+        case eUpAxis_Y:
             _a = AM_Mul(m_lookAtMatrix, AM_V4(0.0f, halfHeight, 0.0f, 1.0f)).XYZ;
             _b = AM_Mul(m_lookAtMatrix, AM_V4(0.0f, -halfHeight, 0.0f, 1.0f)).XYZ;
             break;
 
-        case eGameEngineUpAxis_Z:
+        case eUpAxis_Z:
             _a = AM_Mul(m_lookAtMatrix, AM_V4(0.0f, 0.0f, halfHeight, 1.0f)).XYZ;
             _b = AM_Mul(m_lookAtMatrix, AM_V4(0.0f, 0.0f, -halfHeight, 1.0f)).XYZ;
             break;
@@ -577,7 +577,7 @@ namespace SparkyStudios::Audio::Amplitude
         if (outer->m_needUpdate)
             outer->_update();
 
-        const eGameEngineUpAxis upAxis = amEngine->GetState()->up_axis;
+        const GameEngineUpAxis upAxis = amEngine->GetState()->up_axis;
 
         const AmVec3& x = position;
 
@@ -600,7 +600,7 @@ namespace SparkyStudios::Audio::Amplitude
         switch (upAxis)
         {
         default:
-        case eGameEngineUpAxis_Y:
+        case eUpAxis_Y:
             {
                 const AmReal32 dP1 =
                     AM_ABS(AM_Dot(x - outer->_p1, AM_Norm(outer->_p2 - outer->_p1))) / (outer->GetHalfDepth() - inner->GetHalfDepth());
@@ -620,7 +620,7 @@ namespace SparkyStudios::Audio::Amplitude
                 return AM_CLAMP(shortestPath, 0.0f, 1.0f);
             }
 
-        case eGameEngineUpAxis_Z:
+        case eUpAxis_Z:
             {
                 const AmReal32 dP1 =
                     AM_ABS(AM_Dot(x - outer->_p1, AM_Norm(outer->_p2 - outer->_p1))) / (outer->GetHalfHeight() - inner->GetHalfHeight());
@@ -659,7 +659,7 @@ namespace SparkyStudios::Audio::Amplitude
         if (outer->m_needUpdate)
             outer->Update();
 
-        const eGameEngineUpAxis upAxis = amEngine->GetState()->up_axis;
+        const GameEngineUpAxis upAxis = amEngine->GetState()->up_axis;
 
         const AmVec3& x = position;
 
@@ -715,7 +715,7 @@ namespace SparkyStudios::Audio::Amplitude
         if (outer->m_needUpdate)
             outer->Update();
 
-        const eGameEngineUpAxis upAxis = amEngine->GetState()->up_axis;
+        const GameEngineUpAxis upAxis = amEngine->GetState()->up_axis;
 
         const AmVec3& soundToListener = position - inner->GetLocation();
         const AmReal32 distance = AM_Len(soundToListener);

@@ -155,16 +155,6 @@ namespace SparkyStudios::Audio::Amplitude
         std::memcpy(dest.GetBuffer(), src, srcSize * sizeof(AmReal32));
         std::memset(dest.GetBuffer() + srcSize, 0, (dest.GetSize() - srcSize) * sizeof(AmReal32));
     }
-
-    AM_INLINE(AmVec3) SphericalToCartesian(AmReal32 azimuth, AmReal32 elevation, AmReal32 radius)
-    {
-        // Translates spherical to cartesian, where Y - up, Z - forward, X - right
-        const AmReal32 x = +radius * std::cos(elevation) * std::cos(azimuth);
-        const AmReal32 y = +radius * std::sin(elevation);
-        const AmReal32 z = -radius * std::cos(elevation) * std::sin(azimuth);
-
-        return AM_V3(x, y, z);
-    }
 } // namespace SparkyStudios::Audio::Amplitude
 
 #endif // SS_AMPLITUDE_AUDIO_UTILS_H
