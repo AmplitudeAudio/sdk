@@ -48,6 +48,7 @@
 #include <SparkyStudios/Audio/Amplitude/IO/PackageItemFile.h>
 #include <SparkyStudios/Audio/Amplitude/IO/Resource.h>
 
+#include <SparkyStudios/Audio/Amplitude/Math/CartesianCoordinateSystem.h>
 #include <SparkyStudios/Audio/Amplitude/Math/Curve.h>
 #include <SparkyStudios/Audio/Amplitude/Math/FFT.h>
 #include <SparkyStudios/Audio/Amplitude/Math/HandmadeMath.h>
