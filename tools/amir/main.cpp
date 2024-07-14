@@ -87,7 +87,7 @@ void triangulate(const std::vector<HRIRSphereVertex>& vertices, std::vector<AmUI
     }
 }
 
-int parseFileName_IRCAM(const AmOsString& fileName, PolarPosition& position)
+int parseFileName_IRCAM(const AmOsString& fileName, SphericalPosition& position)
 {
     const auto azimuth_location = fileName.find(AM_OS_STRING("_T"));
     if (azimuth_location == AmOsString::npos)
@@ -104,7 +104,7 @@ int parseFileName_IRCAM(const AmOsString& fileName, PolarPosition& position)
     // azimuth in degrees 3 digits, we need 90 deg offset so that the angle is relative to z-axis,
     // - from 000 to 180 for source on your left,
     // - from 180 to 359 for source on your right
-    const auto azimuth = 90.0f + static_cast<AmReal32>(std::atof(fileName.substr(azimuth_location + 2, 3).c_str()));
+    const auto azimuth = static_cast<AmReal32>(std::atof(fileName.substr(azimuth_location + 2, 3).c_str()));
 
     // elevation in degrees, modulo 360, 3 digits,
     // - from 315 to 345 for source below your head,
@@ -112,11 +112,11 @@ int parseFileName_IRCAM(const AmOsString& fileName, PolarPosition& position)
     // - from 015 to 090 for source above your head
     const auto elevation = static_cast<AmReal32>(std::atof(fileName.substr(elevation_location + 2, 3).c_str()));
 
-    position = PolarPosition(azimuth * AM_DegToRad, elevation * AM_DegToRad, 1.0);
+    position = SphericalPosition::FromDegrees(azimuth, elevation);
     return EXIT_SUCCESS;
 }
 
-int parseFileName_MIT(const AmOsString& fileName, PolarPosition& position)
+int parseFileName_MIT(const AmOsString& fileName, SphericalPosition& position)
 {
     const auto azimuth_location = fileName.find('e');
     if (azimuth_location == AmOsString::npos)
@@ -138,8 +138,6 @@ int parseFileName_MIT(const AmOsString& fileName, PolarPosition& position)
     for (AmSize el = elevation_location + 1; el < azimuth_location; ++el)
         elevationString += fileName[el];
 
-    char* end;
-
     // azimuth in degrees 3 digits, we need to negate so that the angle is relative to positive z-axis,
     // - from 000 to 180 for source on your left,
     // - from 180 to 359 for source on your right
@@ -150,7 +148,7 @@ int parseFileName_MIT(const AmOsString& fileName, PolarPosition& position)
     // - from 180 to 359 for source on your right
     const auto elevation = std::strtof(elevationString.c_str(), nullptr);
 
-    position = PolarPosition(azimuth * AM_DegToRad, elevation * AM_DegToRad, 1.0);
+    position = SphericalPosition(azimuth * AM_DegToRad, elevation * AM_DegToRad, 1.0);
     return EXIT_SUCCESS;
 }
 
@@ -210,15 +208,16 @@ static int process(const AmOsString& inFileName, const AmOsString& outFileName, 
         if (state.verbose)
             log(stdout, "Processing %s.\n", path.c_str());
 
-        PolarPosition polar;
+        SphericalPosition spherical;
 
-        if (state.datasetModel == eHRIRSphereDatasetModel_IRCAM && parseFileName_IRCAM(entry.filename().native(), polar) == EXIT_FAILURE)
+        if (state.datasetModel == eHRIRSphereDatasetModel_IRCAM &&
+            parseFileName_IRCAM(entry.filename().native(), spherical) == EXIT_FAILURE)
         {
             log(stderr, "Invalid file name: %s.\n", path.c_str());
             return EXIT_FAILURE;
         }
 
-        if (state.datasetModel == eHRIRSphereDatasetModel_MIT && parseFileName_MIT(entry.filename().native(), polar) == EXIT_FAILURE)
+        if (state.datasetModel == eHRIRSphereDatasetModel_MIT && parseFileName_MIT(entry.filename().native(), spherical) == EXIT_FAILURE)
         {
             log(stderr, "Invalid file name: %s.\n", path.c_str());
             return EXIT_FAILURE;
@@ -227,11 +226,11 @@ static int process(const AmOsString& inFileName, const AmOsString& outFileName, 
         const AmUInt32 max = state.datasetModel == eHRIRSphereDatasetModel_IRCAM ? 1 : 2;
         for (AmUInt32 i = 0; i < max; ++i)
         {
-            if (i == 1 && (polar.m_Azimuth == -AM_PI32 || polar.m_Azimuth == AM_PI32))
+            if (i == 1 && (spherical.GetAzimuth() == -AM_PI32 || spherical.GetAzimuth() == AM_PI32))
                 continue; // Do not duplicate borders
 
-            polar.m_Azimuth -= static_cast<AmReal32>(i) * AM_PI32;
-            const AmVec3 position = polar.ToCartesian(eUpAxis_Y);
+            spherical.SetAzimuth(spherical.GetAzimuth() - static_cast<AmReal32>(i) * AM_PI32);
+            const AmVec3 position = spherical.ToCartesian();
 
             auto* decoder = wavCodec->CreateDecoder();
             std::shared_ptr<File> file = std::make_shared<DiskFile>(absolute(entry));
@@ -266,10 +265,10 @@ static int process(const AmOsString& inFileName, const AmOsString& outFileName, 
             vertex.m_LeftIR.resize(totalFrames);
             vertex.m_RightIR.resize(totalFrames);
 
-            for (AmUInt32 i = 0; i < totalFrames; ++i)
+            for (AmUInt32 j = 0; j < totalFrames; ++j)
             {
-                vertex.m_LeftIR[i] = buffer[i * 2 + 0];
-                vertex.m_RightIR[i] = buffer[i * 2 + 1];
+                vertex.m_LeftIR[j] = buffer[j * 2 + 0];
+                vertex.m_RightIR[j] = buffer[j * 2 + 1];
             }
 
             vertices.push_back(vertex);

@@ -174,8 +174,8 @@ set(SA_SOURCE
     include/SparkyStudios/Audio/Amplitude/Math/Curve.h
     include/SparkyStudios/Audio/Amplitude/Math/FFT.h
     include/SparkyStudios/Audio/Amplitude/Math/HandmadeMath.h
-    include/SparkyStudios/Audio/Amplitude/Math/PolarPosition.h
     include/SparkyStudios/Audio/Amplitude/Math/Shape.h
+    include/SparkyStudios/Audio/Amplitude/Math/SphericalPosition.h
     include/SparkyStudios/Audio/Amplitude/Math/SplitComplex.h
     include/SparkyStudios/Audio/Amplitude/Math/Utils.h
     include/SparkyStudios/Audio/Amplitude/Mixer/Resampler.h
@@ -257,8 +257,8 @@ set(SA_SOURCE
     src/Math/CartesianCoordinateSystem.cpp
     src/Math/Curve.cpp
     src/Math/FFT.cpp
-    src/Math/PolarPosition.cpp
     src/Math/Shape.cpp
+    src/Math/SphericalPosition.cpp
     src/Math/SplitComplex.cpp
 
     src/Mixer/Resamplers/R8BrainResampler.h
