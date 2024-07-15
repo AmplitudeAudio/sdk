@@ -254,25 +254,6 @@ namespace SparkyStudios::Audio::Amplitude
     };
 
     /**
-     * @brief Enumerates the list of supported up axis.
-     *
-     * This should be synchronized with the game engine settings.
-     * It will affect how vectors and matrices calculation are performed.
-     */
-    enum GameEngineUpAxis : AmUInt8
-    {
-        /**
-         * @brief The up axis is Y.
-         */
-        eUpAxis_Y = 0,
-
-        /**
-         * @brief The up axis is Z.
-         */
-        eUpAxis_Z = 1,
-    };
-
-    /**
      * @brief Describe the format of an audio sample.
      *
      * This data structure is mainly filled by a Codec

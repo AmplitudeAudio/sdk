@@ -59,24 +59,30 @@ namespace SparkyStudios::Audio::Amplitude
         /**
          * @brief Sets the orientation of this Listener.
          *
-         * @param direction The direction towards the Listener.
-         * @param up The up vector.
+         * @param orientation
          */
-        void SetOrientation(const AmVec3& direction, const AmVec3& up);
+        void SetOrientation(const Orientation& orientation);
+
+        /**
+         * @brief Gets the orientation of this Listener.
+         *
+         * @return The current orientation of this Listener.
+         */
+        [[nodiscard]] const Orientation& GetOrientation() const;
 
         /**
          * @brief Get the direction vector of the Listener.
          *
          * @return The direction vector.
          */
-        [[nodiscard]] const AmVec3& GetDirection() const;
+        [[nodiscard]] AmVec3 GetDirection() const;
 
         /**
          * @brief Get the up vector of the Listener.
          *
          * @return The up vector.
          */
-        [[nodiscard]] const AmVec3& GetUp() const;
+        [[nodiscard]] AmVec3 GetUp() const;
 
         AmMat4& GetInverseMatrix();
 
@@ -103,8 +109,7 @@ namespace SparkyStudios::Audio::Amplitude
         AmListenerID _id;
 
         AmVec3 _location;
-        AmVec3 _direction;
-        AmVec3 _up;
+        Orientation _orientation;
 
         AmVec3 _lastLocation;
         AmVec3 _velocity;

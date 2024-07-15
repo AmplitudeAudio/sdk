@@ -15,7 +15,6 @@
 #include <Sound/AttenuationShapes.h>
 
 #include <SparkyStudios/Audio/Amplitude/Core/Engine.h>
-#include <SparkyStudios/Audio/Amplitude/Core/Log.h>
 
 #include <Core/EngineInternalState.h>
 
@@ -68,10 +67,10 @@ namespace SparkyStudios::Audio::Amplitude
         const Attenuation* attenuation, const AmVec3& soundLocation, const Listener& listener)
     {
         m_innerShape->SetLocation(soundLocation);
-        m_innerShape->SetOrientation(AM_V3(0, 0, 0), AM_V3(0, 0, 0));
+        m_innerShape->SetOrientation(Orientation::Zero());
 
         m_outerShape->SetLocation(soundLocation);
-        m_outerShape->SetOrientation(AM_V3(0, 0, 0), AM_V3(0, 0, 0));
+        m_outerShape->SetOrientation(Orientation::Zero());
 
         if (const AmVec3& soundToListener = listener.GetLocation() - soundLocation;
             AM_Len(soundToListener) >= attenuation->GetMaxDistance())
@@ -84,10 +83,10 @@ namespace SparkyStudios::Audio::Amplitude
     AmReal32 ConeAttenuationZone::GetAttenuationFactor(const Attenuation* attenuation, const Entity& entity, const Listener& listener)
     {
         m_innerShape->SetLocation(entity.GetLocation());
-        m_innerShape->SetOrientation(entity.GetDirection(), entity.GetUp());
+        m_innerShape->SetOrientation(entity.GetOrientation());
 
         m_outerShape->SetLocation(entity.GetLocation());
-        m_outerShape->SetOrientation(entity.GetDirection(), entity.GetUp());
+        m_outerShape->SetOrientation(entity.GetOrientation());
 
         const AmVec3& soundToListener = listener.GetLocation() - entity.GetLocation();
         const AmReal32 distance = AM_Len(soundToListener);
@@ -106,10 +105,10 @@ namespace SparkyStudios::Audio::Amplitude
         const Attenuation* attenuation, const AmVec3& soundLocation, const Listener& listener)
     {
         m_innerShape->SetLocation(soundLocation);
-        m_innerShape->SetOrientation(AM_V3(0, 0, 0), AM_V3(0, 0, 0));
+        m_innerShape->SetOrientation(Orientation::Zero());
 
         m_outerShape->SetLocation(soundLocation);
-        m_outerShape->SetOrientation(AM_V3(0, 0, 0), AM_V3(0, 0, 0));
+        m_outerShape->SetOrientation(Orientation::Zero());
 
         const AmVec3& soundToListener = listener.GetLocation() - soundLocation;
         const AmReal32 distance = AM_Len(soundToListener);
@@ -129,10 +128,10 @@ namespace SparkyStudios::Audio::Amplitude
     AmReal32 BoxAttenuationZone::GetAttenuationFactor(const Attenuation* attenuation, const AmVec3& soundLocation, const Listener& listener)
     {
         m_innerShape->SetLocation(soundLocation);
-        m_innerShape->SetOrientation(AM_V3(0, 0, 0), AM_V3(0, 0, 0));
+        m_innerShape->SetOrientation(Orientation::Zero());
 
         m_outerShape->SetLocation(soundLocation);
-        m_outerShape->SetOrientation(AM_V3(0, 0, 0), AM_V3(0, 0, 0));
+        m_outerShape->SetOrientation(Orientation::Zero());
 
         const AmVec3& soundToListener = listener.GetLocation() - soundLocation;
         const AmReal32 distance = AM_Len(soundToListener);
@@ -147,10 +146,10 @@ namespace SparkyStudios::Audio::Amplitude
     AmReal32 BoxAttenuationZone::GetAttenuationFactor(const Attenuation* attenuation, const Entity& entity, const Listener& listener)
     {
         m_innerShape->SetLocation(entity.GetLocation());
-        m_innerShape->SetOrientation(entity.GetDirection(), entity.GetUp());
+        m_innerShape->SetOrientation(entity.GetOrientation());
 
         m_outerShape->SetLocation(entity.GetLocation());
-        m_outerShape->SetOrientation(entity.GetDirection(), entity.GetUp());
+        m_outerShape->SetOrientation(entity.GetOrientation());
 
         const AmVec3& soundToListener = listener.GetLocation() - entity.GetLocation();
         const AmReal32 distance = AM_Len(soundToListener);
@@ -279,10 +278,10 @@ namespace SparkyStudios::Audio::Amplitude
         const Attenuation* attenuation, const AmVec3& soundLocation, const Listener& listener)
     {
         m_innerShape->SetLocation(soundLocation);
-        m_innerShape->SetOrientation(AM_V3(0, 0, 0), AM_V3(0, 0, 0));
+        m_innerShape->SetOrientation(Orientation::Zero());
 
         m_outerShape->SetLocation(soundLocation);
-        m_outerShape->SetOrientation(AM_V3(0, 0, 0), AM_V3(0, 0, 0));
+        m_outerShape->SetOrientation(Orientation::Zero());
 
         return GetFactor(attenuation, soundLocation, listener, AM_M4D(1.0f));
     }
@@ -290,12 +289,12 @@ namespace SparkyStudios::Audio::Amplitude
     AmReal32 CapsuleAttenuationZone::GetAttenuationFactor(const Attenuation* attenuation, const Entity& entity, const Listener& listener)
     {
         m_innerShape->SetLocation(entity.GetLocation());
-        m_innerShape->SetOrientation(entity.GetDirection(), entity.GetUp());
+        m_innerShape->SetOrientation(entity.GetOrientation());
 
         m_outerShape->SetLocation(entity.GetLocation());
-        m_outerShape->SetOrientation(entity.GetDirection(), entity.GetUp());
+        m_outerShape->SetOrientation(entity.GetOrientation());
 
-        return GetFactor(attenuation, entity.GetLocation(), listener, AM_LookAt_RH(AM_V3(0, 0, 0), entity.GetDirection(), entity.GetUp()));
+        return GetFactor(attenuation, entity.GetLocation(), listener, entity.GetOrientation().GetLookAtMatrix(AM_V3(0, 0, 0)));
     }
 
     AmReal32 CapsuleAttenuationZone::GetFactor(
@@ -313,33 +312,17 @@ namespace SparkyStudios::Audio::Amplitude
         const AmReal32 innerHalfHeight = inner->GetHalfHeight() - inner->GetRadius();
         const AmReal32 outerHalfHeight = outer->GetHalfHeight() - outer->GetRadius();
 
-        AmVec3 iA, iB, oA, oB;
+        const AmVec3 iA = AM_Mul(lookAt, AM_V4(0.0f, 0.0f, innerHalfHeight, 1.0f)).XYZ;
+        const AmVec3 iB = AM_Mul(lookAt, AM_V4(0.0f, 0.0f, -innerHalfHeight, 1.0f)).XYZ;
 
-        switch (amEngine->GetState()->up_axis)
-        {
-        default:
-        case eUpAxis_Y:
-            iA = AM_Mul(lookAt, AM_V4(0.0f, innerHalfHeight, 0.0f, 1.0f)).XYZ;
-            iB = AM_Mul(lookAt, AM_V4(0.0f, -innerHalfHeight, 0.0f, 1.0f)).XYZ;
+        const AmVec3 oA = AM_Mul(lookAt, AM_V4(0.0f, 0.0f, outerHalfHeight, 1.0f)).XYZ;
+        const AmVec3 oB = AM_Mul(lookAt, AM_V4(0.0f, 0.0f, -outerHalfHeight, 1.0f)).XYZ;
 
-            oA = AM_Mul(lookAt, AM_V4(0.0f, outerHalfHeight, 0.0f, 1.0f)).XYZ;
-            oB = AM_Mul(lookAt, AM_V4(0.0f, -outerHalfHeight, 0.0f, 1.0f)).XYZ;
-            break;
+        const AmVec3 iE = iB - iA;
+        const AmVec3 iM = AM_Cross(iA, iB);
 
-        case eUpAxis_Z:
-            iA = AM_Mul(lookAt, AM_V4(0.0f, 0.0f, innerHalfHeight, 1.0f)).XYZ;
-            iB = AM_Mul(lookAt, AM_V4(0.0f, 0.0f, -innerHalfHeight, 1.0f)).XYZ;
-
-            oA = AM_Mul(lookAt, AM_V4(0.0f, 0.0f, outerHalfHeight, 1.0f)).XYZ;
-            oB = AM_Mul(lookAt, AM_V4(0.0f, 0.0f, -outerHalfHeight, 1.0f)).XYZ;
-            break;
-        }
-
-        AmVec3 iE = iB - iA;
-        AmVec3 iM = AM_Cross(iA, iB);
-
-        AmVec3 oE = oB - oA;
-        AmVec3 oM = AM_Cross(oA, oB);
+        const AmVec3 oE = oB - oA;
+        const AmVec3 oM = AM_Cross(oA, oB);
 
         const AmReal32 iDistanceToAxis = AM_Len(iM + AM_Cross(iE, x)) / AM_Len(iE);
         const AmReal32 oDistanceToAxis = AM_Len(oM + AM_Cross(oE, x)) / AM_Len(oE);

@@ -121,10 +121,16 @@ namespace SparkyStudios::Audio::Amplitude
         /**
          * @brief Set the orientation of this shape.
          *
-         * @param direction The shape direction.
-         * @param up The shape up vector.
+         * @param orientation The new orientation.
          */
-        void SetOrientation(const AmVec3& direction, const AmVec3& up);
+        void SetOrientation(const Orientation& orientation);
+
+        /**
+         * @brief Gets the orientation of this shape.
+         *
+         * @return The orientation of this shape.
+         */
+        [[nodiscard]] const Orientation& GetOrientation() const;
 
         /**
          * @brief Get the LookAt transformation matrix for this shape.
@@ -145,19 +151,18 @@ namespace SparkyStudios::Audio::Amplitude
          *
          * @return The shape's position.
          */
-        [[nodiscard]] const AmVec3& GetDirection() const;
+        [[nodiscard]] AmVec3 GetDirection() const;
 
         /**
          * @brief Get the up vector of the zone.
          *
          * @return The up vector.
          */
-        [[nodiscard]] const AmVec3& GetUp() const;
+        [[nodiscard]] AmVec3 GetUp() const;
 
     protected:
         AmVec3 m_location;
-        AmVec3 m_direction;
-        AmVec3 m_up;
+        Orientation m_orientation;
 
         AmMat4 m_lookAtMatrix;
 
@@ -180,7 +185,7 @@ namespace SparkyStudios::Audio::Amplitude
         virtual ~Zone() = default;
 
         /**
-         * @brief Get the factor (a value in the range [0, 1]) according to the position
+         * @brief Gets the factor (a value in the range [0, 1]) according to the position
          * of the given entity in the zone.
          *
          * @param entity The entity to get the factor for.
@@ -193,7 +198,7 @@ namespace SparkyStudios::Audio::Amplitude
         }
 
         /**
-         * @brief Get the factor (a value in the range [0, 1]) according to the position
+         * @brief Gets the factor (a value in the range [0, 1]) according to the position
          * of the given listener in the zone.
          *
          * @param listener The listener to get the factor for.
@@ -206,7 +211,7 @@ namespace SparkyStudios::Audio::Amplitude
         }
 
         /**
-         * @brief Get the factor (a value in the range [0, 1]) according to the given
+         * @brief Gets the factor (a value in the range [0, 1]) according to the given
          * position in the zone.
          *
          * @param position The position in the zone to get the factor for.
@@ -216,7 +221,7 @@ namespace SparkyStudios::Audio::Amplitude
         [[nodiscard]] virtual AmReal32 GetFactor(const AmVec3& position) = 0;
 
         /**
-         * @brief Set the location of this zone in the 3D environment.
+         * @brief Sets the location of this zone in the 3D environment.
          *
          * @param location The zone location.
          */
@@ -230,26 +235,32 @@ namespace SparkyStudios::Audio::Amplitude
         [[nodiscard]] const AmVec3& GetLocation() const;
 
         /**
-         * @brief Set the orientation of this shape.
+         * @brief Sets the orientation of this zone.
          *
-         * @param direction The shape direction.
-         * @param up The shape up vector.
+         * @param orientation The new orientation.
          */
-        void SetOrientation(const AmVec3& direction, const AmVec3& up);
+        void SetOrientation(const Orientation& orientation);
+
+        /**
+         * @brief Gets the orientation of this zone.
+         *
+         * @return The orientation of this zone.
+         */
+        [[nodiscard]] const Orientation& GetOrientation() const;
 
         /**
          * @brief Get the direction vector of the zone.
          *
          * @return The direction vector.
          */
-        [[nodiscard]] const AmVec3& GetDirection() const;
+        [[nodiscard]] AmVec3 GetDirection() const;
 
         /**
          * @brief Get the up vector of the zone.
          *
          * @return The up vector.
          */
-        [[nodiscard]] const AmVec3& GetUp() const;
+        [[nodiscard]] AmVec3 GetUp() const;
 
     protected:
         /**

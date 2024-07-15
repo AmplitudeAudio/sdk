@@ -147,7 +147,7 @@ namespace SparkyStudios::Audio::Amplitude
         /**
          * @brief Creates a cartesian coordinate system which match the one used in Amplitude.
          *
-         * @return Amplitude's internal coordinate system for left-handed, Z-up cartesian coordinate system.
+         * @return Amplitude's internal coordinate system for right-handed, Z-up cartesian coordinate system.
          */
         static CartesianCoordinateSystem Default();
 

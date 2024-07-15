@@ -44,17 +44,22 @@ namespace SparkyStudios::Audio::Amplitude
         return _zone->GetLocation();
     }
 
-    void EnvironmentInternalState::SetOrientation(const AmVec3& direction, const AmVec3& up)
+    void EnvironmentInternalState::SetOrientation(const Orientation& orientation)
     {
-        _zone->SetOrientation(direction, up);
+        _zone->SetOrientation(orientation);
     }
 
-    const AmVec3& EnvironmentInternalState::GetDirection() const
+    const Orientation& EnvironmentInternalState::GetOrientation()
+    {
+        return _zone->GetOrientation();
+    }
+
+    AmVec3 EnvironmentInternalState::GetDirection() const
     {
         return _zone->GetDirection();
     }
 
-    const AmVec3& EnvironmentInternalState::GetUp() const
+    AmVec3 EnvironmentInternalState::GetUp() const
     {
         return _zone->GetUp();
     }

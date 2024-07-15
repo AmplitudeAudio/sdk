@@ -32,8 +32,6 @@ namespace SparkyStudios::Audio::Amplitude
         const AmVec3 targetUpVector = GetVector(to._upAxis);
 
         const AmReal32 sourceScale = AM_LenSqr(sourceForwadVector);
-        AMPLITUDE_ASSERT(sourceScale == AM_LenSqr(sourceRightVector));
-        AMPLITUDE_ASSERT(sourceScale == AM_LenSqr(sourceUpVector));
 
         AmMat3 sourceFromId;
         sourceFromId[0] = sourceRightVector;
@@ -95,7 +93,7 @@ namespace SparkyStudios::Audio::Amplitude
 
     CartesianCoordinateSystem CartesianCoordinateSystem::Default()
     {
-        return LeftHandedZUp();
+        return RightHandedZUp();
     }
 
     CartesianCoordinateSystem CartesianCoordinateSystem::AmbiX()
@@ -105,7 +103,7 @@ namespace SparkyStudios::Audio::Amplitude
 
     CartesianCoordinateSystem CartesianCoordinateSystem::RightHandedYUp()
     {
-        return { Axis::NegativeX, Axis::PositiveZ, Axis::PositiveY };
+        return { Axis::PositiveX, Axis::NegativeZ, Axis::PositiveY };
     }
 
     CartesianCoordinateSystem CartesianCoordinateSystem::LeftHandedYUp()
@@ -115,12 +113,12 @@ namespace SparkyStudios::Audio::Amplitude
 
     CartesianCoordinateSystem CartesianCoordinateSystem::RightHandedZUp()
     {
-        return { Axis::NegativeX, Axis::PositiveY, Axis::PositiveZ };
+        return { Axis::PositiveX, Axis::PositiveY, Axis::PositiveZ };
     }
 
     CartesianCoordinateSystem CartesianCoordinateSystem::LeftHandedZUp()
     {
-        return { Axis::PositiveX, Axis::PositiveY, Axis::PositiveZ };
+        return { Axis::PositiveX, Axis::NegativeY, Axis::PositiveZ };
     }
 
     AmVec3 CartesianCoordinateSystem::Convert(

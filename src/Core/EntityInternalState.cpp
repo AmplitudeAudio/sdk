@@ -21,8 +21,7 @@ namespace SparkyStudios::Audio::Amplitude
         , _lastLocation()
         , _velocity()
         , _location()
-        , _direction()
-        , _up()
+        , _orientation(Orientation::Zero())
         , _inverseMatrix(AM_M4D(1.0f))
         , _obstruction(0.0f)
         , _occlusion(0.0f)
@@ -56,20 +55,24 @@ namespace SparkyStudios::Audio::Amplitude
         return _location;
     }
 
-    void EntityInternalState::SetOrientation(const AmVec3& direction, const AmVec3& up)
+    void EntityInternalState::SetOrientation(const Orientation& orientation)
     {
-        _direction = direction;
-        _up = up;
+        _orientation = orientation;
     }
 
-    const AmVec3& EntityInternalState::GetDirection() const
+    AmVec3 EntityInternalState::GetDirection() const
     {
-        return _direction;
+        return _orientation.GetForward();
     }
 
-    const AmVec3& EntityInternalState::GetUp() const
+    AmVec3 EntityInternalState::GetUp() const
     {
-        return _up;
+        return _orientation.GetUp();
+    }
+
+    const Orientation& EntityInternalState::GetOrientation() const
+    {
+        return _orientation;
     }
 
     const AmMat4& EntityInternalState::GetInverseMatrix() const
@@ -80,7 +83,7 @@ namespace SparkyStudios::Audio::Amplitude
     void EntityInternalState::Update()
     {
         _velocity = _location - _lastLocation;
-        _inverseMatrix = AM_LookAt_RH(_location, _location + _direction, _up);
+        _inverseMatrix = _orientation.GetLookAtMatrix(_location);
     }
 
     void EntityInternalState::SetObstruction(AmReal32 obstruction)

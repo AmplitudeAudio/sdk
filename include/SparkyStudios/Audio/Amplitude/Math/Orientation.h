@@ -128,6 +128,22 @@ namespace SparkyStudios::Audio::Amplitude
             return _quaternion;
         }
 
+        /**
+         * @brief Converts the orientation to a rotation matrix.
+         *
+         * @return A rotation matrix representing the current orientation.
+         */
+        [[nodiscard]] AmMat4 GetRotationMatrix() const;
+
+        /**
+         * @brief Converts the orientation to a look-at matrix.
+         *
+         * @param eye The eye's location.
+         *
+         * @return A look-at matrix representing the current orientation, with the eye at the given location.
+         */
+        [[nodiscard]] AmMat4 GetLookAtMatrix(AmVec3 eye) const;
+
     private:
         void ComputeForwardAndUpVectors();
         void ComputeZYXAngles();

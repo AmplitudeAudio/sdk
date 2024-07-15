@@ -684,9 +684,6 @@ namespace SparkyStudios::Audio::Amplitude
         // Samples per streams
         _state->samples_per_stream = config->output()->buffer_size() / config->output()->channels();
 
-        // Set the game engine up axis
-        _state->up_axis = static_cast<GameEngineUpAxis>(config->game()->up_axis());
-
         // Save obstruction/occlusion configurations
         _state->obstruction_config.Init(config->game()->obstruction());
         _state->occlusion_config.Init(config->game()->occlusion());
@@ -1034,21 +1031,10 @@ namespace SparkyStudios::Audio::Amplitude
     AmVec2 CalculatePan(const AmVec3& listenerSpaceLocation)
     {
         if (AM_LenSqr(listenerSpaceLocation) <= kEpsilon)
-        {
             return AM_V2(0.0f, 0.0f);
-        }
 
         const AmVec3 direction = AM_Norm(listenerSpaceLocation);
-
-        switch (amEngine->GetState()->up_axis)
-        {
-        default:
-        case eUpAxis_Y:
-            return AM_V2(AM_Dot(AM_V3(1, 0, 0), direction), AM_Dot(AM_V3(0, 0, 1), direction));
-
-        case eUpAxis_Z:
-            return AM_V2(AM_Dot(AM_V3(1, 0, 0), direction), AM_Dot(AM_V3(0, 1, 0), direction));
-        }
+        return AM_V2(AM_Dot(AM_V3(1, 0, 0), direction), AM_Dot(AM_V3(0, 1, 0), direction));
     }
 
     static void CalculateGainPanPitch(

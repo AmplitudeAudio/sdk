@@ -17,7 +17,7 @@
 #ifndef SPARK_AUDIO_LISTENER_H
 #define SPARK_AUDIO_LISTENER_H
 
-#include <SparkyStudios/Audio/Amplitude/Core/Common.h>
+#include <SparkyStudios/Audio/Amplitude/Math/Orientation.h>
 
 namespace SparkyStudios::Audio::Amplitude
 {
@@ -88,12 +88,32 @@ namespace SparkyStudios::Audio::Amplitude
         void SetLocation(const AmVec3& location) const;
 
         /**
+         * @brief Get the direction vector of the Listener.
+         *
+         * @return The direction vector.
+         */
+        [[nodiscard]] AmVec3 GetDirection() const;
+
+        /**
+         * @brief Get the up vector of the Listener.
+         *
+         * @return The up vector.
+         */
+        [[nodiscard]] AmVec3 GetUp() const;
+
+        /**
          * @brief Set the location, direction and up vector of this Listener.
          *
-         * @param direction The direction of this Listener.
-         * @param up THe up vector of this Listener.
+         * @param orientation The new orientation of this Listener.
          */
-        void SetOrientation(const AmVec3& direction, const AmVec3& up) const;
+        void SetOrientation(const Orientation& orientation) const;
+
+        /**
+         * @brief Get the orientation of the Listener.
+         *
+         * @return The orientation of this Listener.
+         */
+        [[nodiscard]] Orientation GetOrientation() const;
 
         /**
          * @brief Update the state of this Listener.

@@ -24,8 +24,6 @@
 
 namespace SparkyStudios::Audio::Amplitude
 {
-    typedef fplutil::intrusive_list<ChannelInternalState> ChannelList;
-
     class EntityInternalState
     {
     public:
@@ -69,24 +67,30 @@ namespace SparkyStudios::Audio::Amplitude
         /**
          * @brief Sets the orientation of this Entity.
          *
-         * @param direction The direction towards the Entity.
-         * @param up The up vector.
+         * @param orientation
          */
-        void SetOrientation(const AmVec3& direction, const AmVec3& up);
+        void SetOrientation(const Orientation& orientation);
 
         /**
          * @brief Get the direction vector of the Entity.
          *
          * @return The direction vector.
          */
-        [[nodiscard]] const AmVec3& GetDirection() const;
+        [[nodiscard]] AmVec3 GetDirection() const;
 
         /**
          * @brief Get the up vector of the Entity.
          *
          * @return The up vector.
          */
-        [[nodiscard]] const AmVec3& GetUp() const;
+        [[nodiscard]] AmVec3 GetUp() const;
+
+        /**
+         * @brief Get the right vector of the Entity.
+         *
+         * @return The orientation of this Entity.
+         */
+        [[nodiscard]] const Orientation& GetOrientation() const;
 
         /**
          * @brief Returns the inverse transformation matrix of this Entity.
@@ -176,8 +180,7 @@ namespace SparkyStudios::Audio::Amplitude
         AmVec3 _velocity;
 
         AmVec3 _location;
-        AmVec3 _direction;
-        AmVec3 _up;
+        Orientation _orientation;
 
         AmMat4 _inverseMatrix;
 

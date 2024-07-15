@@ -59,8 +59,7 @@ namespace SparkyStudios::Audio::Amplitude
 
     Shape::Shape()
         : m_location()
-        , m_direction()
-        , m_up()
+        , m_orientation(Orientation::Zero())
         , m_lookAtMatrix(AM_M4D(1.0f))
         , m_needUpdate(true)
     {}
@@ -91,17 +90,21 @@ namespace SparkyStudios::Audio::Amplitude
     {
         m_location = location;
 
-        m_lookAtMatrix = AM_LookAt_RH(m_location, m_location + m_direction, m_up);
+        m_lookAtMatrix = m_orientation.GetLookAtMatrix(m_location);
         m_needUpdate = true;
     }
 
-    void Shape::SetOrientation(const AmVec3& direction, const AmVec3& up)
+    void Shape::SetOrientation(const Orientation& orientation)
     {
-        m_direction = direction;
-        m_up = up;
+        m_orientation = orientation;
 
-        m_lookAtMatrix = AM_LookAt_RH(m_location, m_location + m_direction, m_up);
+        m_lookAtMatrix = m_orientation.GetLookAtMatrix(m_location);
         m_needUpdate = true;
+    }
+
+    const Orientation& Shape::GetOrientation() const
+    {
+        return m_orientation;
     }
 
     const AmMat4& Shape::GetLookAt() const
@@ -114,14 +117,14 @@ namespace SparkyStudios::Audio::Amplitude
         return m_location;
     }
 
-    const AmVec3& Shape::GetDirection() const
+    AmVec3 Shape::GetDirection() const
     {
-        return m_direction;
+        return m_orientation.GetForward();
     }
 
-    const AmVec3& Shape::GetUp() const
+    AmVec3 Shape::GetUp() const
     {
-        return m_up;
+        return m_orientation.GetUp();
     }
 
     Zone::Zone(Shape* inner, Shape* outer)
@@ -140,20 +143,25 @@ namespace SparkyStudios::Audio::Amplitude
         return m_innerShape->GetLocation();
     }
 
-    const AmVec3& Zone::GetDirection() const
+    AmVec3 Zone::GetDirection() const
     {
         return m_innerShape->GetDirection();
     }
 
-    const AmVec3& Zone::GetUp() const
+    AmVec3 Zone::GetUp() const
     {
         return m_innerShape->GetUp();
     }
 
-    void Zone::SetOrientation(const AmVec3& direction, const AmVec3& up)
+    void Zone::SetOrientation(const Orientation& orientation)
     {
-        m_innerShape->SetOrientation(direction, up);
-        m_outerShape->SetOrientation(direction, up);
+        m_innerShape->SetOrientation(orientation);
+        m_outerShape->SetOrientation(orientation);
+    }
+
+    const Orientation& Zone::GetOrientation() const
+    {
+        return m_innerShape->GetOrientation();
     }
 
     BoxShape* BoxShape::Create(const BoxShapeDefinition* definition)
@@ -233,34 +241,14 @@ namespace SparkyStudios::Audio::Amplitude
         if (m_needUpdate)
             _update();
 
-        switch (amEngine->GetState()->up_axis)
-        {
-        default:
-            [[fallthrough]];
-        case eUpAxis_Y:
-            {
-                const AmReal32 dP1 = AM_Dot(location - _p1, AM_Norm(_p2 - _p1));
-                const AmReal32 dP2 = AM_Dot(location - _p2, AM_Norm(_p1 - _p2));
-                const AmReal32 dP3 = AM_Dot(location - _p3, AM_Norm(_p1 - _p3));
-                const AmReal32 dP4 = AM_Dot(location - _p4, AM_Norm(_p1 - _p4));
-                const AmReal32 dP5 = AM_Dot(location - _p1, AM_Norm(_p3 - _p1));
-                const AmReal32 dP6 = AM_Dot(location - _p1, AM_Norm(_p4 - _p1));
+        const AmReal32 dP1 = AM_Dot(location - _p1, AM_Norm(_p2 - _p1));
+        const AmReal32 dP2 = AM_Dot(location - _p2, AM_Norm(_p1 - _p2));
+        const AmReal32 dP3 = AM_Dot(location - _p3, AM_Norm(_p1 - _p3));
+        const AmReal32 dP4 = AM_Dot(location - _p4, AM_Norm(_p1 - _p4));
+        const AmReal32 dP5 = AM_Dot(location - _p1, AM_Norm(_p3 - _p1));
+        const AmReal32 dP6 = AM_Dot(location - _p1, AM_Norm(_p4 - _p1));
 
-                return AM_MIN(dP1, AM_MIN(dP2, AM_MIN(dP3, AM_MIN(dP4, AM_MIN(dP5, dP6)))));
-            }
-
-        case eUpAxis_Z:
-            {
-                const AmReal32 dP1 = AM_Dot(location - _p1, AM_Norm(_p2 - _p1));
-                const AmReal32 dP2 = AM_Dot(location - _p2, AM_Norm(_p1 - _p2));
-                const AmReal32 dP3 = AM_Dot(location - _p3, AM_Norm(_p1 - _p3));
-                const AmReal32 dP4 = AM_Dot(location - _p4, AM_Norm(_p1 - _p4));
-                const AmReal32 dP5 = AM_Dot(location - _p1, AM_Norm(_p3 - _p1));
-                const AmReal32 dP6 = AM_Dot(location - _p1, AM_Norm(_p4 - _p1));
-
-                return AM_MIN(dP1, AM_MIN(dP2, AM_MIN(dP3, AM_MIN(dP4, AM_MIN(dP5, dP6)))));
-            }
-        }
+        return AM_MIN(dP1, AM_MIN(dP2, AM_MIN(dP3, AM_MIN(dP4, AM_MIN(dP5, dP6)))));
     }
 
     bool BoxShape::Contains(const AmVec3& location)
@@ -280,23 +268,10 @@ namespace SparkyStudios::Audio::Amplitude
 
     void BoxShape::_update()
     {
-        switch (amEngine->GetState()->up_axis)
-        {
-        default:
-        case eUpAxis_Y:
-            _p1 = AM_Mul(m_lookAtMatrix, AM_V4(-_halfWidth, -_halfHeight, -_halfDepth, 1.0f)).XYZ;
-            _p2 = AM_Mul(m_lookAtMatrix, AM_V4(-_halfWidth, -_halfHeight, _halfDepth, 1.0f)).XYZ;
-            _p3 = AM_Mul(m_lookAtMatrix, AM_V4(_halfWidth, -_halfHeight, -_halfDepth, 1.0f)).XYZ;
-            _p4 = AM_Mul(m_lookAtMatrix, AM_V4(-_halfWidth, _halfHeight, -_halfDepth, 1.0f)).XYZ;
-            break;
-
-        case eUpAxis_Z:
-            _p1 = AM_Mul(m_lookAtMatrix, AM_V4(-_halfWidth, -_halfDepth, -_halfHeight, 1.0f)).XYZ;
-            _p2 = AM_Mul(m_lookAtMatrix, AM_V4(-_halfWidth, _halfDepth, -_halfHeight, 1.0f)).XYZ;
-            _p3 = AM_Mul(m_lookAtMatrix, AM_V4(_halfWidth, -_halfDepth, -_halfHeight, 1.0f)).XYZ;
-            _p4 = AM_Mul(m_lookAtMatrix, AM_V4(-_halfWidth, -_halfDepth, _halfHeight, 1.0f)).XYZ;
-            break;
-        }
+        _p1 = AM_Mul(m_lookAtMatrix, AM_V4(-_halfWidth, -_halfDepth, -_halfHeight, 1.0f)).XYZ;
+        _p2 = AM_Mul(m_lookAtMatrix, AM_V4(-_halfWidth, _halfDepth, -_halfHeight, 1.0f)).XYZ;
+        _p3 = AM_Mul(m_lookAtMatrix, AM_V4(_halfWidth, -_halfDepth, -_halfHeight, 1.0f)).XYZ;
+        _p4 = AM_Mul(m_lookAtMatrix, AM_V4(-_halfWidth, -_halfDepth, _halfHeight, 1.0f)).XYZ;
 
         _u = AM_Norm(_p2 - _p1);
         _v = AM_Norm(_p3 - _p1);
@@ -413,19 +388,8 @@ namespace SparkyStudios::Audio::Amplitude
     {
         const AmReal32 halfHeight = _halfHeight - _radius;
 
-        switch (amEngine->GetState()->up_axis)
-        {
-        default:
-        case eUpAxis_Y:
-            _a = AM_Mul(m_lookAtMatrix, AM_V4(0.0f, halfHeight, 0.0f, 1.0f)).XYZ;
-            _b = AM_Mul(m_lookAtMatrix, AM_V4(0.0f, -halfHeight, 0.0f, 1.0f)).XYZ;
-            break;
-
-        case eUpAxis_Z:
-            _a = AM_Mul(m_lookAtMatrix, AM_V4(0.0f, 0.0f, halfHeight, 1.0f)).XYZ;
-            _b = AM_Mul(m_lookAtMatrix, AM_V4(0.0f, 0.0f, -halfHeight, 1.0f)).XYZ;
-            break;
-        }
+        _a = AM_Mul(m_lookAtMatrix, AM_V4(0.0f, 0.0f, halfHeight, 1.0f)).XYZ;
+        _b = AM_Mul(m_lookAtMatrix, AM_V4(0.0f, 0.0f, -halfHeight, 1.0f)).XYZ;
     }
 
     ConeShape* ConeShape::Create(const ConeShapeDefinition* definition)
@@ -471,13 +435,13 @@ namespace SparkyStudios::Audio::Amplitude
             Update();
 
         const AmVec3& shapeToLocation = location - m_location;
-        const AmReal32 coneDist = AM_Dot(shapeToLocation, m_direction);
+        const AmReal32 coneDist = AM_Dot(shapeToLocation, m_orientation.GetForward());
 
         if (coneDist < 0.0f || coneDist > _height)
             return false;
 
         const AmReal32 coneRadius = coneDist / _height * _radius;
-        const AmReal32 d = AM_Len(shapeToLocation - coneDist * m_direction);
+        const AmReal32 d = AM_Len(shapeToLocation - coneDist * m_orientation.GetForward());
 
         return coneRadius - d;
     }
@@ -488,18 +452,15 @@ namespace SparkyStudios::Audio::Amplitude
             Update();
 
         const AmVec3& shapeToLocation = location - m_location;
-        const AmReal32 coneDist = AM_Dot(shapeToLocation, m_direction);
+        const AmReal32 coneDist = AM_Dot(shapeToLocation, m_orientation.GetForward());
 
         if (coneDist < 0.0f || coneDist > _height)
             return false;
 
         const AmReal32 coneRadius = coneDist / _height * _radius;
-        const AmReal32 d = AM_Len(shapeToLocation - coneDist * m_direction);
+        const AmReal32 d = AM_Len(shapeToLocation - coneDist * m_orientation.GetForward());
 
-        if (d <= coneRadius)
-            return true;
-
-        return false;
+        return d <= coneRadius;
     }
 
     void ConeShape::Update()
@@ -577,8 +538,6 @@ namespace SparkyStudios::Audio::Amplitude
         if (outer->m_needUpdate)
             outer->_update();
 
-        const GameEngineUpAxis upAxis = amEngine->GetState()->up_axis;
-
         const AmVec3& x = position;
 
         const AmReal32 iUX = AM_Dot(inner->_u, x);
@@ -597,51 +556,22 @@ namespace SparkyStudios::Audio::Amplitude
               AM_BETWEEN(oWX, outer->_wP1, outer->_wP4)))
             return 0.0f;
 
-        switch (upAxis)
-        {
-        default:
-        case eUpAxis_Y:
-            {
-                const AmReal32 dP1 =
-                    AM_ABS(AM_Dot(x - outer->_p1, AM_Norm(outer->_p2 - outer->_p1))) / (outer->GetHalfDepth() - inner->GetHalfDepth());
-                const AmReal32 dP2 =
-                    AM_ABS(AM_Dot(x - outer->_p2, AM_Norm(outer->_p1 - outer->_p2))) / (outer->GetHalfDepth() - inner->GetHalfDepth());
-                const AmReal32 dP3 =
-                    AM_ABS(AM_Dot(x - outer->_p3, AM_Norm(outer->_p1 - outer->_p3))) / (outer->GetHalfWidth() - inner->GetHalfWidth());
-                const AmReal32 dP4 =
-                    AM_ABS(AM_Dot(x - outer->_p4, AM_Norm(outer->_p1 - outer->_p4))) / (outer->GetHalfHeight() - inner->GetHalfHeight());
-                const AmReal32 dP5 =
-                    AM_ABS(AM_Dot(x - outer->_p1, AM_Norm(outer->_p3 - outer->_p1))) / (outer->GetHalfWidth() - inner->GetHalfWidth());
-                const AmReal32 dP6 =
-                    AM_ABS(AM_Dot(x - outer->_p1, AM_Norm(outer->_p4 - outer->_p1))) / (outer->GetHalfHeight() - inner->GetHalfHeight());
+        const AmReal32 dP1 =
+            AM_ABS(AM_Dot(x - outer->_p1, AM_Norm(outer->_p2 - outer->_p1))) / (outer->GetHalfHeight() - inner->GetHalfHeight());
+        const AmReal32 dP2 =
+            AM_ABS(AM_Dot(x - outer->_p2, AM_Norm(outer->_p1 - outer->_p2))) / (outer->GetHalfHeight() - inner->GetHalfHeight());
+        const AmReal32 dP3 =
+            AM_ABS(AM_Dot(x - outer->_p3, AM_Norm(outer->_p1 - outer->_p3))) / (outer->GetHalfWidth() - inner->GetHalfWidth());
+        const AmReal32 dP4 =
+            AM_ABS(AM_Dot(x - outer->_p4, AM_Norm(outer->_p1 - outer->_p4))) / (outer->GetHalfDepth() - inner->GetHalfDepth());
+        const AmReal32 dP5 =
+            AM_ABS(AM_Dot(x - outer->_p1, AM_Norm(outer->_p3 - outer->_p1))) / (outer->GetHalfWidth() - inner->GetHalfWidth());
+        const AmReal32 dP6 =
+            AM_ABS(AM_Dot(x - outer->_p1, AM_Norm(outer->_p4 - outer->_p1))) / (outer->GetHalfDepth() - inner->GetHalfDepth());
 
-                const AmReal32 shortestPath = AM_MIN(dP1, AM_MIN(dP2, AM_MIN(dP3, AM_MIN(dP4, AM_MIN(dP5, dP6)))));
+        const AmReal32 shortestPath = AM_MIN(dP1, AM_MIN(dP2, AM_MIN(dP3, AM_MIN(dP4, AM_MIN(dP5, dP6)))));
 
-                return AM_CLAMP(shortestPath, 0.0f, 1.0f);
-            }
-
-        case eUpAxis_Z:
-            {
-                const AmReal32 dP1 =
-                    AM_ABS(AM_Dot(x - outer->_p1, AM_Norm(outer->_p2 - outer->_p1))) / (outer->GetHalfHeight() - inner->GetHalfHeight());
-                const AmReal32 dP2 =
-                    AM_ABS(AM_Dot(x - outer->_p2, AM_Norm(outer->_p1 - outer->_p2))) / (outer->GetHalfHeight() - inner->GetHalfHeight());
-                const AmReal32 dP3 =
-                    AM_ABS(AM_Dot(x - outer->_p3, AM_Norm(outer->_p1 - outer->_p3))) / (outer->GetHalfWidth() - inner->GetHalfWidth());
-                const AmReal32 dP4 =
-                    AM_ABS(AM_Dot(x - outer->_p4, AM_Norm(outer->_p1 - outer->_p4))) / (outer->GetHalfDepth() - inner->GetHalfDepth());
-                const AmReal32 dP5 =
-                    AM_ABS(AM_Dot(x - outer->_p1, AM_Norm(outer->_p3 - outer->_p1))) / (outer->GetHalfWidth() - inner->GetHalfWidth());
-                const AmReal32 dP6 =
-                    AM_ABS(AM_Dot(x - outer->_p1, AM_Norm(outer->_p4 - outer->_p1))) / (outer->GetHalfDepth() - inner->GetHalfDepth());
-
-                const AmReal32 shortestPath = AM_MIN(dP1, AM_MIN(dP2, AM_MIN(dP3, AM_MIN(dP4, AM_MIN(dP5, dP6)))));
-
-                return AM_CLAMP(shortestPath, 0.0f, 1.0f);
-            }
-        }
-
-        return 0.0f;
+        return AM_CLAMP(shortestPath, 0.0f, 1.0f);
     }
 
     CapsuleZone::CapsuleZone(CapsuleShape* inner, CapsuleShape* outer)
@@ -658,8 +588,6 @@ namespace SparkyStudios::Audio::Amplitude
 
         if (outer->m_needUpdate)
             outer->Update();
-
-        const GameEngineUpAxis upAxis = amEngine->GetState()->up_axis;
 
         const AmVec3& x = position;
 
@@ -714,8 +642,6 @@ namespace SparkyStudios::Audio::Amplitude
 
         if (outer->m_needUpdate)
             outer->Update();
-
-        const GameEngineUpAxis upAxis = amEngine->GetState()->up_axis;
 
         const AmVec3& soundToListener = position - inner->GetLocation();
         const AmReal32 distance = AM_Len(soundToListener);

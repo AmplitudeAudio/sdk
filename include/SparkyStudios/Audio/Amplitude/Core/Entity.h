@@ -17,7 +17,7 @@
 #ifndef SS_AMPLITUDE_AUDIO_ENTITY_H
 #define SS_AMPLITUDE_AUDIO_ENTITY_H
 
-#include <SparkyStudios/Audio/Amplitude/Core/Common.h>
+#include <SparkyStudios/Audio/Amplitude/Math/Orientation.h>
 
 namespace SparkyStudios::Audio::Amplitude
 {
@@ -91,24 +91,30 @@ namespace SparkyStudios::Audio::Amplitude
         /**
          * @brief Sets the orientation of this Entity.
          *
-         * @param direction The direction towards the Entity.
-         * @param up The up vector.
+         * @param orientation The new orientation.
          */
-        void SetOrientation(const AmVec3& direction, const AmVec3& up) const;
+        void SetOrientation(const Orientation& orientation) const;
 
         /**
          * @brief Get the direction vector of the Entity.
          *
          * @return The direction vector.
          */
-        [[nodiscard]] const AmVec3& GetDirection() const;
+        [[nodiscard]] AmVec3 GetDirection() const;
 
         /**
          * @brief Get the up vector of the Entity.
          *
          * @return The up vector.
          */
-        [[nodiscard]] const AmVec3& GetUp() const;
+        [[nodiscard]] AmVec3 GetUp() const;
+
+        /**
+         * @brief Get the orientation of the Entity.
+         *
+         * @return The entity's orientation.
+         */
+        [[nodiscard]] const Orientation& GetOrientation() const;
 
         /**
          * @brief Update the state of this Entity.

@@ -86,24 +86,30 @@ namespace SparkyStudios::Audio::Amplitude
         /**
          * @brief Sets the orientation of this Environment.
          *
-         * @param direction The direction towards the Environment.
-         * @param up The up vector.
+         * @param orientation The new orientation.
          */
-        void SetOrientation(const AmVec3& direction, const AmVec3& up) const;
+        void SetOrientation(const Orientation& orientation) const;
+
+        /**
+         * @brief Gets the current orientation of this Environment.
+         *
+         * @return The current orientation of this Environment.
+         */
+        [[nodiscard]] const Orientation& GetOrientation() const;
 
         /**
          * @brief Get the direction vector of the Environment.
          *
          * @return The direction vector.
          */
-        [[nodiscard]] const AmVec3& GetDirection() const;
+        [[nodiscard]] AmVec3 GetDirection() const;
 
         /**
          * @brief Get the up vector of the Environment.
          *
          * @return The up vector.
          */
-        [[nodiscard]] const AmVec3& GetUp() const;
+        [[nodiscard]] AmVec3 GetUp() const;
 
         /**
          * @brief Get the Environment factor for the given location.

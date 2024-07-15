@@ -110,11 +110,6 @@ namespace SparkyStudios::Audio::Amplitude
             _sound->GetBus().GetState()->GetPlayingSoundList().push_front(*this);
     }
 
-    Sound* ChannelInternalState::GetSound() const
-    {
-        return _sound;
-    }
-
     void ChannelInternalState::SetEntity(const Entity& entity)
     {
         if (_entity.Valid())

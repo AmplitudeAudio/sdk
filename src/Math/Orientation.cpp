@@ -53,6 +53,20 @@ namespace SparkyStudios::Audio::Amplitude
         ComputeQuaternion();
     }
 
+    AmMat4 Orientation::GetRotationMatrix() const
+    {
+        const AmMat4 rZ = AM_Rotate_RH(_yaw, AM_V3(0, 0, 1));
+        const AmMat4 rY = AM_Rotate_RH(_pitch, AM_V3(0, 1, 0));
+        const AmMat4 rX = AM_Rotate_RH(_roll, AM_V3(1, 0, 0));
+
+        return rZ * rY * rX;
+    }
+
+    AmMat4 Orientation::GetLookAtMatrix(AmVec3 eye) const
+    {
+        return AM_LookAt_RH(eye, eye + _forward, _up);
+    }
+
     void Orientation::ComputeForwardAndUpVectors()
     {
         _forward.X = std::sin(_yaw) * std::cos(_pitch);
@@ -122,12 +136,6 @@ namespace SparkyStudios::Audio::Amplitude
 
     void Orientation::ComputeQuaternion()
     {
-        const AmMat4 rZ = AM_Rotate_LH(_yaw, AM_V3(0, 0, 1));
-        const AmMat4 rY = AM_Rotate_LH(_pitch, AM_V3(0, 1, 0));
-        const AmMat4 rX = AM_Rotate_LH(_roll, AM_V3(1, 0, 0));
-
-        const AmMat4 rZYX = rZ * rY * rX;
-
-        _quaternion = AM_M4ToQ_LH(rZYX);
+        _quaternion = AM_M4ToQ_RH(GetRotationMatrix());
     }
 } // namespace SparkyStudios::Audio::Amplitude

@@ -141,7 +141,6 @@ namespace SparkyStudios::Audio::Amplitude
             , listener_fetch_mode(eListenerFetchMode_None)
             , sound_speed(333.0)
             , doppler_factor(1.0)
-            , up_axis(eUpAxis_Y)
             , obstruction_config()
             , occlusion_config()
             , track_environments(false)
@@ -264,9 +263,6 @@ namespace SparkyStudios::Audio::Amplitude
         AmReal32 sound_speed;
 
         AmReal32 doppler_factor;
-
-        // The up axis of the game engine.
-        GameEngineUpAxis up_axis;
 
         ObstructionOcclusionState obstruction_config;
 
