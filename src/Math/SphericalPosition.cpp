@@ -50,8 +50,8 @@ namespace SparkyStudios::Audio::Amplitude
     AmVec3 SphericalPosition::ToCartesian() const
     {
         // Translates spherical to cartesian, where positive Z - up, positive Y - forward, positive X - right
-        const AmReal32 x = _radius * std::cos(_elevation) * std::cos(_azimuth);
-        const AmReal32 y = _radius * std::cos(_elevation) * std::sin(_azimuth);
+        const AmReal32 x = _radius * std::cos(_elevation) * std::sin(_azimuth);
+        const AmReal32 y = _radius * std::cos(_elevation) * std::cos(_azimuth);
         const AmReal32 z = _radius * std::sin(_elevation);
 
         return AM_V3(x, y, z);

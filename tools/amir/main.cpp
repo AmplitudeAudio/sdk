@@ -101,16 +101,16 @@ int parseFileName_IRCAM(const AmOsString& fileName, SphericalPosition& position)
         return EXIT_FAILURE;
     }
 
-    // azimuth in degrees 3 digits, we need 90 deg offset so that the angle is relative to z-axis,
-    // - from 000 to 180 for source on your left,
+    // azimuth in degrees 3 digits, we need to negate so that the angle is relative to positive z-axis
+    // - from 000 to 180 for source on your left
     // - from 180 to 359 for source on your right
-    const auto azimuth = static_cast<AmReal32>(std::atof(fileName.substr(azimuth_location + 2, 3).c_str()));
+    const auto azimuth = -std::strtof(fileName.substr(azimuth_location + 2, 3).c_str(), nullptr);
 
-    // elevation in degrees, modulo 360, 3 digits,
-    // - from 315 to 345 for source below your head,
-    // - 0 for source in front of your head,
+    // elevation in degrees, modulo 360, 3 digits
+    // - from 315 to 345 for source below your head
+    // - 0 for source in front of your head
     // - from 015 to 090 for source above your head
-    const auto elevation = static_cast<AmReal32>(std::atof(fileName.substr(elevation_location + 2, 3).c_str()));
+    const auto elevation = std::strtof(fileName.substr(elevation_location + 2, 3).c_str(), nullptr);
 
     position = SphericalPosition::FromDegrees(azimuth, elevation);
     return EXIT_SUCCESS;
@@ -138,17 +138,47 @@ int parseFileName_MIT(const AmOsString& fileName, SphericalPosition& position)
     for (AmSize el = elevation_location + 1; el < azimuth_location; ++el)
         elevationString += fileName[el];
 
-    // azimuth in degrees 3 digits, we need to negate so that the angle is relative to positive z-axis,
-    // - from 000 to 180 for source on your left,
+    // azimuth in degrees 3 digits, we need to negate so that the angle is relative to positive z-axis
+    // - from 000 to 180 for source on your left
     // - from 180 to 359 for source on your right
     const auto azimuth = -std::strtof(azimuthString.c_str(), nullptr);
 
-    // azimuth in degrees 3 digits, we need 90 deg offset so that the angle is relative to z-axis,
-    // - from 000 to 180 for source on your left,
-    // - from 180 to 359 for source on your right
+    // elevation in degrees 2 digits
+    // - from -15 to -40 for source below your head
+    // - 0 for source in front of your head
+    // - from 15 to 90 for source above your head
     const auto elevation = std::strtof(elevationString.c_str(), nullptr);
 
     position = SphericalPosition(azimuth * AM_DegToRad, elevation * AM_DegToRad, 1.0);
+    return EXIT_SUCCESS;
+}
+
+int parseFileName_SADIE(const AmOsString& fileName, SphericalPosition& position)
+{
+    const auto azimuth_location = fileName.find(AM_OS_STRING("azi_"));
+    if (azimuth_location == AmOsString::npos)
+    {
+        return EXIT_FAILURE;
+    }
+
+    const auto elevation_location = fileName.find(AM_OS_STRING("_ele_"));
+    if (elevation_location == AmOsString::npos)
+    {
+        return EXIT_FAILURE;
+    }
+
+    // azimuth in degrees, we need to negate so that the angle is relative to positive z-axis
+    // - from 000 to 180 for source on your left
+    // - from 180 to 359 for source on your right
+    const auto azimuth = std::strtof(fileName.substr(azimuth_location + 4, elevation_location - (azimuth_location + 4)).c_str(), nullptr);
+
+    // elevation in degrees
+    // - from -15 to -81 for source below your head
+    // - 0 for source in front of your head
+    // - from 15 to 90 for source above your head
+    const auto elevation = std::strtof(fileName.substr(elevation_location + 5).c_str(), nullptr);
+
+    position = SphericalPosition::FromDegrees(azimuth, elevation);
     return EXIT_SUCCESS;
 }
 
@@ -223,7 +253,14 @@ static int process(const AmOsString& inFileName, const AmOsString& outFileName, 
             return EXIT_FAILURE;
         }
 
-        const AmUInt32 max = state.datasetModel == eHRIRSphereDatasetModel_IRCAM ? 1 : 2;
+        if (state.datasetModel == eHRIRSphereDatasetModel_SADIE &&
+            parseFileName_SADIE(entry.filename().native(), spherical) == EXIT_FAILURE)
+        {
+            log(stderr, "Invalid file name: %s.\n", path.c_str());
+            return EXIT_FAILURE;
+        }
+
+        const AmUInt32 max = state.datasetModel == eHRIRSphereDatasetModel_MIT ? 2 : 1;
         for (AmUInt32 i = 0; i < max; ++i)
         {
             if (i == 1 && (spherical.GetAzimuth() == -AM_PI32 || spherical.GetAzimuth() == AM_PI32))
@@ -278,6 +315,7 @@ static int process(const AmOsString& inFileName, const AmOsString& outFileName, 
         }
     }
 
+    log(stdout, "Building mesh...\n");
     triangulate(vertices, indices, state.debug);
 
     // Header

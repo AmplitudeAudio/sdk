@@ -14,8 +14,8 @@
 
 #pragma once
 
-#ifndef SS_AMPLITUDE_AUDIO_HRTF_HRIRSPHERE_H
-#define SS_AMPLITUDE_AUDIO_HRTF_HRIRSPHERE_H
+#ifndef _AM_HRTF_HRIRSPHERE_H
+#define _AM_HRTF_HRIRSPHERE_H
 
 #include <SparkyStudios/Audio/Amplitude/Core/Common.h>
 #include <SparkyStudios/Audio/Amplitude/IO/File.h>
@@ -36,9 +36,15 @@ namespace SparkyStudios::Audio::Amplitude
 
         /**
          * @brief The HRIR sphere uses data from the MIT (KEMAR) dataset.
-         *(http://sound.media.mit.edu/resources/KEMAR.html).
+         * (http://sound.media.mit.edu/resources/KEMAR.html).
          */
         eHRIRSphereDatasetModel_MIT = 1,
+
+        /**
+         * @brief The HRIR sphere uses data from the SADIE II dataset.
+         * (https://www.york.ac.uk/sadie-project/database.html).
+         */
+        eHRIRSphereDatasetModel_SADIE = 2,
 
         /**
          * @brief Invalid HRIR sphere dataset model.
@@ -141,4 +147,4 @@ namespace SparkyStudios::Audio::Amplitude
     };
 } // namespace SparkyStudios::Audio::Amplitude
 
-#endif // SS_AMPLITUDE_AUDIO_HRTF_HRIRSPHERE_H
+#endif // _AM_HRTF_HRIRSPHERE_H
