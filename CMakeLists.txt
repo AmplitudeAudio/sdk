@@ -174,6 +174,7 @@ set(SA_SOURCE
     include/SparkyStudios/Audio/Amplitude/Math/Curve.h
     include/SparkyStudios/Audio/Amplitude/Math/FFT.h
     include/SparkyStudios/Audio/Amplitude/Math/HandmadeMath.h
+    include/SparkyStudios/Audio/Amplitude/Math/Orientation.h
     include/SparkyStudios/Audio/Amplitude/Math/Shape.h
     include/SparkyStudios/Audio/Amplitude/Math/SphericalPosition.h
     include/SparkyStudios/Audio/Amplitude/Math/SplitComplex.h
@@ -256,6 +257,7 @@ set(SA_SOURCE
 
     src/Math/CartesianCoordinateSystem.cpp
     src/Math/Curve.cpp
+    src/Math/Orientation.cpp
     src/Math/FFT.cpp
     src/Math/Shape.cpp
     src/Math/SphericalPosition.cpp
