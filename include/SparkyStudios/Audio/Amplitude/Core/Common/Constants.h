@@ -14,8 +14,8 @@
 
 #pragma once
 
-#ifndef SS_AMPLITUDE_AUDIO_CONSTANTS_H
-#define SS_AMPLITUDE_AUDIO_CONSTANTS_H
+#ifndef _AM_CORE_COMMON_CONSTANTS_H
+#define _AM_CORE_COMMON_CONSTANTS_H
 
 #include <SparkyStudios/Audio/Amplitude/Core/Common/Types.h>
 
@@ -39,7 +39,7 @@ namespace SparkyStudios::Audio::Amplitude
     /**
      * @brief Minimum value where values lower than this are considered to be 0.
      */
-    constexpr AmReal32 kEpsilon = 0.0001f;
+    constexpr AmReal32 kEpsilon = 1e-6f;
 
     /**
      * @brief The minimum fade duration in milliseconds.
@@ -56,4 +56,4 @@ namespace SparkyStudios::Audio::Amplitude
     constexpr AmInt32 kAmFixedPointMask = (kAmFixedPointBits - 1);
 } // namespace SparkyStudios::Audio::Amplitude
 
-#endif // SS_AMPLITUDE_AUDIO_CONSTANTS_H
+#endif // _AM_CORE_COMMON_CONSTANTS_H

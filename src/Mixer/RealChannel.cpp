@@ -15,13 +15,14 @@
 #include <cassert>
 #include <cmath>
 
-#include <SparkyStudios/Audio/Amplitude/Core/Playback/Channel.h>
 #include <SparkyStudios/Audio/Amplitude/Core/Log.h>
+#include <SparkyStudios/Audio/Amplitude/Core/Playback/Channel.h>
 
 #include <SparkyStudios/Audio/Amplitude/Sound/Collection.h>
 
+#include <Core/Engine.h>
 #include <Core/Playback/ChannelInternalState.h>
-#include <Core/EngineInternalState.h>
+#include <Sound/Sound.h>
 
 #include <Mixer/RealChannel.h>
 
@@ -51,7 +52,7 @@ namespace SparkyStudios::Audio::Amplitude
     void RealChannel::Initialize(int i)
     {
         _channelId = i;
-        _mixer = &Engine::GetInstance()->GetState()->mixer;
+        _mixer = &amEngine->GetState()->mixer;
     }
 
     void RealChannel::MarkAsPlayed(const Sound* sound)
@@ -213,7 +214,7 @@ namespace SparkyStudios::Audio::Amplitude
         }
         else
         {
-            const CollectionPlayMode mode = collection->GetDefinition()->play_mode();
+            const CollectionPlayMode mode = static_cast<const CollectionImpl*>(collection)->GetDefinition()->play_mode();
 
             return mode == CollectionPlayMode_PlayOne && !_loop.at(layer) ? state == ePSF_PLAY
                 : mode == CollectionPlayMode_PlayOne && _loop.at(layer)   ? state == ePSF_LOOP
@@ -340,10 +341,10 @@ namespace SparkyStudios::Audio::Amplitude
 
         for (auto&& layer : _channelLayersId)
         {
-            if (layer.second == 0 || _activeSounds[layer.first] == nullptr)
+            if (layer.second == 0)
                 continue;
 
-            _activeSounds[layer.first]->SetObstruction(obstruction);
+            _mixer->SetObstruction(_channelId, layer.second, obstruction);
         }
     }
 
@@ -353,10 +354,10 @@ namespace SparkyStudios::Audio::Amplitude
 
         for (auto&& layer : _channelLayersId)
         {
-            if (layer.second == 0 || _activeSounds[layer.first] == nullptr)
+            if (layer.second == 0)
                 continue;
 
-            _activeSounds[layer.first]->SetOcclusion(occlusion);
+            _mixer->SetOcclusion(_channelId, layer.second, occlusion);
         }
     }
 

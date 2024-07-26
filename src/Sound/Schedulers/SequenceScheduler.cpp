@@ -12,10 +12,9 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include <SparkyStudios/Audio/Amplitude/Core/Engine.h>
-
 #include <SparkyStudios/Audio/Amplitude/Sound/Sound.h>
 
+#include <Core/Engine.h>
 #include <Sound/Schedulers/SequenceScheduler.h>
 
 #include "collection_definition_generated.h"

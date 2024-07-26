@@ -119,8 +119,7 @@ bool FlacCodec::FlacDecoder::Open(std::shared_ptr<File> file)
 {
     _file = file;
 
-    FLAC__StreamDecoderInitStatus init_status = _flac.init();
-    if (init_status != FLAC__STREAM_DECODER_INIT_STATUS_OK)
+    if (const FLAC__StreamDecoderInitStatus init_status = _flac.init(); init_status != FLAC__STREAM_DECODER_INIT_STATUS_OK)
     {
         _file.reset();
         amLogError("Initializing FLAC decoder: %s", FLAC__StreamDecoderInitStatusString[init_status]);

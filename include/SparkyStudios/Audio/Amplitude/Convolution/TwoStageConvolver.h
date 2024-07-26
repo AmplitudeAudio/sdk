@@ -17,15 +17,14 @@
 
 #pragma once
 
-#ifndef SS_AMPLITUDE_AUDIO_CONVOLUTION_TWO_STAGE_CONVOLVER_H
-#define SS_AMPLITUDE_AUDIO_CONVOLUTION_TWO_STAGE_CONVOLVER_H
+#ifndef _AM_CONVOLUTION_TWO_STAGE_CONVOLVER
+#define _AM_CONVOLUTION_TWO_STAGE_CONVOLVER
 
 #include <SparkyStudios/Audio/Amplitude/Convolution/Convolver.h>
 
-namespace SparkyStudios::Audio::Amplitude::Convolution
+namespace SparkyStudios::Audio::Amplitude
 {
     /**
-     * @class TwoStageConvolver
      * @brief FFT convolver using two different block sizes
      *
      * The 2-stage convolver consists internally of two convolvers:
@@ -67,7 +66,7 @@ namespace SparkyStudios::Audio::Amplitude::Convolution
          *
          * @return @c true on success, @c false otherwise.
          */
-        bool Init(size_t headBlockSize, size_t tailBlockSize, const AmAudioSample* ir, size_t irLen);
+        bool Init(AmSize headBlockSize, AmSize tailBlockSize, const AmAudioSample* ir, AmSize irLen);
 
         /**
          * @brief Convolves the the given input samples and immediately outputs the result
@@ -76,7 +75,7 @@ namespace SparkyStudios::Audio::Amplitude::Convolution
          * @param output The convolution result
          * @param len Number of input/output samples
          */
-        void Process(const AmAudioSample* input, AmAudioSample* output, size_t len);
+        void Process(const AmAudioSample* input, AmAudioSample* output, AmSize len);
 
         /**
          * @brief Resets the convolver and discards the set impulse response
@@ -107,8 +106,8 @@ namespace SparkyStudios::Audio::Amplitude::Convolution
         void DoBackgroundProcessing();
 
     private:
-        size_t _headBlockSize;
-        size_t _tailBlockSize;
+        AmSize _headBlockSize;
+        AmSize _tailBlockSize;
         Convolver _headConvolver;
         Convolver _tailConvolver0;
         AmAlignedReal32Buffer _tailOutput0;
@@ -117,10 +116,10 @@ namespace SparkyStudios::Audio::Amplitude::Convolution
         AmAlignedReal32Buffer _tailOutput;
         AmAlignedReal32Buffer _tailPrecalculated;
         AmAlignedReal32Buffer _tailInput;
-        size_t _tailInputFill;
-        size_t _precalculatedPos;
+        AmSize _tailInputFill;
+        AmSize _precalculatedPos;
         AmAlignedReal32Buffer _backgroundProcessingInput;
     };
 } // namespace SparkyStudios::Audio::Amplitude::Convolution
 
-#endif // SS_AMPLITUDE_AUDIO_CONVOLUTION_TWO_STAGE_CONVOLVER_H
+#endif // _AM_CONVOLUTION_TWO_STAGE_CONVOLVER

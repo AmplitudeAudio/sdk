@@ -14,8 +14,8 @@
 
 #pragma once
 
-#ifndef SS_AMPLITUDE_AUDIO_MATH_UTILS_H
-#define SS_AMPLITUDE_AUDIO_MATH_UTILS_H
+#ifndef _AM_MATH_UTILS_H
+#define _AM_MATH_UTILS_H
 
 #include <SparkyStudios/Audio/Amplitude/Core/Common.h>
 
@@ -53,19 +53,19 @@ namespace SparkyStudios::Audio::Amplitude
         AmInt32 state;
     } gLCG = { 4321 };
 
-    AM_API_PRIVATE AM_INLINE(float) AmDitherReal32(const AmReal32 ditherMin, const AmReal32 ditherMax)
+    AM_API_PRIVATE AM_INLINE float AmDitherReal32(const AmReal32 ditherMin, const AmReal32 ditherMax)
     {
         gLCG.state = (AM_LCG_A * gLCG.state + AM_LCG_C) % AM_LCG_M;
         const AmReal32 x = gLCG.state / (double)0x7FFFFFFF;
         return ditherMin + x * (ditherMax - ditherMin);
     }
 
-    AM_API_PRIVATE AM_INLINE(AmInt32) AmFloatToFixedPoint(const AmReal32 x)
+    AM_API_PRIVATE AM_INLINE AmInt32 AmFloatToFixedPoint(const AmReal32 x)
     {
         return static_cast<AmInt32>(x * kAmFixedPointUnit);
     }
 
-    AM_API_PRIVATE AM_INLINE(AmReal32) AmInt16ToReal32(const AmInt16 x)
+    AM_API_PRIVATE AM_INLINE AmReal32 AmInt16ToReal32(const AmInt16 x)
     {
         auto y = static_cast<AmReal32>(x);
 
@@ -82,7 +82,7 @@ namespace SparkyStudios::Audio::Amplitude
         return y;
     }
 
-    AM_API_PRIVATE AM_INLINE(AmReal32) AmInt32ToReal32(const AmInt32 x)
+    AM_API_PRIVATE AM_INLINE AmReal32 AmInt32ToReal32(const AmInt32 x)
     {
         auto y = static_cast<AmReal32>(x);
 
@@ -99,7 +99,7 @@ namespace SparkyStudios::Audio::Amplitude
         return y;
     }
 
-    AM_API_PRIVATE AM_INLINE(AmInt16) AmReal32ToInt16(const AmReal32 x, bool dithering = false)
+    AM_API_PRIVATE AM_INLINE AmInt16 AmReal32ToInt16(const AmReal32 x, bool dithering = false)
     {
         AmReal32 y = x;
 
@@ -109,7 +109,7 @@ namespace SparkyStudios::Audio::Amplitude
             y += AmDitherReal32(1.0f / INT16_MIN, 1.0f / INT16_MAX);
         }
 
-        y = AM_CLAMP(x, -1.0f, 1.0f);
+        y = AM_CLAMP(y, -1.0f, 1.0f);
 
 #if defined(AM_ACCURATE_CONVERSION)
         // The accurate way.
@@ -124,7 +124,7 @@ namespace SparkyStudios::Audio::Amplitude
         return static_cast<AmInt16>(y);
     }
 
-    AM_API_PRIVATE AM_INLINE(AmReal32)
+    AM_API_PRIVATE AM_INLINE AmReal32
         CatmullRom(const AmReal32 t, const AmReal32 p0, const AmReal32 p1, const AmReal32 p2, const AmReal32 p3)
     {
         // clang-format off
@@ -137,12 +137,12 @@ namespace SparkyStudios::Audio::Amplitude
         // clang-format on
     }
 
-    AM_API_PRIVATE AM_INLINE(AmReal32) ComputeDopplerFactor(
+    AM_API_PRIVATE AM_INLINE AmReal32 ComputeDopplerFactor(
         const AmVec3& locationDelta,
         const AmVec3& sourceVelocity,
         const AmVec3& listenerVelocity,
-        AmReal32 soundSpeed,
-        AmReal32 dopplerFactor)
+        const AmReal32 soundSpeed,
+        const AmReal32 dopplerFactor)
     {
         const AmReal32 deltaLength = AM_Len(locationDelta);
 
@@ -167,7 +167,7 @@ namespace SparkyStudios::Audio::Amplitude
      * @return The next power of 2.
      */
     template<typename T>
-    AM_API_PRIVATE T NextPowerOf2(const T& val)
+    AM_API_PRIVATE AM_INLINE T NextPowerOf2(const T& val)
     {
         T nextPowerOf2 = 1;
         while (nextPowerOf2 < val)
@@ -175,6 +175,52 @@ namespace SparkyStudios::Audio::Amplitude
 
         return nextPowerOf2;
     }
+
+    /**
+     * @brief Computes the value base^exp using the squared exponentiation method.
+     *
+     * @tparam T An integer type, a floating-point type, or a any other type where operatror *= is defined.
+     * @param base Input of the power function.
+     * @param exp The exponent of the power function. Must be non-negative.
+     *
+     * @return The result of raising the base to the power of the exponent.
+     */
+    template<typename T>
+    AM_API_PRIVATE AM_INLINE T IntegerPow(T base, AmInt32 exp)
+    {
+        AMPLITUDE_ASSERT(exp >= 0);
+        T result = static_cast<T>(1);
+
+        while (true)
+        {
+            if (exp & 1)
+                result *= base;
+
+            exp >>= 1;
+
+            if (!exp)
+                break;
+
+            base *= base;
+        }
+
+        return result;
+    }
+
+    /**
+     * @brief Returns a direction vector relative to a given position and rotation.
+     *
+     * @param originPosition Origin position of the direction.
+     * @param originRotation Origin rotation of the direction.
+     * @param position Target position of the direction.
+     *
+     * @return A relative direction vector (not normalized).
+     */
+    AM_API_PRIVATE AM_INLINE AmVec3
+        GetRelativeDirection(const AmVec3& originPosition, const AmQuat& originRotation, const AmVec3& position)
+    {
+        return AM_RotateV3Q(position - originPosition, AM_InvQ(originRotation));
+    }
 } // namespace SparkyStudios::Audio::Amplitude
 
-#endif // SS_AMPLITUDE_AUDIO_MATH_UTILS_H
+#endif // _AM_MATH_UTILS_H

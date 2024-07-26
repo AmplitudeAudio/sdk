@@ -14,8 +14,8 @@
 
 #pragma once
 
-#ifndef SS_AMPLITUDE_AUDIO_AMPLITUDE_H
-#define SS_AMPLITUDE_AUDIO_AMPLITUDE_H
+#ifndef _AM_AMPLITUDE_H
+#define _AM_AMPLITUDE_H
 
 #include <SparkyStudios/Audio/Amplitude/Core/Common.h>
 
@@ -48,9 +48,11 @@
 #include <SparkyStudios/Audio/Amplitude/IO/PackageItemFile.h>
 #include <SparkyStudios/Audio/Amplitude/IO/Resource.h>
 
+#include <SparkyStudios/Audio/Amplitude/Math/BarycentricCoordinates.h>
 #include <SparkyStudios/Audio/Amplitude/Math/CartesianCoordinateSystem.h>
 #include <SparkyStudios/Audio/Amplitude/Math/Curve.h>
 #include <SparkyStudios/Audio/Amplitude/Math/FFT.h>
+#include <SparkyStudios/Audio/Amplitude/Math/Geometry.h>
 #include <SparkyStudios/Audio/Amplitude/Math/HandmadeMath.h>
 #include <SparkyStudios/Audio/Amplitude/Math/Orientation.h>
 #include <SparkyStudios/Audio/Amplitude/Math/Shape.h>
@@ -58,6 +60,7 @@
 #include <SparkyStudios/Audio/Amplitude/Math/SplitComplex.h>
 #include <SparkyStudios/Audio/Amplitude/Math/Utils.h>
 
+#include <SparkyStudios/Audio/Amplitude/Mixer/Amplimix.h>
 #include <SparkyStudios/Audio/Amplitude/Mixer/Resampler.h>
 #include <SparkyStudios/Audio/Amplitude/Mixer/SoundProcessor.h>
 
@@ -67,11 +70,10 @@
 #include <SparkyStudios/Audio/Amplitude/Sound/Fader.h>
 #include <SparkyStudios/Audio/Amplitude/Sound/Filter.h>
 #include <SparkyStudios/Audio/Amplitude/Sound/Rtpc.h>
-#include <SparkyStudios/Audio/Amplitude/Sound/Scheduler.h>
 #include <SparkyStudios/Audio/Amplitude/Sound/Sound.h>
 #include <SparkyStudios/Audio/Amplitude/Sound/SoundBank.h>
 #include <SparkyStudios/Audio/Amplitude/Sound/SoundObject.h>
 #include <SparkyStudios/Audio/Amplitude/Sound/Switch.h>
 #include <SparkyStudios/Audio/Amplitude/Sound/SwitchContainer.h>
 
-#endif // SS_AMPLITUDE_AUDIO_AMPLITUDE_H
+#endif // _AM_AMPLITUDE_H

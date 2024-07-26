@@ -14,8 +14,8 @@
 
 #pragma once
 
-#ifndef SS_AMPLITUDE_AUDIO_EVENTLISTENER_H
-#define SS_AMPLITUDE_AUDIO_EVENTLISTENER_H
+#ifndef _AM_CORE_PLAYBACK_CHANNEL_EVENT_LISTENER_H
+#define _AM_CORE_PLAYBACK_CHANNEL_EVENT_LISTENER_H
 
 #include <functional>
 #include <list>
@@ -87,4 +87,4 @@ namespace SparkyStudios::Audio::Amplitude
     };
 } // namespace SparkyStudios::Audio::Amplitude
 
-#endif // SS_AMPLITUDE_AUDIO_EVENTLISTENER_H
+#endif // _AM_CORE_PLAYBACK_CHANNEL_EVENT_LISTENER_H

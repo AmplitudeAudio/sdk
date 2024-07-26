@@ -95,18 +95,15 @@ namespace SparkyStudios::Audio::Amplitude
 
     bool WAVCodec::WAVDecoder::Close()
     {
-        if (_initialized)
-        {
-            _file.reset();
+        if (!_initialized)
+            return true; // true because it is already closed
 
-            m_format = SoundFormat();
-            _initialized = false;
+        _file.reset();
 
-            return drwav_uninit(&_wav) == DRWAV_SUCCESS;
-        }
+        m_format = SoundFormat();
+        _initialized = false;
 
-        // true because it is already closed
-        return true;
+        return drwav_uninit(&_wav) == DRWAV_SUCCESS;
     }
 
     AmUInt64 WAVCodec::WAVDecoder::Load(AmVoidPtr out)
@@ -182,23 +179,19 @@ namespace SparkyStudios::Audio::Amplitude
 
     bool WAVCodec::WAVEncoder::Close()
     {
-        if (_initialized)
-        {
-            m_format = SoundFormat();
-            _isFormatSet = false;
-            _initialized = false;
-            return drwav_uninit(&_wav) == DRWAV_SUCCESS;
-        }
+        if (!_initialized)
+            return true;
 
-        return true;
+        m_format = SoundFormat();
+        _isFormatSet = false;
+        _initialized = false;
+
+        return drwav_uninit(&_wav) == DRWAV_SUCCESS;
     }
 
     AmUInt64 WAVCodec::WAVEncoder::Write(AmVoidPtr in, AmUInt64 offset, AmUInt64 length)
     {
-        if (!_initialized)
-            return 0;
-
-        return drwav_write_pcm_frames(&_wav, length, in);
+        return !_initialized ? 0 : drwav_write_pcm_frames(&_wav, length, in);
     }
 
     Codec::Decoder* WAVCodec::CreateDecoder()

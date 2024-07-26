@@ -91,7 +91,12 @@ namespace SparkyStudios::Audio::Amplitude
             return std::ceil(_sampleRatio * static_cast<AmReal32>(inputFrameCount));
         }
 
-        [[nodiscard]] AmUInt64 GetLatencyInFrames() const override
+        [[nodiscard]] AmUInt64 GetInputLatency() const override
+        {
+            return 0;
+        }
+
+        [[nodiscard]] AmUInt64 GetOutputLatency() const override
         {
             return 0;
         }

@@ -14,8 +14,8 @@
 
 #pragma once
 
-#ifndef SS_AMPLITUDE_AUDIO_IO_FILESYSTEM_H
-#define SS_AMPLITUDE_AUDIO_IO_FILESYSTEM_H
+#ifndef _AM_IO_FILESYSTEM_H
+#define _AM_IO_FILESYSTEM_H
 
 #include <SparkyStudios/Audio/Amplitude/Core/Common.h>
 #include <SparkyStudios/Audio/Amplitude/IO/File.h>
@@ -141,4 +141,4 @@ namespace SparkyStudios::Audio::Amplitude
     };
 } // namespace SparkyStudios::Audio::Amplitude
 
-#endif // SS_AMPLITUDE_AUDIO_IO_FILESYSTEM_H
+#endif // _AM_IO_FILESYSTEM_H

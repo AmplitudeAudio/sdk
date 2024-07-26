@@ -19,6 +19,7 @@
 
 #include <SparkyStudios/Audio/Amplitude/Core/Common.h>
 
+#include <Core/Playback/ChannelInternalState.h>
 #include <Utils/intrusive_list.h>
 
 namespace SparkyStudios::Audio::Amplitude
@@ -33,14 +34,20 @@ namespace SparkyStudios::Audio::Amplitude
          *
          * @return The game Listener ID.
          */
-        [[nodiscard]] AmListenerID GetId() const;
+        [[nodiscard]] AM_INLINE AmListenerID GetId() const
+        {
+            return _id;
+        }
 
         /**
          * @brief Sets the ID of this Listener in game.
          *
          * @param id The game Listener ID.
          */
-        void SetId(AmListenerID id);
+        AM_INLINE void SetId(AmListenerID id)
+        {
+            _id = id;
+        }
 
         /**
          * @brief Sets the location of this Listener.
@@ -54,46 +61,98 @@ namespace SparkyStudios::Audio::Amplitude
          *
          * @return The current location of this Listener.
          */
-        [[nodiscard]] const AmVec3& GetLocation() const;
+        [[nodiscard]] AM_INLINE const AmVec3& GetLocation() const
+        {
+            return _location;
+        }
 
         /**
          * @brief Sets the orientation of this Listener.
          *
-         * @param orientation
+         * @param orientation The new orientation.
          */
-        void SetOrientation(const Orientation& orientation);
+        AM_INLINE void SetOrientation(const Orientation& orientation)
+        {
+            _orientation = orientation;
+        }
 
         /**
          * @brief Gets the orientation of this Listener.
          *
          * @return The current orientation of this Listener.
          */
-        [[nodiscard]] const Orientation& GetOrientation() const;
+        [[nodiscard]] AM_INLINE const Orientation& GetOrientation() const
+        {
+            return _orientation;
+        }
 
         /**
          * @brief Get the direction vector of the Listener.
          *
          * @return The direction vector.
          */
-        [[nodiscard]] AmVec3 GetDirection() const;
+        [[nodiscard]] AM_INLINE AmVec3 GetDirection() const
+        {
+            return _orientation.GetForward();
+        }
 
         /**
          * @brief Get the up vector of the Listener.
          *
          * @return The up vector.
          */
-        [[nodiscard]] AmVec3 GetUp() const;
+        [[nodiscard]] AM_INLINE AmVec3 GetUp() const
+        {
+            return _orientation.GetUp();
+        }
 
-        AmMat4& GetInverseMatrix();
+        AM_INLINE AmMat4& GetInverseMatrix()
+        {
+            return _inverseMatrix;
+        }
 
-        [[nodiscard]] const AmMat4& GetInverseMatrix() const;
+        [[nodiscard]] AM_INLINE const AmMat4& GetInverseMatrix() const
+        {
+            return _inverseMatrix;
+        }
 
         /**
          * @brief Gets the velocity of the Listener.
          *
          * @return The Listener's velocity.
          */
-        [[nodiscard]] const AmVec3& GetVelocity() const;
+        [[nodiscard]] AM_INLINE const AmVec3& GetVelocity() const
+        {
+            return _velocity;
+        }
+
+        /**
+         * @brief Sets the directivity of the Listener.
+         *
+         * @param directivity The new directivity.
+         * @param sharpness The sharpness of the directivity.
+         */
+        void SetDirectivity(AmReal32 directivity, AmReal32 sharpness);
+
+        /**
+         * @brief Gets the directivity of the Listener.
+         *
+         * @return The Listener's directivity.
+         */
+        [[nodiscard]] AM_INLINE AmReal32 GetDirectivity() const
+        {
+            return _directivity;
+        }
+
+        /**
+         * @brief Gets the sharpness of the directivity of the Listener.
+         *
+         * @return The Listener's directivity sharpness.
+         */
+        [[nodiscard]] AM_INLINE AmReal32 GetDirectivitySharpness() const
+        {
+            return _directivitySharpness;
+        }
 
         /**
          * @brief Updates the inverse matrix of this Listener.
@@ -102,6 +161,16 @@ namespace SparkyStudios::Audio::Amplitude
          * each frame update.
          */
         void Update();
+
+        ChannelList& GetPlayingSoundList()
+        {
+            return _playingSoundList;
+        }
+
+        [[nodiscard]] const ChannelList& GetPlayingSoundList() const
+        {
+            return _playingSoundList;
+        }
 
         fplutil::intrusive_list_node node;
 
@@ -114,7 +183,13 @@ namespace SparkyStudios::Audio::Amplitude
         AmVec3 _lastLocation;
         AmVec3 _velocity;
 
+        AmReal32 _directivity;
+        AmReal32 _directivitySharpness;
+
         AmMat4 _inverseMatrix;
+
+        // Keeps track of how many sounds are being rendered by this entity.
+        ChannelList _playingSoundList;
     };
 } // namespace SparkyStudios::Audio::Amplitude
 

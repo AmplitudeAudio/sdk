@@ -14,8 +14,8 @@
 
 #pragma once
 
-#ifndef SS_AMPLITUDE_AUDIO_IO_PACKAGEFILE_H
-#define SS_AMPLITUDE_AUDIO_IO_PACKAGEFILE_H
+#ifndef _AM_IO_PACKAGE_FILE_H
+#define _AM_IO_PACKAGE_FILE_H
 
 #include <SparkyStudios/Audio/Amplitude/IO/DiskFile.h>
 #include <SparkyStudios/Audio/Amplitude/IO/PackageFileSystem.h>
@@ -74,4 +74,4 @@ namespace SparkyStudios::Audio::Amplitude
     };
 } // namespace SparkyStudios::Audio::Amplitude
 
-#endif // SS_AMPLITUDE_AUDIO_IO_PACKAGEFILE_H
+#endif // _AM_IO_PACKAGE_FILE_H

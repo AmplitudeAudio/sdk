@@ -14,9 +14,8 @@
 
 #include <SparkyStudios/Audio/Amplitude/Amplitude.h>
 
-#include <Core/EngineInternalState.h>
-#include <Mixer/Mixer.h>
-#include <Utils/Utils.h>
+#include <Core/Engine.h>
+#include <Mixer/Amplimix.h>
 
 #define AMPLIMIX_STORE(A, C) std::atomic_store_explicit(A, C, std::memory_order_release)
 #define AMPLIMIX_LOAD(A) std::atomic_load_explicit(A, std::memory_order_acquire)
@@ -26,7 +25,7 @@ namespace SparkyStudios::Audio::Amplitude
 {
     struct AmplimixMutexLocker
     {
-        explicit AmplimixMutexLocker(Mixer* mixer)
+        explicit AmplimixMutexLocker(AmplimixImpl* mixer)
             : m_mixer(mixer)
         {
             Lock();
@@ -61,7 +60,7 @@ namespace SparkyStudios::Audio::Amplitude
         }
 
     private:
-        Mixer* m_mixer;
+        AmplimixImpl* m_mixer;
         bool m_locked = false;
     };
 
@@ -71,7 +70,7 @@ namespace SparkyStudios::Audio::Amplitude
     constexpr AmUInt32 kProcessedFramesCount = 1;
 #endif // AM_SIMD_INTRINSICS
 
-    static void OnSoundDestroyed(Mixer* mixer, MixerLayer* layer);
+    static void OnSoundDestroyed(AmplimixImpl* mixer, AmplimixLayerImpl* layer);
 
     static void* ma_malloc(size_t sz, void*)
     {
@@ -103,7 +102,7 @@ namespace SparkyStudios::Audio::Amplitude
         AM_UNUSED(pHeap);
 
         auto* pResampler = Resampler::Construct("libsamplerate");
-        const auto* pMixerLayer = static_cast<MixerLayer*>(pUserData);
+        const auto* pMixerLayer = static_cast<AmplimixLayerImpl*>(pUserData);
 
         const AmUInt64 maxFramesIn = pMixerLayer->end - pMixerLayer->start;
         pResampler->Init(pConfig->channels, pConfig->sampleRateIn, pConfig->sampleRateOut, maxFramesIn);
@@ -169,7 +168,7 @@ namespace SparkyStudios::Audio::Amplitude
         AM_UNUSED(pUserData);
         const auto* pResampler = static_cast<const ResamplerInstance*>(pBackend);
 
-        return pResampler->GetLatencyInFrames();
+        return pResampler->GetInputLatency();
     }
 
     static ma_uint64 ma_resampling_backend_get_output_latency_ls(void* pUserData, const ma_resampling_backend* pBackend)
@@ -177,7 +176,7 @@ namespace SparkyStudios::Audio::Amplitude
         AM_UNUSED(pUserData);
         const auto* pResampler = static_cast<const ResamplerInstance*>(pBackend);
 
-        return pResampler->GetLatencyInFrames();
+        return pResampler->GetOutputLatency();
     }
 
     static ma_result ma_resampling_backend_get_required_input_frame_count_ls(
@@ -235,7 +234,7 @@ namespace SparkyStudios::Audio::Amplitude
         return { left, right };
     }
 
-    static bool ShouldLoopSound(Mixer* mixer, MixerLayer* layer)
+    static bool ShouldLoopSound(AmplimixImpl* mixer, AmplimixLayerImpl* layer)
     {
         const auto* sound = layer->snd->sound.get();
         const AmUInt32 loopCount = sound->GetSettings().m_loopCount;
@@ -243,46 +242,46 @@ namespace SparkyStudios::Audio::Amplitude
         return sound->GetCurrentLoopCount() != loopCount;
     }
 
-    static void OnSoundStarted(Mixer* mixer, MixerLayer* layer)
+    static void OnSoundStarted(AmplimixImpl* mixer, AmplimixLayerImpl* layer)
     {
         const auto* sound = layer->snd->sound.get();
         amLogDebug("Started sound: '" AM_OS_CHAR_FMT "'.", sound->GetSound()->GetPath().c_str());
 
-        const auto* channel = sound->GetChannel();
-        auto* channelState = channel->GetParentChannelState();
+        const auto channel = sound->GetChannel();
+        auto* channelState = channel.GetState();
 
         channelState->Trigger(ChannelEvent::Begin);
     }
 
-    static void OnSoundPaused(Mixer* mixer, MixerLayer* layer)
+    static void OnSoundPaused(AmplimixImpl* mixer, AmplimixLayerImpl* layer)
     {
         const auto* sound = layer->snd->sound.get();
         amLogDebug("Paused sound: '" AM_OS_CHAR_FMT "'.", sound->GetSound()->GetPath().c_str());
 
-        const auto* channel = sound->GetChannel();
-        auto* channelState = channel->GetParentChannelState();
+        const auto channel = sound->GetChannel();
+        auto* channelState = channel.GetState();
 
         channelState->Trigger(ChannelEvent::Pause);
     }
 
-    static void OnSoundResumed(Mixer* mixer, MixerLayer* layer)
+    static void OnSoundResumed(AmplimixImpl* mixer, AmplimixLayerImpl* layer)
     {
         const auto* sound = layer->snd->sound.get();
         amLogDebug("Resumed sound: '" AM_OS_CHAR_FMT "'.", sound->GetSound()->GetPath().c_str());
 
-        const auto* channel = sound->GetChannel();
-        auto* channelState = channel->GetParentChannelState();
+        const auto channel = sound->GetChannel();
+        auto* channelState = channel.GetState();
 
         channelState->Trigger(ChannelEvent::Resume);
     }
 
-    static void OnSoundStopped(Mixer* mixer, MixerLayer* layer)
+    static void OnSoundStopped(AmplimixImpl* mixer, AmplimixLayerImpl* layer)
     {
         const auto* sound = layer->snd->sound.get();
         amLogDebug("Stopped sound: '" AM_OS_CHAR_FMT "'.", sound->GetSound()->GetPath().c_str());
 
-        const auto* channel = sound->GetChannel();
-        auto* channelState = channel->GetParentChannelState();
+        const auto channel = sound->GetChannel();
+        auto* channelState = channel.GetState();
 
         channelState->Trigger(ChannelEvent::Stop);
 
@@ -290,19 +289,19 @@ namespace SparkyStudios::Audio::Amplitude
         OnSoundDestroyed(mixer, layer);
     }
 
-    static bool OnSoundLooped(Mixer* mixer, MixerLayer* layer)
+    static bool OnSoundLooped(AmplimixImpl* mixer, AmplimixLayerImpl* layer)
     {
         auto* sound = layer->snd->sound.get();
         amLogDebug("Looped sound: '" AM_OS_CHAR_FMT "'.", sound->GetSound()->GetPath().c_str());
 
-        Mixer::IncrementSoundLoopCount(sound);
+        AmplimixImpl::IncrementSoundLoopCount(sound);
 
         const bool shouldLoop = ShouldLoopSound(mixer, layer);
 
         if (shouldLoop)
         {
-            const auto* channel = sound->GetChannel();
-            auto* channelState = channel->GetParentChannelState();
+            const auto channel = sound->GetChannel();
+            auto* channelState = channel.GetState();
 
             channelState->Trigger(ChannelEvent::Loop);
         }
@@ -310,7 +309,7 @@ namespace SparkyStudios::Audio::Amplitude
         return shouldLoop;
     }
 
-    static AmUInt64 OnSoundStream(Mixer* mixer, MixerLayer* layer, AmUInt64 offset, AmUInt64 frames)
+    static AmUInt64 OnSoundStream(AmplimixImpl* mixer, AmplimixLayerImpl* layer, AmUInt64 offset, AmUInt64 frames)
     {
         if (!layer->snd->stream)
             return 0;
@@ -319,18 +318,15 @@ namespace SparkyStudios::Audio::Amplitude
         return sound->GetAudio(offset, frames);
     }
 
-    static void OnSoundEnded(Mixer* mixer, MixerLayer* layer)
+    static void OnSoundEnded(AmplimixImpl* mixer, AmplimixLayerImpl* layer)
     {
         auto* sound = layer->snd->sound.get();
         amLogDebug("Ended sound: '" AM_OS_CHAR_FMT "'.", sound->GetSound()->GetPath().c_str());
 
-        RealChannel* channel = sound->GetChannel();
-        auto* channelState = channel->GetParentChannelState();
+        const auto channel = sound->GetChannel();
+        auto* channelState = channel.GetState();
 
-        // Clean up the pipeline
-        mixer->GetPipeline()->Cleanup(sound);
-
-        if (const Engine* engine = Engine::GetInstance(); engine->GetState()->stopping)
+        if (const auto* engine = static_cast<const EngineImpl*>(Engine::GetInstance()); engine->GetState()->stopping)
         {
             channelState->Trigger(ChannelEvent::End);
 
@@ -341,7 +337,7 @@ namespace SparkyStudios::Audio::Amplitude
         if (sound->GetSettings().m_kind == SoundKind::Standalone)
         {
             // Stop playing the sound
-            channel->GetParentChannelState()->HaltInternal();
+            channelState->HaltInternal();
 
             channelState->Trigger(ChannelEvent::End);
 
@@ -351,7 +347,7 @@ namespace SparkyStudios::Audio::Amplitude
         else if (sound->GetSettings().m_kind == SoundKind::Switched)
         {
             // Stop playing the sound
-            channel->GetParentChannelState()->HaltInternal();
+            channelState->HaltInternal();
 
             channelState->Trigger(ChannelEvent::End);
 
@@ -360,30 +356,30 @@ namespace SparkyStudios::Audio::Amplitude
         }
         else if (sound->GetSettings().m_kind == SoundKind::Contained)
         {
-            const Collection* collection = sound->GetCollection();
+            const CollectionImpl* collection = sound->GetCollection();
             AMPLITUDE_ASSERT(collection != nullptr); // Should always have a collection for contained sound instances.
 
             if (const CollectionDefinition* config = collection->GetDefinition(); config->play_mode() == CollectionPlayMode_PlayAll)
             {
-                if (channel->Valid())
+                if (channelState->Valid())
                 {
-                    channel->MarkAsPlayed(sound->GetSound());
-                    if (channel->AllSoundsHasPlayed())
+                    channelState->GetRealChannel().MarkAsPlayed(sound->GetSound());
+                    if (channelState->GetRealChannel().AllSoundsHasPlayed())
                     {
-                        channel->ClearPlayedSounds();
+                        channelState->GetRealChannel().ClearPlayedSounds();
                         if (config->play_mode() == CollectionPlayMode_PlayAll)
                         {
                             // Stop playing the collection
-                            channel->GetParentChannelState()->HaltInternal();
+                            channelState->HaltInternal();
 
                             channelState->Trigger(ChannelEvent::End);
                         }
                     }
 
                     // Play the collection again only if the channel is still playing.
-                    if (channel->Playing())
+                    if (channelState->GetRealChannel().Playing())
                     {
-                        channel->GetParentChannelState()->Play();
+                        channelState->Play();
                     }
                 }
 
@@ -397,10 +393,15 @@ namespace SparkyStudios::Audio::Amplitude
         }
     }
 
-    static void OnSoundDestroyed(Mixer* mixer, MixerLayer* layer)
+    static void OnSoundDestroyed(AmplimixImpl* mixer, AmplimixLayerImpl* layer)
     {
         if (layer->snd == nullptr)
             return;
+
+        const auto* sound = layer->snd->sound.get();
+
+        // Clean up the pipeline
+        mixer->GetPipeline()->Cleanup(layer);
 
         layer->snd->sound.reset();
 
@@ -439,7 +440,7 @@ namespace SparkyStudios::Audio::Amplitude
                                                              ma_resampling_backend_get_expected_output_frame_count_ls,
                                                              ma_resampling_backend_reset_ls };
 
-    Mixer::Mixer(AmReal32 masterGain)
+    AmplimixImpl::AmplimixImpl(AmReal32 masterGain)
         : _initialized(false)
         , _commandsStack()
         , _audioThreadMutex(nullptr)
@@ -454,12 +455,12 @@ namespace SparkyStudios::Audio::Amplitude
         AMPLIMIX_STORE(&_masterGain, masterGain);
     }
 
-    Mixer::~Mixer()
+    AmplimixImpl::~AmplimixImpl()
     {
         Deinit(); // Ensures Deinit is called
     }
 
-    bool Mixer::Init(const EngineConfigDefinition* config)
+    bool AmplimixImpl::Init(const EngineConfigDefinition* config)
     {
         if (_initialized)
         {
@@ -543,7 +544,7 @@ namespace SparkyStudios::Audio::Amplitude
         return true;
     }
 
-    void Mixer::Deinit()
+    void AmplimixImpl::Deinit()
     {
         if (!_initialized)
             return;
@@ -563,7 +564,7 @@ namespace SparkyStudios::Audio::Amplitude
             layer.Reset();
     }
 
-    void Mixer::UpdateDevice(
+    void AmplimixImpl::UpdateDevice(
         AmObjectID deviceID,
         AmString deviceName,
         AmUInt32 deviceOutputSampleRate,
@@ -577,12 +578,7 @@ namespace SparkyStudios::Audio::Amplitude
         _device.mDeviceOutputFormat = deviceOutputFormat;
     }
 
-    bool Mixer::IsInitialized() const
-    {
-        return _initialized;
-    }
-
-    AmUInt64 Mixer::Mix(AmVoidPtr mixBuffer, AmUInt64 frameCount)
+    AmUInt64 AmplimixImpl::Mix(AmVoidPtr mixBuffer, AmUInt64 frameCount)
     {
         if (!_initialized || amEngine->GetState() == nullptr || amEngine->GetState()->stopping || amEngine->GetState()->paused)
             return 0;
@@ -650,13 +646,13 @@ namespace SparkyStudios::Audio::Amplitude
         return frameCount;
     }
 
-    AmUInt32 Mixer::Play(
+    AmUInt32 AmplimixImpl::Play(
         SoundData* sound, PlayStateFlag flag, AmReal32 gain, AmReal32 pan, AmReal32 pitch, AmReal32 speed, AmUInt32 id, AmUInt32 layer)
     {
         return PlayAdvanced(sound, flag, gain, pan, pitch, speed, 0, sound->length, id, layer);
     }
 
-    AmUInt32 Mixer::PlayAdvanced(
+    AmUInt32 AmplimixImpl::PlayAdvanced(
         SoundData* sound,
         PlayStateFlag flag,
         AmReal32 gain,
@@ -762,27 +758,64 @@ namespace SparkyStudios::Audio::Amplitude
         return layer;
     }
 
-    bool Mixer::SetGainPan(AmUInt32 id, AmUInt32 layer, AmReal32 gain, AmReal32 pan)
+    bool AmplimixImpl::SetObstruction(AmUInt32 id, AmUInt32 layer, AmReal32 obstruction)
     {
         auto* lay = GetLayer(layer);
 
         // check id and state flag to make sure the id is valid
-        if ((id == lay->id) && (AMPLIMIX_LOAD(&lay->flag) > ePSF_STOP))
+        if (id != lay->id || AMPLIMIX_LOAD(&lay->flag) <= ePSF_STOP)
         {
-            if (lay->snd != nullptr && lay->snd->format.GetNumChannels() == 1)
-                pan = 0.0f;
-
-            // convert gain and pan to left and right gain and store it atomically
-            AMPLIMIX_STORE(&lay->gain, LRGain(gain, pan));
-            // return success
-            return true;
+            // return failure
+            return false;
         }
 
-        // return failure
-        return false;
+        // store the obstruction factor in the layer
+        AMPLIMIX_STORE(&lay->obstruction, obstruction);
+
+        // return success
+        return true;
     }
 
-    bool Mixer::SetPitch(AmUInt32 id, AmUInt32 layer, AmReal32 pitch)
+    bool AmplimixImpl::SetOcclusion(AmUInt32 id, AmUInt32 layer, AmReal32 occlusion)
+    {
+        auto* lay = GetLayer(layer);
+
+        // check id and state flag to make sure the id is valid
+        if (id != lay->id || AMPLIMIX_LOAD(&lay->flag) <= ePSF_STOP)
+        {
+            // return failure
+            return false;
+        }
+
+        // store the occlusion factor in the layer
+        AMPLIMIX_STORE(&lay->occlusion, occlusion);
+
+        // return success
+        return true;
+    }
+
+    bool AmplimixImpl::SetGainPan(AmUInt32 id, AmUInt32 layer, AmReal32 gain, AmReal32 pan)
+    {
+        auto* lay = GetLayer(layer);
+
+        // check id and state flag to make sure the id is valid
+        if (id != lay->id || AMPLIMIX_LOAD(&lay->flag) <= ePSF_STOP)
+        {
+            // return failure
+            return false;
+        }
+
+        if (lay->snd != nullptr && lay->snd->format.GetNumChannels() == 1)
+            pan = 0.0f;
+
+        // convert gain and pan to left and right gain and store it atomically
+        AMPLIMIX_STORE(&lay->gain, LRGain(gain, pan));
+
+        // return success
+        return true;
+    }
+
+    bool AmplimixImpl::SetPitch(AmUInt32 id, AmUInt32 layer, AmReal32 pitch)
     {
         auto* lay = GetLayer(layer);
 
@@ -799,7 +832,7 @@ namespace SparkyStudios::Audio::Amplitude
         return false;
     }
 
-    bool Mixer::SetCursor(AmUInt32 id, AmUInt32 layer, AmUInt64 cursor)
+    bool AmplimixImpl::SetCursor(AmUInt32 id, AmUInt32 layer, AmUInt64 cursor)
     {
         auto* lay = GetLayer(layer);
 
@@ -822,7 +855,7 @@ namespace SparkyStudios::Audio::Amplitude
         return false;
     }
 
-    bool Mixer::SetPlayState(AmUInt32 id, AmUInt32 layer, PlayStateFlag flag)
+    bool AmplimixImpl::SetPlayState(AmUInt32 id, AmUInt32 layer, PlayStateFlag flag)
     {
         // return failure if given flag invalid
         if (flag >= ePSF_MAX)
@@ -861,7 +894,7 @@ namespace SparkyStudios::Audio::Amplitude
         return false;
     }
 
-    PlayStateFlag Mixer::GetPlayState(AmUInt32 id, AmUInt32 layer)
+    PlayStateFlag AmplimixImpl::GetPlayState(AmUInt32 id, AmUInt32 layer)
     {
         // get layer based on the lowest bits of id
         const auto* lay = GetLayer(layer);
@@ -877,7 +910,7 @@ namespace SparkyStudios::Audio::Amplitude
         return ePSF_MIN;
     }
 
-    bool Mixer::SetPlaySpeed(AmUInt32 id, AmUInt32 layer, AmReal32 speed)
+    bool AmplimixImpl::SetPlaySpeed(AmUInt32 id, AmUInt32 layer, AmReal32 speed)
     {
         auto* lay = GetLayer(layer);
 
@@ -894,12 +927,12 @@ namespace SparkyStudios::Audio::Amplitude
         return false;
     }
 
-    void Mixer::SetMasterGain(AmReal32 gain)
+    void AmplimixImpl::SetMasterGain(AmReal32 gain)
     {
         AMPLIMIX_STORE(&_masterGain, gain);
     }
 
-    void Mixer::StopAll()
+    void AmplimixImpl::StopAll()
     {
         AmplimixMutexLocker lock(this);
 
@@ -912,7 +945,7 @@ namespace SparkyStudios::Audio::Amplitude
         }
     }
 
-    void Mixer::HaltAll()
+    void AmplimixImpl::HaltAll()
     {
         AmplimixMutexLocker lock(this);
 
@@ -925,7 +958,7 @@ namespace SparkyStudios::Audio::Amplitude
         }
     }
 
-    void Mixer::PlayAll()
+    void AmplimixImpl::PlayAll()
     {
         AmplimixMutexLocker lock(this);
 
@@ -939,7 +972,7 @@ namespace SparkyStudios::Audio::Amplitude
         }
     }
 
-    bool Mixer::IsInsideThreadMutex() const
+    bool AmplimixImpl::IsInsideThreadMutex() const
     {
         if (const AmUInt64 threadId = Thread::GetCurrentThreadId(); _insideAudioThreadMutex.contains(threadId))
             return _insideAudioThreadMutex.at(threadId);
@@ -947,32 +980,27 @@ namespace SparkyStudios::Audio::Amplitude
         return false;
     }
 
-    void Mixer::PushCommand(const MixerCommand& command)
+    void AmplimixImpl::PushCommand(const MixerCommand& command)
     {
         _commandsStack.push(command);
     }
 
-    const ProcessorPipeline* Mixer::GetPipeline() const
+    const ProcessorPipeline* AmplimixImpl::GetPipeline() const
     {
         return _pipeline.get();
     }
 
-    ProcessorPipeline* Mixer::GetPipeline()
+    ProcessorPipeline* AmplimixImpl::GetPipeline()
     {
         return _pipeline.get();
     }
 
-    void Mixer::IncrementSoundLoopCount(SoundInstance* sound)
+    void AmplimixImpl::IncrementSoundLoopCount(SoundInstance* sound)
     {
         ++sound->_currentLoopCount;
     }
 
-    const DeviceDescription& Mixer::GetDeviceDescription() const
-    {
-        return _device;
-    }
-
-    void Mixer::ExecuteCommands()
+    void AmplimixImpl::ExecuteCommands()
     {
         while (!_commandsStack.empty())
         {
@@ -983,7 +1011,7 @@ namespace SparkyStudios::Audio::Amplitude
         }
     }
 
-    void Mixer::MixLayer(MixerLayer* layer, AmAudioFrameBuffer buffer, AmUInt64 bufferSize, AmUInt64 samples)
+    void AmplimixImpl::MixLayer(AmplimixLayerImpl* layer, AmAudioFrameBuffer buffer, AmUInt64 bufferSize, AmUInt64 samples)
     {
         if (layer->snd == nullptr)
         {
@@ -1031,7 +1059,7 @@ namespace SparkyStudios::Audio::Amplitude
             ma_data_converter_get_required_input_frame_count(&layer->dataConverter, outSamples, &inSamples);
 
 #if defined(AM_SIMD_INTRINSICS)
-        inSamples = AM_VALUE_ALIGN(inSamples, kProcessedFramesCount);
+        inSamples = AM_VALUE_ALIGN(inSamples - ma_data_converter_get_input_latency(&layer->dataConverter), kProcessedFramesCount);
 #endif // AM_SIMD_INTRINSICS
 
         SoundChunk* in = SoundChunk::CreateChunk(inSamples, soundChannels, MemoryPoolKind::Amplimix);
@@ -1104,7 +1132,7 @@ namespace SparkyStudios::Audio::Amplitude
             return;
         }
 
-        if (flag >= ePSF_PLAY)
+        if (outSamples > 0 && flag >= ePSF_PLAY)
         {
             // Cache cursor
             AmUInt64 oldCursor = cursor;
@@ -1113,7 +1141,7 @@ namespace SparkyStudios::Audio::Amplitude
 
             _pipeline->Process(
                 reinterpret_cast<AmAudioSampleBuffer>(out->buffer), reinterpret_cast<AmAudioSampleBuffer>(out->buffer), out->frames,
-                out->size, reqChannels, sampleRate, layer->snd->sound.get());
+                out->size, reqChannels, sampleRate, layer);
 
             /* */ AmReal32 position = cursor;
             const AmUInt64 start = layer->start;
@@ -1217,13 +1245,13 @@ namespace SparkyStudios::Audio::Amplitude
         }
     }
 
-    MixerLayer* Mixer::GetLayer(AmUInt32 layer)
+    AmplimixLayerImpl* AmplimixImpl::GetLayer(AmUInt32 layer)
     {
         // get layer based on the lowest bits of layer id
         return &_layers[layer & kAmplimixLayersMask];
     }
 
-    bool Mixer::ShouldMix(MixerLayer* layer)
+    bool AmplimixImpl::ShouldMix(AmplimixLayerImpl* layer)
     {
         if (layer->snd == nullptr)
             return false;
@@ -1235,13 +1263,13 @@ namespace SparkyStudios::Audio::Amplitude
         return (flag > ePSF_HALT);
     }
 
-    void Mixer::UpdatePitch(MixerLayer* layer)
+    void AmplimixImpl::UpdatePitch(AmplimixLayerImpl* layer)
     {
         const AmReal32 pitch = AMPLIMIX_LOAD(&layer->pitch);
         const AmReal32 speed = AMPLIMIX_LOAD(&layer->userPlaySpeed);
 
         const AmReal32 oldSpeed = AMPLIMIX_LOAD(&layer->playSpeed);
-        const AmReal32 playSpeed = pitch > 0 ? pitch * speed : 0.001f;
+        const AmReal32 playSpeed = AM_MAX(pitch * speed, 0.001f);
 
         if (playSpeed != oldSpeed)
         {
@@ -1256,7 +1284,7 @@ namespace SparkyStudios::Audio::Amplitude
         }
     }
 
-    void Mixer::LockAudioMutex()
+    void AmplimixImpl::LockAudioMutex()
     {
         if (_audioThreadMutex)
             Thread::LockMutex(_audioThreadMutex);
@@ -1264,7 +1292,7 @@ namespace SparkyStudios::Audio::Amplitude
         _insideAudioThreadMutex[Thread::GetCurrentThreadId()] = true;
     }
 
-    void Mixer::UnlockAudioMutex()
+    void AmplimixImpl::UnlockAudioMutex()
     {
         AMPLITUDE_ASSERT(IsInsideThreadMutex());
 
@@ -1274,8 +1302,134 @@ namespace SparkyStudios::Audio::Amplitude
         _insideAudioThreadMutex[Thread::GetCurrentThreadId()] = false;
     }
 
-    void MixerLayer::Reset()
+    void AmplimixLayerImpl::Reset()
     {
         ma_data_converter_uninit(&dataConverter, &gAllocationCallbacks);
+    }
+
+    AmUInt32 AmplimixLayerImpl::GetId() const
+    {
+        return id;
+    }
+
+    AmUInt64 AmplimixLayerImpl::GetStartPosition() const
+    {
+        return start;
+    }
+
+    AmUInt64 AmplimixLayerImpl::GetEndPosition() const
+    {
+        return end;
+    }
+
+    AmUInt64 AmplimixLayerImpl::GetCurrentPosition() const
+    {
+        return AMPLIMIX_LOAD(&cursor);
+    }
+
+    AmVec2 AmplimixLayerImpl::GetGain() const
+    {
+        return AMPLIMIX_LOAD(&gain);
+    }
+
+    AmReal32 AmplimixLayerImpl::GetPitch() const
+    {
+        return AMPLIMIX_LOAD(&pitch);
+    }
+
+    AmReal32 AmplimixLayerImpl::GetObstruction() const
+    {
+        return AMPLIMIX_LOAD(&obstruction);
+    }
+
+    AmReal32 AmplimixLayerImpl::GetOcclusion() const
+    {
+        return AMPLIMIX_LOAD(&occlusion);
+    }
+
+    AmReal32 AmplimixLayerImpl::GetPlaySpeed() const
+    {
+        return AMPLIMIX_LOAD(&playSpeed);
+    }
+
+    AmVec3 AmplimixLayerImpl::GetLocation() const
+    {
+        if (snd == nullptr || snd->sound == nullptr)
+            return AM_V3(0.0f, 0.0f, 0.0f);
+
+        return snd->sound->GetChannel().GetLocation();
+    }
+
+    Entity AmplimixLayerImpl::GetEntity() const
+    {
+        if (snd == nullptr || snd->sound == nullptr)
+            return Entity(nullptr);
+
+        return snd->sound->GetChannel().GetEntity();
+    }
+
+    Listener AmplimixLayerImpl::GetListener() const
+    {
+        if (snd == nullptr || snd->sound == nullptr)
+            return Listener(nullptr);
+
+        return snd->sound->GetChannel().GetListener();
+    }
+
+    Channel AmplimixLayerImpl::GetChannel() const
+    {
+        if (snd == nullptr || snd->sound == nullptr)
+            return Channel(nullptr);
+
+        return snd->sound->GetChannel();
+    }
+
+    SoundFormat AmplimixLayerImpl::GetSoundFormat() const
+    {
+        if (snd == nullptr || snd->sound == nullptr)
+            return SoundFormat();
+
+        return snd->format;
+    }
+
+    bool AmplimixLayerImpl::IsSpatializationEnabled() const
+    {
+        if (snd == nullptr || snd->sound == nullptr)
+            return false;
+
+        // TODO: Update this with the new spatialization system
+        return snd->sound->GetSettings().m_spatialization != 0;
+    }
+
+    bool AmplimixLayerImpl::IsLoopEnabled() const
+    {
+        if (snd == nullptr || snd->sound == nullptr)
+            return false;
+
+        return snd->sound->GetSettings().m_loop;
+    }
+
+    bool AmplimixLayerImpl::IsStreamEnabled() const
+    {
+        if (snd == nullptr || snd->sound == nullptr)
+            return false;
+
+        return snd->sound->GetSound()->IsStream();
+    }
+
+    const Sound* AmplimixLayerImpl::GetSound() const
+    {
+        if (snd == nullptr || snd->sound == nullptr)
+            return nullptr;
+
+        return snd->sound->GetSound();
+    }
+
+    const EffectInstance* AmplimixLayerImpl::GetEffect() const
+    {
+        if (snd == nullptr || snd->sound == nullptr)
+            return nullptr;
+
+        return snd->sound->GetEffect();
     }
 } // namespace SparkyStudios::Audio::Amplitude

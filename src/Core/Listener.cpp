@@ -61,6 +61,24 @@ namespace SparkyStudios::Audio::Amplitude
         return _state->GetOrientation();
     }
 
+    void Listener::SetDirectivity(AmReal32 directivity, AmReal32 sharpness) const
+    {
+        AMPLITUDE_ASSERT(Valid());
+        _state->SetDirectivity(directivity, sharpness);
+    }
+
+    AmReal32 Listener::GetDirectivity() const
+    {
+        AMPLITUDE_ASSERT(Valid());
+        return _state->GetDirectivity();
+    }
+
+    AmReal32 Listener::GetDirectivitySharpness() const
+    {
+        AMPLITUDE_ASSERT(Valid());
+        return _state->GetDirectivitySharpness();
+    }
+
     const AmVec3& Listener::GetLocation() const
     {
         AMPLITUDE_ASSERT(Valid());

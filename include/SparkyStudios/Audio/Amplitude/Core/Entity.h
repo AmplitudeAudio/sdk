@@ -14,8 +14,8 @@
 
 #pragma once
 
-#ifndef SS_AMPLITUDE_AUDIO_ENTITY_H
-#define SS_AMPLITUDE_AUDIO_ENTITY_H
+#ifndef _AM_CORE_ENTITY_H
+#define _AM_CORE_ENTITY_H
 
 #include <SparkyStudios/Audio/Amplitude/Math/Orientation.h>
 
@@ -141,6 +141,15 @@ namespace SparkyStudios::Audio::Amplitude
         void SetOcclusion(AmReal32 occlusion) const;
 
         /**
+         * @brief Sets the directivity and sharpness of sounds played by this Entity.
+         *
+         * @param directivity The directivity of the sound source, in the range [0, 1].
+         * @param sharpness The directivity sharpness of the sound source, in the range [1, +INF].
+         * Increasing this value increases the directivity towards the front of the source.
+         */
+        void SetDirectivity(AmReal32 directivity, AmReal32 sharpness) const;
+
+        /**
          * @brief Get the obstruction level of sounds played by this Entity.
          *
          * @return The obstruction amount.
@@ -153,6 +162,20 @@ namespace SparkyStudios::Audio::Amplitude
          * @return The occlusion amount.
          */
         [[nodiscard]] AmReal32 GetOcclusion() const;
+
+        /**
+         * @brief Gets the directivity of sounds played by this Entity.
+         *
+         * @return The directivity of sound sources.
+         */
+        [[nodiscard]] AmReal32 GetDirectivity() const;
+
+        /**
+         * @brief Gets the directivity sharpness of sounds played by this Entity.
+         *
+         * @return The directivity sharpness of sounds played by this Entity.
+         */
+        [[nodiscard]] AmReal32 GetDirectivitySharpness() const;
 
         /**
          * @brief Sets the environment factor for this Entity in the given environment.
@@ -190,4 +213,4 @@ namespace SparkyStudios::Audio::Amplitude
     };
 } // namespace SparkyStudios::Audio::Amplitude
 
-#endif // SS_AMPLITUDE_AUDIO_ENTITY_H
+#endif // _AM_CORE_ENTITY_H

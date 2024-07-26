@@ -14,8 +14,8 @@
 
 #pragma once
 
-#ifndef SS_AMPLITUDE_AUDIO_ATTENUATION_INTERNAL_STATE_H
-#define SS_AMPLITUDE_AUDIO_ATTENUATION_INTERNAL_STATE_H
+#ifndef _AM_SOUND_ATTENUATION_SHAPES_H
+#define _AM_SOUND_ATTENUATION_SHAPES_H
 
 #include <SparkyStudios/Audio/Amplitude/Core/Common.h>
 
@@ -26,17 +26,17 @@
 
 #include <SparkyStudios/Audio/Amplitude/Sound/Attenuation.h>
 
-#include "attenuation_definition_generated.h"
+#include <Sound/Attenuation.h>
 
 namespace SparkyStudios::Audio::Amplitude
 {
     class ConeAttenuationZone final
-        : public AttenuationZone
+        : public AttenuationZoneImpl
         , public ConeZone
     {
     public:
         explicit ConeAttenuationZone(const ConeZoneSettings* settings)
-            : AttenuationZone()
+            : AttenuationZoneImpl()
             , ConeZone(ConeShape::Create(settings->inner()), ConeShape::Create(settings->outer()))
         {}
 
@@ -51,12 +51,12 @@ namespace SparkyStudios::Audio::Amplitude
     };
 
     class SphereAttenuationZone final
-        : public AttenuationZone
+        : public AttenuationZoneImpl
         , public SphereZone
     {
     public:
         explicit SphereAttenuationZone(const SphereZoneSettings* settings)
-            : AttenuationZone()
+            : AttenuationZoneImpl()
             , SphereZone(SphereShape::Create(settings->inner()), SphereShape::Create(settings->outer()))
         {}
 
@@ -71,12 +71,12 @@ namespace SparkyStudios::Audio::Amplitude
     };
 
     class BoxAttenuationZone final
-        : public AttenuationZone
+        : public AttenuationZoneImpl
         , public BoxZone
     {
     public:
         explicit BoxAttenuationZone(const BoxZoneSettings* settings)
-            : AttenuationZone()
+            : AttenuationZoneImpl()
             , BoxZone(BoxShape::Create(settings->inner()), BoxShape::Create(settings->outer()))
         {}
 
@@ -91,12 +91,12 @@ namespace SparkyStudios::Audio::Amplitude
     };
 
     class CapsuleAttenuationZone final
-        : public AttenuationZone
+        : public AttenuationZoneImpl
         , public CapsuleZone
     {
     public:
         explicit CapsuleAttenuationZone(const CapsuleZoneSettings* settings)
-            : AttenuationZone()
+            : AttenuationZoneImpl()
             , CapsuleZone(CapsuleShape::Create(settings->inner()), CapsuleShape::Create(settings->outer()))
         {}
 
@@ -113,4 +113,4 @@ namespace SparkyStudios::Audio::Amplitude
     };
 } // namespace SparkyStudios::Audio::Amplitude
 
-#endif // SS_AMPLITUDE_AUDIO_ATTENUATION_INTERNAL_STATE_H
+#endif // _AM_SOUND_ATTENUATION_SHAPES_H

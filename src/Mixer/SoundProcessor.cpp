@@ -18,6 +18,7 @@
 
 #include <SparkyStudios/Audio/Amplitude/Core/Log.h>
 #include <SparkyStudios/Audio/Amplitude/Core/Memory.h>
+#include <SparkyStudios/Audio/Amplitude/Mixer/Amplimix.h>
 #include <SparkyStudios/Audio/Amplitude/Mixer/SoundProcessor.h>
 
 #include <Mixer/SoundData.h>
@@ -51,7 +52,7 @@ namespace SparkyStudios::Audio::Amplitude
         return bufferSize;
     }
 
-    void SoundProcessorInstance::Cleanup(SoundInstance* sound)
+    void SoundProcessorInstance::Cleanup(const AmplimixLayer* layer)
     {
         // Do nothing in base class
     }
@@ -177,7 +178,7 @@ namespace SparkyStudios::Audio::Amplitude
         AmSize bufferSize,
         AmUInt16 channels,
         AmUInt32 sampleRate,
-        SoundInstance* sound)
+        const AmplimixLayer* layer)
     {
         if (_dryProcessor == nullptr || _wetProcessor == nullptr)
         {
@@ -193,8 +194,8 @@ namespace SparkyStudios::Audio::Amplitude
         std::memcpy(dryOut->buffer, in, bufferSize);
         std::memcpy(wetOut->buffer, in, bufferSize);
 
-        _dryProcessor->Process(reinterpret_cast<AmAudioSampleBuffer>(dryOut->buffer), in, frames, bufferSize, channels, sampleRate, sound);
-        _wetProcessor->Process(reinterpret_cast<AmAudioSampleBuffer>(wetOut->buffer), in, frames, bufferSize, channels, sampleRate, sound);
+        _dryProcessor->Process(reinterpret_cast<AmAudioSampleBuffer>(dryOut->buffer), in, frames, bufferSize, channels, sampleRate, layer);
+        _wetProcessor->Process(reinterpret_cast<AmAudioSampleBuffer>(wetOut->buffer), in, frames, bufferSize, channels, sampleRate, layer);
 
 #if defined(AM_SIMD_INTRINSICS)
         const AmSize length = frames / dryOut->samplesPerVector;

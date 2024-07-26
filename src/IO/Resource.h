@@ -1,4 +1,4 @@
-// Copyright (c) 2021-present Sparky Studios. All rights reserved.
+// Copyright (c) 2024-present Sparky Studios. All rights reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -12,12 +12,29 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+#pragma once
+
+#ifndef _AM_IMPLEMENTATION_IO_RESOURCE_H
+#define _AM_IMPLEMENTATION_IO_RESOURCE_H
+
 #include <SparkyStudios/Audio/Amplitude/IO/Resource.h>
 
 namespace SparkyStudios::Audio::Amplitude
 {
-    const AmOsString& Resource::GetPath() const
+    class ResourceImpl : public Resource
     {
-        return _filename;
-    }
-}
+    public:
+        /**
+         * @copydoc Resource::GetPath
+         */
+        [[nodiscard]] AM_INLINE const AmOsString& GetPath() const override
+        {
+            return m_filename;
+        }
+
+    protected:
+        AmOsString m_filename;
+    };
+} // namespace SparkyStudios::Audio::Amplitude
+
+#endif // _AM_IMPLEMENTATION_IO_RESOURCE_H

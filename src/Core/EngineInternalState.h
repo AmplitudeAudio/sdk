@@ -12,8 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef SS_AMPLITUDE_AUDIO_ENGINEINTERNALSTATE_H
-#define SS_AMPLITUDE_AUDIO_ENGINEINTERNALSTATE_H
+#ifndef _AM_IMPLEMENTATION_CORE_ENGINE_INTERNAL_STATE_H
+#define _AM_IMPLEMENTATION_CORE_ENGINE_INTERNAL_STATE_H
 
 #include <map>
 #include <vector>
@@ -26,11 +26,18 @@
 #include <Core/Playback/BusInternalState.h>
 #include <Core/Playback/ChannelInternalState.h>
 
-#include <Mixer/Mixer.h>
+#include <Core/Event.h>
+#include <Mixer/Amplimix.h>
+#include <Sound/Attenuation.h>
+#include <Sound/Collection.h>
+#include <Sound/Effect.h>
+#include <Sound/Rtpc.h>
+#include <Sound/Sound.h>
+#include <Sound/Switch.h>
+#include <Sound/SwitchContainer.h>
 
 #include <Utils/intrusive_list.h>
 
-#include "collection_definition_generated.h"
 #include "engine_config_definition_generated.h"
 
 namespace SparkyStudios::Audio::Amplitude
@@ -49,25 +56,25 @@ namespace SparkyStudios::Audio::Amplitude
     typedef std::map<AmOsString, AmEventID> EventIdMap;
     typedef std::map<AmOsString, AmBankID> SoundBankIdMap;
 
-    typedef std::map<AmSwitchContainerID, AmUniquePtr<MemoryPoolKind::Engine, SwitchContainer>> SwitchContainerMap;
+    typedef std::map<AmSwitchContainerID, AmUniquePtr<MemoryPoolKind::Engine, SwitchContainerImpl>> SwitchContainerMap;
 
-    typedef std::map<AmCollectionID, AmUniquePtr<MemoryPoolKind::Engine, Collection>> CollectionMap;
+    typedef std::map<AmCollectionID, AmUniquePtr<MemoryPoolKind::Engine, CollectionImpl>> CollectionMap;
 
-    typedef std::map<AmSoundID, AmUniquePtr<MemoryPoolKind::Engine, Sound>> SoundMap;
+    typedef std::map<AmSoundID, AmUniquePtr<MemoryPoolKind::Engine, SoundImpl>> SoundMap;
 
-    typedef std::map<AmAttenuationID, AmUniquePtr<MemoryPoolKind::Engine, Attenuation>> AttenuationMap;
+    typedef std::map<AmAttenuationID, AmUniquePtr<MemoryPoolKind::Engine, AttenuationImpl>> AttenuationMap;
 
-    typedef std::map<AmSwitchID, AmUniquePtr<MemoryPoolKind::Engine, Switch>> SwitchMap;
+    typedef std::map<AmSwitchID, AmUniquePtr<MemoryPoolKind::Engine, SwitchImpl>> SwitchMap;
 
-    typedef std::map<AmRtpcID, AmUniquePtr<MemoryPoolKind::Engine, Rtpc>> RtpcMap;
+    typedef std::map<AmRtpcID, AmUniquePtr<MemoryPoolKind::Engine, RtpcImpl>> RtpcMap;
 
-    typedef std::map<AmEffectID, AmUniquePtr<MemoryPoolKind::Engine, Effect>> EffectMap;
+    typedef std::map<AmEffectID, AmUniquePtr<MemoryPoolKind::Engine, EffectImpl>> EffectMap;
 
-    typedef std::map<AmEventID, AmUniquePtr<MemoryPoolKind::Engine, Event>> EventMap;
+    typedef std::map<AmEventID, AmUniquePtr<MemoryPoolKind::Engine, EventImpl>> EventMap;
 
     typedef std::map<AmBankID, AmUniquePtr<MemoryPoolKind::Engine, SoundBank>> SoundBankMap;
 
-    typedef std::vector<EventInstance> EventInstanceVector;
+    typedef std::vector<EventInstanceImpl> EventInstanceVector;
 
     typedef std::vector<ChannelInternalState> ChannelStateVector;
 
@@ -148,7 +155,7 @@ namespace SparkyStudios::Audio::Amplitude
             , version(nullptr)
         {}
 
-        Mixer mixer;
+        AmplimixImpl mixer;
 
         // Hold the audio buses definition file contents.
         std::string buses_source;
@@ -315,4 +322,4 @@ namespace SparkyStudios::Audio::Amplitude
     AmUInt32 GetMaxNumberOfChannels(const EngineConfigDefinition* config);
 } // namespace SparkyStudios::Audio::Amplitude
 
-#endif // SS_AMPLITUDE_AUDIO_ENGINEINTERNALSTATE_H
+#endif // _AM_IMPLEMENTATION_CORE_ENGINE_INTERNAL_STATE_H

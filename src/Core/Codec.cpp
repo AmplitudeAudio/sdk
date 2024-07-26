@@ -40,6 +40,16 @@ namespace SparkyStudios::Audio::Amplitude
         return c;
     }
 
+    Codec::Decoder::Decoder(const Codec* codec)
+        : m_format()
+        , m_codec(codec)
+    {}
+
+    Codec::Encoder::Encoder(const Codec* codec)
+        : m_format()
+        , m_codec(codec)
+    {}
+
     Codec::Codec(AmString name)
         : m_name(std::move(name))
     {

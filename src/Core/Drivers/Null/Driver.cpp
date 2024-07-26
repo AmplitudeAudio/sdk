@@ -14,7 +14,7 @@
 
 #include <Core/Drivers/Null/Driver.h>
 
-#include <Mixer/Mixer.h>
+#include <Mixer/Amplimix.h>
 
 namespace SparkyStudios::Audio::Amplitude
 {
@@ -24,7 +24,7 @@ namespace SparkyStudios::Audio::Amplitude
 
         while (data->mRunning)
         {
-            amEngine->GetMixer()->Mix(data->mOutputBuffer, data->mOutputBufferSize);
+            Engine::GetInstance()->GetMixer()->Mix(data->mOutputBuffer, data->mOutputBufferSize);
             Thread::Sleep(1);
         }
     }

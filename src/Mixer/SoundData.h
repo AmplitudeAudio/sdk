@@ -14,8 +14,8 @@
 
 #pragma once
 
-#ifndef SS_AMPLITUDE_AUDIO_SOUNDDATA_H
-#define SS_AMPLITUDE_AUDIO_SOUNDDATA_H
+#ifndef _AM_IMPLEMENTATION_MIXER_SOUND_DATA_H
+#define _AM_IMPLEMENTATION_MIXER_SOUND_DATA_H
 
 #include <SparkyStudios/Audio/Amplitude/Core/Common.h>
 #include <SparkyStudios/Audio/Amplitude/Core/Memory.h>
@@ -24,6 +24,8 @@
 
 namespace SparkyStudios::Audio::Amplitude
 {
+    class SoundInstance;
+
     struct SoundChunk
     {
         AmUInt64 length;
@@ -46,11 +48,13 @@ namespace SparkyStudios::Audio::Amplitude
 
     struct SoundData
     {
-        SoundChunk* chunk = nullptr;
-        AmUInt64 length = 0;
-        AmUniquePtr<MemoryPoolKind::Engine, SoundInstance> sound = nullptr;
-        SoundFormat format{};
-        bool stream = false;
+        SoundData();
+
+        SoundChunk* chunk;
+        AmUInt64 length;
+        AmUniquePtr<MemoryPoolKind::Engine, SoundInstance> sound;
+        SoundFormat format;
+        bool stream;
 
         static SoundData* CreateMusic(const SoundFormat& format, SoundChunk* chunk, AmUInt64 frames, SoundInstance* soundInstance);
         static SoundData* CreateSound(const SoundFormat& format, SoundChunk* chunk, AmUInt64 frames, SoundInstance* soundInstance);
@@ -59,4 +63,4 @@ namespace SparkyStudios::Audio::Amplitude
     };
 } // namespace SparkyStudios::Audio::Amplitude
 
-#endif // SS_AMPLITUDE_AUDIO_SOUNDDATA_H
+#endif // _AM_IMPLEMENTATION_MIXER_SOUND_DATA_H

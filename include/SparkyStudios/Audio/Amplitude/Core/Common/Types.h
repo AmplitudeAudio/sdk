@@ -14,8 +14,8 @@
 
 #pragma once
 
-#ifndef SS_AMPLITUDE_AUDIO_TYPES_H
-#define SS_AMPLITUDE_AUDIO_TYPES_H
+#ifndef _AM_CORE_COMMON_TYPES_H
+#define _AM_CORE_COMMON_TYPES_H
 
 #include <SparkyStudios/Audio/Amplitude/Core/Common/Config.h>
 
@@ -61,4 +61,4 @@ namespace SparkyStudios::Audio::Amplitude
     // clang-format on
 } // namespace SparkyStudios::Audio::Amplitude
 
-#endif // SS_AMPLITUDE_AUDIO_TYPES_H
+#endif // _AM_CORE_COMMON_TYPES_H

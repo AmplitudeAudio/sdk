@@ -14,11 +14,10 @@
 
 #pragma once
 
-#ifndef SS_AMPLITUDE_AUDIO_ATTENUATION_H
-#define SS_AMPLITUDE_AUDIO_ATTENUATION_H
+#ifndef _AM_SOUND_ATTENUATION_H
+#define _AM_SOUND_ATTENUATION_H
 
 #include <SparkyStudios/Audio/Amplitude/Core/Common.h>
-#include <SparkyStudios/Audio/Amplitude/Core/Memory.h>
 
 #include <SparkyStudios/Audio/Amplitude/Core/Asset.h>
 #include <SparkyStudios/Audio/Amplitude/Core/Entity.h>
@@ -30,11 +29,6 @@
 
 namespace SparkyStudios::Audio::Amplitude
 {
-    struct EngineInternalState;
-
-    struct AttenuationDefinition;
-    struct AttenuationShapeDefinition;
-
     class Attenuation;
 
     /**
@@ -59,7 +53,7 @@ namespace SparkyStudios::Audio::Amplitude
          *
          * @return The attenuation factor.
          */
-        virtual float GetAttenuationFactor(const Attenuation* attenuation, const AmVec3& soundLocation, const Listener& listener);
+        virtual AmReal32 GetAttenuationFactor(const Attenuation* attenuation, const AmVec3& soundLocation, const Listener& listener) = 0;
 
         /**
          * @brief Returns the attenuation factor.
@@ -72,24 +66,7 @@ namespace SparkyStudios::Audio::Amplitude
          *
          * @return The attenuation factor.
          */
-        virtual float GetAttenuationFactor(const Attenuation* attenuation, const Entity& entity, const Listener& listener);
-
-        /**
-         * @brief Creates an AttenuationZone object from the definition.
-         *
-         * @param definition The attenuation shape definition.
-         *
-         * @return An AttenuationZone object.
-         */
-        static AttenuationZone* Create(const AttenuationShapeDefinition* definition);
-
-    protected:
-        AttenuationZone();
-
-        /**
-         * @brief The maximum attenuation factor to apply to the sound gain.
-         */
-        float m_maxAttenuationFactor;
+        virtual AmReal32 GetAttenuationFactor(const Attenuation* attenuation, const Entity& entity, const Listener& listener) = 0;
     };
 
     /**
@@ -102,22 +79,9 @@ namespace SparkyStudios::Audio::Amplitude
      * when the sound need to adjust his volume due to the distance of from the listener,
      * and many other parameters.
      */
-    class AM_API_PUBLIC Attenuation final : public Asset<AmAttenuationID, AttenuationDefinition>
+    class AM_API_PUBLIC Attenuation : public Asset<AmAttenuationID>
     {
     public:
-        /**
-         * @brief Creates an uninitialized Attenuation.
-         *
-         * An uninitialized Attenuation instance cannot compute gain nor provide
-         * attenuation configuration data.
-         */
-        Attenuation();
-
-        /**
-         * @brief Destroys the Attenuation asset and releases all associated resources.
-         */
-        ~Attenuation() override;
-
         /**
          * @brief Returns the gain of the sound from the given distance to the listener.
          *
@@ -126,7 +90,7 @@ namespace SparkyStudios::Audio::Amplitude
          *
          * @return The computed gain value fom the curve.
          */
-        [[nodiscard]] float GetGain(const AmVec3& soundLocation, const Listener& listener) const;
+        [[nodiscard]] virtual AmReal32 GetGain(const AmVec3& soundLocation, const Listener& listener) const = 0;
 
         /**
          * @brief Returns the gain of the sound from the given distance to the listener.
@@ -136,41 +100,29 @@ namespace SparkyStudios::Audio::Amplitude
          *
          * @return The computed gain value fom the curve.
          */
-        [[nodiscard]] float GetGain(const Entity& entity, const Listener& listener) const;
+        [[nodiscard]] virtual AmReal32 GetGain(const Entity& entity, const Listener& listener) const = 0;
 
         /**
          * @brief Returns the shape object of this Attenuation.
          *
          * @return The Attenuation shape.
          */
-        [[nodiscard]] AttenuationZone* GetShape() const;
+        [[nodiscard]] virtual AttenuationZone* GetShape() const = 0;
 
         /**
          * @brief Returns the gain curve attached to this Attenuation.
          *
          * @return The attenuation's gain curve.
          */
-        [[nodiscard]] const Curve& GetGainCurve() const;
+        [[nodiscard]] virtual const Curve& GetGainCurve() const = 0;
 
         /**
          * @brief Returns the maximum distance for a fully attenuated sound
          *
          * @return The maximum sound attenuation distance.
          */
-        [[nodiscard]] double GetMaxDistance() const;
-
-        bool LoadDefinition(const AttenuationDefinition* definition, EngineInternalState* state) override;
-        [[nodiscard]] const AttenuationDefinition* GetDefinition() const override;
-
-    private:
-        AmString _name;
-
-        double _maxDistance;
-
-        AmUniquePtr<MemoryPoolKind::Engine, AttenuationZone> _shape;
-
-        Curve _gainCurve;
+        [[nodiscard]] virtual AmReal64 GetMaxDistance() const = 0;
     };
 } // namespace SparkyStudios::Audio::Amplitude
 
-#endif // SS_AMPLITUDE_AUDIO_ATTENUATION_H
+#endif // _AM_SOUND_ATTENUATION_H

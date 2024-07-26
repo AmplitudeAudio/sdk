@@ -101,6 +101,12 @@ namespace SparkyStudios::Audio::Amplitude
         _state->SetOcclusion(occlusion);
     }
 
+    void Entity::SetDirectivity(AmReal32 directivity, AmReal32 sharpness) const
+    {
+        AMPLITUDE_ASSERT(Valid());
+        _state->SetDirectivity(directivity, sharpness);
+    }
+
     AmReal32 Entity::GetObstruction() const
     {
         AMPLITUDE_ASSERT(Valid());
@@ -111,6 +117,18 @@ namespace SparkyStudios::Audio::Amplitude
     {
         AMPLITUDE_ASSERT(Valid());
         return _state->GetOcclusion();
+    }
+
+    AmReal32 Entity::GetDirectivity() const
+    {
+        AMPLITUDE_ASSERT(Valid());
+        return _state->GetDirectivity();
+    }
+
+    AmReal32 Entity::GetDirectivitySharpness() const
+    {
+        AMPLITUDE_ASSERT(Valid());
+        return _state->GetDirectivitySharpness();
     }
 
     void Entity::SetEnvironmentFactor(AmEnvironmentID environment, AmReal32 factor) const

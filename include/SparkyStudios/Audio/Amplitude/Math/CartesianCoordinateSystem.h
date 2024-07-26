@@ -229,7 +229,7 @@ namespace SparkyStudios::Audio::Amplitude
          * @brief Gets the vector corresponding to the coordinate system's right axis.
          * @return The coordinate system's right vector.
          */
-        [[nodiscard]] AM_INLINE(AmVec3) GetRightVector() const
+        [[nodiscard]] AM_INLINE AmVec3 GetRightVector() const
         {
             return GetVector(_rightAxis);
         }
@@ -238,7 +238,7 @@ namespace SparkyStudios::Audio::Amplitude
          * @brief Gets the vector corresponding to the coordinate system's forward axis.
          * @return The coordinate system's forward vector.
          */
-        [[nodiscard]] AM_INLINE(AmVec3) GetForwardVector() const
+        [[nodiscard]] AM_INLINE AmVec3 GetForwardVector() const
         {
             return GetVector(_forwardAxis);
         }
@@ -247,7 +247,7 @@ namespace SparkyStudios::Audio::Amplitude
          * @brief Gets the vector corresponding to the coordinate system's up axis.
          * @return The coordinate system's up vector.
          */
-        [[nodiscard]] AM_INLINE(AmVec3) GetUpVector() const
+        [[nodiscard]] AM_INLINE AmVec3 GetUpVector() const
         {
             return GetVector(_upAxis);
         }

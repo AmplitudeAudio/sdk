@@ -15,8 +15,8 @@
 #include <SparkyStudios/Audio/Amplitude/Core/Log.h>
 #include <SparkyStudios/Audio/Amplitude/Core/Memory.h>
 
-#include <Mixer/Mixer.h>
 #include <Mixer/SoundData.h>
+#include <Sound/Sound.h>
 
 namespace SparkyStudios::Audio::Amplitude
 {
@@ -87,6 +87,14 @@ namespace SparkyStudios::Audio::Amplitude
         ampoolfree(memoryPool, buffer);
         buffer = nullptr;
     }
+
+    SoundData::SoundData()
+        : chunk(nullptr)
+        , length(0)
+        , sound(nullptr)
+        , format()
+        , stream(false)
+    {}
 
     SoundData* SoundData::CreateMusic(const SoundFormat& format, SoundChunk* chunk, AmUInt64 frames, SoundInstance* soundInstance)
     {

@@ -13,6 +13,7 @@
 // limitations under the License.
 
 #include <SparkyStudios/Audio/Amplitude/Core/Memory.h>
+#include <SparkyStudios/Audio/Amplitude/Mixer/Amplimix.h>
 
 #include <Mixer/ProcessorPipeline.h>
 
@@ -54,21 +55,21 @@ namespace SparkyStudios::Audio::Amplitude
         AmSize bufferSize,
         AmUInt16 channels,
         AmUInt32 sampleRate,
-        SoundInstance* sound)
+        const AmplimixLayer* layer)
     {
         AmConstAudioSampleBuffer cIn = in;
 
         for (auto&& p : _processors)
         {
-            p->Process(out, cIn, frames, bufferSize, channels, sampleRate, sound);
+            p->Process(out, cIn, frames, bufferSize, channels, sampleRate, layer);
             cIn = out;
         }
     }
 
-    void ProcessorPipeline::Cleanup(SoundInstance* sound)
+    void ProcessorPipeline::Cleanup(const AmplimixLayer* layer)
     {
         for (auto&& p : _processors)
-            p->Cleanup(sound);
+            p->Cleanup(layer);
     }
 
     AmSize ProcessorPipeline::GetOutputBufferSize(AmUInt64 frames, AmSize bufferSize, AmUInt16 channels, AmUInt32 sampleRate)

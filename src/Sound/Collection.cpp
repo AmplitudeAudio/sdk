@@ -12,30 +12,31 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+#include <ranges>
+
 #include <SparkyStudios/Audio/Amplitude/Amplitude.h>
 
-#include <Core/EngineInternalState.h>
+#include <Sound/Collection.h>
 #include <Sound/Schedulers/RandomScheduler.h>
 #include <Sound/Schedulers/SequenceScheduler.h>
 
-#include "collection_definition_generated.h"
-
 namespace SparkyStudios::Audio::Amplitude
 {
-    Collection::Collection()
-        : SoundObject()
-        , _worldScopeScheduler(nullptr)
+    template class AssetImpl<AmCollectionID, CollectionDefinition>;
+
+    CollectionImpl::CollectionImpl()
+        : _worldScopeScheduler(nullptr)
         , _entityScopeSchedulers()
         , _sounds()
         , _soundSettings()
     {}
 
-    Collection::~Collection()
+    CollectionImpl::~CollectionImpl()
     {
         ampooldelete(MemoryPoolKind::Engine, Scheduler, _worldScopeScheduler);
         _worldScopeScheduler = nullptr;
 
-        for (const auto& [id, scheduler] : _entityScopeSchedulers)
+        for (const auto& scheduler : _entityScopeSchedulers | std::views::values)
             ampooldelete(MemoryPoolKind::Engine, Scheduler, scheduler);
 
         _entityScopeSchedulers.clear();
@@ -44,7 +45,7 @@ namespace SparkyStudios::Audio::Amplitude
         m_attenuation = nullptr;
     }
 
-    Sound* Collection::SelectFromWorld(const std::vector<AmSoundID>& toSkip) const
+    Sound* CollectionImpl::SelectFromWorld(const std::vector<AmSoundID>& toSkip) const
     {
         const CollectionDefinition* definition = GetDefinition();
         if (_worldScopeScheduler == nullptr || !_worldScopeScheduler->Valid())
@@ -56,7 +57,7 @@ namespace SparkyStudios::Audio::Amplitude
         return _worldScopeScheduler->Select(toSkip);
     }
 
-    Sound* Collection::SelectFromEntity(const Entity& entity, const std::vector<AmSoundID>& toSkip)
+    Sound* CollectionImpl::SelectFromEntity(const Entity& entity, const std::vector<AmSoundID>& toSkip)
     {
         const CollectionDefinition* definition = GetDefinition();
         if (const auto findIt = _entityScopeSchedulers.find(entity.GetId()); findIt == _entityScopeSchedulers.end())
@@ -65,13 +66,13 @@ namespace SparkyStudios::Audio::Amplitude
         return _entityScopeSchedulers[entity.GetId()]->Select(toSkip);
     }
 
-    void Collection::ResetEntityScopeScheduler(const Entity& entity)
+    void CollectionImpl::ResetEntityScopeScheduler(const Entity& entity)
     {
         if (const auto findIt = _entityScopeSchedulers.find(entity.GetId()); findIt != _entityScopeSchedulers.end())
             findIt->second->Reset();
     }
 
-    void Collection::ResetWorldScopeScheduler()
+    void CollectionImpl::ResetWorldScopeScheduler()
     {
         if (_worldScopeScheduler == nullptr || !_worldScopeScheduler->Valid())
             return;
@@ -79,7 +80,7 @@ namespace SparkyStudios::Audio::Amplitude
         _worldScopeScheduler->Reset();
     }
 
-    Scheduler* Collection::CreateScheduler(const CollectionDefinition* definition)
+    Scheduler* CollectionImpl::CreateScheduler(const CollectionDefinition* definition)
     {
         Scheduler* scheduler;
 
@@ -107,12 +108,12 @@ namespace SparkyStudios::Audio::Amplitude
         return scheduler;
     }
 
-    const std::vector<AmSoundID>& Collection::GetSounds() const
+    const std::vector<AmSoundID>& CollectionImpl::GetSounds() const
     {
         return _sounds;
     }
 
-    bool Collection::LoadDefinition(const CollectionDefinition* definition, EngineInternalState* state)
+    bool CollectionImpl::LoadDefinition(const CollectionDefinition* definition, EngineInternalState* state)
     {
         if (!definition->bus())
         {
@@ -149,13 +150,14 @@ namespace SparkyStudios::Audio::Amplitude
 
             if (!m_attenuation)
             {
-                amLogError("Collection %s specifies an unknown attenuation ID: %llu.", definition->name()->c_str(), definition->attenuation());
+                amLogError(
+                    "Collection %s specifies an unknown attenuation ID: %llu.", definition->name()->c_str(), definition->attenuation());
                 return false;
             }
         }
 
-        _id = definition->id();
-        _name = definition->name()->str();
+        m_id = definition->id();
+        m_name = definition->name()->str();
 
         RtpcValue::Init(m_gain, definition->gain(), 1);
         RtpcValue::Init(m_pitch, definition->pitch(), 1);
@@ -207,14 +209,14 @@ namespace SparkyStudios::Audio::Amplitude
         return true;
     }
 
-    const CollectionDefinition* Collection::GetDefinition() const
+    const CollectionDefinition* CollectionImpl::GetDefinition() const
     {
-        return GetCollectionDefinition(_source.c_str());
+        return GetCollectionDefinition(m_source.c_str());
     }
 
-    void Collection::AcquireReferences(EngineInternalState* state)
+    void CollectionImpl::AcquireReferences(EngineInternalState* state)
     {
-        AMPLITUDE_ASSERT(_id != kAmInvalidObjectId);
+        AMPLITUDE_ASSERT(m_id != kAmInvalidObjectId);
 
         if (m_effect)
             m_effect->GetRefCounter()->Increment();
@@ -227,9 +229,9 @@ namespace SparkyStudios::Audio::Amplitude
                 findIt->second->GetRefCounter()->Increment();
     }
 
-    void Collection::ReleaseReferences(EngineInternalState* state)
+    void CollectionImpl::ReleaseReferences(EngineInternalState* state)
     {
-        AMPLITUDE_ASSERT(_id != kAmInvalidObjectId);
+        AMPLITUDE_ASSERT(m_id != kAmInvalidObjectId);
 
         if (m_effect)
             m_effect->GetRefCounter()->Decrement();

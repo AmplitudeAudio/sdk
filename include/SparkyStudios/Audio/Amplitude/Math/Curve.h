@@ -14,8 +14,8 @@
 
 #pragma once
 
-#ifndef SS_AMPLITUDE_AUDIO_CURVE_H
-#define SS_AMPLITUDE_AUDIO_CURVE_H
+#ifndef _AM_MATH_CURVE_H
+#define _AM_MATH_CURVE_H
 
 #include <SparkyStudios/Audio/Amplitude/Core/Common.h>
 
@@ -160,4 +160,4 @@ namespace SparkyStudios::Audio::Amplitude
         std::vector<CurvePart> _parts;
     };
 } // namespace SparkyStudios::Audio::Amplitude
-#endif // SS_AMPLITUDE_AUDIO_CURVE_H
+#endif // _AM_MATH_CURVE_H

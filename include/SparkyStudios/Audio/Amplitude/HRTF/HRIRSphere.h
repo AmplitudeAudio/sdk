@@ -14,12 +14,13 @@
 
 #pragma once
 
-#ifndef _AM_HRTF_HRIRSPHERE_H
-#define _AM_HRTF_HRIRSPHERE_H
+#ifndef _AM_HRTF_HRIR_SPHERE_H
+#define _AM_HRTF_HRIR_SPHERE_H
 
 #include <SparkyStudios/Audio/Amplitude/Core/Common.h>
 #include <SparkyStudios/Audio/Amplitude/IO/File.h>
 #include <SparkyStudios/Audio/Amplitude/IO/Resource.h>
+#include <SparkyStudios/Audio/Amplitude/Math/Geometry.h>
 
 namespace SparkyStudios::Audio::Amplitude
 {
@@ -110,41 +111,31 @@ namespace SparkyStudios::Audio::Amplitude
     };
 
     /**
-     * @brief A 3D sphere of HRTF data.
+     * @brief A 3D sphere of HRIR data.
      */
     class AM_API_PUBLIC HRIRSphere : public Resource
     {
     public:
-        /**
-         * @brief Constructs a new @c HRIRSphere instance.
-         *
-         * @param[in] filePath The path to the HRIR sphere file.
-         */
-        explicit HRIRSphere(const AmOsString& filePath);
+        virtual void SetResource(const AmOsString& filePath) = 0;
 
-        ~HRIRSphere() override;
+        [[nodiscard]] virtual const std::vector<HRIRSphereVertex>& GetVertices() const = 0;
 
-        void Load(const FileSystem* loader) override;
+        [[nodiscard]] virtual const std::vector<Face>& GetFaces() const = 0;
 
-        [[nodiscard]] const std::vector<HRIRSphereVertex>& GetVertices() const;
+        [[nodiscard]] virtual const HRIRSphereVertex& GetVertex(AmUInt32 index) const = 0;
 
-        [[nodiscard]] const std::vector<AmUInt32>& GetIndices() const;
+        [[nodiscard]] virtual AmUInt32 GetVertexCount() const = 0;
 
-        [[nodiscard]] const HRIRSphereVertex& GetVertex(AmUInt32 index) const;
+        [[nodiscard]] virtual AmUInt32 GetFaceCount() const = 0;
 
-        [[nodiscard]] AmUInt32 GetVertexCount() const;
+        [[nodiscard]] virtual AmUInt32 GetSampleRate() const = 0;
 
-        [[nodiscard]] AmUInt32 GetIndexCount() const;
+        [[nodiscard]] virtual AmUInt32 GetIRLength() const = 0;
 
-        [[nodiscard]] AmUInt32 GetSampleRate() const;
+        virtual void Transform(const AmMat4& matrix) = 0;
 
-        [[nodiscard]] AmUInt32 GetIRLength() const;
-
-    private:
-        HRIRSphereFileHeaderDescription _header;
-        std::vector<HRIRSphereVertex> _vertices;
-        std::vector<AmUInt32> _indices;
+        [[nodiscard]] virtual bool IsLoaded() const = 0;
     };
 } // namespace SparkyStudios::Audio::Amplitude
 
-#endif // _AM_HRTF_HRIRSPHERE_H
+#endif // _AM_HRTF_HRIR_SPHERE_H

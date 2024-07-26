@@ -170,15 +170,18 @@ set(SA_SOURCE
     include/SparkyStudios/Audio/Amplitude/IO/PackageItemFile.h
     include/SparkyStudios/Audio/Amplitude/IO/PackageFileSystem.h
     include/SparkyStudios/Audio/Amplitude/IO/Resource.h
+    include/SparkyStudios/Audio/Amplitude/Math/BarycentricCoordinates.h
     include/SparkyStudios/Audio/Amplitude/Math/CartesianCoordinateSystem.h
     include/SparkyStudios/Audio/Amplitude/Math/Curve.h
     include/SparkyStudios/Audio/Amplitude/Math/FFT.h
+    include/SparkyStudios/Audio/Amplitude/Math/Geometry.h
     include/SparkyStudios/Audio/Amplitude/Math/HandmadeMath.h
     include/SparkyStudios/Audio/Amplitude/Math/Orientation.h
     include/SparkyStudios/Audio/Amplitude/Math/Shape.h
     include/SparkyStudios/Audio/Amplitude/Math/SphericalPosition.h
     include/SparkyStudios/Audio/Amplitude/Math/SplitComplex.h
     include/SparkyStudios/Audio/Amplitude/Math/Utils.h
+    include/SparkyStudios/Audio/Amplitude/Mixer/Amplimix.h
     include/SparkyStudios/Audio/Amplitude/Mixer/Resampler.h
     include/SparkyStudios/Audio/Amplitude/Mixer/SoundProcessor.h
     include/SparkyStudios/Audio/Amplitude/Sound/Attenuation.h
@@ -187,7 +190,6 @@ set(SA_SOURCE
     include/SparkyStudios/Audio/Amplitude/Sound/Fader.h
     include/SparkyStudios/Audio/Amplitude/Sound/Filter.h
     include/SparkyStudios/Audio/Amplitude/Sound/Rtpc.h
-    include/SparkyStudios/Audio/Amplitude/Sound/Scheduler.h
     include/SparkyStudios/Audio/Amplitude/Sound/Sound.h
     include/SparkyStudios/Audio/Amplitude/Sound/SoundBank.h
     include/SparkyStudios/Audio/Amplitude/Sound/SoundObject.h
@@ -224,12 +226,14 @@ set(SA_SOURCE
     src/Core/Playback/ChannelInternalState.h
 
     src/Core/Asset.cpp
+    src/Core/Asset.h
     src/Core/Codec.cpp
     src/Core/Common.cpp
     src/Core/DefaultPlugins.h
     src/Core/Device.cpp
     src/Core/Driver.cpp
     src/Core/Engine.cpp
+    src/Core/Engine.h
     src/Core/EngineInternalState.h
     src/Core/Entity.cpp
     src/Core/EntityInternalState.cpp
@@ -238,6 +242,7 @@ set(SA_SOURCE
     src/Core/EnvironmentInternalState.cpp
     src/Core/EnvironmentInternalState.h
     src/Core/Event.cpp
+    src/Core/Event.h
     src/Core/ListenerInternalState.cpp
     src/Core/ListenerInternalState.h
     src/Core/Listener.cpp
@@ -247,18 +252,23 @@ set(SA_SOURCE
     src/Core/Version.cpp
 
     src/HRTF/HRIRSphere.cpp
+    src/HRTF/HRIRSphere.h
     src/IO/DiskFile.cpp
     src/IO/DiskFileSystem.cpp
     src/IO/File.cpp
     src/IO/MemoryFile.cpp
     src/IO/PackageItemFile.cpp
     src/IO/PackageFileSystem.cpp
-    src/IO/Resource.cpp
+    src/IO/Resource.h
 
+    src/Math/BarycentricCoordinates.cpp
     src/Math/CartesianCoordinateSystem.cpp
     src/Math/Curve.cpp
     src/Math/Orientation.cpp
+    src/Math/FaceBSPTree.cpp
+    src/Math/FaceBSPTree.h
     src/Math/FFT.cpp
+    src/Math/Geometry.cpp
     src/Math/Shape.cpp
     src/Math/SphericalPosition.cpp
     src/Math/SplitComplex.cpp
@@ -272,8 +282,8 @@ set(SA_SOURCE
     src/Mixer/SoundProcessors/OcclusionProcessor.h
     src/Mixer/SoundProcessors/PassThroughProcessor.h
     src/Mixer/SoundProcessors/SilenceProcessor.h
-    src/Mixer/Mixer.cpp
-    src/Mixer/Mixer.h
+    src/Mixer/Amplimix.h
+    src/Mixer/Amplimix.cpp
     src/Mixer/ProcessorPipeline.cpp
     src/Mixer/ProcessorPipeline.h
     src/Mixer/RealChannel.cpp
@@ -309,6 +319,8 @@ set(SA_SOURCE
     src/Sound/Filters/FreeverbFilter.h
     src/Sound/Filters/LofiFilter.cpp
     src/Sound/Filters/LofiFilter.h
+    src/Sound/Filters/MonoPoleFilter.cpp
+    src/Sound/Filters/MonoPoleFilter.h
     src/Sound/Filters/RobotizeFilter.cpp
     src/Sound/Filters/RobotizeFilter.h
     src/Sound/Filters/WaveShaperFilter.cpp
@@ -318,19 +330,28 @@ set(SA_SOURCE
     src/Sound/Schedulers/SequenceScheduler.cpp
     src/Sound/Schedulers/SequenceScheduler.h
     src/Sound/Attenuation.cpp
+    src/Sound/Attenuation.h
     src/Sound/AttenuationShapes.cpp
     src/Sound/AttenuationShapes.h
     src/Sound/Collection.cpp
+    src/Sound/Collection.h
     src/Sound/Effect.cpp
+    src/Sound/Effect.h
     src/Sound/Fader.cpp
     src/Sound/Filter.cpp
     src/Sound/RefCounter.cpp
     src/Sound/Rtpc.cpp
+    src/Sound/Rtpc.h
+    src/Sound/Scheduler.h
     src/Sound/Sound.cpp
+    src/Sound/Sound.h
     src/Sound/SoundBank.cpp
     src/Sound/SoundObject.cpp
+    src/Sound/SoundObject.h
     src/Sound/Switch.cpp
+    src/Sound/Switch.h
     src/Sound/SwitchContainer.cpp
+    src/Sound/SwitchContainer.h
 
     src/Utils/Audio/Compression/ADPCM/ADPCM.cpp
     src/Utils/Audio/Compression/ADPCM/ADPCM.h

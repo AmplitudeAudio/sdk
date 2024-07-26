@@ -21,7 +21,7 @@ namespace SparkyStudios::Audio::Amplitude
         , _re()
         , _im()
     {
-        Resize(initialSize);
+        Resize(initialSize, false);
     }
 
     SplitComplex::~SplitComplex()
@@ -36,13 +36,13 @@ namespace SparkyStudios::Audio::Amplitude
         _size = 0;
     }
 
-    void SplitComplex::Resize(const AmSize newSize)
+    void SplitComplex::Resize(const AmSize newSize, const bool clear)
     {
         if (newSize == _size)
             return;
 
-        _re.Resize(newSize);
-        _im.Resize(newSize);
+        _re.Resize(newSize, clear);
+        _im.Resize(newSize, clear);
         _size = newSize;
     }
 
@@ -76,5 +76,11 @@ namespace SparkyStudios::Audio::Amplitude
     const AmAudioSample* SplitComplex::im() const
     {
         return _im.GetBuffer();
+    }
+
+    std::complex<AmAudioSample> SplitComplex::operator[](AmSize index) const
+    {
+        AMPLITUDE_ASSERT(index < _size);
+        return { _re[index], _im[index] };
     }
 } // namespace SparkyStudios::Audio::Amplitude

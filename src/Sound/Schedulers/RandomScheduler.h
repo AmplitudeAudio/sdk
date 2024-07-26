@@ -17,13 +17,13 @@
 #ifndef SPARK_AUDIO_RANDOM_SCHEDULER_H
 #define SPARK_AUDIO_RANDOM_SCHEDULER_H
 
-#include <SparkyStudios/Audio/Amplitude/Sound/Scheduler.h>
+#include <Sound/Scheduler.h>
 
 namespace SparkyStudios::Audio::Amplitude
 {
     struct RandomSoundSchedulerConfig;
 
-    class RandomScheduler : public Scheduler
+    class RandomScheduler final : public Scheduler
     {
     public:
         RandomScheduler();
@@ -35,7 +35,7 @@ namespace SparkyStudios::Audio::Amplitude
         void Reset() override;
 
     private:
-        float _probabilitiesSum;
+        AmReal32 _probabilitiesSum;
         const CollectionDefinition* _definition;
         const RandomSoundSchedulerConfig* _config;
         std::vector<Sound*> _avoidRepeatStack;

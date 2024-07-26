@@ -17,17 +17,16 @@
 
 #pragma once
 
-#ifndef SS_AMPLITUDE_AUDIO_CONVOLUTION_CONVOLVER_H
-#define SS_AMPLITUDE_AUDIO_CONVOLUTION_CONVOLVER_H
+#ifndef _AM_CONVOLUTION_CONVOLVER_H
+#define _AM_CONVOLUTION_CONVOLVER_H
 
 #include <SparkyStudios/Audio/Amplitude/Core/Common.h>
 
 #include <SparkyStudios/Audio/Amplitude/Math/FFT.h>
 
-namespace SparkyStudios::Audio::Amplitude::Convolution
+namespace SparkyStudios::Audio::Amplitude
 {
     /**
-     * @class Convolver
      * @brief Implementation of a partitioned FFT convolution algorithm with uniform block size
      *
      * Some notes on how to use it:
@@ -79,6 +78,20 @@ namespace SparkyStudios::Audio::Amplitude::Convolution
          */
         void Reset();
 
+        /**
+         * @brief Gets the size of a single convolution segment.
+         *
+         * @return The size of a single convolution segment.
+         */
+        [[nodiscard]] AmSize GetSegmentSize() const;
+
+        /**
+         * @brief Gets the number of convolution segments.
+         *
+         * @return The number of convolution segments.
+         */
+        [[nodiscard]] AmSize GetSegmentCount() const;
+
     private:
         AmSize _blockSize;
         AmSize _segSize;
@@ -95,6 +108,6 @@ namespace SparkyStudios::Audio::Amplitude::Convolution
         AmAlignedReal32Buffer _inputBuffer;
         AmSize _inputBufferFill;
     };
-} // namespace SparkyStudios::Audio::Amplitude::Convolution
+} // namespace SparkyStudios::Audio::Amplitude
 
-#endif // SS_AMPLITUDE_AUDIO_CONVOLUTION_CONVOLVER_H
+#endif // _AM_CONVOLUTION_CONVOLVER_H

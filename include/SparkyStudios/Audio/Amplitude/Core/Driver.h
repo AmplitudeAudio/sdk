@@ -14,16 +14,14 @@
 
 #pragma once
 
-#ifndef SS_AMPLITUDE_AUDIO_DRIVER_H
-#define SS_AMPLITUDE_AUDIO_DRIVER_H
+#ifndef _AM_CORE_DRIVER_H
+#define _AM_CORE_DRIVER_H
 
 #include <SparkyStudios/Audio/Amplitude/Core/Common.h>
 #include <SparkyStudios/Audio/Amplitude/Core/Device.h>
 
 namespace SparkyStudios::Audio::Amplitude
 {
-    class Mixer;
-
     /**
      * @brief Base class for audio device driver implementations.
      *
@@ -145,4 +143,4 @@ namespace SparkyStudios::Audio::Amplitude
     };
 } // namespace SparkyStudios::Audio::Amplitude
 
-#endif // SS_AMPLITUDE_AUDIO_DRIVER_H
+#endif // _AM_CORE_DRIVER_H

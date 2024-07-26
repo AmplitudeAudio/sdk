@@ -14,8 +14,8 @@
 
 #pragma once
 
-#ifndef SS_AMPLITUDE_AUDIO_SWITCHCONTAINER_H
-#define SS_AMPLITUDE_AUDIO_SWITCHCONTAINER_H
+#ifndef _AM_SOUND_SWITCH_CONTAINER_H
+#define _AM_SOUND_SWITCH_CONTAINER_H
 
 #include <SparkyStudios/Audio/Amplitude/Sound/Fader.h>
 #include <SparkyStudios/Audio/Amplitude/Sound/SoundObject.h>
@@ -23,11 +23,6 @@
 
 namespace SparkyStudios::Audio::Amplitude
 {
-    struct EngineInternalState;
-    class BusInternalState;
-
-    struct SwitchContainerDefinition;
-
     /**
      * @brief Describes a single item within a SwitchContainer.
      */
@@ -93,27 +88,17 @@ namespace SparkyStudios::Audio::Amplitude
      * one or multiple switches. Only one switch can be active at a time in a switch container. When a
      * switch is active, all the sounds and collections that are registered on it will be played.
      */
-    class AM_API_PUBLIC SwitchContainer final
-        : public Asset<AmSwitchContainerID, SwitchContainerDefinition>
-        , public SoundObject
+    class AM_API_PUBLIC SwitchContainer
+        : public SoundObject
+        , public Asset<AmSwitchContainerID>
     {
     public:
-        /**
-         * @brief Creates an uninitialized switch container.
-         */
-        SwitchContainer();
-
-        /**
-         * @brief Destroys the switch container asset and all related resources.
-         */
-        ~SwitchContainer() override;
-
         /**
          * @brief Returns the switch attached to this SwitchContainer.
          *
          * @return The switch of this SwitchContainer if available or nullptr.
          */
-        [[nodiscard]] const Switch* GetSwitch() const;
+        [[nodiscard]] virtual const Switch* GetSwitch() const = 0;
 
         /**
          * @brief Get the fade in Fader for the given sound object ID.
@@ -122,7 +107,7 @@ namespace SparkyStudios::Audio::Amplitude
          *
          * @return The fade in Fader.
          */
-        [[nodiscard]] FaderInstance* GetFaderIn(AmObjectID id) const;
+        [[nodiscard]] virtual FaderInstance* GetFaderIn(AmObjectID id) const = 0;
 
         /**
          * @brief Get the fade out Fader for the given sound object ID.
@@ -131,7 +116,7 @@ namespace SparkyStudios::Audio::Amplitude
          *
          * @return The fade out Fader.
          */
-        [[nodiscard]] FaderInstance* GetFaderOut(AmObjectID id) const;
+        [[nodiscard]] virtual FaderInstance* GetFaderOut(AmObjectID id) const = 0;
 
         /**
          * @brief Returns the list of sound objects referenced in this SwitchContainer for the given state.
@@ -140,20 +125,8 @@ namespace SparkyStudios::Audio::Amplitude
          *
          * @return The list of sound object IDs registered to the given state.
          */
-        [[nodiscard]] const std::vector<SwitchContainerItem>& GetSoundObjects(AmObjectID stateId) const;
-
-        bool LoadDefinition(const SwitchContainerDefinition* definition, EngineInternalState* state) override;
-        [[nodiscard]] const SwitchContainerDefinition* GetDefinition() const override;
-        void AcquireReferences(EngineInternalState* state) override;
-        void ReleaseReferences(EngineInternalState* state) override;
-
-    private:
-        Switch* _switch;
-
-        std::map<AmObjectID, std::vector<SwitchContainerItem>> _sounds;
-        std::map<AmObjectID, std::tuple<Fader*, FaderInstance*>> _fadersIn;
-        std::map<AmObjectID, std::tuple<Fader*, FaderInstance*>> _fadersOut;
+        [[nodiscard]] virtual  const std::vector<SwitchContainerItem>& GetSoundObjects(AmObjectID stateId) const = 0;
     };
 } // namespace SparkyStudios::Audio::Amplitude
 
-#endif // SS_AMPLITUDE_AUDIO_SWITCHCONTAINER_H
+#endif // _AM_SOUND_SWITCH_CONTAINER_H

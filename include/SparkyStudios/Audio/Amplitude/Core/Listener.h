@@ -14,8 +14,8 @@
 
 #pragma once
 
-#ifndef SPARK_AUDIO_LISTENER_H
-#define SPARK_AUDIO_LISTENER_H
+#ifndef _AM_CORE_LISTENER_H
+#define _AM_CORE_LISTENER_H
 
 #include <SparkyStudios/Audio/Amplitude/Math/Orientation.h>
 
@@ -116,6 +116,30 @@ namespace SparkyStudios::Audio::Amplitude
         [[nodiscard]] Orientation GetOrientation() const;
 
         /**
+         * @brief Sets the directivity and sharpness of Listener. This affects how sounds are perceived
+         * by the Listener.
+         *
+         * @param directivity The directivity of the listener, in the range [0, 1].
+         * @param sharpness The directivity sharpness of the listener, in the range [1, +INF].
+         * Increasing this value increases the directivity towards the front of the listener.
+         */
+        void SetDirectivity(AmReal32 directivity, AmReal32 sharpness) const;
+
+        /**
+         * @brief Gets the directivity of sounds played by this Entity.
+         *
+         * @return The directivity of sound sources.
+         */
+        [[nodiscard]] AmReal32 GetDirectivity() const;
+
+        /**
+         * @brief Gets the directivity sharpness of sounds played by this Entity.
+         *
+         * @return The directivity sharpness of sounds played by this Entity.
+         */
+        [[nodiscard]] AmReal32 GetDirectivitySharpness() const;
+
+        /**
          * @brief Update the state of this Listener.
          *
          * This method is called automatically by the Engine
@@ -138,4 +162,4 @@ namespace SparkyStudios::Audio::Amplitude
     };
 } // namespace SparkyStudios::Audio::Amplitude
 
-#endif // SPARK_AUDIO_LISTENER_H
+#endif // _AM_CORE_LISTENER_H

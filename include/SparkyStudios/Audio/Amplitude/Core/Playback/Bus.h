@@ -14,8 +14,8 @@
 
 #pragma once
 
-#ifndef SPARK_AUDIO_BUS_H
-#define SPARK_AUDIO_BUS_H
+#ifndef _AM_CORE_PLAYBACK_BUS_H
+#define _AM_CORE_PLAYBACK_BUS_H
 
 #include <SparkyStudios/Audio/Amplitude/Core/Common.h>
 
@@ -139,4 +139,4 @@ namespace SparkyStudios::Audio::Amplitude
     };
 } // namespace SparkyStudios::Audio::Amplitude
 
-#endif // SPARK_AUDIO_BUS_H
+#endif // _AM_CORE_PLAYBACK_BUS_H

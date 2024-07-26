@@ -36,7 +36,6 @@
   "game": {
     "listener_fetch_mode": "Nearest",
     "track_environments": true,
-    "up_axis": "Y",
     "listeners": 100,
     "entities": 4096,
     "environments": 512,

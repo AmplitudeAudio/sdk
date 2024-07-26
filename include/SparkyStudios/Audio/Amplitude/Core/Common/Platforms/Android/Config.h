@@ -14,8 +14,8 @@
 
 #pragma once
 
-#ifndef SS_AMPLITUDE_AUDIO_ANDROID_CONFIG_H
-#define SS_AMPLITUDE_AUDIO_ANDROID_CONFIG_H
+#ifndef _AM_CORE_COMMON_PLATFORMS_ANDROID_CONFIG_H
+#define _AM_CORE_COMMON_PLATFORMS_ANDROID_CONFIG_H
 
 // Enable Android Compilation
 #define AM_ANDROID_VERSION
@@ -39,4 +39,4 @@
 
 #include <SparkyStudios/Audio/Amplitude/Core/Common/Platforms/UNIX/Config.h>
 
-#endif // SS_AMPLITUDE_AUDIO_ANDROID_CONFIG_H
+#endif // _AM_CORE_COMMON_PLATFORMS_ANDROID_CONFIG_H

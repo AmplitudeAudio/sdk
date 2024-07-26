@@ -34,6 +34,11 @@
 
 namespace SparkyStudios::Audio::Amplitude
 {
+    class SwitchImpl;
+    class SoundImpl;
+    class CollectionImpl;
+    class SwitchContainerImpl;
+
     typedef fplutil::intrusive_list<class ChannelInternalState> ChannelList;
 
     // Represents a sample that is playing on a channel.
@@ -57,6 +62,8 @@ namespace SparkyStudios::Audio::Amplitude
             , _pan()
             , _pitch(1.0f)
             , _location()
+            , _directivity(0.0f)
+            , _directivitySharpness(1.0f)
             , _channelStateId(kAmInvalidObjectId)
             , _dopplerFactors()
         {}
@@ -76,55 +83,67 @@ namespace SparkyStudios::Audio::Amplitude
         // Set the switch container playing on this channel. Note that when you set
         // the switch container, you also add this channel to the bus list that
         // corresponds to that switch container.
-        void SetSwitchContainer(SwitchContainer* switchContainer);
+        void SetSwitchContainer(SwitchContainerImpl* switchContainer);
 
         // Get or set the collection playing on this channel. Note that when you set
         // the collection, you also add this channel to the bus list that
         // corresponds to that collection.
-        void SetCollection(Collection* collection);
+        void SetCollection(CollectionImpl* collection);
 
         // Get or set the sound playing on this channel. Note that when you set
         // the sound, you also add this channel to the bus list that
         // corresponds to that sound.
-        void SetSound(Sound* sound);
+        void SetSound(SoundImpl* sound);
 
-        [[nodiscard]] AM_INLINE(SwitchContainer*) GetSwitchContainer() const
+        [[nodiscard]] AM_INLINE SwitchContainerImpl* GetSwitchContainer() const
         {
             return _switchContainer;
         }
 
-        [[nodiscard]] AM_INLINE(Collection*) GetCollection() const
+        [[nodiscard]] AM_INLINE CollectionImpl* GetCollection() const
         {
             return _collection;
         }
 
-        [[nodiscard]] AM_INLINE(Sound*) GetSound() const
+        [[nodiscard]] AM_INLINE SoundImpl* GetSound() const
         {
             return _sound;
         }
 
         void SetEntity(const Entity& entity);
 
-        AM_INLINE(Entity&) GetEntity()
+        AM_INLINE Entity& GetEntity()
         {
             return _entity;
         }
 
-        [[nodiscard]] AM_INLINE(const Entity&) GetEntity() const
+        [[nodiscard]] AM_INLINE const Entity& GetEntity() const
         {
             return _entity;
+        }
+
+        void SetListener(const Listener& listener);
+
+        AM_INLINE Listener& GetListener()
+        {
+            return _activeListener;
+        }
+
+        [[nodiscard]] AM_INLINE const Listener& GetListener() const
+        {
+            return _activeListener;
         }
 
         // Get the current state of this channel (playing, stopped, paused, etc.). This
         // is tracked manually because not all ChannelInternalStates are backed by
         // real channels.
-        [[nodiscard]] AM_INLINE(ChannelPlaybackState) GetChannelState() const
+        [[nodiscard]] AM_INLINE ChannelPlaybackState GetChannelState() const
         {
             return _channelState;
         }
 
         // Get or set the location of this channel
-        AM_INLINE(void) SetLocation(const AmVec3& location)
+        AM_INLINE void SetLocation(const AmVec3& location)
         {
             // Entity scoped channel
             if (_entity.Valid())
@@ -134,7 +153,7 @@ namespace SparkyStudios::Audio::Amplitude
             _location = location;
         }
 
-        [[nodiscard]] AM_INLINE(const AmVec3&) GetLocation() const
+        [[nodiscard]] AM_INLINE const AmVec3& GetLocation() const
         {
             // Entity scoped channel
             if (_entity.Valid())
@@ -157,12 +176,12 @@ namespace SparkyStudios::Audio::Amplitude
         [[nodiscard]] bool Paused() const;
 
         // Set and query the user gain of this channel.
-        AM_INLINE(void) SetUserGain(const AmReal32 user_gain)
+        AM_INLINE void SetUserGain(const AmReal32 user_gain)
         {
             _userGain = user_gain;
         }
 
-        [[nodiscard]] AM_INLINE(AmReal32) GetUserGain() const
+        [[nodiscard]] AM_INLINE AmReal32 GetUserGain() const
         {
             return _userGain;
         }
@@ -170,7 +189,7 @@ namespace SparkyStudios::Audio::Amplitude
         // Set and query the current gain of this channel.
         void SetGain(AmReal32 gain);
 
-        [[nodiscard]] AM_INLINE(AmReal32) GetGain() const
+        [[nodiscard]] AM_INLINE AmReal32 GetGain() const
         {
             return _gain;
         }
@@ -178,6 +197,34 @@ namespace SparkyStudios::Audio::Amplitude
         void SetPitch(AmReal32 pitch);
 
         [[nodiscard]] AmReal32 GetPitch() const;
+
+        /**
+         * @brief Sets the directivity of souund.
+         *
+         * @param directivity The directivity of the sound.
+         * @param directivitySharpness The sharpness of the directivity.
+         */
+        void SetDirectivity(AmReal32 directivity, AmReal32 directivitySharpness);
+
+        /**
+         * @brief Get the directivity of the sound source.
+         *
+         * @return The directivity.
+         */
+        [[nodiscard]] AM_INLINE AmReal32 GetDirectivity() const
+        {
+            return _directivity;
+        }
+
+        /**
+         * @brief Get the sharpness of the sound source directivity.
+         *
+         * @return The directivity sharpness.
+         */
+        [[nodiscard]] AM_INLINE AmReal32 GetDirectivitySharpness() const
+        {
+            return _directivitySharpness;
+        }
 
         // Immediately stop the audio. May cause clicking.
         void Halt();
@@ -198,7 +245,7 @@ namespace SparkyStudios::Audio::Amplitude
         void SetPan(const AmVec2& pan);
 
         // Returns the pan of this channel.
-        [[nodiscard]] AM_INLINE(const AmVec2&) GetPan() const
+        [[nodiscard]] AM_INLINE const AmVec2& GetPan() const
         {
             return _pan;
         }
@@ -219,50 +266,40 @@ namespace SparkyStudios::Audio::Amplitude
         void AdvanceFrame(AmTime deltaTime);
 
         // Returns the real channel.
-        AM_INLINE(RealChannel&) GetRealChannel()
+        AM_INLINE RealChannel& GetRealChannel()
         {
             return _realChannel;
         }
 
-        [[nodiscard]] AM_INLINE(const RealChannel&) GetRealChannel() const
+        [[nodiscard]] AM_INLINE const RealChannel& GetRealChannel() const
         {
             return _realChannel;
         }
 
-        [[nodiscard]] AM_INLINE(bool) Valid() const
+        [[nodiscard]] AM_INLINE bool Valid() const
         {
             return IsAlive() && IsReal();
         }
 
-        [[nodiscard]] AM_INLINE(bool) IsAlive() const
+        [[nodiscard]] AM_INLINE bool IsAlive() const
         {
             return _sound != nullptr || _collection != nullptr || _switchContainer != nullptr;
         }
 
         // Returns true if the real channel is valid.
-        [[nodiscard]] AM_INLINE(bool) IsReal() const
+        [[nodiscard]] AM_INLINE bool IsReal() const
         {
             return _realChannel.Valid();
         }
 
-        [[nodiscard]] AM_INLINE(AmObjectID) GetPlayingObjectId() const
-        {
-            if (_switchContainer)
-                return _switchContainer->GetId();
-            if (_collection)
-                return _collection->GetId();
-            if (_sound)
-                return _sound->GetId();
+        [[nodiscard]] AmObjectID GetPlayingObjectId() const;
 
-            return kAmInvalidObjectId;
-        }
-
-        [[nodiscard]] AM_INLINE(AmUInt32) GetChannelStateId() const
+        [[nodiscard]] AM_INLINE AmUInt32 GetChannelStateId() const
         {
             return _channelStateId;
         }
 
-        AM_INLINE(void) SetChannelStateId(AmUInt64 id)
+        AM_INLINE void SetChannelStateId(AmUInt64 id)
         {
             _channelStateId = id;
         }
@@ -317,27 +354,31 @@ namespace SparkyStudios::Audio::Amplitude
         // The node that tracks the list of sounds playing on a given entity.
         fplutil::intrusive_list_node entity_node;
 
+        // The node that tracks the list of sounds rendered by a given listener.
+        fplutil::intrusive_list_node listener_node;
+
     private:
         bool PlaySwitchContainerStateUpdate(const std::vector<SwitchContainerItem>& previous, const std::vector<SwitchContainerItem>& next);
         bool PlaySwitchContainer();
         bool PlayCollection();
         bool PlaySound();
 
+        // The real channel feeding the mixer with audio data.
         RealChannel _realChannel;
 
         // Whether this channel is currently playing, stopped, fading out, etc.
         ChannelPlaybackState _channelState;
 
         // The collection of the sound being played on this channel.
-        SwitchContainer* _switchContainer;
+        SwitchContainerImpl* _switchContainer;
 
         // The collection of the sound being played on this channel.
-        Collection* _collection;
+        CollectionImpl* _collection;
 
         // The sound source that was chosen from the sound collection.
-        Sound* _sound;
+        SoundImpl* _sound;
 
-        const Switch* _switch;
+        const SwitchImpl* _switch;
         AmObjectID _playingSwitchContainerStateId;
         AmObjectID _previousSwitchContainerStateId;
 
@@ -351,13 +392,16 @@ namespace SparkyStudios::Audio::Amplitude
         // The entity which is playing the sound of this channel.
         Entity _entity;
 
+        // The listener currenty rendering this channel.
+        Listener _activeListener;
+
         // The gain set by the user.
         AmReal32 _userGain;
 
         // The gain of this channel.
         AmReal32 _gain;
 
-        // The pan of this channel.
+        // The pan of this channel for 2D rendering.
         AmVec2 _pan;
 
         // The pitch of this channel.
@@ -365,6 +409,9 @@ namespace SparkyStudios::Audio::Amplitude
 
         // The location of this channel's sound.
         AmVec3 _location;
+
+        AmReal32 _directivity;
+        AmReal32 _directivitySharpness;
 
         AmUInt64 _channelStateId;
 

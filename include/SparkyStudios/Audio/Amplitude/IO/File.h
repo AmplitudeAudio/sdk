@@ -14,8 +14,8 @@
 
 #pragma once
 
-#ifndef SS_AMPLITUDE_AUDIO_IO_FILE_H
-#define SS_AMPLITUDE_AUDIO_IO_FILE_H
+#ifndef _AM_IO_FILE_H
+#define _AM_IO_FILE_H
 
 #include <filesystem>
 
@@ -220,4 +220,4 @@ namespace SparkyStudios::Audio::Amplitude
     };
 } // namespace SparkyStudios::Audio::Amplitude
 
-#endif // SS_AMPLITUDE_AUDIO_IO_FILE_H
+#endif // _AM_IO_FILE_H

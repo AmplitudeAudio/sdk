@@ -14,8 +14,8 @@
 
 #pragma once
 
-#ifndef SS_AMPLITUDE_AUDIO_MIXER_DEVICE_DESCRIPTION_H
-#define SS_AMPLITUDE_AUDIO_MIXER_DEVICE_DESCRIPTION_H
+#ifndef _AM_CORE_DEVICE_H
+#define _AM_CORE_DEVICE_H
 
 #include <SparkyStudios/Audio/Amplitude/Core/Common.h>
 
@@ -79,27 +79,27 @@ namespace SparkyStudios::Audio::Amplitude
         Default = 0,
 
         /**
-         * @brief Send audio samples as mono.
+         * @brief Encodes audio stream as a 1D mono stream.
          */
         Mono = 1,
 
         /**
-         * @brief Send audio samples as interleaved stereo.
+         * @brief Encodes audio stream as a 2D stereo stream.
          */
         Stereo = 2,
 
         /**
-         * @brief Send audio samples as quadraphonic.
+         * @brief Encodes audio stream as a 2D quadratic stream.
          */
         Quad = 4,
 
         /**
-         * @brief Send audio samples as 5.1 surround sound.
+         * @brief Encodes audio stream as a 2D stream following 5.1 surround specifications.
          */
         Surround_5_1 = 6,
 
         /**
-         * @brief Send audio samples as 7.1 surround sound.
+         * @brief Encodes audio stream as a 2D stream following 7.1 surround specifications.
          */
         Surround_7_1 = 8
     };
@@ -235,7 +235,7 @@ namespace SparkyStudios::Audio::Amplitude
      * @param device The device description.
      * @param driver The driver which triggered the device notification.
      */
-    typedef void (*DeviceNotificationCallback)(DeviceNotification notification, const DeviceDescription& device, Driver* driver);
+    AM_CALLBACK(void, DeviceNotificationCallback)(DeviceNotification notification, const DeviceDescription& device, Driver* driver);
 
     /**
      * @brief Registers a callback to listen to device state changes.
@@ -254,4 +254,4 @@ namespace SparkyStudios::Audio::Amplitude
     AM_API_PUBLIC void CallDeviceNotificationCallback(DeviceNotification notification, const DeviceDescription& device, Driver* driver);
 } // namespace SparkyStudios::Audio::Amplitude
 
-#endif // SS_AMPLITUDE_AUDIO_MIXER_DEVICE_DESCRIPTION_H
+#endif // _AM_CORE_DEVICE_H

@@ -14,8 +14,8 @@
 
 #pragma once
 
-#ifndef SS_AMPLITUDE_AUDIO_SHAPE_H
-#define SS_AMPLITUDE_AUDIO_SHAPE_H
+#ifndef _AM_MATH_SHAPE_H
+#define _AM_MATH_SHAPE_H
 
 #include <SparkyStudios/Audio/Amplitude/Core/Common.h>
 #include <SparkyStudios/Audio/Amplitude/Core/Entity.h>
@@ -677,4 +677,4 @@ namespace SparkyStudios::Audio::Amplitude
     };
 } // namespace SparkyStudios::Audio::Amplitude
 
-#endif // SS_AMPLITUDE_AUDIO_SHAPE_H
+#endif // _AM_MATH_SHAPE_H

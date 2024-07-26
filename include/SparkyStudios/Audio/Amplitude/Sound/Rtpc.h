@@ -14,8 +14,8 @@
 
 #pragma once
 
-#ifndef SS_AMPLITUDE_AUDIO_RTPC_H
-#define SS_AMPLITUDE_AUDIO_RTPC_H
+#ifndef _AM_SOUND_RTPC_H
+#define _AM_SOUND_RTPC_H
 
 #include <SparkyStudios/Audio/Amplitude/Core/Common.h>
 
@@ -25,13 +25,8 @@
 
 #include <SparkyStudios/Audio/Amplitude/IO/File.h>
 
-#include <SparkyStudios/Audio/Amplitude/Sound/Fader.h>
-
 namespace SparkyStudios::Audio::Amplitude
 {
-    struct EngineInternalState;
-
-    struct RtpcDefinition;
     struct RtpcCompatibleValue;
 
     /**
@@ -42,21 +37,9 @@ namespace SparkyStudios::Audio::Amplitude
      *
      * A Rtpc object is shared between any objects and values linked to it.
      */
-    class AM_API_PUBLIC Rtpc final : public Asset<AmRtpcID, RtpcDefinition>
+    class AM_API_PUBLIC Rtpc : public Asset<AmRtpcID>
     {
     public:
-        /**
-         * @brief Creates an unitialized Rtpc object.
-         *
-         * An unitialized Rtpc object cannot be used to update values.
-         */
-        Rtpc();
-
-        /**
-         * @brief Destroys the Rtpc asset and releases all associated resources.
-         */
-        ~Rtpc() override;
-
         /**
          * @brief Updates the value of the RTPC.
          *
@@ -64,66 +47,47 @@ namespace SparkyStudios::Audio::Amplitude
          *
          * @param deltaTime The time elapsed since the last update.
          */
-        void Update(AmTime deltaTime);
+        virtual void Update(AmTime deltaTime) = 0;
 
         /**
          * @brief Get the minimum value of this RTPC.
          *
          * @return The RTPC minimum value.
          */
-        [[nodiscard]] AmReal64 GetMinValue() const;
+        [[nodiscard]] virtual AmReal64 GetMinValue() const = 0;
 
         /**
          * @brief Get the maximum value of this RTPC.
          *
          * @return The RTPC maximum value.
          */
-        [[nodiscard]] AmReal64 GetMaxValue() const;
+        [[nodiscard]] virtual AmReal64 GetMaxValue() const = 0;
 
         /**
          * @brief Get the current value of this RTPC.
          *
          * @return The current RTPC value.
          */
-        [[nodiscard]] AmReal64 GetValue() const;
+        [[nodiscard]] virtual AmReal64 GetValue() const = 0;
 
         /**
          * @brief Set the current value of this RTPC.
          *
          * @param value The value to set.
          */
-        void SetValue(AmReal64 value);
+        virtual void SetValue(AmReal64 value) = 0;
 
         /**
          * @brief Get the default value of this RTPC.
          *
          * @return The default RTPC value.
          */
-        [[nodiscard]] AmReal64 GetDefaultValue() const;
+        [[nodiscard]] virtual AmReal64 GetDefaultValue() const = 0;
 
         /**
          * @brief Resets the current RTPC value to the default value.
          */
-        void Reset();
-
-        bool LoadDefinition(const RtpcDefinition* definition, EngineInternalState* state) override;
-        [[nodiscard]] const RtpcDefinition* GetDefinition() const override;
-
-    private:
-        AmString _name;
-
-        AmReal64 _minValue;
-        AmReal64 _maxValue;
-        AmReal64 _defValue;
-
-        AmReal64 _currentValue;
-        AmReal64 _targetValue;
-
-        Fader* _faderAttackFactory;
-        Fader* _faderReleaseFactory;
-
-        FaderInstance* _faderAttack;
-        FaderInstance* _faderRelease;
+        virtual void Reset() = 0;
     };
 
     /**
@@ -201,4 +165,4 @@ namespace SparkyStudios::Audio::Amplitude
     };
 } // namespace SparkyStudios::Audio::Amplitude
 
-#endif // SS_AMPLITUDE_AUDIO_RTPC_H
+#endif // _AM_SOUND_RTPC_H

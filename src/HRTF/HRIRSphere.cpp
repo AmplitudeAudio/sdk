@@ -13,40 +13,48 @@
 // limitations under the License.
 
 #include <SparkyStudios/Audio/Amplitude/Core/Log.h>
-#include <SparkyStudios/Audio/Amplitude/HRTF/HRIRSphere.h>
 
+#include <HRTF/HRIRSphere.h>
+#include <Math/FaceBSPTree.h>
 #include <Utils/Utils.h>
 
 namespace SparkyStudios::Audio::Amplitude
 {
-    HRIRSphere::HRIRSphere(const AmOsString& filePath)
-        : Resource()
-    {
-        _filename = filePath;
-    }
+    HRIRSphereImpl::HRIRSphereImpl()
+        : ResourceImpl()
+        , _loaded(false)
+    {}
 
-    HRIRSphere::~HRIRSphere()
+    HRIRSphereImpl::~HRIRSphereImpl()
     {
         _vertices.clear();
-        _indices.clear();
+        _faces.clear();
     }
 
-    void HRIRSphere::Load(const FileSystem* loader)
+    void HRIRSphereImpl::SetResource(const AmOsString& filePath)
     {
-        if (!loader->Exists(_filename))
+        m_filename = filePath;
+    }
+
+    void HRIRSphereImpl::Load(const FileSystem* loader)
+    {
+        if (_loaded)
+            return;
+
+        if (!loader->Exists(m_filename))
         {
-            amLogError("Failed to load HRIRSphere: " AM_OS_CHAR_FMT " does not exist", _filename.c_str());
+            amLogError("Failed to load HRIRSphere: " AM_OS_CHAR_FMT " does not exist.", m_filename.c_str());
             return;
         }
 
-        const auto file = loader->OpenFile(_filename);
+        const auto file = loader->OpenFile(m_filename);
 
         // Read the header magic
         file->Read(_header.m_Header, 4);
 
-        if (std::strncmp(reinterpret_cast<const char*>(_header.m_Header), "AMIR", 4) != 0)
+        if (std::strncmp(reinterpret_cast<char*>(_header.m_Header), "AMIR", 4) != 0)
         {
-            amLogError("Failed to load HRIRSphere: " AM_OS_CHAR_FMT " is not a valid HRIRSphere file", _filename.c_str());
+            amLogError("Failed to load HRIRSphere: " AM_OS_CHAR_FMT " is not a valid HRIRSphere file.", m_filename.c_str());
             return;
         }
 
@@ -56,8 +64,8 @@ namespace SparkyStudios::Audio::Amplitude
         _header.m_VertexCount = file->Read32();
         _header.m_IndexCount = file->Read32();
 
-        _indices.resize(_header.m_IndexCount);
-        file->Read(reinterpret_cast<AmUInt8Buffer>(_indices.data()), _header.m_IndexCount * sizeof(AmUInt32));
+        std::vector<AmUInt32> indices(_header.m_IndexCount);
+        file->Read(reinterpret_cast<AmUInt8Buffer>(indices.data()), _header.m_IndexCount * sizeof(AmUInt32));
 
         _vertices.resize(_header.m_VertexCount);
         for (auto& vertex : _vertices)
@@ -70,40 +78,63 @@ namespace SparkyStudios::Audio::Amplitude
             vertex.m_RightIR.resize(_header.m_IRLength);
             file->Read(reinterpret_cast<AmUInt8Buffer>(vertex.m_RightIR.data()), _header.m_IRLength * sizeof(AmReal32));
         }
+
+        const AmUInt32 faceCount = indices.size() / 3;
+        _faces.resize(faceCount);
+
+        for (AmUInt32 i = 0; i < faceCount; ++i)
+        {
+            _faces[i].m_A = indices[i * 3 + 0];
+            _faces[i].m_B = indices[i * 3 + 1];
+            _faces[i].m_C = indices[i * 3 + 2];
+        }
+
+        _loaded = true;
     }
 
-    const std::vector<HRIRSphereVertex>& HRIRSphere::GetVertices() const
+    const std::vector<HRIRSphereVertex>& HRIRSphereImpl::GetVertices() const
     {
         return _vertices;
     }
 
-    const std::vector<AmUInt32>& HRIRSphere::GetIndices() const
+    const std::vector<Face>& HRIRSphereImpl::GetFaces() const
     {
-        return _indices;
+        return _faces;
     }
 
-    const HRIRSphereVertex& HRIRSphere::GetVertex(AmUInt32 index) const
+    const HRIRSphereVertex& HRIRSphereImpl::GetVertex(AmUInt32 index) const
     {
         return _vertices[index];
     }
 
-    AmUInt32 HRIRSphere::GetVertexCount() const
+    AmUInt32 HRIRSphereImpl::GetVertexCount() const
     {
         return _vertices.size();
     }
 
-    AmUInt32 HRIRSphere::GetIndexCount() const
+    AmUInt32 HRIRSphereImpl::GetFaceCount() const
     {
-        return _indices.size();
+        return _faces.size();
     }
 
-    AmUInt32 HRIRSphere::GetSampleRate() const
+    AmUInt32 HRIRSphereImpl::GetSampleRate() const
     {
         return _header.m_SampleRate;
     }
 
-    AmUInt32 HRIRSphere::GetIRLength() const
+    AmUInt32 HRIRSphereImpl::GetIRLength() const
     {
         return _header.m_IRLength;
+    }
+
+    void HRIRSphereImpl::Transform(const AmMat4& matrix)
+    {
+        for (auto& vertex : _vertices)
+            vertex.m_Position = AM_Mul(matrix, AM_V4V(vertex.m_Position, 1.0f)).XYZ;
+    }
+
+    bool HRIRSphereImpl::IsLoaded() const
+    {
+        return _loaded;
     }
 } // namespace SparkyStudios::Audio::Amplitude

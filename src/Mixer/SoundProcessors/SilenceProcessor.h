@@ -31,7 +31,7 @@ namespace SparkyStudios::Audio::Amplitude
             AmSize bufferSize,
             AmUInt16 channels,
             AmUInt32 sampleRate,
-            SoundInstance* sound) override
+            const AmplimixLayer* layer) override
         {
             std::memset(out, 0, bufferSize);
         }

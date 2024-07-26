@@ -14,10 +14,9 @@
 
 #include <SparkyStudios/Audio/Amplitude/Amplitude.h>
 
-#include <Core/EngineInternalState.h>
+#include <Core/Engine.h>
 #include <Core/EntityInternalState.h>
-
-#include "event_definition_generated.h"
+#include <Core/Event.h>
 
 namespace SparkyStudios::Audio::Amplitude
 {
@@ -25,7 +24,7 @@ namespace SparkyStudios::Audio::Amplitude
         : EventAction(nullptr)
     {}
 
-    EventAction::EventAction(Event* parent)
+    EventAction::EventAction(EventImpl* parent)
         : _active(false)
         , _type(EventActionType_None)
         , _scope(Scope_Entity)
@@ -315,30 +314,30 @@ namespace SparkyStudios::Audio::Amplitude
         return false;
     }
 
-    Event::Event()
+    EventImpl::EventImpl()
         : _runMode(EventActionRunningMode_Parallel)
         , _actions()
     {}
 
-    Event::~Event()
+    EventImpl::~EventImpl()
     {
         _actions.clear();
     }
 
-    EventInstance Event::Trigger(const Entity& entity) const
+    EventInstanceImpl EventImpl::Trigger(const Entity& entity) const
     {
-        amLogDebug("Event '%s' triggered.", _name.c_str());
+        amLogDebug("Event '%s' triggered.", m_name.c_str());
 
-        auto event = EventInstance(this);
+        auto event = EventInstanceImpl(this);
         event.Start(entity);
 
         return event;
     }
 
-    bool Event::LoadDefinition(const EventDefinition* definition, EngineInternalState* state)
+    bool EventImpl::LoadDefinition(const EventDefinition* definition, EngineInternalState* state)
     {
-        _id = definition->id();
-        _name = definition->name()->str();
+        m_id = definition->id();
+        m_name = definition->name()->str();
 
         _runMode = definition->run_mode();
 
@@ -357,9 +356,9 @@ namespace SparkyStudios::Audio::Amplitude
         return true;
     }
 
-    const EventDefinition* Event::GetDefinition() const
+    const EventDefinition* EventImpl::GetDefinition() const
     {
-        return GetEventDefinition(_source.c_str());
+        return GetEventDefinition(m_source.c_str());
     }
 
     EventCanceler::EventCanceler()
@@ -369,6 +368,15 @@ namespace SparkyStudios::Audio::Amplitude
     EventCanceler::EventCanceler(EventInstance* event)
         : _event(event)
     {}
+
+    EventCanceler::~EventCanceler()
+    {
+        if (_event == nullptr)
+            return;
+
+        ampooldelete(MemoryPoolKind::Engine, EventInstanceImpl, (EventInstanceImpl*)_event);
+        _event = nullptr;
+    }
 
     bool EventCanceler::Valid() const
     {
@@ -386,7 +394,7 @@ namespace SparkyStudios::Audio::Amplitude
         return _event;
     }
 
-    EventInstance::EventInstance()
+    EventInstanceImpl::EventInstanceImpl()
         : _runMode(EventActionRunningMode_Parallel)
         , _actions()
         , _running(false)
@@ -394,7 +402,7 @@ namespace SparkyStudios::Audio::Amplitude
         , _entity(nullptr)
     {}
 
-    EventInstance::EventInstance(const Event* parent)
+    EventInstanceImpl::EventInstanceImpl(const EventImpl* parent)
         : _runMode(parent->_runMode)
         , _actions(parent->_actions)
         , _running(false)
@@ -402,7 +410,7 @@ namespace SparkyStudios::Audio::Amplitude
         , _entity(nullptr)
     {}
 
-    void EventInstance::AdvanceFrame(AmTime delta_time)
+    void EventInstanceImpl::AdvanceFrame(AmTime deltaTime)
     {
         if (!_running)
             return;
@@ -416,7 +424,7 @@ namespace SparkyStudios::Audio::Amplitude
                 if (action.IsExecuting())
                 {
                     _running = true;
-                    action.AdvanceFrame(delta_time);
+                    action.AdvanceFrame(deltaTime);
                 }
             }
         }
@@ -431,7 +439,7 @@ namespace SparkyStudios::Audio::Amplitude
                 }
                 else
                 {
-                    _actions[_runningActionIndex].AdvanceFrame(delta_time);
+                    _actions[_runningActionIndex].AdvanceFrame(deltaTime);
                 }
             }
             else
@@ -441,17 +449,17 @@ namespace SparkyStudios::Audio::Amplitude
         }
     }
 
-    bool EventInstance::IsRunning() const
+    bool EventInstanceImpl::IsRunning() const
     {
         return _running;
     }
 
-    void EventInstance::Abort()
+    void EventInstanceImpl::Abort()
     {
         _running = false;
     }
 
-    void EventInstance::Start(const Entity& entity)
+    void EventInstanceImpl::Start(const Entity& entity)
     {
         if (_running)
             return;

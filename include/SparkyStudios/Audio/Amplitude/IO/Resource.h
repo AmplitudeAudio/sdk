@@ -14,8 +14,8 @@
 
 #pragma once
 
-#ifndef SS_AMPLITUDE_AUDIO_IO_RESOURCE_H
-#define SS_AMPLITUDE_AUDIO_IO_RESOURCE_H
+#ifndef _AM_IO_RESOURCE_H
+#define _AM_IO_RESOURCE_H
 
 #include <SparkyStudios/Audio/Amplitude/IO/FileSystem.h>
 
@@ -30,24 +30,18 @@ namespace SparkyStudios::Audio::Amplitude
     class AM_API_PUBLIC Resource
     {
     public:
-        /**
-         * @brief Default virtual destructor.
-         */
         virtual ~Resource() = default;
 
         /**
          * @brief Gets the path to the resource.
          */
-        [[nodiscard]] virtual const AmOsString& GetPath() const;
+        [[nodiscard]] virtual const AmOsString& GetPath() const = 0;
 
         /**
          * @brief Loads the resource from the given FileSystem.
          */
         virtual void Load(const FileSystem* loader) = 0;
-
-    protected:
-        AmOsString _filename;
     };
 } // namespace SparkyStudios::Audio::Amplitude
 
-#endif
+#endif // _AM_IO_RESOURCE_H

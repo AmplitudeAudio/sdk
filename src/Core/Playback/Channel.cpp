@@ -46,6 +46,11 @@ namespace SparkyStudios::Audio::Amplitude
         return _state != nullptr && _stateId != 0;
     }
 
+    AmUInt64 Channel::GetId() const
+    {
+        return _stateId;
+    }
+
     bool Channel::Playing() const
     {
         AMPLITUDE_ASSERT(Valid());
@@ -134,7 +139,20 @@ namespace SparkyStudios::Audio::Amplitude
 
     ChannelPlaybackState Channel::GetPlaybackState() const
     {
+        AMPLITUDE_ASSERT(Valid());
         return _state->GetChannelState();
+    }
+
+    Entity Channel::GetEntity() const
+    {
+        AMPLITUDE_ASSERT(Valid());
+        return _state->GetEntity();
+    }
+
+    Listener Channel::GetListener() const
+    {
+        AMPLITUDE_ASSERT(Valid());
+        return _state->GetListener();
     }
 
     ChannelInternalState* Channel::GetState() const

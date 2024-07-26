@@ -34,7 +34,7 @@ namespace Freeverb
         AllPass();
 
         void SetBuffer(AmReal32Buffer buffer, AmInt32 size);
-        AM_INLINE(AmReal32) Process(AmReal32 input);
+        AM_INLINE AmReal32 Process(AmReal32 input);
         void Mute();
         void SetFeedback(AmReal32 value);
         AmReal32 GetFeedback();
@@ -48,7 +48,7 @@ namespace Freeverb
 
     // Big to inline - but crucial for speed
 
-    AM_INLINE(AmReal32) AllPass::Process(AmReal32 input)
+    AM_INLINE AmReal32 AllPass::Process(AmReal32 input)
     {
         AmReal32 output;
         AmReal32 bufout;

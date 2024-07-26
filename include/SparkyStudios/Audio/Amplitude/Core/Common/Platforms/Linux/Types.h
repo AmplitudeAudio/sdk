@@ -14,9 +14,9 @@
 
 #pragma once
 
-#ifndef SS_AMPLITUDE_AUDIO_LINUX_TYPES_H
-#define SS_AMPLITUDE_AUDIO_LINUX_TYPES_H
+#ifndef _AM_CORE_COMMON_PLATFORMS_LINUX_TYPES_H
+#define _AM_CORE_COMMON_PLATFORMS_LINUX_TYPES_H
 
 #include <SparkyStudios/Audio/Amplitude/Core/Common/Platforms/UNIX/Types.h>
 
-#endif // SS_AMPLITUDE_AUDIO_LINUX_TYPES_H
+#endif // _AM_CORE_COMMON_PLATFORMS_LINUX_TYPES_H

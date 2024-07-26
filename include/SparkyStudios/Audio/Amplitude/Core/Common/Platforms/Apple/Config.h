@@ -14,8 +14,8 @@
 
 #pragma once
 
-#ifndef SS_AMPLITUDE_AUDIO_APPLE_CONFIG_H
-#define SS_AMPLITUDE_AUDIO_APPLE_CONFIG_H
+#ifndef _AM_CORE_COMMON_PLATFORMS_APPLE_CONFIG_H
+#define _AM_CORE_COMMON_PLATFORMS_APPLE_CONFIG_H
 
 #include <TargetConditionals.h>
 
@@ -49,4 +49,4 @@
 
 #include <SparkyStudios/Audio/Amplitude/Core/Common/Platforms/UNIX/Config.h>
 
-#endif // SS_AMPLITUDE_AUDIO_LINUX_CONFIG_H
+#endif // _AM_CORE_COMMON_PLATFORMS_APPLE_CONFIG_H

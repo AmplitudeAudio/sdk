@@ -14,8 +14,8 @@
 
 #pragma once
 
-#ifndef SS_AMPLITUDE_AUDIO_SIMD_H
-#define SS_AMPLITUDE_AUDIO_SIMD_H
+#ifndef _AM_CORE_COMMON_SIMD_H
+#define _AM_CORE_COMMON_SIMD_H
 
 #if defined(AM_SIMD_INTRINSICS)
 
@@ -90,4 +90,4 @@
 
 #endif
 
-#endif // SS_AMPLITUDE_AUDIO_SIMD_H
+#endif // _AM_CORE_COMMON_SIMD_H

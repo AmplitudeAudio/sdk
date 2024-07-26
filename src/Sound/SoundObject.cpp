@@ -12,45 +12,19 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include <SparkyStudios/Audio/Amplitude/Sound/SoundObject.h>
+#include <Sound/Attenuation.h>
+#include <Sound/Effect.h>
+#include <Sound/SoundObject.h>
 
 namespace SparkyStudios::Audio::Amplitude
 {
-    SoundObject::SoundObject()
-        : m_bus(nullptr)
-        , m_gain()
-        , m_priority()
-        , m_effect(nullptr)
-        , m_attenuation(nullptr)
-    {}
-
-    const RtpcValue& SoundObject::GetGain() const
-    {
-        return m_gain;
-    }
-
-    const RtpcValue& SoundObject::GetPitch() const
-    {
-        return m_pitch;
-    }
-
-    const RtpcValue& SoundObject::GetPriority() const
-    {
-        return m_priority;
-    }
-
-    const Effect* SoundObject::GetEffect() const
+    const Effect* SoundObjectImpl::GetEffect() const
     {
         return m_effect;
     }
 
-    const Attenuation* SoundObject::GetAttenuation() const
+    const Attenuation* SoundObjectImpl::GetAttenuation() const
     {
         return m_attenuation;
-    }
-
-    Bus SoundObject::GetBus() const
-    {
-        return Bus(m_bus);
     }
 } // namespace SparkyStudios::Audio::Amplitude

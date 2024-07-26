@@ -15,11 +15,12 @@
 #include <SparkyStudios/Audio/Amplitude/Sound/Switch.h>
 
 #include <Core/EngineInternalState.h>
-
-#include "switch_definition_generated.h"
+#include <Sound/Switch.h>
 
 namespace SparkyStudios::Audio::Amplitude
 {
+    template class AssetImpl<AmSwitchID, SwitchDefinition>;
+
     bool SwitchState::Valid() const
     {
         return m_id != kAmInvalidObjectId && !m_name.empty();
@@ -35,26 +36,26 @@ namespace SparkyStudios::Audio::Amplitude
         return !(*this == other);
     }
 
-    Switch::Switch()
+    SwitchImpl::SwitchImpl()
         : _activeState()
         , _states()
         , _refCounter()
     {}
 
-    Switch::~Switch()
+    SwitchImpl::~SwitchImpl()
     {
         _states.clear();
     }
 
-    const SwitchState& Switch::GetState() const
+    const SwitchState& SwitchImpl::GetState() const
     {
-        AMPLITUDE_ASSERT(_id != kAmInvalidObjectId);
+        AMPLITUDE_ASSERT(m_id != kAmInvalidObjectId);
         return _activeState;
     }
 
-    void Switch::SetState(const SwitchState& state)
+    void SwitchImpl::SetState(const SwitchState& state)
     {
-        AMPLITUDE_ASSERT(_id != kAmInvalidObjectId);
+        AMPLITUDE_ASSERT(m_id != kAmInvalidObjectId);
 
         if (!state.Valid())
         {
@@ -68,9 +69,9 @@ namespace SparkyStudios::Audio::Amplitude
         }
     }
 
-    void Switch::SetState(AmObjectID id)
+    void SwitchImpl::SetState(AmObjectID id)
     {
-        AMPLITUDE_ASSERT(_id != kAmInvalidObjectId);
+        AMPLITUDE_ASSERT(m_id != kAmInvalidObjectId);
         if (const auto findIt = std::ranges::find_if(
                 _states,
                 [id](const SwitchState& state)
@@ -83,9 +84,9 @@ namespace SparkyStudios::Audio::Amplitude
         }
     }
 
-    void Switch::SetState(const std::string& name)
+    void SwitchImpl::SetState(const std::string& name)
     {
-        AMPLITUDE_ASSERT(_id != kAmInvalidObjectId);
+        AMPLITUDE_ASSERT(m_id != kAmInvalidObjectId);
         if (const auto findIt = std::ranges::find_if(
                 _states,
                 [name](const SwitchState& state)
@@ -98,15 +99,15 @@ namespace SparkyStudios::Audio::Amplitude
         }
     }
 
-    const std::vector<SwitchState>& Switch::GetSwitchStates() const
+    const std::vector<SwitchState>& SwitchImpl::GetSwitchStates() const
     {
         return _states;
     }
 
-    bool Switch::LoadDefinition(const SwitchDefinition* definition, EngineInternalState* state)
+    bool SwitchImpl::LoadDefinition(const SwitchDefinition* definition, EngineInternalState* state)
     {
-        _id = definition->id();
-        _name = definition->name()->str();
+        m_id = definition->id();
+        m_name = definition->name()->str();
 
         const flatbuffers::uoffset_t size = definition->states() ? definition->states()->size() : 0;
         _states.resize(size);
@@ -120,8 +121,8 @@ namespace SparkyStudios::Audio::Amplitude
         return true;
     }
 
-    const SwitchDefinition* Switch::GetDefinition() const
+    const SwitchDefinition* SwitchImpl::GetDefinition() const
     {
-        return GetSwitchDefinition(_source.c_str());
+        return GetSwitchDefinition(m_source.c_str());
     }
 } // namespace SparkyStudios::Audio::Amplitude

@@ -14,8 +14,8 @@
 
 #pragma once
 
-#ifndef SS_AMPLITUDE_AUDIO_IO_PACKAGEFILESYSTEM_H
-#define SS_AMPLITUDE_AUDIO_IO_PACKAGEFILESYSTEM_H
+#ifndef _AM_IO_PACKAGE_FILESYSTEM_H
+#define _AM_IO_PACKAGE_FILESYSTEM_H
 
 #include <SparkyStudios/Audio/Amplitude/Core/Thread.h>
 #include <SparkyStudios/Audio/Amplitude/IO/DiskFile.h>
@@ -76,7 +76,7 @@ namespace SparkyStudios::Audio::Amplitude
         /**
          * @brief Package file header tag. Should be equal to 'AMPK'.
          */
-        AmUInt8 m_Header[4];
+        AmUInt8 m_Header[4] = { 'A', 'M', 'P', 'K' };
 
         /**
          * @brief Package file version. Used to implement new features in package
@@ -181,4 +181,4 @@ namespace SparkyStudios::Audio::Amplitude
     };
 } // namespace SparkyStudios::Audio::Amplitude
 
-#endif // SS_AMPLITUDE_AUDIO_IO_PACKAGEFILESYSTEM_H
+#endif // _AM_IO_PACKAGE_FILESYSTEM_H

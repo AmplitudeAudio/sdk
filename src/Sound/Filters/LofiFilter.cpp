@@ -72,7 +72,7 @@ namespace SparkyStudios::Audio::Amplitude
         if (index >= ATTRIBUTE_LAST)
             return "";
 
-        AmString names[ATTRIBUTE_LAST] = { "Wet", "Samplerate", "BitDepth" };
+        static constexpr const char* names[ATTRIBUTE_LAST] = { "Wet", "Samplerate", "BitDepth" };
 
         return names[index];
     }

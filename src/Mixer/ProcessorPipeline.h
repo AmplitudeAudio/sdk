@@ -22,7 +22,7 @@
 
 namespace SparkyStudios::Audio::Amplitude
 {
-    class ProcessorPipeline : SoundProcessorInstance
+    class ProcessorPipeline : public SoundProcessorInstance
     {
     public:
         ProcessorPipeline();
@@ -39,14 +39,32 @@ namespace SparkyStudios::Audio::Amplitude
             AmSize bufferSize,
             AmUInt16 channels,
             AmUInt32 sampleRate,
-            SoundInstance* sound) override;
+            const AmplimixLayer* layer) override;
 
-        void Cleanup(SoundInstance* sound) override;
+        void Cleanup(const AmplimixLayer* layer) override;
 
         AmSize GetOutputBufferSize(AmUInt64 frames, AmSize bufferSize, AmUInt16 channels, AmUInt32 sampleRate) override;
 
     private:
         std::vector<SoundProcessorInstance*> _processors;
+    };
+
+    class ProcessorPipelineFactory final : public SoundProcessor
+    {
+    public:
+        ProcessorPipelineFactory()
+            : SoundProcessor("Pipeline")
+        {}
+
+        AM_INLINE SoundProcessorInstance* CreateInstance() override
+        {
+            return ampoolnew(MemoryPoolKind::Amplimix, ProcessorPipeline);
+        }
+
+        void DestroyInstance(SoundProcessorInstance* instance) override
+        {
+            ampooldelete(MemoryPoolKind::Amplimix, ProcessorPipeline, (ProcessorPipeline*)instance);
+        }
     };
 } // namespace SparkyStudios::Audio::Amplitude
 

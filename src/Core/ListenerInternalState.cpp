@@ -22,19 +22,11 @@ namespace SparkyStudios::Audio::Amplitude
         , _orientation(Orientation::Zero())
         , _lastLocation()
         , _velocity()
+        , _directivity(0.0f)
+        , _directivitySharpness(1.0f)
         , _inverseMatrix(AM_M4D(1.0f))
         , _playingSoundList(&ChannelInternalState::listener_node)
     {}
-
-    AmListenerID ListenerInternalState::GetId() const
-    {
-        return _id;
-    }
-
-    void ListenerInternalState::SetId(AmListenerID id)
-    {
-        _id = id;
-    }
 
     void ListenerInternalState::SetLocation(const AmVec3& location)
     {
@@ -42,44 +34,10 @@ namespace SparkyStudios::Audio::Amplitude
         _location = location;
     }
 
-    const AmVec3& ListenerInternalState::GetLocation() const
+    void ListenerInternalState::SetDirectivity(AmReal32 directivity, AmReal32 sharpness)
     {
-        return _location;
-    }
-
-    void ListenerInternalState::SetOrientation(const Orientation& orientation)
-    {
-        _orientation = orientation;
-    }
-
-    const Orientation& ListenerInternalState::GetOrientation() const
-    {
-        return _orientation;
-    }
-
-    AmVec3 ListenerInternalState::GetDirection() const
-    {
-        return _orientation.GetForward();
-    }
-
-    AmVec3 ListenerInternalState::GetUp() const
-    {
-        return _orientation.GetUp();
-    }
-
-    AmMat4& ListenerInternalState::GetInverseMatrix()
-    {
-        return _inverseMatrix;
-    }
-
-    const AmMat4& ListenerInternalState::GetInverseMatrix() const
-    {
-        return _inverseMatrix;
-    }
-
-    const AmVec3& ListenerInternalState::GetVelocity() const
-    {
-        return _velocity;
+        _directivity = directivity;
+        _directivitySharpness = sharpness;
     }
 
     void ListenerInternalState::Update()

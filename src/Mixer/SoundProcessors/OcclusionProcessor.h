@@ -20,20 +20,48 @@
 #include <SparkyStudios/Audio/Amplitude/Amplitude.h>
 
 #include <Core/EngineInternalState.h>
-#include <Sound/Filters/BiquadResonantFilter.h>
+#include <Sound/Filters/MonoPoleFilter.h>
 
 namespace SparkyStudios::Audio::Amplitude
 {
-    static std::map<AmObjectID, FilterInstance*> gOcclusionFilters = {};
+    // Low pass filter coefficient for smoothing the applied occlusion. This avoids
+    // sudden unrealistic changes in the volume of a sound object. Range [0, 1].
+    // The value below has been calculated empirically.
+    constexpr AmReal32 kOcclusionSmoothingCoefficient = 0.75f;
+
+    AM_INLINE AmReal32 CalculateDirectivity(AmReal32 alpha, AmReal32 order, const SphericalPosition& position)
+    {
+        // Clamp alpha weighting.
+        const AmReal32 alphaClamped = std::min(std::max(alpha, 0.0f), 1.0f);
+
+        // Check for zero-valued alpha (omnidirectional).
+        if (alphaClamped < kEpsilon)
+            return 1.0f;
+
+        const AmReal32 gain = (1.0f - alphaClamped) + alphaClamped * (std::cos(position.GetAzimuth()) * std::cos(position.GetElevation()));
+
+        return std::pow(std::abs(gain), std::max(order, 1.0f));
+    }
+
+    AM_INLINE AmReal32 CalculateOcclusionFilterCoefficient(AmReal32 directivity, AmReal32 occlusion)
+    {
+        const AmReal32 factor = 1.0f / IntegerPow(occlusion + 1.0f, 4);
+        return std::max(0.0f, 1.0f - directivity * factor);
+    }
 
     class OcclusionProcessorInstance : public SoundProcessorInstance
     {
     public:
         OcclusionProcessorInstance()
-            : _lpfCurve()
-            , _lpFilter()
+            : _filter()
+            , _currentOcclusions()
+            , _occlusionFilters()
+        {}
+
+        ~OcclusionProcessorInstance() override
         {
-            _lpfCurve.SetFader("Exponential");
+            for (auto& [soundId, filter] : _occlusionFilters)
+                _filter.DestroyInstance(filter);
         }
 
         void Process(
@@ -43,39 +71,56 @@ namespace SparkyStudios::Audio::Amplitude
             AmSize bufferSize,
             AmUInt16 channels,
             AmUInt32 sampleRate,
-            SoundInstance* sound) override
+            const AmplimixLayer* layer) override
         {
-            const float occlusion = sound->GetOcclusion();
+            const AmReal32 occlusion = layer->GetOcclusion();
 
             if (out != in)
                 std::memcpy(out, in, bufferSize);
 
-            // Nothing to do if no occlusion
-            if (occlusion < kEpsilon)
-                return;
+            const AmUInt64 soundId = layer->GetId();
 
-            _lpfCurve.SetStart({ 0, sampleRate / 2.0f });
-            _lpfCurve.SetEnd({ 1, sampleRate / 2000.0f });
+            const Listener listener = layer->GetListener();
+            const Entity entity = layer->GetEntity();
 
-            const auto& lpfCurve = amEngine->GetState()->occlusion_config.lpf;
-            const auto& gainCurve = amEngine->GetState()->occlusion_config.gain;
+            // Compute the relative listener/source direction in spherical angles.
+            AmVec3 direction = GetRelativeDirection(listener.GetLocation(), listener.GetOrientation().GetQuaternion(), layer->GetLocation());
+            const SphericalPosition listenerDirection = SphericalPosition::FromWorldSpace(direction);
+            const AmReal32 listenerDirectivity =
+                CalculateDirectivity(listener.GetDirectivity(), listener.GetDirectivitySharpness(), listenerDirection);
 
-            if (const AmReal32 lpf = lpfCurve.Get(occlusion); lpf > 0)
+            AmReal32 soundDirectivity = 0.0f;
+            if (entity.Valid())
             {
-                if (!gOcclusionFilters.contains(sound->GetId()))
+                direction = GetRelativeDirection(entity.GetLocation(), entity.GetOrientation().GetQuaternion(), listener.GetLocation());
+                const SphericalPosition entityDirection = SphericalPosition::FromWorldSpace(direction);
+                soundDirectivity = CalculateDirectivity(entity.GetDirectivity(), entity.GetDirectivitySharpness(), entityDirection);
+            }
+
+            _currentOcclusions[soundId] = AM_Lerp(occlusion, kOcclusionSmoothingCoefficient, _currentOcclusions[soundId]);
+
+            const AmReal32 coefficient =
+                CalculateOcclusionFilterCoefficient(listenerDirectivity * soundDirectivity, _currentOcclusions[soundId]);
+
+            const auto& lpfCurve = amEngine->GetOcclusionCoefficientCurve();
+            const auto& gainCurve = amEngine->GetOcclusionGainCurve();
+
+            if (const AmReal32 lpf = lpfCurve.Get(coefficient); lpf > 0)
+            {
+                if (!_occlusionFilters.contains(soundId))
                 {
-                    _lpFilter.InitLowPass(std::ceil(_lpfCurve.Get(lpf)), 0.5f);
-                    gOcclusionFilters[sound->GetId()] = _lpFilter.CreateInstance();
+                    _filter.Init(lpf);
+                    _occlusionFilters[soundId] = _filter.CreateInstance();
                 }
 
                 // Update the filter coefficients
-                gOcclusionFilters[sound->GetId()]->SetFilterParameter(BiquadResonantFilter::ATTRIBUTE_FREQUENCY, _lpfCurve.Get(lpf));
+                _occlusionFilters[soundId]->SetFilterParameter(MonoPoleFilter::ATTRIBUTE_COEFFICIENT, AM_CLAMP(coefficient, 0.0f, 1.0f));
 
                 // Apply Low Pass Filter
-                gOcclusionFilters[sound->GetId()]->Process(out, frames, bufferSize, channels, sampleRate);
+                _occlusionFilters[soundId]->Process(out, frames, bufferSize, channels, sampleRate);
             }
 
-            const AmReal32 gain = gainCurve.Get(occlusion);
+            const AmReal32 gain = gainCurve.Get(_currentOcclusions[soundId]);
 
             // Apply Gain
             const AmSize length = frames * channels;
@@ -102,18 +147,21 @@ namespace SparkyStudios::Audio::Amplitude
 #endif // AM_SIMD_INTRINSICS
         }
 
-        void Cleanup(SoundInstance* sound) override
+        void Cleanup(const AmplimixLayer* layer) override
         {
-            if (!gOcclusionFilters.contains(sound->GetId()))
+            if (!_occlusionFilters.contains(layer->GetId()))
                 return;
 
-            _lpFilter.DestroyInstance(gOcclusionFilters[sound->GetId()]);
-            gOcclusionFilters.erase(sound->GetId());
+            _filter.DestroyInstance(_occlusionFilters[layer->GetId()]);
+            _occlusionFilters.erase(layer->GetId());
         }
 
     private:
-        CurvePart _lpfCurve;
-        BiquadResonantFilter _lpFilter;
+        MonoPoleFilter _filter;
+
+        // Cached state per sound instance
+        std::map<AmObjectID, AmReal32> _currentOcclusions;
+        std::map<AmObjectID, FilterInstance*> _occlusionFilters;
     };
 
     class OcclusionProcessor final : public SoundProcessor

@@ -14,19 +14,14 @@
 
 #pragma once
 
-#ifndef SS_AMPLITUDE_AUDIO_SWITCH_H
-#define SS_AMPLITUDE_AUDIO_SWITCH_H
+#ifndef _AM_SOUND_SWITCH_H
+#define _AM_SOUND_SWITCH_H
 
 #include <SparkyStudios/Audio/Amplitude/Core/Asset.h>
 #include <SparkyStudios/Audio/Amplitude/Core/Common.h>
-#include <SparkyStudios/Audio/Amplitude/Core/RefCounter.h>
 
 namespace SparkyStudios::Audio::Amplitude
 {
-    struct EngineInternalState;
-
-    struct SwitchDefinition;
-
     /**
      * @brief A switch state.
      */
@@ -66,34 +61,22 @@ namespace SparkyStudios::Audio::Amplitude
      *
      * The Switch is a shared object between sound sources. They are used only by SwitchContainer objects.
      */
-    class AM_API_PUBLIC Switch final : public Asset<AmSwitchID, SwitchDefinition>
+    class AM_API_PUBLIC Switch : public Asset<AmSwitchID>
     {
     public:
-        /**
-         * @brief Creates an uninitialized Switch.
-         *
-         * An uninitialized Switch cannot set no provide the actual switch state.
-         */
-        Switch();
-
-        /**
-         * \brief Destroys the switch asset and releases all related resources.
-         */
-        ~Switch() override;
-
         /**
          * @brief Get the current state of the switch.
          *
          * @return The current state of the switch.
          */
-        [[nodiscard]] const SwitchState& GetState() const;
+        [[nodiscard]] virtual const SwitchState& GetState() const = 0;
 
         /**
          * @brief Set the current state of the switch.
          *
          * @param state The state to apply to the switch.
          */
-        void SetState(const SwitchState& state);
+        virtual void SetState(const SwitchState& state) = 0;
 
         /**
          * @brief Set the current state of the switch using the state ID.
@@ -101,7 +84,7 @@ namespace SparkyStudios::Audio::Amplitude
          * @param id The ID of the state to apply. This ID should exist in the list
          * of switch states.
          */
-        void SetState(AmObjectID id);
+        virtual void SetState(AmObjectID id) = 0;
 
         /**
          * @brief Set the current state of the switch using the state name.
@@ -109,24 +92,15 @@ namespace SparkyStudios::Audio::Amplitude
          * @param name The name of the state to apply. This name should exist in the
          * list of switch states.
          */
-        void SetState(const AmString& name);
+        virtual void SetState(const AmString& name) = 0;
 
         /**
          * @brief Get the list of available SwitchStates in this Switch.
          *
          * @return The list of available SwitchStates.
          */
-        [[nodiscard]] const std::vector<SwitchState>& GetSwitchStates() const;
-
-        bool LoadDefinition(const SwitchDefinition* definition, EngineInternalState* state) override;
-        [[nodiscard]] const SwitchDefinition* GetDefinition() const override;
-
-    private:
-        SwitchState _activeState;
-        std::vector<SwitchState> _states;
-
-        RefCounter _refCounter;
+        [[nodiscard]] virtual const std::vector<SwitchState>& GetSwitchStates() const = 0;
     };
 } // namespace SparkyStudios::Audio::Amplitude
 
-#endif // SS_AMPLITUDE_AUDIO_SWITCH_H
+#endif // _AM_SOUND_SWITCH_H

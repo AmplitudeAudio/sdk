@@ -14,81 +14,58 @@
 
 #include <SparkyStudios/Audio/Amplitude/Core/Asset.h>
 
+#include <Core/Asset.h>
 #include <Core/EngineInternalState.h>
 
 namespace SparkyStudios::Audio::Amplitude
 {
     template<typename Id, typename Definition>
-    Asset<Id, Definition>::~Asset()
+    AssetImpl<Id, Definition>::~AssetImpl()
     {
-        AMPLITUDE_ASSERT(_refCounter.GetCount() == 0);
+        AMPLITUDE_ASSERT(m_refCounter.GetCount() == 0);
 
-        _id = kAmInvalidObjectId;
-        _source.clear();
+        m_id = kAmInvalidObjectId;
+        m_source.clear();
     }
 
     template<typename Id, typename Definition>
-    bool Asset<Id, Definition>::LoadDefinitionFromFile(std::shared_ptr<File> file, EngineInternalState* state)
+    bool AssetImpl<Id, Definition>::LoadDefinitionFromFile(std::shared_ptr<File> file, EngineInternalState* state)
     {
         // Ensure we do not load the asset more than once
-        AMPLITUDE_ASSERT(_id == kAmInvalidObjectId);
+        AMPLITUDE_ASSERT(m_id == kAmInvalidObjectId);
 
         AmString source;
         if (!LoadFile(file, &source))
             return false;
 
-        _source = source;
+        m_source = source;
 
         return LoadDefinition(GetDefinition(), state);
     }
 
     template<typename Id, typename Definition>
-    bool Asset<Id, Definition>::LoadDefinitionFromPath(const AmOsString& path, EngineInternalState* state)
+    bool AssetImpl<Id, Definition>::LoadDefinitionFromPath(const AmOsString& path, EngineInternalState* state)
     {
-        const FileSystem* fs = amEngine->GetFileSystem();
+        const FileSystem* fs = Engine::GetInstance()->GetFileSystem();
         const AmOsString& rp = fs->ResolvePath(path);
 
         return LoadDefinitionFromFile(fs->OpenFile(rp), state);
     }
 
     template<typename Id, typename Definition>
-    Id Asset<Id, Definition>::GetId() const
-    {
-        return _id;
-    }
-
-    template<typename Id, typename Definition>
-    const AmString& Asset<Id, Definition>::GetName() const
-    {
-        return _name;
-    }
-
-    template<typename Id, typename Definition>
-    void Asset<Id, Definition>::AcquireReferences(EngineInternalState* state)
+    void AssetImpl<Id, Definition>::AcquireReferences(EngineInternalState* state)
     {}
 
     template<typename Id, typename Definition>
-    void Asset<Id, Definition>::ReleaseReferences(EngineInternalState* state)
+    void AssetImpl<Id, Definition>::ReleaseReferences(EngineInternalState* state)
     {}
 
-    template<typename Id, typename Definition>
-    RefCounter* Asset<Id, Definition>::GetRefCounter()
-    {
-        return &_refCounter;
-    }
-
-    template<typename Id, typename Definition>
-    const RefCounter* Asset<Id, Definition>::GetRefCounter() const
-    {
-        return &_refCounter;
-    }
-
-    template class Asset<AmAttenuationID, AttenuationDefinition>;
-    template class Asset<AmCollectionID, CollectionDefinition>;
-    template class Asset<AmEffectID, EffectDefinition>;
-    template class Asset<AmEventID, EventDefinition>;
-    template class Asset<AmRtpcID, RtpcDefinition>;
-    template class Asset<AmSoundID, SoundDefinition>;
-    template class Asset<AmSwitchContainerID, SwitchContainerDefinition>;
-    template class Asset<AmSwitchID, SwitchDefinition>;
+    template class AssetImpl<AmAttenuationID, AttenuationDefinition>;
+    template class AssetImpl<AmCollectionID, CollectionDefinition>;
+    template class AssetImpl<AmEffectID, EffectDefinition>;
+    template class AssetImpl<AmEventID, EventDefinition>;
+    template class AssetImpl<AmRtpcID, RtpcDefinition>;
+    template class AssetImpl<AmSoundID, SoundDefinition>;
+    template class AssetImpl<AmSwitchContainerID, SwitchContainerDefinition>;
+    template class AssetImpl<AmSwitchID, SwitchDefinition>;
 } // namespace SparkyStudios::Audio::Amplitude

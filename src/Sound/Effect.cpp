@@ -15,71 +15,66 @@
 #include <SparkyStudios/Audio/Amplitude/Amplitude.h>
 
 #include <Core/EngineInternalState.h>
+#include <Sound/Effect.h>
 
 #include "effect_definition_generated.h"
 
 namespace SparkyStudios::Audio::Amplitude
 {
-    static std::unordered_map<AmEffectID, std::vector<EffectInstance*>> gEffectsList = {};
+    template class AssetImpl<AmEffectID, EffectDefinition>;
 
-    Effect::Effect()
+    EffectImpl::EffectImpl()
         : _instances()
         , _parameters()
         , _filter(nullptr)
     {}
 
-    Effect::~Effect()
+    EffectImpl::~EffectImpl()
     {
-        for (auto&& instance : gEffectsList[_id])
+        for (auto&& instance : _instances)
             DestroyInstance(instance);
 
         _filter = nullptr;
-        _parameters.clear();
 
-        gEffectsList.erase(_id);
+        _parameters.clear();
+        _instances.clear();
     }
 
-    EffectInstance* Effect::CreateInstance() const
+    EffectInstance* EffectImpl::CreateInstance() const
     {
-        auto* effect = ampoolnew(MemoryPoolKind::Engine, EffectInstance, this);
-        auto& list = gEffectsList[_id];
-        list.push_back(effect);
+        auto* effect = ampoolnew(MemoryPoolKind::Engine, EffectInstanceImpl, this);
+        _instances.push_back(effect);
         return effect;
     }
 
-    void Effect::DestroyInstance(EffectInstance* instance) const
+    void EffectImpl::DestroyInstance(EffectInstance* instance) const
     {
         if (instance == nullptr)
             return;
 
-        auto& list = gEffectsList[_id];
-        list.erase(std::ranges::find(list, instance));
+        _instances.erase(std::ranges::find(_instances, instance));
 
         ampooldelete(MemoryPoolKind::Engine, EffectInstance, instance);
     }
 
-    void Effect::Update()
+    void EffectImpl::Update()
     {
         // Update effect parameters
-        for (auto&& instance : gEffectsList[_id])
-        {
+        for (auto&& instance : _instances)
             for (AmSize i = 0, l = _parameters.size(); i < l; ++i)
-            {
                 instance->GetFilter()->SetFilterParameter(i, _parameters[i].GetValue());
-            }
-        }
     }
 
-    bool Effect::LoadDefinition(const EffectDefinition* definition, EngineInternalState* state)
+    bool EffectImpl::LoadDefinition(const EffectDefinition* definition, EngineInternalState* state)
     {
-        _id = definition->id();
-        _name = definition->name()->str();
+        m_id = definition->id();
+        m_name = definition->name()->str();
 
         _filter = Filter::Find(definition->effect()->str());
 
         if (_filter == nullptr)
         {
-            amLogError("Effect %s specifies an invalid effect type: %s.", definition->name()->c_str(), definition->effect()->c_str());
+            amLogError("EffectImpl %s specifies an invalid effect type: %s.", definition->name()->c_str(), definition->effect()->c_str());
             return false;
         }
 
@@ -89,17 +84,15 @@ namespace SparkyStudios::Audio::Amplitude
         for (flatbuffers::uoffset_t i = 0; i < paramCount; ++i)
             _parameters[i].Init(definition->parameters()->Get(i));
 
-        gEffectsList[_id] = {};
-
         return true;
     }
 
-    const EffectDefinition* Effect::GetDefinition() const
+    const EffectDefinition* EffectImpl::GetDefinition() const
     {
-        return GetEffectDefinition(_source.c_str());
+        return GetEffectDefinition(m_source.c_str());
     }
 
-    EffectInstance::EffectInstance(const Effect* parent)
+    EffectInstanceImpl::EffectInstanceImpl(const EffectImpl* parent)
         : _parent(parent)
     {
         _filterInstance = _parent->_filter->CreateInstance();
@@ -109,7 +102,7 @@ namespace SparkyStudios::Audio::Amplitude
             _filterInstance->SetFilterParameter(i, _parent->_parameters[i].GetValue());
     }
 
-    EffectInstance::~EffectInstance()
+    EffectInstanceImpl::~EffectInstanceImpl()
     {
         _parent->_filter->DestroyInstance(_filterInstance);
         _filterInstance = nullptr;
@@ -117,7 +110,7 @@ namespace SparkyStudios::Audio::Amplitude
         _parent = nullptr;
     }
 
-    FilterInstance* EffectInstance::GetFilter() const
+    FilterInstance* EffectInstanceImpl::GetFilter() const
     {
         return _filterInstance;
     }

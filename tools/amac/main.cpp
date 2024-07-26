@@ -168,16 +168,16 @@ static int process(const AmOsString& inFileName, const AmOsString& outFileName, 
         {
             AmUInt64 f = std::ceil(static_cast<AmReal32>(numSamples * state.resampling.targetSampleRate) / sampleRate);
 
-            std::vector<r8b::CDSPResampler16*> resamplers;
+            std::vector<r8b::CDSPResampler24*> resamplers;
             for (AmUInt16 c = 0; c < numChannels; c++)
-                resamplers.push_back(new r8b::CDSPResampler16(sampleRate, state.resampling.targetSampleRate, numSamples));
+                resamplers.push_back(new r8b::CDSPResampler24(sampleRate, state.resampling.targetSampleRate, numSamples));
 
             auto* input64 =
                 static_cast<AmReal64Buffer>(ampoolmalign(MemoryPoolKind::SoundData, numSamples * sizeof(AmReal64), AM_SIMD_ALIGNMENT));
 
             for (AmUInt16 c = 0; c < numChannels; c++)
             {
-                auto* resampler = static_cast<r8b::CDSPResampler16*>(resamplers[c]);
+                auto* resampler = static_cast<r8b::CDSPResampler24*>(resamplers[c]);
 
                 for (AmUInt64 i = 0; i < numSamples; i++)
                 {
@@ -186,10 +186,11 @@ static int process(const AmOsString& inFileName, const AmOsString& outFileName, 
 
                 AmReal64Buffer output = nullptr;
                 f = resampler->process(input64, numSamples, output);
-                resampler->clear();
 
                 for (AmUInt64 i = 0; i < f; i++)
                     output16[i * numChannels + c] = AmReal32ToInt16(static_cast<AmReal32>(output[i]), true);
+
+                resampler->clear();
             }
 
             ampoolfree(MemoryPoolKind::SoundData, input64);

@@ -14,8 +14,8 @@
 
 #pragma once
 
-#ifndef SS_AMPLITUDE_AUDIO_SOUND_COLLECTION_SCHEDULER_H
-#define SS_AMPLITUDE_AUDIO_SOUND_COLLECTION_SCHEDULER_H
+#ifndef _AM_IMPLEMENTATION_SOUND_SCHEDULER_H
+#define _AM_IMPLEMENTATION_SOUND_SCHEDULER_H
 
 #include <vector>
 
@@ -67,4 +67,4 @@ namespace SparkyStudios::Audio::Amplitude
     };
 } // namespace SparkyStudios::Audio::Amplitude
 
-#endif // SS_AMPLITUDE_AUDIO_SOUND_COLLECTION_SCHEDULER_H
+#endif // _AM_IMPLEMENTATION_SOUND_SCHEDULER_H

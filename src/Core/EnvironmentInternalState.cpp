@@ -15,6 +15,7 @@
 #include <SparkyStudios/Audio/Amplitude/Amplitude.h>
 
 #include <Core/EnvironmentInternalState.h>
+#include <Core/Engine.h>
 
 namespace SparkyStudios::Audio::Amplitude
 {

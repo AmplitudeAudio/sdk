@@ -14,6 +14,9 @@
 
 #pragma once
 
+#ifndef _AM_MATH_SPHERICAL_POSITION_H
+#define _AM_MATH_SPHERICAL_POSITION_H
+
 #include <SparkyStudios/Audio/Amplitude/Core/Common.h>
 
 namespace SparkyStudios::Audio::Amplitude
@@ -84,7 +87,7 @@ namespace SparkyStudios::Audio::Amplitude
          *
          * @return The azimuth in radians of the spherical position.
          */
-        [[nodiscard]] AM_INLINE(AmReal32) GetAzimuth() const
+        [[nodiscard]] AM_INLINE AmReal32 GetAzimuth() const
         {
             return _azimuth;
         }
@@ -94,7 +97,7 @@ namespace SparkyStudios::Audio::Amplitude
          *
          * @return The elevation in radians of the spherical position.
          */
-        [[nodiscard]] AM_INLINE(AmReal32) GetElevation() const
+        [[nodiscard]] AM_INLINE AmReal32 GetElevation() const
         {
             return _elevation;
         }
@@ -104,7 +107,7 @@ namespace SparkyStudios::Audio::Amplitude
          *
          * @return The distance from the center of the sphere to the point.
          */
-        [[nodiscard]] AM_INLINE(AmReal32) GetRadius() const
+        [[nodiscard]] AM_INLINE AmReal32 GetRadius() const
         {
             return _radius;
         }
@@ -114,7 +117,7 @@ namespace SparkyStudios::Audio::Amplitude
          *
          * @param azimuth The new azimuth in radians.
          */
-        AM_INLINE(void) SetAzimuth(AmReal32 azimuth)
+        AM_INLINE void SetAzimuth(AmReal32 azimuth)
         {
             _azimuth = azimuth;
         }
@@ -124,7 +127,7 @@ namespace SparkyStudios::Audio::Amplitude
          *
          * @param elevation The new elevation in radians.
          */
-        AM_INLINE(void) SetElevation(AmReal32 elevation)
+        AM_INLINE void SetElevation(AmReal32 elevation)
         {
             _elevation = elevation;
         }
@@ -134,7 +137,7 @@ namespace SparkyStudios::Audio::Amplitude
          *
          * @param radius The new distance from the center of the sphere to the point.
          */
-        AM_INLINE(void) SetRadius(AmReal32 radius)
+        AM_INLINE void SetRadius(AmReal32 radius)
         {
             _radius = radius;
         }
@@ -163,3 +166,5 @@ namespace SparkyStudios::Audio::Amplitude
         AmReal32 _radius = 1.0f;
     };
 } // namespace SparkyStudios::Audio::Amplitude
+
+#endif // _AM_MATH_SPHERICAL_POSITION_H

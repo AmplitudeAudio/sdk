@@ -35,8 +35,8 @@ namespace SparkyStudios::Audio::Amplitude
 
     typedef AmAudioFrame* AmAudioFrameBuffer;
 
-    AM_INLINE(void)
-    Sum(AmAudioSample* AM_RESTRICT result, const AmAudioSample* AM_RESTRICT a, const AmAudioSample* AM_RESTRICT b, const AmSize len)
+    AM_INLINE void Sum(
+        AmAudioSample* AM_RESTRICT result, const AmAudioSample* AM_RESTRICT a, const AmAudioSample* AM_RESTRICT b, const AmSize len)
     {
 #if defined(AM_SIMD_INTRINSICS)
         const AmSize end = AmAudioFrame::size * (len / AmAudioFrame::size);
@@ -72,8 +72,7 @@ namespace SparkyStudios::Audio::Amplitude
 #endif
     }
 
-    AM_INLINE(void)
-    ComplexMultiplyAccumulate(
+    AM_INLINE void ComplexMultiplyAccumulate(
         AmAudioSample* AM_RESTRICT re,
         AmAudioSample* AM_RESTRICT im,
         const AmAudioSample* AM_RESTRICT reA,
@@ -133,7 +132,7 @@ namespace SparkyStudios::Audio::Amplitude
 #endif
     }
 
-    AM_INLINE(void) ComplexMultiplyAccumulate(SplitComplex& result, const SplitComplex& a, const SplitComplex& b)
+    AM_INLINE void ComplexMultiplyAccumulate(SplitComplex& result, const SplitComplex& a, const SplitComplex& b)
     {
         AMPLITUDE_ASSERT(result.GetSize() == a.GetSize());
         AMPLITUDE_ASSERT(result.GetSize() == b.GetSize());
@@ -148,12 +147,25 @@ namespace SparkyStudios::Audio::Amplitude
      * @param src The source array.
      * @param srcSize The size of the source array.
      */
-    AM_INLINE(void) CopyAndPad(AmAlignedReal32Buffer& dest, const AmReal32* src, AmSize srcSize)
+    AM_INLINE void CopyAndPad(AmAlignedReal32Buffer& dest, const AmReal32* src, AmSize srcSize)
     {
         AMPLITUDE_ASSERT(dest.GetSize() >= srcSize);
 
         std::memcpy(dest.GetBuffer(), src, srcSize * sizeof(AmReal32));
         std::memset(dest.GetBuffer() + srcSize, 0, (dest.GetSize() - srcSize) * sizeof(AmReal32));
+    }
+
+    /**
+     * @brief Gets the number of B-Format components for the given order and 3D status.
+     *
+     * @param order The ambisonic order.
+     * @param is3D Whether the ambisonic signal is 3D (true) or 2D (false).
+     *
+     * @return The number of B-Format components for the given order and 3D status.
+     */
+    AM_INLINE AmUInt32 OrderToComponents(const AmUInt32 order, const bool is3D)
+    {
+        return is3D ? static_cast<AmUInt32>(std::pow(static_cast<AmReal32>(order) + 1.f, 2.f)) : order * 2 + 1;
     }
 } // namespace SparkyStudios::Audio::Amplitude
 

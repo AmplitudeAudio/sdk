@@ -26,8 +26,6 @@
 
 namespace SparkyStudios::Audio::Amplitude
 {
-    static std::map<AmEnvironmentID, std::map<AmObjectID, EffectInstance*>> gEnvironmentFilters = {};
-
     class EnvironmentProcessorInstance final : public SoundProcessorInstance
     {
     public:
@@ -38,57 +36,52 @@ namespace SparkyStudios::Audio::Amplitude
             AmSize bufferSize,
             AmUInt16 channels,
             AmUInt32 sampleRate,
-            SoundInstance* sound) override
+            const AmplimixLayer* layer) override
         {
-            const auto& settings = sound->GetSettings();
-            if (settings.m_spatialization != Spatialization_None)
+            if (const Entity& entity = layer->GetEntity(); entity.Valid())
             {
-                const Entity& entity = sound->GetChannel()->GetParentChannelState()->GetEntity();
-                if (entity.Valid())
-                {
-                    auto environments = entity.GetEnvironments();
-                    std::vector<std::pair<AmEnvironmentID, AmReal32>> items(environments.begin(), environments.end());
-                    std::ranges::sort(
-                        items,
-                        [](const std::pair<AmEnvironmentID, AmReal32>& a, const std::pair<AmEnvironmentID, AmReal32>& b) -> bool
-                        {
-                            return a.second > b.second;
-                        });
-
-                    for (auto&& environment : items)
+                auto environments = entity.GetEnvironments();
+                std::vector<std::pair<AmEnvironmentID, AmReal32>> items(environments.begin(), environments.end());
+                std::ranges::sort(
+                    items,
+                    [](const std::pair<AmEnvironmentID, AmReal32>& a, const std::pair<AmEnvironmentID, AmReal32>& b) -> bool
                     {
-                        if (environment.second == 0.0f)
-                            continue;
+                        return a.second > b.second;
+                    });
 
-                        const Environment& handle = amEngine->GetEnvironment(environment.first);
-                        if (!handle.Valid())
-                            continue;
+                for (const auto& [environment, amount] : items)
+                {
+                    if (amount == 0.0f)
+                        continue;
 
-                        const Effect* effect = handle.GetEffect();
-                        if (!gEnvironmentFilters.contains(environment.first))
-                        {
-                            const std::map<AmSoundID, EffectInstance*> map{};
-                            gEnvironmentFilters[environment.first] = map;
-                        }
+                    const Environment& handle = amEngine->GetEnvironment(environment);
+                    if (!handle.Valid())
+                        continue;
 
-                        if (!gEnvironmentFilters[environment.first].contains(sound->GetId()))
-                        {
-                            gEnvironmentFilters[environment.first][sound->GetId()] = effect->CreateInstance();
-                        }
-
-                        SoundChunk* scratch = SoundChunk::CreateChunk(frames, channels, MemoryPoolKind::Amplimix);
-                        std::memcpy(reinterpret_cast<AmAudioSampleBuffer>(scratch->buffer), in, bufferSize);
-
-                        FilterInstance* filterInstance = gEnvironmentFilters[environment.first][sound->GetId()]->GetFilter();
-                        filterInstance->SetFilterParameter(0, environment.second);
-                        filterInstance->Process(
-                            reinterpret_cast<AmAudioSampleBuffer>(scratch->buffer), frames, bufferSize, channels, sampleRate);
-
-                        std::memcpy(out, reinterpret_cast<AmAudioSampleBuffer>(scratch->buffer), bufferSize);
-                        SoundChunk::DestroyChunk(scratch);
-
-                        return;
+                    const auto* effect = static_cast<const EffectImpl*>(handle.GetEffect());
+                    if (!_environmentFilters.contains(environment))
+                    {
+                        const std::map<AmSoundID, EffectInstance*> map{};
+                        _environmentFilters[environment] = map;
                     }
+
+                    if (!_environmentFilters[environment].contains(layer->GetId()))
+                    {
+                        _environmentFilters[environment][layer->GetId()] = effect->CreateInstance();
+                    }
+
+                    SoundChunk* scratch = SoundChunk::CreateChunk(frames, channels, MemoryPoolKind::Amplimix);
+                    std::memcpy(reinterpret_cast<AmAudioSampleBuffer>(scratch->buffer), in, bufferSize);
+
+                    FilterInstance* filterInstance = _environmentFilters[environment][layer->GetId()]->GetFilter();
+                    filterInstance->SetFilterParameter(0, amount);
+                    filterInstance->Process(
+                        reinterpret_cast<AmAudioSampleBuffer>(scratch->buffer), frames, bufferSize, channels, sampleRate);
+
+                    std::memcpy(out, reinterpret_cast<AmAudioSampleBuffer>(scratch->buffer), bufferSize);
+                    SoundChunk::DestroyChunk(scratch);
+
+                    return;
                 }
             }
 
@@ -96,30 +89,33 @@ namespace SparkyStudios::Audio::Amplitude
                 std::memcpy(out, in, bufferSize);
         }
 
-        void Cleanup(SoundInstance* sound) override
+        void Cleanup(const AmplimixLayer* layer) override
         {
-            const Entity& entity = sound->GetChannel()->GetParentChannelState()->GetEntity();
+            const Entity& entity = layer->GetEntity();
             if (!entity.Valid())
                 return;
 
-            for (const auto environments = entity.GetEnvironments(); auto&& environment : environments)
+            for (const auto environments = entity.GetEnvironments(); const auto& environment : environments | std::views::keys)
             {
-                if (!gEnvironmentFilters.contains(environment.first))
+                if (!_environmentFilters.contains(environment))
                     continue;
 
-                if (!gEnvironmentFilters[environment.first].contains(sound->GetId()))
+                if (!_environmentFilters[environment].contains(layer->GetId()))
                     continue;
 
-                const Environment& handle = amEngine->GetEnvironment(environment.first);
+                const Environment& handle = amEngine->GetEnvironment(environment);
                 if (!handle.Valid())
                     continue;
 
-                const Effect* effect = handle.GetEffect();
-                effect->DestroyInstance(gEnvironmentFilters[environment.first][sound->GetId()]);
+                const auto* effect = static_cast<const EffectImpl*>(handle.GetEffect());
+                effect->DestroyInstance(_environmentFilters[environment][layer->GetId()]);
 
-                gEnvironmentFilters[environment.first].erase(sound->GetId());
+                _environmentFilters[environment].erase(layer->GetId());
             }
         }
+
+    private:
+        std::map<AmEnvironmentID, std::map<AmObjectID, EffectInstance*>> _environmentFilters = {};
     };
 
     class EnvironmentProcessor final : public SoundProcessor

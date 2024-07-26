@@ -14,14 +14,15 @@
 
 #pragma once
 
-#ifndef SS_AMPLITUDE_AUDIO_MIXER_H
-#define SS_AMPLITUDE_AUDIO_MIXER_H
+#ifndef _AM_MIXER_MIXER_H
+#define _AM_MIXER_MIXER_H
 
 #include <queue>
 
 #include <SparkyStudios/Audio/Amplitude/Core/Common.h>
 #include <SparkyStudios/Audio/Amplitude/Core/Device.h>
 #include <SparkyStudios/Audio/Amplitude/Core/Thread.h>
+#include <SparkyStudios/Audio/Amplitude/Mixer/Amplimix.h>
 #include <SparkyStudios/Audio/Amplitude/Mixer/Resampler.h>
 
 #include <Mixer/ProcessorPipeline.h>
@@ -40,17 +41,7 @@ namespace SparkyStudios::Audio::Amplitude
     static constexpr AmUInt32 kAmplimixLayersCount = (1 << kAmplimixLayersBits);
     static constexpr AmUInt32 kAmplimixLayersMask = (kAmplimixLayersCount - 1);
 
-    class Mixer;
-
-    /**
-     * @brief Called just before the mixer process audio data.
-     */
-    typedef void (*BeforeMixCallback)(Mixer* mixer, AmAudioFrameBuffer audio, AmUInt32 frames);
-
-    /**
-     * @brief Called just after the mixer process audio data.
-     */
-    typedef void (*AfterMixCallback)(Mixer* mixer, AmAudioFrameBuffer audio, AmUInt32 frames);
+    class AmplimixImpl;
 
     /**
      * @brief The callback to execute when running a mixer command.
@@ -67,11 +58,9 @@ namespace SparkyStudios::Audio::Amplitude
         ePSF_MAX,
     };
 
-    struct MixerLayer
+    class AmplimixLayerImpl final : public AmplimixLayer
     {
-        BeforeMixCallback onBeforeMix; // called before the mixing
-        AfterMixCallback onAfterMix; // called after the mixing
-
+    public:
         AmUInt32 id; // playing id
         _Atomic(PlayStateFlag) flag; // state
         _Atomic(AmUInt64) cursor; // cursor
@@ -79,6 +68,9 @@ namespace SparkyStudios::Audio::Amplitude
         _Atomic(AmReal32) pitch; // pitch
         SoundData* snd; // sound data
         AmUInt64 start, end; // start and end frames
+
+        _Atomic(AmReal32) obstruction; // obstruction factor
+        _Atomic(AmReal32) occlusion; // occlusion factor
 
         _Atomic(AmReal32) userPlaySpeed; // user-defined sound playback speed
         _Atomic(AmReal32) playSpeed; // computed (real) sound playback speed
@@ -90,6 +82,26 @@ namespace SparkyStudios::Audio::Amplitude
          * @brief Resets the layer.
          */
         void Reset();
+
+        AmUInt32 GetId() const override;
+        AmUInt64 GetStartPosition() const override;
+        AmUInt64 GetEndPosition() const override;
+        AmUInt64 GetCurrentPosition() const override;
+        AmVec2 GetGain() const override;
+        AmReal32 GetPitch() const override;
+        AmReal32 GetObstruction() const override;
+        AmReal32 GetOcclusion() const override;
+        AmReal32 GetPlaySpeed() const override;
+        AmVec3 GetLocation() const override;
+        Entity GetEntity() const override;
+        Listener GetListener() const override;
+        Channel GetChannel() const override;
+        SoundFormat GetSoundFormat() const override;
+        bool IsSpatializationEnabled() const override;
+        bool IsLoopEnabled() const override;
+        bool IsStreamEnabled() const override;
+        const Sound* GetSound() const override;
+        const EffectInstance* GetEffect() const override;
     };
 
     struct MixerCommand
@@ -100,14 +112,14 @@ namespace SparkyStudios::Audio::Amplitude
     /**
      * @brief Amplimix - The Amplitude Audio Mixer
      */
-    class Mixer
+    class AmplimixImpl final : public Amplimix
     {
         friend struct AmplimixMutexLocker;
 
     public:
-        explicit Mixer(AmReal32 masterGain);
+        explicit AmplimixImpl(AmReal32 masterGain);
 
-        ~Mixer();
+        ~AmplimixImpl() override;
 
         /**
          * @brief Initializes the audio Mixer.
@@ -123,25 +135,21 @@ namespace SparkyStudios::Audio::Amplitude
         void Deinit();
 
         /**
-         * @brief Mixer post initialization.
-         *
-         * This method is called once, just after the playback device is initialized
-         * and before it is started.
-         *
-         * @param bufferSize The buffer size accepted by the playback device.
-         * @param sampleRate The sample rate accepted bu the playback device.
-         * @param channels The number of channels the playback device will output.
+         * @copydoc Amplimix::UpdateDevice
          */
         void UpdateDevice(
             AmObjectID deviceID,
             AmString deviceName,
             AmUInt32 deviceOutputSampleRate,
             PlaybackOutputChannels deviceOutputChannels,
-            PlaybackOutputFormat deviceOutputFormat);
+            PlaybackOutputFormat deviceOutputFormat) override;
 
-        [[nodiscard]] bool IsInitialized() const;
+        [[nodiscard]] AM_INLINE bool IsInitialized() const override
+        {
+            return _initialized;
+        }
 
-        AmUInt64 Mix(AmVoidPtr mixBuffer, AmUInt64 frameCount);
+        AmUInt64 Mix(AmVoidPtr mixBuffer, AmUInt64 frameCount) override;
 
         AmUInt32 Play(
             SoundData* sound, PlayStateFlag flag, AmReal32 gain, AmReal32 pan, AmReal32 pitch, AmReal32 speed, AmUInt32 id, AmUInt32 layer);
@@ -157,6 +165,10 @@ namespace SparkyStudios::Audio::Amplitude
             AmUInt64 endFrame,
             AmUInt32 id,
             AmUInt32 layer);
+
+        bool SetObstruction(AmUInt32 id, AmUInt32 layer, AmReal32 obstruction);
+
+        bool SetOcclusion(AmUInt32 id, AmUInt32 layer, AmReal32 occlusion);
 
         bool SetGainPan(AmUInt32 id, AmUInt32 layer, AmReal32 gain, AmReal32 pan);
 
@@ -186,16 +198,19 @@ namespace SparkyStudios::Audio::Amplitude
 
         [[nodiscard]] ProcessorPipeline* GetPipeline();
 
-        [[nodiscard]] const DeviceDescription& GetDeviceDescription() const;
+        [[nodiscard]] AM_INLINE const DeviceDescription& GetDeviceDescription() const override
+        {
+            return _device;
+        }
 
         static void IncrementSoundLoopCount(SoundInstance* sound);
 
     private:
         void ExecuteCommands();
-        void MixLayer(MixerLayer* layer, AmAudioFrameBuffer buffer, AmUInt64 bufferSize, AmUInt64 samples);
-        MixerLayer* GetLayer(AmUInt32 layer);
-        bool ShouldMix(MixerLayer* layer);
-        void UpdatePitch(MixerLayer* layer);
+        void MixLayer(AmplimixLayerImpl* layer, AmAudioFrameBuffer buffer, AmUInt64 bufferSize, AmUInt64 samples);
+        AmplimixLayerImpl* GetLayer(AmUInt32 layer);
+        bool ShouldMix(AmplimixLayerImpl* layer);
+        void UpdatePitch(AmplimixLayerImpl* layer);
         void LockAudioMutex();
         void UnlockAudioMutex();
 
@@ -208,7 +223,7 @@ namespace SparkyStudios::Audio::Amplitude
 
         AmUInt32 _nextId;
         _Atomic(AmReal32) _masterGain{};
-        MixerLayer _layers[kAmplimixLayersCount];
+        AmplimixLayerImpl _layers[kAmplimixLayersCount];
         AmUInt64 _remainingFrames;
 
         AmUniquePtr<MemoryPoolKind::Amplimix, ProcessorPipeline> _pipeline = nullptr;
@@ -217,4 +232,4 @@ namespace SparkyStudios::Audio::Amplitude
     };
 } // namespace SparkyStudios::Audio::Amplitude
 
-#endif // SS_AMPLITUDE_AUDIO_MIXER_H
+#endif // _AM_MIXER_MIXER_H

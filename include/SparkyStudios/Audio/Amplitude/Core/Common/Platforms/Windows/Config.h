@@ -14,8 +14,8 @@
 
 #pragma once
 
-#ifndef SS_AMPLITUDE_AUDIO_WINDOWS_CONFIG_H
-#define SS_AMPLITUDE_AUDIO_WINDOWS_CONFIG_H
+#ifndef _AM_CORE_COMMON_PLATFORMS_WINDOWS_CONFIG_H
+#define _AM_CORE_COMMON_PLATFORMS_WINDOWS_CONFIG_H
 
 #include <sstream>
 
@@ -44,8 +44,8 @@
 #define AM_LIB_PRIVATE static
 
 // Function inline
-#define AM_INLINE(_return_type_) __forceinline _return_type_
-#define AM_NO_INLINE(_return_type_) __declspec(noinline) _return_type_
+#define AM_INLINE __forceinline
+#define AM_NO_INLINE __declspec(noinline)
 
 // Restrict keyword
 #define AM_RESTRICT __restrict
@@ -65,7 +65,7 @@
 // Macro used to convert a string literal to an AmOsString string at compile-time
 #define AM_OS_STRING(s) L##s
 
-static AM_INLINE(std::wstring) am_string_widen(const std::string& str)
+static AM_INLINE std::wstring am_string_widen(const std::string& str)
 {
     std::wostringstream wstm;
     const auto& ctfacet = std::use_facet<std::ctype<wchar_t>>(wstm.getloc());
@@ -74,7 +74,7 @@ static AM_INLINE(std::wstring) am_string_widen(const std::string& str)
     return wstm.str();
 }
 
-static AM_INLINE(std::string) am_wstring_narrow(const std::wstring& str)
+static AM_INLINE std::string am_wstring_narrow(const std::wstring& str)
 {
     std::ostringstream stm;
     const auto& ctfacet = std::use_facet<std::ctype<wchar_t>>(stm.getloc());
@@ -116,4 +116,4 @@ static AM_INLINE(std::string) am_wstring_narrow(const std::wstring& str)
 #endif // _MSC_VER
 #endif // AMPLITUDE_NO_ASSERTS
 
-#endif // SS_AMPLITUDE_AUDIO_WINDOWS_CONFIG_H
+#endif // _AM_CORE_COMMON_PLATFORMS_WINDOWS_CONFIG_H

@@ -12,8 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef SPARK_AUDIO_LOG_H
-#define SPARK_AUDIO_LOG_H
+#ifndef _AM_CORE_LOG_H
+#define _AM_CORE_LOG_H
 
 #include <SparkyStudios/Audio/Amplitude/Core/Common.h>
 
@@ -198,4 +198,4 @@ namespace SparkyStudios::Audio::Amplitude
     };
 } // namespace SparkyStudios::Audio::Amplitude
 
-#endif // SPARK_AUDIO_LOG_H
+#endif // _AM_CORE_LOG_H

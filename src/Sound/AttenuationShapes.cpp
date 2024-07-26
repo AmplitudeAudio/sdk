@@ -20,26 +20,26 @@
 
 namespace SparkyStudios::Audio::Amplitude
 {
-    AttenuationZone::AttenuationZone()
+    AttenuationZoneImpl::AttenuationZoneImpl()
         : m_maxAttenuationFactor(1.0f)
     {}
 
-    AmReal32 AttenuationZone::GetAttenuationFactor(const Attenuation* attenuation, const AmVec3& soundLocation, const Listener& listener)
+    AmReal32 AttenuationZoneImpl::GetAttenuationFactor(const Attenuation* attenuation, const AmVec3& soundLocation, const Listener& listener)
     {
         return m_maxAttenuationFactor;
     }
 
-    AmReal32 AttenuationZone::GetAttenuationFactor(const Attenuation*, const Entity&, const Listener&)
+    AmReal32 AttenuationZoneImpl::GetAttenuationFactor(const Attenuation*, const Entity&, const Listener&)
     {
         return m_maxAttenuationFactor;
     }
 
-    AttenuationZone* AttenuationZone::Create(const AttenuationShapeDefinition* definition)
+    AttenuationZone* AttenuationZoneImpl::Create(const AttenuationShapeDefinition* definition)
     {
         if (definition == nullptr)
             return nullptr;
 
-        AttenuationZone* shape = nullptr;
+        AttenuationZoneImpl* shape = nullptr;
 
         switch (definition->zone_type())
         {

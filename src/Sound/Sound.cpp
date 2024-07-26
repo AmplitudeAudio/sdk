@@ -14,8 +14,9 @@
 
 #include <SparkyStudios/Audio/Amplitude/Amplitude.h>
 
-#include <Core/EngineInternalState.h>
+#include <Core/Engine.h>
 #include <Mixer/SoundData.h>
+#include <Sound/Sound.h>
 
 #include "sound_definition_generated.h"
 
@@ -23,20 +24,20 @@ namespace SparkyStudios::Audio::Amplitude
 {
     static AmObjectID gLastSoundInstanceID = 0;
 
-    Sound::Sound()
-        : SoundObject()
+    SoundImpl::SoundImpl()
+        : SoundObjectImpl()
         , _codec(nullptr)
         , _decoder(nullptr)
         , _stream(false)
         , _loop(false)
         , _loopCount(0)
-        , _settings()
         , _soundData(nullptr)
         , _format()
         , _soundDataRefCounter()
+        , _settings()
     {}
 
-    Sound::~Sound()
+    SoundImpl::~SoundImpl()
     {
         if (_decoder != nullptr)
         {
@@ -60,26 +61,26 @@ namespace SparkyStudios::Audio::Amplitude
         m_attenuation = nullptr;
     }
 
-    SoundInstance* Sound::CreateInstance()
+    SoundInstance* SoundImpl::CreateInstance()
     {
-        AMPLITUDE_ASSERT(_id != kAmInvalidObjectId);
+        AMPLITUDE_ASSERT(m_id != kAmInvalidObjectId);
         return ampoolnew(MemoryPoolKind::Engine, SoundInstance, this, _settings, m_effect);
     }
 
-    SoundInstance* Sound::CreateInstance(const Collection* collection)
+    SoundInstance* SoundImpl::CreateInstance(const CollectionImpl* collection)
     {
         if (collection == nullptr)
             return CreateInstance();
 
-        AMPLITUDE_ASSERT(_id != kAmInvalidObjectId);
+        AMPLITUDE_ASSERT(m_id != kAmInvalidObjectId);
 
-        auto* sound = ampoolnew(MemoryPoolKind::Engine, SoundInstance, this, collection->_soundSettings.at(_id), collection->m_effect);
+        auto* sound = ampoolnew(MemoryPoolKind::Engine, SoundInstance, this, collection->_soundSettings.at(m_id), collection->m_effect);
         sound->_collection = collection;
 
         return sound;
     }
 
-    SoundChunk* Sound::AcquireSoundData()
+    SoundChunk* SoundImpl::AcquireSoundData()
     {
         if (_stream)
             return nullptr;
@@ -100,7 +101,7 @@ namespace SparkyStudios::Audio::Amplitude
         return _soundData;
     }
 
-    void Sound::ReleaseSoundData()
+    void SoundImpl::ReleaseSoundData()
     {
         if (_stream)
             return;
@@ -114,17 +115,26 @@ namespace SparkyStudios::Audio::Amplitude
         }
     }
 
-    bool Sound::IsStream() const
+    AmObjectID SoundImpl::GetId() const
+    {
+        return AssetImpl::GetId();
+    }
+    const AmString& SoundImpl::GetName() const
+    {
+        return AssetImpl<unsigned long long, SoundDefinition>::GetName();
+    }
+
+    bool SoundImpl::IsStream() const
     {
         return _stream;
     }
 
-    bool Sound::IsLoop() const
+    bool SoundImpl::IsLoop() const
     {
         return _loop;
     }
 
-    void Sound::Load(const FileSystem* loader)
+    void SoundImpl::Load(const FileSystem* loader)
     {
         const AmOsString& filename = GetPath();
 
@@ -159,7 +169,37 @@ namespace SparkyStudios::Audio::Amplitude
         _format = _decoder->GetFormat();
     }
 
-    bool Sound::LoadDefinition(const SoundDefinition* definition, EngineInternalState* state)
+    const RtpcValue& SoundImpl::GetGain() const
+    {
+        return SoundObjectImpl::GetGain();
+    }
+
+    const RtpcValue& SoundImpl::GetPitch() const
+    {
+        return SoundObjectImpl::GetPitch();
+    }
+
+    const RtpcValue& SoundImpl::GetPriority() const
+    {
+        return SoundObjectImpl::GetPriority();
+    }
+
+    const Effect* SoundImpl::GetEffect() const
+    {
+        return SoundObjectImpl::GetEffect();
+    }
+
+    const Attenuation* SoundImpl::GetAttenuation() const
+    {
+        return SoundObjectImpl::GetAttenuation();
+    }
+
+    Bus SoundImpl::GetBus() const
+    {
+        return SoundObjectImpl::GetBus();
+    }
+
+    bool SoundImpl::LoadDefinition(const SoundDefinition* definition, EngineInternalState* state)
     {
         if (definition->id() == kAmInvalidObjectId)
         {
@@ -206,15 +246,15 @@ namespace SparkyStudios::Audio::Amplitude
             }
         }
 
-        _id = definition->id();
-        _name = definition->name()->str();
+        m_id = definition->id();
+        m_name = definition->name()->str();
 
         auto* fs = amEngine->GetFileSystem();
 
         _stream = definition->stream();
         _loop = definition->loop() != nullptr && definition->loop()->enabled();
         _loopCount = definition->loop() ? definition->loop()->loop_count() : 0;
-        _filename = fs->ResolvePath(fs->Join({ AM_OS_STRING("data"), AM_STRING_TO_OS_STRING(definition->path()->str()) }));
+        m_filename = fs->ResolvePath(fs->Join({ AM_OS_STRING("data"), AM_STRING_TO_OS_STRING(definition->path()->str()) }));
 
         RtpcValue::Init(m_gain, definition->gain(), 1);
         RtpcValue::Init(m_pitch, definition->pitch(), 1);
@@ -235,14 +275,14 @@ namespace SparkyStudios::Audio::Amplitude
         return true;
     }
 
-    const SoundDefinition* Sound::GetDefinition() const
+    const SoundDefinition* SoundImpl::GetDefinition() const
     {
-        return GetSoundDefinition(_source.c_str());
+        return GetSoundDefinition(m_source.c_str());
     }
 
-    void Sound::AcquireReferences(EngineInternalState* state)
+    void SoundImpl::AcquireReferences(EngineInternalState* state)
     {
-        AMPLITUDE_ASSERT(_id != kAmInvalidObjectId);
+        AMPLITUDE_ASSERT(m_id != kAmInvalidObjectId);
 
         if (m_effect)
             m_effect->GetRefCounter()->Increment();
@@ -251,9 +291,9 @@ namespace SparkyStudios::Audio::Amplitude
             m_attenuation->GetRefCounter()->Increment();
     }
 
-    void Sound::ReleaseReferences(EngineInternalState* state)
+    void SoundImpl::ReleaseReferences(EngineInternalState* state)
     {
-        AMPLITUDE_ASSERT(_id != kAmInvalidObjectId);
+        AMPLITUDE_ASSERT(m_id != kAmInvalidObjectId);
 
         if (m_effect)
             m_effect->GetRefCounter()->Decrement();
@@ -261,8 +301,12 @@ namespace SparkyStudios::Audio::Amplitude
         if (m_attenuation)
             m_attenuation->GetRefCounter()->Decrement();
     }
+    const AmOsString& SoundImpl::GetPath() const
+    {
+        return ResourceImpl::GetPath();
+    }
 
-    SoundInstance::SoundInstance(Sound* parent, SoundInstanceSettings settings, const Effect* effect)
+    SoundInstance::SoundInstance(SoundImpl* parent, SoundInstanceSettings settings, const EffectImpl* effect)
         : _userData(nullptr)
         , _channel(nullptr)
         , _parent(parent)
@@ -272,8 +316,6 @@ namespace SparkyStudios::Audio::Amplitude
         , _decoder(nullptr)
         , _settings(std::move(settings))
         , _currentLoopCount(0)
-        , _obstruction(0.0f)
-        , _occlusion(0.0f)
         , _id(++gLastSoundInstanceID)
     {
         if (_effect != nullptr)
@@ -418,12 +460,17 @@ namespace SparkyStudios::Audio::Amplitude
         return _parent != nullptr;
     }
 
+    Channel SoundInstance::GetChannel() const
+    {
+        return _channel != nullptr ? Channel(_channel->GetParentChannelState()) : Channel(nullptr);
+    }
+
     void SoundInstance::SetChannel(RealChannel* channel)
     {
         _channel = channel;
     }
 
-    RealChannel* SoundInstance::GetChannel() const
+    RealChannel* SoundInstance::GetRealChannel() const
     {
         return _channel;
     }
@@ -433,7 +480,7 @@ namespace SparkyStudios::Audio::Amplitude
         return _parent;
     }
 
-    const Collection* SoundInstance::GetCollection() const
+    const CollectionImpl* SoundInstance::GetCollection() const
     {
         return _collection;
     }
@@ -446,26 +493,6 @@ namespace SparkyStudios::Audio::Amplitude
     const EffectInstance* SoundInstance::GetEffect() const
     {
         return _effectInstance;
-    }
-
-    void SoundInstance::SetObstruction(AmReal32 obstruction)
-    {
-        _obstruction = obstruction;
-    }
-
-    void SoundInstance::SetOcclusion(AmReal32 occlusion)
-    {
-        _occlusion = occlusion;
-    }
-
-    AmReal32 SoundInstance::GetObstruction() const
-    {
-        return _obstruction;
-    }
-
-    AmReal32 SoundInstance::GetOcclusion() const
-    {
-        return _occlusion;
     }
 
     AmObjectID SoundInstance::GetId() const

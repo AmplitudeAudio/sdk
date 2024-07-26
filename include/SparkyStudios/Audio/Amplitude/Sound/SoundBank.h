@@ -14,8 +14,8 @@
 
 #pragma once
 
-#ifndef SPARK_AUDIO_SOUND_BANK_H
-#define SPARK_AUDIO_SOUND_BANK_H
+#ifndef _AM_SOUND_SOUND_BANK_H
+#define _AM_SOUND_SOUND_BANK_H
 
 #include <queue>
 
@@ -119,4 +119,4 @@ namespace SparkyStudios::Audio::Amplitude
 
 } // namespace SparkyStudios::Audio::Amplitude
 
-#endif // SPARK_AUDIO_SOUND_BANK_H
+#endif // _AM_SOUND_SOUND_BANK_H

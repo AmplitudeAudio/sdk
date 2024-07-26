@@ -147,12 +147,12 @@ static void run(AmVoidPtr param)
     // Setup the default listener
     auto listener = amEngine->AddListener(1);
     listener.SetLocation(AM_V3(0, 0, 0));
-    listener.SetOrientation(AM_V3(0, 0, 1), AM_V3(0, 1.0f, 0));
+    listener.SetOrientation(Orientation::Zero());
 
     // Setup a virtual player entity, for the footsteps.
     auto player = amEngine->AddEntity(1);
     player.SetLocation(AM_V3(0, 0, 0));
-    player.SetOrientation(AM_V3(0, 0, 1), AM_V3(0, 1.0f, 0));
+    player.SetOrientation(Orientation::Zero());
 
     amEngine->SetDefaultListener(&listener);
 

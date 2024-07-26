@@ -14,8 +14,8 @@
 
 #pragma once
 
-#ifndef SS_AMPLITUDE_AUDIO_REAL_CHANNEL_H
-#define SS_AMPLITUDE_AUDIO_REAL_CHANNEL_H
+#ifndef _AM_IMPLEMENTATION_MIXER_H
+#define _AM_IMPLEMENTATION_MIXER_H
 
 #include <vector>
 
@@ -29,16 +29,18 @@
 
 namespace SparkyStudios::Audio::Amplitude
 {
+    class SoundInstance;
+
     struct EngineInternalState;
     class ChannelInternalState;
 
-    class Mixer;
+    class AmplimixImpl;
 
     /**
      * @brief A RealChannel represents a channel of audio on the mixer.
      *
      * Not all channels are backed by RealChannels. If there are more
-     *  channels of audio being played simultaneously than the mixer can handle,
+     * channels of audio being played simultaneously than the mixer can handle,
      * the lowest priority channels will be virtualized. That is, they will no
      * longer have their audio mixed, but their GetGain value and position (and a few
      * other properties) will continue to be tracked.
@@ -49,7 +51,7 @@ namespace SparkyStudios::Audio::Amplitude
     class RealChannel
     {
         friend class ChannelInternalState;
-        friend class Mixer;
+        friend class AmplimixImpl;
 
     public:
         RealChannel();
@@ -187,7 +189,7 @@ namespace SparkyStudios::Audio::Amplitude
         [[nodiscard]] AmChannelID GetID() const;
 
         /**
-         * @brief Set the obstruction level of sounds played by this Entity.
+         * @brief Set the obstruction level of sounds played by this RealChannel.
          *
          * @param obstruction The obstruction amount. This is provided by the
          * game engine.
@@ -195,7 +197,7 @@ namespace SparkyStudios::Audio::Amplitude
         void SetObstruction(AmReal32 obstruction);
 
         /**
-         * @brief Set the occlusion level of sounds played by this Entity.
+         * @brief Set the occlusion level of sounds played by this RealChannel.
          *
          * @param occlusion The occlusion amount. This is provided by the
          * game engine.
@@ -217,7 +219,7 @@ namespace SparkyStudios::Audio::Amplitude
         AmReal32 _pitch;
         AmReal32 _playSpeed;
 
-        Mixer* _mixer;
+        AmplimixImpl* _mixer;
         std::map<AmUInt32, SoundInstance*> _activeSounds;
 
         ChannelInternalState* _parentChannelState;
@@ -226,4 +228,4 @@ namespace SparkyStudios::Audio::Amplitude
     };
 } // namespace SparkyStudios::Audio::Amplitude
 
-#endif // SS_AMPLITUDE_AUDIO_REAL_CHANNEL_H
+#endif // _AM_IMPLEMENTATION_MIXER_H

@@ -14,8 +14,8 @@
 
 #pragma once
 
-#ifndef SS_AMPLITUDE_AUDIO_CODEC_H
-#define SS_AMPLITUDE_AUDIO_CODEC_H
+#ifndef _AM_CORE_CODEC_H
+#define _AM_CORE_CODEC_H
 
 #include <SparkyStudios/Audio/Amplitude/Core/Common.h>
 #include <SparkyStudios/Audio/Amplitude/IO/FileSystem.h>
@@ -44,10 +44,12 @@ namespace SparkyStudios::Audio::Amplitude
         class Decoder
         {
         public:
-            explicit Decoder(const Codec* codec)
-                : m_format()
-                , m_codec(codec)
-            {}
+            /**
+             * @brief Creates a new instance of the decoder for the given codec.
+             *
+             * @param codec The codec wrapper for the decoder.
+             */
+            explicit Decoder(const Codec* codec);
 
             virtual ~Decoder() = default;
 
@@ -135,10 +137,12 @@ namespace SparkyStudios::Audio::Amplitude
         class Encoder
         {
         public:
-            explicit Encoder(const Codec* codec)
-                : m_format()
-                , m_codec(codec)
-            {}
+            /**
+             * @brief Creates a new instance of the encoder for the given codec.
+             *
+             * @param codec The codec wrapper for the encoder.
+             */
+            explicit Encoder(const Codec* codec);
 
             virtual ~Encoder() = default;
 
@@ -311,4 +315,4 @@ namespace SparkyStudios::Audio::Amplitude
     };
 } // namespace SparkyStudios::Audio::Amplitude
 
-#endif // SS_AMPLITUDE_AUDIO_CODEC_H
+#endif // _AM_CORE_CODEC_H

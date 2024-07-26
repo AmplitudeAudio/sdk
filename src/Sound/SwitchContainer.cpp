@@ -12,22 +12,23 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+#include <ranges>
+
 #include <SparkyStudios/Audio/Amplitude/Amplitude.h>
 
 #include <Core/EngineInternalState.h>
-
-#include "switch_container_definition_generated.h"
-#include "switch_definition_generated.h"
+#include <Sound/SwitchContainer.h>
 
 namespace SparkyStudios::Audio::Amplitude
 {
-    SwitchContainer::SwitchContainer()
-        : SoundObject()
-        , _switch(nullptr)
+    template class AssetImpl<AmSwitchContainerID, SwitchContainerDefinition>;
+
+    SwitchContainerImpl::SwitchContainerImpl()
+        : _switch(nullptr)
         , _sounds()
     {}
 
-    SwitchContainer::~SwitchContainer()
+    SwitchContainerImpl::~SwitchContainerImpl()
     {
         _switch = nullptr;
 
@@ -45,12 +46,12 @@ namespace SparkyStudios::Audio::Amplitude
         m_attenuation = nullptr;
     }
 
-    const Switch* SwitchContainer::GetSwitch() const
+    const Switch* SwitchContainerImpl::GetSwitch() const
     {
         return _switch;
     }
 
-    FaderInstance* SwitchContainer::GetFaderIn(AmObjectID id) const
+    FaderInstance* SwitchContainerImpl::GetFaderIn(AmObjectID id) const
     {
         if (_fadersIn.contains(id))
             return std::get<1>(_fadersIn.at(id));
@@ -58,7 +59,7 @@ namespace SparkyStudios::Audio::Amplitude
         return nullptr;
     }
 
-    FaderInstance* SwitchContainer::GetFaderOut(AmObjectID id) const
+    FaderInstance* SwitchContainerImpl::GetFaderOut(AmObjectID id) const
     {
         if (_fadersOut.contains(id))
             return std::get<1>(_fadersOut.at(id));
@@ -66,12 +67,12 @@ namespace SparkyStudios::Audio::Amplitude
         return nullptr;
     }
 
-    const std::vector<SwitchContainerItem>& SwitchContainer::GetSoundObjects(AmObjectID stateId) const
+    const std::vector<SwitchContainerItem>& SwitchContainerImpl::GetSoundObjects(AmObjectID stateId) const
     {
         return _sounds.at(stateId);
     }
 
-    bool SwitchContainer::LoadDefinition(const SwitchContainerDefinition* definition, EngineInternalState* state)
+    bool SwitchContainerImpl::LoadDefinition(const SwitchContainerDefinition* definition, EngineInternalState* state)
     {
         if (!definition->bus())
         {
@@ -126,8 +127,8 @@ namespace SparkyStudios::Audio::Amplitude
             }
         }
 
-        _id = definition->id();
-        _name = definition->name()->str();
+        m_id = definition->id();
+        m_name = definition->name()->str();
 
         RtpcValue::Init(m_gain, definition->gain(), 1);
         RtpcValue::Init(m_pitch, definition->pitch(), 1);
@@ -195,14 +196,14 @@ namespace SparkyStudios::Audio::Amplitude
         return true;
     }
 
-    const SwitchContainerDefinition* SwitchContainer::GetDefinition() const
+    const SwitchContainerDefinition* SwitchContainerImpl::GetDefinition() const
     {
-        return GetSwitchContainerDefinition(_source.c_str());
+        return GetSwitchContainerDefinition(m_source.c_str());
     }
 
-    void SwitchContainer::AcquireReferences(EngineInternalState* state)
+    void SwitchContainerImpl::AcquireReferences(EngineInternalState* state)
     {
-        AMPLITUDE_ASSERT(_id != kAmInvalidObjectId);
+        AMPLITUDE_ASSERT(m_id != kAmInvalidObjectId);
 
         _switch->GetRefCounter()->Increment();
 
@@ -212,15 +213,15 @@ namespace SparkyStudios::Audio::Amplitude
         if (m_attenuation)
             m_attenuation->GetRefCounter()->Increment();
 
-        for (auto&& sound : _sounds)
+        for (auto&& id : _sounds | std::ranges::views::keys)
         {
-            if (auto findIt = state->sound_map.find(sound.first); findIt != state->sound_map.end())
+            if (auto findIt = state->sound_map.find(id); findIt != state->sound_map.end())
             {
                 findIt->second->GetRefCounter()->Increment();
                 continue;
             }
 
-            if (auto findIt = state->collection_map.find(sound.first); findIt != state->collection_map.end())
+            if (auto findIt = state->collection_map.find(id); findIt != state->collection_map.end())
             {
                 findIt->second->GetRefCounter()->Increment();
                 continue;
@@ -228,9 +229,9 @@ namespace SparkyStudios::Audio::Amplitude
         }
     }
 
-    void SwitchContainer::ReleaseReferences(EngineInternalState* state)
+    void SwitchContainerImpl::ReleaseReferences(EngineInternalState* state)
     {
-        AMPLITUDE_ASSERT(_id != kAmInvalidObjectId);
+        AMPLITUDE_ASSERT(m_id != kAmInvalidObjectId);
 
         _switch->GetRefCounter()->Decrement();
 
@@ -240,15 +241,15 @@ namespace SparkyStudios::Audio::Amplitude
         if (m_attenuation)
             m_attenuation->GetRefCounter()->Decrement();
 
-        for (auto&& sound : _sounds)
+        for (auto&& id : _sounds | std::ranges::views::keys)
         {
-            if (auto findIt = state->sound_map.find(sound.first); findIt != state->sound_map.end())
+            if (auto findIt = state->sound_map.find(id); findIt != state->sound_map.end())
             {
                 findIt->second->GetRefCounter()->Decrement();
                 continue;
             }
 
-            if (auto findIt = state->collection_map.find(sound.first); findIt != state->collection_map.end())
+            if (auto findIt = state->collection_map.find(id); findIt != state->collection_map.end())
             {
                 findIt->second->GetRefCounter()->Decrement();
                 continue;

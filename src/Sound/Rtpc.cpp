@@ -16,15 +16,13 @@
 
 #include <SparkyStudios/Audio/Amplitude/Sound/Rtpc.h>
 
-#include <Core/EngineInternalState.h>
-
-#include "rtpc_definition_generated.h"
+#include <Core/Engine.h>
+#include <Sound/Rtpc.h>
 
 namespace SparkyStudios::Audio::Amplitude
 {
-    Rtpc::Rtpc()
-        : _name()
-        , _minValue(0.0)
+    RtpcImpl::RtpcImpl()
+        : _minValue(0.0)
         , _maxValue(1.0)
         , _defValue(0.0)
         , _currentValue(0.0)
@@ -35,7 +33,7 @@ namespace SparkyStudios::Audio::Amplitude
         , _faderRelease(nullptr)
     {}
 
-    Rtpc::~Rtpc()
+    RtpcImpl::~RtpcImpl()
     {
         if (_faderAttack != nullptr)
             _faderAttackFactory->DestroyInstance(_faderAttack);
@@ -48,11 +46,9 @@ namespace SparkyStudios::Audio::Amplitude
 
         _faderAttack = nullptr;
         _faderRelease = nullptr;
-
-        _name.clear();
     }
 
-    void Rtpc::Update(AmTime deltaTime)
+    void RtpcImpl::Update(AmTime deltaTime)
     {
         if (_faderRelease && _currentValue > _targetValue)
         {
@@ -65,22 +61,7 @@ namespace SparkyStudios::Audio::Amplitude
         }
     }
 
-    double Rtpc::GetMinValue() const
-    {
-        return _minValue;
-    }
-
-    double Rtpc::GetMaxValue() const
-    {
-        return _maxValue;
-    }
-
-    double Rtpc::GetValue() const
-    {
-        return _currentValue;
-    }
-
-    void Rtpc::SetValue(AmReal64 value)
+    void RtpcImpl::SetValue(AmReal64 value)
     {
         _targetValue = AM_CLAMP(value, _minValue, _maxValue);
 
@@ -98,20 +79,15 @@ namespace SparkyStudios::Audio::Amplitude
         }
     }
 
-    AmReal64 Rtpc::GetDefaultValue() const
-    {
-        return _defValue;
-    }
-
-    void Rtpc::Reset()
+    void RtpcImpl::Reset()
     {
         SetValue(_defValue);
     }
 
-    bool Rtpc::LoadDefinition(const RtpcDefinition* definition, EngineInternalState* state)
+    bool RtpcImpl::LoadDefinition(const RtpcDefinition* definition, EngineInternalState* state)
     {
-        _id = definition->id();
-        _name = definition->name()->str();
+        m_id = definition->id();
+        m_name = definition->name()->str();
 
         _minValue = definition->min_value();
         _maxValue = definition->max_value();
@@ -138,9 +114,9 @@ namespace SparkyStudios::Audio::Amplitude
         return true;
     }
 
-    const RtpcDefinition* Rtpc::GetDefinition() const
+    const RtpcDefinition* RtpcImpl::GetDefinition() const
     {
-        return GetRtpcDefinition(_source.c_str());
+        return GetRtpcDefinition(m_source.c_str());
     }
 
     void RtpcValue::Init(RtpcValue& value, const RtpcCompatibleValue* definition, AmReal32 staticValue)

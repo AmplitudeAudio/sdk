@@ -14,9 +14,10 @@
 
 #pragma once
 
-#ifndef SS_AMPLITUDE_AUDIO_SPLITCOMPLEX_H
-#define SS_AMPLITUDE_AUDIO_SPLITCOMPLEX_H
+#ifndef _AM_MATH_SPLIT_COMPLEX_H
+#define _AM_MATH_SPLIT_COMPLEX_H
 
+#include <complex>
 #include <SparkyStudios/Audio/Amplitude/Core/Common.h>
 
 namespace SparkyStudios::Audio::Amplitude
@@ -36,7 +37,7 @@ namespace SparkyStudios::Audio::Amplitude
          *
          * @param initialSize The initial size of the split-complex buffer.
          */
-        explicit SplitComplex(size_t initialSize = 0);
+        explicit SplitComplex(AmSize initialSize = 0);
 
         SplitComplex(const SplitComplex&) = delete;
         SplitComplex& operator=(const SplitComplex&) = delete;
@@ -55,8 +56,10 @@ namespace SparkyStudios::Audio::Amplitude
          * @brief Resizes the split-complex buffer to the given size.
          *
          * @param newSize The new size of the split-complex buffer.
+         * @param clear
+         * @param clear
          */
-        void Resize(AmSize newSize);
+        void Resize(AmSize newSize, bool clear = false);
 
         /**
          * @brief Clears the split-complex buffer.
@@ -75,7 +78,7 @@ namespace SparkyStudios::Audio::Amplitude
          *
          * @return The size of the split-complex buffer.
          */
-        [[nodiscard]] AM_INLINE(AmSize) GetSize() const
+        [[nodiscard]] AM_INLINE AmSize GetSize() const
         {
             return _size;
         }
@@ -107,6 +110,8 @@ namespace SparkyStudios::Audio::Amplitude
          * @return The imaginary part of the split-complex buffer.
          */
         [[nodiscard]] const AmAudioSample* im() const;
+
+        [[nodiscard]] std::complex<AmAudioSample> operator[](AmSize index) const;
 
     private:
         AmSize _size;

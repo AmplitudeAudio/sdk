@@ -13,8 +13,9 @@
 // limitations under the License.
 
 #include <Core/Drivers/MiniAudio/Driver.h>
+#include <Core/Engine.h>
 
-#include <Mixer/Mixer.h>
+#include <Mixer/Amplimix.h>
 
 namespace SparkyStudios::Audio::Amplitude
 {
@@ -197,7 +198,7 @@ namespace SparkyStudios::Audio::Amplitude
 
         const auto* pResampler = static_cast<const ResamplerInstance*>(pBackend);
 
-        return pResampler->GetLatencyInFrames();
+        return pResampler->GetInputLatency();
     }
 
     static ma_uint64 ma_resampling_backend_get_output_latency_ls(void* pUserData, const ma_resampling_backend* pBackend)
@@ -206,7 +207,7 @@ namespace SparkyStudios::Audio::Amplitude
 
         const auto* pResampler = static_cast<const ResamplerInstance*>(pBackend);
 
-        return pResampler->GetLatencyInFrames();
+        return pResampler->GetOutputLatency();
     }
 
     static ma_result ma_resampling_backend_get_required_input_frame_count_ls(

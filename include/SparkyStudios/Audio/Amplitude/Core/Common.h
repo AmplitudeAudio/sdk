@@ -14,8 +14,8 @@
 
 #pragma once
 
-#ifndef SS_AMPLITUDE_AUDIO_COMMON_H
-#define SS_AMPLITUDE_AUDIO_COMMON_H
+#ifndef _AM_CORE_COMMON_H
+#define _AM_CORE_COMMON_H
 
 /////////////////////////////////////////////////////////////////////
 /////////////////////////////////////////////////////////////////////
@@ -105,9 +105,11 @@ namespace SparkyStudios::Audio::Amplitude
          * @brief Allocates and align buffer.
          *
          * @param size The buffer size.
+         * @param clear Whether to clear the buffer.
+         *
          * @return the result of the allocation.
          */
-        AmResult Init(AmUInt32 size);
+        AmResult Init(AmUInt32 size, bool clear = true);
 
         /**
          * @brief Clears all data.
@@ -124,7 +126,7 @@ namespace SparkyStudios::Audio::Amplitude
          *
          * @return AmUInt32
          */
-        [[nodiscard]] AM_INLINE(AmUInt32) GetSize() const
+        [[nodiscard]] AM_INLINE AmUInt32 GetSize() const
         {
             return m_floats;
         }
@@ -134,7 +136,7 @@ namespace SparkyStudios::Audio::Amplitude
          *
          * @return AmFloat32Buffer
          */
-        [[nodiscard]] AM_INLINE(AmReal32Buffer) GetBuffer() const
+        [[nodiscard]] AM_INLINE AmReal32Buffer GetBuffer() const
         {
             return m_data;
         }
@@ -144,7 +146,7 @@ namespace SparkyStudios::Audio::Amplitude
          *
          * @return AmUInt8Buffer
          */
-        [[nodiscard]] AM_INLINE(AmUInt8Buffer) GetPointer() const
+        [[nodiscard]] AM_INLINE AmUInt8Buffer GetPointer() const
         {
             return m_basePtr;
         }
@@ -159,8 +161,10 @@ namespace SparkyStudios::Audio::Amplitude
          * @brief Resizes the buffer to the specified size.
          *
          * @param size The new size of the buffer.
+         * @param clear Whether to clear the buffer after resize. If @c true, the buffer will be cleared
+         * even if the new size equals the old size.
          */
-        void Resize(AmUInt32 size);
+        void Resize(AmUInt32 size, bool clear = true);
 
         /**
          * @brief Swaps two buffers.
@@ -205,7 +209,7 @@ namespace SparkyStudios::Audio::Amplitude
          *
          * @return AmReal32Buffer
          */
-        [[nodiscard]] AM_INLINE(AmReal32Buffer) GetBuffer() const
+        [[nodiscard]] AM_INLINE AmReal32Buffer GetBuffer() const
         {
             return m_data;
         }
@@ -275,7 +279,7 @@ namespace SparkyStudios::Audio::Amplitude
          *
          * @return AmUInt32
          */
-        [[nodiscard]] AM_INLINE(AmUInt32) GetSampleRate() const
+        [[nodiscard]] AM_INLINE AmUInt32 GetSampleRate() const
         {
             return _sampleRate;
         }
@@ -285,7 +289,7 @@ namespace SparkyStudios::Audio::Amplitude
          *
          * @return AmUInt16
          */
-        [[nodiscard]] AM_INLINE(AmUInt16) GetNumChannels() const
+        [[nodiscard]] AM_INLINE AmUInt16 GetNumChannels() const
         {
             return _numChannels;
         }
@@ -295,7 +299,7 @@ namespace SparkyStudios::Audio::Amplitude
          *
          * @return AmUInt32
          */
-        [[nodiscard]] AM_INLINE(AmUInt32) GetBitsPerSample() const
+        [[nodiscard]] AM_INLINE AmUInt32 GetBitsPerSample() const
         {
             return _bitsPerSample;
         }
@@ -305,7 +309,7 @@ namespace SparkyStudios::Audio::Amplitude
          *
          * @return AmUInt64
          */
-        [[nodiscard]] AM_INLINE(AmUInt64) GetFramesCount() const
+        [[nodiscard]] AM_INLINE AmUInt64 GetFramesCount() const
         {
             return _framesCount;
         }
@@ -315,7 +319,7 @@ namespace SparkyStudios::Audio::Amplitude
          *
          * @return AmUInt32
          */
-        [[nodiscard]] AM_INLINE(AmUInt32) GetFrameSize() const
+        [[nodiscard]] AM_INLINE AmUInt32 GetFrameSize() const
         {
             return _frameSize;
         }
@@ -325,7 +329,7 @@ namespace SparkyStudios::Audio::Amplitude
          *
          * @return AM_SAMPLE_FORMAT
          */
-        [[nodiscard]] AM_INLINE(AM_SAMPLE_FORMAT) GetSampleType() const
+        [[nodiscard]] AM_INLINE AM_SAMPLE_FORMAT GetSampleType() const
         {
             return _sampleType;
         }
@@ -340,4 +344,4 @@ namespace SparkyStudios::Audio::Amplitude
     };
 } // namespace SparkyStudios::Audio::Amplitude
 
-#endif // SS_AMPLITUDE_AUDIO_COMMON_H
+#endif // _AM_CORE_COMMON_H

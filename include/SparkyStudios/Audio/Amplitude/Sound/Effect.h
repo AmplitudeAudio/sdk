@@ -14,23 +14,16 @@
 
 #pragma once
 
-#ifndef SS_AMPLITUDE_AUDIO_EFFECT_H
-#define SS_AMPLITUDE_AUDIO_EFFECT_H
+#ifndef _AM_SOUND_EFFECT_H
+#define _AM_SOUND_EFFECT_H
 
 #include <SparkyStudios/Audio/Amplitude/Core/Common.h>
 
 #include <SparkyStudios/Audio/Amplitude/Core/Asset.h>
 
-#include <SparkyStudios/Audio/Amplitude/Sound/Filter.h>
-#include <SparkyStudios/Audio/Amplitude/Sound/Rtpc.h>
-
 namespace SparkyStudios::Audio::Amplitude
 {
-    struct EngineInternalState;
-
-    struct EffectDefinition;
-
-    class EffectInstance;
+    class FilterInstance;
 
     /**
      * @brief Amplitude Effect.
@@ -39,51 +32,15 @@ namespace SparkyStudios::Audio::Amplitude
      * (sounds, collections, or switch containers) during playback.
      *
      * Effects are customized using parameters and each parameters can be
-     * updated at runtime using a RTPC.
+     * updated at runtime using a @c RTPC.
      */
-    class AM_API_PUBLIC Effect final : public Asset<AmEffectID, EffectDefinition>
+    class AM_API_PUBLIC Effect : public Asset<AmEffectID>
     {
     public:
         /**
-         * @brief Creates an uninitialized Effect.
-         */
-        Effect();
-
-        /**
-         * \brief Destroys the Effect asset and release all associated resources.
-         */
-        ~Effect() override;
-
-        /**
-         * @brief Creates an instance of this effect.
-         *
-         * @return The effect instance.
-         */
-        [[nodiscard]] EffectInstance* CreateInstance() const;
-
-        /**
-         * @brief Destroys an instance of this effect.
-         *
-         * @param instance The effect instance to delete.
-         */
-        void DestroyInstance(EffectInstance* instance) const;
-
-        /**
          * @brief Updates the effect parameters on each frames.
          */
-        void Update();
-
-        bool LoadDefinition(const EffectDefinition* definition, EngineInternalState* state) override;
-        [[nodiscard]] const EffectDefinition* GetDefinition() const override;
-
-    private:
-        friend class EffectInstance;
-
-        std::vector<EffectInstance*> _instances;
-
-        std::vector<RtpcValue> _parameters;
-
-        Filter* _filter;
+        virtual void Update() = 0;
     };
 
     /**
@@ -93,32 +50,22 @@ namespace SparkyStudios::Audio::Amplitude
      * at a time. It is used to not share the same state between multiple sound
      * objects.
      */
-    class AM_API_PUBLIC EffectInstance
+    class EffectInstance
     {
     public:
         /**
-         * @brief Creates a new EffectInstance.
-         *
-         * @param parent The parent Effect asset.
-         */
-        explicit EffectInstance(const Effect* parent);
-
-        /**
          * @brief Destroys the EffectInstance.
          */
-        ~EffectInstance();
+        virtual ~EffectInstance() = default;
 
         /**
          * @brief Get the filter instance wrapped by this effect.
          *
          * @return The filter instance.
          */
-        [[nodiscard]] FilterInstance* GetFilter() const;
-
-    private:
-        const Effect* _parent;
-        FilterInstance* _filterInstance;
+        [[nodiscard]] virtual FilterInstance* GetFilter() const = 0;
     };
+
 } // namespace SparkyStudios::Audio::Amplitude
 
-#endif // SS_AMPLITUDE_AUDIO_EFFECT_H
+#endif // _AM_SOUND_EFFECT_H

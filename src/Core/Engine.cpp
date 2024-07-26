@@ -20,8 +20,17 @@
 
 #include <SparkyStudios/Audio/Amplitude/Amplitude.h>
 
+#include <Core/Engine.h>
 #include <Core/EngineInternalState.h>
+#include <Core/Event.h>
 #include <Core/Playback/BusInternalState.h>
+#include <Sound/Attenuation.h>
+#include <Sound/Collection.h>
+#include <Sound/Effect.h>
+#include <Sound/Rtpc.h>
+#include <Sound/Sound.h>
+#include <Sound/Switch.h>
+#include <Sound/SwitchContainer.h>
 
 #include "buses_definition_generated.h"
 #include "collection_definition_generated.h"
@@ -86,9 +95,9 @@ namespace SparkyStudios::Audio::Amplitude
     static AmUniquePtr<MemoryPoolKind::Engine, RobotizeFilter> sRobotizeFilterPlugin = nullptr;
     static AmUniquePtr<MemoryPoolKind::Engine, WaveShaperFilter> sWaveShaperFilterPlugin = nullptr;
 
-    static AmUniquePtr<MemoryPoolKind::Engine, Engine> gAmplitude = nullptr;
+    static AmUniquePtr<MemoryPoolKind::Engine, EngineImpl> gAmplitude = nullptr;
 
-    std::set<AmOsString> Engine::_pluginSearchPaths = {};
+    std::set<AmOsString> EngineImpl::_pluginSearchPaths = {};
 
     class LoadSoundBankTask final : public Thread::PoolTask
     {
@@ -147,7 +156,7 @@ namespace SparkyStudios::Audio::Amplitude
         list->push_front(*channel);
     }
 
-    Engine::Engine()
+    EngineImpl::EngineImpl()
         : _frameThreadMutex(nullptr)
         , _configSrc()
         , _state(nullptr)
@@ -156,7 +165,7 @@ namespace SparkyStudios::Audio::Amplitude
         , _audioDriver(nullptr)
     {}
 
-    Engine::~Engine()
+    EngineImpl::~EngineImpl()
     {
         Deinitialize();
 
@@ -203,7 +212,7 @@ namespace SparkyStudios::Audio::Amplitude
             if (!foundPath)
             {
                 // Search for the library in the search paths
-                for (const auto& path : _pluginSearchPaths)
+                for (const auto& path : EngineImpl::_pluginSearchPaths)
                 {
                     if (const auto realPath = fs.ResolvePath(path); fs.Exists(fs.Join({ realPath, finalName })))
                     {
@@ -273,10 +282,10 @@ namespace SparkyStudios::Audio::Amplitude
             return;
         }
 
-        if (_pluginSearchPaths.contains(path))
+        if (EngineImpl::_pluginSearchPaths.contains(path))
             return;
 
-        _pluginSearchPaths.emplace(path);
+        EngineImpl::_pluginSearchPaths.emplace(path);
     }
 
     void Engine::RemovePluginSearchPath(const AmOsString& path)
@@ -287,11 +296,11 @@ namespace SparkyStudios::Audio::Amplitude
             return;
         }
 
-        const auto it = _pluginSearchPaths.find(path);
-        if (it == _pluginSearchPaths.cend())
+        const auto it = EngineImpl::_pluginSearchPaths.find(path);
+        if (it == EngineImpl::_pluginSearchPaths.cend())
             return;
 
-        _pluginSearchPaths.erase(it);
+        EngineImpl::_pluginSearchPaths.erase(it);
     }
 
     bool Engine::RegisterDefaultPlugins()
@@ -395,7 +404,7 @@ namespace SparkyStudios::Audio::Amplitude
     {
         // Amplitude Engine unique instance.
         if (gAmplitude == nullptr)
-            gAmplitude.reset(ampoolnew(MemoryPoolKind::Engine, Engine));
+            gAmplitude.reset(ampoolnew(MemoryPoolKind::Engine, EngineImpl));
 
         return gAmplitude.get();
     }
@@ -554,7 +563,7 @@ namespace SparkyStudios::Audio::Amplitude
         }
     }
 
-    bool Engine::Initialize(const AmOsString& configFile)
+    bool EngineImpl::Initialize(const AmOsString& configFile)
     {
         if (const AmOsString& configFilePath = _fs->ResolvePath(configFile); !LoadFile(_fs->OpenFile(configFilePath), &_configSrc))
         {
@@ -565,7 +574,7 @@ namespace SparkyStudios::Audio::Amplitude
         return Initialize(GetEngineConfigDefinition());
     }
 
-    bool Engine::Initialize(const EngineConfigDefinition* config)
+    bool EngineImpl::Initialize(const EngineConfigDefinition* config)
     {
         if (IsInitialized())
             return true;
@@ -707,7 +716,7 @@ namespace SparkyStudios::Audio::Amplitude
         return true;
     }
 
-    bool Engine::Deinitialize()
+    bool EngineImpl::Deinitialize()
     {
         if (_state == nullptr)
             return true;
@@ -746,29 +755,29 @@ namespace SparkyStudios::Audio::Amplitude
         return true;
     }
 
-    bool Engine::IsInitialized() const
+    bool EngineImpl::IsInitialized() const
     {
         // An initialized engine have a running state
         return _state != nullptr && !_state->stopping;
     }
 
-    void Engine::SetFileSystem(FileSystem* fs)
+    void EngineImpl::SetFileSystem(FileSystem* fs)
     {
         _fs = fs;
     }
 
-    const FileSystem* Engine::GetFileSystem() const
+    const FileSystem* EngineImpl::GetFileSystem() const
     {
         return _fs;
     }
 
-    bool Engine::LoadSoundBank(const AmOsString& filename)
+    bool EngineImpl::LoadSoundBank(const AmOsString& filename)
     {
         AmBankID outID = kAmInvalidObjectId;
         return LoadSoundBank(filename, outID);
     }
 
-    bool Engine::LoadSoundBank(const AmOsString& filename, AmBankID& outID)
+    bool EngineImpl::LoadSoundBank(const AmOsString& filename, AmBankID& outID)
     {
         outID = kAmInvalidObjectId;
         bool success = true;
@@ -797,13 +806,13 @@ namespace SparkyStudios::Audio::Amplitude
         return success;
     }
 
-    bool Engine::LoadSoundBankFromMemory(const char* fileData)
+    bool EngineImpl::LoadSoundBankFromMemory(const char* fileData)
     {
         AmBankID outID = kAmInvalidObjectId;
         return LoadSoundBankFromMemory(fileData, outID);
     }
 
-    bool Engine::LoadSoundBankFromMemory(const char* fileData, AmBankID& outID)
+    bool EngineImpl::LoadSoundBankFromMemory(const char* fileData, AmBankID& outID)
     {
         outID = kAmInvalidObjectId;
         bool success = true;
@@ -833,13 +842,13 @@ namespace SparkyStudios::Audio::Amplitude
         return success;
     }
 
-    bool Engine::LoadSoundBankFromMemoryView(void* ptr, AmSize size)
+    bool EngineImpl::LoadSoundBankFromMemoryView(void* ptr, AmSize size)
     {
         AmBankID outID = kAmInvalidObjectId;
         return LoadSoundBankFromMemoryView(ptr, size, outID);
     }
 
-    bool Engine::LoadSoundBankFromMemoryView(void* ptr, AmSize size, AmBankID& outID)
+    bool EngineImpl::LoadSoundBankFromMemoryView(void* ptr, AmSize size, AmBankID& outID)
     {
         outID = kAmInvalidObjectId;
 
@@ -855,7 +864,7 @@ namespace SparkyStudios::Audio::Amplitude
         return LoadSoundBankFromMemory(dst.c_str(), outID);
     }
 
-    void Engine::UnloadSoundBank(const AmOsString& filename)
+    void EngineImpl::UnloadSoundBank(const AmOsString& filename)
     {
         if (const auto findIt = _state->sound_bank_id_map.find(filename); findIt == _state->sound_bank_id_map.end())
         {
@@ -868,7 +877,7 @@ namespace SparkyStudios::Audio::Amplitude
         }
     }
 
-    void Engine::UnloadSoundBank(AmBankID id)
+    void EngineImpl::UnloadSoundBank(AmBankID id)
     {
         if (const auto findIt = _state->sound_bank_map.find(id); findIt == _state->sound_bank_map.end())
         {
@@ -882,34 +891,34 @@ namespace SparkyStudios::Audio::Amplitude
         }
     }
 
-    void Engine::UnloadSoundBanks()
+    void EngineImpl::UnloadSoundBanks()
     {
         for (const auto& item : _state->sound_bank_map | std::ranges::views::values)
             if (RefCounter* ref = item->GetRefCounter(); ref->GetCount() > 0 && ref->Decrement() == 0)
                 item->Deinitialize(this);
     }
 
-    void Engine::StartOpenFileSystem()
+    void EngineImpl::StartOpenFileSystem()
     {
         _fs->StartOpenFileSystem();
     }
 
-    bool Engine::TryFinalizeOpenFileSystem()
+    bool EngineImpl::TryFinalizeOpenFileSystem()
     {
         return _fs->TryFinalizeOpenFileSystem();
     }
 
-    void Engine::StartCloseFileSystem()
+    void EngineImpl::StartCloseFileSystem()
     {
         _fs->StartCloseFileSystem();
     }
 
-    bool Engine::TryFinalizeCloseFileSystem()
+    bool EngineImpl::TryFinalizeCloseFileSystem()
     {
         return _fs->TryFinalizeCloseFileSystem();
     }
 
-    void Engine::StartLoadSoundFiles()
+    void EngineImpl::StartLoadSoundFiles()
     {
         if (_soundLoaderThreadPool == nullptr)
             _soundLoaderThreadPool.reset(ampoolnew(MemoryPoolKind::Engine, Thread::Pool));
@@ -926,7 +935,7 @@ namespace SparkyStudios::Audio::Amplitude
         }
     }
 
-    bool Engine::TryFinalizeLoadSoundFiles()
+    bool EngineImpl::TryFinalizeLoadSoundFiles()
     {
         if (_soundLoaderThreadPool == nullptr)
             return true;
@@ -1003,7 +1012,7 @@ namespace SparkyStudios::Audio::Amplitude
 
         case eListenerFetchMode_Default:
             {
-                ListenerInternalState* state = Engine::GetInstance()->GetDefaultListener().GetState();
+                ListenerInternalState* state = amEngine->GetDefaultListener().GetState();
                 if (state == nullptr)
                 {
                     return false;
@@ -1041,6 +1050,7 @@ namespace SparkyStudios::Audio::Amplitude
         AmReal32* gain,
         AmVec2* pan,
         AmReal32* pitch,
+        ListenerInternalState** listener,
         const ChannelInternalState* channel,
         const AmReal32 soundGain,
         const AmReal32 soundPitch,
@@ -1056,28 +1066,31 @@ namespace SparkyStudios::Audio::Amplitude
         *gain = soundGain * bus->GetGain() * userGain;
         *pitch = soundPitch;
 
+        ListenerList::const_iterator foundListener;
+        AmReal32 distanceSquared;
+        AmVec3 listenerSpaceLocation;
+
+        bool found = BestListener(&foundListener, &distanceSquared, &listenerSpaceLocation, listeners, location, fetchMode);
+
         if (spatialization == Spatialization_Position || spatialization == Spatialization_PositionOrientation)
         {
-            ListenerList::const_iterator listener;
-            AmReal32 distanceSquared;
-            AmVec3 listenerSpaceLocation;
-            if (BestListener(&listener, &distanceSquared, &listenerSpaceLocation, listeners, location, fetchMode))
+            if (found)
             {
                 if (attenuation != nullptr)
                 {
                     if (spatialization == Spatialization_PositionOrientation)
                     {
                         AMPLITUDE_ASSERT(entity.Valid());
-                        *gain *= attenuation->GetGain(entity, Listener(const_cast<ListenerInternalState*>(&*listener)));
+                        *gain *= attenuation->GetGain(entity, Listener(const_cast<ListenerInternalState*>(&*foundListener)));
                     }
                     else
                     {
-                        *gain *= attenuation->GetGain(location, Listener(const_cast<ListenerInternalState*>(&*listener)));
+                        *gain *= attenuation->GetGain(location, Listener(const_cast<ListenerInternalState*>(&*foundListener)));
                     }
                 }
 
                 *pan = CalculatePan(listenerSpaceLocation);
-                *pitch *= channel != nullptr ? channel->GetDopplerFactor(listener->GetId()) : 1.0f;
+                *pitch *= channel != nullptr ? channel->GetDopplerFactor(foundListener->GetId()) : 1.0f;
             }
             else
             {
@@ -1090,6 +1103,9 @@ namespace SparkyStudios::Audio::Amplitude
         {
             *pan = AM_V2(0, 0);
         }
+
+        if (found && listener != nullptr)
+            *listener = const_cast<ListenerInternalState*>(&*foundListener);
     }
 
     // Given the priority of a node, and the list of ChannelInternalStates sorted by
@@ -1170,92 +1186,92 @@ namespace SparkyStudios::Audio::Amplitude
         return newChannel;
     }
 
-    Channel Engine::Play(SwitchContainerHandle handle) const
+    Channel EngineImpl::Play(SwitchContainerHandle handle) const
     {
         return Play(handle, AM_V3(0, 0, 0), 1.0f);
     }
 
-    Channel Engine::Play(SwitchContainerHandle handle, const AmVec3& location) const
+    Channel EngineImpl::Play(SwitchContainerHandle handle, const AmVec3& location) const
     {
         return Play(handle, location, 1.0f);
     }
 
-    Channel Engine::Play(SwitchContainerHandle handle, const AmVec3& location, const AmReal32 userGain) const
+    Channel EngineImpl::Play(SwitchContainerHandle handle, const AmVec3& location, const AmReal32 userGain) const
     {
         return PlayScopedSwitchContainer(handle, Entity(nullptr), location, userGain);
     }
 
-    Channel Engine::Play(SwitchContainerHandle handle, const Entity& entity) const
+    Channel EngineImpl::Play(SwitchContainerHandle handle, const Entity& entity) const
     {
         return Play(handle, entity, 1.0f);
     }
 
-    Channel Engine::Play(SwitchContainerHandle handle, const Entity& entity, const AmReal32 userGain) const
+    Channel EngineImpl::Play(SwitchContainerHandle handle, const Entity& entity, const AmReal32 userGain) const
     {
         return PlayScopedSwitchContainer(handle, entity, entity.GetLocation(), userGain);
     }
 
-    Channel Engine::Play(CollectionHandle handle) const
+    Channel EngineImpl::Play(CollectionHandle handle) const
     {
         return Play(handle, AM_V3(0, 0, 0), 1.0f);
     }
 
-    Channel Engine::Play(CollectionHandle handle, const AmVec3& location) const
+    Channel EngineImpl::Play(CollectionHandle handle, const AmVec3& location) const
     {
         return Play(handle, location, 1.0f);
     }
 
-    Channel Engine::Play(CollectionHandle handle, const AmVec3& location, const AmReal32 userGain) const
+    Channel EngineImpl::Play(CollectionHandle handle, const AmVec3& location, const AmReal32 userGain) const
     {
         return PlayScopedCollection(handle, Entity(nullptr), location, userGain);
     }
 
-    Channel Engine::Play(CollectionHandle handle, const Entity& entity) const
+    Channel EngineImpl::Play(CollectionHandle handle, const Entity& entity) const
     {
         return Play(handle, entity, 1.0f);
     }
 
-    Channel Engine::Play(CollectionHandle handle, const Entity& entity, const AmReal32 userGain) const
+    Channel EngineImpl::Play(CollectionHandle handle, const Entity& entity, const AmReal32 userGain) const
     {
         return PlayScopedCollection(handle, entity, entity.GetLocation(), userGain);
     }
 
-    Channel Engine::Play(SoundHandle handle) const
+    Channel EngineImpl::Play(SoundHandle handle) const
     {
         return Play(handle, AM_V3(0, 0, 0), 1.0f);
     }
 
-    Channel Engine::Play(SoundHandle handle, const AmVec3& location) const
+    Channel EngineImpl::Play(SoundHandle handle, const AmVec3& location) const
     {
         return Play(handle, location, 1.0f);
     }
 
-    Channel Engine::Play(SoundHandle handle, const AmVec3& location, AmReal32 userGain) const
+    Channel EngineImpl::Play(SoundHandle handle, const AmVec3& location, AmReal32 userGain) const
     {
         return PlayScopedSound(handle, Entity(nullptr), location, userGain);
     }
 
-    Channel Engine::Play(SoundHandle handle, const Entity& entity) const
+    Channel EngineImpl::Play(SoundHandle handle, const Entity& entity) const
     {
         return Play(handle, entity, 1.0f);
     }
 
-    Channel Engine::Play(SoundHandle handle, const Entity& entity, AmReal32 userGain) const
+    Channel EngineImpl::Play(SoundHandle handle, const Entity& entity, AmReal32 userGain) const
     {
         return PlayScopedSound(handle, entity, entity.GetLocation(), userGain);
     }
 
-    Channel Engine::Play(const AmString& name) const
+    Channel EngineImpl::Play(const AmString& name) const
     {
         return Play(name, AM_V3(0, 0, 0), 1.0f);
     }
 
-    Channel Engine::Play(const AmString& name, const AmVec3& location) const
+    Channel EngineImpl::Play(const AmString& name, const AmVec3& location) const
     {
         return Play(name, location, 1.0f);
     }
 
-    Channel Engine::Play(const AmString& name, const AmVec3& location, const AmReal32 userGain) const
+    Channel EngineImpl::Play(const AmString& name, const AmVec3& location, const AmReal32 userGain) const
     {
         if (SoundHandle handle = GetSoundHandle(name))
             return Play(handle, location, userGain);
@@ -1270,12 +1286,12 @@ namespace SparkyStudios::Audio::Amplitude
         return Channel(nullptr);
     }
 
-    Channel Engine::Play(const AmString& name, const Entity& entity) const
+    Channel EngineImpl::Play(const AmString& name, const Entity& entity) const
     {
         return Play(name, entity, 1.0f);
     }
 
-    Channel Engine::Play(const AmString& name, const Entity& entity, const AmReal32 userGain) const
+    Channel EngineImpl::Play(const AmString& name, const Entity& entity, const AmReal32 userGain) const
     {
         if (SoundHandle handle = GetSoundHandle(name))
             return Play(handle, entity, userGain);
@@ -1290,17 +1306,17 @@ namespace SparkyStudios::Audio::Amplitude
         return Channel(nullptr);
     }
 
-    Channel Engine::Play(AmObjectID id) const
+    Channel EngineImpl::Play(AmObjectID id) const
     {
         return Play(id, AM_V3(0, 0, 0), 1.0f);
     }
 
-    Channel Engine::Play(AmObjectID id, const AmVec3& location) const
+    Channel EngineImpl::Play(AmObjectID id, const AmVec3& location) const
     {
         return Play(id, location, 1.0f);
     }
 
-    Channel Engine::Play(AmObjectID id, const AmVec3& location, const AmReal32 userGain) const
+    Channel EngineImpl::Play(AmObjectID id, const AmVec3& location, const AmReal32 userGain) const
     {
         if (SoundHandle handle = GetSoundHandle(id))
             return Play(handle, location, userGain);
@@ -1315,12 +1331,12 @@ namespace SparkyStudios::Audio::Amplitude
         return Channel(nullptr);
     }
 
-    Channel Engine::Play(AmObjectID id, const Entity& entity) const
+    Channel EngineImpl::Play(AmObjectID id, const Entity& entity) const
     {
         return Play(id, entity, 1.0f);
     }
 
-    Channel Engine::Play(AmObjectID id, const Entity& entity, const AmReal32 userGain) const
+    Channel EngineImpl::Play(AmObjectID id, const Entity& entity, const AmReal32 userGain) const
     {
         if (SoundHandle handle = GetSoundHandle(id))
             return Play(handle, entity, userGain);
@@ -1335,14 +1351,14 @@ namespace SparkyStudios::Audio::Amplitude
         return Channel(nullptr);
     }
 
-    void Engine::StopAll() const
+    void EngineImpl::StopAll() const
     {
         for (auto&& channel : _state->channel_state_memory)
             if (channel.Valid() && channel.Playing())
                 channel.Halt();
     }
 
-    EventCanceler Engine::Trigger(EventHandle handle, const Entity& entity) const
+    EventCanceler EngineImpl::Trigger(EventHandle handle, const Entity& entity) const
     {
         if (handle == nullptr)
         {
@@ -1350,13 +1366,13 @@ namespace SparkyStudios::Audio::Amplitude
             return EventCanceler(nullptr);
         }
 
-        EventInstance instance = handle->Trigger(entity);
+        EventInstanceImpl instance = static_cast<EventImpl*>(handle)->Trigger(entity);
         _state->running_events.push_back(std::move(instance));
 
         return EventCanceler(&_state->running_events.back());
     }
 
-    EventCanceler Engine::Trigger(const AmString& name, const Entity& entity) const
+    EventCanceler EngineImpl::Trigger(const AmString& name, const Entity& entity) const
     {
         if (EventHandle handle = GetEventHandle(name))
             return Trigger(handle, entity);
@@ -1365,7 +1381,7 @@ namespace SparkyStudios::Audio::Amplitude
         return EventCanceler(nullptr);
     }
 
-    void Engine::SetSwitchState(SwitchHandle handle, AmObjectID stateId) const
+    void EngineImpl::SetSwitchState(SwitchHandle handle, AmObjectID stateId) const
     {
         if (handle == nullptr)
         {
@@ -1376,7 +1392,7 @@ namespace SparkyStudios::Audio::Amplitude
         handle->SetState(stateId);
     }
 
-    void Engine::SetSwitchState(SwitchHandle handle, const AmString& stateName) const
+    void EngineImpl::SetSwitchState(SwitchHandle handle, const AmString& stateName) const
     {
         if (handle == nullptr)
         {
@@ -1387,7 +1403,7 @@ namespace SparkyStudios::Audio::Amplitude
         handle->SetState(stateName);
     }
 
-    void Engine::SetSwitchState(SwitchHandle handle, const SwitchState& state) const
+    void EngineImpl::SetSwitchState(SwitchHandle handle, const SwitchState& state) const
     {
         if (handle == nullptr)
         {
@@ -1398,7 +1414,7 @@ namespace SparkyStudios::Audio::Amplitude
         handle->SetState(state);
     }
 
-    void Engine::SetSwitchState(AmSwitchID id, AmObjectID stateId) const
+    void EngineImpl::SetSwitchState(AmSwitchID id, AmObjectID stateId) const
     {
         if (SwitchHandle handle = GetSwitchHandle(id))
             return SetSwitchState(handle, stateId);
@@ -1406,7 +1422,7 @@ namespace SparkyStudios::Audio::Amplitude
         amLogError("Cannot update switch: Invalid ID (%llu).", id);
     }
 
-    void Engine::SetSwitchState(AmSwitchID id, const AmString& stateName) const
+    void EngineImpl::SetSwitchState(AmSwitchID id, const AmString& stateName) const
     {
         if (SwitchHandle handle = GetSwitchHandle(id))
             return SetSwitchState(handle, stateName);
@@ -1414,7 +1430,7 @@ namespace SparkyStudios::Audio::Amplitude
         amLogError("Cannot update switch: Invalid ID (%llu).", id);
     }
 
-    void Engine::SetSwitchState(AmSwitchID id, const SwitchState& state) const
+    void EngineImpl::SetSwitchState(AmSwitchID id, const SwitchState& state) const
     {
         if (SwitchHandle handle = GetSwitchHandle(id))
             return SetSwitchState(handle, state);
@@ -1422,7 +1438,7 @@ namespace SparkyStudios::Audio::Amplitude
         amLogError("Cannot update switch: Invalid ID (%llu).", id);
     }
 
-    void Engine::SetSwitchState(const AmString& name, AmObjectID stateId) const
+    void EngineImpl::SetSwitchState(const AmString& name, AmObjectID stateId) const
     {
         if (SwitchHandle handle = GetSwitchHandle(name))
             return SetSwitchState(handle, stateId);
@@ -1430,7 +1446,7 @@ namespace SparkyStudios::Audio::Amplitude
         amLogError("Cannot update switch: Invalid name (%s).", name.c_str());
     }
 
-    void Engine::SetSwitchState(const AmString& name, const AmString& stateName) const
+    void EngineImpl::SetSwitchState(const AmString& name, const AmString& stateName) const
     {
         if (SwitchHandle handle = GetSwitchHandle(name))
             return SetSwitchState(handle, stateName);
@@ -1438,7 +1454,7 @@ namespace SparkyStudios::Audio::Amplitude
         amLogError("Cannot update switch: Invalid name (%s).", name.c_str());
     }
 
-    void Engine::SetSwitchState(const AmString& name, const SwitchState& state) const
+    void EngineImpl::SetSwitchState(const AmString& name, const SwitchState& state) const
     {
         if (SwitchHandle handle = GetSwitchHandle(name))
             return SetSwitchState(handle, state);
@@ -1446,7 +1462,7 @@ namespace SparkyStudios::Audio::Amplitude
         amLogError("Cannot update switch: Invalid name (%s).", name.c_str());
     }
 
-    void Engine::SetRtpcValue(RtpcHandle handle, double value) const
+    void EngineImpl::SetRtpcValue(RtpcHandle handle, double value) const
     {
         if (handle == nullptr)
         {
@@ -1457,7 +1473,7 @@ namespace SparkyStudios::Audio::Amplitude
         handle->SetValue(value);
     }
 
-    void Engine::SetRtpcValue(AmRtpcID id, double value) const
+    void EngineImpl::SetRtpcValue(AmRtpcID id, double value) const
     {
         if (RtpcHandle handle = GetRtpcHandle(id))
             return SetRtpcValue(handle, value);
@@ -1465,7 +1481,7 @@ namespace SparkyStudios::Audio::Amplitude
         amLogError("Cannot update RTPC value: Invalid RTPC ID (%llu).", id);
     }
 
-    void Engine::SetRtpcValue(const AmString& name, double value) const
+    void EngineImpl::SetRtpcValue(const AmString& name, double value) const
     {
         if (RtpcHandle handle = GetRtpcHandle(name))
             return SetRtpcValue(handle, value);
@@ -1473,7 +1489,7 @@ namespace SparkyStudios::Audio::Amplitude
         amLogError("Cannot update RTPC value: Invalid RTPC name (%s).", name.c_str());
     }
 
-    SwitchContainerHandle Engine::GetSwitchContainerHandle(const AmString& name) const
+    SwitchContainerHandle EngineImpl::GetSwitchContainerHandle(const AmString& name) const
     {
         const auto pair = std::ranges::find_if(
             _state->switch_container_map,
@@ -1485,19 +1501,19 @@ namespace SparkyStudios::Audio::Amplitude
         return pair == _state->switch_container_map.end() ? nullptr : pair->second.get();
     }
 
-    SwitchContainerHandle Engine::GetSwitchContainerHandle(AmSwitchContainerID id) const
+    SwitchContainerHandle EngineImpl::GetSwitchContainerHandle(AmSwitchContainerID id) const
     {
         const auto pair = _state->switch_container_map.find(id);
         return pair == _state->switch_container_map.end() ? nullptr : pair->second.get();
     }
 
-    SwitchContainerHandle Engine::GetSwitchContainerHandleFromFile(const AmOsString& filename) const
+    SwitchContainerHandle EngineImpl::GetSwitchContainerHandleFromFile(const AmOsString& filename) const
     {
         const auto pair = _state->switch_container_id_map.find(filename);
         return pair == _state->switch_container_id_map.end() ? nullptr : GetSwitchContainerHandle(pair->second);
     }
 
-    CollectionHandle Engine::GetCollectionHandle(const AmString& name) const
+    CollectionHandle EngineImpl::GetCollectionHandle(const AmString& name) const
     {
         const auto pair = std::ranges::find_if(
             _state->collection_map,
@@ -1509,19 +1525,19 @@ namespace SparkyStudios::Audio::Amplitude
         return pair == _state->collection_map.end() ? nullptr : pair->second.get();
     }
 
-    CollectionHandle Engine::GetCollectionHandle(AmCollectionID id) const
+    CollectionHandle EngineImpl::GetCollectionHandle(AmCollectionID id) const
     {
         const auto pair = _state->collection_map.find(id);
         return pair == _state->collection_map.end() ? nullptr : pair->second.get();
     }
 
-    CollectionHandle Engine::GetCollectionHandleFromFile(const AmOsString& filename) const
+    CollectionHandle EngineImpl::GetCollectionHandleFromFile(const AmOsString& filename) const
     {
         const auto pair = _state->collection_id_map.find(filename);
         return pair == _state->collection_id_map.end() ? nullptr : GetCollectionHandle(pair->second);
     }
 
-    SoundHandle Engine::GetSoundHandle(const AmString& name) const
+    SoundHandle EngineImpl::GetSoundHandle(const AmString& name) const
     {
         const auto pair = std::ranges::find_if(
             _state->sound_map,
@@ -1533,19 +1549,19 @@ namespace SparkyStudios::Audio::Amplitude
         return pair == _state->sound_map.end() ? nullptr : pair->second.get();
     }
 
-    SoundHandle Engine::GetSoundHandle(AmSoundID id) const
+    SoundHandle EngineImpl::GetSoundHandle(AmSoundID id) const
     {
         const auto pair = _state->sound_map.find(id);
         return pair == _state->sound_map.end() ? nullptr : pair->second.get();
     }
 
-    SoundHandle Engine::GetSoundHandleFromFile(const AmOsString& filename) const
+    SoundHandle EngineImpl::GetSoundHandleFromFile(const AmOsString& filename) const
     {
         const auto pair = _state->sound_id_map.find(filename);
         return pair == _state->sound_id_map.end() ? nullptr : GetSoundHandle(pair->second);
     }
 
-    SoundObjectHandle Engine::GetSoundObjectHandle(const AmString& name) const
+    SoundObjectHandle EngineImpl::GetSoundObjectHandle(const AmString& name) const
     {
         if (const SoundHandle handle = GetSoundHandle(name))
             return handle;
@@ -1559,7 +1575,7 @@ namespace SparkyStudios::Audio::Amplitude
         return nullptr;
     }
 
-    SoundObjectHandle Engine::GetSoundObjectHandle(AmSoundID id) const
+    SoundObjectHandle EngineImpl::GetSoundObjectHandle(AmSoundID id) const
     {
         if (const SoundHandle handle = GetSoundHandle(id))
             return handle;
@@ -1573,7 +1589,7 @@ namespace SparkyStudios::Audio::Amplitude
         return nullptr;
     }
 
-    SoundObjectHandle Engine::GetSoundObjectHandleFromFile(const AmOsString& filename) const
+    SoundObjectHandle EngineImpl::GetSoundObjectHandleFromFile(const AmOsString& filename) const
     {
         if (const SoundHandle handle = GetSoundHandleFromFile(filename))
             return handle;
@@ -1587,7 +1603,7 @@ namespace SparkyStudios::Audio::Amplitude
         return nullptr;
     }
 
-    EventHandle Engine::GetEventHandle(const AmString& name) const
+    EventHandle EngineImpl::GetEventHandle(const AmString& name) const
     {
         const auto pair = std::ranges::find_if(
             _state->event_map,
@@ -1599,19 +1615,19 @@ namespace SparkyStudios::Audio::Amplitude
         return pair == _state->event_map.end() ? nullptr : pair->second.get();
     }
 
-    EventHandle Engine::GetEventHandle(AmEventID id) const
+    EventHandle EngineImpl::GetEventHandle(AmEventID id) const
     {
         const auto pair = _state->event_map.find(id);
         return pair == _state->event_map.end() ? nullptr : pair->second.get();
     }
 
-    EventHandle Engine::GetEventHandleFromFile(const AmOsString& filename) const
+    EventHandle EngineImpl::GetEventHandleFromFile(const AmOsString& filename) const
     {
         const auto pair = _state->event_id_map.find(filename);
         return pair == _state->event_id_map.end() ? nullptr : GetEventHandle(pair->second);
     }
 
-    AttenuationHandle Engine::GetAttenuationHandle(const AmString& name) const
+    AttenuationHandle EngineImpl::GetAttenuationHandle(const AmString& name) const
     {
         const auto pair = std::ranges::find_if(
             _state->attenuation_map,
@@ -1623,19 +1639,19 @@ namespace SparkyStudios::Audio::Amplitude
         return pair == _state->attenuation_map.end() ? nullptr : pair->second.get();
     }
 
-    AttenuationHandle Engine::GetAttenuationHandle(AmAttenuationID id) const
+    AttenuationHandle EngineImpl::GetAttenuationHandle(AmAttenuationID id) const
     {
         const auto pair = _state->attenuation_map.find(id);
         return pair == _state->attenuation_map.end() ? nullptr : pair->second.get();
     }
 
-    AttenuationHandle Engine::GetAttenuationHandleFromFile(const AmOsString& filename) const
+    AttenuationHandle EngineImpl::GetAttenuationHandleFromFile(const AmOsString& filename) const
     {
         const auto pair = _state->attenuation_id_map.find(filename);
         return pair == _state->attenuation_id_map.end() ? nullptr : GetAttenuationHandle(pair->second);
     }
 
-    SwitchHandle Engine::GetSwitchHandle(const AmString& name) const
+    SwitchHandle EngineImpl::GetSwitchHandle(const AmString& name) const
     {
         const auto pair = std::ranges::find_if(
             _state->switch_map,
@@ -1647,19 +1663,19 @@ namespace SparkyStudios::Audio::Amplitude
         return pair == _state->switch_map.end() ? nullptr : pair->second.get();
     }
 
-    SwitchHandle Engine::GetSwitchHandle(AmSwitchID id) const
+    SwitchHandle EngineImpl::GetSwitchHandle(AmSwitchID id) const
     {
         const auto pair = _state->switch_map.find(id);
         return pair == _state->switch_map.end() ? nullptr : pair->second.get();
     }
 
-    SwitchHandle Engine::GetSwitchHandleFromFile(const AmOsString& filename) const
+    SwitchHandle EngineImpl::GetSwitchHandleFromFile(const AmOsString& filename) const
     {
         const auto pair = _state->switch_id_map.find(filename);
         return pair == _state->switch_id_map.end() ? nullptr : GetSwitchHandle(pair->second);
     }
 
-    RtpcHandle Engine::GetRtpcHandle(const AmString& name) const
+    RtpcHandle EngineImpl::GetRtpcHandle(const AmString& name) const
     {
         const auto pair = std::ranges::find_if(
             _state->rtpc_map,
@@ -1671,19 +1687,19 @@ namespace SparkyStudios::Audio::Amplitude
         return pair == _state->rtpc_map.end() ? nullptr : pair->second.get();
     }
 
-    RtpcHandle Engine::GetRtpcHandle(AmRtpcID id) const
+    RtpcHandle EngineImpl::GetRtpcHandle(AmRtpcID id) const
     {
         const auto pair = _state->rtpc_map.find(id);
         return pair == _state->rtpc_map.end() ? nullptr : pair->second.get();
     }
 
-    RtpcHandle Engine::GetRtpcHandleFromFile(const AmOsString& filename) const
+    RtpcHandle EngineImpl::GetRtpcHandleFromFile(const AmOsString& filename) const
     {
         const auto pair = _state->rtpc_id_map.find(filename);
         return pair == _state->rtpc_id_map.end() ? nullptr : GetRtpcHandle(pair->second);
     }
 
-    EffectHandle Engine::GetEffectHandle(const AmString& name) const
+    EffectHandle EngineImpl::GetEffectHandle(const AmString& name) const
     {
         const auto pair = std::ranges::find_if(
             _state->effect_map,
@@ -1695,46 +1711,46 @@ namespace SparkyStudios::Audio::Amplitude
         return pair == _state->effect_map.end() ? nullptr : pair->second.get();
     }
 
-    EffectHandle Engine::GetEffectHandle(AmEffectID id) const
+    EffectHandle EngineImpl::GetEffectHandle(AmEffectID id) const
     {
         const auto pair = _state->effect_map.find(id);
         return pair == _state->effect_map.end() ? nullptr : pair->second.get();
     }
 
-    EffectHandle Engine::GetEffectHandleFromFile(const AmOsString& filename) const
+    EffectHandle EngineImpl::GetEffectHandleFromFile(const AmOsString& filename) const
     {
         const auto pair = _state->effect_id_map.find(filename);
         return pair == _state->effect_id_map.end() ? nullptr : GetEffectHandle(pair->second);
     }
 
-    void Engine::SetMasterGain(const AmReal32 gain) const
+    void EngineImpl::SetMasterGain(const AmReal32 gain) const
     {
         _state->master_gain = gain;
         _state->mixer.SetMasterGain(gain);
     }
 
-    AmReal32 Engine::GetMasterGain() const
+    AmReal32 EngineImpl::GetMasterGain() const
     {
         return _state->master_gain;
     }
 
-    void Engine::SetMute(const bool mute) const
+    void EngineImpl::SetMute(const bool mute) const
     {
         _state->mute = mute;
     }
 
-    bool Engine::IsMuted() const
+    bool EngineImpl::IsMuted() const
     {
         return _state->mute;
     }
 
-    void Engine::SetDefaultListener(const Listener* listener)
+    void EngineImpl::SetDefaultListener(const Listener* listener)
     {
         if (listener->Valid())
             _defaultListener = listener->GetState();
     }
 
-    void Engine::SetDefaultListener(AmListenerID id)
+    void EngineImpl::SetDefaultListener(AmListenerID id)
     {
         if (id == kAmInvalidObjectId)
             return;
@@ -1751,12 +1767,12 @@ namespace SparkyStudios::Audio::Amplitude
         }
     }
 
-    Listener Engine::GetDefaultListener() const
+    Listener EngineImpl::GetDefaultListener() const
     {
         return Listener(_defaultListener);
     }
 
-    Listener Engine::AddListener(AmListenerID id) const
+    Listener EngineImpl::AddListener(AmListenerID id) const
     {
         if (_state->listener_state_free_list.empty())
             return Listener(nullptr);
@@ -1772,7 +1788,7 @@ namespace SparkyStudios::Audio::Amplitude
         return Listener(listener);
     }
 
-    Listener Engine::GetListener(AmListenerID id) const
+    Listener EngineImpl::GetListener(AmListenerID id) const
     {
         const auto findIt = std::ranges::find_if(
             _state->listener_state_memory,
@@ -1784,7 +1800,7 @@ namespace SparkyStudios::Audio::Amplitude
         return Listener(findIt != _state->listener_state_memory.end() ? &*findIt : nullptr);
     }
 
-    void Engine::RemoveListener(AmListenerID id) const
+    void EngineImpl::RemoveListener(AmListenerID id) const
     {
         if (const auto findIt = std::ranges::find_if(
                 _state->listener_state_memory,
@@ -1800,7 +1816,7 @@ namespace SparkyStudios::Audio::Amplitude
         }
     }
 
-    void Engine::RemoveListener(const Listener* listener) const
+    void EngineImpl::RemoveListener(const Listener* listener) const
     {
         if (!listener->Valid())
             return;
@@ -1810,7 +1826,7 @@ namespace SparkyStudios::Audio::Amplitude
         _state->listener_state_free_list.push_back(listener->GetState());
     }
 
-    Entity Engine::AddEntity(AmEntityID id) const
+    Entity EngineImpl::AddEntity(AmEntityID id) const
     {
         if (_state->entity_state_free_list.empty())
             return Entity(nullptr);
@@ -1826,7 +1842,7 @@ namespace SparkyStudios::Audio::Amplitude
         return Entity(entity);
     }
 
-    Entity Engine::GetEntity(AmEntityID id) const
+    Entity EngineImpl::GetEntity(AmEntityID id) const
     {
         const auto findIt = std::ranges::find_if(
             _state->entity_state_memory,
@@ -1838,7 +1854,7 @@ namespace SparkyStudios::Audio::Amplitude
         return Entity(findIt != _state->entity_state_memory.end() ? &*findIt : nullptr);
     }
 
-    void Engine::RemoveEntity(const Entity* entity) const
+    void EngineImpl::RemoveEntity(const Entity* entity) const
     {
         if (!entity->Valid())
             return;
@@ -1848,7 +1864,7 @@ namespace SparkyStudios::Audio::Amplitude
         _state->entity_state_free_list.push_back(entity->GetState());
     }
 
-    void Engine::RemoveEntity(AmEntityID id) const
+    void EngineImpl::RemoveEntity(AmEntityID id) const
     {
         if (const auto findIt = std::ranges::find_if(
                 _state->entity_state_memory,
@@ -1864,7 +1880,7 @@ namespace SparkyStudios::Audio::Amplitude
         }
     }
 
-    Environment Engine::AddEnvironment(AmEnvironmentID id) const
+    Environment EngineImpl::AddEnvironment(AmEnvironmentID id) const
     {
         if (_state->environment_state_free_list.empty())
             return Environment(nullptr);
@@ -1880,7 +1896,7 @@ namespace SparkyStudios::Audio::Amplitude
         return Environment(environment);
     }
 
-    Environment Engine::GetEnvironment(AmEnvironmentID id) const
+    Environment EngineImpl::GetEnvironment(AmEnvironmentID id) const
     {
         const auto findIt = std::ranges::find_if(
             _state->environment_state_memory,
@@ -1892,7 +1908,7 @@ namespace SparkyStudios::Audio::Amplitude
         return Environment(findIt != _state->environment_state_memory.end() ? &*findIt : nullptr);
     }
 
-    void Engine::RemoveEnvironment(const Environment* environment) const
+    void EngineImpl::RemoveEnvironment(const Environment* environment) const
     {
         if (!environment->Valid())
             return;
@@ -1902,7 +1918,7 @@ namespace SparkyStudios::Audio::Amplitude
         _state->environment_state_free_list.push_back(environment->GetState());
     }
 
-    void Engine::RemoveEnvironment(AmEnvironmentID id) const
+    void EngineImpl::RemoveEnvironment(AmEnvironmentID id) const
     {
         if (const auto findIt = std::ranges::find_if(
                 _state->environment_state_memory,
@@ -1918,17 +1934,17 @@ namespace SparkyStudios::Audio::Amplitude
         }
     }
 
-    Bus Engine::FindBus(const AmString& name) const
+    Bus EngineImpl::FindBus(const AmString& name) const
     {
         return Bus(FindBusInternalState(_state, name));
     }
 
-    Bus Engine::FindBus(AmBusID id) const
+    Bus EngineImpl::FindBus(AmBusID id) const
     {
         return Bus(FindBusInternalState(_state, id));
     }
 
-    void Engine::Pause(bool pause) const
+    void EngineImpl::Pause(bool pause) const
     {
         if (_state->paused == pause)
             return;
@@ -1956,7 +1972,7 @@ namespace SparkyStudios::Audio::Amplitude
         }
     }
 
-    bool Engine::IsPaused() const
+    bool EngineImpl::IsPaused() const
     {
         return _state->paused;
     }
@@ -1980,55 +1996,46 @@ namespace SparkyStudios::Audio::Amplitude
         if (channel->Stopped())
             return;
 
+        AmReal32 gain;
+        AmVec2 pan;
+        AmReal32 pitch;
+        ListenerInternalState* listener = nullptr;
+
         if (const SwitchContainer* switchContainer = channel->GetSwitchContainer(); switchContainer != nullptr)
         {
-            const SwitchContainerDefinition* definition = switchContainer->GetDefinition();
+            const SwitchContainerDefinition* definition = static_cast<const SwitchContainerImpl*>(switchContainer)->GetDefinition();
 
-            AmReal32 gain;
-            AmVec2 pan;
-            AmReal32 pitch;
             CalculateGainPanPitch(
-                &gain, &pan, &pitch, channel, switchContainer->GetGain().GetValue(), switchContainer->GetPitch().GetValue(),
+                &gain, &pan, &pitch, &listener, channel, switchContainer->GetGain().GetValue(), switchContainer->GetPitch().GetValue(),
                 switchContainer->GetBus().GetState(), definition->spatialization(), switchContainer->GetAttenuation(), channel->GetEntity(),
                 channel->GetLocation(), state->listener_list, channel->GetUserGain(), state->listener_fetch_mode);
-            channel->SetGain(gain);
-            channel->SetPan(pan);
-            channel->SetPitch(pitch);
         }
         else if (const Collection* collection = channel->GetCollection(); collection != nullptr)
         {
-            const CollectionDefinition* definition = collection->GetDefinition();
+            const CollectionDefinition* definition = static_cast<const CollectionImpl*>(collection)->GetDefinition();
 
-            AmReal32 gain;
-            AmVec2 pan;
-            AmReal32 pitch;
             CalculateGainPanPitch(
-                &gain, &pan, &pitch, channel, collection->GetGain().GetValue(), collection->GetPitch().GetValue(),
+                &gain, &pan, &pitch, &listener, channel, collection->GetGain().GetValue(), collection->GetPitch().GetValue(),
                 collection->GetBus().GetState(), definition->spatialization(), collection->GetAttenuation(), channel->GetEntity(),
                 channel->GetLocation(), state->listener_list, channel->GetUserGain(), state->listener_fetch_mode);
-            channel->SetGain(gain);
-            channel->SetPan(pan);
-            channel->SetPitch(pitch);
         }
         else if (const Sound* sound = channel->GetSound(); sound != nullptr)
         {
-            const SoundDefinition* definition = sound->GetDefinition();
+            const SoundDefinition* definition = static_cast<const SoundImpl*>(sound)->GetDefinition();
 
-            AmReal32 gain;
-            AmVec2 pan;
-            AmReal32 pitch;
             CalculateGainPanPitch(
-                &gain, &pan, &pitch, channel, sound->GetGain().GetValue(), sound->GetPitch().GetValue(), sound->GetBus().GetState(),
-                definition->spatialization(), sound->GetAttenuation(), channel->GetEntity(), channel->GetLocation(), state->listener_list,
-                channel->GetUserGain(), state->listener_fetch_mode);
-            channel->SetGain(gain);
-            channel->SetPan(pan);
-            channel->SetPitch(pitch);
+                &gain, &pan, &pitch, &listener, channel, sound->GetGain().GetValue(), sound->GetPitch().GetValue(),
+                sound->GetBus().GetState(), definition->spatialization(), sound->GetAttenuation(), channel->GetEntity(),
+                channel->GetLocation(), state->listener_list, channel->GetUserGain(), state->listener_fetch_mode);
         }
         else
         {
             AMPLITUDE_ASSERT(false);
         }
+
+        channel->SetGain(gain);
+        channel->SetPan(pan);
+        channel->SetPitch(pitch);
     }
 
     // If there are any free real channels, assign those to virtual channels that
@@ -2079,7 +2086,7 @@ namespace SparkyStudios::Audio::Amplitude
         }
     }
 
-    void Engine::AdvanceFrame(AmTime delta) const
+    void EngineImpl::AdvanceFrame(AmTime delta) const
     {
         if (_state == nullptr)
             return;
@@ -2167,7 +2174,7 @@ namespace SparkyStudios::Audio::Amplitude
         _state->total_time += delta;
     }
 
-    void Engine::NextFrame(std::function<void(AmTime delta)> callback) const
+    void EngineImpl::OnNextFrame(std::function<void(AmTime delta)> callback) const
     {
         Thread::LockMutex(_frameThreadMutex);
         {
@@ -2176,29 +2183,29 @@ namespace SparkyStudios::Audio::Amplitude
         Thread::UnlockMutex(_frameThreadMutex);
     }
 
-    AmTime Engine::GetTotalTime() const
+    AmTime EngineImpl::GetTotalTime() const
     {
         return _state->total_time;
     }
 
-    const struct Version* Engine::Version() const
+    const struct Version* EngineImpl::Version() const
     {
         return _state->version;
     }
 
-    const EngineConfigDefinition* Engine::GetEngineConfigDefinition() const
+    const EngineConfigDefinition* EngineImpl::GetEngineConfigDefinition() const
     {
         return Amplitude::GetEngineConfigDefinition(_configSrc.c_str());
     }
 
-    Driver* Engine::GetDriver() const
+    Driver* EngineImpl::GetDriver() const
     {
         return _audioDriver;
     }
 
 #pragma region Amplimix
 
-    Mixer* Engine::GetMixer() const
+    Amplimix* EngineImpl::GetMixer() const
     {
         return &_state->mixer;
     }
@@ -2207,44 +2214,64 @@ namespace SparkyStudios::Audio::Amplitude
 
 #pragma region Engine State
 
-    EngineInternalState* Engine::GetState() const
+    EngineInternalState* EngineImpl::GetState() const
     {
         return _state;
     }
 
-    AmReal32 Engine::GetSoundSpeed() const
+    AmReal32 EngineImpl::GetSoundSpeed() const
     {
         return _state->sound_speed;
     }
 
-    AmReal32 Engine::GetDopplerFactor() const
+    AmReal32 EngineImpl::GetDopplerFactor() const
     {
         return _state->doppler_factor;
     }
 
-    AmUInt32 Engine::GetSamplesPerStream() const
+    AmUInt32 EngineImpl::GetSamplesPerStream() const
     {
         return _state->samples_per_stream;
     }
 
-    bool Engine::IsGameTrackingEnvironmentAmounts() const
+    bool EngineImpl::IsGameTrackingEnvironmentAmounts() const
     {
         return _state->track_environments;
     }
 
-    AmUInt32 Engine::GetMaxListenersCount() const
+    AmUInt32 EngineImpl::GetMaxListenersCount() const
     {
         return GetEngineConfigDefinition()->game()->listeners();
     }
 
-    AmUInt32 Engine::GetMaxEntitiesCount() const
+    AmUInt32 EngineImpl::GetMaxEntitiesCount() const
     {
         return GetEngineConfigDefinition()->game()->entities();
     }
 
+    const Curve& EngineImpl::GetOcclusionCoefficientCurve() const
+    {
+        return _state->occlusion_config.lpf;
+    }
+
+    const Curve& EngineImpl::GetOcclusionGainCurve() const
+    {
+        return _state->occlusion_config.gain;
+    }
+
+    const Curve& EngineImpl::GetObstructionLowPassCurve() const
+    {
+        return _state->obstruction_config.lpf;
+    }
+
+    const Curve& EngineImpl::GetObstructionGainCurve() const
+    {
+        return _state->obstruction_config.gain;
+    }
+
 #pragma endregion
 
-    Channel Engine::PlayScopedSwitchContainer(
+    Channel EngineImpl::PlayScopedSwitchContainer(
         SwitchContainerHandle handle, const Entity& entity, const AmVec3& location, const AmReal32 userGain) const
     {
         if (handle == nullptr)
@@ -2253,7 +2280,7 @@ namespace SparkyStudios::Audio::Amplitude
             return Channel(nullptr);
         }
 
-        const SwitchContainerDefinition* definition = handle->GetDefinition();
+        const SwitchContainerDefinition* definition = static_cast<SwitchContainerImpl*>(handle)->GetDefinition();
 
         if (definition->scope() == Scope_Entity && !entity.Valid())
         {
@@ -2271,10 +2298,11 @@ namespace SparkyStudios::Audio::Amplitude
         AmReal32 gain;
         AmVec2 pan;
         AmReal32 pitch;
+        ListenerInternalState* listener = nullptr;
         CalculateGainPanPitch(
-            &gain, &pan, &pitch, nullptr, handle->GetGain().GetValue(), handle->GetPitch().GetValue(), handle->GetBus().GetState(),
-            definition->spatialization(), handle->GetAttenuation(), entity, location, _state->listener_list, userGain,
-            _state->listener_fetch_mode);
+            &gain, &pan, &pitch, &listener, nullptr, handle->GetGain().GetValue(), handle->GetPitch().GetValue(),
+            handle->GetBus().GetState(), definition->spatialization(), handle->GetAttenuation(), entity, location, _state->listener_list,
+            userGain, _state->listener_fetch_mode);
         const AmReal32 priority = gain * handle->GetPriority().GetValue();
         const auto insertionPoint = FindInsertionPoint(&_state->playing_channel_list, priority);
 
@@ -2292,11 +2320,11 @@ namespace SparkyStudios::Audio::Amplitude
 
         // Now that we have our new channel, set the data on it and update the next pointers.
         newChannel->SetEntity(entity);
-        newChannel->SetSwitchContainer(handle);
+        newChannel->SetSwitchContainer(static_cast<SwitchContainerImpl*>(handle));
         newChannel->SetUserGain(userGain);
 
         // Attempt to play the channel, if the engine is paused, the channel will be played later.
-        NextFrame(
+        OnNextFrame(
             [this, newChannel, handle](AmTime delta)
             {
                 if (!newChannel->Play())
@@ -2312,11 +2340,12 @@ namespace SparkyStudios::Audio::Amplitude
         newChannel->SetPan(pan);
         newChannel->SetPitch(pitch);
         newChannel->SetLocation(location);
+        newChannel->SetListener(Listener(listener));
 
         return Channel(newChannel);
     }
 
-    Channel Engine::PlayScopedCollection(
+    Channel EngineImpl::PlayScopedCollection(
         CollectionHandle handle, const Entity& entity, const AmVec3& location, const AmReal32 userGain) const
     {
         if (handle == nullptr)
@@ -2325,7 +2354,7 @@ namespace SparkyStudios::Audio::Amplitude
             return Channel(nullptr);
         }
 
-        const CollectionDefinition* definition = handle->GetDefinition();
+        const CollectionDefinition* definition = static_cast<CollectionImpl*>(handle)->GetDefinition();
 
         if (definition->scope() == Scope_Entity && !entity.Valid())
         {
@@ -2343,10 +2372,11 @@ namespace SparkyStudios::Audio::Amplitude
         AmReal32 gain;
         AmVec2 pan;
         AmReal32 pitch;
+        ListenerInternalState* listener = nullptr;
         CalculateGainPanPitch(
-            &gain, &pan, &pitch, nullptr, handle->GetGain().GetValue(), handle->GetPitch().GetValue(), handle->GetBus().GetState(),
-            definition->spatialization(), handle->GetAttenuation(), entity, location, _state->listener_list, userGain,
-            _state->listener_fetch_mode);
+            &gain, &pan, &pitch, &listener, nullptr, handle->GetGain().GetValue(), handle->GetPitch().GetValue(),
+            handle->GetBus().GetState(), definition->spatialization(), handle->GetAttenuation(), entity, location, _state->listener_list,
+            userGain, _state->listener_fetch_mode);
         const AmReal32 priority = gain * handle->GetPriority().GetValue();
         const auto insertionPoint = FindInsertionPoint(&_state->playing_channel_list, priority);
 
@@ -2364,11 +2394,11 @@ namespace SparkyStudios::Audio::Amplitude
 
         // Now that we have our new channel, set the data on it and update the next pointers.
         newChannel->SetEntity(entity);
-        newChannel->SetCollection(handle);
+        newChannel->SetCollection(static_cast<CollectionImpl*>(handle));
         newChannel->SetUserGain(userGain);
 
         // Attempt to play the channel, if the engine is paused, the channel will be played later.
-        NextFrame(
+        OnNextFrame(
             [this, newChannel, handle](AmTime delta)
             {
                 if (!newChannel->Play())
@@ -2384,11 +2414,12 @@ namespace SparkyStudios::Audio::Amplitude
         newChannel->SetPan(pan);
         newChannel->SetPitch(pitch);
         newChannel->SetLocation(location);
+        newChannel->SetListener(Listener(listener));
 
         return Channel(newChannel);
     }
 
-    Channel Engine::PlayScopedSound(SoundHandle handle, const Entity& entity, const AmVec3& location, AmReal32 userGain) const
+    Channel EngineImpl::PlayScopedSound(SoundHandle handle, const Entity& entity, const AmVec3& location, AmReal32 userGain) const
     {
         if (handle == nullptr)
         {
@@ -2396,7 +2427,7 @@ namespace SparkyStudios::Audio::Amplitude
             return Channel(nullptr);
         }
 
-        const SoundDefinition* definition = handle->GetDefinition();
+        const SoundDefinition* definition = static_cast<SoundImpl*>(handle)->GetDefinition();
 
         if (definition->scope() == Scope_Entity && !entity.Valid())
         {
@@ -2414,10 +2445,11 @@ namespace SparkyStudios::Audio::Amplitude
         AmReal32 gain;
         AmVec2 pan;
         AmReal32 pitch;
+        ListenerInternalState* listener = nullptr;
         CalculateGainPanPitch(
-            &gain, &pan, &pitch, nullptr, handle->GetGain().GetValue(), handle->GetPitch().GetValue(), handle->GetBus().GetState(),
-            definition->spatialization(), handle->GetAttenuation(), entity, location, _state->listener_list, userGain,
-            _state->listener_fetch_mode);
+            &gain, &pan, &pitch, &listener, nullptr, handle->GetGain().GetValue(), handle->GetPitch().GetValue(),
+            handle->GetBus().GetState(), definition->spatialization(), handle->GetAttenuation(), entity, location, _state->listener_list,
+            userGain, _state->listener_fetch_mode);
         const AmReal32 priority = gain * handle->GetPriority().GetValue();
         const auto insertionPoint = FindInsertionPoint(&_state->playing_channel_list, priority);
 
@@ -2435,11 +2467,11 @@ namespace SparkyStudios::Audio::Amplitude
 
         // Now that we have our new channel, set the data on it and update the next pointers.
         newChannel->SetEntity(entity);
-        newChannel->SetSound(handle);
+        newChannel->SetSound(static_cast<SoundImpl*>(handle));
         newChannel->SetUserGain(userGain);
 
         // Attempt to play the channel, if the engine is paused, the channel will be played later.
-        NextFrame(
+        OnNextFrame(
             [this, newChannel, handle](AmTime delta)
             {
                 if (!newChannel->Play())
@@ -2455,6 +2487,7 @@ namespace SparkyStudios::Audio::Amplitude
         newChannel->SetPan(pan);
         newChannel->SetPitch(pitch);
         newChannel->SetLocation(location);
+        newChannel->SetListener(Listener(listener));
 
         return Channel(newChannel);
     }

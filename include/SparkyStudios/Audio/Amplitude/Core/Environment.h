@@ -14,8 +14,8 @@
 
 #pragma once
 
-#ifndef SS_AMPLITUDE_AUDIO_ENVIRONMENT_H
-#define SS_AMPLITUDE_AUDIO_ENVIRONMENT_H
+#ifndef _AM_CORE_ENVIRONMENT_H
+#define _AM_CORE_ENVIRONMENT_H
 
 #include <SparkyStudios/Audio/Amplitude/Core/Common.h>
 #include <SparkyStudios/Audio/Amplitude/Core/Entity.h>
@@ -191,4 +191,4 @@ namespace SparkyStudios::Audio::Amplitude
     };
 } // namespace SparkyStudios::Audio::Amplitude
 
-#endif // SS_AMPLITUDE_AUDIO_ENVIRONMENT_H
+#endif // _AM_CORE_ENVIRONMENT_H

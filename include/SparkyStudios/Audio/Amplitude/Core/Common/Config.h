@@ -14,8 +14,8 @@
 
 #pragma once
 
-#ifndef SS_AMPLITUDE_AUDIO_CONFIG_H
-#define SS_AMPLITUDE_AUDIO_CONFIG_H
+#ifndef _AM_CORE_COMMON_CONFIG_H
+#define _AM_CORE_COMMON_CONFIG_H
 
 #if defined(__GNUC__) || defined(__clang__)
 #define AM_DEPRECATED(msg) __attribute__((deprecated(msg)))
@@ -101,4 +101,4 @@
 // Maximum number of tasks in a single pool
 #define AM_MAX_THREAD_POOL_TASKS 1024
 
-#endif // SS_AMPLITUDE_AUDIO_CONFIG_H
+#endif // _AM_CORE_COMMON_CONFIG_H

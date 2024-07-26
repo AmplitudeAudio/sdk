@@ -14,8 +14,8 @@
 
 #pragma once
 
-#ifndef SS_AMPLITUDE_AUDIO_THREAD_H
-#define SS_AMPLITUDE_AUDIO_THREAD_H
+#ifndef _AM_CORE_THREAD_H
+#define _AM_CORE_THREAD_H
 
 #include <condition_variable>
 #include <mutex>
@@ -241,4 +241,4 @@ namespace SparkyStudios::Audio::Amplitude
     } // namespace Thread
 } // namespace SparkyStudios::Audio::Amplitude
 
-#endif // SS_AMPLITUDE_AUDIO_THREAD_H
+#endif // _AM_CORE_THREAD_H

@@ -22,7 +22,7 @@
 
 #include <Utils/Utils.h>
 
-namespace SparkyStudios::Audio::Amplitude::Convolution
+namespace SparkyStudios::Audio::Amplitude
 {
     TwoStageConvolver::TwoStageConvolver()
         : _headBlockSize(0)

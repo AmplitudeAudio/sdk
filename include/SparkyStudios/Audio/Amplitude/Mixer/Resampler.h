@@ -14,8 +14,8 @@
 
 #pragma once
 
-#ifndef SS_AMPLITUDE_AUDIO_RESAMPLER_H
-#define SS_AMPLITUDE_AUDIO_RESAMPLER_H
+#ifndef _AM_MIXER_RESAMPLER_H
+#define _AM_MIXER_RESAMPLER_H
 
 #include <SparkyStudios/Audio/Amplitude/Core/Common.h>
 #include <SparkyStudios/Audio/Amplitude/Sound/Sound.h>
@@ -35,16 +35,19 @@ namespace SparkyStudios::Audio::Amplitude
 
         /**
          * @brief Processes the audio data.
+         *
          * @param input The input audio data.
          * @param inputFrames The number of frames in the input buffer.
          * @param output The output audio data.
          * @param outputFrames The number of frames in the output buffer.
-         * @return
+         *
+         * @return @c true if the resampling was successful, otherwise @c false.
          */
         virtual bool Process(AmConstAudioSampleBuffer input, AmUInt64& inputFrames, AmAudioSampleBuffer output, AmUInt64& outputFrames) = 0;
 
         /**
          * @brief Changes the input and output sample rate.
+         *
          * @param sampleRateIn The new input sample rate.
          * @param sampleRateOut The new output sample rate.
          */
@@ -52,18 +55,21 @@ namespace SparkyStudios::Audio::Amplitude
 
         /**
          * @brief Get the current input sample rate.
+         *
          * @return The current input sample rate.
          */
         [[nodiscard]] virtual AmUInt32 GetSampleRateIn() const = 0;
 
         /**
          * @brief Get the current output sample rate.
+         *
          * @return The current output sample rate.
          */
         [[nodiscard]] virtual AmUInt32 GetSampleRateOut() const = 0;
 
         /**
          * @brief Get the current channels count.
+         *
          * @return The current channels count.
          */
         [[nodiscard]] virtual AmUInt16 GetChannelCount() const = 0;
@@ -71,7 +77,9 @@ namespace SparkyStudios::Audio::Amplitude
         /**
          * @brief Returns the required number of frames to have as input for the
          * given amount of output frames.
+         *
          * @param outputFrameCount The number of output frames.
+         *
          * @return The input frame count needed to produce the given output frame count.
          */
         [[nodiscard]] virtual AmUInt64 GetRequiredInputFrameCount(AmUInt64 outputFrameCount) const = 0;
@@ -79,12 +87,26 @@ namespace SparkyStudios::Audio::Amplitude
         /**
          * @brief Returns the expected number of frames to have as output for the
          * given amount of input frames.
+         *
          * @param inputFrameCount The number of input frames.
+         *
          * @return The expected number of output frames for the given input frame count.
          */
         [[nodiscard]] virtual AmUInt64 GetExpectedOutputFrameCount(AmUInt64 inputFrameCount) const = 0;
 
-        [[nodiscard]] virtual AmUInt64 GetLatencyInFrames() const = 0;
+        /**
+         * @brief Returns the current input latency in frames.
+         *
+         * @return The resampler's current input latency in frames.
+         */
+        [[nodiscard]] virtual AmUInt64 GetInputLatency() const = 0;
+
+        /**
+         * @brief Returns the current output latency in frames.
+         *
+         * @return The resampler's current output latency in frames.
+         */
+        [[nodiscard]] virtual AmUInt64 GetOutputLatency() const = 0;
 
         /**
          * @biref Resets the internal resampler state.
@@ -203,4 +225,4 @@ namespace SparkyStudios::Audio::Amplitude
     };
 } // namespace SparkyStudios::Audio::Amplitude
 
-#endif // SS_AMPLITUDE_AUDIO_RESAMPLER_H
+#endif // _AM_MIXER_RESAMPLER_H

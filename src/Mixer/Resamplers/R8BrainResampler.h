@@ -37,30 +37,27 @@ namespace SparkyStudios::Audio::Amplitude
 
         bool Process(AmConstAudioSampleBuffer input, AmUInt64& inputFrames, AmAudioSampleBuffer output, AmUInt64& outputFrames) override
         {
-            const auto input64 = static_cast<AmReal64Buffer>(ampoolmalloc(MemoryPoolKind::SoundData, inputFrames * sizeof(AmReal64)));
+            const AmUniquePtr<MemoryPoolKind::SoundData, AmReal64> input64(
+                static_cast<AmReal64Buffer>(ampoolmalloc(MemoryPoolKind::SoundData, inputFrames * sizeof(AmReal64))));
 
             for (AmUInt16 c = 0; c < _numChannels; c++)
             {
-                r8b::CDSPResampler16* resampler = _resamplers[c].get();
+                r8b::CDSPResampler24* resampler = _resamplers[c].get();
 
                 for (AmUInt64 i = 0; i < inputFrames; i++)
-                    input64[i] = static_cast<AmReal64>(input[i * _numChannels + c]);
+                    input64.get()[i] = static_cast<AmReal64>(input[i * _numChannels + c]);
 
                 AmReal64Buffer output64 = nullptr;
-                outputFrames = resampler->process(input64, static_cast<AmInt32>(inputFrames), output64);
-                resampler->clear();
+                const AmUInt64 processedFrames = resampler->process(input64.get(), static_cast<AmInt32>(inputFrames), output64);
+
+                outputFrames = AM_MIN(outputFrames, processedFrames);
 
                 if (output64 == nullptr)
-                {
-                    ampoolfree(MemoryPoolKind::SoundData, input64);
                     return false;
-                }
 
                 for (AmUInt64 i = 0; i < outputFrames; i++)
                     output[i * _numChannels + c] = static_cast<AmReal32>(output64[i]);
             }
-
-            ampoolfree(MemoryPoolKind::SoundData, input64);
 
             return true;
         }
@@ -69,13 +66,14 @@ namespace SparkyStudios::Audio::Amplitude
         {
             _sampleRateIn = sampleRateIn;
             _sampleRateOut = sampleRateOut;
+            _sampleRatio = static_cast<AmReal64>(sampleRateOut) / static_cast<AmReal64>(sampleRateIn);
 
             for (AmUInt16 c = 0; c < _numChannels; c++)
             {
                 if (_resamplers[c] != nullptr)
                     _resamplers[c].reset();
 
-                _resamplers[c] = std::make_unique<r8b::CDSPResampler16>(sampleRateIn, sampleRateOut, _frameCount);
+                _resamplers[c] = std::make_unique<r8b::CDSPResampler24>(sampleRateIn, sampleRateOut, _frameCount);
             }
         }
 
@@ -104,16 +102,23 @@ namespace SparkyStudios::Audio::Amplitude
 
         [[nodiscard]] AmUInt64 GetExpectedOutputFrameCount(AmUInt64 inputFrameCount) const override
         {
-            // TODO: Implement this
-            return 0;
+            return std::ceil(_sampleRatio * static_cast<AmReal32>(inputFrameCount));
         }
 
-        [[nodiscard]] AmUInt64 GetLatencyInFrames() const override
+        [[nodiscard]] AmUInt64 GetInputLatency() const override
         {
             if (_resamplers.empty())
                 return 0;
 
             return _resamplers[0]->getInLenBeforeOutPos(0);
+        }
+
+        [[nodiscard]] AmUInt64 GetOutputLatency() const override
+        {
+            if (_resamplers.empty())
+                return 0;
+
+            return _resamplers[0]->getLatency();
         }
 
         void Reset() override
@@ -140,8 +145,9 @@ namespace SparkyStudios::Audio::Amplitude
 
         AmUInt32 _sampleRateIn = 0;
         AmUInt32 _sampleRateOut = 0;
+        AmReal64 _sampleRatio = 0.0;
 
-        std::vector<std::unique_ptr<r8b::CDSPResampler16>> _resamplers;
+        std::vector<std::unique_ptr<r8b::CDSPResampler24>> _resamplers;
     };
 
     class R8BrainResampler final : public Resampler

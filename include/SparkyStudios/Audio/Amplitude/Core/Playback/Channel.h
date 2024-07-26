@@ -14,10 +14,12 @@
 
 #pragma once
 
-#ifndef SS_AMPLITUDE_AUDIO_CHANNEL_H
-#define SS_AMPLITUDE_AUDIO_CHANNEL_H
+#ifndef _AM_CORE_PLAYBACK_CHANNEL_H
+#define _AM_CORE_PLAYBACK_CHANNEL_H
 
 #include <SparkyStudios/Audio/Amplitude/Core/Common.h>
+#include <SparkyStudios/Audio/Amplitude/Core/Entity.h>
+#include <SparkyStudios/Audio/Amplitude/Core/Listener.h>
 #include <SparkyStudios/Audio/Amplitude/Core/Playback/ChannelEventListener.h>
 
 namespace SparkyStudios::Audio::Amplitude
@@ -81,6 +83,13 @@ namespace SparkyStudios::Audio::Amplitude
          * @return true if this Channel has been initialized.
          */
         [[nodiscard]] bool Valid() const;
+
+        /**
+         * @brief Gets the ID of this @c Channel.
+         *
+         * @return The ID of this @c Channel.
+         */
+        [[nodiscard]] AmUInt64 GetId() const;
 
         /**
          * @brief Checks if the sound associated to this @c Channel is playing.
@@ -158,6 +167,20 @@ namespace SparkyStudios::Audio::Amplitude
         [[nodiscard]] ChannelPlaybackState GetPlaybackState() const;
 
         /**
+         * @brief Returns the entity associated with this Channel.
+         *
+         * @return The entity associated with this Channel.
+         */
+        [[nodiscard]] Entity GetEntity() const;
+
+        /**
+         * @brief Returns the listener associated with this Channel.
+         *
+         * @return The listener associated with this Channel.
+         */
+        [[nodiscard]] Listener GetListener() const;
+
+        /**
          * @brief Returns the internal state of this Channel.
          *
          * @return The internal state of this Channel.
@@ -184,4 +207,4 @@ namespace SparkyStudios::Audio::Amplitude
     };
 } // namespace SparkyStudios::Audio::Amplitude
 
-#endif // SS_AMPLITUDE_AUDIO_CHANNEL_H
+#endif // _AM_CORE_PLAYBACK_CHANNEL_H

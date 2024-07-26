@@ -14,8 +14,8 @@
 
 #pragma once
 
-#ifndef SS_AMPLITUDE_AUDIO_ENTITY_INTERNAL_STATE_H
-#define SS_AMPLITUDE_AUDIO_ENTITY_INTERNAL_STATE_H
+#ifndef _AM_IMPLEMENTATION_CORE_ENTITY_INTERNAL_STATE_H
+#define _AM_IMPLEMENTATION_CORE_ENTITY_INTERNAL_STATE_H
 
 #include <SparkyStudios/Audio/Amplitude/Core/Common.h>
 
@@ -34,21 +34,30 @@ namespace SparkyStudios::Audio::Amplitude
          *
          * @return The game Entity ID.
          */
-        [[nodiscard]] AmEntityID GetId() const;
+        [[nodiscard]] AM_INLINE AmEntityID GetId() const
+        {
+            return _id;
+        }
 
         /**
          * @brief Sets the ID of this Entity in game.
          *
          * @param id The game Entity ID.
          */
-        void SetId(AmEntityID id);
+        AM_INLINE void SetId(AmEntityID id)
+        {
+            _id = id;
+        }
 
         /**
          * @brief Gets the velocity of the Entity.
          *
          * @return The Entity's velocity.
          */
-        [[nodiscard]] const AmVec3& GetVelocity() const;
+        [[nodiscard]] AM_INLINE const AmVec3& GetVelocity() const
+        {
+            return _velocity;
+        }
 
         /**
          * @brief Sets the location of this Entity.
@@ -62,42 +71,88 @@ namespace SparkyStudios::Audio::Amplitude
          *
          * @return The current location of this Entity.
          */
-        [[nodiscard]] const AmVec3& GetLocation() const;
+        [[nodiscard]] AM_INLINE const AmVec3& GetLocation() const
+        {
+            return _location;
+        }
 
         /**
          * @brief Sets the orientation of this Entity.
          *
-         * @param orientation
+         * @param orientation The new orientation.
          */
-        void SetOrientation(const Orientation& orientation);
+        AM_INLINE void SetOrientation(const Orientation& orientation)
+        {
+            _orientation = orientation;
+        }
 
         /**
          * @brief Get the direction vector of the Entity.
          *
          * @return The direction vector.
          */
-        [[nodiscard]] AmVec3 GetDirection() const;
+        [[nodiscard]] AM_INLINE AmVec3 GetDirection() const
+        {
+            return _orientation.GetForward();
+        }
 
         /**
          * @brief Get the up vector of the Entity.
          *
          * @return The up vector.
          */
-        [[nodiscard]] AmVec3 GetUp() const;
+        [[nodiscard]] AM_INLINE AmVec3 GetUp() const
+        {
+            return _orientation.GetUp();
+        }
 
         /**
          * @brief Get the right vector of the Entity.
          *
          * @return The orientation of this Entity.
          */
-        [[nodiscard]] const Orientation& GetOrientation() const;
+        [[nodiscard]] AM_INLINE const Orientation& GetOrientation() const
+        {
+            return _orientation;
+        }
 
         /**
          * @brief Returns the inverse transformation matrix of this Entity.
          *
          * @return The inverse transformation matrix.
          */
-        [[nodiscard]] const AmMat4& GetInverseMatrix() const;
+        [[nodiscard]] AM_INLINE const AmMat4& GetInverseMatrix() const
+        {
+            return _inverseMatrix;
+        }
+
+        /**
+         * @brief Sets the directivity of sounds played by this Entity.
+         *
+         * @param directivity The directivity of the sound.
+         * @param directivitySharpness The sharpness of the directivity.
+         */
+        void SetDirectivity(AmReal32 directivity, AmReal32 directivitySharpness);
+
+        /**
+         * @brief Get the directivity of sounds played by this Entity.
+         *
+         * @return The directivity.
+         */
+        [[nodiscard]] AM_INLINE AmReal32 GetDirectivity() const
+        {
+            return _directivity;
+        }
+
+        /**
+         * @brief Get the sharpness of the directivity of sounds played by this Entity.
+         *
+         * @return The directivity sharpness.
+         */
+        [[nodiscard]] AM_INLINE AmReal32 GetDirectivitySharpness() const
+        {
+            return _directivitySharpness;
+        }
 
         /**
          * @brief Set the obstruction level of sounds played by this Entity.
@@ -120,14 +175,20 @@ namespace SparkyStudios::Audio::Amplitude
          *
          * @return The obstruction amount.
          */
-        [[nodiscard]] AmReal32 GetObstruction() const;
+        [[nodiscard]] AM_INLINE AmReal32 GetObstruction() const
+        {
+            return _obstruction;
+        }
 
         /**
          * @brief Get the occlusion level of sounds played by this Entity.
          *
          * @return The occlusion amount.
          */
-        [[nodiscard]] AmReal32 GetOcclusion() const;
+        [[nodiscard]] AM_INLINE AmReal32 GetOcclusion() const
+        {
+            return _occlusion;
+        }
 
         /**
          * @brief Sets the environment factor for this Entity in the given environment.
@@ -151,7 +212,10 @@ namespace SparkyStudios::Audio::Amplitude
          *
          * @return The list of environments where this Entity belongs or has visited.
          */
-        [[nodiscard]] const std::map<AmEnvironmentID, AmReal32>& GetEnvironments() const;
+        [[nodiscard]] AM_INLINE const std::map<AmEnvironmentID, AmReal32>& GetEnvironments() const
+        {
+            return _environmentFactors;
+        }
 
         /**
          * @brief Updates the inverse matrix of this Entity.
@@ -187,6 +251,9 @@ namespace SparkyStudios::Audio::Amplitude
         AmReal32 _obstruction;
         AmReal32 _occlusion;
 
+        AmReal32 _directivity;
+        AmReal32 _directivitySharpness;
+
         std::map<AmEnvironmentID, AmReal32> _environmentFactors;
 
         // Keeps track of how many sounds are being played on this entity.
@@ -194,4 +261,4 @@ namespace SparkyStudios::Audio::Amplitude
     };
 } // namespace SparkyStudios::Audio::Amplitude
 
-#endif // SS_AMPLITUDE_AUDIO_ENTITY_INTERNAL_STATE_H
+#endif // _AM_IMPLEMENTATION_CORE_ENTITY_INTERNAL_STATE_H

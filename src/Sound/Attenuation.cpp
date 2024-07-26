@@ -14,20 +14,20 @@
 
 #include <SparkyStudios/Audio/Amplitude/Sound/Attenuation.h>
 
-#include <Core/EngineInternalState.h>
-
-#include "attenuation_definition_generated.h"
+#include <Sound/Attenuation.h>
 
 namespace SparkyStudios::Audio::Amplitude
 {
-    Attenuation::Attenuation()
+    template class AssetImpl<AmAttenuationID, AttenuationDefinition>;
+
+    AttenuationImpl::AttenuationImpl()
         : _name()
         , _maxDistance(0.0f)
         , _shape(nullptr)
         , _gainCurve()
     {}
 
-    Attenuation::~Attenuation()
+    AttenuationImpl::~AttenuationImpl()
     {
         _name.clear();
         _maxDistance = 0.0f;
@@ -35,47 +35,37 @@ namespace SparkyStudios::Audio::Amplitude
         _shape = nullptr;
     }
 
-    AmReal32 Attenuation::GetGain(const AmVec3& soundLocation, const Listener& listener) const
+    AmReal32 AttenuationImpl::GetGain(const AmVec3& soundLocation, const Listener& listener) const
     {
         return _shape->GetAttenuationFactor(this, soundLocation, listener);
     }
 
-    AmReal32 Attenuation::GetGain(const Entity& entity, const Listener& listener) const
+    AmReal32 AttenuationImpl::GetGain(const Entity& entity, const Listener& listener) const
     {
         return _shape->GetAttenuationFactor(this, entity, listener);
     }
 
-    AttenuationZone* Attenuation::GetShape() const
+    AttenuationZone* AttenuationImpl::GetShape() const
     {
         return _shape.get();
     }
 
-    const Curve& Attenuation::GetGainCurve() const
+    bool AttenuationImpl::LoadDefinition(const AttenuationDefinition* definition, EngineInternalState* state)
     {
-        return _gainCurve;
-    }
-
-    double Attenuation::GetMaxDistance() const
-    {
-        return _maxDistance;
-    }
-
-    bool Attenuation::LoadDefinition(const AttenuationDefinition* definition, EngineInternalState* state)
-    {
-        _id = definition->id();
+        m_id = definition->id();
         _name = definition->name()->str();
 
         _maxDistance = definition->max_distance();
 
         _gainCurve.Initialize(definition->gain_curve());
 
-        _shape.reset(AttenuationZone::Create(definition->shape()));
+        _shape.reset(AttenuationZoneImpl::Create(definition->shape()));
 
         return true;
     }
 
-    const AttenuationDefinition* Attenuation::GetDefinition() const
+    const AttenuationDefinition* AttenuationImpl::GetDefinition() const
     {
-        return GetAttenuationDefinition(_source.c_str());
+        return GetAttenuationDefinition(m_source.c_str());
     }
 } // namespace SparkyStudios::Audio::Amplitude

@@ -80,7 +80,7 @@ jobs:
       - name: Setup vcpkg
         uses: lukka/run-vcpkg@v11.2
         with:
-          vcpkgGitCommitId: f7423ee180c4b7f40d43402c2feb3859161ef625
+          vcpkgGitCommitId: 198d68dbcc6c907cb3d0b9b1d93c3df6ecf93c62
 
       - name: Find flatc version
         if: startsWith(matrix.config.os, 'ubuntu') || startsWith(matrix.config.os, 'macos')

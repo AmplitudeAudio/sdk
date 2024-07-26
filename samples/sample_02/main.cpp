@@ -313,7 +313,7 @@ void SampleState::UpdateIcons(float delta_time)
         UpdateIconState(&icon, delta_time);
         AmVec3 location = AM_V3(icon.location.X, icon.location.Y, 0.0f);
         icon.listener.SetLocation(location);
-        icon.listener.SetOrientation(AM_V3(0, 0, -1), AM_V3(0, 1, 0));
+        icon.listener.SetOrientation(Orientation::Zero());
     }
 }
 

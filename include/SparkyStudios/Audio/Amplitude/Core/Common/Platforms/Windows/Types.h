@@ -14,8 +14,8 @@
 
 #pragma once
 
-#ifndef SS_AMPLITUDE_AUDIO_WINDOWS_TYPES_H
-#define SS_AMPLITUDE_AUDIO_WINDOWS_TYPES_H
+#ifndef _AM_CORE_COMMON_PLATFORMS_WINDOWS_TYPES_H
+#define _AM_CORE_COMMON_PLATFORMS_WINDOWS_TYPES_H
 
 #if defined(_MSC_VER) && _MSC_VER < 1600
     typedef unsigned __int64        uint64_t;
@@ -89,4 +89,4 @@ namespace SparkyStudios::Audio::Amplitude
     typedef FILE*                   AmFileHandle;
 } // namespace SparkyStudios::Audio::Amplitude
 
-#endif // SS_AMPLITUDE_AUDIO_WINDOWS_TYPES_H
+#endif // _AM_CORE_COMMON_PLATFORMS_WINDOWS_TYPES_H

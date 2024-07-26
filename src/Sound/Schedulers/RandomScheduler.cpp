@@ -14,10 +14,9 @@
 
 #include <cstdlib>
 
-#include <SparkyStudios/Audio/Amplitude/Core/Engine.h>
-
 #include <SparkyStudios/Audio/Amplitude/Sound/Sound.h>
 
+#include <Core/Engine.h>
 #include <Sound/Schedulers/RandomScheduler.h>
 
 #include "collection_definition_generated.h"

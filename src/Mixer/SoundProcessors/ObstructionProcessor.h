@@ -24,16 +24,21 @@
 
 namespace SparkyStudios::Audio::Amplitude
 {
-    static std::map<AmObjectID, FilterInstance*> gObstructionFilters = {};
-
     class ObstructionProcessorInstance final : public SoundProcessorInstance
     {
     public:
         ObstructionProcessorInstance()
             : _lpfCurve()
-            , _lpFilter()
+            , _filter()
+            , _obstructionFilters()
         {
             _lpfCurve.SetFader("Exponential");
+        }
+
+        ~ObstructionProcessorInstance() override
+        {
+            for (auto& [soundId, filter] : _obstructionFilters)
+                _filter.DestroyInstance(filter);
         }
 
         void Process(
@@ -43,9 +48,9 @@ namespace SparkyStudios::Audio::Amplitude
             AmSize bufferSize,
             AmUInt16 channels,
             AmUInt32 sampleRate,
-            SoundInstance* sound) override
+            const AmplimixLayer* layer) override
         {
-            const float obstruction = sound->GetObstruction();
+            const float obstruction = layer->GetObstruction();
 
             if (out != in)
                 std::memcpy(out, in, bufferSize);
@@ -57,22 +62,24 @@ namespace SparkyStudios::Audio::Amplitude
             _lpfCurve.SetStart({ 0, sampleRate / 2.0f });
             _lpfCurve.SetEnd({ 1, sampleRate / 2000.0f });
 
-            const auto& lpfCurve = amEngine->GetState()->obstruction_config.lpf;
-            const auto& gainCurve = amEngine->GetState()->obstruction_config.gain;
+            const auto& lpfCurve = amEngine->GetObstructionLowPassCurve();
+            const auto& gainCurve = amEngine->GetObstructionGainCurve();
 
             if (const AmReal32 lpf = lpfCurve.Get(obstruction); lpf > 0)
             {
-                if (!gObstructionFilters.contains(sound->GetId()))
+                const AmUInt64 id = layer->GetId();
+
+                if (!_obstructionFilters.contains(id))
                 {
-                    _lpFilter.InitLowPass(std::ceil(_lpfCurve.Get(lpf)), 0.5f);
-                    gObstructionFilters[sound->GetId()] = _lpFilter.CreateInstance();
+                    _filter.InitLowPass(std::ceil(_lpfCurve.Get(lpf)), 0.5f);
+                    _obstructionFilters[id] = _filter.CreateInstance();
                 }
 
                 // Update the filter coefficients
-                gObstructionFilters[sound->GetId()]->SetFilterParameter(BiquadResonantFilter::ATTRIBUTE_FREQUENCY, _lpfCurve.Get(lpf));
+                _obstructionFilters[id]->SetFilterParameter(BiquadResonantFilter::ATTRIBUTE_FREQUENCY, _lpfCurve.Get(lpf));
 
                 // Apply Low Pass Filter
-                gObstructionFilters[sound->GetId()]->Process(out, frames, bufferSize, channels, sampleRate);
+                _obstructionFilters[id]->Process(out, frames, bufferSize, channels, sampleRate);
             }
 
             const AmReal32 gain = gainCurve.Get(obstruction);
@@ -102,18 +109,20 @@ namespace SparkyStudios::Audio::Amplitude
 #endif // AM_SIMD_INTRINSICS
         }
 
-        void Cleanup(SoundInstance* sound) override
+        void Cleanup(const AmplimixLayer* layer) override
         {
-            if (!gObstructionFilters.contains(sound->GetId()))
+            if (!_obstructionFilters.contains(layer->GetId()))
                 return;
 
-            _lpFilter.DestroyInstance(gObstructionFilters[sound->GetId()]);
-            gObstructionFilters.erase(sound->GetId());
+            _filter.DestroyInstance(_obstructionFilters[layer->GetId()]);
+            _obstructionFilters.erase(layer->GetId());
         }
 
     private:
         CurvePart _lpfCurve;
-        BiquadResonantFilter _lpFilter;
+        BiquadResonantFilter _filter;
+
+        std::map<AmObjectID, FilterInstance*> _obstructionFilters;
     };
 
     class ObstructionProcessor final : public SoundProcessor

@@ -59,7 +59,7 @@ namespace SparkyStudios::Audio::Amplitude
         /**
          * @brief The angle of rotation around the Z-axis in radians following the ZYX convention.
          */
-        [[nodiscard]] AM_INLINE(AmReal32) GetYaw() const
+        [[nodiscard]] AM_INLINE AmReal32 GetYaw() const
         {
             return _yaw;
         }
@@ -67,7 +67,7 @@ namespace SparkyStudios::Audio::Amplitude
         /**
          * @brief The angle of rotation around the Y-axis in radians following the ZYX convention.
          */
-        [[nodiscard]] AM_INLINE(AmReal32) GetPitch() const
+        [[nodiscard]] AM_INLINE AmReal32 GetPitch() const
         {
             return _pitch;
         }
@@ -75,7 +75,7 @@ namespace SparkyStudios::Audio::Amplitude
         /**
          * @brief The angle of rotation around the X-axis in radians following the ZYX convention.
          */
-        [[nodiscard]] AM_INLINE(AmReal32) GetRoll() const
+        [[nodiscard]] AM_INLINE AmReal32 GetRoll() const
         {
             return _roll;
         }
@@ -83,7 +83,7 @@ namespace SparkyStudios::Audio::Amplitude
         /**
          * @brief The forward vector of the orientation.
          */
-        [[nodiscard]] AM_INLINE(AmVec3) GetForward() const
+        [[nodiscard]] AM_INLINE AmVec3 GetForward() const
         {
             return _forward;
         }
@@ -91,7 +91,7 @@ namespace SparkyStudios::Audio::Amplitude
         /**
          * @brief The up vector of the orientation.
          */
-        [[nodiscard]] AM_INLINE(AmVec3) GetUp() const
+        [[nodiscard]] AM_INLINE AmVec3 GetUp() const
         {
             return _up;
         }
@@ -99,7 +99,7 @@ namespace SparkyStudios::Audio::Amplitude
         /**
          * @brief The angle of rotation around the Z-axis in radians following the ZYZ convention.
          */
-        [[nodiscard]] AM_INLINE(AmReal32) GetAlpha() const
+        [[nodiscard]] AM_INLINE AmReal32 GetAlpha() const
         {
             return _alpha;
         }
@@ -107,7 +107,7 @@ namespace SparkyStudios::Audio::Amplitude
         /**
          * @brief The angle of rotation around the Y-axis in radians following the ZYZ convention.
          */
-        [[nodiscard]] AM_INLINE(AmReal32) GetBeta() const
+        [[nodiscard]] AM_INLINE AmReal32 GetBeta() const
         {
             return _beta;
         }
@@ -115,7 +115,7 @@ namespace SparkyStudios::Audio::Amplitude
         /**
          * @brief The angle of rotation around the new Z-axis in radians following the ZYZ convention.
          */
-        [[nodiscard]] AM_INLINE(AmReal32) GetGamma() const
+        [[nodiscard]] AM_INLINE AmReal32 GetGamma() const
         {
             return _gamma;
         }
@@ -123,7 +123,7 @@ namespace SparkyStudios::Audio::Amplitude
         /**
          * @brief The quaternion representation of the orientation.
          */
-        [[nodiscard]] AM_INLINE(AmQuat) GetQuaternion() const
+        [[nodiscard]] AM_INLINE AmQuat GetQuaternion() const
         {
             return _quaternion;
         }

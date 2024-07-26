@@ -25,24 +25,11 @@ namespace SparkyStudios::Audio::Amplitude
         , _inverseMatrix(AM_M4D(1.0f))
         , _obstruction(0.0f)
         , _occlusion(0.0f)
+        , _directivity(0.0f)
+        , _directivitySharpness(1.0f)
         , _environmentFactors()
         , _playingSoundList(&ChannelInternalState::entity_node)
     {}
-
-    AmEntityID EntityInternalState::GetId() const
-    {
-        return _id;
-    }
-
-    void EntityInternalState::SetId(AmEntityID id)
-    {
-        _id = id;
-    }
-
-    const AmVec3& EntityInternalState::GetVelocity() const
-    {
-        return _velocity;
-    }
 
     void EntityInternalState::SetLocation(const AmVec3& location)
     {
@@ -50,34 +37,10 @@ namespace SparkyStudios::Audio::Amplitude
         _location = location;
     }
 
-    const AmVec3& EntityInternalState::GetLocation() const
+    void EntityInternalState::SetDirectivity(AmReal32 directivity, AmReal32 directivitySharpness)
     {
-        return _location;
-    }
-
-    void EntityInternalState::SetOrientation(const Orientation& orientation)
-    {
-        _orientation = orientation;
-    }
-
-    AmVec3 EntityInternalState::GetDirection() const
-    {
-        return _orientation.GetForward();
-    }
-
-    AmVec3 EntityInternalState::GetUp() const
-    {
-        return _orientation.GetUp();
-    }
-
-    const Orientation& EntityInternalState::GetOrientation() const
-    {
-        return _orientation;
-    }
-
-    const AmMat4& EntityInternalState::GetInverseMatrix() const
-    {
-        return _inverseMatrix;
+        _directivity = directivity;
+        _directivitySharpness = directivitySharpness;
     }
 
     void EntityInternalState::Update()
@@ -90,28 +53,14 @@ namespace SparkyStudios::Audio::Amplitude
     {
         _obstruction = obstruction;
         for (auto&& sound : _playingSoundList)
-        {
             sound.SetObstruction(obstruction);
-        }
     }
 
     void EntityInternalState::SetOcclusion(AmReal32 occlusion)
     {
         _occlusion = occlusion;
         for (auto&& sound : _playingSoundList)
-        {
             sound.SetOcclusion(occlusion);
-        }
-    }
-
-    AmReal32 EntityInternalState::GetObstruction() const
-    {
-        return _obstruction;
-    }
-
-    AmReal32 EntityInternalState::GetOcclusion() const
-    {
-        return _occlusion;
     }
 
     void EntityInternalState::SetEnvironmentFactor(AmEnvironmentID environment, AmReal32 factor)
@@ -122,15 +71,8 @@ namespace SparkyStudios::Audio::Amplitude
     AmReal32 EntityInternalState::GetEnvironmentFactor(AmEnvironmentID environment)
     {
         if (!_environmentFactors.contains(environment))
-        {
             _environmentFactors[environment] = 0.0f;
-        }
 
         return _environmentFactors[environment];
-    }
-
-    const std::map<AmEnvironmentID, AmReal32>& EntityInternalState::GetEnvironments() const
-    {
-        return _environmentFactors;
     }
 } // namespace SparkyStudios::Audio::Amplitude

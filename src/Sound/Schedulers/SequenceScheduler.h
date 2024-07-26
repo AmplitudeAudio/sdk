@@ -19,13 +19,13 @@
 
 #include <SparkyStudios/Audio/Amplitude/Core/Common.h>
 
-#include <SparkyStudios/Audio/Amplitude/Sound/Scheduler.h>
+#include <Sound/Scheduler.h>
 
 namespace SparkyStudios::Audio::Amplitude
 {
     struct SequenceSoundSchedulerConfig;
 
-    class SequenceScheduler : public Scheduler
+    class SequenceScheduler final : public Scheduler
     {
     public:
         SequenceScheduler();

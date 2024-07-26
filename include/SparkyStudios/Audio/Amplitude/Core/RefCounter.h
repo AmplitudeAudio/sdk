@@ -14,8 +14,8 @@
 
 #pragma once
 
-#ifndef SPARK_AUDIO_REF_COUNTER_H
-#define SPARK_AUDIO_REF_COUNTER_H
+#ifndef _AM_CORE_REF_COUNTER_H
+#define _AM_CORE_REF_COUNTER_H
 
 #include <SparkyStudios/Audio/Amplitude/Core/Common.h>
 
@@ -55,7 +55,7 @@ namespace SparkyStudios::Audio::Amplitude
          *
          * @return The current number of references.
          */
-        [[nodiscard]] AM_INLINE(AmInt32) GetCount() const
+        [[nodiscard]] AM_INLINE AmInt32 GetCount() const
         {
             return _count;
         }
@@ -65,4 +65,4 @@ namespace SparkyStudios::Audio::Amplitude
     };
 } // namespace SparkyStudios::Audio::Amplitude
 
-#endif // SPARK_AUDIO_REF_COUNTER_H
+#endif // _AM_CORE_REF_COUNTER_H

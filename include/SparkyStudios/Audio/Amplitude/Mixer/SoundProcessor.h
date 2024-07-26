@@ -14,11 +14,11 @@
 
 #pragma once
 
-#ifndef SS_AMPLITUDE_AUDIO_SOUND_PROCESSOR_H
-#define SS_AMPLITUDE_AUDIO_SOUND_PROCESSOR_H
+#ifndef _AM_MIXER_SOUND_PROCESSOR_H
+#define _AM_MIXER_SOUND_PROCESSOR_H
 
 #include <SparkyStudios/Audio/Amplitude/Core/Common.h>
-#include <SparkyStudios/Audio/Amplitude/Sound/Sound.h>
+#include <SparkyStudios/Audio/Amplitude/Core/Playback/Channel.h>
 
 namespace SparkyStudios::Audio::Amplitude
 {
@@ -35,7 +35,7 @@ namespace SparkyStudios::Audio::Amplitude
             AmSize bufferSize,
             AmUInt16 channels,
             AmUInt32 sampleRate,
-            SoundInstance* sound) = 0;
+            const AmplimixLayer* layer) = 0;
 
         virtual AmSize GetOutputBufferSize(AmUInt64 frames, AmSize bufferSize, AmUInt16 channels, AmUInt32 sampleRate);
 
@@ -46,9 +46,9 @@ namespace SparkyStudios::Audio::Amplitude
          * @note This means that the sound instance is stopped and will
          * be removed from the Engine.
          *
-         * @param sound The sound instance to clean up.
+         * @param layer The sound instance to clean up.
          */
-        virtual void Cleanup(SoundInstance* sound);
+        virtual void Cleanup(const AmplimixLayer* layer);
     };
 
     class AM_API_PUBLIC SoundProcessor
@@ -128,7 +128,7 @@ namespace SparkyStudios::Audio::Amplitude
          *
          * This function is mainly used for internal purposes. Its
          * called before the Engine initialization, to discard the
-         * registration of new codecs after the engine is fully loaded.
+         * registration of new sound processors after the engine is fully loaded.
          */
         static void LockRegistry();
 
@@ -137,7 +137,7 @@ namespace SparkyStudios::Audio::Amplitude
          *
          * This function is mainly used for internal purposes. Its
          * called after the Engine deinitialization, to allow the
-         * registration of new divers after the engine is fully unloaded.
+         * registration of new sound processors after the engine is fully unloaded.
          */
         static void UnlockRegistry();
 
@@ -173,7 +173,7 @@ namespace SparkyStudios::Audio::Amplitude
             AmSize bufferSize,
             AmUInt16 channels,
             AmUInt32 sampleRate,
-            SoundInstance* sound) override;
+            const AmplimixLayer* layer) override;
 
     private:
         SoundProcessorInstance* _wetProcessor;
@@ -184,4 +184,4 @@ namespace SparkyStudios::Audio::Amplitude
     };
 } // namespace SparkyStudios::Audio::Amplitude
 
-#endif // SS_AMPLITUDE_AUDIO_SOUND_PROCESSOR_H
+#endif // _AM_MIXER_SOUND_PROCESSOR_H

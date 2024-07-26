@@ -14,128 +14,17 @@
 
 #pragma once
 
-#ifndef SS_AMPLITUDE_AUDIO_EVENT_H
-#define SS_AMPLITUDE_AUDIO_EVENT_H
+#ifndef _AM_CORE_EVENT_H
+#define _AM_CORE_EVENT_H
 
 #include <SparkyStudios/Audio/Amplitude/Core/Asset.h>
 #include <SparkyStudios/Audio/Amplitude/Core/Common.h>
 #include <SparkyStudios/Audio/Amplitude/Core/Entity.h>
 #include <SparkyStudios/Audio/Amplitude/Core/Playback/Channel.h>
-#include <SparkyStudios/Audio/Amplitude/Core/RefCounter.h>
 
 namespace SparkyStudios::Audio::Amplitude
 {
-    struct EngineInternalState;
-
-    struct EventDefinition;
-    struct EventActionDefinition;
-
-    class Event;
     class EventInstance;
-
-    /**
-     * @brief An event action that will be applied when
-     * the parent event will be triggered.
-     */
-    class AM_API_PUBLIC EventAction
-    {
-        friend class Event;
-
-    public:
-        EventAction();
-        explicit EventAction(Event* parent);
-
-        /**
-         * @brief Initialize the event action from a definition.
-         *
-         * @param definition The definition to load data from.
-         */
-        void Initialize(const EventActionDefinition* definition);
-
-        /**
-         * @brief Runs the action in entity scope.
-         *
-         * @param entity The entity which trigger the event.
-         */
-        void Run(const Entity& entity);
-
-        /**
-         * @brief Runs the action in world scope.
-         */
-        void Run();
-
-        /**
-         * @brief Apply a frame update on this EventAction.
-         *
-         * @param delta_time The time elapsed since the last frame.
-         *
-         * @return true if the event action should be updated on the next frame, false otherwise.
-         */
-        void AdvanceFrame(AmTime delta_time);
-
-        /**
-         * @brief Checks if the event action is active and currently executing.
-         *
-         * @return true if the event action is active and currently executing, false otherwise.
-         */
-        [[nodiscard]] bool IsExecuting() const;
-
-    private:
-        void ExecutePlay(const Entity& entity);
-        void ExecutePause(const Entity& entity);
-        void ExecuteResume(const Entity& entity);
-        void ExecuteStop(const Entity& entity);
-        void ExecuteSeek(const Entity& entity);
-        void ExecuteMute(const Entity& entity, bool mute);
-        void ExecuteWait(const Entity& entity);
-
-        bool _active;
-        AmInt8 _type;
-        AmInt8 _scope;
-        std::vector<AmObjectID> _targets;
-
-        std::vector<Channel> _playingChannels;
-        AmTime _accumulatedTime;
-
-        Event* _parent;
-    };
-
-    /**
-     * @brief An event is mainly used to apply a set of actions at a given time in game.
-     *
-     * This Event class is only referenced through an EventCanceler object and it is
-     * managed by the Engine. Events can be triggered at runtime by calling the
-     * <code>Engine::Trigger()</code> method using the name of the event.
-     */
-    class AM_API_PUBLIC Event final : public Asset<AmEventID, EventDefinition>
-    {
-        friend class EventInstance;
-
-    public:
-        /**
-         * @brief Creates an unitialized event.
-         */
-        Event();
-
-        /**
-         * @brief Destroys the event asset and release all related resources.
-         */
-        ~Event() override;
-
-        /**
-         * @brief Triggers the event for the specified engine state.
-         *
-         * @param entity The which trigger the event.
-         */
-        [[nodiscard]] EventInstance Trigger(const Entity& entity) const;
-
-        bool LoadDefinition(const EventDefinition* definition, EngineInternalState* state) override;
-        [[nodiscard]] const EventDefinition* GetDefinition() const override;
-
-    private:
-        AmInt8 _runMode;
-        std::vector<EventAction> _actions;
-    };
 
     /**
      * @brief A class which can cancel a triggered Event.
@@ -150,7 +39,19 @@ namespace SparkyStudios::Audio::Amplitude
          */
         EventCanceler();
 
+        /**
+         * @brief Creates an @c EventCanceler which will abort
+         * the given event once cancelled.
+         *
+         * @param event The event instance to cancel.
+         */
         explicit EventCanceler(EventInstance* event);
+
+        /**
+         * @brief Destroys the event canceller and releases
+         * the wrapped event instance.
+         */
+        ~EventCanceler();
 
         /**
          * @brief Checks whether this EventCanceler has been initialized.
@@ -176,6 +77,17 @@ namespace SparkyStudios::Audio::Amplitude
     };
 
     /**
+     * @brief An event is mainly used to apply a set of actions at a given time in game.
+     *
+     * This Event class is only referenced through an EventCanceler object and it is
+     * managed by the Engine. Events can be triggered at runtime by calling the
+     * <code>Engine::Trigger()</code> method using the name of the event.
+     */
+    class AM_API_PUBLIC Event : public Asset<AmEventID>
+    {
+    };
+
+    /**
      * @brief A triggered event.
      *
      * EventInstance are created when an Event is effectively triggered. They represent
@@ -183,44 +95,28 @@ namespace SparkyStudios::Audio::Amplitude
      */
     class AM_API_PUBLIC EventInstance
     {
-        friend class Event;
-
     public:
-        EventInstance();
-        explicit EventInstance(const Event* parent);
+        virtual ~EventInstance() = default;
 
         /**
-         * @brief Apply a frame update on this Event.
+         * @brief Applies a frame update on this Event.
          *
-         * @param delta_time The time elapsed since the last frame.
+         * @param deltaTime The time elapsed since the last frame.
          */
-        void AdvanceFrame(AmTime delta_time);
+        virtual void AdvanceFrame(AmTime deltaTime) = 0;
 
         /**
          * @brief Returns whether thisEvent is running.
          *
          * @return true if the event is running, false otherwise.
          */
-        [[nodiscard]] bool IsRunning() const;
+        [[nodiscard]] virtual bool IsRunning() const = 0;
 
         /**
-         * @brief Abort the execution of this Event.
+         * @brief Aborts the execution of this Event.
          */
-        void Abort();
-
-    private:
-        /**
-         * @brief Starts this Event.
-         */
-        void Start(const Entity& entity);
-
-        AmInt8 _runMode;
-        std::vector<EventAction> _actions;
-        bool _running;
-
-        size_t _runningActionIndex;
-        Entity _entity;
+        virtual void Abort() = 0;
     };
 } // namespace SparkyStudios::Audio::Amplitude
 
-#endif // SS_AMPLITUDE_AUDIO_EVENT_H
+#endif // _AM_CORE_EVENT_H

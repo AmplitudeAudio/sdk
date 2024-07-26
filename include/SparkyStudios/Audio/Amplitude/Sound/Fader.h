@@ -14,8 +14,8 @@
 
 #pragma once
 
-#ifndef SS_AMPLITUDE_AUDIO_FADER_H
-#define SS_AMPLITUDE_AUDIO_FADER_H
+#ifndef _AM_SOUND_FADER_H
+#define _AM_SOUND_FADER_H
 
 #include <SparkyStudios/Audio/Amplitude/Core/Common.h>
 
@@ -23,8 +23,6 @@
 
 namespace SparkyStudios::Audio::Amplitude
 {
-    class Mixer;
-
     /**
      * @brief A Fader instance. An object of this class will be created each time
      * a Fader is requested.
@@ -140,7 +138,7 @@ namespace SparkyStudios::Audio::Amplitude
          *
          * @return The Fader state.
          */
-        [[nodiscard]] AM_INLINE(AM_FADER_STATE) GetState() const
+        [[nodiscard]] AM_INLINE AM_FADER_STATE GetState() const
         {
             return m_state;
         }
@@ -150,7 +148,7 @@ namespace SparkyStudios::Audio::Amplitude
          *
          * @param state The state to set.
          */
-        AM_INLINE(void) SetState(AM_FADER_STATE state)
+        AM_INLINE void SetState(AM_FADER_STATE state)
         {
             m_state = state;
         }
@@ -189,15 +187,13 @@ namespace SparkyStudios::Audio::Amplitude
      */
     class AM_API_PUBLIC Fader
     {
-        friend class Mixer;
-
     public:
         /**
          * @brief Create a new Fader instance.
          *
          * @param name The Fader name. eg. "MiniAudioLinear".
          */
-        explicit Fader(std::string name);
+        explicit Fader(AmString name);
 
         /**
          * @brief Default Fader constructor.
@@ -226,7 +222,7 @@ namespace SparkyStudios::Audio::Amplitude
          *
          * @return The name of this Fader.
          */
-        [[nodiscard]] const std::string& GetName() const;
+        [[nodiscard]] const AmString& GetName() const;
 
         /**
          * @brief Gets the control points of the transition curve used by this Fader.
@@ -257,7 +253,7 @@ namespace SparkyStudios::Audio::Amplitude
          *
          * @return The Fader with the given name, or NULL if none.
          */
-        static FaderInstance* Construct(const std::string& name);
+        static FaderInstance* Construct(const AmString& name);
 
         /**
          * @brief Destroys the given Fader instance.
@@ -265,7 +261,7 @@ namespace SparkyStudios::Audio::Amplitude
          * @param name The name of the Fader.
          * @param instance The Fader instance to destroy.
          */
-        static void Destruct(const std::string& name, FaderInstance* instance);
+        static void Destruct(const AmString& name, FaderInstance* instance);
 
         /**
          * @brief Locks the faders registry.
@@ -290,21 +286,21 @@ namespace SparkyStudios::Audio::Amplitude
          *
          * @return The registry of Faders.
          */
-        static const std::map<std::string, Fader*>& GetRegistry();
+        static const std::map<AmString, Fader*>& GetRegistry();
 
         /**
          * @brief Look up a Fader by name.
          *
          * @return The Fader with the given name, or NULL if none.
          */
-        static Fader* Find(const std::string& name);
+        static Fader* Find(const AmString& name);
 
     protected:
         /**
          * @brief The name of this Fader.
          */
-        std::string m_name;
+        AmString m_name;
     };
 } // namespace SparkyStudios::Audio::Amplitude
 
-#endif // SS_AMPLITUDE_AUDIO_FADER_H
+#endif // _AM_SOUND_FADER_H

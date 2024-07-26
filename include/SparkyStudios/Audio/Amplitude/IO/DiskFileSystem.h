@@ -14,8 +14,8 @@
 
 #pragma once
 
-#ifndef SS_AMPLITUDE_AUDIO_IO_DISKFILESYSTEM_H
-#define SS_AMPLITUDE_AUDIO_IO_DISKFILESYSTEM_H
+#ifndef _AM_IO_DISK_FILESYSTEM_H
+#define _AM_IO_DISK_FILESYSTEM_H
 
 #include <filesystem>
 
@@ -95,4 +95,4 @@ namespace SparkyStudios::Audio::Amplitude
     };
 } // namespace SparkyStudios::Audio::Amplitude
 
-#endif // SS_AMPLITUDE_AUDIO_IO_DISKFILESYSTEM_H
+#endif // _AM_IO_DISK_FILESYSTEM_H

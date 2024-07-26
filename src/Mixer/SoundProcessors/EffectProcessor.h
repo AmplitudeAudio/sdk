@@ -31,9 +31,9 @@ namespace SparkyStudios::Audio::Amplitude
             AmSize bufferSize,
             AmUInt16 channels,
             AmUInt32 sampleRate,
-            SoundInstance* sound) override
+            const AmplimixLayer* layer) override
         {
-            const EffectInstance* effect = sound->GetEffect();
+            const EffectInstance* effect = layer->GetEffect();
 
             if (out != in)
                 std::memcpy(out, in, bufferSize);

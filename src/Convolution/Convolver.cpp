@@ -21,7 +21,7 @@
 
 #include <Utils/Utils.h>
 
-namespace SparkyStudios::Audio::Amplitude::Convolution
+namespace SparkyStudios::Audio::Amplitude
 {
     Convolver::Convolver()
         : _blockSize(0)
@@ -69,6 +69,16 @@ namespace SparkyStudios::Audio::Amplitude::Convolution
         _inputBufferFill = 0;
     }
 
+    AmSize Convolver::GetSegmentSize() const
+    {
+        return _segSize;
+    }
+
+    AmSize Convolver::GetSegmentCount() const
+    {
+        return _segCount;
+    }
+
     bool Convolver::Init(AmSize blockSize, const AmAudioSample* ir, AmSize irLen)
     {
         Reset();
@@ -85,7 +95,7 @@ namespace SparkyStudios::Audio::Amplitude::Convolution
 
         _blockSize = NextPowerOf2(blockSize);
         _segSize = 2 * _blockSize;
-        _segCount = static_cast<AmSize>(std::ceil(static_cast<float>(irLen) / static_cast<float>(_blockSize)));
+        _segCount = static_cast<AmSize>(std::ceil(static_cast<AmReal32>(irLen) / static_cast<AmReal32>(_blockSize)));
         _fftComplexSize = FFT::GetOutputSize(_segSize);
 
         // FFT
@@ -108,8 +118,8 @@ namespace SparkyStudios::Audio::Amplitude::Convolution
         }
 
         // Prepare convolution buffers
-        _preMultiplied.Resize(_fftComplexSize);
-        _conv.Resize(_fftComplexSize);
+        _preMultiplied.Resize(_fftComplexSize, true);
+        _conv.Resize(_fftComplexSize, true);
         _overlap.Resize(_blockSize);
 
         // Prepare input buffer
@@ -139,7 +149,7 @@ namespace SparkyStudios::Audio::Amplitude::Convolution
             std::memcpy(_inputBuffer.GetBuffer() + inputBufferPos, input + processed, processing * sizeof(AmAudioSample));
 
             // Forward FFT
-            CopyAndPad(_fftBuffer, &_inputBuffer[0], _blockSize);
+            CopyAndPad(_fftBuffer, _inputBuffer.GetBuffer(), processing);
             _fft.Forward(_fftBuffer.GetBuffer(), *_segments[_current]);
 
             // Complex multiplication
@@ -154,7 +164,7 @@ namespace SparkyStudios::Audio::Amplitude::Convolution
                 }
             }
             _conv.CopyFrom(_preMultiplied);
-            ComplexMultiplyAccumulate(_conv, *_segments[_current], *_segmentsIR[0]);
+            ComplexMultiplyAccumulate(_conv, *_segmentsIR[0], *_segments[_current]);
 
             // Backward FFT
             _fft.Backward(_fftBuffer.GetBuffer(), _conv);
@@ -180,4 +190,4 @@ namespace SparkyStudios::Audio::Amplitude::Convolution
             processed += processing;
         }
     }
-} // namespace SparkyStudios::Audio::Amplitude::Convolution
+} // namespace SparkyStudios::Audio::Amplitude

@@ -34,7 +34,7 @@ namespace Freeverb
         Comb();
 
         void SetBuffer(AmReal32Buffer buffer, AmInt32 size);
-        AM_INLINE(AmReal32) Process(AmReal32 input);
+        AM_INLINE AmReal32 Process(AmReal32 input);
         void Mute();
         void SetDamp(AmReal32 value);
         AmReal32 GetDamp();
@@ -53,7 +53,7 @@ namespace Freeverb
 
     // Big to inline - but crucial for speed
 
-    AM_INLINE(AmReal32) Comb::Process(AmReal32 input)
+    AM_INLINE AmReal32 Comb::Process(AmReal32 input)
     {
         AmReal32 output;
 

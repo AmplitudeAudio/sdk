@@ -14,13 +14,10 @@
 
 #pragma once
 
-#ifndef SS_AMPLITUDE_AUDIO_SOUND_OBJECT_H
-#define SS_AMPLITUDE_AUDIO_SOUND_OBJECT_H
+#ifndef _AM_SOUND_SOUND_OBJECT_H
+#define _AM_SOUND_SOUND_OBJECT_H
 
-#include <SparkyStudios/Audio/Amplitude/Core/Common.h>
 #include <SparkyStudios/Audio/Amplitude/Core/Playback/Bus.h>
-
-#include <SparkyStudios/Audio/Amplitude/IO/Resource.h>
 
 #include <SparkyStudios/Audio/Amplitude/Sound/Attenuation.h>
 #include <SparkyStudios/Audio/Amplitude/Sound/Effect.h>
@@ -28,15 +25,12 @@
 
 namespace SparkyStudios::Audio::Amplitude
 {
-    struct EngineInternalState;
-
     /**
      * @brief The SoundObject class is the base class for all sound objects.
      */
     class AM_API_PUBLIC SoundObject
     {
     public:
-        SoundObject();
         virtual ~SoundObject() = default;
 
         /**
@@ -44,54 +38,43 @@ namespace SparkyStudios::Audio::Amplitude
          *
          * @return The sound object gain.
          */
-        [[nodiscard]] virtual const RtpcValue& GetGain() const;
+        [[nodiscard]] virtual const RtpcValue& GetGain() const = 0;
 
         /**
          * @brief Gets the actual pitch of the sound object.
          *
          * @return The sound object pitch.
          */
-        [[nodiscard]] virtual const RtpcValue& GetPitch() const;
+        [[nodiscard]] virtual const RtpcValue& GetPitch() const = 0;
 
         /**
          * @brief Gets the actual priority of the sound object.
          *
          * @return The sound object priority.
          */
-        [[nodiscard]] virtual const RtpcValue& GetPriority() const;
+        [[nodiscard]] virtual const RtpcValue& GetPriority() const = 0;
 
         /**
          * @brief Get the Effect object associated with this sound object.
          *
          * @return The Effect object.
          */
-        [[nodiscard]] virtual const Effect* GetEffect() const;
+        [[nodiscard]] virtual const Effect* GetEffect() const = 0;
 
         /**
          * @brief Get the Attenuation object associated with this sound object.
          *
          * @return The Attenuation object.
          */
-        [[nodiscard]] virtual const Attenuation* GetAttenuation() const;
+        [[nodiscard]] virtual const Attenuation* GetAttenuation() const = 0;
 
         /**
          * @brief Return the bus this sound object will play on.
          *
          * @return The bus this sound object will play on.
          */
-        [[nodiscard]] virtual Bus GetBus() const;
-
-    protected:
-        // The bus this sound object will play on.
-        BusInternalState* m_bus;
-
-        RtpcValue m_gain;
-        RtpcValue m_pitch;
-        RtpcValue m_priority;
-
-        Effect* m_effect;
-        Attenuation* m_attenuation;
+        [[nodiscard]] virtual Bus GetBus() const = 0;
     };
 } // namespace SparkyStudios::Audio::Amplitude
 
-#endif // SS_AMPLITUDE_AUDIO_SOUND_OBJECT_H
+#endif // _AM_SOUND_SOUND_OBJECT_H

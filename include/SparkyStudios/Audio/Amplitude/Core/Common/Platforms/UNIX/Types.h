@@ -14,8 +14,8 @@
 
 #pragma once
 
-#ifndef SS_AMPLITUDE_AUDIO_UNIX_TYPES_H
-#define SS_AMPLITUDE_AUDIO_UNIX_TYPES_H
+#ifndef _AM_CORE_COMMON_PLATFORMS_UNIX_TYPES_H
+#define _AM_CORE_COMMON_PLATFORMS_UNIX_TYPES_H
 
 #include <cstdint>
 #include <cstdio>
@@ -84,4 +84,4 @@ namespace SparkyStudios::Audio::Amplitude
     typedef FILE*                   AmFileHandle;
 } // namespace SparkyStudios::Audio::Amplitude
 
-#endif // SS_AMPLITUDE_AUDIO_UNIX_TYPES_H
+#endif // _AM_CORE_COMMON_PLATFORMS_UNIX_TYPES_H

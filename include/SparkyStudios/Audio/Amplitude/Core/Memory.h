@@ -15,8 +15,8 @@
 
 #pragma once
 
-#ifndef SS_AMPLITUDE_AUDIO_MEMORY_H
-#define SS_AMPLITUDE_AUDIO_MEMORY_H
+#ifndef _AM_CORE_MEMORY_H
+#define _AM_CORE_MEMORY_H
 
 #include <SparkyStudios/Audio/Amplitude/Core/Common.h>
 
@@ -548,7 +548,7 @@ namespace SparkyStudios::Audio::Amplitude
             return reinterpret_cast<T>(_address);
         }
 
-        [[nodiscard]] AM_INLINE(AmVoidPtr) Address() const
+        [[nodiscard]] AM_INLINE AmVoidPtr Address() const
         {
             return _address;
         }
@@ -563,7 +563,7 @@ namespace SparkyStudios::Audio::Amplitude
     {
         constexpr am_delete() noexcept = default;
 
-        AM_INLINE(void) operator()(T * asset) const noexcept
+        AM_INLINE void operator()(T * asset) const noexcept
         {
             static_assert(!std::is_void_v<T>, "Cannot delete a void pointer.");
             ampooldelete(Pool, T, asset);
@@ -574,4 +574,4 @@ namespace SparkyStudios::Audio::Amplitude
     using AmUniquePtr = std::unique_ptr<T, am_delete<Pool, T>>;
 } // namespace SparkyStudios::Audio::Amplitude
 
-#endif // SS_AMPLITUDE_AUDIO_MEMORY_H
+#endif // _AM_CORE_MEMORY_H
