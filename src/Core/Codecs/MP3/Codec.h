@@ -14,8 +14,8 @@
 
 #pragma once
 
-#ifndef SS_AMPLITUDE_AUDIO_MP3_CODEC_H
-#define SS_AMPLITUDE_AUDIO_MP3_CODEC_H
+#ifndef _AM_IMPLEMENTATION_CORE_CODECS_MP3_CODEC_H
+#define _AM_IMPLEMENTATION_CORE_CODECS_MP3_CODEC_H
 
 #include <SparkyStudios/Audio/Amplitude/Amplitude.h>
 
@@ -39,9 +39,9 @@ namespace SparkyStudios::Audio::Amplitude
 
             bool Close() override;
 
-            AmUInt64 Load(AmVoidPtr out) override;
+            AmUInt64 Load(AudioBuffer* out) override;
 
-            AmUInt64 Stream(AmVoidPtr out, AmUInt64 offset, AmUInt64 length) override;
+            AmUInt64 Stream(AudioBuffer* out, AmUInt64 bufferOffset, AmUInt64 seekOffset, AmUInt64 length) override;
 
             bool Seek(AmUInt64 offset) override;
 
@@ -64,7 +64,7 @@ namespace SparkyStudios::Audio::Amplitude
 
             bool Close() override;
 
-            AmUInt64 Write(AmVoidPtr in, AmUInt64 offset, AmUInt64 length) override;
+            AmUInt64 Write(AudioBuffer* in, AmUInt64 offset, AmUInt64 length) override;
 
         private:
             bool _initialized;
@@ -89,4 +89,4 @@ namespace SparkyStudios::Audio::Amplitude
     };
 } // namespace SparkyStudios::Audio::Amplitude
 
-#endif // SS_AMPLITUDE_AUDIO_MP3_CODEC_H
+#endif // _AM_IMPLEMENTATION_CORE_CODECS_MP3_CODEC_H

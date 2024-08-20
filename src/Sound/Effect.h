@@ -17,7 +17,9 @@
 #ifndef _AM_IMPLEMENTATION_SOUND_EFFECT_H
 #define _AM_IMPLEMENTATION_SOUND_EFFECT_H
 
+#include <SparkyStudios/Audio/Amplitude/DSP/Filter.h>
 #include <SparkyStudios/Audio/Amplitude/Sound/Effect.h>
+#include <SparkyStudios/Audio/Amplitude/Sound/Rtpc.h>
 
 #include <Core/Asset.h>
 

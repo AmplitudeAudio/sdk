@@ -26,34 +26,44 @@ namespace SparkyStudios::Audio::Amplitude
     class LibsamplerateResamplerInstance final : public ResamplerInstance
     {
     public:
-        void Init(AmUInt16 channelCount, AmUInt32 sampleRateIn, AmUInt32 sampleRateOut, AmUInt64 frameCount) override
+        void Initialize(AmUInt16 channelCount, AmUInt32 sampleRateIn, AmUInt32 sampleRateOut) override
         {
-            _resampler = src_new(SRC_SINC_BEST_QUALITY, channelCount, nullptr);
+            _resampler.resize(channelCount);
+            for (AmUInt16 c = 0; c < channelCount; c++)
+                _resampler[c] = src_new(SRC_SINC_BEST_QUALITY, 1, nullptr);
 
             _numChannels = channelCount;
-            _frameCount = frameCount;
 
             _sampleRateIn = sampleRateIn;
             _sampleRateOut = sampleRateOut;
             _sampleRatio = static_cast<AmReal64>(sampleRateOut) / static_cast<AmReal64>(sampleRateIn);
         }
 
-        bool Process(AmConstAudioSampleBuffer input, AmUInt64& inputFrames, AmAudioSampleBuffer output, AmUInt64& outputFrames) override
+        bool Process(const AudioBuffer& input, AmUInt64& inputFrames, AudioBuffer& output, AmUInt64& outputFrames) override
         {
-            SRC_DATA data;
-            data.data_in = input;
-            data.data_out = output;
-            data.end_of_input = 0;
-            data.input_frames = inputFrames;
-            data.output_frames = outputFrames;
-            data.src_ratio = _sampleRatio;
+            AMPLITUDE_ASSERT(input.GetChannelCount() == _numChannels);
+            AMPLITUDE_ASSERT(output.GetChannelCount() == _numChannels);
 
-            int err = src_process(_resampler, &data);
+            SRC_DATA data;
+            for (AmUInt16 c = 0; c < _numChannels; c++)
+            {
+                data.data_in = input[c].begin();
+                data.data_out = output[c].begin();
+                data.end_of_input = 0;
+                data.input_frames = inputFrames;
+                data.output_frames = outputFrames;
+                data.src_ratio = _sampleRatio;
+
+                int err = src_process(_resampler[c], &data);
+
+                if (err != 0)
+                    return false;
+            }
 
             inputFrames = data.input_frames_used;
             outputFrames = data.output_frames_gen;
 
-            return err == 0;
+            return true;
         }
 
         void SetSampleRate(AmUInt32 sampleRateIn, AmUInt32 sampleRateOut) override
@@ -63,7 +73,8 @@ namespace SparkyStudios::Audio::Amplitude
 
             _sampleRatio = static_cast<AmReal64>(sampleRateOut) / static_cast<AmReal64>(sampleRateIn);
 
-            src_set_ratio(_resampler, _sampleRatio);
+            for (AmUInt16 c = 0; c < _numChannels; c++)
+                src_set_ratio(_resampler[c], _sampleRatio);
         }
 
         [[nodiscard]] AmUInt32 GetSampleRateIn() const override
@@ -81,14 +92,14 @@ namespace SparkyStudios::Audio::Amplitude
             return _numChannels;
         }
 
-        [[nodiscard]] AmUInt64 GetRequiredInputFrameCount(AmUInt64 outputFrameCount) const override
+        [[nodiscard]] AmUInt64 GetRequiredInputFrames(AmUInt64 outputFrameCount) const override
         {
-            return std::ceil(static_cast<AmReal32>(outputFrameCount) / _sampleRatio);
+            return (AmUInt64)(static_cast<AmReal32>(outputFrameCount) / _sampleRatio);
         }
 
-        [[nodiscard]] AmUInt64 GetExpectedOutputFrameCount(AmUInt64 inputFrameCount) const override
+        [[nodiscard]] AmUInt64 GetExpectedOutputFrames(AmUInt64 inputFrameCount) const override
         {
-            return std::ceil(_sampleRatio * static_cast<AmReal32>(inputFrameCount));
+            return (AmUInt64)(_sampleRatio * static_cast<AmReal32>(inputFrameCount));
         }
 
         [[nodiscard]] AmUInt64 GetInputLatency() const override
@@ -103,27 +114,29 @@ namespace SparkyStudios::Audio::Amplitude
 
         void Reset() override
         {
-            src_reset(_resampler);
+            for (AmUInt16 c = 0; c < _numChannels; c++)
+                src_reset(_resampler[c]);
         }
 
         void Clear() override
         {
-            if (_resampler == nullptr)
+            if (_resampler.empty())
                 return;
 
-            src_delete(_resampler);
-            _resampler = nullptr;
+            for (AmUInt16 c = 0; c < _numChannels; c++)
+                src_delete(_resampler[c]);
+
+            _resampler.clear();
         }
 
     private:
         AmUInt16 _numChannels = 0;
-        AmUInt64 _frameCount = 0;
 
         AmUInt32 _sampleRateIn = 0;
         AmUInt32 _sampleRateOut = 0;
         AmReal64 _sampleRatio = 0.0;
 
-        SRC_STATE* _resampler = nullptr;
+        std::vector<SRC_STATE*> _resampler;
     };
 
     class LibsamplerateResampler final : public Resampler

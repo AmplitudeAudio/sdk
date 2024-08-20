@@ -64,6 +64,7 @@ namespace SparkyStudios::Audio::Amplitude
     static AmUniquePtr<MemoryPoolKind::Engine, PassThroughProcessor> sPassThroughProcessorPlugin = nullptr;
     static AmUniquePtr<MemoryPoolKind::Engine, SilenceProcessor> sSilenceProcessorPlugin = nullptr;
     // ---
+    static AmUniquePtr<MemoryPoolKind::Engine, DefaultResampler> sDefaultResamplerPlugin = nullptr;
     static AmUniquePtr<MemoryPoolKind::Engine, LibsamplerateResampler> sLibsamplerateResamplerPlugin = nullptr;
     static AmUniquePtr<MemoryPoolKind::Engine, R8BrainResampler> sR8BrainResamplerPlugin = nullptr;
     // ---
@@ -319,6 +320,7 @@ namespace SparkyStudios::Audio::Amplitude
         sPassThroughProcessorPlugin.reset(ampoolnew(MemoryPoolKind::Engine, PassThroughProcessor));
         sSilenceProcessorPlugin.reset(ampoolnew(MemoryPoolKind::Engine, SilenceProcessor));
         // ---
+        sDefaultResamplerPlugin.reset(ampoolnew(MemoryPoolKind::Engine, DefaultResampler));
         sLibsamplerateResamplerPlugin.reset(ampoolnew(MemoryPoolKind::Engine, LibsamplerateResampler));
         sR8BrainResamplerPlugin.reset(ampoolnew(MemoryPoolKind::Engine, R8BrainResampler));
         // ---
@@ -366,6 +368,7 @@ namespace SparkyStudios::Audio::Amplitude
         sPassThroughProcessorPlugin.reset(nullptr);
         sSilenceProcessorPlugin.reset(nullptr);
         // ---
+        sDefaultResamplerPlugin.reset(nullptr);
         sLibsamplerateResamplerPlugin.reset(nullptr);
         sR8BrainResamplerPlugin.reset(nullptr);
         // ---

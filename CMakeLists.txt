@@ -147,6 +147,7 @@ set(SA_SOURCE
     include/SparkyStudios/Audio/Amplitude/Core/Playback/Channel.h
     include/SparkyStudios/Audio/Amplitude/Core/Playback/ChannelEventListener.h
     include/SparkyStudios/Audio/Amplitude/Core/Asset.h
+    include/SparkyStudios/Audio/Amplitude/Core/AudioBuffer.h
     include/SparkyStudios/Audio/Amplitude/Core/Codec.h
     include/SparkyStudios/Audio/Amplitude/Core/Common.h
     include/SparkyStudios/Audio/Amplitude/Core/Device.h
@@ -161,6 +162,9 @@ set(SA_SOURCE
     include/SparkyStudios/Audio/Amplitude/Core/RefCounter.h
     include/SparkyStudios/Audio/Amplitude/Core/Thread.h
     include/SparkyStudios/Audio/Amplitude/Core/Version.h
+    include/SparkyStudios/Audio/Amplitude/DSP/AudioConverter.h
+    include/SparkyStudios/Audio/Amplitude/DSP/Filter.h
+    include/SparkyStudios/Audio/Amplitude/DSP/Resampler.h
     include/SparkyStudios/Audio/Amplitude/HRTF/HRIRSphere.h
     include/SparkyStudios/Audio/Amplitude/IO/DiskFile.h
     include/SparkyStudios/Audio/Amplitude/IO/DiskFileSystem.h
@@ -182,13 +186,12 @@ set(SA_SOURCE
     include/SparkyStudios/Audio/Amplitude/Math/SplitComplex.h
     include/SparkyStudios/Audio/Amplitude/Math/Utils.h
     include/SparkyStudios/Audio/Amplitude/Mixer/Amplimix.h
-    include/SparkyStudios/Audio/Amplitude/Mixer/Resampler.h
+    include/SparkyStudios/Audio/Amplitude/Mixer/Pipeline.h
     include/SparkyStudios/Audio/Amplitude/Mixer/SoundProcessor.h
     include/SparkyStudios/Audio/Amplitude/Sound/Attenuation.h
     include/SparkyStudios/Audio/Amplitude/Sound/Collection.h
     include/SparkyStudios/Audio/Amplitude/Sound/Effect.h
     include/SparkyStudios/Audio/Amplitude/Sound/Fader.h
-    include/SparkyStudios/Audio/Amplitude/Sound/Filter.h
     include/SparkyStudios/Audio/Amplitude/Sound/Rtpc.h
     include/SparkyStudios/Audio/Amplitude/Sound/Sound.h
     include/SparkyStudios/Audio/Amplitude/Sound/SoundBank.h
@@ -227,6 +230,7 @@ set(SA_SOURCE
 
     src/Core/Asset.cpp
     src/Core/Asset.h
+    src/Core/AudioBuffer.cpp
     src/Core/Codec.cpp
     src/Core/Common.cpp
     src/Core/DefaultPlugins.h
@@ -250,6 +254,36 @@ set(SA_SOURCE
     src/Core/Memory.cpp
     src/Core/Thread.cpp
     src/Core/Version.cpp
+
+    src/DSP/Filters/BassBoostFilter.cpp
+    src/DSP/Filters/BassBoostFilter.h
+    src/DSP/Filters/BiquadResonantFilter.cpp
+    src/DSP/Filters/BiquadResonantFilter.h
+    src/DSP/Filters/DCRemovalFilter.cpp
+    src/DSP/Filters/DCRemovalFilter.h
+    src/DSP/Filters/DelayFilter.cpp
+    src/DSP/Filters/DelayFilter.h
+    src/DSP/Filters/EqualizerFilter.cpp
+    src/DSP/Filters/EqualizerFilter.h
+    src/DSP/Filters/FFTFilter.cpp
+    src/DSP/Filters/FFTFilter.h
+    src/DSP/Filters/FlangerFilter.cpp
+    src/DSP/Filters/FlangerFilter.h
+    src/DSP/Filters/FreeverbFilter.cpp
+    src/DSP/Filters/FreeverbFilter.h
+    src/DSP/Filters/LofiFilter.cpp
+    src/DSP/Filters/LofiFilter.h
+    src/DSP/Filters/MonoPoleFilter.cpp
+    src/DSP/Filters/MonoPoleFilter.h
+    src/DSP/Filters/RobotizeFilter.cpp
+    src/DSP/Filters/RobotizeFilter.h
+    src/DSP/Filters/WaveShaperFilter.cpp
+    src/DSP/Filters/WaveShaperFilter.h
+    src/DSP/Resamplers/DefaultResampler.cpp
+    src/DSP/Resamplers/DefaultResampler.h
+    src/DSP/AudioConverter.cpp
+    src/DSP/Filter.cpp
+    src/DSP/Resampler.cpp
 
     src/HRTF/HRIRSphere.cpp
     src/HRTF/HRIRSphere.h
@@ -275,20 +309,18 @@ set(SA_SOURCE
 
     src/Mixer/Resamplers/R8BrainResampler.h
     src/Mixer/Resamplers/LibsamplerateResampler.h
-    src/Mixer/SoundProcessors/ClipProcessor.h
-    src/Mixer/SoundProcessors/EffectProcessor.h
-    src/Mixer/SoundProcessors/EnvironmentProcessor.h
-    src/Mixer/SoundProcessors/ObstructionProcessor.h
-    src/Mixer/SoundProcessors/OcclusionProcessor.h
-    src/Mixer/SoundProcessors/PassThroughProcessor.h
-    src/Mixer/SoundProcessors/SilenceProcessor.h
+    src/Mixer/Pipeline/ClipProcessor.h
+    src/Mixer/Pipeline/EffectProcessor.h
+    src/Mixer/Pipeline/EnvironmentProcessor.h
+    src/Mixer/Pipeline/ObstructionProcessor.h
+    src/Mixer/Pipeline/OcclusionProcessor.h
+    src/Mixer/Pipeline/PassThroughProcessor.h
+    src/Mixer/Pipeline/SilenceProcessor.h
     src/Mixer/Amplimix.h
     src/Mixer/Amplimix.cpp
-    src/Mixer/ProcessorPipeline.cpp
-    src/Mixer/ProcessorPipeline.h
+    src/Mixer/Pipeline.cpp
     src/Mixer/RealChannel.cpp
     src/Mixer/RealChannel.h
-    src/Mixer/Resampler.cpp
     src/Mixer/SoundData.cpp
     src/Mixer/SoundData.h
     src/Mixer/SoundProcessor.cpp
@@ -301,30 +333,6 @@ set(SA_SOURCE
     src/Sound/Faders/ExponentialFader.h
     src/Sound/Faders/LinearFader.h
     src/Sound/Faders/SCurveFader.h
-    src/Sound/Filters/BassBoostFilter.cpp
-    src/Sound/Filters/BassBoostFilter.h
-    src/Sound/Filters/BiquadResonantFilter.cpp
-    src/Sound/Filters/BiquadResonantFilter.h
-    src/Sound/Filters/DCRemovalFilter.cpp
-    src/Sound/Filters/DCRemovalFilter.h
-    src/Sound/Filters/DelayFilter.cpp
-    src/Sound/Filters/DelayFilter.h
-    src/Sound/Filters/EqualizerFilter.cpp
-    src/Sound/Filters/EqualizerFilter.h
-    src/Sound/Filters/FFTFilter.cpp
-    src/Sound/Filters/FFTFilter.h
-    src/Sound/Filters/FlangerFilter.cpp
-    src/Sound/Filters/FlangerFilter.h
-    src/Sound/Filters/FreeverbFilter.cpp
-    src/Sound/Filters/FreeverbFilter.h
-    src/Sound/Filters/LofiFilter.cpp
-    src/Sound/Filters/LofiFilter.h
-    src/Sound/Filters/MonoPoleFilter.cpp
-    src/Sound/Filters/MonoPoleFilter.h
-    src/Sound/Filters/RobotizeFilter.cpp
-    src/Sound/Filters/RobotizeFilter.h
-    src/Sound/Filters/WaveShaperFilter.cpp
-    src/Sound/Filters/WaveShaperFilter.h
     src/Sound/Schedulers/RandomScheduler.cpp
     src/Sound/Schedulers/RandomScheduler.h
     src/Sound/Schedulers/SequenceScheduler.cpp
@@ -338,7 +346,6 @@ set(SA_SOURCE
     src/Sound/Effect.cpp
     src/Sound/Effect.h
     src/Sound/Fader.cpp
-    src/Sound/Filter.cpp
     src/Sound/RefCounter.cpp
     src/Sound/Rtpc.cpp
     src/Sound/Rtpc.h
@@ -398,6 +405,7 @@ set(SA_SOURCE
     src/Utils/pffft/pffft_common.cpp
     src/Utils/pffft/pffft_priv_impl.h
     src/Utils/intrusive_list.h
+    src/Utils/Utils.cpp
     src/Utils/Utils.h
 )
 

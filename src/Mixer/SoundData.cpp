@@ -40,7 +40,7 @@ namespace SparkyStudios::Audio::Amplitude
     SoundChunk* SoundChunk::CreateChunk(AmUInt64 frames, AmUInt16 channels, MemoryPoolKind pool)
     {
 #if defined(AM_SIMD_INTRINSICS)
-        const AmUInt64 alignedFrames = AM_VALUE_ALIGN(frames, AmAudioFrame::size);
+        const AmUInt64 alignedFrames = AM_VALUE_ALIGN(frames, GetSimdBlockSize());
 #else
         const AmUInt64 alignedFrames = frames;
 #endif // AM_SIMD_INTRINSICS
@@ -51,25 +51,8 @@ namespace SparkyStudios::Audio::Amplitude
         chunk->frames = alignedFrames;
         chunk->length = alignedLength;
         chunk->size = alignedLength * sizeof(AmReal32);
-#if defined(AM_SIMD_INTRINSICS)
-        chunk->samplesPerVector = AmAudioFrame::size / channels;
-#endif // AM_SIMD_INTRINSICS
         chunk->memoryPool = pool;
-#if defined(AM_SIMD_INTRINSICS)
-        chunk->buffer = static_cast<AmAudioFrameBuffer>(ampoolmalign(pool, chunk->size, AM_SIMD_ALIGNMENT));
-#else
-        chunk->buffer = static_cast<AmAudioFrameBuffer>(ampoolmalloc(pool, chunk->size));
-#endif // AM_SIMD_INTRINSICS
-
-        if (chunk->buffer == nullptr)
-        {
-            amLogError("Failed to allocate memory for sound chunk.");
-
-            ampooldelete(MemoryPoolKind::SoundData, SoundChunk, chunk);
-            return nullptr;
-        }
-
-        std::memset(chunk->buffer, 0, chunk->size);
+        chunk->buffer = ampoolnew(pool, AudioBuffer, chunk->frames, channels);
 
         return chunk;
     }
@@ -84,7 +67,8 @@ namespace SparkyStudios::Audio::Amplitude
         if (buffer == nullptr)
             return;
 
-        ampoolfree(memoryPool, buffer);
+        buffer->Clear();
+        ampooldelete(memoryPool, AudioBuffer, buffer);
         buffer = nullptr;
     }
 

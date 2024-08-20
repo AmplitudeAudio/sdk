@@ -17,6 +17,7 @@
 #ifndef _AM_MATH_UTILS_H
 #define _AM_MATH_UTILS_H
 
+#include <SparkyStudios/Audio/Amplitude/Core/AudioBuffer.h>
 #include <SparkyStudios/Audio/Amplitude/Core/Common.h>
 
 #define AM_LCG_M 2147483647
@@ -125,7 +126,7 @@ namespace SparkyStudios::Audio::Amplitude
     }
 
     AM_API_PRIVATE AM_INLINE AmReal32
-        CatmullRom(const AmReal32 t, const AmReal32 p0, const AmReal32 p1, const AmReal32 p2, const AmReal32 p3)
+    CatmullRom(const AmReal32 t, const AmReal32 p0, const AmReal32 p1, const AmReal32 p2, const AmReal32 p3)
     {
         // clang-format off
         return 0.5f * (
@@ -216,10 +217,34 @@ namespace SparkyStudios::Audio::Amplitude
      *
      * @return A relative direction vector (not normalized).
      */
-    AM_API_PRIVATE AM_INLINE AmVec3
-        GetRelativeDirection(const AmVec3& originPosition, const AmQuat& originRotation, const AmVec3& position)
+    AM_API_PRIVATE AM_INLINE AmVec3 GetRelativeDirection(const AmVec3& originPosition, const AmQuat& originRotation, const AmVec3& position)
     {
         return AM_RotateV3Q(position - originPosition, AM_InvQ(originRotation));
+    }
+
+    /**
+     * @brief Finds the greatest common divisor (GCD) of two integers.
+     *
+     * @param a First integer.
+     * @param b Second integer.
+     *
+     * @return The greatest common divisor of a and b.
+     */
+    AM_API_PRIVATE AM_INLINE AmInt64 FindGCD(AmInt64 a, AmInt64 b)
+    {
+        a = std::abs(a);
+        b = std::abs(b);
+
+        AmInt64 c = 0;
+
+        while (b != 0)
+        {
+            c = b;
+            b = a % b;
+            a = c;
+        }
+
+        return a;
     }
 } // namespace SparkyStudios::Audio::Amplitude
 

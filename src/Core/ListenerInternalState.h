@@ -14,8 +14,8 @@
 
 #pragma once
 
-#ifndef SPARK_AUDIO_LISTENER_INTERNAL_STATE_H
-#define SPARK_AUDIO_LISTENER_INTERNAL_STATE_H
+#ifndef _AM_IMPLEMENTATION_CORE_LISTENER_INTERNAL_STATE_H
+#define _AM_IMPLEMENTATION_CORE_LISTENER_INTERNAL_STATE_H
 
 #include <SparkyStudios/Audio/Amplitude/Core/Common.h>
 
@@ -193,4 +193,4 @@ namespace SparkyStudios::Audio::Amplitude
     };
 } // namespace SparkyStudios::Audio::Amplitude
 
-#endif // SPARK_AUDIO_LISTENER_INTERNAL_STATE_H
+#endif // _AM_IMPLEMENTATION_CORE_LISTENER_INTERNAL_STATE_H

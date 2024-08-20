@@ -14,8 +14,8 @@
 
 #pragma once
 
-#ifndef _AM_SOUND_ATTENUATION_SHAPES_H
-#define _AM_SOUND_ATTENUATION_SHAPES_H
+#ifndef _AM_IMPLEMENTATION_SOUND_ATTENUATION_SHAPES_H
+#define _AM_IMPLEMENTATION_SOUND_ATTENUATION_SHAPES_H
 
 #include <SparkyStudios/Audio/Amplitude/Core/Common.h>
 
@@ -113,4 +113,4 @@ namespace SparkyStudios::Audio::Amplitude
     };
 } // namespace SparkyStudios::Audio::Amplitude
 
-#endif // _AM_SOUND_ATTENUATION_SHAPES_H
+#endif // _AM_IMPLEMENTATION_SOUND_ATTENUATION_SHAPES_H

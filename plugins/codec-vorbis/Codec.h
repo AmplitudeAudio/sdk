@@ -14,8 +14,8 @@
 
 #pragma once
 
-#ifndef SS_AMPLITUDE_AUDIO_VORBIS_CODEC_CODEC_H
-#define SS_AMPLITUDE_AUDIO_VORBIS_CODEC_CODEC_H
+#ifndef _AM_PLUGIN_CODEC_VORBIS_CODEC_H
+#define _AM_PLUGIN_CODEC_VORBIS_CODEC_H
 
 #include <Plugin.h>
 
@@ -39,9 +39,9 @@ public:
 
         bool Close() override;
 
-        AmUInt64 Load(AmVoidPtr out) override;
+        AmUInt64 Load(AudioBuffer* out) override;
 
-        AmUInt64 Stream(AmVoidPtr out, AmUInt64 offset, AmUInt64 length) override;
+        AmUInt64 Stream(AudioBuffer* out, AmUInt64 bufferOffset, AmUInt64 seekOffset, AmUInt64 length) override;
 
         bool Seek(AmUInt64 offset) override;
 
@@ -65,7 +65,7 @@ public:
 
         bool Close() override;
 
-        AmUInt64 Write(AmVoidPtr in, AmUInt64 offset, AmUInt64 length) override;
+        AmUInt64 Write(AudioBuffer* in, AmUInt64 offset, AmUInt64 length) override;
 
     private:
         bool _initialized;
@@ -87,4 +87,4 @@ public:
 
     [[nodiscard]] bool CanHandleFile(std::shared_ptr<File> file) const override;
 };
-#endif // SS_AMPLITUDE_AUDIO_VORBIS_CODEC_CODEC_H
+#endif // _AM_PLUGIN_CODEC_VORBIS_CODEC_H

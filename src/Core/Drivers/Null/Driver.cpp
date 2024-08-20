@@ -24,7 +24,7 @@ namespace SparkyStudios::Audio::Amplitude
 
         while (data->mRunning)
         {
-            Engine::GetInstance()->GetMixer()->Mix(data->mOutputBuffer, data->mOutputBufferSize);
+            Engine::GetInstance()->GetMixer()->Mix(nullptr, data->mOutputBufferSize);
             Thread::Sleep(1);
         }
     }
@@ -48,7 +48,6 @@ namespace SparkyStudios::Audio::Amplitude
             return false;
 
         _deviceData.mOutputBufferSize = device.mOutputBufferSize / static_cast<AmUInt32>(device.mRequestedOutputChannels);
-        _deviceData.mOutputBuffer = ampoolmalign(MemoryPoolKind::Amplimix, device.mOutputBufferSize * sizeof(AmReal32), AM_SIMD_ALIGNMENT);
         _deviceData.mRunning = true;
 
         _thread = Thread::CreateThread(null_mix, &_deviceData);
@@ -67,9 +66,6 @@ namespace SparkyStudios::Audio::Amplitude
             Thread::Wait(_thread);
             Thread::Release(_thread);
             _thread = nullptr;
-
-            ampoolfree(MemoryPoolKind::Amplimix, _deviceData.mOutputBuffer);
-            _deviceData.mOutputBuffer = nullptr;
 
             _deviceData.mOutputBufferSize = 0;
 

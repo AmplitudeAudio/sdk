@@ -14,10 +14,11 @@
 
 #include <Codec.h>
 
-void FlacCodec::FlacDecoderInternal::set_current_output_buffer(AmAudioSampleBuffer output, AmUInt64 size)
+void FlacCodec::FlacDecoderInternal::set_current_output_buffer(AudioBuffer* output, AmUInt64 size, AmUInt64 offset)
 {
     _current_output_buffer = output;
     _current_output_buffer_size = size;
+    _current_output_buffer_offset = offset;
 }
 
 ::FLAC__StreamDecoderWriteStatus FlacCodec::FlacDecoderInternal::write_callback(
@@ -34,7 +35,8 @@ void FlacCodec::FlacDecoderInternal::set_current_output_buffer(AmAudioSampleBuff
     {
         for (AmUInt32 j = 0; j < frame->header.channels; j++)
         {
-            _current_output_buffer[(sample * frame->header.channels) + j] = AmInt16ToReal32(buffer[j][i]);
+            auto& channel = _current_output_buffer->GetChannel(j);
+            channel[sample + _current_output_buffer_offset] = AmInt16ToReal32(buffer[j][i]);
         }
 
         sample++;
@@ -156,12 +158,12 @@ bool FlacCodec::FlacDecoder::Close()
     return true;
 }
 
-AmUInt64 FlacCodec::FlacDecoder::Load(AmVoidPtr out)
+AmUInt64 FlacCodec::FlacDecoder::Load(AudioBuffer* out)
 {
     if (!_initialized)
         return 0;
 
-    _flac.set_current_output_buffer(static_cast<AmAudioSampleBuffer>(out), m_format.GetFramesCount());
+    _flac.set_current_output_buffer(out, m_format.GetFramesCount(), 0);
 
     if (!Seek(0))
         return 0;
@@ -172,19 +174,22 @@ AmUInt64 FlacCodec::FlacDecoder::Load(AmVoidPtr out)
     return 0;
 }
 
-AmUInt64 FlacCodec::FlacDecoder::Stream(AmVoidPtr out, AmUInt64 offset, AmUInt64 length)
+AmUInt64 FlacCodec::FlacDecoder::Stream(AudioBuffer* out, AmUInt64 bufferOffset, AmUInt64 seekOffset, AmUInt64 length)
 {
     if (!_initialized)
         return 0;
 
-    _flac.set_current_output_buffer(static_cast<AmAudioSampleBuffer>(out), length);
+    _flac.set_current_output_buffer(out, length, bufferOffset);
 
-    bool seeked = Seek(offset);
+    bool seeked = Seek(seekOffset);
 
     while (_flac.need_more_frames() && _flac.get_state() != FLAC__STREAM_DECODER_END_OF_STREAM)
         _flac.process_single();
 
-    return _flac.read_frame_count();
+    AmUInt64 read = _flac.read_frame_count();
+    _flac.reset_read_frame_count();
+
+    return read;
 }
 
 bool FlacCodec::FlacDecoder::Seek(AmUInt64 offset)
@@ -206,7 +211,7 @@ bool FlacCodec::FlacEncoder::Close()
     return true;
 }
 
-AmUInt64 FlacCodec::FlacEncoder::Write(AmVoidPtr in, AmUInt64 offset, AmUInt64 length)
+AmUInt64 FlacCodec::FlacEncoder::Write(AudioBuffer* in, AmUInt64 offset, AmUInt64 length)
 {
     return 0;
 }

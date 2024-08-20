@@ -21,8 +21,6 @@
 #include "../src/Core/Codecs/MP3/Codec.h"
 #include "../src/Core/Codecs/WAV/Codec.h"
 
-#include "../src/Utils/Audio/Resampling/CDSPResampler.h"
-
 #define AM_FLAG_NOISE_SHAPING 0x1
 
 using namespace SparkyStudios::Audio::Amplitude;
@@ -100,9 +98,10 @@ static void log(FILE* output, const char* fmt, ...)
 static int process(const AmOsString& inFileName, const AmOsString& outFileName, const ProcessingState& state)
 {
     AmInt32 res;
+    DiskFileSystem fs;
 
-    const auto inputFile = amEngine->GetFileSystem()->OpenFile(inFileName);
-    const auto outputFile = amEngine->GetFileSystem()->OpenFile(outFileName);
+    const auto inputFile = fs.OpenFile(inFileName, eFOM_READ);
+    const auto outputFile = fs.OpenFile(outFileName, eFOM_WRITE);
 
     auto* ams_codec = Codec::Find("ams");
     auto* wav_codec = Codec::Find("wav");
@@ -147,11 +146,9 @@ static int process(const AmOsString& inFileName, const AmOsString& outFileName, 
                 outFileName.c_str());
         }
 
-        auto const pcmData = static_cast<AmAudioSampleBuffer>(ampoolmalloc(MemoryPoolKind::Codec, numSamples * framesSize));
-
-        if (decoder->Load(pcmData) != numSamples || !decoder->Close())
+        AudioBuffer pcmData(numSamples, numChannels);
+        if (decoder->Load(&pcmData) != numSamples || !decoder->Close())
         {
-            ampoolfree(MemoryPoolKind::Codec, pcmData);
             log(stderr, "Error while decoding PCM file \"" AM_OS_CHAR_FMT "\".\n", inFileName.c_str());
             return EXIT_FAILURE;
         }
@@ -161,104 +158,42 @@ static int process(const AmOsString& inFileName, const AmOsString& outFileName, 
             state.noiseShaping ? (sampleRate > 64000 ? Compression::ADPCM::eNSM_STATIC : Compression::ADPCM::eNSM_DYNAMIC)
                                : Compression::ADPCM::eNSM_OFF);
 
-        auto* output16 = static_cast<AmInt16Buffer>(
-            ampoolmalign(MemoryPoolKind::SoundData, numSamples * numChannels * sizeof(AmInt16), AM_SIMD_ALIGNMENT));
-
         if (state.resampling.enabled)
         {
-            AmUInt64 f = std::ceil(static_cast<AmReal32>(numSamples * state.resampling.targetSampleRate) / sampleRate);
+            const auto resampler = Resampler::Construct("default");
 
-            std::vector<r8b::CDSPResampler24*> resamplers;
-            for (AmUInt16 c = 0; c < numChannels; c++)
-                resamplers.push_back(new r8b::CDSPResampler24(sampleRate, state.resampling.targetSampleRate, numSamples));
+            AmUInt64 f = resampler->GetExpectedOutputFrames(numSamples);
+            AudioBuffer output(f, numChannels);
 
-            auto* input64 =
-                static_cast<AmReal64Buffer>(ampoolmalign(MemoryPoolKind::SoundData, numSamples * sizeof(AmReal64), AM_SIMD_ALIGNMENT));
-
-            for (AmUInt16 c = 0; c < numChannels; c++)
-            {
-                auto* resampler = static_cast<r8b::CDSPResampler24*>(resamplers[c]);
-
-                for (AmUInt64 i = 0; i < numSamples; i++)
-                {
-                    input64[i] = static_cast<AmReal64>(pcmData[i * numChannels + c]);
-                }
-
-                AmReal64Buffer output = nullptr;
-                f = resampler->process(input64, numSamples, output);
-
-                for (AmUInt64 i = 0; i < f; i++)
-                    output16[i * numChannels + c] = AmReal32ToInt16(static_cast<AmReal32>(output[i]), true);
-
-                resampler->clear();
-            }
-
-            ampoolfree(MemoryPoolKind::SoundData, input64);
+            resampler->Process(pcmData, numSamples, output, f);
 
             sampleRate = state.resampling.targetSampleRate;
             numSamples = f;
 
-            SoundFormat encodeFormat{};
-            encodeFormat.SetAll(sampleRate, numChannels, format.GetBitsPerSample(), numSamples, framesSize, AM_SAMPLE_FORMAT_INT);
-
-            encoder->SetFormat(encodeFormat);
-            if (!encoder->Open(outputFile))
-            {
-                ampoolfree(MemoryPoolKind::SoundData, output16);
-
-                log(stderr, "Unable to open file \"" AM_OS_CHAR_FMT "\" for writing.\n", outFileName.c_str());
-
-                return EXIT_FAILURE;
-            }
-
-            if (encoder->Write(output16, 0, numSamples) != numSamples || !encoder->Close())
-            {
-                ampoolfree(MemoryPoolKind::Codec, pcmData);
-                ampoolfree(MemoryPoolKind::SoundData, output16);
-
-                log(stderr, "Error while encoding ADPCM file \"" AM_OS_CHAR_FMT "\".\n", outFileName.c_str());
-
-                return EXIT_FAILURE;
-            }
-
-            for (AmUInt16 c = 0; c < numChannels; c++)
-                delete resamplers[c];
+            pcmData = output;
+            Resampler::Destruct("default", resampler);
         }
-        else
+
+        SoundFormat encodeFormat{};
+        encodeFormat.SetAll(sampleRate, numChannels, format.GetBitsPerSample(), numSamples, framesSize, AM_SAMPLE_FORMAT_INT);
+
+        encoder->SetFormat(encodeFormat);
+        if (!encoder->Open(outputFile))
         {
-            for (int i = 0; i < numSamples * numChannels; ++i)
-                output16[i] = AmReal32ToInt16(pcmData[i], true);
-
-            encoder->SetFormat(format);
-            if (!encoder->Open(outputFile))
-            {
-                ampoolfree(MemoryPoolKind::SoundData, output16);
-                ampoolfree(MemoryPoolKind::Codec, pcmData);
-
-                log(stderr, "Unable to open file \"" AM_OS_CHAR_FMT "\" for writing.\n", outFileName.c_str());
-
-                return EXIT_FAILURE;
-            }
-
-            if (encoder->Write(output16, 0, numSamples) != numSamples || !encoder->Close())
-            {
-                ampoolfree(MemoryPoolKind::SoundData, output16);
-                ampoolfree(MemoryPoolKind::Codec, pcmData);
-
-                log(stderr, "Error while encoding ADPCM file \"" AM_OS_CHAR_FMT "\".\n", outFileName.c_str());
-
-                return EXIT_FAILURE;
-            }
+            log(stderr, "Unable to open file \"" AM_OS_CHAR_FMT "\" for writing.\n", outFileName.c_str());
+            return EXIT_FAILURE;
         }
 
-        ampoolfree(MemoryPoolKind::SoundData, output16);
+        if (encoder->Write(&pcmData, 0, numSamples) != numSamples || !encoder->Close())
+        {
+            log(stderr, "Error while encoding ADPCM file \"" AM_OS_CHAR_FMT "\".\n", outFileName.c_str());
+            return EXIT_FAILURE;
+        }
 
         if (state.verbose)
         {
             log(stdout, "Operation completed successfully.\n");
         }
-
-        ampoolfree(MemoryPoolKind::Codec, pcmData);
 
         res = EXIT_SUCCESS;
     }
@@ -296,20 +231,19 @@ static int process(const AmOsString& inFileName, const AmOsString& outFileName, 
                 outFileName.c_str());
         }
 
-        AmUInt64 numSamples = decoder->GetFormat().GetFramesCount();
+        AmUInt64 numSamples = amsFormat.GetFramesCount();
+        AmUInt64 numChannels = amsFormat.GetNumChannels();
 
-        auto* adpcmData = static_cast<AmInt16Buffer>(ampoolmalloc(MemoryPoolKind::Codec, numSamples * decoder->GetFormat().GetFrameSize()));
+        AudioBuffer adpcmData(numSamples, numChannels);
 
-        if (decoder->Load(adpcmData) != numSamples || !decoder->Close())
+        if (decoder->Load(&adpcmData) != numSamples || !decoder->Close())
         {
-            ampoolfree(MemoryPoolKind::Codec, adpcmData);
             log(stderr, "Error while decoding ADPCM file \"" AM_OS_CHAR_FMT "\".\n", inFileName.c_str());
             return EXIT_FAILURE;
         }
 
-        if (encoder->Write(adpcmData, 0, numSamples) != numSamples || !encoder->Close())
+        if (encoder->Write(&adpcmData, 0, numSamples) != numSamples || !encoder->Close())
         {
-            ampoolfree(MemoryPoolKind::Codec, adpcmData);
             log(stderr, "Error while encoding PCM file \"" AM_OS_CHAR_FMT "\".\n", outFileName.c_str());
             return EXIT_FAILURE;
         }
@@ -319,10 +253,9 @@ static int process(const AmOsString& inFileName, const AmOsString& outFileName, 
             log(stdout, "Operation completed successfully.\n");
         }
 
-        ampoolfree(MemoryPoolKind::Codec, adpcmData);
 
-        delete decoder;
-        delete encoder;
+        ams_codec->DestroyDecoder(decoder);
+        wav_codec->DestroyEncoder(encoder);
 
         res = EXIT_SUCCESS;
     }
@@ -504,5 +437,11 @@ int main(int argc, char* argv[])
         return EXIT_SUCCESS;
     }
 
-    return process(AM_STRING_TO_OS_STRING(inFileName), AM_STRING_TO_OS_STRING(outFileName), state);
+    Engine::RegisterDefaultPlugins();
+
+    const auto res = process(AM_STRING_TO_OS_STRING(inFileName), AM_STRING_TO_OS_STRING(outFileName), state);
+
+    Engine::UnregisterDefaultPlugins();
+
+    return res;
 }

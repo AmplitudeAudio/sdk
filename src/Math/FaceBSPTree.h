@@ -14,8 +14,8 @@
 
 #pragma once
 
-#ifndef _AM_MATH_FACE_BSP_H
-#define _AM_MATH_FACE_BSP_H
+#ifndef _AM_IMPLEMENTATION_MATH_FACE_BSP_H
+#define _AM_IMPLEMENTATION_MATH_FACE_BSP_H
 
 #include <SparkyStudios/Audio/Amplitude/Core/Common.h>
 
@@ -68,4 +68,4 @@ namespace SparkyStudios::Audio::Amplitude
     };
 } // namespace SparkyStudios::Audio::Amplitude
 
-#endif // _AM_MATH_FACE_BSP_H
+#endif // _AM_IMPLEMENTATION_MATH_FACE_BSP_H

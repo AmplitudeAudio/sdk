@@ -92,10 +92,11 @@ namespace SparkyStudios::Audio::Amplitude
          * @brief Opens the file at the given path.
          *
          * @param path The path to the file to open.
+         * @param mode The file open mode.
          *
          * @return The opened file. The returned File implementation depends on the FileSystem implementation.
          */
-        [[nodiscard]] virtual std::shared_ptr<File> OpenFile(const AmOsString& path) const = 0;
+        [[nodiscard]] virtual std::shared_ptr<File> OpenFile(const AmOsString& path, FileOpenMode mode = eFOM_READ) const = 0;
 
         /**
          * @brief Opens the FileSystem.

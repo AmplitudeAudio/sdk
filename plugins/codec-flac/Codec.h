@@ -14,8 +14,8 @@
 
 #pragma once
 
-#ifndef SS_AMPLITUDE_AUDIO_FLAC_CODEC_CODEC_H
-#define SS_AMPLITUDE_AUDIO_FLAC_CODEC_CODEC_H
+#ifndef _AM_PLUGIN_CODEC_FLAC_CODEC_H
+#define _AM_PLUGIN_CODEC_FLAC_CODEC_H
 
 #include <Plugin.h>
 
@@ -42,7 +42,7 @@ public:
         FlacDecoderInternal(const FlacDecoderInternal&) = delete;
         FlacDecoderInternal& operator=(const FlacDecoderInternal&) = delete;
 
-        void set_current_output_buffer(AmAudioSampleBuffer output, AmUInt64 size);
+        void set_current_output_buffer(AudioBuffer* output, AmUInt64 size, AmUInt64 offset);
 
         [[nodiscard]] bool need_more_frames() const
         {
@@ -52,6 +52,11 @@ public:
         [[nodiscard]] AmUInt64 read_frame_count() const
         {
             return _read_frame_count;
+        }
+
+        void reset_read_frame_count()
+        {
+            _read_frame_count = 0;
         }
 
     protected:
@@ -70,8 +75,9 @@ public:
         bool _need_more_frames;
         AmUInt64 _read_frame_count;
 
-        AmAudioSampleBuffer _current_output_buffer;
+        AudioBuffer* _current_output_buffer;
         AmUInt64 _current_output_buffer_size;
+        AmUInt64 _current_output_buffer_offset;
     };
 
     class FlacDecoder final : public Codec::Decoder
@@ -87,9 +93,9 @@ public:
 
         bool Close() override;
 
-        AmUInt64 Load(AmVoidPtr out) override;
+        AmUInt64 Load(AudioBuffer* out) override;
 
-        AmUInt64 Stream(AmVoidPtr out, AmUInt64 offset, AmUInt64 length) override;
+        AmUInt64 Stream(AudioBuffer* out, AmUInt64 bufferOffset, AmUInt64 seekOffset, AmUInt64 length) override;
 
         bool Seek(AmUInt64 offset) override;
 
@@ -114,7 +120,7 @@ public:
 
         bool Close() override;
 
-        AmUInt64 Write(AmVoidPtr in, AmUInt64 offset, AmUInt64 length) override;
+        AmUInt64 Write(AudioBuffer* in, AmUInt64 offset, AmUInt64 length) override;
 
     private:
         bool _initialized;
@@ -134,4 +140,4 @@ public:
 
     [[nodiscard]] bool CanHandleFile(std::shared_ptr<File> file) const override;
 };
-#endif // SS_AMPLITUDE_AUDIO_FLAC_CODEC_CODEC_H
+#endif // _AM_PLUGIN_CODEC_FLAC_CODEC_H

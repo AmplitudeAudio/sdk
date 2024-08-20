@@ -14,23 +14,24 @@
 
 #pragma once
 
-#ifndef AMPLITUDE_DEFAULTPLUGINS_H
-#define AMPLITUDE_DEFAULTPLUGINS_H
+#ifndef _AM_IMPLEMENTATION_CORE_DEFAULT_PLUGINS_H
+#define _AM_IMPLEMENTATION_CORE_DEFAULT_PLUGINS_H
 
 #pragma region Default Sound Processors
 
-#include <Mixer/SoundProcessors/ClipProcessor.h>
-#include <Mixer/SoundProcessors/EffectProcessor.h>
-#include <Mixer/SoundProcessors/EnvironmentProcessor.h>
-#include <Mixer/SoundProcessors/ObstructionProcessor.h>
-#include <Mixer/SoundProcessors/OcclusionProcessor.h>
-#include <Mixer/SoundProcessors/PassThroughProcessor.h>
-#include <Mixer/SoundProcessors/SilenceProcessor.h>
+#include <Mixer/Pipeline/ClipProcessor.h>
+#include <Mixer/Pipeline/EffectProcessor.h>
+#include <Mixer/Pipeline/EnvironmentProcessor.h>
+#include <Mixer/Pipeline/ObstructionProcessor.h>
+#include <Mixer/Pipeline/OcclusionProcessor.h>
+#include <Mixer/Pipeline/PassThroughProcessor.h>
+#include <Mixer/Pipeline/SilenceProcessor.h>
 
 #pragma endregion
 
 #pragma region Default Resamplers
 
+#include <DSP/Resamplers/DefaultResampler.h>
 #include <Mixer/Resamplers/LibsamplerateResampler.h>
 #include <Mixer/Resamplers/R8BrainResampler.h>
 
@@ -66,17 +67,17 @@
 
 #pragma region Default Filters
 
-#include <Sound/Filters/BassBoostFilter.h>
-#include <Sound/Filters/BiquadResonantFilter.h>
-#include <Sound/Filters/DCRemovalFilter.h>
-#include <Sound/Filters/DelayFilter.h>
-#include <Sound/Filters/EqualizerFilter.h>
-#include <Sound/Filters/FlangerFilter.h>
-#include <Sound/Filters/FreeverbFilter.h>
-#include <Sound/Filters/LofiFilter.h>
-#include <Sound/Filters/RobotizeFilter.h>
-#include <Sound/Filters/WaveShaperFilter.h>
+#include <DSP/Filters/BassBoostFilter.h>
+#include <DSP/Filters/BiquadResonantFilter.h>
+#include <DSP/Filters/DCRemovalFilter.h>
+#include <DSP/Filters/DelayFilter.h>
+#include <DSP/Filters/EqualizerFilter.h>
+#include <DSP/Filters/FlangerFilter.h>
+#include <DSP/Filters/FreeverbFilter.h>
+#include <DSP/Filters/LofiFilter.h>
+#include <DSP/Filters/RobotizeFilter.h>
+#include <DSP/Filters/WaveShaperFilter.h>
 
 #pragma endregion
 
-#endif // AMPLITUDE_DEFAULTPLUGINS_H
+#endif // _AM_IMPLEMENTATION_CORE_DEFAULT_PLUGINS_H

@@ -17,6 +17,7 @@
 #ifndef _AM_IMPLEMENTATION_MIXER_SOUND_DATA_H
 #define _AM_IMPLEMENTATION_MIXER_SOUND_DATA_H
 
+#include <SparkyStudios/Audio/Amplitude/Core/AudioBuffer.h>
 #include <SparkyStudios/Audio/Amplitude/Core/Common.h>
 #include <SparkyStudios/Audio/Amplitude/Core/Memory.h>
 
@@ -32,11 +33,7 @@ namespace SparkyStudios::Audio::Amplitude
         AmUInt64 frames;
         AmSize size;
 
-        AmAudioFrameBuffer buffer;
-
-#if defined(AM_SIMD_INTRINSICS)
-        AmUInt64 samplesPerVector;
-#endif // AM_SIMD_INTRINSICS
+        AudioBuffer* buffer;
 
         MemoryPoolKind memoryPool;
 

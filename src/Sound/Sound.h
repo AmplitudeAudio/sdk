@@ -33,6 +33,7 @@ namespace SparkyStudios::Audio::Amplitude
     class CollectionImpl;
     class EffectInstance;
     class RealChannel;
+    class SoundChunk;
 
     /**
      * @brief Describes the place where a Sound belongs to.

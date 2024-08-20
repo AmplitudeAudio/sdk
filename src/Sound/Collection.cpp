@@ -16,6 +16,7 @@
 
 #include <SparkyStudios/Audio/Amplitude/Amplitude.h>
 
+#include <Core/EngineInternalState.h>
 #include <Sound/Collection.h>
 #include <Sound/Schedulers/RandomScheduler.h>
 #include <Sound/Schedulers/SequenceScheduler.h>

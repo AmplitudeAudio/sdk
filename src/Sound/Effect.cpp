@@ -62,7 +62,7 @@ namespace SparkyStudios::Audio::Amplitude
         // Update effect parameters
         for (auto&& instance : _instances)
             for (AmSize i = 0, l = _parameters.size(); i < l; ++i)
-                instance->GetFilter()->SetFilterParameter(i, _parameters[i].GetValue());
+                instance->GetFilter()->SetParameter(i, _parameters[i].GetValue());
     }
 
     bool EffectImpl::LoadDefinition(const EffectDefinition* definition, EngineInternalState* state)
@@ -99,7 +99,7 @@ namespace SparkyStudios::Audio::Amplitude
 
         // First initialization of filter parameters
         for (AmSize i = 0, l = _parent->_parameters.size(); i < l; ++i)
-            _filterInstance->SetFilterParameter(i, _parent->_parameters[i].GetValue());
+            _filterInstance->SetParameter(i, _parent->_parameters[i].GetValue());
     }
 
     EffectInstanceImpl::~EffectInstanceImpl()

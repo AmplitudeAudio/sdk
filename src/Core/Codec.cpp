@@ -45,10 +45,20 @@ namespace SparkyStudios::Audio::Amplitude
         , m_codec(codec)
     {}
 
+    const SoundFormat& Codec::Decoder::GetFormat() const
+    {
+        return m_format;
+    }
+
     Codec::Encoder::Encoder(const Codec* codec)
         : m_format()
         , m_codec(codec)
     {}
+
+    void Codec::Encoder::SetFormat(const SoundFormat& format)
+    {
+        m_format = format;
+    }
 
     Codec::Codec(AmString name)
         : m_name(std::move(name))
@@ -59,6 +69,11 @@ namespace SparkyStudios::Audio::Amplitude
     Codec::~Codec()
     {
         Unregister(this);
+    }
+
+    const AmString& Codec::GetName() const
+    {
+        return m_name;
     }
 
     void Codec::Register(Codec* codec)

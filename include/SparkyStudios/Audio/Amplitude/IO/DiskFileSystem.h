@@ -68,7 +68,7 @@ namespace SparkyStudios::Audio::Amplitude
         /**
          * @copydoc FileSystem::OpenFile
          */
-        [[nodiscard]] std::shared_ptr<File> OpenFile(const AmOsString& path) const override;
+        [[nodiscard]] std::shared_ptr<File> OpenFile(const AmOsString& path, FileOpenMode mode) const override;
 
         /**
          * @copydoc FileSystem::StartOpenFileSystem

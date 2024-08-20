@@ -65,10 +65,10 @@ namespace SparkyStudios::Audio::Amplitude
         return joined.native();
     }
 
-    std::shared_ptr<File> DiskFileSystem::OpenFile(const AmOsString& path) const
+    std::shared_ptr<File> DiskFileSystem::OpenFile(const AmOsString& path, FileOpenMode mode) const
     {
         auto file = std::shared_ptr<DiskFile>(ampoolnew(MemoryPoolKind::IO, DiskFile), am_delete<MemoryPoolKind::IO, DiskFile>{});
-        file->Open(ResolvePath(path));
+        file->Open(ResolvePath(path), mode);
 
         return file;
     }

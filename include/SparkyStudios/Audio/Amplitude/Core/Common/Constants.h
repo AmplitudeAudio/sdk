@@ -54,6 +54,21 @@ namespace SparkyStudios::Audio::Amplitude
     constexpr AmInt32 kAmFixedPointUnit = (1 << kAmFixedPointBits);
 
     constexpr AmInt32 kAmFixedPointMask = (kAmFixedPointBits - 1);
+
+    /**
+     * @brief The maximum number of frames that can be processed at once.
+     */
+    constexpr AmUInt64 kAmMaxSupportedFrameCount = 16384;
+
+    /**
+     * @brief The maximum supported ambisonic order.
+     */
+    constexpr AmUInt32 kAmMaxSupportedAmbisonicOrder = 3;
+
+    /**
+     * @brief The maximum supported channel count for an ambisonic audio source.
+     */
+    constexpr AmUInt32 kAmMaxSupportedChannelCount = (kAmMaxSupportedAmbisonicOrder + 1) * (kAmMaxSupportedAmbisonicOrder + 1);
 } // namespace SparkyStudios::Audio::Amplitude
 
 #endif // _AM_CORE_COMMON_CONSTANTS_H

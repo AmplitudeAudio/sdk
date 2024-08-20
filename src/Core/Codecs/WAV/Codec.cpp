@@ -16,6 +16,7 @@
 #include "dr_wav.h"
 
 #include <Core/Codecs/WAV/Codec.h>
+#include <Utils/Utils.h>
 
 namespace SparkyStudios::Audio::Amplitude
 {
@@ -106,26 +107,27 @@ namespace SparkyStudios::Audio::Amplitude
         return drwav_uninit(&_wav) == DRWAV_SUCCESS;
     }
 
-    AmUInt64 WAVCodec::WAVDecoder::Load(AmVoidPtr out)
+    AmUInt64 WAVCodec::WAVDecoder::Load(AudioBuffer* out)
     {
-        if (!_initialized)
-            return 0;
-
-        if (!Seek(0))
-            return 0;
-
-        return drwav_read_pcm_frames_f32(&_wav, _wav.totalPCMFrameCount, static_cast<AmAudioSampleBuffer>(out));
+        return Stream(out, 0, 0, _wav.totalPCMFrameCount);
     }
 
-    AmUInt64 WAVCodec::WAVDecoder::Stream(AmVoidPtr out, AmUInt64 offset, AmUInt64 length)
+    AmUInt64 WAVCodec::WAVDecoder::Stream(AudioBuffer* out, AmUInt64 bufferOffset, AmUInt64 seekOffset, AmUInt64 length)
     {
         if (!_initialized)
             return 0;
 
-        if (!Seek(offset))
+        if (!Seek(seekOffset))
             return 0;
 
-        return drwav_read_pcm_frames_f32(&_wav, length, static_cast<AmAudioSampleBuffer>(out));
+        AmAlignedReal32Buffer buffer;
+        buffer.Init(length * _wav.channels);
+
+        const AmUInt64 read = drwav_read_pcm_frames_f32(&_wav, length, buffer.GetBuffer());
+
+        Deinterleave(buffer.GetBuffer(), 0, out->GetData().GetBuffer(), bufferOffset, length, _wav.channels);
+
+        return read;
     }
 
     bool WAVCodec::WAVDecoder::Seek(AmUInt64 offset)
@@ -189,9 +191,17 @@ namespace SparkyStudios::Audio::Amplitude
         return drwav_uninit(&_wav) == DRWAV_SUCCESS;
     }
 
-    AmUInt64 WAVCodec::WAVEncoder::Write(AmVoidPtr in, AmUInt64 offset, AmUInt64 length)
+    AmUInt64 WAVCodec::WAVEncoder::Write(AudioBuffer* in, AmUInt64 offset, AmUInt64 length)
     {
-        return !_initialized ? 0 : drwav_write_pcm_frames(&_wav, length, in);
+        if (!_initialized)
+            return 0;
+
+        AmAlignedReal32Buffer buffer;
+        buffer.Init(length);
+
+        Interleave(in, 0, buffer.GetBuffer(), 0, length, _wav.channels);
+
+        return drwav_write_pcm_frames(&_wav, length, buffer.GetBuffer());
     }
 
     Codec::Decoder* WAVCodec::CreateDecoder()

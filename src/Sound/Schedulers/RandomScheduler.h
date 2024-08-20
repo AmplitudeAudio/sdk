@@ -14,8 +14,8 @@
 
 #pragma once
 
-#ifndef SPARK_AUDIO_RANDOM_SCHEDULER_H
-#define SPARK_AUDIO_RANDOM_SCHEDULER_H
+#ifndef _AM_IMPLEMENTATION_SCHEDULERS_RANDOM_SCHEDULER_H
+#define _AM_IMPLEMENTATION_SCHEDULERS_RANDOM_SCHEDULER_H
 
 #include <Sound/Scheduler.h>
 
@@ -43,4 +43,4 @@ namespace SparkyStudios::Audio::Amplitude
     };
 } // namespace SparkyStudios::Audio::Amplitude
 
-#endif // SPARK_AUDIO_RANDOM_SCHEDULER_H
+#endif // _AM_IMPLEMENTATION_SCHEDULERS_RANDOM_SCHEDULER_H

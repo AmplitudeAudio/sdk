@@ -14,18 +14,18 @@
 
 #pragma once
 
-#ifndef _AM_MIXER_MIXER_H
-#define _AM_MIXER_MIXER_H
+#ifndef _AM_IMPLEMENTATION_MIXER_AMPLIMIX_H
+#define _AM_IMPLEMENTATION_MIXER_AMPLIMIX_H
 
 #include <queue>
 
 #include <SparkyStudios/Audio/Amplitude/Core/Common.h>
 #include <SparkyStudios/Audio/Amplitude/Core/Device.h>
 #include <SparkyStudios/Audio/Amplitude/Core/Thread.h>
+#include <SparkyStudios/Audio/Amplitude/DSP/AudioConverter.h>
 #include <SparkyStudios/Audio/Amplitude/Mixer/Amplimix.h>
-#include <SparkyStudios/Audio/Amplitude/Mixer/Resampler.h>
+#include <SparkyStudios/Audio/Amplitude/Mixer/Pipeline.h>
 
-#include <Mixer/ProcessorPipeline.h>
 #include <Mixer/SoundData.h>
 
 #include <Utils/miniaudio/miniaudio_utils.h>
@@ -73,10 +73,11 @@ namespace SparkyStudios::Audio::Amplitude
         _Atomic(AmReal32) occlusion; // occlusion factor
 
         _Atomic(AmReal32) userPlaySpeed; // user-defined sound playback speed
-        _Atomic(AmReal32) playSpeed; // computed (real) sound playback speed
+        _Atomic(AmReal32) playSpeed; // current sound playback speed
+        _Atomic(AmReal32) targetPlaySpeed; // computed (real) sound playback speed
         _Atomic(AmReal32) sampleRateRatio; // sample rate ratio
 
-        ma_data_converter dataConverter; // miniaudio resampler & channel converter
+        AudioConverter* dataConverter; // miniaudio resampler & channel converter
 
         /**
          * @brief Resets the layer.
@@ -149,7 +150,7 @@ namespace SparkyStudios::Audio::Amplitude
             return _initialized;
         }
 
-        AmUInt64 Mix(AmVoidPtr mixBuffer, AmUInt64 frameCount) override;
+        AmUInt64 Mix(AudioBuffer** outBuffer, AmUInt64 frameCount) override;
 
         AmUInt32 Play(
             SoundData* sound, PlayStateFlag flag, AmReal32 gain, AmReal32 pan, AmReal32 pitch, AmReal32 speed, AmUInt32 id, AmUInt32 layer);
@@ -194,9 +195,9 @@ namespace SparkyStudios::Audio::Amplitude
 
         void PushCommand(const MixerCommand& command);
 
-        [[nodiscard]] const ProcessorPipeline* GetPipeline() const;
+        [[nodiscard]] const Pipeline* GetPipeline() const;
 
-        [[nodiscard]] ProcessorPipeline* GetPipeline();
+        [[nodiscard]] Pipeline* GetPipeline();
 
         [[nodiscard]] AM_INLINE const DeviceDescription& GetDeviceDescription() const override
         {
@@ -207,7 +208,7 @@ namespace SparkyStudios::Audio::Amplitude
 
     private:
         void ExecuteCommands();
-        void MixLayer(AmplimixLayerImpl* layer, AmAudioFrameBuffer buffer, AmUInt64 bufferSize, AmUInt64 samples);
+        void MixLayer(AmplimixLayerImpl* layer, AudioBuffer* buffer, AmUInt64 frameCount);
         AmplimixLayerImpl* GetLayer(AmUInt32 layer);
         bool ShouldMix(AmplimixLayerImpl* layer);
         void UpdatePitch(AmplimixLayerImpl* layer);
@@ -226,10 +227,12 @@ namespace SparkyStudios::Audio::Amplitude
         AmplimixLayerImpl _layers[kAmplimixLayersCount];
         AmUInt64 _remainingFrames;
 
-        AmUniquePtr<MemoryPoolKind::Amplimix, ProcessorPipeline> _pipeline = nullptr;
+        AmUniquePtr<MemoryPoolKind::Amplimix, Pipeline> _pipeline = nullptr;
 
         DeviceDescription _device;
+
+        AudioBuffer _scratchBuffer;
     };
 } // namespace SparkyStudios::Audio::Amplitude
 
-#endif // _AM_MIXER_MIXER_H
+#endif // _AM_IMPLEMENTATION_MIXER_AMPLIMIX_H

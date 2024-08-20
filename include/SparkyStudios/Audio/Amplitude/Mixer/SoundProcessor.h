@@ -17,8 +17,8 @@
 #ifndef _AM_MIXER_SOUND_PROCESSOR_H
 #define _AM_MIXER_SOUND_PROCESSOR_H
 
+#include <SparkyStudios/Audio/Amplitude/Core/AudioBuffer.h>
 #include <SparkyStudios/Audio/Amplitude/Core/Common.h>
-#include <SparkyStudios/Audio/Amplitude/Core/Playback/Channel.h>
 
 namespace SparkyStudios::Audio::Amplitude
 {
@@ -28,14 +28,7 @@ namespace SparkyStudios::Audio::Amplitude
         SoundProcessorInstance() = default;
         virtual ~SoundProcessorInstance() = default;
 
-        virtual void Process(
-            AmAudioSampleBuffer out,
-            AmConstAudioSampleBuffer in,
-            AmUInt64 frames,
-            AmSize bufferSize,
-            AmUInt16 channels,
-            AmUInt32 sampleRate,
-            const AmplimixLayer* layer) = 0;
+        virtual void Process(const AmplimixLayer* layer, const AudioBuffer& in, AudioBuffer& out) = 0;
 
         virtual AmSize GetOutputBufferSize(AmUInt64 frames, AmSize bufferSize, AmUInt16 channels, AmUInt32 sampleRate);
 
@@ -166,14 +159,7 @@ namespace SparkyStudios::Audio::Amplitude
 
         void SetDryProcessor(SoundProcessorInstance* processor, AmReal32 dry);
 
-        void Process(
-            AmAudioSampleBuffer out,
-            AmConstAudioSampleBuffer in,
-            AmUInt64 frames,
-            AmSize bufferSize,
-            AmUInt16 channels,
-            AmUInt32 sampleRate,
-            const AmplimixLayer* layer) override;
+        void Process(const AmplimixLayer* layer, const AudioBuffer& in, AudioBuffer& out) override;
 
     private:
         SoundProcessorInstance* _wetProcessor;

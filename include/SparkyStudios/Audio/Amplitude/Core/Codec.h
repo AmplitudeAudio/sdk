@@ -17,6 +17,7 @@
 #ifndef _AM_CORE_CODEC_H
 #define _AM_CORE_CODEC_H
 
+#include <SparkyStudios/Audio/Amplitude/Core/AudioBuffer.h>
 #include <SparkyStudios/Audio/Amplitude/Core/Common.h>
 #include <SparkyStudios/Audio/Amplitude/IO/FileSystem.h>
 
@@ -74,13 +75,10 @@ namespace SparkyStudios::Audio::Amplitude
              *
              * @return The audio sample format.
              */
-            [[nodiscard]] const SoundFormat& GetFormat() const
-            {
-                return m_format;
-            }
+            [[nodiscard]] const SoundFormat& GetFormat() const;
 
             /**
-             * @breif Loads the entire audio file into the output buffer.
+             * @brief Loads the entire audio file into the output buffer.
              *
              * The output buffer must allocate enough size for this operation
              * to be successful.
@@ -89,18 +87,19 @@ namespace SparkyStudios::Audio::Amplitude
              *
              * @return The number of audio frames loaded into the buffer.
              */
-            virtual AmUInt64 Load(AmVoidPtr out) = 0;
+            virtual AmUInt64 Load(AudioBuffer* out) = 0;
 
             /**
              * @brief Streams a part of the file from disk into the output buffer.
              *
              * @param out The buffer to stream the file data into.
-             * @param offset The offset in frames from which start to read the file.
+             * @param bufferOffset
+             * @param seekOffset The offset in frames from which start to read the file.
              * @param length The length in frames to read from the file.
              *
              * @return The number of frames read.
              */
-            virtual AmUInt64 Stream(AmVoidPtr out, AmUInt64 offset, AmUInt64 length) = 0;
+            virtual AmUInt64 Stream(AudioBuffer* out, AmUInt64 bufferOffset, AmUInt64 seekOffset, AmUInt64 length) = 0;
 
             /**
              * @brief Moves the cursor to the given frame.
@@ -167,10 +166,7 @@ namespace SparkyStudios::Audio::Amplitude
              *
              * @param format The audio sample format.
              */
-            virtual void SetFormat(const SoundFormat& format)
-            {
-                m_format = format;
-            }
+            virtual void SetFormat(const SoundFormat& format);
 
             /**
              * @brief Writes a the given buffer into the file.
@@ -181,7 +177,7 @@ namespace SparkyStudios::Audio::Amplitude
              *
              * @return The number of frames written.
              */
-            virtual AmUInt64 Write(AmVoidPtr in, AmUInt64 offset, AmUInt64 length) = 0;
+            virtual AmUInt64 Write(AudioBuffer* in, AmUInt64 offset, AmUInt64 length) = 0;
 
         protected:
             /**
@@ -255,10 +251,7 @@ namespace SparkyStudios::Audio::Amplitude
          *
          * @return The name of this codec.
          */
-        [[nodiscard]] const AmString& GetName() const
-        {
-            return m_name;
-        }
+        [[nodiscard]] const AmString& GetName() const;
 
         /**
          * @brief Registers a new audio codec.

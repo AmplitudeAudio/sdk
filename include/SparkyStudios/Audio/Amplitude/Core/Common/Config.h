@@ -95,9 +95,6 @@
 // Maximum number of filters per stream
 #define AM_FILTERS_PER_STREAM 8
 
-// 1) Mono, 2) Stereo, 4) Quad, 6) 5.1, 8) 7.1
-#define AM_MAX_CHANNELS 8
-
 // Maximum number of tasks in a single pool
 #define AM_MAX_THREAD_POOL_TASKS 1024
 

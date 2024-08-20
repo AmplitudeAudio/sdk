@@ -20,7 +20,6 @@
 #include <SparkyStudios/Audio/Amplitude/Sound/Collection.h>
 
 #include <Core/Asset.h>
-#include <Core/EngineInternalState.h>
 #include <Sound/Scheduler.h>
 #include <Sound/Sound.h>
 #include <Sound/SoundObject.h>
@@ -29,7 +28,6 @@
 
 namespace SparkyStudios::Audio::Amplitude
 {
-
     class CollectionImpl final
         : public Collection
         , public SoundObjectImpl
@@ -44,7 +42,7 @@ namespace SparkyStudios::Audio::Amplitude
         CollectionImpl();
 
         /**
-         * @bref Destroys the collection asset and all related resources.
+         * @brief Destroys the collection asset and all related resources.
          */
         ~CollectionImpl() override;
 

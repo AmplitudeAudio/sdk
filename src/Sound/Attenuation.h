@@ -17,10 +17,10 @@
 #ifndef _AM_IMPLEMENTATION_SOUND_ATTENUATION_H
 #define _AM_IMPLEMENTATION_SOUND_ATTENUATION_H
 
+#include <SparkyStudios/Audio/Amplitude/Core/Memory.h>
 #include <SparkyStudios/Audio/Amplitude/Sound/Attenuation.h>
 
 #include <Core/Asset.h>
-#include <Core/EngineInternalState.h>
 
 #include "attenuation_definition_generated.h"
 

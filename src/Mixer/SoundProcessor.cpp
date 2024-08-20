@@ -171,63 +171,61 @@ namespace SparkyStudios::Audio::Amplitude
         _wet = AM_CLAMP(wet, 0, 1);
     }
 
-    void ProcessorMixer::Process(
-        AmAudioSampleBuffer out,
-        AmConstAudioSampleBuffer in,
-        AmUInt64 frames,
-        AmSize bufferSize,
-        AmUInt16 channels,
-        AmUInt32 sampleRate,
-        const AmplimixLayer* layer)
+    void ProcessorMixer::Process(const AmplimixLayer* layer, const AudioBuffer& in, AudioBuffer& out)
     {
         if (_dryProcessor == nullptr || _wetProcessor == nullptr)
         {
-            if (out != in)
-                std::memcpy(out, in, bufferSize);
+            if (&out != &in)
+                AudioBuffer::Copy(in, 0, out, 0, out.GetFrameCount());
 
             return;
         }
 
+        const AmSize frames = out.GetFrameCount();
+        const AmSize channels = out.GetChannelCount();
+
         const auto dryOut = SoundChunk::CreateChunk(frames, channels, MemoryPoolKind::Amplimix);
         const auto wetOut = SoundChunk::CreateChunk(frames, channels, MemoryPoolKind::Amplimix);
 
-        std::memcpy(dryOut->buffer, in, bufferSize);
-        std::memcpy(wetOut->buffer, in, bufferSize);
+        AudioBuffer::Copy(in, 0, *dryOut->buffer, 0, frames);
+        AudioBuffer::Copy(in, 0, *wetOut->buffer, 0, frames);
 
-        _dryProcessor->Process(reinterpret_cast<AmAudioSampleBuffer>(dryOut->buffer), in, frames, bufferSize, channels, sampleRate, layer);
-        _wetProcessor->Process(reinterpret_cast<AmAudioSampleBuffer>(wetOut->buffer), in, frames, bufferSize, channels, sampleRate, layer);
+        _dryProcessor->Process(layer, in, *dryOut->buffer);
+        _wetProcessor->Process(layer, in, *wetOut->buffer);
+
+        AmSize remaining = frames;
 
 #if defined(AM_SIMD_INTRINSICS)
-        const AmSize length = frames / dryOut->samplesPerVector;
-        const AmSize end = length * dryOut->samplesPerVector;
-        const AmSize remaining = (end - frames) * channels;
+        const AmSize end = GetNumSimdChunks(frames);
+        constexpr AmSize blockSize = GetSimdBlockSize();
+
+        remaining = remaining - end;
 
         const auto dry = xsimd::batch(_dry);
         const auto wet = xsimd::batch(_wet);
-
-        for (AmSize i = 0; i < length; i++)
-        {
-            const auto& bd = dryOut->buffer[i];
-            const auto& bw = wetOut->buffer[i];
-
-            xsimd::store_aligned(&out[i * AmAudioFrame::size], xsimd::fma(bd, dry, (bw - bd) * wet));
-        }
-
-        for (AmSize i = 0; i < remaining; i++)
-        {
-            const auto& bd = reinterpret_cast<AmAudioSampleBuffer>(dryOut->buffer)[i + end];
-            const auto& bw = reinterpret_cast<AmAudioSampleBuffer>(wetOut->buffer)[i + end];
-
-            out[i + end] = bd * _dry + (bw - bd) * _wet;
-        }
-#else
-        const AmSize length = frames * channels;
-
-        for (AmSize i = 0; i < length; i++)
-        {
-            out[i] = dryOut->buffer[i] * _dry + (wetOut->buffer[i] - dryOut->buffer[i]) * _wet;
-        }
 #endif // AM_SIMD_INTRINSICS
+
+        for (AmSize c = 0; c < channels; c++)
+        {
+            const auto& dryChannel = (*dryOut->buffer)[c];
+            const auto& wetChannel = (*wetOut->buffer)[c];
+            auto& outChannel = out[c];
+
+#if defined(AM_SIMD_INTRINSICS)
+            for (AmSize i = 0; i < end; i += blockSize)
+            {
+                const auto& bd = xsimd::load_aligned(&dryChannel[i]);
+                const auto& bw = xsimd::load_aligned(&wetChannel[i]);
+
+                xsimd::store_aligned(&outChannel[i], xsimd::fma(bd, dry, (bw - bd) * wet));
+            }
+#endif // AM_SIMD_INTRINSICS
+
+            for (AmSize i = frames - remaining; i < frames; i++)
+            {
+                outChannel[i] = dryChannel[i] * _dry + (wetChannel[i] - dryChannel[i]) * _wet;
+            }
+        }
 
         SoundChunk::DestroyChunk(dryOut);
         SoundChunk::DestroyChunk(wetOut);

@@ -93,7 +93,7 @@ namespace SparkyStudios::Audio::Amplitude
         return joined;
     }
 
-    std::shared_ptr<File> PackageFileSystem::OpenFile(const AmOsString& path) const
+    std::shared_ptr<File> PackageFileSystem::OpenFile(const AmOsString& path, FileOpenMode mode) const
     {
         if (!_valid)
             return nullptr;

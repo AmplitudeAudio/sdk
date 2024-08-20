@@ -180,7 +180,7 @@ namespace SparkyStudios::Audio::Amplitude
             return m_data[index];
         }
 
-        const AmReal32& operator[](size_t index) const
+        const AmReal32& operator[](AmSize index) const
         {
             AMPLITUDE_ASSERT(m_data != nullptr && index < m_floats);
             return m_data[index];

@@ -91,10 +91,8 @@ namespace SparkyStudios::Audio::Amplitude
             return;
         }
 
-        if (size != m_floats)
+        if (size > m_floats)
         {
-            m_floats = size;
-
 #ifndef AM_SIMD_INTRINSICS
             m_basePtr = static_cast<AmUInt8Buffer>(amrealloc(m_basePtr, size * sizeof(AmReal32)));
 #else
@@ -103,6 +101,8 @@ namespace SparkyStudios::Audio::Amplitude
 
             m_data = reinterpret_cast<AmReal32Buffer>(m_basePtr);
         }
+
+        m_floats = size;
 
         if (clear)
             Clear();

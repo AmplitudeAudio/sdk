@@ -37,6 +37,10 @@
 #include <SparkyStudios/Audio/Amplitude/Core/Thread.h>
 #include <SparkyStudios/Audio/Amplitude/Core/Version.h>
 
+#include <SparkyStudios/Audio/Amplitude/DSP/AudioConverter.h>
+#include <SparkyStudios/Audio/Amplitude/DSP/Filter.h>
+#include <SparkyStudios/Audio/Amplitude/DSP/Resampler.h>
+
 #include <SparkyStudios/Audio/Amplitude/HRTF/HRIRSphere.h>
 
 #include <SparkyStudios/Audio/Amplitude/IO/DiskFile.h>
@@ -61,14 +65,12 @@
 #include <SparkyStudios/Audio/Amplitude/Math/Utils.h>
 
 #include <SparkyStudios/Audio/Amplitude/Mixer/Amplimix.h>
-#include <SparkyStudios/Audio/Amplitude/Mixer/Resampler.h>
 #include <SparkyStudios/Audio/Amplitude/Mixer/SoundProcessor.h>
 
 #include <SparkyStudios/Audio/Amplitude/Sound/Attenuation.h>
 #include <SparkyStudios/Audio/Amplitude/Sound/Collection.h>
 #include <SparkyStudios/Audio/Amplitude/Sound/Effect.h>
 #include <SparkyStudios/Audio/Amplitude/Sound/Fader.h>
-#include <SparkyStudios/Audio/Amplitude/Sound/Filter.h>
 #include <SparkyStudios/Audio/Amplitude/Sound/Rtpc.h>
 #include <SparkyStudios/Audio/Amplitude/Sound/Sound.h>
 #include <SparkyStudios/Audio/Amplitude/Sound/SoundBank.h>

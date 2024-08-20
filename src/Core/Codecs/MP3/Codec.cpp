@@ -16,6 +16,7 @@
 #include "dr_mp3.h"
 
 #include <Core/Codecs/MP3/Codec.h>
+#include <Utils/Utils.h>
 
 namespace SparkyStudios::Audio::Amplitude
 {
@@ -109,20 +110,27 @@ namespace SparkyStudios::Audio::Amplitude
         return true;
     }
 
-    AmUInt64 MP3Codec::MP3Decoder::Load(AmVoidPtr out)
+    AmUInt64 MP3Codec::MP3Decoder::Load(AudioBuffer* out)
     {
-        return Stream(out, 0, m_format.GetFramesCount());
+        return Stream(out, 0, 0, m_format.GetFramesCount());
     }
 
-    AmUInt64 MP3Codec::MP3Decoder::Stream(AmVoidPtr out, AmUInt64 offset, AmUInt64 length)
+    AmUInt64 MP3Codec::MP3Decoder::Stream(AudioBuffer* out, AmUInt64 bufferOffset, AmUInt64 seekOffset, AmUInt64 length)
     {
         if (!_initialized)
             return 0;
 
-        if (!Seek(offset))
+        if (!Seek(seekOffset))
             return 0;
 
-        return drmp3_read_pcm_frames_f32(&_mp3, length, static_cast<AmAudioSampleBuffer>(out));
+        AmAlignedReal32Buffer buffer;
+        buffer.Init(length * _mp3.channels);
+
+        const AmUInt64 read = drmp3_read_pcm_frames_f32(&_mp3, length, buffer.GetBuffer());
+
+        Deinterleave(buffer.GetBuffer(), 0, out->GetData().GetBuffer(), bufferOffset, length, _mp3.channels);
+
+        return read;
     }
 
     bool MP3Codec::MP3Decoder::Seek(AmUInt64 offset)
@@ -144,7 +152,7 @@ namespace SparkyStudios::Audio::Amplitude
         return true;
     }
 
-    AmUInt64 MP3Codec::MP3Encoder::Write(AmVoidPtr in, AmUInt64 offset, AmUInt64 length)
+    AmUInt64 MP3Codec::MP3Encoder::Write(AudioBuffer* in, AmUInt64 offset, AmUInt64 length)
     {
         return 0;
     }

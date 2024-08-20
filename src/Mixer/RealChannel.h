@@ -14,8 +14,8 @@
 
 #pragma once
 
-#ifndef _AM_IMPLEMENTATION_MIXER_H
-#define _AM_IMPLEMENTATION_MIXER_H
+#ifndef _AM_IMPLEMENTATION_MIXER_REAL_CHANNEL_H
+#define _AM_IMPLEMENTATION_MIXER_REAL_CHANNEL_H
 
 #include <vector>
 
@@ -228,4 +228,4 @@ namespace SparkyStudios::Audio::Amplitude
     };
 } // namespace SparkyStudios::Audio::Amplitude
 
-#endif // _AM_IMPLEMENTATION_MIXER_H
+#endif // _AM_IMPLEMENTATION_MIXER_REAL_CHANNEL_H

@@ -292,25 +292,26 @@ static int process(const AmOsString& inFileName, const AmOsString& outFileName, 
             if (irLength == 0)
                 irLength = totalFrames;
 
-            AmAlignedReal32Buffer buffer;
-            buffer.Init(totalFrames * 2);
-
-            decoder->Load(buffer.GetBuffer());
+            AudioBuffer buffer(totalFrames, 2);
+            decoder->Load(&buffer);
 
             HRIRSphereVertex vertex;
             vertex.m_Position = position;
             vertex.m_LeftIR.resize(totalFrames);
             vertex.m_RightIR.resize(totalFrames);
 
+            const auto& leftChannel = buffer[0];
+            const auto& rightChannel = buffer[1];
+
             for (AmUInt32 j = 0; j < totalFrames; ++j)
             {
-                vertex.m_LeftIR[j] = buffer[j * 2 + 0];
-                vertex.m_RightIR[j] = buffer[j * 2 + 1];
+                vertex.m_LeftIR[j] = leftChannel[j];
+                vertex.m_RightIR[j] = rightChannel[j];
             }
 
             vertices.push_back(vertex);
 
-            buffer.Release();
+            buffer.Clear();
             wavCodec->DestroyDecoder(decoder);
         }
     }

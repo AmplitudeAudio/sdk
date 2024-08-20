@@ -14,8 +14,8 @@
 
 #pragma once
 
-#ifndef SS_AMPLITUDE_AUDIO_NULL_DRIVER_H
-#define SS_AMPLITUDE_AUDIO_NULL_DRIVER_H
+#ifndef _AM_IMPLEMENTATION_CORE_DRIVERS_NULL_DRIVER_H
+#define _AM_IMPLEMENTATION_CORE_DRIVERS_NULL_DRIVER_H
 
 #include <SparkyStudios/Audio/Amplitude/Amplitude.h>
 
@@ -24,7 +24,6 @@ namespace SparkyStudios::Audio::Amplitude
     struct NullDriverDeviceData
     {
         AmUInt32 mOutputBufferSize;
-        AmVoidPtr mOutputBuffer;
         bool mRunning;
     };
 
@@ -50,4 +49,4 @@ namespace SparkyStudios::Audio::Amplitude
     };
 } // namespace SparkyStudios::Audio::Amplitude
 
-#endif // SS_AMPLITUDE_AUDIO_NULL_DRIVER_H
+#endif // _AM_IMPLEMENTATION_CORE_DRIVERS_NULL_DRIVER_H

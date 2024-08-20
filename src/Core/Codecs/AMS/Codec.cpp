@@ -370,7 +370,7 @@ namespace SparkyStudios::Audio::Amplitude
     }
 
     static AmUInt64 Decode(
-        std::shared_ptr<File> file, const SoundFormat& format, AmVoidPtr out, AmUInt64 offset, AmUInt64 length, AmUInt32 blockSize)
+        std::shared_ptr<File> file, const SoundFormat& format, AudioBuffer* out, AmUInt64 offset, AmUInt64 length, AmUInt32 blockSize)
     {
         const AmUInt32 numChannels = format.GetNumChannels();
         const AmUInt32 frameSize = format.GetFrameSize();
@@ -381,6 +381,15 @@ namespace SparkyStudios::Audio::Amplitude
 
         if (!pcm_block || !adpcm_block)
         {
+            return 0;
+        }
+
+        auto* output16 = static_cast<AmInt16Buffer>(ampoolmalloc(MemoryPoolKind::Codec, length * numChannels * sizeof(AmInt16)));
+
+        if (!output16)
+        {
+            ampoolfree(MemoryPoolKind::Codec, pcm_block);
+            ampoolfree(MemoryPoolKind::Codec, adpcm_block);
             return 0;
         }
 
@@ -399,9 +408,16 @@ namespace SparkyStudios::Audio::Amplitude
         }
 
         const AmUInt64 oo = (offset % blockSize) * numChannels;
+        std::memcpy(output16, pcm_block + oo, length * frameSize);
 
-        memcpy(out, pcm_block + oo, length * frameSize);
+        for (AmUInt16 c = 0; c < numChannels; c++)
+        {
+            auto& channel = out->GetChannel(c);
+            for (AmUInt64 i = 0; i < length; i++)
+                channel[i] = AmInt16ToReal32(output16[i * numChannels + c]);
+        }
 
+        ampoolfree(MemoryPoolKind::Codec, output16);
         ampoolfree(MemoryPoolKind::Codec, pcm_block);
         ampoolfree(MemoryPoolKind::Codec, adpcm_block);
 
@@ -411,7 +427,7 @@ namespace SparkyStudios::Audio::Amplitude
     static AmUInt64 Encode(
         std::shared_ptr<File> file,
         SoundFormat& format,
-        AmVoidPtr in,
+        AudioBuffer* in,
         AmUInt64 length,
         AmUInt32 samplesPerBlock,
         int lookAhead,
@@ -427,6 +443,18 @@ namespace SparkyStudios::Audio::Amplitude
         if (!adpcm_block)
             return 0;
 
+        auto* input16 = static_cast<AmInt16Buffer>(ampoolmalloc(MemoryPoolKind::Codec, length * numChannels * sizeof(AmInt16)));
+
+        if (!input16)
+            return 0;
+
+        for (AmUInt16 c = 0; c < numChannels; c++)
+        {
+            const auto& channel = in->GetChannel(c);
+            for (AmUInt64 i = 0; i < length; i++)
+                input16[i * numChannels + c] = AmReal32ToInt16(channel[i], true);
+        }
+
         AmUInt64 offset = 0;
         while (length)
         {
@@ -441,17 +469,17 @@ namespace SparkyStudios::Audio::Amplitude
                 this_block_pcm_samples = length;
             }
 
-            AmInt16Buffer pcm_block = static_cast<AmInt16Buffer>(in) + offset * numChannels;
+            AmInt16Buffer pcm_block = input16 + offset * numChannels;
 
             if (IS_BIG_ENDIAN)
             {
                 AmUInt32 count = this_block_pcm_samples * numChannels;
-                auto* cp = (unsigned char*)pcm_block;
+                auto* cp = reinterpret_cast<unsigned char*>(pcm_block);
 
                 while (count--)
                 {
-                    int16_t temp = cp[0] + (cp[1] << 8);
-                    *(int16_t*)cp = temp;
+                    const int16_t temp = cp[0] + (cp[1] << 8);
+                    *reinterpret_cast<int16_t*>(cp) = temp;
                     cp += 2;
                 }
             }
@@ -520,6 +548,7 @@ namespace SparkyStudios::Audio::Amplitude
             FreeContext(ctx);
         }
 
+        ampoolfree(MemoryPoolKind::Codec, input16);
         ampoolfree(MemoryPoolKind::Codec, adpcm_block);
 
         return offset;
@@ -558,7 +587,7 @@ namespace SparkyStudios::Audio::Amplitude
         return true;
     }
 
-    AmUInt64 AMSCodec::AMSDecoder::Load(AmVoidPtr out)
+    AmUInt64 AMSCodec::AMSDecoder::Load(AudioBuffer* out)
     {
         if (!_initialized)
             return 0;
@@ -569,15 +598,15 @@ namespace SparkyStudios::Audio::Amplitude
         return Decode(_file, m_format, out, 0, m_format.GetFramesCount(), _blockSize);
     }
 
-    AmUInt64 AMSCodec::AMSDecoder::Stream(AmVoidPtr out, AmUInt64 offset, AmUInt64 length)
+    AmUInt64 AMSCodec::AMSDecoder::Stream(AudioBuffer* out, AmUInt64 bufferOffset, AmUInt64 seekOffset, AmUInt64 length)
     {
         if (!_initialized)
             return 0;
 
-        if (!Seek(offset))
+        if (!Seek(seekOffset))
             return 0;
 
-        return Decode(_file, m_format, out, offset, length, _blockSize);
+        return Decode(_file, m_format, out, seekOffset, length, _blockSize);
     }
 
     bool AMSCodec::AMSDecoder::Seek(AmUInt64 offset)
@@ -619,7 +648,7 @@ namespace SparkyStudios::Audio::Amplitude
         return true;
     }
 
-    AmUInt64 AMSCodec::AMSEncoder::Write(AmVoidPtr in, AmUInt64 offset, AmUInt64 length)
+    AmUInt64 AMSCodec::AMSEncoder::Write(AudioBuffer* in, AmUInt64 offset, AmUInt64 length)
     {
         _file->Seek(sizeof(ADPCMHeader) + offset, eFSO_START);
         return Encode(_file, m_format, in, length, _samplesPerBlock, _lookAhead, _noiseShaping);

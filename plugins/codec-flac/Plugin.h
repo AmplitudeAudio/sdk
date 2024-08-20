@@ -14,11 +14,11 @@
 
 #pragma once
 
-#ifndef SS_AMPLITUDE_AUDIO_FLAC_CODEC_PLUGIN_H
-#define SS_AMPLITUDE_AUDIO_FLAC_CODEC_PLUGIN_H
+#ifndef _AM_PLUGIN_CODEC_FLAC_PLUGIN_H
+#define _AM_PLUGIN_CODEC_FLAC_PLUGIN_H
 
 #include <SparkyStudios/Audio/Amplitude/Amplitude.h>
 
 using namespace SparkyStudios::Audio::Amplitude;
 
-#endif // SS_AMPLITUDE_AUDIO_FLAC_CODEC_PLUGIN_H
+#endif // _AM_PLUGIN_CODEC_FLAC_PLUGIN_H

@@ -15,6 +15,7 @@
 #ifndef _AM_MIXER_AMPLIMIX_H
 #define _AM_MIXER_AMPLIMIX_H
 
+#include <SparkyStudios/Audio/Amplitude/Core/AudioBuffer.h>
 #include <SparkyStudios/Audio/Amplitude/Core/Common.h>
 #include <SparkyStudios/Audio/Amplitude/Core/Device.h>
 #include <SparkyStudios/Audio/Amplitude/Core/Entity.h>
@@ -119,12 +120,12 @@ namespace SparkyStudios::Audio::Amplitude
         /**
          * @brief Processes the audio data by mixing multiple audio sources for the specified number of frames.
          *
-         * @param mixBuffer The buffer to store the mixed audio data.
+         * @param outBuffer The buffer to store the mixed audio data.
          * @param frameCount The number of frames to mix.
          *
          * @return The number of frames actually mixed.
          */
-        virtual AmUInt64 Mix(AmVoidPtr mixBuffer, AmUInt64 frameCount) = 0;
+        virtual AmUInt64 Mix(AudioBuffer** outBuffer, AmUInt64 frameCount) = 0;
 
         /**
          * @brief Gets the description of the rendering audio device.

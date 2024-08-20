@@ -14,8 +14,8 @@
 
 #pragma once
 
-#ifndef SS_AMPLITUDE_AUDIO_S_CURVE_FADER_H
-#define SS_AMPLITUDE_AUDIO_S_CURVE_FADER_H
+#ifndef _AM_IMPLEMENTATION_SOUND_FADERS_S_CURVE_FADER_H
+#define _AM_IMPLEMENTATION_SOUND_FADERS_S_CURVE_FADER_H
 
 #include <SparkyStudios/Audio/Amplitude/Core/Memory.h>
 #include <SparkyStudios/Audio/Amplitude/Sound/Fader.h>
@@ -81,4 +81,4 @@ namespace SparkyStudios::Audio::Amplitude
     };
 } // namespace SparkyStudios::Audio::Amplitude
 
-#endif // SS_AMPLITUDE_AUDIO_S_CURVE_FADER_H
+#endif // _AM_IMPLEMENTATION_SOUND_FADERS_S_CURVE_FADER_H

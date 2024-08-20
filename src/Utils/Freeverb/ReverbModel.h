@@ -38,9 +38,9 @@ namespace Freeverb
 
         void Mute();
         void ProcessMix(
-            AmAudioSampleBuffer inputL, AmAudioSampleBuffer inputR, AmAudioSampleBuffer outputL, AmAudioSampleBuffer outputR, AmUInt64 frames, AmUInt32 skip);
+            AmConstAudioSampleBuffer inputL, AmConstAudioSampleBuffer inputR, AmAudioSampleBuffer outputL, AmAudioSampleBuffer outputR, AmUInt64 frames, AmUInt32 skip);
         void ProcessReplace(
-            AmAudioSampleBuffer inputL, AmAudioSampleBuffer inputR, AmAudioSampleBuffer outputL, AmAudioSampleBuffer outputR, AmUInt64 frames, AmUInt32 skip);
+            AmConstAudioSampleBuffer inputL, AmConstAudioSampleBuffer inputR, AmAudioSampleBuffer outputL, AmAudioSampleBuffer outputR, AmUInt64 frames, AmUInt32 skip);
         void SetRoomSize(AmReal32 value);
         AmReal32 GetRoomSize() const;
         void SetDamp(AmReal32 value);

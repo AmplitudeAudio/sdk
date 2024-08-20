@@ -89,7 +89,7 @@ namespace SparkyStudios::Audio::Amplitude
         {
             _soundData = SoundChunk::CreateChunk(_format.GetFramesCount(), _format.GetNumChannels());
 
-            if (_decoder->Load(reinterpret_cast<AmAudioSampleBuffer>(_soundData->buffer)) != _format.GetFramesCount())
+            if (_decoder->Load(_soundData->buffer) != _format.GetFramesCount())
             {
                 SoundChunk::DestroyChunk(_soundData);
                 amLogError("Could not load a sound instance. Unable to read data from the parent sound.");
@@ -405,20 +405,20 @@ namespace SparkyStudios::Audio::Amplitude
 
         const AmUInt16 channels = _parent->_format.GetNumChannels();
 
-        AmUInt64 l = frames, o = offset, r = 0;
-        auto b = reinterpret_cast<AmAudioSampleBuffer>(data->chunk->buffer);
+        AmUInt64 l = frames, o = offset, r = 0, s = 0;
+        AudioBuffer* b = data->chunk->buffer;
 
         bool needFill = true;
         do
         {
-            const AmUInt64 n = _decoder->Stream(b, o, l);
+            const AmUInt64 n = _decoder->Stream(b, s, o, l);
             r += n;
 
             // If we reached the end of the file but looping is enabled, then
             // seek back to the beginning of the file and fill the remaining part of the buffer.
             if (needFill = n < l && _parent->_loop && _decoder->Seek(0); needFill)
             {
-                b += n * channels;
+                s += n;
                 l -= n;
                 o = 0;
             }

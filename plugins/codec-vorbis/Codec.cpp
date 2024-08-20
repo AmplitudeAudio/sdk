@@ -14,16 +14,6 @@
 
 #include <Codec.h>
 
-AM_API_PRIVATE void vorbis_interleave(float* dest, const float* const* src, unsigned nframes, unsigned channels)
-{
-    for (const float* const* src_end = src + channels; src != src_end; ++src, ++dest)
-    {
-        float* d = dest;
-        for (const float *s = *src, *s_end = s + nframes; s != s_end; ++s, d += channels)
-            *d = *s;
-    }
-}
-
 AM_API_PRIVATE size_t read_callback(void* ptr, size_t size, size_t nmemb, void* userdata)
 {
     auto* file = static_cast<File*>(userdata);
@@ -93,12 +83,12 @@ bool VorbisCodec::VorbisDecoder::Close()
     return true;
 }
 
-AmUInt64 VorbisCodec::VorbisDecoder::Load(AmVoidPtr out)
+AmUInt64 VorbisCodec::VorbisDecoder::Load(AudioBuffer* out)
 {
-    return Stream(out, 0, m_format.GetFramesCount());
+    return Stream(out, 0, 0, m_format.GetFramesCount());
 }
 
-AmUInt64 VorbisCodec::VorbisDecoder::Stream(AmVoidPtr out, AmUInt64 offset, AmUInt64 length)
+AmUInt64 VorbisCodec::VorbisDecoder::Stream(AudioBuffer* out, AmUInt64 bufferOffset, AmUInt64 seekOffset, AmUInt64 length)
 {
     if (!_initialized)
         return 0;
@@ -112,7 +102,7 @@ AmUInt64 VorbisCodec::VorbisDecoder::Stream(AmVoidPtr out, AmUInt64 offset, AmUI
 
     while (size > 0)
     {
-        if (!Seek(offset + read))
+        if (!Seek(seekOffset + read))
             return 0;
 
         const AmInt64 ret = ov_read_float(&_vorbis, &data, static_cast<AmInt32>(size), nullptr);
@@ -122,7 +112,11 @@ AmUInt64 VorbisCodec::VorbisDecoder::Stream(AmVoidPtr out, AmUInt64 offset, AmUI
 
         if (ret > 0)
         {
-            vorbis_interleave(static_cast<AmAudioSampleBuffer>(out) + read * channels, data, ret, channels);
+            for (AmUInt16 i = 0; i < channels; ++i)
+            {
+                auto& channel = out->GetChannel(i);
+                std::memcpy(&channel[bufferOffset] + read, data[i], ret * sizeof(AmAudioSample));
+            }
 
             size -= ret;
             read += ret;
@@ -162,7 +156,7 @@ bool VorbisCodec::VorbisEncoder::Close()
     return true;
 }
 
-AmUInt64 VorbisCodec::VorbisEncoder::Write(AmVoidPtr in, AmUInt64 offset, AmUInt64 length)
+AmUInt64 VorbisCodec::VorbisEncoder::Write(AudioBuffer* in, AmUInt64 offset, AmUInt64 length)
 {
     return 0;
 }
