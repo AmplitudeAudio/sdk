@@ -29,6 +29,11 @@ struct ProcessingState
 {
     bool verbose = false;
     bool debug = false;
+    struct
+    {
+        bool enabled = false;
+        AmUInt32 targetSampleRate = 44100;
+    } resampling;
     HRIRSphereDatasetModel datasetModel = eHRIRSphereDatasetModel_IRCAM;
 };
 
@@ -284,7 +289,7 @@ static int process(const AmOsString& inFileName, const AmOsString& outFileName, 
                 return EXIT_FAILURE;
             }
 
-            const AmUInt64 totalFrames = decoder->GetFormat().GetFramesCount();
+            AmUInt64 totalFrames = decoder->GetFormat().GetFramesCount();
 
             if (sampleRate == 0)
                 sampleRate = decoder->GetFormat().GetSampleRate();
@@ -294,6 +299,22 @@ static int process(const AmOsString& inFileName, const AmOsString& outFileName, 
 
             AudioBuffer buffer(totalFrames, 2);
             decoder->Load(&buffer);
+
+            if (state.resampling.enabled)
+            {
+                auto* resampler = Resampler::Construct("default");
+                resampler->Initialize(2, sampleRate, state.resampling.targetSampleRate);
+
+                auto resampledTotalFrames = resampler->GetExpectedOutputFrames(totalFrames);
+                AudioBuffer resampledBuffer(resampledTotalFrames, 2);
+
+                resampler->Process(buffer, totalFrames, resampledBuffer, resampledTotalFrames);
+
+                totalFrames = resampledTotalFrames;
+
+                buffer = resampledBuffer;
+                Resampler::Destruct("default", resampler);
+            }
 
             HRIRSphereVertex vertex;
             vertex.m_Position = position;
@@ -405,6 +426,12 @@ int main(int argc, char* argv[])
                 state.debug = true;
                 break;
 
+            case 'R':
+            case 'r':
+                state.resampling.enabled = true;
+                state.resampling.targetSampleRate = strtol(argv[++i], argv, 10);
+                break;
+
             default:
                 log(stderr, "\nInvalid option: -%c. Use -h for help.\n", **argv);
                 return EXIT_FAILURE;
@@ -464,6 +491,7 @@ int main(int argc, char* argv[])
         log(stdout, "    -[qQ]:        \tQuiet mode. Shutdown all messages.\n");
         log(stdout, "    -[vV]:        \tVerbose mode. Display all messages.\n");
         log(stdout, "    -[dD]:        \tDebug mode. Will create an obj file with a preview of the sphere shape.\n");
+        log(stdout, "    -[rR] freq:   \tResample HRIR data to the target frequency.\n");
         log(stdout, "    -[mM]:        \tThe dataset model to use.\n");
         log(stdout, "                  \tThe default value is 0. The available values are:\n");
         log(stdout, "           0:     \tIRCAN (LISTEN) dataset (http://recherche.ircam.fr/equipes/salles/listen/download.html).\n");
@@ -476,5 +504,11 @@ int main(int argc, char* argv[])
         return EXIT_SUCCESS;
     }
 
-    return process(AM_STRING_TO_OS_STRING(inFileName), AM_STRING_TO_OS_STRING(outFileName), state);
+    Engine::RegisterDefaultPlugins();
+
+    const auto res = process(AM_STRING_TO_OS_STRING(inFileName), AM_STRING_TO_OS_STRING(outFileName), state);
+
+    Engine::UnregisterDefaultPlugins();
+
+    return res;
 }
