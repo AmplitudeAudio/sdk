@@ -361,4 +361,14 @@ namespace SparkyStudios::Audio::Amplitude
             static_cast<AmReal32>(_upRate) / std::accumulate(filterChannel->begin(), filterChannel->end(), 0.0f);
         ScalarMultiply(filterChannel->begin(), filterChannel->begin(), normalizingFactor, filterLength);
     }
+
+    ResamplerInstance* DefaultResampler::CreateInstance()
+    {
+        return ampoolnew(MemoryPoolKind::Filtering, DefaultResamplerInstance);
+    }
+
+    void DefaultResampler::DestroyInstance(ResamplerInstance* instance)
+    {
+        ampooldelete(MemoryPoolKind::Filtering, DefaultResamplerInstance, (DefaultResamplerInstance*)instance);
+    }
 } // namespace SparkyStudios::Audio::Amplitude

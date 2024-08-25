@@ -281,6 +281,9 @@ set(SA_SOURCE
     src/DSP/Filters/WaveShaperFilter.h
     src/DSP/Resamplers/DefaultResampler.cpp
     src/DSP/Resamplers/DefaultResampler.h
+    src/DSP/Resamplers/LibsamplerateResampler.cpp
+    src/DSP/Resamplers/LibsamplerateResampler.h
+    src/DSP/Resamplers/R8BrainResampler.h
     src/DSP/AudioConverter.cpp
     src/DSP/Filter.cpp
     src/DSP/Resampler.cpp
@@ -307,8 +310,6 @@ set(SA_SOURCE
     src/Math/SphericalPosition.cpp
     src/Math/SplitComplex.cpp
 
-    src/Mixer/Resamplers/R8BrainResampler.h
-    src/Mixer/Resamplers/LibsamplerateResampler.h
     src/Mixer/Pipeline/ClipProcessor.h
     src/Mixer/Pipeline/EffectProcessor.h
     src/Mixer/Pipeline/EnvironmentProcessor.h

@@ -32,8 +32,8 @@
 #pragma region Default Resamplers
 
 #include <DSP/Resamplers/DefaultResampler.h>
-#include <Mixer/Resamplers/LibsamplerateResampler.h>
-#include <Mixer/Resamplers/R8BrainResampler.h>
+#include <DSP/Resamplers/LibsamplerateResampler.h>
+#include <DSP/Resamplers/R8BrainResampler.h>
 
 #pragma endregion
 

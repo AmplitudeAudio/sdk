@@ -145,7 +145,7 @@ namespace SparkyStudios::Audio::Amplitude
         void GenerateInterpolatingFilter(AmUInt64 sampleRate);
 
         /**
-         * @brief Arranges the antialiasing filter coefficients in polyphase filter format.
+         * @brief Arranges the anti-aliasing filter coefficients in polyphase filter format.
          *
          * @param filterLength The number of samples in the filter buffer.
          * @param filter The buffer containing the filter coefficients.
@@ -211,15 +211,9 @@ namespace SparkyStudios::Audio::Amplitude
             : Resampler("default")
         {}
 
-        ResamplerInstance* CreateInstance() override
-        {
-            return ampoolnew(MemoryPoolKind::Filtering, DefaultResamplerInstance);
-        }
+        ResamplerInstance* CreateInstance() override;
 
-        void DestroyInstance(ResamplerInstance* instance) override
-        {
-            ampooldelete(MemoryPoolKind::Filtering, DefaultResamplerInstance, (DefaultResamplerInstance*)instance);
-        }
+        void DestroyInstance(ResamplerInstance* instance) override;
     };
 } // namespace SparkyStudios::Audio::Amplitude
 
