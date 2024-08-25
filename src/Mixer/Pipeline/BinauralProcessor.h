@@ -334,7 +334,7 @@ namespace SparkyStudios::Audio::Amplitude
         {
             if (!_hrirSphere.IsLoaded())
             {
-                _hrirSphere.SetResource("./data/mit.amir");
+                _hrirSphere.SetResource(AM_OS_STRING("./data/mit.amir"));
                 _hrirSphere.Load(Engine::GetInstance()->GetFileSystem());
             }
 

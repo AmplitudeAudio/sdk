@@ -121,7 +121,7 @@ namespace SparkyStudios::Audio::Amplitude
     }
     const AmString& SoundImpl::GetName() const
     {
-        return AssetImpl<unsigned long long, SoundDefinition>::GetName();
+        return AssetImpl::GetName();
     }
 
     bool SoundImpl::IsStream() const
