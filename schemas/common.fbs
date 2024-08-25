@@ -31,10 +31,15 @@ enum ValueKind: byte {
 enum Spatialization: byte {
   /// Sounds are always played at their regular gain.
   None,
+
   /// Sounds have their gain adjusted based on the attenuation.
   Position,
+
   /// Sounds have their gain adjusted based on the attenuation and following their orientation.
   PositionOrientation,
+
+  /// Enable 3D spatialization using Head Related Transfer Functions
+  HRTF,
 }
 
 /// Scopes allow specifying how playback data are shared between each instance
@@ -43,6 +48,7 @@ enum Scope: byte {
   /// All instances of the collection will be treated as one object so
   /// that the repetition across entities is avoided.
   World,
+
   /// Each instance of the collection will be treated as a single object
   /// and therefore no data will be shared across entities.
   Entity,

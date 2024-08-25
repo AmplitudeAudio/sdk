@@ -51,6 +51,13 @@ namespace SparkyStudios::Audio::Amplitude
     {
         Fader::Destruct(_faderName, _fader);
 
+        _hrtfContext.m_CurrentDirection = AM_V3(0, 0, 0);
+        _hrtfContext.m_PreviousDirection = AM_V3(0, 0, 0);
+        _hrtfContext.m_PreviousSamplesL.Release();
+        _hrtfContext.m_PreviousSamplesR.Release();
+        _hrtfContext.m_PreviousGain = 0.0f;
+        _hrtfContext.m_CurrentGain = 0.0f;
+
         _realChannel._channelLayersId.clear();
         _realChannel._activeSounds.clear();
         _realChannel._playedSounds.clear();
@@ -564,6 +571,17 @@ namespace SparkyStudios::Audio::Amplitude
                 else if (_targetFadeOutState == ChannelPlaybackState::Paused)
                     Pause();
             }
+        }
+
+        // Update HRTF context
+        if (_activeListener.Valid())
+        {
+            _hrtfContext.m_PreviousDirection = _hrtfContext.m_CurrentDirection;
+            _hrtfContext.m_CurrentDirection = AM_Mul(_activeListener.GetState()->GetInverseMatrix(), AM_V4V(GetLocation() - _activeListener.GetLocation(), 1.0f)).XYZ;
+            _hrtfContext.m_CurrentDirection = AM_Norm(_hrtfContext.m_CurrentDirection);
+
+            _hrtfContext.m_PreviousGain = _hrtfContext.m_CurrentGain;
+            _hrtfContext.m_CurrentGain = _gain;
         }
     }
 

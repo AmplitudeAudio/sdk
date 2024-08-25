@@ -34,7 +34,7 @@ namespace SparkyStudios::Audio::Amplitude
             if (effect == nullptr)
                 return;
 
-            effect->GetFilter()->Process(in, out, in.GetFrameCount(), layer->GetSoundFormat().GetSampleRate());
+            effect->GetFilter()->Process(in, out, in.GetFrameCount(), layer->GetSampleRate());
         }
     };
 

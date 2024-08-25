@@ -154,8 +154,8 @@ namespace SparkyStudios::Audio::Amplitude
         }
     }
 
-    CartesianCoordinateSystem::CartesianCoordinateSystem(Axis rigth, Axis forward, Axis up)
-        : _rightAxis(rigth)
+    CartesianCoordinateSystem::CartesianCoordinateSystem(Axis right, Axis forward, Axis up)
+        : _rightAxis(right)
         , _forwardAxis(forward)
         , _upAxis(up)
     {}

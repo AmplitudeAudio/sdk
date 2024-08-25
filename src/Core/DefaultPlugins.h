@@ -19,6 +19,7 @@
 
 #pragma region Default Sound Processors
 
+#include <Mixer/Pipeline/BinauralProcessor.h>
 #include <Mixer/Pipeline/ClipProcessor.h>
 #include <Mixer/Pipeline/EffectProcessor.h>
 #include <Mixer/Pipeline/EnvironmentProcessor.h>

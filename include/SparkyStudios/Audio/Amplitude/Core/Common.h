@@ -257,6 +257,30 @@ namespace SparkyStudios::Audio::Amplitude
         AM_FADER_STATE_ACTIVE = 1,
     };
 
+    enum eSpatialization
+    {
+        /**
+         * @brief Disables spatialization.
+         */
+        eSpatialization_None,
+
+        /**
+         * @brief Enables 2D (left-right) spatialization based on sound position
+         */
+        eSpatialization_Position,
+
+        /**
+         * @brief Enables 2D (left-right) spatialization based on sound position
+         * and orientation. The sound need to be attached to an @c Entity.
+         */
+        eSpatialization_PositionOrientation,
+
+        /**
+         * @brief Enables 3D spatialization using Head Related Transfer Functions.
+         */
+        eSpatialization_HRTF
+    };
+
     /**
      * @brief Describe the format of an audio sample.
      *

@@ -24,8 +24,8 @@ namespace SparkyStudios::Audio::Amplitude
     /**
      * @brief A class representing a cartesian coordinate system.
      *
-     * It's used to know in which direction is positive along each axis, and also allow
-     * Amplitude to convert incoming data to the internal coordinate sytem.
+     * It's used to know which direction is positive along each axis, and also allows
+     * Amplitude to convert incoming data to the internal coordinate system.
      */
     class AM_API_PUBLIC CartesianCoordinateSystem
     {
@@ -219,11 +219,11 @@ namespace SparkyStudios::Audio::Amplitude
         /**
          * @brief Creates a new cartesian coordinate system with the given axes.
          *
-         * @param rigth The right axis of the new coordinate system.
+         * @param right The right axis of the new coordinate system.
          * @param forward The forward axis of the new coordinate system.
          * @param up The up axis of the new coordinate system.
          */
-        CartesianCoordinateSystem(Axis rigth, Axis forward, Axis up);
+        CartesianCoordinateSystem(Axis right, Axis forward, Axis up);
 
         /**
          * @brief Gets the vector corresponding to the coordinate system's right axis.

@@ -98,11 +98,12 @@ namespace SparkyStudios::Audio::Amplitude
         Listener GetListener() const override;
         Channel GetChannel() const override;
         SoundFormat GetSoundFormat() const override;
-        bool IsSpatializationEnabled() const override;
+        eSpatialization GetSpatialization() const override;
         bool IsLoopEnabled() const override;
         bool IsStreamEnabled() const override;
         const Sound* GetSound() const override;
         const EffectInstance* GetEffect() const override;
+        AmUInt32 GetSampleRate() const override;
     };
 
     struct MixerCommand

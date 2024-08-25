@@ -75,9 +75,7 @@ namespace SparkyStudios::Audio::Amplitude
                 framesToProcess = STFT_WINDOW_SIZE;
 
             for (AmUInt32 i = 0; i < framesToProcess; i++)
-            {
                 _temp[i] = inChannel[i + offset];
-            }
 
             if (framesToProcess < STFT_WINDOW_SIZE)
                 std::memset(_temp + framesToProcess, 0, sizeof(AmReal32) * (STFT_WINDOW_SIZE - framesToProcess));

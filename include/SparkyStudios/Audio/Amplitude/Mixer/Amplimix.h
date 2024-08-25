@@ -72,7 +72,7 @@ namespace SparkyStudios::Audio::Amplitude
 
         virtual SoundFormat GetSoundFormat() const = 0;
 
-        virtual bool IsSpatializationEnabled() const = 0;
+        virtual eSpatialization GetSpatialization() const = 0;
 
         virtual bool IsLoopEnabled() const = 0;
 
@@ -81,6 +81,8 @@ namespace SparkyStudios::Audio::Amplitude
         virtual const Sound* GetSound() const = 0;
 
         virtual const EffectInstance* GetEffect() const = 0;
+
+        virtual AmUInt32 GetSampleRate() const = 0;
     };
 
     /**

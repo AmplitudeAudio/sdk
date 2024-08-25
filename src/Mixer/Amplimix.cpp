@@ -1189,13 +1189,12 @@ namespace SparkyStudios::Audio::Amplitude
         return snd->format;
     }
 
-    bool AmplimixLayerImpl::IsSpatializationEnabled() const
+    eSpatialization AmplimixLayerImpl::GetSpatialization() const
     {
         if (snd == nullptr || snd->sound == nullptr)
-            return false;
+            return eSpatialization_None;
 
-        // TODO: Update this with the new spatialization system
-        return snd->sound->GetSettings().m_spatialization != 0;
+        return static_cast<eSpatialization>(snd->sound->GetSettings().m_spatialization);
     }
 
     bool AmplimixLayerImpl::IsLoopEnabled() const
@@ -1228,5 +1227,14 @@ namespace SparkyStudios::Audio::Amplitude
             return nullptr;
 
         return snd->sound->GetEffect();
+    }
+
+    AmUInt32 AmplimixLayerImpl::GetSampleRate() const
+    {
+        if (snd == nullptr || snd->sound == nullptr)
+            return 0;
+
+        const AmReal32 ratio = AMPLIMIX_LOAD(&sampleRateRatio);
+        return snd->format.GetSampleRate() * ratio;
     }
 } // namespace SparkyStudios::Audio::Amplitude

@@ -290,6 +290,7 @@ set(SA_SOURCE
 
     src/HRTF/HRIRSphere.cpp
     src/HRTF/HRIRSphere.h
+    src/HRTF/HRTFContext.h
     src/IO/DiskFile.cpp
     src/IO/DiskFileSystem.cpp
     src/IO/File.cpp
@@ -310,6 +311,7 @@ set(SA_SOURCE
     src/Math/SphericalPosition.cpp
     src/Math/SplitComplex.cpp
 
+    src/Mixer/Pipeline/BinauralProcessor.h
     src/Mixer/Pipeline/ClipProcessor.h
     src/Mixer/Pipeline/EffectProcessor.h
     src/Mixer/Pipeline/EnvironmentProcessor.h

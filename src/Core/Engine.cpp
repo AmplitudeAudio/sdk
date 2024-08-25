@@ -56,6 +56,7 @@ namespace SparkyStudios::Audio::Amplitude
     static std::vector<dylib*> gLoadedPlugins = {};
 
     // Default Plugins instances
+    static AmUniquePtr<MemoryPoolKind::Engine, BinauralProcessor> sBinauralProcessorPlugin = nullptr;
     static AmUniquePtr<MemoryPoolKind::Engine, ClipProcessor> sClipProcessorPlugin = nullptr;
     static AmUniquePtr<MemoryPoolKind::Engine, EffectProcessor> sEffectProcessorPlugin = nullptr;
     static AmUniquePtr<MemoryPoolKind::Engine, EnvironmentProcessor> sEnvironmentProcessorPlugin = nullptr;
@@ -312,6 +313,7 @@ namespace SparkyStudios::Audio::Amplitude
         // Ensure to cleanup registries
         UnregisterDefaultPlugins();
 
+        sBinauralProcessorPlugin.reset(ampoolnew(MemoryPoolKind::Engine, BinauralProcessor));
         sClipProcessorPlugin.reset(ampoolnew(MemoryPoolKind::Engine, ClipProcessor));
         sEffectProcessorPlugin.reset(ampoolnew(MemoryPoolKind::Engine, EffectProcessor));
         sEnvironmentProcessorPlugin.reset(ampoolnew(MemoryPoolKind::Engine, EnvironmentProcessor));
@@ -360,6 +362,7 @@ namespace SparkyStudios::Audio::Amplitude
         if (gAmplitude != nullptr && gAmplitude->_state != nullptr)
             return false; // Cannot unregister the default plugins when the engine is already initialized.
 
+        sBinauralProcessorPlugin.reset(nullptr);
         sClipProcessorPlugin.reset(nullptr);
         sEffectProcessorPlugin.reset(nullptr);
         sEnvironmentProcessorPlugin.reset(nullptr);

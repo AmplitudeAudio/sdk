@@ -75,7 +75,7 @@ namespace SparkyStudios::Audio::Amplitude
     AudioBufferChannel& AudioBufferChannel::operator=(const std::vector<AmReal32>& data)
     {
         AMPLITUDE_ASSERT(_isEnabled);
-        AMPLITUDE_ASSERT(data.size() == _frameCount);
+        AMPLITUDE_ASSERT(_frameCount <= data.size());
         std::memcpy(_begin, data.data(), sizeof(AmReal32) * _frameCount);
         return *this;
     }
@@ -86,7 +86,7 @@ namespace SparkyStudios::Audio::Amplitude
         {
             AMPLITUDE_ASSERT(_isEnabled);
             AMPLITUDE_ASSERT(channel._isEnabled);
-            AMPLITUDE_ASSERT(_frameCount == channel._frameCount);
+            AMPLITUDE_ASSERT(_frameCount <= channel._frameCount);
             std::memcpy(_begin, channel._begin, sizeof(AmReal32) * _frameCount);
         }
 
@@ -97,7 +97,7 @@ namespace SparkyStudios::Audio::Amplitude
     {
         AMPLITUDE_ASSERT(_isEnabled);
         AMPLITUDE_ASSERT(channel._isEnabled);
-        AMPLITUDE_ASSERT(_frameCount == channel._frameCount);
+        AMPLITUDE_ASSERT(_frameCount <= channel._frameCount);
 
         AmSize remaining = _frameCount;
 
@@ -117,9 +117,7 @@ namespace SparkyStudios::Audio::Amplitude
 #endif
 
         for (AmSize i = _frameCount - remaining; i < _frameCount; i++)
-        {
             _begin[i] += channel._begin[i];
-        }
 
         return *this;
     }
@@ -128,7 +126,7 @@ namespace SparkyStudios::Audio::Amplitude
     {
         AMPLITUDE_ASSERT(_isEnabled);
         AMPLITUDE_ASSERT(channel._isEnabled);
-        AMPLITUDE_ASSERT(_frameCount == channel._frameCount);
+        AMPLITUDE_ASSERT(_frameCount <= channel._frameCount);
 
         AmSize remaining = _frameCount;
 
@@ -148,9 +146,7 @@ namespace SparkyStudios::Audio::Amplitude
 #endif
 
         for (AmSize i = _frameCount - remaining; i < _frameCount; i++)
-        {
             _begin[i] -= channel._begin[i];
-        }
 
         return *this;
     }
@@ -159,7 +155,7 @@ namespace SparkyStudios::Audio::Amplitude
     {
         AMPLITUDE_ASSERT(_isEnabled);
         AMPLITUDE_ASSERT(channel._isEnabled);
-        AMPLITUDE_ASSERT(_frameCount == channel._frameCount);
+        AMPLITUDE_ASSERT(_frameCount <= channel._frameCount);
 
         PointwiseMultiply(_begin, channel._begin, _begin, _frameCount);
 
