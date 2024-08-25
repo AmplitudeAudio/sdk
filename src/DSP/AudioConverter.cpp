@@ -21,6 +21,8 @@ namespace SparkyStudios::Audio::Amplitude
     AudioConverter::AudioConverter()
         : _resampler(nullptr)
         , _channelConversionMode(kChannelConversionModeDisabled)
+        , _needResampling(false)
+        , _srcInitialized(false)
     {
         _resampler = Resampler::Construct("default");
         Reset();
@@ -42,8 +44,15 @@ namespace SparkyStudios::Audio::Amplitude
         else
             return false; // Unsupported channel conversion mode
 
-        _needResampling = settings.m_sourceChannelCount != settings.m_targetChannelCount;
-        _resampler->Initialize(settings.m_targetChannelCount, settings.m_sourceSampleRate, settings.m_targetSampleRate);
+        _needResampling = settings.m_sourceSampleRate != settings.m_targetSampleRate;
+
+        if (_needResampling)
+        {
+            _resampler->Initialize(settings.m_targetChannelCount, settings.m_sourceSampleRate, settings.m_targetSampleRate);
+            _srcInitialized = true;
+        }
+
+        _settings = settings;
 
         return true;
     }
@@ -78,7 +87,17 @@ namespace SparkyStudios::Audio::Amplitude
     void AudioConverter::SetSampleRate(AmUInt64 sourceSampleRate, AmUInt64 targetSampleRate)
     {
         _needResampling = sourceSampleRate != targetSampleRate;
-        _resampler->SetSampleRate(sourceSampleRate, targetSampleRate);
+
+        _settings.m_sourceSampleRate = sourceSampleRate;
+        _settings.m_targetSampleRate = targetSampleRate;
+
+        if (!_needResampling)
+            return;
+
+        if (_srcInitialized)
+            _resampler->SetSampleRate(sourceSampleRate, targetSampleRate);
+        else
+            _resampler->Initialize(_settings.m_targetChannelCount, sourceSampleRate, targetSampleRate);
     }
 
     AmUInt64 AudioConverter::GetRequiredInputFrameCount(AmUInt64 outputFrameCount) const

@@ -17,7 +17,7 @@
 #include <Core/Engine.h>
 #include <Mixer/Amplimix.h>
 
-#define AMPLIMIX_STORE(A, C) std::atomic_store_explicit(A, C, std::memory_order_release)
+#define AMPLIMIX_STORE(A, C) std::atomic_store_explicit(A, (C), std::memory_order_release)
 #define AMPLIMIX_LOAD(A) std::atomic_load_explicit(A, std::memory_order_acquire)
 #define AMPLIMIX_CSWAP(A, E, C) std::atomic_compare_exchange_strong_explicit(A, E, C, std::memory_order_acq_rel, std::memory_order_acquire)
 
@@ -529,6 +529,10 @@ namespace SparkyStudios::Audio::Amplitude
             AMPLIMIX_STORE(&lay->userPlaySpeed, speed);
             // atomically set cursor to start position based on given argument
             AMPLIMIX_STORE(&lay->cursor, lay->start);
+            // store the base sample rate ratio for this source
+            AMPLIMIX_STORE(
+                &lay->baseSampleRateRatio,
+                static_cast<AmReal32>(sound->format.GetSampleRate()) / static_cast<AmReal32>(_device.mRequestedOutputSampleRate));
 
             // Initialize the converter
             lay->dataConverter = ampoolnew(MemoryPoolKind::Amplimix, AudioConverter);
@@ -1064,9 +1068,8 @@ namespace SparkyStudios::Audio::Amplitude
         {
             currentSpeed = AM_Lerp(currentSpeed, 0.75f, playSpeed);
 
-            const AmReal32 basePitch =
-                static_cast<AmReal32>(layer->snd->format.GetSampleRate()) / static_cast<AmReal32>(_device.mRequestedOutputSampleRate);
-            const AmReal32 sampleRateRatio = basePitch * currentSpeed;
+            const AmReal32 baseSampleRateRatio = AMPLIMIX_LOAD(&layer->baseSampleRateRatio);
+            const AmReal32 sampleRateRatio = baseSampleRateRatio * currentSpeed;
 
             AMPLIMIX_STORE(&layer->targetPlaySpeed, playSpeed);
             AMPLIMIX_STORE(&layer->sampleRateRatio, sampleRateRatio);

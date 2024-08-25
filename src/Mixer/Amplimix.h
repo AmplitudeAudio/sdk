@@ -76,6 +76,7 @@ namespace SparkyStudios::Audio::Amplitude
         _Atomic(AmReal32) playSpeed; // current sound playback speed
         _Atomic(AmReal32) targetPlaySpeed; // computed (real) sound playback speed
         _Atomic(AmReal32) sampleRateRatio; // sample rate ratio
+        _Atomic(AmReal32) baseSampleRateRatio; // base sample rate ratio
 
         AudioConverter* dataConverter; // miniaudio resampler & channel converter
 

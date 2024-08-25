@@ -158,6 +158,9 @@ namespace SparkyStudios::Audio::Amplitude
         ChannelConversionMode _channelConversionMode;
 
         bool _needResampling;
+        bool _srcInitialized;
+
+        Settings _settings;
     };
 } // namespace SparkyStudios::Audio::Amplitude
 
