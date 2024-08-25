@@ -186,6 +186,7 @@ set(SA_SOURCE
     include/SparkyStudios/Audio/Amplitude/Math/SplitComplex.h
     include/SparkyStudios/Audio/Amplitude/Math/Utils.h
     include/SparkyStudios/Audio/Amplitude/Mixer/Amplimix.h
+    include/SparkyStudios/Audio/Amplitude/Mixer/Node.h
     include/SparkyStudios/Audio/Amplitude/Mixer/Pipeline.h
     include/SparkyStudios/Audio/Amplitude/Mixer/SoundProcessor.h
     include/SparkyStudios/Audio/Amplitude/Sound/Attenuation.h
@@ -319,8 +320,10 @@ set(SA_SOURCE
     src/Mixer/Pipeline/OcclusionProcessor.h
     src/Mixer/Pipeline/PassThroughProcessor.h
     src/Mixer/Pipeline/SilenceProcessor.h
+
     src/Mixer/Amplimix.h
     src/Mixer/Amplimix.cpp
+    src/Mixer/Node.cpp
     src/Mixer/Pipeline.cpp
     src/Mixer/RealChannel.cpp
     src/Mixer/RealChannel.h

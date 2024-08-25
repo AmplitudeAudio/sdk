@@ -65,6 +65,7 @@
 #include <SparkyStudios/Audio/Amplitude/Math/Utils.h>
 
 #include <SparkyStudios/Audio/Amplitude/Mixer/Amplimix.h>
+#include <SparkyStudios/Audio/Amplitude/Mixer/Pipeline.h>
 #include <SparkyStudios/Audio/Amplitude/Mixer/SoundProcessor.h>
 
 #include <SparkyStudios/Audio/Amplitude/Sound/Attenuation.h>

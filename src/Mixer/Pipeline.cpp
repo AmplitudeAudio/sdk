@@ -19,7 +19,15 @@ namespace SparkyStudios::Audio::Amplitude
 {
     Pipeline::Pipeline()
         : _processors()
-    {}
+    {
+        _inputNode = ampoolnew(MemoryPoolKind::Amplimix, InputNodeInstance, 1, this);
+        _outputNode = ampoolnew(MemoryPoolKind::Amplimix, OutputNodeInstance, 2, this);
+
+        _outputNode->Connect(_inputNode->GetId());
+
+        _nodes[_inputNode->GetId()] = _inputNode;
+        _nodes[_outputNode->GetId()] = _outputNode;
+    }
 
     Pipeline::~Pipeline()
     {
@@ -27,6 +35,9 @@ namespace SparkyStudios::Audio::Amplitude
             ampooldelete(MemoryPoolKind::Amplimix, SoundProcessorInstance, processor);
 
         _processors.clear();
+
+        ampooldelete(MemoryPoolKind::Amplimix, InputNodeInstance, _inputNode);
+        ampooldelete(MemoryPoolKind::Amplimix, OutputNodeInstance, _outputNode);
     }
 
     void Pipeline::Append(SoundProcessorInstance* processor)
@@ -60,5 +71,31 @@ namespace SparkyStudios::Audio::Amplitude
     {
         for (auto&& p : _processors)
             p->Cleanup(layer);
+    }
+
+    void Pipeline::Execute(const AmplimixLayer* layer, const AudioBuffer& in, AudioBuffer& out)
+    {
+        _inputNode->SetInput(layer, &in);
+        _outputNode->SetOutput(&out);
+
+        _outputNode->Consume();
+    }
+
+    InputNodeInstance* Pipeline::GetInputNode() const
+    {
+        return _inputNode;
+    }
+
+    OutputNodeInstance* Pipeline::GetOutputNode() const
+    {
+        return _outputNode;
+    }
+
+    NodeInstance* Pipeline::GetNode(AmObjectID id) const
+    {
+        if (_nodes.find(id) != _nodes.end())
+            return _nodes.at(id);
+
+        return nullptr;
     }
 } // namespace SparkyStudios::Audio::Amplitude

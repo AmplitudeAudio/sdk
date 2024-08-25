@@ -19,16 +19,15 @@
 
 #include <SparkyStudios/Audio/Amplitude/Core/Common.h>
 #include <SparkyStudios/Audio/Amplitude/Mixer/Amplimix.h>
+#include <SparkyStudios/Audio/Amplitude/Mixer/Node.h>
 #include <SparkyStudios/Audio/Amplitude/Mixer/SoundProcessor.h>
 
 namespace SparkyStudios::Audio::Amplitude
 {
     class Pipeline
     {
+#pragma region Old Implementation
     public:
-        Pipeline();
-        ~Pipeline();
-
         void Append(SoundProcessorInstance* processor);
 
         void Insert(SoundProcessorInstance* processor, AmSize index);
@@ -39,6 +38,38 @@ namespace SparkyStudios::Audio::Amplitude
 
     private:
         std::vector<SoundProcessorInstance*> _processors;
+#pragma endregion
+
+    public:
+        Pipeline();
+        ~Pipeline();
+
+        void Execute(const AmplimixLayer* layer, const AudioBuffer& in, AudioBuffer& out);
+
+        /**
+         * @brief Gets the input node of the pipeline.
+         */
+        [[nodiscard]] InputNodeInstance* GetInputNode() const;
+
+        /**
+         * @brief Gets the output node of the pipeline.
+         */
+        [[nodiscard]] OutputNodeInstance* GetOutputNode() const;
+
+        /**
+         * @brief Gets the node with the specified ID.
+         *
+         * @param id The ID of the node to retrieve.
+         *
+         * @return The node with the specified ID, or @c nullptr if not found.
+         */
+        [[nodiscard]] NodeInstance* GetNode(AmObjectID id) const;
+
+    private:
+        std::unordered_map<AmObjectID, NodeInstance*> _nodes;
+
+        InputNodeInstance* _inputNode;
+        OutputNodeInstance* _outputNode;
     };
 } // namespace SparkyStudios::Audio::Amplitude
 

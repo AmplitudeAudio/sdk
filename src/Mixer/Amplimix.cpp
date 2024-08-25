@@ -932,7 +932,8 @@ namespace SparkyStudios::Audio::Amplitude
             AmUInt64 oldCursor = cursor;
 
             // Execute Pipeline
-            _pipeline->Process(layer, *out->buffer, *out->buffer);
+            // _pipeline->Process(layer, *out->buffer, *out->buffer);
+            _pipeline->Execute(layer, *out->buffer, *out->buffer);
 
             /* */ AmReal32 position = cursor;
             const AmUInt64 start = layer->start;
