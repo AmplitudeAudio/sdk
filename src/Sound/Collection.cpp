@@ -23,8 +23,6 @@
 
 namespace SparkyStudios::Audio::Amplitude
 {
-    template class AssetImpl<AmCollectionID, CollectionDefinition>;
-
     CollectionImpl::CollectionImpl()
         : _worldScopeScheduler(nullptr)
         , _entityScopeSchedulers()

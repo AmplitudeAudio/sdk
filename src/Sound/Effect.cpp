@@ -21,8 +21,6 @@
 
 namespace SparkyStudios::Audio::Amplitude
 {
-    template class AssetImpl<AmEffectID, EffectDefinition>;
-
     EffectImpl::EffectImpl()
         : _instances()
         , _parameters()

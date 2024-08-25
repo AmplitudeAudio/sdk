@@ -21,8 +21,6 @@
 
 namespace SparkyStudios::Audio::Amplitude
 {
-    template class AssetImpl<AmSwitchContainerID, SwitchContainerDefinition>;
-
     SwitchContainerImpl::SwitchContainerImpl()
         : _switch(nullptr)
         , _sounds()

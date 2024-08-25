@@ -18,8 +18,6 @@
 
 namespace SparkyStudios::Audio::Amplitude
 {
-    template class AssetImpl<AmAttenuationID, AttenuationDefinition>;
-
     AttenuationImpl::AttenuationImpl()
         : _name()
         , _maxDistance(0.0f)
