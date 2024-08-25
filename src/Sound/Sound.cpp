@@ -216,7 +216,7 @@ namespace SparkyStudios::Audio::Amplitude
         m_bus = FindBusInternalState(state, definition->bus());
         if (!m_bus)
         {
-            amLogError("Sound %s specifies an unknown bus ID: %llu.", definition->name()->c_str(), definition->bus());
+            amLogError("Sound %s specifies an unknown bus ID: " AM_ID_CHAR_FMT ".", definition->name()->c_str(), definition->bus());
             return false;
         }
 
@@ -228,7 +228,7 @@ namespace SparkyStudios::Audio::Amplitude
             }
             else
             {
-                amLogError("Sound definition is invalid: invalid effect ID '%llu'", definition->effect());
+                amLogError("Sound definition is invalid: invalid effect ID '" AM_ID_CHAR_FMT "'", definition->effect());
                 return false;
             }
         }
@@ -241,7 +241,7 @@ namespace SparkyStudios::Audio::Amplitude
             }
             else
             {
-                amLogError("Sound definition is invalid: invalid attenuation ID '%llu'", definition->attenuation());
+                amLogError("Sound definition is invalid: invalid attenuation ID '" AM_ID_CHAR_FMT "'", definition->attenuation());
                 return false;
             }
         }

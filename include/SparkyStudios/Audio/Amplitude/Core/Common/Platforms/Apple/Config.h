@@ -49,4 +49,9 @@
 
 #include <SparkyStudios/Audio/Amplitude/Core/Common/Platforms/UNIX/Config.h>
 
+#ifndef AM_ID_CHAR_FMT
+// Defines the format used to print AmObjectId value
+#define AM_ID_CHAR_FMT "%llu"
+#endif
+
 #endif // _AM_CORE_COMMON_PLATFORMS_APPLE_CONFIG_H

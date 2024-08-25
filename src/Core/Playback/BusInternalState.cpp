@@ -52,7 +52,7 @@ namespace SparkyStudios::Audio::Amplitude
         _bus = amEngine->FindBus(definition->id());
         if (!_bus.Valid())
         {
-            amLogError("Cannot initialize duck-bus internal state: unable to find a duck-bus with ID %llu.", definition->id());
+            amLogError("Cannot initialize duck-bus internal state: unable to find a duck-bus with ID " AM_ID_CHAR_FMT ".", definition->id());
             return false;
         }
 

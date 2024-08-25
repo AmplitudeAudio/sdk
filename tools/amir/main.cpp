@@ -96,26 +96,22 @@ int parseFileName_IRCAM(const AmOsString& fileName, SphericalPosition& position)
 {
     const auto azimuth_location = fileName.find(AM_OS_STRING("_T"));
     if (azimuth_location == AmOsString::npos)
-    {
         return EXIT_FAILURE;
-    }
 
     const auto elevation_location = fileName.find(AM_OS_STRING("_P"));
     if (elevation_location == AmOsString::npos)
-    {
         return EXIT_FAILURE;
-    }
 
     // azimuth in degrees 3 digits, we need to negate so that the angle is relative to positive z-axis
     // - from 000 to 180 for source on your left
     // - from 180 to 359 for source on your right
-    const auto azimuth = -std::strtof(fileName.substr(azimuth_location + 2, 3).c_str(), nullptr);
+    const auto azimuth = -std::strtof(AM_OS_STRING_TO_STRING(fileName.substr(azimuth_location + 2, 3)), nullptr);
 
     // elevation in degrees, modulo 360, 3 digits
     // - from 315 to 345 for source below your head
     // - 0 for source in front of your head
     // - from 015 to 090 for source above your head
-    const auto elevation = std::strtof(fileName.substr(elevation_location + 2, 3).c_str(), nullptr);
+    const auto elevation = std::strtof(AM_OS_STRING_TO_STRING(fileName.substr(elevation_location + 2, 3)), nullptr);
 
     position = SphericalPosition::FromDegrees(azimuth, elevation);
     return EXIT_SUCCESS;
@@ -125,15 +121,11 @@ int parseFileName_MIT(const AmOsString& fileName, SphericalPosition& position)
 {
     const auto azimuth_location = fileName.find('e');
     if (azimuth_location == AmOsString::npos)
-    {
         return EXIT_FAILURE;
-    }
 
     const auto elevation_location = fileName.find('H');
     if (elevation_location == AmOsString::npos)
-    {
         return EXIT_FAILURE;
-    }
 
     AmOsString azimuthString;
     for (AmSize az = azimuth_location + 1; fileName[az] != 'a'; ++az)
@@ -146,13 +138,13 @@ int parseFileName_MIT(const AmOsString& fileName, SphericalPosition& position)
     // azimuth in degrees 3 digits, we need to negate so that the angle is relative to positive z-axis
     // - from 000 to 180 for source on your left
     // - from 180 to 359 for source on your right
-    const auto azimuth = -std::strtof(azimuthString.c_str(), nullptr);
+    const auto azimuth = -std::strtof(AM_OS_STRING_TO_STRING(azimuthString), nullptr);
 
     // elevation in degrees 2 digits
     // - from -15 to -40 for source below your head
     // - 0 for source in front of your head
     // - from 15 to 90 for source above your head
-    const auto elevation = std::strtof(elevationString.c_str(), nullptr);
+    const auto elevation = std::strtof(AM_OS_STRING_TO_STRING(elevationString), nullptr);
 
     position = SphericalPosition(azimuth * AM_DegToRad, elevation * AM_DegToRad, 1.0);
     return EXIT_SUCCESS;
@@ -162,26 +154,23 @@ int parseFileName_SADIE(const AmOsString& fileName, SphericalPosition& position)
 {
     const auto azimuth_location = fileName.find(AM_OS_STRING("azi_"));
     if (azimuth_location == AmOsString::npos)
-    {
         return EXIT_FAILURE;
-    }
 
     const auto elevation_location = fileName.find(AM_OS_STRING("_ele_"));
     if (elevation_location == AmOsString::npos)
-    {
         return EXIT_FAILURE;
-    }
 
-    // azimuth in degrees, we need to negate so that the angle is relative to positive z-axis
+    // azimuth in degrees
     // - from 000 to 180 for source on your left
     // - from 180 to 359 for source on your right
-    const auto azimuth = std::strtof(fileName.substr(azimuth_location + 4, elevation_location - (azimuth_location + 4)).c_str(), nullptr);
+    const auto azimuth =
+        std::strtof(AM_OS_STRING_TO_STRING(fileName.substr(azimuth_location + 4, elevation_location - (azimuth_location + 4))), nullptr);
 
     // elevation in degrees
     // - from -15 to -81 for source below your head
     // - 0 for source in front of your head
     // - from 15 to 90 for source above your head
-    const auto elevation = std::strtof(fileName.substr(elevation_location + 5).c_str(), nullptr);
+    const auto elevation = std::strtof(AM_OS_STRING_TO_STRING(fileName.substr(elevation_location + 5)), nullptr);
 
     position = SphericalPosition::FromDegrees(azimuth, elevation);
     return EXIT_SUCCESS;

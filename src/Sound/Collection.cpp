@@ -125,7 +125,7 @@ namespace SparkyStudios::Audio::Amplitude
         m_bus = FindBusInternalState(state, definition->bus());
         if (!m_bus)
         {
-            amLogError("Collection %s specifies an unknown bus ID: %llu.", definition->name()->c_str(), definition->bus());
+            amLogError("Collection %s specifies an unknown bus ID: " AM_ID_CHAR_FMT ".", definition->name()->c_str(), definition->bus());
             return false;
         }
 
@@ -137,7 +137,7 @@ namespace SparkyStudios::Audio::Amplitude
             }
             else
             {
-                amLogError("Sound definition is invalid: invalid effect ID '%llu'.", definition->effect());
+                amLogError("Sound definition is invalid: invalid effect ID '" AM_ID_CHAR_FMT "'.", definition->effect());
                 return false;
             }
         }
@@ -152,7 +152,7 @@ namespace SparkyStudios::Audio::Amplitude
             if (!m_attenuation)
             {
                 amLogError(
-                    "Collection %s specifies an unknown attenuation ID: %llu.", definition->name()->c_str(), definition->attenuation());
+                    "Collection %s specifies an unknown attenuation ID: " AM_ID_CHAR_FMT ".", definition->name()->c_str(), definition->attenuation());
                 return false;
             }
         }
@@ -176,13 +176,13 @@ namespace SparkyStudios::Audio::Amplitude
 
             if (id == kAmInvalidObjectId)
             {
-                amLogError("Collection %s specifies an invalid sound ID: %llu.", definition->name()->c_str(), id);
+                amLogError("Collection %s specifies an invalid sound ID: " AM_ID_CHAR_FMT ".", definition->name()->c_str(), id);
                 return false;
             }
 
             if (auto findIt = state->sound_map.find(id); findIt == state->sound_map.end())
             {
-                amLogError("Collection %s specifies an unknown sound ID: %llu", definition->name()->c_str(), id);
+                amLogError("Collection %s specifies an unknown sound ID: " AM_ID_CHAR_FMT "", definition->name()->c_str(), id);
                 return false;
             }
             else

@@ -62,6 +62,9 @@
 // Defines the format used to print AmOsString text
 #define AM_OS_CHAR_FMT "%ls"
 
+// Defines the format used to print AmObjectId value
+#define AM_ID_CHAR_FMT "%llu"
+
 // Macro used to convert a string literal to an AmOsString string at compile-time
 #define AM_OS_STRING(s) L##s
 

@@ -466,7 +466,7 @@ namespace SparkyStudios::Audio::Amplitude
             }
             else
             {
-                amLogError("Unknown bus with ID '%llu' listed in child buses.", busId);
+                amLogError("Unknown bus with ID '" AM_ID_CHAR_FMT "' listed in child buses.", busId);
                 return false;
             }
         }
@@ -489,7 +489,7 @@ namespace SparkyStudios::Audio::Amplitude
             else
             {
                 ampooldelete(MemoryPoolKind::Engine, DuckBusInternalState, bus);
-                amLogError("Unknown bus with ID '%llu' listed in duck buses.", duck->id());
+                amLogError("Unknown bus with ID '" AM_ID_CHAR_FMT "' listed in duck buses.", duck->id());
                 return false;
             }
         }
@@ -887,7 +887,7 @@ namespace SparkyStudios::Audio::Amplitude
     {
         if (const auto findIt = _state->sound_bank_map.find(id); findIt == _state->sound_bank_map.end())
         {
-            amLogWarning("Cannot deinitialize Soundbank with ID '%llu'. Soundbank not loaded.", id);
+            amLogWarning("Cannot deinitialize Soundbank with ID '" AM_ID_CHAR_FMT "'. Soundbank not loaded.", id);
             AMPLITUDE_ASSERT(0);
         }
         else if (findIt->second->GetRefCounter()->Decrement() == 0)
@@ -1333,7 +1333,7 @@ namespace SparkyStudios::Audio::Amplitude
         if (SwitchContainerHandle handle = GetSwitchContainerHandle(id))
             return Play(handle, location, userGain);
 
-        amLogError("Cannot play sound: invalid ID (%llu).", id);
+        amLogError("Cannot play sound: invalid ID (" AM_ID_CHAR_FMT ").", id);
         return Channel(nullptr);
     }
 
@@ -1353,7 +1353,7 @@ namespace SparkyStudios::Audio::Amplitude
         if (SwitchContainerHandle handle = GetSwitchContainerHandle(id))
             return Play(handle, entity, userGain);
 
-        amLogError("Cannot play sound: invalid ID (%llu).", id);
+        amLogError("Cannot play sound: invalid ID (" AM_ID_CHAR_FMT ").", id);
         return Channel(nullptr);
     }
 
@@ -1425,7 +1425,7 @@ namespace SparkyStudios::Audio::Amplitude
         if (SwitchHandle handle = GetSwitchHandle(id))
             return SetSwitchState(handle, stateId);
 
-        amLogError("Cannot update switch: Invalid ID (%llu).", id);
+        amLogError("Cannot update switch: Invalid ID (" AM_ID_CHAR_FMT ").", id);
     }
 
     void EngineImpl::SetSwitchState(AmSwitchID id, const AmString& stateName) const
@@ -1433,7 +1433,7 @@ namespace SparkyStudios::Audio::Amplitude
         if (SwitchHandle handle = GetSwitchHandle(id))
             return SetSwitchState(handle, stateName);
 
-        amLogError("Cannot update switch: Invalid ID (%llu).", id);
+        amLogError("Cannot update switch: Invalid ID (" AM_ID_CHAR_FMT ").", id);
     }
 
     void EngineImpl::SetSwitchState(AmSwitchID id, const SwitchState& state) const
@@ -1441,7 +1441,7 @@ namespace SparkyStudios::Audio::Amplitude
         if (SwitchHandle handle = GetSwitchHandle(id))
             return SetSwitchState(handle, state);
 
-        amLogError("Cannot update switch: Invalid ID (%llu).", id);
+        amLogError("Cannot update switch: Invalid ID (" AM_ID_CHAR_FMT ").", id);
     }
 
     void EngineImpl::SetSwitchState(const AmString& name, AmObjectID stateId) const
@@ -1484,7 +1484,7 @@ namespace SparkyStudios::Audio::Amplitude
         if (RtpcHandle handle = GetRtpcHandle(id))
             return SetRtpcValue(handle, value);
 
-        amLogError("Cannot update RTPC value: Invalid RTPC ID (%llu).", id);
+        amLogError("Cannot update RTPC value: Invalid RTPC ID (" AM_ID_CHAR_FMT ").", id);
     }
 
     void EngineImpl::SetRtpcValue(const AmString& name, double value) const

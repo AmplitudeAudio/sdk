@@ -89,7 +89,7 @@ namespace SparkyStudios::Audio::Amplitude
         m_bus = FindBusInternalState(state, definition->bus());
         if (!m_bus)
         {
-            amLogError("SwitchContainer %s specifies an unknown bus ID: %llu.", definition->name()->c_str(), definition->bus());
+            amLogError("SwitchContainer %s specifies an unknown bus ID: " AM_ID_CHAR_FMT ".", definition->name()->c_str(), definition->bus());
             return false;
         }
 
@@ -106,7 +106,7 @@ namespace SparkyStudios::Audio::Amplitude
             }
             else
             {
-                amLogError("Sound definition is invalid: invalid effect ID '%llu'", definition->effect());
+                amLogError("Sound definition is invalid: invalid effect ID '" AM_ID_CHAR_FMT "'", definition->effect());
                 return false;
             }
         }
@@ -121,7 +121,7 @@ namespace SparkyStudios::Audio::Amplitude
             if (!m_attenuation)
             {
                 amLogError(
-                    "SwitchContainer %s specifies an unknown attenuation ID: %llu.", definition->name()->c_str(),
+                    "SwitchContainer %s specifies an unknown attenuation ID: " AM_ID_CHAR_FMT ".", definition->name()->c_str(),
                     definition->attenuation());
                 return false;
             }
@@ -150,14 +150,14 @@ namespace SparkyStudios::Audio::Amplitude
 
             if (id == kAmInvalidObjectId)
             {
-                amLogError("SwitchContainer %s specifies an invalid sound object ID: %llu.", definition->name()->c_str(), id);
+                amLogError("SwitchContainer %s specifies an invalid sound object ID: " AM_ID_CHAR_FMT ".", definition->name()->c_str(), id);
                 return false;
             }
 
             if (!state->sound_map.contains(id) && !state->collection_map.contains(id))
             {
                 amLogError(
-                    "SwitchContainer %s specifies an unknown sound object ID: %llu. It's neither a Sound nor a Collection.",
+                    "SwitchContainer %s specifies an unknown sound object ID: " AM_ID_CHAR_FMT ". It's neither a Sound nor a Collection.",
                     definition->name()->c_str(), id);
                 return false;
             }
