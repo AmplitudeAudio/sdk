@@ -160,7 +160,8 @@ static int process(const AmOsString& inFileName, const AmOsString& outFileName, 
 
         if (state.resampling.enabled)
         {
-            const auto resampler = Resampler::Construct("default");
+            auto* resampler = Resampler::Construct("default");
+            resampler->Initialize(numChannels, sampleRate, state.resampling.targetSampleRate);
 
             AmUInt64 f = resampler->GetExpectedOutputFrames(numSamples);
             AudioBuffer output(f, numChannels);
