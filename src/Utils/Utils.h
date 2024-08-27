@@ -232,6 +232,31 @@ namespace SparkyStudios::Audio::Amplitude
             output[i] = input[i] * scalar;
     }
 
+    AM_INLINE void ScalarMultiplyAccumulate(const AmReal32* input, AmReal32* output, AmReal32 scalar, AmSize length)
+    {
+        AmSize remaining = length;
+
+#if defined(AM_SIMD_INTRINSICS)
+        const AmSize end = GetNumSimdChunks(length);
+        constexpr AmSize blockSize = GetSimdBlockSize();
+        remaining = remaining - end;
+
+        const auto& bb = xsimd::batch(scalar);
+
+        for (AmSize i = 0; i < end; i += blockSize)
+        {
+            auto ba = xsimd::load_aligned(input + i);
+            auto bc = xsimd::load_aligned(output + i);
+
+            auto res = xsimd::fma(ba, bb, bc);
+            res.store_aligned(output + i);
+        }
+#endif
+
+        for (AmSize i = length - remaining; i < length; i++)
+            output[i] += input[i] * scalar;
+    }
+
     AM_INLINE void PointwiseMultiply(const AmReal32* inputA, const AmReal32* inputB, AmReal32* output, AmSize length)
     {
         AmSize remaining = length;

@@ -16,6 +16,7 @@
 #include <SparkyStudios/Audio/Amplitude/Mixer/Pipeline.h>
 
 #include <Mixer/Nodes/AttenuationNode.h>
+#include <Mixer/Nodes/OcclusionNode.h>
 
 namespace SparkyStudios::Audio::Amplitude
 {
@@ -31,8 +32,12 @@ namespace SparkyStudios::Audio::Amplitude
         auto attenuationNode = ampoolnew(MemoryPoolKind::Amplimix, AttenuationNodeInstance, 3, this);
         _nodes[attenuationNode->GetId()] = attenuationNode;
 
+        auto occlusionNode = ampoolnew(MemoryPoolKind::Amplimix, OcclusionNodeInstance, 4, this);
+        _nodes[occlusionNode->GetId()] = occlusionNode;
+
         attenuationNode->Connect(_inputNode->GetId());
-        _outputNode->Connect(attenuationNode->GetId());
+        occlusionNode->Connect(attenuationNode->GetId());
+        _outputNode->Connect(occlusionNode->GetId());
     }
 
     Pipeline::~Pipeline()

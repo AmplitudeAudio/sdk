@@ -29,6 +29,7 @@
 #include <cstring>
 #include <map>
 #include <memory>
+#include <ranges>
 #include <set>
 #include <string>
 #include <unordered_map>

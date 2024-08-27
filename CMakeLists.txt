@@ -316,6 +316,8 @@ set(SA_SOURCE
 
     src/Mixer/Nodes/AttenuationNode.cpp
     src/Mixer/Nodes/AttenuationNode.h
+    src/Mixer/Nodes/OcclusionNode.cpp
+    src/Mixer/Nodes/OcclusionNode.h
 
     src/Mixer/Pipeline/BinauralProcessor.h
     src/Mixer/Pipeline/ClipProcessor.h
