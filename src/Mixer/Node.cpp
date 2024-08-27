@@ -27,7 +27,12 @@ namespace SparkyStudios::Audio::Amplitude
         return m_id;
     }
 
-    ProcessorNodeInstance::ProcessorNodeInstance(AmObjectID id, Pipeline* pipeline)
+    const AmplimixLayer* NodeInstance::GetLayer() const
+    {
+        return _layer;
+    }
+
+    ProcessorNodeInstance::ProcessorNodeInstance(AmObjectID id, const Pipeline* pipeline)
         : NodeInstance(id)
         , m_pipeline(std::move(pipeline))
     {}
@@ -52,10 +57,11 @@ namespace SparkyStudios::Audio::Amplitude
 
     AudioBuffer ProcessorNodeInstance::Provide()
     {
+        Consume();
         return Process(_processingBuffer);
     }
 
-    MixerNodeInstance::MixerNodeInstance(AmObjectID id, Pipeline* pipeline)
+    MixerNodeInstance::MixerNodeInstance(AmObjectID id, const Pipeline* pipeline)
         : NodeInstance(id)
         , m_pipeline(pipeline)
     {}
@@ -92,16 +98,16 @@ namespace SparkyStudios::Audio::Amplitude
 
     AudioBuffer MixerNodeInstance::Provide()
     {
+        Consume();
         return Mix(_processingBuffers);
     }
 
-    InputNodeInstance::InputNodeInstance(AmObjectID id, Pipeline* pipeline)
+    InputNodeInstance::InputNodeInstance(AmObjectID id, const Pipeline* pipeline)
         : NodeInstance(id)
     {}
 
-    void InputNodeInstance::SetInput(const AmplimixLayer* layer, const AudioBuffer* buffer)
+    void InputNodeInstance::SetInput(const AudioBuffer* buffer)
     {
-        _layer = layer;
         _buffer = buffer;
     }
 
@@ -113,7 +119,7 @@ namespace SparkyStudios::Audio::Amplitude
         return std::move(temp);
     }
 
-    OutputNodeInstance::OutputNodeInstance(AmObjectID id, Pipeline* pipeline)
+    OutputNodeInstance::OutputNodeInstance(AmObjectID id, const Pipeline* pipeline)
         : NodeInstance(id)
         , _pipeline(pipeline)
     {}

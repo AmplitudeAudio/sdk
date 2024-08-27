@@ -20,7 +20,9 @@
 #include <SparkyStudios/Audio/Amplitude/Core/Device.h>
 #include <SparkyStudios/Audio/Amplitude/Core/Entity.h>
 #include <SparkyStudios/Audio/Amplitude/Core/Listener.h>
+#include <SparkyStudios/Audio/Amplitude/Core/Playback/Bus.h>
 #include <SparkyStudios/Audio/Amplitude/Core/Playback/Channel.h>
+#include <SparkyStudios/Audio/Amplitude/Sound/Attenuation.h>
 
 namespace SparkyStudios::Audio::Amplitude
 {
@@ -52,7 +54,9 @@ namespace SparkyStudios::Audio::Amplitude
 
         virtual AmUInt64 GetCurrentPosition() const = 0;
 
-        virtual AmVec2 GetGain() const = 0;
+        virtual AmReal32 GetGain() const = 0;
+
+        virtual AmReal32 GetPan() const = 0;
 
         virtual AmReal32 GetPitch() const = 0;
 
@@ -70,6 +74,8 @@ namespace SparkyStudios::Audio::Amplitude
 
         virtual Channel GetChannel() const = 0;
 
+        virtual Bus GetBus() const = 0;
+
         virtual SoundFormat GetSoundFormat() const = 0;
 
         virtual eSpatialization GetSpatialization() const = 0;
@@ -81,6 +87,8 @@ namespace SparkyStudios::Audio::Amplitude
         virtual const Sound* GetSound() const = 0;
 
         virtual const EffectInstance* GetEffect() const = 0;
+
+        virtual const Attenuation* GetAttenuation() const = 0;
 
         virtual AmUInt32 GetSampleRate() const = 0;
     };
@@ -113,7 +121,7 @@ namespace SparkyStudios::Audio::Amplitude
             PlaybackOutputFormat deviceOutputFormat) = 0;
 
         /**
-         * @cbrief Checks if the mixer is initialized.
+         * @brief Checks if the mixer is initialized.
          *
          * @return @c true if the mixer is initialized, @c false otherwise.
          */

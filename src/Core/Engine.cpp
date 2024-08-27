@@ -955,16 +955,13 @@ namespace SparkyStudios::Audio::Amplitude
 
     bool BestListener(
         ListenerList::const_iterator* bestListener,
-        AmReal32* distanceSquared,
         AmVec3* listenerSpaceLocation,
         const ListenerList& listeners,
         const AmVec3& location,
         eListenerFetchMode fetchMode)
     {
         if (listeners.empty())
-        {
             return false;
-        }
 
         const AmVec4 location4 = AM_V4V(location, 1.0f);
 
@@ -979,17 +976,16 @@ namespace SparkyStudios::Audio::Amplitude
             {
                 auto listener = listeners.cbegin();
                 *listenerSpaceLocation = AM_Mul(listener->GetInverseMatrix(), location4).XYZ;
-                *distanceSquared = AM_LenSqr(*listenerSpaceLocation);
+                AmReal32 distanceSquared = AM_LenSqr(*listenerSpaceLocation);
                 *bestListener = listener;
 
                 for (++listener; listener != listeners.cend(); ++listener)
                 {
                     const AmVec3 transformedLocation = AM_Mul(listener->GetInverseMatrix(), location4).XYZ;
                     if (const AmReal32 magnitudeSquared = AM_LenSqr(transformedLocation);
-                        fetchMode == eListenerFetchMode_Nearest ? magnitudeSquared < *distanceSquared : magnitudeSquared > *distanceSquared)
+                        fetchMode == eListenerFetchMode_Nearest ? magnitudeSquared < distanceSquared : magnitudeSquared > distanceSquared)
                     {
                         *bestListener = listener;
-                        *distanceSquared = magnitudeSquared;
                         *listenerSpaceLocation = transformedLocation;
                     }
                 }
@@ -1001,7 +997,6 @@ namespace SparkyStudios::Audio::Amplitude
                 auto listener = listeners.cbegin();
                 const AmMat4& mat = listener->GetInverseMatrix();
                 *listenerSpaceLocation = AM_Mul(mat, location4).XYZ;
-                *distanceSquared = AM_LenSqr(*listenerSpaceLocation);
                 *bestListener = listener;
             }
             break;
@@ -1011,7 +1006,6 @@ namespace SparkyStudios::Audio::Amplitude
                 auto listener = listeners.cend();
                 const AmMat4& mat = listener->GetInverseMatrix();
                 *listenerSpaceLocation = AM_Mul(mat, location4).XYZ;
-                *distanceSquared = AM_LenSqr(*listenerSpaceLocation);
                 *bestListener = listener;
             }
             break;
@@ -1020,9 +1014,7 @@ namespace SparkyStudios::Audio::Amplitude
             {
                 ListenerInternalState* state = amEngine->GetDefaultListener().GetState();
                 if (state == nullptr)
-                {
                     return false;
-                }
 
                 for (auto listener = listeners.cbegin(); listener != listeners.cend(); ++listener)
                 {
@@ -1030,7 +1022,6 @@ namespace SparkyStudios::Audio::Amplitude
                     {
                         const AmMat4& mat = state->GetInverseMatrix();
                         *listenerSpaceLocation = AM_Mul(mat, location4).XYZ;
-                        *distanceSquared = AM_LenSqr(*listenerSpaceLocation);
                         *bestListener = listener;
                         return true;
                     }
@@ -1076,39 +1067,15 @@ namespace SparkyStudios::Audio::Amplitude
         AmReal32 distanceSquared;
         AmVec3 listenerSpaceLocation;
 
-        bool found = BestListener(&foundListener, &distanceSquared, &listenerSpaceLocation, listeners, location, fetchMode);
+        bool found = BestListener(&foundListener, &listenerSpaceLocation, listeners, location, fetchMode);
 
-        if (spatialization == Spatialization_Position || spatialization == Spatialization_PositionOrientation)
-        {
-            if (found)
-            {
-                if (attenuation != nullptr)
-                {
-                    if (spatialization == Spatialization_PositionOrientation)
-                    {
-                        AMPLITUDE_ASSERT(entity.Valid());
-                        *gain *= attenuation->GetGain(entity, Listener(const_cast<ListenerInternalState*>(&*foundListener)));
-                    }
-                    else
-                    {
-                        *gain *= attenuation->GetGain(location, Listener(const_cast<ListenerInternalState*>(&*foundListener)));
-                    }
-                }
-
-                *pan = CalculatePan(listenerSpaceLocation);
-                *pitch *= channel != nullptr ? channel->GetDopplerFactor(foundListener->GetId()) : 1.0f;
-            }
-            else
-            {
-                *gain = 0.0f;
-                *pan = AM_V2(0, 0);
-                *pitch = 1.0f;
-            }
-        }
-        else
-        {
+        if (spatialization != Spatialization_Position && spatialization != Spatialization_PositionOrientation)
             *pan = AM_V2(0, 0);
-        }
+        else
+            *pan = CalculatePan(listenerSpaceLocation);
+
+        if (spatialization != Spatialization_None)
+            *pitch *= channel != nullptr ? channel->GetDopplerFactor(foundListener->GetId()) : 1.0f;
 
         if (found && listener != nullptr)
             *listener = const_cast<ListenerInternalState*>(&*foundListener);
@@ -1123,13 +1090,11 @@ namespace SparkyStudios::Audio::Amplitude
     PriorityList::iterator FindInsertionPoint(PriorityList* list, const AmReal32 priority)
     {
         PriorityList::reverse_iterator it;
+
         for (it = list->rbegin(); it != list->rend(); ++it)
-        {
             if (const AmReal32 p = it->Priority(); p > priority)
-            {
                 break;
-            }
-        }
+
         return it.base();
     }
 

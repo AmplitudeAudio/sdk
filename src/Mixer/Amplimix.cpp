@@ -521,8 +521,10 @@ namespace SparkyStudios::Audio::Amplitude
             lay->end = endFrame;
 #endif // AM_SIMD_INTRINSICS
 
-            // convert gain and pan to left and right gain and store it atomically
-            AMPLIMIX_STORE(&lay->gain, LRGain(gain, pan));
+            // store the gain
+            AMPLIMIX_STORE(&lay->gain, gain);
+            // store the pan
+            AMPLIMIX_STORE(&lay->pan, pan);
             // store the pitch
             AMPLIMIX_STORE(&lay->pitch, pitch);
             // store the playback speed
@@ -613,8 +615,10 @@ namespace SparkyStudios::Audio::Amplitude
         if (lay->snd != nullptr && lay->snd->format.GetNumChannels() == 1)
             pan = 0.0f;
 
-        // convert gain and pan to left and right gain and store it atomically
-        AMPLIMIX_STORE(&lay->gain, LRGain(gain, pan));
+        // store the gain
+        AMPLIMIX_STORE(&lay->gain, gain);
+        // store the pan
+        AMPLIMIX_STORE(&lay->pan, pan);
 
         // return success
         return true;
@@ -840,7 +844,7 @@ namespace SparkyStudios::Audio::Amplitude
         AmUInt64 cursor = AMPLIMIX_LOAD(&layer->cursor);
 
         // atomically load left and right gain
-        const AmVec2 g = AMPLIMIX_LOAD(&layer->gain);
+        const AmVec2 g = LRGain(AMPLIMIX_LOAD(&layer->gain), AMPLIMIX_LOAD(&layer->pan));
         const AmReal32 gain = AMPLIMIX_LOAD(&_masterGain);
 
         AmReal32 l = g.X, r = g.Y;
@@ -1128,9 +1132,14 @@ namespace SparkyStudios::Audio::Amplitude
         return AMPLIMIX_LOAD(&cursor);
     }
 
-    AmVec2 AmplimixLayerImpl::GetGain() const
+    AmReal32 AmplimixLayerImpl::GetGain() const
     {
         return AMPLIMIX_LOAD(&gain);
+    }
+
+    AmReal32 AmplimixLayerImpl::GetPan() const
+    {
+        return AMPLIMIX_LOAD(&pan);
     }
 
     AmReal32 AmplimixLayerImpl::GetPitch() const
@@ -1185,6 +1194,14 @@ namespace SparkyStudios::Audio::Amplitude
         return snd->sound->GetChannel();
     }
 
+    Bus AmplimixLayerImpl::GetBus() const
+    {
+        if (snd == nullptr || snd->sound == nullptr)
+            return Bus(nullptr);
+
+        return amEngine->FindBus(snd->sound->GetSettings().m_busID);
+    }
+
     SoundFormat AmplimixLayerImpl::GetSoundFormat() const
     {
         if (snd == nullptr || snd->sound == nullptr)
@@ -1231,6 +1248,14 @@ namespace SparkyStudios::Audio::Amplitude
             return nullptr;
 
         return snd->sound->GetEffect();
+    }
+
+    const Attenuation* AmplimixLayerImpl::GetAttenuation() const
+    {
+        if (snd == nullptr || snd->sound == nullptr)
+            return nullptr;
+
+        return amEngine->GetAttenuationHandle(snd->sound->GetSettings().m_attenuationID);
     }
 
     AmUInt32 AmplimixLayerImpl::GetSampleRate() const

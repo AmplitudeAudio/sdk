@@ -15,18 +15,24 @@
 #include <SparkyStudios/Audio/Amplitude/Core/Memory.h>
 #include <SparkyStudios/Audio/Amplitude/Mixer/Pipeline.h>
 
+#include <Mixer/Nodes/AttenuationNode.h>
+
 namespace SparkyStudios::Audio::Amplitude
 {
     Pipeline::Pipeline()
         : _processors()
     {
         _inputNode = ampoolnew(MemoryPoolKind::Amplimix, InputNodeInstance, 1, this);
-        _outputNode = ampoolnew(MemoryPoolKind::Amplimix, OutputNodeInstance, 2, this);
-
-        _outputNode->Connect(_inputNode->GetId());
-
         _nodes[_inputNode->GetId()] = _inputNode;
+
+        _outputNode = ampoolnew(MemoryPoolKind::Amplimix, OutputNodeInstance, 2, this);
         _nodes[_outputNode->GetId()] = _outputNode;
+
+        auto attenuationNode = ampoolnew(MemoryPoolKind::Amplimix, AttenuationNodeInstance, 3, this);
+        _nodes[attenuationNode->GetId()] = attenuationNode;
+
+        attenuationNode->Connect(_inputNode->GetId());
+        _outputNode->Connect(attenuationNode->GetId());
     }
 
     Pipeline::~Pipeline()
@@ -36,8 +42,8 @@ namespace SparkyStudios::Audio::Amplitude
 
         _processors.clear();
 
-        ampooldelete(MemoryPoolKind::Amplimix, InputNodeInstance, _inputNode);
-        ampooldelete(MemoryPoolKind::Amplimix, OutputNodeInstance, _outputNode);
+        for (const auto& node : _nodes)
+            ampooldelete(MemoryPoolKind::Amplimix, NodeInstance, node.second);
     }
 
     void Pipeline::Append(SoundProcessorInstance* processor)
@@ -75,9 +81,17 @@ namespace SparkyStudios::Audio::Amplitude
 
     void Pipeline::Execute(const AmplimixLayer* layer, const AudioBuffer& in, AudioBuffer& out)
     {
-        _inputNode->SetInput(layer, &in);
+        // Update the layer for all nodes in the pipeline
+        for (auto& node : _nodes)
+            node.second->_layer = layer;
+
+        // Set the input and output buffers for the pipeline
+        _inputNode->SetInput(&in);
         _outputNode->SetOutput(&out);
 
+        // Consume data from the output node.
+        // This will propagate the data from the input node to the output node,
+        // executing all nodes in between.
         _outputNode->Consume();
     }
 

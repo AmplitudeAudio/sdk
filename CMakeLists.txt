@@ -287,6 +287,8 @@ set(SA_SOURCE
     src/DSP/Resamplers/R8BrainResampler.h
     src/DSP/AudioConverter.cpp
     src/DSP/Filter.cpp
+    src/DSP/Gain.cpp
+    src/DSP/Gain.h
     src/DSP/Resampler.cpp
 
     src/HRTF/HRIRSphere.cpp
@@ -311,6 +313,9 @@ set(SA_SOURCE
     src/Math/Shape.cpp
     src/Math/SphericalPosition.cpp
     src/Math/SplitComplex.cpp
+
+    src/Mixer/Nodes/AttenuationNode.cpp
+    src/Mixer/Nodes/AttenuationNode.h
 
     src/Mixer/Pipeline/BinauralProcessor.h
     src/Mixer/Pipeline/ClipProcessor.h

@@ -44,6 +44,14 @@ namespace SparkyStudios::Audio::Amplitude
         Pipeline();
         ~Pipeline();
 
+        /**
+         * @brief Executes the pipeline for the given layer.
+         *
+         * @param layer The Amplimix layer for which execute the pipeline.
+         * @param in The input buffer to process. This buffer is passed to the input
+         * node of the pipeline.
+         * @param out The output buffer where the output node will fill processed data.
+         */
         void Execute(const AmplimixLayer* layer, const AudioBuffer& in, AudioBuffer& out);
 
         /**

@@ -64,7 +64,8 @@ namespace SparkyStudios::Audio::Amplitude
         AmUInt32 id; // playing id
         _Atomic(PlayStateFlag) flag; // state
         _Atomic(AmUInt64) cursor; // cursor
-        _Atomic(AmVec2) gain; // gain
+        _Atomic(AmReal32) gain; // gain
+        _Atomic(AmReal32) pan; // pan
         _Atomic(AmReal32) pitch; // pitch
         SoundData* snd; // sound data
         AmUInt64 start, end; // start and end frames
@@ -89,7 +90,8 @@ namespace SparkyStudios::Audio::Amplitude
         AmUInt64 GetStartPosition() const override;
         AmUInt64 GetEndPosition() const override;
         AmUInt64 GetCurrentPosition() const override;
-        AmVec2 GetGain() const override;
+        AmReal32 GetGain() const override;
+        AmReal32 GetPan() const override;
         AmReal32 GetPitch() const override;
         AmReal32 GetObstruction() const override;
         AmReal32 GetOcclusion() const override;
@@ -98,12 +100,14 @@ namespace SparkyStudios::Audio::Amplitude
         Entity GetEntity() const override;
         Listener GetListener() const override;
         Channel GetChannel() const override;
+        Bus GetBus() const override;
         SoundFormat GetSoundFormat() const override;
         eSpatialization GetSpatialization() const override;
         bool IsLoopEnabled() const override;
         bool IsStreamEnabled() const override;
         const Sound* GetSound() const override;
         const EffectInstance* GetEffect() const override;
+        const Attenuation* GetAttenuation() const override;
         AmUInt32 GetSampleRate() const override;
     };
 

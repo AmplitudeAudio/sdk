@@ -34,6 +34,8 @@ namespace SparkyStudios::Audio::Amplitude
      */
     class AM_API_PUBLIC NodeInstance
     {
+        friend class Pipeline;
+
     public:
         /**
          * @brief NodeInstance constructor.
@@ -52,8 +54,16 @@ namespace SparkyStudios::Audio::Amplitude
          */
         [[nodiscard]] AmObjectID GetId() const;
 
+        /**
+         * @brief Gets the Amplimix layer this node instance is currently associated with.
+         */
+        [[nodiscard]] const AmplimixLayer* GetLayer() const;
+
     protected:
         AmObjectID m_id; /// The unique identifier for the node instance in the pipeline.
+
+    private:
+        const AmplimixLayer* _layer; /// The Amplimix layer this node instance is currently associated with.
     };
 
     /**
@@ -106,7 +116,7 @@ namespace SparkyStudios::Audio::Amplitude
         /**
          * @brief ProcessorNodeInstance constructor.
          */
-        ProcessorNodeInstance(AmObjectID id, Pipeline* pipeline);
+        ProcessorNodeInstance(AmObjectID id, const Pipeline* pipeline);
 
         /**
          * @brief ProcessorNodeInstance destructor.
@@ -139,7 +149,7 @@ namespace SparkyStudios::Audio::Amplitude
 
     protected:
         AmObjectID m_provider;
-        Pipeline* m_pipeline; ///< The pipeline this node instance belongs to.
+        const Pipeline* m_pipeline; ///< The pipeline this node instance belongs to.
 
     private:
         AudioBuffer _processingBuffer;
@@ -159,7 +169,7 @@ namespace SparkyStudios::Audio::Amplitude
         /**
          * @brief MixerNodeInstance constructor.
          */
-        MixerNodeInstance(AmObjectID id, Pipeline* pipeline);
+        MixerNodeInstance(AmObjectID id, const Pipeline* pipeline);
 
         /**
          * @brief MixerNodeInstance destructor.
@@ -207,7 +217,7 @@ namespace SparkyStudios::Audio::Amplitude
 
     protected:
         std::vector<AmObjectID> m_providers;
-        Pipeline* m_pipeline; ///< The pipeline this node instance belongs to.
+        const Pipeline* m_pipeline; ///< The pipeline this node instance belongs to.
 
     private:
         std::vector<AudioBuffer> _processingBuffers;
@@ -229,7 +239,7 @@ namespace SparkyStudios::Audio::Amplitude
         /**
          * @brief InputNodeInstance constructor.
          */
-        InputNodeInstance(AmObjectID id, Pipeline* pipeline);
+        InputNodeInstance(AmObjectID id, const Pipeline* pipeline);
 
         /**
          * @brief InputNodeInstance destructor.
@@ -239,10 +249,9 @@ namespace SparkyStudios::Audio::Amplitude
         /**
          * @brief Set the input of the pipeline.
          *
-         * @param layer The layer to which this input belongs.
          * @param buffer The buffer to set as the input.
          */
-        void SetInput(const AmplimixLayer* layer, const AudioBuffer* buffer);
+        void SetInput(const AudioBuffer* buffer);
 
         /**
          * @copydoc ProviderNodeInstance::Provide()
@@ -250,7 +259,6 @@ namespace SparkyStudios::Audio::Amplitude
         AudioBuffer Provide() final;
 
     private:
-        const AmplimixLayer* _layer;
         const AudioBuffer* _buffer;
     };
 
@@ -270,7 +278,7 @@ namespace SparkyStudios::Audio::Amplitude
         /**
          * @brief OutputNodeInstance constructor.
          */
-        OutputNodeInstance(AmObjectID id, Pipeline* pipeline);
+        OutputNodeInstance(AmObjectID id, const Pipeline* pipeline);
 
         /**
          * @brief OutputNodeInstance destructor.
@@ -296,7 +304,7 @@ namespace SparkyStudios::Audio::Amplitude
 
     private:
         AmObjectID _provider;
-        Pipeline* _pipeline; ///< The pipeline this node instance belongs to.
+        const Pipeline* _pipeline; ///< The pipeline this node instance belongs to.
         AudioBuffer* _buffer;
     };
 
@@ -332,10 +340,11 @@ namespace SparkyStudios::Audio::Amplitude
          * @brief Creates a new instance of the node.
          *
          * @param id Unique identifier for the new instance.
+         * @param pipeline The pipeline associated with the new instance.
          *
          * @return A new instance of the node.
          */
-        virtual NodeInstance* CreateInstance(AmObjectID id) const = 0;
+        virtual NodeInstance* CreateInstance(AmObjectID id, const Pipeline* pipeline) const = 0;
 
         /**
          * @brief Destroys the specified instance of the node.
