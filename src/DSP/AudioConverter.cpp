@@ -97,7 +97,10 @@ namespace SparkyStudios::Audio::Amplitude
         if (_srcInitialized)
             _resampler->SetSampleRate(sourceSampleRate, targetSampleRate);
         else
+        {
             _resampler->Initialize(_settings.m_targetChannelCount, sourceSampleRate, targetSampleRate);
+            _srcInitialized = true;
+        }
     }
 
     AmUInt64 AudioConverter::GetRequiredInputFrameCount(AmUInt64 outputFrameCount) const

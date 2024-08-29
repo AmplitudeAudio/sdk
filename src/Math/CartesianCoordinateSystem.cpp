@@ -23,29 +23,29 @@ namespace SparkyStudios::Audio::Amplitude
         , _toFromScalar(0.0f)
         , _windingSwap(0.0f)
     {
-        const AmVec3 sourceForwadVector = GetVector(from._forwardAxis);
+        const AmVec3 sourceForwardVector = GetVector(from._forwardAxis);
         const AmVec3 sourceRightVector = GetVector(from._rightAxis);
         const AmVec3 sourceUpVector = GetVector(from._upAxis);
 
-        const AmVec3 targetForwadVector = GetVector(to._forwardAxis);
+        const AmVec3 targetForwardVector = GetVector(to._forwardAxis);
         const AmVec3 targetRightVector = GetVector(to._rightAxis);
         const AmVec3 targetUpVector = GetVector(to._upAxis);
 
-        const AmReal32 sourceScale = AM_LenSqr(sourceForwadVector);
+        const AmReal32 sourceScale = AM_LenSqr(sourceForwardVector);
 
         AmMat3 sourceFromId;
         sourceFromId[0] = sourceRightVector;
         sourceFromId[1] = sourceUpVector;
-        sourceFromId[2] = sourceForwadVector;
+        sourceFromId[2] = sourceForwardVector;
 
-        const AmReal32 targetScale = AM_LenSqr(targetForwadVector);
+        const AmReal32 targetScale = AM_LenSqr(targetForwardVector);
         AMPLITUDE_ASSERT(targetScale == AM_LenSqr(targetRightVector));
         AMPLITUDE_ASSERT(targetScale == AM_LenSqr(targetUpVector));
 
         AmMat3 targetFromId;
         targetFromId[0] = targetRightVector;
         targetFromId[1] = targetUpVector;
-        targetFromId[2] = targetForwadVector;
+        targetFromId[2] = targetForwardVector;
 
         _fromToMatrix = targetFromId * AM_InvGeneral(sourceFromId);
         _fromToMatrix[0] = AM_Norm(_fromToMatrix[0]);

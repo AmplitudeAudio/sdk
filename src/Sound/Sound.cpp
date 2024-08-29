@@ -174,6 +174,11 @@ namespace SparkyStudios::Audio::Amplitude
         return SoundObjectImpl::GetGain();
     }
 
+    const RtpcValue& SoundImpl::GetNearFieldGain() const
+    {
+        return _nearFieldGain;
+    }
+
     const RtpcValue& SoundImpl::GetPitch() const
     {
         return SoundObjectImpl::GetPitch();
@@ -257,10 +262,11 @@ namespace SparkyStudios::Audio::Amplitude
         m_filename = fs->ResolvePath(fs->Join({ AM_OS_STRING("data"), AM_STRING_TO_OS_STRING(definition->path()->str()) }));
 
         RtpcValue::Init(m_gain, definition->gain(), 1);
+        RtpcValue::Init(_nearFieldGain, definition->near_field_gain(), 1);
         RtpcValue::Init(m_pitch, definition->pitch(), 1);
         RtpcValue::Init(m_priority, definition->priority(), 1);
 
-        _settings.m_id = definition->id();
+        _settings.m_id = m_id;
         _settings.m_kind = SoundKind::Standalone;
         _settings.m_busID = definition->bus();
         _settings.m_effectID = definition->effect();
@@ -268,6 +274,7 @@ namespace SparkyStudios::Audio::Amplitude
         _settings.m_spatialization = definition->spatialization();
         _settings.m_priority = RtpcValue(m_priority);
         _settings.m_gain = RtpcValue(m_gain);
+        _settings.m_nearFieldGain = RtpcValue(_nearFieldGain);
         _settings.m_pitch = RtpcValue(m_pitch);
         _settings.m_loop = _loop;
         _settings.m_loopCount = _loopCount;

@@ -14,6 +14,7 @@
 
 #pragma once
 
+#include "SparkyStudios/Audio/Amplitude/Core/Common/Types.h"
 #ifndef _AM_IMPLEMENTATION_DSP_FILTERS_BIQUAD_RESONANT_FILTER_H
 #define _AM_IMPLEMENTATION_DSP_FILTERS_BIQUAD_RESONANT_FILTER_H
 
@@ -71,6 +72,8 @@ namespace SparkyStudios::Audio::Amplitude
             TYPE_NOTCH,
             TYPE_LOW_SHELF,
             TYPE_HIGH_SHELF,
+            TYPE_DUAL_BAND_LOW_PASS,
+            TYPE_DUAL_BAND_HIGH_PASS,
             TYPE_LAST
         };
 
@@ -92,6 +95,10 @@ namespace SparkyStudios::Audio::Amplitude
         AmResult InitializeLowShelf(AmReal32 frequency, AmReal32 s, AmReal32 gain);
 
         AmResult InitializeHighShelf(AmReal32 frequency, AmReal32 s, AmReal32 gain);
+
+        AmResult InitializeDualBandLowPass(AmReal32 frequency);
+
+        AmResult InitializeDualBandHighPass(AmReal32 frequency);
 
         [[nodiscard]] AmUInt32 GetParamCount() const override;
 

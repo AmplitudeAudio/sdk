@@ -150,7 +150,8 @@ namespace SparkyStudios::Audio::Amplitude
             if (!m_attenuation)
             {
                 amLogError(
-                    "Collection %s specifies an unknown attenuation ID: " AM_ID_CHAR_FMT ".", definition->name()->c_str(), definition->attenuation());
+                    "Collection %s specifies an unknown attenuation ID: " AM_ID_CHAR_FMT ".", definition->name()->c_str(),
+                    definition->attenuation());
                 return false;
             }
         }
@@ -194,6 +195,7 @@ namespace SparkyStudios::Audio::Amplitude
                 settings.m_spatialization = definition->spatialization();
                 settings.m_priority = RtpcValue(m_priority);
                 RtpcValue::Init(settings.m_gain, entry->gain(), 1);
+                settings.m_nearFieldGain = findIt->second->GetNearFieldGain();
                 RtpcValue::Init(settings.m_pitch, entry->pitch(), 1);
                 settings.m_loop = findIt->second->_loop;
                 settings.m_loopCount = findIt->second->_loopCount;

@@ -44,7 +44,7 @@ namespace SparkyStudios::Audio::Amplitude
         explicit Listener(ListenerInternalState* state);
 
         /**
-         * @brief Uninitialize this Listener.
+         * @brief Deinitialize this Listener.
          *
          * Note that this does not destroy the internal state it references,
          * it just removes this reference to it. To destroy the Listener,
@@ -140,6 +140,13 @@ namespace SparkyStudios::Audio::Amplitude
         [[nodiscard]] AmReal32 GetDirectivitySharpness() const;
 
         /**
+         * @brief Gets the inverse matrix of the Listener.
+         *
+         * You can use this matrix to transform 3D global space into Listener space.
+         */
+        [[nodiscard]] const AmMat4& GetInverseMatrix() const;
+
+        /**
          * @brief Update the state of this Listener.
          *
          * This method is called automatically by the Engine
@@ -152,10 +159,7 @@ namespace SparkyStudios::Audio::Amplitude
          *
          * @return ListenerInternalState*
          */
-        [[nodiscard]] ListenerInternalState* GetState() const
-        {
-            return _state;
-        }
+        [[nodiscard]] ListenerInternalState* GetState() const;
 
     private:
         ListenerInternalState* _state;

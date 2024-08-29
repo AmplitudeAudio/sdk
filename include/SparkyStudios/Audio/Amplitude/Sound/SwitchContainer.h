@@ -40,7 +40,7 @@ namespace SparkyStudios::Audio::Amplitude
          * changes its state between one of the values where this item is registered.
          *
          * If this value is set to @c false, each the sound will be stopped and played again
-         * from the begginning.
+         * from the beginning.
          */
         bool m_continueBetweenStates;
 
@@ -65,7 +65,7 @@ namespace SparkyStudios::Audio::Amplitude
         AmString m_fadeOutAlgorithm;
 
         /**
-         * @brief The custom gain applied on this item.
+         * @brief The custom linear gain applied on this item.
          *
          * The final gain will be computed with this value multiplied with the gain of the
          * attenuation model, if any.
@@ -125,7 +125,7 @@ namespace SparkyStudios::Audio::Amplitude
          *
          * @return The list of sound object IDs registered to the given state.
          */
-        [[nodiscard]] virtual  const std::vector<SwitchContainerItem>& GetSoundObjects(AmObjectID stateId) const = 0;
+        [[nodiscard]] virtual const std::vector<SwitchContainerItem>& GetSoundObjects(AmObjectID stateId) const = 0;
     };
 } // namespace SparkyStudios::Audio::Amplitude
 

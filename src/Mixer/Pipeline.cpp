@@ -16,7 +16,10 @@
 #include <SparkyStudios/Audio/Amplitude/Mixer/Pipeline.h>
 
 #include <Mixer/Nodes/AttenuationNode.h>
+#include <Mixer/Nodes/NearFieldEffectNode.h>
 #include <Mixer/Nodes/OcclusionNode.h>
+#include <Mixer/Nodes/StereoMixerNode.h>
+#include <Mixer/Nodes/StereoPanningNode.h>
 
 namespace SparkyStudios::Audio::Amplitude
 {
@@ -35,9 +38,33 @@ namespace SparkyStudios::Audio::Amplitude
         auto occlusionNode = ampoolnew(MemoryPoolKind::Amplimix, OcclusionNodeInstance, 4, this);
         _nodes[occlusionNode->GetId()] = occlusionNode;
 
-        attenuationNode->Connect(_inputNode->GetId());
-        occlusionNode->Connect(attenuationNode->GetId());
-        _outputNode->Connect(occlusionNode->GetId());
+        auto nearFieldEffectNode = ampoolnew(MemoryPoolKind::Amplimix, NearFieldEffectNodeInstance, 5, this);
+        _nodes[nearFieldEffectNode->GetId()] = nearFieldEffectNode;
+
+        auto stereoPanningNode = ampoolnew(MemoryPoolKind::Amplimix, StereoPanningNodeInstance, 6, this);
+        _nodes[stereoPanningNode->GetId()] = stereoPanningNode;
+
+        auto stereoMixerNode = ampoolnew(MemoryPoolKind::Amplimix, StereoMixerNodeInstance, 7, this);
+        _nodes[stereoMixerNode->GetId()] = stereoMixerNode;
+
+        // Direct Sound Path
+        {
+            attenuationNode->Connect(_inputNode->GetId());
+            occlusionNode->Connect(attenuationNode->GetId());
+            nearFieldEffectNode->Connect(occlusionNode->GetId());
+            stereoMixerNode->Connect(nearFieldEffectNode->GetId());
+
+            // Stereo Panning
+            {
+                stereoPanningNode->Connect(occlusionNode->GetId());
+                stereoMixerNode->Connect(stereoPanningNode->GetId());
+            }
+
+            // HRTF Panning
+            {}
+        }
+
+        _outputNode->Connect(stereoMixerNode->GetId());
     }
 
     Pipeline::~Pipeline()

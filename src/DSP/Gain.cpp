@@ -18,122 +18,84 @@
 namespace SparkyStudios::Audio::Amplitude
 {
     constexpr AmReal32 kGainThreshold = 0.001f;
+    constexpr AmSize kUnitRampLength = 2048;
 
     void Gain::ApplyReplaceConstantGain(
-        AmReal32 gain, const AudioBuffer& in, AmSize inOffset, AudioBuffer& out, AmSize outOffset, AmSize frames)
+        AmReal32 gain, const AudioBufferChannel& in, AmSize inOffset, AudioBufferChannel& out, AmSize outOffset, AmSize frames)
     {
-        AMPLITUDE_ASSERT(in.GetChannelCount() == out.GetChannelCount());
-        AMPLITUDE_ASSERT(in.GetFrameCount() <= inOffset + frames);
-        AMPLITUDE_ASSERT(out.GetFrameCount() <= outOffset + frames);
+        AMPLITUDE_ASSERT(in.size() >= inOffset + frames);
+        AMPLITUDE_ASSERT(out.size() >= outOffset + frames);
 
-        for (AmSize i = 0, l = in.GetChannelCount(); i < l; ++i)
-        {
-            const auto& inChannel = in[i];
-            auto& outChannel = out[i];
-
-            ScalarMultiply(inChannel.begin() + inOffset, outChannel.begin() + outOffset, gain, frames);
-        }
+        ScalarMultiply(in.begin() + inOffset, out.begin() + outOffset, gain, frames);
     }
 
-    void Gain::ApplyAdditiveConstantGain(
-        AmReal32 gain, const AudioBuffer& in, AmSize inOffset, AudioBuffer& out, AmSize outOffset, AmSize frames)
+    void Gain::ApplyAccumulateConstantGain(
+        AmReal32 gain, const AudioBufferChannel& in, AmSize inOffset, AudioBufferChannel& out, AmSize outOffset, AmSize frames)
     {
-        AMPLITUDE_ASSERT(in.GetChannelCount() == out.GetChannelCount());
-        AMPLITUDE_ASSERT(in.GetFrameCount() <= inOffset + frames);
-        AMPLITUDE_ASSERT(out.GetFrameCount() <= outOffset + frames);
+        AMPLITUDE_ASSERT(in.size() >= inOffset + frames);
+        AMPLITUDE_ASSERT(out.size() >= outOffset + frames);
 
-        for (AmSize i = 0, l = in.GetChannelCount(); i < l; ++i)
-        {
-            const auto& inChannel = in[i];
-            auto& outChannel = out[i];
-
-            for (AmSize j = 0; j < frames; ++j)
-            {
-                outChannel[j + outOffset] += inChannel[j + inOffset] * gain;
-            }
-        }
+        ScalarMultiplyAccumulate(in.begin() + inOffset, out.begin() + outOffset, gain, frames);
     }
 
     void Gain::ApplyReplaceLinearGain(
-        AmReal32 startGain, AmReal32 endGain, const AudioBuffer& in, AmSize inOffset, AudioBuffer& out, AmSize outOffset, AmSize frames)
+        AmReal32 startGain,
+        AmReal32 endGain,
+        const AudioBufferChannel& in,
+        AmSize inOffset,
+        AudioBufferChannel& out,
+        AmSize outOffset,
+        AmSize frames)
     {
-        AMPLITUDE_ASSERT(in.GetChannelCount() == out.GetChannelCount());
-        AMPLITUDE_ASSERT(in.GetFrameCount() <= inOffset + frames);
-        AMPLITUDE_ASSERT(out.GetFrameCount() <= outOffset + frames);
+        AMPLITUDE_ASSERT(in.size() >= inOffset + frames);
+        AMPLITUDE_ASSERT(out.size() >= outOffset + frames);
 
         const AmReal32 step = 1.0f / frames;
 
-        for (AmSize i = 0, l = in.GetChannelCount(); i < l; ++i)
-        {
-            const auto& inChannel = in[i];
-            auto& outChannel = out[i];
-
-            for (AmSize j = 0; j < frames; ++j)
-            {
-                outChannel[j + outOffset] = inChannel[j + inOffset] * AM_Lerp(startGain, step * j, endGain);
-            }
-        }
+        for (AmSize j = 0; j < frames; ++j)
+            out[j + outOffset] = in[j + inOffset] * AM_Lerp(startGain, step * j, endGain);
     }
 
-    void Gain::ApplyAdditiveLinearGain(
-        AmReal32 startGain, AmReal32 endGain, const AudioBuffer& in, AmSize inOffset, AudioBuffer& out, AmSize outOffset, AmSize frames)
+    void Gain::ApplyAccumulateLinearGain(
+        AmReal32 startGain,
+        AmReal32 endGain,
+        const AudioBufferChannel& in,
+        AmSize inOffset,
+        AudioBufferChannel& out,
+        AmSize outOffset,
+        AmSize frames)
     {
-        AMPLITUDE_ASSERT(in.GetChannelCount() == out.GetChannelCount());
-        AMPLITUDE_ASSERT(in.GetFrameCount() <= inOffset + frames);
-        AMPLITUDE_ASSERT(out.GetFrameCount() <= outOffset + frames);
+        AMPLITUDE_ASSERT(in.size() >= inOffset + frames);
+        AMPLITUDE_ASSERT(out.size() >= outOffset + frames);
 
         const AmReal32 step = 1.0f / frames;
 
-        for (AmSize i = 0, l = in.GetChannelCount(); i < l; ++i)
-        {
-            const auto& inChannel = in[i];
-            auto& outChannel = out[i];
-
-            for (AmSize j = 0; j < frames; ++j)
-            {
-                outChannel[j + outOffset] += inChannel[j + inOffset] * AM_Lerp(startGain, step * j, endGain);
-            }
-        }
+        for (AmSize j = 0; j < frames; ++j)
+            out[j + outOffset] += in[j + inOffset] * AM_Lerp(startGain, step * j, endGain);
     }
 
-    void Gain::ApplyReplaceGain(Curve gainCurve, const AudioBuffer& in, AmSize inOffset, AudioBuffer& out, AmSize outOffset, AmSize frames)
+    void Gain::ApplyReplaceGain(
+        Curve gainCurve, const AudioBufferChannel& in, AmSize inOffset, AudioBufferChannel& out, AmSize outOffset, AmSize frames)
     {
-        AMPLITUDE_ASSERT(in.GetChannelCount() == out.GetChannelCount());
-        AMPLITUDE_ASSERT(in.GetFrameCount() <= inOffset + frames);
-        AMPLITUDE_ASSERT(out.GetFrameCount() <= outOffset + frames);
+        AMPLITUDE_ASSERT(in.size() >= inOffset + frames);
+        AMPLITUDE_ASSERT(out.size() >= outOffset + frames);
 
         const AmReal32 step = 1.0f / frames;
 
-        for (AmSize i = 0, l = in.GetChannelCount(); i < l; ++i)
-        {
-            const auto& inChannel = in[i];
-            auto& outChannel = out[i];
-
-            for (AmSize j = 0; j < frames; ++j)
-            {
-                outChannel[j + outOffset] = inChannel[j + inOffset] * gainCurve.Get(step * j);
-            }
-        }
+        for (AmSize j = 0; j < frames; ++j)
+            out[j + outOffset] = in[j + inOffset] * gainCurve.Get(step * j);
     }
 
-    void Gain::ApplyAdditiveGain(Curve gainCurve, const AudioBuffer& in, AmSize inOffset, AudioBuffer& out, AmSize outOffset, AmSize frames)
+    void Gain::ApplyAccumulateGain(
+        Curve gainCurve, const AudioBufferChannel& in, AmSize inOffset, AudioBufferChannel& out, AmSize outOffset, AmSize frames)
     {
-        AMPLITUDE_ASSERT(in.GetChannelCount() == out.GetChannelCount());
-        AMPLITUDE_ASSERT(in.GetFrameCount() <= inOffset + frames);
-        AMPLITUDE_ASSERT(out.GetFrameCount() <= outOffset + frames);
+        AMPLITUDE_ASSERT(in.size() >= inOffset + frames);
+        AMPLITUDE_ASSERT(out.size() >= outOffset + frames);
 
         const AmReal32 step = 1.0f / frames;
 
-        for (AmSize i = 0, l = in.GetChannelCount(); i < l; ++i)
-        {
-            const auto& inChannel = in[i];
-            auto& outChannel = out[i];
-
-            for (AmSize j = 0; j < frames; ++j)
-            {
-                outChannel[j + outOffset] += inChannel[j + inOffset] * gainCurve.Get(step * j);
-            }
-        }
+        for (AmSize j = 0; j < frames; ++j)
+            out[j + outOffset] += in[j + inOffset] * gainCurve.Get(step * j);
     }
 
     bool Gain::IsZero(AmReal32 gain)
@@ -145,5 +107,147 @@ namespace SparkyStudios::Audio::Amplitude
     {
         const AmReal32 k = 1.0f - gain;
         return AM_ABS(k) < kGainThreshold;
+    }
+
+    AmVec2 Gain::CalculateStereoPannedGain(AmReal32 gain, AmVec3 sourcePosition, AmMat4 listenerViewMatrix)
+    {
+        if (IsZero(gain))
+            return AM_V2(0, 0);
+
+        const auto& listenerSpaceSourcePosition = listenerViewMatrix * AM_V4V(sourcePosition, 1.0f);
+        if (AM_LenSqr(listenerSpaceSourcePosition.XYZ) <= kEpsilon)
+            return AM_V2(0, 0);
+
+        const AmVec3 direction = AM_Norm(listenerSpaceSourcePosition.XYZ);
+
+        return CalculateStereoPannedGain(gain, SphericalPosition::FromWorldSpace(direction));
+    }
+
+    AmVec2 Gain::CalculateStereoPannedGain(AmReal32 gain, AmReal32 pan)
+    {
+        if (IsZero(gain))
+            return AM_V2(0, 0);
+
+        // Clamp pan to its valid range of -1.0f to 1.0f inclusive
+        pan = AM_CLAMP(pan, -1.0f, 1.0f);
+
+        // Convert gain and pan to left and right gain
+        // This formula is explained in the following paper:
+        // http://www.rs-met.com/documents/tutorials/PanRules.pdf
+        const AmReal32 p = static_cast<AmReal32>(M_PI) * (pan + 1.0f) / 4.0f;
+        const AmReal32 left = std::cos(p) * gain;
+        const AmReal32 right = std::sin(p) * gain;
+
+        return { left, right };
+    }
+
+    AmVec2 Gain::CalculateStereoPannedGain(AmReal32 gain, SphericalPosition sourcePosition)
+    {
+        if (IsZero(gain))
+            return AM_V2(0, 0);
+
+        const AmReal32 cosTheta = std::cos(sourcePosition.GetElevation());
+
+        return { 0.5f * (1.0f + std::cos((AM_DegToRad * +90.0f) - sourcePosition.GetAzimuth()) * cosTheta) * gain,
+                 0.5f * (1.0f + std::cos((AM_DegToRad * -90.0f) - sourcePosition.GetAzimuth()) * cosTheta) * gain };
+    }
+
+    GainProcessor::GainProcessor()
+        : _currentGain(0.0f)
+        , _isInitialized(false)
+    {}
+
+    GainProcessor::GainProcessor(AmReal32 initialGain)
+        : _currentGain(initialGain)
+        , _isInitialized(true)
+    {}
+
+    void GainProcessor::ApplyGain(
+        AmReal32 gain,
+        const AudioBufferChannel& in,
+        AmSize inOffset,
+        AudioBufferChannel& out,
+        AmSize outOffset,
+        AmSize frames,
+        bool accumulate)
+    {
+        if (!_isInitialized)
+            SetGain(0.0f);
+
+        AMPLITUDE_ASSERT(inOffset + frames <= in.size());
+        AMPLITUDE_ASSERT(outOffset + frames <= out.size());
+
+        AmSize rampLength = std::abs(gain - _currentGain) * kUnitRampLength;
+
+#if defined(AM_SIMD_INTRINSICS)
+        rampLength = AM_VALUE_ALIGN(rampLength - GetSimdBlockSize(), GetSimdBlockSize());
+#endif
+
+        if (rampLength > 0)
+            _currentGain =
+                LinearGainRamp(rampLength, _currentGain, gain, in.begin() + inOffset, out.begin() + outOffset, frames, accumulate);
+        else
+            _currentGain = gain;
+
+        if (rampLength < frames)
+        {
+            if (Gain::IsZero(_currentGain))
+            {
+                if (!accumulate)
+                    std::fill(out.begin() + outOffset + rampLength, out.end(), 0.0f);
+
+                return;
+            }
+            else if (Gain::IsOne(_currentGain) && !accumulate)
+            {
+                if (&in != &out)
+                    std::copy(in.begin() + inOffset + rampLength, in.end(), out.begin() + outOffset + rampLength);
+
+                return;
+            }
+
+            if (accumulate)
+                Gain::ApplyAccumulateConstantGain(
+                    _currentGain, in, inOffset + rampLength, out, outOffset + rampLength, frames - rampLength);
+            else
+                Gain::ApplyReplaceConstantGain(_currentGain, in, inOffset + rampLength, out, outOffset + rampLength, frames - rampLength);
+        }
+    }
+
+    void GainProcessor::SetGain(AmReal32 gain)
+    {
+        _currentGain = gain;
+        _isInitialized = true;
+    }
+
+    AmReal32 GainProcessor::LinearGainRamp(
+        AmSize rampLength, AmReal32 startGain, AmReal32 endGain, const AmReal32* in, AmReal32* out, AmSize frames, bool accumulate)
+    {
+        AMPLITUDE_ASSERT(out != nullptr);
+        AMPLITUDE_ASSERT(rampLength > 0);
+
+        const AmSize length = std::min(rampLength, frames);
+        const AmReal32 step = (endGain - startGain) / static_cast<AmReal32>(rampLength);
+
+        AmReal32 currentGain = startGain;
+
+        if (accumulate)
+        {
+            for (AmSize frame = 0; frame < length; ++frame)
+            {
+                out[frame] += currentGain * in[frame];
+                currentGain += step;
+            }
+        }
+        else
+        {
+            for (AmSize frame = 0; frame < length; ++frame)
+            {
+                out[frame] = currentGain * in[frame];
+                currentGain += step;
+            }
+        }
+
+        return currentGain;
     }
 } // namespace SparkyStudios::Audio::Amplitude

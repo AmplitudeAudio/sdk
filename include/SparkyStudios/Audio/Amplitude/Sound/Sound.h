@@ -53,6 +53,13 @@ namespace SparkyStudios::Audio::Amplitude
          * @return true if looping is enabled, false otherwise.
          */
         [[nodiscard]] virtual bool IsLoop() const = 0;
+
+        /**
+         * @brief Gets the near field effect gain of the sound object.
+         *
+         * @return The sound object near field effect gain.
+         */
+        [[nodiscard]] virtual const RtpcValue& GetNearFieldGain() const = 0;
     };
 } // namespace SparkyStudios::Audio::Amplitude
 

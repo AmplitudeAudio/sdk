@@ -21,6 +21,7 @@ enum SwitchContainerUpdateBehavior: byte {
   /// Update sounds only on play requests. Previous play requests will still
   /// have the previous switch state.
   UpdateOnPlay,
+
   /// Update sounds on each switch state change.
   UpdateOnChange,
 }
@@ -48,7 +49,7 @@ table SwitchContainerEntry {
   /// A custom gain to apply only on this object.
   gain:RtpcCompatibleValue;
 
-  /// Custom pitch (0.0..2.0) to apply to the sound. The final value will be computed with the
+  /// Custom pitch to apply to the sound. The final value will be computed with the
   /// real pitch from the doppler effect.
   pitch:RtpcCompatibleValue;
 

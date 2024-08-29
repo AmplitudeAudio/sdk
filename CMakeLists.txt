@@ -286,9 +286,13 @@ set(SA_SOURCE
     src/DSP/Resamplers/LibsamplerateResampler.h
     src/DSP/Resamplers/R8BrainResampler.h
     src/DSP/AudioConverter.cpp
+    src/DSP/Delay.cpp
+    src/DSP/Delay.h
     src/DSP/Filter.cpp
     src/DSP/Gain.cpp
     src/DSP/Gain.h
+    src/DSP/NearFieldProcessor.cpp
+    src/DSP/NearFieldProcessor.h
     src/DSP/Resampler.cpp
 
     src/HRTF/HRIRSphere.cpp
@@ -316,8 +320,14 @@ set(SA_SOURCE
 
     src/Mixer/Nodes/AttenuationNode.cpp
     src/Mixer/Nodes/AttenuationNode.h
+    src/Mixer/Nodes/NearFieldEffectNode.cpp
+    src/Mixer/Nodes/NearFieldEffectNode.h
     src/Mixer/Nodes/OcclusionNode.cpp
     src/Mixer/Nodes/OcclusionNode.h
+    src/Mixer/Nodes/StereoPanningNode.cpp
+    src/Mixer/Nodes/StereoPanningNode.h
+    src/Mixer/Nodes/StereoMixerNode.cpp
+    src/Mixer/Nodes/StereoMixerNode.h
 
     src/Mixer/Pipeline/BinauralProcessor.h
     src/Mixer/Pipeline/ClipProcessor.h

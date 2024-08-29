@@ -69,6 +69,7 @@ namespace SparkyStudios::Audio::Amplitude
         AmUInt8 m_spatialization;
         RtpcValue m_priority;
         RtpcValue m_gain;
+        RtpcValue m_nearFieldGain;
         RtpcValue m_pitch;
         bool m_loop;
         AmUInt32 m_loopCount;
@@ -180,6 +181,11 @@ namespace SparkyStudios::Audio::Amplitude
         [[nodiscard]] const RtpcValue& GetGain() const override;
 
         /**
+         * @brief Gets the near field effect gain.
+         */
+        [[nodiscard]] const RtpcValue& GetNearFieldGain() const override;
+
+        /**
          * @copydoc SoundObject::GetPitch
          */
         [[nodiscard]] const RtpcValue& GetPitch() const override;
@@ -225,6 +231,8 @@ namespace SparkyStudios::Audio::Amplitude
         SoundChunk* _soundData;
         SoundFormat _format;
         RefCounter _soundDataRefCounter;
+
+        RtpcValue _nearFieldGain;
 
         SoundInstanceSettings _settings;
     };

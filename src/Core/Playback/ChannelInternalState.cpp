@@ -577,7 +577,8 @@ namespace SparkyStudios::Audio::Amplitude
         if (_activeListener.Valid())
         {
             _hrtfContext.m_PreviousDirection = _hrtfContext.m_CurrentDirection;
-            _hrtfContext.m_CurrentDirection = AM_Mul(_activeListener.GetState()->GetInverseMatrix(), AM_V4V(GetLocation() - _activeListener.GetLocation(), 1.0f)).XYZ;
+            _hrtfContext.m_CurrentDirection =
+                AM_Mul(_activeListener.GetState()->GetInverseMatrix(), AM_V4V(GetLocation() - _activeListener.GetLocation(), 1.0f)).XYZ;
             _hrtfContext.m_CurrentDirection = AM_Norm(_hrtfContext.m_CurrentDirection);
 
             _hrtfContext.m_PreviousGain = _hrtfContext.m_CurrentGain;
@@ -716,6 +717,7 @@ namespace SparkyStudios::Audio::Amplitude
             settings.m_spatialization = definition->spatialization();
             settings.m_priority = _switchContainer->GetPriority();
             settings.m_gain = item.m_gain;
+            settings.m_nearFieldGain = sound->GetNearFieldGain();
             settings.m_pitch = item.m_pitch;
             settings.m_loop = sound->IsLoop();
             settings.m_loopCount = sound->GetDefinition()->loop()->loop_count();

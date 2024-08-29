@@ -62,7 +62,7 @@ namespace SparkyStudios::Audio::Amplitude
 
     AmResult BiquadResonantFilter::InitializeNotching(AmReal32 frequency, AmReal32 q)
     {
-        return Initialize(TYPE_NOTCH, frequency, q, 0.0);
+        return Initialize(TYPE_NOTCH, frequency, q, 0.0f);
     }
 
     AmResult BiquadResonantFilter::InitializeLowShelf(AmReal32 frequency, AmReal32 s, AmReal32 gain)
@@ -73,6 +73,16 @@ namespace SparkyStudios::Audio::Amplitude
     AmResult BiquadResonantFilter::InitializeHighShelf(AmReal32 frequency, AmReal32 s, AmReal32 gain)
     {
         return Initialize(TYPE_HIGH_SHELF, frequency, s, gain);
+    }
+
+    AmResult BiquadResonantFilter::InitializeDualBandLowPass(AmReal32 frequency)
+    {
+        return Initialize(TYPE_DUAL_BAND_LOW_PASS, frequency, 0.0f, 0.0f);
+    }
+
+    AmResult BiquadResonantFilter::InitializeDualBandHighPass(AmReal32 frequency)
+    {
+        return Initialize(TYPE_DUAL_BAND_HIGH_PASS, frequency, 0.0f, 0.0f);
     }
 
     AmUInt32 BiquadResonantFilter::GetParamCount() const
@@ -220,6 +230,36 @@ namespace SparkyStudios::Audio::Amplitude
 
     void BiquadResonantFilterInstance::ComputeBiquadResonantParams()
     {
+        if (m_parameters[BiquadResonantFilter::ATTRIBUTE_TYPE] == BiquadResonantFilter::TYPE_DUAL_BAND_HIGH_PASS ||
+            m_parameters[BiquadResonantFilter::ATTRIBUTE_TYPE] == BiquadResonantFilter::TYPE_DUAL_BAND_LOW_PASS)
+        {
+            const AmReal32 k =
+                std::tan(M_PI * m_parameters[BiquadResonantFilter::ATTRIBUTE_FREQUENCY] / static_cast<AmReal32>(_sampleRate));
+            const AmReal32 k2 = k * k;
+            const AmReal32 d = k2 + 2.0f * k + 1.0f;
+
+            AMPLITUDE_ASSERT(d > kEpsilon);
+
+            _b1 = 2.0f * (k2 - 1.0f) / d;
+            _b2 = (k2 - 2.0f * k + 1.0f) / d;
+
+            if (m_parameters[BiquadResonantFilter::ATTRIBUTE_TYPE] == BiquadResonantFilter::TYPE_DUAL_BAND_HIGH_PASS)
+            {
+                _a0 = 1.0f / d;
+                _a1 = -2.0f * _a0;
+                _a2 = _a0;
+            }
+
+            if (m_parameters[BiquadResonantFilter::ATTRIBUTE_TYPE] == BiquadResonantFilter::TYPE_DUAL_BAND_LOW_PASS)
+            {
+                _a0 = k2 / d;
+                _a1 = 2.0f * _a0;
+                _a2 = _a0;
+            }
+
+            return;
+        }
+
         const AmReal32 q = m_parameters[BiquadResonantFilter::ATTRIBUTE_RESONANCE];
         const AmReal32 omega = 2.0f * M_PI * m_parameters[BiquadResonantFilter::ATTRIBUTE_FREQUENCY] / static_cast<AmReal32>(_sampleRate);
         const AmReal32 sinOmega = std::sin(omega);

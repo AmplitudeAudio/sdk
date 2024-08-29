@@ -41,7 +41,12 @@ table SoundDefinition {
   /// Linear gain (0.0 .. 1.0) of the sound when played back by the audio system.
   gain:RtpcCompatibleValue;
 
-  /// Custom pitch (0.0..2.0) to apply to the sound. The final value will be computed with the
+  /// Near Field Effect gain (0.0 .. 1.0) of the sound. This value is used by the near
+  /// field effect node in the Pipeline, to apply effects relative to sound source near the
+  /// listener (<1m).
+  near_field_gain:RtpcCompatibleValue;
+
+  /// Custom pitch to apply to the sound. The final value will be computed with the
   /// real pitch from the doppler effect.
   pitch:RtpcCompatibleValue;
 

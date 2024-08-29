@@ -119,7 +119,8 @@ namespace SparkyStudios::Audio::Amplitude
         const AmReal32 gain = gainCurve.Get(_currentOcclusions[soundId]);
 
         // Apply Gain
-        Gain::ApplyReplaceConstantGain(gain, output, 0, output, 0, frames);
+        for (AmSize c = 0; c < output.GetChannelCount(); ++c)
+            Gain::ApplyReplaceConstantGain(gain, output[c], 0, output[c], 0, frames);
 
         return output;
     }

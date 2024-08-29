@@ -91,7 +91,7 @@ namespace SparkyStudios::Audio::Amplitude
         AmUInt64 GetEndPosition() const override;
         AmUInt64 GetCurrentPosition() const override;
         AmReal32 GetGain() const override;
-        AmReal32 GetPan() const override;
+        AmReal32 GetStereoPan() const override;
         AmReal32 GetPitch() const override;
         AmReal32 GetObstruction() const override;
         AmReal32 GetOcclusion() const override;

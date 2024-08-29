@@ -68,21 +68,6 @@ namespace SparkyStudios::Audio::Amplitude
 
     static void OnSoundDestroyed(AmplimixImpl* mixer, AmplimixLayerImpl* layer);
 
-    static AmVec2 LRGain(AmReal32 gain, AmReal32 pan)
-    {
-        // Clamp pan to its valid range of -1.0f to 1.0f inclusive
-        pan = AM_CLAMP(pan, -1.0f, 1.0f);
-
-        // Convert gain and pan to left and right gain and store it atomically
-        // This formula is explained in the following paper:
-        // http://www.rs-met.com/documents/tutorials/PanRules.pdf
-        const AmReal32 p = static_cast<AmReal32>(M_PI) * (pan + 1.0f) / 4.0f;
-        const AmReal32 left = std::cos(p) * gain;
-        const AmReal32 right = std::sin(p) * gain;
-
-        return { left, right };
-    }
-
     static bool ShouldLoopSound(AmplimixImpl* mixer, AmplimixLayerImpl* layer)
     {
         const auto* sound = layer->snd->sound.get();
@@ -529,25 +514,29 @@ namespace SparkyStudios::Audio::Amplitude
             AMPLIMIX_STORE(&lay->pitch, pitch);
             // store the playback speed
             AMPLIMIX_STORE(&lay->userPlaySpeed, speed);
+            // initial value for the current speed
+            AMPLIMIX_STORE(&lay->playSpeed, pitch * speed);
             // atomically set cursor to start position based on given argument
             AMPLIMIX_STORE(&lay->cursor, lay->start);
+
+            const AmReal32 baseRatio =
+                static_cast<AmReal32>(sound->format.GetSampleRate()) / static_cast<AmReal32>(_device.mRequestedOutputSampleRate);
             // store the base sample rate ratio for this source
-            AMPLIMIX_STORE(
-                &lay->baseSampleRateRatio,
-                static_cast<AmReal32>(sound->format.GetSampleRate()) / static_cast<AmReal32>(_device.mRequestedOutputSampleRate));
+            AMPLIMIX_STORE(&lay->baseSampleRateRatio, baseRatio);
+            // store the initial value for sample rate ratio
+            AMPLIMIX_STORE(&lay->sampleRateRatio, baseRatio * pitch * speed);
 
             // Initialize the converter
             lay->dataConverter = ampoolnew(MemoryPoolKind::Amplimix, AudioConverter);
 
             const auto soundChannels = static_cast<AmUInt32>(sound->format.GetNumChannels());
-            const auto reqChannels = static_cast<AmUInt32>(_device.mRequestedOutputChannels);
 
             const AmUInt32 soundSampleRate = sound->format.GetSampleRate();
             const AmUInt32 reqSampleRate = _device.mRequestedOutputSampleRate;
 
             AudioConverter::Settings converterSettings{};
             converterSettings.m_sourceChannelCount = soundChannels;
-            converterSettings.m_targetChannelCount = reqChannels;
+            converterSettings.m_targetChannelCount = 1; // Sound is always processed as mono
             converterSettings.m_sourceSampleRate = soundSampleRate;
             converterSettings.m_targetSampleRate = reqSampleRate;
 
@@ -835,28 +824,19 @@ namespace SparkyStudios::Audio::Amplitude
             return;
         }
 
-        const auto reqChannels = static_cast<AmUInt16>(_device.mRequestedOutputChannels);
-
         // load flag value atomically first
         PlayStateFlag flag = AMPLIMIX_LOAD(&layer->flag);
 
         // atomically load cursor
         AmUInt64 cursor = AMPLIMIX_LOAD(&layer->cursor);
 
-        // atomically load left and right gain
-        const AmVec2 g = LRGain(AMPLIMIX_LOAD(&layer->gain), AMPLIMIX_LOAD(&layer->pan));
+        // atomically load master gain
         const AmReal32 gain = AMPLIMIX_LOAD(&_masterGain);
 
-        AmReal32 l = g.X, r = g.Y;
-        if (_device.mRequestedOutputChannels == PlaybackOutputChannels::Mono)
-            l = r = (l + r) * AM_InvSqrtF(2);
-
 #if defined(AM_SIMD_INTRINSICS)
-        auto lGain = xsimd::batch(l * gain);
-        auto rGain = xsimd::batch(r * gain);
+        auto bGain = xsimd::batch(gain);
 #else
-        const auto lGain = l * gain;
-        const auto rGain = r * gain;
+        const auto bGain = gain;
 #endif // AM_SIMD_INTRINSICS
 
         // loop state
@@ -876,7 +856,8 @@ namespace SparkyStudios::Audio::Amplitude
 #endif // AM_SIMD_INTRINSICS
 
         SoundChunk* in = SoundChunk::CreateChunk(inSamples, soundChannels, MemoryPoolKind::Amplimix);
-        SoundChunk* out = SoundChunk::CreateChunk(AM_MAX(inSamples, outSamples), reqChannels, MemoryPoolKind::Amplimix);
+        SoundChunk* transient = SoundChunk::CreateChunk(AM_MAX(inSamples, outSamples), 1, MemoryPoolKind::Amplimix);
+        SoundChunk* out = SoundChunk::CreateChunk(transient->frames, 2, MemoryPoolKind::Amplimix);
 
         // if this sound is streaming, and we have a stream event callback
         if (layer->snd->stream)
@@ -928,7 +909,7 @@ namespace SparkyStudios::Audio::Amplitude
             }
         }
 
-        layer->dataConverter->Process(*in->buffer, inSamples, *out->buffer, outSamples);
+        layer->dataConverter->Process(*in->buffer, inSamples, *transient->buffer, outSamples);
 
         if (outSamples > 0 && flag >= ePSF_PLAY)
         {
@@ -936,8 +917,7 @@ namespace SparkyStudios::Audio::Amplitude
             AmUInt64 oldCursor = cursor;
 
             // Execute Pipeline
-            // _pipeline->Process(layer, *out->buffer, *out->buffer);
-            _pipeline->Execute(layer, *out->buffer, *out->buffer);
+            _pipeline->Execute(layer, *transient->buffer, *out->buffer);
 
             /* */ AmReal32 position = cursor;
             const AmUInt64 start = layer->start;
@@ -977,12 +957,12 @@ namespace SparkyStudios::Audio::Amplitude
                 {
                 case PlaybackOutputChannels::Mono:
                     // lGain is always equal to rGain on mono
-                    MixMono(i, lGain, out->buffer->GetChannel(0), buffer->GetChannel(0));
+                    MixMono(i, bGain, out->buffer->GetChannel(0), buffer->GetChannel(0));
                     break;
 
                 case PlaybackOutputChannels::Stereo:
-                    MixMono(i, lGain, out->buffer->GetChannel(0), buffer->GetChannel(0));
-                    MixMono(i, rGain, out->buffer->GetChannel(1), buffer->GetChannel(1));
+                    MixMono(i, bGain, out->buffer->GetChannel(0), buffer->GetChannel(0));
+                    MixMono(i, bGain, out->buffer->GetChannel(1), buffer->GetChannel(1));
                     break;
 
                 default:
@@ -1007,6 +987,7 @@ namespace SparkyStudios::Audio::Amplitude
         }
 
         SoundChunk::DestroyChunk(out);
+        SoundChunk::DestroyChunk(transient);
         SoundChunk::DestroyChunk(in);
 
         // run callback if reached the end
@@ -1137,7 +1118,7 @@ namespace SparkyStudios::Audio::Amplitude
         return AMPLIMIX_LOAD(&gain);
     }
 
-    AmReal32 AmplimixLayerImpl::GetPan() const
+    AmReal32 AmplimixLayerImpl::GetStereoPan() const
     {
         return AMPLIMIX_LOAD(&pan);
     }

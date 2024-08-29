@@ -79,6 +79,12 @@ namespace SparkyStudios::Audio::Amplitude
         return _state->GetDirectivitySharpness();
     }
 
+    const AmMat4& Listener::GetInverseMatrix() const
+    {
+        AMPLITUDE_ASSERT(Valid());
+        return _state->GetInverseMatrix();
+    }
+
     const AmVec3& Listener::GetLocation() const
     {
         AMPLITUDE_ASSERT(Valid());
@@ -107,5 +113,10 @@ namespace SparkyStudios::Audio::Amplitude
     {
         AMPLITUDE_ASSERT(Valid());
         _state->Update();
+    }
+
+    ListenerInternalState* Listener::GetState() const
+    {
+        return _state;
     }
 } // namespace SparkyStudios::Audio::Amplitude

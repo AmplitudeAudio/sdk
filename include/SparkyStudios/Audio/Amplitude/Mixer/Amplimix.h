@@ -56,7 +56,7 @@ namespace SparkyStudios::Audio::Amplitude
 
         virtual AmReal32 GetGain() const = 0;
 
-        virtual AmReal32 GetPan() const = 0;
+        virtual AmReal32 GetStereoPan() const = 0;
 
         virtual AmReal32 GetPitch() const = 0;
 

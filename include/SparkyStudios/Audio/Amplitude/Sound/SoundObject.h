@@ -34,9 +34,9 @@ namespace SparkyStudios::Audio::Amplitude
         virtual ~SoundObject() = default;
 
         /**
-         * @brief Gets the actual gain of the sound object.
+         * @brief Gets the linear gain of the sound object.
          *
-         * @return The sound object gain.
+         * @return The sound object linear gain.
          */
         [[nodiscard]] virtual const RtpcValue& GetGain() const = 0;
 

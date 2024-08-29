@@ -82,7 +82,8 @@ namespace SparkyStudios::Audio::Amplitude
 
         if (!Gain::IsOne(targetGain))
         {
-            Gain::ApplyReplaceConstantGain(targetGain, input, 0, output, 0, input.GetFrameCount());
+            for (AmSize c = 0; c < output.GetChannelCount(); ++c)
+                Gain::ApplyReplaceConstantGain(targetGain, input[c], 0, output[c], 0, input.GetFrameCount());
         }
 
         return output;
