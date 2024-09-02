@@ -29,7 +29,6 @@
 #include <SparkyStudios/Audio/Amplitude/Sound/Switch.h>
 #include <SparkyStudios/Audio/Amplitude/Sound/SwitchContainer.h>
 
-#include <HRTF/HRTFContext.h>
 #include <Mixer/RealChannel.h>
 #include <Utils/intrusive_list.h>
 
@@ -47,8 +46,7 @@ namespace SparkyStudios::Audio::Amplitude
     {
     public:
         ChannelInternalState()
-            : _hrtfContext()
-            , _realChannel(this)
+            : _realChannel(this)
             , _channelState(ChannelPlaybackState::Stopped)
             , _switchContainer(nullptr)
             , _collection(nullptr)
@@ -344,16 +342,6 @@ namespace SparkyStudios::Audio::Amplitude
 
         void Trigger(ChannelEvent event);
 
-        AM_INLINE HRTFContext& GetHRTFContext()
-        {
-            return _hrtfContext;
-        }
-
-        AM_INLINE const HRTFContext& GetHRTFContext() const
-        {
-            return _hrtfContext;
-        }
-
         // The node that tracks the location in the priority list.
         fplutil::intrusive_list_node priority_node;
 
@@ -374,9 +362,6 @@ namespace SparkyStudios::Audio::Amplitude
         bool PlaySwitchContainer();
         bool PlayCollection();
         bool PlaySound();
-
-        // The context data for HRTF processing.
-        HRTFContext _hrtfContext;
 
         // The real channel feeding the mixer with audio data.
         RealChannel _realChannel;
