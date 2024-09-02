@@ -15,6 +15,9 @@
 #include <SparkyStudios/Audio/Amplitude/Core/Memory.h>
 #include <SparkyStudios/Audio/Amplitude/Mixer/Pipeline.h>
 
+#include <Mixer/Nodes/AmbisonicBinauralDecoderNode.h>
+#include <Mixer/Nodes/AmbisonicMixerNode.h>
+#include <Mixer/Nodes/AmbisonicPanningNode.h>
 #include <Mixer/Nodes/AttenuationNode.h>
 #include <Mixer/Nodes/NearFieldEffectNode.h>
 #include <Mixer/Nodes/OcclusionNode.h>
@@ -27,25 +30,35 @@ namespace SparkyStudios::Audio::Amplitude
         : _processors()
     {
         _inputNode = ampoolnew(MemoryPoolKind::Amplimix, InputNodeInstance, 1, this);
-        _nodes[_inputNode->GetId()] = _inputNode;
+        _nodeInstances[_inputNode->GetId()] = _inputNode;
 
         _outputNode = ampoolnew(MemoryPoolKind::Amplimix, OutputNodeInstance, 2, this);
-        _nodes[_outputNode->GetId()] = _outputNode;
+        _nodeInstances[_outputNode->GetId()] = _outputNode;
 
         auto attenuationNode = ampoolnew(MemoryPoolKind::Amplimix, AttenuationNodeInstance, 3, this);
-        _nodes[attenuationNode->GetId()] = attenuationNode;
+        _nodeInstances[attenuationNode->GetId()] = attenuationNode;
 
         auto occlusionNode = ampoolnew(MemoryPoolKind::Amplimix, OcclusionNodeInstance, 4, this);
-        _nodes[occlusionNode->GetId()] = occlusionNode;
+        _nodeInstances[occlusionNode->GetId()] = occlusionNode;
 
         auto nearFieldEffectNode = ampoolnew(MemoryPoolKind::Amplimix, NearFieldEffectNodeInstance, 5, this);
-        _nodes[nearFieldEffectNode->GetId()] = nearFieldEffectNode;
+        _nodeInstances[nearFieldEffectNode->GetId()] = nearFieldEffectNode;
 
         auto stereoPanningNode = ampoolnew(MemoryPoolKind::Amplimix, StereoPanningNodeInstance, 6, this);
-        _nodes[stereoPanningNode->GetId()] = stereoPanningNode;
+        _nodeInstances[stereoPanningNode->GetId()] = stereoPanningNode;
 
-        auto stereoMixerNode = ampoolnew(MemoryPoolKind::Amplimix, StereoMixerNodeInstance, 7, this);
-        _nodes[stereoMixerNode->GetId()] = stereoMixerNode;
+        auto ambisonicPanningNode = ampoolnew(MemoryPoolKind::Amplimix, AmbisonicPanningNodeInstance, 7, this);
+        _nodeInstances[ambisonicPanningNode->GetId()] = ambisonicPanningNode;
+
+        auto ambisonicMixerNode = ampoolnew(MemoryPoolKind::Amplimix, AmbisonicMixerNodeInstance, 8, this);
+        _nodeInstances[ambisonicMixerNode->GetId()] = ambisonicMixerNode;
+
+        _nodes.push_back(ampoolnew(MemoryPoolKind::Amplimix, AmbisonicBinauralDecoderNode));
+        auto ambisonicBinauralDecoder = (AmbisonicBinauralDecoderNodeInstance*)_nodes[0]->CreateInstance(9, this);
+        _nodeInstances[ambisonicBinauralDecoder->GetId()] = ambisonicBinauralDecoder;
+
+        auto stereoMixerNode = ampoolnew(MemoryPoolKind::Amplimix, StereoMixerNodeInstance, 10, this);
+        _nodeInstances[stereoMixerNode->GetId()] = stereoMixerNode;
 
         // Direct Sound Path
         {
@@ -61,7 +74,12 @@ namespace SparkyStudios::Audio::Amplitude
             }
 
             // HRTF Panning
-            {}
+            {
+                ambisonicPanningNode->Connect(occlusionNode->GetId());
+                ambisonicMixerNode->Connect(ambisonicPanningNode->GetId());
+                ambisonicBinauralDecoder->Connect(ambisonicMixerNode->GetId());
+                stereoMixerNode->Connect(ambisonicBinauralDecoder->GetId());
+            }
         }
 
         _outputNode->Connect(stereoMixerNode->GetId());
@@ -74,8 +92,11 @@ namespace SparkyStudios::Audio::Amplitude
 
         _processors.clear();
 
-        for (const auto& node : _nodes)
+        for (const auto& node : _nodeInstances)
             ampooldelete(MemoryPoolKind::Amplimix, NodeInstance, node.second);
+
+        for (const auto& node : _nodes)
+            ampooldelete(MemoryPoolKind::Amplimix, Node, node);
     }
 
     void Pipeline::Append(SoundProcessorInstance* processor)
@@ -114,7 +135,7 @@ namespace SparkyStudios::Audio::Amplitude
     void Pipeline::Execute(const AmplimixLayer* layer, const AudioBuffer& in, AudioBuffer& out)
     {
         // Update the layer for all nodes in the pipeline
-        for (auto& node : _nodes)
+        for (auto& node : _nodeInstances)
             node.second->_layer = layer;
 
         // Set the input and output buffers for the pipeline
@@ -139,8 +160,8 @@ namespace SparkyStudios::Audio::Amplitude
 
     NodeInstance* Pipeline::GetNode(AmObjectID id) const
     {
-        if (_nodes.find(id) != _nodes.end())
-            return _nodes.at(id);
+        if (_nodeInstances.find(id) != _nodeInstances.end())
+            return _nodeInstances.at(id);
 
         return nullptr;
     }

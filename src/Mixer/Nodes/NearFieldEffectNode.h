@@ -28,7 +28,7 @@ namespace SparkyStudios::Audio::Amplitude
     public:
         NearFieldEffectNodeInstance(AmObjectID id, const Pipeline* pipeline);
 
-        AudioBuffer Process(const AudioBuffer& input) final;
+        AudioBuffer Process(const AudioBuffer& input) override;
 
     private:
         std::map<AmObjectID, GainProcessor> _leftGainProcessors;
@@ -40,9 +40,15 @@ namespace SparkyStudios::Audio::Amplitude
     public:
         NearFieldEffectNode();
 
-        NodeInstance* CreateInstance(AmObjectID id, const Pipeline* pipeline) const final;
+        [[nodiscard]] AM_INLINE NodeInstance* CreateInstance(AmObjectID id, const Pipeline* pipeline) const override
+        {
+            return ampoolnew(MemoryPoolKind::Amplimix, NearFieldEffectNodeInstance, id, pipeline);
+        }
 
-        void DestroyInstance(NodeInstance* instance) const final;
+        AM_INLINE void DestroyInstance(NodeInstance* instance) const override
+        {
+            ampooldelete(MemoryPoolKind::Amplimix, NearFieldEffectNodeInstance, (NearFieldEffectNodeInstance*)instance);
+        }
     };
 } // namespace SparkyStudios::Audio::Amplitude
 

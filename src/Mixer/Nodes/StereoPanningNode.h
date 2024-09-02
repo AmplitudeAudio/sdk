@@ -26,18 +26,24 @@ namespace SparkyStudios::Audio::Amplitude
     public:
         StereoPanningNodeInstance(AmObjectID id, const Pipeline* pipeline);
 
-        AudioBuffer Process(const AudioBuffer& input) final;
+        AudioBuffer Process(const AudioBuffer& input) override;
     };
 
-    class StereoPanningNode : public Node
+    class StereoPanningNode final : public Node
     {
     public:
         StereoPanningNode();
 
-        NodeInstance* CreateInstance(AmObjectID id, const Pipeline* pipeline) const final;
+        [[nodiscard]] AM_INLINE NodeInstance* CreateInstance(AmObjectID id, const Pipeline* pipeline) const override
+        {
+            return ampoolnew(MemoryPoolKind::Amplimix, StereoPanningNodeInstance, id, pipeline);
+        }
 
-        void DestroyInstance(NodeInstance* instance) const final;
+        AM_INLINE void DestroyInstance(NodeInstance* instance) const override
+        {
+            ampooldelete(MemoryPoolKind::Amplimix, StereoPanningNodeInstance, (StereoPanningNodeInstance*)instance);
+        }
     };
 } // namespace SparkyStudios::Audio::Amplitude
 
-#endif // _AM_IMPLEMENTATION_MIXER_NODES_STEREO_MIXER_NODE_H
+#endif // _AM_IMPLEMENTATION_MIXER_NODES_STEREO_PANNING_NODE_H

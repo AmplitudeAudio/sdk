@@ -14,37 +14,41 @@
 
 #pragma once
 
-#ifndef _AM_IMPLEMENTATION_MIXER_NODES_STEREO_MIXER_NODE_H
-#define _AM_IMPLEMENTATION_MIXER_NODES_STEREO_MIXER_NODE_H
+#ifndef _AM_IMPLEMENTATION_MIXER_NODES_AMBISONIC_PANNING_NODE_H
+#define _AM_IMPLEMENTATION_MIXER_NODES_AMBISONIC_PANNING_NODE_H
 
-#include <SparkyStudios/Audio/Amplitude/Core/Memory.h>
-#include <SparkyStudios/Audio/Amplitude/Mixer/Node.h>
+#include <SparkyStudios/Audio/Amplitude/Amplitude.h>
+
+#include <Ambisonics/AmbisonicSource.h>
 
 namespace SparkyStudios::Audio::Amplitude
 {
-    class StereoMixerNodeInstance final : public MixerNodeInstance
+    class AmbisonicPanningNodeInstance final : public ProcessorNodeInstance
     {
     public:
-        StereoMixerNodeInstance(AmObjectID id, const Pipeline* pipeline);
+        AmbisonicPanningNodeInstance(AmObjectID id, const Pipeline* pipeline);
 
-        AudioBuffer Mix(const std::vector<AudioBuffer>& inputs) override;
+        AudioBuffer Process(const AudioBuffer& input) override;
+
+    private:
+        std::map<AmObjectID, AmbisonicSource> _sources;
     };
 
-    class StereoMixerNode final : public Node
+    class AmbisonicPanningNode final : public Node
     {
     public:
-        StereoMixerNode();
+        AmbisonicPanningNode();
 
         [[nodiscard]] AM_INLINE NodeInstance* CreateInstance(AmObjectID id, const Pipeline* pipeline) const override
         {
-            return ampoolnew(MemoryPoolKind::Amplimix, StereoMixerNodeInstance, id, pipeline);
+            return ampoolnew(MemoryPoolKind::Amplimix, AmbisonicPanningNodeInstance, id, pipeline);
         }
 
         AM_INLINE void DestroyInstance(NodeInstance* instance) const override
         {
-            ampooldelete(MemoryPoolKind::Amplimix, StereoMixerNodeInstance, (StereoMixerNodeInstance*)instance);
+            ampooldelete(MemoryPoolKind::Amplimix, AmbisonicPanningNodeInstance, (AmbisonicPanningNodeInstance*)instance);
         }
     };
 } // namespace SparkyStudios::Audio::Amplitude
 
-#endif // _AM_IMPLEMENTATION_MIXER_NODES_STEREO_MIXER_NODE_H
+#endif // _AM_IMPLEMENTATION_MIXER_NODES_AMBISONIC_PANNING_NODE_H

@@ -331,6 +331,12 @@ set(SA_SOURCE
     src/Math/SphericalPosition.cpp
     src/Math/SplitComplex.cpp
 
+    src/Mixer/Nodes/AmbisonicBinauralDecoderNode.cpp
+    src/Mixer/Nodes/AmbisonicBinauralDecoderNode.h
+    src/Mixer/Nodes/AmbisonicMixerNode.cpp
+    src/Mixer/Nodes/AmbisonicMixerNode.h
+    src/Mixer/Nodes/AmbisonicPanningNode.cpp
+    src/Mixer/Nodes/AmbisonicPanningNode.h
     src/Mixer/Nodes/AttenuationNode.cpp
     src/Mixer/Nodes/AttenuationNode.h
     src/Mixer/Nodes/NearFieldEffectNode.cpp

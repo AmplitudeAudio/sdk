@@ -15,23 +15,29 @@
 #include <SparkyStudios/Audio/Amplitude/Core/Memory.h>
 #include <SparkyStudios/Audio/Amplitude/Mixer/Amplimix.h>
 
-#include <Mixer/Nodes/StereoMixerNode.h>
+#include <Core/EngineInternalState.h>
+#include <Mixer/Nodes/AmbisonicMixerNode.h>
 #include <Utils/Utils.h>
 
 namespace SparkyStudios::Audio::Amplitude
 {
-    StereoMixerNodeInstance::StereoMixerNodeInstance(AmObjectID id, const Pipeline* pipeline)
+    AmbisonicMixerNodeInstance::AmbisonicMixerNodeInstance(AmObjectID id, const Pipeline* pipeline)
         : MixerNodeInstance(id, pipeline)
     {}
 
-    AudioBuffer StereoMixerNodeInstance::Mix(const std::vector<AudioBuffer>& inputs)
+    AudioBuffer AmbisonicMixerNodeInstance::Mix(const std::vector<AudioBuffer>& inputs)
     {
-        AudioBuffer output(kAmMaxSupportedFrameCount, 2);
+        const ePanningMode mode = Engine::GetInstance()->GetPanningMode();
+        if (mode == ePanningMode_Stereo)
+            return {};
+
+        const AmUInt32 channelCount = OrderToComponents(mode, true);
+        AudioBuffer output(kAmMaxSupportedFrameCount, channelCount);
 
         if (inputs.empty())
             return output;
 
-        output = AudioBuffer(inputs[0].GetFrameCount(), 2);
+        output = AudioBuffer(inputs[0].GetFrameCount(), channelCount);
 
         constexpr AmReal32 ratio = 1.0f;
 
@@ -49,7 +55,7 @@ namespace SparkyStudios::Audio::Amplitude
         return output;
     }
 
-    StereoMixerNode::StereoMixerNode()
-        : Node("StereoMixer")
+    AmbisonicMixerNode::AmbisonicMixerNode()
+        : Node("AmbisonicMixer")
     {}
 } // namespace SparkyStudios::Audio::Amplitude

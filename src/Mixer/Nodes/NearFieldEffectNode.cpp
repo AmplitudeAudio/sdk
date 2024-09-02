@@ -98,14 +98,4 @@ namespace SparkyStudios::Audio::Amplitude
     NearFieldEffectNode::NearFieldEffectNode()
         : Node("NearFieldEffect")
     {}
-
-    NodeInstance* NearFieldEffectNode::CreateInstance(AmObjectID id, const Pipeline* pipeline) const
-    {
-        return ampoolnew(MemoryPoolKind::Amplimix, NearFieldEffectNodeInstance, id, pipeline);
-    }
-
-    void NearFieldEffectNode::DestroyInstance(NodeInstance* instance) const
-    {
-        ampooldelete(MemoryPoolKind::Amplimix, NearFieldEffectNodeInstance, (NearFieldEffectNodeInstance*)instance);
-    }
 } // namespace SparkyStudios::Audio::Amplitude

@@ -128,14 +128,4 @@ namespace SparkyStudios::Audio::Amplitude
     OcclusionNode::OcclusionNode()
         : Node("Occlusion")
     {}
-
-    NodeInstance* OcclusionNode::CreateInstance(AmObjectID id, const Pipeline* pipeline) const
-    {
-        return ampoolnew(MemoryPoolKind::Amplimix, OcclusionNodeInstance, id, pipeline);
-    }
-
-    void OcclusionNode::DestroyInstance(NodeInstance* instance) const
-    {
-        ampooldelete(MemoryPoolKind::Amplimix, OcclusionNodeInstance, (OcclusionNodeInstance*)instance);
-    }
 } // namespace SparkyStudios::Audio::Amplitude

@@ -92,14 +92,4 @@ namespace SparkyStudios::Audio::Amplitude
     AttenuationNode::AttenuationNode()
         : Node("Attenuation")
     {}
-
-    NodeInstance* AttenuationNode::CreateInstance(AmObjectID id, const Pipeline* pipeline) const
-    {
-        return ampoolnew(MemoryPoolKind::Amplimix, AttenuationNodeInstance, id, pipeline);
-    }
-
-    void AttenuationNode::DestroyInstance(NodeInstance* instance) const
-    {
-        ampooldelete(MemoryPoolKind::Amplimix, AttenuationNodeInstance, (AttenuationNodeInstance*)instance);
-    }
 } // namespace SparkyStudios::Audio::Amplitude

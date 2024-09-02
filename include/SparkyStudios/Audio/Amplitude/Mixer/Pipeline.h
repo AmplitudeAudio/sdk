@@ -74,7 +74,8 @@ namespace SparkyStudios::Audio::Amplitude
         [[nodiscard]] NodeInstance* GetNode(AmObjectID id) const;
 
     private:
-        std::unordered_map<AmObjectID, NodeInstance*> _nodes;
+        std::unordered_map<AmObjectID, NodeInstance*> _nodeInstances;
+        std::vector<Node*> _nodes;
 
         InputNodeInstance* _inputNode;
         OutputNodeInstance* _outputNode;

@@ -30,7 +30,7 @@ namespace SparkyStudios::Audio::Amplitude
 
         ~OcclusionNodeInstance() override;
 
-        AudioBuffer Process(const AudioBuffer& input) final;
+        AudioBuffer Process(const AudioBuffer& input) override;
 
     private:
         MonoPoleFilter _filter;
@@ -40,14 +40,20 @@ namespace SparkyStudios::Audio::Amplitude
         std::map<AmObjectID, FilterInstance*> _occlusionFilters;
     };
 
-    class OcclusionNode : public Node
+    class OcclusionNode final : public Node
     {
     public:
         OcclusionNode();
 
-        NodeInstance* CreateInstance(AmObjectID id, const Pipeline* pipeline) const final;
+        [[nodiscard]] AM_INLINE NodeInstance* CreateInstance(AmObjectID id, const Pipeline* pipeline) const override
+        {
+            return ampoolnew(MemoryPoolKind::Amplimix, OcclusionNodeInstance, id, pipeline);
+        }
 
-        void DestroyInstance(NodeInstance* instance) const final;
+        AM_INLINE void DestroyInstance(NodeInstance* instance) const override
+        {
+            ampooldelete(MemoryPoolKind::Amplimix, OcclusionNodeInstance, (OcclusionNodeInstance*)instance);
+        }
     };
 } // namespace SparkyStudios::Audio::Amplitude
 

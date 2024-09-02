@@ -28,7 +28,7 @@ namespace SparkyStudios::Audio::Amplitude
     public:
         AttenuationNodeInstance(AmObjectID id, const Pipeline* pipeline);
 
-        AudioBuffer Process(const AudioBuffer& input) final;
+        AudioBuffer Process(const AudioBuffer& input) override;
     };
 
     class AttenuationNode final : public Node
@@ -36,9 +36,15 @@ namespace SparkyStudios::Audio::Amplitude
     public:
         AttenuationNode();
 
-        NodeInstance* CreateInstance(AmObjectID id, const Pipeline* pipeline) const final;
+        [[nodiscard]] AM_INLINE NodeInstance* CreateInstance(AmObjectID id, const Pipeline* pipeline) const override
+        {
+            return ampoolnew(MemoryPoolKind::Amplimix, AttenuationNodeInstance, id, pipeline);
+        }
 
-        void DestroyInstance(NodeInstance* instance) const final;
+        AM_INLINE void DestroyInstance(NodeInstance* instance) const override
+        {
+            ampooldelete(MemoryPoolKind::Amplimix, AttenuationNodeInstance, (AttenuationNodeInstance*)instance);
+        }
     };
 } // namespace SparkyStudios::Audio::Amplitude
 

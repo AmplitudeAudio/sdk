@@ -14,37 +14,37 @@
 
 #pragma once
 
-#ifndef _AM_IMPLEMENTATION_MIXER_NODES_STEREO_MIXER_NODE_H
-#define _AM_IMPLEMENTATION_MIXER_NODES_STEREO_MIXER_NODE_H
+#ifndef _AM_IMPLEMENTATION_MIXER_NODES_AMBISONIC_MIXER_NODE_H
+#define _AM_IMPLEMENTATION_MIXER_NODES_AMBISONIC_MIXER_NODE_H
 
 #include <SparkyStudios/Audio/Amplitude/Core/Memory.h>
 #include <SparkyStudios/Audio/Amplitude/Mixer/Node.h>
 
 namespace SparkyStudios::Audio::Amplitude
 {
-    class StereoMixerNodeInstance final : public MixerNodeInstance
+    class AmbisonicMixerNodeInstance final : public MixerNodeInstance
     {
     public:
-        StereoMixerNodeInstance(AmObjectID id, const Pipeline* pipeline);
+        AmbisonicMixerNodeInstance(AmObjectID id, const Pipeline* pipeline);
 
         AudioBuffer Mix(const std::vector<AudioBuffer>& inputs) override;
     };
 
-    class StereoMixerNode final : public Node
+    class AmbisonicMixerNode final : public Node
     {
     public:
-        StereoMixerNode();
+        AmbisonicMixerNode();
 
         [[nodiscard]] AM_INLINE NodeInstance* CreateInstance(AmObjectID id, const Pipeline* pipeline) const override
         {
-            return ampoolnew(MemoryPoolKind::Amplimix, StereoMixerNodeInstance, id, pipeline);
+            return ampoolnew(MemoryPoolKind::Amplimix, AmbisonicMixerNodeInstance, id, pipeline);
         }
 
         AM_INLINE void DestroyInstance(NodeInstance* instance) const override
         {
-            ampooldelete(MemoryPoolKind::Amplimix, StereoMixerNodeInstance, (StereoMixerNodeInstance*)instance);
+            ampooldelete(MemoryPoolKind::Amplimix, AmbisonicMixerNodeInstance, (AmbisonicMixerNodeInstance*)instance);
         }
     };
 } // namespace SparkyStudios::Audio::Amplitude
 
-#endif // _AM_IMPLEMENTATION_MIXER_NODES_STEREO_MIXER_NODE_H
+#endif // _AM_IMPLEMENTATION_MIXER_NODES_AMBISONIC_MIXER_NODE_H

@@ -26,7 +26,12 @@ namespace SparkyStudios::Audio::Amplitude
         AMPLITUDE_ASSERT(in.size() >= inOffset + frames);
         AMPLITUDE_ASSERT(out.size() >= outOffset + frames);
 
-        ScalarMultiply(in.begin() + inOffset, out.begin() + outOffset, gain, frames);
+        if (IsZero(gain))
+            out.clear();
+        else if (IsOne(gain))
+            out = in;
+        else
+            ScalarMultiply(in.begin() + inOffset, out.begin() + outOffset, gain, frames);
     }
 
     void Gain::ApplyAccumulateConstantGain(
@@ -35,7 +40,10 @@ namespace SparkyStudios::Audio::Amplitude
         AMPLITUDE_ASSERT(in.size() >= inOffset + frames);
         AMPLITUDE_ASSERT(out.size() >= outOffset + frames);
 
-        ScalarMultiplyAccumulate(in.begin() + inOffset, out.begin() + outOffset, gain, frames);
+        if (IsOne(gain))
+            out += in;
+        else if (!IsZero(gain))
+            ScalarMultiplyAccumulate(in.begin() + inOffset, out.begin() + outOffset, gain, frames);
     }
 
     void Gain::ApplyReplaceLinearGain(
@@ -116,11 +124,11 @@ namespace SparkyStudios::Audio::Amplitude
 
         const auto& listenerSpaceSourcePosition = listenerViewMatrix * AM_V4V(sourcePosition, 1.0f);
         if (AM_LenSqr(listenerSpaceSourcePosition.XYZ) <= kEpsilon)
-            return AM_V2(0, 0);
+            return CalculateStereoPannedGain(gain, 0);
 
         const AmVec3 direction = AM_Norm(listenerSpaceSourcePosition.XYZ);
 
-        return CalculateStereoPannedGain(gain, SphericalPosition::FromWorldSpace(direction));
+        return CalculateStereoPannedGain(gain, SphericalPosition::ForHRTF(direction));
     }
 
     AmVec2 Gain::CalculateStereoPannedGain(AmReal32 gain, AmReal32 pan)
@@ -135,10 +143,10 @@ namespace SparkyStudios::Audio::Amplitude
         // This formula is explained in the following paper:
         // http://www.rs-met.com/documents/tutorials/PanRules.pdf
         const AmReal32 p = static_cast<AmReal32>(M_PI) * (pan + 1.0f) / 4.0f;
-        const AmReal32 left = std::cos(p) * gain;
-        const AmReal32 right = std::sin(p) * gain;
+        const AmReal32 left = std::cos(p);
+        const AmReal32 right = std::sin(p);
 
-        return { left, right };
+        return { left * left * gain, right * right * gain };
     }
 
     AmVec2 Gain::CalculateStereoPannedGain(AmReal32 gain, SphericalPosition sourcePosition)
@@ -148,8 +156,8 @@ namespace SparkyStudios::Audio::Amplitude
 
         const AmReal32 cosTheta = std::cos(sourcePosition.GetElevation());
 
-        return { 0.5f * (1.0f + std::cos((AM_DegToRad * +90.0f) - sourcePosition.GetAzimuth()) * cosTheta) * gain,
-                 0.5f * (1.0f + std::cos((AM_DegToRad * -90.0f) - sourcePosition.GetAzimuth()) * cosTheta) * gain };
+        return { 0.5f * (1.0f + std::cos((AM_DegToRad * -90.0f) - sourcePosition.GetAzimuth()) * cosTheta) * gain,
+                 0.5f * (1.0f + std::cos((AM_DegToRad * +90.0f) - sourcePosition.GetAzimuth()) * cosTheta) * gain };
     }
 
     GainProcessor::GainProcessor()
