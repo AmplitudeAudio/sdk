@@ -22,7 +22,7 @@
 namespace SparkyStudios::Audio::Amplitude
 {
     /**
-     * @brief Represents a vire to a single channel in an @c AudioBuffer.
+     * @brief Represents a view to a single channel in an @c AudioBuffer.
      */
     class AM_API_PUBLIC AudioBufferChannel
     {
@@ -129,7 +129,7 @@ namespace SparkyStudios::Audio::Amplitude
         AudioBufferChannel& operator-=(const AudioBufferChannel& channel);
 
         /**
-         * @brief Pointwise multiplies this channel with the provided @c AudioBufferChannel.
+         * @brief Point-wise multiplies this channel with the provided @c AudioBufferChannel.
          *
          * @param channel The @c AudioBufferChannel to multiply with.
          *
@@ -138,7 +138,7 @@ namespace SparkyStudios::Audio::Amplitude
         AudioBufferChannel& operator*=(const AudioBufferChannel& channel);
 
         /**
-         * @brief Pointwise multiplies this channel with the provided scalar.
+         * @brief Point-wise multiplies this channel with the provided scalar.
          *
          * @param scalar The scalar to multiply with.
          *
@@ -306,7 +306,7 @@ namespace SparkyStudios::Audio::Amplitude
         AudioBuffer& operator-=(const AudioBuffer& buffer);
 
         /**
-         * @brief Pointwise multiplies the audio buffer data with the provided @c AudioBuffer.
+         * @brief Point-wise multiplies the audio buffer data with the provided @c AudioBuffer.
          *
          * @param buffer The buffer to multiply with this one.
          *

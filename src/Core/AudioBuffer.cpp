@@ -278,8 +278,11 @@ namespace SparkyStudios::Audio::Amplitude
     {
         if (this != &buffer)
         {
-            _frameCount = buffer._frameCount;
-            Initialize(buffer.GetChannelCount());
+            if (_frameCount != buffer._frameCount || GetChannelCount() != buffer.GetChannelCount())
+            {
+                _frameCount = buffer._frameCount;
+                Initialize(buffer.GetChannelCount());
+            }
 
             for (AmSize i = 0; i < GetChannelCount(); ++i)
                 _channels[i] = buffer._channels[i];
