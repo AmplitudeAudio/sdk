@@ -27,7 +27,7 @@ using namespace SparkyStudios::Audio::Amplitude;
 
 struct ProcessingState
 {
-    bool verbose = false;
+    bool verbose = true;
     bool debug = false;
     struct
     {
@@ -79,8 +79,7 @@ void triangulate(const std::vector<HRIRSphereVertex>& vertices, std::vector<AmUI
     indices.clear();
     indices.resize(indicesCount);
 
-    for (AmUInt32 i = 0; i < indicesCount; ++i)
-        indices[i] = outIndices[i];
+    std::memcpy(indices.data(), outIndices, indicesCount * sizeof(AmUInt32));
 
     if (debug)
     {
@@ -90,6 +89,8 @@ void triangulate(const std::vector<HRIRSphereVertex>& vertices, std::vector<AmUI
 
         log(stdout, "debug_hrir_sphere.obj written\n");
     }
+
+    free(outIndices);
 }
 
 int parseFileName_IRCAM(const AmOsString& fileName, SphericalPosition& position)
@@ -102,7 +103,7 @@ int parseFileName_IRCAM(const AmOsString& fileName, SphericalPosition& position)
     if (elevation_location == AmOsString::npos)
         return EXIT_FAILURE;
 
-    // azimuth in degrees 3 digits, we need to negate so that the angle is relative to positive z-axis
+    // azimuth in degrees 3 digits, we need to negate so that the angle is relative to positive y-axis
     // - from 000 to 180 for source on your left
     // - from 180 to 359 for source on your right
     const auto azimuth = -std::strtof(AM_OS_STRING_TO_STRING(fileName.substr(azimuth_location + 2, 3)), nullptr);
@@ -135,10 +136,10 @@ int parseFileName_MIT(const AmOsString& fileName, SphericalPosition& position)
     for (AmSize el = elevation_location + 1; el < azimuth_location; ++el)
         elevationString += fileName[el];
 
-    // azimuth in degrees 3 digits, we need to negate so that the angle is relative to positive z-axis
-    // - from 000 to 180 for source on your left
-    // - from 180 to 359 for source on your right
-    const auto azimuth = -std::strtof(AM_OS_STRING_TO_STRING(azimuthString), nullptr);
+    // azimuth in degrees 3 digits
+    // - from 000 to 180 for source on your right
+    // - from 180 to 359 for source on your left
+    const auto azimuth = std::strtof(AM_OS_STRING_TO_STRING(azimuthString), nullptr);
 
     // elevation in degrees 2 digits
     // - from -15 to -40 for source below your head
@@ -146,7 +147,7 @@ int parseFileName_MIT(const AmOsString& fileName, SphericalPosition& position)
     // - from 15 to 90 for source above your head
     const auto elevation = std::strtof(AM_OS_STRING_TO_STRING(elevationString), nullptr);
 
-    position = SphericalPosition(azimuth * AM_DegToRad, elevation * AM_DegToRad, 1.0);
+    position = SphericalPosition::FromDegrees(azimuth, elevation);
     return EXIT_SUCCESS;
 }
 
@@ -160,17 +161,20 @@ int parseFileName_SADIE(const AmOsString& fileName, SphericalPosition& position)
     if (elevation_location == AmOsString::npos)
         return EXIT_FAILURE;
 
-    // azimuth in degrees
+    // azimuth in degrees, we need to negate so that the angle is relative to positive y-axis
     // - from 000 to 180 for source on your left
     // - from 180 to 359 for source on your right
-    const auto azimuth =
-        std::strtof(AM_OS_STRING_TO_STRING(fileName.substr(azimuth_location + 4, elevation_location - (azimuth_location + 4))), nullptr);
+    auto azimuthStr = fileName.substr(azimuth_location + 4, elevation_location - (azimuth_location + 4));
+    std::replace(azimuthStr.begin(), azimuthStr.end(), ',', '.');
+    const auto azimuth = -std::strtof(AM_OS_STRING_TO_STRING(azimuthStr), nullptr);
 
     // elevation in degrees
-    // - from -15 to -81 for source below your head
+    // - from -15 to -90 for source below your head
     // - 0 for source in front of your head
     // - from 15 to 90 for source above your head
-    const auto elevation = std::strtof(AM_OS_STRING_TO_STRING(fileName.substr(elevation_location + 5)), nullptr);
+    auto elevationStr = fileName.substr(elevation_location + 5);
+    std::replace(elevationStr.begin(), elevationStr.end(), ',', '.');
+    const auto elevation = std::strtof(AM_OS_STRING_TO_STRING(elevationStr), nullptr);
 
     position = SphericalPosition::FromDegrees(azimuth, elevation);
     return EXIT_SUCCESS;
@@ -225,6 +229,8 @@ static int process(const AmOsString& inFileName, const AmOsString& outFileName, 
 
     AmUniquePtr<MemoryPoolKind::Default, Codec> wavCodec(amnew(WAVCodec));
 
+    std::vector<AmVec3> positions;
+
     for (const auto& entry : sorted_by_name)
     {
         const auto& path = entry.native();
@@ -237,44 +243,46 @@ static int process(const AmOsString& inFileName, const AmOsString& outFileName, 
         if (state.datasetModel == eHRIRSphereDatasetModel_IRCAM &&
             parseFileName_IRCAM(entry.filename().native(), spherical) == EXIT_FAILURE)
         {
-            log(stderr, "Invalid file name: %s.\n", path.c_str());
+            log(stderr, "\tInvalid file name: %s.\n", path.c_str());
             return EXIT_FAILURE;
         }
 
         if (state.datasetModel == eHRIRSphereDatasetModel_MIT && parseFileName_MIT(entry.filename().native(), spherical) == EXIT_FAILURE)
         {
-            log(stderr, "Invalid file name: %s.\n", path.c_str());
+            log(stderr, "\tInvalid file name: %s.\n", path.c_str());
             return EXIT_FAILURE;
         }
 
         if (state.datasetModel == eHRIRSphereDatasetModel_SADIE &&
             parseFileName_SADIE(entry.filename().native(), spherical) == EXIT_FAILURE)
         {
-            log(stderr, "Invalid file name: %s.\n", path.c_str());
+            log(stderr, "\tInvalid file name: %s.\n", path.c_str());
             return EXIT_FAILURE;
         }
 
         const AmUInt32 max = state.datasetModel == eHRIRSphereDatasetModel_MIT ? 2 : 1;
         for (AmUInt32 i = 0; i < max; ++i)
         {
-            if (i == 1 && (spherical.GetAzimuth() == -AM_PI32 || spherical.GetAzimuth() == AM_PI32))
+            spherical.SetAzimuth(spherical.GetAzimuth() * (i * -2.0f + 1.0f));
+            const AmVec3 position = spherical.ToCartesian();
+
+            if (const auto& it = std::find(positions.begin(), positions.end(), position); it != positions.end())
                 continue; // Do not duplicate borders
 
-            spherical.SetAzimuth(spherical.GetAzimuth() - static_cast<AmReal32>(i) * AM_PI32);
-            const AmVec3 position = spherical.ToCartesian();
+            positions.push_back(position);
 
             auto* decoder = wavCodec->CreateDecoder();
             std::shared_ptr<File> file = std::make_shared<DiskFile>(absolute(entry));
 
             if (!decoder->Open(file))
             {
-                log(stderr, "Failed to open file %s.\n", path.c_str());
+                log(stderr, "\tFailed to open file %s.\n", path.c_str());
                 return EXIT_FAILURE;
             }
 
             if (decoder->GetFormat().GetNumChannels() != 2)
             {
-                log(stderr, "Unsupported number of channels: %d. Only 2 channels is supported.\n", decoder->GetFormat().GetNumChannels());
+                log(stderr, "\tUnsupported number of channels: %d. Only 2 channels is supported.\n", decoder->GetFormat().GetNumChannels());
                 return EXIT_FAILURE;
             }
 
@@ -315,14 +323,16 @@ static int process(const AmOsString& inFileName, const AmOsString& outFileName, 
 
             for (AmUInt32 j = 0; j < totalFrames; ++j)
             {
-                vertex.m_LeftIR[j] = leftChannel[j];
-                vertex.m_RightIR[j] = rightChannel[j];
+                vertex.m_LeftIR[j] = i == 0 ? leftChannel[j] : rightChannel[j];
+                vertex.m_RightIR[j] = i == 0 ? rightChannel[j] : leftChannel[j];
             }
 
             vertices.push_back(vertex);
 
             buffer.Clear();
             wavCodec->DestroyDecoder(decoder);
+
+            log(stdout, "\tProcessed %s -> {%f, %f, %f}.\n", path.c_str(), vertex.m_Position.X, vertex.m_Position.Y, vertex.m_Position.Z);
         }
     }
 
@@ -403,7 +413,7 @@ int main(int argc, char* argv[])
             case 'm':
                 state.datasetModel = static_cast<HRIRSphereDatasetModel>(strtol(argv[++i], argv, 10));
 
-                if (state.datasetModel < eHRIRSphereDatasetModel_MIT || state.datasetModel >= eHRIRSphereDatasetModel_Invalid)
+                if (state.datasetModel < eHRIRSphereDatasetModel_IRCAM || state.datasetModel >= eHRIRSphereDatasetModel_Invalid)
                 {
                     log(stderr, "\nInvalid dataset model!\n");
                     return EXIT_FAILURE;
