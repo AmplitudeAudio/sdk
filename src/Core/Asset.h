@@ -23,7 +23,7 @@
 
 namespace SparkyStudios::Audio::Amplitude
 {
-    class EngineInternalState;
+    struct EngineInternalState;
 
     /**
      * @brief Asset class' private implementation.

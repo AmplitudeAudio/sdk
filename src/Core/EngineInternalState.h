@@ -152,6 +152,7 @@ namespace SparkyStudios::Audio::Amplitude
             , occlusion_config()
             , track_environments(false)
             , samples_per_stream(512)
+            , panning_mode(ePanningMode_Stereo)
             , version(nullptr)
         {}
 
@@ -278,6 +279,8 @@ namespace SparkyStudios::Audio::Amplitude
         bool track_environments;
 
         AmUInt32 samples_per_stream;
+
+        ePanningMode panning_mode;
 
         const struct Version* version;
     };

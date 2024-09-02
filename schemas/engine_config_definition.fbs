@@ -82,7 +82,7 @@ table PlaybackOutputConfig {
   buffer_size:uint = 1024;
 
   /// The output buffer format.
-  format:ePlaybackOutputFormat = Int16;
+  format:ePlaybackOutputFormat = Float32;
 }
 
 /// A single processor in the audio mixer pipeline.
@@ -126,6 +126,10 @@ table AudioMixerConfig {
   /// Configures the mixer pipeline. The pipeline is responsible to
   /// process the sound (ie. apply effects) before it is sent to the audio device.
   pipeline:[AudioMixerPipelineItem];
+
+  /// Defines the panning mode to use. If Stereo mode is set, all the sound sources
+  /// playing with HRTF spatialization will fallback to PositionOrientation spatialization.
+  panning_mode:PanningMode;
 }
 
 /// The default obstruction/occlusion curve applied on sound's

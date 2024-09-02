@@ -14,6 +14,25 @@
 
 namespace SparkyStudios.Audio.Amplitude;
 
+/// The panning mode of the spatial renderer.
+enum PanningMode: byte {
+  /// 2D stereo (left-right) panning. Does not support HRTF rendering.
+  Stereo = 0,
+
+  /// HRTF-based panning using first-order Ambisonics, over a virtual array of
+  /// 8 loudspeakers arranged in a cube configuration around the listener's head.
+  BinauralLowQuality = 1,
+
+  /// HRTF-based panning using second-order Ambisonics, over a virtual array of
+  /// 12 loudspeakers arranged in a dodecahedral configuration (using faces of the dodecahedron).
+  BinauralMediumQuality = 2,
+
+  /// HRTF-based panning using third-order Ambisonics, over a virtual array of
+  /// 26 loudspeakers arranged in a Lebedev grid.
+  /// See: https://people.sc.fsu.edu/~jburkardt/m_src/sphere_lebedev_rule/sphere_lebedev_rule.html
+  BinauralHighQuality = 3
+}
+
 /// The type of value a parameter have.
 enum ValueKind: byte {
   /// The parameter doesn't have a value yet. This is an internal case used by the SDK

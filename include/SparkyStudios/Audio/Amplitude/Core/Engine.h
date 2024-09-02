@@ -483,7 +483,7 @@ namespace SparkyStudios::Audio::Amplitude
 
 #pragma endregion
 
-#pragma region Master Gain & Mute State
+#pragma region Master Gain& Mute State
 
         /**
          * @brief Adjusts the master gain of the mixer.
@@ -1170,7 +1170,7 @@ namespace SparkyStudios::Audio::Amplitude
 
 #pragma endregion
 
-#pragma region Engine State & Configuration
+#pragma region Engine State& Configuration
 
         /**
          * @brief Get the current speed of sound.
@@ -1243,6 +1243,13 @@ namespace SparkyStudios::Audio::Amplitude
          * @return The obstruction gain curve.
          */
         [[nodiscard]] virtual const Curve& GetObstructionGainCurve() const = 0;
+
+        /**
+         * @brief Gets the panning mode defined in the loaded engine configuration.
+         *
+         * @return The panning mode.
+         */
+        [[nodiscard]] virtual ePanningMode GetPanningMode() const = 0;
 
 #pragma endregion
 

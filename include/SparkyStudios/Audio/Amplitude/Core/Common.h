@@ -259,6 +259,9 @@ namespace SparkyStudios::Audio::Amplitude
         AM_FADER_STATE_ACTIVE = 1,
     };
 
+    /**
+     * @brief Enumerates the list of available spatialization modes.
+     */
     enum eSpatialization
     {
         /**
@@ -267,20 +270,65 @@ namespace SparkyStudios::Audio::Amplitude
         eSpatialization_None,
 
         /**
-         * @brief Enables 2D (left-right) spatialization based on sound position
+         * @brief Enables 2D (left-right) spatialization based on sound position.
+         *
+         * @note This mode is available for every panning mode.
          */
         eSpatialization_Position,
 
         /**
          * @brief Enables 2D (left-right) spatialization based on sound position
-         * and orientation. The sound need to be attached to an @c Entity.
+         * and orientation.
+         *
+         * @note The sound instance using this spatialization mode needs to be attached to an @c Entity.
+         * @note This mode is available for every panning mode.
          */
         eSpatialization_PositionOrientation,
 
         /**
          * @brief Enables 3D spatialization using Head Related Transfer Functions.
+         *
+         * @note This mode is only available for binaural panning modes.
          */
         eSpatialization_HRTF
+    };
+
+    /**
+     * @brief Enumerates the list of available panning modes.
+     */
+    enum ePanningMode
+    {
+        /**
+         * @brief 2D stereo panning. This panning mode won't provide HRTF-related features.
+         *
+         * @note The Ambisonic decoder will use a virtual array of 2 loudspeakers
+         * evenly arranged in front of the listener's head.
+         */
+        ePanningMode_Stereo = 0,
+
+        /**
+         * @brief 3D binaural panning using first-order HRTF.
+         *
+         * @note The Ambisonic decoder will use a virtual array of 8 loudspeakers
+         * arranged in a cube configuration around the listener's head.
+         */
+        ePanningMode_BinauralLowQuality = 1,
+
+        /**
+         * @brief 3D binaural panning using second-order HRTF.
+         *
+         * @note The Ambisonic decoder will use a virtual array of 12 loudspeakers
+         * arranged in a dodecahedral configuration (using faces of the dodecahedron).
+         */
+        ePanningMode_BinauralMediumQuality = 2,
+
+        /**
+         * @brief 3D binaural panning using third-order HRTF.
+         *
+         * @note The Ambisonic decoder will use a virtual array of 26 loudspeakers
+         * arranged in a Lebedev grid. See: https://people.sc.fsu.edu/~jburkardt/m_src/sphere_lebedev_rule/sphere_lebedev_rule.html
+         */
+        ePanningMode_BinauralHighQuality = 3,
     };
 
     /**

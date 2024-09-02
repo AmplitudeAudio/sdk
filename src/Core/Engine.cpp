@@ -628,6 +628,9 @@ namespace SparkyStudios::Audio::Amplitude
             return false;
         }
 
+        // Load the panning mode
+        _state->panning_mode = static_cast<ePanningMode>(config->mixer()->panning_mode());
+
         // Initialize the channel internal data.
         InitializeChannelFreeLists(
             &_state->real_channel_free_list, &_state->virtual_channel_free_list, &_state->channel_state_memory,
@@ -954,11 +957,7 @@ namespace SparkyStudios::Audio::Amplitude
     }
 
     bool BestListener(
-        ListenerList::const_iterator* bestListener,
-        AmVec3* listenerSpaceLocation,
-        const ListenerList& listeners,
-        const AmVec3& location,
-        eListenerFetchMode fetchMode)
+        ListenerList::const_iterator* bestListener, const ListenerList& listeners, const AmVec3& location, eListenerFetchMode fetchMode)
     {
         if (listeners.empty())
             return false;
@@ -975,8 +974,8 @@ namespace SparkyStudios::Audio::Amplitude
         case eListenerFetchMode_Farthest:
             {
                 auto listener = listeners.cbegin();
-                *listenerSpaceLocation = AM_Mul(listener->GetInverseMatrix(), location4).XYZ;
-                AmReal32 distanceSquared = AM_LenSqr(*listenerSpaceLocation);
+                auto listenerSpaceLocation = AM_Mul(listener->GetInverseMatrix(), location4).XYZ;
+                AmReal32 distanceSquared = AM_LenSqr(listenerSpaceLocation);
                 *bestListener = listener;
 
                 for (++listener; listener != listeners.cend(); ++listener)
@@ -986,7 +985,6 @@ namespace SparkyStudios::Audio::Amplitude
                         fetchMode == eListenerFetchMode_Nearest ? magnitudeSquared < distanceSquared : magnitudeSquared > distanceSquared)
                     {
                         *bestListener = listener;
-                        *listenerSpaceLocation = transformedLocation;
                     }
                 }
             }
@@ -996,7 +994,6 @@ namespace SparkyStudios::Audio::Amplitude
             {
                 auto listener = listeners.cbegin();
                 const AmMat4& mat = listener->GetInverseMatrix();
-                *listenerSpaceLocation = AM_Mul(mat, location4).XYZ;
                 *bestListener = listener;
             }
             break;
@@ -1005,7 +1002,6 @@ namespace SparkyStudios::Audio::Amplitude
             {
                 auto listener = listeners.cend();
                 const AmMat4& mat = listener->GetInverseMatrix();
-                *listenerSpaceLocation = AM_Mul(mat, location4).XYZ;
                 *bestListener = listener;
             }
             break;
@@ -1021,7 +1017,6 @@ namespace SparkyStudios::Audio::Amplitude
                     if (listener->GetId() == state->GetId())
                     {
                         const AmMat4& mat = state->GetInverseMatrix();
-                        *listenerSpaceLocation = AM_Mul(mat, location4).XYZ;
                         *bestListener = listener;
                         return true;
                     }
@@ -1062,17 +1057,11 @@ namespace SparkyStudios::Audio::Amplitude
     {
         *gain = soundGain * bus->GetGain() * userGain;
         *pitch = soundPitch;
+        *pan = AM_V2(0, 0); // TODO: This may be removed in the future, since panning is handled automatically in pipeline nodes..
 
         ListenerList::const_iterator foundListener;
-        AmReal32 distanceSquared;
-        AmVec3 listenerSpaceLocation;
 
-        bool found = BestListener(&foundListener, &listenerSpaceLocation, listeners, location, fetchMode);
-
-        if (spatialization != Spatialization_Position && spatialization != Spatialization_PositionOrientation)
-            *pan = AM_V2(0, 0);
-        else
-            *pan = CalculatePan(listenerSpaceLocation);
+        bool found = BestListener(&foundListener, listeners, location, fetchMode);
 
         if (spatialization != Spatialization_None)
             *pitch *= channel != nullptr ? channel->GetDopplerFactor(foundListener->GetId()) : 1.0f;
@@ -2238,6 +2227,11 @@ namespace SparkyStudios::Audio::Amplitude
     const Curve& EngineImpl::GetObstructionGainCurve() const
     {
         return _state->obstruction_config.gain;
+    }
+
+    ePanningMode EngineImpl::GetPanningMode() const
+    {
+        return _state->panning_mode;
     }
 
 #pragma endregion
