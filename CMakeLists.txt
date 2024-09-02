@@ -207,6 +207,8 @@ set(SA_SOURCE
     src/Ambisonics/AmbisonicDecoder.h
     src/Ambisonics/AmbisonicEntity.cpp
     src/Ambisonics/AmbisonicEntity.h
+    src/Ambisonics/AmbisonicOrientationProcessor.cpp
+    src/Ambisonics/AmbisonicOrientationProcessor.h
     src/Ambisonics/AmbisonicSource.cpp
     src/Ambisonics/AmbisonicSource.cpp
     src/Ambisonics/AmbisonicSpeaker.cpp
