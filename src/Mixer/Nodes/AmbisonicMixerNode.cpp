@@ -28,10 +28,9 @@ namespace SparkyStudios::Audio::Amplitude
     AudioBuffer AmbisonicMixerNodeInstance::Mix(const std::vector<AudioBuffer>& inputs)
     {
         const ePanningMode mode = Engine::GetInstance()->GetPanningMode();
-        if (mode == ePanningMode_Stereo)
-            return {};
+        const AmUInt32 order = AM_MIN(mode, 1);
 
-        const AmUInt32 channelCount = OrderToComponents(mode, true);
+        const AmUInt32 channelCount = OrderToComponents(order, true);
         AudioBuffer output(kAmMaxSupportedFrameCount, channelCount);
 
         if (inputs.empty())

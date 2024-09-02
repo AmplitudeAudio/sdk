@@ -34,6 +34,10 @@ namespace SparkyStudios::Audio::Amplitude
         if (layer == nullptr)
             return {};
 
+        const eSpatialization spatialization = layer->GetSpatialization();
+        if (spatialization != eSpatialization_HRTF)
+            return {};
+
         const auto& listener = layer->GetListener();
         if (!listener.Valid())
             return {};
@@ -41,14 +45,15 @@ namespace SparkyStudios::Audio::Amplitude
         const auto& listenerSpaceSourcePosition = listener.GetInverseMatrix() * AM_V4V(layer->GetLocation(), 1.0f);
 
         const ePanningMode mode = Engine::GetInstance()->GetPanningMode();
+        const AmUInt32 order = AM_MIN(mode, 1);
 
         BFormat encodedOutput;
-        encodedOutput.Configure(mode, true, input.GetFrameCount());
+        encodedOutput.Configure(order, true, input.GetFrameCount());
 
         if (!_sources.contains(layer->GetId()))
         {
             AmbisonicSource& source = _sources[layer->GetId()];
-            source.Configure(mode, true);
+            source.Configure(order, true);
         }
 
         AmbisonicSource& source = _sources[layer->GetId()];

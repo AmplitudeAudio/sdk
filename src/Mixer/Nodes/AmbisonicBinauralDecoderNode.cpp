@@ -36,9 +36,10 @@ namespace SparkyStudios::Audio::Amplitude
             return {};
 
         const ePanningMode mode = Engine::GetInstance()->GetPanningMode();
+        const AmUInt32 order = AM_MIN(mode, 1);
 
         BFormat soundField;
-        soundField.Configure(mode, true, input.GetFrameCount());
+        soundField.Configure(order, true, input.GetFrameCount());
 
         for (AmUInt32 i = 0, l = input.GetChannelCount(); i < l; ++i)
             soundField.CopyStream(input[i], i, input.GetFrameCount());
@@ -47,10 +48,10 @@ namespace SparkyStudios::Audio::Amplitude
 
         if (mode == ePanningMode_Stereo)
         {
-            if (!_binauralizers.contains(layer->GetId()))
+            if (!_decoders.contains(layer->GetId()))
             {
                 AmbisonicDecoder& decoder = _decoders[layer->GetId()];
-                decoder.Configure(mode, true, eSpeakersPreset_Stereo);
+                decoder.Configure(order, true, eSpeakersPreset_Stereo);
             }
 
             AmbisonicDecoder& decoder = _decoders[layer->GetId()];
@@ -61,7 +62,7 @@ namespace SparkyStudios::Audio::Amplitude
             if (!_binauralizers.contains(layer->GetId()))
             {
                 AmbisonicBinauralizer& decoder = _binauralizers[layer->GetId()];
-                decoder.Configure(mode, true, _hrirSphere);
+                decoder.Configure(order, true, _hrirSphere);
             }
 
             AmbisonicBinauralizer& decoder = _binauralizers[layer->GetId()];
