@@ -15,10 +15,10 @@
 #include <Ambisonics/AmbisonicEntity.h>
 #include <Utils/Utils.h>
 
-#define sqrt32 std::sqrtf(3.f) / 2.f
-#define sqrt58 std::sqrtf(5.f / 8.f)
-#define sqrt152 std::sqrtf(15.f) / 2.f
-#define sqrt38 std::sqrtf(3.f / 8.f)
+#define sqrt32 std::sqrt(3.f) / 2.f
+#define sqrt58 std::sqrt(5.f / 8.f)
+#define sqrt152 std::sqrt(15.f) / 2.f
+#define sqrt38 std::sqrt(3.f / 8.f)
 
 namespace SparkyStudios::Audio::Amplitude
 {
@@ -47,14 +47,14 @@ namespace SparkyStudios::Audio::Amplitude
 
     void AmbisonicEntity::Refresh()
     {
-        const AmReal32 cosAzim = std::cosf(m_position.GetAzimuth());
-        const AmReal32 sinAzim = std::sinf(m_position.GetAzimuth());
-        const AmReal32 cosElev = std::cosf(m_position.GetElevation());
-        const AmReal32 sinElev = std::sinf(m_position.GetElevation());
+        const AmReal32 cosAzim = std::cos(m_position.GetAzimuth());
+        const AmReal32 sinAzim = std::sin(m_position.GetAzimuth());
+        const AmReal32 cosElev = std::cos(m_position.GetElevation());
+        const AmReal32 sinElev = std::sin(m_position.GetElevation());
 
-        const AmReal32 cos2Azim = std::cosf(2.0f * m_position.GetAzimuth());
-        const AmReal32 sin2Azim = std::sinf(2.0f * m_position.GetAzimuth());
-        const AmReal32 sin2Elev = std::sinf(2.0f * m_position.GetElevation());
+        const AmReal32 cos2Azim = std::cos(2.0f * m_position.GetAzimuth());
+        const AmReal32 sin2Azim = std::sin(2.0f * m_position.GetAzimuth());
+        const AmReal32 sin2Elev = std::sin(2.0f * m_position.GetElevation());
 
         if (m_is3D)
         {
@@ -70,26 +70,26 @@ namespace SparkyStudios::Audio::Amplitude
 
             if (m_order >= 2)
             {
-                m_coefficients[eBFormatChannel_V] = sqrt32 * (sin2Azim * std::powf(cosElev, 2.0f)) * m_orderWeights[2]; // V
+                m_coefficients[eBFormatChannel_V] = sqrt32 * (sin2Azim * std::pow(cosElev, 2.0f)) * m_orderWeights[2]; // V
                 m_coefficients[eBFormatChannel_T] = sqrt32 * (sinAzim * sin2Elev) * m_orderWeights[2]; // T
-                m_coefficients[eBFormatChannel_R] = (1.5f * std::powf(sinElev, 2.0f) - 0.5f) * m_orderWeights[2]; // R
+                m_coefficients[eBFormatChannel_R] = (1.5f * std::pow(sinElev, 2.0f) - 0.5f) * m_orderWeights[2]; // R
                 m_coefficients[eBFormatChannel_S] = sqrt32 * (cosAzim * sin2Elev) * m_orderWeights[2]; // S
-                m_coefficients[eBFormatChannel_U] = sqrt32 * (cos2Azim * std::powf(cosElev, 2.0f)) * m_orderWeights[2]; // U
+                m_coefficients[eBFormatChannel_U] = sqrt32 * (cos2Azim * std::pow(cosElev, 2.0f)) * m_orderWeights[2]; // U
             }
 
             if (m_order >= 3)
             {
                 m_coefficients[eBFormatChannel_Q] =
-                    sqrt58 * (std::sinf(3.0f * m_position.GetAzimuth()) * std::powf(cosElev, 3.0f)) * m_orderWeights[3]; // Q
-                m_coefficients[eBFormatChannel_O] = sqrt152 * (sin2Azim * sinElev * std::powf(cosElev, 2.f)) * m_orderWeights[3]; // O
+                    sqrt58 * (std::sin(3.0f * m_position.GetAzimuth()) * std::pow(cosElev, 3.0f)) * m_orderWeights[3]; // Q
+                m_coefficients[eBFormatChannel_O] = sqrt152 * (sin2Azim * sinElev * std::pow(cosElev, 2.f)) * m_orderWeights[3]; // O
                 m_coefficients[eBFormatChannel_M] =
-                    sqrt38 * (sinAzim * cosElev * (5.f * std::powf(sinElev, 2.f) - 1.f)) * m_orderWeights[3]; // M
-                m_coefficients[eBFormatChannel_K] = sinElev * (5.f * std::powf(sinElev, 2.f) - 3.f) * 0.5f * m_orderWeights[3]; // K
+                    sqrt38 * (sinAzim * cosElev * (5.f * std::pow(sinElev, 2.f) - 1.f)) * m_orderWeights[3]; // M
+                m_coefficients[eBFormatChannel_K] = sinElev * (5.f * std::pow(sinElev, 2.f) - 3.f) * 0.5f * m_orderWeights[3]; // K
                 m_coefficients[eBFormatChannel_L] =
-                    sqrt38 * (cosAzim * cosElev * (5.f * std::powf(sinElev, 2.f) - 1.f)) * m_orderWeights[3]; // L
-                m_coefficients[eBFormatChannel_N] = sqrt152 * (cos2Azim * sinElev * std::powf(cosElev, 2.f)) * m_orderWeights[3]; // N
+                    sqrt38 * (cosAzim * cosElev * (5.f * std::pow(sinElev, 2.f) - 1.f)) * m_orderWeights[3]; // L
+                m_coefficients[eBFormatChannel_N] = sqrt152 * (cos2Azim * sinElev * std::pow(cosElev, 2.f)) * m_orderWeights[3]; // N
                 m_coefficients[eBFormatChannel_P] =
-                    sqrt58 * (std::cosf(3.f * m_position.GetAzimuth()) * std::powf(cosElev, 3.f)) * m_orderWeights[3]; // P
+                    sqrt58 * (std::cos(3.f * m_position.GetAzimuth()) * std::pow(cosElev, 3.f)) * m_orderWeights[3]; // P
             }
         }
         else
@@ -104,14 +104,14 @@ namespace SparkyStudios::Audio::Amplitude
 
             if (m_order >= 2)
             {
-                m_coefficients[3] = cos2Azim * std::powf(cosElev, 2.0f) * m_orderWeights[2];
-                m_coefficients[4] = sin2Azim * std::powf(cosElev, 2.0f) * m_orderWeights[2];
+                m_coefficients[3] = cos2Azim * std::pow(cosElev, 2.0f) * m_orderWeights[2];
+                m_coefficients[4] = sin2Azim * std::pow(cosElev, 2.0f) * m_orderWeights[2];
             }
 
             if (m_order >= 3)
             {
-                m_coefficients[5] = std::cosf(3.0f * m_position.GetAzimuth()) * std::powf(cosElev, 3) * m_orderWeights[3];
-                m_coefficients[6] = std::sinf(3.0f * m_position.GetAzimuth()) * std::powf(cosElev, 3) * m_orderWeights[3];
+                m_coefficients[5] = std::cos(3.0f * m_position.GetAzimuth()) * std::pow(cosElev, 3) * m_orderWeights[3];
+                m_coefficients[6] = std::sin(3.0f * m_position.GetAzimuth()) * std::pow(cosElev, 3) * m_orderWeights[3];
             }
         }
 

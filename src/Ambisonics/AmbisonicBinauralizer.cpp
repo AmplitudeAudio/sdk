@@ -70,7 +70,7 @@ namespace SparkyStudios::Audio::Amplitude
                     //  The spherical harmonic coefficients are multiplied by (2*order + 1) to provide the correct decoder
                     //  for SN3D normalized Ambisonic inputs.
                     const AmReal32 coefficient =
-                        _decoder.GetSpeakerCoefficient(i, c) * (2.f * std::floorf(std::sqrtf(static_cast<AmReal32>(c))) + 1.f);
+                        _decoder.GetSpeakerCoefficient(i, c) * (2.f * std::floor(std::sqrt(static_cast<AmReal32>(c))) + 1.f);
 
                     ScalarMultiplyAccumulate(hrir[0].GetBuffer(), leftChannel.begin(), coefficient, hrirLength);
                     ScalarMultiplyAccumulate(hrir[1].GetBuffer(), rightChannel.begin(), coefficient, hrirLength);
