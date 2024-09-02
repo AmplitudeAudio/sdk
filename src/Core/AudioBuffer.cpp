@@ -219,6 +219,11 @@ namespace SparkyStudios::Audio::Amplitude
         _data.Release();
     }
 
+    bool AudioBuffer::IsEmpty() const
+    {
+        return _frameCount == 0 || _channels.empty();
+    }
+
     AmSize AudioBuffer::GetFrameCount() const
     {
         return _frameCount;

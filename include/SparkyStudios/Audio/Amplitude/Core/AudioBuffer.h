@@ -203,6 +203,13 @@ namespace SparkyStudios::Audio::Amplitude
         ~AudioBuffer();
 
         /**
+         * @brief Check if the audio buffer is empty.
+         *
+         * @return @c true if the audio buffer is empty, @c false otherwise.
+         */
+        [[nodiscard]] bool IsEmpty() const;
+
+        /**
          * @brief Gets the number of frames in the buffer.
          *
          * @return The number of frames in the buffer.
