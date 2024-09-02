@@ -21,39 +21,6 @@
 
 namespace SparkyStudios::Audio::Amplitude
 {
-    AmbisonicMixerNodeInstance::AmbisonicMixerNodeInstance(AmObjectID id, const Pipeline* pipeline)
-        : MixerNodeInstance(id, pipeline)
-    {}
-
-    AudioBuffer AmbisonicMixerNodeInstance::Mix(const std::vector<AudioBuffer>& inputs)
-    {
-        const ePanningMode mode = Engine::GetInstance()->GetPanningMode();
-        const AmUInt32 order = AM_MIN(mode, 1);
-
-        const AmUInt32 channelCount = OrderToComponents(order, true);
-        AudioBuffer output(kAmMaxSupportedFrameCount, channelCount);
-
-        if (inputs.empty())
-            return output;
-
-        output = AudioBuffer(inputs[0].GetFrameCount(), channelCount);
-
-        constexpr AmReal32 ratio = 1.0f;
-
-        for (AmSize i = 0, l = inputs.size(); i < l; ++i)
-        {
-            if (inputs[i].IsEmpty())
-                continue;
-
-            AMPLITUDE_ASSERT(inputs[i].GetFrameCount() == output.GetFrameCount());
-            AMPLITUDE_ASSERT(inputs[i].GetChannelCount() == output.GetChannelCount());
-
-            ScalarMultiplyAccumulate(inputs[i].GetData().GetBuffer(), output.GetData().GetBuffer(), ratio, output.GetData().GetSize());
-        }
-
-        return output;
-    }
-
     AmbisonicMixerNode::AmbisonicMixerNode()
         : Node("AmbisonicMixer")
     {}

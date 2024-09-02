@@ -20,35 +20,6 @@
 
 namespace SparkyStudios::Audio::Amplitude
 {
-    StereoMixerNodeInstance::StereoMixerNodeInstance(AmObjectID id, const Pipeline* pipeline)
-        : MixerNodeInstance(id, pipeline)
-    {}
-
-    AudioBuffer StereoMixerNodeInstance::Mix(const std::vector<AudioBuffer>& inputs)
-    {
-        AudioBuffer output(kAmMaxSupportedFrameCount, 2);
-
-        if (inputs.empty())
-            return output;
-
-        output = AudioBuffer(inputs[0].GetFrameCount(), 2);
-
-        constexpr AmReal32 ratio = 1.0f;
-
-        for (AmSize i = 0, l = inputs.size(); i < l; ++i)
-        {
-            if (inputs[i].IsEmpty())
-                continue;
-
-            AMPLITUDE_ASSERT(inputs[i].GetFrameCount() == output.GetFrameCount());
-            AMPLITUDE_ASSERT(inputs[i].GetChannelCount() == output.GetChannelCount());
-
-            ScalarMultiplyAccumulate(inputs[i].GetData().GetBuffer(), output.GetData().GetBuffer(), ratio, output.GetData().GetSize());
-        }
-
-        return output;
-    }
-
     StereoMixerNode::StereoMixerNode()
         : Node("StereoMixer")
     {}

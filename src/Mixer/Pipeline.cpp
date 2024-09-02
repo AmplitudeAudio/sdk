@@ -51,14 +51,14 @@ namespace SparkyStudios::Audio::Amplitude
         auto ambisonicPanningNode = ampoolnew(MemoryPoolKind::Amplimix, AmbisonicPanningNodeInstance, 7, this);
         _nodeInstances[ambisonicPanningNode->GetId()] = ambisonicPanningNode;
 
-        auto ambisonicMixerNode = ampoolnew(MemoryPoolKind::Amplimix, AmbisonicMixerNodeInstance, 8, this);
+        auto ambisonicMixerNode = ampoolnew(MemoryPoolKind::Amplimix, MixerNodeInstance, 8, this);
         _nodeInstances[ambisonicMixerNode->GetId()] = ambisonicMixerNode;
 
         _nodes.push_back(ampoolnew(MemoryPoolKind::Amplimix, AmbisonicBinauralDecoderNode));
         auto ambisonicBinauralDecoder = (AmbisonicBinauralDecoderNodeInstance*)_nodes[0]->CreateInstance(9, this);
         _nodeInstances[ambisonicBinauralDecoder->GetId()] = ambisonicBinauralDecoder;
 
-        auto stereoMixerNode = ampoolnew(MemoryPoolKind::Amplimix, StereoMixerNodeInstance, 10, this);
+        auto stereoMixerNode = ampoolnew(MemoryPoolKind::Amplimix, MixerNodeInstance, 10, this);
         _nodeInstances[stereoMixerNode->GetId()] = stereoMixerNode;
 
         // Direct Sound Path

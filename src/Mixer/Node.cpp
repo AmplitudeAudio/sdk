@@ -16,6 +16,8 @@
 #include <SparkyStudios/Audio/Amplitude/Mixer/Node.h>
 #include <SparkyStudios/Audio/Amplitude/Mixer/Pipeline.h>
 
+#include <Utils/Utils.h>
+
 namespace SparkyStudios::Audio::Amplitude
 {
     NodeInstance::NodeInstance(AmObjectID id)
@@ -99,7 +101,26 @@ namespace SparkyStudios::Audio::Amplitude
     AudioBuffer MixerNodeInstance::Provide()
     {
         Consume();
-        return Mix(_processingBuffers);
+
+        if (_processingBuffers.empty())
+            return {};
+
+        AudioBuffer output(_processingBuffers[0].GetFrameCount(), _processingBuffers[0].GetChannelCount());
+
+        for (AmSize i = 0, l = _processingBuffers.size(); i < l; ++i)
+        {
+            const auto& input = _processingBuffers[i];
+
+            if (input.IsEmpty())
+                continue;
+
+            AMPLITUDE_ASSERT(input.GetFrameCount() == output.GetFrameCount());
+            AMPLITUDE_ASSERT(input.GetChannelCount() == output.GetChannelCount());
+
+            output += input;
+        }
+
+        return output;
     }
 
     InputNodeInstance::InputNodeInstance(AmObjectID id, const Pipeline* pipeline)

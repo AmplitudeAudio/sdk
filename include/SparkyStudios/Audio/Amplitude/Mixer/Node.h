@@ -177,16 +177,6 @@ namespace SparkyStudios::Audio::Amplitude
         ~MixerNodeInstance() override = default;
 
         /**
-         * @brief Mixes audio data from multiple inputs, and outputs the result
-         * of the mix.
-         *
-         * @param inputs The list of input audio data to mix.
-         *
-         * @return The output audio data.
-         */
-        virtual AudioBuffer Mix(const std::vector<AudioBuffer>& inputs) = 0;
-
-        /**
          * @copydoc ConsumerNodeInstance::Consume()
          */
         void Consume() final;

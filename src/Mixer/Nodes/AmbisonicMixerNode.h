@@ -22,14 +22,6 @@
 
 namespace SparkyStudios::Audio::Amplitude
 {
-    class AmbisonicMixerNodeInstance final : public MixerNodeInstance
-    {
-    public:
-        AmbisonicMixerNodeInstance(AmObjectID id, const Pipeline* pipeline);
-
-        AudioBuffer Mix(const std::vector<AudioBuffer>& inputs) override;
-    };
-
     class AmbisonicMixerNode final : public Node
     {
     public:
@@ -37,12 +29,12 @@ namespace SparkyStudios::Audio::Amplitude
 
         [[nodiscard]] AM_INLINE NodeInstance* CreateInstance(AmObjectID id, const Pipeline* pipeline) const override
         {
-            return ampoolnew(MemoryPoolKind::Amplimix, AmbisonicMixerNodeInstance, id, pipeline);
+            return ampoolnew(MemoryPoolKind::Amplimix, MixerNodeInstance, id, pipeline);
         }
 
         AM_INLINE void DestroyInstance(NodeInstance* instance) const override
         {
-            ampooldelete(MemoryPoolKind::Amplimix, AmbisonicMixerNodeInstance, (AmbisonicMixerNodeInstance*)instance);
+            ampooldelete(MemoryPoolKind::Amplimix, MixerNodeInstance, (MixerNodeInstance*)instance);
         }
     };
 } // namespace SparkyStudios::Audio::Amplitude
