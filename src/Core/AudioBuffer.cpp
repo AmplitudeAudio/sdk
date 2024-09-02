@@ -318,6 +318,14 @@ namespace SparkyStudios::Audio::Amplitude
         return *this;
     }
 
+    AudioBuffer& AudioBuffer::operator*=(AmReal32 scalar)
+    {
+        for (AmSize i = 0; i < GetChannelCount(); ++i)
+            _channels[i] *= scalar;
+
+        return *this;
+    }
+
     void AudioBuffer::Initialize(const AmSize channelCount)
     {
         const AmSize alignedSize = FindNextAlignedArrayIndex<AmReal32>(_frameCount, AM_SIMD_ALIGNMENT);

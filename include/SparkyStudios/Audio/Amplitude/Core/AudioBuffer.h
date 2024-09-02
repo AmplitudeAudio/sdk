@@ -314,6 +314,15 @@ namespace SparkyStudios::Audio::Amplitude
          */
         AudioBuffer& operator*=(const AudioBuffer& buffer);
 
+        /**
+         * @brief Point-wise multiplies this channel with the provided scalar.
+         *
+         * @param scalar The scalar to multiply with.
+         *
+         * @return A reference to the modified channel.
+         */
+        AudioBuffer& operator*=(AmReal32 scalar);
+
     private:
         void Initialize(AmSize channelCount);
 
