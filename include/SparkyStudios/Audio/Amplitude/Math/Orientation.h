@@ -57,6 +57,13 @@ namespace SparkyStudios::Audio::Amplitude
         Orientation(AmVec3 forward, AmVec3 up);
 
         /**
+         * @brief Constructs an Orientation instance from a quaternion.
+         *
+         * @param quaternion The quaternion representing the orientation.
+         */
+        Orientation(AmQuat quaternion);
+
+        /**
          * @brief The angle of rotation around the Z-axis in radians following the ZYX convention.
          */
         [[nodiscard]] AM_INLINE AmReal32 GetYaw() const

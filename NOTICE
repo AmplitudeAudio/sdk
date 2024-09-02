@@ -1,6 +1,18 @@
 Amplitude Audio SDK
 Copyright (c) 2021-present Sparky Studios. All rights reserved.
 
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+
 ---
 
 This software contains code derived from the Freeverb library by Jezar at Dreampoint (http://www.dreampoint.co.uk),
@@ -18,6 +30,11 @@ Copyright (c) 2017 HiFi-LoFi, which was licensed under the MIT License.
 
 This software includes code of the r8brain-free-src library (https://github.com/avaneev/r8brain-free-src),
 Copyright (c) 2013-2022 Aleksey Vaneev, and distributed under the MIT License.
+
+This software includes implementations derived from the ambisonic-lib library (https://github.com/delikas/ambisonic-lib),
+Copyright (c) 2014 greekgoddj, and distributed under the MIT License.
+
+This software includes code of the lebedev-quadrature library (https://github.com/lucasmyers97/lebedev-quadrature).
 
 The Amplimix code is heavily inspired by the atomix library (https://github.com/BareRose/atomix) licensed under
 the CC0-1.0 License.

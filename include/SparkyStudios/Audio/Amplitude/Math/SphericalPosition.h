@@ -35,6 +35,15 @@ namespace SparkyStudios::Audio::Amplitude
         static SphericalPosition FromWorldSpace(const AmVec3& position);
 
         /**
+         * @brief Create a spherical position from a 3D position in world space. This
+         * method is optimized for use in HRTF (Head-Related Transfer Function) space,
+         * where the azimuth is rotated 90 degrees around the z-axis
+         *
+         * @param position The position in world space.
+         */
+        static SphericalPosition ForHRTF(const AmVec3& position);
+
+        /**
          * @brief Create a spherical position from given azimuth and elevation in degrees.
          *
          * @param azimuthDegrees The azimuth in degrees.

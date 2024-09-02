@@ -200,6 +200,21 @@ set(SA_SOURCE
     include/SparkyStudios/Audio/Amplitude/Sound/SwitchContainer.h
     include/SparkyStudios/Audio/Amplitude/Amplitude.h
 
+    src/Ambisonics/AmbisonicBinauralizer.cpp
+    src/Ambisonics/AmbisonicBinauralizer.h
+    src/Ambisonics/AmbisonicComponent.cpp
+    src/Ambisonics/AmbisonicComponent.h
+    src/Ambisonics/AmbisonicDecoder.cpp
+    src/Ambisonics/AmbisonicDecoder.h
+    src/Ambisonics/AmbisonicEntity.cpp
+    src/Ambisonics/AmbisonicEntity.h
+    src/Ambisonics/AmbisonicSource.cpp
+    src/Ambisonics/AmbisonicSource.cpp
+    src/Ambisonics/AmbisonicSpeaker.cpp
+    src/Ambisonics/AmbisonicSpeaker.h
+    src/Ambisonics/BFormat.cpp
+    src/Ambisonics/BFormat.h
+
     src/Convolution/Convolver.cpp
 
     src/Core/Codecs/AMS/Codec.cpp
@@ -406,6 +421,14 @@ set(SA_SOURCE
     src/Utils/Freeverb/ReverbModel.cpp
     src/Utils/Freeverb/ReverbModel.h
     src/Utils/Freeverb/tuning.h
+    src/Utils/lebedev-quadrature/generator_point.hpp
+    src/Utils/lebedev-quadrature/generator_point.inl
+    src/Utils/lebedev-quadrature/lebedev_quadrature.hpp
+    src/Utils/lebedev-quadrature/preprocessor.hpp
+    src/Utils/lebedev-quadrature/quadrature_order.hpp
+    src/Utils/lebedev-quadrature/quadrature_order.inl
+    src/Utils/lebedev-quadrature/quadrature_points.hpp
+    src/Utils/lebedev-quadrature/quadrature_points.inl
     src/Utils/miniaudio/miniaudio.cpp
     src/Utils/miniaudio/miniaudio_utils.h
     src/Utils/pffft/simd/pf_altivec_float.h

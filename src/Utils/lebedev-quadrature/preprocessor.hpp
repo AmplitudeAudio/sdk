@@ -1,0 +1,12 @@
+#ifndef LEBEDEV_PREPROCESSOR_HPP
+#define LEBEDEV_PREPROCESSOR_HPP
+
+#if LEBEDEV_HEADER_ONLY
+    #define LEBEDEV_EXTERNAL_LINKAGE inline
+    #define LEBEDEV_INTERNAL_LINKAGE inline
+#else
+    #define LEBEDEV_EXTERNAL_LINKAGE
+    #define LEBEDEV_INTERNAL_LINKAGE static
+#endif
+
+#endif

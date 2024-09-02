@@ -12,6 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+#include <SparkyStudios/Audio/Amplitude/Math/CartesianCoordinateSystem.h>
 #include <SparkyStudios/Audio/Amplitude/Math/Orientation.h>
 
 namespace SparkyStudios::Audio::Amplitude
@@ -53,18 +54,42 @@ namespace SparkyStudios::Audio::Amplitude
         ComputeQuaternion();
     }
 
+    Orientation::Orientation(AmQuat quaternion)
+        : _forward()
+        , _yaw(0)
+        , _up()
+        , _pitch(0)
+        , _roll(0)
+        , _alpha(0)
+        , _beta(0)
+        , _gamma(0)
+        , _quaternion(quaternion)
+    {
+        _forward = AM_RotateV3Q(AM_V3(0, 1, 0), quaternion);
+        _up = AM_RotateV3Q(AM_V3(0, 0, 1), quaternion);
+
+        ComputeZYXAngles();
+        ComputeZYZAngles();
+    }
+
     AmMat4 Orientation::GetRotationMatrix() const
     {
-        const AmMat4 rZ = AM_Rotate_RH(_yaw, AM_V3(0, 0, 1));
-        const AmMat4 rY = AM_Rotate_RH(_pitch, AM_V3(0, 1, 0));
-        const AmMat4 rX = AM_Rotate_RH(_roll, AM_V3(1, 0, 0));
+        CartesianCoordinateSystem cd(CartesianCoordinateSystem::RightHandedYUp());
+        CartesianCoordinateSystem cs(CartesianCoordinateSystem::Default());
+
+        const AmMat4 rZ = AM_Rotate_RH(_yaw, cd.Convert(AM_V3(0, 0, 1), cs));
+        const AmMat4 rY = AM_Rotate_RH(_pitch, cd.Convert(AM_V3(0, 1, 0), cs));
+        const AmMat4 rX = AM_Rotate_RH(_roll, cd.Convert(AM_V3(1, 0, 0), cs));
 
         return rZ * rY * rX;
     }
 
     AmMat4 Orientation::GetLookAtMatrix(AmVec3 eye) const
     {
-        return AM_LookAt_RH(eye, eye + _forward, _up);
+        CartesianCoordinateSystem cd(CartesianCoordinateSystem::RightHandedYUp());
+        CartesianCoordinateSystem cs(CartesianCoordinateSystem::Default());
+
+        return AM_LookAt_RH(eye, eye + cd.Convert(_forward, cs), cd.Convert(_up, cs));
     }
 
     void Orientation::ComputeForwardAndUpVectors()

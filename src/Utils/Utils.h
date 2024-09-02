@@ -180,6 +180,19 @@ namespace SparkyStudios::Audio::Amplitude
         return is3D ? static_cast<AmUInt32>(std::pow(static_cast<AmReal32>(order) + 1.f, 2.f)) : order * 2 + 1;
     }
 
+    /**
+     * @brief Gets the number of speakers for the given order and 3D status.
+     *
+     * @param order The ambisonic order.
+     * @param is3D Whether the ambisonic signal is 3D (true) or 2D (false).
+     *
+     * @return The number of speakers for the given order and 3D status.
+     */
+    AM_INLINE AmUInt32 OrderToSpeakers(const AmUInt32 order, const bool is3D)
+    {
+        return (is3D) ? (order * 2 + 2) * 2 : order * 2 + 2;
+    }
+
     template<typename T>
     AM_INLINE AmSize FindNextAlignedArrayIndex(AmSize length, AmSize memoryAlignmentBytes)
     {

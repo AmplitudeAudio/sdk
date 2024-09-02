@@ -20,7 +20,15 @@ namespace SparkyStudios::Audio::Amplitude
     {
         const AmReal32 radius = AM_Len(position);
 
-        return { std::atan2(position.Y, position.X), std::atan2(position.Z, AM_Len(position.XY)), radius };
+        return { -std::atan2(position.Y, position.X), std::atan2(position.Z, AM_Len(position.XY)), radius };
+    }
+
+    SphericalPosition SphericalPosition::ForHRTF(const AmVec3& position)
+    {
+        SphericalPosition hrtfPosition = FromWorldSpace(position);
+        // Apply a 90-degree flip in azimuth to convert position to Ears-centered coordinate system used for HRTF
+        hrtfPosition._azimuth += 90.0f * AM_DegToRad;
+        return hrtfPosition;
     }
 
     SphericalPosition SphericalPosition::FromDegrees(AmReal32 azimuthDegrees, AmReal32 elevationDegrees, AmReal32 radius)
