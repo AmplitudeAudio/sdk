@@ -35,7 +35,7 @@ namespace SparkyStudios::Audio::Amplitude
         return b;
     }
 
-    static AmUInt32& soundProcessorsCount()
+    static AmUInt32& resamplersCount()
     {
         static AmUInt32 c = 0;
         return c;
@@ -74,7 +74,7 @@ namespace SparkyStudios::Audio::Amplitude
 
         ResamplerRegistry& resamplers = resamplerRegistry();
         resamplers.insert(ResamplerImpl(resampler->GetName(), resampler));
-        soundProcessorsCount()++;
+        resamplersCount()++;
     }
 
     void Resampler::Unregister(const Resampler* resampler)
@@ -86,7 +86,7 @@ namespace SparkyStudios::Audio::Amplitude
         if (const auto& it = resamplers.find(resampler->GetName()); it != resamplers.end())
         {
             resamplers.erase(it);
-            soundProcessorsCount()--;
+            resamplersCount()--;
         }
     }
 

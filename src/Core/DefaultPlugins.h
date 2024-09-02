@@ -17,19 +17,6 @@
 #ifndef _AM_IMPLEMENTATION_CORE_DEFAULT_PLUGINS_H
 #define _AM_IMPLEMENTATION_CORE_DEFAULT_PLUGINS_H
 
-#pragma region Default Sound Processors
-
-#include <Mixer/Pipeline/BinauralProcessor.h>
-#include <Mixer/Pipeline/ClipProcessor.h>
-#include <Mixer/Pipeline/EffectProcessor.h>
-#include <Mixer/Pipeline/EnvironmentProcessor.h>
-#include <Mixer/Pipeline/ObstructionProcessor.h>
-#include <Mixer/Pipeline/OcclusionProcessor.h>
-#include <Mixer/Pipeline/PassThroughProcessor.h>
-#include <Mixer/Pipeline/SilenceProcessor.h>
-
-#pragma endregion
-
 #pragma region Default Resamplers
 
 #include <DSP/Resamplers/DefaultResampler.h>

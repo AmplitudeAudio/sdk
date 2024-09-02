@@ -234,8 +234,7 @@ namespace SparkyStudios::Audio::Amplitude
 
         const auto* sound = layer->snd->sound.get();
 
-        // Clean up the pipeline
-        mixer->GetPipeline()->Cleanup(layer);
+        // TODO: Clean up the pipeline
 
         layer->snd->sound.reset();
 
@@ -286,63 +285,7 @@ namespace SparkyStudios::Audio::Amplitude
             return false;
         }
 
-        if (const auto* pipeline = config->mixer()->pipeline(); pipeline != nullptr && pipeline->size() > 0)
-        {
-            _pipeline.reset(ampoolnew(MemoryPoolKind::Amplimix, Pipeline));
-
-            for (flatbuffers::uoffset_t i = 0, l = pipeline->size(); i < l; ++i)
-            {
-                switch (config->mixer()->pipeline_type()->Get(i))
-                {
-                case AudioMixerPipelineItem_AudioProcessorMixer:
-                    {
-                        const auto* p = pipeline->GetAs<AudioProcessorMixer>(i);
-                        SoundProcessorInstance* dryProcessor = SoundProcessor::Construct(p->dry_processor()->str());
-                        SoundProcessorInstance* wetProcessor = SoundProcessor::Construct(p->wet_processor()->str());
-
-                        if (dryProcessor == nullptr)
-                        {
-                            amLogError("Unable to find a registered sound processor with name: %s.", p->dry_processor()->c_str());
-                            _pipeline.reset(nullptr);
-                            return false;
-                        }
-
-                        if (wetProcessor == nullptr)
-                        {
-                            amLogError("Unable to find a registered sound processor with name: %s.", p->wet_processor()->c_str());
-                            _pipeline.reset(nullptr);
-                            return false;
-                        }
-
-                        auto* mixer = ampoolnew(MemoryPoolKind::Amplimix, ProcessorMixer);
-                        mixer->SetDryProcessor(dryProcessor, p->dry());
-                        mixer->SetWetProcessor(wetProcessor, p->wet());
-
-                        _pipeline->Append(mixer);
-                    }
-                    break;
-
-                case AudioMixerPipelineItem_AudioSoundProcessor:
-                    {
-                        const auto* p = pipeline->GetAs<AudioSoundProcessor>(i);
-                        SoundProcessorInstance* soundProcessor = SoundProcessor::Construct(p->processor()->str());
-                        if (soundProcessor == nullptr)
-                        {
-                            amLogError("Unable to find a registered sound processor with name: %s.", p->processor()->c_str());
-                            _pipeline.reset(nullptr);
-                            return false;
-                        }
-
-                        _pipeline->Append(soundProcessor);
-                    }
-                    break;
-
-                default:
-                    AMPLITUDE_ASSERT(false);
-                    break;
-                }
-            }
-        }
+        _pipeline.reset(ampoolnew(MemoryPoolKind::Amplimix, Pipeline));
 
         if (_pipeline == nullptr)
         {
@@ -715,7 +658,6 @@ namespace SparkyStudios::Audio::Amplitude
         // check id and state flag to make sure the id is valid
         if ((id == lay->id) && (AMPLIMIX_LOAD(&lay->flag) > ePSF_STOP))
         {
-            // convert gain and pan to left and right gain and store it atomically
             AMPLIMIX_STORE(&lay->userPlaySpeed, speed);
             // return success
             return true;

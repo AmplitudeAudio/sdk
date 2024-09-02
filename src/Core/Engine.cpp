@@ -56,15 +56,6 @@ namespace SparkyStudios::Audio::Amplitude
     static std::vector<dylib*> gLoadedPlugins = {};
 
     // Default Plugins instances
-    static AmUniquePtr<MemoryPoolKind::Engine, BinauralProcessor> sBinauralProcessorPlugin = nullptr;
-    static AmUniquePtr<MemoryPoolKind::Engine, ClipProcessor> sClipProcessorPlugin = nullptr;
-    static AmUniquePtr<MemoryPoolKind::Engine, EffectProcessor> sEffectProcessorPlugin = nullptr;
-    static AmUniquePtr<MemoryPoolKind::Engine, EnvironmentProcessor> sEnvironmentProcessorPlugin = nullptr;
-    static AmUniquePtr<MemoryPoolKind::Engine, ObstructionProcessor> sObstructionProcessorPlugin = nullptr;
-    static AmUniquePtr<MemoryPoolKind::Engine, OcclusionProcessor> sOcclusionProcessorPlugin = nullptr;
-    static AmUniquePtr<MemoryPoolKind::Engine, PassThroughProcessor> sPassThroughProcessorPlugin = nullptr;
-    static AmUniquePtr<MemoryPoolKind::Engine, SilenceProcessor> sSilenceProcessorPlugin = nullptr;
-    // ---
     static AmUniquePtr<MemoryPoolKind::Engine, DefaultResampler> sDefaultResamplerPlugin = nullptr;
     static AmUniquePtr<MemoryPoolKind::Engine, LibsamplerateResampler> sLibsamplerateResamplerPlugin = nullptr;
     static AmUniquePtr<MemoryPoolKind::Engine, R8BrainResampler> sR8BrainResamplerPlugin = nullptr;
@@ -313,15 +304,6 @@ namespace SparkyStudios::Audio::Amplitude
         // Ensure to cleanup registries
         UnregisterDefaultPlugins();
 
-        sBinauralProcessorPlugin.reset(ampoolnew(MemoryPoolKind::Engine, BinauralProcessor));
-        sClipProcessorPlugin.reset(ampoolnew(MemoryPoolKind::Engine, ClipProcessor));
-        sEffectProcessorPlugin.reset(ampoolnew(MemoryPoolKind::Engine, EffectProcessor));
-        sEnvironmentProcessorPlugin.reset(ampoolnew(MemoryPoolKind::Engine, EnvironmentProcessor));
-        sObstructionProcessorPlugin.reset(ampoolnew(MemoryPoolKind::Engine, ObstructionProcessor));
-        sOcclusionProcessorPlugin.reset(ampoolnew(MemoryPoolKind::Engine, OcclusionProcessor));
-        sPassThroughProcessorPlugin.reset(ampoolnew(MemoryPoolKind::Engine, PassThroughProcessor));
-        sSilenceProcessorPlugin.reset(ampoolnew(MemoryPoolKind::Engine, SilenceProcessor));
-        // ---
         sDefaultResamplerPlugin.reset(ampoolnew(MemoryPoolKind::Engine, DefaultResampler));
         sLibsamplerateResamplerPlugin.reset(ampoolnew(MemoryPoolKind::Engine, LibsamplerateResampler));
         sR8BrainResamplerPlugin.reset(ampoolnew(MemoryPoolKind::Engine, R8BrainResampler));
@@ -362,15 +344,6 @@ namespace SparkyStudios::Audio::Amplitude
         if (gAmplitude != nullptr && gAmplitude->_state != nullptr)
             return false; // Cannot unregister the default plugins when the engine is already initialized.
 
-        sBinauralProcessorPlugin.reset(nullptr);
-        sClipProcessorPlugin.reset(nullptr);
-        sEffectProcessorPlugin.reset(nullptr);
-        sEnvironmentProcessorPlugin.reset(nullptr);
-        sObstructionProcessorPlugin.reset(nullptr);
-        sOcclusionProcessorPlugin.reset(nullptr);
-        sPassThroughProcessorPlugin.reset(nullptr);
-        sSilenceProcessorPlugin.reset(nullptr);
-        // ---
         sDefaultResamplerPlugin.reset(nullptr);
         sLibsamplerateResamplerPlugin.reset(nullptr);
         sR8BrainResamplerPlugin.reset(nullptr);
@@ -588,7 +561,6 @@ namespace SparkyStudios::Audio::Amplitude
         // Lock plugins registries
         Driver::LockRegistry();
         Codec::LockRegistry();
-        SoundProcessor::LockRegistry();
         Resampler::LockRegistry();
         Filter::LockRegistry();
         Fader::LockRegistry();
@@ -756,7 +728,6 @@ namespace SparkyStudios::Audio::Amplitude
         // Unlock registries
         Driver::UnlockRegistry();
         Codec::UnlockRegistry();
-        SoundProcessor::UnlockRegistry();
         Resampler::UnlockRegistry();
         Filter::UnlockRegistry();
         Fader::UnlockRegistry();

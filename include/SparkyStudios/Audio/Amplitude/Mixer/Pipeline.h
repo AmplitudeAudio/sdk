@@ -20,26 +20,11 @@
 #include <SparkyStudios/Audio/Amplitude/Core/Common.h>
 #include <SparkyStudios/Audio/Amplitude/Mixer/Amplimix.h>
 #include <SparkyStudios/Audio/Amplitude/Mixer/Node.h>
-#include <SparkyStudios/Audio/Amplitude/Mixer/SoundProcessor.h>
 
 namespace SparkyStudios::Audio::Amplitude
 {
     class Pipeline
     {
-#pragma region Old Implementation
-    public:
-        void Append(SoundProcessorInstance* processor);
-
-        void Insert(SoundProcessorInstance* processor, AmSize index);
-
-        void Process(const AmplimixLayer* layer, const AudioBuffer& in, AudioBuffer& out);
-
-        void Cleanup(const AmplimixLayer* layer);
-
-    private:
-        std::vector<SoundProcessorInstance*> _processors;
-#pragma endregion
-
     public:
         Pipeline();
         ~Pipeline();

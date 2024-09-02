@@ -187,7 +187,6 @@ set(SA_SOURCE
     include/SparkyStudios/Audio/Amplitude/Mixer/Amplimix.h
     include/SparkyStudios/Audio/Amplitude/Mixer/Node.h
     include/SparkyStudios/Audio/Amplitude/Mixer/Pipeline.h
-    include/SparkyStudios/Audio/Amplitude/Mixer/SoundProcessor.h
     include/SparkyStudios/Audio/Amplitude/Sound/Attenuation.h
     include/SparkyStudios/Audio/Amplitude/Sound/Collection.h
     include/SparkyStudios/Audio/Amplitude/Sound/Effect.h
@@ -348,15 +347,6 @@ set(SA_SOURCE
     src/Mixer/Nodes/StereoMixerNode.cpp
     src/Mixer/Nodes/StereoMixerNode.h
 
-    src/Mixer/Pipeline/BinauralProcessor.h
-    src/Mixer/Pipeline/ClipProcessor.h
-    src/Mixer/Pipeline/EffectProcessor.h
-    src/Mixer/Pipeline/EnvironmentProcessor.h
-    src/Mixer/Pipeline/ObstructionProcessor.h
-    src/Mixer/Pipeline/OcclusionProcessor.h
-    src/Mixer/Pipeline/PassThroughProcessor.h
-    src/Mixer/Pipeline/SilenceProcessor.h
-
     src/Mixer/Amplimix.h
     src/Mixer/Amplimix.cpp
     src/Mixer/Node.cpp
@@ -365,7 +355,6 @@ set(SA_SOURCE
     src/Mixer/RealChannel.h
     src/Mixer/SoundData.cpp
     src/Mixer/SoundData.h
-    src/Mixer/SoundProcessor.cpp
 
     src/Sound/Faders/ConstantFader.h
     src/Sound/Faders/EaseFader.h

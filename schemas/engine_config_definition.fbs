@@ -85,33 +85,6 @@ table PlaybackOutputConfig {
   format:ePlaybackOutputFormat = Float32;
 }
 
-/// A single processor in the audio mixer pipeline.
-table AudioSoundProcessor {
-  /// The sound processor to use at this stage of the pipeline.
-  processor:string (required);
-}
-
-/// A processor mixer in the audio mixer pipeline.
-table AudioProcessorMixer {
-  /// The sound processor to use in the wet mix.
-  wet_processor:string (required);
-
-  /// The sound processor to use in the dry mix.
-  dry_processor:string (required);
-
-  /// The wet level, between the range 0..1.
-  wet:float = 1;
-
-  /// The dry level, between the range 0..1.
-  dry:float = 1;
-}
-
-/// An item in the audio mixer pipeline.
-union AudioMixerPipelineItem {
-  AudioSoundProcessor,
-  AudioProcessorMixer,
-}
-
 /// Audio mixer configuration
 table AudioMixerConfig {
   /// The number of active audio mixer channels to allocate.
@@ -122,10 +95,6 @@ table AudioMixerConfig {
   /// on virtual channels, but information about the channel is
   /// still tracked.
   virtual_channels:uint;
-
-  /// Configures the mixer pipeline. The pipeline is responsible to
-  /// process the sound (ie. apply effects) before it is sent to the audio device.
-  pipeline:[AudioMixerPipelineItem];
 
   /// Defines the panning mode to use. If Stereo mode is set, all the sound sources
   /// playing with HRTF spatialization will fallback to PositionOrientation spatialization.
