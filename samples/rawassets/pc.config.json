@@ -3,35 +3,13 @@
   "output": {
     "frequency": 44100,
     "channels": 2,
-    "buffer_size": 1024,
+    "buffer_size": 4096,
     "format": "Float32"
   },
   "mixer": {
+    "panning_mode": "BinauralLowQuality",
     "active_channels": 50,
-    "virtual_channels": 100,
-    "pipeline_type": [
-      "AudioSoundProcessor",
-      "AudioSoundProcessor",
-      "AudioProcessorMixer",
-      "AudioSoundProcessor"
-    ],
-    "pipeline": [
-      {
-        "processor": "EffectProcessor"
-      },
-      {
-        "processor": "OcclusionProcessor"
-      },
-      {
-        "dry_processor": "ObstructionProcessor",
-        "wet_processor": "EnvironmentProcessor",
-        "dry": 0.5,
-        "wet": 0.5
-      },
-      {
-        "processor": "ClipProcessor"
-      }
-    ]
+    "virtual_channels": 100
   },
   "game": {
     "listener_fetch_mode": "Nearest",
