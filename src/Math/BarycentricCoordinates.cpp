@@ -29,22 +29,22 @@ namespace SparkyStudios::Audio::Amplitude
 
         const AmReal32 invDet = 1.0f / det;
         const AmVec3 s = rayOrigin - triangle.at(0);
-        const AmReal32 u = invDet * AM_Dot(s, r2);
+        const AmReal32 v = invDet * AM_Dot(s, r2);
 
-        if (u < -kEpsilon || u > 1.0f + kEpsilon)
+        if (v < -kEpsilon || v > 1.0f + kEpsilon)
             return false;
 
         const AmVec3 s1 = AM_Cross(s, e1);
-        const AmReal32 v = invDet * AM_Dot(rayDirection, s1);
+        const AmReal32 w = invDet * AM_Dot(rayDirection, s1);
 
-        if (v < -kEpsilon || u + v > 1.0f + kEpsilon)
+        if (w < -kEpsilon || v + w > 1.0f + kEpsilon)
             return false;
 
         if (const AmReal32 t = invDet * AM_Dot(e2, s1); t >= kEpsilon)
         {
-            result.m_U = u;
             result.m_V = v;
-            result.m_W = 1.0f - u - v;
+            result.m_W = w;
+            result.m_U = 1.0f - v - w;
             return true;
         }
 
@@ -72,9 +72,9 @@ namespace SparkyStudios::Audio::Amplitude
 
         const AmReal32 d = d1 * d3 - d2 * d2;
 
-        m_U = (d3 * d4 - d2 * d5) / d;
-        m_V = (d1 * d5 - d2 * d4) / d;
-        m_W = 1.0f - m_U - m_V;
+        m_V = (d3 * d4 - d2 * d5) / d;
+        m_W = (d1 * d5 - d2 * d4) / d;
+        m_U = 1.0f - m_V - m_W;
     }
 
     bool BarycentricCoordinates::IsValid() const

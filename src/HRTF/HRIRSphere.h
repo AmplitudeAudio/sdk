@@ -20,6 +20,7 @@
 #include <SparkyStudios/Audio/Amplitude/HRTF/HRIRSphere.h>
 
 #include <IO/Resource.h>
+#include <Math/FaceBSPTree.h>
 
 namespace SparkyStudios::Audio::Amplitude
 {
@@ -51,6 +52,7 @@ namespace SparkyStudios::Audio::Amplitude
         [[nodiscard]] AmUInt32 GetFaceCount() const override;
         [[nodiscard]] AmUInt32 GetSampleRate() const override;
         [[nodiscard]] AmUInt32 GetIRLength() const override;
+        void SampleBilinear(const AmVec3& direction, AmReal32* leftHRIR, AmReal32* rightHRIR) const override;
         void Transform(const AmMat4& matrix) override;
         [[nodiscard]] bool IsLoaded() const override;
 
@@ -58,6 +60,7 @@ namespace SparkyStudios::Audio::Amplitude
         HRIRSphereFileHeaderDescription _header;
         std::vector<HRIRSphereVertex> _vertices;
         std::vector<Face> _faces;
+        FaceBSPTree _tree;
 
         bool _loaded;
     };

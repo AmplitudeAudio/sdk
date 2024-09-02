@@ -13,6 +13,7 @@
 // limitations under the License.
 
 #include <SparkyStudios/Audio/Amplitude/Core/Log.h>
+#include <SparkyStudios/Audio/Amplitude/Math/BarycentricCoordinates.h>
 
 #include <HRTF/HRIRSphere.h>
 #include <Math/FaceBSPTree.h>
@@ -68,6 +69,10 @@ namespace SparkyStudios::Audio::Amplitude
         file->Read(reinterpret_cast<AmUInt8Buffer>(indices.data()), _header.m_IndexCount * sizeof(AmUInt32));
 
         _vertices.resize(_header.m_VertexCount);
+
+        AmUInt32 i = 0;
+        std::vector<AmVec3> vertices(_header.m_VertexCount);
+
         for (auto& vertex : _vertices)
         {
             file->Read(reinterpret_cast<AmUInt8Buffer>(&vertex.m_Position), sizeof(AmVec3));
@@ -77,17 +82,22 @@ namespace SparkyStudios::Audio::Amplitude
 
             vertex.m_RightIR.resize(_header.m_IRLength);
             file->Read(reinterpret_cast<AmUInt8Buffer>(vertex.m_RightIR.data()), _header.m_IRLength * sizeof(AmReal32));
+
+            vertices[i] = vertex.m_Position;
+            ++i;
         }
 
         const AmUInt32 faceCount = indices.size() / 3;
         _faces.resize(faceCount);
 
-        for (AmUInt32 i = 0; i < faceCount; ++i)
+        for (i = 0; i < faceCount; ++i)
         {
             _faces[i].m_A = indices[i * 3 + 0];
             _faces[i].m_B = indices[i * 3 + 1];
             _faces[i].m_C = indices[i * 3 + 2];
         }
+
+        _tree.Build(vertices, _faces);
 
         _loaded = true;
     }
@@ -125,6 +135,69 @@ namespace SparkyStudios::Audio::Amplitude
     AmUInt32 HRIRSphereImpl::GetIRLength() const
     {
         return _header.m_IRLength;
+    }
+
+    void HRIRSphereImpl::SampleBilinear(const AmVec3& direction, AmReal32* leftHRIR, AmReal32* rightHRIR) const
+    {
+        const auto& dir = AM_Mul(direction, 10.0f);
+        const auto* face = _tree.Query(dir);
+
+        if (face == nullptr)
+            return;
+
+        const auto& vertexA = _vertices[face->m_A];
+        const auto& vertexB = _vertices[face->m_B];
+        const auto& vertexC = _vertices[face->m_C];
+
+        // If we are close to any vertex, just return the HRIR of that vertex
+        {
+            constexpr AmReal32 k2 = kEpsilon * kEpsilon;
+
+            if (AM_LenSqr(vertexA.m_Position - direction) < k2)
+            {
+                const AmSize length = vertexA.m_LeftIR.size();
+                std::memcpy(leftHRIR, vertexA.m_LeftIR.data(), length * sizeof(AmReal32));
+                std::memcpy(rightHRIR, vertexA.m_RightIR.data(), length * sizeof(AmReal32));
+                return;
+            }
+
+            if (AM_LenSqr(vertexB.m_Position - direction) < k2)
+            {
+                const AmSize length = vertexB.m_LeftIR.size();
+                std::memcpy(leftHRIR, vertexB.m_LeftIR.data(), length * sizeof(AmReal32));
+                std::memcpy(rightHRIR, vertexB.m_RightIR.data(), length * sizeof(AmReal32));
+                return;
+            }
+
+            if (AM_LenSqr(vertexC.m_Position - direction) < k2)
+            {
+                const AmSize length = vertexC.m_LeftIR.size();
+                std::memcpy(leftHRIR, vertexC.m_LeftIR.data(), length * sizeof(AmReal32));
+                std::memcpy(rightHRIR, vertexC.m_RightIR.data(), length * sizeof(AmReal32));
+                return;
+            }
+        }
+
+        // Otherwise, perform bilinear interpolation
+        {
+            BarycentricCoordinates barycenter;
+            if (!BarycentricCoordinates::RayTriangleIntersection(
+                    AM_V3(0.0f, 0.0f, 0.0f), dir, { vertexA.m_Position, vertexB.m_Position, vertexC.m_Position }, barycenter))
+            {
+                return;
+            }
+
+            const AmSize length = vertexA.m_LeftIR.size();
+
+            for (AmSize i = 0; i < length; ++i)
+            {
+                leftHRIR[i] =
+                    vertexA.m_LeftIR[i] * barycenter.m_U + vertexB.m_LeftIR[i] * barycenter.m_V + vertexC.m_LeftIR[i] * barycenter.m_W;
+
+                rightHRIR[i] =
+                    vertexA.m_RightIR[i] * barycenter.m_U + vertexB.m_RightIR[i] * barycenter.m_V + vertexC.m_RightIR[i] * barycenter.m_W;
+            }
+        }
     }
 
     void HRIRSphereImpl::Transform(const AmMat4& matrix)
