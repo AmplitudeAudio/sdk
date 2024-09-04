@@ -28,6 +28,7 @@
 
 #include <Core/Event.h>
 #include <Mixer/Amplimix.h>
+#include <Mixer/Pipeline.h>
 #include <Sound/Attenuation.h>
 #include <Sound/Collection.h>
 #include <Sound/Effect.h>
@@ -150,6 +151,8 @@ namespace SparkyStudios::Audio::Amplitude
             , doppler_factor(1.0)
             , obstruction_config()
             , occlusion_config()
+            , pipeline()
+            , pipeline_source()
             , track_environments(false)
             , samples_per_stream(512)
             , panning_mode(ePanningMode_Stereo)
@@ -235,6 +238,12 @@ namespace SparkyStudios::Audio::Amplitude
 
         // Hold the sounds banks.
         SoundBankMap sound_bank_map;
+
+        // Hold the pipelines.
+        PipelineImpl pipeline;
+
+        // Hold the audio buses definition file contents.
+        std::string pipeline_source;
 
         // The pre-allocated pool of all ChannelInternalState objects
         ChannelStateVector channel_state_memory;

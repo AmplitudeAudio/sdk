@@ -1,0 +1,76 @@
+{
+    "id": 1,
+    "name": "default",
+    "nodes": [
+        {
+            "id": 1,
+            "name": "Input",
+            "consume": []
+        },
+        {
+            "id": 2,
+            "name": "Attenuation",
+            "consume": [
+                1
+            ]
+        },
+        {
+            "id": 3,
+            "name": "Occlusion",
+            "consume": [
+                2
+            ]
+        },
+        {
+            "id": 4,
+            "name": "StereoPanning",
+            "consume": [
+                3
+            ]
+        },
+        {
+            "id": 5,
+            "name": "AmbisonicPanning",
+            "consume": [
+                3
+            ]
+        },
+        {
+            "id": 6,
+            "name": "NearFieldEffect",
+            "consume": [
+                3
+            ]
+        },
+        {
+            "id": 7,
+            "name": "AmbisonicMixer",
+            "consume": [
+                5
+            ]
+        },
+        {
+            "id": 8,
+            "name": "StereoMixer",
+            "consume": [
+                4,
+                10,
+                6
+            ]
+        },
+        {
+            "id": 10,
+            "name": "AmbisonicBinauralDecoder",
+            "consume": [
+                7
+            ]
+        },
+        {
+            "id": 9,
+            "name": "Output",
+            "consume": [
+                8
+            ]
+        }
+    ]
+}

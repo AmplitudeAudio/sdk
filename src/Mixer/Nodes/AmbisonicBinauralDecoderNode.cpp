@@ -20,56 +20,42 @@
 
 namespace SparkyStudios::Audio::Amplitude
 {
-    AmbisonicBinauralDecoderNodeInstance::AmbisonicBinauralDecoderNodeInstance(
-        AmObjectID id, const Pipeline* pipeline, const HRIRSphere* hrirSphere)
-        : ProcessorNodeInstance(id, pipeline)
-        , _hrirSphere(hrirSphere)
-    {}
-
-    AudioBuffer AmbisonicBinauralDecoderNodeInstance::Process(const AudioBuffer& input)
+    AmbisonicBinauralDecoderNodeInstance::AmbisonicBinauralDecoderNodeInstance(const HRIRSphere* hrirSphere)
+        : _hrirSphere(hrirSphere)
     {
-        const auto* layer = GetLayer();
-        if (layer == nullptr)
-            return {};
+        const ePanningMode mode = Engine::GetInstance()->GetPanningMode();
+        const AmUInt32 order = AM_MIN(mode, 1);
 
-        if (input.IsEmpty())
-            return {};
+        if (mode == ePanningMode_Stereo)
+            _decoder.Configure(order, true, eSpeakersPreset_Stereo);
+        else
+            _binauralizer.Configure(order, true, _hrirSphere);
+    }
+
+    const AudioBuffer* AmbisonicBinauralDecoderNodeInstance::Process(const AudioBuffer* input)
+    {
+        if (input->IsEmpty())
+            return nullptr;
+
+        const auto* layer = GetLayer();
 
         const ePanningMode mode = Engine::GetInstance()->GetPanningMode();
         const AmUInt32 order = AM_MIN(mode, 1);
 
         BFormat soundField;
-        soundField.Configure(order, true, input.GetFrameCount());
+        soundField.Configure(order, true, input->GetFrameCount());
 
-        for (AmUInt32 i = 0, l = input.GetChannelCount(); i < l; ++i)
-            soundField.CopyStream(input[i], i, input.GetFrameCount());
+        for (AmUInt32 i = 0, l = input->GetChannelCount(); i < l; ++i)
+            soundField.CopyStream(input->GetChannel(i), i, input->GetFrameCount());
 
-        AudioBuffer output(input.GetFrameCount(), 2);
+        _output = AudioBuffer(input->GetFrameCount(), 2);
 
         if (mode == ePanningMode_Stereo)
-        {
-            if (!_decoders.contains(layer->GetId()))
-            {
-                AmbisonicDecoder& decoder = _decoders[layer->GetId()];
-                decoder.Configure(order, true, eSpeakersPreset_Stereo);
-            }
-
-            AmbisonicDecoder& decoder = _decoders[layer->GetId()];
-            decoder.Process(&soundField, input.GetFrameCount(), output);
-        }
+            _decoder.Process(&soundField, input->GetFrameCount(), _output);
         else
-        {
-            if (!_binauralizers.contains(layer->GetId()))
-            {
-                AmbisonicBinauralizer& decoder = _binauralizers[layer->GetId()];
-                decoder.Configure(order, true, _hrirSphere);
-            }
+            _binauralizer.Process(&soundField, input->GetFrameCount(), _output);
 
-            AmbisonicBinauralizer& decoder = _binauralizers[layer->GetId()];
-            decoder.Process(&soundField, input.GetFrameCount(), output);
-        }
-
-        return output;
+        return &_output;
     }
 
     AmbisonicBinauralDecoderNode::AmbisonicBinauralDecoderNode()

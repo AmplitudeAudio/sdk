@@ -23,31 +23,32 @@
 
 namespace SparkyStudios::Audio::Amplitude
 {
-    class Pipeline
+    class Pipeline;
+
+    class AM_API_PUBLIC PipelineInstance
     {
+        friend class Pipeline;
+
     public:
-        Pipeline();
-        ~Pipeline();
+        virtual ~PipelineInstance() = default;
 
         /**
          * @brief Executes the pipeline for the given layer.
          *
-         * @param layer The Amplimix layer for which execute the pipeline.
          * @param in The input buffer to process. This buffer is passed to the input
          * node of the pipeline.
          * @param out The output buffer where the output node will fill processed data.
          */
-        void Execute(const AmplimixLayer* layer, const AudioBuffer& in, AudioBuffer& out);
+        virtual void Execute(const AudioBuffer& in, AudioBuffer& out) = 0;
 
         /**
-         * @brief Gets the input node of the pipeline.
+         * @brief Resets the internal state for all nodes in the pipeline.
+         *
+         * This method is called automatically when Amplimix has finished processing a frame
+         * for a specific layer. You should not manually call this method, unless you know what
+         * you're doing.
          */
-        [[nodiscard]] InputNodeInstance* GetInputNode() const;
-
-        /**
-         * @brief Gets the output node of the pipeline.
-         */
-        [[nodiscard]] OutputNodeInstance* GetOutputNode() const;
+        virtual void Reset() = 0;
 
         /**
          * @brief Gets the node with the specified ID.
@@ -56,14 +57,34 @@ namespace SparkyStudios::Audio::Amplitude
          *
          * @return The node with the specified ID, or @c nullptr if not found.
          */
-        [[nodiscard]] NodeInstance* GetNode(AmObjectID id) const;
+        [[nodiscard]] virtual NodeInstance* GetNode(AmObjectID id) const = 0;
+    };
 
-    private:
-        std::unordered_map<AmObjectID, NodeInstance*> _nodeInstances;
-        std::vector<Node*> _nodes;
+    /**
+     * @brief A pipeline assembles a set of nodes to process audio data.
+     *
+     * For each layer in Amplimix, a pipeline is created for that specific layer.
+     */
+    class AM_API_PUBLIC Pipeline : public Asset<AmPipelineID>
+    {
+    public:
+        virtual ~Pipeline() = default;
 
-        InputNodeInstance* _inputNode;
-        OutputNodeInstance* _outputNode;
+        /**
+         * @brief Creates a new pipeline instance for the specified layer.
+         *
+         * @param layer The layer for which to create the pipeline instance.
+         *
+         * @return A new pipeline instance for the specified layer.
+         */
+        virtual PipelineInstance* CreateInstance(const AmplimixLayer* layer) const = 0;
+
+        /**
+         * @brief Destroys the specified pipeline instance.
+         *
+         * @param instance The pipeline instance to destroy.
+         */
+        virtual void DestroyInstance(PipelineInstance* instance) const = 0;
     };
 } // namespace SparkyStudios::Audio::Amplitude
 

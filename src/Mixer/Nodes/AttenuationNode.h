@@ -17,6 +17,7 @@
 #ifndef _AM_IMPLEMENTATION_MIXER_NODES_ATTENUATION_NODE_H
 #define _AM_IMPLEMENTATION_MIXER_NODES_ATTENUATION_NODE_H
 
+#include <SparkyStudios/Audio/Amplitude/Core/Memory.h>
 #include <SparkyStudios/Audio/Amplitude/Mixer/Node.h>
 
 namespace SparkyStudios::Audio::Amplitude
@@ -26,9 +27,10 @@ namespace SparkyStudios::Audio::Amplitude
     class AttenuationNodeInstance final : public ProcessorNodeInstance
     {
     public:
-        AttenuationNodeInstance(AmObjectID id, const Pipeline* pipeline);
+        const AudioBuffer* Process(const AudioBuffer* input) override;
 
-        AudioBuffer Process(const AudioBuffer& input) override;
+    private:
+        AudioBuffer _output;
     };
 
     class AttenuationNode final : public Node
@@ -36,9 +38,9 @@ namespace SparkyStudios::Audio::Amplitude
     public:
         AttenuationNode();
 
-        [[nodiscard]] AM_INLINE NodeInstance* CreateInstance(AmObjectID id, const Pipeline* pipeline) const override
+        [[nodiscard]] AM_INLINE NodeInstance* CreateInstance() const override
         {
-            return ampoolnew(MemoryPoolKind::Amplimix, AttenuationNodeInstance, id, pipeline);
+            return ampoolnew(MemoryPoolKind::Amplimix, AttenuationNodeInstance);
         }
 
         AM_INLINE void DestroyInstance(NodeInstance* instance) const override

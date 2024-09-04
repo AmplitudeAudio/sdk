@@ -24,20 +24,12 @@ namespace SparkyStudios::Audio::Amplitude
     constexpr AmReal32 kNearFieldMinDistance = 0.1f; // 0.1 meter
     constexpr AmReal32 kNearFieldMaxGain = 9.0f;
 
-    NearFieldEffectNodeInstance::NearFieldEffectNodeInstance(AmObjectID id, const Pipeline* pipeline)
-        : ProcessorNodeInstance(id, pipeline)
-    {}
-
-    AudioBuffer NearFieldEffectNodeInstance::Process(const AudioBuffer& input)
+    const AudioBuffer* NearFieldEffectNodeInstance::Process(const AudioBuffer* input)
     {
         // Only mono input is supported for this node.
-        AMPLITUDE_ASSERT(input.GetChannelCount() == 1);
-
-        AudioBuffer output(input.GetFrameCount(), 2);
+        AMPLITUDE_ASSERT(input->GetChannelCount() == 1);
 
         const auto* layer = GetLayer();
-        if (layer == nullptr)
-            return output;
 
         AmVec2 pannedGain = { 0.0f, 0.0f };
 
@@ -56,11 +48,8 @@ namespace SparkyStudios::Audio::Amplitude
                 nearFieldFactor * nearFieldGain / kNearFieldMaxGain, layer->GetLocation(), listener.GetInverseMatrix());
         }
 
-        auto& leftGainProcessor = _leftGainProcessors[layer->GetId()];
-        auto& rightGainProcessor = _rightGainProcessors[layer->GetId()];
-
-        const AmReal32 leftGainCurrent = leftGainProcessor.GetGain();
-        const AmReal32 rightGainCurrent = rightGainProcessor.GetGain();
+        const AmReal32 leftGainCurrent = _leftGainProcessor.GetGain();
+        const AmReal32 rightGainCurrent = _rightGainProcessor.GetGain();
 
         const AmReal32 leftGainTarget = pannedGain.X;
         const AmReal32 rightGainTarget = pannedGain.Y;
@@ -70,29 +59,31 @@ namespace SparkyStudios::Audio::Amplitude
 
         if (isLeftGainZero && isRightGainZero)
         {
-            leftGainProcessor.SetGain(0.0f);
-            rightGainProcessor.SetGain(0.0f);
+            _leftGainProcessor.SetGain(0.0f);
+            _rightGainProcessor.SetGain(0.0f);
 
-            return output;
+            return nullptr;
         }
 
-        {
-            NearFieldProcessor processor(layer->GetSampleRate(), input.GetFrameCount());
+        _output = AudioBuffer(input->GetFrameCount(), 2);
 
-            const auto& inChannel = input.GetChannel(0);
-            auto& outChannelLeft = output.GetChannel(0);
-            auto& outChannelRight = output.GetChannel(1);
+        {
+            NearFieldProcessor processor(layer->GetSampleRate(), input->GetFrameCount());
+
+            const auto& inChannel = input->GetChannel(0);
+            auto& outChannelLeft = _output.GetChannel(0);
+            auto& outChannelRight = _output.GetChannel(1);
 
             // Apply bass boost and delay compensation(if necessary) to the input signal
             // and place it temporarily in the right output channel. This way we avoid
             // allocating a temporary buffer.
             processor.Process(inChannel, outChannelRight, layer->GetSpatialization() == eSpatialization_HRTF);
 
-            leftGainProcessor.ApplyGain(leftGainTarget, outChannelRight, 0, outChannelLeft, 0, input.GetFrameCount(), false);
-            rightGainProcessor.ApplyGain(rightGainTarget, outChannelRight, 0, outChannelRight, 0, input.GetFrameCount(), false);
+            _leftGainProcessor.ApplyGain(leftGainTarget, outChannelRight, 0, outChannelLeft, 0, input->GetFrameCount(), false);
+            _rightGainProcessor.ApplyGain(rightGainTarget, outChannelRight, 0, outChannelRight, 0, input->GetFrameCount(), false);
         }
 
-        return output;
+        return &_output;
     }
 
     NearFieldEffectNode::NearFieldEffectNode()

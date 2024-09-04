@@ -26,12 +26,13 @@ namespace SparkyStudios::Audio::Amplitude
     class AmbisonicPanningNodeInstance final : public ProcessorNodeInstance
     {
     public:
-        AmbisonicPanningNodeInstance(AmObjectID id, const Pipeline* pipeline);
+        AmbisonicPanningNodeInstance();
 
-        AudioBuffer Process(const AudioBuffer& input) override;
+        const AudioBuffer* Process(const AudioBuffer* input) override;
 
     private:
-        std::map<AmObjectID, AmbisonicSource> _sources;
+        AmbisonicSource _source;
+        BFormat _soundField;
     };
 
     class AmbisonicPanningNode final : public Node
@@ -39,9 +40,9 @@ namespace SparkyStudios::Audio::Amplitude
     public:
         AmbisonicPanningNode();
 
-        [[nodiscard]] AM_INLINE NodeInstance* CreateInstance(AmObjectID id, const Pipeline* pipeline) const override
+        [[nodiscard]] AM_INLINE NodeInstance* CreateInstance() const override
         {
-            return ampoolnew(MemoryPoolKind::Amplimix, AmbisonicPanningNodeInstance, id, pipeline);
+            return ampoolnew(MemoryPoolKind::Amplimix, AmbisonicPanningNodeInstance);
         }
 
         AM_INLINE void DestroyInstance(NodeInstance* instance) const override

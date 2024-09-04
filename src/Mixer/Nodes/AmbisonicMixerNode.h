@@ -27,9 +27,9 @@ namespace SparkyStudios::Audio::Amplitude
     public:
         AmbisonicMixerNode();
 
-        [[nodiscard]] AM_INLINE NodeInstance* CreateInstance(AmObjectID id, const Pipeline* pipeline) const override
+        [[nodiscard]] AM_INLINE NodeInstance* CreateInstance() const override
         {
-            return ampoolnew(MemoryPoolKind::Amplimix, MixerNodeInstance, id, pipeline);
+            return ampoolnew(MemoryPoolKind::Amplimix, MixerNodeInstance);
         }
 
         AM_INLINE void DestroyInstance(NodeInstance* instance) const override

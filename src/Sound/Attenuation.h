@@ -128,8 +128,6 @@ namespace SparkyStudios::Audio::Amplitude
         [[nodiscard]] const AttenuationDefinition* GetDefinition() const override;
 
     private:
-        AmString _name;
-
         AmReal64 _maxDistance;
 
         AmUniquePtr<MemoryPoolKind::Engine, AttenuationZone> _shape;

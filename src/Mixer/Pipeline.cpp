@@ -12,95 +12,34 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+#include <SparkyStudios/Audio/Amplitude/Core/Log.h>
 #include <SparkyStudios/Audio/Amplitude/Core/Memory.h>
-#include <SparkyStudios/Audio/Amplitude/Mixer/Pipeline.h>
 
-#include <Mixer/Nodes/AmbisonicBinauralDecoderNode.h>
-#include <Mixer/Nodes/AmbisonicMixerNode.h>
-#include <Mixer/Nodes/AmbisonicPanningNode.h>
-#include <Mixer/Nodes/AttenuationNode.h>
-#include <Mixer/Nodes/NearFieldEffectNode.h>
-#include <Mixer/Nodes/OcclusionNode.h>
-#include <Mixer/Nodes/StereoMixerNode.h>
-#include <Mixer/Nodes/StereoPanningNode.h>
+#include <Mixer/Pipeline.h>
 
 namespace SparkyStudios::Audio::Amplitude
 {
-    Pipeline::Pipeline()
+    PipelineInstanceImpl::PipelineInstanceImpl(const Pipeline* parent, const AmplimixLayer* layer)
         : _nodeInstances()
-        , _nodes()
-    {
-        _inputNode = ampoolnew(MemoryPoolKind::Amplimix, InputNodeInstance, 1, this);
-        _nodeInstances[_inputNode->GetId()] = _inputNode;
+        , _layer(layer)
+        , _inputNode(nullptr)
+        , _outputNode(nullptr)
+    {}
 
-        _outputNode = ampoolnew(MemoryPoolKind::Amplimix, OutputNodeInstance, 2, this);
-        _nodeInstances[_outputNode->GetId()] = _outputNode;
-
-        auto attenuationNode = ampoolnew(MemoryPoolKind::Amplimix, AttenuationNodeInstance, 3, this);
-        _nodeInstances[attenuationNode->GetId()] = attenuationNode;
-
-        auto occlusionNode = ampoolnew(MemoryPoolKind::Amplimix, OcclusionNodeInstance, 4, this);
-        _nodeInstances[occlusionNode->GetId()] = occlusionNode;
-
-        auto nearFieldEffectNode = ampoolnew(MemoryPoolKind::Amplimix, NearFieldEffectNodeInstance, 5, this);
-        _nodeInstances[nearFieldEffectNode->GetId()] = nearFieldEffectNode;
-
-        auto stereoPanningNode = ampoolnew(MemoryPoolKind::Amplimix, StereoPanningNodeInstance, 6, this);
-        _nodeInstances[stereoPanningNode->GetId()] = stereoPanningNode;
-
-        auto ambisonicPanningNode = ampoolnew(MemoryPoolKind::Amplimix, AmbisonicPanningNodeInstance, 7, this);
-        _nodeInstances[ambisonicPanningNode->GetId()] = ambisonicPanningNode;
-
-        auto ambisonicMixerNode = ampoolnew(MemoryPoolKind::Amplimix, MixerNodeInstance, 8, this);
-        _nodeInstances[ambisonicMixerNode->GetId()] = ambisonicMixerNode;
-
-        _nodes.push_back(ampoolnew(MemoryPoolKind::Amplimix, AmbisonicBinauralDecoderNode));
-        auto ambisonicBinauralDecoder = (AmbisonicBinauralDecoderNodeInstance*)_nodes[0]->CreateInstance(9, this);
-        _nodeInstances[ambisonicBinauralDecoder->GetId()] = ambisonicBinauralDecoder;
-
-        auto stereoMixerNode = ampoolnew(MemoryPoolKind::Amplimix, MixerNodeInstance, 10, this);
-        _nodeInstances[stereoMixerNode->GetId()] = stereoMixerNode;
-
-        // Direct Sound Path
-        {
-            attenuationNode->Connect(_inputNode->GetId());
-            occlusionNode->Connect(attenuationNode->GetId());
-            nearFieldEffectNode->Connect(occlusionNode->GetId());
-            stereoMixerNode->Connect(nearFieldEffectNode->GetId());
-
-            // Stereo Panning
-            {
-                stereoPanningNode->Connect(occlusionNode->GetId());
-                stereoMixerNode->Connect(stereoPanningNode->GetId());
-            }
-
-            // HRTF Panning
-            {
-                ambisonicPanningNode->Connect(occlusionNode->GetId());
-                ambisonicMixerNode->Connect(ambisonicPanningNode->GetId());
-                ambisonicBinauralDecoder->Connect(ambisonicMixerNode->GetId());
-                stereoMixerNode->Connect(ambisonicBinauralDecoder->GetId());
-            }
-        }
-
-        _outputNode->Connect(stereoMixerNode->GetId());
-    }
-
-    Pipeline::~Pipeline()
+    PipelineInstanceImpl::~PipelineInstanceImpl()
     {
         for (const auto& node : _nodeInstances)
             ampooldelete(MemoryPoolKind::Amplimix, NodeInstance, node.second);
 
-        for (const auto& node : _nodes)
-            ampooldelete(MemoryPoolKind::Amplimix, Node, node);
+        ampooldelete(MemoryPoolKind::Amplimix, InputNodeInstance, _inputNode);
+        ampooldelete(MemoryPoolKind::Amplimix, OutputNodeInstance, _outputNode);
+
+        _inputNode = nullptr;
+        _outputNode = nullptr;
     }
 
-    void Pipeline::Execute(const AmplimixLayer* layer, const AudioBuffer& in, AudioBuffer& out)
+    void PipelineInstanceImpl::Execute(const AudioBuffer& in, AudioBuffer& out)
     {
-        // Update the layer for all nodes in the pipeline
-        for (auto& node : _nodeInstances)
-            node.second->_layer = layer;
-
         // Set the input and output buffers for the pipeline
         _inputNode->SetInput(&in);
         _outputNode->SetOutput(&out);
@@ -111,21 +50,122 @@ namespace SparkyStudios::Audio::Amplitude
         _outputNode->Consume();
     }
 
-    InputNodeInstance* Pipeline::GetInputNode() const
-    {
-        return _inputNode;
-    }
-
-    OutputNodeInstance* Pipeline::GetOutputNode() const
-    {
-        return _outputNode;
-    }
-
-    NodeInstance* Pipeline::GetNode(AmObjectID id) const
+    NodeInstance* PipelineInstanceImpl::GetNode(AmObjectID id) const
     {
         if (_nodeInstances.find(id) != _nodeInstances.end())
             return _nodeInstances.at(id);
 
         return nullptr;
+    }
+
+    void PipelineInstanceImpl::Reset()
+    {
+        for (const auto& node : _nodeInstances)
+            node.second->Reset();
+
+        _inputNode->Reset();
+        _outputNode->Reset();
+    }
+
+    void PipelineInstanceImpl::AddNode(AmObjectID id, NodeInstance* nodeInstance)
+    {
+        if (_nodeInstances.find(id) != _nodeInstances.end())
+            return;
+
+        _nodeInstances[id] = nodeInstance;
+    }
+
+    PipelineImpl::~PipelineImpl()
+    {}
+
+    PipelineInstance* PipelineImpl::CreateInstance(const AmplimixLayer* layer) const
+    {
+        auto* instance = ampoolnew(MemoryPoolKind::Amplimix, PipelineInstanceImpl, this, layer);
+
+        const auto* definition = GetDefinition();
+        const auto* nodes = definition->nodes();
+
+        // Create node instances based on the pipeline definition
+        for (flatbuffers::uoffset_t i = 0, l = nodes->size(); i < l; ++i)
+        {
+            const auto* nodeDef = nodes->Get(i);
+            const auto& nodeName = nodeDef->name()->str();
+            const auto& nodeId = nodeDef->id();
+            const auto* inputs = nodeDef->consume();
+
+            NodeInstance* node = nullptr;
+            if (nodeName.compare("Input") == 0)
+            {
+                node = ampoolnew(MemoryPoolKind::Amplimix, InputNodeInstance);
+                instance->_inputNode = static_cast<InputNodeInstance*>(node);
+            }
+            else if (nodeName.compare("Output") == 0)
+            {
+                node = ampoolnew(MemoryPoolKind::Amplimix, OutputNodeInstance);
+                instance->_outputNode = static_cast<OutputNodeInstance*>(node);
+            }
+            else
+            {
+                node = Node::Construct(nodeName);
+            }
+
+            if (node == nullptr)
+            {
+                amLogError(
+                    "Pipeline node not found: %s. Make sure it is registered. If the node is provided by a plugin, make sure to load the "
+                    "plugin before Amplitude.",
+                    nodeName.c_str());
+                DestroyInstance(instance);
+                return nullptr;
+            }
+
+            // Initialize the node with the provided parameters
+            node->Initialize(nodeId, layer, instance);
+
+            instance->AddNode(nodeId, node);
+
+            // Connect the node inputs
+            auto* consumerNode = dynamic_cast<ConsumerNodeInstance*>(node);
+            if (consumerNode == nullptr)
+                continue;
+
+            for (flatbuffers::uoffset_t j = 0, m = inputs->size(); j < m; ++j)
+            {
+                if (inputs->Get(j) == nodeId)
+                {
+                    amLogError("A node cannot consume itself: %s", nodeName.c_str());
+                    continue;
+                }
+
+                consumerNode->Connect(inputs->Get(j));
+            }
+        }
+
+        if (instance->_inputNode == nullptr || instance->_outputNode == nullptr)
+        {
+            amLogError("The pipeline must have an input and an output node.");
+            DestroyInstance(instance);
+            return nullptr;
+        }
+
+        return instance;
+    }
+
+    void PipelineImpl::DestroyInstance(PipelineInstance* instance) const
+    {
+        ampooldelete(MemoryPoolKind::Amplimix, PipelineInstanceImpl, (PipelineInstanceImpl*)instance);
+    }
+
+    bool PipelineImpl::LoadDefinition(const PipelineDefinition* definition, EngineInternalState* state)
+    {
+        m_id = definition->id();
+        m_name = definition->name()->str();
+
+        return true;
+    }
+
+    const PipelineDefinition* PipelineImpl::GetDefinition() const
+    {
+        return GetPipelineDefinition(m_source.c_str());
     }
 } // namespace SparkyStudios::Audio::Amplitude

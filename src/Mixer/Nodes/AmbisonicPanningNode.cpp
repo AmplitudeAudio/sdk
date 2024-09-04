@@ -18,49 +18,41 @@
 #include <Core/EngineInternalState.h>
 #include <Mixer/Nodes/AmbisonicPanningNode.h>
 
-#include "Ambisonics/AmbisonicOrientationProcessor.h"
 #include "engine_config_definition_generated.h"
-#include "SparkyStudios/Audio/Amplitude/Math/Orientation.h"
 
 namespace SparkyStudios::Audio::Amplitude
 {
-    AmbisonicPanningNodeInstance::AmbisonicPanningNodeInstance(AmObjectID id, const Pipeline* pipeline)
-        : ProcessorNodeInstance(id, pipeline)
-    {}
+    AmbisonicPanningNodeInstance::AmbisonicPanningNodeInstance()
+    {
+        const ePanningMode mode = Engine::GetInstance()->GetPanningMode();
+        const AmUInt32 order = AM_MIN(mode, 1);
 
-    AudioBuffer AmbisonicPanningNodeInstance::Process(const AudioBuffer& input)
+        _source.Configure(order, true);
+    }
+
+    const AudioBuffer* AmbisonicPanningNodeInstance::Process(const AudioBuffer* input)
     {
         const auto* layer = GetLayer();
-        if (layer == nullptr)
-            return {};
 
         const eSpatialization spatialization = layer->GetSpatialization();
         if (spatialization != eSpatialization_HRTF)
-            return {};
+            return nullptr;
 
         const auto& listener = layer->GetListener();
         if (!listener.Valid())
-            return {};
+            return nullptr;
 
         const auto& listenerSpaceSourcePosition = listener.GetInverseMatrix() * AM_V4V(layer->GetLocation(), 1.0f);
 
         const ePanningMode mode = Engine::GetInstance()->GetPanningMode();
         const AmUInt32 order = AM_MIN(mode, 1);
 
-        BFormat encodedOutput;
-        encodedOutput.Configure(order, true, input.GetFrameCount());
+        _soundField.Configure(order, true, input->GetFrameCount());
 
-        if (!_sources.contains(layer->GetId()))
-        {
-            AmbisonicSource& source = _sources[layer->GetId()];
-            source.Configure(order, true);
-        }
+        _source.SetPosition(SphericalPosition::ForHRTF(listenerSpaceSourcePosition.XYZ), 0.25f);
+        _source.Process(input->GetChannel(0), input->GetFrameCount(), &_soundField);
 
-        AmbisonicSource& source = _sources[layer->GetId()];
-        source.SetPosition(SphericalPosition::ForHRTF(listenerSpaceSourcePosition.XYZ), 0.25f);
-        source.Process(input[0], input.GetFrameCount(), &encodedOutput);
-
-        return encodedOutput.GetBuffer()->Clone();
+        return _soundField.GetBuffer();
     }
 
     AmbisonicPanningNode::AmbisonicPanningNode()

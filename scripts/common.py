@@ -47,6 +47,9 @@ SOUNDBANKS_DIR_NAME = 'soundbanks'
 # Directory where unprocessed event flatbuffers data can be found.
 EVENTS_DIR_NAME = 'events'
 
+# Directory where unprocessed pipeline flatbuffers data can be found.
+PIPELINES_DIR_NAME = 'pipelines'
+
 # Directory where unprocessed attenuation flatbuffers data can be found.
 ATTENUATORS_DIR_NAME = 'attenuators'
 
@@ -197,6 +200,7 @@ def processed_json_path(path: str, input_path: str, output_path: str):
         else ".ambank" if SOUNDBANKS_DIR_NAME in path
         else ".amcollection" if COLLECTIONS_DIR_NAME in path
         else ".amevent" if EVENTS_DIR_NAME in path
+        else ".ampipeline" if PIPELINES_DIR_NAME in path
         else ".amattenuation" if ATTENUATORS_DIR_NAME in path
         else ".amswitch" if SWITCHES_DIR_NAME in path
         else ".amswitchcontainer" if SWITCH_CONTAINERS_DIR_NAME in path
@@ -331,6 +335,10 @@ def get_conversion_data(project_path: str):
             schema=find_in_paths(
                 'event_definition.bfbs', SCHEMA_PATHS),
             input_files=glob.glob(os.path.join(project_path, EVENTS_DIR_NAME, '**/*.json'), recursive=True)),
+        FlatbuffersConversionData(
+            schema=find_in_paths(
+                'pipeline_definition.bfbs', SCHEMA_PATHS),
+            input_files=glob.glob(os.path.join(project_path, PIPELINES_DIR_NAME, '**/*.json'), recursive=True)),
         FlatbuffersConversionData(
             schema=find_in_paths(
                 'attenuation_definition.bfbs', SCHEMA_PATHS),

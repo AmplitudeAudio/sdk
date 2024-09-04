@@ -17,6 +17,7 @@
 #ifndef _AM_IMPLEMENTATION_MIXER_NODES_OCCLUSION_NODE_H
 #define _AM_IMPLEMENTATION_MIXER_NODES_OCCLUSION_NODE_H
 
+#include <SparkyStudios/Audio/Amplitude/Core/Memory.h>
 #include <SparkyStudios/Audio/Amplitude/Mixer/Node.h>
 
 #include <DSP/Filters/MonoPoleFilter.h>
@@ -26,18 +27,19 @@ namespace SparkyStudios::Audio::Amplitude
     class OcclusionNodeInstance final : public ProcessorNodeInstance
     {
     public:
-        OcclusionNodeInstance(AmObjectID id, const Pipeline* pipeline);
+        OcclusionNodeInstance();
 
         ~OcclusionNodeInstance() override;
 
-        AudioBuffer Process(const AudioBuffer& input) override;
+        const AudioBuffer* Process(const AudioBuffer* input) override;
 
     private:
         MonoPoleFilter _filter;
 
-        // Cached state per sound instance
-        std::map<AmObjectID, AmReal32> _currentOcclusions;
-        std::map<AmObjectID, FilterInstance*> _occlusionFilters;
+        AmReal32 _currentOcclusion;
+        FilterInstance* _occlusionFilter;
+
+        AudioBuffer _output;
     };
 
     class OcclusionNode final : public Node
@@ -45,9 +47,9 @@ namespace SparkyStudios::Audio::Amplitude
     public:
         OcclusionNode();
 
-        [[nodiscard]] AM_INLINE NodeInstance* CreateInstance(AmObjectID id, const Pipeline* pipeline) const override
+        [[nodiscard]] AM_INLINE NodeInstance* CreateInstance() const override
         {
-            return ampoolnew(MemoryPoolKind::Amplimix, OcclusionNodeInstance, id, pipeline);
+            return ampoolnew(MemoryPoolKind::Amplimix, OcclusionNodeInstance);
         }
 
         AM_INLINE void DestroyInstance(NodeInstance* instance) const override

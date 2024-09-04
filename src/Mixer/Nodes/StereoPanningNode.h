@@ -17,6 +17,7 @@
 #ifndef _AM_IMPLEMENTATION_MIXER_NODES_STEREO_PANNING_NODE_H
 #define _AM_IMPLEMENTATION_MIXER_NODES_STEREO_PANNING_NODE_H
 
+#include <SparkyStudios/Audio/Amplitude/Core/Memory.h>
 #include <SparkyStudios/Audio/Amplitude/Mixer/Node.h>
 
 namespace SparkyStudios::Audio::Amplitude
@@ -24,9 +25,10 @@ namespace SparkyStudios::Audio::Amplitude
     class StereoPanningNodeInstance final : public ProcessorNodeInstance
     {
     public:
-        StereoPanningNodeInstance(AmObjectID id, const Pipeline* pipeline);
+        const AudioBuffer* Process(const AudioBuffer* input) override;
 
-        AudioBuffer Process(const AudioBuffer& input) override;
+    private:
+        AudioBuffer _output;
     };
 
     class StereoPanningNode final : public Node
@@ -34,9 +36,9 @@ namespace SparkyStudios::Audio::Amplitude
     public:
         StereoPanningNode();
 
-        [[nodiscard]] AM_INLINE NodeInstance* CreateInstance(AmObjectID id, const Pipeline* pipeline) const override
+        [[nodiscard]] AM_INLINE NodeInstance* CreateInstance() const override
         {
-            return ampoolnew(MemoryPoolKind::Amplimix, StereoPanningNodeInstance, id, pipeline);
+            return ampoolnew(MemoryPoolKind::Amplimix, StereoPanningNodeInstance);
         }
 
         AM_INLINE void DestroyInstance(NodeInstance* instance) const override

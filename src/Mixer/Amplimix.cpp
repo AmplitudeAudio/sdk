@@ -16,6 +16,7 @@
 
 #include <Core/Engine.h>
 #include <Mixer/Amplimix.h>
+#include <Mixer/Pipeline.h>
 
 #define AMPLIMIX_STORE(A, C) std::atomic_store_explicit(A, (C), std::memory_order_release)
 #define AMPLIMIX_LOAD(A) std::atomic_load_explicit(A, std::memory_order_acquire)
@@ -232,12 +233,11 @@ namespace SparkyStudios::Audio::Amplitude
         if (layer->snd == nullptr)
             return;
 
-        const auto* sound = layer->snd->sound.get();
+        // Clean up the pipeline
+        mixer->GetPipeline()->DestroyInstance(layer->pipeline);
 
-        // TODO: Clean up the pipeline
-
+        // Clean up the sound instance
         layer->snd->sound.reset();
-
         layer->snd = nullptr;
 
         AMPLIMIX_STORE(&layer->flag, ePSF_MIN);
@@ -285,7 +285,7 @@ namespace SparkyStudios::Audio::Amplitude
             return false;
         }
 
-        _pipeline.reset(ampoolnew(MemoryPoolKind::Amplimix, Pipeline));
+        _pipeline = Engine::GetInstance()->GetPipelineHandle();
 
         if (_pipeline == nullptr)
         {
@@ -295,7 +295,7 @@ namespace SparkyStudios::Audio::Amplitude
 
         _device.mOutputBufferSize = config->output()->buffer_size();
         _device.mRequestedOutputSampleRate = config->output()->frequency();
-        _device.mRequestedOutputChannels = static_cast<PlaybackOutputChannels>(config->output()->channels());
+        _device.mRequestedOutputChannels = PlaybackOutputChannels::Stereo; // For now, only support stereo output.
         _device.mRequestedOutputFormat = static_cast<PlaybackOutputFormat>(config->output()->format());
 
         _audioThreadMutex = Thread::CreateMutex(500);
@@ -319,7 +319,7 @@ namespace SparkyStudios::Audio::Amplitude
 
         _audioThreadMutex = nullptr;
 
-        _pipeline.reset(nullptr);
+        _pipeline = nullptr;
 
         for (auto& layer : _layers)
             layer.Reset();
@@ -381,6 +381,8 @@ namespace SparkyStudios::Audio::Amplitude
                 AMPLIMIX_STORE(&layer.cursor, cursor);
             }
 #endif // AM_SIMD_ALIGNMENT
+
+            layer.pipeline->Reset();
         }
 
         lock.Unlock();
@@ -437,6 +439,9 @@ namespace SparkyStudios::Audio::Amplitude
         // check if corresponding layer is free
         if (AMPLIMIX_LOAD(&lay->flag) == ePSF_MIN)
         {
+            // Initialize this layer's pipeline
+            lay->pipeline = _pipeline->CreateInstance(lay);
+
             // fill in non-atomic layer data along with truncating start and end
             lay->id = id;
             lay->snd = sound;
@@ -727,12 +732,12 @@ namespace SparkyStudios::Audio::Amplitude
 
     const Pipeline* AmplimixImpl::GetPipeline() const
     {
-        return _pipeline.get();
+        return _pipeline;
     }
 
     Pipeline* AmplimixImpl::GetPipeline()
     {
-        return _pipeline.get();
+        return _pipeline;
     }
 
     void AmplimixImpl::IncrementSoundLoopCount(SoundInstance* sound)
@@ -759,7 +764,7 @@ namespace SparkyStudios::Audio::Amplitude
             return;
         }
 
-        if (_pipeline == nullptr)
+        if (_pipeline == nullptr || layer->pipeline == nullptr)
         {
             amLogWarning("No active pipeline is set, this means no sound will be rendered. You should configure the Amplimix "
                          "pipeline in your engine configuration file.");
@@ -859,7 +864,7 @@ namespace SparkyStudios::Audio::Amplitude
             AmUInt64 oldCursor = cursor;
 
             // Execute Pipeline
-            _pipeline->Execute(layer, *transient->buffer, *out->buffer);
+            layer->pipeline->Execute(*transient->buffer, *out->buffer);
 
             /* */ AmReal32 position = cursor;
             const AmUInt64 start = layer->start;

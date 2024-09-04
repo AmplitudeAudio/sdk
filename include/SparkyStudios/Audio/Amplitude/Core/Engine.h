@@ -32,6 +32,7 @@
 #include <SparkyStudios/Audio/Amplitude/Core/Version.h>
 
 #include <SparkyStudios/Audio/Amplitude/Mixer/Amplimix.h>
+#include <SparkyStudios/Audio/Amplitude/Mixer/Pipeline.h>
 
 #include <SparkyStudios/Audio/Amplitude/Sound/Attenuation.h>
 #include <SparkyStudios/Audio/Amplitude/Sound/Collection.h>
@@ -58,6 +59,7 @@ namespace SparkyStudios::Audio::Amplitude
     typedef Sound* SoundHandle;
     typedef SoundObject* SoundObjectHandle;
     typedef Event* EventHandle;
+    typedef Pipeline* PipelineHandle;
     typedef Attenuation* AttenuationHandle;
     typedef Switch* SwitchHandle;
     typedef Rtpc* RtpcHandle;
@@ -480,6 +482,11 @@ namespace SparkyStudios::Audio::Amplitude
          * @param filename The filename containing the flatbuffer binary data.
          */
         [[nodiscard]] virtual EffectHandle GetEffectHandleFromFile(const AmOsString& filename) const = 0;
+
+        /**
+         * @brief Gets this @c PipelineHandle loaded in the engine configuration.
+         */
+        [[nodiscard]] virtual PipelineHandle GetPipelineHandle() const = 0;
 
 #pragma endregion
 

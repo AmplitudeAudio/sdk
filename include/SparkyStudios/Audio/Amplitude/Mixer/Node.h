@@ -23,7 +23,7 @@
 namespace SparkyStudios::Audio::Amplitude
 {
     class AmplimixLayer;
-    class Pipeline;
+    class PipelineInstance;
 
     /**
      * @brief An instance of an Amplimix pipeline node.
@@ -34,15 +34,17 @@ namespace SparkyStudios::Audio::Amplitude
      */
     class AM_API_PUBLIC NodeInstance
     {
-        friend class Pipeline;
+        friend class PipelineInstance;
 
     public:
         /**
-         * @brief NodeInstance constructor.
+         * @brief Initializes the node instance.
          *
          * @param id Unique identifier for the node instance.
+         * @param layer The Amplimix layer this node instance is currently associated with.
+         * @param pipeline The pipeline this node instance belongs to.
          */
-        NodeInstance(AmObjectID id);
+        virtual void Initialize(AmObjectID id, const AmplimixLayer* layer, const PipelineInstance* pipeline);
 
         /**
          * @brief NodeInstance destructor.
@@ -59,11 +61,18 @@ namespace SparkyStudios::Audio::Amplitude
          */
         [[nodiscard]] const AmplimixLayer* GetLayer() const;
 
-    protected:
-        AmObjectID m_id; /// The unique identifier for the node instance in the pipeline.
+        /**
+         * @brief Resets the node instance's internal state.
+         *
+         * This function should be called automatically by Amplimix, each time the pipeline is
+         * about to be executed. Call it manually only if you know what you're doing.
+         */
+        virtual void Reset() = 0;
 
-    private:
-        const AmplimixLayer* _layer; /// The Amplimix layer this node instance is currently associated with.
+    protected:
+        AmObjectID m_id; ///< The unique identifier for the node instance in the pipeline.
+        const AmplimixLayer* m_layer; ///< The Amplimix layer this node instance is currently associated with.
+        const PipelineInstance* m_pipeline; ///< The pipeline this node instance belongs to.
     };
 
     /**
@@ -100,7 +109,7 @@ namespace SparkyStudios::Audio::Amplitude
          *
          * @return The output audio data.
          */
-        virtual AudioBuffer Provide() = 0;
+        virtual const AudioBuffer* Provide() = 0;
     };
 
     /**
@@ -114,9 +123,9 @@ namespace SparkyStudios::Audio::Amplitude
     {
     public:
         /**
-         * @brief ProcessorNodeInstance constructor.
+         * @brief PropertyNodeInstance constructor.
          */
-        ProcessorNodeInstance(AmObjectID id, const Pipeline* pipeline);
+        ProcessorNodeInstance();
 
         /**
          * @brief ProcessorNodeInstance destructor.
@@ -130,7 +139,7 @@ namespace SparkyStudios::Audio::Amplitude
          *
          * @return The output audio data.
          */
-        virtual AudioBuffer Process(const AudioBuffer& input) = 0;
+        virtual const AudioBuffer* Process(const AudioBuffer* input) = 0;
 
         /**
          * @copydoc ConsumerNodeInstance::Consume()
@@ -145,14 +154,19 @@ namespace SparkyStudios::Audio::Amplitude
         /**
          * @copydoc ProviderNodeInstance::Provide()
          */
-        AudioBuffer Provide() final;
+        const AudioBuffer* Provide() final;
+
+        /**
+         * @copydoc NodeInstance::Reset()
+         */
+        void Reset() override;
 
     protected:
         AmObjectID m_provider;
-        const Pipeline* m_pipeline; ///< The pipeline this node instance belongs to.
 
     private:
-        AudioBuffer _processingBuffer;
+        const AudioBuffer* _processingBuffer;
+        const AudioBuffer* _lastOuputBuffer;
     };
 
     /**
@@ -169,7 +183,7 @@ namespace SparkyStudios::Audio::Amplitude
         /**
          * @brief MixerNodeInstance constructor.
          */
-        MixerNodeInstance(AmObjectID id, const Pipeline* pipeline);
+        MixerNodeInstance();
 
         /**
          * @brief MixerNodeInstance destructor.
@@ -198,38 +212,44 @@ namespace SparkyStudios::Audio::Amplitude
          * @note This method clears the existing input provider nodes,
          * and replaces them with the provided ones.
          */
-        void In(const std::vector<AmObjectID>& providers);
+        void Connect(const std::vector<AmObjectID>& providers);
 
         /**
          * @copydoc ProviderNodeInstance::Provide()
          */
-        AudioBuffer Provide() final;
+        const AudioBuffer* Provide() final;
+
+        /**
+         * @copydoc NodeInstance::Reset()
+         */
+        void Reset() override;
 
     protected:
         std::vector<AmObjectID> m_providers;
-        const Pipeline* m_pipeline; ///< The pipeline this node instance belongs to.
 
     private:
-        std::vector<AudioBuffer> _processingBuffers;
+        std::vector<const AudioBuffer*> _processingBuffers;
+        AudioBuffer _mixBuffer;
+        bool _processed;
     };
 
+    /**
+     * @brief Class used to marks the input of the pipeline.
+     *
+     * This node is automatically added to the pipeline when created. And thus
+     * should not be manually added to the pipeline asset.
+     */
     class AM_API_PUBLIC InputNodeInstance final
         : public NodeInstance
         , public ProviderNodeInstance
     {
-        friend class Pipeline;
+        friend class PipelineInstance;
 
-        /**
-         * @brief Class used to marks the input of the pipeline.
-         *
-         * This node is automatically added to the pipeline when created. And thus
-         * should not be manually added to the pipeline asset.
-         */
     public:
         /**
          * @brief InputNodeInstance constructor.
          */
-        InputNodeInstance(AmObjectID id, const Pipeline* pipeline);
+        InputNodeInstance();
 
         /**
          * @brief InputNodeInstance destructor.
@@ -246,7 +266,12 @@ namespace SparkyStudios::Audio::Amplitude
         /**
          * @copydoc ProviderNodeInstance::Provide()
          */
-        AudioBuffer Provide() final;
+        const AudioBuffer* Provide() override;
+
+        /**
+         * @copydoc NodeInstance::Reset()
+         */
+        void Reset() override;
 
     private:
         const AudioBuffer* _buffer;
@@ -262,13 +287,13 @@ namespace SparkyStudios::Audio::Amplitude
         : public NodeInstance
         , public ConsumerNodeInstance
     {
-        friend class Pipeline;
+        friend class PipelineInstance;
 
     public:
         /**
          * @brief OutputNodeInstance constructor.
          */
-        OutputNodeInstance(AmObjectID id, const Pipeline* pipeline);
+        OutputNodeInstance();
 
         /**
          * @brief OutputNodeInstance destructor.
@@ -285,16 +310,20 @@ namespace SparkyStudios::Audio::Amplitude
         /**
          * @copydoc ConsumerNodeInstance::Consume()
          */
-        void Consume() final;
+        void Consume() override;
 
         /**
          * @copydoc ConsumerNodeInstance::Connect()
          */
-        void Connect(AmObjectID provider) final;
+        void Connect(AmObjectID provider) override;
+
+        /**
+         * @copydoc NodeInstance::Reset()
+         */
+        void Reset() override;
 
     private:
         AmObjectID _provider;
-        const Pipeline* _pipeline; ///< The pipeline this node instance belongs to.
         AudioBuffer* _buffer;
     };
 
@@ -319,22 +348,18 @@ namespace SparkyStudios::Audio::Amplitude
         /**
          * @brief Node destructor.
          */
-        virtual ~Node() = default;
-
-        /**
-         * @brief Returns the name of the node.
-         */
-        [[nodiscard]] const AmString& GetName() const;
+        virtual ~Node();
 
         /**
          * @brief Creates a new instance of the node.
          *
          * @param id Unique identifier for the new instance.
+         * @param layer The Amplimix layer associated with the new instance.
          * @param pipeline The pipeline associated with the new instance.
          *
          * @return A new instance of the node.
          */
-        virtual NodeInstance* CreateInstance(AmObjectID id, const Pipeline* pipeline) const = 0;
+        virtual NodeInstance* CreateInstance() const = 0;
 
         /**
          * @brief Destroys the specified instance of the node.
@@ -343,8 +368,74 @@ namespace SparkyStudios::Audio::Amplitude
          */
         virtual void DestroyInstance(NodeInstance* instance) const = 0;
 
+        /**
+         * @brief Returns the name of the node.
+         */
+        [[nodiscard]] const AmString& GetName() const;
+
+        /**
+         * @brief Registers a new node.
+         *
+         * @param node The node to add in the registry.
+         */
+        static void Register(Node* node);
+
+        /**
+         * @brief Unregisters a node.
+         *
+         * @param node The node to remove from the registry.
+         */
+        static void Unregister(const Node* node);
+
+        /**
+         * @brief Creates a new instance of the the node with the given name
+         * and returns its pointer. The returned pointer should be deleted using Node::Destruct().
+         *
+         * @param name The name of the node.
+         *
+         * @return The node with the given name, or NULL if none.
+         */
+        static NodeInstance* Construct(const AmString& name);
+
+        /**
+         * @brief Destroys the given node instance.
+         *
+         * @param name The name of the node.
+         * @param instance The node instance to destroy.
+         */
+        static void Destruct(const AmString& name, NodeInstance* instance);
+
+        /**
+         * @brief Locks the nodes registry.
+         *
+         * This function is mainly used for internal purposes. Its
+         * called before the Engine initialization, to discard the
+         * registration of new nodes after the engine is fully loaded.
+         */
+        static void LockRegistry();
+
+        /**
+         * @brief Unlocks the nodes registry.
+         *
+         * This function is mainly used for internal purposes. Its
+         * called after the Engine deinitialization, to allow the
+         * registration of new divers after the engine is fully unloaded.
+         */
+        static void UnlockRegistry();
+
+    protected:
+        /**
+         * @brief The name of this node.
+         */
+        AmString m_name;
+
     private:
-        AmString _name;
+        /**
+         * @brief Look up a node by name.
+         *
+         * @return The node with the given name, or NULL if none.
+         */
+        static Node* Find(const AmString& name);
     };
 } // namespace SparkyStudios::Audio::Amplitude
 

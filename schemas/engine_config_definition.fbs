@@ -72,12 +72,7 @@ table PlaybackOutputConfig {
   /// Output sampling frequency in samples per second.
   frequency:uint = 48000;
 
-  /// The number of output channels to support.
-  channels:ePlaybackOutputChannels = Stereo;
-
-  /// Bytes used per output sample.
-  /// The number of processed samples is equal to this value
-  /// divided by the number of channels.
+  /// The number of samples to process per output.
   /// It's highly recommended to use a multiple of 2 for this value.
   buffer_size:uint = 1024;
 
@@ -99,6 +94,9 @@ table AudioMixerConfig {
   /// Defines the panning mode to use. If Stereo mode is set, all the sound sources
   /// playing with HRTF spatialization will fallback to PositionOrientation spatialization.
   panning_mode:PanningMode;
+
+  /// The name of the pipeline asset file to load.
+  pipeline:string (required);
 }
 
 /// The default obstruction/occlusion curve applied on sound's

@@ -68,4 +68,17 @@
 
 #pragma endregion
 
+#pragma region Default Pipeline Nodes
+
+#include <Mixer/Nodes/AmbisonicBinauralDecoderNode.h>
+#include <Mixer/Nodes/AmbisonicMixerNode.h>
+#include <Mixer/Nodes/AmbisonicPanningNode.h>
+#include <Mixer/Nodes/AttenuationNode.h>
+#include <Mixer/Nodes/NearFieldEffectNode.h>
+#include <Mixer/Nodes/OcclusionNode.h>
+#include <Mixer/Nodes/StereoMixerNode.h>
+#include <Mixer/Nodes/StereoPanningNode.h>
+
+#pragma endregion
+
 #endif // _AM_IMPLEMENTATION_CORE_DEFAULT_PLUGINS_H

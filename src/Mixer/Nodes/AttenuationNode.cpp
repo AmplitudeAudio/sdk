@@ -22,17 +22,9 @@
 
 namespace SparkyStudios::Audio::Amplitude
 {
-    AttenuationNodeInstance::AttenuationNodeInstance(AmObjectID id, const Pipeline* pipeline)
-        : ProcessorNodeInstance(id, pipeline)
-    {}
-
-    AudioBuffer AttenuationNodeInstance::Process(const AudioBuffer& input)
+    const AudioBuffer* AttenuationNodeInstance::Process(const AudioBuffer* input)
     {
-        AudioBuffer output = input.Clone();
-
         const auto* layer = GetLayer();
-        if (layer == nullptr)
-            return output;
 
         const Attenuation* attenuation = layer->GetAttenuation();
 
@@ -75,18 +67,17 @@ namespace SparkyStudios::Audio::Amplitude
         }
 
         if (Gain::IsZero(targetGain))
-        {
-            output.Clear();
-            return output;
-        }
+            return nullptr;
 
-        if (!Gain::IsOne(targetGain))
-        {
-            for (AmSize c = 0; c < output.GetChannelCount(); ++c)
-                Gain::ApplyReplaceConstantGain(targetGain, input[c], 0, output[c], 0, input.GetFrameCount());
-        }
+        if (Gain::IsOne(targetGain))
+            return input;
 
-        return output;
+        _output = *input;
+
+        for (AmSize c = 0; c < _output.GetChannelCount(); ++c)
+            Gain::ApplyReplaceConstantGain(targetGain, input->GetChannel(c), 0, _output[c], 0, input->GetFrameCount());
+
+        return &_output;
     }
 
     AttenuationNode::AttenuationNode()

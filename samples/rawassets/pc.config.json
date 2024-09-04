@@ -2,14 +2,14 @@
   "driver": "miniaudio",
   "output": {
     "frequency": 44100,
-    "channels": 2,
     "buffer_size": 4096,
     "format": "Float32"
   },
   "mixer": {
-    "panning_mode": "BinauralLowQuality",
+    "panning_mode": "BinauralHighQuality",
     "active_channels": 50,
-    "virtual_channels": 100
+    "virtual_channels": 100,
+    "pipeline": "default.ampipeline"
   },
   "game": {
     "listener_fetch_mode": "Nearest",

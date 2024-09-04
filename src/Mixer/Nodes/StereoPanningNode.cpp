@@ -22,34 +22,30 @@
 
 namespace SparkyStudios::Audio::Amplitude
 {
-
-    StereoPanningNodeInstance::StereoPanningNodeInstance(AmObjectID id, const Pipeline* pipeline)
-        : ProcessorNodeInstance(id, pipeline)
-    {}
-
-    AudioBuffer StereoPanningNodeInstance::Process(const AudioBuffer& input)
+    const AudioBuffer* StereoPanningNodeInstance::Process(const AudioBuffer* input)
     {
         const auto* layer = GetLayer();
-        if (layer == nullptr)
-            return input.Clone();
+
+        const auto& listener = layer->GetListener();
+        if (!listener.Valid())
+            return nullptr;
 
         // Mono channels required for input
-        AMPLITUDE_ASSERT(input.GetChannelCount() == 1);
+        AMPLITUDE_ASSERT(input->GetChannelCount() == 1);
 
         // Stereo channels for output
-        AudioBuffer output(input.GetFrameCount(), 2);
+        _output = AudioBuffer(input->GetFrameCount(), 2);
 
         // Apply panning
         {
-            const auto& listener = layer->GetListener();
             const AmReal32 gain = layer->GetGain();
             const AmVec2 pannedGain = Gain::CalculateStereoPannedGain(gain, layer->GetLocation(), listener.GetInverseMatrix());
 
-            Gain::ApplyReplaceConstantGain(pannedGain.Left, input[0], 0, output[0], 0, output.GetFrameCount());
-            Gain::ApplyReplaceConstantGain(pannedGain.Right, input[0], 0, output[1], 0, output.GetFrameCount());
+            Gain::ApplyReplaceConstantGain(pannedGain.Left, input->GetChannel(0), 0, _output[0], 0, _output.GetFrameCount());
+            Gain::ApplyReplaceConstantGain(pannedGain.Right, input->GetChannel(0), 0, _output[1], 0, _output.GetFrameCount());
         }
 
-        return output;
+        return &_output;
     }
 
     StereoPanningNode::StereoPanningNode()

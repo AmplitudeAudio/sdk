@@ -35,6 +35,7 @@
 #include "buses_definition_generated.h"
 #include "collection_definition_generated.h"
 #include "engine_config_definition_generated.h"
+#include "pipeline_definition_generated.h"
 #include "rtpc_definition_generated.h"
 #include "sound_definition_generated.h"
 #include "switch_container_definition_generated.h"
@@ -87,6 +88,15 @@ namespace SparkyStudios::Audio::Amplitude
     static AmUniquePtr<MemoryPoolKind::Engine, LofiFilter> sLofiFilterPlugin = nullptr;
     static AmUniquePtr<MemoryPoolKind::Engine, RobotizeFilter> sRobotizeFilterPlugin = nullptr;
     static AmUniquePtr<MemoryPoolKind::Engine, WaveShaperFilter> sWaveShaperFilterPlugin = nullptr;
+    // ---
+    static AmUniquePtr<MemoryPoolKind::Engine, AmbisonicBinauralDecoderNode> sAmbisonicBinauralDecoderNodePlugin = nullptr;
+    static AmUniquePtr<MemoryPoolKind::Engine, AmbisonicMixerNode> sAmbisonicMixerNodePlugin = nullptr;
+    static AmUniquePtr<MemoryPoolKind::Engine, AmbisonicPanningNode> sAmbisonicPanningNodePlugin = nullptr;
+    static AmUniquePtr<MemoryPoolKind::Engine, AttenuationNode> sAttenuationNodePlugin = nullptr;
+    static AmUniquePtr<MemoryPoolKind::Engine, NearFieldEffectNode> sNearFieldEffectNodePlugin = nullptr;
+    static AmUniquePtr<MemoryPoolKind::Engine, OcclusionNode> sOcclusionNodePlugin = nullptr;
+    static AmUniquePtr<MemoryPoolKind::Engine, StereoMixerNode> sStereoMixerNodePlugin = nullptr;
+    static AmUniquePtr<MemoryPoolKind::Engine, StereoPanningNode> sStereoPanningNodePlugin = nullptr;
 
     static AmUniquePtr<MemoryPoolKind::Engine, EngineImpl> gAmplitude = nullptr;
 
@@ -335,6 +345,15 @@ namespace SparkyStudios::Audio::Amplitude
         sLofiFilterPlugin.reset(ampoolnew(MemoryPoolKind::Engine, LofiFilter));
         sRobotizeFilterPlugin.reset(ampoolnew(MemoryPoolKind::Engine, RobotizeFilter));
         sWaveShaperFilterPlugin.reset(ampoolnew(MemoryPoolKind::Engine, WaveShaperFilter));
+        // ---
+        sAmbisonicBinauralDecoderNodePlugin.reset(ampoolnew(MemoryPoolKind::Engine, AmbisonicBinauralDecoderNode));
+        sAmbisonicMixerNodePlugin.reset(ampoolnew(MemoryPoolKind::Engine, AmbisonicMixerNode));
+        sAmbisonicPanningNodePlugin.reset(ampoolnew(MemoryPoolKind::Engine, AmbisonicPanningNode));
+        sAttenuationNodePlugin.reset(ampoolnew(MemoryPoolKind::Engine, AttenuationNode));
+        sNearFieldEffectNodePlugin.reset(ampoolnew(MemoryPoolKind::Engine, NearFieldEffectNode));
+        sOcclusionNodePlugin.reset(ampoolnew(MemoryPoolKind::Engine, OcclusionNode));
+        sStereoMixerNodePlugin.reset(ampoolnew(MemoryPoolKind::Engine, StereoMixerNode));
+        sStereoPanningNodePlugin.reset(ampoolnew(MemoryPoolKind::Engine, StereoPanningNode));
 
         return true;
     }
@@ -375,6 +394,15 @@ namespace SparkyStudios::Audio::Amplitude
         sLofiFilterPlugin.reset(nullptr);
         sRobotizeFilterPlugin.reset(nullptr);
         sWaveShaperFilterPlugin.reset(nullptr);
+        //
+        sAmbisonicBinauralDecoderNodePlugin.reset(nullptr);
+        sAmbisonicMixerNodePlugin.reset(nullptr);
+        sAmbisonicPanningNodePlugin.reset(nullptr);
+        sAttenuationNodePlugin.reset(nullptr);
+        sNearFieldEffectNodePlugin.reset(nullptr);
+        sOcclusionNodePlugin.reset(nullptr);
+        sStereoMixerNodePlugin.reset(nullptr);
+        sStereoPanningNodePlugin.reset(nullptr);
 
         return true;
     }
@@ -564,6 +592,7 @@ namespace SparkyStudios::Audio::Amplitude
         Resampler::LockRegistry();
         Filter::LockRegistry();
         Fader::LockRegistry();
+        Node::LockRegistry();
 
         _frameThreadMutex = Thread::CreateMutex(500);
 
@@ -592,6 +621,19 @@ namespace SparkyStudios::Audio::Amplitude
             return false;
         }
 
+        // Load the pipeline from the specified file
+        if (const AmOsString& pipelineFilePath =
+                _fs->ResolvePath(_fs->Join({ AM_OS_STRING("pipelines"), AM_STRING_TO_OS_STRING(config->mixer()->pipeline()->c_str()) }));
+            !_state->pipeline.LoadDefinitionFromPath(pipelineFilePath, _state))
+        {
+            amLogCritical("Could not load the pipeline asset.");
+            Deinitialize();
+            return false;
+        }
+
+        // Load the panning mode
+        _state->panning_mode = static_cast<ePanningMode>(config->mixer()->panning_mode());
+
         // Initialize audio mixer
         if (!_state->mixer.Init(config))
         {
@@ -599,9 +641,6 @@ namespace SparkyStudios::Audio::Amplitude
             Deinitialize();
             return false;
         }
-
-        // Load the panning mode
-        _state->panning_mode = static_cast<ePanningMode>(config->mixer()->panning_mode());
 
         // Initialize the channel internal data.
         InitializeChannelFreeLists(
@@ -672,7 +711,7 @@ namespace SparkyStudios::Audio::Amplitude
         _state->doppler_factor = config->game()->doppler_factor();
 
         // Samples per streams
-        _state->samples_per_stream = config->output()->buffer_size() / config->output()->channels();
+        _state->samples_per_stream = config->output()->buffer_size() / 2;
 
         // Save obstruction/occlusion configurations
         _state->obstruction_config.Init(config->game()->obstruction());
@@ -731,6 +770,7 @@ namespace SparkyStudios::Audio::Amplitude
         Resampler::UnlockRegistry();
         Filter::UnlockRegistry();
         Fader::UnlockRegistry();
+        Node::UnlockRegistry();
 
         return true;
     }
@@ -1654,6 +1694,11 @@ namespace SparkyStudios::Audio::Amplitude
         return pair == _state->effect_id_map.end() ? nullptr : GetEffectHandle(pair->second);
     }
 
+    PipelineHandle EngineImpl::GetPipelineHandle() const
+    {
+        return &_state->pipeline;
+    }
+
     void EngineImpl::SetMasterGain(const AmReal32 gain) const
     {
         _state->master_gain = gain;
@@ -2025,7 +2070,7 @@ namespace SparkyStudios::Audio::Amplitude
         if (_state->paused)
             return;
 
-        // Executre pending frame callbacks.
+        // Execute pending frame callbacks.
         Thread::LockMutex(_frameThreadMutex);
         {
             while (!_nextFrameCallbacks.empty())
@@ -2084,7 +2129,6 @@ namespace SparkyStudios::Audio::Amplitude
                 return a.Priority() < b.Priority();
             });
 
-        // No point in updating which channels are real and virtual when paused.
         UpdateRealChannels(&_state->playing_channel_list, &_state->real_channel_free_list, &_state->virtual_channel_free_list);
 
         for (AmSize i = 0; i < _state->running_events.size(); ++i)

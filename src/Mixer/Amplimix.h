@@ -80,6 +80,7 @@ namespace SparkyStudios::Audio::Amplitude
         _Atomic(AmReal32) baseSampleRateRatio; // base sample rate ratio
 
         AudioConverter* dataConverter; // miniaudio resampler & channel converter
+        PipelineInstance* pipeline; // pipeline for this layer
 
         /**
          * @brief Resets the layer.
@@ -233,7 +234,7 @@ namespace SparkyStudios::Audio::Amplitude
         AmplimixLayerImpl _layers[kAmplimixLayersCount];
         AmUInt64 _remainingFrames;
 
-        AmUniquePtr<MemoryPoolKind::Amplimix, Pipeline> _pipeline = nullptr;
+        Pipeline* _pipeline = nullptr;
 
         DeviceDescription _device;
 

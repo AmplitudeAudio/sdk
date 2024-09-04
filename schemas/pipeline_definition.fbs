@@ -1,0 +1,49 @@
+// Copyright (c) 2024-present Sparky Studios. All rights reserved.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+include "common.fbs";
+
+namespace SparkyStudios.Audio.Amplitude;
+
+table PipelineNodeDefinition {
+  /// The node ID. This value should be unique across all nodes of the same pipeline.
+  id:uint64 = 0;
+
+  /// The name of the node to instantiate. Make sure that name is available in the pipeline
+  /// nodes registry.
+  name:string;
+
+  /// The array of nodes this node will consume. Only Mixer nodes may consume more than one input.
+  /// Consumer nodes can only consume one input, so there must be only one value in the array for these nodes.
+  /// Producer nodes doesn't consume inputs, so the array must be empty for these nodes.
+  consume:[uint];
+}
+
+/// A pipeline tells Amplimix how to process audio data before to send it to the audio device.
+/// Pipeline nodes must be registered within the engine before to be used in a pipeline asset.
+table PipelineDefinition {
+  /// The unique ID for this pipeline.
+  id:uint64 = 0;
+
+  /// The name of this pipeline.
+  name:string;
+
+  /// The list of nodes in this pipeline
+  nodes:[PipelineNodeDefinition];
+}
+
+root_type PipelineDefinition;
+
+file_identifier "AMPL";
+file_extension "ampipeline";

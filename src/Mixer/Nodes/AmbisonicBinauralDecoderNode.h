@@ -14,28 +14,31 @@
 
 #pragma once
 
-#ifndef _AM_IMPLEMENTATION_MIXER_NODES__NODE_H
-#define _AM_IMPLEMENTATION_MIXER_NODES__NODE_H
+#ifndef _AM_IMPLEMENTATION_MIXER_NODES_AMBISONIC_BINAURAL_DECODER_NODE_H
+#define _AM_IMPLEMENTATION_MIXER_NODES_AMBISONIC_BINAURAL_DECODER_NODE_H
 
 #include <SparkyStudios/Audio/Amplitude/Core/Memory.h>
 #include <SparkyStudios/Audio/Amplitude/Mixer/Node.h>
 
 #include <Ambisonics/AmbisonicBinauralizer.h>
 #include <HRTF/HRIRSphere.h>
+#include <Mixer/Pipeline.h>
 
 namespace SparkyStudios::Audio::Amplitude
 {
     class AmbisonicBinauralDecoderNodeInstance final : public ProcessorNodeInstance
     {
     public:
-        AmbisonicBinauralDecoderNodeInstance(AmObjectID id, const Pipeline* pipeline, const HRIRSphere* hrir);
+        AmbisonicBinauralDecoderNodeInstance(const HRIRSphere* hrir);
 
-        AudioBuffer Process(const AudioBuffer& input) override;
+        const AudioBuffer* Process(const AudioBuffer* input) override;
 
     private:
         const HRIRSphere* _hrirSphere;
-        std::map<AmObjectID, AmbisonicBinauralizer> _binauralizers;
-        std::map<AmObjectID, AmbisonicDecoder> _decoders;
+        AmbisonicBinauralizer _binauralizer;
+        AmbisonicDecoder _decoder;
+
+        AudioBuffer _output;
     };
 
     class AmbisonicBinauralDecoderNode final : public Node
@@ -43,9 +46,9 @@ namespace SparkyStudios::Audio::Amplitude
     public:
         AmbisonicBinauralDecoderNode();
 
-        [[nodiscard]] AM_INLINE NodeInstance* CreateInstance(AmObjectID id, const Pipeline* pipeline) const override
+        [[nodiscard]] AM_INLINE NodeInstance* CreateInstance() const override
         {
-            return ampoolnew(MemoryPoolKind::Amplimix, AmbisonicBinauralDecoderNodeInstance, id, pipeline, &_hrirSphere);
+            return ampoolnew(MemoryPoolKind::Amplimix, AmbisonicBinauralDecoderNodeInstance, &_hrirSphere);
         }
 
         void DestroyInstance(NodeInstance* instance) const override
@@ -58,4 +61,4 @@ namespace SparkyStudios::Audio::Amplitude
     };
 } // namespace SparkyStudios::Audio::Amplitude
 
-#endif // _AM_IMPLEMENTATION_MIXER_NODES__NODE_H
+#endif // _AM_IMPLEMENTATION_MIXER_NODES_AMBISONIC_BINAURAL_DECODER_NODE_H

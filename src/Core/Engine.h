@@ -108,6 +108,7 @@ namespace SparkyStudios::Audio::Amplitude
         [[nodiscard]] EffectHandle GetEffectHandle(const AmString& name) const override;
         [[nodiscard]] EffectHandle GetEffectHandle(AmEffectID id) const override;
         [[nodiscard]] EffectHandle GetEffectHandleFromFile(const AmOsString& filename) const override;
+        [[nodiscard]] PipelineHandle GetPipelineHandle() const override;
         void SetMasterGain(AmReal32 gain) const override;
         [[nodiscard]] AmReal32 GetMasterGain() const override;
         void SetMute(bool mute) const override;

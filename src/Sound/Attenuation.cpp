@@ -19,15 +19,13 @@
 namespace SparkyStudios::Audio::Amplitude
 {
     AttenuationImpl::AttenuationImpl()
-        : _name()
-        , _maxDistance(0.0f)
+        : _maxDistance(0.0f)
         , _shape(nullptr)
         , _gainCurve()
     {}
 
     AttenuationImpl::~AttenuationImpl()
     {
-        _name.clear();
         _maxDistance = 0.0f;
 
         _shape = nullptr;
@@ -51,7 +49,7 @@ namespace SparkyStudios::Audio::Amplitude
     bool AttenuationImpl::LoadDefinition(const AttenuationDefinition* definition, EngineInternalState* state)
     {
         m_id = definition->id();
-        _name = definition->name()->str();
+        m_name = definition->name()->str();
 
         _maxDistance = definition->max_distance();
 

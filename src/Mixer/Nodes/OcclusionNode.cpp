@@ -44,34 +44,28 @@ namespace SparkyStudios::Audio::Amplitude
         return std::max(0.0f, 1.0f - directivity * factor);
     }
 
-    OcclusionNodeInstance::OcclusionNodeInstance(AmObjectID id, const Pipeline* pipeline)
-        : ProcessorNodeInstance(id, pipeline)
-        , _filter()
-        , _currentOcclusions()
-        , _occlusionFilters()
-    {}
+    OcclusionNodeInstance::OcclusionNodeInstance()
+        : _filter()
+        , _currentOcclusion(0)
+        , _occlusionFilter(nullptr)
+    {
+        _occlusionFilter = _filter.CreateInstance();
+    }
 
     OcclusionNodeInstance::~OcclusionNodeInstance()
     {
-        for (const auto& filter : _occlusionFilters | std::views::values)
-            _filter.DestroyInstance(filter);
-
-        _occlusionFilters.clear();
-        _currentOcclusions.clear();
+        _filter.DestroyInstance(_occlusionFilter);
+        _occlusionFilter = nullptr;
     }
 
-    AudioBuffer OcclusionNodeInstance::Process(const AudioBuffer& input)
+    const AudioBuffer* OcclusionNodeInstance::Process(const AudioBuffer* input)
     {
-        AudioBuffer output = input.Clone();
-
         const auto* layer = GetLayer();
-        if (layer == nullptr)
-            return output;
 
         const AmReal32 occlusion = layer->GetOcclusion();
 
-        const auto frames = input.GetFrameCount();
-        const auto channels = input.GetChannelCount();
+        const auto frames = input->GetFrameCount();
+        const auto channels = input->GetChannelCount();
         const auto sampleRate = layer->GetSoundFormat().GetSampleRate();
 
         const AmUInt64 soundId = layer->GetId();
@@ -93,36 +87,31 @@ namespace SparkyStudios::Audio::Amplitude
             soundDirectivity = CalculateDirectivity(entity.GetDirectivity(), entity.GetDirectivitySharpness(), entityDirection);
         }
 
-        _currentOcclusions[soundId] = AM_Lerp(occlusion, kOcclusionSmoothingCoefficient, _currentOcclusions[soundId]);
+        _currentOcclusion = AM_Lerp(occlusion, kOcclusionSmoothingCoefficient, _currentOcclusion);
 
-        const AmReal32 coefficient =
-            CalculateOcclusionFilterCoefficient(listenerDirectivity * soundDirectivity, _currentOcclusions[soundId]);
+        const AmReal32 coefficient = CalculateOcclusionFilterCoefficient(listenerDirectivity * soundDirectivity, _currentOcclusion);
 
         const auto& lpfCurve = Engine::GetInstance()->GetOcclusionCoefficientCurve();
         const auto& gainCurve = Engine::GetInstance()->GetOcclusionGainCurve();
 
+        _output = AudioBuffer(frames, channels);
+
         if (const AmReal32 lpf = lpfCurve.Get(coefficient); lpf > 0)
         {
-            if (!_occlusionFilters.contains(soundId))
-            {
-                _filter.Initialize(lpf);
-                _occlusionFilters[soundId] = _filter.CreateInstance();
-            }
-
             // Update the filter coefficients
-            _occlusionFilters[soundId]->SetParameter(MonoPoleFilter::ATTRIBUTE_COEFFICIENT, AM_CLAMP(lpf, 0.0f, 1.0f));
+            _occlusionFilter->SetParameter(MonoPoleFilter::ATTRIBUTE_COEFFICIENT, AM_CLAMP(lpf, 0.0f, 1.0f));
 
             // Apply Low Pass Filter
-            _occlusionFilters[soundId]->Process(input, output, frames, sampleRate);
+            _occlusionFilter->Process(*input, _output, frames, sampleRate);
         }
 
-        const AmReal32 gain = gainCurve.Get(_currentOcclusions[soundId]);
+        const AmReal32 gain = gainCurve.Get(_currentOcclusion);
 
         // Apply Gain
-        for (AmSize c = 0; c < output.GetChannelCount(); ++c)
-            Gain::ApplyReplaceConstantGain(gain, output[c], 0, output[c], 0, frames);
+        for (AmSize c = 0; c < channels; ++c)
+            Gain::ApplyReplaceConstantGain(gain, input->GetChannel(c), 0, _output[c], 0, frames);
 
-        return output;
+        return &_output;
     }
 
     OcclusionNode::OcclusionNode()
