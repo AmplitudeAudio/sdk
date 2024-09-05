@@ -24,7 +24,7 @@ namespace SparkyStudios::Audio::Amplitude
         : _hrirSphere(hrirSphere)
     {
         const ePanningMode mode = Engine::GetInstance()->GetPanningMode();
-        const AmUInt32 order = AM_MIN(mode, 1);
+        const AmUInt32 order = AM_MAX(static_cast<AmUInt32>(mode), 1);
 
         if (mode == ePanningMode_Stereo)
             _decoder.Configure(order, true, eSpeakersPreset_Stereo);
@@ -40,7 +40,7 @@ namespace SparkyStudios::Audio::Amplitude
         const auto* layer = GetLayer();
 
         const ePanningMode mode = Engine::GetInstance()->GetPanningMode();
-        const AmUInt32 order = AM_MIN(mode, 1);
+        const AmUInt32 order = AM_MAX(static_cast<AmUInt32>(mode), 1);
 
         BFormat soundField;
         soundField.Configure(order, true, input->GetFrameCount());

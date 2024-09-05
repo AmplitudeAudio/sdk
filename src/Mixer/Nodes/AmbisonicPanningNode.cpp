@@ -14,18 +14,15 @@
 
 #include <SparkyStudios/Audio/Amplitude/Mixer/Amplimix.h>
 
-#include <Ambisonics/BFormat.h>
 #include <Core/EngineInternalState.h>
 #include <Mixer/Nodes/AmbisonicPanningNode.h>
-
-#include "engine_config_definition_generated.h"
 
 namespace SparkyStudios::Audio::Amplitude
 {
     AmbisonicPanningNodeInstance::AmbisonicPanningNodeInstance()
     {
         const ePanningMode mode = Engine::GetInstance()->GetPanningMode();
-        const AmUInt32 order = AM_MIN(mode, 1);
+        const AmUInt32 order = AM_MAX(static_cast<AmUInt32>(mode), 1);
 
         _source.Configure(order, true);
     }
@@ -45,7 +42,7 @@ namespace SparkyStudios::Audio::Amplitude
         const auto& listenerSpaceSourcePosition = listener.GetInverseMatrix() * AM_V4V(layer->GetLocation(), 1.0f);
 
         const ePanningMode mode = Engine::GetInstance()->GetPanningMode();
-        const AmUInt32 order = AM_MIN(mode, 1);
+        const AmUInt32 order = AM_MAX(static_cast<AmUInt32>(mode), 1);
 
         _soundField.Configure(order, true, input->GetFrameCount());
 
