@@ -49,6 +49,7 @@ namespace SparkyStudios::Audio::Amplitude
         OutputNodeInstance* _outputNode;
 
         const AmplimixLayer* _layer;
+        AudioBuffer _inputBuffer;
     };
 
     class PipelineImpl final

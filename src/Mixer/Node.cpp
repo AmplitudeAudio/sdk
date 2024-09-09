@@ -17,6 +17,7 @@
 #include <SparkyStudios/Audio/Amplitude/Mixer/Node.h>
 #include <SparkyStudios/Audio/Amplitude/Mixer/Pipeline.h>
 
+#include <Sound/Effect.h>
 #include <Utils/Utils.h>
 
 namespace SparkyStudios::Audio::Amplitude
@@ -194,13 +195,23 @@ namespace SparkyStudios::Audio::Amplitude
         : _buffer(nullptr)
     {}
 
-    void InputNodeInstance::SetInput(const AudioBuffer* buffer)
+    void InputNodeInstance::SetInput(AudioBuffer* buffer)
     {
         _buffer = buffer;
+
+        const auto* effect = static_cast<const EffectInstanceImpl*>(GetLayer()->GetEffect());
+        if (effect != nullptr)
+            _filter = effect->GetFilter();
     }
 
     const AudioBuffer* InputNodeInstance::Provide()
     {
+        if (_buffer == nullptr)
+            return nullptr;
+
+        if (_filter != nullptr)
+            _filter->Process(*_buffer, *_buffer, _buffer->GetFrameCount(), GetLayer()->GetSampleRate());
+
         return _buffer;
     }
 

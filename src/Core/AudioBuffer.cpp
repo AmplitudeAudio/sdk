@@ -157,7 +157,7 @@ namespace SparkyStudios::Audio::Amplitude
         AMPLITUDE_ASSERT(channel._isEnabled);
         AMPLITUDE_ASSERT(_frameCount <= channel._frameCount);
 
-        PointwiseMultiply(_begin, channel._begin, _begin, _frameCount);
+        PointWiseMultiply(_begin, channel._begin, _begin, _frameCount);
 
         return *this;
     }

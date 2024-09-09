@@ -19,6 +19,7 @@
 
 #include <SparkyStudios/Audio/Amplitude/Core/AudioBuffer.h>
 #include <SparkyStudios/Audio/Amplitude/Core/Common.h>
+#include <SparkyStudios/Audio/Amplitude/DSP/Filter.h>
 
 namespace SparkyStudios::Audio::Amplitude
 {
@@ -261,7 +262,7 @@ namespace SparkyStudios::Audio::Amplitude
          *
          * @param buffer The buffer to set as the input.
          */
-        void SetInput(const AudioBuffer* buffer);
+        void SetInput(AudioBuffer* buffer);
 
         /**
          * @copydoc ProviderNodeInstance::Provide()
@@ -274,7 +275,8 @@ namespace SparkyStudios::Audio::Amplitude
         void Reset() override;
 
     private:
-        const AudioBuffer* _buffer;
+        AudioBuffer* _buffer;
+        FilterInstance* _filter;
     };
 
     /**

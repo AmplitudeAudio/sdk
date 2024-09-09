@@ -24,6 +24,7 @@
 namespace SparkyStudios::Audio::Amplitude
 {
     class FilterInstance;
+    class EffectInstance;
 
     /**
      * @brief Amplitude Effect.
@@ -41,6 +42,20 @@ namespace SparkyStudios::Audio::Amplitude
          * @brief Updates the effect parameters on each frames.
          */
         virtual void Update() = 0;
+
+        /**
+         * @brief Creates an instance of this effect.
+         *
+         * @return The effect instance.
+         */
+        [[nodiscard]] virtual EffectInstance* CreateInstance() const = 0;
+
+        /**
+         * @brief Destroys an instance of this effect.
+         *
+         * @param instance The effect instance to delete.
+         */
+        virtual void DestroyInstance(EffectInstance* instance) const = 0;
     };
 
     /**

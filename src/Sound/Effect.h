@@ -47,18 +47,14 @@ namespace SparkyStudios::Audio::Amplitude
         ~EffectImpl() override;
 
         /**
-         * @brief Creates an instance of this effect.
-         *
-         * @return The effect instance.
+         * @copydoc Effect::CreateInstance
          */
-        [[nodiscard]] EffectInstance* CreateInstance() const;
+        [[nodiscard]] EffectInstance* CreateInstance() const override;
 
         /**
-         * @brief Destroys an instance of this effect.
-         *
-         * @param instance The effect instance to delete.
+         * @copydoc Effect::DestroyInstance
          */
-        void DestroyInstance(EffectInstance* instance) const;
+        void DestroyInstance(EffectInstance* instance) const override;
 
         /**
          * @copydoc Asset::GetId

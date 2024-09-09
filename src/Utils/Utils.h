@@ -270,7 +270,7 @@ namespace SparkyStudios::Audio::Amplitude
             output[i] += input[i] * scalar;
     }
 
-    AM_INLINE void PointwiseMultiply(const AmReal32* inputA, const AmReal32* inputB, AmReal32* output, AmSize length)
+    AM_INLINE void PointWiseMultiply(const AmReal32* inputA, const AmReal32* inputB, AmReal32* output, AmSize length)
     {
         AmSize remaining = length;
 
@@ -291,6 +291,30 @@ namespace SparkyStudios::Audio::Amplitude
 
         for (AmSize i = length - remaining; i < length; i++)
             output[i] = inputA[i] * inputB[i];
+    }
+
+    AM_INLINE void PointWiseMultiplyAccumulate(const AmReal32* inputA, const AmReal32* inputB, AmReal32* output, AmSize length)
+    {
+        AmSize remaining = length;
+
+#if defined(AM_SIMD_INTRINSICS)
+        const AmSize end = GetNumSimdChunks(length);
+        constexpr AmSize blockSize = GetSimdBlockSize();
+        remaining = remaining - end;
+
+        for (AmSize i = 0; i < end; i += blockSize)
+        {
+            const auto ba = xsimd::load_aligned(inputA + i);
+            const auto bb = xsimd::load_aligned(inputB + i);
+            auto bc = xsimd::load_aligned(output + i);
+
+            auto res = xsimd::fma(ba, bb, bc);
+            res.store_aligned(output + i);
+        }
+#endif
+
+        for (AmSize i = length - remaining; i < length; i++)
+            output[i] += inputA[i] * inputB[i];
     }
 
     AM_INLINE void GenerateHannWindow(bool fullWindow, AmSize windowLength, AudioBufferChannel* buffer)

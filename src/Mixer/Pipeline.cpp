@@ -40,8 +40,11 @@ namespace SparkyStudios::Audio::Amplitude
 
     void PipelineInstanceImpl::Execute(const AudioBuffer& in, AudioBuffer& out)
     {
+        // Copy the input buffer content
+        _inputBuffer = in;
+
         // Set the input and output buffers for the pipeline
-        _inputNode->SetInput(&in);
+        _inputNode->SetInput(&_inputBuffer);
         _outputNode->SetOutput(&out);
 
         // Consume data from the output node.
