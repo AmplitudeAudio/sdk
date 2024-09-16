@@ -150,6 +150,9 @@ namespace SparkyStudios::Audio::Amplitude
         if (deltaLength == 0.0f)
             return 1.0f;
 
+        if (dopplerFactor < kEpsilon)
+            return 0.0f;
+
         AmReal32 vss = AM_Dot(sourceVelocity, locationDelta) / deltaLength;
         AmReal32 vls = AM_Dot(listenerVelocity, locationDelta) / deltaLength;
 
@@ -157,7 +160,7 @@ namespace SparkyStudios::Audio::Amplitude
         vss = AM_MIN(vss, maxSpeed);
         vls = AM_MIN(vls, maxSpeed);
 
-        return (soundSpeed - vls * dopplerFactor) / (soundSpeed - vss * dopplerFactor);
+        return (soundSpeed + vls * dopplerFactor) / (soundSpeed + vss * dopplerFactor);
     }
 
     /**
