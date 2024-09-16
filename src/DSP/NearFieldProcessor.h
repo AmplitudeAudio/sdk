@@ -28,6 +28,7 @@ namespace SparkyStudios::Audio::Amplitude
     {
     public:
         NearFieldProcessor(AmUInt32 sampleRate, AmUInt32 framesCount);
+        ~NearFieldProcessor();
 
         void Process(const AudioBufferChannel& in, AudioBufferChannel& out, bool isHrtfEnabled);
 

@@ -52,6 +52,21 @@ namespace SparkyStudios::Audio::Amplitude
         _highPassFilter->SetParameter(BiquadResonantFilter::ATTRIBUTE_FREQUENCY, kCrossOverFrequencyHz);
     }
 
+    NearFieldProcessor::~NearFieldProcessor()
+    {
+        if (_lowPassFilter != nullptr)
+        {
+            Filter::Destruct("BiquadResonant", _lowPassFilter);
+            _lowPassFilter = nullptr;
+        }
+
+        if (_highPassFilter != nullptr)
+        {
+            Filter::Destruct("BiquadResonant", _highPassFilter);
+            _highPassFilter = nullptr;
+        }
+    }
+
     void NearFieldProcessor::Process(const AudioBufferChannel& in, AudioBufferChannel& out, bool isHrtfEnabled)
     {
         // Only mono input and output channels are supported.
