@@ -63,6 +63,7 @@
 #include <DSP/Filters/FlangerFilter.h>
 #include <DSP/Filters/FreeverbFilter.h>
 #include <DSP/Filters/LofiFilter.h>
+#include <DSP/Filters/MonoPoleFilter.h>
 #include <DSP/Filters/RobotizeFilter.h>
 #include <DSP/Filters/WaveShaperFilter.h>
 
@@ -76,6 +77,7 @@
 #include <Mixer/Nodes/AttenuationNode.h>
 #include <Mixer/Nodes/NearFieldEffectNode.h>
 #include <Mixer/Nodes/OcclusionNode.h>
+#include <Mixer/Nodes/ReflectionsNode.h>
 #include <Mixer/Nodes/StereoMixerNode.h>
 #include <Mixer/Nodes/StereoPanningNode.h>
 

@@ -18,6 +18,7 @@ namespace SparkyStudios::Audio::Amplitude
 {
     Delay::Delay(AmSize maxDelay, AmSize framesCount)
         : _maxDelay(maxDelay)
+        , _buffer(nullptr)
         , _framesCount(framesCount)
         , _writePos(0)
     {
@@ -37,7 +38,7 @@ namespace SparkyStudios::Audio::Amplitude
 
         if (_buffer == nullptr)
         {
-            _buffer.reset(ampoolnew(MemoryPoolKind::Filtering, AudioBuffer, newFramesCount, 1));
+            _buffer.reset(ampoolnew(MemoryPoolKind::Filtering, AudioBuffer, newFramesCount, kAmMonoChannelCount));
             _buffer->Clear();
             return;
         }
@@ -45,10 +46,10 @@ namespace SparkyStudios::Audio::Amplitude
         AudioBufferChannel* channel = &_buffer->GetChannel(0);
         const AmSize oldFramesCount = _buffer->GetFrameCount();
 
-        if (newFramesCount > oldFramesCount)
+        if (_maxDelay > oldFramesCount - _framesCount)
         {
             AmUniquePtr<MemoryPoolKind::Filtering, AudioBuffer> newBuffer(
-                ampoolnew(MemoryPoolKind::Filtering, AudioBuffer, newFramesCount, 1));
+                ampoolnew(MemoryPoolKind::Filtering, AudioBuffer, newFramesCount, kAmMonoChannelCount));
             newBuffer->Clear();
 
             std::copy(channel->begin() + _writePos, channel->end(), newBuffer->GetChannel(0).begin());
@@ -87,7 +88,7 @@ namespace SparkyStudios::Audio::Amplitude
 
         // Record the remaining space in the _buffer after the write cursor.
         const AmSize remainingSizeWrite = delayBufferSize - _writePos;
-        AudioBufferChannel* delayChannel = &(*_buffer)[0];
+        AudioBufferChannel* delayChannel = &_buffer->GetChannel(0);
 
         // Copy the channel into the delay line.
         if (remainingSizeWrite >= _framesCount)

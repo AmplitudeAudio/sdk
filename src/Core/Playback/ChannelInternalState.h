@@ -134,6 +134,18 @@ namespace SparkyStudios::Audio::Amplitude
             return _activeListener;
         }
 
+        void SetRoom(const Room& room);
+
+        AM_INLINE Room& GetRoom()
+        {
+            return _room;
+        }
+
+        [[nodiscard]] AM_INLINE const Room& GetRoom() const
+        {
+            return _room;
+        }
+
         // Get the current state of this channel (playing, stopped, paused, etc.). This
         // is tracked manually because not all ChannelInternalStates are backed by
         // real channels.
@@ -329,6 +341,8 @@ namespace SparkyStudios::Audio::Amplitude
          */
         [[nodiscard]] AmReal32 GetDopplerFactor(AmListenerID listener) const;
 
+        [[nodiscard]] AmReal32 GetReflectionsGain(AmRoomID room) const;
+
         void HaltInternal();
 
         /**
@@ -356,6 +370,9 @@ namespace SparkyStudios::Audio::Amplitude
 
         // The node that tracks the list of sounds rendered by a given listener.
         fplutil::intrusive_list_node listener_node;
+
+        // The node that tracks the list of sounds playing in a given room.
+        fplutil::intrusive_list_node room_node;
 
     private:
         bool PlaySwitchContainerStateUpdate(const std::vector<SwitchContainerItem>& previous, const std::vector<SwitchContainerItem>& next);
@@ -395,6 +412,9 @@ namespace SparkyStudios::Audio::Amplitude
         // The listener currently rendering this channel.
         Listener _activeListener;
 
+        // The room in which this channel is playing.
+        Room _room;
+
         // The gain set by the user.
         AmReal32 _userGain;
 
@@ -416,6 +436,7 @@ namespace SparkyStudios::Audio::Amplitude
         AmUInt64 _channelStateId;
 
         std::map<AmListenerID, AmReal32> _dopplerFactors;
+        std::map<AmRoomID, AmReal32> _roomGains;
 
         std::map<ChannelEvent, ChannelEventListener*> _eventsMap;
     };

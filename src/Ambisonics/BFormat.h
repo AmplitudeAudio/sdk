@@ -27,6 +27,7 @@ namespace SparkyStudios::Audio::Amplitude
     class BFormat final : public AmbisonicComponent
     {
         friend class AmbisonicSource;
+        friend class AmbisonicOrientationProcessor;
 
     public:
         BFormat();

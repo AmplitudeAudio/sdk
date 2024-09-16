@@ -50,6 +50,7 @@ namespace SparkyStudios::Audio::Amplitude
     typedef AmObjectID          AmRtpcID;
     typedef AmObjectID          AmEffectID;
     typedef AmObjectID          AmEnvironmentID;
+    typedef AmObjectID          AmRoomID;
 
     typedef AmUInt8             AmResult;
     typedef AmUInt64            AmHandle;

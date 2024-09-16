@@ -66,7 +66,49 @@ namespace SparkyStudios::Audio::Amplitude
     constexpr AmUInt32 kAmMaxSupportedAmbisonicOrder = 3;
 
     /**
-     * @brief The maximum supported channel count for an ambisonic audio source.
+     * @brief The number of surfaces in a room.
+     *
+     * @note Only cube-shaped rooms are supported.
+     */
+    constexpr AmSize kAmRoomSurfaceCount = 6;
+
+    /**
+     * @brief The number of channels in a mono audio source.
+     */
+    constexpr AmSize kAmMonoChannelCount = 1;
+
+    /**
+     * @brief The number of channels in a stereo audio source.
+     */
+    constexpr AmSize kAmStereoChannelCount = 2;
+
+    /**
+     * @brief The number of channels in a 5.1 surround audio source.
+     */
+    constexpr AmSize kAm51SurroundChannelCount = 6;
+
+    /**
+     * @brief The number of channels in a 7.1 surround audio source.
+     */
+    constexpr AmSize kAm71SurroundChannelCount = 8;
+
+    /**
+     * @brief The number of channels in first-order ambisonic source.
+     */
+    constexpr AmSize kAmFirstOrderAmbisonicChannelCount = 4;
+
+    /**
+     * @brief The number of channels in second-order ambisonic source.
+     */
+    constexpr AmSize kAmSecondOrderAmbisonicChannelCount = 9;
+
+    /**
+     * @brief The number of channels in third-order ambisonic source.
+     */
+    constexpr AmSize kAmThirdOrderAmbisonicChannelCount = 16;
+
+    /**
+     * @brief The maximum supported channel count for an ambisonic source.
      */
     constexpr AmUInt32 kAmMaxSupportedChannelCount = (kAmMaxSupportedAmbisonicOrder + 1) * (kAmMaxSupportedAmbisonicOrder + 1);
 } // namespace SparkyStudios::Audio::Amplitude

@@ -29,6 +29,7 @@
 #include <SparkyStudios/Audio/Amplitude/Core/Listener.h>
 #include <SparkyStudios/Audio/Amplitude/Core/Playback/Bus.h>
 #include <SparkyStudios/Audio/Amplitude/Core/Playback/Channel.h>
+#include <SparkyStudios/Audio/Amplitude/Core/Room.h>
 #include <SparkyStudios/Audio/Amplitude/Core/Version.h>
 
 #include <SparkyStudios/Audio/Amplitude/Mixer/Amplimix.h>
@@ -667,6 +668,43 @@ namespace SparkyStudios::Audio::Amplitude
          * @param id The ID of the game environment to be removed.
          */
         virtual void RemoveEnvironment(AmEnvironmentID id) const = 0;
+
+#pragma endregion
+
+#pragma region Rooms Management
+
+        /**
+         * @brief Initializes and return a @c Room.
+         *
+         * @param id The room ID.
+         *
+         * @return An initialized @c Room.
+         */
+        [[nodiscard]] virtual Room AddRoom(AmRoomID id) const = 0;
+
+        /**
+         * @brief Returns the @c Room with the given ID.
+         *
+         * @param id The room ID.
+         *
+         * @return An initialized @c Room if that one has been registered before,
+         * otherwise an uninitialized @c Room.
+         */
+        [[nodiscard]] virtual Room GetRoom(AmRoomID id) const = 0;
+
+        /**
+         * @brief Removes a @c Room.
+         *
+         * @param room The room to be removed.
+         */
+        virtual void RemoveRoom(const Room* room) const = 0;
+
+        /**
+         * @brief Removes a @c Room given its ID.
+         *
+         * @param id The ID of the room to be removed.
+         */
+        virtual void RemoveRoom(AmRoomID id) const = 0;
 
 #pragma endregion
 

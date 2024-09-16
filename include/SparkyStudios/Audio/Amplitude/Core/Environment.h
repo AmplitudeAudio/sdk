@@ -19,7 +19,6 @@
 
 #include <SparkyStudios/Audio/Amplitude/Core/Common.h>
 #include <SparkyStudios/Audio/Amplitude/Core/Entity.h>
-#include <SparkyStudios/Audio/Amplitude/Core/RefCounter.h>
 #include <SparkyStudios/Audio/Amplitude/Math/Shape.h>
 #include <SparkyStudios/Audio/Amplitude/Sound/Effect.h>
 
@@ -29,7 +28,7 @@ namespace SparkyStudios::Audio::Amplitude
 
     /**
      * @brief An Environment is a zone where every spatialized audio playing inside him got
-     * applied some effects, like reverb, echo, or gain.
+     * applied a specific effect.
      *
      * The Environment class is a lightweight reference to a EnvironmentInternalState object
      * which is managed by the Engine.

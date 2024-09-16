@@ -159,6 +159,7 @@ set(SA_SOURCE
     include/SparkyStudios/Audio/Amplitude/Core/Log.h
     include/SparkyStudios/Audio/Amplitude/Core/Memory.h
     include/SparkyStudios/Audio/Amplitude/Core/RefCounter.h
+    include/SparkyStudios/Audio/Amplitude/Core/Room.h
     include/SparkyStudios/Audio/Amplitude/Core/Thread.h
     include/SparkyStudios/Audio/Amplitude/Core/Version.h
     include/SparkyStudios/Audio/Amplitude/DSP/AudioConverter.h
@@ -246,6 +247,8 @@ set(SA_SOURCE
     src/Core/Asset.cpp
     src/Core/Asset.h
     src/Core/AudioBuffer.cpp
+    src/Core/AudioBufferCrossFader.cpp
+    src/Core/AudioBufferCrossFader.h
     src/Core/Codec.cpp
     src/Core/Common.cpp
     src/Core/DefaultPlugins.h
@@ -267,6 +270,9 @@ set(SA_SOURCE
     src/Core/Listener.cpp
     src/Core/Log.cpp
     src/Core/Memory.cpp
+    src/Core/Room.cpp
+    src/Core/RoomInternalState.cpp
+    src/Core/RoomInternalState.h
     src/Core/Thread.cpp
     src/Core/Version.cpp
 
@@ -307,6 +313,8 @@ set(SA_SOURCE
     src/DSP/Gain.h
     src/DSP/NearFieldProcessor.cpp
     src/DSP/NearFieldProcessor.h
+    src/DSP/ReflectionsProcessor.cpp
+    src/DSP/ReflectionsProcessor.h
     src/DSP/Resampler.cpp
 
     src/HRTF/HRIRSphere.cpp
@@ -344,6 +352,8 @@ set(SA_SOURCE
     src/Mixer/Nodes/NearFieldEffectNode.h
     src/Mixer/Nodes/OcclusionNode.cpp
     src/Mixer/Nodes/OcclusionNode.h
+    src/Mixer/Nodes/ReflectionsNode.cpp
+    src/Mixer/Nodes/ReflectionsNode.h
     src/Mixer/Nodes/StereoPanningNode.cpp
     src/Mixer/Nodes/StereoPanningNode.h
     src/Mixer/Nodes/StereoMixerNode.cpp

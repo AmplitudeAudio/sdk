@@ -48,6 +48,7 @@ namespace SparkyStudios::Audio::Amplitude
         AM_INLINE void SetOrientation(const Orientation& orientation)
         {
             _orientation = orientation;
+            Refresh();
         }
 
         [[nodiscard]] AM_INLINE const Orientation& GetOrientation() const

@@ -100,6 +100,7 @@ namespace SparkyStudios::Audio::Amplitude
         AmVec3 GetLocation() const override;
         Entity GetEntity() const override;
         Listener GetListener() const override;
+        Room GetRoom() const override;
         Channel GetChannel() const override;
         Bus GetBus() const override;
         SoundFormat GetSoundFormat() const override;

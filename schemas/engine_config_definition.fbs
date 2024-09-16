@@ -125,6 +125,9 @@ table GameSyncConfig {
   /// The number of environments to allocate.
   environments:uint = 64;
 
+  /// The number of rooms to allocate.
+  rooms:uint = 1024;
+
   /// The maximum speed of sound in the game.
   sound_speed:float = 333.0;
 

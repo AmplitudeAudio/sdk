@@ -29,6 +29,7 @@
 #include <cstring>
 #include <map>
 #include <memory>
+#include <numeric>
 #include <ranges>
 #include <set>
 #include <string>
@@ -51,13 +52,10 @@
 // Common defines
 
 // Define an invalid object handle
-#define AM_INVALID_HANDLE 0
+#define AM_INVALID_HANDLE nullptr
 
 // Check for handle validity
 #define AM_IS_VALID_HANDLE(handle) ((handle) != AM_INVALID_HANDLE)
-
-// Check for channels value validity
-#define AM_IS_VALID_CHANNELS_VALUE(channels) ((channels) == 1 || (channels) == 2 || (channels) == 4 || (channels) == 6 || (channels) == 8)
 
 // Clamps a value between a and b
 #define AM_CLAMP(v, a, b) (((v) < (a)) ? (a) : ((v) > (b)) ? (b) : (v))
@@ -262,7 +260,7 @@ namespace SparkyStudios::Audio::Amplitude
     /**
      * @brief Enumerates the list of available spatialization modes.
      */
-    enum eSpatialization
+    enum eSpatialization : AmUInt8
     {
         /**
          * @brief Disables spatialization.
@@ -296,7 +294,7 @@ namespace SparkyStudios::Audio::Amplitude
     /**
      * @brief Enumerates the list of available panning modes.
      */
-    enum ePanningMode
+    enum ePanningMode : AmUInt8
     {
         /**
          * @brief 2D stereo panning. This panning mode won't provide HRTF-related features.

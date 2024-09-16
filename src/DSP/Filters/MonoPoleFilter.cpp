@@ -23,6 +23,7 @@ namespace SparkyStudios::Audio::Amplitude
         , _previousSample(0.0f)
     {
         Initialize(MonoPoleFilter::ATTRIBUTE_LAST);
+        SetParameter(MonoPoleFilter::ATTRIBUTE_COEFFICIENT, parent->_coefficient);
     }
 
     AmAudioSample MonoPoleFilterInstance::ProcessSample(AmAudioSample sample, AmUInt16 channel, AmUInt32 sampleRate)

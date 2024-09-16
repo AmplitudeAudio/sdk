@@ -25,6 +25,7 @@
 #include <Core/ListenerInternalState.h>
 #include <Core/Playback/BusInternalState.h>
 #include <Core/Playback/ChannelInternalState.h>
+#include <Core/RoomInternalState.h>
 
 #include <Core/Event.h>
 #include <Mixer/Amplimix.h>
@@ -92,6 +93,9 @@ namespace SparkyStudios::Audio::Amplitude
     typedef std::vector<EnvironmentInternalState> EnvironmentStateVector;
     typedef fplutil::intrusive_list<EnvironmentInternalState> EnvironmentList;
 
+    typedef std::vector<RoomInternalState> RoomStateVector;
+    typedef fplutil::intrusive_list<RoomInternalState> RoomList;
+
     struct ObstructionOcclusionState
     {
         Curve lpf;
@@ -144,6 +148,9 @@ namespace SparkyStudios::Audio::Amplitude
             , environment_list(&EnvironmentInternalState::node)
             , environment_state_memory()
             , environment_state_free_list()
+            , room_list(&RoomInternalState::node)
+            , room_state_memory()
+            , room_state_free_list()
             , current_frame(0)
             , total_time(0.0)
             , listener_fetch_mode(eListenerFetchMode_None)
@@ -267,6 +274,11 @@ namespace SparkyStudios::Audio::Amplitude
         EnvironmentList environment_list;
         EnvironmentStateVector environment_state_memory;
         std::vector<EnvironmentInternalState*> environment_state_free_list;
+
+        // The list of rooms.
+        RoomList room_list;
+        RoomStateVector room_state_memory;
+        std::vector<RoomInternalState*> room_state_free_list;
 
         // The current frame, i.e. the number of times AdvanceFrame has been called.
         AmUInt64 current_frame;

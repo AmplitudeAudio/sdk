@@ -86,6 +86,7 @@ namespace SparkyStudios::Audio::Amplitude
     static AmUniquePtr<MemoryPoolKind::Engine, FlangerFilter> sFlangerFilterPlugin = nullptr;
     static AmUniquePtr<MemoryPoolKind::Engine, FreeverbFilter> sFreeverbFilterPlugin = nullptr;
     static AmUniquePtr<MemoryPoolKind::Engine, LofiFilter> sLofiFilterPlugin = nullptr;
+    static AmUniquePtr<MemoryPoolKind::Engine, MonoPoleFilter> sMonoPoleFilterPlugin = nullptr;
     static AmUniquePtr<MemoryPoolKind::Engine, RobotizeFilter> sRobotizeFilterPlugin = nullptr;
     static AmUniquePtr<MemoryPoolKind::Engine, WaveShaperFilter> sWaveShaperFilterPlugin = nullptr;
     // ---
@@ -95,6 +96,7 @@ namespace SparkyStudios::Audio::Amplitude
     static AmUniquePtr<MemoryPoolKind::Engine, AttenuationNode> sAttenuationNodePlugin = nullptr;
     static AmUniquePtr<MemoryPoolKind::Engine, NearFieldEffectNode> sNearFieldEffectNodePlugin = nullptr;
     static AmUniquePtr<MemoryPoolKind::Engine, OcclusionNode> sOcclusionNodePlugin = nullptr;
+    static AmUniquePtr<MemoryPoolKind::Engine, ReflectionsNode> sReflectionsNodePlugin = nullptr;
     static AmUniquePtr<MemoryPoolKind::Engine, StereoMixerNode> sStereoMixerNodePlugin = nullptr;
     static AmUniquePtr<MemoryPoolKind::Engine, StereoPanningNode> sStereoPanningNodePlugin = nullptr;
 
@@ -157,6 +159,30 @@ namespace SparkyStudios::Audio::Amplitude
         channel->Reset();
         FreeList* list = channel->IsReal() ? &state->real_channel_free_list : &state->virtual_channel_free_list;
         list->push_front(*channel);
+    }
+
+    void AssignBestRoom(ChannelInternalState* newChannel, const AmVec3& location, EngineInternalState* state)
+    {
+        RoomInternalState* bestRoom = nullptr;
+        AmReal32 minDistanceSquared = std::numeric_limits<AmReal32>::max();
+
+        for (auto&& room : state->room_list)
+        {
+            auto& shape = room.GetShape();
+
+            if (shape.Contains(location))
+            {
+                bestRoom = &room;
+                break;
+            }
+            else if (const AmReal32 distance = shape.GetShortestDistanceToEdge(location); distance < minDistanceSquared)
+            {
+                minDistanceSquared = distance;
+                bestRoom = &room;
+            }
+        }
+
+        newChannel->SetRoom(Room(bestRoom));
     }
 
     EngineImpl::EngineImpl()
@@ -343,6 +369,7 @@ namespace SparkyStudios::Audio::Amplitude
         sFlangerFilterPlugin.reset(ampoolnew(MemoryPoolKind::Engine, FlangerFilter));
         sFreeverbFilterPlugin.reset(ampoolnew(MemoryPoolKind::Engine, FreeverbFilter));
         sLofiFilterPlugin.reset(ampoolnew(MemoryPoolKind::Engine, LofiFilter));
+        sMonoPoleFilterPlugin.reset(ampoolnew(MemoryPoolKind::Engine, MonoPoleFilter));
         sRobotizeFilterPlugin.reset(ampoolnew(MemoryPoolKind::Engine, RobotizeFilter));
         sWaveShaperFilterPlugin.reset(ampoolnew(MemoryPoolKind::Engine, WaveShaperFilter));
         // ---
@@ -352,6 +379,7 @@ namespace SparkyStudios::Audio::Amplitude
         sAttenuationNodePlugin.reset(ampoolnew(MemoryPoolKind::Engine, AttenuationNode));
         sNearFieldEffectNodePlugin.reset(ampoolnew(MemoryPoolKind::Engine, NearFieldEffectNode));
         sOcclusionNodePlugin.reset(ampoolnew(MemoryPoolKind::Engine, OcclusionNode));
+        sReflectionsNodePlugin.reset(ampoolnew(MemoryPoolKind::Engine, ReflectionsNode));
         sStereoMixerNodePlugin.reset(ampoolnew(MemoryPoolKind::Engine, StereoMixerNode));
         sStereoPanningNodePlugin.reset(ampoolnew(MemoryPoolKind::Engine, StereoPanningNode));
 
@@ -391,6 +419,7 @@ namespace SparkyStudios::Audio::Amplitude
         sEqualizerFilterPlugin.reset(nullptr);
         sFlangerFilterPlugin.reset(nullptr);
         sFreeverbFilterPlugin.reset(nullptr);
+        sMonoPoleFilterPlugin.reset(nullptr);
         sLofiFilterPlugin.reset(nullptr);
         sRobotizeFilterPlugin.reset(nullptr);
         sWaveShaperFilterPlugin.reset(nullptr);
@@ -401,6 +430,7 @@ namespace SparkyStudios::Audio::Amplitude
         sAttenuationNodePlugin.reset(nullptr);
         sNearFieldEffectNodePlugin.reset(nullptr);
         sOcclusionNodePlugin.reset(nullptr);
+        sReflectionsNodePlugin.reset(nullptr);
         sStereoMixerNodePlugin.reset(nullptr);
         sStereoPanningNodePlugin.reset(nullptr);
 
@@ -570,6 +600,18 @@ namespace SparkyStudios::Audio::Amplitude
         }
     }
 
+    static void InitializeRoomFreeList(
+        std::vector<RoomInternalState*>* roomStateFreeList, RoomStateVector* roomList, const AmUInt32 listSize)
+    {
+        roomList->resize(listSize);
+        roomStateFreeList->reserve(listSize);
+        for (AmSize i = 0; i < listSize; ++i)
+        {
+            RoomInternalState& room = (*roomList)[i];
+            roomStateFreeList->push_back(&room);
+        }
+    }
+
     bool EngineImpl::Initialize(const AmOsString& configFile)
     {
         if (const AmOsString& configFilePath = _fs->ResolvePath(configFile); !LoadFile(_fs->OpenFile(configFilePath), &_configSrc))
@@ -656,6 +698,9 @@ namespace SparkyStudios::Audio::Amplitude
         // Initialize the environment internal data.
         InitializeEnvironmentFreeList(
             &_state->environment_state_free_list, &_state->environment_state_memory, config->game()->environments());
+
+        // Initialize the room internal data.
+        InitializeRoomFreeList(&_state->room_state_free_list, &_state->room_state_memory, config->game()->rooms());
 
         // Load the audio buses.
         if (const AmOsString& busesFilePath = _fs->ResolvePath(AM_STRING_TO_OS_STRING(config->buses_file()->c_str()));
@@ -967,35 +1012,35 @@ namespace SparkyStudios::Audio::Amplitude
         return true;
     }
 
-    bool BestListener(
-        ListenerList::const_iterator* bestListener, const ListenerList& listeners, const AmVec3& location, eListenerFetchMode fetchMode)
+    ListenerInternalState* FindBestListener(ListenerList& listeners, const AmVec3& location, eListenerFetchMode fetchMode)
     {
         if (listeners.empty())
-            return false;
+            return nullptr;
 
+        ListenerList::iterator bestListener;
         const AmVec4 location4 = AM_V4V(location, 1.0f);
 
         switch (fetchMode)
         {
         case eListenerFetchMode_None:
-            return false;
+            return nullptr;
 
         case eListenerFetchMode_Nearest:
             [[fallthrough]];
         case eListenerFetchMode_Farthest:
             {
-                auto listener = listeners.cbegin();
+                auto listener = listeners.begin();
                 auto listenerSpaceLocation = AM_Mul(listener->GetInverseMatrix(), location4).XYZ;
                 AmReal32 distanceSquared = AM_LenSqr(listenerSpaceLocation);
-                *bestListener = listener;
+                bestListener = listener;
 
-                for (++listener; listener != listeners.cend(); ++listener)
+                for (++listener; listener != listeners.end(); ++listener)
                 {
                     const AmVec3 transformedLocation = AM_Mul(listener->GetInverseMatrix(), location4).XYZ;
                     if (const AmReal32 magnitudeSquared = AM_LenSqr(transformedLocation);
                         fetchMode == eListenerFetchMode_Nearest ? magnitudeSquared < distanceSquared : magnitudeSquared > distanceSquared)
                     {
-                        *bestListener = listener;
+                        bestListener = listener;
                     }
                 }
             }
@@ -1003,17 +1048,17 @@ namespace SparkyStudios::Audio::Amplitude
 
         case eListenerFetchMode_First:
             {
-                auto listener = listeners.cbegin();
+                auto listener = listeners.begin();
                 const AmMat4& mat = listener->GetInverseMatrix();
-                *bestListener = listener;
+                bestListener = listener;
             }
             break;
 
         case eListenerFetchMode_Last:
             {
-                auto listener = listeners.cend();
+                auto listener = listeners.end();
                 const AmMat4& mat = listener->GetInverseMatrix();
-                *bestListener = listener;
+                bestListener = listener;
             }
             break;
 
@@ -1021,23 +1066,22 @@ namespace SparkyStudios::Audio::Amplitude
             {
                 ListenerInternalState* state = amEngine->GetDefaultListener().GetState();
                 if (state == nullptr)
-                    return false;
+                    return nullptr;
 
-                for (auto listener = listeners.cbegin(); listener != listeners.cend(); ++listener)
+                for (auto listener = listeners.begin(); listener != listeners.end(); ++listener)
                 {
                     if (listener->GetId() == state->GetId())
                     {
                         const AmMat4& mat = state->GetInverseMatrix();
-                        *bestListener = listener;
-                        return true;
+                        return &*listener;
                     }
                 }
 
-                return false;
+                return nullptr;
             }
         }
 
-        return true;
+        return &*bestListener;
     }
 
     AmVec2 CalculatePan(const AmVec3& listenerSpaceLocation)
@@ -1053,32 +1097,20 @@ namespace SparkyStudios::Audio::Amplitude
         AmReal32* gain,
         AmVec2* pan,
         AmReal32* pitch,
-        ListenerInternalState** listener,
+        const ListenerInternalState* listener,
         const ChannelInternalState* channel,
         const AmReal32 soundGain,
         const AmReal32 soundPitch,
         const BusInternalState* bus,
         const Spatialization spatialization,
-        const Attenuation* attenuation,
-        const Entity& entity,
-        const AmVec3& location,
-        const ListenerList& listeners,
-        const AmReal32 userGain,
-        eListenerFetchMode fetchMode)
+        const AmReal32 userGain)
     {
         *gain = soundGain * bus->GetGain() * userGain;
         *pitch = soundPitch;
         *pan = AM_V2(0, 0); // TODO: This may be removed in the future, since panning is handled automatically in pipeline nodes..
 
-        ListenerList::const_iterator foundListener;
-
-        bool found = BestListener(&foundListener, listeners, location, fetchMode);
-
-        if (spatialization != Spatialization_None)
-            *pitch *= channel != nullptr ? channel->GetDopplerFactor(foundListener->GetId()) : 1.0f;
-
-        if (found && listener != nullptr)
-            *listener = const_cast<ListenerInternalState*>(&*foundListener);
+        if (spatialization != Spatialization_None && listener != nullptr && channel != nullptr)
+            *pitch *= channel->GetDopplerFactor(listener->GetId());
     }
 
     // Given the priority of a node, and the list of ChannelInternalStates sorted by
@@ -1910,6 +1942,60 @@ namespace SparkyStudios::Audio::Amplitude
         }
     }
 
+    Room EngineImpl::AddRoom(AmRoomID id) const
+    {
+        if (_state->room_state_free_list.empty())
+            return Room(nullptr);
+
+        if (const Room item = GetRoom(id); item.Valid())
+            return item;
+
+        RoomInternalState* room = _state->room_state_free_list.back();
+        room->SetId(id);
+        _state->room_state_free_list.pop_back();
+        _state->room_list.push_back(*room);
+
+        return Room(room);
+    }
+
+    Room EngineImpl::GetRoom(AmRoomID id) const
+    {
+        const auto findIt = std::ranges::find_if(
+            _state->room_state_memory,
+            [&id](const RoomInternalState& state)
+            {
+                return state.GetId() == id;
+            });
+
+        return Room(findIt != _state->room_state_memory.end() ? &*findIt : nullptr);
+    }
+
+    void EngineImpl::RemoveRoom(const Room* room) const
+    {
+        if (!room->Valid())
+            return;
+
+        room->GetState()->SetId(kAmInvalidObjectId);
+        room->GetState()->node.remove();
+        _state->room_state_free_list.push_back(room->GetState());
+    }
+
+    void EngineImpl::RemoveRoom(AmRoomID id) const
+    {
+        if (const auto findIt = std::ranges::find_if(
+                _state->room_state_memory,
+                [&id](const RoomInternalState& state)
+                {
+                    return state.GetId() == id;
+                });
+            findIt != _state->room_state_memory.end())
+        {
+            findIt->SetId(kAmInvalidObjectId);
+            findIt->node.remove();
+            _state->room_state_free_list.push_back(&*findIt);
+        }
+    }
+
     Bus EngineImpl::FindBus(const AmString& name) const
     {
         return Bus(FindBusInternalState(_state, name));
@@ -1967,7 +2053,7 @@ namespace SparkyStudios::Audio::Amplitude
         }
     }
 
-    static void UpdateChannel(ChannelInternalState* channel, const EngineInternalState* state)
+    static void UpdateChannel(ChannelInternalState* channel, EngineInternalState* state)
     {
         if (channel->Stopped())
             return;
@@ -1975,43 +2061,45 @@ namespace SparkyStudios::Audio::Amplitude
         AmReal32 gain;
         AmVec2 pan;
         AmReal32 pitch;
-        ListenerInternalState* listener = nullptr;
+
+        // Find the best listener for this channel.
+        ListenerInternalState* listener = FindBestListener(state->listener_list, channel->GetLocation(), state->listener_fetch_mode);
 
         if (const SwitchContainer* switchContainer = channel->GetSwitchContainer(); switchContainer != nullptr)
         {
             const SwitchContainerDefinition* definition = static_cast<const SwitchContainerImpl*>(switchContainer)->GetDefinition();
 
             CalculateGainPanPitch(
-                &gain, &pan, &pitch, &listener, channel, switchContainer->GetGain().GetValue(), switchContainer->GetPitch().GetValue(),
-                switchContainer->GetBus().GetState(), definition->spatialization(), switchContainer->GetAttenuation(), channel->GetEntity(),
-                channel->GetLocation(), state->listener_list, channel->GetUserGain(), state->listener_fetch_mode);
+                &gain, &pan, &pitch, listener, nullptr, switchContainer->GetGain().GetValue(), switchContainer->GetPitch().GetValue(),
+                switchContainer->GetBus().GetState(), definition->spatialization(), channel->GetUserGain());
         }
         else if (const Collection* collection = channel->GetCollection(); collection != nullptr)
         {
             const CollectionDefinition* definition = static_cast<const CollectionImpl*>(collection)->GetDefinition();
 
             CalculateGainPanPitch(
-                &gain, &pan, &pitch, &listener, channel, collection->GetGain().GetValue(), collection->GetPitch().GetValue(),
-                collection->GetBus().GetState(), definition->spatialization(), collection->GetAttenuation(), channel->GetEntity(),
-                channel->GetLocation(), state->listener_list, channel->GetUserGain(), state->listener_fetch_mode);
+                &gain, &pan, &pitch, listener, nullptr, collection->GetGain().GetValue(), collection->GetPitch().GetValue(),
+                collection->GetBus().GetState(), definition->spatialization(), channel->GetUserGain());
         }
         else if (const Sound* sound = channel->GetSound(); sound != nullptr)
         {
             const SoundDefinition* definition = static_cast<const SoundImpl*>(sound)->GetDefinition();
 
             CalculateGainPanPitch(
-                &gain, &pan, &pitch, &listener, channel, sound->GetGain().GetValue(), sound->GetPitch().GetValue(),
-                sound->GetBus().GetState(), definition->spatialization(), sound->GetAttenuation(), channel->GetEntity(),
-                channel->GetLocation(), state->listener_list, channel->GetUserGain(), state->listener_fetch_mode);
+                &gain, &pan, &pitch, listener, nullptr, sound->GetGain().GetValue(), sound->GetPitch().GetValue(),
+                sound->GetBus().GetState(), definition->spatialization(), channel->GetUserGain());
         }
         else
         {
             AMPLITUDE_ASSERT(false);
         }
 
+        AssignBestRoom(channel, channel->GetLocation(), state);
+
         channel->SetGain(gain);
         channel->SetPan(pan);
         channel->SetPitch(pitch);
+        channel->SetListener(Listener(listener));
     }
 
     // If there are any free real channels, assign those to virtual channels that
@@ -2085,6 +2173,12 @@ namespace SparkyStudios::Audio::Amplitude
 
         EraseFinishedSounds(_state);
 
+        _state->room_list.sort(
+            [](const RoomInternalState& a, const RoomInternalState& b) -> bool
+            {
+                return a.GetVolume() > b.GetVolume();
+            });
+
         for (const auto& rtpc : _state->rtpc_map | std::views::values)
             rtpc->Update(delta);
 
@@ -2118,12 +2212,10 @@ namespace SparkyStudios::Audio::Amplitude
             _state->master_bus->AdvanceFrame(delta, masterGain);
         }
 
-        PriorityList& list = _state->playing_channel_list;
-
-        for (auto&& state : list)
+        for (auto&& state : _state->playing_channel_list)
             UpdateChannel(&state, _state);
 
-        list.sort(
+        _state->playing_channel_list.sort(
             [](const ChannelInternalState& a, const ChannelInternalState& b) -> bool
             {
                 return a.Priority() < b.Priority();
@@ -2274,15 +2366,16 @@ namespace SparkyStudios::Audio::Amplitude
             entity.GetState()->Update();
         }
 
+        // Find the best listener for this channel.
+        ListenerInternalState* listener = FindBestListener(_state->listener_list, location, _state->listener_fetch_mode);
+
         // Find where it belongs in the list.
         AmReal32 gain;
         AmVec2 pan;
         AmReal32 pitch;
-        ListenerInternalState* listener = nullptr;
         CalculateGainPanPitch(
-            &gain, &pan, &pitch, &listener, nullptr, handle->GetGain().GetValue(), handle->GetPitch().GetValue(),
-            handle->GetBus().GetState(), definition->spatialization(), handle->GetAttenuation(), entity, location, _state->listener_list,
-            userGain, _state->listener_fetch_mode);
+            &gain, &pan, &pitch, listener, nullptr, handle->GetGain().GetValue(), handle->GetPitch().GetValue(),
+            handle->GetBus().GetState(), definition->spatialization(), userGain);
         const AmReal32 priority = gain * handle->GetPriority().GetValue();
         const auto insertionPoint = FindInsertionPoint(&_state->playing_channel_list, priority);
 
@@ -2316,6 +2409,8 @@ namespace SparkyStudios::Audio::Amplitude
                 }
             });
 
+        AssignBestRoom(newChannel, location, _state);
+
         newChannel->SetGain(gain);
         newChannel->SetPan(pan);
         newChannel->SetPitch(pitch);
@@ -2348,15 +2443,16 @@ namespace SparkyStudios::Audio::Amplitude
             entity.GetState()->Update();
         }
 
+        // Find the best listener for this channel.
+        ListenerInternalState* listener = FindBestListener(_state->listener_list, location, _state->listener_fetch_mode);
+
         // Find where it belongs in the list.
         AmReal32 gain;
         AmVec2 pan;
         AmReal32 pitch;
-        ListenerInternalState* listener = nullptr;
         CalculateGainPanPitch(
-            &gain, &pan, &pitch, &listener, nullptr, handle->GetGain().GetValue(), handle->GetPitch().GetValue(),
-            handle->GetBus().GetState(), definition->spatialization(), handle->GetAttenuation(), entity, location, _state->listener_list,
-            userGain, _state->listener_fetch_mode);
+            &gain, &pan, &pitch, listener, nullptr, handle->GetGain().GetValue(), handle->GetPitch().GetValue(),
+            handle->GetBus().GetState(), definition->spatialization(), userGain);
         const AmReal32 priority = gain * handle->GetPriority().GetValue();
         const auto insertionPoint = FindInsertionPoint(&_state->playing_channel_list, priority);
 
@@ -2390,6 +2486,8 @@ namespace SparkyStudios::Audio::Amplitude
                 }
             });
 
+        AssignBestRoom(newChannel, location, _state);
+
         newChannel->SetGain(gain);
         newChannel->SetPan(pan);
         newChannel->SetPitch(pitch);
@@ -2421,15 +2519,16 @@ namespace SparkyStudios::Audio::Amplitude
             entity.GetState()->Update();
         }
 
+        // Find the best listener for this channel.
+        ListenerInternalState* listener = FindBestListener(_state->listener_list, location, _state->listener_fetch_mode);
+
         // Find where it belongs in the list.
         AmReal32 gain;
         AmVec2 pan;
         AmReal32 pitch;
-        ListenerInternalState* listener = nullptr;
         CalculateGainPanPitch(
-            &gain, &pan, &pitch, &listener, nullptr, handle->GetGain().GetValue(), handle->GetPitch().GetValue(),
-            handle->GetBus().GetState(), definition->spatialization(), handle->GetAttenuation(), entity, location, _state->listener_list,
-            userGain, _state->listener_fetch_mode);
+            &gain, &pan, &pitch, listener, nullptr, handle->GetGain().GetValue(), handle->GetPitch().GetValue(),
+            handle->GetBus().GetState(), definition->spatialization(), userGain);
         const AmReal32 priority = gain * handle->GetPriority().GetValue();
         const auto insertionPoint = FindInsertionPoint(&_state->playing_channel_list, priority);
 
@@ -2462,6 +2561,8 @@ namespace SparkyStudios::Audio::Amplitude
                     InsertIntoFreeList(_state, newChannel);
                 }
             });
+
+        AssignBestRoom(newChannel, location, _state);
 
         newChannel->SetGain(gain);
         newChannel->SetPan(pan);

@@ -17,6 +17,7 @@
     "listeners": 100,
     "entities": 4096,
     "environments": 512,
+    "rooms": 1024,
     "sound_speed": 333,
     "doppler_factor": 1.0,
     "obstruction": {

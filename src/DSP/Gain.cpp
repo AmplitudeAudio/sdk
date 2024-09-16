@@ -188,6 +188,7 @@ namespace SparkyStudios::Audio::Amplitude
         AmSize rampLength = std::abs(gain - _currentGain) * kUnitRampLength;
 
 #if defined(AM_SIMD_INTRINSICS)
+        rampLength = AM_MAX(rampLength, GetSimdBlockSize());
         rampLength = AM_VALUE_ALIGN(rampLength - GetSimdBlockSize(), GetSimdBlockSize());
 #endif
 
@@ -234,7 +235,7 @@ namespace SparkyStudios::Audio::Amplitude
         AMPLITUDE_ASSERT(out != nullptr);
         AMPLITUDE_ASSERT(rampLength > 0);
 
-        const AmSize length = std::min(rampLength, frames);
+        const AmSize length = AM_MIN(rampLength, frames);
         const AmReal32 step = (endGain - startGain) / static_cast<AmReal32>(rampLength);
 
         AmReal32 currentGain = startGain;

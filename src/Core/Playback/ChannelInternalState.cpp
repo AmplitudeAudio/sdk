@@ -112,6 +112,9 @@ namespace SparkyStudios::Audio::Amplitude
 
     void ChannelInternalState::SetEntity(const Entity& entity)
     {
+        if (entity.GetState() == _entity.GetState())
+            return;
+
         if (_entity.Valid())
             entity_node.remove();
 
@@ -123,6 +126,9 @@ namespace SparkyStudios::Audio::Amplitude
 
     void ChannelInternalState::SetListener(const Listener& listener)
     {
+        if (listener.GetState() == _activeListener.GetState())
+            return;
+
         if (_activeListener.Valid())
             listener_node.remove();
 
@@ -130,6 +136,20 @@ namespace SparkyStudios::Audio::Amplitude
 
         if (_activeListener.Valid())
             _activeListener.GetState()->GetPlayingSoundList().push_front(*this);
+    }
+
+    void ChannelInternalState::SetRoom(const Room& room)
+    {
+        if (room.GetState() == _room.GetState())
+            return;
+
+        if (_room.Valid())
+            room_node.remove();
+
+        _room = room;
+
+        if (_room.Valid())
+            _room.GetState()->GetPlayingSoundList().push_front(*this);
     }
 
     bool ChannelInternalState::Play()
@@ -344,6 +364,27 @@ namespace SparkyStudios::Audio::Amplitude
                     _entity.GetLocation() - listener.GetLocation(), _entity.GetVelocity(), listener.GetVelocity(),
                     amEngine->GetSoundSpeed(), amEngine->GetDopplerFactor());
             }
+        }
+
+        // Update Room gains
+        if (_room.Valid())
+        {
+            AmReal32 gain = 0.0f;
+
+            const AmReal32 roomVolume = _room.GetVolume();
+            if (roomVolume >= kEpsilon)
+            {
+                const AmVec3& relativeLocation =
+                    GetRelativeDirection(_room.GetLocation(), _room.GetOrientation().GetQuaternion(), GetLocation());
+                const AmVec3& closestPoint = _room.GetShape().GetClosestPoint(relativeLocation);
+
+                // Avoid division by zero by shifting the attenuation by 1.0f
+                const AmReal32 distance = AM_Len(relativeLocation - closestPoint) + 1.0f;
+
+                gain = 1.0f / (distance * distance);
+            }
+
+            _roomGains[_room.GetId()] = _room.GetGain() * gain;
         }
 
         // Update sounds if playing a switch container
@@ -598,6 +639,11 @@ namespace SparkyStudios::Audio::Amplitude
     AmReal32 ChannelInternalState::GetDopplerFactor(AmListenerID listener) const
     {
         return _dopplerFactors.contains(listener) ? _dopplerFactors.at(listener) : 1.0f;
+    }
+
+    AmReal32 ChannelInternalState::GetReflectionsGain(AmRoomID room) const
+    {
+        return _roomGains.contains(room) ? _roomGains.at(room) : 0.0f;
     }
 
     void ChannelInternalState::On(const ChannelEvent event, ChannelEventCallback callback, void* userData)

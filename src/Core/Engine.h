@@ -130,6 +130,10 @@ namespace SparkyStudios::Audio::Amplitude
         [[nodiscard]] Environment GetEnvironment(AmEnvironmentID id) const override;
         void RemoveEnvironment(const Environment* Environment) const override;
         void RemoveEnvironment(AmEnvironmentID id) const override;
+        [[nodiscard]] Room AddRoom(AmRoomID id) const override;
+        [[nodiscard]] Room GetRoom(AmRoomID id) const override;
+        void RemoveRoom(const Room* room) const override;
+        void RemoveRoom(AmRoomID id) const override;
         [[nodiscard]] Bus FindBus(const AmString& name) const override;
         [[nodiscard]] Bus FindBus(AmBusID id) const override;
         [[nodiscard]] Channel Play(SwitchContainerHandle handle) const override;

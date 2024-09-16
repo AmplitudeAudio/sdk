@@ -155,6 +155,12 @@ namespace SparkyStudios::Audio::Amplitude
         return _state->GetListener();
     }
 
+    Room Channel::GetRoom() const
+    {
+        AMPLITUDE_ASSERT(Valid());
+        return _state->GetRoom();
+    }
+
     ChannelInternalState* Channel::GetState() const
     {
         return _state;

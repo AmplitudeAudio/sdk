@@ -55,6 +55,7 @@
             "consume": [
                 4,
                 10,
+                12,
                 6
             ]
         },
@@ -63,6 +64,20 @@
             "name": "AmbisonicBinauralDecoder",
             "consume": [
                 7
+            ]
+        },
+        {
+            "id": 11,
+            "name": "Reflections",
+            "consume": [
+                1
+            ]
+        },
+        {
+            "id": 12,
+            "name": "AmbisonicBinauralDecoder",
+            "consume": [
+                11
             ]
         },
         {

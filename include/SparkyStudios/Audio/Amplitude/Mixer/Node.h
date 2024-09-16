@@ -125,8 +125,11 @@ namespace SparkyStudios::Audio::Amplitude
     public:
         /**
          * @brief PropertyNodeInstance constructor.
+         *
+         * @param processOnEmptyBuffer If true, the node will execute the Process() method
+         * even if the input buffer is @c nullptr.
          */
-        ProcessorNodeInstance();
+        ProcessorNodeInstance(bool processOnEmptyBuffer = false);
 
         /**
          * @brief ProcessorNodeInstance destructor.
@@ -168,6 +171,7 @@ namespace SparkyStudios::Audio::Amplitude
     private:
         const AudioBuffer* _processingBuffer;
         const AudioBuffer* _lastOuputBuffer;
+        bool _processOnEmptyInputBuffer;
     };
 
     /**

@@ -22,6 +22,7 @@
 #include <SparkyStudios/Audio/Amplitude/Core/Listener.h>
 #include <SparkyStudios/Audio/Amplitude/Core/Playback/Bus.h>
 #include <SparkyStudios/Audio/Amplitude/Core/Playback/Channel.h>
+#include <SparkyStudios/Audio/Amplitude/Core/Room.h>
 #include <SparkyStudios/Audio/Amplitude/Sound/Attenuation.h>
 
 namespace SparkyStudios::Audio::Amplitude
@@ -71,6 +72,8 @@ namespace SparkyStudios::Audio::Amplitude
         virtual Entity GetEntity() const = 0;
 
         virtual Listener GetListener() const = 0;
+
+        virtual Room GetRoom() const = 0;
 
         virtual Channel GetChannel() const = 0;
 

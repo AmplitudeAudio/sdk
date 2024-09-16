@@ -21,6 +21,7 @@
 #include <SparkyStudios/Audio/Amplitude/Core/Entity.h>
 #include <SparkyStudios/Audio/Amplitude/Core/Listener.h>
 #include <SparkyStudios/Audio/Amplitude/Core/Playback/ChannelEventListener.h>
+#include <SparkyStudios/Audio/Amplitude/Core/Room.h>
 
 namespace SparkyStudios::Audio::Amplitude
 {
@@ -179,6 +180,13 @@ namespace SparkyStudios::Audio::Amplitude
          * @return The listener associated with this Channel.
          */
         [[nodiscard]] Listener GetListener() const;
+
+        /**
+         * @brief Returns the room associated with this Channel.
+         *
+         * @return The room associated with this Channel.
+         */
+        [[nodiscard]] Room GetRoom() const;
 
         /**
          * @brief Returns the internal state of this Channel.

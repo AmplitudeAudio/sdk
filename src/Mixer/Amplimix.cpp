@@ -866,11 +866,11 @@ namespace SparkyStudios::Audio::Amplitude
             // Execute Pipeline
             layer->pipeline->Execute(*transient->buffer, *out->buffer);
 
-            /* */ AmReal32 position = cursor;
+            /* */ AmReal64 position = cursor;
             const AmUInt64 start = layer->start;
             const AmUInt64 end = layer->end;
 
-            const auto step = static_cast<AmReal32>(inSamples) / static_cast<AmReal32>(outSamples);
+            const AmReal64 step = static_cast<AmReal64>(inSamples) / static_cast<AmReal64>(outSamples);
 
             // regular playback
             for (AmUInt64 i = 0; i < outSamples; i += kProcessedFramesCount)
@@ -1112,6 +1112,14 @@ namespace SparkyStudios::Audio::Amplitude
             return Listener(nullptr);
 
         return snd->sound->GetChannel().GetListener();
+    }
+
+    Room AmplimixLayerImpl::GetRoom() const
+    {
+        if (snd == nullptr || snd->sound == nullptr)
+            return Room(nullptr);
+
+        return snd->sound->GetChannel().GetRoom();
     }
 
     Channel AmplimixLayerImpl::GetChannel() const

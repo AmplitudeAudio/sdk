@@ -62,9 +62,10 @@ namespace SparkyStudios::Audio::Amplitude
         return m_layer;
     }
 
-    ProcessorNodeInstance::ProcessorNodeInstance()
+    ProcessorNodeInstance::ProcessorNodeInstance(bool processOnEmptyInputBuffer)
         : _lastOuputBuffer(nullptr)
         , _processingBuffer(nullptr)
+        , _processOnEmptyInputBuffer(processOnEmptyInputBuffer)
     {}
 
     void ProcessorNodeInstance::Consume()
@@ -99,7 +100,7 @@ namespace SparkyStudios::Audio::Amplitude
         if (_processingBuffer == nullptr)
             Consume();
 
-        if (_processingBuffer == nullptr)
+        if (_processingBuffer == nullptr && !_processOnEmptyInputBuffer)
             return nullptr;
 
         return _lastOuputBuffer = Process(_processingBuffer);
@@ -193,6 +194,7 @@ namespace SparkyStudios::Audio::Amplitude
 
     InputNodeInstance::InputNodeInstance()
         : _buffer(nullptr)
+        , _filter(nullptr)
     {}
 
     void InputNodeInstance::SetInput(AudioBuffer* buffer)
@@ -250,7 +252,11 @@ namespace SparkyStudios::Audio::Amplitude
         ProviderNodeInstance* provider = dynamic_cast<ProviderNodeInstance*>(node);
         AMPLITUDE_ASSERT(provider != nullptr);
 
-        *_buffer = *provider->Provide();
+        const auto* output = provider->Provide();
+        if (output == nullptr)
+            return;
+
+        *_buffer = *output;
 
         for (AmSize c = 0; c < _buffer->GetChannelCount(); c++)
         {

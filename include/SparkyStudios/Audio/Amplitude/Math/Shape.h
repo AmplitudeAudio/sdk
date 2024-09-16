@@ -300,6 +300,14 @@ namespace SparkyStudios::Audio::Amplitude
         explicit BoxShape(AmReal32 halfWidth, AmReal32 halfHeight, AmReal32 halfDepth);
 
         /**
+         * @brief Construct a new Box Shape.
+         *
+         * @param position The position of the box shape.
+         * @param dimensions The dimensions of the box shape.
+         */
+        explicit BoxShape(const AmVec3& position, const AmVec3& dimensions);
+
+        /**
          * @brief Get the half width of the box shape.
          *
          * @return The box shape's half width.
@@ -380,6 +388,15 @@ namespace SparkyStudios::Audio::Amplitude
          * @return true if the shape contains the given position, false otherwise.
          */
         [[nodiscard]] bool Contains(const AmVec3& location) final;
+
+        /**
+         * @brief Get the closest point to the given location.
+         *
+         * @param location The location to get the closest point for.
+         *
+         * @return The closest point to the given location.
+         */
+        [[nodiscard]] AmVec3 GetClosestPoint(const AmVec3& location) const;
 
     private:
         void _update();

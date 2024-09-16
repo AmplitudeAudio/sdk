@@ -188,6 +188,27 @@ namespace SparkyStudios::Audio::Amplitude
         , _wP4(0.0)
     {}
 
+    BoxShape::BoxShape(const AmVec3& position, const AmVec3& dimensions)
+        : _halfWidth(dimensions.X * 0.5f)
+        , _halfHeight(dimensions.Z * 0.5f)
+        , _halfDepth(dimensions.Y * 0.5f)
+        , _u()
+        , _v()
+        , _w()
+        , _p1()
+        , _p2()
+        , _p3()
+        , _p4()
+        , _uP1(0.0)
+        , _vP1(0.0)
+        , _wP1(0.0)
+        , _uP2(0.0)
+        , _vP3(0.0)
+        , _wP4(0.0)
+    {
+        SetLocation(position);
+    }
+
     AmReal32 BoxShape::GetHalfWidth() const
     {
         return _halfWidth;
@@ -264,6 +285,17 @@ namespace SparkyStudios::Audio::Amplitude
             return true;
 
         return false;
+    }
+
+    AmVec3 BoxShape::GetClosestPoint(const AmVec3& location) const
+    {
+        AmVec3 closestPoint;
+        const AmVec3& relativeLocation = GetRelativeDirection(GetLocation(), GetOrientation().GetQuaternion(), location);
+        closestPoint.X = AM_CLAMP(relativeLocation.X, -_halfWidth, _halfWidth);
+        closestPoint.Y = AM_CLAMP(relativeLocation.Y, -_halfDepth, _halfDepth);
+        closestPoint.Z = AM_CLAMP(relativeLocation.Z, -_halfHeight, _halfHeight);
+
+        return closestPoint;
     }
 
     void BoxShape::_update()
