@@ -42,7 +42,7 @@ namespace SparkyStudios::Audio::Amplitude
          *
          * The Stream() method of a decoder implementation should be thread-safe.
          */
-        class Decoder
+        class AM_API_PUBLIC Decoder
         {
         public:
             /**
@@ -133,7 +133,7 @@ namespace SparkyStudios::Audio::Amplitude
          *
          * The Write() methods of an encoder implementation should be thread safe.
          */
-        class Encoder
+        class AM_API_PUBLIC Encoder
         {
         public:
             /**
