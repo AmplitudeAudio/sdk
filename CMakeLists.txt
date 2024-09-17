@@ -348,6 +348,10 @@ set(SA_SOURCE
     src/Mixer/Nodes/AmbisonicPanningNode.h
     src/Mixer/Nodes/AttenuationNode.cpp
     src/Mixer/Nodes/AttenuationNode.h
+    src/Mixer/Nodes/ClampNode.cpp
+    src/Mixer/Nodes/ClampNode.h
+    src/Mixer/Nodes/ClipNode.cpp
+    src/Mixer/Nodes/ClipNode.h
     src/Mixer/Nodes/NearFieldEffectNode.cpp
     src/Mixer/Nodes/NearFieldEffectNode.h
     src/Mixer/Nodes/OcclusionNode.cpp

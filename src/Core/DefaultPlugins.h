@@ -75,6 +75,8 @@
 #include <Mixer/Nodes/AmbisonicMixerNode.h>
 #include <Mixer/Nodes/AmbisonicPanningNode.h>
 #include <Mixer/Nodes/AttenuationNode.h>
+#include <Mixer/Nodes/ClampNode.h>
+#include <Mixer/Nodes/ClipNode.h>
 #include <Mixer/Nodes/NearFieldEffectNode.h>
 #include <Mixer/Nodes/OcclusionNode.h>
 #include <Mixer/Nodes/ReflectionsNode.h>

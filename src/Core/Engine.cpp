@@ -94,6 +94,8 @@ namespace SparkyStudios::Audio::Amplitude
     static AmUniquePtr<MemoryPoolKind::Engine, AmbisonicMixerNode> sAmbisonicMixerNodePlugin = nullptr;
     static AmUniquePtr<MemoryPoolKind::Engine, AmbisonicPanningNode> sAmbisonicPanningNodePlugin = nullptr;
     static AmUniquePtr<MemoryPoolKind::Engine, AttenuationNode> sAttenuationNodePlugin = nullptr;
+    static AmUniquePtr<MemoryPoolKind::Engine, ClampNode> sClampNodePlugin = nullptr;
+    static AmUniquePtr<MemoryPoolKind::Engine, ClipNode> sClipNodePlugin = nullptr;
     static AmUniquePtr<MemoryPoolKind::Engine, NearFieldEffectNode> sNearFieldEffectNodePlugin = nullptr;
     static AmUniquePtr<MemoryPoolKind::Engine, OcclusionNode> sOcclusionNodePlugin = nullptr;
     static AmUniquePtr<MemoryPoolKind::Engine, ReflectionsNode> sReflectionsNodePlugin = nullptr;
@@ -377,6 +379,8 @@ namespace SparkyStudios::Audio::Amplitude
         sAmbisonicMixerNodePlugin.reset(ampoolnew(MemoryPoolKind::Engine, AmbisonicMixerNode));
         sAmbisonicPanningNodePlugin.reset(ampoolnew(MemoryPoolKind::Engine, AmbisonicPanningNode));
         sAttenuationNodePlugin.reset(ampoolnew(MemoryPoolKind::Engine, AttenuationNode));
+        sClampNodePlugin.reset(ampoolnew(MemoryPoolKind::Engine, ClampNode));
+        sClipNodePlugin.reset(ampoolnew(MemoryPoolKind::Engine, ClipNode));
         sNearFieldEffectNodePlugin.reset(ampoolnew(MemoryPoolKind::Engine, NearFieldEffectNode));
         sOcclusionNodePlugin.reset(ampoolnew(MemoryPoolKind::Engine, OcclusionNode));
         sReflectionsNodePlugin.reset(ampoolnew(MemoryPoolKind::Engine, ReflectionsNode));
@@ -428,6 +432,8 @@ namespace SparkyStudios::Audio::Amplitude
         sAmbisonicMixerNodePlugin.reset(nullptr);
         sAmbisonicPanningNodePlugin.reset(nullptr);
         sAttenuationNodePlugin.reset(nullptr);
+        sClampNodePlugin.reset(nullptr);
+        sClipNodePlugin.reset(nullptr);
         sNearFieldEffectNodePlugin.reset(nullptr);
         sOcclusionNodePlugin.reset(nullptr);
         sReflectionsNodePlugin.reset(nullptr);

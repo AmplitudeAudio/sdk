@@ -257,17 +257,6 @@ namespace SparkyStudios::Audio::Amplitude
             return;
 
         *_buffer = *output;
-
-        for (AmSize c = 0; c < _buffer->GetChannelCount(); c++)
-        {
-            const auto& inChannel = _buffer->GetChannel(c);
-            auto& outChannel = _buffer->GetChannel(c);
-
-            for (AmSize i = 0, l = _buffer->GetFrameCount(); i < l; i++)
-                outChannel[i] = inChannel[i] <= -1.65f ? -0.9862875f
-                    : inChannel[i] >= 1.65f            ? 0.9862875f
-                                                       : 0.87f * inChannel[i] - 0.1f * inChannel[i] * inChannel[i] * inChannel[i];
-        }
     }
 
     void OutputNodeInstance::Reset()
