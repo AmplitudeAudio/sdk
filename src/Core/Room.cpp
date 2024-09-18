@@ -154,6 +154,12 @@ namespace SparkyStudios::Audio::Amplitude
         return _state->GetVolume();
     }
 
+    AmReal32 Room::GetSurfaceArea(RoomWall wall) const
+    {
+        AMPLITUDE_ASSERT(Valid());
+        return _state->GetSurfaceArea(wall);
+    }
+
     void Room::Update() const
     {
         AMPLITUDE_ASSERT(Valid());

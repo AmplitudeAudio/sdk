@@ -80,6 +80,7 @@
 #include <Mixer/Nodes/NearFieldEffectNode.h>
 #include <Mixer/Nodes/OcclusionNode.h>
 #include <Mixer/Nodes/ReflectionsNode.h>
+#include <Mixer/Nodes/ReverbNode.h>
 #include <Mixer/Nodes/StereoMixerNode.h>
 #include <Mixer/Nodes/StereoPanningNode.h>
 

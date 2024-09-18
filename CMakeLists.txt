@@ -358,6 +358,8 @@ set(SA_SOURCE
     src/Mixer/Nodes/OcclusionNode.h
     src/Mixer/Nodes/ReflectionsNode.cpp
     src/Mixer/Nodes/ReflectionsNode.h
+    src/Mixer/Nodes/ReverbNode.cpp
+    src/Mixer/Nodes/ReverbNode.h
     src/Mixer/Nodes/StereoPanningNode.cpp
     src/Mixer/Nodes/StereoPanningNode.h
     src/Mixer/Nodes/StereoMixerNode.cpp

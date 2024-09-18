@@ -382,7 +382,7 @@ namespace SparkyStudios::Audio::Amplitude
             }
 #endif // AM_SIMD_ALIGNMENT
 
-            layer.pipeline->Reset();
+            layer.ResetPipeline();
         }
 
         lock.Unlock();
@@ -1038,6 +1038,16 @@ namespace SparkyStudios::Audio::Amplitude
     void AmplimixLayerImpl::Reset()
     {
         ampooldelete(MemoryPoolKind::Amplimix, AudioConverter, dataConverter);
+    }
+
+    void AmplimixLayerImpl::ResetPipeline()
+    {
+        pipeline->Reset();
+
+        // Update pending states
+        const Room& room = GetRoom();
+        if (room.Valid())
+            room.GetState()->SetWasUpdated(false);
     }
 
     AmUInt32 AmplimixLayerImpl::GetId() const

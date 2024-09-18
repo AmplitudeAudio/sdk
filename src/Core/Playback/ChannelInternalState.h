@@ -341,7 +341,7 @@ namespace SparkyStudios::Audio::Amplitude
          */
         [[nodiscard]] AmReal32 GetDopplerFactor(AmListenerID listener) const;
 
-        [[nodiscard]] AmReal32 GetReflectionsGain(AmRoomID room) const;
+        [[nodiscard]] AmReal32 GetRoomGain(AmRoomID room) const;
 
         void HaltInternal();
 

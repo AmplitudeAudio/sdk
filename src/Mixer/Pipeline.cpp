@@ -19,7 +19,7 @@
 
 namespace SparkyStudios::Audio::Amplitude
 {
-    PipelineInstanceImpl::PipelineInstanceImpl(const Pipeline* parent, const AmplimixLayer* layer)
+    PipelineInstanceImpl::PipelineInstanceImpl(const Pipeline* parent, const AmplimixLayerImpl* layer)
         : _nodeInstances()
         , _layer(layer)
         , _inputNode(nullptr)
@@ -83,7 +83,7 @@ namespace SparkyStudios::Audio::Amplitude
 
     PipelineInstance* PipelineImpl::CreateInstance(const AmplimixLayer* layer) const
     {
-        auto* instance = ampoolnew(MemoryPoolKind::Amplimix, PipelineInstanceImpl, this, layer);
+        auto* instance = ampoolnew(MemoryPoolKind::Amplimix, PipelineInstanceImpl, this, static_cast<const AmplimixLayerImpl*>(layer));
 
         const auto* definition = GetDefinition();
         const auto* nodes = definition->nodes();

@@ -308,6 +308,26 @@ namespace SparkyStudios::Audio::Amplitude
             return dimensions.X * dimensions.Y * dimensions.Z;
         }
 
+        [[nodiscard]] AM_INLINE AmReal32 GetSurfaceArea(RoomWall wall) const
+        {
+            const auto& dimensions = GetDimensions();
+
+            switch (wall)
+            {
+            case RoomWall::Front:
+            case RoomWall::Back:
+                return dimensions.X * dimensions.Z;
+            case RoomWall::Left:
+            case RoomWall::Right:
+                return dimensions.Y * dimensions.Z;
+            case RoomWall::Top:
+            case RoomWall::Bottom:
+                return dimensions.X * dimensions.Y;
+            default:
+                return 0.0f;
+            }
+        }
+
         [[nodiscard]] AM_INLINE AmReal32* GetCoefficients()
         {
             return _reflectionsProperties.GetCoefficients();
@@ -342,6 +362,16 @@ namespace SparkyStudios::Audio::Amplitude
             return _needUpdate;
         }
 
+        AM_INLINE void SetWasUpdated(bool updated)
+        {
+            _wasUpdated = updated;
+        }
+
+        [[nodiscard]] AM_INLINE bool WasUpdated() const
+        {
+            return _wasUpdated;
+        }
+
         ChannelList& GetPlayingSoundList()
         {
             return _playingSoundList;
@@ -359,7 +389,9 @@ namespace SparkyStudios::Audio::Amplitude
 
         RoomMaterial _materials[6];
         RoomReflectionsProperties _reflectionsProperties;
+
         bool _needUpdate;
+        bool _wasUpdated;
 
         ChannelList _playingSoundList;
     };

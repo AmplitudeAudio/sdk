@@ -77,5 +77,6 @@ namespace SparkyStudios::Audio::Amplitude
         }
 
         _needUpdate = false;
+        _wasUpdated = true;
     }
 } // namespace SparkyStudios::Audio::Amplitude

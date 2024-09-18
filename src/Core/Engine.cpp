@@ -99,6 +99,7 @@ namespace SparkyStudios::Audio::Amplitude
     static AmUniquePtr<MemoryPoolKind::Engine, NearFieldEffectNode> sNearFieldEffectNodePlugin = nullptr;
     static AmUniquePtr<MemoryPoolKind::Engine, OcclusionNode> sOcclusionNodePlugin = nullptr;
     static AmUniquePtr<MemoryPoolKind::Engine, ReflectionsNode> sReflectionsNodePlugin = nullptr;
+    static AmUniquePtr<MemoryPoolKind::Engine, ReverbNode> sReverbNodePlugin = nullptr;
     static AmUniquePtr<MemoryPoolKind::Engine, StereoMixerNode> sStereoMixerNodePlugin = nullptr;
     static AmUniquePtr<MemoryPoolKind::Engine, StereoPanningNode> sStereoPanningNodePlugin = nullptr;
 
@@ -207,7 +208,7 @@ namespace SparkyStudios::Audio::Amplitude
         for (const auto& plugin : gLoadedPlugins)
         {
             if (const auto unregisterFunc = plugin->get_function<bool()>("UnregisterPlugin"); !unregisterFunc())
-                amLogError("An error occured while unloading the plugin '%s'", plugin->get_function<const char*()>("PluginName")());
+                amLogError("An error occurred while unloading the plugin '%s'", plugin->get_function<const char*()>("PluginName")());
 
             ampooldelete(MemoryPoolKind::Engine, dylib, plugin);
         }
@@ -384,6 +385,7 @@ namespace SparkyStudios::Audio::Amplitude
         sNearFieldEffectNodePlugin.reset(ampoolnew(MemoryPoolKind::Engine, NearFieldEffectNode));
         sOcclusionNodePlugin.reset(ampoolnew(MemoryPoolKind::Engine, OcclusionNode));
         sReflectionsNodePlugin.reset(ampoolnew(MemoryPoolKind::Engine, ReflectionsNode));
+        sReverbNodePlugin.reset(ampoolnew(MemoryPoolKind::Engine, ReverbNode));
         sStereoMixerNodePlugin.reset(ampoolnew(MemoryPoolKind::Engine, StereoMixerNode));
         sStereoPanningNodePlugin.reset(ampoolnew(MemoryPoolKind::Engine, StereoPanningNode));
 
@@ -437,6 +439,7 @@ namespace SparkyStudios::Audio::Amplitude
         sNearFieldEffectNodePlugin.reset(nullptr);
         sOcclusionNodePlugin.reset(nullptr);
         sReflectionsNodePlugin.reset(nullptr);
+        sReverbNodePlugin.reset(nullptr);
         sStereoMixerNodePlugin.reset(nullptr);
         sStereoPanningNodePlugin.reset(nullptr);
 
@@ -2195,6 +2198,9 @@ namespace SparkyStudios::Audio::Amplitude
             state.Update();
 
         for (auto&& state : _state->environment_list)
+            state.Update();
+
+        for (auto&& state : _state->room_list)
             state.Update();
 
         for (auto&& state : _state->entity_list)

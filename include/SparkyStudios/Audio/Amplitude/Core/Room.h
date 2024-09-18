@@ -91,6 +91,11 @@ namespace SparkyStudios::Audio::Amplitude
          * @brief The back wall.
          */
         Back,
+
+        /**
+         * @brief An Invalid wall. Also used to mark the maximum value of the enum.
+         */
+        Invalid
     };
 
     /**
@@ -289,6 +294,15 @@ namespace SparkyStudios::Audio::Amplitude
          * @return The volume of the room.
          */
         [[nodiscard]] AmReal32 GetVolume() const;
+
+        /**
+         * @brief Gets the surface area of a specific wall of this @c Room.
+         *
+         * @param wall The wall to get the surface area for.
+         *
+         * @return The surface area of the specified wall.
+         */
+        [[nodiscard]] AmReal32 GetSurfaceArea(RoomWall wall) const;
 
         /**
          * @brief Update the state of this @c Room.

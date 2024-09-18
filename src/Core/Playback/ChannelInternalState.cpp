@@ -641,7 +641,7 @@ namespace SparkyStudios::Audio::Amplitude
         return _dopplerFactors.contains(listener) ? _dopplerFactors.at(listener) : 1.0f;
     }
 
-    AmReal32 ChannelInternalState::GetReflectionsGain(AmRoomID room) const
+    AmReal32 ChannelInternalState::GetRoomGain(AmRoomID room) const
     {
         return _roomGains.contains(room) ? _roomGains.at(room) : 0.0f;
     }

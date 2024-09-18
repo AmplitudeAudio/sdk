@@ -87,6 +87,8 @@ namespace SparkyStudios::Audio::Amplitude
          */
         void Reset();
 
+        void ResetPipeline();
+
         AmUInt32 GetId() const override;
         AmUInt64 GetStartPosition() const override;
         AmUInt64 GetEndPosition() const override;

@@ -138,7 +138,7 @@ namespace SparkyStudios::Audio::Amplitude
             offsets[2] + relativeListenerPosition[2] + 1.0f, offsets[2] - relativeListenerPosition[2] + 1.0f
         };
 
-        for (size_t i = 0; i < kAmRoomSurfaceCount; ++i)
+        for (AmSize i = 0; i < kAmRoomSurfaceCount; ++i)
         {
             // Convert distances to time delays in seconds.
             _reflections[i].m_delaySeconds = distances[i] / speedOfSound;
@@ -149,7 +149,7 @@ namespace SparkyStudios::Audio::Amplitude
 
     void ReflectionsProcessor::UpdateGainAndDelay()
     {
-        for (size_t i = 0; i < kAmRoomSurfaceCount; ++i)
+        for (AmSize i = 0; i < kAmRoomSurfaceCount; ++i)
         {
             _delays[i] =
                 std::min(_maxDelaySamples, static_cast<AmSize>(_reflections[i].m_delaySeconds * static_cast<AmReal32>(_sampleRate)));

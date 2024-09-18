@@ -20,6 +20,7 @@
 #include <SparkyStudios/Audio/Amplitude/Mixer/Pipeline.h>
 
 #include <Core/Asset.h>
+#include <Mixer/Amplimix.h>
 
 #include "pipeline_definition_generated.h"
 
@@ -30,7 +31,7 @@ namespace SparkyStudios::Audio::Amplitude
         friend class PipelineImpl;
 
     public:
-        PipelineInstanceImpl(const Pipeline* parent, const AmplimixLayer* layer);
+        PipelineInstanceImpl(const Pipeline* parent, const AmplimixLayerImpl* layer);
 
         ~PipelineInstanceImpl() override;
 
@@ -48,7 +49,7 @@ namespace SparkyStudios::Audio::Amplitude
         InputNodeInstance* _inputNode;
         OutputNodeInstance* _outputNode;
 
-        const AmplimixLayer* _layer;
+        const AmplimixLayerImpl* _layer;
         AudioBuffer _inputBuffer;
     };
 

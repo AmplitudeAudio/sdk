@@ -31,7 +31,7 @@ namespace SparkyStudios::Audio::Amplitude
 
     void ReflectionsNodeInstance::Initialize(AmObjectID id, const AmplimixLayer* layer, const PipelineInstance* node)
     {
-        NodeInstance::Initialize(id, layer, node);
+        ProcessorNodeInstance::Initialize(id, layer, node);
 
         const auto& deviceConfig = amEngine->GetMixer()->GetDeviceDescription();
 
@@ -65,9 +65,9 @@ namespace SparkyStudios::Audio::Amplitude
 
         const auto* layer = GetLayer();
         const auto& room = layer->GetRoom();
-        const AmReal32 reflectionGain = layer->GetChannel().GetState()->GetReflectionsGain(room.GetId());
+        const AmReal32 roomGain = layer->GetChannel().GetState()->GetRoomGain(room.GetId());
 
-        if (reflectionGain < kEpsilon)
+        if (roomGain < kEpsilon)
             return nullptr;
 
         const auto& listener = layer->GetListener();
@@ -79,7 +79,7 @@ namespace SparkyStudios::Audio::Amplitude
         {
             // Apply reflections gain
             AudioBuffer temp(input->GetFrameCount(), kAmMonoChannelCount);
-            Gain::ApplyReplaceConstantGain(reflectionGain, input->GetChannel(0), 0, temp[0], 0, _output.GetSampleCount());
+            Gain::ApplyReplaceConstantGain(roomGain, input->GetChannel(0), 0, temp[0], 0, _output.GetSampleCount());
 
             // Process reflections
             _reflectionsProcessor->Process(temp, &_output);
@@ -107,11 +107,8 @@ namespace SparkyStudios::Audio::Amplitude
         const auto& location = layer->GetLocation();
 
         const auto& room = layer->GetRoom();
-        if (room.Valid() && room.GetState()->NeedsUpdate())
-        {
-            room.Update();
+        if (room.Valid() && room.GetState()->WasUpdated())
             _reflectionsProcessor->Update(room.GetState(), listener.GetLocation(), amEngine->GetSoundSpeed());
-        }
     }
 
     ReflectionsNode::ReflectionsNode()
