@@ -29,8 +29,7 @@
     "delay.amfx",
     "flanger.amfx",
     "lpf.amfx",
-    "robotize.amfx",
-    "rvb_small_room.amfx"
+    "robotize.amfx"
   ],
   "collections": [
     "grass_footsteps.amcollection",

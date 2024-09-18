@@ -48,7 +48,6 @@
   ],
   "rtpc": [],
   "effects": [
-    "rvb_small_room.amfx",
     "flanger.amfx",
     "robotize.amfx",
     "lpf.amfx",

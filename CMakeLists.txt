@@ -290,8 +290,6 @@ set(SA_SOURCE
     src/DSP/Filters/FFTFilter.h
     src/DSP/Filters/FlangerFilter.cpp
     src/DSP/Filters/FlangerFilter.h
-    src/DSP/Filters/FreeverbFilter.cpp
-    src/DSP/Filters/FreeverbFilter.h
     src/DSP/Filters/LofiFilter.cpp
     src/DSP/Filters/LofiFilter.h
     src/DSP/Filters/MonoPoleFilter.cpp

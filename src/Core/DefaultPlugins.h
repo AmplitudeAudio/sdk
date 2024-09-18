@@ -61,7 +61,6 @@
 #include <DSP/Filters/DelayFilter.h>
 #include <DSP/Filters/EqualizerFilter.h>
 #include <DSP/Filters/FlangerFilter.h>
-#include <DSP/Filters/FreeverbFilter.h>
 #include <DSP/Filters/LofiFilter.h>
 #include <DSP/Filters/MonoPoleFilter.h>
 #include <DSP/Filters/RobotizeFilter.h>

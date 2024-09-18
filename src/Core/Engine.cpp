@@ -84,7 +84,6 @@ namespace SparkyStudios::Audio::Amplitude
     static AmUniquePtr<MemoryPoolKind::Engine, DelayFilter> sDelayFilterPlugin = nullptr;
     static AmUniquePtr<MemoryPoolKind::Engine, EqualizerFilter> sEqualizerFilterPlugin = nullptr;
     static AmUniquePtr<MemoryPoolKind::Engine, FlangerFilter> sFlangerFilterPlugin = nullptr;
-    static AmUniquePtr<MemoryPoolKind::Engine, FreeverbFilter> sFreeverbFilterPlugin = nullptr;
     static AmUniquePtr<MemoryPoolKind::Engine, LofiFilter> sLofiFilterPlugin = nullptr;
     static AmUniquePtr<MemoryPoolKind::Engine, MonoPoleFilter> sMonoPoleFilterPlugin = nullptr;
     static AmUniquePtr<MemoryPoolKind::Engine, RobotizeFilter> sRobotizeFilterPlugin = nullptr;
@@ -370,7 +369,6 @@ namespace SparkyStudios::Audio::Amplitude
         sDelayFilterPlugin.reset(ampoolnew(MemoryPoolKind::Engine, DelayFilter));
         sEqualizerFilterPlugin.reset(ampoolnew(MemoryPoolKind::Engine, EqualizerFilter));
         sFlangerFilterPlugin.reset(ampoolnew(MemoryPoolKind::Engine, FlangerFilter));
-        sFreeverbFilterPlugin.reset(ampoolnew(MemoryPoolKind::Engine, FreeverbFilter));
         sLofiFilterPlugin.reset(ampoolnew(MemoryPoolKind::Engine, LofiFilter));
         sMonoPoleFilterPlugin.reset(ampoolnew(MemoryPoolKind::Engine, MonoPoleFilter));
         sRobotizeFilterPlugin.reset(ampoolnew(MemoryPoolKind::Engine, RobotizeFilter));
@@ -424,7 +422,6 @@ namespace SparkyStudios::Audio::Amplitude
         sDelayFilterPlugin.reset(nullptr);
         sEqualizerFilterPlugin.reset(nullptr);
         sFlangerFilterPlugin.reset(nullptr);
-        sFreeverbFilterPlugin.reset(nullptr);
         sMonoPoleFilterPlugin.reset(nullptr);
         sLofiFilterPlugin.reset(nullptr);
         sRobotizeFilterPlugin.reset(nullptr);
