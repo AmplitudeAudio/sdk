@@ -63,8 +63,9 @@ namespace SparkyStudios::Audio::Amplitude
     }
 
     ProcessorNodeInstance::ProcessorNodeInstance(bool processOnEmptyInputBuffer)
-        : _lastOuputBuffer(nullptr)
+        : m_provider(0)
         , _processingBuffer(nullptr)
+        , _lastOuputBuffer(nullptr)
         , _processOnEmptyInputBuffer(processOnEmptyInputBuffer)
     {}
 
@@ -165,15 +166,21 @@ namespace SparkyStudios::Audio::Amplitude
         if (_processingBuffers.empty())
             return nullptr;
 
-        _mixBuffer = AudioBuffer(_processingBuffers[0]->GetFrameCount(), _processingBuffers[0]->GetChannelCount());
+        auto buffers = _processingBuffers |
+            std::ranges::views::filter(
+                           [](const AudioBuffer* buffer)
+                           {
+                               return buffer != nullptr && !buffer->IsEmpty();
+                           });
 
-        for (AmSize i = 0, l = _processingBuffers.size(); i < l; ++i)
+        if (buffers.empty())
+            return nullptr;
+
+        const auto& first = buffers.begin();
+        _mixBuffer = AudioBuffer((*first)->GetFrameCount(), (*first)->GetChannelCount());
+
+        for (const auto& input : buffers)
         {
-            const auto& input = _processingBuffers[i];
-
-            if (input == nullptr || input->IsEmpty())
-                continue;
-
             AMPLITUDE_ASSERT(input->GetFrameCount() == _mixBuffer.GetFrameCount());
             AMPLITUDE_ASSERT(input->GetChannelCount() == _mixBuffer.GetChannelCount());
 
@@ -223,7 +230,8 @@ namespace SparkyStudios::Audio::Amplitude
     }
 
     OutputNodeInstance::OutputNodeInstance()
-        : _buffer(nullptr)
+        : _provider(0)
+        , _buffer(nullptr)
     {}
 
     void OutputNodeInstance::SetOutput(AudioBuffer* buffer)
