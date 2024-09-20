@@ -350,8 +350,12 @@ set(SA_SOURCE
     src/Mixer/Nodes/ClampNode.h
     src/Mixer/Nodes/ClipNode.cpp
     src/Mixer/Nodes/ClipNode.h
+    src/Mixer/Nodes/EnvironmentEffectNode.cpp
+    src/Mixer/Nodes/EnvironmentEffectNode.h
     src/Mixer/Nodes/NearFieldEffectNode.cpp
     src/Mixer/Nodes/NearFieldEffectNode.h
+    src/Mixer/Nodes/ObstructionNode.cpp
+    src/Mixer/Nodes/ObstructionNode.h
     src/Mixer/Nodes/OcclusionNode.cpp
     src/Mixer/Nodes/OcclusionNode.h
     src/Mixer/Nodes/ReflectionsNode.cpp

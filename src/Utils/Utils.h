@@ -253,7 +253,7 @@ namespace SparkyStudios::Audio::Amplitude
             (*buffer)[i] = 0.5f * (1.0f - std::cos(scalingFactor * static_cast<AmReal32>(i)));
     }
 
-    AmReal32 ComputeMonopoleFilterCoefficient(AmReal32 centerFrequency, AmUInt32 sampleRate);
+    AmReal32 ComputeMonopoleFilterCoefficient(AmReal32 cutoffFrequency, AmUInt32 sampleRate);
 } // namespace SparkyStudios::Audio::Amplitude
 
 #endif // _AM_IMPLEMENTATION_UTILS_UTILS_H

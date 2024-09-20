@@ -186,7 +186,7 @@ namespace SparkyStudios::Audio::Amplitude
         [[nodiscard]] AmUInt32 GetMaxEntitiesCount() const override;
         [[nodiscard]] const Curve& GetOcclusionCoefficientCurve() const override;
         [[nodiscard]] const Curve& GetOcclusionGainCurve() const override;
-        [[nodiscard]] const Curve& GetObstructionLowPassCurve() const override;
+        [[nodiscard]] const Curve& GetObstructionCoefficientCurve() const override;
         [[nodiscard]] const Curve& GetObstructionGainCurve() const override;
         [[nodiscard]] ePanningMode GetPanningMode() const override;
 

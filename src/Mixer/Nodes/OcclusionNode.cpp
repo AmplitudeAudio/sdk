@@ -68,8 +68,6 @@ namespace SparkyStudios::Audio::Amplitude
         const auto channels = input->GetChannelCount();
         const auto sampleRate = layer->GetSoundFormat().GetSampleRate();
 
-        const AmUInt64 soundId = layer->GetId();
-
         const Listener listener = layer->GetListener();
         const Entity entity = layer->GetEntity();
 
@@ -96,7 +94,7 @@ namespace SparkyStudios::Audio::Amplitude
 
         _output = AudioBuffer(frames, channels);
 
-        if (const AmReal32 lpf = lpfCurve.Get(coefficient); lpf > 0)
+        if (const AmReal32 lpf = lpfCurve.Get(_currentOcclusion); lpf > kEpsilon)
         {
             // Update the filter coefficients
             _occlusionFilter->SetParameter(MonoPoleFilter::ATTRIBUTE_COEFFICIENT, AM_CLAMP(lpf, 0.0f, 1.0f));
@@ -104,12 +102,16 @@ namespace SparkyStudios::Audio::Amplitude
             // Apply Low Pass Filter
             _occlusionFilter->Process(*input, _output, frames, sampleRate);
         }
+        else
+        {
+            _output = *input;
+        }
 
         const AmReal32 gain = gainCurve.Get(_currentOcclusion);
 
         // Apply Gain
         for (AmSize c = 0; c < channels; ++c)
-            Gain::ApplyReplaceConstantGain(gain, input->GetChannel(c), 0, _output[c], 0, frames);
+            Gain::ApplyReplaceConstantGain(gain, _output[c], 0, _output[c], 0, frames);
 
         return &_output;
     }

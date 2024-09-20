@@ -1280,7 +1280,7 @@ namespace SparkyStudios::Audio::Amplitude
          *
          * @return The obstruction low pass curve.
          */
-        [[nodiscard]] virtual const Curve& GetObstructionLowPassCurve() const = 0;
+        [[nodiscard]] virtual const Curve& GetObstructionCoefficientCurve() const = 0;
 
         /**
          * @brief Gets the obstruction gain curve defined in the loaded engine configuration.
