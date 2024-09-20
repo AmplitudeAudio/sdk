@@ -182,12 +182,20 @@ namespace SparkyStudios::Audio::Amplitude
                 output[eBFormatChannel_W] += delayChannel;
                 switch (static_cast<RoomWall>(i))
                 {
-                case RoomWall::Right: // Right wall reflection
+                case RoomWall::Left: // Left wall reflection
                     output[eBFormatChannel_Y] += delayChannel;
                     break;
 
-                case RoomWall::Left: // Left wall reflection
+                case RoomWall::Right: // Right wall reflection
                     output[eBFormatChannel_Y] -= delayChannel;
+                    break;
+
+                case RoomWall::Bottom: // Floor reflection
+                    output[eBFormatChannel_Z] -= delayChannel;
+                    break;
+
+                case RoomWall::Top: // Ceiling reflection
+                    output[eBFormatChannel_Z] += delayChannel;
                     break;
 
                 case RoomWall::Front: // Front wall reflection
@@ -198,12 +206,9 @@ namespace SparkyStudios::Audio::Amplitude
                     output[eBFormatChannel_X] -= delayChannel;
                     break;
 
-                case RoomWall::Floor: // Floor reflection
-                    output[eBFormatChannel_Z] += delayChannel;
-                    break;
-
-                case RoomWall::Ceiling: // Ceiling reflection
-                    output[eBFormatChannel_Z] -= delayChannel;
+                default:
+                    amLogError("Invalid room wall index: %d", static_cast<int>(i));
+                    AMPLITUDE_ASSERT(false);
                     break;
                 }
             }

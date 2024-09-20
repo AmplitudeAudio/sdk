@@ -104,11 +104,8 @@ namespace SparkyStudios::Audio::Amplitude
         if (!listener.Valid())
             return;
 
-        const auto& location = layer->GetLocation();
-
         const auto& room = layer->GetRoom();
-        if (room.Valid() && room.GetState()->WasUpdated())
-            _reflectionsProcessor->Update(room.GetState(), listener.GetLocation(), amEngine->GetSoundSpeed());
+        _reflectionsProcessor->Update(room.GetState(), listener.GetLocation(), amEngine->GetSoundSpeed());
     }
 
     ReflectionsNode::ReflectionsNode()
