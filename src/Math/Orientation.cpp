@@ -74,88 +74,80 @@ namespace SparkyStudios::Audio::Amplitude
 
     AmMat4 Orientation::GetRotationMatrix() const
     {
-        CartesianCoordinateSystem cd(CartesianCoordinateSystem::RightHandedYUp());
-        CartesianCoordinateSystem cs(CartesianCoordinateSystem::Default());
+        const AmMat4 rZ = AM_Rotate_RH(_yaw, AM_V3(0, 0, 1));
+        const AmMat4 rY = AM_Rotate_RH(_pitch, AM_V3(0, 1, 0));
+        const AmMat4 rX = AM_Rotate_RH(_roll, AM_V3(1, 0, 0));
 
-        const AmMat4 rZ = AM_Rotate_RH(_yaw, cd.Convert(AM_V3(0, 0, 1), cs));
-        const AmMat4 rY = AM_Rotate_RH(_pitch, cd.Convert(AM_V3(0, 1, 0), cs));
-        const AmMat4 rX = AM_Rotate_RH(_roll, cd.Convert(AM_V3(1, 0, 0), cs));
-
-        return rZ * rY * rX;
+        return (rZ * rY) * rX;
     }
 
     AmMat4 Orientation::GetLookAtMatrix(AmVec3 eye) const
     {
-        CartesianCoordinateSystem cd(CartesianCoordinateSystem::RightHandedYUp());
-        CartesianCoordinateSystem cs(CartesianCoordinateSystem::Default());
+        const AmVec3 yAxis = _forward;
+        const AmVec3 xAxis = AM_Cross(yAxis, _up);
+        const AmVec3 zAxis = AM_Cross(xAxis, yAxis);
 
-        return AM_LookAt_RH(eye, eye + cd.Convert(_forward, cs), cd.Convert(_up, cs));
+        AmMat4 rotation = AM_M4D(1.0f);
+        rotation[0][0] = xAxis.X;
+        rotation[0][1] = yAxis.X;
+        rotation[0][2] = zAxis.X;
+        rotation[1][0] = xAxis.Y;
+        rotation[1][1] = yAxis.Y;
+        rotation[1][2] = zAxis.Y;
+        rotation[2][0] = xAxis.Z;
+        rotation[2][1] = yAxis.Z;
+        rotation[2][2] = zAxis.Z;
+
+        AmMat4 translation = AM_M4D(1.0f);
+        translation[3][0] = -eye.X;
+        translation[3][1] = -eye.Y;
+        translation[3][2] = -eye.Z;
+
+        return rotation * translation;
     }
 
     void Orientation::ComputeForwardAndUpVectors()
     {
-        _forward.X = std::sin(_yaw) * std::cos(_pitch);
-        _forward.Y = std::cos(_yaw) * std::cos(_pitch);
-        _forward.Z = std::sin(_roll);
+        _forward = AM_V3(0, 1, 0);
+        _up = AM_V3(0, 0, 1);
 
-        _up.X = std::sin(_yaw) * std::sin(_pitch);
-        _up.Y = std::cos(_yaw) * std::sin(_pitch);
-        _up.Z = std::cos(_pitch);
+        const AmMat4& rotation = GetRotationMatrix();
+
+        _forward = (rotation * AM_V4V(_forward, 1.0f)).XYZ;
+        _up = (rotation * AM_V4V(_up, 1.0f)).XYZ;
     }
 
     void Orientation::ComputeZYXAngles()
     {
-        // Yaw is the bearing of the forward vector's shadow in the xy plane.
-        _yaw = std::atan2(_forward.Y, _forward.X);
+        AmVec3 right = AM_Cross(_forward, _up);
+        AmVec3 up = AM_Cross(right, _forward);
 
-        // Find the vector in the xy plane.
-        const AmReal32 planeRightX = std::sin(_yaw);
-        const AmReal32 planeRightY = std::cos(_yaw);
+        if (AM_Dot(up, _up) < 0)
+            up = -up;
 
-        // Pitch is the leftward lean of our up vector, computed here using a dot product.
-        _pitch = std::asin(_up.X * planeRightX + _up.Y * planeRightY);
+        // Compute yaw (rotation around Z-axis)
+        _yaw = -std::atan2(_forward.X, right.X);
 
-        // If we're twisted upside-down, return a roll in the range +-(pi/2, pi)
-        if (_up.Z < 0)
-            _pitch = static_cast<AmReal32>((0.0f <= _pitch) - (_pitch < 0.0f)) * AM_PI32 - _pitch;
+        // Compute pitch (rotation around Y-axis)
+        _pitch = std::asin(-up.X);
 
-        // Roll is the altitude of the forward vector off the xy plane, toward the up direction.
-        _roll = std::asin(_forward.Z);
+        // Compute roll (rotation around X-axis)
+        _roll = -std::atan2(_up.Y, _up.Z);
     }
 
     void Orientation::ComputeZYZAngles()
     {
-        const AmReal32 cosYaw = std::cos(_yaw);
-        const AmReal32 sinYaw = std::sin(_yaw);
-        const AmReal32 cosPitch = std::cos(_pitch);
-        const AmReal32 sinPitch = std::sin(_pitch);
-        const AmReal32 cosRoll = std::cos(_roll);
-        const AmReal32 sinRoll = std::sin(_roll);
-
-        // Convert Yaw-Pitch-Roll (ZYX convention) to Alpha-Beta-Gamma (ZYZ convention)
-        if (const AmReal32 m33 = cosPitch * cosRoll; m33 == 1.0f)
+        if (const AmMat4 rotation = GetRotationMatrix(); std::abs(rotation[2][2]) - 1.0f < 0.0f)
         {
-            _beta = 0.0f;
-            _gamma = 0.0f;
-            _alpha = std::atan2(sinYaw, cosYaw);
-        }
-        else if (m33 == -1.0f)
-        {
-            _beta = AM_PI32;
-            _gamma = 0.0f;
-            _alpha = std::atan2(-sinYaw, cosYaw);
+            _alpha = std::atan2(rotation[1][2], rotation[0][2]);
+            _beta = std::acos(rotation[2][2]);
+            _gamma = std::atan2(rotation[2][1], -rotation[2][0]);
         }
         else
         {
-            const AmReal32 m32 = sinYaw * sinPitch * sinRoll + cosYaw * cosRoll;
-            const AmReal32 m31 = cosYaw * sinPitch * sinRoll - sinYaw * cosRoll;
-            _alpha = std::atan2(m32, m31);
-
-            _beta = std::acos(m33);
-
-            const AmReal32 m23 = cosPitch * sinRoll;
-            const AmReal32 m13 = sinPitch;
-            _gamma = std::atan2(m23, m13);
+            _alpha = 0;
+            _beta = rotation[2][2] < 0 ? AM_PI32 : 0.0f;
+            _gamma = std::atan2(rotation[0][1], rotation[0][0]);
         }
     }
 
