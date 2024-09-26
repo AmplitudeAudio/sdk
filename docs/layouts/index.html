@@ -2,16 +2,19 @@
 <section class="section container-fluid mt-n3 pb-3">
   <div class="row justify-content-center">
     <div class="col-lg-12 text-center">
-      <h1>{{ .Title }}</h1>
+      <h1 class="text-uppercase">{{ .Title }}</h1>
+      <p class="meta">
+        {{ .Params.meta | safeHTML }}
+      </p>
     </div>
-    <div class="col-lg-9 col-xl-8 text-center">
-      <p class="lead">{{ .Params.lead | safeHTML }}</p>
+    <div class="col-lg-9 col-xl-8 text-center mt-4">
+      <p class="lead fs-1">{{ .Params.lead | safeHTML }}</p>
       <a class="btn btn-primary btn-cta rounded-pill btn-lg my-3"
         href="{{ .Site.BaseURL | relLangURL }}docs/{{ if site.Params.doks.docsVersioning }}{{ site.Params.doks.docsVersion }}/{{ end }}get-started/introduction/"
         role="button">{{ i18n "get-started" }}</a>
       {{ .Content }}
       <p class="meta">
-        Amplitude Audio SDK is open-source and licensed under Apache-2.0
+        {{ i18n "home-hero-license" }}
       </p>
       <div class="d-flex justify-content-center py-2">
         <a class="github-button" href="https://github.com/SparkyStudios/AmplitudeAudioSDK"
@@ -27,68 +30,225 @@
 {{ if site.Params.doks.backgroundDots -}}
 <div class="d-flex justify-content-center">
   <div class="flex-fill py-2"
-    style="height: 200px; background-size: cover; background-position: center; background-image: url('/images/home_bg.svg');">
+    style="height: 200px; background-size: cover; background-position: center; background-image: url('/images/home_bg.svg');"></div>
   </div>
 </div>
 {{ end -}}
-{{ if eq $.Site.Language.LanguageName "English" }}
-<section class="section section-md section-features">
+
+<section class="section section-md">
   <div class="container">
-    <div class="row justify-content-center text-center">
-      <div class="col-lg-5">
-        <h2 class="h4">🎮 Built for games</h2>
-        <p>
-          With its entity-based architecture and its optimized API you will be able to easily integrate Amplitude in
-          your game.
-        </p>
-      </div>
-      <div class="col-lg-5">
-        <h2 class="h4">📄 Data-driven development</h2>
-        <p>
-          Amplitude uses JSON files for asset authoring. You just have to write them, and let Amplitude do the magic for
-          you.
-        </p>
-      </div>
-      <div class="col-lg-5">
-        <h2 class="h4">🐧 Multi-platform support</h2>
-        <p>
-          Amplitude runs on Windows, Linux and Mac OS platforms. Support for Android and iOS devices will be available
-          soon.
-        </p>
-      </div>
+    <div class="section-header">
+      <h2 class="section-header-title">{{ i18n "home-section-engine-title" }}</h2>
+      <span class="meta">{{ i18n "home-section-engine-subtitle" }}</span>
     </div>
-    <div class="row justify-content-center text-center">
-      <div class="col-lg-5">
-        <h2 class="h4">⚡ Fast processing</h2>
-        <p>
-          Entities management and audio processing are fast. Amplitude extensively uses SIMD optmized operations.
-        </p>
+    <div class="d-flex flex-column gap-5">
+      <div class="row justify-content-center text-center">
+        <div class="col-lg-5">
+          <span class="section-item-icon">
+            <img src="/images/device-gamepad-2.svg" alt="built-for-games">
+          </span>
+          <h3 class="h5 fw-normal text-uppercase">{{ i18n "home-section-engine-1-title" }}</h3>
+          <p class="section-item-description">
+            {{ i18n "home-section-engine-1-description" }}
+          </p>
+        </div>
+        <div class="col-lg-5">
+          <span class="section-item-icon">
+            <img src="/images/json.svg" alt="data-driven-development">
+          </span>
+          <h3 class="h5 fw-normal text-uppercase">{{ i18n "home-section-engine-2-title" }}</h3>
+          <p class="section-item-description">
+            {{ i18n "home-section-engine-2-description" }}
+          </p>
+        </div>
+        <div class="col-lg-5">
+          <span class="section-item-icon">
+            <img src="/images/arrows-shuffle.svg" alt="multi-platform-support">
+          </span>
+          <h3 class="h5 fw-normal text-uppercase">{{ i18n "home-section-engine-3-title" }}</h3>
+          <p class="section-item-description">
+            {{ i18n "home-section-engine-3-description" }}
+          </p>
+        </div>
       </div>
-      <div class="col-lg-5">
-        <h2 class="h4">🔌 Plugins architecture</h2>
-        <p>
-          Amplitude is extensible. You can create custom plugins and add new filters, codecs, and more to the engine.
-        </p>
-      </div>
-      <div class="col-lg-5">
-        <h2 class="h4">♻️ Easy to use</h2>
-        <p>
-          Amplitude follows most of the concepts in audio programming for games. Even without experience, you can
-          quickly get started.
-        </p>
+      <div class="row justify-content-center text-center">
+        <div class="col-lg-5">
+          <span class="section-item-icon">
+            <img src="/images/bolt.svg" alt="fast-processing">
+          </span>
+          <h3 class="h5 fw-normal text-uppercase">{{ i18n "home-section-engine-4-title" }}</h3>
+          <p class="section-item-description">
+            {{ i18n "home-section-engine-4-description" }}
+          </p>
+        </div>
+        <div class="col-lg-5">
+          <span class="section-item-icon">
+            <img src="/images/plug.svg" alt="plugins-architecture">
+          </span>
+          <h3 class="h5 fw-normal text-uppercase">{{ i18n "home-section-engine-5-title" }}</h3>
+          <p class="section-item-description">
+            {{ i18n "home-section-engine-5-description" }}
+          </p>
+        </div>
+        <div class="col-lg-5">
+          <span class="section-item-icon">
+            <img src="/images/school.svg" alt="quick-learning-curve">
+          </span>
+          <h3 class="h5 fw-normal text-uppercase">{{ i18n "home-section-engine-6-title" }}</h3>
+          <p class="section-item-description">
+            {{ i18n "home-section-engine-6-description" }}
+          </p>
+        </div>
       </div>
     </div>
   </div>
 </section>
-{{ end }}
+
+<section class="section section-md bg-light">
+  <div class="container">
+    <div class="section-header">
+      <h2 class="section-header-title">{{ i18n "home-section-features-title" }}</h2>
+      <span class="meta">{{ i18n "home-section-features-subtitle" }}</span>
+    </div>
+    <div class="d-flex flex-column gap-5">
+      <div class="row justify-content-center text-center">
+        <div class="col-lg-5">
+          <span class="section-item-icon">
+            <img src="/images/headphones.svg" alt="hrtf">
+          </span>
+          <h3 class="h5 fw-normal text-uppercase">{{ i18n "home-section-features-1-title" }}</h3>
+          <p class="section-item-description">
+            {{ i18n "home-section-features-1-description" }}
+          </p>
+        </div>
+        <div class="col-lg-5">
+          <span class="section-item-icon">
+            <img src="/images/wall.svg" alt="obstruction-occlusion">
+          </span>
+          <h3 class="h5 fw-normal text-uppercase">{{ i18n "home-section-features-2-title" }}</h3>
+          <p class="section-item-description">
+            {{ i18n "home-section-features-2-description" }}
+          </p>
+        </div>
+        <div class="col-lg-5">
+          <span class="section-item-icon">
+            <img src="/images/schema.svg" alt="multi-platform-support">
+          </span>
+          <h3 class="h5 fw-normal text-uppercase">{{ i18n "home-section-features-3-title" }}</h3>
+          <p class="section-item-description">
+            {{ i18n "home-section-features-3-description" }}
+          </p>
+        </div>
+      </div>
+      <div class="row justify-content-center text-center">
+        <div class="col-lg-5">
+          <span class="section-item-icon">
+            <img src="/images/arrow-elbow-right.svg" alt="reflections-reverb">
+          </span>
+          <h3 class="h5 fw-normal text-uppercase">{{ i18n "home-section-features-4-title" }}</h3>
+          <p class="section-item-description">
+            {{ i18n "home-section-features-4-description" }}
+          </p>
+        </div>
+        <div class="col-lg-5">
+          <span class="section-item-icon">
+            <img src="/images/ambisonics.svg" alt="ambisonics-rendering">
+          </span>
+          <h3 class="h5 fw-normal text-uppercase">{{ i18n "home-section-features-5-title" }}</h3>
+          <p class="section-item-description">
+            {{ i18n "home-section-features-5-description" }}
+          </p>
+        </div>
+        <div class="col-lg-5">
+          <span class="section-item-icon">
+            <img src="/images/volume-2.svg" alt="attenuation-models">
+          </span>
+          <h3 class="h5 fw-normal text-uppercase">{{ i18n "home-section-features-6-title" }}</h3>
+          <p class="section-item-description">
+            {{ i18n "home-section-features-6-description" }}
+          </p>
+        </div>
+      </div>
+      <div class="row justify-content-center text-center">
+        <div class="col-lg-5">
+          <span class="section-item-icon">
+            <img src="/images/wave-sine.svg" alt="rtpc">
+          </span>
+          <h3 class="h5 fw-normal text-uppercase">{{ i18n "home-section-features-7-title" }}</h3>
+          <p class="section-item-description">
+            {{ i18n "home-section-features-7-description" }}
+          </p>
+        </div>
+        <div class="col-lg-5">
+          <span class="section-item-icon">
+            <img src="/images/photo-scan.svg" alt="environment-effects">
+          </span>
+          <h3 class="h5 fw-normal text-uppercase">{{ i18n "home-section-features-8-title" }}</h3>
+          <p class="section-item-description">
+            {{ i18n "home-section-features-8-description" }}
+          </p>
+        </div>
+        <div class="col-lg-5">
+          <span class="section-item-icon">
+            <img src="/images/package.svg" alt="release-packages">
+          </span>
+          <h3 class="h5 fw-normal text-uppercase">{{ i18n "home-section-features-9-title" }}</h3>
+          <p class="section-item-description">
+            {{ i18n "home-section-features-9-description" }}
+          </p>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="section section-md">
+  <div class="container">
+    <div class="section-header">
+      <h2 class="section-header-title">{{ i18n "home-section-integrations-title" }}</h2>
+      <span class="meta">{{ i18n "home-section-integrations-subtitle" }}</span>
+    </div>
+    <div class="d-flex flex-column gap-5">
+      <div class="row justify-content-center text-center">
+        <div class="col-lg-5">
+          <span class="section-item-icon">
+            <img src="/images/sdk.svg" alt="sdk">
+          </span>
+          <h3 class="h5 fw-normal text-uppercase">{{ i18n "home-section-integrations-1-title" }}</h3>
+          <p class="section-item-description">
+            {{ i18n "home-section-integrations-1-description" }}
+          </p>
+        </div>
+        <div class="col-lg-5">
+          <span class="section-item-icon">
+            <img src="/images/o3de_icon.svg" alt="sdk">
+          </span>
+          <h3 class="h5 fw-normal text-uppercase">{{ i18n "home-section-integrations-2-title" }}</h3>
+          <p class="section-item-description">
+            {{ i18n "home-section-integrations-2-description" }}
+          </p>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+{{ if false -}}
+<section class="section section-md bg-light">
+  <div class="container">
+    <div class="section-header">
+      <h2 class="section-header-title">{{ i18n "home-section-contact-title" }}</h2>
+      <span class="meta">{{ i18n "home-section-contact-subtitle" }}</span>
+    </div>
+  </div>
+</section>
+{{ end -}}
 {{ end }}
 
 {{ define "sidebar-footer" }}
 {{ if site.Params.doks.sectionFooter -}}
-<section class="section section-md container-fluid bg-light">
+<section class="section section-md container-fluid">
   <div class="row justify-content-center text-center">
     <div class="col-lg-7">
-      <h2 class="mt-2">Start your Amplitude journey</h2>
       <a class="btn btn-primary rounded-pill px-4 my-2"
         href="{{ .Site.BaseURL | relLangURL }}docs/{{ if site.Params.doks.docsVersioning }}{{ site.Params.doks.docsVersion }}/{{ end }}get-started/introduction/"
         role="button">{{ i18n "get-started" }}</a>
