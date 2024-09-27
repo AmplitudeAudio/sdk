@@ -43,29 +43,16 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-  build-sdk:
+  build:
     needs: [ cleanup ]
     uses: ./.github/workflows/cmake.yml
     with:
       project-path: .
+      project-slug: amplitude_audio_sdk
     name: Amplitude Audio SDK
 
-  build-plugins:
-    needs: [ build-sdk ]
-    uses: ./.github/workflows/cmake.yml
-    with:
-      project-path: ./plugins/${{ matrix.project.path }}
-    name: ${{ matrix.project.name }}
-    strategy:
-      matrix:
-        project:
-          - name: FLAC Codec
-            path: codec-flac
-          - name: Vorbis Codec
-            path: codec-vorbis
-
   release:
-    needs: [ build-plugins ]
+    needs: [ build ]
     runs-on: ${{ matrix.config.os }}
     name: "[${{ matrix.build_type }}] ${{ matrix.config.name }}"
     strategy:

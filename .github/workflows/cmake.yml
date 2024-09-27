@@ -6,6 +6,10 @@ on:
       project-path:
         required: true
         type: string
+      project-slug:
+        required: true
+        type: string
+
 
 jobs:
   build:
@@ -19,8 +23,7 @@ jobs:
           - name: "Windows Latest MSVC"
             key: msvc
             os: windows-latest
-            sdk_dir: win
-            artifact: "amplitude_audio_sdk_windows_msvc_x64.7z"
+            artifact: "${{ inputs.project-slug }}_windows_msvc_x64.7z"
             cc: "cl"
             cxx: "cl"
             generator: "Visual Studio 17 2022"
@@ -29,8 +32,7 @@ jobs:
           - name: "Windows Latest MinGW"
             key: mingw
             os: windows-latest
-            sdk_dir: win
-            artifact: "amplitude_audio_sdk_windows_mingw_x64.7z"
+            artifact: "${{ inputs.project-slug }}_windows_mingw_x64.7z"
             cc: "gcc"
             cxx: "g++"
             generator: "Ninja"
@@ -39,8 +41,7 @@ jobs:
           - name: "Ubuntu Latest GCC"
             key: gcc
             os: ubuntu-24.04
-            sdk_dir: linux
-            artifact: "amplitude_audio_sdk_linux_gcc_x64.7z"
+            artifact: "${{ inputs.project-slug }}_linux_gcc_x64.7z"
             cc: "gcc"
             cxx: "g++"
             generator: "Ninja"
@@ -49,8 +50,7 @@ jobs:
           - name: "macOS x64 Latest Clang"
             key: clang
             os: macos-13
-            sdk_dir: osx
-            artifact: "amplitude_audio_sdk_macos_clang_x64.7z"
+            artifact: "${{ inputs.project-slug }}_macos_clang_x64.7z"
             cc: "clang"
             cxx: "clang++"
             generator: "Ninja"
@@ -59,8 +59,7 @@ jobs:
           - name: "macOS arm64 Latest Clang"
             key: clang
             os: macos-14
-            sdk_dir: osx
-            artifact: "amplitude_audio_sdk_macos_clang_arm64.7z"
+            artifact: "${{ inputs.project-slug }}_macos_clang_arm64.7z"
             cc: "clang"
             cxx: "clang++"
             generator: "Ninja"
@@ -181,12 +180,12 @@ jobs:
       - name: Copy flatc to SDK folder (Windows)
         if: startsWith(matrix.config.os, 'windows')
         run: |
-          Copy-Item .\bin\flatc.exe -Destination .\sdk\bin\${{ matrix.config.sdk_dir }}
+          Copy-Item .\bin\flatc.exe -Destination .\sdk\bin\${{ matrix.config.target_triplet }}
 
       - name: Copy flatc to SDK folder (Unix)
         if: startsWith(matrix.config.os, 'ubuntu') || startsWith(matrix.config.os, 'macos')
         run: |
-          cp ./bin/flatc ./sdk/bin/${{ matrix.config.sdk_dir }}
+          cp ./bin/flatc ./sdk/bin/${{ matrix.config.target_triplet }}
 
       - name: Save SDK Cache
         uses: actions/cache/save@v4
