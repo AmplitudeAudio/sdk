@@ -91,11 +91,11 @@ static AM_INLINE std::string am_wstring_narrow(const std::wstring& str)
 #endif
 
 // AMPLITUDE_ASSERT Config
-#ifdef AMPLITUDE_NO_ASSERTS
+#ifdef AM_NO_ASSERTS
 #define AMPLITUDE_ASSERT(x)
 #else
 #include <cassert> // assert
 #define AMPLITUDE_ASSERT(x) assert(x)
-#endif // AMPLITUDE_NO_ASSERTS
+#endif // AM_NO_ASSERTS
 
 #endif // _AM_CORE_COMMON_PLATFORMS_UNIX_CONFIG_H

@@ -91,7 +91,7 @@ static AM_INLINE std::string am_wstring_narrow(const std::wstring& str)
 #define AM_STRING_TO_OS_STRING(s) am_string_widen(s).c_str()
 
 // AMPLITUDE_ASSERT Config
-#ifdef AMPLITUDE_NO_ASSERTS
+#ifdef AM_NO_ASSERTS
 #define AMPLITUDE_ASSERT(x)
 #else
 #ifdef _MSC_VER
@@ -117,6 +117,6 @@ static AM_INLINE std::string am_wstring_narrow(const std::wstring& str)
 #include <cassert> // assert
 #define AMPLITUDE_ASSERT(x) assert(x)
 #endif // _MSC_VER
-#endif // AMPLITUDE_NO_ASSERTS
+#endif // AM_NO_ASSERTS
 
 #endif // _AM_CORE_COMMON_PLATFORMS_WINDOWS_CONFIG_H

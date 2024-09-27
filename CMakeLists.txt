@@ -489,6 +489,8 @@ foreach (build_type ${AM_BUILDSYSTEM_TYPE})
     )
 
     target_compile_definitions(${build_type} PRIVATE AM_BUILDSYSTEM_BUILDING_AMPLITUDE)
+    target_compile_definitions(${build_type} PUBLIC "$<$<CONFIG:RELEASE>:AM_NO_MEMORY_STATS>")
+    target_compile_definitions(${build_type} PUBLIC "$<$<CONFIG:RELEASE>:AM_NO_ASSERTS>")
 
     target_link_libraries(${build_type}
         PRIVATE
