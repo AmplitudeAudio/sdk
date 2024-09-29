@@ -83,6 +83,10 @@ namespace SparkyStudios::Audio::Amplitude
             vertex.m_RightIR.resize(_header.m_IRLength);
             file->Read(reinterpret_cast<AmUInt8Buffer>(vertex.m_RightIR.data()), _header.m_IRLength * sizeof(AmReal32));
 
+            file->Read(reinterpret_cast<AmUInt8Buffer>(&vertex.m_LeftDelay), sizeof(AmReal32));
+
+            file->Read(reinterpret_cast<AmUInt8Buffer>(&vertex.m_RightDelay), sizeof(AmReal32));
+
             vertices[i] = vertex.m_Position;
             ++i;
         }

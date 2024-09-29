@@ -17,12 +17,10 @@
 
 #include <SparkyStudios/Audio/Amplitude/Math/Orientation.h>
 
-#include <Ambisonics/AmbisonicComponent.h>
+#include <Ambisonics/BFormat.h>
 
 namespace SparkyStudios::Audio::Amplitude
 {
-    class BFormat;
-
     class AmbisonicOrientationProcessor : public AmbisonicComponent
     {
     public:

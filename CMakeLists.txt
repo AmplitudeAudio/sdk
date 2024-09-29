@@ -309,7 +309,6 @@ set(SA_SOURCE
 
     src/HRTF/HRIRSphere.cpp
     src/HRTF/HRIRSphere.h
-    src/HRTF/HRTFContext.h
     src/IO/DiskFile.cpp
     src/IO/DiskFileSystem.cpp
     src/IO/File.cpp
@@ -336,6 +335,8 @@ set(SA_SOURCE
     src/Mixer/Nodes/AmbisonicMixerNode.h
     src/Mixer/Nodes/AmbisonicPanningNode.cpp
     src/Mixer/Nodes/AmbisonicPanningNode.h
+    src/Mixer/Nodes/AmbisonicRotatorNode.cpp
+    src/Mixer/Nodes/AmbisonicRotatorNode.h
     src/Mixer/Nodes/AttenuationNode.cpp
     src/Mixer/Nodes/AttenuationNode.h
     src/Mixer/Nodes/ClampNode.cpp

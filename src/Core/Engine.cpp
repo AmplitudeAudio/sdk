@@ -92,6 +92,7 @@ namespace SparkyStudios::Audio::Amplitude
     static AmUniquePtr<MemoryPoolKind::Engine, AmbisonicBinauralDecoderNode> sAmbisonicBinauralDecoderNodePlugin = nullptr;
     static AmUniquePtr<MemoryPoolKind::Engine, AmbisonicMixerNode> sAmbisonicMixerNodePlugin = nullptr;
     static AmUniquePtr<MemoryPoolKind::Engine, AmbisonicPanningNode> sAmbisonicPanningNodePlugin = nullptr;
+    static AmUniquePtr<MemoryPoolKind::Engine, AmbisonicRotatorNode> sAmbisonicRotatorNodePlugin = nullptr;
     static AmUniquePtr<MemoryPoolKind::Engine, AttenuationNode> sAttenuationNodePlugin = nullptr;
     static AmUniquePtr<MemoryPoolKind::Engine, ClampNode> sClampNodePlugin = nullptr;
     static AmUniquePtr<MemoryPoolKind::Engine, ClipNode> sClipNodePlugin = nullptr;
@@ -379,6 +380,7 @@ namespace SparkyStudios::Audio::Amplitude
         sAmbisonicBinauralDecoderNodePlugin.reset(ampoolnew(MemoryPoolKind::Engine, AmbisonicBinauralDecoderNode));
         sAmbisonicMixerNodePlugin.reset(ampoolnew(MemoryPoolKind::Engine, AmbisonicMixerNode));
         sAmbisonicPanningNodePlugin.reset(ampoolnew(MemoryPoolKind::Engine, AmbisonicPanningNode));
+        sAmbisonicRotatorNodePlugin.reset(ampoolnew(MemoryPoolKind::Engine, AmbisonicRotatorNode));
         sAttenuationNodePlugin.reset(ampoolnew(MemoryPoolKind::Engine, AttenuationNode));
         sClampNodePlugin.reset(ampoolnew(MemoryPoolKind::Engine, ClampNode));
         sClipNodePlugin.reset(ampoolnew(MemoryPoolKind::Engine, ClipNode));
@@ -434,6 +436,7 @@ namespace SparkyStudios::Audio::Amplitude
         sAmbisonicBinauralDecoderNodePlugin.reset(nullptr);
         sAmbisonicMixerNodePlugin.reset(nullptr);
         sAmbisonicPanningNodePlugin.reset(nullptr);
+        sAmbisonicRotatorNodePlugin.reset(nullptr);
         sAttenuationNodePlugin.reset(nullptr);
         sClampNodePlugin.reset(nullptr);
         sClipNodePlugin.reset(nullptr);

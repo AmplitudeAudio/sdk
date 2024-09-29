@@ -108,6 +108,16 @@ namespace SparkyStudios::Audio::Amplitude
          * @brief The right HRIR data.
          */
         std::vector<AmReal32> m_RightIR;
+
+        /**
+         * @brief The delay for the left ear.
+         */
+        AmReal32 m_LeftDelay = 0.0f;
+
+        /**
+         * @brief The delay for the right ear.
+         */
+        AmReal32 m_RightDelay = 0.0f;
     };
 
     /**

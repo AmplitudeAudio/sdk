@@ -22,7 +22,6 @@
 #include <Ambisonics/AmbisonicDecoder.h>
 #include <Ambisonics/BFormat.h>
 #include <HRTF/HRIRSphere.h>
-#include <HRTF/HRTFContext.h>
 
 namespace SparkyStudios::Audio::Amplitude
 {

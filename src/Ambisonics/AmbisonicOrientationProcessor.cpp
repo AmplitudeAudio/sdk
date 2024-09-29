@@ -13,7 +13,6 @@
 // limitations under the License.
 
 #include <Ambisonics/AmbisonicOrientationProcessor.h>
-#include <Ambisonics/BFormat.h>
 
 #define sqrt3 std::sqrt(3.f)
 #define sqrt3_2 std::sqrt(3.f / 2.f)

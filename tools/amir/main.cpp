@@ -21,6 +21,7 @@
 #include <SparkyStudios/Audio/Amplitude/Amplitude.h>
 
 #include <Core/Codecs/WAV/Codec.h>
+#include <DSP/Filters/BiquadResonantFilter.h>
 #include <Utils/Utils.h>
 
 using namespace SparkyStudios::Audio::Amplitude;
@@ -56,6 +57,87 @@ static void log(FILE* output, const char* fmt, ...)
     vfprintf(output, fmt, args);
 #endif
     va_end(args);
+}
+
+void cxcorr(AmReal32* a, AmReal32* b, AmReal32* x_ab, AmSize la, AmSize lb)
+{
+    AmInt32 m, n, negFLAG, arg, len, lim;
+
+    len = static_cast<AmInt32>(la + lb) - 1;
+    std::memset(x_ab, 0, len * sizeof(AmReal32));
+
+    for (m = 1; m <= len; m++)
+    {
+        arg = m - static_cast<AmInt32>(la);
+        if (arg < 0)
+        {
+            negFLAG = 1;
+            lim = static_cast<AmInt32>(la) + arg;
+        }
+        else
+        {
+            negFLAG = 0;
+            lim = static_cast<AmInt32>(la) - arg;
+        }
+        for (n = 1; n <= lim; n++)
+        {
+            if (negFLAG == 0)
+                x_ab[m - 1] += (a[arg + n - 1] * b[n - 1]);
+            else
+                x_ab[m - 1] += (a[n - 1] * b[n - arg - 1]);
+        }
+    }
+}
+
+// Estimates the Inter-aural Time Difference (ITD) between the left and right channels of the HRIR sphere.
+// The implementation is inspired by the following code:
+// https://github.com/leomccormack/Spatial_Audio_Framework/blob/018e06e86ccdbb37cc527ca511a3a26576126b71/framework/modules/saf_hrir/saf_hrir.c#L40
+void estimateITD(HRIRSphereVertex& vertex, AmSize irLength, AmUInt32 sampleRate)
+{
+    constexpr AmReal32 kFC = 750.0f;
+    constexpr AmReal32 kQ = 0.7071f;
+
+    BiquadResonantFilter lpfFilter;
+    lpfFilter.InitializeLowPass(kFC, kQ);
+
+    const AmReal32 maxITD = AM_SqrtF(2.0f) / 2e3f;
+
+    AmReal32 correlationLength = 2 * irLength - 1;
+
+    AmAlignedReal32Buffer correlation;
+    AudioBuffer hrirLPF(irLength, kAmStereoChannelCount);
+
+    correlation.Init(correlationLength);
+
+    AudioBuffer hrir(irLength, kAmStereoChannelCount);
+    std::memcpy(hrir[0].begin(), vertex.m_LeftIR.data(), irLength * sizeof(AmReal32));
+    std::memcpy(hrir[1].begin(), vertex.m_RightIR.data(), irLength * sizeof(AmReal32));
+
+    // Apply LPF
+    FilterInstance* lpfInstance = lpfFilter.CreateInstance();
+    lpfInstance->Process(hrir, hrirLPF, irLength, sampleRate);
+    lpfFilter.DestroyInstance(lpfInstance);
+
+    // xcorr between L and R
+    cxcorr(hrirLPF[0].begin(), hrirLPF[1].begin(), correlation.GetBuffer(), irLength, irLength);
+
+    AmReal32 maxVal = 0.0f;
+    AmUInt32 maxIdx = 0;
+
+    for (AmUInt32 j = 0; j < correlationLength; ++j)
+    {
+        if (correlation[j] > maxVal)
+        {
+            maxIdx = j;
+            maxVal = correlation[j];
+        }
+    }
+
+    AmReal32 itd = (static_cast<AmReal32>(irLength) - static_cast<AmReal32>(maxIdx) - 1.0f) / static_cast<AmReal32>(sampleRate);
+    itd = AM_CLAMP(itd, -maxITD, maxITD);
+
+    vertex.m_LeftDelay = itd < 0.0f ? -itd : 0.0f;
+    vertex.m_RightDelay = itd > 0.0f ? itd : 0.0f;
 }
 
 void triangulate(const std::vector<HRIRSphereVertex>& vertices, std::vector<AmUInt32>& indices, bool debug = false)
@@ -308,6 +390,7 @@ static int process(const AmOsString& inFileName, const AmOsString& outFileName, 
                 resampler->Process(buffer, totalFrames, resampledBuffer, resampledTotalFrames);
 
                 totalFrames = resampledTotalFrames;
+                sampleRate = state.resampling.targetSampleRate;
 
                 buffer = resampledBuffer;
                 Resampler::Destruct("default", resampler);
@@ -326,6 +409,8 @@ static int process(const AmOsString& inFileName, const AmOsString& outFileName, 
                 vertex.m_LeftIR[j] = i == 0 ? leftChannel[j] : rightChannel[j];
                 vertex.m_RightIR[j] = i == 0 ? rightChannel[j] : leftChannel[j];
             }
+
+            estimateITD(vertex, totalFrames, sampleRate);
 
             vertices.push_back(vertex);
 
@@ -359,6 +444,8 @@ static int process(const AmOsString& inFileName, const AmOsString& outFileName, 
         packageFile.Write(reinterpret_cast<AmConstUInt8Buffer>(&vertex.m_Position), sizeof(AmVec3));
         packageFile.Write(reinterpret_cast<AmConstUInt8Buffer>(vertex.m_LeftIR.data()), irLength * sizeof(AmReal32));
         packageFile.Write(reinterpret_cast<AmConstUInt8Buffer>(vertex.m_RightIR.data()), irLength * sizeof(AmReal32));
+        packageFile.Write(reinterpret_cast<AmConstUInt8Buffer>(&vertex.m_LeftDelay), sizeof(AmReal32));
+        packageFile.Write(reinterpret_cast<AmConstUInt8Buffer>(&vertex.m_RightDelay), sizeof(AmReal32));
     }
 
     packageFile.Close();
