@@ -11,7 +11,7 @@ toc: true
 Attenuation models are a way to specify how the gain of a sound object is affected by its position in space (in the case of spatialized sounds), and its distance from the attached listener.
 
 {{< alert >}}
-The flatbuffers schema of this file can be found [here](https://github.com/SparkyStudios/AmplitudeAudioSDK/blob/main/schemas/attenuation_definition.fbs).
+The flatbuffers schema of this file can be found [here](https://github.com/AmplitudeAudio/sdk/blob/main/schemas/attenuation_definition.fbs).
 {{< /alert >}}
 
 An attenuation model is configured with the following properties:

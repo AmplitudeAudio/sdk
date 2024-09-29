@@ -11,7 +11,7 @@ toc: true
 This configuration file allows you to register the list of buses Amplitude will use in the engine. For each bus, you can configure settings for auto-ducking between them.
 
 {{< alert >}}
-The flatbuffers schema of this file can be found [here](https://github.com/SparkyStudios/AmplitudeAudioSDK/blob/main/schemas/buses_definition.fbs).
+The flatbuffers schema of this file can be found [here](https://github.com/AmplitudeAudio/sdk/blob/main/schemas/buses_definition.fbs).
 {{< /alert >}}
 
 When configuring buses, you are allowed to create as many buses as you want, but there should be at least one `master` bus. The master bus is a special bus that controls all the other buses. It should have a `id` attribute set to `1` and a `name` attribute set to `master`.

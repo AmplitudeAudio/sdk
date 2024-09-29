@@ -31,7 +31,7 @@ To build Amplitude from sources, you will need to first install some dependencie
 Once you have installed dependencies you can clone the repository from GitHub using `git` as follows:
 
 ```bash
-git clone https://github.com/SparkyStudios/AmplitudeAudioSDK.git
+git clone https://github.com/AmplitudeAudio/sdk.git
 ```
 
 This will create a directory named `AmplitudeAudioSDK` at the location you cloned the repository. Enter that directory and use CMake to generate build files for your system:

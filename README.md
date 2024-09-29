@@ -1,5 +1,6 @@
-![build](https://github.com/SparkyStudios/AmplitudeAudioSDK/actions/workflows/build.yml/badge.svg)
-![documentation](https://github.com/SparkyStudios/AmplitudeAudioSDK/actions/workflows/hugo.yml/badge.svg)
+![build](https://github.com/AmplitudeAudio/sdk/actions/workflows/build.yml/badge.svg)
+![documentation](https://github.com/AmplitudeAudio/sdk/actions/workflows/hugo.yml/badge.svg)
+[![Codecov](https://img.shields.io/codecov/c/gh/AmplitudeAudio/sdk?style=flat&logo=codecov&label=Coverage)](https://codecov.io/gh/AmplitudeAudio/sdk?branch=develop)
 [![discord server](https://dcbadge.vercel.app/api/server/q8eT8Mq6du?style=flat)](https://discord.gg/q8eT8Mq6du)
 [![X (formerly Twitter) Follow](https://img.shields.io/twitter/follow/amaudiosdk?style=social&logo=x&label=%40amaudiosdk)](https://x.com/@amaudiosdk)
 
@@ -25,11 +26,11 @@ thanks to its data-driven way. All you need is to write configuration files and 
   <br/>
 </div>
 
-> Amplitude is still in active development, and no official release is made yet. However, the API is stable and no breaking changes will be introduced until the first release. To get a copy of the SDK, you should [build it from sources](https://amplitudeaudiosdk.com/docs/get-started/installation/#build-the-sdk-from-sources). Feel free to raise an [issue](https://github.com/SparkyStudios/AmplitudeAudioSDK/issues/new/choose "Open a Github Issue") or open a [PR](https://github.com/SparkyStudios/AmplitudeAudioSDK/pulls), by following our [Contributor Guidelines](https://github.com/SparkyStudios/AmplitudeAudioSDK/blob/main/CODE_OF_CONDUCT.md).
+> Amplitude is still in active development, and no official release is made yet. However, the API is stable and no breaking changes will be introduced until the first release. To get a copy of the SDK, you should [build it from sources](https://amplitudeaudiosdk.com/docs/get-started/installation/#build-the-sdk-from-sources). Feel free to raise an [issue](https://github.com/AmplitudeAudio/sdk/issues/new/choose "Open a Github Issue") or open a [PR](https://github.com/AmplitudeAudio/sdk/pulls), by following our [Contributor Guidelines](https://github.com/AmplitudeAudio/sdk/blob/main/CODE_OF_CONDUCT.md).
 
 ## Sample Projects
 
-The quickest way to get started with the SDK is to have a look on the [sample projects](https://github.com/SparkyStudios/AmplitudeAudioSDK/blob/develop/samples).
+The quickest way to get started with the SDK is to have a look on the [sample projects](https://github.com/AmplitudeAudio/sdk/blob/develop/samples).
 
 ## Features
 
@@ -63,8 +64,8 @@ Amplitude uses [MiniAudio](http://miniaud.io/) as the default audio device imple
 
 ## Download
 
-Official Amplitude release files are available from the [GitHub releases page](https://github.com/SparkyStudios/AmplitudeAudioSDK/releases).
+Official Amplitude release files are available from the [GitHub releases page](https://github.com/AmplitudeAudio/sdk/releases).
 
 ## License
 
-Amplitude Audio SDK is licensed under the [Apache License 2.0](https://github.com/SparkyStudios/AmplitudeAudioSDK/blob/main/LICENSE).
+Amplitude Audio SDK is licensed under the [Apache License 2.0](https://github.com/AmplitudeAudio/sdk/blob/main/LICENSE).

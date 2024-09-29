@@ -5,7 +5,7 @@
   "description": "A powerful and cross-platform audio engine, optimized for games.",
   "version": "1.0",
   "license": "Apache-2.0",
-  "homepage": "https://github.com/SparkyStudios/AmplitudeAudioSDK",
+  "homepage": "https://github.com/AmplitudeAudio/sdk",
   "features": {
     "samples": {
       "description": "Amplitude Audio SDK Samples",

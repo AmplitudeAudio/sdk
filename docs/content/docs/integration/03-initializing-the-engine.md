@@ -11,7 +11,7 @@ toc: true
 {{< callout context="note" title="Note" icon="info-circle" >}}
 You will need to have an Amplitude project to follow these instructions. Please read the
 [project setup]({{< relref "../project-setup/01-project-architecture" >}}) documentation to create a project. You can
-also get one of the [sample projects](https://github.com/SparkyStudios/AmplitudeAudioSDK/tree/develop/samples) provided
+also get one of the [sample projects](https://github.com/AmplitudeAudio/sdk/tree/develop/samples) provided
 in the GitHub repository.
 {{< /callout >}}
 

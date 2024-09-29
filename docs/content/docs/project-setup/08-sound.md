@@ -11,7 +11,7 @@ toc: true
 Sound is where you define sources for any sound objects that will be used in the runtime. They also represent the most basic form of sound objects, allowing you to trigger audio directly from a file.
 
 {{< alert >}}
-The flatbuffers schema of this file can be found [here](https://github.com/SparkyStudios/AmplitudeAudioSDK/blob/main/schemas/sound_definition.fbs).
+The flatbuffers schema of this file can be found [here](https://github.com/AmplitudeAudio/sdk/blob/main/schemas/sound_definition.fbs).
 {{< /alert >}}
 
 Apart from the common properties of [sound object]({{< relref "07-sound-object" >}}) assets, a sound asset contains the following properties:

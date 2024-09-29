@@ -11,7 +11,7 @@ toc: true
 A switch container is a special container sound object that automatically play or schedule sounds when a specific [Switch] changes his state.
 
 {{< alert >}}
-The flatbuffers schema of this file can be found [here](https://github.com/SparkyStudios/AmplitudeAudioSDK/blob/main/schemas/switch_container_definition.fbs).
+The flatbuffers schema of this file can be found [here](https://github.com/AmplitudeAudio/sdk/blob/main/schemas/switch_container_definition.fbs).
 {{< /alert >}}
 
 Apart from the common properties of [sound object]({{< relref "07-sound-object" >}}) assets, a switch container asset contains the following properties:

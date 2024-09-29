@@ -11,7 +11,7 @@ toc: true
 Effects allow you to apply sound effects to any sound object. Effects are applied at the playback time through a pipeline processor.
 
 {{< alert >}}
-The flatbuffers schema of this file can be found [here](https://github.com/SparkyStudios/AmplitudeAudioSDK/blob/main/schemas/effect_definition.fbs).
+The flatbuffers schema of this file can be found [here](https://github.com/AmplitudeAudio/sdk/blob/main/schemas/effect_definition.fbs).
 {{< /alert >}}
 
 An effect file contains the following properties:

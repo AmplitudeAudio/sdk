@@ -10,7 +10,7 @@ toc: true
 
 {{< callout context="caution" title="Warning" icon="alert-triangle" >}}
 This documentation page is WIP and not yet complete. You can have a complete demo on how to interact with the engine
-through the official [sample projects](https://github.com/SparkyStudios/AmplitudeAudioSDK/blob/develop/samples).
+through the official [sample projects](https://github.com/AmplitudeAudio/sdk/blob/develop/samples).
 {{< /callout >}}
 
 ## The rendering loop

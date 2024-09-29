@@ -11,7 +11,7 @@ toc: true
 Amplitude has been built in a way to let you have complete freedom on the behavior of the engine at runtime. You can create several configuration files per device (PC, mobile, console), per platform (Windows, Android, XBOX, PlayStation), or any other criteria your project has to suit, then pick and load the right settings file at runtime.
 
 {{< alert >}}
-The flatbuffers schema of this file can be found [here](https://github.com/SparkyStudios/AmplitudeAudioSDK/blob/main/schemas/engine_config_definition.fbs).
+The flatbuffers schema of this file can be found [here](https://github.com/AmplitudeAudio/sdk/blob/main/schemas/engine_config_definition.fbs).
 {{< /alert >}}
 
 The config file will let you customize:

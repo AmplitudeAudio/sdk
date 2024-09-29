@@ -11,7 +11,7 @@ toc: true
 A switch is an object maintaining a single state at a time during runtime. Its main purpose is to send feedback to [Switch Container] objects, so they can play the right sounds for the current state. For example, you could create a switch for a terrain or any walkable area, with states like grass, ice, or wood, and link it to a switch container playing footstep sounds according to the current state.
 
 {{< alert >}}
-The flatbuffers schema of this file can be found [here](https://github.com/SparkyStudios/AmplitudeAudioSDK/blob/main/schemas/switch_definition.fbs).
+The flatbuffers schema of this file can be found [here](https://github.com/AmplitudeAudio/sdk/blob/main/schemas/switch_definition.fbs).
 {{< /alert >}}
 
 A switch asset is described by the following attributes:

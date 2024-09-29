@@ -11,7 +11,7 @@ toc: true
 The Collection is the first container sound object and the simplest. It organizes and schedules a list of [Sound]s({{< relref "08-sound" >}}), which can then be played randomly or sequentially according to a scheduler.
 
 {{< alert >}}
-The flatbuffers schema of this file can be found [here](https://github.com/SparkyStudios/AmplitudeAudioSDK/blob/main/schemas/collection_definition.fbs).
+The flatbuffers schema of this file can be found [here](https://github.com/AmplitudeAudio/sdk/blob/main/schemas/collection_definition.fbs).
 {{< /alert >}}
 
 Apart from the common properties of [sound object]({{< relref "07-sound-object" >}}) assets, a collection asset contains the following properties:
