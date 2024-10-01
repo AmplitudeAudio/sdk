@@ -112,10 +112,24 @@ namespace SparkyStudios::Audio::Amplitude
         /**
          * @copydoc Attenuation::GetMaxDistance
          */
-        [[nodiscard]] AmReal64 GetMaxDistance() const override
+        [[nodiscard]] AM_INLINE AmReal64 GetMaxDistance() const override
         {
             return _maxDistance;
         }
+
+        /**
+         * @copydoc Attenuation::IsAirAbsorptionEnabled
+         */
+        [[nodiscard]] AM_INLINE bool IsAirAbsorptionEnabled() const override
+        {
+            return _airAbsorptionEnabled;
+        }
+
+        /**
+         * @copydoc Attenuation::EvaluateAirAbsorption
+         */
+        [[nodiscard]] AmReal32 EvaluateAirAbsorption(
+            const AmVec3& soundLocation, const AmVec3& listenerLocation, AmUInt32 band) const override;
 
         /**
          * @copydoc AssetImpl::LoadDefinition
@@ -133,6 +147,9 @@ namespace SparkyStudios::Audio::Amplitude
         AmUniquePtr<MemoryPoolKind::Engine, AttenuationZone> _shape;
 
         Curve _gainCurve;
+
+        bool _airAbsorptionEnabled;
+        std::array<AmReal32, kAmAirAbsorptionBandCount> _airAbsorptionCoefficients;
     };
 } // namespace SparkyStudios::Audio::Amplitude
 

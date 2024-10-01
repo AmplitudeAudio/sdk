@@ -26,6 +26,16 @@ table AttenuationShapeDefinition {
   max_attenuation_factor:float;
 }
 
+/// Schema for air absorption model configuration.
+table AttenuationAirAbsorptionDefinition {
+  /// Whether the attenuation model supports air absorption.
+  enabled:bool = true;
+
+  /// The absorption coefficients to use when generating the 3-band EQ values.
+  /// This array should have exactly 3 values if set.
+  coefficients:[float];
+}
+
 /// The attenuation definition.
 table AttenuationDefinition {
   /// The attenuation object ID.
@@ -42,6 +52,9 @@ table AttenuationDefinition {
 
   /// The curve that the attenuation will use to know the sound gain according to the distance from the listener.
   gain_curve:CurveDefinition;
+
+  /// The air absorption model for this attenuation.
+  air_absorption:AttenuationAirAbsorptionDefinition;
 }
 
 root_type AttenuationDefinition;

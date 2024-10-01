@@ -122,6 +122,30 @@ namespace SparkyStudios::Audio::Amplitude
          * @return The maximum sound attenuation distance.
          */
         [[nodiscard]] virtual AmReal64 GetMaxDistance() const = 0;
+
+        /**
+         * @brief Returns whether air absorption is enabled for this Attenuation.
+         *
+         * @return `true` if air absorption is enabled, `false` otherwise.
+         */
+        [[nodiscard]] virtual bool IsAirAbsorptionEnabled() const = 0;
+
+        /**
+         * @brief Evaluates the air absorption effect for a specific frequency band.
+         *
+         * This method calculates the attenuation factor due to air absorption
+         * at a given frequency band for a sound source located at a specific position
+         * and a listener located at another specific position.
+         *
+         * @param soundLocation The location of the sound source.
+         * @param listenerLocation The location of the listener which is hearing the sound.
+         * @param band The frequency band for which the air absorption effect is evaluated.
+         *
+         * @return The air absorption attenuation factor for the given frequency band.
+         * The returned value is in decibels (dB).
+         */
+        [[nodiscard]] virtual AmReal32 EvaluateAirAbsorption(
+            const AmVec3& soundLocation, const AmVec3& listenerLocation, AmUInt32 band) const = 0;
     };
 } // namespace SparkyStudios::Audio::Amplitude
 

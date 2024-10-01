@@ -22,6 +22,8 @@ namespace SparkyStudios::Audio::Amplitude
         : _maxDistance(0.0f)
         , _shape(nullptr)
         , _gainCurve()
+        , _airAbsorptionEnabled(true)
+        , _airAbsorptionCoefficients{ 0.0002f, 0.0017f, 0.0182f }
     {}
 
     AttenuationImpl::~AttenuationImpl()
@@ -46,6 +48,12 @@ namespace SparkyStudios::Audio::Amplitude
         return _shape.get();
     }
 
+    AmReal32 AttenuationImpl::EvaluateAirAbsorption(const AmVec3& soundLocation, const AmVec3& listenerLocation, AmUInt32 band) const
+    {
+        const AmReal32 distance = AM_Len(soundLocation - listenerLocation);
+        return std::exp(-_airAbsorptionCoefficients[band] * distance);
+    }
+
     bool AttenuationImpl::LoadDefinition(const AttenuationDefinition* definition, EngineInternalState* state)
     {
         m_id = definition->id();
@@ -56,6 +64,18 @@ namespace SparkyStudios::Audio::Amplitude
         _gainCurve.Initialize(definition->gain_curve());
 
         _shape.reset(AttenuationZoneImpl::Create(definition->shape()));
+
+        if (const auto* model = definition->air_absorption(); model != nullptr)
+        {
+            _airAbsorptionEnabled = model->enabled();
+
+            if (_airAbsorptionEnabled)
+            {
+                _airAbsorptionCoefficients[0] = model->coefficients()->Get(0);
+                _airAbsorptionCoefficients[1] = model->coefficients()->Get(1);
+                _airAbsorptionCoefficients[2] = model->coefficients()->Get(2);
+            }
+        }
 
         return true;
     }

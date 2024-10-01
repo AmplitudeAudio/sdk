@@ -20,17 +20,50 @@
 #include <SparkyStudios/Audio/Amplitude/Core/Memory.h>
 #include <SparkyStudios/Audio/Amplitude/Mixer/Node.h>
 
+#include <DSP/Filters/BiquadResonantFilter.h>
+
 namespace SparkyStudios::Audio::Amplitude
 {
     class AmplimixLayer;
 
+    class AirAbsorptionEQFilter final
+    {
+    public:
+        AirAbsorptionEQFilter();
+        ~AirAbsorptionEQFilter();
+
+        void SetGains(AmReal32 gainLow, AmReal32 gainMid, AmReal32 gainHigh);
+
+        void Process(const AudioBuffer& input, AudioBuffer& output, AmReal32 sampleRate);
+
+        void Normalize(std::array<AmReal32, kAmAirAbsorptionBandCount>& gains, AmReal32& overallGain);
+
+    private:
+        void EnsureFilters();
+        void ApplyFilters(AmUInt32 set, const AudioBuffer& input, AudioBuffer& output, AmReal32 sampleRate);
+
+        BiquadResonantFilter _eqFilterFactory;
+
+        FilterInstance* _lowShelfFilter[2];
+        FilterInstance* _peakingFilter[2];
+        FilterInstance* _highShelfFilter[2];
+
+        AmUInt32 _currentSet;
+        bool _needUpdateGains;
+    };
+
     class AttenuationNodeInstance final : public ProcessorNodeInstance
     {
     public:
+        AttenuationNodeInstance();
+
         const AudioBuffer* Process(const AudioBuffer* input) override;
 
     private:
         AudioBuffer _output;
+
+        std::array<AmReal32, kAmAirAbsorptionBandCount> _gains;
+        AirAbsorptionEQFilter _eqFilter;
     };
 
     class AttenuationNode final : public Node
