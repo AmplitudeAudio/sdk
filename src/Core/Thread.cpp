@@ -15,8 +15,10 @@
 #include <SparkyStudios/Audio/Amplitude/Core/Thread.h>
 
 #if defined(AM_WINDOWS_VERSION)
-#include <processthreadsapi.h>
+// clang-format off
 #include <Windows.h>
+#include <processthreadsapi.h>
+// clang-format on
 #undef CreateMutex
 #else
 #include <ctime>

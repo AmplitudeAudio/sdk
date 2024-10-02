@@ -150,7 +150,7 @@ namespace SparkyStudios::Audio::Amplitude
             void Work() final;
 
             /**
-             * @bbrief Pool task execution function.
+             * @brief Pool task execution function.
              */
             virtual void AwaitableWork() = 0;
 
