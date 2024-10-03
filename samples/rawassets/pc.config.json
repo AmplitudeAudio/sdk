@@ -1,7 +1,7 @@
 {
   "driver": "miniaudio",
   "output": {
-    "frequency": 44100,
+    "frequency": 48000,
     "buffer_size": 4096,
     "format": "Float32"
   },
@@ -10,6 +10,10 @@
     "active_channels": 50,
     "virtual_channels": 100,
     "pipeline": "default.ampipeline"
+  },
+  "hrtf": {
+    "amir_file": "data/sadie_h12.amir",
+    "hrir_sampling": "Bilinear"
   },
   "game": {
     "listener_fetch_mode": "Nearest",

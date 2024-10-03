@@ -53,9 +53,9 @@ enum eListenerFetchMode : ushort {
   /// that only one listener is used everytime.
   ///
   /// The default listener should be set using Engine::SetDefaultListener().
-  /// If no listener is set to default, the behavior is the same as ListenerFetchMode::None.
+  /// If no listener is set to default, the behavior is the same as eListenerFetchMode::None.
   /// If the listener set as default is next removed, the behavior will be the same as
-  /// ListenerFetchMode::None, until another default listener is set.
+  /// eListenerFetchMode::None, until another default listener is set.
   Default,
 
   /// Fetches for the first available listener. This ensures
@@ -65,6 +65,18 @@ enum eListenerFetchMode : ushort {
   /// Fetches for the last available listener. This ensures
   /// that only one listener is used everytime.
   Last,
+}
+
+/// Defines how the HRIR sphere is sampled when doing Ambisonics
+/// binauralization.
+enum HRIRSphereSamplingMode : ushort {
+  /// Provides the most accurate binauralization, as the HRIR data are smoothly
+  /// transitioned between sphere points.
+  Bilinear,
+
+  /// Provides the fastest binauralization, as the closest sphere point to the
+  /// current direction is always picked.
+  NearestNeighbor,
 }
 
 /// Playback device configuration
@@ -91,9 +103,9 @@ table AudioMixerConfig {
   /// still tracked.
   virtual_channels:uint;
 
-  /// Defines the panning mode to use. If Stereo mode is set, all the sound sources
-  /// playing with HRTF spatialization will fallback to PositionOrientation spatialization.
-  panning_mode:PanningMode;
+  /// Defines the panning mode to use. Using any valy other than Stereo
+  /// will apply Ambisonics binauralization with the defined HRIR sphere file.
+  panning_mode:PanningMode = Stereo;
 
   /// The name of the pipeline asset file to load.
   pipeline:string (required);
@@ -129,7 +141,7 @@ table GameSyncConfig {
   rooms:uint = 1024;
 
   /// The maximum speed of sound in the game.
-  sound_speed:float = 333.0;
+  sound_speed:float = 343.0;
 
   /// The Doppler factor. Set 1.0 to normal Doppler effect,
   /// set 0.0 to disable Doppler effect.
@@ -148,12 +160,25 @@ table GameSyncConfig {
   track_environments:bool = true;
 }
 
+/// HRTF and Ambisonics binauralization configuration
+table HRTFConfig {
+  /// The path to the AMIR asset file (generated using the amit tool).
+  amir_file:string (required);
+
+  /// The HRIR sampling mode.
+  hrir_sampling:
+HRIRSphereSamplingMode = NearestNeighbor;
+}
+
 table EngineConfigDefinition {
   /// Configures the playback device.
   output:PlaybackOutputConfig (required);
 
   /// Configures the audio mixer.
   mixer:AudioMixerConfig (required);
+
+  /// Configures HRTF processing.
+  hrtf:HRTFConfig;
 
   /// Configures the game sync.
   game:GameSyncConfig (required);

@@ -64,11 +64,11 @@ namespace SparkyStudios::Audio::Amplitude
                     hrir[0].Clear();
                     hrir[1].Clear();
 
-                    _hrir->SampleBilinear(position.ToCartesian(), hrir[0].GetBuffer(), hrir[1].GetBuffer());
+                    _hrir->Sample(position.ToCartesian(), hrir[0].GetBuffer(), hrir[1].GetBuffer());
 
                     // Scale the HRTFs by the coefficient of the current channel/component
-                    //  The spherical harmonic coefficients are multiplied by (2*order + 1) to provide the correct decoder
-                    //  for SN3D normalized Ambisonic inputs.
+                    // The spherical harmonic coefficients are multiplied by (2*order + 1) to provide the correct decoder
+                    // for SN3D normalized Ambisonic inputs.
                     const AmReal32 coefficient =
                         _decoder.GetSpeakerCoefficient(i, c) * (2.f * std::floor(std::sqrt(static_cast<AmReal32>(c))) + 1.f);
 
@@ -111,8 +111,8 @@ namespace SparkyStudios::Audio::Amplitude
 
         for (AmUInt32 c = 0; c < m_channelCount; c++)
         {
-            _convL[c].Init(kInterpolationBlockSize, _accumulatedHRIR[0][c].begin(), _hrir->GetIRLength());
-            _convR[c].Init(kInterpolationBlockSize, _accumulatedHRIR[1][c].begin(), _hrir->GetIRLength());
+            _convL[c].Init(_hrir->GetIRLength(), _accumulatedHRIR[0][c].begin(), _hrir->GetIRLength());
+            _convR[c].Init(_hrir->GetIRLength(), _accumulatedHRIR[1][c].begin(), _hrir->GetIRLength());
         }
 
         return true;

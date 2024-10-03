@@ -141,6 +141,38 @@ namespace SparkyStudios::Audio::Amplitude
         return _header.m_IRLength;
     }
 
+    eHRIRSphereSamplingMode HRIRSphereImpl::GetSamplingMode() const
+    {
+        return _samplingMode;
+    }
+
+    void HRIRSphereImpl::SetSamplingMode(eHRIRSphereSamplingMode mode)
+    {
+        _samplingMode = mode;
+    }
+
+    void HRIRSphereImpl::Sample(const AmVec3& direction, AmReal32* leftHRIR, AmReal32* rightHRIR) const
+    {
+        switch (_samplingMode)
+        {
+        case eHRIRSphereSamplingMode_Bilinear:
+            return SampleBilinear(direction, leftHRIR, rightHRIR);
+        case eHRIRSphereSamplingMode_NearestNeighbor:
+            return SampleNearestNeighbor(direction, leftHRIR, rightHRIR);
+        }
+    }
+
+    void HRIRSphereImpl::Transform(const AmMat4& matrix)
+    {
+        for (auto& vertex : _vertices)
+            vertex.m_Position = AM_Mul(matrix, AM_V4V(vertex.m_Position, 1.0f)).XYZ;
+    }
+
+    bool HRIRSphereImpl::IsLoaded() const
+    {
+        return _loaded;
+    }
+
     void HRIRSphereImpl::SampleBilinear(const AmVec3& direction, AmReal32* leftHRIR, AmReal32* rightHRIR) const
     {
         const auto& dir = AM_Mul(direction, 10.0f);
@@ -246,17 +278,6 @@ namespace SparkyStudios::Audio::Amplitude
                 return;
             }
         }
-    }
-
-    void HRIRSphereImpl::Transform(const AmMat4& matrix)
-    {
-        for (auto& vertex : _vertices)
-            vertex.m_Position = AM_Mul(matrix, AM_V4V(vertex.m_Position, 1.0f)).XYZ;
-    }
-
-    bool HRIRSphereImpl::IsLoaded() const
-    {
-        return _loaded;
     }
 
     const HRIRSphereVertex* HRIRSphereImpl::GetClosestVertex(const AmVec3& position, const Face* face) const

@@ -29,7 +29,7 @@ namespace SparkyStudios::Audio::Amplitude
     class AmbisonicBinauralDecoderNodeInstance final : public ProcessorNodeInstance
     {
     public:
-        AmbisonicBinauralDecoderNodeInstance(const HRIRSphere* hrir);
+        AmbisonicBinauralDecoderNodeInstance();
 
         const AudioBuffer* Process(const AudioBuffer* input) override;
 
@@ -48,16 +48,13 @@ namespace SparkyStudios::Audio::Amplitude
 
         [[nodiscard]] AM_INLINE NodeInstance* CreateInstance() const override
         {
-            return ampoolnew(MemoryPoolKind::Amplimix, AmbisonicBinauralDecoderNodeInstance, &_hrirSphere);
+            return ampoolnew(MemoryPoolKind::Amplimix, AmbisonicBinauralDecoderNodeInstance);
         }
 
         void DestroyInstance(NodeInstance* instance) const override
         {
             ampooldelete(MemoryPoolKind::Amplimix, AmbisonicBinauralDecoderNodeInstance, (AmbisonicBinauralDecoderNodeInstance*)instance);
         }
-
-    private:
-        HRIRSphereImpl _hrirSphere;
     };
 } // namespace SparkyStudios::Audio::Amplitude
 

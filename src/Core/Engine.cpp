@@ -688,8 +688,29 @@ namespace SparkyStudios::Audio::Amplitude
             return false;
         }
 
-        // Load the panning mode
+        // Store the panning mode
         _state->panning_mode = static_cast<ePanningMode>(config->mixer()->panning_mode());
+
+        const auto* hrtfConfig = config->hrtf();
+
+        if (hrtfConfig != nullptr)
+        {
+            // Store the HRIR sampling mode
+            _state->hrir_sampling_mode = static_cast<eHRIRSphereSamplingMode>(config->hrtf()->hrir_sampling());
+
+            // Load the HRIR sphere
+            _state->hrir_sphere = ampoolnew(MemoryPoolKind::Engine, HRIRSphereImpl);
+            _state->hrir_sphere->SetResource(AM_STRING_TO_OS_STRING(config->hrtf()->amir_file()->c_str()));
+            _state->hrir_sphere->SetSamplingMode(_state->hrir_sampling_mode);
+            _state->hrir_sphere->Load(GetFileSystem());
+        }
+        else if (_state->panning_mode != ePanningMode_Stereo)
+        {
+            amLogCritical("The HRTF configuration is missing, but the panning mode is not stereo. Please provide an HRTF configuration, or "
+                          "set the panning mode to Stereo.");
+            Deinitialize();
+            return false;
+        }
 
         // Initialize audio mixer
         if (!_state->mixer.Init(config))
@@ -818,6 +839,13 @@ namespace SparkyStudios::Audio::Amplitude
 
         // Unload sound banks
         UnloadSoundBanks();
+
+        // Release HRIR sphere
+        if (_state->hrir_sphere != nullptr)
+        {
+            ampooldelete(MemoryPoolKind::Engine, HRIRSphereImpl, _state->hrir_sphere);
+            _state->hrir_sphere = nullptr;
+        }
 
         ampooldelete(MemoryPoolKind::Engine, EngineInternalState, _state);
         _state = nullptr;
@@ -2357,6 +2385,16 @@ namespace SparkyStudios::Audio::Amplitude
     ePanningMode EngineImpl::GetPanningMode() const
     {
         return _state->panning_mode;
+    }
+
+    eHRIRSphereSamplingMode EngineImpl::GetHRIRSphereSamplingMode() const
+    {
+        return _state->hrir_sampling_mode;
+    }
+
+    const HRIRSphere* EngineImpl::GetHRIRSphere() const
+    {
+        return _state->hrir_sphere;
     }
 
 #pragma endregion

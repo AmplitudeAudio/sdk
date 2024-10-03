@@ -20,11 +20,16 @@
 
 namespace SparkyStudios::Audio::Amplitude
 {
-    AmbisonicBinauralDecoderNodeInstance::AmbisonicBinauralDecoderNodeInstance(const HRIRSphere* hrirSphere)
-        : _hrirSphere(hrirSphere)
+    AmbisonicBinauralDecoderNodeInstance::AmbisonicBinauralDecoderNodeInstance()
+        : ProcessorNodeInstance(false)
     {
-        const ePanningMode mode = Engine::GetInstance()->GetPanningMode();
-        const AmUInt32 order = AM_MAX(static_cast<AmUInt32>(mode), 1);
+        _hrirSphere = Engine::GetInstance()->GetHRIRSphere();
+        ePanningMode mode = Engine::GetInstance()->GetPanningMode();
+
+        if (mode != ePanningMode_Stereo && _hrirSphere == nullptr)
+            mode = ePanningMode_Stereo;
+
+        const AmUInt32 order = AM_MAX(static_cast<AmUInt32>(mode), 1u);
 
         if (mode == ePanningMode_Stereo)
             _decoder.Configure(order, true, eSpeakersPreset_Stereo);
@@ -40,7 +45,7 @@ namespace SparkyStudios::Audio::Amplitude
         const auto* layer = GetLayer();
 
         const ePanningMode mode = Engine::GetInstance()->GetPanningMode();
-        const AmUInt32 order = AM_MAX(static_cast<AmUInt32>(mode), 1);
+        const AmUInt32 order = AM_MAX(static_cast<AmUInt32>(mode), 1u);
 
         BFormat soundField;
         soundField.Configure(order, true, input->GetFrameCount());
@@ -60,12 +65,5 @@ namespace SparkyStudios::Audio::Amplitude
 
     AmbisonicBinauralDecoderNode::AmbisonicBinauralDecoderNode()
         : Node("AmbisonicBinauralDecoder")
-    {
-        if (!_hrirSphere.IsLoaded())
-        {
-            // TODO: Get the HRIR file to load from settings.
-            _hrirSphere.SetResource(AM_OS_STRING("./data/mit.amir"));
-            _hrirSphere.Load(Engine::GetInstance()->GetFileSystem());
-        }
-    }
+    {}
 } // namespace SparkyStudios::Audio::Amplitude

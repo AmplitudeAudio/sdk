@@ -52,14 +52,18 @@ namespace SparkyStudios::Audio::Amplitude
         [[nodiscard]] AmUInt32 GetFaceCount() const override;
         [[nodiscard]] AmUInt32 GetSampleRate() const override;
         [[nodiscard]] AmUInt32 GetIRLength() const override;
-        void SampleBilinear(const AmVec3& direction, AmReal32* leftHRIR, AmReal32* rightHRIR) const override;
-        void SampleNearestNeighbor(const AmVec3& direction, AmReal32* leftHRIR, AmReal32* rightHRIR) const override;
+        void SetSamplingMode(eHRIRSphereSamplingMode mode) override;
+        [[nodiscard]] eHRIRSphereSamplingMode GetSamplingMode() const override;
+        void Sample(const AmVec3& direction, AmReal32* leftHRIR, AmReal32* rightHRIR) const override;
         void Transform(const AmMat4& matrix) override;
         [[nodiscard]] bool IsLoaded() const override;
 
     private:
+        void SampleBilinear(const AmVec3& direction, AmReal32* leftHRIR, AmReal32* rightHRIR) const;
+        void SampleNearestNeighbor(const AmVec3& direction, AmReal32* leftHRIR, AmReal32* rightHRIR) const;
         const HRIRSphereVertex* GetClosestVertex(const AmVec3& position, const Face* face) const;
 
+        eHRIRSphereSamplingMode _samplingMode;
         HRIRSphereFileHeaderDescription _header;
         std::vector<HRIRSphereVertex> _vertices;
         std::vector<Face> _faces;

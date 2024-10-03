@@ -28,6 +28,7 @@
 #include <Core/RoomInternalState.h>
 
 #include <Core/Event.h>
+#include <HRTF/HRIRSphere.h>
 #include <Mixer/Amplimix.h>
 #include <Mixer/Pipeline.h>
 #include <Sound/Attenuation.h>
@@ -154,7 +155,7 @@ namespace SparkyStudios::Audio::Amplitude
             , current_frame(0)
             , total_time(0.0)
             , listener_fetch_mode(eListenerFetchMode_None)
-            , sound_speed(333.0)
+            , sound_speed(343.0)
             , doppler_factor(1.0)
             , obstruction_config()
             , occlusion_config()
@@ -163,13 +164,15 @@ namespace SparkyStudios::Audio::Amplitude
             , track_environments(false)
             , samples_per_stream(512)
             , panning_mode(ePanningMode_Stereo)
+            , hrir_sampling_mode(eHRIRSphereSamplingMode_NearestNeighbor)
+            , hrir_sphere(nullptr)
             , version(nullptr)
         {}
 
         AmplimixImpl mixer;
 
         // Hold the audio buses definition file contents.
-        std::string buses_source;
+        AmString buses_source;
 
         // The state of the buses.
         std::vector<BusInternalState> buses;
@@ -250,7 +253,7 @@ namespace SparkyStudios::Audio::Amplitude
         PipelineImpl pipeline;
 
         // Hold the audio buses definition file contents.
-        std::string pipeline_source;
+        AmString pipeline_source;
 
         // The pre-allocated pool of all ChannelInternalState objects
         ChannelStateVector channel_state_memory;
@@ -303,6 +306,10 @@ namespace SparkyStudios::Audio::Amplitude
 
         ePanningMode panning_mode;
 
+        eHRIRSphereSamplingMode hrir_sampling_mode;
+
+        HRIRSphereImpl* hrir_sphere;
+
         const struct Version* version;
     };
 
@@ -341,7 +348,7 @@ namespace SparkyStudios::Audio::Amplitude
     // listener, respectively.
     AmVec2 CalculatePan(const AmVec3& listenerSpaceLocation);
 
-    bool LoadFile(const std::shared_ptr<File>& file, std::string* dest);
+    bool LoadFile(const std::shared_ptr<File>& file, AmString* dest);
 
     AmUInt32 GetMaxNumberOfChannels(const EngineConfigDefinition* config);
 } // namespace SparkyStudios::Audio::Amplitude

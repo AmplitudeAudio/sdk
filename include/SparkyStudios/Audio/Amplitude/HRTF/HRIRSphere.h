@@ -149,24 +149,25 @@ namespace SparkyStudios::Audio::Amplitude
         [[nodiscard]] virtual AmUInt32 GetIRLength() const = 0;
 
         /**
-         * @brief Samples the HRIR sphere for the given direction using bilinear interpolation.
+         * @brief Sets the sampling mode for the HRIR sphere.
          *
-         * See more info about bilinear sampling [here](http://www02.smt.ufrj.br/~diniz/conf/confi117.pdf).
-         *
-         * @param[in] direction The sound to listener direction.
-         * @param[out] leftHRIR The left HRIR data.
-         * @param[out] rightHRIR The right HRIR data.
+         * @param[in] mode The sampling mode to use.
          */
-        virtual void SampleBilinear(const AmVec3& direction, AmReal32* leftHRIR, AmReal32* rightHRIR) const = 0;
+        virtual void SetSamplingMode(eHRIRSphereSamplingMode mode) = 0;
 
         /**
-         * @brief Samples the HRIR sphere for the given direction using nearest neighbor interpolation.
+         * @brief Gets the sampling mode for the HRIR sphere.
+         */
+        [[nodiscard]] virtual eHRIRSphereSamplingMode GetSamplingMode() const = 0;
+
+        /**
+         * @brief Samples the HRIR sphere for the given direction.
          *
          * @param[in] direction The sound to listener direction.
          * @param[out] leftHRIR The left HRIR data.
          * @param[out] rightHRIR The right HRIR data.
          */
-        virtual void SampleNearestNeighbor(const AmVec3& direction, AmReal32* leftHRIR, AmReal32* rightHRIR) const = 0;
+        virtual void Sample(const AmVec3& direction, AmReal32* leftHRIR, AmReal32* rightHRIR) const = 0;
 
         virtual void Transform(const AmMat4& matrix) = 0;
 

@@ -189,6 +189,8 @@ namespace SparkyStudios::Audio::Amplitude
         [[nodiscard]] const Curve& GetObstructionCoefficientCurve() const override;
         [[nodiscard]] const Curve& GetObstructionGainCurve() const override;
         [[nodiscard]] ePanningMode GetPanningMode() const override;
+        [[nodiscard]] eHRIRSphereSamplingMode GetHRIRSphereSamplingMode() const override;
+        [[nodiscard]] const HRIRSphere* GetHRIRSphere() const override;
 
     private:
         Channel PlayScopedSwitchContainer(

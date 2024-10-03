@@ -32,6 +32,8 @@
 #include <SparkyStudios/Audio/Amplitude/Core/Room.h>
 #include <SparkyStudios/Audio/Amplitude/Core/Version.h>
 
+#include <SparkyStudios/Audio/Amplitude/HRTF/HRIRSphere.h>
+
 #include <SparkyStudios/Audio/Amplitude/Mixer/Amplimix.h>
 #include <SparkyStudios/Audio/Amplitude/Mixer/Pipeline.h>
 
@@ -75,7 +77,7 @@ namespace SparkyStudios::Audio::Amplitude
     public:
         virtual ~Engine() = default;
 
-#pragma region Miscalaneous
+#pragma region Miscellaneous
 
         /**
          * @brief Gets the version structure.
@@ -1215,7 +1217,7 @@ namespace SparkyStudios::Audio::Amplitude
 
 #pragma endregion
 
-#pragma region Engine State& Configuration
+#pragma region Engine State and Configuration
 
         /**
          * @brief Get the current speed of sound.
@@ -1295,6 +1297,25 @@ namespace SparkyStudios::Audio::Amplitude
          * @return The panning mode.
          */
         [[nodiscard]] virtual ePanningMode GetPanningMode() const = 0;
+
+        /**
+         * Gets the HRIR sphere sampling mode defined in the loaded engine configuration.
+         *
+         * @return The HRIR sphere sampling mode.
+         */
+        [[nodiscard]] virtual eHRIRSphereSamplingMode GetHRIRSphereSamplingMode() const = 0;
+
+        /**
+         * Gets the HRIR sphere defined in the loaded engine configuration.
+         *
+         * @return The HRIR sphere. If no HRIR sphere is defined, returns nullptr.
+         *
+         * @note The HRIR sphere is optional and can be null in some cases. If the
+         * engine does not have an HRIR sphere defined, this function will return `nullptr`.
+         *
+         * @see HRIRSphere
+         */
+        [[nodiscard]] virtual const HRIRSphere* GetHRIRSphere() const = 0;
 
 #pragma endregion
 

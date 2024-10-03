@@ -330,6 +330,26 @@ namespace SparkyStudios::Audio::Amplitude
     };
 
     /**
+     * @brief Defines how the HRIR sphere is sampled when doing Ambisonics binauralization.
+     *
+     * @ingroup core
+     */
+    enum eHRIRSphereSamplingMode : AmUInt8
+    {
+        /**
+         * @brief Provides the most accurate binauralization, as the HRIR data are smoothly transitioned between sphere points.
+         *
+         * See more info about bilinear sampling [here](http://www02.smt.ufrj.br/~diniz/conf/confi117.pdf).
+         */
+        eHRIRSphereSamplingMode_Bilinear = 0,
+
+        /**
+         * @brief Provides a more efficient binauralization, as the HRIR data are interpolated using only the nearest neighbors.
+         */
+        eHRIRSphereSamplingMode_NearestNeighbor = 1,
+    };
+
+    /**
      * @brief Describe the format of an audio sample.
      *
      * This data structure is mainly filled by a Codec
