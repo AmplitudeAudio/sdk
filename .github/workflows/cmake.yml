@@ -79,7 +79,7 @@ jobs:
       - name: Setup vcpkg
         uses: lukka/run-vcpkg@v11.2
         with:
-          vcpkgGitCommitId: 198d68dbcc6c907cb3d0b9b1d93c3df6ecf93c62
+          vcpkgGitCommitId: 76d153790caf0592fce8fc4484aa6db18c7d00d4
           doNotCache: false
 
       - name: Find flatc version
