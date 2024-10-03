@@ -48,6 +48,12 @@ namespace SparkyStudios::Audio::Amplitude
         eHRIRSphereDatasetModel_SADIE = 2,
 
         /**
+         * @brief The HRIR sphere uses data from a SOFA (Spatially Oriented Format for Acoustics) file.
+         * (https://www.sofaconventions.org/).
+         */
+        eHRIRSphereDatasetModel_SOFA = 3,
+
+        /**
          * @brief Invalid HRIR sphere dataset model.
          */
         eHRIRSphereDatasetModel_Invalid

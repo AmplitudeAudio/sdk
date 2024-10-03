@@ -16,10 +16,13 @@ cmake_minimum_required(VERSION 3.20)
 
 project(amir)
 
+find_package(mysofa CONFIG REQUIRED)
+
 add_executable(amir main.cpp convhull_3d.h)
 
 target_link_libraries(amir
-    Static
+    PRIVATE
+    Static mysofa::mysofa-static
 )
 
 add_dependencies(amir

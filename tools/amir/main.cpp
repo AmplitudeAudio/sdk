@@ -20,6 +20,8 @@
 
 #include <SparkyStudios/Audio/Amplitude/Amplitude.h>
 
+#include <mysofa.h>
+
 #include <Core/Codecs/WAV/Codec.h>
 #include <DSP/Filters/BiquadResonantFilter.h>
 #include <Utils/Utils.h>
@@ -35,7 +37,7 @@ struct ProcessingState
         bool enabled = false;
         AmUInt32 targetSampleRate = 44100;
     } resampling;
-    HRIRSphereDatasetModel datasetModel = eHRIRSphereDatasetModel_IRCAM;
+    HRIRSphereDatasetModel datasetModel = eHRIRSphereDatasetModel_SOFA;
 };
 
 static constexpr AmUInt32 kCurrentVersion = 1;
@@ -262,7 +264,41 @@ int parseFileName_SADIE(const AmOsString& fileName, SphericalPosition& position)
     return EXIT_SUCCESS;
 }
 
-static int process(const AmOsString& inFileName, const AmOsString& outFileName, const ProcessingState& state)
+void processVertex(
+    const AudioBuffer& buffer, const AmVec3& position, AmUInt32 irLength, AmReal32 sampleRate, bool mirror, HRIRSphereVertex& vertex)
+{
+    vertex.m_Position = position;
+    vertex.m_LeftIR.resize(irLength);
+    vertex.m_RightIR.resize(irLength);
+
+    const auto& leftChannel = buffer[0];
+    const auto& rightChannel = buffer[1];
+
+    std::memcpy(vertex.m_LeftIR.data(), !mirror ? leftChannel.begin() : rightChannel.begin(), irLength * sizeof(AmReal32));
+    std::memcpy(vertex.m_RightIR.data(), !mirror ? rightChannel.begin() : leftChannel.begin(), irLength * sizeof(AmReal32));
+}
+
+void resampleIR(const ProcessingState& state, AudioBuffer& buffer, AmUInt32& sampleRate, AmUInt64& irLength)
+{
+    if (!state.resampling.enabled)
+        return;
+
+    auto* resampler = Resampler::Construct("default");
+    resampler->Initialize(2, sampleRate, state.resampling.targetSampleRate);
+
+    auto resampledTotalFrames = resampler->GetExpectedOutputFrames(irLength);
+    AudioBuffer resampledBuffer(resampledTotalFrames, 2);
+
+    resampler->Process(buffer, irLength, resampledBuffer, resampledTotalFrames);
+
+    irLength = resampledTotalFrames;
+    sampleRate = state.resampling.targetSampleRate;
+
+    buffer = resampledBuffer;
+    Resampler::Destruct("default", resampler);
+}
+
+int process(const AmOsString& inFileName, const AmOsString& outFileName, const ProcessingState& state)
 {
     const std::filesystem::path datasetPath(inFileName);
     const std::filesystem::path packagePath(outFileName);
@@ -273,85 +309,77 @@ static int process(const AmOsString& inFileName, const AmOsString& outFileName, 
         return EXIT_FAILURE;
     }
 
-    if (!is_directory(datasetPath))
-    {
-        log(stderr, "The path " AM_OS_CHAR_FMT " is not a directory.\n", datasetPath.native().c_str());
-        return EXIT_FAILURE;
-    }
-
     if (state.datasetModel >= eHRIRSphereDatasetModel_Invalid)
     {
         log(stderr, "Unsupported dataset model.\n");
         return EXIT_FAILURE;
     }
 
-    DiskFile packageFile(absolute(packagePath), eFOM_WRITE);
-
     AmUInt32 sampleRate = 0;
-    AmUInt32 irLength = 0;
-
-    std::set<std::filesystem::path> sorted_by_name;
+    AmUInt64 irLength = 0;
 
     std::vector<HRIRSphereVertex> vertices;
     std::vector<AmUInt32> indices;
 
-    for (const auto& file : std::filesystem::recursive_directory_iterator(datasetPath))
-    {
-        if (file.is_directory())
-            continue;
+    DiskFile packageFile(absolute(packagePath), eFOM_WRITE);
 
-        // Avoid known bad files
+    if (state.datasetModel != eHRIRSphereDatasetModel_SOFA)
+    {
+        if (!is_directory(datasetPath))
         {
-            if (file.path().filename() == AM_OS_STRING(".DS_Store"))
+            log(stderr, "The path " AM_OS_CHAR_FMT " is not a directory.\n", datasetPath.native().c_str());
+            return EXIT_FAILURE;
+        }
+
+        std::set<std::filesystem::path> sorted_by_name;
+
+        for (const auto& file : std::filesystem::recursive_directory_iterator(datasetPath))
+        {
+            if (file.is_directory())
                 continue;
+
+            // Avoid known bad files
+            {
+                if (file.path().filename() == AM_OS_STRING(".DS_Store"))
+                    continue;
+            }
+
+            sorted_by_name.insert(file);
         }
 
-        sorted_by_name.insert(file);
-    }
+        AmUniquePtr<MemoryPoolKind::Default, Codec> wavCodec(amnew(WAVCodec));
 
-    AmUniquePtr<MemoryPoolKind::Default, Codec> wavCodec(amnew(WAVCodec));
+        std::vector<AmVec3> positions;
 
-    std::vector<AmVec3> positions;
-
-    for (const auto& entry : sorted_by_name)
-    {
-        const auto& path = entry.native();
-
-        if (state.verbose)
-            log(stdout, "Processing %s.\n", path.c_str());
-
-        SphericalPosition spherical;
-
-        if (state.datasetModel == eHRIRSphereDatasetModel_IRCAM &&
-            parseFileName_IRCAM(entry.filename().native(), spherical) == EXIT_FAILURE)
+        for (const auto& entry : sorted_by_name)
         {
-            log(stderr, "\tInvalid file name: %s.\n", path.c_str());
-            return EXIT_FAILURE;
-        }
+            const auto& path = entry.native();
 
-        if (state.datasetModel == eHRIRSphereDatasetModel_MIT && parseFileName_MIT(entry.filename().native(), spherical) == EXIT_FAILURE)
-        {
-            log(stderr, "\tInvalid file name: %s.\n", path.c_str());
-            return EXIT_FAILURE;
-        }
+            if (state.verbose)
+                log(stdout, "Processing %s.\n", path.c_str());
 
-        if (state.datasetModel == eHRIRSphereDatasetModel_SADIE &&
-            parseFileName_SADIE(entry.filename().native(), spherical) == EXIT_FAILURE)
-        {
-            log(stderr, "\tInvalid file name: %s.\n", path.c_str());
-            return EXIT_FAILURE;
-        }
+            SphericalPosition spherical;
 
-        const AmUInt32 max = state.datasetModel == eHRIRSphereDatasetModel_MIT ? 2 : 1;
-        for (AmUInt32 i = 0; i < max; ++i)
-        {
-            spherical.SetAzimuth(spherical.GetAzimuth() * (i * -2.0f + 1.0f));
-            const AmVec3 position = spherical.ToCartesian();
+            if (state.datasetModel == eHRIRSphereDatasetModel_IRCAM &&
+                parseFileName_IRCAM(entry.filename().native(), spherical) == EXIT_FAILURE)
+            {
+                log(stderr, "\tInvalid file name: %s.\n", path.c_str());
+                return EXIT_FAILURE;
+            }
 
-            if (const auto& it = std::find(positions.begin(), positions.end(), position); it != positions.end())
-                continue; // Do not duplicate borders
+            if (state.datasetModel == eHRIRSphereDatasetModel_MIT &&
+                parseFileName_MIT(entry.filename().native(), spherical) == EXIT_FAILURE)
+            {
+                log(stderr, "\tInvalid file name: %s.\n", path.c_str());
+                return EXIT_FAILURE;
+            }
 
-            positions.push_back(position);
+            if (state.datasetModel == eHRIRSphereDatasetModel_SADIE &&
+                parseFileName_SADIE(entry.filename().native(), spherical) == EXIT_FAILURE)
+            {
+                log(stderr, "\tInvalid file name: %s.\n", path.c_str());
+                return EXIT_FAILURE;
+            }
 
             auto* decoder = wavCodec->CreateDecoder();
             std::shared_ptr<File> file = std::make_shared<DiskFile>(absolute(entry));
@@ -379,46 +407,95 @@ static int process(const AmOsString& inFileName, const AmOsString& outFileName, 
             AudioBuffer buffer(totalFrames, 2);
             decoder->Load(&buffer);
 
-            if (state.resampling.enabled)
+            resampleIR(state, buffer, sampleRate, irLength);
+
+            const AmUInt32 max = state.datasetModel == eHRIRSphereDatasetModel_MIT ? 2 : 1;
+            for (AmUInt32 i = 0; i < max; ++i)
             {
-                auto* resampler = Resampler::Construct("default");
-                resampler->Initialize(2, sampleRate, state.resampling.targetSampleRate);
+                spherical.SetAzimuth(spherical.GetAzimuth() * (i * -2.0f + 1.0f));
+                const AmVec3 position = spherical.ToCartesian();
 
-                auto resampledTotalFrames = resampler->GetExpectedOutputFrames(totalFrames);
-                AudioBuffer resampledBuffer(resampledTotalFrames, 2);
+                if (const auto& it = std::find(positions.begin(), positions.end(), position); it != positions.end())
+                    continue; // Do not duplicate borders
 
-                resampler->Process(buffer, totalFrames, resampledBuffer, resampledTotalFrames);
+                positions.push_back(position);
 
-                totalFrames = resampledTotalFrames;
-                sampleRate = state.resampling.targetSampleRate;
+                HRIRSphereVertex vertex;
+                processVertex(buffer, position, irLength, sampleRate, i != 0, vertex);
+                estimateITD(vertex, irLength, sampleRate);
 
-                buffer = resampledBuffer;
-                Resampler::Destruct("default", resampler);
+                vertices.push_back(vertex);
+
+                log(stdout, "\tProcessed %s -> {%f, %f, %f}.\n", path.c_str(), vertex.m_Position.X, vertex.m_Position.Y,
+                    vertex.m_Position.Z);
             }
-
-            HRIRSphereVertex vertex;
-            vertex.m_Position = position;
-            vertex.m_LeftIR.resize(totalFrames);
-            vertex.m_RightIR.resize(totalFrames);
-
-            const auto& leftChannel = buffer[0];
-            const auto& rightChannel = buffer[1];
-
-            for (AmUInt32 j = 0; j < totalFrames; ++j)
-            {
-                vertex.m_LeftIR[j] = i == 0 ? leftChannel[j] : rightChannel[j];
-                vertex.m_RightIR[j] = i == 0 ? rightChannel[j] : leftChannel[j];
-            }
-
-            estimateITD(vertex, totalFrames, sampleRate);
-
-            vertices.push_back(vertex);
 
             buffer.Clear();
             wavCodec->DestroyDecoder(decoder);
-
-            log(stdout, "\tProcessed %s -> {%f, %f, %f}.\n", path.c_str(), vertex.m_Position.X, vertex.m_Position.Y, vertex.m_Position.Z);
         }
+    }
+    else
+    {
+        AmInt32 err = 0;
+        MYSOFA_HRTF* hrtf = nullptr;
+        MYSOFA_ATTRIBUTE* tmp_a = nullptr;
+
+        hrtf = mysofa_load(datasetPath.string().c_str(), &err);
+
+        switch (err)
+        {
+        case MYSOFA_OK:
+            {
+                if (state.resampling.enabled)
+                    mysofa_resample(hrtf, state.resampling.targetSampleRate);
+
+                vertices.reserve(hrtf->M);
+
+                irLength = hrtf->N;
+                sampleRate = hrtf->DataSamplingRate.values[0];
+
+                if (hrtf->R != 2)
+                {
+                    log(stderr, "Unsupported number of channels: %d. Only 2 channels is supported.\n", hrtf->R);
+                    return EXIT_FAILURE;
+                }
+
+                const AmUInt32 bufferSize = hrtf->N * hrtf->R;
+
+                const AmVec3 listenerForward =
+                    AM_V3(hrtf->ListenerView.values[0], hrtf->ListenerView.values[1], hrtf->ListenerView.values[2]);
+                const AmVec3 listenerUp = AM_V3(hrtf->ListenerUp.values[0], hrtf->ListenerUp.values[1], hrtf->ListenerUp.values[2]);
+
+                AudioBuffer buffer(hrtf->N, hrtf->R);
+
+                for (AmUInt32 i = 0; i < hrtf->M; ++i)
+                {
+                    std::memcpy(buffer.GetData().GetBuffer(), hrtf->DataIR.values + i * bufferSize, bufferSize * sizeof(AmReal32));
+
+                    const AmString type = mysofa_getAttribute(hrtf->SourcePosition.attributes, "Type");
+
+                    AmReal32* rawPosition = hrtf->SourcePosition.values + i * 3;
+
+                    if (type == "spherical")
+                        mysofa_s2c(rawPosition);
+
+                    AmVec3 position = AM_V3(rawPosition[0], rawPosition[1], rawPosition[2]);
+
+                    HRIRSphereVertex vertex;
+                    processVertex(buffer, position, irLength, sampleRate, false, vertex);
+                    estimateITD(vertex, irLength, sampleRate);
+
+                    vertices.push_back(vertex);
+
+                    buffer.Clear();
+
+                    log(stdout, "Processed SOFA measurement %u -> {%f, %f, %f}.\n", i, rawPosition[0], rawPosition[1], rawPosition[2]);
+                }
+                break;
+            }
+        }
+
+        mysofa_free(hrtf);
     }
 
     log(stdout, "Building mesh...\n");
@@ -580,10 +657,14 @@ int main(int argc, char* argv[])
         log(stdout, "    -[rR] freq:   \tResample HRIR data to the target frequency.\n");
         log(stdout, "    -[mM]:        \tThe dataset model to use.\n");
         log(stdout, "                  \tThe default value is 0. The available values are:\n");
-        log(stdout, "           0:     \tIRCAN (LISTEN) dataset (http://recherche.ircam.fr/equipes/salles/listen/download.html).\n");
+        log(stdout, "           0:     \tIRCAM (LISTEN) dataset (http://recherche.ircam.fr/equipes/salles/listen/download.html).\n");
         log(stdout, "           1:     \tMIT (KEMAR) dataset (http://sound.media.mit.edu/resources/KEMAR.html).\n");
+        log(stdout, "           2:     \tSADIE II dataset (https://www.york.ac.uk/sadie-project/database.html).\n");
+        log(stdout, "           3:     \tSOFA file (https://www.sofaconventions.org).\n");
         log(stdout, "\n");
-        log(stdout, "Example: amir -m 1 /path/to/mit/dataset/ output_package.amir\n");
+        log(stdout, "Example:\n");
+        log(stdout, "\tamir -m 1 /path/to/mit/dataset/ output_asset.amir\n");
+        log(stdout, "\tamir -m 3 /path/to/mit/file.sofa output_asset.amir\n");
         log(stdout, "\n");
         // clang-format on
 
@@ -595,6 +676,8 @@ int main(int argc, char* argv[])
     const auto res = process(AM_STRING_TO_OS_STRING(inFileName), AM_STRING_TO_OS_STRING(outFileName), state);
 
     Engine::UnregisterDefaultPlugins();
+
+    MemoryManager::Deinitialize();
 
     return res;
 }
