@@ -150,13 +150,23 @@ namespace SparkyStudios::Audio::Amplitude
 
         /**
          * @brief Samples the HRIR sphere for the given direction using bilinear interpolation.
-         * See more info here http://www02.smt.ufrj.br/~diniz/conf/confi117.pdf.
          *
-         * @param direction The sound to listener direction.
-         * @param leftHRIR The left HRIR data.
-         * @param rightHRIR The right HRIR data.
+         * See more info about bilinear sampling [here](http://www02.smt.ufrj.br/~diniz/conf/confi117.pdf).
+         *
+         * @param[in] direction The sound to listener direction.
+         * @param[out] leftHRIR The left HRIR data.
+         * @param[out] rightHRIR The right HRIR data.
          */
         virtual void SampleBilinear(const AmVec3& direction, AmReal32* leftHRIR, AmReal32* rightHRIR) const = 0;
+
+        /**
+         * @brief Samples the HRIR sphere for the given direction using nearest neighbor interpolation.
+         *
+         * @param[in] direction The sound to listener direction.
+         * @param[out] leftHRIR The left HRIR data.
+         * @param[out] rightHRIR The right HRIR data.
+         */
+        virtual void SampleNearestNeighbor(const AmVec3& direction, AmReal32* leftHRIR, AmReal32* rightHRIR) const = 0;
 
         virtual void Transform(const AmMat4& matrix) = 0;
 

@@ -149,38 +149,22 @@ namespace SparkyStudios::Audio::Amplitude
         if (face == nullptr)
             return;
 
-        const auto& vertexA = _vertices[face->m_A];
-        const auto& vertexB = _vertices[face->m_B];
-        const auto& vertexC = _vertices[face->m_C];
-
-        // If we are close to any vertex, just return the HRIR of that vertex
+        // If we are very close to any vertex, just return the HRIR of that vertex
         {
-            constexpr AmReal32 k2 = kEpsilon * kEpsilon;
+            const auto* vertex = GetClosestVertex(direction, face);
 
-            if (AM_LenSqr(vertexA.m_Position - direction) < k2)
+            if (vertex != nullptr)
             {
-                const AmSize length = vertexA.m_LeftIR.size();
-                std::memcpy(leftHRIR, vertexA.m_LeftIR.data(), length * sizeof(AmReal32));
-                std::memcpy(rightHRIR, vertexA.m_RightIR.data(), length * sizeof(AmReal32));
-                return;
-            }
-
-            if (AM_LenSqr(vertexB.m_Position - direction) < k2)
-            {
-                const AmSize length = vertexB.m_LeftIR.size();
-                std::memcpy(leftHRIR, vertexB.m_LeftIR.data(), length * sizeof(AmReal32));
-                std::memcpy(rightHRIR, vertexB.m_RightIR.data(), length * sizeof(AmReal32));
-                return;
-            }
-
-            if (AM_LenSqr(vertexC.m_Position - direction) < k2)
-            {
-                const AmSize length = vertexC.m_LeftIR.size();
-                std::memcpy(leftHRIR, vertexC.m_LeftIR.data(), length * sizeof(AmReal32));
-                std::memcpy(rightHRIR, vertexC.m_RightIR.data(), length * sizeof(AmReal32));
+                const AmSize length = vertex->m_LeftIR.size();
+                std::memcpy(leftHRIR, vertex->m_LeftIR.data(), length * sizeof(AmReal32));
+                std::memcpy(rightHRIR, vertex->m_RightIR.data(), length * sizeof(AmReal32));
                 return;
             }
         }
+
+        const auto& vertexA = _vertices[face->m_A];
+        const auto& vertexB = _vertices[face->m_B];
+        const auto& vertexC = _vertices[face->m_C];
 
         // Otherwise, perform bilinear interpolation
         {
@@ -204,6 +188,66 @@ namespace SparkyStudios::Audio::Amplitude
         }
     }
 
+    void HRIRSphereImpl::SampleNearestNeighbor(const AmVec3& direction, AmReal32* leftHRIR, AmReal32* rightHRIR) const
+    {
+        const auto& dir = AM_Mul(direction, 10.0f);
+        const auto* face = _tree.Query(dir);
+
+        if (face == nullptr)
+            return;
+
+        // If we are very close to any vertex, just return the HRIR of that vertex
+        {
+            const auto* vertex = GetClosestVertex(direction, face);
+
+            if (vertex != nullptr)
+            {
+                const AmSize length = vertex->m_LeftIR.size();
+                std::memcpy(leftHRIR, vertex->m_LeftIR.data(), length * sizeof(AmReal32));
+                std::memcpy(rightHRIR, vertex->m_RightIR.data(), length * sizeof(AmReal32));
+                return;
+            }
+        }
+
+        const auto& vertexA = _vertices[face->m_A];
+        const auto& vertexB = _vertices[face->m_B];
+        const auto& vertexC = _vertices[face->m_C];
+
+        // Otherwise, perform nearest neighbor interpolation
+        {
+            BarycentricCoordinates barycenter;
+            if (!BarycentricCoordinates::RayTriangleIntersection(
+                    AM_V3(0.0f, 0.0f, 0.0f), dir, { vertexA.m_Position, vertexB.m_Position, vertexC.m_Position }, barycenter))
+            {
+                return;
+            }
+
+            const AmSize length = vertexA.m_LeftIR.size();
+            const AmReal32 min = std::min({ barycenter.m_U, barycenter.m_V, barycenter.m_W });
+
+            if (min == barycenter.m_U)
+            {
+                std::memcpy(leftHRIR, vertexA.m_LeftIR.data(), length * sizeof(AmReal32));
+                std::memcpy(rightHRIR, vertexA.m_RightIR.data(), length * sizeof(AmReal32));
+                return;
+            }
+
+            if (min == barycenter.m_V)
+            {
+                std::memcpy(leftHRIR, vertexB.m_LeftIR.data(), length * sizeof(AmReal32));
+                std::memcpy(rightHRIR, vertexB.m_RightIR.data(), length * sizeof(AmReal32));
+                return;
+            }
+
+            if (min == barycenter.m_W)
+            {
+                std::memcpy(leftHRIR, vertexC.m_LeftIR.data(), length * sizeof(AmReal32));
+                std::memcpy(rightHRIR, vertexC.m_RightIR.data(), length * sizeof(AmReal32));
+                return;
+            }
+        }
+    }
+
     void HRIRSphereImpl::Transform(const AmMat4& matrix)
     {
         for (auto& vertex : _vertices)
@@ -213,5 +257,25 @@ namespace SparkyStudios::Audio::Amplitude
     bool HRIRSphereImpl::IsLoaded() const
     {
         return _loaded;
+    }
+
+    const HRIRSphereVertex* HRIRSphereImpl::GetClosestVertex(const AmVec3& position, const Face* face) const
+    {
+        const auto& vertexA = _vertices[face->m_A];
+        const auto& vertexB = _vertices[face->m_B];
+        const auto& vertexC = _vertices[face->m_C];
+
+        constexpr AmReal32 k2 = kEpsilon * kEpsilon;
+
+        if (AM_LenSqr(vertexA.m_Position - position) < k2)
+            return &vertexA;
+
+        if (AM_LenSqr(vertexB.m_Position - position) < k2)
+            return &vertexB;
+
+        if (AM_LenSqr(vertexC.m_Position - position) < k2)
+            return &vertexC;
+
+        return nullptr;
     }
 } // namespace SparkyStudios::Audio::Amplitude
