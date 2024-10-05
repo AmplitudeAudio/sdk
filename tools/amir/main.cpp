@@ -440,6 +440,8 @@ int process(const AmOsString& inFileName, const AmOsString& outFileName, const P
         MYSOFA_HRTF* hrtf = nullptr;
         MYSOFA_ATTRIBUTE* tmp_a = nullptr;
 
+        AmString kAttributeType = "Type";
+
         hrtf = mysofa_load(datasetPath.string().c_str(), &err);
 
         switch (err)
@@ -472,7 +474,7 @@ int process(const AmOsString& inFileName, const AmOsString& outFileName, const P
                 {
                     std::memcpy(buffer.GetData().GetBuffer(), hrtf->DataIR.values + i * bufferSize, bufferSize * sizeof(AmReal32));
 
-                    const AmString type = mysofa_getAttribute(hrtf->SourcePosition.attributes, "Type");
+                    const AmString type = mysofa_getAttribute(hrtf->SourcePosition.attributes, kAttributeType.data());
 
                     AmReal32* rawPosition = hrtf->SourcePosition.values + i * 3;
 
