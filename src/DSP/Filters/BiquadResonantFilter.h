@@ -14,7 +14,6 @@
 
 #pragma once
 
-#include "SparkyStudios/Audio/Amplitude/Core/Common/Types.h"
 #ifndef _AM_IMPLEMENTATION_DSP_FILTERS_BIQUAD_RESONANT_FILTER_H
 #define _AM_IMPLEMENTATION_DSP_FILTERS_BIQUAD_RESONANT_FILTER_H
 

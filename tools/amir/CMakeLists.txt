@@ -22,7 +22,7 @@ add_executable(amir main.cpp convhull_3d.h)
 
 target_link_libraries(amir
     PRIVATE
-    Static mysofa::mysofa-static
+    Static $<IF:$<TARGET_EXISTS:mysofa::mysofa-shared>,mysofa::mysofa-shared,mysofa::mysofa-static>
 )
 
 add_dependencies(amir
