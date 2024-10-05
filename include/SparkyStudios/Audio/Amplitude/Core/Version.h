@@ -21,8 +21,10 @@
 
 /**
  * @brief Gets the current Amplitude SDK version.
+ *
+ * @ingroup core
  */
-#define amVersion SparkyStudios::Audio::Amplitude::Version()
+#define amVersion SparkyStudios::Audio::Amplitude::GetVersion()
 
 #define AM_VERSION_MAJOR 1
 #define AM_VERSION_MINOR 0
@@ -32,6 +34,8 @@ namespace SparkyStudios::Audio::Amplitude
 {
     /**
      * @brief A structure containing the version number of the library.
+     *
+     * @ingroup core
      */
     struct Version
     {
@@ -59,9 +63,11 @@ namespace SparkyStudios::Audio::Amplitude
     /**
      * @brief Returns the version.
      *
-     * @return The version.
+     * @return The current SDK version.
+     *
+     * @ingroup core
      */
-    AM_API_PUBLIC const struct Version& Version();
+    AM_API_PUBLIC const struct Version& GetVersion();
 } // namespace SparkyStudios::Audio::Amplitude
 
 #endif // _AM_CORE_VERSION_H

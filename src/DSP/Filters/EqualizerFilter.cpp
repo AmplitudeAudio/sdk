@@ -38,28 +38,28 @@ namespace SparkyStudios::Audio::Amplitude
         AmReal32 volume8)
     {
         if (volume1 < GetParamMin(ATTRIBUTE_BAND_1) || volume1 > GetParamMax(ATTRIBUTE_BAND_1))
-            return AM_ERROR_INVALID_PARAMETER;
+            return eErrorCode_InvalidParameter;
 
         if (volume2 < GetParamMin(ATTRIBUTE_BAND_2) || volume2 > GetParamMax(ATTRIBUTE_BAND_2))
-            return AM_ERROR_INVALID_PARAMETER;
+            return eErrorCode_InvalidParameter;
 
         if (volume3 < GetParamMin(ATTRIBUTE_BAND_3) || volume3 > GetParamMax(ATTRIBUTE_BAND_3))
-            return AM_ERROR_INVALID_PARAMETER;
+            return eErrorCode_InvalidParameter;
 
         if (volume4 < GetParamMin(ATTRIBUTE_BAND_4) || volume4 > GetParamMax(ATTRIBUTE_BAND_4))
-            return AM_ERROR_INVALID_PARAMETER;
+            return eErrorCode_InvalidParameter;
 
         if (volume5 < GetParamMin(ATTRIBUTE_BAND_5) || volume5 > GetParamMax(ATTRIBUTE_BAND_5))
-            return AM_ERROR_INVALID_PARAMETER;
+            return eErrorCode_InvalidParameter;
 
         if (volume6 < GetParamMin(ATTRIBUTE_BAND_6) || volume6 > GetParamMax(ATTRIBUTE_BAND_6))
-            return AM_ERROR_INVALID_PARAMETER;
+            return eErrorCode_InvalidParameter;
 
         if (volume7 < GetParamMin(ATTRIBUTE_BAND_7) || volume7 > GetParamMax(ATTRIBUTE_BAND_7))
-            return AM_ERROR_INVALID_PARAMETER;
+            return eErrorCode_InvalidParameter;
 
         if (volume8 < GetParamMin(ATTRIBUTE_BAND_8) || volume8 > GetParamMax(ATTRIBUTE_BAND_8))
-            return AM_ERROR_INVALID_PARAMETER;
+            return eErrorCode_InvalidParameter;
 
         _volume[ATTRIBUTE_BAND_1 - ATTRIBUTE_BAND_1] = volume1;
         _volume[ATTRIBUTE_BAND_2 - ATTRIBUTE_BAND_1] = volume2;
@@ -70,7 +70,7 @@ namespace SparkyStudios::Audio::Amplitude
         _volume[ATTRIBUTE_BAND_7 - ATTRIBUTE_BAND_1] = volume7;
         _volume[ATTRIBUTE_BAND_8 - ATTRIBUTE_BAND_1] = volume8;
 
-        return AM_ERROR_NO_ERROR;
+        return eErrorCode_Success;
     }
 
     AmUInt32 EqualizerFilter::GetParamCount() const
@@ -107,7 +107,7 @@ namespace SparkyStudios::Audio::Amplitude
 
     AmUInt32 EqualizerFilter::GetParamType(AmUInt32 index) const
     {
-        return PARAM_FLOAT;
+        return kParameterTypeFloat;
     }
 
     AmReal32 EqualizerFilter::GetParamMax(AmUInt32 index) const
@@ -159,11 +159,13 @@ namespace SparkyStudios::Audio::Amplitude
     void EqualizerFilterInstance::ProcessFFTChannel(
         SplitComplex& fft, AmUInt16 channel, AmUInt64 frames, AmUInt16 channels, AmUInt32 sampleRate)
     {
-        Comp2MagPhase(fft, frames / 2);
+        const auto halfSize = frames / 2;
 
-        for (AmUInt32 p = 0, l = frames / 2; p < l; p++)
+        Comp2MagPhase(fft, halfSize);
+
+        for (AmUInt32 p = 0, l = halfSize; p < l; p++)
         {
-            const auto i = static_cast<AmInt32>(std::floor(std::sqrt(p / static_cast<AmReal32>(frames / 2)) * (frames / 2)));
+            const auto i = static_cast<AmInt32>(std::floor(std::sqrt(p / static_cast<AmReal32>(halfSize)) * (halfSize)));
 
             AmInt32 p2 = (i / (frames / 16));
             AmInt32 p1 = p2 - 1;
@@ -180,8 +182,6 @@ namespace SparkyStudios::Audio::Amplitude
             const AmReal32 v = static_cast<AmReal32>(i % (frames / 16)) / static_cast<AmReal32>(frames / 16);
             fft.re()[p] *= CatmullRom(v, m_parameters[p0 + 1], m_parameters[p1 + 1], m_parameters[p2 + 1], m_parameters[p3 + 1]);
         }
-
-        const auto halfSize = frames / 2;
 
         std::memset(fft.re() + halfSize, 0, sizeof(AmReal32) * halfSize);
         std::memset(fft.im() + halfSize, 0, sizeof(AmReal32) * halfSize);

@@ -30,14 +30,14 @@ namespace SparkyStudios::Audio::Amplitude
     AmResult BiquadResonantFilter::Initialize(TYPE type, AmReal32 frequency, AmReal32 resonance, AmReal32 gain)
     {
         if (type >= TYPE_LAST || frequency <= 0 || resonance <= 0)
-            return AM_ERROR_INVALID_PARAMETER;
+            return eErrorCode_InvalidParameter;
 
         _filterType = type;
         _frequency = frequency;
         _resonance = resonance;
         _gain = gain;
 
-        return AM_ERROR_NO_ERROR;
+        return eErrorCode_Success;
     }
 
     AmResult BiquadResonantFilter::InitializeLowPass(AmReal32 frequency, AmReal32 q)
@@ -109,9 +109,9 @@ namespace SparkyStudios::Audio::Amplitude
     AmUInt32 BiquadResonantFilter::GetParamType(AmUInt32 index) const
     {
         if (index == ATTRIBUTE_TYPE)
-            return PARAM_INT;
+            return kParameterTypeInt;
 
-        return PARAM_FLOAT;
+        return kParameterTypeFloat;
     }
 
     AmReal32 BiquadResonantFilter::GetParamMax(AmUInt32 index) const

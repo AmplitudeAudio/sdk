@@ -24,69 +24,70 @@
 namespace SparkyStudios::Audio::Amplitude
 {
     /**
-     * @brief A FileSystem implementation that reads and write files
-     * from disk.
+     * @brief A `FileSystem` implementation that reads and write files from disk.
+     *
+     * @ingroup io
      */
     class AM_API_PUBLIC DiskFileSystem final : public FileSystem
     {
     public:
         /**
-         * @brief Create a new instance of the DiskFileSystem class.
+         * @brief Creates a new instance of the DiskFileSystem class.
          */
         DiskFileSystem();
 
         /**
-         * @copydoc FileSystem::SetBasePath
+         * @inherit
          */
         void SetBasePath(const AmOsString& basePath) override;
 
         /**
-         * @copydoc FileSystem::GetBasePath
+         * @inherit
          */
         [[nodiscard]] const AmOsString& GetBasePath() const override;
 
         /**
-         * @copydoc FileSystem::ResolvePath
+         * @inherit
          */
         [[nodiscard]] AmOsString ResolvePath(const AmOsString& path) const override;
 
         /**
-         * @copydoc FileSystem::Exists
+         * @inherit
          */
         [[nodiscard]] bool Exists(const AmOsString& path) const override;
 
         /**
-         * @copydoc FileSystem::IsDirectory
+         * @inherit
          */
         [[nodiscard]] bool IsDirectory(const AmOsString& path) const override;
 
         /**
-         * @copydoc FileSystem::Join
+         * @inherit
          */
         [[nodiscard]] AmOsString Join(const std::vector<AmOsString>& parts) const override;
 
         /**
-         * @copydoc FileSystem::OpenFile
+         * @inherit
          */
-        [[nodiscard]] std::shared_ptr<File> OpenFile(const AmOsString& path, FileOpenMode mode) const override;
+        [[nodiscard]] std::shared_ptr<File> OpenFile(const AmOsString& path, eFileOpenMode mode) const override;
 
         /**
-         * @copydoc FileSystem::StartOpenFileSystem
+         * @inherit
          */
         void StartOpenFileSystem() override;
 
         /**
-         * @copydoc FileSystem::TryFinalizeOpenFileSystem
+         * @inherit
          */
         bool TryFinalizeOpenFileSystem() override;
 
         /**
-         * @copydoc FileSystem::StartCloseFileSystem
+         * @inherit
          */
         void StartCloseFileSystem() override;
 
         /**
-         * @copydoc FileSystem::TryFinalizeCloseFileSystem
+         * @inherit
          */
         bool TryFinalizeCloseFileSystem() override;
 

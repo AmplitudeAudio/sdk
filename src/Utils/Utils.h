@@ -18,7 +18,7 @@
 #define _AM_IMPLEMENTATION_UTILS_UTILS_H
 
 #include <SparkyStudios/Audio/Amplitude/Core/Common.h>
-#include <SparkyStudios/Audio/Amplitude/Math/SplitComplex.h>
+#include <SparkyStudios/Audio/Amplitude/DSP/SplitComplex.h>
 #include <SparkyStudios/Audio/Amplitude/Math/Utils.h>
 
 #if defined(AM_SIMD_INTRINSICS)

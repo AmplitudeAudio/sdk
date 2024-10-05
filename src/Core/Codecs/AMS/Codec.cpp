@@ -281,7 +281,7 @@ namespace SparkyStudios::Audio::Amplitude
             }
         }
 
-        format.SetAll(sample_rate, num_channels, bits_per_sample, num_samples, num_channels * sizeof(AmInt16), AM_SAMPLE_FORMAT_INT);
+        format.SetAll(sample_rate, num_channels, bits_per_sample, num_samples, num_channels * sizeof(AmInt16), eAudioSampleFormat_Int16);
 
         blockSize = wave_header.head.blockAlign;
 
@@ -616,7 +616,7 @@ namespace SparkyStudios::Audio::Amplitude
         const AmUInt32 steps = offset / samplesPerBlock;
 
         offset = steps * _blockSize;
-        _file->Seek(sizeof(ADPCMHeader) + offset, eFSO_START);
+        _file->Seek(sizeof(ADPCMHeader) + offset, eFileSeekOrigin_Start);
 
         return true;
     }
@@ -650,7 +650,7 @@ namespace SparkyStudios::Audio::Amplitude
 
     AmUInt64 AMSCodec::AMSEncoder::Write(AudioBuffer* in, AmUInt64 offset, AmUInt64 length)
     {
-        _file->Seek(sizeof(ADPCMHeader) + offset, eFSO_START);
+        _file->Seek(sizeof(ADPCMHeader) + offset, eFileSeekOrigin_Start);
         return Encode(_file, m_format, in, length, _samplesPerBlock, _lookAhead, _noiseShaping);
     }
 

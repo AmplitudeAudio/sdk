@@ -27,23 +27,27 @@ namespace SparkyStudios::Audio::Amplitude
     class EventInstance;
 
     /**
-     * @brief A class which can cancel a triggered Event.
+     * @brief An helper class used to cancel a running `Event`.
+     *
+     * @see Event
+     *
+     * @ingroup engine
      */
     class AM_API_PUBLIC EventCanceler
     {
     public:
         /**
-         * @brief Creates an uninitialized EventCanceler.
+         * @brief Creates an uninitialized `EventCanceler`.
          *
-         * An uninitialized Event cannot be triggered.
+         * An uninitialized `EventCanceler` cannot be canceled.
          */
         EventCanceler();
 
         /**
-         * @brief Creates an @c EventCanceler which will abort
+         * @brief Creates an `EventCanceler` which will abort
          * the given event once cancelled.
          *
-         * @param event The event instance to cancel.
+         * @param[in] event The event instance to cancel.
          */
         explicit EventCanceler(EventInstance* event);
 
@@ -54,34 +58,47 @@ namespace SparkyStudios::Audio::Amplitude
         ~EventCanceler();
 
         /**
-         * @brief Checks whether this EventCanceler has been initialized.
+         * @brief Checks whether this `EventCanceler` has been initialized.
          *
-         * @return true if this EventCanceler has been initialized, false otherwise.
+         * @return `true` if this `EventCanceler` has been initialized, `false` otherwise.
          */
         [[nodiscard]] bool Valid() const;
 
         /**
-         * @brief Cancels and abort the wrapped Event.
+         * @brief Cancels and abort the wrapped `Event`.
          */
         void Cancel() const;
 
         /**
-         * @brief Returns the Event wrapped by this EventCanceler.
+         * @brief Returns the `Event` wrapped by this `EventCanceler`.
          *
-         * @return The Event wrapped by this EventCanceler.
+         * @return The `Event` wrapped by this `EventCanceler`.
          */
         [[nodiscard]] EventInstance* GetEvent() const;
 
     private:
+        /**
+         * @brief The wrapped event instance.
+         *
+         * @internal
+         */
         EventInstance* _event;
     };
 
     /**
-     * @brief An event is mainly used to apply a set of actions at a given time in game.
+     * @brief Amplitude Event Asset.
      *
-     * This Event class is only referenced through an EventCanceler object and it is
-     * managed by the Engine. Events can be triggered at runtime by calling the
-     * <code>Engine::Trigger()</code> method using the name of the event.
+     * An event is used to apply a set of actions (synchronously or asynchronously) at a given time
+     * in the game.
+     *
+     * This `Event` class is only referenced through an `EventCanceler` object and it is
+     * managed by the `Engine`. Events can be triggered at runtime by using the `Trigger()`
+     * method of the `Engine` instance:
+     * ```cpp
+     * amEngine->Trigger("an_event_name"); // You can also use the event ID, or its handle.
+     * ```
+     *
+     * @ingroup assets
      */
     class AM_API_PUBLIC Event : public Asset<AmEventID>
     {
@@ -90,30 +107,44 @@ namespace SparkyStudios::Audio::Amplitude
     /**
      * @brief A triggered event.
      *
-     * EventInstance are created when an Event is effectively triggered. They represent
+     * `EventInstance` objects are created when an `Event` is triggered. They represent
      * the lifetime of that event at that particular time.
+     *
+     * The internal state of an `EventInstance` is owned by that `EventInstance`, that means
+     * each time you trigger an `Event`, a new instance with its own state is created.
+     *
+     * @see Event
+     *
+     * @ingroup engine
      */
     class AM_API_PUBLIC EventInstance
     {
     public:
+        /**
+         * @brief Default constructor.
+         */
         virtual ~EventInstance() = default;
 
         /**
-         * @brief Applies a frame update on this Event.
+         * @brief Applies a frame update on this `Event`.
          *
-         * @param deltaTime The time elapsed since the last frame.
+         * This method is called once per frame to update the event instance's state.
+         *
+         * @param[in] deltaTime The time elapsed since the last frame.
+         *
+         * @warning This method is for internal usage only.
          */
         virtual void AdvanceFrame(AmTime deltaTime) = 0;
 
         /**
-         * @brief Returns whether thisEvent is running.
+         * @brief Returns whether this `EventInstance` is running.
          *
-         * @return true if the event is running, false otherwise.
+         * @return `true` if the event is running, `false` otherwise.
          */
         [[nodiscard]] virtual bool IsRunning() const = 0;
 
         /**
-         * @brief Aborts the execution of this Event.
+         * @brief Aborts the execution of this `Event`.
          */
         virtual void Abort() = 0;
     };

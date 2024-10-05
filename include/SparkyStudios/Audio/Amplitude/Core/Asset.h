@@ -25,10 +25,12 @@ namespace SparkyStudios::Audio::Amplitude
      * @brief Amplitude Asset.
      *
      * This is the base class for all Amplitude assets. An Amplitude asset is a
-     * .json file with a specific format (definition), which is specified by the
-     * corresponding asset flatbuffer schema.
+     * `.json` file with a specific format (definition) specified by the corresponding
+     * asset's flatbuffer schema.
      *
      * @tparam Id The type of the asset id.
+     *
+     * @ingroup assets
      */
     template<typename Id>
     class AM_API_PUBLIC Asset

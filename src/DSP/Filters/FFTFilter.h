@@ -18,7 +18,7 @@
 #define _AM_IMPLEMENTATION_DSP_FILTERS_FFT_FILTER_H
 
 #include <SparkyStudios/Audio/Amplitude/DSP/Filter.h>
-#include <SparkyStudios/Audio/Amplitude/Math/SplitComplex.h>
+#include <SparkyStudios/Audio/Amplitude/DSP/SplitComplex.h>
 
 namespace SparkyStudios::Audio::Amplitude
 {
@@ -43,6 +43,7 @@ namespace SparkyStudios::Audio::Amplitude
         ~FFTFilterInstance() override;
 
     protected:
+        void Process(const AudioBuffer& in, AudioBuffer& out, AmUInt64 frames, AmUInt32 sampleRate) override;
         void ProcessChannel(const AudioBuffer& in, AudioBuffer& out, AmUInt16 channel, AmUInt64 frames, AmUInt32 sampleRate) override;
 
         virtual void ProcessFFTChannel(SplitComplex& fft, AmUInt16 channel, AmUInt64 frames, AmUInt16 channels, AmUInt32 sampleRate);
@@ -57,6 +58,8 @@ namespace SparkyStudios::Audio::Amplitude
 
     private:
         AmReal32Buffer _temp = nullptr;
+        AmReal32Buffer _sumPhase = nullptr;
+        AmReal32Buffer _lastPhase = nullptr;
     };
 } // namespace SparkyStudios::Audio::Amplitude
 

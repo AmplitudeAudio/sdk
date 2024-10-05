@@ -46,9 +46,9 @@ namespace SparkyStudios::Audio::Amplitude
         auto* file = static_cast<File*>(pUserData);
         file->Seek(
             offset,
-            origin == drwav_seek_origin_start         ? eFSO_START
-                : origin == drwav_seek_origin_current ? eFSO_CURRENT
-                                                      : eFSO_START);
+            origin == drwav_seek_origin_start         ? eFileSeekOrigin_Start
+                : origin == drwav_seek_origin_current ? eFileSeekOrigin_Current
+                                                      : eFileSeekOrigin_Start);
         return DRWAV_TRUE;
     }
 
@@ -86,7 +86,7 @@ namespace SparkyStudios::Audio::Amplitude
 
         m_format.SetAll(
             _wav.sampleRate, _wav.channels, _wav.bitsPerSample, _wav.totalPCMFrameCount, _wav.channels * sizeof(AmAudioSample),
-            AM_SAMPLE_FORMAT_FLOAT // This codec always read frames as float32 values
+            eAudioSampleFormat_Float32 // This codec always read frames as float32 values
         );
 
         _initialized = true;

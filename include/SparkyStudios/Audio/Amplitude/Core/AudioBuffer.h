@@ -22,7 +22,11 @@
 namespace SparkyStudios::Audio::Amplitude
 {
     /**
-     * @brief Represents a view to a single channel in an @c AudioBuffer.
+     * @brief Represents a view to a single channel in an `AudioBuffer`.
+     *
+     * @see AudioBuffer
+     *
+     * @ingroup core
      */
     class AM_API_PUBLIC AudioBufferChannel
     {
@@ -63,75 +67,75 @@ namespace SparkyStudios::Audio::Amplitude
         [[nodiscard]] const AmReal32* end() const;
 
         /**
-         * @brief Clears the channel data to zero.
+         * @brief Clears the channel data with zero.
          */
         void clear();
 
         /**
          * @brief Checks if the channel is enabled.
          *
-         * @return @c true if the channel is enabled, @c false otherwise.
+         * @return `true` if the channel is enabled, `false` otherwise.
          */
         [[nodiscard]] bool enabled() const;
 
         /**
-         * @brief Gets the frame at the specified index.
+         * @brief Gets the audio sample at the specified index.
          *
-         * @param index The frame index.
+         * @param[in] index The audio sample index.
          *
-         * @return The frame at the specified index.
+         * @return The audio sample at the specified index.
          */
         AmReal32& operator[](AmSize index);
 
         /**
-         * @brief Gets the frame at the specified index.
+         * @brief Gets the audio sample at the specified index.
          *
-         * @param index The frame index.
+         * @param[in] index The audio sample index.
          *
-         * @return The frame at the specified index.
+         * @return The audio sample at the specified index.
          */
         [[nodiscard]] const AmReal32& operator[](AmSize index) const;
 
         /**
          * @brief Sets the entire channel data from the provided vector.
          *
-         * @param data The vector containing the new channel data.
+         * @param[in] data The vector containing the new channel data.
          *
          * @return A reference to the modified channel.
          */
         AudioBufferChannel& operator=(const std::vector<AmReal32>& data);
 
         /**
-         * @brief Sets the entire channel data from the provided @c AudioBufferChannel.
+         * @brief Sets the entire channel data from the provided `AudioBufferChannel`.
          *
-         * @param channel The @c AudioBufferChannel to copy the data from.
+         * @param[in] channel The `AudioBufferChannel` to copy the data from.
          *
          * @return A reference to the modified channel.
          */
         AudioBufferChannel& operator=(const AudioBufferChannel& channel);
 
         /**
-         * @brief Adds the provided @c AudioBufferChannel to this channel.
+         * @brief Performs point-wise addition of this channel with the provided `AudioBufferChannel`.
          *
-         * @param channel The @c AudioBufferChannel to add.
+         * @param[in] channel The `AudioBufferChannel` to add.
          *
          * @return A reference to the modified channel.
          */
         AudioBufferChannel& operator+=(const AudioBufferChannel& channel);
 
         /**
-         * @brief Subtracts the provided @c AudioBufferChannel from this channel.
+         * @brief Performs point-wise subtraction of this channel with the provided `AudioBufferChannel`.
          *
-         * @param channel The @c AudioBufferChannel to subtract.
+         * @param[in] channel The `AudioBufferChannel` to subtract.
          *
          * @return A reference to the modified channel.
          */
         AudioBufferChannel& operator-=(const AudioBufferChannel& channel);
 
         /**
-         * @brief Point-wise multiplies this channel with the provided @c AudioBufferChannel.
+         * @brief Point-wise multiplies this channel with the provided `AudioBufferChannel`.
          *
-         * @param channel The @c AudioBufferChannel to multiply with.
+         * @param[in] channel The `AudioBufferChannel` to multiply with.
          *
          * @return A reference to the modified channel.
          */
@@ -140,7 +144,7 @@ namespace SparkyStudios::Audio::Amplitude
         /**
          * @brief Point-wise multiplies this channel with the provided scalar.
          *
-         * @param scalar The scalar to multiply with.
+         * @param[in] scalar The scalar to multiply with.
          *
          * @return A reference to the modified channel.
          */
@@ -149,24 +153,60 @@ namespace SparkyStudios::Audio::Amplitude
     private:
         friend class AudioBuffer;
 
+        /**
+         * @brief Creates a new audio buffer channel from the provided memory range.
+         *
+         * @param[in] begin The beginning of the memory range storing the channel data.
+         * @param[in] numFrames The number of audio samples in the memory range.
+         *
+         * @internal
+         */
         AudioBufferChannel(AmReal32* begin, AmSize numFrames);
 
+        /**
+         * @brief The beginning of the memory range storing the channel data.
+         *
+         * @internal
+         */
         AmReal32* _begin;
+
+        /**
+         * @brief The number of audio samples in the memory range.
+         *
+         * @internal
+         */
         AmSize _frameCount;
+
+        /**
+         * @brief Indicates whether the channel is enabled.
+         *
+         * @internal
+         */
         bool _isEnabled;
     };
 
+    /**
+     * @brief Represents an audio buffer containing multiple channels.
+     *
+     * An `AudioBuffer` is a de-interleaved memory storage used to store and manipulate audio data,
+     * such as audio samples or Ambisonics sound fields, in a flexible and efficient manner. Accessing
+     * a channel data will return an `AudioBufferChannel` object, which is a view to the memory range storing that channel.
+     *
+     * @see AudioBufferChannel
+     *
+     * @ingroup core
+     */
     class AM_API_PUBLIC AudioBuffer
     {
     public:
         /**
          * @brief Copies the given number of frames from the source buffer to the destination buffer.
          *
-         * @param source The source buffer to copy.
-         * @param sourceOffset The offset in the source buffer.
-         * @param destination The destination buffer to copy to.
-         * @param destinationOffset The offset in the destination buffer.
-         * @param numFrames The number of frames to copy.
+         * @param[in] source The source buffer to copy.
+         * @param[in] sourceOffset The offset in the source buffer.
+         * @param[out] destination The destination buffer to copy to.
+         * @param[in] destinationOffset The offset in the destination buffer.
+         * @param[in] numFrames The number of frames to copy.
          */
         static void Copy(
             const AudioBuffer& source, AmSize sourceOffset, AudioBuffer& destination, AmSize destinationOffset, AmSize numFrames);
@@ -179,15 +219,15 @@ namespace SparkyStudios::Audio::Amplitude
         /**
          * @brief Creates an audio buffer with the specified number of frames and channels.
          *
-         * @param numFrames The number of frames in the buffer.
-         * @param numChannels The number of channels in the buffer.
+         * @param[in] numFrames The number of frames in the buffer.
+         * @param[in] numChannels The number of channels in the buffer.
          */
         AudioBuffer(AmSize numFrames, AmSize numChannels);
 
         /**
          * @brief Explicitly deletes the audio buffer copy to avoid unintended usage.
          *
-         * @param buffer The other audio buffer to copy.
+         * @param[in] buffer The other audio buffer to copy.
          *
          * @note Use the assignment operator to copy the audio buffer.
          */
@@ -196,16 +236,19 @@ namespace SparkyStudios::Audio::Amplitude
         /**
          * @brief Moves the given audio buffer data in this one.
          *
-         * @param buffer The other audio buffer to move.
+         * @param[in] buffer The other audio buffer to move.
          */
         AudioBuffer(AudioBuffer&& buffer) noexcept;
 
+        /**
+         * @brief Destroys the audio buffer data and release allocated memory.
+         */
         ~AudioBuffer();
 
         /**
          * @brief Check if the audio buffer is empty.
          *
-         * @return @c true if the audio buffer is empty, @c false otherwise.
+         * @return `true` if the audio buffer is empty, `false` otherwise.
          */
         [[nodiscard]] bool IsEmpty() const;
 
@@ -236,20 +279,20 @@ namespace SparkyStudios::Audio::Amplitude
         [[nodiscard]] const AmAlignedReal32Buffer& GetData() const;
 
         /**
-         * @brief Gets the @c AudioBufferChannel at the specified index.
+         * @brief Gets the `AudioBufferChannel` at the specified index.
          *
-         * @param index The channel index.
+         * @param[in] index The channel index.
          *
-         * @return The @c AudioBufferChannel at the specified index.
+         * @return The `AudioBufferChannel` at the specified index.
          */
         AudioBufferChannel& GetChannel(AmSize index);
 
         /**
-         * @brief Gets the @c AudioBufferChannel at the specified index.
+         * @brief Gets the `AudioBufferChannel` at the specified index.
          *
-         * @param index The channel index.
+         * @param[in] index The channel index.
          *
-         * @return The @c AudioBufferChannel at the specified index.
+         * @return The `AudioBufferChannel` at the specified index.
          */
         [[nodiscard]] const AudioBufferChannel& GetChannel(AmSize index) const;
 
@@ -261,54 +304,54 @@ namespace SparkyStudios::Audio::Amplitude
         AudioBuffer Clone() const;
 
         /**
-         * @brief Gets the @c AudioBufferChannel at the specified index.
+         * @brief Gets the `AudioBufferChannel` at the specified index.
          *
-         * @param index The channel index.
+         * @param[in] index The channel index.
          *
-         * @return The @c AudioBufferChannel at the specified index.
+         * @return The `AudioBufferChannel` at the specified index.
          */
         AudioBufferChannel& operator[](AmSize index);
 
         /**
-         * @brief Gets the @c AudioBufferChannel at the specified index.
+         * @brief Gets the `AudioBufferChannel` at the specified index.
          *
-         * @param index The channel index.
+         * @param[in] index The channel index.
          *
-         * @return The @c AudioBufferChannel at the specified index.
+         * @return The `AudioBufferChannel` at the specified index.
          */
         [[nodiscard]] const AudioBufferChannel& operator[](AmSize index) const;
 
         /**
-         * @brief Copies the audio buffer data from the provided @c AudioBuffer.
+         * @brief Copies the audio buffer data from the provided `AudioBuffer`.
          *
-         * @param buffer The other audio buffer to copy.
+         * @param[in] buffer The other audio buffer to copy.
          *
          * @return This instance with the copied audio buffer data.
          */
         AudioBuffer& operator=(const AudioBuffer& buffer);
 
         /**
-         * @brief Accumulates the audio buffer data from the provided @c AudioBuffer.
+         * @brief Accumulates the audio buffer data from the provided `AudioBuffer`.
          *
-         * @param buffer The buffer to add in this one.
+         * @param[in] buffer The buffer to add in this one.
          *
          * @return This instance with the added audio buffer data.
          */
         AudioBuffer& operator+=(const AudioBuffer& buffer);
 
         /**
-         * @brief Subtracts the audio buffer data from the provided @c AudioBuffer.
+         * @brief Subtracts the audio buffer data from the provided `AudioBuffer`.
          *
-         * @param buffer The buffer to subtract from this one.
+         * @param[in] buffer The buffer to subtract from this one.
          *
          * @return This instance with the subtracted audio buffer data.
          */
         AudioBuffer& operator-=(const AudioBuffer& buffer);
 
         /**
-         * @brief Point-wise multiplies the audio buffer data with the provided @c AudioBuffer.
+         * @brief Point-wise multiplies the audio buffer data with the provided `AudioBuffer`.
          *
-         * @param buffer The buffer to multiply with this one.
+         * @param[in] buffer The buffer to multiply with this one.
          *
          * @return This instance with the multiplied audio buffer data.
          */
@@ -317,18 +360,41 @@ namespace SparkyStudios::Audio::Amplitude
         /**
          * @brief Point-wise multiplies this channel with the provided scalar.
          *
-         * @param scalar The scalar to multiply with.
+         * @param[in] scalar The scalar to multiply with.
          *
          * @return A reference to the modified channel.
          */
         AudioBuffer& operator*=(AmReal32 scalar);
 
     private:
+        /**
+         * @brief Initializes the audio buffer with the specified number of channels.
+         *
+         * @param[in] channelCount The number of channels in the buffer.
+         *
+         * @internal
+         */
         void Initialize(AmSize channelCount);
 
+        /**
+         * @brief The number of audio samples in each channel.
+         *
+         * @internal
+         */
         AmSize _frameCount;
+
+        /**
+         * @brief The vector of available channels.
+         *
+         * @internal
+         */
         std::vector<AudioBufferChannel> _channels;
 
+        /**
+         * @brief The wrapped audio buffer data.
+         *
+         * @internal
+         */
         AmAlignedReal32Buffer _data;
     };
 } // namespace SparkyStudios::Audio::Amplitude

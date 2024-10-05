@@ -23,23 +23,40 @@ namespace SparkyStudios::Audio::Amplitude
 {
     /**
      * @brief Represents a triangulated face.
+     *
+     * A face is defined by three vertices. This structure is optimized for use
+     * with an existing indexed vertex array, so only the indices of each face's
+     * vertex need to be provided.
+     *
+     * @ingroup math
      */
     struct AM_API_PUBLIC Face
     {
-        AmSize m_A;
-        AmSize m_B;
-        AmSize m_C;
+        AmSize m_A; ///< Index of the first vertex.
+        AmSize m_B; ///< Index of the second vertex.
+        AmSize m_C; ///< Index of the third vertex.
 
+        /**
+         * @brief Checks if the face is valid.
+         *
+         * @return `true` if the face is valid, `false` otherwise.
+         */
         [[nodiscard]] bool IsValid() const;
     };
 
     /**
-     * @brief Represents a triangulated edge.
+     * @brief Represents an edge.
+     *
+     * An edge is defined by two vertices. This structure is optimized for use
+     * with an existing indexed vertex array, so only the indices of each edge's
+     * vertex need to be provided.
+     *
+     * @ingroup math
      */
     struct AM_API_PUBLIC Edge
     {
-        AmSize m_E0;
-        AmSize m_E1;
+        AmSize m_E0; ///< Index of the first vertex.
+        AmSize m_E1; ///< Index of the second vertex.
 
         bool operator<(const Edge& other) const;
         bool operator==(const Edge& other) const;

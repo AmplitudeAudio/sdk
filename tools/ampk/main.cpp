@@ -23,7 +23,7 @@ struct ProcessingState
 {
     bool verbose = false;
 
-    PackageFileCompressionAlgorithm compression = ePCA_None;
+    ePackageFileCompressionAlgorithm compression = ePackageFileCompressionAlgorithm_None;
 };
 
 static constexpr AmUInt32 kCurrentVersion = 1;
@@ -82,11 +82,11 @@ static int process(const AmOsString& inFileName, const AmOsString& outFileName, 
         }
     }
 
-    DiskFile packageFile(absolute(packagePath), eFOM_WRITE);
+    DiskFile packageFile(absolute(packagePath), eFileOpenMode_Write);
 
     packageFile.Write(reinterpret_cast<AmConstUInt8Buffer>("AMPK"), 4);
     packageFile.Write16(kCurrentVersion);
-    packageFile.Write8(ePCA_None); // TODO: state.compression
+    packageFile.Write8(ePackageFileCompressionAlgorithm_None); // TODO: state.compression
 
     AmSize lastOffset = 0;
     std::vector<AmUInt8> buffer;
@@ -183,9 +183,10 @@ int main(int argc, char* argv[])
 
             case 'C':
             case 'c':
-                state.compression = static_cast<PackageFileCompressionAlgorithm>(strtol(argv[++i], argv, 10));
+                state.compression = static_cast<ePackageFileCompressionAlgorithm>(strtol(argv[++i], argv, 10));
 
-                if (state.compression < ePCA_None || state.compression >= ePCA_Invalid)
+                if (state.compression < ePackageFileCompressionAlgorithm_None ||
+                    state.compression >= ePackageFileCompressionAlgorithm_Invalid)
                 {
                     log(stderr, "\nInvalid compression algorithm!\n");
                     return EXIT_FAILURE;

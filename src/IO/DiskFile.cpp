@@ -24,7 +24,7 @@ namespace SparkyStudios::Audio::Amplitude
         : m_fileHandle(fp)
     {}
 
-    DiskFile::DiskFile(const std::filesystem::path& fileName, FileOpenMode mode, FileOpenKind kind)
+    DiskFile::DiskFile(const std::filesystem::path& fileName, eFileOpenMode mode, eFileOpenKind kind)
         : DiskFile()
     {
         Open(fileName, mode, kind);
@@ -71,7 +71,7 @@ namespace SparkyStudios::Audio::Amplitude
         return len;
     }
 
-    void DiskFile::Seek(AmInt64 offset, FileSeekOrigin origin)
+    void DiskFile::Seek(AmInt64 offset, eFileSeekOrigin origin)
     {
         fseek(m_fileHandle, offset, origin);
     }
@@ -91,29 +91,29 @@ namespace SparkyStudios::Audio::Amplitude
         return m_fileHandle != nullptr;
     }
 
-    AmResult DiskFile::Open(const std::filesystem::path& filePath, FileOpenMode mode, FileOpenKind kind)
+    AmResult DiskFile::Open(const std::filesystem::path& filePath, eFileOpenMode mode, eFileOpenKind kind)
     {
         if (filePath.empty())
-            return AM_ERROR_INVALID_PARAMETER;
+            return eErrorCode_InvalidParameter;
 
         AmOsString op{};
 
         switch (mode)
         {
-        case eFOM_READ:
-            op = kind == eFOK_TEXT ? AM_OS_STRING("r") : AM_OS_STRING("rb");
+        case eFileOpenMode_Read:
+            op = kind == eFileOpenKind_Text ? AM_OS_STRING("r") : AM_OS_STRING("rb");
             break;
-        case eFOM_WRITE:
-            op = kind == eFOK_TEXT ? AM_OS_STRING("w") : AM_OS_STRING("wb");
+        case eFileOpenMode_Write:
+            op = kind == eFileOpenKind_Text ? AM_OS_STRING("w") : AM_OS_STRING("wb");
             break;
-        case eFOM_APPEND:
-            op = kind == eFOK_TEXT ? AM_OS_STRING("a") : AM_OS_STRING("ab");
+        case eFileOpenMode_Append:
+            op = kind == eFileOpenKind_Text ? AM_OS_STRING("a") : AM_OS_STRING("ab");
             break;
-        case eFOM_READWRITE:
-            op = kind == eFOK_TEXT ? AM_OS_STRING("w+") : AM_OS_STRING("wb+");
+        case eFileOpenMode_ReadWrite:
+            op = kind == eFileOpenKind_Text ? AM_OS_STRING("w+") : AM_OS_STRING("wb+");
             break;
-        case eFOM_READAPPEND:
-            op = kind == eFOK_TEXT ? AM_OS_STRING("a+") : AM_OS_STRING("ab+");
+        case eFileOpenMode_ReadAppend:
+            op = kind == eFileOpenKind_Text ? AM_OS_STRING("a+") : AM_OS_STRING("ab+");
             break;
         }
 
@@ -124,11 +124,11 @@ namespace SparkyStudios::Audio::Amplitude
 #endif
 
         if (!m_fileHandle)
-            return AM_ERROR_FILE_NOT_FOUND;
+            return eErrorCode_FileNotFound;
 
         m_filePath = filePath;
 
-        return AM_ERROR_NO_ERROR;
+        return eErrorCode_Success;
     }
 
     void DiskFile::Close()
@@ -139,4 +139,4 @@ namespace SparkyStudios::Audio::Amplitude
         fclose(m_fileHandle);
         m_fileHandle = nullptr;
     }
-}
+} // namespace SparkyStudios::Audio::Amplitude

@@ -37,8 +37,8 @@ namespace SparkyStudios::Audio::Amplitude
     private:
         void InitializeBuffer(AmUInt16 channels, AmUInt32 sampleRate);
 
-        AmReal32Buffer _buffer;
-        AmReal32Buffer _totals;
+        AmAlignedReal32Buffer _buffer;
+        AmAlignedReal32Buffer _totals;
         AmUInt64 _bufferLength;
         AmUInt64 _offset;
     };
@@ -51,6 +51,7 @@ namespace SparkyStudios::Audio::Amplitude
         enum ATTRIBUTE
         {
             ATTRIBUTE_WET = 0,
+            ATTRIBUTE_LENGTH = 1,
             ATTRIBUTE_LAST
         };
 

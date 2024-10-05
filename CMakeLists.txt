@@ -119,7 +119,6 @@ build_flatbuffers("${FLATBUFFERS_SCHEMAS}"
 
 # Setup project source files.
 set(SA_SOURCE
-    include/SparkyStudios/Audio/Amplitude/Convolution/Convolver.h
     include/SparkyStudios/Audio/Amplitude/Core/Common/Platforms/Android/Config.h
     include/SparkyStudios/Audio/Amplitude/Core/Common/Platforms/Android/Types.h
     include/SparkyStudios/Audio/Amplitude/Core/Common/Platforms/Apple/Config.h
@@ -155,8 +154,11 @@ set(SA_SOURCE
     include/SparkyStudios/Audio/Amplitude/Core/Thread.h
     include/SparkyStudios/Audio/Amplitude/Core/Version.h
     include/SparkyStudios/Audio/Amplitude/DSP/AudioConverter.h
+    include/SparkyStudios/Audio/Amplitude/DSP/Convolver.h
+    include/SparkyStudios/Audio/Amplitude/DSP/FFT.h
     include/SparkyStudios/Audio/Amplitude/DSP/Filter.h
     include/SparkyStudios/Audio/Amplitude/DSP/Resampler.h
+    include/SparkyStudios/Audio/Amplitude/DSP/SplitComplex.h
     include/SparkyStudios/Audio/Amplitude/HRTF/HRIRSphere.h
     include/SparkyStudios/Audio/Amplitude/IO/DiskFile.h
     include/SparkyStudios/Audio/Amplitude/IO/DiskFileSystem.h
@@ -169,13 +171,11 @@ set(SA_SOURCE
     include/SparkyStudios/Audio/Amplitude/Math/BarycentricCoordinates.h
     include/SparkyStudios/Audio/Amplitude/Math/CartesianCoordinateSystem.h
     include/SparkyStudios/Audio/Amplitude/Math/Curve.h
-    include/SparkyStudios/Audio/Amplitude/Math/FFT.h
     include/SparkyStudios/Audio/Amplitude/Math/Geometry.h
     include/SparkyStudios/Audio/Amplitude/Math/HandmadeMath.h
     include/SparkyStudios/Audio/Amplitude/Math/Orientation.h
     include/SparkyStudios/Audio/Amplitude/Math/Shape.h
     include/SparkyStudios/Audio/Amplitude/Math/SphericalPosition.h
-    include/SparkyStudios/Audio/Amplitude/Math/SplitComplex.h
     include/SparkyStudios/Audio/Amplitude/Math/Utils.h
     include/SparkyStudios/Audio/Amplitude/Mixer/Amplimix.h
     include/SparkyStudios/Audio/Amplitude/Mixer/Node.h
@@ -208,8 +208,6 @@ set(SA_SOURCE
     src/Ambisonics/AmbisonicSpeaker.h
     src/Ambisonics/BFormat.cpp
     src/Ambisonics/BFormat.h
-
-    src/Convolution/Convolver.cpp
 
     src/Core/Codecs/AMS/Codec.cpp
     src/Core/Codecs/AMS/Codec.h
@@ -296,8 +294,10 @@ set(SA_SOURCE
     src/DSP/Resamplers/LibsamplerateResampler.h
     src/DSP/Resamplers/R8BrainResampler.h
     src/DSP/AudioConverter.cpp
+    src/DSP/Convolver.cpp
     src/DSP/Delay.cpp
     src/DSP/Delay.h
+    src/DSP/FFT.cpp
     src/DSP/Filter.cpp
     src/DSP/Gain.cpp
     src/DSP/Gain.h
@@ -306,6 +306,7 @@ set(SA_SOURCE
     src/DSP/ReflectionsProcessor.cpp
     src/DSP/ReflectionsProcessor.h
     src/DSP/Resampler.cpp
+    src/DSP/SplitComplex.cpp
 
     src/HRTF/HRIRSphere.cpp
     src/HRTF/HRIRSphere.h
@@ -323,11 +324,9 @@ set(SA_SOURCE
     src/Math/Orientation.cpp
     src/Math/FaceBSPTree.cpp
     src/Math/FaceBSPTree.h
-    src/Math/FFT.cpp
     src/Math/Geometry.cpp
     src/Math/Shape.cpp
     src/Math/SphericalPosition.cpp
-    src/Math/SplitComplex.cpp
 
     src/Mixer/Nodes/AmbisonicBinauralDecoderNode.cpp
     src/Mixer/Nodes/AmbisonicBinauralDecoderNode.h

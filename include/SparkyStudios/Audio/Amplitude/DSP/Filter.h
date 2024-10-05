@@ -26,49 +26,53 @@ namespace SparkyStudios::Audio::Amplitude
     /**
      * @brief A Filter instance.
      *
-     * An object of this class will be created each time a @c Filter is requested.
+     * An object of this class will be created each time a `Filter` is requested.
+     *
+     * @ingroup dsp
      */
     class AM_API_PUBLIC FilterInstance
     {
     public:
         /**
-         * @brief Constructs a new @c FilterInstance object.
+         * @brief Constructs a new `FilterInstance` object.
          *
-         * @param parent The parent @c Filter object that created this instance.
+         * @param[in] parent The parent `Filter` object that created this instance.
          */
         explicit FilterInstance(Filter* parent);
 
+        /**
+         * @brief Destroys the `FilterInstance` object.
+         */
         virtual ~FilterInstance();
 
         /**
-         * @brief Initializes the filter instance with the provided number of
-         * parameters.
+         * @brief Initializes the filter instance with the provided number of parameters.
          *
-         * @param paramCount The number of parameters the filter will need.
+         * @param[in] paramCount The number of parameters the filter will need.
          */
         AmResult Initialize(AmUInt32 paramCount);
 
         /**
          * @brief Updates the filter instance state for the provided delta time.
          *
-         * @param deltaTime The time in milliseconds since the last frame.
+         * @param[in] deltaTime The time in milliseconds since the last frame.
          */
         virtual void AdvanceFrame(AmTime deltaTime);
 
         /**
          * @brief Executes the filter instance.
          *
-         * @param in The input buffer on which the filter should be applied.
-         * @param out The output buffer where the filtered output will be stored.
-         * @param frames The number of frames to process.
-         * @param sampleRate The current sample rate of the @c buffer.
+         * @param[in] in The input buffer on which the filter should be applied.
+         * @param[out] out The output buffer where the filtered output will be stored.
+         * @param[in] frames The number of frames to process.
+         * @param[in] sampleRate The current sample rate of the `buffer`.
          */
         virtual void Process(const AudioBuffer& in, AudioBuffer& out, AmUInt64 frames, AmUInt32 sampleRate);
 
         /**
          * @brief Gets the current value of the parameter at the given index.
          *
-         * @param parameterIndex The index of the parameter to retrieve.
+         * @param[in] parameterIndex The index of the parameter to retrieve.
          *
          * @return The current value of the parameter.
          */
@@ -77,8 +81,8 @@ namespace SparkyStudios::Audio::Amplitude
         /**
          * @brief Sets the value of the parameter at the given index.
          *
-         * @param parameterIndex The index of the parameter to retrieve.
-         * @param value The value to set to the parameter.
+         * @param[in] parameterIndex The index of the parameter to retrieve.
+         * @param[in] value The value to set to the parameter.
          */
         virtual void SetParameter(AmUInt32 parameterIndex, AmReal32 value);
 
@@ -86,11 +90,11 @@ namespace SparkyStudios::Audio::Amplitude
         /**
          * @brief Executes the filter instance on a single channel of the given buffer.
          *
-         * @param in The input buffer on which the filter should be applied.
-         * @param out The output buffer where the filtered output will be stored.
-         * @param channel The index of the channel to process.
-         * @param frames The number of frames to process.
-         * @param sampleRate The current sample rate of the @c buffer.
+         * @param[in] in The input buffer on which the filter should be applied.
+         * @param[out] out The output buffer where the filtered output will be stored.
+         * @param[in] channel The index of the channel to process.
+         * @param[in] frames The number of frames to process.
+         * @param[in] sampleRate The current sample rate of the `buffer`.
          */
         virtual void ProcessChannel(const AudioBuffer& in, AudioBuffer& out, AmUInt16 channel, AmUInt64 frames, AmUInt32 sampleRate);
 
@@ -99,81 +103,107 @@ namespace SparkyStudios::Audio::Amplitude
          *
          * @param sample The audio sample to process.
          * @param channel The index of the channel to process.
-         * @param sampleRate The current sample rate of the @c buffer.
+         * @param sampleRate The current sample rate of the `buffer`.
          */
         virtual AmAudioSample ProcessSample(AmAudioSample sample, AmUInt16 channel, AmUInt32 sampleRate);
 
+        /**
+         * @brief The parent filter object that created this instance.
+         */
         Filter* m_parent;
 
+        /**
+         * @brief The number of parameters available for this filter.
+         */
         AmUInt32 m_numParams;
+
+        /**
+         * @brief The number of parameters that have changed since the last frame.
+         */
         AmUInt32 m_numParamsChanged;
-        AmReal32Buffer m_parameters;
+
+        /**
+         * @brief The parameters buffer.
+         */
+        AmReal32* m_parameters;
     };
 
     /**
-     * @brief Helper class to manage filters.
+     * @brief Base class to manage filters.
      *
-     * A filter applies transformations on an audio buffer..
+     * A filter applies transformations to an audio buffer. The `Filter` class implements factory methods to create
+     * instances of `FilterInstance` objects, which are where the the filtering is done.
+     *
+     * The `Filter` class follows the [plugins architecture](/plugins/anatomy.md), and thus, you are able to create your own filters
+     * by inheriting from this class, and by implementing the necessary dependencies.
+     *
+     * @ingroup dsp
      */
     class AM_API_PUBLIC Filter
     {
         friend class FilterInstance;
 
     public:
-        enum PARAM_TYPE
+        /**
+         * @brief The type of a filter parameter.
+         */
+        enum ParameterType
         {
-            PARAM_FLOAT = 0,
-            PARAM_INT,
-            PARAM_BOOL
+            kParameterTypeFloat = 0, ///< The parameter is a float.
+            kParameterTypeInt, ///< The parameter is an integer.
+            kParameterTypeBool ///< The parameter is a boolean.
         };
 
         /**
-         * @brief Create a new @c Filter instance.
+         * @brief Create a new `Filter` instance.
          *
-         * @param name The filter name. eg. "Delay".
+         * @param[in] name The filter name. eg. "Echo".
          */
         explicit Filter(AmString name);
 
+        /**
+         * @brief Default destructor.
+         */
         virtual ~Filter();
 
         /**
-         * @brief Get the maximum number of parameters available for this filter.
+         * @brief Gets the maximum number of parameters available for this filter.
          *
          * @return The maximum number of filter parameters.
          */
         [[nodiscard]] virtual AmUInt32 GetParamCount() const;
 
         /**
-         * @brief Get the name of the parameter at the given index.
+         * @brief Gets the name of the parameter at the given index.
          *
-         * @param index The parameter index.
+         * @param[in] index The parameter index.
          *
          * @return The name of the parameter at the given index.
          */
         [[nodiscard]] virtual AmString GetParamName(AmUInt32 index) const;
 
         /**
-         * @brief Get the type of the parameter at the given index.
+         * @brief Gets the type of the parameter at the given index.
          *
-         * @param index The parameter index.
+         * @param[in] index The parameter index.
          *
          * @return The type of the parameter at the given index.
          */
         [[nodiscard]] virtual AmUInt32 GetParamType(AmUInt32 index) const;
 
         /**
-         * @brief Get the maximum allowed value of the parameter at the given index.
+         * @brief Gets the maximum allowed value of the parameter at the given index.
          *
-         * @param index The parameter index.
+         * @param[in] index The parameter index.
          *
          * @return The maximum allowed value of the parameter at the given index.
          */
         [[nodiscard]] virtual AmReal32 GetParamMax(AmUInt32 index) const;
 
         /**
-         * @brief Get the minimum allowed value of the parameter at the given index.
+         * @brief Gets the minimum allowed value of the parameter at the given index.
          *
-         * @param index The parameter index.
+         * @param[in] index The parameter index.
          *
          * @return The minimum allowed value of the parameter at the given index.
          */
@@ -187,10 +217,12 @@ namespace SparkyStudios::Audio::Amplitude
         virtual FilterInstance* CreateInstance() = 0;
 
         /**
-         * @brief Destroys an instance of the filter. The instance should have
-         * been created with @c Filter::CreateInstance().
+         * @brief Destroys an instance of the filter.
          *
-         * @param instance The filter instance to be destroyed.
+         * @warning The instance should have been created with @ref CreateInstance `CreateInstance()`
+         * before being destroyed with this method.
+         *
+         * @param[in] instance The filter instance to be destroyed.
          */
         virtual void DestroyInstance(FilterInstance* instance) = 0;
 
@@ -204,57 +236,58 @@ namespace SparkyStudios::Audio::Amplitude
         /**
          * @brief Registers a new filter.
          *
-         * @param filter The filter to add in the registry.
+         * @param[in] filter The filter to add in the registry.
          */
         static void Register(Filter* filter);
 
         /**
          * @brief Unregisters a filter.
          *
-         * @param filter The filter to remove from the registry.
+         * @param[in] filter The filter to remove from the registry.
          */
         static void Unregister(const Filter* filter);
 
         /**
          * @brief Look up a filter by name.
          *
-         * @return The filter with the given name, or @c nullptr if none.
+         * @return The filter with the given name, or `nullptr` if none.
          */
         static Filter* Find(const AmString& name);
 
         /**
-         * @brief Creates a new instance of the the filter with the given name
-         * and returns its pointer. The returned pointer should be deleted using @c Filter::Destruct().
+         * @brief Creates a new instance of the the filter with the given name and returns its pointer.
          *
-         * @param name The name of the filter.
+         * @note The returned pointer should be deleted using @ref Destruct `Destruct()`.
          *
-         * @return The filter with the given name, or @c nullptr if none.
+         * @param[in] name The name of the filter.
+         *
+         * @return The filter with the given name, or `nullptr` if none.
          */
         static FilterInstance* Construct(const AmString& name);
 
         /**
          * @brief Destroys the given filter instance.
          *
-         * @param name The name of the filter.
-         * @param instance The filter instance to destroy.
+         * @param[in] name The name of the filter.
+         * @param[in] instance The filter instance to destroy.
          */
         static void Destruct(const AmString& name, FilterInstance* instance);
 
         /**
          * @brief Locks the filters registry.
          *
-         * This function is mainly used for internal purposes. Its
-         * called before the Engine initialization, to discard the
-         * registration of new filters after the engine is fully loaded.
+         * @warning This function is mainly used for internal purposes. It's
+         * called before the `Engine` initialization, to discard the registration
+         * of new filters after the engine is fully loaded.
          */
         static void LockRegistry();
 
         /**
          * @brief Unlocks the filters registry.
          *
-         * This function is mainly used for internal purposes. Its
-         * called after the Engine deinitialization, to allow the
-         * registration of new divers after the engine is fully unloaded.
+         * @warning This function is mainly used for internal purposes. It's
+         * called after the `Engine` deinitialization, to allow the registration
+         * of new filters after the engine is fully unloaded.
          */
         static void UnlockRegistry();
 

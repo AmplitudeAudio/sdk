@@ -15,7 +15,7 @@
 // Based on the code from https://github.com/HiFi-LoFi/FFTConvolver
 // Copyright (c) 2017 HiFi-LoFi, MIT License
 
-#include <SparkyStudios/Audio/Amplitude/Convolution/Convolver.h>
+#include <SparkyStudios/Audio/Amplitude/DSP/Convolver.h>
 
 #include <SparkyStudios/Audio/Amplitude/Core/Memory.h>
 

@@ -22,23 +22,25 @@
 namespace SparkyStudios::Audio::Amplitude
 {
     /**
-     * @brief A File implementation that reads and writes a memory buffer.
+     * @brief A `File` implementation that reads from and writes to a memory buffer.
+     *
+     * @ingroup io
      */
     class AM_API_PUBLIC MemoryFile : public File
     {
     public:
         /**
-         * @brief Creates a new MemoryFile instance.
+         * @brief Creates a new `MemoryFile` instance.
          */
         MemoryFile();
 
         /**
-         * @brief Creates a new MemoryFile instance from a memory buffer.
+         * @brief Creates a new `MemoryFile` instance from a memory buffer.
          *
-         * @param buffer The memory buffer to manage in this instance.
-         * @param size The size of the memory buffer.
-         * @param copy If true, the memory buffer will be copied.
-         * @param takeOwnership If true, the memory buffer will be owned by this instance, and released when this instance is destroyed.
+         * @param[in] buffer The memory buffer to manage in this instance.
+         * @param[in] size The size of the memory buffer.
+         * @param[in] copy If true, the memory buffer will be copied.
+         * @param[in] takeOwnership If true, the memory buffer will be owned by this instance, and released when this instance is destroyed.
          */
         MemoryFile(AmUInt8Buffer buffer, AmSize size, bool copy = false, bool takeOwnership = true);
 
@@ -48,54 +50,54 @@ namespace SparkyStudios::Audio::Amplitude
         ~MemoryFile() override;
 
         /**
-         * @copydoc File::GetPath
+         * @inherit
          */
         [[nodiscard]] AmOsString GetPath() const override;
 
         /**
-         * @copydoc File::Eof
+         * @inherit
          */
         bool Eof() override;
 
         /**
-         * @copydoc File::Read
+         * @inherit
          */
         AmSize Read(AmUInt8Buffer dst, AmSize bytes) override;
 
         /**
-         * @copydoc File::Write
+         * @inherit
          */
         AmSize Write(AmConstUInt8Buffer src, AmSize bytes) override;
 
         /**
-         * @copydoc File::Length
+         * @inherit
          */
         AmSize Length() override;
 
         /**
-         * @copydoc File::Seek
+         * @inherit
          */
-        void Seek(AmInt64 offset, FileSeekOrigin origin) override;
+        void Seek(AmInt64 offset, eFileSeekOrigin origin) override;
 
         /**
-         * @copydoc File::Position
+         * @inherit
          */
         AmSize Position() override;
 
         /**
-         * @copydoc File::GetPtr
+         * @inherit
          */
         AmVoidPtr GetPtr() override;
 
         /**
-         * @copydoc File::IsValid
+         * @inherit
          */
         [[nodiscard]] bool IsValid() const override;
 
         /**
          * @brief Opens a new memory buffer with the specified size.
          *
-         * @param size The size of the buffer.
+         * @param[in] size The size of the buffer.
          *
          * @return The result of the operation.
          */
@@ -104,10 +106,10 @@ namespace SparkyStudios::Audio::Amplitude
         /**
          * @brief Opens a memory buffer.
          *
-         * @param buffer The memory buffer to open.
-         * @param size The size of the memory buffer.
-         * @param copy If true, the memory buffer will be copied.
-         * @param takeOwnership If true, the memory buffer will be owned by this instance, and released when this instance is destroyed.
+         * @param[in] buffer The memory buffer to open.
+         * @param[in] size The size of the memory buffer.
+         * @param[in] copy If true, the memory buffer will be copied.
+         * @param[in] takeOwnership If true, the memory buffer will be owned by this instance, and released when this instance is destroyed.
          *
          * @return The result of the operation.
          */
@@ -116,7 +118,7 @@ namespace SparkyStudios::Audio::Amplitude
         /**
          * @brief Opens a memory buffer from a file content.
          *
-         * @param fileName The path to the file to open.
+         * @param[in] fileName The path to the file to open.
          *
          * @return The result of the operation.
          */
@@ -125,7 +127,7 @@ namespace SparkyStudios::Audio::Amplitude
         /**
          * @brief Copies data from a file instance to a memory buffer. The file content is entirely copied.
          *
-         * @param file The file isntance to copy data from.
+         * @param[in] file The file instance to copy data from.
          *
          * @return The result of the operation.
          */

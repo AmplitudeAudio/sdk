@@ -25,6 +25,8 @@ namespace SparkyStudios::Audio::Amplitude
 
     /**
      * @brief The playback output format of the device.
+     *
+     * @ingroup engine
      */
     enum class PlaybackOutputFormat : AmUInt16
     {
@@ -36,38 +38,35 @@ namespace SparkyStudios::Audio::Amplitude
         Default = 0,
 
         /**
-         * @brief Send audio samples as unsigned 8-bit integers
-         * to the device.
+         * @brief Send audio samples as unsigned 8-bit integers to the device.
          */
         UInt8 = 1,
 
         /**
-         * @brief Send audio samples as signed 16-bit integers
-         * to the device.
+         * @brief Send audio samples as signed 16-bit integers to the device.
          */
         Int16 = 2,
 
         /**
-         * @brief Send audio samples as signed 24-bit integers
-         * to the device.
+         * @brief Send audio samples as signed 24-bit integers to the device.
          */
         Int24 = 3,
 
         /**
-         * @brief Send audio samples as signed 32-bit integers
-         * to the device.
+         * @brief Send audio samples as signed 32-bit integers to the device.
          */
         Int32 = 4,
 
         /**
-         * @brief Send audio samples as 32-bit floating point values
-         * to the device.
+         * @brief Send audio samples as 32-bit floating point values to the device.
          */
         Float32 = 5
     };
 
     /**
      * @brief The playback output channel layout of the device.
+     *
+     * @ingroup engine
      */
     enum class PlaybackOutputChannels : AmUInt16
     {
@@ -106,6 +105,8 @@ namespace SparkyStudios::Audio::Amplitude
 
     /**
      * @brief The device state.
+     *
+     * @ingroup engine
      */
     enum class DeviceState : AmUInt8
     {
@@ -137,6 +138,8 @@ namespace SparkyStudios::Audio::Amplitude
 
     /**
      * @brief The possible device notification types.
+     *
+     * @ingroup engine
      */
     enum class DeviceNotification : AmUInt8
     {
@@ -151,7 +154,7 @@ namespace SparkyStudios::Audio::Amplitude
         Started,
 
         /**
-         * @brief The device is paused.
+         * @brief The device has changed.
          */
         Rerouted,
 
@@ -174,6 +177,8 @@ namespace SparkyStudios::Audio::Amplitude
      *
      * The device settings are filled after the Amplimix initialization,
      * and are provided by the selected Driver.
+     *
+     * @ingroup engine
      */
     struct DeviceDescription
     {
@@ -231,25 +236,31 @@ namespace SparkyStudios::Audio::Amplitude
     /**
      * @brief The device notification callback.
      *
-     * @param notification The notification type.
-     * @param device The device description.
-     * @param driver The driver which triggered the device notification.
+     * @param[in] notification The notification type.
+     * @param[in] device The device description.
+     * @param[in] driver The driver which triggered the device notification.
+     *
+     * @ingroup engine
      */
     AM_CALLBACK(void, DeviceNotificationCallback)(DeviceNotification notification, const DeviceDescription& device, Driver* driver);
 
     /**
      * @brief Registers a callback to listen to device state changes.
      *
-     * @param callback The callback to register.
+     * @param[in] callback The callback to register.
+     *
+     * @ingroup engine
      */
     AM_API_PUBLIC void RegisterDeviceNotificationCallback(DeviceNotificationCallback callback);
 
     /**
      * @brief Calls the registered device notification callback.
      *
-     * @param notification The notification type.
-     * @param device The device description.
-     * @param driver The driver which triggered the device notification.
+     * @param[in] notification The notification type.
+     * @param[in] device The device description.
+     * @param[in] driver The driver which triggered the device notification.
+     *
+     * @ingroup engine
      */
     AM_API_PUBLIC void CallDeviceNotificationCallback(DeviceNotification notification, const DeviceDescription& device, Driver* driver);
 } // namespace SparkyStudios::Audio::Amplitude

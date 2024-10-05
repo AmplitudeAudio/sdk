@@ -14,8 +14,8 @@
 
 #pragma once
 
-#ifndef _AM_MATH_SPLIT_COMPLEX_H
-#define _AM_MATH_SPLIT_COMPLEX_H
+#ifndef _AM_DSP_SPLIT_COMPLEX_H
+#define _AM_DSP_SPLIT_COMPLEX_H
 
 #include <complex>
 #include <SparkyStudios/Audio/Amplitude/Core/Common.h>
@@ -28,6 +28,8 @@ namespace SparkyStudios::Audio::Amplitude
      * The split-complex representation stores the real and imaginary parts
      * of FFT results in two different memory buffers which is useful e.g. for
      * SIMD optimizations.
+     *
+     * @ingroup dsp
      */
     class AM_API_PUBLIC SplitComplex
     {
@@ -35,7 +37,7 @@ namespace SparkyStudios::Audio::Amplitude
         /**
          * @brief Creates a new split-complex buffer with the given initial size.
          *
-         * @param initialSize The initial size of the split-complex buffer.
+         * @param[in] initialSize The initial size of the split-complex buffer.
          */
         explicit SplitComplex(AmSize initialSize = 0);
 
@@ -55,9 +57,8 @@ namespace SparkyStudios::Audio::Amplitude
         /**
          * @brief Resizes the split-complex buffer to the given size.
          *
-         * @param newSize The new size of the split-complex buffer.
-         * @param clear
-         * @param clear
+         * @param[in] newSize The new size of the split-complex buffer.
+         * @param[in] clear Whether to clear the buffer after resizing.
          */
         void Resize(AmSize newSize, bool clear = false);
 
@@ -69,7 +70,7 @@ namespace SparkyStudios::Audio::Amplitude
         /**
          * @brief Copies the given split-complex buffer to this one.
          *
-         * @param other The split-complex buffer to copy.
+         * @param[in] other The split-complex buffer to copy.
          */
         void CopyFrom(const SplitComplex& other) const;
 
@@ -111,6 +112,13 @@ namespace SparkyStudios::Audio::Amplitude
          */
         [[nodiscard]] const AmAudioSample* im() const;
 
+        /**
+         * @brief Gets the complex value at the given index.
+         *
+         * @param[in] index The index of the complex value.
+         *
+         * @return The complex value at the given index.
+         */
         [[nodiscard]] std::complex<AmAudioSample> operator[](AmSize index) const;
 
     private:
@@ -120,4 +128,4 @@ namespace SparkyStudios::Audio::Amplitude
     };
 } // namespace SparkyStudios::Audio::Amplitude
 
-#endif
+#endif // _AM_DSP_SPLIT_COMPLEX_H

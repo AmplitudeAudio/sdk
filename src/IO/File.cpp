@@ -84,7 +84,7 @@ namespace SparkyStudios::Audio::Amplitude
 
     void File::Seek(AmSize offset)
     {
-        Seek(offset, eFSO_START);
+        Seek(offset, eFileSeekOrigin_Start);
     }
 
     AmVoidPtr File::GetPtr()

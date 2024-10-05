@@ -29,6 +29,8 @@ namespace SparkyStudios::Audio::Amplitude
      * or from a forward and up vector. Once built, the orientation is stored in the ZYX representation
      * (yaw, pitch, roll), in the ZYZ representation, in the quaternion representation, and in forward-up
      * vectors representation.
+     *
+     * @ingroup math
      */
     struct AM_API_PUBLIC Orientation
     {
@@ -42,24 +44,24 @@ namespace SparkyStudios::Audio::Amplitude
         /**
          * @brief Constructs an Orientation instance with the given yaw, pitch, and roll angles.
          *
-         * @param yaw The angle of rotation around the X-axis in radians.
-         * @param pitch The angle of rotation around the Y-axis in radians.
-         * @param roll The angle of rotation around the Z-axis in radians.
+         * @param[in] yaw The angle of rotation around the X-axis in radians.
+         * @param[in] pitch The angle of rotation around the Y-axis in radians.
+         * @param[in] roll The angle of rotation around the Z-axis in radians.
          */
         Orientation(AmReal32 yaw, AmReal32 pitch, AmReal32 roll);
 
         /**
          * @brief Constructs an Orientation instance from a forward and up vector.
          *
-         * @param forward The forward vector of the orientation.
-         * @param up The up vector of the orientation.
+         * @param[in] forward The forward vector of the orientation.
+         * @param[in] up The up vector of the orientation.
          */
         Orientation(AmVec3 forward, AmVec3 up);
 
         /**
          * @brief Constructs an Orientation instance from a quaternion.
          *
-         * @param quaternion The quaternion representing the orientation.
+         * @param[in] quaternion The quaternion representing the orientation.
          */
         Orientation(AmQuat quaternion);
 
@@ -145,7 +147,7 @@ namespace SparkyStudios::Audio::Amplitude
         /**
          * @brief Converts the orientation to a look-at matrix.
          *
-         * @param eye The eye's location.
+         * @param[in] eye The eye's location.
          *
          * @return A look-at matrix representing the current orientation, with the eye at the given location.
          */

@@ -23,12 +23,14 @@ namespace SparkyStudios::Audio::Amplitude
 {
     /**
      * @brief Holds the number of references to an object.
+     *
+     * @ingroup core
      */
     class AM_API_PUBLIC RefCounter
     {
     public:
         /**
-         * @brief Constructs a new RefCounter.
+         * @brief Constructs a new `RefCounter`.
          *
          * This initializes the internal counter to 0.
          */

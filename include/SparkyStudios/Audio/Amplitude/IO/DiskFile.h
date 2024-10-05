@@ -22,31 +22,34 @@
 namespace SparkyStudios::Audio::Amplitude
 {
     /**
-     * @brief A File implementation that reads and writes a file on disk.
+     * @brief A `File` implementation that reads and writes a file on disk.
+     *
+     * @ingroup io
      */
     class AM_API_PUBLIC DiskFile : public File
     {
     public:
         /**
-         * @brief Creates a new DiskFile instance.
+         * @brief Creates a new `DiskFile` instance.
          */
         DiskFile();
 
         /**
-         * @brief Creates a new DiskFile instance from a file handle.
+         * @brief Creates a new `DiskFile` instance from a file handle.
          *
-         * @param fp The file handle to manage in this instance.
+         * @param[in] fp The file handle to manage in this instance.
          */
         explicit DiskFile(AmFileHandle fp);
 
         /**
          * @brief Creates a new DiskFile instance by opening a file at the given path.
          *
-         * @param fileName The path to the file to open.
-         * @param mode The open mode to use.
-         * @param kind The type of file to open.
+         * @param[in] fileName The path to the file to open.
+         * @param[in] mode The open mode to use.
+         * @param[in] kind The type of file to open.
          */
-        explicit DiskFile(const std::filesystem::path& fileName, FileOpenMode mode = eFOM_READ, FileOpenKind kind = eFOK_BINARY);
+        explicit DiskFile(
+            const std::filesystem::path& fileName, eFileOpenMode mode = eFileOpenMode_Read, eFileOpenKind kind = eFileOpenKind_Binary);
 
         /**
          * @brief Destroys the instance and release the file handler.
@@ -54,60 +57,61 @@ namespace SparkyStudios::Audio::Amplitude
         ~DiskFile() override;
 
         /**
-         * @copydoc File::GetPath
+         * @inherit
          */
         [[nodiscard]] AmOsString GetPath() const override;
 
         /**
-         * @copydoc File::Eof
+         * @inherit
          */
         bool Eof() override;
 
         /**
-         * @copydoc File::Read
+         * @inherit
          */
         AmSize Read(AmUInt8Buffer dst, AmSize bytes) override;
 
         /**
-         * @copydoc File::Write
+         * @inherit
          */
         AmSize Write(AmConstUInt8Buffer src, AmSize bytes) override;
 
         /**
-         * @copydoc File::Length
+         * @inherit
          */
         AmSize Length() override;
 
         /**
-         * @copydoc File::Seek
+         * @inherit
          */
-        void Seek(AmInt64 offset, FileSeekOrigin origin) override;
+        void Seek(AmInt64 offset, eFileSeekOrigin origin) override;
 
         /**
-         * @copydoc File::Position
+         * @inherit
          */
         AmSize Position() override;
 
         /**
-         * @copydoc File::GetPtr
+         * @inherit
          */
         AmVoidPtr GetPtr() override;
 
         /**
-         * @copydoc File::IsValid
+         * @inherit
          */
         [[nodiscard]] bool IsValid() const override;
 
         /**
          * @brief Opens a file at the given path.
          *
-         * @param filePath The path to the file to open.
-         * @param mode The open mode to use.
-         * @param kind The type of file to open.
+         * @param[in] filePath The path to the file to open.
+         * @param[in] mode The open mode to use.
+         * @param[in] kind The type of file to open.
          *
          * @return The result of the operation.
          */
-        AmResult Open(const std::filesystem::path& filePath, FileOpenMode mode = eFOM_READ, FileOpenKind kind = eFOK_BINARY);
+        AmResult Open(
+            const std::filesystem::path& filePath, eFileOpenMode mode = eFileOpenMode_Read, eFileOpenKind kind = eFileOpenKind_Binary);
 
         /**
          * @brief Closes the file.

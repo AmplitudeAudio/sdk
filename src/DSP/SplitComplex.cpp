@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include <SparkyStudios/Audio/Amplitude/Math/SplitComplex.h>
+#include <SparkyStudios/Audio/Amplitude/DSP/SplitComplex.h>
 
 namespace SparkyStudios::Audio::Amplitude
 {

@@ -17,17 +17,17 @@
 
 #pragma once
 
-#ifndef _AM_CONVOLUTION_CONVOLVER_H
-#define _AM_CONVOLUTION_CONVOLVER_H
+#ifndef _AM_DSP_CONVOLVER_H
+#define _AM_DSP_CONVOLVER_H
 
 #include <SparkyStudios/Audio/Amplitude/Core/Common.h>
 
-#include <SparkyStudios/Audio/Amplitude/Math/FFT.h>
+#include <SparkyStudios/Audio/Amplitude/DSP/FFT.h>
 
 namespace SparkyStudios::Audio::Amplitude
 {
     /**
-     * @brief Implementation of a partitioned FFT convolution algorithm with uniform block size
+     * @brief Implementation of a partitioned FFT convolution algorithm with uniform block size.
      *
      * Some notes on how to use it:
      *
@@ -43,11 +43,24 @@ namespace SparkyStudios::Audio::Amplitude
      *   "unpredictable" operations like allocations, locking, API calls, etc. are
      *   performed during processing (all necessary allocations and preparations take
      *   place during initialization).
+     *
+     * @ingroup dsp
      */
     class Convolver
     {
     public:
+        /**
+         * @brief Default constructor.
+         *
+         * Creates an uninitialized convolver.
+         */
         Convolver();
+
+        /**
+         * @brief Destructor.
+         *
+         * Destroys the convolver and frees all allocated resources.
+         */
         virtual ~Convolver();
 
         // Prevent uncontrolled usage
@@ -55,26 +68,29 @@ namespace SparkyStudios::Audio::Amplitude
         Convolver& operator=(const Convolver&) = delete;
 
         /**
-         * @brief Initializes the convolver
+         * @brief Initializes the convolver.
          *
-         * @param blockSize Block size internally used by the convolver (partition size)
-         * @param ir The impulse response
-         * @param irLen Length of the impulse response
+         * @param[in] blockSize Block size internally used by the convolver (partition size)
+         * @param[in] ir The impulse response
+         * @param[in] irLen Length of the impulse response
          *
-         * @return true: Success - false: Failed
+         * @return `true` when the convolver is successfully initialized, `false` otherwise.
          */
         bool Init(AmSize blockSize, const AmAudioSample* ir, AmSize irLen);
 
         /**
-         * @brief Convolves the the given input samples and immediately outputs the result
-         * @param input The input samples
-         * @param output The convolution result
-         * @param len Number of input/output samples
+         * @brief Convolves the the given input samples and immediately outputs the result.
+         *
+         * @param[in] input The input samples.
+         * @param[out] output The convolution result.
+         * @param[in] len Number of input/output samples to process.
          */
         void Process(const AmAudioSample* input, AmAudioSample* output, AmSize len);
 
         /**
-         * @brief Resets the convolver and discards the set impulse response
+         * @brief Resets the convolver state and discards the set impulse response.
+         *
+         * The convolver will need to be @ref Init initialized again after this call.
          */
         void Reset();
 
@@ -110,4 +126,4 @@ namespace SparkyStudios::Audio::Amplitude
     };
 } // namespace SparkyStudios::Audio::Amplitude
 
-#endif // _AM_CONVOLUTION_CONVOLVER_H
+#endif // _AM_DSP_CONVOLVER_H

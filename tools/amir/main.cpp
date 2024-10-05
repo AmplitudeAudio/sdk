@@ -321,7 +321,7 @@ int process(const AmOsString& inFileName, const AmOsString& outFileName, const P
     std::vector<HRIRSphereVertex> vertices;
     std::vector<AmUInt32> indices;
 
-    DiskFile packageFile(absolute(packagePath), eFOM_WRITE);
+    DiskFile packageFile(absolute(packagePath), eFileOpenMode_Write);
 
     if (state.datasetModel != eHRIRSphereDatasetModel_SOFA)
     {

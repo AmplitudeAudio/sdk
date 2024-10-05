@@ -83,19 +83,15 @@
 #define MA_NO_SSE2
 #endif // AMPLITUDE_DISABLE_SIMD
 
-// Define the value of Pi if the platform doesn't do that
 #ifndef M_PI
+/// Define the value of Pi if the platform doesn't do that
 #define M_PI 3.14159265358979323846264f // from CRC
 #endif
 
-/////////////////////////////////////////////////////////////////////
-/////////////////////////////////////////////////////////////////////
 // Configuration defines
+// --------------------------------------------------------------
 
-// Maximum number of filters per stream
-#define AM_FILTERS_PER_STREAM 8
-
-// Maximum number of tasks in a single pool
+/// Maximum number of tasks in a single pool
 #define AM_MAX_THREAD_POOL_TASKS 1024
 
 #endif // _AM_CORE_COMMON_CONFIG_H

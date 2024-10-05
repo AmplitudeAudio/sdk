@@ -14,96 +14,101 @@
 
 #pragma once
 
-#ifndef _AM_MIXER_RESAMPLER_H
-#define _AM_MIXER_RESAMPLER_H
+#ifndef _AM_DSP_RESAMPLER_H
+#define _AM_DSP_RESAMPLER_H
 
 #include <SparkyStudios/Audio/Amplitude/Core/Common.h>
 #include <SparkyStudios/Audio/Amplitude/Sound/Sound.h>
 
 namespace SparkyStudios::Audio::Amplitude
 {
+    class Resampler;
+
     /**
      * @brief A Resampler instance.
      *
-     * An object of this class will be created each time a @c Resampler is requested.
+     * An object of this class will be created each time a `Resampler` is requested.
+     *
+     * @ingroup dsp
      */
     class AM_API_PUBLIC ResamplerInstance
     {
     public:
         /**
-         * @brief Construct a new ResamplerInstance object.
+         * @brief Constructs a new `ResamplerInstance` object.
          *
          * This will initialize the resampler instance state to default values.
          */
         ResamplerInstance() = default;
 
+        /**
+         * @brief Default destructor.
+         */
         virtual ~ResamplerInstance() = default;
 
         /**
-         * @brief Initialize a new instance of the resampler.
+         * @brief Initializes a new instance of the resampler.
          *
-         * @param channelCount The number of channels in the audio data.
-         * @param sampleRateIn The input sample rate.
-         * @param sampleRateOut The output sample rate.
+         * @param[in] channelCount The number of channels in the audio data.
+         * @param[in] sampleRateIn The input sample rate.
+         * @param[in] sampleRateOut The output sample rate.
          */
         virtual void Initialize(AmUInt16 channelCount, AmUInt32 sampleRateIn, AmUInt32 sampleRateOut) = 0;
 
         /**
          * @brief Processes the audio data.
          *
-         * @param input The input audio data.
-         * @param inputFrames The number of frames in the input buffer.
-         * @param output The output audio data.
-         * @param outputFrames The number of frames in the output buffer.
+         * @param[in] input The input audio data.
+         * @param[in,out] inputFrames The number of frames in the input buffer.
+         * @param[out] output The output audio data.
+         * @param[in,out] outputFrames The number of frames in the output buffer.
          *
-         * @return @c true if the resampling was successful, otherwise @c false.
+         * @return `true` if the resampling was successful, `false` otherwise.
          */
         virtual bool Process(const AudioBuffer& input, AmUInt64& inputFrames, AudioBuffer& output, AmUInt64& outputFrames) = 0;
 
         /**
          * @brief Changes the input and output sample rate.
          *
-         * @param sampleRateIn The new input sample rate.
-         * @param sampleRateOut The new output sample rate.
+         * @param[in] sampleRateIn The new input sample rate.
+         * @param[in] sampleRateOut The new output sample rate.
          */
         virtual void SetSampleRate(AmUInt32 sampleRateIn, AmUInt32 sampleRateOut) = 0;
 
         /**
-         * @brief Get the current input sample rate.
+         * @brief Gets the current input sample rate.
          *
          * @return The current input sample rate.
          */
         [[nodiscard]] virtual AmUInt32 GetSampleRateIn() const = 0;
 
         /**
-         * @brief Get the current output sample rate.
+         * @brief Gets the current output sample rate.
          *
          * @return The current output sample rate.
          */
         [[nodiscard]] virtual AmUInt32 GetSampleRateOut() const = 0;
 
         /**
-         * @brief Get the current channels count.
+         * @brief Gets the current channels count.
          *
          * @return The current channels count.
          */
         [[nodiscard]] virtual AmUInt16 GetChannelCount() const = 0;
 
         /**
-         * @brief Returns the required number of frames to have as input for the
-         * given amount of output frames.
+         * @brief Returns the required number of frames to have as input for the given amount of output frames.
          *
-         * @param outputFrameCount The number of output frames.
+         * @param[in] outputFrameCount The number of output frames.
          *
          * @return The input frame count needed to produce the given output frame count.
          */
         [[nodiscard]] virtual AmUInt64 GetRequiredInputFrames(AmUInt64 outputFrameCount) const = 0;
 
         /**
-         * @brief Returns the expected number of frames to have as output for the
-         * given amount of input frames.
+         * @brief Returns the expected number of frames to have as output for the given amount of input frames.
          *
-         * @param inputFrameCount The number of input frames.
+         * @param[in] inputFrameCount The number of input frames.
          *
          * @return The expected number of output frames for the given input frame count.
          */
@@ -130,18 +135,30 @@ namespace SparkyStudios::Audio::Amplitude
 
         /**
          * @brief Cleans up the internal resampler state and allocated data.
+         *
          * @note This method is called when the resampler is about to be destroyed.
          */
         virtual void Clear() = 0;
     };
 
+    /**
+     * @brief Base class to manage resamplers.
+     *
+     * A resampler is used to change the sample rate of an audio buffer. The `Resampler` class implements
+     * factory methods to create instances of `ResamplerInstance` objects, which are where the the resampling is done.
+     *
+     * The `Resampler` class follows the [plugins architecture](/plugins/anatomy.md), and thus, you are able to create your own resamplers
+     * and register them to the `Engine` by inheriting from this class, and by implementing the necessary dependencies.
+     *
+     * @ingroup dsp
+     */
     class AM_API_PUBLIC Resampler
     {
     public:
         /**
          * @brief Create a new Resampler instance.
          *
-         * @param name The resampler name. eg. "MiniAudioLinear".
+         * @param[in] name The resampler name. eg. "MiniAudioLinear".
          */
         explicit Resampler(AmString name);
 
@@ -152,18 +169,25 @@ namespace SparkyStudios::Audio::Amplitude
          */
         Resampler();
 
+        /**
+         * @brief Default destructor.
+         */
         virtual ~Resampler();
 
         /**
          * @brief Creates a new instance of the resampler.
+         *
          * @return A new instance of the resampler.
          */
         virtual ResamplerInstance* CreateInstance() = 0;
 
         /**
-         * @brief Destroys an instance of the resampler. The instance should have
-         * been created with CreateInstance().
-         * @param instance The resampler instance to be destroyed.
+         * @brief Destroys an instance of the resampler.
+         *
+         * @warning The instance should have been created with @ref CreateInstance `CreateInstance()`
+         * before being destroyed with this method.
+         *
+         * @param[in] instance The resampler instance to be destroyed.
          */
         virtual void DestroyInstance(ResamplerInstance* instance) = 0;
 
@@ -177,50 +201,51 @@ namespace SparkyStudios::Audio::Amplitude
         /**
          * @brief Registers a new resampler.
          *
-         * @param resampler The resampler to add in the registry.
+         * @param[in] resampler The resampler to add in the registry.
          */
         static void Register(Resampler* resampler);
 
         /**
          * @brief Unregisters a resampler.
          *
-         * @param resampler The resampler to remove from the registry.
+         * @param[in] resampler The resampler to remove from the registry.
          */
         static void Unregister(const Resampler* resampler);
 
         /**
-         * @brief Creates a new instance of the the resampler with the given name
-         * and returns its pointer. The returned pointer should be deleted using Resampler::Destruct().
+         * @brief Creates a new instance of the the resampler with the given name and returns its pointer.
          *
-         * @param name The name of the resampler.
+         * @note The returned pointer should be deleted using @ref Destruct `Destruct()`.
          *
-         * @return The resampler with the given name, or NULL if none.
+         * @param[in] name The name of the resampler.
+         *
+         * @return The resampler with the given name, or `nullptr` if none.
          */
         static ResamplerInstance* Construct(const AmString& name);
 
         /**
          * @brief Destroys the given resampler instance.
          *
-         * @param name The name of the resampler.
-         * @param instance The resampler instance to destroy.
+         * @param[in] name The name of the resampler.
+         * @param[in] instance The resampler instance to destroy.
          */
         static void Destruct(const AmString& name, ResamplerInstance* instance);
 
         /**
          * @brief Locks the resamplers registry.
          *
-         * This function is mainly used for internal purposes. Its
-         * called before the Engine initialization, to discard the
-         * registration of new resamplers after the engine is fully loaded.
+         * @warning This function is mainly used for internal purposes. It's
+         * called before the `Engine` initialization, to discard the registration
+         * of new resamplers after the engine is fully loaded.
          */
         static void LockRegistry();
 
         /**
          * @brief Unlocks the resamplers registry.
          *
-         * This function is mainly used for internal purposes. Its
-         * called after the Engine deinitialization, to allow the
-         * registration of new divers after the engine is fully unloaded.
+         * @warning This function is mainly used for internal purposes. It's
+         * called after the `Engine` deinitialization, to allow the registration
+         * of new resamplers after the engine is fully unloaded.
          */
         static void UnlockRegistry();
 
@@ -234,10 +259,12 @@ namespace SparkyStudios::Audio::Amplitude
         /**
          * @brief Look up a resampler by name.
          *
-         * @return The resampler with the given name, or NULL if none.
+         * @return The resampler with the given name, or `nullptr` if none.
+         *
+         * @internal
          */
         static Resampler* Find(const AmString& name);
     };
 } // namespace SparkyStudios::Audio::Amplitude
 
-#endif // _AM_MIXER_RESAMPLER_H
+#endif // _AM_DSP_RESAMPLER_H

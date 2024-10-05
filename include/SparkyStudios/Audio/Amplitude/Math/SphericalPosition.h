@@ -22,54 +22,59 @@
 namespace SparkyStudios::Audio::Amplitude
 {
     /**
-     * @brief Describes the coordinates of a point on a sphere's surface, relative
-     * to the center of the sphere.
+     * @brief Spherical coordinates representation.
+     *
+     * Describes the coordinates of a point on a sphere's surface, relative to
+     * the center of that sphere.
+     *
+     * @ingroup math
      */
     struct AM_API_PUBLIC SphericalPosition
     {
         /**
-         * @brief Create a spherical position from a 3D position in world space.
+         * @brief Creates a spherical position from a 3D position in world space.
          *
-         * @param position The position in world space.
+         * @param[in] position The position in world space.
          */
         static SphericalPosition FromWorldSpace(const AmVec3& position);
 
         /**
-         * @brief Create a spherical position from a 3D position in world space. This
-         * method is optimized for use in HRTF (Head-Related Transfer Function) space,
-         * where the azimuth is rotated 90 degrees around the z-axis
+         * @brief Creates a spherical position from a 3D position in world space.
          *
-         * @param position The position in world space.
+         * This method is optimized for use in HRTF (Head-Related Transfer Function) space,
+         * where the azimuth is rotated 90 degrees around the z-axis.
+         *
+         * @param[in] position The position in world space.
          */
         static SphericalPosition ForHRTF(const AmVec3& position);
 
         /**
-         * @brief Create a spherical position from given azimuth and elevation in degrees.
+         * @brief Creates a spherical position from given azimuth and elevation in degrees.
          *
-         * @param azimuthDegrees The azimuth in degrees.
-         * @param elevationDegrees The elevation in degrees.
-         * @param radius The distance from the center of the sphere to the point.
+         * @param[in] azimuthDegrees The azimuth in degrees.
+         * @param[in] elevationDegrees The elevation in degrees.
+         * @param[in] radius The distance from the center of the sphere to the point.
          *
          * @return A spherical position representing the given azimuth and elevation in degrees.
          */
         static SphericalPosition FromDegrees(AmReal32 azimuthDegrees, AmReal32 elevationDegrees, AmReal32 radius = 1.0f);
 
         /**
-         * @brief Create a spherical position with default values (azimuth = 0, elevation = 0, radius = 1).
+         * @brief Creates a spherical position with default values (azimuth = 0, elevation = 0, radius = 1).
          */
         SphericalPosition() = default;
 
         /**
-         * @brief Create a spherical position with given azimuth, elevation, and radius.
+         * @brief Creates a spherical position with given azimuth, elevation, and radius.
          *
-         * @param azimuth The rotation around the z-axis in radians.
-         * @param elevation The rotation around the x-axis in radians.
-         * @param radius The distance from the center of the sphere to the point.
+         * @param[in] azimuth The rotation around the z-axis in radians.
+         * @param[in] elevation The rotation around the x-axis in radians.
+         * @param[in] radius The distance from the center of the sphere to the point.
          */
         SphericalPosition(AmReal32 azimuth, AmReal32 elevation, AmReal32 radius = 1.0f);
 
         /**
-         * @brief Flip the azimuth of the spherical position and returns a new instance.
+         * @brief Flips the azimuth of the spherical position and returns a new instance.
          *
          * @return A new spherical position with the azimuth flipped.
          */
@@ -78,7 +83,7 @@ namespace SparkyStudios::Audio::Amplitude
         /**
          * @brief Rotates the spherical position with the given rotation and returns a new instance.
          *
-         * @param rotation The rotation to apply to the spherical position.
+         * @param[in] rotation The rotation to apply to the spherical position.
          *
          * @return A rotated spherical position.
          */

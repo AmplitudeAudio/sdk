@@ -24,22 +24,26 @@
 namespace SparkyStudios::Audio::Amplitude
 {
     /**
-     * @brief Describes a single item within a SwitchContainer.
+     * @brief Describes a single item within a `SwitchContainer`.
+     *
+     * @see [SwitchContainer](../../assets/SwitchContainer/index.md)
+     *
+     * @ingroup engine
      */
     struct SwitchContainerItem
     {
         /**
          * @brief The object ID of the item.
          *
-         * May be a @a AmSoundID or a @a AmCollectionID.
+         * May be a `AmSoundID` or a `AmCollectionID`.
          */
         AmObjectID m_id;
 
         /**
-         * @brief Whether to continue playing this item when the SwitchContainer
+         * @brief Whether to continue playing this item when the `SwitchContainer`
          * changes its state between one of the values where this item is registered.
          *
-         * If this value is set to @c false, each the sound will be stopped and played again
+         * If this value is set to `false`, each sound will be stopped and played again
          * from the beginning.
          */
         bool m_continueBetweenStates;
@@ -82,11 +86,15 @@ namespace SparkyStudios::Audio::Amplitude
     };
 
     /**
-     * @brief Amplitude Switch Container.
+     * @brief Amplitude Switch Container Asset.
      *
      * A switch container is a container sound object where sounds and collections can be registered on
      * one or multiple switches. Only one switch can be active at a time in a switch container. When a
      * switch is active, all the sounds and collections that are registered on it will be played.
+     *
+     * @see [SoundObject](../../engine/SoundObject/index.md)
+     *
+     * @ingroup assets
      */
     class AM_API_PUBLIC SwitchContainer
         : public SoundObject
@@ -103,7 +111,7 @@ namespace SparkyStudios::Audio::Amplitude
         /**
          * @brief Get the fade in Fader for the given sound object ID.
          *
-         * @param id The ID of the sound object.
+         * @param[in] id The ID of the sound object.
          *
          * @return The fade in Fader.
          */
@@ -112,7 +120,7 @@ namespace SparkyStudios::Audio::Amplitude
         /**
          * @brief Get the fade out Fader for the given sound object ID.
          *
-         * @param id The ID of the sound object.
+         * @param[in] id The ID of the sound object.
          *
          * @return The fade out Fader.
          */
@@ -121,7 +129,7 @@ namespace SparkyStudios::Audio::Amplitude
         /**
          * @brief Returns the list of sound objects referenced in this SwitchContainer for the given state.
          *
-         * @param stateId The switch state to get the objects for.
+         * @param[in] stateId The switch state to get the objects for.
          *
          * @return The list of sound object IDs registered to the given state.
          */

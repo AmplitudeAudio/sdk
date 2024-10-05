@@ -27,12 +27,12 @@ namespace SparkyStudios::Audio::Amplitude
     AmResult FlangerFilter::Initialize(AmReal32 delay, AmReal32 frequency)
     {
         if (delay <= 0 || frequency <= 0)
-            return AM_ERROR_INVALID_PARAMETER;
+            return eErrorCode_InvalidParameter;
 
         _delay = delay;
         _frequency = frequency;
 
-        return AM_ERROR_NO_ERROR;
+        return eErrorCode_Success;
     }
 
     AmUInt32 FlangerFilter::GetParamCount() const
@@ -52,7 +52,7 @@ namespace SparkyStudios::Audio::Amplitude
 
     AmUInt32 FlangerFilter::GetParamType(AmUInt32 index) const
     {
-        return PARAM_FLOAT;
+        return kParameterTypeFloat;
     }
 
     AmReal32 FlangerFilter::GetParamMax(AmUInt32 index) const

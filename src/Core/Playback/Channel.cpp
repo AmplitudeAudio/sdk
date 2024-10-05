@@ -33,8 +33,6 @@ namespace SparkyStudios::Audio::Amplitude
         : Channel(state, ++globalStateId)
     {}
 
-    Channel::Channel(const Channel& other) = default;
-
     void Channel::Clear()
     {
         _state = nullptr;

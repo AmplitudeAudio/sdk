@@ -61,7 +61,7 @@ namespace SparkyStudios::Audio::Amplitude
 
     AmUInt32 Filter::GetParamType(AmUInt32 index) const
     {
-        return Filter::PARAM_FLOAT;
+        return Filter::kParameterTypeFloat;
     }
 
     AmReal32 Filter::GetParamMax(AmUInt32 index) const
@@ -178,7 +178,7 @@ namespace SparkyStudios::Audio::Amplitude
             m_parameters = nullptr;
             m_numParams = 0;
 
-            return AM_ERROR_OUT_OF_MEMORY;
+            return eErrorCode_OutOfMemory;
         }
 
         std::memset(m_parameters, 0, m_numParams * sizeof(AmReal32));

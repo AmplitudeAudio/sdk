@@ -17,7 +17,7 @@
 #ifndef _AM_CORE_COMMON_PLATFORMS_LINUX_CONFIG_H
 #define _AM_CORE_COMMON_PLATFORMS_LINUX_CONFIG_H
 
-// Enable Android Compilation
+/// Compiling for a Linux platform
 #define AM_LINUX_VERSION
 
 // Detect the platform CPU type
@@ -40,7 +40,7 @@
 #include <SparkyStudios/Audio/Amplitude/Core/Common/Platforms/UNIX/Config.h>
 
 #ifndef AM_ID_CHAR_FMT
-// Defines the format used to print AmObjectId value
+/// Defines the format used to print AmObjectId value
 #define AM_ID_CHAR_FMT "%lu"
 #endif
 

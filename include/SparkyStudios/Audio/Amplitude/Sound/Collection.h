@@ -24,11 +24,15 @@
 namespace SparkyStudios::Audio::Amplitude
 {
     /**
-     * @brief Amplitude Collection.
+     * @brief Amplitude Collection Asset.
      *
-     * A Collection is a container sound object that group multiple sounds over the same name. Only
+     * A `Collection` is a container sound object that group multiple sounds over the same name. Only
      * one sound can be playing at a time in the same collection, and the sound picked for playback
-     * is chosen by the collection's Scheduler.
+     * is chosen by the collection's `Scheduler`.
+     *
+     * @see [SoundObject](../../engine/SoundObject/index.md)
+     *
+     * @ingroup assets
      */
     class AM_API_PUBLIC Collection
         : public SoundObject
@@ -38,7 +42,7 @@ namespace SparkyStudios::Audio::Amplitude
         /**
          * @brief Returns a Sound from this collection from the World scope.
          *
-         * @param toSkip The list of Sound IDs to skip fom the selection.
+         * @param[in] toSkip The list of Sound IDs to skip fom the selection.
          *
          * @return The selected Sound.
          */
@@ -47,8 +51,8 @@ namespace SparkyStudios::Audio::Amplitude
         /**
          * @brief Returns a Sound from this collection from an Entity scope.
          *
-         * @param entity The entity from which pick the sound.
-         * @param toSkip The list of Sound IDs to skip fom the selection.
+         * @param[in] entity The entity from which pick the sound.
+         * @param[in] toSkip The list of Sound IDs to skip fom the selection.
          *
          * @return The selected Sound.
          */
@@ -57,7 +61,7 @@ namespace SparkyStudios::Audio::Amplitude
         /**
          * @brief Resets the internal state of the scheduler running for the given Entity.
          *
-         * @param entity The entity for which reset the scheduler state.
+         * @param[in] entity The entity for which reset the scheduler state.
          */
         virtual void ResetEntityScopeScheduler(const Entity& entity) = 0;
 

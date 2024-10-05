@@ -28,97 +28,105 @@ namespace SparkyStudios::Audio::Amplitude
 
     /**
      * @brief A single point in a Curve.
+     *
+     * @ingroup math
      */
     struct AM_API_PUBLIC CurvePoint
     {
         /**
          * @brief The coordinates of the point over the X axis.
          */
-        double x;
+        AmReal64 x;
 
         /**
          * @brief The coordinates of the point over the Y axis.
          */
-        float y;
+        AmReal32 y;
 
         bool operator==(const CurvePoint& rhs) const;
         bool operator!=(const CurvePoint& rhs) const;
     };
 
     /**
-     * @brief A part of a Curve.
+     * @brief A segment of a `Curve`.
      *
-     * CurveParts allows to a curve to have different fading algorithms at the same time.
-     * Each CurvePart has a start and end point, and the fading algorithm which moves the value
+     * A `CurvePart` allows a curve to have different fading algorithms at the same time.
+     * Each `CurvePart` has a start and end point, and the fading algorithm which moves the value
      * from the start point to the end point.
+     *
+     * @ingroup math
      */
     class AM_API_PUBLIC CurvePart
     {
     public:
         /**
-         * @brief Creates an empty CurvePart.
+         * @brief Creates an empty `CurvePart`.
          */
         CurvePart();
+
+        /**
+         * @brief Destroys this `CurvePart`.
+         */
         ~CurvePart();
 
         /**
-         * @brief Initializes this CurvePart from a definition.
+         * @brief Initializes this `CurvePart` from a definition.
          *
-         * @param definition The definition of the curve part generated
-         *                   from a flatbuffer binary.
+         * @param[in] definition The definition of the curve part generated
+         * from a flatbuffer binary.
          */
         void Initialize(const CurvePartDefinition* definition);
 
         /**
-         * @brief Returns the start point of this CurvePart.
+         * @brief Returns the start point of this `CurvePart`.
          *
-         * @return The start point of this CurvePart.
+         * @return The start point of this `CurvePart`.
          */
         [[nodiscard]] const CurvePoint& GetStart() const;
 
         /**
-         * @brief Sets the start point of this CurvePart.
+         * @brief Sets the start point of this `CurvePart`.
          *
-         * @param start The new start point.
+         * @param[in] start The new start point.
          */
         void SetStart(const CurvePoint& start);
 
         /**
-         * @brief Returns the end point of this CurvePart.
+         * @brief Returns the end point of this `CurvePart`.
          *
-         * @return The end point of this CurvePart.
+         * @return The end point of this `CurvePart`.
          */
         [[nodiscard]] const CurvePoint& GetEnd() const;
 
         /**
-         * @brief Sets the end point of this CurvePart.
+         * @brief Sets the end point of this `CurvePart`.
          *
-         * @param end The new end point.
+         * @param[in] end The new end point.
          */
         void SetEnd(const CurvePoint& end);
 
         /**
-         * @brief Returns the Fader of this CurvePart.
+         * @brief Returns the Fader of this `CurvePart`.
          *
-         * @return The Fader of this CurvePart.
+         * @return The `FaderInstance` of this `CurvePart`.
          */
         [[nodiscard]] FaderInstance* GetFader() const;
 
         /**
-         * @brief Sets the Fader of this CurvePart.
+         * @brief Sets the fader of this `CurvePart`.
          *
-         * @param fader The new Fader.
+         * @param[in] fader The name of the `Fader` to set.
          */
         void SetFader(const AmString& fader);
 
         /**
          * @brief Gets the Y coordinates of a point given its coordinates over the X axis.
          *
-         * @param x The coordinates of the point over the X axis.
+         * @param[in] x The coordinates of the point over the X axis.
          *
          * @return The Y coordinates of the point.
          */
-        [[nodiscard]] float Get(double x) const;
+        [[nodiscard]] AmReal32 Get(AmReal64 x) const;
 
     private:
         CurvePoint _start;
@@ -129,32 +137,37 @@ namespace SparkyStudios::Audio::Amplitude
     };
 
     /**
-     * @brief A Curve which describe the variation of a value (on the Y-axis) according to another (on the X-axis).
+     * @brief A `Curve` which describe the variation of a value (on the Y-axis) according to another (on the X-axis).
+     *
+     * @ingroup math
      */
     class AM_API_PUBLIC Curve
     {
     public:
+        /**
+         * @brief Creates an empty `Curve`.
+         */
         Curve();
 
         /**
          * @brief Initializes curve parts from the given definition.
          *
-         * @param definition The curve definition data.
+         * @param[in] definition The curve definition data.
          */
         void Initialize(const CurveDefinition* definition);
 
         /**
          * @brief Get the curve value corresponding to the given X value.
          *
-         * @param x The X value.
+         * @param[in] x The X value.
          *
          * @return The curve value.
          */
-        [[nodiscard]] float Get(double x) const;
+        [[nodiscard]] AmReal32 Get(AmReal64 x) const;
 
     private:
         // Finds the curve part corresponding to the given X value.
-        [[nodiscard]] const CurvePart* _findCurvePart(double x) const;
+        [[nodiscard]] const CurvePart* _findCurvePart(AmReal64 x) const;
 
         // The parts of the curve.
         std::vector<CurvePart> _parts;

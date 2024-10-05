@@ -27,10 +27,10 @@ namespace SparkyStudios::Audio::Amplitude
     AmResult WaveShaperFilter::Init(AmReal32 amount)
     {
         if (_amount < -1.0f || _amount > 1.0f)
-            return AM_ERROR_INVALID_PARAMETER;
+            return eErrorCode_InvalidParameter;
 
         _amount = amount;
-        return AM_ERROR_NO_ERROR;
+        return eErrorCode_Success;
     }
 
     AmUInt32 WaveShaperFilter::GetParamCount() const
@@ -49,7 +49,7 @@ namespace SparkyStudios::Audio::Amplitude
 
     AmUInt32 WaveShaperFilter::GetParamType(AmUInt32 index) const
     {
-        return PARAM_FLOAT;
+        return kParameterTypeFloat;
     }
 
     AmReal32 WaveShaperFilter::GetParamMax(AmUInt32 index) const

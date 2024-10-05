@@ -124,7 +124,7 @@ namespace SparkyStudios::Audio::Amplitude
         {
             _userGain = user_gain;
             _targetUserGain = user_gain;
-            _gainFader->SetState(AM_FADER_STATE_STOPPED);
+            _gainFader->SetState(eFaderState_Stopped);
         }
 
         // Return the user gain.

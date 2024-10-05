@@ -38,8 +38,11 @@
 #include <SparkyStudios/Audio/Amplitude/Core/Version.h>
 
 #include <SparkyStudios/Audio/Amplitude/DSP/AudioConverter.h>
+#include <SparkyStudios/Audio/Amplitude/DSP/Convolver.h>
+#include <SparkyStudios/Audio/Amplitude/DSP/FFT.h>
 #include <SparkyStudios/Audio/Amplitude/DSP/Filter.h>
 #include <SparkyStudios/Audio/Amplitude/DSP/Resampler.h>
+#include <SparkyStudios/Audio/Amplitude/DSP/SplitComplex.h>
 
 #include <SparkyStudios/Audio/Amplitude/HRTF/HRIRSphere.h>
 
@@ -55,13 +58,11 @@
 #include <SparkyStudios/Audio/Amplitude/Math/BarycentricCoordinates.h>
 #include <SparkyStudios/Audio/Amplitude/Math/CartesianCoordinateSystem.h>
 #include <SparkyStudios/Audio/Amplitude/Math/Curve.h>
-#include <SparkyStudios/Audio/Amplitude/Math/FFT.h>
 #include <SparkyStudios/Audio/Amplitude/Math/Geometry.h>
 #include <SparkyStudios/Audio/Amplitude/Math/HandmadeMath.h>
 #include <SparkyStudios/Audio/Amplitude/Math/Orientation.h>
 #include <SparkyStudios/Audio/Amplitude/Math/Shape.h>
 #include <SparkyStudios/Audio/Amplitude/Math/SphericalPosition.h>
-#include <SparkyStudios/Audio/Amplitude/Math/SplitComplex.h>
 #include <SparkyStudios/Audio/Amplitude/Math/Utils.h>
 
 #include <SparkyStudios/Audio/Amplitude/Mixer/Amplimix.h>

@@ -24,8 +24,21 @@
 namespace SparkyStudios::Audio::Amplitude
 {
     /**
-     * @brief A Fader instance. An object of this class will be created each time
-     * a Fader is requested.
+     * @brief Enumerates the list of states in a fader.
+     *
+     * @ingroup engine
+     */
+    enum eFaderState : AmInt8
+    {
+        eFaderState_Stopped = -1, ///< The fader is stopped
+        eFaderState_Disabled = 0, ///< The fader is disabled
+        eFaderState_Active = 1, ///< The fader is active and fading
+    };
+
+    /**
+     * @brief A Fader instance. An object of this class will be created each time a `Fader` is requested.
+     *
+     * @ingroup engine
      */
     class AM_API_PUBLIC FaderInstance
     {
@@ -42,19 +55,19 @@ namespace SparkyStudios::Audio::Amplitude
         {
         public:
             /**
-             * @brief Construct a new Transition curve.
+             * @brief Constructs a new Transition curve.
              *
-             * @param x1 The x coordinate of the second control point.
-             * @param y1 The y coordinate of the second control point.
-             * @param x2 The x coordinate of the third control point.
-             * @param y2 The y coordinate of the third control point.
+             * @param[in] x1 The x coordinate of the second control point.
+             * @param[in] y1 The y coordinate of the second control point.
+             * @param[in] x2 The x coordinate of the third control point.
+             * @param[in] y2 The y coordinate of the third control point.
              */
             Transition(AmReal32 x1, AmReal32 y1, AmReal32 x2, AmReal32 y2);
 
             /**
-             * @brief Construct a new Transition curve.
+             * @brief Constructs a new Transition curve.
              *
-             * @param controlPoints The control points of the curve.
+             * @param[in] controlPoints The control points of the curve.
              */
             Transition(const BeizerCurveControlPoints& controlPoints);
 
@@ -62,7 +75,7 @@ namespace SparkyStudios::Audio::Amplitude
              * @brief Given an animation duration percentage (in the range [0, 1]),
              * it calculates the animation progression percentage from the configured curve.
              *
-             * @param t The animation duration percentage (in the range [0, 1]).
+             * @param[in] t The animation duration percentage (in the range [0, 1]).
              *
              * @return The animation progress percentage (in the range [0, 1]).
              */
@@ -80,75 +93,78 @@ namespace SparkyStudios::Audio::Amplitude
         };
 
         /**
-         * @brief Construct a new FaderInstance object.
+         * @brief Constructs a new FaderInstance object.
          *
          * This will initialize the fader instance state to default values.
          */
         FaderInstance();
 
+        /**
+         * @brief Default destructor.
+         */
         virtual ~FaderInstance() = default;
 
         /**
          * @brief Set up fader.
          *
-         * @param from The start value.
-         * @param to The target value.
-         * @param duration The duration of transition.
+         * @param[in] from The start value.
+         * @param[in] to The target value.
+         * @param[in] duration The duration of transition.
          */
         void Set(AmReal64 from, AmReal64 to, AmTime duration);
 
         /**
          * @brief Set up fader.
          *
-         * @param from The start value.
-         * @param to The target value.
+         * @param[in] from The start value.
+         * @param[in] to The target value.
          */
         void Set(AmReal64 from, AmReal64 to);
 
         /**
-         * @brief Set the duration of the transition.
+         * @brief Sets the duration of the transition.
          *
-         * @param duration The transition duration.
+         * @param[in] duration The transition duration.
          */
         void SetDuration(AmTime duration);
 
         /**
-         * @brief Get the current fading value.
+         * @brief Gets the current fading value.
          *
-         * To use this method you firstly need to define the fading start time using
-         * <code>Fader::Start()</code>.
+         * To use this method you first need to define the fading start time using
+         * @ref Start `Start()`.
          *
-         * @param time The time at which the value should be calculated.
+         * @param[in] time The time at which the value should be calculated.
          *
          * @return The current value.
          */
         virtual AmReal64 GetFromTime(AmTime time);
 
         /**
-         * @brief Get the current fading value.
+         * @brief Gets the current fading value.
          *
-         * @param percentage The percentage of time elapsed. This should be in the range [0, 1].
+         * @param[in] percentage The percentage of time elapsed. This should be in the range [0, 1].
          *
          * @return The current value.
          */
         virtual AmReal64 GetFromPercentage(AmReal64 percentage);
 
         /**
-         * @brief Get the state of this Fader.
+         * @brief Gets the state of this Fader.
          *
          * @return The Fader state.
          */
-        [[nodiscard]] AM_INLINE AM_FADER_STATE GetState() const
+        [[nodiscard]] AM_INLINE eFaderState GetState() const
         {
             return m_state;
         }
 
         /**
-         * @brief Set the state of this Fader.
+         * @brief Sets the state of this Fader.
          *
-         * @param state The state to set.
+         * @param[in] state The state to set.
          */
-        AM_INLINE void SetState(AM_FADER_STATE state)
+        AM_INLINE void SetState(eFaderState state)
         {
             m_state = state;
         }
@@ -156,7 +172,7 @@ namespace SparkyStudios::Audio::Amplitude
         /**
          * @brief Sets the fading start time.
          *
-         * @param time The fading start time.
+         * @param[in] time The fading start time.
          */
         void Start(AmTime time = 0.0);
 
@@ -174,7 +190,7 @@ namespace SparkyStudios::Audio::Amplitude
         // Time fading will end
         AmTime m_endTime;
         // Active flag; 0 means disabled, 1 is active, -1 means was active, but stopped
-        AM_FADER_STATE m_state;
+        eFaderState m_state;
         // The transition function
         Transition m_curve;
     };
@@ -184,6 +200,8 @@ namespace SparkyStudios::Audio::Amplitude
      *
      * A fader is used to move a value to a specific target value
      * during an amount of time and according to a fading algorithm.
+     *
+     * @ingroup engine
      */
     class AM_API_PUBLIC Fader
     {
@@ -202,18 +220,24 @@ namespace SparkyStudios::Audio::Amplitude
          */
         Fader();
 
+        /**
+         * @brief Default destructor.
+         */
         virtual ~Fader();
 
         /**
          * @brief Creates a new instance of the Fader.
+         *
          * @return A new instance of the Fader.
          */
         virtual FaderInstance* CreateInstance() = 0;
 
         /**
-         * @brief Destroys an instance of the Fader. The instance should have
-         * been created with CreateInstance().
-         * @param instance The Fader instance to be destroyed.
+         * @brief Destroys an instance of the Fader.
+         *
+         * @note The instance should have been created with CreateInstance().
+         *
+         * @param[in] instance The Fader instance to be destroyed.
          */
         virtual void DestroyInstance(FaderInstance* instance) = 0;
 
@@ -234,50 +258,51 @@ namespace SparkyStudios::Audio::Amplitude
         /**
          * @brief Registers a new fader.
          *
-         * @param fader The Fader to add in the registry.
+         * @param[in] fader The Fader to add in the registry.
          */
         static void Register(Fader* fader);
 
         /**
          * @brief Unregister a fader.
          *
-         * @param fader The Fader to remove from the registry.
+         * @param[in] fader The Fader to remove from the registry.
          */
         static void Unregister(const Fader* fader);
 
         /**
-         * @brief Creates a new instance of the the Fader with the given name
-         * and returns its pointer. The returned pointer should be deleted using Fader::Destruct().
+         * @brief Creates a new instance of the the fader with the given name and returns its pointer.
          *
-         * @param name The name of the Fader.
+         * @note The returned pointer should be deleted using @ref Destruct `Destruct()`.
          *
-         * @return The Fader with the given name, or NULL if none.
+         * @param[in] name The name of the fader.
+         *
+         * @return The fader with the given name, or `nullptr` if none.
          */
         static FaderInstance* Construct(const AmString& name);
 
         /**
-         * @brief Destroys the given Fader instance.
+         * @brief Destroys the given fader instance.
          *
-         * @param name The name of the Fader.
-         * @param instance The Fader instance to destroy.
+         * @param[in] name The name of the fader.
+         * @param[in] instance The fader instance to destroy.
          */
         static void Destruct(const AmString& name, FaderInstance* instance);
 
         /**
          * @brief Locks the faders registry.
          *
-         * This function is mainly used for internal purposes. Its
-         * called before the Engine initialization, to discard the
-         * registration of new Faders after the engine is fully loaded.
+         * @warning This function is mainly used for internal purposes. It's
+         * called before the `Engine` initialization, to discard the registration
+         * of new fader after the engine is fully loaded.
          */
         static void LockRegistry();
 
         /**
          * @brief Unlocks the faders registry.
          *
-         * This function is mainly used for internal purposes. Its
-         * called after the Engine deinitialization, to allow the
-         * registration of new divers after the engine is fully unloaded.
+         * @warning This function is mainly used for internal purposes. It's
+         * called after the `Engine` deinitialization, to allow the registration
+         * of new fader after the engine is fully unloaded.
          */
         static void UnlockRegistry();
 
@@ -292,6 +317,8 @@ namespace SparkyStudios::Audio::Amplitude
          * @brief Look up a Fader by name.
          *
          * @return The Fader with the given name, or NULL if none.
+         *
+         * @internal
          */
         static Fader* Find(const AmString& name);
 

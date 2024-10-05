@@ -26,29 +26,31 @@ namespace SparkyStudios::Audio::Amplitude
 {
     /**
      * @brief The model of the HRIR sphere dataset.
+     *
+     * @ingroup core
      */
     enum HRIRSphereDatasetModel : AmUInt8
     {
         /**
-         * @brief The HRIR sphere uses data from the IRCAM (LISTEN) dataset.
+         * The HRIR sphere uses data from the IRCAM (LISTEN) dataset.
          * (http://recherche.ircam.fr/equipes/salles/listen/download.html)
          */
         eHRIRSphereDatasetModel_IRCAM = 0,
 
         /**
-         * @brief The HRIR sphere uses data from the MIT (KEMAR) dataset.
+         * The HRIR sphere uses data from the MIT (KEMAR) dataset.
          * (http://sound.media.mit.edu/resources/KEMAR.html).
          */
         eHRIRSphereDatasetModel_MIT = 1,
 
         /**
-         * @brief The HRIR sphere uses data from the SADIE II dataset.
+         * The HRIR sphere uses data from the SADIE II dataset.
          * (https://www.york.ac.uk/sadie-project/database.html).
          */
         eHRIRSphereDatasetModel_SADIE = 2,
 
         /**
-         * @brief The HRIR sphere uses data from a SOFA (Spatially Oriented Format for Acoustics) file.
+         * The HRIR sphere uses data from a SOFA (Spatially Oriented Format for Acoustics) file.
          * (https://www.sofaconventions.org/).
          */
         eHRIRSphereDatasetModel_SOFA = 3,
@@ -61,6 +63,8 @@ namespace SparkyStudios::Audio::Amplitude
 
     /**
      * @brief Provides metadata about an HRIR sphere file.
+     *
+     * @ingroup core
      */
     struct HRIRSphereFileHeaderDescription
     {
@@ -97,6 +101,8 @@ namespace SparkyStudios::Audio::Amplitude
 
     /**
      * @brief A vertex of the HRIR sphere.
+     *
+     * @ingroup core
      */
     struct HRIRSphereVertex
     {
@@ -128,6 +134,8 @@ namespace SparkyStudios::Audio::Amplitude
 
     /**
      * @brief A 3D sphere of HRIR data.
+     *
+     * @ingroup core
      */
     class AM_API_PUBLIC HRIRSphere : public Resource
     {

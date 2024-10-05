@@ -25,14 +25,17 @@ namespace SparkyStudios::Audio::Amplitude
     /**
      * @brief Allow converting audio buffers between different sample rates and channel counts.
      *
-     * @note This class uses the @c Resampler class to perform sample rate conversion.
-     * @note Only mono to stereo or vice versa conversions are supported.
+     * @note This class uses the `Resampler` class to perform sample rate conversion.
+     *
+     * @note Only mono to stereo or vice versa conversions are currently supported.
+     *
+     * @ingroup dsp
      */
     class AudioConverter final
     {
     public:
         /**
-         * @brief Store conversion settings for an @c AudioConverter instance.
+         * @brief Store conversion settings for an `AudioConverter` instance.
          */
         struct Settings
         {
@@ -62,50 +65,51 @@ namespace SparkyStudios::Audio::Amplitude
          */
         AudioConverter();
 
+        /**
+         * @brief Destroys the instance and release associated resources.
+         */
         ~AudioConverter();
 
         /**
          * @brief Initializes the audio converter with the given conversion settings.
          *
-         * @param settings The conversion settings.
+         * @param[in] settings The conversion settings.
          *
-         * @return @c true if the initialization was successful, @c false otherwise.
+         * @return `true` if the initialization was successful, `false` otherwise.
          */
         bool Configure(const Settings& settings);
 
         /**
          * @brief Converts the audio buffer from the source sample rate and channel count to the target sample rate and channel count.
          *
-         * @param input The source audio buffer.
-         * @param inputFrames The number of frames to process in the input audio buffer.
-         * @param output The target audio buffer to store the converted audio.
-         * @param outputFrames The number of frames to process in the target audio buffer.
+         * @param[in] input The source audio buffer.
+         * @param[in,out] inputFrames The number of frames to process in the input audio buffer.
+         * @param[out] output The target audio buffer to store the converted audio.
+         * @param[in,out] outputFrames The number of frames to process in the target audio buffer.
          */
         void Process(const AudioBuffer& input, AmUInt64& inputFrames, AudioBuffer& output, AmUInt64& outputFrames);
 
         /**
          * @brief Updates the source sample rate and target sample rate.
          *
-         * @param sourceSampleRate The source sample rate.
-         * @param targetSampleRate The target sample rate.
+         * @param[in] sourceSampleRate The source sample rate.
+         * @param[in] targetSampleRate The target sample rate.
          */
         void SetSampleRate(AmUInt64 sourceSampleRate, AmUInt64 targetSampleRate);
 
         /**
-         * @brief Returns the required number of frames to have as input for the
-         * given amount of output frames.
+         * @brief Returns the required number of frames to have as input for the given amount of output frames.
          *
-         * @param outputFrameCount The number of output frames.
+         * @param[in] outputFrameCount The number of output frames.
          *
          * @return The input frame count needed to produce the given output frame count.
          */
         [[nodiscard]] AmUInt64 GetRequiredInputFrameCount(AmUInt64 outputFrameCount) const;
 
         /**
-         * @brief Returns the expected number of frames to have as output for the
-         * given amount of input frames.
+         * @brief Returns the expected number of frames to have as output for the given amount of input frames.
          *
-         * @param inputFrameCount The number of input frames.
+         * @param[in] inputFrameCount The number of input frames.
          *
          * @return The expected number of output frames for the given input frame count.
          */
@@ -139,18 +143,22 @@ namespace SparkyStudios::Audio::Amplitude
         };
 
         /**
-         * @brief Convert stereo audio to mono.
+         * @brief Converts stereo audio to mono.
          *
-         * @param input The input audio buffer.
-         * @param output The output audio buffer to store the converted audio.
+         * @param[in] input The input audio buffer.
+         * @param[out] output The output audio buffer to store the converted audio.
+         *
+         * @internal
          */
         static void ConvertStereoFromMono(const AudioBuffer& input, AudioBuffer& output);
 
         /**
-         * @brief Convert mono audio to stereo.
+         * @brief Converts mono audio to stereo.
          *
-         * @param input The input audio buffer.
-         * @param output The output audio buffer to store the converted audio.
+         * @param[in] input The input audio buffer.
+         * @param[out] output The output audio buffer to store the converted audio.
+         *
+         * @internal
          */
         static void ConvertMonoFromStereo(const AudioBuffer& input, AudioBuffer& output);
 

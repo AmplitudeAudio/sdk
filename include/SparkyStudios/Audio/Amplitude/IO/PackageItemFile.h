@@ -23,48 +23,56 @@
 namespace SparkyStudios::Audio::Amplitude
 {
     /**
-     * @brief A File implementation that provides access to an item in an
-     * Amplitude package file.
+     * @brief A `File` implementation that provides access to an item in an Amplitude package file.
+     *
+     * @ingroup io
      */
     class AM_API_PUBLIC PackageItemFile : public DiskFile
     {
     public:
+        /**
+         * @brief Constructs a new `PackageItemFile` instance.
+         *
+         * @param[in] item The description of the package item.
+         * @param[in] packageFile The path to the package file.
+         * @param[in] headerSize The size of the package file header.
+         */
         PackageItemFile(const PackageFileItemDescription* item, const std::filesystem::path& packageFile, AmSize headerSize);
 
         /**
-         * @copydoc DiskFile::GetPath
+         * @inherit
          */
         [[nodiscard]] AmOsString GetPath() const override;
 
         /**
-         * @copydoc DiskFile::Eof
+         * @inherit
          */
         bool Eof() override;
 
         /**
-         * @copydoc DiskFile::Read
+         * @inherit
          */
         AmSize Read(AmUInt8Buffer dst, AmSize bytes) override;
 
         /**
-         * @copydoc DiskFile::Write
+         * @inherit
          *
          * @note Writing is disabled for packages item files.
          */
         AmSize Write(AmConstUInt8Buffer src, AmSize bytes) override;
 
         /**
-         * @copydoc DiskFile::Length
+         * @inherit
          */
         AmSize Length() override;
 
         /**
-         * @copydoc DiskFile::Seek
+         * @inherit
          */
-        void Seek(AmInt64 offset, FileSeekOrigin origin) override;
+        void Seek(AmInt64 offset, eFileSeekOrigin origin) override;
 
         /**
-         * @copydoc DiskFile::Position
+         * @inherit
          */
         AmSize Position() override;
 

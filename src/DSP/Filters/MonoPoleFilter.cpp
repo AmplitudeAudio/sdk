@@ -53,11 +53,11 @@ namespace SparkyStudios::Audio::Amplitude
     AmResult MonoPoleFilter::Initialize(AmReal32 coefficient)
     {
         if (coefficient < 0.0f || coefficient > 1.0f)
-            return AM_ERROR_INVALID_PARAMETER;
+            return eErrorCode_InvalidParameter;
 
         _coefficient = AM_CLAMP(coefficient, 0.0f, 1.0f);
 
-        return AM_ERROR_NO_ERROR;
+        return eErrorCode_Success;
     }
 
     AmUInt32 MonoPoleFilter::GetParamCount() const
@@ -77,7 +77,7 @@ namespace SparkyStudios::Audio::Amplitude
 
     AmUInt32 MonoPoleFilter::GetParamType(AmUInt32 index) const
     {
-        return PARAM_FLOAT;
+        return kParameterTypeFloat;
     }
 
     AmReal32 MonoPoleFilter::GetParamMax(AmUInt32 index) const

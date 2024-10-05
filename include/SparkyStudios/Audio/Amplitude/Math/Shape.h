@@ -30,54 +30,60 @@ namespace SparkyStudios::Audio::Amplitude
     class SphereShapeDefinition;
 
     /**
-     * @brief A Shape.
+     * @brief A geometrical closed 3D shape.
      *
-     * A Shape define a zone in the world where listeners and sound sources can be localized. This is used by the
-     * engine to detect the position on these objects and apply a specific effect (environmental effect or
-     * attenuation effect) to them.
+     * A `Shape` defines a zone in the world where game objects (listener, sound sources, entities, etc.) can
+     * be localized. Shapes are used in many places of the engine, like to define a sound attenuation shape, or to build a room.
+     *
+     * @ingroup math
      */
     class AM_API_PUBLIC Shape
     {
     public:
         /**
-         * @brief Creates a new Shape from a definition.
+         * @brief Creates a new `Shape` from a definition.
          *
-         * @param definition The definition of the shape generated
-         *                   from a flatbuffer binary.
+         * @param[in] definition The definition of the shape generated
+         * from a flatbuffer binary.
+         *
+         * @warning This method is intended for internal usage only.
          */
         static Shape* Create(const ShapeDefinition* definition);
 
         /**
-         * @brief Construct a new Shape.
+         * @brief Constructs a new `Shape`.
          */
         Shape();
 
+        /**
+         * @brief Default destructor.
+         */
         virtual ~Shape() = default;
 
         /**
-         * @brief Get the shortest distance to the edge of this shape.
+         * @brief Gets the shortest distance to the edge of this shape.
          *
-         * @param entity The entity from which calculate the distance.
+         * @param[in] entity The entity from which calculate the distance.
          *
-         * @return The shortest distance from the location to the edge
-         * of this shape. If negative, the given location in outside the shape.
+         * @return The shortest distance from the entity location to the edge
+         * of this shape. If negative, the given entity in outside the shape.
          */
         [[nodiscard]] virtual AmReal32 GetShortestDistanceToEdge(const Entity& entity);
 
         /**
-         * @brief Get the shortest distance to the edge of this shape.
+         * @brief Gets the shortest distance to the edge of this shape.
          *
-         * @param listener The listener from which calculate the distance.
+         * @param[in] listener The listener from which calculate the distance.
          *
-         * @return The shortest distance from the location to the edge
-         * of this shape. If negative, the given location in outside the shape.
+         * @return The shortest distance from the listener location to the edge
+         * of this shape. If negative, the given listener in outside the shape.
          */
         [[nodiscard]] virtual AmReal32 GetShortestDistanceToEdge(const Listener& listener);
 
         /**
-         * @brief Get the shortest distance to the edge of this shape.
+         * @brief Gets the shortest distance to the edge of this shape.
          *
-         * @param location The location from which calculate the distance.
+         * @param[in] location The location from which calculate the distance.
          *
          * @return The shortest distance from the location to the edge
          * of this shape. If negative, the given location in outside the shape.
@@ -87,41 +93,41 @@ namespace SparkyStudios::Audio::Amplitude
         /**
          * @brief Checks if the given entity is contained in this shape.
          *
-         * @param entity The entity to check.
+         * @param[in] entity The entity to check.
          *
-         * @return true if the shape contains the entity, false otherwise.
+         * @return `true` if the shape contains the entity, `false` otherwise.
          */
         [[nodiscard]] virtual bool Contains(const Entity& entity);
 
         /**
          * @brief Checks if the given listener is contained in this shape.
          *
-         * @param listener The listener to check.
+         * @param[in] listener The listener to check.
          *
-         * @return true if the shape contains the listener, false otherwise.
+         * @return `true` if the shape contains the listener, `false` otherwise.
          */
         [[nodiscard]] virtual bool Contains(const Listener& listener);
 
         /**
          * @brief Checks if the given position is contained in this shape.
          *
-         * @param location The 3D position to check.
+         * @param[in] location The 3D position to check.
          *
-         * @return true if the shape contains the given position, false otherwise.
+         * @return `true` if the shape contains the given position, `false` otherwise.
          */
         [[nodiscard]] virtual bool Contains(const AmVec3& location) = 0;
 
         /**
-         * @brief Set the location of this shape in the 3D environment.
+         * @brief Sets the location of this shape in the 3D environment.
          *
-         * @param location The shape location.
+         * @param[in] location The shape location.
          */
         void SetLocation(const AmVec3& location);
 
         /**
-         * @brief Set the orientation of this shape.
+         * @brief Sets the orientation of this shape.
          *
-         * @param orientation The new orientation.
+         * @param[in] orientation The new orientation.
          */
         void SetOrientation(const Orientation& orientation);
 
@@ -133,28 +139,28 @@ namespace SparkyStudios::Audio::Amplitude
         [[nodiscard]] const Orientation& GetOrientation() const;
 
         /**
-         * @brief Get the LookAt transformation matrix for this shape.
+         * @brief Gets the LookAt transformation matrix for this shape.
          *
-         * @return The lookAt transformation matrix.
+         * @return The look-at transformation matrix.
          */
         [[nodiscard]] const AmMat4& GetLookAt() const;
 
         /**
-         * @brief Get the position of this shape in the 3D environment.
+         * @brief Gets the position of this shape in the 3D environment.
          *
          * @return The shape's position.
          */
         [[nodiscard]] const AmVec3& GetLocation() const;
 
         /**
-         * @brief Get the position of this shape in the 3D environment.
+         * @brief Gets the position of this shape in the 3D environment.
          *
          * @return The shape's position.
          */
         [[nodiscard]] AmVec3 GetDirection() const;
 
         /**
-         * @brief Get the up vector of the zone.
+         * @brief Gets the up vector of the zone.
          *
          * @return The up vector.
          */
@@ -170,60 +176,75 @@ namespace SparkyStudios::Audio::Amplitude
     };
 
     /**
-     * @brief A shape that represents a zone in the world.
+     * @brief A tuple of shapes that represents a zone in the world.
      *
-     * This shape is mainly used by attenuations and environments. It's composed of an inner shape and an outer shape.
-     * The inner shape is the zone where the factor is equal to one all the time. The outer shape is the zone where the
-     * factor increase or decrease according to the shortest distance of the game object from the outer edge.
+     * This shape is mainly used by attenuations and environments. It's composed of an inner `Shape` and an outer `Shape`.
+     * The inner shape is the place where the @ref GetFactor factor is equal to one all the time. The outer shape is the place where the
+     * @ref GetFactor factor increase or decrease according to the shortest distance of the game object from the outer edge.
      *
-     * If the game object is outside the outer shape (thus, outside the zone), the factor is zero.
+     * If the game object is outside the outer shape (thus, outside the zone), the @ref GetFactor factor is zero.
+     *
+     * @ingroup math
      */
     class AM_API_PUBLIC Zone
     {
     public:
+        /**
+         * @brief Creates a new `Zone` from the given inner and outer shapes.
+         *
+         * @param[in] inner The inner shape.
+         * @param[in] outer The outer shape.
+         */
         explicit Zone(Shape* inner, Shape* outer);
+
+        /**
+         * @brief Default destructor.
+         */
         virtual ~Zone() = default;
 
         /**
-         * @brief Gets the factor (a value in the range [0, 1]) according to the position
-         * of the given entity in the zone.
+         * @brief Gets the factor according to the position of the given entity in the zone.
          *
-         * @param entity The entity to get the factor for.
+         * @param[in] entity The entity to get the factor for.
          *
          * @return The factor.
+         *
+         * @note The factor is a value in the range [0, 1].
          */
-        [[nodiscard]] virtual AmReal32 GetFactor(const Entity& entity)
+        [[nodiscard]] virtual AM_INLINE AmReal32 GetFactor(const Entity& entity)
         {
             return GetFactor(entity.GetLocation());
         }
 
         /**
-         * @brief Gets the factor (a value in the range [0, 1]) according to the position
-         * of the given listener in the zone.
+         * @brief Gets the factor according to the position of the given listener in the zone.
          *
-         * @param listener The listener to get the factor for.
+         * @param[in] listener The listener to get the factor for.
          *
          * @return The factor.
+         *
+         * @note The factor is a value in the range [0, 1].
          */
-        [[nodiscard]] virtual AmReal32 GetFactor(const Listener& listener)
+        [[nodiscard]] virtual AM_INLINE AmReal32 GetFactor(const Listener& listener)
         {
             return GetFactor(listener.GetLocation());
         }
 
         /**
-         * @brief Gets the factor (a value in the range [0, 1]) according to the given
-         * position in the zone.
+         * @brief Gets the factor according to the given position in the zone.
          *
-         * @param position The position in the zone to get the factor for.
+         * @param[in] position The position in the zone to get the factor for.
          *
          * @return The factor.
+         *
+         * @note The factor is a value in the range [0, 1].
          */
         [[nodiscard]] virtual AmReal32 GetFactor(const AmVec3& position) = 0;
 
         /**
          * @brief Sets the location of this zone in the 3D environment.
          *
-         * @param location The zone location.
+         * @param[in] location The zone location.
          */
         void SetLocation(const AmVec3& location);
 
@@ -237,7 +258,7 @@ namespace SparkyStudios::Audio::Amplitude
         /**
          * @brief Sets the orientation of this zone.
          *
-         * @param orientation The new orientation.
+         * @param[in] orientation The new orientation.
          */
         void SetOrientation(const Orientation& orientation);
 
@@ -249,14 +270,14 @@ namespace SparkyStudios::Audio::Amplitude
         [[nodiscard]] const Orientation& GetOrientation() const;
 
         /**
-         * @brief Get the direction vector of the zone.
+         * @brief Gets the direction vector of the zone.
          *
          * @return The direction vector.
          */
         [[nodiscard]] AmVec3 GetDirection() const;
 
         /**
-         * @brief Get the up vector of the zone.
+         * @brief Gets the up vector of the zone.
          *
          * @return The up vector.
          */
@@ -276,6 +297,8 @@ namespace SparkyStudios::Audio::Amplitude
 
     /**
      * @brief A box shape, defined by a width, an height, and a depth.
+     *
+     * @ingroup math
      */
     class AM_API_PUBLIC BoxShape : public Shape
     {
@@ -283,97 +306,99 @@ namespace SparkyStudios::Audio::Amplitude
 
     public:
         /**
-         * @brief Creates a new BoxShape from a definition.
+         * @brief Creates a new `BoxShape` from a definition.
          *
-         * @param definition The definition of the box shape generated
-         *                   from a flatbuffer binary.
+         * @param[in] definition The definition of the shape generated
+         * from a flatbuffer binary.
+         *
+         * @warning This method is intended for internal usage only.
          */
         static BoxShape* Create(const BoxShapeDefinition* definition);
 
         /**
-         * @brief Construct a new Box Shape.
+         * @brief Constructs a new `BoxShape`.
          *
-         * @param halfWidth The half width of the box shape.
-         * @param halfHeight The half height of the box shape.
-         * @param halfDepth The half depth of the box shape.
+         * @param[in] halfWidth The half width of the box shape.
+         * @param[in] halfHeight The half height of the box shape.
+         * @param[in] halfDepth The half depth of the box shape.
          */
         explicit BoxShape(AmReal32 halfWidth, AmReal32 halfHeight, AmReal32 halfDepth);
 
         /**
-         * @brief Construct a new Box Shape.
+         * @brief Constructs a new `BoxShape`.
          *
-         * @param position The position of the box shape.
-         * @param dimensions The dimensions of the box shape.
+         * @param[in] position The position of the box shape.
+         * @param[in] dimensions The dimensions of the box shape.
          */
         explicit BoxShape(const AmVec3& position, const AmVec3& dimensions);
 
         /**
-         * @brief Get the half width of the box shape.
+         * @brief Gets the half width of the `BoxShape`.
          *
          * @return The box shape's half width.
          */
         [[nodiscard]] AmReal32 GetHalfWidth() const;
 
         /**
-         * @brief Get the half height of the box shape.
+         * @brief Gets the half height of the `BoxShape`.
          *
          * @return The box shape's half height.
          */
         [[nodiscard]] AmReal32 GetHalfHeight() const;
 
         /**
-         * @brief Get the half depth of the box shape.
+         * @brief Gets the half depth of the `BoxShape`.
          *
          * @return The box shape's half depth.
          */
         [[nodiscard]] AmReal32 GetHalfDepth() const;
 
         /**
-         * @brief Get the width of the box shape.
+         * @brief Gets the width of the `BoxShape`.
          *
          * @return The box shape's width.
          */
         [[nodiscard]] AmReal32 GetWidth() const;
 
         /**
-         * @brief Get the height of the box shape.
+         * @brief Gets the height of the `BoxShape`.
          *
          * @return The box shape's height.
          */
         [[nodiscard]] AmReal32 GetHeight() const;
 
         /**
-         * @brief Get the depth of the box shape.
+         * @brief Gets the depth of the `BoxShape`.
          *
          * @return The box shape's depth.
          */
         [[nodiscard]] AmReal32 GetDepth() const;
 
         /**
-         * @brief Set the half width of the box shape.
+         * @brief Sets the half width of the `BoxShape`.
          *
-         * @param halfWidth The new box shape's half width.
+         * @param[in] halfWidth The new box shape's half width.
          */
         void SetHalfWidth(AmReal32 halfWidth);
 
         /**
-         * @brief Set the half height of the box shape.
+         * @brief Sets the half height of the `BoxShape`.
          *
-         * @param halfHeight The new box shape's half height.
+         * @param[in] halfHeight The new box shape's half height.
          */
         void SetHalfHeight(AmReal32 halfHeight);
 
         /**
-         * @brief Set the half depth of the box shape.
+         * @brief Sets the half depth of the `BoxShape`.
          *
-         * @param halfDepth The new box shape's half depth.
+         * @param[in] halfDepth The new box shape's half depth.
          */
         void SetHalfDepth(AmReal32 halfDepth);
 
         /**
-         * @brief Get the shortest distance to the edge of this shape.
+         * @brief Gets the shortest distance to the edge of this shape.
          *
-         * @param location The location from which calculate the distance.
+         * @param[in] location The location from which calculate the distance.
          *
          * @return The shortest distance from the location to the edge
          * of this shape. If negative, the given location in outside the shape.
@@ -383,16 +408,16 @@ namespace SparkyStudios::Audio::Amplitude
         /**
          * @brief Checks if the given position is contained in this shape.
          *
-         * @param location The 3D position to check.
+         * @param[in] location The 3D position to check.
          *
-         * @return true if the shape contains the given position, false otherwise.
+         * @return `true` if the shape contains the given position, `false` otherwise.
          */
         [[nodiscard]] bool Contains(const AmVec3& location) final;
 
         /**
-         * @brief Get the closest point to the given location.
+         * @brief Gets the closest point to the given location.
          *
-         * @param location The location to get the closest point for.
+         * @param[in] location The location to get the closest point for.
          *
          * @return The closest point to the given location.
          */
@@ -415,6 +440,8 @@ namespace SparkyStudios::Audio::Amplitude
 
     /**
      * @brief A capsule shape, defined by a radius and an height.
+     *
+     * @ingroup math
      */
     class AM_API_PUBLIC CapsuleShape : public Shape
     {
@@ -422,67 +449,69 @@ namespace SparkyStudios::Audio::Amplitude
 
     public:
         /**
-         * @brief Creates a new CapsuleShape from a definition.
+         * @brief Creates a new `CapsuleShape` from a definition.
          *
-         * @param definition The definition of the capsule shape generated
-         *                   from a flatbuffer binary.
+         * @param[in] definition The definition of the shape generated
+         * from a flatbuffer binary.
+         *
+         * @warning This method is intended for internal usage only.
          */
         static CapsuleShape* Create(const CapsuleShapeDefinition* definition);
 
         /**
-         * @brief Construct a new Capsule Shape.
+         * @brief Constructs a new `CapsuleShape`.
          *
-         * @param radius The capsule radius.
-         * @param halfHeight The capsule half height.
+         * @param[in] radius The capsule radius.
+         * @param[in] halfHeight The capsule half height.
          */
         explicit CapsuleShape(AmReal32 radius, AmReal32 halfHeight);
 
         /**
-         * @brief Get the radius of the capsule shape.
+         * @brief Gets the radius of the capsule shape.
          *
          * @return The capsule's radius.
          */
         [[nodiscard]] AmReal32 GetRadius() const;
 
         /**
-         * @brief Get the half height of the capsule shape.
+         * @brief Gets the half height of the capsule shape.
          *
          * @return The capsule's half height.
          */
         [[nodiscard]] AmReal32 GetHalfHeight() const;
 
         /**
-         * @brief Get the diameter of the capsule shape.
+         * @brief Gets the diameter of the capsule shape.
          *
          * @return The capsule's diameter.
          */
         [[nodiscard]] AmReal32 GetDiameter() const;
 
         /**
-         * @brief Get the height of the capsule shape.
+         * @brief Gets the height of the capsule shape.
          *
          * @return The capsule's height.
          */
         [[nodiscard]] AmReal32 GetHeight() const;
 
         /**
-         * @brief Set the radius of the capsule shape.
+         * @brief Sets the radius of the capsule shape.
          *
-         * @param radius The capsule's radius.
+         * @param[in] radius The capsule's radius.
          */
         void SetRadius(AmReal32 radius);
 
         /**
-         * @brief Set the half height of the capsule shape.
+         * @brief Sets the half height of the capsule shape.
          *
-         * @param halfHeight The capsule's half height.
+         * @param[in] halfHeight The capsule's half height.
          */
         void SetHalfHeight(AmReal32 halfHeight);
 
         /**
-         * @brief Get the shortest distance to the edge of this shape.
+         * @brief Gets the shortest distance to the edge of this shape.
          *
-         * @param location The location from which calculate the distance.
+         * @param[in] location The location from which calculate the distance.
          *
          * @return The shortest distance from the location to the edge
          * of this shape. If negative, the given location in outside the shape.
@@ -492,9 +521,9 @@ namespace SparkyStudios::Audio::Amplitude
         /**
          * @brief Checks if the given position is contained in this shape.
          *
-         * @param location The 3D position to check.
+         * @param[in] location The 3D position to check.
          *
-         * @return true if the shape contains the given position, false otherwise.
+         * @return `true` if the shape contains the given position, `false` otherwise.
          */
         [[nodiscard]] bool Contains(const AmVec3& location) final;
 
@@ -509,6 +538,8 @@ namespace SparkyStudios::Audio::Amplitude
 
     /**
      * @brief A cone shape, defined by a radius and an height.
+     *
+     * @ingroup math
      */
     class AM_API_PUBLIC ConeShape : public Shape
     {
@@ -518,58 +549,60 @@ namespace SparkyStudios::Audio::Amplitude
         /**
          * @brief Creates a new ConeShape from a definition.
          *
-         * @param definition The definition of the cone shape generated
-         *                   from a flatbuffer binary.
+         * @param[in] definition The definition of the shape generated
+         * from a flatbuffer binary.
+         *
+         * @warning This method is intended for internal usage only.
          */
         static ConeShape* Create(const ConeShapeDefinition* definition);
 
         /**
-         * @brief Construct a new Cone Shape.
+         * @brief Constructs a new `ConeShape`.
          *
-         * @param radius The radius of the cone's base.
-         * @param height The height of the cone.
+         * @param[in] radius The radius of the cone's base.
+         * @param[in] height The height of the cone.
          */
         explicit ConeShape(AmReal32 radius, AmReal32 height);
 
         /**
-         * @brief Get the radius of the cone shape.
+         * @brief Gets the radius of the cone shape.
          *
          * @return The cone base's radius.
          */
         [[nodiscard]] AmReal32 GetRadius() const;
 
         /**
-         * @brief Get the diameter of the cone shape.
+         * @brief Gets the diameter of the cone shape.
          *
          * @return The cone base's diameter.
          */
         [[nodiscard]] AmReal32 GetDiameter() const;
 
         /**
-         * @brief Get the height of the cone shape.
+         * @brief Gets the height of the cone shape.
          *
          * @return The cone's height.
          */
         [[nodiscard]] AmReal32 GetHeight() const;
 
         /**
-         * @brief Set the radius of the cone shape.
+         * @brief Sets the radius of the cone shape.
          *
-         * @param radius The cone base's radius.
+         * @param[in] radius The cone base's radius.
          */
         void SetRadius(AmReal32 radius);
 
         /**
-         * @brief Set the height of the cone shape.
+         * @brief Sets the height of the cone shape.
          *
-         * @param height The cone's height.
+         * @param[in] height The cone's height.
          */
         void SetHeight(AmReal32 height);
 
         /**
-         * @brief Get the shortest distance to the edge of this shape.
+         * @brief Gets the shortest distance to the edge of this shape.
          *
-         * @param location The location from which calculate the distance.
+         * @param[in] location The location from which calculate the distance.
          *
          * @return The shortest distance from the location to the edge
          * of this shape. If negative, the given location in outside the shape.
@@ -579,7 +612,7 @@ namespace SparkyStudios::Audio::Amplitude
         /**
          * @brief Checks if the given position is contained in this shape.
          *
-         * @param location The 3D position to check.
+         * @param[in] location The 3D position to check.
          *
          * @return true if the shape contains the given position, false otherwise.
          */
@@ -594,6 +627,8 @@ namespace SparkyStudios::Audio::Amplitude
 
     /**
      * @brief A sphere shape, defined by a radius.
+     *
+     * @ingroup math
      */
     class AM_API_PUBLIC SphereShape : public Shape
     {
@@ -603,43 +638,45 @@ namespace SparkyStudios::Audio::Amplitude
         /**
          * @brief Creates a new SphereShape from a definition.
          *
-         * @param definition The definition of the sphere shape generated
-         *                   from a flatbuffer binary.
+         * @param[in] definition The definition of the shape generated
+         * from a flatbuffer binary.
+         *
+         * @warning This method is intended for internal usage only.
          */
         static SphereShape* Create(const SphereShapeDefinition* definition);
 
         /**
-         * @brief Construct a new Sphere Shape.
+         * @brief Constructs a new `SphereShape`.
          *
-         * @param radius The sphere's radius.
+         * @param[in] radius The sphere's radius.
          */
         explicit SphereShape(AmReal32 radius);
 
         /**
-         * @brief Get the radius of the sphere shape.
+         * @brief Gets the radius of the sphere shape.
          *
          * @return The sphere's radius.
          */
         [[nodiscard]] AmReal32 GetRadius() const;
 
         /**
-         * @brief Get the diameter of the sphere shape.
+         * @brief Gets the diameter of the sphere shape.
          *
          * @return The sphere's diameter.
          */
         [[nodiscard]] AmReal32 GetDiameter() const;
 
         /**
-         * @brief Set the radius of the sphere shape.
+         * @brief Sets the radius of the sphere shape.
          *
-         * @param radius The sphere's radius.
+         * @param[in] radius The sphere's radius.
          */
         void SetRadius(AmReal32 radius);
 
         /**
-         * @brief Get the shortest distance to the edge of this shape.
+         * @brief Gets the shortest distance to the edge of this shape.
          *
-         * @param location The location from which calculate the distance.
+         * @param[in] location The location from which calculate the distance.
          *
          * @return The shortest distance from the location to the edge
          * of this shape. If negative, the given location in outside the shape.
@@ -649,7 +686,7 @@ namespace SparkyStudios::Audio::Amplitude
         /**
          * @brief Checks if the given position is contained in this shape.
          *
-         * @param location The 3D position to check.
+         * @param[in] location The 3D position to check.
          *
          * @return true if the shape contains the given position, false otherwise.
          */
@@ -661,35 +698,91 @@ namespace SparkyStudios::Audio::Amplitude
         AmReal32 _radius;
     };
 
+    /**
+     * @brief A `Zone` built with an inner `BoxShape` and an outer `BoxShape`.
+     *
+     * @ingroup math
+     */
     class AM_API_PUBLIC BoxZone : public Zone
     {
     public:
+        /**
+         * @brief Constructs a new `BoxZone`.
+         *
+         * @param[in] inner The inner `BoxShape`.
+         * @param[in] outer The outer `BoxShape`.
+         */
         BoxZone(BoxShape* inner, BoxShape* outer);
 
+        /**
+         * @inherit
+         */
         [[nodiscard]] AmReal32 GetFactor(const AmVec3& position) final;
     };
 
+    /**
+     * @brief A `Zone` built with an inner `CapsuleShape` and an outer `CapsuleShape`.
+     *
+     * @ingroup math
+     */
     class AM_API_PUBLIC CapsuleZone : public Zone
     {
     public:
+        /**
+         * @brief Constructs a new `CapsuleZone`.
+         *
+         * @param[in] inner The inner `CapsuleShape`.
+         * @param[in] outer The outer `CapsuleShape`.
+         */
         CapsuleZone(CapsuleShape* inner, CapsuleShape* outer);
 
+        /**
+         * @inherit
+         */
         [[nodiscard]] AmReal32 GetFactor(const AmVec3& position) final;
     };
 
+    /**
+     * @brief A `Zone` built with an inner `ConeShape` and an outer `ConeShape`.
+     *
+     * @ingroup math
+     */
     class AM_API_PUBLIC ConeZone : public Zone
     {
     public:
+        /**
+         * @brief Constructs a new `ConeZone`.
+         *
+         * @param[in] inner The inner `ConeShape`.
+         * @param[in] outer The outer `ConeShape`.
+         */
         ConeZone(ConeShape* inner, ConeShape* outer);
 
+        /**
+         * @inherit
+         */
         [[nodiscard]] AmReal32 GetFactor(const AmVec3& position) final;
     };
 
+    /**
+     * @brief A `Zone` built with an inner `SphereShape` and an outer `SphereShape`.
+     *
+     * @ingroup math
+     */
     class AM_API_PUBLIC SphereZone : public Zone
     {
     public:
+        /**
+         * @brief Constructs a new `SphereZone`.
+         *
+         * @param[in] inner The inner `SphereShape`.
+         * @param[in] outer The outer `SphereShape`.
+         */
         SphereZone(SphereShape* inner, SphereShape* outer);
 
+        /**
+         * @inherit
+         */
         [[nodiscard]] AmReal32 GetFactor(const AmVec3& position) final;
     };
 } // namespace SparkyStudios::Audio::Amplitude

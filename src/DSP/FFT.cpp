@@ -13,7 +13,7 @@
 // limitations under the License.
 
 #include <SparkyStudios/Audio/Amplitude/Core/Memory.h>
-#include <SparkyStudios/Audio/Amplitude/Math/FFT.h>
+#include <SparkyStudios/Audio/Amplitude/DSP/FFT.h>
 
 #include <Utils/Audio/FFT/AudioFFT.h>
 

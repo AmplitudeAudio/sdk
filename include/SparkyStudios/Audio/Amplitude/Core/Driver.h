@@ -27,6 +27,8 @@ namespace SparkyStudios::Audio::Amplitude
      *
      * A driver allows to use an audio device to output sounds and
      * receive data from the microphone.
+     *
+     * @ingroup engine
      */
     class AM_API_PUBLIC Driver
     {
@@ -34,32 +36,38 @@ namespace SparkyStudios::Audio::Amplitude
         /**
          * @brief Creates a new AudioDriver with an unique name.
          *
-         * @param name The driver name. Recommended names are "APIName".
+         * @param[in] name The driver name. Recommended names are "APIName".
          * eg. "MiniAudio" or "PortAudio" or "SDL", etc...
          */
         explicit Driver(AmString name);
 
+        /**
+         * @brief Default destructor.
+         */
         virtual ~Driver();
 
         /**
          * @brief Open and start using the audio device.
          *
-         * @param device The audio device to use description to use for
-         * initializing the physical device.
+         * @param[in] device The audio device to use description to use for initializing the physical device.
+         *
+         * @return `true` if successful, `false` otherwise.
          */
         virtual bool Open(const DeviceDescription& device) = 0;
 
         /**
          * @brief Closes the audio device.
+         *
+         * @return `true` if successful, `false` otherwise.
          */
         virtual bool Close() = 0;
 
         /**
          * @brief Enumerates all the available audio devices.
          *
-         * @param devices The vector in which to store the device descriptions.
+         * @param[out] devices The vector in which to store the device descriptions.
          *
-         * @return @c true if successful, @c false otherwise.
+         * @return `true` if successful, `false` otherwise.
          */
         virtual bool EnumerateDevices(std::vector<DeviceDescription>& devices) = 0;
 
@@ -80,14 +88,14 @@ namespace SparkyStudios::Audio::Amplitude
         /**
          * @brief Registers a new audio driver.
          *
-         * @param driver The audio driver to add in the registry.
+         * @param[in] driver The audio driver to add in the registry.
          */
         static void Register(Driver* driver);
 
         /**
          * @brief Unregisters an audio driver.
          *
-         * @param driver The audio driver to remove from the registry.
+         * @param[in] driver The audio driver to remove from the registry.
          */
         static void Unregister(const Driver* driver);
 
@@ -101,32 +109,34 @@ namespace SparkyStudios::Audio::Amplitude
         /**
          * @brief Look up a driver by name.
          *
-         * @return The audio driver with the given name, or NULL if none.
+         * @param[in] name The name of the audio driver. Must be registered before.
+         *
+         * @return The audio driver with the given name, or `nullptr` if none.
          */
         static Driver* Find(const AmString& name);
 
         /**
          * @brief Set the default diver to use in the engine.
          *
-         * @param name The name of the audio driver. Must be registered before.
+         * @param[in] name The name of the audio driver. Must be registered before.
          */
         static void SetDefault(const AmString& name);
 
         /**
          * @brief Locks the drivers registry.
          *
-         * This function is mainly used for internal purposes. Its
-         * called before the Engine initialization, to discard the
-         * registration of new divers after the engine is fully loaded.
+         * @warning This function is mainly used for internal purposes. It's
+         * called before the `Engine` initialization, to discard the registration
+         * of new divers after the engine is fully loaded.
          */
         static void LockRegistry();
 
         /**
          * @brief Unlocks the drivers registry.
          *
-         * This function is mainly used for internal purposes. Its
-         * called after the Engine deinitialization, to allow the
-         * registration of new divers after the engine is fully unloaded.
+         * @warning This function is mainly used for internal purposes. It's
+         * called after the `Engine` deinitialization, to allow the registration
+         * of new divers after the engine is fully unloaded.
          */
         static void UnlockRegistry();
 

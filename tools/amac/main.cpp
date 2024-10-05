@@ -100,8 +100,8 @@ static int process(const AmOsString& inFileName, const AmOsString& outFileName, 
     AmInt32 res;
     DiskFileSystem fs;
 
-    const auto inputFile = fs.OpenFile(inFileName, eFOM_READ);
-    const auto outputFile = fs.OpenFile(outFileName, eFOM_WRITE);
+    const auto inputFile = fs.OpenFile(inFileName, eFileOpenMode_Read);
+    const auto outputFile = fs.OpenFile(outFileName, eFileOpenMode_Write);
 
     auto* ams_codec = Codec::Find("ams");
     auto* wav_codec = Codec::Find("wav");
@@ -176,7 +176,7 @@ static int process(const AmOsString& inFileName, const AmOsString& outFileName, 
         }
 
         SoundFormat encodeFormat{};
-        encodeFormat.SetAll(sampleRate, numChannels, format.GetBitsPerSample(), numSamples, framesSize, AM_SAMPLE_FORMAT_INT);
+        encodeFormat.SetAll(sampleRate, numChannels, format.GetBitsPerSample(), numSamples, framesSize, eAudioSampleFormat_Int16);
 
         encoder->SetFormat(encodeFormat);
         if (!encoder->Open(outputFile))
@@ -217,7 +217,7 @@ static int process(const AmOsString& inFileName, const AmOsString& outFileName, 
             16, // always decode in 16 bits per sample
             amsFormat.GetFramesCount(),
             amsFormat.GetNumChannels() * sizeof(AmInt16), // Always decode in 16 bits signed integers
-            AM_SAMPLE_FORMAT_INT);
+            eAudioSampleFormat_Int16);
 
         encoder->SetFormat(wavFormat);
         if (!encoder->Open(outputFile))
@@ -253,7 +253,6 @@ static int process(const AmOsString& inFileName, const AmOsString& outFileName, 
         {
             log(stdout, "Operation completed successfully.\n");
         }
-
 
         ams_codec->DestroyDecoder(decoder);
         wav_codec->DestroyEncoder(encoder);

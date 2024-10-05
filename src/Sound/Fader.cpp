@@ -17,7 +17,7 @@
 
 namespace SparkyStudios::Audio::Amplitude
 {
-    typedef std::map<std::string, Fader*> FaderRegistry;
+    typedef std::map<AmString, Fader*> FaderRegistry;
     typedef FaderRegistry::value_type FaderImpl;
 
     static constexpr AmUInt32 kNewtonIterations = 4;
@@ -160,7 +160,7 @@ namespace SparkyStudios::Audio::Amplitude
     {
         m_from = m_to = m_delta = 0;
         m_time = m_startTime = m_endTime = 0;
-        m_state = AM_FADER_STATE_DISABLED;
+        m_state = eFaderState_Disabled;
     }
 
     void FaderInstance::Set(AmReal64 from, AmReal64 to, AmTime duration)
@@ -184,7 +184,7 @@ namespace SparkyStudios::Audio::Amplitude
 
     AmReal64 FaderInstance::GetFromTime(AmTime time)
     {
-        if (m_state != AM_FADER_STATE_ACTIVE)
+        if (m_state != eFaderState_Active)
             return 0.0f;
 
         if (m_startTime >= time)
@@ -206,7 +206,7 @@ namespace SparkyStudios::Audio::Amplitude
     {
         m_startTime = time;
         m_endTime = m_startTime + m_time;
-        m_state = AM_FADER_STATE_ACTIVE;
+        m_state = eFaderState_Active;
     }
 
     static FaderRegistry& faderRegistry()
@@ -227,7 +227,7 @@ namespace SparkyStudios::Audio::Amplitude
         return c;
     }
 
-    Fader::Fader(std::string name)
+    Fader::Fader(AmString name)
         : m_name(std::move(name))
     {
         Register(this);
@@ -242,7 +242,7 @@ namespace SparkyStudios::Audio::Amplitude
         Unregister(this);
     }
 
-    const std::string& Fader::GetName() const
+    const AmString& Fader::GetName() const
     {
         return m_name;
     }
@@ -276,7 +276,7 @@ namespace SparkyStudios::Audio::Amplitude
         }
     }
 
-    Fader* Fader::Find(const std::string& name)
+    Fader* Fader::Find(const AmString& name)
     {
         const FaderRegistry& faders = faderRegistry();
         if (const auto& it = faders.find(name); it != faders.end())
@@ -285,7 +285,7 @@ namespace SparkyStudios::Audio::Amplitude
         return nullptr;
     }
 
-    FaderInstance* Fader::Construct(const std::string& name)
+    FaderInstance* Fader::Construct(const AmString& name)
     {
         Fader* fader = Find(name);
         if (fader == nullptr)
@@ -294,7 +294,7 @@ namespace SparkyStudios::Audio::Amplitude
         return fader->CreateInstance();
     }
 
-    void Fader::Destruct(const std::string& name, FaderInstance* instance)
+    void Fader::Destruct(const AmString& name, FaderInstance* instance)
     {
         if (instance == nullptr)
             return;
@@ -316,7 +316,7 @@ namespace SparkyStudios::Audio::Amplitude
         lockFaders() = false;
     }
 
-    const std::map<std::string, Fader*>& Fader::GetRegistry()
+    const std::map<AmString, Fader*>& Fader::GetRegistry()
     {
         return faderRegistry();
     }

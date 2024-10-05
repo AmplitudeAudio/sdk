@@ -46,9 +46,9 @@ namespace SparkyStudios::Audio::Amplitude
         auto* file = static_cast<File*>(pUserData);
         file->Seek(
             offset,
-            origin == drmp3_seek_origin_start         ? eFSO_START
-                : origin == drmp3_seek_origin_current ? eFSO_CURRENT
-                                                      : eFSO_START);
+            origin == drmp3_seek_origin_start         ? eFileSeekOrigin_Start
+                : origin == drmp3_seek_origin_current ? eFileSeekOrigin_Current
+                                                      : eFileSeekOrigin_Start);
         return DRMP3_TRUE;
     }
 
@@ -87,7 +87,7 @@ namespace SparkyStudios::Audio::Amplitude
 
         m_format.SetAll(
             _mp3.sampleRate, _mp3.channels, 0, framesCount, _mp3.channels * sizeof(AmAudioSample),
-            AM_SAMPLE_FORMAT_FLOAT // This codec always read frames as float32 values
+            eAudioSampleFormat_Float32 // This codec always read frames as float32 values
         );
 
         _initialized = true;

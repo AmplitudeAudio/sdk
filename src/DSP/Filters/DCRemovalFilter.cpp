@@ -26,11 +26,11 @@ namespace SparkyStudios::Audio::Amplitude
     AmResult DCRemovalFilter::Initialize(AmReal32 length)
     {
         if (length <= 0)
-            return AM_ERROR_INVALID_PARAMETER;
+            return eErrorCode_InvalidParameter;
 
         _length = length;
 
-        return AM_ERROR_NO_ERROR;
+        return eErrorCode_Success;
     }
 
     FilterInstance* DCRemovalFilter::CreateInstance()
@@ -45,25 +45,26 @@ namespace SparkyStudios::Audio::Amplitude
 
     DCRemovalFilterInstance::DCRemovalFilterInstance(DCRemovalFilter* parent)
         : FilterInstance(parent)
-        , _buffer(nullptr)
-        , _totals(nullptr)
+        , _buffer()
+        , _totals()
         , _bufferLength(0)
         , _offset(0)
     {
-        Initialize(1);
+        Initialize(DCRemovalFilter::ATTRIBUTE_LAST);
+        SetParameter(DCRemovalFilter::ATTRIBUTE_LAST, parent->_length);
     }
 
     DCRemovalFilterInstance::~DCRemovalFilterInstance()
     {
-        ampoolfree(MemoryPoolKind::Filtering, _buffer);
-        ampoolfree(MemoryPoolKind::Filtering, _totals);
+        _buffer.Clear();
+        _totals.Clear();
     }
 
     void DCRemovalFilterInstance::Process(const AudioBuffer& in, AudioBuffer& out, AmUInt64 frames, AmUInt32 sampleRate)
     {
         const AmUInt16 channels = in.GetChannelCount();
 
-        if (_buffer == nullptr)
+        if (_buffer.GetPointer() == nullptr)
         {
             InitializeBuffer(channels, sampleRate);
         }
@@ -103,12 +104,9 @@ namespace SparkyStudios::Audio::Amplitude
 
     void DCRemovalFilterInstance::InitializeBuffer(AmUInt16 channels, AmUInt32 sampleRate)
     {
-        _bufferLength = static_cast<AmUInt64>(std::ceil(dynamic_cast<DCRemovalFilter*>(m_parent)->_length * sampleRate));
+        _bufferLength = static_cast<AmUInt64>(std::ceil(m_parameters[DCRemovalFilter::ATTRIBUTE_LENGTH] * sampleRate));
 
-        _buffer = static_cast<AmReal32Buffer>(ampoolmalloc(MemoryPoolKind::Filtering, _bufferLength * channels * sizeof(AmReal32)));
-        _totals = static_cast<AmReal32Buffer>(ampoolmalloc(MemoryPoolKind::Filtering, channels * sizeof(AmReal32)));
-
-        std::memset(_buffer, 0, _bufferLength * channels * sizeof(AmReal32));
-        std::memset(_totals, 0, channels * sizeof(AmReal32));
+        _buffer.Resize(_bufferLength * channels, true);
+        _totals.Resize(channels, true);
     }
 } // namespace SparkyStudios::Audio::Amplitude

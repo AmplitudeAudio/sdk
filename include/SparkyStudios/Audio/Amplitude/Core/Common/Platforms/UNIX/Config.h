@@ -17,7 +17,7 @@
 #ifndef _AM_CORE_COMMON_PLATFORMS_UNIX_CONFIG_H
 #define _AM_CORE_COMMON_PLATFORMS_UNIX_CONFIG_H
 
-// Call policy
+/// Call policy
 #define AM_CALL_POLICY
 
 // Library export policy
@@ -79,13 +79,13 @@ static AM_INLINE std::string am_wstring_narrow(const std::wstring& str)
 #define AM_OS_STRING_TO_STRING(s) am_wstring_narrow(s).c_str()
 #define AM_STRING_TO_OS_STRING(s) am_string_widen(s).c_str()
 #else
-// Defines the format used to print AmOsString text
+/// Defines the format used to print AmOsString text
 #define AM_OS_CHAR_FMT "%s"
 
-// Macro used to convert a string literal to an AmOsString string at compile-time
+/// Macro used to convert a string literal to an AmOsString string at compile-time
 #define AM_OS_STRING(s) s
 
-// Conversion between OS strings and default strings
+/// Conversion between OS strings and default strings
 #define AM_OS_STRING_TO_STRING(s) std::string(s).c_str()
 #define AM_STRING_TO_OS_STRING(s) std::string(s).c_str()
 #endif

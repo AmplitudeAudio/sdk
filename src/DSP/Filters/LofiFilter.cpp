@@ -28,12 +28,12 @@ namespace SparkyStudios::Audio::Amplitude
     AmResult LofiFilter::Init(AmReal32 sampleRate, AmReal32 bitDepth)
     {
         if (sampleRate <= 0 || bitDepth <= 0)
-            return AM_ERROR_INVALID_PARAMETER;
+            return eErrorCode_InvalidParameter;
 
         _sampleRate = sampleRate;
         _bitDepth = bitDepth;
 
-        return AM_ERROR_NO_ERROR;
+        return eErrorCode_Success;
     }
 
     AmUInt32 LofiFilter::GetParamCount() const
@@ -79,7 +79,7 @@ namespace SparkyStudios::Audio::Amplitude
 
     AmUInt32 LofiFilter::GetParamType(AmUInt32 index) const
     {
-        return PARAM_FLOAT;
+        return kParameterTypeFloat;
     }
 
     FilterInstance* LofiFilter::CreateInstance()

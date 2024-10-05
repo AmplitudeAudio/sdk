@@ -19,12 +19,15 @@
 
 #include <TargetConditionals.h>
 
-#define AM_APPLE_VERSION ///< Compiling for an Apple platform
+/// Compiling for an Apple platform
+#define AM_APPLE_VERSION
 
 #if TARGET_OS_IPHONE || TARGET_OS_TV
-#define AM_IOS_VERSION ///< Compiling for iOS or tvOS (iPhone, iPad, iPod, Apple TV...)
+/// Compiling for iOS or tvOS (iPhone, iPad, iPod, Apple TV...)
+#define AM_IOS_VERSION
 #elif !TARGET_OS_EMBEDDED
-#define AM_OSX_VERSION ///< Compiling for Mac OS X
+/// Compiling for Mac OS X
+#define AM_OSX_VERSION
 #endif
 
 // Detect the platform CPU type
@@ -50,7 +53,7 @@
 #include <SparkyStudios/Audio/Amplitude/Core/Common/Platforms/UNIX/Config.h>
 
 #ifndef AM_ID_CHAR_FMT
-// Defines the format used to print AmObjectId value
+/// Defines the format used to print AmObjectId value
 #define AM_ID_CHAR_FMT "%llu"
 #endif
 

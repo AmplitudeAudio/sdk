@@ -17,6 +17,7 @@
 #ifndef _AM_IO_PACKAGE_FILESYSTEM_H
 #define _AM_IO_PACKAGE_FILESYSTEM_H
 
+#include <SparkyStudios/Audio/Amplitude/Core/Memory.h>
 #include <SparkyStudios/Audio/Amplitude/Core/Thread.h>
 #include <SparkyStudios/Audio/Amplitude/IO/DiskFile.h>
 #include <SparkyStudios/Audio/Amplitude/IO/FileSystem.h>
@@ -24,36 +25,41 @@
 namespace SparkyStudios::Audio::Amplitude
 {
     /**
-     * @brief Defines the compression algorithms a package file can be compressed with.
+     * @brief Defines the algorithms a package file can be compressed with.
+     *
+     * @ingroup io
      */
-    enum PackageFileCompressionAlgorithm : AmUInt8
+    enum ePackageFileCompressionAlgorithm : AmUInt8
     {
         /**
          * @brief No compression algorithm has been used for the package file.
          */
-        ePCA_None,
+        ePackageFileCompressionAlgorithm_None,
 
         /**
          * @brief The package file has been compressed using ZLib.
          */
-        ePCA_ZLib,
+        ePackageFileCompressionAlgorithm_ZLib,
 
         /**
          * @brief Invalid compression algorithm.
          */
-        ePCA_Invalid
+        ePackageFileCompressionAlgorithm_Invalid
     };
 
     /**
      * @brief Describes an item in the package file.
      *
      * The item description is stored in the package file's header.
+     *
+     * @ingroup io
      */
     struct PackageFileItemDescription
     {
         /**
-         * @brief The name of the package item. It usually refers to the
-         * resource path.
+         * @brief The name of the package item.
+         *
+         * @note It usually refers to the resource path.
          */
         AmString m_Name;
 
@@ -70,16 +76,22 @@ namespace SparkyStudios::Audio::Amplitude
 
     /**
      * @brief Provides metadata about the package file.
+     *
+     * @ingroup io
      */
     struct PackageFileHeaderDescription
     {
         /**
-         * @brief Package file header tag. Should be equal to 'AMPK'.
+         * @brief Package file header tag.
+         *
+         * @note Should be equal to 'AMPK'.
          */
         AmUInt8 m_Header[4] = { 'A', 'M', 'P', 'K' };
 
         /**
-         * @brief Package file version. Used to implement new features in package
+         * @brief Package file version.
+         *
+         * This is used to implement new features in package
          * files and still be backward compatible with old versions.
          */
         AmUInt16 m_Version = 0;
@@ -87,7 +99,7 @@ namespace SparkyStudios::Audio::Amplitude
         /**
          * @brief The compression algorithm used for this package file.
          */
-        PackageFileCompressionAlgorithm m_CompressionAlgorithm = ePCA_Invalid;
+        ePackageFileCompressionAlgorithm m_CompressionAlgorithm = ePackageFileCompressionAlgorithm_Invalid;
 
         /**
          * @brief The description of each item in the package file.
@@ -98,75 +110,86 @@ namespace SparkyStudios::Audio::Amplitude
     };
 
     /**
-     * @brief A FileSystem implementation that provides access
-     * to an Amplitude package file.
+     * @brief A `FileSystem` implementation that provides access to an Amplitude package file.
+     *
+     * @ingroup io
      */
     class AM_API_PUBLIC PackageFileSystem final : public FileSystem
     {
     public:
         /**
-         * @brief Constructs a new @c PackageFileSystem instance.
+         * @brief Constructs a new `PackageFileSystem` instance.
          */
         PackageFileSystem();
 
+        /**
+         * @brief Destroys the `PackageFileSystem` instance.
+         */
         ~PackageFileSystem() override;
 
         /**
-         * @copydoc FileSystem::SetBasePath
+         * @inherit
          */
         void SetBasePath(const AmOsString& basePath) override;
 
         /**
-         * @copydoc FileSystem::GetBasePath
+         * @inherit
          */
         [[nodiscard]] const AmOsString& GetBasePath() const override;
 
         /**
-         * @copydoc FileSystem::ResolvePath
+         * @inherit
          */
         [[nodiscard]] AmOsString ResolvePath(const AmOsString& path) const override;
 
         /**
-         * @copydoc FileSystem::Exists
+         * @inherit
          */
         [[nodiscard]] bool Exists(const AmOsString& path) const override;
 
         /**
-         * @copydoc FileSystem::IsDirectory
+         * @inherit
          */
         [[nodiscard]] bool IsDirectory(const AmOsString& path) const override;
 
         /**
-         * @copydoc FileSystem::Join
+         * @inherit
          */
         [[nodiscard]] AmOsString Join(const std::vector<AmOsString>& parts) const override;
 
         /**
-         * @copydoc FileSystem::OpenFile
+         * @inherit
          */
-        [[nodiscard]] std::shared_ptr<File> OpenFile(const AmOsString& path, FileOpenMode mode = eFOM_READ) const override;
+        [[nodiscard]] std::shared_ptr<File> OpenFile(const AmOsString& path, eFileOpenMode mode = eFileOpenMode_Read) const override;
 
         /**
-         * @copydoc FileSystem::StartOpenFileSystem
+         * @inherit
          */
         void StartOpenFileSystem() override;
 
         /**
-         * @copydoc FileSystem::TryFinalizeOpenFileSystem
+         * @inherit
          */
         bool TryFinalizeOpenFileSystem() override;
 
         /**
-         * @copydoc FileSystem::StartCloseFileSystem
+         * @inherit
          */
         void StartCloseFileSystem() override;
 
         /**
-         * @copydoc FileSystem::TryFinalizeCloseFileSystem
+         * @inherit
          */
         bool TryFinalizeCloseFileSystem() override;
 
     private:
+        /**
+         * @brief Loads the package in a background thread.
+         *
+         * @param[in] pParam The `PackageFileSystem` instance to load.
+         *
+         * @internal
+         */
         static void LoadPackage(AmVoidPtr pParam);
 
         std::filesystem::path _packagePath;

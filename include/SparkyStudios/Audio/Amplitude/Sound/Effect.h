@@ -27,13 +27,17 @@ namespace SparkyStudios::Audio::Amplitude
     class EffectInstance;
 
     /**
-     * @brief Amplitude Effect.
+     * @brief Amplitude Effect Asset.
      *
      * An effect is a sound filter applied to one or more sound objects
      * (sounds, collections, or switch containers) during playback.
      *
      * Effects are customized using parameters and each parameters can be
-     * updated at runtime using a @c RTPC.
+     * updated at runtime using a `Rtpc`.
+     *
+     * @see [Rtpc](../Rtpc/index.md), [EffectInstance](../../engine/EffectInstance/index.md)
+     *
+     * @ingroup assets
      */
     class AM_API_PUBLIC Effect : public Asset<AmEffectID>
     {
@@ -53,28 +57,31 @@ namespace SparkyStudios::Audio::Amplitude
         /**
          * @brief Destroys an instance of this effect.
          *
-         * @param instance The effect instance to delete.
+         * @param[in] instance The effect instance to delete.
          */
         virtual void DestroyInstance(EffectInstance* instance) const = 0;
     };
 
     /**
-     * @brief An instance of an Effect asset.
+     * @brief An instance of an `Effect` asset.
      *
-     * The effect instance is the real filter applied to only one sound object
-     * at a time. It is used to not share the same state between multiple sound
-     * objects.
+     * The effect instance is the real place where the filter is applied to only one sound object
+     * at a time. Each effect instance has its own state, and that state is not shared across sound objects.
+     *
+     * @see [Effect](../../assets/Effect/index.md), [FilterInstance](../../dsp/FilterInstance/index.md)
+     *
+     * @ingroup engine
      */
     class EffectInstance
     {
     public:
         /**
-         * @brief Destroys the EffectInstance.
+         * @brief Default destructor.
          */
         virtual ~EffectInstance() = default;
 
         /**
-         * @brief Get the filter instance wrapped by this effect.
+         * @brief Gets the filter instance wrapped by this effect.
          *
          * @return The filter instance.
          */

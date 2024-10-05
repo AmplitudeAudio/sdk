@@ -17,7 +17,7 @@
 #ifndef _AM_CORE_COMMON_PLATFORMS_ANDROID_CONFIG_H
 #define _AM_CORE_COMMON_PLATFORMS_ANDROID_CONFIG_H
 
-// Enable Android Compilation
+/// Compiling for an Android platform
 #define AM_ANDROID_VERSION
 
 // Detect the platform CPU type

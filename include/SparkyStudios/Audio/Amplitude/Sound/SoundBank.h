@@ -28,44 +28,55 @@ namespace SparkyStudios::Audio::Amplitude
     class Engine;
 
     /**
-     * @brief Amplitude Sound Bank
+     * @brief Amplitude Sound Bank Asset.
      *
-     * A Sound Bank is a group of Amplitude assets, packed in a single binary. This way allows
+     * A Sound Bank is a group of Amplitude assets, registered in a single binary. This way allows
      * you to pack the needed data for your game as you want (ie. sound banks per levels). A sound bank
-     * need to be loaded by the Engine using @code Engine::LoadSoundBank() @endcode before to play sounds and
+     * need to be loaded by the Engine using `#!cpp Engine::LoadSoundBank()` before to play sounds and
      * trigger events inside it. When the sound bank data should be released (ie. changing the level, closing
-     * the game, etc.), you need to unload the sound bank using @code Engine::UnloadSoundBank() @endcode.
+     * the game, etc.), you need to unload the sound bank using `#!cpp Engine::UnloadSoundBank()`.
+     *
+     * @ingroup assets
      */
     class AM_API_PUBLIC SoundBank
     {
     public:
+        /**
+         * @brief Creates an uninitialized `SoundBank`.
+         */
         SoundBank();
-        explicit SoundBank(const std::string& source);
+
+        /**
+         * @brief Creates a sound bank from the given source file.
+         *
+         * @warning This constructor is for internal usage only.
+         */
+        explicit SoundBank(const AmString& source);
 
         /**
          * @brief Initializes the sound bank by loading all the packed data.
          *
-         * @param filename The path to the sound bank file.
-         * @param engine The engine instance in which load the sound bank.
+         * @param[in] filename The path to the sound bank file.
+         * @param[in] engine The engine instance in which load the sound bank.
          *
-         * @return true when the operation succeeds, false otherwise.
+         * @return `true` when the operation succeeds, `false` otherwise.
          */
         bool Initialize(const AmOsString& filename, Engine* engine);
 
         /**
          * @brief Initializes the sound bank by loading all the packed data.
          *
-         * @param fileData The sound bank file content.
-         * @param engine The engine instance in which load the sound bank.
+         * @param[in] fileData The sound bank file content.
+         * @param[in] engine The engine instance in which load the sound bank.
          *
-         * @return true when the operation succeeds, false otherwise.
+         * @return `true` when the operation succeeds, `false` otherwise.
          */
         bool InitializeFromMemory(const char* fileData, Engine* engine);
 
         /**
          * @brief Unloads the sound bank from the Engine.
          *
-         * @param engine The engine instance from which unload the sound bank.
+         * @param[in] engine The engine instance from which unload the sound bank.
          */
         void Deinitialize(Engine* engine);
 
@@ -91,7 +102,7 @@ namespace SparkyStudios::Audio::Amplitude
         [[nodiscard]] const SoundBankDefinition* GetSoundBankDefinition() const;
 
         /**
-         * @brief Get the references counter of this instance.
+         * @brief Gets the references counter of this instance.
          *
          * @return The references counter.
          */
@@ -100,8 +111,10 @@ namespace SparkyStudios::Audio::Amplitude
         /**
          * @brief Load the sound files referenced in the sound bank.
          *
-         * This method should usually not be called directly. It is called automatically by the Engine with
-         * the @code Engine::StartLoadSoundFiles() @endcode method.
+         * @param[in] engine The engine instance from which load the sound files.
+         *
+         * @warning This method should not be called directly. It is called automatically by the `Engine` with
+         * the `#!cpp Engine::StartLoadSoundFiles()` method.
          */
         void LoadSoundFiles(const Engine* engine);
 

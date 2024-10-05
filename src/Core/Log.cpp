@@ -33,51 +33,51 @@ namespace SparkyStudios::Audio::Amplitude
     void Logger::Debug(const char* file, int line, const AmString& message)
     {
 #ifdef AM_DEBUG
-        Log(eLML_DEBUG, file, line, message);
+        Log(eLogMessageLevel_Debug, file, line, message);
 #endif
     }
 
     void Logger::Info(const char* file, int line, const AmString& message)
     {
-        Log(eLML_INFO, file, line, message);
+        Log(eLogMessageLevel_Info, file, line, message);
     }
 
     void Logger::Warning(const char* file, int line, const AmString& message)
     {
-        Log(eLML_WARNING, file, line, message);
+        Log(eLogMessageLevel_Warning, file, line, message);
     }
 
     void Logger::Error(const char* file, int line, const AmString& message)
     {
-        Log(eLML_ERROR, file, line, message);
+        Log(eLogMessageLevel_Error, file, line, message);
     }
 
     void Logger::Critical(const char* file, int line, const AmString& message)
     {
-        Log(eLML_CRITICAL, file, line, message);
+        Log(eLogMessageLevel_Critical, file, line, message);
     }
 
     ConsoleLogger::ConsoleLogger(bool displayFileAndLine)
         : m_displayFileAndLine(displayFileAndLine)
     {}
 
-    void ConsoleLogger::Log(LogMessageLevel level, const char* file, int line, const AmString& message)
+    void ConsoleLogger::Log(eLogMessageLevel level, const char* file, int line, const AmString& message)
     {
         switch (level)
         {
-        case eLML_DEBUG:
+        case eLogMessageLevel_Debug:
             std::cout << "[DEBUG] ";
             break;
-        case eLML_INFO:
+        case eLogMessageLevel_Info:
             std::cout << "[INFO] ";
             break;
-        case eLML_WARNING:
+        case eLogMessageLevel_Warning:
             std::cout << "[WARNING] ";
             break;
-        case eLML_ERROR:
+        case eLogMessageLevel_Error:
             std::cout << "[ERROR] ";
             break;
-        case eLML_CRITICAL:
+        case eLogMessageLevel_Critical:
             std::cout << "[CRITICAL] ";
             break;
         }

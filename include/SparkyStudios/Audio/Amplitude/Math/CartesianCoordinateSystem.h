@@ -26,6 +26,8 @@ namespace SparkyStudios::Audio::Amplitude
      *
      * It's used to know which direction is positive along each axis, and also allows
      * Amplitude to convert incoming data to the internal coordinate system.
+     *
+     * @ingroup math
      */
     class AM_API_PUBLIC CartesianCoordinateSystem
     {
@@ -75,15 +77,15 @@ namespace SparkyStudios::Audio::Amplitude
             /**
              * @brief Constructs a converter from two cartesian coordinate systems.
              *
-             * @param from The source cartesian coordinate system.
-             * @param to The target cartesian coordinate system.
+             * @param[in] from The source cartesian coordinate system.
+             * @param[in] to The target cartesian coordinate system.
              */
             Converter(const CartesianCoordinateSystem& from, const CartesianCoordinateSystem& to);
 
             /**
              * @brief Converts a vector from the source coordinate system to the target coordinate system.
              *
-             * @param vector The vector to convert.
+             * @param[in] vector The vector to convert.
              *
              * @return A vector in the target coordinate system.
              */
@@ -92,7 +94,7 @@ namespace SparkyStudios::Audio::Amplitude
             /**
              * @brief Converts a quaternion from the source coordinate system to the target coordinate system.
              *
-             * @param quaternion The quaternion to convert.
+             * @param[in] quaternion The quaternion to convert.
              *
              * @return A quaternion in the target coordinate system.
              */
@@ -101,7 +103,7 @@ namespace SparkyStudios::Audio::Amplitude
             /**
              * @brief Converts a scalar from the source coordinate system to the target coordinate system.
              *
-             * @param scalar The scalar to convert.
+             * @param[in] scalar The scalar to convert.
              *
              * @return A scalar in the target coordinate system.
              */
@@ -110,7 +112,7 @@ namespace SparkyStudios::Audio::Amplitude
             /**
              * @brief Converts a vector from the target coordinate system to the source coordinate system.
              *
-             * @param vector The vector to convert.
+             * @param[in] vector The vector to convert.
              *
              * @return A vector in the source coordinate system.
              */
@@ -119,7 +121,7 @@ namespace SparkyStudios::Audio::Amplitude
             /**
              * @brief Converts a quaternion from the target coordinate system to the source coordinate system.
              *
-             * @param quaternion The quaternion to convert.
+             * @param[in] quaternion The quaternion to convert.
              *
              * @return A quaternion in the source coordinate system.
              */
@@ -128,7 +130,7 @@ namespace SparkyStudios::Audio::Amplitude
             /**
              * @brief Converts a scalar from the target coordinate system to the source coordinate system.
              *
-             * @param scalar The scalar to convert.
+             * @param[in] scalar The scalar to convert.
              *
              * @return A scalar in the source coordinate system.
              */
@@ -263,7 +265,7 @@ namespace SparkyStudios::Audio::Amplitude
         [[nodiscard]] AmVec3 Convert(const AmVec3& vector, const CartesianCoordinateSystem& from) const;
 
         /**
-         * @biref Converts a quaternion from one coordinate system to the current one.
+         * @brief Converts a quaternion from one coordinate system to the current one.
          *
          * @param quaternion The quaternion to convert.
          * @param from The original coordinate system of the quaternion.

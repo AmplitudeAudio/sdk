@@ -32,6 +32,8 @@ namespace SparkyStudios::Audio::Amplitude
      * This class represents the actual node executed within the
      * Amplimix pipeline. Each node instance has a unique ID assigned
      * to it, that matches the one provided in the pipeline asset.
+     *
+     * @ingroup mixer
      */
     class AM_API_PUBLIC NodeInstance
     {
@@ -41,31 +43,37 @@ namespace SparkyStudios::Audio::Amplitude
         /**
          * @brief Initializes the node instance.
          *
-         * @param id Unique identifier for the node instance.
-         * @param layer The Amplimix layer this node instance is currently associated with.
-         * @param pipeline The pipeline this node instance belongs to.
+         * @param[in] id Unique identifier for the node instance.
+         * @param[in] layer The Amplimix layer this node instance is currently associated with.
+         * @param[in] pipeline The pipeline this node instance belongs to.
          */
         virtual void Initialize(AmObjectID id, const AmplimixLayer* layer, const PipelineInstance* pipeline);
 
         /**
-         * @brief NodeInstance destructor.
+         * @brief Default destructor.
          */
         virtual ~NodeInstance() = default;
 
         /**
-         * @brief Returns the unique identifier for the node instance.
+         * @brief Gets the unique identifier for the node instance.
+         *
+         * @return The unique identifier for the node instance.
          */
         [[nodiscard]] AmObjectID GetId() const;
 
         /**
          * @brief Gets the Amplimix layer this node instance is currently associated with.
+         *
+         * @return The Amplimix layer this node instance is currently associated with.
+         *
+         * @see [AmplimixLayer](../AmplimixLayer/index.md)
          */
         [[nodiscard]] const AmplimixLayer* GetLayer() const;
 
         /**
          * @brief Resets the node instance's internal state.
          *
-         * This function should be called automatically by Amplimix, each time the pipeline is
+         * @warning This function should be called automatically by Amplimix, each time the pipeline is
          * about to be executed. Call it manually only if you know what you're doing.
          */
         virtual void Reset() = 0;
@@ -77,45 +85,53 @@ namespace SparkyStudios::Audio::Amplitude
     };
 
     /**
-     * @brief Interface for Amplimix pipeline nodes that can consume
-     * audio data from an input buffer.
+     * @brief Interface for Amplimix pipeline nodes that can consume audio data from an input buffer.
+     *
+     * @ingroup mixer
      */
     class AM_API_PUBLIC ConsumerNodeInstance
     {
     public:
         /**
-         * @brief Consumes audio data from the provider node
-         * specified with the call of @c ConsumerNodeInstance::Connect().
+         * @brief Consumes audio data from the provider node.
+         *
+         * The provider node should be  specified with the call of @ref Connect `Connect()`.
          */
         virtual void Consume() = 0;
 
         /**
-         * @brief Set the input provider node ID for this node.
+         * @brief Sets the input provider node ID for this node.
          *
-         * @param provider The provider node for this node.
+         * @param[in] provider The provider node for this node.
          */
         virtual void Connect(AmObjectID provider) = 0;
     };
 
     /**
-     * @brief Interface for Amplimix pipeline nodes that can provide
-     * audio data to an output buffer.
+     * @brief Interface for Amplimix pipeline nodes that can provide audio data to an output buffer.
+     *
+     * @ingroup mixer
      */
     class AM_API_PUBLIC ProviderNodeInstance
     {
     public:
         /**
-         * @brief Produces audio data ready to be taken as input of
-         * a consumer node.
+         * @brief Produces audio data ready to be taken as input from a consumer node.
          *
          * @return The output audio data.
+         *
+         * @see [AudioBuffer](../../core/AudioBuffer/index.md)
          */
         virtual const AudioBuffer* Provide() = 0;
     };
 
     /**
-     * @brief Base class for Amplimix pipeline nodes that can process
-     * audio data in-place.
+     * @brief Base class for Amplimix pipeline nodes that can process audio data in-place.
+     *
+     * @see [NodeInstance](../NodeInstance/index.md), [ConsumerNodeInstance](../ConsumerNodeInstance/index.md),
+     * [ProviderNodeInstance](../ProviderNodeInstance/index.md)
+     *
+     * @ingroup mixer
      */
     class AM_API_PUBLIC ProcessorNodeInstance
         : public NodeInstance
@@ -126,47 +142,47 @@ namespace SparkyStudios::Audio::Amplitude
         /**
          * @brief PropertyNodeInstance constructor.
          *
-         * @param processOnEmptyBuffer If true, the node will execute the Process() method
-         * even if the input buffer is @c nullptr.
+         * @param[in] processOnEmptyBuffer If `true`, the node will execute the @ref Process `Process()` method
+         * even if the input buffer is `nullptr`.
          */
         ProcessorNodeInstance(bool processOnEmptyBuffer = false);
 
         /**
-         * @brief ProcessorNodeInstance destructor.
+         * @brief Default destructor.
          */
         ~ProcessorNodeInstance() override = default;
 
         /**
-         * @brief Process input audio data and returns the output audio data.
+         * @brief Processes input audio data and returns the output audio data.
          *
-         * @param input The input audio data to process.
+         * @param[in] input The input audio data to process.
          *
          * @return The output audio data.
          */
         virtual const AudioBuffer* Process(const AudioBuffer* input) = 0;
 
         /**
-         * @copydoc ConsumerNodeInstance::Consume()
+         * @inherit
          */
         void Consume() final;
 
         /**
-         * @copydoc ConsumerNodeInstance::Connect()
+         * @inherit
          */
         void Connect(AmObjectID provider) final;
 
         /**
-         * @copydoc ProviderNodeInstance::Provide()
+         * @inherit
          */
         const AudioBuffer* Provide() final;
 
         /**
-         * @copydoc NodeInstance::Reset()
+         * @inherit
          */
         void Reset() override;
 
     protected:
-        AmObjectID m_provider;
+        AmObjectID m_provider; ///< The ID of the input provider node.
 
     private:
         const AudioBuffer* _processingBuffer;
@@ -175,9 +191,12 @@ namespace SparkyStudios::Audio::Amplitude
     };
 
     /**
-     * @brief Base class for Amplimix pipeline nodes that can mix
-     * audio data from multiple input buffers, and outputs the result
-     * of the mix.
+     * @brief Base class for Amplimix pipeline nodes that can mix audio data from multiple input buffers.
+     *
+     * @see [NodeInstance](../NodeInstance/index.md), [ConsumerNodeInstance](../ConsumerNodeInstance/index.md),
+     * [ProviderNodeInstance](../ProviderNodeInstance/index.md)
+     *
+     * @ingroup mixer
      */
     class AM_API_PUBLIC MixerNodeInstance
         : public NodeInstance
@@ -191,17 +210,17 @@ namespace SparkyStudios::Audio::Amplitude
         MixerNodeInstance();
 
         /**
-         * @brief MixerNodeInstance destructor.
+         * @brief Default destructor.
          */
         ~MixerNodeInstance() override = default;
 
         /**
-         * @copydoc ConsumerNodeInstance::Consume()
+         * @inherit
          */
         void Consume() final;
 
         /**
-         * @copydoc ConsumerNodeInstance::Connect()
+         * @inherit
          *
          * @note This method appends the given provider to the list of input
          * provider nodes. If the provider node already exists in the list, it
@@ -210,9 +229,9 @@ namespace SparkyStudios::Audio::Amplitude
         void Connect(AmObjectID provider) final;
 
         /**
-         * @brief Set the input provider nodes for this mixer node.
+         * @brief Sets the input provider nodes for this mixer node.
          *
-         * @param providers The provider nodes for this mixer node.
+         * @param[in] providers The provider nodes for this mixer node.
          *
          * @note This method clears the existing input provider nodes,
          * and replaces them with the provided ones.
@@ -220,17 +239,17 @@ namespace SparkyStudios::Audio::Amplitude
         void Connect(const std::vector<AmObjectID>& providers);
 
         /**
-         * @copydoc ProviderNodeInstance::Provide()
+         * @inherit
          */
         const AudioBuffer* Provide() final;
 
         /**
-         * @copydoc NodeInstance::Reset()
+         * @inherit
          */
         void Reset() override;
 
     protected:
-        std::vector<AmObjectID> m_providers;
+        std::vector<AmObjectID> m_providers; ///< The IDs of the input provider nodes.
 
     private:
         std::vector<const AudioBuffer*> _processingBuffers;
@@ -239,10 +258,14 @@ namespace SparkyStudios::Audio::Amplitude
     };
 
     /**
-     * @brief Class used to marks the input of the pipeline.
+     * @brief Class used to mark the input of the pipeline.
      *
-     * This node is automatically added to the pipeline when created. And thus
+     * @warning This node is automatically added to the pipeline when created. And thus
      * should not be manually added to the pipeline asset.
+     *
+     * @see [ProviderNodeInstance](../ProviderNodeInstance/index.md)
+     *
+     * @ingroup mixer
      */
     class AM_API_PUBLIC InputNodeInstance final
         : public NodeInstance
@@ -257,24 +280,24 @@ namespace SparkyStudios::Audio::Amplitude
         InputNodeInstance();
 
         /**
-         * @brief InputNodeInstance destructor.
+         * @brief Default destructor.
          */
         ~InputNodeInstance() override = default;
 
         /**
-         * @brief Set the input of the pipeline.
+         * @brief Sets the input of the pipeline.
          *
-         * @param buffer The buffer to set as the input.
+         * @param[in] buffer The buffer to set as the input.
          */
         void SetInput(AudioBuffer* buffer);
 
         /**
-         * @copydoc ProviderNodeInstance::Provide()
+         * @inherit
          */
         const AudioBuffer* Provide() override;
 
         /**
-         * @copydoc NodeInstance::Reset()
+         * @inherit
          */
         void Reset() override;
 
@@ -284,10 +307,14 @@ namespace SparkyStudios::Audio::Amplitude
     };
 
     /**
-     * @brief Class used to marks the output of the pipeline.
+     * @brief Class used to mark the output of the pipeline.
      *
-     * This node is automatically added to the pipeline when created. And thus
+     * @warning This node is automatically added to the pipeline when created. And thus
      * should not be manually added to the pipeline asset.
+     *
+     * @see [ConsumerNodeInstance](../ConsumerNodeInstance/index.md)
+     *
+     * @ingroup mixer
      */
     class AM_API_PUBLIC OutputNodeInstance final
         : public NodeInstance
@@ -302,29 +329,29 @@ namespace SparkyStudios::Audio::Amplitude
         OutputNodeInstance();
 
         /**
-         * @brief OutputNodeInstance destructor.
+         * @brief Default destructor.
          */
         ~OutputNodeInstance() override = default;
 
         /**
-         * @brief Set the output of the pipeline.
+         * @brief Sets the output of the pipeline.
          *
-         * @param buffer The buffer to set as the output.
+         * @param[in] buffer The buffer to set as the output.
          */
         void SetOutput(AudioBuffer* buffer);
 
         /**
-         * @copydoc ConsumerNodeInstance::Consume()
+         * @inherit
          */
         void Consume() override;
 
         /**
-         * @copydoc ConsumerNodeInstance::Connect()
+         * @inherit
          */
         void Connect(AmObjectID provider) override;
 
         /**
-         * @copydoc NodeInstance::Reset()
+         * @inherit
          */
         void Reset() override;
 
@@ -336,10 +363,13 @@ namespace SparkyStudios::Audio::Amplitude
     /**
      * @brief Base class for Amplimix pipeline nodes.
      *
-     * This class presents the basic structure to create Amplimix
-     * pipeline nodes. Each @c Node must be derived from this class
-     * and implement the @c Node::CreateInstance() and
-     * @c Node::DestroyInstance() methods.
+     * This class presents the basic structure to create Amplimix pipeline nodes. Each
+     * `Node` of your pipelines must be derived from this class and implement the @ref CreateInstance `CreateInstance()`
+     * and @ref DestroyInstance `DestroyInstance()` methods.
+     *
+     * @see [NodeInstance](../NodeInstance/index.md)
+     *
+     * @ingroup mixer
      */
     class AM_API_PUBLIC Node
     {
@@ -347,7 +377,7 @@ namespace SparkyStudios::Audio::Amplitude
         /**
          * @brief Node constructor.
          *
-         * @param name Name of the node. Should be unique within the pipeline.
+         * @param[in] name Name of the node. Should be unique within the pipeline.
          */
         Node(AmString name);
 
@@ -359,9 +389,9 @@ namespace SparkyStudios::Audio::Amplitude
         /**
          * @brief Creates a new instance of the node.
          *
-         * @param id Unique identifier for the new instance.
-         * @param layer The Amplimix layer associated with the new instance.
-         * @param pipeline The pipeline associated with the new instance.
+         * @param[in] id Unique identifier for the new instance.
+         * @param[in] layer The Amplimix layer associated with the new instance.
+         * @param[in] pipeline The pipeline associated with the new instance.
          *
          * @return A new instance of the node.
          */
@@ -370,7 +400,7 @@ namespace SparkyStudios::Audio::Amplitude
         /**
          * @brief Destroys the specified instance of the node.
          *
-         * @param instance Pointer to the instance to be destroyed.
+         * @param[in] instance Pointer to the instance to be destroyed.
          */
         virtual void DestroyInstance(NodeInstance* instance) const = 0;
 
@@ -382,14 +412,14 @@ namespace SparkyStudios::Audio::Amplitude
         /**
          * @brief Registers a new node.
          *
-         * @param node The node to add in the registry.
+         * @param[in] node The node to add in the registry.
          */
         static void Register(Node* node);
 
         /**
          * @brief Unregisters a node.
          *
-         * @param node The node to remove from the registry.
+         * @param[in] node The node to remove from the registry.
          */
         static void Unregister(const Node* node);
 
@@ -397,35 +427,35 @@ namespace SparkyStudios::Audio::Amplitude
          * @brief Creates a new instance of the the node with the given name
          * and returns its pointer. The returned pointer should be deleted using Node::Destruct().
          *
-         * @param name The name of the node.
+         * @param[in] name The name of the node.
          *
-         * @return The node with the given name, or NULL if none.
+         * @return The node with the given name, or `nullptr` if none.
          */
         static NodeInstance* Construct(const AmString& name);
 
         /**
          * @brief Destroys the given node instance.
          *
-         * @param name The name of the node.
-         * @param instance The node instance to destroy.
+         * @param[in] name The name of the node.
+         * @param[in] instance The node instance to destroy.
          */
         static void Destruct(const AmString& name, NodeInstance* instance);
 
         /**
          * @brief Locks the nodes registry.
          *
-         * This function is mainly used for internal purposes. Its
-         * called before the Engine initialization, to discard the
-         * registration of new nodes after the engine is fully loaded.
+         * @warning This function is mainly used for internal purposes. It's
+         * called before the `Engine` initialization, to discard the registration
+         * of new nodes after the engine is fully loaded.
          */
         static void LockRegistry();
 
         /**
          * @brief Unlocks the nodes registry.
          *
-         * This function is mainly used for internal purposes. Its
-         * called after the Engine deinitialization, to allow the
-         * registration of new divers after the engine is fully unloaded.
+         * @warning This function is mainly used for internal purposes. It's
+         * called after the `Engine` deinitialization, to allow the registration
+         * of new nodes after the engine is fully unloaded.
          */
         static void UnlockRegistry();
 
@@ -440,6 +470,8 @@ namespace SparkyStudios::Audio::Amplitude
          * @brief Look up a node by name.
          *
          * @return The node with the given name, or NULL if none.
+         *
+         * @internal
          */
         static Node* Find(const AmString& name);
     };

@@ -145,7 +145,7 @@ namespace SparkyStudios::Audio::Amplitude
         dest->assign(bytes + 1, 0);
 
         // Read the file into the buffer
-        file->Seek(0, eFSO_START);
+        file->Seek(0, eFileSeekOrigin_Start);
         const AmUInt32 len = file->Read(reinterpret_cast<AmUInt8Buffer>(&(*dest)[0]), bytes);
 
         return len == bytes && len > 0;
@@ -156,9 +156,9 @@ namespace SparkyStudios::Audio::Amplitude
         return config->mixer()->virtual_channels() + config->mixer()->active_channels();
     }
 
-    // Returns this channel to the free appropriate free list based on whether it's
+    // Returns this channel to the appropriate free list based on whether it's
     // backed by a real channel or not.
-    static void InsertIntoFreeList(EngineInternalState* state, ChannelInternalState* channel)
+    void InsertIntoFreeList(EngineInternalState* state, ChannelInternalState* channel)
     {
         channel->Remove();
         channel->Reset();
@@ -299,7 +299,7 @@ namespace SparkyStudios::Audio::Amplitude
         {
             const auto GetPluginName = plugin->get_function<const char*()>("PluginName");
             const auto GetPluginVersion = plugin->get_function<const char*()>("PluginVersion");
-            amLogInfo("LoadPlugin '%s' version: %s", GetPluginName(), GetPluginVersion());
+            amLogInfo("Loaded Plugin '%s' Version: %s", GetPluginName(), GetPluginVersion());
         }
 
         void* handle = plugin->native_handle();
@@ -655,7 +655,7 @@ namespace SparkyStudios::Audio::Amplitude
 
         // Create the internal engine state
         _state = ampoolnew(MemoryPoolKind::Engine, EngineInternalState);
-        _state->version = &Amplitude::Version();
+        _state->version = &Amplitude::GetVersion();
 
         // Load the audio driver
         if (config->driver())

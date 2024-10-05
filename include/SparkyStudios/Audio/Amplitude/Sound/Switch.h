@@ -24,6 +24,13 @@ namespace SparkyStudios::Audio::Amplitude
 {
     /**
      * @brief A switch state.
+     *
+     * A switch state is a single state that can be applied to a `SwitchContainer` to control which sounds are played.
+     * Only one state can be active at a time in the same `Switch` asset.
+     *
+     * @see [Switch](../../assets/Switch/index.md), [SwitchContainer](../../assets/SwitchContainer/index.md)
+     *
+     * @ingroup engine
      */
     struct AM_API_PUBLIC SwitchState
     {
@@ -42,60 +49,85 @@ namespace SparkyStudios::Audio::Amplitude
         /**
          * @brief Checks whether this switch state is valid.
          *
-         * @return @c true if the switch state is valid, @c false otherwise.
+         * @return `true` if the switch state is valid, `false` otherwise.
          */
         [[nodiscard]] bool Valid() const;
 
+        /**
+         * @brief Compares this switch state with another one for equality.
+         *
+         * @param[im] other The other switch state to compare with.
+         *
+         * @return `true` if the switch states are equal, `false` otherwise.
+         */
         bool operator==(const SwitchState& other) const;
+
+        /**
+         * @brief Compares this switch state with another one for inequality.
+         *
+         * @param[in] other The other switch state to compare with.
+         *
+         * @return `true` if the switch states are not equal, `false` otherwise.
+         */
         bool operator!=(const SwitchState& other) const;
     };
 
     /**
-     * @brief Amplitude Switch.
+     * @brief Amplitude Switch Asset.
      *
-     * A switch is a collection of states which can change the sound played from a SwitchContainer.
+     * A switch is a collection of states which can change the sounds played from a `SwitchContainer`.
      *
-     * For example, you can have a switch named "SurfaceType" which have "wood", "grass", "metal" and "water" as states. A
-     * SwitchContainer using this switch can group sounds per switch states, so when a state is active, all the sounds of
-     * that state are played.
+     * For example, you can have a switch named `SurfaceType` which have `wood`, `grass`, `metal` and `water` as states. A
+     * `SwitchContainer` using this switch can group sounds per switch states, so when a state is active, all the sounds of
+     * that state are played. Changing the state of a `Switch` will updated ALL the `SwitchContainer` objects that use this `Switch`.
      *
-     * The Switch is a shared object between sound sources. They are used only by SwitchContainer objects.
+     * The `Switch` is a shared object between sound sources. They are used only by `SwitchContainer` objects.
+     *
+     * @see [SwitchState](../../engine/SwitchState/index.md), [SwitchContainer](../../assets/SwitchContainer/index.md)
+     *
+     * @ingroup assets
      */
     class AM_API_PUBLIC Switch : public Asset<AmSwitchID>
     {
     public:
         /**
-         * @brief Get the current state of the switch.
+         * @brief Gets the current state of the switch.
          *
          * @return The current state of the switch.
          */
         [[nodiscard]] virtual const SwitchState& GetState() const = 0;
 
         /**
-         * @brief Set the current state of the switch.
+         * @brief Sets the current state of the switch.
          *
-         * @param state The state to apply to the switch.
+         * @note Changing the state of a `Switch` will updated ALL the `SwitchContainer` objects that use this `Switch`.
+         *
+         * @param[in] state The state to apply to the switch.
          */
         virtual void SetState(const SwitchState& state) = 0;
 
         /**
-         * @brief Set the current state of the switch using the state ID.
+         * @brief Sets the current state of the switch using the state ID.
          *
-         * @param id The ID of the state to apply. This ID should exist in the list
-         * of switch states.
+         * @note Changing the state of a `Switch` will updated ALL the `SwitchContainer` objects that use this `Switch`.
+         *
+         * @param[in] id The ID of the state to apply. This ID should exist in the list
+         * of registered switch states.
          */
         virtual void SetState(AmObjectID id) = 0;
 
         /**
-         * @brief Set the current state of the switch using the state name.
+         * @brief Sets the current state of the switch using the state name.
          *
-         * @param name The name of the state to apply. This name should exist in the
-         * list of switch states.
+         * @note Changing the state of a `Switch` will updated ALL the `SwitchContainer` objects that use this `Switch`.
+         *
+         * @param[in] name The name of the state to apply. This name should exist in the
+         * list of registered switch states.
          */
         virtual void SetState(const AmString& name) = 0;
 
         /**
-         * @brief Get the list of available SwitchStates in this Switch.
+         * @brief Gets the list of available SwitchStates in this Switch.
          *
          * @return The list of available SwitchStates.
          */

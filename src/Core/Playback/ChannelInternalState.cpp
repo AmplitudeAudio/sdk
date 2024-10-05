@@ -490,7 +490,7 @@ namespace SparkyStudios::Audio::Amplitude
                         continue;
 
                     FaderInstance* out = _switchContainer->GetFaderOut(item.m_id);
-                    if (out->GetState() == AM_FADER_STATE_STOPPED)
+                    if (out->GetState() == eFaderState_Stopped)
                         continue;
 
                     const AmReal32 gain = out->GetFromTime(Engine::GetInstance()->GetTotalTime());
@@ -501,7 +501,7 @@ namespace SparkyStudios::Audio::Amplitude
 
                     if (gain == 0.0f)
                     {
-                        out->SetState(AM_FADER_STATE_STOPPED);
+                        out->SetState(eFaderState_Stopped);
                         // Fading in transition complete. Now we can halt the channel layer
                         _realChannel.Halt(layer);
                     }
@@ -523,7 +523,7 @@ namespace SparkyStudios::Audio::Amplitude
                         continue;
 
                     FaderInstance* in = _switchContainer->GetFaderIn(item.m_id);
-                    if (in->GetState() == AM_FADER_STATE_STOPPED)
+                    if (in->GetState() == eFaderState_Stopped)
                         continue;
 
                     const AmReal32 gain = in->GetFromTime(Engine::GetInstance()->GetTotalTime());
@@ -533,7 +533,7 @@ namespace SparkyStudios::Audio::Amplitude
                         _realChannel.SetGain(gain, layer);
 
                     if (_gain - gain <= kEpsilon)
-                        in->SetState(AM_FADER_STATE_STOPPED);
+                        in->SetState(eFaderState_Stopped);
                 }
 
                 if (!isAtLeastOneFadeInRunning && !isAtLeastOneFadeOutRunning)
@@ -547,7 +547,7 @@ namespace SparkyStudios::Audio::Amplitude
         // Update the fading in animation if necessary
         if (_channelState == ChannelPlaybackState::FadingIn)
         {
-            if (_fader != nullptr && _fader->GetState() == AM_FADER_STATE_ACTIVE)
+            if (_fader != nullptr && _fader->GetState() == eFaderState_Active)
             {
                 const AmReal32 gain = _fader->GetFromTime(Engine::GetInstance()->GetTotalTime());
 
@@ -556,7 +556,7 @@ namespace SparkyStudios::Audio::Amplitude
 
                 if (_gain - gain <= kEpsilon)
                 {
-                    _fader->SetState(AM_FADER_STATE_STOPPED);
+                    _fader->SetState(eFaderState_Stopped);
 
                     // Fading in transition complete. Now we mark the channel as playing.
                     _channelState = ChannelPlaybackState::Playing;
@@ -576,7 +576,7 @@ namespace SparkyStudios::Audio::Amplitude
         // Update the fading out animation if necessary
         if (_channelState == ChannelPlaybackState::FadingOut)
         {
-            if (_fader != nullptr && _fader->GetState() == AM_FADER_STATE_ACTIVE)
+            if (_fader != nullptr && _fader->GetState() == eFaderState_Active)
             {
                 _gain = _fader->GetFromTime(Engine::GetInstance()->GetTotalTime());
 
@@ -585,7 +585,7 @@ namespace SparkyStudios::Audio::Amplitude
 
                 if (_gain == 0.0f)
                 {
-                    _fader->SetState(AM_FADER_STATE_STOPPED);
+                    _fader->SetState(eFaderState_Stopped);
 
                     // Fading out transition complete. Now we can halt or pause the channel.
                     if (_targetFadeOutState == ChannelPlaybackState::Stopped)

@@ -17,7 +17,7 @@
 #ifndef _AM_IMPLEMENTATION_AMBISONICS_AMBISONIC_BINAURALIZER_H
 #define _AM_IMPLEMENTATION_AMBISONICS_AMBISONIC_BINAURALIZER_H
 
-#include <SparkyStudios/Audio/Amplitude/Convolution/Convolver.h>
+#include <SparkyStudios/Audio/Amplitude/DSP/Convolver.h>
 
 #include <Ambisonics/AmbisonicDecoder.h>
 #include <Ambisonics/BFormat.h>

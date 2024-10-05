@@ -32,7 +32,7 @@ namespace SparkyStudios::Audio::Amplitude
             ampoolfree(MemoryPoolKind::Default, m_basePtr);
 
         if (size == 0)
-            return AM_ERROR_NO_ERROR;
+            return eErrorCode_Success;
 
         m_basePtr = nullptr;
         m_data = nullptr;
@@ -46,14 +46,14 @@ namespace SparkyStudios::Audio::Amplitude
 #endif
 
         if (m_basePtr == nullptr)
-            return AM_ERROR_OUT_OF_MEMORY;
+            return eErrorCode_OutOfMemory;
 
         m_data = reinterpret_cast<AmReal32Buffer>(m_basePtr);
 
         if (clear)
             Clear();
 
-        return AM_ERROR_NO_ERROR;
+        return eErrorCode_Success;
     }
 
     void AmAlignedReal32Buffer::Clear() const
@@ -120,19 +120,13 @@ namespace SparkyStudios::Audio::Amplitude
         Release();
     }
 
-    AmTinyAlignedReal32Buffer::AmTinyAlignedReal32Buffer()
-    {
-        AmUInt8Buffer basePtr = &m_actualData[0];
-        m_data = reinterpret_cast<AmReal32Buffer>(reinterpret_cast<AmSize>(basePtr) + (AM_SIMD_ALIGNMENT - 1) & ~(AM_SIMD_ALIGNMENT - 1));
-    }
-
     void SoundFormat::SetAll(
         AmUInt32 sampleRate,
         AmUInt16 numChannels,
         AmUInt32 bitsPerSample,
         AmUInt64 framesCount,
         AmUInt32 frameSize,
-        AM_SAMPLE_FORMAT sampleType)
+        eAudioSampleFormat sampleType)
     {
         _sampleRate = sampleRate;
         _numChannels = numChannels;

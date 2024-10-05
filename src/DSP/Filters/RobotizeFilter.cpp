@@ -30,7 +30,7 @@ namespace SparkyStudios::Audio::Amplitude
         m_frequency = frequency;
         m_waveform = waveform;
 
-        return AM_ERROR_NO_ERROR;
+        return eErrorCode_Success;
     }
 
     AmUInt32 RobotizeFilter::GetParamCount() const
@@ -50,9 +50,9 @@ namespace SparkyStudios::Audio::Amplitude
     AmUInt32 RobotizeFilter::GetParamType(AmUInt32 index) const
     {
         if (index == ATTRIBUTE_WAVEFORM)
-            return PARAM_INT;
+            return kParameterTypeInt;
 
-        return PARAM_FLOAT;
+        return kParameterTypeFloat;
     }
 
     AmReal32 RobotizeFilter::GetParamMax(AmUInt32 index) const

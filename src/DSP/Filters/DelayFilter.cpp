@@ -28,13 +28,13 @@ namespace SparkyStudios::Audio::Amplitude
     AmResult DelayFilter::Initialize(AmReal32 delay, AmReal32 decay, AmReal32 delayStart)
     {
         if (delay <= 0 || decay <= 0)
-            return AM_ERROR_INVALID_PARAMETER;
+            return eErrorCode_InvalidParameter;
 
         _delay = delay;
         _decay = decay;
         _delayStart = delayStart;
 
-        return AM_ERROR_NO_ERROR;
+        return eErrorCode_Success;
     }
 
     AmUInt32 DelayFilter::GetParamCount() const
@@ -55,9 +55,9 @@ namespace SparkyStudios::Audio::Amplitude
     AmUInt32 DelayFilter::GetParamType(AmUInt32 index) const
     {
         if (index == ATTRIBUTE_DELAY_START)
-            return PARAM_BOOL;
+            return kParameterTypeBool;
 
-        return PARAM_FLOAT;
+        return kParameterTypeFloat;
     }
 
     AmReal32 DelayFilter::GetParamMax(AmUInt32 index) const

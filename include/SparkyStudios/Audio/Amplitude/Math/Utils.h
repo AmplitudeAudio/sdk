@@ -26,6 +26,11 @@
 
 namespace SparkyStudios::Audio::Amplitude
 {
+    /**
+     * @brief A structure containing control points for a Bezier curve.
+     *
+     * @ingroup math
+     */
     struct BeizerCurveControlPoints
     {
         /**
@@ -54,18 +59,49 @@ namespace SparkyStudios::Audio::Amplitude
         AmInt32 state;
     } gLCG = { 4321 };
 
-    AM_API_PRIVATE AM_INLINE float AmDitherReal32(const AmReal32 ditherMin, const AmReal32 ditherMax)
+    /**
+     * @brief Generates a random number between `ditherMin` and `ditherMax`.
+     *
+     * @param[in] ditherMin The minimum value for the random number.
+     * @param[in] ditherMax The maximum value for the random number.
+     *
+     * @return A random number between `ditherMin` and `ditherMax`.
+     *
+     * @ingroup math
+     */
+    AM_API_PRIVATE AM_INLINE AmReal32 AmDitherReal32(const AmReal32 ditherMin, const AmReal32 ditherMax)
     {
         gLCG.state = (AM_LCG_A * gLCG.state + AM_LCG_C) % AM_LCG_M;
         const AmReal32 x = gLCG.state / (double)0x7FFFFFFF;
         return ditherMin + x * (ditherMax - ditherMin);
     }
 
+    /**
+     * @brief Converts a 32-bit floating-point audio sample to a fixed-point representation.
+     *
+     * @param[in] x The 32-bit floating-point audio sample to convert.
+     *
+     * @return The fixed-point representation of the input 32-bit floating-point audio sample.
+     *
+     * @ingroup math
+     */
     AM_API_PRIVATE AM_INLINE AmInt32 AmFloatToFixedPoint(const AmReal32 x)
     {
         return static_cast<AmInt32>(x * kAmFixedPointUnit);
     }
 
+    /**
+     * @brief Converts a 16-bit signed integer audio sample to a 32-bit floating-point representation.
+     *
+     * @param[in] x The 16-bit signed integer audio sample to convert.
+     *
+     * @return The 32-bit floating-point representation of the input 16-bit signed integer audio sample.
+     *
+     * @tip For more accurate conversion, the SDK should be compiled with the `AM_ACCURATE_CONVERSION`
+     * macro defined.
+     *
+     * @ingroup math
+     */
     AM_API_PRIVATE AM_INLINE AmReal32 AmInt16ToReal32(const AmInt16 x)
     {
         auto y = static_cast<AmReal32>(x);
@@ -83,6 +119,18 @@ namespace SparkyStudios::Audio::Amplitude
         return y;
     }
 
+    /**
+     * @brief Converts a 32-bit signed integer audio sample to a 32-bit floating-point representation.
+     *
+     * @param[in] x The 32-bit signed integer audio sample to convert.
+     *
+     * @return The 32-bit floating-point representation of the input 32-bit signed integer audio sample.
+     *
+     * @tip For more accurate conversion, the SDK should be compiled with the `AM_ACCURATE_CONVERSION`
+     * macro defined.
+     *
+     * @ingroup math
+     */
     AM_API_PRIVATE AM_INLINE AmReal32 AmInt32ToReal32(const AmInt32 x)
     {
         auto y = static_cast<AmReal32>(x);
@@ -100,6 +148,19 @@ namespace SparkyStudios::Audio::Amplitude
         return y;
     }
 
+    /**
+     * @brief Converts a 32-bit floating-point audio sample to a 16-bit signed integer representation.
+     *
+     * @param[in] x The 32-bit floating-point audio sample to convert.
+     * @param[in] dithering If `true`, adds a dithering noise to the output.
+     *
+     * @return The 16-bit signed integer representation of the input 32-bit floating-point audio sample.
+     *
+     * @tip For more accurate conversion, the SDK should be compiled with the `AM_ACCURATE_CONVERSION`
+     * macro defined.
+     *
+     * @ingroup math
+     */
     AM_API_PRIVATE AM_INLINE AmInt16 AmReal32ToInt16(const AmReal32 x, bool dithering = false)
     {
         AmReal32 y = x;
@@ -125,6 +186,19 @@ namespace SparkyStudios::Audio::Amplitude
         return static_cast<AmInt16>(y);
     }
 
+    /**
+     * @brief Computes the Catmull-Rom interpolation value at a given time `t` between four points.
+     *
+     * @param[in] t The time value between 0 and 1.
+     * @param[in] p0 The first point.
+     * @param[in] p1 The second point.
+     * @param[in] p2 The third point.
+     * @param[in] p3 The fourth point.
+     *
+     * @return The Catmull-Rom interpolation value at the given time `t`.
+     *
+     * @ingroup math
+     */
     AM_API_PRIVATE AM_INLINE AmReal32
     CatmullRom(const AmReal32 t, const AmReal32 p0, const AmReal32 p1, const AmReal32 p2, const AmReal32 p3)
     {
@@ -138,6 +212,19 @@ namespace SparkyStudios::Audio::Amplitude
         // clang-format on
     }
 
+    /**
+     * @brief Computes the Doppler factor for a sound source at a given location.
+     *
+     * @param[in] locationDelta The distance vector from the listener to the sound source.
+     * @param[in] sourceVelocity The velocity of the sound source.
+     * @param[in] listenerVelocity The velocity of the listener.
+     * @param[in] soundSpeed The speed of sound.
+     * @param[in] dopplerFactor The Doppler factor.
+     *
+     * @return The computed Doppler factor.
+     *
+     * @ingroup math
+     */
     AM_API_PRIVATE AM_INLINE AmReal32 ComputeDopplerFactor(
         const AmVec3& locationDelta,
         const AmVec3& sourceVelocity,
@@ -166,9 +253,13 @@ namespace SparkyStudios::Audio::Amplitude
     /**
      * @brief Returns the next power of 2 of a given number.
      *
-     * @param val The number.
+     * @tparam T An integer type, a floating-point type, or a any other type where operator *= is defined.
+     *
+     * @param[in] val The number.
      *
      * @return The next power of 2.
+     *
+     * @ingroup math
      */
     template<typename T>
     AM_API_PRIVATE AM_INLINE T NextPowerOf2(const T& val)
@@ -183,11 +274,14 @@ namespace SparkyStudios::Audio::Amplitude
     /**
      * @brief Computes the value base^exp using the squared exponentiation method.
      *
-     * @tparam T An integer type, a floating-point type, or a any other type where operatror *= is defined.
-     * @param base Input of the power function.
-     * @param exp The exponent of the power function. Must be non-negative.
+     * @tparam T An integer type, a floating-point type, or a any other type where operator *= is defined.
+
+     * @param[in] base Input of the power function.
+     * @param[in] exp The exponent of the power function. Must be non-negative.
      *
      * @return The result of raising the base to the power of the exponent.
+     *
+     * @ingroup math
      */
     template<typename T>
     AM_API_PRIVATE AM_INLINE T IntegerPow(T base, AmInt32 exp)
@@ -214,11 +308,13 @@ namespace SparkyStudios::Audio::Amplitude
     /**
      * @brief Returns a direction vector relative to a given position and rotation.
      *
-     * @param originPosition Origin position of the direction.
-     * @param originRotation Origin rotation of the direction.
-     * @param position Target position of the direction.
+     * @param[in] originPosition Origin position of the direction.
+     * @param[in] originRotation Origin rotation of the direction.
+     * @param[in] position Target position of the direction.
      *
      * @return A relative direction vector (not normalized).
+     *
+     * @ingroup math
      */
     AM_API_PRIVATE AM_INLINE AmVec3 GetRelativeDirection(const AmVec3& originPosition, const AmQuat& originRotation, const AmVec3& position)
     {
@@ -228,10 +324,12 @@ namespace SparkyStudios::Audio::Amplitude
     /**
      * @brief Finds the greatest common divisor (GCD) of two integers.
      *
-     * @param a First integer.
-     * @param b Second integer.
+     * @param[in] a First integer.
+     * @param[in] b Second integer.
      *
      * @return The greatest common divisor of a and b.
+     *
+     * @ingroup math
      */
     AM_API_PRIVATE AM_INLINE AmInt64 FindGCD(AmInt64 a, AmInt64 b)
     {

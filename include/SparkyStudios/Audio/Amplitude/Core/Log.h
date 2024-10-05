@@ -19,6 +19,8 @@
 
 /**
  * @brief The global logger instance.
+ *
+ * @ingroup core
  */
 #define amLogger SparkyStudios::Audio::Amplitude::Logger::GetLogger()
 
@@ -28,6 +30,8 @@
  * @param _level_ The level of the log message.
  * @param _message_ The message to log.
  * @param ... The arguments to format the message with.
+ *
+ * @ingroup core
  */
 #define amLog(_level_, _message_, ...)                                                                                                     \
     if (amLogger != nullptr)                                                                                                               \
@@ -44,6 +48,8 @@
  *
  * @param _message_ The message to log.
  * @param ... The arguments to format the message with.
+ *
+ * @ingroup core
  */
 #define amLogDebug(_message_, ...) amLog(Debug, _message_, ##__VA_ARGS__)
 
@@ -52,6 +58,8 @@
  *
  * @param _message_ The message to log.
  * @param ... The arguments to format the message with.
+ *
+ * @ingroup core
  */
 #define amLogInfo(_message_, ...) amLog(Info, _message_, ##__VA_ARGS__)
 
@@ -60,6 +68,8 @@
  *
  * @param _message_ The message to log.
  * @param ... The arguments to format the message with.
+ *
+ * @ingroup core
  */
 #define amLogWarning(_message_, ...) amLog(Warning, _message_, ##__VA_ARGS__)
 
@@ -68,6 +78,8 @@
  *
  * @param _message_ The message to log.
  * @param ... The arguments to format the message with.
+ *
+ * @ingroup core
  */
 #define amLogError(_message_, ...) amLog(Error, _message_, ##__VA_ARGS__)
 
@@ -76,6 +88,8 @@
  *
  * @param _message_ The message to log.
  * @param ... The arguments to format the message with.
+ *
+ * @ingroup core
  */
 #define amLogCritical(_message_, ...) amLog(Critical, _message_, ##__VA_ARGS__)
 
@@ -85,14 +99,16 @@ namespace SparkyStudios::Audio::Amplitude
      * @brief The level of a log message.
      *
      * This is used to determine the importance of a log message.
+     *
+     * @ingroup core
      */
-    enum LogMessageLevel : AmUInt8
+    enum eLogMessageLevel : AmUInt8
     {
-        eLML_DEBUG = 0,
-        eLML_INFO = 1,
-        eLML_WARNING = 2,
-        eLML_ERROR = 3,
-        eLML_CRITICAL = 4,
+        eLogMessageLevel_Debug = 0, ///< Debug messages.
+        eLogMessageLevel_Info = 1, ///< Informational messages.
+        eLogMessageLevel_Warning = 2, ///< Warning messages.
+        eLogMessageLevel_Error = 3, ///< Error messages.
+        eLogMessageLevel_Critical = 4, ///< Critical messages.
     };
 
     /**
@@ -100,21 +116,26 @@ namespace SparkyStudios::Audio::Amplitude
      *
      * Base class used to perform logging. Implementations of this class have the ability to display or store
      * log messages wherever they are needed.
+     *
+     * @ingroup core
      */
     class AM_API_PUBLIC Logger
     {
     public:
+        /**
+         * @brief Default destructor.
+         */
         virtual ~Logger() = default;
 
         /**
-         * @brief Sets the logger instance to use when calling @c amLogger
+         * @brief Sets the logger instance to use when calling `amLogger`
          *
-         * @param loggerInstance The logger instance.
+         * @param[in] loggerInstance The logger instance.
          */
         static void SetLogger(Logger* loggerInstance);
 
         /**
-         * @brief Gets the logger instance to use when calling @c amLogger
+         * @brief Gets the logger instance to use when calling `amLogger`
          *
          * @return The logger instance.
          */
@@ -123,45 +144,45 @@ namespace SparkyStudios::Audio::Amplitude
         /**
          * @brief Logs a debug message.
          *
-         * @param file The file where the message was logged.
-         * @param line The line where the message was logged.
-         * @param message The message to log.
+         * @param[in] file The file where the message was logged.
+         * @param[in] line The line where the message was logged.
+         * @param[in] message The message to log.
          */
         void Debug(const char* file, int line, const AmString& message);
 
         /**
          * @brief Logs an informational message.
          *
-         * @param file The file where the message was logged.
-         * @param line The line where the message was logged.
-         * @param message The message to log.
+         * @param[in] file The file where the message was logged.
+         * @param[in] line The line where the message was logged.
+         * @param[in] message The message to log.
          */
         void Info(const char* file, int line, const AmString& message);
 
         /**
          * @brief Logs a warning message.
          *
-         * @param file The file where the message was logged.
-         * @param line The line where the message was logged.
-         * @param message The message to log.
+         * @param[in] file The file where the message was logged.
+         * @param[in] line The line where the message was logged.
+         * @param[in] message The message to log.
          */
         void Warning(const char* file, int line, const AmString& message);
 
         /**
          * @brief Logs an error message.
          *
-         * @param file The file where the message was logged.
-         * @param line The line where the message was logged.
-         * @param message The message to log.
+         * @param[in] file The file where the message was logged.
+         * @param[in] line The line where the message was logged.
+         * @param[in] message The message to log.
          */
         void Error(const char* file, int line, const AmString& message);
 
         /**
          * @brief Logs a critical message.
          *
-         * @param file The file where the message was logged.
-         * @param line The line where the message was logged.
-         * @param message The message to log.
+         * @param[in] file The file where the message was logged.
+         * @param[in] line The line where the message was logged.
+         * @param[in] message The message to log.
          */
         void Critical(const char* file, int line, const AmString& message);
 
@@ -169,29 +190,41 @@ namespace SparkyStudios::Audio::Amplitude
         /**
          * @brief Logs a message with the given level.
          *
-         * @param level The level of the log message.
-         * @param file The file where the message was logged.
-         * @param line The line where the message was logged.
-         * @param message The message to log.
+         * @param[in] level The level of the log message.
+         * @param[in] file The file where the message was logged.
+         * @param[in] line The line where the message was logged.
+         * @param[in] message The message to log.
          */
-        virtual void Log(LogMessageLevel level, const char* file, int line, const AmString& message) = 0;
+        virtual void Log(eLogMessageLevel level, const char* file, int line, const AmString& message) = 0;
     };
 
     /**
      * @brief The console logger class.
      *
-     * This class logs messages to the console.
+     * This class logs messages to the console or terminal.
+     *
+     * @ingroup core
      */
     class AM_API_PUBLIC ConsoleLogger final : public Logger
     {
     public:
+        /**
+         * @brief Constructs a new console logger.
+         *
+         * @param[in] displayFileAndLine Whether to display the file and line number in the log messages.
+         */
         explicit ConsoleLogger(bool displayFileAndLine = true);
-        ~ConsoleLogger() override = default;
 
         /**
-         * @copydoc Logger::Log
+         * @brief Destructor.
          */
-        void Log(LogMessageLevel level, const char* file, int line, const AmString& message) override;
+        ~ConsoleLogger() override = default;
+
+    protected:
+        /**
+         * @inherit
+         */
+        void Log(eLogMessageLevel level, const char* file, int line, const AmString& message) override;
 
     private:
         bool m_displayFileAndLine = true;

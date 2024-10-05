@@ -26,11 +26,16 @@
 namespace SparkyStudios::Audio::Amplitude
 {
     /**
-     * @brief The SoundObject class is the base class for all sound objects.
+     * @brief Base class for Amplitude sound objects.
+     *
+     * @ingroup engine
      */
     class AM_API_PUBLIC SoundObject
     {
     public:
+        /**
+         * @brief Default destructor.
+         */
         virtual ~SoundObject() = default;
 
         /**
@@ -55,21 +60,21 @@ namespace SparkyStudios::Audio::Amplitude
         [[nodiscard]] virtual const RtpcValue& GetPriority() const = 0;
 
         /**
-         * @brief Get the Effect object associated with this sound object.
+         * @brief Gets the Effect object associated with this sound object.
          *
          * @return The Effect object.
          */
         [[nodiscard]] virtual const Effect* GetEffect() const = 0;
 
         /**
-         * @brief Get the Attenuation object associated with this sound object.
+         * @brief Gets the Attenuation object associated with this sound object.
          *
          * @return The Attenuation object.
          */
         [[nodiscard]] virtual const Attenuation* GetAttenuation() const = 0;
 
         /**
-         * @brief Return the bus this sound object will play on.
+         * @brief Returns the bus this sound object will play on.
          *
          * @return The bus this sound object will play on.
          */

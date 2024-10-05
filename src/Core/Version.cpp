@@ -35,7 +35,7 @@ namespace SparkyStudios::Audio::Amplitude
     };
     // clang-format on
 
-    const struct Version& Version()
+    const struct Version& GetVersion()
     {
         return kVersion;
     }

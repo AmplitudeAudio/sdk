@@ -26,10 +26,10 @@ namespace SparkyStudios::Audio::Amplitude
     AmResult BassBoostFilter::Initialize(AmReal32 aBoost)
     {
         if (aBoost < 0)
-            return AM_ERROR_INVALID_PARAMETER;
+            return eErrorCode_InvalidParameter;
 
         m_boost = aBoost;
-        return AM_ERROR_NO_ERROR;
+        return eErrorCode_Success;
     }
 
     AmUInt32 BassBoostFilter::GetParamCount() const
@@ -47,7 +47,7 @@ namespace SparkyStudios::Audio::Amplitude
 
     AmUInt32 BassBoostFilter::GetParamType(AmUInt32 index) const
     {
-        return PARAM_FLOAT;
+        return kParameterTypeFloat;
     }
 
     AmReal32 BassBoostFilter::GetParamMax(AmUInt32 index) const

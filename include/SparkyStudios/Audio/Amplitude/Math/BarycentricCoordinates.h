@@ -23,18 +23,20 @@ namespace SparkyStudios::Audio::Amplitude
 {
     /**
      * @brief Represents barycentric coordinates between a point and 3 vertices of a triangle.
+     *
+     * @ingroup math
      */
     struct BarycentricCoordinates
     {
         /**
          * @brief Computes the barycentric coordinates of the intersection of a ray with a triangle.
          *
-         * @param rayOrigin The origin of the ray.
-         * @param rayDirection The direction of the ray.
-         * @param triangle The vertices of the triangle.
-         * @param result The result of the intersection.
+         * @param[in] rayOrigin The origin of the ray.
+         * @param[in] rayDirection The direction of the ray.
+         * @param[in] triangle The vertices of the triangle.
+         * @param[out] result The result of the intersection.
          *
-         * @return @c true if the ray intersects the triangle, @c false otherwise.
+         * @return `true` if the ray intersects the triangle, `false` otherwise.
          */
         static bool RayTriangleIntersection(
             const AmVec3& rayOrigin, const AmVec3& rayDirection, const std::array<AmVec3, 3>& triangle, BarycentricCoordinates& result);
@@ -45,17 +47,17 @@ namespace SparkyStudios::Audio::Amplitude
         BarycentricCoordinates();
 
         /**
-         * @brief Computes barcentric coordinates from a position and a triangle.
+         * @brief Computes barycentric coordinates from a position and a triangle.
          *
-         * @param position The position of the intersection.
-         * @param triangle The triangle.
+         * @param[in] position The position of the intersection.
+         * @param[in] triangle The triangle.
          */
         BarycentricCoordinates(const AmVec3& position, const std::array<AmVec3, 3>& triangle);
 
         /**
          * @brief Checks whether the coordinates are valid.
          *
-         * @return @c true if the coordinates are valid, @c false otherwise.
+         * @return `true` if the coordinates are valid, `false` otherwise.
          */
         [[nodiscard]] bool IsValid() const;
 

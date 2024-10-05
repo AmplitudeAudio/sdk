@@ -93,7 +93,7 @@ namespace SparkyStudios::Audio::Amplitude
         return joined;
     }
 
-    std::shared_ptr<File> PackageFileSystem::OpenFile(const AmOsString& path, FileOpenMode mode) const
+    std::shared_ptr<File> PackageFileSystem::OpenFile(const AmOsString& path, eFileOpenMode mode) const
     {
         if (!_valid)
             return nullptr;
@@ -169,7 +169,7 @@ namespace SparkyStudios::Audio::Amplitude
             }
 
             // Compression Algorithm
-            pFileSystem->_header.m_CompressionAlgorithm = static_cast<PackageFileCompressionAlgorithm>(pFileSystem->_packageFile->Read8());
+            pFileSystem->_header.m_CompressionAlgorithm = static_cast<ePackageFileCompressionAlgorithm>(pFileSystem->_packageFile->Read8());
 
             // Item Descriptions
             if (const AmSize itemsCount = pFileSystem->_packageFile->Read64(); itemsCount > 0)

@@ -24,144 +24,173 @@ namespace SparkyStudios::Audio::Amplitude
     class ListenerInternalState;
 
     /**
-     * @brief An object whose distance from sounds determines their gain.
+     * @brief A object which can render sound sources.
      *
-     * The Listener class is a lightweight reference to a ListenerInternalState
-     * which is managed by the Engine. Multiple Listener objects may point to
+     * The `Listener` class is a lightweight reference to a `ListenerInternalState`
+     * which is managed by the `Engine`. Multiple `Listener` objects may point to
      * the same underlying data.
+     *
+     * @ingroup engine
      */
     class AM_API_PUBLIC Listener
     {
     public:
         /**
-         * @brief Construct an uninitialized Listener.
+         * @brief Construct an uninitialized `Listener`.
          *
-         * An uninitialized Listener cannot have its location set or queried.
-         * To initialize the Listener, use <code>Engine::AddListener();</code>.
+         * An uninitialized `Listener` cannot have its location set or queried, nor
+         * render sound sources.
+         *
+         * To create an initialized `Listener`, use the `AddListener()` method of the
+         * `Engine` instance.
+         * ```cpp
+         * amEngine->AddListener(1234); // You should provide an unique ID
+         * ```
          */
         Listener();
 
+        /**
+         * @brief Creates a wrapper instance over the provided state.
+         *
+         * @param[in] state The internal state to wrap.
+         *
+         * @warning This constructor is for internal usage only.
+         */
         explicit Listener(ListenerInternalState* state);
 
         /**
-         * @brief Deinitialize this Listener.
+         * @brief Uninitializes this `Listener`.
          *
          * Note that this does not destroy the internal state it references,
-         * it just removes this reference to it. To destroy the Listener,
-         * use <code>Engine::RemoveListener();</code>.
+         * it just removes this reference to it.
+         *
+         * To completely destroy the `Listener`, use `RemoveListener()` method
+         * of the `Engine` instance.
+         * ```cpp
+         * amEngine->RemoveListener(1234); // You should provide the listener ID
+         * ```
          */
         void Clear();
 
         /**
-         * @brief Checks whether this Listener has been initialized.
+         * @brief Checks whether this `Listener` has been initialized.
          *
-         * @return bool true if this Listener has been initialized.
+         * @return `true` if this `Listener` is initialized, `false` otherwise.
          */
         [[nodiscard]] bool Valid() const;
 
         /**
-         * @brief Gets the ID of this Listener in game.
+         * @brief Gets the ID of this `Listener`.
          *
-         * @return The game Listener ID.
+         * @return The `Listener` ID.
          */
         [[nodiscard]] AmListenerID GetId() const;
 
         /**
-         * @brief Gets the velocity of the Listener.
+         * @brief Gets the velocity of the `Listener`.
          *
-         * @return The Listener's velocity.
+         * @return The listener's velocity.
          */
         [[nodiscard]] const AmVec3& GetVelocity() const;
 
         /**
-         * @brief Returns the location of this Listener.
+         * @brief Gets the location of this `Listener`.
          *
-         * @return AmVec3 The location of this Listener.
+         * @return The location of this `Listener`.
          */
         [[nodiscard]] const AmVec3& GetLocation() const;
 
         /**
-         * @brief Set the location of this Listener.
+         * @brief Sets the location of this `Listener`.
          *
-         * @param location The new location of this Listener.
+         * @param[in] location The new location of this `Listener`.
          */
         void SetLocation(const AmVec3& location) const;
 
         /**
-         * @brief Get the direction vector of the Listener.
+         * @brief Gets the direction vector of the `Listener`.
          *
          * @return The direction vector.
          */
         [[nodiscard]] AmVec3 GetDirection() const;
 
         /**
-         * @brief Get the up vector of the Listener.
+         * @brief Gets the up vector of the `Listener`.
          *
          * @return The up vector.
          */
         [[nodiscard]] AmVec3 GetUp() const;
 
         /**
-         * @brief Set the location, direction and up vector of this Listener.
+         * @brief Sets the location, direction and up vector of this `Listener`.
          *
-         * @param orientation The new orientation of this Listener.
+         * @param[in] orientation The new orientation of this `Listener`.
          */
         void SetOrientation(const Orientation& orientation) const;
 
         /**
-         * @brief Get the orientation of the Listener.
+         * @brief Gets the orientation of the `Listener`.
          *
-         * @return The orientation of this Listener.
+         * @return The orientation of this `Listener`.
          */
         [[nodiscard]] Orientation GetOrientation() const;
 
         /**
-         * @brief Sets the directivity and sharpness of Listener. This affects how sounds are perceived
-         * by the Listener.
+         * @brief Sets the directivity and sharpness of `Listener`. This affects how sounds are perceived
+         * by the `Listener`.
          *
-         * @param directivity The directivity of the listener, in the range [0, 1].
-         * @param sharpness The directivity sharpness of the listener, in the range [1, +INF].
+         * @param[in] directivity The directivity of the listener, in the range [0, 1].
+         * @param[in] sharpness The directivity sharpness of the listener, in the range [1, +INF].
          * Increasing this value increases the directivity towards the front of the listener.
          */
         void SetDirectivity(AmReal32 directivity, AmReal32 sharpness) const;
 
         /**
-         * @brief Gets the directivity of sounds played by this Entity.
+         * @brief Gets the directivity of sounds played by this `Listener`.
          *
          * @return The directivity of sound sources.
          */
         [[nodiscard]] AmReal32 GetDirectivity() const;
 
         /**
-         * @brief Gets the directivity sharpness of sounds played by this Entity.
+         * @brief Gets the directivity sharpness of sounds played by this `Listener`.
          *
-         * @return The directivity sharpness of sounds played by this Entity.
+         * @return The directivity sharpness of sounds played by this `Listener`.
          */
         [[nodiscard]] AmReal32 GetDirectivitySharpness() const;
 
         /**
-         * @brief Gets the inverse matrix of the Listener.
+         * @brief Gets the inverse matrix of the `Listener`.
          *
-         * You can use this matrix to transform 3D global space into Listener space.
+         * You can use this matrix to convert locations from global space to `Listener` space.
          */
         [[nodiscard]] const AmMat4& GetInverseMatrix() const;
 
         /**
-         * @brief Update the state of this Listener.
+         * @brief Update the state of this `Listener`.
          *
-         * This method is called automatically by the Engine
-         * on each frames.
+         * This method is called automatically by the `Engine`
+         * on each frames to update the internal state of the `Listener`
+         *
+         * @warning This method is for internal usage only.
          */
         void Update() const;
 
         /**
          * @brief Returns the internal state of this Listener.
          *
-         * @return ListenerInternalState*
+         * @return The `Listener` internal state.
+         *
+         * @warning This method is for internal usage only.
          */
         [[nodiscard]] ListenerInternalState* GetState() const;
 
     private:
+        /**
+         * @brief The internal state of the listener.
+         *
+         * @internal
+         */
         ListenerInternalState* _state;
     };
 } // namespace SparkyStudios::Audio::Amplitude

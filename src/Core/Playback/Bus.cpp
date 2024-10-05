@@ -18,6 +18,14 @@
 
 namespace SparkyStudios::Audio::Amplitude
 {
+    Bus::Bus()
+        : _state(nullptr)
+    {}
+
+    Bus::Bus(BusInternalState* state)
+        : _state(state)
+    {}
+
     void Bus::Clear()
     {
         _state = nullptr;
