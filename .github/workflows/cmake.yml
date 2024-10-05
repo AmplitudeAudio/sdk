@@ -77,9 +77,9 @@ jobs:
           echo github.event_name: ${{ github.event_name }}
 
       - name: Setup vcpkg
-        uses: lukka/run-vcpkg@v11.2
+        uses: lukka/run-vcpkg@v11.5
         with:
-          vcpkgGitCommitId: 76d153790caf0592fce8fc4484aa6db18c7d00d4
+          vcpkgGitCommitId: 7adc2e4d49e8d0efc07a369079faa6bc3dbb90f3
           doNotCache: false
 
       - name: Find flatc version
