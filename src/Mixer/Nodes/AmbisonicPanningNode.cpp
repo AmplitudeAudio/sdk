@@ -22,7 +22,7 @@ namespace SparkyStudios::Audio::Amplitude
     AmbisonicPanningNodeInstance::AmbisonicPanningNodeInstance()
     {
         const ePanningMode mode = Engine::GetInstance()->GetPanningMode();
-        const AmUInt32 order = AM_MAX(static_cast<AmUInt32>(mode), 1);
+        const AmUInt32 order = AM_MAX(static_cast<AmUInt32>(mode), 1u);
 
         _source.Configure(order, true);
     }
@@ -31,8 +31,7 @@ namespace SparkyStudios::Audio::Amplitude
     {
         const auto* layer = GetLayer();
 
-        const eSpatialization spatialization = layer->GetSpatialization();
-        if (spatialization != eSpatialization_HRTF)
+        if (const eSpatialization spatialization = layer->GetSpatialization(); spatialization != eSpatialization_HRTF)
             return nullptr;
 
         const auto& listener = layer->GetListener();
@@ -42,7 +41,7 @@ namespace SparkyStudios::Audio::Amplitude
         const auto& listenerSpaceSourcePosition = listener.GetInverseMatrix() * AM_V4V(layer->GetLocation(), 1.0f);
 
         const ePanningMode mode = Engine::GetInstance()->GetPanningMode();
-        const AmUInt32 order = AM_MAX(static_cast<AmUInt32>(mode), 1);
+        const AmUInt32 order = AM_MAX(static_cast<AmUInt32>(mode), 1u);
 
         _soundField.Configure(order, true, input->GetFrameCount());
 

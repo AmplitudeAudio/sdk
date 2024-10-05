@@ -214,8 +214,8 @@ extern "C" {
 #endif
 #endif
 
-#define AM_MIN(a, b) ((a) > (b) ? (b) : (a))
-#define AM_MAX(a, b) ((a) < (b) ? (b) : (a))
+#define AM_MIN(a, b) std::min(a, b)
+#define AM_MAX(a, b) std::max(a, b)
 #define AM_ABS(a) ((a) > 0 ? (a) : -(a))
 #define AM_MOD(a, m) (((a) % (m)) >= 0 ? ((a) % (m)) : (((a) % (m)) + (m)))
 #define AM_SQUARE(x) ((x) * (x))
