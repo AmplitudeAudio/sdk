@@ -37,7 +37,7 @@ namespace SparkyStudios::Audio::Amplitude
      *
      * @ingroup core
      */
-    struct Version
+    struct AmVersion
     {
         /**
          * @brief Version number, updated only on major releases.
@@ -67,7 +67,7 @@ namespace SparkyStudios::Audio::Amplitude
      *
      * @ingroup core
      */
-    AM_API_PUBLIC const struct Version& GetVersion();
+    AM_API_PUBLIC const AmVersion& GetVersion();
 } // namespace SparkyStudios::Audio::Amplitude
 
 #endif // _AM_CORE_VERSION_H

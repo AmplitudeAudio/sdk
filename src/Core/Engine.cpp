@@ -2301,7 +2301,7 @@ namespace SparkyStudios::Audio::Amplitude
         return _state->total_time;
     }
 
-    const struct Version* EngineImpl::Version() const
+    const struct AmVersion* EngineImpl::Version() const
     {
         return _state->version;
     }

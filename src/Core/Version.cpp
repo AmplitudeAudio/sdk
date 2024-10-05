@@ -24,7 +24,7 @@ namespace SparkyStudios::Audio::Amplitude
      * @brief String which identifies the current version of Amplitude.
      */
     // clang-format off
-    static const struct Version kVersion = {
+    static const AmVersion kVersion = {
         AM_VERSION_MAJOR,
         AM_VERSION_MINOR,
         AM_VERSION_PATCH,
@@ -35,7 +35,7 @@ namespace SparkyStudios::Audio::Amplitude
     };
     // clang-format on
 
-    const struct Version& GetVersion()
+    const AmVersion& GetVersion()
     {
         return kVersion;
     }

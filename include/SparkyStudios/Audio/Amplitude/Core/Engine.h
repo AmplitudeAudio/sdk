@@ -100,7 +100,7 @@ namespace SparkyStudios::Audio::Amplitude
          *
          * @return The version string structure
          */
-        [[nodiscard]] virtual const Version* Version() const = 0;
+        [[nodiscard]] virtual const AmVersion* Version() const = 0;
 
 #pragma endregion
 

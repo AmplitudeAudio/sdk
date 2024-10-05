@@ -57,7 +57,7 @@ namespace SparkyStudios::Audio::Amplitude
          */
         [[nodiscard]] EngineInternalState* GetState() const;
 
-        [[nodiscard]] const struct Version* Version() const override;
+        [[nodiscard]] const struct AmVersion* Version() const override;
         bool Initialize(const AmOsString& configFile) override;
         bool Deinitialize() override;
         [[nodiscard]] bool IsInitialized() const override;

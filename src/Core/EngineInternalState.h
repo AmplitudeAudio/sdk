@@ -310,7 +310,7 @@ namespace SparkyStudios::Audio::Amplitude
 
         HRIRSphereImpl* hrir_sphere;
 
-        const struct Version* version;
+        const struct AmVersion* version;
     };
 
     /**
