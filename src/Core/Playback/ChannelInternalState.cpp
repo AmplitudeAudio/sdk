@@ -70,6 +70,7 @@ namespace SparkyStudios::Audio::Amplitude
         _userGain = 0.0f;
         _gain = 0.0f;
         _location = AM_V3(0, 0, 0);
+        _channelStateId = 0;
 
         for (const auto& sound : _eventsMap | std::views::values)
             ampooldelete(MemoryPoolKind::Engine, ChannelEventListener, sound);

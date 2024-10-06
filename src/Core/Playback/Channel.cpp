@@ -30,8 +30,22 @@ namespace SparkyStudios::Audio::Amplitude
     {}
 
     Channel::Channel(ChannelInternalState* state)
-        : Channel(state, ++globalStateId)
-    {}
+        : _state(state)
+        , _stateId(0)
+    {
+        if (state == nullptr)
+            return;
+
+        if (state->GetChannelStateId() > 0)
+        {
+            _stateId = state->GetChannelStateId();
+        }
+        else
+        {
+            _stateId = ++globalStateId;
+            state->SetChannelStateId(_stateId);
+        }
+    }
 
     void Channel::Clear()
     {
