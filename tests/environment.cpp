@@ -77,7 +77,7 @@ TEST_CASE("Environment Tests", "[entity][core][amplitude]")
 
             const auto direction = AM_V3(1, 0, 0);
             const auto up = AM_V3(0, 0, 1);
-            state.SetOrientation(direction, up);
+            state.SetOrientation(Orientation(direction, up));
 
             THEN("it returns the new orientation")
             {
@@ -148,7 +148,7 @@ TEST_CASE("Environment Tests", "[entity][core][amplitude]")
 
             const auto direction = AM_V3(1, 0, 0);
             const auto up = AM_V3(0, 0, 1);
-            wrapper.SetOrientation(direction, up);
+            wrapper.SetOrientation(Orientation(direction, up));
 
             THEN("it returns the new orientation")
             {

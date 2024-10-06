@@ -77,8 +77,8 @@ TEST_CASE("DiskFileSystem Tests", "[filesystem][amplitude]")
 
     SECTION("can open files")
     {
-        REQUIRE(fileSystem.OpenFile(AM_OS_STRING("tests.config.amconfig"))->IsValid());
-        REQUIRE_FALSE(fileSystem.OpenFile(AM_OS_STRING("some_random_file.ext"))->IsValid());
+        REQUIRE(fileSystem.OpenFile(AM_OS_STRING("tests.config.amconfig"), eFileOpenMode_Read)->IsValid());
+        REQUIRE_FALSE(fileSystem.OpenFile(AM_OS_STRING("some_random_file.ext"), eFileOpenMode_Read)->IsValid());
     }
 
     SECTION("can close filesystem")
@@ -93,7 +93,7 @@ TEST_CASE("DiskFileSystem DiskFile Tests", "[filesystem][amplitude]")
     DiskFileSystem fileSystem;
     fileSystem.SetBasePath(AM_OS_STRING("./samples/assets"));
 
-    const auto& file = fileSystem.OpenFile(AM_OS_STRING("test_data/diskfile_read_test.txt"));
+    const auto& file = fileSystem.OpenFile(AM_OS_STRING("test_data/diskfile_read_test.txt"), eFileOpenMode_Read);
 
     SECTION("can open files")
     {
@@ -118,13 +118,13 @@ TEST_CASE("DiskFileSystem DiskFile Tests", "[filesystem][amplitude]")
 
     SECTION("can seek the file")
     {
-        file->Seek(1, eFSO_START);
+        file->Seek(1, eFileSeekOrigin_Start);
         REQUIRE(file->Position() == 1);
         REQUIRE(file->Read8() == 'K');
-        file->Seek(-2, eFSO_END);
+        file->Seek(-2, eFileSeekOrigin_End);
         REQUIRE(file->Position() == 0);
         REQUIRE(file->Read8() == 'O');
-        file->Seek(-1, eFSO_CURRENT);
+        file->Seek(-1, eFileSeekOrigin_Current);
         REQUIRE(file->Position() == 0);
         REQUIRE(file->Read8() == 'O');
     }
@@ -155,7 +155,7 @@ TEST_CASE("Native DiskFile Tests", "[filesystem][amplitude]")
     DiskFileSystem fileSystem;
     fileSystem.SetBasePath(AM_OS_STRING("./samples/assets"));
 
-    DiskFile file(fileSystem.ResolvePath(AM_OS_STRING("test_data/diskfile_read_test.txt")), eFOM_READWRITE, eFOK_BINARY);
+    DiskFile file(fileSystem.ResolvePath(AM_OS_STRING("test_data/diskfile_read_test.txt")), eFileOpenMode_ReadWrite, eFileOpenKind_Binary);
 
     SECTION("can open files")
     {
@@ -165,7 +165,7 @@ TEST_CASE("Native DiskFile Tests", "[filesystem][amplitude]")
     SECTION("cannot open empty paths")
     {
         DiskFile temp;
-        REQUIRE(temp.Open(AM_OS_STRING(""), eFOM_READWRITE, eFOK_BINARY) == AM_ERROR_INVALID_PARAMETER);
+        REQUIRE(temp.Open(AM_OS_STRING(""), eFileOpenMode_ReadWrite, eFileOpenKind_Binary) == eErrorCode_InvalidParameter);
     }
 
     SECTION("can return the correct file path")
@@ -180,20 +180,20 @@ TEST_CASE("Native DiskFile Tests", "[filesystem][amplitude]")
 
     SECTION("can write the file")
     {
-        file.Seek(0, eFSO_START);
+        file.Seek(0, eFileSeekOrigin_Start);
         REQUIRE(file.Write8('K') == 1);
         REQUIRE(file.Write8('O') == 1);
 
         SECTION("can seek the file")
         {
-            file.Seek(1, eFSO_START);
+            file.Seek(1, eFileSeekOrigin_Start);
             REQUIRE(file.Position() == 1);
             REQUIRE(file.Read8() == 'O');
         }
 
         SECTION("can read the entire file")
         {
-            file.Seek(0, eFSO_START);
+            file.Seek(0, eFileSeekOrigin_Start);
             auto* content = static_cast<AmUInt8Buffer>(ammalloc(2));
             REQUIRE(file.Read(content, 2) == 2);
             REQUIRE(content[0] == 'K');
@@ -205,7 +205,7 @@ TEST_CASE("Native DiskFile Tests", "[filesystem][amplitude]")
 
         SECTION("can write the entire file")
         {
-            file.Seek(0, eFSO_START);
+            file.Seek(0, eFileSeekOrigin_Start);
             auto* content = static_cast<AmUInt8Buffer>(ammalloc(2));
             content[0] = 'O';
             content[1] = 'K';
@@ -218,7 +218,7 @@ TEST_CASE("Native DiskFile Tests", "[filesystem][amplitude]")
 
     SECTION("can close files")
     {
-        file.Seek(0, eFSO_START);
+        file.Seek(0, eFileSeekOrigin_Start);
         REQUIRE(file.Write8('O') == 1);
         REQUIRE(file.Write8('K') == 1);
 
@@ -234,10 +234,10 @@ TEST_CASE("MemoryFile Tests", "[filesystem][amplitude]")
     MemoryFile file;
     file.Open(2);
 
-    file.Seek(0, eFSO_START);
+    file.Seek(0, eFileSeekOrigin_Start);
     file.Write8('O');
     file.Write8('K');
-    file.Seek(0, eFSO_START);
+    file.Seek(0, eFileSeekOrigin_Start);
 
     SECTION("can open files")
     {
@@ -249,35 +249,35 @@ TEST_CASE("MemoryFile Tests", "[filesystem][amplitude]")
         char ok[] = "OK";
 
         file.Close();
-        REQUIRE(file.OpenMem(nullptr, 2) == AM_ERROR_INVALID_PARAMETER);
+        REQUIRE(file.OpenMem(nullptr, 2) == eErrorCode_InvalidParameter);
         REQUIRE_FALSE(file.IsValid());
-        REQUIRE(file.OpenMem(reinterpret_cast<AmConstUInt8Buffer>(ok), 2, false, false) == AM_ERROR_NO_ERROR);
+        REQUIRE(file.OpenMem(reinterpret_cast<AmConstUInt8Buffer>(ok), 2, false, false) == eErrorCode_Success);
         REQUIRE(file.IsValid());
         REQUIRE(file.GetPtr() == ok);
 
         file.Close();
         REQUIRE(ok[0] == 'O');
         REQUIRE(ok[1] == 'K');
-        REQUIRE(file.OpenMem(reinterpret_cast<AmConstUInt8Buffer>(ok), 2, true, true) == AM_ERROR_NO_ERROR);
+        REQUIRE(file.OpenMem(reinterpret_cast<AmConstUInt8Buffer>(ok), 2, true, true) == eErrorCode_Success);
         REQUIRE(file.IsValid());
         REQUIRE(file.Read(reinterpret_cast<AmUInt8Buffer>(ok), 2) == 2);
         REQUIRE(ok[0] == 'O');
         REQUIRE(ok[1] == 'K');
 
         file.Close();
-        REQUIRE(file.OpenToMem("") == AM_ERROR_INVALID_PARAMETER);
+        REQUIRE(file.OpenToMem("") == eErrorCode_InvalidParameter);
         REQUIRE_FALSE(file.IsValid());
-        REQUIRE(file.OpenToMem(fileSystem.ResolvePath(AM_OS_STRING("test_data/diskfile_read_test.txt"))) == AM_ERROR_NO_ERROR);
+        REQUIRE(file.OpenToMem(fileSystem.ResolvePath(AM_OS_STRING("test_data/diskfile_read_test.txt"))) == eErrorCode_Success);
         REQUIRE(file.IsValid());
         REQUIRE(file.Read(reinterpret_cast<AmUInt8Buffer>(ok), 2) == 2);
         REQUIRE(ok[0] == 'O');
         REQUIRE(ok[1] == 'K');
 
         file.Close();
-        DiskFile df(fileSystem.ResolvePath(AM_OS_STRING("test_data/diskfile_read_test.txt")), eFOM_READ, eFOK_BINARY);
-        REQUIRE(file.OpenFileToMem(nullptr) == AM_ERROR_INVALID_PARAMETER);
+        DiskFile df(fileSystem.ResolvePath(AM_OS_STRING("test_data/diskfile_read_test.txt")), eFileOpenMode_Read, eFileOpenKind_Binary);
+        REQUIRE(file.OpenFileToMem(nullptr) == eErrorCode_InvalidParameter);
         REQUIRE_FALSE(file.IsValid());
-        REQUIRE(file.OpenFileToMem(&df) == AM_ERROR_NO_ERROR);
+        REQUIRE(file.OpenFileToMem(&df) == eErrorCode_Success);
         REQUIRE(file.IsValid());
         REQUIRE(file.Read(reinterpret_cast<AmUInt8Buffer>(ok), 2) == 2);
         REQUIRE(ok[0] == 'O');
@@ -302,23 +302,23 @@ TEST_CASE("MemoryFile Tests", "[filesystem][amplitude]")
 
     SECTION("can seek the file")
     {
-        file.Seek(1, eFSO_START);
+        file.Seek(1, eFileSeekOrigin_Start);
         REQUIRE(file.Position() == 1);
         REQUIRE(file.Read8() == 'K');
-        file.Seek(-2, eFSO_END);
+        file.Seek(-2, eFileSeekOrigin_End);
         REQUIRE(file.Position() == 0);
         REQUIRE(file.Read8() == 'O');
-        file.Seek(-1, eFSO_CURRENT);
+        file.Seek(-1, eFileSeekOrigin_Current);
         REQUIRE(file.Position() == 0);
         REQUIRE(file.Read8() == 'O');
-        file.Seek(1234, eFSO_START);
+        file.Seek(1234, eFileSeekOrigin_Start);
         REQUIRE(file.Position() == 1);
         REQUIRE(file.Read8() == 'K');
     }
 
     SECTION("can read the entire file")
     {
-        file.Seek(0, eFSO_START);
+        file.Seek(0, eFileSeekOrigin_Start);
         auto* content = static_cast<AmUInt8Buffer>(ammalloc(2));
         REQUIRE(file.Read(content, 2) == 2);
         REQUIRE(content[0] == 'O');
