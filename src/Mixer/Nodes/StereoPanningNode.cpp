@@ -38,8 +38,8 @@ namespace SparkyStudios::Audio::Amplitude
 
         // Apply panning
         {
-            const AmReal32 gain = layer->GetGain();
-            const AmVec2 pannedGain = Gain::CalculateStereoPannedGain(gain, layer->GetLocation(), listener.GetInverseMatrix());
+            constexpr AmReal32 kGain = 1.0f;
+            const AmVec2 pannedGain = Gain::CalculateStereoPannedGain(kGain, layer->GetLocation(), listener.GetInverseMatrix());
 
             Gain::ApplyReplaceConstantGain(pannedGain.Left, input->GetChannel(0), 0, _output[0], 0, _output.GetFrameCount());
             Gain::ApplyReplaceConstantGain(pannedGain.Right, input->GetChannel(0), 0, _output[1], 0, _output.GetFrameCount());

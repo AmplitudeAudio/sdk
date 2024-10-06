@@ -778,7 +778,7 @@ namespace SparkyStudios::Audio::Amplitude
         AmUInt64 cursor = AMPLIMIX_LOAD(&layer->cursor);
 
         // atomically load master gain
-        const AmReal32 gain = AMPLIMIX_LOAD(&_masterGain);
+        const AmReal32 gain = AMPLIMIX_LOAD(&_masterGain) * AMPLIMIX_LOAD(&layer->gain);
 
 #if defined(AM_SIMD_INTRINSICS)
         auto bGain = xsimd::batch(gain);
