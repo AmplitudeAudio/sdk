@@ -55,8 +55,8 @@ message(STATUS "Using Amplitude Audio SDK at ${AM_SDK_PATH}")
 set(AmplitudeAudioSDK_FOUND TRUE)
 
 set(AMPLITUDE_COMPILE_DEFINITIONS
-    $<IF:$<CONFIG:Release>,AM_NO_ASSERTS,>
-    $<IF:$<CONFIG:Release>,AM_NO_MEMORY_STATS,>
+    $<$<CONFIG:RELEASE>:AM_NO_ASSERTS>
+    $<$<CONFIG:RELEASE>:AM_NO_MEMORY_STATS>
 )
 
 # Use these to get the parent path and folder name before adding the external 3rd party target.
@@ -88,19 +88,28 @@ else()
 endif()
 
 add_library(SparkyStudios::Audio::Amplitude::SDK::Static STATIC IMPORTED GLOBAL)
+add_library(SparkyStudios::Audio::Amplitude::SDK::Shared SHARED IMPORTED GLOBAL)
+
 set_target_properties(SparkyStudios::Audio::Amplitude::SDK::Static PROPERTIES
     IMPORTED_LOCATION "${AM_SDK_PATH}/lib/${AM_SDK_PLATFORM}/static/${AMPLITUDE_STATIC_LIB_NAME}"
     IMPORTED_LOCATION_DEBUG "${AM_SDK_PATH}/lib/${AM_SDK_PLATFORM}/static/${AMPLITUDE_STATIC_LIB_NAME_DEBUG}"
     INTERFACE_INCLUDE_DIRECTORIES "${AM_SDK_PATH}/include"
-    INTERFACE_COMPILE_DEFINITIONS "AM_BUILDSYSTEM_STATIC ${AMPLITUDE_COMPILE_DEFINITIONS}"
 )
 
-add_library(SparkyStudios::Audio::Amplitude::SDK::Shared SHARED IMPORTED GLOBAL)
 set_target_properties(SparkyStudios::Audio::Amplitude::SDK::Shared PROPERTIES
     IMPORTED_LOCATION "${AM_SDK_PATH}/lib/${AM_SDK_PLATFORM}/shared/${AMPLITUDE_SHARED_LIB_NAME}"
     IMPORTED_LOCATION_DEBUG "${AM_SDK_PATH}/lib/${AM_SDK_PLATFORM}/shared/${AMPLITUDE_SHARED_LIB_NAME_DEBUG}"
     INTERFACE_INCLUDE_DIRECTORIES "${AM_SDK_PATH}/include"
-    INTERFACE_COMPILE_DEFINITIONS "AM_BUILDSYSTEM_SHARED ${AMPLITUDE_COMPILE_DEFINITIONS}"
+)
+
+set_property(
+    TARGET SparkyStudios::Audio::Amplitude::SDK::Static
+    APPEND PROPERTY INTERFACE_COMPILE_DEFINITIONS ${AMPLITUDE_COMPILE_DEFINITIONS} AM_BUILDSYSTEM_STATIC
+)
+
+set_property(
+    TARGET SparkyStudios::Audio::Amplitude::SDK::Shared
+    APPEND PROPERTY INTERFACE_COMPILE_DEFINITIONS ${AMPLITUDE_COMPILE_DEFINITIONS} AM_BUILDSYSTEM_SHARED
 )
 
 if(WIN32)
