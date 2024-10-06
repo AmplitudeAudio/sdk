@@ -31,9 +31,6 @@ namespace SparkyStudios::Audio::Amplitude
         for (const auto& node : _nodeInstances)
             ampooldelete(MemoryPoolKind::Amplimix, NodeInstance, node.second);
 
-        ampooldelete(MemoryPoolKind::Amplimix, InputNodeInstance, _inputNode);
-        ampooldelete(MemoryPoolKind::Amplimix, OutputNodeInstance, _outputNode);
-
         _inputNode = nullptr;
         _outputNode = nullptr;
     }
