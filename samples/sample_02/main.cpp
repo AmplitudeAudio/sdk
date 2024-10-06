@@ -53,10 +53,10 @@ static void device_notification(DeviceNotification notification, const DeviceDes
     }
 }
 
-const int kScreenWidth = 640;
-const int kScreenHeight = 480;
+const AmInt32 kScreenWidth = 640;
+const AmInt32 kScreenHeight = 480;
 const AmTime kFramesPerSecond = 60.0;
-const Uint32 kDelayMilliseconds = static_cast<Uint32>(kAmSecond * 1.0 / kFramesPerSecond);
+const AmUInt32 kDelayMilliseconds = static_cast<AmUInt32>(kAmSecond * 1.0 / kFramesPerSecond);
 
 const char* kWindowTitle = "Amplitude Audio SDK Sample";
 AmOsString kAudioConfig = AM_OS_STRING("pc.config.amconfig");
@@ -66,7 +66,7 @@ const char* kChannelTexture = "./assets/textures/channel.bmp";
 const char* kListenerTexture = "./assets/textures/listener.bmp";
 const char* kSoundHandleName = "throw_collection_1";
 
-int gListenerIdCounter = 0;
+AmInt32 gListenerIdCounter = 0;
 
 struct IconState
 {
@@ -129,17 +129,17 @@ public:
 
 private:
     SDL_Texture* LoadTexture(const char* texture_path);
-    void AdvanceFrame(float delta_time);
+    void AdvanceFrame(AmReal32 delta_time);
     void HandleInput();
-    void UpdateIconState(IconState* icon_state, float delta_time);
-    void UpdateIcons(float delta_time);
+    void UpdateIconState(IconState* icon_state, AmReal32 delta_time);
+    void UpdateIcons(AmReal32 delta_time);
     void RemoveInvalidSounds();
     void DrawInstructions();
     void DrawIcon(const IconState& icon_state, SDL_Texture* texture);
     void DrawIcons();
 
     bool quit_;
-    std::string audio_config_source_;
+    AmString audio_config_source_;
     Bus master_bus_;
     SDL_Window* window_;
     SDL_Renderer* renderer_;
@@ -216,9 +216,7 @@ bool SampleState::Initialize()
     // Initialize images.
     if ((channel_texture_ = LoadTexture(kChannelTexture)) == nullptr || (listener_texture_ = LoadTexture(kListenerTexture)) == nullptr ||
         (instructions_texture_ = LoadTexture(kInstructionsTexture)) == nullptr)
-    {
         return false;
-    }
 
     RegisterDeviceNotificationCallback(device_notification);
 
@@ -236,13 +234,7 @@ bool SampleState::Initialize()
     const auto sdkPath = std::filesystem::path(std::getenv("AM_SDK_PATH"));
 
     Engine::AddPluginSearchPath(AM_OS_STRING("./assets/plugins"));
-#if defined(AM_WINDOWS_VERSION)
-    Engine::AddPluginSearchPath(sdkPath / AM_OS_STRING("lib/win/plugins"));
-#elif defined(AM_LINUX_VERSION)
-    Engine::AddPluginSearchPath(sdkPath / AM_OS_STRING("lib/linux/plugins"));
-#elif defined(AM_OSX_VERSION)
-    Engine::AddPluginSearchPath(sdkPath / AM_OS_STRING("lib/osx/plugins"));
-#endif
+    Engine::AddPluginSearchPath(sdkPath / AM_OS_STRING("lib/" AM_SDK_PLATFORM "/plugins"));
 
 #if defined(_DEBUG) || defined(DEBUG) || (defined(__GNUC__) && !defined(__OPTIMIZE__))
     Engine::LoadPlugin(AM_OS_STRING("AmplitudeVorbisCodecPlugin_d"));
@@ -274,7 +266,7 @@ bool SampleState::Initialize()
     return true;
 }
 
-void SampleState::UpdateIconState(IconState* icon_state, float delta_time)
+void SampleState::UpdateIconState(IconState* icon_state, AmReal32 delta_time)
 {
     icon_state->location += icon_state->velocity * delta_time;
     if (icon_state->location.X < 0)
@@ -282,9 +274,9 @@ void SampleState::UpdateIconState(IconState* icon_state, float delta_time)
         icon_state->location.X *= -1;
         icon_state->velocity.X *= -1;
     }
-    else if (icon_state->location[0] > kScreenWidth)
+    else if (icon_state->location.X > kScreenWidth)
     {
-        icon_state->location.X -= icon_state->location[0] - kScreenWidth;
+        icon_state->location.X -= icon_state->location.X - kScreenWidth;
         icon_state->velocity.X *= -1;
     }
     if (icon_state->location.Y < 0)
@@ -292,26 +284,27 @@ void SampleState::UpdateIconState(IconState* icon_state, float delta_time)
         icon_state->location.Y *= -1;
         icon_state->velocity.Y *= -1;
     }
-    else if (icon_state->location[1] > kScreenHeight)
+    else if (icon_state->location.Y > kScreenHeight)
     {
-        icon_state->location.Y -= icon_state->location[1] - kScreenHeight;
+        icon_state->location.Y -= icon_state->location.Y - kScreenHeight;
         icon_state->velocity.Y *= -1;
     }
 }
 
-void SampleState::UpdateIcons(float delta_time)
+void SampleState::UpdateIcons(AmReal32 delta_time)
 {
     for (auto& icon : channel_icons_)
     {
         UpdateIconState(&icon, delta_time);
-        icon.channel.SetLocation(AM_V3(icon.location.X, icon.location.Y, 0.0f));
-        icon.entity.SetLocation(AM_V3(icon.location.X, icon.location.Y, 0.0f));
+        icon.channel.SetLocation(AM_V3(icon.location.X, 0.0f, icon.location.Y));
+        icon.entity.SetLocation(AM_V3(icon.location.X, 0.0f, icon.location.Y));
+        icon.entity.SetOrientation(Orientation::Zero());
     }
 
     for (auto& icon : listener_icons_)
     {
         UpdateIconState(&icon, delta_time);
-        AmVec3 location = AM_V3(icon.location.X, icon.location.Y, 0.0f);
+        AmVec3 location = AM_V3(icon.location.X, 0.0f, icon.location.Y);
         icon.listener.SetLocation(location);
         icon.listener.SetOrientation(Orientation::Zero());
     }
@@ -320,8 +313,8 @@ void SampleState::UpdateIcons(float delta_time)
 void TextureRect(SDL_Rect* rect, const AmVec2& location, SDL_Texture* texture)
 {
     SDL_QueryTexture(texture, nullptr, nullptr, &rect->w, &rect->h);
-    rect->x = static_cast<int>(location.X - static_cast<float>(rect->w) / 2);
-    rect->y = static_cast<int>(location.Y - static_cast<float>(rect->h) / 2);
+    rect->x = static_cast<AmInt32>(location.X - static_cast<AmReal32>(rect->w) / 2);
+    rect->y = static_cast<AmInt32>(location.Y - static_cast<AmReal32>(rect->h) / 2);
 }
 
 void SampleState::DrawIcon(const IconState& icon_state, SDL_Texture* texture)
@@ -338,7 +331,7 @@ void SampleState::RemoveInvalidSounds()
             channel_icons_.begin(), channel_icons_.end(),
             [](const ChannelIcon& icon)
             {
-                return !icon.channel.Valid() || !icon.channel.Playing();
+                return !icon.channel.Valid();
             }),
         channel_icons_.end());
 }
@@ -365,8 +358,8 @@ void SampleState::DrawIcons()
 
 bool RectContains(const SDL_Rect& rect, const AmVec2& point)
 {
-    return point.X >= static_cast<float>(rect.x) && point.X < static_cast<float>(rect.x + rect.w) &&
-        point.Y >= static_cast<float>(rect.y) && point.Y < static_cast<float>(rect.y + rect.h);
+    return point.X >= static_cast<AmReal32>(rect.x) && point.X < static_cast<AmReal32>(rect.x + rect.w) &&
+        point.Y >= static_cast<AmReal32>(rect.y) && point.Y < static_cast<AmReal32>(rect.y + rect.h);
 }
 
 void SampleState::HandleInput()
@@ -434,14 +427,14 @@ void SampleState::HandleInput()
                 if (event.button.button == SDL_BUTTON_LEFT)
                 {
                     Entity entity = amEngine->AddEntity(++gListenerIdCounter);
-                    entity.SetLocation(AM_V3(new_channel_location_.X, new_channel_location_.Y, 0));
+                    entity.SetLocation(AM_V3(new_channel_location_.X, 0.0f, new_channel_location_.Y));
                     Channel channel = amEngine->Play(101, entity);
                     if (channel.Valid())
                     {
                         channel_icons_.emplace_back();
                         ChannelIcon& icon = channel_icons_.back();
                         icon.location = new_channel_location_;
-                        icon.velocity = mouse_location - new_channel_location_;
+                        icon.velocity = (mouse_location - new_channel_location_) * 0.001f;
                         icon.channel = channel;
                         icon.entity = entity;
                     }
@@ -468,7 +461,7 @@ void SampleState::HandleInput()
                 // Set the master gain to be based on a x position of the mouse such
                 // that at x = 0 the gain is 0% and at x = kScreenWidth the master gain
                 // is at 100%.
-                float percentage = static_cast<float>(event.motion.x) / kScreenWidth;
+                AmReal32 percentage = static_cast<AmReal32>(event.motion.x) / kScreenWidth;
                 master_bus_.SetGain(percentage);
             }
         default:; // Do nothing.
@@ -476,7 +469,7 @@ void SampleState::HandleInput()
     }
 }
 
-void SampleState::AdvanceFrame(float delta_time)
+void SampleState::AdvanceFrame(AmReal32 delta_time)
 {
     HandleInput();
     UpdateIcons(delta_time);
@@ -495,8 +488,8 @@ void SampleState::Run()
     while (!amEngine->TryFinalizeLoadSoundFiles())
         SDL_Delay(1);
 
-    Uint32 previous_time = 0;
-    Uint32 time = 0;
+    AmUInt32 previous_time = 0;
+    AmUInt32 time = 0;
     while (!quit_)
     {
         previous_time = time;
@@ -506,7 +499,7 @@ void SampleState::Run()
     }
 }
 
-int main(int argc, char* argv[])
+AmInt32 main(AmInt32 argc, char* argv[])
 {
     (void)argc;
     (void)argv;

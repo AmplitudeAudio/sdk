@@ -81,13 +81,7 @@ static void run(AmVoidPtr param)
     Engine::RegisterDefaultPlugins();
 
     Engine::AddPluginSearchPath(AM_OS_STRING("./assets/plugins"));
-#if defined(AM_WINDOWS_VERSION)
-    Engine::AddPluginSearchPath(sdkPath / AM_OS_STRING("lib/win/plugins"));
-#elif defined(AM_LINUX_VERSION)
-    Engine::AddPluginSearchPath(sdkPath / AM_OS_STRING("lib/linux/plugins"));
-#elif defined(AM_OSX_VERSION)
-    Engine::AddPluginSearchPath(sdkPath / AM_OS_STRING("lib/osx/plugins"));
-#endif
+    Engine::AddPluginSearchPath(sdkPath / AM_OS_STRING("lib/" AM_SDK_PLATFORM "/plugins"));
 
 #if defined(_DEBUG) || defined(DEBUG) || (defined(__GNUC__) && !defined(__OPTIMIZE__))
     Engine::LoadPlugin(AM_OS_STRING("AmplitudeVorbisCodecPlugin_d"));
@@ -190,7 +184,39 @@ static void run(AmVoidPtr param)
 
             if (!ctx->mainMenuBackgroundChannel.Valid() ||
                 ctx->mainMenuBackgroundChannel.GetPlaybackState() == ChannelPlaybackState::Stopped)
-                ctx->mainMenuBackgroundChannel = amEngine->Play(mainMenuBackgroundHandle);
+            {
+                ctx->mainMenuBackgroundChannel = amEngine->Play(mainMenuBackgroundHandle, bug);
+                ctx->mainMenuBackgroundChannel.On(
+                    ChannelEvent::Begin,
+                    [ctx](const ChannelEventInfo& info)
+                    {
+                        amLogInfo("[CALLBACK] Sound started playing");
+                    });
+                ctx->mainMenuBackgroundChannel.On(
+                    ChannelEvent::Pause,
+                    [ctx](const ChannelEventInfo& info)
+                    {
+                        amLogInfo("[CALLBACK] Sound paused");
+                    });
+                ctx->mainMenuBackgroundChannel.On(
+                    ChannelEvent::Resume,
+                    [ctx](const ChannelEventInfo& info)
+                    {
+                        amLogInfo("[CALLBACK] Sound resumed");
+                    });
+                ctx->mainMenuBackgroundChannel.On(
+                    ChannelEvent::End,
+                    [ctx](const ChannelEventInfo& info)
+                    {
+                        amLogInfo("[CALLBACK] Sound finished playing");
+                    });
+                ctx->mainMenuBackgroundChannel.On(
+                    ChannelEvent::Loop,
+                    [ctx](const ChannelEventInfo& info)
+                    {
+                        amLogInfo("[CALLBACK] Sound started playing again (loop)");
+                    });
+            }
             else if (ctx->mainMenuBackgroundChannel.GetPlaybackState() == ChannelPlaybackState::Paused)
                 ctx->mainMenuBackgroundChannel.Resume(kAmSecond);
         }
@@ -202,7 +228,21 @@ static void run(AmVoidPtr param)
             if (ctx->appMode == kAppModeCollectionTest)
             {
                 if (!ctx->collectionSampleChannel.Valid() || !ctx->collectionSampleChannel.Playing())
+                {
                     ctx->collectionSampleChannel = amEngine->Play(collectionHandle);
+                    ctx->collectionSampleChannel.On(
+                        ChannelEvent::Begin,
+                        [ctx](const ChannelEventInfo& info)
+                        {
+                            amLogInfo("[CALLBACK] Collection started playing");
+                        });
+                    ctx->collectionSampleChannel.On(
+                        ChannelEvent::End,
+                        [ctx](const ChannelEventInfo& info)
+                        {
+                            amLogInfo("[CALLBACK] Collection finished playing");
+                        });
+                }
             }
             else if (ctx->appMode == kAppModeSwitchContainerTest)
             {
@@ -225,7 +265,21 @@ static void run(AmVoidPtr param)
                 }
 
                 if (!ctx->switchContainerChannel.Valid() || !ctx->switchContainerChannel.Playing())
+                {
                     ctx->switchContainerChannel = amEngine->Play(footstepsHandle, player);
+                    ctx->switchContainerChannel.On(
+                        ChannelEvent::Begin,
+                        [ctx](const ChannelEventInfo& info)
+                        {
+                            amLogInfo("[CALLBACK] Switch started playing");
+                        });
+                    ctx->switchContainerChannel.On(
+                        ChannelEvent::End,
+                        [ctx](const ChannelEventInfo& info)
+                        {
+                            amLogInfo("[CALLBACK] Switch finished playing");
+                        });
+                }
 
                 lastSwitch = ctx->currentSwitchState;
             }
@@ -244,15 +298,20 @@ static void run(AmVoidPtr param)
     while (!amEngine->TryFinalizeCloseFileSystem())
         Thread::Sleep(1);
 
-    amEngine->DestroyInstance();
-
     // Unregister all default plugins
     Engine::UnregisterDefaultPlugins();
+
+    amEngine->DestroyInstance();
 }
 
 int main(int argc, char* argv[])
 {
-    ConsoleLogger logger;
+#if defined(_DEBUG) || defined(DEBUG) || (defined(__GNUC__) && !defined(__OPTIMIZE__))
+    ConsoleLogger logger(true);
+#else
+    ConsoleLogger logger(false);
+#endif
+
     Logger::SetLogger(&logger);
 
     MemoryManager::Initialize(MemoryManagerConfig());

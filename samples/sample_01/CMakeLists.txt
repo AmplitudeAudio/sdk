@@ -55,3 +55,10 @@ add_dependencies(${PROJECT_NAME}
     Shared
     ss_amplitude_audio_sample_assets
 )
+
+target_compile_definitions(
+    ${PROJECT_NAME}
+    PRIVATE
+        AM_SDK_PLATFORM="${VCPKG_TARGET_TRIPLET}"
+        AM_SDK_PATH="$ENV{AM_SDK_PATH}"
+)
