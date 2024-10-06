@@ -25,13 +25,13 @@ jobs:
       - name: Cleanup
         run: |
           gh extension install actions/gh-actions-cache
-          
+
           REPO=${{ github.repository }}
           BRANCH=${{ github.ref }}
-          
+
           echo "Fetching list of cache key"
           cacheKeysForPR=$(gh actions-cache list -R $REPO -B $BRANCH | cut -f 1 )
-          
+
           ## Setting this to not fail the workflow while deleting cache keys. 
           set +e
           echo "Deleting caches..."
@@ -44,46 +44,46 @@ jobs:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
   build:
-    needs: [ cleanup ]
+    needs: [cleanup]
     uses: ./.github/workflows/cmake.yml
     with:
       project-path: .
-      project-slug: amplitude_audio_sdk
+      project-slug: sdk
     name: Amplitude Audio SDK
 
   release:
-    needs: [ build ]
+    needs: [build]
     runs-on: ${{ matrix.config.os }}
     name: "[${{ matrix.build_type }}] ${{ matrix.config.name }}"
     strategy:
       fail-fast: false
       matrix:
-        build_type: [ "release", "debug" ]
+        build_type: ["release", "debug"]
         config:
           - name: "Windows Latest MSVC"
             os: windows-latest
-            artifact: "amplitude_audio_sdk_windows_msvc_x64.7z"
             archiver: "7z a"
+            target_triplet: x64-windows
 
           - name: "Windows Latest MinGW"
             os: windows-latest
-            artifact: "amplitude_audio_sdk_windows_mingw_x64.7z"
             archiver: "7z a"
+            target_triplet: x64-mingw-static
 
           - name: "Ubuntu Latest GCC"
             os: ubuntu-latest
-            artifact: "amplitude_audio_sdk_linux_gcc_x64.7z"
             archiver: "7z a"
+            target_triplet: x64-linux
 
           - name: "macOS x64 Latest Clang"
             os: macos-13
-            artifact: "amplitude_audio_sdk_macos_clang_x64.7z"
             archiver: "7za a"
+            target_triplet: x64-osx
 
           - name: "macOS arm64 Latest Clang"
             os: macos-14
-            artifact: "amplitude_audio_sdk_macos_clang_arm64.7z"
             archiver: "7za a"
+            target_triplet: arm64-osx
 
     steps:
       - name: Check out code
@@ -94,19 +94,23 @@ jobs:
         with:
           enableCrossOsArchive: true
           path: sdk
-          key: ${{ matrix.build_type }}-${{ matrix.config.artifact }}-${{ hashFiles('**/sdk') }}
+          key: ${{ matrix.build_type }}-sdk-${{ matrix.config.target_triplet }}-${{ hashFiles('**/sdk') }}
           restore-keys: |
-            ${{ matrix.build_type }}-${{ matrix.config.artifact }}-
+            ${{ matrix.build_type }}-sdk-${{ matrix.config.target_triplet }}-
 
       - name: Pack
         shell: bash
-        run: ${{ matrix.config.archiver }} ./${{ matrix.build_type }}_${{ matrix.config.artifact }} LICENSE NOTICE README.md sdk
+        run: ${{ matrix.config.archiver }} ./${{ matrix.build_type }}_sdk_${{ matrix.config.target_triplet }}.7z LICENSE NOTICE README.md sdk
 
       - name: Upload
         uses: actions/upload-artifact@v4
         with:
-          path: ./${{ matrix.build_type }}_${{ matrix.config.artifact }}
-          name: ${{ matrix.build_type }}_${{ matrix.config.artifact }}
+          path: |
+            LICENSE
+            NOTICE
+            README.md
+            sdk/
+          name: ${{ matrix.build_type }}_sdk_${{ matrix.config.target_triplet }}
 
       - name: Upload release asset
         if: github.event_name == 'release' && (github.event.action == 'published' || github.event.action == 'created')
@@ -115,6 +119,6 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           upload_url: ${{ github.event.release.upload_url }}
-          asset_path: ./${{ matrix.build_type }}_${{ matrix.config.artifact }}
-          asset_name: ${{ matrix.build_type }}_${{ matrix.config.artifact }}.zip
-          asset_content_type: application/zip
+          asset_path: ./${{ matrix.build_type }}_sdk_${{ matrix.config.target_triplet }}.7z
+          asset_name: ${{ matrix.build_type }}_sdk_${{ matrix.config.target_triplet }}.7z
+          asset_content_type: application/x-7z-compressed

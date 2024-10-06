@@ -9,7 +9,18 @@ on:
       project-slug:
         required: true
         type: string
-
+      pull-sdk:
+        required: false
+        type: boolean
+        default: false
+      sdk-version:
+        required: false
+        type: string
+        default: nightly
+      need-flatc:
+        required: false
+        type: boolean
+        default: true
 
 jobs:
   build:
@@ -18,12 +29,11 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        build_type: [ "release", "debug" ]
+        build_type: ["release", "debug"]
         config:
           - name: "Windows Latest MSVC"
             key: msvc
             os: windows-latest
-            artifact: "${{ inputs.project-slug }}_windows_msvc_x64.7z"
             cc: "cl"
             cxx: "cl"
             generator: "Visual Studio 17 2022"
@@ -32,7 +42,6 @@ jobs:
           - name: "Windows Latest MinGW"
             key: mingw
             os: windows-latest
-            artifact: "${{ inputs.project-slug }}_windows_mingw_x64.7z"
             cc: "gcc"
             cxx: "g++"
             generator: "Ninja"
@@ -41,7 +50,6 @@ jobs:
           - name: "Ubuntu Latest GCC"
             key: gcc
             os: ubuntu-24.04
-            artifact: "${{ inputs.project-slug }}_linux_gcc_x64.7z"
             cc: "gcc"
             cxx: "g++"
             generator: "Ninja"
@@ -50,7 +58,6 @@ jobs:
           - name: "macOS x64 Latest Clang"
             key: clang
             os: macos-13
-            artifact: "${{ inputs.project-slug }}_macos_clang_x64.7z"
             cc: "clang"
             cxx: "clang++"
             generator: "Ninja"
@@ -59,7 +66,6 @@ jobs:
           - name: "macOS arm64 Latest Clang"
             key: clang
             os: macos-14
-            artifact: "${{ inputs.project-slug }}_macos_clang_arm64.7z"
             cc: "clang"
             cxx: "clang++"
             generator: "Ninja"
@@ -70,6 +76,19 @@ jobs:
       - uses: actions/checkout@v4
         with:
           submodules: recursive
+
+      - name: Setup Amplitude Audio SDK
+        uses: AmplitudeAudio/action-setup-sdk@main
+        if: inputs.pull-sdk
+        id: sdk_path
+        with:
+          platforms: |
+            ${{ matrix.config.target_triplet }}
+          version: ${{ inputs.sdk-version }}
+          install-dir: "${{ github.workspace }}/amplitude_audio"
+          config: ${{ matrix.build_type }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Print env
         run: |
@@ -142,9 +161,9 @@ jobs:
         with:
           enableCrossOsArchive: true
           path: sdk
-          key: "${{ matrix.build_type }}-${{ matrix.config.artifact }}-${{ hashFiles('**/sdk') }}"
+          key: "${{ matrix.build_type }}-${{ inputs.project-slug }}-${{ matrix.config.target_triplet }}-${{ hashFiles('**/sdk') }}"
           restore-keys: |
-            ${{ matrix.build_type }}-${{ matrix.config.artifact }}-
+            ${{ matrix.build_type }}-${{ inputs.project-slug }}-${{ matrix.config.target_triplet }}
 
       - name: Configure
         id: configure
@@ -161,6 +180,9 @@ jobs:
             -DVCPKG_TARGET_TRIPLET:STRING="${{ matrix.config.target_triplet }}" \
             -DCMAKE_EXPORT_COMPILE_COMMANDS:BOOL=TRUE \
             -DBUILD_SAMPLES:BOOL=TRUE
+        env:
+          AM_SDK_PATH: "${{ steps.sdk_path.outputs.path }}/sdk"
+          AM_SDK_PLATFORM: ${{ matrix.config.target_triplet }}
 
       - name: Inspect vcpkg errors
         if: failure() && steps.configure.outcome != 'success'
@@ -178,12 +200,12 @@ jobs:
         run: cmake --install . --strip --config ${{ matrix.build_type }}
 
       - name: Copy flatc to SDK folder (Windows)
-        if: startsWith(matrix.config.os, 'windows')
+        if: inputs.need-flatc && startsWith(matrix.config.os, 'windows')
         run: |
           Copy-Item .\bin\flatc.exe -Destination .\sdk\bin\${{ matrix.config.target_triplet }}
 
       - name: Copy flatc to SDK folder (Unix)
-        if: startsWith(matrix.config.os, 'ubuntu') || startsWith(matrix.config.os, 'macos')
+        if: inputs.need-flatc && (startsWith(matrix.config.os, 'ubuntu') || startsWith(matrix.config.os, 'macos'))
         run: |
           cp ./bin/flatc ./sdk/bin/${{ matrix.config.target_triplet }}
 
@@ -193,4 +215,4 @@ jobs:
         with:
           enableCrossOsArchive: true
           path: sdk
-          key: ${{ matrix.build_type }}-${{ matrix.config.artifact }}-${{ hashFiles('**/sdk') }}
+          key: ${{ matrix.build_type }}-${{ inputs.project-slug }}-${{ matrix.config.target_triplet }}-${{ hashFiles('**/sdk') }}
