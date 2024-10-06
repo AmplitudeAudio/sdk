@@ -209,36 +209,36 @@ namespace SparkyStudios::Audio::Amplitude
         const auto* layer = GetLayer();
 
         const Attenuation* attenuation = layer->GetAttenuation();
+        if (attenuation == nullptr)
+            return input;
+
         const Listener& listener = layer->GetListener();
 
         AmReal32 targetGain = 1.0f;
 
-        if (attenuation != nullptr)
+        // Compute attenuated gain based on spatialization
         {
             const eSpatialization spatialization = layer->GetSpatialization();
 
             if (listener.Valid())
             {
-                if (spatialization != eSpatialization_None)
+                const Entity& entity = layer->GetEntity();
+
+                if (spatialization == eSpatialization_PositionOrientation)
                 {
-                    const Entity& entity = layer->GetEntity();
+                    AMPLITUDE_ASSERT(entity.Valid());
+                    targetGain *= attenuation->GetGain(entity, listener);
+                }
+                else if (spatialization == eSpatialization_HRTF && entity.Valid())
+                {
+                    targetGain *= attenuation->GetGain(entity, listener);
+                }
+                else if (spatialization == eSpatialization_Position)
+                {
+                    const AmVec3& location = layer->GetLocation();
 
-                    if (spatialization == eSpatialization_PositionOrientation)
-                    {
-                        AMPLITUDE_ASSERT(entity.Valid());
-                        targetGain *= attenuation->GetGain(entity, listener);
-                    }
-                    else if (spatialization == eSpatialization_HRTF && entity.Valid())
-                    {
-                        targetGain *= attenuation->GetGain(entity, listener);
-                    }
-                    else
-                    {
-                        const AmVec3& location = layer->GetLocation();
-
-                        // Position-based spatialization, or HRTF-based spatialization without entity
-                        targetGain *= attenuation->GetGain(location, listener);
-                    }
+                    // Position-based spatialization, or HRTF-based spatialization without entity
+                    targetGain *= attenuation->GetGain(location, listener);
                 }
             }
             else
@@ -264,25 +264,16 @@ namespace SparkyStudios::Audio::Amplitude
         if (Gain::IsZero(targetGain))
             return nullptr;
 
-        if (Gain::IsOne(targetGain))
-            return input;
-
         _output = *input;
 
         // Apply gain attenuation
-        for (AmSize c = 0; c < _output.GetChannelCount(); ++c)
-            Gain::ApplyReplaceConstantGain(targetGain, input->GetChannel(c), 0, _output[c], 0, input->GetFrameCount());
+        if (!Gain::IsOne(targetGain))
+            for (AmSize c = 0; c < _output.GetChannelCount(); ++c)
+                Gain::ApplyReplaceConstantGain(targetGain, input->GetChannel(c), 0, _output[c], 0, input->GetFrameCount());
 
         // Apply air absorption EQ filter
         if (attenuation->IsAirAbsorptionEnabled() && listener.Valid())
-        {
-            const AmVec3& soundLocation = layer->GetLocation();
-            const AmVec3& listenerLocation = listener.GetLocation();
-
-            auto sampleRate = layer->GetSampleRate();
-
-            _eqFilter.Process(_output, _output, sampleRate);
-        }
+            _eqFilter.Process(_output, _output, layer->GetSampleRate());
 
         return &_output;
     }
