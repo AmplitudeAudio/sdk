@@ -66,6 +66,9 @@ namespace SparkyStudios::Audio::Amplitude
 
     void ReflectionsProcessor::Update(const RoomInternalState* roomState, const AmVec3& listenerPosition, AmReal32 speedOfSound)
     {
+        if (roomState == nullptr)
+            return;
+
         const AmReal32 lowPassCoefficient = ComputeMonopoleFilterCoefficient(roomState->GetCutOffFrequency(), _sampleRate);
         _lowPassFilter->SetParameter(MonoPoleFilter::ATTRIBUTE_COEFFICIENT, lowPassCoefficient);
 
