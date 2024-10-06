@@ -1,47 +1,29 @@
 {
   "driver": "miniaudio",
   "output": {
-    "frequency": 44100,
-    "channels": 2,
-    "buffer_size": 1024,
+    "frequency": 48000,
+    "buffer_size": 4096,
     "format": "Float32"
   },
   "mixer": {
+    "panning_mode": "BinauralHighQuality",
     "active_channels": 50,
     "virtual_channels": 100,
-    "pipeline_type": [
-      "AudioSoundProcessor",
-      "AudioSoundProcessor",
-      "AudioProcessorMixer",
-      "AudioSoundProcessor"
-    ],
-    "pipeline": [
-      {
-        "processor": "EffectProcessor"
-      },
-      {
-        "processor": "OcclusionProcessor"
-      },
-      {
-        "dry_processor": "ObstructionProcessor",
-        "wet_processor": "EnvironmentProcessor",
-        "dry": 0.5,
-        "wet": 0.5
-      },
-      {
-        "processor": "ClipProcessor"
-      }
-    ]
+    "pipeline": "default.ampipeline"
+  },
+  "hrtf": {
+    "amir_file": "data/sadie_h12.amir",
+    "hrir_sampling": "Bilinear"
   },
   "game": {
     "listener_fetch_mode": "Nearest",
     "track_environments": true,
-    "up_axis": "Y",
     "listeners": 100,
     "entities": 4096,
     "environments": 512,
-    "sound_speed": 333,
+    "rooms": 1024,
     "doppler_factor": 1.0,
+    "sound_speed": 343,
     "obstruction": {
       "lpf_curve": {
         "parts": [
@@ -67,7 +49,7 @@
             },
             "end": {
               "x": 1,
-              "y": 0
+              "y": 1
             },
             "fader": "Linear"
           }
