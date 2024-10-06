@@ -175,7 +175,7 @@ namespace SparkyStudios::Audio::Amplitude
 
             ma_device_config deviceConfig = ma_device_config_init(ma_device_type_playback);
             deviceConfig.noClip = true;
-            deviceConfig.noPreSilencedOutputBuffer = true;
+            deviceConfig.noPreSilencedOutputBuffer = false;
             deviceConfig.periodSizeInFrames = device.mOutputBufferSize / channelsCount;
             deviceConfig.playback.format = ma_format_from_amplitude(device.mRequestedOutputFormat);
             deviceConfig.playback.channels = channelsCount;
