@@ -185,7 +185,7 @@ static void run(AmVoidPtr param)
             if (!ctx->mainMenuBackgroundChannel.Valid() ||
                 ctx->mainMenuBackgroundChannel.GetPlaybackState() == ChannelPlaybackState::Stopped)
             {
-                ctx->mainMenuBackgroundChannel = amEngine->Play(mainMenuBackgroundHandle, bug);
+                ctx->mainMenuBackgroundChannel = amEngine->Play(mainMenuBackgroundHandle);
                 ctx->mainMenuBackgroundChannel.On(
                     ChannelEvent::Begin,
                     [ctx](const ChannelEventInfo& info)
