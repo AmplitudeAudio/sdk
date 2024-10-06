@@ -119,9 +119,6 @@ namespace SparkyStudios::Audio::Amplitude
         auto* channelState = channel.GetState();
 
         channelState->Trigger(ChannelEvent::Stop);
-
-        // Destroy the sound instance on stop
-        OnSoundDestroyed(mixer, layer);
     }
 
     static bool OnSoundLooped(AmplimixImpl* mixer, AmplimixLayerImpl* layer)
@@ -632,6 +629,12 @@ namespace SparkyStudios::Audio::Amplitude
             // swap if flag has not changed and return if successful
             if (AMPLIMIX_CSWAP(&lay->flag, &prev, flag))
             {
+                if (flag == ePSF_STOP)
+                {
+                    // Destroy the sound instance on stop
+                    OnSoundDestroyed(this, lay);
+                }
+
                 return true;
             }
         }
