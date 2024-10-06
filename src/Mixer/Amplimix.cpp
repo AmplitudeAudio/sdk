@@ -806,7 +806,7 @@ namespace SparkyStudios::Audio::Amplitude
 #endif // AM_SIMD_INTRINSICS
 
         SoundChunk* in = SoundChunk::CreateChunk(inSamples, soundChannels, MemoryPoolKind::Amplimix);
-        SoundChunk* transient = SoundChunk::CreateChunk(AM_MAX(inSamples, outSamples), 1, MemoryPoolKind::Amplimix);
+        SoundChunk* transient = SoundChunk::CreateChunk(outSamples, 1, MemoryPoolKind::Amplimix);
         SoundChunk* out = SoundChunk::CreateChunk(transient->frames, 2, MemoryPoolKind::Amplimix);
 
         // if this sound is streaming, and we have a stream event callback
