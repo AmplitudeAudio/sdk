@@ -260,7 +260,7 @@ namespace SparkyStudios::Audio::Amplitude
 
         if (!foundPath)
         {
-            amLogError("[The plugin cannot be found in any of the search paths.");
+            amLogError("The plugin '" AM_OS_CHAR_FMT "' cannot be found in any of the search paths.", pluginLibraryName.c_str());
             return nullptr;
         }
 
@@ -271,28 +271,28 @@ namespace SparkyStudios::Audio::Amplitude
         if (!plugin->has_symbol("RegisterPlugin"))
         {
             amLogError(
-                "LoadPlugin fail on '" AM_OS_CHAR_FMT "'. The library doesn't export a RegisterPlugin symbol.", pluginLibraryName.c_str());
+                "Failed to load plugin '" AM_OS_CHAR_FMT "'. The library doesn't export a RegisterPlugin symbol.", pluginLibraryName.c_str());
             return nullptr;
         }
 
         if (!plugin->has_symbol("PluginName"))
         {
             amLogError(
-                "LoadPlugin fail on '" AM_OS_CHAR_FMT "'. The library doesn't export a PluginName symbol.", pluginLibraryName.c_str());
+                "Failed to load plugin '" AM_OS_CHAR_FMT "'. The library doesn't export a PluginName symbol.", pluginLibraryName.c_str());
             return nullptr;
         }
 
         if (!plugin->has_symbol("PluginVersion"))
         {
             amLogError(
-                "LoadPlugin fail on '" AM_OS_CHAR_FMT "'. The library doesn't export a PluginVersion symbol.", pluginLibraryName.c_str());
+                "Failed to load plugin '" AM_OS_CHAR_FMT "'. The library doesn't export a PluginVersion symbol.", pluginLibraryName.c_str());
             return nullptr;
         }
 
         if (const auto registerFunc = plugin->get_function<bool(Engine*, MemoryManager*)>("RegisterPlugin");
             !registerFunc(amEngine, amMemory))
         {
-            amLogError("LoadPlugin fail on '" AM_OS_CHAR_FMT "'. The plugin registration has failed.", pluginLibraryName.c_str());
+            amLogError("Failed to load plugin '" AM_OS_CHAR_FMT "'. The plugin registration has failed.", pluginLibraryName.c_str());
             return nullptr;
         }
 
