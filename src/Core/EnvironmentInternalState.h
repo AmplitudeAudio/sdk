@@ -118,7 +118,7 @@ namespace SparkyStudios::Audio::Amplitude
          *
          * @param effect The effect to apply in the Environment.
          */
-        void SetEffect(const std::string& effect);
+        void SetEffect(const AmString& effect);
 
         /**
          * @brief Set the Effect applied in the Environment.

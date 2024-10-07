@@ -83,7 +83,7 @@ namespace SparkyStudios::Audio::Amplitude
         _effect = amEngine->GetEffectHandle(effect);
     }
 
-    void EnvironmentInternalState::SetEffect(const std::string& effect)
+    void EnvironmentInternalState::SetEffect(const AmString& effect)
     {
         _effect = amEngine->GetEffectHandle(effect);
     }
