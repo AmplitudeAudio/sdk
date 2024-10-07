@@ -1,5 +1,4 @@
 ![build](https://github.com/AmplitudeAudio/sdk/actions/workflows/build.yml/badge.svg)
-![documentation](https://github.com/AmplitudeAudio/sdk/actions/workflows/hugo.yml/badge.svg)
 [![Codecov](https://img.shields.io/codecov/c/gh/AmplitudeAudio/sdk?style=flat&logo=codecov&label=Coverage)](https://codecov.io/gh/AmplitudeAudio/sdk?branch=develop)
 [![discord server](https://dcbadge.vercel.app/api/server/q8eT8Mq6du?style=flat)](https://discord.gg/q8eT8Mq6du)
 [![X (formerly Twitter) Follow](https://img.shields.io/twitter/follow/amaudiosdk?style=social&logo=x&label=%40amaudiosdk)](https://x.com/@amaudiosdk)
