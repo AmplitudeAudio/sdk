@@ -127,6 +127,17 @@ namespace SparkyStudios::Audio::Amplitude
         return to.Convert(vector, from);
     }
 
+    AmQuat CartesianCoordinateSystem::Convert(
+        const AmQuat& rotation, const CartesianCoordinateSystem& from, const CartesianCoordinateSystem& to)
+    {
+        return to.Convert(rotation, from);
+    }
+
+    AmReal32 CartesianCoordinateSystem::Convert(AmReal32 scalar, const CartesianCoordinateSystem& from, const CartesianCoordinateSystem& to)
+    {
+        return to.Convert(scalar, from);
+    }
+
     AmVec3 CartesianCoordinateSystem::ConvertToDefault(const AmVec3& vector, const CartesianCoordinateSystem& from)
     {
         return Convert(vector, from, Default());

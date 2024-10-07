@@ -191,19 +191,41 @@ namespace SparkyStudios::Audio::Amplitude
         /**
          * @brief Converts a vector from one coordinate system to another.
          *
-         * @param vector The vector to convert.
-         * @param from The source coordinate system.
-         * @param to The destination coordinate system.
+         * @param[in] vector The vector to convert.
+         * @param[in] from The source coordinate system.
+         * @param[in] to The destination coordinate system.
          *
          * @return The converted vector.
          */
         static AmVec3 Convert(const AmVec3& vector, const CartesianCoordinateSystem& from, const CartesianCoordinateSystem& to);
 
         /**
+         * @brief Converts a quaternion rotation from one coordinate system to another.
+         *
+         * @param[in] rotation The rotation to convert.
+         * @param[in] from The source coordinate system.
+         * @param[in] to The destination coordinate system.
+         *
+         * @return The converted rotation.
+         */
+        static AmQuat Convert(const AmQuat& rotation, const CartesianCoordinateSystem& from, const CartesianCoordinateSystem& to);
+
+        /**
+         * @brief Converts a scalar from one coordinate system to another.
+         *
+         * @param[in] scalar The scalar to convert.
+         * @param[in] from The source coordinate system.
+         * @param[in] to The destination coordinate system.
+         *
+         * @return The converted scalar.
+         */
+        static AmReal32 Convert(AmReal32 scalar, const CartesianCoordinateSystem& from, const CartesianCoordinateSystem& to);
+
+        /**
          * @brief Converts a vector from one coordinate system to the default coordinate system.
          *
-         * @param vector The vector to convert.
-         * @param from The source coordinate system.
+         * @param[in] vector The vector to convert.
+         * @param[in] from The source coordinate system.
          *
          * @return The converted vector.
          */
@@ -212,7 +234,7 @@ namespace SparkyStudios::Audio::Amplitude
         /**
          * @brief Gets a vector corresponding to the given axis.
          *
-         * @param axis The axis to get the vector for.
+         * @param[in] axis The axis to get the vector for.
          *
          * @return A vector corresponding to the given axis.
          */
@@ -221,14 +243,15 @@ namespace SparkyStudios::Audio::Amplitude
         /**
          * @brief Creates a new cartesian coordinate system with the given axes.
          *
-         * @param right The right axis of the new coordinate system.
-         * @param forward The forward axis of the new coordinate system.
-         * @param up The up axis of the new coordinate system.
+         * @param[in] right The right axis of the new coordinate system.
+         * @param[in] forward The forward axis of the new coordinate system.
+         * @param[in] up The up axis of the new coordinate system.
          */
         CartesianCoordinateSystem(Axis right, Axis forward, Axis up);
 
         /**
          * @brief Gets the vector corresponding to the coordinate system's right axis.
+         *
          * @return The coordinate system's right vector.
          */
         [[nodiscard]] AM_INLINE AmVec3 GetRightVector() const
@@ -238,6 +261,7 @@ namespace SparkyStudios::Audio::Amplitude
 
         /**
          * @brief Gets the vector corresponding to the coordinate system's forward axis.
+         *
          * @return The coordinate system's forward vector.
          */
         [[nodiscard]] AM_INLINE AmVec3 GetForwardVector() const
@@ -247,6 +271,7 @@ namespace SparkyStudios::Audio::Amplitude
 
         /**
          * @brief Gets the vector corresponding to the coordinate system's up axis.
+         *
          * @return The coordinate system's up vector.
          */
         [[nodiscard]] AM_INLINE AmVec3 GetUpVector() const
@@ -257,8 +282,8 @@ namespace SparkyStudios::Audio::Amplitude
         /**
          * @brief Converts a vector from one coordinate system to the current one.
          *
-         * @param vector The vector to convert.
-         * @param from The original coordinate system of the vector.
+         * @param[in] vector The vector to convert.
+         * @param[in] from The original coordinate system of the vector.
          *
          * @return The converted vector in the current coordinate system.
          */
@@ -267,8 +292,8 @@ namespace SparkyStudios::Audio::Amplitude
         /**
          * @brief Converts a quaternion from one coordinate system to the current one.
          *
-         * @param quaternion The quaternion to convert.
-         * @param from The original coordinate system of the quaternion.
+         * @param[in] quaternion The quaternion to convert.
+         * @param[in] from The original coordinate system of the quaternion.
          *
          * @return The converted quaternion in the current coordinate system.
          */
@@ -277,8 +302,8 @@ namespace SparkyStudios::Audio::Amplitude
         /**
          * @brief Converts a scalar from one coordinate system to the current one.
          *
-         * @param scalar The scalar to convert.
-         * @param from The original coordinate system of the scalar.
+         * @param[in] scalar The scalar to convert.
+         * @param[in] from The original coordinate system of the scalar.
          *
          * @return The converted scalar in the current coordinate system.
          */
