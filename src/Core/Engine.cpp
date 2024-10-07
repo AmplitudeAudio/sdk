@@ -35,8 +35,6 @@
 #include "buses_definition_generated.h"
 #include "collection_definition_generated.h"
 #include "engine_config_definition_generated.h"
-#include "pipeline_definition_generated.h"
-#include "rtpc_definition_generated.h"
 #include "sound_definition_generated.h"
 #include "switch_container_definition_generated.h"
 
@@ -342,7 +340,7 @@ namespace SparkyStudios::Audio::Amplitude
         if (gAmplitude != nullptr && gAmplitude->_state != nullptr)
             return false; // Cannot register the default plugins when the engine is already initialized.
 
-        // Ensure to cleanup registries
+        // Ensure to clean up registries
         UnregisterDefaultPlugins();
 
         sDefaultResamplerPlugin.reset(ampoolnew(MemoryPoolKind::Engine, DefaultResampler));
@@ -976,7 +974,7 @@ namespace SparkyStudios::Audio::Amplitude
     {
         if (const auto findIt = _state->sound_bank_id_map.find(filename); findIt == _state->sound_bank_id_map.end())
         {
-            amLogWarning("Cannot deinitialize Soundbank '" AM_OS_CHAR_FMT "'. Soundbank not loaded.", filename.c_str());
+            amLogWarning("Cannot unload Soundbank '" AM_OS_CHAR_FMT "'. Soundbank not loaded.", filename.c_str());
             AMPLITUDE_ASSERT(0);
         }
         else
@@ -989,7 +987,7 @@ namespace SparkyStudios::Audio::Amplitude
     {
         if (const auto findIt = _state->sound_bank_map.find(id); findIt == _state->sound_bank_map.end())
         {
-            amLogWarning("Cannot deinitialize Soundbank with ID '" AM_ID_CHAR_FMT "'. Soundbank not loaded.", id);
+            amLogWarning("Cannot unload Soundbank with ID '" AM_ID_CHAR_FMT "'. Soundbank not loaded.", id);
             AMPLITUDE_ASSERT(0);
         }
         else if (findIt->second->GetRefCounter()->Decrement() == 0)
@@ -1091,17 +1089,13 @@ namespace SparkyStudios::Audio::Amplitude
 
         case eListenerFetchMode_First:
             {
-                auto listener = listeners.begin();
-                const AmMat4& mat = listener->GetInverseMatrix();
-                bestListener = listener;
+                bestListener = listeners.begin();
             }
             break;
 
         case eListenerFetchMode_Last:
             {
-                auto listener = listeners.end();
-                const AmMat4& mat = listener->GetInverseMatrix();
-                bestListener = listener;
+                bestListener = listeners.end();
             }
             break;
 
@@ -1112,13 +1106,8 @@ namespace SparkyStudios::Audio::Amplitude
                     return nullptr;
 
                 for (auto listener = listeners.begin(); listener != listeners.end(); ++listener)
-                {
                     if (listener->GetId() == state->GetId())
-                    {
-                        const AmMat4& mat = state->GetInverseMatrix();
                         return &*listener;
-                    }
-                }
 
                 return nullptr;
             }
@@ -2294,6 +2283,20 @@ namespace SparkyStudios::Audio::Amplitude
             _nextFrameCallbacks.push(std::move(callback));
         }
         Thread::UnlockMutex(_frameThreadMutex);
+    }
+
+    void EngineImpl::WaitUntilNextFrame() const
+    {
+        const AmUInt64 nextFrame = _state->current_frame + 1;
+        while (_state->current_frame < nextFrame)
+            Thread::Sleep(1);
+    }
+
+    void EngineImpl::WaitUntilFrames(AmUInt64 frameCount) const
+    {
+        const AmUInt64 nextFrame = _state->current_frame + frameCount;
+        while (_state->current_frame < nextFrame)
+            Thread::Sleep(1);
     }
 
     AmTime EngineImpl::GetTotalTime() const

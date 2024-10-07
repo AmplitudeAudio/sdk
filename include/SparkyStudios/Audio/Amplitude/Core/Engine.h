@@ -224,6 +224,22 @@ namespace SparkyStudios::Audio::Amplitude
         virtual void OnNextFrame(std::function<void(AmTime delta)> callback) const = 0;
 
         /**
+         * @brief Waits until the next frame is ready.
+         *
+         * This method blocks the current thread until the next frame is ready.
+         */
+        virtual void WaitUntilNextFrame() const = 0;
+
+        /**
+         * @brief Waits until the specified number of frames are ready.
+         *
+         * This method blocks the current thread until the specified number of frames are ready.
+         *
+         * @param[in] frameCount The number of frames to wait until.
+         */
+        virtual void WaitUntilFrames(AmUInt64 frameCount) const = 0;
+
+        /**
          * @brief Gets the total elapsed time in milliseconds since the start of the engine.
          *
          * @return The total elapsed time in milliseconds since the start of the engine.
