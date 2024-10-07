@@ -205,6 +205,21 @@ jobs:
           AM_SDK_PATH: "${{ steps.sdk_path.outputs.path }}/sdk"
           AM_SDK_PLATFORM: ${{ matrix.config.target_triplet }}
 
+      - name: Generate coverage
+        shell: bash
+        working-directory: ${{ inputs.project-path }}/build
+        run: |
+          lcov --capture --directory . --output-file coverage.info --base-directory .  --ignore-errors inconsistent --ignore-errors range
+          lcov --remove coverage.info '/usr/*' '*/vcpkg_installed/*' --output-file coverage.info  --ignore-errors inconsistent --ignore-errors range
+          lcov --list coverage.info  --ignore-errors inconsistent --ignore-errors range
+
+      - name: Upload coverage to Codecov
+        uses: codecov/codecov-action@v4
+        with:
+          file: ${{ inputs.project-path }}/build/coverage.info
+        env:
+          CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
+
       - name: Install Strip
         shell: bash
         working-directory: ${{ inputs.project-path }}/build
