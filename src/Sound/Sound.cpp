@@ -87,6 +87,13 @@ namespace SparkyStudios::Audio::Amplitude
 
         if (_soundDataRefCounter.GetCount() == 0)
         {
+            if (_decoder == nullptr)
+            {
+                amLogError("Could not load a sound instance. No decoder was initialized. Make sure the codec able to decode the audio file "
+                           "at '" AM_OS_CHAR_FMT "' is registered to the engine.", m_filename.c_str());
+                return nullptr;
+            }
+
             _soundData = SoundChunk::CreateChunk(_format.GetFramesCount(), _format.GetNumChannels());
 
             if (_decoder->Load(_soundData->buffer) != _format.GetFramesCount())
