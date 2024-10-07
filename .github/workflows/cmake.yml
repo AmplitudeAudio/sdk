@@ -111,7 +111,7 @@ jobs:
       - name: Install dependencies on Windows
         if: startsWith(matrix.config.os, 'windows')
         run: |
-          choco install ninja cmake curl
+          choco install ninja cmake curl lcov
           ninja --version
           cmake --version
           $FLATC_VERSION = "$(curl "https://api.github.com/repos/google/flatbuffers/releases/latest" --ssl-no-revoke --silent | Select-String -Pattern '"tag_name":\s*"(.+)"')" -replace '.*"v(.+)".*','$1'
@@ -123,13 +123,15 @@ jobs:
 
       - name: Install dependencies on Windows (MingW)
         if: startsWith(matrix.config.os, 'windows') && startsWith(matrix.config.key, 'mingw')
-        run: choco upgrade mingw
+        run: |
+          choco install lcov
+          choco upgrade mingw
 
       - name: Install dependencies on Ubuntu
         if: startsWith(matrix.config.os, 'ubuntu')
         run: |
           sudo apt-get update
-          sudo apt-get install cpanminus autoconf automake libtool pkg-config libltdl-dev ninja-build cmake
+          sudo apt-get install cpanminus autoconf automake libtool pkg-config libltdl-dev ninja-build cmake lcov
           sudo cpanm open
           ninja --version
           cmake --version
@@ -142,7 +144,7 @@ jobs:
       - name: Install dependencies on MacOS
         if: startsWith(matrix.config.os, 'macos')
         run: |
-          brew install p7zip cmake ninja
+          brew install p7zip cmake ninja lcov
           ninja --version
           cmake --version
           wget https://github.com/google/flatbuffers/releases/download/${{ steps.flatc_version.outputs.tag }}/Mac.flatc.binary.zip
