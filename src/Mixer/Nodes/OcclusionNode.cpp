@@ -71,6 +71,9 @@ namespace SparkyStudios::Audio::Amplitude
         const Listener listener = layer->GetListener();
         const Entity entity = layer->GetEntity();
 
+        if (!listener.Valid())
+            return nullptr;
+
         // Compute the relative listener/source direction in spherical angles.
         AmVec3 direction = GetRelativeDirection(listener.GetLocation(), listener.GetOrientation().GetQuaternion(), layer->GetLocation());
         const SphericalPosition listenerDirection = SphericalPosition::FromWorldSpace(direction);
@@ -85,19 +88,20 @@ namespace SparkyStudios::Audio::Amplitude
             soundDirectivity = CalculateDirectivity(entity.GetDirectivity(), entity.GetDirectivitySharpness(), entityDirection);
         }
 
-        _currentOcclusion = AM_Lerp(occlusion, kOcclusionSmoothingCoefficient, _currentOcclusion);
-
-        const AmReal32 coefficient = CalculateOcclusionFilterCoefficient(listenerDirectivity * soundDirectivity, _currentOcclusion);
-
         const auto& lpfCurve = Engine::GetInstance()->GetOcclusionCoefficientCurve();
         const auto& gainCurve = Engine::GetInstance()->GetOcclusionGainCurve();
 
+        _currentOcclusion = AM_Lerp(occlusion, kOcclusionSmoothingCoefficient, _currentOcclusion);
+
+        const AmReal32 lpf = lpfCurve.Get(_currentOcclusion);
+        const AmReal32 coefficient = CalculateOcclusionFilterCoefficient(listenerDirectivity * soundDirectivity, lpf);
+
         _output = AudioBuffer(frames, channels);
 
-        if (const AmReal32 lpf = lpfCurve.Get(_currentOcclusion); lpf > kEpsilon)
+        if (coefficient > kEpsilon)
         {
             // Update the filter coefficients
-            _occlusionFilter->SetParameter(MonoPoleFilter::ATTRIBUTE_COEFFICIENT, AM_CLAMP(lpf, 0.0f, 1.0f));
+            _occlusionFilter->SetParameter(MonoPoleFilter::ATTRIBUTE_COEFFICIENT, AM_CLAMP(coefficient, 0.0f, 1.0f));
 
             // Apply Low Pass Filter
             _occlusionFilter->Process(*input, _output, frames, sampleRate);
