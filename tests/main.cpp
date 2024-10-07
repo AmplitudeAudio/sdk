@@ -21,16 +21,16 @@
 
 using namespace SparkyStudios::Audio::Amplitude;
 
-struct MyListener : Catch::EventListenerBase
+struct AmTestListener : Catch::EventListenerBase
 {
     using EventListenerBase::EventListenerBase; // inherit constructor
 
-    // Get rid of Wweak-tables
-    ~MyListener() override = default;
+    // Get rid of weak-tables
+    ~AmTestListener() override = default;
 
     static void run(AmVoidPtr listener)
     {
-        const auto* self = static_cast<MyListener*>(listener);
+        const auto* self = static_cast<AmTestListener*>(listener);
 
         while (self->running)
         {
@@ -39,6 +39,8 @@ struct MyListener : Catch::EventListenerBase
             amEngine->AdvanceFrame(delta);
             Thread::Sleep(static_cast<AmInt32>(delta));
         }
+
+        amLogDebug("Test run ended");
     }
 
     // The whole test run starting
@@ -59,16 +61,10 @@ struct MyListener : Catch::EventListenerBase
         const auto sdkPath = std::filesystem::path(std::getenv("AM_SDK_PATH"));
 
         Engine::AddPluginSearchPath(AM_OS_STRING("./assets/plugins"));
-#if defined(AM_WINDOWS_VERSION)
-        Engine::AddPluginSearchPath(sdkPath / AM_OS_STRING("lib/win/plugins"));
-#elif defined(AM_LINUX_VERSION)
-        Engine::AddPluginSearchPath(sdkPath / AM_OS_STRING("lib/linux/plugins"));
-#elif defined(AM_OSX_VERSION)
-        Engine::AddPluginSearchPath(sdkPath / AM_OS_STRING("lib/osx/plugins"));
-#endif
+        Engine::AddPluginSearchPath(sdkPath / AM_OS_STRING("lib/" AM_SDK_PLATFORM "/plugins"));
 
-        Engine::LoadPlugin(AM_OS_STRING("AmplitudeVorbisCodecPlugin_d"));
-        Engine::LoadPlugin(AM_OS_STRING("AmplitudeFlacCodecPlugin_d"));
+        // Engine::LoadPlugin(AM_OS_STRING("AmplitudeVorbisCodecPlugin_d"));
+        // Engine::LoadPlugin(AM_OS_STRING("AmplitudeFlacCodecPlugin_d"));
 
         running = true;
 
@@ -106,10 +102,13 @@ struct MyListener : Catch::EventListenerBase
     bool running = false;
 };
 
-CATCH_REGISTER_LISTENER(MyListener)
+CATCH_REGISTER_LISTENER(AmTestListener)
 
 int main(int argc, char* argv[])
 {
+    ConsoleLogger logger;
+    Logger::SetLogger(&logger);
+
     MemoryManager::Initialize({});
 
     const auto res = Catch::Session().run(argc, argv);

@@ -1,0 +1,53 @@
+{
+  "id": 1999,
+  "name": "test_collection",
+  "priority": {
+    "kind": "Static",
+    "value": 1.0
+  },
+  "gain": {
+    "kind": "Static",
+    "value": 1.0
+  },
+  "bus": 2,
+  "sounds_type": [
+    "Sequence",
+    "Sequence",
+    "Sequence"
+  ],
+  "sounds": [
+    {
+      "sound": 9991,
+      "gain": {
+        "kind": "Static",
+        "value": 1.0
+      }
+    },
+    {
+      "sound": 9992,
+      "gain": {
+        "kind": "Static",
+        "value": 1.0
+      }
+    },
+    {
+      "sound": 9993,
+      "gain": {
+        "kind": "Static",
+        "value": 1.0
+      }
+    }
+  ],
+  "spatialization": "None",
+  "attenuation": 0,
+  "play_mode": "PlayAll",
+  "scheduler": {
+    "mode": "Sequence",
+    "config_type": "Sequence",
+    "config": {
+      "end_behavior": "Reverse"
+    }
+  },
+  "scope": "World",
+  "fader": "Linear"
+}

@@ -76,6 +76,19 @@ TEST_CASE("Listener Tests", "[listener][core][amplitude]")
                 REQUIRE(AM_EqV3(state.GetUp(), up));
             }
         }
+
+        WHEN("the directivity changes")
+        {
+            constexpr auto directivity = 0.5f;
+            constexpr auto sharpness = 1.5f;
+            state.SetDirectivity(directivity, sharpness);
+
+            THEN("it returns the new directivity and sharpness")
+            {
+                REQUIRE(state.GetDirectivity() == directivity);
+                REQUIRE(state.GetDirectivitySharpness() == sharpness);
+            }
+        }
     }
 
     SECTION("can be used with a wrapper")
@@ -85,6 +98,8 @@ TEST_CASE("Listener Tests", "[listener][core][amplitude]")
         SECTION("can return the correct ID")
         {
             REQUIRE(wrapper.GetId() == 1);
+
+            REQUIRE(wrapper.GetId() == state.GetId());
         }
 
         WHEN("the location changes")
@@ -96,6 +111,8 @@ TEST_CASE("Listener Tests", "[listener][core][amplitude]")
             THEN("it returns the new location")
             {
                 REQUIRE(AM_EqV3(wrapper.GetLocation(), location));
+
+                REQUIRE(AM_EqV3(wrapper.GetLocation(), state.GetLocation()));
             }
 
             AND_WHEN("an update occurs")
@@ -107,6 +124,8 @@ TEST_CASE("Listener Tests", "[listener][core][amplitude]")
                     const auto& velocity = location - lastLocation;
 
                     REQUIRE(AM_EqV3(wrapper.GetVelocity(), velocity));
+
+                    REQUIRE(AM_EqV3(wrapper.GetVelocity(), state.GetVelocity()));
                 }
             }
         }
@@ -119,8 +138,27 @@ TEST_CASE("Listener Tests", "[listener][core][amplitude]")
 
             THEN("it returns the new orientation")
             {
-                REQUIRE(AM_EqV3(state.GetDirection(), direction));
-                REQUIRE(AM_EqV3(state.GetUp(), up));
+                REQUIRE(AM_EqV3(wrapper.GetDirection(), direction));
+                REQUIRE(AM_EqV3(wrapper.GetUp(), up));
+
+                REQUIRE(AM_EqV3(wrapper.GetDirection(), state.GetDirection()));
+                REQUIRE(AM_EqV3(wrapper.GetUp(), state.GetUp()));
+            }
+        }
+
+        WHEN("the directivity changes")
+        {
+            constexpr auto directivity = 0.5f;
+            constexpr auto sharpness = 1.5f;
+            wrapper.SetDirectivity(directivity, sharpness);
+
+            THEN("it returns the new directivity and sharpness")
+            {
+                REQUIRE(wrapper.GetDirectivity() == directivity);
+                REQUIRE(wrapper.GetDirectivitySharpness() == sharpness);
+
+                REQUIRE(wrapper.GetDirectivity() == state.GetDirectivity());
+                REQUIRE(wrapper.GetDirectivitySharpness() == state.GetDirectivitySharpness());
             }
         }
 

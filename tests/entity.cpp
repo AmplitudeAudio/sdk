@@ -115,6 +115,19 @@ TEST_CASE("Entity Tests", "[entity][core][amplitude]")
         {
             REQUIRE(state.GetEnvironmentFactor(12345) == 0.0f);
         }
+
+        WHEN("the directivity changes")
+        {
+            constexpr auto directivity = 0.5f;
+            constexpr auto sharpness = 1.5f;
+            state.SetDirectivity(directivity, sharpness);
+
+            THEN("it returns the new directivity and sharpness")
+            {
+                REQUIRE(state.GetDirectivity() == directivity);
+                REQUIRE(state.GetDirectivitySharpness() == sharpness);
+            }
+        }
     }
 
     SECTION("can be used with a wrapper")
@@ -125,6 +138,8 @@ TEST_CASE("Entity Tests", "[entity][core][amplitude]")
         SECTION("can return the correct ID")
         {
             REQUIRE(wrapper.GetId() == 1);
+
+            REQUIRE(wrapper.GetId() == state.GetId());
         }
 
         WHEN("the location changes")
@@ -136,6 +151,8 @@ TEST_CASE("Entity Tests", "[entity][core][amplitude]")
             THEN("it returns the new location")
             {
                 REQUIRE(AM_EqV3(wrapper.GetLocation(), location));
+
+                REQUIRE(AM_EqV3(wrapper.GetLocation(), state.GetLocation()));
             }
 
             AND_WHEN("an update occurs")
@@ -147,6 +164,8 @@ TEST_CASE("Entity Tests", "[entity][core][amplitude]")
                     const auto& velocity = location - lastLocation;
 
                     REQUIRE(AM_EqV3(wrapper.GetVelocity(), velocity));
+
+                    REQUIRE(AM_EqV3(wrapper.GetVelocity(), state.GetVelocity()));
                 }
             }
         }
@@ -155,12 +174,16 @@ TEST_CASE("Entity Tests", "[entity][core][amplitude]")
         {
             const auto direction = AM_V3(1, 0, 0);
             const auto up = AM_V3(0, 0, 1);
-            wrapper.SetOrientation(Orientation(direction, up));
+            const auto orientation = Orientation(direction, up);
+            wrapper.SetOrientation(orientation);
 
             THEN("it returns the new orientation")
             {
                 REQUIRE(AM_EqV3(wrapper.GetDirection(), direction));
                 REQUIRE(AM_EqV3(wrapper.GetUp(), up));
+
+                REQUIRE(AM_EqV3(wrapper.GetDirection(), state.GetDirection()));
+                REQUIRE(AM_EqV3(wrapper.GetUp(), state.GetUp()));
             }
         }
 
@@ -172,6 +195,8 @@ TEST_CASE("Entity Tests", "[entity][core][amplitude]")
             THEN("it returns the new obstruction")
             {
                 REQUIRE(wrapper.GetObstruction() == obstruction);
+
+                REQUIRE(wrapper.GetObstruction() == state.GetObstruction());
             }
         }
 
@@ -183,16 +208,8 @@ TEST_CASE("Entity Tests", "[entity][core][amplitude]")
             THEN("it returns the new obstruction")
             {
                 REQUIRE(wrapper.GetOcclusion() == occlusion);
-            }
-        }
 
-        WHEN("the internal state wrapper is cleared")
-        {
-            wrapper.Clear();
-
-            THEN("it is no longer valid")
-            {
-                REQUIRE_FALSE(wrapper.Valid());
+                REQUIRE(wrapper.GetOcclusion() == state.GetOcclusion());
             }
         }
 
@@ -205,18 +222,51 @@ TEST_CASE("Entity Tests", "[entity][core][amplitude]")
             THEN("it returns the new environment factor")
             {
                 REQUIRE(wrapper.GetEnvironmentFactor(environment) == factor);
+
+                REQUIRE(wrapper.GetEnvironmentFactor(environment) == state.GetEnvironmentFactor(environment));
             }
 
             THEN("the list of environment factors is updated")
             {
                 REQUIRE(wrapper.GetEnvironments().size() == 1);
                 REQUIRE(wrapper.GetEnvironments().at(environment) == factor);
+
+                REQUIRE(wrapper.GetEnvironments().size() == state.GetEnvironments().size());
+                REQUIRE(wrapper.GetEnvironments().at(environment) == state.GetEnvironmentFactor(environment));
             }
         }
 
         SECTION("returns 0 as the environment factor for an unregistered environment ID")
         {
             REQUIRE(wrapper.GetEnvironmentFactor(12345) == 0.0f);
+
+            REQUIRE(wrapper.GetEnvironmentFactor(12345) == state.GetEnvironmentFactor(12345));
+        }
+
+        WHEN("the directivity changes")
+        {
+            constexpr auto directivity = 0.5f;
+            constexpr auto sharpness = 1.5f;
+            wrapper.SetDirectivity(directivity, sharpness);
+
+            THEN("it returns the new directivity and sharpness")
+            {
+                REQUIRE(wrapper.GetDirectivity() == directivity);
+                REQUIRE(wrapper.GetDirectivitySharpness() == sharpness);
+
+                REQUIRE(wrapper.GetDirectivity() == state.GetDirectivity());
+                REQUIRE(wrapper.GetDirectivitySharpness() == state.GetDirectivitySharpness());
+            }
+        }
+
+        WHEN("the internal state wrapper is cleared")
+        {
+            wrapper.Clear();
+
+            THEN("it is no longer valid")
+            {
+                REQUIRE_FALSE(wrapper.Valid());
+            }
         }
     }
 

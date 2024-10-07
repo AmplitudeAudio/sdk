@@ -1,0 +1,22 @@
+{
+  "id": 9991,
+  "name": "test_sound_01",
+  "gain": {
+    "kind": "Static",
+    "value": 1.0
+  },
+  "bus": 1,
+  "priority": {
+    "kind": "Static",
+    "value": 1.0
+  },
+  "stream": false,
+  "loop": {
+    "enabled": false,
+    "loop_count": 5
+  },
+  "spatialization": "None",
+  "attenuation": 0,
+  "fader": "Linear",
+  "path": "tests/test_sound_01.wav"
+}

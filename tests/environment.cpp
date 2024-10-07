@@ -54,6 +54,8 @@ TEST_CASE("Environment Tests", "[entity][core][amplitude]")
             THEN("it returns the new location")
             {
                 REQUIRE(AM_EqV3(state.GetLocation(), location));
+
+                REQUIRE(AM_EqV3(zone.GetLocation(), location));
             }
 
             AND_WHEN("an update occurs")
@@ -63,6 +65,8 @@ TEST_CASE("Environment Tests", "[entity][core][amplitude]")
                 THEN("the location stays the same")
                 {
                     REQUIRE(AM_EqV3(state.GetLocation(), location));
+
+                    REQUIRE(AM_EqV3(zone.GetLocation(), location));
                 }
             }
         }
@@ -83,6 +87,9 @@ TEST_CASE("Environment Tests", "[entity][core][amplitude]")
             {
                 REQUIRE(AM_EqV3(state.GetDirection(), direction));
                 REQUIRE(AM_EqV3(state.GetUp(), up));
+
+                REQUIRE(AM_EqV3(zone.GetDirection(), direction));
+                REQUIRE(AM_EqV3(zone.GetUp(), up));
             }
         }
 
@@ -99,6 +106,46 @@ TEST_CASE("Environment Tests", "[entity][core][amplitude]")
                 REQUIRE(state.GetZone() == &zone);
             }
         }
+
+        WHEN("the effect changes")
+        {
+            SphereShape inner(10);
+            SphereShape outer(20);
+            SphereZone zone(&inner, &outer);
+
+            state.SetZone(&zone);
+
+            WHEN("an effect is set by ID")
+            {
+                state.SetEffect(2);
+
+                THEN("it returns the new effect")
+                {
+                    REQUIRE(state.GetEffect() == amEngine->GetEffectHandle(2));
+                }
+            }
+
+            WHEN("an effect is set by name")
+            {
+                state.SetEffect("lpf");
+
+                THEN("it returns the new effect")
+                {
+                    REQUIRE(state.GetEffect() == amEngine->GetEffectHandle("lpf"));
+                }
+            }
+
+            WHEN("an effect is set by handle")
+            {
+                auto* effect = amEngine->GetEffectHandle("equalizer");
+                state.SetEffect(effect);
+
+                THEN("it returns the new effect")
+                {
+                    REQUIRE(state.GetEffect() == effect);
+                }
+            }
+        }
     }
 
     SECTION("can be used with a wrapper")
@@ -109,6 +156,8 @@ TEST_CASE("Environment Tests", "[entity][core][amplitude]")
         SECTION("can return the correct ID")
         {
             REQUIRE(wrapper.GetId() == 1);
+
+            REQUIRE(state.GetId() == 1);
         }
 
         WHEN("the location changes")
@@ -125,6 +174,10 @@ TEST_CASE("Environment Tests", "[entity][core][amplitude]")
             THEN("it returns the new location")
             {
                 REQUIRE(AM_EqV3(wrapper.GetLocation(), location));
+
+                REQUIRE(AM_EqV3(wrapper.GetLocation(), state.GetLocation()));
+
+                REQUIRE(AM_EqV3(state.GetLocation(), zone.GetLocation()));
             }
 
             AND_WHEN("an update occurs")
@@ -134,6 +187,10 @@ TEST_CASE("Environment Tests", "[entity][core][amplitude]")
                 THEN("the location stays the same")
                 {
                     REQUIRE(AM_EqV3(wrapper.GetLocation(), location));
+
+                    REQUIRE(AM_EqV3(wrapper.GetLocation(), state.GetLocation()));
+
+                    REQUIRE(AM_EqV3(state.GetLocation(), zone.GetLocation()));
                 }
             }
         }
@@ -154,6 +211,12 @@ TEST_CASE("Environment Tests", "[entity][core][amplitude]")
             {
                 REQUIRE(AM_EqV3(wrapper.GetDirection(), direction));
                 REQUIRE(AM_EqV3(wrapper.GetUp(), up));
+
+                REQUIRE(AM_EqV3(wrapper.GetDirection(), state.GetDirection()));
+                REQUIRE(AM_EqV3(wrapper.GetUp(), state.GetUp()));
+
+                REQUIRE(AM_EqV3(state.GetDirection(), zone.GetDirection()));
+                REQUIRE(AM_EqV3(state.GetUp(), zone.GetUp()));
             }
         }
 
@@ -168,6 +231,54 @@ TEST_CASE("Environment Tests", "[entity][core][amplitude]")
             THEN("it returns the new zone")
             {
                 REQUIRE(wrapper.GetZone() == &zone);
+
+                REQUIRE(wrapper.GetZone() == state.GetZone());
+            }
+        }
+
+        WHEN("the effect changes")
+        {
+            SphereShape inner(10);
+            SphereShape outer(20);
+            SphereZone zone(&inner, &outer);
+
+            wrapper.SetZone(&zone);
+
+            WHEN("an effect is set by ID")
+            {
+                wrapper.SetEffect(2);
+
+                THEN("it returns the new effect")
+                {
+                    REQUIRE(wrapper.GetEffect() == amEngine->GetEffectHandle(2));
+
+                    REQUIRE(wrapper.GetEffect() == state.GetEffect());
+                }
+            }
+
+            WHEN("an effect is set by name")
+            {
+                wrapper.SetEffect("lpf");
+
+                THEN("it returns the new effect")
+                {
+                    REQUIRE(wrapper.GetEffect() == amEngine->GetEffectHandle("lpf"));
+
+                    REQUIRE(wrapper.GetEffect() == state.GetEffect());
+                }
+            }
+
+            WHEN("an effect is set by handle")
+            {
+                auto* effect = amEngine->GetEffectHandle("equalizer");
+                wrapper.SetEffect(effect);
+
+                THEN("it returns the new effect")
+                {
+                    REQUIRE(wrapper.GetEffect() == effect);
+
+                    REQUIRE(wrapper.GetEffect() == state.GetEffect());
+                }
             }
         }
 

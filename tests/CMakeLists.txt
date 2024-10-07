@@ -28,7 +28,8 @@ add_executable(${PROJECT_NAME}
     entity.cpp
     engine.cpp
     environment.cpp
-    common.cpp)
+    common.cpp
+    math.cpp)
 target_link_libraries(${PROJECT_NAME} PRIVATE Catch2::Catch2 Shared)
 
 add_custom_command(
@@ -41,9 +42,17 @@ add_dependencies(${PROJECT_NAME}
     ss_amplitude_audio_sample_project
     amac
     ampk
+    amir
 )
 
 include(Catch)
 catch_discover_tests(${PROJECT_NAME}
     WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}
+)
+
+target_compile_definitions(
+    ${PROJECT_NAME}
+    PRIVATE
+    AM_SDK_PLATFORM="${VCPKG_TARGET_TRIPLET}"
+    AM_SDK_PATH="$ENV{AM_SDK_PATH}"
 )
