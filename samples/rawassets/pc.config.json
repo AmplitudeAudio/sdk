@@ -1,7 +1,7 @@
 {
   "driver": "miniaudio",
   "output": {
-    "frequency": 48000,
+    "frequency": 44100,
     "buffer_size": 4096,
     "format": "Float32"
   },

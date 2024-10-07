@@ -22,15 +22,6 @@
 
 using namespace SparkyStudios::Audio::Amplitude;
 
-static void log(const char* fmt, va_list args)
-{
-#if defined(AM_WCHAR_SUPPORTED)
-    vfwprintf(stdout, AM_STRING_TO_OS_STRING(fmt), args);
-#else
-    vfprintf(stdout, fmt, args);
-#endif
-}
-
 static void device_notification(DeviceNotification notification, const DeviceDescription& device, Driver* driver)
 {
     switch (notification)
@@ -53,18 +44,18 @@ static void device_notification(DeviceNotification notification, const DeviceDes
     }
 }
 
-const AmInt32 kScreenWidth = 640;
-const AmInt32 kScreenHeight = 480;
-const AmTime kFramesPerSecond = 60.0;
-const AmUInt32 kDelayMilliseconds = static_cast<AmUInt32>(kAmSecond * 1.0 / kFramesPerSecond);
+constexpr AmInt32 kScreenWidth = 640;
+constexpr AmInt32 kScreenHeight = 480;
+constexpr AmTime kFramesPerSecond = 60.0;
+constexpr AmUInt32 kDelayMilliseconds = static_cast<AmUInt32>(kAmSecond * 1.0 / kFramesPerSecond);
 
-const char* kWindowTitle = "Amplitude Audio SDK Sample";
-AmOsString kAudioConfig = AM_OS_STRING("pc.config.amconfig");
-AmOsString kSoundBank = AM_OS_STRING("sample_02.ambank");
-const char* kInstructionsTexture = "./assets/textures/instructions.bmp";
-const char* kChannelTexture = "./assets/textures/channel.bmp";
-const char* kListenerTexture = "./assets/textures/listener.bmp";
-const char* kSoundHandleName = "throw_collection_1";
+constexpr char kWindowTitle[] = "Amplitude Audio SDK Sample";
+const AmOsString kAudioConfig = AM_OS_STRING("pc.config.amconfig");
+const AmOsString kSoundBank = AM_OS_STRING("sample_02.ambank");
+constexpr char kInstructionsTexture[] = "./assets/textures/instructions.bmp";
+constexpr char kChannelTexture[] = "./assets/textures/channel.bmp";
+constexpr char kListenerTexture[] = "./assets/textures/listener.bmp";
+constexpr char kSoundHandleName[] = "throw_collection_1";
 
 AmInt32 gListenerIdCounter = 0;
 
@@ -128,15 +119,15 @@ public:
     void Run();
 
 private:
-    SDL_Texture* LoadTexture(const char* texture_path);
+    SDL_Texture* LoadTexture(const char* texture_path) const;
     void AdvanceFrame(AmReal32 delta_time);
     void HandleInput();
     void UpdateIconState(IconState* icon_state, AmReal32 delta_time);
     void UpdateIcons(AmReal32 delta_time);
     void RemoveInvalidSounds();
-    void DrawInstructions();
-    void DrawIcon(const IconState& icon_state, SDL_Texture* texture);
-    void DrawIcons();
+    void DrawInstructions() const;
+    void DrawIcon(const IconState& icon_state, SDL_Texture* texture) const;
+    void DrawIcons() const;
 
     bool quit_;
     AmString audio_config_source_;
@@ -167,7 +158,7 @@ SampleState::~SampleState()
     SDL_Quit();
 }
 
-SDL_Texture* SampleState::LoadTexture(const char* texture_path)
+SDL_Texture* SampleState::LoadTexture(const char* texture_path) const
 {
     SDL_Surface* surface = SDL_LoadBMP(texture_path);
     if (surface == nullptr)
@@ -317,7 +308,7 @@ void TextureRect(SDL_Rect* rect, const AmVec2& location, SDL_Texture* texture)
     rect->y = static_cast<AmInt32>(location.Y - static_cast<AmReal32>(rect->h) / 2);
 }
 
-void SampleState::DrawIcon(const IconState& icon_state, SDL_Texture* texture)
+void SampleState::DrawIcon(const IconState& icon_state, SDL_Texture* texture) const
 {
     SDL_Rect rect = { 0, 0, 0, 0 };
     TextureRect(&rect, icon_state.location, texture);
@@ -326,24 +317,22 @@ void SampleState::DrawIcon(const IconState& icon_state, SDL_Texture* texture)
 
 void SampleState::RemoveInvalidSounds()
 {
-    channel_icons_.erase(
-        std::remove_if(
-            channel_icons_.begin(), channel_icons_.end(),
-            [](const ChannelIcon& icon)
-            {
-                return !icon.channel.Valid();
-            }),
-        channel_icons_.end());
+    std::erase_if(
+        channel_icons_,
+        [](const ChannelIcon& icon)
+        {
+            return !icon.channel.Valid();
+        });
 }
 
-void SampleState::DrawInstructions()
+void SampleState::DrawInstructions() const
 {
     SDL_Rect rect = { 0, 0, 0, 0 };
     SDL_QueryTexture(instructions_texture_, nullptr, nullptr, &rect.w, &rect.h);
     SDL_RenderCopy(renderer_, instructions_texture_, nullptr, &rect);
 }
 
-void SampleState::DrawIcons()
+void SampleState::DrawIcons() const
 {
     for (const auto& channel_icon : channel_icons_)
     {
@@ -504,6 +493,9 @@ AmInt32 main(AmInt32 argc, char* argv[])
     (void)argc;
     (void)argv;
 
+    ConsoleLogger logger;
+    Logger::SetLogger(&logger);
+
     MemoryManager::Initialize(MemoryManagerConfig());
 
     if (SampleState sample; !sample.Initialize())
@@ -518,10 +510,10 @@ AmInt32 main(AmInt32 argc, char* argv[])
     while (!amEngine->TryFinalizeCloseFileSystem())
         Thread::Sleep(1);
 
-    amEngine->DestroyInstance();
-
     // Unregister all default plugins
     Engine::UnregisterDefaultPlugins();
+
+    amEngine->DestroyInstance();
 
 #if !defined(AM_NO_MEMORY_STATS)
     amLogInfo("%s", amMemory->InspectMemoryLeaks().c_str());
