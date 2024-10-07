@@ -40,7 +40,7 @@ namespace SparkyStudios::Audio::Amplitude
         if (w < -kEpsilon || v + w > 1.0f + kEpsilon)
             return false;
 
-        if (const AmReal32 t = invDet * AM_Dot(e2, s1); t >= kEpsilon)
+        if (const AmReal32 t = invDet * AM_Dot(e2, s1); t >= 0.0f)
         {
             result.m_V = v;
             result.m_W = w;
