@@ -1,0 +1,9 @@
+codecov:
+  branch: develop
+
+coverage:
+  round: up
+  range: 0..10
+
+ignore:
+  - src/Utils/
