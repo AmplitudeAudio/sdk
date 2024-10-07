@@ -720,6 +720,53 @@ TEST_CASE("Engine Tests", "[engine][core][amplitude]")
 
                 amEngine->UnloadSoundBank("tests.init.ambank");
             }
+
+            GIVEN("an environment")
+            {
+                const auto environment = amEngine->AddEnvironment(1234);
+
+                WHEN("the effect changes")
+                {
+                    SphereShape inner(10);
+                    SphereShape outer(20);
+                    SphereZone zone(&inner, &outer);
+
+                    environment.SetZone(&zone);
+
+                    WHEN("an effect is set by ID")
+                    {
+                        environment.SetEffect(2);
+
+                        THEN("it returns the new effect")
+                        {
+                            REQUIRE(environment.GetEffect() == amEngine->GetEffectHandle(2));
+                        }
+                    }
+
+                    WHEN("an effect is set by name")
+                    {
+                        environment.SetEffect("lpf");
+
+                        THEN("it returns the new effect")
+                        {
+                            REQUIRE(environment.GetEffect() == amEngine->GetEffectHandle("lpf"));
+                        }
+                    }
+
+                    WHEN("an effect is set by handle")
+                    {
+                        auto* effect = amEngine->GetEffectHandle("equalizer");
+                        environment.SetEffect(effect);
+
+                        THEN("it returns the new effect")
+                        {
+                            REQUIRE(environment.GetEffect() == effect);
+                        }
+                    }
+                }
+
+                amEngine->UnloadSoundBank("tests.init.ambank");
+            }
         }
     }
 }
