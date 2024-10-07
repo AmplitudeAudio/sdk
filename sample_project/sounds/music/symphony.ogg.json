@@ -20,5 +20,5 @@
   "effect": 0,
   "attenuation": 0,
   "fader": "Linear",
-  "path": "abcdefu.flac"
+  "path": "music/symphony.ogg"
 }

@@ -38,14 +38,13 @@ namespace SparkyStudios::Audio::Amplitude
 
     NullDriver::~NullDriver()
     {
-        if (_initialized)
-            Close();
+        Close();
     }
 
     bool NullDriver::Open(const DeviceDescription& device)
     {
         if (_initialized)
-            return false;
+            return true;
 
         _deviceData.mOutputBufferSize = device.mOutputBufferSize / static_cast<AmUInt32>(device.mRequestedOutputChannels);
         _deviceData.mRunning = true;

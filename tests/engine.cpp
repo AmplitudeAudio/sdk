@@ -60,7 +60,7 @@ TEST_CASE("Engine Tests", "[engine][core][amplitude]")
         REQUIRE(amEngine->Deinitialize());
     }
 
-    GIVEN("an unknow driver")
+    GIVEN("an unknown driver")
     {
         THEN("it can be initialized with a default driver")
         {
