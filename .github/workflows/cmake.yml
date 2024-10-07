@@ -201,6 +201,9 @@ jobs:
         shell: bash
         working-directory: ${{ inputs.project-path }}/build/tests
         run: ctest -j1 -C ${{ matrix.build_type }} --output-on-failure
+        env:
+          AM_SDK_PATH: "${{ steps.sdk_path.outputs.path }}/sdk"
+          AM_SDK_PLATFORM: ${{ matrix.config.target_triplet }}
 
       - name: Install Strip
         shell: bash
