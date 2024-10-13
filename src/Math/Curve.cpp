@@ -52,13 +52,7 @@ namespace SparkyStudios::Audio::Amplitude
         _start = { definition->start()->x(), definition->start()->y() };
         _end = { definition->end()->x(), definition->end()->y() };
 
-        if (_fader != nullptr)
-            _faderFactory->DestroyInstance(_fader);
-
-        _faderFactory = Fader::Find(definition->fader()->str());
-        _fader = _faderFactory->CreateInstance();
-
-        _fader->Set(_start.y, _end.y, 0.0);
+        SetFader(definition->fader()->str());
     }
 
     const CurvePoint& CurvePart::GetStart() const
@@ -95,16 +89,22 @@ namespace SparkyStudios::Audio::Amplitude
     void CurvePart::SetFader(const AmString& fader)
     {
         if (_fader != nullptr)
+        {
             _faderFactory->DestroyInstance(_fader);
+            _fader = nullptr;
+        }
 
         _faderFactory = Fader::Find(fader);
+        if (_faderFactory == nullptr)
+            return;
+
         _fader = _faderFactory->CreateInstance();
         _fader->Set(_start.y, _end.y, 0.0);
     }
 
-    float CurvePart::Get(double x) const
+    AmReal32 CurvePart::Get(AmReal64 x) const
     {
-        const double percentage = (x - _start.x) / (_end.x - _start.x);
+        const AmReal64 percentage = (x - _start.x) / (_end.x - _start.x);
         return _fader->GetFromPercentage(percentage);
     }
 
@@ -114,6 +114,9 @@ namespace SparkyStudios::Audio::Amplitude
 
     void Curve::Initialize(const CurveDefinition* definition)
     {
+        if (definition == nullptr)
+            return;
+
         const flatbuffers::uoffset_t size = definition->parts() ? definition->parts()->size() : 0;
         _parts.resize(size);
 
@@ -121,10 +124,25 @@ namespace SparkyStudios::Audio::Amplitude
             _parts[i].Initialize(definition->parts()->Get(i));
     }
 
-    float Curve::Get(double x) const
+    void Curve::Initialize(const std::vector<CurvePart>& parts)
     {
-        // Clamp the x value to the possible curve range.
-        x = AM_CLAMP(x, _parts.front().GetStart().x, _parts.back().GetEnd().x);
+        _parts.resize(parts.size());
+
+        for (size_t i = 0; i < parts.size(); ++i)
+        {
+            _parts[i].SetStart(parts[i].GetStart());
+            _parts[i].SetEnd(parts[i].GetEnd());
+
+            _parts[i].SetFader(parts[i]._faderFactory->GetName());
+        }
+    }
+
+    AmReal32 Curve::Get(AmReal64 x) const
+    {
+        if (_parts.empty())
+            return 0.0f;
+
+        // Search the curve range corresponding to the x value.
         const CurvePart* part = _findCurvePart(x);
 
         // If no curve part found
@@ -134,7 +152,7 @@ namespace SparkyStudios::Audio::Amplitude
         return part->Get(x);
     }
 
-    const CurvePart* Curve::_findCurvePart(double x) const
+    const CurvePart* Curve::_findCurvePart(AmReal64 x) const
     {
         for (const auto& item : _parts)
             if (item.GetStart().x <= x && item.GetEnd().x >= x)

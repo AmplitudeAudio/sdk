@@ -355,3 +355,141 @@ TEST_CASE("Spherical Position Tests", "[spherical_position][math][amplitude]")
         }
     }
 }
+
+TEST_CASE("Curve Tests", "[curve][math][amplitude]")
+{
+    SECTION("curve points")
+    {
+        CurvePoint a{ 0.5, 1.0f };
+        CurvePoint b{ 1.0, 2.0f };
+        CurvePoint c{ 0.5, 1.0f };
+
+        THEN("it should be equal to itself")
+        {
+            REQUIRE(a == a);
+        }
+
+        THEN("it should be equal to another curve point with the same coordinates")
+        {
+            REQUIRE(a == c);
+        }
+
+        THEN("it should not be equal to another curve point with different coordinates")
+        {
+            REQUIRE(a != b);
+            REQUIRE(b != c);
+        }
+    }
+
+    SECTION("curve parts")
+    {
+        CurvePart part1;
+
+        CurvePoint zero{ 0.0, 0.0f };
+        CurvePoint one{ 1.0, 1.0f };
+
+        THEN("it cannot be initialized with a null definition")
+        {
+            part1.Initialize(nullptr);
+            REQUIRE(part1.GetStart() == zero);
+            REQUIRE(part1.GetEnd() == zero);
+        }
+
+        THEN("it can receive a start point")
+        {
+            part1.SetStart(one);
+            REQUIRE(part1.GetStart() == one);
+        }
+
+        THEN("it can receive an end point")
+        {
+            part1.SetEnd(zero);
+            REQUIRE(part1.GetEnd() == zero);
+        }
+
+        THEN("it can receive a fader")
+        {
+            part1.SetFader("Linear");
+            REQUIRE(part1.GetFader() != nullptr);
+
+            AND_THEN("it cannot use an invalid fader")
+            {
+                part1.SetFader("Invalid");
+                REQUIRE(part1.GetFader() == nullptr);
+            }
+        }
+
+        THEN("it can get the right values")
+        {
+            part1.SetFader("Linear");
+            part1.SetStart(zero);
+            part1.SetEnd(one);
+
+            for (AmReal64 t = 0.0; t <= 1.0; t += 0.1)
+            {
+                const AmReal32 value = part1.Get(t);
+                REQUIRE(value - t < kEpsilon);
+            }
+        }
+    }
+
+    SECTION("curve")
+    {
+        CurvePoint zero{ 0.0, 0.0f };
+        CurvePoint middle{ 0.5, 1.0f };
+        CurvePoint one{ 1.0, 0.0f };
+
+        CurvePart part1;
+        part1.SetStart(zero);
+        part1.SetEnd(middle);
+        part1.SetFader("Linear");
+
+        CurvePart part2;
+        part2.SetStart(middle);
+        part2.SetEnd(one);
+        part2.SetFader("Linear");
+
+        Curve curve;
+
+        THEN("cannot be initialized with a null definition")
+        {
+            curve.Initialize(nullptr);
+
+            REQUIRE(curve.Get(0.0) == 0.0f);
+        }
+
+        THEN("can be initialized with curve parts")
+        {
+            curve.Initialize({ part1, part2 });
+
+            REQUIRE(curve.Get(0.0) - 0.0f < kEpsilon);
+            REQUIRE(curve.Get(0.5) - 1.0f < kEpsilon);
+            REQUIRE(curve.Get(1.0) - 0.0f < kEpsilon);
+        }
+
+        THEN("can get the right values")
+        {
+            curve.Initialize({ part1, part2 });
+
+            for (AmReal64 t = 0.0; t <= 0.5; t += 0.1)
+            {
+                const AmReal32 value = curve.Get(t);
+                REQUIRE(value - (t * 2) < kEpsilon);
+            }
+
+            for (AmReal64 t = 0.5; t <= 1.0; t += 0.1)
+            {
+                const AmReal32 value = curve.Get(t);
+                REQUIRE(value - 2 - 2 * t < kEpsilon);
+            }
+        }
+
+        THEN("cannot get values outside the range")
+        {
+            curve.Initialize({ part1, part2 });
+
+            REQUIRE(curve.Get(-1.0) == 0.0f);
+            REQUIRE(curve.Get(2.0) == 0.0f);
+        }
+    }
+}

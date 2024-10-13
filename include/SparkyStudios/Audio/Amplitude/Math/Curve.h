@@ -129,6 +129,8 @@ namespace SparkyStudios::Audio::Amplitude
         [[nodiscard]] AmReal32 Get(AmReal64 x) const;
 
     private:
+        friend class Curve;
+
         CurvePoint _start;
         CurvePoint _end;
 
@@ -155,6 +157,13 @@ namespace SparkyStudios::Audio::Amplitude
          * @param[in] definition The curve definition data.
          */
         void Initialize(const CurveDefinition* definition);
+
+        /**
+         * @brief Initializes curve parts from the given vector.
+         *
+         * @param[in] parts The vector of curve parts.
+         */
+        void Initialize(const std::vector<CurvePart>& parts);
 
         /**
          * @brief Get the curve value corresponding to the given X value.
