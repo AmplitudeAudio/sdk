@@ -324,6 +324,38 @@ TEST_CASE("Engine Tests", "[engine][core][amplitude]")
                 amEngine->UnloadSoundBank("tests.init.ambank");
             }
 
+            THEN("it can register rooms")
+            {
+                Room r1 = amEngine->AddRoom(1);
+                Room r2 = amEngine->AddRoom(2);
+
+                REQUIRE(r1.Valid());
+                REQUIRE(r2.Valid());
+
+                Room r3 = amEngine->AddRoom(1);
+                REQUIRE(r3.Valid());
+                REQUIRE(r3.GetState() == r1.GetState());
+
+                Room r4 = amEngine->GetRoom(2);
+                REQUIRE(r4.Valid());
+                REQUIRE(r4.GetState() == r2.GetState());
+
+                Room r5 = amEngine->GetRoom(3);
+                REQUIRE_FALSE(r5.Valid());
+
+                amEngine->RemoveRoom(1);
+                amEngine->RemoveRoom(&r2);
+                amEngine->RemoveRoom(3);
+
+                REQUIRE_FALSE(r1.Valid());
+                REQUIRE_FALSE(r2.Valid());
+                REQUIRE_FALSE(r3.Valid());
+                REQUIRE_FALSE(r4.Valid());
+                REQUIRE_FALSE(r5.Valid());
+
+                amEngine->UnloadSoundBank("tests.init.ambank");
+            }
+
             THEN("it can access sound assets by names")
             {
                 REQUIRE(amEngine->GetSoundHandle("symphony") != nullptr);

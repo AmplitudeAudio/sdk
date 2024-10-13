@@ -551,16 +551,16 @@ if(BUILD_SAMPLES)
 endif ()
 
 if(UNIT_TESTS)
-    enable_testing()
-    add_subdirectory(tests)
-    message(STATUS ${PROJECT_BINARY_DIR})
-
     setup_target_for_coverage_lcov(
         NAME ss_amplitude_audio_tests_coverage
         EXECUTABLE ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/ss_amplitude_audio_tests
         DEPENDENCIES ss_amplitude_audio_tests
-        EXCLUDE "/usr/*" "${CMAKE_BINARY_DIR}/vcpkg_installed/*"
+        EXCLUDE "/usr/*" "${CMAKE_BINARY_DIR}/vcpkg_installed/*" "${PROJECT_SOURCE_DIR}/src/Utils/*"
     )
+
+    enable_testing()
+    add_subdirectory(tests)
+    message(STATUS ${PROJECT_BINARY_DIR})
 endif ()
 
 # #####################################################
