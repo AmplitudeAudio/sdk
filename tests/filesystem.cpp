@@ -438,3 +438,84 @@ TEST_CASE("PackageFileSystem Tests", "[filesystem][amplitude]")
         }
     }
 }
+
+TEST_CASE("PackageFileSystem PackageItemFile Tests", "[filesystem][amplitude]")
+{
+    PackageFileSystem fileSystem;
+    fileSystem.SetBasePath(AM_OS_STRING("./samples/assets.ampk"));
+
+    fileSystem.StartOpenFileSystem();
+    while (!fileSystem.TryFinalizeOpenFileSystem())
+        Thread::Sleep(1);
+
+    auto file = fileSystem.OpenFile(AM_OS_STRING("data/tests/file_read_test.txt"), eFileOpenMode_Read);
+
+    SECTION("can open a package file")
+    {
+        REQUIRE(file->IsValid());
+    }
+
+    SECTION("cannot open unknown file")
+    {
+        REQUIRE(fileSystem.OpenFile(AM_OS_STRING("some_random_file.ext")) == nullptr);
+    }
+
+    SECTION("can return the correct file path")
+    {
+        REQUIRE(file->GetPath() == fileSystem.ResolvePath(AM_OS_STRING("data/tests/file_read_test.txt")));
+    }
+
+    SECTION("can return the correct file size")
+    {
+        REQUIRE(file->Length() == 2);
+    }
+
+    SECTION("cannot write the file")
+    {
+        REQUIRE(file->Write8('O') == 0);
+        REQUIRE(file->Write8('K') == 0);
+    }
+
+    SECTION("can seek the file")
+    {
+        file->Seek(1, eFileSeekOrigin_Start);
+        REQUIRE(file->Position() == 1);
+        REQUIRE(file->Read8() == 'K');
+        file->Seek(-2, eFileSeekOrigin_End);
+        REQUIRE(file->Position() == 0);
+        REQUIRE(file->Read8() == 'O');
+        file->Seek(-1, eFileSeekOrigin_Current);
+        REQUIRE(file->Position() == 0);
+        REQUIRE(file->Read8() == 'O');
+        file->Seek(1234, eFileSeekOrigin_Start);
+        REQUIRE(file->Position() == 2);
+        REQUIRE(file->Read8() == 0);
+
+        file->Seek(1, eFileSeekOrigin_Start);
+        file->Seek(0, eFileSeekOrigin_Current);
+        REQUIRE(file->Position() == 1);
+        REQUIRE(file->Read8() == 'K');
+
+        file->Seek(1, eFileSeekOrigin_Start);
+        file->Seek(1, eFileSeekOrigin_Start);
+        REQUIRE(file->Position() == 1);
+        REQUIRE(file->Read8() == 'K');
+
+        file->Seek(1, eFileSeekOrigin_Start);
+        file->Seek(-1, eFileSeekOrigin_End);
+        REQUIRE(file->Position() == 1);
+        REQUIRE(file->Read8() == 'K');
+    }
+
+    SECTION("can read the entire file")
+    {
+        file->Seek(0, eFileSeekOrigin_Start);
+        auto* content = static_cast<AmUInt8Buffer>(ammalloc(2));
+        REQUIRE(file->Read(content, 2) == 2);
+        REQUIRE(content[0] == 'O');
+        REQUIRE(content[1] == 'K');
+        REQUIRE(file->Position() == file->Length());
+        REQUIRE(file->Eof());
+        amfree(content);
+    }
+}

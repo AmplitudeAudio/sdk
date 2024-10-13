@@ -54,16 +54,22 @@ namespace SparkyStudios::Audio::Amplitude
 
     void PackageItemFile::Seek(AmInt64 offset, eFileSeekOrigin origin)
     {
-        if (origin == eFileSeekOrigin_Start && Position() == offset)
+        const AmSize currentPosition = Position();
+        const AmSize fileSize = Length();
+
+        const AmInt64 minOffset = _headerSize + _description->m_Offset;
+        const AmInt64 maxOffset = minOffset + fileSize;
+
+        if (origin == eFileSeekOrigin_Start && currentPosition == offset)
             return;
 
-        if (origin == eFileSeekOrigin_End && Position() == (Length() + offset))
+        if (origin == eFileSeekOrigin_End && currentPosition == (fileSize + offset))
             return;
 
         if (origin == eFileSeekOrigin_Current && offset == 0)
             return;
 
-        AmInt64 finalOffset = _headerSize + _description->m_Offset;
+        AmInt64 finalOffset = minOffset;
 
         switch (origin)
         {
@@ -71,12 +77,14 @@ namespace SparkyStudios::Audio::Amplitude
             finalOffset += offset;
             break;
         case eFileSeekOrigin_End:
-            finalOffset += Length() + offset;
+            finalOffset += fileSize - 1 + offset;
             break;
         case eFileSeekOrigin_Current:
-            finalOffset += Position() + offset;
+            finalOffset += currentPosition + offset;
             break;
         }
+
+        finalOffset = AM_CLAMP(finalOffset, minOffset, maxOffset);
 
         DiskFile::Seek(finalOffset, eFileSeekOrigin_Start);
     }
