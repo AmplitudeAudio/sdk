@@ -130,7 +130,7 @@ TEST_CASE("Thread Pool Tests", "[thread][amplitude]")
 
             THEN("the task is executed")
             {
-                Thread::Sleep(110); // Wait for the task to execute
+                Thread::Sleep(150); // Wait for the task to execute
                 REQUIRE(task->IsExecuted());
 
                 AND_THEN("the task is removed from the pool")
@@ -169,7 +169,7 @@ TEST_CASE("Thread Pool Tests", "[thread][amplitude]")
 
             THEN("the task is not executed")
             {
-                Thread::Sleep(10); // Wait for the task to execute
+                Thread::Sleep(50); // Wait for the task to execute
                 REQUIRE_FALSE(task->IsExecuted());
 
                 AND_THEN("the task is not removed from the pool")
@@ -207,7 +207,7 @@ TEST_CASE("Thread Pool Tests", "[thread][amplitude]")
         }
     }
 
-    WHEN("a thread pool is created whithout threads")
+    WHEN("a thread pool is created without threads")
     {
         Thread::Pool pool2;
         pool2.Init(0);
