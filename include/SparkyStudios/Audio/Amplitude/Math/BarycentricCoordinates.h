@@ -26,7 +26,7 @@ namespace SparkyStudios::Audio::Amplitude
      *
      * @ingroup math
      */
-    struct BarycentricCoordinates
+    struct AM_API_PUBLIC BarycentricCoordinates
     {
         /**
          * @brief Computes the barycentric coordinates of the intersection of a ray with a triangle.

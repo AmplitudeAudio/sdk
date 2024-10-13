@@ -71,7 +71,7 @@ namespace SparkyStudios::Audio::Amplitude
         /**
          * @brief Converts values from one cartesian coordinate system to another.
          */
-        class Converter
+        class AM_API_PUBLIC Converter
         {
         public:
             /**
