@@ -10,7 +10,7 @@
     "kind": "Static",
     "value": 1.0
   },
-  "stream": false,
+  "stream": true,
   "loop": {
     "enabled": false,
     "loop_count": 5
