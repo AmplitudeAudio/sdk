@@ -187,7 +187,7 @@ jobs:
             -DVCPKG_TARGET_TRIPLET:STRING="${{ matrix.config.target_triplet }}" \
             -DCMAKE_EXPORT_COMPILE_COMMANDS:BOOL=TRUE \
             -DBUILD_SAMPLES:BOOL=TRUE \
-            -DUNIT_TESTS:BOOL=TRUE
+            -DUNIT_TESTS:BOOL=${{ matrix.build_type == 'release' && 'FALSE' || 'TRUE' }}
         env:
           AM_SDK_PATH: "${{ steps.sdk_path.outputs.path }}/sdk"
           AM_SDK_PLATFORM: ${{ matrix.config.target_triplet }}
