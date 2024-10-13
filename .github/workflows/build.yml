@@ -50,6 +50,7 @@ jobs:
       project-path: .
       project-slug: sdk
     name: Amplitude Audio SDK
+    secrets: inherit
 
   release:
     needs: [build]
