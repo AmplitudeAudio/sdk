@@ -100,6 +100,24 @@ TEST_CASE("Thread Tests", "[thread][amplitude]")
 
         REQUIRE((end - start) >= 100); // Should at least run for 100ms
     }
+
+    GIVEN("a null mutex")
+    {
+        THEN("locking a null mutex does not crash")
+        {
+            Thread::LockMutex(nullptr);
+        }
+
+        THEN("unlocking a null mutex does not crash")
+        {
+            Thread::UnlockMutex(nullptr);
+        }
+
+        THEN("destroying a null mutex does not crash")
+        {
+            Thread::DestroyMutex(nullptr);
+        }
+    }
 }
 
 TEST_CASE("Thread Pool Tests", "[thread][amplitude]")
@@ -153,7 +171,7 @@ TEST_CASE("Thread Pool Tests", "[thread][amplitude]")
 
                 if (willExecuteWorkInCallerThread)
                 {
-                    Thread::Sleep(100);
+                    // Thread::Sleep(150);
                     REQUIRE(task->IsExecuted());
                     REQUIRE(task->GetExecutingThreadId() == Thread::GetCurrentThreadId());
                 }

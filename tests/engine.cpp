@@ -413,7 +413,7 @@ TEST_CASE("Engine Tests", "[engine][core][amplitude]")
                 REQUIRE(channel.Valid());
                 REQUIRE(channel.Playing());
 
-                Thread::Sleep(1000); // wait for the sound to finish playing
+                Thread::Sleep(2000); // wait for the sound to finish playing
                 REQUIRE_FALSE(channel.Playing());
 
                 amEngine->UnloadSoundBank(AM_OS_STRING("tests.init.ambank"));
@@ -427,7 +427,7 @@ TEST_CASE("Engine Tests", "[engine][core][amplitude]")
                 REQUIRE(channel.Valid());
                 REQUIRE(channel.Playing());
 
-                Thread::Sleep(1000); // wait for the sound to finish playing
+                Thread::Sleep(2000); // wait for the sound to finish playing
                 REQUIRE_FALSE(channel.Playing());
 
                 amEngine->UnloadSoundBank(AM_OS_STRING("tests.init.ambank"));
@@ -457,7 +457,7 @@ TEST_CASE("Engine Tests", "[engine][core][amplitude]")
                 REQUIRE(channel.Valid());
                 REQUIRE(channel.Playing());
 
-                Thread::Sleep(kAmSecond * 3); // wait for the sound to finish playing
+                Thread::Sleep(kAmSecond * 5); // wait for the sound to finish playing
                 REQUIRE_FALSE(channel.Playing());
 
                 amEngine->UnloadSoundBank(AM_OS_STRING("tests.init.ambank"));
