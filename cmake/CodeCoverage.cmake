@@ -141,9 +141,9 @@ option(CODE_COVERAGE_VERBOSE "Verbose information" FALSE)
 
 # Check prereqs
 find_program( GCOV_PATH gcov )
-find_program( LCOV_PATH  NAMES lcov lcov.bat lcov.exe lcov.perl)
+find_program( LCOV_PATH  NAMES lcov lcov.bat lcov.exe lcov.perl HINTS ENV LCOV_PATH )
 find_program( FASTCOV_PATH NAMES fastcov fastcov.py )
-find_program( GENHTML_PATH NAMES genhtml genhtml.perl genhtml.bat )
+find_program( GENHTML_PATH NAMES genhtml genhtml.perl genhtml.bat HINTS ENV LCOV_PATH )
 find_program( GCOVR_PATH gcovr PATHS ${CMAKE_SOURCE_DIR}/scripts/test)
 find_program( CPPFILT_PATH NAMES c++filt )
 

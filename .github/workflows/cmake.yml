@@ -112,8 +112,12 @@ jobs:
         if: startsWith(matrix.config.os, 'windows')
         run: |
           choco install ninja cmake curl lcov
+          [Environment]::SetEnvironmentVariable("PATH", $Env:PATH + ";C:\ProgramData\chocolatey\lib\lcov\tools\bin", [EnvironmentVariableTarget]::Machine)
+          $env:PATH = [System.Environment]::GetEnvironmentVariable("PATH", "Machine") + ";" + [System.Environment]::GetEnvironmentVariable("PATH", "User")
+          echo "LCOV_PATH=C:/ProgramData/chocolatey/lib/lcov/tools/bin" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
           ninja --version
           cmake --version
+          lcov --version
           $FLATC_VERSION = "$(curl "https://api.github.com/repos/google/flatbuffers/releases/latest" --ssl-no-revoke --silent | Select-String -Pattern '"tag_name":\s*"(.+)"')" -replace '.*"v(.+)".*','$1'
           echo "flatc download latest v$FLATC_VERSION version"
           iwr -Uri https://github.com/google/flatbuffers/releases/download/v$FLATC_VERSION/Windows.flatc.binary.zip -OutFile flatc.zip
@@ -124,7 +128,6 @@ jobs:
       - name: Install dependencies on Windows (MingW)
         if: startsWith(matrix.config.os, 'windows') && startsWith(matrix.config.key, 'mingw')
         run: |
-          choco install lcov
           choco upgrade mingw
 
       - name: Install dependencies on Ubuntu
@@ -136,6 +139,7 @@ jobs:
           ninja --version
           cmake --version
           gcc --version
+          lcov --version
           wget https://github.com/google/flatbuffers/releases/download/${{ steps.flatc_version.outputs.tag }}/Linux.flatc.binary.g++-13.zip
           mkdir bin
           sudo unzip Linux.flatc.binary.g++-13.zip -d bin
@@ -147,6 +151,7 @@ jobs:
           brew install p7zip cmake ninja lcov
           ninja --version
           cmake --version
+          lcov --version
           wget https://github.com/google/flatbuffers/releases/download/${{ steps.flatc_version.outputs.tag }}/Mac.flatc.binary.zip
           mkdir bin
           sudo unzip Mac.flatc.binary.zip -d bin
