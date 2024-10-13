@@ -269,7 +269,8 @@ namespace SparkyStudios::Audio::Amplitude
         if (!plugin->has_symbol("RegisterPlugin"))
         {
             amLogError(
-                "Failed to load plugin '" AM_OS_CHAR_FMT "'. The library doesn't export a RegisterPlugin symbol.", pluginLibraryName.c_str());
+                "Failed to load plugin '" AM_OS_CHAR_FMT "'. The library doesn't export a RegisterPlugin symbol.",
+                pluginLibraryName.c_str());
             return nullptr;
         }
 
@@ -283,7 +284,8 @@ namespace SparkyStudios::Audio::Amplitude
         if (!plugin->has_symbol("PluginVersion"))
         {
             amLogError(
-                "Failed to load plugin '" AM_OS_CHAR_FMT "'. The library doesn't export a PluginVersion symbol.", pluginLibraryName.c_str());
+                "Failed to load plugin '" AM_OS_CHAR_FMT "'. The library doesn't export a PluginVersion symbol.",
+                pluginLibraryName.c_str());
             return nullptr;
         }
 
@@ -975,7 +977,7 @@ namespace SparkyStudios::Audio::Amplitude
         if (const auto findIt = _state->sound_bank_id_map.find(filename); findIt == _state->sound_bank_id_map.end())
         {
             amLogWarning("Cannot unload Soundbank '" AM_OS_CHAR_FMT "'. Soundbank not loaded.", filename.c_str());
-            AMPLITUDE_ASSERT(0);
+            AMPLITUDE_ASSERT(false);
         }
         else
         {
@@ -988,7 +990,7 @@ namespace SparkyStudios::Audio::Amplitude
         if (const auto findIt = _state->sound_bank_map.find(id); findIt == _state->sound_bank_map.end())
         {
             amLogWarning("Cannot unload Soundbank with ID '" AM_ID_CHAR_FMT "'. Soundbank not loaded.", id);
-            AMPLITUDE_ASSERT(0);
+            AMPLITUDE_ASSERT(false);
         }
         else if (findIt->second->GetRefCounter()->Decrement() == 0)
         {
@@ -1082,6 +1084,7 @@ namespace SparkyStudios::Audio::Amplitude
                         fetchMode == eListenerFetchMode_Nearest ? magnitudeSquared < distanceSquared : magnitudeSquared > distanceSquared)
                     {
                         bestListener = listener;
+                        distanceSquared = magnitudeSquared;
                     }
                 }
             }
