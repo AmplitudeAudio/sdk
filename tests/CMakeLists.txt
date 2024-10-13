@@ -30,7 +30,7 @@ add_executable(${PROJECT_NAME}
     environment.cpp
     common.cpp
     math.cpp)
-target_link_libraries(${PROJECT_NAME} PRIVATE Catch2::Catch2 Shared)
+target_link_libraries(${PROJECT_NAME} PRIVATE Catch2::Catch2 Static)
 
 add_custom_command(
     TARGET ${PROJECT_NAME} POST_BUILD
@@ -38,7 +38,7 @@ add_custom_command(
 )
 
 add_dependencies(${PROJECT_NAME}
-    Shared
+    Static
     ss_amplitude_audio_sample_project
     amac
     ampk
