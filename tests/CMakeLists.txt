@@ -32,14 +32,19 @@ add_executable(${PROJECT_NAME}
     math.cpp)
 target_link_libraries(${PROJECT_NAME} PRIVATE Catch2::Catch2 Static)
 
-add_custom_command(
-    TARGET ${PROJECT_NAME} POST_BUILD
+add_custom_target(ss_amplitude_audio_test_package
     COMMAND $<TARGET_FILE:ampk> -q -c 0 ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/samples/assets ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/samples/assets.ampk
+    WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
+)
+
+add_dependencies(ss_amplitude_audio_test_package
+    ampk
+    ss_amplitude_audio_sample_project
 )
 
 add_dependencies(${PROJECT_NAME}
     Static
-    ss_amplitude_audio_sample_project
+    ss_amplitude_audio_test_package
     amac
     ampk
     amir
