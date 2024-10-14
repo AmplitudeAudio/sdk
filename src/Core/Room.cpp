@@ -19,6 +19,16 @@
 
 namespace SparkyStudios::Audio::Amplitude
 {
+    bool RoomMaterial::operator==(const RoomMaterial& other) const
+    {
+        return std::memcmp(&m_absorptionCoefficients, &other.m_absorptionCoefficients, sizeof(AmReal32) * 9) == 0;
+    }
+
+    bool RoomMaterial::operator!=(const RoomMaterial& other) const
+    {
+        return !(*this == other);
+    }
+
     Room::Room()
         : _state(nullptr)
     {}
@@ -152,6 +162,12 @@ namespace SparkyStudios::Audio::Amplitude
     {
         AMPLITUDE_ASSERT(Valid());
         return _state->GetVolume();
+    }
+
+    AmVec3 Room::GetDimensions() const
+    {
+        AMPLITUDE_ASSERT(Valid());
+        return _state->GetDimensions();
     }
 
     AmReal32 Room::GetSurfaceArea(RoomWall wall) const

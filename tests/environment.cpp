@@ -20,7 +20,7 @@
 
 using namespace SparkyStudios::Audio::Amplitude;
 
-TEST_CASE("Environment Tests", "[entity][core][amplitude]")
+TEST_CASE("Environment Tests", "[environment][core][amplitude]")
 {
     EnvironmentInternalState state;
     state.SetId(1);
@@ -81,7 +81,8 @@ TEST_CASE("Environment Tests", "[entity][core][amplitude]")
 
             const auto direction = AM_V3(1, 0, 0);
             const auto up = AM_V3(0, 0, 1);
-            state.SetOrientation(Orientation(direction, up));
+            const auto orientation = Orientation(direction, up);
+            state.SetOrientation(orientation);
 
             THEN("it returns the new orientation")
             {
@@ -90,6 +91,9 @@ TEST_CASE("Environment Tests", "[entity][core][amplitude]")
 
                 REQUIRE(AM_EqV3(zone.GetDirection(), direction));
                 REQUIRE(AM_EqV3(zone.GetUp(), up));
+
+                REQUIRE(std::memcmp(&state.GetOrientation(), &orientation, sizeof(Orientation)) == 0);
+                REQUIRE(std::memcmp(&zone.GetOrientation(), &orientation, sizeof(Orientation)) == 0);
             }
         }
 

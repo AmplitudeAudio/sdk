@@ -112,7 +112,7 @@ namespace SparkyStudios::Audio::Amplitude
         /**
          * @brief Constructs a new `RoomMaterial`.
          *
-         * @note This constructor initializes a `RoomMaterialType`::Custom material.
+         * @note This constructor initializes a `RoomMaterialType::Custom` material.
          */
         RoomMaterial();
 
@@ -132,6 +132,24 @@ namespace SparkyStudios::Audio::Amplitude
          * @brief The absorption coefficients of the material.
          */
         AmReal32 m_absorptionCoefficients[9];
+
+        /**
+         * @brief Checks if two `RoomMaterial` objects are equal.
+         *
+         * @param[in] other The other `RoomMaterial` to compare with.
+         *
+         * @return `true` if the materials are equal, `false` otherwise.
+         */
+        bool operator==(const RoomMaterial& other) const;
+
+        /**
+         * @brief Checks if two `RoomMaterial` objects are not equal.
+         *
+         * @param[in] other The other `RoomMaterial` to compare with.
+         *
+         * @return `true` if the materials are not equal, `false` otherwise.
+         */
+        bool operator!=(const RoomMaterial& other) const;
     };
 
     /**
@@ -323,6 +341,13 @@ namespace SparkyStudios::Audio::Amplitude
          * @return The volume of the room's shape.
          */
         [[nodiscard]] AmReal32 GetVolume() const;
+
+        /**
+         * @brief Gets the dimensions of the `Room` in meters.
+         *
+         * @return The dimensions of the room's shape.
+         */
+        [[nodiscard]] AmVec3 GetDimensions() const;
 
         /**
          * @brief Gets the surface area of a specific wall of this `Room`.

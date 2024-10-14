@@ -423,6 +423,28 @@ namespace SparkyStudios::Audio::Amplitude
          */
         [[nodiscard]] AmVec3 GetClosestPoint(const AmVec3& location) const;
 
+        /**
+         * @brief Compares this shape with another shape for equality.
+         *
+         * @note Shapes are equal if they have the same dimensions, the position, and the same orientation.
+         *
+         * @param[in] other The other shape to compare with.
+         *
+         * @return `true` if the shapes are equal, `false` otherwise.
+         */
+        bool operator==(const BoxShape& other) const;
+
+        /**
+         * @brief Compares this shape with another shape for inequality.
+         *
+         * @note Shapes are equal if they have the same dimensions, the position, and the same orientation.
+         *
+         * @param[in] other The other shape to compare with.
+         *
+         * @return `false` if the shapes are equal, `true` otherwise.
+         */
+        bool operator!=(const BoxShape& other) const;
+
     private:
         void _update();
 

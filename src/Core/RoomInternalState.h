@@ -142,7 +142,10 @@ namespace SparkyStudios::Audio::Amplitude
             , _reflectionsProperties()
             , _needUpdate(false)
             , _playingSoundList(&ChannelInternalState::room_node)
-        {}
+        {
+            for (AmSize i = 0; i < kAmRoomSurfaceCount; i++)
+                _materials[i] = RoomMaterial(RoomMaterialType::Transparent);
+        }
 
         /**
          * @brief Gets the ID of this room.
@@ -387,7 +390,7 @@ namespace SparkyStudios::Audio::Amplitude
     private:
         AmRoomID _id;
 
-        RoomMaterial _materials[6];
+        RoomMaterial _materials[kAmRoomSurfaceCount];
         RoomReflectionsProperties _reflectionsProperties;
 
         bool _needUpdate;

@@ -298,6 +298,16 @@ namespace SparkyStudios::Audio::Amplitude
         return closestPoint;
     }
 
+    bool BoxShape::operator==(const BoxShape& other) const
+    {
+        return _p1 == other._p1 && _p2 == other._p2 && _p3 == other._p3 && _p4 == other._p4;
+    }
+
+    bool BoxShape::operator!=(const BoxShape& other) const
+    {
+        return !(*this == other);
+    }
+
     void BoxShape::_update()
     {
         _p1 = AM_Mul(m_lookAtMatrix, AM_V4(-_halfWidth, -_halfDepth, -_halfHeight, 1.0f)).XYZ;
