@@ -167,6 +167,8 @@ namespace SparkyStudios::Audio::Amplitude
         [[nodiscard]] AmVec3 GetUp() const;
 
     protected:
+        virtual void Update() = 0;
+
         AmVec3 m_location;
         Orientation m_orientation;
 
@@ -424,6 +426,23 @@ namespace SparkyStudios::Audio::Amplitude
         [[nodiscard]] AmVec3 GetClosestPoint(const AmVec3& location) const;
 
         /**
+         * @brief Gets the corners of the box shape.
+         *
+         * The returned corners are arranged in the following order:
+         *
+         *     6 - - - - 4
+         *     | \       | \
+         *     |   3 - - - - 5
+         *     |   |     |   |
+         *      1  | - - 7   |
+         *       \ |       \ |
+         *         0 - - - - 2
+         *
+         * @return The corners of the box shape.
+         */
+        [[nodiscard]] std::array<AmVec3, 8> GetCorners() const;
+
+        /**
          * @brief Compares this shape with another shape for equality.
          *
          * @note Shapes are equal if they have the same dimensions, the position, and the same orientation.
@@ -446,7 +465,7 @@ namespace SparkyStudios::Audio::Amplitude
         bool operator!=(const BoxShape& other) const;
 
     private:
-        void _update();
+        void Update() override;
 
         AmReal32 _halfWidth;
         AmReal32 _halfHeight;
@@ -549,8 +568,30 @@ namespace SparkyStudios::Audio::Amplitude
          */
         [[nodiscard]] bool Contains(const AmVec3& location) final;
 
+        /**
+         * @brief Compares this shape with another shape for equality.
+         *
+         * @note Shapes are equal if they have the same dimensions, the position, and the same orientation.
+         *
+         * @param[in] other The other shape to compare with.
+         *
+         * @return `true` if the shapes are equal, `false` otherwise.
+         */
+        bool operator==(const CapsuleShape& other) const;
+
+        /**
+         * @brief Compares this shape with another shape for inequality.
+         *
+         * @note Shapes are equal if they have the same dimensions, the position, and the same orientation.
+         *
+         * @param[in] other The other shape to compare with.
+         *
+         * @return `false` if the shapes are equal, `true` otherwise.
+         */
+        bool operator!=(const CapsuleShape& other) const;
+
     private:
-        void Update();
+        void Update() override;
 
         AmReal32 _radius;
         AmReal32 _halfHeight;
@@ -640,8 +681,30 @@ namespace SparkyStudios::Audio::Amplitude
          */
         [[nodiscard]] bool Contains(const AmVec3& location) final;
 
+        /**
+         * @brief Compares this shape with another shape for equality.
+         *
+         * @note Shapes are equal if they have the same dimensions, the position, and the same orientation.
+         *
+         * @param[in] other The other shape to compare with.
+         *
+         * @return `true` if the shapes are equal, `false` otherwise.
+         */
+        bool operator==(const ConeShape& other) const;
+
+        /**
+         * @brief Compares this shape with another shape for inequality.
+         *
+         * @note Shapes are equal if they have the same dimensions, the position, and the same orientation.
+         *
+         * @param[in] other The other shape to compare with.
+         *
+         * @return `false` if the shapes are equal, `true` otherwise.
+         */
+        bool operator!=(const ConeShape& other) const;
+
     private:
-        void Update();
+        void Update() override;
 
         AmReal32 _radius;
         AmReal32 _height;
@@ -714,8 +777,30 @@ namespace SparkyStudios::Audio::Amplitude
          */
         [[nodiscard]] bool Contains(const AmVec3& location) final;
 
+        /**
+         * @brief Compares this shape with another shape for equality.
+         *
+         * @note Shapes are equal if they have the same dimensions, the position, and the same orientation.
+         *
+         * @param[in] other The other shape to compare with.
+         *
+         * @return `true` if the shapes are equal, `false` otherwise.
+         */
+        bool operator==(const SphereShape& other) const;
+
+        /**
+         * @brief Compares this shape with another shape for inequality.
+         *
+         * @note Shapes are equal if they have the same dimensions, the position, and the same orientation.
+         *
+         * @param[in] other The other shape to compare with.
+         *
+         * @return `false` if the shapes are equal, `true` otherwise.
+         */
+        bool operator!=(const SphereShape& other) const;
+
     private:
-        void Update();
+        void Update() override;
 
         AmReal32 _radius;
     };

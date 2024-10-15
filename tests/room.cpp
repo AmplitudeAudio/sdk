@@ -1,4 +1,4 @@
-// Copyright (c) 2021-present Sparky Studios. All rights reserved.
+// Copyright (c) 2024-present Sparky Studios. All rights reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -157,6 +157,17 @@ TEST_CASE("Room Tests", "[room][core][amplitude]")
             THEN("it returns the new cutoff frequency")
             {
                 REQUIRE(state.GetCutOffFrequency() == kCutoffFrequency);
+            }
+        }
+
+        WHEN("the gain changes")
+        {
+            constexpr auto kGain = 0.5f;
+            state.SetGain(kGain);
+
+            THEN("it returns the new gain")
+            {
+                REQUIRE(state.GetGain() == kGain);
             }
         }
     }
@@ -337,6 +348,18 @@ TEST_CASE("Room Tests", "[room][core][amplitude]")
                         REQUIRE(wrapper.GetWallMaterial(static_cast<RoomWall>(i)) == materials[i]);
                     }
                 }
+            }
+        }
+
+        WHEN("the gain changes")
+        {
+            constexpr auto kGain = 0.5f;
+            wrapper.SetGain(kGain);
+
+            THEN("it returns the new gain")
+            {
+                REQUIRE(wrapper.GetGain() == kGain);
+                REQUIRE(wrapper.GetGain() == state.GetGain());
             }
         }
 

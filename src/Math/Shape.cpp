@@ -92,6 +92,7 @@ namespace SparkyStudios::Audio::Amplitude
 
         m_lookAtMatrix = m_orientation.GetLookAtMatrix(m_location);
         m_needUpdate = true;
+        Update();
     }
 
     void Shape::SetOrientation(const Orientation& orientation)
@@ -100,6 +101,7 @@ namespace SparkyStudios::Audio::Amplitude
 
         m_lookAtMatrix = m_orientation.GetLookAtMatrix(m_location);
         m_needUpdate = true;
+        Update();
     }
 
     const Orientation& Shape::GetOrientation() const
@@ -260,7 +262,7 @@ namespace SparkyStudios::Audio::Amplitude
     AmReal32 BoxShape::GetShortestDistanceToEdge(const AmVec3& location)
     {
         if (m_needUpdate)
-            _update();
+            Update();
 
         const AmReal32 dP1 = AM_Dot(location - _p1, AM_Norm(_p2 - _p1));
         const AmReal32 dP2 = AM_Dot(location - _p2, AM_Norm(_p1 - _p2));
@@ -269,22 +271,19 @@ namespace SparkyStudios::Audio::Amplitude
         const AmReal32 dP5 = AM_Dot(location - _p1, AM_Norm(_p3 - _p1));
         const AmReal32 dP6 = AM_Dot(location - _p1, AM_Norm(_p4 - _p1));
 
-        return AM_MIN(dP1, AM_MIN(dP2, AM_MIN(dP3, AM_MIN(dP4, AM_MIN(dP5, dP6)))));
+        return std::min({ dP1, dP2, dP3, dP4, dP5, dP6 });
     }
 
     bool BoxShape::Contains(const AmVec3& location)
     {
         if (m_needUpdate)
-            _update();
+            Update();
 
         const AmReal32 ux = AM_Dot(_u, location);
         const AmReal32 vx = AM_Dot(_v, location);
         const AmReal32 wx = AM_Dot(_w, location);
 
-        if (AM_BETWEEN(ux, _uP1, _uP2) && AM_BETWEEN(vx, _vP1, _vP3) && AM_BETWEEN(wx, _wP1, _wP4))
-            return true;
-
-        return false;
+        return (AM_BETWEEN(ux, _uP1, _uP2) && AM_BETWEEN(vx, _vP1, _vP3) && AM_BETWEEN(wx, _wP1, _wP4));
     }
 
     AmVec3 BoxShape::GetClosestPoint(const AmVec3& location) const
@@ -298,9 +297,24 @@ namespace SparkyStudios::Audio::Amplitude
         return closestPoint;
     }
 
+    std::array<AmVec3, 8> BoxShape::GetCorners() const
+    {
+        std::array<AmVec3, 8> corners;
+        corners[0] = AM_Mul(m_lookAtMatrix, AM_V4(-_halfWidth, -_halfDepth, -_halfHeight, 1.0f)).XYZ;
+        corners[1] = AM_Mul(m_lookAtMatrix, AM_V4(-_halfWidth, _halfDepth, -_halfHeight, 1.0f)).XYZ;
+        corners[2] = AM_Mul(m_lookAtMatrix, AM_V4(_halfWidth, -_halfDepth, -_halfHeight, 1.0f)).XYZ;
+        corners[3] = AM_Mul(m_lookAtMatrix, AM_V4(-_halfWidth, -_halfDepth, _halfHeight, 1.0f)).XYZ;
+        corners[4] = AM_Mul(m_lookAtMatrix, AM_V4(_halfWidth, _halfDepth, _halfHeight, 1.0f)).XYZ;
+        corners[5] = AM_Mul(m_lookAtMatrix, AM_V4(_halfWidth, -_halfDepth, _halfHeight, 1.0f)).XYZ;
+        corners[6] = AM_Mul(m_lookAtMatrix, AM_V4(-_halfWidth, _halfDepth, _halfHeight, 1.0f)).XYZ;
+        corners[7] = AM_Mul(m_lookAtMatrix, AM_V4(_halfWidth, _halfDepth, -_halfHeight, 1.0f)).XYZ;
+
+        return corners;
+    }
+
     bool BoxShape::operator==(const BoxShape& other) const
     {
-        return _p1 == other._p1 && _p2 == other._p2 && _p3 == other._p3 && _p4 == other._p4;
+        return GetCorners() == other.GetCorners();
     }
 
     bool BoxShape::operator!=(const BoxShape& other) const
@@ -308,7 +322,7 @@ namespace SparkyStudios::Audio::Amplitude
         return !(*this == other);
     }
 
-    void BoxShape::_update()
+    void BoxShape::Update()
     {
         _p1 = AM_Mul(m_lookAtMatrix, AM_V4(-_halfWidth, -_halfDepth, -_halfHeight, 1.0f)).XYZ;
         _p2 = AM_Mul(m_lookAtMatrix, AM_V4(-_halfWidth, _halfDepth, -_halfHeight, 1.0f)).XYZ;
@@ -388,7 +402,7 @@ namespace SparkyStudios::Audio::Amplitude
         const AmReal32 distanceToA = AM_Len(u);
         const AmReal32 distanceToB = AM_Len(v);
 
-        // TODO: Check if location is whithin the cylinder part of the capsule
+        // TODO: Check if location is within the cylinder part of the capsule
 
         if (distanceToA <= _radius)
             return _radius - distanceToA;
@@ -424,6 +438,16 @@ namespace SparkyStudios::Audio::Amplitude
             return true;
 
         return false;
+    }
+
+    bool CapsuleShape::operator==(const CapsuleShape& other) const
+    {
+        return _a == other._a && _b == other._b && _radius == other._radius && _halfHeight == other._halfHeight;
+    }
+
+    bool CapsuleShape::operator!=(const CapsuleShape& other) const
+    {
+        return !(*this == other);
     }
 
     void CapsuleShape::Update()
@@ -479,8 +503,11 @@ namespace SparkyStudios::Audio::Amplitude
         const AmVec3& shapeToLocation = location - m_location;
         const AmReal32 coneDist = AM_Dot(shapeToLocation, m_orientation.GetForward());
 
-        if (coneDist < 0.0f || coneDist > _height)
-            return false;
+        if (coneDist < 0.0f)
+            return coneDist;
+
+        if (coneDist >= _height)
+            return _height - coneDist;
 
         const AmReal32 coneRadius = coneDist / _height * _radius;
         const AmReal32 d = AM_Len(shapeToLocation - coneDist * m_orientation.GetForward());
@@ -503,6 +530,17 @@ namespace SparkyStudios::Audio::Amplitude
         const AmReal32 d = AM_Len(shapeToLocation - coneDist * m_orientation.GetForward());
 
         return d <= coneRadius;
+    }
+
+    bool ConeShape::operator==(const ConeShape& other) const
+    {
+        return _radius == other._radius && _height == other._height && m_location == other.m_location &&
+            m_orientation.GetForward() == other.m_orientation.GetForward();
+    }
+
+    bool ConeShape::operator!=(const ConeShape& other) const
+    {
+        return !(*this == other);
     }
 
     void ConeShape::Update()
@@ -554,10 +592,17 @@ namespace SparkyStudios::Audio::Amplitude
         const AmVec3& shapeToLocation = location - m_location;
         const AmReal32 distance = AM_Len(shapeToLocation);
 
-        if (distance > _radius)
-            return false;
+        return distance <= _radius;
+    }
 
-        return true;
+    bool SphereShape::operator==(const SphereShape& other) const
+    {
+        return _radius == other._radius && m_location == other.m_location;
+    }
+
+    bool SphereShape::operator!=(const SphereShape& other) const
+    {
+        return !(*this == other);
     }
 
     void SphereShape::Update()
@@ -575,10 +620,10 @@ namespace SparkyStudios::Audio::Amplitude
         auto* outer = dynamic_cast<BoxShape*>(m_outerShape);
 
         if (inner->m_needUpdate)
-            inner->_update();
+            inner->Update();
 
         if (outer->m_needUpdate)
-            outer->_update();
+            outer->Update();
 
         const AmVec3& x = position;
 
