@@ -31,7 +31,8 @@ add_executable(${PROJECT_NAME}
     common.cpp
     math.cpp
     room.cpp
-    shape.cpp)
+    shape.cpp
+    zone.cpp)
 target_link_libraries(${PROJECT_NAME} PRIVATE Catch2::Catch2 Static)
 
 add_custom_target(ss_amplitude_audio_test_package

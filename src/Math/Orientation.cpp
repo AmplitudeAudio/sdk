@@ -22,7 +22,7 @@ namespace SparkyStudios::Audio::Amplitude
         return { 0.0f, 0.0f, 0.0 };
     }
 
-    Orientation::Orientation(AmReal32 pitch, AmReal32 yaw, AmReal32 roll)
+    Orientation::Orientation(AmReal32 yaw, AmReal32 pitch, AmReal32 roll)
         : _forward()
         , _yaw(yaw)
         , _up()

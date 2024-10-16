@@ -290,9 +290,9 @@ namespace SparkyStudios::Audio::Amplitude
     {
         AmVec3 closestPoint;
         const AmVec3& relativeLocation = GetRelativeDirection(GetLocation(), GetOrientation().GetQuaternion(), location);
-        closestPoint.X = AM_CLAMP(relativeLocation.X, -_halfWidth, _halfWidth);
-        closestPoint.Y = AM_CLAMP(relativeLocation.Y, -_halfDepth, _halfDepth);
-        closestPoint.Z = AM_CLAMP(relativeLocation.Z, -_halfHeight, _halfHeight);
+        closestPoint.X = std::clamp(relativeLocation.X, -_halfWidth, _halfWidth);
+        closestPoint.Y = std::clamp(relativeLocation.Y, -_halfDepth, _halfDepth);
+        closestPoint.Z = std::clamp(relativeLocation.Z, -_halfHeight, _halfHeight);
 
         return closestPoint;
     }
@@ -509,7 +509,7 @@ namespace SparkyStudios::Audio::Amplitude
         if (coneDist >= _height)
             return _height - coneDist;
 
-        const AmReal32 coneRadius = coneDist / _height * _radius;
+        const AmReal32 coneRadius = std::min((coneDist / _height) * _radius, _radius);
         const AmReal32 d = AM_Len(shapeToLocation - coneDist * m_orientation.GetForward());
 
         return coneRadius - d;
@@ -526,7 +526,7 @@ namespace SparkyStudios::Audio::Amplitude
         if (coneDist < 0.0f || coneDist > _height)
             return false;
 
-        const AmReal32 coneRadius = coneDist / _height * _radius;
+        const AmReal32 coneRadius = std::min((coneDist / _height) * _radius, _radius);
         const AmReal32 d = AM_Len(shapeToLocation - coneDist * m_orientation.GetForward());
 
         return d <= coneRadius;
@@ -616,6 +616,12 @@ namespace SparkyStudios::Audio::Amplitude
 
     AmReal32 BoxZone::GetFactor(const AmVec3& position)
     {
+        if (m_innerShape->Contains(position))
+            return 1.0f;
+
+        if (!m_outerShape->Contains(position))
+            return 0.0f;
+
         auto* inner = dynamic_cast<BoxShape*>(m_innerShape);
         auto* outer = dynamic_cast<BoxShape*>(m_outerShape);
 
@@ -644,21 +650,21 @@ namespace SparkyStudios::Audio::Amplitude
             return 0.0f;
 
         const AmReal32 dP1 =
-            AM_ABS(AM_Dot(x - outer->_p1, AM_Norm(outer->_p2 - outer->_p1))) / (outer->GetHalfHeight() - inner->GetHalfHeight());
+            std::abs(AM_Dot(x - outer->_p1, AM_Norm(outer->_p2 - outer->_p1))) / (outer->GetHalfHeight() - inner->GetHalfHeight());
         const AmReal32 dP2 =
-            AM_ABS(AM_Dot(x - outer->_p2, AM_Norm(outer->_p1 - outer->_p2))) / (outer->GetHalfHeight() - inner->GetHalfHeight());
+            std::abs(AM_Dot(x - outer->_p2, AM_Norm(outer->_p1 - outer->_p2))) / (outer->GetHalfHeight() - inner->GetHalfHeight());
         const AmReal32 dP3 =
-            AM_ABS(AM_Dot(x - outer->_p3, AM_Norm(outer->_p1 - outer->_p3))) / (outer->GetHalfWidth() - inner->GetHalfWidth());
+            std::abs(AM_Dot(x - outer->_p3, AM_Norm(outer->_p1 - outer->_p3))) / (outer->GetHalfWidth() - inner->GetHalfWidth());
         const AmReal32 dP4 =
-            AM_ABS(AM_Dot(x - outer->_p4, AM_Norm(outer->_p1 - outer->_p4))) / (outer->GetHalfDepth() - inner->GetHalfDepth());
+            std::abs(AM_Dot(x - outer->_p4, AM_Norm(outer->_p1 - outer->_p4))) / (outer->GetHalfDepth() - inner->GetHalfDepth());
         const AmReal32 dP5 =
-            AM_ABS(AM_Dot(x - outer->_p1, AM_Norm(outer->_p3 - outer->_p1))) / (outer->GetHalfWidth() - inner->GetHalfWidth());
+            std::abs(AM_Dot(x - outer->_p1, AM_Norm(outer->_p3 - outer->_p1))) / (outer->GetHalfWidth() - inner->GetHalfWidth());
         const AmReal32 dP6 =
-            AM_ABS(AM_Dot(x - outer->_p1, AM_Norm(outer->_p4 - outer->_p1))) / (outer->GetHalfDepth() - inner->GetHalfDepth());
+            std::abs(AM_Dot(x - outer->_p1, AM_Norm(outer->_p4 - outer->_p1))) / (outer->GetHalfDepth() - inner->GetHalfDepth());
 
-        const AmReal32 shortestPath = AM_MIN(dP1, AM_MIN(dP2, AM_MIN(dP3, AM_MIN(dP4, AM_MIN(dP5, dP6)))));
+        const AmReal32 shortestPath = std::min({ dP1, dP2, dP3, dP4, dP5, dP6 });
 
-        return AM_CLAMP(shortestPath, 0.0f, 1.0f);
+        return std::clamp(shortestPath, 0.0f, 1.0f);
     }
 
     CapsuleZone::CapsuleZone(CapsuleShape* inner, CapsuleShape* outer)
@@ -667,6 +673,12 @@ namespace SparkyStudios::Audio::Amplitude
 
     AmReal32 CapsuleZone::GetFactor(const AmVec3& position)
     {
+        if (m_innerShape->Contains(position))
+            return 1.0f;
+
+        if (!m_outerShape->Contains(position))
+            return 0.0f;
+
         auto* inner = dynamic_cast<CapsuleShape*>(m_innerShape);
         auto* outer = dynamic_cast<CapsuleShape*>(m_outerShape);
 
@@ -710,9 +722,9 @@ namespace SparkyStudios::Audio::Amplitude
         const AmReal32 rDelta = 1.0f - (oDistanceToAxis - inner->GetRadius()) / (outer->GetRadius() - inner->GetRadius());
         const AmReal32 hDelta = 1.0f - (distanceToOrigin - inner->GetHalfHeight()) / (outer->GetHalfHeight() - inner->GetHalfHeight());
 
-        const AmReal32 delta = AM_MIN(rDelta, hDelta);
+        const AmReal32 delta = std::min(rDelta, hDelta);
 
-        return AM_CLAMP(delta, 0.0f, 1.0f);
+        return std::clamp(delta, 0.0f, 1.0f);
     }
 
     ConeZone::ConeZone(ConeShape* inner, ConeShape* outer)
@@ -721,6 +733,12 @@ namespace SparkyStudios::Audio::Amplitude
 
     AmReal32 ConeZone::GetFactor(const AmVec3& position)
     {
+        if (m_innerShape->Contains(position))
+            return 1.0f;
+
+        if (!m_outerShape->Contains(position))
+            return 0.0f;
+
         auto* inner = dynamic_cast<ConeShape*>(m_innerShape);
         auto* outer = dynamic_cast<ConeShape*>(m_outerShape);
 
@@ -730,28 +748,27 @@ namespace SparkyStudios::Audio::Amplitude
         if (outer->m_needUpdate)
             outer->Update();
 
-        const AmVec3& soundToListener = position - inner->GetLocation();
-        const AmReal32 distance = AM_Len(soundToListener);
+        const AmVec3& shapeToPosition = position - inner->GetLocation();
+        const AmReal32 distance = AM_Len(shapeToPosition);
 
-        if (!m_outerShape->Contains(position))
+        const AmReal32 coneDist = AM_Dot(shapeToPosition, inner->GetDirection());
+
+        if (coneDist < 0.0f || coneDist > outer->GetHeight())
             return 0.0f;
 
-        const AmReal32 coneDist = AM_Dot(soundToListener, inner->GetDirection());
+        const AmReal32 innerConeRadius = std::min((coneDist / inner->GetHeight()) * inner->GetRadius(), inner->GetRadius());
+        const AmReal32 outerConeRadius = std::min((coneDist / outer->GetHeight()) * outer->GetRadius(), outer->GetRadius());
 
-        const AmReal32 innerConeRadius = coneDist / inner->GetHeight() * inner->GetRadius();
-        const AmReal32 outerConeRadius = coneDist / outer->GetHeight() * outer->GetRadius();
+        const AmReal32 d = AM_Len(shapeToPosition - coneDist * inner->GetDirection());
 
-        const AmReal32 d = AM_Len(soundToListener - coneDist * inner->GetDirection());
+        // The location is on the direction axis
+        if (d == 0.0f)
+        {
+            const AmReal32 delta = (coneDist - inner->GetHeight()) / (outer->GetHeight() - inner->GetHeight());
+            return 1.0f - std::clamp(delta, 0.0f, 1.0f);
+        }
 
-        if (d <= innerConeRadius)
-            return 1.0f;
-
-        if (d >= outerConeRadius)
-            return 0.0f;
-
-        const AmReal32 delta = (distance - innerConeRadius) / (outerConeRadius - innerConeRadius);
-
-        return 1.0f - AM_CLAMP(delta, 0.0f, 1.0f);
+        return outer->GetShortestDistanceToEdge(position) / outer->GetRadius();
     }
 
     SphereZone::SphereZone(SphereShape* inner, SphereShape* outer)
@@ -760,6 +777,12 @@ namespace SparkyStudios::Audio::Amplitude
 
     AmReal32 SphereZone::GetFactor(const AmVec3& position)
     {
+        if (m_innerShape->Contains(position))
+            return 1.0f;
+
+        if (!m_outerShape->Contains(position))
+            return 0.0f;
+
         auto* inner = dynamic_cast<SphereShape*>(m_innerShape);
         auto* outer = dynamic_cast<SphereShape*>(m_outerShape);
 
@@ -776,6 +799,6 @@ namespace SparkyStudios::Audio::Amplitude
 
         const AmReal32 delta = (distance - inner->GetRadius()) / (outer->GetRadius() - inner->GetRadius());
 
-        return 1.0f - AM_CLAMP(delta, 0.0f, 1.0f);
+        return 1.0f - std::clamp(delta, 0.0f, 1.0f);
     }
 } // namespace SparkyStudios::Audio::Amplitude
