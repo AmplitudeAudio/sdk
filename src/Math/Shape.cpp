@@ -21,7 +21,7 @@
 
 namespace SparkyStudios::Audio::Amplitude
 {
-    Shape* Shape::Create(const ShapeDefinition* definition)
+    std::shared_ptr<Shape> Shape::Create(const ShapeDefinition* definition)
     {
         if (definition == nullptr)
             return nullptr;
@@ -129,10 +129,16 @@ namespace SparkyStudios::Audio::Amplitude
         return m_orientation.GetUp();
     }
 
-    Zone::Zone(Shape* inner, Shape* outer)
+    Zone::Zone(std::shared_ptr<Shape> inner, std::shared_ptr<Shape> outer)
         : m_innerShape(inner)
         , m_outerShape(outer)
     {}
+
+    Zone::~Zone()
+    {
+        m_innerShape.reset();
+        m_outerShape.reset();
+    }
 
     void Zone::SetLocation(const AmVec3& location)
     {
@@ -166,9 +172,11 @@ namespace SparkyStudios::Audio::Amplitude
         return m_innerShape->GetOrientation();
     }
 
-    BoxShape* BoxShape::Create(const BoxShapeDefinition* definition)
+    std::shared_ptr<BoxShape> BoxShape::Create(const BoxShapeDefinition* definition)
     {
-        return amnew(BoxShape, definition->half_width(), definition->half_height(), definition->half_depth());
+        return std::shared_ptr<BoxShape>(
+            amnew(BoxShape, definition->half_width(), definition->half_height(), definition->half_depth()),
+            am_delete<eMemoryPoolKind_Default, BoxShape>{});
     }
 
     BoxShape::BoxShape(const AmReal32 halfWidth, const AmReal32 halfHeight, const AmReal32 halfDepth)
@@ -344,9 +352,10 @@ namespace SparkyStudios::Audio::Amplitude
         m_needUpdate = false;
     }
 
-    CapsuleShape* CapsuleShape::Create(const CapsuleShapeDefinition* definition)
+    std::shared_ptr<CapsuleShape> CapsuleShape::Create(const CapsuleShapeDefinition* definition)
     {
-        return amnew(CapsuleShape, definition->radius(), definition->half_height());
+        return std::shared_ptr<CapsuleShape>(
+            amnew(CapsuleShape, definition->radius(), definition->half_height()), am_delete<eMemoryPoolKind_Default, CapsuleShape>{});
     }
 
     CapsuleShape::CapsuleShape(const AmReal32 radius, const AmReal32 halfHeight)
@@ -458,9 +467,10 @@ namespace SparkyStudios::Audio::Amplitude
         _b = AM_Mul(m_lookAtMatrix, AM_V4(0.0f, 0.0f, -halfHeight, 1.0f)).XYZ;
     }
 
-    ConeShape* ConeShape::Create(const ConeShapeDefinition* definition)
+    std::shared_ptr<ConeShape> ConeShape::Create(const ConeShapeDefinition* definition)
     {
-        return amnew(ConeShape, definition->radius(), definition->height());
+        return std::shared_ptr<ConeShape>(
+            amnew(ConeShape, definition->radius(), definition->height()), am_delete<eMemoryPoolKind_Default, ConeShape>{});
     }
 
     ConeShape::ConeShape(const AmReal32 radius, const AmReal32 height)
@@ -548,9 +558,9 @@ namespace SparkyStudios::Audio::Amplitude
         m_needUpdate = false;
     }
 
-    SphereShape* SphereShape::Create(const SphereShapeDefinition* definition)
+    std::shared_ptr<SphereShape> SphereShape::Create(const SphereShapeDefinition* definition)
     {
-        return amnew(SphereShape, definition->radius());
+        return std::shared_ptr<SphereShape>(amnew(SphereShape, definition->radius()), am_delete<eMemoryPoolKind_Default, SphereShape>{});
     }
 
     SphereShape::SphereShape(const AmReal32 radius)
@@ -610,7 +620,7 @@ namespace SparkyStudios::Audio::Amplitude
         m_needUpdate = false;
     }
 
-    BoxZone::BoxZone(BoxShape* inner, BoxShape* outer)
+    BoxZone::BoxZone(std::shared_ptr<BoxShape> inner, std::shared_ptr<BoxShape> outer)
         : Zone(inner, outer)
     {}
 
@@ -622,8 +632,8 @@ namespace SparkyStudios::Audio::Amplitude
         if (!m_outerShape->Contains(position))
             return 0.0f;
 
-        auto* inner = dynamic_cast<BoxShape*>(m_innerShape);
-        auto* outer = dynamic_cast<BoxShape*>(m_outerShape);
+        auto* inner = dynamic_cast<BoxShape*>(m_innerShape.get());
+        auto* outer = dynamic_cast<BoxShape*>(m_outerShape.get());
 
         if (inner->m_needUpdate)
             inner->Update();
@@ -667,7 +677,7 @@ namespace SparkyStudios::Audio::Amplitude
         return std::clamp(shortestPath, 0.0f, 1.0f);
     }
 
-    CapsuleZone::CapsuleZone(CapsuleShape* inner, CapsuleShape* outer)
+    CapsuleZone::CapsuleZone(std::shared_ptr<CapsuleShape> inner, std::shared_ptr<CapsuleShape> outer)
         : Zone(inner, outer)
     {}
 
@@ -679,8 +689,8 @@ namespace SparkyStudios::Audio::Amplitude
         if (!m_outerShape->Contains(position))
             return 0.0f;
 
-        auto* inner = dynamic_cast<CapsuleShape*>(m_innerShape);
-        auto* outer = dynamic_cast<CapsuleShape*>(m_outerShape);
+        auto* inner = dynamic_cast<CapsuleShape*>(m_innerShape.get());
+        auto* outer = dynamic_cast<CapsuleShape*>(m_outerShape.get());
 
         if (inner->m_needUpdate)
             inner->Update();
@@ -727,7 +737,7 @@ namespace SparkyStudios::Audio::Amplitude
         return std::clamp(delta, 0.0f, 1.0f);
     }
 
-    ConeZone::ConeZone(ConeShape* inner, ConeShape* outer)
+    ConeZone::ConeZone(std::shared_ptr<ConeShape> inner, std::shared_ptr<ConeShape> outer)
         : Zone(inner, outer)
     {}
 
@@ -739,8 +749,8 @@ namespace SparkyStudios::Audio::Amplitude
         if (!m_outerShape->Contains(position))
             return 0.0f;
 
-        auto* inner = dynamic_cast<ConeShape*>(m_innerShape);
-        auto* outer = dynamic_cast<ConeShape*>(m_outerShape);
+        auto* inner = dynamic_cast<ConeShape*>(m_innerShape.get());
+        auto* outer = dynamic_cast<ConeShape*>(m_outerShape.get());
 
         if (inner->m_needUpdate)
             inner->Update();
@@ -771,7 +781,7 @@ namespace SparkyStudios::Audio::Amplitude
         return outer->GetShortestDistanceToEdge(position) / outer->GetRadius();
     }
 
-    SphereZone::SphereZone(SphereShape* inner, SphereShape* outer)
+    SphereZone::SphereZone(std::shared_ptr<SphereShape> inner, std::shared_ptr<SphereShape> outer)
         : Zone(inner, outer)
     {}
 
@@ -783,8 +793,8 @@ namespace SparkyStudios::Audio::Amplitude
         if (!m_outerShape->Contains(position))
             return 0.0f;
 
-        auto* inner = dynamic_cast<SphereShape*>(m_innerShape);
-        auto* outer = dynamic_cast<SphereShape*>(m_outerShape);
+        auto* inner = dynamic_cast<SphereShape*>(m_innerShape.get());
+        auto* outer = dynamic_cast<SphereShape*>(m_outerShape.get());
 
         if (inner->m_needUpdate)
             inner->Update();

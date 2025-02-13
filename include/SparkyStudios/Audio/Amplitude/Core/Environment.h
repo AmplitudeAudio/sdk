@@ -170,14 +170,14 @@ namespace SparkyStudios::Audio::Amplitude
          *
          * @param[in] zone The environment's zone.
          */
-        void SetZone(Zone* zone) const;
+        void SetZone(std::shared_ptr<Zone> zone) const;
 
         /**
          * @brief Gets the `Zone` linked to this environment.
          *
          * @return An `Zone` instance.
          */
-        [[nodiscard]] Zone* GetZone() const;
+        [[nodiscard]] std::shared_ptr<Zone> GetZone() const;
 
         /**
          * @brief Returns the internal state of this `Environment`.

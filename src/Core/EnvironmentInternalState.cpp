@@ -14,8 +14,8 @@
 
 #include <SparkyStudios/Audio/Amplitude/Amplitude.h>
 
-#include <Core/EnvironmentInternalState.h>
 #include <Core/Engine.h>
+#include <Core/EnvironmentInternalState.h>
 
 namespace SparkyStudios::Audio::Amplitude
 {
@@ -100,16 +100,16 @@ namespace SparkyStudios::Audio::Amplitude
 
     const Zone* EnvironmentInternalState::GetZone() const
     {
-        return _zone;
+        return _zone.get();
     }
 
-    void EnvironmentInternalState::SetZone(Zone* zone)
+    void EnvironmentInternalState::SetZone(std::shared_ptr<Zone> zone)
     {
         _zone = zone;
         Update();
     }
 
-    Zone* EnvironmentInternalState::GetZone()
+    std::shared_ptr<Zone> EnvironmentInternalState::GetZone()
     {
         return _zone;
     }

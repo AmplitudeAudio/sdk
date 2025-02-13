@@ -139,7 +139,7 @@ namespace SparkyStudios::Audio::Amplitude
          *
          * @param zone The environment's zone.
          */
-        void SetZone(Zone* zone);
+        void SetZone(std::shared_ptr<Zone> zone);
 
         /**
          * @brief Get the Zone linked to this environment.
@@ -153,7 +153,7 @@ namespace SparkyStudios::Audio::Amplitude
          *
          * @return An Zone instance.
          */
-        [[nodiscard]] Zone* GetZone();
+        [[nodiscard]] std::shared_ptr<Zone> GetZone();
 
         /**
          * @brief Updates the inverse matrix of this Environment.
@@ -168,7 +168,7 @@ namespace SparkyStudios::Audio::Amplitude
     private:
         AmEnvironmentID _id;
 
-        Zone* _zone;
+        std::shared_ptr<Zone> _zone;
         const Effect* _effect;
     };
 } // namespace SparkyStudios::Audio::Amplitude

@@ -928,11 +928,11 @@ TEST_CASE("Engine Tests", "[engine][core][amplitude]")
 
                 WHEN("the effect changes")
                 {
-                    SphereShape inner(10);
-                    SphereShape outer(20);
-                    SphereZone zone(&inner, &outer);
+                    auto inner = std::make_shared<SphereShape>(10);
+                    auto outer = std::make_shared<SphereShape>(20);
+                    auto zone = std::make_shared<SphereZone>(inner, outer);
 
-                    environment.SetZone(&zone);
+                    environment.SetZone(zone);
 
                     WHEN("an effect is set by ID")
                     {

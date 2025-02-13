@@ -28,12 +28,12 @@ TEST_CASE("Environment Tests", "[environment][core][amplitude]")
     fplutil::intrusive_list environment_list(&EnvironmentInternalState::node);
     environment_list.push_back(state);
 
-    SphereShape inner(10);
-    SphereShape outer(20);
-    SphereZone zone(&inner, &outer);
+    auto inner = std::make_shared<SphereShape>(10);
+    auto outer = std::make_shared<SphereShape>(20);
+    auto zone = std::make_shared<SphereZone>(inner, outer);
 
-    state.SetZone(&zone);
-    REQUIRE(state.GetZone() == &zone);
+    state.SetZone(zone);
+    REQUIRE(state.GetZone() == zone);
 
     SECTION("can be used without a wrapper")
     {
@@ -56,7 +56,7 @@ TEST_CASE("Environment Tests", "[environment][core][amplitude]")
             {
                 REQUIRE(AM_EqV3(state.GetLocation(), location));
 
-                REQUIRE(AM_EqV3(zone.GetLocation(), location));
+                REQUIRE(AM_EqV3(zone->GetLocation(), location));
             }
 
             AND_WHEN("an update occurs")
@@ -67,7 +67,7 @@ TEST_CASE("Environment Tests", "[environment][core][amplitude]")
                 {
                     REQUIRE(AM_EqV3(state.GetLocation(), location));
 
-                    REQUIRE(AM_EqV3(zone.GetLocation(), location));
+                    REQUIRE(AM_EqV3(zone->GetLocation(), location));
                 }
             }
         }
@@ -84,11 +84,11 @@ TEST_CASE("Environment Tests", "[environment][core][amplitude]")
                 REQUIRE(AM_EqV3(state.GetDirection(), direction));
                 REQUIRE(AM_EqV3(state.GetUp(), up));
 
-                REQUIRE(AM_EqV3(zone.GetDirection(), direction));
-                REQUIRE(AM_EqV3(zone.GetUp(), up));
+                REQUIRE(AM_EqV3(zone->GetDirection(), direction));
+                REQUIRE(AM_EqV3(zone->GetUp(), up));
 
                 REQUIRE(std::memcmp(&state.GetOrientation(), &orientation, sizeof(Orientation)) == 0);
-                REQUIRE(std::memcmp(&zone.GetOrientation(), &orientation, sizeof(Orientation)) == 0);
+                REQUIRE(std::memcmp(&zone->GetOrientation(), &orientation, sizeof(Orientation)) == 0);
             }
         }
 
@@ -96,7 +96,7 @@ TEST_CASE("Environment Tests", "[environment][core][amplitude]")
         {
             THEN("it returns the new zone")
             {
-                REQUIRE(state.GetZone() == &zone);
+                REQUIRE(state.GetZone() == zone);
             }
         }
     }
@@ -106,8 +106,8 @@ TEST_CASE("Environment Tests", "[environment][core][amplitude]")
         Environment wrapper(&state);
         REQUIRE(wrapper.GetState() == &state);
 
-        wrapper.SetZone(&zone);
-        REQUIRE(wrapper.GetZone() == &zone);
+        wrapper.SetZone(zone);
+        REQUIRE(wrapper.GetZone() == zone);
 
         SECTION("can return the correct ID")
         {
@@ -127,7 +127,7 @@ TEST_CASE("Environment Tests", "[environment][core][amplitude]")
 
                 REQUIRE(AM_EqV3(wrapper.GetLocation(), state.GetLocation()));
 
-                REQUIRE(AM_EqV3(state.GetLocation(), zone.GetLocation()));
+                REQUIRE(AM_EqV3(state.GetLocation(), zone->GetLocation()));
             }
 
             AND_WHEN("an update occurs")
@@ -140,7 +140,7 @@ TEST_CASE("Environment Tests", "[environment][core][amplitude]")
 
                     REQUIRE(AM_EqV3(wrapper.GetLocation(), state.GetLocation()));
 
-                    REQUIRE(AM_EqV3(state.GetLocation(), zone.GetLocation()));
+                    REQUIRE(AM_EqV3(state.GetLocation(), zone->GetLocation()));
                 }
             }
         }
@@ -159,8 +159,8 @@ TEST_CASE("Environment Tests", "[environment][core][amplitude]")
                 REQUIRE(AM_EqV3(wrapper.GetDirection(), state.GetDirection()));
                 REQUIRE(AM_EqV3(wrapper.GetUp(), state.GetUp()));
 
-                REQUIRE(AM_EqV3(state.GetDirection(), zone.GetDirection()));
-                REQUIRE(AM_EqV3(state.GetUp(), zone.GetUp()));
+                REQUIRE(AM_EqV3(state.GetDirection(), zone->GetDirection()));
+                REQUIRE(AM_EqV3(state.GetUp(), zone->GetUp()));
             }
         }
 
@@ -168,7 +168,7 @@ TEST_CASE("Environment Tests", "[environment][core][amplitude]")
         {
             THEN("it returns the new zone")
             {
-                REQUIRE(wrapper.GetZone() == &zone);
+                REQUIRE(wrapper.GetZone() == zone);
 
                 REQUIRE(wrapper.GetZone() == state.GetZone());
             }

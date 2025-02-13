@@ -40,12 +40,6 @@ namespace SparkyStudios::Audio::Amplitude
             , ConeZone(ConeShape::Create(settings->inner()), ConeShape::Create(settings->outer()))
         {}
 
-        ~ConeAttenuationZone() override
-        {
-            amdelete(ConeShape, (ConeShape*)m_innerShape);
-            amdelete(ConeShape, (ConeShape*)m_outerShape);
-        }
-
         float GetAttenuationFactor(const Attenuation*, const AmVec3& soundLocation, const Listener& listener) override;
         float GetAttenuationFactor(const Attenuation*, const Entity& entity, const Listener& listener) override;
     };
@@ -59,12 +53,6 @@ namespace SparkyStudios::Audio::Amplitude
             : AttenuationZoneImpl()
             , SphereZone(SphereShape::Create(settings->inner()), SphereShape::Create(settings->outer()))
         {}
-
-        ~SphereAttenuationZone() override
-        {
-            amdelete(SphereShape, (SphereShape*)m_innerShape);
-            amdelete(SphereShape, (SphereShape*)m_outerShape);
-        }
 
         float GetAttenuationFactor(const Attenuation*, const AmVec3& soundLocation, const Listener& listener) override;
         float GetAttenuationFactor(const Attenuation*, const Entity& entity, const Listener& listener) override;
@@ -80,12 +68,6 @@ namespace SparkyStudios::Audio::Amplitude
             , BoxZone(BoxShape::Create(settings->inner()), BoxShape::Create(settings->outer()))
         {}
 
-        ~BoxAttenuationZone() override
-        {
-            amdelete(BoxShape, (BoxShape*)m_innerShape);
-            amdelete(BoxShape, (BoxShape*)m_outerShape);
-        }
-
         float GetAttenuationFactor(const Attenuation*, const AmVec3& soundLocation, const Listener& listener) override;
         float GetAttenuationFactor(const Attenuation*, const Entity& entity, const Listener& listener) override;
     };
@@ -99,12 +81,6 @@ namespace SparkyStudios::Audio::Amplitude
             : AttenuationZoneImpl()
             , CapsuleZone(CapsuleShape::Create(settings->inner()), CapsuleShape::Create(settings->outer()))
         {}
-
-        ~CapsuleAttenuationZone() override
-        {
-            amdelete(CapsuleShape, (CapsuleShape*)m_innerShape);
-            amdelete(CapsuleShape, (CapsuleShape*)m_outerShape);
-        }
 
         float GetAttenuationFactor(const Attenuation*, const AmVec3& soundLocation, const Listener& listener) override;
         float GetAttenuationFactor(const Attenuation*, const Entity& entity, const Listener& listener) override;

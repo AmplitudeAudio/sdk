@@ -24,7 +24,8 @@ namespace SparkyStudios::Audio::Amplitude
         : m_maxAttenuationFactor(1.0f)
     {}
 
-    AmReal32 AttenuationZoneImpl::GetAttenuationFactor(const Attenuation* attenuation, const AmVec3& soundLocation, const Listener& listener)
+    AmReal32 AttenuationZoneImpl::GetAttenuationFactor(
+        const Attenuation* attenuation, const AmVec3& soundLocation, const Listener& listener)
     {
         return m_maxAttenuationFactor;
     }
@@ -300,8 +301,8 @@ namespace SparkyStudios::Audio::Amplitude
     AmReal32 CapsuleAttenuationZone::GetFactor(
         const Attenuation* attenuation, const AmVec3& soundLocation, const Listener& listener, AmMat4 lookAt)
     {
-        const auto* inner = dynamic_cast<CapsuleShape*>(m_innerShape);
-        const auto* outer = dynamic_cast<CapsuleShape*>(m_outerShape);
+        const auto* inner = dynamic_cast<CapsuleShape*>(m_innerShape.get());
+        const auto* outer = dynamic_cast<CapsuleShape*>(m_outerShape.get());
 
         lookAt = AM_Mul(AM_Translate(soundLocation), lookAt);
 
