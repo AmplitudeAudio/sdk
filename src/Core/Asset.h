@@ -60,7 +60,7 @@ namespace SparkyStudios::Audio::Amplitude
          *
          * @return @c true on success, @c false otherwise.
          */
-        virtual bool LoadDefinition(const Definition* definition, EngineInternalState* state) = 0;
+        virtual bool LoadDefinition(const Definition* definition, std::shared_ptr<EngineInternalState> state) = 0;
 
         /**
          * @brief Load the asset from the given definition file.
@@ -70,7 +70,7 @@ namespace SparkyStudios::Audio::Amplitude
          *
          * @return @c true on success, @c false otherwise.
          */
-        virtual bool LoadDefinitionFromFile(std::shared_ptr<File> file, EngineInternalState* state);
+        virtual bool LoadDefinitionFromFile(std::shared_ptr<File> file, std::shared_ptr<EngineInternalState> state);
 
         /**
          * @brief Load the asset from the definition file at the given path.
@@ -80,7 +80,7 @@ namespace SparkyStudios::Audio::Amplitude
          *
          * @return @c true on success, @c false otherwise.
          */
-        virtual bool LoadDefinitionFromPath(const AmOsString& path, EngineInternalState* state);
+        virtual bool LoadDefinitionFromPath(const AmOsString& path, std::shared_ptr<EngineInternalState> state);
 
         /**
          * @brief Gets the asset definition instance.
@@ -96,14 +96,14 @@ namespace SparkyStudios::Audio::Amplitude
          *
          * @param state The engine state used while loading the asset.
          */
-        virtual void AcquireReferences(EngineInternalState* state);
+        virtual void AcquireReferences(std::shared_ptr<EngineInternalState> state);
 
         /**
          * @brief Releases the references acquired when loading the asset.
          *
          * @param state The engine state used while loading the asset.
          */
-        virtual void ReleaseReferences(EngineInternalState* state);
+        virtual void ReleaseReferences(std::shared_ptr<EngineInternalState> state);
 
         /**
          * @brief Gets the asset reference counter.

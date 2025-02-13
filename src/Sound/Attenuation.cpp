@@ -54,7 +54,7 @@ namespace SparkyStudios::Audio::Amplitude
         return std::exp(-_airAbsorptionCoefficients[band] * distance);
     }
 
-    bool AttenuationImpl::LoadDefinition(const AttenuationDefinition* definition, EngineInternalState* state)
+    bool AttenuationImpl::LoadDefinition(const AttenuationDefinition* definition, std::shared_ptr<EngineInternalState> state)
     {
         m_id = definition->id();
         m_name = definition->name()->str();

@@ -155,7 +155,7 @@ namespace SparkyStudios::Audio::Amplitude
         /**
          * @copydoc AssetImpl::LoadDefinition
          */
-        bool LoadDefinition(const SoundDefinition* definition, EngineInternalState* state) override;
+        bool LoadDefinition(const SoundDefinition* definition, std::shared_ptr<EngineInternalState> state) override;
 
         /**
          * @copydoc AssetImpl::GetDefinition
@@ -165,12 +165,12 @@ namespace SparkyStudios::Audio::Amplitude
         /**
          * @copydoc AssetImpl::AcquireReferences
          */
-        void AcquireReferences(EngineInternalState* state) override;
+        void AcquireReferences(std::shared_ptr<EngineInternalState> state) override;
 
         /**
          * @copydoc AssetImpl::ReleaseReferences
          */
-        void ReleaseReferences(EngineInternalState* state) override;
+        void ReleaseReferences(std::shared_ptr<EngineInternalState> state) override;
 
         /**
          * @copydoc Resource::GetPath
@@ -180,7 +180,7 @@ namespace SparkyStudios::Audio::Amplitude
         /**
          * @copydoc Resource::Load
          */
-        void Load(const FileSystem* loader) override;
+        void Load(std::shared_ptr<const FileSystem> loader) override;
 
         /**
          * @copydoc SoundObject::GetGain

@@ -63,7 +63,7 @@ namespace SparkyStudios::Audio::Amplitude
                 instance->GetFilter()->SetParameter(i, _parameters[i].GetValue());
     }
 
-    bool EffectImpl::LoadDefinition(const EffectDefinition* definition, EngineInternalState* state)
+    bool EffectImpl::LoadDefinition(const EffectDefinition* definition, std::shared_ptr<EngineInternalState> state)
     {
         m_id = definition->id();
         m_name = definition->name()->str();

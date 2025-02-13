@@ -137,7 +137,7 @@ namespace SparkyStudios::Audio::Amplitude
          *
          * @param[in] fs The file system implementation.
          */
-        virtual void SetFileSystem(FileSystem* fs) = 0;
+        virtual void SetFileSystem(std::shared_ptr<FileSystem> fs) = 0;
 
         /**
          * @brief Gets the file system implementation used by the engine.
@@ -145,7 +145,7 @@ namespace SparkyStudios::Audio::Amplitude
          * @return The current file system implementation used by the engine,
          * or `nullptr` if no file system has been set.
          */
-        [[nodiscard]] virtual const FileSystem* GetFileSystem() const = 0;
+        [[nodiscard]] virtual std::shared_ptr<const FileSystem> GetFileSystem() const = 0;
 
         /**
          * @brief Opens the file system, usually in a separate thread.
@@ -1701,7 +1701,7 @@ namespace SparkyStudios::Audio::Amplitude
          *
          * @see HRIRSphere
          */
-        [[nodiscard]] virtual const HRIRSphere* GetHRIRSphere() const = 0;
+        [[nodiscard]] virtual std::shared_ptr<const HRIRSphere> GetHRIRSphere() const = 0;
 
 #pragma endregion
 

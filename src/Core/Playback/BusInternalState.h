@@ -34,7 +34,7 @@ namespace SparkyStudios::Audio::Amplitude
     class DuckBusInternalState
     {
     public:
-        explicit DuckBusInternalState(BusInternalState* parent)
+        explicit DuckBusInternalState(std::shared_ptr<BusInternalState> parent)
             : _parent(parent)
             , _initialized(false)
             , _bus(nullptr)
@@ -54,7 +54,7 @@ namespace SparkyStudios::Audio::Amplitude
         void Update(AmTime deltaTime);
 
     private:
-        BusInternalState* _parent;
+        std::shared_ptr<BusInternalState> _parent;
         bool _initialized;
 
         Bus _bus;
@@ -153,7 +153,7 @@ namespace SparkyStudios::Audio::Amplitude
         }
 
         // Return the vector of child buses.
-        AM_INLINE std::vector<BusInternalState*>& GetChildBuses()
+        AM_INLINE std::vector<std::shared_ptr<BusInternalState>>& GetChildBuses()
         {
             return _childBuses;
         }
@@ -197,7 +197,7 @@ namespace SparkyStudios::Audio::Amplitude
 
         // Children of a given bus have their gain multiplied against their parent's
         // gain.
-        std::vector<BusInternalState*> _childBuses;
+        std::vector<std::shared_ptr<BusInternalState>> _childBuses;
 
         // When a sound is played on this bus, sounds played on these buses should be
         // ducked.

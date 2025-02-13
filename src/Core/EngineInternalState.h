@@ -175,10 +175,10 @@ namespace SparkyStudios::Audio::Amplitude
         AmString buses_source;
 
         // The state of the buses.
-        std::vector<BusInternalState> buses;
+        std::vector<std::shared_ptr<BusInternalState>> buses;
 
         // The master bus, cached to prevent needless lookups.
-        BusInternalState* master_bus;
+        std::shared_ptr<BusInternalState> master_bus;
 
         // The gain applied to all buses.
         AmReal32 master_gain;
@@ -308,7 +308,7 @@ namespace SparkyStudios::Audio::Amplitude
 
         eHRIRSphereSamplingMode hrir_sampling_mode;
 
-        HRIRSphereImpl* hrir_sphere;
+        std::shared_ptr<HRIRSphereImpl> hrir_sphere;
 
         const struct AmVersion* version;
     };
@@ -317,13 +317,13 @@ namespace SparkyStudios::Audio::Amplitude
      * @brief Removes all the finished sounds from the playing list.
      * @param state The engine state to update.
      */
-    void EraseFinishedSounds(EngineInternalState* state);
+    void EraseFinishedSounds(std::shared_ptr<EngineInternalState> state);
 
     // Find a bus with the given ID.
-    BusInternalState* FindBusInternalState(EngineInternalState* state, AmBusID id);
+    std::shared_ptr<BusInternalState> FindBusInternalState(std::shared_ptr<EngineInternalState> state, AmBusID id);
 
     // Find a bus with the given name.
-    BusInternalState* FindBusInternalState(EngineInternalState* state, const AmString& name);
+    std::shared_ptr<BusInternalState> FindBusInternalState(std::shared_ptr<EngineInternalState> state, const AmString& name);
 
     // Given a playing sound, find where a new sound with the given priority should
     // be inserted into the list.

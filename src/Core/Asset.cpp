@@ -29,7 +29,7 @@ namespace SparkyStudios::Audio::Amplitude
     }
 
     template<typename Id, typename Definition>
-    bool AssetImpl<Id, Definition>::LoadDefinitionFromFile(std::shared_ptr<File> file, EngineInternalState* state)
+    bool AssetImpl<Id, Definition>::LoadDefinitionFromFile(std::shared_ptr<File> file, std::shared_ptr<EngineInternalState> state)
     {
         // Ensure we do not load the asset more than once
         AMPLITUDE_ASSERT(m_id == kAmInvalidObjectId);
@@ -44,20 +44,20 @@ namespace SparkyStudios::Audio::Amplitude
     }
 
     template<typename Id, typename Definition>
-    bool AssetImpl<Id, Definition>::LoadDefinitionFromPath(const AmOsString& path, EngineInternalState* state)
+    bool AssetImpl<Id, Definition>::LoadDefinitionFromPath(const AmOsString& path, std::shared_ptr<EngineInternalState> state)
     {
-        const FileSystem* fs = Engine::GetInstance()->GetFileSystem();
+        auto fs = Engine::GetInstance()->GetFileSystem();
         const AmOsString& rp = fs->ResolvePath(path);
 
         return LoadDefinitionFromFile(fs->OpenFile(rp), state);
     }
 
     template<typename Id, typename Definition>
-    void AssetImpl<Id, Definition>::AcquireReferences(EngineInternalState* state)
+    void AssetImpl<Id, Definition>::AcquireReferences(std::shared_ptr<EngineInternalState> state)
     {}
 
     template<typename Id, typename Definition>
-    void AssetImpl<Id, Definition>::ReleaseReferences(EngineInternalState* state)
+    void AssetImpl<Id, Definition>::ReleaseReferences(std::shared_ptr<EngineInternalState> state)
     {}
 
     template class AssetImpl<AmAttenuationID, AttenuationDefinition>;

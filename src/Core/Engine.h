@@ -55,14 +55,14 @@ namespace SparkyStudios::Audio::Amplitude
          *
          * @return The current state of this Engine.
          */
-        [[nodiscard]] EngineInternalState* GetState() const;
+        [[nodiscard]] std::shared_ptr<EngineInternalState> GetState() const;
 
         [[nodiscard]] const struct AmVersion* Version() const override;
         bool Initialize(const AmOsString& configFile) override;
         bool Deinitialize() override;
         [[nodiscard]] bool IsInitialized() const override;
-        void SetFileSystem(FileSystem* fs) override;
-        [[nodiscard]] const FileSystem* GetFileSystem() const override;
+        void SetFileSystem(std::shared_ptr<FileSystem> fs) override;
+        [[nodiscard]] std::shared_ptr<const FileSystem> GetFileSystem() const override;
         void StartOpenFileSystem() override;
         bool TryFinalizeOpenFileSystem() override;
         void StartCloseFileSystem() override;
@@ -196,7 +196,7 @@ namespace SparkyStudios::Audio::Amplitude
         [[nodiscard]] const Curve& GetObstructionGainCurve() const override;
         [[nodiscard]] ePanningMode GetPanningMode() const override;
         [[nodiscard]] eHRIRSphereSamplingMode GetHRIRSphereSamplingMode() const override;
-        [[nodiscard]] const HRIRSphere* GetHRIRSphere() const override;
+        [[nodiscard]] std::shared_ptr<const HRIRSphere> GetHRIRSphere() const override;
 
     private:
         Channel PlayScopedSwitchContainer(
@@ -215,13 +215,13 @@ namespace SparkyStudios::Audio::Amplitude
         AmString _configSrc;
 
         // The current state of the engine.
-        EngineInternalState* _state;
+        std::shared_ptr<EngineInternalState> _state;
 
         // The default audio listener.
         ListenerInternalState* _defaultListener;
 
         // The file loader implementation.
-        FileSystem* _fs;
+        std::shared_ptr<FileSystem> _fs;
 
         // The audio driver used by the engine.
         Driver* _audioDriver;

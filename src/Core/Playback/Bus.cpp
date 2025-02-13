@@ -22,7 +22,7 @@ namespace SparkyStudios::Audio::Amplitude
         : _state(nullptr)
     {}
 
-    Bus::Bus(BusInternalState* state)
+    Bus::Bus(std::shared_ptr<BusInternalState> state)
         : _state(state)
     {}
 
@@ -76,7 +76,7 @@ namespace SparkyStudios::Audio::Amplitude
         return _state->IsMute();
     }
 
-    BusInternalState* Bus::GetState() const
+    std::shared_ptr<BusInternalState> Bus::GetState() const
     {
         return _state;
     }

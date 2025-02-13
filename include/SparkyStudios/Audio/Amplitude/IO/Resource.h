@@ -45,7 +45,7 @@ namespace SparkyStudios::Audio::Amplitude
         /**
          * @brief Loads the resource from the given FileSystem.
          */
-        virtual void Load(const FileSystem* loader) = 0;
+        virtual void Load(std::shared_ptr<const FileSystem> loader) = 0;
     };
 } // namespace SparkyStudios::Audio::Amplitude
 

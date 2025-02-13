@@ -34,7 +34,7 @@ namespace SparkyStudios::Audio::Amplitude
         if (mode == ePanningMode_Stereo)
             _decoder.Configure(order, true, eSpeakersPreset_Stereo);
         else
-            _binauralizer.Configure(order, true, _hrirSphere);
+            _binauralizer.Configure(order, true, _hrirSphere.get());
     }
 
     const AudioBuffer* AmbisonicBinauralDecoderNodeInstance::Process(const AudioBuffer* input)

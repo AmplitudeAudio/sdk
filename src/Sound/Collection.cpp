@@ -119,7 +119,7 @@ namespace SparkyStudios::Audio::Amplitude
         return _sounds;
     }
 
-    bool CollectionImpl::LoadDefinition(const CollectionDefinition* definition, EngineInternalState* state)
+    bool CollectionImpl::LoadDefinition(const CollectionDefinition* definition, std::shared_ptr<EngineInternalState> state)
     {
         if (definition->id() == kAmInvalidObjectId)
         {
@@ -235,7 +235,7 @@ namespace SparkyStudios::Audio::Amplitude
         return GetCollectionDefinition(m_source.c_str());
     }
 
-    void CollectionImpl::AcquireReferences(EngineInternalState* state)
+    void CollectionImpl::AcquireReferences(std::shared_ptr<EngineInternalState> state)
     {
         AMPLITUDE_ASSERT(m_id != kAmInvalidObjectId);
 
@@ -250,7 +250,7 @@ namespace SparkyStudios::Audio::Amplitude
                 findIt->second->GetRefCounter()->Increment();
     }
 
-    void CollectionImpl::ReleaseReferences(EngineInternalState* state)
+    void CollectionImpl::ReleaseReferences(std::shared_ptr<EngineInternalState> state)
     {
         AMPLITUDE_ASSERT(m_id != kAmInvalidObjectId);
 

@@ -156,7 +156,7 @@ namespace SparkyStudios::Audio::Amplitude
 
     // Returns this channel to the appropriate free list based on whether it's
     // backed by a real channel or not.
-    void InsertIntoFreeList(EngineInternalState* state, ChannelInternalState* channel)
+    void InsertIntoFreeList(std::shared_ptr<EngineInternalState> state, ChannelInternalState* channel)
     {
         channel->Remove();
         channel->Reset();
@@ -164,7 +164,7 @@ namespace SparkyStudios::Audio::Amplitude
         list->push_front(*channel);
     }
 
-    void AssignBestRoom(ChannelInternalState* newChannel, const AmVec3& location, EngineInternalState* state)
+    void AssignBestRoom(ChannelInternalState* newChannel, const AmVec3& location, std::shared_ptr<EngineInternalState> state)
     {
         RoomInternalState* bestRoom = nullptr;
         AmReal32 minDistanceSquared = std::numeric_limits<AmReal32>::max();
@@ -471,47 +471,48 @@ namespace SparkyStudios::Audio::Amplitude
         gAmplitude.reset();
     }
 
-    BusInternalState* FindBusInternalState(EngineInternalState* state, AmBusID id)
+    std::shared_ptr<BusInternalState> FindBusInternalState(std::shared_ptr<EngineInternalState> state, AmBusID id)
     {
         if (const auto it = std::ranges::find_if(
                 state->buses,
-                [&id](const BusInternalState& bus)
+                [&id](const std::shared_ptr<BusInternalState>& bus)
                 {
-                    return bus.GetId() == id;
+                    return bus->GetId() == id;
                 });
             it != state->buses.end())
         {
-            return &*it;
+            return *it;
         }
 
         return nullptr;
     }
 
-    BusInternalState* FindBusInternalState(EngineInternalState* state, const AmString& name)
+    std::shared_ptr<BusInternalState> FindBusInternalState(std::shared_ptr<EngineInternalState> state, const AmString& name)
     {
         if (const auto it = std::ranges::find_if(
                 state->buses,
-                [&name](const BusInternalState& bus)
+                [&name](const std::shared_ptr<BusInternalState>& bus)
                 {
-                    return bus.GetName() == name;
+                    return bus->GetName() == name;
                 });
             it != state->buses.end())
         {
-            return &*it;
+            return *it;
         }
 
         return nullptr;
     }
 
-    static bool PopulateChildBuses(EngineInternalState* state, BusInternalState* parent, const BusIdList* childIdList)
+    static bool PopulateChildBuses(
+        std::shared_ptr<EngineInternalState> state, std::shared_ptr<BusInternalState> parent, const BusIdList* childIdList)
     {
-        std::vector<BusInternalState*>* output = &parent->GetChildBuses();
+        std::vector<std::shared_ptr<BusInternalState>>* output = &parent->GetChildBuses();
 
         for (flatbuffers::uoffset_t i = 0; childIdList && i < childIdList->size(); ++i)
         {
             const AmBusID busId = childIdList->Get(i);
 
-            if (BusInternalState* bus = FindBusInternalState(state, busId))
+            if (auto bus = FindBusInternalState(state, busId))
             {
                 output->push_back(bus);
             }
@@ -525,7 +526,10 @@ namespace SparkyStudios::Audio::Amplitude
         return true;
     }
 
-    static bool PopulateDuckBuses(EngineInternalState* state, BusInternalState* parent, const DuckBusDefinitionList* duckBusDefinitionList)
+    static bool PopulateDuckBuses(
+        std::shared_ptr<EngineInternalState> state,
+        std::shared_ptr<BusInternalState> parent,
+        const DuckBusDefinitionList* duckBusDefinitionList)
     {
         DuckBusList* output = &parent->GetDuckBuses();
 
@@ -659,7 +663,7 @@ namespace SparkyStudios::Audio::Amplitude
         _frameThreadMutex = Thread::CreateMutex(500);
 
         // Create the internal engine state
-        _state = ampoolnew(eMemoryPoolKind_Engine, EngineInternalState);
+        _state = AmSharedPtr<EngineInternalState, eMemoryPoolKind_Engine>::Make();
         _state->version = &Amplitude::GetVersion();
 
         // Load the audio driver
@@ -684,9 +688,8 @@ namespace SparkyStudios::Audio::Amplitude
 
         if (_audioDriver == nullptr)
         {
-            amLogCritical(
-                "Failed to load the specified driver, the default driver, and the null driver. Please check your engine "
-                "configuration, and ensure that all the needed plugins are loaded.");
+            amLogCritical("Failed to load the specified driver, the default driver, and the null driver. Please check your engine "
+                          "configuration, and ensure that all the needed plugins are loaded.");
             Deinitialize();
             return false;
         }
@@ -710,16 +713,15 @@ namespace SparkyStudios::Audio::Amplitude
             _state->hrir_sampling_mode = static_cast<eHRIRSphereSamplingMode>(config->hrtf()->hrir_sampling());
 
             // Load the HRIR sphere
-            _state->hrir_sphere = ampoolnew(eMemoryPoolKind_Engine, HRIRSphereImpl);
+            _state->hrir_sphere = AmSharedPtr<HRIRSphereImpl, eMemoryPoolKind_Engine>::Make();
             _state->hrir_sphere->SetResource(AM_STRING_TO_OS_STRING(config->hrtf()->amir_file()->c_str()));
             _state->hrir_sphere->SetSamplingMode(_state->hrir_sampling_mode);
             _state->hrir_sphere->Load(GetFileSystem());
         }
         else if (_state->panning_mode != ePanningMode_Stereo)
         {
-            amLogCritical(
-                "The HRTF configuration is missing, but the panning mode is not stereo. Please provide an HRTF configuration, or "
-                "set the panning mode to Stereo.");
+            amLogCritical("The HRTF configuration is missing, but the panning mode is not stereo. Please provide an HRTF configuration, or "
+                          "set the panning mode to Stereo.");
             Deinitialize();
             return false;
         }
@@ -763,19 +765,20 @@ namespace SparkyStudios::Audio::Amplitude
         _state->buses.resize(busCount);
         for (flatbuffers::uoffset_t i = 0; i < busCount; ++i)
         {
-            _state->buses[i].Initialize(busDefList->buses()->Get(i));
+            _state->buses[i] = AmSharedPtr<BusInternalState, eMemoryPoolKind_Engine>::Make();
+            _state->buses[i]->Initialize(busDefList->buses()->Get(i));
         }
 
         // Set up the children and ducking pointers.
         for (auto& bus : _state->buses)
         {
-            const BusDefinition* def = bus.GetBusDefinition();
-            if (!PopulateChildBuses(_state, &bus, def->child_buses()))
+            const BusDefinition* def = bus->GetBusDefinition();
+            if (!PopulateChildBuses(_state, bus, def->child_buses()))
             {
                 Deinitialize();
                 return false;
             }
-            if (!PopulateDuckBuses(_state, &bus, def->duck_buses()))
+            if (!PopulateDuckBuses(_state, bus, def->duck_buses()))
             {
                 Deinitialize();
                 return false;
@@ -871,12 +874,10 @@ namespace SparkyStudios::Audio::Amplitude
         // Release HRIR sphere
         if (_state->hrir_sphere != nullptr)
         {
-            ampooldelete(eMemoryPoolKind_Engine, HRIRSphereImpl, _state->hrir_sphere);
-            _state->hrir_sphere = nullptr;
+            _state->hrir_sphere.reset();
         }
 
-        ampooldelete(eMemoryPoolKind_Engine, EngineInternalState, _state);
-        _state = nullptr;
+        _state.reset();
 
         Thread::DestroyMutex(_frameThreadMutex);
 
@@ -897,12 +898,12 @@ namespace SparkyStudios::Audio::Amplitude
         return _state != nullptr && !_state->stopping;
     }
 
-    void EngineImpl::SetFileSystem(FileSystem* fs)
+    void EngineImpl::SetFileSystem(std::shared_ptr<FileSystem> fs)
     {
         _fs = fs;
     }
 
-    const FileSystem* EngineImpl::GetFileSystem() const
+    std::shared_ptr<const FileSystem> EngineImpl::GetFileSystem() const
     {
         return _fs;
     }
@@ -1208,7 +1209,7 @@ namespace SparkyStudios::Audio::Amplitude
         const ChannelInternalState* channel,
         const AmReal32 soundGain,
         const AmReal32 soundPitch,
-        const BusInternalState* bus,
+        std::shared_ptr<const BusInternalState> bus,
         const eSpatialization spatialization,
         const AmReal32 userGain)
     {
@@ -2182,7 +2183,7 @@ namespace SparkyStudios::Audio::Amplitude
         return _state->paused;
     }
 
-    void EraseFinishedSounds(EngineInternalState* state)
+    void EraseFinishedSounds(std::shared_ptr<EngineInternalState> state)
     {
         PriorityList& list = state->playing_channel_list;
         for (auto channelInternalState = list.begin(); channelInternalState != list.end();)
@@ -2196,7 +2197,7 @@ namespace SparkyStudios::Audio::Amplitude
         }
     }
 
-    static void UpdateChannel(ChannelInternalState* channel, EngineInternalState* state)
+    static void UpdateChannel(ChannelInternalState* channel, std::shared_ptr<EngineInternalState> state)
     {
         if (channel->Stopped())
             return;
@@ -2344,10 +2345,10 @@ namespace SparkyStudios::Audio::Amplitude
         }
 
         for (auto&& bus : _state->buses)
-            bus.ResetDuckGain();
+            bus->ResetDuckGain();
 
         for (auto&& bus : _state->buses)
-            bus.UpdateDuckGain(delta);
+            bus->UpdateDuckGain(delta);
 
         if (_state->master_bus)
         {
@@ -2438,7 +2439,7 @@ namespace SparkyStudios::Audio::Amplitude
 
 #pragma region Engine State
 
-    EngineInternalState* EngineImpl::GetState() const
+    std::shared_ptr<EngineInternalState> EngineImpl::GetState() const
     {
         return _state;
     }
@@ -2503,7 +2504,7 @@ namespace SparkyStudios::Audio::Amplitude
         return _state->hrir_sampling_mode;
     }
 
-    const HRIRSphere* EngineImpl::GetHRIRSphere() const
+    std::shared_ptr<const HRIRSphere> EngineImpl::GetHRIRSphere() const
     {
         return _state->hrir_sphere;
     }
