@@ -55,55 +55,55 @@ namespace SparkyStudios::Audio::Amplitude
     static std::vector<dylib*> gLoadedPlugins = {};
 
     // Default Plugins instances
-    static AmUniquePtr<eMemoryPoolKind_Engine, DefaultResampler> sDefaultResamplerPlugin = nullptr;
+    static AmUniquePtr<DefaultResampler, eMemoryPoolKind_Engine> sDefaultResamplerPlugin = nullptr;
     // ---
-    static AmUniquePtr<eMemoryPoolKind_Engine, ConstantFader> sConstantFaderPlugin = nullptr;
-    static AmUniquePtr<eMemoryPoolKind_Engine, EaseFader> sEaseFaderPlugin = nullptr;
-    static AmUniquePtr<eMemoryPoolKind_Engine, EaseInFader> sEaseInFaderPlugin = nullptr;
-    static AmUniquePtr<eMemoryPoolKind_Engine, EaseInOutFader> sEaseInOutFaderPlugin = nullptr;
-    static AmUniquePtr<eMemoryPoolKind_Engine, EaseOutFader> sEaseOutFaderPlugin = nullptr;
-    static AmUniquePtr<eMemoryPoolKind_Engine, ExponentialFader> sExponentialFaderPlugin = nullptr;
-    static AmUniquePtr<eMemoryPoolKind_Engine, LinearFader> sLinearFaderPlugin = nullptr;
-    static AmUniquePtr<eMemoryPoolKind_Engine, SCurveSmoothFader> sCurveSmoothFaderPlugin = nullptr;
-    static AmUniquePtr<eMemoryPoolKind_Engine, SCurveSharpFader> sCurveSharpFaderPlugin = nullptr;
+    static AmUniquePtr<ConstantFader, eMemoryPoolKind_Engine> sConstantFaderPlugin = nullptr;
+    static AmUniquePtr<EaseFader, eMemoryPoolKind_Engine> sEaseFaderPlugin = nullptr;
+    static AmUniquePtr<EaseInFader, eMemoryPoolKind_Engine> sEaseInFaderPlugin = nullptr;
+    static AmUniquePtr<EaseInOutFader, eMemoryPoolKind_Engine> sEaseInOutFaderPlugin = nullptr;
+    static AmUniquePtr<EaseOutFader, eMemoryPoolKind_Engine> sEaseOutFaderPlugin = nullptr;
+    static AmUniquePtr<ExponentialFader, eMemoryPoolKind_Engine> sExponentialFaderPlugin = nullptr;
+    static AmUniquePtr<LinearFader, eMemoryPoolKind_Engine> sLinearFaderPlugin = nullptr;
+    static AmUniquePtr<SCurveSmoothFader, eMemoryPoolKind_Engine> sCurveSmoothFaderPlugin = nullptr;
+    static AmUniquePtr<SCurveSharpFader, eMemoryPoolKind_Engine> sCurveSharpFaderPlugin = nullptr;
     // ---
-    static AmUniquePtr<eMemoryPoolKind_Engine, AMSCodec> sAMSCodecPlugin = nullptr;
-    static AmUniquePtr<eMemoryPoolKind_Engine, MP3Codec> sMP3CodecPlugin = nullptr;
-    static AmUniquePtr<eMemoryPoolKind_Engine, WAVCodec> sWAVCodecPlugin = nullptr;
+    static AmUniquePtr<AMSCodec, eMemoryPoolKind_Engine> sAMSCodecPlugin = nullptr;
+    static AmUniquePtr<MP3Codec, eMemoryPoolKind_Engine> sMP3CodecPlugin = nullptr;
+    static AmUniquePtr<WAVCodec, eMemoryPoolKind_Engine> sWAVCodecPlugin = nullptr;
     // ---
-    static AmUniquePtr<eMemoryPoolKind_Engine, MiniAudioDriver> sMiniAudioDriverPlugin = nullptr;
-    static AmUniquePtr<eMemoryPoolKind_Engine, NullDriver> sNullDriverPlugin = nullptr;
+    static AmUniquePtr<MiniAudioDriver, eMemoryPoolKind_Engine> sMiniAudioDriverPlugin = nullptr;
+    static AmUniquePtr<NullDriver, eMemoryPoolKind_Engine> sNullDriverPlugin = nullptr;
     // ---
-    static AmUniquePtr<eMemoryPoolKind_Engine, BassBoostFilter> sBassBoostFilterPlugin = nullptr;
-    static AmUniquePtr<eMemoryPoolKind_Engine, BiquadResonantFilter> sBiquadResonantFilterPlugin = nullptr;
-    static AmUniquePtr<eMemoryPoolKind_Engine, DCRemovalFilter> sDCRemovalFilterPlugin = nullptr;
-    static AmUniquePtr<eMemoryPoolKind_Engine, DelayFilter> sDelayFilterPlugin = nullptr;
-    static AmUniquePtr<eMemoryPoolKind_Engine, EqualizerFilter> sEqualizerFilterPlugin = nullptr;
-    static AmUniquePtr<eMemoryPoolKind_Engine, FlangerFilter> sFlangerFilterPlugin = nullptr;
-    static AmUniquePtr<eMemoryPoolKind_Engine, LofiFilter> sLofiFilterPlugin = nullptr;
-    static AmUniquePtr<eMemoryPoolKind_Engine, MonoPoleFilter> sMonoPoleFilterPlugin = nullptr;
-    static AmUniquePtr<eMemoryPoolKind_Engine, RobotizeFilter> sRobotizeFilterPlugin = nullptr;
-    static AmUniquePtr<eMemoryPoolKind_Engine, WaveShaperFilter> sWaveShaperFilterPlugin = nullptr;
+    static AmUniquePtr<BassBoostFilter, eMemoryPoolKind_Engine> sBassBoostFilterPlugin = nullptr;
+    static AmUniquePtr<BiquadResonantFilter, eMemoryPoolKind_Engine> sBiquadResonantFilterPlugin = nullptr;
+    static AmUniquePtr<DCRemovalFilter, eMemoryPoolKind_Engine> sDCRemovalFilterPlugin = nullptr;
+    static AmUniquePtr<DelayFilter, eMemoryPoolKind_Engine> sDelayFilterPlugin = nullptr;
+    static AmUniquePtr<EqualizerFilter, eMemoryPoolKind_Engine> sEqualizerFilterPlugin = nullptr;
+    static AmUniquePtr<FlangerFilter, eMemoryPoolKind_Engine> sFlangerFilterPlugin = nullptr;
+    static AmUniquePtr<LofiFilter, eMemoryPoolKind_Engine> sLofiFilterPlugin = nullptr;
+    static AmUniquePtr<MonoPoleFilter, eMemoryPoolKind_Engine> sMonoPoleFilterPlugin = nullptr;
+    static AmUniquePtr<RobotizeFilter, eMemoryPoolKind_Engine> sRobotizeFilterPlugin = nullptr;
+    static AmUniquePtr<WaveShaperFilter, eMemoryPoolKind_Engine> sWaveShaperFilterPlugin = nullptr;
     // ---
-    static AmUniquePtr<eMemoryPoolKind_Engine, AmbisonicBinauralDecoderNode> sAmbisonicBinauralDecoderNodePlugin = nullptr;
-    static AmUniquePtr<eMemoryPoolKind_Engine, AmbisonicMixerNode> sAmbisonicMixerNodePlugin = nullptr;
-    static AmUniquePtr<eMemoryPoolKind_Engine, AmbisonicPanningNode> sAmbisonicPanningNodePlugin = nullptr;
-    static AmUniquePtr<eMemoryPoolKind_Engine, AmbisonicRotatorNode> sAmbisonicRotatorNodePlugin = nullptr;
-    static AmUniquePtr<eMemoryPoolKind_Engine, AttenuationNode> sAttenuationNodePlugin = nullptr;
-    static AmUniquePtr<eMemoryPoolKind_Engine, ClampNode> sClampNodePlugin = nullptr;
-    static AmUniquePtr<eMemoryPoolKind_Engine, ClipNode> sClipNodePlugin = nullptr;
-    static AmUniquePtr<eMemoryPoolKind_Engine, EnvironmentEffectNode> sEnvironmentEffectNodePlugin = nullptr;
-    static AmUniquePtr<eMemoryPoolKind_Engine, InputNode> sInputNodePlugin = nullptr;
-    static AmUniquePtr<eMemoryPoolKind_Engine, NearFieldEffectNode> sNearFieldEffectNodePlugin = nullptr;
-    static AmUniquePtr<eMemoryPoolKind_Engine, ObstructionNode> sObstructionNodePlugin = nullptr;
-    static AmUniquePtr<eMemoryPoolKind_Engine, OcclusionNode> sOcclusionNodePlugin = nullptr;
-    static AmUniquePtr<eMemoryPoolKind_Engine, OutputNode> sOutputNodePlugin = nullptr;
-    static AmUniquePtr<eMemoryPoolKind_Engine, ReflectionsNode> sReflectionsNodePlugin = nullptr;
-    static AmUniquePtr<eMemoryPoolKind_Engine, ReverbNode> sReverbNodePlugin = nullptr;
-    static AmUniquePtr<eMemoryPoolKind_Engine, StereoMixerNode> sStereoMixerNodePlugin = nullptr;
-    static AmUniquePtr<eMemoryPoolKind_Engine, StereoPanningNode> sStereoPanningNodePlugin = nullptr;
+    static AmUniquePtr<AmbisonicBinauralDecoderNode, eMemoryPoolKind_Engine> sAmbisonicBinauralDecoderNodePlugin = nullptr;
+    static AmUniquePtr<AmbisonicMixerNode, eMemoryPoolKind_Engine> sAmbisonicMixerNodePlugin = nullptr;
+    static AmUniquePtr<AmbisonicPanningNode, eMemoryPoolKind_Engine> sAmbisonicPanningNodePlugin = nullptr;
+    static AmUniquePtr<AmbisonicRotatorNode, eMemoryPoolKind_Engine> sAmbisonicRotatorNodePlugin = nullptr;
+    static AmUniquePtr<AttenuationNode, eMemoryPoolKind_Engine> sAttenuationNodePlugin = nullptr;
+    static AmUniquePtr<ClampNode, eMemoryPoolKind_Engine> sClampNodePlugin = nullptr;
+    static AmUniquePtr<ClipNode, eMemoryPoolKind_Engine> sClipNodePlugin = nullptr;
+    static AmUniquePtr<EnvironmentEffectNode, eMemoryPoolKind_Engine> sEnvironmentEffectNodePlugin = nullptr;
+    static AmUniquePtr<InputNode, eMemoryPoolKind_Engine> sInputNodePlugin = nullptr;
+    static AmUniquePtr<NearFieldEffectNode, eMemoryPoolKind_Engine> sNearFieldEffectNodePlugin = nullptr;
+    static AmUniquePtr<ObstructionNode, eMemoryPoolKind_Engine> sObstructionNodePlugin = nullptr;
+    static AmUniquePtr<OcclusionNode, eMemoryPoolKind_Engine> sOcclusionNodePlugin = nullptr;
+    static AmUniquePtr<OutputNode, eMemoryPoolKind_Engine> sOutputNodePlugin = nullptr;
+    static AmUniquePtr<ReflectionsNode, eMemoryPoolKind_Engine> sReflectionsNodePlugin = nullptr;
+    static AmUniquePtr<ReverbNode, eMemoryPoolKind_Engine> sReverbNodePlugin = nullptr;
+    static AmUniquePtr<StereoMixerNode, eMemoryPoolKind_Engine> sStereoMixerNodePlugin = nullptr;
+    static AmUniquePtr<StereoPanningNode, eMemoryPoolKind_Engine> sStereoPanningNodePlugin = nullptr;
 
-    static AmUniquePtr<eMemoryPoolKind_Engine, EngineImpl> gAmplitude = nullptr;
+    static AmUniquePtr<EngineImpl, eMemoryPoolKind_Engine> gAmplitude = nullptr;
 
     std::set<AmOsString> EngineImpl::_pluginSearchPaths = {};
 
@@ -921,7 +921,7 @@ namespace SparkyStudios::Audio::Amplitude
         if (const auto findIt = _state->sound_bank_id_map.find(filename); findIt == _state->sound_bank_id_map.end() ||
             (findIt != _state->sound_bank_id_map.end() && !_state->sound_bank_map.contains(findIt->second)))
         {
-            AmUniquePtr<eMemoryPoolKind_Engine, SoundBank> soundBank(ampoolnew(eMemoryPoolKind_Engine, SoundBank));
+            AmUniquePtr<SoundBank, eMemoryPoolKind_Engine> soundBank(ampoolnew(eMemoryPoolKind_Engine, SoundBank));
             success = soundBank->Initialize(filename, this);
 
             if (success)
@@ -957,7 +957,7 @@ namespace SparkyStudios::Audio::Amplitude
         outID = kAmInvalidObjectId;
         bool success = true;
 
-        AmUniquePtr<eMemoryPoolKind_Engine, SoundBank> soundBank(ampoolnew(eMemoryPoolKind_Engine, SoundBank));
+        AmUniquePtr<SoundBank, eMemoryPoolKind_Engine> soundBank(ampoolnew(eMemoryPoolKind_Engine, SoundBank));
         const AmOsString filename = AM_STRING_TO_OS_STRING(soundBank->GetName());
         if (const auto findIt = _state->sound_bank_id_map.find(filename); findIt == _state->sound_bank_id_map.end() ||
             (findIt != _state->sound_bank_id_map.end() && !_state->sound_bank_map.contains(findIt->second)))
@@ -1109,7 +1109,7 @@ namespace SparkyStudios::Audio::Amplitude
         for (const auto& bank : _state->sound_bank_map | std::views::values)
         {
             auto task = std::shared_ptr<LoadSoundBankTask>(
-                ampoolnew(eMemoryPoolKind_Engine, LoadSoundBankTask, bank.get()), am_delete<eMemoryPoolKind_Engine, LoadSoundBankTask>{});
+                ampoolnew(eMemoryPoolKind_Engine, LoadSoundBankTask, bank.get()), am_delete<LoadSoundBankTask, eMemoryPoolKind_Engine>{});
 
             _soundLoaderThreadPool->AddTask(task);
         }

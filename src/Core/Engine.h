@@ -227,7 +227,7 @@ namespace SparkyStudios::Audio::Amplitude
         Driver* _audioDriver;
 
         // The thread pool used to load audio files.
-        AmUniquePtr<eMemoryPoolKind_Engine, Thread::Pool> _soundLoaderThreadPool;
+        AmUniquePtr<Thread::Pool, eMemoryPoolKind_Engine> _soundLoaderThreadPool;
     };
 } // namespace SparkyStudios::Audio::Amplitude
 

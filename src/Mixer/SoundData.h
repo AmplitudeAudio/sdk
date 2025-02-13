@@ -49,7 +49,7 @@ namespace SparkyStudios::Audio::Amplitude
 
         SoundChunk* chunk;
         AmUInt64 length;
-        AmUniquePtr<eMemoryPoolKind_Amplimix, SoundInstance> sound;
+        AmUniquePtr<SoundInstance, eMemoryPoolKind_Amplimix> sound;
         SoundFormat format;
         bool stream;
 

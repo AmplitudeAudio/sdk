@@ -783,21 +783,21 @@ namespace SparkyStudios::Audio::Amplitude
     };
 
     /**
-     * @brief Deleter for unique pointers.
+     * @brief Deleter for unique/shared pointers.
      *
-     * @tparam Pool The memory pool to delete the pointer from.
      * @tparam T The type of the pointer to delete.
+     * @tparam Pool The memory pool to delete the pointer from.
      *
      * @note This deleter uses the `ampooldelete` function to delete the pointer.
      *       It is templated to ensure that the correct pool is used.
      *       This allows for a single implementation of the deleter for all pointer types.
-     *       The `std::unique_ptr` will automatically call this deleter when the pointer is deleted.
+     *       The `std::unique_ptr` and `std::shared_ptr` will automatically call this deleter when the pointer is deleted.
      *
-     * @see ampooldelete, AmUniquePtr
+     * @see ampooldelete, AmUniquePtr, AmSharedPtr
      *
      * @ingroup memory
      */
-    template<eMemoryPoolKind Pool, class T>
+    template<class T, eMemoryPoolKind Pool = eMemoryPoolKind_Default>
     struct am_delete
     {
         constexpr am_delete() noexcept = default;
@@ -812,13 +812,41 @@ namespace SparkyStudios::Audio::Amplitude
     /**
      * @brief Unique pointer type.
      *
-     * @tparam Pool The memory pool to allocate the pointer from.
      * @tparam T The type of the pointer to allocate.
+     * @tparam Pool The memory pool to allocate the pointer from.
      *
      * @ingroup memory
      */
-    template<eMemoryPoolKind Pool, class T>
-    using AmUniquePtr = std::unique_ptr<T, am_delete<Pool, T>>;
+    template<class T, eMemoryPoolKind Pool = eMemoryPoolKind_Default>
+    using AmUniquePtr = std::unique_ptr<T, am_delete<T, Pool>>;
+
+    /**
+     * @brief Shared pointer type.
+     *
+     * @tparam T The type of the pointer to allocate.
+     * @tparam Pool The memory pool to allocate the pointer from.
+     *
+     * @ingroup memory
+     */
+    template<class T, eMemoryPoolKind Pool = eMemoryPoolKind_Default>
+    class AmSharedPtr : public std::shared_ptr<T>
+    {
+    public:
+        template<class... Args>
+        static AmSharedPtr<T, Pool> Make(Args&&... args)
+        {
+            return AmSharedPtr<T, Pool>(ampoolnew(Pool, T, std::forward<Args>(args)...));
+        }
+
+        /**
+         * @brief Creates a new shared pointer.
+         *
+         * @param ptr The pointer to wrap.
+         */
+        AmSharedPtr(T* ptr)
+            : std::shared_ptr<T>(ptr, am_delete<T, Pool>{})
+        {}
+    };
 } // namespace SparkyStudios::Audio::Amplitude
 
 #endif // _AM_CORE_MEMORY_H

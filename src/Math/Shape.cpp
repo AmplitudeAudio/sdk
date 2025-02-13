@@ -174,9 +174,7 @@ namespace SparkyStudios::Audio::Amplitude
 
     std::shared_ptr<BoxShape> BoxShape::Create(const BoxShapeDefinition* definition)
     {
-        return std::shared_ptr<BoxShape>(
-            amnew(BoxShape, definition->half_width(), definition->half_height(), definition->half_depth()),
-            am_delete<eMemoryPoolKind_Default, BoxShape>{});
+        return AmSharedPtr<BoxShape>::Make(definition->half_width(), definition->half_height(), definition->half_depth());
     }
 
     BoxShape::BoxShape(const AmReal32 halfWidth, const AmReal32 halfHeight, const AmReal32 halfDepth)
@@ -354,8 +352,7 @@ namespace SparkyStudios::Audio::Amplitude
 
     std::shared_ptr<CapsuleShape> CapsuleShape::Create(const CapsuleShapeDefinition* definition)
     {
-        return std::shared_ptr<CapsuleShape>(
-            amnew(CapsuleShape, definition->radius(), definition->half_height()), am_delete<eMemoryPoolKind_Default, CapsuleShape>{});
+        return AmSharedPtr<CapsuleShape>::Make(definition->radius(), definition->half_height());
     }
 
     CapsuleShape::CapsuleShape(const AmReal32 radius, const AmReal32 halfHeight)
@@ -469,8 +466,7 @@ namespace SparkyStudios::Audio::Amplitude
 
     std::shared_ptr<ConeShape> ConeShape::Create(const ConeShapeDefinition* definition)
     {
-        return std::shared_ptr<ConeShape>(
-            amnew(ConeShape, definition->radius(), definition->height()), am_delete<eMemoryPoolKind_Default, ConeShape>{});
+        return AmSharedPtr<ConeShape>::Make(definition->radius(), definition->height());
     }
 
     ConeShape::ConeShape(const AmReal32 radius, const AmReal32 height)
@@ -560,7 +556,7 @@ namespace SparkyStudios::Audio::Amplitude
 
     std::shared_ptr<SphereShape> SphereShape::Create(const SphereShapeDefinition* definition)
     {
-        return std::shared_ptr<SphereShape>(amnew(SphereShape, definition->radius()), am_delete<eMemoryPoolKind_Default, SphereShape>{});
+        return AmSharedPtr<SphereShape>::Make(definition->radius());
     }
 
     SphereShape::SphereShape(const AmReal32 radius)

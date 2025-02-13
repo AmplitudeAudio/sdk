@@ -50,7 +50,7 @@ namespace SparkyStudios::Audio::Amplitude
 
         if (_maxDelay > oldFramesCount - _framesCount)
         {
-            AmUniquePtr<eMemoryPoolKind_Filtering, AudioBuffer> newBuffer(
+            AmUniquePtr<AudioBuffer, eMemoryPoolKind_Filtering> newBuffer(
                 ampoolnew(eMemoryPoolKind_Filtering, AudioBuffer, newFramesCount, kAmMonoChannelCount));
             newBuffer->Clear();
 
