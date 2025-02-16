@@ -5,7 +5,7 @@
 
 <p align="center">
   <a href="https://amplitudeaudiosdk.com">
-    <img src="https://amplitudeaudiosdk.com/images/logo_trimmed.png" width="320">
+    <img src="https://amplitudeaudiosdk.com/images/logo_trimmed.png" width="320" alt="Amplitude Audio SDK">
   </a>
 </p>
 
@@ -20,12 +20,12 @@ thanks to its data-driven way. All you need is to write configuration files and 
 
   <br/>
 
-[Project Setup](https://docs.amplitudeaudiosdk.com/nightly/project/) | [Integration](https://docs.amplitudeaudiosdk.com/nightly/integration/) | API Documentation
+[Project Setup](https://docs.amplitudeaudiosdk.com/nightly/project/) | [Integration](https://docs.amplitudeaudiosdk.com/nightly/integration/) | [API Documentation](https://docs.amplitudeaudiosdk.com/nightly/api/)
 
   <br/>
 </div>
 
-> Amplitude is still in active development, and no official release is made yet. However, the API is stable and no breaking changes will be introduced until the first release. To get a copy of the SDK, you should [build it from sources](https://docs.amplitudeaudiosdk.com/nightly/getting-started/installation/#build-from-sources). Feel free to raise an [issue](https://github.com/AmplitudeAudio/sdk/issues/new/choose "Open a Github Issue") or open a [PR](https://github.com/AmplitudeAudio/sdk/pulls), by following our [Contributor Guidelines](https://github.com/AmplitudeAudio/sdk/blob/main/CODE_OF_CONDUCT.md).
+> Amplitude is still in active development, and no official release is available yet. However, the API is stable and no breaking changes will be introduced until the first release. To get a copy of the SDK, you should [build it from sources](https://docs.amplitudeaudiosdk.com/nightly/getting-started/installation/#build-from-sources). Feel free to raise an [issue](https://github.com/AmplitudeAudio/sdk/issues/new/choose "Open a Github Issue") or open a [PR](https://github.com/AmplitudeAudio/sdk/pulls), by following our [Contributor Guidelines](https://github.com/AmplitudeAudio/sdk/blob/main/CODE_OF_CONDUCT.md).
 
 ## Sample Projects
 
@@ -33,7 +33,7 @@ The quickest way to get started with the SDK is to have a look on the [sample pr
 
 ## Features
 
-This is a list of some of the most important features of Amplitude:
+This is a list of some features provided by Amplitude:
 
 - [Spatial Audio, HRTF, and Ambisonic Rendering](https://docs.amplitudeaudiosdk.com/nightly/getting-started/introduction/#spatial-audio-hrtf-and-ambisonic-rendering)
 - [Data-driven Development](https://docs.amplitudeaudiosdk.com/nightly/getting-started/introduction/#data-driven-development)
