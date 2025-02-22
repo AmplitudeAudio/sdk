@@ -25,6 +25,9 @@ namespace SparkyStudios::Audio::Amplitude
 {
     DuckBusInternalState::~DuckBusInternalState()
     {
+        _bus.Clear();
+        _parent = nullptr;
+
         if (_faderIn != nullptr)
             _faderInFactory->DestroyInstance(_faderIn);
 

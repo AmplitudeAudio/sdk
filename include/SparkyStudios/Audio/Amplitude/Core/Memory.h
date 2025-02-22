@@ -847,6 +847,40 @@ namespace SparkyStudios::Audio::Amplitude
             : std::shared_ptr<T>(ptr, am_delete<T, Pool>{})
         {}
     };
+
+    /**
+     * @brief Fake shared pointer.
+     *
+     * This is a fake shared pointer that does nothing on deletion. It is used to
+     * make use of `AmSharedPtr` in places where a shared pointer is required, but
+     * the object is not owned by the shared pointer.
+     *
+     * @tparam T The type of the object being wrapped.
+     *
+     * @see AmSharedPtr
+     *
+     * @ingroup memory
+     */
+    template<typename T>
+    struct AmFakeSharedPtr : public std::shared_ptr<T>
+    {
+        struct am_fake_delete
+        {
+            constexpr am_fake_delete() noexcept = default;
+
+            void operator()(T*) const
+            {}
+        };
+
+        /**
+         * @brief Creates a new fake shared pointer.
+         *
+         * @param ptr The pointer to wrap.
+         */
+        AmFakeSharedPtr(T* ptr)
+            : std::shared_ptr<T>(ptr, am_fake_delete{})
+        {}
+    };
 } // namespace SparkyStudios::Audio::Amplitude
 
 #endif // _AM_CORE_MEMORY_H

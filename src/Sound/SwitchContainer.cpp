@@ -182,7 +182,7 @@ namespace SparkyStudios::Audio::Amplitude
             }
 
             // Setup entry Faders
-            Fader* fader = Fader::Find(entry->fade_in()->fader()->str());
+            std::shared_ptr<Fader> fader = Fader::Find(entry->fade_in()->fader()->str());
             FaderInstance* faderInstance = fader->CreateInstance();
             faderInstance->SetDuration(entry->fade_in()->duration());
 

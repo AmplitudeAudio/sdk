@@ -260,14 +260,14 @@ namespace SparkyStudios::Audio::Amplitude
          *
          * @param[in] fader The Fader to add in the registry.
          */
-        static void Register(Fader* fader);
+        static void Register(std::shared_ptr<Fader> fader);
 
         /**
          * @brief Unregister a fader.
          *
          * @param[in] fader The Fader to remove from the registry.
          */
-        static void Unregister(const Fader* fader);
+        static void Unregister(std::shared_ptr<const Fader> fader);
 
         /**
          * @brief Creates a new instance of the fader with the given name and returns its pointer.
@@ -311,7 +311,7 @@ namespace SparkyStudios::Audio::Amplitude
          *
          * @return The registry of Faders.
          */
-        static const std::map<AmString, Fader*>& GetRegistry();
+        static const std::map<AmString, std::shared_ptr<Fader>>& GetRegistry();
 
         /**
          * @brief Look up a Fader by name.
@@ -320,7 +320,7 @@ namespace SparkyStudios::Audio::Amplitude
          *
          * @internal
          */
-        static Fader* Find(const AmString& name);
+        static std::shared_ptr<Fader> Find(const AmString& name);
 
     protected:
         /**

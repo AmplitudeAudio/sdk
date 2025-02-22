@@ -17,7 +17,7 @@
 
 namespace SparkyStudios::Audio::Amplitude
 {
-    typedef std::map<std::string, Filter*> FilterRegistry;
+    typedef std::map<std::string, std::shared_ptr<Filter>> FilterRegistry;
     typedef FilterRegistry::value_type FilterImpl;
 
     static FilterRegistry& filterRegistry()
@@ -40,14 +40,10 @@ namespace SparkyStudios::Audio::Amplitude
 
     Filter::Filter(std::string name)
         : m_name(std::move(name))
-    {
-        Filter::Register(this);
-    }
+    {}
 
     Filter::~Filter()
-    {
-        Unregister(this);
-    }
+    {}
 
     AmUInt32 Filter::GetParamCount() const
     {
@@ -79,7 +75,7 @@ namespace SparkyStudios::Audio::Amplitude
         return m_name;
     }
 
-    void Filter::Register(Filter* filter)
+    void Filter::Register(std::shared_ptr<Filter> filter)
     {
         if (lockFilters() || filter == nullptr)
             return;
@@ -92,7 +88,7 @@ namespace SparkyStudios::Audio::Amplitude
         filtersCount()++;
     }
 
-    void Filter::Unregister(const Filter* filter)
+    void Filter::Unregister(std::shared_ptr<const Filter> filter)
     {
         if (lockFilters() || filter == nullptr)
             return;
@@ -105,7 +101,7 @@ namespace SparkyStudios::Audio::Amplitude
         }
     }
 
-    Filter* Filter::Find(const std::string& name)
+    std::shared_ptr<Filter> Filter::Find(const std::string& name)
     {
         for (const FilterRegistry& filters = filterRegistry(); auto&& filter : filters)
             if (filter.second->m_name == name)
@@ -116,7 +112,7 @@ namespace SparkyStudios::Audio::Amplitude
 
     FilterInstance* Filter::Construct(const std::string& name)
     {
-        Filter* filter = Find(name);
+        std::shared_ptr<Filter> filter = Find(name);
         if (filter == nullptr)
             return nullptr;
 
@@ -128,7 +124,7 @@ namespace SparkyStudios::Audio::Amplitude
         if (instance == nullptr)
             return;
 
-        Filter* filter = Find(name);
+        std::shared_ptr<Filter> filter = Find(name);
         if (filter == nullptr)
             return;
 
@@ -145,7 +141,7 @@ namespace SparkyStudios::Audio::Amplitude
         lockFilters() = false;
     }
 
-    const std::map<std::string, Filter*>& Filter::GetRegistry()
+    const std::map<std::string, std::shared_ptr<Filter>>& Filter::GetRegistry()
     {
         return filterRegistry();
     }

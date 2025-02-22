@@ -1588,7 +1588,7 @@ namespace SparkyStudios::Audio::Amplitude
          *
          * @return The audio driver.
          */
-        [[nodiscard]] virtual Driver* GetDriver() const = 0;
+        [[nodiscard]] virtual std::shared_ptr<Driver> GetDriver() const = 0;
 
 #pragma endregion
 

@@ -78,7 +78,7 @@ namespace SparkyStudios::Audio::Amplitude
          */
         [[nodiscard]] AM_INLINE Bus GetBus() const override
         {
-            return Bus(m_bus);
+            return Bus(m_bus.get());
         }
 
         /**

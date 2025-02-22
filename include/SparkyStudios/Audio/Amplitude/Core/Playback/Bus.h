@@ -50,7 +50,7 @@ namespace SparkyStudios::Audio::Amplitude
          *
          * @warning This constructor is for internal usage only.
          */
-        explicit Bus(std::shared_ptr<BusInternalState> state);
+        explicit Bus(BusInternalState* state);
 
         /**
          * @brief Uninitializes this `Bus`.
@@ -135,7 +135,7 @@ namespace SparkyStudios::Audio::Amplitude
          *
          * @return The bus internal state.
          */
-        [[nodiscard]] std::shared_ptr<BusInternalState> GetState() const;
+        [[nodiscard]] BusInternalState* GetState() const;
 
     private:
         /**
@@ -143,7 +143,7 @@ namespace SparkyStudios::Audio::Amplitude
          *
          * @internal This field is not exposed to the public API.
          */
-        std::shared_ptr<BusInternalState> _state;
+        BusInternalState* _state;
     };
 } // namespace SparkyStudios::Audio::Amplitude
 

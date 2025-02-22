@@ -90,7 +90,7 @@ namespace SparkyStudios::Audio::Amplitude
     private:
         mutable std::vector<EffectInstance*> _instances;
         std::vector<RtpcValue> _parameters;
-        Filter* _filter;
+        std::shared_ptr<Filter> _filter;
     };
 
     class EffectInstanceImpl final : public EffectInstance

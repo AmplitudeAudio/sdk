@@ -150,7 +150,7 @@ namespace SparkyStudios::Audio::Amplitude
         CurvePoint _start;
         CurvePoint _end;
 
-        Fader* _faderFactory;
+        std::shared_ptr<Fader> _faderFactory;
         FaderInstance* _fader;
     };
 

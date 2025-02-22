@@ -182,7 +182,7 @@ namespace SparkyStudios::Audio::Amplitude
         void SetRtpcValue(RtpcHandle handle, double value) const override;
         void SetRtpcValue(AmRtpcID id, double value) const override;
         void SetRtpcValue(const AmString& name, double value) const override;
-        [[nodiscard]] Driver* GetDriver() const override;
+        [[nodiscard]] std::shared_ptr<Driver> GetDriver() const override;
         [[nodiscard]] Amplimix* GetMixer() const override;
         [[nodiscard]] AmReal32 GetSoundSpeed() const override;
         [[nodiscard]] AmReal32 GetDopplerFactor() const override;
@@ -224,7 +224,7 @@ namespace SparkyStudios::Audio::Amplitude
         std::shared_ptr<FileSystem> _fs;
 
         // The audio driver used by the engine.
-        Driver* _audioDriver;
+        std::shared_ptr<Driver> _audioDriver;
 
         // The thread pool used to load audio files.
         AmUniquePtr<Thread::Pool, eMemoryPoolKind_Engine> _soundLoaderThreadPool;

@@ -34,7 +34,7 @@ namespace SparkyStudios::Audio::Amplitude
     class DuckBusInternalState
     {
     public:
-        explicit DuckBusInternalState(std::shared_ptr<BusInternalState> parent)
+        explicit DuckBusInternalState(BusInternalState* parent)
             : _parent(parent)
             , _initialized(false)
             , _bus(nullptr)
@@ -54,7 +54,7 @@ namespace SparkyStudios::Audio::Amplitude
         void Update(AmTime deltaTime);
 
     private:
-        std::shared_ptr<BusInternalState> _parent;
+        BusInternalState* _parent;
         bool _initialized;
 
         Bus _bus;
@@ -62,8 +62,8 @@ namespace SparkyStudios::Audio::Amplitude
         AmTime _fadeInDuration;
         AmTime _fadeOutDuration;
 
-        Fader* _faderInFactory;
-        Fader* _faderOutFactory;
+        std::shared_ptr<Fader> _faderInFactory;
+        std::shared_ptr<Fader> _faderOutFactory;
 
         FaderInstance* _faderIn;
         FaderInstance* _faderOut;
@@ -209,7 +209,7 @@ namespace SparkyStudios::Audio::Amplitude
         // The target user gain of this bus (used for fading).
         AmReal32 _targetUserGain;
 
-        Fader* _gainFaderFactory;
+        std::shared_ptr<Fader> _gainFaderFactory;
 
         // The bus gain fader.
         FaderInstance* _gainFader;

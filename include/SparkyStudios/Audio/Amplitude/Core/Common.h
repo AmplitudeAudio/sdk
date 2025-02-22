@@ -201,7 +201,7 @@ namespace SparkyStudios::Audio::Amplitude
          */
         [[nodiscard]] AM_INLINE AmUInt8Buffer GetPointer() const
         {
-            return m_basePtr;
+            return m_basePtr.get();
         }
 
         /**
@@ -296,7 +296,7 @@ namespace SparkyStudios::Audio::Amplitude
 
     private:
         AmReal32* m_data; // aligned pointer
-        AmUInt8Buffer m_basePtr; // raw allocated pointer (for delete)
+        std::shared_ptr<AmUInt8> m_basePtr; // raw allocated pointer (for delete)
         AmUInt32 m_floats; // size of buffer (w/out padding)
     };
 
