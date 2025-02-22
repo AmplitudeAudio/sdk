@@ -432,14 +432,14 @@ int main(int argc, char* argv[])
         return EXIT_SUCCESS;
     }
 
-    Engine::RegisterDefaultPlugins();
+    Engine::RegisterDefaultExtensions();
 
     const auto res = process(AM_STRING_TO_OS_STRING(inFileName), AM_STRING_TO_OS_STRING(outFileName), state);
 
     ampoolfree(eMemoryPoolKind_Default, inFileName);
     ampoolfree(eMemoryPoolKind_Default, outFileName);
 
-    Engine::UnregisterDefaultPlugins();
+    Engine::UnregisterDefaultExtensions();
 
     MemoryManager::Deinitialize();
 

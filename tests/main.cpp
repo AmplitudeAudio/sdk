@@ -108,7 +108,7 @@ struct AmTestListener : Catch::EventListenerBase
             Thread::Sleep(1);
 
         // Register all the default plugins shipped with the engine
-        Engine::RegisterDefaultPlugins();
+        Engine::RegisterDefaultExtensions();
         Driver::Unregister(Driver::Find("miniaudio"));
 
         const auto sdkPath = std::filesystem::path(std::getenv("AM_SDK_PATH"));
@@ -143,7 +143,7 @@ struct AmTestListener : Catch::EventListenerBase
         }
 
         // Unregister all default plugins
-        Engine::UnregisterDefaultPlugins();
+        Engine::UnregisterDefaultExtensions();
 
         amEngine->DestroyInstance();
     }

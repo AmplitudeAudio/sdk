@@ -832,6 +832,13 @@ namespace SparkyStudios::Audio::Amplitude
     class AmSharedPtr : public std::shared_ptr<T>
     {
     public:
+        /**
+         * @brief Construct a shared pointer from the given parameters.
+         *
+         * @param[in] args The parameters to pass to the constructor.
+         *
+         * @return The created shared pointer.
+         */
         template<class... Args>
         static AmSharedPtr<T, Pool> Make(Args&&... args)
         {
@@ -841,7 +848,7 @@ namespace SparkyStudios::Audio::Amplitude
         /**
          * @brief Creates a new shared pointer.
          *
-         * @param ptr The pointer to wrap.
+         * @param[in] ptr The pointer to wrap.
          */
         AmSharedPtr(T* ptr)
             : std::shared_ptr<T>(ptr, am_delete<T, Pool>{})
@@ -875,7 +882,7 @@ namespace SparkyStudios::Audio::Amplitude
         /**
          * @brief Creates a new fake shared pointer.
          *
-         * @param ptr The pointer to wrap.
+         * @param[in] ptr The pointer to wrap.
          */
         AmFakeSharedPtr(T* ptr)
             : std::shared_ptr<T>(ptr, am_fake_delete{})

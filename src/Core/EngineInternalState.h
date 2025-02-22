@@ -351,20 +351,6 @@ namespace SparkyStudios::Audio::Amplitude
     bool LoadFile(const std::shared_ptr<File>& file, AmString* dest);
 
     AmUInt32 GetMaxNumberOfChannels(const EngineConfigDefinition* config);
-
-    template<typename T>
-    void RegisterPlugin(std::shared_ptr<T>& plugin)
-    {
-        plugin = AmSharedPtr<T, eMemoryPoolKind_Engine>(ampoolnew(eMemoryPoolKind_Engine, T));
-        T::Register(plugin);
-    }
-
-    template<typename T>
-    void UnregisterPlugin(std::shared_ptr<T>& plugin)
-    {
-        T::Unregister(plugin);
-        plugin.reset();
-    }
 } // namespace SparkyStudios::Audio::Amplitude
 
 #endif // _AM_IMPLEMENTATION_CORE_ENGINE_INTERNAL_STATE_H

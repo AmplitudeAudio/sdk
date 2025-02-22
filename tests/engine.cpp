@@ -76,10 +76,10 @@ TEST_CASE("Engine Tests", "[engine][core][amplitude]")
         THEN("it cannot be initialized without a default driver")
         {
             REQUIRE(amEngine->Deinitialize());
-            Engine::UnregisterDefaultPlugins();
+            Engine::UnregisterDefaultExtensions();
             REQUIRE_FALSE(amEngine->Initialize(AM_OS_STRING("tests.invalid.unknown_driver.config.amconfig")));
             REQUIRE(amEngine->Deinitialize());
-            Engine::RegisterDefaultPlugins();
+            Engine::RegisterDefaultExtensions();
         }
 
         THEN("it fallbacks to the null driver when initialized without a default driver")
@@ -107,10 +107,10 @@ TEST_CASE("Engine Tests", "[engine][core][amplitude]")
         THEN("it cannot be initialized without a default driver")
         {
             REQUIRE(amEngine->Deinitialize());
-            Engine::UnregisterDefaultPlugins();
+            Engine::UnregisterDefaultExtensions();
             REQUIRE_FALSE(amEngine->Initialize(AM_OS_STRING("tests.invalid.unset_driver.config.amconfig")));
             REQUIRE(amEngine->Deinitialize());
-            Engine::RegisterDefaultPlugins();
+            Engine::RegisterDefaultExtensions();
         }
 
         THEN("it fallbacks to the null driver when initialized without a default driver")
@@ -129,10 +129,10 @@ TEST_CASE("Engine Tests", "[engine][core][amplitude]")
         THEN("it cannot be initialized with a failing driver")
         {
             REQUIRE(amEngine->Deinitialize());
-            Engine::UnregisterDefaultPlugins();
+            Engine::UnregisterDefaultExtensions();
             REQUIRE_FALSE(amEngine->Initialize(AM_OS_STRING("tests.invalid.failing_driver.config.amconfig")));
             REQUIRE(amEngine->Deinitialize());
-            Engine::RegisterDefaultPlugins();
+            Engine::RegisterDefaultExtensions();
         }
 
         THEN("it fallbacks to the null driver when initialized with a failing driver")
@@ -204,12 +204,12 @@ TEST_CASE("Engine Tests", "[engine][core][amplitude]")
 
         SECTION("cannot register default plugins after initialization")
         {
-            REQUIRE_FALSE(Engine::RegisterDefaultPlugins());
+            REQUIRE_FALSE(Engine::RegisterDefaultExtensions());
         }
 
         SECTION("cannot unregister default plugins after initialization")
         {
-            REQUIRE_FALSE(Engine::UnregisterDefaultPlugins());
+            REQUIRE_FALSE(Engine::UnregisterDefaultExtensions());
         }
 
         THEN("it can be paused and resumed")

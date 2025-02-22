@@ -26,6 +26,7 @@
 #include <SparkyStudios/Audio/Amplitude/Core/Environment.h>
 #include <SparkyStudios/Audio/Amplitude/Core/Event.h>
 #include <SparkyStudios/Audio/Amplitude/Core/Listener.h>
+#include <SparkyStudios/Audio/Amplitude/Core/Memory.h>
 #include <SparkyStudios/Audio/Amplitude/Core/Playback/Bus.h>
 #include <SparkyStudios/Audio/Amplitude/Core/Playback/Channel.h>
 #include <SparkyStudios/Audio/Amplitude/Core/Room.h>
@@ -1733,12 +1734,44 @@ namespace SparkyStudios::Audio::Amplitude
         /**
          * @brief Register all default plugins.
          */
-        static bool RegisterDefaultPlugins();
+        static bool RegisterDefaultExtensions();
 
         /**
          * @brief Unregister all default plugins.
          */
-        static bool UnregisterDefaultPlugins();
+        static bool UnregisterDefaultExtensions();
+
+        /**
+         * @brief Registers a plugin into Amplitude.
+         *
+         * @note Amplitude will automatically create a new instance of the plugin by calling
+         * the class constructor with the specified arguments.
+         *
+         * @param[in] args The arguments to pass to the plugin class constructor.
+         *
+         * @return The registered plugin.
+         */
+        template<typename T, class... Args>
+        static std::shared_ptr<T> RegisterExtension(Args&&... args)
+        {
+            auto plugin = AmSharedPtr<T, eMemoryPoolKind_Engine>::Make(std::forward<Args>(args)...);
+            T::Register(plugin);
+
+            return plugin;
+        }
+
+        /**
+         * @brief Unregisters a plugin from Amplitude.
+         *
+         * @param[in] plugin The plugin to unregister. The pointer will automatically be
+         * discarded by calling this method.
+         */
+        template<typename T>
+        static void UnregisterExtension(std::shared_ptr<T>& plugin)
+        {
+            T::Unregister(plugin);
+            plugin.reset();
+        }
 
 #pragma endregion
 
