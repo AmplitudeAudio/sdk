@@ -98,9 +98,9 @@ namespace SparkyStudios::Audio::Amplitude
         return _effect;
     }
 
-    const Zone* EnvironmentInternalState::GetZone() const
+    std::shared_ptr<const Zone> EnvironmentInternalState::GetZone() const
     {
-        return _zone.get();
+        return _zone;
     }
 
     void EnvironmentInternalState::SetZone(std::shared_ptr<Zone> zone)

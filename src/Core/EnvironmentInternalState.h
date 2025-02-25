@@ -146,7 +146,7 @@ namespace SparkyStudios::Audio::Amplitude
          *
          * @return An Zone instance.
          */
-        [[nodiscard]] const Zone* GetZone() const;
+        [[nodiscard]] std::shared_ptr<const Zone> GetZone() const;
 
         /**
          * @brief Get the Zone linked to this environment.
