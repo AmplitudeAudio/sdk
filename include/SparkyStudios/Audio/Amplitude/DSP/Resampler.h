@@ -203,14 +203,14 @@ namespace SparkyStudios::Audio::Amplitude
          *
          * @param[in] resampler The resampler to add in the registry.
          */
-        static void Register(Resampler* resampler);
+        static void Register(std::shared_ptr<Resampler> resampler);
 
         /**
          * @brief Unregisters a resampler.
          *
          * @param[in] resampler The resampler to remove from the registry.
          */
-        static void Unregister(const Resampler* resampler);
+        static void Unregister(std::shared_ptr<const Resampler> resampler);
 
         /**
          * @brief Creates a new instance of the resampler with the given name and returns its pointer.
@@ -249,21 +249,27 @@ namespace SparkyStudios::Audio::Amplitude
          */
         static void UnlockRegistry();
 
+        /**
+         * @brief Gets the list of registered Resamplers.
+         *
+         * @return The registry of Resamplers.
+         */
+        static const std::map<AmString, std::shared_ptr<Resampler>>& GetRegistry();
+
+        /**
+         * @brief Look up a Resampler by name.
+         *
+         * @return The Resampler with the given name, or NULL if none.
+         *
+         * @internal
+         */
+        static std::shared_ptr<Resampler> Find(const AmString& name);
+
     protected:
         /**
          * @brief The name of this resampler.
          */
         AmString m_name;
-
-    private:
-        /**
-         * @brief Look up a resampler by name.
-         *
-         * @return The resampler with the given name, or `nullptr` if none.
-         *
-         * @internal
-         */
-        static Resampler* Find(const AmString& name);
     };
 } // namespace SparkyStudios::Audio::Amplitude
 

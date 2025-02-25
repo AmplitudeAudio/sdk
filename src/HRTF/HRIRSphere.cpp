@@ -37,7 +37,7 @@ namespace SparkyStudios::Audio::Amplitude
         m_filename = filePath;
     }
 
-    void HRIRSphereImpl::Load(const FileSystem* loader)
+    void HRIRSphereImpl::Load(std::shared_ptr<const FileSystem> loader)
     {
         if (_loaded)
             return;

@@ -78,7 +78,7 @@ namespace SparkyStudios::Audio::Amplitude
          */
         [[nodiscard]] AM_INLINE Bus GetBus() const override
         {
-            return Bus(m_bus);
+            return Bus(m_bus.get());
         }
 
         /**
@@ -99,7 +99,7 @@ namespace SparkyStudios::Audio::Amplitude
 
     protected:
         // The bus this sound object will play on.
-        BusInternalState* m_bus;
+        std::shared_ptr<BusInternalState> m_bus;
 
         RtpcValue m_gain;
         RtpcValue m_pitch;

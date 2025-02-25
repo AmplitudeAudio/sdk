@@ -57,7 +57,7 @@ namespace SparkyStudios::Audio::Amplitude
 
     AmOsString PackageFileSystem::ResolvePath(const AmOsString& path) const
     {
-        auto resolvedPath= std::filesystem::path(path).lexically_normal().native();
+        auto resolvedPath = std::filesystem::path(path).lexically_normal().native();
         std::ranges::replace(resolvedPath, '\\', '/');
         return resolvedPath;
     }
@@ -110,9 +110,7 @@ namespace SparkyStudios::Audio::Amplitude
         if (it == _header.m_Items.end())
             return nullptr;
 
-        return std::shared_ptr<PackageItemFile>(
-            ampoolnew(eMemoryPoolKind_IO, PackageItemFile, &*it, _packagePath, _headerSize),
-            am_delete<eMemoryPoolKind_IO, PackageItemFile>{});
+        return AmSharedPtr<PackageItemFile, eMemoryPoolKind_IO>::Make(&*it, _packagePath, _headerSize);
     }
 
     void PackageFileSystem::StartOpenFileSystem()

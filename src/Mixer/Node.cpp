@@ -24,7 +24,7 @@
 
 namespace SparkyStudios::Audio::Amplitude
 {
-    typedef std::map<std::string, Node*> NodeRegistry;
+    typedef std::map<std::string, std::shared_ptr<Node>> NodeRegistry;
     typedef NodeRegistry::value_type NodeImpl;
 
     static NodeRegistry& nodeRegistry()
@@ -275,21 +275,17 @@ namespace SparkyStudios::Audio::Amplitude
 
     Node::Node(AmString name)
         : m_name(std::move(name))
-    {
-        Register(this);
-    }
+    {}
 
     Node::~Node()
-    {
-        Unregister(this);
-    }
+    {}
 
     const AmString& Node::GetName() const
     {
         return m_name;
     }
 
-    void Node::Register(Node* node)
+    void Node::Register(std::shared_ptr<Node> node)
     {
         if (lockNodes() || node == nullptr)
             return;
@@ -305,7 +301,7 @@ namespace SparkyStudios::Audio::Amplitude
         nodesCount()++;
     }
 
-    void Node::Unregister(const Node* node)
+    void Node::Unregister(std::shared_ptr<const Node> node)
     {
         if (lockNodes() || node == nullptr)
             return;
@@ -318,7 +314,7 @@ namespace SparkyStudios::Audio::Amplitude
         }
     }
 
-    Node* Node::Find(const std::string& name)
+    std::shared_ptr<Node> Node::Find(const std::string& name)
     {
         NodeRegistry& nodes = nodeRegistry();
         if (const auto& it = nodes.find(name); it != nodes.end())
@@ -329,7 +325,7 @@ namespace SparkyStudios::Audio::Amplitude
 
     NodeInstance* Node::Construct(const std::string& name)
     {
-        const Node* node = Find(name);
+        std::shared_ptr<Node> node = Find(name);
         if (node == nullptr)
             return nullptr;
 
@@ -341,7 +337,7 @@ namespace SparkyStudios::Audio::Amplitude
         if (instance == nullptr)
             return;
 
-        const Node* node = Find(name);
+        std::shared_ptr<Node> node = Find(name);
         if (node == nullptr)
             return;
 
@@ -358,7 +354,7 @@ namespace SparkyStudios::Audio::Amplitude
         lockNodes() = false;
     }
 
-    const std::map<AmString, Node*>& Node::GetRegistry()
+    const std::map<AmString, std::shared_ptr<Node>>& Node::GetRegistry()
     {
         return nodeRegistry();
     }

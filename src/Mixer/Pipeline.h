@@ -83,7 +83,7 @@ namespace SparkyStudios::Audio::Amplitude
         /**
          * @copydoc AssetImpl::LoadDefinition
          */
-        bool LoadDefinition(const PipelineDefinition* definition, EngineInternalState* state) override;
+        bool LoadDefinition(const PipelineDefinition* definition, std::shared_ptr<EngineInternalState> state) override;
 
         /**
          * @copydoc AssetImpl::GetDefinition

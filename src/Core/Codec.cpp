@@ -19,7 +19,7 @@
 
 namespace SparkyStudios::Audio::Amplitude
 {
-    typedef std::map<AmString, Codec*> CodecRegistry;
+    typedef std::map<AmString, std::shared_ptr<Codec>> CodecRegistry;
     typedef CodecRegistry::value_type CodecImpl;
 
     static CodecRegistry& codecRegistry()
@@ -62,21 +62,17 @@ namespace SparkyStudios::Audio::Amplitude
 
     Codec::Codec(AmString name)
         : m_name(std::move(name))
-    {
-        Register(this);
-    }
+    {}
 
     Codec::~Codec()
-    {
-        Unregister(this);
-    }
+    {}
 
     const AmString& Codec::GetName() const
     {
         return m_name;
     }
 
-    void Codec::Register(Codec* codec)
+    void Codec::Register(std::shared_ptr<Codec> codec)
     {
         if (lockCodecs() || codec == nullptr)
             return;
@@ -92,7 +88,7 @@ namespace SparkyStudios::Audio::Amplitude
         codecsCount()++;
     }
 
-    void Codec::Unregister(const Codec* codec)
+    void Codec::Unregister(std::shared_ptr<const Codec> codec)
     {
         if (lockCodecs() || codec == nullptr)
             return;
@@ -105,7 +101,7 @@ namespace SparkyStudios::Audio::Amplitude
         }
     }
 
-    Codec* Codec::Find(const AmString& name)
+    std::shared_ptr<Codec> Codec::Find(const AmString& name)
     {
         const CodecRegistry& codecs = codecRegistry();
         if (const auto& it = codecs.find(name); it != codecs.end())
@@ -114,7 +110,7 @@ namespace SparkyStudios::Audio::Amplitude
         return nullptr;
     }
 
-    Codec* Codec::FindCodecForFile(std::shared_ptr<File> file)
+    std::shared_ptr<Codec> Codec::FindCodecForFile(std::shared_ptr<File> file)
     {
         for (const CodecRegistry& codecs = codecRegistry(); const auto& [_, codec] : codecs)
             if (codec->CanHandleFile(file))
@@ -131,5 +127,10 @@ namespace SparkyStudios::Audio::Amplitude
     void Codec::UnlockRegistry()
     {
         lockCodecs() = false;
+    }
+
+    const std::map<AmString, std::shared_ptr<Codec>>& Codec::GetRegistry()
+    {
+        return codecRegistry();
     }
 } // namespace SparkyStudios::Audio::Amplitude

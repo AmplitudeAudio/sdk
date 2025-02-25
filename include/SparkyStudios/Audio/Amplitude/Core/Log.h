@@ -36,7 +36,7 @@
 #define amLog(_level_, _message_, ...)                                                                                                     \
     if (amLogger != nullptr)                                                                                                               \
     {                                                                                                                                      \
-        constexpr size_t bufferLen = 2048;                                                                                                 \
+        constexpr size_t bufferLen = 4096;                                                                                                 \
         char buffer[bufferLen];                                                                                                            \
         int formatted = std::snprintf(buffer, bufferLen, _message_, ##__VA_ARGS__);                                                        \
         amLogger->_level_(__FILE__, __LINE__, AmString(buffer).substr(0, formatted));                                                      \
@@ -101,7 +101,7 @@
  *
  * @ingroup core
  */
-#define amLogSuccess(_message_,...) amLog(Success, _message_, ##__VA_ARGS__)
+#define amLogSuccess(_message_, ...) amLog(Success, _message_, ##__VA_ARGS__)
 
 namespace SparkyStudios::Audio::Amplitude
 {

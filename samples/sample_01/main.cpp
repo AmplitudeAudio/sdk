@@ -24,7 +24,7 @@ static constexpr AmUInt32 kAppModeSwitchContainerTest = 2;
 
 struct ExecutionContext
 {
-    DiskFileSystem fileLoader;
+    std::shared_ptr<DiskFileSystem> fileLoader = AmSharedPtr<DiskFileSystem, eMemoryPoolKind_IO>::Make();
 
     AmUInt32 appMode = kAppModeMainMenu;
 
@@ -69,6 +69,10 @@ static void run(AmVoidPtr param)
 
     auto cleanup = [&ctx]()
     {
+        ctx->mainMenuBackgroundChannel.Clear();
+        ctx->collectionSampleChannel.Clear();
+        ctx->switchContainerChannel.Clear();
+
         amEngine->Deinitialize();
 
         // Wait for the file system to complete loading.
@@ -77,15 +81,17 @@ static void run(AmVoidPtr param)
             Thread::Sleep(1);
 
         // Unregister all default plugins
-        Engine::UnregisterDefaultPlugins();
+        Engine::UnregisterDefaultExtensions();
 
         amEngine->DestroyInstance();
+
+        ctx->fileLoader.reset();
 
         ctx->stop = true;
     };
 
-    ctx->fileLoader.SetBasePath(AM_OS_STRING("./assets"));
-    amEngine->SetFileSystem(&ctx->fileLoader);
+    ctx->fileLoader->SetBasePath(AM_OS_STRING("./assets"));
+    amEngine->SetFileSystem(ctx->fileLoader);
 
     // Wait for the file system to complete loading.
     amEngine->StartOpenFileSystem();
@@ -95,7 +101,7 @@ static void run(AmVoidPtr param)
     const auto sdkPath = std::filesystem::path(std::getenv("AM_SDK_PATH"));
 
     // Register all the default plugins shipped with the engine
-    Engine::RegisterDefaultPlugins();
+    Engine::RegisterDefaultExtensions();
 
     Engine::AddPluginSearchPath(AM_OS_STRING("./assets/plugins"));
     Engine::AddPluginSearchPath(sdkPath / AM_OS_STRING("lib/" AM_SDK_PLATFORM "/plugins"));

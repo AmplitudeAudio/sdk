@@ -80,7 +80,7 @@ namespace SparkyStudios::Audio::Amplitude
         /**
          * @copydoc AssetImpl::LoadDefinition
          */
-        bool LoadDefinition(const EffectDefinition* definition, EngineInternalState* state) override;
+        bool LoadDefinition(const EffectDefinition* definition, std::shared_ptr<EngineInternalState> state) override;
 
         /**
          * @copydoc AssetImpl::GetDefinition
@@ -90,7 +90,7 @@ namespace SparkyStudios::Audio::Amplitude
     private:
         mutable std::vector<EffectInstance*> _instances;
         std::vector<RtpcValue> _parameters;
-        Filter* _filter;
+        std::shared_ptr<Filter> _filter;
     };
 
     class EffectInstanceImpl final : public EffectInstance

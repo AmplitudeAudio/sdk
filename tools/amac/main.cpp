@@ -103,12 +103,12 @@ static int process(const AmOsString& inFileName, const AmOsString& outFileName, 
     const auto inputFile = fs.OpenFile(inFileName, eFileOpenMode_Read);
     const auto outputFile = fs.OpenFile(outFileName, eFileOpenMode_Write);
 
-    auto* ams_codec = Codec::Find("ams");
-    auto* wav_codec = Codec::Find("wav");
+    auto ams_codec = Codec::Find("ams");
+    auto wav_codec = Codec::Find("wav");
 
     if (state.mode == ePM_ENCODE)
     {
-        auto* codec = Codec::FindCodecForFile(inputFile);
+        auto codec = Codec::FindCodecForFile(inputFile);
         if (!codec)
         {
             log(stderr, "Unable to load the input file: " AM_OS_CHAR_FMT ". File not found or codec unavailable.\n", inFileName.c_str());
@@ -432,14 +432,14 @@ int main(int argc, char* argv[])
         return EXIT_SUCCESS;
     }
 
-    Engine::RegisterDefaultPlugins();
+    Engine::RegisterDefaultExtensions();
 
     const auto res = process(AM_STRING_TO_OS_STRING(inFileName), AM_STRING_TO_OS_STRING(outFileName), state);
 
     ampoolfree(eMemoryPoolKind_Default, inFileName);
     ampoolfree(eMemoryPoolKind_Default, outFileName);
 
-    Engine::UnregisterDefaultPlugins();
+    Engine::UnregisterDefaultExtensions();
 
     MemoryManager::Deinitialize();
 

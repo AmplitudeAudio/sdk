@@ -98,9 +98,9 @@ struct AmTestListener : Catch::EventListenerBase
     // The whole test run starting
     void testRunStarting(Catch::TestRunInfo const& testRunInfo) override
     {
-        fileSystem.SetBasePath(AM_OS_STRING("./samples/assets"));
+        fileSystem->SetBasePath(AM_OS_STRING("./samples/assets"));
 
-        amEngine->SetFileSystem(&fileSystem);
+        amEngine->SetFileSystem(fileSystem);
 
         // Wait for the file system to complete loading.
         amEngine->StartOpenFileSystem();
@@ -108,7 +108,7 @@ struct AmTestListener : Catch::EventListenerBase
             Thread::Sleep(1);
 
         // Register all the default plugins shipped with the engine
-        Engine::RegisterDefaultPlugins();
+        Engine::RegisterDefaultExtensions();
         Driver::Unregister(Driver::Find("miniaudio"));
 
         const auto sdkPath = std::filesystem::path(std::getenv("AM_SDK_PATH"));
@@ -143,13 +143,13 @@ struct AmTestListener : Catch::EventListenerBase
         }
 
         // Unregister all default plugins
-        Engine::UnregisterDefaultPlugins();
+        Engine::UnregisterDefaultExtensions();
 
         amEngine->DestroyInstance();
     }
 
     AmThreadHandle threadHandle = nullptr;
-    DiskFileSystem fileSystem;
+    std::shared_ptr<DiskFileSystem> fileSystem = AmSharedPtr<DiskFileSystem, eMemoryPoolKind_IO>::Make();
     bool running = false;
 };
 

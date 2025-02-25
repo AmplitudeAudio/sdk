@@ -102,7 +102,7 @@ namespace SparkyStudios::Audio::Amplitude
         return _states;
     }
 
-    bool SwitchImpl::LoadDefinition(const SwitchDefinition* definition, EngineInternalState* state)
+    bool SwitchImpl::LoadDefinition(const SwitchDefinition* definition, std::shared_ptr<EngineInternalState> state)
     {
         m_id = definition->id();
         m_name = definition->name()->str();

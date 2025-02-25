@@ -108,7 +108,7 @@ namespace SparkyStudios::Audio::Amplitude
         /**
          * @copydoc AssetImpl::LoadDefinition
          */
-        bool LoadDefinition(const RtpcDefinition* definition, EngineInternalState* state) override;
+        bool LoadDefinition(const RtpcDefinition* definition, std::shared_ptr<EngineInternalState> state) override;
 
         /**
          * @copydoc AssetImpl::GetDefinition
@@ -123,8 +123,8 @@ namespace SparkyStudios::Audio::Amplitude
         AmReal64 _currentValue;
         AmReal64 _targetValue;
 
-        Fader* _faderAttackFactory;
-        Fader* _faderReleaseFactory;
+        std::shared_ptr<Fader> _faderAttackFactory;
+        std::shared_ptr<Fader> _faderReleaseFactory;
 
         FaderInstance* _faderAttack;
         FaderInstance* _faderRelease;

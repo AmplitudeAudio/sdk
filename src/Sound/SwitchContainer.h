@@ -144,7 +144,7 @@ namespace SparkyStudios::Audio::Amplitude
         /**
          * @copydoc AssetImpl::LoadDefinition
          */
-        bool LoadDefinition(const SwitchContainerDefinition* definition, EngineInternalState* state) override;
+        bool LoadDefinition(const SwitchContainerDefinition* definition, std::shared_ptr<EngineInternalState> state) override;
 
         /**
          * @copydoc AssetImpl::GetDefinition
@@ -154,19 +154,19 @@ namespace SparkyStudios::Audio::Amplitude
         /**
          * @copydoc AssetImpl::AcquireReferences
          */
-        void AcquireReferences(EngineInternalState* state) override;
+        void AcquireReferences(std::shared_ptr<EngineInternalState> state) override;
 
         /**
          * @copydoc AssetImpl::ReleaseReferences
          */
-        void ReleaseReferences(EngineInternalState* state) override;
+        void ReleaseReferences(std::shared_ptr<EngineInternalState> state) override;
 
     private:
         SwitchImpl* _switch;
 
         std::map<AmObjectID, std::vector<SwitchContainerItem>> _sounds;
-        std::map<AmObjectID, std::tuple<Fader*, FaderInstance*>> _fadersIn;
-        std::map<AmObjectID, std::tuple<Fader*, FaderInstance*>> _fadersOut;
+        std::map<AmObjectID, std::tuple<std::shared_ptr<Fader>, FaderInstance*>> _fadersIn;
+        std::map<AmObjectID, std::tuple<std::shared_ptr<Fader>, FaderInstance*>> _fadersOut;
     };
 } // namespace SparkyStudios::Audio::Amplitude
 

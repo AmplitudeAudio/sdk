@@ -29,7 +29,7 @@ namespace SparkyStudios::Audio::Amplitude
     class BusInternalState;
     class DuckBusInternalState;
 
-    typedef std::vector<AmUniquePtr<eMemoryPoolKind_Engine, DuckBusInternalState>> DuckBusList;
+    typedef std::vector<AmUniquePtr<DuckBusInternalState, eMemoryPoolKind_Engine>> DuckBusList;
 
     class DuckBusInternalState
     {
@@ -62,8 +62,8 @@ namespace SparkyStudios::Audio::Amplitude
         AmTime _fadeInDuration;
         AmTime _fadeOutDuration;
 
-        Fader* _faderInFactory;
-        Fader* _faderOutFactory;
+        std::shared_ptr<Fader> _faderInFactory;
+        std::shared_ptr<Fader> _faderOutFactory;
 
         FaderInstance* _faderIn;
         FaderInstance* _faderOut;
@@ -153,7 +153,7 @@ namespace SparkyStudios::Audio::Amplitude
         }
 
         // Return the vector of child buses.
-        AM_INLINE std::vector<BusInternalState*>& GetChildBuses()
+        AM_INLINE std::vector<std::shared_ptr<BusInternalState>>& GetChildBuses()
         {
             return _childBuses;
         }
@@ -197,7 +197,7 @@ namespace SparkyStudios::Audio::Amplitude
 
         // Children of a given bus have their gain multiplied against their parent's
         // gain.
-        std::vector<BusInternalState*> _childBuses;
+        std::vector<std::shared_ptr<BusInternalState>> _childBuses;
 
         // When a sound is played on this bus, sounds played on these buses should be
         // ducked.
@@ -209,7 +209,7 @@ namespace SparkyStudios::Audio::Amplitude
         // The target user gain of this bus (used for fading).
         AmReal32 _targetUserGain;
 
-        Fader* _gainFaderFactory;
+        std::shared_ptr<Fader> _gainFaderFactory;
 
         // The bus gain fader.
         FaderInstance* _gainFader;

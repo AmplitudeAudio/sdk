@@ -16,10 +16,11 @@
 
 #include <SparkyStudios/Audio/Amplitude/Core/Driver.h>
 #include <SparkyStudios/Audio/Amplitude/Core/Log.h>
+#include <SparkyStudios/Audio/Amplitude/Core/Memory.h>
 
 namespace SparkyStudios::Audio::Amplitude
 {
-    typedef std::map<AmString, Driver*> DriverRegistry;
+    typedef std::map<AmString, std::shared_ptr<Driver>> DriverRegistry;
     typedef DriverRegistry::value_type DriverImpl;
 
     static DriverRegistry& driverRegistry()
@@ -43,14 +44,10 @@ namespace SparkyStudios::Audio::Amplitude
     Driver::Driver(AmString name)
         : m_name(std::move(name))
         , m_deviceDescription()
-    {
-        Register(this);
-    }
+    {}
 
     Driver::~Driver()
-    {
-        Unregister(this);
-    }
+    {}
 
     const AmString& Driver::GetName() const
     {
@@ -62,7 +59,7 @@ namespace SparkyStudios::Audio::Amplitude
         return m_deviceDescription;
     }
 
-    void Driver::Register(Driver* driver)
+    void Driver::Register(std::shared_ptr<Driver> driver)
     {
         if (lockDrivers() || driver == nullptr)
             return;
@@ -78,7 +75,7 @@ namespace SparkyStudios::Audio::Amplitude
         driversCount()++;
     }
 
-    void Driver::Unregister(const Driver* driver)
+    void Driver::Unregister(std::shared_ptr<const Driver> driver)
     {
         if (lockDrivers() || driver == nullptr)
             return;
@@ -91,7 +88,7 @@ namespace SparkyStudios::Audio::Amplitude
         }
     }
 
-    Driver* Driver::Default()
+    std::shared_ptr<Driver> Driver::Default()
     {
         if (const DriverRegistry& drivers = driverRegistry(); !drivers.empty())
             return drivers.rbegin()->second;
@@ -99,7 +96,7 @@ namespace SparkyStudios::Audio::Amplitude
         return nullptr;
     }
 
-    Driver* Driver::Find(const AmString& name)
+    std::shared_ptr<Driver> Driver::Find(const AmString& name)
     {
         const DriverRegistry& drivers = driverRegistry();
         if (const auto& it = drivers.find(name); it != drivers.end())
@@ -115,7 +112,7 @@ namespace SparkyStudios::Audio::Amplitude
         {
             if (i->second->m_name == name)
             {
-                std::pair<AmString, Driver*> node = DriverImpl(i->first, i->second);
+                std::pair<AmString, std::shared_ptr<Driver>> node = DriverImpl(i->first, i->second);
                 drivers.erase(i);
                 drivers.insert(node);
                 return;
@@ -131,5 +128,10 @@ namespace SparkyStudios::Audio::Amplitude
     void Driver::UnlockRegistry()
     {
         lockDrivers() = false;
+    }
+
+    const std::map<AmString, std::shared_ptr<Driver>>& Driver::GetRegistry()
+    {
+        return driverRegistry();
     }
 } // namespace SparkyStudios::Audio::Amplitude

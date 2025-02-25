@@ -334,7 +334,7 @@ namespace SparkyStudios::Audio::Amplitude
         return event;
     }
 
-    bool EventImpl::LoadDefinition(const EventDefinition* definition, EngineInternalState* state)
+    bool EventImpl::LoadDefinition(const EventDefinition* definition, std::shared_ptr<EngineInternalState> state)
     {
         m_id = definition->id();
         m_name = definition->name()->str();

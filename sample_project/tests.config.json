@@ -17,7 +17,7 @@
   },
   "game": {
     "listener_fetch_mode": "Nearest",
-    "track_environments": true,
+    "track_environments": false,
     "listeners": 100,
     "entities": 4096,
     "environments": 512,

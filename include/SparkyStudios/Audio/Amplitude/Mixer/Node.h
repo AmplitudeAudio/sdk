@@ -448,14 +448,14 @@ namespace SparkyStudios::Audio::Amplitude
          *
          * @param[in] node The node to add in the registry.
          */
-        static void Register(Node* node);
+        static void Register(std::shared_ptr<Node> node);
 
         /**
          * @brief Unregisters a node.
          *
          * @param[in] node The node to remove from the registry.
          */
-        static void Unregister(const Node* node);
+        static void Unregister(std::shared_ptr<const Node> node);
 
         /**
          * @brief Creates a new instance of the node with the given name
@@ -498,7 +498,7 @@ namespace SparkyStudios::Audio::Amplitude
          *
          * @return The registry of nodes.
          */
-        static const std::map<AmString, Node*>& GetRegistry();
+        static const std::map<AmString, std::shared_ptr<Node>>& GetRegistry();
 
         /**
          * @brief Look up a node by name.
@@ -507,7 +507,7 @@ namespace SparkyStudios::Audio::Amplitude
          *
          * @internal
          */
-        static Node* Find(const AmString& name);
+        static std::shared_ptr<Node> Find(const AmString& name);
 
     protected:
         /**

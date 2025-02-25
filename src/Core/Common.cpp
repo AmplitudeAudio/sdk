@@ -29,7 +29,7 @@ namespace SparkyStudios::Audio::Amplitude
     AmResult AmAlignedReal32Buffer::Init(AmUInt32 size, bool clear)
     {
         if (m_basePtr != nullptr)
-            ampoolfree(eMemoryPoolKind_Default, m_basePtr);
+            m_basePtr.reset();
 
         if (size == 0)
             return eErrorCode_Success;
@@ -40,15 +40,15 @@ namespace SparkyStudios::Audio::Amplitude
         m_floats = size;
 
 #ifndef AM_SIMD_INTRINSICS
-        m_basePtr = static_cast<AmUInt8Buffer>(ammalloc(size * sizeof(AmReal32)));
+        m_basePtr = AmSharedPtr<AmUInt8>(static_cast<AmUInt8Buffer>(ammalloc(size * sizeof(AmReal32))));
 #else
-        m_basePtr = static_cast<AmUInt8Buffer>(ammalign(size * sizeof(AmReal32), AM_SIMD_ALIGNMENT));
+        m_basePtr = AmSharedPtr<AmUInt8>(static_cast<AmUInt8Buffer>(ammalign(size * sizeof(AmReal32), AM_SIMD_ALIGNMENT)));
 #endif
 
         if (m_basePtr == nullptr)
             return eErrorCode_OutOfMemory;
 
-        m_data = reinterpret_cast<AmReal32Buffer>(m_basePtr);
+        m_data = reinterpret_cast<AmReal32Buffer>(m_basePtr.get());
 
         if (clear)
             Clear();
@@ -58,7 +58,7 @@ namespace SparkyStudios::Audio::Amplitude
 
     void AmAlignedReal32Buffer::Clear() const
     {
-        std::memset(m_basePtr, 0, sizeof(AmReal32) * m_floats);
+        std::memset(m_basePtr.get(), 0, sizeof(AmReal32) * m_floats);
     }
 
     void AmAlignedReal32Buffer::Release()
@@ -66,8 +66,7 @@ namespace SparkyStudios::Audio::Amplitude
         if (m_basePtr == nullptr)
             return;
 
-        amfree(m_basePtr);
-        m_basePtr = nullptr;
+        m_basePtr.reset();
 
         m_floats = 0;
         m_data = nullptr;
@@ -79,7 +78,7 @@ namespace SparkyStudios::Audio::Amplitude
 
         if (this != &other)
         {
-            std::memcpy(m_basePtr, other.m_basePtr, m_floats * sizeof(AmReal32));
+            std::memcpy(m_basePtr.get(), other.m_basePtr.get(), m_floats * sizeof(AmReal32));
         }
     }
 
@@ -94,12 +93,16 @@ namespace SparkyStudios::Audio::Amplitude
         if (size != m_floats)
         {
 #ifndef AM_SIMD_INTRINSICS
-            m_basePtr = static_cast<AmUInt8Buffer>(amrealloc(m_basePtr, size * sizeof(AmReal32)));
+            auto tempPtr = AmSharedPtr<AmUInt8>(static_cast<AmUInt8Buffer>(ammalloc(size * sizeof(AmReal32))));
 #else
-            m_basePtr = static_cast<AmUInt8Buffer>(amrealign(m_basePtr, size * sizeof(AmReal32), AM_SIMD_ALIGNMENT));
+            auto tempPtr = AmSharedPtr<AmUInt8>(static_cast<AmUInt8Buffer>(ammalign(size * sizeof(AmReal32), AM_SIMD_ALIGNMENT)));
 #endif
 
-            m_data = reinterpret_cast<AmReal32Buffer>(m_basePtr);
+            std::memcpy(tempPtr.get(), m_basePtr.get(), m_floats * sizeof(AmReal32));
+            std::swap(m_basePtr, tempPtr);
+            tempPtr.reset();
+
+            m_data = reinterpret_cast<AmReal32Buffer>(m_basePtr.get());
         }
 
         m_floats = size;

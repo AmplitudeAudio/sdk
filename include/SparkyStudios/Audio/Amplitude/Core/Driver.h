@@ -90,21 +90,21 @@ namespace SparkyStudios::Audio::Amplitude
          *
          * @param[in] driver The audio driver to add in the registry.
          */
-        static void Register(Driver* driver);
+        static void Register(std::shared_ptr<Driver> driver);
 
         /**
          * @brief Unregisters an audio driver.
          *
          * @param[in] driver The audio driver to remove from the registry.
          */
-        static void Unregister(const Driver* driver);
+        static void Unregister(std::shared_ptr<const Driver> driver);
 
         /**
          * @brief Choose the most preferred audio driver.
          *
          * @return The default audio driver.
          */
-        static Driver* Default();
+        static std::shared_ptr<Driver> Default();
 
         /**
          * @brief Look up a driver by name.
@@ -113,7 +113,7 @@ namespace SparkyStudios::Audio::Amplitude
          *
          * @return The audio driver with the given name, or `nullptr` if none.
          */
-        static Driver* Find(const AmString& name);
+        static std::shared_ptr<Driver> Find(const AmString& name);
 
         /**
          * @brief Set the default diver to use in the engine.
@@ -139,6 +139,13 @@ namespace SparkyStudios::Audio::Amplitude
          * of new divers after the engine is fully unloaded.
          */
         static void UnlockRegistry();
+
+        /**
+         * @brief Gets the list of registered Drivers.
+         *
+         * @return The registry of Drivers.
+         */
+        static const std::map<AmString, std::shared_ptr<Driver>>& GetRegistry();
 
     protected:
         /**

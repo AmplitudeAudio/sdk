@@ -114,13 +114,13 @@ namespace SparkyStudios::Audio::Amplitude
         return _state->GetEffect();
     }
 
-    void Environment::SetZone(Zone* zone) const
+    void Environment::SetZone(std::shared_ptr<Zone> zone) const
     {
         AMPLITUDE_ASSERT(Valid());
         _state->SetZone(zone);
     }
 
-    Zone* Environment::GetZone() const
+    std::shared_ptr<Zone> Environment::GetZone() const
     {
         AMPLITUDE_ASSERT(Valid());
         return _state->GetZone();

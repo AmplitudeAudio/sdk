@@ -20,7 +20,7 @@ using namespace SparkyStudios::Audio::Amplitude;
 
 TEST_CASE("Constant Fader Tests", "[constant_fader][faders][sound][amplitude]")
 {
-    Fader* fader = Fader::Find("Constant");
+    std::shared_ptr<Fader> fader = Fader::Find("Constant");
     constexpr BezierCurveControlPoints cp1 = { 0.0f, 0.0f, 0.0f, 0.0f };
     const BezierCurveControlPoints cp2 = fader->GetControlPoints();
     REQUIRE((cp1.x1 == cp2.x1 && cp1.y1 == cp2.y1 && cp1.x2 == cp2.x2 && cp1.y2 == cp2.y2));
@@ -40,7 +40,7 @@ TEST_CASE("Constant Fader Tests", "[constant_fader][faders][sound][amplitude]")
 
 TEST_CASE("Ease Fader Tests", "[ease_fader][faders][sound][amplitude]")
 {
-    Fader* fader = Fader::Find("Ease");
+    std::shared_ptr<Fader> fader = Fader::Find("Ease");
     constexpr BezierCurveControlPoints cp1 = { 0.25f, 0.1f, 0.25f, 1.0f };
     const BezierCurveControlPoints cp2 = fader->GetControlPoints();
     REQUIRE((cp1.x1 == cp2.x1 && cp1.y1 == cp2.y1 && cp1.x2 == cp2.x2 && cp1.y2 == cp2.y2));
@@ -60,7 +60,7 @@ TEST_CASE("Ease Fader Tests", "[ease_fader][faders][sound][amplitude]")
 
 TEST_CASE("EaseIn Fader Tests", "[easein_fader][faders][sound][amplitude]")
 {
-    Fader* fader = Fader::Find("EaseIn");
+    std::shared_ptr<Fader> fader = Fader::Find("EaseIn");
     constexpr BezierCurveControlPoints cp1 = { 0.42f, 0.0f, 1.0f, 1.0f };
     const BezierCurveControlPoints cp2 = fader->GetControlPoints();
     REQUIRE((cp1.x1 == cp2.x1 && cp1.y1 == cp2.y1 && cp1.x2 == cp2.x2 && cp1.y2 == cp2.y2));
@@ -80,7 +80,7 @@ TEST_CASE("EaseIn Fader Tests", "[easein_fader][faders][sound][amplitude]")
 
 TEST_CASE("EaseInOut Fader Tests", "[easeinout_fader][faders][sound][amplitude]")
 {
-    Fader* fader = Fader::Find("EaseInOut");
+    std::shared_ptr<Fader> fader = Fader::Find("EaseInOut");
     constexpr BezierCurveControlPoints cp1 = { 0.42f, 0.0f, 0.58f, 1.0f };
     const BezierCurveControlPoints cp2 = fader->GetControlPoints();
     REQUIRE((cp1.x1 == cp2.x1 && cp1.y1 == cp2.y1 && cp1.x2 == cp2.x2 && cp1.y2 == cp2.y2));
@@ -100,7 +100,7 @@ TEST_CASE("EaseInOut Fader Tests", "[easeinout_fader][faders][sound][amplitude]"
 
 TEST_CASE("EaseOut Fader Tests", "[easeout_fader][faders][sound][amplitude]")
 {
-    Fader* fader = Fader::Find("EaseOut");
+    std::shared_ptr<Fader> fader = Fader::Find("EaseOut");
     constexpr BezierCurveControlPoints cp1 = { 0.0f, 0.0f, 0.58f, 1.0f };
     const BezierCurveControlPoints cp2 = fader->GetControlPoints();
     REQUIRE((cp1.x1 == cp2.x1 && cp1.y1 == cp2.y1 && cp1.x2 == cp2.x2 && cp1.y2 == cp2.y2));
@@ -120,7 +120,7 @@ TEST_CASE("EaseOut Fader Tests", "[easeout_fader][faders][sound][amplitude]")
 
 TEST_CASE("Exponential Fader Tests", "[exponential_fader][faders][sound][amplitude]")
 {
-    Fader* fader = Fader::Find("Exponential");
+    std::shared_ptr<Fader> fader = Fader::Find("Exponential");
     constexpr BezierCurveControlPoints cp1 = { 1.0f, 0.0f, 1.0f, 1.0f };
     const BezierCurveControlPoints cp2 = fader->GetControlPoints();
     REQUIRE((cp1.x1 == cp2.x1 && cp1.y1 == cp2.y1 && cp1.x2 == cp2.x2 && cp1.y2 == cp2.y2));
@@ -140,7 +140,7 @@ TEST_CASE("Exponential Fader Tests", "[exponential_fader][faders][sound][amplitu
 
 TEST_CASE("Linear Fader Tests", "[linear_fader][faders][sound][amplitude]")
 {
-    Fader* fader = Fader::Find("Linear");
+    std::shared_ptr<Fader> fader = Fader::Find("Linear");
     constexpr BezierCurveControlPoints cp1 = { 0.0f, 0.0f, 1.0f, 1.0f };
     const BezierCurveControlPoints cp2 = fader->GetControlPoints();
     REQUIRE((cp1.x1 == cp2.x1 && cp1.y1 == cp2.y1 && cp1.x2 == cp2.x2 && cp1.y2 == cp2.y2));
@@ -160,7 +160,7 @@ TEST_CASE("Linear Fader Tests", "[linear_fader][faders][sound][amplitude]")
 
 TEST_CASE("SCurveSharp Fader Tests", "[scurvesharp_fader][faders][sound][amplitude]")
 {
-    Fader* fader = Fader::Find("SCurveSharp");
+    std::shared_ptr<Fader> fader = Fader::Find("SCurveSharp");
     constexpr BezierCurveControlPoints cp1 = { 0.9f, 0.0f, 0.1f, 1.0f };
     const BezierCurveControlPoints cp2 = fader->GetControlPoints();
     REQUIRE((cp1.x1 == cp2.x1 && cp1.y1 == cp2.y1 && cp1.x2 == cp2.x2 && cp1.y2 == cp2.y2));
@@ -180,7 +180,7 @@ TEST_CASE("SCurveSharp Fader Tests", "[scurvesharp_fader][faders][sound][amplitu
 
 TEST_CASE("SCurveSmooth Fader Tests", "[scurvesmooth_fader][faders][sound][amplitude]")
 {
-    Fader* fader = Fader::Find("SCurveSmooth");
+    std::shared_ptr<Fader> fader = Fader::Find("SCurveSmooth");
     constexpr BezierCurveControlPoints cp1 = { 0.64f, 0.0f, 0.36f, 1.0f };
     const BezierCurveControlPoints cp2 = fader->GetControlPoints();
     REQUIRE((cp1.x1 == cp2.x1 && cp1.y1 == cp2.y1 && cp1.x2 == cp2.x2 && cp1.y2 == cp2.y2));

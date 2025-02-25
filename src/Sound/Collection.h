@@ -154,7 +154,7 @@ namespace SparkyStudios::Audio::Amplitude
         /**
          * @copydoc AssetImpl::LoadDefinition
          */
-        bool LoadDefinition(const CollectionDefinition* definition, EngineInternalState* state) override;
+        bool LoadDefinition(const CollectionDefinition* definition, std::shared_ptr<EngineInternalState> state) override;
 
         /**
          * @copydoc AssetImpl::GetDefinition
@@ -164,12 +164,12 @@ namespace SparkyStudios::Audio::Amplitude
         /**
          * @copydoc AssetImpl::AcquireReferences
          */
-        void AcquireReferences(EngineInternalState* state) override;
+        void AcquireReferences(std::shared_ptr<EngineInternalState> state) override;
 
         /**
          * @copydoc AssetImpl::ReleaseReferences
          */
-        void ReleaseReferences(EngineInternalState* state) override;
+        void ReleaseReferences(std::shared_ptr<EngineInternalState> state) override;
 
     private:
         static Scheduler* CreateScheduler(const CollectionDefinition* definition);

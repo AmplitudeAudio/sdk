@@ -48,7 +48,7 @@ namespace SparkyStudios::Audio::Amplitude
          *
          * @warning This method is intended for internal usage only.
          */
-        static Shape* Create(const ShapeDefinition* definition);
+        static std::shared_ptr<Shape> Create(const ShapeDefinition* definition);
 
         /**
          * @brief Constructs a new `Shape`.
@@ -197,12 +197,12 @@ namespace SparkyStudios::Audio::Amplitude
          * @param[in] inner The inner shape.
          * @param[in] outer The outer shape.
          */
-        explicit Zone(Shape* inner, Shape* outer);
+        explicit Zone(std::shared_ptr<Shape> inner, std::shared_ptr<Shape> outer);
 
         /**
          * @brief Default destructor.
          */
-        virtual ~Zone() = default;
+        virtual ~Zone();
 
         /**
          * @brief Gets the factor according to the position of the given entity in the zone.
@@ -289,12 +289,12 @@ namespace SparkyStudios::Audio::Amplitude
         /**
          * @brief The inner shape of the zone.
          */
-        Shape* m_innerShape;
+        std::shared_ptr<Shape> m_innerShape;
 
         /**
          * @brief The outer shape of the zone.
          */
-        Shape* m_outerShape;
+        std::shared_ptr<Shape> m_outerShape;
     };
 
     /**
@@ -315,7 +315,7 @@ namespace SparkyStudios::Audio::Amplitude
          *
          * @warning This method is intended for internal usage only.
          */
-        static BoxShape* Create(const BoxShapeDefinition* definition);
+        static std::shared_ptr<BoxShape> Create(const BoxShapeDefinition* definition);
 
         /**
          * @brief Constructs a new `BoxShape`.
@@ -497,7 +497,7 @@ namespace SparkyStudios::Audio::Amplitude
          *
          * @warning This method is intended for internal usage only.
          */
-        static CapsuleShape* Create(const CapsuleShapeDefinition* definition);
+        static std::shared_ptr<CapsuleShape> Create(const CapsuleShapeDefinition* definition);
 
         /**
          * @brief Constructs a new `CapsuleShape`.
@@ -617,7 +617,7 @@ namespace SparkyStudios::Audio::Amplitude
          *
          * @warning This method is intended for internal usage only.
          */
-        static ConeShape* Create(const ConeShapeDefinition* definition);
+        static std::shared_ptr<ConeShape> Create(const ConeShapeDefinition* definition);
 
         /**
          * @brief Constructs a new `ConeShape`.
@@ -728,7 +728,7 @@ namespace SparkyStudios::Audio::Amplitude
          *
          * @warning This method is intended for internal usage only.
          */
-        static SphereShape* Create(const SphereShapeDefinition* definition);
+        static std::shared_ptr<SphereShape> Create(const SphereShapeDefinition* definition);
 
         /**
          * @brief Constructs a new `SphereShape`.
@@ -819,7 +819,7 @@ namespace SparkyStudios::Audio::Amplitude
          * @param[in] inner The inner `BoxShape`.
          * @param[in] outer The outer `BoxShape`.
          */
-        BoxZone(BoxShape* inner, BoxShape* outer);
+        BoxZone(std::shared_ptr<BoxShape> inner, std::shared_ptr<BoxShape> outer);
 
         /**
          * @inherit
@@ -841,7 +841,7 @@ namespace SparkyStudios::Audio::Amplitude
          * @param[in] inner The inner `CapsuleShape`.
          * @param[in] outer The outer `CapsuleShape`.
          */
-        CapsuleZone(CapsuleShape* inner, CapsuleShape* outer);
+        CapsuleZone(std::shared_ptr<CapsuleShape> inner, std::shared_ptr<CapsuleShape> outer);
 
         /**
          * @inherit
@@ -863,7 +863,7 @@ namespace SparkyStudios::Audio::Amplitude
          * @param[in] inner The inner `ConeShape`.
          * @param[in] outer The outer `ConeShape`.
          */
-        ConeZone(ConeShape* inner, ConeShape* outer);
+        ConeZone(std::shared_ptr<ConeShape> inner, std::shared_ptr<ConeShape> outer);
 
         /**
          * @inherit
@@ -885,7 +885,7 @@ namespace SparkyStudios::Audio::Amplitude
          * @param[in] inner The inner `SphereShape`.
          * @param[in] outer The outer `SphereShape`.
          */
-        SphereZone(SphereShape* inner, SphereShape* outer);
+        SphereZone(std::shared_ptr<SphereShape> inner, std::shared_ptr<SphereShape> outer);
 
         /**
          * @inherit

@@ -34,7 +34,7 @@ namespace SparkyStudios::Audio::Amplitude
         const AudioBuffer* Process(const AudioBuffer* input) override;
 
     private:
-        const HRIRSphere* _hrirSphere;
+        std::shared_ptr<const HRIRSphere> _hrirSphere;
         AmbisonicBinauralizer _binauralizer;
         AmbisonicDecoder _decoder;
 

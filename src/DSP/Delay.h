@@ -90,7 +90,7 @@ namespace SparkyStudios::Audio::Amplitude
         AmSize _maxDelay;
         AmSize _framesCount;
         AmSize _writePos;
-        AmUniquePtr<eMemoryPoolKind_Filtering, AudioBuffer> _buffer;
+        AmUniquePtr<AudioBuffer, eMemoryPoolKind_Filtering> _buffer;
     };
 } // namespace SparkyStudios::Audio::Amplitude
 

@@ -134,7 +134,7 @@ namespace SparkyStudios::Audio::Amplitude
         /**
          * @copydoc AssetImpl::LoadDefinition
          */
-        bool LoadDefinition(const AttenuationDefinition* definition, EngineInternalState* state) override;
+        bool LoadDefinition(const AttenuationDefinition* definition, std::shared_ptr<EngineInternalState> state) override;
 
         /**
          * @copydoc AssetImpl::GetDefinition
@@ -144,7 +144,7 @@ namespace SparkyStudios::Audio::Amplitude
     private:
         AmReal64 _maxDistance;
 
-        AmUniquePtr<eMemoryPoolKind_Engine, AttenuationZone> _shape;
+        AmUniquePtr<AttenuationZone, eMemoryPoolKind_Engine> _shape;
 
         Curve _gainCurve;
 

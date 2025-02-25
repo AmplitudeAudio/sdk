@@ -269,14 +269,14 @@ namespace SparkyStudios::Audio::Amplitude
          *
          * @param[in] codec The audio codec to add in the registry.
          */
-        static void Register(Codec* codec);
+        static void Register(std::shared_ptr<Codec> codec);
 
         /**
          * @brief Unregisters a audio codec.
          *
          * @param[in] codec The audio codec to remove from the registry.
          */
-        static void Unregister(const Codec* codec);
+        static void Unregister(std::shared_ptr<const Codec> codec);
 
         /**
          * @brief Look up a codec by name.
@@ -285,7 +285,7 @@ namespace SparkyStudios::Audio::Amplitude
          *
          * @return The codec with the given name, or `nullptr` if none.
          */
-        static Codec* Find(const AmString& name);
+        static std::shared_ptr<Codec> Find(const AmString& name);
 
         /**
          * @brief Finds the codec which can handle the given file.
@@ -294,7 +294,7 @@ namespace SparkyStudios::Audio::Amplitude
          *
          * @return The codec which can handle the given file, or `nullptr` if none.
          */
-        static Codec* FindCodecForFile(std::shared_ptr<File> file);
+        static std::shared_ptr<Codec> FindCodecForFile(std::shared_ptr<File> file);
 
         /**
          * @brief Locks the codecs registry.
@@ -313,6 +313,13 @@ namespace SparkyStudios::Audio::Amplitude
          * of new codecs after the engine is fully unloaded.
          */
         static void UnlockRegistry();
+
+        /**
+         * @brief Gets the list of registered Codecs.
+         *
+         * @return The registry of Codecs.
+         */
+        static const std::map<AmString, std::shared_ptr<Codec>>& GetRegistry();
 
     protected:
         /**

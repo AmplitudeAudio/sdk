@@ -77,7 +77,7 @@ namespace SparkyStudios::Audio::Amplitude
         return _sounds.at(stateId);
     }
 
-    bool SwitchContainerImpl::LoadDefinition(const SwitchContainerDefinition* definition, EngineInternalState* state)
+    bool SwitchContainerImpl::LoadDefinition(const SwitchContainerDefinition* definition, std::shared_ptr<EngineInternalState> state)
     {
         if (definition->id() == kAmInvalidObjectId)
         {
@@ -182,7 +182,7 @@ namespace SparkyStudios::Audio::Amplitude
             }
 
             // Setup entry Faders
-            Fader* fader = Fader::Find(entry->fade_in()->fader()->str());
+            std::shared_ptr<Fader> fader = Fader::Find(entry->fade_in()->fader()->str());
             FaderInstance* faderInstance = fader->CreateInstance();
             faderInstance->SetDuration(entry->fade_in()->duration());
 
@@ -220,7 +220,7 @@ namespace SparkyStudios::Audio::Amplitude
         return GetSwitchContainerDefinition(m_source.c_str());
     }
 
-    void SwitchContainerImpl::AcquireReferences(EngineInternalState* state)
+    void SwitchContainerImpl::AcquireReferences(std::shared_ptr<EngineInternalState> state)
     {
         AMPLITUDE_ASSERT(m_id != kAmInvalidObjectId);
 
@@ -248,7 +248,7 @@ namespace SparkyStudios::Audio::Amplitude
         }
     }
 
-    void SwitchContainerImpl::ReleaseReferences(EngineInternalState* state)
+    void SwitchContainerImpl::ReleaseReferences(std::shared_ptr<EngineInternalState> state)
     {
         AMPLITUDE_ASSERT(m_id != kAmInvalidObjectId);
 

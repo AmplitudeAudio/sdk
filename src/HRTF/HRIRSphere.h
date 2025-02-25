@@ -43,7 +43,7 @@ namespace SparkyStudios::Audio::Amplitude
             return ResourceImpl::GetPath();
         }
 
-        void Load(const FileSystem* loader) override;
+        void Load(std::shared_ptr<const FileSystem> loader) override;
 
         [[nodiscard]] const std::vector<HRIRSphereVertex>& GetVertices() const override;
         [[nodiscard]] const std::vector<Face>& GetFaces() const override;

@@ -13,8 +13,6 @@
 // limitations under the License.
 
 #include <algorithm>
-#include <cmath>
-#include <fstream>
 #include <memory>
 #include <ranges>
 
@@ -55,55 +53,55 @@ namespace SparkyStudios::Audio::Amplitude
     static std::vector<dylib*> gLoadedPlugins = {};
 
     // Default Plugins instances
-    static AmUniquePtr<eMemoryPoolKind_Engine, DefaultResampler> sDefaultResamplerPlugin = nullptr;
+    static std::shared_ptr<DefaultResampler> sDefaultResamplerPlugin = nullptr;
     // ---
-    static AmUniquePtr<eMemoryPoolKind_Engine, ConstantFader> sConstantFaderPlugin = nullptr;
-    static AmUniquePtr<eMemoryPoolKind_Engine, EaseFader> sEaseFaderPlugin = nullptr;
-    static AmUniquePtr<eMemoryPoolKind_Engine, EaseInFader> sEaseInFaderPlugin = nullptr;
-    static AmUniquePtr<eMemoryPoolKind_Engine, EaseInOutFader> sEaseInOutFaderPlugin = nullptr;
-    static AmUniquePtr<eMemoryPoolKind_Engine, EaseOutFader> sEaseOutFaderPlugin = nullptr;
-    static AmUniquePtr<eMemoryPoolKind_Engine, ExponentialFader> sExponentialFaderPlugin = nullptr;
-    static AmUniquePtr<eMemoryPoolKind_Engine, LinearFader> sLinearFaderPlugin = nullptr;
-    static AmUniquePtr<eMemoryPoolKind_Engine, SCurveSmoothFader> sCurveSmoothFaderPlugin = nullptr;
-    static AmUniquePtr<eMemoryPoolKind_Engine, SCurveSharpFader> sCurveSharpFaderPlugin = nullptr;
+    static std::shared_ptr<ConstantFader> sConstantFaderPlugin = nullptr;
+    static std::shared_ptr<EaseFader> sEaseFaderPlugin = nullptr;
+    static std::shared_ptr<EaseInFader> sEaseInFaderPlugin = nullptr;
+    static std::shared_ptr<EaseInOutFader> sEaseInOutFaderPlugin = nullptr;
+    static std::shared_ptr<EaseOutFader> sEaseOutFaderPlugin = nullptr;
+    static std::shared_ptr<ExponentialFader> sExponentialFaderPlugin = nullptr;
+    static std::shared_ptr<LinearFader> sLinearFaderPlugin = nullptr;
+    static std::shared_ptr<SCurveSmoothFader> sCurveSmoothFaderPlugin = nullptr;
+    static std::shared_ptr<SCurveSharpFader> sCurveSharpFaderPlugin = nullptr;
     // ---
-    static AmUniquePtr<eMemoryPoolKind_Engine, AMSCodec> sAMSCodecPlugin = nullptr;
-    static AmUniquePtr<eMemoryPoolKind_Engine, MP3Codec> sMP3CodecPlugin = nullptr;
-    static AmUniquePtr<eMemoryPoolKind_Engine, WAVCodec> sWAVCodecPlugin = nullptr;
+    static std::shared_ptr<AMSCodec> sAMSCodecPlugin = nullptr;
+    static std::shared_ptr<MP3Codec> sMP3CodecPlugin = nullptr;
+    static std::shared_ptr<WAVCodec> sWAVCodecPlugin = nullptr;
     // ---
-    static AmUniquePtr<eMemoryPoolKind_Engine, MiniAudioDriver> sMiniAudioDriverPlugin = nullptr;
-    static AmUniquePtr<eMemoryPoolKind_Engine, NullDriver> sNullDriverPlugin = nullptr;
+    static std::shared_ptr<MiniAudioDriver> sMiniAudioDriverPlugin = nullptr;
+    static std::shared_ptr<NullDriver> sNullDriverPlugin = nullptr;
     // ---
-    static AmUniquePtr<eMemoryPoolKind_Engine, BassBoostFilter> sBassBoostFilterPlugin = nullptr;
-    static AmUniquePtr<eMemoryPoolKind_Engine, BiquadResonantFilter> sBiquadResonantFilterPlugin = nullptr;
-    static AmUniquePtr<eMemoryPoolKind_Engine, DCRemovalFilter> sDCRemovalFilterPlugin = nullptr;
-    static AmUniquePtr<eMemoryPoolKind_Engine, DelayFilter> sDelayFilterPlugin = nullptr;
-    static AmUniquePtr<eMemoryPoolKind_Engine, EqualizerFilter> sEqualizerFilterPlugin = nullptr;
-    static AmUniquePtr<eMemoryPoolKind_Engine, FlangerFilter> sFlangerFilterPlugin = nullptr;
-    static AmUniquePtr<eMemoryPoolKind_Engine, LofiFilter> sLofiFilterPlugin = nullptr;
-    static AmUniquePtr<eMemoryPoolKind_Engine, MonoPoleFilter> sMonoPoleFilterPlugin = nullptr;
-    static AmUniquePtr<eMemoryPoolKind_Engine, RobotizeFilter> sRobotizeFilterPlugin = nullptr;
-    static AmUniquePtr<eMemoryPoolKind_Engine, WaveShaperFilter> sWaveShaperFilterPlugin = nullptr;
+    static std::shared_ptr<BassBoostFilter> sBassBoostFilterPlugin = nullptr;
+    static std::shared_ptr<BiquadResonantFilter> sBiquadResonantFilterPlugin = nullptr;
+    static std::shared_ptr<DCRemovalFilter> sDCRemovalFilterPlugin = nullptr;
+    static std::shared_ptr<DelayFilter> sDelayFilterPlugin = nullptr;
+    static std::shared_ptr<EqualizerFilter> sEqualizerFilterPlugin = nullptr;
+    static std::shared_ptr<FlangerFilter> sFlangerFilterPlugin = nullptr;
+    static std::shared_ptr<LofiFilter> sLofiFilterPlugin = nullptr;
+    static std::shared_ptr<MonoPoleFilter> sMonoPoleFilterPlugin = nullptr;
+    static std::shared_ptr<RobotizeFilter> sRobotizeFilterPlugin = nullptr;
+    static std::shared_ptr<WaveShaperFilter> sWaveShaperFilterPlugin = nullptr;
     // ---
-    static AmUniquePtr<eMemoryPoolKind_Engine, AmbisonicBinauralDecoderNode> sAmbisonicBinauralDecoderNodePlugin = nullptr;
-    static AmUniquePtr<eMemoryPoolKind_Engine, AmbisonicMixerNode> sAmbisonicMixerNodePlugin = nullptr;
-    static AmUniquePtr<eMemoryPoolKind_Engine, AmbisonicPanningNode> sAmbisonicPanningNodePlugin = nullptr;
-    static AmUniquePtr<eMemoryPoolKind_Engine, AmbisonicRotatorNode> sAmbisonicRotatorNodePlugin = nullptr;
-    static AmUniquePtr<eMemoryPoolKind_Engine, AttenuationNode> sAttenuationNodePlugin = nullptr;
-    static AmUniquePtr<eMemoryPoolKind_Engine, ClampNode> sClampNodePlugin = nullptr;
-    static AmUniquePtr<eMemoryPoolKind_Engine, ClipNode> sClipNodePlugin = nullptr;
-    static AmUniquePtr<eMemoryPoolKind_Engine, EnvironmentEffectNode> sEnvironmentEffectNodePlugin = nullptr;
-    static AmUniquePtr<eMemoryPoolKind_Engine, InputNode> sInputNodePlugin = nullptr;
-    static AmUniquePtr<eMemoryPoolKind_Engine, NearFieldEffectNode> sNearFieldEffectNodePlugin = nullptr;
-    static AmUniquePtr<eMemoryPoolKind_Engine, ObstructionNode> sObstructionNodePlugin = nullptr;
-    static AmUniquePtr<eMemoryPoolKind_Engine, OcclusionNode> sOcclusionNodePlugin = nullptr;
-    static AmUniquePtr<eMemoryPoolKind_Engine, OutputNode> sOutputNodePlugin = nullptr;
-    static AmUniquePtr<eMemoryPoolKind_Engine, ReflectionsNode> sReflectionsNodePlugin = nullptr;
-    static AmUniquePtr<eMemoryPoolKind_Engine, ReverbNode> sReverbNodePlugin = nullptr;
-    static AmUniquePtr<eMemoryPoolKind_Engine, StereoMixerNode> sStereoMixerNodePlugin = nullptr;
-    static AmUniquePtr<eMemoryPoolKind_Engine, StereoPanningNode> sStereoPanningNodePlugin = nullptr;
+    static std::shared_ptr<AmbisonicBinauralDecoderNode> sAmbisonicBinauralDecoderNodePlugin = nullptr;
+    static std::shared_ptr<AmbisonicMixerNode> sAmbisonicMixerNodePlugin = nullptr;
+    static std::shared_ptr<AmbisonicPanningNode> sAmbisonicPanningNodePlugin = nullptr;
+    static std::shared_ptr<AmbisonicRotatorNode> sAmbisonicRotatorNodePlugin = nullptr;
+    static std::shared_ptr<AttenuationNode> sAttenuationNodePlugin = nullptr;
+    static std::shared_ptr<ClampNode> sClampNodePlugin = nullptr;
+    static std::shared_ptr<ClipNode> sClipNodePlugin = nullptr;
+    static std::shared_ptr<EnvironmentEffectNode> sEnvironmentEffectNodePlugin = nullptr;
+    static std::shared_ptr<InputNode> sInputNodePlugin = nullptr;
+    static std::shared_ptr<NearFieldEffectNode> sNearFieldEffectNodePlugin = nullptr;
+    static std::shared_ptr<ObstructionNode> sObstructionNodePlugin = nullptr;
+    static std::shared_ptr<OcclusionNode> sOcclusionNodePlugin = nullptr;
+    static std::shared_ptr<OutputNode> sOutputNodePlugin = nullptr;
+    static std::shared_ptr<ReflectionsNode> sReflectionsNodePlugin = nullptr;
+    static std::shared_ptr<ReverbNode> sReverbNodePlugin = nullptr;
+    static std::shared_ptr<StereoMixerNode> sStereoMixerNodePlugin = nullptr;
+    static std::shared_ptr<StereoPanningNode> sStereoPanningNodePlugin = nullptr;
 
-    static AmUniquePtr<eMemoryPoolKind_Engine, EngineImpl> gAmplitude = nullptr;
+    static AmUniquePtr<EngineImpl, eMemoryPoolKind_Engine> gAmplitude = nullptr;
 
     std::set<AmOsString> EngineImpl::_pluginSearchPaths = {};
 
@@ -156,7 +154,7 @@ namespace SparkyStudios::Audio::Amplitude
 
     // Returns this channel to the appropriate free list based on whether it's
     // backed by a real channel or not.
-    void InsertIntoFreeList(EngineInternalState* state, ChannelInternalState* channel)
+    void InsertIntoFreeList(std::shared_ptr<EngineInternalState> state, ChannelInternalState* channel)
     {
         channel->Remove();
         channel->Reset();
@@ -164,7 +162,7 @@ namespace SparkyStudios::Audio::Amplitude
         list->push_front(*channel);
     }
 
-    void AssignBestRoom(ChannelInternalState* newChannel, const AmVec3& location, EngineInternalState* state)
+    void AssignBestRoom(ChannelInternalState* newChannel, const AmVec3& location, std::shared_ptr<EngineInternalState> state)
     {
         RoomInternalState* bestRoom = nullptr;
         AmReal32 minDistanceSquared = std::numeric_limits<AmReal32>::max();
@@ -338,117 +336,117 @@ namespace SparkyStudios::Audio::Amplitude
         EngineImpl::_pluginSearchPaths.erase(it);
     }
 
-    bool Engine::RegisterDefaultPlugins()
+    bool Engine::RegisterDefaultExtensions()
     {
         if (gAmplitude != nullptr && gAmplitude->_state != nullptr)
             return false; // Cannot register the default plugins when the engine is already initialized.
 
         // Ensure to clean up registries
-        UnregisterDefaultPlugins();
+        UnregisterDefaultExtensions();
 
-        sDefaultResamplerPlugin.reset(ampoolnew(eMemoryPoolKind_Engine, DefaultResampler));
+        sDefaultResamplerPlugin = RegisterExtension<DefaultResampler>();
         // ---
-        sConstantFaderPlugin.reset(ampoolnew(eMemoryPoolKind_Engine, ConstantFader));
-        sEaseFaderPlugin.reset(ampoolnew(eMemoryPoolKind_Engine, EaseFader));
-        sEaseInFaderPlugin.reset(ampoolnew(eMemoryPoolKind_Engine, EaseInFader));
-        sEaseInOutFaderPlugin.reset(ampoolnew(eMemoryPoolKind_Engine, EaseInOutFader));
-        sEaseOutFaderPlugin.reset(ampoolnew(eMemoryPoolKind_Engine, EaseOutFader));
-        sExponentialFaderPlugin.reset(ampoolnew(eMemoryPoolKind_Engine, ExponentialFader));
-        sLinearFaderPlugin.reset(ampoolnew(eMemoryPoolKind_Engine, LinearFader));
-        sCurveSmoothFaderPlugin.reset(ampoolnew(eMemoryPoolKind_Engine, SCurveSmoothFader));
-        sCurveSharpFaderPlugin.reset(ampoolnew(eMemoryPoolKind_Engine, SCurveSharpFader));
+        sConstantFaderPlugin = RegisterExtension<ConstantFader>();
+        sEaseFaderPlugin = RegisterExtension<EaseFader>();
+        sEaseInFaderPlugin = RegisterExtension<EaseInFader>();
+        sEaseInOutFaderPlugin = RegisterExtension<EaseInOutFader>();
+        sEaseOutFaderPlugin = RegisterExtension<EaseOutFader>();
+        sExponentialFaderPlugin = RegisterExtension<ExponentialFader>();
+        sLinearFaderPlugin = RegisterExtension<LinearFader>();
+        sCurveSmoothFaderPlugin = RegisterExtension<SCurveSmoothFader>();
+        sCurveSharpFaderPlugin = RegisterExtension<SCurveSharpFader>();
         // ---
-        sAMSCodecPlugin.reset(ampoolnew(eMemoryPoolKind_Engine, AMSCodec));
-        sMP3CodecPlugin.reset(ampoolnew(eMemoryPoolKind_Engine, MP3Codec));
-        sWAVCodecPlugin.reset(ampoolnew(eMemoryPoolKind_Engine, WAVCodec));
+        sAMSCodecPlugin = RegisterExtension<AMSCodec>();
+        sMP3CodecPlugin = RegisterExtension<MP3Codec>();
+        sWAVCodecPlugin = RegisterExtension<WAVCodec>();
         // ---
-        sMiniAudioDriverPlugin.reset(ampoolnew(eMemoryPoolKind_Engine, MiniAudioDriver));
-        sNullDriverPlugin.reset(ampoolnew(eMemoryPoolKind_Engine, NullDriver));
+        sMiniAudioDriverPlugin = RegisterExtension<MiniAudioDriver>();
+        sNullDriverPlugin = RegisterExtension<NullDriver>();
         // ---
-        sBassBoostFilterPlugin.reset(ampoolnew(eMemoryPoolKind_Engine, BassBoostFilter));
-        sBiquadResonantFilterPlugin.reset(ampoolnew(eMemoryPoolKind_Engine, BiquadResonantFilter));
-        sDCRemovalFilterPlugin.reset(ampoolnew(eMemoryPoolKind_Engine, DCRemovalFilter));
-        sDelayFilterPlugin.reset(ampoolnew(eMemoryPoolKind_Engine, DelayFilter));
-        sEqualizerFilterPlugin.reset(ampoolnew(eMemoryPoolKind_Engine, EqualizerFilter));
-        sFlangerFilterPlugin.reset(ampoolnew(eMemoryPoolKind_Engine, FlangerFilter));
-        sLofiFilterPlugin.reset(ampoolnew(eMemoryPoolKind_Engine, LofiFilter));
-        sMonoPoleFilterPlugin.reset(ampoolnew(eMemoryPoolKind_Engine, MonoPoleFilter));
-        sRobotizeFilterPlugin.reset(ampoolnew(eMemoryPoolKind_Engine, RobotizeFilter));
-        sWaveShaperFilterPlugin.reset(ampoolnew(eMemoryPoolKind_Engine, WaveShaperFilter));
+        sBassBoostFilterPlugin = RegisterExtension<BassBoostFilter>();
+        sBiquadResonantFilterPlugin = RegisterExtension<BiquadResonantFilter>();
+        sDCRemovalFilterPlugin = RegisterExtension<DCRemovalFilter>();
+        sDelayFilterPlugin = RegisterExtension<DelayFilter>();
+        sEqualizerFilterPlugin = RegisterExtension<EqualizerFilter>();
+        sFlangerFilterPlugin = RegisterExtension<FlangerFilter>();
+        sLofiFilterPlugin = RegisterExtension<LofiFilter>();
+        sMonoPoleFilterPlugin = RegisterExtension<MonoPoleFilter>();
+        sRobotizeFilterPlugin = RegisterExtension<RobotizeFilter>();
+        sWaveShaperFilterPlugin = RegisterExtension<WaveShaperFilter>();
         // ---
-        sAmbisonicBinauralDecoderNodePlugin.reset(ampoolnew(eMemoryPoolKind_Engine, AmbisonicBinauralDecoderNode));
-        sAmbisonicMixerNodePlugin.reset(ampoolnew(eMemoryPoolKind_Engine, AmbisonicMixerNode));
-        sAmbisonicPanningNodePlugin.reset(ampoolnew(eMemoryPoolKind_Engine, AmbisonicPanningNode));
-        sAmbisonicRotatorNodePlugin.reset(ampoolnew(eMemoryPoolKind_Engine, AmbisonicRotatorNode));
-        sAttenuationNodePlugin.reset(ampoolnew(eMemoryPoolKind_Engine, AttenuationNode));
-        sClampNodePlugin.reset(ampoolnew(eMemoryPoolKind_Engine, ClampNode));
-        sClipNodePlugin.reset(ampoolnew(eMemoryPoolKind_Engine, ClipNode));
-        sEnvironmentEffectNodePlugin.reset(ampoolnew(eMemoryPoolKind_Engine, EnvironmentEffectNode));
-        sInputNodePlugin.reset(ampoolnew(eMemoryPoolKind_Engine, InputNode));
-        sNearFieldEffectNodePlugin.reset(ampoolnew(eMemoryPoolKind_Engine, NearFieldEffectNode));
-        sObstructionNodePlugin.reset(ampoolnew(eMemoryPoolKind_Engine, ObstructionNode));
-        sOcclusionNodePlugin.reset(ampoolnew(eMemoryPoolKind_Engine, OcclusionNode));
-        sOutputNodePlugin.reset(ampoolnew(eMemoryPoolKind_Engine, OutputNode));
-        sReflectionsNodePlugin.reset(ampoolnew(eMemoryPoolKind_Engine, ReflectionsNode));
-        sReverbNodePlugin.reset(ampoolnew(eMemoryPoolKind_Engine, ReverbNode));
-        sStereoMixerNodePlugin.reset(ampoolnew(eMemoryPoolKind_Engine, StereoMixerNode));
-        sStereoPanningNodePlugin.reset(ampoolnew(eMemoryPoolKind_Engine, StereoPanningNode));
+        sAmbisonicBinauralDecoderNodePlugin = RegisterExtension<AmbisonicBinauralDecoderNode>();
+        sAmbisonicMixerNodePlugin = RegisterExtension<AmbisonicMixerNode>();
+        sAmbisonicPanningNodePlugin = RegisterExtension<AmbisonicPanningNode>();
+        sAmbisonicRotatorNodePlugin = RegisterExtension<AmbisonicRotatorNode>();
+        sAttenuationNodePlugin = RegisterExtension<AttenuationNode>();
+        sClampNodePlugin = RegisterExtension<ClampNode>();
+        sClipNodePlugin = RegisterExtension<ClipNode>();
+        sEnvironmentEffectNodePlugin = RegisterExtension<EnvironmentEffectNode>();
+        sInputNodePlugin = RegisterExtension<InputNode>();
+        sNearFieldEffectNodePlugin = RegisterExtension<NearFieldEffectNode>();
+        sObstructionNodePlugin = RegisterExtension<ObstructionNode>();
+        sOcclusionNodePlugin = RegisterExtension<OcclusionNode>();
+        sOutputNodePlugin = RegisterExtension<OutputNode>();
+        sReflectionsNodePlugin = RegisterExtension<ReflectionsNode>();
+        sReverbNodePlugin = RegisterExtension<ReverbNode>();
+        sStereoMixerNodePlugin = RegisterExtension<StereoMixerNode>();
+        sStereoPanningNodePlugin = RegisterExtension<StereoPanningNode>();
 
         return true;
     }
 
-    bool Engine::UnregisterDefaultPlugins()
+    bool Engine::UnregisterDefaultExtensions()
     {
         if (gAmplitude != nullptr && gAmplitude->_state != nullptr)
             return false; // Cannot unregister the default plugins when the engine is already initialized.
 
-        sDefaultResamplerPlugin.reset(nullptr);
+        UnregisterExtension(sDefaultResamplerPlugin);
         // ---
-        sConstantFaderPlugin.reset(nullptr);
-        sEaseFaderPlugin.reset(nullptr);
-        sEaseInFaderPlugin.reset(nullptr);
-        sEaseInOutFaderPlugin.reset(nullptr);
-        sEaseOutFaderPlugin.reset(nullptr);
-        sExponentialFaderPlugin.reset(nullptr);
-        sLinearFaderPlugin.reset(nullptr);
-        sCurveSmoothFaderPlugin.reset(nullptr);
-        sCurveSharpFaderPlugin.reset(nullptr);
+        UnregisterExtension(sConstantFaderPlugin);
+        UnregisterExtension(sEaseFaderPlugin);
+        UnregisterExtension(sEaseInFaderPlugin);
+        UnregisterExtension(sEaseInOutFaderPlugin);
+        UnregisterExtension(sEaseOutFaderPlugin);
+        UnregisterExtension(sExponentialFaderPlugin);
+        UnregisterExtension(sLinearFaderPlugin);
+        UnregisterExtension(sCurveSmoothFaderPlugin);
+        UnregisterExtension(sCurveSharpFaderPlugin);
         // ---
-        sAMSCodecPlugin.reset(nullptr);
-        sMP3CodecPlugin.reset(nullptr);
-        sWAVCodecPlugin.reset(nullptr);
+        UnregisterExtension(sAMSCodecPlugin);
+        UnregisterExtension(sMP3CodecPlugin);
+        UnregisterExtension(sWAVCodecPlugin);
         // ---
-        sMiniAudioDriverPlugin.reset(nullptr);
-        sNullDriverPlugin.reset(nullptr);
+        UnregisterExtension(sMiniAudioDriverPlugin);
+        UnregisterExtension(sNullDriverPlugin);
         // ---
-        sBassBoostFilterPlugin.reset(nullptr);
-        sBiquadResonantFilterPlugin.reset(nullptr);
-        sDCRemovalFilterPlugin.reset(nullptr);
-        sDelayFilterPlugin.reset(nullptr);
-        sEqualizerFilterPlugin.reset(nullptr);
-        sFlangerFilterPlugin.reset(nullptr);
-        sMonoPoleFilterPlugin.reset(nullptr);
-        sLofiFilterPlugin.reset(nullptr);
-        sRobotizeFilterPlugin.reset(nullptr);
-        sWaveShaperFilterPlugin.reset(nullptr);
-        //
-        sAmbisonicBinauralDecoderNodePlugin.reset(nullptr);
-        sAmbisonicMixerNodePlugin.reset(nullptr);
-        sAmbisonicPanningNodePlugin.reset(nullptr);
-        sAmbisonicRotatorNodePlugin.reset(nullptr);
-        sAttenuationNodePlugin.reset(nullptr);
-        sClampNodePlugin.reset(nullptr);
-        sClipNodePlugin.reset(nullptr);
-        sEnvironmentEffectNodePlugin.reset(nullptr);
-        sInputNodePlugin.reset(nullptr);
-        sNearFieldEffectNodePlugin.reset(nullptr);
-        sObstructionNodePlugin.reset(nullptr);
-        sOcclusionNodePlugin.reset(nullptr);
-        sOutputNodePlugin.reset(nullptr);
-        sReflectionsNodePlugin.reset(nullptr);
-        sReverbNodePlugin.reset(nullptr);
-        sStereoMixerNodePlugin.reset(nullptr);
-        sStereoPanningNodePlugin.reset(nullptr);
+        UnregisterExtension(sBassBoostFilterPlugin);
+        UnregisterExtension(sBiquadResonantFilterPlugin);
+        UnregisterExtension(sDCRemovalFilterPlugin);
+        UnregisterExtension(sDelayFilterPlugin);
+        UnregisterExtension(sEqualizerFilterPlugin);
+        UnregisterExtension(sFlangerFilterPlugin);
+        UnregisterExtension(sLofiFilterPlugin);
+        UnregisterExtension(sMonoPoleFilterPlugin);
+        UnregisterExtension(sRobotizeFilterPlugin);
+        UnregisterExtension(sWaveShaperFilterPlugin);
+        // ---
+        UnregisterExtension(sAmbisonicBinauralDecoderNodePlugin);
+        UnregisterExtension(sAmbisonicMixerNodePlugin);
+        UnregisterExtension(sAmbisonicPanningNodePlugin);
+        UnregisterExtension(sAmbisonicRotatorNodePlugin);
+        UnregisterExtension(sAttenuationNodePlugin);
+        UnregisterExtension(sClampNodePlugin);
+        UnregisterExtension(sClipNodePlugin);
+        UnregisterExtension(sEnvironmentEffectNodePlugin);
+        UnregisterExtension(sInputNodePlugin);
+        UnregisterExtension(sNearFieldEffectNodePlugin);
+        UnregisterExtension(sObstructionNodePlugin);
+        UnregisterExtension(sOcclusionNodePlugin);
+        UnregisterExtension(sOutputNodePlugin);
+        UnregisterExtension(sReflectionsNodePlugin);
+        UnregisterExtension(sReverbNodePlugin);
+        UnregisterExtension(sStereoMixerNodePlugin);
+        UnregisterExtension(sStereoPanningNodePlugin);
 
         return true;
     }
@@ -471,47 +469,48 @@ namespace SparkyStudios::Audio::Amplitude
         gAmplitude.reset();
     }
 
-    BusInternalState* FindBusInternalState(EngineInternalState* state, AmBusID id)
+    std::shared_ptr<BusInternalState> FindBusInternalState(std::shared_ptr<EngineInternalState> state, AmBusID id)
     {
         if (const auto it = std::ranges::find_if(
                 state->buses,
-                [&id](const BusInternalState& bus)
+                [&id](const std::shared_ptr<BusInternalState>& bus)
                 {
-                    return bus.GetId() == id;
+                    return bus->GetId() == id;
                 });
             it != state->buses.end())
         {
-            return &*it;
+            return *it;
         }
 
         return nullptr;
     }
 
-    BusInternalState* FindBusInternalState(EngineInternalState* state, const AmString& name)
+    std::shared_ptr<BusInternalState> FindBusInternalState(std::shared_ptr<EngineInternalState> state, const AmString& name)
     {
         if (const auto it = std::ranges::find_if(
                 state->buses,
-                [&name](const BusInternalState& bus)
+                [&name](const std::shared_ptr<BusInternalState>& bus)
                 {
-                    return bus.GetName() == name;
+                    return bus->GetName() == name;
                 });
             it != state->buses.end())
         {
-            return &*it;
+            return *it;
         }
 
         return nullptr;
     }
 
-    static bool PopulateChildBuses(EngineInternalState* state, BusInternalState* parent, const BusIdList* childIdList)
+    static bool PopulateChildBuses(
+        std::shared_ptr<EngineInternalState> state, std::shared_ptr<BusInternalState> parent, const BusIdList* childIdList)
     {
-        std::vector<BusInternalState*>* output = &parent->GetChildBuses();
+        std::vector<std::shared_ptr<BusInternalState>>* output = &parent->GetChildBuses();
 
         for (flatbuffers::uoffset_t i = 0; childIdList && i < childIdList->size(); ++i)
         {
             const AmBusID busId = childIdList->Get(i);
 
-            if (BusInternalState* bus = FindBusInternalState(state, busId))
+            if (auto bus = FindBusInternalState(state, busId))
             {
                 output->push_back(bus);
             }
@@ -525,7 +524,10 @@ namespace SparkyStudios::Audio::Amplitude
         return true;
     }
 
-    static bool PopulateDuckBuses(EngineInternalState* state, BusInternalState* parent, const DuckBusDefinitionList* duckBusDefinitionList)
+    static bool PopulateDuckBuses(
+        std::shared_ptr<EngineInternalState> state,
+        std::shared_ptr<BusInternalState> parent,
+        const DuckBusDefinitionList* duckBusDefinitionList)
     {
         DuckBusList* output = &parent->GetDuckBuses();
 
@@ -533,13 +535,15 @@ namespace SparkyStudios::Audio::Amplitude
         {
             const DuckBusDefinition* duck = duckBusDefinitionList->Get(i);
 
-            if (auto* bus = ampoolnew(eMemoryPoolKind_Engine, DuckBusInternalState, parent); bus->Initialize(duck))
+            if (AmUniquePtr<DuckBusInternalState, eMemoryPoolKind_Engine> bus(
+                    ampoolnew(eMemoryPoolKind_Engine, DuckBusInternalState, parent.get()));
+                bus->Initialize(duck))
             {
-                output->emplace_back(bus);
+                output->push_back(std::move(bus));
             }
             else
             {
-                ampooldelete(eMemoryPoolKind_Engine, DuckBusInternalState, bus);
+                bus.reset(nullptr);
                 amLogError("Unknown bus with ID '" AM_ID_CHAR_FMT "' listed in duck buses.", duck->id());
                 return false;
             }
@@ -659,7 +663,7 @@ namespace SparkyStudios::Audio::Amplitude
         _frameThreadMutex = Thread::CreateMutex(500);
 
         // Create the internal engine state
-        _state = ampoolnew(eMemoryPoolKind_Engine, EngineInternalState);
+        _state = AmSharedPtr<EngineInternalState, eMemoryPoolKind_Engine>::Make();
         _state->version = &Amplitude::GetVersion();
 
         // Load the audio driver
@@ -679,14 +683,13 @@ namespace SparkyStudios::Audio::Amplitude
         if (_audioDriver == nullptr)
         {
             amLogError("Could not load the audio driver. Loading the null driver as fallback.");
-            _audioDriver = sNullDriverPlugin.get();
+            _audioDriver = sNullDriverPlugin;
         }
 
         if (_audioDriver == nullptr)
         {
-            amLogCritical(
-                "Failed to load the specified driver, the default driver, and the null driver. Please check your engine "
-                "configuration, and ensure that all the needed plugins are loaded.");
+            amLogCritical("Failed to load the specified driver, the default driver, and the null driver. Please check your engine "
+                          "configuration, and ensure that all the needed plugins are loaded.");
             Deinitialize();
             return false;
         }
@@ -710,16 +713,15 @@ namespace SparkyStudios::Audio::Amplitude
             _state->hrir_sampling_mode = static_cast<eHRIRSphereSamplingMode>(config->hrtf()->hrir_sampling());
 
             // Load the HRIR sphere
-            _state->hrir_sphere = ampoolnew(eMemoryPoolKind_Engine, HRIRSphereImpl);
+            _state->hrir_sphere = AmSharedPtr<HRIRSphereImpl, eMemoryPoolKind_Engine>::Make();
             _state->hrir_sphere->SetResource(AM_STRING_TO_OS_STRING(config->hrtf()->amir_file()->c_str()));
             _state->hrir_sphere->SetSamplingMode(_state->hrir_sampling_mode);
             _state->hrir_sphere->Load(GetFileSystem());
         }
         else if (_state->panning_mode != ePanningMode_Stereo)
         {
-            amLogCritical(
-                "The HRTF configuration is missing, but the panning mode is not stereo. Please provide an HRTF configuration, or "
-                "set the panning mode to Stereo.");
+            amLogCritical("The HRTF configuration is missing, but the panning mode is not stereo. Please provide an HRTF configuration, or "
+                          "set the panning mode to Stereo.");
             Deinitialize();
             return false;
         }
@@ -763,19 +765,20 @@ namespace SparkyStudios::Audio::Amplitude
         _state->buses.resize(busCount);
         for (flatbuffers::uoffset_t i = 0; i < busCount; ++i)
         {
-            _state->buses[i].Initialize(busDefList->buses()->Get(i));
+            _state->buses[i] = AmSharedPtr<BusInternalState, eMemoryPoolKind_Engine>::Make();
+            _state->buses[i]->Initialize(busDefList->buses()->Get(i));
         }
 
         // Set up the children and ducking pointers.
         for (auto& bus : _state->buses)
         {
-            const BusDefinition* def = bus.GetBusDefinition();
-            if (!PopulateChildBuses(_state, &bus, def->child_buses()))
+            const BusDefinition* def = bus->GetBusDefinition();
+            if (!PopulateChildBuses(_state, bus, def->child_buses()))
             {
                 Deinitialize();
                 return false;
             }
-            if (!PopulateDuckBuses(_state, &bus, def->duck_buses()))
+            if (!PopulateDuckBuses(_state, bus, def->duck_buses()))
             {
                 Deinitialize();
                 return false;
@@ -824,7 +827,7 @@ namespace SparkyStudios::Audio::Amplitude
             amLogError(
                 "Could not open the audio device using the '%s' driver. Loading the null driver as fallback.",
                 _audioDriver->GetName().c_str());
-            _audioDriver = sNullDriverPlugin.get();
+            _audioDriver = sNullDriverPlugin;
 
             if (_audioDriver == nullptr || !_audioDriver->Open(_state->mixer.GetDeviceDescription()))
             {
@@ -870,13 +873,14 @@ namespace SparkyStudios::Audio::Amplitude
 
         // Release HRIR sphere
         if (_state->hrir_sphere != nullptr)
-        {
-            ampooldelete(eMemoryPoolKind_Engine, HRIRSphereImpl, _state->hrir_sphere);
-            _state->hrir_sphere = nullptr;
-        }
+            _state->hrir_sphere.reset();
 
-        ampooldelete(eMemoryPoolKind_Engine, EngineInternalState, _state);
-        _state = nullptr;
+        // Release buses
+        _state->master_bus.reset();
+        _state->buses.clear();
+
+        _state.reset();
+        _audioDriver.reset();
 
         Thread::DestroyMutex(_frameThreadMutex);
 
@@ -897,12 +901,12 @@ namespace SparkyStudios::Audio::Amplitude
         return _state != nullptr && !_state->stopping;
     }
 
-    void EngineImpl::SetFileSystem(FileSystem* fs)
+    void EngineImpl::SetFileSystem(std::shared_ptr<FileSystem> fs)
     {
         _fs = fs;
     }
 
-    const FileSystem* EngineImpl::GetFileSystem() const
+    std::shared_ptr<const FileSystem> EngineImpl::GetFileSystem() const
     {
         return _fs;
     }
@@ -921,7 +925,7 @@ namespace SparkyStudios::Audio::Amplitude
         if (const auto findIt = _state->sound_bank_id_map.find(filename); findIt == _state->sound_bank_id_map.end() ||
             (findIt != _state->sound_bank_id_map.end() && !_state->sound_bank_map.contains(findIt->second)))
         {
-            AmUniquePtr<eMemoryPoolKind_Engine, SoundBank> soundBank(ampoolnew(eMemoryPoolKind_Engine, SoundBank));
+            AmUniquePtr<SoundBank, eMemoryPoolKind_Engine> soundBank(ampoolnew(eMemoryPoolKind_Engine, SoundBank));
             success = soundBank->Initialize(filename, this);
 
             if (success)
@@ -957,7 +961,7 @@ namespace SparkyStudios::Audio::Amplitude
         outID = kAmInvalidObjectId;
         bool success = true;
 
-        AmUniquePtr<eMemoryPoolKind_Engine, SoundBank> soundBank(ampoolnew(eMemoryPoolKind_Engine, SoundBank));
+        AmUniquePtr<SoundBank, eMemoryPoolKind_Engine> soundBank(ampoolnew(eMemoryPoolKind_Engine, SoundBank));
         const AmOsString filename = AM_STRING_TO_OS_STRING(soundBank->GetName());
         if (const auto findIt = _state->sound_bank_id_map.find(filename); findIt == _state->sound_bank_id_map.end() ||
             (findIt != _state->sound_bank_id_map.end() && !_state->sound_bank_map.contains(findIt->second)))
@@ -1108,9 +1112,7 @@ namespace SparkyStudios::Audio::Amplitude
 
         for (const auto& bank : _state->sound_bank_map | std::views::values)
         {
-            auto task = std::shared_ptr<LoadSoundBankTask>(
-                ampoolnew(eMemoryPoolKind_Engine, LoadSoundBankTask, bank.get()), am_delete<eMemoryPoolKind_Engine, LoadSoundBankTask>{});
-
+            auto task = AmSharedPtr<LoadSoundBankTask, eMemoryPoolKind_Engine>::Make(bank.get());
             _soundLoaderThreadPool->AddTask(task);
         }
     }
@@ -2141,12 +2143,12 @@ namespace SparkyStudios::Audio::Amplitude
 
     Bus EngineImpl::FindBus(const AmString& name) const
     {
-        return Bus(FindBusInternalState(_state, name));
+        return Bus(FindBusInternalState(_state, name).get());
     }
 
     Bus EngineImpl::FindBus(AmBusID id) const
     {
-        return Bus(FindBusInternalState(_state, id));
+        return Bus(FindBusInternalState(_state, id).get());
     }
 
     void EngineImpl::Pause(bool pause) const
@@ -2182,7 +2184,7 @@ namespace SparkyStudios::Audio::Amplitude
         return _state->paused;
     }
 
-    void EraseFinishedSounds(EngineInternalState* state)
+    void EraseFinishedSounds(std::shared_ptr<EngineInternalState> state)
     {
         PriorityList& list = state->playing_channel_list;
         for (auto channelInternalState = list.begin(); channelInternalState != list.end();)
@@ -2196,7 +2198,7 @@ namespace SparkyStudios::Audio::Amplitude
         }
     }
 
-    static void UpdateChannel(ChannelInternalState* channel, EngineInternalState* state)
+    static void UpdateChannel(ChannelInternalState* channel, std::shared_ptr<EngineInternalState> state)
     {
         if (channel->Stopped())
             return;
@@ -2344,10 +2346,10 @@ namespace SparkyStudios::Audio::Amplitude
         }
 
         for (auto&& bus : _state->buses)
-            bus.ResetDuckGain();
+            bus->ResetDuckGain();
 
         for (auto&& bus : _state->buses)
-            bus.UpdateDuckGain(delta);
+            bus->UpdateDuckGain(delta);
 
         if (_state->master_bus)
         {
@@ -2422,7 +2424,7 @@ namespace SparkyStudios::Audio::Amplitude
         return Amplitude::GetEngineConfigDefinition(_configSrc.c_str());
     }
 
-    Driver* EngineImpl::GetDriver() const
+    std::shared_ptr<Driver> EngineImpl::GetDriver() const
     {
         return _audioDriver;
     }
@@ -2438,7 +2440,7 @@ namespace SparkyStudios::Audio::Amplitude
 
 #pragma region Engine State
 
-    EngineInternalState* EngineImpl::GetState() const
+    std::shared_ptr<EngineInternalState> EngineImpl::GetState() const
     {
         return _state;
     }
@@ -2503,7 +2505,7 @@ namespace SparkyStudios::Audio::Amplitude
         return _state->hrir_sampling_mode;
     }
 
-    const HRIRSphere* EngineImpl::GetHRIRSphere() const
+    std::shared_ptr<const HRIRSphere> EngineImpl::GetHRIRSphere() const
     {
         return _state->hrir_sphere;
     }

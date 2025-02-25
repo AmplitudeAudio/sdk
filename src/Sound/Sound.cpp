@@ -159,7 +159,7 @@ namespace SparkyStudios::Audio::Amplitude
         return _loop;
     }
 
-    void SoundImpl::Load(const FileSystem* loader)
+    void SoundImpl::Load(std::shared_ptr<const FileSystem> loader)
     {
         const AmOsString& filename = GetPath();
 
@@ -229,7 +229,7 @@ namespace SparkyStudios::Audio::Amplitude
         return SoundObjectImpl::GetBus();
     }
 
-    bool SoundImpl::LoadDefinition(const SoundDefinition* definition, EngineInternalState* state)
+    bool SoundImpl::LoadDefinition(const SoundDefinition* definition, std::shared_ptr<EngineInternalState> state)
     {
         if (definition->id() == kAmInvalidObjectId)
         {
@@ -284,7 +284,7 @@ namespace SparkyStudios::Audio::Amplitude
         m_spatialization = static_cast<eSpatialization>(definition->spatialization());
         m_scope = static_cast<eScope>(definition->scope());
 
-        auto* fs = amEngine->GetFileSystem();
+        auto fs = amEngine->GetFileSystem();
 
         const SoundLoopConfig* loopConfig = definition->loop();
 
@@ -319,7 +319,7 @@ namespace SparkyStudios::Audio::Amplitude
         return GetSoundDefinition(m_source.c_str());
     }
 
-    void SoundImpl::AcquireReferences(EngineInternalState* state)
+    void SoundImpl::AcquireReferences(std::shared_ptr<EngineInternalState> state)
     {
         AMPLITUDE_ASSERT(m_id != kAmInvalidObjectId);
 
@@ -330,7 +330,7 @@ namespace SparkyStudios::Audio::Amplitude
             m_attenuation->GetRefCounter()->Increment();
     }
 
-    void SoundImpl::ReleaseReferences(EngineInternalState* state)
+    void SoundImpl::ReleaseReferences(std::shared_ptr<EngineInternalState> state)
     {
         AMPLITUDE_ASSERT(m_id != kAmInvalidObjectId);
 

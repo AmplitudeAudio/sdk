@@ -13,11 +13,12 @@
 // limitations under the License.
 
 #include <SparkyStudios/Audio/Amplitude/Core/Log.h>
+#include <SparkyStudios/Audio/Amplitude/Core/Memory.h>
 #include <SparkyStudios/Audio/Amplitude/Sound/Fader.h>
 
 namespace SparkyStudios::Audio::Amplitude
 {
-    typedef std::map<AmString, Fader*> FaderRegistry;
+    typedef std::map<AmString, std::shared_ptr<Fader>> FaderRegistry;
     typedef FaderRegistry::value_type FaderImpl;
 
     static constexpr AmUInt32 kNewtonIterations = 4;
@@ -229,25 +230,21 @@ namespace SparkyStudios::Audio::Amplitude
 
     Fader::Fader(AmString name)
         : m_name(std::move(name))
-    {
-        Register(this);
-    }
+    {}
 
     Fader::Fader()
         : m_name()
     {}
 
     Fader::~Fader()
-    {
-        Unregister(this);
-    }
+    {}
 
     const AmString& Fader::GetName() const
     {
         return m_name;
     }
 
-    void Fader::Register(Fader* fader)
+    void Fader::Register(std::shared_ptr<Fader> fader)
     {
         if (lockFaders() || fader == nullptr)
             return;
@@ -263,7 +260,7 @@ namespace SparkyStudios::Audio::Amplitude
         fadersCount()++;
     }
 
-    void Fader::Unregister(const Fader* fader)
+    void Fader::Unregister(std::shared_ptr<const Fader> fader)
     {
         if (lockFaders() || fader == nullptr)
             return;
@@ -276,7 +273,7 @@ namespace SparkyStudios::Audio::Amplitude
         }
     }
 
-    Fader* Fader::Find(const AmString& name)
+    std::shared_ptr<Fader> Fader::Find(const AmString& name)
     {
         const FaderRegistry& faders = faderRegistry();
         if (const auto& it = faders.find(name); it != faders.end())
@@ -287,7 +284,7 @@ namespace SparkyStudios::Audio::Amplitude
 
     FaderInstance* Fader::Construct(const AmString& name)
     {
-        Fader* fader = Find(name);
+        std::shared_ptr<Fader> fader = Find(name);
         if (fader == nullptr)
             return nullptr;
 
@@ -299,7 +296,7 @@ namespace SparkyStudios::Audio::Amplitude
         if (instance == nullptr)
             return;
 
-        Fader* fader = Find(name);
+        std::shared_ptr<Fader> fader = Find(name);
         if (fader == nullptr)
             return;
 
@@ -316,7 +313,7 @@ namespace SparkyStudios::Audio::Amplitude
         lockFaders() = false;
     }
 
-    const std::map<AmString, Fader*>& Fader::GetRegistry()
+    const std::map<AmString, std::shared_ptr<Fader>>& Fader::GetRegistry()
     {
         return faderRegistry();
     }

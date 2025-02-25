@@ -238,21 +238,21 @@ namespace SparkyStudios::Audio::Amplitude
          *
          * @param[in] filter The filter to add in the registry.
          */
-        static void Register(Filter* filter);
+        static void Register(std::shared_ptr<Filter> filter);
 
         /**
          * @brief Unregisters a filter.
          *
          * @param[in] filter The filter to remove from the registry.
          */
-        static void Unregister(const Filter* filter);
+        static void Unregister(std::shared_ptr<const Filter> filter);
 
         /**
          * @brief Look up a filter by name.
          *
          * @return The filter with the given name, or `nullptr` if none.
          */
-        static Filter* Find(const AmString& name);
+        static std::shared_ptr<Filter> Find(const AmString& name);
 
         /**
          * @brief Creates a new instance of the the filter with the given name and returns its pointer.
@@ -296,7 +296,7 @@ namespace SparkyStudios::Audio::Amplitude
          *
          * @return The registry of filters.
          */
-        static const std::map<AmString, Filter*>& GetRegistry();
+        static const std::map<AmString, std::shared_ptr<Filter>>& GetRegistry();
 
     protected:
         /**

@@ -107,7 +107,7 @@ public:
         , listener_icons_()
         , listener_texture_(nullptr)
         , new_listener_location_()
-        , _loader()
+        , _loader(AmSharedPtr<DiskFileSystem, eMemoryPoolKind_IO>::Make())
     {}
 
     ~SampleState();
@@ -145,7 +145,7 @@ private:
     SDL_Texture* listener_texture_;
     AmVec2 new_listener_location_;
 
-    DiskFileSystem _loader;
+    std::shared_ptr<DiskFileSystem> _loader;
 };
 
 SampleState::~SampleState()
@@ -211,8 +211,8 @@ bool SampleState::Initialize()
 
     RegisterDeviceNotificationCallback(device_notification);
 
-    _loader.SetBasePath(AM_OS_STRING("./assets"));
-    amEngine->SetFileSystem(&_loader);
+    _loader->SetBasePath(AM_OS_STRING("./assets"));
+    amEngine->SetFileSystem(_loader);
 
     // Wait for the sound files to complete loading.
     amEngine->StartOpenFileSystem();
@@ -220,7 +220,7 @@ bool SampleState::Initialize()
         SDL_Delay(1);
 
     // Register all the default plugins shipped with the engine
-    Engine::RegisterDefaultPlugins();
+    Engine::RegisterDefaultExtensions();
 
     const auto sdkPath = std::filesystem::path(std::getenv("AM_SDK_PATH"));
 
@@ -511,7 +511,7 @@ AmInt32 main(AmInt32 argc, char* argv[])
         Thread::Sleep(1);
 
     // Unregister all default plugins
-    Engine::UnregisterDefaultPlugins();
+    Engine::UnregisterDefaultExtensions();
 
     amEngine->DestroyInstance();
 

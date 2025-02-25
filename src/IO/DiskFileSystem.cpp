@@ -67,7 +67,7 @@ namespace SparkyStudios::Audio::Amplitude
 
     std::shared_ptr<File> DiskFileSystem::OpenFile(const AmOsString& path, eFileOpenMode mode) const
     {
-        auto file = std::shared_ptr<DiskFile>(ampoolnew(eMemoryPoolKind_IO, DiskFile), am_delete<eMemoryPoolKind_IO, DiskFile>{});
+        auto file = AmSharedPtr<DiskFile, eMemoryPoolKind_IO>::Make();
         file->Open(ResolvePath(path), mode);
 
         return file;

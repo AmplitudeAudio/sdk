@@ -347,7 +347,7 @@ int process(const AmOsString& inFileName, const AmOsString& outFileName, const P
             sorted_by_name.insert(file);
         }
 
-        AmUniquePtr<eMemoryPoolKind_Default, Codec> wavCodec(amnew(WAVCodec));
+        AmUniquePtr<Codec> wavCodec(amnew(WAVCodec));
 
         std::vector<AmVec3> positions;
 
@@ -382,7 +382,7 @@ int process(const AmOsString& inFileName, const AmOsString& outFileName, const P
             }
 
             auto* decoder = wavCodec->CreateDecoder();
-            std::shared_ptr<File> file = std::make_shared<DiskFile>(absolute(entry));
+            auto file = AmSharedPtr<DiskFile, eMemoryPoolKind_IO>::Make(absolute(entry));
 
             if (!decoder->Open(file))
             {
@@ -669,14 +669,14 @@ int main(int argc, char* argv[])
         return EXIT_SUCCESS;
     }
 
-    Engine::RegisterDefaultPlugins();
+    Engine::RegisterDefaultExtensions();
 
     const auto res = process(AM_STRING_TO_OS_STRING(inFileName), AM_STRING_TO_OS_STRING(outFileName), state);
 
     ampoolfree(eMemoryPoolKind_Default, inFileName);
     ampoolfree(eMemoryPoolKind_Default, outFileName);
 
-    Engine::UnregisterDefaultPlugins();
+    Engine::UnregisterDefaultExtensions();
 
     MemoryManager::Deinitialize();
 

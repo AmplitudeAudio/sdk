@@ -23,24 +23,24 @@ using namespace SparkyStudios::Audio::Amplitude;
 
 TEST_CASE("Capsule Zone Tests", "[capsule_zone][math][amplitude]")
 {
-    CapsuleShape inner(25, 50);
-    CapsuleShape outer(50, 100);
-    CapsuleZone zone(&inner, &outer);
+    auto inner = std::make_shared<CapsuleShape>(25, 50);
+    auto outer = std::make_shared<CapsuleShape>(50, 100);
+    auto zone = std::make_shared<CapsuleZone>(inner, outer);
 
     WHEN("the location changes")
     {
         const AmVec3 newLocation = AM_V3(10, 20, 30);
-        zone.SetLocation(newLocation);
+        zone->SetLocation(newLocation);
 
         THEN("it returns the correct location")
         {
-            REQUIRE(zone.GetLocation() == newLocation);
+            REQUIRE(zone->GetLocation() == newLocation);
         }
 
         THEN("the inner and outer shapes are moved accordingly")
         {
-            REQUIRE(inner.GetLocation() == newLocation);
-            REQUIRE(outer.GetLocation() == newLocation);
+            REQUIRE(inner->GetLocation() == newLocation);
+            REQUIRE(outer->GetLocation() == newLocation);
         }
     }
 
@@ -49,23 +49,23 @@ TEST_CASE("Capsule Zone Tests", "[capsule_zone][math][amplitude]")
         const auto direction = AM_V3(0, 0, 1);
         const auto up = AM_V3(0, 1, 0);
         const auto newOrientation = Orientation(direction, up);
-        zone.SetOrientation(newOrientation);
+        zone->SetOrientation(newOrientation);
 
         THEN("it returns the correct orientation")
         {
-            REQUIRE(std::memcmp(&zone.GetOrientation(), &newOrientation, sizeof(Orientation)) == 0);
+            REQUIRE(std::memcmp(&zone->GetOrientation(), &newOrientation, sizeof(Orientation)) == 0);
         }
 
         THEN("the inner and outer shapes are rotated accordingly")
         {
-            REQUIRE(std::memcmp(&inner.GetOrientation(), &newOrientation, sizeof(Orientation)) == 0);
-            REQUIRE(std::memcmp(&outer.GetOrientation(), &newOrientation, sizeof(Orientation)) == 0);
+            REQUIRE(std::memcmp(&inner->GetOrientation(), &newOrientation, sizeof(Orientation)) == 0);
+            REQUIRE(std::memcmp(&outer->GetOrientation(), &newOrientation, sizeof(Orientation)) == 0);
         }
 
         THEN("it computes the correct direction and up vectors")
         {
-            REQUIRE(AM_EqV3(zone.GetDirection(), newOrientation.GetForward()));
-            REQUIRE(AM_EqV3(zone.GetUp(), newOrientation.GetUp()));
+            REQUIRE(AM_EqV3(zone->GetDirection(), newOrientation.GetForward()));
+            REQUIRE(AM_EqV3(zone->GetUp(), newOrientation.GetUp()));
         }
     }
 
@@ -75,32 +75,32 @@ TEST_CASE("Capsule Zone Tests", "[capsule_zone][math][amplitude]")
         const AmVec3 outer = AM_V3(100, 20, 20);
         const AmVec3 middle = AM_V3(37.5f, 0, 0);
 
-        REQUIRE(zone.GetFactor(inner) == 1.0f);
-        REQUIRE(zone.GetFactor(outer) == 0.0f);
-        REQUIRE(zone.GetFactor(middle) == 0.5f);
+        REQUIRE(zone->GetFactor(inner) == 1.0f);
+        REQUIRE(zone->GetFactor(outer) == 0.0f);
+        REQUIRE(zone->GetFactor(middle) == 0.5f);
     }
 }
 
 TEST_CASE("Sphere Zone Tests", "[sphere_zone][math][amplitude]")
 {
-    SphereShape inner(50);
-    SphereShape outer(100);
-    SphereZone zone(&inner, &outer);
+    auto inner = std::make_shared<SphereShape>(50);
+    auto outer = std::make_shared<SphereShape>(100);
+    auto zone = std::make_shared<SphereZone>(inner, outer);
 
     WHEN("the location changes")
     {
         const AmVec3 newLocation = AM_V3(10, 20, 30);
-        zone.SetLocation(newLocation);
+        zone->SetLocation(newLocation);
 
         THEN("it returns the correct location")
         {
-            REQUIRE(zone.GetLocation() == newLocation);
+            REQUIRE(zone->GetLocation() == newLocation);
         }
 
         THEN("the inner and outer shapes are moved accordingly")
         {
-            REQUIRE(inner.GetLocation() == newLocation);
-            REQUIRE(outer.GetLocation() == newLocation);
+            REQUIRE(inner->GetLocation() == newLocation);
+            REQUIRE(outer->GetLocation() == newLocation);
         }
     }
 
@@ -109,23 +109,23 @@ TEST_CASE("Sphere Zone Tests", "[sphere_zone][math][amplitude]")
         const auto direction = AM_V3(0, 0, 1);
         const auto up = AM_V3(0, 1, 0);
         const auto newOrientation = Orientation(direction, up);
-        zone.SetOrientation(newOrientation);
+        zone->SetOrientation(newOrientation);
 
         THEN("it returns the correct orientation")
         {
-            REQUIRE(std::memcmp(&zone.GetOrientation(), &newOrientation, sizeof(Orientation)) == 0);
+            REQUIRE(std::memcmp(&zone->GetOrientation(), &newOrientation, sizeof(Orientation)) == 0);
         }
 
         THEN("the inner and outer shapes are rotated accordingly")
         {
-            REQUIRE(std::memcmp(&inner.GetOrientation(), &newOrientation, sizeof(Orientation)) == 0);
-            REQUIRE(std::memcmp(&outer.GetOrientation(), &newOrientation, sizeof(Orientation)) == 0);
+            REQUIRE(std::memcmp(&inner->GetOrientation(), &newOrientation, sizeof(Orientation)) == 0);
+            REQUIRE(std::memcmp(&outer->GetOrientation(), &newOrientation, sizeof(Orientation)) == 0);
         }
 
         THEN("it computes the correct direction and up vectors")
         {
-            REQUIRE(AM_EqV3(zone.GetDirection(), direction));
-            REQUIRE(AM_EqV3(zone.GetUp(), up));
+            REQUIRE(AM_EqV3(zone->GetDirection(), direction));
+            REQUIRE(AM_EqV3(zone->GetUp(), up));
         }
     }
 
@@ -135,32 +135,32 @@ TEST_CASE("Sphere Zone Tests", "[sphere_zone][math][amplitude]")
         const AmVec3 outer = AM_V3(175, 175, 175);
         const AmVec3 middle = AM_V3(0, 75, 0);
 
-        REQUIRE(zone.GetFactor(inner) == 1);
-        REQUIRE(zone.GetFactor(outer) == 0);
-        REQUIRE(zone.GetFactor(middle) == 0.5f);
+        REQUIRE(zone->GetFactor(inner) == 1);
+        REQUIRE(zone->GetFactor(outer) == 0);
+        REQUIRE(zone->GetFactor(middle) == 0.5f);
     }
 }
 
 TEST_CASE("Box Zone Tests", "[box_zone][math][amplitude]")
 {
-    BoxShape inner(50, 50, 50);
-    BoxShape outer(100, 100, 100);
-    BoxZone zone(&inner, &outer);
+    auto inner = std::make_shared<BoxShape>(50, 50, 50);
+    auto outer = std::make_shared<BoxShape>(100, 100, 100);
+    auto zone = std::make_shared<BoxZone>(inner, outer);
 
     WHEN("the location changes")
     {
         const AmVec3 newLocation = AM_V3(10, 20, 30);
-        zone.SetLocation(newLocation);
+        zone->SetLocation(newLocation);
 
         THEN("it returns the correct location")
         {
-            REQUIRE(zone.GetLocation() == newLocation);
+            REQUIRE(zone->GetLocation() == newLocation);
         }
 
         THEN("the inner and outer shapes are moved accordingly")
         {
-            REQUIRE(inner.GetLocation() == newLocation);
-            REQUIRE(outer.GetLocation() == newLocation);
+            REQUIRE(inner->GetLocation() == newLocation);
+            REQUIRE(outer->GetLocation() == newLocation);
         }
     }
 
@@ -169,23 +169,23 @@ TEST_CASE("Box Zone Tests", "[box_zone][math][amplitude]")
         const auto direction = AM_V3(0, 0, 1);
         const auto up = AM_V3(0, 1, 0);
         const auto newOrientation = Orientation(direction, up);
-        zone.SetOrientation(newOrientation);
+        zone->SetOrientation(newOrientation);
 
         THEN("it returns the correct orientation")
         {
-            REQUIRE(std::memcmp(&zone.GetOrientation(), &newOrientation, sizeof(Orientation)) == 0);
+            REQUIRE(std::memcmp(&zone->GetOrientation(), &newOrientation, sizeof(Orientation)) == 0);
         }
 
         THEN("the inner and outer shapes are rotated accordingly")
         {
-            REQUIRE(std::memcmp(&inner.GetOrientation(), &newOrientation, sizeof(Orientation)) == 0);
-            REQUIRE(std::memcmp(&outer.GetOrientation(), &newOrientation, sizeof(Orientation)) == 0);
+            REQUIRE(std::memcmp(&inner->GetOrientation(), &newOrientation, sizeof(Orientation)) == 0);
+            REQUIRE(std::memcmp(&outer->GetOrientation(), &newOrientation, sizeof(Orientation)) == 0);
         }
 
         THEN("it computes the correct direction and up vectors")
         {
-            REQUIRE(AM_EqV3(zone.GetDirection(), direction));
-            REQUIRE(AM_EqV3(zone.GetUp(), up));
+            REQUIRE(AM_EqV3(zone->GetDirection(), direction));
+            REQUIRE(AM_EqV3(zone->GetUp(), up));
         }
     }
 
@@ -195,32 +195,32 @@ TEST_CASE("Box Zone Tests", "[box_zone][math][amplitude]")
         const AmVec3 outer = AM_V3(175, 175, 175);
         const AmVec3 middle = AM_V3(87.5f, 87.5f, 87.5f);
 
-        REQUIRE(zone.GetFactor(inner) == 1);
-        REQUIRE(zone.GetFactor(outer) == 0);
-        REQUIRE(zone.GetFactor(middle) == 0.25f);
+        REQUIRE(zone->GetFactor(inner) == 1);
+        REQUIRE(zone->GetFactor(outer) == 0);
+        REQUIRE(zone->GetFactor(middle) == 0.25f);
     }
 }
 
 TEST_CASE("Cone Zone Tests", "[cone_zone][math][amplitude]")
 {
-    ConeShape inner(50, 50);
-    ConeShape outer(100, 100);
-    ConeZone zone(&inner, &outer);
+    auto inner = std::make_shared<ConeShape>(50, 50);
+    auto outer = std::make_shared<ConeShape>(100, 100);
+    auto zone = std::make_shared<ConeZone>(inner, outer);
 
     WHEN("the location changes")
     {
         const AmVec3 newLocation = AM_V3(10, 20, 30);
-        zone.SetLocation(newLocation);
+        zone->SetLocation(newLocation);
 
         THEN("it returns the correct location")
         {
-            REQUIRE(zone.GetLocation() == newLocation);
+            REQUIRE(zone->GetLocation() == newLocation);
         }
 
         THEN("the inner and outer shapes are moved accordingly")
         {
-            REQUIRE(inner.GetLocation() == newLocation);
-            REQUIRE(outer.GetLocation() == newLocation);
+            REQUIRE(inner->GetLocation() == newLocation);
+            REQUIRE(outer->GetLocation() == newLocation);
         }
     }
 
@@ -229,23 +229,23 @@ TEST_CASE("Cone Zone Tests", "[cone_zone][math][amplitude]")
         const auto direction = AM_V3(0, 0, 1);
         const auto up = AM_V3(0, 1, 0);
         const auto newOrientation = Orientation(direction, up);
-        zone.SetOrientation(newOrientation);
+        zone->SetOrientation(newOrientation);
 
         THEN("it returns the correct orientation")
         {
-            REQUIRE(std::memcmp(&zone.GetOrientation(), &newOrientation, sizeof(Orientation)) == 0);
+            REQUIRE(std::memcmp(&zone->GetOrientation(), &newOrientation, sizeof(Orientation)) == 0);
         }
 
         THEN("the inner and outer shapes are rotated accordingly")
         {
-            REQUIRE(std::memcmp(&inner.GetOrientation(), &newOrientation, sizeof(Orientation)) == 0);
-            REQUIRE(std::memcmp(&outer.GetOrientation(), &newOrientation, sizeof(Orientation)) == 0);
+            REQUIRE(std::memcmp(&inner->GetOrientation(), &newOrientation, sizeof(Orientation)) == 0);
+            REQUIRE(std::memcmp(&outer->GetOrientation(), &newOrientation, sizeof(Orientation)) == 0);
         }
 
         THEN("it computes the correct direction and up vectors")
         {
-            REQUIRE(AM_EqV3(zone.GetDirection(), direction));
-            REQUIRE(AM_EqV3(zone.GetUp(), up));
+            REQUIRE(AM_EqV3(zone->GetDirection(), direction));
+            REQUIRE(AM_EqV3(zone->GetUp(), up));
         }
     }
 
@@ -256,9 +256,9 @@ TEST_CASE("Cone Zone Tests", "[cone_zone][math][amplitude]")
         const AmVec3 middle1 = AM_V3(0.0f, 87.5f, 0);
         const AmVec3 middle2 = AM_V3(25.0f, 75.0f, 0);
 
-        REQUIRE(zone.GetFactor(inner) == 1);
-        REQUIRE(zone.GetFactor(outer) == 0);
-        REQUIRE(zone.GetFactor(middle1) == 0.25f);
-        REQUIRE(zone.GetFactor(middle2) == 0.5f);
+        REQUIRE(zone->GetFactor(inner) == 1);
+        REQUIRE(zone->GetFactor(outer) == 0);
+        REQUIRE(zone->GetFactor(middle1) == 0.25f);
+        REQUIRE(zone->GetFactor(middle2) == 0.5f);
     }
 }

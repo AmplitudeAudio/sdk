@@ -57,11 +57,11 @@ namespace SparkyStudios::Audio::Amplitude
         }
         else
         {
-            const FileSystem* fs = engine->GetFileSystem();
+            auto fs = engine->GetFileSystem();
             const AmOsString& filePath = fs->ResolvePath(fs->Join({ AM_OS_STRING("switch_containers"), filename }));
 
             // This is a new switch container, load it and update it.
-            AmUniquePtr<eMemoryPoolKind_Engine, SwitchContainerImpl> switch_container(
+            AmUniquePtr<SwitchContainerImpl, eMemoryPoolKind_Engine> switch_container(
                 ampoolnew(eMemoryPoolKind_Engine, SwitchContainerImpl));
             if (!switch_container->LoadDefinitionFromPath(filePath, engine->GetState()))
                 return false;
@@ -94,11 +94,11 @@ namespace SparkyStudios::Audio::Amplitude
         }
         else
         {
-            const FileSystem* fs = engine->GetFileSystem();
+            auto fs = engine->GetFileSystem();
             const AmOsString& filePath = fs->ResolvePath(fs->Join({ AM_OS_STRING("collections"), filename }));
 
             // This is a new collection, load it and update it.
-            AmUniquePtr<eMemoryPoolKind_Engine, CollectionImpl> collection(ampoolnew(eMemoryPoolKind_Engine, CollectionImpl));
+            AmUniquePtr<CollectionImpl, eMemoryPoolKind_Engine> collection(ampoolnew(eMemoryPoolKind_Engine, CollectionImpl));
             if (!collection->LoadDefinitionFromPath(filePath, engine->GetState()))
                 return false;
 
@@ -130,11 +130,11 @@ namespace SparkyStudios::Audio::Amplitude
         }
         else
         {
-            const FileSystem* fs = engine->GetFileSystem();
+            auto fs = engine->GetFileSystem();
             const AmOsString& filePath = fs->ResolvePath(fs->Join({ AM_OS_STRING("sounds"), filename }));
 
             // This is a new sound, load it and update it.
-            AmUniquePtr<eMemoryPoolKind_Engine, SoundImpl> sound(ampoolnew(eMemoryPoolKind_Engine, SoundImpl));
+            AmUniquePtr<SoundImpl, eMemoryPoolKind_Engine> sound(ampoolnew(eMemoryPoolKind_Engine, SoundImpl));
             if (!sound->LoadDefinitionFromPath(filePath, engine->GetState()))
                 return false;
 
@@ -168,11 +168,11 @@ namespace SparkyStudios::Audio::Amplitude
         }
         else
         {
-            const FileSystem* fs = engine->GetFileSystem();
+            auto fs = engine->GetFileSystem();
             const AmOsString& filePath = fs->ResolvePath(fs->Join({ AM_OS_STRING("events"), filename }));
 
             // This is a new event, load it and update it.
-            AmUniquePtr<eMemoryPoolKind_Engine, EventImpl> event(ampoolnew(eMemoryPoolKind_Engine, EventImpl));
+            AmUniquePtr<EventImpl, eMemoryPoolKind_Engine> event(ampoolnew(eMemoryPoolKind_Engine, EventImpl));
             if (!event->LoadDefinitionFromPath(filePath, engine->GetState()))
                 return false;
 
@@ -204,11 +204,11 @@ namespace SparkyStudios::Audio::Amplitude
         }
         else
         {
-            const FileSystem* fs = engine->GetFileSystem();
+            auto fs = engine->GetFileSystem();
             const AmOsString& filePath = fs->ResolvePath(fs->Join({ AM_OS_STRING("attenuators"), filename }));
 
             // This is a new event, load it and update it.
-            AmUniquePtr<eMemoryPoolKind_Engine, AttenuationImpl> attenuation(ampoolnew(eMemoryPoolKind_Engine, AttenuationImpl));
+            AmUniquePtr<AttenuationImpl, eMemoryPoolKind_Engine> attenuation(ampoolnew(eMemoryPoolKind_Engine, AttenuationImpl));
             if (!attenuation->LoadDefinitionFromPath(filePath, engine->GetState()))
                 return false;
 
@@ -240,11 +240,11 @@ namespace SparkyStudios::Audio::Amplitude
         }
         else
         {
-            const FileSystem* fs = engine->GetFileSystem();
+            auto fs = engine->GetFileSystem();
             const AmOsString& filePath = fs->ResolvePath(fs->Join({ AM_OS_STRING("switches"), filename }));
 
             // This is a new event, load it and update it.
-            AmUniquePtr<eMemoryPoolKind_Engine, SwitchImpl> _switch(ampoolnew(eMemoryPoolKind_Engine, SwitchImpl));
+            AmUniquePtr<SwitchImpl, eMemoryPoolKind_Engine> _switch(ampoolnew(eMemoryPoolKind_Engine, SwitchImpl));
             if (!_switch->LoadDefinitionFromPath(filePath, engine->GetState()))
             {
                 return false;
@@ -278,11 +278,11 @@ namespace SparkyStudios::Audio::Amplitude
         }
         else
         {
-            const FileSystem* fs = engine->GetFileSystem();
+            auto fs = engine->GetFileSystem();
             const AmOsString& filePath = fs->ResolvePath(fs->Join({ AM_OS_STRING("rtpc"), filename }));
 
             // This is a new rtpc, load it and update it.
-            AmUniquePtr<eMemoryPoolKind_Engine, RtpcImpl> rtpc(ampoolnew(eMemoryPoolKind_Engine, RtpcImpl));
+            AmUniquePtr<RtpcImpl, eMemoryPoolKind_Engine> rtpc(ampoolnew(eMemoryPoolKind_Engine, RtpcImpl));
             if (!rtpc->LoadDefinitionFromPath(filePath, engine->GetState()))
             {
                 return false;
@@ -316,11 +316,11 @@ namespace SparkyStudios::Audio::Amplitude
         }
         else
         {
-            const FileSystem* fs = engine->GetFileSystem();
+            auto fs = engine->GetFileSystem();
             const AmOsString& filePath = fs->ResolvePath(fs->Join({ AM_OS_STRING("effects"), filename }));
 
             // This is a new effect, load it and update it.
-            AmUniquePtr<eMemoryPoolKind_Engine, EffectImpl> effect(ampoolnew(eMemoryPoolKind_Engine, EffectImpl));
+            AmUniquePtr<EffectImpl, eMemoryPoolKind_Engine> effect(ampoolnew(eMemoryPoolKind_Engine, EffectImpl));
             if (!effect->LoadDefinitionFromPath(filePath, engine->GetState()))
             {
                 return false;
@@ -346,7 +346,7 @@ namespace SparkyStudios::Audio::Amplitude
 
     bool SoundBank::Initialize(const AmOsString& filename, Engine* engine)
     {
-        const FileSystem* fs = engine->GetFileSystem();
+        auto fs = engine->GetFileSystem();
         const AmOsString& filePath = fs->ResolvePath(fs->Join({ AM_OS_STRING("soundbanks"), filename }));
 
         if (!LoadFile(fs->OpenFile(filePath), &_soundBankDefSource))
@@ -365,7 +365,7 @@ namespace SparkyStudios::Audio::Amplitude
         return InitializeInternal(engine);
     }
 
-    static bool DeinitializeSwitchContainer(const AmOsString& filename, EngineInternalState* state)
+    static bool DeinitializeSwitchContainer(const AmOsString& filename, std::shared_ptr<EngineInternalState> state)
     {
         const auto id_iter = state->switch_container_id_map.find(filename);
         if (id_iter == state->switch_container_id_map.end())
@@ -386,7 +386,7 @@ namespace SparkyStudios::Audio::Amplitude
         return true;
     }
 
-    static bool DeinitializeCollection(const AmOsString& filename, EngineInternalState* state)
+    static bool DeinitializeCollection(const AmOsString& filename, std::shared_ptr<EngineInternalState> state)
     {
         const auto id_iter = state->collection_id_map.find(filename);
         if (id_iter == state->collection_id_map.end())
@@ -407,7 +407,7 @@ namespace SparkyStudios::Audio::Amplitude
         return true;
     }
 
-    static bool DeinitializeSound(const AmOsString& filename, EngineInternalState* state)
+    static bool DeinitializeSound(const AmOsString& filename, std::shared_ptr<EngineInternalState> state)
     {
         const auto id_iter = state->sound_id_map.find(filename);
         if (id_iter == state->sound_id_map.end())
@@ -428,7 +428,7 @@ namespace SparkyStudios::Audio::Amplitude
         return true;
     }
 
-    static bool DeinitializeEvent(const AmOsString& filename, EngineInternalState* state)
+    static bool DeinitializeEvent(const AmOsString& filename, std::shared_ptr<EngineInternalState> state)
     {
         const auto id_iter = state->event_id_map.find(filename);
         if (id_iter == state->event_id_map.end())
@@ -449,7 +449,7 @@ namespace SparkyStudios::Audio::Amplitude
         return true;
     }
 
-    static bool DeinitializeAttenuation(const AmOsString& filename, EngineInternalState* state)
+    static bool DeinitializeAttenuation(const AmOsString& filename, std::shared_ptr<EngineInternalState> state)
     {
         const auto id_iter = state->attenuation_id_map.find(filename);
         if (id_iter == state->attenuation_id_map.end())
@@ -470,7 +470,7 @@ namespace SparkyStudios::Audio::Amplitude
         return true;
     }
 
-    static bool DeinitializeSwitch(const AmOsString& filename, EngineInternalState* state)
+    static bool DeinitializeSwitch(const AmOsString& filename, std::shared_ptr<EngineInternalState> state)
     {
         const auto id_iter = state->switch_id_map.find(filename);
         if (id_iter == state->switch_id_map.end())
@@ -491,7 +491,7 @@ namespace SparkyStudios::Audio::Amplitude
         return true;
     }
 
-    static bool DeinitializeEffect(const AmOsString& filename, EngineInternalState* state)
+    static bool DeinitializeEffect(const AmOsString& filename, std::shared_ptr<EngineInternalState> state)
     {
         const auto id_iter = state->effect_id_map.find(filename);
         if (id_iter == state->effect_id_map.end())
@@ -512,7 +512,7 @@ namespace SparkyStudios::Audio::Amplitude
         return true;
     }
 
-    static bool DeinitializeRtpc(const AmOsString& filename, EngineInternalState* state)
+    static bool DeinitializeRtpc(const AmOsString& filename, std::shared_ptr<EngineInternalState> state)
     {
         const auto id_iter = state->rtpc_id_map.find(filename);
         if (id_iter == state->rtpc_id_map.end())

@@ -111,7 +111,7 @@ namespace SparkyStudios::Audio::Amplitude
             const auto& nodeId = nodeDef->id();
             const auto* inputs = nodeDef->consume();
 
-            const Node* node = Node::Find(nodeName);
+            auto node = Node::Find(nodeName);
             NodeInstance* nodeInstance = nullptr;
 
             if (nodeName == "Input")
@@ -223,7 +223,7 @@ namespace SparkyStudios::Audio::Amplitude
         ampooldelete(eMemoryPoolKind_Amplimix, PipelineInstanceImpl, (PipelineInstanceImpl*)instance);
     }
 
-    bool PipelineImpl::LoadDefinition(const PipelineDefinition* definition, EngineInternalState* state)
+    bool PipelineImpl::LoadDefinition(const PipelineDefinition* definition, std::shared_ptr<EngineInternalState> state)
     {
         m_id = definition->id();
         m_name = definition->name()->str();

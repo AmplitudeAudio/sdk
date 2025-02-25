@@ -25,8 +25,8 @@ TEST_CASE("HRTF Sphere Tests", "[hrtf_sphere][hrtf][amplitude]")
     HRIRSphereImpl sphere;
     REQUIRE_FALSE(sphere.IsLoaded());
 
-    DiskFileSystem fs;
-    fs.SetBasePath(AM_OS_STRING("./samples/assets"));
+    auto fs = AmSharedPtr<DiskFileSystem, eMemoryPoolKind_IO>::Make();
+    fs->SetBasePath(AM_OS_STRING("./samples/assets"));
 
     sphere.SetResource(AM_OS_STRING("./data/baker_a_101_lp_512.amir"));
     REQUIRE_FALSE(sphere.IsLoaded());
@@ -35,7 +35,7 @@ TEST_CASE("HRTF Sphere Tests", "[hrtf_sphere][hrtf][amplitude]")
     REQUIRE_FALSE(sphere.IsLoaded());
 
     sphere.SetResource(AM_OS_STRING("./data/sadie_h12.amir"));
-    sphere.Load(&fs);
+    sphere.Load(fs);
 
     REQUIRE(sphere.IsLoaded());
     REQUIRE(sphere.GetPath() == AM_OS_STRING("./data/sadie_h12.amir"));

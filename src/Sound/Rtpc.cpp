@@ -82,7 +82,7 @@ namespace SparkyStudios::Audio::Amplitude
         SetValue(_defValue);
     }
 
-    bool RtpcImpl::LoadDefinition(const RtpcDefinition* definition, EngineInternalState* state)
+    bool RtpcImpl::LoadDefinition(const RtpcDefinition* definition, std::shared_ptr<EngineInternalState> state)
     {
         m_id = definition->id();
         m_name = definition->name()->str();

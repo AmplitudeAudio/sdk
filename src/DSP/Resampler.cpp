@@ -20,7 +20,7 @@
 
 namespace SparkyStudios::Audio::Amplitude
 {
-    typedef std::map<std::string, Resampler*> ResamplerRegistry;
+    typedef std::map<std::string, std::shared_ptr<Resampler>> ResamplerRegistry;
     typedef ResamplerRegistry::value_type ResamplerImpl;
 
     static ResamplerRegistry& resamplerRegistry()
@@ -43,25 +43,21 @@ namespace SparkyStudios::Audio::Amplitude
 
     Resampler::Resampler(std::string name)
         : m_name(std::move(name))
-    {
-        Register(this);
-    }
+    {}
 
     Resampler::Resampler()
         : m_name()
     {}
 
     Resampler::~Resampler()
-    {
-        Unregister(this);
-    }
+    {}
 
     const std::string& Resampler::GetName() const
     {
         return m_name;
     }
 
-    void Resampler::Register(Resampler* resampler)
+    void Resampler::Register(std::shared_ptr<Resampler> resampler)
     {
         if (lockResamplers() || resampler == nullptr)
             return;
@@ -77,7 +73,7 @@ namespace SparkyStudios::Audio::Amplitude
         resamplersCount()++;
     }
 
-    void Resampler::Unregister(const Resampler* resampler)
+    void Resampler::Unregister(std::shared_ptr<const Resampler> resampler)
     {
         if (lockResamplers() || resampler == nullptr)
             return;
@@ -90,7 +86,7 @@ namespace SparkyStudios::Audio::Amplitude
         }
     }
 
-    Resampler* Resampler::Find(const std::string& name)
+    std::shared_ptr<Resampler> Resampler::Find(const std::string& name)
     {
         ResamplerRegistry& resamplers = resamplerRegistry();
         if (const auto& it = resamplers.find(name); it != resamplers.end())
@@ -101,7 +97,7 @@ namespace SparkyStudios::Audio::Amplitude
 
     ResamplerInstance* Resampler::Construct(const std::string& name)
     {
-        Resampler* resampler = Find(name);
+        std::shared_ptr<Resampler> resampler = Find(name);
         if (resampler == nullptr)
             return nullptr;
 
@@ -113,7 +109,7 @@ namespace SparkyStudios::Audio::Amplitude
         if (instance == nullptr)
             return;
 
-        Resampler* resampler = Find(name);
+        std::shared_ptr<Resampler> resampler = Find(name);
         if (resampler == nullptr)
             return;
 
@@ -128,5 +124,10 @@ namespace SparkyStudios::Audio::Amplitude
     void Resampler::UnlockRegistry()
     {
         lockResamplers() = false;
+    }
+
+    const std::map<std::string, std::shared_ptr<Resampler>>& Resampler::GetRegistry()
+    {
+        return resamplerRegistry();
     }
 } // namespace SparkyStudios::Audio::Amplitude

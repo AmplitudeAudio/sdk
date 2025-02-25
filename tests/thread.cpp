@@ -149,7 +149,7 @@ TEST_CASE("Thread Pool Tests", "[thread][amplitude]")
 
         WHEN("a ready task is added to the pool")
         {
-            std::shared_ptr<DummyPoolTask> task(amnew(DummyPoolTask), am_delete<eMemoryPoolKind_Default, DummyPoolTask>{});
+            auto task = AmSharedPtr<DummyPoolTask>::Make();
             REQUIRE_FALSE(task->IsExecuted());
 
             pool.AddTask(task);
@@ -186,7 +186,7 @@ TEST_CASE("Thread Pool Tests", "[thread][amplitude]")
 
         WHEN("a not ready task is added to the pool")
         {
-            std::shared_ptr<NeverReadyPoolTask> task(amnew(NeverReadyPoolTask), am_delete<eMemoryPoolKind_Default, NeverReadyPoolTask>{});
+            auto task = AmSharedPtr<NeverReadyPoolTask>::Make();
             REQUIRE_FALSE(task->IsExecuted());
 
             pool.AddTask(task);
@@ -211,8 +211,7 @@ TEST_CASE("Thread Pool Tests", "[thread][amplitude]")
 
         WHEN("an awaitable ready task is added to the pool")
         {
-            std::shared_ptr<AwaitableDummyPoolTask> task(
-                amnew(AwaitableDummyPoolTask), am_delete<eMemoryPoolKind_Default, AwaitableDummyPoolTask>{});
+            auto task = AmSharedPtr<AwaitableDummyPoolTask>::Make();
             REQUIRE_FALSE(task->IsExecuted());
 
             pool.AddTask(task);
@@ -243,7 +242,7 @@ TEST_CASE("Thread Pool Tests", "[thread][amplitude]")
 
         AND_THEN("it execute tasks in the caller thread")
         {
-            auto task = std::shared_ptr<DummyPoolTask>(amnew(DummyPoolTask), am_delete<eMemoryPoolKind_Default, DummyPoolTask>{});
+            auto task = AmSharedPtr<DummyPoolTask>::Make();
             REQUIRE_FALSE(task->IsExecuted());
 
             pool2.AddTask(task);
