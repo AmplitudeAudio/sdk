@@ -15,7 +15,7 @@
 #include <SparkyStudios/Audio/Amplitude/Core/Memory.h>
 #include <SparkyStudios/Audio/Amplitude/Core/Thread.h>
 
-#if defined(AM_WINDOWS_VERSION)
+#if AM_PLATFORM_WIN
 // clang-format off
 #include <Windows.h>
 #include <processthreadsapi.h>
@@ -37,7 +37,7 @@ namespace SparkyStudios::Audio::Amplitude::Thread
         AmVoidPtr mParam;
     };
 
-#if defined(AM_WINDOWS_VERSION)
+#if AM_PLATFORM_WIN
     struct AmThreadHandleData
     {
         HANDLE thread;
@@ -295,7 +295,7 @@ namespace SparkyStudios::Audio::Amplitude::Thread
 
     AmThreadID GetCurrentThreadId()
     {
-#if defined(AM_APPLE_VERSION)
+#if AM_PLATFORM_APPLE
         AmThreadID tid = 0;
         pthread_threadid_np(pthread_self(), &tid);
         return tid;

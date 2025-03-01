@@ -55,7 +55,7 @@ namespace SparkyStudios::Audio::Amplitude
 #elif defined(AM_SIMD_ARCH_SSE2)
     typedef xsimd::batch<AmReal32, xsimd::sse2> simd_batch;
 #elif defined(AM_SIMD_ARCH_NEON)
-#if defined(AM_CPU_ARM_64)
+#if AM_ARCH_ARM_64
     typedef xsimd::batch<AmReal32, xsimd::neon64> simd_batch;
 #else
     typedef xsimd::batch<AmReal32, xsimd::neon> simd_batch;

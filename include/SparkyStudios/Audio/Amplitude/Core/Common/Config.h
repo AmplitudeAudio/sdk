@@ -17,26 +17,26 @@
 #ifndef _AM_CORE_COMMON_CONFIG_H
 #define _AM_CORE_COMMON_CONFIG_H
 
-#if defined(__GNUC__) || defined(__clang__)
+#if AM_COMPILER_GCC || AM_COMPILER_CLANG
 #define AM_DEPRECATED(msg) __attribute__((deprecated(msg)))
-#elif defined(_MSC_VER)
+#elif AM_COMPILER_MSVC
 #define AM_DEPRECATED(msg) __declspec(deprecated(msg))
 #else
 #define AM_DEPRECATED(msg)
 #endif
 
-#if defined(_WIN32) || defined(_WIN64) || defined(WINAPI_FAMILY)
+#if AM_PLATFORM_WIN
 #include <SparkyStudios/Audio/Amplitude/Core/Common/Platforms/Windows/Config.h>
-#elif defined(__ANDROID__)
+#elif AM_PLATFORM_ANDROID
 #include <SparkyStudios/Audio/Amplitude/Core/Common/Platforms/Android/Config.h>
-#elif defined(__linux__)
-#include <SparkyStudios/Audio/Amplitude/Core/Common/Platforms/Linux/Config.h>
-#elif defined(__APPLE__)
+#elif AM_PLATFORM_APPLE
 #include <SparkyStudios/Audio/Amplitude/Core/Common/Platforms/Apple/Config.h>
+#elif AM_PLATFORM_LINUX
+#include <SparkyStudios/Audio/Amplitude/Core/Common/Platforms/Linux/Config.h>
 #endif
 
 #if !defined(AM_VALUE_ALIGN)
-#define AM_VALUE_ALIGN(_value_, _alignment_) (((_value_) + ((_alignment_)-1)) & ~((_alignment_)-1))
+#define AM_VALUE_ALIGN(_value_, _alignment_) (((_value_) + ((_alignment_) - 1)) & ~((_alignment_) - 1))
 #endif
 
 #if !defined(AM_CALL_POLICY)
@@ -70,10 +70,10 @@
 #endif
 
 #if !defined(AMPLITUDE_DISABLE_SIMD)
-#if defined(AM_CPU_X86) || defined(AM_CPU_X86_64) || defined(AM_CPU_ARM) || defined(AM_CPU_ARM_64)
+#if AM_ARCH_X86 || AM_ARCH_X86_64 || AM_ARCH_ARM_V7 || AM_ARCH_ARM_64
 #define AM_SIMD_INTRINSICS
 #include <SparkyStudios/Audio/Amplitude/Core/Common/SIMD.h>
-#endif // AM_CPU_X86 || AM_CPU_X86_64 || AM_CPU_ARM_NEON
+#endif // AM_ARCH_X86 || AM_ARCH_X86_64 || AM_ARCH_ARM_V7 || AM_ARCH_ARM_64
 #else
 #define PFFFT_SIMD_DISABLE
 #define HANDMADE_MATH_NO_SIMD

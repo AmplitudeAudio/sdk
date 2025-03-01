@@ -40,7 +40,7 @@
 
 #include <dylib.hpp>
 
-#if defined(AM_WINDOWS_VERSION)
+#if AM_PLATFORM_WIN
 #undef CreateMutex
 #endif
 

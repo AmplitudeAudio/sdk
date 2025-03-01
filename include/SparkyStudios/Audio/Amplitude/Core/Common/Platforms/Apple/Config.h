@@ -17,36 +17,6 @@
 #ifndef _AM_CORE_COMMON_PLATFORMS_APPLE_CONFIG_H
 #define _AM_CORE_COMMON_PLATFORMS_APPLE_CONFIG_H
 
-#include <TargetConditionals.h>
-
-/// Compiling for an Apple platform
-#define AM_APPLE_VERSION
-
-#if TARGET_OS_IPHONE || TARGET_OS_TV
-/// Compiling for iOS or tvOS (iPhone, iPad, iPod, Apple TV...)
-#define AM_IOS_VERSION
-#elif !TARGET_OS_EMBEDDED
-/// Compiling for Mac OS X
-#define AM_OSX_VERSION
-#endif
-
-// Detect the platform CPU type
-#if defined(__LP64__) || defined(_LP64)
-#ifdef __aarch64__
-#define AM_CPU_ARM_64
-#define AM_CPU_ARM_NEON
-#else
-#define AM_CPU_X86_64
-#endif
-#else
-#ifdef __arm__
-#define AM_CPU_ARM
-#define AM_CPU_ARM_NEON
-#else
-#define AM_CPU_X86
-#endif
-#endif
-
 // Spinlock isn't available on Apple CLang
 #define AM_NO_PTHREAD_SPINLOCK
 

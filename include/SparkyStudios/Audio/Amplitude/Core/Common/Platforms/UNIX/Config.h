@@ -36,7 +36,7 @@
 #define AM_NO_INLINE __attribute__((noinline))
 
 // Restrict keyword
-#if defined(__GNUC__)
+#if AM_COMPILER_GCC
 #define AM_RESTRICT __restrict__
 #else
 #define AM_RESTRICT __restrict

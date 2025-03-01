@@ -17,26 +17,6 @@
 #ifndef _AM_CORE_COMMON_PLATFORMS_LINUX_CONFIG_H
 #define _AM_CORE_COMMON_PLATFORMS_LINUX_CONFIG_H
 
-/// Compiling for a Linux platform
-#define AM_LINUX_VERSION
-
-// Detect the platform CPU type
-#if defined(__LP64__) || defined(_LP64)
-#ifdef __aarch64__
-#define AM_CPU_ARM_64
-#define AM_CPU_ARM_NEON
-#else
-#define AM_CPU_X86_64
-#endif
-#else
-#ifdef __arm__
-#define AM_CPU_ARM
-#define AM_CPU_ARM_NEON
-#else
-#define AM_CPU_X86
-#endif
-#endif
-
 #include <SparkyStudios/Audio/Amplitude/Core/Common/Platforms/UNIX/Config.h>
 
 #ifndef AM_ID_CHAR_FMT

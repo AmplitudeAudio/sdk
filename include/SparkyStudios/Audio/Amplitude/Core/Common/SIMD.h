@@ -75,7 +75,7 @@
 #define AM_SIMD_ARCH_FMA3
 #endif
 
-#if defined(AM_CPU_ARM_NEON)
+#if AM_ARCH_ARM
 #if !defined(AM_BUILDSYSTEM_ARCH_ARM_NEON)
 #define AM_BUILDSYSTEM_ARCH_ARM_NEON
 #endif
