@@ -242,6 +242,9 @@ set(SA_SOURCE
     src/Core/Drivers/Null/Driver.cpp
     src/Core/Drivers/Null/Driver.h
 
+    src/Core/Platforms/Android/AndroidConsoleLogger.cpp
+    src/Core/Platforms/Android/AndroidConsoleLogger.h
+
     src/Core/Playback/Bus.cpp
     src/Core/Playback/BusInternalState.cpp
     src/Core/Playback/BusInternalState.h

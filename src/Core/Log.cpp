@@ -12,13 +12,41 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+#if AM_PLATFORM_ANDROID
+#include <Core/Platforms/Android/AndroidConsoleLogger.h>
+#else
 #include <iostream>
+#endif
 
 #include <SparkyStudios/Audio/Amplitude/Core/Log.h>
 
 namespace SparkyStudios::Audio::Amplitude
 {
     static Logger* gLogger = nullptr;
+
+    static auto& getLogger(eLogMessageLevel level)
+    {
+#if AM_PLATFORM_ANDROID
+        switch (level)
+        {
+        case eLogMessageLevel_Debug:
+            return aout_d;
+        case eLogMessageLevel_Info:
+            return aout_i;
+        case eLogMessageLevel_Warning:
+            return aout_w;
+        case eLogMessageLevel_Error:
+            return aout_e;
+        case eLogMessageLevel_Critical:
+            return aout_f;
+        default:
+        case eLogMessageLevel_Success:
+            return aout_s;
+        }
+#else
+        return std::cout;
+#endif
+    }
 
     void Logger::SetLogger(Logger* loggerInstance)
     {
@@ -68,34 +96,37 @@ namespace SparkyStudios::Audio::Amplitude
 
     void ConsoleLogger::Log(eLogMessageLevel level, const char* file, int line, const AmString& message)
     {
+        auto& out = getLogger(level);
+
         switch (level)
         {
         case eLogMessageLevel_Debug:
-            std::cout << "[DEBUG] ";
+            out << "[DEBUG] ";
             break;
         case eLogMessageLevel_Info:
-            std::cout << "[INFO] ";
+            out << "[INFO] ";
             break;
         case eLogMessageLevel_Warning:
-            std::cout << "[WARNING] ";
+            out << "[WARNING] ";
             break;
         case eLogMessageLevel_Error:
-            std::cout << "[ERROR] ";
+            out << "[ERROR] ";
             break;
         case eLogMessageLevel_Critical:
-            std::cout << "[CRITICAL] ";
+            out << "[CRITICAL] ";
             break;
         case eLogMessageLevel_Success:
-            std::cout << "[SUCCESS] ";
+            out << "[SUCCESS] ";
             break;
         }
 
         if (m_displayFileAndLine)
-            std::cout << "(" << file << ":" << line << ") ";
+            out << "(" << file << ":" << line << ") ";
 
-        std::cout << message;
+        AmString m = message;
+        if (message.back() == '\n')
+            m.pop_back();
 
-        if (message.back() != '\n')
-            std::cout << std::endl;
+        out << m << std::endl;
     }
 } // namespace SparkyStudios::Audio::Amplitude

@@ -223,6 +223,8 @@ namespace SparkyStudios::Audio::Amplitude
      *
      * This class logs messages to the console or terminal.
      *
+     * @note On Android, this class logs messages in logcat, using the @b AM tag.
+     *
      * @ingroup core
      */
     class AM_API_PUBLIC ConsoleLogger final : public Logger
