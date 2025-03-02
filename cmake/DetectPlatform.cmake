@@ -122,3 +122,35 @@ else ()
 endif ()
 
 set(AM_EXCLUDE_PLATFORMS ${AM_EXCLUDE_PLATFORMS} CACHE INTERNAL "")
+
+# ------------------------------------------------------------------------------
+# am_apply_detected_platform_defines(TARGET_NAME)
+#
+# Adds compile definitions for each detected platform variables.
+#
+# Arguments:
+#
+# * TARGET_NAME: The name of the project where to add compile definitions.
+function(am_apply_detected_platform_defines TARGET_NAME)
+    foreach (_var AM_PLATFORM_WIN
+            AM_PLATFORM_LINUX
+            AM_PLATFORM_APPLE
+            AM_PLATFORM_MACOS
+            AM_PLATFORM_IOS
+            AM_PLATFORM_ANDROID
+            AM_PLATFORM_UNIX
+            AM_PLATFORM_EMSCRIPTEN
+
+            AM_COMPILER_CLANG
+            AM_COMPILER_GCC
+            AM_COMPILER_MSVC
+
+            AM_ARCH_X86
+            AM_ARCH_X86_64
+            AM_ARCH_ARM_64
+            AM_ARCH_ARM_V7
+            AM_ARCH_ARM
+    )
+        target_compile_definitions(${TARGET_NAME} PUBLIC ${_var}=${${_var}})
+    endforeach ()
+endfunction()

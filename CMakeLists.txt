@@ -518,27 +518,11 @@ foreach (build_type ${AM_BUILDSYSTEM_TYPE})
         target_compile_definitions(${build_type} PUBLIC AM_FFT_APPLE_ACCELERATE)
     endif ()
 
-    foreach(_var AM_PLATFORM_WIN
-            AM_PLATFORM_LINUX
-            AM_PLATFORM_APPLE
-            AM_PLATFORM_MACOS
-            AM_PLATFORM_IOS
-            AM_PLATFORM_ANDROID
-            AM_PLATFORM_UNIX
-            AM_PLATFORM_EMSCRIPTEN
+    if (AM_PLATFORM_ANDROID)
+        target_link_libraries(${build_type} PUBLIC android log)
+    endif ()
 
-            AM_COMPILER_CLANG
-            AM_COMPILER_GCC
-            AM_COMPILER_MSVC
-
-            AM_ARCH_X86
-            AM_ARCH_X86_64
-            AM_ARCH_ARM_64
-            AM_ARCH_ARM_V7
-            AM_ARCH_ARM
-    )
-        target_compile_definitions(${build_type} PUBLIC ${_var}=${${_var}})
-    endforeach()
+    am_apply_detected_platform_defines(${build_type})
 endforeach ()
 
 if (BUILD_TOOLS)
