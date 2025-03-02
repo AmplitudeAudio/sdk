@@ -82,6 +82,8 @@
 #include <SparkyStudios/Audio/Amplitude/Sound/SwitchContainer.h>
 
 #if AM_PLATFORM_ANDROID
+#include <SparkyStudios/Audio/Amplitude/IO/Android/AssetManagerFile.h>
+#include <SparkyStudios/Audio/Amplitude/IO/Android/AssetManagerFileSystem.h>
 #include <SparkyStudios/Audio/Amplitude/IO/Android/LogcatLogger.h>
 #endif // AM_PLATFORM_ANDROID
 

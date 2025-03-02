@@ -473,7 +473,12 @@ set(SA_SOURCE
 
 if (AM_PLATFORM_ANDROID)
     list(APPEND SA_SOURCE
+        include/SparkyStudios/Audio/Amplitude/IO/Android/AssetManagerFile.h
+        include/SparkyStudios/Audio/Amplitude/IO/Android/AssetManagerFileSystem.h
         include/SparkyStudios/Audio/Amplitude/IO/Android/LogcatLogger.h
+
+        src/IO/Android/AssetManagerFile.cpp
+        src/IO/Android/AssetManagerFileSystem.cpp
         src/IO/Android/LogcatLogger.cpp
     )
 endif ()
