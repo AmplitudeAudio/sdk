@@ -15,8 +15,8 @@
 #include <map>
 
 #include <SparkyStudios/Audio/Amplitude/Core/Driver.h>
-#include <SparkyStudios/Audio/Amplitude/Core/Log.h>
 #include <SparkyStudios/Audio/Amplitude/Core/Memory.h>
+#include <SparkyStudios/Audio/Amplitude/IO/Log.h>
 
 namespace SparkyStudios::Audio::Amplitude
 {

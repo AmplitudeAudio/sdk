@@ -14,8 +14,8 @@
 
 #include <ranges>
 
-#include <SparkyStudios/Audio/Amplitude/Core/Log.h>
 #include <SparkyStudios/Audio/Amplitude/Core/Memory.h>
+#include <SparkyStudios/Audio/Amplitude/IO/Log.h>
 #include <SparkyStudios/Audio/Amplitude/Mixer/Node.h>
 #include <SparkyStudios/Audio/Amplitude/Mixer/Pipeline.h>
 

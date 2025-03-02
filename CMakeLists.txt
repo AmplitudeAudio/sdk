@@ -163,7 +163,6 @@ set(SA_SOURCE
     include/SparkyStudios/Audio/Amplitude/Core/Environment.h
     include/SparkyStudios/Audio/Amplitude/Core/Event.h
     include/SparkyStudios/Audio/Amplitude/Core/Listener.h
-    include/SparkyStudios/Audio/Amplitude/Core/Log.h
     include/SparkyStudios/Audio/Amplitude/Core/Memory.h
     include/SparkyStudios/Audio/Amplitude/Core/RefCounter.h
     include/SparkyStudios/Audio/Amplitude/Core/Room.h
@@ -176,10 +175,12 @@ set(SA_SOURCE
     include/SparkyStudios/Audio/Amplitude/DSP/Resampler.h
     include/SparkyStudios/Audio/Amplitude/DSP/SplitComplex.h
     include/SparkyStudios/Audio/Amplitude/HRTF/HRIRSphere.h
+    include/SparkyStudios/Audio/Amplitude/IO/ConsoleLogger.h
     include/SparkyStudios/Audio/Amplitude/IO/DiskFile.h
     include/SparkyStudios/Audio/Amplitude/IO/DiskFileSystem.h
     include/SparkyStudios/Audio/Amplitude/IO/File.h
     include/SparkyStudios/Audio/Amplitude/IO/FileSystem.h
+    include/SparkyStudios/Audio/Amplitude/IO/Log.h
     include/SparkyStudios/Audio/Amplitude/IO/MemoryFile.h
     include/SparkyStudios/Audio/Amplitude/IO/PackageItemFile.h
     include/SparkyStudios/Audio/Amplitude/IO/PackageFileSystem.h
@@ -242,9 +243,6 @@ set(SA_SOURCE
     src/Core/Drivers/Null/Driver.cpp
     src/Core/Drivers/Null/Driver.h
 
-    src/Core/Platforms/Android/AndroidConsoleLogger.cpp
-    src/Core/Platforms/Android/AndroidConsoleLogger.h
-
     src/Core/Playback/Bus.cpp
     src/Core/Playback/BusInternalState.cpp
     src/Core/Playback/BusInternalState.h
@@ -277,7 +275,6 @@ set(SA_SOURCE
     src/Core/ListenerInternalState.cpp
     src/Core/ListenerInternalState.h
     src/Core/Listener.cpp
-    src/Core/Log.cpp
     src/Core/Memory.cpp
     src/Core/Room.cpp
     src/Core/RoomInternalState.cpp
@@ -326,9 +323,12 @@ set(SA_SOURCE
 
     src/HRTF/HRIRSphere.cpp
     src/HRTF/HRIRSphere.h
+
+    src/IO/ConsoleLogger.cpp
     src/IO/DiskFile.cpp
     src/IO/DiskFileSystem.cpp
     src/IO/File.cpp
+    src/IO/Log.cpp
     src/IO/MemoryFile.cpp
     src/IO/PackageItemFile.cpp
     src/IO/PackageFileSystem.cpp
@@ -470,6 +470,13 @@ set(SA_SOURCE
     src/Utils/Utils.cpp
     src/Utils/Utils.h
 )
+
+if (AM_PLATFORM_ANDROID)
+    list(APPEND SA_SOURCE
+        include/SparkyStudios/Audio/Amplitude/IO/Android/LogcatLogger.h
+        src/IO/Android/LogcatLogger.cpp
+    )
+endif ()
 
 # Includes for this project
 include_directories(src

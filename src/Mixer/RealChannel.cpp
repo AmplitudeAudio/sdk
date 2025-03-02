@@ -17,8 +17,8 @@
 #include <cassert>
 #include <cmath>
 
-#include <SparkyStudios/Audio/Amplitude/Core/Log.h>
 #include <SparkyStudios/Audio/Amplitude/Core/Playback/Channel.h>
+#include <SparkyStudios/Audio/Amplitude/IO/Log.h>
 
 #include <SparkyStudios/Audio/Amplitude/Sound/Collection.h>
 

@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include <SparkyStudios/Audio/Amplitude/Core/Log.h>
+#include <SparkyStudios/Audio/Amplitude/IO/Log.h>
 #include <SparkyStudios/Audio/Amplitude/Sound/SoundBank.h>
 
 #include <Core/Engine.h>

@@ -28,7 +28,6 @@
 #include <SparkyStudios/Audio/Amplitude/Core/Environment.h>
 #include <SparkyStudios/Audio/Amplitude/Core/Event.h>
 #include <SparkyStudios/Audio/Amplitude/Core/Listener.h>
-#include <SparkyStudios/Audio/Amplitude/Core/Log.h>
 #include <SparkyStudios/Audio/Amplitude/Core/Memory.h>
 #include <SparkyStudios/Audio/Amplitude/Core/Playback/Bus.h>
 #include <SparkyStudios/Audio/Amplitude/Core/Playback/Channel.h>
@@ -46,10 +45,12 @@
 
 #include <SparkyStudios/Audio/Amplitude/HRTF/HRIRSphere.h>
 
+#include <SparkyStudios/Audio/Amplitude/IO/ConsoleLogger.h>
 #include <SparkyStudios/Audio/Amplitude/IO/DiskFile.h>
 #include <SparkyStudios/Audio/Amplitude/IO/DiskFileSystem.h>
 #include <SparkyStudios/Audio/Amplitude/IO/File.h>
 #include <SparkyStudios/Audio/Amplitude/IO/FileSystem.h>
+#include <SparkyStudios/Audio/Amplitude/IO/Log.h>
 #include <SparkyStudios/Audio/Amplitude/IO/MemoryFile.h>
 #include <SparkyStudios/Audio/Amplitude/IO/PackageFileSystem.h>
 #include <SparkyStudios/Audio/Amplitude/IO/PackageItemFile.h>
@@ -79,5 +80,9 @@
 #include <SparkyStudios/Audio/Amplitude/Sound/SoundObject.h>
 #include <SparkyStudios/Audio/Amplitude/Sound/Switch.h>
 #include <SparkyStudios/Audio/Amplitude/Sound/SwitchContainer.h>
+
+#if AM_PLATFORM_ANDROID
+#include <SparkyStudios/Audio/Amplitude/IO/Android/LogcatLogger.h>
+#endif // AM_PLATFORM_ANDROID
 
 #endif // _AM_AMPLITUDE_H
