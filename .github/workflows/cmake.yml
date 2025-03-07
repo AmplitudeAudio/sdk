@@ -241,16 +241,6 @@ jobs:
         working-directory: ${{ inputs.project-path }}/build
         run: cmake --install . --strip --config ${{ matrix.build_type }}
 
-      - name: Copy flatc to SDK folder (Windows)
-        if: inputs.need-flatc && startsWith(matrix.config.os, 'windows')
-        run: |
-          Copy-Item .\bin\flatc.exe -Destination .\sdk\bin\${{ matrix.config.target_triplet }}
-
-      - name: Copy flatc to SDK folder (Unix)
-        if: inputs.need-flatc && (startsWith(matrix.config.os, 'ubuntu') || startsWith(matrix.config.os, 'macos'))
-        run: |
-          cp ./bin/flatc ./sdk/bin/${{ matrix.config.target_triplet }}
-
       - name: Save SDK Cache
         uses: actions/cache/save@v4
         id: cache
