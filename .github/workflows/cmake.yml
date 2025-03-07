@@ -213,7 +213,7 @@ jobs:
         run: cmake --build . --config ${{ matrix.build_type }}
 
       - name: Test
-        if: matrix.build_type == 'debug'
+        if: ${{ matrix.build_type == 'debug' && !endsWith(matrix.config.target_triplet, 'android') }}
         working-directory: ${{ inputs.project-path }}/build/tests
         run: ctest --extra-verbose -C debug
         env:
