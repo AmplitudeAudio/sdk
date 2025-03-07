@@ -29,7 +29,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        build_type: ["release", "debug"]
+        build_type: [ "release", "debug" ]
         config:
           - name: "Windows Latest MSVC"
             key: msvc
@@ -62,6 +62,22 @@ jobs:
             cxx: "clang++"
             generator: "Ninja"
             target_triplet: arm64-osx
+
+          - name: "Android x64 Latest Clang"
+            os: ubuntu-latest
+            cc: "clang"
+            cxx: "clang++"
+            generator: "Ninja"
+            target_triplet: x64-android
+            android_abi: x86_64
+
+          - name: "Android arm64 Latest Clang"
+            os: ubuntu-latest
+            cc: "clang"
+            cxx: "clang++"
+            generator: "Ninja"
+            target_triplet: arm64-android
+            android_abi: arm64-v8a
 
     steps:
       # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
@@ -132,6 +148,13 @@ jobs:
           sudo unzip Linux.flatc.binary.g++-13.zip -d bin
           ./bin/flatc --version
 
+      - name: Setup Android NDK
+        id: setup-ndk
+        if: startsWith(matrix.config.os, 'ubuntu') && endsWith(matrix.config.target_triplet, 'android')
+        uses: nttld/setup-ndk@v1
+        with:
+          ndk-version: r27c
+
       - name: Install dependencies on MacOS
         if: startsWith(matrix.config.os, 'macos')
         run: |
@@ -160,7 +183,7 @@ jobs:
             ${{ matrix.build_type }}-${{ inputs.project-slug }}-${{ matrix.config.target_triplet }}
 
       - name: Configure
-        id: configure
+        if: ${{ !endsWith(matrix.config.target_triplet, 'android') }}
         working-directory: ${{ inputs.project-path }}
         run: |
           mkdir build
@@ -169,8 +192,19 @@ jobs:
           AM_SDK_PATH: "${{ steps.sdk_path.outputs.path }}/sdk"
           AM_SDK_PLATFORM: ${{ matrix.config.target_triplet }}
 
+      - name: Configure
+        if: endsWith(matrix.config.target_triplet, 'android')
+        working-directory: ${{ inputs.project-path }}
+        run: |
+          mkdir build
+          cmake -S . -B build -G "${{ matrix.config.generator }}" -DCMAKE_BUILD_TYPE=${{ matrix.build_type }} -DCMAKE_TOOLCHAIN_FILE:STRING="${{ github.workspace }}/vcpkg/scripts/buildsystems/vcpkg.cmake" -DVCPKG_TARGET_TRIPLET:STRING="${{ matrix.config.target_triplet }}" -DCMAKE_EXPORT_COMPILE_COMMANDS:BOOL=TRUE -DBUILD_SAMPLES:BOOL=FALSE -DBUILD_TOOLS:BOOL=FALSE -DUNIT_TESTS:BOOL=FALSE -DANDROID_ABI=${{ matrix.config.android_abi }} -DCMAKE_ANDROID_ARCH_ABI=${{ matrix.config.android_abi }} -DANDROID_NDK=${{ steps.setup-ndk.outputs.ndk-path }} -DCMAKE_ANDROID_NDK=${{ steps.setup-ndk.outputs.ndk-path }} -DVCPKG_CHAINLOAD_TOOLCHAIN_FILE=${{ steps.setup-ndk.outputs.ndk-path }}/build/cmake/android.toolchain.cmake -DANDROID_PLATFORM=21
+        env:
+          AM_SDK_PATH: "${{ steps.sdk_path.outputs.path }}/sdk"
+          AM_SDK_PLATFORM: ${{ matrix.config.target_triplet }}
+          ANDROID_NDK_HOME: ${{ steps.setup-ndk.outputs.ndk-path }}
+
       - name: Inspect vcpkg errors
-        if: failure() && steps.configure.outcome != 'success'
+        if: failure()
         run: |
           cat ${{ github.workspace }}/build/vcpkg_installed/vcpkg/issue_body.md
 

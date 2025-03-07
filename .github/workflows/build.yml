@@ -44,7 +44,7 @@ jobs:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
   build:
-    needs: [cleanup]
+    needs: [ cleanup ]
     uses: ./.github/workflows/cmake.yml
     with:
       project-path: .
@@ -53,13 +53,13 @@ jobs:
     secrets: inherit
 
   release:
-    needs: [build]
+    needs: [ build ]
     runs-on: ${{ matrix.config.os }}
     name: "[${{ matrix.build_type }}] ${{ matrix.config.name }}"
     strategy:
       fail-fast: false
       matrix:
-        build_type: ["release", "debug"]
+        build_type: [ "release", "debug" ]
         config:
           - name: "Windows Latest MSVC"
             os: windows-latest
@@ -80,6 +80,16 @@ jobs:
             os: macos-14
             archiver: "7za a"
             target_triplet: arm64-osx
+
+          - name: "Android x64 Latest Clang"
+            os: ubuntu-latest
+            archiver: "7za a"
+            target_triplet: x64-android
+
+          - name: "Android arm64 Latest Clang"
+            os: ubuntu-latest
+            archiver: "7za a"
+            target_triplet: arm64-android
 
     steps:
       - name: Check out code
