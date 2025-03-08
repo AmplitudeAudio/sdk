@@ -63,6 +63,8 @@ namespace SparkyStudios::Audio::Amplitude
 #endif // AM_SIMD_ARCH_AVX2
 
     typedef simd_batch::arch_type simd_arch;
+#else
+    typedef AmAudioSample simd_batch;
 #endif //  defined(AM_SIMD_INTRINSICS)
 
     AM_INLINE constexpr AmSize GetSimdBlockSize()

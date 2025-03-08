@@ -79,6 +79,22 @@ jobs:
             target_triplet: arm64-android
             android_abi: arm64-v8a
 
+          - name: "Android x86 Latest Clang"
+            os: ubuntu-latest
+            cc: "clang"
+            cxx: "clang++"
+            generator: "Ninja"
+            target_triplet: x86-android
+            android_abi: x86
+
+          - name: "Android arm Latest Clang"
+            os: ubuntu-latest
+            cc: "clang"
+            cxx: "clang++"
+            generator: "Ninja"
+            target_triplet: arm-neon-android
+            android_abi: armeabi-v7a
+
     steps:
       # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
       - uses: actions/checkout@v4
