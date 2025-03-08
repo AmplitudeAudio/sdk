@@ -82,28 +82,6 @@ namespace SparkyStudios::Audio::Amplitude
         AndroidLogcatStream stream(getPriority(level), m_logTag);
         std::ostream out(&stream);
 
-        switch (level)
-        {
-        case eLogMessageLevel_Debug:
-            out << "[DEBUG] ";
-            break;
-        case eLogMessageLevel_Info:
-            out << "[INFO] ";
-            break;
-        case eLogMessageLevel_Warning:
-            out << "[WARNING] ";
-            break;
-        case eLogMessageLevel_Error:
-            out << "[ERROR] ";
-            break;
-        case eLogMessageLevel_Critical:
-            out << "[CRITICAL] ";
-            break;
-        case eLogMessageLevel_Success:
-            out << "[SUCCESS] ";
-            break;
-        }
-
         out << message << std::endl;
     }
 } // namespace SparkyStudios::Audio::Amplitude
