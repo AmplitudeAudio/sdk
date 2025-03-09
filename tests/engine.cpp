@@ -474,6 +474,8 @@ TEST_CASE("Engine Tests", "[engine][core][amplitude]")
 
                 Thread::Sleep(2000); // wait for the sound to finish playing
                 REQUIRE_FALSE(channel.Playing());
+
+                channel.Stop(0);
             }
 
             THEN("engine can play a sound using its ID")
@@ -486,6 +488,8 @@ TEST_CASE("Engine Tests", "[engine][core][amplitude]")
 
                 Thread::Sleep(2000); // wait for the sound to finish playing
                 REQUIRE_FALSE(channel.Playing());
+
+                channel.Stop(0);
             }
 
             THEN("engine can play a sound using its name")
@@ -498,6 +502,8 @@ TEST_CASE("Engine Tests", "[engine][core][amplitude]")
 
                 Thread::Sleep(1000); // wait for the sound to finish playing
                 REQUIRE_FALSE(channel.Playing());
+
+                channel.Stop(0);
             }
 
             THEN("engine can play a collection using its handle")
@@ -512,6 +518,8 @@ TEST_CASE("Engine Tests", "[engine][core][amplitude]")
 
                 Thread::Sleep(kAmSecond * 5); // wait for the sound to finish playing
                 REQUIRE_FALSE(channel.Playing());
+
+                channel.Stop(0);
             }
 
             THEN("engine can play a collection using its ID")
@@ -524,6 +532,8 @@ TEST_CASE("Engine Tests", "[engine][core][amplitude]")
 
                 Thread::Sleep(kAmSecond * 3); // wait for the sound to finish playing
                 REQUIRE_FALSE(channel.Playing());
+
+                channel.Stop(0);
             }
 
             THEN("engine can play a collection using its name")
@@ -536,6 +546,8 @@ TEST_CASE("Engine Tests", "[engine][core][amplitude]")
 
                 Thread::Sleep(kAmSecond * 3); // wait for the sound to finish playing
                 REQUIRE_FALSE(channel.Playing());
+
+                channel.Stop(0);
             }
 
             THEN("engine can play a switch container using its handle")
@@ -554,6 +566,8 @@ TEST_CASE("Engine Tests", "[engine][core][amplitude]")
 
                 Thread::Sleep(1000); // wait for the sound to finish playing
                 REQUIRE_FALSE(channel.Playing());
+
+                channel.Stop(0);
             }
 
             THEN("engine can play a switch container using its ID")
@@ -571,6 +585,8 @@ TEST_CASE("Engine Tests", "[engine][core][amplitude]")
 
                 Thread::Sleep(1000); // wait for the sound to finish playing
                 REQUIRE_FALSE(channel.Playing());
+
+                channel.Stop(0);
             }
 
             THEN("engine can play a switch container using its name")
@@ -588,6 +604,8 @@ TEST_CASE("Engine Tests", "[engine][core][amplitude]")
 
                 Thread::Sleep(1000); // wait for the sound to finish playing
                 REQUIRE_FALSE(channel.Playing());
+
+                channel.Stop(0);
             }
 
             THEN("engine can load switch handles by name")
