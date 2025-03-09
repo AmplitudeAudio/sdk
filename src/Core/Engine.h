@@ -74,13 +74,14 @@ namespace SparkyStudios::Audio::Amplitude
         [[nodiscard]] AmTime GetTotalTime() const override;
         bool LoadSoundBank(const AmOsString& filename) override;
         bool LoadSoundBank(const AmOsString& filename, AmBankID& outID) override;
-        bool LoadSoundBankFromMemory(const char* fileData) override;
-        bool LoadSoundBankFromMemory(const char* fileData, AmBankID& outID) override;
+        bool LoadSoundBankFromMemory(const AmUInt8* fileData) override;
+        bool LoadSoundBankFromMemory(const AmUInt8* fileData, AmBankID& outID) override;
         bool LoadSoundBankFromMemoryView(void* ptr, AmSize size) override;
         bool LoadSoundBankFromMemoryView(void* ptr, AmSize size, AmBankID& outID) override;
         void UnloadSoundBank(const AmOsString& filename) override;
         void UnloadSoundBank(AmBankID id) override;
         void UnloadSoundBanks() override;
+        void EnsureSoundBankLoaded(const AmOsString& filename) override;
         [[nodiscard]] bool HasLoadedSoundBank(const AmOsString& filename) const override;
         [[nodiscard]] bool HasLoadedSoundBank(AmBankID id) const override;
         [[nodiscard]] bool HasLoadedSoundBanks() const override;

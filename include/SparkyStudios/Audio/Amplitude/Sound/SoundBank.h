@@ -71,7 +71,7 @@ namespace SparkyStudios::Audio::Amplitude
          *
          * @return `true` when the operation succeeds, `false` otherwise.
          */
-        bool InitializeFromMemory(const char* fileData, Engine* engine);
+        bool InitializeFromMemory(const AmUInt8* fileData, Engine* engine);
 
         /**
          * @brief Unloads the sound bank from the Engine.

@@ -340,6 +340,7 @@ namespace SparkyStudios::Audio::Amplitude
         if (m_attenuation)
             m_attenuation->GetRefCounter()->Decrement();
     }
+
     const AmOsString& SoundImpl::GetPath() const
     {
         return ResourceImpl::GetPath();
@@ -363,6 +364,13 @@ namespace SparkyStudios::Audio::Amplitude
         if (_parent->_stream)
         {
             const auto filename = _parent->GetPath();
+
+            if (_parent->_codec == nullptr)
+            {
+                amLogError("Cannot load the sound: unable to find codec for '" AM_OS_CHAR_FMT "'.", filename.c_str());
+                return;
+            }
+
             const auto file = amEngine->GetFileSystem()->OpenFile(filename);
 
             _decoder = _parent->_codec->CreateDecoder();
@@ -439,7 +447,7 @@ namespace SparkyStudios::Audio::Amplitude
     {
         AMPLITUDE_ASSERT(Valid());
 
-        if (!_parent->_stream || _userData == nullptr)
+        if (!_parent->_stream || _decoder == nullptr || _userData == nullptr)
             return 0;
 
         const auto* data = static_cast<SoundData*>(_userData);
@@ -483,7 +491,7 @@ namespace SparkyStudios::Audio::Amplitude
         _effect->DestroyInstance(_effectInstance);
         _effectInstance = nullptr;
 
-        if (_parent->_stream)
+        if (_parent->_stream && _decoder != nullptr)
         {
             _decoder->Close();
             _parent->_codec->DestroyDecoder(_decoder);

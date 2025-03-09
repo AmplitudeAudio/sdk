@@ -30,10 +30,33 @@ namespace SparkyStudios::Audio::Amplitude
      */
     enum eFileOpenMode : AmUInt8
     {
+        /**
+         * @brief Opens the file only for reading.
+         */
         eFileOpenMode_Read = 0,
+
+        /**
+         * @brief Opens the file only for writing.
+         *
+         * @note The previous file's content will be discarded.
+         */
         eFileOpenMode_Write = 1,
+
+        /**
+         * @brief Opens the file only for writing, without discarding the previous content.
+         */
         eFileOpenMode_Append = 2,
+
+        /**
+         * @brief Opens the file for read and write operations.
+         *
+         * @note The previous file's content will be discarded.
+         */
         eFileOpenMode_ReadWrite = 3,
+
+        /**
+         * @brief Opens the file for read and write operations, without discarding the previous content.
+         */
         eFileOpenMode_ReadAppend = 4,
     };
 
@@ -44,7 +67,14 @@ namespace SparkyStudios::Audio::Amplitude
      */
     enum eFileOpenKind : AmUInt8
     {
+        /**
+         * @brief Opens the file as a binary file.
+         */
         eFileOpenKind_Binary = 0,
+
+        /**
+         * @brief Opens the file as a text file.
+         */
         eFileOpenKind_Text = 1,
     };
 
@@ -55,8 +85,25 @@ namespace SparkyStudios::Audio::Amplitude
      */
     enum eFileSeekOrigin : AmUInt8
     {
+        /**
+         * @brief Seek from the beginning of the file.
+         *
+         * @see [SEEK_SET](https://en.cppreference.com/w/cpp/io/c)
+         */
         eFileSeekOrigin_Start = SEEK_SET,
+
+        /**
+         * @brief Seek from the cursor position.
+         *
+         * @see [SEEK_CUR](https://en.cppreference.com/w/cpp/io/c)
+         */
         eFileSeekOrigin_Current = SEEK_CUR,
+
+        /**
+         * @brief Seek from the end of the file.
+         *
+         * @see [SEEK_END](https://en.cppreference.com/w/cpp/io/c)
+         */
         eFileSeekOrigin_End = SEEK_END,
     };
 

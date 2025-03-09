@@ -163,7 +163,10 @@ namespace SparkyStudios::Audio::Amplitude
 
     void RealChannel::Destroy(AmUInt32 layer)
     {
-        AMPLITUDE_ASSERT(Valid() && _channelLayersId[layer] != kAmInvalidObjectId);
+        AMPLITUDE_ASSERT(Valid());
+
+        if (_channelLayersId[layer] == kAmInvalidObjectId)
+            return;
 
         const MixerCommandCallback callback = [&, layer]() -> bool
         {
