@@ -23,6 +23,7 @@ namespace SparkyStudios::Audio::Amplitude
 {
     HRIRSphereImpl::HRIRSphereImpl()
         : ResourceImpl()
+        , _samplingMode(eHRIRSphereSamplingMode_NearestNeighbor)
         , _loaded(false)
     {}
 
