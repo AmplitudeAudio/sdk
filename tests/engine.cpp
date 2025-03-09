@@ -965,6 +965,8 @@ TEST_CASE("Engine Tests", "[engine][core][amplitude]")
                         }
                     }
                 }
+
+                amEngine->RemoveEnvironment(1234);
             }
 
             GIVEN("a switch")
