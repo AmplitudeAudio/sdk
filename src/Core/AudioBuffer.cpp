@@ -18,6 +18,13 @@
 
 namespace SparkyStudios::Audio::Amplitude
 {
+    AudioBufferChannel::~AudioBufferChannel()
+    {
+        _begin = nullptr;
+        _frameCount = 0;
+        _isEnabled = false;
+    }
+
     AmSize AudioBufferChannel::size() const
     {
         return _frameCount;
@@ -237,7 +244,8 @@ namespace SparkyStudios::Audio::Amplitude
     void AudioBuffer::Clear()
     {
         for (auto& channel : _channels)
-            channel.clear();
+            if (channel.enabled())
+                channel.clear();
     }
 
     const AmAlignedReal32Buffer& AudioBuffer::GetData() const
