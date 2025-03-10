@@ -301,7 +301,7 @@ namespace SparkyStudios::Audio::Amplitude::Thread
         return tid;
 #else
         pid_t tid = syscall(__NR_gettid);
-        return (AmThreadID)tid;
+        return static_cast<AmThreadID>(tid);
 #endif
     }
 #endif
@@ -436,7 +436,7 @@ namespace SparkyStudios::Audio::Amplitude::Thread
 
             do
             {
-                AmInt32 r = _robin % _taskCount;
+                const AmInt32 r = _robin % _taskCount;
                 _robin++;
                 t = _taskArray[r];
 
