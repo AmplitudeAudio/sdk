@@ -91,6 +91,16 @@ jobs:
             archiver: "7za a"
             target_triplet: arm64-android
 
+          - name: "Android x86 Latest Clang"
+            os: ubuntu-latest
+            archiver: "7za a"
+            target_triplet: x86-android
+
+          - name: "Android arm Latest Clang"
+            os: ubuntu-latest
+            archiver: "7za a"
+            target_triplet: arm-neon-android
+
     steps:
       - name: Check out code
         uses: actions/checkout@v4
