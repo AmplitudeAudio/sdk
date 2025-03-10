@@ -55,7 +55,7 @@ This is a list of some features provided by Amplitude:
 ## Supported Platforms
 
 Amplitude can support the following platforms:
-- ❌ [Android](https://www.android.com/) devices
+- ✔️ [Android](https://www.android.com/) devices
 - ❌ [iOS](https://www.apple.com/ios/) devices
 - ✔️ [Linux](https://www.kernel.org/)
 - ✔️ [OS X](https://www.apple.com/osx/)
