@@ -850,7 +850,7 @@ namespace SparkyStudios::Audio::Amplitude
          *
          * @param[in] ptr The pointer to wrap.
          */
-        AmSharedPtr(T* ptr)
+        explicit AmSharedPtr(T* ptr)
             : std::shared_ptr<T>(ptr, am_delete<T, Pool>{})
         {}
     };

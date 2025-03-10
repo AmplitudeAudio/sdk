@@ -53,10 +53,8 @@ TEST_CASE("Pipeline Tests", "[pipeline][mixer][amplitude]")
             fileSystem.OpenFile(fileSystem.Join({ AM_OS_STRING("pipelines"), AM_OS_STRING("stereo.ampipeline") }), eFileOpenMode_Read),
             nullptr);
 
-        PipelineInstance* instance = pipeline.CreateInstance(&layer);
+        auto instance = pipeline.CreateInstance(&layer);
         REQUIRE_FALSE(instance == nullptr);
-
-        pipeline.DestroyInstance(instance);
     }
 
     THEN("can create instances with duplicate producers")
@@ -67,10 +65,8 @@ TEST_CASE("Pipeline Tests", "[pipeline][mixer][amplitude]")
                 fileSystem.Join({ AM_OS_STRING("pipelines"), AM_OS_STRING("tests.double_consume.ampipeline") }), eFileOpenMode_Read),
             nullptr);
 
-        PipelineInstance* instance = pipeline.CreateInstance(&layer);
+        auto instance = pipeline.CreateInstance(&layer);
         REQUIRE_FALSE(instance == nullptr);
-
-        pipeline.DestroyInstance(instance);
     }
 
     THEN("cannot create instances with self consuming node")
@@ -81,7 +77,7 @@ TEST_CASE("Pipeline Tests", "[pipeline][mixer][amplitude]")
                 fileSystem.Join({ AM_OS_STRING("pipelines"), AM_OS_STRING("tests.invalid.self_consume.ampipeline") }), eFileOpenMode_Read),
             nullptr);
 
-        PipelineInstance* instance = pipeline.CreateInstance(&layer);
+        auto instance = pipeline.CreateInstance(&layer);
         REQUIRE(instance == nullptr);
     }
 
@@ -93,7 +89,7 @@ TEST_CASE("Pipeline Tests", "[pipeline][mixer][amplitude]")
                 fileSystem.Join({ AM_OS_STRING("pipelines"), AM_OS_STRING("tests.invalid.missing_input.ampipeline") }), eFileOpenMode_Read),
             nullptr);
 
-        PipelineInstance* instance = pipeline.CreateInstance(&layer);
+        auto instance = pipeline.CreateInstance(&layer);
         REQUIRE(instance == nullptr);
     }
 
@@ -106,7 +102,7 @@ TEST_CASE("Pipeline Tests", "[pipeline][mixer][amplitude]")
                 eFileOpenMode_Read),
             nullptr);
 
-        PipelineInstance* instance = pipeline.CreateInstance(&layer);
+        auto instance = pipeline.CreateInstance(&layer);
         REQUIRE(instance == nullptr);
     }
 
@@ -119,7 +115,7 @@ TEST_CASE("Pipeline Tests", "[pipeline][mixer][amplitude]")
                 eFileOpenMode_Read),
             nullptr);
 
-        PipelineInstance* instance = pipeline.CreateInstance(&layer);
+        auto instance = pipeline.CreateInstance(&layer);
         REQUIRE(instance == nullptr);
     }
 
@@ -132,7 +128,7 @@ TEST_CASE("Pipeline Tests", "[pipeline][mixer][amplitude]")
                 eFileOpenMode_Read),
             nullptr);
 
-        PipelineInstance* instance = pipeline.CreateInstance(&layer);
+        auto instance = pipeline.CreateInstance(&layer);
         REQUIRE(instance == nullptr);
     }
 
@@ -145,7 +141,7 @@ TEST_CASE("Pipeline Tests", "[pipeline][mixer][amplitude]")
                 eFileOpenMode_Read),
             nullptr);
 
-        PipelineInstance* instance = pipeline.CreateInstance(&layer);
+        auto instance = pipeline.CreateInstance(&layer);
         REQUIRE(instance == nullptr);
     }
 
@@ -158,7 +154,7 @@ TEST_CASE("Pipeline Tests", "[pipeline][mixer][amplitude]")
                 eFileOpenMode_Read),
             nullptr);
 
-        PipelineInstance* instance = pipeline.CreateInstance(&layer);
+        auto instance = pipeline.CreateInstance(&layer);
         REQUIRE(instance == nullptr);
     }
 
@@ -170,7 +166,7 @@ TEST_CASE("Pipeline Tests", "[pipeline][mixer][amplitude]")
                 fileSystem.Join({ AM_OS_STRING("pipelines"), AM_OS_STRING("tests.invalid.unknown_node.ampipeline") }), eFileOpenMode_Read),
             nullptr);
 
-        PipelineInstance* instance = pipeline.CreateInstance(&layer);
+        auto instance = pipeline.CreateInstance(&layer);
         REQUIRE(instance == nullptr);
     }
 
@@ -183,14 +179,14 @@ TEST_CASE("Pipeline Tests", "[pipeline][mixer][amplitude]")
                 eFileOpenMode_Read),
             nullptr);
 
-        PipelineInstance* instance = pipeline.CreateInstance(&layer);
+        auto instance = pipeline.CreateInstance(&layer);
         REQUIRE(instance == nullptr);
     }
 }
 
 TEST_CASE("AmbisonicBinauralDecoderNode Tests", "[ambisonic_binaural_decoder][nodes][mixer][amplitude]")
 {
-    AmbisonicBinauralDecoderNode node;
+    const AmbisonicBinauralDecoderNode node;
 
     SECTION("test can consume")
     {
@@ -215,7 +211,7 @@ TEST_CASE("AmbisonicBinauralDecoderNode Tests", "[ambisonic_binaural_decoder][no
 
 TEST_CASE("AmbisonicMixerNode Tests", "[ambisonic_mixer][nodes][mixer][amplitude]")
 {
-    AmbisonicMixerNode node;
+    const AmbisonicMixerNode node;
 
     SECTION("test can consume")
     {
@@ -240,7 +236,7 @@ TEST_CASE("AmbisonicMixerNode Tests", "[ambisonic_mixer][nodes][mixer][amplitude
 
 TEST_CASE("AmbisonicPanningNode Tests", "[ambisonic_panning][nodes][mixer][amplitude]")
 {
-    AmbisonicPanningNode node;
+    const AmbisonicPanningNode node;
 
     SECTION("test can consume")
     {
@@ -265,7 +261,7 @@ TEST_CASE("AmbisonicPanningNode Tests", "[ambisonic_panning][nodes][mixer][ampli
 
 TEST_CASE("AmbisonicRotatorNode Tests", "[ambisonic_rotator][nodes][mixer][amplitude]")
 {
-    AmbisonicRotatorNode node;
+    const AmbisonicRotatorNode node;
 
     SECTION("test can consume")
     {
@@ -290,7 +286,7 @@ TEST_CASE("AmbisonicRotatorNode Tests", "[ambisonic_rotator][nodes][mixer][ampli
 
 TEST_CASE("AttenuationNode Tests", "[attenuation][nodes][mixer][amplitude]")
 {
-    AttenuationNode node;
+    const AttenuationNode node;
 
     SECTION("test can consume")
     {
@@ -315,7 +311,7 @@ TEST_CASE("AttenuationNode Tests", "[attenuation][nodes][mixer][amplitude]")
 
 TEST_CASE("ClampNode Tests", "[clamp][nodes][mixer][amplitude]")
 {
-    ClampNode node;
+    const ClampNode node;
 
     SECTION("test can consume")
     {
@@ -340,7 +336,7 @@ TEST_CASE("ClampNode Tests", "[clamp][nodes][mixer][amplitude]")
 
 TEST_CASE("ClipNode Tests", "[clip][nodes][mixer][amplitude]")
 {
-    ClipNode node;
+    const ClipNode node;
 
     SECTION("test can consume")
     {
@@ -365,7 +361,7 @@ TEST_CASE("ClipNode Tests", "[clip][nodes][mixer][amplitude]")
 
 TEST_CASE("EnvironmentEffectNode Tests", "[environment_effect][nodes][mixer][amplitude]")
 {
-    EnvironmentEffectNode node;
+    const EnvironmentEffectNode node;
 
     SECTION("test can consume")
     {
@@ -390,7 +386,7 @@ TEST_CASE("EnvironmentEffectNode Tests", "[environment_effect][nodes][mixer][amp
 
 TEST_CASE("InputNode Tests", "[input][nodes][mixer][amplitude]")
 {
-    InputNode node;
+    const InputNode node;
 
     SECTION("test can consume")
     {
@@ -415,7 +411,7 @@ TEST_CASE("InputNode Tests", "[input][nodes][mixer][amplitude]")
 
 TEST_CASE("NearFieldEffectNode Tests", "[near_field_effect][nodes][mixer][amplitude]")
 {
-    NearFieldEffectNode node;
+    const NearFieldEffectNode node;
 
     SECTION("test can consume")
     {
@@ -440,7 +436,7 @@ TEST_CASE("NearFieldEffectNode Tests", "[near_field_effect][nodes][mixer][amplit
 
 TEST_CASE("ObstructionNode Tests", "[obstruction][nodes][mixer][amplitude]")
 {
-    ObstructionNode node;
+    const ObstructionNode node;
 
     SECTION("test can consume")
     {
@@ -465,7 +461,7 @@ TEST_CASE("ObstructionNode Tests", "[obstruction][nodes][mixer][amplitude]")
 
 TEST_CASE("OcclusionNode Tests", "[occlusion][nodes][mixer][amplitude]")
 {
-    OcclusionNode node;
+    const OcclusionNode node;
 
     SECTION("test can consume")
     {
@@ -490,7 +486,7 @@ TEST_CASE("OcclusionNode Tests", "[occlusion][nodes][mixer][amplitude]")
 
 TEST_CASE("OutputNode Tests", "[output][nodes][mixer][amplitude]")
 {
-    OutputNode node;
+    const OutputNode node;
 
     SECTION("test can consume")
     {
@@ -515,7 +511,7 @@ TEST_CASE("OutputNode Tests", "[output][nodes][mixer][amplitude]")
 
 TEST_CASE("ReflectionsNode Tests", "[reflections][nodes][mixer][amplitude]")
 {
-    ReflectionsNode node;
+    const ReflectionsNode node;
 
     SECTION("test can consume")
     {
@@ -540,7 +536,7 @@ TEST_CASE("ReflectionsNode Tests", "[reflections][nodes][mixer][amplitude]")
 
 TEST_CASE("ReverbNode Tests", "[reverb][nodes][mixer][amplitude]")
 {
-    ReverbNode node;
+    const ReverbNode node;
 
     SECTION("test can consume")
     {
@@ -565,7 +561,7 @@ TEST_CASE("ReverbNode Tests", "[reverb][nodes][mixer][amplitude]")
 
 TEST_CASE("StereoMixerNode Tests", "[stereo_mixer][nodes][mixer][amplitude]")
 {
-    StereoMixerNode node;
+    const StereoMixerNode node;
 
     SECTION("test can consume")
     {
@@ -590,7 +586,7 @@ TEST_CASE("StereoMixerNode Tests", "[stereo_mixer][nodes][mixer][amplitude]")
 
 TEST_CASE("StereoPanningNode Tests", "[stereo_panning][nodes][mixer][amplitude]")
 {
-    StereoPanningNode node;
+    const StereoPanningNode node;
 
     SECTION("test can consume")
     {

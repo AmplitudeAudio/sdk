@@ -300,7 +300,7 @@ namespace SparkyStudios::Audio::Amplitude
             return;
 
         // Clean up the pipeline
-        mixer->GetPipeline()->DestroyInstance(layer->pipeline);
+        layer->pipeline = nullptr;
 
         // Clean up the sound instance
         layer->snd->sound.reset();

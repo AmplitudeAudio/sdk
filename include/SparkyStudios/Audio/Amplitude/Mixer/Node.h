@@ -47,7 +47,7 @@ namespace SparkyStudios::Audio::Amplitude
          * @param[in] layer The Amplimix layer this node instance is currently associated with.
          * @param[in] pipeline The pipeline this node instance belongs to.
          */
-        virtual void Initialize(AmObjectID id, const AmplimixLayer* layer, const PipelineInstance* pipeline);
+        virtual void Initialize(AmObjectID id, const AmplimixLayer* layer, std::shared_ptr<const PipelineInstance> pipeline);
 
         /**
          * @brief Default destructor.
@@ -81,7 +81,7 @@ namespace SparkyStudios::Audio::Amplitude
     protected:
         AmObjectID m_id; ///< The unique identifier for the node instance in the pipeline.
         const AmplimixLayer* m_layer; ///< The Amplimix layer this node instance is currently associated with.
-        const PipelineInstance* m_pipeline; ///< The pipeline this node instance belongs to.
+        std::shared_ptr<const PipelineInstance> m_pipeline; ///< The pipeline this node instance belongs to.
     };
 
     /**
@@ -401,14 +401,7 @@ namespace SparkyStudios::Audio::Amplitude
          *
          * @return A new instance of the node.
          */
-        virtual NodeInstance* CreateInstance() const = 0;
-
-        /**
-         * @brief Destroys the specified instance of the node.
-         *
-         * @param[in] instance Pointer to the instance to be destroyed.
-         */
-        virtual void DestroyInstance(NodeInstance* instance) const = 0;
+        virtual std::shared_ptr<NodeInstance> CreateInstance() const = 0;
 
         /**
          * @brief Returns the name of the node.
@@ -465,15 +458,7 @@ namespace SparkyStudios::Audio::Amplitude
          *
          * @return The node with the given name, or `nullptr` if none.
          */
-        static NodeInstance* Construct(const AmString& name);
-
-        /**
-         * @brief Destroys the given node instance.
-         *
-         * @param[in] name The name of the node.
-         * @param[in] instance The node instance to destroy.
-         */
-        static void Destruct(const AmString& name, NodeInstance* instance);
+        static std::shared_ptr<NodeInstance> Construct(const AmString& name);
 
         /**
          * @brief Locks the nodes' registry.

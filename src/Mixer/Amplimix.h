@@ -80,7 +80,7 @@ namespace SparkyStudios::Audio::Amplitude
         _Atomic(AmReal32) baseSampleRateRatio; // base sample rate ratio
 
         AudioConverter* dataConverter = nullptr; // miniaudio resampler & channel converter
-        PipelineInstance* pipeline = nullptr; // pipeline for this layer
+        std::shared_ptr<PipelineInstance> pipeline = nullptr; // pipeline for this layer
 
         AmMutexHandle mutex = nullptr; // mutex for thread-safe access
         std::unordered_map<AmThreadID, bool> mutexLocked; // true if mutex is locked

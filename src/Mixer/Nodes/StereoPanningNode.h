@@ -36,14 +36,9 @@ namespace SparkyStudios::Audio::Amplitude
     public:
         StereoPanningNode();
 
-        [[nodiscard]] AM_INLINE NodeInstance* CreateInstance() const override
+        [[nodiscard]] AM_INLINE std::shared_ptr<NodeInstance> CreateInstance() const override
         {
-            return ampoolnew(eMemoryPoolKind_Amplimix, StereoPanningNodeInstance);
-        }
-
-        AM_INLINE void DestroyInstance(NodeInstance* instance) const override
-        {
-            ampooldelete(eMemoryPoolKind_Amplimix, StereoPanningNodeInstance, (StereoPanningNodeInstance*)instance);
+            return AmSharedPtr<StereoPanningNodeInstance, eMemoryPoolKind_Amplimix>::Make();
         }
 
         [[nodiscard]] AM_INLINE bool CanConsume() const override

@@ -35,21 +35,16 @@ public:
     {}
 };
 
-class InvalidConsumerNode : public Node
+class InvalidConsumerNode final : public Node
 {
 public:
     InvalidConsumerNode()
         : Node("InvalidConsumerNode")
     {}
 
-    [[nodiscard]] AM_INLINE NodeInstance* CreateInstance() const override
+    [[nodiscard]] AM_INLINE std::shared_ptr<NodeInstance> CreateInstance() const override
     {
-        return ampoolnew(eMemoryPoolKind_Amplimix, InvalidConsumerNodeInstance);
-    }
-
-    AM_INLINE void DestroyInstance(NodeInstance* instance) const override
-    {
-        ampooldelete(eMemoryPoolKind_Amplimix, InvalidConsumerNodeInstance, (InvalidConsumerNodeInstance*)instance);
+        return AmSharedPtr<InvalidConsumerNodeInstance, eMemoryPoolKind_Amplimix>::Make();
     }
 
     [[nodiscard]] AM_INLINE bool CanConsume() const override

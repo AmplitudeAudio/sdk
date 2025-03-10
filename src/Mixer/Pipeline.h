@@ -37,17 +37,17 @@ namespace SparkyStudios::Audio::Amplitude
 
         void Execute(const AudioBuffer& inputBuffer, AudioBuffer& outputBuffer) override;
 
-        NodeInstance* GetNode(AmObjectID id) const override;
+        std::shared_ptr<NodeInstance> GetNode(AmObjectID id) const override;
 
         void Reset() override;
 
-        void AddNode(AmObjectID id, AmString nodeName, NodeInstance* nodeInstance);
+        void AddNode(AmObjectID id, AmString nodeName, std::shared_ptr<NodeInstance> nodeInstance);
 
     private:
-        std::unordered_map<AmObjectID, std::pair<AmString, NodeInstance*>> _nodeInstances;
+        std::unordered_map<AmObjectID, std::pair<AmString, std::shared_ptr<NodeInstance>>> _nodeInstances;
 
-        InputNodeInstance* _inputNode;
-        OutputNodeInstance* _outputNode;
+        std::shared_ptr<InputNodeInstance> _inputNode;
+        std::shared_ptr<OutputNodeInstance> _outputNode;
 
         const AmplimixLayerImpl* _layer;
         AudioBuffer _inputBuffer;
@@ -60,9 +60,7 @@ namespace SparkyStudios::Audio::Amplitude
     public:
         ~PipelineImpl() override;
 
-        PipelineInstance* CreateInstance(const AmplimixLayer* layer) const override;
-
-        void DestroyInstance(PipelineInstance* instance) const override;
+        std::shared_ptr<PipelineInstance> CreateInstance(const AmplimixLayer* layer) const override;
 
         /**
          * @copydoc Asset::GetId

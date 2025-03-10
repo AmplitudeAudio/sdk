@@ -12,6 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+#include <ranges>
+
 #include <SparkyStudios/Audio/Amplitude/Core/Memory.h>
 #include <SparkyStudios/Audio/Amplitude/IO/Log.h>
 
@@ -21,29 +23,23 @@ namespace SparkyStudios::Audio::Amplitude
 {
     PipelineInstanceImpl::PipelineInstanceImpl(const Pipeline* parent, const AmplimixLayerImpl* layer)
         : _nodeInstances()
-        , _layer(layer)
         , _inputNode(nullptr)
         , _outputNode(nullptr)
+        , _layer(layer)
     {}
 
     PipelineInstanceImpl::~PipelineInstanceImpl()
     {
-        for (const auto& node : _nodeInstances)
-            Node::Destruct(node.second.first, node.second.second);
+        for (auto& [name, node] : _nodeInstances | std::views::values)
+            node = nullptr; // Clear the node instance
 
         _nodeInstances.clear();
 
         if (_outputNode != nullptr)
-        {
-            Node::Destruct("Output", _outputNode);
             _outputNode = nullptr;
-        }
 
         if (_inputNode != nullptr)
-        {
-            Node::Destruct("Input", _inputNode);
             _inputNode = nullptr;
-        }
     }
 
     void PipelineInstanceImpl::Execute(const AudioBuffer& in, AudioBuffer& out)
@@ -61,9 +57,9 @@ namespace SparkyStudios::Audio::Amplitude
         _outputNode->Consume();
     }
 
-    NodeInstance* PipelineInstanceImpl::GetNode(AmObjectID id) const
+    std::shared_ptr<NodeInstance> PipelineInstanceImpl::GetNode(AmObjectID id) const
     {
-        if (_nodeInstances.find(id) != _nodeInstances.end())
+        if (_nodeInstances.contains(id))
             return _nodeInstances.at(id).second;
 
         if (_inputNode != nullptr && _inputNode->GetId() == id)
@@ -79,15 +75,15 @@ namespace SparkyStudios::Audio::Amplitude
     {
         _inputNode->Reset();
 
-        for (const auto& node : _nodeInstances)
-            node.second.second->Reset();
+        for (const auto& [name, node] : _nodeInstances | std::views::values)
+            node->Reset();
 
         _outputNode->Reset();
     }
 
-    void PipelineInstanceImpl::AddNode(AmObjectID id, AmString nodeName, NodeInstance* nodeInstance)
+    void PipelineInstanceImpl::AddNode(AmObjectID id, AmString nodeName, std::shared_ptr<NodeInstance> nodeInstance)
     {
-        if (_nodeInstances.find(id) != _nodeInstances.end())
+        if (_nodeInstances.contains(id))
             return;
 
         _nodeInstances[id] = std::make_pair(nodeName, nodeInstance);
@@ -96,9 +92,10 @@ namespace SparkyStudios::Audio::Amplitude
     PipelineImpl::~PipelineImpl()
     {}
 
-    PipelineInstance* PipelineImpl::CreateInstance(const AmplimixLayer* layer) const
+    std::shared_ptr<PipelineInstance> PipelineImpl::CreateInstance(const AmplimixLayer* layer) const
     {
-        auto* instance = ampoolnew(eMemoryPoolKind_Amplimix, PipelineInstanceImpl, this, static_cast<const AmplimixLayerImpl*>(layer));
+        auto instance =
+            AmSharedPtr<PipelineInstanceImpl, eMemoryPoolKind_Amplimix>::Make(this, static_cast<const AmplimixLayerImpl*>(layer));
 
         const auto* definition = GetDefinition();
         const auto* nodes = definition->nodes();
@@ -112,31 +109,29 @@ namespace SparkyStudios::Audio::Amplitude
             const auto* inputs = nodeDef->consume();
 
             auto node = Node::Find(nodeName);
-            NodeInstance* nodeInstance = nullptr;
+            std::shared_ptr<NodeInstance> nodeInstance = nullptr;
 
             if (nodeName == "Input")
             {
                 if (instance->_inputNode != nullptr)
                 {
                     amLogError("More than one input node was found in the pipeline.");
-                    DestroyInstance(instance);
                     return nullptr;
                 }
 
                 nodeInstance = node->CreateInstance();
-                instance->_inputNode = static_cast<InputNodeInstance*>(nodeInstance);
+                instance->_inputNode = std::static_pointer_cast<InputNodeInstance>(nodeInstance);
             }
             else if (nodeName == "Output")
             {
                 if (instance->_outputNode != nullptr)
                 {
                     amLogError("More than one output node was found in the pipeline.");
-                    DestroyInstance(instance);
                     return nullptr;
                 }
 
                 nodeInstance = node->CreateInstance();
-                instance->_outputNode = static_cast<OutputNodeInstance*>(nodeInstance);
+                instance->_outputNode = std::static_pointer_cast<OutputNodeInstance>(nodeInstance);
             }
             else
             {
@@ -150,7 +145,6 @@ namespace SparkyStudios::Audio::Amplitude
                         "the "
                         "plugin before Amplitude.",
                         nodeName.c_str());
-                    DestroyInstance(instance);
                     return nullptr;
                 }
 
@@ -163,13 +157,12 @@ namespace SparkyStudios::Audio::Amplitude
             // Connect the node inputs
             if (node->CanConsume())
             {
-                auto* consumerNode = dynamic_cast<ConsumerNodeInstance*>(nodeInstance);
+                auto consumerNode = std::dynamic_pointer_cast<ConsumerNodeInstance>(nodeInstance);
                 if (consumerNode == nullptr)
                 {
                     amLogError(
                         "The node '%s' can consume, but it doesn't inherits ConsumerNodeInstance. This is a programming error.",
                         nodeName.c_str());
-                    DestroyInstance(instance);
                     return nullptr;
                 }
 
@@ -178,7 +171,6 @@ namespace SparkyStudios::Audio::Amplitude
                     amLogError(
                         "The node '%s' requires %zu to %zu input(s), but %d were provided.", nodeName.c_str(), node->GetMinInputCount(),
                         node->GetMaxInputCount(), inputs->size());
-                    DestroyInstance(instance);
                     return nullptr;
                 }
 
@@ -190,7 +182,6 @@ namespace SparkyStudios::Audio::Amplitude
                     if (producerNodeId == nodeId)
                     {
                         amLogError("A node cannot consume itself: %s", nodeName.c_str());
-                        DestroyInstance(instance);
                         return nullptr;
                     }
 
@@ -211,16 +202,10 @@ namespace SparkyStudios::Audio::Amplitude
         if (instance->_inputNode == nullptr || instance->_outputNode == nullptr)
         {
             amLogError("The pipeline must have an input and an output node.");
-            DestroyInstance(instance);
             return nullptr;
         }
 
         return instance;
-    }
-
-    void PipelineImpl::DestroyInstance(PipelineInstance* instance) const
-    {
-        ampooldelete(eMemoryPoolKind_Amplimix, PipelineInstanceImpl, (PipelineInstanceImpl*)instance);
     }
 
     bool PipelineImpl::LoadDefinition(const PipelineDefinition* definition, std::shared_ptr<EngineInternalState> state)

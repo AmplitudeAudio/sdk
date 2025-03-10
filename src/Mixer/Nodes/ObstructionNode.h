@@ -47,14 +47,9 @@ namespace SparkyStudios::Audio::Amplitude
     public:
         ObstructionNode();
 
-        [[nodiscard]] AM_INLINE NodeInstance* CreateInstance() const override
+        [[nodiscard]] AM_INLINE std::shared_ptr<NodeInstance> CreateInstance() const override
         {
-            return ampoolnew(eMemoryPoolKind_Amplimix, ObstructionNodeInstance);
-        }
-
-        AM_INLINE void DestroyInstance(NodeInstance* instance) const override
-        {
-            ampooldelete(eMemoryPoolKind_Amplimix, ObstructionNodeInstance, (ObstructionNodeInstance*)instance);
+            return AmSharedPtr<ObstructionNodeInstance, eMemoryPoolKind_Amplimix>::Make();
         }
 
         [[nodiscard]] AM_INLINE bool CanConsume() const override

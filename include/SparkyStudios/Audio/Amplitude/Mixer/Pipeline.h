@@ -68,7 +68,7 @@ namespace SparkyStudios::Audio::Amplitude
          *
          * @return The node with the specified ID, or `nullptr` if not found.
          */
-        [[nodiscard]] virtual NodeInstance* GetNode(AmObjectID id) const = 0;
+        [[nodiscard]] virtual std::shared_ptr<NodeInstance> GetNode(AmObjectID id) const = 0;
     };
 
     /**
@@ -86,7 +86,7 @@ namespace SparkyStudios::Audio::Amplitude
         /**
          * @brief Default destructor.
          */
-        virtual ~Pipeline() = default;
+        ~Pipeline() override = default;
 
         /**
          * @brief Creates a new pipeline instance for the specified layer.
@@ -95,14 +95,7 @@ namespace SparkyStudios::Audio::Amplitude
          *
          * @return A new pipeline instance for the specified layer.
          */
-        virtual PipelineInstance* CreateInstance(const AmplimixLayer* layer) const = 0;
-
-        /**
-         * @brief Destroys the specified pipeline instance.
-         *
-         * @param[in] instance The pipeline instance to destroy.
-         */
-        virtual void DestroyInstance(PipelineInstance* instance) const = 0;
+        virtual std::shared_ptr<PipelineInstance> CreateInstance(const AmplimixLayer* layer) const = 0;
     };
 } // namespace SparkyStudios::Audio::Amplitude
 

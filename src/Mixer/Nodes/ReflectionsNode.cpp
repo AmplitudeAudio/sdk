@@ -29,7 +29,7 @@ namespace SparkyStudios::Audio::Amplitude
         _reflectionsProcessor = nullptr;
     }
 
-    void ReflectionsNodeInstance::Initialize(AmObjectID id, const AmplimixLayer* layer, const PipelineInstance* node)
+    void ReflectionsNodeInstance::Initialize(AmObjectID id, const AmplimixLayer* layer, std::shared_ptr<const PipelineInstance> node)
     {
         ProcessorNodeInstance::Initialize(id, layer, node);
 

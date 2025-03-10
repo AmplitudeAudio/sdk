@@ -42,14 +42,9 @@ namespace SparkyStudios::Audio::Amplitude
     public:
         AmbisonicRotatorNode();
 
-        [[nodiscard]] AM_INLINE NodeInstance* CreateInstance() const override
+        [[nodiscard]] AM_INLINE std::shared_ptr<NodeInstance> CreateInstance() const override
         {
-            return ampoolnew(eMemoryPoolKind_Amplimix, AmbisonicRotatorNodeInstance);
-        }
-
-        AM_INLINE void DestroyInstance(NodeInstance* instance) const override
-        {
-            ampooldelete(eMemoryPoolKind_Amplimix, AmbisonicRotatorNodeInstance, (AmbisonicRotatorNodeInstance*)instance);
+            return AmSharedPtr<AmbisonicRotatorNodeInstance, eMemoryPoolKind_Amplimix>::Make();
         }
 
         [[nodiscard]] AM_INLINE bool CanConsume() const override

@@ -45,7 +45,7 @@ namespace SparkyStudios::Audio::Amplitude
         return c;
     }
 
-    void NodeInstance::Initialize(AmObjectID id, const AmplimixLayer* layer, const PipelineInstance* node)
+    void NodeInstance::Initialize(AmObjectID id, const AmplimixLayer* layer, std::shared_ptr<const PipelineInstance> node)
     {
         AMPLITUDE_ASSERT(layer != nullptr);
 
@@ -78,10 +78,10 @@ namespace SparkyStudios::Audio::Amplitude
 
         AMPLITUDE_ASSERT(m_provider != kAmInvalidObjectId);
 
-        NodeInstance* node = m_pipeline->GetNode(m_provider);
+        const auto node = m_pipeline->GetNode(m_provider);
         AMPLITUDE_ASSERT(node != nullptr);
 
-        const auto provider = dynamic_cast<ProviderNodeInstance*>(node);
+        const auto provider = std::dynamic_pointer_cast<ProviderNodeInstance>(node);
         AMPLITUDE_ASSERT(provider != nullptr);
 
         _processingBuffer = provider->Provide();
@@ -134,10 +134,10 @@ namespace SparkyStudios::Audio::Amplitude
         {
             AMPLITUDE_ASSERT(providerId != kAmInvalidObjectId);
 
-            NodeInstance* node = m_pipeline->GetNode(providerId);
+            auto node = m_pipeline->GetNode(providerId);
             AMPLITUDE_ASSERT(node != nullptr);
 
-            auto* provider = dynamic_cast<ProviderNodeInstance*>(node);
+            auto provider = std::dynamic_pointer_cast<ProviderNodeInstance>(node);
             AMPLITUDE_ASSERT(provider != nullptr);
 
             _processingBuffers.push_back(provider->Provide());
@@ -255,10 +255,10 @@ namespace SparkyStudios::Audio::Amplitude
 
         AMPLITUDE_ASSERT(_provider != kAmInvalidObjectId);
 
-        NodeInstance* node = m_pipeline->GetNode(_provider);
+        auto node = m_pipeline->GetNode(_provider);
         AMPLITUDE_ASSERT(node != nullptr);
 
-        const auto provider = dynamic_cast<ProviderNodeInstance*>(node);
+        const auto provider = std::dynamic_pointer_cast<ProviderNodeInstance>(node);
         AMPLITUDE_ASSERT(provider != nullptr);
 
         const auto* output = provider->Provide();
@@ -323,25 +323,13 @@ namespace SparkyStudios::Audio::Amplitude
         return nullptr;
     }
 
-    NodeInstance* Node::Construct(const std::string& name)
+    std::shared_ptr<NodeInstance> Node::Construct(const std::string& name)
     {
         std::shared_ptr<Node> node = Find(name);
         if (node == nullptr)
             return nullptr;
 
         return node->CreateInstance();
-    }
-
-    void Node::Destruct(const std::string& name, NodeInstance* instance)
-    {
-        if (instance == nullptr)
-            return;
-
-        std::shared_ptr<Node> node = Find(name);
-        if (node == nullptr)
-            return;
-
-        node->DestroyInstance(instance);
     }
 
     void Node::LockRegistry()
