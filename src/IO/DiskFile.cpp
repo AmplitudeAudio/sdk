@@ -117,7 +117,7 @@ namespace SparkyStudios::Audio::Amplitude
             break;
         }
 
-#if defined(AM_WINDOWS_VERSION)
+#if AM_PLATFORM_WIN
         _wfopen_s(&m_fileHandle, filePath.c_str(), op.c_str());
 #else
         m_fileHandle = fopen(filePath.c_str(), op.c_str());

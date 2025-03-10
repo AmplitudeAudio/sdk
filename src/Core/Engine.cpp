@@ -40,7 +40,7 @@
 
 #include <dylib.hpp>
 
-#if defined(AM_WINDOWS_VERSION)
+#if AM_PLATFORM_WIN
 #undef CreateMutex
 #endif
 
@@ -688,8 +688,9 @@ namespace SparkyStudios::Audio::Amplitude
 
         if (_audioDriver == nullptr)
         {
-            amLogCritical("Failed to load the specified driver, the default driver, and the null driver. Please check your engine "
-                          "configuration, and ensure that all the needed plugins are loaded.");
+            amLogCritical(
+                "Failed to load the specified driver, the default driver, and the null driver. Please check your engine "
+                "configuration, and ensure that all the needed plugins are loaded.");
             Deinitialize();
             return false;
         }
@@ -720,8 +721,9 @@ namespace SparkyStudios::Audio::Amplitude
         }
         else if (_state->panning_mode != ePanningMode_Stereo)
         {
-            amLogCritical("The HRTF configuration is missing, but the panning mode is not stereo. Please provide an HRTF configuration, or "
-                          "set the panning mode to Stereo.");
+            amLogCritical(
+                "The HRTF configuration is missing, but the panning mode is not stereo. Please provide an HRTF configuration, or "
+                "set the panning mode to Stereo.");
             Deinitialize();
             return false;
         }
@@ -950,13 +952,13 @@ namespace SparkyStudios::Audio::Amplitude
         return success;
     }
 
-    bool EngineImpl::LoadSoundBankFromMemory(const char* fileData)
+    bool EngineImpl::LoadSoundBankFromMemory(const AmUInt8* fileData)
     {
         AmBankID outID = kAmInvalidObjectId;
         return LoadSoundBankFromMemory(fileData, outID);
     }
 
-    bool EngineImpl::LoadSoundBankFromMemory(const char* fileData, AmBankID& outID)
+    bool EngineImpl::LoadSoundBankFromMemory(const AmUInt8* fileData, AmBankID& outID)
     {
         outID = kAmInvalidObjectId;
         bool success = true;
@@ -1009,7 +1011,7 @@ namespace SparkyStudios::Audio::Amplitude
         if (const AmUInt32 len = mf.Read(reinterpret_cast<AmUInt8Buffer>(&dst[0]), mf.Length()); len != size)
             return false;
 
-        return LoadSoundBankFromMemory(dst.c_str(), outID);
+        return LoadSoundBankFromMemory(reinterpret_cast<const AmUInt8*>(dst.c_str()), outID);
     }
 
     void EngineImpl::UnloadSoundBank(const AmOsString& filename)
@@ -1063,6 +1065,14 @@ namespace SparkyStudios::Audio::Amplitude
             _state->sound_bank_map.erase(id);
 
         Thread::UnlockMutex(_frameThreadMutex);
+    }
+
+    void EngineImpl::EnsureSoundBankLoaded(const AmOsString& filename)
+    {
+        if (HasLoadedSoundBank(filename))
+            return;
+
+        LoadSoundBank(filename);
     }
 
     bool EngineImpl::HasLoadedSoundBank(const AmOsString& filename) const

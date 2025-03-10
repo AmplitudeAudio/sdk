@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include <SparkyStudios/Audio/Amplitude/Core/Log.h>
+#include <SparkyStudios/Audio/Amplitude/IO/Log.h>
 #include <SparkyStudios/Audio/Amplitude/Sound/SoundBank.h>
 
 #include <Core/Engine.h>
@@ -355,12 +355,12 @@ namespace SparkyStudios::Audio::Amplitude
         return InitializeInternal(engine);
     }
 
-    bool SoundBank::InitializeFromMemory(const char* fileData, Engine* engine)
+    bool SoundBank::InitializeFromMemory(const AmUInt8* fileData, Engine* engine)
     {
         if (!fileData)
             return false;
 
-        _soundBankDefSource = fileData;
+        _soundBankDefSource = reinterpret_cast<const char*>(fileData);
 
         return InitializeInternal(engine);
     }

@@ -19,22 +19,6 @@
 
 #include <sstream>
 
-// Enable Windows Compilation
-#define AM_WINDOWS_VERSION
-
-// Detect the platform CPU type
-#if defined(_M_IX86)
-#define AM_CPU_X86
-#elif defined(_M_AMD64) || defined(_M_X64)
-#define AM_CPU_X86_64
-#elif defined(_M_ARM)
-#define AM_CPU_ARM
-#define AM_CPU_ARM_NEON
-#elif defined(_M_ARM64)
-#define AM_CPU_ARM_64
-#define AM_CPU_ARM_NEON
-#endif
-
 // Call policy
 #define AM_CALL_POLICY __cdecl
 

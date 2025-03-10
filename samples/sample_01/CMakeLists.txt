@@ -18,15 +18,11 @@ set(PROJECT_NAME ss_amplitude_audio_sample_01)
 
 project(${PROJECT_NAME})
 
-if(WIN32)
-    set(RUNTIME_OUTPUT_DIRECTORY "win")
-elseif(APPLE)
-    set(RUNTIME_OUTPUT_DIRECTORY "osx")
+if(AM_PLATFORM_APPLE)
     set(CMAKE_MACOSX_RPATH 1)
     list(APPEND CMAKE_INSTALL_RPATH "@executable_path" "@executable_path/../../../lib/${RUNTIME_OUTPUT_DIRECTORY}/shared/")
-elseif(UNIX AND NOT ANDROID)
-    set(RUNTIME_OUTPUT_DIRECTORY "linux")
-    if (CMAKE_CXX_COMPILER_ID MATCHES "Clang")
+elseif(AM_PLATFORM_LINUX)
+    if (AM_COMPILER_CLANG)
         set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -Wl,-rpath,$ORIGIN/../../../lib/${RUNTIME_OUTPUT_DIRECTORY}/shared/")
         set(CMAKE_INSTALL_RPATH_USE_LINK_PATH FALSE)
     else()
@@ -39,9 +35,9 @@ set(ss_amplitude_audio_sample_01_SRCS
     main.cpp
 )
 
-add_executable(ss_amplitude_audio_sample_01 ${ss_amplitude_audio_sample_01_SRCS})
+add_executable(${PROJECT_NAME} ${ss_amplitude_audio_sample_01_SRCS})
 
-set_target_properties(ss_amplitude_audio_sample_01
+set_target_properties(${PROJECT_NAME}
     PROPERTIES
         OUTPUT_NAME sample_01
         RUNTIME_OUTPUT_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/samples

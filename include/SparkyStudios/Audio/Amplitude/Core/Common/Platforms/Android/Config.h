@@ -17,26 +17,24 @@
 #ifndef _AM_CORE_COMMON_PLATFORMS_ANDROID_CONFIG_H
 #define _AM_CORE_COMMON_PLATFORMS_ANDROID_CONFIG_H
 
-/// Compiling for an Android platform
-#define AM_ANDROID_VERSION
-
-// Detect the platform CPU type
-#if defined(__LP64__) || defined(_LP64)
-#ifdef __aarch64__
-#define AM_CPU_ARM_64
-#define AM_CPU_ARM_NEON
-#else
-#define AM_CPU_X86_64
-#endif
-#else
-#ifdef __arm__
-#define AM_CPU_ARM
-#define AM_CPU_ARM_NEON
-#else
-#define AM_CPU_X86
-#endif
-#endif
+// Spinlock isn't available on Android NDK
+#define AM_NO_PTHREAD_SPINLOCK
 
 #include <SparkyStudios/Audio/Amplitude/Core/Common/Platforms/UNIX/Config.h>
+
+// Amplitude doesn't support SIMD on non NEON64 Android platforms (armeabi-v7a)
+#if !defined(__aarch64__)
+#define AMPLITUDE_DISABLE_SIMD
+#endif
+
+#ifndef AM_ID_CHAR_FMT
+#if defined(__aarch64__)
+/// Defines the format used to print AmObjectId value
+#define AM_ID_CHAR_FMT "%lu"
+#else
+/// Defines the format used to print AmObjectId value
+#define AM_ID_CHAR_FMT "%llu"
+#endif
+#endif
 
 #endif // _AM_CORE_COMMON_PLATFORMS_ANDROID_CONFIG_H

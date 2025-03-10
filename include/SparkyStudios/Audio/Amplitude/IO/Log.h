@@ -12,15 +12,17 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef _AM_CORE_LOG_H
-#define _AM_CORE_LOG_H
+#pragma once
+
+#ifndef _AM_IO_LOG_H
+#define _AM_IO_LOG_H
 
 #include <SparkyStudios/Audio/Amplitude/Core/Common.h>
 
 /**
  * @brief The global logger instance.
  *
- * @ingroup core
+ * @ingroup io
  */
 #define amLogger SparkyStudios::Audio::Amplitude::Logger::GetLogger()
 
@@ -31,7 +33,7 @@
  * @param _message_ The message to log.
  * @param ... The arguments to format the message with.
  *
- * @ingroup core
+ * @ingroup io
  */
 #define amLog(_level_, _message_, ...)                                                                                                     \
     if (amLogger != nullptr)                                                                                                               \
@@ -49,7 +51,7 @@
  * @param _message_ The message to log.
  * @param ... The arguments to format the message with.
  *
- * @ingroup core
+ * @ingroup io
  */
 #define amLogDebug(_message_, ...) amLog(Debug, _message_, ##__VA_ARGS__)
 
@@ -59,7 +61,7 @@
  * @param _message_ The message to log.
  * @param ... The arguments to format the message with.
  *
- * @ingroup core
+ * @ingroup io
  */
 #define amLogInfo(_message_, ...) amLog(Info, _message_, ##__VA_ARGS__)
 
@@ -69,7 +71,7 @@
  * @param _message_ The message to log.
  * @param ... The arguments to format the message with.
  *
- * @ingroup core
+ * @ingroup io
  */
 #define amLogWarning(_message_, ...) amLog(Warning, _message_, ##__VA_ARGS__)
 
@@ -79,7 +81,7 @@
  * @param _message_ The message to log.
  * @param ... The arguments to format the message with.
  *
- * @ingroup core
+ * @ingroup io
  */
 #define amLogError(_message_, ...) amLog(Error, _message_, ##__VA_ARGS__)
 
@@ -89,7 +91,7 @@
  * @param _message_ The message to log.
  * @param ... The arguments to format the message with.
  *
- * @ingroup core
+ * @ingroup io
  */
 #define amLogCritical(_message_, ...) amLog(Critical, _message_, ##__VA_ARGS__)
 
@@ -99,7 +101,7 @@
  * @param _message_ The message to log.
  * @param ... The arguments to format the message with.
  *
- * @ingroup core
+ * @ingroup io
  */
 #define amLogSuccess(_message_, ...) amLog(Success, _message_, ##__VA_ARGS__)
 
@@ -110,7 +112,7 @@ namespace SparkyStudios::Audio::Amplitude
      *
      * This is used to determine the importance of a log message.
      *
-     * @ingroup core
+     * @ingroup io
      */
     enum eLogMessageLevel : AmUInt8
     {
@@ -128,7 +130,7 @@ namespace SparkyStudios::Audio::Amplitude
      * Base class used to perform logging. Implementations of this class have the ability to display or store
      * log messages wherever they are needed.
      *
-     * @ingroup core
+     * @ingroup io
      */
     class AM_API_PUBLIC Logger
     {
@@ -217,38 +219,6 @@ namespace SparkyStudios::Audio::Amplitude
          */
         virtual void Log(eLogMessageLevel level, const char* file, int line, const AmString& message) = 0;
     };
-
-    /**
-     * @brief The console logger class.
-     *
-     * This class logs messages to the console or terminal.
-     *
-     * @ingroup core
-     */
-    class AM_API_PUBLIC ConsoleLogger final : public Logger
-    {
-    public:
-        /**
-         * @brief Constructs a new console logger.
-         *
-         * @param[in] displayFileAndLine Whether to display the file and line number in the log messages.
-         */
-        explicit ConsoleLogger(bool displayFileAndLine = true);
-
-        /**
-         * @brief Destructor.
-         */
-        ~ConsoleLogger() override = default;
-
-    protected:
-        /**
-         * @inherit
-         */
-        void Log(eLogMessageLevel level, const char* file, int line, const AmString& message) override;
-
-    private:
-        bool m_displayFileAndLine = true;
-    };
 } // namespace SparkyStudios::Audio::Amplitude
 
-#endif // _AM_CORE_LOG_H
+#endif // _AM_IO_LOG_H

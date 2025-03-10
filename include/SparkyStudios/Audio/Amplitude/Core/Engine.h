@@ -292,7 +292,7 @@ namespace SparkyStudios::Audio::Amplitude
          *
          * @return `true` when the sound bank is successfully loaded, `false` otherwise.
          */
-        virtual bool LoadSoundBankFromMemory(const char* fileData) = 0;
+        virtual bool LoadSoundBankFromMemory(const AmUInt8* fileData) = 0;
 
         /**
          * @brief Loads a sound bank from memory.
@@ -310,7 +310,7 @@ namespace SparkyStudios::Audio::Amplitude
          *
          * @return `true` when the sound bank is successfully loaded, `false` otherwise.
          */
-        virtual bool LoadSoundBankFromMemory(const char* fileData, AmBankID& outID) = 0;
+        virtual bool LoadSoundBankFromMemory(const AmUInt8* fileData, AmBankID& outID) = 0;
 
         /**
          * @brief Loads a sound bank from memory.
@@ -367,6 +367,16 @@ namespace SparkyStudios::Audio::Amplitude
          * @brief Unloads all the loaded sound banks.
          */
         virtual void UnloadSoundBanks() = 0;
+
+        /**
+         * @brief Make sure a sound bank is loaded in the engine.
+         *
+         * If the sound bank referenced by the iven file path is already loaded, the method
+         * will do nothing, and the sound bank reference count will be kept unchanged.
+         *
+         * @param filename The path to the sound bank asset file to load.
+         */
+        virtual void EnsureSoundBankLoaded(const AmOsString& filename) = 0;
 
         /**
          * @brief Checks if a sound bank with the given filename has been loaded.
@@ -1732,45 +1742,45 @@ namespace SparkyStudios::Audio::Amplitude
         static void RemovePluginSearchPath(const AmOsString& path);
 
         /**
-         * @brief Register all default plugins.
+         * @brief Register all default extensions.
          */
         static bool RegisterDefaultExtensions();
 
         /**
-         * @brief Unregister all default plugins.
+         * @brief Unregister all default extensions.
          */
         static bool UnregisterDefaultExtensions();
 
         /**
-         * @brief Registers a plugin into Amplitude.
+         * @brief Registers an extension into Amplitude.
          *
-         * @note Amplitude will automatically create a new instance of the plugin by calling
+         * @note Amplitude will automatically create a new instance of the extension by calling
          * the class constructor with the specified arguments.
          *
-         * @param[in] args The arguments to pass to the plugin class constructor.
+         * @param[in] args The arguments to pass to the extension class constructor.
          *
-         * @return The registered plugin.
+         * @return The registered extension.
          */
         template<typename T, class... Args>
         static std::shared_ptr<T> RegisterExtension(Args&&... args)
         {
-            auto plugin = AmSharedPtr<T, eMemoryPoolKind_Engine>::Make(std::forward<Args>(args)...);
-            T::Register(plugin);
+            auto extension = AmSharedPtr<T, eMemoryPoolKind_Engine>::Make(std::forward<Args>(args)...);
+            T::Register(extension);
 
-            return plugin;
+            return extension;
         }
 
         /**
-         * @brief Unregisters a plugin from Amplitude.
+         * @brief Unregisters an extension from Amplitude.
          *
-         * @param[in] plugin The plugin to unregister. The pointer will automatically be
+         * @param[in] extension The extension to unregister. The pointer will automatically be
          * discarded by calling this method.
          */
         template<typename T>
-        static void UnregisterExtension(std::shared_ptr<T>& plugin)
+        static void UnregisterExtension(std::shared_ptr<T>& extension)
         {
-            T::Unregister(plugin);
-            plugin.reset();
+            T::Unregister(extension);
+            extension.reset();
         }
 
 #pragma endregion

@@ -47,7 +47,7 @@ endforeach()
 
 if(NOT found_sdk)
     # If we don't find a path that appears to be a valid Amplitude install, we can bail here.
-    message(SEND_ERROR "Unable to find a valid Amplitude Audio SDK installation.")
+    message(SEND_ERROR "Unable to find a valid Amplitude Audio SDK installation. Please provide a valid path to the SDK through a AM_SDK_PATH CMake variable or environment variable.")
     return()
 endif()
 

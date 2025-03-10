@@ -15,6 +15,7 @@
 cmake_minimum_required(VERSION 3.20)
 
 cmake_policy(SET CMP0048 NEW)
+cmake_policy(SET CMP0091 NEW)
 
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake")
 
@@ -45,10 +46,12 @@ project(Amplitude
     HOMEPAGE_URL "https://amplitudeaudiosdk.com"
 )
 
+include(DetectPlatform)
+
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
-if(UNIT_TESTS AND NOT MSVC)
+if(UNIT_TESTS AND NOT AM_COMPILER_MSVC)
     include(CodeCoverage)
     append_coverage_compiler_flags()
 
@@ -73,13 +76,13 @@ set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/${AM_BIN_DESTINATION}")
 
 set(CMAKE_INSTALL_PREFIX "${CMAKE_CURRENT_LIST_DIR}/sdk")
 
-if (UNIX)
+if (AM_PLATFORM_UNIX)
     find_package(Threads REQUIRED)
 endif ()
 
 # Setup FFT and Accelerate Framework
 # ------------------------------------------------------------------------------
-if (APPLE)
+if (AM_PLATFORM_APPLE)
     find_library(ACCELERATE_FRAMEWORK Accelerate)
 endif ()
 
@@ -160,7 +163,6 @@ set(SA_SOURCE
     include/SparkyStudios/Audio/Amplitude/Core/Environment.h
     include/SparkyStudios/Audio/Amplitude/Core/Event.h
     include/SparkyStudios/Audio/Amplitude/Core/Listener.h
-    include/SparkyStudios/Audio/Amplitude/Core/Log.h
     include/SparkyStudios/Audio/Amplitude/Core/Memory.h
     include/SparkyStudios/Audio/Amplitude/Core/RefCounter.h
     include/SparkyStudios/Audio/Amplitude/Core/Room.h
@@ -173,10 +175,12 @@ set(SA_SOURCE
     include/SparkyStudios/Audio/Amplitude/DSP/Resampler.h
     include/SparkyStudios/Audio/Amplitude/DSP/SplitComplex.h
     include/SparkyStudios/Audio/Amplitude/HRTF/HRIRSphere.h
+    include/SparkyStudios/Audio/Amplitude/IO/ConsoleLogger.h
     include/SparkyStudios/Audio/Amplitude/IO/DiskFile.h
     include/SparkyStudios/Audio/Amplitude/IO/DiskFileSystem.h
     include/SparkyStudios/Audio/Amplitude/IO/File.h
     include/SparkyStudios/Audio/Amplitude/IO/FileSystem.h
+    include/SparkyStudios/Audio/Amplitude/IO/Log.h
     include/SparkyStudios/Audio/Amplitude/IO/MemoryFile.h
     include/SparkyStudios/Audio/Amplitude/IO/PackageItemFile.h
     include/SparkyStudios/Audio/Amplitude/IO/PackageFileSystem.h
@@ -271,7 +275,6 @@ set(SA_SOURCE
     src/Core/ListenerInternalState.cpp
     src/Core/ListenerInternalState.h
     src/Core/Listener.cpp
-    src/Core/Log.cpp
     src/Core/Memory.cpp
     src/Core/Room.cpp
     src/Core/RoomInternalState.cpp
@@ -320,9 +323,12 @@ set(SA_SOURCE
 
     src/HRTF/HRIRSphere.cpp
     src/HRTF/HRIRSphere.h
+
+    src/IO/ConsoleLogger.cpp
     src/IO/DiskFile.cpp
     src/IO/DiskFileSystem.cpp
     src/IO/File.cpp
+    src/IO/Log.cpp
     src/IO/MemoryFile.cpp
     src/IO/PackageItemFile.cpp
     src/IO/PackageFileSystem.cpp
@@ -465,6 +471,18 @@ set(SA_SOURCE
     src/Utils/Utils.h
 )
 
+if (AM_PLATFORM_ANDROID)
+    list(APPEND SA_SOURCE
+        include/SparkyStudios/Audio/Amplitude/IO/Android/AssetManagerFile.h
+        include/SparkyStudios/Audio/Amplitude/IO/Android/AssetManagerFileSystem.h
+        include/SparkyStudios/Audio/Amplitude/IO/Android/LogcatLogger.h
+
+        src/IO/Android/AssetManagerFile.cpp
+        src/IO/Android/AssetManagerFileSystem.cpp
+        src/IO/Android/LogcatLogger.cpp
+    )
+endif ()
+
 # Includes for this project
 include_directories(src
     include
@@ -498,8 +516,7 @@ foreach (build_type ${AM_BUILDSYSTEM_TYPE})
     target_compile_definitions(${build_type} PUBLIC "$<$<CONFIG:RELEASE>:AM_NO_ASSERTS>")
 
     target_link_libraries(${build_type}
-        PRIVATE
-        flatbuffers::flatbuffers xsimd
+        PRIVATE xsimd
     )
 
     add_dependencies(${build_type}
@@ -507,14 +524,20 @@ foreach (build_type ${AM_BUILDSYSTEM_TYPE})
         amplitude_build_binary_schemas
     )
 
-    if (UNIX)
+    if (AM_PLATFORM_UNIX)
         target_link_libraries(${build_type} PUBLIC Threads::Threads ${CMAKE_DL_LIBS})
     endif ()
 
-    if (APPLE)
+    if (AM_PLATFORM_APPLE)
         target_link_libraries(${build_type} PUBLIC ${ACCELERATE_FRAMEWORK})
         target_compile_definitions(${build_type} PUBLIC AM_FFT_APPLE_ACCELERATE)
     endif ()
+
+    if (AM_PLATFORM_ANDROID)
+        target_link_libraries(${build_type} PUBLIC android log)
+    endif ()
+
+    am_apply_detected_platform_defines(${build_type})
 endforeach ()
 
 if (BUILD_TOOLS)
@@ -545,7 +568,7 @@ if (BUILD_SAMPLES)
 endif ()
 
 if (UNIT_TESTS)
-    if (NOT MSVC)
+    if (NOT AM_COMPILER_MSVC)
         setup_target_for_coverage_lcov(
             NAME ss_amplitude_audio_tests_coverage
             EXECUTABLE ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/ss_amplitude_audio_tests

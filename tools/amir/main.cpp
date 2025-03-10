@@ -545,11 +545,11 @@ int main(int argc, char* argv[])
 
     for (int i = 1; i < argc; i++)
     {
-#if defined(AM_WINDOWS_VERSION)
+#if AM_PLATFORM_WIN
         if (*argv[i] == '-' || *argv[i] == '/')
 #else
         if (*argv[i] == '-')
-#endif // AM_WINDOWS_VERSION
+#endif // AM_PLATFORM_WIN
         {
             switch (argv[i][1])
             {

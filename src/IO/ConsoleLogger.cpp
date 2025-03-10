@@ -1,4 +1,4 @@
-// Copyright (c) 2021-present Sparky Studios. All rights reserved.
+// Copyright (c) 2025-present Sparky Studios. All rights reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -14,54 +14,10 @@
 
 #include <iostream>
 
-#include <SparkyStudios/Audio/Amplitude/Core/Log.h>
+#include <SparkyStudios/Audio/Amplitude/IO/ConsoleLogger.h>
 
 namespace SparkyStudios::Audio::Amplitude
 {
-    static Logger* gLogger = nullptr;
-
-    void Logger::SetLogger(Logger* loggerInstance)
-    {
-        gLogger = loggerInstance;
-    }
-
-    Logger* Logger::GetLogger()
-    {
-        return gLogger;
-    }
-
-    void Logger::Debug(const char* file, int line, const AmString& message)
-    {
-#ifdef AM_DEBUG
-        Log(eLogMessageLevel_Debug, file, line, message);
-#endif
-    }
-
-    void Logger::Info(const char* file, int line, const AmString& message)
-    {
-        Log(eLogMessageLevel_Info, file, line, message);
-    }
-
-    void Logger::Warning(const char* file, int line, const AmString& message)
-    {
-        Log(eLogMessageLevel_Warning, file, line, message);
-    }
-
-    void Logger::Error(const char* file, int line, const AmString& message)
-    {
-        Log(eLogMessageLevel_Error, file, line, message);
-    }
-
-    void Logger::Critical(const char* file, int line, const AmString& message)
-    {
-        Log(eLogMessageLevel_Critical, file, line, message);
-    }
-
-    void Logger::Success(const char* file, int line, const AmString& message)
-    {
-        Log(eLogMessageLevel_Success, file, line, message);
-    }
-
     ConsoleLogger::ConsoleLogger(bool displayFileAndLine)
         : m_displayFileAndLine(displayFileAndLine)
     {}

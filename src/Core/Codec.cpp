@@ -15,7 +15,7 @@
 #include <map>
 
 #include <SparkyStudios/Audio/Amplitude/Core/Codec.h>
-#include <SparkyStudios/Audio/Amplitude/Core/Log.h>
+#include <SparkyStudios/Audio/Amplitude/IO/Log.h>
 
 namespace SparkyStudios::Audio::Amplitude
 {

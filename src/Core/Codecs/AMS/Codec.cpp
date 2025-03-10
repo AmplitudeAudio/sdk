@@ -307,21 +307,21 @@ namespace SparkyStudios::Audio::Amplitude
         memset(&header, 0, sizeof(header));
 
         // ========== RIFF HEADER
-#if defined(AM_WINDOWS_VERSION)
+#if AM_PLATFORM_WIN
         strncpy_s((char*)header.riff.chunkID, 4, "RIFF", sizeof(header.riff.chunkID));
 #else
         strncpy((char*)header.riff.chunkID, "RIFF", sizeof(header.riff.chunkID));
 #endif
         header.riff.chunkSize = sizeof(RIFFHeader) + sizeof(WAVEHeader) + sizeof(DATAHeader) + totalDataBytes;
 
-#if defined(AM_WINDOWS_VERSION)
+#if AM_PLATFORM_WIN
         strncpy_s((char*)header.riff.chunkFormat, 4, "WAVE", sizeof(header.riff.chunkFormat));
 #else
         strncpy((char*)header.riff.chunkFormat, "WAVE", sizeof(header.riff.chunkFormat));
 #endif
 
         // ========== FORMAT HEADER
-#if defined(AM_WINDOWS_VERSION)
+#if AM_PLATFORM_WIN
         strncpy_s((char*)header.fmt.chunkID, 4, "fmt ", sizeof(header.fmt.chunkID));
 #else
         strncpy((char*)header.fmt.chunkID, "fmt ", sizeof(header.fmt.chunkID));
@@ -340,7 +340,7 @@ namespace SparkyStudios::Audio::Amplitude
         header.wave.validBitsPerSample = samplesPerBlock;
 
         // ========== FACT HEADER
-#if defined(AM_WINDOWS_VERSION)
+#if AM_PLATFORM_WIN
         strncpy_s((char*)header.fact.chunkID, 4, "fact", sizeof(header.fact.chunkID));
 #else
         strncpy((char*)header.fact.chunkID, "fact", sizeof(header.fact.chunkID));
@@ -350,7 +350,7 @@ namespace SparkyStudios::Audio::Amplitude
         header.fact.chunkSize = 4;
 
         // ========== DATA HEADER
-#if defined(AM_WINDOWS_VERSION)
+#if AM_PLATFORM_WIN
         strncpy_s((char*)header.data.chunkID, 4, "data", sizeof(header.data.chunkID));
 #else
         strncpy((char*)header.data.chunkID, "data", sizeof(header.data.chunkID));

@@ -32,6 +32,11 @@ namespace SparkyStudios::Audio::Amplitude
     {
     public:
         /**
+         * @brief Destructor.
+         */
+        ~AudioBufferChannel();
+
+        /**
          * @brief Gets the size of the buffer.
          *
          * @return The size of the buffer.

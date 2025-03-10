@@ -19,14 +19,14 @@
 
 #include <SparkyStudios/Audio/Amplitude/Core/Common/Config.h>
 
-#if defined(AM_WINDOWS_VERSION)
+#if AM_PLATFORM_WIN
 #include <SparkyStudios/Audio/Amplitude/Core/Common/Platforms/Windows/Types.h>
-#elif defined(AM_ANDROID_VERSION)
+#elif AM_PLATFORM_ANDROID
 #include <SparkyStudios/Audio/Amplitude/Core/Common/Platforms/Android/Types.h>
-#elif defined(AM_LINUX_VERSION)
-#include <SparkyStudios/Audio/Amplitude/Core/Common/Platforms/Linux/Types.h>
-#elif defined(AM_OSX_VERSION) || defined(AM_IOS_VERSION)
+#elif AM_PLATFORM_APPLE
 #include <SparkyStudios/Audio/Amplitude/Core/Common/Platforms/Apple/Types.h>
+#elif AM_PLATFORM_LINUX
+#include <SparkyStudios/Audio/Amplitude/Core/Common/Platforms/Linux/Types.h>
 #endif
 
 namespace SparkyStudios::Audio::Amplitude
