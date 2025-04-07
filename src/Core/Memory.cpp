@@ -168,6 +168,17 @@ namespace SparkyStudios::Audio::Amplitude
         _allocator.reset(nullptr);
     }
 
+    void MemoryManager::RemoveAllocation(const Allocation& allocation)
+    {
+        if (const auto& it = _memAllocations.find(allocation); it != _memAllocations.end())
+            _memAllocations.erase(it);
+    }
+
+    void MemoryManager::AddAllocation(const Allocation& allocation)
+    {
+        _memAllocations.insert(allocation);
+    }
+
     AmVoidPtr MemoryManager::Malloc(eMemoryPoolKind pool, AmSize size, const char* file, AmUInt32 line)
     {
 #if !defined(AM_NO_MEMORY_STATS)
@@ -177,7 +188,7 @@ namespace SparkyStudios::Audio::Amplitude
 
         AmVoidPtr ptr = _allocator->Malloc(pool, size);
 
-        _memAllocations.insert({ pool, ptr, SizeOf(pool, ptr), file, line });
+        AddAllocation({ pool, ptr, SizeOf(pool, ptr), file, line });
         return ptr;
     }
 
@@ -190,7 +201,7 @@ namespace SparkyStudios::Audio::Amplitude
 
         AmVoidPtr ptr = _allocator->Malign(pool, size, alignment);
 
-        _memAllocations.insert({ pool, ptr, SizeOf(pool, ptr), file, line });
+        AddAllocation({ pool, ptr, SizeOf(pool, ptr), file, line });
 
         return ptr;
     }
@@ -207,7 +218,8 @@ namespace SparkyStudios::Audio::Amplitude
 
         AmVoidPtr ptr = _allocator->Realloc(pool, address, size);
 
-        _memAllocations.insert({ pool, ptr, SizeOf(pool, ptr), file, line });
+        RemoveAllocation({ pool, address });
+        AddAllocation({ pool, ptr, SizeOf(pool, ptr), file, line });
 
         return ptr;
     }
@@ -225,7 +237,8 @@ namespace SparkyStudios::Audio::Amplitude
 
         AmVoidPtr ptr = _allocator->Realign(pool, address, size, alignment);
 
-        _memAllocations.insert({ pool, ptr, SizeOf(pool, ptr), file, line });
+        RemoveAllocation({ pool, address });
+        AddAllocation({ pool, ptr, SizeOf(pool, ptr), file, line });
 
         return ptr;
     }

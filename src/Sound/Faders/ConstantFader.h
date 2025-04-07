@@ -29,7 +29,7 @@ namespace SparkyStudios::Audio::Amplitude
     public:
         ConstantFaderInstance()
         {
-            m_curve = gConstantFaderCurveControlPoints;
+            m_curve = Transition(gConstantFaderCurveControlPoints);
         }
     };
 
@@ -40,9 +40,9 @@ namespace SparkyStudios::Audio::Amplitude
             : Fader("Constant")
         {}
 
-        FaderInstance* CreateInstance() override
+        std::shared_ptr<FaderInstance> CreateInstance() override
         {
-            return amnew(ConstantFaderInstance);
+            return AmSharedPtr<ConstantFaderInstance, eMemoryPoolKind_Engine>::Make();
         }
 
         void DestroyInstance(FaderInstance* instance) override

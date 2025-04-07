@@ -69,7 +69,7 @@ namespace SparkyStudios::Audio::Amplitude
 
         const AmSize _maxDelaySamples;
 
-        FilterInstance* _lowPassFilter;
+        std::shared_ptr<FilterInstance> _lowPassFilter;
 
         AudioBuffer _tempMonoBuffer;
 

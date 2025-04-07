@@ -82,14 +82,9 @@ namespace SparkyStudios::Audio::Amplitude
         return kParameterTypeFloat;
     }
 
-    FilterInstance* LofiFilter::CreateInstance()
+    std::shared_ptr<FilterInstance> LofiFilter::CreateInstance()
     {
-        return ampoolnew(eMemoryPoolKind_Filtering, LofiFilterInstance, this);
-    }
-
-    void LofiFilter::DestroyInstance(FilterInstance* instance)
-    {
-        ampooldelete(eMemoryPoolKind_Filtering, LofiFilterInstance, (LofiFilterInstance*)instance);
+        return AmSharedPtr<LofiFilterInstance, eMemoryPoolKind_Filtering>::Make(this);
     }
 
     LofiFilterInstance::LofiFilterInstance(LofiFilter* parent)

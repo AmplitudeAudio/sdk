@@ -29,7 +29,7 @@ namespace SparkyStudios::Audio::Amplitude
     public:
         EaseInFaderInstance()
         {
-            m_curve = gEaseInFaderCurveControlPoints;
+            m_curve = Transition(gEaseInFaderCurveControlPoints);
         }
     };
 
@@ -40,9 +40,9 @@ namespace SparkyStudios::Audio::Amplitude
             : Fader("EaseIn")
         {}
 
-        FaderInstance* CreateInstance() override
+        std::shared_ptr<FaderInstance> CreateInstance() override
         {
-            return amnew(EaseInFaderInstance);
+            return AmSharedPtr<EaseInFaderInstance, eMemoryPoolKind_Engine>::Make();
         }
 
         void DestroyInstance(FaderInstance* instance) override

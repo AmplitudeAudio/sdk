@@ -463,7 +463,7 @@ int main(int argc, char* argv[])
 #if !defined(AM_NO_MEMORY_STATS)
     printMemoryStats();
 
-    amLogInfo("%s", amMemory->InspectMemoryLeaks().c_str());
+    std::cout << amMemory->InspectMemoryLeaks();
 #endif
 
     MemoryManager::Deinitialize();

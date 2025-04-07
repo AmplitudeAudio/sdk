@@ -31,7 +31,7 @@ namespace SparkyStudios::Audio::Amplitude
     CurvePart::CurvePart()
         : _start()
         , _end()
-        , _faderFactory(nullptr)
+        , _faderName()
         , _fader(nullptr)
     {}
 
@@ -41,17 +41,14 @@ namespace SparkyStudios::Audio::Amplitude
         SetStart(other._start);
         SetEnd(other._end);
 
-        if (other._fader != nullptr)
-            SetFader(other._faderFactory->GetName());
+        if (!other._faderName.empty())
+            SetFader(other._faderName);
     }
 
     CurvePart::~CurvePart()
     {
-        if (_fader != nullptr)
-            _faderFactory->DestroyInstance(_fader);
-
+        _faderName.clear();
         _fader = nullptr;
-        _faderFactory = nullptr;
     }
 
     void CurvePart::Initialize(const CurvePartDefinition* definition)
@@ -91,24 +88,20 @@ namespace SparkyStudios::Audio::Amplitude
             _fader->Set(_start.y, _end.y, 0.0);
     }
 
-    FaderInstance* CurvePart::GetFader() const
+    std::shared_ptr<FaderInstance> CurvePart::GetFader() const
     {
         return _fader;
     }
 
     void CurvePart::SetFader(const AmString& fader)
     {
-        if (_fader != nullptr)
-        {
-            _faderFactory->DestroyInstance(_fader);
-            _fader = nullptr;
-        }
+        _fader = nullptr;
 
-        _faderFactory = Fader::Find(fader);
-        if (_faderFactory == nullptr)
+        _fader = Fader::Construct(fader);
+        if (_fader == nullptr)
             return;
 
-        _fader = _faderFactory->CreateInstance();
+        _faderName = fader;
         _fader->Set(_start.y, _end.y, 0.0);
     }
 
@@ -126,7 +119,7 @@ namespace SparkyStudios::Audio::Amplitude
         SetStart(other._start);
         SetEnd(other._end);
 
-        SetFader(other._faderFactory->GetName());
+        SetFader(other._faderName);
 
         return *this;
     }

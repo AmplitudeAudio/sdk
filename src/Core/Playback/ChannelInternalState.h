@@ -400,7 +400,7 @@ namespace SparkyStudios::Audio::Amplitude
         AmObjectID _previousSwitchContainerStateId;
 
         // The sound fader of this channel.
-        FaderInstance* _fader;
+        std::shared_ptr<FaderInstance> _fader;
         AmString _faderName;
 
         // The target state of the fade out transition. Must be either Paused or Stopped.
@@ -438,7 +438,7 @@ namespace SparkyStudios::Audio::Amplitude
         std::map<AmListenerID, AmReal32> _dopplerFactors;
         std::map<AmRoomID, AmReal32> _roomGains;
 
-        std::map<ChannelEvent, ChannelEventListener*> _eventsMap;
+        std::map<ChannelEvent, std::shared_ptr<ChannelEventListener>> _eventsMap;
     };
 } // namespace SparkyStudios::Audio::Amplitude
 

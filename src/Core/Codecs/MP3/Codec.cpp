@@ -157,24 +157,14 @@ namespace SparkyStudios::Audio::Amplitude
         return 0;
     }
 
-    Codec::Decoder* MP3Codec::CreateDecoder()
+    std::shared_ptr<Codec::Decoder> MP3Codec::CreateDecoder()
     {
-        return ampoolnew(eMemoryPoolKind_Codec, MP3Decoder, this);
+        return AmSharedPtr<MP3Decoder, eMemoryPoolKind_Codec>::Make(this);
     }
 
-    void MP3Codec::DestroyDecoder(Decoder* decoder)
+    std::shared_ptr<Codec::Encoder> MP3Codec::CreateEncoder()
     {
-        ampooldelete(eMemoryPoolKind_Codec, MP3Decoder, (MP3Decoder*)decoder);
-    }
-
-    Codec::Encoder* MP3Codec::CreateEncoder()
-    {
-        return ampoolnew(eMemoryPoolKind_Codec, MP3Encoder, this);
-    }
-
-    void MP3Codec::DestroyEncoder(Encoder* encoder)
-    {
-        ampooldelete(eMemoryPoolKind_Codec, MP3Encoder, (MP3Encoder*)encoder);
+        return AmSharedPtr<MP3Encoder, eMemoryPoolKind_Codec>::Make(this);
     }
 
     bool MP3Codec::CanHandleFile(std::shared_ptr<File> file) const

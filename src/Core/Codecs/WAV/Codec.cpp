@@ -204,24 +204,14 @@ namespace SparkyStudios::Audio::Amplitude
         return drwav_write_pcm_frames(&_wav, length, buffer.GetBuffer());
     }
 
-    Codec::Decoder* WAVCodec::CreateDecoder()
+    std::shared_ptr<Codec::Decoder> WAVCodec::CreateDecoder()
     {
-        return ampoolnew(eMemoryPoolKind_Codec, WAVDecoder, this);
+        return AmSharedPtr<WAVDecoder, eMemoryPoolKind_Codec>::Make(this);
     }
 
-    void WAVCodec::DestroyDecoder(Decoder* decoder)
+    std::shared_ptr<Codec::Encoder> WAVCodec::CreateEncoder()
     {
-        ampooldelete(eMemoryPoolKind_Codec, WAVDecoder, (WAVDecoder*)decoder);
-    }
-
-    Codec::Encoder* WAVCodec::CreateEncoder()
-    {
-        return ampoolnew(eMemoryPoolKind_Codec, WAVEncoder, this);
-    }
-
-    void WAVCodec::DestroyEncoder(Encoder* encoder)
-    {
-        ampooldelete(eMemoryPoolKind_Codec, WAVEncoder, (WAVEncoder*)encoder);
+        return AmSharedPtr<WAVEncoder, eMemoryPoolKind_Codec>::Make(this);
     }
 
     bool WAVCodec::CanHandleFile(std::shared_ptr<File> file) const

@@ -152,7 +152,7 @@ namespace SparkyStudios::Audio::Amplitude
             }
 
             // Initialize the node with the provided parameters
-            nodeInstance->Initialize(nodeId, layer, instance);
+            nodeInstance->Initialize(nodeId, layer, instance.get());
 
             // Connect the node inputs
             if (node->CanConsume())

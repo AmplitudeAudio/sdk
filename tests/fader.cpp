@@ -25,7 +25,7 @@ TEST_CASE("Constant Fader Tests", "[constant_fader][faders][sound][amplitude]")
     const BezierCurveControlPoints cp2 = fader->GetControlPoints();
     REQUIRE((cp1.x1 == cp2.x1 && cp1.y1 == cp2.y1 && cp1.x2 == cp2.x2 && cp1.y2 == cp2.y2));
 
-    FaderInstance* instance = Fader::Construct("Constant");
+    auto instance = Fader::Construct("Constant");
 
     instance->Set(0.0, 1.0, kAmSecond);
 
@@ -34,8 +34,6 @@ TEST_CASE("Constant Fader Tests", "[constant_fader][faders][sound][amplitude]")
     REQUIRE(instance->GetFromPercentage(0.50) == 0.0);
     REQUIRE(instance->GetFromPercentage(0.75) == 0.0);
     REQUIRE(instance->GetFromPercentage(1.00) == 1.0);
-
-    Fader::Destruct("Constant", instance);
 }
 
 TEST_CASE("Ease Fader Tests", "[ease_fader][faders][sound][amplitude]")
@@ -45,7 +43,7 @@ TEST_CASE("Ease Fader Tests", "[ease_fader][faders][sound][amplitude]")
     const BezierCurveControlPoints cp2 = fader->GetControlPoints();
     REQUIRE((cp1.x1 == cp2.x1 && cp1.y1 == cp2.y1 && cp1.x2 == cp2.x2 && cp1.y2 == cp2.y2));
 
-    FaderInstance* instance = Fader::Construct("Ease");
+    auto instance = Fader::Construct("Ease");
 
     instance->Set(0.0, 1.0, kAmSecond);
 
@@ -54,8 +52,6 @@ TEST_CASE("Ease Fader Tests", "[ease_fader][faders][sound][amplitude]")
     REQUIRE(instance->GetFromPercentage(0.50) - 0.80240338786711973 < kEpsilon);
     REQUIRE(instance->GetFromPercentage(0.75) - 0.96045897841111938 < kEpsilon);
     REQUIRE(instance->GetFromPercentage(1.00) == 1.0);
-
-    Fader::Destruct("Ease", instance);
 }
 
 TEST_CASE("EaseIn Fader Tests", "[easein_fader][faders][sound][amplitude]")
@@ -65,7 +61,7 @@ TEST_CASE("EaseIn Fader Tests", "[easein_fader][faders][sound][amplitude]")
     const BezierCurveControlPoints cp2 = fader->GetControlPoints();
     REQUIRE((cp1.x1 == cp2.x1 && cp1.y1 == cp2.y1 && cp1.x2 == cp2.x2 && cp1.y2 == cp2.y2));
 
-    FaderInstance* instance = Fader::Construct("EaseIn");
+    auto instance = Fader::Construct("EaseIn");
 
     instance->Set(0.0, 1.0, kAmSecond);
 
@@ -74,8 +70,6 @@ TEST_CASE("EaseIn Fader Tests", "[easein_fader][faders][sound][amplitude]")
     REQUIRE(instance->GetFromPercentage(0.50) - 0.31535681876384836 < kEpsilon);
     REQUIRE(instance->GetFromPercentage(0.75) - 0.62186187464895193 < kEpsilon);
     REQUIRE(instance->GetFromPercentage(1.00) == 1.0);
-
-    Fader::Destruct("EaseIn", instance);
 }
 
 TEST_CASE("EaseInOut Fader Tests", "[easeinout_fader][faders][sound][amplitude]")
@@ -85,7 +79,7 @@ TEST_CASE("EaseInOut Fader Tests", "[easeinout_fader][faders][sound][amplitude]"
     const BezierCurveControlPoints cp2 = fader->GetControlPoints();
     REQUIRE((cp1.x1 == cp2.x1 && cp1.y1 == cp2.y1 && cp1.x2 == cp2.x2 && cp1.y2 == cp2.y2));
 
-    FaderInstance* instance = Fader::Construct("EaseInOut");
+    auto instance = Fader::Construct("EaseInOut");
 
     instance->Set(0.0, 1.0, kAmSecond);
 
@@ -94,8 +88,6 @@ TEST_CASE("EaseInOut Fader Tests", "[easeinout_fader][faders][sound][amplitude]"
     REQUIRE(instance->GetFromPercentage(0.50) - 0.50000001926874293 < kEpsilon);
     REQUIRE(instance->GetFromPercentage(0.75) - 0.87083807775645594 < kEpsilon);
     REQUIRE(instance->GetFromPercentage(1.00) == 1.0);
-
-    Fader::Destruct("EaseInOut", instance);
 }
 
 TEST_CASE("EaseOut Fader Tests", "[easeout_fader][faders][sound][amplitude]")
@@ -105,7 +97,7 @@ TEST_CASE("EaseOut Fader Tests", "[easeout_fader][faders][sound][amplitude]")
     const BezierCurveControlPoints cp2 = fader->GetControlPoints();
     REQUIRE((cp1.x1 == cp2.x1 && cp1.y1 == cp2.y1 && cp1.x2 == cp2.x2 && cp1.y2 == cp2.y2));
 
-    FaderInstance* instance = Fader::Construct("EaseOut");
+    auto instance = Fader::Construct("EaseOut");
 
     instance->Set(0.0, 1.0, kAmSecond);
 
@@ -114,8 +106,6 @@ TEST_CASE("EaseOut Fader Tests", "[easeout_fader][faders][sound][amplitude]")
     REQUIRE(instance->GetFromPercentage(0.50) - 0.68464319530730855 < kEpsilon);
     REQUIRE(instance->GetFromPercentage(0.75) - 0.90653535347727843 < kEpsilon);
     REQUIRE(instance->GetFromPercentage(1.00) == 1.0);
-
-    Fader::Destruct("EaseOut", instance);
 }
 
 TEST_CASE("Exponential Fader Tests", "[exponential_fader][faders][sound][amplitude]")
@@ -125,7 +115,7 @@ TEST_CASE("Exponential Fader Tests", "[exponential_fader][faders][sound][amplitu
     const BezierCurveControlPoints cp2 = fader->GetControlPoints();
     REQUIRE((cp1.x1 == cp2.x1 && cp1.y1 == cp2.y1 && cp1.x2 == cp2.x2 && cp1.y2 == cp2.y2));
 
-    FaderInstance* instance = Fader::Construct("Exponential");
+    auto instance = Fader::Construct("Exponential");
 
     instance->Set(0.0, 1.0, kAmSecond);
 
@@ -134,8 +124,6 @@ TEST_CASE("Exponential Fader Tests", "[exponential_fader][faders][sound][amplitu
     REQUIRE(instance->GetFromPercentage(0.50) - 0.68464319530730855 < kEpsilon);
     REQUIRE(instance->GetFromPercentage(0.75) - 0.90653535347727843 < kEpsilon);
     REQUIRE(instance->GetFromPercentage(1.00) == 1.0);
-
-    Fader::Destruct("Exponential", instance);
 }
 
 TEST_CASE("Linear Fader Tests", "[linear_fader][faders][sound][amplitude]")
@@ -145,7 +133,7 @@ TEST_CASE("Linear Fader Tests", "[linear_fader][faders][sound][amplitude]")
     const BezierCurveControlPoints cp2 = fader->GetControlPoints();
     REQUIRE((cp1.x1 == cp2.x1 && cp1.y1 == cp2.y1 && cp1.x2 == cp2.x2 && cp1.y2 == cp2.y2));
 
-    FaderInstance* instance = Fader::Construct("Linear");
+    auto instance = Fader::Construct("Linear");
 
     instance->Set(0.0, 1.0, kAmSecond);
 
@@ -154,8 +142,6 @@ TEST_CASE("Linear Fader Tests", "[linear_fader][faders][sound][amplitude]")
     REQUIRE(instance->GetFromPercentage(0.50) == 0.50);
     REQUIRE(instance->GetFromPercentage(0.75) == 0.75);
     REQUIRE(instance->GetFromPercentage(1.00) == 1.0);
-
-    Fader::Destruct("Linear", instance);
 }
 
 TEST_CASE("SCurveSharp Fader Tests", "[scurvesharp_fader][faders][sound][amplitude]")
@@ -165,7 +151,7 @@ TEST_CASE("SCurveSharp Fader Tests", "[scurvesharp_fader][faders][sound][amplitu
     const BezierCurveControlPoints cp2 = fader->GetControlPoints();
     REQUIRE((cp1.x1 == cp2.x1 && cp1.y1 == cp2.y1 && cp1.x2 == cp2.x2 && cp1.y2 == cp2.y2));
 
-    FaderInstance* instance = Fader::Construct("SCurveSharp");
+    auto instance = Fader::Construct("SCurveSharp");
 
     instance->Set(0.0, 1.0, kAmSecond);
 
@@ -174,8 +160,6 @@ TEST_CASE("SCurveSharp Fader Tests", "[scurvesharp_fader][faders][sound][amplitu
     REQUIRE(instance->GetFromPercentage(0.50) - 0.50000008381902017 < kEpsilon);
     REQUIRE(instance->GetFromPercentage(0.75) - 0.96270967398599439 < kEpsilon);
     REQUIRE(instance->GetFromPercentage(1.00) == 1.0);
-
-    Fader::Destruct("SCurveSharp", instance);
 }
 
 TEST_CASE("SCurveSmooth Fader Tests", "[scurvesmooth_fader][faders][sound][amplitude]")
@@ -185,7 +169,7 @@ TEST_CASE("SCurveSmooth Fader Tests", "[scurvesmooth_fader][faders][sound][ampli
     const BezierCurveControlPoints cp2 = fader->GetControlPoints();
     REQUIRE((cp1.x1 == cp2.x1 && cp1.y1 == cp2.y1 && cp1.x2 == cp2.x2 && cp1.y2 == cp2.y2));
 
-    FaderInstance* instance = Fader::Construct("SCurveSmooth");
+    auto instance = Fader::Construct("SCurveSmooth");
 
     instance->Set(0.0, 1.0, kAmSecond);
 
@@ -194,6 +178,4 @@ TEST_CASE("SCurveSmooth Fader Tests", "[scurvesmooth_fader][faders][sound][ampli
     REQUIRE(instance->GetFromPercentage(0.50) - 0.50000008381902017 < kEpsilon);
     REQUIRE(instance->GetFromPercentage(0.75) - 0.92725541264298184 < kEpsilon);
     REQUIRE(instance->GetFromPercentage(1.00) == 1.0);
-
-    Fader::Destruct("SCurveSmooth", instance);
 }

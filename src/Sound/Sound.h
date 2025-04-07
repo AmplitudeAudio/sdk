@@ -245,7 +245,7 @@ namespace SparkyStudios::Audio::Amplitude
 
     private:
         std::shared_ptr<Codec> _codec;
-        Codec::Decoder* _decoder;
+        std::shared_ptr<Codec::Decoder> _decoder;
 
         bool _stream;
         bool _loop;
@@ -411,7 +411,7 @@ namespace SparkyStudios::Audio::Amplitude
         const CollectionImpl* _collection;
         const EffectImpl* _effect;
         EffectInstance* _effectInstance;
-        Codec::Decoder* _decoder;
+        std::shared_ptr<Codec::Decoder> _decoder;
 
         SoundInstanceSettings _settings;
 

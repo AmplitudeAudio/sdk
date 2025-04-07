@@ -113,11 +113,11 @@ namespace SparkyStudios::Audio::Amplitude
          *
          * @return The filter instance.
          */
-        [[nodiscard]] FilterInstance* GetFilter() const override;
+        [[nodiscard]] std::shared_ptr<FilterInstance> GetFilter() const override;
 
     private:
         const EffectImpl* _parent;
-        FilterInstance* _filterInstance;
+        std::shared_ptr<FilterInstance> _filterInstance;
     };
 } // namespace SparkyStudios::Audio::Amplitude
 

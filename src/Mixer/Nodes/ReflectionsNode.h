@@ -32,7 +32,7 @@ namespace SparkyStudios::Audio::Amplitude
         ReflectionsNodeInstance();
         ~ReflectionsNodeInstance() override;
 
-        void Initialize(AmObjectID id, const AmplimixLayer* layer, std::shared_ptr<const PipelineInstance> node) override;
+        void Initialize(AmObjectID id, const AmplimixLayer* layer, const PipelineInstance* pipeline) override;
 
         const AudioBuffer* Process(const AudioBuffer* input) override;
 

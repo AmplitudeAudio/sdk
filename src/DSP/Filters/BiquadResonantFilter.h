@@ -28,7 +28,7 @@ namespace SparkyStudios::Audio::Amplitude
         AmReal32 y1, y2, x1, x2;
     };
 
-    class BiquadResonantFilterInstance : public FilterInstance
+    class BiquadResonantFilterInstance final : public FilterInstance
     {
     public:
         explicit BiquadResonantFilterInstance(BiquadResonantFilter* parent);
@@ -109,9 +109,7 @@ namespace SparkyStudios::Audio::Amplitude
 
         [[nodiscard]] AmReal32 GetParamMin(AmUInt32 index) const override;
 
-        FilterInstance* CreateInstance() override;
-
-        void DestroyInstance(FilterInstance* instance) override;
+        std::shared_ptr<FilterInstance> CreateInstance() override;
 
     private:
         AmInt32 _filterType;

@@ -40,7 +40,7 @@ namespace SparkyStudios::Audio::Amplitude
          *
          * The `Decoder` is built by a `Codec` instance. It's used to read
          * an audio file and process its data. Each implementation should
-         * allow to @ref Load load the entire file into memory or @ref Stream stream
+         * allow to @ref Load `Load()` the entire file into memory or @ref Stream `Stream()`
          * it from the file system.
          *
          * The @ref Stream `Stream()` method of a decoder implementation must be thread-safe.
@@ -182,7 +182,7 @@ namespace SparkyStudios::Audio::Amplitude
             /**
              * @brief Writes the given buffer into the file.
              *
-             * @param[in] in The buffer to write into the the file.
+             * @param[in] in The buffer to write into the file.
              * @param[in] offset The offset in frames from which write the input buffer.
              * @param[in] length The length in frames to write from the input buffer.
              *
@@ -211,7 +211,7 @@ namespace SparkyStudios::Audio::Amplitude
          * @brief Create a new Codec instance.
          *
          * @param name The codec name. Recommended names are "FILE_EXTENSION".
-         * eg. "WAV" or "OGG".
+         * e.g. "WAV" or "OGG".
          */
         explicit Codec(AmString name);
 
@@ -225,28 +225,14 @@ namespace SparkyStudios::Audio::Amplitude
          *
          * @return A `Decoder` instance.
          */
-        [[nodiscard]] virtual Decoder* CreateDecoder() = 0;
-
-        /**
-         * @brief Destroys the decoder associated to this codec.
-         *
-         * @param[in] decoder The decoder instance to destroy.
-         */
-        virtual void DestroyDecoder(Decoder* decoder) = 0;
+        [[nodiscard]] virtual std::shared_ptr<Decoder> CreateDecoder() = 0;
 
         /**
          * @brief Creates a new instance of the encoder associated to this codec.
          *
          * @return An `Encoder` instance.
          */
-        [[nodiscard]] virtual Encoder* CreateEncoder() = 0;
-
-        /**
-         * @brief Destroys the encoder associated to this codec.
-         *
-         * @param[in] encoder The encoder instance to destroy.
-         */
-        virtual void DestroyEncoder(Encoder* encoder) = 0;
+        [[nodiscard]] virtual std::shared_ptr<Encoder> CreateEncoder() = 0;
 
         /**
          * @brief Checks whether this `Codec` can handle the file at the given path.
@@ -297,7 +283,7 @@ namespace SparkyStudios::Audio::Amplitude
         static std::shared_ptr<Codec> FindCodecForFile(std::shared_ptr<File> file);
 
         /**
-         * @brief Locks the codecs registry.
+         * @brief Locks the codecs' registry.
          *
          * @warning This function is mainly used for internal purposes. It's
          * called before the `Engine` initialization, to discard the registration
@@ -306,7 +292,7 @@ namespace SparkyStudios::Audio::Amplitude
         static void LockRegistry();
 
         /**
-         * @brief Unlocks the codecs registry.
+         * @brief Unlocks the codecs' registry.
          *
          * @warning This function is mainly used for internal purposes. It's
          * called after the `Engine` deinitialization, to allow the registration

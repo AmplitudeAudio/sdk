@@ -23,7 +23,7 @@ namespace SparkyStudios::Audio::Amplitude
 {
     class RobotizeFilter;
 
-    class RobotizeFilterInstance : public FilterInstance
+    class RobotizeFilterInstance final : public FilterInstance
     {
     public:
         explicit RobotizeFilterInstance(RobotizeFilter* parent);
@@ -80,9 +80,7 @@ namespace SparkyStudios::Audio::Amplitude
 
         [[nodiscard]] AmReal32 GetParamMin(AmUInt32 index) const override;
 
-        FilterInstance* CreateInstance() override;
-
-        void DestroyInstance(FilterInstance* instance) override;
+        std::shared_ptr<FilterInstance> CreateInstance() override;
 
     protected:
         AmReal32 m_frequency;

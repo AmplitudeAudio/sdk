@@ -29,7 +29,7 @@ namespace SparkyStudios::Audio::Amplitude
     public:
         LinearFaderInstance()
         {
-            m_curve = gLinearFaderCurveControlPoints;
+            m_curve = Transition(gLinearFaderCurveControlPoints);
         }
     };
 
@@ -40,9 +40,9 @@ namespace SparkyStudios::Audio::Amplitude
             : Fader("Linear")
         {}
 
-        FaderInstance* CreateInstance() override
+        std::shared_ptr<FaderInstance> CreateInstance() override
         {
-            return amnew(LinearFaderInstance);
+            return AmSharedPtr<LinearFaderInstance, eMemoryPoolKind_Engine>::Make();
         }
 
         void DestroyInstance(FaderInstance* instance) override

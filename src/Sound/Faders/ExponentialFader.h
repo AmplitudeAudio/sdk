@@ -29,7 +29,7 @@ namespace SparkyStudios::Audio::Amplitude
     public:
         ExponentialFaderInstance()
         {
-            m_curve = gExponentialFaderCurveControlPoints;
+            m_curve = Transition(gExponentialFaderCurveControlPoints);
         }
     };
 
@@ -40,9 +40,9 @@ namespace SparkyStudios::Audio::Amplitude
             : Fader("Exponential")
         {}
 
-        FaderInstance* CreateInstance() override
+        std::shared_ptr<FaderInstance> CreateInstance() override
         {
-            return amnew(ExponentialFaderInstance);
+            return AmSharedPtr<ExponentialFaderInstance, eMemoryPoolKind_Engine>::Make();
         }
 
         void DestroyInstance(FaderInstance* instance) override

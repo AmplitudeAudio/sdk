@@ -45,8 +45,8 @@ namespace SparkyStudios::Audio::Amplitude
         AmSize _delayCompensation = 0;
 
         // Biquad filters that apply frequency splitting of the input mono signal.
-        FilterInstance* _lowPassFilter = nullptr;
-        FilterInstance* _highPassFilter = nullptr;
+        std::shared_ptr<FilterInstance> _lowPassFilter = nullptr;
+        std::shared_ptr<FilterInstance> _highPassFilter = nullptr;
 
         // Buffer for the low-passed signal. We do not modify the high-passed signal
         // so we can write it directly to the output channel.
@@ -57,4 +57,4 @@ namespace SparkyStudios::Audio::Amplitude
     };
 } // namespace SparkyStudios::Audio::Amplitude
 
-#endif // _AM_IMPLEMENTATION_MIXER_PIPELINE_NEAR_FIELD_PROCESSOR_H
+#endif // _AM_IMPLEMENTATION_DSP_NEAR_FIELD_PROCESSOR_H

@@ -110,25 +110,13 @@ namespace SparkyStudios::Audio::Amplitude
         return nullptr;
     }
 
-    FilterInstance* Filter::Construct(const std::string& name)
+    std::shared_ptr<FilterInstance> Filter::Construct(const std::string& name)
     {
         std::shared_ptr<Filter> filter = Find(name);
         if (filter == nullptr)
             return nullptr;
 
         return filter->CreateInstance();
-    }
-
-    void Filter::Destruct(const std::string& name, FilterInstance* instance)
-    {
-        if (instance == nullptr)
-            return;
-
-        std::shared_ptr<Filter> filter = Find(name);
-        if (filter == nullptr)
-            return;
-
-        filter->DestroyInstance(instance);
     }
 
     void Filter::LockRegistry()

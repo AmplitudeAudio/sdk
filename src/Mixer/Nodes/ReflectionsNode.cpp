@@ -29,9 +29,9 @@ namespace SparkyStudios::Audio::Amplitude
         _reflectionsProcessor = nullptr;
     }
 
-    void ReflectionsNodeInstance::Initialize(AmObjectID id, const AmplimixLayer* layer, std::shared_ptr<const PipelineInstance> node)
+    void ReflectionsNodeInstance::Initialize(AmObjectID id, const AmplimixLayer* layer, const PipelineInstance* pipeline)
     {
-        ProcessorNodeInstance::Initialize(id, layer, node);
+        ProcessorNodeInstance::Initialize(id, layer, pipeline);
 
         const auto& deviceConfig = amEngine->GetMixer()->GetDeviceDescription();
 

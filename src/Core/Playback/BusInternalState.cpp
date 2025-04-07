@@ -28,17 +28,8 @@ namespace SparkyStudios::Audio::Amplitude
         _bus.Clear();
         _parent = nullptr;
 
-        if (_faderIn != nullptr)
-            _faderInFactory->DestroyInstance(_faderIn);
-
-        if (_faderOut != nullptr)
-            _faderOutFactory->DestroyInstance(_faderOut);
-
         _faderIn = nullptr;
         _faderOut = nullptr;
-
-        _faderInFactory = nullptr;
-        _faderOutFactory = nullptr;
     }
 
     bool DuckBusInternalState::Initialize(const DuckBusDefinition* definition)
@@ -64,26 +55,24 @@ namespace SparkyStudios::Audio::Amplitude
         _fadeInDuration = definition->fade_in()->duration();
         _fadeOutDuration = definition->fade_out()->duration();
 
-        if (_faderIn != nullptr)
-            _faderInFactory->DestroyInstance(_faderIn);
+        _faderIn = nullptr;
 
-        _faderInFactory = Fader::Find(definition->fade_in()->fader()->str());
+        const auto faderInFactory = Fader::Find(definition->fade_in()->fader()->str());
 
-        if (_faderInFactory == nullptr)
+        if (faderInFactory == nullptr)
             return false;
 
-        _faderIn = _faderInFactory->CreateInstance();
+        _faderIn = faderInFactory->CreateInstance();
         _faderIn->Set(1.0f, _targetGain, _fadeInDuration);
 
-        if (_faderOut != nullptr)
-            _faderOutFactory->DestroyInstance(_faderOut);
+        _faderOut = nullptr;
 
-        _faderOutFactory = Fader::Find(definition->fade_out()->fader()->str());
+        const auto faderOutFactory = Fader::Find(definition->fade_out()->fader()->str());
 
-        if (_faderOutFactory == nullptr)
+        if (faderOutFactory == nullptr)
             return false;
 
-        _faderOut = _faderOutFactory->CreateInstance();
+        _faderOut = faderOutFactory->CreateInstance();
         _faderOut->Set(_targetGain, 1.0f, _fadeOutDuration);
 
         _initialized = true;
@@ -134,11 +123,17 @@ namespace SparkyStudios::Audio::Amplitude
 
     BusInternalState::~BusInternalState()
     {
-        if (_gainFader != nullptr)
-            _gainFaderFactory->DestroyInstance(_gainFader);
+        _busDefinition = nullptr;
+
+        _id = kAmInvalidObjectId;
+        _name.clear();
+
+        _userGain = 1.0f;
+        _targetUserGain = 1.0f;
+        _duckGain = 1.0f;
+        _gain = 1.0f;
 
         _gainFader = nullptr;
-        _gainFaderFactory = nullptr;
 
         _childBuses.clear();
         _duckBuses.clear();
@@ -157,13 +152,10 @@ namespace SparkyStudios::Audio::Amplitude
         // Initialize the gain with the value specified by the definition file.
         _gain = _busDefinition->gain();
 
-        if (_gainFader != nullptr)
-            _gainFaderFactory->DestroyInstance(_gainFader);
+        _gainFader = nullptr;
 
-        _gainFaderFactory = Fader::Find(_busDefinition->fader()->str());
-
-        if (_gainFaderFactory != nullptr)
-            _gainFader = _gainFaderFactory->CreateInstance();
+        if (const auto gainFaderFactory = Fader::Find(_busDefinition->fader()->str()); gainFaderFactory != nullptr)
+            _gainFader = gainFaderFactory->CreateInstance();
 
         _childBuses.clear();
         _duckBuses.clear();

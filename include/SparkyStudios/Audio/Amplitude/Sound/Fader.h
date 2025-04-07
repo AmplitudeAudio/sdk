@@ -69,7 +69,7 @@ namespace SparkyStudios::Audio::Amplitude
              *
              * @param[in] controlPoints The control points of the curve.
              */
-            Transition(const BezierCurveControlPoints& controlPoints);
+            explicit Transition(const BezierCurveControlPoints& controlPoints);
 
             /**
              * @brief Given an animation duration percentage (in the range [0, 1]),
@@ -230,7 +230,7 @@ namespace SparkyStudios::Audio::Amplitude
          *
          * @return A new instance of the Fader.
          */
-        virtual FaderInstance* CreateInstance() = 0;
+        virtual std::shared_ptr<FaderInstance> CreateInstance() = 0;
 
         /**
          * @brief Destroys an instance of the Fader.
@@ -278,15 +278,7 @@ namespace SparkyStudios::Audio::Amplitude
          *
          * @return The fader with the given name, or `nullptr` if none.
          */
-        static FaderInstance* Construct(const AmString& name);
-
-        /**
-         * @brief Destroys the given fader instance.
-         *
-         * @param[in] name The name of the fader.
-         * @param[in] instance The fader instance to destroy.
-         */
-        static void Destruct(const AmString& name, FaderInstance* instance);
+        static std::shared_ptr<FaderInstance> Construct(const AmString& name);
 
         /**
          * @brief Locks the faders registry.

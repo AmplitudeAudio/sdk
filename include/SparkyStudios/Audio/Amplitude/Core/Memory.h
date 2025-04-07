@@ -694,6 +694,9 @@ namespace SparkyStudios::Audio::Amplitude
         explicit MemoryManager(std::unique_ptr<MemoryAllocator> allocator);
         ~MemoryManager();
 
+        void RemoveAllocation(const Allocation& allocation);
+        void AddAllocation(const Allocation& allocation);
+
         std::unique_ptr<MemoryAllocator> _allocator;
 
         std::set<Allocation> _memAllocations;
@@ -869,7 +872,7 @@ namespace SparkyStudios::Audio::Amplitude
      * @ingroup memory
      */
     template<typename T>
-    struct AmFakeSharedPtr : public std::shared_ptr<T>
+    class AmFakeSharedPtr : public std::shared_ptr<T>
     {
         struct am_fake_delete
         {
@@ -879,12 +882,13 @@ namespace SparkyStudios::Audio::Amplitude
             {}
         };
 
+    public:
         /**
          * @brief Creates a new fake shared pointer.
          *
          * @param[in] ptr The pointer to wrap.
          */
-        AmFakeSharedPtr(T* ptr)
+        explicit AmFakeSharedPtr(T* ptr)
             : std::shared_ptr<T>(ptr, am_fake_delete{})
         {}
     };

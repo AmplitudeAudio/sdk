@@ -23,7 +23,7 @@ namespace SparkyStudios::Audio::Amplitude
 {
     class DCRemovalFilter;
 
-    class DCRemovalFilterInstance : public FilterInstance
+    class DCRemovalFilterInstance final : public FilterInstance
     {
     public:
         explicit DCRemovalFilterInstance(DCRemovalFilter* parent);
@@ -59,9 +59,7 @@ namespace SparkyStudios::Audio::Amplitude
 
         AmResult Initialize(AmReal32 length = 0.1f);
 
-        FilterInstance* CreateInstance() override;
-
-        void DestroyInstance(FilterInstance* instance) override;
+        std::shared_ptr<FilterInstance> CreateInstance() override;
 
     private:
         AmReal32 _length;

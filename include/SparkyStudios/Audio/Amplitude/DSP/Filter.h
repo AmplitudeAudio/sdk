@@ -145,7 +145,7 @@ namespace SparkyStudios::Audio::Amplitude
 
     public:
         /**
-         * @brief The type of a filter parameter.
+         * @brief The type of filter parameter.
          */
         enum ParameterType
         {
@@ -214,17 +214,7 @@ namespace SparkyStudios::Audio::Amplitude
          *
          * @return A new instance of the filter.
          */
-        virtual FilterInstance* CreateInstance() = 0;
-
-        /**
-         * @brief Destroys an instance of the filter.
-         *
-         * @warning The instance should have been created with @ref CreateInstance `CreateInstance()`
-         * before being destroyed with this method.
-         *
-         * @param[in] instance The filter instance to be destroyed.
-         */
-        virtual void DestroyInstance(FilterInstance* instance) = 0;
+        virtual std::shared_ptr<FilterInstance> CreateInstance() = 0;
 
         /**
          * @brief Gets the name of this filter.
@@ -255,7 +245,7 @@ namespace SparkyStudios::Audio::Amplitude
         static std::shared_ptr<Filter> Find(const AmString& name);
 
         /**
-         * @brief Creates a new instance of the the filter with the given name and returns its pointer.
+         * @brief Creates a new instance of the filter with the given name and returns its pointer.
          *
          * @note The returned pointer should be deleted using @ref Destruct `Destruct()`.
          *
@@ -263,18 +253,10 @@ namespace SparkyStudios::Audio::Amplitude
          *
          * @return The filter with the given name, or `nullptr` if none.
          */
-        static FilterInstance* Construct(const AmString& name);
+        static std::shared_ptr<FilterInstance> Construct(const AmString& name);
 
         /**
-         * @brief Destroys the given filter instance.
-         *
-         * @param[in] name The name of the filter.
-         * @param[in] instance The filter instance to destroy.
-         */
-        static void Destruct(const AmString& name, FilterInstance* instance);
-
-        /**
-         * @brief Locks the filters registry.
+         * @brief Locks the filters' registry.
          *
          * @warning This function is mainly used for internal purposes. It's
          * called before the `Engine` initialization, to discard the registration
@@ -283,7 +265,7 @@ namespace SparkyStudios::Audio::Amplitude
         static void LockRegistry();
 
         /**
-         * @brief Unlocks the filters registry.
+         * @brief Unlocks the filters' registry.
          *
          * @warning This function is mainly used for internal purposes. It's
          * called after the `Engine` deinitialization, to allow the registration

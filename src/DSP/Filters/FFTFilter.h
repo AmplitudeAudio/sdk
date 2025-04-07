@@ -32,8 +32,7 @@ namespace SparkyStudios::Audio::Amplitude
         explicit FFTFilter(const std::string& name);
         ~FFTFilter() override = default;
 
-        FilterInstance* CreateInstance() override;
-        void DestroyInstance(FilterInstance* instance) override;
+        std::shared_ptr<FilterInstance> CreateInstance() override;
     };
 
     class FFTFilterInstance : public FilterInstance

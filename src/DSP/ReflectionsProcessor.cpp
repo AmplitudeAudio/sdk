@@ -57,11 +57,7 @@ namespace SparkyStudios::Audio::Amplitude
 
     ReflectionsProcessor::~ReflectionsProcessor()
     {
-        if (_lowPassFilter != nullptr)
-        {
-            Filter::Destruct("MonoPole", _lowPassFilter);
-            _lowPassFilter = nullptr;
-        }
+        _lowPassFilter = nullptr;
     }
 
     void ReflectionsProcessor::Update(const RoomInternalState* roomState, const AmVec3& listenerPosition, AmReal32 speedOfSound)
@@ -121,11 +117,10 @@ namespace SparkyStudios::Audio::Amplitude
     {
         const AmVec3 roomCenter = AM_V3(0.0f, 0.0f, 0.0f);
 
-        BoxShape roomShape(roomCenter, dimensions);
-        if (!roomShape.Contains(relativeListenerPosition))
+        if (BoxShape roomShape(roomCenter, dimensions); !roomShape.Contains(relativeListenerPosition))
         {
             // Nothing to do if the listener is outside the room.
-            std::fill(_reflections.begin(), _reflections.end(), Reflection());
+            std::ranges::fill(_reflections, Reflection());
             return;
         }
 

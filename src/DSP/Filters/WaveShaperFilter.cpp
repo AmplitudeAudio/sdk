@@ -65,14 +65,9 @@ namespace SparkyStudios::Audio::Amplitude
         return 0.0f;
     }
 
-    FilterInstance* WaveShaperFilter::CreateInstance()
+    std::shared_ptr<FilterInstance> WaveShaperFilter::CreateInstance()
     {
-        return ampoolnew(eMemoryPoolKind_Filtering, WaveShaperFilterInstance, this);
-    }
-
-    void WaveShaperFilter::DestroyInstance(FilterInstance* instance)
-    {
-        ampooldelete(eMemoryPoolKind_Filtering, WaveShaperFilterInstance, (WaveShaperFilterInstance*)instance);
+        return AmSharedPtr<WaveShaperFilterInstance, eMemoryPoolKind_Filtering>::Make(this);
     }
 
     WaveShaperFilterInstance::WaveShaperFilterInstance(WaveShaperFilter* parent)

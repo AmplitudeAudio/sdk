@@ -123,11 +123,8 @@ namespace SparkyStudios::Audio::Amplitude
         AmReal64 _currentValue;
         AmReal64 _targetValue;
 
-        std::shared_ptr<Fader> _faderAttackFactory;
-        std::shared_ptr<Fader> _faderReleaseFactory;
-
-        FaderInstance* _faderAttack;
-        FaderInstance* _faderRelease;
+        std::shared_ptr<FaderInstance> _faderAttack;
+        std::shared_ptr<FaderInstance> _faderRelease;
     };
 } // namespace SparkyStudios::Audio::Amplitude
 

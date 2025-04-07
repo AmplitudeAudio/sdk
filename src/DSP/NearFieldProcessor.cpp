@@ -54,17 +54,8 @@ namespace SparkyStudios::Audio::Amplitude
 
     NearFieldProcessor::~NearFieldProcessor()
     {
-        if (_lowPassFilter != nullptr)
-        {
-            Filter::Destruct("BiquadResonant", _lowPassFilter);
-            _lowPassFilter = nullptr;
-        }
-
-        if (_highPassFilter != nullptr)
-        {
-            Filter::Destruct("BiquadResonant", _highPassFilter);
-            _highPassFilter = nullptr;
-        }
+        _lowPassFilter = nullptr;
+        _highPassFilter = nullptr;
     }
 
     void NearFieldProcessor::Process(const AudioBufferChannel& in, AudioBufferChannel& out, bool isHrtfEnabled)

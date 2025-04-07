@@ -34,10 +34,10 @@ namespace SparkyStudios::Audio::Amplitude
     {
     public:
         /**
-         * @brief Creates a new AudioDriver with an unique name.
+         * @brief Creates a new Driver with a unique name.
          *
          * @param[in] name The driver name. Recommended names are "APIName".
-         * eg. "MiniAudio" or "PortAudio" or "SDL", etc...
+         * e.g. "MiniAudio" or "PortAudio" or "SDL", etc...
          */
         explicit Driver(AmString name);
 
@@ -123,7 +123,7 @@ namespace SparkyStudios::Audio::Amplitude
         static void SetDefault(const AmString& name);
 
         /**
-         * @brief Locks the drivers registry.
+         * @brief Locks the drivers' registry.
          *
          * @warning This function is mainly used for internal purposes. It's
          * called before the `Engine` initialization, to discard the registration
@@ -132,7 +132,7 @@ namespace SparkyStudios::Audio::Amplitude
         static void LockRegistry();
 
         /**
-         * @brief Unlocks the drivers registry.
+         * @brief Unlocks the drivers' registry.
          *
          * @warning This function is mainly used for internal purposes. It's
          * called after the `Engine` deinitialization, to allow the registration

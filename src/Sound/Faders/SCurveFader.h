@@ -30,7 +30,7 @@ namespace SparkyStudios::Audio::Amplitude
     public:
         explicit SCurveFaderInstance(const BezierCurveControlPoints& curveControlPoints)
         {
-            m_curve = curveControlPoints;
+            m_curve = Transition(curveControlPoints);
         }
     };
 
@@ -41,9 +41,9 @@ namespace SparkyStudios::Audio::Amplitude
             : Fader("SCurveSmooth")
         {}
 
-        FaderInstance* CreateInstance() override
+        std::shared_ptr<FaderInstance> CreateInstance() override
         {
-            return amnew(SCurveFaderInstance, gSCurveSmoothFaderCurveControlPoints);
+            return AmSharedPtr<SCurveFaderInstance, eMemoryPoolKind_Engine>::Make(gSCurveSmoothFaderCurveControlPoints);
         }
 
         void DestroyInstance(FaderInstance* instance) override
@@ -64,9 +64,9 @@ namespace SparkyStudios::Audio::Amplitude
             : Fader("SCurveSharp")
         {}
 
-        FaderInstance* CreateInstance() override
+        std::shared_ptr<FaderInstance> CreateInstance() override
         {
-            return amnew(SCurveFaderInstance, gSCurveSharpFaderCurveControlPoints);
+            return AmSharedPtr<SCurveFaderInstance, eMemoryPoolKind_Engine>::Make(gSCurveSharpFaderCurveControlPoints);
         }
 
         void DestroyInstance(FaderInstance* instance) override

@@ -73,14 +73,9 @@ namespace SparkyStudios::Audio::Amplitude
         return 0.0f;
     }
 
-    FilterInstance* RobotizeFilter::CreateInstance()
+    std::shared_ptr<FilterInstance> RobotizeFilter::CreateInstance()
     {
-        return ampoolnew(eMemoryPoolKind_Filtering, RobotizeFilterInstance, this);
-    }
-
-    void RobotizeFilter::DestroyInstance(FilterInstance* instance)
-    {
-        ampooldelete(eMemoryPoolKind_Filtering, RobotizeFilterInstance, (RobotizeFilterInstance*)instance);
+        return AmSharedPtr<RobotizeFilterInstance, eMemoryPoolKind_Filtering>::Make(this);
     }
 
     RobotizeFilterInstance::RobotizeFilterInstance(RobotizeFilter* parent)

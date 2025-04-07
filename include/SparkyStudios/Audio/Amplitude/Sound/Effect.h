@@ -85,7 +85,7 @@ namespace SparkyStudios::Audio::Amplitude
          *
          * @return The filter instance.
          */
-        [[nodiscard]] virtual FilterInstance* GetFilter() const = 0;
+        [[nodiscard]] virtual std::shared_ptr<FilterInstance> GetFilter() const = 0;
     };
 
 } // namespace SparkyStudios::Audio::Amplitude

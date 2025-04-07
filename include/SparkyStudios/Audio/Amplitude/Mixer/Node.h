@@ -47,7 +47,7 @@ namespace SparkyStudios::Audio::Amplitude
          * @param[in] layer The Amplimix layer this node instance is currently associated with.
          * @param[in] pipeline The pipeline this node instance belongs to.
          */
-        virtual void Initialize(AmObjectID id, const AmplimixLayer* layer, std::shared_ptr<const PipelineInstance> pipeline);
+        virtual void Initialize(AmObjectID id, const AmplimixLayer* layer, const PipelineInstance* pipeline);
 
         /**
          * @brief Default destructor.
@@ -81,7 +81,7 @@ namespace SparkyStudios::Audio::Amplitude
     protected:
         AmObjectID m_id; ///< The unique identifier for the node instance in the pipeline.
         const AmplimixLayer* m_layer; ///< The Amplimix layer this node instance is currently associated with.
-        std::shared_ptr<const PipelineInstance> m_pipeline; ///< The pipeline this node instance belongs to.
+        const PipelineInstance* m_pipeline; ///< The pipeline this node instance belongs to.
     };
 
     /**
@@ -313,7 +313,7 @@ namespace SparkyStudios::Audio::Amplitude
 
     private:
         AudioBuffer* _buffer;
-        FilterInstance* _filter;
+        std::shared_ptr<FilterInstance> _filter;
     };
 
     /**

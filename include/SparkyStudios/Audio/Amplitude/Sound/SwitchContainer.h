@@ -115,7 +115,7 @@ namespace SparkyStudios::Audio::Amplitude
          *
          * @return The fade in Fader.
          */
-        [[nodiscard]] virtual FaderInstance* GetFaderIn(AmObjectID id) const = 0;
+        [[nodiscard]] virtual std::shared_ptr<FaderInstance> GetFaderIn(AmObjectID id) const = 0;
 
         /**
          * @brief Get the fade out Fader for the given sound object ID.
@@ -124,7 +124,7 @@ namespace SparkyStudios::Audio::Amplitude
          *
          * @return The fade out Fader.
          */
-        [[nodiscard]] virtual FaderInstance* GetFaderOut(AmObjectID id) const = 0;
+        [[nodiscard]] virtual std::shared_ptr<FaderInstance> GetFaderOut(AmObjectID id) const = 0;
 
         /**
          * @brief Returns the list of sound objects referenced in this SwitchContainer for the given state.

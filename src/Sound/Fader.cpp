@@ -282,25 +282,13 @@ namespace SparkyStudios::Audio::Amplitude
         return nullptr;
     }
 
-    FaderInstance* Fader::Construct(const AmString& name)
+    std::shared_ptr<FaderInstance> Fader::Construct(const AmString& name)
     {
         std::shared_ptr<Fader> fader = Find(name);
         if (fader == nullptr)
             return nullptr;
 
         return fader->CreateInstance();
-    }
-
-    void Fader::Destruct(const AmString& name, FaderInstance* instance)
-    {
-        if (instance == nullptr)
-            return;
-
-        std::shared_ptr<Fader> fader = Find(name);
-        if (fader == nullptr)
-            return;
-
-        fader->DestroyInstance(instance);
     }
 
     void Fader::LockRegistry()

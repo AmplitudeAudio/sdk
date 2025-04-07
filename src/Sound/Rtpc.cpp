@@ -27,23 +27,12 @@ namespace SparkyStudios::Audio::Amplitude
         , _defValue(0.0)
         , _currentValue(0.0)
         , _targetValue(0.0)
-        , _faderAttackFactory(nullptr)
-        , _faderReleaseFactory(nullptr)
         , _faderAttack(nullptr)
         , _faderRelease(nullptr)
     {}
 
     RtpcImpl::~RtpcImpl()
     {
-        if (_faderAttack != nullptr)
-            _faderAttackFactory->DestroyInstance(_faderAttack);
-
-        if (_faderRelease != nullptr)
-            _faderReleaseFactory->DestroyInstance(_faderRelease);
-
-        _faderAttackFactory = nullptr;
-        _faderReleaseFactory = nullptr;
-
         _faderAttack = nullptr;
         _faderRelease = nullptr;
     }
@@ -93,18 +82,18 @@ namespace SparkyStudios::Audio::Amplitude
 
         if (definition->fade_settings() && definition->fade_settings()->enabled())
         {
-            _faderAttackFactory = Fader::Find(definition->fade_settings()->fade_attack()->fader()->str());
-            _faderReleaseFactory = Fader::Find(definition->fade_settings()->fade_release()->fader()->str());
+            const auto faderAttackFactory = Fader::Find(definition->fade_settings()->fade_attack()->fader()->str());
+            const auto faderReleaseFactory = Fader::Find(definition->fade_settings()->fade_release()->fader()->str());
 
-            if (_faderAttackFactory != nullptr)
+            if (faderAttackFactory != nullptr)
             {
-                _faderAttack = _faderAttackFactory->CreateInstance();
+                _faderAttack = faderAttackFactory->CreateInstance();
                 _faderAttack->SetDuration(definition->fade_settings()->fade_attack()->duration());
             }
 
-            if (_faderReleaseFactory != nullptr)
+            if (faderReleaseFactory != nullptr)
             {
-                _faderRelease = _faderReleaseFactory->CreateInstance();
+                _faderRelease = faderReleaseFactory->CreateInstance();
                 _faderRelease->SetDuration(definition->fade_settings()->fade_release()->duration());
             }
         }
@@ -129,7 +118,6 @@ namespace SparkyStudios::Audio::Amplitude
         : _valueKind(ValueKind_None)
         , _value(0.0f)
         , _curve(nullptr)
-        , _ownCurve(false)
         , _rtpc(nullptr)
         , _initialized(false)
     {}
@@ -139,7 +127,6 @@ namespace SparkyStudios::Audio::Amplitude
         _valueKind = other._valueKind;
         _value = other._value;
         _curve = other._curve;
-        _ownCurve = false;
         _rtpc = other._rtpc;
         _initialized = true;
     }
@@ -149,17 +136,15 @@ namespace SparkyStudios::Audio::Amplitude
         _valueKind = ValueKind_Static;
         _value = value;
         _curve = nullptr;
-        _ownCurve = false;
         _rtpc = nullptr;
         _initialized = true;
     }
 
-    void RtpcValue::Init(const Rtpc* rtpc, Curve* curve)
+    void RtpcValue::Init(const Rtpc* rtpc, std::shared_ptr<Curve> curve)
     {
         _valueKind = ValueKind_RTPC;
         _value = 0.0f;
         _curve = curve;
-        _ownCurve = false;
         _rtpc = rtpc;
         _initialized = false;
     }
@@ -169,7 +154,6 @@ namespace SparkyStudios::Audio::Amplitude
         _valueKind = definition->kind();
         _value = definition->value();
         _curve = nullptr;
-        _ownCurve = true;
         _rtpc = nullptr;
 
         if (definition->kind() == ValueKind_RTPC)
@@ -181,10 +165,10 @@ namespace SparkyStudios::Audio::Amplitude
                 amLogError("Linking a parameter to an invalid or uninitialized RTPC handle.");
             }
 
-            auto* curve = ampoolnew(eMemoryPoolKind_Engine, Curve);
+            auto curve = AmSharedPtr<Curve, eMemoryPoolKind_Engine>::Make();
             curve->Initialize(definition->rtpc()->curve());
 
-            _curve = curve;
+            _curve = std::move(curve);
         }
 
         _initialized = true;
@@ -192,12 +176,8 @@ namespace SparkyStudios::Audio::Amplitude
 
     RtpcValue::~RtpcValue()
     {
-        if (_ownCurve && _curve != nullptr)
-            ampooldelete(eMemoryPoolKind_Engine, Curve, _curve);
-
-        _ownCurve = false;
-        _curve = nullptr;
         _rtpc = nullptr;
+        _curve = nullptr;
     }
 
     float RtpcValue::GetValue() const

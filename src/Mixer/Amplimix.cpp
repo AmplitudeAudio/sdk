@@ -227,6 +227,9 @@ namespace SparkyStudios::Audio::Amplitude
 
         if (const auto* engine = static_cast<const EngineImpl*>(Engine::GetInstance()); engine->GetState()->stopping)
         {
+            // Stop playing the sound
+            channelState->HaltInternal();
+
             channelState->Trigger(ChannelEvent::End);
 
             OnSoundDestroyed(mixer, layer);
@@ -698,9 +701,9 @@ namespace SparkyStudios::Audio::Amplitude
         // check id and state flag to make sure the id is valid
         if (PlayStateFlag prev; (id == lay->id) && ((prev = AMPLIMIX_LOAD(&lay->flag)) >= ePSF_STOP))
         {
-            // return failure if already in desired state
+            // return success if already in desired state
             if (prev == flag)
-                return false;
+                return true;
 
             // run appropriate callback
             if (prev == ePSF_STOP && (flag == ePSF_PLAY || flag == ePSF_LOOP))

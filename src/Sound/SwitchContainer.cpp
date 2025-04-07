@@ -30,11 +30,11 @@ namespace SparkyStudios::Audio::Amplitude
     {
         _switch = nullptr;
 
-        for (const auto& instance : _fadersIn | std::views::values)
-            std::get<0>(instance)->DestroyInstance(std::get<1>(instance));
+        for (auto& instance : _fadersIn | std::views::values)
+            instance = nullptr;
 
-        for (const auto& instance : _fadersOut | std::views::values)
-            std::get<0>(instance)->DestroyInstance(std::get<1>(instance));
+        for (auto& instance : _fadersOut | std::views::values)
+            instance = nullptr;
 
         _sounds.clear();
         _fadersIn.clear();
@@ -56,18 +56,18 @@ namespace SparkyStudios::Audio::Amplitude
         return _switch;
     }
 
-    FaderInstance* SwitchContainerImpl::GetFaderIn(AmObjectID id) const
+    std::shared_ptr<FaderInstance> SwitchContainerImpl::GetFaderIn(AmObjectID id) const
     {
         if (_fadersIn.contains(id))
-            return std::get<1>(_fadersIn.at(id));
+            return _fadersIn.at(id);
 
         return nullptr;
     }
 
-    FaderInstance* SwitchContainerImpl::GetFaderOut(AmObjectID id) const
+    std::shared_ptr<FaderInstance> SwitchContainerImpl::GetFaderOut(AmObjectID id) const
     {
         if (_fadersOut.contains(id))
-            return std::get<1>(_fadersOut.at(id));
+            return _fadersOut.at(id);
 
         return nullptr;
     }
@@ -182,17 +182,11 @@ namespace SparkyStudios::Audio::Amplitude
             }
 
             // Setup entry Faders
-            std::shared_ptr<Fader> fader = Fader::Find(entry->fade_in()->fader()->str());
-            FaderInstance* faderInstance = fader->CreateInstance();
-            faderInstance->SetDuration(entry->fade_in()->duration());
+            _fadersIn[id] = Fader::Construct(entry->fade_in()->fader()->str());
+            _fadersIn[id]->SetDuration(entry->fade_in()->duration());
 
-            _fadersIn[id] = std::make_tuple(fader, faderInstance);
-
-            fader = Fader::Find(entry->fade_out()->fader()->str());
-            faderInstance = fader->CreateInstance();
-            faderInstance->SetDuration(entry->fade_out()->duration());
-
-            _fadersOut[id] = std::make_tuple(fader, faderInstance);
+            _fadersOut[id] = Fader::Construct(entry->fade_out()->fader()->str());
+            _fadersOut[id]->SetDuration(entry->fade_out()->duration());
 
             SwitchContainerItem item;
             item.m_id = id;

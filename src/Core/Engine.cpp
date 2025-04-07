@@ -1476,7 +1476,7 @@ namespace SparkyStudios::Audio::Amplitude
     void EngineImpl::StopAll() const
     {
         for (auto&& channel : _state->channel_state_memory)
-            if (channel.Valid() && channel.Playing())
+            if (channel.Valid())
                 channel.Halt();
     }
 

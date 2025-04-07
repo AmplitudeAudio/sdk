@@ -75,13 +75,9 @@ namespace SparkyStudios::Audio::Amplitude
 
         ~MP3Codec() override = default;
 
-        [[nodiscard]] Decoder* CreateDecoder() override;
+        [[nodiscard]] std::shared_ptr<Decoder> CreateDecoder() override;
 
-        void DestroyDecoder(Decoder* decoder) override;
-
-        [[nodiscard]] Encoder* CreateEncoder() override;
-
-        void DestroyEncoder(Encoder* encoder) override;
+        [[nodiscard]] std::shared_ptr<Encoder> CreateEncoder() override;
 
         [[nodiscard]] bool CanHandleFile(std::shared_ptr<File> file) const override;
 

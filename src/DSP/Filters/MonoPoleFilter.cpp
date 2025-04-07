@@ -98,13 +98,8 @@ namespace SparkyStudios::Audio::Amplitude
         return 0.0f;
     }
 
-    FilterInstance* MonoPoleFilter::CreateInstance()
+    std::shared_ptr<FilterInstance> MonoPoleFilter::CreateInstance()
     {
-        return ampoolnew(eMemoryPoolKind_Filtering, MonoPoleFilterInstance, this);
-    }
-
-    void MonoPoleFilter::DestroyInstance(FilterInstance* instance)
-    {
-        ampooldelete(eMemoryPoolKind_Filtering, MonoPoleFilterInstance, (MonoPoleFilterInstance*)instance);
+        return AmSharedPtr<MonoPoleFilterInstance, eMemoryPoolKind_Filtering>::Make(this);
     }
 } // namespace SparkyStudios::Audio::Amplitude

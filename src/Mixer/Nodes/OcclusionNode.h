@@ -37,7 +37,7 @@ namespace SparkyStudios::Audio::Amplitude
         MonoPoleFilter _filter;
 
         AmReal32 _currentOcclusion;
-        FilterInstance* _occlusionFilter;
+        std::shared_ptr<FilterInstance> _occlusionFilter;
 
         AudioBuffer _output;
     };

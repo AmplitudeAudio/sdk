@@ -148,14 +148,9 @@ namespace SparkyStudios::Audio::Amplitude
         }
     }
 
-    FilterInstance* BiquadResonantFilter::CreateInstance()
+    std::shared_ptr<FilterInstance> BiquadResonantFilter::CreateInstance()
     {
-        return ampoolnew(eMemoryPoolKind_Filtering, BiquadResonantFilterInstance, this);
-    }
-
-    void BiquadResonantFilter::DestroyInstance(FilterInstance* instance)
-    {
-        ampooldelete(eMemoryPoolKind_Filtering, BiquadResonantFilterInstance, (BiquadResonantFilterInstance*)instance);
+        return AmSharedPtr<BiquadResonantFilterInstance, eMemoryPoolKind_Filtering>::Make(this);
     }
 
     BiquadResonantFilterInstance::BiquadResonantFilterInstance(BiquadResonantFilter* parent)
@@ -261,7 +256,8 @@ namespace SparkyStudios::Audio::Amplitude
         }
 
         const AmReal32 q = m_parameters[BiquadResonantFilter::ATTRIBUTE_RESONANCE];
-        const AmReal32 omega = 2.0f * AM_PI32 * m_parameters[BiquadResonantFilter::ATTRIBUTE_FREQUENCY] / static_cast<AmReal32>(_sampleRate);
+        const AmReal32 omega =
+            2.0f * AM_PI32 * m_parameters[BiquadResonantFilter::ATTRIBUTE_FREQUENCY] / static_cast<AmReal32>(_sampleRate);
         const AmReal32 sinOmega = std::sin(omega);
         const AmReal32 cosOmega = std::cos(omega);
         const AmReal32 A = std::pow(10.0f, (m_parameters[BiquadResonantFilter::ATTRIBUTE_GAIN] / 40.0f));

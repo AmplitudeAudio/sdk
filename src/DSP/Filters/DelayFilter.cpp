@@ -70,14 +70,9 @@ namespace SparkyStudios::Audio::Amplitude
         return 0.0f;
     }
 
-    FilterInstance* DelayFilter::CreateInstance()
+    std::shared_ptr<FilterInstance> DelayFilter::CreateInstance()
     {
-        return ampoolnew(eMemoryPoolKind_Filtering, DelayFilterInstance, this);
-    }
-
-    void DelayFilter::DestroyInstance(FilterInstance* instance)
-    {
-        ampooldelete(eMemoryPoolKind_Filtering, DelayFilterInstance, (DelayFilterInstance*)instance);
+        return AmSharedPtr<DelayFilterInstance, eMemoryPoolKind_Filtering>::Make(this);
     }
 
     DelayFilterInstance::DelayFilterInstance(DelayFilter* parent)

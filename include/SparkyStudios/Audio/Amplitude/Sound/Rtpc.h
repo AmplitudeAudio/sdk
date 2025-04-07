@@ -20,10 +20,8 @@
 #include <SparkyStudios/Audio/Amplitude/Core/Common.h>
 
 #include <SparkyStudios/Audio/Amplitude/Core/Asset.h>
-
-#include <SparkyStudios/Audio/Amplitude/Math/Curve.h>
-
 #include <SparkyStudios/Audio/Amplitude/IO/File.h>
+#include <SparkyStudios/Audio/Amplitude/Math/Curve.h>
 
 namespace SparkyStudios::Audio::Amplitude
 {
@@ -149,7 +147,7 @@ namespace SparkyStudios::Audio::Amplitude
          * @param[in] rtpc The RTPC to link to.
          * @param[in] curve The curve to use.
          */
-        void Init(const Rtpc* rtpc, Curve* curve);
+        void Init(const Rtpc* rtpc, std::shared_ptr<Curve> curve);
 
         /**
          * @brief Creates a `RtpcValue` object from an asset definition.
@@ -176,8 +174,7 @@ namespace SparkyStudios::Audio::Amplitude
     private:
         AmInt8 _valueKind;
         AmReal32 _value;
-        Curve* _curve;
-        bool _ownCurve;
+        std::shared_ptr<Curve> _curve;
         const Rtpc* _rtpc;
 
         bool _initialized;

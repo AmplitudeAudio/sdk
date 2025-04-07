@@ -23,7 +23,7 @@ namespace SparkyStudios::Audio::Amplitude
 {
     class EqualizerFilter;
 
-    class EqualizerFilterInstance : public FFTFilterInstance
+    class EqualizerFilterInstance final : public FFTFilterInstance
     {
     public:
         explicit EqualizerFilterInstance(EqualizerFilter* parent);
@@ -74,9 +74,7 @@ namespace SparkyStudios::Audio::Amplitude
 
         [[nodiscard]] AmReal32 GetParamMin(AmUInt32 index) const override;
 
-        FilterInstance* CreateInstance() override;
-
-        void DestroyInstance(FilterInstance* instance) override;
+        std::shared_ptr<FilterInstance> CreateInstance() override;
 
     private:
         AmReal32 _volume[8];

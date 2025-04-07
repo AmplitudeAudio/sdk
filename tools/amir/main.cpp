@@ -116,9 +116,10 @@ void estimateITD(HRIRSphereVertex& vertex, AmSize irLength, AmUInt32 sampleRate)
     std::memcpy(hrir[1].begin(), vertex.m_RightIR.data(), irLength * sizeof(AmReal32));
 
     // Apply LPF
-    FilterInstance* lpfInstance = lpfFilter.CreateInstance();
-    lpfInstance->Process(hrir, hrirLPF, irLength, sampleRate);
-    lpfFilter.DestroyInstance(lpfInstance);
+    {
+        auto lpfInstance = lpfFilter.CreateInstance();
+        lpfInstance->Process(hrir, hrirLPF, irLength, sampleRate);
+    }
 
     // xcorr between L and R
     cxcorr(hrirLPF[0].begin(), hrirLPF[1].begin(), correlation.GetBuffer(), irLength, irLength);
@@ -381,10 +382,9 @@ int process(const AmOsString& inFileName, const AmOsString& outFileName, const P
                 return EXIT_FAILURE;
             }
 
-            auto* decoder = wavCodec->CreateDecoder();
-            auto file = AmSharedPtr<DiskFile, eMemoryPoolKind_IO>::Make(absolute(entry));
+            auto decoder = wavCodec->CreateDecoder();
 
-            if (!decoder->Open(file))
+            if (auto file = AmSharedPtr<DiskFile, eMemoryPoolKind_IO>::Make(absolute(entry)); !decoder->Open(file))
             {
                 log(stderr, "\tFailed to open file %s.\n", path.c_str());
                 return EXIT_FAILURE;
@@ -431,7 +431,6 @@ int process(const AmOsString& inFileName, const AmOsString& outFileName, const P
             }
 
             buffer.Clear();
-            wavCodec->DestroyDecoder(decoder);
         }
     }
     else

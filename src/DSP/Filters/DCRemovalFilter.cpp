@@ -33,14 +33,9 @@ namespace SparkyStudios::Audio::Amplitude
         return eErrorCode_Success;
     }
 
-    FilterInstance* DCRemovalFilter::CreateInstance()
+    std::shared_ptr<FilterInstance> DCRemovalFilter::CreateInstance()
     {
-        return ampoolnew(eMemoryPoolKind_Filtering, DCRemovalFilterInstance, this);
-    }
-
-    void DCRemovalFilter::DestroyInstance(FilterInstance* instance)
-    {
-        ampooldelete(eMemoryPoolKind_Filtering, DCRemovalFilterInstance, (DCRemovalFilterInstance*)instance);
+        return AmSharedPtr<DCRemovalFilterInstance, eMemoryPoolKind_Filtering>::Make(this);
     }
 
     DCRemovalFilterInstance::DCRemovalFilterInstance(DCRemovalFilter* parent)

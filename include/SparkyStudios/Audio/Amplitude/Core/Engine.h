@@ -82,7 +82,7 @@ namespace SparkyStudios::Audio::Amplitude
      * engine](../../../integration/initializing-the-engine.md) first, for example:
      * ```cpp
      * amEngine->Initialize("config.amconfig");
-     * //...
+     * // ...
      * amEngine->Deinitialize();
      * ```
      *

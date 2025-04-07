@@ -23,7 +23,7 @@ namespace SparkyStudios::Audio::Amplitude
 {
     class MonoPoleFilter;
 
-    class MonoPoleFilterInstance : public FilterInstance
+    class MonoPoleFilterInstance final : public FilterInstance
     {
     public:
         explicit MonoPoleFilterInstance(MonoPoleFilter* parent);
@@ -63,9 +63,7 @@ namespace SparkyStudios::Audio::Amplitude
 
         [[nodiscard]] AmReal32 GetParamMin(AmUInt32 index) const override;
 
-        FilterInstance* CreateInstance() override;
-
-        void DestroyInstance(FilterInstance* instance) override;
+        std::shared_ptr<FilterInstance> CreateInstance() override;
 
     private:
         AmReal32 _coefficient;

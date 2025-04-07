@@ -23,7 +23,7 @@ namespace SparkyStudios::Audio::Amplitude
 {
     class WaveShaperFilter;
 
-    class WaveShaperFilterInstance : public FilterInstance
+    class WaveShaperFilterInstance final : public FilterInstance
     {
     public:
         explicit WaveShaperFilterInstance(WaveShaperFilter* parent);
@@ -60,9 +60,7 @@ namespace SparkyStudios::Audio::Amplitude
 
         [[nodiscard]] AmReal32 GetParamMin(AmUInt32 index) const override;
 
-        FilterInstance* CreateInstance() override;
-
-        void DestroyInstance(FilterInstance* instance) override;
+        std::shared_ptr<FilterInstance> CreateInstance() override;
 
     private:
         AmReal32 _amount;

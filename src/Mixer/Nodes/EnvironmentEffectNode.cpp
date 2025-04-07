@@ -103,9 +103,11 @@ namespace SparkyStudios::Audio::Amplitude
 
             AudioBuffer scratch(input->GetFrameCount(), input->GetChannelCount());
 
-            FilterInstance* filterInstance = _environmentFilters[environment][layerId]->GetFilter();
-            filterInstance->SetParameter(0, amount);
-            filterInstance->Process(*input, scratch, input->GetFrameCount(), layer->GetSampleRate());
+            {
+                auto filterInstance = _environmentFilters[environment][layerId]->GetFilter();
+                filterInstance->SetParameter(0, amount);
+                filterInstance->Process(*input, scratch, input->GetFrameCount(), layer->GetSampleRate());
+            }
 
             _output += scratch;
         }

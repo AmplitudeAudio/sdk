@@ -129,12 +129,12 @@ namespace SparkyStudios::Audio::Amplitude
         /**
          * @copydoc SwitchContainer::GetFaderIn
          */
-        [[nodiscard]] FaderInstance* GetFaderIn(AmObjectID id) const override;
+        [[nodiscard]] std::shared_ptr<FaderInstance> GetFaderIn(AmObjectID id) const override;
 
         /**
          * @copydoc SwitchContainer::GetFaderOut
          */
-        [[nodiscard]] FaderInstance* GetFaderOut(AmObjectID id) const override;
+        [[nodiscard]] std::shared_ptr<FaderInstance> GetFaderOut(AmObjectID id) const override;
 
         /**
          * @copydoc SwitchContainer::GetSoundObjects
@@ -165,8 +165,8 @@ namespace SparkyStudios::Audio::Amplitude
         SwitchImpl* _switch;
 
         std::map<AmObjectID, std::vector<SwitchContainerItem>> _sounds;
-        std::map<AmObjectID, std::tuple<std::shared_ptr<Fader>, FaderInstance*>> _fadersIn;
-        std::map<AmObjectID, std::tuple<std::shared_ptr<Fader>, FaderInstance*>> _fadersOut;
+        std::map<AmObjectID, std::shared_ptr<FaderInstance>> _fadersIn;
+        std::map<AmObjectID, std::shared_ptr<FaderInstance>> _fadersOut;
     };
 } // namespace SparkyStudios::Audio::Amplitude
 

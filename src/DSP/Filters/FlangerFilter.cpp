@@ -77,14 +77,9 @@ namespace SparkyStudios::Audio::Amplitude
         return 0.001f;
     }
 
-    FilterInstance* FlangerFilter::CreateInstance()
+    std::shared_ptr<FilterInstance> FlangerFilter::CreateInstance()
     {
-        return ampoolnew(eMemoryPoolKind_Filtering, FlangerFilterInstance, this);
-    }
-
-    void FlangerFilter::DestroyInstance(FilterInstance* instance)
-    {
-        ampooldelete(eMemoryPoolKind_Filtering, FlangerFilterInstance, (FlangerFilterInstance*)instance);
+        return AmSharedPtr<FlangerFilterInstance, eMemoryPoolKind_Filtering>::Make(this);
     }
 
     FlangerFilterInstance::FlangerFilterInstance(FlangerFilter* parent)

@@ -61,23 +61,9 @@ namespace SparkyStudios::Audio::Amplitude
     {
         for (AmUInt32 i = 0; i < 2; ++i)
         {
-            if (_lowShelfFilter[i] != nullptr)
-            {
-                _eqFilterFactory.DestroyInstance(_lowShelfFilter[i]);
-                _lowShelfFilter[i] = nullptr;
-            }
-
-            if (_peakingFilter[i] != nullptr)
-            {
-                _eqFilterFactory.DestroyInstance(_peakingFilter[i]);
-                _peakingFilter[i] = nullptr;
-            }
-
-            if (_highShelfFilter[i] != nullptr)
-            {
-                _eqFilterFactory.DestroyInstance(_highShelfFilter[i]);
-                _highShelfFilter[i] = nullptr;
-            }
+            _lowShelfFilter[i] = nullptr;
+            _peakingFilter[i] = nullptr;
+            _highShelfFilter[i] = nullptr;
         }
     }
 

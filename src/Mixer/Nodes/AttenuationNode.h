@@ -44,9 +44,9 @@ namespace SparkyStudios::Audio::Amplitude
 
         BiquadResonantFilter _eqFilterFactory;
 
-        FilterInstance* _lowShelfFilter[2];
-        FilterInstance* _peakingFilter[2];
-        FilterInstance* _highShelfFilter[2];
+        std::shared_ptr<FilterInstance> _lowShelfFilter[2];
+        std::shared_ptr<FilterInstance> _peakingFilter[2];
+        std::shared_ptr<FilterInstance> _highShelfFilter[2];
 
         AmUInt32 _currentSet;
         bool _needUpdateGains;

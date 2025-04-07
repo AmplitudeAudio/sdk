@@ -23,7 +23,7 @@ namespace SparkyStudios::Audio::Amplitude
 {
     class DelayFilter;
 
-    class DelayFilterInstance : public FilterInstance
+    class DelayFilterInstance final : public FilterInstance
     {
     public:
         explicit DelayFilterInstance(DelayFilter* parent);
@@ -73,9 +73,7 @@ namespace SparkyStudios::Audio::Amplitude
 
         [[nodiscard]] AmReal32 GetParamMin(AmUInt32 index) const override;
 
-        FilterInstance* CreateInstance() override;
-
-        void DestroyInstance(FilterInstance* instance) override;
+        std::shared_ptr<FilterInstance> CreateInstance() override;
 
     protected:
         AmReal32 _delay;

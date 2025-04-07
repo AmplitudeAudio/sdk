@@ -23,7 +23,7 @@ namespace SparkyStudios::Audio::Amplitude
 {
     class FlangerFilter;
 
-    class FlangerFilterInstance : public FilterInstance
+    class FlangerFilterInstance final : public FilterInstance
     {
     public:
         explicit FlangerFilterInstance(FlangerFilter* parent);
@@ -72,9 +72,7 @@ namespace SparkyStudios::Audio::Amplitude
 
         [[nodiscard]] AmReal32 GetParamMin(AmUInt32 index) const override;
 
-        FilterInstance* CreateInstance() override;
-
-        void DestroyInstance(FilterInstance* instance) override;
+        std::shared_ptr<FilterInstance> CreateInstance() override;
 
     private:
         AmReal32 _delay;

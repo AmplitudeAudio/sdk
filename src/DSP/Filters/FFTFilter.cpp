@@ -34,14 +34,9 @@ namespace SparkyStudios::Audio::Amplitude
         : Filter(name)
     {}
 
-    FilterInstance* FFTFilter::CreateInstance()
+    std::shared_ptr<FilterInstance> FFTFilter::CreateInstance()
     {
-        return ampoolnew(eMemoryPoolKind_Filtering, FFTFilterInstance, this);
-    }
-
-    void FFTFilter::DestroyInstance(FilterInstance* instance)
-    {
-        ampooldelete(eMemoryPoolKind_Filtering, FFTFilterInstance, (FFTFilterInstance*)instance);
+        return AmSharedPtr<FFTFilterInstance, eMemoryPoolKind_Filtering>::Make(this);
     }
 
     FFTFilterInstance::FFTFilterInstance(FFTFilter* parent)

@@ -63,14 +63,9 @@ namespace SparkyStudios::Audio::Amplitude
         return 0.0f;
     }
 
-    FilterInstance* BassBoostFilter::CreateInstance()
+    std::shared_ptr<FilterInstance> BassBoostFilter::CreateInstance()
     {
-        return ampoolnew(eMemoryPoolKind_Filtering, BassBoostFilterInstance, this);
-    }
-
-    void BassBoostFilter::DestroyInstance(FilterInstance* instance)
-    {
-        ampooldelete(eMemoryPoolKind_Filtering, BassBoostFilterInstance, (BassBoostFilterInstance*)instance);
+        return AmSharedPtr<BassBoostFilterInstance, eMemoryPoolKind_Filtering>::Make(this);
     }
 
     BassBoostFilterInstance::BassBoostFilterInstance(BassBoostFilter* parent)

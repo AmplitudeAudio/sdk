@@ -41,8 +41,6 @@ namespace SparkyStudios::Audio::Amplitude
             , _targetGain(0.0f)
             , _fadeInDuration(0.0)
             , _fadeOutDuration(0.0)
-            , _faderInFactory(nullptr)
-            , _faderOutFactory(nullptr)
             , _faderIn(nullptr)
             , _faderOut(nullptr)
             , _transitionPercentage(0.0)
@@ -62,11 +60,8 @@ namespace SparkyStudios::Audio::Amplitude
         AmTime _fadeInDuration;
         AmTime _fadeOutDuration;
 
-        std::shared_ptr<Fader> _faderInFactory;
-        std::shared_ptr<Fader> _faderOutFactory;
-
-        FaderInstance* _faderIn;
-        FaderInstance* _faderOut;
+        std::shared_ptr<FaderInstance> _faderIn;
+        std::shared_ptr<FaderInstance> _faderOut;
 
         AmTime _transitionPercentage;
     };
@@ -81,7 +76,6 @@ namespace SparkyStudios::Audio::Amplitude
             , _duckBuses()
             , _userGain(1.0f)
             , _targetUserGain(1.0f)
-            , _gainFaderFactory(nullptr)
             , _gainFader(nullptr)
             , _duckGain(1.0f)
             , _gain(1.0f)
@@ -209,10 +203,8 @@ namespace SparkyStudios::Audio::Amplitude
         // The target user gain of this bus (used for fading).
         AmReal32 _targetUserGain;
 
-        std::shared_ptr<Fader> _gainFaderFactory;
-
         // The bus gain fader.
-        FaderInstance* _gainFader;
+        std::shared_ptr<FaderInstance> _gainFader;
 
         // The current _duckGain of this bus to be applied to all buses in
         // _duckBuses.

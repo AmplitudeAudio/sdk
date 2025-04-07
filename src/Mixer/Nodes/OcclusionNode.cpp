@@ -54,7 +54,6 @@ namespace SparkyStudios::Audio::Amplitude
 
     OcclusionNodeInstance::~OcclusionNodeInstance()
     {
-        _filter.DestroyInstance(_occlusionFilter);
         _occlusionFilter = nullptr;
     }
 

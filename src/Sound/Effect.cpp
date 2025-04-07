@@ -102,13 +102,11 @@ namespace SparkyStudios::Audio::Amplitude
 
     EffectInstanceImpl::~EffectInstanceImpl()
     {
-        _parent->_filter->DestroyInstance(_filterInstance);
         _filterInstance = nullptr;
-
         _parent = nullptr;
     }
 
-    FilterInstance* EffectInstanceImpl::GetFilter() const
+    std::shared_ptr<FilterInstance> EffectInstanceImpl::GetFilter() const
     {
         return _filterInstance;
     }

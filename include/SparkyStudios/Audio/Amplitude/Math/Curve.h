@@ -117,7 +117,7 @@ namespace SparkyStudios::Audio::Amplitude
          *
          * @return The `FaderInstance` of this `CurvePart`.
          */
-        [[nodiscard]] FaderInstance* GetFader() const;
+        [[nodiscard]] std::shared_ptr<FaderInstance> GetFader() const;
 
         /**
          * @brief Sets the fader of this `CurvePart`.
@@ -150,8 +150,8 @@ namespace SparkyStudios::Audio::Amplitude
         CurvePoint _start;
         CurvePoint _end;
 
-        std::shared_ptr<Fader> _faderFactory;
-        FaderInstance* _fader;
+        AmString _faderName;
+        std::shared_ptr<FaderInstance> _fader;
     };
 
     /**

@@ -23,7 +23,7 @@ namespace SparkyStudios::Audio::Amplitude
 
     BFormat::~BFormat()
     {
-        if (_buffer)
+        if (_buffer != nullptr)
             ampooldelete(eMemoryPoolKind_SoundData, AudioBuffer, _buffer);
 
         _buffer = nullptr;

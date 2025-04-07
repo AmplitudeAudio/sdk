@@ -20,9 +20,9 @@ namespace SparkyStudios::Audio::Amplitude
 {
     Delay::Delay(AmSize maxDelay, AmSize framesCount)
         : _maxDelay(maxDelay)
-        , _buffer(nullptr)
         , _framesCount(framesCount)
         , _writePos(0)
+        , _buffer(nullptr)
     {
         AMPLITUDE_ASSERT(_framesCount > 0);
         SetMaxDelay(maxDelay);

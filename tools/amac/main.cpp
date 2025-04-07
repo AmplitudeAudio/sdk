@@ -115,7 +115,7 @@ static int process(const AmOsString& inFileName, const AmOsString& outFileName, 
             return EXIT_FAILURE;
         }
 
-        auto* decoder = codec->CreateDecoder();
+        auto decoder = codec->CreateDecoder();
         if (!decoder->Open(inputFile))
         {
             log(stderr, "Unable to load the input file: " AM_OS_CHAR_FMT ". The found codec (%s) was not able to open the input file.\n",
@@ -130,7 +130,7 @@ static int process(const AmOsString& inFileName, const AmOsString& outFileName, 
         AmUInt64 numSamples = format.GetFramesCount();
         AmUInt64 framesSize = format.GetFrameSize();
 
-        auto* encoder = dynamic_cast<AMSCodec::AMSEncoder*>(ams_codec->CreateEncoder());
+        auto encoder = std::dynamic_pointer_cast<AMSCodec::AMSEncoder>(ams_codec->CreateEncoder());
 
         if (state.blockSizeShift > 0)
             blockSize = 1 << state.blockSizeShift;
@@ -200,8 +200,8 @@ static int process(const AmOsString& inFileName, const AmOsString& outFileName, 
     }
     else if (state.mode == ePM_DECODE)
     {
-        auto* decoder = ams_codec->CreateDecoder();
-        auto* encoder = wav_codec->CreateEncoder();
+        auto decoder = ams_codec->CreateDecoder();
+        auto encoder = wav_codec->CreateEncoder();
 
         if (!decoder->Open(inputFile))
         {
@@ -253,9 +253,6 @@ static int process(const AmOsString& inFileName, const AmOsString& outFileName, 
         {
             log(stdout, "Operation completed successfully.\n");
         }
-
-        ams_codec->DestroyDecoder(decoder);
-        wav_codec->DestroyEncoder(encoder);
 
         res = EXIT_SUCCESS;
     }

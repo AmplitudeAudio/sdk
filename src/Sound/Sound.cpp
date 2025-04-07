@@ -50,7 +50,6 @@ namespace SparkyStudios::Audio::Amplitude
         if (_decoder != nullptr)
         {
             _decoder->Close();
-            _codec->DestroyDecoder(_decoder);
 
             _decoder = nullptr;
             _codec = nullptr;
@@ -452,8 +451,6 @@ namespace SparkyStudios::Audio::Amplitude
 
         const auto* data = static_cast<SoundData*>(_userData);
 
-        const AmUInt16 channels = _parent->_format.GetNumChannels();
-
         AmUInt64 l = frames, o = offset, r = 0, s = 0;
         AudioBuffer* b = data->chunk->buffer;
 
@@ -492,10 +489,7 @@ namespace SparkyStudios::Audio::Amplitude
         _effectInstance = nullptr;
 
         if (_parent->_stream && _decoder != nullptr)
-        {
             _decoder->Close();
-            _parent->_codec->DestroyDecoder(_decoder);
-        }
 
         _decoder = nullptr;
 

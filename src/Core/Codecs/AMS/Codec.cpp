@@ -663,24 +663,14 @@ namespace SparkyStudios::Audio::Amplitude
         _noiseShaping = noiseShaping;
     }
 
-    Codec::Decoder* AMSCodec::CreateDecoder()
+    std::shared_ptr<Codec::Decoder> AMSCodec::CreateDecoder()
     {
-        return ampoolnew(eMemoryPoolKind_Codec, AMSDecoder, this);
+        return AmSharedPtr<AMSDecoder, eMemoryPoolKind_Codec>::Make(this);
     }
 
-    void AMSCodec::DestroyDecoder(Decoder* decoder)
+    std::shared_ptr<Codec::Encoder> AMSCodec::CreateEncoder()
     {
-        ampooldelete(eMemoryPoolKind_Codec, AMSDecoder, (AMSDecoder*)decoder);
-    }
-
-    Codec::Encoder* AMSCodec::CreateEncoder()
-    {
-        return ampoolnew(eMemoryPoolKind_Codec, AMSEncoder, this);
-    }
-
-    void AMSCodec::DestroyEncoder(Encoder* encoder)
-    {
-        ampooldelete(eMemoryPoolKind_Codec, AMSEncoder, (AMSEncoder*)encoder);
+        return AmSharedPtr<AMSEncoder, eMemoryPoolKind_Codec>::Make(this);
     }
 
     bool AMSCodec::CanHandleFile(std::shared_ptr<File> file) const

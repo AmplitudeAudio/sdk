@@ -20,8 +20,8 @@ namespace SparkyStudios::Audio::Amplitude
 {
     AmbisonicSpeaker::AmbisonicSpeaker()
     {
-        Configure(1, true);
-        Refresh();
+        AmbisonicSpeaker::Configure(1, true);
+        AmbisonicSpeaker::Refresh();
     }
 
     AmbisonicSpeaker::~AmbisonicSpeaker() = default;
