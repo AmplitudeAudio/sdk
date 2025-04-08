@@ -17,6 +17,8 @@
 #ifndef _AM_IO_DISK_FILE_H
 #define _AM_IO_DISK_FILE_H
 
+#include <filesystem>
+
 #include <SparkyStudios/Audio/Amplitude/IO/File.h>
 
 #include <filesystem>
