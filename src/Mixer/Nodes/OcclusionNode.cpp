@@ -79,7 +79,7 @@ namespace SparkyStudios::Audio::Amplitude
         const AmReal32 listenerDirectivity =
             CalculateDirectivity(listener.GetDirectivity(), listener.GetDirectivitySharpness(), listenerDirection);
 
-        AmReal32 soundDirectivity = 0.0f;
+        AmReal32 soundDirectivity = 1.0f;
         if (entity.Valid())
         {
             direction = GetRelativeDirection(entity.GetLocation(), entity.GetOrientation().GetQuaternion(), listener.GetLocation());
