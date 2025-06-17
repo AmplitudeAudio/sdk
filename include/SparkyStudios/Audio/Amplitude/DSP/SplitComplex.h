@@ -26,7 +26,7 @@ namespace SparkyStudios::Audio::Amplitude
      * @brief Buffer for split-complex representation of FFT results.
      *
      * The split-complex representation stores the real and imaginary parts
-     * of FFT results in two different memory buffers which is useful e.g. for
+     * of FFT result in two different memory buffers, which is useful, e.g., for
      * SIMD optimizations.
      *
      * @ingroup dsp
@@ -41,8 +41,23 @@ namespace SparkyStudios::Audio::Amplitude
          */
         explicit SplitComplex(AmSize initialSize = 0);
 
-        SplitComplex(const SplitComplex&) = delete;
-        SplitComplex& operator=(const SplitComplex&) = delete;
+        /**
+         * @brief Copy constructor and assignment operator are deleted to prevent copying.
+         *
+         * This class does not allow assignment between instances. It ensures
+         * that each instance has its own unique state and prevents accidental sharing
+         * of internal resources.
+         *
+         * @param other The @c SplitComplex instance to assign from. This is explicitly disallowed.
+         *
+         * @return This method does not return a value since it is deleted.
+         */
+        SplitComplex(const SplitComplex& other) = delete;
+
+        /**
+         * @copydoc SplitComplex::SplitComplex(const SplitComplex& other)
+         */
+        SplitComplex& operator=(const SplitComplex& other) = delete;
 
         /**
          * @brief Destroy the split-complex buffer and release all allocated memory.

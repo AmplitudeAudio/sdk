@@ -96,7 +96,7 @@ jobs:
             android_abi: armeabi-v7a
 
     steps:
-      # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
+      # Checks out your repository under $GITHUB_WORKSPACE, so your job can access it
       - uses: actions/checkout@v4
         with:
           submodules: recursive
@@ -122,7 +122,7 @@ jobs:
       - name: Setup vcpkg
         uses: lukka/run-vcpkg@v11.5
         with:
-          vcpkgGitCommitId: 6784dd45fa9a97ce6232f57d755e029b4db3eb81
+          vcpkgGitCommitId: 993c188a0e71002f6b6b959741d57fb8a2edf0ec
           doNotCache: false
 
       - name: Find flatc version

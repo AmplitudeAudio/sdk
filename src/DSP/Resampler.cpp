@@ -95,25 +95,13 @@ namespace SparkyStudios::Audio::Amplitude
         return nullptr;
     }
 
-    ResamplerInstance* Resampler::Construct(const std::string& name)
+    std::shared_ptr<ResamplerInstance> Resampler::Construct(const std::string& name)
     {
         std::shared_ptr<Resampler> resampler = Find(name);
         if (resampler == nullptr)
             return nullptr;
 
         return resampler->CreateInstance();
-    }
-
-    void Resampler::Destruct(const std::string& name, ResamplerInstance* instance)
-    {
-        if (instance == nullptr)
-            return;
-
-        std::shared_ptr<Resampler> resampler = Find(name);
-        if (resampler == nullptr)
-            return;
-
-        resampler->DestroyInstance(instance);
     }
 
     void Resampler::LockRegistry()

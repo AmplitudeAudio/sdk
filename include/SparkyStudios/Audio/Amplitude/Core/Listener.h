@@ -24,11 +24,10 @@ namespace SparkyStudios::Audio::Amplitude
     class ListenerInternalState;
 
     /**
-     * @brief A object which can render sound sources.
+     * @brief An object used to render sound sources.
      *
-     * The `Listener` class is a lightweight reference to a `ListenerInternalState`
-     * which is managed by the `Engine`. Multiple `Listener` objects may point to
-     * the same underlying data.
+     * The @c Listener class is a lightweight reference to a @c ListenerInternalState which is managed internally
+     * by the @c Engine. Multiple @c Listener objects may point to the same underlying data, and share the same state.
      *
      * @ingroup engine
      */
@@ -36,16 +35,16 @@ namespace SparkyStudios::Audio::Amplitude
     {
     public:
         /**
-         * @brief Construct an uninitialized `Listener`.
+         * @brief Construct an uninitialized listener.
          *
-         * An uninitialized `Listener` cannot have its location set or queried, nor
-         * render sound sources.
+         * @note An uninitialized listener cannot have its location set or queried, nor render sound sources.
          *
-         * To create an initialized `Listener`, use the `AddListener()` method of the
-         * `Engine` instance.
-         * ```cpp
-         * amEngine->AddListener(1234); // You should provide an unique ID
-         * ```
+         * @note To create an initialized listener, use the @ref Engine::AddListener "`AddListener()`" method
+         * of the @c Engine instance.
+         *
+         * @code{cpp}
+         * amEngine->AddListener(1234); // You should provide a unique ID
+         * @endcode
          */
         Listener();
 
@@ -59,127 +58,127 @@ namespace SparkyStudios::Audio::Amplitude
         explicit Listener(ListenerInternalState* state);
 
         /**
-         * @brief Uninitializes this `Listener`.
+         * @brief Uninitializes this listener.
          *
-         * Note that this does not destroy the internal state it references,
-         * it just removes this reference to it.
+         * @note This does not destroy the internal state it references, it just removes this reference to it.
          *
-         * To completely destroy the `Listener`, use `RemoveListener()` method
-         * of the `Engine` instance.
-         * ```cpp
+         * @note To completely destroy the listener, use @ref Engine::RemoveListener "`RemoveListener()`" method
+         * of the @c Engine instance.
+         *
+         * @code{cpp}
          * amEngine->RemoveListener(1234); // You should provide the listener ID
-         * ```
+         * @endcode
          */
         void Clear();
 
         /**
-         * @brief Checks whether this `Listener` has been initialized.
+         * @brief Checks whether this listener has been initialized.
          *
-         * @return `true` if this `Listener` is initialized, `false` otherwise.
+         * @return @c true if this listener is initialized, @c false otherwise.
          */
         [[nodiscard]] bool Valid() const;
 
         /**
-         * @brief Gets the ID of this `Listener`.
+         * @brief Gets the ID of this listener.
          *
-         * @return The `Listener` ID.
+         * @return The listener's ID.
          */
         [[nodiscard]] AmListenerID GetId() const;
 
         /**
-         * @brief Gets the velocity of the `Listener`.
+         * @brief Gets the velocity of this listener.
          *
          * @return The listener's velocity.
          */
         [[nodiscard]] const AmVec3& GetVelocity() const;
 
         /**
-         * @brief Gets the location of this `Listener`.
+         * @brief Gets the location of this listener.
          *
-         * @return The location of this `Listener`.
+         * @return The listener's location.
          */
         [[nodiscard]] const AmVec3& GetLocation() const;
 
         /**
-         * @brief Sets the location of this `Listener`.
+         * @brief Sets the location of this listener.
          *
-         * @param[in] location The new location of this `Listener`.
+         * @param[in] location The new location of this listener.
          */
         void SetLocation(const AmVec3& location) const;
 
         /**
-         * @brief Gets the direction vector of the `Listener`.
+         * @brief Gets the direction vector of the listener.
          *
          * @return The direction vector.
          */
         [[nodiscard]] AmVec3 GetDirection() const;
 
         /**
-         * @brief Gets the up vector of the `Listener`.
+         * @brief Gets the up vector of the listener.
          *
          * @return The up vector.
          */
         [[nodiscard]] AmVec3 GetUp() const;
 
         /**
-         * @brief Sets the location, direction and up vector of this `Listener`.
+         * @brief Sets the location, direction and up vector of this listener, through an Orientation representation.
          *
-         * @param[in] orientation The new orientation of this `Listener`.
+         * @param[in] orientation The new orientation of this listener.
          */
         void SetOrientation(const Orientation& orientation) const;
 
         /**
-         * @brief Gets the orientation of the `Listener`.
+         * @brief Gets the orientation of this listener.
          *
-         * @return The orientation of this `Listener`.
+         * @return The listener's orientation.
          */
         [[nodiscard]] Orientation GetOrientation() const;
 
         /**
-         * @brief Sets the directivity and sharpness of `Listener`. This affects how sounds are perceived
-         * by the `Listener`.
+         * @brief Sets the directivity and sharpness of this listener.
+         *
+         * This affects how sounds are perceived by the listener.
          *
          * @param[in] directivity The directivity of the listener, in the range [0, 1].
-         * @param[in] sharpness The directivity sharpness of the listener, in the range [1, +INF].
-         * Increasing this value increases the directivity towards the front of the listener.
+         * @param[in] sharpness The directivity sharpness of the listener, in the range [1, +INF]. Increasing this
+         * value increases the directivity towards the front of the listener.
          */
         void SetDirectivity(AmReal32 directivity, AmReal32 sharpness) const;
 
         /**
-         * @brief Gets the directivity of sounds played by this `Listener`.
+         * @brief Gets the directivity of sounds rendered by this listener.
          *
          * @return The directivity of sound sources.
          */
         [[nodiscard]] AmReal32 GetDirectivity() const;
 
         /**
-         * @brief Gets the directivity sharpness of sounds played by this `Listener`.
+         * @brief Gets the directivity sharpness of sounds rendered by this listener.
          *
-         * @return The directivity sharpness of sounds played by this `Listener`.
+         * @return The directivity sharpness of sounds rendered by this listener.
          */
         [[nodiscard]] AmReal32 GetDirectivitySharpness() const;
 
         /**
-         * @brief Gets the inverse matrix of the `Listener`.
+         * @brief Gets the inverse matrix of the listener.
          *
-         * You can use this matrix to convert locations from global space to `Listener` space.
+         * You can use this matrix to convert locations from global space to listener space.
          */
         [[nodiscard]] const AmMat4& GetInverseMatrix() const;
 
         /**
-         * @brief Update the state of this `Listener`.
+         * @brief Update the state of this listener.
          *
-         * This method is called automatically by the `Engine`
-         * on each frames to update the internal state of the `Listener`
+         * The @c Engine calls this method automatically on each frame to update the internal state of the listener.
          *
          * @warning This method is for internal usage only.
          */
         void Update() const;
 
         /**
-         * @brief Returns the internal state of this Listener.
+         * @brief Returns the internal state of this listener.
          *
-         * @return The `Listener` internal state.
+         * @return The listener's internal state.
          *
          * @warning This method is for internal usage only.
          */

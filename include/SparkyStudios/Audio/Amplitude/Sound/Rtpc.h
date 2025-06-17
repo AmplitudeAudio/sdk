@@ -28,10 +28,10 @@ namespace SparkyStudios::Audio::Amplitude
     struct RtpcCompatibleValue;
 
     /**
-     * @brief Amplitude Real-Time Parameter Control Asset.
+     * @brief Amplitude Real-Time Parameter Control asset.
      *
-     * A RTPC is a value that is updated by the game. Any update to the RTPC is
-     * listened by the engine to propagate the changes to other parameters linked to it.
+     * A RTPC is a value updated by the game. The engine listens to any update on the RTPC
+     * to propagate the changes to other parameters linked to it.
      *
      * A Rtpc object is shared between any objects and values linked to it.
      *
@@ -91,13 +91,12 @@ namespace SparkyStudios::Audio::Amplitude
     };
 
     /**
-     * @brief A RTPC compatible value is used as a wrapper to hold property values
-     * that can be linked to RTPCs.
+     * @brief A RTPC-compatible value is used as a wrapper to hold property values that can be linked to RTPCs.
      *
      * A property value that can be linked to a RTPC can be either a single static value
-     * that never updates, or a curve and an RTPC value that is updated by the game. The
+     * that never updates or a curve and an RTPC value that is updated by the game. The
      * curve is used here as a function that takes the current RTPC value and returns the
-     * parameter value.
+     * actual property value.
      *
      * @ingroup engine
      */
@@ -105,9 +104,9 @@ namespace SparkyStudios::Audio::Amplitude
     {
     public:
         /**
-         * @brief Initializes the `RtpcValue` object.
+         * @brief Initializes the RTPC value.
          *
-         * @param[in] value The `RtpcValue` object to initialize.
+         * @param[in] value The RtpcValue object to initialize.
          * @param[in] definition The RtpcCompatibleValue object to initialize from.
          * @param[in] staticValue The static value to set.
          *
@@ -116,33 +115,33 @@ namespace SparkyStudios::Audio::Amplitude
         static void Init(RtpcValue& value, const RtpcCompatibleValue* definition, AmReal32 staticValue);
 
         /**
-         * @brief Creates an uninitialized `RtpcValue` object.
+         * @brief Creates an uninitialized RTPC value.
          *
-         * An uninitialized `RtpcValue` object cannot be used to update values.
+         * @note An uninitialized @c RtpcValue object cannot be used to update values.
          */
         RtpcValue();
 
         /**
-         * @brief Creates a copy of the `RtpcValue` object.
+         * @brief Creates a copy of the RTPC value.
          *
-         * @param[in] other The `RtpcValue` object to copy.
+         * @param[in] other The object to copy.
          */
         RtpcValue(const RtpcValue& other);
 
         /**
-         * @brief Destroys the RtpcValue object.
+         * Destroys the RtpcValue object.
          */
         ~RtpcValue();
 
         /**
-         * @brief Creates a `RtpcValue` object with a static value.
+         * @brief Creates an RTPC value with a static value.
          *
          * @param[in] value The static value to set.
          */
         void Init(AmReal32 value);
 
         /**
-         * @brief Creates a `RtpcValue` object with a curve and an RTPC object.
+         * @brief Creates an RTPC value with a curve and an RTPC object.
          *
          * @param[in] rtpc The RTPC to link to.
          * @param[in] curve The curve to use.
@@ -150,15 +149,17 @@ namespace SparkyStudios::Audio::Amplitude
         void Init(const Rtpc* rtpc, std::shared_ptr<Curve> curve);
 
         /**
-         * @brief Creates a `RtpcValue` object from an asset definition.
+         * @brief Creates an RTPC value from an asset definition.
          *
          * @param[in] definition The RTPC-compatible value asset definition.
          */
         void Init(const RtpcCompatibleValue* definition);
 
         /**
-         * @brief Gets the current RTPC value. For static values, this will always
-         * return the value passed to the constructor or set from an asset definition.
+         * @brief Gets the current RTPC value.
+         *
+         * For static values, this will always return the value passed to the constructor
+         * or set from an asset definition.
          *
          * @return The current RTPC value.
          */
@@ -167,7 +168,7 @@ namespace SparkyStudios::Audio::Amplitude
         /**
          * @brief Checks if the RTPC value is static.
          *
-         * @return `true` if the RTPC value is static, `false` otherwise.
+         * @return @c true if the RTPC value is static, @c false otherwise.
          */
         [[nodiscard]] bool IsStatic() const;
 

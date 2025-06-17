@@ -28,7 +28,7 @@ namespace SparkyStudios::Audio::Amplitude
         gDeviceNotificationCallback = nullptr;
     }
 
-    void CallDeviceNotificationCallback(DeviceNotification notification, const DeviceDescription& device, Driver* driver)
+    void CallDeviceNotificationCallback(eDeviceNotification notification, const DeviceDescription& device, Driver* driver)
     {
         if (gDeviceNotificationCallback != nullptr)
         {

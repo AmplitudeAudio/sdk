@@ -22,9 +22,7 @@
 namespace SparkyStudios::Audio::Amplitude
 {
     /**
-     * @brief The console logger class.
-     *
-     * This class logs messages to the console or terminal.
+     * @brief A @ref Logger implementation that outputs messages to the console.
      *
      * @ingroup io
      */
@@ -39,7 +37,7 @@ namespace SparkyStudios::Audio::Amplitude
         explicit ConsoleLogger(bool displayFileAndLine = true);
 
         /**
-         * @brief Destructor.
+         * @brief Default destructor.
          */
         ~ConsoleLogger() override = default;
 

@@ -170,7 +170,7 @@ namespace SparkyStudios::Audio::Amplitude
          *
          * @param entity The which trigger the event.
          */
-        [[nodiscard]] EventInstanceImpl Trigger(const Entity& entity) const;
+        [[nodiscard]] std::shared_ptr<EventInstanceImpl> Trigger(const Entity& entity) const;
 
         /**
          * @copydoc AssetImpl::LoadDefinition

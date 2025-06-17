@@ -27,7 +27,10 @@ namespace SparkyStudios::Audio::Amplitude
     /**
      * @brief A Resampler instance.
      *
-     * An object of this class will be created each time a `Resampler` is requested.
+     * This class is the place where the resampling is performed. It exposes methods
+     * to initialize, configure, and process the resampling on an AudioBuffer.
+     *
+     * An instance of this class will be created each time its parent Resampler will be requested.
      *
      * @ingroup dsp
      */
@@ -35,7 +38,7 @@ namespace SparkyStudios::Audio::Amplitude
     {
     public:
         /**
-         * @brief Constructs a new `ResamplerInstance` object.
+         * @brief Constructs a new @c ResamplerInstance object.
          *
          * This will initialize the resampler instance state to default values.
          */
@@ -47,7 +50,7 @@ namespace SparkyStudios::Audio::Amplitude
         virtual ~ResamplerInstance() = default;
 
         /**
-         * @brief Initializes a new instance of the resampler.
+         * @brief Initializes the resampler instance.
          *
          * @param[in] channelCount The number of channels in the audio data.
          * @param[in] sampleRateIn The input sample rate.
@@ -63,7 +66,7 @@ namespace SparkyStudios::Audio::Amplitude
          * @param[out] output The output audio data.
          * @param[in,out] outputFrames The number of frames in the output buffer.
          *
-         * @return `true` if the resampling was successful, `false` otherwise.
+         * @return @c true if the resampling was successful, @c false otherwise.
          */
         virtual bool Process(const AudioBuffer& input, AmUInt64& inputFrames, AudioBuffer& output, AmUInt64& outputFrames) = 0;
 
@@ -97,7 +100,7 @@ namespace SparkyStudios::Audio::Amplitude
         [[nodiscard]] virtual AmUInt16 GetChannelCount() const = 0;
 
         /**
-         * @brief Returns the required number of frames to have as input for the given amount of output frames.
+         * @brief Returns the required number of frames to have as input for the given number of output frames.
          *
          * @param[in] outputFrameCount The number of output frames.
          *
@@ -106,7 +109,7 @@ namespace SparkyStudios::Audio::Amplitude
         [[nodiscard]] virtual AmUInt64 GetRequiredInputFrames(AmUInt64 outputFrameCount) const = 0;
 
         /**
-         * @brief Returns the expected number of frames to have as output for the given amount of input frames.
+         * @brief Returns the expected number of frames to have as output for the given number of input frames.
          *
          * @param[in] inputFrameCount The number of input frames.
          *
@@ -142,13 +145,13 @@ namespace SparkyStudios::Audio::Amplitude
     };
 
     /**
-     * @brief Base class to manage resamplers.
+     * @brief Base class used to create resamplers.
      *
-     * A resampler is used to change the sample rate of an audio buffer. The `Resampler` class implements
-     * factory methods to create instances of `ResamplerInstance` objects, which are where the the resampling is done.
+     * A resampler is used to change the sample rate of an audio buffer. The @c Resampler class implements
+     * factory methods to create instances of @c ResamplerInstance objects, which are where the resampling is done.
      *
-     * The `Resampler` class follows the [plugins architecture](/plugins/anatomy.md), and thus, you are able to create your own resamplers
-     * and register them to the `Engine` by inheriting from this class, and by implementing the necessary dependencies.
+     * The @c Resampler class follows the [plugin architecture](/plugins/anatomy), and thus, you are able to create
+     * your own resamplers and register them to the Engine by inheriting from this class and by implementing the necessary dependencies.
      *
      * @ingroup dsp
      */
@@ -156,16 +159,16 @@ namespace SparkyStudios::Audio::Amplitude
     {
     public:
         /**
-         * @brief Create a new Resampler instance.
+         * @brief Create a new resampler instance.
          *
-         * @param[in] name The resampler name. e.g. "MiniAudioLinear".
+         * @param[in] name The resampler name, e.g., "Libsamplerate".
          */
         explicit Resampler(AmString name);
 
         /**
-         * @brief Default Resampler constructor.
+         * @brief Default resampler constructor.
          *
-         * This will not automatically register the resampler. It's meant for internal resamplers only.
+         * @warning This constructor is meant for internal resamplers only.
          */
         Resampler();
 
@@ -179,17 +182,7 @@ namespace SparkyStudios::Audio::Amplitude
          *
          * @return A new instance of the resampler.
          */
-        virtual ResamplerInstance* CreateInstance() = 0;
-
-        /**
-         * @brief Destroys an instance of the resampler.
-         *
-         * @warning The instance should have been created with @ref CreateInstance `CreateInstance()`
-         * before being destroyed with this method.
-         *
-         * @param[in] instance The resampler instance to be destroyed.
-         */
-        virtual void DestroyInstance(ResamplerInstance* instance) = 0;
+        virtual std::shared_ptr<ResamplerInstance> CreateInstance() = 0;
 
         /**
          * @brief Gets the name of this resampler.
@@ -201,41 +194,48 @@ namespace SparkyStudios::Audio::Amplitude
         /**
          * @brief Registers a new resampler.
          *
+         * @note This method does nothing if the registry is locked.
+         *
          * @param[in] resampler The resampler to add in the registry.
+         *
+         * @see LockRegistry, UnlockRegistry
          */
         static void Register(std::shared_ptr<Resampler> resampler);
 
         /**
          * @brief Unregisters a resampler.
          *
+         * @note This method does nothing if the registry is locked.
+         *
          * @param[in] resampler The resampler to remove from the registry.
+         *
+         * @see LockRegistry, UnlockRegistry
          */
         static void Unregister(std::shared_ptr<const Resampler> resampler);
 
         /**
-         * @brief Creates a new instance of the resampler with the given name and returns its pointer.
+         * @brief Look up a resampler by name.
          *
-         * @note The returned pointer should be deleted using @ref Destruct `Destruct()`.
+         * @param[in] name The name of the resampler to find.
          *
-         * @param[in] name The name of the resampler.
-         *
-         * @return The resampler with the given name, or `nullptr` if none.
+         * @return The resampler with the given name, or @c nullptr if not found.
          */
-        static ResamplerInstance* Construct(const AmString& name);
+        static std::shared_ptr<Resampler> Find(const AmString& name);
 
         /**
-         * @brief Destroys the given resampler instance.
+         * @brief Creates a new instance of the resampler with the given name and returns its pointer.
          *
          * @param[in] name The name of the resampler.
-         * @param[in] instance The resampler instance to destroy.
+         *
+         * @return The resampler with the given name, or @c nullptr if not found.
          */
-        static void Destruct(const AmString& name, ResamplerInstance* instance);
+        static std::shared_ptr<ResamplerInstance> Construct(const AmString& name);
 
         /**
          * @brief Locks the resamplers registry.
          *
          * @warning This function is mainly used for internal purposes. It's
-         * called before the `Engine` initialization, to discard the registration
+         * called before the @c Engine initialization, to discard the registration
          * of new resamplers after the engine is fully loaded.
          */
         static void LockRegistry();
@@ -244,26 +244,17 @@ namespace SparkyStudios::Audio::Amplitude
          * @brief Unlocks the resamplers registry.
          *
          * @warning This function is mainly used for internal purposes. It's
-         * called after the `Engine` deinitialization, to allow the registration
+         * called after the @c Engine deinitialization, to allow the registration
          * of new resamplers after the engine is fully unloaded.
          */
         static void UnlockRegistry();
 
         /**
-         * @brief Gets the list of registered Resamplers.
+         * @brief Gets the list of registered resamplers.
          *
-         * @return The registry of Resamplers.
+         * @return The registry of resamplers.
          */
         static const std::map<AmString, std::shared_ptr<Resampler>>& GetRegistry();
-
-        /**
-         * @brief Look up a Resampler by name.
-         *
-         * @return The Resampler with the given name, or NULL if none.
-         *
-         * @internal
-         */
-        static std::shared_ptr<Resampler> Find(const AmString& name);
 
     protected:
         /**

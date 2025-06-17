@@ -110,7 +110,7 @@ namespace SparkyStudios::Audio::Amplitude
     };
 
     /**
-     * @brief A `FileSystem` implementation that provides access to an Amplitude package file.
+     * @brief A @c FileSystem implementation that provides access to an Amplitude package file.
      *
      * @ingroup io
      */
@@ -118,12 +118,12 @@ namespace SparkyStudios::Audio::Amplitude
     {
     public:
         /**
-         * @brief Constructs a new `PackageFileSystem` instance.
+         * @brief Constructs a new @c PackageFileSystem instance.
          */
         PackageFileSystem();
 
         /**
-         * @brief Destroys the `PackageFileSystem` instance.
+         * @brief Destroys the @c PackageFileSystem instance.
          */
         ~PackageFileSystem() override;
 
@@ -193,7 +193,7 @@ namespace SparkyStudios::Audio::Amplitude
         /**
          * @brief Loads the package in a background thread.
          *
-         * @param[in] pParam The `PackageFileSystem` instance to load.
+         * @param[in] pParam The @c PackageFileSystem instance to load.
          *
          * @internal
          */

@@ -30,8 +30,8 @@ namespace SparkyStudios::Audio::Amplitude
      * @brief An Environment is a zone where every spatialized audio playing inside him got
      * applied a specific effect.
      *
-     * The `Environment` class is a lightweight reference to an `EnvironmentInternalState` object
-     * which is managed by the `Engine`.
+     * The @c Environment class is a lightweight reference to an @c EnvironmentInternalState object
+     * which is managed internally by the @c Engine.
      *
      * @ingroup engine
      */
@@ -39,10 +39,17 @@ namespace SparkyStudios::Audio::Amplitude
     {
     public:
         /**
-         * @brief Creates an uninitialized `Environment`.
+         * @brief Creates an uninitialized environment.
          *
-         * An uninitialized Environment cannot provide location and orientation
+         * An uninitialized environment cannot provide location and orientation
          * information, and therefore cannot play sounds.
+         *
+         * To create an initialized environment, use the @ref Engine::AddEnvironment "`AddEnvironment()`" method of the
+         * @c Engine instance.
+         *
+         * @code{cpp}
+         * amEngine->AddEnvironment(1234); // You should provide a unique ID
+         * @endcode
          */
         Environment();
 
@@ -56,71 +63,77 @@ namespace SparkyStudios::Audio::Amplitude
         explicit Environment(EnvironmentInternalState* state);
 
         /**
-         * @brief Uninitializes this Environment.
+         * @brief Uninitializes this environment.
          *
-         * Note that this does not destroy the internal state it references,
-         * it just removes this reference to it.
+         * @note This does not destroy the internal state it references, it just removes this reference to it.
+         *
+         * To completely destroy the environment, use the @ref Engine::RemoveEnvironment "`RemoveEnvironment()`" method
+         * of the @c Engine instance.
+         *
+         * @code{cpp}
+         * amEngine->RemoveEnvironment(1234); // You should provide the environment ID
+         * @endcode
          */
         void Clear();
 
         /**
-         * @brief Checks whether this `Environment` has been initialized.
+         * @brief Checks whether this environment has been initialized.
          *
-         * @return `true` if this `Environment` is initialized, `false` otherwise.
+         * @return @c true if this environment is initialized, @c false otherwise.
          */
         [[nodiscard]] bool Valid() const;
 
         /**
-         * @brief Returns the unique ID of this `Environment`.
+         * @brief Returns the unique ID of this environment.
          *
-         * @return The `Environment` unique ID.
+         * @return The environment's unique ID.
          */
         [[nodiscard]] AmEnvironmentID GetId() const;
 
         /**
-         * @brief Sets the location of this `Environment`.
+         * @brief Sets the location of this environment.
          *
          * @param[in] location The new location.
          */
         void SetLocation(const AmVec3& location) const;
 
         /**
-         * @brief Gets the current location of this `Environment`.
+         * @brief Gets the current location of this environment.
          *
-         * @return The current location of this `Environment`.
+         * @return The current location of this environment.
          */
         [[nodiscard]] const AmVec3& GetLocation() const;
 
         /**
-         * @brief Sets the orientation of this `Environment`.
+         * @brief Sets the orientation of this environment.
          *
          * @param[in] orientation The new orientation.
          */
         void SetOrientation(const Orientation& orientation) const;
 
         /**
-         * @brief Gets the current orientation of this `Environment`.
+         * @brief Gets the current orientation of this environment.
          *
-         * @return The current orientation of this `Environment`.
+         * @return The current orientation of this environment.
          */
         [[nodiscard]] const Orientation& GetOrientation() const;
 
         /**
-         * @brief Gets the direction vector of the `Environment`.
+         * @brief Gets the direction vector of the environment.
          *
          * @return The direction vector.
          */
         [[nodiscard]] AmVec3 GetDirection() const;
 
         /**
-         * @brief Gets the up vector of the `Environment`.
+         * @brief Gets the up vector of the environment.
          *
          * @return The up vector.
          */
         [[nodiscard]] AmVec3 GetUp() const;
 
         /**
-         * @brief Gets the `Environment` factor for the given location.
+         * @brief Gets the environment factor for the given location.
          *
          * @param[in] location The location for which compute the environment factor.
          *
@@ -129,7 +142,7 @@ namespace SparkyStudios::Audio::Amplitude
         [[nodiscard]] AmReal32 GetFactor(const AmVec3& location) const;
 
         /**
-         * @brief Gets the `Environment` factor for the given entity.
+         * @brief Gets the environment factor for the given entity.
          *
          * @param[in] entity The entity for which compute the environment factor.
          *
@@ -138,61 +151,72 @@ namespace SparkyStudios::Audio::Amplitude
         [[nodiscard]] AmReal32 GetFactor(const Entity& entity) const;
 
         /**
-         * @brief Sets the `Effect` applied in the `Environment`.
+         * @brief Sets the effect applied in the environment.
          *
-         * @param[in] effect The ID of the effect to apply in the `Environment`.
+         * @param[in] effect The ID of the effect to apply in the environment.
+         *
+         * @see Effect
          */
         void SetEffect(AmEffectID effect) const;
 
         /**
-         * @brief Sets the `Effect` applied in the `Environment`.
+         * @brief Sets the effect applied in the environment.
          *
-         * @param[in] effect The name of the effect to apply in the `Environment`.
+         * @param[in] effect The name of the effect to apply in the environment.
+         *
+         * @see Effect
          */
         void SetEffect(const AmString& effect) const;
 
         /**
-         * @brief Sets the `Effect` applied in the `Environment`.
+         * @brief Sets the effect applied in the environment.
          *
-         * @param[in] effect The effect to apply in the `Environment`.
+         * @param[in] effect The effect to apply in the environment.
+         *
+         * @see Effect
          */
         void SetEffect(const Effect* effect) const;
 
         /**
-         * @brief Gets the `Effect` linked to this environment.
+         * @brief Gets the effect linked to this environment.
          *
-         * @return An `Effect` instance.
+         * @return An Effect instance.
+         *
+         * @see Effect
          */
         [[nodiscard]] const Effect* GetEffect() const;
 
         /**
-         * @brief Sets the `Zone` for this environment.
+         * @brief Sets the zone for this environment.
          *
          * @param[in] zone The environment's zone.
+         *
+         * @see Zone
          */
         void SetZone(std::shared_ptr<Zone> zone) const;
 
         /**
-         * @brief Gets the `Zone` linked to this environment.
+         * @brief Gets the zone linked to this environment.
          *
-         * @return An `Zone` instance.
+         * @return An zone instance.
+         *
+         * @see Zone
          */
         [[nodiscard]] std::shared_ptr<Zone> GetZone() const;
 
         /**
-         * @brief Returns the internal state of this `Environment`.
+         * @brief Returns the internal state of this environment.
          *
-         * @return The `Environment` internal state.
+         * @return The environment internal state.
          *
          * @warning This method is for internal usage only.
          */
         [[nodiscard]] EnvironmentInternalState* GetState() const;
 
         /**
-         * @brief Updates the state of this `Environment`.
+         * @brief Updates the state of this environment.
          *
-         * This method is called automatically by the `Engine`
-         * on each frames to update the internal state of the `Environment`.
+         * The @c Engine calls this method automatically on each frame to update the internal state of the environment.
          *
          * @warning This method is for internal usage only.
          */

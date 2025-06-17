@@ -28,10 +28,9 @@ namespace SparkyStudios::Audio::Amplitude
      *
      * This utility class is used to perform Fast Fourier Transform (FFT) operations
      * on audio data with real-to-complex/complex-to-real routines. The algorithm is
-     * highly optimized for speed, and the class provides and high-level API for the
-     * user.
+     * highly optimized for speed, and the class provides a high-level API for the user.
      *
-     * The output of the operation is ready-to-use, that means all the post processing
+     * The output of the operation is ready-to-use. That means all the post-processing
      * operations (scale, normalization, etc.) have been applied.
      *
      * @ingroup dsp
@@ -53,8 +52,23 @@ namespace SparkyStudios::Audio::Amplitude
          */
         FFT();
 
-        FFT(const FFT&) = delete;
-        FFT& operator=(const FFT&) = delete;
+        /**
+         * @brief Copy constructor and assignment operator are deleted to prevent copying.
+         *
+         * This class does not allow assignment between instances. It ensures
+         * that each instance has its own unique state and prevents accidental sharing
+         * of internal resources.
+         *
+         * @param other The @c FFT instance to assign from. This is explicitly disallowed.
+         *
+         * @return This method does not return a value since it is deleted.
+         */
+        FFT(const FFT& other) = delete;
+
+        /**
+         * @copydoc FFT::FFT(const FFT& other)
+         */
+        FFT& operator=(const FFT& other) = delete;
 
         /**
          * @brief Destructor.
@@ -71,20 +85,20 @@ namespace SparkyStudios::Audio::Amplitude
         /**
          * @brief Performs the forward FFT operation.
          *
-         * @param[in] input The input audio data. This buffer needs to be of the same size as the one provided to the @ref Initialize
-         * `Initialize()` method.
-         * @param[out] splitComplex The complex buffer output separated into real and imaginary parts. The buffer will be resized if
-         * necessary.
+         * @param[in] input The input audio data. This buffer needs to be of the same size as
+         * the one provided to the @ref Initialize "`Initialize()`" method.
+         * @param[out] splitComplex The complex buffer output separated into real and imaginary
+         * parts. The buffer will be resized if necessary.
          */
         void Forward(const AmReal32* input, SplitComplex& splitComplex) const;
 
         /**
          * @brief Performs the inverse FFT operation.
          *
-         * @param[out] output The output audio data. This buffer needs to be of the same size as the one provided to the @ref Initialize
-         * `Initialize()` method.
-         * @param[in] splitComplex The complex buffer output separated into real and imaginary parts. The buffer will be resized if
-         * necessary.
+         * @param[out] output The output audio data. This buffer needs to be of the same size
+         * as the one provided to the @ref Initialize "`Initialize()`" method.
+         * @param[in] splitComplex The complex buffer output separated into real and imaginary
+         * parts. The buffer will be resized if necessary.
          */
         void Backward(AmReal32* output, SplitComplex& splitComplex) const;
 

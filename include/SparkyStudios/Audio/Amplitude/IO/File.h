@@ -108,7 +108,7 @@ namespace SparkyStudios::Audio::Amplitude
     };
 
     /**
-     * @brief Base class for a file in a `FileSystem`.
+     * @brief Base class used to manage files in a @c FileSystem.
      *
      * @ingroup io
      */
@@ -121,35 +121,35 @@ namespace SparkyStudios::Audio::Amplitude
         virtual ~File() = default;
 
         /**
-         * @brief Gets the path to the file in the loaded `FileSystem`.
+         * @brief Gets the path to the file in the loaded @c FileSystem.
          *
          * @return The path to the file.
          */
         [[nodiscard]] virtual AmOsString GetPath() const = 0;
 
         /**
-         * @brief Reads a single byte from the file in an `AmUInt8`.
+         * @brief Reads a single byte from the file in an @c AmUInt8.
          *
          * @return The read value.
          */
         AmUInt8 Read8();
 
         /**
-         * @brief Reads two bytes from the file in an `AmUInt16`.
+         * @brief Reads two bytes from the file in an @c AmUInt16.
          *
          * @return The read value.
          */
         AmUInt16 Read16();
 
         /**
-         * @brief Reads four bytes from the file in an `AmUInt32`.
+         * @brief Reads four bytes from the file in an @c AmUInt32.
          *
          * @return The read value.
          */
         AmUInt32 Read32();
 
         /**
-         * @brief Reads eight bytes from the file in an `AmUInt64`.
+         * @brief Reads eight bytes from the file in an @c AmUInt64.
          *
          * @return The read value.
          */
@@ -163,28 +163,28 @@ namespace SparkyStudios::Audio::Amplitude
         AmString ReadString();
 
         /**
-         * @brief Writes a single byte to the file from an `AmUInt8`.
+         * @brief Writes a single byte to the file from an @c AmUInt8.
          *
          * @param[in] value The value to write.
          */
         AmSize Write8(AmUInt8 value);
 
         /**
-         * @brief Writes two bytes to the file from an `AmUInt16`.
+         * @brief Writes two bytes to the file from an @c AmUInt16.
          *
          * @param[in] value The value to write.
          */
         AmSize Write16(AmUInt16 value);
 
         /**
-         * @brief Writes four bytes to the file from an `AmUInt32`.
+         * @brief Writes four bytes to the file from an @c AmUInt32.
          *
          * @param[in] value The value to write.
          */
         AmSize Write32(AmUInt32 value);
 
         /**
-         * @brief Writes eight bytes to the file from an `AmUInt64`.
+         * @brief Writes eight bytes to the file from an @c AmUInt64.
          *
          * @param[in] value The value to write.
          */
@@ -200,7 +200,7 @@ namespace SparkyStudios::Audio::Amplitude
         /**
          * @brief Checks if the read cursor is at the end of the file.
          *
-         * @return `true` if the read cursor is at the end of the file, `false` otherwise.
+         * @return @c true if the read cursor is at the end of the file, @c false otherwise.
          */
         virtual bool Eof() = 0;
 
@@ -265,10 +265,10 @@ namespace SparkyStudios::Audio::Amplitude
         /**
          * @brief Checks if the file is valid.
          *
-         * Validity of a file is determined by the underlying implementation. But this should
+         * The validity of a file is determined by the underlying implementation. But this should
          * primarily mean that the file exists AND has been opened.
          *
-         * @return `true` if the file is valid, `false` otherwise.
+         * @return @c true if the file is valid, @c false otherwise.
          */
         [[nodiscard]] virtual bool IsValid() const = 0;
     };

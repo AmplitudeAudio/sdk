@@ -98,14 +98,14 @@ TEST_CASE("Room Tests", "[room][core][amplitude]")
 
             THEN("it computes the correct surface areas")
             {
-                REQUIRE(state.GetSurfaceArea(RoomWall::Back) == 1000 * 500);
-                REQUIRE(state.GetSurfaceArea(RoomWall::Front) == state.GetSurfaceArea(RoomWall::Back));
+                REQUIRE(state.GetSurfaceArea(eRoomWall_Back) == 1000 * 500);
+                REQUIRE(state.GetSurfaceArea(eRoomWall_Front) == state.GetSurfaceArea(eRoomWall_Back));
 
-                REQUIRE(state.GetSurfaceArea(RoomWall::Top) == 1000 * 500);
-                REQUIRE(state.GetSurfaceArea(RoomWall::Bottom) == state.GetSurfaceArea(RoomWall::Top));
+                REQUIRE(state.GetSurfaceArea(eRoomWall_Top) == 1000 * 500);
+                REQUIRE(state.GetSurfaceArea(eRoomWall_Bottom) == state.GetSurfaceArea(eRoomWall_Top));
 
-                REQUIRE(state.GetSurfaceArea(RoomWall::Left) == 500 * 500);
-                REQUIRE(state.GetSurfaceArea(RoomWall::Right) == state.GetSurfaceArea(RoomWall::Left));
+                REQUIRE(state.GetSurfaceArea(eRoomWall_Left) == 500 * 500);
+                REQUIRE(state.GetSurfaceArea(eRoomWall_Right) == state.GetSurfaceArea(eRoomWall_Left));
             }
 
             AND_WHEN("the dimensions change")
@@ -120,8 +120,8 @@ TEST_CASE("Room Tests", "[room][core][amplitude]")
 
                 THEN("it compute the correct shape")
                 {
-                    BoxShape shape(50, 50, 50);
-                    REQUIRE(state.GetShape() == shape);
+                    BoxShape box_shape(50, 50, 50);
+                    REQUIRE(state.GetShape() == box_shape);
                 }
             }
         }
@@ -130,21 +130,21 @@ TEST_CASE("Room Tests", "[room][core][amplitude]")
         {
             SECTION("setting materials per wall")
             {
-                state.SetWallMaterial(RoomWall::Front, RoomMaterial(RoomMaterialType::Metal));
-                state.SetWallMaterial(RoomWall::Back, RoomMaterial(RoomMaterialType::Marble));
+                state.SetWallMaterial(eRoomWall_Front, RoomWallMaterial(eRoomWallMaterialType_Metal));
+                state.SetWallMaterial(eRoomWall_Back, RoomWallMaterial(eRoomWallMaterialType_Marble));
 
                 THEN("it returns the new materials per wall")
                 {
-                    REQUIRE(state.GetWallMaterial(RoomWall::Front) == RoomMaterial(RoomMaterialType::Metal));
-                    REQUIRE(state.GetWallMaterial(RoomWall::Back) == RoomMaterial(RoomMaterialType::Marble));
+                    REQUIRE(state.GetWallMaterial(eRoomWall_Front) == RoomWallMaterial(eRoomWallMaterialType_Metal));
+                    REQUIRE(state.GetWallMaterial(eRoomWall_Back) == RoomWallMaterial(eRoomWallMaterialType_Marble));
                 }
 
                 THEN("other walls' materials remain unchanged")
                 {
-                    REQUIRE(state.GetWallMaterial(RoomWall::Bottom) == RoomMaterial(RoomMaterialType::Transparent));
-                    REQUIRE(state.GetWallMaterial(RoomWall::Top) == RoomMaterial(RoomMaterialType::Transparent));
-                    REQUIRE(state.GetWallMaterial(RoomWall::Left) == RoomMaterial(RoomMaterialType::Transparent));
-                    REQUIRE(state.GetWallMaterial(RoomWall::Right) == RoomMaterial(RoomMaterialType::Transparent));
+                    REQUIRE(state.GetWallMaterial(eRoomWall_Bottom) == RoomWallMaterial(eRoomWallMaterialType_Transparent));
+                    REQUIRE(state.GetWallMaterial(eRoomWall_Top) == RoomWallMaterial(eRoomWallMaterialType_Transparent));
+                    REQUIRE(state.GetWallMaterial(eRoomWall_Left) == RoomWallMaterial(eRoomWallMaterialType_Transparent));
+                    REQUIRE(state.GetWallMaterial(eRoomWall_Right) == RoomWallMaterial(eRoomWallMaterialType_Transparent));
                 }
             }
         }
@@ -254,23 +254,23 @@ TEST_CASE("Room Tests", "[room][core][amplitude]")
 
             THEN("it computes the correct surface areas")
             {
-                REQUIRE(wrapper.GetSurfaceArea(RoomWall::Back) == 1000 * 500);
-                REQUIRE(wrapper.GetSurfaceArea(RoomWall::Front) == wrapper.GetSurfaceArea(RoomWall::Back));
+                REQUIRE(wrapper.GetSurfaceArea(eRoomWall_Back) == 1000 * 500);
+                REQUIRE(wrapper.GetSurfaceArea(eRoomWall_Front) == wrapper.GetSurfaceArea(eRoomWall_Back));
 
-                REQUIRE(wrapper.GetSurfaceArea(RoomWall::Top) == 1000 * 500);
-                REQUIRE(wrapper.GetSurfaceArea(RoomWall::Bottom) == wrapper.GetSurfaceArea(RoomWall::Top));
+                REQUIRE(wrapper.GetSurfaceArea(eRoomWall_Top) == 1000 * 500);
+                REQUIRE(wrapper.GetSurfaceArea(eRoomWall_Bottom) == wrapper.GetSurfaceArea(eRoomWall_Top));
 
-                REQUIRE(wrapper.GetSurfaceArea(RoomWall::Left) == 500 * 500);
-                REQUIRE(wrapper.GetSurfaceArea(RoomWall::Right) == wrapper.GetSurfaceArea(RoomWall::Left));
+                REQUIRE(wrapper.GetSurfaceArea(eRoomWall_Left) == 500 * 500);
+                REQUIRE(wrapper.GetSurfaceArea(eRoomWall_Right) == wrapper.GetSurfaceArea(eRoomWall_Left));
 
-                REQUIRE(wrapper.GetSurfaceArea(RoomWall::Back) == state.GetSurfaceArea(RoomWall::Back));
-                REQUIRE(wrapper.GetSurfaceArea(RoomWall::Front) == state.GetSurfaceArea(RoomWall::Front));
+                REQUIRE(wrapper.GetSurfaceArea(eRoomWall_Back) == state.GetSurfaceArea(eRoomWall_Back));
+                REQUIRE(wrapper.GetSurfaceArea(eRoomWall_Front) == state.GetSurfaceArea(eRoomWall_Front));
 
-                REQUIRE(wrapper.GetSurfaceArea(RoomWall::Top) == state.GetSurfaceArea(RoomWall::Top));
-                REQUIRE(wrapper.GetSurfaceArea(RoomWall::Bottom) == state.GetSurfaceArea(RoomWall::Bottom));
+                REQUIRE(wrapper.GetSurfaceArea(eRoomWall_Top) == state.GetSurfaceArea(eRoomWall_Top));
+                REQUIRE(wrapper.GetSurfaceArea(eRoomWall_Bottom) == state.GetSurfaceArea(eRoomWall_Bottom));
 
-                REQUIRE(wrapper.GetSurfaceArea(RoomWall::Left) == state.GetSurfaceArea(RoomWall::Left));
-                REQUIRE(wrapper.GetSurfaceArea(RoomWall::Right) == state.GetSurfaceArea(RoomWall::Right));
+                REQUIRE(wrapper.GetSurfaceArea(eRoomWall_Left) == state.GetSurfaceArea(eRoomWall_Left));
+                REQUIRE(wrapper.GetSurfaceArea(eRoomWall_Right) == state.GetSurfaceArea(eRoomWall_Right));
             }
 
             AND_WHEN("the dimensions change")
@@ -286,8 +286,8 @@ TEST_CASE("Room Tests", "[room][core][amplitude]")
 
                 THEN("it compute the correct shape")
                 {
-                    BoxShape shape(50, 50, 50);
-                    REQUIRE(wrapper.GetShape() == shape);
+                    BoxShape box_shape(50, 50, 50);
+                    REQUIRE(wrapper.GetShape() == box_shape);
                     REQUIRE(wrapper.GetShape() == state.GetShape());
                 }
             }
@@ -297,46 +297,46 @@ TEST_CASE("Room Tests", "[room][core][amplitude]")
         {
             SECTION("setting materials per wall")
             {
-                wrapper.SetWallMaterial(RoomWall::Front, RoomMaterial(RoomMaterialType::Metal));
-                wrapper.SetWallMaterial(RoomWall::Back, RoomMaterial(RoomMaterialType::Marble));
+                wrapper.SetWallMaterial(eRoomWall_Front, RoomWallMaterial(eRoomWallMaterialType_Metal));
+                wrapper.SetWallMaterial(eRoomWall_Back, RoomWallMaterial(eRoomWallMaterialType_Marble));
 
                 THEN("it returns the new materials per wall")
                 {
-                    REQUIRE(wrapper.GetWallMaterial(RoomWall::Front) == RoomMaterial(RoomMaterialType::Metal));
-                    REQUIRE(wrapper.GetWallMaterial(RoomWall::Back) == RoomMaterial(RoomMaterialType::Marble));
+                    REQUIRE(wrapper.GetWallMaterial(eRoomWall_Front) == RoomWallMaterial(eRoomWallMaterialType_Metal));
+                    REQUIRE(wrapper.GetWallMaterial(eRoomWall_Back) == RoomWallMaterial(eRoomWallMaterialType_Marble));
                 }
 
                 THEN("other walls' materials remain unchanged")
                 {
-                    REQUIRE(wrapper.GetWallMaterial(RoomWall::Bottom) == RoomMaterial(RoomMaterialType::Transparent));
-                    REQUIRE(wrapper.GetWallMaterial(RoomWall::Top) == RoomMaterial(RoomMaterialType::Transparent));
-                    REQUIRE(wrapper.GetWallMaterial(RoomWall::Left) == RoomMaterial(RoomMaterialType::Transparent));
-                    REQUIRE(wrapper.GetWallMaterial(RoomWall::Right) == RoomMaterial(RoomMaterialType::Transparent));
+                    REQUIRE(wrapper.GetWallMaterial(eRoomWall_Bottom) == RoomWallMaterial(eRoomWallMaterialType_Transparent));
+                    REQUIRE(wrapper.GetWallMaterial(eRoomWall_Top) == RoomWallMaterial(eRoomWallMaterialType_Transparent));
+                    REQUIRE(wrapper.GetWallMaterial(eRoomWall_Left) == RoomWallMaterial(eRoomWallMaterialType_Transparent));
+                    REQUIRE(wrapper.GetWallMaterial(eRoomWall_Right) == RoomWallMaterial(eRoomWallMaterialType_Transparent));
                 }
             }
 
             SECTION("setting materials for the entire room")
             {
-                const auto material = RoomMaterial(RoomMaterialType::Glass);
+                const auto material = RoomWallMaterial(eRoomWallMaterialType_Glass);
                 wrapper.SetAllWallMaterials(material);
 
                 THEN("it returns the new materials for the entire room")
                 {
-                    REQUIRE(wrapper.GetWallMaterial(RoomWall::Front) == material);
-                    REQUIRE(wrapper.GetWallMaterial(RoomWall::Back) == material);
-                    REQUIRE(wrapper.GetWallMaterial(RoomWall::Top) == material);
-                    REQUIRE(wrapper.GetWallMaterial(RoomWall::Bottom) == material);
-                    REQUIRE(wrapper.GetWallMaterial(RoomWall::Left) == material);
-                    REQUIRE(wrapper.GetWallMaterial(RoomWall::Right) == material);
+                    REQUIRE(wrapper.GetWallMaterial(eRoomWall_Front) == material);
+                    REQUIRE(wrapper.GetWallMaterial(eRoomWall_Back) == material);
+                    REQUIRE(wrapper.GetWallMaterial(eRoomWall_Top) == material);
+                    REQUIRE(wrapper.GetWallMaterial(eRoomWall_Bottom) == material);
+                    REQUIRE(wrapper.GetWallMaterial(eRoomWall_Left) == material);
+                    REQUIRE(wrapper.GetWallMaterial(eRoomWall_Right) == material);
                 }
             }
 
             SECTION("setting all materials at once")
             {
-                const std::vector<RoomMaterial> materials = {
-                    RoomMaterial(RoomMaterialType::Metal), RoomMaterial(RoomMaterialType::Marble),
-                    RoomMaterial(RoomMaterialType::Glass), RoomMaterial(RoomMaterialType::BrickPainted),
-                    RoomMaterial(RoomMaterialType::Wood),  RoomMaterial(RoomMaterialType::FoamPanel)
+                const std::vector<RoomWallMaterial> materials = {
+                    RoomWallMaterial(eRoomWallMaterialType_Metal), RoomWallMaterial(eRoomWallMaterialType_Marble),
+                    RoomWallMaterial(eRoomWallMaterialType_Glass), RoomWallMaterial(eRoomWallMaterialType_BrickPainted),
+                    RoomWallMaterial(eRoomWallMaterialType_Wood),  RoomWallMaterial(eRoomWallMaterialType_FoamPanel)
                 };
 
                 wrapper.SetWallMaterials(materials[0], materials[1], materials[2], materials[3], materials[4], materials[5]);
@@ -345,7 +345,7 @@ TEST_CASE("Room Tests", "[room][core][amplitude]")
                 {
                     for (size_t i = 0; i < kAmRoomSurfaceCount; ++i)
                     {
-                        REQUIRE(wrapper.GetWallMaterial(static_cast<RoomWall>(i)) == materials[i]);
+                        REQUIRE(wrapper.GetWallMaterial(static_cast<eRoomWall>(i)) == materials[i]);
                     }
                 }
             }

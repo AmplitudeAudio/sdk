@@ -26,10 +26,9 @@ namespace SparkyStudios::Audio::Amplitude
     /**
      * @brief An object representing one node in the tree of buses. Buses are used to adjust a set of channel gains in tandem.
      *
-     * The `Bus` class is a lightweight reference to a `BusInternalState` object which
-     * is managed by the Engine. There is always at least one bus, the **master** bus,
-     * and any number of additional buses may be defined as well. Each bus can be
-     * thought as a node in the tree. The gain on a `Bus` is applied to all child buses as well.
+     * The @c Bus class is a lightweight reference to a @c BusInternalState object which is managed internally by the Engine. There
+     * is always at least one bus, the "master" bus, and any number of additional buses may be defined as well. Each bus can be
+     * thought as a node in the tree. The gain on a @c Bus is applied to all child buses as well.
      *
      * @ingroup engine
      */
@@ -37,66 +36,65 @@ namespace SparkyStudios::Audio::Amplitude
     {
     public:
         /**
-         * @brief Creates an uninitialized `Bus`.
+         * @brief Creates an uninitialized bus.
          *
-         * An uninitialized Bus cannot set or get any of it's fields.
+         * @note An uninitialized bus cannot set or get any of its fields.
          */
         Bus();
 
         /**
          * @brief Creates a wrapper instance over the provided state.
          *
-         * @param[in] state The internal state to wrap.
-         *
          * @warning This constructor is for internal usage only.
+         *
+         * @param[in] state The internal state to wrap.
          */
         explicit Bus(BusInternalState* state);
 
         /**
-         * @brief Uninitializes this `Bus`.
+         * @brief Uninitializes this bus.
          *
-         * Note that this does not destroy the internal state it references,
-         * it just removes this reference to it.
+         * @note This does not destroy the internal state it references, it just removes this reference to it.
          */
         void Clear();
 
         /**
-         * @brief Checks whether this `Bus` has been initialized.
+         * @brief Checks whether this bus has been initialized.
          *
-         * @return `true` if this `Bus` has been initialized.
+         * @return @c true if this bus has been initialized, @c false otherwise.
          */
         [[nodiscard]] bool Valid() const;
 
         /**
-         * @brief Gets the unique ID of this `Bus`.
+         * @brief Gets the unique ID of this bus.
          *
          * @return The bus unique ID.
          */
         [[nodiscard]] AmBusID GetId() const;
 
         /**
-         * @brief Gets the name of this `Bus`.
+         * @brief Gets the name of this bus.
          *
          * @return The bus name.
          */
         [[nodiscard]] const AmString& GetName() const;
 
         /**
-         * @brief Sets the gain of this `Bus`.
+         * @brief Sets the gain of this bus.
          *
          * @param[in] gain The new gain value.
          */
         void SetGain(AmReal32 gain) const;
 
         /**
-         * @brief Returns the user specified gain on this `Bus`.
+         * @brief Returns the user specified gain on this bus.
          *
          * @return The user specified gain.
          */
         [[nodiscard]] AmReal32 GetGain() const;
 
         /**
-         * @brief Fades to `gain` over `duration` milliseconds.
+         * @brief Fades to @c gain over @c duration milliseconds.
          *
          * @param[in] gain The gain value to fade to.
          * @param[in] duration The amount of time in milliseconds to take to reach the desired gain.
@@ -104,7 +102,7 @@ namespace SparkyStudios::Audio::Amplitude
         void FadeTo(AmReal32 gain, AmTime duration) const;
 
         /**
-         * @brief Returns the final calculated gain on this `Bus`.
+         * @brief Returns the final calculated gain on this bus.
          *
          * @note The final gain of a bus is the product of the gain specified in the bus
          * definition file, with the gain specified by the user, and with the final gain
@@ -115,23 +113,23 @@ namespace SparkyStudios::Audio::Amplitude
         [[nodiscard]] AmReal32 GetFinalGain() const;
 
         /**
-         * @brief Sets the muted state of this `Bus`.
+         * @brief Sets the muted state of this bus.
          *
          * @param[in] mute The muted state.
          */
         void SetMute(bool mute) const;
 
         /**
-         * @brief Returns whether this `Bus` is muted.
+         * @brief Returns whether this bus is muted.
          *
-         * @return `true` if this Bus is muted, `false` otherwise.
+         * @return @c true if this bus is muted, @c false otherwise.
          */
         [[nodiscard]] bool IsMuted() const;
 
         /**
-         * @brief Returns the internal state of this `Bus`.
+         * @brief Returns the internal state of this bus.
          *
-         * @warning This method is only for internal usage.
+         * @warning This method is only for internal usage only.
          *
          * @return The bus internal state.
          */
@@ -139,7 +137,7 @@ namespace SparkyStudios::Audio::Amplitude
 
     private:
         /**
-         * @brief Internal state of the Bus.
+         * @brief Internal state of the bus.
          *
          * @internal This field is not exposed to the public API.
          */

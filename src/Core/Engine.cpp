@@ -1488,10 +1488,10 @@ namespace SparkyStudios::Audio::Amplitude
             return EventCanceler(nullptr);
         }
 
-        EventInstanceImpl instance = dynamic_cast<EventImpl*>(handle)->Trigger(entity);
+        auto instance = dynamic_cast<EventImpl*>(handle)->Trigger(entity);
         _state->running_events.push_back(std::move(instance));
 
-        return EventCanceler(&_state->running_events.back());
+        return EventCanceler(_state->running_events.back());
     }
 
     EventCanceler EngineImpl::Trigger(const AmString& name, const Entity& entity) const
@@ -2380,7 +2380,7 @@ namespace SparkyStudios::Audio::Amplitude
 
         for (AmSize i = 0; i < _state->running_events.size(); ++i)
         {
-            EventInstance* event = &_state->running_events[i];
+            auto event = _state->running_events[i];
 
             if (!event->IsRunning())
             {
@@ -2561,7 +2561,7 @@ namespace SparkyStudios::Audio::Amplitude
             insertionPoint, &_state->playing_channel_list, &_state->real_channel_free_list, &_state->virtual_channel_free_list,
             _state->paused);
 
-        // The channel could not be added to the list; not high enough priority.
+        // The channel could not be added to the list; not a high enough priority.
         if (newChannel == nullptr)
         {
             amLogDebug("Cannot play switch container: Not high enough priority.");

@@ -24,13 +24,13 @@
 namespace SparkyStudios::Audio::Amplitude
 {
     /**
-     * @brief Amplitude Collection Asset.
+     * @brief Amplitude collection asset.
      *
-     * A `Collection` is a container sound object that group multiple sounds over the same name. Only
+     * A @c Collection is a container sound object that groups multiple sounds over the same name. Only
      * one sound can be playing at a time in the same collection, and the sound picked for playback
-     * is chosen by the collection's `Scheduler`.
+     * is chosen by the collection's @c Scheduler.
      *
-     * @see [SoundObject](../../engine/SoundObject/index.md)
+     * @see SoundObject
      *
      * @ingroup assets
      */
@@ -40,9 +40,11 @@ namespace SparkyStudios::Audio::Amplitude
     {
     public:
         /**
-         * @brief Returns a Sound from this collection from the World scope.
+         * @brief Picks a world-scoped Sound from this collection.
          *
-         * @param[in] toSkip The list of Sound IDs to skip fom the selection.
+         * @note The @c Scheduler is responsible for picking the sound to play.
+         *
+         * @param[in] toSkip The list of Sound IDs to skip from the selection.
          *
          * @return The selected Sound.
          */
@@ -51,8 +53,10 @@ namespace SparkyStudios::Audio::Amplitude
         /**
          * @brief Returns a Sound from this collection from an Entity scope.
          *
+         * @note The @c Scheduler is responsible for picking the sound to play.
+         *
          * @param[in] entity The entity from which pick the sound.
-         * @param[in] toSkip The list of Sound IDs to skip fom the selection.
+         * @param[in] toSkip The list of Sound IDs to skip from the selection.
          *
          * @return The selected Sound.
          */

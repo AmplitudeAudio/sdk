@@ -150,7 +150,7 @@ struct AmTestListener : Catch::EventListenerBase
 
 CATCH_REGISTER_LISTENER(AmTestListener)
 
-void deviceCallback(DeviceNotification notification, const DeviceDescription& device, Driver* driver)
+void deviceCallback(eDeviceNotification notification, const DeviceDescription& device, Driver* driver)
 {
     amLogDebug(
         "Device notification: %d, device: %s, driver: %s", static_cast<int>(notification), device.mDeviceName.c_str(),

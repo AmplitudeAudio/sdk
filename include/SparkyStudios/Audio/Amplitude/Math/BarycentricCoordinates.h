@@ -29,14 +29,14 @@ namespace SparkyStudios::Audio::Amplitude
     struct AM_API_PUBLIC BarycentricCoordinates
     {
         /**
-         * @brief Computes the barycentric coordinates of the intersection of a ray with a triangle.
+         * @brief Computes the barycentric coordinates for the intersection of a ray with a triangle.
          *
          * @param[in] rayOrigin The origin of the ray.
          * @param[in] rayDirection The direction of the ray.
          * @param[in] triangle The vertices of the triangle.
          * @param[out] result The result of the intersection.
          *
-         * @return `true` if the ray intersects the triangle, `false` otherwise.
+         * @return @c true if the ray intersects the triangle, @c false otherwise.
          */
         static bool RayTriangleIntersection(
             const AmVec3& rayOrigin, const AmVec3& rayDirection, const std::array<AmVec3, 3>& triangle, BarycentricCoordinates& result);
@@ -57,12 +57,38 @@ namespace SparkyStudios::Audio::Amplitude
         /**
          * @brief Checks whether the coordinates are valid.
          *
-         * @return `true` if the coordinates are valid, `false` otherwise.
+         * @return @c true if the coordinates are valid, @c false otherwise.
          */
         [[nodiscard]] bool IsValid() const;
 
+        /**
+         * @brief Represents the barycentric U-coordinate in a triangle.
+         *
+         * The U-coordinate, along with V and W, defines the barycentric
+         * coordinates of a point relative to the vertices of a triangle.
+         * It is computed such that the sum of U, V, and W is 1.0, ensuring
+         * the point lies within or on the triangle if the values are valid.
+         */
         AmReal32 m_U;
+
+        /**
+         * @brief Represents the barycentric V-coordinate in a triangle.
+         *
+         * The V-coordinate, together with U and W, defines the barycentric
+         * coordinates of a point relative to the vertices of a triangle.
+         * It is computed such that the sum of U, V, and W is 1.0, ensuring
+         * the point lies within or on the triangle if the values are valid.
+         */
         AmReal32 m_V;
+
+        /**
+         * @brief Represents the barycentric W-coordinate in a triangle.
+         *
+         * The W-coordinate, together with U and V, defines the barycentric
+         * coordinates of a point relative to the vertices of a triangle.
+         * It is computed such that the sum of U, V, and W is 1.0, ensuring
+         * the point lies within or on the triangle if the values are valid.
+         */
         AmReal32 m_W;
     };
 } // namespace SparkyStudios::Audio::Amplitude

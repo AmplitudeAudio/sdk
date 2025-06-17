@@ -146,7 +146,7 @@ namespace SparkyStudios::Audio::Amplitude
             , _playingSoundList(&ChannelInternalState::room_node)
         {
             for (AmSize i = 0; i < kAmRoomSurfaceCount; i++)
-                _materials[i] = RoomMaterial(RoomMaterialType::Transparent);
+                _materials[i] = RoomWallMaterial(eRoomWallMaterialType_Transparent);
         }
 
         /**
@@ -262,12 +262,12 @@ namespace SparkyStudios::Audio::Amplitude
             return _reflectionsProperties.GetRoomShape();
         }
 
-        AM_INLINE void SetWallMaterial(RoomWall wall, const RoomMaterial& material)
+        AM_INLINE void SetWallMaterial(eRoomWall wall, const RoomWallMaterial& material)
         {
             _materials[static_cast<AmSize>(wall)] = material;
         }
 
-        [[nodiscard]] AM_INLINE const RoomMaterial& GetWallMaterial(RoomWall wall) const
+        [[nodiscard]] AM_INLINE const RoomWallMaterial& GetWallMaterial(eRoomWall wall) const
         {
             return _materials[static_cast<AmSize>(wall)];
         }
@@ -313,20 +313,20 @@ namespace SparkyStudios::Audio::Amplitude
             return dimensions.X * dimensions.Y * dimensions.Z;
         }
 
-        [[nodiscard]] AM_INLINE AmReal32 GetSurfaceArea(RoomWall wall) const
+        [[nodiscard]] AM_INLINE AmReal32 GetSurfaceArea(eRoomWall wall) const
         {
             const auto& dimensions = GetDimensions();
 
             switch (wall)
             {
-            case RoomWall::Front:
-            case RoomWall::Back:
+            case eRoomWall_Front:
+            case eRoomWall_Back:
                 return dimensions.X * dimensions.Z;
-            case RoomWall::Left:
-            case RoomWall::Right:
+            case eRoomWall_Left:
+            case eRoomWall_Right:
                 return dimensions.Y * dimensions.Z;
-            case RoomWall::Top:
-            case RoomWall::Bottom:
+            case eRoomWall_Top:
+            case eRoomWall_Bottom:
                 return dimensions.X * dimensions.Y;
             default:
                 return 0.0f;
@@ -357,8 +357,7 @@ namespace SparkyStudios::Audio::Amplitude
         /**
          * @brief Updates the reflection properties of this room.
          *
-         * @note This method is called automatically by the Engine on
-         * each frame update.
+         * @note The Engine calls this method automatically on each frame update.
          */
         void Update();
 
@@ -392,7 +391,7 @@ namespace SparkyStudios::Audio::Amplitude
     private:
         AmRoomID _id;
 
-        RoomMaterial _materials[kAmRoomSurfaceCount];
+        RoomWallMaterial _materials[kAmRoomSurfaceCount];
         RoomReflectionsProperties _reflectionsProperties;
 
         bool _needUpdate;

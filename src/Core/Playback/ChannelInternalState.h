@@ -353,9 +353,9 @@ namespace SparkyStudios::Audio::Amplitude
          * @param callback The callback function.
          * @param userData The user data to pass to the callback.
          */
-        void On(ChannelEvent event, ChannelEventCallback callback, void* userData = nullptr);
+        void On(eChannelEvent event, ChannelEventCallback callback, void* userData = nullptr);
 
-        void Trigger(ChannelEvent event);
+        void Trigger(eChannelEvent event);
 
         // The node that tracks the location in the priority list.
         fplutil::intrusive_list_node priority_node;
@@ -440,7 +440,7 @@ namespace SparkyStudios::Audio::Amplitude
         std::map<AmListenerID, AmReal32> _dopplerFactors;
         std::map<AmRoomID, AmReal32> _roomGains;
 
-        std::map<ChannelEvent, std::shared_ptr<ChannelEventListener>> _eventsMap;
+        std::map<eChannelEvent, std::shared_ptr<ChannelEventListener>> _eventsMap;
     };
 } // namespace SparkyStudios::Audio::Amplitude
 

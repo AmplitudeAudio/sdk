@@ -116,18 +116,41 @@ namespace SparkyStudios::Audio::Amplitude
      */
     enum eLogMessageLevel : AmUInt8
     {
-        eLogMessageLevel_Debug = 0, ///< Debug messages.
-        eLogMessageLevel_Info = 1, ///< Informational messages.
-        eLogMessageLevel_Warning = 2, ///< Warning messages.
-        eLogMessageLevel_Error = 3, ///< Error messages.
-        eLogMessageLevel_Critical = 4, ///< Critical messages.
-        eLogMessageLevel_Success = 5, ///< Success messages.
+        /**
+         * @brief Debug messages.
+         */
+        eLogMessageLevel_Debug = 0,
+
+        /**
+         * @brief Informational messages.
+         */
+        eLogMessageLevel_Info = 1,
+
+        /**
+         * @brief Warning messages.
+         */
+        eLogMessageLevel_Warning = 2,
+
+        /**
+         * @brief Error messages.
+         */
+        eLogMessageLevel_Error = 3,
+
+        /**
+         * @brief Critical messages.
+         */
+        eLogMessageLevel_Critical = 4,
+
+        /**
+         * @brief Success messages.
+         */
+        eLogMessageLevel_Success = 5,
     };
 
     /**
      * @brief The logger class.
      *
-     * Base class used to perform logging. Implementations of this class have the ability to display or store
+     * Base class used to perform logging. Implementations of this class can display or store
      * log messages wherever they are needed.
      *
      * @ingroup io
@@ -141,14 +164,14 @@ namespace SparkyStudios::Audio::Amplitude
         virtual ~Logger() = default;
 
         /**
-         * @brief Sets the logger instance to use when calling `amLogger`
+         * @brief Sets the logger instance to use when calling @c amLogger
          *
          * @param[in] loggerInstance The logger instance.
          */
         static void SetLogger(Logger* loggerInstance);
 
         /**
-         * @brief Gets the logger instance to use when calling `amLogger`
+         * @brief Gets the logger instance to use when calling @c amLogger
          *
          * @return The logger instance.
          */

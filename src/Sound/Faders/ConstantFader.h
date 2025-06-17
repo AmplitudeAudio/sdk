@@ -45,11 +45,6 @@ namespace SparkyStudios::Audio::Amplitude
             return AmSharedPtr<ConstantFaderInstance, eMemoryPoolKind_Engine>::Make();
         }
 
-        void DestroyInstance(FaderInstance* instance) override
-        {
-            amdelete(ConstantFaderInstance, (ConstantFaderInstance*)instance);
-        }
-
         [[nodiscard]] BezierCurveControlPoints GetControlPoints() const override
         {
             return gConstantFaderCurveControlPoints;

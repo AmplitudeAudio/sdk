@@ -22,7 +22,7 @@
 namespace SparkyStudios::Audio::Amplitude
 {
     /**
-     * @brief A `File` implementation that reads and writes a file on disk.
+     * @brief A @ref File implementation that reads and writes files on disk.
      *
      * @ingroup io
      */
@@ -30,19 +30,19 @@ namespace SparkyStudios::Audio::Amplitude
     {
     public:
         /**
-         * @brief Creates a new `DiskFile` instance.
+         * @brief Creates a new @c DiskFile instance.
          */
         DiskFile();
 
         /**
-         * @brief Creates a new `DiskFile` instance from a file handle.
+         * @brief Creates a new @c DiskFile instance from a file handle.
          *
          * @param[in] fp The file handle to manage in this instance.
          */
         explicit DiskFile(AmFileHandle fp);
 
         /**
-         * @brief Creates a new DiskFile instance by opening a file at the given path.
+         * @brief Creates a new @c DiskFile instance by opening a file at the given path.
          *
          * @param[in] fileName The path to the file to open.
          * @param[in] mode The open mode to use.

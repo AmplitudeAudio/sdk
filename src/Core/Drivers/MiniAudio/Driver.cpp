@@ -102,15 +102,15 @@ namespace SparkyStudios::Audio::Amplitude
         switch (pNotification->type)
         {
         case ma_device_notification_type_started:
-            driver->m_deviceDescription.mDeviceState = DeviceState::Started;
-            CallDeviceNotificationCallback(DeviceNotification::Started, driver->GetDeviceDescription(), driver);
+            driver->m_deviceDescription.mDeviceState = eDeviceState_Started;
+            CallDeviceNotificationCallback(eDeviceNotification_Started, driver->GetDeviceDescription(), driver);
             break;
         case ma_device_notification_type_stopped:
-            driver->m_deviceDescription.mDeviceState = DeviceState::Stopped;
-            CallDeviceNotificationCallback(DeviceNotification::Stopped, driver->GetDeviceDescription(), driver);
+            driver->m_deviceDescription.mDeviceState = eDeviceState_Stopped;
+            CallDeviceNotificationCallback(eDeviceNotification_Stopped, driver->GetDeviceDescription(), driver);
             break;
         case ma_device_notification_type_rerouted:
-            CallDeviceNotificationCallback(DeviceNotification::Rerouted, driver->GetDeviceDescription(), driver);
+            CallDeviceNotificationCallback(eDeviceNotification_Rerouted, driver->GetDeviceDescription(), driver);
             break;
         case ma_device_notification_type_interruption_began:
             amLogDebug("Device interruption began");
@@ -201,9 +201,9 @@ namespace SparkyStudios::Audio::Amplitude
             m_deviceDescription.mDeviceOutputSampleRate = _device.playback.internalSampleRate;
             m_deviceDescription.mDeviceOutputChannels = static_cast<PlaybackOutputChannels>(_device.playback.internalChannels);
             m_deviceDescription.mDeviceOutputFormat = static_cast<PlaybackOutputFormat>(_device.playback.internalFormat);
-            m_deviceDescription.mDeviceState = DeviceState::Opened;
+            m_deviceDescription.mDeviceState = eDeviceState_Opened;
 
-            CallDeviceNotificationCallback(DeviceNotification::Opened, m_deviceDescription, this);
+            CallDeviceNotificationCallback(eDeviceNotification_Opened, m_deviceDescription, this);
 
             amEngine->GetMixer()->UpdateDevice(
                 m_deviceDescription.mDeviceID, m_deviceDescription.mDeviceName, m_deviceDescription.mDeviceOutputSampleRate,
@@ -218,7 +218,7 @@ namespace SparkyStudios::Audio::Amplitude
             return false;
         }
 
-        m_deviceDescription.mDeviceState = DeviceState::Started;
+        m_deviceDescription.mDeviceState = eDeviceState_Started;
         return true;
     }
 
@@ -236,7 +236,7 @@ namespace SparkyStudios::Audio::Amplitude
             return false;
         }
 
-        m_deviceDescription.mDeviceState = DeviceState::Closed;
+        m_deviceDescription.mDeviceState = eDeviceState_Closed;
 
         ma_device_uninit(&_device);
 
@@ -275,7 +275,7 @@ namespace SparkyStudios::Audio::Amplitude
                     static_cast<PlaybackOutputChannels>(pPlaybackInfos[iDevice].nativeDataFormats[0].channels);
                 _devices[iDevice].mDeviceOutputFormat =
                     static_cast<PlaybackOutputFormat>(pPlaybackInfos[iDevice].nativeDataFormats[0].format);
-                _devices[iDevice].mDeviceState = DeviceState::Closed;
+                _devices[iDevice].mDeviceState = eDeviceState_Closed;
             }
         }
 

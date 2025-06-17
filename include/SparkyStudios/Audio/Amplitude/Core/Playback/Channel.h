@@ -28,7 +28,7 @@ namespace SparkyStudios::Audio::Amplitude
     class ChannelInternalState;
 
     /**
-     * @brief Enumerates the playback states for a `Channel`.
+     * @brief Lists the playback states for a @c Channel.
      *
      * @ingroup engine
      */
@@ -45,12 +45,13 @@ namespace SparkyStudios::Audio::Amplitude
         eChannelPlaybackState_Playing = 1,
 
         /**
-         * @brief The channel has just been played or resumed and is fading in to the `Playing` state.
+         * @brief The channel has just been played or resumed and is fading in to the @c eChannelPlaybackState_Playing state.
          */
         eChannelPlaybackState_FadingIn = 2,
 
         /**
-         * @brief The channel has just been stopped or paused and is fading out to the `Stopped` or `Paused` state.
+         * @brief The channel has just been stopped or paused and is fading out to the @c eChannelPlaybackState_Stopped
+         * or @c eChannelPlaybackState_Paused state.
          */
         eChannelPlaybackState_FadingOut = 3,
 
@@ -66,26 +67,48 @@ namespace SparkyStudios::Audio::Amplitude
     };
 
     /**
-     * @brief Enumerates the events triggered by a `Channel` during playback.
+     * @brief Lists the events triggered by a @c Channel during playback.
      *
      * @ingroup engine
      */
-    enum class ChannelEvent : AmUInt8
+    enum eChannelEvent : AmUInt8
     {
-        Begin = 0, ///< The playback of the channel has started.
-        End = 1, ///< The playback of the channel has ended.
-        Resume = 2, ///< The playback of the channel has resumed after being paused.
-        Pause = 3, ///< The playback of the channel has been paused.
-        Stop = 4, ///< The playback of the channel has been stopped.
-        Loop = 5 ///< The playback of the channel has looped.
+        /**
+         * @brief The playback of the channel has started.
+         */
+        eChannelEvent_Begin = 0,
+
+        /**
+         * @brief The playback of the channel has ended.
+         */
+        eChannelEvent_End = 1,
+
+        /**
+         * @brief The playback of the channel has resumed after being paused.
+         */
+        eChannelEvent_Resume = 2,
+
+        /**
+         * @brief The playback of the channel has been paused.
+         */
+        eChannelEvent_Pause = 3,
+
+        /**
+         * @brief The playback of the channel has been stopped.
+         */
+        eChannelEvent_Stop = 4,
+
+        /**
+         * @brief The playback of the channel has looped.
+         */
+        eChannelEvent_Loop = 5
     };
 
     /**
      * @brief An object that represents a single channel of audio.
      *
-     * The `Channel` class is a lightweight reference to a `ChannelInternalState` object
-     * which is managed by the Engine. Multiple channels may point to the same
-     * underlying data.
+     * The @c Channel class is a lightweight reference to a @c ChannelInternalState object which is managed internally by the
+     * Engine. Multiple channels may point to the same underlying data while maintaining different states.
      *
      * @ingroup engine
      */
@@ -93,9 +116,9 @@ namespace SparkyStudios::Audio::Amplitude
     {
     public:
         /**
-         * @brief Construct an uninitialized `Channel`.
+         * @brief Construct an uninitialized channel.
          *
-         * An uninitialized `Channel` cannot have its data set or queried.
+         * @note An uninitialized channel cannot have its data set or queried.
          */
         Channel();
 
@@ -109,140 +132,143 @@ namespace SparkyStudios::Audio::Amplitude
         explicit Channel(ChannelInternalState* state);
 
         /**
-         * @brief Uninitializes this `Channel`.
+         * @brief Uninitializes this channel.
          *
-         * Note that this does not stop the audio or destroy the internal
-         * state it references, it just removes this reference to it.
+         * @note This does not stop the audio or destroy the internal state it references, it just removes this reference to it.
          */
         void Clear();
 
         /**
-         * @brief Checks whether this `Channel` has been initialized.
+         * @brief Checks whether this channel has been initialized.
          *
-         * @return `true` if this `Channel` has been initialized.
+         * @return @c true if this channel has been initialized, @c false otherwise.
          */
         [[nodiscard]] bool Valid() const;
 
         /**
-         * @brief Gets the ID of this `Channel`.
+         * @brief Gets the ID of this channel.
          *
-         * @return The ID of this `Channel`.
+         * @return The ID of this channel.
          */
         [[nodiscard]] AmUInt64 GetId() const;
 
         /**
-         * @brief Checks if the sound associated to this `Channel` is playing.
+         * @brief Checks if the sound associated with this channel is playing.
          *
-         * @return Whether the channel is currently playing.
+         * @return @c true if the channel is currently playing, @c false otherwise.
          */
         [[nodiscard]] bool Playing() const;
 
         /**
-         * @brief Stops the `Channel`.
+         * @brief Stops the channel.
          *
-         * A sound will stop on its own if its not set to loop. Looped audio must be explicitly stopped.
+         * @note A sound will stop on its own if it's not set to loop. Looped audio must be explicitly stopped.
          *
          * @param[in] duration The fade out duration before to stop the channel.
          */
         void Stop(AmTime duration = kMinFadeDuration) const;
 
         /**
-         * @brief Pauses the `Channel`.
+         * @brief Pauses the channel.
          *
-         * A paused channel may be resumed where it left off.
+         * @note A paused channel may be resumed where it left off.
          *
          * @param[in] duration The fade out duration before to pause the channel.
+         *
+         * @see Resume
          */
         void Pause(AmTime duration = kMinFadeDuration) const;
 
         /**
-         * @brief Resumes the `Channel`.
+         * @brief Resumes the channel.
          *
-         * If this channel was paused it will continue where it left off.
+         * If this channel is paused, it will continue where it left off.
          *
-         * @param[in] duration The fade in duration after resuming the channel.
+         * @param[in] duration The fade-in duration after resuming the channel.
+         *
+         * @see Pause
          */
         void Resume(AmTime duration = kMinFadeDuration) const;
 
         /**
-         * @brief Gets the location of this `Channel`.
+         * @brief Gets the location of this channel in the game environment.
          *
-         * If the audio on this channel is not set to be Positional, this method will
+         * If the audio on this channel doesn't support positional data, this method will
          * return an invalid location.
          *
-         * @return The location of this `Channel`.
+         * @return The location of this channel.
          */
         [[nodiscard]] const AmVec3& GetLocation() const;
 
         /**
-         * @brief Sets the location of this `Channel`.
+         * @brief Sets the location of this channel in the game environment.
          *
-         * If the audio on this channel is not set to be Positional, this method
+         * If the audio on this channel doesn't support positional data, this method
          * does nothing.
          *
-         * @param[in] location The new location of the `Channel`.
+         * @param[in] location The new location of the channel.
          */
         void SetLocation(const AmVec3& location) const;
 
         /**
-         * @brief Sets the gain on this `Channel`.
+         * @brief Sets the gain on this channel.
          *
          * @param[in] gain The new gain value.
          */
         void SetGain(AmReal32 gain) const;
 
         /**
-         * @brief Returns the gain on this `Channel`.
+         * @brief Returns the gain on this channel.
          *
          * @return The channel's gain.
          */
         [[nodiscard]] AmReal32 GetGain() const;
 
         /**
-         * @brief Returns the playback state of this `Channel`.
+         * @brief Returns the playback state of this channel.
          *
-         * @return A `ChannelPlaybackState` enumeration value representing the current state of the `Channel`.
+         * @return An @ref eChannelPlaybackState enumeration value representing the current state of the channel.
          */
         [[nodiscard]] eChannelPlaybackState GetPlaybackState() const;
 
         /**
-         * @brief Returns the `Entity` associated with this `Channel`.
+         * @brief Returns the Entity associated with this channel.
          *
-         * @note If no `Entity` is associated with this `Channel`, this method will return an
-         * uninitialized `Entity` object. You should check if the entity is valid before using it.
+         * @note If no @c Entity is associated with this channel, this method will return an
+         * uninitialized @c Entity object. You should check if the entity is valid before using it.
          *
-         * @return The entity associated with this `Channel`.
+         * @return The entity associated with this channel.
          *
          * @see Entity
          */
         [[nodiscard]] Entity GetEntity() const;
 
         /**
-         * @brief Returns the `Listener` associated with this `Channel`.
+         * @brief Returns the Listener associated with this channel.
          *
-         * @note If no `Listener` is associated with this `Channel`, this method will return an
-         * uninitialized `Listener` object. You should check if the listener is valid before using it.
+         * @note If no @c Listener is associated with this channel, this method will return an
+         * uninitialized @c Listener object. You should check if the listener is valid before using it.
          *
-         * @return The listener associated with this `Channel`.
+         * @return The listener associated with this channel.
          *
          * @see Listener
          */
         [[nodiscard]] Listener GetListener() const;
 
         /**
-         * @brief Returns the `Room` associated with this `Channel`.
+         * @brief Returns the Room associated with this channel.
          *
-         * @note If no `Room` is associated with this `Channel`, this method will return an
-         * uninitialized `Room` object. You should check if the room is valid before using it.
+         * @note If no @c Room is associated with this channel, this method will return an
+         * uninitialized @c Room object. You should check if the room is valid before using it.
          *
-         * @return The room associated with this Channel.
+         * @return The room associated with this channel.
          */
         [[nodiscard]] Room GetRoom() const;
 
         /**
-         * @brief Returns the internal state of this Channel.
+         * @brief Returns the internal state of this channel.
          *
-         * @return The internal state of this Channel.
+         * @return The internal state of this channel.
          *
          * @warning This method is for internal usage only.
          */
@@ -255,10 +281,10 @@ namespace SparkyStudios::Audio::Amplitude
          * @param[in] callback The callback function.
          * @param[in] userData The user data to pass to the callback.
          *
-         * @see ChannelEvent
+         * @see eChannelEvent
          * @see ChannelEventCallback
          */
-        void On(ChannelEvent event, ChannelEventCallback callback, void* userData = nullptr) const;
+        void On(eChannelEvent event, ChannelEventCallback callback, void* userData = nullptr) const;
 
     private:
         /**
@@ -271,7 +297,7 @@ namespace SparkyStudios::Audio::Amplitude
         /**
          * @brief Checks if the internal state ID is valid.
          *
-         * @return `true` if the internal state ID is valid.
+         * @return @c true if the internal state ID is valid, @c false otherwise.
          *
          * @internal
          */

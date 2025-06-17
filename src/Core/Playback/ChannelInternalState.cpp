@@ -654,7 +654,7 @@ namespace SparkyStudios::Audio::Amplitude
         return _roomGains.contains(room) ? _roomGains.at(room) : 0.0f;
     }
 
-    void ChannelInternalState::On(const ChannelEvent event, ChannelEventCallback callback, void* userData)
+    void ChannelInternalState::On(const eChannelEvent event, ChannelEventCallback callback, void* userData)
     {
         if (!Valid())
             return;
@@ -665,7 +665,7 @@ namespace SparkyStudios::Audio::Amplitude
         _eventsMap[event]->Add(callback, userData);
     }
 
-    void ChannelInternalState::Trigger(ChannelEvent event)
+    void ChannelInternalState::Trigger(eChannelEvent event)
     {
         if (!Valid())
             return;

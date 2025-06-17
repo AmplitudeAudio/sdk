@@ -48,10 +48,10 @@ namespace SparkyStudios::Audio::Amplitude
     };
 
     /**
-     * @brief A segment of a `Curve`.
+     * @brief A segment of a @c Curve.
      *
-     * A `CurvePart` allows a curve to have different fading algorithms at the same time.
-     * Each `CurvePart` has a start and end point, and the fading algorithm which moves the value
+     * A @c CurvePart allows a curve to have different fading algorithms at the same time.
+     * Each @c CurvePart has a start and end point, and the fading algorithm which moves the value
      * from the start point to the end point.
      *
      * @ingroup math
@@ -60,24 +60,24 @@ namespace SparkyStudios::Audio::Amplitude
     {
     public:
         /**
-         * @brief Creates an empty `CurvePart`.
+         * @brief Creates an empty @c CurvePart.
          */
         CurvePart();
 
         /**
          * @brief Copy constructor.
          *
-         * @param[in] other The `CurvePart` to copy.
+         * @param[in] other The @c CurvePart to copy.
          */
         CurvePart(const CurvePart& other);
 
         /**
-         * @brief Destroys this `CurvePart`.
+         * @brief Destroys this @c CurvePart.
          */
         ~CurvePart();
 
         /**
-         * @brief Initializes this `CurvePart` from a definition.
+         * @brief Initializes this @c CurvePart from a definition.
          *
          * @param[in] definition The definition of the curve part generated
          * from a flatbuffer binary.
@@ -85,44 +85,44 @@ namespace SparkyStudios::Audio::Amplitude
         void Initialize(const CurvePartDefinition* definition);
 
         /**
-         * @brief Returns the start point of this `CurvePart`.
+         * @brief Returns the start point of this @c CurvePart.
          *
-         * @return The start point of this `CurvePart`.
+         * @return The start point of this @c CurvePart.
          */
         [[nodiscard]] const CurvePoint& GetStart() const;
 
         /**
-         * @brief Sets the start point of this `CurvePart`.
+         * @brief Sets the start point of this @c CurvePart.
          *
          * @param[in] start The new start point.
          */
         void SetStart(const CurvePoint& start);
 
         /**
-         * @brief Returns the end point of this `CurvePart`.
+         * @brief Returns the end point of this @c CurvePart.
          *
-         * @return The end point of this `CurvePart`.
+         * @return The end point of this @c CurvePart.
          */
         [[nodiscard]] const CurvePoint& GetEnd() const;
 
         /**
-         * @brief Sets the end point of this `CurvePart`.
+         * @brief Sets the end point of this @c CurvePart.
          *
          * @param[in] end The new end point.
          */
         void SetEnd(const CurvePoint& end);
 
         /**
-         * @brief Returns the Fader of this `CurvePart`.
+         * @brief Returns the Fader of this @c CurvePart.
          *
-         * @return The `FaderInstance` of this `CurvePart`.
+         * @return The @c FaderInstance of this @c CurvePart.
          */
         [[nodiscard]] std::shared_ptr<FaderInstance> GetFader() const;
 
         /**
-         * @brief Sets the fader of this `CurvePart`.
+         * @brief Sets the fader of this @c CurvePart.
          *
-         * @param[in] fader The name of the `Fader` to set.
+         * @param[in] fader The name of the @c Fader to set.
          */
         void SetFader(const AmString& fader);
 
@@ -138,9 +138,9 @@ namespace SparkyStudios::Audio::Amplitude
         /**
          * @brief Copy assignment operator.
          *
-         * @param[in] other The other `CurvePart` to copy.
+         * @param[in] other The other @c CurvePart to copy.
          *
-         * @return A copy of this `CurvePart`.
+         * @return A copy of this @c CurvePart.
          */
         CurvePart& operator=(const CurvePart& other);
 
@@ -155,7 +155,7 @@ namespace SparkyStudios::Audio::Amplitude
     };
 
     /**
-     * @brief A `Curve` which describe the variation of a value (on the Y-axis) according to another (on the X-axis).
+     * @brief A @c Curve that describes the variation of a value (on the Y-axis) according to another (on the X-axis).
      *
      * @ingroup math
      */
@@ -163,7 +163,7 @@ namespace SparkyStudios::Audio::Amplitude
     {
     public:
         /**
-         * @brief Creates an empty `Curve`.
+         * @brief Creates an empty @c Curve.
          */
         Curve();
 

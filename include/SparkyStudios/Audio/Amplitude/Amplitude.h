@@ -12,6 +12,46 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+/**
+ * @defgroup core Core
+ * @brief Core functionalities of the SDK
+ */
+
+/**
+ * @defgroup engine Engine
+ * @brief Engine-specific functionalities
+ */
+
+/**
+ * @defgroup assets Assets
+ * @brief Assets API
+ */
+
+/**
+ * @defgroup io IO
+ * @brief Input/Output API
+ */
+
+/**
+ * @defgroup math Math
+ * @brief Math libraries and utilities
+ */
+
+/**
+ * @defgroup memory Memory
+ * @brief Memory management and allocation
+ */
+
+/**
+ * @defgroup dsp DSP
+ * @brief Digital Signal Processing (DSP) API
+ */
+
+/**
+ * @defgroup mixer Mixer
+ * @brief Mixer & Pipeline API
+ */
+
 #pragma once
 
 #ifndef _AM_AMPLITUDE_H

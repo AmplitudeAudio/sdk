@@ -30,7 +30,7 @@ namespace SparkyStudios::Audio::Amplitude
 
     AudioConverter::~AudioConverter()
     {
-        Resampler::Destruct("default", _resampler);
+        _resampler.reset();
     }
 
     bool AudioConverter::Configure(const Settings& settings)

@@ -362,13 +362,8 @@ namespace SparkyStudios::Audio::Amplitude
         ScalarMultiply(filterChannel->begin(), filterChannel->begin(), normalizingFactor, filterLength);
     }
 
-    ResamplerInstance* DefaultResampler::CreateInstance()
+    std::shared_ptr<ResamplerInstance> DefaultResampler::CreateInstance()
     {
-        return ampoolnew(eMemoryPoolKind_Filtering, DefaultResamplerInstance);
-    }
-
-    void DefaultResampler::DestroyInstance(ResamplerInstance* instance)
-    {
-        ampooldelete(eMemoryPoolKind_Filtering, DefaultResamplerInstance, (DefaultResamplerInstance*)instance);
+        return AmSharedPtr<DefaultResamplerInstance, eMemoryPoolKind_Filtering>::Make();
     }
 } // namespace SparkyStudios::Audio::Amplitude

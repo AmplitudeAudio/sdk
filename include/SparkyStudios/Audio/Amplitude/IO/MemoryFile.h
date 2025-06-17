@@ -22,7 +22,7 @@
 namespace SparkyStudios::Audio::Amplitude
 {
     /**
-     * @brief A `File` implementation that reads from and writes to a memory buffer.
+     * @brief A @c File implementation that reads from and writes to a memory buffer.
      *
      * @ingroup io
      */
@@ -30,12 +30,12 @@ namespace SparkyStudios::Audio::Amplitude
     {
     public:
         /**
-         * @brief Creates a new `MemoryFile` instance.
+         * @brief Creates a new @c MemoryFile instance.
          */
         MemoryFile();
 
         /**
-         * @brief Creates a new `MemoryFile` instance from a memory buffer.
+         * @brief Creates a new @c MemoryFile instance from a memory buffer.
          *
          * @param[in] buffer The memory buffer to manage in this instance.
          * @param[in] size The size of the memory buffer.
@@ -109,7 +109,7 @@ namespace SparkyStudios::Audio::Amplitude
          * @param[in] buffer The memory buffer to open.
          * @param[in] size The size of the memory buffer.
          * @param[in] copy If true, the memory buffer will be copied.
-         * @param[in] takeOwnership If true, the memory buffer will be owned by this instance, and released when this instance is destroyed.
+         * @param[in] takeOwnership If true, the memory buffer will be owned by this instance and released when this instance is destroyed.
          *
          * @return The result of the operation.
          */

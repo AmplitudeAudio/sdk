@@ -861,9 +861,9 @@ namespace SparkyStudios::Audio::Amplitude
     /**
      * @brief Fake shared pointer.
      *
-     * This is a fake shared pointer that does nothing on deletion. It is used to
-     * make use of `AmSharedPtr` in places where a shared pointer is required, but
-     * the object is not owned by the shared pointer.
+     * This is a fake shared pointer that does nothing on deletion. Its purpose is
+     * to make use of @c AmSharedPtr in places where a shared pointer is required,
+     * but the object is not owned by the shared pointer.
      *
      * @tparam T The type of the object being wrapped.
      *

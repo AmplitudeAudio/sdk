@@ -24,8 +24,8 @@ namespace SparkyStudios::Audio::Amplitude
     /**
      * @brief A class representing a cartesian coordinate system.
      *
-     * It's used to know which direction is positive along each axis, and also allows
-     * Amplitude to convert incoming data to the internal coordinate system.
+     * It's used to know which direction is positive along each axis and also allows
+     * Amplitude to convert incoming data from the game's coordinate system to the internal coordinate system.
      *
      * @ingroup math
      */
@@ -33,7 +33,7 @@ namespace SparkyStudios::Audio::Amplitude
     {
     public:
         /**
-         * @brief Enumerates the axes of the cartesian coordinate system.
+         * @brief Lists the axes of the cartesian coordinate system.
          */
         enum class Axis
         {
@@ -147,9 +147,9 @@ namespace SparkyStudios::Audio::Amplitude
         };
 
         /**
-         * @brief Creates a cartesian coordinate system which match the one used in Amplitude.
+         * @brief Creates a cartesian coordinate system that matches the one used in Amplitude.
          *
-         * @return Amplitude's internal coordinate system for right-handed, Z-up cartesian coordinate system.
+         * @return Internal coordinate system used by Amplitude, for a right-handed, Z-up cartesian coordinate system.
          */
         static CartesianCoordinateSystem Default();
 

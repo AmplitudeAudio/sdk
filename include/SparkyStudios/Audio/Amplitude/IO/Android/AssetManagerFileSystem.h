@@ -26,7 +26,7 @@
 namespace SparkyStudios::Audio::Amplitude
 {
     /**
-     * @brief A `FileSystem` implementation that reads and writes files from an Android AssetManager.
+     * @brief A @c FileSystem implementation that reads and writes files from an Android AssetManager.
      *
      * @ingroup io
      */
@@ -34,9 +34,9 @@ namespace SparkyStudios::Audio::Amplitude
     {
     public:
         /**
-         * @brief Creates a new instance of the AssetManagerFileSystem class.
+         * @brief Creates a new instance of the @c AssetManagerFileSystem class.
          *
-         * @param[in] assetManager The Android AssetManager to use for file operations.
+         * @param[in] assetManager The Android @c AAssetManager instance to use for file operations.
          */
         explicit AssetManagerFileSystem(AAssetManager* assetManager);
 

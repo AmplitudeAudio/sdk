@@ -178,29 +178,29 @@ namespace SparkyStudios::Audio::Amplitude
 
                 // Apply ambisonic reflection encoding
                 output[eBFormatChannel_W] += delayChannel;
-                switch (static_cast<RoomWall>(i))
+                switch (static_cast<eRoomWall>(i))
                 {
-                case RoomWall::Left: // Left wall reflection
+                case eRoomWall_Left: // Left wall reflection
                     output[eBFormatChannel_Y] += delayChannel;
                     break;
 
-                case RoomWall::Right: // Right wall reflection
+                case eRoomWall_Right: // Right wall reflection
                     output[eBFormatChannel_Y] -= delayChannel;
                     break;
 
-                case RoomWall::Bottom: // Floor reflection
+                case eRoomWall_Bottom: // Floor reflection
                     output[eBFormatChannel_Z] -= delayChannel;
                     break;
 
-                case RoomWall::Top: // Ceiling reflection
+                case eRoomWall_Top: // Ceiling reflection
                     output[eBFormatChannel_Z] += delayChannel;
                     break;
 
-                case RoomWall::Front: // Front wall reflection
+                case eRoomWall_Front: // Front wall reflection
                     output[eBFormatChannel_X] += delayChannel;
                     break;
 
-                case RoomWall::Back: // Back wall reflection
+                case eRoomWall_Back: // Back wall reflection
                     output[eBFormatChannel_X] -= delayChannel;
                     break;
 

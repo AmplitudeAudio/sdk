@@ -97,7 +97,7 @@
  * @param _type_ Return type of the function
  * @param _name_ Name of the function
  *
- * @note This must be followed by the parentheses containing the function arguments declaration
+ * @note This must be followed by the parentheses containing the function arguments declaration.
  *
  * @ingroup core
  */
@@ -126,12 +126,15 @@
  */
 #define AM_UNUSED(x) ((void)(x))
 
+#define AM_STRING_EXPAND(X) #X
+
 /**
  * @brief Turn X into a string literal.
  *
- * @param x The value to transform into a string literal
+ * @param X The value to transform into a string literal
+ *
+ * @ingroup core
  */
-#define AM_STRING_EXPAND(X) #X
 #define AM_TO_STRING(X) AM_STRING_EXPAND(X)
 
 namespace SparkyStudios::Audio::Amplitude
@@ -160,7 +163,7 @@ namespace SparkyStudios::Audio::Amplitude
          * @param[in] size The buffer size.
          * @param[in] clear Whether to clear the buffer.
          *
-         * @returns An `AM_ERROR` value indicating if the allocation was successful or not.
+         * @returns An @c AM_ERROR value indicating if the allocation was successful or not.
          */
         AmResult Init(AmUInt32 size, bool clear = true);
 
@@ -185,7 +188,7 @@ namespace SparkyStudios::Audio::Amplitude
         }
 
         /**
-         * @brief Gets the current aligned pointer.
+         * @brief Gets the current-aligned pointer.
          *
          * @return The pointer the float buffer
          */
@@ -215,7 +218,7 @@ namespace SparkyStudios::Audio::Amplitude
          * @brief Resizes the buffer to the specified size.
          *
          * @param[in] size The new size of the buffer.
-         * @param[in] clear Whether to clear the buffer after resize. If `true`, the buffer will be cleared
+         * @param[in] clear Whether to clear the buffer after resize. If @c true, the buffer will be cleared
          * even if the new size equals the old size.
          */
         void Resize(AmUInt32 size, bool clear = true);
@@ -275,7 +278,7 @@ namespace SparkyStudios::Audio::Amplitude
          *
          * @return The reference to the float at the specified index.
          */
-        AmReal32& operator[](AmSize index)
+        AmReal32& operator[](const AmSize index)
         {
             AMPLITUDE_ASSERT(m_data != nullptr && index < m_floats);
             return m_data[index];
@@ -288,7 +291,7 @@ namespace SparkyStudios::Audio::Amplitude
          *
          * @return The const reference to the float at the specified index.
          */
-        const AmReal32& operator[](AmSize index) const
+        const AmReal32& operator[](const AmSize index) const
         {
             AMPLITUDE_ASSERT(m_data != nullptr && index < m_floats);
             return m_data[index];
@@ -300,7 +303,7 @@ namespace SparkyStudios::Audio::Amplitude
     };
 
     /**
-     * @brief Enumerates the list of possible errors encountered by the library.
+     * @brief Lists the possible errors encountered by the library.
      *
      * @ingroup core
      */
@@ -309,7 +312,7 @@ namespace SparkyStudios::Audio::Amplitude
         eErrorCode_Success = 0, ///< No error
         eErrorCode_InvalidParameter = 1, ///< Some parameter is invalid
         eErrorCode_FileNotFound = 2, ///< File not found
-        eErrorCode_FileLoadFailed = 3, ///< File found, but could not be loaded
+        eErrorCode_FileLoadFailed = 3, ///< File found but could not be loaded
         eErrorCode_DllNotFound = 4, ///< DLL not found, or wrong DLL
         eErrorCode_OutOfMemory = 5, ///< Out of memory
         eErrorCode_NotImplemented = 6, ///< Feature not implemented
@@ -317,7 +320,7 @@ namespace SparkyStudios::Audio::Amplitude
     };
 
     /**
-     * @brief Enumerates the list of possible sample formats handled by Amplitude.
+     * @brief Lists the possible sample formats handled by Amplitude.
      *
      * @ingroup core
      */
@@ -329,7 +332,7 @@ namespace SparkyStudios::Audio::Amplitude
     };
 
     /**
-     * @brief Enumerates the list of available spatialization modes.
+     * @brief Lists the available spatialization modes.
      *
      * @ingroup core
      */
@@ -350,7 +353,7 @@ namespace SparkyStudios::Audio::Amplitude
         /**
          * @brief Enables 2D (left-right) spatialization based on sound position and orientation.
          *
-         * @note The sound instance using this spatialization mode needs to be attached to an `Entity`.
+         * @note The sound instance using this spatialization mode needs to be attached to an @c Entity.
          *
          * @note This mode is available for every panning mode.
          */
@@ -365,29 +368,31 @@ namespace SparkyStudios::Audio::Amplitude
     };
 
     /**
-     * @brief Enumerates the list of available scopes for sound objects.
+     * @brief Lists the available scopes for sound objects.
      *
      * @ingroup core
      */
     enum eScope : AmUInt8
     {
         /**
-         * @brief The sound object is within the game world. Instances of collections played in this scope
-         * will be treated as one object across all entities.
+         * @brief The sound object is within the game world.
+         *
+         * Instances of collections played in this scope will be treated as one object across all entities.
          */
         eScope_World,
 
         /**
-         * @brief The sound object is within a specific entity. Instances of collections played in this scope
-         * will be treated as separate objects, and no data will be shared across entities.
+         * @brief The sound object is within a specific entity.
          *
-         * @note Sound objects using this scope are required to be attached to an [`Entity`](./Entity.md).
+         * Instances of collections played in this scope will be treated as separate objects, and no data will be shared across entities.
+         *
+         * @note Sound objects using this scope are required to be attached to an @c Entity.
          */
         eScope_Entity
     };
 
     /**
-     * @brief Enumerates the list of available panning modes.
+     * @brief Lists the available panning modes.
      *
      * @ingroup core
      */
@@ -413,7 +418,7 @@ namespace SparkyStudios::Audio::Amplitude
          * @brief 3D binaural panning using second-order HRTF.
          *
          * @note The Ambisonic decoder will use a virtual array of 12 loudspeakers
-         * arranged in a dodecahedral configuration (using faces of the dodecahedron).
+         * arranged in a dodecahedral configuration (using the faces of the dodecahedron).
          */
         ePanningMode_BinauralMediumQuality = 2,
 
@@ -447,9 +452,11 @@ namespace SparkyStudios::Audio::Amplitude
     };
 
     /**
-     * @brief Describe the format of an audio sample.
+     * @brief Describes the format of an audio sample.
      *
-     * This data structure is mainly filled by a `Codec` during the initialization time.
+     * This data structure is mainly filled by a @c Codec during the initialization time.
+     *
+     * @see Codec
      *
      * @ingroup core
      */

@@ -32,14 +32,25 @@ namespace SparkyStudios::Audio::Amplitude
      */
     struct AM_API_PUBLIC Face
     {
-        AmSize m_A; ///< Index of the first vertex.
-        AmSize m_B; ///< Index of the second vertex.
-        AmSize m_C; ///< Index of the third vertex.
+        /**
+         * @brief Index of the first vertex.
+         */
+        AmSize m_A;
+
+        /**
+         * @brief Index of the second vertex.
+         */
+        AmSize m_B;
+
+        /**
+         * @brief Index of the third vertex.
+         */
+        AmSize m_C;
 
         /**
          * @brief Checks if the face is valid.
          *
-         * @return `true` if the face is valid, `false` otherwise.
+         * @return @c true if the face is valid, @c false otherwise.
          */
         [[nodiscard]] bool IsValid() const;
     };
@@ -55,10 +66,37 @@ namespace SparkyStudios::Audio::Amplitude
      */
     struct AM_API_PUBLIC Edge
     {
-        AmSize m_E0; ///< Index of the first vertex.
-        AmSize m_E1; ///< Index of the second vertex.
+        /**
+         * @brief Index of the first vertex.
+         */
+        AmSize m_E0;
 
+        /**
+         * @brief Index of the second vertex.
+         */
+        AmSize m_E1;
+
+        /**
+         * @brief Compares two edges for ordering.
+         *
+         * This operator determines the ordering of two edges based on their vertex indices.
+         * It first compares the first vertex index (m_E0) of the two edges, and if they are equal,
+         * it compares the second vertex index (m_E1).
+         *
+         * @param other The edge to compare against.
+         * @return @c true if this edge is considered less than the other, @c false otherwise.
+         */
         bool operator<(const Edge& other) const;
+
+        /**
+         * @brief Checks if two edges are equal.
+         *
+         * Compares the vertex indices of two edges to determine if they are equivalent.
+         * Two edges are considered equal if both of their vertex indices are equal.
+         *
+         * @param other The edge to compare against.
+         * @return @c true if the edges are equal, @c false otherwise.
+         */
         bool operator==(const Edge& other) const;
     };
 } // namespace SparkyStudios::Audio::Amplitude

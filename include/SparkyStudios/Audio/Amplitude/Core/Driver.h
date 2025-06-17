@@ -23,9 +23,9 @@
 namespace SparkyStudios::Audio::Amplitude
 {
     /**
-     * @brief Base class for audio device driver implementations.
+     * @brief Base class used to create device drivers.
      *
-     * A driver allows to use an audio device to output sounds and
+     * A driver allows using an audio device to output sounds on speakers and
      * receive data from the microphone.
      *
      * @ingroup engine
@@ -34,10 +34,9 @@ namespace SparkyStudios::Audio::Amplitude
     {
     public:
         /**
-         * @brief Creates a new Driver with a unique name.
+         * @brief Creates a new driver with a unique name.
          *
-         * @param[in] name The driver name. Recommended names are "APIName".
-         * e.g. "MiniAudio" or "PortAudio" or "SDL", etc...
+         * @param[in] name The driver's name. Recommended names are "APIName", e.g., "MiniAudio" or "PortAudio" or "SDL", etc...
          */
         explicit Driver(AmString name);
 
@@ -49,16 +48,16 @@ namespace SparkyStudios::Audio::Amplitude
         /**
          * @brief Open and start using the audio device.
          *
-         * @param[in] device The audio device to use description to use for initializing the physical device.
+         * @param[in] device The audio device description to use for initializing the physical device.
          *
-         * @return `true` if successful, `false` otherwise.
+         * @return @c true if successful, @c false otherwise.
          */
         virtual bool Open(const DeviceDescription& device) = 0;
 
         /**
          * @brief Closes the audio device.
          *
-         * @return `true` if successful, `false` otherwise.
+         * @return @c true if successful, @c false otherwise.
          */
         virtual bool Close() = 0;
 
@@ -67,7 +66,7 @@ namespace SparkyStudios::Audio::Amplitude
          *
          * @param[out] devices The vector in which to store the device descriptions.
          *
-         * @return `true` if successful, `false` otherwise.
+         * @return @c true if successful, @c false otherwise.
          */
         virtual bool EnumerateDevices(std::vector<DeviceDescription>& devices) = 0;
 
@@ -88,19 +87,30 @@ namespace SparkyStudios::Audio::Amplitude
         /**
          * @brief Registers a new audio driver.
          *
+         * @note This method does nothing if the registry is locked.
+         *
          * @param[in] driver The audio driver to add in the registry.
+         *
+         * @see LockRegistry, UnlockRegistry
          */
         static void Register(std::shared_ptr<Driver> driver);
 
         /**
          * @brief Unregisters an audio driver.
          *
+         * @note This method does nothing if the registry is locked.
+         *
          * @param[in] driver The audio driver to remove from the registry.
+         *
+         * @see LockRegistry, UnlockRegistry
          */
         static void Unregister(std::shared_ptr<const Driver> driver);
 
         /**
          * @brief Choose the most preferred audio driver.
+         *
+         * This method will return the driver instance corresponding to the name provided in the loaded
+         * engine configuration. [Read this page](/project/engine-config/#driver) to learn more.
          *
          * @return The default audio driver.
          */
@@ -111,12 +121,14 @@ namespace SparkyStudios::Audio::Amplitude
          *
          * @param[in] name The name of the audio driver. Must be registered before.
          *
-         * @return The audio driver with the given name, or `nullptr` if none.
+         * @return The audio driver with the given name, or @c nullptr if not found.
          */
         static std::shared_ptr<Driver> Find(const AmString& name);
 
         /**
          * @brief Set the default diver to use in the engine.
+         *
+         * This method will overwrite the default driver set from the loaded engine configuration.
          *
          * @param[in] name The name of the audio driver. Must be registered before.
          */
@@ -126,7 +138,7 @@ namespace SparkyStudios::Audio::Amplitude
          * @brief Locks the drivers' registry.
          *
          * @warning This function is mainly used for internal purposes. It's
-         * called before the `Engine` initialization, to discard the registration
+         * called before the @c Engine initialization, to discard the registration
          * of new divers after the engine is fully loaded.
          */
         static void LockRegistry();
@@ -135,7 +147,7 @@ namespace SparkyStudios::Audio::Amplitude
          * @brief Unlocks the drivers' registry.
          *
          * @warning This function is mainly used for internal purposes. It's
-         * called after the `Engine` deinitialization, to allow the registration
+         * called after the @c Engine deinitialization, to allow the registration
          * of new divers after the engine is fully unloaded.
          */
         static void UnlockRegistry();
@@ -149,7 +161,7 @@ namespace SparkyStudios::Audio::Amplitude
 
     protected:
         /**
-         * @brief The driver name.
+         * @brief The driver's name.
          */
         AmString m_name;
 

@@ -24,9 +24,9 @@
 namespace SparkyStudios::Audio::Amplitude
 {
     /**
-     * @brief Describes a single item within a `SwitchContainer`.
+     * @brief Describes a single item within a switch container.
      *
-     * @see [SwitchContainer](../../assets/SwitchContainer/index.md)
+     * @see SwitchContainer
      *
      * @ingroup engine
      */
@@ -35,15 +35,15 @@ namespace SparkyStudios::Audio::Amplitude
         /**
          * @brief The object ID of the item.
          *
-         * May be a `AmSoundID` or a `AmCollectionID`.
+         * Maybe an @c AmSoundID or an @c AmCollectionID.
          */
         AmObjectID m_id;
 
         /**
-         * @brief Whether to continue playing this item when the `SwitchContainer`
+         * @brief Whether to continue playing this item when the @c SwitchContainer
          * changes its state between one of the values where this item is registered.
          *
-         * If this value is set to `false`, each sound will be stopped and played again
+         * If this value is set to @c false, each sound will be stopped and played again
          * from the beginning.
          */
         bool m_continueBetweenStates;
@@ -86,13 +86,13 @@ namespace SparkyStudios::Audio::Amplitude
     };
 
     /**
-     * @brief Amplitude Switch Container Asset.
+     * @brief Amplitude switch container asset.
      *
      * A switch container is a container sound object where sounds and collections can be registered on
      * one or multiple switches. Only one switch can be active at a time in a switch container. When a
-     * switch is active, all the sounds and collections that are registered on it will be played.
+     * switch is active, all the sounds and collections that are registered on it will be played simultaneously.
      *
-     * @see [SoundObject](../../engine/SoundObject/index.md)
+     * @see SoundObject, Switch
      *
      * @ingroup assets
      */
@@ -102,32 +102,32 @@ namespace SparkyStudios::Audio::Amplitude
     {
     public:
         /**
-         * @brief Returns the switch attached to this SwitchContainer.
+         * @brief Returns the switch attached to this switch container.
          *
-         * @return The switch of this SwitchContainer if available or nullptr.
+         * @return The switch of this @c SwitchContainer if available or @c nullptr.
          */
         [[nodiscard]] virtual const Switch* GetSwitch() const = 0;
 
         /**
-         * @brief Get the fade in Fader for the given sound object ID.
+         * @brief Get the fade-in Fader for the given sound object ID.
          *
          * @param[in] id The ID of the sound object.
          *
-         * @return The fade in Fader.
+         * @return The fade-in Fader.
          */
         [[nodiscard]] virtual std::shared_ptr<FaderInstance> GetFaderIn(AmObjectID id) const = 0;
 
         /**
-         * @brief Get the fade out Fader for the given sound object ID.
+         * @brief Get the fade-out Fader for the given sound object ID.
          *
          * @param[in] id The ID of the sound object.
          *
-         * @return The fade out Fader.
+         * @return The fade-out Fader.
          */
         [[nodiscard]] virtual std::shared_ptr<FaderInstance> GetFaderOut(AmObjectID id) const = 0;
 
         /**
-         * @brief Returns the list of sound objects referenced in this SwitchContainer for the given state.
+         * @brief Returns the list of sound objects referenced in this switch container for the given state.
          *
          * @param[in] stateId The switch state to get the objects for.
          *

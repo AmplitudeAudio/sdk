@@ -21,11 +21,10 @@
 
 namespace SparkyStudios::Audio::Amplitude
 {
-
     /**
-     * @brief An Amplitude resource in a `FileSystem`.
+     * @brief An Amplitude resource in a @c FileSystem.
      *
-     * This base class represents a resource (sound files, assets, etc.) in a `FileSystem`.
+     * This base class represents a resource (sound files, assets, etc.) in a @c FileSystem.
      *
      * @ingroup io
      */

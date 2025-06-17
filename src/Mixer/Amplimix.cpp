@@ -140,7 +140,7 @@ namespace SparkyStudios::Audio::Amplitude
         const auto channel = sound->GetChannel();
         auto* channelState = channel.GetState();
 
-        channelState->Trigger(ChannelEvent::Begin);
+        channelState->Trigger(eChannelEvent_Begin);
     }
 
     static void OnSoundPaused(AmplimixImpl* mixer, AmplimixLayerImpl* layer)
@@ -153,7 +153,7 @@ namespace SparkyStudios::Audio::Amplitude
         const auto channel = sound->GetChannel();
         auto* channelState = channel.GetState();
 
-        channelState->Trigger(ChannelEvent::Pause);
+        channelState->Trigger(eChannelEvent_Pause);
     }
 
     static void OnSoundResumed(AmplimixImpl* mixer, AmplimixLayerImpl* layer)
@@ -166,7 +166,7 @@ namespace SparkyStudios::Audio::Amplitude
         const auto channel = sound->GetChannel();
         auto* channelState = channel.GetState();
 
-        channelState->Trigger(ChannelEvent::Resume);
+        channelState->Trigger(eChannelEvent_Resume);
     }
 
     static void OnSoundStopped(AmplimixImpl* mixer, AmplimixLayerImpl* layer)
@@ -179,7 +179,7 @@ namespace SparkyStudios::Audio::Amplitude
         const auto channel = sound->GetChannel();
         auto* channelState = channel.GetState();
 
-        channelState->Trigger(ChannelEvent::Stop);
+        channelState->Trigger(eChannelEvent_Stop);
     }
 
     static bool OnSoundLooped(AmplimixImpl* mixer, AmplimixLayerImpl* layer)
@@ -198,7 +198,7 @@ namespace SparkyStudios::Audio::Amplitude
             const auto channel = sound->GetChannel();
             auto* channelState = channel.GetState();
 
-            channelState->Trigger(ChannelEvent::Loop);
+            channelState->Trigger(eChannelEvent_Loop);
         }
 
         return shouldLoop;
@@ -230,7 +230,7 @@ namespace SparkyStudios::Audio::Amplitude
             // Stop playing the sound
             channelState->HaltInternal();
 
-            channelState->Trigger(ChannelEvent::End);
+            channelState->Trigger(eChannelEvent_End);
 
             OnSoundDestroyed(mixer, layer);
             return;
@@ -241,7 +241,7 @@ namespace SparkyStudios::Audio::Amplitude
             // Stop playing the sound
             channelState->HaltInternal();
 
-            channelState->Trigger(ChannelEvent::End);
+            channelState->Trigger(eChannelEvent_End);
 
             // Destroy the sound instance on end
             OnSoundDestroyed(mixer, layer);
@@ -251,7 +251,7 @@ namespace SparkyStudios::Audio::Amplitude
             // Stop playing the sound
             channelState->HaltInternal();
 
-            channelState->Trigger(ChannelEvent::End);
+            channelState->Trigger(eChannelEvent_End);
 
             // Destroy the sound instance on stop
             OnSoundDestroyed(mixer, layer);
@@ -274,7 +274,7 @@ namespace SparkyStudios::Audio::Amplitude
                             // Stop playing the collection
                             channelState->HaltInternal();
 
-                            channelState->Trigger(ChannelEvent::End);
+                            channelState->Trigger(eChannelEvent_End);
                         }
                     }
 

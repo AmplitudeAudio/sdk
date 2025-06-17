@@ -26,9 +26,12 @@ namespace SparkyStudios::Audio::Amplitude
     /**
      * @brief Audio file reader and writer.
      *
-     * The `Codec` class is used to implement an audio file reader and writer.
+     * The @c Codec class is used to implement an audio file reader and writer.
      * This is the base class for all audio codecs, each implementation should
-     * allow to build decoders and encoders.
+     * allow building decoders and encoders.
+     *
+     * The @c Codec class follows the [plugin architecture](/plugins/anatomy), and thus, you are able to create
+     * your own codecs and register them to the Engine by inheriting from this class and by implementing the necessary dependencies.
      *
      * @ingroup engine
      */
@@ -38,12 +41,10 @@ namespace SparkyStudios::Audio::Amplitude
         /**
          * @brief Audio file reader.
          *
-         * The `Decoder` is built by a `Codec` instance. It's used to read
-         * an audio file and process its data. Each implementation should
-         * allow to @ref Load `Load()` the entire file into memory or @ref Stream `Stream()`
-         * it from the file system.
+         * The @c Decoder is built by a @c Codec instance. It's used to read an audio file and process its data. Each implementation
+         * should allow to @ref Load "load" the entire file into memory or @ref Stream "stream" it from the file system.
          *
-         * The @ref Stream `Stream()` method of a decoder implementation must be thread-safe.
+         * The @ref Stream "`Stream()`" method of a decoder implementation must be thread-safe.
          */
         class AM_API_PUBLIC Decoder
         {
@@ -51,7 +52,7 @@ namespace SparkyStudios::Audio::Amplitude
             /**
              * @brief Creates a new instance of the decoder for the given codec.
              *
-             * @param[in] codec The codec wrapper for the decoder.
+             * @param[in] codec The parent codec for the decoder.
              */
             explicit Decoder(const Codec* codec);
 
@@ -65,14 +66,14 @@ namespace SparkyStudios::Audio::Amplitude
              *
              * @param[in] file The file to read.
              *
-             * @return `true` if the file was opened successfully, `false` otherwise.
+             * @return @c true if the file was opened successfully, @c false otherwise.
              */
             virtual bool Open(std::shared_ptr<File> file) = 0;
 
             /**
              * @brief Closes the previously opened file.
              *
-             * @return `true` if the file was closed successfully, `false` otherwise.
+             * @return @c true if the file was closed successfully, @c false otherwise.
              */
             virtual bool Close() = 0;
 
@@ -88,8 +89,7 @@ namespace SparkyStudios::Audio::Amplitude
             /**
              * @brief Loads the entire audio file into the output buffer.
              *
-             * The output buffer must allocate enough size for this operation
-             * to be successful.
+             * @warning The output buffer must allocate enough sizes for this operation to be successful.
              *
              * @param[out] out The buffer to load audio data data into.
              *
@@ -98,10 +98,10 @@ namespace SparkyStudios::Audio::Amplitude
             virtual AmUInt64 Load(AudioBuffer* out) = 0;
 
             /**
-             * @brief Streams a part of the file from disk into the output buffer.
+             * @brief Streams a part of the file from the disk into the output buffer.
              *
              * @param[out] out The buffer to stream the file data into.
-             * @param[in] bufferOffset The offset in frames from which start to write in the `out` buffer.
+             * @param[in] bufferOffset The offset in frames from which start to write in the @c out buffer.
              * @param[in] seekOffset The offset in frames from which start to read the file.
              * @param[in] length The length in frames to read from the file.
              *
@@ -114,7 +114,7 @@ namespace SparkyStudios::Audio::Amplitude
              *
              * @param[in] offset The offset in frames to move the cursor to.
              *
-             * @return `true` if the cursor was moved successfully, `false` otherwise.
+             * @return @c true if the cursor was moved successfully, @c false otherwise.
              */
             virtual bool Seek(AmUInt64 offset) = 0;
 
@@ -122,8 +122,7 @@ namespace SparkyStudios::Audio::Amplitude
             /**
              * @brief The audio sample format of the file currently loaded by this decoder.
              *
-             * The sound format must be filled during the initialization
-             * of this decoder.
+             * @note The sound format must be filled during the initialization of this decoder.
              */
             SoundFormat m_format;
 
@@ -136,10 +135,10 @@ namespace SparkyStudios::Audio::Amplitude
         /**
          * @brief Audio file writer.
          *
-         * The `Encoder` is built by a `Codec` instance. It's used to write
+         * The @c Encoder is built by a @c Codec instance. It's used to write
          * data to an audio file.
          *
-         * The @ref Write `Write()` methods of an encoder implementation must be thread safe.
+         * The @ref Write "`Write()`" method of an encoder implementation must be thread safe.
          */
         class AM_API_PUBLIC Encoder
         {
@@ -147,7 +146,7 @@ namespace SparkyStudios::Audio::Amplitude
             /**
              * @brief Creates a new instance of the encoder for the given codec.
              *
-             * @param[in] codec The codec wrapper for the encoder.
+             * @param[in] codec The parent codec for the encoder.
              */
             explicit Encoder(const Codec* codec);
 
@@ -161,14 +160,14 @@ namespace SparkyStudios::Audio::Amplitude
              *
              * @param[in] file The file to write.
              *
-             * @return `true` if the file was opened successfully, `false` otherwise.
+             * @return @c true if the file was opened successfully, @c false otherwise.
              */
             virtual bool Open(std::shared_ptr<File> file) = 0;
 
             /**
              * @brief Closes a previously opened file.
              *
-             * @return `true` if the file was closed successfully, `false` otherwise.
+             * @return @c true if the file was closed successfully, @c false otherwise.
              */
             virtual bool Close() = 0;
 
@@ -197,7 +196,7 @@ namespace SparkyStudios::Audio::Amplitude
              * The sound format must be set before the initialization of this encoder. Otherwise,
              * the encoder initialization should fail.
              *
-             * @note The final behavior depend on the specific codec implementation.
+             * @note The final behavior depends on the specific codec implementation.
              */
             SoundFormat m_format;
 
@@ -208,10 +207,9 @@ namespace SparkyStudios::Audio::Amplitude
         };
 
         /**
-         * @brief Create a new Codec instance.
+         * @brief Create a new codec instance.
          *
-         * @param name The codec name. Recommended names are "FILE_EXTENSION".
-         * e.g. "WAV" or "OGG".
+         * @param name The codec name. Recommended names are "FILE_EXTENSION", e.g., "WAV" or "OGG".
          */
         explicit Codec(AmString name);
 
@@ -221,25 +219,25 @@ namespace SparkyStudios::Audio::Amplitude
         virtual ~Codec();
 
         /**
-         * @brief Creates a new instance of the decoder associated to this codec.
+         * @brief Creates a new instance of the decoder associated with this codec.
          *
-         * @return A `Decoder` instance.
+         * @return A @c Decoder instance.
          */
         [[nodiscard]] virtual std::shared_ptr<Decoder> CreateDecoder() = 0;
 
         /**
-         * @brief Creates a new instance of the encoder associated to this codec.
+         * @brief Creates a new instance of the encoder associated with this codec.
          *
-         * @return An `Encoder` instance.
+         * @return An @c Encoder instance.
          */
         [[nodiscard]] virtual std::shared_ptr<Encoder> CreateEncoder() = 0;
 
         /**
-         * @brief Checks whether this `Codec` can handle the file at the given path.
+         * @brief Checks whether this codec can handle the file at the given path.
          *
          * @param[in] file The file to check.
          *
-         * @return `true` if the `Codec` can handle the file, `false` otherwise.
+         * @return @c true if the codec can handle the file, @c false otherwise.
          */
         [[nodiscard]] virtual bool CanHandleFile(std::shared_ptr<File> file) const = 0;
 
@@ -253,14 +251,22 @@ namespace SparkyStudios::Audio::Amplitude
         /**
          * @brief Registers a new audio codec.
          *
+         * @note This method does nothing if the registry is locked.
+         *
          * @param[in] codec The audio codec to add in the registry.
+         *
+         * @see LockRegistry, UnlockRegistry
          */
         static void Register(std::shared_ptr<Codec> codec);
 
         /**
          * @brief Unregisters a audio codec.
          *
+         * @note This method does nothing if the registry is locked.
+         *
          * @param[in] codec The audio codec to remove from the registry.
+         *
+         * @see LockRegistry, UnlockRegistry
          */
         static void Unregister(std::shared_ptr<const Codec> codec);
 
@@ -269,7 +275,7 @@ namespace SparkyStudios::Audio::Amplitude
          *
          * @param[in] name The name of the codec to find.
          *
-         * @return The codec with the given name, or `nullptr` if none.
+         * @return The codec with the given name, or @c nullptr if not found.
          */
         static std::shared_ptr<Codec> Find(const AmString& name);
 
@@ -278,15 +284,15 @@ namespace SparkyStudios::Audio::Amplitude
          *
          * @param[in] file The file to find the codec for.
          *
-         * @return The codec which can handle the given file, or `nullptr` if none.
+         * @return The codec which can handle the given file, or @c nullptr if not found.
          */
-        static std::shared_ptr<Codec> FindCodecForFile(std::shared_ptr<File> file);
+        static std::shared_ptr<Codec> FindForFile(std::shared_ptr<File> file);
 
         /**
          * @brief Locks the codecs' registry.
          *
          * @warning This function is mainly used for internal purposes. It's
-         * called before the `Engine` initialization, to discard the registration
+         * called before the @c Engine initialization, to discard the registration
          * of new codecs after the engine is fully loaded.
          */
         static void LockRegistry();
@@ -295,15 +301,15 @@ namespace SparkyStudios::Audio::Amplitude
          * @brief Unlocks the codecs' registry.
          *
          * @warning This function is mainly used for internal purposes. It's
-         * called after the `Engine` deinitialization, to allow the registration
+         * called after the @c Engine deinitialization, to allow the registration
          * of new codecs after the engine is fully unloaded.
          */
         static void UnlockRegistry();
 
         /**
-         * @brief Gets the list of registered Codecs.
+         * @brief Gets the list of registered codecs.
          *
-         * @return The registry of Codecs.
+         * @return The registry of codecs.
          */
         static const std::map<AmString, std::shared_ptr<Codec>>& GetRegistry();
 

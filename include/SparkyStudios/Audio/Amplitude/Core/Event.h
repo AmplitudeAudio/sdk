@@ -27,7 +27,7 @@ namespace SparkyStudios::Audio::Amplitude
     class EventInstance;
 
     /**
-     * @brief An helper class used to cancel a running `Event`.
+     * @brief Helper class used to cancel a running @c Event.
      *
      * @see Event
      *
@@ -37,44 +37,42 @@ namespace SparkyStudios::Audio::Amplitude
     {
     public:
         /**
-         * @brief Creates an uninitialized `EventCanceler`.
+         * @brief Creates an uninitialized event canceler.
          *
-         * An uninitialized `EventCanceler` cannot be canceled.
+         * An uninitialized event canceler cannot be canceled.
          */
         EventCanceler();
 
         /**
-         * @brief Creates an `EventCanceler` which will abort
-         * the given event once cancelled.
+         * @brief Creates an event canceler which will abort the given event once canceled.
          *
          * @param[in] event The event instance to cancel.
          */
-        explicit EventCanceler(EventInstance* event);
+        explicit EventCanceler(std::shared_ptr<EventInstance> event);
 
         /**
-         * @brief Destroys the event canceller and releases
-         * the wrapped event instance.
+         * @brief Destroys the event canceler and releases the wrapped event instance.
          */
         ~EventCanceler();
 
         /**
-         * @brief Checks whether this `EventCanceler` has been initialized.
+         * @brief Checks whether this event canceler has been initialized.
          *
-         * @return `true` if this `EventCanceler` has been initialized, `false` otherwise.
+         * @return @c true if this event canceler has been initialized, @c false otherwise.
          */
         [[nodiscard]] bool Valid() const;
 
         /**
-         * @brief Cancels and abort the wrapped `Event`.
+         * @brief Cancels and abort the wrapped @c Event.
          */
         void Cancel() const;
 
         /**
-         * @brief Returns the `Event` wrapped by this `EventCanceler`.
+         * @brief Returns the @c EventInstance wrapped by this event canceler.
          *
-         * @return The `Event` wrapped by this `EventCanceler`.
+         * @return The @c EventInstance wrapped by this event canceler.
          */
-        [[nodiscard]] EventInstance* GetEvent() const;
+        [[nodiscard]] std::shared_ptr<EventInstance> GetEvent() const;
 
     private:
         /**
@@ -82,21 +80,21 @@ namespace SparkyStudios::Audio::Amplitude
          *
          * @internal
          */
-        EventInstance* _event;
+        std::shared_ptr<EventInstance> _event;
     };
 
     /**
-     * @brief Amplitude Event Asset.
+     * @brief Amplitude event asset.
      *
      * An event is used to apply a set of actions (synchronously or asynchronously) at a given time
      * in the game.
      *
-     * This `Event` class is only referenced through an `EventCanceler` object and it is
-     * managed by the `Engine`. Events can be triggered at runtime by using the `Trigger()`
-     * method of the `Engine` instance:
-     * ```cpp
+     * This @c Event class is only referenced through an @c EventCanceler object, and it is
+     * managed by the @c Engine. Events can be triggered at runtime by using the Engine::Trigger() method:
+     *
+     * @code{cpp}
      * amEngine->Trigger("an_event_name"); // You can also use the event ID, or its handle.
-     * ```
+     * @endcode
      *
      * @ingroup assets
      */
@@ -107,11 +105,11 @@ namespace SparkyStudios::Audio::Amplitude
     /**
      * @brief A triggered event.
      *
-     * `EventInstance` objects are created when an `Event` is triggered. They represent
+     * @c EventInstance objects are created when an @c Event is triggered. They represent
      * the lifetime of that event at that particular time.
      *
-     * The internal state of an `EventInstance` is owned by that `EventInstance`, that means
-     * each time you trigger an `Event`, a new instance with its own state is created.
+     * The internal state of an @c EventInstance is owned by that @c EventInstance. That means
+     * each time you trigger an @c Event, a new instance with its own state is created.
      *
      * @see Event
      *
@@ -126,7 +124,7 @@ namespace SparkyStudios::Audio::Amplitude
         virtual ~EventInstance() = default;
 
         /**
-         * @brief Applies a frame update on this `Event`.
+         * @brief Applies a frame update on this @c Event.
          *
          * This method is called once per frame to update the event instance's state.
          *
@@ -137,14 +135,14 @@ namespace SparkyStudios::Audio::Amplitude
         virtual void AdvanceFrame(AmTime deltaTime) = 0;
 
         /**
-         * @brief Returns whether this `EventInstance` is running.
+         * @brief Returns whether this @c EventInstance is running.
          *
-         * @return `true` if the event is running, `false` otherwise.
+         * @return @c true if the event is running, @c false otherwise.
          */
         [[nodiscard]] virtual bool IsRunning() const = 0;
 
         /**
-         * @brief Aborts the execution of this `Event`.
+         * @brief Aborts the execution of this event.
          */
         virtual void Abort() = 0;
     };

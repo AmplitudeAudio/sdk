@@ -35,14 +35,14 @@ namespace SparkyStudios::Audio::Amplitude
     struct AM_API_PUBLIC Orientation
     {
         /**
-         * @brief Gets a zero Orientation instance.
+         * @brief Gets a zero-orientation instance.
          *
-         * @return A zero Orientation instance. 0 for all angles.
+         * @return A zero-orientation instance. 0 for all angles.
          */
         static Orientation Zero();
 
         /**
-         * @brief Constructs an Orientation instance with the given yaw, pitch, and roll angles.
+         * @brief Constructs an orientation instance with the given yaw, pitch, and roll angles.
          *
          * @param[in] yaw The angle of rotation around the X-axis in radians.
          * @param[in] pitch The angle of rotation around the Y-axis in radians.
@@ -51,7 +51,7 @@ namespace SparkyStudios::Audio::Amplitude
         Orientation(AmReal32 yaw, AmReal32 pitch, AmReal32 roll);
 
         /**
-         * @brief Constructs an Orientation instance from a forward and up vector.
+         * @brief Constructs an orientation instance from a forward and up vector.
          *
          * @param[in] forward The forward vector of the orientation.
          * @param[in] up The up vector of the orientation.
@@ -59,7 +59,7 @@ namespace SparkyStudios::Audio::Amplitude
         Orientation(AmVec3 forward, AmVec3 up);
 
         /**
-         * @brief Constructs an Orientation instance from a quaternion.
+         * @brief Constructs an orientation instance from a quaternion.
          *
          * @param[in] quaternion The quaternion representing the orientation.
          */

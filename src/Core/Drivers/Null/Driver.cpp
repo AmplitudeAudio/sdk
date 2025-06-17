@@ -46,7 +46,7 @@ namespace SparkyStudios::Audio::Amplitude
         if (_initialized)
             return true;
 
-        CallDeviceNotificationCallback(DeviceNotification::Opened, device, this);
+        CallDeviceNotificationCallback(eDeviceNotification_Opened, device, this);
 
         _deviceData.mOutputBufferSize = device.mOutputBufferSize / static_cast<AmUInt32>(device.mRequestedOutputChannels);
         _deviceData.mDeviceDescription = device;
@@ -55,7 +55,7 @@ namespace SparkyStudios::Audio::Amplitude
         _thread = Thread::CreateThread(null_mix, &_deviceData);
 
         _initialized = true;
-        CallDeviceNotificationCallback(DeviceNotification::Started, device, this);
+        CallDeviceNotificationCallback(eDeviceNotification_Started, device, this);
 
         return true;
     }
@@ -65,7 +65,7 @@ namespace SparkyStudios::Audio::Amplitude
         if (_initialized)
         {
             _deviceData.mRunning = false;
-            CallDeviceNotificationCallback(DeviceNotification::Stopped, _deviceData.mDeviceDescription, this);
+            CallDeviceNotificationCallback(eDeviceNotification_Stopped, _deviceData.mDeviceDescription, this);
 
             Thread::Wait(_thread);
             Thread::Release(_thread);
@@ -74,7 +74,7 @@ namespace SparkyStudios::Audio::Amplitude
             _deviceData.mOutputBufferSize = 0;
 
             _initialized = false;
-            CallDeviceNotificationCallback(DeviceNotification::Closed, _deviceData.mDeviceDescription, this);
+            CallDeviceNotificationCallback(eDeviceNotification_Closed, _deviceData.mDeviceDescription, this);
         }
 
         return true;

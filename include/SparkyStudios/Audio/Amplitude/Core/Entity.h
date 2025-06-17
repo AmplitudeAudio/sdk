@@ -26,11 +26,11 @@ namespace SparkyStudios::Audio::Amplitude
     /**
      * @brief An Entity represents a spatially positioned object in the game.
      *
-     * Amplitude use entities to link sound to an object in the game. Each sounds
-     * played from an entity get the location and orientation data fom that entity.
+     * Amplitude uses entities to link sound to an object in the game. Each sound
+     * played from an entity gets the location and orientation data from that entity.
      *
-     * The `Entity` class is a lightweight reference to an `EntityInternalState` object
-     * which is managed by the `Engine`.
+     * The @c Entity class is a lightweight reference to an @c EntityInternalState object
+     * which is managed internally by the Engine.
      *
      * @ingroup engine
      */
@@ -38,16 +38,17 @@ namespace SparkyStudios::Audio::Amplitude
     {
     public:
         /**
-         * @brief Creates an uninitialized `Entity`.
+         * @brief Creates an uninitialized entity.
          *
-         * An uninitialized Entity cannot provide location and orientation
+         * An uninitialized entity cannot provide location and orientation
          * information, and therefore cannot play sounds.
          *
-         * To create an initialized `Entity`, use the `AddEntity()` method of the
-         * `Engine` instance.
-         * ```cpp
-         * amEngine->AddEntity(1234); // You should provide an unique ID
-         * ```
+         * To create an initialized entity, use the @ref Engine::AddEntity "`AddEntity()`" method of the
+         * @c Engine instance.
+         *
+         * @code{cpp}
+         * amEngine->AddEntity(1234); // You should provide a unique ID
+         * @endcode
          */
         Entity();
 
@@ -61,108 +62,107 @@ namespace SparkyStudios::Audio::Amplitude
         explicit Entity(EntityInternalState* state);
 
         /**
-         * @brief Uninitializes this `Entity`.
+         * @brief Uninitializes this entity.
          *
-         * Note that this does not destroy the internal state it references,
-         * it just removes this reference to it.
+         * @note This does not destroy the internal state it references, it just removes this reference to it.
          *
-         * To completely destroy the `Entity`, use `RemoveEntity()` method
-         * of the `Engine` instance.
-         * ```cpp
+         * To completely destroy the entity, use the @ref Engine::RemoveEntity "`RemoveEntity()`" method
+         * of the @c Engine instance.
+         *
+         * @code{cpp}
          * amEngine->RemoveEntity(1234); // You should provide the entity ID
-         * ```
+         * @endcode
          */
         void Clear();
 
         /**
-         * @brief Checks whether this `Entity` has been initialized.
+         * @brief Checks whether this entity has been initialized.
          *
-         * @return `true` if this `Entity` is initialized, `false` otherwise.
+         * @return @c true if this entity is initialized, @c false otherwise.
          */
         [[nodiscard]] bool Valid() const;
 
         /**
-         * @brief Gets the ID of this `Entity`.
+         * @brief Gets the ID of this entity.
          *
-         * @return The `Entity` ID.
+         * @return The entity ID.
          */
         [[nodiscard]] AmEntityID GetId() const;
 
         /**
-         * @brief Gets the velocity of the `Entity`.
+         * @brief Gets the velocity of the entity.
          *
          * @return The entity's velocity.
          */
         [[nodiscard]] const AmVec3& GetVelocity() const;
 
         /**
-         * @brief Sets the location of this `Entity`.
+         * @brief Sets the location of this entity.
          *
          * @param[in] location The new location.
          */
         void SetLocation(const AmVec3& location) const;
 
         /**
-         * @brief Gets the current location of this `Entity`.
+         * @brief Gets the current location of this entity.
          *
-         * @return The current location of this `Entity`.
+         * @return The current location of this entity.
          */
         [[nodiscard]] const AmVec3& GetLocation() const;
 
         /**
-         * @brief Sets the orientation of this `Entity`.
+         * @brief Sets the orientation of this entity.
          *
          * @param[in] orientation The new orientation.
          */
         void SetOrientation(const Orientation& orientation) const;
 
         /**
-         * @brief Gets the direction vector of the `Entity`.
+         * @brief Gets the direction vector of the entity.
          *
          * @return The direction vector.
          */
         [[nodiscard]] AmVec3 GetDirection() const;
 
         /**
-         * @brief Gets the up vector of the `Entity`.
+         * @brief Gets the up vector of the entity.
          *
          * @return The up vector.
          */
         [[nodiscard]] AmVec3 GetUp() const;
 
         /**
-         * @brief Gets the orientation of the `Entity`.
+         * @brief Gets the orientation of the entity.
          *
          * @return The entity's orientation.
          */
         [[nodiscard]] const Orientation& GetOrientation() const;
 
         /**
-         * @brief Updates the state of this `Entity`.
+         * @brief Updates the state of this entity.
          *
-         * This method is called automatically by the `Engine`
-         * on each frames to update the internal state of the `Entity`
+         * The @c Engine calls this method automatically on each frame to update the internal state of the entity.
          *
          * @warning This method is for internal usage only.
          */
         void Update() const;
 
         /**
-         * @brief Sets the obstruction level of sounds played by this `Entity`.
+         * @brief Sets the obstruction level of sounds played by this entity.
          *
          * @param[in] obstruction The obstruction amount.
          */
         void SetObstruction(AmReal32 obstruction) const;
 
         /**
-         * @brief Sets the occlusion level of sounds played by this `Entity`.
+         * @brief Sets the occlusion level of sounds played by this entity.
          *
          * @param[in] occlusion The occlusion amount.
          */
         void SetOcclusion(AmReal32 occlusion) const;
 
         /**
-         * @brief Sets the directivity and sharpness of sounds played by this `Entity`.
+         * @brief Sets the directivity and sharpness of sounds played by this entity.
          *
          * @param[in] directivity The directivity of the sound source, in the range [0, 1].
          * @param[in] sharpness The directivity sharpness of the sound source, in the range [1, +INF].
@@ -171,35 +171,35 @@ namespace SparkyStudios::Audio::Amplitude
         void SetDirectivity(AmReal32 directivity, AmReal32 sharpness) const;
 
         /**
-         * @brief Gets the obstruction level of sounds played by this `Entity`.
+         * @brief Gets the obstruction level of sounds played by this entity.
          *
          * @return The obstruction amount.
          */
         [[nodiscard]] AmReal32 GetObstruction() const;
 
         /**
-         * @brief Gets the occlusion level of sounds played by this `Entity`.
+         * @brief Gets the occlusion level of sounds played by this entity.
          *
          * @return The occlusion amount.
          */
         [[nodiscard]] AmReal32 GetOcclusion() const;
 
         /**
-         * @brief Gets the directivity of sounds played by this `Entity`.
+         * @brief Gets the directivity of sounds played by this entity.
          *
          * @return The directivity of sound sources.
          */
         [[nodiscard]] AmReal32 GetDirectivity() const;
 
         /**
-         * @brief Gets the directivity sharpness of sounds played by this `Entity`.
+         * @brief Gets the directivity sharpness of sounds played by this entity.
          *
-         * @return The directivity sharpness of sounds played by this `Entity`.
+         * @return The directivity sharpness of sounds played by this entity.
          */
         [[nodiscard]] AmReal32 GetDirectivitySharpness() const;
 
         /**
-         * @brief Sets the environment factor for this `Entity` in the given environment.
+         * @brief Sets the environment factor for this entity in the given environment.
          *
          * @param[in] environment The environment ID.
          * @param[in] factor The environment factor.
@@ -207,7 +207,7 @@ namespace SparkyStudios::Audio::Amplitude
         void SetEnvironmentFactor(AmEnvironmentID environment, AmReal32 factor) const;
 
         /**
-         * @brief Gets the environment factor of this `Entity` for the given environment.
+         * @brief Gets the environment factor of this entity for the given environment.
          *
          * @param[in] environment The environment ID.
          *
@@ -216,16 +216,16 @@ namespace SparkyStudios::Audio::Amplitude
         [[nodiscard]] AmReal32 GetEnvironmentFactor(AmEnvironmentID environment) const;
 
         /**
-         * @brief Gets the list of environments where this `Entity` belongs or has visited.
+         * @brief Gets the list of environments where this entity belongs or has visited.
          *
-         * @return The list of environments where this `Entity` belongs or has visited.
+         * @return The list of environments where this entity belongs or has visited.
          */
         [[nodiscard]] const std::map<AmEnvironmentID, AmReal32>& GetEnvironments() const;
 
         /**
-         * @brief Returns the internal state of this `Entity`.
+         * @brief Returns the internal state of this entity.
          *
-         * @return The `Entity` internal state.
+         * @return The entity internal state.
          *
          * @warning This method is for internal usage only.
          */

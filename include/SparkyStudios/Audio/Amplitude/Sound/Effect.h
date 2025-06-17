@@ -27,15 +27,15 @@ namespace SparkyStudios::Audio::Amplitude
     class EffectInstance;
 
     /**
-     * @brief Amplitude Effect Asset.
+     * @brief Amplitude effect asset.
      *
      * An effect is a sound filter applied to one or more sound objects
      * (sounds, collections, or switch containers) during playback.
      *
-     * Effects are customized using parameters and each parameters can be
-     * updated at runtime using a `Rtpc`.
+     * Effects are customized using parameters, and each parameter can be
+     * updated at runtime using a @c Rtpc.
      *
-     * @see [Rtpc](../Rtpc/index.md), [EffectInstance](../../engine/EffectInstance/index.md)
+     * @see Rtpc, EffectInstance
      *
      * @ingroup assets
      */
@@ -43,7 +43,7 @@ namespace SparkyStudios::Audio::Amplitude
     {
     public:
         /**
-         * @brief Updates the effect parameters on each frames.
+         * @brief Updates the effect parameters on each frame.
          */
         virtual void Update() = 0;
 
@@ -51,6 +51,8 @@ namespace SparkyStudios::Audio::Amplitude
          * @brief Creates an instance of this effect.
          *
          * @return The effect instance.
+         *
+         * @see EffectInstance
          */
         [[nodiscard]] virtual EffectInstance* CreateInstance() const = 0;
 
@@ -58,17 +60,19 @@ namespace SparkyStudios::Audio::Amplitude
          * @brief Destroys an instance of this effect.
          *
          * @param[in] instance The effect instance to delete.
+         *
+         * @see EffectInstance
          */
         virtual void DestroyInstance(EffectInstance* instance) const = 0;
     };
 
     /**
-     * @brief An instance of an `Effect` asset.
+     * @brief An instance of an @c Effect asset.
      *
      * The effect instance is the real place where the filter is applied to only one sound object
      * at a time. Each effect instance has its own state, and that state is not shared across sound objects.
      *
-     * @see [Effect](../../assets/Effect/index.md), [FilterInstance](../../dsp/FilterInstance/index.md)
+     * @see Effect, FilterInstance
      *
      * @ingroup engine
      */
@@ -84,6 +88,8 @@ namespace SparkyStudios::Audio::Amplitude
          * @brief Gets the filter instance wrapped by this effect.
          *
          * @return The filter instance.
+         *
+         * @see FilterInstance
          */
         [[nodiscard]] virtual std::shared_ptr<FilterInstance> GetFilter() const = 0;
     };

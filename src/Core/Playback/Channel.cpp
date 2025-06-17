@@ -178,7 +178,7 @@ namespace SparkyStudios::Audio::Amplitude
         return _state;
     }
 
-    void Channel::On(const ChannelEvent event, ChannelEventCallback callback, void* userData) const
+    void Channel::On(const eChannelEvent event, ChannelEventCallback callback, void* userData) const
     {
         AMPLITUDE_ASSERT(Valid());
 

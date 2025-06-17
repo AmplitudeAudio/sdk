@@ -22,23 +22,23 @@
 
 using namespace SparkyStudios::Audio::Amplitude;
 
-static void device_notification(DeviceNotification notification, const DeviceDescription& device, Driver* driver)
+static void device_notification(eDeviceNotification notification, const DeviceDescription& device, Driver* driver)
 {
     switch (notification)
     {
-    case DeviceNotification::Opened:
+    case eDeviceNotification_Opened:
         amLogInfo("Device opened: %s", device.mDeviceName.c_str());
         break;
-    case DeviceNotification::Started:
+    case eDeviceNotification_Started:
         amLogInfo("Device started: %s", device.mDeviceName.c_str());
         break;
-    case DeviceNotification::Stopped:
+    case eDeviceNotification_Stopped:
         amLogInfo("Device stopped: %s", device.mDeviceName.c_str());
         break;
-    case DeviceNotification::Rerouted:
+    case eDeviceNotification_Rerouted:
         amLogInfo("Device rerouted: %s", device.mDeviceName.c_str());
         break;
-    case DeviceNotification::Closed:
+    case eDeviceNotification_Closed:
         amLogInfo("Device closed: %s", device.mDeviceName.c_str());
         break;
     }

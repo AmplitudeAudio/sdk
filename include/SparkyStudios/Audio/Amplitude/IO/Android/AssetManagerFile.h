@@ -26,7 +26,7 @@
 namespace SparkyStudios::Audio::Amplitude
 {
     /**
-     * @brief A `File` implementation that reads and writes files from an Android AssetManager.
+     * @brief A @c File implementation that reads and writes files from an Android AssetManager.
      *
      * @ingroup io
      */
@@ -34,7 +34,7 @@ namespace SparkyStudios::Audio::Amplitude
     {
     public:
         /**
-         * @brief Constructs a new `AssetManagerFile` instance.
+         * @brief Constructs a new @c AssetManagerFile instance.
          *
          * @param[in] asset The wrapper Android asset.
          * @param[in] path The path to the file.
@@ -42,7 +42,7 @@ namespace SparkyStudios::Audio::Amplitude
         AssetManagerFile(AAsset* asset, const AmOsString& path);
 
         /**
-         * @brief Destroys the `AssetManagerFile` instance and release resources.
+         * @brief Destroys the @c AssetManagerFile instance and release resources.
          */
         ~AssetManagerFile() override;
 

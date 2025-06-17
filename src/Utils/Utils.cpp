@@ -52,7 +52,8 @@ namespace SparkyStudios::Audio::Amplitude
             std::memcpy(out + outOffset, in->GetChannel(0).begin() + inOffset, numSamples * sizeof(AmReal32));
             return;
         }
-        else if (numChannels == 2)
+
+        if (numChannels == 2)
         {
             InterleaveStereo(numSamples, in->GetChannel(0).begin(), in->GetChannel(1).begin(), inOffset, out, outOffset);
             return;

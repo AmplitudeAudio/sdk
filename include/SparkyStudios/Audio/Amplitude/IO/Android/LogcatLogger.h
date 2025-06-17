@@ -41,7 +41,7 @@ namespace SparkyStudios::Audio::Amplitude
         explicit LogcatLogger(const char* logTag = "AM");
 
         /**
-         * @brief Destructor.
+         * @brief Default destructor.
          */
         ~LogcatLogger() override = default;
 

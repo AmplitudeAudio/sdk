@@ -33,7 +33,7 @@ namespace SparkyStudios::Audio::Amplitude
     class Sound;
 
     /**
-     * @brief Called just after the mixer process audio data.
+     * @brief Called just after the mixer processes audio data.
      *
      * @param[in] mixer The Amplimix instance.
      * @param[in] buffer The audio buffer that has been mixed.
@@ -47,9 +47,9 @@ namespace SparkyStudios::Audio::Amplitude
      * @brief A single layer in the mixer.
      *
      * A mixer layer is a container for audio data and associated properties. Each layer is linked
-     * to a single `SoundInstance`, and manage its life cycle inside `Amplimix`.
+     * to a single @c SoundInstance and manages its life cycle inside @c Amplimix.
      *
-     * @see [Amplimix](../Amplimix/index.md)
+     * @see Amplimix
      *
      * @ingroup mixer
      */
@@ -130,11 +130,11 @@ namespace SparkyStudios::Audio::Amplitude
          * @brief Gets the obstruction amount of the audio data in the layer.
          *
          * This value is useful only when the layer is associated with a sound instance that has spatialization enabled. You
-         * can update this value using the `SetObstruction` method from the `Entity` this layer is associated with.
+         * can update this value using the @c SetObstruction method from the @c Entity this layer is associated with.
          *
          * @return The obstruction amount of the audio data in the layer.
          *
-         * @see [Entity](../../engine/Entity/index.md)
+         * @see Entity::SetObstruction, Entity::GetObstruction
          */
         virtual AmReal32 GetObstruction() const = 0;
 
@@ -142,18 +142,18 @@ namespace SparkyStudios::Audio::Amplitude
          * @brief Gets the occlusion amount of the audio data in the layer.
          *
          * This value is useful only when the layer is associated with a sound instance that has spatialization enabled. You
-         * can update this value using the `SetOcclusion` method from the `Entity` this layer is associated with.
+         * can update this value using the @c SetOcclusion method from the @c Entity this layer is associated with.
          *
          * @return The occlusion amount of the audio data in the layer.
          *
-         * @see [Entity](../../engine/Entity/index.md)
+         * @see Entity::SetOcclusion, Entity::GetOcclusion
          */
         virtual AmReal32 GetOcclusion() const = 0;
 
         /**
          * @brief Gets the play speed of the audio data in the layer.
          *
-         * This values affects the final @ref GetPitch pitch.
+         * This value affects the final @ref GetPitch pitch.
          *
          * @return The play speed of the audio data in the layer.
          */
@@ -163,11 +163,11 @@ namespace SparkyStudios::Audio::Amplitude
          * @brief Gets the location of the audio data in the layer.
          *
          * The location is expressed as a 3D vector in the global space. For sound instances linked
-         * to an `Entity`, the location of that entity is returned instead.
+         * to an @c Entity, the location of that entity is returned instead.
          *
          * @return The location of the audio data in the layer.
          *
-         * @see [Entity](../../engine/Entity/index.md)
+         * @see Entity::SetLocation, Entity::GetLocation
          */
         virtual AmVec3 GetLocation() const = 0;
 
@@ -175,9 +175,9 @@ namespace SparkyStudios::Audio::Amplitude
          * @brief Gets the entity associated with the audio data in the layer.
          *
          * @return The entity associated with the audio data in the layer. If the layer is not associated with
-         * an `Entity`, an invalid entity is returned.
+         * an @c Entity, an invalid entity is returned.
          *
-         * @see [Entity](../../engine/Entity/index.md)
+         * @see Entity
          */
         virtual Entity GetEntity() const = 0;
 
@@ -185,9 +185,9 @@ namespace SparkyStudios::Audio::Amplitude
          * @brief Gets the listener currently rendering the audio data in the layer.
          *
          * @return The listener currently rendering the audio data in the layer. If the layer is not associated with
-         * a `Listener`, an invalid listener is returned.
+         * a @c Listener, an invalid listener is returned.
          *
-         * @see [Listener](../../engine/Listener/index.md)
+         * @see Listener
          */
         virtual Listener GetListener() const = 0;
 
@@ -195,20 +195,20 @@ namespace SparkyStudios::Audio::Amplitude
          * @brief Gets the room in which the audio data in the layer is currently located.
          *
          * @return The room in which the audio data in the layer is currently located. If the layer is not located
-         * in a `Room`, an invalid room is returned.
+         * in a @c Room, an invalid room is returned.
          *
-         * @see [Room](../../engine/Room/index.md)
+         * @see Room
          */
         virtual Room GetRoom() const = 0;
 
         /**
          * @brief Gets the channel managing the audio data in the layer.
          *
-         * Multiple layers can be linked to the same `Channel`.
+         * Multiple layers can be linked to the same @c Channel.
          *
          * @return The channel managing the audio data in the layer.
          *
-         * @see [Channel](../../engine/Channel/index.md)
+         * @see Channel
          */
         virtual Channel GetChannel() const = 0;
 
@@ -217,7 +217,7 @@ namespace SparkyStudios::Audio::Amplitude
          *
          * @return The bus on which the audio data in the layer is playing.
          *
-         * @see [Bus](../../engine/Bus/index.md)
+         * @see Bus
          */
         virtual Bus GetBus() const = 0;
 
@@ -225,11 +225,11 @@ namespace SparkyStudios::Audio::Amplitude
          * @brief Gets the sound format of the audio data in the layer.
          *
          * The sound format specifies the number of channels, sample rate, and other audio properties. It is
-         * filled by the `Codec` that handled the decoding of the audio data.
+         * filled by the @c Codec that handled the decoding of the audio data.
          *
          * @return The sound format of the audio data in the layer.
          *
-         * @see [SoundFormat](../../core/SoundFormat/index.md), [Codec](../../engine/Codec/index.md)
+         * @see SoundFormat, Codec
          */
         virtual SoundFormat GetSoundFormat() const = 0;
 
@@ -241,21 +241,21 @@ namespace SparkyStudios::Audio::Amplitude
          *
          * @return The spatialization mode of the audio data in the layer.
          *
-         * @see [eSpatialization](../../core/eSpatialization/index.md)
+         * @see eSpatialization
          */
         virtual eSpatialization GetSpatialization() const = 0;
 
         /**
          * @brief Checks if the audio data in the layer is looping.
          *
-         * @return `true` if the audio data in the layer is looping, `false` otherwise.
+         * @return @c true if the audio data in the layer is looping, @c false otherwise.
          */
         virtual bool IsLoopEnabled() const = 0;
 
         /**
          * @brief Checks if the audio data in the layer is streaming from the file system.
          *
-         * @return `true` if the audio data in the layer is streaming from the file system, `false` otherwise.
+         * @return @c true if the audio data in the layer is streaming from the file system, @c false otherwise.
          */
         virtual bool IsStreamEnabled() const = 0;
 
@@ -264,7 +264,7 @@ namespace SparkyStudios::Audio::Amplitude
          *
          * @return The sound associated with the audio data in the layer.
          *
-         * @see [Sound](../../assets/Sound/index.md)
+         * @see Sound
          */
         virtual const Sound* GetSound() const = 0;
 
@@ -273,7 +273,7 @@ namespace SparkyStudios::Audio::Amplitude
          *
          * @return The effect associated with the audio data in the layer.
          *
-         * @see [EffectInstance](../../engine/EffectInstance/index.md), [Effect](../../assets/Effect/index.md)
+         * @see EffectInstance, Effect
          */
         virtual const EffectInstance* GetEffect() const = 0;
 
@@ -282,15 +282,15 @@ namespace SparkyStudios::Audio::Amplitude
          *
          * @return The attenuation associated with the audio data in the layer.
          *
-         * @see [Attenuation](../../assets/Attenuation/index.md)
+         * @see Attenuation
          */
         virtual const Attenuation* GetAttenuation() const = 0;
 
         /**
          * @brief Gets the current sample rate of the audio data in the layer.
          *
-         * The current sample rate of the audio data in the layer can be different from the original sample rate
-         * stored in the sound format. Its value may change due to the Doppler effect, or due to an internal
+         * The current sample rate of the audio data can be different from the original sample rate
+         * stored in the sound format. Its value may change due to the Doppler effect or due to an internal
          * sample rate conversion to match the one specified in the loaded engine configuration.
          *
          * @return The current sample rate of the audio data in the layer.
@@ -301,10 +301,10 @@ namespace SparkyStudios::Audio::Amplitude
     /**
      * @brief Amplitude Audio Mixer.
      *
-     * This class handles processing of audio data by mixing multiple audio sources.
-     * The resulting audio stream are next handled by the `Driver` for playback or recording.
+     * This class handles the processing of audio data by mixing multiple audio sources.
+     * The @c Driver next handles the resulting audio stream for playback or recording.
      *
-     * @see [Driver](../../engine/Driver/index.md)
+     * @see Driver
      *
      * @ingroup mixer
      */
@@ -322,7 +322,7 @@ namespace SparkyStudios::Audio::Amplitude
          * @param[in] deviceID The ID of the audio device.
          * @param[in] deviceName The name of the audio device.
          * @param[in] deviceOutputSampleRate The sample rate of the audio device's output.
-         * @param[in] deviceOutputChannels The number of audio channels of the audio device's output.
+         * @param[in] deviceOutputChannels The number of audio channels for the audio device's output.
          * @param[in] deviceOutputFormat The format of the audio device's output.
          */
         virtual void UpdateDevice(
@@ -335,7 +335,7 @@ namespace SparkyStudios::Audio::Amplitude
         /**
          * @brief Checks if the mixer is initialized.
          *
-         * @return `true` if the mixer is initialized, `false` otherwise.
+         * @return @c true if the mixer is initialized, @c false otherwise.
          */
         [[nodiscard]] virtual bool IsInitialized() const = 0;
 

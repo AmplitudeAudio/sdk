@@ -45,11 +45,6 @@ namespace SparkyStudios::Audio::Amplitude
             return AmSharedPtr<LinearFaderInstance, eMemoryPoolKind_Engine>::Make();
         }
 
-        void DestroyInstance(FaderInstance* instance) override
-        {
-            amdelete(LinearFaderInstance, (LinearFaderInstance*)instance);
-        }
-
         [[nodiscard]] BezierCurveControlPoints GetControlPoints() const override
         {
             return gLinearFaderCurveControlPoints;

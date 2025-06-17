@@ -25,9 +25,9 @@ namespace SparkyStudios::Audio::Amplitude
     /**
      * @brief Allow converting audio buffers between different sample rates and channel counts.
      *
-     * @note This class uses the `Resampler` class to perform sample rate conversion.
-     *
-     * @note Only mono to stereo or vice versa conversions are currently supported.
+     * @note
+     * - This class uses the @c Resampler class to perform sample rate conversion.
+     * - Only mono-to-stereo or vice versa conversions are currently supported.
      *
      * @ingroup dsp
      */
@@ -35,7 +35,7 @@ namespace SparkyStudios::Audio::Amplitude
     {
     public:
         /**
-         * @brief Store conversion settings for an `AudioConverter` instance.
+         * @brief Store conversion settings for an @c AudioConverter instance.
          */
         struct Settings
         {
@@ -75,7 +75,7 @@ namespace SparkyStudios::Audio::Amplitude
          *
          * @param[in] settings The conversion settings.
          *
-         * @return `true` if the initialization was successful, `false` otherwise.
+         * @return @c true if the initialization was successful, @c false otherwise.
          */
         bool Configure(const Settings& settings);
 
@@ -162,7 +162,7 @@ namespace SparkyStudios::Audio::Amplitude
          */
         static void ConvertMonoFromStereo(const AudioBuffer& input, AudioBuffer& output);
 
-        ResamplerInstance* _resampler;
+        std::shared_ptr<ResamplerInstance> _resampler;
         ChannelConversionMode _channelConversionMode;
 
         bool _needResampling;

@@ -37,7 +37,7 @@ struct ProcessingState
         bool enabled = false;
         AmUInt32 targetSampleRate = 44100;
     } resampling;
-    HRIRSphereDatasetModel datasetModel = eHRIRSphereDatasetModel_SOFA;
+    eHRIRSphereDatasetModel datasetModel = eHRIRSphereDatasetModel_SOFA;
 };
 
 static constexpr AmUInt32 kCurrentVersion = 1;
@@ -284,7 +284,7 @@ void resampleIR(const ProcessingState& state, AudioBuffer& buffer, AmUInt32& sam
     if (!state.resampling.enabled)
         return;
 
-    auto* resampler = Resampler::Construct("default");
+    auto resampler = Resampler::Construct("default");
     resampler->Initialize(2, sampleRate, state.resampling.targetSampleRate);
 
     auto resampledTotalFrames = resampler->GetExpectedOutputFrames(irLength);
@@ -296,7 +296,6 @@ void resampleIR(const ProcessingState& state, AudioBuffer& buffer, AmUInt32& sam
     sampleRate = state.resampling.targetSampleRate;
 
     buffer = resampledBuffer;
-    Resampler::Destruct("default", resampler);
 }
 
 int process(const AmOsString& inFileName, const AmOsString& outFileName, const ProcessingState& state)
@@ -576,7 +575,7 @@ int main(int argc, char* argv[])
 
             case 'M':
             case 'm':
-                state.datasetModel = static_cast<HRIRSphereDatasetModel>(strtol(argv[++i], argv, 10));
+                state.datasetModel = static_cast<eHRIRSphereDatasetModel>(strtol(argv[++i], argv, 10));
 
                 if (state.datasetModel < eHRIRSphereDatasetModel_IRCAM || state.datasetModel >= eHRIRSphereDatasetModel_Invalid)
                 {

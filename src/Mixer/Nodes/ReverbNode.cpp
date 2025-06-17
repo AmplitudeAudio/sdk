@@ -46,7 +46,7 @@ namespace SparkyStudios::Audio::Amplitude
             AmReal32 maxSurface = 0.0f;
 
             for (AmUInt32 i = 0; i < kAmRoomSurfaceCount; ++i)
-                if (const AmReal32 surface = room.GetSurfaceArea(static_cast<RoomWall>(i)); surface > maxSurface)
+                if (const AmReal32 surface = room.GetSurfaceArea(static_cast<eRoomWall>(i)); surface > maxSurface)
                     maxSurface = surface;
 
             const AmReal32 roomSize = room.GetVolume() / (maxSurface * AM_SqrtF(maxSurface));

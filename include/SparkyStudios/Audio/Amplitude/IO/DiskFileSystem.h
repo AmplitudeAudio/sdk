@@ -24,7 +24,7 @@
 namespace SparkyStudios::Audio::Amplitude
 {
     /**
-     * @brief A `FileSystem` implementation that reads and write files from disk.
+     * @brief A @c FileSystem implementation that manages files and directories on disk.
      *
      * @ingroup io
      */
@@ -32,7 +32,7 @@ namespace SparkyStudios::Audio::Amplitude
     {
     public:
         /**
-         * @brief Creates a new instance of the DiskFileSystem class.
+         * @brief Creates a new instance of the @c DiskFileSystem class.
          */
         DiskFileSystem();
 

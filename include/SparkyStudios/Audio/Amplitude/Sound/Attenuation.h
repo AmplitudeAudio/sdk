@@ -23,8 +23,6 @@
 #include <SparkyStudios/Audio/Amplitude/Core/Entity.h>
 #include <SparkyStudios/Audio/Amplitude/Core/Listener.h>
 
-#include <SparkyStudios/Audio/Amplitude/IO/File.h>
-
 #include <SparkyStudios/Audio/Amplitude/Math/Curve.h>
 
 namespace SparkyStudios::Audio::Amplitude
@@ -34,7 +32,7 @@ namespace SparkyStudios::Audio::Amplitude
     /**
      * @brief The propagation shape for positional sounds.
      *
-     * This allows to increase the attenuation according to the shape of
+     * This class updates the attenuation value according to the shape of
      * the sound propagation.
      *
      * @ingroup engine
@@ -50,11 +48,11 @@ namespace SparkyStudios::Audio::Amplitude
         /**
          * @brief Returns the attenuation factor.
          *
-         * This method is used only for position based sound sources.
+         * This method is used only for position-based sound sources.
          *
-         * @param[in] attenuation The Attenuator object to use for distance attenuation.
+         * @param[in] attenuation The Attenuation object to use for distance attenuation.
          * @param[in] soundLocation The location of the sound source.
-         * @param[in] listener The listener for which compute the attenuation.
+         * @param[in] listener The listener for which the attenuation is computed.
          *
          * @return The attenuation factor.
          */
@@ -63,11 +61,11 @@ namespace SparkyStudios::Audio::Amplitude
         /**
          * @brief Returns the attenuation factor.
          *
-         * This method is used by position and orientation based sound sources.
+         * This method is used by position-based and orientation-based sound sources.
          *
-         * @param[in] attenuation The Attenuator object to use for distance attenuation.
+         * @param[in] attenuation The Attenuation object to use for distance attenuation.
          * @param[in] entity The entity which emits the sound.
-         * @param[in] listener The listener for which compute the attenuation.
+         * @param[in] listener The listener for which the attenuation is computed.
          *
          * @return The attenuation factor.
          */
@@ -75,13 +73,13 @@ namespace SparkyStudios::Audio::Amplitude
     };
 
     /**
-     * @brief Amplitude Attenuation Asset.
+     * @brief Amplitude attenuation asset.
      *
-     * An `Attenuation` materializes how the sound volume and other distance-based
+     * An @c Attenuation materializes how the sound volume and other distance-based
      * parameters are calculated following the distance of the sound source to the listener.
      *
-     * The `Attenuation` is a shared object between sound sources. They are used only
-     * when the sound need to adjust its volume due to the distance of from the listener,
+     * The @c Attenuation is a shared object between sound sources. They are used only
+     * when the sound needs to adjust its volume due to the distance from the listener,
      * and many other parameters.
      *
      * @ingroup assets
@@ -95,7 +93,7 @@ namespace SparkyStudios::Audio::Amplitude
          * @param[in] soundLocation The location of the sound source.
          * @param[in] listener The listener which is hearing the sound.
          *
-         * @return The computed gain value fom the curve.
+         * @return The computed gain value from the curve.
          */
         [[nodiscard]] virtual AmReal32 GetGain(const AmVec3& soundLocation, const Listener& listener) const = 0;
 
@@ -105,7 +103,7 @@ namespace SparkyStudios::Audio::Amplitude
          * @param[in] entity The entity which emits the sound.
          * @param[in] listener The listener which is hearing the sound.
          *
-         * @return The computed gain value fom the curve.
+         * @return The computed gain value from the curve.
          */
         [[nodiscard]] virtual AmReal32 GetGain(const Entity& entity, const Listener& listener) const = 0;
 
@@ -133,7 +131,7 @@ namespace SparkyStudios::Audio::Amplitude
         /**
          * @brief Returns whether air absorption is enabled for this Attenuation.
          *
-         * @return `true` if air absorption is enabled, `false` otherwise.
+         * @return @c true if air absorption is enabled, @c false otherwise.
          */
         [[nodiscard]] virtual bool IsAirAbsorptionEnabled() const = 0;
 
@@ -145,7 +143,7 @@ namespace SparkyStudios::Audio::Amplitude
          * and a listener located at another specific position.
          *
          * @param[in] soundLocation The location of the sound source.
-         * @param[in] listenerLocation The location of the listener which is hearing the sound.
+         * @param[in] listenerLocation The location of the listener who is hearing the sound.
          * @param[in] band The frequency band for which the air absorption effect is evaluated.
          *
          * @return The air absorption attenuation factor in decibels (dB) for the given frequency band.

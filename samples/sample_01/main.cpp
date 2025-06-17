@@ -220,31 +220,31 @@ static void run(AmVoidPtr param)
             {
                 ctx->mainMenuBackgroundChannel = amEngine->Play(mainMenuBackgroundHandle);
                 ctx->mainMenuBackgroundChannel.On(
-                    ChannelEvent::Begin,
+                    eChannelEvent_Begin,
                     [ctx](const ChannelEventInfo& info)
                     {
                         amLogInfo("[CALLBACK] Sound started playing");
                     });
                 ctx->mainMenuBackgroundChannel.On(
-                    ChannelEvent::Pause,
+                    eChannelEvent_Pause,
                     [ctx](const ChannelEventInfo& info)
                     {
                         amLogInfo("[CALLBACK] Sound paused");
                     });
                 ctx->mainMenuBackgroundChannel.On(
-                    ChannelEvent::Resume,
+                    eChannelEvent_Resume,
                     [ctx](const ChannelEventInfo& info)
                     {
                         amLogInfo("[CALLBACK] Sound resumed");
                     });
                 ctx->mainMenuBackgroundChannel.On(
-                    ChannelEvent::End,
+                    eChannelEvent_End,
                     [ctx](const ChannelEventInfo& info)
                     {
                         amLogInfo("[CALLBACK] Sound finished playing");
                     });
                 ctx->mainMenuBackgroundChannel.On(
-                    ChannelEvent::Loop,
+                    eChannelEvent_Loop,
                     [ctx](const ChannelEventInfo& info)
                     {
                         amLogInfo("[CALLBACK] Sound started playing again (loop)");
@@ -264,13 +264,13 @@ static void run(AmVoidPtr param)
                 {
                     ctx->collectionSampleChannel = amEngine->Play(collectionHandle);
                     ctx->collectionSampleChannel.On(
-                        ChannelEvent::Begin,
+                        eChannelEvent_Begin,
                         [ctx](const ChannelEventInfo& info)
                         {
                             amLogInfo("[CALLBACK] Collection started playing");
                         });
                     ctx->collectionSampleChannel.On(
-                        ChannelEvent::End,
+                        eChannelEvent_End,
                         [ctx](const ChannelEventInfo& info)
                         {
                             amLogInfo("[CALLBACK] Collection finished playing");
@@ -301,13 +301,13 @@ static void run(AmVoidPtr param)
                 {
                     ctx->switchContainerChannel = amEngine->Play(footstepsHandle, player);
                     ctx->switchContainerChannel.On(
-                        ChannelEvent::Begin,
+                        eChannelEvent_Begin,
                         [ctx](const ChannelEventInfo& info)
                         {
                             amLogInfo("[CALLBACK] Switch started playing");
                         });
                     ctx->switchContainerChannel.On(
-                        ChannelEvent::End,
+                        eChannelEvent_End,
                         [ctx](const ChannelEventInfo& info)
                         {
                             amLogInfo("[CALLBACK] Switch finished playing");

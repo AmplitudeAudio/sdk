@@ -324,12 +324,12 @@ namespace SparkyStudios::Audio::Amplitude
         _actions.clear();
     }
 
-    EventInstanceImpl EventImpl::Trigger(const Entity& entity) const
+    std::shared_ptr<EventInstanceImpl> EventImpl::Trigger(const Entity& entity) const
     {
         amLogDebug("Event '%s' triggered.", m_name.c_str());
 
-        auto event = EventInstanceImpl(this);
-        event.Start(entity);
+        auto event = AmSharedPtr<EventInstanceImpl, eMemoryPoolKind_Engine>::Make(this);
+        event->Start(entity);
 
         return event;
     }
@@ -365,8 +365,8 @@ namespace SparkyStudios::Audio::Amplitude
         : EventCanceler(nullptr)
     {}
 
-    EventCanceler::EventCanceler(EventInstance* event)
-        : _event(event)
+    EventCanceler::EventCanceler(std::shared_ptr<EventInstance> event)
+        : _event(std::move(event))
     {}
 
     EventCanceler::~EventCanceler()
@@ -379,16 +379,18 @@ namespace SparkyStudios::Audio::Amplitude
 
     bool EventCanceler::Valid() const
     {
-        return _event != nullptr;
+        return _event != nullptr && _event->IsRunning();
     }
 
     void EventCanceler::Cancel() const
     {
-        AMPLITUDE_ASSERT(Valid());
+        if (!Valid())
+            return;
+
         _event->Abort();
     }
 
-    EventInstance* EventCanceler::GetEvent() const
+    std::shared_ptr<EventInstance> EventCanceler::GetEvent() const
     {
         return _event;
     }

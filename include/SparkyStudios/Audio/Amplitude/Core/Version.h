@@ -50,7 +50,7 @@ namespace SparkyStudios::Audio::Amplitude
         AmUInt8 minor;
 
         /**
-         * @brief Version number, updated for tiny releases (ex: Bug fixes).
+         * @brief Version number, updated for tiny releases (e.g.: Bug fixes).
          */
         AmUInt8 revision;
 

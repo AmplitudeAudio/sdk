@@ -108,7 +108,7 @@ static int process(const AmOsString& inFileName, const AmOsString& outFileName, 
 
     if (state.mode == ePM_ENCODE)
     {
-        auto codec = Codec::FindCodecForFile(inputFile);
+        auto codec = Codec::FindForFile(inputFile);
         if (!codec)
         {
             log(stderr, "Unable to load the input file: " AM_OS_CHAR_FMT ". File not found or codec unavailable.\n", inFileName.c_str());
@@ -160,7 +160,7 @@ static int process(const AmOsString& inFileName, const AmOsString& outFileName, 
 
         if (state.resampling.enabled)
         {
-            auto* resampler = Resampler::Construct("default");
+            auto resampler = Resampler::Construct("default");
             resampler->Initialize(numChannels, sampleRate, state.resampling.targetSampleRate);
 
             AmUInt64 f = resampler->GetExpectedOutputFrames(numSamples);
@@ -172,7 +172,6 @@ static int process(const AmOsString& inFileName, const AmOsString& outFileName, 
             numSamples = f;
 
             pcmData = output;
-            Resampler::Destruct("default", resampler);
         }
 
         SoundFormat encodeFormat{};

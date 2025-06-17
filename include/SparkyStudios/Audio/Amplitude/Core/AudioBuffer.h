@@ -22,7 +22,7 @@
 namespace SparkyStudios::Audio::Amplitude
 {
     /**
-     * @brief Represents a view to a single channel in an `AudioBuffer`.
+     * @brief Represents a view to a single channel in an @c AudioBuffer.
      *
      * @see AudioBuffer
      *
@@ -79,7 +79,7 @@ namespace SparkyStudios::Audio::Amplitude
         /**
          * @brief Checks if the channel is enabled.
          *
-         * @return `true` if the channel is enabled, `false` otherwise.
+         * @return @c true if the channel is enabled, @c false otherwise.
          */
         [[nodiscard]] bool enabled() const;
 
@@ -111,36 +111,36 @@ namespace SparkyStudios::Audio::Amplitude
         AudioBufferChannel& operator=(const std::vector<AmReal32>& data);
 
         /**
-         * @brief Sets the entire channel data from the provided `AudioBufferChannel`.
+         * @brief Sets the entire channel data from the provided @c AudioBufferChannel.
          *
-         * @param[in] channel The `AudioBufferChannel` to copy the data from.
+         * @param[in] channel The @c AudioBufferChannel to copy the data from.
          *
          * @return A reference to the modified channel.
          */
         AudioBufferChannel& operator=(const AudioBufferChannel& channel);
 
         /**
-         * @brief Performs point-wise addition of this channel with the provided `AudioBufferChannel`.
+         * @brief Point-wise adds this channel with the provided @c AudioBufferChannel.
          *
-         * @param[in] channel The `AudioBufferChannel` to add.
+         * @param[in] channel The @c AudioBufferChannel to add.
          *
          * @return A reference to the modified channel.
          */
         AudioBufferChannel& operator+=(const AudioBufferChannel& channel);
 
         /**
-         * @brief Performs point-wise subtraction of this channel with the provided `AudioBufferChannel`.
+         * @brief Point-wise subtracts this channel with the provided @c AudioBufferChannel.
          *
-         * @param[in] channel The `AudioBufferChannel` to subtract.
+         * @param[in] channel The @c AudioBufferChannel to subtract.
          *
          * @return A reference to the modified channel.
          */
         AudioBufferChannel& operator-=(const AudioBufferChannel& channel);
 
         /**
-         * @brief Point-wise multiplies this channel with the provided `AudioBufferChannel`.
+         * @brief Point-wise multiplies this channel with the provided @c AudioBufferChannel.
          *
-         * @param[in] channel The `AudioBufferChannel` to multiply with.
+         * @param[in] channel The @c AudioBufferChannel to multiply with.
          *
          * @return A reference to the modified channel.
          */
@@ -193,9 +193,9 @@ namespace SparkyStudios::Audio::Amplitude
     /**
      * @brief Represents an audio buffer containing multiple channels.
      *
-     * An `AudioBuffer` is a de-interleaved memory storage used to store and manipulate audio data,
+     * An @c AudioBuffer is a de-interleaved memory storage used to store and manipulate audio data,
      * such as audio samples or Ambisonics sound fields, in a flexible and efficient manner. Accessing
-     * a channel data will return an `AudioBufferChannel` object, which is a view to the memory range storing that channel.
+     * channel data will return an @c AudioBufferChannel object, which is a view to the memory range storing that channel.
      *
      * @see AudioBufferChannel
      *
@@ -253,7 +253,7 @@ namespace SparkyStudios::Audio::Amplitude
         /**
          * @brief Check if the audio buffer is empty.
          *
-         * @return `true` if the audio buffer is empty, `false` otherwise.
+         * @return @c true if the audio buffer is empty, @c false otherwise.
          */
         [[nodiscard]] bool IsEmpty() const;
 
@@ -284,20 +284,20 @@ namespace SparkyStudios::Audio::Amplitude
         [[nodiscard]] const AmAlignedReal32Buffer& GetData() const;
 
         /**
-         * @brief Gets the `AudioBufferChannel` at the specified index.
+         * @brief Gets the @c AudioBufferChannel at the specified index.
          *
          * @param[in] index The channel index.
          *
-         * @return The `AudioBufferChannel` at the specified index.
+         * @return The @c AudioBufferChannel at the specified index.
          */
         AudioBufferChannel& GetChannel(AmSize index);
 
         /**
-         * @brief Gets the `AudioBufferChannel` at the specified index.
+         * @brief Gets the @c AudioBufferChannel at the specified index.
          *
          * @param[in] index The channel index.
          *
-         * @return The `AudioBufferChannel` at the specified index.
+         * @return The @c AudioBufferChannel at the specified index.
          */
         [[nodiscard]] const AudioBufferChannel& GetChannel(AmSize index) const;
 
@@ -309,25 +309,25 @@ namespace SparkyStudios::Audio::Amplitude
         AudioBuffer Clone() const;
 
         /**
-         * @brief Gets the `AudioBufferChannel` at the specified index.
+         * @brief Gets the @c AudioBufferChannel at the specified index.
          *
          * @param[in] index The channel index.
          *
-         * @return The `AudioBufferChannel` at the specified index.
+         * @return The @c AudioBufferChannel at the specified index.
          */
         AudioBufferChannel& operator[](AmSize index);
 
         /**
-         * @brief Gets the `AudioBufferChannel` at the specified index.
+         * @brief Gets the @c AudioBufferChannel at the specified index.
          *
          * @param[in] index The channel index.
          *
-         * @return The `AudioBufferChannel` at the specified index.
+         * @return The @c AudioBufferChannel at the specified index.
          */
         [[nodiscard]] const AudioBufferChannel& operator[](AmSize index) const;
 
         /**
-         * @brief Copies the audio buffer data from the provided `AudioBuffer`.
+         * @brief Copies the audio buffer data from the provided @c AudioBuffer.
          *
          * @param[in] buffer The other audio buffer to copy.
          *
@@ -336,7 +336,7 @@ namespace SparkyStudios::Audio::Amplitude
         AudioBuffer& operator=(const AudioBuffer& buffer);
 
         /**
-         * @brief Accumulates the audio buffer data from the provided `AudioBuffer`.
+         * @brief Accumulates the audio buffer data from the provided @c AudioBuffer.
          *
          * @param[in] buffer The buffer to add in this one.
          *
@@ -345,7 +345,7 @@ namespace SparkyStudios::Audio::Amplitude
         AudioBuffer& operator+=(const AudioBuffer& buffer);
 
         /**
-         * @brief Subtracts the audio buffer data from the provided `AudioBuffer`.
+         * @brief Subtracts the audio buffer data from the provided @c AudioBuffer.
          *
          * @param[in] buffer The buffer to subtract from this one.
          *
@@ -354,7 +354,7 @@ namespace SparkyStudios::Audio::Amplitude
         AudioBuffer& operator-=(const AudioBuffer& buffer);
 
         /**
-         * @brief Point-wise multiplies the audio buffer data with the provided `AudioBuffer`.
+         * @brief Point-wise multiplies the audio buffer data with the provided @c AudioBuffer.
          *
          * @param[in] buffer The buffer to multiply with this one.
          *

@@ -23,7 +23,7 @@ namespace SparkyStudios::Audio::Amplitude
     constexpr AmUInt32 kReflectionStartingBand = 4;
     constexpr AmUInt32 kReflectionAveragingBandsCount = 3;
 
-    constexpr AmReal32 kDefaultAbsorptionCoefficients[static_cast<AmUInt32>(RoomMaterialType::Custom)][9] = {
+    constexpr AmReal32 kDefaultAbsorptionCoefficients[static_cast<AmUInt32>(eRoomWallMaterialType_Custom)][9] = {
         { 1.00f, 1.00f, 1.00f, 1.00f, 1.00f, 1.00f, 1.00f, 1.00f, 1.00f },
         { 0.11f, 0.21f, 0.41f, 0.71f, 0.76f, 0.86f, 0.86f, 0.91f, 0.91f },
         { 0.03f, 0.06f, 0.11f, 0.16f, 0.21f, 0.26f, 0.31f, 0.41f, 0.61f },
@@ -41,12 +41,12 @@ namespace SparkyStudios::Audio::Amplitude
         { 0.01f, 0.01f, 0.02f, 0.02f, 0.03f, 0.03f, 0.04f, 0.05f, 0.06f },
     };
 
-    RoomMaterial::RoomMaterial()
-        : m_type(RoomMaterialType::Custom)
+    RoomWallMaterial::RoomWallMaterial()
+        : m_type(eRoomWallMaterialType_Custom)
         , m_absorptionCoefficients{ 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f }
     {}
 
-    RoomMaterial::RoomMaterial(RoomMaterialType type)
+    RoomWallMaterial::RoomWallMaterial(eRoomWallMaterialType type)
         : m_type(type)
         , m_absorptionCoefficients{ 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f }
     {

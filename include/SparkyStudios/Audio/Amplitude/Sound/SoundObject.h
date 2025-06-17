@@ -41,21 +41,21 @@ namespace SparkyStudios::Audio::Amplitude
         /**
          * @brief Gets the linear gain of the sound object.
          *
-         * @return The sound object linear gain.
+         * @return The sound object's linear gain.
          */
         [[nodiscard]] virtual const RtpcValue& GetGain() const = 0;
 
         /**
-         * @brief Gets the actual pitch of the sound object.
+         * @brief Gets the current pitch of the sound object.
          *
-         * @return The sound object pitch.
+         * @return The sound object's pitch.
          */
         [[nodiscard]] virtual const RtpcValue& GetPitch() const = 0;
 
         /**
-         * @brief Gets the actual priority of the sound object.
+         * @brief Gets the current priority of the sound object.
          *
-         * @return The sound object priority.
+         * @return The sound object's priority.
          */
         [[nodiscard]] virtual const RtpcValue& GetPriority() const = 0;
 
@@ -74,9 +74,9 @@ namespace SparkyStudios::Audio::Amplitude
         [[nodiscard]] virtual const Attenuation* GetAttenuation() const = 0;
 
         /**
-         * @brief Returns the bus this sound object will play on.
+         * @brief Returns the Bus this sound object will play on.
          *
-         * @return The bus this sound object will play on.
+         * @return The Bus this sound object will play on.
          */
         [[nodiscard]] virtual Bus GetBus() const = 0;
 
@@ -84,13 +84,15 @@ namespace SparkyStudios::Audio::Amplitude
          * @brief Returns the spatialization mode of the sound object.
          *
          * @return The spatialization mode of the sound object.
+         *
+         * @see eSpatialization
          */
         [[nodiscard]] virtual eSpatialization GetSpatialization() const = 0;
 
         /**
          * @brief Returns the scope of the sound object.
          *
-         * @return The scope of the sound object.
+         * @return The sound object's scope.
          */
         [[nodiscard]] virtual eScope GetScope() const = 0;
     };

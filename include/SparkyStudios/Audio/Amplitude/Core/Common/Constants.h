@@ -64,7 +64,7 @@ namespace SparkyStudios::Audio::Amplitude
     constexpr AmInt32 kAmFixedPointBits = 15;
 
     /**
-     * @brief The unit value for a 32-bit fixed-point audio sample..
+     * @brief The unit value for a 32-bit fixed-point audio sample.
      *
      * @ingroup core
      */
@@ -115,35 +115,35 @@ namespace SparkyStudios::Audio::Amplitude
     constexpr AmSize kAmStereoChannelCount = 2;
 
     /**
-     * @brief The number of channels in a 5.1 surround audio source.
+     * @brief The number of channels in a 5.1-surround audio source.
      *
      * @ingroup core
      */
     constexpr AmSize kAm51SurroundChannelCount = 6;
 
     /**
-     * @brief The number of channels in a 7.1 surround audio source.
+     * @brief The number of channels in a 7.1-surround audio source.
      *
      * @ingroup core
      */
     constexpr AmSize kAm71SurroundChannelCount = 8;
 
     /**
-     * @brief The number of channels in first-order ambisonic source.
+     * @brief The number of channels in a first-order ambisonic source.
      *
      * @ingroup core
      */
     constexpr AmSize kAmFirstOrderAmbisonicChannelCount = 4;
 
     /**
-     * @brief The number of channels in second-order ambisonic source.
+     * @brief The number of channels in a second-order ambisonic source.
      *
      * @ingroup core
      */
     constexpr AmSize kAmSecondOrderAmbisonicChannelCount = 9;
 
     /**
-     * @brief The number of channels in third-order ambisonic source.
+     * @brief The number of channels in a third-order ambisonic source.
      *
      * @ingroup core
      */

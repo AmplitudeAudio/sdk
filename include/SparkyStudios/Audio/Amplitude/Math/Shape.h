@@ -32,8 +32,8 @@ namespace SparkyStudios::Audio::Amplitude
     /**
      * @brief A geometrical closed 3D shape.
      *
-     * A `Shape` defines a zone in the world where game objects (listener, sound sources, entities, etc.) can
-     * be localized. Shapes are used in many places of the engine, like to define a sound attenuation shape, or to build a room.
+     * A @c Shape defines a zone in the world where game objects (listener, sound sources, entities, etc.) can
+     * be localized. Shapes are used in many places of the engine, like to define a sound attenuation shape or to build a room.
      *
      * @ingroup math
      */
@@ -41,17 +41,16 @@ namespace SparkyStudios::Audio::Amplitude
     {
     public:
         /**
-         * @brief Creates a new `Shape` from a definition.
+         * @brief Creates a new @c Shape from a definition.
          *
-         * @param[in] definition The definition of the shape generated
-         * from a flatbuffer binary.
+         * @param[in] definition The definition of the shape generated from a flatbuffer binary.
          *
          * @warning This method is intended for internal usage only.
          */
         static std::shared_ptr<Shape> Create(const ShapeDefinition* definition);
 
         /**
-         * @brief Constructs a new `Shape`.
+         * @brief Constructs a new @c Shape.
          */
         Shape();
 
@@ -63,7 +62,7 @@ namespace SparkyStudios::Audio::Amplitude
         /**
          * @brief Gets the shortest distance to the edge of this shape.
          *
-         * @param[in] entity The entity from which calculate the distance.
+         * @param[in] entity The entity used to calculate the distance.
          *
          * @return The shortest distance from the entity location to the edge
          * of this shape. If negative, the given entity in outside the shape.
@@ -73,7 +72,7 @@ namespace SparkyStudios::Audio::Amplitude
         /**
          * @brief Gets the shortest distance to the edge of this shape.
          *
-         * @param[in] listener The listener from which calculate the distance.
+         * @param[in] listener The listener used to calculate the distance.
          *
          * @return The shortest distance from the listener location to the edge
          * of this shape. If negative, the given listener in outside the shape.
@@ -95,7 +94,7 @@ namespace SparkyStudios::Audio::Amplitude
          *
          * @param[in] entity The entity to check.
          *
-         * @return `true` if the shape contains the entity, `false` otherwise.
+         * @return @c true if the shape contains the entity, @c false otherwise.
          */
         [[nodiscard]] virtual bool Contains(const Entity& entity);
 
@@ -104,7 +103,7 @@ namespace SparkyStudios::Audio::Amplitude
          *
          * @param[in] listener The listener to check.
          *
-         * @return `true` if the shape contains the listener, `false` otherwise.
+         * @return @c true if the shape contains the listener, @c false otherwise.
          */
         [[nodiscard]] virtual bool Contains(const Listener& listener);
 
@@ -113,7 +112,7 @@ namespace SparkyStudios::Audio::Amplitude
          *
          * @param[in] location The 3D position to check.
          *
-         * @return `true` if the shape contains the given position, `false` otherwise.
+         * @return @c true if the shape contains the given position, @c false otherwise.
          */
         [[nodiscard]] virtual bool Contains(const AmVec3& location) = 0;
 
@@ -167,24 +166,48 @@ namespace SparkyStudios::Audio::Amplitude
         [[nodiscard]] AmVec3 GetUp() const;
 
     protected:
+        /**
+         * @brief Updates the internal state of the shape.
+         *
+         * This pure virtual function must be implemented by derived classes to
+         * perform custom updates whenever modifications occur, such as
+         * changes to the shape's position, orientation, or other parameters.
+         * It is intended to synchronize the internal data or perform
+         * computations necessary for the shape's functionality.
+         *
+         * @note The engine calls this method internally when parameters like location or orientation are modified.
+         */
         virtual void Update() = 0;
 
+        /**
+         * @brief Represents the 3D position of an object in space.
+         */
         AmVec3 m_location;
+
+        /**
+         * @brief Represents the orientation of an object in 3D space.
+         */
         Orientation m_orientation;
 
+        /**
+         * @brief The look-at matrix representing a transformation in 3D space.
+         */
         AmMat4 m_lookAtMatrix;
 
+        /**
+         * @brief Indicates whether an update is required.
+         */
         bool m_needUpdate;
     };
 
     /**
      * @brief A tuple of shapes that represents a zone in the world.
      *
-     * This shape is mainly used by attenuations and environments. It's composed of an inner `Shape` and an outer `Shape`.
-     * The inner shape is the place where the @ref GetFactor factor is equal to one all the time. The outer shape is the place where the
-     * @ref GetFactor factor increase or decrease according to the shortest distance of the game object from the outer edge.
+     * This shape is mainly used by attenuation and environments. It's composed of an inner @c Shape and an outer @c Shape.
+     * The inner shape is the place where the @ref GetFactor "factor" is equal to one all the time. The outer shape is the place where the
+     * @ref GetFactor "factor" increases or decreases according to the shortest distance of the game object from the outer edge.
      *
-     * If the game object is outside the outer shape (thus, outside the zone), the @ref GetFactor factor is zero.
+     * If the game object is outside the outer shape (thus, outside the zone), the @ref GetFactor "factor" is zero.
      *
      * @ingroup math
      */
@@ -192,7 +215,7 @@ namespace SparkyStudios::Audio::Amplitude
     {
     public:
         /**
-         * @brief Creates a new `Zone` from the given inner and outer shapes.
+         * @brief Creates a new zone from the given inner and outer shapes.
          *
          * @param[in] inner The inner shape.
          * @param[in] outer The outer shape.
@@ -298,17 +321,17 @@ namespace SparkyStudios::Audio::Amplitude
     };
 
     /**
-     * @brief A box shape, defined by a width, an height, and a depth.
+     * @brief A box shape, defined by a width, a height, and a depth.
      *
      * @ingroup math
      */
-    class AM_API_PUBLIC BoxShape : public Shape
+    class AM_API_PUBLIC BoxShape final : public Shape
     {
         friend class BoxZone;
 
     public:
         /**
-         * @brief Creates a new `BoxShape` from a definition.
+         * @brief Creates a new box shape from a flatbuffer definition.
          *
          * @param[in] definition The definition of the shape generated
          * from a flatbuffer binary.
@@ -318,16 +341,16 @@ namespace SparkyStudios::Audio::Amplitude
         static std::shared_ptr<BoxShape> Create(const BoxShapeDefinition* definition);
 
         /**
-         * @brief Constructs a new `BoxShape`.
+         * @brief Constructs a new box shape.
          *
-         * @param[in] halfWidth The half width of the box shape.
-         * @param[in] halfHeight The half height of the box shape.
-         * @param[in] halfDepth The half depth of the box shape.
+         * @param[in] halfWidth The half-width of the box shape.
+         * @param[in] halfHeight The half-height of the box shape.
+         * @param[in] halfDepth The half-depth of the box shape.
          */
         explicit BoxShape(AmReal32 halfWidth, AmReal32 halfHeight, AmReal32 halfDepth);
 
         /**
-         * @brief Constructs a new `BoxShape`.
+         * @brief Constructs a new box shape.
          *
          * @param[in] position The position of the box shape.
          * @param[in] dimensions The dimensions of the box shape.
@@ -335,65 +358,65 @@ namespace SparkyStudios::Audio::Amplitude
         explicit BoxShape(const AmVec3& position, const AmVec3& dimensions);
 
         /**
-         * @brief Gets the half width of the `BoxShape`.
+         * @brief Gets the half-width of the box shape.
          *
-         * @return The box shape's half width.
+         * @return The box shape's half-width.
          */
         [[nodiscard]] AmReal32 GetHalfWidth() const;
 
         /**
-         * @brief Gets the half height of the `BoxShape`.
+         * @brief Gets the half-height of the box shape.
          *
-         * @return The box shape's half height.
+         * @return The box shape's half-height.
          */
         [[nodiscard]] AmReal32 GetHalfHeight() const;
 
         /**
-         * @brief Gets the half depth of the `BoxShape`.
+         * @brief Gets the half-depth of the box shape.
          *
-         * @return The box shape's half depth.
+         * @return The box shape's half-depth.
          */
         [[nodiscard]] AmReal32 GetHalfDepth() const;
 
         /**
-         * @brief Gets the width of the `BoxShape`.
+         * @brief Gets the width of the box shape.
          *
          * @return The box shape's width.
          */
         [[nodiscard]] AmReal32 GetWidth() const;
 
         /**
-         * @brief Gets the height of the `BoxShape`.
+         * @brief Gets the height of the box shape.
          *
          * @return The box shape's height.
          */
         [[nodiscard]] AmReal32 GetHeight() const;
 
         /**
-         * @brief Gets the depth of the `BoxShape`.
+         * @brief Gets the depth of the box shape.
          *
          * @return The box shape's depth.
          */
         [[nodiscard]] AmReal32 GetDepth() const;
 
         /**
-         * @brief Sets the half width of the `BoxShape`.
+         * @brief Sets the half-width of the box shape.
          *
-         * @param[in] halfWidth The new box shape's half width.
+         * @param[in] halfWidth The new box shape's half-width.
          */
         void SetHalfWidth(AmReal32 halfWidth);
 
         /**
-         * @brief Sets the half height of the `BoxShape`.
+         * @brief Sets the half-height of the box shape.
          *
-         * @param[in] halfHeight The new box shape's half height.
+         * @param[in] halfHeight The new box shape's half-height.
          */
         void SetHalfHeight(AmReal32 halfHeight);
 
         /**
-         * @brief Sets the half depth of the `BoxShape`.
+         * @brief Sets the half-depth of the box shape.
          *
-         * @param[in] halfDepth The new box shape's half depth.
+         * @param[in] halfDepth The new box shape's half-depth.
          */
         void SetHalfDepth(AmReal32 halfDepth);
 
@@ -405,16 +428,16 @@ namespace SparkyStudios::Audio::Amplitude
          * @return The shortest distance from the location to the edge
          * of this shape. If negative, the given location in outside the shape.
          */
-        [[nodiscard]] AmReal32 GetShortestDistanceToEdge(const AmVec3& location) final;
+        [[nodiscard]] AmReal32 GetShortestDistanceToEdge(const AmVec3& location) override;
 
         /**
          * @brief Checks if the given position is contained in this shape.
          *
          * @param[in] location The 3D position to check.
          *
-         * @return `true` if the shape contains the given position, `false` otherwise.
+         * @return @c true if the shape contains the given position, @c false otherwise.
          */
-        [[nodiscard]] bool Contains(const AmVec3& location) final;
+        [[nodiscard]] bool Contains(const AmVec3& location) override;
 
         /**
          * @brief Gets the closest point to the given location.
@@ -449,7 +472,7 @@ namespace SparkyStudios::Audio::Amplitude
          *
          * @param[in] other The other shape to compare with.
          *
-         * @return `true` if the shapes are equal, `false` otherwise.
+         * @return @c true if the shapes are equal, @c false otherwise.
          */
         bool operator==(const BoxShape& other) const;
 
@@ -460,11 +483,22 @@ namespace SparkyStudios::Audio::Amplitude
          *
          * @param[in] other The other shape to compare with.
          *
-         * @return `false` if the shapes are equal, `true` otherwise.
+         * @return @c false if the shapes are equal, @c true otherwise.
          */
         bool operator!=(const BoxShape& other) const;
 
     private:
+        /**
+         * @brief Updates the transformed parameters of the box shape.
+         *
+         * This method recalculates the corner points and direction vectors of the box
+         * shape based on the current transformation matrix. It ensures that the box shape
+         * is updated with the latest scale, position, orientation, or any other transformation
+         * applied. It also internally updates the state to avoid redundant updates.
+         *
+         * This function is primarily used internally and is called when any transformation
+         * influencing the box shape has changed.
+         */
         void Update() override;
 
         AmReal32 _halfWidth;
@@ -480,17 +514,17 @@ namespace SparkyStudios::Audio::Amplitude
     };
 
     /**
-     * @brief A capsule shape, defined by a radius and an height.
+     * @brief A capsule shape, defined by a radius and a height.
      *
      * @ingroup math
      */
-    class AM_API_PUBLIC CapsuleShape : public Shape
+    class AM_API_PUBLIC CapsuleShape final : public Shape
     {
         friend class CapsuleZone;
 
     public:
         /**
-         * @brief Creates a new `CapsuleShape` from a definition.
+         * @brief Creates a new capsule shape from a flatbuffer definition.
          *
          * @param[in] definition The definition of the shape generated
          * from a flatbuffer binary.
@@ -500,7 +534,7 @@ namespace SparkyStudios::Audio::Amplitude
         static std::shared_ptr<CapsuleShape> Create(const CapsuleShapeDefinition* definition);
 
         /**
-         * @brief Constructs a new `CapsuleShape`.
+         * @brief Constructs a new capsule shape.
          *
          * @param[in] radius The capsule radius.
          * @param[in] halfHeight The capsule half height.
@@ -515,9 +549,9 @@ namespace SparkyStudios::Audio::Amplitude
         [[nodiscard]] AmReal32 GetRadius() const;
 
         /**
-         * @brief Gets the half height of the capsule shape.
+         * @brief Gets the half-height of the capsule shape.
          *
-         * @return The capsule's half height.
+         * @return The capsule's half-height.
          */
         [[nodiscard]] AmReal32 GetHalfHeight() const;
 
@@ -543,9 +577,9 @@ namespace SparkyStudios::Audio::Amplitude
         void SetRadius(AmReal32 radius);
 
         /**
-         * @brief Sets the half height of the capsule shape.
+         * @brief Sets the half-height of the capsule shape.
          *
-         * @param[in] halfHeight The capsule's half height.
+         * @param[in] halfHeight The capsule's half-height.
          */
         void SetHalfHeight(AmReal32 halfHeight);
 
@@ -557,16 +591,16 @@ namespace SparkyStudios::Audio::Amplitude
          * @return The shortest distance from the location to the edge
          * of this shape. If negative, the given location in outside the shape.
          */
-        [[nodiscard]] AmReal32 GetShortestDistanceToEdge(const AmVec3& location) final;
+        [[nodiscard]] AmReal32 GetShortestDistanceToEdge(const AmVec3& location) override;
 
         /**
          * @brief Checks if the given position is contained in this shape.
          *
          * @param[in] location The 3D position to check.
          *
-         * @return `true` if the shape contains the given position, `false` otherwise.
+         * @return @c true if the shape contains the given position, @c false otherwise.
          */
-        [[nodiscard]] bool Contains(const AmVec3& location) final;
+        [[nodiscard]] bool Contains(const AmVec3& location) override;
 
         /**
          * @brief Compares this shape with another shape for equality.
@@ -575,7 +609,7 @@ namespace SparkyStudios::Audio::Amplitude
          *
          * @param[in] other The other shape to compare with.
          *
-         * @return `true` if the shapes are equal, `false` otherwise.
+         * @return @c true if the shapes are equal, @c false otherwise.
          */
         bool operator==(const CapsuleShape& other) const;
 
@@ -586,11 +620,17 @@ namespace SparkyStudios::Audio::Amplitude
          *
          * @param[in] other The other shape to compare with.
          *
-         * @return `false` if the shapes are equal, `true` otherwise.
+         * @return @c false if the shapes are equal, @c true otherwise.
          */
         bool operator!=(const CapsuleShape& other) const;
 
     private:
+        /**
+         * @brief Updates the capsule shape's key spatial points.
+         *
+         * Recalculates the top and bottom cap positions of the capsule based on its current orientation,
+         * radius, and half-height. This ensures the capsule shape remains consistent with its transformations.
+         */
         void Update() override;
 
         AmReal32 _radius;
@@ -600,17 +640,17 @@ namespace SparkyStudios::Audio::Amplitude
     };
 
     /**
-     * @brief A cone shape, defined by a radius and an height.
+     * @brief A cone shape, defined by a radius and a height.
      *
      * @ingroup math
      */
-    class AM_API_PUBLIC ConeShape : public Shape
+    class AM_API_PUBLIC ConeShape final : public Shape
     {
         friend class ConeZone;
 
     public:
         /**
-         * @brief Creates a new ConeShape from a definition.
+         * @brief Creates a new cone shape from a definition.
          *
          * @param[in] definition The definition of the shape generated
          * from a flatbuffer binary.
@@ -620,7 +660,7 @@ namespace SparkyStudios::Audio::Amplitude
         static std::shared_ptr<ConeShape> Create(const ConeShapeDefinition* definition);
 
         /**
-         * @brief Constructs a new `ConeShape`.
+         * @brief Constructs a new cone shape.
          *
          * @param[in] radius The radius of the cone's base.
          * @param[in] height The height of the cone.
@@ -670,7 +710,7 @@ namespace SparkyStudios::Audio::Amplitude
          * @return The shortest distance from the location to the edge
          * of this shape. If negative, the given location in outside the shape.
          */
-        [[nodiscard]] AmReal32 GetShortestDistanceToEdge(const AmVec3& location) final;
+        [[nodiscard]] AmReal32 GetShortestDistanceToEdge(const AmVec3& location) override;
 
         /**
          * @brief Checks if the given position is contained in this shape.
@@ -679,7 +719,7 @@ namespace SparkyStudios::Audio::Amplitude
          *
          * @return true if the shape contains the given position, false otherwise.
          */
-        [[nodiscard]] bool Contains(const AmVec3& location) final;
+        [[nodiscard]] bool Contains(const AmVec3& location) override;
 
         /**
          * @brief Compares this shape with another shape for equality.
@@ -688,7 +728,7 @@ namespace SparkyStudios::Audio::Amplitude
          *
          * @param[in] other The other shape to compare with.
          *
-         * @return `true` if the shapes are equal, `false` otherwise.
+         * @return @c true if the shapes are equal, @c false otherwise.
          */
         bool operator==(const ConeShape& other) const;
 
@@ -699,11 +739,20 @@ namespace SparkyStudios::Audio::Amplitude
          *
          * @param[in] other The other shape to compare with.
          *
-         * @return `false` if the shapes are equal, `true` otherwise.
+         * @return @c false if the shapes are equal, @c true otherwise.
          */
         bool operator!=(const ConeShape& other) const;
 
     private:
+        /**
+         * @brief Updates the internal state of the cone shape.
+         *
+         * This method recalculates and synchronizes the internal state of the cone shape if required.
+         * It is invoked when changes to the shape's properties or other dependent attributes
+         * require an update to its internal representation.
+         *
+         * @note This function is called automatically when needed and should typically not require direct invocation.
+         */
         void Update() override;
 
         AmReal32 _radius;
@@ -715,13 +764,13 @@ namespace SparkyStudios::Audio::Amplitude
      *
      * @ingroup math
      */
-    class AM_API_PUBLIC SphereShape : public Shape
+    class AM_API_PUBLIC SphereShape final : public Shape
     {
         friend class SphereZone;
 
     public:
         /**
-         * @brief Creates a new SphereShape from a definition.
+         * @brief Creates a new sphere shape from a definition.
          *
          * @param[in] definition The definition of the shape generated
          * from a flatbuffer binary.
@@ -731,7 +780,7 @@ namespace SparkyStudios::Audio::Amplitude
         static std::shared_ptr<SphereShape> Create(const SphereShapeDefinition* definition);
 
         /**
-         * @brief Constructs a new `SphereShape`.
+         * @brief Constructs a new sphere shape.
          *
          * @param[in] radius The sphere's radius.
          */
@@ -766,7 +815,7 @@ namespace SparkyStudios::Audio::Amplitude
          * @return The shortest distance from the location to the edge
          * of this shape. If negative, the given location in outside the shape.
          */
-        [[nodiscard]] AmReal32 GetShortestDistanceToEdge(const AmVec3& location) final;
+        [[nodiscard]] AmReal32 GetShortestDistanceToEdge(const AmVec3& location) override;
 
         /**
          * @brief Checks if the given position is contained in this shape.
@@ -775,7 +824,7 @@ namespace SparkyStudios::Audio::Amplitude
          *
          * @return true if the shape contains the given position, false otherwise.
          */
-        [[nodiscard]] bool Contains(const AmVec3& location) final;
+        [[nodiscard]] bool Contains(const AmVec3& location) override;
 
         /**
          * @brief Compares this shape with another shape for equality.
@@ -784,7 +833,7 @@ namespace SparkyStudios::Audio::Amplitude
          *
          * @param[in] other The other shape to compare with.
          *
-         * @return `true` if the shapes are equal, `false` otherwise.
+         * @return @c true if the shapes are equal, @c false otherwise.
          */
         bool operator==(const SphereShape& other) const;
 
@@ -795,18 +844,25 @@ namespace SparkyStudios::Audio::Amplitude
          *
          * @param[in] other The other shape to compare with.
          *
-         * @return `false` if the shapes are equal, `true` otherwise.
+         * @return @c false if the shapes are equal, @c true otherwise.
          */
         bool operator!=(const SphereShape& other) const;
 
     private:
+        /**
+         * @brief Updates the internal state of the sphere shape.
+         *
+         * Marks the sphere as up to date by resetting any pending updates.
+         * This method ensures that the shape is in a consistent state and
+         * that all dependent calculations or operations use the latest data.
+         */
         void Update() override;
 
         AmReal32 _radius;
     };
 
     /**
-     * @brief A `Zone` built with an inner `BoxShape` and an outer `BoxShape`.
+     * @brief A @c Zone built with an inner @c BoxShape and an outer @c BoxShape.
      *
      * @ingroup math
      */
@@ -814,10 +870,12 @@ namespace SparkyStudios::Audio::Amplitude
     {
     public:
         /**
-         * @brief Constructs a new `BoxZone`.
+         * @brief Constructs a new box zone.
          *
-         * @param[in] inner The inner `BoxShape`.
-         * @param[in] outer The outer `BoxShape`.
+         * @param[in] inner The inner @c BoxShape.
+         * @param[in] outer The outer @c BoxShape.
+         *
+         * @see BoxShape
          */
         BoxZone(std::shared_ptr<BoxShape> inner, std::shared_ptr<BoxShape> outer);
 
@@ -828,7 +886,7 @@ namespace SparkyStudios::Audio::Amplitude
     };
 
     /**
-     * @brief A `Zone` built with an inner `CapsuleShape` and an outer `CapsuleShape`.
+     * @brief A @c Zone built with an inner @c CapsuleShape and an outer @c CapsuleShape.
      *
      * @ingroup math
      */
@@ -836,10 +894,12 @@ namespace SparkyStudios::Audio::Amplitude
     {
     public:
         /**
-         * @brief Constructs a new `CapsuleZone`.
+         * @brief Constructs a new capsule zone.
          *
-         * @param[in] inner The inner `CapsuleShape`.
-         * @param[in] outer The outer `CapsuleShape`.
+         * @param[in] inner The inner @c CapsuleShape.
+         * @param[in] outer The outer @c CapsuleShape.
+         *
+         * @see CapsuleShape
          */
         CapsuleZone(std::shared_ptr<CapsuleShape> inner, std::shared_ptr<CapsuleShape> outer);
 
@@ -850,7 +910,7 @@ namespace SparkyStudios::Audio::Amplitude
     };
 
     /**
-     * @brief A `Zone` built with an inner `ConeShape` and an outer `ConeShape`.
+     * @brief A @c Zone built with an inner @c ConeShape and an outer @c ConeShape.
      *
      * @ingroup math
      */
@@ -858,10 +918,12 @@ namespace SparkyStudios::Audio::Amplitude
     {
     public:
         /**
-         * @brief Constructs a new `ConeZone`.
+         * @brief Constructs a new cone zone.
          *
-         * @param[in] inner The inner `ConeShape`.
-         * @param[in] outer The outer `ConeShape`.
+         * @param[in] inner The inner @c ConeShape.
+         * @param[in] outer The outer @c ConeShape.
+         *
+         * @see ConeShape
          */
         ConeZone(std::shared_ptr<ConeShape> inner, std::shared_ptr<ConeShape> outer);
 
@@ -872,7 +934,7 @@ namespace SparkyStudios::Audio::Amplitude
     };
 
     /**
-     * @brief A `Zone` built with an inner `SphereShape` and an outer `SphereShape`.
+     * @brief A @c Zone built with an inner @c SphereShape and an outer @c SphereShape.
      *
      * @ingroup math
      */
@@ -880,10 +942,12 @@ namespace SparkyStudios::Audio::Amplitude
     {
     public:
         /**
-         * @brief Constructs a new `SphereZone`.
+         * @brief Constructs a new sphere zone.
          *
-         * @param[in] inner The inner `SphereShape`.
-         * @param[in] outer The outer `SphereShape`.
+         * @param[in] inner The inner @c SphereShape.
+         * @param[in] outer The outer @c SphereShape.
+         *
+         * @see SphereShape
          */
         SphereZone(std::shared_ptr<SphereShape> inner, std::shared_ptr<SphereShape> outer);
 

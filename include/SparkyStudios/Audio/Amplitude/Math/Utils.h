@@ -20,8 +20,13 @@
 #include <SparkyStudios/Audio/Amplitude/Core/AudioBuffer.h>
 #include <SparkyStudios/Audio/Amplitude/Core/Common.h>
 
+/** @internal */
 #define AM_LCG_M 2147483647
+
+/** @internal */
 #define AM_LCG_A 48271
+
+/** @internal */
 #define AM_LCG_C 0
 
 namespace SparkyStudios::Audio::Amplitude
@@ -54,18 +59,21 @@ namespace SparkyStudios::Audio::Amplitude
         AmReal32 y2;
     };
 
+    /**
+     * @internal
+     */
     AM_API_PRIVATE struct
     {
         AmInt32 state;
     } gLCG = { 4321 };
 
     /**
-     * @brief Generates a random number between `ditherMin` and `ditherMax`.
+     * @brief Generates a random number between @c ditherMin and @c ditherMax.
      *
      * @param[in] ditherMin The minimum value for the random number.
      * @param[in] ditherMax The maximum value for the random number.
      *
-     * @return A random number between `ditherMin` and `ditherMax`.
+     * @return A random number between @c ditherMin and @c ditherMax.
      *
      * @ingroup math
      */
@@ -97,7 +105,7 @@ namespace SparkyStudios::Audio::Amplitude
      *
      * @return The 32-bit floating-point representation of the input 16-bit signed integer audio sample.
      *
-     * @tip For more accurate conversion, the SDK should be compiled with the `AM_ACCURATE_CONVERSION`
+     * @note For more accurate conversion, the SDK should be compiled with the @c AM_ACCURATE_CONVERSION
      * macro defined.
      *
      * @ingroup math
@@ -126,7 +134,7 @@ namespace SparkyStudios::Audio::Amplitude
      *
      * @return The 32-bit floating-point representation of the input 32-bit signed integer audio sample.
      *
-     * @tip For more accurate conversion, the SDK should be compiled with the `AM_ACCURATE_CONVERSION`
+     * @note For more accurate conversion, the SDK should be compiled with the @c AM_ACCURATE_CONVERSION
      * macro defined.
      *
      * @ingroup math
@@ -152,11 +160,11 @@ namespace SparkyStudios::Audio::Amplitude
      * @brief Converts a 32-bit floating-point audio sample to a 16-bit signed integer representation.
      *
      * @param[in] x The 32-bit floating-point audio sample to convert.
-     * @param[in] dithering If `true`, adds a dithering noise to the output.
+     * @param[in] dithering If @c true, adds a dithering noise to the output.
      *
      * @return The 16-bit signed integer representation of the input 32-bit floating-point audio sample.
      *
-     * @tip For more accurate conversion, the SDK should be compiled with the `AM_ACCURATE_CONVERSION`
+     * @note For more accurate conversion, the SDK should be compiled with the @c AM_ACCURATE_CONVERSION
      * macro defined.
      *
      * @ingroup math
@@ -187,7 +195,7 @@ namespace SparkyStudios::Audio::Amplitude
     }
 
     /**
-     * @brief Computes the Catmull-Rom interpolation value at a given time `t` between four points.
+     * @brief Computes the Catmull-Rom interpolation value at a given time @c t between four points.
      *
      * @param[in] t The time value between 0 and 1.
      * @param[in] p0 The first point.
@@ -195,7 +203,7 @@ namespace SparkyStudios::Audio::Amplitude
      * @param[in] p2 The third point.
      * @param[in] p3 The fourth point.
      *
-     * @return The Catmull-Rom interpolation value at the given time `t`.
+     * @return The Catmull-Rom interpolation value at the given time @c t.
      *
      * @ingroup math
      */
@@ -253,7 +261,7 @@ namespace SparkyStudios::Audio::Amplitude
     /**
      * @brief Returns the next power of 2 of a given number.
      *
-     * @tparam T An integer type, a floating-point type, or a any other type where operator *= is defined.
+     * @tparam T An integer type, a floating-point type, or any other type where operator *= is defined.
      *
      * @param[in] val The number.
      *

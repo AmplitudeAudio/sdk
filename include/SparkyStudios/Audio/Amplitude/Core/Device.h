@@ -108,32 +108,32 @@ namespace SparkyStudios::Audio::Amplitude
      *
      * @ingroup engine
      */
-    enum class DeviceState : AmUInt8
+    enum eDeviceState : AmUInt8
     {
         /**
-         * @brief The device is opened, but not yet started.
+         * @brief The device is opened but not yet started.
          */
-        Opened,
+        eDeviceState_Opened,
 
         /**
          * @brief The device is started and running.
          */
-        Started,
+        eDeviceState_Started,
 
         /**
          * @brief The device is paused.
          */
-        Paused,
+        eDeviceState_Paused,
 
         /**
          * @brief The device is stopped.
          */
-        Stopped,
+        eDeviceState_Stopped,
 
         /**
          * @brief The device is closed.
          */
-        Closed
+        eDeviceState_Closed
     };
 
     /**
@@ -141,32 +141,32 @@ namespace SparkyStudios::Audio::Amplitude
      *
      * @ingroup engine
      */
-    enum class DeviceNotification : AmUInt8
+    enum eDeviceNotification : AmUInt8
     {
         /**
-         * @brief The device is opened, but not yet started.
+         * @brief The device is opened but not yet started.
          */
-        Opened,
+        eDeviceNotification_Opened,
 
         /**
          * @brief The device is started.
          */
-        Started,
+        eDeviceNotification_Started,
 
         /**
          * @brief The device has changed.
          */
-        Rerouted,
+        eDeviceNotification_Rerouted,
 
         /**
          * @brief The device is stopped.
          */
-        Stopped,
+        eDeviceNotification_Stopped,
 
         /**
          * @brief The device is closed.
          */
-        Closed
+        eDeviceNotification_Closed
     };
 
     /**
@@ -175,7 +175,7 @@ namespace SparkyStudios::Audio::Amplitude
      * This stores the settings requested from the engine configuration
      * and the actual settings provided by the device.
      *
-     * The device settings are filled after the Amplimix initialization,
+     * The device settings are filled after the Amplimix initialization
      * and are provided by the selected Driver.
      *
      * @ingroup engine
@@ -230,7 +230,7 @@ namespace SparkyStudios::Audio::Amplitude
         /**
          * @brief The device state.
          */
-        DeviceState mDeviceState;
+        eDeviceState mDeviceState;
     };
 
     /**
@@ -242,7 +242,7 @@ namespace SparkyStudios::Audio::Amplitude
      *
      * @ingroup engine
      */
-    AM_CALLBACK(void, DeviceNotificationCallback)(DeviceNotification notification, const DeviceDescription& device, Driver* driver);
+    AM_CALLBACK(void, DeviceNotificationCallback)(eDeviceNotification notification, const DeviceDescription& device, Driver* driver);
 
     /**
      * @brief Registers a callback to listen to device state changes.
@@ -269,7 +269,7 @@ namespace SparkyStudios::Audio::Amplitude
      *
      * @ingroup engine
      */
-    AM_API_PUBLIC void CallDeviceNotificationCallback(DeviceNotification notification, const DeviceDescription& device, Driver* driver);
+    AM_API_PUBLIC void CallDeviceNotificationCallback(eDeviceNotification notification, const DeviceDescription& device, Driver* driver);
 } // namespace SparkyStudios::Audio::Amplitude
 
 #endif // _AM_CORE_DEVICE_H

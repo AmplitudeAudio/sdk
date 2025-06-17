@@ -23,7 +23,7 @@
 namespace SparkyStudios::Audio::Amplitude
 {
     /**
-     * @brief A `File` implementation that provides access to an item in an Amplitude package file.
+     * @brief A @c File implementation that provides access to an item in an Amplitude package file.
      *
      * @ingroup io
      */
@@ -31,7 +31,7 @@ namespace SparkyStudios::Audio::Amplitude
     {
     public:
         /**
-         * @brief Constructs a new `PackageItemFile` instance.
+         * @brief Constructs a new @c PackageItemFile instance.
          *
          * @param[in] item The description of the package item.
          * @param[in] packageFile The path to the package file.

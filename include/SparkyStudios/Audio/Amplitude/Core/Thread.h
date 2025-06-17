@@ -46,9 +46,9 @@ namespace SparkyStudios::Audio::Amplitude
          * A mutex is an object that a thread can acquire, preventing other
          * threads from acquiring it.
          *
-         * To acquire the mutex ownership, you should use @ref LockMutex `LockMutex()` with
-         * the mutex handle as parameter. To release the ownership, use @ref UnlockMutex `UnlockMutex()`
-         * with the mutex handle as parameter.
+         * To acquire the mutex ownership, you should use @ref LockMutex with
+         * the mutex handle as a parameter. To release the ownership, use @ref UnlockMutex
+         * with the mutex handle as a parameter.
          *
          * @param[in] spinCount The number of times the mutex should spin before checking if it's available.
          *
@@ -94,7 +94,7 @@ namespace SparkyStudios::Audio::Amplitude
         AM_API_PUBLIC AmThreadHandle CreateThread(AmThreadFunction threadFunction, AmVoidPtr parameter = nullptr);
 
         /**
-         * @brief Makes the calling thread sleep for the given amount of milliseconds.
+         * @brief Makes the calling thread sleep for the given number of milliseconds.
          *
          * @param[in] milliseconds The amount of time the calling thread should sleep.
          *
@@ -150,7 +150,7 @@ namespace SparkyStudios::Audio::Amplitude
             /**
              * @brief Main pool task execution function.
              *
-             * When this task will be picked by the pool scheduler, this method
+             * When this task is picked by the pool scheduler, this method
              * will be called to execute the task.
              */
             virtual void Work() = 0;
@@ -158,20 +158,31 @@ namespace SparkyStudios::Audio::Amplitude
             /**
              * @brief Checks if the task is ready to be picked by the pool scheduler.
              *
-             * @return `true` if the task is ready, `false` otherwise.
+             * @return @c true if the task is ready, @c false otherwise.
              */
             virtual bool Ready();
         };
 
         /**
-         * @brief A pool task that allows a thread to wait until it finishes.
+         * @brief A class representing a task executed within a pool, which allows awaiting its completion.
+         *
+         * The AwaitablePoolTask class inherits from PoolTask and provides extended functionality
+         * allowing asynchronous execution via an AwaitableWork function and synchronous waiting
+         * for task completion using the Await methods.
          *
          * @ingroup core
          */
         class AM_API_PUBLIC AwaitablePoolTask : public PoolTask
         {
         public:
+            /**
+             * @brief Default constructor.
+             */
             AwaitablePoolTask();
+
+            /**
+             * @brief Default destructor.
+             */
             ~AwaitablePoolTask() override = default;
 
             /**
@@ -180,7 +191,7 @@ namespace SparkyStudios::Audio::Amplitude
             void Work() final;
 
             /**
-             * @brief Pool task execution function.
+             * @brief Pool task execution function that can be awaited.
              */
             virtual void AwaitableWork() = 0;
 
@@ -207,8 +218,8 @@ namespace SparkyStudios::Audio::Amplitude
          * The Pool tasks scheduler can pick and run pool tasks on several multiple
          * threads. The number of threads is defined at initialization.
          *
-         * The maximum number of tasks the pool can manage is defined by the `AM_MAX_THREAD_POOL_TASKS`
-         * macro. The default value is `1024`
+         * The maximum number of tasks the pool can manage is defined by the @c AM_MAX_THREAD_POOL_TASKS
+         * macro. The default value is @c 1024
          *
          * @ingroup core
          */
@@ -228,26 +239,26 @@ namespace SparkyStudios::Audio::Amplitude
             ~Pool();
 
             /**
-             * @brief Initializes and run thread pool.
+             * @brief Initializes and run the thread pool.
              *
              * @param[in] threadCount The number of threads in the pool. For thread count 0, work is done
-             * at @ref AddTask `AddTask()` call in the calling thread.
+             * at @ref AddTask call in the calling thread.
              */
             void Init(AmUInt32 threadCount);
 
             /**
-             * @brief Add a task to the tasks list.
+             * @brief Add a task to the task list.
              *
-             * @param[in] task The `PoolTask` to add. The task is not automatically deleted when the work is done.
+             * @param[in] task The @c PoolTask to add. The task is not automatically deleted when the work is done.
              */
             void AddTask(std::shared_ptr<PoolTask> task);
 
             /**
              * @brief Called from worker thread to get a new task.
              *
-             * @warning This method is called internally, and should not be called in user code.
+             * @warning This method is called internally and should not be called in user code.
              *
-             * @return The next `PoolTask` to execute, or `nullptr` if no task is available.
+             * @return The next @c PoolTask to execute, or @c nullptr if no task is available.
              */
             std::shared_ptr<PoolTask> GetWork();
 
@@ -261,14 +272,14 @@ namespace SparkyStudios::Audio::Amplitude
             /**
              * @brief Indicates that the pool is running.
              *
-             * @return `true` if the pool is running, `false` otherwise.
+             * @return @c true if the pool is running, @c false otherwise.
              */
             [[nodiscard]] bool IsRunning() const;
 
             /**
-             * @brief Indicates that has tasks pending.
+             * @brief Indicates that the pool has tasks pending.
              *
-             * @return `true` if there are tasks pending, `false` otherwise.
+             * @return @c true if there are tasks pending, @c false otherwise.
              */
             [[nodiscard]] bool HasTasks() const;
 
@@ -284,7 +295,7 @@ namespace SparkyStudios::Audio::Amplitude
             AmThreadHandle* _thread; // array of thread handles
             AmMutexHandle _workMutex; // mutex to protect task array/max task
             std::shared_ptr<PoolTask> _taskArray[AM_MAX_THREAD_POOL_TASKS]{}; // pointers to tasks
-            AmInt32 _taskCount; // how many tasks are pending
+            AmInt32 _taskCount; // number of pending tasks
             AmInt32 _robin; // cyclic counter, used to pick jobs for threads
             volatile bool _running; // running flag, used to flag threads to Stop
         };

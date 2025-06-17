@@ -19,12 +19,12 @@
 
 namespace SparkyStudios::Audio::Amplitude
 {
-    bool RoomMaterial::operator==(const RoomMaterial& other) const
+    bool RoomWallMaterial::operator==(const RoomWallMaterial& other) const
     {
         return std::memcmp(&m_absorptionCoefficients, &other.m_absorptionCoefficients, sizeof(AmReal32) * 9) == 0;
     }
 
-    bool RoomMaterial::operator!=(const RoomMaterial& other) const
+    bool RoomWallMaterial::operator!=(const RoomWallMaterial& other) const
     {
         return !(*this == other);
     }
@@ -106,41 +106,41 @@ namespace SparkyStudios::Audio::Amplitude
         return _state->GetShape();
     }
 
-    void Room::SetWallMaterial(RoomWall wall, const RoomMaterial& material) const
+    void Room::SetWallMaterial(eRoomWall wall, const RoomWallMaterial& material) const
     {
         AMPLITUDE_ASSERT(Valid());
         _state->SetWallMaterial(wall, material);
     }
 
-    void Room::SetAllWallMaterials(const RoomMaterial& material) const
+    void Room::SetAllWallMaterials(const RoomWallMaterial& material) const
     {
         AMPLITUDE_ASSERT(Valid());
-        _state->SetWallMaterial(RoomWall::Left, material);
-        _state->SetWallMaterial(RoomWall::Right, material);
-        _state->SetWallMaterial(RoomWall::Floor, material);
-        _state->SetWallMaterial(RoomWall::Ceiling, material);
-        _state->SetWallMaterial(RoomWall::Front, material);
-        _state->SetWallMaterial(RoomWall::Back, material);
+        _state->SetWallMaterial(eRoomWall_Left, material);
+        _state->SetWallMaterial(eRoomWall_Right, material);
+        _state->SetWallMaterial(eRoomWall_Floor, material);
+        _state->SetWallMaterial(eRoomWall_Ceiling, material);
+        _state->SetWallMaterial(eRoomWall_Front, material);
+        _state->SetWallMaterial(eRoomWall_Back, material);
     }
 
     void Room::SetWallMaterials(
-        const RoomMaterial& leftWallMaterial,
-        const RoomMaterial& rightWallMaterial,
-        const RoomMaterial& floorMaterial,
-        const RoomMaterial& ceilingMaterial,
-        const RoomMaterial& frontWallMaterial,
-        const RoomMaterial& backWallMaterial) const
+        const RoomWallMaterial& leftWallMaterial,
+        const RoomWallMaterial& rightWallMaterial,
+        const RoomWallMaterial& floorMaterial,
+        const RoomWallMaterial& ceilingMaterial,
+        const RoomWallMaterial& frontWallMaterial,
+        const RoomWallMaterial& backWallMaterial) const
     {
         AMPLITUDE_ASSERT(Valid());
-        _state->SetWallMaterial(RoomWall::Left, leftWallMaterial);
-        _state->SetWallMaterial(RoomWall::Right, rightWallMaterial);
-        _state->SetWallMaterial(RoomWall::Floor, floorMaterial);
-        _state->SetWallMaterial(RoomWall::Ceiling, ceilingMaterial);
-        _state->SetWallMaterial(RoomWall::Front, frontWallMaterial);
-        _state->SetWallMaterial(RoomWall::Back, backWallMaterial);
+        _state->SetWallMaterial(eRoomWall_Left, leftWallMaterial);
+        _state->SetWallMaterial(eRoomWall_Right, rightWallMaterial);
+        _state->SetWallMaterial(eRoomWall_Floor, floorMaterial);
+        _state->SetWallMaterial(eRoomWall_Ceiling, ceilingMaterial);
+        _state->SetWallMaterial(eRoomWall_Front, frontWallMaterial);
+        _state->SetWallMaterial(eRoomWall_Back, backWallMaterial);
     }
 
-    const RoomMaterial& Room::GetWallMaterial(RoomWall wall) const
+    const RoomWallMaterial& Room::GetWallMaterial(eRoomWall wall) const
     {
         AMPLITUDE_ASSERT(Valid());
         return _state->GetWallMaterial(wall);
@@ -170,7 +170,7 @@ namespace SparkyStudios::Audio::Amplitude
         return _state->GetDimensions();
     }
 
-    AmReal32 Room::GetSurfaceArea(RoomWall wall) const
+    AmReal32 Room::GetSurfaceArea(eRoomWall wall) const
     {
         AMPLITUDE_ASSERT(Valid());
         return _state->GetSurfaceArea(wall);

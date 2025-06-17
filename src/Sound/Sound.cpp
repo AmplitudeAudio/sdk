@@ -176,7 +176,7 @@ namespace SparkyStudios::Audio::Amplitude
 
         const auto file = loader->OpenFile(filename);
 
-        _codec = Codec::FindCodecForFile(file);
+        _codec = Codec::FindForFile(file);
         if (_codec == nullptr)
         {
             amLogError("Cannot load the sound: unable to find codec for '" AM_OS_CHAR_FMT "'.", filename.c_str());

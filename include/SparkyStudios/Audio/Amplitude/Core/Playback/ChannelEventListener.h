@@ -61,7 +61,7 @@ namespace SparkyStudios::Audio::Amplitude
     typedef std::function<void(ChannelEventInfo)> ChannelEventCallback;
 
     /**
-     * @brief Channel Event listener.
+     * @brief Channel event listener.
      *
      * Event handlers are registered to the event listener through a callback to receive
      * event notifications.
@@ -85,14 +85,14 @@ namespace SparkyStudios::Audio::Amplitude
          * @brief Registers a custom callback to this event listener.
          *
          * @param[in] callback The event callback.
-         * @param[in] userData The additional data to pass to the handler when this listener receive the event.
+         * @param[in] userData The additional data to pass to the handler when this listener receives the event.
          */
         void Add(const ChannelEventCallback& callback, void* userData = nullptr);
 
         /**
          * @brief Executes the event by calling all the registered event handlers.
          *
-         * @param[in] channel The channel which have triggered the event.
+         * @param[in] channel The channel that has triggered the event.
          *
          * @warning This method is for internal usage only.
          */
@@ -103,7 +103,7 @@ namespace SparkyStudios::Audio::Amplitude
          * @brief Adds a custom callback to the internal list of handlers.
          *
          * @param[in] callback The event callback.
-         * @param[in] userData The additional data to pass to the handler when this listener receive the event.
+         * @param[in] userData The additional data to pass to the handler when this listener receives the event.
          *
          * @internal
          */

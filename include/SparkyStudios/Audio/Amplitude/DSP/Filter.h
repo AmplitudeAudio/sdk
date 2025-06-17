@@ -26,7 +26,10 @@ namespace SparkyStudios::Audio::Amplitude
     /**
      * @brief A Filter instance.
      *
-     * An object of this class will be created each time a `Filter` is requested.
+     * This class is the place where the DSP filtering is performed. It stores the actual values
+     * of the Filter parameters and uses them to apply filtering on an AudioBuffer.
+     *
+     * An instance of this class will be created each time its parent Filter will be requested.
      *
      * @ingroup dsp
      */
@@ -34,14 +37,14 @@ namespace SparkyStudios::Audio::Amplitude
     {
     public:
         /**
-         * @brief Constructs a new `FilterInstance` object.
+         * @brief Constructs a new @c FilterInstance object.
          *
-         * @param[in] parent The parent `Filter` object that created this instance.
+         * @param[in] parent The parent @c Filter object that created this instance.
          */
         explicit FilterInstance(Filter* parent);
 
         /**
-         * @brief Destroys the `FilterInstance` object.
+         * @brief Destroys the @c FilterInstance object.
          */
         virtual ~FilterInstance();
 
@@ -65,7 +68,7 @@ namespace SparkyStudios::Audio::Amplitude
          * @param[in] in The input buffer on which the filter should be applied.
          * @param[out] out The output buffer where the filtered output will be stored.
          * @param[in] frames The number of frames to process.
-         * @param[in] sampleRate The current sample rate of the `buffer`.
+         * @param[in] sampleRate The current sample rate of the input buffer.
          */
         virtual void Process(const AudioBuffer& in, AudioBuffer& out, AmUInt64 frames, AmUInt32 sampleRate);
 
@@ -94,16 +97,16 @@ namespace SparkyStudios::Audio::Amplitude
          * @param[out] out The output buffer where the filtered output will be stored.
          * @param[in] channel The index of the channel to process.
          * @param[in] frames The number of frames to process.
-         * @param[in] sampleRate The current sample rate of the `buffer`.
+         * @param[in] sampleRate The current sample rate of the input buffer.
          */
         virtual void ProcessChannel(const AudioBuffer& in, AudioBuffer& out, AmUInt16 channel, AmUInt64 frames, AmUInt32 sampleRate);
 
         /**
          * @brief Executes the filter instance on a single sample of the given buffer.
          *
-         * @param sample The audio sample to process.
-         * @param channel The index of the channel to process.
-         * @param sampleRate The current sample rate of the `buffer`.
+         * @param[in] sample The audio sample to process.
+         * @param[in] channel The index of the channel to process.
+         * @param[in] sampleRate The current sample rate of the input buffer.
          */
         virtual AmAudioSample ProcessSample(AmAudioSample sample, AmUInt16 channel, AmUInt32 sampleRate);
 
@@ -129,13 +132,13 @@ namespace SparkyStudios::Audio::Amplitude
     };
 
     /**
-     * @brief Base class to manage filters.
+     * @brief Base class used to create DSP filters.
      *
-     * A filter applies transformations to an audio buffer. The `Filter` class implements factory methods to create
-     * instances of `FilterInstance` objects, which are where the the filtering is done.
+     * A filter applies transformations to an audio buffer. The @c Filter class implements
+     * factory methods to create instances of @c FilterInstance objects, which are where the filtering is done.
      *
-     * The `Filter` class follows the [plugins architecture](/plugins/anatomy.md), and thus, you are able to create your own filters
-     * by inheriting from this class, and by implementing the necessary dependencies.
+     * The @c Filter class follows the [plugin architecture](/plugins/anatomy), and thus, you are able to create
+     * your own filters and register them to the Engine by inheriting from this class and by implementing the necessary dependencies.
      *
      * @ingroup dsp
      */
@@ -145,19 +148,30 @@ namespace SparkyStudios::Audio::Amplitude
 
     public:
         /**
-         * @brief The type of filter parameter.
+         * @brief Lists the available parameter types for a filter.
          */
         enum ParameterType
         {
-            kParameterTypeFloat = 0, ///< The parameter is a float.
-            kParameterTypeInt, ///< The parameter is an integer.
-            kParameterTypeBool ///< The parameter is a boolean.
+            /**
+             * @brief The parameter stores a @c float value.
+             */
+            kParameterTypeFloat = 0,
+
+            /**
+             * @brief The parameter stores an @c integer value.
+             */
+            kParameterTypeInt,
+
+            /**
+             * @brief The parameter stores a @c boolean value.
+             */
+            kParameterTypeBool
         };
 
         /**
-         * @brief Create a new `Filter` instance.
+         * @brief Creates a new filter instance.
          *
-         * @param[in] name The filter name. eg. "Echo".
+         * @param[in] name The filter name, e.g. "Echo".
          */
         explicit Filter(AmString name);
 
@@ -226,32 +240,38 @@ namespace SparkyStudios::Audio::Amplitude
         /**
          * @brief Registers a new filter.
          *
+         * @note This method does nothing if the registry is locked.
+         *
          * @param[in] filter The filter to add in the registry.
+         *
+         * @see LockRegistry, UnlockRegistry
          */
         static void Register(std::shared_ptr<Filter> filter);
 
         /**
          * @brief Unregisters a filter.
          *
+         * @note This method does nothing if the registry is locked.
+         *
          * @param[in] filter The filter to remove from the registry.
+         *
+         * @see LockRegistry, UnlockRegistry
          */
         static void Unregister(std::shared_ptr<const Filter> filter);
 
         /**
          * @brief Look up a filter by name.
          *
-         * @return The filter with the given name, or `nullptr` if none.
+         * @return The filter with the given name, or @c nullptr if not found.
          */
         static std::shared_ptr<Filter> Find(const AmString& name);
 
         /**
          * @brief Creates a new instance of the filter with the given name and returns its pointer.
          *
-         * @note The returned pointer should be deleted using @ref Destruct `Destruct()`.
-         *
          * @param[in] name The name of the filter.
          *
-         * @return The filter with the given name, or `nullptr` if none.
+         * @return The filter with the given name, or @c nullptr if not found.
          */
         static std::shared_ptr<FilterInstance> Construct(const AmString& name);
 
@@ -259,7 +279,7 @@ namespace SparkyStudios::Audio::Amplitude
          * @brief Locks the filters' registry.
          *
          * @warning This function is mainly used for internal purposes. It's
-         * called before the `Engine` initialization, to discard the registration
+         * called before the @c Engine initialization, to discard the registration
          * of new filters after the engine is fully loaded.
          */
         static void LockRegistry();
@@ -268,7 +288,7 @@ namespace SparkyStudios::Audio::Amplitude
          * @brief Unlocks the filters' registry.
          *
          * @warning This function is mainly used for internal purposes. It's
-         * called after the `Engine` deinitialization, to allow the registration
+         * called after the @c Engine deinitialization, to allow the registration
          * of new filters after the engine is fully unloaded.
          */
         static void UnlockRegistry();

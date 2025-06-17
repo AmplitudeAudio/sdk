@@ -30,7 +30,7 @@ namespace SparkyStudios::Audio::Amplitude
     {
     public:
         /**
-         * @brief Constructs a new `RefCounter`.
+         * @brief Constructs a new @c RefCounter.
          *
          * This initializes the internal counter to 0.
          */

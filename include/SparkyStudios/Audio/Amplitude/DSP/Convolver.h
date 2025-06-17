@@ -27,19 +27,17 @@
 namespace SparkyStudios::Audio::Amplitude
 {
     /**
-     * @brief Implementation of a partitioned FFT convolution algorithm with uniform block size.
+     * @brief Implementation of a partitioned FFT convolution algorithm with a uniform block size.
      *
      * Some notes on how to use it:
      *
-     * - After initialization with an impulse response, subsequent data portions of
+     * - After initialization with an impulse response, further data portions of
      *   arbitrary length can be convolved. The convolver internally can handle
      *   this by using appropriate buffering.
-     *
-     * - The convolver works without "latency" (except for the required
-     *   processing time, of course), i.e. the output always is the convolved
-     *   input for each processing call.
-     *
-     * - The convolver is suitable for real-time processing which means that no
+     * - The convolver works without "latency" (except for the required processing
+     *   time, of course), e.g., the output always is the convolved input for each
+     *   processing call.
+     * - The convolver is suitable for real-time processing, which means that no
      *   "unpredictable" operations like allocations, locking, API calls, etc. are
      *   performed during processing (all necessary allocations and preparations take
      *   place during initialization).
@@ -63,9 +61,23 @@ namespace SparkyStudios::Audio::Amplitude
          */
         virtual ~Convolver();
 
-        // Prevent uncontrolled usage
-        Convolver(const Convolver&) = delete;
-        Convolver& operator=(const Convolver&) = delete;
+        /**
+         * @brief Copy constructor and assignment operator are deleted to prevent copying.
+         *
+         * This class does not allow assignment between instances. It ensures
+         * that each instance has its own unique state and prevents accidental sharing
+         * of internal resources.
+         *
+         * @param other The @c Convolver instance to assign from. This is explicitly disallowed.
+         *
+         * @return This method does not return a value since it is deleted.
+         */
+        Convolver(const Convolver& other) = delete;
+
+        /**
+         * @copydoc Convolver::Convolver(const Convolver& other)
+         */
+        Convolver& operator=(const Convolver& other) = delete;
 
         /**
          * @brief Initializes the convolver.
@@ -74,12 +86,12 @@ namespace SparkyStudios::Audio::Amplitude
          * @param[in] ir The impulse response
          * @param[in] irLen Length of the impulse response
          *
-         * @return `true` when the convolver is successfully initialized, `false` otherwise.
+         * @return @c true when the convolver is successfully initialized, @c false otherwise.
          */
         bool Init(AmSize blockSize, const AmAudioSample* ir, AmSize irLen);
 
         /**
-         * @brief Convolves the the given input samples and immediately outputs the result.
+         * @brief Convolves the given input samples and immediately outputs the result.
          *
          * @param[in] input The input samples.
          * @param[out] output The convolution result.
@@ -90,7 +102,7 @@ namespace SparkyStudios::Audio::Amplitude
         /**
          * @brief Resets the convolver state and discards the set impulse response.
          *
-         * The convolver will need to be @ref Init initialized again after this call.
+         * The convolver will need to be @ref Init "initialized" again after this call.
          */
         void Reset();
 

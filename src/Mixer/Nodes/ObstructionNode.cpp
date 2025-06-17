@@ -47,9 +47,6 @@ namespace SparkyStudios::Audio::Amplitude
         const auto channels = input->GetChannelCount();
         const auto sampleRate = layer->GetSoundFormat().GetSampleRate();
 
-        const Listener listener = layer->GetListener();
-        const Entity entity = layer->GetEntity();
-
         _currentObstruction = AM_Lerp(_currentObstruction, kObstructionSmoothingCoefficient, obstruction);
 
         const auto& lpfCurve = Engine::GetInstance()->GetObstructionCoefficientCurve();

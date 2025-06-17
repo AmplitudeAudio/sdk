@@ -29,7 +29,7 @@ namespace SparkyStudios::Audio::Amplitude
      * @brief Represents an instance of a pipeline for a specific layer.
      *
      * A pipeline instance is created for each single layer in the mixer. Each pipeline instance
-     * manages its own state, and create a set of node instances following the provided configuration.
+     * manages its own state and creates a set of node instances following the provided configuration.
      *
      * @ingroup mixer
      */
@@ -39,7 +39,7 @@ namespace SparkyStudios::Audio::Amplitude
 
     public:
         /**
-         * @brief Default constructor.
+         * @brief Default destructor.
          */
         virtual ~PipelineInstance() = default;
 
@@ -56,8 +56,8 @@ namespace SparkyStudios::Audio::Amplitude
          * @brief Resets the internal state for all nodes in the pipeline.
          *
          * @warning This method is called automatically when Amplimix has finished processing a frame
-         * for a specific layer. You should not manually call this method, unless you know what
-         * you're doing.
+         * for a specific layer. __You should not manually call this method unless you know what
+         * you're doing__.
          */
         virtual void Reset() = 0;
 
@@ -66,17 +66,17 @@ namespace SparkyStudios::Audio::Amplitude
          *
          * @param[in] id The ID of the node to retrieve.
          *
-         * @return The node with the specified ID, or `nullptr` if not found.
+         * @return The node with the specified ID, or @c nullptr if not found.
          */
         [[nodiscard]] virtual std::shared_ptr<NodeInstance> GetNode(AmObjectID id) const = 0;
     };
 
     /**
-     * @brief A pipeline assembles a set of nodes to process audio data.
+     * @brief Assembles a set of nodes to process audio data.
      *
-     * For each layer in `Amplimix`, a `PipelineInstance` is created for that specific layer.
+     * For each layer in @c Amplimix, a @c PipelineInstance is created for that specific layer.
      *
-     * @see [Amplimix](../Amplimix/index.md), [PipelineInstance](../PipelineInstance/index.md)
+     * @see Amplimix, PipelineInstance
      *
      * @ingroup mixer
      */
