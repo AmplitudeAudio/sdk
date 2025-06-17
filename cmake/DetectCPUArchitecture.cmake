@@ -675,6 +675,48 @@ set(AM_BUILDSYSTEM_X86_AVX512DQ_TEST_CODE
     }"
 )
 
+list(APPEND AM_BUILDSYSTEM_ARCHS_PRI "X86_AVX512CD")
+
+if (AM_BUILDSYSTEM_CLANG OR AM_BUILDSYSTEM_GCC OR AM_BUILDSYSTEM_INTEL)
+    set(AM_BUILDSYSTEM_X86_AVX512CD_CXX_FLAGS "-mavx512cd")
+    #unsupported on MSVC
+endif ()
+
+set(AM_BUILDSYSTEM_X86_AVX512CD_DEFINE "AM_BUILDSYSTEM_ARCH_X86_AVX512CD")
+set(AM_BUILDSYSTEM_X86_AVX512CD_SUFFIX "-x86_avx512cd")
+set(AM_BUILDSYSTEM_X86_AVX512CD_TEST_CODE
+        "#include <immintrin.h>
+    #include <iostream>
+
+    char* prevent_optimization(char* ptr)
+    {
+        volatile bool never = false;
+        if (never) {
+            while (*ptr++)
+                std::cout << *ptr;
+        }
+        char* volatile* volatile opaque;
+        opaque = &ptr;
+        return *opaque;
+    }
+
+    int main()
+    {
+        union {
+            char data[64];
+            __m512i align;
+        };
+        char* p = data;
+        p = prevent_optimization(p);
+
+        __m512i i = _mm512_load_si512((void*)p);
+        i = _mm512_conflict_epi32(i, i); // only in AVX512-CD
+        _mm512_store_si512((void*)p, i);
+
+        p = prevent_optimization(p);
+    }"
+)
+
 list(APPEND AM_BUILDSYSTEM_ARCHS_PRI "X86_AVX512VL")
 
 if (AM_BUILDSYSTEM_CLANG OR AM_BUILDSYSTEM_GCC OR AM_BUILDSYSTEM_INTEL)
@@ -1136,10 +1178,12 @@ function(am_buildsystem_get_arch_perm ALL_ARCHS_VAR)
 
         if (DEFINED ARCH_SUPPORTED_X86_AVX512BW)
             if (DEFINED ARCH_SUPPORTED_X86_AVX512DQ)
-                if (DEFINED ARCH_SUPPORTED_X86_AVX512VL)
-                    # All Intel processors that support AVX512BW also support
-                    # AVX512DQ and AVX512VL
-                    list(APPEND ALL_ARCHS "X86_AVX512F,X86_FMA3,X86_POPCNT_INSN,X86_AVX512BW,X86_AVX512DQ,X86_AVX512VL")
+                if (DEFINED ARCH_SUPPORTED_X86_AVX512CD)
+                    if (DEFINED ARCH_SUPPORTED_X86_AVX512VL)
+                        # All Intel processors that support AVX512BW also support
+                        # AVX512DQ, AVX512CD and AVX512VL
+                        list(APPEND ALL_ARCHS "X86_AVX512F,X86_FMA3,X86_POPCNT_INSN,X86_AVX512BW,X86_AVX512DQ,X86_AVX512CD,X86_AVX512VL")
+                    endif ()
                 endif ()
             endif ()
         endif ()
