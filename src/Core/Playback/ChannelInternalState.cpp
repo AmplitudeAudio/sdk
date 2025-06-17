@@ -69,6 +69,7 @@ namespace SparkyStudios::Audio::Amplitude
         _entity = Entity();
         _userGain = 0.0f;
         _gain = 0.0f;
+        _realGain = 0.0f;
         _location = AM_V3(0, 0, 0);
         _channelStateId = 0;
 
@@ -226,11 +227,15 @@ namespace SparkyStudios::Audio::Amplitude
         _fader->Start(Engine::GetInstance()->GetTotalTime());
 
         _realChannel.SetGain(0.0f);
+        _realGain = 0.0f;
 
         if (_realChannel.Resume())
             _channelState = eChannelPlaybackState_FadingIn;
         else
+        {
             _realChannel.SetGain(_gain);
+            _realGain = _gain;
+        }
     }
 
     void ChannelInternalState::FadeOut(AmTime duration, eChannelPlaybackState targetState)
@@ -239,7 +244,7 @@ namespace SparkyStudios::Audio::Amplitude
             return;
 
         // If the sound is muted, no need to fade out
-        if (_gain == 0.0f)
+        if (_realGain == 0.0f)
         {
             if (targetState == eChannelPlaybackState_Stopped)
                 return Halt();
@@ -278,6 +283,7 @@ namespace SparkyStudios::Audio::Amplitude
             return;
 
         _gain = gain;
+        _realGain = gain;
 
         if (!Valid())
             return;
@@ -562,14 +568,14 @@ namespace SparkyStudios::Audio::Amplitude
 
                     // Fading in transition complete. Now we mark the channel as playing.
                     _channelState = eChannelPlaybackState_Playing;
-                    _gain = gain;
+                    _realGain = gain;
                 }
             }
             else
             {
                 // No fader is defined, no fading occurs
                 if (IsReal())
-                    _realChannel.SetGain(_gain);
+                    _realChannel.SetGain(_realGain);
 
                 _channelState = eChannelPlaybackState_Playing;
             }
@@ -580,12 +586,12 @@ namespace SparkyStudios::Audio::Amplitude
         {
             if (_fader != nullptr && _fader->GetState() == eFaderState_Active)
             {
-                _gain = _fader->GetFromTime(Engine::GetInstance()->GetTotalTime());
+                _realGain = _fader->GetFromTime(Engine::GetInstance()->GetTotalTime());
 
                 if (IsReal())
-                    _realChannel.SetGain(_gain);
+                    _realChannel.SetGain(_realGain);
 
-                if (_gain == 0.0f)
+                if (_realGain == 0.0f)
                 {
                     _fader->SetState(eFaderState_Stopped);
 

@@ -59,6 +59,7 @@ namespace SparkyStudios::Audio::Amplitude
             , _entity()
             , _userGain(1.0f)
             , _gain(1.0f)
+            , _realGain(1.0f)
             , _pan()
             , _pitch(1.0f)
             , _location()
@@ -420,6 +421,7 @@ namespace SparkyStudios::Audio::Amplitude
 
         // The gain of this channel.
         AmReal32 _gain;
+        AmReal32 _realGain;
 
         // The pan of this channel for 2D rendering.
         AmVec2 _pan;

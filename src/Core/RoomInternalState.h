@@ -33,6 +33,7 @@ namespace SparkyStudios::Audio::Amplitude
             : _shape(0.0f, 0.0f, 0.0f)
             , _cutOffFrequency(0.0f)
             , _coefficients{ 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f }
+            , _gain(0)
         {}
 
         [[nodiscard]] const AmVec3& GetRoomLocation() const
@@ -141,6 +142,7 @@ namespace SparkyStudios::Audio::Amplitude
             : _id(kAmInvalidObjectId)
             , _reflectionsProperties()
             , _needUpdate(false)
+            , _wasUpdated(false)
             , _playingSoundList(&ChannelInternalState::room_node)
         {
             for (AmSize i = 0; i < kAmRoomSurfaceCount; i++)

@@ -148,7 +148,7 @@ namespace SparkyStudios::Audio::Amplitude
         const PlayStateFlag loops = _loop[layer] ? ePSF_LOOP : ePSF_PLAY;
 
         _channelLayersId[layer] =
-            _mixer->Play(static_cast<SoundData*>(sound->GetUserData()), loops, _gain[layer], _pan, _pitch, _playSpeed, _channelId, 0);
+            _mixer->Play(static_cast<SoundData*>(sound->GetUserData()), loops, GetGain(layer), _pan, _pitch, _playSpeed, _channelId, 0);
 
         // Check if playing the sound was successful, and display the error if it was not.
         const bool success = _channelLayersId[layer] != kAmInvalidObjectId;
@@ -260,6 +260,8 @@ namespace SparkyStudios::Audio::Amplitude
 
             SetGain(gain, layer.first);
         }
+
+        _defaultGain = gain;
     }
 
     void RealChannel::SetGain(AmReal32 gain, AmUInt32 layer)
@@ -270,7 +272,7 @@ namespace SparkyStudios::Audio::Amplitude
     AmReal32 RealChannel::GetGain(AmUInt32 layer) const
     {
         AMPLITUDE_ASSERT(Valid());
-        return _gain.contains(layer) ? _gain.at(layer) : 0.0f;
+        return _gain.contains(layer) ? _gain.at(layer) : _defaultGain;
     }
 
     bool RealChannel::Halt(AmUInt32 layer)
@@ -333,7 +335,7 @@ namespace SparkyStudios::Audio::Amplitude
             if (layer.second == 0)
                 continue;
 
-            SetGainPan(_gain[layer.first], pan.X, layer.first);
+            SetGainPan(GetGain(layer.first), pan.X, layer.first);
         }
 
         _pan = pan.X;

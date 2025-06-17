@@ -217,6 +217,7 @@ namespace SparkyStudios::Audio::Amplitude
         std::map<AmUInt32, bool> _stream;
         std::map<AmUInt32, bool> _loop;
 
+        AmReal32 _defaultGain;
         AmReal32 _pan;
         std::map<AmUInt32, AmReal32> _gain;
         AmReal32 _pitch;
