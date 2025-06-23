@@ -13,20 +13,23 @@
 // limitations under the License.
 
 #include <SparkyStudios/Audio/Amplitude/Math/SphericalPosition.h>
+#include <SparkyStudios/Audio/Amplitude/Math/Utils.h>
+
+#include <Math/LinearAlgebra.h>
 
 namespace SparkyStudios::Audio::Amplitude
 {
-    SphericalPosition SphericalPosition::FromWorldSpace(const AmVec3& position)
+    SphericalPosition SphericalPosition::FromWorldSpace(const AmVector3& position)
     {
-        const AmReal32 radius = AM_Len(position);
+        const AmReal32 radius = Length(position);
 
-        return { -std::atan2(position.Y, position.X), std::atan2(position.Z, AM_Len(position.XY)), radius };
+        return { -std::atan2(position.y, position.x), std::atan2(position.z, Length(position.xy)), radius };
     }
 
-    SphericalPosition SphericalPosition::ForHRTF(const AmVec3& position)
+    SphericalPosition SphericalPosition::ForHRTF(const AmVector3& position)
     {
         SphericalPosition hrtfPosition = FromWorldSpace(position);
-        // Apply a 90-degree flip in azimuth to convert position to Ears-centered coordinate system used for HRTF
+        // Apply a 90-degree flip in azimuth to convert position to an Ears-centered coordinate system used for HRTF
         hrtfPosition._azimuth += 90.0f * AM_DegToRad;
         return hrtfPosition;
     }
@@ -49,20 +52,20 @@ namespace SparkyStudios::Audio::Amplitude
         return flippedAzimuth;
     }
 
-    SphericalPosition SphericalPosition::Rotate(AmQuat rotation) const
+    SphericalPosition SphericalPosition::Rotate(AmQuaternion rotation) const
     {
-        AmVec3 rotatedPosition = AM_RotateV3Q(ToCartesian(), rotation);
+        const AmVector3 rotatedPosition = RotateVector(ToCartesian(), rotation);
         return FromWorldSpace(rotatedPosition);
     }
 
-    AmVec3 SphericalPosition::ToCartesian() const
+    AmVector3 SphericalPosition::ToCartesian() const
     {
         // Translates spherical to cartesian, where positive Z - up, positive Y - forward, positive X - right
         const AmReal32 x = +_radius * std::cos(_elevation) * std::cos(_azimuth);
         const AmReal32 y = -_radius * std::cos(_elevation) * std::sin(_azimuth);
         const AmReal32 z = +_radius * std::sin(_elevation);
 
-        return AM_V3(x, y, z);
+        return { x, y, z };
     }
 
     bool SphericalPosition::operator==(const SphericalPosition& other) const

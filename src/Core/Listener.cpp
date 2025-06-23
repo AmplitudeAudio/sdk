@@ -43,7 +43,7 @@ namespace SparkyStudios::Audio::Amplitude
         return _state->GetId();
     }
 
-    const AmVec3& Listener::GetVelocity() const
+    const AmVector3& Listener::GetVelocity() const
     {
         AMPLITUDE_ASSERT(Valid());
         return _state->GetVelocity();
@@ -79,31 +79,31 @@ namespace SparkyStudios::Audio::Amplitude
         return _state->GetDirectivitySharpness();
     }
 
-    const AmMat4& Listener::GetInverseMatrix() const
+    const AmMatrix4& Listener::GetInverseMatrix() const
     {
         AMPLITUDE_ASSERT(Valid());
         return _state->GetInverseMatrix();
     }
 
-    const AmVec3& Listener::GetLocation() const
+    const AmVector3& Listener::GetLocation() const
     {
         AMPLITUDE_ASSERT(Valid());
         return _state->GetLocation();
     }
 
-    void Listener::SetLocation(const AmVec3& location) const
+    void Listener::SetLocation(const AmVector3& location) const
     {
         AMPLITUDE_ASSERT(Valid());
         _state->SetLocation(location);
     }
 
-    AmVec3 Listener::GetDirection() const
+    AmVector3 Listener::GetDirection() const
     {
         AMPLITUDE_ASSERT(Valid());
         return _state->GetDirection();
     }
 
-    AmVec3 Listener::GetUp() const
+    AmVector3 Listener::GetUp() const
     {
         AMPLITUDE_ASSERT(Valid());
         return _state->GetUp();

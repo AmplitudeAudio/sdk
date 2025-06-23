@@ -18,6 +18,7 @@
 #define _AM_MATH_CARTESIAN_COORDINATE_SYSTEM_H
 
 #include <SparkyStudios/Audio/Amplitude/Core/Common.h>
+#include <SparkyStudios/Audio/Amplitude/Math/LinearAlgebra.h>
 
 namespace SparkyStudios::Audio::Amplitude
 {
@@ -89,7 +90,7 @@ namespace SparkyStudios::Audio::Amplitude
              *
              * @return A vector in the target coordinate system.
              */
-            [[nodiscard]] AmVec3 Forward(const AmVec3& vector) const;
+            [[nodiscard]] AmVector3 Forward(const AmVector3& vector) const;
 
             /**
              * @brief Converts a quaternion from the source coordinate system to the target coordinate system.
@@ -98,7 +99,7 @@ namespace SparkyStudios::Audio::Amplitude
              *
              * @return A quaternion in the target coordinate system.
              */
-            [[nodiscard]] AmQuat Forward(const AmQuat& quaternion) const;
+            [[nodiscard]] AmQuaternion Forward(const AmQuaternion& quaternion) const;
 
             /**
              * @brief Converts a scalar from the source coordinate system to the target coordinate system.
@@ -116,7 +117,7 @@ namespace SparkyStudios::Audio::Amplitude
              *
              * @return A vector in the source coordinate system.
              */
-            [[nodiscard]] AmVec3 Backward(const AmVec3& vector) const;
+            [[nodiscard]] AmVector3 Backward(const AmVector3& vector) const;
 
             /**
              * @brief Converts a quaternion from the target coordinate system to the source coordinate system.
@@ -125,7 +126,7 @@ namespace SparkyStudios::Audio::Amplitude
              *
              * @return A quaternion in the source coordinate system.
              */
-            [[nodiscard]] AmQuat Backward(const AmQuat& quaternion) const;
+            [[nodiscard]] AmQuaternion Backward(const AmQuaternion& quaternion) const;
 
             /**
              * @brief Converts a scalar from the target coordinate system to the source coordinate system.
@@ -137,8 +138,8 @@ namespace SparkyStudios::Audio::Amplitude
             [[nodiscard]] AmReal32 Backward(const AmReal32& scalar) const;
 
         private:
-            AmMat3 _fromToMatrix;
-            AmMat3 _toFromMatrix;
+            AmMatrix3 _fromToMatrix;
+            AmMatrix3 _toFromMatrix;
 
             AmReal32 _fromToScalar;
             AmReal32 _toFromScalar;
@@ -197,7 +198,7 @@ namespace SparkyStudios::Audio::Amplitude
          *
          * @return The converted vector.
          */
-        static AmVec3 Convert(const AmVec3& vector, const CartesianCoordinateSystem& from, const CartesianCoordinateSystem& to);
+        static AmVector3 Convert(const AmVector3& vector, const CartesianCoordinateSystem& from, const CartesianCoordinateSystem& to);
 
         /**
          * @brief Converts a quaternion rotation from one coordinate system to another.
@@ -208,7 +209,8 @@ namespace SparkyStudios::Audio::Amplitude
          *
          * @return The converted rotation.
          */
-        static AmQuat Convert(const AmQuat& rotation, const CartesianCoordinateSystem& from, const CartesianCoordinateSystem& to);
+        static AmQuaternion Convert(
+            const AmQuaternion& rotation, const CartesianCoordinateSystem& from, const CartesianCoordinateSystem& to);
 
         /**
          * @brief Converts a scalar from one coordinate system to another.
@@ -229,7 +231,7 @@ namespace SparkyStudios::Audio::Amplitude
          *
          * @return The converted vector.
          */
-        static AmVec3 ConvertToDefault(const AmVec3& vector, const CartesianCoordinateSystem& from);
+        static AmVector3 ConvertToDefault(const AmVector3& vector, const CartesianCoordinateSystem& from);
 
         /**
          * @brief Gets a vector corresponding to the given axis.
@@ -238,7 +240,7 @@ namespace SparkyStudios::Audio::Amplitude
          *
          * @return A vector corresponding to the given axis.
          */
-        [[nodiscard]] static AmVec3 GetVector(Axis axis);
+        [[nodiscard]] static AmVector3 GetVector(Axis axis);
 
         /**
          * @brief Creates a new cartesian coordinate system with the given axes.
@@ -254,7 +256,7 @@ namespace SparkyStudios::Audio::Amplitude
          *
          * @return The coordinate system's right vector.
          */
-        [[nodiscard]] AM_INLINE AmVec3 GetRightVector() const
+        [[nodiscard]] AM_INLINE AmVector3 GetRightVector() const
         {
             return GetVector(_rightAxis);
         }
@@ -264,7 +266,7 @@ namespace SparkyStudios::Audio::Amplitude
          *
          * @return The coordinate system's forward vector.
          */
-        [[nodiscard]] AM_INLINE AmVec3 GetForwardVector() const
+        [[nodiscard]] AM_INLINE AmVector3 GetForwardVector() const
         {
             return GetVector(_forwardAxis);
         }
@@ -274,7 +276,7 @@ namespace SparkyStudios::Audio::Amplitude
          *
          * @return The coordinate system's up vector.
          */
-        [[nodiscard]] AM_INLINE AmVec3 GetUpVector() const
+        [[nodiscard]] AM_INLINE AmVector3 GetUpVector() const
         {
             return GetVector(_upAxis);
         }
@@ -287,7 +289,7 @@ namespace SparkyStudios::Audio::Amplitude
          *
          * @return The converted vector in the current coordinate system.
          */
-        [[nodiscard]] AmVec3 Convert(const AmVec3& vector, const CartesianCoordinateSystem& from) const;
+        [[nodiscard]] AmVector3 Convert(const AmVector3& vector, const CartesianCoordinateSystem& from) const;
 
         /**
          * @brief Converts a quaternion from one coordinate system to the current one.
@@ -297,7 +299,7 @@ namespace SparkyStudios::Audio::Amplitude
          *
          * @return The converted quaternion in the current coordinate system.
          */
-        [[nodiscard]] AmQuat Convert(const AmQuat& quaternion, const CartesianCoordinateSystem& from) const;
+        [[nodiscard]] AmQuaternion Convert(const AmQuaternion& quaternion, const CartesianCoordinateSystem& from) const;
 
         /**
          * @brief Converts a scalar from one coordinate system to the current one.

@@ -100,9 +100,21 @@ find_package(xsimd CONFIG REQUIRED)
 
 # ------------------------------------------------------------------------------
 
+# Setup Eigen
+# ------------------------------------------------------------------------------
+find_package(Eigen3 CONFIG REQUIRED)
+
+# ------------------------------------------------------------------------------
+
 # Setup miniaudio
 # ------------------------------------------------------------------------------
 find_path(MINIAUDIO_INCLUDE_DIRS "miniaudio.h")
+
+# ------------------------------------------------------------------------------
+
+# Setup dylib
+# ------------------------------------------------------------------------------
+find_path(DYLIB_INCLUDE_DIRS "dylib.hpp")
 
 # Check what instruction sets the current host supports.
 include(DetectCPUArchitecture)
@@ -189,7 +201,7 @@ set(SA_SOURCE
     include/SparkyStudios/Audio/Amplitude/Math/CartesianCoordinateSystem.h
     include/SparkyStudios/Audio/Amplitude/Math/Curve.h
     include/SparkyStudios/Audio/Amplitude/Math/Geometry.h
-    include/SparkyStudios/Audio/Amplitude/Math/HandmadeMath.h
+    include/SparkyStudios/Audio/Amplitude/Math/LinearAlgebra.h
     include/SparkyStudios/Audio/Amplitude/Math/Orientation.h
     include/SparkyStudios/Audio/Amplitude/Math/Shape.h
     include/SparkyStudios/Audio/Amplitude/Math/SphericalPosition.h
@@ -341,6 +353,7 @@ set(SA_SOURCE
     src/Math/FaceBSPTree.cpp
     src/Math/FaceBSPTree.h
     src/Math/Geometry.cpp
+    src/Math/LinearAlgebra.h
     src/Math/Shape.cpp
     src/Math/SphericalPosition.cpp
 
@@ -488,6 +501,7 @@ include_directories(src
     include
     ${AM_FLATBUFFERS_GENERATED_INCLUDES_DIR}
     ${MINIAUDIO_INCLUDE_DIRS}
+    ${DYLIB_INCLUDE_DIRS}
 )
 
 add_library(Static STATIC ${SA_SOURCE})
@@ -516,7 +530,7 @@ foreach (build_type ${AM_BUILDSYSTEM_TYPE})
     target_compile_definitions(${build_type} PUBLIC "$<$<CONFIG:RELEASE>:AM_NO_ASSERTS>")
 
     target_link_libraries(${build_type}
-        PRIVATE xsimd
+        PRIVATE xsimd Eigen3::Eigen
     )
 
     add_dependencies(${build_type}

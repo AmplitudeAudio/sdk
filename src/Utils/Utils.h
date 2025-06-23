@@ -21,6 +21,8 @@
 #include <SparkyStudios/Audio/Amplitude/DSP/SplitComplex.h>
 #include <SparkyStudios/Audio/Amplitude/Math/Utils.h>
 
+#include <Math/LinearAlgebra.h>
+
 #if defined(AM_SIMD_INTRINSICS)
 #include <xsimd/xsimd.hpp>
 #endif // defined(AM_SIMD_INTRINSICS)
@@ -286,6 +288,61 @@ namespace SparkyStudios::Audio::Amplitude
     }
 
     AmReal32 ComputeMonopoleFilterCoefficient(AmReal32 cutoffFrequency, AmUInt32 sampleRate);
+
+    /**
+     * @brief Computes the Doppler factor for a sound source at a given location.
+     *
+     * @param[in] locationDelta The distance vector from the listener to the sound source.
+     * @param[in] sourceVelocity The velocity of the sound source.
+     * @param[in] listenerVelocity The velocity of the listener.
+     * @param[in] soundSpeed The speed of sound.
+     * @param[in] dopplerFactor The Doppler factor.
+     *
+     * @return The computed Doppler factor.
+     *
+     * @ingroup math
+     */
+    AM_API_PRIVATE AM_INLINE AmReal32 ComputeDopplerFactor(
+        const AmVector3& locationDelta,
+        const AmVector3& sourceVelocity,
+        const AmVector3& listenerVelocity,
+        const AmReal32 soundSpeed,
+        const AmReal32 dopplerFactor)
+    {
+        const AmReal32 deltaLength = Length(locationDelta);
+
+        if (deltaLength == 0.0f)
+            return 1.0f;
+
+        if (dopplerFactor < kEpsilon)
+            return 0.0f;
+
+        AmReal32 vss = Dot(sourceVelocity, locationDelta) / deltaLength;
+        AmReal32 vls = Dot(listenerVelocity, locationDelta) / deltaLength;
+
+        const AmReal32 maxSpeed = soundSpeed / dopplerFactor;
+        vss = AM_MIN(vss, maxSpeed);
+        vls = AM_MIN(vls, maxSpeed);
+
+        return (soundSpeed + vls * dopplerFactor) / (soundSpeed + vss * dopplerFactor);
+    }
+
+    /**
+     * @brief Returns a direction vector relative to a given position and rotation.
+     *
+     * @param[in] originPosition Origin position of the direction.
+     * @param[in] originRotation Origin rotation of the direction.
+     * @param[in] position Target position of the direction.
+     *
+     * @return A relative direction vector (not normalized).
+     *
+     * @ingroup math
+     */
+    AM_API_PRIVATE AM_INLINE AmVector3
+    GetRelativeDirection(const AmVector3& originPosition, const AmQuaternion& originRotation, const AmVector3& position)
+    {
+        return RotateVector(Sub(position, originPosition), Inverse(originRotation));
+    }
 } // namespace SparkyStudios::Audio::Amplitude
 
 #endif // _AM_IMPLEMENTATION_UTILS_UTILS_H

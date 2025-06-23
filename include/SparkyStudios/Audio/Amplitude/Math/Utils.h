@@ -18,16 +18,28 @@
 #define _AM_MATH_UTILS_H
 
 #include <SparkyStudios/Audio/Amplitude/Core/AudioBuffer.h>
-#include <SparkyStudios/Audio/Amplitude/Core/Common.h>
+#include <SparkyStudios/Audio/Amplitude/Math/LinearAlgebra.h>
 
-/** @internal */
+/**
+ * @{
+ * @internal
+ */
 #define AM_LCG_M 2147483647
-
-/** @internal */
 #define AM_LCG_A 48271
-
-/** @internal */
 #define AM_LCG_C 0
+#define AM_PI 3.14159265358979323846
+#define AM_PI32 3.14159265359f
+#define AM_DEG180 180.0
+#define AM_DEG18032 180.0f
+#define AM_TURNHALF 0.5
+#define AM_TURNHALF32 0.5f
+#define AM_RadToDeg ((float)(AM_DEG180 / AM_PI))
+#define AM_RadToTurn ((float)(AM_TURNHALF / AM_PI))
+#define AM_DegToRad ((float)(AM_PI / AM_DEG180))
+#define AM_DegToTurn ((float)(AM_TURNHALF / AM_DEG180))
+#define AM_TurnToRad ((float)(AM_PI / AM_TURNHALF))
+#define AM_TurnToDeg ((float)(AM_DEG180 / AM_TURNHALF))
+/** @} */
 
 namespace SparkyStudios::Audio::Amplitude
 {
@@ -221,44 +233,6 @@ namespace SparkyStudios::Audio::Amplitude
     }
 
     /**
-     * @brief Computes the Doppler factor for a sound source at a given location.
-     *
-     * @param[in] locationDelta The distance vector from the listener to the sound source.
-     * @param[in] sourceVelocity The velocity of the sound source.
-     * @param[in] listenerVelocity The velocity of the listener.
-     * @param[in] soundSpeed The speed of sound.
-     * @param[in] dopplerFactor The Doppler factor.
-     *
-     * @return The computed Doppler factor.
-     *
-     * @ingroup math
-     */
-    AM_API_PRIVATE AM_INLINE AmReal32 ComputeDopplerFactor(
-        const AmVec3& locationDelta,
-        const AmVec3& sourceVelocity,
-        const AmVec3& listenerVelocity,
-        const AmReal32 soundSpeed,
-        const AmReal32 dopplerFactor)
-    {
-        const AmReal32 deltaLength = AM_Len(locationDelta);
-
-        if (deltaLength == 0.0f)
-            return 1.0f;
-
-        if (dopplerFactor < kEpsilon)
-            return 0.0f;
-
-        AmReal32 vss = AM_Dot(sourceVelocity, locationDelta) / deltaLength;
-        AmReal32 vls = AM_Dot(listenerVelocity, locationDelta) / deltaLength;
-
-        const AmReal32 maxSpeed = soundSpeed / dopplerFactor;
-        vss = AM_MIN(vss, maxSpeed);
-        vls = AM_MIN(vls, maxSpeed);
-
-        return (soundSpeed + vls * dopplerFactor) / (soundSpeed + vss * dopplerFactor);
-    }
-
-    /**
      * @brief Returns the next power of 2 of a given number.
      *
      * @tparam T An integer type, a floating-point type, or any other type where operator *= is defined.
@@ -313,21 +287,6 @@ namespace SparkyStudios::Audio::Amplitude
         return result;
     }
 
-    /**
-     * @brief Returns a direction vector relative to a given position and rotation.
-     *
-     * @param[in] originPosition Origin position of the direction.
-     * @param[in] originRotation Origin rotation of the direction.
-     * @param[in] position Target position of the direction.
-     *
-     * @return A relative direction vector (not normalized).
-     *
-     * @ingroup math
-     */
-    AM_API_PRIVATE AM_INLINE AmVec3 GetRelativeDirection(const AmVec3& originPosition, const AmQuat& originRotation, const AmVec3& position)
-    {
-        return AM_RotateV3Q(position - originPosition, AM_InvQ(originRotation));
-    }
 
     /**
      * @brief Finds the greatest common divisor (GCD) of two integers.

@@ -17,7 +17,7 @@
 #ifndef _AM_MATH_ORIENTATION_H
 #define _AM_MATH_ORIENTATION_H
 
-#include <SparkyStudios/Audio/Amplitude/Core/Common.h>
+#include <SparkyStudios/Audio/Amplitude/Math/LinearAlgebra.h>
 
 namespace SparkyStudios::Audio::Amplitude
 {
@@ -56,14 +56,14 @@ namespace SparkyStudios::Audio::Amplitude
          * @param[in] forward The forward vector of the orientation.
          * @param[in] up The up vector of the orientation.
          */
-        Orientation(AmVec3 forward, AmVec3 up);
+        Orientation(AmVector3 forward, AmVector3 up);
 
         /**
          * @brief Constructs an orientation instance from a quaternion.
          *
          * @param[in] quaternion The quaternion representing the orientation.
          */
-        Orientation(AmQuat quaternion);
+        Orientation(AmQuaternion quaternion);
 
         /**
          * @brief The angle of rotation around the Z-axis in radians following the ZYX convention.
@@ -92,7 +92,7 @@ namespace SparkyStudios::Audio::Amplitude
         /**
          * @brief The forward vector of the orientation.
          */
-        [[nodiscard]] AM_INLINE AmVec3 GetForward() const
+        [[nodiscard]] AM_INLINE const AmVector3& GetForward() const
         {
             return _forward;
         }
@@ -100,7 +100,7 @@ namespace SparkyStudios::Audio::Amplitude
         /**
          * @brief The up vector of the orientation.
          */
-        [[nodiscard]] AM_INLINE AmVec3 GetUp() const
+        [[nodiscard]] AM_INLINE const AmVector3& GetUp() const
         {
             return _up;
         }
@@ -132,7 +132,7 @@ namespace SparkyStudios::Audio::Amplitude
         /**
          * @brief The quaternion representation of the orientation.
          */
-        [[nodiscard]] AM_INLINE AmQuat GetQuaternion() const
+        [[nodiscard]] AM_INLINE const AmQuaternion& GetQuaternion() const
         {
             return _quaternion;
         }
@@ -142,7 +142,7 @@ namespace SparkyStudios::Audio::Amplitude
          *
          * @return A rotation matrix representing the current orientation.
          */
-        [[nodiscard]] AmMat4 GetRotationMatrix() const;
+        [[nodiscard]] AmMatrix3 GetRotationMatrix() const;
 
         /**
          * @brief Converts the orientation to a look-at matrix.
@@ -151,7 +151,7 @@ namespace SparkyStudios::Audio::Amplitude
          *
          * @return A look-at matrix representing the current orientation, with the eye at the given location.
          */
-        [[nodiscard]] AmMat4 GetLookAtMatrix(AmVec3 eye) const;
+        [[nodiscard]] AmMatrix4 GetLookAtMatrix(AmVector3 eye) const;
 
     private:
         void ComputeForwardAndUpVectors();
@@ -159,15 +159,15 @@ namespace SparkyStudios::Audio::Amplitude
         void ComputeZYZAngles();
         void ComputeQuaternion();
 
-        AmVec3 _forward;
+        AmVector3 _forward;
         AmReal32 _yaw;
-        AmVec3 _up;
+        AmVector3 _up;
         AmReal32 _pitch;
         AmReal32 _roll;
         AmReal32 _alpha;
         AmReal32 _beta;
         AmReal32 _gamma;
-        AmQuat _quaternion;
+        AmQuaternion _quaternion;
     };
 } // namespace SparkyStudios::Audio::Amplitude
 

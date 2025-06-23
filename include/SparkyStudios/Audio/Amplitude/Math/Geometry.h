@@ -18,9 +18,53 @@
 #define _AM_MATH_GEOMETRY_H
 
 #include <SparkyStudios/Audio/Amplitude/Core/Common.h>
+#include <SparkyStudios/Audio/Amplitude/Math/LinearAlgebra.h>
 
 namespace SparkyStudios::Audio::Amplitude
 {
+    /**
+     * @brief Represent a triangle geometry.
+     *
+     * A triangle is a collection of three vertices oriented in a Clock-Wise (CW) manner.
+     *
+     * @ingroup math
+     */
+    typedef union {
+        AmVector3 m_Vertices[3];
+
+        struct
+        {
+            /**
+             * @brief Represents the first vertex of a triangle.
+             */
+            AmVector3 m_A;
+
+            /**
+             * @brief Represents the second vertex of a triangle.
+             */
+            AmVector3 m_B;
+
+            /**
+             * @brief Represents the third vertex of a triangle.
+             */
+            AmVector3 m_C;
+        };
+
+#ifdef __cplusplus
+        AM_INLINE AmVector3& operator[](const AmUInt32 index)
+        {
+            AMPLITUDE_ASSERT(AM_BETWEEN(index, 0, 2));
+            return m_Vertices[index];
+        }
+
+        [[nodiscard]] AM_INLINE const AmVector3& operator[](const AmUInt32 index) const
+        {
+            AMPLITUDE_ASSERT(AM_BETWEEN(index, 0, 2));
+            return m_Vertices[index];
+        }
+#endif
+    } Triangle;
+
     /**
      * @brief Represents a triangulated face.
      *

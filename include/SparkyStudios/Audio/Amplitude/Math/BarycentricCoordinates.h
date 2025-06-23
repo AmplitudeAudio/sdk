@@ -17,7 +17,7 @@
 #ifndef _AM_MATH_BARYCENTRIC_COORDINATES_H
 #define _AM_MATH_BARYCENTRIC_COORDINATES_H
 
-#include <SparkyStudios/Audio/Amplitude/Core/Common.h>
+#include <SparkyStudios/Audio/Amplitude/Math/Geometry.h>
 
 namespace SparkyStudios::Audio::Amplitude
 {
@@ -39,7 +39,7 @@ namespace SparkyStudios::Audio::Amplitude
          * @return @c true if the ray intersects the triangle, @c false otherwise.
          */
         static bool RayTriangleIntersection(
-            const AmVec3& rayOrigin, const AmVec3& rayDirection, const std::array<AmVec3, 3>& triangle, BarycentricCoordinates& result);
+            const AmVector3& rayOrigin, const AmVector3& rayDirection, const Triangle& triangle, BarycentricCoordinates& result);
 
         /**
          * @brief Default constructor.
@@ -52,7 +52,7 @@ namespace SparkyStudios::Audio::Amplitude
          * @param[in] position The position of the intersection.
          * @param[in] triangle The triangle.
          */
-        BarycentricCoordinates(const AmVec3& position, const std::array<AmVec3, 3>& triangle);
+        BarycentricCoordinates(const AmVector3& position, const Triangle& triangle);
 
         /**
          * @brief Checks whether the coordinates are valid.

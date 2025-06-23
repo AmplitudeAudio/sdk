@@ -16,6 +16,7 @@
 #include <SparkyStudios/Audio/Amplitude/Math/Shape.h>
 
 #include <Core/EngineInternalState.h>
+#include <Math/LinearAlgebra.h>
 
 #include "common_generated.h"
 
@@ -60,7 +61,7 @@ namespace SparkyStudios::Audio::Amplitude
     Shape::Shape()
         : m_location()
         , m_orientation(Orientation::Zero())
-        , m_lookAtMatrix(AM_M4D(1.0f))
+        , m_lookAtMatrix(Identity4())
         , m_needUpdate(true)
     {}
 
@@ -76,17 +77,17 @@ namespace SparkyStudios::Audio::Amplitude
 
     bool Shape::Contains(const Entity& entity)
     {
-        const AmVec3& x = entity.GetLocation();
+        const AmVector3& x = entity.GetLocation();
         return Contains(x);
     }
 
     bool Shape::Contains(const Listener& listener)
     {
-        const AmVec3& x = listener.GetLocation();
+        const AmVector3& x = listener.GetLocation();
         return Contains(x);
     }
 
-    void Shape::SetLocation(const AmVec3& location)
+    void Shape::SetLocation(const AmVector3& location)
     {
         m_location = location;
 
@@ -109,22 +110,22 @@ namespace SparkyStudios::Audio::Amplitude
         return m_orientation;
     }
 
-    const AmMat4& Shape::GetLookAt() const
+    const AmMatrix4& Shape::GetLookAt() const
     {
         return m_lookAtMatrix;
     }
 
-    const AmVec3& Shape::GetLocation() const
+    const AmVector3& Shape::GetLocation() const
     {
         return m_location;
     }
 
-    AmVec3 Shape::GetDirection() const
+    AmVector3 Shape::GetDirection() const
     {
         return m_orientation.GetForward();
     }
 
-    AmVec3 Shape::GetUp() const
+    AmVector3 Shape::GetUp() const
     {
         return m_orientation.GetUp();
     }
@@ -140,23 +141,23 @@ namespace SparkyStudios::Audio::Amplitude
         m_outerShape.reset();
     }
 
-    void Zone::SetLocation(const AmVec3& location)
+    void Zone::SetLocation(const AmVector3& location)
     {
         m_innerShape->SetLocation(location);
         m_outerShape->SetLocation(location);
     }
 
-    const AmVec3& Zone::GetLocation() const
+    const AmVector3& Zone::GetLocation() const
     {
         return m_innerShape->GetLocation();
     }
 
-    AmVec3 Zone::GetDirection() const
+    AmVector3 Zone::GetDirection() const
     {
         return m_innerShape->GetDirection();
     }
 
-    AmVec3 Zone::GetUp() const
+    AmVector3 Zone::GetUp() const
     {
         return m_innerShape->GetUp();
     }
@@ -196,10 +197,10 @@ namespace SparkyStudios::Audio::Amplitude
         , _wP4(0.0)
     {}
 
-    BoxShape::BoxShape(const AmVec3& position, const AmVec3& dimensions)
-        : _halfWidth(dimensions.X * 0.5f)
-        , _halfHeight(dimensions.Z * 0.5f)
-        , _halfDepth(dimensions.Y * 0.5f)
+    BoxShape::BoxShape(const AmVector3& position, const AmVector3& dimensions)
+        : _halfWidth(dimensions.x * 0.5f)
+        , _halfHeight(dimensions.z * 0.5f)
+        , _halfDepth(dimensions.y * 0.5f)
         , _u()
         , _v()
         , _w()
@@ -265,55 +266,55 @@ namespace SparkyStudios::Audio::Amplitude
         m_needUpdate = true;
     }
 
-    AmReal32 BoxShape::GetShortestDistanceToEdge(const AmVec3& location)
+    AmReal32 BoxShape::GetShortestDistanceToEdge(const AmVector3& location)
     {
         if (m_needUpdate)
             Update();
 
-        const AmReal32 dP1 = AM_Dot(location - _p1, AM_Norm(_p2 - _p1));
-        const AmReal32 dP2 = AM_Dot(location - _p2, AM_Norm(_p1 - _p2));
-        const AmReal32 dP3 = AM_Dot(location - _p3, AM_Norm(_p1 - _p3));
-        const AmReal32 dP4 = AM_Dot(location - _p4, AM_Norm(_p1 - _p4));
-        const AmReal32 dP5 = AM_Dot(location - _p1, AM_Norm(_p3 - _p1));
-        const AmReal32 dP6 = AM_Dot(location - _p1, AM_Norm(_p4 - _p1));
+        const AmReal32 dP1 = Dot(Sub(location, _p1), Normalize(Sub(_p2, _p1)));
+        const AmReal32 dP2 = Dot(Sub(location, _p2), Normalize(Sub(_p1, _p2)));
+        const AmReal32 dP3 = Dot(Sub(location, _p3), Normalize(Sub(_p1, _p3)));
+        const AmReal32 dP4 = Dot(Sub(location, _p4), Normalize(Sub(_p1, _p4)));
+        const AmReal32 dP5 = Dot(Sub(location, _p1), Normalize(Sub(_p3, _p1)));
+        const AmReal32 dP6 = Dot(Sub(location, _p1), Normalize(Sub(_p4, _p1)));
 
         return std::min({ dP1, dP2, dP3, dP4, dP5, dP6 });
     }
 
-    bool BoxShape::Contains(const AmVec3& location)
+    bool BoxShape::Contains(const AmVector3& location)
     {
         if (m_needUpdate)
             Update();
 
-        const AmReal32 ux = AM_Dot(_u, location);
-        const AmReal32 vx = AM_Dot(_v, location);
-        const AmReal32 wx = AM_Dot(_w, location);
+        const AmReal32 ux = Dot(_u, location);
+        const AmReal32 vx = Dot(_v, location);
+        const AmReal32 wx = Dot(_w, location);
 
         return (AM_BETWEEN(ux, _uP1, _uP2) && AM_BETWEEN(vx, _vP1, _vP3) && AM_BETWEEN(wx, _wP1, _wP4));
     }
 
-    AmVec3 BoxShape::GetClosestPoint(const AmVec3& location) const
+    AmVector3 BoxShape::GetClosestPoint(const AmVector3& location) const
     {
-        AmVec3 closestPoint;
-        const AmVec3& relativeLocation = GetRelativeDirection(GetLocation(), GetOrientation().GetQuaternion(), location);
-        closestPoint.X = std::clamp(relativeLocation.X, -_halfWidth, _halfWidth);
-        closestPoint.Y = std::clamp(relativeLocation.Y, -_halfDepth, _halfDepth);
-        closestPoint.Z = std::clamp(relativeLocation.Z, -_halfHeight, _halfHeight);
+        AmVector3 closestPoint;
+        const AmVector3& relativeLocation = GetRelativeDirection(GetLocation(), GetOrientation().GetQuaternion(), location);
+        closestPoint.x = std::clamp(relativeLocation.x, -_halfWidth, _halfWidth);
+        closestPoint.y = std::clamp(relativeLocation.y, -_halfDepth, _halfDepth);
+        closestPoint.z = std::clamp(relativeLocation.z, -_halfHeight, _halfHeight);
 
         return closestPoint;
     }
 
-    std::array<AmVec3, 8> BoxShape::GetCorners() const
+    std::array<AmVector3, 8> BoxShape::GetCorners() const
     {
-        std::array<AmVec3, 8> corners;
-        corners[0] = AM_Mul(m_lookAtMatrix, AM_V4(-_halfWidth, -_halfDepth, -_halfHeight, 1.0f)).XYZ;
-        corners[1] = AM_Mul(m_lookAtMatrix, AM_V4(-_halfWidth, _halfDepth, -_halfHeight, 1.0f)).XYZ;
-        corners[2] = AM_Mul(m_lookAtMatrix, AM_V4(_halfWidth, -_halfDepth, -_halfHeight, 1.0f)).XYZ;
-        corners[3] = AM_Mul(m_lookAtMatrix, AM_V4(-_halfWidth, -_halfDepth, _halfHeight, 1.0f)).XYZ;
-        corners[4] = AM_Mul(m_lookAtMatrix, AM_V4(_halfWidth, _halfDepth, _halfHeight, 1.0f)).XYZ;
-        corners[5] = AM_Mul(m_lookAtMatrix, AM_V4(_halfWidth, -_halfDepth, _halfHeight, 1.0f)).XYZ;
-        corners[6] = AM_Mul(m_lookAtMatrix, AM_V4(-_halfWidth, _halfDepth, _halfHeight, 1.0f)).XYZ;
-        corners[7] = AM_Mul(m_lookAtMatrix, AM_V4(_halfWidth, _halfDepth, -_halfHeight, 1.0f)).XYZ;
+        std::array<AmVector3, 8> corners;
+        corners[0] = Transform(m_lookAtMatrix, { -_halfWidth, -_halfDepth, -_halfHeight, 1.0f }).xyz;
+        corners[1] = Transform(m_lookAtMatrix, { -_halfWidth, _halfDepth, -_halfHeight, 1.0f }).xyz;
+        corners[2] = Transform(m_lookAtMatrix, { _halfWidth, -_halfDepth, -_halfHeight, 1.0f }).xyz;
+        corners[3] = Transform(m_lookAtMatrix, { -_halfWidth, -_halfDepth, _halfHeight, 1.0f }).xyz;
+        corners[4] = Transform(m_lookAtMatrix, { _halfWidth, _halfDepth, _halfHeight, 1.0f }).xyz;
+        corners[5] = Transform(m_lookAtMatrix, { _halfWidth, -_halfDepth, _halfHeight, 1.0f }).xyz;
+        corners[6] = Transform(m_lookAtMatrix, { -_halfWidth, _halfDepth, _halfHeight, 1.0f }).xyz;
+        corners[7] = Transform(m_lookAtMatrix, { _halfWidth, _halfDepth, -_halfHeight, 1.0f }).xyz;
 
         return corners;
     }
@@ -330,22 +331,22 @@ namespace SparkyStudios::Audio::Amplitude
 
     void BoxShape::Update()
     {
-        _p1 = AM_Mul(m_lookAtMatrix, AM_V4(-_halfWidth, -_halfDepth, -_halfHeight, 1.0f)).XYZ;
-        _p2 = AM_Mul(m_lookAtMatrix, AM_V4(-_halfWidth, _halfDepth, -_halfHeight, 1.0f)).XYZ;
-        _p3 = AM_Mul(m_lookAtMatrix, AM_V4(_halfWidth, -_halfDepth, -_halfHeight, 1.0f)).XYZ;
-        _p4 = AM_Mul(m_lookAtMatrix, AM_V4(-_halfWidth, -_halfDepth, _halfHeight, 1.0f)).XYZ;
+        _p1 = Transform(m_lookAtMatrix, { -_halfWidth, -_halfDepth, -_halfHeight, 1.0f }).xyz;
+        _p2 = Transform(m_lookAtMatrix, { -_halfWidth, _halfDepth, -_halfHeight, 1.0f }).xyz;
+        _p3 = Transform(m_lookAtMatrix, { _halfWidth, -_halfDepth, -_halfHeight, 1.0f }).xyz;
+        _p4 = Transform(m_lookAtMatrix, { -_halfWidth, -_halfDepth, _halfHeight, 1.0f }).xyz;
 
-        _u = AM_Norm(_p2 - _p1);
-        _v = AM_Norm(_p3 - _p1);
-        _w = AM_Norm(_p4 - _p1);
+        _u = Normalize(Sub(_p2, _p1));
+        _v = Normalize(Sub(_p3, _p1));
+        _w = Normalize(Sub(_p4, _p1));
 
-        _uP1 = AM_Dot(_u, _p1);
-        _vP1 = AM_Dot(_v, _p1);
-        _wP1 = AM_Dot(_w, _p1);
+        _uP1 = Dot(_u, _p1);
+        _vP1 = Dot(_v, _p1);
+        _wP1 = Dot(_w, _p1);
 
-        _uP2 = AM_Dot(_u, _p2);
-        _vP3 = AM_Dot(_v, _p3);
-        _wP4 = AM_Dot(_w, _p4);
+        _uP2 = Dot(_u, _p2);
+        _vP3 = Dot(_v, _p3);
+        _wP4 = Dot(_w, _p4);
 
         m_needUpdate = false;
     }
@@ -394,19 +395,19 @@ namespace SparkyStudios::Audio::Amplitude
         m_needUpdate = true;
     }
 
-    AmReal32 CapsuleShape::GetShortestDistanceToEdge(const AmVec3& location)
+    AmReal32 CapsuleShape::GetShortestDistanceToEdge(const AmVector3& location)
     {
         if (m_needUpdate)
             Update();
 
-        const AmVec3 e = _b - _a;
-        const AmVec3 m = AM_Cross(_a, _b);
-        const AmVec3 u = location - _a;
-        const AmVec3 v = location - _b;
+        const AmVector3 e = Sub(_b, _a);
+        const AmVector3 m = Cross(_a, _b);
+        const AmVector3 u = Sub(location, _a);
+        const AmVector3 v = Sub(location, _b);
 
-        const AmReal32 distanceToAxis = AM_Len(m + AM_Cross(e, location)) / AM_Len(e);
-        const AmReal32 distanceToA = AM_Len(u);
-        const AmReal32 distanceToB = AM_Len(v);
+        const AmReal32 distanceToAxis = Length(Add(m, Cross(e, location))) / Length(e);
+        const AmReal32 distanceToA = Length(u);
+        const AmReal32 distanceToB = Length(v);
 
         // TODO: Check if location is within the cylinder part of the capsule
 
@@ -419,7 +420,7 @@ namespace SparkyStudios::Audio::Amplitude
         return _radius - distanceToAxis;
     }
 
-    bool CapsuleShape::Contains(const AmVec3& location)
+    bool CapsuleShape::Contains(const AmVector3& location)
     {
         if (m_needUpdate)
             Update();
@@ -427,8 +428,8 @@ namespace SparkyStudios::Audio::Amplitude
         const AmReal32 distanceToOrigin = AM_Len(location - m_location);
         const AmReal32 halfHeight = _halfHeight - _radius;
 
-        const AmVec3 e = _b - _a;
-        const AmVec3 m = AM_Cross(_a, _b);
+        const AmVector3 e = _b - _a;
+        const AmVector3 m = AM_Cross(_a, _b);
 
         const AmReal32 distanceToAxis = AM_Len(m + AM_Cross(e, location)) / AM_Len(e);
 
@@ -501,13 +502,13 @@ namespace SparkyStudios::Audio::Amplitude
         m_needUpdate = true;
     }
 
-    AmReal32 ConeShape::GetShortestDistanceToEdge(const AmVec3& location)
+    AmReal32 ConeShape::GetShortestDistanceToEdge(const AmVector3& location)
     {
         if (m_needUpdate)
             Update();
 
-        const AmVec3& shapeToLocation = location - m_location;
-        const AmReal32 coneDist = AM_Dot(shapeToLocation, m_orientation.GetForward());
+        const AmVector3& shapeToLocation = location - m_location;
+        const AmReal32 coneDist = Dot(shapeToLocation, m_orientation.GetForward());
 
         if (coneDist < 0.0f)
             return coneDist;
@@ -521,13 +522,13 @@ namespace SparkyStudios::Audio::Amplitude
         return coneRadius - d;
     }
 
-    bool ConeShape::Contains(const AmVec3& location)
+    bool ConeShape::Contains(const AmVector3& location)
     {
         if (m_needUpdate)
             Update();
 
-        const AmVec3& shapeToLocation = location - m_location;
-        const AmReal32 coneDist = AM_Dot(shapeToLocation, m_orientation.GetForward());
+        const AmVector3& shapeToLocation = location - m_location;
+        const AmReal32 coneDist = Dot(shapeToLocation, m_orientation.GetForward());
 
         if (coneDist < 0.0f || coneDist > _height)
             return false;
@@ -579,23 +580,23 @@ namespace SparkyStudios::Audio::Amplitude
         m_needUpdate = true;
     }
 
-    AmReal32 SphereShape::GetShortestDistanceToEdge(const AmVec3& location)
+    AmReal32 SphereShape::GetShortestDistanceToEdge(const AmVector3& location)
     {
         if (m_needUpdate)
             Update();
 
-        const AmVec3& shapeToLocation = location - m_location;
+        const AmVector3& shapeToLocation = location - m_location;
         const AmReal32 distance = AM_Len(shapeToLocation);
 
         return _radius - distance;
     }
 
-    bool SphereShape::Contains(const AmVec3& location)
+    bool SphereShape::Contains(const AmVector3& location)
     {
         if (m_needUpdate)
             Update();
 
-        const AmVec3& shapeToLocation = location - m_location;
+        const AmVector3& shapeToLocation = location - m_location;
         const AmReal32 distance = AM_Len(shapeToLocation);
 
         return distance <= _radius;
@@ -620,7 +621,7 @@ namespace SparkyStudios::Audio::Amplitude
         : Zone(inner, outer)
     {}
 
-    AmReal32 BoxZone::GetFactor(const AmVec3& position)
+    AmReal32 BoxZone::GetFactor(const AmVector3& position)
     {
         if (m_innerShape->Contains(position))
             return 1.0f;
@@ -637,15 +638,15 @@ namespace SparkyStudios::Audio::Amplitude
         if (outer->m_needUpdate)
             outer->Update();
 
-        const AmVec3& x = position;
+        const AmVector3& x = position;
 
-        const AmReal32 iUX = AM_Dot(inner->_u, x);
-        const AmReal32 iVX = AM_Dot(inner->_v, x);
-        const AmReal32 iWX = AM_Dot(inner->_w, x);
+        const AmReal32 iUX = Dot(inner->_u, x);
+        const AmReal32 iVX = Dot(inner->_v, x);
+        const AmReal32 iWX = Dot(inner->_w, x);
 
-        const AmReal32 oUX = AM_Dot(outer->_u, x);
-        const AmReal32 oVX = AM_Dot(outer->_v, x);
-        const AmReal32 oWX = AM_Dot(outer->_w, x);
+        const AmReal32 oUX = Dot(outer->_u, x);
+        const AmReal32 oVX = Dot(outer->_v, x);
+        const AmReal32 oWX = Dot(outer->_w, x);
 
         if (AM_BETWEEN(iUX, inner->_uP1, inner->_uP2) && AM_BETWEEN(iVX, inner->_vP1, inner->_vP3) &&
             AM_BETWEEN(iWX, inner->_wP1, inner->_wP4))
@@ -656,17 +657,17 @@ namespace SparkyStudios::Audio::Amplitude
             return 0.0f;
 
         const AmReal32 dP1 =
-            std::abs(AM_Dot(x - outer->_p1, AM_Norm(outer->_p2 - outer->_p1))) / (outer->GetHalfHeight() - inner->GetHalfHeight());
+            std::abs(Dot(x - outer->_p1, AM_Norm(outer->_p2 - outer->_p1))) / (outer->GetHalfHeight() - inner->GetHalfHeight());
         const AmReal32 dP2 =
-            std::abs(AM_Dot(x - outer->_p2, AM_Norm(outer->_p1 - outer->_p2))) / (outer->GetHalfHeight() - inner->GetHalfHeight());
+            std::abs(Dot(x - outer->_p2, AM_Norm(outer->_p1 - outer->_p2))) / (outer->GetHalfHeight() - inner->GetHalfHeight());
         const AmReal32 dP3 =
-            std::abs(AM_Dot(x - outer->_p3, AM_Norm(outer->_p1 - outer->_p3))) / (outer->GetHalfWidth() - inner->GetHalfWidth());
+            std::abs(Dot(x - outer->_p3, AM_Norm(outer->_p1 - outer->_p3))) / (outer->GetHalfWidth() - inner->GetHalfWidth());
         const AmReal32 dP4 =
-            std::abs(AM_Dot(x - outer->_p4, AM_Norm(outer->_p1 - outer->_p4))) / (outer->GetHalfDepth() - inner->GetHalfDepth());
+            std::abs(Dot(x - outer->_p4, AM_Norm(outer->_p1 - outer->_p4))) / (outer->GetHalfDepth() - inner->GetHalfDepth());
         const AmReal32 dP5 =
-            std::abs(AM_Dot(x - outer->_p1, AM_Norm(outer->_p3 - outer->_p1))) / (outer->GetHalfWidth() - inner->GetHalfWidth());
+            std::abs(Dot(x - outer->_p1, AM_Norm(outer->_p3 - outer->_p1))) / (outer->GetHalfWidth() - inner->GetHalfWidth());
         const AmReal32 dP6 =
-            std::abs(AM_Dot(x - outer->_p1, AM_Norm(outer->_p4 - outer->_p1))) / (outer->GetHalfDepth() - inner->GetHalfDepth());
+            std::abs(Dot(x - outer->_p1, AM_Norm(outer->_p4 - outer->_p1))) / (outer->GetHalfDepth() - inner->GetHalfDepth());
 
         const AmReal32 shortestPath = std::min({ dP1, dP2, dP3, dP4, dP5, dP6 });
 
@@ -677,7 +678,7 @@ namespace SparkyStudios::Audio::Amplitude
         : Zone(inner, outer)
     {}
 
-    AmReal32 CapsuleZone::GetFactor(const AmVec3& position)
+    AmReal32 CapsuleZone::GetFactor(const AmVector3& position)
     {
         if (m_innerShape->Contains(position))
             return 1.0f;
@@ -694,18 +695,18 @@ namespace SparkyStudios::Audio::Amplitude
         if (outer->m_needUpdate)
             outer->Update();
 
-        const AmVec3& x = position;
+        const AmVector3& x = position;
 
         const AmReal32 distanceToOrigin = AM_Len(x - inner->GetLocation());
 
         const AmReal32 innerHalfHeight = inner->GetHalfHeight() - inner->GetRadius();
         const AmReal32 outerHalfHeight = outer->GetHalfHeight() - outer->GetRadius();
 
-        AmVec3 iE = inner->_b - inner->_a;
-        AmVec3 iM = AM_Cross(inner->_a, inner->_b);
+        AmVector3 iE = inner->_b - inner->_a;
+        AmVector3 iM = AM_Cross(inner->_a, inner->_b);
 
-        AmVec3 oE = outer->_b - outer->_a;
-        AmVec3 oM = AM_Cross(outer->_a, outer->_b);
+        AmVector3 oE = outer->_b - outer->_a;
+        AmVector3 oM = AM_Cross(outer->_a, outer->_b);
 
         const AmReal32 iDistanceToAxis = AM_Len(iM + AM_Cross(iE, x)) / AM_Len(iE);
         const AmReal32 oDistanceToAxis = AM_Len(oM + AM_Cross(oE, x)) / AM_Len(oE);
@@ -737,7 +738,7 @@ namespace SparkyStudios::Audio::Amplitude
         : Zone(inner, outer)
     {}
 
-    AmReal32 ConeZone::GetFactor(const AmVec3& position)
+    AmReal32 ConeZone::GetFactor(const AmVector3& position)
     {
         if (m_innerShape->Contains(position))
             return 1.0f;
@@ -754,10 +755,10 @@ namespace SparkyStudios::Audio::Amplitude
         if (outer->m_needUpdate)
             outer->Update();
 
-        const AmVec3& shapeToPosition = position - inner->GetLocation();
+        const AmVector3& shapeToPosition = position - inner->GetLocation();
         const AmReal32 distance = AM_Len(shapeToPosition);
 
-        const AmReal32 coneDist = AM_Dot(shapeToPosition, inner->GetDirection());
+        const AmReal32 coneDist = Dot(shapeToPosition, inner->GetDirection());
 
         if (coneDist < 0.0f || coneDist > outer->GetHeight())
             return 0.0f;
@@ -781,7 +782,7 @@ namespace SparkyStudios::Audio::Amplitude
         : Zone(inner, outer)
     {}
 
-    AmReal32 SphereZone::GetFactor(const AmVec3& position)
+    AmReal32 SphereZone::GetFactor(const AmVector3& position)
     {
         if (m_innerShape->Contains(position))
             return 1.0f;
@@ -798,7 +799,7 @@ namespace SparkyStudios::Audio::Amplitude
         if (outer->m_needUpdate)
             outer->Update();
 
-        const AmVec3& soundToListener = position - inner->GetLocation();
+        const AmVector3& soundToListener = position - inner->GetLocation();
         const AmReal32 distance = AM_Len(soundToListener);
         if (distance >= outer->GetRadius())
             return 0.0f;

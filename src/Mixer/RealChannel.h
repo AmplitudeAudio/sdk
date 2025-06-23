@@ -21,8 +21,6 @@
 
 #include <SparkyStudios/Audio/Amplitude/Core/Playback/Channel.h>
 
-#include <SparkyStudios/Audio/Amplitude/Math/HandmadeMath.h>
-
 #include <SparkyStudios/Audio/Amplitude/Sound/Collection.h>
 #include <SparkyStudios/Audio/Amplitude/Sound/Fader.h>
 #include <SparkyStudios/Audio/Amplitude/Sound/Sound.h>

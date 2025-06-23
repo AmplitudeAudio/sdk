@@ -14,6 +14,8 @@
 
 #include <SparkyStudios/Audio/Amplitude/Math/CartesianCoordinateSystem.h>
 
+#include <Math/LinearAlgebra.h>
+
 namespace SparkyStudios::Audio::Amplitude
 {
     CartesianCoordinateSystem::Converter::Converter(const CartesianCoordinateSystem& from, const CartesianCoordinateSystem& to)
@@ -23,51 +25,48 @@ namespace SparkyStudios::Audio::Amplitude
         , _toFromScalar(0.0f)
         , _windingSwap(0.0f)
     {
-        const AmVec3 sourceForwardVector = GetVector(from._forwardAxis);
-        const AmVec3 sourceRightVector = GetVector(from._rightAxis);
-        const AmVec3 sourceUpVector = GetVector(from._upAxis);
+        const auto sourceForwardVector = GetVector(from._forwardAxis);
+        const auto sourceRightVector = GetVector(from._rightAxis);
+        const auto sourceUpVector = GetVector(from._upAxis);
 
-        const AmVec3 targetForwardVector = GetVector(to._forwardAxis);
-        const AmVec3 targetRightVector = GetVector(to._rightAxis);
-        const AmVec3 targetUpVector = GetVector(to._upAxis);
+        const auto targetForwardVector = GetVector(to._forwardAxis);
+        const auto targetRightVector = GetVector(to._rightAxis);
+        const auto targetUpVector = GetVector(to._upAxis);
 
-        const AmReal32 sourceScale = AM_LenSqr(sourceForwardVector);
+        const AmReal32 sourceScale = SquaredLength(sourceForwardVector);
 
-        AmMat3 sourceFromId;
+        AmMatrix3 sourceFromId;
         sourceFromId[0] = sourceRightVector;
         sourceFromId[1] = sourceUpVector;
         sourceFromId[2] = sourceForwardVector;
 
-        const AmReal32 targetScale = AM_LenSqr(targetForwardVector);
-        AMPLITUDE_ASSERT(targetScale == AM_LenSqr(targetRightVector));
-        AMPLITUDE_ASSERT(targetScale == AM_LenSqr(targetUpVector));
+        const AmReal32 targetScale = SquaredLength(targetForwardVector);
+        AMPLITUDE_ASSERT(targetScale == SquaredLength(targetRightVector));
+        AMPLITUDE_ASSERT(targetScale == SquaredLength(targetUpVector));
 
-        AmMat3 targetFromId;
+        AmMatrix3 targetFromId;
         targetFromId[0] = targetRightVector;
         targetFromId[1] = targetUpVector;
         targetFromId[2] = targetForwardVector;
 
-        _fromToMatrix = targetFromId * AM_InvGeneral(sourceFromId);
-        _fromToMatrix[0] = AM_Norm(_fromToMatrix[0]);
-        _fromToMatrix[1] = AM_Norm(_fromToMatrix[1]);
-        _fromToMatrix[2] = AM_Norm(_fromToMatrix[2]);
+        _fromToMatrix = Normalize(Mul(targetFromId, Inverse(sourceFromId)));
         _fromToScalar = 1.0f / std::sqrt(sourceScale) * std::sqrt(targetScale);
 
-        _toFromMatrix = AM_InvGeneral(_fromToMatrix);
+        _toFromMatrix = Inverse(_fromToMatrix);
         _toFromScalar = 1.0f / _fromToScalar;
 
-        _windingSwap = AM_Determinant(_fromToMatrix) < 0 ? -1.0f : 1.0f;
+        _windingSwap = Determinant(_fromToMatrix) < 0 ? -1.0f : 1.0f;
     }
 
-    AmVec3 CartesianCoordinateSystem::Converter::Forward(const AmVec3& vector) const
+    AmVector3 CartesianCoordinateSystem::Converter::Forward(const AmVector3& vector) const
     {
-        return _fromToMatrix * vector * _fromToScalar;
+        return Transform(_fromToMatrix, Mul(vector, _fromToScalar));
     }
 
-    AmQuat CartesianCoordinateSystem::Converter::Forward(const AmQuat& quaternion) const
+    AmQuaternion CartesianCoordinateSystem::Converter::Forward(const AmQuaternion& quaternion) const
     {
-        const AmVec3 axis = _fromToMatrix * quaternion.XYZ;
-        return AM_Q(axis.X, axis.Y, axis.Z, quaternion.W * _windingSwap);
+        const auto axis = Transform(_fromToMatrix, quaternion.xyz);
+        return { quaternion.w * _windingSwap, axis.x, axis.y, axis.z };
     }
 
     AmReal32 CartesianCoordinateSystem::Converter::Forward(const AmReal32& scalar) const
@@ -75,15 +74,15 @@ namespace SparkyStudios::Audio::Amplitude
         return scalar * _fromToScalar;
     }
 
-    AmVec3 CartesianCoordinateSystem::Converter::Backward(const AmVec3& vector) const
+    AmVector3 CartesianCoordinateSystem::Converter::Backward(const AmVector3& vector) const
     {
-        return _toFromMatrix * vector * _toFromScalar;
+        return Transform(_toFromMatrix, Mul(vector, _toFromScalar));
     }
 
-    AmQuat CartesianCoordinateSystem::Converter::Backward(const AmQuat& quaternion) const
+    AmQuaternion CartesianCoordinateSystem::Converter::Backward(const AmQuaternion& quaternion) const
     {
-        const AmVec3 axis = _toFromMatrix * quaternion.XYZ;
-        return AM_Q(axis.X, axis.Y, axis.Z, quaternion.W * _windingSwap);
+        const auto axis = Transform(_toFromMatrix, quaternion.xyz);
+        return { quaternion.w * _windingSwap, axis.x, axis.y, axis.z };
     }
 
     AmReal32 CartesianCoordinateSystem::Converter::Backward(const AmReal32& scalar) const
@@ -121,14 +120,14 @@ namespace SparkyStudios::Audio::Amplitude
         return { Axis::PositiveX, Axis::NegativeY, Axis::PositiveZ };
     }
 
-    AmVec3 CartesianCoordinateSystem::Convert(
-        const AmVec3& vector, const CartesianCoordinateSystem& from, const CartesianCoordinateSystem& to)
+    AmVector3 CartesianCoordinateSystem::Convert(
+        const AmVector3& vector, const CartesianCoordinateSystem& from, const CartesianCoordinateSystem& to)
     {
         return to.Convert(vector, from);
     }
 
-    AmQuat CartesianCoordinateSystem::Convert(
-        const AmQuat& rotation, const CartesianCoordinateSystem& from, const CartesianCoordinateSystem& to)
+    AmQuaternion CartesianCoordinateSystem::Convert(
+        const AmQuaternion& rotation, const CartesianCoordinateSystem& from, const CartesianCoordinateSystem& to)
     {
         return to.Convert(rotation, from);
     }
@@ -138,30 +137,30 @@ namespace SparkyStudios::Audio::Amplitude
         return to.Convert(scalar, from);
     }
 
-    AmVec3 CartesianCoordinateSystem::ConvertToDefault(const AmVec3& vector, const CartesianCoordinateSystem& from)
+    AmVector3 CartesianCoordinateSystem::ConvertToDefault(const AmVector3& vector, const CartesianCoordinateSystem& from)
     {
         return Convert(vector, from, Default());
     }
 
-    AmVec3 CartesianCoordinateSystem::GetVector(Axis axis)
+    AmVector3 CartesianCoordinateSystem::GetVector(Axis axis)
     {
         switch (axis)
         {
         case Axis::PositiveX:
-            return AM_V3(1.0f, 0.0f, 0.0f);
+            return kVector3UnitX;
         case Axis::NegativeX:
-            return AM_V3(-1.0f, 0.0f, 0.0f);
+            return { -1.0f, 0.0f, 0.0f };
         case Axis::PositiveY:
-            return AM_V3(0.0f, 1.0f, 0.0f);
+            return kVector3UnitY;
         case Axis::NegativeY:
-            return AM_V3(0.0f, -1.0f, 0.0f);
+            return { 0.0f, -1.0f, 0.0f };
         case Axis::PositiveZ:
-            return AM_V3(0.0f, 0.0f, 1.0f);
+            return kVector3UnitZ;
         case Axis::NegativeZ:
-            return AM_V3(0.0f, 0.0f, -1.0f);
+            return { 0.0f, 0.0f, -1.0f };
         default:
             AMPLITUDE_ASSERT(false);
-            return AM_V3(0.0f, 0.0f, 0.0f);
+            return kVector3Zero;
         }
     }
 
@@ -171,13 +170,13 @@ namespace SparkyStudios::Audio::Amplitude
         , _upAxis(up)
     {}
 
-    AmVec3 CartesianCoordinateSystem::Convert(const AmVec3& vector, const CartesianCoordinateSystem& from) const
+    AmVector3 CartesianCoordinateSystem::Convert(const AmVector3& vector, const CartesianCoordinateSystem& from) const
     {
         const Converter converter(from, *this);
         return converter.Forward(vector);
     }
 
-    AmQuat CartesianCoordinateSystem::Convert(const AmQuat& quaternion, const CartesianCoordinateSystem& from) const
+    AmQuaternion CartesianCoordinateSystem::Convert(const AmQuaternion& quaternion, const CartesianCoordinateSystem& from) const
     {
         const Converter converter(from, *this);
         return converter.Forward(quaternion);

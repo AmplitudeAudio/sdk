@@ -22,7 +22,7 @@ namespace SparkyStudios::Audio::Amplitude
         , _velocity()
         , _location()
         , _orientation(Orientation::Zero())
-        , _inverseMatrix(AM_M4D(1.0f))
+        , _inverseMatrix(Identity4())
         , _obstruction(0.0f)
         , _occlusion(0.0f)
         , _directivity(0.0f)
@@ -31,7 +31,7 @@ namespace SparkyStudios::Audio::Amplitude
         , _playingSoundList(&ChannelInternalState::entity_node)
     {}
 
-    void EntityInternalState::SetLocation(const AmVec3& location)
+    void EntityInternalState::SetLocation(const AmVector3& location)
     {
         _lastLocation = _location;
         _location = location;
@@ -45,7 +45,7 @@ namespace SparkyStudios::Audio::Amplitude
 
     void EntityInternalState::Update()
     {
-        _velocity = _location - _lastLocation;
+        _velocity = Sub(_location, _lastLocation);
         _inverseMatrix = _orientation.GetLookAtMatrix(_location);
     }
 

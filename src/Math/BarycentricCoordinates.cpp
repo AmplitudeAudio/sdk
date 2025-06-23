@@ -14,33 +14,35 @@
 
 #include <SparkyStudios/Audio/Amplitude/Math/BarycentricCoordinates.h>
 
+#include <Math/LinearAlgebra.h>
+
 namespace SparkyStudios::Audio::Amplitude
 {
     bool BarycentricCoordinates::RayTriangleIntersection(
-        const AmVec3& rayOrigin, const AmVec3& rayDirection, const std::array<AmVec3, 3>& triangle, BarycentricCoordinates& result)
+        const AmVector3& rayOrigin, const AmVector3& rayDirection, const Triangle& triangle, BarycentricCoordinates& result)
     {
-        const AmVec3 e1 = triangle.at(1) - triangle.at(0);
-        const AmVec3 e2 = triangle.at(2) - triangle.at(0);
-        const AmVec3 r2 = AM_Cross(rayDirection, e2);
+        const auto e1 = Sub(triangle[1], triangle[0]);
+        const auto e2 = Sub(triangle[2], triangle[0]);
+        const auto r2 = Cross(rayDirection, e2);
 
-        const AmReal32 det = AM_Dot(e1, r2);
+        const AmReal32 det = Dot(e1, r2);
         if (det > -kEpsilon && det < kEpsilon)
             return false; // Ray parallel to triangle
 
         const AmReal32 invDet = 1.0f / det;
-        const AmVec3 s = rayOrigin - triangle.at(0);
-        const AmReal32 v = invDet * AM_Dot(s, r2);
+        const auto s = Sub(rayOrigin, triangle[0]);
+        const AmReal32 v = invDet * Dot(s, r2);
 
         if (v < -kEpsilon || v > 1.0f + kEpsilon)
             return false;
 
-        const AmVec3 s1 = AM_Cross(s, e1);
-        const AmReal32 w = invDet * AM_Dot(rayDirection, s1);
+        const auto s1 = Cross(s, e1);
+        const AmReal32 w = invDet * Dot(rayDirection, s1);
 
         if (w < -kEpsilon || v + w > 1.0f + kEpsilon)
             return false;
 
-        if (const AmReal32 t = invDet * AM_Dot(e2, s1); t >= 0.0f)
+        if (const AmReal32 t = invDet * Dot(e2, s1); t >= 0.0f)
         {
             result.m_V = v;
             result.m_W = w;
@@ -57,18 +59,18 @@ namespace SparkyStudios::Audio::Amplitude
         , m_W(-kEpsilon)
     {}
 
-    BarycentricCoordinates::BarycentricCoordinates(const AmVec3& p, const std::array<AmVec3, 3>& triangle)
+    BarycentricCoordinates::BarycentricCoordinates(const AmVector3& position, const Triangle& triangle)
         : BarycentricCoordinates()
     {
-        const AmVec3 ab = triangle.at(1) - triangle.at(0);
-        const AmVec3 ac = triangle.at(2) - triangle.at(0);
-        const AmVec3 ap = p - triangle.at(0);
+        const auto ab = Sub(triangle[1], triangle[0]);
+        const auto ac = Sub(triangle[2], triangle[0]);
+        const auto ap = Sub(position, triangle[0]);
 
-        const AmReal32 d1 = AM_Dot(ab, ab);
-        const AmReal32 d2 = AM_Dot(ab, ac);
-        const AmReal32 d3 = AM_Dot(ac, ac);
-        const AmReal32 d4 = AM_Dot(ap, ab);
-        const AmReal32 d5 = AM_Dot(ap, ac);
+        const AmReal32 d1 = Dot(ab, ab);
+        const AmReal32 d2 = Dot(ab, ac);
+        const AmReal32 d3 = Dot(ac, ac);
+        const AmReal32 d4 = Dot(ap, ab);
+        const AmReal32 d5 = Dot(ap, ac);
 
         const AmReal32 d = d1 * d3 - d2 * d2;
 

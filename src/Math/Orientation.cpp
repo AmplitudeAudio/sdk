@@ -14,6 +14,9 @@
 
 #include <SparkyStudios/Audio/Amplitude/Math/CartesianCoordinateSystem.h>
 #include <SparkyStudios/Audio/Amplitude/Math/Orientation.h>
+#include <SparkyStudios/Audio/Amplitude/Math/Utils.h>
+
+#include <Math/LinearAlgebra.h>
 
 namespace SparkyStudios::Audio::Amplitude
 {
@@ -38,10 +41,10 @@ namespace SparkyStudios::Audio::Amplitude
         ComputeQuaternion();
     }
 
-    Orientation::Orientation(AmVec3 forward, AmVec3 up)
-        : _forward(AM_Norm(forward))
+    Orientation::Orientation(AmVector3 forward, AmVector3 up)
+        : _forward(Normalize(std::move(forward)))
         , _yaw(0)
-        , _up(AM_Norm(up))
+        , _up(Normalize(std::move(up)))
         , _pitch(0)
         , _roll(0)
         , _alpha(0)
@@ -54,7 +57,7 @@ namespace SparkyStudios::Audio::Amplitude
         ComputeQuaternion();
     }
 
-    Orientation::Orientation(AmQuat quaternion)
+    Orientation::Orientation(AmQuaternion quaternion)
         : _forward()
         , _yaw(0)
         , _up()
@@ -63,81 +66,71 @@ namespace SparkyStudios::Audio::Amplitude
         , _alpha(0)
         , _beta(0)
         , _gamma(0)
-        , _quaternion(quaternion)
+        , _quaternion(std::move(quaternion))
     {
-        _forward = AM_RotateV3Q(AM_V3(0, 1, 0), quaternion);
-        _up = AM_RotateV3Q(AM_V3(0, 0, 1), quaternion);
+        _forward = RotateVector(kVector3UnitY, _quaternion);
+        _up = RotateVector(kVector3UnitZ, _quaternion);
 
         ComputeZYXAngles();
         ComputeZYZAngles();
     }
 
-    AmMat4 Orientation::GetRotationMatrix() const
+    AmMatrix3 Orientation::GetRotationMatrix() const
     {
-        const AmMat4 rZ = AM_Rotate_RH(_yaw, AM_V3(0, 0, 1));
-        const AmMat4 rY = AM_Rotate_RH(_pitch, AM_V3(0, 1, 0));
-        const AmMat4 rX = AM_Rotate_RH(_roll, AM_V3(1, 0, 0));
-
-        return (rZ * rY) * rX;
+        const auto rZ = Eigen::AngleAxisf(_yaw, VecToEigen(kVector3UnitZ));
+        const auto rY = Eigen::AngleAxisf(_pitch, VecToEigen(kVector3UnitY));
+        const auto rX = Eigen::AngleAxisf(_roll, VecToEigen(kVector3UnitX));
+        return EigenToMat3((rZ * rY * rX).matrix());
     }
 
-    AmMat4 Orientation::GetLookAtMatrix(AmVec3 eye) const
+    AmMatrix4 Orientation::GetLookAtMatrix(AmVector3 eye) const
     {
-        const AmVec3 yAxis = _forward;
-        const AmVec3 xAxis = AM_Cross(yAxis, _up);
-        const AmVec3 zAxis = AM_Cross(xAxis, yAxis);
+        const auto yAxis = VecToEigen(_forward);
+        const auto xAxis = yAxis.cross(VecToEigen(_up));
+        const auto zAxis = xAxis.cross(yAxis);
 
-        AmMat4 rotation = AM_M4D(1.0f);
-        rotation[0][0] = xAxis.X;
-        rotation[0][1] = yAxis.X;
-        rotation[0][2] = zAxis.X;
-        rotation[1][0] = xAxis.Y;
-        rotation[1][1] = yAxis.Y;
-        rotation[1][2] = zAxis.Y;
-        rotation[2][0] = xAxis.Z;
-        rotation[2][1] = yAxis.Z;
-        rotation[2][2] = zAxis.Z;
+        // Create the rotation matrix
+        Eigen::Matrix4f rotation = Eigen::Matrix4f::Identity();
+        rotation.block<3, 1>(0, 0) = xAxis;
+        rotation.block<3, 1>(0, 1) = yAxis;
+        rotation.block<3, 1>(0, 2) = zAxis;
 
-        AmMat4 translation = AM_M4D(1.0f);
-        translation[3][0] = -eye.X;
-        translation[3][1] = -eye.Y;
-        translation[3][2] = -eye.Z;
+        // Create the translation matrix
+        Eigen::Matrix4f translation = Eigen::Matrix4f::Identity();
+        translation.block<3, 1>(0, 3) = -VecToEigen(eye);
 
-        return rotation * translation;
+        return EigenToMat(Eigen::Matrix4f(rotation * translation));
     }
 
     void Orientation::ComputeForwardAndUpVectors()
     {
-        _forward = AM_V3(0, 1, 0);
-        _up = AM_V3(0, 0, 1);
+        const AmMatrix3& rotation = GetRotationMatrix();
 
-        const AmMat4& rotation = GetRotationMatrix();
-
-        _forward = (rotation * AM_V4V(_forward, 1.0f)).XYZ;
-        _up = (rotation * AM_V4V(_up, 1.0f)).XYZ;
+        _forward = Transform(rotation, kVector3UnitY);
+        _up = Transform(rotation, kVector3UnitZ);
     }
 
     void Orientation::ComputeZYXAngles()
     {
-        AmVec3 right = AM_Cross(_forward, _up);
-        AmVec3 up = AM_Cross(right, _forward);
+        auto right = Cross(_forward, _up);
+        auto up = Cross(right, _forward);
 
-        if (AM_Dot(up, _up) < 0)
-            up = -up;
+        if (Dot(up, _up) < 0)
+            up = Negate(up);
 
         // Compute yaw (rotation around Z-axis)
-        _yaw = -std::atan2(_forward.X, right.X);
+        _yaw = -std::atan2(_forward[0], right.x());
 
         // Compute pitch (rotation around Y-axis)
-        _pitch = std::asin(-up.X);
+        _pitch = std::asin(-up.x());
 
         // Compute roll (rotation around X-axis)
-        _roll = -std::atan2(_up.Y, _up.Z);
+        _roll = -std::atan2(_up[1], _up[2]);
     }
 
     void Orientation::ComputeZYZAngles()
     {
-        if (const AmMat4 rotation = GetRotationMatrix(); std::abs(rotation[2][2]) - 1.0f < 0.0f)
+        if (const AmMatrix3 rotation = GetRotationMatrix(); std::abs(rotation[2][2]) - 1.0f < 0.0f)
         {
             _alpha = std::atan2(rotation[1][2], rotation[0][2]);
             _beta = std::acos(rotation[2][2]);
@@ -153,6 +146,6 @@ namespace SparkyStudios::Audio::Amplitude
 
     void Orientation::ComputeQuaternion()
     {
-        _quaternion = AM_M4ToQ_RH(GetRotationMatrix());
+        _quaternion = EigenToQuat(Eigen::Quaternionf(MatToEigen(GetRotationMatrix())));
     }
 } // namespace SparkyStudios::Audio::Amplitude
