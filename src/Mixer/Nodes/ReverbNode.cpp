@@ -49,7 +49,7 @@ namespace SparkyStudios::Audio::Amplitude
                 if (const AmReal32 surface = room.GetSurfaceArea(static_cast<eRoomWall>(i)); surface > maxSurface)
                     maxSurface = surface;
 
-            const AmReal32 roomSize = room.GetVolume() / (maxSurface * std::sqrtf(maxSurface));
+            const AmReal32 roomSize = room.GetVolume() / (maxSurface * std::sqrt(maxSurface));
 
             _model.SetRoomSize(roomSize);
         }

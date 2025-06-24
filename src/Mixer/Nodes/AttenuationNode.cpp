@@ -160,7 +160,7 @@ namespace SparkyStudios::Audio::Amplitude
 
             if (_peakingFilter[i] == nullptr)
             {
-                const AmReal32 cutoffFrequency = std::sqrtf(kLowCutoffFrequencies[1] * kHighCutoffFrequencies[1]);
+                const AmReal32 cutoffFrequency = std::sqrt(kLowCutoffFrequencies[1] * kHighCutoffFrequencies[1]);
                 _eqFilterFactory.InitializePeaking(
                     cutoffFrequency, cutoffFrequency / (kHighCutoffFrequencies[1] - kLowCutoffFrequencies[1]), 0.0f);
                 _peakingFilter[i] = _eqFilterFactory.CreateInstance();
