@@ -74,7 +74,7 @@ namespace SparkyStudios::Audio::Amplitude
                 static_cast<AmReal32>(kReflectionAveragingBandsCount);
 
             AmReal32* output = _reflectionsProperties.GetCoefficients();
-            output[i] = AM_MIN(1.0f, std::sqrtf(1.0f - averageAbsorptionCoefficients));
+            output[i] = AM_MIN(1.0f, std::sqrt(1.0f - averageAbsorptionCoefficients));
         }
 
         _needUpdate = false;

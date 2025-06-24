@@ -102,7 +102,7 @@ void estimateITD(HRIRSphereVertex& vertex, AmSize irLength, AmUInt32 sampleRate)
     BiquadResonantFilter lpfFilter;
     lpfFilter.InitializeLowPass(kFC, kQ);
 
-    const AmReal32 maxITD = std::sqrtf(2.0f) / 2e3f;
+    const AmReal32 maxITD = std::sqrt(2.0f) / 2e3f;
 
     const AmReal32 correlationLength = 2.0f * irLength - 1;
 
