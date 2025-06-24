@@ -14,6 +14,7 @@
 
 #include <SparkyStudios/Audio/Amplitude/Core/Memory.h>
 #include <SparkyStudios/Audio/Amplitude/DSP/FFT.h>
+#include <SparkyStudios/Audio/Amplitude/Math/Utils.h>
 
 #include <DSP/Filters/FFTFilter.h>
 

@@ -72,11 +72,11 @@ namespace SparkyStudios::Audio::Amplitude
         _vertices.resize(_header.m_VertexCount);
 
         AmUInt32 i = 0;
-        std::vector<AmVec3> vertices(_header.m_VertexCount);
+        std::vector<AmVector3> vertices(_header.m_VertexCount);
 
         for (auto& vertex : _vertices)
         {
-            file->Read(reinterpret_cast<AmUInt8Buffer>(&vertex.m_Position), sizeof(AmVec3));
+            file->Read(reinterpret_cast<AmUInt8Buffer>(&vertex.m_Position), sizeof(AmVector3));
 
             vertex.m_LeftIR.resize(_header.m_IRLength);
             file->Read(reinterpret_cast<AmUInt8Buffer>(vertex.m_LeftIR.data()), _header.m_IRLength * sizeof(AmReal32));
@@ -152,7 +152,7 @@ namespace SparkyStudios::Audio::Amplitude
         _samplingMode = mode;
     }
 
-    void HRIRSphereImpl::Sample(const AmVec3& direction, AmReal32* leftHRIR, AmReal32* rightHRIR) const
+    void HRIRSphereImpl::Sample(const AmVector3& direction, AmReal32* leftHRIR, AmReal32* rightHRIR) const
     {
         switch (_samplingMode)
         {
@@ -163,10 +163,10 @@ namespace SparkyStudios::Audio::Amplitude
         }
     }
 
-    void HRIRSphereImpl::Transform(const AmMat4& matrix)
+    void HRIRSphereImpl::Transform(const AmMatrix4& matrix)
     {
         for (auto& vertex : _vertices)
-            vertex.m_Position = AM_Mul(matrix, AM_V4V(vertex.m_Position, 1.0f)).XYZ;
+            vertex.m_Position = Amplitude::Transform(matrix, AmVector4{ .xyz = vertex.m_Position, ._pad2 = 1.0f }).xyz;
     }
 
     bool HRIRSphereImpl::IsLoaded() const
@@ -174,9 +174,9 @@ namespace SparkyStudios::Audio::Amplitude
         return _loaded;
     }
 
-    void HRIRSphereImpl::SampleBilinear(const AmVec3& direction, AmReal32* leftHRIR, AmReal32* rightHRIR) const
+    void HRIRSphereImpl::SampleBilinear(const AmVector3& direction, AmReal32* leftHRIR, AmReal32* rightHRIR) const
     {
-        const auto& dir = AM_Mul(direction, 10.0f);
+        const auto& dir = Scale(direction, 10.0f);
         const auto* face = _tree.Query(dir);
 
         if (face == nullptr)
@@ -203,7 +203,7 @@ namespace SparkyStudios::Audio::Amplitude
         {
             BarycentricCoordinates barycenter;
             if (!BarycentricCoordinates::RayTriangleIntersection(
-                    AM_V3(0.0f, 0.0f, 0.0f), dir, { vertexA.m_Position, vertexB.m_Position, vertexC.m_Position }, barycenter))
+                    kVector3Zero, dir, { vertexA.m_Position, vertexB.m_Position, vertexC.m_Position }, barycenter))
             {
                 return;
             }
@@ -221,9 +221,9 @@ namespace SparkyStudios::Audio::Amplitude
         }
     }
 
-    void HRIRSphereImpl::SampleNearestNeighbor(const AmVec3& direction, AmReal32* leftHRIR, AmReal32* rightHRIR) const
+    void HRIRSphereImpl::SampleNearestNeighbor(const AmVector3& direction, AmReal32* leftHRIR, AmReal32* rightHRIR) const
     {
-        const auto& dir = AM_Mul(direction, 10.0f);
+        const auto& dir = Scale(direction, 10.0f);
         const auto* face = _tree.Query(dir);
 
         if (face == nullptr)
@@ -250,7 +250,7 @@ namespace SparkyStudios::Audio::Amplitude
         {
             BarycentricCoordinates barycenter;
             if (!BarycentricCoordinates::RayTriangleIntersection(
-                    AM_V3(0.0f, 0.0f, 0.0f), dir, { vertexA.m_Position, vertexB.m_Position, vertexC.m_Position }, barycenter))
+                    kVector3Zero, dir, { vertexA.m_Position, vertexB.m_Position, vertexC.m_Position }, barycenter))
             {
                 return;
             }
@@ -281,7 +281,7 @@ namespace SparkyStudios::Audio::Amplitude
         }
     }
 
-    const HRIRSphereVertex* HRIRSphereImpl::GetClosestVertex(const AmVec3& position, const Face* face) const
+    const HRIRSphereVertex* HRIRSphereImpl::GetClosestVertex(const AmVector3& position, const Face* face) const
     {
         const auto& vertexA = _vertices[face->m_A];
         const auto& vertexB = _vertices[face->m_B];
@@ -289,13 +289,13 @@ namespace SparkyStudios::Audio::Amplitude
 
         constexpr AmReal32 k2 = kEpsilon * kEpsilon;
 
-        if (AM_LenSqr(vertexA.m_Position - position) < k2)
+        if (SquaredLength(Sub(vertexA.m_Position, position)) < k2)
             return &vertexA;
 
-        if (AM_LenSqr(vertexB.m_Position - position) < k2)
+        if (SquaredLength(Sub(vertexB.m_Position, position)) < k2)
             return &vertexB;
 
-        if (AM_LenSqr(vertexC.m_Position - position) < k2)
+        if (SquaredLength(Sub(vertexC.m_Position, position)) < k2)
             return &vertexC;
 
         return nullptr;

@@ -326,7 +326,7 @@ namespace SparkyStudios::Audio::Amplitude
         return success;
     }
 
-    void RealChannel::SetPan(const AmVec2& pan)
+    void RealChannel::SetPan(const AmVector2& pan)
     {
         AMPLITUDE_ASSERT(Valid());
 
@@ -335,10 +335,10 @@ namespace SparkyStudios::Audio::Amplitude
             if (layer.second == 0)
                 continue;
 
-            SetGainPan(GetGain(layer.first), pan.X, layer.first);
+            SetGainPan(GetGain(layer.first), pan.x, layer.first);
         }
 
-        _pan = pan.X;
+        _pan = pan.x;
     }
 
     void RealChannel::SetPitch(AmReal32 pitch)

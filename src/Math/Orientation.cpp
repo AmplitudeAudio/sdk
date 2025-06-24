@@ -91,9 +91,9 @@ namespace SparkyStudios::Audio::Amplitude
 
         // Create the rotation matrix
         Eigen::Matrix4f rotation = Eigen::Matrix4f::Identity();
-        rotation.block<3, 1>(0, 0) = xAxis;
-        rotation.block<3, 1>(0, 1) = yAxis;
-        rotation.block<3, 1>(0, 2) = zAxis;
+        rotation.block<1, 3>(0, 0) = xAxis;
+        rotation.block<1, 3>(1, 0) = yAxis;
+        rotation.block<1, 3>(2, 0) = zAxis;
 
         // Create the translation matrix
         Eigen::Matrix4f translation = Eigen::Matrix4f::Identity();
@@ -106,8 +106,8 @@ namespace SparkyStudios::Audio::Amplitude
     {
         const AmMatrix3& rotation = GetRotationMatrix();
 
-        _forward = Transform(rotation, kVector3UnitY);
-        _up = Transform(rotation, kVector3UnitZ);
+        _forward = Normalize(Transform(rotation, kVector3UnitY));
+        _up = Normalize(Transform(rotation, kVector3UnitZ));
     }
 
     void Orientation::ComputeZYXAngles()
@@ -119,33 +119,33 @@ namespace SparkyStudios::Audio::Amplitude
             up = Negate(up);
 
         // Compute yaw (rotation around Z-axis)
-        _yaw = -std::atan2(_forward[0], right.x());
+        _yaw = -std::atan2(_forward.x, right.x);
 
         // Compute pitch (rotation around Y-axis)
-        _pitch = std::asin(-up.x());
+        _pitch = std::asin(-up.x);
 
         // Compute roll (rotation around X-axis)
-        _roll = -std::atan2(_up[1], _up[2]);
+        _roll = -std::atan2(_up.y, _up.z);
     }
 
     void Orientation::ComputeZYZAngles()
     {
         if (const AmMatrix3 rotation = GetRotationMatrix(); std::abs(rotation[2][2]) - 1.0f < 0.0f)
         {
-            _alpha = std::atan2(rotation[1][2], rotation[0][2]);
+            _alpha = std::atan2(rotation[2][1], rotation[2][0]);
             _beta = std::acos(rotation[2][2]);
-            _gamma = std::atan2(rotation[2][1], -rotation[2][0]);
+            _gamma = std::atan2(rotation[1][2], -rotation[0][2]);
         }
         else
         {
             _alpha = 0;
             _beta = rotation[2][2] < 0 ? AM_PI32 : 0.0f;
-            _gamma = std::atan2(rotation[0][1], rotation[0][0]);
+            _gamma = std::atan2(rotation[1][0], rotation[0][0]);
         }
     }
 
     void Orientation::ComputeQuaternion()
     {
-        _quaternion = EigenToQuat(Eigen::Quaternionf(MatToEigen(GetRotationMatrix())));
+        _quaternion = EigenToQuat(Eigen::Quaternionf(MatToEigen(GetRotationMatrix())).normalized());
     }
 } // namespace SparkyStudios::Audio::Amplitude

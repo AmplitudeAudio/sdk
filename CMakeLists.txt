@@ -41,7 +41,7 @@ if (BUILD_TOOLS)
 endif ()
 
 project(Amplitude
-    VERSION ${DETECTED_AM_VERSION}
+    VERSION ${AM_SDK_VERSION}
     DESCRIPTION "A cross-platform audio engine for games"
     HOMEPAGE_URL "https://amplitudeaudiosdk.com"
 )

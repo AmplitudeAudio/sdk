@@ -109,7 +109,7 @@ namespace SparkyStudios::Audio::Amplitude
         /**
          * @brief The cartesian position of the vertex.
          */
-        AmVec3 m_Position;
+        AmVector3 m_Position;
 
         /**
          * @brief The HRIR data for the left ear.
@@ -231,7 +231,7 @@ namespace SparkyStudios::Audio::Amplitude
          * @param[out] leftHRIR The left HRIR data.
          * @param[out] rightHRIR The right HRIR data.
          */
-        virtual void Sample(const AmVec3& direction, AmReal32* leftHRIR, AmReal32* rightHRIR) const = 0;
+        virtual void Sample(const AmVector3& direction, AmReal32* leftHRIR, AmReal32* rightHRIR) const = 0;
 
         /**
          * @brief Applies a transformation matrix to the HRIR sphere.
@@ -242,7 +242,7 @@ namespace SparkyStudios::Audio::Amplitude
          *
          * @param[in] matrix The transformation matrix to be applied.
          */
-        virtual void Transform(const AmMat4& matrix) = 0;
+        virtual void Transform(const AmMatrix4& matrix) = 0;
 
         /**
          * @brief Checks if the HRIR sphere resource is loaded.

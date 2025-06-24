@@ -14,6 +14,7 @@
 
 #include <SparkyStudios/Audio/Amplitude/Sound/Attenuation.h>
 
+#include <Math/LinearAlgebra.h>
 #include <Sound/Attenuation.h>
 
 namespace SparkyStudios::Audio::Amplitude
@@ -33,7 +34,7 @@ namespace SparkyStudios::Audio::Amplitude
         _shape = nullptr;
     }
 
-    AmReal32 AttenuationImpl::GetGain(const AmVec3& soundLocation, const Listener& listener) const
+    AmReal32 AttenuationImpl::GetGain(const AmVector3& soundLocation, const Listener& listener) const
     {
         return _shape->GetAttenuationFactor(this, soundLocation, listener);
     }
@@ -48,9 +49,9 @@ namespace SparkyStudios::Audio::Amplitude
         return _shape.get();
     }
 
-    AmReal32 AttenuationImpl::EvaluateAirAbsorption(const AmVec3& soundLocation, const AmVec3& listenerLocation, AmUInt32 band) const
+    AmReal32 AttenuationImpl::EvaluateAirAbsorption(const AmVector3& soundLocation, const AmVector3& listenerLocation, AmUInt32 band) const
     {
-        const AmReal32 distance = AM_Len(soundLocation - listenerLocation);
+        const AmReal32 distance = Length(Sub(soundLocation, listenerLocation));
         return std::exp(-_airAbsorptionCoefficients[band] * distance);
     }
 

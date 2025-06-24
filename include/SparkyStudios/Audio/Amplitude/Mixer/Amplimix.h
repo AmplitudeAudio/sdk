@@ -169,7 +169,7 @@ namespace SparkyStudios::Audio::Amplitude
          *
          * @see Entity::SetLocation, Entity::GetLocation
          */
-        virtual AmVec3 GetLocation() const = 0;
+        virtual AmVector3 GetLocation() const = 0;
 
         /**
          * @brief Gets the entity associated with the audio data in the layer.

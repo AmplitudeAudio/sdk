@@ -336,9 +336,9 @@ namespace SparkyStudios::Audio::Amplitude
     bool BestListener(
         ListenerList::const_iterator* bestListener,
         AmReal32* distanceSquared,
-        AmVec3* listenerSpaceLocation,
+        AmVector3* listenerSpaceLocation,
         const ListenerList& listeners,
-        const AmVec3& location);
+        const AmVector3& location);
 
     // Given a vector in listener space, return a vector inside a unit circle
     // representing the direction from the listener to the sound. A value of (-1, 0)
@@ -346,7 +346,7 @@ namespace SparkyStudios::Audio::Amplitude
     // means the sound is directly to the listener's right. Likewise, values of
     // (0, 1) and (0, -1) mean the sound is directly in front or behind the
     // listener, respectively.
-    AmVec2 CalculatePan(const AmVec3& listenerSpaceLocation);
+    AmVector2 CalculatePan(const AmVector3& listenerSpaceLocation);
 
     bool LoadFile(const std::shared_ptr<File>& file, AmString* dest);
 

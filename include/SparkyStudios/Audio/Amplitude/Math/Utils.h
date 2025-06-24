@@ -287,7 +287,6 @@ namespace SparkyStudios::Audio::Amplitude
         return result;
     }
 
-
     /**
      * @brief Finds the greatest common divisor (GCD) of two integers.
      *
@@ -313,6 +312,45 @@ namespace SparkyStudios::Audio::Amplitude
         }
 
         return a;
+    }
+
+    /**
+     * @brief Calculates the inverse square root of a number using Quake III's implementation.
+     *
+     * @param[in] x The number to calculate the inverse square root of.
+     *
+     * @return The inverse square root of the input number.
+     *
+     * @ingroup math
+     */
+    AM_API_PRIVATE AM_INLINE AmReal32 InverseSquareRoot(AmReal32 x)
+    {
+        // Use the fast inverse square root method (Quake III)
+        AmReal32 h = 0.5f * x;
+        AmInt32 i = *(AmInt32*)&x;
+        i = 0x5f3759df - (i >> 1);
+        x = *(AmReal32*)&i;
+        x = x * (1.5f - h * x * x); // 1st iteration
+#if defined(AM_ACCURATE_CONVERSION)
+        x = x * (1.5f - h * x * x); // 2nd iteration for more accuracy
+#endif
+        return x;
+    }
+
+    /**
+     * @brief Calculates the linear interpolation value at a given time @c t between two points.
+     *
+     * @param[in] t The time value between 0 and 1.
+     * @param[in] p0 The first point.
+     * @param[in] p1 The second point.
+     *
+     * @return The linear interpolation value at the given time @c t.
+     *
+     * @ingroup math
+     */
+    AM_API_PRIVATE AM_INLINE AmReal32 Lerp(const AmReal32 t, const AmReal32 p0, const AmReal32 p1)
+    {
+        return (1.0f - t) * p0 + t * p1;
     }
 } // namespace SparkyStudios::Audio::Amplitude
 

@@ -49,14 +49,14 @@ TEST_CASE("Environment Tests", "[environment][core][amplitude]")
 
         WHEN("the location changes")
         {
-            const auto location = AM_V3(10, 20, 30);
+            constexpr AmVector3 location = { 10, 20, 30 };
             state.SetLocation(location);
 
             THEN("it returns the new location")
             {
-                REQUIRE(AM_EqV3(state.GetLocation(), location));
+                REQUIRE(state.GetLocation() == location);
 
-                REQUIRE(AM_EqV3(zone->GetLocation(), location));
+                REQUIRE(zone->GetLocation() == location);
             }
 
             AND_WHEN("an update occurs")
@@ -65,27 +65,28 @@ TEST_CASE("Environment Tests", "[environment][core][amplitude]")
 
                 THEN("the location stays the same")
                 {
-                    REQUIRE(AM_EqV3(state.GetLocation(), location));
+                    REQUIRE(state.GetLocation() == location);
 
-                    REQUIRE(AM_EqV3(zone->GetLocation(), location));
+                    REQUIRE(zone->GetLocation() == location);
                 }
             }
         }
 
         WHEN("the orientation changes")
         {
-            const auto direction = AM_V3(1, 0, 0);
-            const auto up = AM_V3(0, 0, 1);
+            constexpr AmVector3 direction = kVector3UnitX;
+            constexpr AmVector3 up = kVector3UnitZ;
+
             const auto orientation = Orientation(direction, up);
             state.SetOrientation(orientation);
 
             THEN("it returns the new orientation")
             {
-                REQUIRE(AM_EqV3(state.GetDirection(), direction));
-                REQUIRE(AM_EqV3(state.GetUp(), up));
+                REQUIRE(state.GetDirection() == direction);
+                REQUIRE(state.GetUp() == up);
 
-                REQUIRE(AM_EqV3(zone->GetDirection(), direction));
-                REQUIRE(AM_EqV3(zone->GetUp(), up));
+                REQUIRE(zone->GetDirection() == direction);
+                REQUIRE(zone->GetUp() == up);
 
                 REQUIRE(std::memcmp(&state.GetOrientation(), &orientation, sizeof(Orientation)) == 0);
                 REQUIRE(std::memcmp(&zone->GetOrientation(), &orientation, sizeof(Orientation)) == 0);
@@ -118,16 +119,16 @@ TEST_CASE("Environment Tests", "[environment][core][amplitude]")
 
         WHEN("the location changes")
         {
-            const auto location = AM_V3(10, 20, 30);
+            constexpr AmVector3 location = { 10, 20, 30 };
             wrapper.SetLocation(location);
 
             THEN("it returns the new location")
             {
-                REQUIRE(AM_EqV3(wrapper.GetLocation(), location));
+                REQUIRE(wrapper.GetLocation() == location);
 
-                REQUIRE(AM_EqV3(wrapper.GetLocation(), state.GetLocation()));
+                REQUIRE(wrapper.GetLocation() == state.GetLocation());
 
-                REQUIRE(AM_EqV3(state.GetLocation(), zone->GetLocation()));
+                REQUIRE(state.GetLocation() == zone->GetLocation());
             }
 
             AND_WHEN("an update occurs")
@@ -136,31 +137,31 @@ TEST_CASE("Environment Tests", "[environment][core][amplitude]")
 
                 THEN("the location stays the same")
                 {
-                    REQUIRE(AM_EqV3(wrapper.GetLocation(), location));
+                    REQUIRE(wrapper.GetLocation() == location);
 
-                    REQUIRE(AM_EqV3(wrapper.GetLocation(), state.GetLocation()));
+                    REQUIRE(wrapper.GetLocation() == state.GetLocation());
 
-                    REQUIRE(AM_EqV3(state.GetLocation(), zone->GetLocation()));
+                    REQUIRE(state.GetLocation() == zone->GetLocation());
                 }
             }
         }
 
         WHEN("the orientation changes")
         {
-            const auto direction = AM_V3(1, 0, 0);
-            const auto up = AM_V3(0, 0, 1);
+            constexpr AmVector3 direction = { 1, 0, 0 };
+            constexpr AmVector3 up = { 0, 0, 1 };
             wrapper.SetOrientation(Orientation(direction, up));
 
             THEN("it returns the new orientation")
             {
-                REQUIRE(AM_EqV3(wrapper.GetDirection(), direction));
-                REQUIRE(AM_EqV3(wrapper.GetUp(), up));
+                REQUIRE(wrapper.GetDirection() == direction);
+                REQUIRE(wrapper.GetUp() == up);
 
-                REQUIRE(AM_EqV3(wrapper.GetDirection(), state.GetDirection()));
-                REQUIRE(AM_EqV3(wrapper.GetUp(), state.GetUp()));
+                REQUIRE(wrapper.GetDirection() == state.GetDirection());
+                REQUIRE(wrapper.GetUp() == state.GetUp());
 
-                REQUIRE(AM_EqV3(state.GetDirection(), zone->GetDirection()));
-                REQUIRE(AM_EqV3(state.GetUp(), zone->GetUp()));
+                REQUIRE(state.GetDirection() == zone->GetDirection());
+                REQUIRE(state.GetUp() == zone->GetUp());
             }
         }
 

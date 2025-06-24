@@ -147,14 +147,9 @@ namespace SparkyStudios::Audio::Amplitude
         return EigenToVec2(Vec2ToEigen(a) + Vec2ToEigen(b));
     }
 
-    AM_INLINE AmVector2 Mul(const AmVector2& a, const AmReal32 b)
+    AM_INLINE AmVector2 Scale(const AmVector2& a, const AmReal32 b)
     {
         return EigenToVec2(Vec2ToEigen(a) * b);
-    }
-
-    AM_INLINE AmVector2 Cross(const AmVector2& a, const AmVector2& b)
-    {
-        return EigenToVec2(Vec2ToEigen(a).cross(Vec2ToEigen(b)));
     }
 
     AM_INLINE AmReal32 Dot(const AmVector2& a, const AmVector2& b)
@@ -182,6 +177,11 @@ namespace SparkyStudios::Audio::Amplitude
         return EigenToVec2(-Vec2ToEigen(v));
     }
 
+    AM_INLINE AmVector2 Abs(const AmVector2& v)
+    {
+        return EigenToVec2(Vec2ToEigen(v).cwiseAbs());
+    }
+
     AM_INLINE AmVector3 Sub(const AmVector3& a, const AmVector3& b)
     {
         return EigenToVec3(Vec3ToEigen(a) - Vec3ToEigen(b));
@@ -192,7 +192,7 @@ namespace SparkyStudios::Audio::Amplitude
         return EigenToVec3(Vec3ToEigen(a) + Vec3ToEigen(b));
     }
 
-    AM_INLINE AmVector3 Mul(const AmVector3& a, const AmReal32 b)
+    AM_INLINE AmVector3 Scale(const AmVector3& a, const AmReal32 b)
     {
         return EigenToVec3(Vec3ToEigen(a) * b);
     }
@@ -227,6 +227,16 @@ namespace SparkyStudios::Audio::Amplitude
         return EigenToVec3(-Vec3ToEigen(v));
     }
 
+    AM_INLINE AmVector3 Abs(const AmVector3& v)
+    {
+        return EigenToVec3(Vec3ToEigen(v).cwiseAbs());
+    }
+
+    AM_INLINE AmVector3 Project(const AmVector3& a, const AmVector3& b)
+    {
+        return Scale(b, Dot(a, b) / SquaredLength(b));
+    }
+
     AM_INLINE AmVector3 RotateVector(const AmVector3& v, const AmQuaternion& q)
     {
         return EigenToVec3(QuatToEigen(q) * Vec3ToEigen(v));
@@ -235,6 +245,11 @@ namespace SparkyStudios::Audio::Amplitude
     AM_INLINE AmMatrix3 Mul(const AmMatrix3& a, const AmMatrix3& b)
     {
         return EigenToMat3(Mat3ToEigen(a) * Mat3ToEigen(b));
+    }
+
+    AM_INLINE AmMatrix4 Mul(const AmMatrix4& a, const AmMatrix4& b)
+    {
+        return EigenToMat4(Mat4ToEigen(a) * Mat4ToEigen(b));
     }
 
     AM_INLINE AmMatrix3 Inverse(const AmMatrix3& m)
@@ -297,14 +312,32 @@ namespace SparkyStudios::Audio::Amplitude
         return EigenToQuat(QuatToEigen(q).inverse());
     }
 
-    AM_INLINE AmMatrix3 Identity3()
+    AM_INLINE AmReal32 Length(const AmQuaternion& q)
     {
-        return EigenToMat3(Eigen::Matrix3f::Identity());
+        return QuatToEigen(q).norm();
     }
 
-    AM_INLINE AmMatrix4 Identity4()
+    AM_INLINE AmReal32 SquaredLength(const AmQuaternion& q)
     {
-        return EigenToMat4(Eigen::Matrix4f::Identity());
+        return QuatToEigen(q).squaredNorm();
+    }
+
+    AM_INLINE AmMatrix4 Translation(const AmVector3& translation)
+    {
+        Eigen::Matrix4f mat = Eigen::Matrix4f::Identity();
+        mat.block<3, 1>(0, 3) = VecToEigen(translation);
+        return EigenToMat4(mat);
+    }
+
+    AM_INLINE AmMatrix4 Rotation(const AmQuaternion& rotation)
+    {
+        // Convert quaternion to Eigen 3x3 rotation matrix
+        Eigen::Matrix3f rot = QuatToEigen(rotation).matrix();
+        // Create a 4x4 identity matrix
+        Eigen::Matrix4f mat = Eigen::Matrix4f::Identity();
+        // Set the top-left 3x3 block to the rotation
+        mat.block<3, 3>(0, 0) = rot;
+        return EigenToMat4(mat);
     }
 } // namespace SparkyStudios::Audio::Amplitude
 

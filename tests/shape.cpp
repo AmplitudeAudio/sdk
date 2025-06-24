@@ -18,6 +18,7 @@
 
 #include <Core/EntityInternalState.h>
 #include <Core/ListenerInternalState.h>
+#include <Math/LinearAlgebra.h>
 
 using namespace SparkyStudios::Audio::Amplitude;
 
@@ -25,10 +26,10 @@ TEST_CASE("Sphere Shape Tests", "[sphere_shape][math][amplitude]")
 {
     SphereShape shape(50);
 
-    const AmVec3 inner = AM_V3(25, 25, 25);
-    const AmVec3 outer = AM_V3(100, 100, 100);
-    const AmVec3 center = AM_V3(0, 0, 0);
-    const AmVec3 surfacePoint = AM_V3(0, 0, 50);
+    constexpr AmVector3 inner = { 25, 25, 25 };
+    constexpr AmVector3 outer = { 100, 100, 100 };
+    constexpr AmVector3 center = { 0, 0, 0 };
+    constexpr AmVector3 surfacePoint = { 0, 0, 50 };
 
     THEN("it returns the correct radius")
     {
@@ -57,7 +58,7 @@ TEST_CASE("Sphere Shape Tests", "[sphere_shape][math][amplitude]")
 
     WHEN("the location changes")
     {
-        const AmVec3 location = AM_V3(100, 100, 100);
+        constexpr AmVector3 location = { 100, 100, 100 };
         shape.SetLocation(location);
 
         THEN("it returns the new location")
@@ -68,7 +69,7 @@ TEST_CASE("Sphere Shape Tests", "[sphere_shape][math][amplitude]")
 
     WHEN("the orientation changes")
     {
-        const Orientation orientation = Orientation(AM_QFromAxisAngle_RH(AM_V3(0.5, 0.5, 0.5), AM_PI32));
+        const Orientation orientation = Orientation(FromAxisAngle({ 0.5, 0.5, 0.5 }, AM_PI32));
         shape.SetOrientation(orientation);
 
         THEN("it returns the new orientation")
@@ -79,8 +80,8 @@ TEST_CASE("Sphere Shape Tests", "[sphere_shape][math][amplitude]")
 
     THEN("it returns the shortest distance between a point and the shape")
     {
-        REQUIRE(shape.GetShortestDistanceToEdge(inner) == shape.GetRadius() - AM_Len(inner));
-        REQUIRE(shape.GetShortestDistanceToEdge(outer) == shape.GetRadius() - AM_Len(outer));
+        REQUIRE(shape.GetShortestDistanceToEdge(inner) == shape.GetRadius() - Length(inner));
+        REQUIRE(shape.GetShortestDistanceToEdge(outer) == shape.GetRadius() - Length(outer));
         REQUIRE(shape.GetShortestDistanceToEdge(surfacePoint) == 0.0f);
     }
 
@@ -96,7 +97,7 @@ TEST_CASE("Sphere Shape Tests", "[sphere_shape][math][amplitude]")
         SphereShape other(100);
         SphereShape some(50);
         SphereShape clone(50);
-        clone.SetLocation(AM_V3(100, 100, 100));
+        clone.SetLocation({ 100, 100, 100 });
 
         THEN("it can check for equality")
         {
@@ -111,10 +112,10 @@ TEST_CASE("Box Shape Tests", "[box_shape][math][amplitude]")
 {
     BoxShape shape(50, 50, 50);
 
-    const AmVec3 inner = AM_V3(-25, -25, -25);
-    const AmVec3 outer = AM_V3(100, 100, 100);
-    const AmVec3 center = AM_V3(0, 0, 0);
-    const AmVec3 surfacePoint = AM_V3(0, 0, 50);
+    constexpr AmVector3 inner = { -25, -25, -25 };
+    constexpr AmVector3 outer = { 100, 100, 100 };
+    constexpr AmVector3 center = { 0, 0, 0 };
+    constexpr AmVector3 surfacePoint = { 0, 0, 50 };
 
     THEN("it returns the correct dimensions")
     {
@@ -169,14 +170,14 @@ TEST_CASE("Box Shape Tests", "[box_shape][math][amplitude]")
         REQUIRE(shape.GetClosestPoint(inner) == inner);
         REQUIRE(shape.GetClosestPoint(outer) == corners[4]);
         REQUIRE(shape.GetClosestPoint(center) == center);
-        REQUIRE(shape.GetClosestPoint(surfacePoint) == AM_V3(0, 0, 50));
+        REQUIRE(shape.GetClosestPoint(surfacePoint) == AmVector3{ 0, 0, 50 });
     }
 
     THEN("it can check for equality")
     {
         BoxShape other(250, 250, 250);
         BoxShape some(50, 50, 50);
-        BoxShape clone(AM_V3(100, 100, 100), AM_V3(100, 100, 100));
+        BoxShape clone({ 100, 100, 100 }, { 100, 100, 100 });
 
         REQUIRE(shape == some);
         REQUIRE(shape != other);
@@ -188,10 +189,10 @@ TEST_CASE("Capsule Shape Tests", "[capsule_shape][math][amplitude]")
 {
     CapsuleShape shape(50, 100);
 
-    const AmVec3 inner = AM_V3(0, 0, 75);
-    const AmVec3 outer = AM_V3(0, 150, 0);
-    const AmVec3 center = AM_V3(0, 0, 0);
-    const AmVec3 surfacePoint = AM_V3(50, 0, 50);
+    constexpr AmVector3 inner = { 0, 0, 75 };
+    constexpr AmVector3 outer = { 0, 150, 0 };
+    constexpr AmVector3 center = { 0, 0, 0 };
+    constexpr AmVector3 surfacePoint = { 50, 0, 50 };
 
     THEN("it returns the correct radius")
     {
@@ -262,7 +263,7 @@ TEST_CASE("Capsule Shape Tests", "[capsule_shape][math][amplitude]")
         CapsuleShape other(50, 200);
         CapsuleShape some(50, 100);
         CapsuleShape clone(50, 100);
-        clone.SetLocation(AM_V3(100, 100, 100));
+        clone.SetLocation({ 100, 100, 100 });
 
         REQUIRE(shape == some);
         REQUIRE(shape != other);
@@ -274,10 +275,10 @@ TEST_CASE("Cone Shape Tests", "[cone_shape][math][amplitude]")
 {
     ConeShape shape(50, 100);
 
-    const AmVec3 inner = AM_V3(0, 50, 0);
-    const AmVec3 outer = AM_V3(0, 0, 150);
-    const AmVec3 center = AM_V3(0, 0, 0);
-    const AmVec3 surfacePoint = AM_V3(0, 100, 25);
+    constexpr AmVector3 inner = { 0, 50, 0 };
+    constexpr AmVector3 outer = { 0, 0, 150 };
+    constexpr AmVector3 center = { 0, 0, 0 };
+    constexpr AmVector3 surfacePoint = { 0, 100, 25 };
 
     THEN("it returns the correct radius")
     {
@@ -333,7 +334,7 @@ TEST_CASE("Cone Shape Tests", "[cone_shape][math][amplitude]")
         ConeShape other(50, 200);
         ConeShape some(50, 100);
         ConeShape clone(50, 100);
-        clone.SetLocation(AM_V3(100, 100, 100));
+        clone.SetLocation({ 100, 100, 100 });
 
         REQUIRE(shape == some);
         REQUIRE(shape != other);

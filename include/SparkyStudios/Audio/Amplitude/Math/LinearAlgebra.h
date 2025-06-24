@@ -482,6 +482,79 @@ namespace SparkyStudios::Audio::Amplitude
      * @ingroup math
      */
     constexpr AmVector3 kVector3UnitZ = { 0.0f, 0.0f, 1.0f };
+
+    /**
+     * @brief A zero vector in 4D space.
+     *
+     * This constant represents a vector with all components set to zero.
+     *
+     * @ingroup math
+     */
+    constexpr AmVector4 kVector4Zero = { 0.0f, 0.0f, 0.0f, 0.0f };
+
+    /**
+     * @brief A unit vector in 4D space.
+     *
+     * This constant represents a vector with all components set to one.
+     *
+     * @ingroup math
+     */
+    constexpr AmVector4 kVector4One = { 1.0f, 1.0f, 1.0f, 1.0f };
+
+    /**
+     * @brief A unit vector along the X-axis in 4D space.
+     *
+     * This constant represents a basis vector pointing in the positive X direction.
+     *
+     * @ingroup math
+     */
+    constexpr AmVector4 kVector4UnitX = { 1.0f, 0.0f, 0.0f, 0.0f };
+
+    /**
+     * @brief A unit vector along the Y-axis in 4D space.
+     *
+     * This constant represents a basis vector pointing in the positive Y direction.
+     *
+     * @ingroup math
+     */
+    constexpr AmVector4 kVector4UnitY = { 0.0f, 1.0f, 0.0f, 0.0f };
+
+    /**
+     * @brief A unit vector along the Z-axis in 4D space.
+     *
+     * This constant represents a basis vector pointing in the positive Z direction.
+     *
+     * @ingroup math
+     */
+    constexpr AmVector4 kVector4UnitZ = { 0.0f, 0.0f, 1.0f, 0.0f };
+
+    /**
+     * @brief A unit vector along the W-axis in 4D space.
+     *
+     * This constant represents a basis vector pointing in the positive W direction.
+     *
+     * @ingroup math
+     */
+    constexpr AmVector4 kVector4UnitW = { 0.0f, 0.0f, 0.0f, 1.0f };
+
+    /**
+     * @brief An identity matrix in 3D space.
+     *
+     * This constant represents a 3x3 identity matrix, which is used to represent no transformation.
+     * @ingroup math
+     */
+    constexpr AmMatrix3 kMatrix3Identity = { 1.0f, 0.0f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f, 0.0f, 1.0f };
+
+    /**
+     * @brief An identity matrix in 4D space.
+     *
+     * This constant represents a 4x4 identity matrix, which is used to represent no transformation.
+     *
+     * @ingroup math
+     */
+    constexpr AmMatrix4 kMatrix4Identity = {
+        1.0f, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f
+    };
 } // namespace SparkyStudios::Audio::Amplitude
 
 #endif // _AM_MATH_LINEAR_ALGEBRA_H

@@ -24,7 +24,7 @@ namespace SparkyStudios::Audio::Amplitude
         , _velocity()
         , _directivity(0.0f)
         , _directivitySharpness(1.0f)
-        , _inverseMatrix(Identity4())
+        , _inverseMatrix(kMatrix4Identity)
         , _playingSoundList(&ChannelInternalState::listener_node)
     {}
 

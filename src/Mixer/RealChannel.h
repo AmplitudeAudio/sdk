@@ -116,7 +116,7 @@ namespace SparkyStudios::Audio::Amplitude
         /**
          * @brief Set the pan for the sound. This should be a unit vector.
          */
-        void SetPan(const AmVec2& pan);
+        void SetPan(const AmVector2& pan);
 
         /**
          * @brief Set the pitch of the sound.

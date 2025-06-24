@@ -29,7 +29,7 @@ namespace SparkyStudios::Audio::Amplitude
      *
      * @ingroup math
      */
-    typedef union {
+    typedef union Triangle {
         AmVector3 m_Vertices[3];
 
         struct

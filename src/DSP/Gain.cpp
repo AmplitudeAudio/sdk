@@ -61,7 +61,7 @@ namespace SparkyStudios::Audio::Amplitude
         const AmReal32 step = 1.0f / frames;
 
         for (AmSize j = 0; j < frames; ++j)
-            out[j + outOffset] = in[j + inOffset] * AM_Lerp(startGain, step * j, endGain);
+            out[j + outOffset] = in[j + inOffset] * Lerp(step * j, startGain, endGain);
     }
 
     void Gain::ApplyAccumulateLinearGain(
@@ -79,7 +79,7 @@ namespace SparkyStudios::Audio::Amplitude
         const AmReal32 step = 1.0f / frames;
 
         for (AmSize j = 0; j < frames; ++j)
-            out[j + outOffset] += in[j + inOffset] * AM_Lerp(startGain, step * j, endGain);
+            out[j + outOffset] += in[j + inOffset] * Lerp(step * j, startGain, endGain);
     }
 
     void Gain::ApplyReplaceGain(
@@ -117,24 +117,25 @@ namespace SparkyStudios::Audio::Amplitude
         return AM_ABS(k) < kGainThreshold;
     }
 
-    AmVec2 Gain::CalculateStereoPannedGain(AmReal32 gain, AmVec3 sourcePosition, AmMat4 listenerViewMatrix)
+    AmVector2 Gain::CalculateStereoPannedGain(AmReal32 gain, AmVector3 sourcePosition, AmMatrix4 listenerViewMatrix)
     {
         if (IsZero(gain))
-            return AM_V2(0, 0);
+            return kVector2Zero;
 
-        const auto& listenerSpaceSourcePosition = listenerViewMatrix * AM_V4V(sourcePosition, 1.0f);
-        if (AM_LenSqr(listenerSpaceSourcePosition.XYZ) <= kEpsilon)
+        const auto& listenerSpaceSourcePosition =
+            Transform(listenerViewMatrix, { sourcePosition.x, sourcePosition.y, sourcePosition.z, 1.0f });
+        if (SquaredLength(listenerSpaceSourcePosition.xyz) <= kEpsilon)
             return CalculateStereoPannedGain(gain, 0);
 
-        const AmVec3 direction = AM_Norm(listenerSpaceSourcePosition.XYZ);
+        const AmVector3 direction = Normalize(listenerSpaceSourcePosition.xyz);
 
         return CalculateStereoPannedGain(gain, SphericalPosition::ForHRTF(direction));
     }
 
-    AmVec2 Gain::CalculateStereoPannedGain(AmReal32 gain, AmReal32 pan)
+    AmVector2 Gain::CalculateStereoPannedGain(AmReal32 gain, AmReal32 pan)
     {
         if (IsZero(gain))
-            return AM_V2(0, 0);
+            return kVector2Zero;
 
         // Clamp pan to its valid range of -1.0f to 1.0f inclusive
         pan = AM_CLAMP(pan, -1.0f, 1.0f);
@@ -149,10 +150,10 @@ namespace SparkyStudios::Audio::Amplitude
         return { left * left * gain, right * right * gain };
     }
 
-    AmVec2 Gain::CalculateStereoPannedGain(AmReal32 gain, SphericalPosition sourcePosition)
+    AmVector2 Gain::CalculateStereoPannedGain(AmReal32 gain, SphericalPosition sourcePosition)
     {
         if (IsZero(gain))
-            return AM_V2(0, 0);
+            return kVector2Zero;
 
         const AmReal32 cosTheta = std::cos(sourcePosition.GetElevation());
 

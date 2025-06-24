@@ -70,7 +70,7 @@ namespace SparkyStudios::Audio::Amplitude
         _userGain = 0.0f;
         _gain = 0.0f;
         _realGain = 0.0f;
-        _location = AM_V3(0, 0, 0);
+        _location = kVector3Zero;
         _channelStateId = 0;
 
         for (auto& sound : _eventsMap | std::views::values)
@@ -265,7 +265,7 @@ namespace SparkyStudios::Audio::Amplitude
         _targetFadeOutState = targetState;
     }
 
-    void ChannelInternalState::SetPan(const AmVec2& pan)
+    void ChannelInternalState::SetPan(const AmVector2& pan)
     {
         _pan = pan;
 
@@ -370,7 +370,7 @@ namespace SparkyStudios::Audio::Amplitude
                     continue;
 
                 _dopplerFactors[listener.GetId()] = ComputeDopplerFactor(
-                    _entity.GetLocation() - listener.GetLocation(), _entity.GetVelocity(), listener.GetVelocity(),
+                    Sub(_entity.GetLocation(), listener.GetLocation()), _entity.GetVelocity(), listener.GetVelocity(),
                     amEngine->GetSoundSpeed(), amEngine->GetDopplerFactor());
             }
         }
@@ -382,12 +382,12 @@ namespace SparkyStudios::Audio::Amplitude
 
             if (const AmReal32 roomVolume = _room.GetVolume(); roomVolume >= kEpsilon)
             {
-                const AmVec3& relativeLocation =
+                const AmVector3& relativeLocation =
                     GetRelativeDirection(_room.GetLocation(), _room.GetOrientation().GetQuaternion(), GetLocation());
-                const AmVec3& closestPoint = _room.GetShape().GetClosestPoint(relativeLocation);
+                const AmVector3& closestPoint = _room.GetShape().GetClosestPoint(relativeLocation);
 
                 // Avoid division by zero by shifting the attenuation by 1.0f
-                const AmReal32 distance = AM_Len(relativeLocation - closestPoint) + 1.0f;
+                const AmReal32 distance = Length(Sub(relativeLocation, closestPoint)) + 1.0f;
 
                 gain = 1.0f / (distance * distance);
             }

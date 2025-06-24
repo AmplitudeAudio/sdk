@@ -139,7 +139,7 @@ namespace SparkyStudios::Audio::Amplitude
         auto& right = output[1];
         const auto& mono = input[0];
 
-        ScalarMultiply(mono.begin(), left.begin(), AM_InvSqrtF(2), input.GetFrameCount());
+        ScalarMultiply(mono.begin(), left.begin(), InverseSquareRoot(2), input.GetFrameCount());
         std::copy_n(left.begin(), input.GetFrameCount(), right.begin());
     }
 
@@ -151,7 +151,7 @@ namespace SparkyStudios::Audio::Amplitude
 
         const AmSize length = input.GetFrameCount();
         AmSize remaining = input.GetFrameCount();
-        const AmReal32 invSqrt2 = AM_InvSqrtF(2);
+        const AmReal32 invSqrt2 = InverseSquareRoot(2);
 
         const auto& left = input[0];
         const auto& right = input[1];

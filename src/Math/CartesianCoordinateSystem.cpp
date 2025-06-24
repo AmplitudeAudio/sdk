@@ -35,22 +35,22 @@ namespace SparkyStudios::Audio::Amplitude
 
         const AmReal32 sourceScale = SquaredLength(sourceForwardVector);
 
-        AmMatrix3 sourceFromId;
-        sourceFromId[0] = sourceRightVector;
-        sourceFromId[1] = sourceUpVector;
-        sourceFromId[2] = sourceForwardVector;
+        Eigen::Matrix3f sourceFromId = Eigen::Matrix3f::Zero();
+        sourceFromId.block<3, 1>(0, 0) = Vec3ToEigen(sourceRightVector);
+        sourceFromId.block<3, 1>(0, 1) = Vec3ToEigen(sourceUpVector);
+        sourceFromId.block<3, 1>(0, 2) = Vec3ToEigen(sourceForwardVector);
 
         const AmReal32 targetScale = SquaredLength(targetForwardVector);
         AMPLITUDE_ASSERT(targetScale == SquaredLength(targetRightVector));
         AMPLITUDE_ASSERT(targetScale == SquaredLength(targetUpVector));
 
-        AmMatrix3 targetFromId;
-        targetFromId[0] = targetRightVector;
-        targetFromId[1] = targetUpVector;
-        targetFromId[2] = targetForwardVector;
+        Eigen::Matrix3f targetFromId = Eigen::Matrix3f::Zero();
+        targetFromId.block<3, 1>(0, 0) = Vec3ToEigen(targetRightVector);
+        targetFromId.block<3, 1>(0, 1) = Vec3ToEigen(targetUpVector);
+        targetFromId.block<3, 1>(0, 2) = Vec3ToEigen(targetForwardVector);
 
-        _fromToMatrix = Normalize(Mul(targetFromId, Inverse(sourceFromId)));
-        _fromToScalar = 1.0f / std::sqrt(sourceScale) * std::sqrt(targetScale);
+        _fromToMatrix = EigenToMat3((targetFromId * sourceFromId.inverse()).matrix());
+        _fromToScalar = (1.0f / std::sqrt(sourceScale)) * std::sqrt(targetScale);
 
         _toFromMatrix = Inverse(_fromToMatrix);
         _toFromScalar = 1.0f / _fromToScalar;
@@ -60,7 +60,7 @@ namespace SparkyStudios::Audio::Amplitude
 
     AmVector3 CartesianCoordinateSystem::Converter::Forward(const AmVector3& vector) const
     {
-        return Transform(_fromToMatrix, Mul(vector, _fromToScalar));
+        return Scale(Transform(_fromToMatrix, vector), _fromToScalar);
     }
 
     AmQuaternion CartesianCoordinateSystem::Converter::Forward(const AmQuaternion& quaternion) const
@@ -76,7 +76,7 @@ namespace SparkyStudios::Audio::Amplitude
 
     AmVector3 CartesianCoordinateSystem::Converter::Backward(const AmVector3& vector) const
     {
-        return Transform(_toFromMatrix, Mul(vector, _toFromScalar));
+        return Scale(Transform(_toFromMatrix, vector), _toFromScalar);
     }
 
     AmQuaternion CartesianCoordinateSystem::Converter::Backward(const AmQuaternion& quaternion) const

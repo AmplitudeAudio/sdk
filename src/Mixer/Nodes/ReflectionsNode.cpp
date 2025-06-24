@@ -86,7 +86,7 @@ namespace SparkyStudios::Audio::Amplitude
         }
 
         // Rotate the reflections to match the listener's orientation
-        _orientationProcessor.SetOrientation(Orientation(AM_InvQ(listener.GetOrientation().GetQuaternion())));
+        _orientationProcessor.SetOrientation(Orientation(Inverse(listener.GetOrientation().GetQuaternion())));
         _orientationProcessor.Process(&_output, _output.GetSampleCount());
 
         return _output.GetBuffer();

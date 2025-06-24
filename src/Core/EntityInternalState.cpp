@@ -22,7 +22,7 @@ namespace SparkyStudios::Audio::Amplitude
         , _velocity()
         , _location()
         , _orientation(Orientation::Zero())
-        , _inverseMatrix(Identity4())
+        , _inverseMatrix(kMatrix4Identity)
         , _obstruction(0.0f)
         , _occlusion(0.0f)
         , _directivity(0.0f)

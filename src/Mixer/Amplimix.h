@@ -104,7 +104,7 @@ namespace SparkyStudios::Audio::Amplitude
         [[nodiscard]] AmReal32 GetObstruction() const override;
         [[nodiscard]] AmReal32 GetOcclusion() const override;
         [[nodiscard]] AmReal32 GetPlaySpeed() const override;
-        [[nodiscard]] AmVec3 GetLocation() const override;
+        [[nodiscard]] AmVector3 GetLocation() const override;
         [[nodiscard]] Entity GetEntity() const override;
         [[nodiscard]] Listener GetListener() const override;
         [[nodiscard]] Room GetRoom() const override;
