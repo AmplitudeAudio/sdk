@@ -303,7 +303,8 @@ namespace SparkyStudios::Audio::Amplitude
                 for (AmUInt32 i = 0; i < 26; ++i)
                 {
                     _speakers[i].Configure(m_order, m_is3D);
-                    _speakers[i].SetPosition(SphericalPosition::ForHRTF(AM_V3(xAxis.at(i), yAxis.at(i), zAxis.at(i))));
+                    _speakers[i].SetPosition(SphericalPosition::ForHRTF(AmVector3{
+                        static_cast<AmReal32>(xAxis.at(i)), static_cast<AmReal32>(yAxis.at(i)), static_cast<AmReal32>(zAxis.at(i)) }));
                 }
                 break;
             }

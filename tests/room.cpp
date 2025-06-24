@@ -42,12 +42,12 @@ TEST_CASE("Room Tests", "[room][core][amplitude]")
 
         WHEN("the location changes")
         {
-            const auto location = AM_V3(10, 20, 30);
+            constexpr AmVector3 location = { 10, 20, 30 };
             state.SetLocation(location);
 
             THEN("it returns the new location")
             {
-                REQUIRE(AM_EqV3(state.GetLocation(), location));
+                REQUIRE(state.GetLocation() == location);
             }
 
             AND_WHEN("an update occurs")
@@ -56,22 +56,22 @@ TEST_CASE("Room Tests", "[room][core][amplitude]")
 
                 THEN("the location stays the same")
                 {
-                    REQUIRE(AM_EqV3(state.GetLocation(), location));
+                    REQUIRE(state.GetLocation() == location);
                 }
             }
         }
 
         WHEN("the orientation changes")
         {
-            const auto direction = AM_V3(1, 0, 0);
-            const auto up = AM_V3(0, 0, 1);
+            const auto direction = kVector3UnitX;
+            const auto up = kVector3UnitZ;
             const auto orientation = Orientation(direction, up);
             state.SetOrientation(orientation);
 
             THEN("it returns the new orientation")
             {
-                REQUIRE(AM_EqV3(state.GetDirection(), direction));
-                REQUIRE(AM_EqV3(state.GetUp(), up));
+                REQUIRE(state.GetDirection() == direction);
+                REQUIRE(state.GetUp() == up);
                 REQUIRE(std::memcmp(&state.GetOrientation(), &orientation, sizeof(Orientation)) == 0);
             }
         }
@@ -88,7 +88,7 @@ TEST_CASE("Room Tests", "[room][core][amplitude]")
 
             THEN("it compute correct dimensions")
             {
-                REQUIRE(AM_EqV3(state.GetDimensions(), AM_V3(1000, 500, 500)));
+                REQUIRE(state.GetDimensions() == AmVector3{ 1000, 500, 500 });
             }
 
             THEN("it computes the correct volume")
@@ -110,12 +110,12 @@ TEST_CASE("Room Tests", "[room][core][amplitude]")
 
             AND_WHEN("the dimensions change")
             {
-                const auto dimensions = AM_V3(100, 100, 100);
+                constexpr AmVector3 dimensions = { 100, 100, 100 };
                 state.SetDimensions(dimensions);
 
                 THEN("it returns the new dimensions")
                 {
-                    REQUIRE(AM_EqV3(state.GetDimensions(), dimensions));
+                    REQUIRE(state.GetDimensions() == dimensions);
                 }
 
                 THEN("it compute the correct shape")
@@ -186,14 +186,14 @@ TEST_CASE("Room Tests", "[room][core][amplitude]")
 
         WHEN("the location changes")
         {
-            const auto location = AM_V3(10, 20, 30);
+            constexpr AmVector3 location = { 10, 20, 30 };
             wrapper.SetLocation(location);
 
             THEN("it returns the new location")
             {
-                REQUIRE(AM_EqV3(wrapper.GetLocation(), location));
+                REQUIRE(wrapper.GetLocation() == location);
 
-                REQUIRE(AM_EqV3(wrapper.GetLocation(), state.GetLocation()));
+                REQUIRE(wrapper.GetLocation() == state.GetLocation());
             }
 
             AND_WHEN("an update occurs")
@@ -202,27 +202,27 @@ TEST_CASE("Room Tests", "[room][core][amplitude]")
 
                 THEN("the location stays the same")
                 {
-                    REQUIRE(AM_EqV3(wrapper.GetLocation(), location));
+                    REQUIRE(wrapper.GetLocation() == location);
 
-                    REQUIRE(AM_EqV3(wrapper.GetLocation(), state.GetLocation()));
+                    REQUIRE(wrapper.GetLocation() == state.GetLocation());
                 }
             }
         }
 
         WHEN("the orientation changes")
         {
-            const auto direction = AM_V3(1, 0, 0);
-            const auto up = AM_V3(0, 0, 1);
+            const auto direction = kVector3UnitX;
+            const auto up = kVector3UnitZ;
             const auto orientation = Orientation(direction, up);
             wrapper.SetOrientation(orientation);
 
             THEN("it returns the new orientation")
             {
-                REQUIRE(AM_EqV3(wrapper.GetDirection(), direction));
-                REQUIRE(AM_EqV3(wrapper.GetUp(), up));
+                REQUIRE(wrapper.GetDirection() == direction);
+                REQUIRE(wrapper.GetUp() == up);
 
-                REQUIRE(AM_EqV3(wrapper.GetDirection(), state.GetDirection()));
-                REQUIRE(AM_EqV3(wrapper.GetUp(), state.GetUp()));
+                REQUIRE(wrapper.GetDirection() == state.GetDirection());
+                REQUIRE(wrapper.GetUp() == state.GetUp());
 
                 REQUIRE(std::memcmp(&wrapper.GetOrientation(), &orientation, sizeof(Orientation)) == 0);
                 REQUIRE(std::memcmp(&state.GetOrientation(), &wrapper.GetOrientation(), sizeof(Orientation)) == 0);
@@ -242,8 +242,8 @@ TEST_CASE("Room Tests", "[room][core][amplitude]")
 
             THEN("it compute correct dimensions")
             {
-                REQUIRE(AM_EqV3(wrapper.GetDimensions(), AM_V3(1000, 500, 500)));
-                REQUIRE(AM_EqV3(wrapper.GetDimensions(), state.GetDimensions()));
+                REQUIRE(wrapper.GetDimensions() == AmVector3{ 1000, 500, 500 });
+                REQUIRE(wrapper.GetDimensions() == state.GetDimensions());
             }
 
             THEN("it computes the correct volume")
@@ -275,13 +275,13 @@ TEST_CASE("Room Tests", "[room][core][amplitude]")
 
             AND_WHEN("the dimensions change")
             {
-                const auto dimensions = AM_V3(100, 100, 100);
+                constexpr AmVector3 dimensions = { 100, 100, 100 };
                 wrapper.SetDimensions(dimensions);
 
                 THEN("it returns the new dimensions")
                 {
-                    REQUIRE(AM_EqV3(wrapper.GetDimensions(), dimensions));
-                    REQUIRE(AM_EqV3(wrapper.GetDimensions(), state.GetDimensions()));
+                    REQUIRE(wrapper.GetDimensions() == dimensions);
+                    REQUIRE(wrapper.GetDimensions() == state.GetDimensions());
                 }
 
                 THEN("it compute the correct shape")

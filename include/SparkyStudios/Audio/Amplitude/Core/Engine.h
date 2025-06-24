@@ -17,8 +17,6 @@
 #ifndef _AM_CORE_ENGINE_H
 #define _AM_CORE_ENGINE_H
 
-#include <queue>
-
 #include <SparkyStudios/Audio/Amplitude/Core/Common.h>
 
 #include <SparkyStudios/Audio/Amplitude/Core/Device.h>
@@ -1111,7 +1109,7 @@ namespace SparkyStudios::Audio::Amplitude
          * @return The channel the switch container is being played on. If the switch container could not be
          * played, or the given handle is invalid, an invalid @c Channel is returned.
          */
-        [[nodiscard]] virtual Channel Play(SwitchContainerHandle handle, const AmVec3& location) const = 0;
+        [[nodiscard]] virtual Channel Play(SwitchContainerHandle handle, const AmVector3& location) const = 0;
 
         /**
          * @brief Plays a switch container associated with the given handle in the World scope.
@@ -1126,7 +1124,7 @@ namespace SparkyStudios::Audio::Amplitude
          * @return The channel the switch container is being played on. If the switch container could not be
          * played, or the given handle is invalid, an invalid @c Channel is returned.
          */
-        [[nodiscard]] virtual Channel Play(SwitchContainerHandle handle, const AmVec3& location, AmReal32 userGain) const = 0;
+        [[nodiscard]] virtual Channel Play(SwitchContainerHandle handle, const AmVector3& location, AmReal32 userGain) const = 0;
 
         /**
          * @brief Plays a switch container associated with the given handle in an Entity scope.
@@ -1179,7 +1177,7 @@ namespace SparkyStudios::Audio::Amplitude
          * @return The channel the collection is being played on. If the collection could not be
          * played, or the handle is invalid, an invalid @c Channel is returned.
          */
-        [[nodiscard]] virtual Channel Play(CollectionHandle handle, const AmVec3& location) const = 0;
+        [[nodiscard]] virtual Channel Play(CollectionHandle handle, const AmVector3& location) const = 0;
 
         /**
          * @brief Plays a collection associated with the given handle in the World scope.
@@ -1194,7 +1192,7 @@ namespace SparkyStudios::Audio::Amplitude
          * @return The channel the collection is being played on. If the collection could not be
          * played, or the handle is invalid, an invalid @c Channel is returned.
          */
-        [[nodiscard]] virtual Channel Play(CollectionHandle handle, const AmVec3& location, AmReal32 userGain) const = 0;
+        [[nodiscard]] virtual Channel Play(CollectionHandle handle, const AmVector3& location, AmReal32 userGain) const = 0;
 
         /**
          * @brief Plays a collection associated with the given handle in the Entity scope.
@@ -1247,7 +1245,7 @@ namespace SparkyStudios::Audio::Amplitude
          * @return The channel the sound is being played on. If the sound could not be
          * played, the given handle is invalid, an invalid @c Channel is returned.
          */
-        [[nodiscard]] virtual Channel Play(SoundHandle handle, const AmVec3& location) const = 0;
+        [[nodiscard]] virtual Channel Play(SoundHandle handle, const AmVector3& location) const = 0;
 
         /**
          * @brief Plays a sound associated with the given handle in the World scope.
@@ -1262,7 +1260,7 @@ namespace SparkyStudios::Audio::Amplitude
          * @return The channel the sound is being played on. If the sound could not be
          * played, the given handle is invalid, an invalid @c Channel is returned.
          */
-        [[nodiscard]] virtual Channel Play(SoundHandle handle, const AmVec3& location, AmReal32 userGain) const = 0;
+        [[nodiscard]] virtual Channel Play(SoundHandle handle, const AmVector3& location, AmReal32 userGain) const = 0;
 
         /**
          * @brief Plays a sound associated with the given sound handle in an Entity scope.
@@ -1321,7 +1319,7 @@ namespace SparkyStudios::Audio::Amplitude
          * @return The channel the sound object is being played on. If the object could not be
          * played, or an object with the given name was not found, an invalid @c Channel is returned.
          */
-        [[nodiscard]] virtual Channel Play(const AmString& name, const AmVec3& location) const = 0;
+        [[nodiscard]] virtual Channel Play(const AmString& name, const AmVector3& location) const = 0;
 
         /**
          * @brief Plays a sound object associated with the given name in the World scope.
@@ -1339,7 +1337,7 @@ namespace SparkyStudios::Audio::Amplitude
          * @return The channel the sound object is being played on. If the object could not be
          * played, or an object with the given name was not found, an invalid @c Channel is returned.
          */
-        [[nodiscard]] virtual Channel Play(const AmString& name, const AmVec3& location, AmReal32 userGain) const = 0;
+        [[nodiscard]] virtual Channel Play(const AmString& name, const AmVector3& location, AmReal32 userGain) const = 0;
 
         /**
          * @brief Plays a sound object associated with the given name in an Entity scope.
@@ -1406,7 +1404,7 @@ namespace SparkyStudios::Audio::Amplitude
          * @return The channel the sound object is being played on. If the object could not be
          * played, or an object with the given ID was not found, an invalid @c Channel is returned.
          */
-        [[nodiscard]] virtual Channel Play(AmObjectID id, const AmVec3& location) const = 0;
+        [[nodiscard]] virtual Channel Play(AmObjectID id, const AmVector3& location) const = 0;
 
         /**
          * @brief Plays a sound object associated with the given ID in the World scope.
@@ -1424,7 +1422,7 @@ namespace SparkyStudios::Audio::Amplitude
          * @return The channel the sound object is being played on. If the object could not be
          * played, or an object with the given ID was not found, an invalid @c Channel is returned.
          */
-        [[nodiscard]] virtual Channel Play(AmObjectID id, const AmVec3& location, AmReal32 userGain) const = 0;
+        [[nodiscard]] virtual Channel Play(AmObjectID id, const AmVector3& location, AmReal32 userGain) const = 0;
 
         /**
          * @brief Plays a sound object associated with the given ID in an Entity scope.

@@ -14,6 +14,7 @@
 
 #include <algorithm>
 #include <memory>
+#include <queue>
 #include <ranges>
 
 #include <SparkyStudios/Audio/Amplitude/Amplitude.h>
@@ -162,7 +163,7 @@ namespace SparkyStudios::Audio::Amplitude
         list->push_front(*channel);
     }
 
-    void AssignBestRoom(ChannelInternalState* newChannel, const AmVec3& location, std::shared_ptr<EngineInternalState> state)
+    void AssignBestRoom(ChannelInternalState* newChannel, const AmVector3& location, std::shared_ptr<EngineInternalState> state)
     {
         RoomInternalState* bestRoom = nullptr;
         AmReal32 minDistanceSquared = std::numeric_limits<AmReal32>::max();
@@ -688,9 +689,8 @@ namespace SparkyStudios::Audio::Amplitude
 
         if (_audioDriver == nullptr)
         {
-            amLogCritical(
-                "Failed to load the specified driver, the default driver, and the null driver. Please check your engine "
-                "configuration, and ensure that all the needed plugins are loaded.");
+            amLogCritical("Failed to load the specified driver, the default driver, and the null driver. Please check your engine "
+                          "configuration, and ensure that all the needed plugins are loaded.");
             Deinitialize();
             return false;
         }
@@ -721,9 +721,8 @@ namespace SparkyStudios::Audio::Amplitude
         }
         else if (_state->panning_mode != ePanningMode_Stereo)
         {
-            amLogCritical(
-                "The HRTF configuration is missing, but the panning mode is not stereo. Please provide an HRTF configuration, or "
-                "set the panning mode to Stereo.");
+            amLogCritical("The HRTF configuration is missing, but the panning mode is not stereo. Please provide an HRTF configuration, or "
+                          "set the panning mode to Stereo.");
             Deinitialize();
             return false;
         }
@@ -1139,13 +1138,13 @@ namespace SparkyStudios::Audio::Amplitude
         return true;
     }
 
-    ListenerInternalState* FindBestListener(ListenerList& listeners, const AmVec3& location, eListenerFetchMode fetchMode)
+    ListenerInternalState* FindBestListener(ListenerList& listeners, const AmVector3& location, eListenerFetchMode fetchMode)
     {
         if (listeners.empty())
             return nullptr;
 
         ListenerList::iterator bestListener;
-        const AmVec4 location4 = AM_V4V(location, 1.0f);
+        const AmVector4 location4 = { location.x, location.y, location.z, 1.0f };
 
         switch (fetchMode)
         {
@@ -1157,14 +1156,14 @@ namespace SparkyStudios::Audio::Amplitude
         case eListenerFetchMode_Farthest:
             {
                 auto listener = listeners.begin();
-                auto listenerSpaceLocation = AM_Mul(listener->GetInverseMatrix(), location4).XYZ;
-                AmReal32 distanceSquared = AM_LenSqr(listenerSpaceLocation);
+                auto listenerSpaceLocation = Transform(listener->GetInverseMatrix(), location4).xyz;
+                AmReal32 distanceSquared = SquaredLength(listenerSpaceLocation);
                 bestListener = listener;
 
                 for (++listener; listener != listeners.end(); ++listener)
                 {
-                    const AmVec3 transformedLocation = AM_Mul(listener->GetInverseMatrix(), location4).XYZ;
-                    if (const AmReal32 magnitudeSquared = AM_LenSqr(transformedLocation);
+                    const AmVector3 transformedLocation = Transform(listener->GetInverseMatrix(), location4).xyz;
+                    if (const AmReal32 magnitudeSquared = SquaredLength(transformedLocation);
                         fetchMode == eListenerFetchMode_Nearest ? magnitudeSquared < distanceSquared : magnitudeSquared > distanceSquared)
                     {
                         bestListener = listener;
@@ -1203,18 +1202,18 @@ namespace SparkyStudios::Audio::Amplitude
         return &*bestListener;
     }
 
-    AmVec2 CalculatePan(const AmVec3& listenerSpaceLocation)
+    AmVector2 CalculatePan(const AmVector3& listenerSpaceLocation)
     {
-        if (AM_LenSqr(listenerSpaceLocation) <= kEpsilon)
-            return AM_V2(0.0f, 0.0f);
+        if (SquaredLength(listenerSpaceLocation) <= kEpsilon)
+            return kVector2Zero;
 
-        const AmVec3 direction = AM_Norm(listenerSpaceLocation);
-        return AM_V2(AM_Dot(AM_V3(1, 0, 0), direction), AM_Dot(AM_V3(0, 1, 0), direction));
+        const AmVector3 direction = Normalize(listenerSpaceLocation);
+        return { Dot(kVector3UnitX, direction), Dot(kVector3UnitY, direction) };
     }
 
     static void CalculateGainPanPitch(
         AmReal32* gain,
-        AmVec2* pan,
+        AmVector2* pan,
         AmReal32* pitch,
         const ListenerInternalState* listener,
         const ChannelInternalState* channel,
@@ -1226,7 +1225,7 @@ namespace SparkyStudios::Audio::Amplitude
     {
         *gain = soundGain * bus->GetGain() * userGain;
         *pitch = soundPitch;
-        *pan = AM_V2(0, 0); // TODO: This may be removed in the future, since panning is handled automatically in pipeline nodes..
+        *pan = kVector2Zero; // TODO: This may be removed in the future, since panning is handled automatically in pipeline nodes..
 
         if (spatialization != eSpatialization_None && listener != nullptr && channel != nullptr)
             *pitch *= channel->GetDopplerFactor(listener->GetId());
@@ -1310,15 +1309,15 @@ namespace SparkyStudios::Audio::Amplitude
 
     Channel EngineImpl::Play(SwitchContainerHandle handle) const
     {
-        return Play(handle, AM_V3(0, 0, 0), 1.0f);
+        return Play(handle, kVector3Zero, 1.0f);
     }
 
-    Channel EngineImpl::Play(SwitchContainerHandle handle, const AmVec3& location) const
+    Channel EngineImpl::Play(SwitchContainerHandle handle, const AmVector3& location) const
     {
         return Play(handle, location, 1.0f);
     }
 
-    Channel EngineImpl::Play(SwitchContainerHandle handle, const AmVec3& location, const AmReal32 userGain) const
+    Channel EngineImpl::Play(SwitchContainerHandle handle, const AmVector3& location, const AmReal32 userGain) const
     {
         return PlayScopedSwitchContainer(handle, Entity(nullptr), location, userGain);
     }
@@ -1335,15 +1334,15 @@ namespace SparkyStudios::Audio::Amplitude
 
     Channel EngineImpl::Play(CollectionHandle handle) const
     {
-        return Play(handle, AM_V3(0, 0, 0), 1.0f);
+        return Play(handle, kVector3Zero, 1.0f);
     }
 
-    Channel EngineImpl::Play(CollectionHandle handle, const AmVec3& location) const
+    Channel EngineImpl::Play(CollectionHandle handle, const AmVector3& location) const
     {
         return Play(handle, location, 1.0f);
     }
 
-    Channel EngineImpl::Play(CollectionHandle handle, const AmVec3& location, const AmReal32 userGain) const
+    Channel EngineImpl::Play(CollectionHandle handle, const AmVector3& location, const AmReal32 userGain) const
     {
         return PlayScopedCollection(handle, Entity(nullptr), location, userGain);
     }
@@ -1360,15 +1359,15 @@ namespace SparkyStudios::Audio::Amplitude
 
     Channel EngineImpl::Play(SoundHandle handle) const
     {
-        return Play(handle, AM_V3(0, 0, 0), 1.0f);
+        return Play(handle, kVector3Zero, 1.0f);
     }
 
-    Channel EngineImpl::Play(SoundHandle handle, const AmVec3& location) const
+    Channel EngineImpl::Play(SoundHandle handle, const AmVector3& location) const
     {
         return Play(handle, location, 1.0f);
     }
 
-    Channel EngineImpl::Play(SoundHandle handle, const AmVec3& location, AmReal32 userGain) const
+    Channel EngineImpl::Play(SoundHandle handle, const AmVector3& location, AmReal32 userGain) const
     {
         return PlayScopedSound(handle, Entity(nullptr), location, userGain);
     }
@@ -1385,15 +1384,15 @@ namespace SparkyStudios::Audio::Amplitude
 
     Channel EngineImpl::Play(const AmString& name) const
     {
-        return Play(name, AM_V3(0, 0, 0), 1.0f);
+        return Play(name, kVector3Zero, 1.0f);
     }
 
-    Channel EngineImpl::Play(const AmString& name, const AmVec3& location) const
+    Channel EngineImpl::Play(const AmString& name, const AmVector3& location) const
     {
         return Play(name, location, 1.0f);
     }
 
-    Channel EngineImpl::Play(const AmString& name, const AmVec3& location, const AmReal32 userGain) const
+    Channel EngineImpl::Play(const AmString& name, const AmVector3& location, const AmReal32 userGain) const
     {
         if (SoundHandle handle = GetSoundHandle(name))
             return Play(handle, location, userGain);
@@ -1430,15 +1429,15 @@ namespace SparkyStudios::Audio::Amplitude
 
     Channel EngineImpl::Play(AmObjectID id) const
     {
-        return Play(id, AM_V3(0, 0, 0), 1.0f);
+        return Play(id, kVector3Zero, 1.0f);
     }
 
-    Channel EngineImpl::Play(AmObjectID id, const AmVec3& location) const
+    Channel EngineImpl::Play(AmObjectID id, const AmVector3& location) const
     {
         return Play(id, location, 1.0f);
     }
 
-    Channel EngineImpl::Play(AmObjectID id, const AmVec3& location, const AmReal32 userGain) const
+    Channel EngineImpl::Play(AmObjectID id, const AmVector3& location, const AmReal32 userGain) const
     {
         if (Sound* handle = GetSoundHandle(id))
             return Play(handle, location, userGain);
@@ -2214,7 +2213,7 @@ namespace SparkyStudios::Audio::Amplitude
             return;
 
         AmReal32 gain;
-        AmVec2 pan;
+        AmVector2 pan;
         AmReal32 pitch;
 
         // Find the best listener for this channel.
@@ -2523,7 +2522,7 @@ namespace SparkyStudios::Audio::Amplitude
 #pragma endregion
 
     Channel EngineImpl::PlayScopedSwitchContainer(
-        SwitchContainerHandle handle, const Entity& entity, const AmVec3& location, const AmReal32 userGain) const
+        SwitchContainerHandle handle, const Entity& entity, const AmVector3& location, const AmReal32 userGain) const
     {
         if (handle == nullptr)
         {
@@ -2548,7 +2547,7 @@ namespace SparkyStudios::Audio::Amplitude
 
         // Find where it belongs in the list.
         AmReal32 gain;
-        AmVec2 pan;
+        AmVector2 pan;
         AmReal32 pitch;
         CalculateGainPanPitch(
             &gain, &pan, &pitch, listener, nullptr, handle->GetGain().GetValue(), handle->GetPitch().GetValue(),
@@ -2598,7 +2597,7 @@ namespace SparkyStudios::Audio::Amplitude
     }
 
     Channel EngineImpl::PlayScopedCollection(
-        CollectionHandle handle, const Entity& entity, const AmVec3& location, const AmReal32 userGain) const
+        CollectionHandle handle, const Entity& entity, const AmVector3& location, const AmReal32 userGain) const
     {
         if (handle == nullptr)
         {
@@ -2623,7 +2622,7 @@ namespace SparkyStudios::Audio::Amplitude
 
         // Find where it belongs in the list.
         AmReal32 gain;
-        AmVec2 pan;
+        AmVector2 pan;
         AmReal32 pitch;
         CalculateGainPanPitch(
             &gain, &pan, &pitch, listener, nullptr, handle->GetGain().GetValue(), handle->GetPitch().GetValue(),
@@ -2672,7 +2671,7 @@ namespace SparkyStudios::Audio::Amplitude
         return Channel(newChannel);
     }
 
-    Channel EngineImpl::PlayScopedSound(SoundHandle handle, const Entity& entity, const AmVec3& location, AmReal32 userGain) const
+    Channel EngineImpl::PlayScopedSound(SoundHandle handle, const Entity& entity, const AmVector3& location, AmReal32 userGain) const
     {
         if (handle == nullptr)
         {
@@ -2697,7 +2696,7 @@ namespace SparkyStudios::Audio::Amplitude
 
         // Find where it belongs in the list.
         AmReal32 gain;
-        AmVec2 pan;
+        AmVector2 pan;
         AmReal32 pitch;
         CalculateGainPanPitch(
             &gain, &pan, &pitch, listener, nullptr, handle->GetGain().GetValue(), handle->GetPitch().GetValue(),

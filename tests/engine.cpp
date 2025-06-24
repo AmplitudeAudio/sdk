@@ -759,7 +759,7 @@ TEST_CASE_PERSISTENT_FIXTURE(EngineTestsFixture, "Engine Tests", "[engine][core]
 
     GIVEN("a playing channel")
     {
-        AmVec3 location = { 10.0f, 20.0f, 30.0f };
+        AmVector3 location = { 10.0f, 20.0f, 30.0f };
         AmReal32 userGain = 0.36f;
         Channel channel = amEngine->Play(100, location, userGain);
         amEngine->WaitUntilNextFrame(); // Playing is done in the next frame
@@ -849,18 +849,18 @@ TEST_CASE_PERSISTENT_FIXTURE(EngineTestsFixture, "Engine Tests", "[engine][core]
 
         THEN("it returns the correct location")
         {
-            AmVec3 result = channel.GetLocation();
-            REQUIRE(AM_EqV3(result, location));
+            AmVector3 result = channel.GetLocation();
+            REQUIRE(result == location);
 
             WHEN("location is updated")
             {
-                AmVec3 newLocation = { 100.0f, 200.0f, 300.0f };
+                AmVector3 newLocation = { 100.0f, 200.0f, 300.0f };
                 channel.SetLocation(newLocation);
 
                 THEN("it returns the new location")
                 {
-                    AmVec3 result2 = channel.GetLocation();
-                    REQUIRE(AM_EqV3(result2, newLocation));
+                    AmVector3 result2 = channel.GetLocation();
+                    REQUIRE(result2 == newLocation);
                 }
             }
 

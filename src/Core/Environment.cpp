@@ -42,13 +42,13 @@ namespace SparkyStudios::Audio::Amplitude
         return _state != nullptr ? _state->GetId() : kAmInvalidObjectId;
     }
 
-    void Environment::SetLocation(const AmVec3& location) const
+    void Environment::SetLocation(const AmVector3& location) const
     {
         AMPLITUDE_ASSERT(Valid());
         _state->SetLocation(location);
     }
 
-    const AmVec3& Environment::GetLocation() const
+    const AmVector3& Environment::GetLocation() const
     {
         AMPLITUDE_ASSERT(Valid());
         return _state->GetLocation();
@@ -66,19 +66,19 @@ namespace SparkyStudios::Audio::Amplitude
         return _state->GetOrientation();
     }
 
-    AmVec3 Environment::GetDirection() const
+    AmVector3 Environment::GetDirection() const
     {
         AMPLITUDE_ASSERT(Valid());
         return _state->GetDirection();
     }
 
-    AmVec3 Environment::GetUp() const
+    AmVector3 Environment::GetUp() const
     {
         AMPLITUDE_ASSERT(Valid());
         return _state->GetUp();
     }
 
-    AmReal32 Environment::GetFactor(const AmVec3& location) const
+    AmReal32 Environment::GetFactor(const AmVector3& location) const
     {
         AMPLITUDE_ASSERT(Valid());
         return _state->GetFactor(location);

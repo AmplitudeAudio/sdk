@@ -36,12 +36,12 @@ namespace SparkyStudios::Audio::Amplitude
             , _gain(0)
         {}
 
-        [[nodiscard]] const AmVec3& GetRoomLocation() const
+        [[nodiscard]] const AmVector3& GetRoomLocation() const
         {
             return _shape.GetLocation();
         }
 
-        AM_INLINE void SetRoomLocation(const AmVec3& location)
+        AM_INLINE void SetRoomLocation(const AmVector3& location)
         {
             _shape.SetLocation(location);
         }
@@ -56,12 +56,12 @@ namespace SparkyStudios::Audio::Amplitude
             _shape.SetOrientation(orientation);
         }
 
-        [[nodiscard]] AM_INLINE AmVec3 GetRoomDirection() const
+        [[nodiscard]] AM_INLINE AmVector3 GetRoomDirection() const
         {
             return _shape.GetOrientation().GetForward();
         }
 
-        [[nodiscard]] AM_INLINE AmVec3 GetRoomUp() const
+        [[nodiscard]] AM_INLINE AmVector3 GetRoomUp() const
         {
             return _shape.GetOrientation().GetUp();
         }
@@ -174,7 +174,7 @@ namespace SparkyStudios::Audio::Amplitude
          *
          * @param location The new location.
          */
-        AM_INLINE void SetLocation(const AmVec3& location)
+        AM_INLINE void SetLocation(const AmVector3& location)
         {
             _reflectionsProperties.SetRoomLocation(location);
             _needUpdate = true;
@@ -185,7 +185,7 @@ namespace SparkyStudios::Audio::Amplitude
          *
          * @return The current location of this Environment.
          */
-        [[nodiscard]] AM_INLINE const AmVec3& GetLocation() const
+        [[nodiscard]] AM_INLINE const AmVector3& GetLocation() const
         {
             return _reflectionsProperties.GetRoomLocation();
         }
@@ -216,7 +216,7 @@ namespace SparkyStudios::Audio::Amplitude
          *
          * @return The direction vector.
          */
-        [[nodiscard]] AM_INLINE AmVec3 GetDirection() const
+        [[nodiscard]] AM_INLINE AmVector3 GetDirection() const
         {
             return _reflectionsProperties.GetRoomDirection();
         }
@@ -226,7 +226,7 @@ namespace SparkyStudios::Audio::Amplitude
          *
          * @return The up vector.
          */
-        [[nodiscard]] AM_INLINE AmVec3 GetUp() const
+        [[nodiscard]] AM_INLINE AmVector3 GetUp() const
         {
             return _reflectionsProperties.GetRoomUp();
         }
@@ -272,17 +272,17 @@ namespace SparkyStudios::Audio::Amplitude
             return _materials[static_cast<AmSize>(wall)];
         }
 
-        [[nodiscard]] AM_INLINE AmVec3 GetDimensions() const
+        [[nodiscard]] AM_INLINE AmVector3 GetDimensions() const
         {
             return { _reflectionsProperties.GetRoomWidth(), _reflectionsProperties.GetRoomDepth(), _reflectionsProperties.GetRoomHeight() };
         }
 
-        AM_INLINE void SetDimensions(const AmVec3& dimensions)
+        AM_INLINE void SetDimensions(const AmVector3& dimensions)
         {
             auto& shape = _reflectionsProperties.GetRoomShape();
-            shape.SetHalfWidth(dimensions.X * 0.5f);
-            shape.SetHalfHeight(dimensions.Z * 0.5f);
-            shape.SetHalfDepth(dimensions.Y * 0.5f);
+            shape.SetHalfWidth(dimensions.x * 0.5f);
+            shape.SetHalfHeight(dimensions.z * 0.5f);
+            shape.SetHalfDepth(dimensions.y * 0.5f);
             _needUpdate = true;
         }
 
@@ -310,7 +310,7 @@ namespace SparkyStudios::Audio::Amplitude
         [[nodiscard]] AM_INLINE AmReal32 GetVolume() const
         {
             const auto& dimensions = GetDimensions();
-            return dimensions.X * dimensions.Y * dimensions.Z;
+            return dimensions.x * dimensions.y * dimensions.z;
         }
 
         [[nodiscard]] AM_INLINE AmReal32 GetSurfaceArea(eRoomWall wall) const
@@ -321,13 +321,13 @@ namespace SparkyStudios::Audio::Amplitude
             {
             case eRoomWall_Front:
             case eRoomWall_Back:
-                return dimensions.X * dimensions.Z;
+                return dimensions.x * dimensions.z;
             case eRoomWall_Left:
             case eRoomWall_Right:
-                return dimensions.Y * dimensions.Z;
+                return dimensions.y * dimensions.z;
             case eRoomWall_Top:
             case eRoomWall_Bottom:
-                return dimensions.X * dimensions.Y;
+                return dimensions.x * dimensions.y;
             default:
                 return 0.0f;
             }

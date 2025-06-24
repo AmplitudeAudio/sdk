@@ -20,6 +20,7 @@
 #include <SparkyStudios/Audio/Amplitude/Core/Common.h>
 
 #include <Core/Playback/ChannelInternalState.h>
+#include <Math/LinearAlgebra.h>
 #include <Utils/intrusive_list.h>
 
 namespace SparkyStudios::Audio::Amplitude
@@ -30,7 +31,7 @@ namespace SparkyStudios::Audio::Amplitude
         EntityInternalState();
 
         /**
-         * @brief Gets the ID of this Entity in game.
+         * @brief Gets the ID of this Entity in the game.
          *
          * @return The game Entity ID.
          */
@@ -40,7 +41,7 @@ namespace SparkyStudios::Audio::Amplitude
         }
 
         /**
-         * @brief Sets the ID of this Entity in game.
+         * @brief Sets the ID of this Entity in the game.
          *
          * @param id The game Entity ID.
          */
@@ -54,7 +55,7 @@ namespace SparkyStudios::Audio::Amplitude
          *
          * @return The Entity's velocity.
          */
-        [[nodiscard]] AM_INLINE const AmVec3& GetVelocity() const
+        [[nodiscard]] AM_INLINE const AmVector3& GetVelocity() const
         {
             return _velocity;
         }
@@ -64,14 +65,14 @@ namespace SparkyStudios::Audio::Amplitude
          *
          * @param location The new location.
          */
-        void SetLocation(const AmVec3& location);
+        void SetLocation(const AmVector3& location);
 
         /**
          * @brief Gets the current location of this Entity.
          *
          * @return The current location of this Entity.
          */
-        [[nodiscard]] AM_INLINE const AmVec3& GetLocation() const
+        [[nodiscard]] AM_INLINE const AmVector3& GetLocation() const
         {
             return _location;
         }
@@ -91,7 +92,7 @@ namespace SparkyStudios::Audio::Amplitude
          *
          * @return The direction vector.
          */
-        [[nodiscard]] AM_INLINE AmVec3 GetDirection() const
+        [[nodiscard]] AM_INLINE AmVector3 GetDirection() const
         {
             return _orientation.GetForward();
         }
@@ -101,7 +102,7 @@ namespace SparkyStudios::Audio::Amplitude
          *
          * @return The up vector.
          */
-        [[nodiscard]] AM_INLINE AmVec3 GetUp() const
+        [[nodiscard]] AM_INLINE AmVector3 GetUp() const
         {
             return _orientation.GetUp();
         }
@@ -121,7 +122,7 @@ namespace SparkyStudios::Audio::Amplitude
          *
          * @return The inverse transformation matrix.
          */
-        [[nodiscard]] AM_INLINE const AmMat4& GetInverseMatrix() const
+        [[nodiscard]] AM_INLINE const AmMatrix4& GetInverseMatrix() const
         {
             return _inverseMatrix;
         }
@@ -145,7 +146,7 @@ namespace SparkyStudios::Audio::Amplitude
         }
 
         /**
-         * @brief Get the sharpness of the directivity of sounds played by this Entity.
+         * @brief Get the sharpness for the directivity of sounds played by this Entity.
          *
          * @return The directivity sharpness.
          */
@@ -220,7 +221,7 @@ namespace SparkyStudios::Audio::Amplitude
         /**
          * @brief Updates the inverse matrix of this Entity.
          *
-         * This method is called automatically by the Engine on
+         * The Engine calls this method automatically on
          * each frame update.
          */
         void Update();
@@ -240,13 +241,13 @@ namespace SparkyStudios::Audio::Amplitude
     private:
         AmEntityID _id;
 
-        AmVec3 _lastLocation;
-        AmVec3 _velocity;
+        AmVector3 _lastLocation;
+        AmVector3 _velocity;
 
-        AmVec3 _location;
+        AmVector3 _location;
         Orientation _orientation;
 
-        AmMat4 _inverseMatrix;
+        AmMatrix4 _inverseMatrix;
 
         AmReal32 _obstruction;
         AmReal32 _occlusion;

@@ -90,35 +90,35 @@ namespace SparkyStudios::Audio::Amplitude
          *
          * @return The listener's velocity.
          */
-        [[nodiscard]] const AmVec3& GetVelocity() const;
+        [[nodiscard]] const AmVector3& GetVelocity() const;
 
         /**
          * @brief Gets the location of this listener.
          *
          * @return The listener's location.
          */
-        [[nodiscard]] const AmVec3& GetLocation() const;
+        [[nodiscard]] const AmVector3& GetLocation() const;
 
         /**
          * @brief Sets the location of this listener.
          *
          * @param[in] location The new location of this listener.
          */
-        void SetLocation(const AmVec3& location) const;
+        void SetLocation(const AmVector3& location) const;
 
         /**
          * @brief Gets the direction vector of the listener.
          *
          * @return The direction vector.
          */
-        [[nodiscard]] AmVec3 GetDirection() const;
+        [[nodiscard]] AmVector3 GetDirection() const;
 
         /**
          * @brief Gets the up vector of the listener.
          *
          * @return The up vector.
          */
-        [[nodiscard]] AmVec3 GetUp() const;
+        [[nodiscard]] AmVector3 GetUp() const;
 
         /**
          * @brief Sets the location, direction and up vector of this listener, through an Orientation representation.
@@ -164,7 +164,7 @@ namespace SparkyStudios::Audio::Amplitude
          *
          * You can use this matrix to convert locations from global space to listener space.
          */
-        [[nodiscard]] const AmMat4& GetInverseMatrix() const;
+        [[nodiscard]] const AmMatrix4& GetInverseMatrix() const;
 
         /**
          * @brief Update the state of this listener.

@@ -94,21 +94,21 @@ namespace SparkyStudios::Audio::Amplitude
          *
          * @return The entity's velocity.
          */
-        [[nodiscard]] const AmVec3& GetVelocity() const;
+        [[nodiscard]] const AmVector3& GetVelocity() const;
 
         /**
          * @brief Sets the location of this entity.
          *
          * @param[in] location The new location.
          */
-        void SetLocation(const AmVec3& location) const;
+        void SetLocation(const AmVector3& location) const;
 
         /**
          * @brief Gets the current location of this entity.
          *
          * @return The current location of this entity.
          */
-        [[nodiscard]] const AmVec3& GetLocation() const;
+        [[nodiscard]] const AmVector3& GetLocation() const;
 
         /**
          * @brief Sets the orientation of this entity.
@@ -122,14 +122,14 @@ namespace SparkyStudios::Audio::Amplitude
          *
          * @return The direction vector.
          */
-        [[nodiscard]] AmVec3 GetDirection() const;
+        [[nodiscard]] AmVector3 GetDirection() const;
 
         /**
          * @brief Gets the up vector of the entity.
          *
          * @return The up vector.
          */
-        [[nodiscard]] AmVec3 GetUp() const;
+        [[nodiscard]] AmVector3 GetUp() const;
 
         /**
          * @brief Gets the orientation of the entity.

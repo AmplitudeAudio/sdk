@@ -17,6 +17,7 @@
 #include <SparkyStudios/Audio/Amplitude/Amplitude.h>
 
 #include <HRTF/HRIRSphere.h>
+#include <Math/LinearAlgebra.h>
 
 using namespace SparkyStudios::Audio::Amplitude;
 
@@ -57,7 +58,7 @@ TEST_CASE("HRTF Sphere Tests", "[hrtf_sphere][hrtf][amplitude]")
     l.Init(256);
     r.Init(256);
 
-    AmVec3 direction = AM_V3(0.0f, 0.0f, -1.2f);
+    AmVector3 direction = { 0.0f, 0.0f, -1.2f };
 
     sphere.SetSamplingMode(eHRIRSphereSamplingMode_Bilinear);
     REQUIRE(sphere.GetSamplingMode() == eHRIRSphereSamplingMode_Bilinear);
@@ -74,15 +75,15 @@ TEST_CASE("HRTF Sphere Tests", "[hrtf_sphere][hrtf][amplitude]")
     REQUIRE(std::memcmp(l.GetBuffer(), vertex.m_LeftIR.data(), 256 * sizeof(AmReal32)) == 0);
     REQUIRE(std::memcmp(r.GetBuffer(), vertex.m_RightIR.data(), 256 * sizeof(AmReal32)) == 0);
 
-    direction.Z = -1.0f;
+    direction.z = -1.0f;
 
     sphere.Sample(direction, l.GetBuffer(), r.GetBuffer());
     REQUIRE(std::memcmp(l.GetBuffer(), vertex.m_LeftIR.data(), 256 * sizeof(AmReal32)) == 0);
     REQUIRE(std::memcmp(r.GetBuffer(), vertex.m_RightIR.data(), 256 * sizeof(AmReal32)) == 0);
 
-    AmMat4 rotation = AM_Rotate_RH(90.0f * AM_DegToRad, AM_V3(0, 0, 1));
+    AmMatrix4 rotation = Rotation(FromAxisAngle(kVector3UnitZ, 90.0f * AM_DegToRad));
     sphere.Transform(rotation);
 
     HRIRSphereVertex transformedVertex = sphere.GetVertex(0);
-    REQUIRE(transformedVertex.m_Position == AM_Mul(rotation, AM_V4V(vertex.m_Position, 1.0f)).XYZ);
+    REQUIRE(transformedVertex.m_Position == Transform(rotation, { .xyz = vertex.m_Position, ._pad2 = 1.0f }).xyz);
 }

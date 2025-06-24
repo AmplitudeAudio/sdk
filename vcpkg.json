@@ -43,6 +43,10 @@
     {
       "name": "miniaudio",
       "version>=": "0.11.22"
+    },
+    {
+      "name": "eigen3",
+      "version>=": "3.4.0#5"
     }
   ]
 }

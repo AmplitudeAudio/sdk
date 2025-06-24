@@ -39,8 +39,8 @@ namespace SparkyStudios::Audio::Amplitude
         if (!listener.Valid())
             return nullptr;
 
-        const AmQuat listenerRotation = listener.GetOrientation().GetQuaternion();
-        const AmQuat inverseListenerRotation = AM_InvQ(listenerRotation);
+        const AmQuaternion listenerRotation = listener.GetOrientation().GetQuaternion();
+        const AmQuaternion inverseListenerRotation = Inverse(listenerRotation);
 
         const ePanningMode mode = Engine::GetInstance()->GetPanningMode();
         const AmUInt32 order = AM_MAX(static_cast<AmUInt32>(mode), 1u);

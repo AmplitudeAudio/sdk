@@ -95,14 +95,14 @@ namespace SparkyStudios::Audio::Amplitude
          *
          * @param[in] location The new location.
          */
-        void SetLocation(const AmVec3& location) const;
+        void SetLocation(const AmVector3& location) const;
 
         /**
          * @brief Gets the current location of this environment.
          *
          * @return The current location of this environment.
          */
-        [[nodiscard]] const AmVec3& GetLocation() const;
+        [[nodiscard]] const AmVector3& GetLocation() const;
 
         /**
          * @brief Sets the orientation of this environment.
@@ -123,14 +123,14 @@ namespace SparkyStudios::Audio::Amplitude
          *
          * @return The direction vector.
          */
-        [[nodiscard]] AmVec3 GetDirection() const;
+        [[nodiscard]] AmVector3 GetDirection() const;
 
         /**
          * @brief Gets the up vector of the environment.
          *
          * @return The up vector.
          */
-        [[nodiscard]] AmVec3 GetUp() const;
+        [[nodiscard]] AmVector3 GetUp() const;
 
         /**
          * @brief Gets the environment factor for the given location.
@@ -139,7 +139,7 @@ namespace SparkyStudios::Audio::Amplitude
          *
          * @return The environment factor.
          */
-        [[nodiscard]] AmReal32 GetFactor(const AmVec3& location) const;
+        [[nodiscard]] AmReal32 GetFactor(const AmVector3& location) const;
 
         /**
          * @brief Gets the environment factor for the given entity.

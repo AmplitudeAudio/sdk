@@ -60,7 +60,7 @@ namespace SparkyStudios::Audio::Amplitude
         _lowPassFilter = nullptr;
     }
 
-    void ReflectionsProcessor::Update(const RoomInternalState* roomState, const AmVec3& listenerPosition, AmReal32 speedOfSound)
+    void ReflectionsProcessor::Update(const RoomInternalState* roomState, const AmVector3& listenerPosition, AmReal32 speedOfSound)
     {
         if (roomState == nullptr)
             return;
@@ -68,8 +68,8 @@ namespace SparkyStudios::Audio::Amplitude
         const AmReal32 lowPassCoefficient = ComputeMonopoleFilterCoefficient(roomState->GetCutOffFrequency(), _sampleRate);
         _lowPassFilter->SetParameter(MonoPoleFilter::ATTRIBUTE_COEFFICIENT, lowPassCoefficient);
 
-        const AmVec3& relativeListenerPosition =
-            GetRelativeDirection(roomState->GetLocation(), AM_InvQ(roomState->GetOrientation().GetQuaternion()), listenerPosition);
+        const AmVector3& relativeListenerPosition =
+            GetRelativeDirection(roomState->GetLocation(), Inverse(roomState->GetOrientation().GetQuaternion()), listenerPosition);
 
         ComputeReflections(relativeListenerPosition, roomState->GetDimensions(), speedOfSound, roomState->GetCoefficients());
 
@@ -113,9 +113,12 @@ namespace SparkyStudios::Audio::Amplitude
     }
 
     void ReflectionsProcessor::ComputeReflections(
-        const AmVec3& relativeListenerPosition, const AmVec3& dimensions, AmReal32 speedOfSound, const AmReal32* reflectionCoefficients)
+        const AmVector3& relativeListenerPosition,
+        const AmVector3& dimensions,
+        AmReal32 speedOfSound,
+        const AmReal32* reflectionCoefficients)
     {
-        const AmVec3 roomCenter = AM_V3(0.0f, 0.0f, 0.0f);
+        const AmVector3 roomCenter = kVector3Zero;
 
         if (BoxShape roomShape(roomCenter, dimensions); !roomShape.Contains(relativeListenerPosition))
         {
@@ -129,7 +132,7 @@ namespace SparkyStudios::Audio::Amplitude
         // of reflections, the distance traveled is arbitrary. So, we add 1.0f to
         // the computed distance in order to avoid delay time approaching 0 and the
         // magnitude approaching +inf.
-        const AmVec3& offsets = 0.5f * dimensions;
+        const AmVector3 offsets = Scale(dimensions, 0.5f);
         const AmReal32 distances[kAmRoomSurfaceCount] = {
             offsets[0] + relativeListenerPosition[0] + 1.0f, offsets[0] - relativeListenerPosition[0] + 1.0f,
             offsets[1] - relativeListenerPosition[1] + 1.0f, offsets[1] + relativeListenerPosition[1] + 1.0f,

@@ -17,7 +17,7 @@
 #ifndef _AM_IMPLEMENTATION_MATH_FACE_BSP_H
 #define _AM_IMPLEMENTATION_MATH_FACE_BSP_H
 
-#include <SparkyStudios/Audio/Amplitude/Core/Common.h>
+#include <SparkyStudios/Audio/Amplitude/Math/Geometry.h>
 
 namespace SparkyStudios::Audio::Amplitude
 {
@@ -39,7 +39,7 @@ namespace SparkyStudios::Audio::Amplitude
             union {
                 struct
                 {
-                    AmVec3 m_PlaneNormal;
+                    AmVector3 m_PlaneNormal;
                     AmUInt32 m_LeftIndex;
                     AmUInt32 m_RightIndex;
                 } m_Split;
@@ -53,16 +53,16 @@ namespace SparkyStudios::Audio::Amplitude
 
         FaceBSPTree() = default;
 
-        void Build(const std::vector<AmVec3>& points, const std::vector<Face>& faces);
+        void Build(const std::vector<AmVector3>& points, const std::vector<Face>& faces);
 
-        [[nodiscard]] const Face* Query(const AmVec3& direction) const;
+        [[nodiscard]] const Face* Query(const AmVector3& direction) const;
 
     private:
         static void GetEdges(const std::vector<Face>& faces, std::vector<Edge>& edges);
         static void BuildTree(
-            const std::vector<AmVec3>& vertices, const std::vector<Face>& faces, std::vector<Edge>& edges, std::vector<Node>& nodes);
+            const std::vector<AmVector3>& vertices, const std::vector<Face>& faces, std::vector<Edge>& edges, std::vector<Node>& nodes);
         static void BuildChild(
-            const std::vector<AmVec3>& vertices, const std::vector<Face>& faces, std::vector<Edge>& edges, std::vector<Node>& nodes);
+            const std::vector<AmVector3>& vertices, const std::vector<Face>& faces, std::vector<Edge>& edges, std::vector<Node>& nodes);
 
         std::vector<Node> _nodes;
     };

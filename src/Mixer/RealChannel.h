@@ -21,8 +21,6 @@
 
 #include <SparkyStudios/Audio/Amplitude/Core/Playback/Channel.h>
 
-#include <SparkyStudios/Audio/Amplitude/Math/HandmadeMath.h>
-
 #include <SparkyStudios/Audio/Amplitude/Sound/Collection.h>
 #include <SparkyStudios/Audio/Amplitude/Sound/Fader.h>
 #include <SparkyStudios/Audio/Amplitude/Sound/Sound.h>
@@ -118,7 +116,7 @@ namespace SparkyStudios::Audio::Amplitude
         /**
          * @brief Set the pan for the sound. This should be a unit vector.
          */
-        void SetPan(const AmVec2& pan);
+        void SetPan(const AmVector2& pan);
 
         /**
          * @brief Set the pitch of the sound.

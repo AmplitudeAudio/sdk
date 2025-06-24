@@ -100,7 +100,7 @@
 #include <SparkyStudios/Audio/Amplitude/Math/CartesianCoordinateSystem.h>
 #include <SparkyStudios/Audio/Amplitude/Math/Curve.h>
 #include <SparkyStudios/Audio/Amplitude/Math/Geometry.h>
-#include <SparkyStudios/Audio/Amplitude/Math/HandmadeMath.h>
+#include <SparkyStudios/Audio/Amplitude/Math/LinearAlgebra.h>
 #include <SparkyStudios/Audio/Amplitude/Math/Orientation.h>
 #include <SparkyStudios/Audio/Amplitude/Math/Shape.h>
 #include <SparkyStudios/Audio/Amplitude/Math/SphericalPosition.h>

@@ -17,8 +17,6 @@
 #ifndef _AM_IMPLEMENTATION_CORE_PLAYBACK_CHANNEL_INTERNAL_STATE_H
 #define _AM_IMPLEMENTATION_CORE_PLAYBACK_CHANNEL_INTERNAL_STATE_H
 
-#include <utility>
-
 #include <SparkyStudios/Audio/Amplitude/Core/Common.h>
 
 #include <SparkyStudios/Audio/Amplitude/Core/Entity.h>
@@ -156,7 +154,7 @@ namespace SparkyStudios::Audio::Amplitude
         }
 
         // Get or set the location of this channel
-        AM_INLINE void SetLocation(const AmVec3& location)
+        AM_INLINE void SetLocation(const AmVector3& location)
         {
             // Entity scoped channel
             if (_entity.Valid())
@@ -166,7 +164,7 @@ namespace SparkyStudios::Audio::Amplitude
             _location = location;
         }
 
-        [[nodiscard]] AM_INLINE const AmVec3& GetLocation() const
+        [[nodiscard]] AM_INLINE const AmVector3& GetLocation() const
         {
             // Entity scoped channel
             if (_entity.Valid())
@@ -255,10 +253,10 @@ namespace SparkyStudios::Audio::Amplitude
         void FadeOut(AmTime duration, eChannelPlaybackState targetState = eChannelPlaybackState_Stopped);
 
         // Sets the pan based on a position in a unit circle.
-        void SetPan(const AmVec2& pan);
+        void SetPan(const AmVector2& pan);
 
         // Returns the pan of this channel.
-        [[nodiscard]] AM_INLINE const AmVec2& GetPan() const
+        [[nodiscard]] AM_INLINE const AmVector2& GetPan() const
         {
             return _pan;
         }
@@ -424,13 +422,13 @@ namespace SparkyStudios::Audio::Amplitude
         AmReal32 _realGain;
 
         // The pan of this channel for 2D rendering.
-        AmVec2 _pan;
+        AmVector2 _pan;
 
         // The pitch of this channel.
         AmReal32 _pitch;
 
         // The location of this channel's sound.
-        AmVec3 _location;
+        AmVector3 _location;
 
         AmReal32 _directivity;
         AmReal32 _directivitySharpness;

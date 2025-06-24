@@ -198,7 +198,7 @@ namespace SparkyStudios::Audio::Amplitude
          *
          * @return The location of this channel.
          */
-        [[nodiscard]] const AmVec3& GetLocation() const;
+        [[nodiscard]] const AmVector3& GetLocation() const;
 
         /**
          * @brief Sets the location of this channel in the game environment.
@@ -208,7 +208,7 @@ namespace SparkyStudios::Audio::Amplitude
          *
          * @param[in] location The new location of the channel.
          */
-        void SetLocation(const AmVec3& location) const;
+        void SetLocation(const AmVector3& location) const;
 
         /**
          * @brief Sets the gain on this channel.

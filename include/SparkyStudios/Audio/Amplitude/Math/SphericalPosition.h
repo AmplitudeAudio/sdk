@@ -18,6 +18,7 @@
 #define _AM_MATH_SPHERICAL_POSITION_H
 
 #include <SparkyStudios/Audio/Amplitude/Core/Common.h>
+#include <SparkyStudios/Audio/Amplitude/Math/LinearAlgebra.h>
 
 namespace SparkyStudios::Audio::Amplitude
 {
@@ -36,7 +37,7 @@ namespace SparkyStudios::Audio::Amplitude
          *
          * @param[in] position The position in world space.
          */
-        static SphericalPosition FromWorldSpace(const AmVec3& position);
+        static SphericalPosition FromWorldSpace(const AmVector3& position);
 
         /**
          * @brief Creates a spherical position from a 3D position in world space.
@@ -46,7 +47,7 @@ namespace SparkyStudios::Audio::Amplitude
          *
          * @param[in] position The position in world space.
          */
-        static SphericalPosition ForHRTF(const AmVec3& position);
+        static SphericalPosition ForHRTF(const AmVector3& position);
 
         /**
          * @brief Creates a spherical position from given azimuth and elevation in degrees.
@@ -65,7 +66,7 @@ namespace SparkyStudios::Audio::Amplitude
         SphericalPosition() = default;
 
         /**
-         * @brief Creates a spherical position with given azimuth, elevation, and radius.
+         * @brief Creates a spherical position with a given azimuth, elevation, and radius.
          *
          * @param[in] azimuth The rotation around the z-axis in radians.
          * @param[in] elevation The rotation around the x-axis in radians.
@@ -87,14 +88,14 @@ namespace SparkyStudios::Audio::Amplitude
          *
          * @return A rotated spherical position.
          */
-        [[nodiscard]] SphericalPosition Rotate(AmQuat rotation) const;
+        [[nodiscard]] SphericalPosition Rotate(AmQuaternion rotation) const;
 
         /**
          * @brief Converts the spherical position to a 3D position in world space.
          *
          * @return A 3D position in world space corresponding to the spherical position.
          */
-        [[nodiscard]] AmVec3 ToCartesian() const;
+        [[nodiscard]] AmVector3 ToCartesian() const;
 
         /**
          * @brief Gets the azimuth in radians of the spherical position.

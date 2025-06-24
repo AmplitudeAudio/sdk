@@ -43,12 +43,12 @@ TEST_CASE("Listener Tests", "[listener][core][amplitude]")
         WHEN("the location changes")
         {
             const auto lastLocation = state.GetLocation();
-            const auto location = AM_V3(10, 20, 30);
+            const auto location = AmVector3{ 10, 20, 30 };
             state.SetLocation(location);
 
             THEN("it returns the new location")
             {
-                REQUIRE(AM_EqV3(state.GetLocation(), location));
+                REQUIRE(state.GetLocation() == location);
             }
 
             AND_WHEN("an update occurs")
@@ -57,23 +57,23 @@ TEST_CASE("Listener Tests", "[listener][core][amplitude]")
 
                 THEN("It updates the velocity")
                 {
-                    const auto& velocity = location - lastLocation;
+                    const auto& velocity = Sub(location, lastLocation);
 
-                    REQUIRE(AM_EqV3(state.GetVelocity(), velocity));
+                    REQUIRE(state.GetVelocity() == velocity);
                 }
             }
         }
 
         WHEN("the orientation changes")
         {
-            const auto direction = AM_V3(1, 0, 0);
-            const auto up = AM_V3(0, 0, 1);
+            const auto direction = kVector3UnitX;
+            const auto up = kVector3UnitZ;
             state.SetOrientation(Orientation(direction, up));
 
             THEN("it returns the new orientation")
             {
-                REQUIRE(AM_EqV3(state.GetDirection(), direction));
-                REQUIRE(AM_EqV3(state.GetUp(), up));
+                REQUIRE(state.GetDirection() == direction);
+                REQUIRE(state.GetUp() == up);
             }
         }
 
@@ -105,14 +105,14 @@ TEST_CASE("Listener Tests", "[listener][core][amplitude]")
         WHEN("the location changes")
         {
             const auto lastLocation = state.GetLocation();
-            const auto location = AM_V3(10, 20, 30);
+            const auto location = AmVector3{ 10, 20, 30 };
             wrapper.SetLocation(location);
 
             THEN("it returns the new location")
             {
-                REQUIRE(AM_EqV3(wrapper.GetLocation(), location));
+                REQUIRE(wrapper.GetLocation() == location);
 
-                REQUIRE(AM_EqV3(wrapper.GetLocation(), state.GetLocation()));
+                REQUIRE(wrapper.GetLocation() == state.GetLocation());
             }
 
             AND_WHEN("an update occurs")
@@ -121,28 +121,28 @@ TEST_CASE("Listener Tests", "[listener][core][amplitude]")
 
                 THEN("It updates the velocity")
                 {
-                    const auto& velocity = location - lastLocation;
+                    const auto& velocity = Sub(location, lastLocation);
 
-                    REQUIRE(AM_EqV3(wrapper.GetVelocity(), velocity));
+                    REQUIRE(wrapper.GetVelocity() == velocity);
 
-                    REQUIRE(AM_EqV3(wrapper.GetVelocity(), state.GetVelocity()));
+                    REQUIRE(wrapper.GetVelocity() == state.GetVelocity());
                 }
             }
         }
 
         WHEN("the orientation changes")
         {
-            const auto direction = AM_V3(1, 0, 0);
-            const auto up = AM_V3(0, 0, 1);
+            const auto direction = kVector3UnitX;
+            const auto up = kVector3UnitZ;
             wrapper.SetOrientation(Orientation(direction, up));
 
             THEN("it returns the new orientation")
             {
-                REQUIRE(AM_EqV3(wrapper.GetDirection(), direction));
-                REQUIRE(AM_EqV3(wrapper.GetUp(), up));
+                REQUIRE(wrapper.GetDirection() == direction);
+                REQUIRE(wrapper.GetUp() == up);
 
-                REQUIRE(AM_EqV3(wrapper.GetDirection(), state.GetDirection()));
-                REQUIRE(AM_EqV3(wrapper.GetUp(), state.GetUp()));
+                REQUIRE(wrapper.GetDirection() == state.GetDirection());
+                REQUIRE(wrapper.GetUp() == state.GetUp());
             }
         }
 

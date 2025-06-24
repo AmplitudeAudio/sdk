@@ -24,11 +24,11 @@ namespace SparkyStudios::Audio::Amplitude
         , _velocity()
         , _directivity(0.0f)
         , _directivitySharpness(1.0f)
-        , _inverseMatrix(AM_M4D(1.0f))
+        , _inverseMatrix(kMatrix4Identity)
         , _playingSoundList(&ChannelInternalState::listener_node)
     {}
 
-    void ListenerInternalState::SetLocation(const AmVec3& location)
+    void ListenerInternalState::SetLocation(const AmVector3& location)
     {
         _lastLocation = _location;
         _location = location;
@@ -42,7 +42,7 @@ namespace SparkyStudios::Audio::Amplitude
 
     void ListenerInternalState::Update()
     {
-        _velocity = _location - _lastLocation;
+        _velocity = Sub(_location, _lastLocation);
         _inverseMatrix = _orientation.GetLookAtMatrix(_location);
     }
 } // namespace SparkyStudios::Audio::Amplitude

@@ -29,7 +29,7 @@ TEST_CASE("Capsule Zone Tests", "[capsule_zone][math][amplitude]")
 
     WHEN("the location changes")
     {
-        const AmVec3 newLocation = AM_V3(10, 20, 30);
+        const AmVector3 newLocation = { 10, 20, 30 };
         zone->SetLocation(newLocation);
 
         THEN("it returns the correct location")
@@ -46,8 +46,8 @@ TEST_CASE("Capsule Zone Tests", "[capsule_zone][math][amplitude]")
 
     WHEN("the orientation changes")
     {
-        const auto direction = AM_V3(0, 0, 1);
-        const auto up = AM_V3(0, 1, 0);
+        const auto direction = kVector3UnitX;
+        const auto up = kVector3UnitZ;
         const auto newOrientation = Orientation(direction, up);
         zone->SetOrientation(newOrientation);
 
@@ -64,16 +64,16 @@ TEST_CASE("Capsule Zone Tests", "[capsule_zone][math][amplitude]")
 
         THEN("it computes the correct direction and up vectors")
         {
-            REQUIRE(AM_EqV3(zone->GetDirection(), newOrientation.GetForward()));
-            REQUIRE(AM_EqV3(zone->GetUp(), newOrientation.GetUp()));
+            REQUIRE(zone->GetDirection() == newOrientation.GetForward());
+            REQUIRE(zone->GetUp() == newOrientation.GetUp());
         }
     }
 
     THEN("it computes the correct factors")
     {
-        const AmVec3 inner = AM_V3(10, 10, 10);
-        const AmVec3 outer = AM_V3(100, 20, 20);
-        const AmVec3 middle = AM_V3(37.5f, 0, 0);
+        const AmVector3 inner = { 10, 10, 10 };
+        const AmVector3 outer = { 100, 20, 20 };
+        const AmVector3 middle = { 37.5f, 0, 0 };
 
         REQUIRE(zone->GetFactor(inner) == 1.0f);
         REQUIRE(zone->GetFactor(outer) == 0.0f);
@@ -89,7 +89,7 @@ TEST_CASE("Sphere Zone Tests", "[sphere_zone][math][amplitude]")
 
     WHEN("the location changes")
     {
-        const AmVec3 newLocation = AM_V3(10, 20, 30);
+        const AmVector3 newLocation = { 10, 20, 30 };
         zone->SetLocation(newLocation);
 
         THEN("it returns the correct location")
@@ -106,8 +106,8 @@ TEST_CASE("Sphere Zone Tests", "[sphere_zone][math][amplitude]")
 
     WHEN("the orientation changes")
     {
-        const auto direction = AM_V3(0, 0, 1);
-        const auto up = AM_V3(0, 1, 0);
+        const auto direction = kVector3UnitX;
+        const auto up = kVector3UnitZ;
         const auto newOrientation = Orientation(direction, up);
         zone->SetOrientation(newOrientation);
 
@@ -124,16 +124,16 @@ TEST_CASE("Sphere Zone Tests", "[sphere_zone][math][amplitude]")
 
         THEN("it computes the correct direction and up vectors")
         {
-            REQUIRE(AM_EqV3(zone->GetDirection(), direction));
-            REQUIRE(AM_EqV3(zone->GetUp(), up));
+            REQUIRE(zone->GetDirection() == direction);
+            REQUIRE(zone->GetUp() == up);
         }
     }
 
     THEN("it compute correct factors")
     {
-        const AmVec3 inner = AM_V3(25, 25, 25);
-        const AmVec3 outer = AM_V3(175, 175, 175);
-        const AmVec3 middle = AM_V3(0, 75, 0);
+        const AmVector3 inner = { 25, 25, 25 };
+        const AmVector3 outer = { 175, 175, 175 };
+        const AmVector3 middle = { 0, 75, 0 };
 
         REQUIRE(zone->GetFactor(inner) == 1);
         REQUIRE(zone->GetFactor(outer) == 0);
@@ -149,7 +149,7 @@ TEST_CASE("Box Zone Tests", "[box_zone][math][amplitude]")
 
     WHEN("the location changes")
     {
-        const AmVec3 newLocation = AM_V3(10, 20, 30);
+        const AmVector3 newLocation = { 10, 20, 30 };
         zone->SetLocation(newLocation);
 
         THEN("it returns the correct location")
@@ -166,8 +166,8 @@ TEST_CASE("Box Zone Tests", "[box_zone][math][amplitude]")
 
     WHEN("the orientation changes")
     {
-        const auto direction = AM_V3(0, 0, 1);
-        const auto up = AM_V3(0, 1, 0);
+        const auto direction = kVector3UnitX;
+        const auto up = kVector3UnitZ;
         const auto newOrientation = Orientation(direction, up);
         zone->SetOrientation(newOrientation);
 
@@ -184,16 +184,16 @@ TEST_CASE("Box Zone Tests", "[box_zone][math][amplitude]")
 
         THEN("it computes the correct direction and up vectors")
         {
-            REQUIRE(AM_EqV3(zone->GetDirection(), direction));
-            REQUIRE(AM_EqV3(zone->GetUp(), up));
+            REQUIRE(zone->GetDirection() == direction);
+            REQUIRE(zone->GetUp() == up);
         }
     }
 
     THEN("it compute correct factors")
     {
-        const AmVec3 inner = AM_V3(25, 25, 25);
-        const AmVec3 outer = AM_V3(175, 175, 175);
-        const AmVec3 middle = AM_V3(87.5f, 87.5f, 87.5f);
+        const AmVector3 inner = { 25, 25, 25 };
+        const AmVector3 outer = { 175, 175, 175 };
+        const AmVector3 middle = { 87.5f, 87.5f, 87.5f };
 
         REQUIRE(zone->GetFactor(inner) == 1);
         REQUIRE(zone->GetFactor(outer) == 0);
@@ -209,7 +209,7 @@ TEST_CASE("Cone Zone Tests", "[cone_zone][math][amplitude]")
 
     WHEN("the location changes")
     {
-        const AmVec3 newLocation = AM_V3(10, 20, 30);
+        const AmVector3 newLocation = { 10, 20, 30 };
         zone->SetLocation(newLocation);
 
         THEN("it returns the correct location")
@@ -226,8 +226,8 @@ TEST_CASE("Cone Zone Tests", "[cone_zone][math][amplitude]")
 
     WHEN("the orientation changes")
     {
-        const auto direction = AM_V3(0, 0, 1);
-        const auto up = AM_V3(0, 1, 0);
+        const auto direction = kVector3UnitX;
+        const auto up = kVector3UnitZ;
         const auto newOrientation = Orientation(direction, up);
         zone->SetOrientation(newOrientation);
 
@@ -244,17 +244,17 @@ TEST_CASE("Cone Zone Tests", "[cone_zone][math][amplitude]")
 
         THEN("it computes the correct direction and up vectors")
         {
-            REQUIRE(AM_EqV3(zone->GetDirection(), direction));
-            REQUIRE(AM_EqV3(zone->GetUp(), up));
+            REQUIRE(zone->GetDirection() == direction);
+            REQUIRE(zone->GetUp() == up);
         }
     }
 
     THEN("it compute correct factors")
     {
-        const AmVec3 inner = AM_V3(25, 25, 0);
-        const AmVec3 outer = AM_V3(175, 175, 0);
-        const AmVec3 middle1 = AM_V3(0.0f, 87.5f, 0);
-        const AmVec3 middle2 = AM_V3(25.0f, 75.0f, 0);
+        const AmVector3 inner = { 25, 25, 0 };
+        const AmVector3 outer = { 175, 175, 0 };
+        const AmVector3 middle1 = { 0.0f, 87.5f, 0 };
+        const AmVector3 middle2 = { 25.0f, 75.0f, 0 };
 
         REQUIRE(zone->GetFactor(inner) == 1);
         REQUIRE(zone->GetFactor(outer) == 0);

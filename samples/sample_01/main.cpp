@@ -175,12 +175,12 @@ static void run(AmVoidPtr param)
 
     // Setup the default listener
     auto listener = amEngine->AddListener(1);
-    listener.SetLocation(AM_V3(0, 0, 0));
+    listener.SetLocation(kVector3Zero);
     listener.SetOrientation(Orientation::Zero());
 
     // Setup a virtual player entity, for the footsteps.
     auto player = amEngine->AddEntity(1);
-    player.SetLocation(AM_V3(0, 0, 0));
+    player.SetLocation(kVector3Zero);
     player.SetOrientation(Orientation::Zero());
 
     amEngine->SetDefaultListener(&listener);

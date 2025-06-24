@@ -1099,7 +1099,7 @@ namespace SparkyStudios::Audio::Amplitude
 
         if (currentSpeed != playSpeed)
         {
-            currentSpeed = AM_Lerp(currentSpeed, 0.75f, playSpeed);
+            currentSpeed = Lerp(0.75f, currentSpeed, playSpeed);
 
             const AmReal32 baseSampleRateRatio = AMPLIMIX_LOAD(&layer->baseSampleRateRatio);
             const AmReal32 sampleRateRatio = baseSampleRateRatio * currentSpeed;
@@ -1208,10 +1208,10 @@ namespace SparkyStudios::Audio::Amplitude
         return AMPLIMIX_LOAD(&playSpeed);
     }
 
-    AmVec3 AmplimixLayerImpl::GetLocation() const
+    AmVector3 AmplimixLayerImpl::GetLocation() const
     {
         if (snd == nullptr || snd->sound == nullptr)
-            return AM_V3(0.0f, 0.0f, 0.0f);
+            return kVector3Zero;
 
         return snd->sound->GetChannel().GetLocation();
     }

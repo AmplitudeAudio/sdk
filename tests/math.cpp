@@ -16,22 +16,25 @@
 
 #include <SparkyStudios/Audio/Amplitude/Amplitude.h>
 
+#include <Math/LinearAlgebra.h>
+#include <Utils/Utils.h>
+
 using namespace SparkyStudios::Audio::Amplitude;
 
 TEST_CASE("Barycentric Coordinate Tests", "[barycentric_coordinates][math][amplitude]")
 {
-    const auto point1 = AM_V3(1, 2, 1);
-    const auto point2 = AM_V3(0, 0, 0);
-    const auto point3 = AM_V3(2, 1, 2);
+    constexpr AmVector3 point1 = { 1, 2, 1 };
+    constexpr AmVector3 point2 = { 0, 0, 0 };
+    constexpr AmVector3 point3 = { 2, 1, 2 };
 
-    const auto center = AM_V3(1, 1, 1);
-    const auto triangle = std::array<AmVec3, 3>{ point1, point2, point3 };
+    constexpr auto center = kVector3One;
+    constexpr auto triangle = Triangle{ point1, point2, point3 };
 
-    const auto i = point1 - center;
-    const auto j = point2 - center;
-    const auto k = AM_Cross(i, j);
+    const auto i = Sub(point1, center);
+    const auto j = Sub(point2, center);
+    const auto k = Cross(i, j);
 
-    const auto rayOrigin = center;
+    constexpr auto rayOrigin = center;
     const auto rayDirection = k;
 
     SECTION("can compute the barycentric coordinates of a point inside the triangle")
@@ -70,9 +73,9 @@ TEST_CASE("Cartesian Coordinate System Tests", "[cartesian_coordinate_system][ma
 
         THEN("it have the correct axes")
         {
-            REQUIRE(AM_EqV3(coordinateSystem.GetRightVector(), AM_V3(1, 0, 0)));
-            REQUIRE(AM_EqV3(coordinateSystem.GetUpVector(), AM_V3(0, 0, 1)));
-            REQUIRE(AM_EqV3(coordinateSystem.GetForwardVector(), AM_V3(0, 1, 0)));
+            REQUIRE(coordinateSystem.GetRightVector() == kVector3UnitX);
+            REQUIRE(coordinateSystem.GetUpVector() == kVector3UnitZ);
+            REQUIRE(coordinateSystem.GetForwardVector() == kVector3UnitY);
         }
     }
 
@@ -82,9 +85,9 @@ TEST_CASE("Cartesian Coordinate System Tests", "[cartesian_coordinate_system][ma
 
         THEN("it have the correct axes")
         {
-            REQUIRE(AM_EqV3(coordinateSystem.GetRightVector(), AM_V3(1, 0, 0)));
-            REQUIRE(AM_EqV3(coordinateSystem.GetUpVector(), AM_V3(0, 1, 0)));
-            REQUIRE(AM_EqV3(coordinateSystem.GetForwardVector(), AM_V3(0, 0, -1)));
+            REQUIRE(coordinateSystem.GetRightVector() == kVector3UnitX);
+            REQUIRE(coordinateSystem.GetUpVector() == kVector3UnitY);
+            REQUIRE(coordinateSystem.GetForwardVector() == AmVector3{ 0, 0, -1 });
         }
     }
 
@@ -94,9 +97,9 @@ TEST_CASE("Cartesian Coordinate System Tests", "[cartesian_coordinate_system][ma
 
         THEN("it have the correct axes")
         {
-            REQUIRE(AM_EqV3(coordinateSystem.GetRightVector(), AM_V3(1, 0, 0)));
-            REQUIRE(AM_EqV3(coordinateSystem.GetUpVector(), AM_V3(0, 0, 1)));
-            REQUIRE(AM_EqV3(coordinateSystem.GetForwardVector(), AM_V3(0, -1, 0)));
+            REQUIRE(coordinateSystem.GetRightVector() == kVector3UnitX);
+            REQUIRE(coordinateSystem.GetUpVector() == kVector3UnitZ);
+            REQUIRE(coordinateSystem.GetForwardVector() == AmVector3{ 0, -1, 0 });
         }
     }
 
@@ -106,9 +109,9 @@ TEST_CASE("Cartesian Coordinate System Tests", "[cartesian_coordinate_system][ma
 
         THEN("it have the correct axes")
         {
-            REQUIRE(AM_EqV3(coordinateSystem.GetRightVector(), AM_V3(1, 0, 0)));
-            REQUIRE(AM_EqV3(coordinateSystem.GetUpVector(), AM_V3(0, 1, 0)));
-            REQUIRE(AM_EqV3(coordinateSystem.GetForwardVector(), AM_V3(0, 0, 1)));
+            REQUIRE(coordinateSystem.GetRightVector() == kVector3UnitX);
+            REQUIRE(coordinateSystem.GetUpVector() == kVector3UnitY);
+            REQUIRE(coordinateSystem.GetForwardVector() == kVector3UnitZ);
         }
     }
 
@@ -122,9 +125,9 @@ TEST_CASE("Cartesian Coordinate System Tests", "[cartesian_coordinate_system][ma
 
         THEN("it have the correct axes")
         {
-            REQUIRE(AM_EqV3(coordinateSystem.GetRightVector(), CartesianCoordinateSystem::GetVector(rightVector)));
-            REQUIRE(AM_EqV3(coordinateSystem.GetUpVector(), CartesianCoordinateSystem::GetVector(upVector)));
-            REQUIRE(AM_EqV3(coordinateSystem.GetForwardVector(), CartesianCoordinateSystem::GetVector(forwardVector)));
+            REQUIRE(coordinateSystem.GetRightVector() == CartesianCoordinateSystem::GetVector(rightVector));
+            REQUIRE(coordinateSystem.GetUpVector() == CartesianCoordinateSystem::GetVector(upVector));
+            REQUIRE(coordinateSystem.GetForwardVector() == CartesianCoordinateSystem::GetVector(forwardVector));
         }
     }
 
@@ -135,7 +138,7 @@ TEST_CASE("Cartesian Coordinate System Tests", "[cartesian_coordinate_system][ma
 
         GIVEN("a point in the default coordinate system")
         {
-            const auto point = AM_V3(1, 2, 3);
+            constexpr auto point = AmVector3{ 1, 2, 3 };
 
             WHEN("converted to AmbiX coordinate system")
             {
@@ -143,14 +146,14 @@ TEST_CASE("Cartesian Coordinate System Tests", "[cartesian_coordinate_system][ma
 
                 THEN("it should have the same position in the AmbiX coordinate system")
                 {
-                    REQUIRE(AM_EqV3(convertedPoint, AM_V3(2, -1, 3)));
+                    REQUIRE(convertedPoint == AmVector3{ 2, -1, 3 });
                 }
 
                 THEN("it should convert back to the original coordinate system")
                 {
                     const auto convertedBackPoint = CartesianCoordinateSystem::Convert(convertedPoint, to, from);
 
-                    REQUIRE(AM_EqV3(convertedBackPoint, point));
+                    REQUIRE(convertedBackPoint == point);
                 }
 
                 THEN("it should match the point using the Converter API")
@@ -158,13 +161,13 @@ TEST_CASE("Cartesian Coordinate System Tests", "[cartesian_coordinate_system][ma
                     const auto converter = CartesianCoordinateSystem::Converter(from, to);
                     const auto convertedPoint2 = converter.Forward(point);
 
-                    REQUIRE(AM_EqV3(convertedPoint2, convertedPoint));
+                    REQUIRE(convertedPoint2 == convertedPoint);
 
                     AND_THEN("it should convert back to the original coordinate system using the Converter API")
                     {
                         const auto convertedBackPoint2 = converter.Backward(convertedPoint);
 
-                        REQUIRE(AM_EqV3(convertedBackPoint2, point));
+                        REQUIRE(convertedBackPoint2 == point);
                     }
                 }
             }
@@ -172,7 +175,7 @@ TEST_CASE("Cartesian Coordinate System Tests", "[cartesian_coordinate_system][ma
 
         GIVEN("a quaternion rotation in the default coordinate system")
         {
-            const auto rotation = AM_QFromAxisAngle_RH(AM_V3(0, 1, 0), AM_DegToRad * 45.0f);
+            const auto rotation = FromAxisAngle(kVector3UnitY, AM_DegToRad * 45.0f);
 
             WHEN("converted to AmbiX coordinate system")
             {
@@ -180,16 +183,16 @@ TEST_CASE("Cartesian Coordinate System Tests", "[cartesian_coordinate_system][ma
 
                 THEN("it should have the same rotation in the AmbiX coordinate system")
                 {
-                    REQUIRE(AM_EqV3(convertedRotation.XYZ, AM_V3(rotation.Y, -rotation.X, rotation.Z)));
-                    REQUIRE(convertedRotation.W == rotation.W);
+                    REQUIRE(convertedRotation.xyz == AmVector3{ rotation.y, -rotation.x, rotation.z });
+                    REQUIRE(convertedRotation.w == rotation.w);
                 }
 
                 THEN("it should convert back to the original coordinate system")
                 {
                     const auto convertedBackRotation = CartesianCoordinateSystem::Convert(convertedRotation, to, from);
 
-                    REQUIRE(AM_EqV3(convertedBackRotation.XYZ, rotation.XYZ));
-                    REQUIRE(convertedBackRotation.W == rotation.W);
+                    REQUIRE(convertedBackRotation.xyz == rotation.xyz);
+                    REQUIRE(convertedBackRotation.w == rotation.w);
                 }
 
                 THEN("it should match the rotation using the Converter API")
@@ -197,15 +200,15 @@ TEST_CASE("Cartesian Coordinate System Tests", "[cartesian_coordinate_system][ma
                     const auto converter = CartesianCoordinateSystem::Converter(from, to);
                     const auto convertedRotation2 = converter.Forward(rotation);
 
-                    REQUIRE(AM_EqV3(convertedRotation2.XYZ, convertedRotation.XYZ));
-                    REQUIRE(convertedRotation2.W == convertedRotation.W);
+                    REQUIRE(convertedRotation2.xyz == convertedRotation.xyz);
+                    REQUIRE(convertedRotation2.w == convertedRotation.w);
 
                     AND_THEN("it should convert back to the original coordinate system using the Converter API")
                     {
                         const auto convertedBackRotation2 = converter.Backward(convertedRotation);
 
-                        REQUIRE(AM_EqV3(convertedBackRotation2.XYZ, rotation.XYZ));
-                        REQUIRE(convertedBackRotation2.W == rotation.W);
+                        REQUIRE(convertedBackRotation2.xyz == rotation.xyz);
+                        REQUIRE(convertedBackRotation2.w == rotation.w);
                     }
                 }
             }
@@ -267,9 +270,9 @@ TEST_CASE("Spherical Position Tests", "[spherical_position][math][amplitude]")
         {
             const auto cartesianPosition = position.ToCartesian();
 
-            REQUIRE(cartesianPosition.X == +5.0f * std::cos(position.GetElevation()) * std::cos(position.GetAzimuth()));
-            REQUIRE(cartesianPosition.Y == -5.0f * std::cos(position.GetElevation()) * std::sin(position.GetAzimuth()));
-            REQUIRE(cartesianPosition.Z == +5.0f * std::sin(position.GetElevation()));
+            REQUIRE(cartesianPosition.x == +5.0f * std::cos(position.GetElevation()) * std::cos(position.GetAzimuth()));
+            REQUIRE(cartesianPosition.y == -5.0f * std::cos(position.GetElevation()) * std::sin(position.GetAzimuth()));
+            REQUIRE(cartesianPosition.z == +5.0f * std::sin(position.GetElevation()));
         }
 
         THEN("it can flip azimuth")
@@ -294,10 +297,10 @@ TEST_CASE("Spherical Position Tests", "[spherical_position][math][amplitude]")
 
         THEN("it can be rotated")
         {
-            const auto rotation = AM_QFromAxisAngle_RH(AM_V3(0, 0, 1), AM_DegToRad * 90.0f);
+            const auto rotation = FromAxisAngle(kVector3UnitZ, AM_DegToRad * 90.0f);
             const auto rotatedPosition = position.Rotate(rotation);
 
-            const auto rotatedPosition2 = SphericalPosition::FromWorldSpace(AM_RotateV3Q(position.ToCartesian(), rotation));
+            const auto rotatedPosition2 = SphericalPosition::FromWorldSpace(RotateVector(position.ToCartesian(), rotation));
 
             REQUIRE(rotatedPosition.GetAzimuth() == rotatedPosition2.GetAzimuth());
             REQUIRE(rotatedPosition.GetElevation() == rotatedPosition2.GetElevation());
@@ -329,24 +332,24 @@ TEST_CASE("Spherical Position Tests", "[spherical_position][math][amplitude]")
 
     GIVEN("a cartesian position")
     {
-        const auto cartesianPosition = AM_V3(5.0f, 3.0f, 4.0f);
+        constexpr AmVector3 cartesianPosition = { 5.0f, 3.0f, 4.0f };
 
         THEN("it can convert to spherical coordinates in world space")
         {
             const auto sphericalPosition = SphericalPosition::FromWorldSpace(cartesianPosition);
 
-            REQUIRE(sphericalPosition.GetAzimuth() == -std::atan2(cartesianPosition.Y, cartesianPosition.X));
-            REQUIRE(sphericalPosition.GetElevation() == std::atan2(cartesianPosition.Z, AM_Len(cartesianPosition.XY)));
-            REQUIRE(sphericalPosition.GetRadius() == AM_Len(cartesianPosition));
+            REQUIRE(sphericalPosition.GetAzimuth() == -std::atan2(cartesianPosition.y, cartesianPosition.x));
+            REQUIRE(sphericalPosition.GetElevation() == std::atan2(cartesianPosition.z, Length(cartesianPosition.xy)));
+            REQUIRE(sphericalPosition.GetRadius() == Length(cartesianPosition));
         }
 
         THEN("it can convert to spherical coordinates in AmbiX space")
         {
             const auto sphericalPosition = SphericalPosition::ForHRTF(cartesianPosition);
 
-            REQUIRE(sphericalPosition.GetAzimuth() == 90.0f * AM_DegToRad - std::atan2(cartesianPosition.Y, cartesianPosition.X));
-            REQUIRE(sphericalPosition.GetElevation() == std::atan2(cartesianPosition.Z, AM_Len(cartesianPosition.XY)));
-            REQUIRE(sphericalPosition.GetRadius() == AM_Len(cartesianPosition));
+            REQUIRE(sphericalPosition.GetAzimuth() == 90.0f * AM_DegToRad - std::atan2(cartesianPosition.y, cartesianPosition.x));
+            REQUIRE(sphericalPosition.GetElevation() == std::atan2(cartesianPosition.z, Length(cartesianPosition.xy)));
+            REQUIRE(sphericalPosition.GetRadius() == Length(cartesianPosition));
         }
     }
 
@@ -566,10 +569,10 @@ TEST_CASE("Utilities Tests", "[utilities][math][amplitude]")
     SECTION("doppler factor")
     {
         constexpr AmReal32 soundSpeed = 343.0f;
-        constexpr AmVec3 source = { 10.0f, 25.0f, 1.0f };
-        constexpr AmVec3 listener = { 0.0f, 0.0f, 0.0f };
+        constexpr AmVector3 source = { 10.0f, 25.0f, 1.0f };
+        constexpr AmVector3 listener = { 0.0f, 0.0f, 0.0f };
 
-        const AmReal32 dopplerFactor = ComputeDopplerFactor(source - listener, source, listener, soundSpeed, 1.0f);
+        const AmReal32 dopplerFactor = ComputeDopplerFactor(Sub(source, listener), source, listener, soundSpeed, 1.0f);
 
         REQUIRE(std::abs(dopplerFactor - 0.927166343f) < kEpsilon);
     }
@@ -602,5 +605,277 @@ TEST_CASE("Utilities Tests", "[utilities][math][amplitude]")
         REQUIRE(FindGCD(48, 144) == 48);
         REQUIRE(FindGCD(-100, 200) == 100);
         REQUIRE(FindGCD(0, 200) == 200);
+    }
+}
+
+TEST_CASE("Orientation Tests", "[orientation][math][amplitude]")
+{
+    SECTION("Zero orientation")
+    {
+        const auto zero = Orientation::Zero();
+
+        // Test that Zero() creates an orientation with zero angles
+        REQUIRE(zero.GetYaw() == 0.0f);
+        REQUIRE(zero.GetPitch() == 0.0f);
+        REQUIRE(zero.GetRoll() == 0.0f);
+
+        // Test forward and up vectors for zero orientations
+        REQUIRE(zero.GetForward() == kVector3UnitY);
+        REQUIRE(zero.GetUp() == kVector3UnitZ);
+    }
+
+    SECTION("Construction from Euler angles")
+    {
+        constexpr AmReal32 yaw = AM_DegToRad * 45.0f;
+        constexpr AmReal32 pitch = AM_DegToRad * 30.0f;
+        constexpr AmReal32 roll = AM_DegToRad * 15.0f;
+
+        const Orientation orientation(yaw, pitch, roll);
+
+        THEN("it should store the correct Euler angles")
+        {
+            REQUIRE(std::abs(orientation.GetYaw() - yaw) < kEpsilon);
+            REQUIRE(std::abs(orientation.GetPitch() - pitch) < kEpsilon);
+            REQUIRE(std::abs(orientation.GetRoll() - roll) < kEpsilon);
+        }
+
+        THEN("it should compute forward and up vectors")
+        {
+            const auto forward = orientation.GetForward();
+            const auto up = orientation.GetUp();
+
+            // Forward and up vectors should be normalized
+            REQUIRE(std::abs(Length(forward) - 1.0f) < kEpsilon);
+            REQUIRE(std::abs(Length(up) - 1.0f) < kEpsilon);
+
+            // Forward and up vectors should be perpendicular
+            REQUIRE(std::abs(Dot(forward, up)) < kEpsilon);
+
+            // Expected values for yaw=45°, pitch=30°, roll=15°
+            // Original forward is +Y, up is +Z, so ZYX order: Rz(yaw) * Ry(pitch) * Rx(roll)
+            // These values are computed for that convention.
+            constexpr AmVector3 expectedForward = {
+                -0.591506f, // Forward X component
+                0.774519f, // Forward Y component
+                0.224144f // Forward Z component
+            };
+
+            constexpr AmVector3 expectedUp = {
+                0.524519f, // Up X component
+                0.158494f, // Up Y component
+                0.836516f // Up Z component
+            };
+
+            // Verify forward vector components with appropriate tolerance
+            REQUIRE(std::abs(forward.x - expectedForward.x) < kEpsilon);
+            REQUIRE(std::abs(forward.y - expectedForward.y) < kEpsilon);
+            REQUIRE(std::abs(forward.z - expectedForward.z) < kEpsilon);
+
+            // Verify up vector components with appropriate tolerance
+            REQUIRE(std::abs(up.x - expectedUp.x) < kEpsilon);
+            REQUIRE(std::abs(up.y - expectedUp.y) < kEpsilon);
+            REQUIRE(std::abs(up.z - expectedUp.z) < kEpsilon);
+        }
+
+        THEN("it should compute ZYZ Euler angles")
+        {
+            // Alpha, beta, gamma should be computed
+            const auto alpha = orientation.GetAlpha();
+            const auto beta = orientation.GetBeta();
+            const auto gamma = orientation.GetGamma();
+
+            // These values should be within valid ranges
+            REQUIRE(alpha >= -AM_PI32);
+            REQUIRE(alpha <= AM_PI32);
+            REQUIRE(beta >= 0.0f);
+            REQUIRE(beta <= AM_PI32);
+            REQUIRE(gamma >= -AM_PI32);
+            REQUIRE(gamma <= AM_PI32);
+        }
+
+        THEN("it should compute a valid quaternion")
+        {
+            const auto quaternion = orientation.GetQuaternion();
+
+            // Quaternion should be normalized
+            const AmReal32 length = Length(quaternion);
+
+            REQUIRE(std::abs(length - 1.0f) < kEpsilon);
+        }
+    }
+
+    SECTION("Construction from forward and up vectors")
+    {
+        constexpr AmVector3 forward = kVector3UnitY;
+        constexpr AmVector3 up = kVector3UnitZ;
+
+        const Orientation orientation(forward, up);
+
+        THEN("it should normalize and store the vectors")
+        {
+            const auto storedForward = orientation.GetForward();
+            const auto storedUp = orientation.GetUp();
+
+            // Vectors should be normalized
+            REQUIRE(std::abs(Length(storedForward) - 1.0f) < kEpsilon);
+            REQUIRE(std::abs(Length(storedUp) - 1.0f) < kEpsilon);
+
+            // Should match normalized input vectors
+            REQUIRE(storedForward == Normalize(forward));
+            REQUIRE(storedUp == Normalize(up));
+        }
+
+        THEN("it should compute corresponding Euler angles")
+        {
+            // ZYX angles should be computed from the vectors
+            const auto yaw = orientation.GetYaw();
+            const auto pitch = orientation.GetPitch();
+            const auto roll = orientation.GetRoll();
+
+            // Reconstructed vectors from angles should match the original
+            const Orientation reconstructed(yaw, pitch, roll);
+            const auto reconstructedForward = reconstructed.GetForward();
+            const auto reconstructedUp = reconstructed.GetUp();
+
+            REQUIRE(reconstructedForward == orientation.GetForward());
+            REQUIRE(reconstructedUp == orientation.GetUp());
+        }
+    }
+
+    SECTION("Construction from quaternion")
+    {
+        // Create a quaternion representing a 90-degree rotation around Z-axis
+        const AmQuaternion quaternion = FromAxisAngle(kVector3UnitZ, AM_DegToRad * 90.0f);
+
+        const Orientation orientation(quaternion);
+
+        THEN("it should store the quaternion")
+        {
+            const AmQuaternion storedQuaternion = orientation.GetQuaternion();
+
+            REQUIRE(std::abs(storedQuaternion.w - quaternion.w) < kEpsilon);
+            REQUIRE(std::abs(storedQuaternion.x - quaternion.x) < kEpsilon);
+            REQUIRE(std::abs(storedQuaternion.y - quaternion.y) < kEpsilon);
+            REQUIRE(std::abs(storedQuaternion.z - quaternion.z) < kEpsilon);
+        }
+
+        THEN("it should compute corresponding forward and up vectors")
+        {
+            const auto forward = orientation.GetForward();
+            const auto up = orientation.GetUp();
+
+            // Vectors should be normalized
+            REQUIRE(std::abs(Length(forward) - 1.0f) < kEpsilon);
+            REQUIRE(std::abs(Length(up) - 1.0f) < kEpsilon);
+
+            // For a 90-degree Z rotation, forward should be rotated from unit Y
+            const AmVector3 expectedForward = RotateVector(kVector3UnitY, quaternion);
+            const AmVector3 expectedUp = RotateVector(kVector3UnitZ, quaternion);
+
+            REQUIRE(forward == expectedForward);
+            REQUIRE(up == expectedUp);
+        }
+    }
+
+    SECTION("Rotation matrix generation")
+    {
+        constexpr AmReal32 yaw = AM_DegToRad * 45.0f;
+        constexpr AmReal32 pitch = AM_DegToRad * 30.0f;
+        constexpr AmReal32 roll = AM_DegToRad * 15.0f;
+
+        const Orientation orientation(yaw, pitch, roll);
+        const AmMatrix3 rotationMatrix = orientation.GetRotationMatrix();
+
+        THEN("it should produce a valid rotation matrix")
+        {
+            // Check if it's orthogonal (R * R^T = I)
+            constexpr AmMatrix3 identity = kMatrix3Identity;
+            const AmMatrix3 product = Mul(rotationMatrix, Transpose(rotationMatrix));
+
+            for (int i = 0; i < 3; ++i)
+                for (int j = 0; j < 3; ++j)
+                    REQUIRE(std::abs(product[i][j] - identity[i][j]) < kEpsilon);
+
+            // Check determinant is 1 (proper rotation)
+            const AmReal32 det = Determinant(rotationMatrix);
+            REQUIRE(std::abs(det - 1.0f) < kEpsilon);
+        }
+
+        THEN("it should correctly transform the unit vectors")
+        {
+            const AmVector3 transformedY = Transform(rotationMatrix, kVector3UnitY);
+            const AmVector3 transformedZ = Transform(rotationMatrix, kVector3UnitZ);
+
+            REQUIRE(transformedY == orientation.GetForward());
+            REQUIRE(transformedZ == orientation.GetUp());
+        }
+    }
+
+    SECTION("Look-at matrix generation")
+    {
+        const Orientation orientation(0.0f, 0.0f, 0.0f); // Zero orientation
+        constexpr AmVector3 eye = { 5.0f, 5.0f, 5.0f };
+
+        const AmMatrix4 lookAtMatrix = orientation.GetLookAtMatrix(eye);
+
+        THEN("it should produce a valid transformation matrix")
+        {
+            // The matrix should be invertible
+            const AmReal32 det = Determinant(lookAtMatrix);
+            REQUIRE(std::abs(det) > kEpsilon);
+        }
+
+        THEN("it should incorporate the eye position")
+        {
+            // The translation part should be related to the eye position
+            REQUIRE(((lookAtMatrix[3][0] != 0.0f) || (lookAtMatrix[3][1] != 0.0f) || (lookAtMatrix[3][2] != 0.0f)));
+        }
+    }
+
+    SECTION("Consistency between different representations")
+    {
+        GIVEN("an orientation created from Euler angles")
+        {
+            constexpr AmReal32 yaw = AM_DegToRad * 60.0f;
+            constexpr AmReal32 pitch = AM_DegToRad * 20.0f;
+            constexpr AmReal32 roll = AM_DegToRad * 10.0f;
+
+            const Orientation originalOrientation(yaw, pitch, roll);
+
+            WHEN("reconstructed from its forward and up vectors")
+            {
+                const Orientation reconstructedFromVectors(originalOrientation.GetForward(), originalOrientation.GetUp());
+
+                THEN("it should produce equivalent orientations")
+                {
+                    REQUIRE(originalOrientation.GetForward() == reconstructedFromVectors.GetForward());
+                    REQUIRE(originalOrientation.GetUp() == reconstructedFromVectors.GetUp());
+                }
+            }
+
+            WHEN("reconstructed from its quaternion")
+            {
+                const Orientation reconstructedFromQuaternion(originalOrientation.GetQuaternion());
+
+                THEN("it should produce equivalent orientations")
+                {
+                    REQUIRE(Length(Sub(originalOrientation.GetForward(), reconstructedFromQuaternion.GetForward())) < kEpsilon);
+                    REQUIRE(Length(Sub(originalOrientation.GetUp(), reconstructedFromQuaternion.GetUp())) < kEpsilon);
+                }
+            }
+        }
+    }
+
+    SECTION("Edge cases")
+    {
+        THEN("it should handle extreme angle values")
+        {
+            // Test with large angles
+            const Orientation orientation1(AM_PI32 * 2.5f, AM_PI32 * 1.5f, AM_PI32 * 3.0f);
+
+            // Vectors should still be normalized
+            REQUIRE(std::abs(Length(orientation1.GetForward()) - 1.0f) < kEpsilon);
+            REQUIRE(std::abs(Length(orientation1.GetUp()) - 1.0f) < kEpsilon);
+        }
     }
 }
