@@ -91,7 +91,9 @@
 // Configuration defines
 // --------------------------------------------------------------
 
+#if !defined(AM_MAX_THREAD_POOL_TASKS)
 /// Maximum number of tasks in a single pool
 #define AM_MAX_THREAD_POOL_TASKS 1024
+#endif
 
 #endif // _AM_CORE_COMMON_CONFIG_H

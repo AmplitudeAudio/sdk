@@ -126,6 +126,18 @@ TEST_CASE("Thread Tests", "[thread][amplitude]")
             Thread::DestroyMutex(nullptr);
         }
     }
+
+    SECTION("can get the current thread id")
+    {
+        const auto id = Thread::GetCurrentThreadId();
+        REQUIRE(id != 0);
+    }
+
+    SECTION("can get the CPU count")
+    {
+        const auto count = Thread::GetCPUCount();
+        REQUIRE(count > 0);
+    }
 }
 
 TEST_CASE("Thread Pool Tests", "[thread][amplitude]")

@@ -135,6 +135,13 @@ namespace SparkyStudios::Audio::Amplitude
         AM_API_PUBLIC AmThreadID GetCurrentThreadId();
 
         /**
+         * @brief Gets the number of hardware CPU.
+         *
+         * @ingroup core
+         */
+        AM_API_PUBLIC AmUInt32 GetCPUCount();
+
+        /**
          * @brief Base class for pool tasks.
          *
          * @ingroup core

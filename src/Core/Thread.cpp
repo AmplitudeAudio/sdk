@@ -12,6 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+#include <thread>
+
 #include <SparkyStudios/Audio/Amplitude/Core/Memory.h>
 #include <SparkyStudios/Audio/Amplitude/Core/Thread.h>
 
@@ -305,6 +307,13 @@ namespace SparkyStudios::Audio::Amplitude::Thread
 #endif
     }
 #endif
+
+    AmUInt32 GetCPUCount()
+    {
+        // Since `hardware_concurrency()` may return 0 in edge cases,
+        // we return at least 1 for the number of CPUs.
+        return std::max(1u, std::thread::hardware_concurrency());
+    }
 
     static void PoolWorker(AmVoidPtr param)
     {
