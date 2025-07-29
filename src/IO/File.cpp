@@ -86,9 +86,4 @@ namespace SparkyStudios::Audio::Amplitude
     {
         Seek(offset, eFileSeekOrigin_Start);
     }
-
-    AmVoidPtr File::GetPtr()
-    {
-        return nullptr;
-    }
 } // namespace SparkyStudios::Audio::Amplitude
