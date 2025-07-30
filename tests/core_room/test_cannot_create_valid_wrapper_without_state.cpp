@@ -14,12 +14,23 @@
 
 #include <SparkyStudios/Audio/Amplitude/Amplitude.h>
 
+#include <Core/RoomInternalState.h>
+
 #include "SimpleTestCase.h"
 
 using namespace SparkyStudios::Audio::Amplitude;
 
 void SimpleTestCase::Run()
 {
-    const auto count = Thread::GetCPUCount();
-    ExpectTrue(count > 0, "CPU count should be greater than zero");
+    RoomInternalState state;
+    state.SetId(1);
+
+    fplutil::intrusive_list room_list(&RoomInternalState::node);
+    room_list.push_back(state);
+
+    Room wrapper2(nullptr);
+    ExpectFalse(wrapper2.Valid(), "Wrapper should not be valid without a state");
+
+    Room wrapper3;
+    ExpectFalse(wrapper3.Valid(), "Wrapper should not be valid without a state");
 }

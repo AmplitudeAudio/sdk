@@ -14,12 +14,25 @@
 
 #include <SparkyStudios/Audio/Amplitude/Amplitude.h>
 
+#include <Core/RoomInternalState.h>
+
 #include "SimpleTestCase.h"
 
 using namespace SparkyStudios::Audio::Amplitude;
 
 void SimpleTestCase::Run()
 {
-    const auto count = Thread::GetCPUCount();
-    ExpectTrue(count > 0, "CPU count should be greater than zero");
+    RoomInternalState state;
+    state.SetId(1);
+
+    fplutil::intrusive_list room_list(&RoomInternalState::node);
+    room_list.push_back(state);
+
+    Room wrapper(&state);
+    ExpectEqual(wrapper.GetState(), &state);
+
+    constexpr auto kGain = 0.5f;
+    state.SetGain(kGain);
+
+    ExpectEqual(state.GetGain(), kGain, "State should have the correct gain");
 }

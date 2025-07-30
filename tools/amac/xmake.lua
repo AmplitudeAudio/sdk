@@ -14,20 +14,17 @@
 
 target("amac")
     set_kind("binary")
-
-    -- Include main project include directories
-    add_includedirs("$(projectdir)/include", "$(projectdir)/src")
-    add_includedirs("$(builddir)/include/SparkyStudios/Audio/Amplitude")
-
-    -- Add packages
-    add_packages("flatbuffers", "cli11")
-
-    -- Source files
-    add_files("main.cpp")
+    set_targetdir("$(builddir)/bin")
 
     -- Link to Amplitude Static library
     add_deps("Amplitude")
 
-    -- Set output directory
-    set_targetdir("$(builddir)/bin")
+    -- Add packages
+    add_packages("cli11")
+
+    -- Include main project include directories
+    add_includedirs("$(projectdir)/src", "$(builddir)/include")
+
+    -- Source files
+    add_files("main.cpp")
 target_end()

@@ -14,17 +14,11 @@
 
 #include <SparkyStudios/Audio/Amplitude/Amplitude.h>
 
-#include "TestCase.h"
+#include "SimpleTestCase.h"
 
 using namespace SparkyStudios::Audio::Amplitude;
 
-void TestCase::SetUp()
-{}
-
-void TestCase::TearDown()
-{}
-
-void TestCase::Run()
+void SimpleTestCase::Run()
 {
     // Test that actions on a null mutex are no-op
     Thread::LockMutex(nullptr);

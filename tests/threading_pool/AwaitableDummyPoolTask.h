@@ -12,14 +12,27 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include <SparkyStudios/Audio/Amplitude/Amplitude.h>
+#pragma once
 
-#include "SimpleTestCase.h"
+#include <SparkyStudios/Audio/Amplitude/Core/Thread.h>
 
-using namespace SparkyStudios::Audio::Amplitude;
-
-void SimpleTestCase::Run()
+namespace SparkyStudios::Audio::Amplitude
 {
-    const auto count = Thread::GetCPUCount();
-    ExpectTrue(count > 0, "CPU count should be greater than zero");
-}
+    class AwaitableDummyPoolTask final : public Thread::AwaitablePoolTask
+    {
+    public:
+        void AwaitableWork() override
+        {
+            Thread::Sleep(1000);
+            _isExecuted = true;
+        }
+
+        [[nodiscard]] bool IsExecuted() const
+        {
+            return _isExecuted;
+        }
+
+    private:
+        bool _isExecuted = false;
+    };
+} // namespace SparkyStudios::Audio::Amplitude

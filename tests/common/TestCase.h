@@ -1,109 +1,132 @@
+// Copyright (c) 2021-present Sparky Studios. All rights reserved.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
 #pragma once
 
 #include <iostream>
 
-class TestCase
+#include <SparkyStudios/Audio/Amplitude/Amplitude.h>
+
+namespace SparkyStudios::Audio::Amplitude::Tests
 {
-public:
-    TestCase()
-        : passedCount_(0)
-        , failedCount_(0)
-    {}
-
-    virtual ~TestCase() = default;
-
-    // Set up resources before each test (optional)
-    void SetUp();
-
-    // Clean up resources after each test (optional)
-    void TearDown();
-
-    // Utility methods for common test expectations
-    template<typename T>
-    void ExpectEqual(const T& expected, const T& actual, const char* message = "")
+    class TestCase
     {
-        if (!(expected == actual))
+    public:
+        TestCase()
+            : _passedCount(0)
+            , _failedCount(0)
+        {}
+
+        virtual ~TestCase() = default;
+
+        // Set up resources before each test (optional)
+        virtual void SetUp() = 0;
+
+        // Clean up resources after each test (optional)
+        virtual void TearDown() = 0;
+
+        // Utility methods for common test expectations
+        template<typename T>
+        void ExpectEqual(const T& expected, const T& actual, const char* message = "")
         {
-            ReportFailure("ExpectEqual failed", message);
+            if (!(expected == actual))
+            {
+                ReportFailure("ExpectEqual failed", message);
+            }
+            else
+            {
+                ++_passedCount;
+            }
         }
-        else
+
+        template<typename T>
+        void ExpectNotEqual(const T& expected, const T& actual, const char* message = "")
         {
-            ++passedCount_;
+            if (expected == actual)
+            {
+                ReportFailure("ExpectNotEqual failed", message);
+            }
+            else
+            {
+                ++_passedCount;
+            }
         }
-    }
 
-    template<typename T>
-    void ExpectNotEqual(const T& expected, const T& actual, const char* message = "")
-    {
-        if (expected == actual)
+        void ExpectTrue(bool condition, const char* message = "")
         {
-            ReportFailure("ExpectNotEqual failed", message);
+            if (!condition)
+            {
+                ReportFailure("ExpectTrue failed", message);
+            }
+            else
+            {
+                ++_passedCount;
+            }
         }
-        else
+
+        void ExpectFalse(bool condition, const char* message = "")
         {
-            ++passedCount_;
+            if (condition)
+            {
+                ReportFailure("ExpectFalse failed", message);
+            }
+            else
+            {
+                ++_passedCount;
+            }
         }
-    }
 
-    void ExpectTrue(bool condition, const char* message = "")
-    {
-        if (!condition)
+        // Returns true if any expectation failed during the test
+        bool HasFailure() const
         {
-            ReportFailure("ExpectTrue failed", message);
+            return _failedCount > 0;
         }
-        else
+
+        // Returns the number of passed expectations
+        int PassedCount() const
         {
-            ++passedCount_;
+            return _passedCount;
         }
-    }
 
-    void ExpectFalse(bool condition, const char* message = "")
-    {
-        if (condition)
+        // Returns the number of failed expectations
+        int FailedCount() const
         {
-            ReportFailure("ExpectFalse failed", message);
+            return _failedCount;
         }
-        else
+
+        // Returns the total number of expectations ran
+        int TotalExpectations() const
         {
-            ++passedCount_;
+            return _passedCount + _failedCount;
         }
-    }
 
-    // Returns true if any expectation failed during the test
-    bool HasFailure() const
-    {
-        return failedCount_ > 0;
-    }
+        // Run the test case (must be overridden)
+        virtual void Run() = 0;
 
-    // Returns the number of passed expectations
-    int PassedCount() const
-    {
-        return passedCount_;
-    }
+    protected:
+        virtual void ReportFailure(const char* failureType, const char* message)
+        {
+            ++_failedCount;
+            amLogError("[TEST FAILURE] %s: %s", failureType, message);
+        }
 
-    // Returns the number of failed expectations
-    int FailedCount() const
-    {
-        return failedCount_;
-    }
+    private:
+        int _passedCount;
+        int _failedCount;
+    };
 
-    // Returns the total number of expectations ran
-    int TotalExpectations() const
-    {
-        return passedCount_ + failedCount_;
-    }
+    std::shared_ptr<TestCase> MakeTestCase();
+} // namespace SparkyStudios::Audio::Amplitude::Tests
 
-    // Run the test case (must be overridden)
-    void Run();
-
-protected:
-    virtual void ReportFailure(const char* failureType, const char* message)
-    {
-        ++failedCount_;
-        std::cout << "[TEST FAILURE] " << failureType << ": " << message << std::endl;
-    }
-
-private:
-    int passedCount_;
-    int failedCount_;
-};
+using namespace SparkyStudios::Audio::Amplitude::Tests;

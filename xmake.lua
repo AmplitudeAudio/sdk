@@ -13,7 +13,7 @@
 -- limitations under the License.
 
 -- Set minimum xmake version
-set_xmakever("2.7.0")
+set_xmakever("3.0.0")
 
 add_repositories("repo xmake/repo", {rootdir = os.scriptdir()})
 
@@ -23,7 +23,9 @@ set_version("1.0")
 set_license("Apache-2.0")
 set_languages("c++20")
 set_description("A powerful and cross-platform audio engine, optimized for games.")
-add_rules("mode.debug", "mode.release")
+
+add_rules("mode.debug", "mode.release", "mode.coverage")
+add_rules("plugin.compile_commands.autoupdate")
 
 -- Options
 option("build_assets")
@@ -83,8 +85,6 @@ if has_config("build_samples") then
 end
 
 if has_config("unit_tests") then
-    add_rules("mode.coverage")
-    add_requires("catch2")
     set_config("build_assets", true)
 end
 
@@ -121,7 +121,7 @@ add_packages("flatbuffers", "dylib", "xsimd", "miniaudio", "eigen")
 -- Generate FlatBuffers schema files
 target("generated_includes")
     set_kind("phony")
-    set_default(false)
+    set_default(true)
 
     on_build(function (target)
         import("core.project.config")
@@ -150,7 +150,7 @@ target_end()
 -- Build binary schemas
 target("build_binary_schemas")
     set_kind("phony")
-    set_default(false)
+    set_default(true)
 
     on_build(function (target)
         import("core.project.config")
@@ -205,16 +205,13 @@ target("Amplitude")
     -- INSTALLATION
     -- ----------------------------------------
 
-    -- Header files
     add_headerfiles("include/(**.h)")
-
-    -- Schema files
     add_installfiles("(schemas/**.bfbs)")
-
-    -- Python files
     add_installfiles("(scripts/*.py)")
+
+    remove_installfiles("scripts/build_schemas.py", "scripts/__pycache__/*.pyc")
 target_end()
- 
+
 -- Build tools if enabled
 if has_config("build_tools") and not is_plat("android") and not is_plat("iphoneos") then
     includes("tools/amac/xmake.lua")
@@ -225,17 +222,19 @@ end
 
 -- Build sample assets if enabled
 if has_config("build_assets") then
-    target("ss_amplitude_audio_sample_project")
+    target("build_sample_project")
         set_kind("phony")
 
         on_build(function (target)
             import("core.project.config")
+            import("lib.detect.find_program")
+            import("lib.detect.find_tool")
 
-            local python = os.find_program("python3") or os.find_program("python")
+            local python = find_program("python3") or find_program("python")
             local scripts_dir = path.join(os.projectdir(), "scripts")
             local sample_project_dir = path.join(os.projectdir(), "sample_project")
             local output_dir = path.join(config.builddir(), "samples/assets")
-            local flatc_path = path.join(os.projectdir(), "bin/flatc")
+            local flatc_path = find_tool("flatc")
             local schemas_dir = path.join(os.projectdir(), "schemas")
 
             -- Create output directory
@@ -243,10 +242,10 @@ if has_config("build_assets") then
 
             if python then
                 os.exec("%s %s/build_project.py -p %s -b %s -f %s -s %s",
-                    python, scripts_dir, sample_project_dir, output_dir, flatc_path, schemas_dir)
+                    python, scripts_dir, sample_project_dir, output_dir, flatc_path.program, schemas_dir)
 
                 -- Copy assets to output directory
-                os.cp(path.join(os.projectdir(), "assets"), output_dir)
+                os.cp(path.join(os.projectdir(), "assets"), path.join(config.builddir(), "samples"))
             else
                 print("Python not found. Cannot build sample project.")
             end
@@ -259,7 +258,7 @@ end
 -- Build samples if enabled
 if has_config("build_samples") then
     includes("samples/xmake.lua")
-end 
+end
 
 -- Build unit tests if enabled
 if has_config("unit_tests") then

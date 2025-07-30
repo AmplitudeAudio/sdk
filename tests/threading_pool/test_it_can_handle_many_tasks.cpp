@@ -14,12 +14,28 @@
 
 #include <SparkyStudios/Audio/Amplitude/Amplitude.h>
 
+#include "DummyPoolTask.h"
 #include "SimpleTestCase.h"
 
 using namespace SparkyStudios::Audio::Amplitude;
 
 void SimpleTestCase::Run()
 {
-    const auto count = Thread::GetCPUCount();
-    ExpectTrue(count > 0, "CPU count should be greater than zero");
+    Thread::Pool pool;
+    pool.Init(1);
+
+    const AmThreadID threadId = Thread::GetCurrentThreadId();
+
+    for (size_t i = 0; i < AM_MAX_THREAD_POOL_TASKS + 100; i++)
+    {
+        auto task = std::make_shared<DummyPoolTask>(threadId);
+        ExpectFalse(task->IsExecuted(), "Task should not be executed before added to the pool");
+
+        bool mayExecuteWorkInCallerThread = pool.GetTaskCount() >= AM_MAX_THREAD_POOL_TASKS;
+
+        pool.AddTask(task);
+
+        if (mayExecuteWorkInCallerThread && task->IsExecuted())
+            ExpectTrue(task->GetExecutingThreadId() == threadId, "Task should be executed in the caller thread");
+    }
 }

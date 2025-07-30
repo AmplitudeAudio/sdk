@@ -1,7 +1,5 @@
-add_rules("mode.debug")
-
 for _, filepath in ipairs(os.filedirs("**")) do
-    if (os.isfile(filepath) or filepath == "common") then
+    if os.isfile(filepath) or filepath == "common" then
         -- Skip files
         goto continue
     end
@@ -25,11 +23,13 @@ for _, filepath in ipairs(os.filedirs("**")) do
         set_kind("binary")
         set_default(false)
         set_group(group)
-        set_rundir("$(projectdir)")
+        set_rundir("$(builddir)")
 
-        add_deps("Amplitude")
+        add_deps("Amplitude", "build_sample_project")
 
-        add_includedirs("common", {public = false})
+        add_includedirs("common")
+        add_includedirs("$(projectdir)/src")
+        add_includedirs("$(builddir)/include")
 
         add_files("common/*.cpp")
 
@@ -41,18 +41,3 @@ for _, filepath in ipairs(os.filedirs("**")) do
 
     ::continue::
 end
-
-target("tests")
-    set_kind("binary")
-    set_default(false)
-    set_rundir("$(projectdir)")
-
-    add_deps("Amplitude")
-    add_packages("catch2")
-
-    add_files("*.cpp")
-
-    add_includedirs("$(projectdir)/src")
-    add_includedirs("$(builddir)/include")
-
-target_end()

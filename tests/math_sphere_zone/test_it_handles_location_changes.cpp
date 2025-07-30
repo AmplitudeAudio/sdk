@@ -20,6 +20,15 @@ using namespace SparkyStudios::Audio::Amplitude;
 
 void SimpleTestCase::Run()
 {
-    const auto count = Thread::GetCPUCount();
-    ExpectTrue(count > 0, "CPU count should be greater than zero");
+    auto inner = std::make_shared<SphereShape>(50);
+    auto outer = std::make_shared<SphereShape>(100);
+    auto zone = std::make_shared<SphereZone>(inner, outer);
+
+    const AmVector3 newLocation = { 10, 20, 30 };
+    zone->SetLocation(newLocation);
+
+    ExpectEqual(zone->GetLocation(), newLocation, "Location should be updated");
+
+    ExpectEqual(inner->GetLocation(), newLocation, "Inner capsule location should be updated");
+    ExpectEqual(outer->GetLocation(), newLocation, "Outer capsule location should be updated");
 }

@@ -14,12 +14,24 @@
 
 #include <SparkyStudios/Audio/Amplitude/Amplitude.h>
 
+#include "AwaitableDummyPoolTask.h"
 #include "SimpleTestCase.h"
 
 using namespace SparkyStudios::Audio::Amplitude;
 
 void SimpleTestCase::Run()
 {
-    const auto count = Thread::GetCPUCount();
-    ExpectTrue(count > 0, "CPU count should be greater than zero");
+    Thread::Pool pool;
+    pool.Init(1);
+
+    auto task = AmSharedPtr<AwaitableDummyPoolTask>::Make();
+    ExpectFalse(task->IsExecuted(), "Task should not be executed yet");
+
+    pool.AddTask(task);
+
+    task->Await(10);
+    ExpectFalse(task->IsExecuted(), "Task should not be executed before the wait time");
+
+    task->Await();
+    ExpectTrue(task->IsExecuted(), "Task should be executed after the wait time");
 }

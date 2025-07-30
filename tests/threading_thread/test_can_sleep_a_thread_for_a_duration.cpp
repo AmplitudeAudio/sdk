@@ -14,17 +14,11 @@
 
 #include <SparkyStudios/Audio/Amplitude/Amplitude.h>
 
-#include "TestCase.h"
+#include "SimpleTestCase.h"
 
 using namespace SparkyStudios::Audio::Amplitude;
 
-void TestCase::SetUp()
-{}
-
-void TestCase::TearDown()
-{}
-
-void TestCase::Run()
+void SimpleTestCase::Run()
 {
     const auto start = Thread::GetTimeMillis();
     Thread::Sleep(100);

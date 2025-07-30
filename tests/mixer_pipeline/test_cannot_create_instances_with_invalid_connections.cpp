@@ -14,12 +14,23 @@
 
 #include <SparkyStudios/Audio/Amplitude/Amplitude.h>
 
-#include "SimpleTestCase.h"
+#include <Mixer/Pipeline.h>
+
+#include "EngineTestCase.h"
 
 using namespace SparkyStudios::Audio::Amplitude;
 
-void SimpleTestCase::Run()
+void EngineTestCase::Run()
 {
-    const auto count = Thread::GetCPUCount();
-    ExpectTrue(count > 0, "CPU count should be greater than zero");
+    AmplimixLayerImpl layer;
+
+    PipelineImpl pipeline;
+    pipeline.LoadDefinitionFromFile(
+        _fileSystem->OpenFile(
+            _fileSystem->Join({ AM_OS_STRING("pipelines"), AM_OS_STRING("tests.invalid.invalid_producers_count.ampipeline") }),
+            eFileOpenMode_Read),
+        nullptr);
+
+    auto instance = pipeline.CreateInstance(&layer);
+    ExpectTrue(instance == nullptr, "Pipeline instance should be null");
 }

@@ -12,14 +12,26 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include <SparkyStudios/Audio/Amplitude/Amplitude.h>
+#pragma once
 
-#include "SimpleTestCase.h"
+#include "TestCase.h"
 
-using namespace SparkyStudios::Audio::Amplitude;
-
-void SimpleTestCase::Run()
+namespace SparkyStudios::Audio::Amplitude::Tests
 {
-    const auto count = Thread::GetCPUCount();
-    ExpectTrue(count > 0, "CPU count should be greater than zero");
-}
+    class SimpleTestCase : public TestCase
+    {
+    public:
+        void SetUp() override
+        {}
+
+        void TearDown() override
+        {}
+
+        void Run() override;
+    };
+
+    std::shared_ptr<TestCase> MakeTestCase()
+    {
+        return AmSharedPtr<SimpleTestCase>::Make();
+    }
+} // namespace SparkyStudios::Audio::Amplitude::Tests

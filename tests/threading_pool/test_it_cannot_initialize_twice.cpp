@@ -20,6 +20,10 @@ using namespace SparkyStudios::Audio::Amplitude;
 
 void SimpleTestCase::Run()
 {
-    const auto count = Thread::GetCPUCount();
-    ExpectTrue(count > 0, "CPU count should be greater than zero");
+    Thread::Pool pool;
+    pool.Init(1);
+
+    pool.Init(4);
+    ExpectNotEqual<AmUInt32>(pool.GetThreadCount(), 4, "Thread count should not be 4");
+    ExpectEqual<AmUInt32>(pool.GetThreadCount(), 1, "Thread count should be 1");
 }
