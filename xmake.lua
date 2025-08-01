@@ -331,6 +331,10 @@ if has_config("unit_tests") then
         "%s -a %s --output-file %s --ignore-errors inconsistent,range,mismatch,source,count,negative,unused,corrupt", lcov,
           table.concat(all_info_files, " -a "), baseline_info)
 
+        for _, file in ipairs(all_info_files) do
+          os.rm(file)
+        end
+
         print("Baseline coverage report generated at: %s", baseline_info)
       end)
     target_end()

@@ -31,28 +31,57 @@ void SimpleTestCase::Run()
     Room wrapper(&state);
     AM_EXPECT_EQ(wrapper.GetState(), &state);
 
-    const auto direction = kVector3UnitX;
-    const auto up = kVector3UnitZ;
-    const auto orientation = Orientation(direction, up);
-    state.SetOrientation(orientation);
+    {
+        const auto direction = kVector3UnitX;
+        const auto up = kVector3UnitZ;
+        const auto orientation = Orientation(direction, up);
+        state.SetOrientation(orientation);
 
-    AM_EXPECT_EQ(state.GetDirection(), direction);
-    AM_EXPECT_EQ(wrapper.GetDirection(), direction);
+        AM_EXPECT_EQ(state.GetDirection(), direction);
+        AM_EXPECT_EQ(wrapper.GetDirection(), direction);
 
-    AM_EXPECT_EQ(state.GetUp(), up);
-    AM_EXPECT_EQ(wrapper.GetUp(), up);
+        AM_EXPECT_EQ(state.GetUp(), up);
+        AM_EXPECT_EQ(wrapper.GetUp(), up);
 
-    AM_EXPECT(std::memcmp(&state.GetOrientation(), &orientation, sizeof(Orientation)) == 0);
-    AM_EXPECT(std::memcmp(&state.GetOrientation(), &orientation, sizeof(Orientation)) == 0);
+        AM_EXPECT(std::memcmp(&state.GetOrientation(), &orientation, sizeof(Orientation)) == 0);
+        AM_EXPECT(std::memcmp(&state.GetOrientation(), &orientation, sizeof(Orientation)) == 0);
 
-    state.Update();
+        state.Update();
 
-    AM_EXPECT_EQ(state.GetDirection(), direction);
-    AM_EXPECT_EQ(wrapper.GetDirection(), direction);
+        AM_EXPECT_EQ(state.GetDirection(), direction);
+        AM_EXPECT_EQ(wrapper.GetDirection(), direction);
 
-    AM_EXPECT_EQ(state.GetUp(), up);
-    AM_EXPECT_EQ(wrapper.GetUp(), up);
+        AM_EXPECT_EQ(state.GetUp(), up);
+        AM_EXPECT_EQ(wrapper.GetUp(), up);
 
-    AM_EXPECT(std::memcmp(&state.GetOrientation(), &orientation, sizeof(Orientation)) == 0);
-    AM_EXPECT(std::memcmp(&state.GetOrientation(), &orientation, sizeof(Orientation)) == 0);
+        AM_EXPECT(std::memcmp(&state.GetOrientation(), &orientation, sizeof(Orientation)) == 0);
+        AM_EXPECT(std::memcmp(&state.GetOrientation(), &orientation, sizeof(Orientation)) == 0);
+    }
+
+    {
+        const auto direction = kVector3UnitY;
+        const auto up = kVector3UnitX;
+        const auto orientation = Orientation(direction, up);
+        wrapper.SetOrientation(orientation);
+
+        AM_EXPECT_EQ(state.GetDirection(), direction);
+        AM_EXPECT_EQ(wrapper.GetDirection(), direction);
+
+        AM_EXPECT_EQ(state.GetUp(), up);
+        AM_EXPECT_EQ(wrapper.GetUp(), up);
+
+        AM_EXPECT(std::memcmp(&state.GetOrientation(), &orientation, sizeof(Orientation)) == 0);
+        AM_EXPECT(std::memcmp(&state.GetOrientation(), &orientation, sizeof(Orientation)) == 0);
+
+        wrapper.Update();
+
+        AM_EXPECT_EQ(state.GetDirection(), direction);
+        AM_EXPECT_EQ(wrapper.GetDirection(), direction);
+
+        AM_EXPECT_EQ(state.GetUp(), up);
+        AM_EXPECT_EQ(wrapper.GetUp(), up);
+
+        AM_EXPECT(std::memcmp(&state.GetOrientation(), &orientation, sizeof(Orientation)) == 0);
+        AM_EXPECT(std::memcmp(&state.GetOrientation(), &orientation, sizeof(Orientation)) == 0);
+    }
 }

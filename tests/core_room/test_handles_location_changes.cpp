@@ -31,14 +31,29 @@ void SimpleTestCase::Run()
     Room wrapper(&state);
     AM_EXPECT_EQ(wrapper.GetState(), &state);
 
-    constexpr AmVector3 location = { 10, 20, 30 };
-    state.SetLocation(location);
+    {
+        constexpr AmVector3 location = { 10, 20, 30 };
+        state.SetLocation(location);
 
-    AM_EXPECT_EQ(state.GetLocation(), location);
-    AM_EXPECT_EQ(wrapper.GetLocation(), location);
+        AM_EXPECT_EQ(state.GetLocation(), location);
+        AM_EXPECT_EQ(wrapper.GetLocation(), location);
 
-    state.Update();
+        state.Update();
 
-    AM_EXPECT_EQ(state.GetLocation(), location);
-    AM_EXPECT_EQ(wrapper.GetLocation(), location);
+        AM_EXPECT_EQ(state.GetLocation(), location);
+        AM_EXPECT_EQ(wrapper.GetLocation(), location);
+    }
+
+    {
+        constexpr AmVector3 location = { 30, 20, 10 };
+        wrapper.SetLocation(location);
+
+        AM_EXPECT_EQ(state.GetLocation(), location);
+        AM_EXPECT_EQ(wrapper.GetLocation(), location);
+
+        wrapper.Update();
+
+        AM_EXPECT_EQ(state.GetLocation(), location);
+        AM_EXPECT_EQ(wrapper.GetLocation(), location);
+    }
 }

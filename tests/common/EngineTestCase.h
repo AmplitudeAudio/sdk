@@ -70,6 +70,19 @@ namespace SparkyStudios::Audio::Amplitude::Tests
             _running = true;
 
             _threadHandle = Thread::CreateThread(run, this);
+
+            amEngine->Initialize(AM_OS_STRING("tests.config.amconfig"));
+
+            amEngine->EnsureSoundBankLoaded(AM_OS_STRING("tests.init.ambank"));
+
+            amEngine->StartLoadSoundFiles();
+            while (!amEngine->TryFinalizeLoadSoundFiles())
+                Thread::Sleep(1);
+
+            AM_EXPECT(amEngine->TryFinalizeLoadSoundFiles());
+
+            AM_UNUSED(amEngine->AddListener(1));
+            amEngine->SetDefaultListener(1);
         }
 
         void TearDown() override
@@ -81,6 +94,11 @@ namespace SparkyStudios::Audio::Amplitude::Tests
 
             if (amEngine->IsInitialized())
             {
+                amEngine->SetDefaultListener(nullptr);
+                amEngine->RemoveListener(1);
+
+                amEngine->UnloadSoundBanks();
+
                 amEngine->Deinitialize();
 
                 // Wait for the file system to complete loading.

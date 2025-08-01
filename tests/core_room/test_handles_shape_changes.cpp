@@ -61,6 +61,9 @@ void SimpleTestCase::Run()
     AM_EXPECT_EQ(wrapper.GetSurfaceArea(eRoomWall_Floor), 1000 * 500);
     AM_EXPECT_EQ(wrapper.GetSurfaceArea(eRoomWall_Ceiling), wrapper.GetSurfaceArea(eRoomWall_Ceiling));
 
+    AM_EXPECT_EQ(state.GetSurfaceArea((eRoomWall)99), 0.0f);
+    AM_EXPECT_EQ(wrapper.GetSurfaceArea((eRoomWall)99), 0.0f);
+
     constexpr AmVector3 dimensions = { 100, 100, 100 };
     state.SetDimensions(dimensions);
 
