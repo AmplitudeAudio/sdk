@@ -26,9 +26,10 @@
  */
 #define amVersion SparkyStudios::Audio::Amplitude::GetVersion()
 
-#define AM_VERSION_MAJOR 1
-#define AM_VERSION_MINOR 0
-#define AM_VERSION_PATCH 0
+#define AM_VERSION_MAJOR ${VERSION_MAJOR}
+#define AM_VERSION_MINOR ${VERSION_MINOR}
+#define AM_VERSION_PATCH ${VERSION_ALTER}
+#define AM_VERSION_BUILD "${GIT_COMMIT}"
 
 namespace SparkyStudios::Audio::Amplitude
 {
@@ -53,6 +54,11 @@ namespace SparkyStudios::Audio::Amplitude
          * @brief Version number, updated for tiny releases (e.g.: Bug fixes).
          */
         AmUInt8 revision;
+
+        /**
+         * @brief Build ID.
+         */
+        AmString build;
 
         /**
          * @brief Text string containing the name and version of the library.

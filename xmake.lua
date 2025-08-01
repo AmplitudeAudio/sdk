@@ -19,7 +19,7 @@ add_repositories("repo xmake/repo", { rootdir = os.scriptdir() })
 
 -- Project definition
 set_project("Amplitude")
-set_version("1.0")
+set_version("1.0.0")
 set_license("Apache-2.0")
 set_languages("c++20")
 set_description("A powerful and cross-platform audio engine, optimized for games.")
@@ -211,6 +211,10 @@ target("Amplitude")
       "src/IO/Android/LogcatLogger.cpp"
     )
   end
+
+  -- Config files
+  set_configdir("$(projectdir)")
+  add_configfiles("xmake/config/(**.in)")
 
   -- INSTALLATION
   -- ----------------------------------------
