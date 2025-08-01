@@ -21,5 +21,5 @@ using namespace SparkyStudios::Audio::Amplitude;
 void SimpleTestCase::Run()
 {
     const auto count = Thread::GetCPUCount();
-    ExpectTrue(count > 0, "CPU count should be greater than zero");
+    AM_EXPECT(count > 0);
 }

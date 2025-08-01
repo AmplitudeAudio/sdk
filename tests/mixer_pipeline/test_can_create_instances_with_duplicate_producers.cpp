@@ -31,5 +31,5 @@ void EngineTestCase::Run()
         nullptr);
 
     auto instance = pipeline.CreateInstance(&layer);
-    ExpectFalse(instance == nullptr, "Pipeline instance should not be null");
+    AM_EXPECT_NOT(instance == nullptr);
 }

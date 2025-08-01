@@ -260,7 +260,7 @@ namespace SparkyStudios::Audio::Amplitude
          *
          * @return The internal file handle. This depends on the implementation.
          */
-        virtual AmVoidPtr GetPtr();
+        virtual AmVoidPtr GetPtr() = 0;
 
         /**
          * @brief Checks if the file is valid.

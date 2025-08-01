@@ -1,43 +1,81 @@
-for _, filepath in ipairs(os.filedirs("**")) do
-    if os.isfile(filepath) or filepath == "common" then
-        -- Skip files
-        goto continue
-    end
+-- Copyright (c) 2021-present Sparky Studios. All rights reserved.
+--
+-- Licensed under the Apache License, Version 2.0 (the "License");
+-- you may not use this file except in compliance with the License.
+-- You may obtain a copy of the License at
+--
+--     http://www.apache.org/licenses/LICENSE-2.0
+--
+-- Unless required by applicable law or agreed to in writing, software
+-- distributed under the License is distributed on an "AS IS" BASIS,
+-- WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+-- See the License for the specific language governing permissions and
+-- limitations under the License.
 
-    local name = path.basename(filepath)
+target("generate_test_package")
+  set_kind("phony")
 
-    local parts = {}
-    local first, rest = name:match("([^_]+)_(.+)")
+  add_deps("ampk")
 
-    if first and rest then
-        parts[1] = first
-        parts[2] = rest
+  on_build(function(target)
+    import("core.project.config")
+    import("core.project.project")
+    import("lib.detect.find_tool")
+
+    local ampk = project.target("ampk")
+
+    local program = ampk:targetfile()
+    if program then
+      local assets_dir = path.join(path.absolute(config.builddir()), "samples/assets")
+      local output_dir = path.join(path.absolute(config.builddir()), "samples/assets.ampk")
+
+      os.exec("%s -q -c 0 %s %s", program, assets_dir, output_dir)
     else
-        parts[1] = name
+      print("ampk not found.")
     end
+  end)
+target_end()
 
-    local group = parts[1] or name
-    local target_name = parts[2] or name
+for _, filepath in ipairs(os.filedirs("**")) do
+  if os.isfile(filepath) or filepath == "common" then
+    -- Skip files
+    goto continue
+  end
 
-    target(target_name)
-        set_kind("binary")
-        set_default(false)
-        set_group(group)
-        set_rundir("$(builddir)")
+  local name = path.basename(filepath)
 
-        add_deps("Amplitude", "build_sample_project")
+  local parts = {}
+  local first, rest = name:match("([^_]+)_(.+)")
 
-        add_includedirs("common")
-        add_includedirs("$(projectdir)/src")
-        add_includedirs("$(builddir)/include")
+  if first and rest then
+    parts[1] = first
+    parts[2] = rest
+  else
+    parts[1] = name
+  end
 
-        add_files("common/*.cpp")
+  local group = parts[1] or name
+  local target_name = parts[2] or name
 
-        for _, test_file in ipairs(os.files(name .. "/test_*.cpp")) do
-            local test_name = path.basename(test_file):gsub("^test_", "")
-            add_tests(test_name, {files = test_file})
-        end
+  for _, test_file in ipairs(os.files(name .. "/test_*.cpp")) do
+    local test_name = path.basename(test_file):gsub("^test_", "")
+    target(target_name .. "_" .. test_name)
+      set_kind("binary")
+      set_default(false)
+      set_group("test_" .. group)
+      set_rundir("$(builddir)")
+
+      add_deps("Amplitude", "build_sample_project", "generate_test_package", "ampk")
+
+      add_includedirs("common")
+      add_includedirs("$(projectdir)/src")
+      add_includedirs("$(builddir)/include")
+
+      add_files("common/*.cpp", test_file)
+
+      add_tests("test")
     target_end()
+  end
 
-    ::continue::
+  ::continue::
 end

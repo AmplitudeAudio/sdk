@@ -24,5 +24,5 @@ void SimpleTestCase::Run()
     Thread::Sleep(100);
     const auto end = Thread::GetTimeMillis();
 
-    ExpectTrue((end - start) >= 100, "Thread::Sleep did not sleep for the expected duration");
+    AM_EXPECT((end - start) >= 100);
 }

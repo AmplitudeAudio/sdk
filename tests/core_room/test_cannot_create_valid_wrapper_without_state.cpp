@@ -29,8 +29,8 @@ void SimpleTestCase::Run()
     room_list.push_back(state);
 
     Room wrapper2(nullptr);
-    ExpectFalse(wrapper2.Valid(), "Wrapper should not be valid without a state");
+    AM_EXPECT_NOT(wrapper2.Valid());
 
     Room wrapper3;
-    ExpectFalse(wrapper3.Valid(), "Wrapper should not be valid without a state");
+    AM_EXPECT_NOT(wrapper3.Valid());
 }

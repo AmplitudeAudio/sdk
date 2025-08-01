@@ -66,3 +66,4 @@ vcpkg_installed/
 am_build/
 .xmake/
 scripts/__pycache__
+**/compile_commands.json

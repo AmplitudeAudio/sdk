@@ -25,7 +25,7 @@ set_languages("c++20")
 set_description("A powerful and cross-platform audio engine, optimized for games.")
 
 add_rules("mode.debug", "mode.release", "mode.coverage")
--- add_rules("plugin.compile_commands.autoupdate")
+add_rules("plugin.compile_commands.autoupdate")
 
 -- Options
 option("build_assets")
@@ -58,13 +58,18 @@ option("coverage_min_threshold")
   set_description("Minimum coverage percentage required (0 to disable)")
 option_end()
 
+_ARCH_CACHE = {}
+
 -- Hooks
 on_config(function(target)
   import("xmake.cpu")
   import("xmake.platform")
 
-  local archs = cpu.am_get_supported_archs()
-  for _, arch in ipairs(archs) do
+  if _ARCH_CACHE == nil or #_ARCH_CACHE == 0 then
+    _ARCH_CACHE = cpu.am_get_supported_archs()
+  end
+
+  for _, arch in ipairs(_ARCH_CACHE) do
     local flags, define, suffix = cpu.am_get_arch_info(arch)
 
     for _, flag in ipairs(flags) do
@@ -271,7 +276,62 @@ if has_config("unit_tests") then
 
   -- Add code coverage for non-MSVC compilers
   if not is_plat("windows") and is_mode("coverage") then
-    target("coverage_report")
+    target("coverage_generate_baseline_report")
+      set_kind("phony")
+      set_default(false)
+
+      on_build(function(target)
+        import("core.project.config")
+        import("lib.detect.find_program")
+
+        -- Find required tools
+        local lcov = find_program("lcov")
+        local geninfo = find_program("geninfo")
+
+        if not lcov or not geninfo then
+          raise("lcov not found. Please install lcov package.")
+        end
+
+        -- Get configuration
+        local coverage_dir = path.join(config.builddir(), "coverage")
+        local data_dir = path.join(coverage_dir, "data")
+
+        -- Create directories
+        os.mkdir(data_dir)
+
+        print("Generating baseline coverage report...")
+
+        -- Initialize coverage counters
+        print("Initializing coverage data...")
+        os.exec("%s --directory %s --zerocounters", lcov, config.builddir())
+
+        local baseline_info = path.join(data_dir, "baseline.info")
+
+        -- Use geninfo directly for better control
+        local all_info_files = {}
+        local search_dirs = os.dirs(path.join(config.builddir(), "**"))
+
+        for i, dir in ipairs(search_dirs) do
+          local gcno_files = os.files(path.join(dir, "*.gcno"))
+          if #gcno_files > 0 then
+            local info_file = path.join(data_dir, path.filename(dir) .. i .. ".info")
+            os.exec(
+              "%s %s --base-directory %s --initial --output-file %s --ignore-errors inconsistent,range,mismatch,source,count,negative",
+              geninfo, dir, os.projectdir(), info_file)
+            table.insert(all_info_files, info_file)
+          end
+        end
+
+        -- Combine all info files
+        os.exec(
+        "%s -a %s --output-file %s --ignore-errors inconsistent,range,mismatch,source,count,negative,unused,corrupt", lcov,
+          table.concat(all_info_files, " -a "), baseline_info)
+
+        print("Baseline coverage report generated at: %s", baseline_info)
+      end)
+    target_end()
+
+    target("coverage_generate_test_report")
       set_kind("phony")
       set_default(false)
 
@@ -283,9 +343,8 @@ if has_config("unit_tests") then
         -- Find required tools
         local lcov = find_program("lcov")
         local genhtml = find_program("genhtml")
-        local geninfo = find_program("geninfo")
 
-        if not lcov or not genhtml or not geninfo then
+        if not lcov or not genhtml then
           raise("lcov not found. Please install lcov package.")
         end
 
@@ -299,54 +358,32 @@ if has_config("unit_tests") then
         os.mkdir(data_dir)
         os.mkdir(html_dir)
 
-        print("Generating code coverage report...")
-
-        -- Initialize coverage counters
-        print("Initializing coverage data...")
-        os.exec("%s --directory %s --zerocounters", lcov, config.builddir())
+        print("Generating test coverage report...")
 
         local baseline_info = path.join(data_dir, "baseline.info")
 
-        -- -- Capture baseline coverage
-        -- print("Capturing baseline coverage...")
-        -- os.exec("%s --directory %s --base-directory %s --capture --initial --output-file %s",
-        --   lcov, config.builddir(), os.projectdir(), baseline_info)
-
-        -- Use geninfo directly for better control
-        local all_info_files = {}
-        local search_dirs = os.dirs(path.join(config.builddir(), "**"))
-
-        for i, dir in ipairs(search_dirs) do
-            local gcno_files = os.files(path.join(dir, "*.gcno"))
-            if #gcno_files > 0 then
-                local info_file = path.join(data_dir, path.filename(dir) .. i .. ".info")
-                os.exec("%s %s --base-directory %s --initial --output-file %s --ignore-errors inconsistent,range,mismatch,source,count,negative",
-                       geninfo, dir, os.projectdir(), info_file)
-                table.insert(all_info_files, info_file)
-            end
+        -- Check if baseline info exists
+        if not os.isfile(baseline_info) then
+          raise("Baseline coverage file not found. Run 'xmake build coverage_generate_baseline_report' first.")
         end
-
-        -- Combine all info files
-        os.exec("%s -a %s --output-file %s --ignore-errors inconsistent,range,mismatch,source,count,negative,unused,corrupt", lcov, table.concat(all_info_files, " -a "), baseline_info)
 
         -- Check if test coverage data exists
         local gcda_files = os.files(path.join(config.builddir(), "**.gcda"))
         if #gcda_files == 0 then
-          print("Warning: No coverage data found. Make sure to run 'xmake test' first.")
-          return
+          raise("No test coverage data found. Make sure to run 'xmake test' first.")
         end
 
         -- Capture test coverage
         print("Capturing test coverage data...")
         local testrun_info = path.join(data_dir, "testrun.info")
-        os.exec("%s --directory %s --capture --output-file %s --ignore-errors inconsistent,range,mismatch,source,count,negative,corrupt",
+        os.exec(
+          "%s --directory %s --capture --output-file %s --ignore-errors inconsistent,range,mismatch,source,count,negative,corrupt",
           lcov, config.builddir(), testrun_info)
 
-        -- local combined_info = testrun_info
         -- Combine baseline and test coverage
         print("Combining coverage data...")
         local combined_info = path.join(data_dir, "combined.info")
-        os.exec("%s --add-tracefile %s --add-tracefile %s --output-file %s",
+        os.exec("%s --add-tracefile %s --add-tracefile %s --output-file %s --ignore-errors inconsistent,range,mismatch,source,count,negative,corrupt",
           lcov, baseline_info, testrun_info, combined_info)
 
         -- Filter coverage data
@@ -354,11 +391,12 @@ if has_config("unit_tests") then
         local filtered_info = path.join(data_dir, "filtered.info")
         local project_dir = os.projectdir()
         os.exec(
-          "%s --remove %s '/usr/*' '*/tests/*' '*/.xmake/*' '*/build/*' --output-file %s --ignore-errors inconsistent,range,mismatch,source,count,negative,unused,corrupt",
+          "%s --remove %s '/usr/*' '*/tests/*' '*/.xmake/*' '*/build/*' '*/src/Utils/*' '*/samples/*' --output-file %s --ignore-errors inconsistent,range,mismatch,source,count,negative,unused,corrupt",
           lcov, combined_info, filtered_info)
 
         -- Extract coverage data to include only project sources
-        os.exec("%s --extract %s '%s/src/*' '%s/include/*' --output-file %s --ignore-errors inconsistent,range,mismatch,source,count,negative,unused,corrupt",
+        os.exec(
+          "%s --extract %s '%s/src/*' '%s/include/*' --output-file %s --ignore-errors inconsistent,range,mismatch,source,count,negative,unused,corrupt",
           lcov, filtered_info, project_dir, project_dir, filtered_info)
 
         -- Generate HTML report
@@ -368,7 +406,10 @@ if has_config("unit_tests") then
           genhtml, filtered_info, html_dir)
 
         -- Extract coverage summary
-        local coverage_summary = os.iorun("%s --summary %s --ignore-errors inconsistent,range,mismatch,source,count,negative,unused,corrupt", lcov, filtered_info)
+        local coverage_summary = os.iorun(
+        "%s --summary %s --ignore-errors inconsistent,range,mismatch,source,count,negative,unused,corrupt", lcov,
+          filtered_info)
+
         print("Coverage Summary:")
         print(coverage_summary)
 
@@ -387,7 +428,7 @@ if has_config("unit_tests") then
 
         print("Coverage report generated at: %s", html_dir)
         print("Open %s to view the report", path.join(html_dir, "index.html"))
-    end)
+      end)
     target_end()
 
     target("coverage_clean")

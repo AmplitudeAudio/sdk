@@ -21,5 +21,5 @@ using namespace SparkyStudios::Audio::Amplitude;
 void SimpleTestCase::Run()
 {
     const auto id = Thread::GetCurrentThreadId();
-    ExpectNotEqual<AmThreadID>(id, 0, "Thread ID should not be zero");
+    AM_EXPECT_NE(id, 0);
 }

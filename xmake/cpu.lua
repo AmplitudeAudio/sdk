@@ -13,88 +13,431 @@
 -- limitations under the License.
 
 local cpu_archs = {
-    X86_SSE2 = {
-        flags = {"-msse2", "/arch:SSE2"},
-        define = "AM_BUILDSYSTEM_ARCH_X86_SSE2",
-        suffix = "-x86_sse2",
-        test = [[#include <emmintrin.h>
-char test() { __m128i a; a = _mm_setzero_si128(); return 0; }]]
-    },
-    X86_SSE3 = {
-        flags = {"-msse3", "/arch:SSE2", "/arch:SSE3"},
-        define = "AM_BUILDSYSTEM_ARCH_X86_SSE3",
-        suffix = "-x86_sse3",
-        test = [[#include <pmmintrin.h>
-char test() { __m128 a; a = _mm_setzero_ps(); return 0; }]]
-    },
-    X86_SSSE3 = {
-        flags = {"-mssse3", "/arch:SSE2", "/arch:SSSE3"},
-        define = "AM_BUILDSYSTEM_ARCH_X86_SSSE3",
-        suffix = "-x86_ssse3",
-        test = [[#include <tmmintrin.h>
-char test() { __m128i a; a = _mm_setzero_si128(); return 0; }]]
-    },
-    X86_SSE4_1 = {
-        flags = {"-msse4.1", "/arch:SSE2", "/arch:SSE4.1"},
-        define = "AM_BUILDSYSTEM_ARCH_X86_SSE4_1",
-        suffix = "-x86_sse4_1",
-        test = [[#include <smmintrin.h>
-char test() { __m128i a; a = _mm_setzero_si128(); return 0; }]]
-    },
-    X86_AVX = {
-        flags = {"-mavx", "/arch:AVX"},
-        define = "AM_BUILDSYSTEM_ARCH_X86_AVX",
-        suffix = "-x86_avx",
-        test = [[#include <immintrin.h>
-char test() { __m256 a; a = _mm256_setzero_ps(); return 0; }]]
-    },
-    X86_AVX2 = {
-        flags = {"-mavx2", "/arch:AVX", "/arch:CORE-AVX2"},
-        define = "AM_BUILDSYSTEM_ARCH_X86_AVX2",
-        suffix = "-x86_avx2",
-        test = [[#include <immintrin.h>
-char test() { __m256i a; a = _mm256_setzero_si256(); return 0; }]]
-    },
-    ARM_NEON = {
-        flags = {"-mfpu=neon"},
-        define = "AM_BUILDSYSTEM_ARCH_ARM_NEON",
-        suffix = "-arm_neon",
-        test = [[#include <arm_neon.h>
-char test() { uint32x4_t a; a = vdupq_n_u32(0); return 0; }]]
-    },
-    ARM64_NEON = {
-        flags = {"-arch arm64", "-mcpu=generic+simd"},
-        define = "AM_BUILDSYSTEM_ARCH_ARM_NEON",
-        suffix = "-arm64_neon",
-        test = [[#include <arm_neon.h>
-char test() { uint32x4_t a; a = vdupq_n_u32(0); return 0; }]]
+  X86_SSE2 = {
+    flags = { "-msse2", "/arch:SSE2" },
+    define = "AM_BUILDSYSTEM_ARCH_X86_SSE2",
+    suffix = "-x86_sse2",
+    test = [[#include <emmintrin.h>
+#include <iostream>
+
+char* prevent_optimization(char* ptr)
+{
+    volatile bool never = false;
+    if (never) {
+        while (*ptr++)
+            std::cout << *ptr;
     }
+    char* volatile* volatile opaque;
+    opaque = &ptr;
+    return *opaque;
+}
+
+int main()
+{
+    union {
+        char data[16];
+        __m128i align;
+    };
+    char* p = data;
+    p = prevent_optimization(p);
+
+    __m128i one = _mm_load_si128((__m128i*)p);
+    one = _mm_or_si128(one, one);
+    _mm_store_si128((__m128i*)p, one);
+
+    p = prevent_optimization(p);
+}]]
+  },
+  X86_SSE3 = {
+    flags = { "-msse3", "/arch:SSE2", "/arch:SSE3" },
+    define = "AM_BUILDSYSTEM_ARCH_X86_SSE3",
+    suffix = "-x86_sse3",
+    test = [[#include <pmmintrin.h>
+#include <iostream>
+
+char* prevent_optimization(char* ptr)
+{
+    volatile bool never = false;
+    if (never) {
+        while (*ptr++)
+            std::cout << *ptr;
+    }
+    char* volatile* volatile opaque;
+    opaque = &ptr;
+    return *opaque;
+}
+
+int main()
+{
+    union {
+        char data[16];
+        __m128 align;
+    };
+    char* p = data;
+    p = prevent_optimization(p);
+
+    __m128 one = _mm_load_ps((float*)p);
+    one = _mm_hadd_ps(one, one);
+    _mm_store_ps((float*)p, one);
+
+    p = prevent_optimization(p);
+}]]
+  },
+  X86_SSSE3 = {
+    flags = { "-mssse3", "/arch:SSE2", "/arch:SSSE3" },
+    define = "AM_BUILDSYSTEM_ARCH_X86_SSSE3",
+    suffix = "-x86_ssse3",
+    test = [[#include <tmmintrin.h>
+#include <iostream>
+
+char* prevent_optimization(char* ptr)
+{
+    volatile bool never = false;
+    if (never) {
+        while (*ptr++)
+            std::cout << *ptr;
+    }
+    char* volatile* volatile opaque;
+    opaque = &ptr;
+    return *opaque;
+}
+
+int main()
+{
+    union {
+        char data[16];
+        __m128i align;
+    };
+    char* p = data;
+    p = prevent_optimization(p);
+
+    __m128i one = _mm_load_si128((__m128i*)p);
+    one = _mm_abs_epi8(one);
+    _mm_store_si128((__m128i*)p, one);
+
+    p = prevent_optimization(p);
+}]]
+  },
+  X86_SSE4_1 = {
+    flags = { "-msse4.1", "/arch:SSE2", "/arch:SSE4.1" },
+    define = "AM_BUILDSYSTEM_ARCH_X86_SSE4_1",
+    suffix = "-x86_sse4_1",
+    test = [[#include <smmintrin.h>
+#include <iostream>
+
+char* prevent_optimization(char* ptr)
+{
+    volatile bool never = false;
+    if (never) {
+        while (*ptr++)
+            std::cout << *ptr;
+    }
+    char* volatile* volatile opaque;
+    opaque = &ptr;
+    return *opaque;
+}
+
+int main()
+{
+    union {
+        char data[16];
+        __m128i align;
+    };
+    char* p = data;
+    p = prevent_optimization(p);
+
+    __m128i one = _mm_load_si128((__m128i*)p);
+    one = _mm_cvtepi16_epi32(one);
+    _mm_store_si128((__m128i*)p, one);
+
+    p = prevent_optimization(p);
+}]]
+  },
+  X86_POPCNT = {
+    flags = { "-mssse3 -mpopcnt", "/arch:SSE4.2" },
+    define = "AM_BUILDSYSTEM_ARCH_X86_POPCNT_INSN",
+    suffix = "-x86_popcnt",
+    test = [[#include <nmmintrin.h>
+#include <iostream>
+
+unsigned* prevent_optimization(unsigned* ptr)
+{
+    volatile bool never = false;
+    if (never) {
+        while (*ptr++)
+            std::cout << *ptr;
+    }
+    unsigned* volatile* volatile opaque;
+    opaque = &ptr;
+    return *opaque;
+}
+
+int main()
+{
+    unsigned data;
+    unsigned* p = &data;
+    p = prevent_optimization(p);
+
+    *p = _mm_popcnt_u32(*p);
+
+    p = prevent_optimization(p);
+}]]
+  },
+  X86_AVX = {
+    flags = { "-mavx", "/arch:AVX" },
+    define = "AM_BUILDSYSTEM_ARCH_X86_AVX",
+    suffix = "-x86_avx",
+    test = [[#include <immintrin.h>
+#include <iostream>
+
+#if (__clang_major__ == 3) && (__clang_minor__ == 6)
+#error Not supported.
+#endif
+#if (__GNUC__ == 4) && (__GNUC_MINOR__ == 4) && !defined(__INTEL_COMPILER) && !defined(__clang__)
+#error Not supported.
+#endif
+
+char* prevent_optimization(char* ptr)
+{
+    volatile bool never = false;
+    if (never) {
+        while (*ptr++)
+            std::cout << *ptr;
+    }
+    char* volatile* volatile opaque;
+    opaque = &ptr;
+    return *opaque;
+}
+
+int main()
+{
+    union {
+        char data[32];
+        __m256 align;
+    };
+    char* p = data;
+    p = prevent_optimization(p);
+
+    __m256 one = _mm256_load_ps((float*)p);
+    one = _mm256_add_ps(one, one);
+    _mm256_store_ps((float*)p, one);
+
+    p = prevent_optimization(p);
+}]]
+  },
+  X86_AVX2 = {
+    flags = { "-mavx2", "-xCORE-AVX2", "/arch:AVX", "/arch:CORE-AVX2" },
+    define = "AM_BUILDSYSTEM_ARCH_X86_AVX2",
+    suffix = "-x86_avx2",
+    test = [[#include <immintrin.h>
+#include <iostream>
+
+#if (__clang_major__ == 3) && (__clang_minor__ == 6)
+#error Not supported.
+#endif
+
+char* prevent_optimization(char* ptr)
+{
+    volatile bool never = false;
+    if (never) {
+        while (*ptr++)
+            std::cout << *ptr;
+    }
+    char* volatile* volatile opaque;
+    opaque = &ptr;
+    return *opaque;
+}
+
+int main()
+{
+    union {
+        char data[32];
+        __m256 align;
+    };
+    char* p = data;
+    p = prevent_optimization(p);
+
+    __m256i one = _mm256_load_si256((__m256i*)p);
+    one = _mm256_or_si256(one, one);
+    _mm256_store_si256((__m256i*)p, one);
+
+    p = prevent_optimization(p);
+}]]
+  },
+  ARM_FMA3 = {
+    flags = { "-mfma", "-xCORE-AVX2", "/arch:AVX", "/arch:CORE-AVX2" },
+    define = "AM_BUILDSYSTEM_ARCH_X86_FMA3",
+    suffix = "-x86_fma3",
+    test = [[#include <immintrin.h>
+#include <iostream>
+
+char* prevent_optimization(char* ptr)
+{
+    volatile bool never = false;
+    if (never) {
+        while (*ptr++)
+            std::cout << *ptr;
+    }
+    char* volatile* volatile opaque;
+    opaque = &ptr;
+    return *opaque;
+}
+
+int main()
+{
+    union {
+        char data[16];
+        __m128 align;
+    };
+    char* p = data;
+    p = prevent_optimization(p);
+
+    __m128 one = _mm_load_ps((float*)p);
+    one = _mm_fmadd_ps(one, one, one);
+    _mm_store_ps((float*)p, one);
+
+    p = prevent_optimization(p);
+}]]
+  },
+  ARM_FMA4 = {
+    flags = { "-mfma4", "/arch:AVX" },
+    define = "AM_BUILDSYSTEM_ARCH_X86_FMA4",
+    suffix = "-x86_fma4",
+    test = [[#include <x86intrin.h>
+#include <iostream>
+
+char* prevent_optimization(char* ptr)
+{
+    volatile bool never = false;
+    if (never) {
+        while (*ptr++)
+            std::cout << *ptr;
+    }
+    char* volatile* volatile opaque;
+    opaque = &ptr;
+    return *opaque;
+}
+
+int main()
+{
+    union {
+        char data[16];
+        __m128 align;
+    };
+    char* p = data;
+    p = prevent_optimization(p);
+
+    __m128 one = _mm_load_ps((float*)p);
+    one = _mm_macc_ps(one, one, one);
+    _mm_store_ps((float*)p, one);
+
+    p = prevent_optimization(p);
+}]]
+  },
+  ARM_NEON = {
+    flags = { "-mfpu=neon" },
+    define = "AM_BUILDSYSTEM_ARCH_ARM_NEON",
+    suffix = "-arm_neon",
+    test = [[#if defined(__clang_major__)
+#if (__clang_major__ < 3) || ((__clang_major__ == 3) && (__clang_minor__ <= 3))
+#error NEON is not supported on clang 3.3 and earlier.
+#endif
+#endif
+
+#include <arm_neon.h>
+#include <iostream>
+
+char* prevent_optimization(char* ptr)
+{
+    volatile bool never = false;
+    if (never) {
+        while (*ptr++)
+            std::cout << *ptr;
+    }
+    char* volatile* volatile opaque;
+    opaque = &ptr;
+    return *opaque;
+}
+
+int main()
+{
+    union {
+        char data[16];
+        uint32x4_t align;
+    };
+    char* p = data;
+    p = prevent_optimization(p);
+
+    uint32x4_t one = vld1q_u32((uint32_t*)p);
+    one = vaddq_u32(one, one);
+    vst1q_u32((uint32_t*)p, one);
+
+    p = prevent_optimization(p);
+}]]
+  },
+  ARM64_NEON = {
+    flags = { "-arch arm64", "-mcpu=generic+simd" },
+    define = "AM_BUILDSYSTEM_ARCH_ARM_NEON",
+    suffix = "-arm64_neon",
+    test = [[#include <arm_neon.h>
+#include <iostream>
+
+char* prevent_optimization(char* ptr)
+{
+    volatile bool never = false;
+    if (never) {
+        while (*ptr++)
+            std::cout << *ptr;
+    }
+    char* volatile* volatile opaque;
+    opaque = &ptr;
+    return *opaque;
+}
+
+int main()
+{
+    union {
+        char data[16];
+        uint32x4_t align;
+    };
+    char* p = data;
+    p = prevent_optimization(p);
+
+    uint32x4_t one = vld1q_u32((uint32_t*)p);
+    one = vaddq_u32(one, one);
+
+    // GCC 4.8 misses a subset of functions
+    one = vdupq_laneq_u32(one, 1);
+
+    vst1q_u32((uint32_t*)p, one);
+    p = prevent_optimization(p);
+}]]
+  }
 }
 
 function am_get_arch_info(arch)
-    local info = cpu_archs[arch]
-    if info then
-        return info.flags, info.define, info.suffix
-    end
-    return nil, nil, nil
+  local info = cpu_archs[arch]
+  if info then
+    return info.flags, info.define, info.suffix
+  end
+  return nil, nil, nil
 end
 
 import("lib.detect.check_cxsnippets")
 
 local function is_arch_supported(arch)
-    local info = cpu_archs[arch]
-    if not info then return false end
-    local ok = check_cxsnippets(info.test, {sourcekind = "cxx"})
-    return ok
+  local info = cpu_archs[arch]
+  if not info then return false end
+  local ok = check_cxsnippets(info.test, { sourcekind = "cxx" })
+  return ok
 end
 
 function am_get_supported_archs()
-    local supported = {}
-    for arch, _ in pairs(cpu_archs) do
-        if is_arch_supported(arch) then
-            table.insert(supported, arch)
-        end
+  local supported = {}
+  for arch, _ in pairs(cpu_archs) do
+    if is_arch_supported(arch) then
+      table.insert(supported, arch)
     end
-    return supported
+  end
+  return supported
 end
-

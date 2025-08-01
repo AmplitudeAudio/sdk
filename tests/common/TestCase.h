@@ -14,9 +14,9 @@
 
 #pragma once
 
-#include <iostream>
-
 #include <SparkyStudios/Audio/Amplitude/Amplitude.h>
+
+#include "TestUtils.h"
 
 namespace SparkyStudios::Audio::Amplitude::Tests
 {
@@ -36,50 +36,11 @@ namespace SparkyStudios::Audio::Amplitude::Tests
         // Clean up resources after each test (optional)
         virtual void TearDown() = 0;
 
-        // Utility methods for common test expectations
-        template<typename T>
-        void ExpectEqual(const T& expected, const T& actual, const char* message = "")
-        {
-            if (!(expected == actual))
-            {
-                ReportFailure("ExpectEqual failed", message);
-            }
-            else
-            {
-                ++_passedCount;
-            }
-        }
-
-        template<typename T>
-        void ExpectNotEqual(const T& expected, const T& actual, const char* message = "")
-        {
-            if (expected == actual)
-            {
-                ReportFailure("ExpectNotEqual failed", message);
-            }
-            else
-            {
-                ++_passedCount;
-            }
-        }
-
-        void ExpectTrue(bool condition, const char* message = "")
+        void Expect(bool condition, const char* message = "")
         {
             if (!condition)
             {
-                ReportFailure("ExpectTrue failed", message);
-            }
-            else
-            {
-                ++_passedCount;
-            }
-        }
-
-        void ExpectFalse(bool condition, const char* message = "")
-        {
-            if (condition)
-            {
-                ReportFailure("ExpectFalse failed", message);
+                ReportFailure("Expectation failed", message);
             }
             else
             {

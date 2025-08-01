@@ -21,5 +21,5 @@ using namespace SparkyStudios::Audio::Amplitude;
 void SimpleTestCase::Run()
 {
     const auto& version = amVersion;
-    ExpectEqual<AmUInt8>(version.major, AM_VERSION_MAJOR, "Major version mismatch");
+    AM_EXPECT_EQ(version.major, AM_VERSION_MAJOR);
 }
