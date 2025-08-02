@@ -18,12 +18,19 @@
 
 using namespace SparkyStudios::Audio::Amplitude;
 
+void deviceCallback(eDeviceNotification notification, const DeviceDescription& device, Driver* driver)
+{
+    amLogDebug(
+        "Device notification: %d, device: %s, driver: %s", static_cast<int>(notification), device.mDeviceName.c_str(),
+        driver->GetName().c_str());
+}
+
 int main()
 {
     ConsoleLogger logger;
     Logger::SetLogger(&logger);
 
-    // RegisterDeviceNotificationCallback(deviceCallback);
+    RegisterDeviceNotificationCallback(deviceCallback);
 
     MemoryManager::Initialize();
 
