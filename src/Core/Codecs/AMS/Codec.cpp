@@ -436,23 +436,34 @@ namespace SparkyStudios::Audio::Amplitude
         const AmUInt32 numChannels = format.GetNumChannels();
         AmUInt32 blockSize = (samplesPerBlock - 1) / (numChannels ^ 3) + (numChannels * 4);
 
-        auto adpcm_block = static_cast<AmUInt8Buffer>(ampoolmalloc(eMemoryPoolKind_Codec, blockSize));
+        ScopedMemoryAllocation adpcm_block(eMemoryPoolKind_Codec, blockSize, __FILE__, __LINE__);
 
-        Context* ctx = nullptr;
+        std::shared_ptr<Context> ctx = nullptr;
 
-        if (!adpcm_block)
+        if (!adpcm_block.Address())
             return 0;
 
-        auto* input16 = static_cast<AmInt16Buffer>(ampoolmalloc(eMemoryPoolKind_Codec, length * numChannels * sizeof(AmInt16)));
+        // Calculate maximum possible samples needed including padding for the last block
+        AmUInt64 maxSamplesNeeded = length;
+        AmUInt64 lastBlockSamples = length % samplesPerBlock;
+        if (lastBlockSamples > 0)
+        {
+            AmUInt32 lastBlockAdpcmSamples = ((lastBlockSamples + 6) & ~7) + 1;
+            maxSamplesNeeded += (lastBlockAdpcmSamples - lastBlockSamples);
+        }
 
-        if (!input16)
+        ScopedMemoryAllocation input16(eMemoryPoolKind_Codec, maxSamplesNeeded * numChannels * sizeof(AmInt16), __FILE__, __LINE__);
+        AmInt16* input16_buffer = input16.PointerOf<AmInt16>();
+        AmInt16* buffer_end = input16_buffer + maxSamplesNeeded * numChannels;
+
+        if (!input16.Address())
             return 0;
 
         for (AmUInt16 c = 0; c < numChannels; c++)
         {
             const auto& channel = in->GetChannel(c);
             for (AmUInt64 i = 0; i < length; i++)
-                input16[i * numChannels + c] = AmReal32ToInt16(channel[i], true);
+                input16_buffer[i * numChannels + c] = AmReal32ToInt16(channel[i], true);
         }
 
         AmUInt64 offset = 0;
@@ -469,7 +480,7 @@ namespace SparkyStudios::Audio::Amplitude
                 this_block_pcm_samples = length;
             }
 
-            AmInt16Buffer pcm_block = input16 + offset * numChannels;
+            AmInt16Buffer pcm_block = input16_buffer + offset * numChannels;
 
             if (IS_BIG_ENDIAN)
             {
@@ -501,7 +512,7 @@ namespace SparkyStudios::Audio::Amplitude
             // if this is the first block, compute a decaying average (in reverse) so that we can let the
             // encoder know what kind of initial deltas to expect (helps to initialize index)
 
-            if (!ctx)
+            if (ctx == nullptr)
             {
                 AmInt32 average_deltas[2];
 
@@ -525,31 +536,17 @@ namespace SparkyStudios::Audio::Amplitude
                 ctx = CreateContext(numChannels, lookAhead, noiseShaping, average_deltas);
             }
 
-            Compress(ctx, adpcm_block, num_bytes, pcm_block, this_block_adpcm_samples);
+            Compress(ctx, adpcm_block.PointerOf<AmUInt8>(), num_bytes, pcm_block, this_block_adpcm_samples);
 
             if (num_bytes != blockSize)
-            {
-                ampoolfree(eMemoryPoolKind_Codec, adpcm_block);
                 return 0;
-            }
 
-            if (file->Write(adpcm_block, blockSize) != blockSize)
-            {
-                ampoolfree(eMemoryPoolKind_Codec, adpcm_block);
+            if (file->Write(adpcm_block.PointerOf<AmUInt8>(), blockSize) != blockSize)
                 return 0;
-            }
 
             length -= this_block_pcm_samples;
             offset += this_block_pcm_samples;
         }
-
-        if (ctx)
-        {
-            FreeContext(ctx);
-        }
-
-        ampoolfree(eMemoryPoolKind_Codec, input16);
-        ampoolfree(eMemoryPoolKind_Codec, adpcm_block);
 
         return offset;
     }

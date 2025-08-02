@@ -158,14 +158,7 @@ namespace SparkyStudios::Audio::Amplitude::Compression::ADPCM
      * @param noiseShaping Noise shaping mode.
      * @param initialDeltas Initial deltas for compression.
      */
-    Context* CreateContext(int numChannels, int lookAhead, NoiseShapingMode noiseShaping, AmInt32 initialDeltas[2]);
-
-    /**
-     * @brief Frees an ADPCM encoding context.
-     *
-     * @param context The context to free.
-     */
-    void FreeContext(Context* context);
+    std::shared_ptr<Context> CreateContext(int numChannels, int lookAhead, NoiseShapingMode noiseShaping, AmInt32 initialDeltas[2]);
 
     /**
      * @brief Compresses a block of 16-bit PCM data into 4-bit ADPCM.
@@ -178,7 +171,7 @@ namespace SparkyStudios::Audio::Amplitude::Compression::ADPCM
      *
      * @return bool
      */
-    bool Compress(Context* ctx, AmUInt8Buffer out, AmSize& outSize, AmConstInt16Buffer in, AmSize sampleCount);
+    bool Compress(std::shared_ptr<Context> ctx, AmUInt8Buffer out, AmSize& outSize, AmConstInt16Buffer in, AmSize sampleCount);
 
     /**
      * @brief Decompresses the block of ADPCM data into PCM. This requires no context because ADPCM blocks
