@@ -15,8 +15,8 @@
 // Based on ADPCM-XQ, Copyright (c) 2015 David Bryant.
 // https://github.com/dbry/adpcm-xq
 
-#include <Utils/Audio/Compression/ADPCM/ADPCM.h>
 #include <cstring>
+#include <Utils/Audio/Compression/ADPCM/ADPCM.h>
 
 #define CLIP(v, a, b) v = AM_CLAMP(v, a, b)
 
@@ -39,7 +39,7 @@ namespace SparkyStudios::Audio::Amplitude::Compression::ADPCM
         -1, -1, -1, -1, 2, 4, 6, 8
     };
 
-    static void set_decode_parameters(Context* ctx, AmConstInt32Buffer init_pcmdata, AmConstInt8Buffer init_index)
+    static void set_decode_parameters(std::shared_ptr<Context> ctx, AmConstInt32Buffer init_pcmdata, AmConstInt8Buffer init_index)
     {
         int ch;
 
@@ -50,7 +50,7 @@ namespace SparkyStudios::Audio::Amplitude::Compression::ADPCM
         }
     }
 
-    static void get_decode_parameters(Context* ctx, AmInt32* init_pcmdata, AmInt8* init_index)
+    static void get_decode_parameters(std::shared_ptr<Context> ctx, AmInt32* init_pcmdata, AmInt8* init_index)
     {
         int ch;
 
@@ -147,7 +147,7 @@ namespace SparkyStudios::Audio::Amplitude::Compression::ADPCM
         return min_error;
     }
 
-    static uint8_t encode_sample(Context* ctx, int ch, const AmInt16* sample, int num_samples)
+    static uint8_t encode_sample(std::shared_ptr<Context> ctx, int ch, const AmInt16* sample, int num_samples)
     {
         Channel* pchan = ctx->channels + ch;
         AmInt32 csample = *sample;
@@ -210,7 +210,7 @@ namespace SparkyStudios::Audio::Amplitude::Compression::ADPCM
         return nibble;
     }
 
-    static void encode_chunks(Context* ctx, uint8_t** outbuf, size_t& outbufsize, const AmInt16** inbuf, int inbufcount)
+    static void encode_chunks(std::shared_ptr<Context> ctx, uint8_t** outbuf, size_t& outbufsize, const AmInt16** inbuf, int inbufcount)
     {
         const AmInt16* pcmbuf;
         int chunks, ch, i;
@@ -238,12 +238,12 @@ namespace SparkyStudios::Audio::Amplitude::Compression::ADPCM
         }
     }
 
-    Context* CreateContext(int numChannels, int lookAhead, NoiseShapingMode noiseShaping, AmInt32 initialDeltas[2])
+    std::shared_ptr<Context> CreateContext(int numChannels, int lookAhead, NoiseShapingMode noiseShaping, AmInt32 initialDeltas[2])
     {
-        Context* ctx = static_cast<Context*>(ampoolmalloc(eMemoryPoolKind_Codec, sizeof(Context)));
+        auto ctx = AmSharedPtr<Context, eMemoryPoolKind_Codec>::Make();
         int ch, i;
 
-        memset(ctx, 0, sizeof(Context));
+        std::memset(ctx.get(), 0, sizeof(Context));
         ctx->noiseShaping = noiseShaping;
         ctx->numChannels = numChannels;
         ctx->lookAhead = lookAhead;
@@ -265,12 +265,7 @@ namespace SparkyStudios::Audio::Amplitude::Compression::ADPCM
         return ctx;
     }
 
-    void FreeContext(Context* context)
-    {
-        ampoolfree(eMemoryPoolKind_Codec, context);
-    }
-
-    bool Compress(Context* ctx, AmUInt8Buffer out, AmSize& outSize, AmConstInt16Buffer in, AmSize sampleCount)
+    bool Compress(std::shared_ptr<Context> ctx, AmUInt8Buffer out, AmSize& outSize, AmConstInt16Buffer in, AmSize sampleCount)
     {
         AmInt32 init_pcmdata[2];
         AmInt8 init_index[2];
