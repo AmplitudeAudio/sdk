@@ -743,6 +743,26 @@ namespace SparkyStudios::Audio::Amplitude
         ScopedMemoryAllocation(eMemoryPoolKind pool, AmSize size, AmUInt32 alignment, const char* file, AmUInt32 line);
 
         /**
+         * @brief Copy constructor is deleted to prevent double free.
+         */
+        ScopedMemoryAllocation(const ScopedMemoryAllocation&) = delete;
+
+        /**
+         * @brief Copy assignment operator is deleted to prevent double free.
+         */
+        ScopedMemoryAllocation& operator=(const ScopedMemoryAllocation&) = delete;
+
+        /**
+         * @brief Move constructor transfers ownership.
+         */
+        ScopedMemoryAllocation(ScopedMemoryAllocation&& other) noexcept;
+
+        /**
+         * @brief Move assignment operator transfers ownership.
+         */
+        ScopedMemoryAllocation& operator=(ScopedMemoryAllocation&& other) noexcept;
+
+        /**
          * @brief Releases the allocated memory.
          */
         ~ScopedMemoryAllocation();
