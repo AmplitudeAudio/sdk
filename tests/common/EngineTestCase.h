@@ -18,6 +18,54 @@
 
 namespace SparkyStudios::Audio::Amplitude::Tests
 {
+
+    class InvalidConsumerNodeInstance
+        : public NodeInstance
+        , public ProviderNodeInstance
+    {
+    public:
+        const AudioBuffer* Provide() override
+        {
+            return nullptr;
+        }
+
+        void Reset() override
+        {}
+    };
+
+    class InvalidConsumerNode final : public Node
+    {
+    public:
+        InvalidConsumerNode()
+            : Node("InvalidConsumerNode")
+        {}
+
+        [[nodiscard]] AM_INLINE std::shared_ptr<NodeInstance> CreateInstance() const override
+        {
+            return AmSharedPtr<InvalidConsumerNodeInstance, eMemoryPoolKind_Amplimix>::Make();
+        }
+
+        [[nodiscard]] AM_INLINE bool CanConsume() const override
+        {
+            return true;
+        }
+
+        [[nodiscard]] AM_INLINE bool CanProduce() const override
+        {
+            return false;
+        }
+
+        [[nodiscard]] AM_INLINE AmSize GetMaxInputCount() const override
+        {
+            return 1;
+        }
+
+        [[nodiscard]] AM_INLINE AmSize GetMinInputCount() const override
+        {
+            return 1;
+        }
+    };
+
     class EngineTestCase : public TestCase
     {
     public:
@@ -41,6 +89,8 @@ namespace SparkyStudios::Audio::Amplitude::Tests
         void SetUp() override
         {
             amLogDebug("Test run started");
+
+            _invalidConsumerNodePlugin = Engine::RegisterExtension<InvalidConsumerNode>();
 
             _fileSystem->SetBasePath(AM_OS_STRING("./samples/assets"));
 
@@ -110,6 +160,8 @@ namespace SparkyStudios::Audio::Amplitude::Tests
             // Unregister all default plugins
             Engine::UnregisterDefaultExtensions();
 
+            Engine::UnregisterExtension(_invalidConsumerNodePlugin);
+
             amEngine->DestroyInstance();
 
             amLogDebug("Test run ended");
@@ -128,6 +180,7 @@ namespace SparkyStudios::Audio::Amplitude::Tests
     private:
         AmThreadHandle _threadHandle = nullptr;
         bool _running = false;
+        std::shared_ptr<InvalidConsumerNode> _invalidConsumerNodePlugin = nullptr;
     };
 
     std::shared_ptr<TestCase> MakeTestCase()
