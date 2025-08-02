@@ -13,18 +13,19 @@
 -- limitations under the License.
 
 target("amac")
-    set_kind("binary")
-    set_targetdir("$(builddir)/bin")
+  set_kind("binary")
+  set_targetdir("$(builddir)/bin")
+  set_group("tools")
 
-    -- Link to Amplitude Static library
-    add_deps("Amplitude")
+  -- Link to Amplitude Static library
+  add_deps("Amplitude")
 
-    -- Add packages
-    add_packages("cli11")
+  -- Add packages
+  add_packages("cli11")
 
-    -- Include main project include directories
-    add_includedirs("$(projectdir)/src", "$(builddir)/include")
+  -- Include main project include directories
+  add_includedirs("$(projectdir)/src", "$(builddir)/include")
 
-    -- Source files
-    add_files("main.cpp")
+  -- Source files
+  add_files("main.cpp")
 target_end()

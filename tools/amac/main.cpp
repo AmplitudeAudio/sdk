@@ -13,17 +13,23 @@
 // limitations under the License.
 
 #include <cstdarg>
-#include <iostream>
+#include <cstdlib>
 
 #include <SparkyStudios/Audio/Amplitude/Amplitude.h>
 
-#include "../src/Core/Codecs/AMS/Codec.h"
-#include "../src/Core/Codecs/MP3/Codec.h"
-#include "../src/Core/Codecs/WAV/Codec.h"
+#include <CLI/CLI.hpp>
+
+#include <Core/Codecs/AMS/Codec.h>
+#include <Core/Codecs/MP3/Codec.h>
+#include <Core/Codecs/WAV/Codec.h>
 
 #define AM_FLAG_NOISE_SHAPING 0x1
 
 using namespace SparkyStudios::Audio::Amplitude;
+
+struct AppOptions;
+static int process(const AmOsString& inFileName, const AmOsString& outFileName, const AppOptions& state);
+static void log(FILE* output, const char* fmt, ...);
 
 /**
  * @brief Defines in which mode the process should run.
@@ -38,7 +44,7 @@ enum ProcessingMode
 /**
  * @brief Stores the current process state.
  */
-struct ProcessingState
+struct AppOptions
 {
     /**
      * @brief Defines the current processing mode, should be
@@ -50,6 +56,11 @@ struct ProcessingState
      * @brief Defines if the process is called in verbose mode.
      */
     bool verbose = false;
+
+    /**
+     * @brief Defines if the process should not display the logo.
+     */
+    bool noLogo = false;
 
     /**
      * @brief The look ahead setting to use when encoding.
@@ -74,6 +85,132 @@ struct ProcessingState
         bool enabled = false;
         AmUInt32 targetSampleRate = 48000;
     } resampling;
+
+    /**
+     * @brief The path to the input file to process.
+     */
+    std::string inputFile;
+
+    /**
+     * @brief The path to the output file to create.
+     */
+    std::string outputFile;
+};
+
+/**
+ * @brief The application context.
+ */
+struct AppContext
+{
+    /**
+     * @brief The command line interface application.
+     */
+    CLI::App app{ "Amplitude Audio Compressor", "amac" };
+
+    /**
+     * @brief The processing state.
+     */
+    AppOptions options;
+
+    int run(int argc, char** argv)
+    {
+        MemoryManager::Initialize();
+
+        app.add_flag("-l", options.noLogo, "Hide logo and copyright notice.")->default_val(false)->group("Global");
+
+        app.add_flag("-v,--verbose", options.verbose, "Verbose mode. Display all messages")->default_val(false)->group("Global");
+
+        app.add_flag_function(
+               "-q,--quiet",
+               [this](bool value)
+               {
+                   if (!value)
+                       return;
+
+                   options.verbose = false;
+                   options.noLogo = true;
+               },
+               "Quiet mode. Shutdown all messages.")
+            ->default_val(false)
+            ->group("Global");
+
+        app.add_flag_function(
+               "-e,--encode",
+               [this](bool value)
+               {
+                   if (!value)
+                       return;
+
+                   options.mode = ePM_ENCODE;
+               },
+               "Compress the input file into the output file.")
+            ->default_val(false)
+            ->group("Encode");
+
+        app.add_flag_function(
+               "-d,--decode",
+               [this](bool value)
+               {
+                   if (!value)
+                       return;
+
+                   options.mode = ePM_DECODE;
+               },
+               "Decompress the input file into the output file.")
+            ->default_val(false)
+            ->group("Decode");
+
+        app.add_flag("-0{0},-1{1},-2{2},-3{3},-4{4},-5{5},-6{6},-7{7},-8{8}", options.lookAhead, "The look ahead level.")
+            ->default_val(3)
+            ->multi_option_policy(CLI::MultiOptionPolicy::TakeLast)
+            ->group("Encode");
+
+        app.add_option(
+               "-b,--block-size-shift", options.blockSizeShift,
+               "The block size shift. If not defined, the block size will be calculated based on the number of channels and the sample "
+               "rate.")
+            ->default_val(0)
+            ->transform(CLI::Range(8, 15))
+            ->group("Encode");
+
+        app.add_flag("!-f", options.noiseShaping, "Disable noise shaping. Only used for compression.")->default_val(true)->group("Encode");
+
+        app.add_option_function<AmUInt32>(
+               "-r,--resample",
+               [this](const AmUInt32& value)
+               {
+                   options.resampling.enabled = true;
+                   options.resampling.targetSampleRate = value;
+               },
+               "Resamples input data to the target frequency.")
+            ->transform(CLI::Range(8000, 384000))
+            ->group("Encode");
+
+        app.add_option("input", options.inputFile, "The path to the input file to process.")->required()->transform(CLI::ExistingFile);
+
+        app.add_option("output", options.outputFile, "The path to the output file to create.")->required();
+
+        CLI11_PARSE(app, argc, argv);
+
+        if (!options.noLogo)
+        {
+            log(stdout, "\n");
+            log(stdout, "Amplitude Audio Compressor (amac)\n");
+            log(stdout, "Copyright (c) 2021-present Sparky Studios - Licensed under Apache 2.0\n");
+            log(stdout, "=====================================================================\n");
+            log(stdout, "\n");
+        }
+
+        Engine::RegisterDefaultExtensions();
+
+        const auto res = process(AM_STRING_TO_OS_STRING(options.inputFile), AM_STRING_TO_OS_STRING(options.outputFile), options);
+
+        Engine::UnregisterDefaultExtensions();
+
+        MemoryManager::Deinitialize();
+
+        return res;
+    }
 };
 
 /**
@@ -95,19 +232,20 @@ static void log(FILE* output, const char* fmt, ...)
     va_end(args);
 }
 
-static int process(const AmOsString& inFileName, const AmOsString& outFileName, const ProcessingState& state)
+static int process(const AmOsString& inFileName, const AmOsString& outFileName, const AppOptions& state)
 {
     AmInt32 res;
     DiskFileSystem fs;
 
     const auto inputFile = fs.OpenFile(inFileName, eFileOpenMode_Read);
-    const auto outputFile = fs.OpenFile(outFileName, eFileOpenMode_Write);
 
     auto ams_codec = Codec::Find("ams");
     auto wav_codec = Codec::Find("wav");
 
     if (state.mode == ePM_ENCODE)
     {
+        const auto outputFile = fs.OpenFile(outFileName, eFileOpenMode_Write);
+
         auto codec = Codec::FindForFile(inputFile);
         if (!codec)
         {
@@ -160,6 +298,9 @@ static int process(const AmOsString& inFileName, const AmOsString& outFileName, 
 
         if (state.resampling.enabled)
         {
+            if (state.verbose)
+                log(stdout, "Resampling input data from %d Hz to %d Hz...\n", sampleRate, state.resampling.targetSampleRate);
+
             auto resampler = Resampler::Construct("default");
             resampler->Initialize(numChannels, sampleRate, state.resampling.targetSampleRate);
 
@@ -172,6 +313,9 @@ static int process(const AmOsString& inFileName, const AmOsString& outFileName, 
             numSamples = f;
 
             pcmData = output;
+
+            if (state.verbose)
+                log(stdout, "Resampling completed.\n");
         }
 
         SoundFormat encodeFormat{};
@@ -199,6 +343,8 @@ static int process(const AmOsString& inFileName, const AmOsString& outFileName, 
     }
     else if (state.mode == ePM_DECODE)
     {
+        const auto outputFile = fs.OpenFile(outFileName, eFileOpenMode_Write);
+
         auto decoder = ams_codec->CreateDecoder();
         auto encoder = wav_codec->CreateEncoder();
 
@@ -266,178 +412,6 @@ static int process(const AmOsString& inFileName, const AmOsString& outFileName, 
 
 int main(int argc, char* argv[])
 {
-    MemoryManager::Initialize();
-
-    char *inFileName = nullptr, *outFileName = nullptr;
-    bool noLogo = false, needHelp = false;
-    ProcessingState state;
-
-    for (int i = 1; i < argc; i++)
-    {
-#if AM_PLATFORM_WIN
-        if (*argv[i] == '-' || *argv[i] == '/')
-#else
-        if (*argv[i] == '-')
-#endif // AM_PLATFORM_WIN
-        {
-            switch (argv[i][1])
-            {
-            case 'H':
-            case 'h':
-                needHelp = true;
-                state.verbose = true;
-                break;
-
-            case 'O':
-            case 'o':
-                noLogo = true;
-                break;
-
-            case 'Q':
-            case 'q':
-                state.verbose = false;
-                noLogo = true;
-                break;
-
-            case 'V':
-            case 'v':
-                state.verbose = true;
-                break;
-
-            case 'C':
-            case 'c':
-                state.mode = ePM_ENCODE;
-                break;
-
-            case '0':
-            case '1':
-            case '2':
-            case '3':
-            case '4':
-            case '5':
-            case '6':
-            case '7':
-            case '8':
-                state.lookAhead = argv[i][1] - '0';
-                break;
-
-            case 'B':
-            case 'b':
-                state.blockSizeShift = strtol(argv[++i], argv, 10);
-
-                if (state.blockSizeShift < 8 || state.blockSizeShift > 15)
-                {
-                    log(stderr, "\nblock size power must be 8 to 15!\n");
-                    return EXIT_FAILURE;
-                }
-                break;
-
-            case 'F':
-            case 'f':
-                state.noiseShaping = false;
-                break;
-
-            case 'R':
-            case 'r':
-                state.resampling.enabled = true;
-                state.resampling.targetSampleRate = strtol(argv[++i], argv, 10);
-
-                if (state.resampling.targetSampleRate < 8000 || state.blockSizeShift > 384000)
-                {
-                    log(stderr, "\nInvalid sample rate provided. Please give a value between 8000 and 384000.\n");
-                    return EXIT_FAILURE;
-                }
-                break;
-
-            case 'D':
-            case 'd':
-                state.mode = ePM_DECODE;
-                break;
-
-            default:
-                log(stderr, "\nInvalid option: -%c. Use -h for help.\n", **argv);
-                return EXIT_FAILURE;
-            }
-        }
-        else if (!inFileName)
-        {
-            const auto len = strlen(argv[i]);
-            inFileName = static_cast<char*>(ampoolmalloc(eMemoryPoolKind_Default, len + 1));
-
-            std::memcpy(inFileName, argv[i], len);
-            inFileName[len] = '\0';
-        }
-        else if (!outFileName)
-        {
-            const auto len = strlen(argv[i]);
-            outFileName = static_cast<char*>(ampoolmalloc(eMemoryPoolKind_Default, len + 1));
-
-            std::memcpy(outFileName, argv[i], len);
-            outFileName[len] = '\0';
-        }
-        else
-        {
-            log(stderr, "\nUnknown extra argument: %s !\n", *argv);
-            return EXIT_FAILURE;
-        }
-    }
-
-    if (!inFileName || !outFileName)
-    {
-        needHelp = true;
-    }
-
-    if (!noLogo)
-    {
-        // clang-format off
-        log(stdout, "\n");
-        log(stdout, "Amplitude Audio Compressor (amac)\n");
-        log(stdout, "Copyright (c) 2021-present Sparky Studios - Licensed under Apache 2.0\n");
-        log(stdout, "=====================================================================\n");
-        log(stdout, "\n");
-        // clang-format on
-    }
-
-    if (needHelp)
-    {
-        // clang-format off
-        log(stdout, "Usage: amac [OPTIONS] INPUT_FILE OUTPUT_FILE\n");
-        log(stdout, "\n");
-        log(stdout, "Global options:\n");
-        log(stdout, "    -[hH]:        \tDisplay this help message.\n");
-        log(stdout, "    -[oO]:        \tHide logo and copyright notice.\n");
-        log(stdout, "    -[qQ]:        \tQuiet mode. Shutdown all messages.\n");
-        log(stdout, "    -[vV]:        \tVerbose mode. Display all messages.\n");
-        log(stdout, "\n");
-        log(stdout, "Compression options:\n");
-        log(stdout, "    -[cC]:        \tCompress the input file into the output file.\n");
-        log(stdout, "    -[0-8]:       \tThe look ahead level.\n");
-        log(stdout, "                  \tDefaults to 3.\n");
-        log(stdout, "    -[bB] [8-15]: \tThe block size shift.\n");
-        log(stdout, "                  \tIf not defined, the block size will be calculated based on the number of channels and the sample rate.\n");
-        log(stdout, "    -[fF]:        \tDisable noise shaping. Only used for compression.\n");
-        log(stdout, "    -[rR] freq:   \tResamples input data to the target frequency.\n");
-        log(stdout, "\n");
-        log(stdout, "Decompression options:\n");
-        log(stdout, "    -[dD]:        \tDecompress the input file into the output file.\n");
-        log(stdout, "\n");
-        log(stdout, "Example: amac -c -4 -b 12 input_pcm.wav output_adpcm.ams\n");
-        log(stdout, "\n");
-        // clang-format on
-
-        return EXIT_SUCCESS;
-    }
-
-    Engine::RegisterDefaultExtensions();
-
-    const auto res = process(AM_STRING_TO_OS_STRING(inFileName), AM_STRING_TO_OS_STRING(outFileName), state);
-
-    ampoolfree(eMemoryPoolKind_Default, inFileName);
-    ampoolfree(eMemoryPoolKind_Default, outFileName);
-
-    Engine::UnregisterDefaultExtensions();
-
-    MemoryManager::Deinitialize();
-
-    return res;
+    AppContext app;
+    return app.run(argc, argv);
 }
