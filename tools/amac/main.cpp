@@ -12,12 +12,14 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include <cstdarg>
 #include <cstdlib>
 
 #include <SparkyStudios/Audio/Amplitude/Amplitude.h>
 
 #include <CLI/CLI.hpp>
+
+#include <cli_formatter.h>
+#include <utils.h>
 
 #include <Core/Codecs/AMS/Codec.h>
 #include <Core/Codecs/MP3/Codec.h>
@@ -29,7 +31,6 @@ using namespace SparkyStudios::Audio::Amplitude;
 
 struct AppOptions;
 static int process(const AmOsString& inFileName, const AmOsString& outFileName, const AppOptions& state);
-static void log(FILE* output, const char* fmt, ...);
 
 /**
  * @brief Defines in which mode the process should run.
@@ -42,7 +43,7 @@ enum ProcessingMode
 };
 
 /**
- * @brief Stores the current process state.
+ * @brief Stores the application options passed via CLI.
  */
 struct AppOptions
 {
@@ -83,7 +84,7 @@ struct AppOptions
     struct
     {
         bool enabled = false;
-        AmUInt32 targetSampleRate = 48000;
+        AmUInt32 targetSampleRate = 44100;
     } resampling;
 
     /**
@@ -112,13 +113,29 @@ struct AppContext
      */
     AppOptions options;
 
+    /**
+     * @brief The exit code generated during processing.
+     */
+    int exitCode = 0;
+
     int run(int argc, char** argv)
     {
         MemoryManager::Initialize();
 
-        app.add_flag("-l", options.noLogo, "Hide logo and copyright notice.")->default_val(false)->group("Global");
+        const auto formatter = std::make_shared<AmplitudeToolCLIFormatter>();
 
-        app.add_flag("-v,--verbose", options.verbose, "Verbose mode. Display all messages")->default_val(false)->group("Global");
+        app.set_version_flag("--version", "1.0.0");
+
+        app.formatter(formatter)
+            ->usage("Usage: amac [OPTIONS] INPUT_FILE OUTPUT_FILE")
+            ->footer("amac -e -4 -b 12 input_pcm.wav output_adpcm.ams");
+
+        app.add_flag("-l,--no-logo", options.noLogo, "Hide logo and copyright notice.")->default_val(false)->default_str("false")->group("Global");
+
+        app.add_flag("-v,--verbose", options.verbose, "Verbose mode. Display all messages")
+            ->default_val(false)
+            ->default_str("false")
+            ->group("Global");
 
         app.add_flag_function(
                "-q,--quiet",
@@ -132,20 +149,21 @@ struct AppContext
                },
                "Quiet mode. Shutdown all messages.")
             ->default_val(false)
+            ->default_str("false")
             ->group("Global");
 
-        app.add_flag_function(
-               "-e,--encode",
-               [this](bool value)
-               {
-                   if (!value)
-                       return;
+        auto encodeFlag = app.add_flag_function(
+                                 "-e,--encode",
+                                 [this](bool value)
+                                 {
+                                     if (!value)
+                                         return;
 
-                   options.mode = ePM_ENCODE;
-               },
-               "Compress the input file into the output file.")
-            ->default_val(false)
-            ->group("Encode");
+                                     options.mode = ePM_ENCODE;
+                                 },
+                                 "Compress the input file into the output file.")
+                              ->default_val(false)
+                              ->group("Encode");
 
         app.add_flag_function(
                "-d,--decode",
@@ -158,11 +176,13 @@ struct AppContext
                },
                "Decompress the input file into the output file.")
             ->default_val(false)
+            ->excludes(encodeFlag)
             ->group("Decode");
 
         app.add_flag("-0{0},-1{1},-2{2},-3{3},-4{4},-5{5},-6{6},-7{7},-8{8}", options.lookAhead, "The look ahead level.")
             ->default_val(3)
             ->multi_option_policy(CLI::MultiOptionPolicy::TakeLast)
+            ->needs(encodeFlag)
             ->group("Encode");
 
         app.add_option(
@@ -171,9 +191,14 @@ struct AppContext
                "rate.")
             ->default_val(0)
             ->transform(CLI::Range(8, 15))
+            ->needs(encodeFlag)
+            ->option_text("frequency in [8 - 15]")
             ->group("Encode");
 
-        app.add_flag("!-f", options.noiseShaping, "Disable noise shaping. Only used for compression.")->default_val(true)->group("Encode");
+        app.add_flag("!-f", options.noiseShaping, "Disable noise shaping. Only used for compression.")
+            ->default_val(true)
+            ->needs(encodeFlag)
+            ->group("Encode");
 
         app.add_option_function<AmUInt32>(
                "-r,--resample",
@@ -184,53 +209,33 @@ struct AppContext
                },
                "Resamples input data to the target frequency.")
             ->transform(CLI::Range(8000, 384000))
+            ->needs(encodeFlag)
+            ->option_text("frequency in [8000 - 384000]")
             ->group("Encode");
 
-        app.add_option("input", options.inputFile, "The path to the input file to process.")->required()->transform(CLI::ExistingFile);
+        app.add_option("INPUT_FILE", options.inputFile, "The path to the input file to process.")->required()->transform(CLI::ExistingFile);
 
-        app.add_option("output", options.outputFile, "The path to the output file to create.")->required();
+        app.add_option("OUTPUT_FILE", options.outputFile, "The path to the output file to create.")->required();
 
         CLI11_PARSE(app, argc, argv);
 
         if (!options.noLogo)
         {
-            log(stdout, "\n");
-            log(stdout, "Amplitude Audio Compressor (amac)\n");
-            log(stdout, "Copyright (c) 2021-present Sparky Studios - Licensed under Apache 2.0\n");
-            log(stdout, "=====================================================================\n");
+            log(stdout, formatter->make_description(&app).c_str());
             log(stdout, "\n");
         }
 
         Engine::RegisterDefaultExtensions();
 
-        const auto res = process(AM_STRING_TO_OS_STRING(options.inputFile), AM_STRING_TO_OS_STRING(options.outputFile), options);
+        exitCode = process(AM_STRING_TO_OS_STRING(options.inputFile), AM_STRING_TO_OS_STRING(options.outputFile), options);
 
         Engine::UnregisterDefaultExtensions();
 
         MemoryManager::Deinitialize();
 
-        return res;
+        return exitCode;
     }
 };
-
-/**
- * @brief The log function, used in verbose mode.
- *
- * @param output The output stream.
- * @param fmt The message format.
- * @param ... The arguments.
- */
-static void log(FILE* output, const char* fmt, ...)
-{
-    va_list args;
-    va_start(args, fmt);
-#if defined(AM_WCHAR_SUPPORTED)
-    vfwprintf(output, AM_STRING_TO_OS_STRING(fmt), args);
-#else
-    vfprintf(output, fmt, args);
-#endif
-    va_end(args);
-}
 
 static int process(const AmOsString& inFileName, const AmOsString& outFileName, const AppOptions& state)
 {
