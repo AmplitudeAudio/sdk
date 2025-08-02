@@ -14,8 +14,8 @@
 
 local cpu_archs = {
   X86_SSE2 = {
-    flags = { "-msse2", "/arch:SSE2" },
-    define = "AM_BUILDSYSTEM_ARCH_X86_SSE2",
+    flags = { { value = "-msse2", tools = { "gcc", "clang", "icc" } }, { value = "/arch:SSE2", tools = { "cl", "clang_cl", "icl" } } },
+    define = { "AM_BUILDSYSTEM_ARCH_X86_SSE2", "__SSE2__" },
     suffix = "-x86_sse2",
     test = [[#include <emmintrin.h>
 #include <iostream>
@@ -49,8 +49,8 @@ int main()
 }]]
   },
   X86_SSE3 = {
-    flags = { "-msse3", "/arch:SSE2", "/arch:SSE3" },
-    define = "AM_BUILDSYSTEM_ARCH_X86_SSE3",
+    flags = { { value = "-msse3", tools = { "gcc", "clang", "icc" } }, { value = "/arch:SSE2", tools = { "cl", "clang_cl", "icl" } }, { value = "/arch:AVX", tools = { "cl", "clang_cl", "icl" } } },
+    define = { "AM_BUILDSYSTEM_ARCH_X86_SSE3", "__SSE3__" },
     suffix = "-x86_sse3",
     test = [[#include <pmmintrin.h>
 #include <iostream>
@@ -84,8 +84,8 @@ int main()
 }]]
   },
   X86_SSSE3 = {
-    flags = { "-mssse3", "/arch:SSE2", "/arch:SSSE3" },
-    define = "AM_BUILDSYSTEM_ARCH_X86_SSSE3",
+    flags = { { value = "-mssse3", tools = { "gcc", "clang", "icc" } }, { value = "/arch:SSE2", tools = { "cl", "clang_cl", "icl" } }, { value = "/arch:AVX", tools = { "cl", "clang_cl", "icl" } } },
+    define = { "AM_BUILDSYSTEM_ARCH_X86_SSSE3", "__SSSE3__" },
     suffix = "-x86_ssse3",
     test = [[#include <tmmintrin.h>
 #include <iostream>
@@ -119,8 +119,8 @@ int main()
 }]]
   },
   X86_SSE4_1 = {
-    flags = { "-msse4.1", "/arch:SSE2", "/arch:SSE4.1" },
-    define = "AM_BUILDSYSTEM_ARCH_X86_SSE4_1",
+    flags = { { value = "-msse4.1", tools = { "gcc", "clang", "icc" } }, { value = "/arch:SSE2", tools = { "cl", "clang_cl", "icl" } }, { value = "/arch:AVX", tools = { "cl", "clang_cl", "icl" } } },
+    define = { "AM_BUILDSYSTEM_ARCH_X86_SSE4_1", "__SSE4_1__" },
     suffix = "-x86_sse4_1",
     test = [[#include <smmintrin.h>
 #include <iostream>
@@ -154,8 +154,8 @@ int main()
 }]]
   },
   X86_POPCNT = {
-    flags = { "-mssse3 -mpopcnt", "/arch:SSE4.2" },
-    define = "AM_BUILDSYSTEM_ARCH_X86_POPCNT_INSN",
+    flags = { { value = "-mssse3", tools = { "gcc", "clang", "icc" } }, { value = "-mpopcnt", tools = { "gcc", "clang", "icc" } }, { value = "/arch:AVX", tools = { "cl", "clang_cl", "icl" } } },
+    define = { "AM_BUILDSYSTEM_ARCH_X86_POPCNT_INSN" },
     suffix = "-x86_popcnt",
     test = [[#include <nmmintrin.h>
 #include <iostream>
@@ -184,8 +184,8 @@ int main()
 }]]
   },
   X86_AVX = {
-    flags = { "-mavx", "/arch:AVX" },
-    define = "AM_BUILDSYSTEM_ARCH_X86_AVX",
+    flags = { { value = "-mavx", tools = { "gcc", "clang", "icc" } }, { value = "/arch:AVX", tools = { "cl", "clang_cl", "icl" } } },
+    define = { "AM_BUILDSYSTEM_ARCH_X86_AVX", "__AVX__" },
     suffix = "-x86_avx",
     test = [[#include <immintrin.h>
 #include <iostream>
@@ -226,8 +226,8 @@ int main()
 }]]
   },
   X86_AVX2 = {
-    flags = { "-mavx2", "-xCORE-AVX2", "/arch:AVX", "/arch:CORE-AVX2" },
-    define = "AM_BUILDSYSTEM_ARCH_X86_AVX2",
+    flags = { { value = "-mavx2", tools = { "gcc", "clang", "icc" } }, { value = "-xCORE-AVX2", tools = { "icc" } }, { value = "/arch:AVX2", tools = { "cl", "clang_cl", "icl" } }, { value = "/arch:CORE-AVX2", tools = { "icl" } } },
+    define = { "AM_BUILDSYSTEM_ARCH_X86_AVX2", "__AVX2__" },
     suffix = "-x86_avx2",
     test = [[#include <immintrin.h>
 #include <iostream>
@@ -265,8 +265,8 @@ int main()
 }]]
   },
   ARM_FMA3 = {
-    flags = { "-mfma", "-xCORE-AVX2", "/arch:AVX", "/arch:CORE-AVX2" },
-    define = "AM_BUILDSYSTEM_ARCH_X86_FMA3",
+    flags = { { value = "-mfma", tools = { "gcc", "clang", "icc" } }, { value = "-xCORE-AVX2", tools = { "icc" } }, { value = "/arch:AVX2", tools = { "cl", "clang_cl", "icl" } }, { value = "/arch:CORE-AVX2", tools = { "icl" } } },
+    define = { "AM_BUILDSYSTEM_ARCH_X86_FMA3", "__FMA__" },
     suffix = "-x86_fma3",
     test = [[#include <immintrin.h>
 #include <iostream>
@@ -299,44 +299,9 @@ int main()
     p = prevent_optimization(p);
 }]]
   },
-  ARM_FMA4 = {
-    flags = { "-mfma4", "/arch:AVX" },
-    define = "AM_BUILDSYSTEM_ARCH_X86_FMA4",
-    suffix = "-x86_fma4",
-    test = [[#include <x86intrin.h>
-#include <iostream>
-
-char* prevent_optimization(char* ptr)
-{
-    volatile bool never = false;
-    if (never) {
-        while (*ptr++)
-            std::cout << *ptr;
-    }
-    char* volatile* volatile opaque;
-    opaque = &ptr;
-    return *opaque;
-}
-
-int main()
-{
-    union {
-        char data[16];
-        __m128 align;
-    };
-    char* p = data;
-    p = prevent_optimization(p);
-
-    __m128 one = _mm_load_ps((float*)p);
-    one = _mm_macc_ps(one, one, one);
-    _mm_store_ps((float*)p, one);
-
-    p = prevent_optimization(p);
-}]]
-  },
   ARM_NEON = {
-    flags = { "-mfpu=neon" },
-    define = "AM_BUILDSYSTEM_ARCH_ARM_NEON",
+    flags = { { value = "-mfpu=neon", tools = { "gcc", "clang", "icc" } } },
+    define = { "AM_BUILDSYSTEM_ARCH_ARM_NEON" },
     suffix = "-arm_neon",
     test = [[#if defined(__clang_major__)
 #if (__clang_major__ < 3) || ((__clang_major__ == 3) && (__clang_minor__ <= 3))
@@ -376,8 +341,8 @@ int main()
 }]]
   },
   ARM64_NEON = {
-    flags = { "-arch arm64", "-mcpu=generic+simd" },
-    define = "AM_BUILDSYSTEM_ARCH_ARM_NEON",
+    flags = { { value = "-mcpu=generic+simd", tools = { "gcc", "clang", "icc" } } },
+    define = { "AM_BUILDSYSTEM_ARCH_ARM_NEON" },
     suffix = "-arm64_neon",
     test = [[#include <arm_neon.h>
 #include <iostream>
