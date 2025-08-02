@@ -83,11 +83,21 @@ namespace SparkyStudios::Audio::Amplitude
 
         if (size != m_floats)
         {
+            AmReal32* newData = nullptr;
+
 #ifndef AM_SIMD_INTRINSICS
-            m_data = static_cast<AmReal32*>(amrealloc(m_data, size * sizeof(AmReal32)));
+            newData = static_cast<AmReal32*>(amrealloc(m_data, size * sizeof(AmReal32)));
 #else
-            m_data = static_cast<AmReal32*>(amrealign(m_data, size * sizeof(AmReal32), AM_SIMD_ALIGNMENT));
+            newData = static_cast<AmReal32*>(amrealign(m_data, size * sizeof(AmReal32), AM_SIMD_ALIGNMENT));
 #endif
+
+            if (newData == nullptr && size > 0)
+            {
+                // Allocation failed - keep original data and size
+                return;
+            }
+
+            m_data = newData;
         }
 
         m_floats = size;
