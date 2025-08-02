@@ -24,7 +24,7 @@ target("amac")
   add_packages("cli11")
 
   -- Include main project include directories
-  add_includedirs("$(projectdir)/src", "$(builddir)/include")
+  add_includedirs("$(projectdir)/src", "$(projectdir)/tools/common", "$(builddir)/include")
 
   -- Source files
   add_files("main.cpp")

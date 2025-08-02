@@ -12,18 +12,125 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include <cstdarg>
-#include <iostream>
-
 #include <SparkyStudios/Audio/Amplitude/Amplitude.h>
+
+#include <CLI/CLI.hpp>
+
+#include <cli_formatter.h>
+#include <utils.h>
 
 using namespace SparkyStudios::Audio::Amplitude;
 
-struct ProcessingState
+struct AppOptions;
+static int process(const AmOsString& inFileName, const AmOsString& outFileName, const AppOptions& state);
+
+/**
+ * @brief Stores the application options passed via CLI.
+ */
+struct AppOptions
 {
+    /**
+     * @brief Defines if the process is called in verbose mode.
+     */
     bool verbose = false;
 
+    /**
+     * @brief Defines if the process should not display the logo.
+     */
+    bool noLogo = false;
+
+    /**
+     * @brief The compression algorithm to use.
+     */
     ePackageFileCompressionAlgorithm compression = ePackageFileCompressionAlgorithm_None;
+
+    /**
+     * @brief The path to the input project directory to process.
+     */
+    std::string inputFile;
+
+    /**
+     * @brief The path to the output package file to create.
+     */
+    std::string outputFile;
+};
+
+/**
+ * @brief The application context.
+ */
+struct AppContext
+{
+    /**
+     * @brief The command line interface application.
+     */
+    CLI::App app{ "Amplitude Packager", "ampk" };
+
+    /**
+     * @brief The processing state.
+     */
+    AppOptions options;
+
+    /**
+     * @brief The exit code generated during processing.
+     */
+    int exitCode = 0;
+
+    int run(int argc, char** argv)
+    {
+        MemoryManager::Initialize();
+
+        const auto formatter = std::make_shared<AmplitudeToolCLIFormatter>();
+
+        app.set_version_flag("--version", "1.0.0");
+
+        app.formatter(formatter)
+            ->usage("Usage: ampk [OPTIONS] PROJECT_DIR OUTPUT_FILE")
+            ->footer("ampk -c 1 /path/to/project/ output_package.ampk");
+
+        app.add_flag("-l,--no-logo", options.noLogo, "Hide logo and copyright notice.")->default_val(false)->default_str("false");
+
+        app.add_flag("-v,--verbose", options.verbose, "Verbose mode. Display all messages")->default_val(false)->default_str("false");
+
+        app.add_flag_function(
+               "-q,--quiet",
+               [this](bool value)
+               {
+                   if (!value)
+                       return;
+
+                   options.verbose = false;
+                   options.noLogo = true;
+               },
+               "Quiet mode. Shutdown all messages.")
+            ->default_val(false)
+            ->default_str("false");
+
+        app.add_option(
+               "-c,--compression", options.compression,
+               "The compression algorithm to use.\nIf not defined, the resulting package will not be compressed. The available values "
+               "are:\n0:\tNo compression.\n1:\tZLib compression.")
+            ->option_text("{0,1}");
+
+        app.add_option("PROJECT_DIR", options.inputFile, "The path to the project directory to process.")
+            ->required()
+            ->transform(CLI::ExistingPath);
+
+        app.add_option("OUTPUT_FILE", options.outputFile, "The path to the output package file to create.")->required();
+
+        CLI11_PARSE(app, argc, argv);
+
+        if (!options.noLogo)
+        {
+            log(stdout, formatter->make_description(&app).c_str());
+            log(stdout, "\n");
+        }
+
+        exitCode = process(AM_STRING_TO_OS_STRING(options.inputFile), AM_STRING_TO_OS_STRING(options.outputFile), options);
+
+        MemoryManager::Deinitialize();
+
+        return exitCode;
+    }
 };
 
 static constexpr AmUInt32 kCurrentVersion = 1;
@@ -39,26 +146,7 @@ static constexpr char kProjectDirSounds[] = "sounds";
 static constexpr char kProjectDirSwitchContainers[] = "switch_containers";
 static constexpr char kProjectDirSwitches[] = "switches";
 
-/**
- * @brief The log function, used in verbose mode.
- *
- * @param output The output stream.
- * @param fmt The message format.
- * @param ... The arguments.
- */
-static void log(FILE* output, const char* fmt, ...)
-{
-    va_list args;
-    va_start(args, fmt);
-#if defined(AM_WCHAR_SUPPORTED)
-    vfwprintf(output, AM_STRING_TO_OS_STRING(fmt), args);
-#else
-    vfprintf(output, fmt, args);
-#endif
-    va_end(args);
-}
-
-static int process(const AmOsString& inFileName, const AmOsString& outFileName, const ProcessingState& state)
+static int process(const AmOsString& inFileName, const AmOsString& outFileName, const AppOptions& state)
 {
     const std::filesystem::path projectPath(inFileName);
     const std::filesystem::path packagePath(outFileName);
@@ -157,126 +245,6 @@ static int process(const AmOsString& inFileName, const AmOsString& outFileName, 
 
 int main(int argc, char* argv[])
 {
-    MemoryManager::Initialize();
-
-    char *inFileName = nullptr, *outFileName = nullptr;
-    bool noLogo = false, needHelp = false;
-    ProcessingState state;
-
-    for (int i = 1; i < argc; i++)
-    {
-#if AM_PLATFORM_WIN
-        if (*argv[i] == '-' || *argv[i] == '/')
-#else
-        if (*argv[i] == '-')
-#endif // AM_PLATFORM_WIN
-        {
-            switch (argv[i][1])
-            {
-            case 'H':
-            case 'h':
-                needHelp = true;
-                state.verbose = true;
-                break;
-
-            case 'O':
-            case 'o':
-                noLogo = true;
-                break;
-
-            case 'Q':
-            case 'q':
-                state.verbose = false;
-                noLogo = true;
-                break;
-
-            case 'V':
-            case 'v':
-                state.verbose = true;
-                break;
-
-            case 'C':
-            case 'c':
-                state.compression = static_cast<ePackageFileCompressionAlgorithm>(strtol(argv[++i], argv, 10));
-
-                if (state.compression < ePackageFileCompressionAlgorithm_None ||
-                    state.compression >= ePackageFileCompressionAlgorithm_Invalid)
-                {
-                    log(stderr, "\nInvalid compression algorithm!\n");
-                    return EXIT_FAILURE;
-                }
-                break;
-
-            default:
-                log(stderr, "\nInvalid option: -%c. Use -h for help.\n", **argv);
-                return EXIT_FAILURE;
-            }
-        }
-        else if (!inFileName)
-        {
-            const auto len = strlen(argv[i]);
-            inFileName = static_cast<char*>(ampoolmalloc(eMemoryPoolKind_Default, len + 1));
-
-            std::memcpy(inFileName, argv[i], len);
-            inFileName[len] = '\0';
-        }
-        else if (!outFileName)
-        {
-            const auto len = strlen(argv[i]);
-            outFileName = static_cast<char*>(ampoolmalloc(eMemoryPoolKind_Default, len + 1));
-
-            std::memcpy(outFileName, argv[i], len);
-            outFileName[len] = '\0';
-        }
-        else
-        {
-            log(stderr, "\nUnknown extra argument: %s !\n", *argv);
-            return EXIT_FAILURE;
-        }
-    }
-
-    if (!inFileName || !outFileName)
-    {
-        needHelp = true;
-    }
-
-    if (!noLogo)
-    {
-        // clang-format off
-        log(stdout, "\n");
-        log(stdout, "Amplitude Packager (ampk)\n");
-        log(stdout, "Copyright (c) 2024-present Sparky Studios - Licensed under Apache 2.0\n");
-        log(stdout, "=====================================================================\n");
-        log(stdout, "\n");
-        // clang-format on
-    }
-
-    if (needHelp)
-    {
-        // clang-format off
-        log(stdout, "Usage: ampk [OPTIONS] PROJECT_DIR OUTPUT_FILE\n");
-        log(stdout, "\n");
-        log(stdout, "Options:\n");
-        log(stdout, "    -[hH]:        \tDisplay this help message.\n");
-        log(stdout, "    -[oO]:        \tHide logo and copyright notice.\n");
-        log(stdout, "    -[qQ]:        \tQuiet mode. Shutdown all messages.\n");
-        log(stdout, "    -[vV]:        \tVerbose mode. Display all messages.\n");
-        log(stdout, "    -[cC]:        \tThe compression algorithm to use.\n");
-        log(stdout, "                  \tIf not defined, the resulting package will not be compressed. The available values are:\n");
-        log(stdout, "           0:     \tNo compression.\n");
-        log(stdout, "           1:     \tZLib compression.\n");
-        log(stdout, "\n");
-        log(stdout, "Example: ampk -c 1 /path/to/project/ output_package.ampk\n");
-        log(stdout, "\n");
-        // clang-format on
-
-        return EXIT_SUCCESS;
-    }
-
-    const int res = process(AM_STRING_TO_OS_STRING(inFileName), AM_STRING_TO_OS_STRING(outFileName), state);
-
-    ampoolfree(eMemoryPoolKind_Default, inFileName);
-    ampoolfree(eMemoryPoolKind_Default, outFileName);
-
-    return res;
+    AppContext app;
+    return app.run(argc, argv);
 }
