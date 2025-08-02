@@ -70,13 +70,15 @@ on_config(function(target)
   end
 
   for _, arch in ipairs(_ARCH_CACHE) do
-    local flags, define, suffix = cpu.am_get_arch_info(arch)
+    local flags, defines, suffix = cpu.am_get_arch_info(arch)
 
     for _, flag in ipairs(flags) do
-      target:add("cflags", flag, { force = true })
+      target:add("cxxflags", flag.value, { force = true, tools = flag.tools })
     end
 
-    target:add("defines", define)
+    for _, define in ipairs(defines) do
+        target:add("defines", define)
+    end
   end
 
   platform.am_apply_detected_platform_defines(target)
