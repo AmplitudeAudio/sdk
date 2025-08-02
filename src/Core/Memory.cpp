@@ -323,6 +323,32 @@ namespace SparkyStudios::Audio::Amplitude
         _address = amMemory->Malign(_pool, size, alignment, file, line);
     }
 
+    ScopedMemoryAllocation::ScopedMemoryAllocation(ScopedMemoryAllocation&& other) noexcept
+    {
+        _pool = other._pool;
+        _address = other._address;
+        other._address = nullptr;
+    }
+
+    ScopedMemoryAllocation& ScopedMemoryAllocation::operator=(ScopedMemoryAllocation&& other) noexcept
+    {
+        if (this != &other)
+        {
+            // Release current resource
+            if (_address != nullptr)
+            {
+                ampoolfree(_pool, _address);
+            }
+
+            // Transfer ownership
+            _pool = other._pool;
+            _address = other._address;
+            other._address = nullptr;
+        }
+
+        return *this;
+    }
+
     ScopedMemoryAllocation::~ScopedMemoryAllocation()
     {
         if (_address == nullptr)
