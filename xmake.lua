@@ -152,7 +152,7 @@ target("generate_includes")
         os.exec("%s --cpp -o %s %s", flatc.program, output_dir, schema)
       end
     else
-      print("flatc not found. Please install flatbuffers.")
+      raise("flatc not found. Please install flatbuffers.")
     end
   end)
 target_end()
@@ -173,7 +173,7 @@ target("build_binary_schemas")
     if python then
       os.exec("%s %s/build_schemas.py --output %s", python, scripts_dir, schemas_dir)
     else
-      print("Python not found. Cannot build binary schemas.")
+      raise("Python not found. Cannot build binary schemas.")
     end
   end)
 target_end()
@@ -220,6 +220,7 @@ target("Amplitude")
   -- ----------------------------------------
 
   add_headerfiles("include/(**.h)")
+
   add_installfiles("(schemas/**.bfbs)")
   add_installfiles("(scripts/*.py)")
 
@@ -261,7 +262,7 @@ if has_config("build_assets") then
         -- Copy assets to output directory
         os.cp(path.join(os.projectdir(), "assets"), path.join(config.builddir(), "samples"))
       else
-        print("Python not found. Cannot build sample project.")
+        raise("Python not found. Cannot build sample project.")
       end
     end)
 
