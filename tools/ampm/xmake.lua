@@ -15,6 +15,7 @@
 target("ampm")
   set_kind("binary")
   set_targetdir("$(builddir)/bin")
+  set_group("tools")
 
   -- Link to Amplitude Static library
   add_deps("Amplitude")

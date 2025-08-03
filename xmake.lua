@@ -23,6 +23,7 @@ set_version("1.0.0")
 set_license("Apache-2.0")
 set_languages("c++20")
 set_description("A powerful and cross-platform audio engine, optimized for games.")
+set_prefixdir("/", { libdir = "lib/$(kind)/$(arch)-$(plat)" })
 
 add_rules("mode.debug", "mode.release", "mode.coverage")
 add_rules("plugin.compile_commands.autoupdate")
