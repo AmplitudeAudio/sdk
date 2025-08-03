@@ -19,7 +19,7 @@ package("xsimd")
     add_versions("11.0.0", "50c31c319c8b36c8946eb954c7cca2e2ece86bf8a66a7ebf321b24cd273e7c47")
 
     add_deps("cmake")
-    
+
     on_install(function (package)
         import("package.tools.cmake").install(package)
     end)
@@ -58,3 +58,4 @@ package("xsimd")
             ]]}, {configs = {languages = "c++14"}, includes = "xsimd/xsimd.hpp"}))
         end
     end)
+package_end()

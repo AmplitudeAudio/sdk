@@ -57,13 +57,16 @@ gen/
 .DS_Store
 .cfft.templates/
 cfft.config.json
+am_build/
+scripts/__pycache__
+tools/ampm/gen.resources.*
 
 # CLangd cache
 .cache/
 
 # VCPKG
 vcpkg_installed/
-am_build/
+
+# XMake
 .xmake/
-scripts/__pycache__
 **/compile_commands.json

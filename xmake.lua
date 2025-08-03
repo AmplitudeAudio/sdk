@@ -128,7 +128,7 @@ if is_plat("android") then
 end
 
 -- Add packages
-add_packages("flatbuffers", "dylib", "xsimd", "miniaudio", "eigen")
+add_packages("flatbuffers", "xsimd", "eigen")
 
 -- Generate FlatBuffers schema files
 target("generate_includes")
@@ -167,13 +167,15 @@ target("build_binary_schemas")
   on_build(function(target)
     import("core.project.config")
     import("lib.detect.find_program")
+    import("lib.detect.find_tool")
 
     local python = find_program("python3") or find_program("python")
     local scripts_dir = path.join(os.projectdir(), "scripts")
     local schemas_dir = path.join(os.projectdir(), "schemas")
+    local flatc = find_tool("flatc")
 
     if python then
-      os.exec("%s %s/build_schemas.py --output %s", python, scripts_dir, schemas_dir)
+      os.exec("%s %s/build_schemas.py --output %s --flatc %s", python, scripts_dir, schemas_dir, flatc.program)
     else
       raise("Python not found. Cannot build binary schemas.")
     end
@@ -186,6 +188,7 @@ target("Amplitude")
   set_default(true)
   set_basename("Amplitude")
 
+  add_packages("dylib", "miniaudio")
   add_deps("generate_includes", "build_binary_schemas")
 
   -- Include paths
@@ -234,7 +237,7 @@ if has_config("build_tools") and not is_plat("android") and not is_plat("iphoneo
   includes("tools/amac/xmake.lua")
   includes("tools/ampk/xmake.lua")
   includes("tools/amir/xmake.lua")
-  -- includes("tools/ampm/xmake.lua")
+  includes("tools/ampm/xmake.lua")
 end
 
 -- Build sample assets if enabled
