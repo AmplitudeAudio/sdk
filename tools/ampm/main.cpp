@@ -1,14 +1,29 @@
+// Copyright (c) 2024-present Sparky Studios. All rights reserved.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
 #include <SparkyStudios/Audio/Amplitude/Amplitude.h>
 
 #include <CLI/CLI.hpp>
 #include <iostream>
 #include <random>
 
-#include <cmrc/cmrc.hpp>
+#include <cli_formatter.h>
+#include <utils.h>
+
+#include "gen.resources.h"
 
 using namespace SparkyStudios::Audio::Amplitude;
-
-CMRC_DECLARE(ampm);
 
 static constexpr char kProjectPathAttenuators[] = "attenuators";
 static constexpr char kProjectPathCollections[] = "collections";
@@ -22,35 +37,6 @@ static constexpr char kProjectPathSwitchContainers[] = "switch_containers";
 static constexpr char kProjectPathSwitches[] = "switches";
 
 static constexpr uint32_t kProjectVersion = 1;
-
-/// Credits: https://stackoverflow.com/a/13059195
-/// https://stackoverflow.com/questions/13059091/
-struct membuf : std::streambuf
-{
-    membuf(char const* base, size_t size)
-    {
-        char* p(const_cast<char*>(base));
-        this->setg(p, p, p + size);
-    }
-    ~membuf() override = default;
-};
-
-/// Credits: https://stackoverflow.com/a/13059195
-/// https://stackoverflow.com/questions/13059091/
-struct memstream
-    : virtual membuf
-    , std::istream
-{
-    memstream(char const* base, char* const end)
-        : membuf(base, reinterpret_cast<uintptr_t>(end) - reinterpret_cast<uintptr_t>(base))
-        , std::istream(static_cast<std::streambuf*>(this))
-    {}
-
-    memstream(char const* base, size_t size)
-        : membuf(base, size)
-        , std::istream(static_cast<std::streambuf*>(this))
-    {}
-};
 
 static std::string SnakeCase(const std::string& str)
 {
@@ -118,8 +104,6 @@ struct AppContext
     CLI::App* assetsApp{ nullptr };
     CLI::App* assetsImportApp{ nullptr };
 
-    cmrc::embedded_filesystem resourcesFS;
-
     InitProjectOptions initProjectOptions;
     CreateSourceOptions createSourceOptions;
     ImportSourceOptions importSourceOptions;
@@ -141,9 +125,11 @@ struct AppContext
 
     AppContext()
         : mainApp("Amplitude Project Manager", "ampm")
-        , resourcesFS(cmrc::ampm::get_filesystem())
     {
         mainApp.require_subcommand(1);
+
+        projectApp = mainApp.add_subcommand("project", "Manage Amplitude projects");
+        assetsApp = mainApp.add_subcommand("assets", "Manage Amplitude assets");
 
         initProjectApp();
         initAssetsApp();
@@ -151,6 +137,14 @@ struct AppContext
 
     int run(int argc, char** argv)
     {
+        const auto formatter = std::make_shared<AmplitudeToolCLIFormatter>();
+
+        mainApp.set_version_flag("--version", "1.0.0");
+
+        mainApp.formatter(formatter)
+            ->usage("Usage: ampk [OPTIONS] PROJECT_DIR OUTPUT_FILE")
+            ->footer("ampk -c 1 /path/to/project/ output_package.ampk");
+
         exeDirectory = weakly_canonical(std::filesystem::path(argv[0])).parent_path();
 
         CLI11_PARSE(mainApp, argc, argv);
@@ -210,31 +204,22 @@ struct AppContext
 
             // Create default config file
             {
-                auto configFile = resourcesFS.open("resources/default.config.json");
-                auto is = memstream(const_cast<char*>(configFile.begin()), const_cast<char*>(configFile.end()));
-
                 std::ofstream projectFile(projectDir / "sources" / "pc.config.json");
-                projectFile << is.rdbuf();
+                projectFile << resource_default_config_json_data;
                 projectFile.flush();
             }
 
             // Create default buses file
             {
-                auto configFile = resourcesFS.open("resources/default.buses.json");
-                auto is = memstream(const_cast<char*>(configFile.begin()), const_cast<char*>(configFile.end()));
-
                 std::ofstream projectFile(projectDir / "sources" / "pc.buses.json");
-                projectFile << is.rdbuf();
+                projectFile << resource_default_buses_json_data;
                 projectFile.flush();
             }
 
             // Create default pipeline file
             {
-                auto configFile = resourcesFS.open("resources/default.pipeline.json");
-                auto is = memstream(const_cast<char*>(configFile.begin()), const_cast<char*>(configFile.end()));
-
                 std::ofstream projectFile(projectDir / "sources" / kProjectPathPipelines / "default.json");
-                projectFile << is.rdbuf();
+                projectFile << resource_default_pipeline_json_data;
                 projectFile.flush();
             }
         }
@@ -256,11 +241,10 @@ struct AppContext
             return EXIT_FAILURE;
         }
 
-        projectFile << R"({"name": ")"
-            << initProjectOptions.name
+        projectFile
+            << R"({"name": ")" << initProjectOptions.name
             << R"(", "default_configuration": "pc.config.amconfig", "sources_dir": "sources", "data_dir": "data", "build_dir": "build", "version": )"
-            << kProjectVersion
-            << R"( })";
+            << kProjectVersion << R"( })";
         projectFile.flush();
 
         std::cout << "Project '" << initProjectOptions.name << "' initialized successfully" << std::endl;
@@ -270,7 +254,7 @@ struct AppContext
 
     [[nodiscard]] int runImportSource() const
     {
-        // Implement import source logic here
+        // TODO: Implement import source logic here
         std::cout << "Importing source..." << std::endl;
 
         // Return success or failure status
@@ -303,31 +287,34 @@ struct AppContext
             },
             "PROJECT_NAME", "PROJECT_NAME");
 
-        projectApp = mainApp.add_subcommand("project", "Manage Amplitude projects");
         projectNewApp = projectApp->add_subcommand("new", "Initialize a new project");
 
-        projectNewApp->add_option("-n,--name", initProjectOptions.name, "Project name.")->required()->transform(projectNameTransformer);
+        // project new
+        {
+            projectNewApp->add_option("-n,--name", initProjectOptions.name, "Project name.")->required()->transform(projectNameTransformer);
 
-        projectNewApp
-            ->add_option(
-                "-t,--template", initProjectOptions.templateName, "Project template. If not set, defaults to the 'empty' template.")
-            ->default_str("empty")
-            ->check(templateNameValidator, "TEMPLATE_NAME");
+            projectNewApp
+                ->add_option(
+                    "-t,--template", initProjectOptions.templateName, "Project template. If not set, defaults to the 'empty' template.")
+                ->default_val("empty")
+                ->check(templateNameValidator, "TEMPLATE_NAME");
 
-        projectNewApp
-            ->add_option(
-                "-o,--output", initProjectOptions.directory, "Project destination directory. If not set, defaults to current directory.")
-            ->default_str(std::filesystem::current_path().string());
+            projectNewApp
+                ->add_option(
+                    "OUTPUT", initProjectOptions.directory, "Project destination directory. If not set, defaults to current directory.")
+                ->default_val(std::filesystem::current_path().string());
+        }
     }
 
     void initAssetsApp()
     {
-        assetsApp = mainApp.add_subcommand("assets", "Manage Amplitude assets");
         assetsImportApp = assetsApp->add_subcommand("import", "Import new source asset from external sound files");
 
-        assetsImportApp->add_option("-i,--input", importSourceOptions.fileName, "Input file path.")->required();
-
-        fillCommonSourceOptions(assetsImportApp, importSourceOptions);
+        // assets import
+        {
+            assetsImportApp->add_option("-i,--input", importSourceOptions.fileName, "Input file path.")->required();
+            fillCommonSourceOptions(assetsImportApp, importSourceOptions);
+        }
     }
 };
 
