@@ -65,6 +65,7 @@ _ARCH_CACHE = {}
 on_config(function(target)
   import("xmake.cpu")
   import("xmake.platform")
+  import("core.project.config")
 
   if _ARCH_CACHE == nil or #_ARCH_CACHE == 0 then
     _ARCH_CACHE = cpu.am_get_supported_archs()
@@ -83,6 +84,8 @@ on_config(function(target)
   end
 
   platform.am_apply_detected_platform_defines(target)
+
+  target:add("defines", "AM_SDK_PLATFORM=\"" .. config.get("arch") .. "-" .. config.get("plat") .. "\"")
 end)
 
 -- Dependencies
@@ -94,7 +97,7 @@ add_requires("eigen >= 3.4.0")
 
 -- Feature-specific dependencies
 if has_config("build_samples") then
-  add_requires("sdl2")
+  add_requires("libsdl2", { configs = { sdlmain = true } })
   set_config("build_assets", true)
 end
 
@@ -129,7 +132,7 @@ if is_plat("android") then
 end
 
 -- Add packages
-add_packages("flatbuffers", "xsimd", "eigen")
+add_packages("flatbuffers", "xsimd", "eigen", "dylib", "miniaudio")
 
 -- Generate FlatBuffers schema files
 target("generate_includes")
@@ -189,7 +192,10 @@ target("Amplitude")
   set_default(true)
   set_basename("Amplitude")
 
-  add_packages("dylib", "miniaudio")
+  if is_mode("debug") then
+	  set_suffixname("_d")
+  end
+
   add_deps("generate_includes", "build_binary_schemas")
 
   -- Include paths
@@ -204,7 +210,7 @@ target("Amplitude")
     add_defines("AM_BUILDSYSTEM_SHARED", { public = true })
   end
 
-  add_defines("AM_BUILDSYSTEM_BUILDING_AMPLITUDE")
+  add_defines("AM_BUILDSYSTEM_BUILDING_AMPLITUDE", { public = false })
 
   -- Common sources
   add_files("src/**/*.cpp")
@@ -278,7 +284,8 @@ end
 
 -- Build samples if enabled
 if has_config("build_samples") then
-  includes("samples/xmake.lua")
+  includes("samples/sample_01/xmake.lua")
+  includes("samples/sample_02/xmake.lua")
 end
 
 -- Build unit tests if enabled
