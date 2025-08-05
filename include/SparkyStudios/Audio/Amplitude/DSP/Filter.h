@@ -19,6 +19,8 @@
 
 #include <SparkyStudios/Audio/Amplitude/Core/AudioBuffer.h>
 
+#include <map>
+
 namespace SparkyStudios::Audio::Amplitude
 {
     class Filter;

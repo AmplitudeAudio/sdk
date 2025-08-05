@@ -20,6 +20,8 @@
 #include <SparkyStudios/Audio/Amplitude/Core/Asset.h>
 #include <SparkyStudios/Audio/Amplitude/Core/Common.h>
 
+#include <vector>
+
 namespace SparkyStudios::Audio::Amplitude
 {
     /**

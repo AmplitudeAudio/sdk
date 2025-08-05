@@ -16,6 +16,8 @@
 #include <DSP/Gain.h>
 #include <Mixer/Nodes/ReverbNode.h>
 
+#include <numeric>
+
 namespace SparkyStudios::Audio::Amplitude
 {
     ReverbNodeInstance::ReverbNodeInstance()

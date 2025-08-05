@@ -12,11 +12,6 @@
 -- See the License for the specific language governing permissions and
 -- limitations under the License.
 
--- Set minimum xmake version
-set_xmakever("3.0.0")
-
-add_repositories("repo xmake/repo", { rootdir = os.scriptdir() })
-
 -- Project definition
 set_project("Amplitude")
 set_version("1.0.0")
@@ -24,6 +19,9 @@ set_license("Apache-2.0")
 set_languages("c++20")
 set_description("A powerful and cross-platform audio engine, optimized for games.")
 set_prefixdir("/", { libdir = "lib/$(kind)/$(arch)-$(plat)" })
+set_xmakever("3.0.0")
+
+add_repositories("repo xmake/repo", { rootdir = os.scriptdir() })
 
 add_rules("mode.debug", "mode.release", "mode.coverage")
 add_rules("plugin.compile_commands.autoupdate")
@@ -138,6 +136,7 @@ add_packages("flatbuffers", "xsimd", "eigen", "dylib", "miniaudio")
 target("generate_includes")
   set_kind("phony")
   set_default(true)
+  set_policy("build.fence", true)
 
   on_build(function(target)
     import("core.project.config")
@@ -157,6 +156,8 @@ target("generate_includes")
       for _, schema in ipairs(schema_files) do
         os.exec("%s --cpp -o %s %s", flatc.program, output_dir, schema)
       end
+
+      print("FlatBuffers headers generated successfully.")
     else
       raise("flatc not found. Please install flatbuffers.")
     end
@@ -167,6 +168,7 @@ target_end()
 target("build_binary_schemas")
   set_kind("phony")
   set_default(true)
+  set_policy("build.fence", true)
 
   on_build(function(target)
     import("core.project.config")
@@ -196,7 +198,7 @@ target("Amplitude")
 	  set_suffixname("_d")
   end
 
-  add_deps("generate_includes", "build_binary_schemas")
+  add_deps("generate_includes", "build_binary_schemas", { inherit = false })
 
   -- Include paths
   add_includedirs("src", { public = false })
@@ -241,10 +243,7 @@ target_end()
 
 -- Build tools if enabled
 if has_config("build_tools") and not is_plat("android") and not is_plat("iphoneos") then
-  includes("tools/amac/xmake.lua")
-  includes("tools/ampk/xmake.lua")
-  includes("tools/amir/xmake.lua")
-  includes("tools/ampm/xmake.lua")
+  includes("tools/**/xmake.lua")
 end
 
 -- Build sample assets if enabled
@@ -284,8 +283,7 @@ end
 
 -- Build samples if enabled
 if has_config("build_samples") then
-  includes("samples/sample_01/xmake.lua")
-  includes("samples/sample_02/xmake.lua")
+  includes("samples/**/xmake.lua")
 end
 
 -- Build unit tests if enabled

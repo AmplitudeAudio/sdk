@@ -16,6 +16,8 @@
 
 #include <Core/RoomInternalState.h>
 
+#include <numeric>
+
 namespace SparkyStudios::Audio::Amplitude
 {
     constexpr AmReal32 kCutOffFrequency = 800.0f;

@@ -72,12 +72,7 @@ static AM_INLINE std::string am_wstring_narrow(const std::wstring& str)
 #define AM_OS_STRING_TO_STRING(s) am_wstring_narrow(s).c_str()
 #define AM_STRING_TO_OS_STRING(s) am_string_widen(s).c_str()
 
-// AMPLITUDE_ASSERT Config
-#ifdef AM_NO_ASSERTS
-#define AMPLITUDE_ASSERT(x)
-#else
-#ifdef _MSC_VER
-#include <cstdio> // for sprintf in asserts
+// Include Windows headers
 #ifndef VC_EXTRALEAN
 #define VC_EXTRALEAN
 #endif // VC_EXTRALEAN
@@ -88,6 +83,13 @@ static AM_INLINE std::string am_wstring_narrow(const std::wstring& str)
 #define NOMINMAX // No need of min and max macros
 #endif // NOMINMAX
 #include <Windows.h> // only needed for OutputDebugStringA, should be solved somehow.
+
+// AMPLITUDE_ASSERT Config
+#ifdef AM_NO_ASSERTS
+#define AMPLITUDE_ASSERT(x)
+#else
+#ifdef _MSC_VER
+#include <cstdio> // for sprintf in asserts
 #define AMPLITUDE_ASSERT(x)                                                                                                                \
     if (!(x))                                                                                                                              \
     {                                                                                                                                      \

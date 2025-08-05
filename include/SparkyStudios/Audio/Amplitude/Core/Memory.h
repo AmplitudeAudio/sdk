@@ -19,6 +19,12 @@
 
 #include <SparkyStudios/Audio/Amplitude/Core/Common.h>
 
+#include <set>
+
+#if !defined(AM_NO_MEMORY_STATS)
+#include <map>
+#endif
+
 /**
  * @brief Shortcut access to the Amplitude's memory manager instance.
  *

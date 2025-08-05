@@ -12,14 +12,11 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include <thread>
-
 #include <SparkyStudios/Audio/Amplitude/Core/Memory.h>
 #include <SparkyStudios/Audio/Amplitude/Core/Thread.h>
 
 #if AM_PLATFORM_WIN
 // clang-format off
-#include <Windows.h>
 #include <processthreadsapi.h>
 // clang-format on
 #undef CreateMutex
@@ -30,6 +27,8 @@
 #include <sys/types.h>
 #include <unistd.h>
 #endif
+
+#include <thread>
 
 namespace SparkyStudios::Audio::Amplitude::Thread
 {

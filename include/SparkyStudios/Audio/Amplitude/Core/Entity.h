@@ -19,6 +19,8 @@
 
 #include <SparkyStudios/Audio/Amplitude/Math/Orientation.h>
 
+#include <map>
+
 namespace SparkyStudios::Audio::Amplitude
 {
     class EntityInternalState;
