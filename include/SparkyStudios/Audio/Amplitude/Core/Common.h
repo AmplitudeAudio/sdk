@@ -17,23 +17,6 @@
 #ifndef _AM_CORE_COMMON_H
 #define _AM_CORE_COMMON_H
 
-// Standard Library
-// --------------------------------------------------------------
-
-#include <algorithm>
-#include <array>
-#include <atomic>
-#include <cmath>
-#include <cstdlib>
-#include <cstring>
-#include <map>
-#include <memory>
-#include <numeric>
-#include <set>
-#include <string>
-#include <unordered_map>
-#include <vector>
-
 // Amplitude
 // --------------------------------------------------------------
 
