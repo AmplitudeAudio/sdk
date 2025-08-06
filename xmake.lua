@@ -18,7 +18,6 @@ set_version("1.0.0")
 set_license("Apache-2.0")
 set_languages("c++20")
 set_description("A powerful and cross-platform audio engine, optimized for games.")
-set_prefixdir("/", { libdir = "lib/$(kind)/$(arch)-$(plat)" })
 set_xmakever("3.0.0")
 
 add_repositories("repo xmake/repo", { rootdir = os.scriptdir() })
@@ -40,7 +39,7 @@ option("build_samples")
 option_end()
 
 option("build_tools")
-  set_default(true)
+  set_default(false)
   set_showmenu(true)
   set_description("Build official CLI tools")
 option_end()
@@ -57,6 +56,12 @@ option("coverage_min_threshold")
   set_description("Minimum coverage percentage required (0 to disable)")
 option_end()
 
+option("as_package")
+  set_default(false)
+  set_showmenu(true)
+  set_description("Configure as a package. This is useful when using Amplitude from sources instead of SDK installation.")
+option_end()
+
 _ARCH_CACHE = {}
 
 -- Hooks
@@ -70,7 +75,7 @@ on_config(function(target)
   end
 
   for _, arch in ipairs(_ARCH_CACHE) do
-    local flags, defines, suffix = cpu.am_get_arch_info(arch)
+    local flags, defines, _ = cpu.am_get_arch_info(arch)
 
     for _, flag in ipairs(flags) do
       target:add("cxxflags", flag.value, { force = true, tools = flag.tools })
@@ -106,6 +111,13 @@ end
 if has_config("build_tools") and not is_plat("android") and not is_plat("iphoneos") then
   add_requires("cli11")
   add_requires("libmysofa")
+end
+
+if has_config("as_package") then
+  set_config("build_samples", false)
+  set_config("unit_tests", false)
+  set_config("build_assets", false)
+  set_config("build_tools", false)
 end
 
 -- Apply debug/release specific defines
@@ -189,64 +201,79 @@ target("build_binary_schemas")
 target_end()
 
 -- Amplitude library
-namespace("Amplitude")
-  local function _setup(kind)
-    set_kind(kind)
-    set_default(is_kind(kind))
-    set_basename("Amplitude")
-    set_targetdir("$(builddir)/$(plat)/$(arch)/$(mode)/" .. kind)
+local function _setup(kind)
+  set_kind(kind)
+  set_default(is_kind(kind))
+  set_basename("Amplitude")
+  set_targetdir("$(builddir)/$(plat)/$(arch)/$(mode)/" .. kind)
+
+  if not has_config("as_package") then
     set_prefixdir("/", { libdir = "lib/" .. kind .. "/$(arch)-$(plat)", bindir = "lib/" .. kind .. "/$(arch)-$(plat)" })
-
-    if is_mode("debug") then
-  	  set_suffixname("_d")
-    end
-
-    add_deps("generate_includes", "build_binary_schemas", { inherit = false })
-
-    -- Include paths
-    add_includedirs("src", { public = false })
-    add_includedirs("include", { public = true })
-    add_includedirs("$(builddir)/include", { public = false })
-
-    add_defines("AM_BUILDSYSTEM_BUILDING_AMPLITUDE", { public = false })
-
-    -- Common sources
-    add_files("src/**/*.cpp")
-
-    -- Platform-specific sources,
-    if not is_plat("android") then
-      remove_files(
-        "src/IO/Android/AssetManagerFile.cpp",
-        "src/IO/Android/AssetManagerFileSystem.cpp",
-        "src/IO/Android/LogcatLogger.cpp"
-      )
-    end
-
-    -- Config files
-    set_configdir("$(projectdir)")
-    add_configfiles("xmake/config/(**.in)")
-
-    -- INSTALLATION
-    -- ----------------------------------------
-
-    add_headerfiles("include/(**.h)")
-
-    add_installfiles("(schemas/**.bfbs)")
-    add_installfiles("(scripts/*.py)")
-
-    remove_installfiles("scripts/build_schemas.py", "scripts/__pycache__/*.pyc")
   end
 
-  target("Shared")
-    _setup("shared")
-    add_defines("AM_BUILDSYSTEM_SHARED", { public = true })
-  target_end()
+  if is_mode("debug") then
+    set_suffixname("_d")
+  end
 
-  target("Static")
-    _setup("static")
-    add_defines("AM_BUILDSYSTEM_STATIC", { public = true })
+  add_deps("generate_includes", "build_binary_schemas", { inherit = false })
+
+  -- Include paths
+  add_includedirs("src", { public = false })
+  add_includedirs("include", { public = true })
+  add_includedirs("$(builddir)/include", { public = false })
+
+  add_defines("AM_BUILDSYSTEM_BUILDING_AMPLITUDE", { public = false })
+
+  -- Common sources
+  add_files("src/**/*.cpp")
+
+  -- Platform-specific sources,
+  if not is_plat("android") then
+    remove_files(
+      "src/IO/Android/AssetManagerFile.cpp",
+      "src/IO/Android/AssetManagerFileSystem.cpp",
+      "src/IO/Android/LogcatLogger.cpp"
+    )
+  end
+
+  -- Config files
+  set_configdir("$(projectdir)")
+  add_configfiles("xmake/config/(**.in)")
+
+  -- INSTALLATION
+  -- ----------------------------------------
+
+  add_headerfiles("include/(**.h)")
+
+  add_installfiles("(schemas/**.bfbs)")
+  add_installfiles("(scripts/*.py)")
+
+  remove_installfiles("scripts/build_schemas.py", "scripts/__pycache__/*.pyc")
+end
+
+if not has_config("as_package") then
+  namespace("Amplitude")
+    target("Shared")
+      _setup("shared")
+      add_defines("AM_BUILDSYSTEM_SHARED", { public = true })
+    target_end()
+
+    target("Static")
+      _setup("static")
+      add_defines("AM_BUILDSYSTEM_STATIC", { public = true })
+    target_end()
+  namespace_end()
+else
+  target("Amplitude")
+    _setup("$(kind)")
+
+    if is_kind("shared") then
+      add_defines("AM_BUILDSYSTEM_SHARED", { public = true })
+    elseif is_kind("static") then
+      add_defines("AM_BUILDSYSTEM_STATIC", { public = true })
+    end
   target_end()
-namespace_end()
+end
 
 -- Build tools if enabled
 if has_config("build_tools") and not is_plat("android") and not is_plat("iphoneos") then
