@@ -18,7 +18,7 @@ target("sample_02")
   set_group("samples")
 
   -- Link to Amplitude Static library
-  add_deps("Amplitude", "build_sample_project")
+  add_deps("Amplitude::Shared", "build_sample_project")
 
   -- Link to SDL2
   add_packages("libsdl2", { components = { "main" } })
@@ -28,7 +28,7 @@ target("sample_02")
   end
 
   -- Include main project include directories
-  add_includedirs("$(projectdir)/src", "$(projectdir)/tools/common", "$(builddir)/include")
+  add_includedirs("$(projectdir)/src")
 
   -- Source files
   add_files("main.cpp")

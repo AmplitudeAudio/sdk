@@ -36,6 +36,19 @@ target("generate_test_package")
   end)
 target_end()
 
+target("common_test")
+  set_kind("object")
+  set_policy("build.fence", true)
+
+  add_deps("Amplitude::Static", "build_sample_project", "generate_test_package", "ampk")
+
+  add_files("common/*.cpp")
+
+  add_includedirs("common", { public = true })
+  add_includedirs("$(projectdir)/src", { public = true })
+  add_includedirs("$(builddir)/include", { public = true })
+target_end()
+
 for _, filepath in ipairs(os.filedirs("**")) do
   if os.isfile(filepath) or filepath == "common" then
     -- Skip files
@@ -65,13 +78,9 @@ for _, filepath in ipairs(os.filedirs("**")) do
       set_group("test_" .. group)
       set_rundir("$(builddir)")
 
-      add_deps("Amplitude", "build_sample_project", "generate_test_package", "ampk")
+      add_deps("common_test")
 
-      add_includedirs("common")
-      add_includedirs("$(projectdir)/src")
-      add_includedirs("$(builddir)/include")
-
-      add_files("common/*.cpp", test_file)
+      add_files(test_file)
 
       add_tests("test")
     target_end()
