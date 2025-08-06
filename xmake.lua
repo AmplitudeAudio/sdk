@@ -192,9 +192,10 @@ target_end()
 namespace("Amplitude")
   local function _setup(kind)
     set_kind(kind)
-    set_default(true)
+    set_default(is_kind(kind))
     set_basename("Amplitude")
     set_targetdir("$(builddir)/$(plat)/$(arch)/$(mode)/" .. kind)
+    set_prefixdir("/", { libdir = "lib/" .. kind .. "/$(arch)-$(plat)", bindir = "lib/" .. kind .. "/$(arch)-$(plat)" })
 
     if is_mode("debug") then
   	  set_suffixname("_d")
