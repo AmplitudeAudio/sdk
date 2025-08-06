@@ -14,9 +14,7 @@
 
 #include <algorithm>
 #include <cstdio>
-#include <fstream>
 #include <SDL2/SDL.h>
-#include <string>
 
 #include <SparkyStudios/Audio/Amplitude/Amplitude.h>
 

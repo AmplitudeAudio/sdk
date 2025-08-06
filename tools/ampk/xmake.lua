@@ -18,7 +18,7 @@ target("ampk")
   set_group("tools")
 
   -- Link to Amplitude Static library
-  add_deps("Amplitude")
+  add_deps("Amplitude::Static")
 
   -- Add packages
   add_packages("cli11")

@@ -135,7 +135,7 @@ add_packages("flatbuffers", "xsimd", "eigen", "dylib", "miniaudio")
 -- Generate FlatBuffers schema files
 target("generate_includes")
   set_kind("phony")
-  set_default(true)
+  set_default(false)
   set_policy("build.fence", true)
 
   on_build(function(target)
@@ -167,7 +167,7 @@ target_end()
 -- Build binary schemas
 target("build_binary_schemas")
   set_kind("phony")
-  set_default(true)
+  set_default(false)
   set_policy("build.fence", true)
 
   on_build(function(target)
@@ -189,57 +189,63 @@ target("build_binary_schemas")
 target_end()
 
 -- Amplitude library
-target("Amplitude")
-  set_kind("$(kind)")
-  set_default(true)
-  set_basename("Amplitude")
+namespace("Amplitude")
+  local function _setup(kind)
+    set_kind(kind)
+    set_default(true)
+    set_basename("Amplitude")
+    set_targetdir("$(builddir)/$(plat)/$(arch)/$(mode)/" .. kind)
 
-  if is_mode("debug") then
-	  set_suffixname("_d")
+    if is_mode("debug") then
+  	  set_suffixname("_d")
+    end
+
+    add_deps("generate_includes", "build_binary_schemas", { inherit = false })
+
+    -- Include paths
+    add_includedirs("src", { public = false })
+    add_includedirs("include", { public = true })
+    add_includedirs("$(builddir)/include", { public = false })
+
+    add_defines("AM_BUILDSYSTEM_BUILDING_AMPLITUDE", { public = false })
+
+    -- Common sources
+    add_files("src/**/*.cpp")
+
+    -- Platform-specific sources,
+    if not is_plat("android") then
+      remove_files(
+        "src/IO/Android/AssetManagerFile.cpp",
+        "src/IO/Android/AssetManagerFileSystem.cpp",
+        "src/IO/Android/LogcatLogger.cpp"
+      )
+    end
+
+    -- Config files
+    set_configdir("$(projectdir)")
+    add_configfiles("xmake/config/(**.in)")
+
+    -- INSTALLATION
+    -- ----------------------------------------
+
+    add_headerfiles("include/(**.h)")
+
+    add_installfiles("(schemas/**.bfbs)")
+    add_installfiles("(scripts/*.py)")
+
+    remove_installfiles("scripts/build_schemas.py", "scripts/__pycache__/*.pyc")
   end
 
-  add_deps("generate_includes", "build_binary_schemas", { inherit = false })
-
-  -- Include paths
-  add_includedirs("src", { public = false })
-  add_includedirs("include", { public = true })
-  add_includedirs("$(builddir)/include", { public = false })
-
-  -- Define the build type
-  if (is_kind("static")) then
-    add_defines("AM_BUILDSYSTEM_STATIC", { public = true })
-  elseif (is_kind("shared")) then
+  target("Shared")
+    _setup("shared")
     add_defines("AM_BUILDSYSTEM_SHARED", { public = true })
-  end
+  target_end()
 
-  add_defines("AM_BUILDSYSTEM_BUILDING_AMPLITUDE", { public = false })
-
-  -- Common sources
-  add_files("src/**/*.cpp")
-
-  -- Platform-specific sources,
-  if not is_plat("android") then
-    remove_files(
-      "src/IO/Android/AssetManagerFile.cpp",
-      "src/IO/Android/AssetManagerFileSystem.cpp",
-      "src/IO/Android/LogcatLogger.cpp"
-    )
-  end
-
-  -- Config files
-  set_configdir("$(projectdir)")
-  add_configfiles("xmake/config/(**.in)")
-
-  -- INSTALLATION
-  -- ----------------------------------------
-
-  add_headerfiles("include/(**.h)")
-
-  add_installfiles("(schemas/**.bfbs)")
-  add_installfiles("(scripts/*.py)")
-
-  remove_installfiles("scripts/build_schemas.py", "scripts/__pycache__/*.pyc")
-target_end()
+  target("Static")
+    _setup("static")
+    add_defines("AM_BUILDSYSTEM_STATIC", { public = true })
+  target_end()
+namespace_end()
 
 -- Build tools if enabled
 if has_config("build_tools") and not is_plat("android") and not is_plat("iphoneos") then

@@ -18,10 +18,7 @@ target("sample_01")
   set_group("samples")
 
   -- Link to Amplitude Static library
-  add_deps("Amplitude", "build_sample_project")
-
-  -- Include main project include directories
-  add_includedirs("$(projectdir)/src", "$(projectdir)/tools/common", "$(builddir)/include")
+  add_deps("Amplitude::Shared", "build_sample_project")
 
   -- Source files
   add_files("main.cpp")
