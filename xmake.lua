@@ -206,7 +206,7 @@ local function _setup(kind)
   set_targetdir("$(builddir)/$(plat)/$(arch)/$(mode)/" .. kind)
 
   if not has_config("as_package") then
-    set_prefixdir("/", { libdir = "lib/" .. kind .. "/$(arch)-$(plat)", bindir = "lib/" .. kind .. "/$(arch)-$(plat)" })
+    set_prefixdir("/", { libdir = "lib/$(arch)-$(plat)/" .. kind, bindir = "lib/$(arch)-$(plat)/" .. kind })
   end
 
   if is_mode("debug") then
