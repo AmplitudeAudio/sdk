@@ -13,50 +13,50 @@
 --
 -- Inspired from AUI, licensed under MPL 2.0 - https://github.com/aui-framework/aui/blob/master/cmake/aui.build.cmake
 function am_apply_detected_platform_defines(target)
+  local platforms = {
+    ["AM_PLATFORM_WIN"] = 0,
+    ["AM_PLATFORM_LINUX"] = 0,
+    ["AM_PLATFORM_APPLE"] = 0,
+    ["AM_PLATFORM_MACOS"] = 0,
+    ["AM_PLATFORM_IOS"] = 0,
+    ["AM_PLATFORM_ANDROID"] = 0,
+    ["AM_PLATFORM_UNIX"] = 0,
+    ["AM_PLATFORM_EMSCRIPTEN"] = 0,
+  }
+
   -- Platforms
   if target:is_plat("windows") then
-    target:add("defines", "AM_PLATFORM_WIN=1")
-  else
-    target:add("defines", "AM_PLATFORM_WIN=0")
+    platforms["AM_PLATFORM_WIN"] = 1
   end
 
   if target:is_plat("linux") then
-    target:add("defines", "AM_PLATFORM_LINUX=1")
-  else
-    target:add("defines", "AM_PLATFORM_LINUX=0")
+    platforms["AM_PLATFORM_UNIX"] = 1
+    platforms["AM_PLATFORM_LINUX"] = 1
   end
 
   if target:is_plat("macosx") then
-    target:add("defines", "AM_PLATFORM_APPLE=1")
-    target:add("defines", "AM_PLATFORM_MACOS=1")
-  else
-    target:add("defines", "AM_PLATFORM_APPLE=0")
-    target:add("defines", "AM_PLATFORM_MACOS=0")
+    platforms["AM_PLATFORM_UNIX"] = 1
+    platforms["AM_PLATFORM_APPLE"] = 1
+    platforms["AM_PLATFORM_MACOS"] = 1
   end
 
   if target:is_plat("android") then
-    target:add("defines", "AM_PLATFORM_ANDROID=1")
-  else
-    target:add("defines", "AM_PLATFORM_ANDROID=0")
+    platforms["AM_PLATFORM_UNIX"] = 1
+    platforms["AM_PLATFORM_ANDROID"] = 1
   end
 
   if target:is_plat("iphoneos") then
-    target:add("defines", "AM_PLATFORM_IOS=1")
-  else
-    target:add("defines", "AM_PLATFORM_IOS=0")
+    platforms["AM_PLATFORM_UNIX"] = 1
+    platforms["AM_PLATFORM_APPLE"] = 1
+    platforms["AM_PLATFORM_IOS"] = 1
   end
 
   if target:is_plat("wasm") then
-    target:add("defines", "AM_PLATFORM_EMSCRIPTEN=1")
-  else
-    target:add("defines", "AM_PLATFORM_EMSCRIPTEN=0")
+    platforms["AM_PLATFORM_EMSCRIPTEN"] = 1
   end
 
-  if target:is_plat("linux") or target:is_plat("macosx") or target:is_plat("android") or target:is_plat("iphoneos") or
-      target:is_plat("wasm") then
-    target:add("defines", "AM_PLATFORM_UNIX=1")
-  else
-    target:add("defines", "AM_PLATFORM_UNIX=0")
+  for define, value in pairs(platforms) do
+    target:add("defines", string.format("%s=%d", define, value))
   end
 
   target:add("defines", "AM_SDK_PLATFORM=\"" .. target:arch() .. "-" .. target:plat() .. "\"")
