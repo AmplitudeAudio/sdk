@@ -87,8 +87,6 @@ on_config(function(target)
   end
 
   platform.am_apply_detected_platform_defines(target)
-
-  target:add("defines", "AM_SDK_PLATFORM=\"" .. config.get("arch") .. "-" .. config.get("plat") .. "\"")
 end)
 
 -- Dependencies
