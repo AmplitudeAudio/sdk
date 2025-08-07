@@ -150,7 +150,7 @@ end
 
 -- FFT and Accelerate Framework for Apple platforms
 if is_plat("macosx") or is_plat("iphoneos") then
-  add_frameworks("Accelerate")
+  add_frameworks("Accelerate", "CoreAudio", "AudioToolbox", "CoreFoundation")
   add_defines("AM_FFT_APPLE_ACCELERATE")
 end
 
@@ -261,6 +261,11 @@ local function _setup(kind)
       "src/IO/Android/AssetManagerFileSystem.cpp",
       "src/IO/Android/LogcatLogger.cpp"
     )
+  end
+
+  if is_plat("iphoneos") then
+    add_files("src/**.mm")
+    add_files("src/Utils/miniaudio/miniaudio.cpp", { cxxflags = "-x objective-c++" })
   end
 
   -- Config files

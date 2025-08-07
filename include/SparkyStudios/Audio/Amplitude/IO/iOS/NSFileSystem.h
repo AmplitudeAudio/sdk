@@ -23,90 +23,89 @@
 
 #include <SparkyStudios/Audio/Amplitude/IO/FileSystem.h>
 
-namespace SparkyStudios::Audio::Amplitude {
-/**
- * @brief An implementation of the FileSystem interface for iOS using
- * NSFileManager.
- *
- * This class provides file system operations for iOS using the NSFileManager
- * API.
- *
- * @ingroup io
- */
-class AM_API_PUBLIC NSFileSystem final : public FileSystem {
-public:
-  /**
-   * @brief Constructs a new NSFileSystem instance.
-   */
-  NSFileSystem();
+namespace SparkyStudios::Audio::Amplitude
+{
+    /**
+     * @brief An implementation of the FileSystem interface for iOS using
+     * NSFileManager.
+     *
+     * This class provides file system operations for iOS using the NSFileManager
+     * API.
+     *
+     * @ingroup io
+     */
+    class AM_API_PUBLIC NSFileSystem final : public FileSystem
+    {
+    public:
+        /**
+         * @brief Constructs a new NSFileSystem instance.
+         */
+        NSFileSystem();
 
-  /**
-   * @brief Destroys the NSFileSystem instance.
-   */
-  ~NSFileSystem() override;
+        /**
+         * @brief Destroys the NSFileSystem instance.
+         */
+        ~NSFileSystem() override;
 
-  /**
-   * @inherit
-   */
-  void SetBasePath(const AmOsString &basePath) override;
+        /**
+         * @inherit
+         */
+        void SetBasePath(const AmOsString& basePath) override;
 
-  /**
-   * @inherit
-   */
-  [[nodiscard]] const AmOsString &GetBasePath() const override;
+        /**
+         * @inherit
+         */
+        [[nodiscard]] const AmOsString& GetBasePath() const override;
 
-  /**
-   * @inherit
-   */
-  [[nodiscard]] AmOsString ResolvePath(const AmOsString &path) const override;
+        /**
+         * @inherit
+         */
+        [[nodiscard]] AmOsString ResolvePath(const AmOsString& path) const override;
 
-  /**
-   * @inherit
-   */
-  [[nodiscard]] bool Exists(const AmOsString &path) const override;
+        /**
+         * @inherit
+         */
+        [[nodiscard]] bool Exists(const AmOsString& path) const override;
 
-  /**
-   * @inherit
-   */
-  [[nodiscard]] bool IsDirectory(const AmOsString &path) const override;
+        /**
+         * @inherit
+         */
+        [[nodiscard]] bool IsDirectory(const AmOsString& path) const override;
 
-  /**
-   * @inherit
-   */
-  [[nodiscard]] AmOsString
-  Join(const std::vector<AmOsString> &parts) const override;
+        /**
+         * @inherit
+         */
+        [[nodiscard]] AmOsString Join(const std::vector<AmOsString>& parts) const override;
 
-  /**
-   * @inherit
-   */
-  [[nodiscard]] std::shared_ptr<File>
-  OpenFile(const AmOsString &path,
-           eFileOpenMode mode = eFileOpenMode_Read) const override;
+        /**
+         * @inherit
+         */
+        [[nodiscard]] std::shared_ptr<File> OpenFile(const AmOsString& path, eFileOpenMode mode = eFileOpenMode_Read) const override;
 
-  /**
-   * @inherit
-   */
-  void StartOpenFileSystem() override;
+        /**
+         * @inherit
+         */
+        void StartOpenFileSystem() override;
 
-  /**
-   * @inherit
-   */
-  bool TryFinalizeOpenFileSystem() override;
+        /**
+         * @inherit
+         */
+        bool TryFinalizeOpenFileSystem() override;
 
-  /**
-   * @inherit
-   */
-  void StartCloseFileSystem() override;
+        /**
+         * @inherit
+         */
+        void StartCloseFileSystem() override;
 
-  /**
-   * @inherit
-   */
-  bool TryFinalizeCloseFileSystem() override;
+        /**
+         * @inherit
+         */
+        bool TryFinalizeCloseFileSystem() override;
 
-private:
-  NSString *m_basePath;
-  NSFileManager *m_fileManager;
-};
+    private:
+        AmOsString m_basePath;
+        NSFileManager* m_fileManager;
+    };
 } // namespace SparkyStudios::Audio::Amplitude
 
 #endif // _AM_IO_IOS_NS_FILE_SYSTEM_H

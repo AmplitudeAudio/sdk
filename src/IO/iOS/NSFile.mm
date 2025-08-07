@@ -65,11 +65,11 @@ NSFile::~NSFile() {
 
 AmOsString NSFile::GetPath() const { return m_path; }
 
-bool NSFile::Eof() {
+bool NSFile::Eof() const {
   return [m_fileHandle offsetInFile] >= [m_fileHandle seekToEndOfFile];
 }
 
-AmSize NSFile::Read(AmUInt8Buffer dst, AmSize bytes) {
+AmSize NSFile::Read(AmUInt8Buffer dst, AmSize bytes) const {
   NSData *data = [m_fileHandle readDataOfLength:bytes];
   AmSize bytesRead = [data length];
   std::memcpy(dst, [data bytes], bytesRead);
@@ -82,7 +82,7 @@ AmSize NSFile::Write(AmConstUInt8Buffer src, AmSize bytes) {
   return bytes;
 }
 
-AmSize NSFile::Length() {
+AmSize NSFile::Length() const {
   unsigned long long currentOffset = [m_fileHandle offsetInFile];
   unsigned long long length = [m_fileHandle seekToEndOfFile];
   [m_fileHandle seekToFileOffset:currentOffset];
@@ -104,11 +104,11 @@ void NSFile::Seek(AmInt64 offset, eFileSeekOrigin origin) {
   }
 }
 
-AmSize NSFile::Position() {
+AmSize NSFile::Position() const {
   return static_cast<AmSize>([m_fileHandle offsetInFile]);
 }
 
-AmVoidPtr NSFile::GetPtr() { return (__bridge void *)m_fileHandle; }
+AmVoidPtr NSFile::GetPtr() const { return (__bridge void *)m_fileHandle; }
 
 bool NSFile::IsValid() const { return m_isValid; }
 } // namespace SparkyStudios::Audio::Amplitude
