@@ -22,19 +22,19 @@ NSFileSystem::NSFileSystem() : m_basePath(nil), m_fileManager(nil) {
   m_fileManager = [NSFileManager defaultManager];
 }
 
-NSFileSystem::~NSFileSystem() { [m_basePath release]; }
+NSFileSystem::~NSFileSystem() {  }
 
 void NSFileSystem::SetBasePath(const AmOsString &basePath) {
-  [m_basePath release];
-  m_basePath = [[NSString alloc] initWithUTF8String:basePath.c_str()];
+  m_basePath = basePath;
 }
 
 const AmOsString &NSFileSystem::GetBasePath() const {
-  return [m_basePath UTF8String];
+  return m_basePath;
 }
 
 AmOsString NSFileSystem::ResolvePath(const AmOsString &path) const {
-  NSString *resolvedPath = [m_basePath
+  NSString *basePath = [[NSString alloc] initWithUTF8String:m_basePath.c_str()];
+  NSString *resolvedPath = [basePath
       stringByAppendingPathComponent:[NSString
                                          stringWithUTF8String:path.c_str()]];
   return [resolvedPath UTF8String];

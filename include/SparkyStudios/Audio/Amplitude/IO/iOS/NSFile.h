@@ -52,17 +52,17 @@ namespace SparkyStudios::Audio::Amplitude
         /**
          * @inherit
          */
-        AmOsString GetPath() const override;
+        [[nodiscard]] AmOsString GetPath() const override;
 
         /**
          * @inherit
          */
-        bool Eof() override;
+        [[nodiscard]] bool Eof() const override;
 
         /**
          * @inherit
          */
-        AmSize Read(AmUInt8Buffer dst, AmSize bytes) override;
+        AmSize Read(AmUInt8Buffer dst, AmSize bytes) const override;
 
         /**
          * @inherit
@@ -72,7 +72,7 @@ namespace SparkyStudios::Audio::Amplitude
         /**
          * @inherit
          */
-        AmSize Length() override;
+        [[nodiscard]] AmSize Length() const override;
 
         /**
          * @inherit
@@ -82,12 +82,12 @@ namespace SparkyStudios::Audio::Amplitude
         /**
          * @inherit
          */
-        AmSize Position() override;
+        [[nodiscard]] AmSize Position() const override;
 
         /**
          * @inherit
          */
-        AmVoidPtr GetPtr() override;
+        [[nodiscard]] AmVoidPtr GetPtr() const override;
 
         /**
          * @inherit
