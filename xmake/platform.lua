@@ -59,6 +59,8 @@ function am_apply_detected_platform_defines(target)
     target:add("defines", "AM_PLATFORM_UNIX=0")
   end
 
+  target:add("defines", "AM_SDK_PLATFORM=\"" .. target:arch() .. "-" .. target:plat() .. "\"")
+
   -- Compilers
   local cc = target:tool("cc")
   local cxx = target:tool("cxx")
