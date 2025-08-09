@@ -111,8 +111,14 @@ namespace SparkyStudios::Audio::Amplitude
 
     void EventAction::ExecutePlay(const Entity& entity)
     {
-        if (entity.Valid())
+        if (_scope == Scope_Entity)
         {
+            if (!entity.Valid())
+            {
+                amLogWarning("Running an entity scoped event action without an entity.");
+                return;
+            }
+
             for (auto&& target : _targets)
             {
                 _playingChannels.push_back(amEngine->Play(target, entity));
@@ -131,6 +137,12 @@ namespace SparkyStudios::Audio::Amplitude
     {
         if (_scope == Scope_Entity)
         {
+            if (!entity.Valid())
+            {
+                amLogWarning("Running an entity scoped event action without an entity.");
+                return;
+            }
+
             for (auto&& target : _targets)
             {
                 for (auto&& item : entity.GetState()->GetPlayingSoundList())
@@ -161,6 +173,12 @@ namespace SparkyStudios::Audio::Amplitude
     {
         if (_scope == Scope_Entity)
         {
+            if (!entity.Valid())
+            {
+                amLogWarning("Running an entity scoped event action without an entity.");
+                return;
+            }
+
             for (auto&& target : _targets)
             {
                 for (auto&& item : entity.GetState()->GetPlayingSoundList())
@@ -191,6 +209,12 @@ namespace SparkyStudios::Audio::Amplitude
     {
         if (_scope == Scope_Entity)
         {
+            if (!entity.Valid())
+            {
+                amLogWarning("Running an entity scoped event action without an entity.");
+                return;
+            }
+
             for (auto&& target : _targets)
             {
                 for (auto&& item : entity.GetState()->GetPlayingSoundList())
