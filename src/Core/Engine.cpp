@@ -639,9 +639,11 @@ namespace SparkyStudios::Audio::Amplitude
 
     bool EngineImpl::Initialize(const AmOsString& configFile)
     {
-        if (const AmOsString& configFilePath = _fs->ResolvePath(configFile); !LoadFile(_fs->OpenFile(configFilePath), &_configSrc))
+        _configFilePath = _fs->ResolvePath(configFile);
+
+        if (!LoadFile(_fs->OpenFile(_configFilePath), &_configSrc))
         {
-            amLogError("Could not load audio config file at path '" AM_OS_CHAR_FMT "'.", configFile.c_str());
+            amLogError("Could not load audio config file at path '" AM_OS_CHAR_FMT "'.", _configFilePath.c_str());
             return false;
         }
 
@@ -2452,6 +2454,11 @@ namespace SparkyStudios::Audio::Amplitude
     std::shared_ptr<EngineInternalState> EngineImpl::GetState() const
     {
         return _state;
+    }
+
+    const AmOsString& EngineImpl::GetConfigurationPath() const
+    {
+        return _configFilePath;
     }
 
     AmReal32 EngineImpl::GetSoundSpeed() const

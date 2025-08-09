@@ -1642,6 +1642,13 @@ namespace SparkyStudios::Audio::Amplitude
 #pragma region Engine State and Configuration
 
         /**
+         * @brief Gets the path to the loaded engine configuration file.
+         *
+         * @return The path to the engine configuration file.
+         */
+        [[nodiscard]] virtual const AmOsString& GetConfigurationPath() const = 0;
+
+        /**
          * @brief Gets the speed of sound, as set in the loaded engine configuration file.
          *
          * @return The speed of sound.

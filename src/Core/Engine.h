@@ -185,6 +185,7 @@ namespace SparkyStudios::Audio::Amplitude
         void SetRtpcValue(const AmString& name, double value) const override;
         [[nodiscard]] std::shared_ptr<Driver> GetDriver() const override;
         [[nodiscard]] Amplimix* GetMixer() const override;
+        [[nodiscard]] const AmOsString& GetConfigurationPath() const override;
         [[nodiscard]] AmReal32 GetSoundSpeed() const override;
         [[nodiscard]] AmReal32 GetDopplerFactor() const override;
         [[nodiscard]] AmUInt32 GetSamplesPerStream() const override;
@@ -211,6 +212,9 @@ namespace SparkyStudios::Audio::Amplitude
         AmMutexHandle _frameThreadMutex;
         // The list of pending next frame callbacks.
         mutable std::queue<std::function<void(AmTime)>> _nextFrameCallbacks;
+
+        // The path to the config file.
+        AmOsString _configFilePath;
 
         // Hold the engine config file contents.
         AmString _configSrc;
