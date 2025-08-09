@@ -976,13 +976,13 @@ namespace SparkyStudios::Audio::Amplitude
         return success;
     }
 
-    bool EngineImpl::LoadSoundBankFromMemory(const AmUInt8* fileData)
+    bool EngineImpl::LoadSoundBankFromMemoryView(AmConstVoidPtr ptr, AmSize size)
     {
         AmBankID outID = kAmInvalidObjectId;
-        return LoadSoundBankFromMemory(fileData, outID);
+        return LoadSoundBankFromMemoryView(ptr, size, outID);
     }
 
-    bool EngineImpl::LoadSoundBankFromMemory(const AmUInt8* fileData, AmBankID& outID)
+    bool EngineImpl::LoadSoundBankFromMemoryView(AmConstVoidPtr ptr, AmSize size, AmBankID& outID)
     {
         outID = kAmInvalidObjectId;
         bool success = true;
@@ -992,7 +992,7 @@ namespace SparkyStudios::Audio::Amplitude
         if (const auto findIt = _state->sound_bank_id_map.find(filename); findIt == _state->sound_bank_id_map.end() ||
             (findIt != _state->sound_bank_id_map.end() && !_state->sound_bank_map.contains(findIt->second)))
         {
-            success = soundBank->InitializeFromMemory(fileData, this);
+            success = soundBank->InitializeFromMemoryView(ptr, size, this);
 
             if (success)
             {
@@ -1014,28 +1014,6 @@ namespace SparkyStudios::Audio::Amplitude
         }
 
         return success;
-    }
-
-    bool EngineImpl::LoadSoundBankFromMemoryView(void* ptr, AmSize size)
-    {
-        AmBankID outID = kAmInvalidObjectId;
-        return LoadSoundBankFromMemoryView(ptr, size, outID);
-    }
-
-    bool EngineImpl::LoadSoundBankFromMemoryView(void* ptr, AmSize size, AmBankID& outID)
-    {
-        outID = kAmInvalidObjectId;
-
-        MemoryFile mf;
-        AmString dst;
-
-        mf.OpenMem(static_cast<AmConstUInt8Buffer>(ptr), size, false, false);
-        dst.assign(size + 1, 0);
-
-        if (const AmUInt32 len = mf.Read(reinterpret_cast<AmUInt8Buffer>(&dst[0]), mf.Length()); len != size)
-            return false;
-
-        return LoadSoundBankFromMemory(reinterpret_cast<const AmUInt8*>(dst.c_str()), outID);
     }
 
     void EngineImpl::UnloadSoundBank(const AmOsString& filename)
