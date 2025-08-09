@@ -355,12 +355,17 @@ namespace SparkyStudios::Audio::Amplitude
         return InitializeInternal(engine);
     }
 
-    bool SoundBank::InitializeFromMemory(const AmUInt8* fileData, Engine* engine)
+    bool SoundBank::InitializeFromMemoryView(AmConstVoidPtr ptr, AmUInt32 size, Engine* engine)
     {
-        if (!fileData)
+        if (!ptr)
             return false;
 
-        _soundBankDefSource = reinterpret_cast<const char*>(fileData);
+        MemoryFile mf;
+        mf.OpenMem(static_cast<AmConstUInt8Buffer>(ptr), size, false, false);
+        _soundBankDefSource.assign(size + 1, 0);
+
+        if (const AmUInt32 len = mf.Read(reinterpret_cast<AmUInt8Buffer>(&_soundBankDefSource[0]), mf.Length()); len != size)
+            return false;
 
         return InitializeInternal(engine);
     }

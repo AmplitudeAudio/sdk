@@ -283,41 +283,6 @@ namespace SparkyStudios::Audio::Amplitude
          * @ref StartLoadSoundFiles "`StartLoadSoundFiles()`" to trigger the loading
          * of sound files on a separate thread.
          *
-         * @param[in] fileData The sound bank data to be loaded.
-         *
-         * @note The @c fileData pointer should be null terminated.
-         *
-         * @warning The @c fileData pointer should remain valid until the sound bank is unloaded.
-         *
-         * @return @c true when the sound bank is successfully loaded, @c false otherwise.
-         */
-        virtual bool LoadSoundBankFromMemory(const AmUInt8* fileData) = 0;
-
-        /**
-         * @brief Loads a sound bank from memory.
-         *
-         * This method queues the sound files in that sound bank for loading. Call
-         * @ref StartLoadSoundFiles "`StartLoadSoundFiles()`" to trigger the loading
-         * of sound files on a separate thread.
-         *
-         * @param[in] fileData The sound bank data to be loaded.
-         * @param[out] outID The ID of the loaded sound bank.
-         *
-         * @note The @c fileData pointer should be null terminated.
-         *
-         * @warning The @c fileData pointer should remain valid until the sound bank is unloaded.
-         *
-         * @return @c true when the sound bank is successfully loaded, @c false otherwise.
-         */
-        virtual bool LoadSoundBankFromMemory(const AmUInt8* fileData, AmBankID& outID) = 0;
-
-        /**
-         * @brief Loads a sound bank from memory.
-         *
-         * This method queues the sound files in that sound bank for loading. Call
-         * @ref StartLoadSoundFiles "`StartLoadSoundFiles()`" to trigger the loading
-         * of sound files on a separate thread.
-         *
          * @param[in] ptr The pointer to the sound bank data to be loaded.
          * @param[in] size The size of the memory to read.
          *
@@ -327,7 +292,7 @@ namespace SparkyStudios::Audio::Amplitude
          *
          * @return @c true when the sound bank is successfully loaded, @c false otherwise.
          */
-        virtual bool LoadSoundBankFromMemoryView(AmVoidPtr ptr, AmSize size) = 0;
+        virtual bool LoadSoundBankFromMemoryView(AmConstVoidPtr ptr, AmSize size) = 0;
 
         /**
          * @brief Loads a sound bank from memory.
@@ -346,7 +311,7 @@ namespace SparkyStudios::Audio::Amplitude
          *
          * @return @c true when the sound bank is successfully loaded, @c false otherwise.
          */
-        virtual bool LoadSoundBankFromMemoryView(AmVoidPtr ptr, AmSize size, AmBankID& outID) = 0;
+        virtual bool LoadSoundBankFromMemoryView(AmConstVoidPtr ptr, AmSize size, AmBankID& outID) = 0;
 
         /**
          * @brief Unloads a sound bank given its filename.
