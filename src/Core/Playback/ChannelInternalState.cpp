@@ -306,12 +306,6 @@ namespace SparkyStudios::Audio::Amplitude
         return _pitch;
     }
 
-    void ChannelInternalState::SetDirectivity(AmReal32 directivity, AmReal32 directivitySharpness)
-    {
-        _directivity = _entity.Valid() ? directivity : 0.0f;
-        _directivitySharpness = _entity.Valid() ? directivitySharpness : 1.0f;
-    }
-
     void ChannelInternalState::Devirtualize(ChannelInternalState* other)
     {
         AMPLITUDE_ASSERT(!_realChannel.Valid());
