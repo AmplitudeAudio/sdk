@@ -714,8 +714,9 @@ namespace SparkyStudios::Audio::Amplitude
 
         if (_audioDriver == nullptr)
         {
-            amLogCritical("Failed to load the specified driver, the default driver, and the null driver. Please check your engine "
-                          "configuration, and ensure that all the needed plugins are loaded.");
+            amLogCritical(
+                "Failed to load the specified driver, the default driver, and the null driver. Please check your engine "
+                "configuration, and ensure that all the needed plugins are loaded.");
             Deinitialize();
             return false;
         }
@@ -746,8 +747,9 @@ namespace SparkyStudios::Audio::Amplitude
         }
         else if (_state->panning_mode != ePanningMode_Stereo)
         {
-            amLogCritical("The HRTF configuration is missing, but the panning mode is not stereo. Please provide an HRTF configuration, or "
-                          "set the panning mode to Stereo.");
+            amLogCritical(
+                "The HRTF configuration is missing, but the panning mode is not stereo. Please provide an HRTF configuration, or "
+                "set the panning mode to Stereo.");
             Deinitialize();
             return false;
         }
@@ -987,11 +989,13 @@ namespace SparkyStudios::Audio::Amplitude
         outID = kAmInvalidObjectId;
         bool success = true;
 
-        AmUniquePtr<SoundBank, eMemoryPoolKind_Engine> soundBank(ampoolnew(eMemoryPoolKind_Engine, SoundBank));
-        const AmOsString filename = AM_STRING_TO_OS_STRING(soundBank->GetName());
+        const auto* soundBankDefinition = Amplitude::GetSoundBankDefinition(ptr);
+        const AmOsString filename = AM_STRING_TO_OS_STRING(soundBankDefinition->name()->str());
+
         if (const auto findIt = _state->sound_bank_id_map.find(filename); findIt == _state->sound_bank_id_map.end() ||
             (findIt != _state->sound_bank_id_map.end() && !_state->sound_bank_map.contains(findIt->second)))
         {
+            AmUniquePtr<SoundBank, eMemoryPoolKind_Engine> soundBank(ampoolnew(eMemoryPoolKind_Engine, SoundBank));
             success = soundBank->InitializeFromMemoryView(ptr, size, this);
 
             if (success)
