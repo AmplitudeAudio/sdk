@@ -106,17 +106,6 @@ namespace SparkyStudios::Audio::Amplitude
         virtual AmReal32 GetGain() const = 0;
 
         /**
-         * @brief Gets the stereo pan of the audio data in the layer.
-         *
-         * The stereo pan of the audio data in the layer is a value between -1.0 (left) and 1.0 (right). A
-         * value of -1.0 will render the audio data to the left speaker, a value of 1.0 will render the audio data
-         * to the right speaker, and a value of 0.0 will render the audio data to the center speaker.
-         *
-         * @return The stereo pan of the audio data in the layer.
-         */
-        virtual AmReal32 GetStereoPan() const = 0;
-
-        /**
          * @brief Gets the pitch of the audio data in the layer.
          *
          * This value is affected by the Doppler effect. A value of 1.0 will play the audio data at its original pitch,

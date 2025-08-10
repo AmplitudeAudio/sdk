@@ -340,14 +340,6 @@ namespace SparkyStudios::Audio::Amplitude
         const ListenerList& listeners,
         const AmVector3& location);
 
-    // Given a vector in listener space, return a vector inside a unit circle
-    // representing the direction from the listener to the sound. A value of (-1, 0)
-    // means the sound is directly to the listener's left, while a value of (1, 0)
-    // means the sound is directly to the listener's right. Likewise, values of
-    // (0, 1) and (0, -1) mean the sound is directly in front or behind the
-    // listener, respectively.
-    AmVector2 CalculatePan(const AmVector3& listenerSpaceLocation);
-
     bool LoadFile(const std::shared_ptr<File>& file, AmString* dest);
 
     AmUInt32 GetMaxNumberOfChannels(const EngineConfigDefinition* config);

@@ -265,16 +265,6 @@ namespace SparkyStudios::Audio::Amplitude
         _targetFadeOutState = targetState;
     }
 
-    void ChannelInternalState::SetPan(const AmVector2& pan)
-    {
-        _pan = pan;
-
-        if (!Valid())
-            return;
-
-        _realChannel.SetPan(pan);
-    }
-
     void ChannelInternalState::SetGain(const AmReal32 gain)
     {
         if (_channelState == eChannelPlaybackState_FadingOut || _channelState == eChannelPlaybackState_FadingIn ||

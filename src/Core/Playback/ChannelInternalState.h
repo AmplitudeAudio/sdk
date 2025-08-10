@@ -58,7 +58,6 @@ namespace SparkyStudios::Audio::Amplitude
             , _userGain(1.0f)
             , _gain(1.0f)
             , _realGain(1.0f)
-            , _pan()
             , _pitch(1.0f)
             , _location()
             , _channelStateId(kAmInvalidObjectId)
@@ -222,15 +221,6 @@ namespace SparkyStudios::Audio::Amplitude
         // Fade out over the specified number of milliseconds.
         void FadeOut(AmTime duration, eChannelPlaybackState targetState = eChannelPlaybackState_Stopped);
 
-        // Sets the pan based on a position in a unit circle.
-        void SetPan(const AmVector2& pan);
-
-        // Returns the pan of this channel.
-        [[nodiscard]] AM_INLINE const AmVector2& GetPan() const
-        {
-            return _pan;
-        }
-
         // Devirtualizes a virtual channel. This transfers ownership of the given
         // channel's channel_id to this channel.
         void Devirtualize(ChannelInternalState* other);
@@ -390,9 +380,6 @@ namespace SparkyStudios::Audio::Amplitude
         // The gain of this channel.
         AmReal32 _gain;
         AmReal32 _realGain;
-
-        // The pan of this channel for 2D rendering.
-        AmVector2 _pan;
 
         // The pitch of this channel.
         AmReal32 _pitch;
