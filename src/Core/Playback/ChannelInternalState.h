@@ -61,8 +61,6 @@ namespace SparkyStudios::Audio::Amplitude
             , _pan()
             , _pitch(1.0f)
             , _location()
-            , _directivity(0.0f)
-            , _directivitySharpness(1.0f)
             , _channelStateId(kAmInvalidObjectId)
             , _dopplerFactors()
         {}
@@ -208,34 +206,6 @@ namespace SparkyStudios::Audio::Amplitude
         void SetPitch(AmReal32 pitch);
 
         [[nodiscard]] AmReal32 GetPitch() const;
-
-        /**
-         * @brief Sets the directivity of souund.
-         *
-         * @param directivity The directivity of the sound.
-         * @param directivitySharpness The sharpness of the directivity.
-         */
-        void SetDirectivity(AmReal32 directivity, AmReal32 directivitySharpness);
-
-        /**
-         * @brief Get the directivity of the sound source.
-         *
-         * @return The directivity.
-         */
-        [[nodiscard]] AM_INLINE AmReal32 GetDirectivity() const
-        {
-            return _directivity;
-        }
-
-        /**
-         * @brief Get the sharpness of the sound source directivity.
-         *
-         * @return The directivity sharpness.
-         */
-        [[nodiscard]] AM_INLINE AmReal32 GetDirectivitySharpness() const
-        {
-            return _directivitySharpness;
-        }
 
         // Immediately stop the audio. May cause clicking.
         void Halt();
@@ -429,9 +399,6 @@ namespace SparkyStudios::Audio::Amplitude
 
         // The location of this channel's sound.
         AmVector3 _location;
-
-        AmReal32 _directivity;
-        AmReal32 _directivitySharpness;
 
         AmUInt64 _channelStateId;
 
