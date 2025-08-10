@@ -479,16 +479,15 @@ namespace SparkyStudios::Audio::Amplitude
     }
 
     AmUInt32 AmplimixImpl::Play(
-        SoundData* sound, PlayStateFlag flag, AmReal32 gain, AmReal32 pan, AmReal32 pitch, AmReal32 speed, AmUInt32 id, AmUInt32 layer)
+        SoundData* sound, PlayStateFlag flag, AmReal32 gain, AmReal32 pitch, AmReal32 speed, AmUInt32 id, AmUInt32 layer)
     {
-        return PlayAdvanced(sound, flag, gain, pan, pitch, speed, 0, sound->length, id, layer);
+        return PlayAdvanced(sound, flag, gain, pitch, speed, 0, sound->length, id, layer);
     }
 
     AmUInt32 AmplimixImpl::PlayAdvanced(
         SoundData* sound,
         PlayStateFlag flag,
         AmReal32 gain,
-        AmReal32 pan,
         AmReal32 pitch,
         AmReal32 speed,
         AmUInt64 startFrame,
@@ -537,8 +536,6 @@ namespace SparkyStudios::Audio::Amplitude
 
             // store the gain
             AMPLIMIX_STORE(&lay->gain, gain);
-            // store the pan
-            AMPLIMIX_STORE(&lay->pan, pan);
             // store the pitch
             AMPLIMIX_STORE(&lay->pitch, pitch);
             // store the playback speed
@@ -621,7 +618,7 @@ namespace SparkyStudios::Audio::Amplitude
         return true;
     }
 
-    bool AmplimixImpl::SetGainPan(AmUInt32 id, AmUInt32 layer, AmReal32 gain, AmReal32 pan)
+    bool AmplimixImpl::SetGain(AmUInt32 id, AmUInt32 layer, AmReal32 gain)
     {
         auto* lay = GetLayer(layer);
         AmplimixLayerMutexLocker lock(lay);
@@ -633,13 +630,8 @@ namespace SparkyStudios::Audio::Amplitude
             return false;
         }
 
-        if (lay->snd != nullptr && lay->snd->format.GetNumChannels() == 1)
-            pan = 0.0f;
-
         // store the gain
         AMPLIMIX_STORE(&lay->gain, gain);
-        // store the pan
-        AMPLIMIX_STORE(&lay->pan, pan);
 
         // return success
         return true;
@@ -862,8 +854,9 @@ namespace SparkyStudios::Audio::Amplitude
 
         if (_pipeline == nullptr || layer->pipeline == nullptr)
         {
-            amLogWarning("No active pipeline is set, this means no sound will be rendered. You should configure the Amplimix "
-                         "pipeline in your engine configuration file.");
+            amLogWarning(
+                "No active pipeline is set, this means no sound will be rendered. You should configure the Amplimix "
+                "pipeline in your engine configuration file.");
             return;
         }
 
@@ -1181,11 +1174,6 @@ namespace SparkyStudios::Audio::Amplitude
     AmReal32 AmplimixLayerImpl::GetGain() const
     {
         return AMPLIMIX_LOAD(&gain);
-    }
-
-    AmReal32 AmplimixLayerImpl::GetStereoPan() const
-    {
-        return AMPLIMIX_LOAD(&pan);
     }
 
     AmReal32 AmplimixLayerImpl::GetPitch() const

@@ -65,7 +65,6 @@ namespace SparkyStudios::Audio::Amplitude
         _Atomic(PlayStateFlag) flag; // state
         _Atomic(AmUInt64) cursor; // cursor
         _Atomic(AmReal32) gain; // gain
-        _Atomic(AmReal32) pan; // pan
         _Atomic(AmReal32) pitch; // pitch
         SoundData* snd = nullptr; // sound data
         AmUInt64 start = 0, end = 0; // start and end frames
@@ -99,7 +98,6 @@ namespace SparkyStudios::Audio::Amplitude
         [[nodiscard]] AmUInt64 GetEndPosition() const override;
         [[nodiscard]] AmUInt64 GetCurrentPosition() const override;
         [[nodiscard]] AmReal32 GetGain() const override;
-        [[nodiscard]] AmReal32 GetStereoPan() const override;
         [[nodiscard]] AmReal32 GetPitch() const override;
         [[nodiscard]] AmReal32 GetObstruction() const override;
         [[nodiscard]] AmReal32 GetOcclusion() const override;
@@ -169,14 +167,12 @@ namespace SparkyStudios::Audio::Amplitude
 
         AmUInt64 Mix(AudioBuffer** outBuffer, AmUInt64 frameCount) override;
 
-        AmUInt32 Play(
-            SoundData* sound, PlayStateFlag flag, AmReal32 gain, AmReal32 pan, AmReal32 pitch, AmReal32 speed, AmUInt32 id, AmUInt32 layer);
+        AmUInt32 Play(SoundData* sound, PlayStateFlag flag, AmReal32 gain, AmReal32 pitch, AmReal32 speed, AmUInt32 id, AmUInt32 layer);
 
         AmUInt32 PlayAdvanced(
             SoundData* sound,
             PlayStateFlag flag,
             AmReal32 gain,
-            AmReal32 pan,
             AmReal32 pitch,
             AmReal32 speed,
             AmUInt64 startFrame,
@@ -188,7 +184,7 @@ namespace SparkyStudios::Audio::Amplitude
 
         bool SetOcclusion(AmUInt32 id, AmUInt32 layer, AmReal32 occlusion);
 
-        bool SetGainPan(AmUInt32 id, AmUInt32 layer, AmReal32 gain, AmReal32 pan);
+        bool SetGain(AmUInt32 id, AmUInt32 layer, AmReal32 gain);
 
         bool SetPitch(AmUInt32 id, AmUInt32 layer, AmReal32 pitch);
 

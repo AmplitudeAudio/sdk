@@ -1209,18 +1209,8 @@ namespace SparkyStudios::Audio::Amplitude
         return &*bestListener;
     }
 
-    AmVector2 CalculatePan(const AmVector3& listenerSpaceLocation)
-    {
-        if (SquaredLength(listenerSpaceLocation) <= kEpsilon)
-            return kVector2Zero;
-
-        const AmVector3 direction = Normalize(listenerSpaceLocation);
-        return { Dot(kVector3UnitX, direction), Dot(kVector3UnitY, direction) };
-    }
-
-    static void CalculateGainPanPitch(
+    static void CalculateGainAndPitch(
         AmReal32* gain,
-        AmVector2* pan,
         AmReal32* pitch,
         const ListenerInternalState* listener,
         const ChannelInternalState* channel,
@@ -1232,7 +1222,6 @@ namespace SparkyStudios::Audio::Amplitude
     {
         *gain = soundGain * bus->GetGain() * userGain;
         *pitch = soundPitch;
-        *pan = kVector2Zero; // TODO: This may be removed in the future, since panning is handled automatically in pipeline nodes..
 
         if (spatialization != eSpatialization_None && listener != nullptr && channel != nullptr)
             *pitch *= channel->GetDopplerFactor(listener->GetId());
@@ -2220,7 +2209,6 @@ namespace SparkyStudios::Audio::Amplitude
             return;
 
         AmReal32 gain;
-        AmVector2 pan;
         AmReal32 pitch;
 
         // Find the best listener for this channel.
@@ -2228,21 +2216,21 @@ namespace SparkyStudios::Audio::Amplitude
 
         if (const SwitchContainer* switchContainer = channel->GetSwitchContainer(); switchContainer != nullptr)
         {
-            CalculateGainPanPitch(
-                &gain, &pan, &pitch, listener, nullptr, switchContainer->GetGain().GetValue(), switchContainer->GetPitch().GetValue(),
+            CalculateGainAndPitch(
+                &gain, &pitch, listener, nullptr, switchContainer->GetGain().GetValue(), switchContainer->GetPitch().GetValue(),
                 switchContainer->GetBus().GetState(), switchContainer->GetSpatialization(), channel->GetUserGain());
         }
         else if (const Collection* collection = channel->GetCollection(); collection != nullptr)
         {
-            CalculateGainPanPitch(
-                &gain, &pan, &pitch, listener, nullptr, collection->GetGain().GetValue(), collection->GetPitch().GetValue(),
+            CalculateGainAndPitch(
+                &gain, &pitch, listener, nullptr, collection->GetGain().GetValue(), collection->GetPitch().GetValue(),
                 collection->GetBus().GetState(), collection->GetSpatialization(), channel->GetUserGain());
         }
         else if (const Sound* sound = channel->GetSound(); sound != nullptr)
         {
-            CalculateGainPanPitch(
-                &gain, &pan, &pitch, listener, nullptr, sound->GetGain().GetValue(), sound->GetPitch().GetValue(),
-                sound->GetBus().GetState(), sound->GetSpatialization(), channel->GetUserGain());
+            CalculateGainAndPitch(
+                &gain, &pitch, listener, nullptr, sound->GetGain().GetValue(), sound->GetPitch().GetValue(), sound->GetBus().GetState(),
+                sound->GetSpatialization(), channel->GetUserGain());
         }
         else
         {
@@ -2252,7 +2240,6 @@ namespace SparkyStudios::Audio::Amplitude
         AssignBestRoom(channel, channel->GetLocation(), state);
 
         channel->SetGain(gain);
-        channel->SetPan(pan);
         channel->SetPitch(pitch);
         channel->SetListener(Listener(listener));
     }
@@ -2601,11 +2588,10 @@ namespace SparkyStudios::Audio::Amplitude
 
         // Find where it belongs in the list.
         AmReal32 gain;
-        AmVector2 pan;
         AmReal32 pitch;
-        CalculateGainPanPitch(
-            &gain, &pan, &pitch, listener, nullptr, handle->GetGain().GetValue(), handle->GetPitch().GetValue(),
-            handle->GetBus().GetState(), handle->GetSpatialization(), userGain);
+        CalculateGainAndPitch(
+            &gain, &pitch, listener, nullptr, handle->GetGain().GetValue(), handle->GetPitch().GetValue(), handle->GetBus().GetState(),
+            handle->GetSpatialization(), userGain);
         const AmReal32 priority = gain * handle->GetPriority().GetValue();
         const auto insertionPoint = FindInsertionPoint(&_state->playing_channel_list, priority);
 
@@ -2642,7 +2628,6 @@ namespace SparkyStudios::Audio::Amplitude
         AssignBestRoom(newChannel, location, _state);
 
         newChannel->SetGain(gain);
-        newChannel->SetPan(pan);
         newChannel->SetPitch(pitch);
         newChannel->SetLocation(location);
         newChannel->SetListener(Listener(listener));
@@ -2676,11 +2661,10 @@ namespace SparkyStudios::Audio::Amplitude
 
         // Find where it belongs in the list.
         AmReal32 gain;
-        AmVector2 pan;
         AmReal32 pitch;
-        CalculateGainPanPitch(
-            &gain, &pan, &pitch, listener, nullptr, handle->GetGain().GetValue(), handle->GetPitch().GetValue(),
-            handle->GetBus().GetState(), handle->GetSpatialization(), userGain);
+        CalculateGainAndPitch(
+            &gain, &pitch, listener, nullptr, handle->GetGain().GetValue(), handle->GetPitch().GetValue(), handle->GetBus().GetState(),
+            handle->GetSpatialization(), userGain);
         const AmReal32 priority = gain * handle->GetPriority().GetValue();
         const auto insertionPoint = FindInsertionPoint(&_state->playing_channel_list, priority);
 
@@ -2717,7 +2701,6 @@ namespace SparkyStudios::Audio::Amplitude
         AssignBestRoom(newChannel, location, _state);
 
         newChannel->SetGain(gain);
-        newChannel->SetPan(pan);
         newChannel->SetPitch(pitch);
         newChannel->SetLocation(location);
         newChannel->SetListener(Listener(listener));
@@ -2750,11 +2733,10 @@ namespace SparkyStudios::Audio::Amplitude
 
         // Find where it belongs in the list.
         AmReal32 gain;
-        AmVector2 pan;
         AmReal32 pitch;
-        CalculateGainPanPitch(
-            &gain, &pan, &pitch, listener, nullptr, handle->GetGain().GetValue(), handle->GetPitch().GetValue(),
-            handle->GetBus().GetState(), handle->GetSpatialization(), userGain);
+        CalculateGainAndPitch(
+            &gain, &pitch, listener, nullptr, handle->GetGain().GetValue(), handle->GetPitch().GetValue(), handle->GetBus().GetState(),
+            handle->GetSpatialization(), userGain);
         const AmReal32 priority = gain * handle->GetPriority().GetValue();
         const auto insertionPoint = FindInsertionPoint(&_state->playing_channel_list, priority);
 
@@ -2791,7 +2773,6 @@ namespace SparkyStudios::Audio::Amplitude
         AssignBestRoom(newChannel, location, _state);
 
         newChannel->SetGain(gain);
-        newChannel->SetPan(pan);
         newChannel->SetPitch(pitch);
         newChannel->SetLocation(location);
         newChannel->SetListener(Listener(listener));
