@@ -20,6 +20,7 @@
 #include <SparkyStudios/Audio/Amplitude/Sound/SwitchContainer.h>
 
 #include <Sound/SoundObject.h>
+#include <Sound/Switch.h>
 
 #include "switch_container_definition_generated.h"
 
@@ -27,8 +28,7 @@ namespace SparkyStudios::Audio::Amplitude
 {
     class SwitchContainerImpl final
         : public SwitchContainer
-        , public SoundObjectImpl
-        , public AssetImpl<AmSwitchContainerID, SwitchContainerDefinition>
+        , public SoundObjectImpl<AmSwitchContainerID, SwitchContainerDefinition>
     {
     public:
         /**

@@ -30,8 +30,7 @@ namespace SparkyStudios::Audio::Amplitude
 {
     class CollectionImpl final
         : public Collection
-        , public SoundObjectImpl
-        , public AssetImpl<AmSoundID, CollectionDefinition>
+        , public SoundObjectImpl<AmSoundID, CollectionDefinition>
     {
         friend class SoundImpl;
 
