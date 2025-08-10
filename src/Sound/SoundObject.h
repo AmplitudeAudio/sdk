@@ -19,12 +19,18 @@
 
 #include <SparkyStudios/Audio/Amplitude/Sound/SoundObject.h>
 
+#include <Sound/Attenuation.h>
+#include <Sound/Effect.h>
+
 namespace SparkyStudios::Audio::Amplitude
 {
     class EffectImpl;
     class AttenuationImpl;
 
-    class SoundObjectImpl : public SoundObject
+    template<typename Id, class Definition>
+    class SoundObjectImpl
+        : public SoundObject
+        , public AssetImpl<Id, Definition>
     {
     public:
         SoundObjectImpl()
@@ -66,12 +72,18 @@ namespace SparkyStudios::Audio::Amplitude
         /**
          * @copydoc SoundObject::GetEffect
          */
-        [[nodiscard]] const Effect* GetEffect() const override;
+        [[nodiscard]] AM_INLINE const Effect* GetEffect() const override
+        {
+            return m_effect;
+        }
 
         /**
          * @copydoc SoundObject::GetAttenuation
          */
-        [[nodiscard]] const Attenuation* GetAttenuation() const override;
+        [[nodiscard]] AM_INLINE const Attenuation* GetAttenuation() const override
+        {
+            return m_attenuation;
+        }
 
         /**
          * @copydoc SoundObject::GetBus

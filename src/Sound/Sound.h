@@ -77,9 +77,8 @@ namespace SparkyStudios::Audio::Amplitude
 
     class SoundImpl final
         : public Sound
-        , public SoundObjectImpl
+        , public SoundObjectImpl<AmSoundID, SoundDefinition>
         , public ResourceImpl
-        , public AssetImpl<AmSoundID, SoundDefinition>
     {
         friend class CollectionImpl;
         friend class SoundInstance;
