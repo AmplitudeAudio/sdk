@@ -149,6 +149,12 @@ namespace SparkyStudios::Audio::Amplitude
         return _state->GetEnvironments();
     }
 
+    AmUInt64 Entity::GetActiveChannelCount() const
+    {
+        AMPLITUDE_ASSERT(Valid());
+        return _state->GetPlayingSoundList().size();
+    }
+
     EntityInternalState* Entity::GetState() const
     {
         return _state;

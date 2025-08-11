@@ -2526,6 +2526,18 @@ namespace SparkyStudios::Audio::Amplitude
         return _state->hrir_sphere;
     }
 
+    Channel EngineImpl::GetChannel(AmChannelID channelID) const
+    {
+        const auto findIt = std::ranges::find_if(
+            _state->channel_state_memory,
+            [channelID](const ChannelInternalState& state)
+            {
+                return (state.GetChannelStateId() == channelID);
+            });
+
+        return Channel(findIt != _state->channel_state_memory.end() ? &*findIt : nullptr);
+    }
+
 #pragma endregion
 
     Channel EngineImpl::PlayScopedSwitchContainer(
