@@ -1746,6 +1746,15 @@ namespace SparkyStudios::Audio::Amplitude
          */
         [[nodiscard]] virtual std::shared_ptr<const HRIRSphere> GetHRIRSphere() const = 0;
 
+        /**
+         * @brief Gets the channel with the given ID.
+         *
+         * @param[in] channelID The ID of the channel to get.
+         *
+         * @return The channel.
+         */
+        [[nodiscard]] virtual Channel GetChannel(AmChannelID channelID) const = 0;
+
 #pragma endregion
 
 #pragma region Plugins Management

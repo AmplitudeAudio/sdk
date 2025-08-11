@@ -225,6 +225,13 @@ namespace SparkyStudios::Audio::Amplitude
         [[nodiscard]] const std::map<AmEnvironmentID, AmReal32>& GetEnvironments() const;
 
         /**
+         * @brief Gets the number of active channels for this entity.
+         *
+         * @return The number of active channels.
+         */
+        [[nodiscard]] AmUInt64 GetActiveChannelCount() const;
+
+        /**
          * @brief Returns the internal state of this entity.
          *
          * @return The entity internal state.
