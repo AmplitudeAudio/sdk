@@ -2583,7 +2583,9 @@ namespace SparkyStudios::Audio::Amplitude
             return Channel(nullptr);
         }
 
-        if (handle->GetScope() == eScope_Entity && !entity.Valid())
+        bool isEntityScope = handle->GetScope() == eScope_Entity;
+
+        if (isEntityScope && !entity.Valid())
         {
             amLogError("Cannot play a switch container in Entity scope. No entity defined.");
             return Channel(nullptr);
@@ -2596,7 +2598,8 @@ namespace SparkyStudios::Audio::Amplitude
         }
 
         // Find the best listener for this channel.
-        ListenerInternalState* listener = FindBestListener(_state->listener_list, location, _state->listener_fetch_mode);
+        ListenerInternalState* listener =
+            FindBestListener(_state->listener_list, isEntityScope ? entity.GetLocation() : location, _state->listener_fetch_mode);
 
         // Find where it belongs in the list.
         AmReal32 gain;
@@ -2620,7 +2623,9 @@ namespace SparkyStudios::Audio::Amplitude
         }
 
         // Now that we have our new channel, set the data on it and update the next pointers.
-        newChannel->SetEntity(entity);
+        if (isEntityScope)
+            newChannel->SetEntity(entity);
+
         newChannel->SetSwitchContainer(dynamic_cast<SwitchContainerImpl*>(handle));
         newChannel->SetUserGain(userGain);
 
@@ -2656,7 +2661,9 @@ namespace SparkyStudios::Audio::Amplitude
             return Channel(nullptr);
         }
 
-        if (handle->GetScope() == eScope_Entity && !entity.Valid())
+        bool isEntityScope = handle->GetScope() == eScope_Entity;
+
+        if (isEntityScope && !entity.Valid())
         {
             amLogError("Cannot play a collection in Entity scope. No entity defined.");
             return Channel(nullptr);
@@ -2669,7 +2676,8 @@ namespace SparkyStudios::Audio::Amplitude
         }
 
         // Find the best listener for this channel.
-        ListenerInternalState* listener = FindBestListener(_state->listener_list, location, _state->listener_fetch_mode);
+        ListenerInternalState* listener =
+            FindBestListener(_state->listener_list, isEntityScope ? entity.GetLocation() : location, _state->listener_fetch_mode);
 
         // Find where it belongs in the list.
         AmReal32 gain;
@@ -2693,7 +2701,9 @@ namespace SparkyStudios::Audio::Amplitude
         }
 
         // Now that we have our new channel, set the data on it and update the next pointers.
-        newChannel->SetEntity(entity);
+        if (isEntityScope)
+            newChannel->SetEntity(entity);
+
         newChannel->SetCollection(dynamic_cast<CollectionImpl*>(handle));
         newChannel->SetUserGain(userGain);
 
@@ -2728,7 +2738,9 @@ namespace SparkyStudios::Audio::Amplitude
             return Channel(nullptr);
         }
 
-        if (handle->GetScope() == eScope_Entity && !entity.Valid())
+        bool isEntityScope = handle->GetScope() == eScope_Entity;
+
+        if (isEntityScope && !entity.Valid())
         {
             amLogError("Cannot play a sound in Entity scope. No entity defined.");
             return Channel(nullptr);
@@ -2741,7 +2753,8 @@ namespace SparkyStudios::Audio::Amplitude
         }
 
         // Find the best listener for this channel.
-        ListenerInternalState* listener = FindBestListener(_state->listener_list, location, _state->listener_fetch_mode);
+        ListenerInternalState* listener =
+            FindBestListener(_state->listener_list, isEntityScope ? entity.GetLocation() : location, _state->listener_fetch_mode);
 
         // Find where it belongs in the list.
         AmReal32 gain;
@@ -2765,7 +2778,9 @@ namespace SparkyStudios::Audio::Amplitude
         }
 
         // Now that we have our new channel, set the data on it and update the next pointers.
-        newChannel->SetEntity(entity);
+        if (isEntityScope)
+            newChannel->SetEntity(entity);
+
         newChannel->SetSound(dynamic_cast<SoundImpl*>(handle));
         newChannel->SetUserGain(userGain);
 
