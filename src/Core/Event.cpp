@@ -92,6 +92,44 @@ namespace SparkyStudios::Audio::Amplitude
         Run(Entity(nullptr));
     }
 
+    void EventAction::Abort()
+    {
+        if (!_active)
+            return;
+
+        switch (_type)
+        {
+        default:
+            [[fallthrough]];
+        case EventActionType_None:
+            return;
+
+        case EventActionType_Play:
+            return AbortPlay();
+
+        case EventActionType_Pause:
+            return AbortPause();
+
+        case EventActionType_Resume:
+            return AbortResume();
+
+        case EventActionType_Stop:
+            return AbortStop();
+
+        case EventActionType_Seek:
+            return AbortSeek();
+
+        case EventActionType_MuteBus:
+            return AbortMute(true);
+
+        case EventActionType_UnmuteBus:
+            return AbortMute(false);
+
+        case EventActionType_Wait:
+            return AbortWait();
+        }
+    }
+
     void EventAction::AdvanceFrame(AmTime delta_time)
     {
         if (!_active)
@@ -109,6 +147,44 @@ namespace SparkyStudios::Audio::Amplitude
         }
     }
 
+    bool EventAction::IsExecuting(const Entity& entity) const
+    {
+        if (!_active)
+            return false;
+
+        switch (_type)
+        {
+        case EventActionType_None:
+            return false;
+
+        case EventActionType_Play:
+            return IsExecutingPlay(entity);
+
+        case EventActionType_Pause:
+            return IsExecutingPause(entity);
+
+        case EventActionType_Resume:
+            return IsExecutingResume(entity);
+
+        case EventActionType_Stop:
+            return IsExecutingStop(entity);
+
+        case EventActionType_Seek:
+            return false;
+
+        case EventActionType_MuteBus:
+            return IsExecutingMute(entity, true);
+
+        case EventActionType_UnmuteBus:
+            return IsExecutingMute(entity, false);
+
+        case EventActionType_Wait:
+            return IsExecutingWait(entity);
+        }
+
+        return false;
+    }
+
     void EventAction::ExecutePlay(const Entity& entity)
     {
         if (_scope == Scope_Entity)
@@ -120,16 +196,12 @@ namespace SparkyStudios::Audio::Amplitude
             }
 
             for (auto&& target : _targets)
-            {
                 _playingChannels.push_back(amEngine->Play(target, entity));
-            }
         }
         else
         {
             for (auto&& target : _targets)
-            {
                 _playingChannels.push_back(amEngine->Play(target));
-            }
         }
     }
 
@@ -144,28 +216,16 @@ namespace SparkyStudios::Audio::Amplitude
             }
 
             for (auto&& target : _targets)
-            {
                 for (auto&& item : entity.GetState()->GetPlayingSoundList())
-                {
                     if (target == item.GetPlayingObjectId())
-                    {
                         item.Pause();
-                    }
-                }
-            }
         }
         else
         {
             for (auto&& target : _targets)
-            {
                 for (auto&& item : amEngine->GetState()->playing_channel_list)
-                {
                     if (target == item.GetPlayingObjectId())
-                    {
                         item.Pause();
-                    }
-                }
-            }
         }
     }
 
@@ -180,28 +240,16 @@ namespace SparkyStudios::Audio::Amplitude
             }
 
             for (auto&& target : _targets)
-            {
                 for (auto&& item : entity.GetState()->GetPlayingSoundList())
-                {
                     if (target == item.GetPlayingObjectId())
-                    {
                         item.Resume();
-                    }
-                }
-            }
         }
         else
         {
             for (auto&& target : _targets)
-            {
                 for (auto&& item : amEngine->GetState()->playing_channel_list)
-                {
                     if (target == item.GetPlayingObjectId())
-                    {
                         item.Resume();
-                    }
-                }
-            }
         }
     }
 
@@ -216,28 +264,16 @@ namespace SparkyStudios::Audio::Amplitude
             }
 
             for (auto&& target : _targets)
-            {
                 for (auto&& item : entity.GetState()->GetPlayingSoundList())
-                {
                     if (target == item.GetPlayingObjectId())
-                    {
                         item.Halt();
-                    }
-                }
-            }
         }
         else
         {
             for (auto&& target : _targets)
-            {
                 for (auto&& item : amEngine->GetState()->playing_channel_list)
-                {
                     if (target == item.GetPlayingObjectId())
-                    {
                         item.Halt();
-                    }
-                }
-            }
         }
     }
 
@@ -249,12 +285,8 @@ namespace SparkyStudios::Audio::Amplitude
     void EventAction::ExecuteMute(const Entity& entity, bool mute)
     {
         for (auto&& target : _targets)
-        {
             if (Bus bus = amEngine->FindBus(target); bus.Valid())
-            {
                 bus.SetMute(mute);
-            }
-        }
     }
 
     void EventAction::ExecuteWait(const Entity& entity)
@@ -262,80 +294,146 @@ namespace SparkyStudios::Audio::Amplitude
         _accumulatedTime = 0.0;
     }
 
-    bool EventAction::IsExecuting() const
+    bool EventAction::IsExecutingPlay(const Entity& entity) const
     {
-        if (!_active)
-            return false;
+        for (auto&& channel : _playingChannels)
+            if (channel.GetPlaybackState() == eChannelPlaybackState_Playing)
+                return true;
 
-        switch (_type)
+        return false;
+    }
+
+    bool EventAction::IsExecutingPause(const Entity& entity) const
+    {
+        if (_scope == Scope_Entity)
         {
-        case EventActionType_None:
-            return false;
-
-        case EventActionType_Play:
+            if (!entity.Valid())
             {
-                bool active = false;
-                for (auto&& channel : _playingChannels)
-                    active |= channel.GetPlaybackState() == eChannelPlaybackState_Playing;
-
-                return active;
+                amLogWarning("Running an entity scoped event action without an entity.");
+                return false;
             }
 
-        case EventActionType_Pause:
-            {
-                bool active = false;
-                for (auto&& channel : _playingChannels)
-                    active |= channel.GetPlaybackState() == eChannelPlaybackState_Paused;
-
-                return active;
-            }
-
-        case EventActionType_Resume:
-            {
-                bool active = false;
-                for (auto&& channel : _playingChannels)
-                    active |= channel.GetPlaybackState() == eChannelPlaybackState_Playing;
-
-                return active;
-            }
-
-        case EventActionType_Stop:
-            {
-                bool active = false;
-                for (auto&& channel : _playingChannels)
-                    active |= channel.GetPlaybackState() == eChannelPlaybackState_Stopped;
-
-                return active;
-            }
-
-        case EventActionType_Seek:
-            return false;
-
-        case EventActionType_MuteBus:
-            {
-                bool active = false;
-                for (auto&& target : _targets)
-                    if (Bus bus = amEngine->FindBus(target); bus.Valid())
-                        active |= bus.IsMuted();
-
-                return active;
-            }
-
-        case EventActionType_UnmuteBus:
-            {
-                bool active = false;
-                for (auto&& target : _targets)
-                    if (Bus bus = amEngine->FindBus(target); bus.Valid())
-                        active |= !bus.IsMuted();
-
-                return active;
-            }
-
-        case EventActionType_Wait:
-            return _accumulatedTime < static_cast<AmTime>(_targets[0]);
+            for (auto&& target : _targets)
+                for (auto&& item : entity.GetState()->GetPlayingSoundList())
+                    if (target == item.GetPlayingObjectId() && item.Valid() && item.GetChannelState() == eChannelPlaybackState_Playing)
+                        return true;
+        }
+        else
+        {
+            for (auto&& target : _targets)
+                for (auto&& item : amEngine->GetState()->playing_channel_list)
+                    if (target == item.GetPlayingObjectId() && item.Valid() && item.GetChannelState() == eChannelPlaybackState_Playing)
+                        return true;
         }
 
         return false;
+    }
+
+    bool EventAction::IsExecutingResume(const Entity& entity) const
+    {
+        if (_scope == Scope_Entity)
+        {
+            if (!entity.Valid())
+            {
+                amLogWarning("Running an entity scoped event action without an entity.");
+                return false;
+            }
+
+            for (auto&& target : _targets)
+                for (auto&& item : entity.GetState()->GetPlayingSoundList())
+                    if (target == item.GetPlayingObjectId() && item.Valid() && item.GetChannelState() == eChannelPlaybackState_Paused)
+                        return true;
+        }
+        else
+        {
+            for (auto&& target : _targets)
+                for (auto&& item : amEngine->GetState()->playing_channel_list)
+                    if (target == item.GetPlayingObjectId() && item.Valid() && item.GetChannelState() == eChannelPlaybackState_Paused)
+                        return true;
+        }
+
+        return false;
+    }
+
+    bool EventAction::IsExecutingStop(const Entity& entity) const
+    {
+        if (_scope == Scope_Entity)
+        {
+            if (!entity.Valid())
+            {
+                amLogWarning("Running an entity scoped event action without an entity.");
+                return false;
+            }
+
+            for (auto&& target : _targets)
+                for (auto&& item : entity.GetState()->GetPlayingSoundList())
+                    if (target == item.GetPlayingObjectId() && item.Valid() && item.GetChannelState() != eChannelPlaybackState_Stopped)
+                        return true;
+        }
+        else
+        {
+            for (auto&& target : _targets)
+                for (auto&& item : amEngine->GetState()->playing_channel_list)
+                    if (target == item.GetPlayingObjectId() && item.Valid() && item.GetChannelState() != eChannelPlaybackState_Stopped)
+                        return true;
+        }
+
+        return false;
+    }
+
+    bool EventAction::IsExecutingSeek(const Entity& entity) const
+    {
+        return false;
+    }
+
+    bool EventAction::IsExecutingMute(const Entity& entity, bool mute) const
+    {
+        for (auto&& target : _targets)
+            if (Bus bus = amEngine->FindBus(target); bus.Valid() && bus.IsMuted() != mute)
+                return true;
+
+        return false;
+    }
+
+    bool EventAction::IsExecutingWait(const Entity& entity) const
+    {
+        return _accumulatedTime < static_cast<AmTime>(_targets[0]);
+    }
+
+    void EventAction::AbortPlay()
+    {
+        for (auto&& channel : _playingChannels)
+            channel.Stop(0);
+    }
+
+    void EventAction::AbortPause()
+    {
+        // noop
+    }
+
+    void EventAction::AbortResume()
+    {
+        // noop
+    }
+
+    void EventAction::AbortStop()
+    {
+        // noop
+    }
+
+    void EventAction::AbortSeek()
+    {
+        // noop
+    }
+
+    void EventAction::AbortMute(bool mute)
+    {
+        // noop
+    }
+
+    void EventAction::AbortWait()
+    {
+        _accumulatedTime = static_cast<AmTime>(_targets[0]);
     }
 
     EventImpl::EventImpl()
@@ -446,7 +544,7 @@ namespace SparkyStudios::Audio::Amplitude
 
             for (auto&& action : _actions)
             {
-                if (action.IsExecuting())
+                if (action.IsExecuting(_entity))
                 {
                     _running = true;
                     action.AdvanceFrame(deltaTime);
@@ -457,7 +555,7 @@ namespace SparkyStudios::Audio::Amplitude
         {
             if (_runningActionIndex < _actions.size())
             {
-                if (!_actions[_runningActionIndex].IsExecuting())
+                if (!_actions[_runningActionIndex].IsExecuting(_entity))
                 {
                     ++_runningActionIndex;
                     _actions[_runningActionIndex].Run(_entity);
@@ -482,6 +580,10 @@ namespace SparkyStudios::Audio::Amplitude
     void EventInstanceImpl::Abort()
     {
         _running = false;
+
+        for (auto&& action : _actions)
+            if (action.IsExecuting(_entity))
+                action.Abort();
     }
 
     void EventInstanceImpl::Start(const Entity& entity)

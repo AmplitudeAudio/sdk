@@ -59,6 +59,11 @@ namespace SparkyStudios::Audio::Amplitude
         void Run();
 
         /**
+         * @brief Aborts the action.
+         */
+        void Abort();
+
+        /**
          * @brief Apply a frame update on this EventAction.
          *
          * @param delta_time The time elapsed since the last frame.
@@ -70,9 +75,11 @@ namespace SparkyStudios::Audio::Amplitude
         /**
          * @brief Checks if the event action is active and currently executing.
          *
+         * @param entity The entity which trigger the event.
+         *
          * @return true if the event action is active and currently executing, false otherwise.
          */
-        [[nodiscard]] bool IsExecuting() const;
+        [[nodiscard]] bool IsExecuting(const Entity& entity) const;
 
     private:
         void ExecutePlay(const Entity& entity);
@@ -82,6 +89,22 @@ namespace SparkyStudios::Audio::Amplitude
         void ExecuteSeek(const Entity& entity);
         void ExecuteMute(const Entity& entity, bool mute);
         void ExecuteWait(const Entity& entity);
+
+        bool IsExecutingPlay(const Entity& entity) const;
+        bool IsExecutingPause(const Entity& entity) const;
+        bool IsExecutingResume(const Entity& entity) const;
+        bool IsExecutingStop(const Entity& entity) const;
+        bool IsExecutingSeek(const Entity& entity) const;
+        bool IsExecutingMute(const Entity& entity, bool mute) const;
+        bool IsExecutingWait(const Entity& entity) const;
+
+        void AbortPlay();
+        void AbortPause();
+        void AbortResume();
+        void AbortStop();
+        void AbortSeek();
+        void AbortMute(bool mute);
+        void AbortWait();
 
         bool _active;
         EventActionType _type;
