@@ -1507,6 +1507,18 @@ namespace SparkyStudios::Audio::Amplitude
         return EventCanceler(nullptr);
     }
 
+    void EngineImpl::CancelAllEvents()
+    {
+        Thread::LockMutex(_frameThreadMutex);
+        {
+            for (auto& event : _state->running_events)
+                event->Abort();
+
+            _state->running_events.clear();
+        }
+        Thread::UnlockMutex(_frameThreadMutex);
+    }
+
     void EngineImpl::SetSwitchState(SwitchHandle handle, AmObjectID stateId) const
     {
         if (handle == nullptr)

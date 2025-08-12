@@ -1476,6 +1476,14 @@ namespace SparkyStudios::Audio::Amplitude
          */
         [[nodiscard]] virtual EventCanceler Trigger(AmEventID id, const Entity& entity) const = 0;
 
+        /**
+         * @brief Cancels all events currently being processed.
+         *
+         * @note This method cancels all events currently being processed by the engine.
+         * It does not cancel events that are queued for processing.
+         */
+        virtual void CancelAllEvents() = 0;
+
 #pragma endregion
 
 #pragma region Switches
