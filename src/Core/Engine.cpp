@@ -1868,6 +1868,9 @@ namespace SparkyStudios::Audio::Amplitude
 
     void EngineImpl::SetMasterGain(const AmReal32 gain) const
     {
+        if (!IsInitialized())
+            return;
+
         _state->master_gain = gain;
         _state->mixer.SetMasterGain(gain);
     }
@@ -1879,6 +1882,9 @@ namespace SparkyStudios::Audio::Amplitude
 
     void EngineImpl::SetMute(const bool mute) const
     {
+        if (!IsInitialized())
+            return;
+
         _state->mute = mute;
     }
 
@@ -1889,6 +1895,9 @@ namespace SparkyStudios::Audio::Amplitude
 
     void EngineImpl::SetDefaultListener(const Listener* listener)
     {
+        if (!IsInitialized())
+            return;
+
         if (listener == nullptr)
             _defaultListener = nullptr;
 
@@ -1898,6 +1907,9 @@ namespace SparkyStudios::Audio::Amplitude
 
     void EngineImpl::SetDefaultListener(AmListenerID id)
     {
+        if (!IsInitialized())
+            return;
+
         if (id == kAmInvalidObjectId)
             return;
 
@@ -2170,6 +2182,9 @@ namespace SparkyStudios::Audio::Amplitude
 
     void EngineImpl::Pause(bool pause) const
     {
+        if (!IsInitialized())
+            return;
+
         if (_state->paused == pause)
             return;
 
