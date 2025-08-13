@@ -2412,9 +2412,7 @@ namespace SparkyStudios::Audio::Amplitude
 
     void EngineImpl::WaitUntilNextFrame() const
     {
-        const AmUInt64 nextFrame = _state->current_frame + 1;
-        while (_state->current_frame < nextFrame)
-            Thread::Sleep(1);
+        WaitUntilFrames(1);
     }
 
     void EngineImpl::WaitUntilFrames(AmUInt64 frameCount) const
