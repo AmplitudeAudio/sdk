@@ -13,9 +13,7 @@
 // limitations under the License.
 
 #include <ranges>
-
 #include <cassert>
-#include <cmath>
 
 #include <SparkyStudios/Audio/Amplitude/Core/Playback/Channel.h>
 #include <SparkyStudios/Audio/Amplitude/IO/Log.h>
