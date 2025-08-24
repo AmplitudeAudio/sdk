@@ -20,44 +20,91 @@ using namespace SparkyStudios::Audio::Amplitude;
 
 void SimpleTestCase::Run()
 {
-    PackageFileSystem filesystem;
-    filesystem.SetBasePath(AM_OS_STRING("./samples/assets.ampk"));
-
-    filesystem.StartOpenFileSystem();
-    while (!filesystem.TryFinalizeOpenFileSystem())
-        Thread::Sleep(1);
-
-    // can sets the base path
+    // Uncompressed file
     {
-        AM_EXPECT(filesystem.GetBasePath() == std::filesystem::current_path() / AM_OS_STRING("samples/assets.ampk"));
-    }
-
-    // can check if files exists
-    {
-        AM_EXPECT(filesystem.Exists(AM_OS_STRING("tests.config.amconfig")));
-        AM_EXPECT_NOT(filesystem.Exists(AM_OS_STRING("some_random_file.ext")));
-    }
-
-    // can open files
-    {
-        AM_EXPECT(filesystem.OpenFile(AM_OS_STRING("tests.config.amconfig"))->IsValid());
-        AM_EXPECT(filesystem.OpenFile(AM_OS_STRING("some_random_file.ext")) == nullptr);
-    }
-
-    // can reopen already opened filesystem
-    {
-        AM_EXPECT(filesystem.TryFinalizeOpenFileSystem());
+        PackageFileSystem filesystem;
+        filesystem.SetBasePath(AM_OS_STRING("./samples/assets_uncompressed.ampk"));
 
         filesystem.StartOpenFileSystem();
         while (!filesystem.TryFinalizeOpenFileSystem())
             Thread::Sleep(1);
 
-        AM_EXPECT(filesystem.TryFinalizeOpenFileSystem());
+        // can sets the base path
+        {
+            AM_EXPECT(filesystem.GetBasePath() == std::filesystem::current_path() / AM_OS_STRING("samples/assets_uncompressed.ampk"));
+        }
+
+        // can check if files exists
+        {
+            AM_EXPECT(filesystem.Exists(AM_OS_STRING("tests.config.amconfig")));
+            AM_EXPECT_NOT(filesystem.Exists(AM_OS_STRING("some_random_file.ext")));
+        }
+
+        // can open files
+        {
+            AM_EXPECT(filesystem.OpenFile(AM_OS_STRING("tests.config.amconfig"))->IsValid());
+            AM_EXPECT(filesystem.OpenFile(AM_OS_STRING("some_random_file.ext")) == nullptr);
+        }
+
+        // can reopen already opened filesystem
+        {
+            AM_EXPECT(filesystem.TryFinalizeOpenFileSystem());
+
+            filesystem.StartOpenFileSystem();
+            while (!filesystem.TryFinalizeOpenFileSystem())
+                Thread::Sleep(1);
+
+            AM_EXPECT(filesystem.TryFinalizeOpenFileSystem());
+        }
+
+        // can close filesystem
+        {
+            filesystem.StartCloseFileSystem();
+            AM_EXPECT(filesystem.TryFinalizeCloseFileSystem());
+        }
     }
 
-    // can close filesystem
+    // Compressed file
     {
-        filesystem.StartCloseFileSystem();
-        AM_EXPECT(filesystem.TryFinalizeCloseFileSystem());
+        PackageFileSystem filesystem;
+        filesystem.SetBasePath(AM_OS_STRING("./samples/assets_compressed.ampk"));
+
+        filesystem.StartOpenFileSystem();
+        while (!filesystem.TryFinalizeOpenFileSystem())
+            Thread::Sleep(1);
+
+        // can sets the base path
+        {
+            AM_EXPECT(filesystem.GetBasePath() == std::filesystem::current_path() / AM_OS_STRING("samples/assets_compressed.ampk"));
+        }
+
+        // can check if files exists
+        {
+            AM_EXPECT(filesystem.Exists(AM_OS_STRING("tests.config.amconfig")));
+            AM_EXPECT_NOT(filesystem.Exists(AM_OS_STRING("some_random_file.ext")));
+        }
+
+        // can open files
+        {
+            AM_EXPECT(filesystem.OpenFile(AM_OS_STRING("tests.config.amconfig"))->IsValid());
+            AM_EXPECT(filesystem.OpenFile(AM_OS_STRING("some_random_file.ext")) == nullptr);
+        }
+
+        // can reopen already opened filesystem
+        {
+            AM_EXPECT(filesystem.TryFinalizeOpenFileSystem());
+
+            filesystem.StartOpenFileSystem();
+            while (!filesystem.TryFinalizeOpenFileSystem())
+                Thread::Sleep(1);
+
+            AM_EXPECT(filesystem.TryFinalizeOpenFileSystem());
+        }
+
+        // can close filesystem
+        {
+            filesystem.StartCloseFileSystem();
+            AM_EXPECT(filesystem.TryFinalizeCloseFileSystem());
+        }
     }
 }

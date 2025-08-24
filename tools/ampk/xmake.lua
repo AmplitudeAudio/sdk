@@ -21,7 +21,7 @@ target("ampk")
   add_deps("Amplitude::Static")
 
   -- Add packages
-  add_packages("cli11")
+  add_packages("cli11", "lz4")
 
   -- Include main project include directories
   add_includedirs("$(projectdir)/src", "$(projectdir)/tools/common", "$(builddir)/include")

@@ -15,6 +15,7 @@
 #include <SparkyStudios/Audio/Amplitude/Amplitude.h>
 
 #include <CLI/CLI.hpp>
+#include <lz4.h>
 
 #include <cli_formatter.h>
 #include <utils.h>
@@ -39,10 +40,18 @@ struct AppOptions
      */
     bool noLogo = false;
 
-    /**
-     * @brief The compression algorithm to use.
-     */
-    ePackageFileCompressionAlgorithm compression = ePackageFileCompressionAlgorithm_None;
+    struct
+    {
+        /**
+         * @brief The compression mode to use.
+         */
+        ePackageFileCompressionMode mode = ePackageFileCompressionMode_Uncompressed;
+
+        /**
+         * @brief The compression block size, in KB.
+         */
+        AmSize blockSize = 64;
+    } compression;
 
     /**
      * @brief The path to the input project directory to process.
@@ -106,10 +115,17 @@ struct AppContext
             ->default_str("false");
 
         app.add_option(
-               "-c,--compression", options.compression,
-               "The compression algorithm to use.\nIf not defined, the resulting package will not be compressed. The available values "
-               "are:\n0:\tNo compression.\n1:\tZLib compression.")
+               "-c,--compression", options.compression.mode,
+               "The compression algorithm to use.\n"
+               "If not defined, the resulting package will not be compressed. The available values are:\n"
+               "0:  No compression.\n"
+               "1:  ZLib compression.")
             ->option_text("{0,1}");
+
+        app.add_option(
+               "-s,--block-size", options.compression.blockSize, "The size of the blocks to use for compression, in KB. Default is 64KB.")
+            ->default_val(64)
+            ->default_str("64");
 
         app.add_option("PROJECT_DIR", options.inputFile, "The path to the project directory to process.")
             ->required()
@@ -140,11 +156,50 @@ static constexpr char kProjectDirCollections[] = "collections";
 static constexpr char kProjectDirData[] = "data";
 static constexpr char kProjectDirEffects[] = "effects";
 static constexpr char kProjectDirEvents[] = "events";
+static constexpr char kProjectDirPipelines[] = "pipelines";
 static constexpr char kProjectDirRTPC[] = "rtpc";
 static constexpr char kProjectDirSoundbanks[] = "soundbanks";
 static constexpr char kProjectDirSounds[] = "sounds";
 static constexpr char kProjectDirSwitchContainers[] = "switch_containers";
 static constexpr char kProjectDirSwitches[] = "switches";
+
+static int compressAndWriteAsset(PackageFileItemDescription& item, std::vector<AmUInt8>& output, const DiskFile& input)
+{
+    LZ4_stream_t lz4Stream;
+    LZ4_initStream(&lz4Stream, sizeof(lz4Stream));
+
+    AmSize offset = 0;
+    const AmSize inputSize = input.Length();
+
+    while (offset < inputSize)
+    {
+        const AmSize outputSize = output.size();
+
+        const AmSize chunkSize = std::min(inputSize - offset, item.m_CompressedBlockSize);
+        AmInt32 maxDstSize = LZ4_compressBound(chunkSize);
+        std::vector<AmUInt8> compressed(maxDstSize);
+
+        std::vector<AmUInt8> data(chunkSize);
+        input.Read(data.data(), chunkSize);
+
+        AmInt32 compressedSize =
+            LZ4_compress_default(reinterpret_cast<char*>(data.data()), reinterpret_cast<char*>(compressed.data()), chunkSize, maxDstSize);
+
+        if (compressedSize <= 0)
+            amLogError("LZ4 compression failed");
+
+        item.m_CompressedChunks.push_back({
+            outputSize, // Offset
+            chunkSize, // Size
+            static_cast<AmSize>(compressedSize) // Compressed size
+        });
+
+        output.insert(output.end(), compressed.begin(), compressed.begin() + compressedSize);
+        offset += chunkSize;
+    }
+
+    return output.size();
+}
 
 static int process(const AmOsString& inFileName, const AmOsString& outFileName, const AppOptions& state)
 {
@@ -157,9 +212,9 @@ static int process(const AmOsString& inFileName, const AmOsString& outFileName, 
         return EXIT_FAILURE;
     }
 
-    const auto projectDirectories = { kProjectDirAttenuators,      kProjectDirCollections, kProjectDirData,       kProjectDirEffects,
-                                      kProjectDirEvents,           kProjectDirRTPC,        kProjectDirSoundbanks, kProjectDirSounds,
-                                      kProjectDirSwitchContainers, kProjectDirSwitches };
+    const auto projectDirectories = { kProjectDirAttenuators, kProjectDirCollections,      kProjectDirData,    kProjectDirEffects,
+                                      kProjectDirEvents,      kProjectDirPipelines,        kProjectDirRTPC,    kProjectDirSoundbanks,
+                                      kProjectDirSounds,      kProjectDirSwitchContainers, kProjectDirSwitches };
 
     for (const auto& directory : projectDirectories)
     {
@@ -177,51 +232,59 @@ static int process(const AmOsString& inFileName, const AmOsString& outFileName, 
 
     packageFile.Write(reinterpret_cast<AmConstUInt8Buffer>("AMPK"), 4);
     packageFile.Write16(kCurrentVersion);
-    packageFile.Write8(ePackageFileCompressionAlgorithm_None); // TODO: state.compression
+    packageFile.Write8(state.compression.mode);
 
     AmSize lastOffset = 0;
     std::vector<AmUInt8> buffer;
     std::vector<PackageFileItemDescription> items;
 
-    const auto appendItem = [&](const std::filesystem::path& file)
+    const auto appendItem = [&](const std::filesystem::directory_entry& file)
     {
+        if (file.is_directory())
+            return;
+
         if (state.verbose)
-            log(stdout, "Adding item: " AM_OS_CHAR_FMT "\n", file.c_str());
+            log(stdout, "Adding item: " AM_OS_CHAR_FMT "\n", file.path().c_str());
 
         DiskFile diskFile(absolute(file));
 
         PackageFileItemDescription item;
         std::string relativePath = relative(absolute(file), projectPath).string();
-        std::ranges::replace(relativePath, '\\', '/');
+        std::ranges::replace(relativePath, '\\', '/'); // Normalize Windows path
         item.m_Name = relativePath;
         item.m_Offset = lastOffset;
         item.m_Size = diskFile.Length();
 
-        buffer.resize(lastOffset + item.m_Size, 0);
-        diskFile.Read(buffer.data() + lastOffset, item.m_Size);
+        if (state.compression.mode == ePackageFileCompressionMode_Uncompressed)
+        {
+            item.m_CompressedBlockSize = 0;
 
-        items.push_back(item);
-        lastOffset += item.m_Size;
+            buffer.resize(lastOffset + item.m_Size, 0);
+            diskFile.Read(buffer.data() + lastOffset, item.m_Size);
+
+            items.push_back(item);
+            lastOffset += item.m_Size;
+        }
+        else if (state.compression.mode == ePackageFileCompressionMode_Compressed)
+        {
+            item.m_CompressedBlockSize = state.compression.blockSize * 1024;
+
+            std::vector<AmUInt8> compressedData;
+            auto compressedSize = compressAndWriteAsset(item, compressedData, diskFile);
+
+            buffer.insert(buffer.end(), compressedData.begin(), compressedData.begin() + compressedSize);
+
+            items.push_back(item);
+            lastOffset += compressedSize;
+        }
     };
 
     for (const auto& directory : projectDirectories)
-    {
         for (const auto& file : std::filesystem::recursive_directory_iterator(projectPath / directory))
-        {
-            if (file.is_directory())
-                continue;
-
             appendItem(file);
-        }
-    }
 
     for (const auto& file : std::filesystem::directory_iterator(projectPath))
-    {
-        if (file.is_directory())
-            continue;
-
         appendItem(file);
-    }
 
     if (state.verbose)
         log(stdout, "Writing package file: " AM_OS_CHAR_FMT "\n", packagePath.c_str());
@@ -233,6 +296,15 @@ static int process(const AmOsString& inFileName, const AmOsString& outFileName, 
         packageFile.WriteString(item.m_Name);
         packageFile.Write64(item.m_Offset);
         packageFile.Write64(item.m_Size);
+        packageFile.Write64(item.m_CompressedBlockSize);
+        packageFile.Write64(item.m_CompressedChunks.size());
+
+        for (const auto& chunk : item.m_CompressedChunks)
+        {
+            packageFile.Write64(chunk.m_Offset);
+            packageFile.Write64(chunk.m_Size);
+            packageFile.Write64(chunk.m_CompressedSize);
+        }
     }
 
     packageFile.Write(buffer.data(), buffer.size());

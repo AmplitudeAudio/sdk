@@ -24,7 +24,6 @@ void SimpleTestCase::Run()
 
     AM_EXPECT(fileSystem.ResolvePath(AM_OS_STRING("sounds/test.wav")) == AM_OS_STRING("sounds/test.wav"));
     AM_EXPECT(
-        fileSystem.ResolvePath(AM_OS_STRING("../../samples/assets/sounds/../test.wav")) ==
-        AM_OS_STRING("../../samples/assets/test.wav"));
+        fileSystem.ResolvePath(AM_OS_STRING("../../samples/assets/sounds/../test.wav")) == AM_OS_STRING("../../samples/assets/test.wav"));
     AM_EXPECT(fileSystem.ResolvePath(AM_OS_STRING("./sounds/../sounds/./test.wav")) == AM_OS_STRING("sounds/test.wav"));
 }

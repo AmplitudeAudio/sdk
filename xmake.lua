@@ -90,11 +90,12 @@ on_config(function(target)
 end)
 
 -- Dependencies
-add_requires("flatbuffers >= 25.2.10")
-add_requires("dylib >= 2.2.1")
-add_requires("xsimd >= 13.2.0")
-add_requires("miniaudio >= 0.11.22")
-add_requires("eigen >= 3.4.0")
+add_requires("flatbuffers ^25.2.10")
+add_requires("dylib ^2.2.1")
+add_requires("xsimd ^13.2.0")
+add_requires("miniaudio ^0.11.22")
+add_requires("eigen ^3.4.0")
+add_requires("lz4 ^1.9.4")
 
 -- Feature-specific dependencies
 if has_config("build_samples") then
@@ -140,7 +141,7 @@ if is_plat("android") then
 end
 
 -- Add packages
-add_packages("flatbuffers", "xsimd", "eigen", "dylib", "miniaudio")
+add_packages("flatbuffers", "xsimd", "eigen", "dylib", "miniaudio", "lz4")
 
 -- Generate FlatBuffers schema files
 target("generate_includes")

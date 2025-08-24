@@ -29,22 +29,47 @@ namespace SparkyStudios::Audio::Amplitude
      *
      * @ingroup io
      */
-    enum ePackageFileCompressionAlgorithm : AmUInt8
+    enum ePackageFileCompressionMode : AmUInt8
     {
         /**
-         * @brief No compression algorithm has been used for the package file.
+         * @brief No compression is used for the package file.
          */
-        ePackageFileCompressionAlgorithm_None,
+        ePackageFileCompressionMode_Uncompressed,
 
         /**
-         * @brief The package file has been compressed using ZLib.
+         * @brief The package file is compressed.
          */
-        ePackageFileCompressionAlgorithm_ZLib,
+        ePackageFileCompressionMode_Compressed,
 
         /**
          * @brief Invalid compression algorithm.
          */
-        ePackageFileCompressionAlgorithm_Invalid
+        ePackageFileCompressionMode_Invalid
+    };
+
+    /**
+     * @brief Describes a compressed chunk in the package file.
+     *
+     * @ingroup io
+     */
+    struct PackageFileCompressedChunk
+    {
+        /**
+         * @brief The offset of the chunk in the package file.
+         */
+        AmSize m_Offset = 0;
+
+        /**
+         * @brief The size of the chunk in bytes.
+         */
+        AmSize m_Size = 0;
+
+        /**
+         * @brief The compressed size of the chunk in bytes.
+         *
+         * @note The compressed size is only used when the package file is compressed.
+         */
+        AmSize m_CompressedSize = 0;
     };
 
     /**
@@ -72,6 +97,20 @@ namespace SparkyStudios::Audio::Amplitude
          * @brief The size of the package item in bytes.
          */
         AmSize m_Size = 0;
+
+        /**
+         * @brief The block size of this asset in the package file, when compressed.
+         *
+         * @note The block size is used only when the package file is compressed.
+         */
+        AmSize m_CompressedBlockSize = 0;
+
+        /**
+         * @brief The compressed chunks of the package item.
+         *
+         * @note The compressed chunks are used only when the package file is compressed.
+         */
+        std::vector<PackageFileCompressedChunk> m_CompressedChunks;
     };
 
     /**
@@ -97,9 +136,9 @@ namespace SparkyStudios::Audio::Amplitude
         AmUInt16 m_Version = 0;
 
         /**
-         * @brief The compression algorithm used for this package file.
+         * @brief The compression mode used for this package file.
          */
-        ePackageFileCompressionAlgorithm m_CompressionAlgorithm = ePackageFileCompressionAlgorithm_Invalid;
+        ePackageFileCompressionMode m_CompressionMode = ePackageFileCompressionMode_Invalid;
 
         /**
          * @brief The description of each item in the package file.
