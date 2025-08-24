@@ -43,12 +43,12 @@ namespace SparkyStudios::Audio::Amplitude
         return AM_OS_STRING("");
     }
 
-    bool MemoryFile::Eof()
+    bool MemoryFile::Eof() const
     {
         return m_offset >= m_dataSize;
     }
 
-    AmSize MemoryFile::Read(AmUInt8Buffer dst, AmSize bytes)
+    AmSize MemoryFile::Read(AmUInt8Buffer dst, AmSize bytes) const
     {
         if (m_offset + bytes >= m_dataSize)
             bytes = m_dataSize - m_offset;
@@ -69,7 +69,7 @@ namespace SparkyStudios::Audio::Amplitude
         return bytesToWrite;
     }
 
-    AmSize MemoryFile::Length()
+    AmSize MemoryFile::Length() const
     {
         return m_dataSize;
     }
@@ -87,12 +87,12 @@ namespace SparkyStudios::Audio::Amplitude
             m_offset = m_dataSize - 1;
     }
 
-    AmSize MemoryFile::Position()
+    AmSize MemoryFile::Position() const
     {
         return m_offset;
     }
 
-    AmVoidPtr MemoryFile::GetPtr()
+    AmVoidPtr MemoryFile::GetPtr() const
     {
         return m_dataPtr;
     }

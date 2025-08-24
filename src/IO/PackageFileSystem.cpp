@@ -13,6 +13,7 @@
 // limitations under the License.
 
 #include <SparkyStudios/Audio/Amplitude/Core/Memory.h>
+#include <SparkyStudios/Audio/Amplitude/IO/Log.h>
 #include <SparkyStudios/Audio/Amplitude/IO/PackageFileSystem.h>
 #include <SparkyStudios/Audio/Amplitude/IO/PackageItemFile.h>
 
@@ -79,6 +80,7 @@ namespace SparkyStudios::Audio::Amplitude
 
     bool PackageFileSystem::IsDirectory(const AmOsString& path) const
     {
+        // Never true for packaged assets
         return false;
     }
 
@@ -126,7 +128,16 @@ namespace SparkyStudios::Audio::Amplitude
 
     bool PackageFileSystem::TryFinalizeOpenFileSystem()
     {
-        return _initialized == true;
+        if (!_initialized)
+            return false;
+
+        if (_loadingThreadHandle == nullptr)
+            return true;
+
+        Thread::Wait(_loadingThreadHandle);
+        Thread::Release(_loadingThreadHandle);
+
+        return true;
     }
 
     void PackageFileSystem::StartCloseFileSystem()
@@ -154,6 +165,7 @@ namespace SparkyStudios::Audio::Amplitude
 
         if (!pFileSystem->_packageFile->IsValid())
         {
+            amLogError("Invalid package file at: " AM_OS_CHAR_FMT, pFileSystem->_packagePath.c_str());
             pFileSystem->_initialized = true;
             return;
         }
@@ -165,6 +177,7 @@ namespace SparkyStudios::Audio::Amplitude
             if (pFileSystem->_header.m_Header[0] != 'A' || pFileSystem->_header.m_Header[1] != 'M' ||
                 pFileSystem->_header.m_Header[2] != 'P' || pFileSystem->_header.m_Header[3] != 'K')
             {
+                amLogError("Invalid package file at: " AM_OS_CHAR_FMT, pFileSystem->_packagePath.c_str());
                 pFileSystem->_initialized = true;
                 return;
             }
@@ -173,12 +186,13 @@ namespace SparkyStudios::Audio::Amplitude
             pFileSystem->_header.m_Version = pFileSystem->_packageFile->Read16();
             if (pFileSystem->_header.m_Version > kLastPackageFileVersion)
             {
+                amLogError("Unsupported package file version at: " AM_OS_CHAR_FMT, pFileSystem->_packagePath.c_str());
                 pFileSystem->_initialized = true;
                 return;
             }
 
             // Compression Algorithm
-            pFileSystem->_header.m_CompressionAlgorithm = static_cast<ePackageFileCompressionAlgorithm>(pFileSystem->_packageFile->Read8());
+            pFileSystem->_header.m_CompressionMode = static_cast<ePackageFileCompressionMode>(pFileSystem->_packageFile->Read8());
 
             // Item Descriptions
             if (const AmSize itemsCount = pFileSystem->_packageFile->Read64(); itemsCount > 0)
@@ -196,6 +210,28 @@ namespace SparkyStudios::Audio::Amplitude
 
                     // Item Size
                     item.m_Size = pFileSystem->_packageFile->Read64();
+
+                    // Compressed Block Size
+                    item.m_CompressedBlockSize = pFileSystem->_packageFile->Read64();
+
+                    // Item Chunks
+                    if (const AmSize chunksCount = pFileSystem->_packageFile->Read64(); chunksCount > 0)
+                    {
+                        item.m_CompressedChunks.resize(chunksCount);
+                        for (AmSize j = 0; j < chunksCount; j++)
+                        {
+                            auto& chunk = item.m_CompressedChunks[j];
+
+                            // Chunk Offset
+                            chunk.m_Offset = pFileSystem->_packageFile->Read64();
+
+                            // Chunk Size
+                            chunk.m_Size = pFileSystem->_packageFile->Read64();
+
+                            // Chunk Compressed Size
+                            chunk.m_CompressedSize = pFileSystem->_packageFile->Read64();
+                        }
+                    }
                 }
             }
         }

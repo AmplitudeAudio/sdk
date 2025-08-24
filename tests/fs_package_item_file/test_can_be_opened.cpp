@@ -20,18 +20,39 @@ using namespace SparkyStudios::Audio::Amplitude;
 
 void SimpleTestCase::Run()
 {
-    PackageFileSystem fileSystem;
-    fileSystem.SetBasePath(AM_OS_STRING("./samples/assets.ampk"));
+    // Uncompressed file
+    {
+        PackageFileSystem fileSystem;
+        fileSystem.SetBasePath(AM_OS_STRING("./samples/assets_uncompressed.ampk"));
 
-    fileSystem.StartOpenFileSystem();
-    while (!fileSystem.TryFinalizeOpenFileSystem())
-        Thread::Sleep(1);
+        fileSystem.StartOpenFileSystem();
+        while (!fileSystem.TryFinalizeOpenFileSystem())
+            Thread::Sleep(1);
 
-    auto file = fileSystem.OpenFile(AM_OS_STRING("data/tests/file_read_test.txt"), eFileOpenMode_Read);
+        auto file = fileSystem.OpenFile(AM_OS_STRING("data/tests/file_read_test.txt"), eFileOpenMode_Read);
 
-    AM_EXPECT(file->IsValid());
-    AM_EXPECT(file->GetPath() == fileSystem.ResolvePath(AM_OS_STRING("data/tests/file_read_test.txt")));
-    AM_EXPECT(file->Length() == 2);
+        AM_EXPECT(file->IsValid());
+        AM_EXPECT(file->GetPath() == fileSystem.ResolvePath(AM_OS_STRING("data/tests/file_read_test.txt")));
+        AM_EXPECT(file->Length() == 2);
 
-    AM_EXPECT(fileSystem.OpenFile(AM_OS_STRING("some_random_file.ext")) == nullptr);
+        AM_EXPECT(fileSystem.OpenFile(AM_OS_STRING("some_random_file.ext")) == nullptr);
+    }
+
+    // Compressed file
+    {
+        PackageFileSystem fileSystem;
+        fileSystem.SetBasePath(AM_OS_STRING("./samples/assets_compressed.ampk"));
+
+        fileSystem.StartOpenFileSystem();
+        while (!fileSystem.TryFinalizeOpenFileSystem())
+            Thread::Sleep(1);
+
+        auto file = fileSystem.OpenFile(AM_OS_STRING("data/tests/file_read_test.txt"), eFileOpenMode_Read);
+
+        AM_EXPECT(file->IsValid());
+        AM_EXPECT(file->GetPath() == fileSystem.ResolvePath(AM_OS_STRING("data/tests/file_read_test.txt")));
+        AM_EXPECT(file->Length() == 2);
+
+        AM_EXPECT(fileSystem.OpenFile(AM_OS_STRING("some_random_file.ext")) == nullptr);
+    }
 }

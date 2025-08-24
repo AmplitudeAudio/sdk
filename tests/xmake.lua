@@ -27,9 +27,11 @@ target("generate_test_package")
     local program = ampk:targetfile()
     if program then
       local assets_dir = path.join(path.absolute(config.builddir()), "samples/assets")
-      local output_dir = path.join(path.absolute(config.builddir()), "samples/assets.ampk")
+      local output_uncompressed_dir = path.join(path.absolute(config.builddir()), "samples/assets_uncompressed.ampk")
+      local output_compressed_dir = path.join(path.absolute(config.builddir()), "samples/assets_compressed.ampk")
 
-      os.exec("%s -q -c 0 %s %s", program, assets_dir, output_dir)
+      os.exec("%s -q -c 0 %s %s", program, assets_dir, output_uncompressed_dir)
+      os.exec("%s -q -c 1 %s %s", program, assets_dir, output_compressed_dir)
     else
       print("ampk not found.")
     end

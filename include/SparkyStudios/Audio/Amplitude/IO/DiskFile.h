@@ -19,6 +19,8 @@
 
 #include <SparkyStudios/Audio/Amplitude/IO/File.h>
 
+#include <filesystem>
+
 namespace SparkyStudios::Audio::Amplitude
 {
     /**
@@ -64,12 +66,12 @@ namespace SparkyStudios::Audio::Amplitude
         /**
          * @inherit
          */
-        bool Eof() override;
+        bool Eof() const override;
 
         /**
          * @inherit
          */
-        AmSize Read(AmUInt8Buffer dst, AmSize bytes) override;
+        AmSize Read(AmUInt8Buffer dst, AmSize bytes) const override;
 
         /**
          * @inherit
@@ -79,7 +81,7 @@ namespace SparkyStudios::Audio::Amplitude
         /**
          * @inherit
          */
-        AmSize Length() override;
+        AmSize Length() const override;
 
         /**
          * @inherit
@@ -89,12 +91,12 @@ namespace SparkyStudios::Audio::Amplitude
         /**
          * @inherit
          */
-        AmSize Position() override;
+        AmSize Position() const override;
 
         /**
          * @inherit
          */
-        AmVoidPtr GetPtr() override;
+        AmVoidPtr GetPtr() const override;
 
         /**
          * @inherit

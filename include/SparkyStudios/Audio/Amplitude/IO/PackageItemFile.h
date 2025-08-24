@@ -47,12 +47,12 @@ namespace SparkyStudios::Audio::Amplitude
         /**
          * @inherit
          */
-        bool Eof() override;
+        [[nodiscard]] bool Eof() const override;
 
         /**
          * @inherit
          */
-        AmSize Read(AmUInt8Buffer dst, AmSize bytes) override;
+        AmSize Read(AmUInt8Buffer dst, AmSize bytes) const override;
 
         /**
          * @inherit
@@ -64,7 +64,7 @@ namespace SparkyStudios::Audio::Amplitude
         /**
          * @inherit
          */
-        AmSize Length() override;
+        [[nodiscard]] AmSize Length() const override;
 
         /**
          * @inherit
@@ -74,11 +74,18 @@ namespace SparkyStudios::Audio::Amplitude
         /**
          * @inherit
          */
-        AmSize Position() override;
+        [[nodiscard]] AmSize Position() const override;
+
+        /**
+         * @brief Get the base position of this file item in the entire package file.
+         */
+        [[nodiscard]] AmSize GetBasePosition() const;
 
     private:
         const PackageFileItemDescription* _description;
+        const bool _isCompressed;
         AmSize _headerSize;
+        mutable AmInt64 _currentPosition;
     };
 } // namespace SparkyStudios::Audio::Amplitude
 

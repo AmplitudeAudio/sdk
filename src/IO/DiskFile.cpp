@@ -40,7 +40,7 @@ namespace SparkyStudios::Audio::Amplitude
         return m_filePath.c_str();
     }
 
-    bool DiskFile::Eof()
+    bool DiskFile::Eof() const
     {
         const long pos = ftell(m_fileHandle);
         const bool value = fgetc(m_fileHandle) == EOF;
@@ -48,7 +48,7 @@ namespace SparkyStudios::Audio::Amplitude
         return value;
     }
 
-    AmSize DiskFile::Read(AmUInt8Buffer dst, AmSize bytes)
+    AmSize DiskFile::Read(AmUInt8Buffer dst, AmSize bytes) const
     {
         return fread(dst, 1, bytes, m_fileHandle);
     }
@@ -58,7 +58,7 @@ namespace SparkyStudios::Audio::Amplitude
         return fwrite(src, 1, bytes, m_fileHandle);
     }
 
-    AmSize DiskFile::Length()
+    AmSize DiskFile::Length() const
     {
         if (!m_fileHandle)
             return 0;
@@ -76,12 +76,12 @@ namespace SparkyStudios::Audio::Amplitude
         fseek(m_fileHandle, offset, origin);
     }
 
-    AmSize DiskFile::Position()
+    AmSize DiskFile::Position() const
     {
         return static_cast<AmSize>(ftell(m_fileHandle));
     }
 
-    AmVoidPtr DiskFile::GetPtr()
+    AmVoidPtr DiskFile::GetPtr() const
     {
         return m_fileHandle;
     }
