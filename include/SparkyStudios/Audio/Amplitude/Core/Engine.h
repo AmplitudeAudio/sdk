@@ -1663,6 +1663,34 @@ namespace SparkyStudios::Audio::Amplitude
         [[nodiscard]] virtual AmReal32 GetDopplerFactor() const = 0;
 
         /**
+         * @brief Get the number of active entities in the engine.
+         *
+         * @return The number of active entities.
+         */
+        [[nodiscard]] virtual AmUInt32 GetActiveEntitiesCount() const = 0;
+
+        /**
+         * @brief Get the number of active listeners in the engine.
+         *
+         * @return The number of active listeners.
+         */
+        [[nodiscard]] virtual AmUInt32 GetActiveListenersCount() const = 0;
+
+        /**
+         * @brief Get the number of active environments in the engine.
+         *
+         * @return The number of active environments.
+         */
+        [[nodiscard]] virtual AmUInt32 GetActiveEnvironmentsCount() const = 0;
+
+        /**
+         * @brief Get the number of active rooms in the engine.
+         *
+         * @return The number of active rooms.
+         */
+        [[nodiscard]] virtual AmUInt32 GetActiveRoomsCount() const = 0;
+
+        /**
          * @brief Get the number of samples to process in one stream, as set in the loaded engine configuration file.
          *
          * @return The number of samples per stream.
@@ -1691,6 +1719,20 @@ namespace SparkyStudios::Audio::Amplitude
          * @return The maximum number of game entities.
          */
         [[nodiscard]] virtual AmUInt32 GetMaxEntitiesCount() const = 0;
+
+        /**
+         * @brief Gets the maximum number of environments handled by the engine.
+         *
+         * @return The maximum number of environments.
+         */
+        [[nodiscard]] virtual AmUInt32 GetMaxEnvironmentsCount() const = 0;
+
+        /**
+         * @brief Gets the maximum number of rooms handled by the engine.
+         *
+         * @return The maximum number of rooms.
+         */
+        [[nodiscard]] virtual AmUInt32 GetMaxRoomsCount() const = 0;
 
         /**
          * @brief Gets the occlusion coefficient curve, as set in the loaded engine configuration file.

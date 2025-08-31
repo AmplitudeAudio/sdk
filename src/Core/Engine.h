@@ -188,10 +188,16 @@ namespace SparkyStudios::Audio::Amplitude
         [[nodiscard]] const AmOsString& GetConfigurationPath() const override;
         [[nodiscard]] AmReal32 GetSoundSpeed() const override;
         [[nodiscard]] AmReal32 GetDopplerFactor() const override;
+        [[nodiscard]] AmUInt32 GetActiveEntitiesCount() const override;
+        [[nodiscard]] AmUInt32 GetActiveListenersCount() const override;
+        [[nodiscard]] AmUInt32 GetActiveEnvironmentsCount() const override;
+        [[nodiscard]] AmUInt32 GetActiveRoomsCount() const override;
         [[nodiscard]] AmUInt32 GetSamplesPerStream() const override;
         [[nodiscard]] bool IsGameTrackingEnvironmentAmounts() const override;
         [[nodiscard]] AmUInt32 GetMaxListenersCount() const override;
         [[nodiscard]] AmUInt32 GetMaxEntitiesCount() const override;
+        [[nodiscard]] AmUInt32 GetMaxEnvironmentsCount() const override;
+        [[nodiscard]] AmUInt32 GetMaxRoomsCount() const override;
         [[nodiscard]] const Curve& GetOcclusionCoefficientCurve() const override;
         [[nodiscard]] const Curve& GetOcclusionGainCurve() const override;
         [[nodiscard]] const Curve& GetObstructionCoefficientCurve() const override;
