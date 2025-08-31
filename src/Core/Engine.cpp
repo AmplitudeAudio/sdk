@@ -2471,6 +2471,26 @@ namespace SparkyStudios::Audio::Amplitude
         return _state->doppler_factor;
     }
 
+    AmUInt32 EngineImpl::GetActiveEntitiesCount() const
+    {
+        return _state->entity_list.size();
+    }
+
+    AmUInt32 EngineImpl::GetActiveListenersCount() const
+    {
+        return _state->listener_list.size();
+    }
+
+    AmUInt32 EngineImpl::GetActiveEnvironmentsCount() const
+    {
+        return _state->environment_list.size();
+    }
+
+    AmUInt32 EngineImpl::GetActiveRoomsCount() const
+    {
+        return _state->room_list.size();
+    }
+
     AmUInt32 EngineImpl::GetSamplesPerStream() const
     {
         return _state->samples_per_stream;
@@ -2489,6 +2509,16 @@ namespace SparkyStudios::Audio::Amplitude
     AmUInt32 EngineImpl::GetMaxEntitiesCount() const
     {
         return GetEngineConfigDefinition()->game()->entities();
+    }
+
+    AmUInt32 EngineImpl::GetMaxEnvironmentsCount() const
+    {
+        return GetEngineConfigDefinition()->game()->environments();
+    }
+
+    AmUInt32 EngineImpl::GetMaxRoomsCount() const
+    {
+        return GetEngineConfigDefinition()->game()->rooms();
     }
 
     const Curve& EngineImpl::GetOcclusionCoefficientCurve() const
