@@ -70,3 +70,4 @@ vcpkg_installed/
 # XMake
 .xmake/
 **/compile_commands.json
+include/SparkyStudios/Audio/Amplitude/Core/Version.h
