@@ -18,11 +18,10 @@
 #include <DSP/Gain.h>
 #include <Mixer/Nodes/AttenuationNode.h>
 
-#include "engine_config_definition_generated.h"
-
 namespace SparkyStudios::Audio::Amplitude
 {
     constexpr AmReal32 kQ = 0.707107f; // sqrt(0.5)
+    constexpr AmReal32 kMaxEQGain = 0.0625f;
 
     void AirAbsorptionEQFilter::Normalize(std::array<AmReal32, kAmAirAbsorptionBandCount>& gains, AmReal32& overallGain)
     {
@@ -36,8 +35,6 @@ namespace SparkyStudios::Audio::Amplitude
         {
             for (auto i = 0; i < kAmAirAbsorptionBandCount; ++i)
             {
-                constexpr AmReal32 kMaxEQGain = 0.0625f;
-
                 gains[i] /= maxGain;
                 gains[i] = std::max(gains[i], kMaxEQGain);
             }

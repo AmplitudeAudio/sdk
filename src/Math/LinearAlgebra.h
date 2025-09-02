@@ -25,7 +25,7 @@ namespace SparkyStudios::Audio::Amplitude
 {
     AM_INLINE Eigen::Vector2f Vec2ToEigen(const AmVector2& v)
     {
-        return Eigen::Vector2f(v.x, v.y);
+        return { v.x, v.y };
     }
 
     AM_INLINE AmVector2 EigenToVec2(const Eigen::Vector2f& v)
@@ -35,7 +35,7 @@ namespace SparkyStudios::Audio::Amplitude
 
     AM_INLINE Eigen::Vector3f Vec3ToEigen(const AmVector3& v)
     {
-        return Eigen::Vector3f(v.x, v.y, v.z);
+        return { v.x, v.y, v.z };
     }
 
     AM_INLINE AmVector3 EigenToVec3(const Eigen::Vector3f& v)
@@ -45,7 +45,7 @@ namespace SparkyStudios::Audio::Amplitude
 
     AM_INLINE Eigen::Vector4f Vec4ToEigen(const AmVector4& v)
     {
-        return Eigen::Vector4f(v.x, v.y, v.z, v.w);
+        return { v.x, v.y, v.z, v.w };
     }
 
     AM_INLINE AmVector4 EigenToVec4(const Eigen::Vector4f& v)
@@ -85,7 +85,7 @@ namespace SparkyStudios::Audio::Amplitude
 
     AM_INLINE Eigen::Quaternionf QuatToEigen(const AmQuaternion& q)
     {
-        return Eigen::Quaternionf(q.w, q.x, q.y, q.z);
+        return { q.w, q.x, q.y, q.z };
     }
 
     AM_INLINE AmQuaternion EigenToQuat(const Eigen::Quaternionf& q)
