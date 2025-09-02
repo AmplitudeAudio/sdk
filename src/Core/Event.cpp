@@ -523,6 +523,7 @@ namespace SparkyStudios::Audio::Amplitude
         , _running(false)
         , _runningActionIndex(0)
         , _entity(nullptr)
+        , _onFinishCallback(nullptr)
     {}
 
     EventInstanceImpl::EventInstanceImpl(const EventImpl* parent)
@@ -531,6 +532,7 @@ namespace SparkyStudios::Audio::Amplitude
         , _running(false)
         , _runningActionIndex(0)
         , _entity(nullptr)
+        , _onFinishCallback(nullptr)
     {}
 
     void EventInstanceImpl::AdvanceFrame(AmTime deltaTime)
@@ -570,6 +572,9 @@ namespace SparkyStudios::Audio::Amplitude
                 _running = false;
             }
         }
+
+        if (!_running && _onFinishCallback)
+            _onFinishCallback(false);
     }
 
     bool EventInstanceImpl::IsRunning() const
@@ -584,6 +589,14 @@ namespace SparkyStudios::Audio::Amplitude
         for (auto&& action : _actions)
             if (action.IsExecuting(_entity))
                 action.Abort();
+
+        if (_onFinishCallback)
+            _onFinishCallback(true);
+    }
+
+    void EventInstanceImpl::OnFinish(std::function<void(bool)> callback)
+    {
+        _onFinishCallback = callback;
     }
 
     void EventInstanceImpl::Start(const Entity& entity)
