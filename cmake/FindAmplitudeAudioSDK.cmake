@@ -13,7 +13,7 @@
 # limitations under the License.
 
 # Amplitude installation path
-set(AM_SDK_PLATFORM ${VCPKG_TARGET_TRIPLET} CACHE STRING "The platform to use for the Amplitude Audio SDK libraries.")
+set(AM_SDK_PLATFORM "" CACHE STRING "The platform to use for the Amplitude Audio SDK libraries.")
 
 # Check for a known file in the SDK path to verify the path
 function(is_valid_sdk sdk_path is_valid)
@@ -106,7 +106,7 @@ set_target_properties(SparkyStudios::Audio::Amplitude::SDK::Static PROPERTIES
 )
 
 set_target_properties(SparkyStudios::Audio::Amplitude::SDK::Static PROPERTIES
-    MAP_IMPORTED_CONFIG_PROFILE DEBUG
+    MAP_IMPORTED_CONFIG_PROFILE RELEASE
     MAP_IMPORTED_CONFIG_MINSIZEREL RELEASE
     MAP_IMPORTED_CONFIG_RELWITHDEBINFO RELEASE
 )
@@ -130,7 +130,7 @@ set_target_properties(SparkyStudios::Audio::Amplitude::SDK::Shared PROPERTIES
 )
 
 set_target_properties(SparkyStudios::Audio::Amplitude::SDK::Shared PROPERTIES
-    MAP_IMPORTED_CONFIG_PROFILE DEBUG
+    MAP_IMPORTED_CONFIG_PROFILE RELEASE
     MAP_IMPORTED_CONFIG_MINSIZEREL RELEASE
     MAP_IMPORTED_CONFIG_RELWITHDEBINFO RELEASE
 )
