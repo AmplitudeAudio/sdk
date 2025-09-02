@@ -14,7 +14,7 @@
 
 #include <SparkyStudios/Audio/Amplitude/Mixer/Amplimix.h>
 
-#include <Core/EngineInternalState.h>
+#include <Core/Engine.h>
 #include <Mixer/Nodes/AmbisonicRotatorNode.h>
 
 namespace SparkyStudios::Audio::Amplitude
@@ -22,7 +22,7 @@ namespace SparkyStudios::Audio::Amplitude
     AmbisonicRotatorNodeInstance::AmbisonicRotatorNodeInstance()
         : ProcessorNodeInstance()
     {
-        const ePanningMode mode = Engine::GetInstance()->GetPanningMode();
+        const ePanningMode mode = amEngine->GetPanningMode();
         const AmUInt32 order = AM_MAX(static_cast<AmUInt32>(mode), 1u);
 
         _rotator.Configure(order, true);
@@ -42,7 +42,7 @@ namespace SparkyStudios::Audio::Amplitude
         const AmQuaternion listenerRotation = listener.GetOrientation().GetQuaternion();
         const AmQuaternion inverseListenerRotation = Inverse(listenerRotation);
 
-        const ePanningMode mode = Engine::GetInstance()->GetPanningMode();
+        const ePanningMode mode = amEngine->GetPanningMode();
         const AmUInt32 order = AM_MAX(static_cast<AmUInt32>(mode), 1u);
 
         _soundField.Configure(order, true, input->GetFrameCount());
