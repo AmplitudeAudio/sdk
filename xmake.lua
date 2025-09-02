@@ -246,6 +246,7 @@ local function _setup(kind)
 
   add_installfiles("(schemas/**.bfbs)")
   add_installfiles("(scripts/*.py)")
+  add_installfiles("(cmake/*.cmake)")
 
   remove_installfiles("scripts/build_schemas.py", "scripts/__pycache__/*.pyc")
 end
