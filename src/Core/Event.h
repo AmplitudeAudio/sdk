@@ -141,11 +141,18 @@ namespace SparkyStudios::Audio::Amplitude
          */
         void Abort() override;
 
+        /**
+         * @copydoc EventInstance::OnFinish
+         */
+        void OnFinish(std::function<void(bool)> callback) override;
+
     private:
         /**
          * @brief Starts this Event.
          */
         void Start(const Entity& entity);
+
+        std::function<void(bool)> _onFinishCallback;
 
         EventActionRunningMode _runMode;
         std::vector<EventAction> _actions;
