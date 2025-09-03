@@ -19,6 +19,8 @@
 
 #include <SparkyStudios/Audio/Amplitude/Core/Common.h>
 
+#include <cmath>
+
 namespace SparkyStudios::Audio::Amplitude
 {
     enum BFormatChannel

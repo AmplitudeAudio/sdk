@@ -14,12 +14,13 @@
 
 #if AM_PLATFORM_ANDROID
 
-#include <sstream>
-#include <vector>
-
 #include <SparkyStudios/Audio/Amplitude/Core/Memory.h>
 #include <SparkyStudios/Audio/Amplitude/IO/Android/AssetManagerFile.h>
 #include <SparkyStudios/Audio/Amplitude/IO/Android/AssetManagerFileSystem.h>
+
+#include <ranges>
+#include <sstream>
+#include <vector>
 
 namespace SparkyStudios::Audio::Amplitude
 {

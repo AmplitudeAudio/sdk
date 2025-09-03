@@ -28,6 +28,7 @@
 #include <unistd.h>
 #endif
 
+#include <cmath>
 #include <thread>
 
 namespace SparkyStudios::Audio::Amplitude::Thread

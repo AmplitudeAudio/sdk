@@ -17,6 +17,7 @@
 #include <SparkyStudios/Audio/Amplitude/Math/Utils.h>
 
 #include <DSP/Filters/FFTFilter.h>
+#include <Utils/Utils.h>
 
 #define STFT_WINDOW_SIZE 256 // must be power of two
 #define STFT_WINDOW_HALF 128

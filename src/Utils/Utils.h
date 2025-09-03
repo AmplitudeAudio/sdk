@@ -27,6 +27,8 @@
 #include <xsimd/xsimd.hpp>
 #endif // defined(AM_SIMD_INTRINSICS)
 
+#include <cmath>
+
 namespace SparkyStudios::Audio::Amplitude
 {
 #if defined(AM_SIMD_INTRINSICS)

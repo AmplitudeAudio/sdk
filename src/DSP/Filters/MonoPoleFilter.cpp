@@ -15,6 +15,7 @@
 #include <SparkyStudios/Audio/Amplitude/Core/Memory.h>
 
 #include <DSP/Filters/MonoPoleFilter.h>
+#include <Utils/Utils.h>
 
 namespace SparkyStudios::Audio::Amplitude
 {

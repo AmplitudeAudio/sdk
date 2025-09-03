@@ -21,6 +21,8 @@
 #include <SparkyStudios/Audio/Amplitude/Core/RefCounter.h>
 #include <SparkyStudios/Audio/Amplitude/IO/File.h>
 
+#include <memory>
+
 namespace SparkyStudios::Audio::Amplitude
 {
     struct EngineInternalState;

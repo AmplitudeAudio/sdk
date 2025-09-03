@@ -14,8 +14,10 @@
 
 #pragma once
 
+#include <cmath>
 #include <cstdarg>
 #include <cstdio>
+#include <ranges>
 
 /**
  * @brief The log function, used in verbose mode.

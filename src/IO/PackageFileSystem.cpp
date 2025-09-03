@@ -17,6 +17,9 @@
 #include <SparkyStudios/Audio/Amplitude/IO/PackageFileSystem.h>
 #include <SparkyStudios/Audio/Amplitude/IO/PackageItemFile.h>
 
+#include <algorithm>
+#include <ranges>
+
 namespace SparkyStudios::Audio::Amplitude
 {
     /**

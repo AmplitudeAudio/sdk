@@ -23,6 +23,7 @@
 #include <set>
 
 #if !defined(AM_NO_MEMORY_STATS)
+#include <atomic>
 #include <map>
 #endif
 
