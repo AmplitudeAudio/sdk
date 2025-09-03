@@ -18,6 +18,7 @@
 #define _AM_DSP_FILTER_H
 
 #include <SparkyStudios/Audio/Amplitude/Core/AudioBuffer.h>
+#include <SparkyStudios/Audio/Amplitude/Core/Memory.h>
 
 #include <map>
 

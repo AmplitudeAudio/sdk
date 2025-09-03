@@ -21,6 +21,8 @@
 #include <SparkyStudios/Audio/Amplitude/Core/Entity.h>
 #include <SparkyStudios/Audio/Amplitude/Core/Listener.h>
 
+#include <memory>
+
 namespace SparkyStudios::Audio::Amplitude
 {
     class ShapeDefinition;

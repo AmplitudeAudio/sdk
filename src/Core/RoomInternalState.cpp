@@ -16,6 +16,7 @@
 
 #include <Core/RoomInternalState.h>
 
+#include <cmath>
 #include <numeric>
 
 namespace SparkyStudios::Audio::Amplitude
@@ -76,7 +77,8 @@ namespace SparkyStudios::Audio::Amplitude
                 static_cast<AmReal32>(kReflectionAveragingBandsCount);
 
             AmReal32* output = _reflectionsProperties.GetCoefficients();
-            output[i] = AM_MIN(1.0f, std::sqrt(1.0f - averageAbsorptionCoefficients));
+            const AmReal32 sqrtCoefficients = std::sqrt(1.0f - averageAbsorptionCoefficients);
+            output[i] = AM_MIN(1.0f, sqrtCoefficients);
         }
 
         _needUpdate = false;
