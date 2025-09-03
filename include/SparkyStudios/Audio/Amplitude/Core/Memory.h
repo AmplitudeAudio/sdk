@@ -19,6 +19,7 @@
 
 #include <SparkyStudios/Audio/Amplitude/Core/Common.h>
 
+#include <memory>
 #include <set>
 
 #if !defined(AM_NO_MEMORY_STATS)
