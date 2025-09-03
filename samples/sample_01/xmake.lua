@@ -12,14 +12,16 @@
 -- See the License for the specific language governing permissions and
 -- limitations under the License.
 
-target("sample_01")
-  set_kind("binary")
-  set_targetdir("$(builddir)/samples")
-  set_group("samples")
+if not is_plat("android") and not is_plat("iphoneos") then
+  target("sample_01")
+    set_kind("binary")
+    set_targetdir("$(builddir)/samples")
+    set_group("samples")
 
-  -- Link to Amplitude Static library
-  add_deps("Amplitude::Shared", "build_sample_project")
+    -- Link to Amplitude Static library
+    add_deps("Amplitude::Shared", "build_sample_project")
 
-  -- Source files
-  add_files("main.cpp")
-target_end()
+    -- Source files
+    add_files("main.cpp")
+  target_end()
+end

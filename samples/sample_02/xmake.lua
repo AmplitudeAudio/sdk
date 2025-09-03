@@ -12,24 +12,26 @@
 -- See the License for the specific language governing permissions and
 -- limitations under the License.
 
-target("sample_02")
-  set_kind("binary")
-  set_targetdir("$(builddir)/samples")
-  set_group("samples")
+if not is_plat("android") and not is_plat("iphoneos") then
+  target("sample_02")
+    set_kind("binary")
+    set_targetdir("$(builddir)/samples")
+    set_group("samples")
 
-  -- Link to Amplitude Static library
-  add_deps("Amplitude::Shared", "build_sample_project")
+    -- Link to Amplitude Static library
+    add_deps("Amplitude::Shared", "build_sample_project")
 
-  -- Link to SDL2
-  add_packages("libsdl2", { components = { "main" } })
+    -- Link to SDL2
+    add_packages("libsdl2", { components = { "main" } })
 
-  if is_plat("windows") then
-    add_ldflags("-subsystem:windows")
-  end
+    if is_plat("windows") then
+      add_ldflags("-subsystem:windows")
+    end
 
-  -- Include main project include directories
-  add_includedirs("$(projectdir)/src")
+    -- Include main project include directories
+    add_includedirs("$(projectdir)/src")
 
-  -- Source files
-  add_files("main.cpp")
-target_end()
+    -- Source files
+    add_files("main.cpp")
+  target_end()
+end
