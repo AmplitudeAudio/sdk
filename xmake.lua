@@ -125,8 +125,10 @@ if is_mode("release") then
 end
 
 -- Thread support for UNIX platforms
-if is_plat("macosx") or is_plat("iphoneos") or is_plat("linux") or is_plat("android") then
+if is_plat("macosx") or is_plat("iphoneos") or is_plat("linux") then
   add_syslinks("pthread", "dl")
+elseif is_plat("android") then
+  add_syslinks("dl")
 end
 
 -- FFT and Accelerate Framework for Apple platforms
@@ -153,7 +155,8 @@ target("generate_includes")
     import("core.project.config")
     import("lib.detect.find_tool")
 
-    local flatc = find_tool("flatc")
+    local flatc = find_tool("flatc", { paths = { "$(env PATH)", "$(projectdir)/bin" } })
+
     if flatc then
       local schemas_dir = path.join(os.projectdir(), "schemas")
       local output_dir = path.join(path.absolute(config.builddir()), "include")
@@ -189,7 +192,7 @@ target("build_binary_schemas")
     local python = find_program("python3") or find_program("python")
     local scripts_dir = path.join(os.projectdir(), "scripts")
     local schemas_dir = path.join(os.projectdir(), "schemas")
-    local flatc = find_tool("flatc")
+    local flatc = find_tool("flatc", { paths = { "$(env PATH)", "$(projectdir)/bin" } })
 
     if python then
       os.exec("%s %s/build_schemas.py --output %s --flatc %s", python, scripts_dir, schemas_dir, flatc.program)
@@ -294,7 +297,7 @@ if has_config("build_assets") then
       local scripts_dir = path.join(os.projectdir(), "scripts")
       local sample_project_dir = path.join(os.projectdir(), "sample_project")
       local output_dir = path.join(config.builddir(), "samples/assets")
-      local flatc_path = find_tool("flatc")
+      local flatc_path = find_tool("flatc", { paths = { "$(env PATH)", "$(projectdir)/bin" } })
       local schemas_dir = path.join(os.projectdir(), "schemas")
 
       -- Create output directory
