@@ -151,17 +151,17 @@ struct AppContext
 
 static constexpr AmUInt32 kCurrentVersion = 1;
 
-static constexpr char kProjectDirAttenuators[] = "attenuators";
-static constexpr char kProjectDirCollections[] = "collections";
-static constexpr char kProjectDirData[] = "data";
-static constexpr char kProjectDirEffects[] = "effects";
-static constexpr char kProjectDirEvents[] = "events";
-static constexpr char kProjectDirPipelines[] = "pipelines";
-static constexpr char kProjectDirRTPC[] = "rtpc";
-static constexpr char kProjectDirSoundbanks[] = "soundbanks";
-static constexpr char kProjectDirSounds[] = "sounds";
-static constexpr char kProjectDirSwitchContainers[] = "switch_containers";
-static constexpr char kProjectDirSwitches[] = "switches";
+static constexpr AmOsChar kProjectDirAttenuators[] = AM_OS_STRING("attenuators");
+static constexpr AmOsChar kProjectDirCollections[] = AM_OS_STRING("collections");
+static constexpr AmOsChar kProjectDirData[] = AM_OS_STRING("data");
+static constexpr AmOsChar kProjectDirEffects[] = AM_OS_STRING("effects");
+static constexpr AmOsChar kProjectDirEvents[] = AM_OS_STRING("events");
+static constexpr AmOsChar kProjectDirPipelines[] = AM_OS_STRING("pipelines");
+static constexpr AmOsChar kProjectDirRTPC[] = AM_OS_STRING("rtpc");
+static constexpr AmOsChar kProjectDirSoundbanks[] = AM_OS_STRING("soundbanks");
+static constexpr AmOsChar kProjectDirSounds[] = AM_OS_STRING("sounds");
+static constexpr AmOsChar kProjectDirSwitchContainers[] = AM_OS_STRING("switch_containers");
+static constexpr AmOsChar kProjectDirSwitches[] = AM_OS_STRING("switches");
 
 static int compressAndWriteAsset(PackageFileItemDescription& item, std::vector<AmUInt8>& output, const DiskFile& input)
 {
@@ -220,7 +220,7 @@ static int process(const AmOsString& inFileName, const AmOsString& outFileName, 
     {
         if (!exists(projectPath / directory) || !is_directory(projectPath / directory))
         {
-            log(stderr, "Invalid project path. The \"%s\" directory is missing.\n", directory);
+            log(stderr, "Invalid project path. The \"" AM_OS_CHAR_FMT "\" directory is missing.\n", directory);
             return EXIT_FAILURE;
         }
     }
