@@ -33,9 +33,16 @@ option("build_assets")
 option_end()
 
 option("build_samples")
+  add_deps("build_assets")
   set_default(false)
   set_showmenu(true)
   set_description("Build samples")
+
+  after_check(function (option)
+    if option:enabled() then
+      option:dep("build_assets"):enable(true)
+    end
+  end)
 option_end()
 
 option("build_tools")
@@ -45,9 +52,18 @@ option("build_tools")
 option_end()
 
 option("unit_tests")
+  add_deps("build_assets")
+  add_deps("build_tools")
   set_default(false)
   set_showmenu(true)
   set_description("Enable Unit Testing")
+
+  after_check(function (option)
+    if option:enabled() then
+      option:dep("build_assets"):enable(true)
+      option:dep("build_tools"):enable(true)
+    end
+  end)
 option_end()
 
 option("coverage_min_threshold")
@@ -57,9 +73,22 @@ option("coverage_min_threshold")
 option_end()
 
 option("as_package")
+  add_deps("build_assets")
+  add_deps("build_samples")
+  add_deps("build_tools")
+  add_deps("unit_tests")
   set_default(false)
   set_showmenu(true)
   set_description("Configure as a package. This is useful when using Amplitude from sources instead of SDK installation.")
+
+  after_check(function (option)
+    if option:enabled() then
+      option:dep("build_assets"):enable(false)
+      option:dep("build_samples"):enable(false)
+      option:dep("build_tools"):enable(false)
+      option:dep("unit_tests"):enable(false)
+    end
+  end)
 option_end()
 
 _ARCH_CACHE = {}
@@ -100,23 +129,11 @@ add_requires("lz4 ^1.9.4")
 -- Feature-specific dependencies
 if has_config("build_samples") then
   add_requires("libsdl2", { configs = { sdlmain = true } })
-  set_config("build_assets", true)
-end
-
-if has_config("unit_tests") then
-  set_config("build_assets", true)
 end
 
 if has_config("build_tools") and not is_plat("android") and not is_plat("iphoneos") then
   add_requires("cli11")
   add_requires("libmysofa")
-end
-
-if has_config("as_package") then
-  set_config("build_samples", false)
-  set_config("unit_tests", false)
-  set_config("build_assets", false)
-  set_config("build_tools", false)
 end
 
 -- Apply debug/release specific defines
