@@ -12,6 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+#if AM_PLATFORM_ANDROID
+
 #include <SparkyStudios/Audio/Amplitude/IO/Android/AssetManagerFile.h>
 
 namespace SparkyStudios::Audio::Amplitude
@@ -101,3 +103,5 @@ namespace SparkyStudios::Audio::Amplitude
         m_asset = nullptr;
     }
 } // namespace SparkyStudios::Audio::Amplitude
+
+#endif // AM_PLATFORM_ANDROID
