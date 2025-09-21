@@ -16,6 +16,7 @@
 #include <memory>
 #include <queue>
 #include <ranges>
+#include <unordered_map>
 
 #include <SparkyStudios/Audio/Amplitude/Amplitude.h>
 
@@ -32,14 +33,13 @@
 #include <Sound/SwitchContainer.h>
 
 #include "buses_definition_generated.h"
-#include "collection_definition_generated.h"
 #include "engine_config_definition_generated.h"
-#include "sound_definition_generated.h"
-#include "switch_container_definition_generated.h"
 
 #include <Core/DefaultPlugins.h>
 
+#ifndef AM_PLUGINS_UNSUPPORTED
 #include <dylib.hpp>
+#endif
 
 #if AM_PLATFORM_WIN
 #undef CreateMutex
@@ -50,8 +50,10 @@ namespace SparkyStudios::Audio::Amplitude
     typedef flatbuffers::Vector<uint64_t> BusIdList;
     typedef flatbuffers::Vector<flatbuffers::Offset<DuckBusDefinition>> DuckBusDefinitionList;
 
+#ifndef AM_PLUGINS_UNSUPPORTED
     // The list of loaded plugins.
-    static std::vector<dylib*> gLoadedPlugins = {};
+    static std::unordered_map<size_t, dylib::library*> gLoadedPlugins = {};
+#endif
 
     // Default Plugins instances
     static std::shared_ptr<DefaultResampler> sDefaultResamplerPlugin = nullptr;
@@ -205,19 +207,22 @@ namespace SparkyStudios::Audio::Amplitude
 
         _audioDriver = nullptr;
 
+#ifndef AM_PLUGINS_UNSUPPORTED
         for (const auto& plugin : gLoadedPlugins)
         {
-            if (const auto unregisterFunc = plugin->get_function<bool()>("UnregisterPlugin"); !unregisterFunc())
-                amLogError("An error occurred while unloading the plugin '%s'", plugin->get_function<const char*()>("PluginName")());
+            if (const auto unregisterFunc = plugin.second->get_function<bool()>("UnregisterPlugin"); !unregisterFunc())
+                amLogError("An error occurred while unloading the plugin '%s'", plugin.second->get_function<const char*()>("PluginName")());
 
-            ampooldelete(eMemoryPoolKind_Engine, dylib, plugin);
+            ampooldelete(eMemoryPoolKind_Engine, library, plugin.second);
         }
 
         gLoadedPlugins.clear();
+#endif
     }
 
     AmVoidPtr Engine::LoadPlugin(const AmOsString& pluginLibraryName)
     {
+#ifndef AM_PLUGINS_UNSUPPORTED
         if (pluginLibraryName.empty())
         {
             amLogError("The plugin library path is empty");
@@ -225,8 +230,8 @@ namespace SparkyStudios::Audio::Amplitude
         }
 
         AmOsString pluginsDirectoryPath = std::filesystem::current_path().native();
-        const auto& finalName = AM_STRING_TO_OS_STRING(dylib::filename_components::prefix) + pluginLibraryName +
-            AM_STRING_TO_OS_STRING(dylib::filename_components::suffix);
+        const auto& finalName = AM_STRING_TO_OS_STRING(dylib::decorations::os_default().prefix) + pluginLibraryName +
+            AM_STRING_TO_OS_STRING(dylib::decorations::os_default().suffix);
 
         bool foundPath = false;
 
@@ -262,11 +267,21 @@ namespace SparkyStudios::Audio::Amplitude
             return nullptr;
         }
 
-        auto* plugin = ampoolnew(
-            eMemoryPoolKind_Engine, dylib, AM_OS_STRING_TO_STRING(pluginsDirectoryPath), AM_OS_STRING_TO_STRING(finalName),
-            dylib::no_filename_decorations);
+        std::filesystem::path pluginPath = std::filesystem::path(pluginsDirectoryPath) / finalName;
 
-        if (!plugin->has_symbol("RegisterPlugin"))
+        std::hash<std::filesystem::path> hashFunction;
+        size_t hashValue = hashFunction(pluginPath);
+
+        if (gLoadedPlugins.find(hashValue) != gLoadedPlugins.end())
+        {
+            amLogWarning("The plugin '" AM_OS_CHAR_FMT "' is already loaded.", pluginLibraryName.c_str());
+            return gLoadedPlugins[hashValue]->native_handle();
+        }
+
+        auto* plugin =
+            ampoolnew(eMemoryPoolKind_Engine, dylib::library, AM_OS_STRING_TO_STRING(pluginPath.native()), dylib::decorations::none());
+
+        if (!plugin->get_symbol("RegisterPlugin"))
         {
             amLogError(
                 "Failed to load plugin '" AM_OS_CHAR_FMT "'. The library doesn't export a RegisterPlugin symbol.",
@@ -274,14 +289,22 @@ namespace SparkyStudios::Audio::Amplitude
             return nullptr;
         }
 
-        if (!plugin->has_symbol("PluginName"))
+        if (!plugin->get_symbol("UnregisterPlugin"))
+        {
+            amLogError(
+                "Failed to load plugin '" AM_OS_CHAR_FMT "'. The library doesn't export a UnregisterPlugin symbol.",
+                pluginLibraryName.c_str());
+            return nullptr;
+        }
+
+        if (!plugin->get_symbol("PluginName"))
         {
             amLogError(
                 "Failed to load plugin '" AM_OS_CHAR_FMT "'. The library doesn't export a PluginName symbol.", pluginLibraryName.c_str());
             return nullptr;
         }
 
-        if (!plugin->has_symbol("PluginVersion"))
+        if (!plugin->get_symbol("PluginVersion"))
         {
             amLogError(
                 "Failed to load plugin '" AM_OS_CHAR_FMT "'. The library doesn't export a PluginVersion symbol.",
@@ -302,10 +325,13 @@ namespace SparkyStudios::Audio::Amplitude
             amLogInfo("Loaded Plugin '%s' Version: %s", GetPluginName(), GetPluginVersion());
         }
 
-        void* handle = plugin->native_handle();
-        gLoadedPlugins.push_back(plugin);
+        gLoadedPlugins[hashValue] = plugin;
 
-        return handle;
+        return plugin->native_handle();
+#else
+        amLogError("The plugin system is not supported on this platform.");
+        return nullptr;
+#endif
     }
 
     void Engine::AddPluginSearchPath(const AmOsString& path)

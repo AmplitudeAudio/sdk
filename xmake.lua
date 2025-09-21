@@ -120,7 +120,6 @@ end)
 
 -- Dependencies
 add_requires("flatbuffers ^25.2.10")
-add_requires("dylib ^2.2.1")
 add_requires("xsimd ^13.2.0")
 add_requires("miniaudio ^0.11.22")
 add_requires("eigen ^3.4.0")
@@ -159,8 +158,16 @@ if is_plat("android") then
   add_syslinks("android", "log")
 end
 
+-- Non mobile platforms
+if not is_plat("iphoneos") and not is_plat("android") then
+  add_requires("dylib ^3.0.1")
+  add_packages("dylib")
+else
+  add_defines("AM_PLUGINS_UNSUPPORTED")
+end
+
 -- Add packages
-add_packages("flatbuffers", "xsimd", "eigen", "dylib", "miniaudio", "lz4")
+add_packages("flatbuffers", "xsimd", "eigen", "miniaudio", "lz4")
 
 -- Generate FlatBuffers schema files
 target("generate_includes")

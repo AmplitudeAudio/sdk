@@ -38,11 +38,21 @@ target("generate_test_package")
   end)
 target_end()
 
+target("test_plugin")
+  set_kind("shared")
+  set_targetdir("$(builddir)/samples")
+  add_rpathdirs("@loader_path/../$(plat)/$(arch)/$(mode)/shared")
+
+  add_deps("Amplitude::Shared")
+
+  add_files("test_plugin/*.cpp")
+target_end()
+
 target("common_test")
   set_kind("object")
   set_policy("build.fence", true)
 
-  add_deps("Amplitude::Static", "build_sample_project", "generate_test_package", "ampk")
+  add_deps("Amplitude::Shared", "build_sample_project", "generate_test_package", "ampk")
 
   add_files("common/*.cpp")
 

@@ -94,6 +94,8 @@ namespace SparkyStudios::Audio::Amplitude::Tests
 
             _fileSystem->SetBasePath(AM_OS_STRING("./samples/assets"));
 
+            Engine::AddPluginSearchPath(_fileSystem->ResolvePath(AM_OS_STRING("../")));
+
             amEngine->SetFileSystem(_fileSystem);
 
             // Wait for the file system to complete loading.
