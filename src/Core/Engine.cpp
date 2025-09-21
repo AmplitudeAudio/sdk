@@ -52,7 +52,7 @@ namespace SparkyStudios::Audio::Amplitude
 
 #ifndef AM_PLUGINS_UNSUPPORTED
     // The list of loaded plugins.
-    static std::unordered_map<size_t, dylib::library*> gLoadedPlugins = {};
+    static std::unordered_map<std::filesystem::path, dylib::library*> gLoadedPlugins = {};
 #endif
 
     // Default Plugins instances
@@ -269,13 +269,10 @@ namespace SparkyStudios::Audio::Amplitude
 
         std::filesystem::path pluginPath = std::filesystem::path(pluginsDirectoryPath) / finalName;
 
-        std::hash<std::filesystem::path> hashFunction;
-        size_t hashValue = hashFunction(pluginPath);
-
-        if (gLoadedPlugins.find(hashValue) != gLoadedPlugins.end())
+        if (gLoadedPlugins.find(pluginPath) != gLoadedPlugins.end())
         {
             amLogWarning("The plugin '" AM_OS_CHAR_FMT "' is already loaded.", pluginLibraryName.c_str());
-            return gLoadedPlugins[hashValue]->native_handle();
+            return gLoadedPlugins[pluginPath]->native_handle();
         }
 
         auto* plugin =
@@ -325,7 +322,7 @@ namespace SparkyStudios::Audio::Amplitude
             amLogInfo("Loaded Plugin '%s' Version: %s", GetPluginName(), GetPluginVersion());
         }
 
-        gLoadedPlugins[hashValue] = plugin;
+        gLoadedPlugins[pluginPath] = plugin;
 
         return plugin->native_handle();
 #else
