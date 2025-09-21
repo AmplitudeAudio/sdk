@@ -45,13 +45,13 @@ jobs:
 
           - name: "macOS x64 Latest Clang"
             key: clang
-            os: macos-13
+            os: macos-15-intel
             arch: x86_64
             plat: macosx
 
           - name: "macOS arm64 Latest Clang"
             key: clang
-            os: macos-14
+            os: macos-15
             arch: arm64
             plat: macosx
 
