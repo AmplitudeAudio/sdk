@@ -15,7 +15,7 @@
 target("generate_test_package")
   set_kind("phony")
 
-  add_deps("ampk")
+  add_deps("ampk", "build_sample_project")
 
   on_build(function(target)
     import("core.project.config")
@@ -42,6 +42,7 @@ target("test_plugin")
   set_kind("shared")
   set_targetdir("$(builddir)/samples")
   add_rpathdirs("@loader_path/../$(plat)/$(arch)/$(mode)/shared")
+  add_defines("AM_BUILDSYSTEM_BUILDING_PLUGIN")
 
   add_deps("Amplitude::Shared")
 
