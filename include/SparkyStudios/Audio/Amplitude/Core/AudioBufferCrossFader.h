@@ -21,7 +21,17 @@
 
 namespace SparkyStudios::Audio::Amplitude
 {
-    class AudioBufferCrossFader
+    /**
+     * @brief Helper class used to cross fade between audio buffers.
+     *
+     * This operation generates a new @c AudioBuffer from a linear cross-fading
+     * between two audio buffers.
+     *
+     * @see AudioBuffer
+     *
+     * @ingroup core
+     */
+    class AM_API_PUBLIC AudioBufferCrossFader
     {
     public:
         explicit AudioBufferCrossFader(AmSize sampleCount);
@@ -29,9 +39,9 @@ namespace SparkyStudios::Audio::Amplitude
         /**
          * @brief Performs a linear cross-fading between two audio buffers.
          *
-         * @param bufferIn The first audio buffer to cross-fade from.
-         * @param bufferOut The second audio buffer to cross-fade to.
-         * @param outputBuffer The resulting cross-faded audio buffer.
+         * @param[in] bufferIn The first audio buffer to cross-fade from.
+         * @param[in] bufferOut The second audio buffer to cross-fade to.
+         * @param[out] outputBuffer The resulting cross-faded audio buffer.
          */
         void CrossFade(const AudioBuffer& bufferIn, const AudioBuffer& bufferOut, AudioBuffer& outputBuffer) const;
 

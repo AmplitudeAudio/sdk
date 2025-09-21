@@ -12,7 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include <Core/AudioBufferCrossFader.h>
+#include <SparkyStudios/Audio/Amplitude/Core/AudioBufferCrossFader.h>
+
 #include <Utils/Utils.h>
 
 namespace SparkyStudios::Audio::Amplitude

@@ -17,10 +17,9 @@
 #ifndef _AM_IMPLEMENTATION_DSP_REFLECTIONS_PROCESSOR_H
 #define _AM_IMPLEMENTATION_DSP_REFLECTIONS_PROCESSOR_H
 
-#include <SparkyStudios/Audio/Amplitude/Core/Common.h>
+#include <SparkyStudios/Audio/Amplitude/Core/AudioBufferCrossFader.h>
 
 #include <Ambisonics/BFormat.h>
-#include <Core/AudioBufferCrossFader.h>
 #include <Core/RoomInternalState.h>
 #include <DSP/Delay.h>
 #include <DSP/Filters/MonoPoleFilter.h>

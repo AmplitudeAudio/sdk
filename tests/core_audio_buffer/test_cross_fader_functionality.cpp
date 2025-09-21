@@ -13,7 +13,6 @@
 // limitations under the License.
 
 #include <SparkyStudios/Audio/Amplitude/Amplitude.h>
-#include <Core/AudioBufferCrossFader.h>
 
 #include "SimpleTestCase.h"
 
