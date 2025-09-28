@@ -27,10 +27,10 @@ void SimpleTestCase::Run()
     auto outer = AmSharedPtr<ConeShape>::Make(100, 100);
     std::shared_ptr<Zone> zone = AmSharedPtr<ConeZone>::Make(inner, outer);
 
-    const AmVector3 innerPoint = { 25, 25, 0 };
-    const AmVector3 outerPoint = { 175, 175, 0 };
-    const AmVector3 middlePoint1 = { 0.0f, 87.5f, 0.0f };
-    const AmVector3 middlePoint2 = { 25.0f, 75.0f, 0.0f };
+    constexpr AmVector3 innerPoint = { 25, 25, 0 };
+    constexpr AmVector3 outerPoint = { 175, 175, 0 };
+    constexpr AmVector3 middlePoint1 = { 0.0f, 87.5f, 0.0f };
+    constexpr AmVector3 middlePoint2 = { 25.0f, 75.0f, 0.0f };
 
     AM_EXPECT_EQ(zone->GetFactor(innerPoint), 1.0f);
     AM_EXPECT_EQ(zone->GetFactor(outerPoint), 0.0f);

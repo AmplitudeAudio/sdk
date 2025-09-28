@@ -361,12 +361,11 @@ namespace SparkyStudios::Audio::Amplitude
 
             if (const AmReal32 roomVolume = _room.GetVolume(); roomVolume >= kEpsilon)
             {
-                const AmVector3& relativeLocation =
-                    GetRelativeDirection(_room.GetLocation(), _room.GetOrientation().GetQuaternion(), GetLocation());
-                const AmVector3& closestPoint = _room.GetShape().GetClosestPoint(relativeLocation);
+                const AmVector3& location = GetLocation();
+                const AmVector3& closestPoint = _room.GetShape().GetClosestPoint(location);
 
                 // Avoid division by zero by shifting the attenuation by 1.0f
-                const AmReal32 distance = Length(Sub(relativeLocation, closestPoint)) + 1.0f;
+                const AmReal32 distance = Length(Sub(location, closestPoint)) + 1.0f;
 
                 gain = 1.0f / (distance * distance);
             }
