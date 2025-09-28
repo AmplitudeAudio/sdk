@@ -234,6 +234,26 @@ namespace SparkyStudios::Audio::Amplitude
         static AmVector3 ConvertToDefault(const AmVector3& vector, const CartesianCoordinateSystem& from);
 
         /**
+         * @brief Converts a quaternion from one coordinate system to the default coordinate system.
+         *
+         * @param[in] rotation The rotation to convert.
+         * @param[in] from The source coordinate system.
+         *
+         * @return The converted rotation.
+         */
+        static AmQuaternion ConvertToDefault(const AmQuaternion& rotation, const CartesianCoordinateSystem& from);
+
+        /**
+         * @brief Converts a scalar from one coordinate system to the default coordinate system.
+         *
+         * @param[in] scalar The scalar to convert.
+         * @param[in] from The source coordinate system.
+         *
+         * @return The converted scalar.
+         */
+        static AmReal32 ConvertToDefault(AmReal32 scalar, const CartesianCoordinateSystem& from);
+
+        /**
          * @brief Gets a vector corresponding to the given axis.
          *
          * @param[in] axis The axis to get the vector for.

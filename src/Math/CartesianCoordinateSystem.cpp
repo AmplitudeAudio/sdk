@@ -142,6 +142,16 @@ namespace SparkyStudios::Audio::Amplitude
         return Convert(vector, from, Default());
     }
 
+    AmQuaternion CartesianCoordinateSystem::ConvertToDefault(const AmQuaternion& rotation, const CartesianCoordinateSystem& from)
+    {
+        return Convert(rotation, from, Default());
+    }
+
+    AmReal32 CartesianCoordinateSystem::ConvertToDefault(AmReal32 scalar, const CartesianCoordinateSystem& from)
+    {
+        return Convert(scalar, from, Default());
+    }
+
     AmVector3 CartesianCoordinateSystem::GetVector(Axis axis)
     {
         switch (axis)
