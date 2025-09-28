@@ -37,7 +37,8 @@ void SimpleTestCase::Run()
     constexpr AmVector3 inner = { 0, 50, 0 };
     constexpr AmVector3 outer = { 0, 0, 150 };
     constexpr AmVector3 center = { 0, 0, 0 };
-    constexpr AmVector3 surfacePoint = { 0, 100, 25 };
+    constexpr AmVector3 basePoint = { 0, 100, 25 };
+    constexpr AmVector3 surfacePoint = { 0, 50, 25 };
 
     AM_EXPECT_EQ(shape.GetRadius(), 50);
     AM_EXPECT_EQ(shape.GetDiameter(), 100);
@@ -45,10 +46,12 @@ void SimpleTestCase::Run()
 
     AM_EXPECT_EQ(shape.GetShortestDistanceToEdge(inner), 25.0f);
     AM_EXPECT_EQ(shape.GetShortestDistanceToEdge(outer), -150.0f);
+    AM_EXPECT_EQ(shape.GetShortestDistanceToEdge(basePoint), 0.0f);
     AM_EXPECT_EQ(shape.GetShortestDistanceToEdge(surfacePoint), 0.0f);
 
     AM_EXPECT(shape.Contains(inner));
     AM_EXPECT_NOT(shape.Contains(outer));
+    AM_EXPECT(shape.Contains(basePoint));
     AM_EXPECT(shape.Contains(surfacePoint));
 
     {
