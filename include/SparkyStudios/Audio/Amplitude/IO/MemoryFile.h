@@ -97,6 +97,11 @@ namespace SparkyStudios::Audio::Amplitude
         [[nodiscard]] bool IsValid() const override;
 
         /**
+         * @inherit
+         */
+        void Close() override;
+
+        /**
          * @brief Opens a new memory buffer with the specified size.
          *
          * @param[in] size The size of the buffer.
@@ -134,11 +139,6 @@ namespace SparkyStudios::Audio::Amplitude
          * @return The result of the operation.
          */
         AmResult OpenFileToMem(File* file);
-
-        /**
-         * @brief Closes the memory buffer and releases associated resources.
-         */
-        void Close();
 
     private:
         AmUInt8Buffer m_dataPtr;

@@ -92,9 +92,9 @@ namespace SparkyStudios::Audio::Amplitude
         [[nodiscard]] bool IsValid() const override;
 
         /**
-         * @brief Closes the file.
+         * @inherit
          */
-        void Close();
+        void Close() override;
 
     private:
         AAsset* m_asset;

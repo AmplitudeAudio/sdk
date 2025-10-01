@@ -23,6 +23,7 @@ void SimpleTestCase::Run()
     // Uncompressed file
     {
         PackageFileSystem fileSystem;
+        fileSystem.SetPlatformFileSystem<DiskFileSystem>();
         fileSystem.SetBasePath(AM_OS_STRING("./samples/assets_uncompressed.ampk"));
 
         fileSystem.StartOpenFileSystem();
@@ -41,6 +42,7 @@ void SimpleTestCase::Run()
     // Compressed file
     {
         PackageFileSystem fileSystem;
+        fileSystem.SetPlatformFileSystem<DiskFileSystem>();
         fileSystem.SetBasePath(AM_OS_STRING("./samples/assets_compressed.ampk"));
 
         fileSystem.StartOpenFileSystem();

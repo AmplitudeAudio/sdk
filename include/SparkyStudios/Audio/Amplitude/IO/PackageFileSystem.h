@@ -19,7 +19,6 @@
 
 #include <SparkyStudios/Audio/Amplitude/Core/Memory.h>
 #include <SparkyStudios/Audio/Amplitude/Core/Thread.h>
-#include <SparkyStudios/Audio/Amplitude/IO/DiskFile.h>
 #include <SparkyStudios/Audio/Amplitude/IO/FileSystem.h>
 
 namespace SparkyStudios::Audio::Amplitude
@@ -222,6 +221,25 @@ namespace SparkyStudios::Audio::Amplitude
         bool TryFinalizeCloseFileSystem() override;
 
         /**
+         * @brief Sets the platform file system to use for opening and reading
+         * the package file.
+         *
+         * @param[in] args The parameters to pass to the file system constructor.
+         */
+        template<class TFileSystem, class... Args>
+        void SetPlatformFileSystem(Args&&... args)
+        {
+            static_assert(std::is_base_of_v<FileSystem, TFileSystem>, "T must inherit from FileSystem");
+            static_assert(!std::is_same_v<TFileSystem, PackageFileSystem>, "T cannot be PackageFileSystem");
+
+            // If the package file is already loaded, this method is a noop
+            if (IsValid())
+                return;
+
+            _fileSystem.reset(ampoolnew(eMemoryPoolKind_IO, TFileSystem, std::forward<Args>(args)...));
+        }
+
+        /**
          * @brief Returns if the package file is valid and loaded.
          *
          * @return @c true if the package file is valid and loaded, @c false otherwise.
@@ -238,8 +256,10 @@ namespace SparkyStudios::Audio::Amplitude
          */
         static void LoadPackage(AmVoidPtr pParam);
 
-        std::filesystem::path _packagePath;
-        AmUniquePtr<DiskFile, eMemoryPoolKind_IO> _packageFile;
+        AmUniquePtr<FileSystem, eMemoryPoolKind_IO> _fileSystem;
+
+        AmOsString _packagePath;
+        std::shared_ptr<File> _packageFile;
 
         AmThreadHandle _loadingThreadHandle;
         mutable bool _initialized;
