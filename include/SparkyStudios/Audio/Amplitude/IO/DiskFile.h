@@ -66,7 +66,7 @@ namespace SparkyStudios::Audio::Amplitude
         /**
          * @inherit
          */
-        bool Eof() const override;
+        [[nodiscard]] bool Eof() const override;
 
         /**
          * @inherit
@@ -81,7 +81,7 @@ namespace SparkyStudios::Audio::Amplitude
         /**
          * @inherit
          */
-        AmSize Length() const override;
+        [[nodiscard]] AmSize Length() const override;
 
         /**
          * @inherit
@@ -91,17 +91,22 @@ namespace SparkyStudios::Audio::Amplitude
         /**
          * @inherit
          */
-        AmSize Position() const override;
+        [[nodiscard]] AmSize Position() const override;
 
         /**
          * @inherit
          */
-        AmVoidPtr GetPtr() const override;
+        [[nodiscard]] AmVoidPtr GetPtr() const override;
 
         /**
          * @inherit
          */
         [[nodiscard]] bool IsValid() const override;
+
+        /**
+         * @inherit.
+         */
+        void Close() override;
 
         /**
          * @brief Opens a file at the given path.
@@ -114,11 +119,6 @@ namespace SparkyStudios::Audio::Amplitude
          */
         AmResult Open(
             const std::filesystem::path& filePath, eFileOpenMode mode = eFileOpenMode_Read, eFileOpenKind kind = eFileOpenKind_Binary);
-
-        /**
-         * @brief Closes the file.
-         */
-        void Close();
 
     private:
         std::filesystem::path m_filePath;

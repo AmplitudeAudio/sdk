@@ -21,14 +21,11 @@ using namespace SparkyStudios::Audio::Amplitude;
 void SimpleTestCase::Run()
 {
     PackageFileSystem fileSystem;
+    fileSystem.SetPlatformFileSystem<DiskFileSystem>();
 
-    AM_EXPECT(
-        fileSystem.Join({ AM_OS_STRING("sounds"), AM_OS_STRING("test.wav") }) ==
-        std::filesystem::path(AM_OS_STRING("sounds/test.wav")).lexically_normal().make_preferred().native());
-    AM_EXPECT(
-        fileSystem.Join({ AM_OS_STRING("../sample_project/sounds/../test.wav") }) ==
-        std::filesystem::path(AM_OS_STRING("../sample_project/test.wav")).lexically_normal().make_preferred().native());
+    AM_EXPECT(fileSystem.Join({ AM_OS_STRING("sounds"), AM_OS_STRING("test.wav") }) == AM_OS_STRING("sounds/test.wav"));
+    AM_EXPECT(fileSystem.Join({ AM_OS_STRING("../sample_project/sounds/../test.wav") }) == AM_OS_STRING("../sample_project/test.wav"));
     AM_EXPECT(
         fileSystem.Join({ AM_OS_STRING("./sounds"), AM_OS_STRING("../sounds/"), AM_OS_STRING("./test.wav") }) ==
-        std::filesystem::path(AM_OS_STRING("sounds/test.wav")).lexically_normal().make_preferred().native());
+        AM_OS_STRING("sounds/test.wav"));
 }

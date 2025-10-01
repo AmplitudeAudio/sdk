@@ -12,7 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include <SparkyStudios/Audio/Amplitude/Core/Memory.h>
 #include <SparkyStudios/Audio/Amplitude/IO/Log.h>
 #include <SparkyStudios/Audio/Amplitude/IO/PackageFileSystem.h>
 #include <SparkyStudios/Audio/Amplitude/IO/PackageItemFile.h>
@@ -41,7 +40,8 @@ namespace SparkyStudios::Audio::Amplitude
         if (_loadingThreadHandle != nullptr)
             Thread::Release(_loadingThreadHandle);
 
-        _packageFile.reset(nullptr);
+        _packageFile.reset();
+        _fileSystem.reset(nullptr);
         _initialized = false;
         _valid = false;
         _header = {};
@@ -50,19 +50,88 @@ namespace SparkyStudios::Audio::Amplitude
 
     void PackageFileSystem::SetBasePath(const AmOsString& basePath)
     {
-        const auto& p = std::filesystem::path(basePath);
-        _packagePath = p.is_relative() ? (std::filesystem::current_path() / p).lexically_normal().make_preferred() : p;
+        if (_fileSystem == nullptr)
+            return;
+
+        _packagePath = _fileSystem->ResolvePath(basePath);
     }
 
     const AmOsString& PackageFileSystem::GetBasePath() const
     {
-        return _packagePath.native();
+        return _packagePath;
     }
 
     AmOsString PackageFileSystem::ResolvePath(const AmOsString& path) const
     {
-        auto resolvedPath = std::filesystem::path(path).lexically_normal().native();
+        AmOsString resolvedPath = path;
+
+        // Normalize path separators and resolve relative components manually
+        // Replace all backslashes with forward slashes
         std::ranges::replace(resolvedPath, '\\', '/');
+
+        // Remove duplicate slashes
+        for (size_t i = 0; i < resolvedPath.length() - 1;)
+        {
+            if (resolvedPath[i] == '/' && resolvedPath[i + 1] == '/')
+                resolvedPath.erase(i + 1, 1);
+            else
+                ++i;
+        }
+
+        // Handle . and .. components
+        std::vector<AmOsString> components;
+        AmSize start = 0;
+        bool canPop = false;
+        for (AmSize i = 0; i <= resolvedPath.length(); ++i)
+        {
+            if (i == resolvedPath.length() || resolvedPath[i] == '/')
+            {
+                if (i > start)
+                {
+                    AmOsString component = resolvedPath.substr(start, i - start);
+                    if (component == AM_OS_STRING(".."))
+                    {
+                        if (!components.empty() && canPop)
+                        {
+                            components.pop_back();
+                            canPop = components.back() != AM_OS_STRING("..");
+                        }
+                        else
+                        {
+                            components.push_back(component);
+                        }
+                    }
+                    else if (component != AM_OS_STRING("."))
+                    {
+                        components.push_back(component);
+                        canPop = true;
+                    }
+                }
+                start = i + 1;
+            }
+        }
+
+        // Reconstruct the path
+        if (components.empty())
+        {
+            resolvedPath = AM_OS_STRING(".");
+        }
+        else
+        {
+            resolvedPath.clear();
+            for (size_t i = 0; i < components.size(); ++i)
+            {
+                if (i > 0)
+                    resolvedPath += AM_OS_STRING("/");
+
+                resolvedPath += components[i];
+            }
+        }
+
+        // Remove possible "./" prefix
+        if (resolvedPath.length() >= 2 && resolvedPath.substr(0, 2) == AM_OS_STRING("./"))
+            resolvedPath = resolvedPath.substr(2);
+
         return resolvedPath;
     }
 
@@ -92,12 +161,12 @@ namespace SparkyStudios::Audio::Amplitude
         if (parts.empty())
             return AM_OS_STRING("");
 
-        std::filesystem::path joined(parts[0]);
+        AmOsString joined(parts[0]);
 
         for (AmSize i = 1, l = parts.size(); i < l; i++)
             joined += AM_OS_STRING("/") + parts[i];
 
-        return joined.lexically_normal().native();
+        return ResolvePath(joined);
     }
 
     std::shared_ptr<File> PackageFileSystem::OpenFile(const AmOsString& path, eFileOpenMode mode) const
@@ -115,7 +184,7 @@ namespace SparkyStudios::Audio::Amplitude
         if (it == _header.m_Items.end())
             return nullptr;
 
-        return AmSharedPtr<PackageItemFile, eMemoryPoolKind_IO>::Make(&*it, _packagePath, _headerSize);
+        return AmSharedPtr<PackageItemFile, eMemoryPoolKind_IO>::Make(&*it, _fileSystem->OpenFile(_packagePath), _headerSize);
     }
 
     void PackageFileSystem::StartOpenFileSystem()
@@ -146,7 +215,7 @@ namespace SparkyStudios::Audio::Amplitude
     void PackageFileSystem::StartCloseFileSystem()
     {
         _packageFile->Close();
-        _packageFile.reset(nullptr);
+        _packageFile.reset();
         _initialized = false;
     }
 
@@ -164,7 +233,7 @@ namespace SparkyStudios::Audio::Amplitude
     {
         auto* pFileSystem = static_cast<PackageFileSystem*>(pParam);
 
-        pFileSystem->_packageFile.reset(ampoolnew(eMemoryPoolKind_IO, DiskFile, pFileSystem->_packagePath));
+        pFileSystem->_packageFile = pFileSystem->_fileSystem->OpenFile(pFileSystem->_packagePath);
 
         if (!pFileSystem->_packageFile->IsValid())
         {

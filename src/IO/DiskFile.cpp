@@ -91,6 +91,15 @@ namespace SparkyStudios::Audio::Amplitude
         return m_fileHandle != nullptr;
     }
 
+    void DiskFile::Close()
+    {
+        if (m_fileHandle == nullptr)
+            return;
+
+        fclose(m_fileHandle);
+        m_fileHandle = nullptr;
+    }
+
     AmResult DiskFile::Open(const std::filesystem::path& filePath, eFileOpenMode mode, eFileOpenKind kind)
     {
         if (filePath.empty())
@@ -129,14 +138,5 @@ namespace SparkyStudios::Audio::Amplitude
         m_filePath = filePath;
 
         return eErrorCode_Success;
-    }
-
-    void DiskFile::Close()
-    {
-        if (m_fileHandle == nullptr)
-            return;
-
-        fclose(m_fileHandle);
-        m_fileHandle = nullptr;
     }
 } // namespace SparkyStudios::Audio::Amplitude

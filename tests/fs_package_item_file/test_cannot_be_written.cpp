@@ -21,6 +21,7 @@ using namespace SparkyStudios::Audio::Amplitude;
 void SimpleTestCase::Run()
 {
     PackageFileSystem fileSystem;
+    fileSystem.SetPlatformFileSystem<DiskFileSystem>();
     fileSystem.SetBasePath(AM_OS_STRING("./samples/assets_uncompressed.ampk"));
 
     fileSystem.StartOpenFileSystem();

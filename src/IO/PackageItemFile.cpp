@@ -19,13 +19,18 @@
 
 namespace SparkyStudios::Audio::Amplitude
 {
-    PackageItemFile::PackageItemFile(const PackageFileItemDescription* item, const std::filesystem::path& packageFile, AmSize headerSize)
+    PackageItemFile::PackageItemFile(const PackageFileItemDescription* item, std::shared_ptr<File> packageFile, AmSize headerSize)
         : _description(item)
         , _isCompressed(item->m_CompressedBlockSize > 0)
         , _headerSize(headerSize)
+        , _packageFile(packageFile)
     {
-        Open(packageFile);
-        PackageItemFile::Seek(0, eFileSeekOrigin_Start);
+        Seek(0, eFileSeekOrigin_Start);
+    }
+
+    PackageItemFile::~PackageItemFile()
+    {
+        _packageFile.reset();
     }
 
     AmOsString PackageItemFile::GetPath() const
@@ -59,8 +64,8 @@ namespace SparkyStudios::Audio::Amplitude
                 const auto& ch = _description->m_CompressedChunks[ci];
                 std::vector<AmUInt8> compressed(ch.m_CompressedSize);
 
-                const_cast<PackageItemFile*>(this)->DiskFile::Seek(GetBasePosition() + ch.m_Offset, eFileSeekOrigin_Start);
-                const_cast<PackageItemFile*>(this)->DiskFile::Read(compressed.data(), ch.m_CompressedSize);
+                _packageFile->Seek(GetBasePosition() + ch.m_Offset, eFileSeekOrigin_Start);
+                _packageFile->Read(compressed.data(), ch.m_CompressedSize);
 
                 std::vector<char> decompressed(ch.m_Size);
                 LZ4_decompress_safe(reinterpret_cast<char*>(compressed.data()), decompressed.data(), ch.m_CompressedSize, ch.m_Size);
@@ -77,11 +82,11 @@ namespace SparkyStudios::Audio::Amplitude
             return bytes;
         }
 
-        const_cast<PackageItemFile*>(this)->DiskFile::Seek(GetBasePosition() + _currentPosition, eFileSeekOrigin_Start);
+        _packageFile->Seek(GetBasePosition() + _currentPosition, eFileSeekOrigin_Start);
 
         const auto distance = Length() - Position();
         bytes = AM_MIN(bytes, distance);
-        const AmSize readBytes = bytes == 0 ? 0 : DiskFile::Read(dst, bytes);
+        const AmSize readBytes = bytes == 0 ? 0 : _packageFile->Read(dst, bytes);
 
         _currentPosition += readBytes;
         return readBytes;
@@ -133,6 +138,25 @@ namespace SparkyStudios::Audio::Amplitude
     AmSize PackageItemFile::Position() const
     {
         return _currentPosition;
+    }
+
+    AmVoidPtr PackageItemFile::GetPtr() const
+    {
+        return nullptr;
+    }
+
+    bool PackageItemFile::IsValid() const
+    {
+        return _packageFile != nullptr && _packageFile->IsValid();
+    }
+
+    void PackageItemFile::Close()
+    {
+        if (_packageFile == nullptr)
+            return;
+
+        _packageFile->Close();
+        _packageFile.reset();
     }
 
     AmSize PackageItemFile::GetBasePosition() const

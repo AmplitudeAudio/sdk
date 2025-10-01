@@ -269,6 +269,11 @@ namespace SparkyStudios::Audio::Amplitude
          * @return @c true if the file is valid, @c false otherwise.
          */
         [[nodiscard]] virtual bool IsValid() const = 0;
+
+        /**
+         * @brief Closes the file an releases allocated resources.
+         */
+        virtual void Close() = 0;
     };
 } // namespace SparkyStudios::Audio::Amplitude
 

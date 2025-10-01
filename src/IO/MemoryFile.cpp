@@ -102,6 +102,17 @@ namespace SparkyStudios::Audio::Amplitude
         return m_dataPtr != nullptr;
     }
 
+    void MemoryFile::Close()
+    {
+        if (m_dataOwned && m_dataPtr != nullptr)
+            ampoolfree(eMemoryPoolKind_IO, m_dataPtr);
+
+        m_dataPtr = nullptr;
+        m_dataSize = 0;
+        m_offset = 0;
+        m_dataOwned = false;
+    }
+
     AmResult MemoryFile::Open(AmSize size)
     {
         return OpenMem(static_cast<AmConstUInt8Buffer>(ampoolmalloc(eMemoryPoolKind_IO, size)), size, false, true);
@@ -180,16 +191,5 @@ namespace SparkyStudios::Audio::Amplitude
         m_dataOwned = true;
 
         return eErrorCode_Success;
-    }
-
-    void MemoryFile::Close()
-    {
-        if (m_dataOwned && m_dataPtr != nullptr)
-            ampoolfree(eMemoryPoolKind_IO, m_dataPtr);
-
-        m_dataPtr = nullptr;
-        m_dataSize = 0;
-        m_offset = 0;
-        m_dataOwned = false;
     }
 } // namespace SparkyStudios::Audio::Amplitude

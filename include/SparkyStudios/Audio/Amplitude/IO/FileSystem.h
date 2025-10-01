@@ -17,7 +17,6 @@
 #ifndef _AM_IO_FILESYSTEM_H
 #define _AM_IO_FILESYSTEM_H
 
-#include <SparkyStudios/Audio/Amplitude/Core/Common.h>
 #include <SparkyStudios/Audio/Amplitude/IO/File.h>
 
 #include <memory>
