@@ -34,6 +34,7 @@
 
 #include "buses_definition_generated.h"
 #include "engine_config_definition_generated.h"
+#include "sound_bank_definition_generated.h"
 
 #include <Core/DefaultPlugins.h>
 
