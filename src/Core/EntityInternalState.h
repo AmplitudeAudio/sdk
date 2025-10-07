@@ -25,7 +25,7 @@
 
 namespace SparkyStudios::Audio::Amplitude
 {
-    class EntityInternalState
+    class AM_API_PUBLIC EntityInternalState
     {
     public:
         EntityInternalState();
