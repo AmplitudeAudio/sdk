@@ -49,25 +49,25 @@ namespace SparkyStudios::Audio::Amplitude::Tests
         }
 
         // Returns true if any expectation failed during the test
-        bool HasFailure() const
+        [[nodiscard]] AM_INLINE bool HasFailure() const
         {
             return _failedCount > 0;
         }
 
         // Returns the number of passed expectations
-        int PassedCount() const
+        [[nodiscard]] AM_INLINE AmInt32 PassedCount() const
         {
             return _passedCount;
         }
 
         // Returns the number of failed expectations
-        int FailedCount() const
+        [[nodiscard]] AM_INLINE AmInt32 FailedCount() const
         {
             return _failedCount;
         }
 
         // Returns the total number of expectations ran
-        int TotalExpectations() const
+        [[nodiscard]] AM_INLINE AmInt32 TotalExpectations() const
         {
             return _passedCount + _failedCount;
         }
@@ -83,8 +83,8 @@ namespace SparkyStudios::Audio::Amplitude::Tests
         }
 
     private:
-        int _passedCount;
-        int _failedCount;
+        AmInt32 _passedCount;
+        AmInt32 _failedCount;
     };
 
     std::shared_ptr<TestCase> MakeTestCase();

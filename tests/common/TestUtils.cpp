@@ -12,8 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include <Core/EntityInternalState.h>
-#include <Core/ListenerInternalState.h>
+#include "TestUtils.h"
 
 namespace SparkyStudios::Audio::Amplitude::Tests
 {
@@ -26,9 +25,7 @@ namespace SparkyStudios::Audio::Amplitude::Tests
 
         listener_list.push_back(*state);
 
-        Listener wrapper(state);
-
-        return wrapper;
+        return Listener(state);
     }
 
     Entity InitTestEntity(EntityInternalState* state)
@@ -37,8 +34,6 @@ namespace SparkyStudios::Audio::Amplitude::Tests
 
         entity_list.push_back(*state);
 
-        Entity wrapper(state);
-
-        return wrapper;
+        return Entity(state);
     }
 } // namespace SparkyStudios::Audio::Amplitude::Tests
