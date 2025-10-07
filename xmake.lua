@@ -119,6 +119,7 @@ on_config(function(target)
 end)
 
 -- Dependencies
+add_requireconfs("*", { debug = is_mode("debug") })
 add_requires("flatbuffers ^25.2.10")
 add_requires("xsimd ^13.2.0")
 add_requires("miniaudio ^0.11.22")
