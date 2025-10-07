@@ -18,8 +18,7 @@
 
 namespace SparkyStudios::Audio::Amplitude::Tests
 {
-
-    class InvalidConsumerNodeInstance
+    class InvalidConsumerNodeInstance final
         : public NodeInstance
         , public ProviderNodeInstance
     {
@@ -66,7 +65,7 @@ namespace SparkyStudios::Audio::Amplitude::Tests
         }
     };
 
-    class EngineTestCase : public TestCase
+    class EngineTestCase final : public TestCase
     {
     public:
         static void run(AmVoidPtr listener)
@@ -171,7 +170,7 @@ namespace SparkyStudios::Audio::Amplitude::Tests
 
         void Run() override;
 
-        AM_INLINE bool IsRunning() const
+        [[nodiscard]] AM_INLINE bool IsRunning() const
         {
             return _running;
         }
