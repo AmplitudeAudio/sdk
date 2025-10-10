@@ -2239,6 +2239,8 @@ namespace SparkyStudios::Audio::Amplitude
         AmReal32 gain;
         AmReal32 pitch;
 
+        bool isEntityScope = false;
+
         // Find the best listener for this channel.
         ListenerInternalState* listener = FindBestListener(state->listener_list, channel->GetLocation(), state->listener_fetch_mode);
 
@@ -2247,25 +2249,32 @@ namespace SparkyStudios::Audio::Amplitude
             CalculateGainAndPitch(
                 &gain, &pitch, listener, nullptr, switchContainer->GetGain().GetValue(), switchContainer->GetPitch().GetValue(),
                 switchContainer->GetBus().GetState(), switchContainer->GetSpatialization(), channel->GetUserGain());
+
+            isEntityScope = switchContainer->GetScope() == eScope_Entity;
         }
         else if (const Collection* collection = channel->GetCollection(); collection != nullptr)
         {
             CalculateGainAndPitch(
                 &gain, &pitch, listener, nullptr, collection->GetGain().GetValue(), collection->GetPitch().GetValue(),
                 collection->GetBus().GetState(), collection->GetSpatialization(), channel->GetUserGain());
+
+            isEntityScope = collection->GetScope() == eScope_Entity;
         }
         else if (const Sound* sound = channel->GetSound(); sound != nullptr)
         {
             CalculateGainAndPitch(
                 &gain, &pitch, listener, nullptr, sound->GetGain().GetValue(), sound->GetPitch().GetValue(), sound->GetBus().GetState(),
                 sound->GetSpatialization(), channel->GetUserGain());
+
+            isEntityScope = sound->GetScope() == eScope_Entity;
         }
         else
         {
             AMPLITUDE_ASSERT(false);
         }
 
-        AssignBestRoom(channel, channel->GetLocation(), state);
+        if (isEntityScope)
+            AssignBestRoom(channel, channel->GetLocation(), state);
 
         channel->SetGain(gain);
         channel->SetPitch(pitch);
@@ -2656,7 +2665,8 @@ namespace SparkyStudios::Audio::Amplitude
                 }
             });
 
-        AssignBestRoom(newChannel, location, _state);
+        if (isEntityScope)
+            AssignBestRoom(newChannel, location, _state);
 
         newChannel->SetGain(gain);
         newChannel->SetPitch(pitch);
@@ -2734,7 +2744,8 @@ namespace SparkyStudios::Audio::Amplitude
                 }
             });
 
-        AssignBestRoom(newChannel, location, _state);
+        if (isEntityScope)
+            AssignBestRoom(newChannel, location, _state);
 
         newChannel->SetGain(gain);
         newChannel->SetPitch(pitch);
@@ -2811,7 +2822,8 @@ namespace SparkyStudios::Audio::Amplitude
                 }
             });
 
-        AssignBestRoom(newChannel, location, _state);
+        if (isEntityScope)
+            AssignBestRoom(newChannel, location, _state);
 
         newChannel->SetGain(gain);
         newChannel->SetPitch(pitch);
