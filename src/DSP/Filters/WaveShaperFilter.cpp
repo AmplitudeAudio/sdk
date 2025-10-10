@@ -33,12 +33,12 @@ namespace SparkyStudios::Audio::Amplitude
         return eErrorCode_Success;
     }
 
-    AmUInt32 WaveShaperFilter::GetParamCount() const
+    AmUInt32 WaveShaperFilter::GetParameterCount() const
     {
         return ATTRIBUTE_LAST;
     }
 
-    AmString WaveShaperFilter::GetParamName(AmUInt32 index) const
+    AmString WaveShaperFilter::GetParameterName(AmUInt32 index) const
     {
         if (index >= ATTRIBUTE_LAST)
             return "";
@@ -47,17 +47,17 @@ namespace SparkyStudios::Audio::Amplitude
         return names[index];
     }
 
-    AmUInt32 WaveShaperFilter::GetParamType(AmUInt32 index) const
+    eParameterType WaveShaperFilter::GetParameterType(AmUInt32 index) const
     {
-        return kParameterTypeFloat;
+        return eParameterType_Float;
     }
 
-    AmReal32 WaveShaperFilter::GetParamMax(AmUInt32 index) const
+    AmReal32 WaveShaperFilter::GetParameterMax(AmUInt32 index) const
     {
         return 1.0f;
     }
 
-    AmReal32 WaveShaperFilter::GetParamMin(AmUInt32 index) const
+    AmReal32 WaveShaperFilter::GetParameterMin(AmUInt32 index) const
     {
         if (index == ATTRIBUTE_AMOUNT)
             return -1.0f;
@@ -73,7 +73,7 @@ namespace SparkyStudios::Audio::Amplitude
     WaveShaperFilterInstance::WaveShaperFilterInstance(WaveShaperFilter* parent)
         : FilterInstance(parent)
     {
-        Initialize(parent->GetParamCount());
+        Initialize(parent->GetParameterCount());
         m_parameters[WaveShaperFilter::ATTRIBUTE_AMOUNT] = parent->_amount;
     }
 

@@ -38,12 +38,12 @@ namespace SparkyStudios::Audio::Amplitude
         return eErrorCode_Success;
     }
 
-    AmUInt32 DelayFilter::GetParamCount() const
+    AmUInt32 DelayFilter::GetParameterCount() const
     {
         return ATTRIBUTE_LAST;
     }
 
-    AmString DelayFilter::GetParamName(AmUInt32 index) const
+    AmString DelayFilter::GetParameterName(AmUInt32 index) const
     {
         if (index >= ATTRIBUTE_LAST)
             return "";
@@ -53,20 +53,20 @@ namespace SparkyStudios::Audio::Amplitude
         return names[index];
     }
 
-    AmUInt32 DelayFilter::GetParamType(AmUInt32 index) const
+    eParameterType DelayFilter::GetParameterType(AmUInt32 index) const
     {
         if (index == ATTRIBUTE_DELAY_START)
-            return kParameterTypeBool;
+            return eParameterType_Bool;
 
-        return kParameterTypeFloat;
+        return eParameterType_Float;
     }
 
-    AmReal32 DelayFilter::GetParamMax(AmUInt32 index) const
+    AmReal32 DelayFilter::GetParameterMax(AmUInt32 index) const
     {
         return 1.0f;
     }
 
-    AmReal32 DelayFilter::GetParamMin(AmUInt32 index) const
+    AmReal32 DelayFilter::GetParameterMin(AmUInt32 index) const
     {
         return 0.0f;
     }
@@ -85,7 +85,7 @@ namespace SparkyStudios::Audio::Amplitude
         _bufferMaxLength = 0;
         _offset = 0;
 
-        Initialize(parent->GetParamCount());
+        Initialize(parent->GetParameterCount());
 
         m_parameters[DelayFilter::ATTRIBUTE_DELAY] = parent->_delay;
         m_parameters[DelayFilter::ATTRIBUTE_DECAY] = parent->_decay;

@@ -85,12 +85,12 @@ namespace SparkyStudios::Audio::Amplitude
         return Initialize(TYPE_DUAL_BAND_HIGH_PASS, frequency, 0.0f, 0.0f);
     }
 
-    AmUInt32 BiquadResonantFilter::GetParamCount() const
+    AmUInt32 BiquadResonantFilter::GetParameterCount() const
     {
         return ATTRIBUTE_LAST;
     }
 
-    AmString BiquadResonantFilter::GetParamName(AmUInt32 index) const
+    AmString BiquadResonantFilter::GetParameterName(AmUInt32 index) const
     {
         if (index >= ATTRIBUTE_LAST)
             return "";
@@ -106,15 +106,15 @@ namespace SparkyStudios::Audio::Amplitude
         return names[index];
     }
 
-    AmUInt32 BiquadResonantFilter::GetParamType(AmUInt32 index) const
+    eParameterType BiquadResonantFilter::GetParameterType(AmUInt32 index) const
     {
         if (index == ATTRIBUTE_TYPE)
-            return kParameterTypeInt;
+            return eParameterType_Int;
 
-        return kParameterTypeFloat;
+        return eParameterType_Float;
     }
 
-    AmReal32 BiquadResonantFilter::GetParamMax(AmUInt32 index) const
+    AmReal32 BiquadResonantFilter::GetParameterMax(AmUInt32 index) const
     {
         switch (index)
         {
@@ -133,7 +133,7 @@ namespace SparkyStudios::Audio::Amplitude
         }
     }
 
-    AmReal32 BiquadResonantFilter::GetParamMin(AmUInt32 index) const
+    AmReal32 BiquadResonantFilter::GetParameterMin(AmUInt32 index) const
     {
         switch (index)
         {

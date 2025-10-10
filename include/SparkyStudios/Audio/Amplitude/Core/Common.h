@@ -491,6 +491,27 @@ namespace SparkyStudios::Audio::Amplitude
     };
 
     /**
+     * @brief Lists the available parameter types for a filter.
+     */
+    enum eParameterType
+    {
+        /**
+         * @brief The parameter stores a @c float value.
+         */
+        eParameterType_Float = 0,
+
+        /**
+         * @brief The parameter stores an @c integer value.
+         */
+        eParameterType_Int,
+
+        /**
+         * @brief The parameter stores a @c boolean value.
+         */
+        eParameterType_Bool
+    };
+
+    /**
      * @brief Describes the format of an audio sample.
      *
      * This data structure is mainly filled by a @c Codec during the initialization time.

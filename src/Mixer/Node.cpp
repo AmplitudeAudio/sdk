@@ -64,6 +64,26 @@ namespace SparkyStudios::Audio::Amplitude
         return m_layer;
     }
 
+    AmReal32 NodeInstance::GetParameter(AmSize index)
+    {
+        if (index >= m_parameters.size())
+            return 0;
+
+        return m_parameters[index];
+    }
+
+    void NodeInstance::SetParameter(AmSize index, AmReal32 value)
+    {
+        if (index >= m_parameters.size())
+            return;
+
+        if (m_parameters[index] == value)
+            return;
+
+        m_parameters[index] = value;
+        m_numParamsChanged |= 1 << index;
+    }
+
     ProcessorNodeInstance::ProcessorNodeInstance(bool processOnEmptyInputBuffer)
         : m_provider(0)
         , _processingBuffer(nullptr)
@@ -284,6 +304,31 @@ namespace SparkyStudios::Audio::Amplitude
     const AmString& Node::GetName() const
     {
         return m_name;
+    }
+
+    AmSize Node::GetParameterCount() const
+    {
+        return 0;
+    }
+
+    AmString Node::GetParameterName(AmSize index) const
+    {
+        return "";
+    }
+
+    eParameterType Node::GetParameterType(AmSize index) const
+    {
+        return eParameterType_Float;
+    }
+
+    AmReal32 Node::GetParameterMax(AmSize index) const
+    {
+        return 0;
+    }
+
+    AmReal32 Node::GetParameterMin(AmSize index) const
+    {
+        return 0;
     }
 
     void Node::Register(std::shared_ptr<Node> node)

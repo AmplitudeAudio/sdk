@@ -36,12 +36,12 @@ namespace SparkyStudios::Audio::Amplitude
         return eErrorCode_Success;
     }
 
-    AmUInt32 FlangerFilter::GetParamCount() const
+    AmUInt32 FlangerFilter::GetParameterCount() const
     {
         return ATTRIBUTE_LAST;
     }
 
-    AmString FlangerFilter::GetParamName(AmUInt32 index) const
+    AmString FlangerFilter::GetParameterName(AmUInt32 index) const
     {
         if (index >= ATTRIBUTE_LAST)
             return "";
@@ -51,12 +51,12 @@ namespace SparkyStudios::Audio::Amplitude
         return names[index];
     }
 
-    AmUInt32 FlangerFilter::GetParamType(AmUInt32 index) const
+    eParameterType FlangerFilter::GetParameterType(AmUInt32 index) const
     {
-        return kParameterTypeFloat;
+        return eParameterType_Float;
     }
 
-    AmReal32 FlangerFilter::GetParamMax(AmUInt32 index) const
+    AmReal32 FlangerFilter::GetParameterMax(AmUInt32 index) const
     {
         if (index == ATTRIBUTE_DELAY)
             return 0.1f;
@@ -67,7 +67,7 @@ namespace SparkyStudios::Audio::Amplitude
         return 1.0f;
     }
 
-    AmReal32 FlangerFilter::GetParamMin(AmUInt32 index) const
+    AmReal32 FlangerFilter::GetParameterMin(AmUInt32 index) const
     {
         if (index == ATTRIBUTE_WET)
             return 0.0f;
@@ -92,7 +92,7 @@ namespace SparkyStudios::Audio::Amplitude
         _offset = 0;
         _index = 0;
 
-        Initialize(parent->GetParamCount());
+        Initialize(parent->GetParameterCount());
 
         m_parameters[FlangerFilter::ATTRIBUTE_DELAY] = parent->_delay;
         m_parameters[FlangerFilter::ATTRIBUTE_FREQUENCY] = parent->_frequency;

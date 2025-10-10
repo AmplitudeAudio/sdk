@@ -37,28 +37,28 @@ namespace SparkyStudios::Audio::Amplitude
         AmReal32 volume7,
         AmReal32 volume8)
     {
-        if (volume1 < GetParamMin(ATTRIBUTE_BAND_1) || volume1 > GetParamMax(ATTRIBUTE_BAND_1))
+        if (volume1 < GetParameterMin(ATTRIBUTE_BAND_1) || volume1 > GetParameterMax(ATTRIBUTE_BAND_1))
             return eErrorCode_InvalidParameter;
 
-        if (volume2 < GetParamMin(ATTRIBUTE_BAND_2) || volume2 > GetParamMax(ATTRIBUTE_BAND_2))
+        if (volume2 < GetParameterMin(ATTRIBUTE_BAND_2) || volume2 > GetParameterMax(ATTRIBUTE_BAND_2))
             return eErrorCode_InvalidParameter;
 
-        if (volume3 < GetParamMin(ATTRIBUTE_BAND_3) || volume3 > GetParamMax(ATTRIBUTE_BAND_3))
+        if (volume3 < GetParameterMin(ATTRIBUTE_BAND_3) || volume3 > GetParameterMax(ATTRIBUTE_BAND_3))
             return eErrorCode_InvalidParameter;
 
-        if (volume4 < GetParamMin(ATTRIBUTE_BAND_4) || volume4 > GetParamMax(ATTRIBUTE_BAND_4))
+        if (volume4 < GetParameterMin(ATTRIBUTE_BAND_4) || volume4 > GetParameterMax(ATTRIBUTE_BAND_4))
             return eErrorCode_InvalidParameter;
 
-        if (volume5 < GetParamMin(ATTRIBUTE_BAND_5) || volume5 > GetParamMax(ATTRIBUTE_BAND_5))
+        if (volume5 < GetParameterMin(ATTRIBUTE_BAND_5) || volume5 > GetParameterMax(ATTRIBUTE_BAND_5))
             return eErrorCode_InvalidParameter;
 
-        if (volume6 < GetParamMin(ATTRIBUTE_BAND_6) || volume6 > GetParamMax(ATTRIBUTE_BAND_6))
+        if (volume6 < GetParameterMin(ATTRIBUTE_BAND_6) || volume6 > GetParameterMax(ATTRIBUTE_BAND_6))
             return eErrorCode_InvalidParameter;
 
-        if (volume7 < GetParamMin(ATTRIBUTE_BAND_7) || volume7 > GetParamMax(ATTRIBUTE_BAND_7))
+        if (volume7 < GetParameterMin(ATTRIBUTE_BAND_7) || volume7 > GetParameterMax(ATTRIBUTE_BAND_7))
             return eErrorCode_InvalidParameter;
 
-        if (volume8 < GetParamMin(ATTRIBUTE_BAND_8) || volume8 > GetParamMax(ATTRIBUTE_BAND_8))
+        if (volume8 < GetParameterMin(ATTRIBUTE_BAND_8) || volume8 > GetParameterMax(ATTRIBUTE_BAND_8))
             return eErrorCode_InvalidParameter;
 
         _volume[ATTRIBUTE_BAND_1 - ATTRIBUTE_BAND_1] = volume1;
@@ -73,12 +73,12 @@ namespace SparkyStudios::Audio::Amplitude
         return eErrorCode_Success;
     }
 
-    AmUInt32 EqualizerFilter::GetParamCount() const
+    AmUInt32 EqualizerFilter::GetParameterCount() const
     {
         return ATTRIBUTE_LAST;
     }
 
-    AmString EqualizerFilter::GetParamName(AmUInt32 index) const
+    AmString EqualizerFilter::GetParameterName(AmUInt32 index) const
     {
         switch (index)
         {
@@ -105,12 +105,12 @@ namespace SparkyStudios::Audio::Amplitude
         }
     }
 
-    AmUInt32 EqualizerFilter::GetParamType(AmUInt32 index) const
+    eParameterType EqualizerFilter::GetParameterType(AmUInt32 index) const
     {
-        return kParameterTypeFloat;
+        return eParameterType_Float;
     }
 
-    AmReal32 EqualizerFilter::GetParamMax(AmUInt32 index) const
+    AmReal32 EqualizerFilter::GetParameterMax(AmUInt32 index) const
     {
         if (index == ATTRIBUTE_WET)
             return 1.0f;
@@ -118,7 +118,7 @@ namespace SparkyStudios::Audio::Amplitude
         return 4.0f;
     }
 
-    AmReal32 EqualizerFilter::GetParamMin(AmUInt32 index) const
+    AmReal32 EqualizerFilter::GetParameterMin(AmUInt32 index) const
     {
         return 0.0f;
     }
@@ -131,7 +131,7 @@ namespace SparkyStudios::Audio::Amplitude
     EqualizerFilterInstance::EqualizerFilterInstance(EqualizerFilter* parent)
         : FFTFilterInstance(parent)
     {
-        Initialize(parent->GetParamCount());
+        Initialize(parent->GetParameterCount());
 
         m_parameters[EqualizerFilter::ATTRIBUTE_BAND_1] =
             parent->_volume[EqualizerFilter::ATTRIBUTE_BAND_1 - EqualizerFilter::ATTRIBUTE_BAND_1];

@@ -36,12 +36,12 @@ namespace SparkyStudios::Audio::Amplitude
         return eErrorCode_Success;
     }
 
-    AmUInt32 LofiFilter::GetParamCount() const
+    AmUInt32 LofiFilter::GetParameterCount() const
     {
         return ATTRIBUTE_LAST;
     }
 
-    AmReal32 LofiFilter::GetParamMax(AmUInt32 index) const
+    AmReal32 LofiFilter::GetParameterMax(AmUInt32 index) const
     {
         switch (index)
         {
@@ -54,7 +54,7 @@ namespace SparkyStudios::Audio::Amplitude
         }
     }
 
-    AmReal32 LofiFilter::GetParamMin(AmUInt32 index) const
+    AmReal32 LofiFilter::GetParameterMin(AmUInt32 index) const
     {
         switch (index)
         {
@@ -67,7 +67,7 @@ namespace SparkyStudios::Audio::Amplitude
         }
     }
 
-    AmString LofiFilter::GetParamName(AmUInt32 index) const
+    AmString LofiFilter::GetParameterName(AmUInt32 index) const
     {
         if (index >= ATTRIBUTE_LAST)
             return "";
@@ -77,9 +77,9 @@ namespace SparkyStudios::Audio::Amplitude
         return names[index];
     }
 
-    AmUInt32 LofiFilter::GetParamType(AmUInt32 index) const
+    eParameterType LofiFilter::GetParameterType(AmUInt32 index) const
     {
-        return kParameterTypeFloat;
+        return eParameterType_Float;
     }
 
     std::shared_ptr<FilterInstance> LofiFilter::CreateInstance()
