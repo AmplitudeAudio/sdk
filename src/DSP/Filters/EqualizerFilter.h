@@ -64,15 +64,15 @@ namespace SparkyStudios::Audio::Amplitude
             AmReal32 volume7 = 0.0f,
             AmReal32 volume8 = 0.0f);
 
-        [[nodiscard]] AmUInt32 GetParamCount() const override;
+        [[nodiscard]] AmUInt32 GetParameterCount() const override;
 
-        [[nodiscard]] AmString GetParamName(AmUInt32 index) const override;
+        [[nodiscard]] AmString GetParameterName(AmUInt32 index) const override;
 
-        [[nodiscard]] AmUInt32 GetParamType(AmUInt32 index) const override;
+        [[nodiscard]] eParameterType GetParameterType(AmUInt32 index) const override;
 
-        [[nodiscard]] AmReal32 GetParamMax(AmUInt32 index) const override;
+        [[nodiscard]] AmReal32 GetParameterMax(AmUInt32 index) const override;
 
-        [[nodiscard]] AmReal32 GetParamMin(AmUInt32 index) const override;
+        [[nodiscard]] AmReal32 GetParameterMin(AmUInt32 index) const override;
 
         std::shared_ptr<FilterInstance> CreateInstance() override;
 

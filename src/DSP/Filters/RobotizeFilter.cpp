@@ -33,12 +33,12 @@ namespace SparkyStudios::Audio::Amplitude
         return eErrorCode_Success;
     }
 
-    AmUInt32 RobotizeFilter::GetParamCount() const
+    AmUInt32 RobotizeFilter::GetParameterCount() const
     {
         return ATTRIBUTE_LAST;
     }
 
-    AmString RobotizeFilter::GetParamName(AmUInt32 index) const
+    AmString RobotizeFilter::GetParameterName(AmUInt32 index) const
     {
         if (index >= ATTRIBUTE_LAST)
             return "";
@@ -47,15 +47,15 @@ namespace SparkyStudios::Audio::Amplitude
         return names[index];
     }
 
-    AmUInt32 RobotizeFilter::GetParamType(AmUInt32 index) const
+    eParameterType RobotizeFilter::GetParameterType(AmUInt32 index) const
     {
         if (index == ATTRIBUTE_WAVEFORM)
-            return kParameterTypeInt;
+            return eParameterType_Int;
 
-        return kParameterTypeFloat;
+        return eParameterType_Float;
     }
 
-    AmReal32 RobotizeFilter::GetParamMax(AmUInt32 index) const
+    AmReal32 RobotizeFilter::GetParameterMax(AmUInt32 index) const
     {
         if (index == ATTRIBUTE_WAVEFORM)
             return WAVE_LAST - 1;
@@ -65,7 +65,7 @@ namespace SparkyStudios::Audio::Amplitude
         return 1.0f;
     }
 
-    AmReal32 RobotizeFilter::GetParamMin(AmUInt32 index) const
+    AmReal32 RobotizeFilter::GetParameterMin(AmUInt32 index) const
     {
         if (index == ATTRIBUTE_FREQUENCY)
             return 0.1f;

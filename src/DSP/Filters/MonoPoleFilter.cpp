@@ -61,12 +61,12 @@ namespace SparkyStudios::Audio::Amplitude
         return eErrorCode_Success;
     }
 
-    AmUInt32 MonoPoleFilter::GetParamCount() const
+    AmUInt32 MonoPoleFilter::GetParameterCount() const
     {
         return ATTRIBUTE_LAST;
     }
 
-    AmString MonoPoleFilter::GetParamName(AmUInt32 index) const
+    AmString MonoPoleFilter::GetParameterName(AmUInt32 index) const
     {
         if (index >= ATTRIBUTE_LAST)
             return "";
@@ -76,12 +76,12 @@ namespace SparkyStudios::Audio::Amplitude
         return names[index];
     }
 
-    AmUInt32 MonoPoleFilter::GetParamType(AmUInt32 index) const
+    eParameterType MonoPoleFilter::GetParameterType(AmUInt32 index) const
     {
-        return kParameterTypeFloat;
+        return eParameterType_Float;
     }
 
-    AmReal32 MonoPoleFilter::GetParamMax(AmUInt32 index) const
+    AmReal32 MonoPoleFilter::GetParameterMax(AmUInt32 index) const
     {
         switch (index)
         {
@@ -94,7 +94,7 @@ namespace SparkyStudios::Audio::Amplitude
         }
     }
 
-    AmReal32 MonoPoleFilter::GetParamMin(AmUInt32 index) const
+    AmReal32 MonoPoleFilter::GetParameterMin(AmUInt32 index) const
     {
         return 0.0f;
     }
