@@ -14,13 +14,13 @@
 
 #include <SparkyStudios/Audio/Amplitude/Amplitude.h>
 
-#include "EngineTestCase.h"
+#include "SimpleTestCase.h"
 
 using namespace SparkyStudios::Audio::Amplitude;
 
 namespace SparkyStudios::Audio::Amplitude::Tests
 {
-    void EngineTestCase::Run()
+    void SimpleTestCase::Run()
     {
         // Test loading a valid plugin
         AmVoidPtr handle = Engine::LoadPlugin(AM_OS_STRING("test_plugin"));

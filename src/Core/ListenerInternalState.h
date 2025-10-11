@@ -25,7 +25,7 @@
 
 namespace SparkyStudios::Audio::Amplitude
 {
-    class AM_API_PUBLIC ListenerInternalState
+    class ListenerInternalState
     {
     public:
         ListenerInternalState();
