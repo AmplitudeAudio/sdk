@@ -24,9 +24,9 @@ namespace SparkyStudios::Audio::Amplitude
         : ProcessorNodeInstance(false)
     {}
 
-    void ReverbNodeInstance::Initialize(AmObjectID id, const AmplimixLayer* layer, const PipelineInstance* pipeline)
+    void ReverbNodeInstance::Initialize(AmObjectID id, const AmplimixLayer* layer, const PipelineInstance* pipeline, AmSize paramCount)
     {
-        ProcessorNodeInstance::Initialize(id, layer, pipeline);
+        ProcessorNodeInstance::Initialize(id, layer, pipeline, paramCount);
         Reset();
 
         _model.SetWidth(1);

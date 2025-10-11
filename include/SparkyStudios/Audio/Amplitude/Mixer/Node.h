@@ -46,8 +46,9 @@ namespace SparkyStudios::Audio::Amplitude
          * @param[in] id Unique identifier for the node instance.
          * @param[in] layer The Amplimix layer this node instance is currently associated with.
          * @param[in] pipeline The pipeline this node instance belongs to.
+         * @param[in] paramCount The number of parameters the node will need.
          */
-        virtual void Initialize(AmObjectID id, const AmplimixLayer* layer, const PipelineInstance* pipeline);
+        virtual void Initialize(AmObjectID id, const AmplimixLayer* layer, const PipelineInstance* pipeline, AmSize paramCount);
 
         /**
          * @brief Default destructor.
