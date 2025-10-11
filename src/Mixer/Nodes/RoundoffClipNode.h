@@ -1,4 +1,4 @@
-// Copyright (c) 2024-present Sparky Studios. All rights reserved.
+// Copyright (c) 2025-present Sparky Studios. All rights reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -14,18 +14,18 @@
 
 #pragma once
 
-#ifndef _AM_IMPLEMENTATION_MIXER_NODES_CLIP_NODE_H
-#define _AM_IMPLEMENTATION_MIXER_NODES_CLIP_NODE_H
+#ifndef _AM_IMPLEMENTATION_MIXER_NODES_ROUNDOFF_CLIP_NODE_H
+#define _AM_IMPLEMENTATION_MIXER_NODES_ROUNDOFF_CLIP_NODE_H
 
 #include <SparkyStudios/Audio/Amplitude/Core/Memory.h>
 #include <SparkyStudios/Audio/Amplitude/Mixer/Node.h>
 
 namespace SparkyStudios::Audio::Amplitude
 {
-    class ClipNodeInstance final : public ProcessorNodeInstance
+    class RoundoffClipNodeInstance final : public ProcessorNodeInstance
     {
     public:
-        ClipNodeInstance();
+        RoundoffClipNodeInstance();
 
         const AudioBuffer* Process(const AudioBuffer* input) override;
 
@@ -33,14 +33,14 @@ namespace SparkyStudios::Audio::Amplitude
         AudioBuffer _output;
     };
 
-    class ClipNode final : public Node
+    class RoundoffClipNode final : public Node
     {
     public:
-        ClipNode();
+        RoundoffClipNode();
 
         [[nodiscard]] AM_INLINE std::shared_ptr<NodeInstance> CreateInstance() const override
         {
-            return AmSharedPtr<ClipNodeInstance, eMemoryPoolKind_Amplimix>::Make();
+            return AmSharedPtr<RoundoffClipNodeInstance, eMemoryPoolKind_Amplimix>::Make();
         }
 
         [[nodiscard]] AM_INLINE bool CanConsume() const override
@@ -65,4 +65,4 @@ namespace SparkyStudios::Audio::Amplitude
     };
 } // namespace SparkyStudios::Audio::Amplitude
 
-#endif // _AM_IMPLEMENTATION_MIXER_NODES_CLIP_NODE_H
+#endif // _AM_IMPLEMENTATION_MIXER_NODES_ROUNDOFF_CLIP_NODE_H

@@ -1,4 +1,4 @@
-// Copyright (c) 2024-present Sparky Studios. All rights reserved.
+// Copyright (c) 2025-present Sparky Studios. All rights reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -12,15 +12,15 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include <Mixer/Nodes/ClipNode.h>
+#include <Mixer/Nodes/RoundoffClipNode.h>
 
 namespace SparkyStudios::Audio::Amplitude
 {
-    ClipNodeInstance::ClipNodeInstance()
+    RoundoffClipNodeInstance::RoundoffClipNodeInstance()
         : ProcessorNodeInstance(false)
     {}
 
-    const AudioBuffer* ClipNodeInstance::Process(const AudioBuffer* input)
+    const AudioBuffer* RoundoffClipNodeInstance::Process(const AudioBuffer* input)
     {
         _output = *input;
 
@@ -41,7 +41,7 @@ namespace SparkyStudios::Audio::Amplitude
         return &_output;
     }
 
-    ClipNode::ClipNode()
-        : Node("Clip")
+    RoundoffClipNode::RoundoffClipNode()
+        : Node("RoundoffClip")
     {}
 } // namespace SparkyStudios::Audio::Amplitude
