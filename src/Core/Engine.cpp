@@ -44,7 +44,9 @@
 
 #if AM_PLATFORM_APPLE
 #include <limits.h>
-#include <mach-o/dyld.h>
+extern "C" {
+    int _NSGetExecutablePath(char* buf, uint32_t* bufSize);
+}
 #elif AM_PLATFORM_UNIX
 #include <limits.h>
 #include <unistd.h>
@@ -85,7 +87,7 @@ namespace SparkyStudios::Audio::Amplitude
         if (len != -1)
         {
             buffer[len] = '\0';
-            rootPath std::filesystem::path(buffer).parent_path();
+            rootPath = std::filesystem::path(buffer).parent_path();
         }
 #endif
 
