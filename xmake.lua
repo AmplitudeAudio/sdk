@@ -459,13 +459,13 @@ if has_config("unit_tests") then
         print("Capturing test coverage data...")
         local testrun_info = path.join(data_dir, "testrun.info")
         os.exec(
-          "%s --directory %s --capture --output-file %s --ignore-errors format,inconsistent,range,mismatch,source,count,negative,corrupt",
+          "%s --directory %s --capture --output-file %s --ignore-errors format,inconsistent,range,mismatch,source,count,negative,corrupt,category",
           lcov, config.builddir(), testrun_info)
 
         -- Combine baseline and test coverage
         print("Combining coverage data...")
         local combined_info = path.join(data_dir, "combined.info")
-        os.exec("%s --add-tracefile %s --add-tracefile %s --output-file %s --ignore-errors format,inconsistent,range,mismatch,source,count,negative,corrupt",
+        os.exec("%s --add-tracefile %s --add-tracefile %s --output-file %s --ignore-errors format,inconsistent,range,mismatch,source,count,negative,corrupt,category",
           lcov, baseline_info, testrun_info, combined_info)
 
         -- Filter coverage data
@@ -473,23 +473,23 @@ if has_config("unit_tests") then
         local filtered_info = path.join(data_dir, "filtered.info")
         local project_dir = os.projectdir()
         os.exec(
-          "%s --remove %s '/usr/*' '*/tests/*' '*/.xmake/*' '*/build/*' '*/src/Utils/*' '*/samples/*' --output-file %s --ignore-errors format,inconsistent,range,mismatch,source,count,negative,unused,corrupt",
+          "%s --remove %s '/usr/*' '*/tests/*' '*/.xmake/*' '*/build/*' '*/src/Utils/*' '*/samples/*' --output-file %s --ignore-errors format,inconsistent,range,mismatch,source,count,negative,unused,corrupt,category",
           lcov, combined_info, filtered_info)
 
         -- Extract coverage data to include only project sources
         os.exec(
-          "%s --extract %s '%s/src/*' '%s/include/*' --output-file %s --ignore-errors format,inconsistent,range,mismatch,source,count,negative,unused,corrupt",
+          "%s --extract %s '%s/src/*' '%s/include/*' --output-file %s --ignore-errors format,inconsistent,range,mismatch,source,count,negative,unused,corrupt,category",
           lcov, filtered_info, project_dir, project_dir, filtered_info)
 
         -- Generate HTML report
         print("Generating HTML coverage report...")
         os.exec(
-          "%s %s --output-directory %s --title 'Amplitude Audio SDK Coverage Report' --num-spaces 4 --legend --show-details --branch-coverage --ignore-errors format,inconsistent,range,mismatch,source,count,negative,unused,corrupt",
+          "%s %s --output-directory %s --title 'Amplitude Audio SDK Coverage Report' --num-spaces 4 --legend --show-details --branch-coverage --ignore-errors format,inconsistent,range,mismatch,source,count,negative,unused,corrupt,category",
           genhtml, filtered_info, html_dir)
 
         -- Extract coverage summary
         local coverage_summary = os.iorun(
-        "%s --summary %s --ignore-errors format,inconsistent,range,mismatch,source,count,negative,unused,corrupt", lcov,
+        "%s --summary %s --ignore-errors format,inconsistent,range,mismatch,source,count,negative,unused,corrupt,category", lcov,
           filtered_info)
 
         print("Coverage Summary:")
