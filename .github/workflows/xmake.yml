@@ -204,7 +204,7 @@ jobs:
         working-directory: ${{ inputs.project-path }}
         run: |
           xmake b -y coverage_generate_baseline_report
-          xmake test
+          xmake test -y
         env:
           AM_SDK_PATH: "${{ steps.sdk_path.outputs.path }}/sdk"
           AM_SDK_PLATFORM: "${{ matrix.config.arch }}-${{ matrix.config.plat }}"
