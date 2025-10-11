@@ -286,6 +286,15 @@ namespace SparkyStudios::Audio::Amplitude
         [[nodiscard]] const AmAlignedReal32Buffer& GetData() const;
 
         /**
+         * @brief Gets all the audio samples of the same frame.
+         *
+         * @param[in] The index at which collect the audio samples in each channels.
+         *
+         * @return The audio frame at the given index.
+         */
+        [[nodiscard]] std::vector<AmAudioSample> GetFrame(AmSize index) const;
+
+        /**
          * @brief Gets the @c AudioBufferChannel at the specified index.
          *
          * @param[in] index The channel index.

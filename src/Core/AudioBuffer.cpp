@@ -253,6 +253,17 @@ namespace SparkyStudios::Audio::Amplitude
         return _data;
     }
 
+    std::vector<AmAudioSample> AudioBuffer::GetFrame(AmSize index) const
+    {
+        const AmSize channelCount = GetChannelCount();
+        std::vector<AmAudioSample> frame(channelCount);
+
+        for (AmSize i = 0; i < channelCount; i++)
+            frame[i] = _channels[i][index];
+
+        return frame;
+    }
+
     AudioBufferChannel& AudioBuffer::GetChannel(AmSize index)
     {
         AMPLITUDE_ASSERT(index < _channels.size());

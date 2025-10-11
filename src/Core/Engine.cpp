@@ -93,15 +93,17 @@ namespace SparkyStudios::Audio::Amplitude
     static std::shared_ptr<AmbisonicRotatorNode> sAmbisonicRotatorNodePlugin = nullptr;
     static std::shared_ptr<AttenuationNode> sAttenuationNodePlugin = nullptr;
     static std::shared_ptr<ClampNode> sClampNodePlugin = nullptr;
-    static std::shared_ptr<ClipNode> sClipNodePlugin = nullptr;
+    static std::shared_ptr<HardClipNode> sHardClipNodePlugin = nullptr;
     static std::shared_ptr<EnvironmentEffectNode> sEnvironmentEffectNodePlugin = nullptr;
     static std::shared_ptr<InputNode> sInputNodePlugin = nullptr;
+    static std::shared_ptr<LimiterNode> sLimiterNodePlugin = nullptr;
     static std::shared_ptr<NearFieldEffectNode> sNearFieldEffectNodePlugin = nullptr;
     static std::shared_ptr<ObstructionNode> sObstructionNodePlugin = nullptr;
     static std::shared_ptr<OcclusionNode> sOcclusionNodePlugin = nullptr;
     static std::shared_ptr<OutputNode> sOutputNodePlugin = nullptr;
     static std::shared_ptr<ReflectionsNode> sReflectionsNodePlugin = nullptr;
     static std::shared_ptr<ReverbNode> sReverbNodePlugin = nullptr;
+    static std::shared_ptr<RoundoffClipNode> sRoundoffClipNodePlugin = nullptr;
     static std::shared_ptr<StereoMixerNode> sStereoMixerNodePlugin = nullptr;
     static std::shared_ptr<StereoPanningNode> sStereoPanningNodePlugin = nullptr;
 
@@ -405,15 +407,17 @@ namespace SparkyStudios::Audio::Amplitude
         sAmbisonicRotatorNodePlugin = RegisterExtension<AmbisonicRotatorNode>();
         sAttenuationNodePlugin = RegisterExtension<AttenuationNode>();
         sClampNodePlugin = RegisterExtension<ClampNode>();
-        sClipNodePlugin = RegisterExtension<ClipNode>();
+        sHardClipNodePlugin = RegisterExtension<HardClipNode>();
         sEnvironmentEffectNodePlugin = RegisterExtension<EnvironmentEffectNode>();
         sInputNodePlugin = RegisterExtension<InputNode>();
+        sLimiterNodePlugin = RegisterExtension<LimiterNode>();
         sNearFieldEffectNodePlugin = RegisterExtension<NearFieldEffectNode>();
         sObstructionNodePlugin = RegisterExtension<ObstructionNode>();
         sOcclusionNodePlugin = RegisterExtension<OcclusionNode>();
         sOutputNodePlugin = RegisterExtension<OutputNode>();
         sReflectionsNodePlugin = RegisterExtension<ReflectionsNode>();
         sReverbNodePlugin = RegisterExtension<ReverbNode>();
+        sRoundoffClipNodePlugin = RegisterExtension<RoundoffClipNode>();
         sStereoMixerNodePlugin = RegisterExtension<StereoMixerNode>();
         sStereoPanningNodePlugin = RegisterExtension<StereoPanningNode>();
 
@@ -461,15 +465,17 @@ namespace SparkyStudios::Audio::Amplitude
         UnregisterExtension(sAmbisonicRotatorNodePlugin);
         UnregisterExtension(sAttenuationNodePlugin);
         UnregisterExtension(sClampNodePlugin);
-        UnregisterExtension(sClipNodePlugin);
+        UnregisterExtension(sHardClipNodePlugin);
         UnregisterExtension(sEnvironmentEffectNodePlugin);
         UnregisterExtension(sInputNodePlugin);
+        UnregisterExtension(sLimiterNodePlugin);
         UnregisterExtension(sNearFieldEffectNodePlugin);
         UnregisterExtension(sObstructionNodePlugin);
         UnregisterExtension(sOcclusionNodePlugin);
         UnregisterExtension(sOutputNodePlugin);
         UnregisterExtension(sReflectionsNodePlugin);
         UnregisterExtension(sReverbNodePlugin);
+        UnregisterExtension(sRoundoffClipNodePlugin);
         UnregisterExtension(sStereoMixerNodePlugin);
         UnregisterExtension(sStereoPanningNodePlugin);
 
