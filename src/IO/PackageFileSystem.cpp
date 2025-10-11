@@ -94,7 +94,7 @@ namespace SparkyStudios::Audio::Amplitude
                         if (!components.empty() && canPop)
                         {
                             components.pop_back();
-                            canPop = components.back() != AM_OS_STRING("..");
+                            canPop = !components.empty() && components.back() != AM_OS_STRING("..");
                         }
                         else
                         {
