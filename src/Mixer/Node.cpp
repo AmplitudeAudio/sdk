@@ -45,13 +45,16 @@ namespace SparkyStudios::Audio::Amplitude
         return c;
     }
 
-    void NodeInstance::Initialize(AmObjectID id, const AmplimixLayer* layer, const PipelineInstance* pipeline)
+    void NodeInstance::Initialize(AmObjectID id, const AmplimixLayer* layer, const PipelineInstance* pipeline, AmSize paramCount)
     {
         AMPLITUDE_ASSERT(layer != nullptr);
 
         m_id = id;
         m_layer = layer;
         m_pipeline = pipeline;
+
+        m_parameters.clear();
+        m_parameters.assign(paramCount, 0);
     }
 
     AmObjectID NodeInstance::GetId() const

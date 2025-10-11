@@ -151,8 +151,14 @@ namespace SparkyStudios::Audio::Amplitude
                 instance->AddNode(nodeId, nodeName, nodeInstance);
             }
 
+            const flatbuffers::uoffset_t paramCount = nodeDef->parameters() ? nodeDef->parameters()->size() : 0;
+
             // Initialize the node with the provided parameters
-            nodeInstance->Initialize(nodeId, layer, instance.get());
+            nodeInstance->Initialize(nodeId, layer, instance.get(), paramCount);
+
+            // Initialize the node parameters
+            for (flatbuffers::uoffset_t i = 0; i < paramCount; ++i)
+                nodeInstance->SetParameter(i, nodeDef->parameters()->Get(i));
 
             // Connect the node inputs
             if (node->CanConsume())

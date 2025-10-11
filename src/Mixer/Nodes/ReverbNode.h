@@ -29,7 +29,7 @@ namespace SparkyStudios::Audio::Amplitude
     public:
         ReverbNodeInstance();
 
-        void Initialize(AmObjectID id, const AmplimixLayer* layer, const PipelineInstance* pipeline) override;
+        void Initialize(AmObjectID id, const AmplimixLayer* layer, const PipelineInstance* pipeline, AmSize paramCount) override;
         void Reset() override;
 
         const AudioBuffer* Process(const AudioBuffer* input) override;
