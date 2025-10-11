@@ -13,6 +13,7 @@
 // limitations under the License.
 
 #include <algorithm>
+#include <filesystem>
 #include <memory>
 #include <queue>
 #include <ranges>
@@ -40,6 +41,14 @@
 
 #ifndef AM_PLUGINS_UNSUPPORTED
 #include <dylib.hpp>
+
+#if AM_PLATFORM_APPLE
+#include <limits.h>
+#include <mach-o/dyld.h>
+#elif AM_PLATFORM_UNIX
+#include <limits.h>
+#include <unistd.h>
+#endif
 #endif
 
 #if AM_PLATFORM_WIN
@@ -54,6 +63,34 @@ namespace SparkyStudios::Audio::Amplitude
 #ifndef AM_PLUGINS_UNSUPPORTED
     // The list of loaded plugins.
     static std::unordered_map<std::filesystem::path, dylib::library*> gLoadedPlugins = {};
+
+    std::filesystem::path GetExecutableRoot()
+    {
+        static std::filesystem::path rootPath;
+        if (!rootPath.empty())
+            return rootPath;
+
+#if AM_PLATFORM_WIN
+        char buffer[MAX_PATH];
+        GetModuleFileNameA(NULL, buffer, MAX_PATH);
+        rootPath = std::filesystem::path(buffer).parent_path();
+#elif AM_PLATFORM_APPLE
+        char buffer[PATH_MAX];
+        uint32_t size = sizeof(buffer);
+        if (_NSGetExecutablePath(buffer, &size) == 0)
+            rootPath = std::filesystem::canonical(std::filesystem::path(buffer)).parent_path();
+#else
+        char buffer[PATH_MAX];
+        ssize_t len = readlink("/proc/self/exe", buffer, sizeof(buffer) - 1);
+        if (len != -1)
+        {
+            buffer[len] = '\0';
+            rootPath std::filesystem::path(buffer).parent_path();
+        }
+#endif
+
+        return rootPath;
+    }
 #endif
 
     // Default Plugins instances
@@ -232,14 +269,17 @@ namespace SparkyStudios::Audio::Amplitude
             return nullptr;
         }
 
-        AmOsString pluginsDirectoryPath = std::filesystem::current_path().native();
-        const auto& finalName = AM_STRING_TO_OS_STRING(dylib::decorations::os_default().prefix) + pluginLibraryName +
-            AM_STRING_TO_OS_STRING(dylib::decorations::os_default().suffix);
-
         bool foundPath = false;
+        DiskFileSystem fs;
+        AmOsString pluginsDirectoryPath;
+        AmOsString finalName;
 
+        for (const auto& path : { GetExecutableRoot(), std::filesystem::current_path() })
         {
-            DiskFileSystem fs;
+            pluginsDirectoryPath = path.native();
+            finalName = AM_STRING_TO_OS_STRING(dylib::decorations::os_default().prefix) + pluginLibraryName +
+                AM_STRING_TO_OS_STRING(dylib::decorations::os_default().suffix);
+
             fs.SetBasePath(pluginsDirectoryPath);
 
             // Search for the library in the current directory
@@ -247,19 +287,20 @@ namespace SparkyStudios::Audio::Amplitude
             {
                 pluginsDirectoryPath = realPath;
                 foundPath = true;
+                break;
             }
+        }
 
-            if (!foundPath)
+        if (!foundPath)
+        {
+            // Search for the library in the search paths
+            for (const auto& path : EngineImpl::_pluginSearchPaths)
             {
-                // Search for the library in the search paths
-                for (const auto& path : EngineImpl::_pluginSearchPaths)
+                if (const auto realPath = fs.ResolvePath(path); fs.Exists(fs.Join({ realPath, finalName })))
                 {
-                    if (const auto realPath = fs.ResolvePath(path); fs.Exists(fs.Join({ realPath, finalName })))
-                    {
-                        pluginsDirectoryPath = realPath;
-                        foundPath = true;
-                        break;
-                    }
+                    pluginsDirectoryPath = realPath;
+                    foundPath = true;
+                    break;
                 }
             }
         }
@@ -278,8 +319,7 @@ namespace SparkyStudios::Audio::Amplitude
             return gLoadedPlugins[pluginPath]->native_handle();
         }
 
-        auto* plugin =
-            ampoolnew(eMemoryPoolKind_Engine, dylib::library, AM_OS_STRING_TO_STRING(pluginPath.native()), dylib::decorations::none());
+        auto* plugin = ampoolnew(eMemoryPoolKind_Engine, dylib::library, AM_OS_STRING_TO_STRING(pluginPath.native()), dylib::decorations());
 
         if (!plugin->get_symbol("RegisterPlugin"))
         {

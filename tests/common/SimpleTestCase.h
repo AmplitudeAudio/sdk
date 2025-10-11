@@ -25,7 +25,9 @@ namespace SparkyStudios::Audio::Amplitude::Tests
         {}
 
         void TearDown() override
-        {}
+        {
+            amEngine->DestroyInstance();
+        }
 
         void Run() override;
     };

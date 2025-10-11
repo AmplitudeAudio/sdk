@@ -40,8 +40,7 @@ target_end()
 
 target("test_plugin")
   set_kind("shared")
-  set_targetdir("$(builddir)/samples")
-  add_rpathdirs("@loader_path/../$(plat)/$(arch)/$(mode)/shared")
+  set_targetdir("$(builddir)/$(plat)/$(arch)/$(mode)/shared")
   add_defines("AM_BUILDSYSTEM_BUILDING_PLUGIN")
 
   add_deps("Amplitude::Shared")
@@ -49,7 +48,20 @@ target("test_plugin")
   add_files("test_plugin/*.cpp")
 target_end()
 
-target("common_test")
+target("common_test_static")
+  set_kind("object")
+  set_policy("build.fence", true)
+
+  add_deps("Amplitude::Static", "build_sample_project", "generate_test_package", "ampk")
+
+  add_files("common/*.cpp")
+
+  add_includedirs("common", { public = true })
+  add_includedirs("$(projectdir)/src", { public = true })
+  add_includedirs("$(builddir)/include", { public = true })
+target_end()
+
+target("common_test_shared")
   set_kind("object")
   set_policy("build.fence", true)
 
@@ -91,7 +103,13 @@ for _, filepath in ipairs(os.filedirs("**")) do
       set_group("test_" .. group)
       set_rundir("$(builddir)")
 
-      add_deps("common_test")
+      if path.basename(test_file):sub(-8) == "__shared" then
+        set_targetdir("$(builddir)/$(plat)/$(arch)/$(mode)/shared")
+        add_deps("common_test_shared")
+      else
+        set_targetdir("$(builddir)/$(plat)/$(arch)/$(mode)/static")
+        add_deps("common_test_static")
+      end
 
       add_files(test_file)
 
