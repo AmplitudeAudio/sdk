@@ -34,6 +34,47 @@ namespace SparkyStudios::Audio::Amplitude
         return eErrorCode_Success;
     }
 
+    AmUInt32 DCRemovalFilter::GetParameterCount() const
+    {
+        return ATTRIBUTE_LAST;
+    }
+
+    AmString DCRemovalFilter::GetParameterName(AmUInt32 index) const
+    {
+        switch (index)
+        {
+        case ATTRIBUTE_WET:
+            return "Wet";
+        case ATTRIBUTE_LENGTH:
+            return "Length";
+        };
+
+        return {};
+    }
+
+    eParameterType DCRemovalFilter::GetParameterType(AmUInt32 index) const
+    {
+        return eParameterType_Float;
+    }
+
+    AmReal32 DCRemovalFilter::GetParameterMax(AmUInt32 index) const
+    {
+        return 1.0f;
+    }
+
+    AmReal32 DCRemovalFilter::GetParameterMin(AmUInt32 index) const
+    {
+        switch (index)
+        {
+        case ATTRIBUTE_WET:
+            return 0.0f;
+        case ATTRIBUTE_LENGTH:
+            return kEpsilon;
+        };
+
+        return 0.0f;
+    }
+
     std::shared_ptr<FilterInstance> DCRemovalFilter::CreateInstance()
     {
         return AmSharedPtr<DCRemovalFilterInstance, eMemoryPoolKind_Filtering>::Make(this);
@@ -47,7 +88,7 @@ namespace SparkyStudios::Audio::Amplitude
         , _offset(0)
     {
         Initialize(DCRemovalFilter::ATTRIBUTE_LAST);
-        SetParameter(DCRemovalFilter::ATTRIBUTE_LAST, parent->_length);
+        SetParameter(DCRemovalFilter::ATTRIBUTE_LENGTH, parent->_length);
     }
 
     DCRemovalFilterInstance::~DCRemovalFilterInstance()
@@ -61,9 +102,7 @@ namespace SparkyStudios::Audio::Amplitude
         const AmUInt16 channels = in.GetChannelCount();
 
         if (_buffer.GetPointer() == nullptr)
-        {
             InitializeBuffer(channels, sampleRate);
-        }
 
         for (AmUInt16 c = 0; c < channels; c++)
         {
