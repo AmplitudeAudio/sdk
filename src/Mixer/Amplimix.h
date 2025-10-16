@@ -217,6 +217,8 @@ namespace SparkyStudios::Audio::Amplitude
             return _device;
         }
 
+        void WaitForCurrentFrame();
+
         static void IncrementSoundLoopCount(SoundInstance* sound);
 
     private:

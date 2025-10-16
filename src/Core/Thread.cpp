@@ -94,6 +94,23 @@ namespace SparkyStudios::Audio::Amplitude::Thread
         ::LeaveCriticalSection(cs);
     }
 
+    bool IsMutexLocked(AmMutexHandle handle)
+    {
+        if (handle == nullptr)
+            return false;
+
+        auto* cs = static_cast<AmMutexHandleData*>(handle);
+        const BOOL result = ::TryEnterCriticalSection(&cs->cs);
+
+        if (result)
+        {
+            ::LeaveCriticalSection(&cs->cs);
+            return false;
+        }
+
+        return true;
+    }
+
     AmThreadHandle CreateThread(AmThreadFunction threadFunction, AmVoidPtr parameter)
     {
         auto* d = ampoolnew(eMemoryPoolKind_IO, AmThreadData);
@@ -239,6 +256,33 @@ namespace SparkyStudios::Audio::Amplitude::Thread
 #endif
 
         lock->spinLocked = false;
+    }
+
+    bool IsMutexLocked(AmMutexHandle handle)
+    {
+        if (handle == nullptr)
+            return false;
+
+        auto* lock = static_cast<AmSpinLockData*>(handle);
+
+#if !defined(AM_NO_PTHREAD_SPINLOCK)
+        if (lock->spinLocked)
+            return true;
+
+        if (pthread_spin_trylock(&lock->lock) == 0)
+        {
+            pthread_spin_unlock(&lock->lock);
+            return false;
+        }
+#else
+        if (pthread_mutex_trylock(&lock->fallBackMutex) == 0)
+        {
+            pthread_mutex_unlock(&lock->fallBackMutex);
+            return false;
+        }
+#endif
+
+        return true;
     }
 
     AmThreadHandle CreateThread(AmThreadFunction threadFunction, AmVoidPtr parameter)
