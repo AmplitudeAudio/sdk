@@ -107,7 +107,7 @@ namespace SparkyStudios::Audio::Amplitude
         if (!IsValidStateId())
             return;
 
-        if (_state->Playing())
+        if (_state->Playing() || _state->Stopped())
             return;
 
         if (duration == 0.0)
