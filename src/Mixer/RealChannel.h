@@ -58,7 +58,7 @@ namespace SparkyStudios::Audio::Amplitude
         /**
          * @brief Initialize this channel.
          */
-        void Initialize(int index);
+        void Initialize(AmChannelID index);
 
         /**
          * @brief Play all the sound instances on the real channel.

@@ -66,8 +66,8 @@ namespace SparkyStudios::Audio::Amplitude
         _location = kVector3Zero;
         _channelStateId = 0;
 
-        for (auto& sound : _eventsMap | std::views::values)
-            sound = nullptr;
+        for (auto& listener : _eventsMap | std::views::values)
+            listener = nullptr;
 
         _eventsMap.clear();
     }
@@ -674,12 +674,8 @@ namespace SparkyStudios::Audio::Amplitude
         {
             bool shouldSkip = false;
             for (const auto& prev : previous)
-            {
                 if (prev.m_id == item.m_id)
-                {
                     shouldSkip = item.m_continueBetweenStates;
-                }
-            }
 
             if (shouldSkip)
                 continue;
