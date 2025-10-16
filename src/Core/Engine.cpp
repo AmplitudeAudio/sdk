@@ -1132,6 +1132,9 @@ namespace SparkyStudios::Audio::Amplitude
 
     bool EngineImpl::HasLoadedSoundBank(const AmOsString& filename) const
     {
+        if (_state == nullptr)
+            return false;
+
         if (const auto findIt = _state->sound_bank_id_map.find(filename); findIt != _state->sound_bank_id_map.end())
             return _state->sound_bank_map.contains(findIt->second);
 
@@ -1140,11 +1143,17 @@ namespace SparkyStudios::Audio::Amplitude
 
     bool EngineImpl::HasLoadedSoundBank(AmBankID id) const
     {
+        if (_state == nullptr)
+            return false;
+
         return _state->sound_bank_map.contains(id);
     }
 
     bool EngineImpl::HasLoadedSoundBanks() const
     {
+        if (_state == nullptr)
+            return false;
+
         return !_state->sound_bank_map.empty();
     }
 
