@@ -165,6 +165,9 @@ namespace SparkyStudios::Audio::Amplitude
 
     MemoryManager::~MemoryManager()
     {
+        // Clear the allocations set to prevent container leak
+        _memAllocations.clear();
+
         _allocator.reset(nullptr);
     }
 
@@ -251,8 +254,7 @@ namespace SparkyStudios::Audio::Amplitude
 
         _allocator->Free(pool, address);
 
-        if (const auto it = _memAllocations.find({ pool, address }); it != _memAllocations.end())
-            _memAllocations.erase(it);
+        RemoveAllocation({ pool, address });
     }
 
     AmSize MemoryManager::TotalReservedMemorySize(eMemoryPoolKind pool) const
