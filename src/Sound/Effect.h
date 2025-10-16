@@ -49,12 +49,7 @@ namespace SparkyStudios::Audio::Amplitude
         /**
          * @copydoc Effect::CreateInstance
          */
-        [[nodiscard]] EffectInstance* CreateInstance() const override;
-
-        /**
-         * @copydoc Effect::DestroyInstance
-         */
-        void DestroyInstance(EffectInstance* instance) const override;
+        [[nodiscard]] std::shared_ptr<EffectInstance> CreateInstance() const override;
 
         /**
          * @copydoc Asset::GetId
@@ -88,7 +83,7 @@ namespace SparkyStudios::Audio::Amplitude
         [[nodiscard]] const EffectDefinition* GetDefinition() const override;
 
     private:
-        mutable std::vector<EffectInstance*> _instances;
+        mutable std::vector<std::shared_ptr<EffectInstance>> _instances;
         std::vector<RtpcValue> _parameters;
         std::shared_ptr<Filter> _filter;
     };

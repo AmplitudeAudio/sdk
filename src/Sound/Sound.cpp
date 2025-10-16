@@ -484,8 +484,6 @@ namespace SparkyStudios::Audio::Amplitude
         }
 
         _userData = nullptr;
-
-        _effect->DestroyInstance(_effectInstance);
         _effectInstance = nullptr;
 
         if (_parent->_stream && _decoder != nullptr)
@@ -532,7 +530,7 @@ namespace SparkyStudios::Audio::Amplitude
         return _currentLoopCount;
     }
 
-    const EffectInstance* SoundInstance::GetEffect() const
+    const std::shared_ptr<EffectInstance> SoundInstance::GetEffect() const
     {
         return _effectInstance;
     }

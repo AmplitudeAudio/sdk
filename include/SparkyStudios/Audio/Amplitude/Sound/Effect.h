@@ -21,6 +21,8 @@
 
 #include <SparkyStudios/Audio/Amplitude/Core/Asset.h>
 
+#include <memory>
+
 namespace SparkyStudios::Audio::Amplitude
 {
     class FilterInstance;
@@ -54,16 +56,7 @@ namespace SparkyStudios::Audio::Amplitude
          *
          * @see EffectInstance
          */
-        [[nodiscard]] virtual EffectInstance* CreateInstance() const = 0;
-
-        /**
-         * @brief Destroys an instance of this effect.
-         *
-         * @param[in] instance The effect instance to delete.
-         *
-         * @see EffectInstance
-         */
-        virtual void DestroyInstance(EffectInstance* instance) const = 0;
+        [[nodiscard]] virtual std::shared_ptr<EffectInstance> CreateInstance() const = 0;
     };
 
     /**

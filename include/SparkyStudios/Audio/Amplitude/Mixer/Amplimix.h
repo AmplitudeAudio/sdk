@@ -264,7 +264,7 @@ namespace SparkyStudios::Audio::Amplitude
          *
          * @see EffectInstance, Effect
          */
-        virtual const EffectInstance* GetEffect() const = 0;
+        virtual const std::shared_ptr<EffectInstance> GetEffect() const = 0;
 
         /**
          * @brief Gets the attenuation associated with the audio data in the layer.

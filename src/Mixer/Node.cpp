@@ -233,7 +233,7 @@ namespace SparkyStudios::Audio::Amplitude
     {
         _buffer = buffer;
 
-        if (const auto* effect = static_cast<const EffectInstanceImpl*>(GetLayer()->GetEffect()); effect != nullptr)
+        if (const auto effect = GetLayer()->GetEffect(); effect != nullptr)
             _filter = effect->GetFilter();
     }
 

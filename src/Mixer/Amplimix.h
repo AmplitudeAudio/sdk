@@ -113,7 +113,7 @@ namespace SparkyStudios::Audio::Amplitude
         [[nodiscard]] bool IsLoopEnabled() const override;
         [[nodiscard]] bool IsStreamEnabled() const override;
         [[nodiscard]] const Sound* GetSound() const override;
-        [[nodiscard]] const EffectInstance* GetEffect() const override;
+        [[nodiscard]] const std::shared_ptr<EffectInstance> GetEffect() const override;
         [[nodiscard]] const Attenuation* GetAttenuation() const override;
         [[nodiscard]] AmUInt32 GetSampleRate() const override;
     };
