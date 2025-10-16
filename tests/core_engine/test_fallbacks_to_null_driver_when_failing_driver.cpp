@@ -25,11 +25,11 @@ namespace SparkyStudios::Audio::Amplitude::Tests
     {
         auto failing = Engine::RegisterExtension<FailingDriver>();
 
-        AM_EXPECT(amEngine->Deinitialize());
+        AM_EXPECT(Deinitialize());
         AM_EXPECT(amEngine->Initialize(AM_OS_STRING("tests.invalid.failing_driver.config.amconfig")));
         AM_EXPECT(amEngine->GetDriver()->GetName() != "failing");
         AM_EXPECT(amEngine->GetDriver()->GetName() == "null");
-        AM_EXPECT(amEngine->Deinitialize());
+        AM_EXPECT(Deinitialize());
 
         Engine::UnregisterExtension(failing);
     }

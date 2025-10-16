@@ -34,7 +34,7 @@ namespace SparkyStudios::Audio::Amplitude::Tests
         channel.Stop();
         AM_EXPECT_EQ(channel.GetPlaybackState(), eChannelPlaybackState_FadingOut);
         AM_EXPECT_NOT(channel.Playing());
-        amEngine->WaitUntilFrames(2);
+        amEngine->WaitUntilFrames(kMinFadeDuration);
         AM_EXPECT_EQ(channel.GetPlaybackState(), eChannelPlaybackState_Stopped);
 
         // Test that resumed stopped channel stays stopped
