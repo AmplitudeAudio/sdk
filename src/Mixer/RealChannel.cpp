@@ -12,8 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include <ranges>
 #include <cassert>
+#include <ranges>
 
 #include <SparkyStudios/Audio/Amplitude/Core/Playback/Channel.h>
 #include <SparkyStudios/Audio/Amplitude/IO/Log.h>
@@ -48,7 +48,7 @@ namespace SparkyStudios::Audio::Amplitude
         , _playedSounds()
     {}
 
-    void RealChannel::Initialize(int i)
+    void RealChannel::Initialize(AmChannelID i)
     {
         _channelId = i;
         _mixer = &amEngine->GetState()->mixer;
