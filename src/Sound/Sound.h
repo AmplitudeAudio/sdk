@@ -374,7 +374,7 @@ namespace SparkyStudios::Audio::Amplitude
          * @return An EffectInstance object if an effect was applied to the sound which have
          * generated this SoundInstance, or nullptr otherwise.
          */
-        [[nodiscard]] const EffectInstance* GetEffect() const;
+        [[nodiscard]] const std::shared_ptr<EffectInstance> GetEffect() const;
 
         /**
          * @brief Set the obstruction level of sounds played by this Entity.
@@ -409,7 +409,7 @@ namespace SparkyStudios::Audio::Amplitude
         SoundImpl* _parent;
         const CollectionImpl* _collection;
         const EffectImpl* _effect;
-        EffectInstance* _effectInstance;
+        std::shared_ptr<EffectInstance> _effectInstance;
         std::shared_ptr<Codec::Decoder> _decoder;
 
         SoundInstanceSettings _settings;

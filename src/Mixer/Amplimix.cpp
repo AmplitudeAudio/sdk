@@ -1293,7 +1293,7 @@ namespace SparkyStudios::Audio::Amplitude
         return snd->sound->GetSound();
     }
 
-    const EffectInstance* AmplimixLayerImpl::GetEffect() const
+    const std::shared_ptr<EffectInstance> AmplimixLayerImpl::GetEffect() const
     {
         if (snd == nullptr || snd->sound == nullptr)
             return nullptr;
