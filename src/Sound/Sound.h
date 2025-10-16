@@ -243,6 +243,8 @@ namespace SparkyStudios::Audio::Amplitude
         [[nodiscard]] bool IsLoop() const override;
 
     private:
+        bool _loaded;
+
         std::shared_ptr<Codec> _codec;
         std::shared_ptr<Codec::Decoder> _decoder;
 
