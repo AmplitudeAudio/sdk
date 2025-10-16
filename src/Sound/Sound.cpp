@@ -34,6 +34,7 @@ namespace SparkyStudios::Audio::Amplitude
 
     SoundImpl::SoundImpl()
         : SoundObjectImpl()
+        , _loaded(false)
         , _codec(nullptr)
         , _decoder(nullptr)
         , _stream(false)
@@ -160,6 +161,12 @@ namespace SparkyStudios::Audio::Amplitude
 
     void SoundImpl::Load(std::shared_ptr<const FileSystem> loader)
     {
+        if (_loaded)
+        {
+            amLogWarning("Sound is already loaded.");
+            return;
+        }
+
         const AmOsString& filename = GetPath();
 
         if (filename.empty())
@@ -191,6 +198,7 @@ namespace SparkyStudios::Audio::Amplitude
         }
 
         _format = _decoder->GetFormat();
+        _loaded = true;
     }
 
     const RtpcValue& SoundImpl::GetGain() const
