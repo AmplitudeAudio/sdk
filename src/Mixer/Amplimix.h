@@ -82,7 +82,6 @@ namespace SparkyStudios::Audio::Amplitude
         std::shared_ptr<PipelineInstance> pipeline = nullptr; // pipeline for this layer
 
         AmMutexHandle mutex = nullptr; // mutex for thread-safe access
-        std::unordered_map<AmThreadID, bool> mutexLocked; // true if mutex is locked
 
         ~AmplimixLayerImpl() override;
 
