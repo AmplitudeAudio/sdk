@@ -24,8 +24,11 @@ namespace SparkyStudios::Audio::Amplitude
 
         while (data->mRunning)
         {
+            if (Engine::GetInstance()->IsStopping())
+                break;
+
             Engine::GetInstance()->GetMixer()->Mix(nullptr, data->mOutputBufferSize);
-            Thread::Sleep(1);
+            Thread::Sleep(10);
         }
     }
 

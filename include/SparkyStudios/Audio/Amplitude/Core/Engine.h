@@ -1770,6 +1770,13 @@ namespace SparkyStudios::Audio::Amplitude
          */
         [[nodiscard]] virtual Channel GetChannel(AmChannelID channelID) const = 0;
 
+        /**
+         * @brief Checks if the engine is stopping.
+         *
+         * @return @c true if the engine is stopping, @c false otherwise.
+         */
+        [[nodiscard]] virtual bool IsStopping() const = 0;
+
 #pragma endregion
 
 #pragma region Plugins Management
