@@ -2643,6 +2643,11 @@ namespace SparkyStudios::Audio::Amplitude
         return Channel(findIt != _state->channel_state_memory.end() ? &*findIt : nullptr);
     }
 
+    bool EngineImpl::IsStopping() const
+    {
+        return _state->stopping;
+    }
+
 #pragma endregion
 
     Channel EngineImpl::PlayScopedSwitchContainer(

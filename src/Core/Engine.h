@@ -205,6 +205,7 @@ namespace SparkyStudios::Audio::Amplitude
         [[nodiscard]] eHRIRSphereSamplingMode GetHRIRSphereSamplingMode() const override;
         [[nodiscard]] std::shared_ptr<const HRIRSphere> GetHRIRSphere() const override;
         [[nodiscard]] Channel GetChannel(AmChannelID channelID) const override;
+        [[nodiscard]] bool IsStopping() const override;
 
     private:
         Channel PlayScopedSwitchContainer(

@@ -438,6 +438,9 @@ namespace SparkyStudios::Audio::Amplitude
         bool hasMixedAtLeastOneLayer = false;
         for (auto&& layer : _layers)
         {
+            if (amEngine->IsStopping())
+                break; // Stop mixing if engine is stopping
+
             if (!ShouldMix(&layer))
                 continue;
 
