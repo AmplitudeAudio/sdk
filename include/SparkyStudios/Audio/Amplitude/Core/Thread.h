@@ -84,6 +84,15 @@ namespace SparkyStudios::Audio::Amplitude
         AM_API_PUBLIC void UnlockMutex(AmMutexHandle handle);
 
         /**
+         * @brief Checks if a mutex is locked.
+         *
+         * @param[in] handle The mutex object handle.
+         *
+         * @ingroup core
+         */
+        AM_API_PUBLIC bool IsMutexLocked(AmMutexHandle handle);
+
+        /**
          * @brief Creates a new thread.
          *
          * @param[in] threadFunction The function to run in the thread.

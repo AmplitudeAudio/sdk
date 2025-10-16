@@ -829,6 +829,12 @@ namespace SparkyStudios::Audio::Amplitude
         return _pipeline;
     }
 
+    void AmplimixImpl::WaitForCurrentFrame()
+    {
+        while (Thread::IsMutexLocked(_audioThreadMutex))
+            Thread::Sleep(10);
+    }
+
     void AmplimixImpl::IncrementSoundLoopCount(SoundInstance* sound)
     {
         ++sound->_currentLoopCount;
