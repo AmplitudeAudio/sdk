@@ -138,25 +138,8 @@ namespace SparkyStudios::Audio::Amplitude::Tests
 
         void TearDown() override
         {
-            _running = false;
-
-            Thread::Wait(_threadHandle);
-            Thread::Release(_threadHandle);
-
-            if (amEngine->IsInitialized())
-            {
-                amEngine->SetDefaultListener(nullptr);
-                amEngine->RemoveListener(1);
-
-                amEngine->UnloadSoundBanks();
-
-                amEngine->Deinitialize();
-
-                // Wait for the file system to complete loading.
-                amEngine->StartCloseFileSystem();
-                while (!amEngine->TryFinalizeCloseFileSystem())
-                    Thread::Sleep(1);
-            }
+            // Deinitialize engine
+            Deinitialize();
 
             // Unregister all default plugins
             Engine::UnregisterDefaultExtensions();
@@ -176,6 +159,35 @@ namespace SparkyStudios::Audio::Amplitude::Tests
         }
 
     protected:
+        bool Deinitialize()
+        {
+            _running = false;
+
+            if (_threadHandle)
+            {
+                Thread::Wait(_threadHandle);
+                Thread::Release(_threadHandle);
+            }
+
+            bool success = true;
+            if (amEngine->IsInitialized())
+            {
+                amEngine->SetDefaultListener(nullptr);
+                amEngine->RemoveListener(1);
+
+                amEngine->UnloadSoundBanks();
+
+                success = amEngine->Deinitialize();
+
+                // Wait for the file system to complete loading.
+                amEngine->StartCloseFileSystem();
+                while (!amEngine->TryFinalizeCloseFileSystem())
+                    Thread::Sleep(1);
+            }
+
+            return success;
+        }
+
         std::shared_ptr<DiskFileSystem> _fileSystem = AmSharedPtr<DiskFileSystem, eMemoryPoolKind_IO>::Make();
 
     private:

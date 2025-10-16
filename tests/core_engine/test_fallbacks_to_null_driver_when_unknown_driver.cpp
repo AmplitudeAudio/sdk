@@ -22,10 +22,10 @@ namespace SparkyStudios::Audio::Amplitude::Tests
 {
     void EngineTestCase::Run()
     {
-        AM_EXPECT(amEngine->Deinitialize());
+        AM_EXPECT(Deinitialize());
         AM_EXPECT(amEngine->Initialize(AM_OS_STRING("tests.invalid.unknown_driver.config.amconfig")));
         AM_EXPECT(amEngine->GetDriver()->GetName() != "unknown");
         AM_EXPECT(amEngine->GetDriver()->GetName() == "null");
-        AM_EXPECT(amEngine->Deinitialize());
+        AM_EXPECT(Deinitialize());
     }
 } // namespace SparkyStudios::Audio::Amplitude::Tests

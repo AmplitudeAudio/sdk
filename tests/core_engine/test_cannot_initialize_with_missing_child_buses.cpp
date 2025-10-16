@@ -22,8 +22,8 @@ namespace SparkyStudios::Audio::Amplitude::Tests
 {
     void EngineTestCase::Run()
     {
-        AM_EXPECT(amEngine->Deinitialize());
+        AM_EXPECT(Deinitialize());
         AM_EXPECT_NOT(amEngine->Initialize(AM_OS_STRING("tests.invalid.missing_child_bus.config.amconfig")));
-        AM_EXPECT(amEngine->Deinitialize());
+        AM_EXPECT(Deinitialize());
     }
 } // namespace SparkyStudios::Audio::Amplitude::Tests
