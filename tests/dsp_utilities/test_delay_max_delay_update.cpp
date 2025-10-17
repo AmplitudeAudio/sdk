@@ -1,4 +1,4 @@
-// Copyright (c) 2021-present Sparky Studios. All rights reserved.
+// Copyright (c) 2024-present Sparky Studios. All rights reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -14,23 +14,26 @@
 
 #include <SparkyStudios/Audio/Amplitude/Amplitude.h>
 
-#include "EngineTestCase.h"
+#include <DSP/Delay.h>
 
-using namespace SparkyStudios::Audio::Amplitude;
+#include "SimpleTestCase.h"
 
 namespace SparkyStudios::Audio::Amplitude::Tests
 {
-    void EngineTestCase::Run()
+    void SimpleTestCase::Run()
     {
-        Channel channel = amEngine->Play("test_sound_03");
-        amEngine->WaitUntilNextFrame(); // Playing is done in the next frame
+        constexpr AmSize initialMaxDelay = 200;
+        constexpr AmSize framesCount = 128;
 
-        AM_EXPECT(channel.Valid());
-        AM_EXPECT(channel.Playing());
+        Delay delay(initialMaxDelay, framesCount);
 
-        Thread::Sleep(2000); // wait for the sound to finish playing
-        AM_EXPECT_NOT(channel.Playing());
+        AM_EXPECT(delay.GetMaxDelay() == initialMaxDelay);
 
-        channel.Stop(0);
+        // Update max delay
+        constexpr AmSize newMaxDelay = 500;
+        delay.SetMaxDelay(newMaxDelay);
+
+        AM_EXPECT(delay.GetMaxDelay() == newMaxDelay);
+        AM_EXPECT(delay.GetDelayInSamples() == newMaxDelay + framesCount);
     }
 } // namespace SparkyStudios::Audio::Amplitude::Tests

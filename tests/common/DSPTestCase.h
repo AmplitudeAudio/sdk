@@ -14,6 +14,8 @@
 
 #pragma once
 
+#include <DSP/Resamplers/DefaultResampler.h>
+
 #include "TestCase.h"
 
 namespace SparkyStudios::Audio::Amplitude::Tests
@@ -22,10 +24,14 @@ namespace SparkyStudios::Audio::Amplitude::Tests
     {
     public:
         void SetUp() override
-        {}
+        {
+            _resampler = Engine::RegisterExtension<DefaultResampler>();
+        }
 
         void TearDown() override
         {
+            Engine::UnregisterExtension(_resampler);
+
             amEngine->DestroyInstance();
         }
 
@@ -67,6 +73,9 @@ namespace SparkyStudios::Audio::Amplitude::Tests
 
             return true;
         }
+
+    private:
+        std::shared_ptr<DefaultResampler> _resampler;
     };
 
     std::shared_ptr<TestCase> MakeTestCase()

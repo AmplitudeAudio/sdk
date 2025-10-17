@@ -112,7 +112,7 @@ namespace SparkyStudios::Audio::Amplitude
         static std::unordered_set<AmplimixLayerImpl*>& GetThreadLocalLockedLayers()
         {
             // Thread-local storage to track which layers are locked by current thread
-            thread_local std::unordered_set<AmplimixLayerImpl*> lockedLayers;
+            static thread_local std::unordered_set<AmplimixLayerImpl*> lockedLayers;
             return lockedLayers;
         }
 

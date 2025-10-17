@@ -1,4 +1,4 @@
-// Copyright (c) 2021-present Sparky Studios. All rights reserved.
+// Copyright (c) 2024-present Sparky Studios. All rights reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -14,23 +14,21 @@
 
 #include <SparkyStudios/Audio/Amplitude/Amplitude.h>
 
-#include "EngineTestCase.h"
-
-using namespace SparkyStudios::Audio::Amplitude;
+#include "DSPTestCase.h"
 
 namespace SparkyStudios::Audio::Amplitude::Tests
 {
-    void EngineTestCase::Run()
+    void DSPTestCase::Run()
     {
-        Channel channel = amEngine->Play("test_sound_03");
-        amEngine->WaitUntilNextFrame(); // Playing is done in the next frame
+        FFT fft;
 
-        AM_EXPECT(channel.Valid());
-        AM_EXPECT(channel.Playing());
+        // Initialize with power-of-2 size
+        constexpr AmSize size = 1024;
+        fft.Initialize(size);
 
-        Thread::Sleep(2000); // wait for the sound to finish playing
-        AM_EXPECT_NOT(channel.Playing());
-
-        channel.Stop(0);
+        // Verify output size calculation
+        const AmUInt64 outputSize = FFT::GetOutputSize(size);
+        AM_EXPECT(outputSize > 0);
+        AM_EXPECT(outputSize == size / 2 + 1); // Complex output size for real FFT
     }
 } // namespace SparkyStudios::Audio::Amplitude::Tests

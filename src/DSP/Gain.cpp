@@ -190,7 +190,7 @@ namespace SparkyStudios::Audio::Amplitude
 
 #if defined(AM_SIMD_INTRINSICS)
         rampLength = AM_MAX(rampLength, GetSimdBlockSize());
-        rampLength = AM_VALUE_ALIGN(rampLength - GetSimdBlockSize(), GetSimdBlockSize());
+        rampLength = AM_VALUE_ALIGN(rampLength, GetSimdBlockSize());
 #endif
 
         if (rampLength > 0)
