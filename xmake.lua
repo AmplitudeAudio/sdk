@@ -111,7 +111,7 @@ on_config(function(target)
     end
 
     for _, define in ipairs(defines) do
-        target:add("defines", define)
+      target:add("defines", define)
     end
   end
 
@@ -123,7 +123,7 @@ add_requireconfs("*", { debug = is_mode("debug") })
 add_requires("flatbuffers ^25.2.10")
 add_requires("xsimd ^13.2.0")
 add_requires("miniaudio ^0.11.22")
-add_requires("eigen ^3.4.0")
+add_requires("eigen ^5.0.0")
 add_requires("lz4 ^1.9.4")
 
 -- Feature-specific dependencies
