@@ -25,16 +25,15 @@ namespace SparkyStudios::Audio::Amplitude::Tests
         fft.Initialize(size);
 
         // Create test signal
-        std::vector<AmAudioSample> input(size);
-        std::vector<AmAudioSample> output(size);
+        AudioBuffer input(size, 1);
+        AudioBuffer output(size, 1);
 
         // Generate sine wave
-        for (AmSize i = 0; i < size; ++i)
-            input[i] = std::sin(2.0f * AM_PI32 * 10.0f * static_cast<AmReal32>(i) / static_cast<AmReal32>(size));
+        GenerateSineWave(input, size);
 
         // Forward FFT
         SplitComplex splitComplex;
-        fft.Forward(input.data(), splitComplex);
+        fft.Forward(input[0].begin(), splitComplex);
 
         // Verify complex output
         AM_EXPECT(splitComplex.GetSize() > 0);
@@ -42,11 +41,11 @@ namespace SparkyStudios::Audio::Amplitude::Tests
         AM_EXPECT(splitComplex.im() != nullptr);
 
         // Backward FFT
-        fft.Backward(output.data(), splitComplex);
+        fft.Backward(output[0].begin(), splitComplex);
 
         // Verify reconstruction (allowing for some numerical error)
         constexpr AmReal32 tolerance = 0.01f;
         for (AmSize i = 0; i < size; ++i)
-            AM_EXPECT(std::abs(output[i] - input[i]) < tolerance);
+            AM_EXPECT(std::abs(output[0][i] - input[0][i]) < tolerance);
     }
 } // namespace SparkyStudios::Audio::Amplitude::Tests

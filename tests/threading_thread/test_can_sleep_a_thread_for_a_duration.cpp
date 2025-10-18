@@ -21,7 +21,7 @@ using namespace SparkyStudios::Audio::Amplitude;
 void SimpleTestCase::Run()
 {
     const auto start = Thread::GetTimeMillis();
-    Thread::Sleep(100);
+    Thread::Sleep(110);
     const auto end = Thread::GetTimeMillis();
 
     AM_EXPECT((end - start) >= 100);

@@ -185,7 +185,7 @@ namespace SparkyStudios::Audio::Amplitude
             pffft_transform_ordered(_pffft_setup, _buffer, _buffer, _scratch, PFFFT_BACKWARD);
 
             // Convert back to split-complex
-            detail::ScaleBuffer(data, _buffer, 2.0f / static_cast<float>(_size), _size);
+            detail::ScaleBuffer(data, _buffer, 1.0f / static_cast<float>(_size), _size);
         }
 
     private:
