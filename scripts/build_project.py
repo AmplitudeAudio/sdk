@@ -23,7 +23,7 @@ import common
 import sys
 
 
-def main(argv):
+def main(argv: list[str]):
     """Builds the Amplitude project for the game.
 
     This script will build all the assets in the Amplitude project directory.
@@ -32,7 +32,7 @@ def main(argv):
       Returns 0 on success.
     """
 
-    options = common.CommandOptions(argv, "build_project", "0.2.0")
+    options = common.CommandOptions(argv, "build_project", "1.0.0")
 
     try:
         common.generate_flatbuffers_binaries(options)
@@ -44,5 +44,5 @@ def main(argv):
     return 0
 
 
-if __name__ == '__main__':
-    main(sys.argv[1:])
+if __name__ == "__main__":
+    sys.exit(main(sys.argv[1:]))

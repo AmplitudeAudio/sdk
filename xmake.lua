@@ -220,7 +220,7 @@ target("build_binary_schemas")
     local flatc = find_tool("flatc", { paths = { "$(env PATH)", "$(projectdir)/bin" } })
 
     if python then
-      os.exec("%s %s/build_schemas.py --output %s --flatc %s", python, scripts_dir, schemas_dir, flatc.program)
+      os.exec("%s %s/build_schemas.py -p %s -b %s -f %s", python, scripts_dir, schemas_dir, schemas_dir, flatc.program)
     else
       raise("Python not found. Cannot build binary schemas.")
     end
