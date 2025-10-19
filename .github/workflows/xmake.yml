@@ -120,6 +120,11 @@ jobs:
           actions-cache-folder: ".xmake-cache"
           actions-cache-key: ${{ matrix.config.arch }}-${{ matrix.config.plat }}
 
+      - name: Setup python
+        uses: actions/setup-python@v6
+        with:
+          python-version: "3.14"
+
       - name: Install dependencies on Windows
         if: startsWith(matrix.config.os, 'windows')
         run: |
