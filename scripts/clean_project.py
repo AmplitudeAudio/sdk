@@ -23,14 +23,14 @@ import common
 import sys
 
 
-def main(argv):
+def main(argv: list[str]):
     """Cleans the generated Amplitude binary assets.
 
     Returns:
       Returns 0 on success.
     """
 
-    options = common.CommandOptions(argv, "clean_project", "0.3.0")
+    options = common.CommandOptions(argv, "clean_project", "1.0.0")
 
     try:
         common.clean_flatbuffers_binaries(options)
@@ -42,5 +42,5 @@ def main(argv):
     return 0
 
 
-if __name__ == '__main__':
-    main(sys.argv[1:])
+if __name__ == "__main__":
+    sys.exit(main(sys.argv[1:]))
