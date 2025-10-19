@@ -26,7 +26,7 @@
 namespace SparkyStudios::Audio::Amplitude
 {
     /**
-     * @brief An implementation of the FileSystem interface for iOS using
+     * @brief An implementation of the @c FileSystem interface for iOS using
      * NSFileManager.
      *
      * This class provides file system operations for iOS using the NSFileManager
