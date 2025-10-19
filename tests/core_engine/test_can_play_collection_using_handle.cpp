@@ -25,7 +25,7 @@ namespace SparkyStudios::Audio::Amplitude::Tests
         CollectionHandle test_collection = amEngine->GetCollectionHandle("test_collection");
 
         Channel channel = amEngine->Play(test_collection);
-        amEngine->WaitUntilNextFrame(); // Playing is done in the next frame
+        amEngine->WaitUntilFrames(2); // Playing is done in the next frame
 
         AM_EXPECT(channel.Valid());
         AM_EXPECT(channel.Playing());
