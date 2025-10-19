@@ -74,6 +74,16 @@ jobs:
             os: ubuntu-latest
             arch: armeabi-v7a
             plat: android
+
+          - name: "iOS arm64 Latest Clang"
+            os: macos-15
+            arch: arm64
+            plat: iphoneos
+
+          - name: "iOS x86_64 Latest Clang"
+            os: macos-15-intel
+            arch: x86_64
+            plat: iphoneos
         exclude:
           - build_type: "coverage"
             config:
@@ -169,7 +179,7 @@ jobs:
           ./bin/flatc --version
 
       - name: Install Local flatc (iOS)
-        if: matrix.config.plat == 'ios'
+        if: matrix.config.plat == 'iphoneos'
         run: |
           wget https://github.com/google/flatbuffers/releases/download/v25.9.23/Mac.flatc.binary.zip
           mkdir bin
