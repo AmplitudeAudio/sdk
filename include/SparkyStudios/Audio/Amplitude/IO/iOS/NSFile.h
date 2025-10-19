@@ -26,7 +26,7 @@
 namespace SparkyStudios::Audio::Amplitude
 {
     /**
-     * @brief A `File` implementation that reads and writes files using Apple's NSFileHandle.
+     * @brief A @c File implementation that reads and writes files using Apple's NSFileHandle.
      *
      * @ingroup io
      *
@@ -92,7 +92,12 @@ namespace SparkyStudios::Audio::Amplitude
         /**
          * @inherit
          */
-        bool IsValid() const override;
+        [[nodiscard]] bool IsValid() const override;
+
+        /**
+         * @inherit
+         */
+        void Close() override;
 
     private:
         NSFileHandle* m_fileHandle;

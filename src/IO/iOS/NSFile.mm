@@ -57,11 +57,7 @@ NSFile::NSFile(const AmOsString &path, eFileOpenMode mode, eFileOpenKind kind)
   m_isValid = (m_fileHandle != nil);
 }
 
-NSFile::~NSFile() {
-  if (m_fileHandle) {
-    [m_fileHandle closeFile];
-  }
-}
+NSFile::~NSFile() { Close(); }
 
 AmOsString NSFile::GetPath() const { return m_path; }
 
@@ -111,4 +107,10 @@ AmSize NSFile::Position() const {
 AmVoidPtr NSFile::GetPtr() const { return (__bridge void *)m_fileHandle; }
 
 bool NSFile::IsValid() const { return m_isValid; }
+
+void NSFile::Close() {
+  if (m_fileHandle) {
+    [m_fileHandle closeFile];
+  }
+}
 } // namespace SparkyStudios::Audio::Amplitude

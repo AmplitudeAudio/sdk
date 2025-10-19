@@ -102,6 +102,8 @@ namespace SparkyStudios::Audio::Amplitude
          * @param path The path to clean.
          *
          * @return The cleaned version of the given path.
+         *
+         * @internal
          */
         static AmOsString CleanPath(const AmOsString& path);
 
