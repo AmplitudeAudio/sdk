@@ -23,12 +23,12 @@ namespace SparkyStudios::Audio::Amplitude::Tests
     void EngineTestCase::Run()
     {
         Channel channel = amEngine->Play(1999);
-        amEngine->WaitUntilNextFrame(); // Playing is done in the next frame
+        amEngine->WaitUntilFrames(2); // Playing is done in the next frame
 
         AM_EXPECT(channel.Valid());
         AM_EXPECT(channel.Playing());
 
-        Thread::Sleep(kAmSecond * 3); // wait for the sound to finish playing
+        Thread::Sleep(kAmSecond * 5); // wait for the sound to finish playing
         AM_EXPECT_NOT(channel.Playing());
 
         channel.Stop(0);

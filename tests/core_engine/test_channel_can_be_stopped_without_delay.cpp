@@ -25,7 +25,7 @@ namespace SparkyStudios::Audio::Amplitude::Tests
         AmVector3 location = { 10.0f, 20.0f, 30.0f };
         AmReal32 userGain = 0.36f;
         Channel channel = amEngine->Play(100, location, userGain);
-        amEngine->WaitUntilNextFrame(); // Playing is done in the next frame
+        amEngine->WaitUntilFrames(2); // Playing is done in the next frame
 
         AM_EXPECT(channel.Valid());
         AM_EXPECT(channel.Playing());

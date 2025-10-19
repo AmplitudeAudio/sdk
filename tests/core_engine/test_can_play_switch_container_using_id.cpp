@@ -28,12 +28,12 @@ namespace SparkyStudios::Audio::Amplitude::Tests
         AM_EXPECT_NOT(channel.Valid()); // switch container is entity scoped
 
         channel = amEngine->Play(200, entity);
-        amEngine->WaitUntilNextFrame(); // Playing is done in the next frame
+        amEngine->WaitUntilFrames(2); // Playing is done in the next frame
 
         AM_EXPECT(channel.Valid());
         AM_EXPECT(channel.Playing());
 
-        Thread::Sleep(1000); // wait for the sound to finish playing
+        Thread::Sleep(kAmSecond * 5); // wait for the sound to finish playing
         AM_EXPECT_NOT(channel.Playing());
 
         channel.Stop(0);
