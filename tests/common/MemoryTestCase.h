@@ -18,26 +18,20 @@
 
 namespace SparkyStudios::Audio::Amplitude::Tests
 {
-    class SimpleTestCase : public TestCase
+    class MemoryTestCase : public TestCase
     {
     public:
         void SetUp() override
-        {
-            MemoryManager::Initialize();
-        }
+        {}
 
         void TearDown() override
-        {
-            amEngine->DestroyInstance();
-
-            MemoryManager::Deinitialize();
-        }
+        {}
 
         void Run() override;
     };
 
     std::shared_ptr<TestCase> MakeTestCase()
     {
-        return std::make_shared<SimpleTestCase>();
+        return std::make_shared<MemoryTestCase>();
     }
 } // namespace SparkyStudios::Audio::Amplitude::Tests

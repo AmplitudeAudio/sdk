@@ -31,8 +31,19 @@ void SimpleTestCase::Run()
     Room wrapper(&state);
     AM_EXPECT_EQ(wrapper.GetState(), &state);
 
-    constexpr auto kGain = 0.5f;
-    state.SetGain(kGain);
+    {
+        constexpr auto kGain = 0.5f;
 
-    AM_EXPECT_EQ(state.GetGain(), kGain);
+        state.SetGain(kGain);
+        AM_EXPECT_EQ(state.GetGain(), kGain);
+        AM_EXPECT_EQ(wrapper.GetGain(), kGain);
+    }
+
+    {
+        constexpr auto kGain = 1.0f;
+
+        wrapper.SetGain(kGain);
+        AM_EXPECT_EQ(wrapper.GetGain(), kGain);
+        AM_EXPECT_EQ(state.GetGain(), kGain);
+    }
 }

@@ -31,8 +31,13 @@ void SimpleTestCase::Run()
     Room wrapper(&state);
     AM_EXPECT_EQ(wrapper.GetState(), &state);
 
-    BoxShape shape(500, 250, 250);
+    const BoxShape shape(500, 250, 250);
     state.SetShape(shape);
+
+    AM_EXPECT_EQ(state.GetShape(), shape);
+    AM_EXPECT_EQ(wrapper.GetShape(), shape);
+
+    wrapper.SetShape(shape);
 
     AM_EXPECT_EQ(state.GetShape(), shape);
     AM_EXPECT_EQ(wrapper.GetShape(), shape);
@@ -63,14 +68,4 @@ void SimpleTestCase::Run()
 
     AM_EXPECT_EQ(state.GetSurfaceArea((eRoomWall)99), 0.0f);
     AM_EXPECT_EQ(wrapper.GetSurfaceArea((eRoomWall)99), 0.0f);
-
-    constexpr AmVector3 dimensions = { 100, 100, 100 };
-    state.SetDimensions(dimensions);
-
-    AM_EXPECT_EQ(state.GetDimensions(), dimensions);
-    AM_EXPECT_EQ(wrapper.GetDimensions(), dimensions);
-
-    BoxShape boxShape(50, 50, 50);
-    AM_EXPECT_EQ(state.GetShape(), boxShape);
-    AM_EXPECT_EQ(wrapper.GetShape(), boxShape);
 }

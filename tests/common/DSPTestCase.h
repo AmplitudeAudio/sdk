@@ -25,6 +25,8 @@ namespace SparkyStudios::Audio::Amplitude::Tests
     public:
         void SetUp() override
         {
+            MemoryManager::Initialize();
+
             _resampler = Engine::RegisterExtension<DefaultResampler>();
         }
 
@@ -33,6 +35,8 @@ namespace SparkyStudios::Audio::Amplitude::Tests
             Engine::UnregisterExtension(_resampler);
 
             amEngine->DestroyInstance();
+
+            MemoryManager::Deinitialize();
         }
 
         void Run() override;
@@ -80,6 +84,6 @@ namespace SparkyStudios::Audio::Amplitude::Tests
 
     std::shared_ptr<TestCase> MakeTestCase()
     {
-        return amshared(DSPTestCase);
+        return std::make_shared<DSPTestCase>();
     }
 } // namespace SparkyStudios::Audio::Amplitude::Tests
