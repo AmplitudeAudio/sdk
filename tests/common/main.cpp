@@ -32,8 +32,6 @@ int main()
 
     RegisterDeviceNotificationCallback(deviceCallback);
 
-    MemoryManager::Initialize();
-
     bool success = true;
     {
         auto testCase = Tests::MakeTestCase();
@@ -44,8 +42,6 @@ int main()
 
         success = !testCase->HasFailure();
     }
-
-    MemoryManager::Deinitialize();
 
     return success ? EXIT_SUCCESS : EXIT_FAILURE;
 }

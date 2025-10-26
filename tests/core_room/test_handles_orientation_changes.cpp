@@ -46,6 +46,9 @@ void SimpleTestCase::Run()
         AM_EXPECT(std::memcmp(&state.GetOrientation(), &orientation, sizeof(Orientation)) == 0);
         AM_EXPECT(std::memcmp(&state.GetOrientation(), &orientation, sizeof(Orientation)) == 0);
 
+        AM_EXPECT(std::memcmp(&wrapper.GetOrientation(), &orientation, sizeof(Orientation)) == 0);
+        AM_EXPECT(std::memcmp(&wrapper.GetOrientation(), &orientation, sizeof(Orientation)) == 0);
+
         state.Update();
 
         AM_EXPECT_EQ(state.GetDirection(), direction);
@@ -56,6 +59,9 @@ void SimpleTestCase::Run()
 
         AM_EXPECT(std::memcmp(&state.GetOrientation(), &orientation, sizeof(Orientation)) == 0);
         AM_EXPECT(std::memcmp(&state.GetOrientation(), &orientation, sizeof(Orientation)) == 0);
+
+        AM_EXPECT(std::memcmp(&wrapper.GetOrientation(), &orientation, sizeof(Orientation)) == 0);
+        AM_EXPECT(std::memcmp(&wrapper.GetOrientation(), &orientation, sizeof(Orientation)) == 0);
     }
 
     {
@@ -73,6 +79,9 @@ void SimpleTestCase::Run()
         AM_EXPECT(std::memcmp(&state.GetOrientation(), &orientation, sizeof(Orientation)) == 0);
         AM_EXPECT(std::memcmp(&state.GetOrientation(), &orientation, sizeof(Orientation)) == 0);
 
+        AM_EXPECT(std::memcmp(&wrapper.GetOrientation(), &orientation, sizeof(Orientation)) == 0);
+        AM_EXPECT(std::memcmp(&wrapper.GetOrientation(), &orientation, sizeof(Orientation)) == 0);
+
         wrapper.Update();
 
         AM_EXPECT_EQ(state.GetDirection(), direction);
@@ -83,5 +92,8 @@ void SimpleTestCase::Run()
 
         AM_EXPECT(std::memcmp(&state.GetOrientation(), &orientation, sizeof(Orientation)) == 0);
         AM_EXPECT(std::memcmp(&state.GetOrientation(), &orientation, sizeof(Orientation)) == 0);
+
+        AM_EXPECT(std::memcmp(&wrapper.GetOrientation(), &orientation, sizeof(Orientation)) == 0);
+        AM_EXPECT(std::memcmp(&wrapper.GetOrientation(), &orientation, sizeof(Orientation)) == 0);
     }
 }

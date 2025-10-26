@@ -87,7 +87,11 @@ namespace SparkyStudios::Audio::Amplitude::Tests
 
         void SetUp() override
         {
+            MemoryManager::Initialize();
+
             amLogDebug("Test run started");
+
+            _fileSystem = ampoolshared(eMemoryPoolKind_IO, DiskFileSystem);
 
             _invalidConsumerNodePlugin = Engine::RegisterExtension<InvalidConsumerNode>();
 
@@ -149,6 +153,10 @@ namespace SparkyStudios::Audio::Amplitude::Tests
             amEngine->DestroyInstance();
 
             amLogDebug("Test run ended");
+
+            _fileSystem.reset();
+
+            MemoryManager::Deinitialize();
         }
 
         void Run() override;
@@ -188,7 +196,7 @@ namespace SparkyStudios::Audio::Amplitude::Tests
             return success;
         }
 
-        std::shared_ptr<DiskFileSystem> _fileSystem = ampoolshared(eMemoryPoolKind_IO, DiskFileSystem);
+        std::shared_ptr<DiskFileSystem> _fileSystem = nullptr;
 
     private:
         AmThreadHandle _threadHandle = nullptr;
@@ -198,6 +206,6 @@ namespace SparkyStudios::Audio::Amplitude::Tests
 
     std::shared_ptr<TestCase> MakeTestCase()
     {
-        return amshared(EngineTestCase);
+        return std::make_shared<EngineTestCase>();
     }
 } // namespace SparkyStudios::Audio::Amplitude::Tests
