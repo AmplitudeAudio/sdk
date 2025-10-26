@@ -24,7 +24,7 @@ namespace SparkyStudios::Audio::Amplitude::Tests
 {
     void DSPTestCase::Run()
     {
-        auto filter = AmSharedPtr<EqualizerFilter>::Make();
+        auto filter = amshared(EqualizerFilter);
         filter->Init(1.0f, 1.5f, 2.0f, 1.5f, 1.0f, 0.8f, 0.6f, 0.4f);
 
         auto instance = filter->CreateInstance();

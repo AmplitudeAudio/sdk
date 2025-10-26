@@ -24,7 +24,7 @@ namespace SparkyStudios::Audio::Amplitude::Tests
 {
     void DSPTestCase::Run()
     {
-        auto filter = AmSharedPtr<DelayFilter>::Make();
+        auto filter = amshared(DelayFilter);
         filter->Initialize(0.3f, 0.7f, 0.0f);
 
         auto instance = filter->CreateInstance();

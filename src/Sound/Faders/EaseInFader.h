@@ -42,7 +42,7 @@ namespace SparkyStudios::Audio::Amplitude
 
         std::shared_ptr<FaderInstance> CreateInstance() override
         {
-            return AmSharedPtr<EaseInFaderInstance, eMemoryPoolKind_Engine>::Make();
+            return ampoolshared(eMemoryPoolKind_Engine, EaseInFaderInstance);
         }
 
         [[nodiscard]] BezierCurveControlPoints GetControlPoints() const override

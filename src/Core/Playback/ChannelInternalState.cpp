@@ -618,7 +618,7 @@ namespace SparkyStudios::Audio::Amplitude
             return;
 
         if (_eventsMap[event] == nullptr)
-            _eventsMap[event] = AmSharedPtr<ChannelEventListener, eMemoryPoolKind_Engine>::Make();
+            _eventsMap[event] = ampoolshared(eMemoryPoolKind_Engine, ChannelEventListener);
 
         _eventsMap[event]->Add(callback, userData);
     }
@@ -629,7 +629,7 @@ namespace SparkyStudios::Audio::Amplitude
             return;
 
         if (_eventsMap[event] == nullptr)
-            _eventsMap[event] = AmSharedPtr<ChannelEventListener, eMemoryPoolKind_Engine>::Make();
+            _eventsMap[event] = ampoolshared(eMemoryPoolKind_Engine, ChannelEventListener);
 
         _eventsMap[event]->Call(this);
     }

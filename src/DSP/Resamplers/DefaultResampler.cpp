@@ -364,6 +364,6 @@ namespace SparkyStudios::Audio::Amplitude
 
     std::shared_ptr<ResamplerInstance> DefaultResampler::CreateInstance()
     {
-        return AmSharedPtr<DefaultResamplerInstance, eMemoryPoolKind_Filtering>::Make();
+        return ampoolshared(eMemoryPoolKind_Filtering, DefaultResamplerInstance);
     }
 } // namespace SparkyStudios::Audio::Amplitude

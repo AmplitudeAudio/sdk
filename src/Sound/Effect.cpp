@@ -38,7 +38,7 @@ namespace SparkyStudios::Audio::Amplitude
 
     std::shared_ptr<EffectInstance> EffectImpl::CreateInstance() const
     {
-        auto effect = AmSharedPtr<EffectInstanceImpl, eMemoryPoolKind_Engine>::Make(this);
+        auto effect = ampoolshared(eMemoryPoolKind_Engine, EffectInstanceImpl, this);
         _instances.push_back(effect);
 
         return effect;

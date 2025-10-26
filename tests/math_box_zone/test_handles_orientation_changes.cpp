@@ -20,9 +20,9 @@ using namespace SparkyStudios::Audio::Amplitude;
 
 void SimpleTestCase::Run()
 {
-    auto inner = AmSharedPtr<BoxShape>::Make(50, 50, 50);
-    auto outer = AmSharedPtr<BoxShape>::Make(100, 100, 100);
-    std::shared_ptr<Zone> zone = AmSharedPtr<BoxZone>::Make(inner, outer);
+    auto inner = amshared(BoxShape, 50, 50, 50);
+    auto outer = amshared(BoxShape, 100, 100, 100);
+    std::shared_ptr<Zone> zone = amshared(BoxZone, inner, outer);
 
     const auto direction = kVector3UnitX;
     const auto up = kVector3UnitZ;

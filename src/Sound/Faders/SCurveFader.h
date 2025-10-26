@@ -43,7 +43,7 @@ namespace SparkyStudios::Audio::Amplitude
 
         std::shared_ptr<FaderInstance> CreateInstance() override
         {
-            return AmSharedPtr<SCurveFaderInstance, eMemoryPoolKind_Engine>::Make(gSCurveSmoothFaderCurveControlPoints);
+            return ampoolshared(eMemoryPoolKind_Engine, SCurveFaderInstance, gSCurveSmoothFaderCurveControlPoints);
         }
 
         [[nodiscard]] BezierCurveControlPoints GetControlPoints() const override
@@ -61,7 +61,7 @@ namespace SparkyStudios::Audio::Amplitude
 
         std::shared_ptr<FaderInstance> CreateInstance() override
         {
-            return AmSharedPtr<SCurveFaderInstance, eMemoryPoolKind_Engine>::Make(gSCurveSharpFaderCurveControlPoints);
+            return ampoolshared(eMemoryPoolKind_Engine, SCurveFaderInstance, gSCurveSharpFaderCurveControlPoints);
         }
 
         [[nodiscard]] BezierCurveControlPoints GetControlPoints() const override

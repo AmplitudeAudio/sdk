@@ -24,7 +24,7 @@ namespace SparkyStudios::Audio::Amplitude::Tests
 {
     void SimpleTestCase::Run()
     {
-        auto filter = AmSharedPtr<DCRemovalFilter>::Make();
+        auto filter = amshared(DCRemovalFilter);
         filter->Initialize(0.1f);
 
         Filter::Unregister(Filter::Find("DCRemoval"));

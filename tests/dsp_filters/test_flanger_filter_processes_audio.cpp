@@ -24,7 +24,7 @@ namespace SparkyStudios::Audio::Amplitude::Tests
 {
     void DSPTestCase::Run()
     {
-        auto filter = AmSharedPtr<FlangerFilter>::Make();
+        auto filter = amshared(FlangerFilter);
         filter->Initialize(0.005f, 10.0f);
 
         auto instance = filter->CreateInstance();

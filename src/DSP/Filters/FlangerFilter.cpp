@@ -80,7 +80,7 @@ namespace SparkyStudios::Audio::Amplitude
 
     std::shared_ptr<FilterInstance> FlangerFilter::CreateInstance()
     {
-        return AmSharedPtr<FlangerFilterInstance, eMemoryPoolKind_Filtering>::Make(this);
+        return ampoolshared(eMemoryPoolKind_Filtering, FlangerFilterInstance, this);
     }
 
     FlangerFilterInstance::FlangerFilterInstance(FlangerFilter* parent)

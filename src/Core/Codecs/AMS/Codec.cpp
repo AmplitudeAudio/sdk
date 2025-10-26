@@ -662,12 +662,12 @@ namespace SparkyStudios::Audio::Amplitude
 
     std::shared_ptr<Codec::Decoder> AMSCodec::CreateDecoder()
     {
-        return AmSharedPtr<AMSDecoder, eMemoryPoolKind_Codec>::Make(this);
+        return ampoolshared(eMemoryPoolKind_Codec, AMSDecoder, this);
     }
 
     std::shared_ptr<Codec::Encoder> AMSCodec::CreateEncoder()
     {
-        return AmSharedPtr<AMSEncoder, eMemoryPoolKind_Codec>::Make(this);
+        return ampoolshared(eMemoryPoolKind_Codec, AMSEncoder, this);
     }
 
     bool AMSCodec::CanHandleFile(std::shared_ptr<File> file) const

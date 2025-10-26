@@ -180,7 +180,7 @@ namespace SparkyStudios::Audio::Amplitude
 
     std::shared_ptr<BoxShape> BoxShape::Create(const BoxShapeDefinition* definition)
     {
-        return AmSharedPtr<BoxShape>::Make(definition->half_width(), definition->half_height(), definition->half_depth());
+        return amshared(BoxShape, definition->half_width(), definition->half_height(), definition->half_depth());
     }
 
     BoxShape::BoxShape(const AmReal32 halfWidth, const AmReal32 halfHeight, const AmReal32 halfDepth)
@@ -382,7 +382,7 @@ namespace SparkyStudios::Audio::Amplitude
 
     std::shared_ptr<CapsuleShape> CapsuleShape::Create(const CapsuleShapeDefinition* definition)
     {
-        return AmSharedPtr<CapsuleShape>::Make(definition->radius(), definition->half_height());
+        return amshared(CapsuleShape, definition->radius(), definition->half_height());
     }
 
     CapsuleShape::CapsuleShape(const AmReal32 radius, const AmReal32 halfHeight)
@@ -513,7 +513,7 @@ namespace SparkyStudios::Audio::Amplitude
 
     std::shared_ptr<ConeShape> ConeShape::Create(const ConeShapeDefinition* definition)
     {
-        return AmSharedPtr<ConeShape>::Make(definition->radius(), definition->height());
+        return amshared(ConeShape, definition->radius(), definition->height());
     }
 
     ConeShape::ConeShape(const AmReal32 radius, const AmReal32 height)
@@ -633,7 +633,7 @@ namespace SparkyStudios::Audio::Amplitude
 
     std::shared_ptr<SphereShape> SphereShape::Create(const SphereShapeDefinition* definition)
     {
-        return AmSharedPtr<SphereShape>::Make(definition->radius());
+        return amshared(SphereShape, definition->radius());
     }
 
     SphereShape::SphereShape(const AmReal32 radius)

@@ -450,7 +450,7 @@ namespace SparkyStudios::Audio::Amplitude
     {
         amLogDebug("Event '%s' triggered.", m_name.c_str());
 
-        auto event = AmSharedPtr<EventInstanceImpl, eMemoryPoolKind_Engine>::Make(this);
+        auto event = ampoolshared(eMemoryPoolKind_Engine, EventInstanceImpl, this);
         event->Start(entity);
 
         return event;

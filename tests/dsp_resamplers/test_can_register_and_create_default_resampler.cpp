@@ -24,7 +24,7 @@ namespace SparkyStudios::Audio::Amplitude::Tests
 {
     void SimpleTestCase::Run()
     {
-        auto resampler = AmSharedPtr<DefaultResampler>::Make();
+        auto resampler = amshared(DefaultResampler);
 
         Resampler::Unregister(Resampler::Find("default"));
         Resampler::Register(resampler);

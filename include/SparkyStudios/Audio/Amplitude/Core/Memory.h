@@ -215,6 +215,68 @@
  */
 #define amdelete(_type_, _ptr_) ampooldelete(SparkyStudios::Audio::Amplitude::eMemoryPoolKind_Default, _type_, _ptr_)
 
+/**
+ * @brief Creates a unique pointer to an object allocated in a specific memory pool.
+ *
+ * This will create a new memory allocation in the specified pool. The allocated
+ * memory will be freed when the object is destroyed using @ref amdelete amdelete.
+ *
+ * @param __pool__ The memory pool to allocate the object in.
+ * @param __type__ The type of the object to allocate.
+ * @param ... Additional arguments to pass to the constructor of the object.
+ *
+ * @see @ref amdelete amdelete
+ *
+ * @ingroup memory
+ */
+#define ampoolunique(__pool__, __type__, ...) AmUniquePtr<__type__, __pool__>(ampoolnew(__pool__, __type__, __VA_ARGS__))
+
+/**
+ * @brief Creates a unique pointer to an object allocated in the default memory pool.
+ *
+ * This will create a new memory allocation in the default pool. The allocated
+ * memory will be freed when the object is destroyed using @ref amdelete amdelete.
+ *
+ * @param __type__ The type of the object to allocate.
+ * @param ... Additional arguments to pass to the constructor of the object.
+ *
+ * @see @ref amdelete amdelete
+ *
+ * @ingroup memory
+ */
+#define amunique(_type_, ...) ampoolunique(SparkyStudios::Audio::Amplitude::eMemoryPoolKind_Default, _type_, __VA_ARGS__)
+
+/**
+ * @brief Creates a shared pointer to an object allocated in a specific memory pool.
+ *
+ * This will create a new memory allocation in the specified pool. The allocated
+ * memory will be freed when the last shared pointer to the object is destroyed.
+ *
+ * @param __pool__ The memory pool to allocate the object in.
+ * @param __type__ The type of the object to allocate.
+ * @param ... Additional arguments to pass to the constructor of the object.
+ *
+ * @see @ref amdelete amdelete
+ *
+ * @ingroup memory
+ */
+#define ampoolshared(__pool__, __type__, ...) AmSharedPtr<__type__, __pool__>::Make(__VA_ARGS__)
+
+/**
+ * @brief Creates a shared pointer to an object allocated in the default memory pool.
+ *
+ * This will create a new memory allocation in the default pool. The allocated
+ * memory will be freed when the last shared pointer to the object is destroyed.
+ *
+ * @param __type__ The type of the object to allocate.
+ * @param ... Additional arguments to pass to the constructor of the object.
+ *
+ * @see @ref amdelete amdelete
+ *
+ * @ingroup memory
+ */
+#define amshared(_type_, ...) ampoolshared(SparkyStudios::Audio::Amplitude::eMemoryPoolKind_Default, _type_, __VA_ARGS__)
+
 namespace SparkyStudios::Audio::Amplitude
 {
     /**

@@ -108,7 +108,7 @@ namespace SparkyStudios::Audio::Amplitude
     {
         const AmOsString resolvedPath = ResolvePath(path);
         if (AAsset* asset = AAssetManager_open(m_assetManager, resolvedPath.c_str(), AASSET_MODE_RANDOM))
-            return AmSharedPtr<AssetManagerFile, eMemoryPoolKind_IO>::Make(asset, resolvedPath);
+            return ampoolshared(eMemoryPoolKind_IO, AssetManagerFile, asset, resolvedPath);
 
         return nullptr;
     }

@@ -125,7 +125,7 @@ namespace SparkyStudios::Audio::Amplitude
 
     std::shared_ptr<FilterInstance> EqualizerFilter::CreateInstance()
     {
-        return AmSharedPtr<EqualizerFilterInstance, eMemoryPoolKind_Filtering>::Make(this);
+        return ampoolshared(eMemoryPoolKind_Filtering, EqualizerFilterInstance, this);
     }
 
     EqualizerFilterInstance::EqualizerFilterInstance(EqualizerFilter* parent)

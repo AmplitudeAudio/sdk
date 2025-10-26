@@ -24,7 +24,7 @@ namespace SparkyStudios::Audio::Amplitude::Tests
 {
     void DSPTestCase::Run()
     {
-        auto filter = AmSharedPtr<WaveShaperFilter>::Make();
+        auto filter = amshared(WaveShaperFilter);
         filter->Init(0.5f);
 
         auto instance = filter->CreateInstance();

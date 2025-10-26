@@ -24,7 +24,7 @@ namespace SparkyStudios::Audio::Amplitude::Tests
 {
     void DSPTestCase::Run()
     {
-        auto filter = AmSharedPtr<BassBoostFilter>::Make();
+        auto filter = amshared(BassBoostFilter);
         filter->Initialize(2.0f);
 
         auto instance = filter->CreateInstance();

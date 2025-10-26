@@ -23,9 +23,9 @@ using namespace SparkyStudios::Audio::Amplitude;
 
 void SimpleTestCase::Run()
 {
-    auto inner = AmSharedPtr<CapsuleShape>::Make(25, 50);
-    auto outer = AmSharedPtr<CapsuleShape>::Make(50, 100);
-    std::shared_ptr<Zone> zone = AmSharedPtr<CapsuleZone>::Make(inner, outer);
+    auto inner = amshared(CapsuleShape, 25, 50);
+    auto outer = amshared(CapsuleShape, 50, 100);
+    std::shared_ptr<Zone> zone = amshared(CapsuleZone, inner, outer);
 
     const AmVector3 innerPoint = { 10, 10, 10 };
     const AmVector3 outerPoint = { 100, 20, 20 };
