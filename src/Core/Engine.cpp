@@ -147,6 +147,7 @@ namespace SparkyStudios::Audio::Amplitude
     static std::shared_ptr<StereoPanningNode> sStereoPanningNodePlugin = nullptr;
 
     static AmUniquePtr<EngineImpl, eMemoryPoolKind_Engine> gAmplitude = nullptr;
+    static AmMutexHandle gInstanceMutex = nullptr;
 
     std::set<AmOsString> EngineImpl::_pluginSearchPaths = {};
 
@@ -530,16 +531,27 @@ namespace SparkyStudios::Audio::Amplitude
         if (!MemoryManager::IsInitialized())
             return nullptr;
 
-        // Amplitude Engine unique instance.
-        if (gAmplitude == nullptr)
-            gAmplitude.reset(ampoolnew(eMemoryPoolKind_Engine, EngineImpl));
+        if (gInstanceMutex == nullptr)
+            gInstanceMutex = Thread::CreateMutex();
+
+        Thread::LockMutex(gInstanceMutex);
+        {
+            // Amplitude Engine unique instance.
+            if (gAmplitude == nullptr)
+                gAmplitude.reset(ampoolnew(eMemoryPoolKind_Engine, EngineImpl));
+        }
+        Thread::UnlockMutex(gInstanceMutex);
 
         return gAmplitude.get();
     }
 
     void Engine::DestroyInstance()
     {
-        gAmplitude.reset();
+        Thread::LockMutex(gInstanceMutex);
+        {
+            gAmplitude.reset();
+        }
+        Thread::UnlockMutex(gInstanceMutex);
     }
 
     std::shared_ptr<BusInternalState> FindBusInternalState(std::shared_ptr<EngineInternalState> state, AmBusID id)
