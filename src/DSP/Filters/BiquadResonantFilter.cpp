@@ -150,7 +150,7 @@ namespace SparkyStudios::Audio::Amplitude
 
     std::shared_ptr<FilterInstance> BiquadResonantFilter::CreateInstance()
     {
-        return AmSharedPtr<BiquadResonantFilterInstance, eMemoryPoolKind_Filtering>::Make(this);
+        return ampoolshared(eMemoryPoolKind_Filtering, BiquadResonantFilterInstance, this);
     }
 
     BiquadResonantFilterInstance::BiquadResonantFilterInstance(BiquadResonantFilter* parent)

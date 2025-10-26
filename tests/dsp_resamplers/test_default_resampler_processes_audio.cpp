@@ -24,7 +24,7 @@ namespace SparkyStudios::Audio::Amplitude::Tests
 {
     void DSPTestCase::Run()
     {
-        auto resampler = AmSharedPtr<DefaultResampler>::Make();
+        auto resampler = amshared(DefaultResampler);
         auto instance = resampler->CreateInstance();
 
         constexpr AmUInt16 channelCount = 2;

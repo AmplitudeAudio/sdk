@@ -41,7 +41,7 @@ namespace SparkyStudios::Audio::Amplitude::Tests
 
         [[nodiscard]] AM_INLINE std::shared_ptr<NodeInstance> CreateInstance() const override
         {
-            return AmSharedPtr<InvalidConsumerNodeInstance, eMemoryPoolKind_Amplimix>::Make();
+            return ampoolshared(eMemoryPoolKind_Amplimix, InvalidConsumerNodeInstance);
         }
 
         [[nodiscard]] AM_INLINE bool CanConsume() const override
@@ -188,7 +188,7 @@ namespace SparkyStudios::Audio::Amplitude::Tests
             return success;
         }
 
-        std::shared_ptr<DiskFileSystem> _fileSystem = AmSharedPtr<DiskFileSystem, eMemoryPoolKind_IO>::Make();
+        std::shared_ptr<DiskFileSystem> _fileSystem = ampoolshared(eMemoryPoolKind_IO, DiskFileSystem);
 
     private:
         AmThreadHandle _threadHandle = nullptr;
@@ -198,6 +198,6 @@ namespace SparkyStudios::Audio::Amplitude::Tests
 
     std::shared_ptr<TestCase> MakeTestCase()
     {
-        return AmSharedPtr<EngineTestCase>::Make();
+        return amshared(EngineTestCase);
     }
 } // namespace SparkyStudios::Audio::Amplitude::Tests

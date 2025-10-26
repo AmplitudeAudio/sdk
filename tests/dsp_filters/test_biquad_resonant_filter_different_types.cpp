@@ -36,7 +36,7 @@ namespace SparkyStudios::Audio::Amplitude::Tests
 
         // Test Low-Pass filter
         {
-            auto filter = AmSharedPtr<BiquadResonantFilter>::Make();
+            auto filter = amshared(BiquadResonantFilter);
             filter->InitializeLowPass(2000.0f, 0.707107f);
             auto instance = filter->CreateInstance();
 
@@ -49,7 +49,7 @@ namespace SparkyStudios::Audio::Amplitude::Tests
 
         // Test High-Pass filter
         {
-            auto filter = AmSharedPtr<BiquadResonantFilter>::Make();
+            auto filter = amshared(BiquadResonantFilter);
             filter->InitializeHighPass(500.0f, 0.707107f);
             auto instance = filter->CreateInstance();
 
@@ -62,7 +62,7 @@ namespace SparkyStudios::Audio::Amplitude::Tests
 
         // Test Band-Pass filter
         {
-            auto filter = AmSharedPtr<BiquadResonantFilter>::Make();
+            auto filter = amshared(BiquadResonantFilter);
             filter->InitializeBandPass(1000.0f, 1.0f);
             auto instance = filter->CreateInstance();
 
@@ -75,7 +75,7 @@ namespace SparkyStudios::Audio::Amplitude::Tests
 
         // Test Notch filter
         {
-            auto filter = AmSharedPtr<BiquadResonantFilter>::Make();
+            auto filter = amshared(BiquadResonantFilter);
             filter->InitializeNotching(1000.0f, 5.0f);
             auto instance = filter->CreateInstance();
 

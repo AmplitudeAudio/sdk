@@ -206,12 +206,12 @@ namespace SparkyStudios::Audio::Amplitude
 
     std::shared_ptr<Codec::Decoder> WAVCodec::CreateDecoder()
     {
-        return AmSharedPtr<WAVDecoder, eMemoryPoolKind_Codec>::Make(this);
+        return ampoolshared(eMemoryPoolKind_Codec, WAVDecoder, this);
     }
 
     std::shared_ptr<Codec::Encoder> WAVCodec::CreateEncoder()
     {
-        return AmSharedPtr<WAVEncoder, eMemoryPoolKind_Codec>::Make(this);
+        return ampoolshared(eMemoryPoolKind_Codec, WAVEncoder, this);
     }
 
     bool WAVCodec::CanHandleFile(std::shared_ptr<File> file) const

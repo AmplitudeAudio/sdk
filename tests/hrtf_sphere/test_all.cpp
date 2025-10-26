@@ -26,7 +26,7 @@ void SimpleTestCase::Run()
     HRIRSphereImpl sphere;
     AM_EXPECT_NOT(sphere.IsLoaded());
 
-    auto fs = AmSharedPtr<DiskFileSystem, eMemoryPoolKind_IO>::Make();
+    auto fs = ampoolshared(eMemoryPoolKind_IO, DiskFileSystem);
     fs->SetBasePath(AM_OS_STRING("./samples/assets"));
 
     sphere.SetResource(AM_OS_STRING("./data/baker_a_101_lp_512.amir"));

@@ -184,7 +184,7 @@ namespace SparkyStudios::Audio::Amplitude
         if (it == _header.m_Items.end())
             return nullptr;
 
-        return AmSharedPtr<PackageItemFile, eMemoryPoolKind_IO>::Make(&*it, _fileSystem->OpenFile(_packagePath), _headerSize);
+        return ampoolshared(eMemoryPoolKind_IO, PackageItemFile, &*it, _fileSystem->OpenFile(_packagePath), _headerSize);
     }
 
     void PackageFileSystem::StartOpenFileSystem()

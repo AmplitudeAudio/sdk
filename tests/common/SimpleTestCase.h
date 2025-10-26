@@ -34,6 +34,6 @@ namespace SparkyStudios::Audio::Amplitude::Tests
 
     std::shared_ptr<TestCase> MakeTestCase()
     {
-        return AmSharedPtr<SimpleTestCase>::Make();
+        return amshared(SimpleTestCase);
     }
 } // namespace SparkyStudios::Audio::Amplitude::Tests

@@ -94,8 +94,7 @@ namespace SparkyStudios::Audio::Amplitude
 
     std::shared_ptr<PipelineInstance> PipelineImpl::CreateInstance(const AmplimixLayer* layer) const
     {
-        auto instance =
-            AmSharedPtr<PipelineInstanceImpl, eMemoryPoolKind_Amplimix>::Make(this, static_cast<const AmplimixLayerImpl*>(layer));
+        auto instance = ampoolshared(eMemoryPoolKind_Amplimix, PipelineInstanceImpl, this, static_cast<const AmplimixLayerImpl*>(layer));
 
         const auto* definition = GetDefinition();
         const auto* nodes = definition->nodes();

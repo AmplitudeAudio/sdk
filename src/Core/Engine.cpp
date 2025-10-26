@@ -608,9 +608,7 @@ namespace SparkyStudios::Audio::Amplitude
         {
             const DuckBusDefinition* duck = duckBusDefinitionList->Get(i);
 
-            if (AmUniquePtr<DuckBusInternalState, eMemoryPoolKind_Engine> bus(
-                    ampoolnew(eMemoryPoolKind_Engine, DuckBusInternalState, parent.get()));
-                bus->Initialize(duck))
+            if (auto bus = ampoolunique(eMemoryPoolKind_Engine, DuckBusInternalState, parent.get()); bus->Initialize(duck))
             {
                 output->push_back(std::move(bus));
             }
@@ -738,7 +736,7 @@ namespace SparkyStudios::Audio::Amplitude
         _frameThreadMutex = Thread::CreateMutex(500);
 
         // Create the internal engine state
-        _state = AmSharedPtr<EngineInternalState, eMemoryPoolKind_Engine>::Make();
+        _state = ampoolshared(eMemoryPoolKind_Engine, EngineInternalState);
         _state->version = &Amplitude::GetVersion();
 
         // Load the audio driver
@@ -788,7 +786,7 @@ namespace SparkyStudios::Audio::Amplitude
             _state->hrir_sampling_mode = static_cast<eHRIRSphereSamplingMode>(config->hrtf()->hrir_sampling());
 
             // Load the HRIR sphere
-            _state->hrir_sphere = AmSharedPtr<HRIRSphereImpl, eMemoryPoolKind_Engine>::Make();
+            _state->hrir_sphere = ampoolshared(eMemoryPoolKind_Engine, HRIRSphereImpl);
             _state->hrir_sphere->SetResource(AM_STRING_TO_OS_STRING(config->hrtf()->amir_file()->c_str()));
             _state->hrir_sphere->SetSamplingMode(_state->hrir_sampling_mode);
             _state->hrir_sphere->Load(GetFileSystem());
@@ -840,7 +838,7 @@ namespace SparkyStudios::Audio::Amplitude
         _state->buses.resize(busCount);
         for (flatbuffers::uoffset_t i = 0; i < busCount; ++i)
         {
-            _state->buses[i] = AmSharedPtr<BusInternalState, eMemoryPoolKind_Engine>::Make();
+            _state->buses[i] = ampoolshared(eMemoryPoolKind_Engine, BusInternalState);
             _state->buses[i]->Initialize(busDefList->buses()->Get(i));
         }
 
@@ -1003,7 +1001,7 @@ namespace SparkyStudios::Audio::Amplitude
         if (const auto findIt = _state->sound_bank_id_map.find(filename); findIt == _state->sound_bank_id_map.end() ||
             (findIt != _state->sound_bank_id_map.end() && !_state->sound_bank_map.contains(findIt->second)))
         {
-            AmUniquePtr<SoundBank, eMemoryPoolKind_Engine> soundBank(ampoolnew(eMemoryPoolKind_Engine, SoundBank));
+            auto soundBank = ampoolunique(eMemoryPoolKind_Engine, SoundBank);
             success = soundBank->Initialize(filename, this);
 
             if (success)
@@ -1045,7 +1043,7 @@ namespace SparkyStudios::Audio::Amplitude
         if (const auto findIt = _state->sound_bank_id_map.find(filename); findIt == _state->sound_bank_id_map.end() ||
             (findIt != _state->sound_bank_id_map.end() && !_state->sound_bank_map.contains(findIt->second)))
         {
-            AmUniquePtr<SoundBank, eMemoryPoolKind_Engine> soundBank(ampoolnew(eMemoryPoolKind_Engine, SoundBank));
+            auto soundBank = ampoolunique(eMemoryPoolKind_Engine, SoundBank);
             success = soundBank->InitializeFromMemoryView(ptr, size, this);
 
             if (success)
@@ -1187,7 +1185,7 @@ namespace SparkyStudios::Audio::Amplitude
 
         for (const auto& bank : _state->sound_bank_map | std::views::values)
         {
-            auto task = AmSharedPtr<LoadSoundBankTask, eMemoryPoolKind_Engine>::Make(bank.get());
+            auto task = ampoolshared(eMemoryPoolKind_Engine, LoadSoundBankTask, bank.get());
             _soundLoaderThreadPool->AddTask(task);
         }
     }

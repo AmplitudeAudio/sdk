@@ -174,8 +174,7 @@ std::shared_ptr<File> NSFileSystem::OpenFile(const AmOsString &path,
     }
 
     // Create the NSFile with resolved path
-    auto file = AmSharedPtr<NSFile, eMemoryPoolKind_IO>::Make(
-        resolvedPath, mode, eFileOpenKind_Binary);
+    auto file = ampoolshared(eMemoryPoolKind_IO, NSFile, resolvedPath, mode, eFileOpenKind_Binary);
 
     // Verify the file was opened successfully
     if (file && !file->IsValid()) {

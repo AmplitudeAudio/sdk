@@ -24,7 +24,7 @@ namespace SparkyStudios::Audio::Amplitude::Tests
 {
     void SimpleTestCase::Run()
     {
-        auto filter = AmSharedPtr<MonoPoleFilter>::Make();
+        auto filter = amshared(MonoPoleFilter);
         filter->Initialize(0.5f);
 
         Filter::Unregister(Filter::Find("MonoPole"));

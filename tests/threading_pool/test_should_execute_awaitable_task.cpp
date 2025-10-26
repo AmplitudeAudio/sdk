@@ -24,7 +24,7 @@ void SimpleTestCase::Run()
     Thread::Pool pool;
     pool.Init(1);
 
-    auto task = AmSharedPtr<AwaitableDummyPoolTask>::Make();
+    auto task = amshared(AwaitableDummyPoolTask);
     AM_EXPECT_NOT(task->IsExecuted());
 
     pool.AddTask(task);

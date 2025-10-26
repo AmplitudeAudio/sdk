@@ -84,7 +84,7 @@ namespace SparkyStudios::Audio::Amplitude
 
     std::shared_ptr<FilterInstance> LofiFilter::CreateInstance()
     {
-        return AmSharedPtr<LofiFilterInstance, eMemoryPoolKind_Filtering>::Make(this);
+        return ampoolshared(eMemoryPoolKind_Filtering, LofiFilterInstance, this);
     }
 
     LofiFilterInstance::LofiFilterInstance(LofiFilter* parent)

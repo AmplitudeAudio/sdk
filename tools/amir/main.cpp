@@ -468,7 +468,7 @@ int process(const AmOsString& inFileName, const AmOsString& outFileName, const A
             sorted_by_name.insert(file);
         }
 
-        AmUniquePtr<Codec> wavCodec(amnew(WAVCodec));
+        auto wavCodec = amshared(WAVCodec);
 
         std::vector<AmVector3> positions;
 
@@ -504,7 +504,7 @@ int process(const AmOsString& inFileName, const AmOsString& outFileName, const A
 
             auto decoder = wavCodec->CreateDecoder();
 
-            if (auto file = AmSharedPtr<DiskFile, eMemoryPoolKind_IO>::Make(absolute(entry)); !decoder->Open(file))
+            if (auto file = ampoolshared(eMemoryPoolKind_IO, DiskFile, absolute(entry)); !decoder->Open(file))
             {
                 log(stderr, "\tFailed to open file %s.\n", path.c_str());
                 return EXIT_FAILURE;

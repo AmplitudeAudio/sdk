@@ -48,7 +48,7 @@ namespace SparkyStudios::Audio::Amplitude
 
         [[nodiscard]] AM_INLINE std::shared_ptr<NodeInstance> CreateInstance() const override
         {
-            return AmSharedPtr<AmbisonicBinauralDecoderNodeInstance, eMemoryPoolKind_Amplimix>::Make();
+            return ampoolshared(eMemoryPoolKind_Amplimix, AmbisonicBinauralDecoderNodeInstance);
         }
 
         [[nodiscard]] AM_INLINE bool CanConsume() const override

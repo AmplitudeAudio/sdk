@@ -240,7 +240,7 @@ namespace SparkyStudios::Audio::Amplitude::Compression::ADPCM
 
     std::shared_ptr<Context> CreateContext(int numChannels, int lookAhead, NoiseShapingMode noiseShaping, AmInt32 initialDeltas[2])
     {
-        auto ctx = AmSharedPtr<Context, eMemoryPoolKind_Codec>::Make();
+        auto ctx = ampoolshared(eMemoryPoolKind_Codec, Context);
         int ch, i;
 
         std::memset(ctx.get(), 0, sizeof(Context));

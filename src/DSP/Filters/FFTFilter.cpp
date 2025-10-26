@@ -38,7 +38,7 @@ namespace SparkyStudios::Audio::Amplitude
 
     std::shared_ptr<FilterInstance> FFTFilter::CreateInstance()
     {
-        return AmSharedPtr<FFTFilterInstance, eMemoryPoolKind_Filtering>::Make(this);
+        return ampoolshared(eMemoryPoolKind_Filtering, FFTFilterInstance, this);
     }
 
     FFTFilterInstance::FFTFilterInstance(FFTFilter* parent)

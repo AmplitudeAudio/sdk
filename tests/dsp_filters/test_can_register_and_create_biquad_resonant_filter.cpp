@@ -24,7 +24,7 @@ namespace SparkyStudios::Audio::Amplitude::Tests
 {
     void SimpleTestCase::Run()
     {
-        auto filter = AmSharedPtr<BiquadResonantFilter>::Make();
+        auto filter = amshared(BiquadResonantFilter);
         filter->InitializeLowPass(1000.0f, 0.707107f);
 
         Filter::Unregister(Filter::Find("BiquadResonant"));

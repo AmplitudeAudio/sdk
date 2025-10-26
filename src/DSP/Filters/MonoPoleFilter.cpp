@@ -101,6 +101,6 @@ namespace SparkyStudios::Audio::Amplitude
 
     std::shared_ptr<FilterInstance> MonoPoleFilter::CreateInstance()
     {
-        return AmSharedPtr<MonoPoleFilterInstance, eMemoryPoolKind_Filtering>::Make(this);
+        return ampoolshared(eMemoryPoolKind_Filtering, MonoPoleFilterInstance, this);
     }
 } // namespace SparkyStudios::Audio::Amplitude

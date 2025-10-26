@@ -25,9 +25,9 @@ namespace SparkyStudios::Audio::Amplitude::Tests
         const auto environment = amEngine->AddEnvironment(1234);
 
         // Set up zone for the environment
-        auto inner = AmSharedPtr<SphereShape>::Make(10);
-        auto outer = AmSharedPtr<SphereShape>::Make(20);
-        auto zone = AmSharedPtr<SphereZone>::Make(inner, outer);
+        auto inner = amshared(SphereShape, 10);
+        auto outer = amshared(SphereShape, 20);
+        auto zone = amshared(SphereZone, inner, outer);
         environment.SetZone(zone);
 
         // Test setting effect by handle
