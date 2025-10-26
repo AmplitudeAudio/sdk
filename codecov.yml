@@ -1,5 +1,6 @@
 codecov:
   branch: develop
+  max_report_age: off
 
 coverage:
   round: up

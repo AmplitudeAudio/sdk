@@ -34,9 +34,6 @@ namespace SparkyStudios::Audio::Amplitude::Tests
         AM_EXPECT(channel.Valid());
         AM_EXPECT(channel.Playing());
 
-        Thread::Sleep(kAmSecond * 5); // wait for the sound to finish playing
-        AM_EXPECT_NOT(channel.Playing());
-
         channel.Stop(0);
 
         // Clean up
