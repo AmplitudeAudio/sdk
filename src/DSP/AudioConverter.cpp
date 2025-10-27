@@ -16,6 +16,8 @@
 
 #include <Utils/Utils.h>
 
+#include <algorithm>
+
 namespace SparkyStudios::Audio::Amplitude
 {
     AudioConverter::AudioConverter()

@@ -18,6 +18,7 @@
 
 #include <cmath>
 #include <numeric>
+#include <algorithm>
 
 namespace SparkyStudios::Audio::Amplitude
 {
