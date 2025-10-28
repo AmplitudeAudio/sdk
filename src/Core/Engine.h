@@ -213,12 +213,12 @@ namespace SparkyStudios::Audio::Amplitude
         Channel PlayScopedCollection(CollectionHandle handle, const Entity& entity, const AmVector3& location, AmReal32 userGain) const;
         Channel PlayScopedSound(SoundHandle handle, const Entity& entity, const AmVector3& location, AmReal32 userGain) const;
 
-        static AmMutexHandle _instanceMutex;
+        static std::mutex _instanceMutex;
 
         // The list of paths in which search for plugins.
         static std::set<AmOsString> _pluginSearchPaths;
 
-        AmMutexHandle _frameThreadMutex;
+        mutable std::mutex _frameThreadMutex;
         // The list of pending next frame callbacks.
         mutable std::queue<std::function<void(AmTime)>> _nextFrameCallbacks;
 

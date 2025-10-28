@@ -17,6 +17,7 @@
 #ifndef _AM_IMPLEMENTATION_MIXER_AMPLIMIX_H
 #define _AM_IMPLEMENTATION_MIXER_AMPLIMIX_H
 
+#include <mutex>
 #include <queue>
 
 #include <SparkyStudios/Audio/Amplitude/Core/Common.h>
@@ -81,7 +82,7 @@ namespace SparkyStudios::Audio::Amplitude
         AudioConverter* dataConverter = nullptr; // miniaudio resampler & channel converter
         std::shared_ptr<PipelineInstance> pipeline = nullptr; // pipeline for this layer
 
-        AmMutexHandle mutex = nullptr; // mutex for thread-safe access
+        std::recursive_mutex mutex; // mutex for thread-safe access
 
         ~AmplimixLayerImpl() override;
 
@@ -216,8 +217,6 @@ namespace SparkyStudios::Audio::Amplitude
             return _device;
         }
 
-        void WaitForCurrentFrame();
-
         static void IncrementSoundLoopCount(SoundInstance* sound);
 
     private:
@@ -233,7 +232,7 @@ namespace SparkyStudios::Audio::Amplitude
 
         std::queue<MixerCommand> _commandsStack;
 
-        AmMutexHandle _audioThreadMutex;
+        std::recursive_mutex _audioThreadMutex;
         std::unordered_map<AmThreadID, bool> _insideAudioThreadMutex;
 
         AmUInt32 _nextId;
