@@ -147,7 +147,7 @@ namespace SparkyStudios::Audio::Amplitude
     static std::shared_ptr<StereoPanningNode> sStereoPanningNodePlugin = nullptr;
 
     static AmUniquePtr<EngineImpl, eMemoryPoolKind_Engine> gAmplitude = nullptr;
-    static AmMutexHandle gInstanceMutex = nullptr;
+    static std::mutex gInstanceMutex;
 
     std::set<AmOsString> EngineImpl::_pluginSearchPaths = {};
 
@@ -234,7 +234,7 @@ namespace SparkyStudios::Audio::Amplitude
     }
 
     EngineImpl::EngineImpl()
-        : _frameThreadMutex(nullptr)
+        : _frameThreadMutex()
         , _configSrc()
         , _state(nullptr)
         , _defaultListener(nullptr)
@@ -531,27 +531,19 @@ namespace SparkyStudios::Audio::Amplitude
         if (!MemoryManager::IsInitialized())
             return nullptr;
 
-        if (gInstanceMutex == nullptr)
-            gInstanceMutex = Thread::CreateMutex();
+        std::lock_guard lock(gInstanceMutex);
 
-        Thread::LockMutex(gInstanceMutex);
-        {
-            // Amplitude Engine unique instance.
-            if (gAmplitude == nullptr)
-                gAmplitude.reset(ampoolnew(eMemoryPoolKind_Engine, EngineImpl));
-        }
-        Thread::UnlockMutex(gInstanceMutex);
+        // Amplitude Engine unique instance.
+        if (gAmplitude == nullptr)
+            gAmplitude.reset(ampoolnew(eMemoryPoolKind_Engine, EngineImpl));
 
         return gAmplitude.get();
     }
 
     void Engine::DestroyInstance()
     {
-        Thread::LockMutex(gInstanceMutex);
-        {
-            gAmplitude.reset();
-        }
-        Thread::UnlockMutex(gInstanceMutex);
+        std::lock_guard lock(gInstanceMutex);
+        gAmplitude.reset();
     }
 
     std::shared_ptr<BusInternalState> FindBusInternalState(std::shared_ptr<EngineInternalState> state, AmBusID id)
@@ -745,8 +737,6 @@ namespace SparkyStudios::Audio::Amplitude
         Fader::LockRegistry();
         Node::LockRegistry();
 
-        _frameThreadMutex = Thread::CreateMutex(500);
-
         // Create the internal engine state
         _state = ampoolshared(eMemoryPoolKind_Engine, EngineInternalState);
         _state->version = &Amplitude::GetVersion();
@@ -933,9 +923,6 @@ namespace SparkyStudios::Audio::Amplitude
 
         _state->stopping = true;
 
-        // Wait for mixer to stop current frame
-        _state->mixer.WaitForCurrentFrame();
-
         // Stop all sounds
         StopAll();
 
@@ -969,8 +956,6 @@ namespace SparkyStudios::Audio::Amplitude
 
         _state.reset();
         _audioDriver.reset();
-
-        Thread::DestroyMutex(_frameThreadMutex);
 
         // Unlock registries
         Driver::UnlockRegistry();
@@ -1102,18 +1087,16 @@ namespace SparkyStudios::Audio::Amplitude
         }
         else if (findIt->second->GetRefCounter()->Decrement() == 0)
         {
-            Thread::LockMutex(_frameThreadMutex);
+            std::lock_guard lock(_frameThreadMutex);
 
             findIt->second->Deinitialize(this);
             _state->sound_bank_map.erase(id);
-
-            Thread::UnlockMutex(_frameThreadMutex);
         }
     }
 
     void EngineImpl::UnloadSoundBanks()
     {
-        Thread::LockMutex(_frameThreadMutex);
+        std::lock_guard lock(_frameThreadMutex);
 
         std::vector<AmBankID> idsToDelete;
         idsToDelete.reserve(_state->sound_bank_map.size());
@@ -1129,8 +1112,6 @@ namespace SparkyStudios::Audio::Amplitude
 
         for (const auto id : idsToDelete)
             _state->sound_bank_map.erase(id);
-
-        Thread::UnlockMutex(_frameThreadMutex);
     }
 
     void EngineImpl::EnsureSoundBankLoaded(const AmOsString& filename)
@@ -1578,14 +1559,12 @@ namespace SparkyStudios::Audio::Amplitude
 
     void EngineImpl::CancelAllEvents()
     {
-        Thread::LockMutex(_frameThreadMutex);
-        {
-            for (auto& event : _state->running_events)
-                event->Abort();
+        std::lock_guard lock(_frameThreadMutex);
 
-            _state->running_events.clear();
-        }
-        Thread::UnlockMutex(_frameThreadMutex);
+        for (auto& event : _state->running_events)
+            event->Abort();
+
+        _state->running_events.clear();
     }
 
     void EngineImpl::SetSwitchState(SwitchHandle handle, AmObjectID stateId) const
@@ -2407,18 +2386,16 @@ namespace SparkyStudios::Audio::Amplitude
 
         if (!_state->stopping)
         {
-            // Execute pending frame callbacks.
-            Thread::LockMutex(_frameThreadMutex);
-            {
-                while (!_nextFrameCallbacks.empty())
-                {
-                    const auto& callback = _nextFrameCallbacks.front();
-                    callback(delta);
+            std::lock_guard lock(_frameThreadMutex);
 
-                    _nextFrameCallbacks.pop();
-                }
+            // Execute pending frame callbacks.
+            while (!_nextFrameCallbacks.empty())
+            {
+                const auto& callback = _nextFrameCallbacks.front();
+                callback(delta);
+
+                _nextFrameCallbacks.pop();
             }
-            Thread::UnlockMutex(_frameThreadMutex);
         }
 
         EraseFinishedSounds(_state);
@@ -2496,11 +2473,8 @@ namespace SparkyStudios::Audio::Amplitude
 
     void EngineImpl::OnNextFrame(std::function<void(AmTime delta)> callback) const
     {
-        Thread::LockMutex(_frameThreadMutex);
-        {
-            _nextFrameCallbacks.push(std::move(callback));
-        }
-        Thread::UnlockMutex(_frameThreadMutex);
+        std::lock_guard lock(_frameThreadMutex);
+        _nextFrameCallbacks.push(std::move(callback));
     }
 
     void EngineImpl::WaitUntilNextFrame() const

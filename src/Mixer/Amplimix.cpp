@@ -18,8 +18,6 @@
 #include <Mixer/Amplimix.h>
 #include <Mixer/Pipeline.h>
 
-#include <unordered_set>
-
 #define AMPLIMIX_STORE(A, C) std::atomic_store_explicit(A, (C), std::memory_order_release)
 #define AMPLIMIX_LOAD(A) std::atomic_load_explicit(A, std::memory_order_acquire)
 #define AMPLIMIX_CSWAP(A, E, C) std::atomic_compare_exchange_strong_explicit(A, E, C, std::memory_order_acq_rel, std::memory_order_acquire)
@@ -87,12 +85,7 @@ namespace SparkyStudios::Audio::Amplitude
             if (_haveLocked)
                 return; // Avoid double locking in same instance
 
-            // Check if current thread already holds this layer's lock
-            if (IsAlreadyLockedByCurrentThread())
-                return; // Prevent deadlock
-
-            if (m_layer->mutex)
-                Thread::LockMutex(m_layer->mutex);
+            m_layer->mutex.lock();
 
             MarkLayerAsLocked();
         }
@@ -102,34 +95,19 @@ namespace SparkyStudios::Audio::Amplitude
             if (!_haveLocked)
                 return;
 
-            if (m_layer->mutex)
-                Thread::UnlockMutex(m_layer->mutex);
+            m_layer->mutex.unlock();
 
             MarkLayerAsUnlocked();
         }
 
     private:
-        static std::unordered_set<AmplimixLayerImpl*>& GetThreadLocalLockedLayers()
-        {
-            // Thread-local storage to track which layers are locked by current thread
-            static thread_local std::unordered_set<AmplimixLayerImpl*> lockedLayers;
-            return lockedLayers;
-        }
-
-        [[nodiscard]] bool IsAlreadyLockedByCurrentThread() const
-        {
-            return GetThreadLocalLockedLayers().contains(m_layer);
-        }
-
         void MarkLayerAsLocked()
         {
-            GetThreadLocalLockedLayers().insert(m_layer);
             _haveLocked = true;
         }
 
         void MarkLayerAsUnlocked()
         {
-            GetThreadLocalLockedLayers().erase(m_layer);
             _haveLocked = false;
         }
 
@@ -348,7 +326,7 @@ namespace SparkyStudios::Audio::Amplitude
     AmplimixImpl::AmplimixImpl(AmReal32 masterGain)
         : _initialized(false)
         , _commandsStack()
-        , _audioThreadMutex(nullptr)
+        , _audioThreadMutex()
         , _insideAudioThreadMutex()
         , _nextId(0)
         , _masterGain()
@@ -388,8 +366,6 @@ namespace SparkyStudios::Audio::Amplitude
         _device.mRequestedOutputChannels = PlaybackOutputChannels::Stereo; // For now, only support stereo output.
         _device.mRequestedOutputFormat = static_cast<PlaybackOutputFormat>(config->output()->format());
 
-        _audioThreadMutex = Thread::CreateMutex(500);
-
         _initialized = true;
 
         return true;
@@ -403,11 +379,6 @@ namespace SparkyStudios::Audio::Amplitude
         AMPLITUDE_ASSERT(!IsInsideThreadMutex());
 
         _initialized = false;
-
-        if (_audioThreadMutex)
-            Thread::DestroyMutex(_audioThreadMutex);
-
-        _audioThreadMutex = nullptr;
 
         _pipeline = nullptr;
 
@@ -525,6 +496,8 @@ namespace SparkyStudios::Audio::Amplitude
         if (endFrame - startFrame < kProcessedFramesCount || endFrame < kProcessedFramesCount)
             return 0; // invalid frame range
 
+        AmplimixMutexLocker lock(this);
+
         // define a layer id
         layer = layer == 0 ? ++_nextId : layer;
 
@@ -532,17 +505,12 @@ namespace SparkyStudios::Audio::Amplitude
         if (id == 0)
             id = kAmplimixLayersCount;
 
-        AmplimixMutexLocker lock(this);
-
         // get layer for next sound handle id
         auto* lay = GetLayer(layer);
 
         // check if corresponding layer is free
         if (AMPLIMIX_LOAD(&lay->flag) == ePSF_MIN)
         {
-            // Initialize the layer's mutex
-            lay->mutex = Thread::CreateMutex(100);
-
             // Initialize this layer's pipeline
             lay->pipeline = _pipeline->CreateInstance(lay);
 
@@ -850,12 +818,6 @@ namespace SparkyStudios::Audio::Amplitude
         return _pipeline;
     }
 
-    void AmplimixImpl::WaitForCurrentFrame()
-    {
-        while (Thread::IsMutexLocked(_audioThreadMutex))
-            Thread::Sleep(10);
-    }
-
     void AmplimixImpl::IncrementSoundLoopCount(SoundInstance* sound)
     {
         ++sound->_currentLoopCount;
@@ -1141,9 +1103,7 @@ namespace SparkyStudios::Audio::Amplitude
 
     void AmplimixImpl::LockAudioMutex()
     {
-        if (_audioThreadMutex)
-            Thread::LockMutex(_audioThreadMutex);
-
+        _audioThreadMutex.lock();
         _insideAudioThreadMutex.insert_or_assign(Thread::GetCurrentThreadId(), true);
     }
 
@@ -1151,17 +1111,12 @@ namespace SparkyStudios::Audio::Amplitude
     {
         AMPLITUDE_ASSERT(IsInsideThreadMutex());
 
-        if (_audioThreadMutex)
-            Thread::UnlockMutex(_audioThreadMutex);
-
+        _audioThreadMutex.unlock();
         _insideAudioThreadMutex.insert_or_assign(Thread::GetCurrentThreadId(), false);
     }
 
     AmplimixLayerImpl::~AmplimixLayerImpl()
-    {
-        if (mutex)
-            Thread::DestroyMutex(mutex);
-    }
+    {}
 
     void AmplimixLayerImpl::Reset()
     {

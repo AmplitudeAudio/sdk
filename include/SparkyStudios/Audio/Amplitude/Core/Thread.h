@@ -23,10 +23,6 @@
 
 namespace SparkyStudios::Audio::Amplitude
 {
-#if AM_PLATFORM_WIN
-#undef CreateMutex
-#endif
-
     /**
      * @brief The AmThreadFunction signature is used to create threads.
      *
@@ -35,63 +31,10 @@ namespace SparkyStudios::Audio::Amplitude
     typedef void (*AmThreadFunction)(AmVoidPtr param);
 
     typedef AmVoidPtr AmThreadHandle;
-    typedef AmVoidPtr AmMutexHandle;
     typedef AmUInt64 AmThreadID;
 
     namespace Thread
     {
-        /**
-         * @brief Creates a mutex object.
-         *
-         * A mutex is an object that a thread can acquire, preventing other
-         * threads from acquiring it.
-         *
-         * To acquire the mutex ownership, you should use @ref LockMutex with
-         * the mutex handle as a parameter. To release the ownership, use @ref UnlockMutex
-         * with the mutex handle as a parameter.
-         *
-         * @param[in] spinCount The number of times the mutex should spin before checking if it's available.
-         *
-         * @ingroup core
-         */
-        AM_API_PUBLIC AmMutexHandle CreateMutex(AmUInt64 spinCount = 100);
-
-        /**
-         * @brief Destroys a mutex object.
-         *
-         * @param[in] handle The mutex object handle.
-         *
-         * @ingroup core
-         */
-        AM_API_PUBLIC void DestroyMutex(AmMutexHandle handle);
-
-        /**
-         * @brief Takes ownership of a mutex.
-         *
-         * @param[in] handle The mutex object handle.
-         *
-         * @ingroup core
-         */
-        AM_API_PUBLIC void LockMutex(AmMutexHandle handle);
-
-        /**
-         * @brief Releases ownership of a mutex.
-         *
-         * @param[in] handle The mutex object handle.
-         *
-         * @ingroup core
-         */
-        AM_API_PUBLIC void UnlockMutex(AmMutexHandle handle);
-
-        /**
-         * @brief Checks if a mutex is locked.
-         *
-         * @param[in] handle The mutex object handle.
-         *
-         * @ingroup core
-         */
-        AM_API_PUBLIC bool IsMutexLocked(AmMutexHandle handle);
-
         /**
          * @brief Creates a new thread.
          *
@@ -309,7 +252,7 @@ namespace SparkyStudios::Audio::Amplitude
         private:
             AmUInt32 _threadCount; // number of threads
             AmThreadHandle* _thread; // array of thread handles
-            AmMutexHandle _workMutex; // mutex to protect task array/max task
+            std::mutex _workMutex; // mutex to protect task array/max task
             std::shared_ptr<PoolTask> _taskArray[AM_MAX_THREAD_POOL_TASKS]{}; // pointers to tasks
             AmInt32 _taskCount; // number of pending tasks
             AmInt32 _robin; // cyclic counter, used to pick jobs for threads
