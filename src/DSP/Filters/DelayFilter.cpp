@@ -46,9 +46,9 @@ namespace SparkyStudios::Audio::Amplitude
     AmString DelayFilter::GetParameterName(AmUInt32 index) const
     {
         if (index >= ATTRIBUTE_LAST)
-            return "";
+            return "Unknown";
 
-        AmString names[ATTRIBUTE_LAST] = { "Wet", "Delay", "Decay", "DelayStart" };
+        static const AmString names[ATTRIBUTE_LAST] = { "Wet", "Delay", "Decay", "Delay Start" };
 
         return names[index];
     }
@@ -63,12 +63,22 @@ namespace SparkyStudios::Audio::Amplitude
 
     AmReal32 DelayFilter::GetParameterMax(AmUInt32 index) const
     {
-        return 1.0f;
+        if (index >= ATTRIBUTE_LAST)
+            return 0.0f;
+
+        static const AmReal32 values[ATTRIBUTE_LAST] = { 1.0f, 1.0f, 1.0f, 1.0f };
+
+        return values[index];
     }
 
     AmReal32 DelayFilter::GetParameterMin(AmUInt32 index) const
     {
-        return 0.0f;
+        if (index >= ATTRIBUTE_LAST)
+            return 0.0f;
+
+        static const AmReal32 values[ATTRIBUTE_LAST] = { 0.0f, 0.0f, 0.0f, 0.0f };
+
+        return values[index];
     }
 
     std::shared_ptr<FilterInstance> DelayFilter::CreateInstance()

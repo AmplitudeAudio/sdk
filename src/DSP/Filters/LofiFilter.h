@@ -58,7 +58,7 @@ namespace SparkyStudios::Audio::Amplitude
         LofiFilter();
         ~LofiFilter() override = default;
 
-        AmResult Init(AmReal32 sampleRate, AmReal32 bitDepth);
+        AmResult Initialize(AmReal32 sampleRate, AmReal32 bitDepth);
 
         [[nodiscard]] AmUInt32 GetParameterCount() const override;
 

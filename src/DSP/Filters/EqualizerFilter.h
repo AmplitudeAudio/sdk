@@ -54,7 +54,7 @@ namespace SparkyStudios::Audio::Amplitude
 
         EqualizerFilter();
 
-        AmResult Init(
+        AmResult Initialize(
             AmReal32 volume1 = 0.0f,
             AmReal32 volume2 = 0.0f,
             AmReal32 volume3 = 0.0f,

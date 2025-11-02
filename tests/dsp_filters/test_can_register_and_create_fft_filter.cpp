@@ -14,7 +14,7 @@
 
 #include <SparkyStudios/Audio/Amplitude/Amplitude.h>
 
-#include <DSP/Filters/BassBoostFilter.h>
+#include <DSP/Filters/FFTFilter.h>
 
 #include "SimpleTestCase.h"
 
@@ -24,25 +24,17 @@ namespace SparkyStudios::Audio::Amplitude::Tests
 {
     void SimpleTestCase::Run()
     {
-        auto filter = amshared(BassBoostFilter);
-        filter->Initialize(2.0f);
+        auto filter = amshared(FFTFilter, "TestFFTFilter");
+        AM_EXPECT_NOT(filter == nullptr);
 
         auto instance = filter->CreateInstance();
         AM_EXPECT_NOT(instance == nullptr);
 
-        // Test parameter get/set
-        instance->SetParameter(BassBoostFilter::ATTRIBUTE_WET, 0.5f);
-        AM_EXPECT(instance->GetParameter(BassBoostFilter::ATTRIBUTE_WET) == 0.5f);
-
-        instance->SetParameter(BassBoostFilter::ATTRIBUTE_BOOST, 5.0f);
-        AM_EXPECT(instance->GetParameter(BassBoostFilter::ATTRIBUTE_BOOST) == 5.0f);
-
-        // Test with full wet
-        instance->SetParameter(BassBoostFilter::ATTRIBUTE_WET, 1.0f);
-        AM_EXPECT(instance->GetParameter(BassBoostFilter::ATTRIBUTE_WET) == 1.0f);
-
-        // Test with dry signal
-        instance->SetParameter(BassBoostFilter::ATTRIBUTE_WET, 0.0f);
-        AM_EXPECT(instance->GetParameter(BassBoostFilter::ATTRIBUTE_WET) == 0.0f);
+        // Test basic functionality
+        AM_EXPECT_EQ(filter->GetParameterCount(), 1);
+        AM_EXPECT_EQ(filter->GetParameterName(0), "Wet");
+        AM_EXPECT_EQ(filter->GetParameterType(0), eParameterType_Float);
+        AM_EXPECT_EQ(filter->GetParameterMin(0), 0.0f);
+        AM_EXPECT_EQ(filter->GetParameterMax(0), 1.0f);
     }
 } // namespace SparkyStudios::Audio::Amplitude::Tests

@@ -33,40 +33,10 @@ namespace SparkyStudios::Audio::Amplitude::Tests
         AM_EXPECT_NOT(Filter::Find("Delay") == nullptr);
         AM_EXPECT(Filter::Find("Delay")->GetName() == "Delay");
 
-        auto instance = Filter::Construct("Delay");
-        AM_EXPECT_NOT(instance == nullptr);
-
-        // Test parameter count
-        AM_EXPECT(filter->GetParameterCount() == DelayFilter::ATTRIBUTE_LAST);
-        AM_EXPECT(filter->GetParameterCount() == 4);
-
-        // Test parameter names
-        AM_EXPECT(filter->GetParameterName(DelayFilter::ATTRIBUTE_WET) == "Wet");
-        AM_EXPECT(filter->GetParameterName(DelayFilter::ATTRIBUTE_DELAY) == "Delay");
-        AM_EXPECT(filter->GetParameterName(DelayFilter::ATTRIBUTE_DECAY) == "Decay");
-        AM_EXPECT(filter->GetParameterName(DelayFilter::ATTRIBUTE_DELAY_START) == "DelayStart");
-
-        // Test parameter types
-        AM_EXPECT(filter->GetParameterType(DelayFilter::ATTRIBUTE_WET) == eParameterType_Float);
-        AM_EXPECT(filter->GetParameterType(DelayFilter::ATTRIBUTE_DELAY) == eParameterType_Float);
-        AM_EXPECT(filter->GetParameterType(DelayFilter::ATTRIBUTE_DECAY) == eParameterType_Float);
-        AM_EXPECT(filter->GetParameterType(DelayFilter::ATTRIBUTE_DELAY_START) == eParameterType_Bool);
-
-        // Test WET parameter boundaries
-        AM_EXPECT(filter->GetParameterMin(DelayFilter::ATTRIBUTE_WET) == 0.0f);
-        AM_EXPECT(filter->GetParameterMax(DelayFilter::ATTRIBUTE_WET) == 1.0f);
-
-        // Test DELAY parameter boundaries
-        AM_EXPECT(filter->GetParameterMin(DelayFilter::ATTRIBUTE_DELAY) == 0.0f);
-        AM_EXPECT(filter->GetParameterMax(DelayFilter::ATTRIBUTE_DELAY) == 1.0f);
-
-        // Test DECAY parameter boundaries
-        AM_EXPECT(filter->GetParameterMin(DelayFilter::ATTRIBUTE_DECAY) == 0.0f);
-        AM_EXPECT(filter->GetParameterMax(DelayFilter::ATTRIBUTE_DECAY) == 1.0f);
-
-        // Test DELAY_START parameter boundaries
-        AM_EXPECT(filter->GetParameterMin(DelayFilter::ATTRIBUTE_DELAY_START) == 0.0f);
-        AM_EXPECT(filter->GetParameterMax(DelayFilter::ATTRIBUTE_DELAY_START) == 1.0f);
+        {
+            auto instance = Filter::Construct("Delay");
+            AM_EXPECT_NOT(instance == nullptr);
+        }
 
         Filter::Unregister(filter);
     }

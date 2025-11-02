@@ -32,9 +32,11 @@ void EngineTestCase::Run()
     AM_EXPECT(part1.GetFader() == nullptr);
 
     part1.SetStart(one);
+    AM_EXPECT_NE(part1.GetStart(), zero);
     AM_EXPECT_EQ(part1.GetStart(), one);
 
     part1.SetEnd(one);
+    AM_EXPECT_NE(part1.GetEnd(), zero);
     AM_EXPECT_EQ(part1.GetEnd(), one);
 
     part1.SetFader("Linear");

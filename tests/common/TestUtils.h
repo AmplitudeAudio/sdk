@@ -21,7 +21,7 @@
 
 namespace SparkyStudios::Audio::Amplitude::Tests
 {
-#define AM_EXPECT(_condition_) Expect(_condition_, #_condition_)
+#define AM_EXPECT(_condition_) Expect(_condition_, #_condition_, __FILE__, __LINE__)
 #define AM_EXPECT_NOT(_condition_) AM_EXPECT(!(_condition_))
 #define AM_EXPECT_EQ(_expected_, _actual_) AM_EXPECT((_expected_) == (_actual_))
 #define AM_EXPECT_NE(_expected_, _actual_) AM_EXPECT((_expected_) != (_actual_))

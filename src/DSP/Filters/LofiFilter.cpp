@@ -25,7 +25,7 @@ namespace SparkyStudios::Audio::Amplitude
         , _bitDepth(3)
     {}
 
-    AmResult LofiFilter::Init(AmReal32 sampleRate, AmReal32 bitDepth)
+    AmResult LofiFilter::Initialize(AmReal32 sampleRate, AmReal32 bitDepth)
     {
         if (sampleRate <= 0 || bitDepth <= 0)
             return eErrorCode_InvalidParameter;
@@ -43,36 +43,30 @@ namespace SparkyStudios::Audio::Amplitude
 
     AmReal32 LofiFilter::GetParameterMax(AmUInt32 index) const
     {
-        switch (index)
-        {
-        case ATTRIBUTE_SAMPLERATE:
-            return 22000;
-        case ATTRIBUTE_BITDEPTH:
-            return 16;
-        default:
-            return 1;
-        }
+        if (index >= ATTRIBUTE_LAST)
+            return 0.0f;
+
+        static const AmReal32 values[ATTRIBUTE_LAST] = { 1.0f, 22000.0f, 16.0f };
+
+        return values[index];
     }
 
     AmReal32 LofiFilter::GetParameterMin(AmUInt32 index) const
     {
-        switch (index)
-        {
-        case ATTRIBUTE_SAMPLERATE:
-            return 100;
-        case ATTRIBUTE_BITDEPTH:
-            return 0.5;
-        default:
-            return 0;
-        }
+        if (index >= ATTRIBUTE_LAST)
+            return 0.0f;
+
+        static const AmReal32 values[ATTRIBUTE_LAST] = { 0.0f, 100.0f, 0.5f };
+
+        return values[index];
     }
 
     AmString LofiFilter::GetParameterName(AmUInt32 index) const
     {
         if (index >= ATTRIBUTE_LAST)
-            return "";
+            return "Unknown";
 
-        static constexpr const char* names[ATTRIBUTE_LAST] = { "Wet", "Samplerate", "BitDepth" };
+        static const AmString names[ATTRIBUTE_LAST] = { "Wet", "Samplerate", "Bit Depth" };
 
         return names[index];
     }

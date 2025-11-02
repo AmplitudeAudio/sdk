@@ -24,9 +24,9 @@ namespace SparkyStudios::Audio::Amplitude
         , _amount(0.0f)
     {}
 
-    AmResult WaveShaperFilter::Init(AmReal32 amount)
+    AmResult WaveShaperFilter::Initialize(AmReal32 amount)
     {
-        if (_amount < -1.0f || _amount > 1.0f)
+        if (amount < -1.0f || amount > 1.0f)
             return eErrorCode_InvalidParameter;
 
         _amount = amount;
@@ -41,9 +41,9 @@ namespace SparkyStudios::Audio::Amplitude
     AmString WaveShaperFilter::GetParameterName(AmUInt32 index) const
     {
         if (index >= ATTRIBUTE_LAST)
-            return "";
+            return "Unknown";
 
-        static constexpr const char* names[] = { "Wet", "Amount" };
+        static const AmString names[ATTRIBUTE_LAST] = { "Wet", "Amount" };
         return names[index];
     }
 
@@ -54,15 +54,22 @@ namespace SparkyStudios::Audio::Amplitude
 
     AmReal32 WaveShaperFilter::GetParameterMax(AmUInt32 index) const
     {
-        return 1.0f;
+        if (index >= ATTRIBUTE_LAST)
+            return 0.0f;
+
+        static const AmReal32 values[ATTRIBUTE_LAST] = { 1.0f, 1.0f };
+
+        return values[index];
     }
 
     AmReal32 WaveShaperFilter::GetParameterMin(AmUInt32 index) const
     {
-        if (index == ATTRIBUTE_AMOUNT)
-            return -1.0f;
+        if (index >= ATTRIBUTE_LAST)
+            return 0.0f;
 
-        return 0.0f;
+        static const AmReal32 values[ATTRIBUTE_LAST] = { 0.0f, -1.0f };
+
+        return values[index];
     }
 
     std::shared_ptr<FilterInstance> WaveShaperFilter::CreateInstance()

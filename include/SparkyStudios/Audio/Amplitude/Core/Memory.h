@@ -162,7 +162,7 @@
  *
  * @ingroup memory
  */
-#define ampoolnew(_pool_, _type_, ...) new (ampoolmalign((_pool_), sizeof(_type_), alignof(_type_))) _type_(__VA_ARGS__)
+#define ampoolnew(_pool_, _type_, ...) new (ampoolmalign(_pool_, sizeof(_type_), alignof(_type_))) _type_(__VA_ARGS__)
 
 /**
  * @brief Deallocates a memory allocated with @ref ampoolnew ampoolnew.
@@ -182,7 +182,7 @@
         if ((_ptr_) != nullptr)                                                                                                            \
         {                                                                                                                                  \
             (_ptr_)->~_type_();                                                                                                            \
-            ampoolfree((_pool_), (_ptr_));                                                                                                 \
+            ampoolfree(_pool_, (_ptr_));                                                                                                   \
         }                                                                                                                                  \
     }
 

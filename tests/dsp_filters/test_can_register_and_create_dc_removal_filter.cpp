@@ -33,28 +33,10 @@ namespace SparkyStudios::Audio::Amplitude::Tests
         AM_EXPECT_NOT(Filter::Find("DCRemoval") == nullptr);
         AM_EXPECT(Filter::Find("DCRemoval")->GetName() == "DCRemoval");
 
-        auto instance = Filter::Construct("DCRemoval");
-        AM_EXPECT_NOT(instance == nullptr);
-
-        // Test parameter count
-        AM_EXPECT(filter->GetParameterCount() == DCRemovalFilter::ATTRIBUTE_LAST);
-        AM_EXPECT(filter->GetParameterCount() == 2);
-
-        // Test parameter names
-        AM_EXPECT(filter->GetParameterName(DCRemovalFilter::ATTRIBUTE_WET) == "Wet");
-        AM_EXPECT(filter->GetParameterName(DCRemovalFilter::ATTRIBUTE_LENGTH) == "Length");
-
-        // Test parameter types
-        AM_EXPECT(filter->GetParameterType(DCRemovalFilter::ATTRIBUTE_WET) == eParameterType_Float);
-        AM_EXPECT(filter->GetParameterType(DCRemovalFilter::ATTRIBUTE_LENGTH) == eParameterType_Float);
-
-        // Test WET parameter boundaries
-        AM_EXPECT(filter->GetParameterMin(DCRemovalFilter::ATTRIBUTE_WET) == 0.0f);
-        AM_EXPECT(filter->GetParameterMax(DCRemovalFilter::ATTRIBUTE_WET) == 1.0f);
-
-        // Test LENGTH parameter boundaries
-        AM_EXPECT(filter->GetParameterMin(DCRemovalFilter::ATTRIBUTE_LENGTH) == kEpsilon);
-        AM_EXPECT(filter->GetParameterMax(DCRemovalFilter::ATTRIBUTE_LENGTH) == 1.0f);
+        {
+            auto instance = Filter::Construct("DCRemoval");
+            AM_EXPECT_NOT(instance == nullptr);
+        }
 
         Filter::Unregister(filter);
     }

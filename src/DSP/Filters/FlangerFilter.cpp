@@ -44,9 +44,9 @@ namespace SparkyStudios::Audio::Amplitude
     AmString FlangerFilter::GetParameterName(AmUInt32 index) const
     {
         if (index >= ATTRIBUTE_LAST)
-            return "";
+            return "Unknown";
 
-        static AmString names[ATTRIBUTE_LAST] = { "Wet", "Delay", "Frequency" };
+        static const AmString names[ATTRIBUTE_LAST] = { "Wet", "Delay", "Frequency" };
 
         return names[index];
     }
@@ -58,24 +58,22 @@ namespace SparkyStudios::Audio::Amplitude
 
     AmReal32 FlangerFilter::GetParameterMax(AmUInt32 index) const
     {
-        if (index == ATTRIBUTE_DELAY)
-            return 0.1f;
+        if (index >= ATTRIBUTE_LAST)
+            return 0.0f;
 
-        if (index == ATTRIBUTE_FREQUENCY)
-            return 100.0f;
+        static const AmReal32 values[ATTRIBUTE_LAST] = { 1.0f, 0.1f, 100.0f };
 
-        return 1.0f;
+        return values[index];
     }
 
     AmReal32 FlangerFilter::GetParameterMin(AmUInt32 index) const
     {
-        if (index == ATTRIBUTE_WET)
+        if (index >= ATTRIBUTE_LAST)
             return 0.0f;
 
-        if (index == ATTRIBUTE_FREQUENCY)
-            return 0.1f;
+        static const AmReal32 values[ATTRIBUTE_LAST] = { 0.0f, 0.001f, 0.1f };
 
-        return 0.001f;
+        return values[index];
     }
 
     std::shared_ptr<FilterInstance> FlangerFilter::CreateInstance()

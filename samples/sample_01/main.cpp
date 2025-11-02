@@ -98,21 +98,8 @@ static void run(AmVoidPtr param)
     while (!amEngine->TryFinalizeOpenFileSystem())
         Thread::Sleep(1);
 
-    const auto sdkPath = std::filesystem::path(std::getenv("AM_SDK_PATH"));
-
     // Register all the default plugins shipped with the engine
     Engine::RegisterDefaultExtensions();
-
-    Engine::AddPluginSearchPath(AM_OS_STRING("./assets/plugins"));
-    Engine::AddPluginSearchPath(sdkPath / AM_OS_STRING("lib/" AM_SDK_PLATFORM "/plugins"));
-
-#ifdef AM_DEBUG
-    Engine::LoadPlugin(AM_OS_STRING("AmplitudeVorbisCodecPlugin_d"));
-    Engine::LoadPlugin(AM_OS_STRING("AmplitudeFlacCodecPlugin_d"));
-#else
-    Engine::LoadPlugin(AM_OS_STRING("AmplitudeVorbisCodecPlugin"));
-    Engine::LoadPlugin(AM_OS_STRING("AmplitudeFlacCodecPlugin"));
-#endif
 
     // Initialize Amplitude.
     if (!amEngine->Initialize(AM_OS_STRING("pc.config.amconfig")))
@@ -134,7 +121,7 @@ static void run(AmVoidPtr param)
     auto masterBus = amEngine->FindBus("master");
 
     // Cache the background sound handle for the main menu.
-    auto mainMenuBackgroundHandle = amEngine->GetSoundHandle("symphony");
+    auto mainMenuBackgroundHandle = amEngine->GetSoundHandle("AMB_Forest");
 
     // Cache the CollectionHandle for the collection sample.
     auto collectionHandle = amEngine->GetCollectionHandle("throw_collection_1");

@@ -150,6 +150,11 @@ namespace SparkyStudios::Audio::Amplitude
             return _channelState;
         }
 
+        AM_INLINE eChannelPlaybackState SetChannelState(eChannelPlaybackState state)
+        {
+            return _channelState = state;
+        }
+
         // Get or set the location of this channel
         AM_INLINE void SetLocation(const AmVector3& location)
         {

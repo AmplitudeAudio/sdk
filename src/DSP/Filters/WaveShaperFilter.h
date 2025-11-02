@@ -48,7 +48,7 @@ namespace SparkyStudios::Audio::Amplitude
         WaveShaperFilter();
         ~WaveShaperFilter() override = default;
 
-        AmResult Init(AmReal32 amount);
+        AmResult Initialize(AmReal32 amount);
 
         [[nodiscard]] AmUInt32 GetParameterCount() const override;
 

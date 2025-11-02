@@ -74,9 +74,9 @@ target("common_test_shared")
   add_includedirs("$(builddir)/include", { public = true })
 target_end()
 
-for _, filepath in ipairs(os.filedirs("**")) do
-  if os.isfile(filepath) or filepath == "common" then
-    -- Skip files
+for _, filepath in ipairs(os.dirs("**")) do
+  if filepath == "common" then
+    -- Skip common directory
     goto continue
   end
 
@@ -114,6 +114,39 @@ for _, filepath in ipairs(os.filedirs("**")) do
       add_files(test_file)
 
       add_tests("test")
+
+      on_test(function (target, opt)
+        import("lib.detect.find_tool")
+
+        local kcov = find_tool("kcov")
+
+        if not kcov then
+          return false, "kcov not found. Please install kcov."
+        end
+
+        local project_dir = os.projectdir()
+        local coverage_dir = path.join(project_dir, "coverage/split_"..target:name())
+        local target_file = path.join(project_dir, target:targetfile())
+        local src_dir = path.join(project_dir, "src")
+        local include_dir = path.join(project_dir, "include")
+
+        os.mkdir(coverage_dir)
+
+        os.cd("$(builddir)")
+        local ok, err = os.execv(kcov.program, {
+          "--include-path=" .. src_dir .. "," .. include_dir,
+          "--exclude-path=" .. path.join(src_dir, "Utils"),
+          "--strip-path=" .. project_dir,
+          coverage_dir,
+          target_file
+        })
+
+        if ok == 0 then
+            return true
+        end
+
+        return false
+      end)
     target_end()
   end
 

@@ -183,8 +183,6 @@ namespace SparkyStudios::Audio::Amplitude::Tests
                 amEngine->SetDefaultListener(nullptr);
                 amEngine->RemoveListener(1);
 
-                amEngine->UnloadSoundBanks();
-
                 success = amEngine->Deinitialize();
 
                 // Wait for the file system to complete loading.

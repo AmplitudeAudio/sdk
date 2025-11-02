@@ -23,7 +23,7 @@ namespace SparkyStudios::Audio::Amplitude::Tests
     void EngineTestCase::Run()
     {
         // Test accessing sound assets by names
-        AM_EXPECT(amEngine->GetSoundHandle("symphony") != nullptr);
+        AM_EXPECT(amEngine->GetSoundHandle("throw_08") != nullptr);
         AM_EXPECT(amEngine->GetSoundHandle("AMB_Forest") != nullptr);
         AM_EXPECT(amEngine->GetSoundHandle("throw_01") != nullptr);
     }

@@ -36,11 +36,11 @@ namespace SparkyStudios::Audio::Amplitude::Tests
         // Clean up resources after each test (optional)
         virtual void TearDown() = 0;
 
-        void Expect(bool condition, const char* message = "")
+        void Expect(bool condition, const char* message = "", const char* file = "", int line = 0)
         {
             if (!condition)
             {
-                ReportFailure("Expectation failed", message);
+                ReportFailure("Expectation failed", message, file, line);
             }
             else
             {
@@ -76,10 +76,14 @@ namespace SparkyStudios::Audio::Amplitude::Tests
         virtual void Run() = 0;
 
     protected:
-        virtual void ReportFailure(const char* failureType, const char* message)
+        virtual void ReportFailure(const char* failureType, const char* message, const char* file = "", int line = 0)
         {
             ++_failedCount;
-            amLogError("[TEST FAILURE] %s: %s", failureType, message);
+
+            constexpr size_t bufferLen = 4096;                                                                                                 \
+            char buffer[bufferLen];
+            int formatted = std::snprintf(buffer, bufferLen, "[TEST FAILURE] %s: %s", failureType, message);
+            amLogger->Error(file, line, AmString(buffer).substr(0, formatted));
         }
 
     private:

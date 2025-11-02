@@ -64,6 +64,11 @@ namespace SparkyStudios::Audio::Amplitude
          * @brief The channel is playing audio but in a paused state.
          */
         eChannelPlaybackState_Paused = 5,
+
+        /**
+         * @brief The channel is playing audio but in a pending state.
+         */
+        eChannelPlaybackState_Pending = 6,
     };
 
     /**
@@ -150,7 +155,7 @@ namespace SparkyStudios::Audio::Amplitude
          *
          * @return The ID of this channel.
          */
-        [[nodiscard]] AmUInt64 GetId() const;
+        [[nodiscard]] AmChannelID GetId() const;
 
         /**
          * @brief Checks if the sound associated with this channel is playing.

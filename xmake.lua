@@ -22,7 +22,7 @@ set_xmakever("3.0.0")
 
 add_repositories("repo xmake/repo", { rootdir = os.scriptdir() })
 
-add_rules("mode.debug", "mode.release", "mode.coverage")
+add_rules("mode.debug", "mode.release")
 add_rules("plugin.compile_commands.autoupdate")
 
 -- Options
@@ -64,12 +64,6 @@ option("unit_tests")
       option:dep("build_tools"):enable(true)
     end
   end)
-option_end()
-
-option("coverage_min_threshold")
-  set_default(0)
-  set_showmenu(true)
-  set_description("Minimum coverage percentage required (0 to disable)")
 option_end()
 
 option("as_package")
@@ -358,163 +352,38 @@ if has_config("unit_tests") then
   includes("tests/xmake.lua")
 
   -- Add code coverage for non-MSVC compilers
-  if not is_plat("windows") and is_mode("coverage") then
-    target("coverage_generate_baseline_report")
-      set_kind("phony")
-      set_default(false)
-
-      on_build(function(target)
-        import("core.project.config")
-        import("lib.detect.find_program")
-
-        -- Find required tools
-        local lcov = find_program("lcov")
-        local geninfo = find_program("geninfo")
-
-        if not lcov or not geninfo then
-          raise("lcov not found. Please install lcov package.")
-        end
-
-        -- Get configuration
-        local coverage_dir = path.join(config.builddir(), "coverage")
-        local data_dir = path.join(coverage_dir, "data")
-
-        -- Create directories
-        os.mkdir(data_dir)
-
-        print("Generating baseline coverage report...")
-
-        -- Initialize coverage counters
-        print("Initializing coverage data...")
-        os.exec("%s --directory %s --zerocounters", lcov, config.builddir())
-
-        local baseline_info = path.join(data_dir, "baseline.info")
-
-        -- Use geninfo directly for better control
-        local all_info_files = {}
-        local search_dirs = os.dirs(path.join(config.builddir(), "**"))
-
-        for i, dir in ipairs(search_dirs) do
-          local gcno_files = os.files(path.join(dir, "*.gcno"))
-          if #gcno_files > 0 then
-            local info_file = path.join(data_dir, path.filename(dir) .. i .. ".info")
-            os.exec(
-              "%s %s --base-directory %s --initial --output-file %s --ignore-errors format,inconsistent,range,mismatch,source,count,negative",
-              geninfo, dir, os.projectdir(), info_file)
-            table.insert(all_info_files, info_file)
-          end
-        end
-
-        -- Combine all info files
-        os.exec(
-        "%s -a %s --output-file %s --ignore-errors format,inconsistent,range,mismatch,source,count,negative,unused,corrupt", lcov,
-          table.concat(all_info_files, " -a "), baseline_info)
-
-        for _, file in ipairs(all_info_files) do
-          os.rm(file)
-        end
-
-        print("Baseline coverage report generated at: %s", baseline_info)
-      end)
-    target_end()
-
+  if not is_plat("windows") then
     target("coverage_generate_test_report")
       set_kind("phony")
       set_default(false)
 
       on_build(function(target)
-        import("core.project.config")
         import("lib.detect.find_program")
-        import("core.base.option")
 
         -- Find required tools
-        local lcov = find_program("lcov")
-        local genhtml = find_program("genhtml")
+        local kcov = find_program("kcov")
 
-        if not lcov or not genhtml then
-          raise("lcov not found. Please install lcov package.")
+        if not kcov then
+          raise("kcov not found. Please install kcov package.")
         end
 
-        -- Get configuration
-        local coverage_dir = path.join(config.builddir(), "coverage")
-        local data_dir = path.join(coverage_dir, "data")
-        local html_dir = path.join(coverage_dir, "html")
-        local min_threshold = config.get("coverage_min_threshold") or 0
+        local coverage_dir = path.join(os.projectdir(), "coverage")
+        local merged_dir = path.join(coverage_dir, "merged")
+        local split_dir = path.join(coverage_dir, "split_*")
 
-        -- Create directories
-        os.mkdir(data_dir)
-        os.mkdir(html_dir)
-
-        print("Generating test coverage report...")
-
-        local baseline_info = path.join(data_dir, "baseline.info")
-
-        -- Check if baseline info exists
-        if not os.isfile(baseline_info) then
-          raise("Baseline coverage file not found. Run 'xmake build coverage_generate_baseline_report' first.")
+        local sources = {}
+        for _, dir in ipairs(os.dirs(split_dir)) do
+          table.insert(sources, dir)
         end
-
-        -- Check if test coverage data exists
-        local gcda_files = os.files(path.join(config.builddir(), "**.gcda"))
-        if #gcda_files == 0 then
-          raise("No test coverage data found. Make sure to run 'xmake test' first.")
-        end
-
-        -- Capture test coverage
-        print("Capturing test coverage data...")
-        local testrun_info = path.join(data_dir, "testrun.info")
-        os.exec(
-          "%s --directory %s --capture --output-file %s --ignore-errors format,inconsistent,range,mismatch,source,count,negative,corrupt,category",
-          lcov, config.builddir(), testrun_info)
-
-        -- Combine baseline and test coverage
-        print("Combining coverage data...")
-        local combined_info = path.join(data_dir, "combined.info")
-        os.exec("%s --add-tracefile %s --add-tracefile %s --output-file %s --ignore-errors format,inconsistent,range,mismatch,source,count,negative,corrupt,category",
-          lcov, baseline_info, testrun_info, combined_info)
-
-        -- Filter coverage data
-        print("Filtering coverage data...")
-        local filtered_info = path.join(data_dir, "filtered.info")
-        local project_dir = os.projectdir()
-        os.exec(
-          "%s --remove %s '/usr/*' '*/tests/*' '*/.xmake/*' '*/build/*' '*/src/Utils/*' '*/samples/*' --output-file %s --ignore-errors format,inconsistent,range,mismatch,source,count,negative,unused,corrupt,category",
-          lcov, combined_info, filtered_info)
-
-        -- Extract coverage data to include only project sources
-        os.exec(
-          "%s --extract %s '%s/src/*' '%s/include/*' --output-file %s --ignore-errors format,inconsistent,range,mismatch,source,count,negative,unused,corrupt,category",
-          lcov, filtered_info, project_dir, project_dir, filtered_info)
 
         -- Generate HTML report
         print("Generating HTML coverage report...")
-        os.exec(
-          "%s %s --output-directory %s --title 'Amplitude Audio SDK Coverage Report' --num-spaces 4 --legend --show-details --branch-coverage --ignore-errors format,inconsistent,range,mismatch,source,count,negative,unused,corrupt,category",
-          genhtml, filtered_info, html_dir)
+        os.execv(kcov, {
+          "--merge", merged_dir, unpack(sources)
+        })
 
-        -- Extract coverage summary
-        local coverage_summary = os.iorun(
-        "%s --summary %s --ignore-errors format,inconsistent,range,mismatch,source,count,negative,unused,corrupt,category", lcov,
-          filtered_info)
-
-        print("Coverage Summary:")
-        print(coverage_summary)
-
-        -- Check minimum threshold
-        if min_threshold > 0 then
-          local line_coverage = coverage_summary:match("lines%.*: ([%d%.]+)%%")
-          if line_coverage then
-            local coverage_percent = tonumber(line_coverage)
-            if coverage_percent < min_threshold then
-              raise("Coverage %g%% is below minimum threshold %g%%", coverage_percent, min_threshold)
-            else
-              print("Coverage %g%% meets minimum threshold %g%%", coverage_percent, min_threshold)
-            end
-          end
-        end
-
-        print("Coverage report generated at: %s", html_dir)
-        print("Open %s to view the report", path.join(html_dir, "index.html"))
+        print("Coverage report generated at: %s", merged_dir)
+        print("Open %s to view the report", path.join(merged_dir, "index.html"))
       end)
     target_end()
 
@@ -525,7 +394,7 @@ if has_config("unit_tests") then
       on_build(function(target)
         import("core.project.config")
 
-        local coverage_dir = path.join(config.builddir(), "coverage")
+        local coverage_dir = path.join(os.projectdir(), "coverage")
 
         print("Cleaning coverage data...")
         os.rm(coverage_dir)

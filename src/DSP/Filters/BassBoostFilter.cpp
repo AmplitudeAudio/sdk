@@ -24,12 +24,12 @@ namespace SparkyStudios::Audio::Amplitude
         , m_boost(2.0f)
     {}
 
-    AmResult BassBoostFilter::Initialize(AmReal32 aBoost)
+    AmResult BassBoostFilter::Initialize(AmReal32 boost)
     {
-        if (aBoost < 0)
+        if (boost < 0)
             return eErrorCode_InvalidParameter;
 
-        m_boost = aBoost;
+        m_boost = boost;
         return eErrorCode_Success;
     }
 
@@ -40,10 +40,12 @@ namespace SparkyStudios::Audio::Amplitude
 
     AmString BassBoostFilter::GetParameterName(AmUInt32 index) const
     {
-        if (index == ATTRIBUTE_BOOST)
-            return "Boost";
+        if (index >= ATTRIBUTE_LAST)
+            return "Unknown";
 
-        return "Wet";
+        static const AmString names[ATTRIBUTE_LAST] = { "Wet", "Boost" };
+
+        return names[index];
     }
 
     eParameterType BassBoostFilter::GetParameterType(AmUInt32 index) const
@@ -53,10 +55,12 @@ namespace SparkyStudios::Audio::Amplitude
 
     AmReal32 BassBoostFilter::GetParameterMax(AmUInt32 index) const
     {
-        if (index == ATTRIBUTE_BOOST)
-            return 10.0f;
+        if (index >= ATTRIBUTE_LAST)
+            return 0.0;
 
-        return 1.0f;
+        static const AmReal32 values[ATTRIBUTE_LAST] = { 1.0f, 10.0f };
+
+        return values[index];
     }
 
     AmReal32 BassBoostFilter::GetParameterMin(AmUInt32 index) const

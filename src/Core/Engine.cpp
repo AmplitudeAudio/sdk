@@ -763,8 +763,9 @@ namespace SparkyStudios::Audio::Amplitude
 
         if (_audioDriver == nullptr)
         {
-            amLogCritical("Failed to load the specified driver, the default driver, and the null driver. Please check your engine "
-                          "configuration, and ensure that all the needed plugins are loaded.");
+            amLogCritical(
+                "Failed to load the specified driver, the default driver, and the null driver. Please check your engine "
+                "configuration, and ensure that all the needed plugins are loaded.");
             Deinitialize();
             return false;
         }
@@ -795,8 +796,9 @@ namespace SparkyStudios::Audio::Amplitude
         }
         else if (_state->panning_mode != ePanningMode_Stereo)
         {
-            amLogCritical("The HRTF configuration is missing, but the panning mode is not stereo. Please provide an HRTF configuration, or "
-                          "set the panning mode to Stereo.");
+            amLogCritical(
+                "The HRTF configuration is missing, but the panning mode is not stereo. Please provide an HRTF configuration, or "
+                "set the panning mode to Stereo.");
             Deinitialize();
             return false;
         }
@@ -2692,12 +2694,22 @@ namespace SparkyStudios::Audio::Amplitude
             return Channel(nullptr);
         }
 
+        newChannel->SetChannelState(eChannelPlaybackState_Pending);
+
         // Now that we have our new channel, set the data on it and update the next pointers.
         if (isEntityScope)
             newChannel->SetEntity(entity);
 
         newChannel->SetSwitchContainer(dynamic_cast<SwitchContainerImpl*>(handle));
         newChannel->SetUserGain(userGain);
+
+        if (isEntityScope)
+            AssignBestRoom(newChannel, location, _state);
+
+        newChannel->SetGain(gain);
+        newChannel->SetPitch(pitch);
+        newChannel->SetLocation(location);
+        newChannel->SetListener(Listener(listener));
 
         // Attempt to play the channel, if the engine is paused, the channel will be played later.
         OnNextFrame(
@@ -2711,14 +2723,6 @@ namespace SparkyStudios::Audio::Amplitude
                     InsertIntoFreeList(_state, newChannel);
                 }
             });
-
-        if (isEntityScope)
-            AssignBestRoom(newChannel, location, _state);
-
-        newChannel->SetGain(gain);
-        newChannel->SetPitch(pitch);
-        newChannel->SetLocation(location);
-        newChannel->SetListener(Listener(listener));
 
         return Channel(newChannel);
     }
@@ -2771,12 +2775,22 @@ namespace SparkyStudios::Audio::Amplitude
             return Channel(nullptr);
         }
 
+        newChannel->SetChannelState(eChannelPlaybackState_Pending);
+
         // Now that we have our new channel, set the data on it and update the next pointers.
         if (isEntityScope)
             newChannel->SetEntity(entity);
 
         newChannel->SetCollection(dynamic_cast<CollectionImpl*>(handle));
         newChannel->SetUserGain(userGain);
+
+        if (isEntityScope)
+            AssignBestRoom(newChannel, location, _state);
+
+        newChannel->SetGain(gain);
+        newChannel->SetPitch(pitch);
+        newChannel->SetLocation(location);
+        newChannel->SetListener(Listener(listener));
 
         // Attempt to play the channel, if the engine is paused, the channel will be played later.
         OnNextFrame(
@@ -2790,14 +2804,6 @@ namespace SparkyStudios::Audio::Amplitude
                     InsertIntoFreeList(_state, newChannel);
                 }
             });
-
-        if (isEntityScope)
-            AssignBestRoom(newChannel, location, _state);
-
-        newChannel->SetGain(gain);
-        newChannel->SetPitch(pitch);
-        newChannel->SetLocation(location);
-        newChannel->SetListener(Listener(listener));
 
         return Channel(newChannel);
     }
@@ -2849,12 +2855,22 @@ namespace SparkyStudios::Audio::Amplitude
             return Channel(nullptr);
         }
 
+        newChannel->SetChannelState(eChannelPlaybackState_Pending);
+
         // Now that we have our new channel, set the data on it and update the next pointers.
         if (isEntityScope)
             newChannel->SetEntity(entity);
 
         newChannel->SetSound(dynamic_cast<SoundImpl*>(handle));
         newChannel->SetUserGain(userGain);
+
+        if (isEntityScope)
+            AssignBestRoom(newChannel, location, _state);
+
+        newChannel->SetGain(gain);
+        newChannel->SetPitch(pitch);
+        newChannel->SetLocation(location);
+        newChannel->SetListener(Listener(listener));
 
         // Attempt to play the channel, if the engine is paused, the channel will be played later.
         OnNextFrame(
@@ -2868,14 +2884,6 @@ namespace SparkyStudios::Audio::Amplitude
                     InsertIntoFreeList(_state, newChannel);
                 }
             });
-
-        if (isEntityScope)
-            AssignBestRoom(newChannel, location, _state);
-
-        newChannel->SetGain(gain);
-        newChannel->SetPitch(pitch);
-        newChannel->SetLocation(location);
-        newChannel->SetListener(Listener(listener));
 
         return Channel(newChannel);
     }

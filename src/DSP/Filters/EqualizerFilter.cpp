@@ -27,7 +27,7 @@ namespace SparkyStudios::Audio::Amplitude
             i = 1.0f;
     }
 
-    AmResult EqualizerFilter::Init(
+    AmResult EqualizerFilter::Initialize(
         AmReal32 volume1,
         AmReal32 volume2,
         AmReal32 volume3,
@@ -80,29 +80,15 @@ namespace SparkyStudios::Audio::Amplitude
 
     AmString EqualizerFilter::GetParameterName(AmUInt32 index) const
     {
-        switch (index)
-        {
-        case ATTRIBUTE_WET:
-            return "Wet";
-        case ATTRIBUTE_BAND_1:
-            return "Band 1";
-        case ATTRIBUTE_BAND_2:
-            return "Band 2";
-        case ATTRIBUTE_BAND_3:
-            return "Band 3";
-        case ATTRIBUTE_BAND_4:
-            return "Band 4";
-        case ATTRIBUTE_BAND_5:
-            return "Band 5";
-        case ATTRIBUTE_BAND_6:
-            return "Band 6";
-        case ATTRIBUTE_BAND_7:
-            return "Band 7";
-        case ATTRIBUTE_BAND_8:
-            return "Band 8";
-        default:
-            return "";
-        }
+        if (index >= ATTRIBUTE_LAST)
+            return "Unknown";
+
+        static const AmString names[ATTRIBUTE_LAST] = {
+            "Wet", "Band 1", "Band 2", "Band 3", "Band 4",
+            "Band 5", "Band 6", "Band 7", "Band 8"
+        };
+
+        return names[index];
     }
 
     eParameterType EqualizerFilter::GetParameterType(AmUInt32 index) const
@@ -112,15 +98,22 @@ namespace SparkyStudios::Audio::Amplitude
 
     AmReal32 EqualizerFilter::GetParameterMax(AmUInt32 index) const
     {
-        if (index == ATTRIBUTE_WET)
-            return 1.0f;
+        if (index >= ATTRIBUTE_LAST)
+            return 0.0f;
 
-        return 4.0f;
+        static const AmReal32 values[ATTRIBUTE_LAST] = { 1.0f, 4.0f, 4.0f, 4.0f, 4.0f, 4.0f, 4.0f, 4.0f, 4.0f };
+
+        return values[index];
     }
 
     AmReal32 EqualizerFilter::GetParameterMin(AmUInt32 index) const
     {
-        return 0.0f;
+        if (index >= ATTRIBUTE_LAST)
+            return 0.0f;
+
+        static const AmReal32 values[ATTRIBUTE_LAST] = { 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f };
+
+        return values[index];
     }
 
     std::shared_ptr<FilterInstance> EqualizerFilter::CreateInstance()

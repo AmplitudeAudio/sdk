@@ -69,9 +69,9 @@ namespace SparkyStudios::Audio::Amplitude
     AmString MonoPoleFilter::GetParameterName(AmUInt32 index) const
     {
         if (index >= ATTRIBUTE_LAST)
-            return "";
+            return "Unknown";
 
-        static constexpr const char* names[ATTRIBUTE_LAST] = { "Wet", "Coefficient" };
+        static const AmString names[ATTRIBUTE_LAST] = { "Wet", "Coefficient" };
 
         return names[index];
     }
@@ -83,20 +83,22 @@ namespace SparkyStudios::Audio::Amplitude
 
     AmReal32 MonoPoleFilter::GetParameterMax(AmUInt32 index) const
     {
-        switch (index)
-        {
-        case ATTRIBUTE_WET:
-        case ATTRIBUTE_COEFFICIENT:
-            return 1.0f;
-
-        default:
+        if (index >= ATTRIBUTE_LAST)
             return 0.0f;
-        }
+
+        static const AmReal32 values[ATTRIBUTE_LAST] = { 1.0f, 1.0f };
+
+        return values[index];
     }
 
     AmReal32 MonoPoleFilter::GetParameterMin(AmUInt32 index) const
     {
-        return 0.0f;
+        if (index >= ATTRIBUTE_LAST)
+            return 0.0f;
+
+        static const AmReal32 values[ATTRIBUTE_LAST] = { 0.0f, 0.0f };
+
+        return values[index];
     }
 
     std::shared_ptr<FilterInstance> MonoPoleFilter::CreateInstance()

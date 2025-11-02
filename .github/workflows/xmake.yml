@@ -159,20 +159,14 @@ jobs:
         if: startsWith(matrix.config.os, 'ubuntu')
         run: |
           sudo apt-get update
-          sudo apt-get install cpanminus autoconf automake libtool pkg-config libltdl-dev
-          sudo cpanm Capture::Tiny DateTime Devel::Cover Digest::MD5 File::Spec JSON::XS Memory::Process Module::Load::Conditional Scalar::Util Time::HiRes TimeDate
-          wget https://github.com/linux-test-project/lcov/releases/download/v2.3.2/lcov-2.3.2.tar.gz
-          tar -xzf lcov-2.3.2.tar.gz
-          cd lcov-2.3.2
-          sudo make install
-          cd ..
+          sudo apt-get install autoconf automake libtool pkg-config libltdl-dev kcov
           if [[ "${{ matrix.config.toolchain }}" == "clang" ]]; then
             sudo apt-get install clang
             clang --version
           else
             gcc --version
           fi
-          lcov --version
+          kcov --version
           xmake --version
 
       - name: Setup Android NDK
@@ -185,8 +179,8 @@ jobs:
       - name: Install dependencies on MacOS
         if: startsWith(matrix.config.os, 'macos')
         run: |
-          brew install p7zip lcov
-          lcov --version
+          brew install p7zip kcov
+          kcov --version
           xmake --version
 
       - name: Install Local flatc (Android)
@@ -237,7 +231,6 @@ jobs:
         if: ${{ matrix.build_type == 'coverage' && matrix.config.plat != 'android' }}
         working-directory: ${{ inputs.project-path }}
         run: |
-          xmake b -y coverage_generate_baseline_report
           xmake test -yvD
         env:
           AM_SDK_PATH: "${{ steps.sdk_path.outputs.path }}/sdk"
@@ -253,9 +246,9 @@ jobs:
       - name: Upload coverage to Codecov
         continue-on-error: true
         if: matrix.build_type == 'coverage' && !startsWith(matrix.config.os, 'windows')
-        uses: codecov/codecov-action@v4
+        uses: codecov/codecov-action@v5
         with:
-          file: ${{ inputs.project-path }}/build/coverage/data/combined.info
+          directory: ${{ inputs.project-path }}/coverage/merged
         env:
           CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
 

@@ -33,7 +33,7 @@ void SimpleTestCase::Run()
     sphere.Load(fs);
     AM_EXPECT_NOT(sphere.IsLoaded());
 
-    sphere.SetResource(AM_OS_STRING("./data/throw_01.ogg"));
+    sphere.SetResource(AM_OS_STRING("./data/throw_01.wav"));
     sphere.Load(fs);
     AM_EXPECT_NOT(sphere.IsLoaded());
 

@@ -41,15 +41,12 @@ namespace SparkyStudios::Audio::Amplitude
 
     AmString DCRemovalFilter::GetParameterName(AmUInt32 index) const
     {
-        switch (index)
-        {
-        case ATTRIBUTE_WET:
-            return "Wet";
-        case ATTRIBUTE_LENGTH:
-            return "Length";
-        };
+        if (index >= ATTRIBUTE_LAST)
+            return "Unknown";
 
-        return {};
+        static const AmString names[ATTRIBUTE_LAST] = { "Wet", "Length" };
+
+        return names[index];
     }
 
     eParameterType DCRemovalFilter::GetParameterType(AmUInt32 index) const
@@ -59,20 +56,17 @@ namespace SparkyStudios::Audio::Amplitude
 
     AmReal32 DCRemovalFilter::GetParameterMax(AmUInt32 index) const
     {
-        return 1.0f;
+        return (index >= ATTRIBUTE_LAST) ? 0.0f : 1.0f;
     }
 
     AmReal32 DCRemovalFilter::GetParameterMin(AmUInt32 index) const
     {
-        switch (index)
-        {
-        case ATTRIBUTE_WET:
-            return 0.0f;
-        case ATTRIBUTE_LENGTH:
-            return kEpsilon;
-        };
+        if (index >= ATTRIBUTE_LAST)
+            return 0.0;
 
-        return 0.0f;
+        static const AmReal32 values[ATTRIBUTE_LAST] = { 0.0f, kEpsilon };
+
+        return values[index];
     }
 
     std::shared_ptr<FilterInstance> DCRemovalFilter::CreateInstance()

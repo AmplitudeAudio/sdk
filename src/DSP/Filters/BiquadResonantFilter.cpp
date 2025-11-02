@@ -93,17 +93,23 @@ namespace SparkyStudios::Audio::Amplitude
     AmString BiquadResonantFilter::GetParameterName(AmUInt32 index) const
     {
         if (index >= ATTRIBUTE_LAST)
-            return "";
+            return "Unknown";
 
-        // clang-format off
-        AmString names[ATTRIBUTE_LAST] = {
-            "Wet", "Type", "Frequency",
-            _filterType == TYPE_LOW_SHELF || _filterType == TYPE_HIGH_SHELF ? "S" : "Q",
-            "Gain"
-        };
-        // clang-format on
-
-        return names[index];
+        switch (index)
+        {
+        case ATTRIBUTE_WET:
+            return "Wet";
+        case ATTRIBUTE_TYPE:
+            return "Type";
+        case ATTRIBUTE_FREQUENCY:
+            return "Frequency";
+        case ATTRIBUTE_RESONANCE:
+            return _filterType == TYPE_LOW_SHELF || _filterType == TYPE_HIGH_SHELF ? "S" : "Resonance";
+        case ATTRIBUTE_GAIN:
+            return "Gain";
+        default:
+            return "Unknown";
+        }
     }
 
     eParameterType BiquadResonantFilter::GetParameterType(AmUInt32 index) const
@@ -116,36 +122,22 @@ namespace SparkyStudios::Audio::Amplitude
 
     AmReal32 BiquadResonantFilter::GetParameterMax(AmUInt32 index) const
     {
-        switch (index)
-        {
-        case ATTRIBUTE_WET:
-            return 1;
-        case ATTRIBUTE_TYPE:
-            return TYPE_LAST - 1;
-        case ATTRIBUTE_FREQUENCY:
-            return 30000.0f;
-        case ATTRIBUTE_RESONANCE:
-            return 40.0f;
-        case ATTRIBUTE_GAIN:
-            return 30.0f;
-        default:
-            return 1.0f;
-        }
+        if (index >= ATTRIBUTE_LAST)
+            return 0.0;
+
+        static const AmReal32 values[ATTRIBUTE_LAST] = { 1.0f, TYPE_LAST - 1, 30000.0f, 40.0f, 30.0f };
+
+        return values[index];
     }
 
     AmReal32 BiquadResonantFilter::GetParameterMin(AmUInt32 index) const
     {
-        switch (index)
-        {
-        case ATTRIBUTE_FREQUENCY:
-            return 10.0f;
-        case ATTRIBUTE_RESONANCE:
-            return 0.025f;
-        case ATTRIBUTE_GAIN:
-            return -30.0f;
-        default:
-            return 0.0f;
-        }
+        if (index >= ATTRIBUTE_LAST)
+            return 0.0;
+
+        static const AmReal32 values[ATTRIBUTE_LAST] = { 0.0f, 0.0f, 10.0f, 0.025f, -30.0f };
+
+        return values[index];
     }
 
     std::shared_ptr<FilterInstance> BiquadResonantFilter::CreateInstance()

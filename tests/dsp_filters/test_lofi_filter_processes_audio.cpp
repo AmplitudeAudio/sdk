@@ -25,7 +25,7 @@ namespace SparkyStudios::Audio::Amplitude::Tests
     void DSPTestCase::Run()
     {
         auto filter = amshared(LofiFilter);
-        filter->Init(8000.0f, 8.0f);
+        filter->Initialize(8000.0f, 8.0f);
 
         auto instance = filter->CreateInstance();
         AM_EXPECT_NOT(instance == nullptr);

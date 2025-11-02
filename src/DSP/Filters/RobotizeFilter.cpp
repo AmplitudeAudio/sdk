@@ -41,9 +41,9 @@ namespace SparkyStudios::Audio::Amplitude
     AmString RobotizeFilter::GetParameterName(AmUInt32 index) const
     {
         if (index >= ATTRIBUTE_LAST)
-            return "";
+            return "Unknown";
 
-        AmString names[3] = { "Wet", "Frequency", "Waveform" };
+        static const AmString names[ATTRIBUTE_LAST] = { "Wet", "Frequency", "Waveform" };
         return names[index];
     }
 
@@ -57,20 +57,22 @@ namespace SparkyStudios::Audio::Amplitude
 
     AmReal32 RobotizeFilter::GetParameterMax(AmUInt32 index) const
     {
-        if (index == ATTRIBUTE_WAVEFORM)
-            return WAVE_LAST - 1;
-        if (index == ATTRIBUTE_FREQUENCY)
-            return 100.0f;
+        if (index >= ATTRIBUTE_LAST)
+            return 0.0f;
 
-        return 1.0f;
+        static const AmReal32 values[ATTRIBUTE_LAST] = { 1.0f, 100.0f, WAVE_LAST - 1 };
+
+        return values[index];
     }
 
     AmReal32 RobotizeFilter::GetParameterMin(AmUInt32 index) const
     {
-        if (index == ATTRIBUTE_FREQUENCY)
-            return 0.1f;
+        if (index >= ATTRIBUTE_LAST)
+            return 0.0f;
 
-        return 0.0f;
+        static const AmReal32 values[ATTRIBUTE_LAST] = { 0.0f, 0.1f, 0.0f };
+
+        return values[index];
     }
 
     std::shared_ptr<FilterInstance> RobotizeFilter::CreateInstance()

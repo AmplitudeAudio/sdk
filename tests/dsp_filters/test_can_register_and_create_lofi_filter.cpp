@@ -25,7 +25,7 @@ namespace SparkyStudios::Audio::Amplitude::Tests
     void SimpleTestCase::Run()
     {
         auto filter = amshared(LofiFilter);
-        filter->Init(8000.0f, 8.0f);
+        filter->Initialize(8000.0f, 8.0f);
 
         Filter::Unregister(Filter::Find("Lofi"));
         Filter::Register(filter);
@@ -43,7 +43,8 @@ namespace SparkyStudios::Audio::Amplitude::Tests
         // Test parameter names
         AM_EXPECT(filter->GetParameterName(LofiFilter::ATTRIBUTE_WET) == "Wet");
         AM_EXPECT(filter->GetParameterName(LofiFilter::ATTRIBUTE_SAMPLERATE) == "Samplerate");
-        AM_EXPECT(filter->GetParameterName(LofiFilter::ATTRIBUTE_BITDEPTH) == "BitDepth");
+        AM_EXPECT(filter->GetParameterName(LofiFilter::ATTRIBUTE_BITDEPTH) == "Bit Depth");
+        AM_EXPECT(filter->GetParameterName(LofiFilter::ATTRIBUTE_LAST) == "Unknown");
 
         // Test parameter types
         AM_EXPECT(filter->GetParameterType(LofiFilter::ATTRIBUTE_WET) == eParameterType_Float);
