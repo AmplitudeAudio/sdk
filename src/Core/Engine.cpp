@@ -244,6 +244,8 @@ namespace SparkyStudios::Audio::Amplitude
 
     EngineImpl::~EngineImpl()
     {
+        using namespace dylib;
+
         Deinitialize();
 
         _configSrc.clear();

@@ -427,7 +427,7 @@ namespace SparkyStudios::Audio::Amplitude
      *
      * @ingroup math
      */
-    constexpr AmVector3 kVector2UnitX = { 1.0f, 0.0f };
+    constexpr AmVector2 kVector2UnitX = { 1.0f, 0.0f };
 
     /**
      * @brief A unit vector along the Y-axis in 2D space.
@@ -436,7 +436,7 @@ namespace SparkyStudios::Audio::Amplitude
      *
      * @ingroup math
      */
-    constexpr AmVector3 kVector2UnitY = { 0.0f, 1.0f };
+    constexpr AmVector2 kVector2UnitY = { 0.0f, 1.0f };
 
     /**
      * @brief A zero vector in 3D space.

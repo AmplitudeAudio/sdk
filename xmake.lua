@@ -153,7 +153,9 @@ if is_plat("android") then
   add_syslinks("android", "log")
 end
 
--- Non mobile platforms
+-- Plugins disabled on iOS/Android due to:
+-- 1. App Store dynamic code loading restrictions
+-- 2. Platform limitations on dlopen/dlsym
 if not is_plat("iphoneos") and not is_plat("android") then
   add_requires("dylib ^3.0.1")
   add_packages("dylib")

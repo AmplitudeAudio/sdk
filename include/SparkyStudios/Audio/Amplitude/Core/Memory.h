@@ -24,7 +24,7 @@
 
 #if !defined(AM_NO_MEMORY_STATS)
 #include <atomic>
-#include <map>
+#include <unordered_map>
 #endif
 
 /**
@@ -178,13 +178,15 @@
  * @ingroup memory
  */
 #define ampooldelete(_pool_, _type_, _ptr_)                                                                                                \
+    do                                                                                                                                     \
     {                                                                                                                                      \
-        if ((_ptr_) != nullptr)                                                                                                            \
+        _type_* __amp_tmp = (_ptr_);                                                                                                       \
+        if (__amp_tmp != nullptr)                                                                                                          \
         {                                                                                                                                  \
-            (_ptr_)->~_type_();                                                                                                            \
-            ampoolfree(_pool_, (_ptr_));                                                                                                   \
+            __amp_tmp->~_type_();                                                                                                          \
+            ampoolfree(_pool_, __amp_tmp);                                                                                                 \
         }                                                                                                                                  \
-    }
+    } while (0)
 
 /**
  * @brief Allocates memory for a new object in the Default pool using the memory manager.
@@ -771,7 +773,7 @@ namespace SparkyStudios::Audio::Amplitude
         std::set<Allocation> _memAllocations;
 
 #if !defined(AM_NO_MEMORY_STATS)
-        std::map<eMemoryPoolKind, MemoryPoolStats> _memPoolsStats;
+        std::unordered_map<eMemoryPoolKind, MemoryPoolStats> _memPoolsStats;
 #endif
     };
 
