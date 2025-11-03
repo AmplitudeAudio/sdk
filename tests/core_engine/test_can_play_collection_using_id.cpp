@@ -27,7 +27,5 @@ namespace SparkyStudios::Audio::Amplitude::Tests
 
         AM_EXPECT(channel.Valid());
         AM_EXPECT(channel.Playing());
-
-        channel.Stop(0);
     }
 } // namespace SparkyStudios::Audio::Amplitude::Tests

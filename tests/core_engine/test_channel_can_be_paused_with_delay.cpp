@@ -43,7 +43,5 @@ namespace SparkyStudios::Audio::Amplitude::Tests
         amEngine->WaitUntilFrames(2);
         AM_EXPECT_EQ(channel.GetPlaybackState(), eChannelPlaybackState_Playing);
         AM_EXPECT(channel.Playing());
-
-        channel.Stop(0);
     }
 } // namespace SparkyStudios::Audio::Amplitude::Tests

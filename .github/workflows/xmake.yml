@@ -252,7 +252,7 @@ jobs:
         if: ${{ matrix.build_type == 'coverage' && matrix.config.plat != 'android' }}
         working-directory: ${{ inputs.project-path }}
         run: |
-          xmake test -y -jN
+          xmake test -y
         env:
           AM_SDK_PATH: "${{ steps.sdk_path.outputs.path }}/sdk"
           AM_SDK_PLATFORM: "${{ matrix.config.arch }}-${{ matrix.config.plat }}"
