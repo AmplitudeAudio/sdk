@@ -29,7 +29,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        build_type: ["release", "debug", "coverage"]
+        build_type: ["release", "debug"]
         config:
           - name: "Windows Latest MSVC"
             os: windows-latest
