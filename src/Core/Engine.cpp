@@ -715,6 +715,8 @@ namespace SparkyStudios::Audio::Amplitude
 
     bool EngineImpl::Initialize(const AmOsString& configFile)
     {
+        std::lock_guard lock(_updateMutex);
+
         _configFilePath = _fs->ResolvePath(configFile);
 
         if (!LoadFile(_fs->OpenFile(_configFilePath), &_configSrc))
@@ -896,7 +898,6 @@ namespace SparkyStudios::Audio::Amplitude
         _state->track_environments = config->game()->track_environments();
 
         // Engine state
-        _state->paused = false;
         _state->mute = false;
         _state->master_gain = 1.0f;
 
@@ -916,12 +917,18 @@ namespace SparkyStudios::Audio::Amplitude
             }
         }
 
+        // Mark the engine as ready
+        _state->paused = false;
+        _state->initialized = true;
+
         amLogDebug("Amplitude Engine initialized successfully.");
         return true;
     }
 
     bool EngineImpl::Deinitialize()
     {
+        std::lock_guard<std::recursive_mutex> lock(_updateMutex);
+
         if (_state == nullptr)
             return true;
 
@@ -977,7 +984,7 @@ namespace SparkyStudios::Audio::Amplitude
     bool EngineImpl::IsInitialized() const
     {
         // An initialized engine have a running state
-        return _state != nullptr && !_state->stopping;
+        return _state != nullptr && _state->initialized;
     }
 
     void EngineImpl::SetFileSystem(std::shared_ptr<FileSystem> fs)
@@ -1922,7 +1929,7 @@ namespace SparkyStudios::Audio::Amplitude
 
     void EngineImpl::SetMasterGain(const AmReal32 gain) const
     {
-        if (!IsInitialized())
+        if (!IsInitialized() || IsStopping())
             return;
 
         _state->master_gain = gain;
@@ -1936,7 +1943,7 @@ namespace SparkyStudios::Audio::Amplitude
 
     void EngineImpl::SetMute(const bool mute) const
     {
-        if (!IsInitialized())
+        if (!IsInitialized() || IsStopping())
             return;
 
         _state->mute = mute;
@@ -1949,7 +1956,7 @@ namespace SparkyStudios::Audio::Amplitude
 
     void EngineImpl::SetDefaultListener(const Listener* listener)
     {
-        if (!IsInitialized())
+        if (!IsInitialized() || IsStopping())
             return;
 
         if (listener == nullptr)
@@ -1961,7 +1968,7 @@ namespace SparkyStudios::Audio::Amplitude
 
     void EngineImpl::SetDefaultListener(AmListenerID id)
     {
-        if (!IsInitialized())
+        if (!IsInitialized() || IsStopping())
             return;
 
         if (id == kAmInvalidObjectId)
@@ -2236,7 +2243,7 @@ namespace SparkyStudios::Audio::Amplitude
 
     void EngineImpl::Pause(bool pause) const
     {
-        if (!IsInitialized())
+        if (!IsInitialized() || IsStopping())
             return;
 
         if (_state->paused == pause)
@@ -2384,7 +2391,9 @@ namespace SparkyStudios::Audio::Amplitude
 
     void EngineImpl::AdvanceFrame(AmTime delta) const
     {
-        if (_state == nullptr)
+        std::lock_guard lock(_updateMutex);
+
+        if (!IsInitialized())
             return;
 
         if (_state->paused)

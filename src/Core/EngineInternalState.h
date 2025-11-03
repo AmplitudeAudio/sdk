@@ -192,6 +192,9 @@ namespace SparkyStudios::Audio::Amplitude
         // If true, the engine is in the process of shutting down.
         bool stopping;
 
+        // If true, the engine is fully initialized and ready to start playback.
+        bool initialized;
+
         // A map of sound names to SoundCollections.
         SwitchContainerMap switch_container_map;
 

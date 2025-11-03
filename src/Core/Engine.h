@@ -219,6 +219,8 @@ namespace SparkyStudios::Audio::Amplitude
         static std::set<AmOsString> _pluginSearchPaths;
 
         mutable std::mutex _frameThreadMutex;
+        mutable std::recursive_mutex _updateMutex;
+
         // The list of pending next frame callbacks.
         mutable std::queue<std::function<void(AmTime)>> _nextFrameCallbacks;
 

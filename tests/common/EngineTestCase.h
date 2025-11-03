@@ -78,7 +78,7 @@ namespace SparkyStudios::Audio::Amplitude::Tests
 
             while (self->IsRunning())
             {
-                if (amEngine->IsInitialized())
+                if (amEngine->IsInitialized() && !amEngine->IsStopping())
                     amEngine->AdvanceFrame(kFrameDelta);
 
                 Thread::Sleep(static_cast<AmInt32>(kFrameDelta));
