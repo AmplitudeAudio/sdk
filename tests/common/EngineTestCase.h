@@ -18,6 +18,8 @@
 
 namespace SparkyStudios::Audio::Amplitude::Tests
 {
+    constexpr AmTime kFrameDelta = kAmSecond / 60.0;
+
     class InvalidConsumerNodeInstance final
         : public NodeInstance
         , public ProviderNodeInstance
@@ -76,10 +78,10 @@ namespace SparkyStudios::Audio::Amplitude::Tests
 
             while (self->IsRunning())
             {
-                constexpr AmTime delta = kAmSecond / 60.0;
+                if (amEngine->IsInitialized())
+                    amEngine->AdvanceFrame(kFrameDelta);
 
-                amEngine->AdvanceFrame(delta);
-                Thread::Sleep(static_cast<AmInt32>(delta));
+                Thread::Sleep(static_cast<AmInt32>(kFrameDelta));
             }
 
             amLogDebug("Amplitude Thread ended");

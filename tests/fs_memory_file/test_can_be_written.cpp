@@ -21,21 +21,21 @@ using namespace SparkyStudios::Audio::Amplitude;
 void SimpleTestCase::Run()
 {
     MemoryFile file;
-    file.Open(8);
+    file.Open(32);
+
+    AM_EXPECT(file.IsValid());
+    AM_EXPECT(file.GetPath().empty());
+    AM_EXPECT(file.Length() == 32);
 
     file.Seek(0, eFileSeekOrigin_Start);
     file.Write8('O');
     file.Write8('K');
     file.Seek(0, eFileSeekOrigin_Start);
 
-    AM_EXPECT(file.IsValid());
-    AM_EXPECT(file.GetPath().empty());
-    AM_EXPECT(file.Length() == 8);
-
     AM_EXPECT(file.Read8() == 'O');
     AM_EXPECT(file.Read8() == 'K');
 
-    char ok[] = "OKOK";
+    char ok[] = "OKOKOKOK";
 
     file.Seek(0, eFileSeekOrigin_Start);
     file.Write16(reinterpret_cast<AmUInt16*>(ok)[0]);
@@ -48,6 +48,10 @@ void SimpleTestCase::Run()
     file.Write64(reinterpret_cast<AmUInt64*>(ok)[0]);
     file.Seek(0, eFileSeekOrigin_Start);
 
+    AM_EXPECT(file.Read8() == 'O');
+    AM_EXPECT(file.Read8() == 'K');
+    AM_EXPECT(file.Read8() == 'O');
+    AM_EXPECT(file.Read8() == 'K');
     AM_EXPECT(file.Read8() == 'O');
     AM_EXPECT(file.Read8() == 'K');
     AM_EXPECT(file.Read8() == 'O');

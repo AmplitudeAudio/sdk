@@ -113,7 +113,7 @@ for _, filepath in ipairs(os.dirs("**")) do
 
       add_files(test_file)
 
-      add_tests("test")
+      add_tests("test", {run_timeout = 30000})
 
       on_test(function (target, opt)
         import("lib.detect.find_tool")
