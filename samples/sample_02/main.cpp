@@ -108,7 +108,7 @@ public:
         , listener_icons_()
         , listener_texture_(nullptr)
         , new_listener_location_()
-        , _loader(AmSharedPtr<DiskFileSystem, eMemoryPoolKind_IO>::Make())
+        , _loader(ampoolshared(eMemoryPoolKind_IO, DiskFileSystem))
     {}
 
     ~SampleState();
