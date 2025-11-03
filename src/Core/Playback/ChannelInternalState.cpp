@@ -641,6 +641,7 @@ namespace SparkyStudios::Audio::Amplitude
         case eChannelPlaybackState_SwitchingState:
         case eChannelPlaybackState_Paused:
         case eChannelPlaybackState_Stopped:
+        case eChannelPlaybackState_Pending:
             break;
         case eChannelPlaybackState_FadingIn:
         case eChannelPlaybackState_Playing:

@@ -120,32 +120,35 @@ for _, filepath in ipairs(os.dirs("**")) do
 
         local kcov = find_tool("kcov")
 
-        if not kcov then
-          return false, "kcov not found. Please install kcov."
-        end
-
         local project_dir = os.projectdir()
-        local coverage_dir = path.join(project_dir, "coverage/split_"..target:name())
         local target_file = path.join(project_dir, target:targetfile())
-        local src_dir = path.join(project_dir, "src")
-        local include_dir = path.join(project_dir, "include")
-
-        os.mkdir(coverage_dir)
+        local ok, err
 
         os.cd("$(builddir)")
-        local ok, err = os.execv(kcov.program, {
-          "--include-path=" .. src_dir .. "," .. include_dir,
-          "--exclude-path=" .. path.join(src_dir, "Utils"),
-          "--strip-path=" .. project_dir,
-          coverage_dir,
-          target_file
-        })
+
+        if not kcov then
+          ok, err = os.execv(target_file)
+        else
+          local coverage_dir = path.join(project_dir, "coverage/split_"..target:name())
+          local src_dir = path.join(project_dir, "src")
+          local include_dir = path.join(project_dir, "include")
+
+          os.mkdir(coverage_dir)
+
+          ok, err = os.execv(kcov.program, {
+            "--include-path=" .. src_dir .. "," .. include_dir,
+            "--exclude-path=" .. path.join(src_dir, "Utils"),
+            "--strip-path=" .. project_dir,
+            coverage_dir,
+            target_file
+          })
+        end
 
         if ok == 0 then
             return true
         end
 
-        return false
+        return false, err
       end)
     target_end()
   end

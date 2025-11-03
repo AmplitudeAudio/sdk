@@ -925,6 +925,8 @@ namespace SparkyStudios::Audio::Amplitude
 
         _state->stopping = true;
 
+        _state->mixer.WaitForAudioMutex();
+
         // Stop all sounds
         StopAll();
 

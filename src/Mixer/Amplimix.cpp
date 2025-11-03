@@ -1115,6 +1115,14 @@ namespace SparkyStudios::Audio::Amplitude
         _insideAudioThreadMutex.insert_or_assign(Thread::GetCurrentThreadId(), false);
     }
 
+    void AmplimixImpl::WaitForAudioMutex()
+    {
+        while (_audioThreadMutex.try_lock_for(std::chrono::milliseconds(500)) == false)
+            std::this_thread::yield();
+
+        _audioThreadMutex.unlock();
+    }
+
     AmplimixLayerImpl::~AmplimixLayerImpl()
     {}
 

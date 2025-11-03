@@ -220,6 +220,8 @@ namespace SparkyStudios::Audio::Amplitude
         static void IncrementSoundLoopCount(SoundInstance* sound);
 
     private:
+        friend class EngineImpl;
+
         void ExecuteCommands();
         void MixLayer(AmplimixLayerImpl* layer, AudioBuffer* buffer, AmUInt64 frameCount);
         AmplimixLayerImpl* GetLayer(AmUInt32 layer);
@@ -227,12 +229,13 @@ namespace SparkyStudios::Audio::Amplitude
         void UpdatePitch(AmplimixLayerImpl* layer);
         void LockAudioMutex();
         void UnlockAudioMutex();
+        void WaitForAudioMutex();
 
         bool _initialized;
 
         std::queue<MixerCommand> _commandsStack;
 
-        std::recursive_mutex _audioThreadMutex;
+        std::recursive_timed_mutex _audioThreadMutex;
         std::unordered_map<AmThreadID, bool> _insideAudioThreadMutex;
 
         AmUInt32 _nextId;

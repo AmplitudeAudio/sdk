@@ -159,15 +159,36 @@ jobs:
         if: startsWith(matrix.config.os, 'ubuntu')
         run: |
           sudo apt-get update
-          sudo apt-get install autoconf automake libtool pkg-config libltdl-dev kcov
+          sudo apt-get install autoconf automake libtool pkg-config libltdl-dev
           if [[ "${{ matrix.config.toolchain }}" == "clang" ]]; then
             sudo apt-get install clang
             clang --version
           else
             gcc --version
           fi
-          kcov --version
           xmake --version
+
+      - name: Cache kcov build
+        if: startsWith(matrix.config.os, 'ubuntu')
+        uses: actions/cache@v4
+        id: kcov-cache
+        with:
+          path: /usr/local/bin/kcov
+          key: kcov-${{ matrix.config.os }}-v43
+
+      - name: Build and install kcov
+        if: startsWith(matrix.config.os, 'ubuntu') && steps.kcov-cache.outputs.cache-hit != 'true'
+        run: |
+          sudo apt-get install binutils-dev build-essential cmake libssl-dev libcurl4-openssl-dev libelf-dev libstdc++-12-dev zlib1g-dev libdw-dev libiberty-dev
+          git clone https://github.com/SimonKagstrom/kcov.git /tmp/kcov
+          cd /tmp/kcov
+          git checkout v43
+          mkdir build
+          cd build
+          cmake ..
+          make -j$(nproc)
+          sudo make install
+          kcov --version
 
       - name: Setup Android NDK
         id: setup-ndk
@@ -231,7 +252,7 @@ jobs:
         if: ${{ matrix.build_type == 'coverage' && matrix.config.plat != 'android' }}
         working-directory: ${{ inputs.project-path }}
         run: |
-          xmake test -yvD
+          xmake test -y -jN
         env:
           AM_SDK_PATH: "${{ steps.sdk_path.outputs.path }}/sdk"
           AM_SDK_PLATFORM: "${{ matrix.config.arch }}-${{ matrix.config.plat }}"
