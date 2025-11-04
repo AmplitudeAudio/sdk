@@ -259,14 +259,14 @@ jobs:
 
       - name: Generate coverage
         continue-on-error: true
-        if: matrix.build_type == 'coverage' && !startsWith(matrix.config.os, 'windows')
+        if: false && matrix.build_type == 'coverage' && !startsWith(matrix.config.os, 'windows')
         working-directory: ${{ inputs.project-path }}
         run: |
           xmake b -y coverage_generate_test_report
 
       - name: Upload coverage to Codecov
         continue-on-error: true
-        if: matrix.build_type == 'coverage' && !startsWith(matrix.config.os, 'windows')
+        if: false && matrix.build_type == 'coverage' && !startsWith(matrix.config.os, 'windows')
         uses: codecov/codecov-action@v5
         with:
           directory: ${{ inputs.project-path }}/coverage/merged
