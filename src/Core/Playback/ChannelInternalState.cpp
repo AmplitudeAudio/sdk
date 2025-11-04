@@ -378,7 +378,7 @@ namespace SparkyStudios::Audio::Amplitude
             _channelState != eChannelPlaybackState_FadingOut)
         {
             const SwitchContainerDefinition* definition = _switchContainer->GetDefinition();
-            const auto switchStateId = _switch->GetState().m_id;
+            const auto switchStateId = _switchContainer->GetSwitch()->GetState().m_id;
 
             if (switchStateId != kAmInvalidObjectId && switchStateId != _playingSwitchContainerStateId &&
                 definition->update_behavior() == SwitchContainerUpdateBehavior_UpdateOnChange)
@@ -731,8 +731,6 @@ namespace SparkyStudios::Audio::Amplitude
 
         const SwitchContainerDefinition* definition = _switchContainer->GetDefinition();
 
-        _switch = static_cast<const SwitchImpl*>(_switchContainer->GetSwitch());
-
         _fader = nullptr;
 
         _faderName = definition->fader()->str();
@@ -742,7 +740,7 @@ namespace SparkyStudios::Audio::Amplitude
 
         if (IsReal())
         {
-            const auto& [stateId, stateName] = _switch->GetState();
+            const auto& [stateId, stateName] = _switchContainer->GetSwitch()->GetState();
             _playingSwitchContainerStateId = stateId != kAmInvalidObjectId ? stateId : definition->default_switch_state();
             const std::vector<SwitchContainerItem>& items = _switchContainer->GetSoundObjects(_playingSwitchContainerStateId);
 

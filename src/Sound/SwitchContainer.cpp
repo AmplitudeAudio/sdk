@@ -111,6 +111,12 @@ namespace SparkyStudios::Audio::Amplitude
         {
             _switch = findIt->second.get();
         }
+        else
+        {
+            amLogError(
+                "SwitchContainer %s specifies an unknown switch ID '" AM_ID_CHAR_FMT "'", definition->name()->c_str(), switchGroupID);
+            return false;
+        }
 
         const uint64_t effectID = definition->effect();
         if (effectID != kAmInvalidObjectId)
@@ -121,7 +127,9 @@ namespace SparkyStudios::Audio::Amplitude
             }
             else
             {
-                amLogError("Sound definition is invalid: invalid effect ID '" AM_ID_CHAR_FMT "'", definition->effect());
+                amLogError(
+                    "SwitchContainer %s specifies an unknown effect ID '" AM_ID_CHAR_FMT "'", definition->name()->c_str(),
+                    definition->effect());
                 return false;
             }
         }

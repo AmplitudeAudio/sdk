@@ -49,7 +49,6 @@ namespace SparkyStudios::Audio::Amplitude
             , _switchContainer(nullptr)
             , _collection(nullptr)
             , _sound(nullptr)
-            , _switch(nullptr)
             , _playingSwitchContainerStateId(kAmInvalidObjectId)
             , _previousSwitchContainerStateId(kAmInvalidObjectId)
             , _fader(nullptr)
@@ -359,7 +358,6 @@ namespace SparkyStudios::Audio::Amplitude
         // The sound source that was chosen from the sound collection.
         SoundImpl* _sound;
 
-        const SwitchImpl* _switch;
         AmObjectID _playingSwitchContainerStateId;
         AmObjectID _previousSwitchContainerStateId;
 
