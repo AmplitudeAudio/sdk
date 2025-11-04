@@ -41,19 +41,19 @@ namespace SparkyStudios::Audio::Amplitude
         return _state != nullptr ? _state->GetId() : kAmInvalidObjectId;
     }
 
-    const AmVec3& Entity::GetVelocity() const
+    const AmVector3& Entity::GetVelocity() const
     {
         AMPLITUDE_ASSERT(Valid());
         return _state->GetVelocity();
     }
 
-    void Entity::SetLocation(const AmVec3& location) const
+    void Entity::SetLocation(const AmVector3& location) const
     {
         AMPLITUDE_ASSERT(Valid());
         _state->SetLocation(location);
     }
 
-    const AmVec3& Entity::GetLocation() const
+    const AmVector3& Entity::GetLocation() const
     {
         AMPLITUDE_ASSERT(Valid());
         return _state->GetLocation();
@@ -65,13 +65,13 @@ namespace SparkyStudios::Audio::Amplitude
         _state->SetOrientation(orientation);
     }
 
-    AmVec3 Entity::GetDirection() const
+    AmVector3 Entity::GetDirection() const
     {
         AMPLITUDE_ASSERT(Valid());
         return _state->GetDirection();
     }
 
-    AmVec3 Entity::GetUp() const
+    AmVector3 Entity::GetUp() const
     {
         AMPLITUDE_ASSERT(Valid());
         return _state->GetUp();
@@ -147,6 +147,12 @@ namespace SparkyStudios::Audio::Amplitude
     {
         AMPLITUDE_ASSERT(Valid());
         return _state->GetEnvironments();
+    }
+
+    AmUInt64 Entity::GetActiveChannelCount() const
+    {
+        AMPLITUDE_ASSERT(Valid());
+        return _state->GetPlayingSoundList().size();
     }
 
     EntityInternalState* Entity::GetState() const

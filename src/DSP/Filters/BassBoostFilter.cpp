@@ -15,6 +15,7 @@
 #include <SparkyStudios/Audio/Amplitude/Core/Memory.h>
 
 #include <DSP/Filters/BassBoostFilter.h>
+#include <Utils/Utils.h>
 
 namespace SparkyStudios::Audio::Amplitude
 {
@@ -23,49 +24,53 @@ namespace SparkyStudios::Audio::Amplitude
         , m_boost(2.0f)
     {}
 
-    AmResult BassBoostFilter::Initialize(AmReal32 aBoost)
+    AmResult BassBoostFilter::Initialize(AmReal32 boost)
     {
-        if (aBoost < 0)
+        if (boost < 0)
             return eErrorCode_InvalidParameter;
 
-        m_boost = aBoost;
+        m_boost = boost;
         return eErrorCode_Success;
     }
 
-    AmUInt32 BassBoostFilter::GetParamCount() const
+    AmUInt32 BassBoostFilter::GetParameterCount() const
     {
         return ATTRIBUTE_LAST;
     }
 
-    AmString BassBoostFilter::GetParamName(AmUInt32 index) const
+    AmString BassBoostFilter::GetParameterName(AmUInt32 index) const
     {
-        if (index == ATTRIBUTE_BOOST)
-            return "Boost";
+        if (index >= ATTRIBUTE_LAST)
+            return "Unknown";
 
-        return "Wet";
+        static const AmString names[ATTRIBUTE_LAST] = { "Wet", "Boost" };
+
+        return names[index];
     }
 
-    AmUInt32 BassBoostFilter::GetParamType(AmUInt32 index) const
+    eParameterType BassBoostFilter::GetParameterType(AmUInt32 index) const
     {
-        return kParameterTypeFloat;
+        return eParameterType_Float;
     }
 
-    AmReal32 BassBoostFilter::GetParamMax(AmUInt32 index) const
+    AmReal32 BassBoostFilter::GetParameterMax(AmUInt32 index) const
     {
-        if (index == ATTRIBUTE_BOOST)
-            return 10.0f;
+        if (index >= ATTRIBUTE_LAST)
+            return 0.0;
 
-        return 1.0f;
+        static const AmReal32 values[ATTRIBUTE_LAST] = { 1.0f, 10.0f };
+
+        return values[index];
     }
 
-    AmReal32 BassBoostFilter::GetParamMin(AmUInt32 index) const
+    AmReal32 BassBoostFilter::GetParameterMin(AmUInt32 index) const
     {
         return 0.0f;
     }
 
     std::shared_ptr<FilterInstance> BassBoostFilter::CreateInstance()
     {
-        return AmSharedPtr<BassBoostFilterInstance, eMemoryPoolKind_Filtering>::Make(this);
+        return ampoolshared(eMemoryPoolKind_Filtering, BassBoostFilterInstance, this);
     }
 
     BassBoostFilterInstance::BassBoostFilterInstance(BassBoostFilter* parent)

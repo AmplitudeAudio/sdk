@@ -21,6 +21,8 @@
 #include <SparkyStudios/Audio/Amplitude/Core/Common.h>
 #include <SparkyStudios/Audio/Amplitude/IO/FileSystem.h>
 
+#include <map>
+
 namespace SparkyStudios::Audio::Amplitude
 {
     /**

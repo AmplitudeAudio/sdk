@@ -17,8 +17,6 @@
 #ifndef _AM_IO_FILE_H
 #define _AM_IO_FILE_H
 
-#include <filesystem>
-
 #include <SparkyStudios/Audio/Amplitude/Core/Common.h>
 
 namespace SparkyStudios::Audio::Amplitude
@@ -132,35 +130,35 @@ namespace SparkyStudios::Audio::Amplitude
          *
          * @return The read value.
          */
-        AmUInt8 Read8();
+        [[nodiscard]] AmUInt8 Read8() const;
 
         /**
          * @brief Reads two bytes from the file in an @c AmUInt16.
          *
          * @return The read value.
          */
-        AmUInt16 Read16();
+        [[nodiscard]] AmUInt16 Read16() const;
 
         /**
          * @brief Reads four bytes from the file in an @c AmUInt32.
          *
          * @return The read value.
          */
-        AmUInt32 Read32();
+        [[nodiscard]] AmUInt32 Read32() const;
 
         /**
          * @brief Reads eight bytes from the file in an @c AmUInt64.
          *
          * @return The read value.
          */
-        AmUInt64 Read64();
+        [[nodiscard]] AmUInt64 Read64() const;
 
         /**
          * @brief Reads a string from the file.
          *
          * @return The read value.
          */
-        AmString ReadString();
+        [[nodiscard]] AmString ReadString() const;
 
         /**
          * @brief Writes a single byte to the file from an @c AmUInt8.
@@ -202,7 +200,7 @@ namespace SparkyStudios::Audio::Amplitude
          *
          * @return @c true if the read cursor is at the end of the file, @c false otherwise.
          */
-        virtual bool Eof() = 0;
+        [[nodiscard]] virtual bool Eof() const = 0;
 
         /**
          * @brief Reads data from the file.
@@ -213,7 +211,7 @@ namespace SparkyStudios::Audio::Amplitude
          *
          * @return The number of bytes read from the file.
          */
-        virtual AmSize Read(AmUInt8Buffer dst, AmSize bytes) = 0;
+        virtual AmSize Read(AmUInt8Buffer dst, AmSize bytes) const = 0;
 
         /**
          * @brief Writes data to the file.
@@ -231,7 +229,7 @@ namespace SparkyStudios::Audio::Amplitude
          *
          * @return The size of the file in bytes.
          */
-        virtual AmSize Length() = 0;
+        [[nodiscard]] virtual AmSize Length() const = 0;
 
         /**
          * @brief Seeks the read/write to the specified offset.
@@ -253,14 +251,14 @@ namespace SparkyStudios::Audio::Amplitude
          *
          * @return The actual position of the read/write cursor.
          */
-        virtual AmSize Position() = 0;
+        [[nodiscard]] virtual AmSize Position() const = 0;
 
         /**
          * @brief Gets the pointer to the internal file handle.
          *
          * @return The internal file handle. This depends on the implementation.
          */
-        virtual AmVoidPtr GetPtr();
+        [[nodiscard]] virtual AmVoidPtr GetPtr() const = 0;
 
         /**
          * @brief Checks if the file is valid.
@@ -271,6 +269,11 @@ namespace SparkyStudios::Audio::Amplitude
          * @return @c true if the file is valid, @c false otherwise.
          */
         [[nodiscard]] virtual bool IsValid() const = 0;
+
+        /**
+         * @brief Closes the file an releases allocated resources.
+         */
+        virtual void Close() = 0;
     };
 } // namespace SparkyStudios::Audio::Amplitude
 

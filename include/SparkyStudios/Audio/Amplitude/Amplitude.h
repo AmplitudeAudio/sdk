@@ -60,6 +60,8 @@
 #include <SparkyStudios/Audio/Amplitude/Core/Common.h>
 
 #include <SparkyStudios/Audio/Amplitude/Core/Asset.h>
+#include <SparkyStudios/Audio/Amplitude/Core/AudioBuffer.h>
+#include <SparkyStudios/Audio/Amplitude/Core/AudioBufferCrossFader.h>
 #include <SparkyStudios/Audio/Amplitude/Core/Codec.h>
 #include <SparkyStudios/Audio/Amplitude/Core/Device.h>
 #include <SparkyStudios/Audio/Amplitude/Core/Driver.h>
@@ -73,6 +75,7 @@
 #include <SparkyStudios/Audio/Amplitude/Core/Playback/Channel.h>
 #include <SparkyStudios/Audio/Amplitude/Core/Playback/ChannelEventListener.h>
 #include <SparkyStudios/Audio/Amplitude/Core/RefCounter.h>
+#include <SparkyStudios/Audio/Amplitude/Core/Room.h>
 #include <SparkyStudios/Audio/Amplitude/Core/Thread.h>
 #include <SparkyStudios/Audio/Amplitude/Core/Version.h>
 
@@ -100,7 +103,7 @@
 #include <SparkyStudios/Audio/Amplitude/Math/CartesianCoordinateSystem.h>
 #include <SparkyStudios/Audio/Amplitude/Math/Curve.h>
 #include <SparkyStudios/Audio/Amplitude/Math/Geometry.h>
-#include <SparkyStudios/Audio/Amplitude/Math/HandmadeMath.h>
+#include <SparkyStudios/Audio/Amplitude/Math/LinearAlgebra.h>
 #include <SparkyStudios/Audio/Amplitude/Math/Orientation.h>
 #include <SparkyStudios/Audio/Amplitude/Math/Shape.h>
 #include <SparkyStudios/Audio/Amplitude/Math/SphericalPosition.h>
@@ -120,11 +123,5 @@
 #include <SparkyStudios/Audio/Amplitude/Sound/SoundObject.h>
 #include <SparkyStudios/Audio/Amplitude/Sound/Switch.h>
 #include <SparkyStudios/Audio/Amplitude/Sound/SwitchContainer.h>
-
-#if AM_PLATFORM_ANDROID
-#include <SparkyStudios/Audio/Amplitude/IO/Android/AssetManagerFile.h>
-#include <SparkyStudios/Audio/Amplitude/IO/Android/AssetManagerFileSystem.h>
-#include <SparkyStudios/Audio/Amplitude/IO/Android/LogcatLogger.h>
-#endif // AM_PLATFORM_ANDROID
 
 #endif // _AM_AMPLITUDE_H

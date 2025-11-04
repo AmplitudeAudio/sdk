@@ -17,7 +17,11 @@
 #ifndef _AM_IO_DISK_FILE_H
 #define _AM_IO_DISK_FILE_H
 
+#include <filesystem>
+
 #include <SparkyStudios/Audio/Amplitude/IO/File.h>
+
+#include <filesystem>
 
 namespace SparkyStudios::Audio::Amplitude
 {
@@ -64,12 +68,12 @@ namespace SparkyStudios::Audio::Amplitude
         /**
          * @inherit
          */
-        bool Eof() override;
+        [[nodiscard]] bool Eof() const override;
 
         /**
          * @inherit
          */
-        AmSize Read(AmUInt8Buffer dst, AmSize bytes) override;
+        AmSize Read(AmUInt8Buffer dst, AmSize bytes) const override;
 
         /**
          * @inherit
@@ -79,7 +83,7 @@ namespace SparkyStudios::Audio::Amplitude
         /**
          * @inherit
          */
-        AmSize Length() override;
+        [[nodiscard]] AmSize Length() const override;
 
         /**
          * @inherit
@@ -89,17 +93,22 @@ namespace SparkyStudios::Audio::Amplitude
         /**
          * @inherit
          */
-        AmSize Position() override;
+        [[nodiscard]] AmSize Position() const override;
 
         /**
          * @inherit
          */
-        AmVoidPtr GetPtr() override;
+        [[nodiscard]] AmVoidPtr GetPtr() const override;
 
         /**
          * @inherit
          */
         [[nodiscard]] bool IsValid() const override;
+
+        /**
+         * @inherit.
+         */
+        void Close() override;
 
         /**
          * @brief Opens a file at the given path.
@@ -112,11 +121,6 @@ namespace SparkyStudios::Audio::Amplitude
          */
         AmResult Open(
             const std::filesystem::path& filePath, eFileOpenMode mode = eFileOpenMode_Read, eFileOpenKind kind = eFileOpenKind_Binary);
-
-        /**
-         * @brief Closes the file.
-         */
-        void Close();
 
     private:
         std::filesystem::path m_filePath;

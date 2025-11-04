@@ -17,8 +17,6 @@
 #ifndef _AM_CORE_ENGINE_H
 #define _AM_CORE_ENGINE_H
 
-#include <queue>
-
 #include <SparkyStudios/Audio/Amplitude/Core/Common.h>
 
 #include <SparkyStudios/Audio/Amplitude/Core/Device.h>
@@ -285,41 +283,6 @@ namespace SparkyStudios::Audio::Amplitude
          * @ref StartLoadSoundFiles "`StartLoadSoundFiles()`" to trigger the loading
          * of sound files on a separate thread.
          *
-         * @param[in] fileData The sound bank data to be loaded.
-         *
-         * @note The @c fileData pointer should be null terminated.
-         *
-         * @warning The @c fileData pointer should remain valid until the sound bank is unloaded.
-         *
-         * @return @c true when the sound bank is successfully loaded, @c false otherwise.
-         */
-        virtual bool LoadSoundBankFromMemory(const AmUInt8* fileData) = 0;
-
-        /**
-         * @brief Loads a sound bank from memory.
-         *
-         * This method queues the sound files in that sound bank for loading. Call
-         * @ref StartLoadSoundFiles "`StartLoadSoundFiles()`" to trigger the loading
-         * of sound files on a separate thread.
-         *
-         * @param[in] fileData The sound bank data to be loaded.
-         * @param[out] outID The ID of the loaded sound bank.
-         *
-         * @note The @c fileData pointer should be null terminated.
-         *
-         * @warning The @c fileData pointer should remain valid until the sound bank is unloaded.
-         *
-         * @return @c true when the sound bank is successfully loaded, @c false otherwise.
-         */
-        virtual bool LoadSoundBankFromMemory(const AmUInt8* fileData, AmBankID& outID) = 0;
-
-        /**
-         * @brief Loads a sound bank from memory.
-         *
-         * This method queues the sound files in that sound bank for loading. Call
-         * @ref StartLoadSoundFiles "`StartLoadSoundFiles()`" to trigger the loading
-         * of sound files on a separate thread.
-         *
          * @param[in] ptr The pointer to the sound bank data to be loaded.
          * @param[in] size The size of the memory to read.
          *
@@ -329,7 +292,7 @@ namespace SparkyStudios::Audio::Amplitude
          *
          * @return @c true when the sound bank is successfully loaded, @c false otherwise.
          */
-        virtual bool LoadSoundBankFromMemoryView(AmVoidPtr ptr, AmSize size) = 0;
+        virtual bool LoadSoundBankFromMemoryView(AmConstVoidPtr ptr, AmSize size) = 0;
 
         /**
          * @brief Loads a sound bank from memory.
@@ -348,7 +311,7 @@ namespace SparkyStudios::Audio::Amplitude
          *
          * @return @c true when the sound bank is successfully loaded, @c false otherwise.
          */
-        virtual bool LoadSoundBankFromMemoryView(AmVoidPtr ptr, AmSize size, AmBankID& outID) = 0;
+        virtual bool LoadSoundBankFromMemoryView(AmConstVoidPtr ptr, AmSize size, AmBankID& outID) = 0;
 
         /**
          * @brief Unloads a sound bank given its filename.
@@ -1111,7 +1074,7 @@ namespace SparkyStudios::Audio::Amplitude
          * @return The channel the switch container is being played on. If the switch container could not be
          * played, or the given handle is invalid, an invalid @c Channel is returned.
          */
-        [[nodiscard]] virtual Channel Play(SwitchContainerHandle handle, const AmVec3& location) const = 0;
+        [[nodiscard]] virtual Channel Play(SwitchContainerHandle handle, const AmVector3& location) const = 0;
 
         /**
          * @brief Plays a switch container associated with the given handle in the World scope.
@@ -1126,7 +1089,7 @@ namespace SparkyStudios::Audio::Amplitude
          * @return The channel the switch container is being played on. If the switch container could not be
          * played, or the given handle is invalid, an invalid @c Channel is returned.
          */
-        [[nodiscard]] virtual Channel Play(SwitchContainerHandle handle, const AmVec3& location, AmReal32 userGain) const = 0;
+        [[nodiscard]] virtual Channel Play(SwitchContainerHandle handle, const AmVector3& location, AmReal32 userGain) const = 0;
 
         /**
          * @brief Plays a switch container associated with the given handle in an Entity scope.
@@ -1179,7 +1142,7 @@ namespace SparkyStudios::Audio::Amplitude
          * @return The channel the collection is being played on. If the collection could not be
          * played, or the handle is invalid, an invalid @c Channel is returned.
          */
-        [[nodiscard]] virtual Channel Play(CollectionHandle handle, const AmVec3& location) const = 0;
+        [[nodiscard]] virtual Channel Play(CollectionHandle handle, const AmVector3& location) const = 0;
 
         /**
          * @brief Plays a collection associated with the given handle in the World scope.
@@ -1194,7 +1157,7 @@ namespace SparkyStudios::Audio::Amplitude
          * @return The channel the collection is being played on. If the collection could not be
          * played, or the handle is invalid, an invalid @c Channel is returned.
          */
-        [[nodiscard]] virtual Channel Play(CollectionHandle handle, const AmVec3& location, AmReal32 userGain) const = 0;
+        [[nodiscard]] virtual Channel Play(CollectionHandle handle, const AmVector3& location, AmReal32 userGain) const = 0;
 
         /**
          * @brief Plays a collection associated with the given handle in the Entity scope.
@@ -1247,7 +1210,7 @@ namespace SparkyStudios::Audio::Amplitude
          * @return The channel the sound is being played on. If the sound could not be
          * played, the given handle is invalid, an invalid @c Channel is returned.
          */
-        [[nodiscard]] virtual Channel Play(SoundHandle handle, const AmVec3& location) const = 0;
+        [[nodiscard]] virtual Channel Play(SoundHandle handle, const AmVector3& location) const = 0;
 
         /**
          * @brief Plays a sound associated with the given handle in the World scope.
@@ -1262,7 +1225,7 @@ namespace SparkyStudios::Audio::Amplitude
          * @return The channel the sound is being played on. If the sound could not be
          * played, the given handle is invalid, an invalid @c Channel is returned.
          */
-        [[nodiscard]] virtual Channel Play(SoundHandle handle, const AmVec3& location, AmReal32 userGain) const = 0;
+        [[nodiscard]] virtual Channel Play(SoundHandle handle, const AmVector3& location, AmReal32 userGain) const = 0;
 
         /**
          * @brief Plays a sound associated with the given sound handle in an Entity scope.
@@ -1321,7 +1284,7 @@ namespace SparkyStudios::Audio::Amplitude
          * @return The channel the sound object is being played on. If the object could not be
          * played, or an object with the given name was not found, an invalid @c Channel is returned.
          */
-        [[nodiscard]] virtual Channel Play(const AmString& name, const AmVec3& location) const = 0;
+        [[nodiscard]] virtual Channel Play(const AmString& name, const AmVector3& location) const = 0;
 
         /**
          * @brief Plays a sound object associated with the given name in the World scope.
@@ -1339,7 +1302,7 @@ namespace SparkyStudios::Audio::Amplitude
          * @return The channel the sound object is being played on. If the object could not be
          * played, or an object with the given name was not found, an invalid @c Channel is returned.
          */
-        [[nodiscard]] virtual Channel Play(const AmString& name, const AmVec3& location, AmReal32 userGain) const = 0;
+        [[nodiscard]] virtual Channel Play(const AmString& name, const AmVector3& location, AmReal32 userGain) const = 0;
 
         /**
          * @brief Plays a sound object associated with the given name in an Entity scope.
@@ -1406,7 +1369,7 @@ namespace SparkyStudios::Audio::Amplitude
          * @return The channel the sound object is being played on. If the object could not be
          * played, or an object with the given ID was not found, an invalid @c Channel is returned.
          */
-        [[nodiscard]] virtual Channel Play(AmObjectID id, const AmVec3& location) const = 0;
+        [[nodiscard]] virtual Channel Play(AmObjectID id, const AmVector3& location) const = 0;
 
         /**
          * @brief Plays a sound object associated with the given ID in the World scope.
@@ -1424,7 +1387,7 @@ namespace SparkyStudios::Audio::Amplitude
          * @return The channel the sound object is being played on. If the object could not be
          * played, or an object with the given ID was not found, an invalid @c Channel is returned.
          */
-        [[nodiscard]] virtual Channel Play(AmObjectID id, const AmVec3& location, AmReal32 userGain) const = 0;
+        [[nodiscard]] virtual Channel Play(AmObjectID id, const AmVector3& location, AmReal32 userGain) const = 0;
 
         /**
          * @brief Plays a sound object associated with the given ID in an Entity scope.
@@ -1512,6 +1475,14 @@ namespace SparkyStudios::Audio::Amplitude
          * @return An @c EventCanceler object which may be used to cancel the execution of the event.
          */
         [[nodiscard]] virtual EventCanceler Trigger(AmEventID id, const Entity& entity) const = 0;
+
+        /**
+         * @brief Cancels all events currently being processed.
+         *
+         * @note This method cancels all events currently being processed by the engine.
+         * It does not cancel events that are queued for processing.
+         */
+        virtual void CancelAllEvents() = 0;
 
 #pragma endregion
 
@@ -1644,6 +1615,13 @@ namespace SparkyStudios::Audio::Amplitude
 #pragma region Engine State and Configuration
 
         /**
+         * @brief Gets the path to the loaded engine configuration file.
+         *
+         * @return The path to the engine configuration file.
+         */
+        [[nodiscard]] virtual const AmOsString& GetConfigurationPath() const = 0;
+
+        /**
          * @brief Gets the speed of sound, as set in the loaded engine configuration file.
          *
          * @return The speed of sound.
@@ -1656,6 +1634,34 @@ namespace SparkyStudios::Audio::Amplitude
          * @return The Doppler factor.
          */
         [[nodiscard]] virtual AmReal32 GetDopplerFactor() const = 0;
+
+        /**
+         * @brief Get the number of active entities in the engine.
+         *
+         * @return The number of active entities.
+         */
+        [[nodiscard]] virtual AmUInt32 GetActiveEntitiesCount() const = 0;
+
+        /**
+         * @brief Get the number of active listeners in the engine.
+         *
+         * @return The number of active listeners.
+         */
+        [[nodiscard]] virtual AmUInt32 GetActiveListenersCount() const = 0;
+
+        /**
+         * @brief Get the number of active environments in the engine.
+         *
+         * @return The number of active environments.
+         */
+        [[nodiscard]] virtual AmUInt32 GetActiveEnvironmentsCount() const = 0;
+
+        /**
+         * @brief Get the number of active rooms in the engine.
+         *
+         * @return The number of active rooms.
+         */
+        [[nodiscard]] virtual AmUInt32 GetActiveRoomsCount() const = 0;
 
         /**
          * @brief Get the number of samples to process in one stream, as set in the loaded engine configuration file.
@@ -1686,6 +1692,20 @@ namespace SparkyStudios::Audio::Amplitude
          * @return The maximum number of game entities.
          */
         [[nodiscard]] virtual AmUInt32 GetMaxEntitiesCount() const = 0;
+
+        /**
+         * @brief Gets the maximum number of environments handled by the engine.
+         *
+         * @return The maximum number of environments.
+         */
+        [[nodiscard]] virtual AmUInt32 GetMaxEnvironmentsCount() const = 0;
+
+        /**
+         * @brief Gets the maximum number of rooms handled by the engine.
+         *
+         * @return The maximum number of rooms.
+         */
+        [[nodiscard]] virtual AmUInt32 GetMaxRoomsCount() const = 0;
 
         /**
          * @brief Gets the occlusion coefficient curve, as set in the loaded engine configuration file.
@@ -1740,6 +1760,22 @@ namespace SparkyStudios::Audio::Amplitude
          * @see HRIRSphere
          */
         [[nodiscard]] virtual std::shared_ptr<const HRIRSphere> GetHRIRSphere() const = 0;
+
+        /**
+         * @brief Gets the channel with the given ID.
+         *
+         * @param[in] channelID The ID of the channel to get.
+         *
+         * @return The channel.
+         */
+        [[nodiscard]] virtual Channel GetChannel(AmChannelID channelID) const = 0;
+
+        /**
+         * @brief Checks if the engine is stopping.
+         *
+         * @return @c true if the engine is stopping, @c false otherwise.
+         */
+        [[nodiscard]] virtual bool IsStopping() const = 0;
 
 #pragma endregion
 

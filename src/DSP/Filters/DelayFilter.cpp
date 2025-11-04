@@ -15,6 +15,7 @@
 #include <SparkyStudios/Audio/Amplitude/Core/Memory.h>
 
 #include <DSP/Filters/DelayFilter.h>
+#include <Utils/Utils.h>
 
 namespace SparkyStudios::Audio::Amplitude
 {
@@ -37,42 +38,52 @@ namespace SparkyStudios::Audio::Amplitude
         return eErrorCode_Success;
     }
 
-    AmUInt32 DelayFilter::GetParamCount() const
+    AmUInt32 DelayFilter::GetParameterCount() const
     {
         return ATTRIBUTE_LAST;
     }
 
-    AmString DelayFilter::GetParamName(AmUInt32 index) const
+    AmString DelayFilter::GetParameterName(AmUInt32 index) const
     {
         if (index >= ATTRIBUTE_LAST)
-            return "";
+            return "Unknown";
 
-        AmString names[ATTRIBUTE_LAST] = { "Wet", "Delay", "Decay", "DelayStart" };
+        static const AmString names[ATTRIBUTE_LAST] = { "Wet", "Delay", "Decay", "Delay Start" };
 
         return names[index];
     }
 
-    AmUInt32 DelayFilter::GetParamType(AmUInt32 index) const
+    eParameterType DelayFilter::GetParameterType(AmUInt32 index) const
     {
         if (index == ATTRIBUTE_DELAY_START)
-            return kParameterTypeBool;
+            return eParameterType_Bool;
 
-        return kParameterTypeFloat;
+        return eParameterType_Float;
     }
 
-    AmReal32 DelayFilter::GetParamMax(AmUInt32 index) const
+    AmReal32 DelayFilter::GetParameterMax(AmUInt32 index) const
     {
-        return 1.0f;
+        if (index >= ATTRIBUTE_LAST)
+            return 0.0f;
+
+        static const AmReal32 values[ATTRIBUTE_LAST] = { 1.0f, 1.0f, 1.0f, 1.0f };
+
+        return values[index];
     }
 
-    AmReal32 DelayFilter::GetParamMin(AmUInt32 index) const
+    AmReal32 DelayFilter::GetParameterMin(AmUInt32 index) const
     {
-        return 0.0f;
+        if (index >= ATTRIBUTE_LAST)
+            return 0.0f;
+
+        static const AmReal32 values[ATTRIBUTE_LAST] = { 0.0f, 0.0f, 0.0f, 0.0f };
+
+        return values[index];
     }
 
     std::shared_ptr<FilterInstance> DelayFilter::CreateInstance()
     {
-        return AmSharedPtr<DelayFilterInstance, eMemoryPoolKind_Filtering>::Make(this);
+        return ampoolshared(eMemoryPoolKind_Filtering, DelayFilterInstance, this);
     }
 
     DelayFilterInstance::DelayFilterInstance(DelayFilter* parent)
@@ -84,7 +95,7 @@ namespace SparkyStudios::Audio::Amplitude
         _bufferMaxLength = 0;
         _offset = 0;
 
-        Initialize(parent->GetParamCount());
+        Initialize(parent->GetParameterCount());
 
         m_parameters[DelayFilter::ATTRIBUTE_DELAY] = parent->_delay;
         m_parameters[DelayFilter::ATTRIBUTE_DECAY] = parent->_decay;

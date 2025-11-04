@@ -224,14 +224,14 @@ namespace SparkyStudios::Audio::Amplitude
          *
          * @param[in] location The new location.
          */
-        void SetLocation(const AmVec3& location) const;
+        void SetLocation(const AmVector3& location) const;
 
         /**
          * @brief Gets the current location of this room.
          *
          * @return The current location of this room.
          */
-        [[nodiscard]] const AmVec3& GetLocation() const;
+        [[nodiscard]] const AmVector3& GetLocation() const;
 
         /**
          * @brief Sets the orientation of this room.
@@ -252,21 +252,21 @@ namespace SparkyStudios::Audio::Amplitude
          *
          * @return The direction (forward) vector.
          */
-        [[nodiscard]] AmVec3 GetDirection() const;
+        [[nodiscard]] AmVector3 GetDirection() const;
 
         /**
          * @brief Gets the up vector of this room.
          *
          * @return The up vector.
          */
-        [[nodiscard]] AmVec3 GetUp() const;
+        [[nodiscard]] AmVector3 GetUp() const;
 
         /**
          * @brief Sets the shape's dimensions of this room.
          *
          * @param[in] dimensions The new dimensions.
          */
-        void SetDimensions(AmVec3 dimensions) const;
+        void SetDimensions(AmVector3 dimensions) const;
 
         /**
          * @brief Sets the shape representing this room.
@@ -350,7 +350,7 @@ namespace SparkyStudios::Audio::Amplitude
          *
          * @return The dimensions of the room's shape.
          */
-        [[nodiscard]] AmVec3 GetDimensions() const;
+        [[nodiscard]] AmVector3 GetDimensions() const;
 
         /**
          * @brief Gets the surface area for a specific wall of this room.

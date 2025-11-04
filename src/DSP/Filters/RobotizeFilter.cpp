@@ -33,49 +33,51 @@ namespace SparkyStudios::Audio::Amplitude
         return eErrorCode_Success;
     }
 
-    AmUInt32 RobotizeFilter::GetParamCount() const
+    AmUInt32 RobotizeFilter::GetParameterCount() const
     {
         return ATTRIBUTE_LAST;
     }
 
-    AmString RobotizeFilter::GetParamName(AmUInt32 index) const
+    AmString RobotizeFilter::GetParameterName(AmUInt32 index) const
     {
         if (index >= ATTRIBUTE_LAST)
-            return "";
+            return "Unknown";
 
-        AmString names[3] = { "Wet", "Frequency", "Waveform" };
+        static const AmString names[ATTRIBUTE_LAST] = { "Wet", "Frequency", "Waveform" };
         return names[index];
     }
 
-    AmUInt32 RobotizeFilter::GetParamType(AmUInt32 index) const
+    eParameterType RobotizeFilter::GetParameterType(AmUInt32 index) const
     {
         if (index == ATTRIBUTE_WAVEFORM)
-            return kParameterTypeInt;
+            return eParameterType_Int;
 
-        return kParameterTypeFloat;
+        return eParameterType_Float;
     }
 
-    AmReal32 RobotizeFilter::GetParamMax(AmUInt32 index) const
+    AmReal32 RobotizeFilter::GetParameterMax(AmUInt32 index) const
     {
-        if (index == ATTRIBUTE_WAVEFORM)
-            return WAVE_LAST - 1;
-        if (index == ATTRIBUTE_FREQUENCY)
-            return 100.0f;
+        if (index >= ATTRIBUTE_LAST)
+            return 0.0f;
 
-        return 1.0f;
+        static const AmReal32 values[ATTRIBUTE_LAST] = { 1.0f, 100.0f, WAVE_LAST - 1 };
+
+        return values[index];
     }
 
-    AmReal32 RobotizeFilter::GetParamMin(AmUInt32 index) const
+    AmReal32 RobotizeFilter::GetParameterMin(AmUInt32 index) const
     {
-        if (index == ATTRIBUTE_FREQUENCY)
-            return 0.1f;
+        if (index >= ATTRIBUTE_LAST)
+            return 0.0f;
 
-        return 0.0f;
+        static const AmReal32 values[ATTRIBUTE_LAST] = { 0.0f, 0.1f, 0.0f };
+
+        return values[index];
     }
 
     std::shared_ptr<FilterInstance> RobotizeFilter::CreateInstance()
     {
-        return AmSharedPtr<RobotizeFilterInstance, eMemoryPoolKind_Filtering>::Make(this);
+        return ampoolshared(eMemoryPoolKind_Filtering, RobotizeFilterInstance, this);
     }
 
     RobotizeFilterInstance::RobotizeFilterInstance(RobotizeFilter* parent)

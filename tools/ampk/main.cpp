@@ -12,53 +12,196 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include <cstdarg>
-#include <iostream>
-
 #include <SparkyStudios/Audio/Amplitude/Amplitude.h>
+
+#include <CLI/CLI.hpp>
+#include <lz4.h>
+
+#include <cli_formatter.h>
+#include <utils.h>
 
 using namespace SparkyStudios::Audio::Amplitude;
 
-struct ProcessingState
+struct AppOptions;
+static int process(const AmOsString& inFileName, const AmOsString& outFileName, const AppOptions& state);
+
+/**
+ * @brief Stores the application options passed via CLI.
+ */
+struct AppOptions
 {
+    /**
+     * @brief Defines if the process is called in verbose mode.
+     */
     bool verbose = false;
 
-    ePackageFileCompressionAlgorithm compression = ePackageFileCompressionAlgorithm_None;
+    /**
+     * @brief Defines if the process should not display the logo.
+     */
+    bool noLogo = false;
+
+    struct
+    {
+        /**
+         * @brief The compression mode to use.
+         */
+        ePackageFileCompressionMode mode = ePackageFileCompressionMode_Uncompressed;
+
+        /**
+         * @brief The compression block size, in KB.
+         */
+        AmSize blockSize = 64;
+    } compression;
+
+    /**
+     * @brief The path to the input project directory to process.
+     */
+    std::string inputFile;
+
+    /**
+     * @brief The path to the output package file to create.
+     */
+    std::string outputFile;
+};
+
+/**
+ * @brief The application context.
+ */
+struct AppContext
+{
+    /**
+     * @brief The command line interface application.
+     */
+    CLI::App app{ "Amplitude Packager", "ampk" };
+
+    /**
+     * @brief The processing state.
+     */
+    AppOptions options;
+
+    /**
+     * @brief The exit code generated during processing.
+     */
+    int exitCode = 0;
+
+    int run(int argc, char** argv)
+    {
+        MemoryManager::Initialize();
+
+        const auto formatter = std::make_shared<AmplitudeToolCLIFormatter>();
+
+        app.set_version_flag("--version", "1.0.0");
+
+        app.formatter(formatter)
+            ->usage("Usage: ampk [OPTIONS] PROJECT_DIR OUTPUT_FILE")
+            ->footer("ampk -c 1 /path/to/project/ output_package.ampk");
+
+        app.add_flag("-l,--no-logo", options.noLogo, "Hide logo and copyright notice.")->default_val(false)->default_str("false");
+
+        app.add_flag("-v,--verbose", options.verbose, "Verbose mode. Display all messages")->default_val(false)->default_str("false");
+
+        app.add_flag_function(
+               "-q,--quiet",
+               [this](bool value)
+               {
+                   if (!value)
+                       return;
+
+                   options.verbose = false;
+                   options.noLogo = true;
+               },
+               "Quiet mode. Shutdown all messages.")
+            ->default_val(false)
+            ->default_str("false");
+
+        app.add_option(
+               "-c,--compression", options.compression.mode,
+               "The compression algorithm to use.\n"
+               "If not defined, the resulting package will not be compressed. The available values are:\n"
+               "0:  No compression.\n"
+               "1:  ZLib compression.")
+            ->option_text("{0,1}");
+
+        app.add_option(
+               "-s,--block-size", options.compression.blockSize, "The size of the blocks to use for compression, in KB. Default is 64KB.")
+            ->default_val(64)
+            ->default_str("64");
+
+        app.add_option("PROJECT_DIR", options.inputFile, "The path to the project directory to process.")
+            ->required()
+            ->transform(CLI::ExistingPath);
+
+        app.add_option("OUTPUT_FILE", options.outputFile, "The path to the output package file to create.")->required();
+
+        CLI11_PARSE(app, argc, argv);
+
+        if (!options.noLogo)
+        {
+            log(stdout, formatter->make_description(&app).c_str());
+            log(stdout, "\n");
+        }
+
+        exitCode = process(AM_STRING_TO_OS_STRING(options.inputFile), AM_STRING_TO_OS_STRING(options.outputFile), options);
+
+        MemoryManager::Deinitialize();
+
+        return exitCode;
+    }
 };
 
 static constexpr AmUInt32 kCurrentVersion = 1;
 
-static constexpr char kProjectDirAttenuators[] = "attenuators";
-static constexpr char kProjectDirCollections[] = "collections";
-static constexpr char kProjectDirData[] = "data";
-static constexpr char kProjectDirEffects[] = "effects";
-static constexpr char kProjectDirEvents[] = "events";
-static constexpr char kProjectDirRTPC[] = "rtpc";
-static constexpr char kProjectDirSoundbanks[] = "soundbanks";
-static constexpr char kProjectDirSounds[] = "sounds";
-static constexpr char kProjectDirSwitchContainers[] = "switch_containers";
-static constexpr char kProjectDirSwitches[] = "switches";
+static constexpr AmOsChar kProjectDirAttenuators[] = AM_OS_STRING("attenuators");
+static constexpr AmOsChar kProjectDirCollections[] = AM_OS_STRING("collections");
+static constexpr AmOsChar kProjectDirData[] = AM_OS_STRING("data");
+static constexpr AmOsChar kProjectDirEffects[] = AM_OS_STRING("effects");
+static constexpr AmOsChar kProjectDirEvents[] = AM_OS_STRING("events");
+static constexpr AmOsChar kProjectDirPipelines[] = AM_OS_STRING("pipelines");
+static constexpr AmOsChar kProjectDirRTPC[] = AM_OS_STRING("rtpc");
+static constexpr AmOsChar kProjectDirSoundbanks[] = AM_OS_STRING("soundbanks");
+static constexpr AmOsChar kProjectDirSounds[] = AM_OS_STRING("sounds");
+static constexpr AmOsChar kProjectDirSwitchContainers[] = AM_OS_STRING("switch_containers");
+static constexpr AmOsChar kProjectDirSwitches[] = AM_OS_STRING("switches");
 
-/**
- * @brief The log function, used in verbose mode.
- *
- * @param output The output stream.
- * @param fmt The message format.
- * @param ... The arguments.
- */
-static void log(FILE* output, const char* fmt, ...)
+static int compressAndWriteAsset(PackageFileItemDescription& item, std::vector<AmUInt8>& output, const DiskFile& input)
 {
-    va_list args;
-    va_start(args, fmt);
-#if defined(AM_WCHAR_SUPPORTED)
-    vfwprintf(output, AM_STRING_TO_OS_STRING(fmt), args);
-#else
-    vfprintf(output, fmt, args);
-#endif
-    va_end(args);
+    LZ4_stream_t lz4Stream;
+    LZ4_initStream(&lz4Stream, sizeof(lz4Stream));
+
+    AmSize offset = 0;
+    const AmSize inputSize = input.Length();
+
+    while (offset < inputSize)
+    {
+        const AmSize outputSize = output.size();
+
+        const AmSize chunkSize = std::min(inputSize - offset, item.m_CompressedBlockSize);
+        AmInt32 maxDstSize = LZ4_compressBound(chunkSize);
+        std::vector<AmUInt8> compressed(maxDstSize);
+
+        std::vector<AmUInt8> data(chunkSize);
+        input.Read(data.data(), chunkSize);
+
+        AmInt32 compressedSize =
+            LZ4_compress_default(reinterpret_cast<char*>(data.data()), reinterpret_cast<char*>(compressed.data()), chunkSize, maxDstSize);
+
+        if (compressedSize <= 0)
+            amLogError("LZ4 compression failed");
+
+        item.m_CompressedChunks.push_back({
+            outputSize, // Offset
+            chunkSize, // Size
+            static_cast<AmSize>(compressedSize) // Compressed size
+        });
+
+        output.insert(output.end(), compressed.begin(), compressed.begin() + compressedSize);
+        offset += chunkSize;
+    }
+
+    return output.size();
 }
 
-static int process(const AmOsString& inFileName, const AmOsString& outFileName, const ProcessingState& state)
+static int process(const AmOsString& inFileName, const AmOsString& outFileName, const AppOptions& state)
 {
     const std::filesystem::path projectPath(inFileName);
     const std::filesystem::path packagePath(outFileName);
@@ -69,15 +212,15 @@ static int process(const AmOsString& inFileName, const AmOsString& outFileName, 
         return EXIT_FAILURE;
     }
 
-    const auto projectDirectories = { kProjectDirAttenuators,      kProjectDirCollections, kProjectDirData,       kProjectDirEffects,
-                                      kProjectDirEvents,           kProjectDirRTPC,        kProjectDirSoundbanks, kProjectDirSounds,
-                                      kProjectDirSwitchContainers, kProjectDirSwitches };
+    const auto projectDirectories = { kProjectDirAttenuators, kProjectDirCollections,      kProjectDirData,    kProjectDirEffects,
+                                      kProjectDirEvents,      kProjectDirPipelines,        kProjectDirRTPC,    kProjectDirSoundbanks,
+                                      kProjectDirSounds,      kProjectDirSwitchContainers, kProjectDirSwitches };
 
     for (const auto& directory : projectDirectories)
     {
         if (!exists(projectPath / directory) || !is_directory(projectPath / directory))
         {
-            log(stderr, "Invalid project path. The \"%s\" directory is missing.\n", directory);
+            log(stderr, "Invalid project path. The \"" AM_OS_CHAR_FMT "\" directory is missing.\n", directory);
             return EXIT_FAILURE;
         }
     }
@@ -89,51 +232,59 @@ static int process(const AmOsString& inFileName, const AmOsString& outFileName, 
 
     packageFile.Write(reinterpret_cast<AmConstUInt8Buffer>("AMPK"), 4);
     packageFile.Write16(kCurrentVersion);
-    packageFile.Write8(ePackageFileCompressionAlgorithm_None); // TODO: state.compression
+    packageFile.Write8(state.compression.mode);
 
     AmSize lastOffset = 0;
     std::vector<AmUInt8> buffer;
     std::vector<PackageFileItemDescription> items;
 
-    const auto appendItem = [&](const std::filesystem::path& file)
+    const auto appendItem = [&](const std::filesystem::directory_entry& file)
     {
+        if (file.is_directory())
+            return;
+
         if (state.verbose)
-            log(stdout, "Adding item: " AM_OS_CHAR_FMT "\n", file.c_str());
+            log(stdout, "Adding item: " AM_OS_CHAR_FMT "\n", file.path().c_str());
 
         DiskFile diskFile(absolute(file));
 
         PackageFileItemDescription item;
         std::string relativePath = relative(absolute(file), projectPath).string();
-        std::ranges::replace(relativePath, '\\', '/');
+        std::ranges::replace(relativePath, '\\', '/'); // Normalize Windows path
         item.m_Name = relativePath;
         item.m_Offset = lastOffset;
         item.m_Size = diskFile.Length();
 
-        buffer.resize(lastOffset + item.m_Size, 0);
-        diskFile.Read(buffer.data() + lastOffset, item.m_Size);
+        if (state.compression.mode == ePackageFileCompressionMode_Uncompressed)
+        {
+            item.m_CompressedBlockSize = 0;
 
-        items.push_back(item);
-        lastOffset += item.m_Size;
+            buffer.resize(lastOffset + item.m_Size, 0);
+            diskFile.Read(buffer.data() + lastOffset, item.m_Size);
+
+            items.push_back(item);
+            lastOffset += item.m_Size;
+        }
+        else if (state.compression.mode == ePackageFileCompressionMode_Compressed)
+        {
+            item.m_CompressedBlockSize = state.compression.blockSize * 1024;
+
+            std::vector<AmUInt8> compressedData;
+            auto compressedSize = compressAndWriteAsset(item, compressedData, diskFile);
+
+            buffer.insert(buffer.end(), compressedData.begin(), compressedData.begin() + compressedSize);
+
+            items.push_back(item);
+            lastOffset += compressedSize;
+        }
     };
 
     for (const auto& directory : projectDirectories)
-    {
         for (const auto& file : std::filesystem::recursive_directory_iterator(projectPath / directory))
-        {
-            if (file.is_directory())
-                continue;
-
             appendItem(file);
-        }
-    }
 
     for (const auto& file : std::filesystem::directory_iterator(projectPath))
-    {
-        if (file.is_directory())
-            continue;
-
         appendItem(file);
-    }
 
     if (state.verbose)
         log(stdout, "Writing package file: " AM_OS_CHAR_FMT "\n", packagePath.c_str());
@@ -145,6 +296,15 @@ static int process(const AmOsString& inFileName, const AmOsString& outFileName, 
         packageFile.WriteString(item.m_Name);
         packageFile.Write64(item.m_Offset);
         packageFile.Write64(item.m_Size);
+        packageFile.Write64(item.m_CompressedBlockSize);
+        packageFile.Write64(item.m_CompressedChunks.size());
+
+        for (const auto& chunk : item.m_CompressedChunks)
+        {
+            packageFile.Write64(chunk.m_Offset);
+            packageFile.Write64(chunk.m_Size);
+            packageFile.Write64(chunk.m_CompressedSize);
+        }
     }
 
     packageFile.Write(buffer.data(), buffer.size());
@@ -157,126 +317,6 @@ static int process(const AmOsString& inFileName, const AmOsString& outFileName, 
 
 int main(int argc, char* argv[])
 {
-    MemoryManager::Initialize();
-
-    char *inFileName = nullptr, *outFileName = nullptr;
-    bool noLogo = false, needHelp = false;
-    ProcessingState state;
-
-    for (int i = 1; i < argc; i++)
-    {
-#if AM_PLATFORM_WIN
-        if (*argv[i] == '-' || *argv[i] == '/')
-#else
-        if (*argv[i] == '-')
-#endif // AM_PLATFORM_WIN
-        {
-            switch (argv[i][1])
-            {
-            case 'H':
-            case 'h':
-                needHelp = true;
-                state.verbose = true;
-                break;
-
-            case 'O':
-            case 'o':
-                noLogo = true;
-                break;
-
-            case 'Q':
-            case 'q':
-                state.verbose = false;
-                noLogo = true;
-                break;
-
-            case 'V':
-            case 'v':
-                state.verbose = true;
-                break;
-
-            case 'C':
-            case 'c':
-                state.compression = static_cast<ePackageFileCompressionAlgorithm>(strtol(argv[++i], argv, 10));
-
-                if (state.compression < ePackageFileCompressionAlgorithm_None ||
-                    state.compression >= ePackageFileCompressionAlgorithm_Invalid)
-                {
-                    log(stderr, "\nInvalid compression algorithm!\n");
-                    return EXIT_FAILURE;
-                }
-                break;
-
-            default:
-                log(stderr, "\nInvalid option: -%c. Use -h for help.\n", **argv);
-                return EXIT_FAILURE;
-            }
-        }
-        else if (!inFileName)
-        {
-            const auto len = strlen(argv[i]);
-            inFileName = static_cast<char*>(ampoolmalloc(eMemoryPoolKind_Default, len + 1));
-
-            std::memcpy(inFileName, argv[i], len);
-            inFileName[len] = '\0';
-        }
-        else if (!outFileName)
-        {
-            const auto len = strlen(argv[i]);
-            outFileName = static_cast<char*>(ampoolmalloc(eMemoryPoolKind_Default, len + 1));
-
-            std::memcpy(outFileName, argv[i], len);
-            outFileName[len] = '\0';
-        }
-        else
-        {
-            log(stderr, "\nUnknown extra argument: %s !\n", *argv);
-            return EXIT_FAILURE;
-        }
-    }
-
-    if (!inFileName || !outFileName)
-    {
-        needHelp = true;
-    }
-
-    if (!noLogo)
-    {
-        // clang-format off
-        log(stdout, "\n");
-        log(stdout, "Amplitude Packager (ampk)\n");
-        log(stdout, "Copyright (c) 2024-present Sparky Studios - Licensed under Apache 2.0\n");
-        log(stdout, "=====================================================================\n");
-        log(stdout, "\n");
-        // clang-format on
-    }
-
-    if (needHelp)
-    {
-        // clang-format off
-        log(stdout, "Usage: ampk [OPTIONS] PROJECT_DIR OUTPUT_FILE\n");
-        log(stdout, "\n");
-        log(stdout, "Options:\n");
-        log(stdout, "    -[hH]:        \tDisplay this help message.\n");
-        log(stdout, "    -[oO]:        \tHide logo and copyright notice.\n");
-        log(stdout, "    -[qQ]:        \tQuiet mode. Shutdown all messages.\n");
-        log(stdout, "    -[vV]:        \tVerbose mode. Display all messages.\n");
-        log(stdout, "    -[cC]:        \tThe compression algorithm to use.\n");
-        log(stdout, "                  \tIf not defined, the resulting package will not be compressed. The available values are:\n");
-        log(stdout, "           0:     \tNo compression.\n");
-        log(stdout, "           1:     \tZLib compression.\n");
-        log(stdout, "\n");
-        log(stdout, "Example: ampk -c 1 /path/to/project/ output_package.ampk\n");
-        log(stdout, "\n");
-        // clang-format on
-
-        return EXIT_SUCCESS;
-    }
-
-    const int res = process(AM_STRING_TO_OS_STRING(inFileName), AM_STRING_TO_OS_STRING(outFileName), state);
-
-    ampoolfree(eMemoryPoolKind_Default, inFileName);
-    ampoolfree(eMemoryPoolKind_Default, outFileName);
-
-    return res;
+    AppContext app;
+    return app.run(argc, argv);
 }

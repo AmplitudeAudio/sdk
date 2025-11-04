@@ -56,7 +56,7 @@ namespace SparkyStudios::Audio::Amplitude
          *
          * @return The attenuation factor.
          */
-        virtual AmReal32 GetAttenuationFactor(const Attenuation* attenuation, const AmVec3& soundLocation, const Listener& listener) = 0;
+        virtual AmReal32 GetAttenuationFactor(const Attenuation* attenuation, const AmVector3& soundLocation, const Listener& listener) = 0;
 
         /**
          * @brief Returns the attenuation factor.
@@ -95,7 +95,7 @@ namespace SparkyStudios::Audio::Amplitude
          *
          * @return The computed gain value from the curve.
          */
-        [[nodiscard]] virtual AmReal32 GetGain(const AmVec3& soundLocation, const Listener& listener) const = 0;
+        [[nodiscard]] virtual AmReal32 GetGain(const AmVector3& soundLocation, const Listener& listener) const = 0;
 
         /**
          * @brief Returns the gain of the sound from the given distance to the listener.
@@ -149,7 +149,7 @@ namespace SparkyStudios::Audio::Amplitude
          * @return The air absorption attenuation factor in decibels (dB) for the given frequency band.
          */
         [[nodiscard]] virtual AmReal32 EvaluateAirAbsorption(
-            const AmVec3& soundLocation, const AmVec3& listenerLocation, AmUInt32 band) const = 0;
+            const AmVector3& soundLocation, const AmVector3& listenerLocation, AmUInt32 band) const = 0;
     };
 } // namespace SparkyStudios::Audio::Amplitude
 

@@ -29,7 +29,7 @@ namespace SparkyStudios::Audio::Amplitude
     public:
         ReverbNodeInstance();
 
-        void Initialize(AmObjectID id, const AmplimixLayer* layer, const PipelineInstance* pipeline) override;
+        void Initialize(AmObjectID id, const AmplimixLayer* layer, const PipelineInstance* pipeline, AmSize paramCount) override;
         void Reset() override;
 
         const AudioBuffer* Process(const AudioBuffer* input) override;
@@ -46,7 +46,7 @@ namespace SparkyStudios::Audio::Amplitude
 
         [[nodiscard]] AM_INLINE std::shared_ptr<NodeInstance> CreateInstance() const override
         {
-            return AmSharedPtr<ReverbNodeInstance, eMemoryPoolKind_Amplimix>::Make();
+            return ampoolshared(eMemoryPoolKind_Amplimix, ReverbNodeInstance);
         }
 
         [[nodiscard]] AM_INLINE bool CanConsume() const override

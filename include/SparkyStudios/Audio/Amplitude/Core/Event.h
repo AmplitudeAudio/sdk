@@ -145,6 +145,13 @@ namespace SparkyStudios::Audio::Amplitude
          * @brief Aborts the execution of this event.
          */
         virtual void Abort() = 0;
+
+        /**
+         * @brief Provides a callback called when the event finishes.
+         *
+         * @param[in] callback The callback to call when the event finishes.
+         */
+        virtual void OnFinish(std::function<void(bool aborted)> callback) = 0;
     };
 } // namespace SparkyStudios::Audio::Amplitude
 

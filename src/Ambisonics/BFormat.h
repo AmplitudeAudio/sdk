@@ -114,7 +114,7 @@ namespace SparkyStudios::Audio::Amplitude
 
         [[nodiscard]] AM_INLINE AudioBuffer* GetBuffer() const
         {
-            return _buffer;
+            return _buffer.get();
         }
 
         /**
@@ -150,7 +150,7 @@ namespace SparkyStudios::Audio::Amplitude
         BFormat& operator*=(const AmReal32& value);
 
     private:
-        AudioBuffer* _buffer;
+        AmUniquePtr<AudioBuffer, eMemoryPoolKind_SoundData> _buffer;
     };
 } // namespace SparkyStudios::Audio::Amplitude
 

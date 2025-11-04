@@ -14,11 +14,12 @@
 
 #include <algorithm>
 #include <cstdio>
-#include <fstream>
-#include <SDL2/SDL.h>
-#include <string>
+
+#include <SDL.h>
 
 #include <SparkyStudios/Audio/Amplitude/Amplitude.h>
+
+#include <Math/LinearAlgebra.h>
 
 using namespace SparkyStudios::Audio::Amplitude;
 
@@ -62,12 +63,12 @@ AmInt32 gListenerIdCounter = 0;
 struct IconState
 {
     IconState()
-        : location(AM_V2(0, 0))
-        , velocity(AM_V2(0, 0))
+        : location({ 0, 0 })
+        , velocity({ 0, 0 })
     {}
 
-    AmVec2 location;
-    AmVec2 velocity;
+    AmVector2 location;
+    AmVector2 velocity;
 };
 
 struct ListenerIcon : public IconState
@@ -107,7 +108,7 @@ public:
         , listener_icons_()
         , listener_texture_(nullptr)
         , new_listener_location_()
-        , _loader(AmSharedPtr<DiskFileSystem, eMemoryPoolKind_IO>::Make())
+        , _loader(ampoolshared(eMemoryPoolKind_IO, DiskFileSystem))
     {}
 
     ~SampleState();
@@ -139,11 +140,11 @@ private:
 
     std::vector<ChannelIcon> channel_icons_;
     SDL_Texture* channel_texture_;
-    AmVec2 new_channel_location_;
+    AmVector2 new_channel_location_;
 
     std::vector<ListenerIcon> listener_icons_;
     SDL_Texture* listener_texture_;
-    AmVec2 new_listener_location_;
+    AmVector2 new_listener_location_;
 
     std::shared_ptr<DiskFileSystem> _loader;
 };
@@ -259,26 +260,26 @@ bool SampleState::Initialize()
 
 void SampleState::UpdateIconState(IconState* icon_state, AmReal32 delta_time)
 {
-    icon_state->location += icon_state->velocity * delta_time;
-    if (icon_state->location.X < 0)
+    icon_state->location = Add(icon_state->location, Scale(icon_state->velocity, delta_time));
+    if (icon_state->location.x < 0)
     {
-        icon_state->location.X *= -1;
-        icon_state->velocity.X *= -1;
+        icon_state->location.x *= -1;
+        icon_state->velocity.x *= -1;
     }
-    else if (icon_state->location.X > kScreenWidth)
+    else if (icon_state->location.x > kScreenWidth)
     {
-        icon_state->location.X -= icon_state->location.X - kScreenWidth;
-        icon_state->velocity.X *= -1;
+        icon_state->location.x -= icon_state->location.x - kScreenWidth;
+        icon_state->velocity.x *= -1;
     }
-    if (icon_state->location.Y < 0)
+    if (icon_state->location.y < 0)
     {
-        icon_state->location.Y *= -1;
-        icon_state->velocity.Y *= -1;
+        icon_state->location.y *= -1;
+        icon_state->velocity.y *= -1;
     }
-    else if (icon_state->location.Y > kScreenHeight)
+    else if (icon_state->location.y > kScreenHeight)
     {
-        icon_state->location.Y -= icon_state->location.Y - kScreenHeight;
-        icon_state->velocity.Y *= -1;
+        icon_state->location.y -= icon_state->location.y - kScreenHeight;
+        icon_state->velocity.y *= -1;
     }
 }
 
@@ -287,25 +288,25 @@ void SampleState::UpdateIcons(AmReal32 delta_time)
     for (auto& icon : channel_icons_)
     {
         UpdateIconState(&icon, delta_time);
-        icon.channel.SetLocation(AM_V3(icon.location.X, 0.0f, icon.location.Y));
-        icon.entity.SetLocation(AM_V3(icon.location.X, 0.0f, icon.location.Y));
+        icon.channel.SetLocation({ icon.location.x, 0.0f, icon.location.y });
+        icon.entity.SetLocation({ icon.location.x, 0.0f, icon.location.y });
         icon.entity.SetOrientation(Orientation::Zero());
     }
 
     for (auto& icon : listener_icons_)
     {
         UpdateIconState(&icon, delta_time);
-        AmVec3 location = AM_V3(icon.location.X, 0.0f, icon.location.Y);
+        AmVector3 location = { icon.location.x, 0.0f, icon.location.y };
         icon.listener.SetLocation(location);
         icon.listener.SetOrientation(Orientation::Zero());
     }
 }
 
-void TextureRect(SDL_Rect* rect, const AmVec2& location, SDL_Texture* texture)
+void TextureRect(SDL_Rect* rect, const AmVector2& location, SDL_Texture* texture)
 {
     SDL_QueryTexture(texture, nullptr, nullptr, &rect->w, &rect->h);
-    rect->x = static_cast<AmInt32>(location.X - static_cast<AmReal32>(rect->w) / 2);
-    rect->y = static_cast<AmInt32>(location.Y - static_cast<AmReal32>(rect->h) / 2);
+    rect->x = static_cast<AmInt32>(location.x - static_cast<AmReal32>(rect->w) / 2);
+    rect->y = static_cast<AmInt32>(location.y - static_cast<AmReal32>(rect->h) / 2);
 }
 
 void SampleState::DrawIcon(const IconState& icon_state, SDL_Texture* texture) const
@@ -345,10 +346,10 @@ void SampleState::DrawIcons() const
     }
 }
 
-bool RectContains(const SDL_Rect& rect, const AmVec2& point)
+bool RectContains(const SDL_Rect& rect, const AmVector2& point)
 {
-    return point.X >= static_cast<AmReal32>(rect.x) && point.X < static_cast<AmReal32>(rect.x + rect.w) &&
-        point.Y >= static_cast<AmReal32>(rect.y) && point.Y < static_cast<AmReal32>(rect.y + rect.h);
+    return point.x >= static_cast<AmReal32>(rect.x) && point.x < static_cast<AmReal32>(rect.x + rect.w) &&
+        point.y >= static_cast<AmReal32>(rect.y) && point.y < static_cast<AmReal32>(rect.y + rect.h);
 }
 
 void SampleState::HandleInput()
@@ -366,7 +367,7 @@ void SampleState::HandleInput()
             }
         case SDL_MOUSEBUTTONDOWN:
             {
-                AmVec2 mouse_location(AM_V2(event.button.x, event.button.y));
+                AmVector2 mouse_location({ static_cast<AmReal32>(event.button.x), static_cast<AmReal32>(event.button.y) });
                 if (event.button.button == SDL_BUTTON_LEFT)
                 {
                     new_channel_location_ = mouse_location;
@@ -379,7 +380,7 @@ void SampleState::HandleInput()
             }
         case SDL_MOUSEBUTTONUP:
             {
-                AmVec2 mouse_location(AM_V2(event.button.x, event.button.y));
+                AmVector2 mouse_location({ static_cast<AmReal32>(event.button.x), static_cast<AmReal32>(event.button.y) });
 
                 SDL_Texture* texture = channel_texture_;
                 auto channel_iter = std::ranges::find_if(
@@ -416,14 +417,14 @@ void SampleState::HandleInput()
                 if (event.button.button == SDL_BUTTON_LEFT)
                 {
                     Entity entity = amEngine->AddEntity(++gListenerIdCounter);
-                    entity.SetLocation(AM_V3(new_channel_location_.X, 0.0f, new_channel_location_.Y));
+                    entity.SetLocation({ new_channel_location_.x, 0.0f, new_channel_location_.y });
                     Channel channel = amEngine->Play(101, entity);
                     if (channel.Valid())
                     {
                         channel_icons_.emplace_back();
                         ChannelIcon& icon = channel_icons_.back();
                         icon.location = new_channel_location_;
-                        icon.velocity = (mouse_location - new_channel_location_) * 0.001f;
+                        icon.velocity = Scale(Sub(mouse_location, new_channel_location_), 0.001f);
                         icon.channel = channel;
                         icon.entity = entity;
                     }
@@ -438,7 +439,7 @@ void SampleState::HandleInput()
                         listener_icons_.emplace_back();
                         ListenerIcon& icon = listener_icons_.back();
                         icon.location = new_listener_location_;
-                        icon.velocity = mouse_location - new_listener_location_;
+                        icon.velocity = Sub(mouse_location, new_listener_location_);
                         icon.listener = listener;
                     }
                     break;
@@ -488,7 +489,7 @@ void SampleState::Run()
     }
 }
 
-AmInt32 main(AmInt32 argc, char* argv[])
+int main(int argc, char* argv[])
 {
     (void)argc;
     (void)argv;

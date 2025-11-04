@@ -33,7 +33,7 @@ namespace SparkyStudios::Audio::Amplitude
 
     private:
         AudioBuffer _output;
-        std::map<AmEnvironmentID, std::map<AmObjectID, EffectInstance*>> _environmentFilters;
+        std::map<AmEnvironmentID, std::map<AmObjectID, std::shared_ptr<EffectInstance>>> _environmentFilters;
     };
 
     class EnvironmentEffectNode final : public Node
@@ -43,7 +43,7 @@ namespace SparkyStudios::Audio::Amplitude
 
         [[nodiscard]] AM_INLINE std::shared_ptr<NodeInstance> CreateInstance() const override
         {
-            return AmSharedPtr<EnvironmentEffectNodeInstance, eMemoryPoolKind_Amplimix>::Make();
+            return ampoolshared(eMemoryPoolKind_Amplimix, EnvironmentEffectNodeInstance);
         }
 
         [[nodiscard]] AM_INLINE bool CanConsume() const override

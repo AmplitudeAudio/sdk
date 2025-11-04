@@ -51,9 +51,6 @@ namespace SparkyStudios::Audio::Amplitude
             if (!handle.Valid())
                 continue;
 
-            const auto* effect = static_cast<const EffectImpl*>(handle.GetEffect());
-            effect->DestroyInstance(_environmentFilters[environment][layerId]);
-
             _environmentFilters[environment].erase(layerId);
         }
     }
@@ -94,7 +91,7 @@ namespace SparkyStudios::Audio::Amplitude
             const auto* effect = static_cast<const EffectImpl*>(handle.GetEffect());
             if (!_environmentFilters.contains(environment))
             {
-                const std::map<AmSoundID, EffectInstance*> map{};
+                const std::map<AmSoundID, std::shared_ptr<EffectInstance>> map{};
                 _environmentFilters[environment] = std::move(map);
             }
 

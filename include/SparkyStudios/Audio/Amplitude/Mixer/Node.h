@@ -46,8 +46,9 @@ namespace SparkyStudios::Audio::Amplitude
          * @param[in] id Unique identifier for the node instance.
          * @param[in] layer The Amplimix layer this node instance is currently associated with.
          * @param[in] pipeline The pipeline this node instance belongs to.
+         * @param[in] paramCount The number of parameters the node will need.
          */
-        virtual void Initialize(AmObjectID id, const AmplimixLayer* layer, const PipelineInstance* pipeline);
+        virtual void Initialize(AmObjectID id, const AmplimixLayer* layer, const PipelineInstance* pipeline, AmSize paramCount);
 
         /**
          * @brief Default destructor.
@@ -78,6 +79,23 @@ namespace SparkyStudios::Audio::Amplitude
          */
         virtual void Reset() = 0;
 
+        /**
+         * @brief Gets the current value of the parameter at the given index.
+         *
+         * @param[in] index The index of the parameter to retrieve.
+         *
+         * @return The current value of the parameter.
+         */
+        virtual AmReal32 GetParameter(AmSize index);
+
+        /**
+         * @brief Sets the value of the parameter at the given index.
+         *
+         * @param[in] index The index of the parameter to retrieve.
+         * @param[in] value The value to set to the parameter.
+         */
+        virtual void SetParameter(AmSize index, AmReal32 value);
+
     protected:
         /**
          * @brief The unique identifier for the node instance in the pipeline.
@@ -93,6 +111,16 @@ namespace SparkyStudios::Audio::Amplitude
          * @brief The pipeline this node instance belongs to.
          */
         const PipelineInstance* m_pipeline;
+
+        /**
+         * @brief The number of parameters that have changed since the last frame.
+         */
+        AmUInt32 m_numParamsChanged;
+
+        /**
+         * @brief The parameters buffer.
+         */
+        std::vector<AmReal32> m_parameters;
     };
 
     /**
@@ -448,6 +476,49 @@ namespace SparkyStudios::Audio::Amplitude
          * @return The minimum number of input connections the node can have.
          */
         [[nodiscard]] virtual AmSize GetMinInputCount() const = 0;
+
+        /**
+         * @brief Returns the number of parameters accepted by this node.
+         *
+         * @return The number of parameters accepted by the node.
+         */
+        [[nodiscard]] virtual AmSize GetParameterCount() const;
+
+        /**
+         * @brief Gets the name of the parameter at the given index.
+         *
+         * @param[in] index The parameter index.
+         *
+         * @return The name of the parameter at the given index.
+         */
+        [[nodiscard]] virtual AmString GetParameterName(AmSize index) const;
+
+        /**
+         * @brief Gets the type of the parameter at the given index.
+         *
+         * @param[in] index The parameter index.
+         *
+         * @return The type of the parameter at the given index.
+         */
+        [[nodiscard]] virtual eParameterType GetParameterType(AmSize index) const;
+
+        /**
+         * @brief Gets the maximum allowed value of the parameter at the given index.
+         *
+         * @param[in] index The parameter index.
+         *
+         * @return The maximum allowed value of the parameter at the given index.
+         */
+        [[nodiscard]] virtual AmReal32 GetParameterMax(AmSize index) const;
+
+        /**
+         * @brief Gets the minimum allowed value of the parameter at the given index.
+         *
+         * @param[in] index The parameter index.
+         *
+         * @return The minimum allowed value of the parameter at the given index.
+         */
+        [[nodiscard]] virtual AmReal32 GetParameterMin(AmSize index) const;
 
         /**
          * @brief Registers a new node.

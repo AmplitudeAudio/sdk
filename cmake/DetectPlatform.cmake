@@ -121,6 +121,15 @@ else ()
     set(AM_ARCH_ARM 0 CACHE INTERNAL "Arch")
 endif ()
 
+# Targets
+# Every platforms supports static library.
+set(AM_BUILDSYSTEM_SUPPORTS_STATIC 1 CACHE INTERNAL "Build System Supports Static")
+
+if (NOT AM_PLATFORM_IOS)
+    # iOS does not support shared library.
+    set(AM_BUILDSYSTEM_SUPPORTS_SHARED 1 CACHE INTERNAL "Build System Supports Shared")
+endif ()
+
 set(AM_EXCLUDE_PLATFORMS ${AM_EXCLUDE_PLATFORMS} CACHE INTERNAL "")
 
 # ------------------------------------------------------------------------------

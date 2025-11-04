@@ -18,11 +18,10 @@
 #include <DSP/Gain.h>
 #include <Mixer/Nodes/AttenuationNode.h>
 
-#include "engine_config_definition_generated.h"
-
 namespace SparkyStudios::Audio::Amplitude
 {
     constexpr AmReal32 kQ = 0.707107f; // sqrt(0.5)
+    constexpr AmReal32 kMaxEQGain = 0.0625f;
 
     void AirAbsorptionEQFilter::Normalize(std::array<AmReal32, kAmAirAbsorptionBandCount>& gains, AmReal32& overallGain)
     {
@@ -36,8 +35,6 @@ namespace SparkyStudios::Audio::Amplitude
         {
             for (auto i = 0; i < kAmAirAbsorptionBandCount; ++i)
             {
-                constexpr AmReal32 kMaxEQGain = 0.0625f;
-
                 gains[i] /= maxGain;
                 gains[i] = std::max(gains[i], kMaxEQGain);
             }
@@ -160,7 +157,7 @@ namespace SparkyStudios::Audio::Amplitude
 
             if (_peakingFilter[i] == nullptr)
             {
-                const AmReal32 cutoffFrequency = AM_SqrtF(kLowCutoffFrequencies[1] * kHighCutoffFrequencies[1]);
+                const AmReal32 cutoffFrequency = std::sqrt(kLowCutoffFrequencies[1] * kHighCutoffFrequencies[1]);
                 _eqFilterFactory.InitializePeaking(
                     cutoffFrequency, cutoffFrequency / (kHighCutoffFrequencies[1] - kLowCutoffFrequencies[1]), 0.0f);
                 _peakingFilter[i] = _eqFilterFactory.CreateInstance();
@@ -219,7 +216,7 @@ namespace SparkyStudios::Audio::Amplitude
                 }
                 else if (spatialization == eSpatialization_Position)
                 {
-                    const AmVec3& location = layer->GetLocation();
+                    const AmVector3& location = layer->GetLocation();
 
                     // Position-based spatialization, or HRTF-based spatialization without entity
                     targetGain *= attenuation->GetGain(location, listener);
@@ -238,8 +235,8 @@ namespace SparkyStudios::Audio::Amplitude
         // Set and normalize gains
         if (attenuation->IsAirAbsorptionEnabled() && listener.Valid())
         {
-            const AmVec3& soundLocation = layer->GetLocation();
-            const AmVec3& listenerLocation = listener.GetLocation();
+            const AmVector3& soundLocation = layer->GetLocation();
+            const AmVector3& listenerLocation = listener.GetLocation();
 
             for (AmUInt32 i = 0; i < kAmAirAbsorptionBandCount; ++i)
                 _gains[i] = attenuation->EvaluateAirAbsorption(soundLocation, listenerLocation, i);

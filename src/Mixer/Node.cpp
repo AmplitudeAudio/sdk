@@ -45,13 +45,16 @@ namespace SparkyStudios::Audio::Amplitude
         return c;
     }
 
-    void NodeInstance::Initialize(AmObjectID id, const AmplimixLayer* layer, const PipelineInstance* pipeline)
+    void NodeInstance::Initialize(AmObjectID id, const AmplimixLayer* layer, const PipelineInstance* pipeline, AmSize paramCount)
     {
         AMPLITUDE_ASSERT(layer != nullptr);
 
         m_id = id;
         m_layer = layer;
         m_pipeline = pipeline;
+
+        m_parameters.clear();
+        m_parameters.assign(paramCount, 0);
     }
 
     AmObjectID NodeInstance::GetId() const
@@ -62,6 +65,26 @@ namespace SparkyStudios::Audio::Amplitude
     const AmplimixLayer* NodeInstance::GetLayer() const
     {
         return m_layer;
+    }
+
+    AmReal32 NodeInstance::GetParameter(AmSize index)
+    {
+        if (index >= m_parameters.size())
+            return 0;
+
+        return m_parameters[index];
+    }
+
+    void NodeInstance::SetParameter(AmSize index, AmReal32 value)
+    {
+        if (index >= m_parameters.size())
+            return;
+
+        if (m_parameters[index] == value)
+            return;
+
+        m_parameters[index] = value;
+        m_numParamsChanged |= 1 << index;
     }
 
     ProcessorNodeInstance::ProcessorNodeInstance(bool processOnEmptyInputBuffer)
@@ -210,7 +233,7 @@ namespace SparkyStudios::Audio::Amplitude
     {
         _buffer = buffer;
 
-        if (const auto* effect = static_cast<const EffectInstanceImpl*>(GetLayer()->GetEffect()); effect != nullptr)
+        if (const auto effect = GetLayer()->GetEffect(); effect != nullptr)
             _filter = effect->GetFilter();
     }
 
@@ -284,6 +307,31 @@ namespace SparkyStudios::Audio::Amplitude
     const AmString& Node::GetName() const
     {
         return m_name;
+    }
+
+    AmSize Node::GetParameterCount() const
+    {
+        return 0;
+    }
+
+    AmString Node::GetParameterName(AmSize index) const
+    {
+        return "";
+    }
+
+    eParameterType Node::GetParameterType(AmSize index) const
+    {
+        return eParameterType_Float;
+    }
+
+    AmReal32 Node::GetParameterMax(AmSize index) const
+    {
+        return 0;
+    }
+
+    AmReal32 Node::GetParameterMin(AmSize index) const
+    {
+        return 0;
     }
 
     void Node::Register(std::shared_ptr<Node> node)

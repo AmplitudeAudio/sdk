@@ -15,12 +15,13 @@
 #define CONVHULL_3D_ENABLE
 #include "convhull_3d.h"
 
-#include <cstdarg>
-#include <iostream>
-
 #include <SparkyStudios/Audio/Amplitude/Amplitude.h>
 
+#include <CLI/CLI.hpp>
 #include <mysofa.h>
+
+#include <cli_formatter.h>
+#include <utils.h>
 
 #include <Core/Codecs/WAV/Codec.h>
 #include <DSP/Filters/BiquadResonantFilter.h>
@@ -28,38 +29,158 @@
 
 using namespace SparkyStudios::Audio::Amplitude;
 
-struct ProcessingState
+struct AppOptions;
+static int process(const AmOsString& inFileName, const AmOsString& outFileName, const AppOptions& state);
+
+/**
+ * @brief Stores the application options passed via CLI.
+ */
+struct AppOptions
 {
-    bool verbose = true;
+    /**
+     * @brief Defines if the process is called in verbose mode.
+     */
+    bool verbose = false;
+
+    /**
+     * @brief Defines if the process should not display the logo.
+     */
+    bool noLogo = false;
+
+    /**
+     * @brief Defines if the process is called in debug mode.
+     *
+     * This will output a 3D visualization mesh of the HRIR sphere, in OBJ format.
+     */
     bool debug = false;
+
+    /**
+     * @brief Configures the resampler for the IR file.
+     */
     struct
     {
         bool enabled = false;
         AmUInt32 targetSampleRate = 44100;
     } resampling;
-    eHRIRSphereDatasetModel datasetModel = eHRIRSphereDatasetModel_SOFA;
+
+    /**
+     * @brief Defines the model of the HRIR dataset.
+     */
+    eHRIRSphereDatasetModel datasetModel = eHRIRSphereDatasetModel_IRCAM;
+
+    /**
+     * @brief The path to the input file to process.
+     */
+    std::string inputFile;
+
+    /**
+     * @brief The path to the output file to create.
+     */
+    std::string outputFile;
 };
 
-static constexpr AmUInt32 kCurrentVersion = 1;
+/**
+ * @brief The application context.
+ */
+struct AppContext
+{
+    /**
+     * @brief The command line interface application.
+     */
+    CLI::App app{ "Amplitude HRIR Sphere Builder", "amir" };
+
+    /**
+     * @brief The processing state.
+     */
+    AppOptions options;
+
+    /**
+     * @brief The exit code generated during processing.
+     */
+    int exitCode = 0;
+
+    int run(int argc, char** argv)
+    {
+        MemoryManager::Initialize();
+
+        app.set_version_flag("--version", "1.0.0");
+
+        const auto formatter = std::make_shared<AmplitudeToolCLIFormatter>();
+
+        app.formatter(formatter)
+            ->usage("Usage: amir [OPTIONS] DATASET_DIR OUTPUT_FILE")
+            ->footer("amir -m 3 /path/to/mit/file.sofa output_asset.amir");
+
+        app.add_flag("-l,--no-logo", options.noLogo, "Hide logo and copyright notice.")->default_val(false)->default_str("false");
+
+        app.add_flag("-v,--verbose", options.verbose, "Verbose mode. Display all messages")->default_val(false)->default_str("false");
+
+        app.add_flag_function(
+               "-q,--quiet",
+               [this](bool value)
+               {
+                   if (!value)
+                       return;
+
+                   options.verbose = false;
+                   options.noLogo = true;
+               },
+               "Quiet mode. Shutdown all messages.")
+            ->default_val(false)
+            ->default_str("false")
+            ->capture_default_str();
+
+        app.add_option(
+               "-m,--model", options.datasetModel,
+               "The dataset model to use.\nThe available values are:\n0:\tIRCAM (LISTEN) dataset "
+               "(http://recherche.ircam.fr/equipes/salles/listen/download.html).\n1:\tMIT (KEMAR) dataset "
+               "(http://sound.media.mit.edu/resources/KEMAR.html).\n2:\tSADIE II dataset "
+               "(https://www.york.ac.uk/sadie-project/database.html).\n3:\tSOFA file (https://www.sofaconventions.org).\n")
+            ->option_text("{0,1,2,3}")
+            ->required();
+
+        app.add_option_function<AmUInt32>(
+               "-r,--resample",
+               [this](const AmUInt32& value)
+               {
+                   options.resampling.enabled = true;
+                   options.resampling.targetSampleRate = value;
+               },
+               "Resamples input data to the target frequency.")
+            ->option_text("frequency");
+
+        app.add_flag("-d,--debug", options.debug, "Debug mode. Will create an obj file with a preview of the sphere shape.");
+
+        app.add_option("DATASET_DIR", options.inputFile, "The path to the dataset file or directory to process.")
+            ->required()
+            ->transform(CLI::ExistingPath);
+
+        app.add_option("OUTPUT_FILE", options.outputFile, "The path to the output file to create.")->required();
+
+        CLI11_PARSE(app, argc, argv);
+
+        if (!options.noLogo)
+        {
+            log(stdout, formatter->make_description(&app).c_str());
+            log(stdout, "\n");
+        }
+
+        Engine::RegisterDefaultExtensions();
+
+        exitCode = process(AM_STRING_TO_OS_STRING(options.inputFile), AM_STRING_TO_OS_STRING(options.outputFile), options);
+
+        Engine::UnregisterDefaultExtensions();
+
+        MemoryManager::Deinitialize();
+
+        return exitCode;
+    }
+};
 
 /**
- * @brief The log function, used in verbose mode.
- *
- * @param output The output stream.
- * @param fmt The message format.
- * @param ... The arguments.
+ * @brief Defines the version of the generated AMIR file.
  */
-static void log(FILE* output, const char* fmt, ...)
-{
-    va_list args;
-    va_start(args, fmt);
-#if defined(AM_WCHAR_SUPPORTED)
-    vfwprintf(output, AM_STRING_TO_OS_STRING(fmt), args);
-#else
-    vfprintf(output, fmt, args);
-#endif
-    va_end(args);
-}
+static constexpr AmUInt32 kCurrentVersion = 1;
 
 void cxcorr(AmReal32* a, AmReal32* b, AmReal32* x_ab, AmSize la, AmSize lb)
 {
@@ -102,7 +223,7 @@ void estimateITD(HRIRSphereVertex& vertex, AmSize irLength, AmUInt32 sampleRate)
     BiquadResonantFilter lpfFilter;
     lpfFilter.InitializeLowPass(kFC, kQ);
 
-    const AmReal32 maxITD = AM_SqrtF(2.0f) / 2e3f;
+    const AmReal32 maxITD = std::sqrt(2.0f) / 2e3f;
 
     const AmReal32 correlationLength = 2.0f * irLength - 1;
 
@@ -149,9 +270,9 @@ void triangulate(const std::vector<HRIRSphereVertex>& vertices, std::vector<AmUI
     for (const auto& v : vertices)
     {
         ch_vertex ch_v;
-        ch_v.x = v.m_Position.X;
-        ch_v.y = v.m_Position.Y;
-        ch_v.z = v.m_Position.Z;
+        ch_v.x = v.m_Position.x;
+        ch_v.y = v.m_Position.y;
+        ch_v.z = v.m_Position.z;
         ch_vertices.push_back(ch_v);
     }
 
@@ -266,7 +387,7 @@ int parseFileName_SADIE(const AmOsString& fileName, SphericalPosition& position)
 }
 
 void processVertex(
-    const AudioBuffer& buffer, const AmVec3& position, AmUInt32 irLength, AmReal32 sampleRate, bool mirror, HRIRSphereVertex& vertex)
+    const AudioBuffer& buffer, const AmVector3& position, AmUInt32 irLength, AmReal32 sampleRate, bool mirror, HRIRSphereVertex& vertex)
 {
     vertex.m_Position = position;
     vertex.m_LeftIR.resize(irLength);
@@ -279,7 +400,7 @@ void processVertex(
     std::memcpy(vertex.m_RightIR.data(), !mirror ? rightChannel.begin() : leftChannel.begin(), irLength * sizeof(AmReal32));
 }
 
-void resampleIR(const ProcessingState& state, AudioBuffer& buffer, AmUInt32& sampleRate, AmUInt64& irLength)
+void resampleIR(const AppOptions& state, AudioBuffer& buffer, AmUInt32& sampleRate, AmUInt64& irLength)
 {
     if (!state.resampling.enabled)
         return;
@@ -298,7 +419,7 @@ void resampleIR(const ProcessingState& state, AudioBuffer& buffer, AmUInt32& sam
     buffer = resampledBuffer;
 }
 
-int process(const AmOsString& inFileName, const AmOsString& outFileName, const ProcessingState& state)
+int process(const AmOsString& inFileName, const AmOsString& outFileName, const AppOptions& state)
 {
     const std::filesystem::path datasetPath(inFileName);
     const std::filesystem::path packagePath(outFileName);
@@ -347,9 +468,9 @@ int process(const AmOsString& inFileName, const AmOsString& outFileName, const P
             sorted_by_name.insert(file);
         }
 
-        AmUniquePtr<Codec> wavCodec(amnew(WAVCodec));
+        auto wavCodec = amshared(WAVCodec);
 
-        std::vector<AmVec3> positions;
+        std::vector<AmVector3> positions;
 
         for (const auto& entry : sorted_by_name)
         {
@@ -383,7 +504,7 @@ int process(const AmOsString& inFileName, const AmOsString& outFileName, const P
 
             auto decoder = wavCodec->CreateDecoder();
 
-            if (auto file = AmSharedPtr<DiskFile, eMemoryPoolKind_IO>::Make(absolute(entry)); !decoder->Open(file))
+            if (auto file = ampoolshared(eMemoryPoolKind_IO, DiskFile, absolute(entry)); !decoder->Open(file))
             {
                 log(stderr, "\tFailed to open file %s.\n", path.c_str());
                 return EXIT_FAILURE;
@@ -412,7 +533,7 @@ int process(const AmOsString& inFileName, const AmOsString& outFileName, const P
             for (AmUInt32 i = 0; i < max; ++i)
             {
                 spherical.SetAzimuth(spherical.GetAzimuth() * (i * -2.0f + 1.0f));
-                const AmVec3 position = spherical.ToCartesian();
+                const AmVector3 position = spherical.ToCartesian();
 
                 if (const auto& it = std::find(positions.begin(), positions.end(), position); it != positions.end())
                     continue; // Do not duplicate borders
@@ -425,8 +546,9 @@ int process(const AmOsString& inFileName, const AmOsString& outFileName, const P
 
                 vertices.push_back(vertex);
 
-                log(stdout, "\tProcessed %s -> {%f, %f, %f}.\n", path.c_str(), vertex.m_Position.X, vertex.m_Position.Y,
-                    vertex.m_Position.Z);
+                if (state.verbose)
+                    log(stdout, "\tProcessed %s -> {%f, %f, %f}.\n", path.c_str(), vertex.m_Position.x, vertex.m_Position.y,
+                        vertex.m_Position.z);
             }
 
             buffer.Clear();
@@ -462,9 +584,9 @@ int process(const AmOsString& inFileName, const AmOsString& outFileName, const P
 
                 const AmUInt32 bufferSize = hrtf->N * hrtf->R;
 
-                const AmVec3 listenerForward =
-                    AM_V3(hrtf->ListenerView.values[0], hrtf->ListenerView.values[1], hrtf->ListenerView.values[2]);
-                const AmVec3 listenerUp = AM_V3(hrtf->ListenerUp.values[0], hrtf->ListenerUp.values[1], hrtf->ListenerUp.values[2]);
+                const AmVector3 listenerForward = { hrtf->ListenerView.values[0], hrtf->ListenerView.values[1],
+                                                    hrtf->ListenerView.values[2] };
+                const AmVector3 listenerUp = { hrtf->ListenerUp.values[0], hrtf->ListenerUp.values[1], hrtf->ListenerUp.values[2] };
 
                 AudioBuffer buffer(hrtf->N, hrtf->R);
 
@@ -479,7 +601,7 @@ int process(const AmOsString& inFileName, const AmOsString& outFileName, const P
                     if (type == "spherical")
                         mysofa_s2c(rawPosition);
 
-                    AmVec3 position = AM_V3(rawPosition[0], rawPosition[1], rawPosition[2]);
+                    AmVector3 position = { rawPosition[0], rawPosition[1], rawPosition[2] };
 
                     HRIRSphereVertex vertex;
                     processVertex(buffer, position, irLength, sampleRate, false, vertex);
@@ -489,7 +611,8 @@ int process(const AmOsString& inFileName, const AmOsString& outFileName, const P
 
                     buffer.Clear();
 
-                    log(stdout, "Processed SOFA measurement %u -> {%f, %f, %f}.\n", i, rawPosition[0], rawPosition[1], rawPosition[2]);
+                    if (state.verbose)
+                        log(stdout, "Processed SOFA measurement %u -> {%f, %f, %f}.\n", i, rawPosition[0], rawPosition[1], rawPosition[2]);
                 }
                 break;
             }
@@ -498,7 +621,9 @@ int process(const AmOsString& inFileName, const AmOsString& outFileName, const P
         mysofa_free(hrtf);
     }
 
-    log(stdout, "Building mesh...\n");
+    if (state.verbose)
+        log(stdout, "Building mesh...\n");
+
     triangulate(vertices, indices, state.debug);
 
     // Header
@@ -518,7 +643,7 @@ int process(const AmOsString& inFileName, const AmOsString& outFileName, const P
     // Vertices
     for (const auto& vertex : vertices)
     {
-        packageFile.Write(reinterpret_cast<AmConstUInt8Buffer>(&vertex.m_Position), sizeof(AmVec3));
+        packageFile.Write(reinterpret_cast<AmConstUInt8Buffer>(&vertex.m_Position), sizeof(AmVector3));
         packageFile.Write(reinterpret_cast<AmConstUInt8Buffer>(vertex.m_LeftIR.data()), irLength * sizeof(AmReal32));
         packageFile.Write(reinterpret_cast<AmConstUInt8Buffer>(vertex.m_RightIR.data()), irLength * sizeof(AmReal32));
         packageFile.Write(reinterpret_cast<AmConstUInt8Buffer>(&vertex.m_LeftDelay), sizeof(AmReal32));
@@ -535,148 +660,6 @@ int process(const AmOsString& inFileName, const AmOsString& outFileName, const P
 
 int main(int argc, char* argv[])
 {
-    MemoryManager::Initialize();
-
-    char *inFileName = nullptr, *outFileName = nullptr;
-    bool noLogo = false, needHelp = false;
-    ProcessingState state;
-
-    for (int i = 1; i < argc; i++)
-    {
-#if AM_PLATFORM_WIN
-        if (*argv[i] == '-' || *argv[i] == '/')
-#else
-        if (*argv[i] == '-')
-#endif // AM_PLATFORM_WIN
-        {
-            switch (argv[i][1])
-            {
-            case 'H':
-            case 'h':
-                needHelp = true;
-                state.verbose = true;
-                break;
-
-            case 'O':
-            case 'o':
-                noLogo = true;
-                break;
-
-            case 'Q':
-            case 'q':
-                state.verbose = false;
-                noLogo = true;
-                break;
-
-            case 'V':
-            case 'v':
-                state.verbose = true;
-                break;
-
-            case 'M':
-            case 'm':
-                state.datasetModel = static_cast<eHRIRSphereDatasetModel>(strtol(argv[++i], argv, 10));
-
-                if (state.datasetModel < eHRIRSphereDatasetModel_IRCAM || state.datasetModel >= eHRIRSphereDatasetModel_Invalid)
-                {
-                    log(stderr, "\nInvalid dataset model!\n");
-                    return EXIT_FAILURE;
-                }
-                break;
-
-            case 'D':
-            case 'd':
-                state.debug = true;
-                break;
-
-            case 'R':
-            case 'r':
-                state.resampling.enabled = true;
-                state.resampling.targetSampleRate = strtol(argv[++i], argv, 10);
-                break;
-
-            default:
-                log(stderr, "\nInvalid option: -%c. Use -h for help.\n", **argv);
-                return EXIT_FAILURE;
-            }
-        }
-        else if (!inFileName)
-        {
-            const auto len = strlen(argv[i]);
-            inFileName = static_cast<char*>(ampoolmalloc(eMemoryPoolKind_Default, len + 1));
-
-            std::memcpy(inFileName, argv[i], len);
-            inFileName[len] = '\0';
-        }
-        else if (!outFileName)
-        {
-            const auto len = strlen(argv[i]);
-            outFileName = static_cast<char*>(ampoolmalloc(eMemoryPoolKind_Default, len + 1));
-
-            std::memcpy(outFileName, argv[i], len);
-            outFileName[len] = '\0';
-        }
-        else
-        {
-            log(stderr, "\nUnknown extra argument: %s !\n", *argv);
-            return EXIT_FAILURE;
-        }
-    }
-
-    if (!inFileName || !outFileName)
-    {
-        needHelp = true;
-    }
-
-    if (!noLogo)
-    {
-        // clang-format off
-        log(stdout, "\n");
-        log(stdout, "Amplitude HRIR Sphere Builder (amir)\n");
-        log(stdout, "Copyright (c) 2024-present Sparky Studios - Licensed under Apache 2.0\n");
-        log(stdout, "=====================================================================\n");
-        log(stdout, "\n");
-        // clang-format on
-    }
-
-    if (needHelp)
-    {
-        // clang-format off
-        log(stdout, "Usage: amir [OPTIONS] DATASET_DIR OUTPUT_FILE\n");
-        log(stdout, "\n");
-        log(stdout, "Options:\n");
-        log(stdout, "    -[hH]:        \tDisplay this help message.\n");
-        log(stdout, "    -[oO]:        \tHide logo and copyright notice.\n");
-        log(stdout, "    -[qQ]:        \tQuiet mode. Shutdown all messages.\n");
-        log(stdout, "    -[vV]:        \tVerbose mode. Display all messages.\n");
-        log(stdout, "    -[dD]:        \tDebug mode. Will create an obj file with a preview of the sphere shape.\n");
-        log(stdout, "    -[rR] freq:   \tResample HRIR data to the target frequency.\n");
-        log(stdout, "    -[mM]:        \tThe dataset model to use.\n");
-        log(stdout, "                  \tThe default value is 0. The available values are:\n");
-        log(stdout, "           0:     \tIRCAM (LISTEN) dataset (http://recherche.ircam.fr/equipes/salles/listen/download.html).\n");
-        log(stdout, "           1:     \tMIT (KEMAR) dataset (http://sound.media.mit.edu/resources/KEMAR.html).\n");
-        log(stdout, "           2:     \tSADIE II dataset (https://www.york.ac.uk/sadie-project/database.html).\n");
-        log(stdout, "           3:     \tSOFA file (https://www.sofaconventions.org).\n");
-        log(stdout, "\n");
-        log(stdout, "Example:\n");
-        log(stdout, "\tamir -m 1 /path/to/mit/dataset/ output_asset.amir\n");
-        log(stdout, "\tamir -m 3 /path/to/mit/file.sofa output_asset.amir\n");
-        log(stdout, "\n");
-        // clang-format on
-
-        return EXIT_SUCCESS;
-    }
-
-    Engine::RegisterDefaultExtensions();
-
-    const auto res = process(AM_STRING_TO_OS_STRING(inFileName), AM_STRING_TO_OS_STRING(outFileName), state);
-
-    ampoolfree(eMemoryPoolKind_Default, inFileName);
-    ampoolfree(eMemoryPoolKind_Default, outFileName);
-
-    Engine::UnregisterDefaultExtensions();
-
-    MemoryManager::Deinitialize();
-
-    return res;
+    AppContext app;
+    return app.run(argc, argv);
 }

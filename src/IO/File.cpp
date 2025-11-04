@@ -16,35 +16,35 @@
 
 namespace SparkyStudios::Audio::Amplitude
 {
-    AmUInt8 File::Read8()
+    AmUInt8 File::Read8() const
     {
         AmUInt8 d = 0;
         Read(&d, 1);
         return d;
     }
 
-    AmUInt16 File::Read16()
+    AmUInt16 File::Read16() const
     {
         AmUInt16 d = 0;
         Read(reinterpret_cast<AmUInt8Buffer>(&d), 2);
         return d;
     }
 
-    AmUInt32 File::Read32()
+    AmUInt32 File::Read32() const
     {
         AmUInt32 d = 0;
         Read(reinterpret_cast<AmUInt8Buffer>(&d), 4);
         return d;
     }
 
-    AmUInt64 File::Read64()
+    AmUInt64 File::Read64() const
     {
         AmUInt64 d = 0;
         Read(reinterpret_cast<AmUInt8Buffer>(&d), 8);
         return d;
     }
 
-    AmString File::ReadString()
+    AmString File::ReadString() const
     {
         const AmUInt32 len = Read32();
 
@@ -85,10 +85,5 @@ namespace SparkyStudios::Audio::Amplitude
     void File::Seek(AmSize offset)
     {
         Seek(offset, eFileSeekOrigin_Start);
-    }
-
-    AmVoidPtr File::GetPtr()
-    {
-        return nullptr;
     }
 } // namespace SparkyStudios::Audio::Amplitude

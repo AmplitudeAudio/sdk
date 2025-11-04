@@ -13,6 +13,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+#include <algorithm>
 #include <numeric>
 
 #include <SparkyStudios/Audio/Amplitude/Math/Utils.h>
@@ -364,6 +365,6 @@ namespace SparkyStudios::Audio::Amplitude
 
     std::shared_ptr<ResamplerInstance> DefaultResampler::CreateInstance()
     {
-        return AmSharedPtr<DefaultResamplerInstance, eMemoryPoolKind_Filtering>::Make();
+        return ampoolshared(eMemoryPoolKind_Filtering, DefaultResamplerInstance);
     }
 } // namespace SparkyStudios::Audio::Amplitude

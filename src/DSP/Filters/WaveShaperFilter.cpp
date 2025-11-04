@@ -24,56 +24,63 @@ namespace SparkyStudios::Audio::Amplitude
         , _amount(0.0f)
     {}
 
-    AmResult WaveShaperFilter::Init(AmReal32 amount)
+    AmResult WaveShaperFilter::Initialize(AmReal32 amount)
     {
-        if (_amount < -1.0f || _amount > 1.0f)
+        if (amount < -1.0f || amount > 1.0f)
             return eErrorCode_InvalidParameter;
 
         _amount = amount;
         return eErrorCode_Success;
     }
 
-    AmUInt32 WaveShaperFilter::GetParamCount() const
+    AmUInt32 WaveShaperFilter::GetParameterCount() const
     {
         return ATTRIBUTE_LAST;
     }
 
-    AmString WaveShaperFilter::GetParamName(AmUInt32 index) const
+    AmString WaveShaperFilter::GetParameterName(AmUInt32 index) const
     {
         if (index >= ATTRIBUTE_LAST)
-            return "";
+            return "Unknown";
 
-        static constexpr const char* names[] = { "Wet", "Amount" };
+        static const AmString names[ATTRIBUTE_LAST] = { "Wet", "Amount" };
         return names[index];
     }
 
-    AmUInt32 WaveShaperFilter::GetParamType(AmUInt32 index) const
+    eParameterType WaveShaperFilter::GetParameterType(AmUInt32 index) const
     {
-        return kParameterTypeFloat;
+        return eParameterType_Float;
     }
 
-    AmReal32 WaveShaperFilter::GetParamMax(AmUInt32 index) const
+    AmReal32 WaveShaperFilter::GetParameterMax(AmUInt32 index) const
     {
-        return 1.0f;
+        if (index >= ATTRIBUTE_LAST)
+            return 0.0f;
+
+        static const AmReal32 values[ATTRIBUTE_LAST] = { 1.0f, 1.0f };
+
+        return values[index];
     }
 
-    AmReal32 WaveShaperFilter::GetParamMin(AmUInt32 index) const
+    AmReal32 WaveShaperFilter::GetParameterMin(AmUInt32 index) const
     {
-        if (index == ATTRIBUTE_AMOUNT)
-            return -1.0f;
+        if (index >= ATTRIBUTE_LAST)
+            return 0.0f;
 
-        return 0.0f;
+        static const AmReal32 values[ATTRIBUTE_LAST] = { 0.0f, -1.0f };
+
+        return values[index];
     }
 
     std::shared_ptr<FilterInstance> WaveShaperFilter::CreateInstance()
     {
-        return AmSharedPtr<WaveShaperFilterInstance, eMemoryPoolKind_Filtering>::Make(this);
+        return ampoolshared(eMemoryPoolKind_Filtering, WaveShaperFilterInstance, this);
     }
 
     WaveShaperFilterInstance::WaveShaperFilterInstance(WaveShaperFilter* parent)
         : FilterInstance(parent)
     {
-        Initialize(parent->GetParamCount());
+        Initialize(parent->GetParameterCount());
         m_parameters[WaveShaperFilter::ATTRIBUTE_AMOUNT] = parent->_amount;
     }
 

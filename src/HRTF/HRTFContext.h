@@ -23,8 +23,8 @@ namespace SparkyStudios::Audio::Amplitude
 {
     struct HRTFContext
     {
-        AmVec3 m_CurrentDirection = { 0.0f, 0.0f, 0.0f };
-        AmVec3 m_PreviousDirection = { 0.0f, 0.0f, 0.0f };
+        AmVector3 m_CurrentDirection = { 0.0f, 0.0f, 0.0f };
+        AmVector3 m_PreviousDirection = { 0.0f, 0.0f, 0.0f };
 
         AmAlignedReal32Buffer m_PreviousSamplesL;
         AmAlignedReal32Buffer m_PreviousSamplesR;

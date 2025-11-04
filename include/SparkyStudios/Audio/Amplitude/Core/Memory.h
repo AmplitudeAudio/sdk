@@ -1,4 +1,3 @@
-
 // Copyright (c) 2021-present Sparky Studios. All rights reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
@@ -19,6 +18,14 @@
 #define _AM_CORE_MEMORY_H
 
 #include <SparkyStudios/Audio/Amplitude/Core/Common.h>
+
+#include <memory>
+#include <set>
+
+#if !defined(AM_NO_MEMORY_STATS)
+#include <atomic>
+#include <unordered_map>
+#endif
 
 /**
  * @brief Shortcut access to the Amplitude's memory manager instance.
@@ -155,7 +162,7 @@
  *
  * @ingroup memory
  */
-#define ampoolnew(_pool_, _type_, ...) new (ampoolmalign((_pool_), sizeof(_type_), alignof(_type_))) _type_(__VA_ARGS__)
+#define ampoolnew(_pool_, _type_, ...) new (ampoolmalign(_pool_, sizeof(_type_), alignof(_type_))) _type_(__VA_ARGS__)
 
 /**
  * @brief Deallocates a memory allocated with @ref ampoolnew ampoolnew.
@@ -171,13 +178,15 @@
  * @ingroup memory
  */
 #define ampooldelete(_pool_, _type_, _ptr_)                                                                                                \
+    do                                                                                                                                     \
     {                                                                                                                                      \
-        if ((_ptr_) != nullptr)                                                                                                            \
+        _type_* __amp_tmp = (_ptr_);                                                                                                       \
+        if (__amp_tmp != nullptr)                                                                                                          \
         {                                                                                                                                  \
-            (_ptr_)->~_type_();                                                                                                            \
-            ampoolfree((_pool_), (_ptr_));                                                                                                 \
+            __amp_tmp->~_type_();                                                                                                          \
+            ampoolfree(_pool_, __amp_tmp);                                                                                                 \
         }                                                                                                                                  \
-    }
+    } while (0)
 
 /**
  * @brief Allocates memory for a new object in the Default pool using the memory manager.
@@ -207,6 +216,68 @@
  * @ingroup memory
  */
 #define amdelete(_type_, _ptr_) ampooldelete(SparkyStudios::Audio::Amplitude::eMemoryPoolKind_Default, _type_, _ptr_)
+
+/**
+ * @brief Creates a unique pointer to an object allocated in a specific memory pool.
+ *
+ * This will create a new memory allocation in the specified pool. The allocated
+ * memory will be freed when the object is destroyed using @ref amdelete amdelete.
+ *
+ * @param __pool__ The memory pool to allocate the object in.
+ * @param __type__ The type of the object to allocate.
+ * @param ... Additional arguments to pass to the constructor of the object.
+ *
+ * @see @ref amdelete amdelete
+ *
+ * @ingroup memory
+ */
+#define ampoolunique(__pool__, __type__, ...) AmUniquePtr<__type__, __pool__>(ampoolnew(__pool__, __type__, __VA_ARGS__))
+
+/**
+ * @brief Creates a unique pointer to an object allocated in the default memory pool.
+ *
+ * This will create a new memory allocation in the default pool. The allocated
+ * memory will be freed when the object is destroyed using @ref amdelete amdelete.
+ *
+ * @param __type__ The type of the object to allocate.
+ * @param ... Additional arguments to pass to the constructor of the object.
+ *
+ * @see @ref amdelete amdelete
+ *
+ * @ingroup memory
+ */
+#define amunique(_type_, ...) ampoolunique(SparkyStudios::Audio::Amplitude::eMemoryPoolKind_Default, _type_, __VA_ARGS__)
+
+/**
+ * @brief Creates a shared pointer to an object allocated in a specific memory pool.
+ *
+ * This will create a new memory allocation in the specified pool. The allocated
+ * memory will be freed when the last shared pointer to the object is destroyed.
+ *
+ * @param __pool__ The memory pool to allocate the object in.
+ * @param __type__ The type of the object to allocate.
+ * @param ... Additional arguments to pass to the constructor of the object.
+ *
+ * @see @ref amdelete amdelete
+ *
+ * @ingroup memory
+ */
+#define ampoolshared(__pool__, __type__, ...) AmSharedPtr<__type__, __pool__>::Make(__VA_ARGS__)
+
+/**
+ * @brief Creates a shared pointer to an object allocated in the default memory pool.
+ *
+ * This will create a new memory allocation in the default pool. The allocated
+ * memory will be freed when the last shared pointer to the object is destroyed.
+ *
+ * @param __type__ The type of the object to allocate.
+ * @param ... Additional arguments to pass to the constructor of the object.
+ *
+ * @see @ref amdelete amdelete
+ *
+ * @ingroup memory
+ */
+#define amshared(_type_, ...) ampoolshared(SparkyStudios::Audio::Amplitude::eMemoryPoolKind_Default, _type_, __VA_ARGS__)
 
 namespace SparkyStudios::Audio::Amplitude
 {
@@ -702,7 +773,7 @@ namespace SparkyStudios::Audio::Amplitude
         std::set<Allocation> _memAllocations;
 
 #if !defined(AM_NO_MEMORY_STATS)
-        std::map<eMemoryPoolKind, MemoryPoolStats> _memPoolsStats;
+        std::unordered_map<eMemoryPoolKind, MemoryPoolStats> _memPoolsStats;
 #endif
     };
 
@@ -742,6 +813,26 @@ namespace SparkyStudios::Audio::Amplitude
          * @param[in] line The line in which the allocation was made.
          */
         ScopedMemoryAllocation(eMemoryPoolKind pool, AmSize size, AmUInt32 alignment, const char* file, AmUInt32 line);
+
+        /**
+         * @brief Copy constructor is deleted to prevent double free.
+         */
+        ScopedMemoryAllocation(const ScopedMemoryAllocation&) = delete;
+
+        /**
+         * @brief Copy assignment operator is deleted to prevent double free.
+         */
+        ScopedMemoryAllocation& operator=(const ScopedMemoryAllocation&) = delete;
+
+        /**
+         * @brief Move constructor transfers ownership.
+         */
+        ScopedMemoryAllocation(ScopedMemoryAllocation&& other) noexcept;
+
+        /**
+         * @brief Move assignment operator transfers ownership.
+         */
+        ScopedMemoryAllocation& operator=(ScopedMemoryAllocation&& other) noexcept;
 
         /**
          * @brief Releases the allocated memory.

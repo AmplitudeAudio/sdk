@@ -15,6 +15,7 @@
 #include <SparkyStudios/Audio/Amplitude/Core/Memory.h>
 
 #include <DSP/Filters/DCRemovalFilter.h>
+#include <Utils/Utils.h>
 
 namespace SparkyStudios::Audio::Amplitude
 {
@@ -33,9 +34,44 @@ namespace SparkyStudios::Audio::Amplitude
         return eErrorCode_Success;
     }
 
+    AmUInt32 DCRemovalFilter::GetParameterCount() const
+    {
+        return ATTRIBUTE_LAST;
+    }
+
+    AmString DCRemovalFilter::GetParameterName(AmUInt32 index) const
+    {
+        if (index >= ATTRIBUTE_LAST)
+            return "Unknown";
+
+        static const AmString names[ATTRIBUTE_LAST] = { "Wet", "Length" };
+
+        return names[index];
+    }
+
+    eParameterType DCRemovalFilter::GetParameterType(AmUInt32 index) const
+    {
+        return eParameterType_Float;
+    }
+
+    AmReal32 DCRemovalFilter::GetParameterMax(AmUInt32 index) const
+    {
+        return (index >= ATTRIBUTE_LAST) ? 0.0f : 1.0f;
+    }
+
+    AmReal32 DCRemovalFilter::GetParameterMin(AmUInt32 index) const
+    {
+        if (index >= ATTRIBUTE_LAST)
+            return 0.0;
+
+        static const AmReal32 values[ATTRIBUTE_LAST] = { 0.0f, kEpsilon };
+
+        return values[index];
+    }
+
     std::shared_ptr<FilterInstance> DCRemovalFilter::CreateInstance()
     {
-        return AmSharedPtr<DCRemovalFilterInstance, eMemoryPoolKind_Filtering>::Make(this);
+        return ampoolshared(eMemoryPoolKind_Filtering, DCRemovalFilterInstance, this);
     }
 
     DCRemovalFilterInstance::DCRemovalFilterInstance(DCRemovalFilter* parent)
@@ -46,7 +82,7 @@ namespace SparkyStudios::Audio::Amplitude
         , _offset(0)
     {
         Initialize(DCRemovalFilter::ATTRIBUTE_LAST);
-        SetParameter(DCRemovalFilter::ATTRIBUTE_LAST, parent->_length);
+        SetParameter(DCRemovalFilter::ATTRIBUTE_LENGTH, parent->_length);
     }
 
     DCRemovalFilterInstance::~DCRemovalFilterInstance()
@@ -60,9 +96,7 @@ namespace SparkyStudios::Audio::Amplitude
         const AmUInt16 channels = in.GetChannelCount();
 
         if (_buffer.GetPointer() == nullptr)
-        {
             InitializeBuffer(channels, sampleRate);
-        }
 
         for (AmUInt16 c = 0; c < channels; c++)
         {

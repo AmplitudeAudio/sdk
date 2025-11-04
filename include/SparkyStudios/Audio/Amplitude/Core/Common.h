@@ -17,23 +17,6 @@
 #ifndef _AM_CORE_COMMON_H
 #define _AM_CORE_COMMON_H
 
-// Standard Library
-// --------------------------------------------------------------
-
-#include <algorithm>
-#include <array>
-#include <atomic>
-#include <cmath>
-#include <cstdlib>
-#include <cstring>
-#include <map>
-#include <memory>
-#include <numeric>
-#include <set>
-#include <string>
-#include <unordered_map>
-#include <vector>
-
 // Amplitude
 // --------------------------------------------------------------
 
@@ -41,8 +24,6 @@
 #include <SparkyStudios/Audio/Amplitude/Core/Common/Types.h>
 
 #include <SparkyStudios/Audio/Amplitude/Core/Common/Constants.h>
-
-#include <SparkyStudios/Audio/Amplitude/Math/HandmadeMath.h>
 
 // Common defines
 // --------------------------------------------------------------
@@ -90,6 +71,64 @@
  * @ingroup math
  */
 #define AM_BETWEEN(v, a, b) ((v) >= AM_MIN(a, b) && (v) <= AM_MAX(a, b))
+
+/**
+ * @brief Gets the minimum between two values.
+ *
+ * @param a The first value
+ * @param b The second value
+ *
+ * @return The lowest value between @c a and @c b.
+ *
+ * @ingroup math
+ */
+#define AM_MIN(a, b) ((a) < (b) ? (a) : (b))
+
+/**
+ * @brief Gets the maximum between two values.
+ *
+ * @param a The first value.
+ * @param b The second value.
+ *
+ * @return The highest value between @c a and @c b.
+ *
+ * @ingroup math
+ */
+#define AM_MAX(a, b) ((a) > (b) ? (a) : (b))
+
+/**
+ * @brief Gets the absolute version of a value.
+ *
+ * @param a The value.
+ *
+ * @return A positive number if @c a was negative.
+ *
+ * @ingroup math
+ */
+#define AM_ABS(a) ((a) > 0 ? (a) : -(a))
+
+/**
+ * @brief Compute modulo that always returns positive values.
+ *
+ * @param a The dividend
+ * @param m The divisor
+ *
+ * @return The positive modulo result.
+ *
+ * @ingroup math
+ */
+#define AM_MOD(a, m) (((a) % (m)) >= 0 ? ((a) % (m)) : (((a) % (m)) + (m)))
+
+/**
+ * @brief Compute the square of a number.
+ *
+ * @param x The number to square
+ *
+ * @return The squared value.
+ *
+ * @ingroup math
+ */
+#define AM_SQUARE(x) ((x) * (x))
 
 /**
  * @brief Declare a callback function type
@@ -449,6 +488,27 @@ namespace SparkyStudios::Audio::Amplitude
          * @brief Provides a more efficient binauralization, as the HRIR data are interpolated using only the nearest neighbors.
          */
         eHRIRSphereSamplingMode_NearestNeighbor = 1,
+    };
+
+    /**
+     * @brief Lists the available parameter types for a filter.
+     */
+    enum eParameterType
+    {
+        /**
+         * @brief The parameter stores a @c float value.
+         */
+        eParameterType_Float = 0,
+
+        /**
+         * @brief The parameter stores an @c integer value.
+         */
+        eParameterType_Int,
+
+        /**
+         * @brief The parameter stores a @c boolean value.
+         */
+        eParameterType_Bool
     };
 
     /**

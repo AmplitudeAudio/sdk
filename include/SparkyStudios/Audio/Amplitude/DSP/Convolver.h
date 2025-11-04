@@ -24,6 +24,8 @@
 
 #include <SparkyStudios/Audio/Amplitude/DSP/FFT.h>
 
+#include <vector>
+
 namespace SparkyStudios::Audio::Amplitude
 {
     /**

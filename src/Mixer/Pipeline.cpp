@@ -94,8 +94,7 @@ namespace SparkyStudios::Audio::Amplitude
 
     std::shared_ptr<PipelineInstance> PipelineImpl::CreateInstance(const AmplimixLayer* layer) const
     {
-        auto instance =
-            AmSharedPtr<PipelineInstanceImpl, eMemoryPoolKind_Amplimix>::Make(this, static_cast<const AmplimixLayerImpl*>(layer));
+        auto instance = ampoolshared(eMemoryPoolKind_Amplimix, PipelineInstanceImpl, this, static_cast<const AmplimixLayerImpl*>(layer));
 
         const auto* definition = GetDefinition();
         const auto* nodes = definition->nodes();
@@ -151,8 +150,14 @@ namespace SparkyStudios::Audio::Amplitude
                 instance->AddNode(nodeId, nodeName, nodeInstance);
             }
 
+            const flatbuffers::uoffset_t paramCount = nodeDef->parameters() ? nodeDef->parameters()->size() : 0;
+
             // Initialize the node with the provided parameters
-            nodeInstance->Initialize(nodeId, layer, instance.get());
+            nodeInstance->Initialize(nodeId, layer, instance.get(), paramCount);
+
+            // Initialize the node parameters
+            for (flatbuffers::uoffset_t i = 0; i < paramCount; ++i)
+                nodeInstance->SetParameter(i, nodeDef->parameters()->Get(i));
 
             // Connect the node inputs
             if (node->CanConsume())

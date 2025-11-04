@@ -21,8 +21,6 @@
 
 #include <SparkyStudios/Audio/Amplitude/Core/Playback/Channel.h>
 
-#include <SparkyStudios/Audio/Amplitude/Math/HandmadeMath.h>
-
 #include <SparkyStudios/Audio/Amplitude/Sound/Collection.h>
 #include <SparkyStudios/Audio/Amplitude/Sound/Fader.h>
 #include <SparkyStudios/Audio/Amplitude/Sound/Sound.h>
@@ -60,7 +58,7 @@ namespace SparkyStudios::Audio::Amplitude
         /**
          * @brief Initialize this channel.
          */
-        void Initialize(int index);
+        void Initialize(AmChannelID index);
 
         /**
          * @brief Play all the sound instances on the real channel.
@@ -114,11 +112,6 @@ namespace SparkyStudios::Audio::Amplitude
          * @brief Get the current GetGain of the real channel.
          */
         [[nodiscard]] AmReal32 GetGain(AmUInt32 layer = kAmInvalidObjectId) const;
-
-        /**
-         * @brief Set the pan for the sound. This should be a unit vector.
-         */
-        void SetPan(const AmVec2& pan);
 
         /**
          * @brief Set the pitch of the sound.
@@ -208,7 +201,6 @@ namespace SparkyStudios::Audio::Amplitude
         void SetOcclusion(AmReal32 occlusion);
 
     private:
-        void SetGainPan(AmReal32 gain, AmReal32 pan, AmUInt32 layer);
         [[nodiscard]] AmUInt32 FindFreeLayer(AmUInt32 layerIndex = 0) const;
 
         AmChannelID _channelId;
@@ -218,7 +210,6 @@ namespace SparkyStudios::Audio::Amplitude
         std::map<AmUInt32, bool> _loop;
 
         AmReal32 _defaultGain;
-        AmReal32 _pan;
         std::map<AmUInt32, AmReal32> _gain;
         AmReal32 _pitch;
         AmReal32 _playSpeed;

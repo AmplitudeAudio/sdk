@@ -85,72 +85,64 @@ namespace SparkyStudios::Audio::Amplitude
         return Initialize(TYPE_DUAL_BAND_HIGH_PASS, frequency, 0.0f, 0.0f);
     }
 
-    AmUInt32 BiquadResonantFilter::GetParamCount() const
+    AmUInt32 BiquadResonantFilter::GetParameterCount() const
     {
         return ATTRIBUTE_LAST;
     }
 
-    AmString BiquadResonantFilter::GetParamName(AmUInt32 index) const
+    AmString BiquadResonantFilter::GetParameterName(AmUInt32 index) const
     {
         if (index >= ATTRIBUTE_LAST)
-            return "";
+            return "Unknown";
 
-        // clang-format off
-        AmString names[ATTRIBUTE_LAST] = {
-            "Wet", "Type", "Frequency",
-            _filterType == TYPE_LOW_SHELF || _filterType == TYPE_HIGH_SHELF ? "S" : "Q",
-            "Gain"
-        };
-        // clang-format on
-
-        return names[index];
-    }
-
-    AmUInt32 BiquadResonantFilter::GetParamType(AmUInt32 index) const
-    {
-        if (index == ATTRIBUTE_TYPE)
-            return kParameterTypeInt;
-
-        return kParameterTypeFloat;
-    }
-
-    AmReal32 BiquadResonantFilter::GetParamMax(AmUInt32 index) const
-    {
         switch (index)
         {
         case ATTRIBUTE_WET:
-            return 1;
+            return "Wet";
         case ATTRIBUTE_TYPE:
-            return TYPE_LAST - 1;
+            return "Type";
         case ATTRIBUTE_FREQUENCY:
-            return 30000.0f;
+            return "Frequency";
         case ATTRIBUTE_RESONANCE:
-            return 40.0f;
+            return _filterType == TYPE_LOW_SHELF || _filterType == TYPE_HIGH_SHELF ? "S" : "Resonance";
         case ATTRIBUTE_GAIN:
-            return 30.0f;
+            return "Gain";
         default:
-            return 1.0f;
+            return "Unknown";
         }
     }
 
-    AmReal32 BiquadResonantFilter::GetParamMin(AmUInt32 index) const
+    eParameterType BiquadResonantFilter::GetParameterType(AmUInt32 index) const
     {
-        switch (index)
-        {
-        case ATTRIBUTE_FREQUENCY:
-            return 10.0f;
-        case ATTRIBUTE_RESONANCE:
-            return 0.025f;
-        case ATTRIBUTE_GAIN:
-            return -30.0f;
-        default:
-            return 0.0f;
-        }
+        if (index == ATTRIBUTE_TYPE)
+            return eParameterType_Int;
+
+        return eParameterType_Float;
+    }
+
+    AmReal32 BiquadResonantFilter::GetParameterMax(AmUInt32 index) const
+    {
+        if (index >= ATTRIBUTE_LAST)
+            return 0.0;
+
+        static const AmReal32 values[ATTRIBUTE_LAST] = { 1.0f, TYPE_LAST - 1, 30000.0f, 40.0f, 30.0f };
+
+        return values[index];
+    }
+
+    AmReal32 BiquadResonantFilter::GetParameterMin(AmUInt32 index) const
+    {
+        if (index >= ATTRIBUTE_LAST)
+            return 0.0;
+
+        static const AmReal32 values[ATTRIBUTE_LAST] = { 0.0f, 0.0f, 10.0f, 0.025f, -30.0f };
+
+        return values[index];
     }
 
     std::shared_ptr<FilterInstance> BiquadResonantFilter::CreateInstance()
     {
-        return AmSharedPtr<BiquadResonantFilterInstance, eMemoryPoolKind_Filtering>::Make(this);
+        return ampoolshared(eMemoryPoolKind_Filtering, BiquadResonantFilterInstance, this);
     }
 
     BiquadResonantFilterInstance::BiquadResonantFilterInstance(BiquadResonantFilter* parent)

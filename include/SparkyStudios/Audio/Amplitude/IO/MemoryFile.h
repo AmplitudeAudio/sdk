@@ -19,6 +19,8 @@
 
 #include <SparkyStudios/Audio/Amplitude/IO/File.h>
 
+#include <filesystem>
+
 namespace SparkyStudios::Audio::Amplitude
 {
     /**
@@ -57,12 +59,12 @@ namespace SparkyStudios::Audio::Amplitude
         /**
          * @inherit
          */
-        bool Eof() override;
+        [[nodiscard]] bool Eof() const override;
 
         /**
          * @inherit
          */
-        AmSize Read(AmUInt8Buffer dst, AmSize bytes) override;
+        AmSize Read(AmUInt8Buffer dst, AmSize bytes) const override;
 
         /**
          * @inherit
@@ -72,7 +74,7 @@ namespace SparkyStudios::Audio::Amplitude
         /**
          * @inherit
          */
-        AmSize Length() override;
+        [[nodiscard]] AmSize Length() const override;
 
         /**
          * @inherit
@@ -82,17 +84,22 @@ namespace SparkyStudios::Audio::Amplitude
         /**
          * @inherit
          */
-        AmSize Position() override;
+        [[nodiscard]] AmSize Position() const override;
 
         /**
          * @inherit
          */
-        AmVoidPtr GetPtr() override;
+        [[nodiscard]] AmVoidPtr GetPtr() const override;
 
         /**
          * @inherit
          */
         [[nodiscard]] bool IsValid() const override;
+
+        /**
+         * @inherit
+         */
+        void Close() override;
 
         /**
          * @brief Opens a new memory buffer with the specified size.
@@ -133,15 +140,10 @@ namespace SparkyStudios::Audio::Amplitude
          */
         AmResult OpenFileToMem(File* file);
 
-        /**
-         * @brief Closes the memory buffer and releases associated resources.
-         */
-        void Close();
-
     private:
         AmUInt8Buffer m_dataPtr;
         AmSize m_dataSize;
-        AmSize m_offset;
+        mutable AmSize m_offset;
         bool m_dataOwned;
     };
 } // namespace SparkyStudios::Audio::Amplitude

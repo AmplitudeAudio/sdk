@@ -45,27 +45,27 @@ namespace SparkyStudios::Audio::Amplitude
     Filter::~Filter()
     {}
 
-    AmUInt32 Filter::GetParamCount() const
+    AmUInt32 Filter::GetParameterCount() const
     {
         return 1;
     }
 
-    AmString Filter::GetParamName(AmUInt32 index) const
+    AmString Filter::GetParameterName(AmUInt32 index) const
     {
         return "Wet";
     }
 
-    AmUInt32 Filter::GetParamType(AmUInt32 index) const
+    eParameterType Filter::GetParameterType(AmUInt32 index) const
     {
-        return Filter::kParameterTypeFloat;
+        return eParameterType_Float;
     }
 
-    AmReal32 Filter::GetParamMax(AmUInt32 index) const
+    AmReal32 Filter::GetParameterMax(AmUInt32 index) const
     {
         return 1.0f;
     }
 
-    AmReal32 Filter::GetParamMin(AmUInt32 index) const
+    AmReal32 Filter::GetParameterMin(AmUInt32 index) const
     {
         return 0.0f;
     }
@@ -136,36 +136,20 @@ namespace SparkyStudios::Audio::Amplitude
 
     FilterInstance::FilterInstance(Filter* parent)
         : m_parent(parent)
-        , m_numParams(0)
         , m_numParamsChanged(0)
-        , m_parameters(nullptr)
+        , m_parameters()
     {}
 
     FilterInstance::~FilterInstance()
     {
-        if (m_parameters != nullptr)
-            ampoolfree(eMemoryPoolKind_Filtering, m_parameters);
+        m_parameters.clear();
     }
 
     AmResult FilterInstance::Initialize(AmUInt32 numParams)
     {
-        if (m_parameters != nullptr)
-            ampoolfree(eMemoryPoolKind_Filtering, m_parameters);
+        m_parameters.clear();
 
-        m_numParams = numParams;
-        m_parameters = static_cast<AmReal32Buffer>(ampoolmalloc(eMemoryPoolKind_Filtering, numParams * sizeof(AmReal32)));
-
-        if (m_parameters == nullptr)
-        {
-            ampoolfree(eMemoryPoolKind_Filtering, m_parameters);
-
-            m_parameters = nullptr;
-            m_numParams = 0;
-
-            return eErrorCode_OutOfMemory;
-        }
-
-        std::memset(m_parameters, 0, m_numParams * sizeof(AmReal32));
+        m_parameters.assign(numParams, 0);
 
         m_parameters[0] = 1; // Set 'Wet' to 1
 
@@ -199,7 +183,7 @@ namespace SparkyStudios::Audio::Amplitude
 
     AmReal32 FilterInstance::GetParameter(AmUInt32 attributeId)
     {
-        if (attributeId >= m_numParams)
+        if (attributeId >= m_parameters.size())
             return 0;
 
         return m_parameters[attributeId];
@@ -207,7 +191,7 @@ namespace SparkyStudios::Audio::Amplitude
 
     void FilterInstance::SetParameter(AmUInt32 attributeId, AmReal32 value)
     {
-        if (attributeId >= m_numParams)
+        if (attributeId >= m_parameters.size())
             return;
 
         if (m_parameters[attributeId] == value)

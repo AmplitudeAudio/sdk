@@ -1,0 +1,288 @@
+name: Build XMake Project
+
+on:
+  workflow_call:
+    inputs:
+      project-path:
+        required: true
+        type: string
+      project-slug:
+        required: true
+        type: string
+      pull-sdk:
+        required: false
+        type: boolean
+        default: false
+      sdk-version:
+        required: false
+        type: string
+        default: nightly
+      need-flatc:
+        required: false
+        type: boolean
+        default: true
+
+jobs:
+  build:
+    name: "[${{ matrix.build_type }}] ${{ matrix.config.name }}"
+    runs-on: ${{ matrix.config.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        build_type: ["release", "debug", "coverage"]
+        config:
+          - name: "Windows Latest MSVC"
+            os: windows-latest
+            arch: x64
+            plat: windows
+
+          - name: "Ubuntu Latest GCC"
+            os: ubuntu-24.04
+            arch: x86_64
+            plat: linux
+
+          - name: "Ubuntu Latest Clang"
+            toolchain: clang
+            os: ubuntu-24.04
+            arch: x86_64
+            plat: linux
+
+          - name: "macOS x64 Latest Clang"
+            os: macos-15-intel
+            arch: x86_64
+            plat: macosx
+
+          - name: "macOS arm64 Latest Clang"
+            os: macos-15
+            arch: arm64
+            plat: macosx
+
+          - name: "Android x64 Latest Clang"
+            os: ubuntu-latest
+            arch: x86_64
+            plat: android
+
+          - name: "Android arm64 Latest Clang"
+            os: ubuntu-latest
+            arch: arm64-v8a
+            plat: android
+
+          - name: "Android x86 Latest Clang"
+            os: ubuntu-latest
+            arch: x86
+            plat: android
+
+          - name: "Android arm Latest Clang"
+            os: ubuntu-latest
+            arch: armeabi-v7a
+            plat: android
+
+          - name: "iOS arm64 Latest Clang"
+            os: macos-15
+            arch: arm64
+            plat: iphoneos
+
+          - name: "iOS x86_64 Latest Clang"
+            os: macos-15-intel
+            arch: x86_64
+            plat: iphoneos
+        exclude:
+          - build_type: "coverage"
+            config:
+              plat: android
+          - build_type: "coverage"
+            config:
+              plat: iphoneos
+
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          submodules: recursive
+
+      - name: Free Disk Space (Ubuntu)
+        if: startsWith(matrix.config.os, 'ubuntu')
+        uses: jlumbroso/free-disk-space@main
+        with:
+          tool-cache: true
+          android: ${{ matrix.config.plat == 'android' }}
+          dotnet: true
+          haskell: true
+          large-packages: true
+          docker-images: true
+          swap-storage: true
+
+      - name: Setup Amplitude Audio SDK
+        uses: AmplitudeAudio/action-setup-sdk@main
+        if: inputs.pull-sdk
+        id: sdk_path
+        with:
+          platforms: |
+            ${{ matrix.config.arch }}-${{ matrix.config.plat }}
+          version: ${{ inputs.sdk-version }}
+          install-dir: "${{ github.workspace }}/amplitude_audio"
+          config: ${{ matrix.build_type }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Print env
+        run: |
+          echo github.event.action: ${{ github.event.action }}
+          echo github.event_name: ${{ github.event_name }}
+
+      - name: Find flatc version
+        if: matrix.config.plat == 'android' || matrix.config.plat == 'iphoneos'
+        id: flatc_version
+        uses: tdemin/find-latest-tag@v1
+        with:
+          repo: https://github.com/google/flatbuffers.git
+
+      - name: Setup xmake
+        uses: xmake-io/github-action-setup-xmake@v1
+        with:
+          xmake-version: latest
+          actions-cache-folder: ".xmake-cache"
+          actions-cache-key: ${{ matrix.config.arch }}-${{ matrix.config.plat }}
+
+      - name: Setup python
+        uses: actions/setup-python@v6
+        with:
+          python-version: "3.14"
+
+      - name: Install dependencies on Windows
+        if: startsWith(matrix.config.os, 'windows')
+        run: |
+          choco install curl
+          xmake --version
+
+      - name: Install dependencies on Ubuntu
+        if: startsWith(matrix.config.os, 'ubuntu')
+        run: |
+          sudo apt-get update
+          sudo apt-get install autoconf automake libtool pkg-config libltdl-dev
+          if [[ "${{ matrix.config.toolchain }}" == "clang" ]]; then
+            sudo apt-get install clang
+            clang --version
+          else
+            gcc --version
+          fi
+          xmake --version
+
+      - name: Cache kcov build
+        if: startsWith(matrix.config.os, 'ubuntu')
+        uses: actions/cache@v4
+        id: kcov-cache
+        with:
+          path: /usr/local/bin/kcov
+          key: kcov-${{ matrix.config.os }}-v43
+
+      - name: Build and install kcov
+        if: startsWith(matrix.config.os, 'ubuntu') && steps.kcov-cache.outputs.cache-hit != 'true'
+        run: |
+          sudo apt-get install binutils-dev build-essential cmake libssl-dev libcurl4-openssl-dev libelf-dev libstdc++-12-dev zlib1g-dev libdw-dev libiberty-dev
+          git clone https://github.com/SimonKagstrom/kcov.git /tmp/kcov
+          cd /tmp/kcov
+          git checkout v43
+          mkdir build
+          cd build
+          cmake ..
+          make -j$(nproc)
+          sudo make install
+          kcov --version
+
+      - name: Setup Android NDK
+        id: setup-ndk
+        if: matrix.config.plat == 'android'
+        uses: nttld/setup-ndk@v1
+        with:
+          ndk-version: r27c
+
+      - name: Install dependencies on MacOS
+        if: startsWith(matrix.config.os, 'macos')
+        run: |
+          brew install p7zip kcov
+          kcov --version
+          xmake --version
+
+      - name: Install Local flatc (Android)
+        if: matrix.config.plat == 'android'
+        run: |
+          wget https://github.com/google/flatbuffers/releases/download/v25.9.23/Linux.flatc.binary.g++-13.zip
+          mkdir bin
+          sudo unzip Linux.flatc.binary.g++-13.zip -d bin
+          ./bin/flatc --version
+
+      - name: Install Local flatc (iOS)
+        if: matrix.config.plat == 'iphoneos'
+        run: |
+          wget https://github.com/google/flatbuffers/releases/download/v25.9.23/Mac.flatc.binary.zip
+          mkdir bin
+          sudo unzip Mac.flatc.binary.zip -d bin
+          ./bin/flatc --version
+
+      - name: Setup Latest Xcode version
+        if: startsWith(matrix.config.os, 'macos')
+        uses: maxim-lobanov/setup-xcode@v1.6.0
+        with:
+          xcode-version: latest
+
+      - name: Restore SDK Cache
+        if: matrix.build_type != 'coverage'
+        uses: actions/cache/restore@v4
+        with:
+          enableCrossOsArchive: true
+          path: sdk
+          key: "${{ matrix.build_type }}-${{ inputs.project-slug }}-${{ matrix.config.arch }}-${{ matrix.config.plat }}"
+          restore-keys: |
+            ${{ matrix.build_type }}-${{ inputs.project-slug }}-${{ matrix.config.arch }}-${{ matrix.config.plat }}
+
+      - name: Configure
+        working-directory: ${{ inputs.project-path }}
+        run: |
+          xmake f -y -a ${{ matrix.config.arch }} -p ${{ matrix.config.plat }} -m ${{ matrix.build_type == 'coverage' && 'debug' || matrix.build_type }} ${{ matrix.config.toolchain && format('--toolchain={0}', matrix.config.toolchain) || '' }} --build_samples=n --build_tools=${{ matrix.config.plat == 'android' && 'n' || 'y' }} --unit_tests=${{ matrix.build_type == 'coverage' && 'y' || 'n' }} --build_assets=${{ matrix.build_type == 'coverage' && 'y' || 'n' }}
+        env:
+          AM_SDK_PATH: "${{ steps.sdk_path.outputs.path }}/sdk"
+          AM_SDK_PLATFORM: "${{ matrix.config.arch }}-${{ matrix.config.plat }}"
+          ANDROID_NDK_HOME: ${{ steps.setup-ndk.outputs.ndk-path }}
+
+      - name: Build
+        working-directory: ${{ inputs.project-path }}
+        run: xmake b -y
+
+      - name: Test
+        if: ${{ matrix.build_type == 'coverage' && matrix.config.plat != 'android' }}
+        working-directory: ${{ inputs.project-path }}
+        run: |
+          xmake test -y
+        env:
+          AM_SDK_PATH: "${{ steps.sdk_path.outputs.path }}/sdk"
+          AM_SDK_PLATFORM: "${{ matrix.config.arch }}-${{ matrix.config.plat }}"
+
+      - name: Generate coverage
+        continue-on-error: true
+        if: false && matrix.build_type == 'coverage' && !startsWith(matrix.config.os, 'windows')
+        working-directory: ${{ inputs.project-path }}
+        run: |
+          xmake b -y coverage_generate_test_report
+
+      - name: Upload coverage to Codecov
+        continue-on-error: true
+        if: false && matrix.build_type == 'coverage' && !startsWith(matrix.config.os, 'windows')
+        uses: codecov/codecov-action@v5
+        with:
+          directory: ${{ inputs.project-path }}/coverage/merged
+        env:
+          CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
+
+      - name: Install
+        if: matrix.build_type != 'coverage'
+        working-directory: ${{ inputs.project-path }}
+        run: xmake i -o sdk
+
+      - name: Save SDK Cache
+        if: matrix.build_type != 'coverage'
+        uses: actions/cache/save@v4
+        id: cache
+        with:
+          enableCrossOsArchive: true
+          path: ${{ inputs.project-path }}/sdk
+          key: ${{ matrix.build_type }}-${{ inputs.project-slug }}-${{ matrix.config.arch }}-${{ matrix.config.plat }}

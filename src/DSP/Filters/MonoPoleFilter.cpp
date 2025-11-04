@@ -15,6 +15,7 @@
 #include <SparkyStudios/Audio/Amplitude/Core/Memory.h>
 
 #include <DSP/Filters/MonoPoleFilter.h>
+#include <Utils/Utils.h>
 
 namespace SparkyStudios::Audio::Amplitude
 {
@@ -60,46 +61,48 @@ namespace SparkyStudios::Audio::Amplitude
         return eErrorCode_Success;
     }
 
-    AmUInt32 MonoPoleFilter::GetParamCount() const
+    AmUInt32 MonoPoleFilter::GetParameterCount() const
     {
         return ATTRIBUTE_LAST;
     }
 
-    AmString MonoPoleFilter::GetParamName(AmUInt32 index) const
+    AmString MonoPoleFilter::GetParameterName(AmUInt32 index) const
     {
         if (index >= ATTRIBUTE_LAST)
-            return "";
+            return "Unknown";
 
-        static constexpr const char* names[ATTRIBUTE_LAST] = { "Wet", "Coefficient" };
+        static const AmString names[ATTRIBUTE_LAST] = { "Wet", "Coefficient" };
 
         return names[index];
     }
 
-    AmUInt32 MonoPoleFilter::GetParamType(AmUInt32 index) const
+    eParameterType MonoPoleFilter::GetParameterType(AmUInt32 index) const
     {
-        return kParameterTypeFloat;
+        return eParameterType_Float;
     }
 
-    AmReal32 MonoPoleFilter::GetParamMax(AmUInt32 index) const
+    AmReal32 MonoPoleFilter::GetParameterMax(AmUInt32 index) const
     {
-        switch (index)
-        {
-        case ATTRIBUTE_WET:
-        case ATTRIBUTE_COEFFICIENT:
-            return 1.0f;
-
-        default:
+        if (index >= ATTRIBUTE_LAST)
             return 0.0f;
-        }
+
+        static const AmReal32 values[ATTRIBUTE_LAST] = { 1.0f, 1.0f };
+
+        return values[index];
     }
 
-    AmReal32 MonoPoleFilter::GetParamMin(AmUInt32 index) const
+    AmReal32 MonoPoleFilter::GetParameterMin(AmUInt32 index) const
     {
-        return 0.0f;
+        if (index >= ATTRIBUTE_LAST)
+            return 0.0f;
+
+        static const AmReal32 values[ATTRIBUTE_LAST] = { 0.0f, 0.0f };
+
+        return values[index];
     }
 
     std::shared_ptr<FilterInstance> MonoPoleFilter::CreateInstance()
     {
-        return AmSharedPtr<MonoPoleFilterInstance, eMemoryPoolKind_Filtering>::Make(this);
+        return ampoolshared(eMemoryPoolKind_Filtering, MonoPoleFilterInstance, this);
     }
 } // namespace SparkyStudios::Audio::Amplitude

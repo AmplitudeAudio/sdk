@@ -66,12 +66,13 @@ namespace SparkyStudios::Audio::Amplitude
         /**
          * @brief Initializes the sound bank by loading all the packed data.
          *
-         * @param[in] fileData The sound bank file content.
+         * @param[in] ptr The sound bank file content.
+         * @param[in] size The size of the sound bank file content.
          * @param[in] engine The engine instance in which load the sound bank.
          *
          * @return @c true when the operation succeeds, @c false otherwise.
          */
-        bool InitializeFromMemory(const AmUInt8* fileData, Engine* engine);
+        bool InitializeFromMemoryView(AmConstVoidPtr ptr, AmUInt32 size, Engine* engine);
 
         /**
          * @brief Unloads the sound bank from the Engine.

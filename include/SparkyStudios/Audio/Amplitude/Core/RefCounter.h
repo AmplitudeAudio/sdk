@@ -19,6 +19,8 @@
 
 #include <SparkyStudios/Audio/Amplitude/Core/Common.h>
 
+#include <atomic>
+
 namespace SparkyStudios::Audio::Amplitude
 {
     /**

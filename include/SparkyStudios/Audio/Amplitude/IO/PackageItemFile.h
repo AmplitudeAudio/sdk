@@ -17,7 +17,7 @@
 #ifndef _AM_IO_PACKAGE_FILE_H
 #define _AM_IO_PACKAGE_FILE_H
 
-#include <SparkyStudios/Audio/Amplitude/IO/DiskFile.h>
+#include <SparkyStudios/Audio/Amplitude/IO/File.h>
 #include <SparkyStudios/Audio/Amplitude/IO/PackageFileSystem.h>
 
 namespace SparkyStudios::Audio::Amplitude
@@ -27,17 +27,22 @@ namespace SparkyStudios::Audio::Amplitude
      *
      * @ingroup io
      */
-    class AM_API_PUBLIC PackageItemFile : public DiskFile
+    class AM_API_PUBLIC PackageItemFile : public File
     {
     public:
         /**
          * @brief Constructs a new @c PackageItemFile instance.
          *
          * @param[in] item The description of the package item.
-         * @param[in] packageFile The path to the package file.
+         * @param[in] packageFile The package file containing this item.
          * @param[in] headerSize The size of the package file header.
          */
-        PackageItemFile(const PackageFileItemDescription* item, const std::filesystem::path& packageFile, AmSize headerSize);
+        PackageItemFile(const PackageFileItemDescription* item, std::shared_ptr<File> packageFile, AmSize headerSize);
+
+        /**
+         * @brief Destroys this instance.
+         */
+        ~PackageItemFile() override;
 
         /**
          * @inherit
@@ -47,12 +52,12 @@ namespace SparkyStudios::Audio::Amplitude
         /**
          * @inherit
          */
-        bool Eof() override;
+        [[nodiscard]] bool Eof() const override;
 
         /**
          * @inherit
          */
-        AmSize Read(AmUInt8Buffer dst, AmSize bytes) override;
+        AmSize Read(AmUInt8Buffer dst, AmSize bytes) const override;
 
         /**
          * @inherit
@@ -64,7 +69,7 @@ namespace SparkyStudios::Audio::Amplitude
         /**
          * @inherit
          */
-        AmSize Length() override;
+        [[nodiscard]] AmSize Length() const override;
 
         /**
          * @inherit
@@ -74,11 +79,34 @@ namespace SparkyStudios::Audio::Amplitude
         /**
          * @inherit
          */
-        AmSize Position() override;
+        [[nodiscard]] AmSize Position() const override;
+
+        /**
+         * @inherit
+         */
+        [[nodiscard]] AmVoidPtr GetPtr() const override;
+
+        /**
+         * @inherit
+         */
+        [[nodiscard]] bool IsValid() const override;
+
+        /**
+         * @inherit.
+         */
+        void Close() override;
+
+        /**
+         * @brief Get the base position of this file item in the entire package file.
+         */
+        [[nodiscard]] AmSize GetBasePosition() const;
 
     private:
+        std::shared_ptr<File> _packageFile;
         const PackageFileItemDescription* _description;
-        AmSize _headerSize;
+        const bool _isCompressed;
+        const AmSize _headerSize;
+        mutable AmInt64 _currentPosition;
     };
 } // namespace SparkyStudios::Audio::Amplitude
 

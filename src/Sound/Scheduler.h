@@ -17,6 +17,8 @@
 #ifndef _AM_IMPLEMENTATION_SOUND_SCHEDULER_H
 #define _AM_IMPLEMENTATION_SOUND_SCHEDULER_H
 
+#include <SparkyStudios/Audio/Amplitude/Core/Common.h>
+
 #include <vector>
 
 namespace SparkyStudios::Audio::Amplitude

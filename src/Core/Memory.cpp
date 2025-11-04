@@ -27,12 +27,6 @@ namespace SparkyStudios::Audio::Amplitude
     static MemoryManager* gMemManager = nullptr;
 
 #if !defined(AM_NO_MEMORY_STATS)
-    static std::map<eMemoryPoolKind, std::string> gMemoryPoolNames = {
-        { eMemoryPoolKind_Amplimix, "Amplimix" },   { eMemoryPoolKind_Codec, "Codec" },         { eMemoryPoolKind_Engine, "Engine" },
-        { eMemoryPoolKind_Filtering, "Filtering" }, { eMemoryPoolKind_SoundData, "SoundData" }, { eMemoryPoolKind_IO, "IO" },
-        { eMemoryPoolKind_Default, "Default" },
-    };
-
     MemoryPoolStats::MemoryPoolStats(eMemoryPoolKind kind)
         : pool(kind)
     {
@@ -165,6 +159,9 @@ namespace SparkyStudios::Audio::Amplitude
 
     MemoryManager::~MemoryManager()
     {
+        // Clear the allocations set to prevent container leak
+        _memAllocations.clear();
+
         _allocator.reset(nullptr);
     }
 
@@ -251,8 +248,7 @@ namespace SparkyStudios::Audio::Amplitude
 
         _allocator->Free(pool, address);
 
-        if (const auto it = _memAllocations.find({ pool, address }); it != _memAllocations.end())
-            _memAllocations.erase(it);
+        RemoveAllocation({ pool, address });
     }
 
     AmSize MemoryManager::TotalReservedMemorySize(eMemoryPoolKind pool) const
@@ -282,7 +278,16 @@ namespace SparkyStudios::Audio::Amplitude
 #if !defined(AM_NO_MEMORY_STATS)
     AmString MemoryManager::GetMemoryPoolName(const eMemoryPoolKind pool)
     {
-        return gMemoryPoolNames[pool];
+        static std::unordered_map<eMemoryPoolKind, std::string> gMemoryPoolNames = {
+            { eMemoryPoolKind_Amplimix, "Amplimix" },   { eMemoryPoolKind_Codec, "Codec" },         { eMemoryPoolKind_Engine, "Engine" },
+            { eMemoryPoolKind_Filtering, "Filtering" }, { eMemoryPoolKind_SoundData, "SoundData" }, { eMemoryPoolKind_IO, "IO" },
+            { eMemoryPoolKind_Default, "Default" },
+        };
+
+        if (const auto it = gMemoryPoolNames.find(pool); it != gMemoryPoolNames.end())
+            return it->second;
+
+        return "Unknown";
     }
 
     const MemoryPoolStats& MemoryManager::GetStats(eMemoryPoolKind pool) const
@@ -300,7 +305,7 @@ namespace SparkyStudios::Audio::Amplitude
 
         for (auto&& allocation : _memAllocations)
         {
-            ss << "Pool: " << gMemoryPoolNames[allocation.pool] << std::endl;
+            ss << "Pool: " << GetMemoryPoolName(allocation.pool) << std::endl;
             ss << "  Address: " << allocation.address << std::endl;
             ss << "  Size: " << allocation.size << std::endl;
             ss << "  File: " << allocation.file << std::endl;
@@ -321,6 +326,32 @@ namespace SparkyStudios::Audio::Amplitude
     {
         _pool = pool;
         _address = amMemory->Malign(_pool, size, alignment, file, line);
+    }
+
+    ScopedMemoryAllocation::ScopedMemoryAllocation(ScopedMemoryAllocation&& other) noexcept
+    {
+        _pool = other._pool;
+        _address = other._address;
+        other._address = nullptr;
+    }
+
+    ScopedMemoryAllocation& ScopedMemoryAllocation::operator=(ScopedMemoryAllocation&& other) noexcept
+    {
+        if (this != &other)
+        {
+            // Release current resource
+            if (_address != nullptr)
+            {
+                ampoolfree(_pool, _address);
+            }
+
+            // Transfer ownership
+            _pool = other._pool;
+            _address = other._address;
+            other._address = nullptr;
+        }
+
+        return *this;
     }
 
     ScopedMemoryAllocation::~ScopedMemoryAllocation()

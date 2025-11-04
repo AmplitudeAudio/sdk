@@ -16,15 +16,17 @@
 #include <DSP/Gain.h>
 #include <Mixer/Nodes/ReverbNode.h>
 
+#include <numeric>
+
 namespace SparkyStudios::Audio::Amplitude
 {
     ReverbNodeInstance::ReverbNodeInstance()
         : ProcessorNodeInstance(false)
     {}
 
-    void ReverbNodeInstance::Initialize(AmObjectID id, const AmplimixLayer* layer, const PipelineInstance* pipeline)
+    void ReverbNodeInstance::Initialize(AmObjectID id, const AmplimixLayer* layer, const PipelineInstance* pipeline, AmSize paramCount)
     {
-        ProcessorNodeInstance::Initialize(id, layer, pipeline);
+        ProcessorNodeInstance::Initialize(id, layer, pipeline, paramCount);
         Reset();
 
         _model.SetWidth(1);
@@ -49,7 +51,7 @@ namespace SparkyStudios::Audio::Amplitude
                 if (const AmReal32 surface = room.GetSurfaceArea(static_cast<eRoomWall>(i)); surface > maxSurface)
                     maxSurface = surface;
 
-            const AmReal32 roomSize = room.GetVolume() / (maxSurface * AM_SqrtF(maxSurface));
+            const AmReal32 roomSize = room.GetVolume() / (maxSurface * std::sqrt(maxSurface));
 
             _model.SetRoomSize(roomSize);
         }

@@ -21,6 +21,10 @@
 #include <SparkyStudios/Audio/Amplitude/Core/Entity.h>
 #include <SparkyStudios/Audio/Amplitude/Core/Listener.h>
 
+#include <array>
+#include <memory>
+#include <span>
+
 namespace SparkyStudios::Audio::Amplitude
 {
     class ShapeDefinition;
@@ -67,7 +71,7 @@ namespace SparkyStudios::Audio::Amplitude
          * @return The shortest distance from the entity location to the edge
          * of this shape. If negative, the given entity in outside the shape.
          */
-        [[nodiscard]] virtual AmReal32 GetShortestDistanceToEdge(const Entity& entity);
+        [[nodiscard]] virtual AmReal32 GetShortestDistanceToEdge(const Entity& entity) const;
 
         /**
          * @brief Gets the shortest distance to the edge of this shape.
@@ -77,7 +81,7 @@ namespace SparkyStudios::Audio::Amplitude
          * @return The shortest distance from the listener location to the edge
          * of this shape. If negative, the given listener in outside the shape.
          */
-        [[nodiscard]] virtual AmReal32 GetShortestDistanceToEdge(const Listener& listener);
+        [[nodiscard]] virtual AmReal32 GetShortestDistanceToEdge(const Listener& listener) const;
 
         /**
          * @brief Gets the shortest distance to the edge of this shape.
@@ -87,7 +91,7 @@ namespace SparkyStudios::Audio::Amplitude
          * @return The shortest distance from the location to the edge
          * of this shape. If negative, the given location in outside the shape.
          */
-        [[nodiscard]] virtual AmReal32 GetShortestDistanceToEdge(const AmVec3& location) = 0;
+        [[nodiscard]] virtual AmReal32 GetShortestDistanceToEdge(const AmVector3& location) const = 0;
 
         /**
          * @brief Checks if the given entity is contained in this shape.
@@ -96,7 +100,7 @@ namespace SparkyStudios::Audio::Amplitude
          *
          * @return @c true if the shape contains the entity, @c false otherwise.
          */
-        [[nodiscard]] virtual bool Contains(const Entity& entity);
+        [[nodiscard]] virtual bool Contains(const Entity& entity) const;
 
         /**
          * @brief Checks if the given listener is contained in this shape.
@@ -105,7 +109,7 @@ namespace SparkyStudios::Audio::Amplitude
          *
          * @return @c true if the shape contains the listener, @c false otherwise.
          */
-        [[nodiscard]] virtual bool Contains(const Listener& listener);
+        [[nodiscard]] virtual bool Contains(const Listener& listener) const;
 
         /**
          * @brief Checks if the given position is contained in this shape.
@@ -114,14 +118,14 @@ namespace SparkyStudios::Audio::Amplitude
          *
          * @return @c true if the shape contains the given position, @c false otherwise.
          */
-        [[nodiscard]] virtual bool Contains(const AmVec3& location) = 0;
+        [[nodiscard]] virtual bool Contains(const AmVector3& location) const = 0;
 
         /**
          * @brief Sets the location of this shape in the 3D environment.
          *
          * @param[in] location The shape location.
          */
-        void SetLocation(const AmVec3& location);
+        void SetLocation(const AmVector3& location);
 
         /**
          * @brief Sets the orientation of this shape.
@@ -142,28 +146,28 @@ namespace SparkyStudios::Audio::Amplitude
          *
          * @return The look-at transformation matrix.
          */
-        [[nodiscard]] const AmMat4& GetLookAt() const;
+        [[nodiscard]] const AmMatrix4& GetLookAt() const;
 
         /**
          * @brief Gets the position of this shape in the 3D environment.
          *
          * @return The shape's position.
          */
-        [[nodiscard]] const AmVec3& GetLocation() const;
+        [[nodiscard]] const AmVector3& GetLocation() const;
 
         /**
          * @brief Gets the position of this shape in the 3D environment.
          *
          * @return The shape's position.
          */
-        [[nodiscard]] AmVec3 GetDirection() const;
+        [[nodiscard]] AmVector3 GetDirection() const;
 
         /**
          * @brief Gets the up vector of the zone.
          *
          * @return The up vector.
          */
-        [[nodiscard]] AmVec3 GetUp() const;
+        [[nodiscard]] AmVector3 GetUp() const;
 
     protected:
         /**
@@ -180,9 +184,22 @@ namespace SparkyStudios::Audio::Amplitude
         virtual void Update() = 0;
 
         /**
+         * @brief Performs an update of the internal state if needed.
+         */
+        AM_INLINE void UpdateIfNeeded() const
+        {
+            if (m_needUpdate)
+            {
+                auto* self = const_cast<Shape*>(this);
+                self->Update();
+                self->m_needUpdate = false;
+            }
+        }
+
+        /**
          * @brief Represents the 3D position of an object in space.
          */
-        AmVec3 m_location;
+        AmVector3 m_location;
 
         /**
          * @brief Represents the orientation of an object in 3D space.
@@ -192,7 +209,7 @@ namespace SparkyStudios::Audio::Amplitude
         /**
          * @brief The look-at matrix representing a transformation in 3D space.
          */
-        AmMat4 m_lookAtMatrix;
+        AmMatrix4 m_lookAtMatrix;
 
         /**
          * @brief Indicates whether an update is required.
@@ -236,7 +253,7 @@ namespace SparkyStudios::Audio::Amplitude
          *
          * @note The factor is a value in the range [0, 1].
          */
-        [[nodiscard]] virtual AM_INLINE AmReal32 GetFactor(const Entity& entity)
+        [[nodiscard]] virtual AM_INLINE AmReal32 GetFactor(const Entity& entity) const
         {
             return GetFactor(entity.GetLocation());
         }
@@ -250,7 +267,7 @@ namespace SparkyStudios::Audio::Amplitude
          *
          * @note The factor is a value in the range [0, 1].
          */
-        [[nodiscard]] virtual AM_INLINE AmReal32 GetFactor(const Listener& listener)
+        [[nodiscard]] virtual AM_INLINE AmReal32 GetFactor(const Listener& listener) const
         {
             return GetFactor(listener.GetLocation());
         }
@@ -264,21 +281,21 @@ namespace SparkyStudios::Audio::Amplitude
          *
          * @note The factor is a value in the range [0, 1].
          */
-        [[nodiscard]] virtual AmReal32 GetFactor(const AmVec3& position) = 0;
+        [[nodiscard]] virtual AmReal32 GetFactor(const AmVector3& position) const = 0;
 
         /**
          * @brief Sets the location of this zone in the 3D environment.
          *
          * @param[in] location The zone location.
          */
-        void SetLocation(const AmVec3& location);
+        void SetLocation(const AmVector3& location);
 
         /**
          * @brief Gets the current location of this zone.
          *
          * @return The current location of this zone.
          */
-        [[nodiscard]] const AmVec3& GetLocation() const;
+        [[nodiscard]] const AmVector3& GetLocation() const;
 
         /**
          * @brief Sets the orientation of this zone.
@@ -299,14 +316,14 @@ namespace SparkyStudios::Audio::Amplitude
          *
          * @return The direction vector.
          */
-        [[nodiscard]] AmVec3 GetDirection() const;
+        [[nodiscard]] AmVector3 GetDirection() const;
 
         /**
          * @brief Gets the up vector of the zone.
          *
          * @return The up vector.
          */
-        [[nodiscard]] AmVec3 GetUp() const;
+        [[nodiscard]] AmVector3 GetUp() const;
 
     protected:
         /**
@@ -355,7 +372,7 @@ namespace SparkyStudios::Audio::Amplitude
          * @param[in] position The position of the box shape.
          * @param[in] dimensions The dimensions of the box shape.
          */
-        explicit BoxShape(const AmVec3& position, const AmVec3& dimensions);
+        explicit BoxShape(const AmVector3& position, const AmVector3& dimensions);
 
         /**
          * @brief Gets the half-width of the box shape.
@@ -428,7 +445,7 @@ namespace SparkyStudios::Audio::Amplitude
          * @return The shortest distance from the location to the edge
          * of this shape. If negative, the given location in outside the shape.
          */
-        [[nodiscard]] AmReal32 GetShortestDistanceToEdge(const AmVec3& location) override;
+        [[nodiscard]] AmReal32 GetShortestDistanceToEdge(const AmVector3& location) const override;
 
         /**
          * @brief Checks if the given position is contained in this shape.
@@ -437,7 +454,7 @@ namespace SparkyStudios::Audio::Amplitude
          *
          * @return @c true if the shape contains the given position, @c false otherwise.
          */
-        [[nodiscard]] bool Contains(const AmVec3& location) override;
+        [[nodiscard]] bool Contains(const AmVector3& location) const override;
 
         /**
          * @brief Gets the closest point to the given location.
@@ -446,7 +463,7 @@ namespace SparkyStudios::Audio::Amplitude
          *
          * @return The closest point to the given location.
          */
-        [[nodiscard]] AmVec3 GetClosestPoint(const AmVec3& location) const;
+        [[nodiscard]] AmVector3 GetClosestPoint(const AmVector3& location) const;
 
         /**
          * @brief Gets the corners of the box shape.
@@ -463,7 +480,7 @@ namespace SparkyStudios::Audio::Amplitude
          *
          * @return The corners of the box shape.
          */
-        [[nodiscard]] std::array<AmVec3, 8> GetCorners() const;
+        [[nodiscard]] std::span<const AmVector3> GetCorners() const;
 
         /**
          * @brief Compares this shape with another shape for equality.
@@ -505,12 +522,14 @@ namespace SparkyStudios::Audio::Amplitude
         AmReal32 _halfHeight;
         AmReal32 _halfDepth;
 
-        AmVec3 _u;
-        AmVec3 _v;
-        AmVec3 _w;
+        AmVector3 _u;
+        AmVector3 _v;
+        AmVector3 _w;
 
-        AmVec3 _p1, _p2, _p3, _p4;
+        AmVector3 _p1, _p2, _p3, _p4;
         AmReal32 _uP1, _vP1, _wP1, _uP2, _vP3, _wP4;
+
+        std::array<AmVector3, 8> _corners;
     };
 
     /**
@@ -591,7 +610,7 @@ namespace SparkyStudios::Audio::Amplitude
          * @return The shortest distance from the location to the edge
          * of this shape. If negative, the given location in outside the shape.
          */
-        [[nodiscard]] AmReal32 GetShortestDistanceToEdge(const AmVec3& location) override;
+        [[nodiscard]] AmReal32 GetShortestDistanceToEdge(const AmVector3& location) const override;
 
         /**
          * @brief Checks if the given position is contained in this shape.
@@ -600,7 +619,7 @@ namespace SparkyStudios::Audio::Amplitude
          *
          * @return @c true if the shape contains the given position, @c false otherwise.
          */
-        [[nodiscard]] bool Contains(const AmVec3& location) override;
+        [[nodiscard]] bool Contains(const AmVector3& location) const override;
 
         /**
          * @brief Compares this shape with another shape for equality.
@@ -636,7 +655,7 @@ namespace SparkyStudios::Audio::Amplitude
         AmReal32 _radius;
         AmReal32 _halfHeight;
 
-        AmVec3 _a, _b;
+        AmVector3 _a, _b;
     };
 
     /**
@@ -710,7 +729,7 @@ namespace SparkyStudios::Audio::Amplitude
          * @return The shortest distance from the location to the edge
          * of this shape. If negative, the given location in outside the shape.
          */
-        [[nodiscard]] AmReal32 GetShortestDistanceToEdge(const AmVec3& location) override;
+        [[nodiscard]] AmReal32 GetShortestDistanceToEdge(const AmVector3& location) const override;
 
         /**
          * @brief Checks if the given position is contained in this shape.
@@ -719,7 +738,7 @@ namespace SparkyStudios::Audio::Amplitude
          *
          * @return true if the shape contains the given position, false otherwise.
          */
-        [[nodiscard]] bool Contains(const AmVec3& location) override;
+        [[nodiscard]] bool Contains(const AmVector3& location) const override;
 
         /**
          * @brief Compares this shape with another shape for equality.
@@ -815,7 +834,7 @@ namespace SparkyStudios::Audio::Amplitude
          * @return The shortest distance from the location to the edge
          * of this shape. If negative, the given location in outside the shape.
          */
-        [[nodiscard]] AmReal32 GetShortestDistanceToEdge(const AmVec3& location) override;
+        [[nodiscard]] AmReal32 GetShortestDistanceToEdge(const AmVector3& location) const override;
 
         /**
          * @brief Checks if the given position is contained in this shape.
@@ -824,7 +843,7 @@ namespace SparkyStudios::Audio::Amplitude
          *
          * @return true if the shape contains the given position, false otherwise.
          */
-        [[nodiscard]] bool Contains(const AmVec3& location) override;
+        [[nodiscard]] bool Contains(const AmVector3& location) const override;
 
         /**
          * @brief Compares this shape with another shape for equality.
@@ -882,7 +901,7 @@ namespace SparkyStudios::Audio::Amplitude
         /**
          * @inherit
          */
-        [[nodiscard]] AmReal32 GetFactor(const AmVec3& position) final;
+        [[nodiscard]] AmReal32 GetFactor(const AmVector3& position) const override;
     };
 
     /**
@@ -906,7 +925,7 @@ namespace SparkyStudios::Audio::Amplitude
         /**
          * @inherit
          */
-        [[nodiscard]] AmReal32 GetFactor(const AmVec3& position) final;
+        [[nodiscard]] AmReal32 GetFactor(const AmVector3& position) const override;
     };
 
     /**
@@ -930,7 +949,7 @@ namespace SparkyStudios::Audio::Amplitude
         /**
          * @inherit
          */
-        [[nodiscard]] AmReal32 GetFactor(const AmVec3& position) final;
+        [[nodiscard]] AmReal32 GetFactor(const AmVector3& position) const override;
     };
 
     /**
@@ -954,7 +973,7 @@ namespace SparkyStudios::Audio::Amplitude
         /**
          * @inherit
          */
-        [[nodiscard]] AmReal32 GetFactor(const AmVec3& position) final;
+        [[nodiscard]] AmReal32 GetFactor(const AmVector3& position) const override;
     };
 } // namespace SparkyStudios::Audio::Amplitude
 

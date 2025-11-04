@@ -14,8 +14,10 @@
 
 #include <SparkyStudios/Audio/Amplitude/Core/Memory.h>
 #include <SparkyStudios/Audio/Amplitude/DSP/FFT.h>
+#include <SparkyStudios/Audio/Amplitude/Math/Utils.h>
 
 #include <DSP/Filters/FFTFilter.h>
+#include <Utils/Utils.h>
 
 #define STFT_WINDOW_SIZE 256 // must be power of two
 #define STFT_WINDOW_HALF 128
@@ -36,7 +38,7 @@ namespace SparkyStudios::Audio::Amplitude
 
     std::shared_ptr<FilterInstance> FFTFilter::CreateInstance()
     {
-        return AmSharedPtr<FFTFilterInstance, eMemoryPoolKind_Filtering>::Make(this);
+        return ampoolshared(eMemoryPoolKind_Filtering, FFTFilterInstance, this);
     }
 
     FFTFilterInstance::FFTFilterInstance(FFTFilter* parent)

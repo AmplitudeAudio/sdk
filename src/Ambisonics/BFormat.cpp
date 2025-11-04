@@ -23,9 +23,6 @@ namespace SparkyStudios::Audio::Amplitude
 
     BFormat::~BFormat()
     {
-        if (_buffer != nullptr)
-            ampooldelete(eMemoryPoolKind_SoundData, AudioBuffer, _buffer);
-
         _buffer = nullptr;
     }
 
@@ -47,10 +44,7 @@ namespace SparkyStudios::Audio::Amplitude
         if (!AmbisonicComponent::Configure(order, is3D))
             return false;
 
-        if (_buffer)
-            ampooldelete(eMemoryPoolKind_SoundData, AudioBuffer, _buffer);
-
-        _buffer = ampoolnew(eMemoryPoolKind_SoundData, AudioBuffer, sampleCount, GetChannelCount());
+        _buffer.reset(ampoolnew(eMemoryPoolKind_SoundData, AudioBuffer, sampleCount, GetChannelCount()));
 
         return true;
     }

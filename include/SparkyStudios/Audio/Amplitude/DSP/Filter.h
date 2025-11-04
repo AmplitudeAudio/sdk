@@ -18,6 +18,10 @@
 #define _AM_DSP_FILTER_H
 
 #include <SparkyStudios/Audio/Amplitude/Core/AudioBuffer.h>
+#include <SparkyStudios/Audio/Amplitude/Core/Memory.h>
+
+#include <map>
+#include <vector>
 
 namespace SparkyStudios::Audio::Amplitude
 {
@@ -116,11 +120,6 @@ namespace SparkyStudios::Audio::Amplitude
         Filter* m_parent;
 
         /**
-         * @brief The number of parameters available for this filter.
-         */
-        AmUInt32 m_numParams;
-
-        /**
          * @brief The number of parameters that have changed since the last frame.
          */
         AmUInt32 m_numParamsChanged;
@@ -128,7 +127,7 @@ namespace SparkyStudios::Audio::Amplitude
         /**
          * @brief The parameters buffer.
          */
-        AmReal32* m_parameters;
+        std::vector<AmReal32> m_parameters;
     };
 
     /**
@@ -148,27 +147,6 @@ namespace SparkyStudios::Audio::Amplitude
 
     public:
         /**
-         * @brief Lists the available parameter types for a filter.
-         */
-        enum ParameterType
-        {
-            /**
-             * @brief The parameter stores a @c float value.
-             */
-            kParameterTypeFloat = 0,
-
-            /**
-             * @brief The parameter stores an @c integer value.
-             */
-            kParameterTypeInt,
-
-            /**
-             * @brief The parameter stores a @c boolean value.
-             */
-            kParameterTypeBool
-        };
-
-        /**
          * @brief Creates a new filter instance.
          *
          * @param[in] name The filter name, e.g. "Echo".
@@ -185,7 +163,7 @@ namespace SparkyStudios::Audio::Amplitude
          *
          * @return The maximum number of filter parameters.
          */
-        [[nodiscard]] virtual AmUInt32 GetParamCount() const;
+        [[nodiscard]] virtual AmUInt32 GetParameterCount() const;
 
         /**
          * @brief Gets the name of the parameter at the given index.
@@ -194,7 +172,7 @@ namespace SparkyStudios::Audio::Amplitude
          *
          * @return The name of the parameter at the given index.
          */
-        [[nodiscard]] virtual AmString GetParamName(AmUInt32 index) const;
+        [[nodiscard]] virtual AmString GetParameterName(AmUInt32 index) const;
 
         /**
          * @brief Gets the type of the parameter at the given index.
@@ -203,7 +181,7 @@ namespace SparkyStudios::Audio::Amplitude
          *
          * @return The type of the parameter at the given index.
          */
-        [[nodiscard]] virtual AmUInt32 GetParamType(AmUInt32 index) const;
+        [[nodiscard]] virtual eParameterType GetParameterType(AmUInt32 index) const;
 
         /**
          * @brief Gets the maximum allowed value of the parameter at the given index.
@@ -212,7 +190,7 @@ namespace SparkyStudios::Audio::Amplitude
          *
          * @return The maximum allowed value of the parameter at the given index.
          */
-        [[nodiscard]] virtual AmReal32 GetParamMax(AmUInt32 index) const;
+        [[nodiscard]] virtual AmReal32 GetParameterMax(AmUInt32 index) const;
 
         /**
          * @brief Gets the minimum allowed value of the parameter at the given index.
@@ -221,7 +199,7 @@ namespace SparkyStudios::Audio::Amplitude
          *
          * @return The minimum allowed value of the parameter at the given index.
          */
-        [[nodiscard]] virtual AmReal32 GetParamMin(AmUInt32 index) const;
+        [[nodiscard]] virtual AmReal32 GetParameterMin(AmUInt32 index) const;
 
         /**
          * @brief Creates a new instance of the filter.

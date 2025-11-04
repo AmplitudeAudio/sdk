@@ -12,6 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+#if AM_PLATFORM_ANDROID
+
 #include <SparkyStudios/Audio/Amplitude/IO/Android/AssetManagerFile.h>
 
 namespace SparkyStudios::Audio::Amplitude
@@ -31,7 +33,7 @@ namespace SparkyStudios::Audio::Amplitude
         return m_path;
     }
 
-    bool AssetManagerFile::Eof()
+    bool AssetManagerFile::Eof() const
     {
         if (!IsValid())
             return true;
@@ -42,7 +44,7 @@ namespace SparkyStudios::Audio::Amplitude
         return currentPosition >= totalLength;
     }
 
-    AmSize AssetManagerFile::Read(AmUInt8Buffer dst, AmSize bytes)
+    AmSize AssetManagerFile::Read(AmUInt8Buffer dst, AmSize bytes) const
     {
         if (!IsValid())
             return 0;
@@ -58,7 +60,7 @@ namespace SparkyStudios::Audio::Amplitude
         return 0;
     }
 
-    AmSize AssetManagerFile::Length()
+    AmSize AssetManagerFile::Length() const
     {
         if (!IsValid())
             return 0;
@@ -74,7 +76,7 @@ namespace SparkyStudios::Audio::Amplitude
         AAsset_seek(m_asset, offset, origin);
     }
 
-    AmSize AssetManagerFile::Position()
+    AmSize AssetManagerFile::Position() const
     {
         if (!IsValid())
             return 0;
@@ -82,7 +84,7 @@ namespace SparkyStudios::Audio::Amplitude
         return AAsset_getLength(m_asset) - AAsset_getRemainingLength(m_asset);
     }
 
-    AmVoidPtr AssetManagerFile::GetPtr()
+    AmVoidPtr AssetManagerFile::GetPtr() const
     {
         return m_asset;
     }
@@ -101,3 +103,5 @@ namespace SparkyStudios::Audio::Amplitude
         m_asset = nullptr;
     }
 } // namespace SparkyStudios::Audio::Amplitude
+
+#endif // AM_PLATFORM_ANDROID

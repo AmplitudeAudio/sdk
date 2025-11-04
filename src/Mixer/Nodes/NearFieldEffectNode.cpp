@@ -16,6 +16,7 @@
 
 #include <DSP/Gain.h>
 #include <DSP/NearFieldProcessor.h>
+#include <Math/LinearAlgebra.h>
 #include <Mixer/Nodes/NearFieldEffectNode.h>
 
 namespace SparkyStudios::Audio::Amplitude
@@ -31,14 +32,14 @@ namespace SparkyStudios::Audio::Amplitude
 
         const auto* layer = GetLayer();
 
-        AmVec2 pannedGain = { 0.0f, 0.0f };
+        AmVector2 pannedGain = { 0.0f, 0.0f };
 
         AmReal32 nearFieldGain = layer->GetSound()->GetNearFieldGain().GetValue();
         if (nearFieldGain > 0.0f)
         {
             const auto& listener = layer->GetListener();
 
-            const AmReal32 distance = AM_Len(listener.GetLocation() - layer->GetLocation());
+            const AmReal32 distance = Length(Sub(listener.GetLocation(), layer->GetLocation()));
 
             AmReal32 nearFieldFactor = 0.0f;
             if (distance < kNearFieldMaxDistance)
@@ -51,8 +52,8 @@ namespace SparkyStudios::Audio::Amplitude
         const AmReal32 leftGainCurrent = _leftGainProcessor.GetGain();
         const AmReal32 rightGainCurrent = _rightGainProcessor.GetGain();
 
-        const AmReal32 leftGainTarget = pannedGain.X;
-        const AmReal32 rightGainTarget = pannedGain.Y;
+        const AmReal32 leftGainTarget = pannedGain.x;
+        const AmReal32 rightGainTarget = pannedGain.y;
 
         const bool isLeftGainZero = Gain::IsZero(leftGainCurrent) && Gain::IsZero(leftGainTarget);
         const bool isRightGainZero = Gain::IsZero(rightGainCurrent) && Gain::IsZero(rightGainTarget);

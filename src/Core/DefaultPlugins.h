@@ -74,15 +74,17 @@
 #include <Mixer/Nodes/AmbisonicRotatorNode.h>
 #include <Mixer/Nodes/AttenuationNode.h>
 #include <Mixer/Nodes/ClampNode.h>
-#include <Mixer/Nodes/ClipNode.h>
+#include <Mixer/Nodes/HardClipNode.h>
 #include <Mixer/Nodes/EnvironmentEffectNode.h>
 #include <Mixer/Nodes/InputNode.h>
+#include <Mixer/Nodes/LimiterNode.h>
 #include <Mixer/Nodes/NearFieldEffectNode.h>
 #include <Mixer/Nodes/ObstructionNode.h>
 #include <Mixer/Nodes/OcclusionNode.h>
 #include <Mixer/Nodes/OutputNode.h>
 #include <Mixer/Nodes/ReflectionsNode.h>
 #include <Mixer/Nodes/ReverbNode.h>
+#include <Mixer/Nodes/RoundoffClipNode.h>
 #include <Mixer/Nodes/StereoMixerNode.h>
 #include <Mixer/Nodes/StereoPanningNode.h>
 

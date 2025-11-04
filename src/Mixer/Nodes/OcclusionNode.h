@@ -49,7 +49,7 @@ namespace SparkyStudios::Audio::Amplitude
 
         [[nodiscard]] AM_INLINE std::shared_ptr<NodeInstance> CreateInstance() const override
         {
-            return AmSharedPtr<OcclusionNodeInstance, eMemoryPoolKind_Amplimix>::Make();
+            return ampoolshared(eMemoryPoolKind_Amplimix, OcclusionNodeInstance);
         }
 
         [[nodiscard]] AM_INLINE bool CanConsume() const override

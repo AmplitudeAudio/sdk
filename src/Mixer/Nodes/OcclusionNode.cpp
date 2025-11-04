@@ -74,7 +74,7 @@ namespace SparkyStudios::Audio::Amplitude
             return nullptr;
 
         // Compute the relative listener/source direction in spherical angles.
-        AmVec3 direction = GetRelativeDirection(listener.GetLocation(), listener.GetOrientation().GetQuaternion(), layer->GetLocation());
+        AmVector3 direction = GetRelativeDirection(listener.GetLocation(), listener.GetOrientation().GetQuaternion(), layer->GetLocation());
         const SphericalPosition listenerDirection = SphericalPosition::FromWorldSpace(direction);
         const AmReal32 listenerDirectivity =
             CalculateDirectivity(listener.GetDirectivity(), listener.GetDirectivitySharpness(), listenerDirection);
@@ -90,7 +90,7 @@ namespace SparkyStudios::Audio::Amplitude
         const auto& lpfCurve = Engine::GetInstance()->GetOcclusionCoefficientCurve();
         const auto& gainCurve = Engine::GetInstance()->GetOcclusionGainCurve();
 
-        _currentOcclusion = AM_Lerp(occlusion, kOcclusionSmoothingCoefficient, _currentOcclusion);
+        _currentOcclusion = Lerp(kOcclusionSmoothingCoefficient, occlusion, _currentOcclusion);
 
         const AmReal32 lpf = lpfCurve.Get(_currentOcclusion);
         const AmReal32 coefficient = CalculateOcclusionFilterCoefficient(listenerDirectivity * soundDirectivity, lpf);

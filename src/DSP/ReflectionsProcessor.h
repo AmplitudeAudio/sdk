@@ -17,10 +17,9 @@
 #ifndef _AM_IMPLEMENTATION_DSP_REFLECTIONS_PROCESSOR_H
 #define _AM_IMPLEMENTATION_DSP_REFLECTIONS_PROCESSOR_H
 
-#include <SparkyStudios/Audio/Amplitude/Core/Common.h>
+#include <SparkyStudios/Audio/Amplitude/Core/AudioBufferCrossFader.h>
 
 #include <Ambisonics/BFormat.h>
-#include <Core/AudioBufferCrossFader.h>
 #include <Core/RoomInternalState.h>
 #include <DSP/Delay.h>
 #include <DSP/Filters/MonoPoleFilter.h>
@@ -43,7 +42,7 @@ namespace SparkyStudios::Audio::Amplitude
         ReflectionsProcessor(AmUInt32 sampleRate, AmSize frameCount);
         ~ReflectionsProcessor();
 
-        void Update(const RoomInternalState* roomState, const AmVec3& listenerPosition, AmReal32 speedOfSound);
+        void Update(const RoomInternalState* roomState, const AmVector3& listenerPosition, AmReal32 speedOfSound);
 
         void Process(const AudioBuffer& input, BFormat* output);
 
@@ -54,8 +53,8 @@ namespace SparkyStudios::Audio::Amplitude
 
     private:
         void ComputeReflections(
-            const AmVec3& relativeListenerPosition,
-            const AmVec3& dimensions,
+            const AmVector3& relativeListenerPosition,
+            const AmVector3& dimensions,
             AmReal32 speedOfSound,
             const AmReal32* reflectionCoefficients);
 

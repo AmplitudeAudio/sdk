@@ -17,10 +17,8 @@
 
 #if AM_PLATFORM_WIN
 // clang-format off
-#include <Windows.h>
 #include <processthreadsapi.h>
 // clang-format on
-#undef CreateMutex
 #else
 #include <ctime>
 #include <pthread.h>
@@ -28,6 +26,9 @@
 #include <sys/types.h>
 #include <unistd.h>
 #endif
+
+#include <cmath>
+#include <thread>
 
 namespace SparkyStudios::Audio::Amplitude::Thread
 {
@@ -44,52 +45,11 @@ namespace SparkyStudios::Audio::Amplitude::Thread
         AmThreadData* data;
     };
 
-    struct AmMutexHandleData
-    {
-        CRITICAL_SECTION cs;
-    };
-
     static DWORD WINAPI ThreadFunc(LPVOID d)
     {
         auto* p = static_cast<AmThreadData*>(d);
         p->mFunc(p->mParam);
         return 0;
-    }
-
-    AmMutexHandle CreateMutex(AmUInt64 spinCount)
-    {
-        auto* cs = ampoolnew(eMemoryPoolKind_IO, AmMutexHandleData);
-        const BOOL res = ::InitializeCriticalSectionAndSpinCount(&cs->cs, spinCount);
-        AMPLITUDE_ASSERT(res == TRUE);
-        return static_cast<AmMutexHandle>(cs);
-    }
-
-    void DestroyMutex(AmMutexHandle handle)
-    {
-        if (handle == nullptr)
-            return;
-
-        auto* cs = static_cast<AmMutexHandleData*>(handle);
-        ::DeleteCriticalSection(&cs->cs);
-        ampooldelete(eMemoryPoolKind_IO, AmMutexHandleData, cs);
-    }
-
-    void LockMutex(AmMutexHandle handle)
-    {
-        if (handle == nullptr)
-            return;
-
-        auto* cs = static_cast<CRITICAL_SECTION*>(handle);
-        ::EnterCriticalSection(cs);
-    }
-
-    void UnlockMutex(AmMutexHandle handle)
-    {
-        if (handle == nullptr)
-            return;
-
-        auto* cs = static_cast<CRITICAL_SECTION*>(handle);
-        ::LeaveCriticalSection(cs);
     }
 
     AmThreadHandle CreateThread(AmThreadFunction threadFunction, AmVoidPtr parameter)
@@ -146,97 +106,11 @@ namespace SparkyStudios::Audio::Amplitude::Thread
         AmThreadData* data;
     };
 
-    struct AmSpinLockData
-    {
-#if !defined(AM_NO_PTHREAD_SPINLOCK)
-        pthread_spinlock_t lock;
-#endif
-        AmUInt64 count;
-        pthread_mutex_t fallBackMutex;
-        bool spinLocked;
-    };
-
     static AmVoidPtr ThreadFunc(AmVoidPtr d)
     {
         auto* p = static_cast<AmThreadData*>(d);
         p->mFunc(p->mParam);
         return nullptr;
-    }
-
-    AmMutexHandle CreateMutex(AmUInt64 spinCount)
-    {
-        auto* lock = ampoolnew(eMemoryPoolKind_IO, AmSpinLockData);
-        lock->spinLocked = false;
-
-#if !defined(AM_NO_PTHREAD_SPINLOCK)
-        pthread_spin_init(&lock->lock, 0);
-        lock->count = spinCount;
-#endif
-
-        pthread_mutexattr_t attr;
-        pthread_mutexattr_init(&attr);
-        pthread_mutexattr_settype(&attr, PTHREAD_MUTEX_RECURSIVE);
-        pthread_mutex_init(&lock->fallBackMutex, &attr);
-
-        return static_cast<AmMutexHandle>(lock);
-    }
-
-    void DestroyMutex(AmMutexHandle handle)
-    {
-        if (handle == nullptr)
-            return;
-
-        auto* lock = static_cast<AmSpinLockData*>(handle);
-
-#if !defined(AM_NO_PTHREAD_SPINLOCK)
-        pthread_spin_destroy(&lock->lock);
-#endif
-
-        pthread_mutex_destroy(&lock->fallBackMutex);
-
-        ampooldelete(eMemoryPoolKind_IO, AmSpinLockData, lock);
-    }
-
-    void LockMutex(AmMutexHandle handle)
-    {
-        if (handle == nullptr)
-            return;
-
-        auto* lock = static_cast<AmSpinLockData*>(handle);
-
-#if !defined(AM_NO_PTHREAD_SPINLOCK)
-        AmUInt64 count = 0;
-        while (count++ < lock->count)
-        {
-            if (pthread_spin_trylock(&lock->lock) == 0)
-            {
-                lock->spinLocked = true;
-                return;
-            }
-        }
-#endif
-
-        if (!lock->spinLocked)
-            pthread_mutex_lock(&lock->fallBackMutex);
-    }
-
-    void UnlockMutex(AmMutexHandle handle)
-    {
-        if (handle == nullptr)
-            return;
-
-        auto* lock = static_cast<AmSpinLockData*>(handle);
-
-#if !defined(AM_NO_PTHREAD_SPINLOCK)
-        if (lock->spinLocked)
-            pthread_spin_unlock(&lock->lock);
-        else
-            pthread_mutex_unlock(&lock->fallBackMutex);
-#else
-        pthread_mutex_unlock(&lock->fallBackMutex);
-#endif
-
-        lock->spinLocked = false;
     }
 
     AmThreadHandle CreateThread(AmThreadFunction threadFunction, AmVoidPtr parameter)
@@ -306,6 +180,13 @@ namespace SparkyStudios::Audio::Amplitude::Thread
     }
 #endif
 
+    AmUInt32 GetCPUCount()
+    {
+        // Since `hardware_concurrency()` may return 0 in edge cases,
+        // we return at least 1 for the number of CPUs.
+        return std::max(1u, std::thread::hardware_concurrency());
+    }
+
     static void PoolWorker(AmVoidPtr param)
     {
         auto* pPool = static_cast<Pool*>(param);
@@ -350,7 +231,7 @@ namespace SparkyStudios::Audio::Amplitude::Thread
     Pool::Pool()
         : _threadCount(0)
         , _thread(nullptr)
-        , _workMutex(nullptr)
+        , _workMutex()
         , _taskCount(0)
         , _robin(0)
         , _running(false)
@@ -370,9 +251,6 @@ namespace SparkyStudios::Audio::Amplitude::Thread
         }
 
         ampoolfree(eMemoryPoolKind_IO, _thread);
-
-        if (_workMutex)
-            DestroyMutex(_workMutex);
     }
 
     void Pool::Init(AmUInt32 threadCount)
@@ -381,7 +259,6 @@ namespace SparkyStudios::Audio::Amplitude::Thread
             return;
 
         _taskCount = 0;
-        _workMutex = CreateMutex();
         _running = true;
         _threadCount = threadCount;
         _thread = static_cast<AmThreadHandle*>(ampoolmalloc(eMemoryPoolKind_IO, sizeof(void*) * threadCount));
@@ -399,15 +276,13 @@ namespace SparkyStudios::Audio::Amplitude::Thread
         }
         else
         {
-            if (_workMutex)
-                LockMutex(_workMutex);
+            _workMutex.lock();
 
             if (_taskCount == AM_MAX_THREAD_POOL_TASKS)
             {
                 // If we're at max tasks, do the task on calling thread
                 // (we're in trouble anyway, might as well slow down adding more tasks)
-                if (_workMutex)
-                    UnlockMutex(_workMutex);
+                _workMutex.unlock();
 
                 if (task->Ready())
                     task->Work();
@@ -417,8 +292,7 @@ namespace SparkyStudios::Audio::Amplitude::Thread
                 _taskArray[_taskCount] = task;
                 _taskCount++;
 
-                if (_workMutex)
-                    UnlockMutex(_workMutex);
+                _workMutex.unlock();
             }
         }
     }
@@ -426,9 +300,7 @@ namespace SparkyStudios::Audio::Amplitude::Thread
     std::shared_ptr<PoolTask> Pool::GetWork()
     {
         std::shared_ptr<PoolTask> t = nullptr;
-
-        if (_workMutex)
-            LockMutex(_workMutex);
+        std::lock_guard lock(_workMutex);
 
         if (_taskCount > 0)
         {
@@ -452,9 +324,6 @@ namespace SparkyStudios::Audio::Amplitude::Thread
                 c++;
             } while (c < _taskCount);
         }
-
-        if (_workMutex)
-            UnlockMutex(_workMutex);
 
         return t;
     }

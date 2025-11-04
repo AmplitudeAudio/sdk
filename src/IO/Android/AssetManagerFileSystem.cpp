@@ -14,12 +14,13 @@
 
 #if AM_PLATFORM_ANDROID
 
-#include <sstream>
-#include <vector>
-
 #include <SparkyStudios/Audio/Amplitude/Core/Memory.h>
 #include <SparkyStudios/Audio/Amplitude/IO/Android/AssetManagerFile.h>
 #include <SparkyStudios/Audio/Amplitude/IO/Android/AssetManagerFileSystem.h>
+
+#include <ranges>
+#include <sstream>
+#include <vector>
 
 namespace SparkyStudios::Audio::Amplitude
 {
@@ -107,7 +108,7 @@ namespace SparkyStudios::Audio::Amplitude
     {
         const AmOsString resolvedPath = ResolvePath(path);
         if (AAsset* asset = AAssetManager_open(m_assetManager, resolvedPath.c_str(), AASSET_MODE_RANDOM))
-            return AmSharedPtr<AssetManagerFile, eMemoryPoolKind_IO>::Make(asset, resolvedPath);
+            return ampoolshared(eMemoryPoolKind_IO, AssetManagerFile, asset, resolvedPath);
 
         return nullptr;
     }

@@ -40,9 +40,13 @@ Makefile
 [dD]ebug/
 Win32/
 
+# Zed
+.zed/
+
 # Jetbrains files
 .idea/
 cmake-*/
+.fleet/
 
 # qt creator
 *.cbp
@@ -51,10 +55,20 @@ cmake-*/
 tags/
 gen/
 .DS_Store
+.cfft.templates/
+cfft.config.json
+am_build/
+scripts/__pycache__
+tools/ampm/gen.resources.*
+coverage/
 
 # CLangd cache
 .cache/
 
 # VCPKG
 vcpkg_installed/
-am_build/
+
+# XMake
+.xmake/
+**/compile_commands.json
+include/SparkyStudios/Audio/Amplitude/Core/Version.h

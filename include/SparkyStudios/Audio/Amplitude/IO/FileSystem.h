@@ -17,15 +17,17 @@
 #ifndef _AM_IO_FILESYSTEM_H
 #define _AM_IO_FILESYSTEM_H
 
-#include <SparkyStudios/Audio/Amplitude/Core/Common.h>
 #include <SparkyStudios/Audio/Amplitude/IO/File.h>
+
+#include <memory>
+#include <vector>
 
 namespace SparkyStudios::Audio::Amplitude
 {
     /**
      * @brief Base class for files and resources loaders.
      *
-     * The engine uses the @c FileSystem class as an interface to
+     * The engine uses this @c FileSystem class as an interface to
      * load files and other resources. It provides basic functionalities
      * needed by a file system.
      *

@@ -13,8 +13,11 @@
 // limitations under the License.
 
 #include <algorithm>
+#include <filesystem>
 #include <memory>
+#include <queue>
 #include <ranges>
+#include <unordered_map>
 
 #include <SparkyStudios/Audio/Amplitude/Amplitude.h>
 
@@ -31,14 +34,24 @@
 #include <Sound/SwitchContainer.h>
 
 #include "buses_definition_generated.h"
-#include "collection_definition_generated.h"
 #include "engine_config_definition_generated.h"
-#include "sound_definition_generated.h"
-#include "switch_container_definition_generated.h"
+#include "sound_bank_definition_generated.h"
 
 #include <Core/DefaultPlugins.h>
 
+#ifndef AM_PLUGINS_UNSUPPORTED
 #include <dylib.hpp>
+
+#if AM_PLATFORM_APPLE
+#include <limits.h>
+extern "C" {
+int _NSGetExecutablePath(char* buf, uint32_t* bufSize);
+}
+#elif AM_PLATFORM_UNIX
+#include <limits.h>
+#include <unistd.h>
+#endif
+#endif
 
 #if AM_PLATFORM_WIN
 #undef CreateMutex
@@ -49,8 +62,38 @@ namespace SparkyStudios::Audio::Amplitude
     typedef flatbuffers::Vector<uint64_t> BusIdList;
     typedef flatbuffers::Vector<flatbuffers::Offset<DuckBusDefinition>> DuckBusDefinitionList;
 
+#ifndef AM_PLUGINS_UNSUPPORTED
     // The list of loaded plugins.
-    static std::vector<dylib*> gLoadedPlugins = {};
+    static std::unordered_map<std::filesystem::path, dylib::library*> gLoadedPlugins = {};
+
+    std::filesystem::path GetExecutableRoot()
+    {
+        static std::filesystem::path rootPath;
+        if (!rootPath.empty())
+            return rootPath;
+
+#if AM_PLATFORM_WIN
+        char buffer[MAX_PATH];
+        GetModuleFileNameA(NULL, buffer, MAX_PATH);
+        rootPath = std::filesystem::path(buffer).parent_path();
+#elif AM_PLATFORM_APPLE
+        char buffer[PATH_MAX];
+        uint32_t size = sizeof(buffer);
+        if (_NSGetExecutablePath(buffer, &size) == 0)
+            rootPath = std::filesystem::canonical(std::filesystem::path(buffer)).parent_path();
+#else
+        char buffer[PATH_MAX];
+        ssize_t len = readlink("/proc/self/exe", buffer, sizeof(buffer) - 1);
+        if (len != -1)
+        {
+            buffer[len] = '\0';
+            rootPath = std::filesystem::path(buffer).parent_path();
+        }
+#endif
+
+        return rootPath;
+    }
+#endif
 
     // Default Plugins instances
     static std::shared_ptr<DefaultResampler> sDefaultResamplerPlugin = nullptr;
@@ -89,19 +132,22 @@ namespace SparkyStudios::Audio::Amplitude
     static std::shared_ptr<AmbisonicRotatorNode> sAmbisonicRotatorNodePlugin = nullptr;
     static std::shared_ptr<AttenuationNode> sAttenuationNodePlugin = nullptr;
     static std::shared_ptr<ClampNode> sClampNodePlugin = nullptr;
-    static std::shared_ptr<ClipNode> sClipNodePlugin = nullptr;
+    static std::shared_ptr<HardClipNode> sHardClipNodePlugin = nullptr;
     static std::shared_ptr<EnvironmentEffectNode> sEnvironmentEffectNodePlugin = nullptr;
     static std::shared_ptr<InputNode> sInputNodePlugin = nullptr;
+    static std::shared_ptr<LimiterNode> sLimiterNodePlugin = nullptr;
     static std::shared_ptr<NearFieldEffectNode> sNearFieldEffectNodePlugin = nullptr;
     static std::shared_ptr<ObstructionNode> sObstructionNodePlugin = nullptr;
     static std::shared_ptr<OcclusionNode> sOcclusionNodePlugin = nullptr;
     static std::shared_ptr<OutputNode> sOutputNodePlugin = nullptr;
     static std::shared_ptr<ReflectionsNode> sReflectionsNodePlugin = nullptr;
     static std::shared_ptr<ReverbNode> sReverbNodePlugin = nullptr;
+    static std::shared_ptr<RoundoffClipNode> sRoundoffClipNodePlugin = nullptr;
     static std::shared_ptr<StereoMixerNode> sStereoMixerNodePlugin = nullptr;
     static std::shared_ptr<StereoPanningNode> sStereoPanningNodePlugin = nullptr;
 
     static AmUniquePtr<EngineImpl, eMemoryPoolKind_Engine> gAmplitude = nullptr;
+    static std::mutex gInstanceMutex;
 
     std::set<AmOsString> EngineImpl::_pluginSearchPaths = {};
 
@@ -162,7 +208,7 @@ namespace SparkyStudios::Audio::Amplitude
         list->push_front(*channel);
     }
 
-    void AssignBestRoom(ChannelInternalState* newChannel, const AmVec3& location, std::shared_ptr<EngineInternalState> state)
+    void AssignBestRoom(ChannelInternalState* newChannel, const AmVector3& location, std::shared_ptr<EngineInternalState> state)
     {
         RoomInternalState* bestRoom = nullptr;
         AmReal32 minDistanceSquared = std::numeric_limits<AmReal32>::max();
@@ -188,7 +234,7 @@ namespace SparkyStudios::Audio::Amplitude
     }
 
     EngineImpl::EngineImpl()
-        : _frameThreadMutex(nullptr)
+        : _frameThreadMutex()
         , _configSrc()
         , _state(nullptr)
         , _defaultListener(nullptr)
@@ -204,33 +250,41 @@ namespace SparkyStudios::Audio::Amplitude
 
         _audioDriver = nullptr;
 
+#ifndef AM_PLUGINS_UNSUPPORTED
+        using namespace dylib;
+
         for (const auto& plugin : gLoadedPlugins)
         {
-            if (const auto unregisterFunc = plugin->get_function<bool()>("UnregisterPlugin"); !unregisterFunc())
-                amLogError("An error occurred while unloading the plugin '%s'", plugin->get_function<const char*()>("PluginName")());
+            if (const auto unregisterFunc = plugin.second->get_function<bool()>("UnregisterPlugin"); !unregisterFunc())
+                amLogError("An error occurred while unloading the plugin '%s'", plugin.second->get_function<const char*()>("PluginName")());
 
-            ampooldelete(eMemoryPoolKind_Engine, dylib, plugin);
+            ampooldelete(eMemoryPoolKind_Engine, library, plugin.second);
         }
 
         gLoadedPlugins.clear();
+#endif
     }
 
     AmVoidPtr Engine::LoadPlugin(const AmOsString& pluginLibraryName)
     {
+#ifndef AM_PLUGINS_UNSUPPORTED
         if (pluginLibraryName.empty())
         {
             amLogError("The plugin library path is empty");
             return nullptr;
         }
 
-        AmOsString pluginsDirectoryPath = std::filesystem::current_path().native();
-        const auto& finalName = AM_STRING_TO_OS_STRING(dylib::filename_components::prefix) + pluginLibraryName +
-            AM_STRING_TO_OS_STRING(dylib::filename_components::suffix);
-
         bool foundPath = false;
+        DiskFileSystem fs;
+        AmOsString pluginsDirectoryPath;
+        AmOsString finalName;
 
+        for (const auto& path : { GetExecutableRoot(), std::filesystem::current_path() })
         {
-            DiskFileSystem fs;
+            pluginsDirectoryPath = path.native();
+            finalName = AM_STRING_TO_OS_STRING(dylib::decorations::os_default().prefix) + pluginLibraryName +
+                AM_STRING_TO_OS_STRING(dylib::decorations::os_default().suffix);
+
             fs.SetBasePath(pluginsDirectoryPath);
 
             // Search for the library in the current directory
@@ -238,19 +292,20 @@ namespace SparkyStudios::Audio::Amplitude
             {
                 pluginsDirectoryPath = realPath;
                 foundPath = true;
+                break;
             }
+        }
 
-            if (!foundPath)
+        if (!foundPath)
+        {
+            // Search for the library in the search paths
+            for (const auto& path : EngineImpl::_pluginSearchPaths)
             {
-                // Search for the library in the search paths
-                for (const auto& path : EngineImpl::_pluginSearchPaths)
+                if (const auto realPath = fs.ResolvePath(path); fs.Exists(fs.Join({ realPath, finalName })))
                 {
-                    if (const auto realPath = fs.ResolvePath(path); fs.Exists(fs.Join({ realPath, finalName })))
-                    {
-                        pluginsDirectoryPath = realPath;
-                        foundPath = true;
-                        break;
-                    }
+                    pluginsDirectoryPath = realPath;
+                    foundPath = true;
+                    break;
                 }
             }
         }
@@ -261,11 +316,17 @@ namespace SparkyStudios::Audio::Amplitude
             return nullptr;
         }
 
-        auto* plugin = ampoolnew(
-            eMemoryPoolKind_Engine, dylib, AM_OS_STRING_TO_STRING(pluginsDirectoryPath), AM_OS_STRING_TO_STRING(finalName),
-            dylib::no_filename_decorations);
+        std::filesystem::path pluginPath = std::filesystem::path(pluginsDirectoryPath) / finalName;
 
-        if (!plugin->has_symbol("RegisterPlugin"))
+        if (gLoadedPlugins.find(pluginPath) != gLoadedPlugins.end())
+        {
+            amLogWarning("The plugin '" AM_OS_CHAR_FMT "' is already loaded.", pluginLibraryName.c_str());
+            return gLoadedPlugins[pluginPath]->native_handle();
+        }
+
+        auto* plugin = ampoolnew(eMemoryPoolKind_Engine, dylib::library, AM_OS_STRING_TO_STRING(pluginPath.native()), dylib::decorations());
+
+        if (!plugin->get_symbol("RegisterPlugin"))
         {
             amLogError(
                 "Failed to load plugin '" AM_OS_CHAR_FMT "'. The library doesn't export a RegisterPlugin symbol.",
@@ -273,14 +334,22 @@ namespace SparkyStudios::Audio::Amplitude
             return nullptr;
         }
 
-        if (!plugin->has_symbol("PluginName"))
+        if (!plugin->get_symbol("UnregisterPlugin"))
+        {
+            amLogError(
+                "Failed to load plugin '" AM_OS_CHAR_FMT "'. The library doesn't export a UnregisterPlugin symbol.",
+                pluginLibraryName.c_str());
+            return nullptr;
+        }
+
+        if (!plugin->get_symbol("PluginName"))
         {
             amLogError(
                 "Failed to load plugin '" AM_OS_CHAR_FMT "'. The library doesn't export a PluginName symbol.", pluginLibraryName.c_str());
             return nullptr;
         }
 
-        if (!plugin->has_symbol("PluginVersion"))
+        if (!plugin->get_symbol("PluginVersion"))
         {
             amLogError(
                 "Failed to load plugin '" AM_OS_CHAR_FMT "'. The library doesn't export a PluginVersion symbol.",
@@ -301,10 +370,13 @@ namespace SparkyStudios::Audio::Amplitude
             amLogInfo("Loaded Plugin '%s' Version: %s", GetPluginName(), GetPluginVersion());
         }
 
-        void* handle = plugin->native_handle();
-        gLoadedPlugins.push_back(plugin);
+        gLoadedPlugins[pluginPath] = plugin;
 
-        return handle;
+        return plugin->native_handle();
+#else
+        amLogError("The plugin system is not supported on this platform.");
+        return nullptr;
+#endif
     }
 
     void Engine::AddPluginSearchPath(const AmOsString& path)
@@ -380,15 +452,17 @@ namespace SparkyStudios::Audio::Amplitude
         sAmbisonicRotatorNodePlugin = RegisterExtension<AmbisonicRotatorNode>();
         sAttenuationNodePlugin = RegisterExtension<AttenuationNode>();
         sClampNodePlugin = RegisterExtension<ClampNode>();
-        sClipNodePlugin = RegisterExtension<ClipNode>();
+        sHardClipNodePlugin = RegisterExtension<HardClipNode>();
         sEnvironmentEffectNodePlugin = RegisterExtension<EnvironmentEffectNode>();
         sInputNodePlugin = RegisterExtension<InputNode>();
+        sLimiterNodePlugin = RegisterExtension<LimiterNode>();
         sNearFieldEffectNodePlugin = RegisterExtension<NearFieldEffectNode>();
         sObstructionNodePlugin = RegisterExtension<ObstructionNode>();
         sOcclusionNodePlugin = RegisterExtension<OcclusionNode>();
         sOutputNodePlugin = RegisterExtension<OutputNode>();
         sReflectionsNodePlugin = RegisterExtension<ReflectionsNode>();
         sReverbNodePlugin = RegisterExtension<ReverbNode>();
+        sRoundoffClipNodePlugin = RegisterExtension<RoundoffClipNode>();
         sStereoMixerNodePlugin = RegisterExtension<StereoMixerNode>();
         sStereoPanningNodePlugin = RegisterExtension<StereoPanningNode>();
 
@@ -436,15 +510,17 @@ namespace SparkyStudios::Audio::Amplitude
         UnregisterExtension(sAmbisonicRotatorNodePlugin);
         UnregisterExtension(sAttenuationNodePlugin);
         UnregisterExtension(sClampNodePlugin);
-        UnregisterExtension(sClipNodePlugin);
+        UnregisterExtension(sHardClipNodePlugin);
         UnregisterExtension(sEnvironmentEffectNodePlugin);
         UnregisterExtension(sInputNodePlugin);
+        UnregisterExtension(sLimiterNodePlugin);
         UnregisterExtension(sNearFieldEffectNodePlugin);
         UnregisterExtension(sObstructionNodePlugin);
         UnregisterExtension(sOcclusionNodePlugin);
         UnregisterExtension(sOutputNodePlugin);
         UnregisterExtension(sReflectionsNodePlugin);
         UnregisterExtension(sReverbNodePlugin);
+        UnregisterExtension(sRoundoffClipNodePlugin);
         UnregisterExtension(sStereoMixerNodePlugin);
         UnregisterExtension(sStereoPanningNodePlugin);
 
@@ -457,6 +533,8 @@ namespace SparkyStudios::Audio::Amplitude
         if (!MemoryManager::IsInitialized())
             return nullptr;
 
+        std::lock_guard lock(gInstanceMutex);
+
         // Amplitude Engine unique instance.
         if (gAmplitude == nullptr)
             gAmplitude.reset(ampoolnew(eMemoryPoolKind_Engine, EngineImpl));
@@ -466,6 +544,7 @@ namespace SparkyStudios::Audio::Amplitude
 
     void Engine::DestroyInstance()
     {
+        std::lock_guard lock(gInstanceMutex);
         gAmplitude.reset();
     }
 
@@ -535,9 +614,7 @@ namespace SparkyStudios::Audio::Amplitude
         {
             const DuckBusDefinition* duck = duckBusDefinitionList->Get(i);
 
-            if (AmUniquePtr<DuckBusInternalState, eMemoryPoolKind_Engine> bus(
-                    ampoolnew(eMemoryPoolKind_Engine, DuckBusInternalState, parent.get()));
-                bus->Initialize(duck))
+            if (auto bus = ampoolunique(eMemoryPoolKind_Engine, DuckBusInternalState, parent.get()); bus->Initialize(duck))
             {
                 output->push_back(std::move(bus));
             }
@@ -638,9 +715,13 @@ namespace SparkyStudios::Audio::Amplitude
 
     bool EngineImpl::Initialize(const AmOsString& configFile)
     {
-        if (const AmOsString& configFilePath = _fs->ResolvePath(configFile); !LoadFile(_fs->OpenFile(configFilePath), &_configSrc))
+        std::lock_guard lock(_updateMutex);
+
+        _configFilePath = _fs->ResolvePath(configFile);
+
+        if (!LoadFile(_fs->OpenFile(_configFilePath), &_configSrc))
         {
-            amLogError("Could not load audio config file at path '" AM_OS_CHAR_FMT "'.", configFile.c_str());
+            amLogError("Could not load audio config file at path '" AM_OS_CHAR_FMT "'.", _configFilePath.c_str());
             return false;
         }
 
@@ -660,10 +741,8 @@ namespace SparkyStudios::Audio::Amplitude
         Fader::LockRegistry();
         Node::LockRegistry();
 
-        _frameThreadMutex = Thread::CreateMutex(500);
-
         // Create the internal engine state
-        _state = AmSharedPtr<EngineInternalState, eMemoryPoolKind_Engine>::Make();
+        _state = ampoolshared(eMemoryPoolKind_Engine, EngineInternalState);
         _state->version = &Amplitude::GetVersion();
 
         // Load the audio driver
@@ -688,9 +767,8 @@ namespace SparkyStudios::Audio::Amplitude
 
         if (_audioDriver == nullptr)
         {
-            amLogCritical(
-                "Failed to load the specified driver, the default driver, and the null driver. Please check your engine "
-                "configuration, and ensure that all the needed plugins are loaded.");
+            amLogCritical("Failed to load the specified driver, the default driver, and the null driver. Please check your engine "
+                          "configuration, and ensure that all the needed plugins are loaded.");
             Deinitialize();
             return false;
         }
@@ -714,16 +792,15 @@ namespace SparkyStudios::Audio::Amplitude
             _state->hrir_sampling_mode = static_cast<eHRIRSphereSamplingMode>(config->hrtf()->hrir_sampling());
 
             // Load the HRIR sphere
-            _state->hrir_sphere = AmSharedPtr<HRIRSphereImpl, eMemoryPoolKind_Engine>::Make();
+            _state->hrir_sphere = ampoolshared(eMemoryPoolKind_Engine, HRIRSphereImpl);
             _state->hrir_sphere->SetResource(AM_STRING_TO_OS_STRING(config->hrtf()->amir_file()->c_str()));
             _state->hrir_sphere->SetSamplingMode(_state->hrir_sampling_mode);
             _state->hrir_sphere->Load(GetFileSystem());
         }
         else if (_state->panning_mode != ePanningMode_Stereo)
         {
-            amLogCritical(
-                "The HRTF configuration is missing, but the panning mode is not stereo. Please provide an HRTF configuration, or "
-                "set the panning mode to Stereo.");
+            amLogCritical("The HRTF configuration is missing, but the panning mode is not stereo. Please provide an HRTF configuration, or "
+                          "set the panning mode to Stereo.");
             Deinitialize();
             return false;
         }
@@ -767,7 +844,7 @@ namespace SparkyStudios::Audio::Amplitude
         _state->buses.resize(busCount);
         for (flatbuffers::uoffset_t i = 0; i < busCount; ++i)
         {
-            _state->buses[i] = AmSharedPtr<BusInternalState, eMemoryPoolKind_Engine>::Make();
+            _state->buses[i] = ampoolshared(eMemoryPoolKind_Engine, BusInternalState);
             _state->buses[i]->Initialize(busDefList->buses()->Get(i));
         }
 
@@ -819,7 +896,6 @@ namespace SparkyStudios::Audio::Amplitude
         _state->track_environments = config->game()->track_environments();
 
         // Engine state
-        _state->paused = false;
         _state->mute = false;
         _state->master_gain = 1.0f;
 
@@ -839,16 +915,24 @@ namespace SparkyStudios::Audio::Amplitude
             }
         }
 
+        // Mark the engine as ready
+        _state->paused = false;
+        _state->initialized = true;
+
         amLogDebug("Amplitude Engine initialized successfully.");
         return true;
     }
 
     bool EngineImpl::Deinitialize()
     {
+        std::lock_guard<std::recursive_mutex> lock(_updateMutex);
+
         if (_state == nullptr)
             return true;
 
         _state->stopping = true;
+
+        _state->mixer.WaitForAudioMutex();
 
         // Stop all sounds
         StopAll();
@@ -884,8 +968,6 @@ namespace SparkyStudios::Audio::Amplitude
         _state.reset();
         _audioDriver.reset();
 
-        Thread::DestroyMutex(_frameThreadMutex);
-
         // Unlock registries
         Driver::UnlockRegistry();
         Codec::UnlockRegistry();
@@ -900,7 +982,7 @@ namespace SparkyStudios::Audio::Amplitude
     bool EngineImpl::IsInitialized() const
     {
         // An initialized engine have a running state
-        return _state != nullptr && !_state->stopping;
+        return _state != nullptr && _state->initialized;
     }
 
     void EngineImpl::SetFileSystem(std::shared_ptr<FileSystem> fs)
@@ -927,7 +1009,7 @@ namespace SparkyStudios::Audio::Amplitude
         if (const auto findIt = _state->sound_bank_id_map.find(filename); findIt == _state->sound_bank_id_map.end() ||
             (findIt != _state->sound_bank_id_map.end() && !_state->sound_bank_map.contains(findIt->second)))
         {
-            AmUniquePtr<SoundBank, eMemoryPoolKind_Engine> soundBank(ampoolnew(eMemoryPoolKind_Engine, SoundBank));
+            auto soundBank = ampoolunique(eMemoryPoolKind_Engine, SoundBank);
             success = soundBank->Initialize(filename, this);
 
             if (success)
@@ -952,23 +1034,25 @@ namespace SparkyStudios::Audio::Amplitude
         return success;
     }
 
-    bool EngineImpl::LoadSoundBankFromMemory(const AmUInt8* fileData)
+    bool EngineImpl::LoadSoundBankFromMemoryView(AmConstVoidPtr ptr, AmSize size)
     {
         AmBankID outID = kAmInvalidObjectId;
-        return LoadSoundBankFromMemory(fileData, outID);
+        return LoadSoundBankFromMemoryView(ptr, size, outID);
     }
 
-    bool EngineImpl::LoadSoundBankFromMemory(const AmUInt8* fileData, AmBankID& outID)
+    bool EngineImpl::LoadSoundBankFromMemoryView(AmConstVoidPtr ptr, AmSize size, AmBankID& outID)
     {
         outID = kAmInvalidObjectId;
         bool success = true;
 
-        AmUniquePtr<SoundBank, eMemoryPoolKind_Engine> soundBank(ampoolnew(eMemoryPoolKind_Engine, SoundBank));
-        const AmOsString filename = AM_STRING_TO_OS_STRING(soundBank->GetName());
+        const auto* soundBankDefinition = Amplitude::GetSoundBankDefinition(ptr);
+        const AmOsString filename = AM_STRING_TO_OS_STRING(soundBankDefinition->name()->str());
+
         if (const auto findIt = _state->sound_bank_id_map.find(filename); findIt == _state->sound_bank_id_map.end() ||
             (findIt != _state->sound_bank_id_map.end() && !_state->sound_bank_map.contains(findIt->second)))
         {
-            success = soundBank->InitializeFromMemory(fileData, this);
+            auto soundBank = ampoolunique(eMemoryPoolKind_Engine, SoundBank);
+            success = soundBank->InitializeFromMemoryView(ptr, size, this);
 
             if (success)
             {
@@ -990,28 +1074,6 @@ namespace SparkyStudios::Audio::Amplitude
         }
 
         return success;
-    }
-
-    bool EngineImpl::LoadSoundBankFromMemoryView(void* ptr, AmSize size)
-    {
-        AmBankID outID = kAmInvalidObjectId;
-        return LoadSoundBankFromMemoryView(ptr, size, outID);
-    }
-
-    bool EngineImpl::LoadSoundBankFromMemoryView(void* ptr, AmSize size, AmBankID& outID)
-    {
-        outID = kAmInvalidObjectId;
-
-        MemoryFile mf;
-        AmString dst;
-
-        mf.OpenMem(static_cast<AmConstUInt8Buffer>(ptr), size, false, false);
-        dst.assign(size + 1, 0);
-
-        if (const AmUInt32 len = mf.Read(reinterpret_cast<AmUInt8Buffer>(&dst[0]), mf.Length()); len != size)
-            return false;
-
-        return LoadSoundBankFromMemory(reinterpret_cast<const AmUInt8*>(dst.c_str()), outID);
     }
 
     void EngineImpl::UnloadSoundBank(const AmOsString& filename)
@@ -1036,18 +1098,16 @@ namespace SparkyStudios::Audio::Amplitude
         }
         else if (findIt->second->GetRefCounter()->Decrement() == 0)
         {
-            Thread::LockMutex(_frameThreadMutex);
+            std::lock_guard lock(_frameThreadMutex);
 
             findIt->second->Deinitialize(this);
             _state->sound_bank_map.erase(id);
-
-            Thread::UnlockMutex(_frameThreadMutex);
         }
     }
 
     void EngineImpl::UnloadSoundBanks()
     {
-        Thread::LockMutex(_frameThreadMutex);
+        std::lock_guard lock(_frameThreadMutex);
 
         std::vector<AmBankID> idsToDelete;
         idsToDelete.reserve(_state->sound_bank_map.size());
@@ -1063,8 +1123,6 @@ namespace SparkyStudios::Audio::Amplitude
 
         for (const auto id : idsToDelete)
             _state->sound_bank_map.erase(id);
-
-        Thread::UnlockMutex(_frameThreadMutex);
     }
 
     void EngineImpl::EnsureSoundBankLoaded(const AmOsString& filename)
@@ -1077,6 +1135,9 @@ namespace SparkyStudios::Audio::Amplitude
 
     bool EngineImpl::HasLoadedSoundBank(const AmOsString& filename) const
     {
+        if (_state == nullptr)
+            return false;
+
         if (const auto findIt = _state->sound_bank_id_map.find(filename); findIt != _state->sound_bank_id_map.end())
             return _state->sound_bank_map.contains(findIt->second);
 
@@ -1085,11 +1146,17 @@ namespace SparkyStudios::Audio::Amplitude
 
     bool EngineImpl::HasLoadedSoundBank(AmBankID id) const
     {
+        if (_state == nullptr)
+            return false;
+
         return _state->sound_bank_map.contains(id);
     }
 
     bool EngineImpl::HasLoadedSoundBanks() const
     {
+        if (_state == nullptr)
+            return false;
+
         return !_state->sound_bank_map.empty();
     }
 
@@ -1122,7 +1189,7 @@ namespace SparkyStudios::Audio::Amplitude
 
         for (const auto& bank : _state->sound_bank_map | std::views::values)
         {
-            auto task = AmSharedPtr<LoadSoundBankTask, eMemoryPoolKind_Engine>::Make(bank.get());
+            auto task = ampoolshared(eMemoryPoolKind_Engine, LoadSoundBankTask, bank.get());
             _soundLoaderThreadPool->AddTask(task);
         }
     }
@@ -1139,13 +1206,13 @@ namespace SparkyStudios::Audio::Amplitude
         return true;
     }
 
-    ListenerInternalState* FindBestListener(ListenerList& listeners, const AmVec3& location, eListenerFetchMode fetchMode)
+    ListenerInternalState* FindBestListener(ListenerList& listeners, const AmVector3& location, eListenerFetchMode fetchMode)
     {
         if (listeners.empty())
             return nullptr;
 
         ListenerList::iterator bestListener;
-        const AmVec4 location4 = AM_V4V(location, 1.0f);
+        const AmVector4 location4 = { location.x, location.y, location.z, 1.0f };
 
         switch (fetchMode)
         {
@@ -1157,14 +1224,14 @@ namespace SparkyStudios::Audio::Amplitude
         case eListenerFetchMode_Farthest:
             {
                 auto listener = listeners.begin();
-                auto listenerSpaceLocation = AM_Mul(listener->GetInverseMatrix(), location4).XYZ;
-                AmReal32 distanceSquared = AM_LenSqr(listenerSpaceLocation);
+                auto listenerSpaceLocation = Transform(listener->GetInverseMatrix(), location4).xyz;
+                AmReal32 distanceSquared = SquaredLength(listenerSpaceLocation);
                 bestListener = listener;
 
                 for (++listener; listener != listeners.end(); ++listener)
                 {
-                    const AmVec3 transformedLocation = AM_Mul(listener->GetInverseMatrix(), location4).XYZ;
-                    if (const AmReal32 magnitudeSquared = AM_LenSqr(transformedLocation);
+                    const AmVector3 transformedLocation = Transform(listener->GetInverseMatrix(), location4).xyz;
+                    if (const AmReal32 magnitudeSquared = SquaredLength(transformedLocation);
                         fetchMode == eListenerFetchMode_Nearest ? magnitudeSquared < distanceSquared : magnitudeSquared > distanceSquared)
                     {
                         bestListener = listener;
@@ -1203,18 +1270,8 @@ namespace SparkyStudios::Audio::Amplitude
         return &*bestListener;
     }
 
-    AmVec2 CalculatePan(const AmVec3& listenerSpaceLocation)
-    {
-        if (AM_LenSqr(listenerSpaceLocation) <= kEpsilon)
-            return AM_V2(0.0f, 0.0f);
-
-        const AmVec3 direction = AM_Norm(listenerSpaceLocation);
-        return AM_V2(AM_Dot(AM_V3(1, 0, 0), direction), AM_Dot(AM_V3(0, 1, 0), direction));
-    }
-
-    static void CalculateGainPanPitch(
+    static void CalculateGainAndPitch(
         AmReal32* gain,
-        AmVec2* pan,
         AmReal32* pitch,
         const ListenerInternalState* listener,
         const ChannelInternalState* channel,
@@ -1226,7 +1283,6 @@ namespace SparkyStudios::Audio::Amplitude
     {
         *gain = soundGain * bus->GetGain() * userGain;
         *pitch = soundPitch;
-        *pan = AM_V2(0, 0); // TODO: This may be removed in the future, since panning is handled automatically in pipeline nodes..
 
         if (spatialization != eSpatialization_None && listener != nullptr && channel != nullptr)
             *pitch *= channel->GetDopplerFactor(listener->GetId());
@@ -1310,15 +1366,15 @@ namespace SparkyStudios::Audio::Amplitude
 
     Channel EngineImpl::Play(SwitchContainerHandle handle) const
     {
-        return Play(handle, AM_V3(0, 0, 0), 1.0f);
+        return Play(handle, kVector3Zero, 1.0f);
     }
 
-    Channel EngineImpl::Play(SwitchContainerHandle handle, const AmVec3& location) const
+    Channel EngineImpl::Play(SwitchContainerHandle handle, const AmVector3& location) const
     {
         return Play(handle, location, 1.0f);
     }
 
-    Channel EngineImpl::Play(SwitchContainerHandle handle, const AmVec3& location, const AmReal32 userGain) const
+    Channel EngineImpl::Play(SwitchContainerHandle handle, const AmVector3& location, const AmReal32 userGain) const
     {
         return PlayScopedSwitchContainer(handle, Entity(nullptr), location, userGain);
     }
@@ -1335,15 +1391,15 @@ namespace SparkyStudios::Audio::Amplitude
 
     Channel EngineImpl::Play(CollectionHandle handle) const
     {
-        return Play(handle, AM_V3(0, 0, 0), 1.0f);
+        return Play(handle, kVector3Zero, 1.0f);
     }
 
-    Channel EngineImpl::Play(CollectionHandle handle, const AmVec3& location) const
+    Channel EngineImpl::Play(CollectionHandle handle, const AmVector3& location) const
     {
         return Play(handle, location, 1.0f);
     }
 
-    Channel EngineImpl::Play(CollectionHandle handle, const AmVec3& location, const AmReal32 userGain) const
+    Channel EngineImpl::Play(CollectionHandle handle, const AmVector3& location, const AmReal32 userGain) const
     {
         return PlayScopedCollection(handle, Entity(nullptr), location, userGain);
     }
@@ -1360,15 +1416,15 @@ namespace SparkyStudios::Audio::Amplitude
 
     Channel EngineImpl::Play(SoundHandle handle) const
     {
-        return Play(handle, AM_V3(0, 0, 0), 1.0f);
+        return Play(handle, kVector3Zero, 1.0f);
     }
 
-    Channel EngineImpl::Play(SoundHandle handle, const AmVec3& location) const
+    Channel EngineImpl::Play(SoundHandle handle, const AmVector3& location) const
     {
         return Play(handle, location, 1.0f);
     }
 
-    Channel EngineImpl::Play(SoundHandle handle, const AmVec3& location, AmReal32 userGain) const
+    Channel EngineImpl::Play(SoundHandle handle, const AmVector3& location, AmReal32 userGain) const
     {
         return PlayScopedSound(handle, Entity(nullptr), location, userGain);
     }
@@ -1385,15 +1441,15 @@ namespace SparkyStudios::Audio::Amplitude
 
     Channel EngineImpl::Play(const AmString& name) const
     {
-        return Play(name, AM_V3(0, 0, 0), 1.0f);
+        return Play(name, kVector3Zero, 1.0f);
     }
 
-    Channel EngineImpl::Play(const AmString& name, const AmVec3& location) const
+    Channel EngineImpl::Play(const AmString& name, const AmVector3& location) const
     {
         return Play(name, location, 1.0f);
     }
 
-    Channel EngineImpl::Play(const AmString& name, const AmVec3& location, const AmReal32 userGain) const
+    Channel EngineImpl::Play(const AmString& name, const AmVector3& location, const AmReal32 userGain) const
     {
         if (SoundHandle handle = GetSoundHandle(name))
             return Play(handle, location, userGain);
@@ -1430,15 +1486,15 @@ namespace SparkyStudios::Audio::Amplitude
 
     Channel EngineImpl::Play(AmObjectID id) const
     {
-        return Play(id, AM_V3(0, 0, 0), 1.0f);
+        return Play(id, kVector3Zero, 1.0f);
     }
 
-    Channel EngineImpl::Play(AmObjectID id, const AmVec3& location) const
+    Channel EngineImpl::Play(AmObjectID id, const AmVector3& location) const
     {
         return Play(id, location, 1.0f);
     }
 
-    Channel EngineImpl::Play(AmObjectID id, const AmVec3& location, const AmReal32 userGain) const
+    Channel EngineImpl::Play(AmObjectID id, const AmVector3& location, const AmReal32 userGain) const
     {
         if (Sound* handle = GetSoundHandle(id))
             return Play(handle, location, userGain);
@@ -1510,6 +1566,16 @@ namespace SparkyStudios::Audio::Amplitude
 
         amLogError("Cannot trigger event: invalid ID (" AM_ID_CHAR_FMT ").", id);
         return EventCanceler(nullptr);
+    }
+
+    void EngineImpl::CancelAllEvents()
+    {
+        std::lock_guard lock(_frameThreadMutex);
+
+        for (auto& event : _state->running_events)
+            event->Abort();
+
+        _state->running_events.clear();
     }
 
     void EngineImpl::SetSwitchState(SwitchHandle handle, AmObjectID stateId) const
@@ -1861,6 +1927,9 @@ namespace SparkyStudios::Audio::Amplitude
 
     void EngineImpl::SetMasterGain(const AmReal32 gain) const
     {
+        if (!IsInitialized() || IsStopping())
+            return;
+
         _state->master_gain = gain;
         _state->mixer.SetMasterGain(gain);
     }
@@ -1872,6 +1941,9 @@ namespace SparkyStudios::Audio::Amplitude
 
     void EngineImpl::SetMute(const bool mute) const
     {
+        if (!IsInitialized() || IsStopping())
+            return;
+
         _state->mute = mute;
     }
 
@@ -1882,6 +1954,9 @@ namespace SparkyStudios::Audio::Amplitude
 
     void EngineImpl::SetDefaultListener(const Listener* listener)
     {
+        if (!IsInitialized() || IsStopping())
+            return;
+
         if (listener == nullptr)
             _defaultListener = nullptr;
 
@@ -1891,6 +1966,9 @@ namespace SparkyStudios::Audio::Amplitude
 
     void EngineImpl::SetDefaultListener(AmListenerID id)
     {
+        if (!IsInitialized() || IsStopping())
+            return;
+
         if (id == kAmInvalidObjectId)
             return;
 
@@ -2163,6 +2241,9 @@ namespace SparkyStudios::Audio::Amplitude
 
     void EngineImpl::Pause(bool pause) const
     {
+        if (!IsInitialized() || IsStopping())
+            return;
+
         if (_state->paused == pause)
             return;
 
@@ -2214,39 +2295,46 @@ namespace SparkyStudios::Audio::Amplitude
             return;
 
         AmReal32 gain;
-        AmVec2 pan;
         AmReal32 pitch;
+
+        bool isEntityScope = false;
 
         // Find the best listener for this channel.
         ListenerInternalState* listener = FindBestListener(state->listener_list, channel->GetLocation(), state->listener_fetch_mode);
 
         if (const SwitchContainer* switchContainer = channel->GetSwitchContainer(); switchContainer != nullptr)
         {
-            CalculateGainPanPitch(
-                &gain, &pan, &pitch, listener, nullptr, switchContainer->GetGain().GetValue(), switchContainer->GetPitch().GetValue(),
+            CalculateGainAndPitch(
+                &gain, &pitch, listener, nullptr, switchContainer->GetGain().GetValue(), switchContainer->GetPitch().GetValue(),
                 switchContainer->GetBus().GetState(), switchContainer->GetSpatialization(), channel->GetUserGain());
+
+            isEntityScope = switchContainer->GetScope() == eScope_Entity;
         }
         else if (const Collection* collection = channel->GetCollection(); collection != nullptr)
         {
-            CalculateGainPanPitch(
-                &gain, &pan, &pitch, listener, nullptr, collection->GetGain().GetValue(), collection->GetPitch().GetValue(),
+            CalculateGainAndPitch(
+                &gain, &pitch, listener, nullptr, collection->GetGain().GetValue(), collection->GetPitch().GetValue(),
                 collection->GetBus().GetState(), collection->GetSpatialization(), channel->GetUserGain());
+
+            isEntityScope = collection->GetScope() == eScope_Entity;
         }
         else if (const Sound* sound = channel->GetSound(); sound != nullptr)
         {
-            CalculateGainPanPitch(
-                &gain, &pan, &pitch, listener, nullptr, sound->GetGain().GetValue(), sound->GetPitch().GetValue(),
-                sound->GetBus().GetState(), sound->GetSpatialization(), channel->GetUserGain());
+            CalculateGainAndPitch(
+                &gain, &pitch, listener, nullptr, sound->GetGain().GetValue(), sound->GetPitch().GetValue(), sound->GetBus().GetState(),
+                sound->GetSpatialization(), channel->GetUserGain());
+
+            isEntityScope = sound->GetScope() == eScope_Entity;
         }
         else
         {
             AMPLITUDE_ASSERT(false);
         }
 
-        AssignBestRoom(channel, channel->GetLocation(), state);
+        if (isEntityScope)
+            AssignBestRoom(channel, channel->GetLocation(), state);
 
         channel->SetGain(gain);
-        channel->SetPan(pan);
         channel->SetPitch(pitch);
         channel->SetListener(Listener(listener));
     }
@@ -2301,7 +2389,9 @@ namespace SparkyStudios::Audio::Amplitude
 
     void EngineImpl::AdvanceFrame(AmTime delta) const
     {
-        if (_state == nullptr)
+        std::lock_guard lock(_updateMutex);
+
+        if (!IsInitialized())
             return;
 
         if (_state->paused)
@@ -2309,18 +2399,16 @@ namespace SparkyStudios::Audio::Amplitude
 
         if (!_state->stopping)
         {
-            // Execute pending frame callbacks.
-            Thread::LockMutex(_frameThreadMutex);
-            {
-                while (!_nextFrameCallbacks.empty())
-                {
-                    const auto& callback = _nextFrameCallbacks.front();
-                    callback(delta);
+            std::lock_guard lock(_frameThreadMutex);
 
-                    _nextFrameCallbacks.pop();
-                }
+            // Execute pending frame callbacks.
+            while (!_nextFrameCallbacks.empty())
+            {
+                const auto& callback = _nextFrameCallbacks.front();
+                callback(delta);
+
+                _nextFrameCallbacks.pop();
             }
-            Thread::UnlockMutex(_frameThreadMutex);
         }
 
         EraseFinishedSounds(_state);
@@ -2398,18 +2486,13 @@ namespace SparkyStudios::Audio::Amplitude
 
     void EngineImpl::OnNextFrame(std::function<void(AmTime delta)> callback) const
     {
-        Thread::LockMutex(_frameThreadMutex);
-        {
-            _nextFrameCallbacks.push(std::move(callback));
-        }
-        Thread::UnlockMutex(_frameThreadMutex);
+        std::lock_guard lock(_frameThreadMutex);
+        _nextFrameCallbacks.push(std::move(callback));
     }
 
     void EngineImpl::WaitUntilNextFrame() const
     {
-        const AmUInt64 nextFrame = _state->current_frame + 1;
-        while (_state->current_frame < nextFrame)
-            Thread::Sleep(1);
+        WaitUntilFrames(1);
     }
 
     void EngineImpl::WaitUntilFrames(AmUInt64 frameCount) const
@@ -2455,6 +2538,11 @@ namespace SparkyStudios::Audio::Amplitude
         return _state;
     }
 
+    const AmOsString& EngineImpl::GetConfigurationPath() const
+    {
+        return _configFilePath;
+    }
+
     AmReal32 EngineImpl::GetSoundSpeed() const
     {
         return _state->sound_speed;
@@ -2463,6 +2551,26 @@ namespace SparkyStudios::Audio::Amplitude
     AmReal32 EngineImpl::GetDopplerFactor() const
     {
         return _state->doppler_factor;
+    }
+
+    AmUInt32 EngineImpl::GetActiveEntitiesCount() const
+    {
+        return _state->entity_list.size();
+    }
+
+    AmUInt32 EngineImpl::GetActiveListenersCount() const
+    {
+        return _state->listener_list.size();
+    }
+
+    AmUInt32 EngineImpl::GetActiveEnvironmentsCount() const
+    {
+        return _state->environment_list.size();
+    }
+
+    AmUInt32 EngineImpl::GetActiveRoomsCount() const
+    {
+        return _state->room_list.size();
     }
 
     AmUInt32 EngineImpl::GetSamplesPerStream() const
@@ -2483,6 +2591,16 @@ namespace SparkyStudios::Audio::Amplitude
     AmUInt32 EngineImpl::GetMaxEntitiesCount() const
     {
         return GetEngineConfigDefinition()->game()->entities();
+    }
+
+    AmUInt32 EngineImpl::GetMaxEnvironmentsCount() const
+    {
+        return GetEngineConfigDefinition()->game()->environments();
+    }
+
+    AmUInt32 EngineImpl::GetMaxRoomsCount() const
+    {
+        return GetEngineConfigDefinition()->game()->rooms();
     }
 
     const Curve& EngineImpl::GetOcclusionCoefficientCurve() const
@@ -2520,10 +2638,27 @@ namespace SparkyStudios::Audio::Amplitude
         return _state->hrir_sphere;
     }
 
+    Channel EngineImpl::GetChannel(AmChannelID channelID) const
+    {
+        const auto findIt = std::ranges::find_if(
+            _state->channel_state_memory,
+            [channelID](const ChannelInternalState& state)
+            {
+                return (state.GetChannelStateId() == channelID);
+            });
+
+        return Channel(findIt != _state->channel_state_memory.end() ? &*findIt : nullptr);
+    }
+
+    bool EngineImpl::IsStopping() const
+    {
+        return _state->stopping;
+    }
+
 #pragma endregion
 
     Channel EngineImpl::PlayScopedSwitchContainer(
-        SwitchContainerHandle handle, const Entity& entity, const AmVec3& location, const AmReal32 userGain) const
+        SwitchContainerHandle handle, const Entity& entity, const AmVector3& location, const AmReal32 userGain) const
     {
         if (handle == nullptr)
         {
@@ -2531,7 +2666,9 @@ namespace SparkyStudios::Audio::Amplitude
             return Channel(nullptr);
         }
 
-        if (handle->GetScope() == eScope_Entity && !entity.Valid())
+        bool isEntityScope = handle->GetScope() == eScope_Entity;
+
+        if (isEntityScope && !entity.Valid())
         {
             amLogError("Cannot play a switch container in Entity scope. No entity defined.");
             return Channel(nullptr);
@@ -2544,15 +2681,15 @@ namespace SparkyStudios::Audio::Amplitude
         }
 
         // Find the best listener for this channel.
-        ListenerInternalState* listener = FindBestListener(_state->listener_list, location, _state->listener_fetch_mode);
+        ListenerInternalState* listener =
+            FindBestListener(_state->listener_list, isEntityScope ? entity.GetLocation() : location, _state->listener_fetch_mode);
 
         // Find where it belongs in the list.
         AmReal32 gain;
-        AmVec2 pan;
         AmReal32 pitch;
-        CalculateGainPanPitch(
-            &gain, &pan, &pitch, listener, nullptr, handle->GetGain().GetValue(), handle->GetPitch().GetValue(),
-            handle->GetBus().GetState(), handle->GetSpatialization(), userGain);
+        CalculateGainAndPitch(
+            &gain, &pitch, listener, nullptr, handle->GetGain().GetValue(), handle->GetPitch().GetValue(), handle->GetBus().GetState(),
+            handle->GetSpatialization(), userGain);
         const AmReal32 priority = gain * handle->GetPriority().GetValue();
         const auto insertionPoint = FindInsertionPoint(&_state->playing_channel_list, priority);
 
@@ -2568,10 +2705,22 @@ namespace SparkyStudios::Audio::Amplitude
             return Channel(nullptr);
         }
 
+        newChannel->SetChannelState(eChannelPlaybackState_Pending);
+
         // Now that we have our new channel, set the data on it and update the next pointers.
-        newChannel->SetEntity(entity);
+        if (isEntityScope)
+            newChannel->SetEntity(entity);
+
         newChannel->SetSwitchContainer(dynamic_cast<SwitchContainerImpl*>(handle));
         newChannel->SetUserGain(userGain);
+
+        if (isEntityScope)
+            AssignBestRoom(newChannel, location, _state);
+
+        newChannel->SetGain(gain);
+        newChannel->SetPitch(pitch);
+        newChannel->SetLocation(location);
+        newChannel->SetListener(Listener(listener));
 
         // Attempt to play the channel, if the engine is paused, the channel will be played later.
         OnNextFrame(
@@ -2586,19 +2735,11 @@ namespace SparkyStudios::Audio::Amplitude
                 }
             });
 
-        AssignBestRoom(newChannel, location, _state);
-
-        newChannel->SetGain(gain);
-        newChannel->SetPan(pan);
-        newChannel->SetPitch(pitch);
-        newChannel->SetLocation(location);
-        newChannel->SetListener(Listener(listener));
-
         return Channel(newChannel);
     }
 
     Channel EngineImpl::PlayScopedCollection(
-        CollectionHandle handle, const Entity& entity, const AmVec3& location, const AmReal32 userGain) const
+        CollectionHandle handle, const Entity& entity, const AmVector3& location, const AmReal32 userGain) const
     {
         if (handle == nullptr)
         {
@@ -2606,7 +2747,9 @@ namespace SparkyStudios::Audio::Amplitude
             return Channel(nullptr);
         }
 
-        if (handle->GetScope() == eScope_Entity && !entity.Valid())
+        bool isEntityScope = handle->GetScope() == eScope_Entity;
+
+        if (isEntityScope && !entity.Valid())
         {
             amLogError("Cannot play a collection in Entity scope. No entity defined.");
             return Channel(nullptr);
@@ -2619,15 +2762,15 @@ namespace SparkyStudios::Audio::Amplitude
         }
 
         // Find the best listener for this channel.
-        ListenerInternalState* listener = FindBestListener(_state->listener_list, location, _state->listener_fetch_mode);
+        ListenerInternalState* listener =
+            FindBestListener(_state->listener_list, isEntityScope ? entity.GetLocation() : location, _state->listener_fetch_mode);
 
         // Find where it belongs in the list.
         AmReal32 gain;
-        AmVec2 pan;
         AmReal32 pitch;
-        CalculateGainPanPitch(
-            &gain, &pan, &pitch, listener, nullptr, handle->GetGain().GetValue(), handle->GetPitch().GetValue(),
-            handle->GetBus().GetState(), handle->GetSpatialization(), userGain);
+        CalculateGainAndPitch(
+            &gain, &pitch, listener, nullptr, handle->GetGain().GetValue(), handle->GetPitch().GetValue(), handle->GetBus().GetState(),
+            handle->GetSpatialization(), userGain);
         const AmReal32 priority = gain * handle->GetPriority().GetValue();
         const auto insertionPoint = FindInsertionPoint(&_state->playing_channel_list, priority);
 
@@ -2643,10 +2786,22 @@ namespace SparkyStudios::Audio::Amplitude
             return Channel(nullptr);
         }
 
+        newChannel->SetChannelState(eChannelPlaybackState_Pending);
+
         // Now that we have our new channel, set the data on it and update the next pointers.
-        newChannel->SetEntity(entity);
+        if (isEntityScope)
+            newChannel->SetEntity(entity);
+
         newChannel->SetCollection(dynamic_cast<CollectionImpl*>(handle));
         newChannel->SetUserGain(userGain);
+
+        if (isEntityScope)
+            AssignBestRoom(newChannel, location, _state);
+
+        newChannel->SetGain(gain);
+        newChannel->SetPitch(pitch);
+        newChannel->SetLocation(location);
+        newChannel->SetListener(Listener(listener));
 
         // Attempt to play the channel, if the engine is paused, the channel will be played later.
         OnNextFrame(
@@ -2661,18 +2816,10 @@ namespace SparkyStudios::Audio::Amplitude
                 }
             });
 
-        AssignBestRoom(newChannel, location, _state);
-
-        newChannel->SetGain(gain);
-        newChannel->SetPan(pan);
-        newChannel->SetPitch(pitch);
-        newChannel->SetLocation(location);
-        newChannel->SetListener(Listener(listener));
-
         return Channel(newChannel);
     }
 
-    Channel EngineImpl::PlayScopedSound(SoundHandle handle, const Entity& entity, const AmVec3& location, AmReal32 userGain) const
+    Channel EngineImpl::PlayScopedSound(SoundHandle handle, const Entity& entity, const AmVector3& location, AmReal32 userGain) const
     {
         if (handle == nullptr)
         {
@@ -2680,7 +2827,9 @@ namespace SparkyStudios::Audio::Amplitude
             return Channel(nullptr);
         }
 
-        if (handle->GetScope() == eScope_Entity && !entity.Valid())
+        bool isEntityScope = handle->GetScope() == eScope_Entity;
+
+        if (isEntityScope && !entity.Valid())
         {
             amLogError("Cannot play a sound in Entity scope. No entity defined.");
             return Channel(nullptr);
@@ -2693,15 +2842,15 @@ namespace SparkyStudios::Audio::Amplitude
         }
 
         // Find the best listener for this channel.
-        ListenerInternalState* listener = FindBestListener(_state->listener_list, location, _state->listener_fetch_mode);
+        ListenerInternalState* listener =
+            FindBestListener(_state->listener_list, isEntityScope ? entity.GetLocation() : location, _state->listener_fetch_mode);
 
         // Find where it belongs in the list.
         AmReal32 gain;
-        AmVec2 pan;
         AmReal32 pitch;
-        CalculateGainPanPitch(
-            &gain, &pan, &pitch, listener, nullptr, handle->GetGain().GetValue(), handle->GetPitch().GetValue(),
-            handle->GetBus().GetState(), handle->GetSpatialization(), userGain);
+        CalculateGainAndPitch(
+            &gain, &pitch, listener, nullptr, handle->GetGain().GetValue(), handle->GetPitch().GetValue(), handle->GetBus().GetState(),
+            handle->GetSpatialization(), userGain);
         const AmReal32 priority = gain * handle->GetPriority().GetValue();
         const auto insertionPoint = FindInsertionPoint(&_state->playing_channel_list, priority);
 
@@ -2717,10 +2866,22 @@ namespace SparkyStudios::Audio::Amplitude
             return Channel(nullptr);
         }
 
+        newChannel->SetChannelState(eChannelPlaybackState_Pending);
+
         // Now that we have our new channel, set the data on it and update the next pointers.
-        newChannel->SetEntity(entity);
+        if (isEntityScope)
+            newChannel->SetEntity(entity);
+
         newChannel->SetSound(dynamic_cast<SoundImpl*>(handle));
         newChannel->SetUserGain(userGain);
+
+        if (isEntityScope)
+            AssignBestRoom(newChannel, location, _state);
+
+        newChannel->SetGain(gain);
+        newChannel->SetPitch(pitch);
+        newChannel->SetLocation(location);
+        newChannel->SetListener(Listener(listener));
 
         // Attempt to play the channel, if the engine is paused, the channel will be played later.
         OnNextFrame(
@@ -2734,14 +2895,6 @@ namespace SparkyStudios::Audio::Amplitude
                     InsertIntoFreeList(_state, newChannel);
                 }
             });
-
-        AssignBestRoom(newChannel, location, _state);
-
-        newChannel->SetGain(gain);
-        newChannel->SetPan(pan);
-        newChannel->SetPitch(pitch);
-        newChannel->SetLocation(location);
-        newChannel->SetListener(Listener(listener));
 
         return Channel(newChannel);
     }

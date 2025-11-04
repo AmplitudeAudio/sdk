@@ -32,7 +32,7 @@ jobs:
           echo "Fetching list of cache key"
           cacheKeysForPR=$(gh actions-cache list -R $REPO -B $BRANCH | cut -f 1 )
 
-          ## Setting this to not fail the workflow while deleting cache keys. 
+          ## Setting this to not fail the workflow while deleting cache keys.
           set +e
           echo "Deleting caches..."
           for cacheKey in $cacheKeysForPR
@@ -44,8 +44,8 @@ jobs:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
   build:
-    needs: [ cleanup ]
-    uses: ./.github/workflows/cmake.yml
+    needs: [cleanup]
+    uses: ./.github/workflows/xmake.yml
     with:
       project-path: .
       project-slug: sdk
@@ -53,70 +53,94 @@ jobs:
     secrets: inherit
 
   release:
-    needs: [ build ]
+    needs: [build]
     runs-on: ${{ matrix.config.os }}
     name: "[${{ matrix.build_type }}] ${{ matrix.config.name }}"
     strategy:
       fail-fast: false
       matrix:
-        build_type: [ "release", "debug" ]
+        build_type: ["release", "debug"]
         config:
           - name: "Windows Latest MSVC"
             os: windows-latest
             archiver: "7z a"
-            target_triplet: x64-windows
+            arch: x64
+            plat: windows
 
           - name: "Ubuntu Latest GCC"
-            os: ubuntu-latest
+            os: ubuntu-24.04
             archiver: "7z a"
-            target_triplet: x64-linux
+            arch: x86_64
+            plat: linux
+
+          - name: "Ubuntu Latest Clang"
+            os: ubuntu-24.04
+            archiver: "7z a"
+            arch: x86_64
+            plat: linux
 
           - name: "macOS x64 Latest Clang"
-            os: macos-13
+            os: macos-15-intel
             archiver: "7za a"
-            target_triplet: x64-osx
+            arch: x86_64
+            plat: macosx
 
           - name: "macOS arm64 Latest Clang"
-            os: macos-14
+            os: macos-15
             archiver: "7za a"
-            target_triplet: arm64-osx
+            arch: arm64
+            plat: macosx
 
           - name: "Android x64 Latest Clang"
             os: ubuntu-latest
             archiver: "7za a"
-            target_triplet: x64-android
+            arch: x86_64
+            plat: android
 
           - name: "Android arm64 Latest Clang"
             os: ubuntu-latest
             archiver: "7za a"
-            target_triplet: arm64-android
+            arch: arm64-v8a
+            plat: android
 
           - name: "Android x86 Latest Clang"
             os: ubuntu-latest
             archiver: "7za a"
-            target_triplet: x86-android
+            arch: x86
+            plat: android
 
           - name: "Android arm Latest Clang"
             os: ubuntu-latest
             archiver: "7za a"
-            target_triplet: arm-neon-android
+            arch: armeabi-v7a
+            plat: android
+
+          - name: "iOS arm64 Latest Clang"
+            os: macos-15
+            archiver: "7za a"
+            arch: arm64
+            plat: iphoneos
+
+          - name: "iOS x86_64 Latest Clang"
+            os: macos-15-intel
+            archiver: "7za a"
+            arch: x86_64
+            plat: iphoneos
 
     steps:
       - name: Check out code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       - name: Restore SDK Cache
         uses: actions/cache/restore@v4
         with:
           enableCrossOsArchive: true
           path: sdk
-          key: ${{ matrix.build_type }}-sdk-${{ matrix.config.target_triplet }}-${{ hashFiles('**/sdk') }}
-          restore-keys: |
-            ${{ matrix.build_type }}-sdk-${{ matrix.config.target_triplet }}-
+          key: ${{ matrix.build_type }}-sdk-${{ matrix.config.arch }}-${{ matrix.config.plat }}
 
       - name: Pack
         shell: bash
-        run: ${{ matrix.config.archiver }} ./${{ matrix.build_type }}_sdk_${{ matrix.config.target_triplet }}.7z LICENSE NOTICE README.md sdk
+        run: ${{ matrix.config.archiver }} ./${{ matrix.build_type }}_sdk_${{ matrix.config.arch }}-${{ matrix.config.plat }}.7z LICENSE NOTICE README.md sdk
 
       - name: Upload
         uses: actions/upload-artifact@v4
@@ -126,7 +150,7 @@ jobs:
             NOTICE
             README.md
             sdk/
-          name: ${{ matrix.build_type }}_sdk_${{ matrix.config.target_triplet }}
+          name: ${{ matrix.build_type }}_sdk_${{ matrix.config.arch }}-${{ matrix.config.plat }}
 
       - name: Upload release asset
         if: github.event_name == 'release' && (github.event.action == 'published' || github.event.action == 'created')
@@ -135,6 +159,6 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           upload_url: ${{ github.event.release.upload_url }}
-          asset_path: ./${{ matrix.build_type }}_sdk_${{ matrix.config.target_triplet }}.7z
-          asset_name: ${{ matrix.build_type }}_sdk_${{ matrix.config.target_triplet }}.7z
+          asset_path: ./${{ matrix.build_type }}_sdk_${{ matrix.config.arch }}-${{ matrix.config.plat }}.7z
+          asset_name: ${{ matrix.build_type }}_sdk_${{ matrix.config.arch }}-${{ matrix.config.plat }}.7z
           asset_content_type: application/x-7z-compressed

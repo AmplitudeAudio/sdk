@@ -1,1 +1,0 @@
-{"id":101,"name":"symphony","effect":0,"gain":{"kind":"Static","value":1},"pitch":{"kind":"Static","value":1},"bus":1,"priority":{"kind":"Static","value":1},"spatialization":0,"attenuation":0,"scope":0,"fader":"Linear","stream":false,"loop":{"enabled":true,"loop_count":0},"near_field_gain":{"kind":"Static","value":0},"path":"music/symphony.ogg"}

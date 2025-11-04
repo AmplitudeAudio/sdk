@@ -25,7 +25,7 @@ namespace SparkyStudios::Audio::Amplitude
         , _bitDepth(3)
     {}
 
-    AmResult LofiFilter::Init(AmReal32 sampleRate, AmReal32 bitDepth)
+    AmResult LofiFilter::Initialize(AmReal32 sampleRate, AmReal32 bitDepth)
     {
         if (sampleRate <= 0 || bitDepth <= 0)
             return eErrorCode_InvalidParameter;
@@ -36,55 +36,49 @@ namespace SparkyStudios::Audio::Amplitude
         return eErrorCode_Success;
     }
 
-    AmUInt32 LofiFilter::GetParamCount() const
+    AmUInt32 LofiFilter::GetParameterCount() const
     {
         return ATTRIBUTE_LAST;
     }
 
-    AmReal32 LofiFilter::GetParamMax(AmUInt32 index) const
-    {
-        switch (index)
-        {
-        case ATTRIBUTE_SAMPLERATE:
-            return 22000;
-        case ATTRIBUTE_BITDEPTH:
-            return 16;
-        default:
-            return 1;
-        }
-    }
-
-    AmReal32 LofiFilter::GetParamMin(AmUInt32 index) const
-    {
-        switch (index)
-        {
-        case ATTRIBUTE_SAMPLERATE:
-            return 100;
-        case ATTRIBUTE_BITDEPTH:
-            return 0.5;
-        default:
-            return 0;
-        }
-    }
-
-    AmString LofiFilter::GetParamName(AmUInt32 index) const
+    AmReal32 LofiFilter::GetParameterMax(AmUInt32 index) const
     {
         if (index >= ATTRIBUTE_LAST)
-            return "";
+            return 0.0f;
 
-        static constexpr const char* names[ATTRIBUTE_LAST] = { "Wet", "Samplerate", "BitDepth" };
+        static const AmReal32 values[ATTRIBUTE_LAST] = { 1.0f, 22000.0f, 16.0f };
+
+        return values[index];
+    }
+
+    AmReal32 LofiFilter::GetParameterMin(AmUInt32 index) const
+    {
+        if (index >= ATTRIBUTE_LAST)
+            return 0.0f;
+
+        static const AmReal32 values[ATTRIBUTE_LAST] = { 0.0f, 100.0f, 0.5f };
+
+        return values[index];
+    }
+
+    AmString LofiFilter::GetParameterName(AmUInt32 index) const
+    {
+        if (index >= ATTRIBUTE_LAST)
+            return "Unknown";
+
+        static const AmString names[ATTRIBUTE_LAST] = { "Wet", "Samplerate", "Bit Depth" };
 
         return names[index];
     }
 
-    AmUInt32 LofiFilter::GetParamType(AmUInt32 index) const
+    eParameterType LofiFilter::GetParameterType(AmUInt32 index) const
     {
-        return kParameterTypeFloat;
+        return eParameterType_Float;
     }
 
     std::shared_ptr<FilterInstance> LofiFilter::CreateInstance()
     {
-        return AmSharedPtr<LofiFilterInstance, eMemoryPoolKind_Filtering>::Make(this);
+        return ampoolshared(eMemoryPoolKind_Filtering, LofiFilterInstance, this);
     }
 
     LofiFilterInstance::LofiFilterInstance(LofiFilter* parent)

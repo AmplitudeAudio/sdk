@@ -53,7 +53,7 @@
 #if defined(AM_BUILDSYSTEM_BUILDING_PLUGIN)
 #define AM_API_PLUGIN AM_LIB_EXPORT
 #else
-#define AM_API_PLUGIN
+#define AM_API_PLUGIN AM_LIB_IMPORT
 #endif
 #else // AM_BUILDSYSTEM_STATIC
 #define AM_API_PUBLIC
@@ -76,11 +76,11 @@
 #endif // AM_ARCH_X86 || AM_ARCH_X86_64 || AM_ARCH_ARM_V7 || AM_ARCH_ARM_64
 #else
 #define PFFFT_SIMD_DISABLE
-#define HANDMADE_MATH_NO_SIMD
 #define MA_NO_NEON
 #define MA_NO_AVX2
 #define MA_NO_AVX
 #define MA_NO_SSE2
+#define EIGEN_DONT_VECTORIZE
 #endif // AMPLITUDE_DISABLE_SIMD
 
 #ifndef M_PI
@@ -91,7 +91,9 @@
 // Configuration defines
 // --------------------------------------------------------------
 
+#if !defined(AM_MAX_THREAD_POOL_TASKS)
 /// Maximum number of tasks in a single pool
 #define AM_MAX_THREAD_POOL_TASKS 1024
+#endif
 
 #endif // _AM_CORE_COMMON_CONFIG_H

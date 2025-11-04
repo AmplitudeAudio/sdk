@@ -165,7 +165,7 @@ namespace SparkyStudios::Audio::Amplitude
                 amLogError("Linking a parameter to an invalid or uninitialized RTPC handle.");
             }
 
-            auto curve = AmSharedPtr<Curve, eMemoryPoolKind_Engine>::Make();
+            auto curve = ampoolshared(eMemoryPoolKind_Engine, Curve);
             curve->Initialize(definition->rtpc()->curve());
 
             _curve = std::move(curve);

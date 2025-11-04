@@ -15,6 +15,7 @@
 #include <SparkyStudios/Audio/Amplitude/Core/Memory.h>
 
 #include <DSP/Filters/FlangerFilter.h>
+#include <Utils/Utils.h>
 
 namespace SparkyStudios::Audio::Amplitude
 {
@@ -35,51 +36,49 @@ namespace SparkyStudios::Audio::Amplitude
         return eErrorCode_Success;
     }
 
-    AmUInt32 FlangerFilter::GetParamCount() const
+    AmUInt32 FlangerFilter::GetParameterCount() const
     {
         return ATTRIBUTE_LAST;
     }
 
-    AmString FlangerFilter::GetParamName(AmUInt32 index) const
+    AmString FlangerFilter::GetParameterName(AmUInt32 index) const
     {
         if (index >= ATTRIBUTE_LAST)
-            return "";
+            return "Unknown";
 
-        static AmString names[ATTRIBUTE_LAST] = { "Wet", "Delay", "Frequency" };
+        static const AmString names[ATTRIBUTE_LAST] = { "Wet", "Delay", "Frequency" };
 
         return names[index];
     }
 
-    AmUInt32 FlangerFilter::GetParamType(AmUInt32 index) const
+    eParameterType FlangerFilter::GetParameterType(AmUInt32 index) const
     {
-        return kParameterTypeFloat;
+        return eParameterType_Float;
     }
 
-    AmReal32 FlangerFilter::GetParamMax(AmUInt32 index) const
+    AmReal32 FlangerFilter::GetParameterMax(AmUInt32 index) const
     {
-        if (index == ATTRIBUTE_DELAY)
-            return 0.1f;
-
-        if (index == ATTRIBUTE_FREQUENCY)
-            return 100.0f;
-
-        return 1.0f;
-    }
-
-    AmReal32 FlangerFilter::GetParamMin(AmUInt32 index) const
-    {
-        if (index == ATTRIBUTE_WET)
+        if (index >= ATTRIBUTE_LAST)
             return 0.0f;
 
-        if (index == ATTRIBUTE_FREQUENCY)
-            return 0.1f;
+        static const AmReal32 values[ATTRIBUTE_LAST] = { 1.0f, 0.1f, 100.0f };
 
-        return 0.001f;
+        return values[index];
+    }
+
+    AmReal32 FlangerFilter::GetParameterMin(AmUInt32 index) const
+    {
+        if (index >= ATTRIBUTE_LAST)
+            return 0.0f;
+
+        static const AmReal32 values[ATTRIBUTE_LAST] = { 0.0f, 0.001f, 0.1f };
+
+        return values[index];
     }
 
     std::shared_ptr<FilterInstance> FlangerFilter::CreateInstance()
     {
-        return AmSharedPtr<FlangerFilterInstance, eMemoryPoolKind_Filtering>::Make(this);
+        return ampoolshared(eMemoryPoolKind_Filtering, FlangerFilterInstance, this);
     }
 
     FlangerFilterInstance::FlangerFilterInstance(FlangerFilter* parent)
@@ -91,7 +90,7 @@ namespace SparkyStudios::Audio::Amplitude
         _offset = 0;
         _index = 0;
 
-        Initialize(parent->GetParamCount());
+        Initialize(parent->GetParameterCount());
 
         m_parameters[FlangerFilter::ATTRIBUTE_DELAY] = parent->_delay;
         m_parameters[FlangerFilter::ATTRIBUTE_FREQUENCY] = parent->_frequency;

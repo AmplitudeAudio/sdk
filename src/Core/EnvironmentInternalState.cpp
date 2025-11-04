@@ -35,12 +35,12 @@ namespace SparkyStudios::Audio::Amplitude
         _id = id;
     }
 
-    void EnvironmentInternalState::SetLocation(const AmVec3& location)
+    void EnvironmentInternalState::SetLocation(const AmVector3& location)
     {
         _zone->SetLocation(location);
     }
 
-    const AmVec3& EnvironmentInternalState::GetLocation() const
+    const AmVector3& EnvironmentInternalState::GetLocation() const
     {
         return _zone->GetLocation();
     }
@@ -55,17 +55,17 @@ namespace SparkyStudios::Audio::Amplitude
         return _zone->GetOrientation();
     }
 
-    AmVec3 EnvironmentInternalState::GetDirection() const
+    AmVector3 EnvironmentInternalState::GetDirection() const
     {
         return _zone->GetDirection();
     }
 
-    AmVec3 EnvironmentInternalState::GetUp() const
+    AmVector3 EnvironmentInternalState::GetUp() const
     {
         return _zone->GetUp();
     }
 
-    AmReal32 EnvironmentInternalState::GetFactor(const AmVec3& location) const
+    AmReal32 EnvironmentInternalState::GetFactor(const AmVector3& location) const
     {
         if (amEngine->IsGameTrackingEnvironmentAmounts())
             return 0.0f;

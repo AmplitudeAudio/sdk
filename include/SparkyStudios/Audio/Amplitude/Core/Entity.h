@@ -19,6 +19,8 @@
 
 #include <SparkyStudios/Audio/Amplitude/Math/Orientation.h>
 
+#include <map>
+
 namespace SparkyStudios::Audio::Amplitude
 {
     class EntityInternalState;
@@ -94,21 +96,21 @@ namespace SparkyStudios::Audio::Amplitude
          *
          * @return The entity's velocity.
          */
-        [[nodiscard]] const AmVec3& GetVelocity() const;
+        [[nodiscard]] const AmVector3& GetVelocity() const;
 
         /**
          * @brief Sets the location of this entity.
          *
          * @param[in] location The new location.
          */
-        void SetLocation(const AmVec3& location) const;
+        void SetLocation(const AmVector3& location) const;
 
         /**
          * @brief Gets the current location of this entity.
          *
          * @return The current location of this entity.
          */
-        [[nodiscard]] const AmVec3& GetLocation() const;
+        [[nodiscard]] const AmVector3& GetLocation() const;
 
         /**
          * @brief Sets the orientation of this entity.
@@ -122,14 +124,14 @@ namespace SparkyStudios::Audio::Amplitude
          *
          * @return The direction vector.
          */
-        [[nodiscard]] AmVec3 GetDirection() const;
+        [[nodiscard]] AmVector3 GetDirection() const;
 
         /**
          * @brief Gets the up vector of the entity.
          *
          * @return The up vector.
          */
-        [[nodiscard]] AmVec3 GetUp() const;
+        [[nodiscard]] AmVector3 GetUp() const;
 
         /**
          * @brief Gets the orientation of the entity.
@@ -221,6 +223,13 @@ namespace SparkyStudios::Audio::Amplitude
          * @return The list of environments where this entity belongs or has visited.
          */
         [[nodiscard]] const std::map<AmEnvironmentID, AmReal32>& GetEnvironments() const;
+
+        /**
+         * @brief Gets the number of active channels for this entity.
+         *
+         * @return The number of active channels.
+         */
+        [[nodiscard]] AmUInt64 GetActiveChannelCount() const;
 
         /**
          * @brief Returns the internal state of this entity.

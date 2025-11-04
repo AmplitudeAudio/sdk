@@ -64,6 +64,11 @@ namespace SparkyStudios::Audio::Amplitude
          * @brief The channel is playing audio but in a paused state.
          */
         eChannelPlaybackState_Paused = 5,
+
+        /**
+         * @brief The channel is playing audio but in a pending state.
+         */
+        eChannelPlaybackState_Pending = 6,
     };
 
     /**
@@ -150,7 +155,7 @@ namespace SparkyStudios::Audio::Amplitude
          *
          * @return The ID of this channel.
          */
-        [[nodiscard]] AmUInt64 GetId() const;
+        [[nodiscard]] AmChannelID GetId() const;
 
         /**
          * @brief Checks if the sound associated with this channel is playing.
@@ -198,7 +203,7 @@ namespace SparkyStudios::Audio::Amplitude
          *
          * @return The location of this channel.
          */
-        [[nodiscard]] const AmVec3& GetLocation() const;
+        [[nodiscard]] const AmVector3& GetLocation() const;
 
         /**
          * @brief Sets the location of this channel in the game environment.
@@ -208,7 +213,7 @@ namespace SparkyStudios::Audio::Amplitude
          *
          * @param[in] location The new location of the channel.
          */
-        void SetLocation(const AmVec3& location) const;
+        void SetLocation(const AmVector3& location) const;
 
         /**
          * @brief Sets the gain on this channel.

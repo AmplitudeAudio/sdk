@@ -17,8 +17,6 @@
 #ifndef _AM_IMPLEMENTATION_CORE_PLAYBACK_CHANNEL_INTERNAL_STATE_H
 #define _AM_IMPLEMENTATION_CORE_PLAYBACK_CHANNEL_INTERNAL_STATE_H
 
-#include <utility>
-
 #include <SparkyStudios/Audio/Amplitude/Core/Common.h>
 
 #include <SparkyStudios/Audio/Amplitude/Core/Entity.h>
@@ -51,7 +49,6 @@ namespace SparkyStudios::Audio::Amplitude
             , _switchContainer(nullptr)
             , _collection(nullptr)
             , _sound(nullptr)
-            , _switch(nullptr)
             , _playingSwitchContainerStateId(kAmInvalidObjectId)
             , _previousSwitchContainerStateId(kAmInvalidObjectId)
             , _fader(nullptr)
@@ -60,11 +57,8 @@ namespace SparkyStudios::Audio::Amplitude
             , _userGain(1.0f)
             , _gain(1.0f)
             , _realGain(1.0f)
-            , _pan()
             , _pitch(1.0f)
             , _location()
-            , _directivity(0.0f)
-            , _directivitySharpness(1.0f)
             , _channelStateId(kAmInvalidObjectId)
             , _dopplerFactors()
         {}
@@ -155,8 +149,13 @@ namespace SparkyStudios::Audio::Amplitude
             return _channelState;
         }
 
+        AM_INLINE eChannelPlaybackState SetChannelState(eChannelPlaybackState state)
+        {
+            return _channelState = state;
+        }
+
         // Get or set the location of this channel
-        AM_INLINE void SetLocation(const AmVec3& location)
+        AM_INLINE void SetLocation(const AmVector3& location)
         {
             // Entity scoped channel
             if (_entity.Valid())
@@ -166,7 +165,7 @@ namespace SparkyStudios::Audio::Amplitude
             _location = location;
         }
 
-        [[nodiscard]] AM_INLINE const AmVec3& GetLocation() const
+        [[nodiscard]] AM_INLINE const AmVector3& GetLocation() const
         {
             // Entity scoped channel
             if (_entity.Valid())
@@ -211,34 +210,6 @@ namespace SparkyStudios::Audio::Amplitude
 
         [[nodiscard]] AmReal32 GetPitch() const;
 
-        /**
-         * @brief Sets the directivity of souund.
-         *
-         * @param directivity The directivity of the sound.
-         * @param directivitySharpness The sharpness of the directivity.
-         */
-        void SetDirectivity(AmReal32 directivity, AmReal32 directivitySharpness);
-
-        /**
-         * @brief Get the directivity of the sound source.
-         *
-         * @return The directivity.
-         */
-        [[nodiscard]] AM_INLINE AmReal32 GetDirectivity() const
-        {
-            return _directivity;
-        }
-
-        /**
-         * @brief Get the sharpness of the sound source directivity.
-         *
-         * @return The directivity sharpness.
-         */
-        [[nodiscard]] AM_INLINE AmReal32 GetDirectivitySharpness() const
-        {
-            return _directivitySharpness;
-        }
-
         // Immediately stop the audio. May cause clicking.
         void Halt();
 
@@ -253,15 +224,6 @@ namespace SparkyStudios::Audio::Amplitude
 
         // Fade out over the specified number of milliseconds.
         void FadeOut(AmTime duration, eChannelPlaybackState targetState = eChannelPlaybackState_Stopped);
-
-        // Sets the pan based on a position in a unit circle.
-        void SetPan(const AmVec2& pan);
-
-        // Returns the pan of this channel.
-        [[nodiscard]] AM_INLINE const AmVec2& GetPan() const
-        {
-            return _pan;
-        }
 
         // Devirtualizes a virtual channel. This transfers ownership of the given
         // channel's channel_id to this channel.
@@ -396,7 +358,6 @@ namespace SparkyStudios::Audio::Amplitude
         // The sound source that was chosen from the sound collection.
         SoundImpl* _sound;
 
-        const SwitchImpl* _switch;
         AmObjectID _playingSwitchContainerStateId;
         AmObjectID _previousSwitchContainerStateId;
 
@@ -423,17 +384,11 @@ namespace SparkyStudios::Audio::Amplitude
         AmReal32 _gain;
         AmReal32 _realGain;
 
-        // The pan of this channel for 2D rendering.
-        AmVec2 _pan;
-
         // The pitch of this channel.
         AmReal32 _pitch;
 
         // The location of this channel's sound.
-        AmVec3 _location;
-
-        AmReal32 _directivity;
-        AmReal32 _directivitySharpness;
+        AmVector3 _location;
 
         AmUInt64 _channelStateId;
 

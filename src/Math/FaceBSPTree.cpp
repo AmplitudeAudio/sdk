@@ -16,10 +16,11 @@
 #include <SparkyStudios/Audio/Amplitude/Math/Utils.h>
 
 #include <Math/FaceBSPTree.h>
+#include <Math/LinearAlgebra.h>
 
 namespace SparkyStudios::Audio::Amplitude
 {
-    void FaceBSPTree::Build(const std::vector<AmVec3>& points, const std::vector<Face>& faces)
+    void FaceBSPTree::Build(const std::vector<AmVector3>& points, const std::vector<Face>& faces)
     {
         std::vector<Edge> edges;
         GetEdges(faces, edges);
@@ -27,7 +28,7 @@ namespace SparkyStudios::Audio::Amplitude
         BuildTree(points, faces, edges, _nodes);
     }
 
-    const Face* FaceBSPTree::Query(const AmVec3& direction) const
+    const Face* FaceBSPTree::Query(const AmVector3& direction) const
     {
         if (_nodes.empty())
             return nullptr;
@@ -46,7 +47,7 @@ namespace SparkyStudios::Audio::Amplitude
                 }
             case Node::kNode_Split:
                 {
-                    if (AM_Dot(_nodes[index].m_Split.m_PlaneNormal, direction) > 0.0f)
+                    if (Dot(_nodes[index].m_Split.m_PlaneNormal, direction) > 0.0f)
                         index = _nodes[index].m_Split.m_LeftIndex;
                     else
                         index = _nodes[index].m_Split.m_RightIndex;
@@ -79,7 +80,7 @@ namespace SparkyStudios::Audio::Amplitude
     }
 
     void FaceBSPTree::BuildTree(
-        const std::vector<AmVec3>& vertices, const std::vector<Face>& faces, std::vector<Edge>& edges, std::vector<Node>& nodes)
+        const std::vector<AmVector3>& vertices, const std::vector<Face>& faces, std::vector<Edge>& edges, std::vector<Node>& nodes)
     {
         constexpr AmReal32 kE = std::numeric_limits<float>::epsilon() * 4.0f;
 
@@ -90,21 +91,19 @@ namespace SparkyStudios::Audio::Amplitude
             currentEdge++;
 
             // The plane passes through by splitBy and (0, 0, 0).
-            auto normal = AM_Cross(vertices[splitBy.m_E0], vertices[splitBy.m_E1]);
+            auto normal = Cross(vertices[splitBy.m_E0], vertices[splitBy.m_E1]);
 
             // Split faces into subspaces.
             std::vector<Face> facesL;
             std::vector<Face> facesR;
             for (const auto& face : faces)
             {
-                if (AM_Dot(normal, vertices[face.m_A]) > kE || AM_Dot(normal, vertices[face.m_B]) > kE ||
-                    AM_Dot(normal, vertices[face.m_C]) > kE)
+                if (Dot(normal, vertices[face.m_A]) > kE || Dot(normal, vertices[face.m_B]) > kE || Dot(normal, vertices[face.m_C]) > kE)
                 {
                     facesL.push_back(face);
                 }
 
-                if (AM_Dot(normal, vertices[face.m_A]) < -kE || AM_Dot(normal, vertices[face.m_B]) < -kE ||
-                    AM_Dot(normal, vertices[face.m_C]) < -kE)
+                if (Dot(normal, vertices[face.m_A]) < -kE || Dot(normal, vertices[face.m_B]) < -kE || Dot(normal, vertices[face.m_C]) < -kE)
                 {
                     facesR.push_back(face);
                 }
@@ -130,7 +129,7 @@ namespace SparkyStudios::Audio::Amplitude
 
             Node leftNode{};
             leftNode.m_Type = Node::kNode_Split;
-            leftNode.m_Split.m_PlaneNormal = AM_Norm(normal);
+            leftNode.m_Split.m_PlaneNormal = Normalize(normal);
             leftNode.m_Split.m_LeftIndex = leftIndex;
             leftNode.m_Split.m_RightIndex = 0;
             nodes.push_back(leftNode);
@@ -149,7 +148,7 @@ namespace SparkyStudios::Audio::Amplitude
     }
 
     void FaceBSPTree::BuildChild(
-        const std::vector<AmVec3>& vertices, const std::vector<Face>& faces, std::vector<Edge>& edges, std::vector<Node>& nodes)
+        const std::vector<AmVector3>& vertices, const std::vector<Face>& faces, std::vector<Edge>& edges, std::vector<Node>& nodes)
     {
         // We should have at most one remaining face if there are no remaining edges. This is not
         // true either due to a bug, or when the source data is incorrect (either the sphere is not

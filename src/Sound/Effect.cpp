@@ -29,38 +29,28 @@ namespace SparkyStudios::Audio::Amplitude
 
     EffectImpl::~EffectImpl()
     {
-        for (auto&& instance : _instances)
-            DestroyInstance(instance);
+        _instances.clear();
 
         _filter = nullptr;
 
         _parameters.clear();
-        _instances.clear();
     }
 
-    EffectInstance* EffectImpl::CreateInstance() const
+    std::shared_ptr<EffectInstance> EffectImpl::CreateInstance() const
     {
-        auto* effect = ampoolnew(eMemoryPoolKind_Engine, EffectInstanceImpl, this);
+        auto effect = ampoolshared(eMemoryPoolKind_Engine, EffectInstanceImpl, this);
         _instances.push_back(effect);
+
         return effect;
-    }
-
-    void EffectImpl::DestroyInstance(EffectInstance* instance) const
-    {
-        if (instance == nullptr)
-            return;
-
-        _instances.erase(std::ranges::find(_instances, instance));
-
-        ampooldelete(eMemoryPoolKind_Engine, EffectInstance, instance);
     }
 
     void EffectImpl::Update()
     {
         // Update effect parameters
         for (auto&& instance : _instances)
-            for (AmSize i = 0, l = _parameters.size(); i < l; ++i)
-                instance->GetFilter()->SetParameter(i, _parameters[i].GetValue());
+            if (instance != nullptr)
+                for (AmSize i = 0, l = _parameters.size(); i < l; ++i)
+                    instance->GetFilter()->SetParameter(i, _parameters[i].GetValue());
     }
 
     bool EffectImpl::LoadDefinition(const EffectDefinition* definition, std::shared_ptr<EngineInternalState> state)

@@ -24,10 +24,12 @@ namespace SparkyStudios::Audio::Amplitude
         AM_VERSION_MAJOR,
         AM_VERSION_MINOR,
         AM_VERSION_PATCH,
+        AM_VERSION_BUILD,
         "Amplitude Audio SDK "
         AM_TO_STRING(AM_VERSION_MAJOR) "."
         AM_TO_STRING(AM_VERSION_MINOR) "."
-        AM_TO_STRING(AM_VERSION_PATCH)
+        AM_TO_STRING(AM_VERSION_PATCH) "#"
+        AM_VERSION_BUILD
     };
     // clang-format on
 

@@ -74,10 +74,8 @@ namespace SparkyStudios::Audio::Amplitude
         [[nodiscard]] AmTime GetTotalTime() const override;
         bool LoadSoundBank(const AmOsString& filename) override;
         bool LoadSoundBank(const AmOsString& filename, AmBankID& outID) override;
-        bool LoadSoundBankFromMemory(const AmUInt8* fileData) override;
-        bool LoadSoundBankFromMemory(const AmUInt8* fileData, AmBankID& outID) override;
-        bool LoadSoundBankFromMemoryView(void* ptr, AmSize size) override;
-        bool LoadSoundBankFromMemoryView(void* ptr, AmSize size, AmBankID& outID) override;
+        bool LoadSoundBankFromMemoryView(AmConstVoidPtr ptr, AmSize size) override;
+        bool LoadSoundBankFromMemoryView(AmConstVoidPtr ptr, AmSize size, AmBankID& outID) override;
         void UnloadSoundBank(const AmOsString& filename) override;
         void UnloadSoundBank(AmBankID id) override;
         void UnloadSoundBanks() override;
@@ -143,34 +141,35 @@ namespace SparkyStudios::Audio::Amplitude
         [[nodiscard]] Bus FindBus(const AmString& name) const override;
         [[nodiscard]] Bus FindBus(AmBusID id) const override;
         [[nodiscard]] Channel Play(SwitchContainerHandle handle) const override;
-        [[nodiscard]] Channel Play(SwitchContainerHandle handle, const AmVec3& location) const override;
-        [[nodiscard]] Channel Play(SwitchContainerHandle handle, const AmVec3& location, AmReal32 userGain) const override;
+        [[nodiscard]] Channel Play(SwitchContainerHandle handle, const AmVector3& location) const override;
+        [[nodiscard]] Channel Play(SwitchContainerHandle handle, const AmVector3& location, AmReal32 userGain) const override;
         [[nodiscard]] Channel Play(SwitchContainerHandle handle, const Entity& entity) const override;
         [[nodiscard]] Channel Play(SwitchContainerHandle handle, const Entity& entity, AmReal32 userGain) const override;
         [[nodiscard]] Channel Play(CollectionHandle handle) const override;
-        [[nodiscard]] Channel Play(CollectionHandle handle, const AmVec3& location) const override;
-        [[nodiscard]] Channel Play(CollectionHandle handle, const AmVec3& location, AmReal32 userGain) const override;
+        [[nodiscard]] Channel Play(CollectionHandle handle, const AmVector3& location) const override;
+        [[nodiscard]] Channel Play(CollectionHandle handle, const AmVector3& location, AmReal32 userGain) const override;
         [[nodiscard]] Channel Play(CollectionHandle handle, const Entity& entity) const override;
         [[nodiscard]] Channel Play(CollectionHandle handle, const Entity& entity, AmReal32 userGain) const override;
         [[nodiscard]] Channel Play(SoundHandle handle) const override;
-        [[nodiscard]] Channel Play(SoundHandle handle, const AmVec3& location) const override;
-        [[nodiscard]] Channel Play(SoundHandle handle, const AmVec3& location, AmReal32 userGain) const override;
+        [[nodiscard]] Channel Play(SoundHandle handle, const AmVector3& location) const override;
+        [[nodiscard]] Channel Play(SoundHandle handle, const AmVector3& location, AmReal32 userGain) const override;
         [[nodiscard]] Channel Play(SoundHandle handle, const Entity& entity) const override;
         [[nodiscard]] Channel Play(SoundHandle handle, const Entity& entity, AmReal32 userGain) const override;
         [[nodiscard]] Channel Play(const AmString& name) const override;
-        [[nodiscard]] Channel Play(const AmString& name, const AmVec3& location) const override;
-        [[nodiscard]] Channel Play(const AmString& name, const AmVec3& location, AmReal32 userGain) const override;
+        [[nodiscard]] Channel Play(const AmString& name, const AmVector3& location) const override;
+        [[nodiscard]] Channel Play(const AmString& name, const AmVector3& location, AmReal32 userGain) const override;
         [[nodiscard]] Channel Play(const AmString& name, const Entity& entity) const override;
         [[nodiscard]] Channel Play(const AmString& name, const Entity& entity, AmReal32 userGain) const override;
         [[nodiscard]] Channel Play(AmObjectID id) const override;
-        [[nodiscard]] Channel Play(AmObjectID id, const AmVec3& location) const override;
-        [[nodiscard]] Channel Play(AmObjectID id, const AmVec3& location, AmReal32 userGain) const override;
+        [[nodiscard]] Channel Play(AmObjectID id, const AmVector3& location) const override;
+        [[nodiscard]] Channel Play(AmObjectID id, const AmVector3& location, AmReal32 userGain) const override;
         [[nodiscard]] Channel Play(AmObjectID id, const Entity& entity) const override;
         [[nodiscard]] Channel Play(AmObjectID id, const Entity& entity, AmReal32 userGain) const override;
         void StopAll() const override;
         [[nodiscard]] EventCanceler Trigger(EventHandle handle, const Entity& entity) const override;
         [[nodiscard]] EventCanceler Trigger(const AmString& name, const Entity& entity) const override;
         [[nodiscard]] EventCanceler Trigger(AmEventID id, const Entity& entity) const override;
+        void CancelAllEvents() override;
         void SetSwitchState(SwitchHandle handle, AmObjectID stateId) const override;
         void SetSwitchState(SwitchHandle handle, const AmString& stateName) const override;
         void SetSwitchState(SwitchHandle handle, const SwitchState& state) const override;
@@ -185,12 +184,19 @@ namespace SparkyStudios::Audio::Amplitude
         void SetRtpcValue(const AmString& name, double value) const override;
         [[nodiscard]] std::shared_ptr<Driver> GetDriver() const override;
         [[nodiscard]] Amplimix* GetMixer() const override;
+        [[nodiscard]] const AmOsString& GetConfigurationPath() const override;
         [[nodiscard]] AmReal32 GetSoundSpeed() const override;
         [[nodiscard]] AmReal32 GetDopplerFactor() const override;
+        [[nodiscard]] AmUInt32 GetActiveEntitiesCount() const override;
+        [[nodiscard]] AmUInt32 GetActiveListenersCount() const override;
+        [[nodiscard]] AmUInt32 GetActiveEnvironmentsCount() const override;
+        [[nodiscard]] AmUInt32 GetActiveRoomsCount() const override;
         [[nodiscard]] AmUInt32 GetSamplesPerStream() const override;
         [[nodiscard]] bool IsGameTrackingEnvironmentAmounts() const override;
         [[nodiscard]] AmUInt32 GetMaxListenersCount() const override;
         [[nodiscard]] AmUInt32 GetMaxEntitiesCount() const override;
+        [[nodiscard]] AmUInt32 GetMaxEnvironmentsCount() const override;
+        [[nodiscard]] AmUInt32 GetMaxRoomsCount() const override;
         [[nodiscard]] const Curve& GetOcclusionCoefficientCurve() const override;
         [[nodiscard]] const Curve& GetOcclusionGainCurve() const override;
         [[nodiscard]] const Curve& GetObstructionCoefficientCurve() const override;
@@ -198,19 +204,28 @@ namespace SparkyStudios::Audio::Amplitude
         [[nodiscard]] ePanningMode GetPanningMode() const override;
         [[nodiscard]] eHRIRSphereSamplingMode GetHRIRSphereSamplingMode() const override;
         [[nodiscard]] std::shared_ptr<const HRIRSphere> GetHRIRSphere() const override;
+        [[nodiscard]] Channel GetChannel(AmChannelID channelID) const override;
+        [[nodiscard]] bool IsStopping() const override;
 
     private:
         Channel PlayScopedSwitchContainer(
-            SwitchContainerHandle handle, const Entity& entity, const AmVec3& location, AmReal32 userGain) const;
-        Channel PlayScopedCollection(CollectionHandle handle, const Entity& entity, const AmVec3& location, AmReal32 userGain) const;
-        Channel PlayScopedSound(SoundHandle handle, const Entity& entity, const AmVec3& location, AmReal32 userGain) const;
+            SwitchContainerHandle handle, const Entity& entity, const AmVector3& location, AmReal32 userGain) const;
+        Channel PlayScopedCollection(CollectionHandle handle, const Entity& entity, const AmVector3& location, AmReal32 userGain) const;
+        Channel PlayScopedSound(SoundHandle handle, const Entity& entity, const AmVector3& location, AmReal32 userGain) const;
 
-        // The lis of paths in which search for plugins.
+        static std::mutex _instanceMutex;
+
+        // The list of paths in which search for plugins.
         static std::set<AmOsString> _pluginSearchPaths;
 
-        AmMutexHandle _frameThreadMutex;
+        mutable std::mutex _frameThreadMutex;
+        mutable std::recursive_mutex _updateMutex;
+
         // The list of pending next frame callbacks.
         mutable std::queue<std::function<void(AmTime)>> _nextFrameCallbacks;
+
+        // The path to the config file.
+        AmOsString _configFilePath;
 
         // Hold the engine config file contents.
         AmString _configSrc;

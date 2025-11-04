@@ -38,14 +38,14 @@ namespace SparkyStudios::Audio::Amplitude
         if (!listener.Valid())
             return nullptr;
 
-        const auto& listenerSpaceSourcePosition = listener.GetInverseMatrix() * AM_V4V(layer->GetLocation(), 1.0f);
+        const auto& listenerSpaceSourcePosition = Transform(listener.GetInverseMatrix(), { .xyz = layer->GetLocation(), ._pad2 = 1.0f });
 
         const ePanningMode mode = Engine::GetInstance()->GetPanningMode();
         const AmUInt32 order = AM_MAX(static_cast<AmUInt32>(mode), 1u);
 
         _soundField.Configure(order, true, input->GetFrameCount());
 
-        _source.SetPosition(SphericalPosition::ForHRTF(listenerSpaceSourcePosition.XYZ), 0.25f);
+        _source.SetPosition(SphericalPosition::ForHRTF(listenerSpaceSourcePosition.xyz), 0.25f);
         _source.Process(input->GetChannel(0), input->GetFrameCount(), &_soundField);
 
         return _soundField.GetBuffer();
