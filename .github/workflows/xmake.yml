@@ -29,7 +29,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        build_type: ["release", "debug"]
+        build_type: ["release", "debug", "coverage"]
         config:
           - name: "Windows Latest MSVC"
             os: windows-latest
@@ -95,8 +95,7 @@ jobs:
               plat: iphoneos
 
     steps:
-      # Checks out your repository under $GITHUB_WORKSPACE, so your job can access it
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
         with:
           submodules: recursive
 
@@ -227,11 +226,12 @@ jobs:
           xcode-version: latest
 
       - name: Restore SDK Cache
+        if: matrix.build_type != 'coverage'
         uses: actions/cache/restore@v4
         with:
           enableCrossOsArchive: true
           path: sdk
-          key: "${{ matrix.build_type }}-${{ inputs.project-slug }}-${{ matrix.config.arch }}-${{ matrix.config.plat }}-${{ hashFiles('**/sdk') }}"
+          key: "${{ matrix.build_type }}-${{ inputs.project-slug }}-${{ matrix.config.arch }}-${{ matrix.config.plat }}"
           restore-keys: |
             ${{ matrix.build_type }}-${{ inputs.project-slug }}-${{ matrix.config.arch }}-${{ matrix.config.plat }}
 
@@ -285,4 +285,4 @@ jobs:
         with:
           enableCrossOsArchive: true
           path: ${{ inputs.project-path }}/sdk
-          key: ${{ matrix.build_type }}-${{ inputs.project-slug }}-${{ matrix.config.arch }}-${{ matrix.config.plat }}-${{ hashFiles('**/sdk') }}
+          key: ${{ matrix.build_type }}-${{ inputs.project-slug }}-${{ matrix.config.arch }}-${{ matrix.config.plat }}
