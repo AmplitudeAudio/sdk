@@ -114,25 +114,13 @@ namespace SparkyStudios::Audio::Amplitude
 
     BFormat& BFormat::operator+=(const AmReal32& value)
     {
-        for (AmUInt32 c = 0; c < GetChannelCount(); ++c)
-        {
-            auto& src = _buffer->GetChannel(c);
-            for (AmUInt32 i = 0; i < GetSampleCount(); ++i)
-                src[i] += value;
-        }
-
+        ScalarAdd(_buffer->GetData().GetBuffer(), _buffer->GetData().GetBuffer(), value, GetSampleCount() * GetChannelCount());
         return *this;
     }
 
     BFormat& BFormat::operator-=(const AmReal32& value)
     {
-        for (AmUInt32 c = 0; c < GetChannelCount(); ++c)
-        {
-            auto& src = _buffer->GetChannel(c);
-            for (AmUInt32 i = 0; i < GetSampleCount(); ++i)
-                src[i] -= value;
-        }
-
+        ScalarSub(_buffer->GetData().GetBuffer(), _buffer->GetData().GetBuffer(), value, GetSampleCount() * GetChannelCount());
         return *this;
     }
 

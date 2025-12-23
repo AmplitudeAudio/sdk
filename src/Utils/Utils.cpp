@@ -133,15 +133,17 @@ namespace SparkyStudios::Audio::Amplitude
 
         for (AmSize i = 0; i < end; i += 4)
         {
-            re[i + 0] += reA[i + 0] * reB[i + 0] - imA[i + 0] * imB[i + 0];
-            re[i + 1] += reA[i + 1] * reB[i + 1] - imA[i + 1] * imB[i + 1];
-            re[i + 2] += reA[i + 2] * reB[i + 2] - imA[i + 2] * imB[i + 2];
-            re[i + 3] += reA[i + 3] * reB[i + 3] - imA[i + 3] * imB[i + 3];
+            AmSize i0 = i, i1 = i + 1, i2 = i + 2, i3 = i + 3;
 
-            im[i + 0] += reA[i + 0] * imB[i + 0] + imA[i + 0] * reB[i + 0];
-            im[i + 1] += reA[i + 1] * imB[i + 1] + imA[i + 1] * reB[i + 1];
-            im[i + 2] += reA[i + 2] * imB[i + 2] + imA[i + 2] * reB[i + 2];
-            im[i + 3] += reA[i + 3] * imB[i + 3] + imA[i + 3] * reB[i + 3];
+            re[i0] += reA[i0] * reB[i0] - imA[i0] * imB[i0];
+            re[i1] += reA[i1] * reB[i1] - imA[i1] * imB[i1];
+            re[i2] += reA[i2] * reB[i2] - imA[i2] * imB[i2];
+            re[i3] += reA[i3] * reB[i3] - imA[i3] * imB[i3];
+
+            im[i0] += reA[i0] * imB[i0] + imA[i0] * reB[i0];
+            im[i1] += reA[i1] * imB[i1] + imA[i1] * reB[i1];
+            im[i2] += reA[i2] * imB[i2] + imA[i2] * reB[i2];
+            im[i3] += reA[i3] * imB[i3] + imA[i3] * reB[i3];
         }
 #endif
 

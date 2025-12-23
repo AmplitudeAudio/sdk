@@ -180,6 +180,54 @@ namespace SparkyStudios::Audio::Amplitude
 
     void Interleave(const AudioBuffer* in, AmUInt64 inOffset, AmReal32* out, AmUInt64 outOffset, AmInt32 numSamples, AmInt32 numChannels);
 
+    AM_INLINE void ScalarAdd(const AmReal32* input, AmReal32* output, AmReal32 scalar, AmSize length)
+    {
+        AmSize remaining = length;
+
+#if defined(AM_SIMD_INTRINSICS)
+        const AmSize end = GetNumSimdChunks(length);
+        constexpr AmSize blockSize = GetSimdBlockSize();
+        remaining = remaining - end;
+
+        const auto& bb = simd_batch(scalar);
+
+        for (AmSize i = 0; i < end; i += blockSize)
+        {
+            const auto& ba = xsimd::load_aligned<simd_arch>(input + i);
+
+            simd_batch res = xsimd::add(ba, bb);
+            res.store_aligned(output + i);
+        }
+#endif
+
+        for (AmSize i = length - remaining; i < length; i++)
+            output[i] = input[i] + scalar;
+    }
+
+    AM_INLINE void ScalarSub(const AmReal32* input, AmReal32* output, AmReal32 scalar, AmSize length)
+    {
+        AmSize remaining = length;
+
+#if defined(AM_SIMD_INTRINSICS)
+        const AmSize end = GetNumSimdChunks(length);
+        constexpr AmSize blockSize = GetSimdBlockSize();
+        remaining = remaining - end;
+
+        const auto& bb = simd_batch(scalar);
+
+        for (AmSize i = 0; i < end; i += blockSize)
+        {
+            const auto& ba = xsimd::load_aligned<simd_arch>(input + i);
+
+            simd_batch res = xsimd::sub(ba, bb);
+            res.store_aligned(output + i);
+        }
+#endif
+
+        for (AmSize i = length - remaining; i < length; i++)
+            output[i] = input[i] - scalar;
+    }
+
     AM_INLINE void ScalarMultiply(const AmReal32* input, AmReal32* output, AmReal32 scalar, AmSize length)
     {
         AmSize remaining = length;
