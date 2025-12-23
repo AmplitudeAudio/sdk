@@ -150,10 +150,10 @@ namespace SparkyStudios::Audio::Amplitude
             _tempSamples[eBFormatChannel_V] = vChannel[i] * _cos2Alpha - uChannel[i] * _sin2Alpha;
 
             // Beta rotation
-            rChannel[i] = _tempSamples[eBFormatChannel_R] * (0.75f * _cosBeta + 0.25f) + _tempSamples[eBFormatChannel_U] * (0.5f * sqrt3 * std::pow(_sinBeta, 2.0f)) + _tempSamples[eBFormatChannel_S] * (sqrt3 * _sinBeta * _cosBeta);
+            rChannel[i] = _tempSamples[eBFormatChannel_R] * (0.75f * _cosBeta + 0.25f) + _tempSamples[eBFormatChannel_U] * (0.5f * sqrt3 * AM_SQUARED(_sinBeta)) + _tempSamples[eBFormatChannel_S] * (sqrt3 * _sinBeta * _cosBeta);
             sChannel[i] = _tempSamples[eBFormatChannel_S] * _cos2Beta - _tempSamples[eBFormatChannel_R] * _cosBeta * _sinBeta * sqrt3 + _tempSamples[eBFormatChannel_U] * _cosBeta * _sinBeta;
             tChannel[i] = _tempSamples[eBFormatChannel_V] * _sinBeta - _tempSamples[eBFormatChannel_T] * _cosBeta;
-            uChannel[i] = _tempSamples[eBFormatChannel_U] * (0.25f * _cos2Beta + 0.75f) - _tempSamples[eBFormatChannel_S] * _cosBeta * _sinBeta + _tempSamples[eBFormatChannel_R] * (0.5f * sqrt3 * std::pow(_sinBeta, 2.0f));
+            uChannel[i] = _tempSamples[eBFormatChannel_U] * (0.25f * _cos2Beta + 0.75f) - _tempSamples[eBFormatChannel_S] * _cosBeta * _sinBeta + _tempSamples[eBFormatChannel_R] * (0.5f * sqrt3 * AM_SQUARED(_sinBeta));
             vChannel[i] = _tempSamples[eBFormatChannel_V] * _cosBeta - _tempSamples[eBFormatChannel_T] * _sinBeta;
 
             // Gamma rotation

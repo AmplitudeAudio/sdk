@@ -79,26 +79,26 @@ namespace SparkyStudios::Audio::Amplitude
 
             if (m_order >= 2)
             {
-                m_coefficients[eBFormatChannel_V] = sqrt32 * (sin2Azim * std::pow(cosElev, 2.0f)) * m_orderWeights[2]; // V
+                m_coefficients[eBFormatChannel_V] = sqrt32 * (sin2Azim * AM_SQUARED(cosElev)) * m_orderWeights[2]; // V
                 m_coefficients[eBFormatChannel_T] = sqrt32 * (sinAzim * sin2Elev) * m_orderWeights[2]; // T
-                m_coefficients[eBFormatChannel_R] = (1.5f * std::pow(sinElev, 2.0f) - 0.5f) * m_orderWeights[2]; // R
+                m_coefficients[eBFormatChannel_R] = (1.5f * AM_SQUARED(sinElev) - 0.5f) * m_orderWeights[2]; // R
                 m_coefficients[eBFormatChannel_S] = sqrt32 * (cosAzim * sin2Elev) * m_orderWeights[2]; // S
-                m_coefficients[eBFormatChannel_U] = sqrt32 * (cos2Azim * std::pow(cosElev, 2.0f)) * m_orderWeights[2]; // U
+                m_coefficients[eBFormatChannel_U] = sqrt32 * (cos2Azim * AM_SQUARED(cosElev)) * m_orderWeights[2]; // U
             }
 
             if (m_order >= 3)
             {
                 m_coefficients[eBFormatChannel_Q] =
-                    sqrt58 * (std::sin(3.0f * m_position.GetAzimuth()) * std::pow(cosElev, 3.0f)) * m_orderWeights[3]; // Q
-                m_coefficients[eBFormatChannel_O] = sqrt152 * (sin2Azim * sinElev * std::pow(cosElev, 2.f)) * m_orderWeights[3]; // O
+                    sqrt58 * (std::sin(3.0f * m_position.GetAzimuth()) * AM_CUBED(cosElev)) * m_orderWeights[3]; // Q
+                m_coefficients[eBFormatChannel_O] = sqrt152 * (sin2Azim * sinElev * AM_SQUARED(cosElev)) * m_orderWeights[3]; // O
                 m_coefficients[eBFormatChannel_M] =
-                    sqrt38 * (sinAzim * cosElev * (5.f * std::pow(sinElev, 2.f) - 1.f)) * m_orderWeights[3]; // M
-                m_coefficients[eBFormatChannel_K] = sinElev * (5.f * std::pow(sinElev, 2.f) - 3.f) * 0.5f * m_orderWeights[3]; // K
+                    sqrt38 * (sinAzim * cosElev * (5.f * AM_SQUARED(sinElev) - 1.f)) * m_orderWeights[3]; // M
+                m_coefficients[eBFormatChannel_K] = sinElev * (5.f * AM_SQUARED(sinElev) - 3.f) * 0.5f * m_orderWeights[3]; // K
                 m_coefficients[eBFormatChannel_L] =
-                    sqrt38 * (cosAzim * cosElev * (5.f * std::pow(sinElev, 2.f) - 1.f)) * m_orderWeights[3]; // L
-                m_coefficients[eBFormatChannel_N] = sqrt152 * (cos2Azim * sinElev * std::pow(cosElev, 2.f)) * m_orderWeights[3]; // N
+                    sqrt38 * (cosAzim * cosElev * (5.f * AM_SQUARED(sinElev) - 1.f)) * m_orderWeights[3]; // L
+                m_coefficients[eBFormatChannel_N] = sqrt152 * (cos2Azim * sinElev * AM_SQUARED(cosElev)) * m_orderWeights[3]; // N
                 m_coefficients[eBFormatChannel_P] =
-                    sqrt58 * (std::cos(3.f * m_position.GetAzimuth()) * std::pow(cosElev, 3.f)) * m_orderWeights[3]; // P
+                    sqrt58 * (std::cos(3.f * m_position.GetAzimuth()) * AM_CUBED(cosElev)) * m_orderWeights[3]; // P
             }
         }
         else
@@ -113,14 +113,14 @@ namespace SparkyStudios::Audio::Amplitude
 
             if (m_order >= 2)
             {
-                m_coefficients[3] = cos2Azim * std::pow(cosElev, 2.0f) * m_orderWeights[2];
-                m_coefficients[4] = sin2Azim * std::pow(cosElev, 2.0f) * m_orderWeights[2];
+                m_coefficients[3] = cos2Azim * AM_SQUARED(cosElev) * m_orderWeights[2];
+                m_coefficients[4] = sin2Azim * AM_SQUARED(cosElev) * m_orderWeights[2];
             }
 
             if (m_order >= 3)
             {
-                m_coefficients[5] = std::cos(3.0f * m_position.GetAzimuth()) * std::pow(cosElev, 3) * m_orderWeights[3];
-                m_coefficients[6] = std::sin(3.0f * m_position.GetAzimuth()) * std::pow(cosElev, 3) * m_orderWeights[3];
+                m_coefficients[5] = std::cos(3.0f * m_position.GetAzimuth()) * AM_CUBED(cosElev) * m_orderWeights[3];
+                m_coefficients[6] = std::sin(3.0f * m_position.GetAzimuth()) * AM_CUBED(cosElev) * m_orderWeights[3];
             }
         }
 

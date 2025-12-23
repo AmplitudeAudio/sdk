@@ -128,7 +128,18 @@
  *
  * @ingroup math
  */
-#define AM_SQUARE(x) ((x) * (x))
+#define AM_SQUARED(x) ((x) * (x))
+
+/**
+ * @brief Compute the cube of a number.
+ *
+ * @param x The number to cube
+ *
+ * @return The cubed value.
+ *
+ * @ingroup math
+ */
+#define AM_CUBED(x) ((x) * (x) * (x))
 
 /**
  * @brief Declare a callback function type
