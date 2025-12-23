@@ -206,7 +206,7 @@ jobs:
       - name: Install Local flatc (Android)
         if: matrix.config.plat == 'android'
         run: |
-          wget https://github.com/google/flatbuffers/releases/download/v25.9.23/Linux.flatc.binary.g++-13.zip
+          wget https://github.com/google/flatbuffers/releases/download/v25.12.19/Linux.flatc.binary.g++-13.zip
           mkdir bin
           sudo unzip Linux.flatc.binary.g++-13.zip -d bin
           ./bin/flatc --version
@@ -214,7 +214,7 @@ jobs:
       - name: Install Local flatc (iOS)
         if: matrix.config.plat == 'iphoneos'
         run: |
-          wget https://github.com/google/flatbuffers/releases/download/v25.9.23/Mac.flatc.binary.zip
+          wget https://github.com/google/flatbuffers/releases/download/v25.12.19/Mac.flatc.binary.zip
           mkdir bin
           sudo unzip Mac.flatc.binary.zip -d bin
           ./bin/flatc --version
