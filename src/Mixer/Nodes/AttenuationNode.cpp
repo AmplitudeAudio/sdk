@@ -93,6 +93,8 @@ namespace SparkyStudios::Audio::Amplitude
     {
         if (_needUpdateGains)
         {
+            AudioBufferCrossFader crossFader(input.GetFrameCount());
+
             const AmUInt32 previousSet = _currentSet;
             _currentSet = 1 - _currentSet;
 
@@ -128,14 +130,7 @@ namespace SparkyStudios::Audio::Amplitude
             ApplyFilters(previousSet, input, temp, sampleRate);
             ApplyFilters(_currentSet, input, output, sampleRate);
 
-            auto& o = output[0];
-            auto& t = temp[0];
-
-            for (AmUInt32 i = 0, l = input.GetFrameCount(); i < l; ++i)
-            {
-                AmReal32 weight = static_cast<AmReal32>(i) / static_cast<AmReal32>(l);
-                o[i] = weight * o[i] + (1.0f - weight) * t[i];
-            }
+            crossFader.CrossFade(output, temp, output);
 
             _needUpdateGains = false;
         }
