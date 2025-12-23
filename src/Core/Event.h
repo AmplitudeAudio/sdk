@@ -146,6 +146,11 @@ namespace SparkyStudios::Audio::Amplitude
          */
         void OnFinish(std::function<void(bool)> callback) override;
 
+        /**
+         * @copydoc EventInstance::GetEntity
+         */
+        Entity GetEntity() const override;
+
     private:
         /**
          * @brief Starts this Event.

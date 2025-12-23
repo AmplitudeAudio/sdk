@@ -152,6 +152,11 @@ namespace SparkyStudios::Audio::Amplitude
          * @param[in] callback The callback to call when the event finishes.
          */
         virtual void OnFinish(std::function<void(bool aborted)> callback) = 0;
+
+        /**
+         * @brief Gets the Entity that triggered this event.
+         */
+        virtual Entity GetEntity() const = 0;
     };
 } // namespace SparkyStudios::Audio::Amplitude
 

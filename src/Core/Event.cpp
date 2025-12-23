@@ -599,6 +599,11 @@ namespace SparkyStudios::Audio::Amplitude
         _onFinishCallback = callback;
     }
 
+    Entity EventInstanceImpl::GetEntity() const
+    {
+        return _entity;
+    }
+
     void EventInstanceImpl::Start(const Entity& entity)
     {
         if (_running)

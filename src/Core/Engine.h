@@ -169,7 +169,8 @@ namespace SparkyStudios::Audio::Amplitude
         [[nodiscard]] EventCanceler Trigger(EventHandle handle, const Entity& entity) const override;
         [[nodiscard]] EventCanceler Trigger(const AmString& name, const Entity& entity) const override;
         [[nodiscard]] EventCanceler Trigger(AmEventID id, const Entity& entity) const override;
-        void CancelAllEvents() override;
+        void CancelEvents(const Entity& entity) const override;
+        void CancelAllEvents() const override;
         void SetSwitchState(SwitchHandle handle, AmObjectID stateId) const override;
         void SetSwitchState(SwitchHandle handle, const AmString& stateName) const override;
         void SetSwitchState(SwitchHandle handle, const SwitchState& state) const override;

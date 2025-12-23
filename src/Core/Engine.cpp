@@ -1568,7 +1568,16 @@ namespace SparkyStudios::Audio::Amplitude
         return EventCanceler(nullptr);
     }
 
-    void EngineImpl::CancelAllEvents()
+    void EngineImpl::CancelEvents(const Entity& entity) const
+    {
+        std::lock_guard lock(_frameThreadMutex);
+
+        for (auto& event : _state->running_events)
+            if (event->GetEntity().GetId() == entity.GetId())
+                event->Abort();
+    }
+
+    void EngineImpl::CancelAllEvents() const
     {
         std::lock_guard lock(_frameThreadMutex);
 
