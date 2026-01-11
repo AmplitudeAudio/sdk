@@ -22,6 +22,7 @@
 #include <SparkyStudios/Audio/Amplitude/Core/Listener.h>
 #include <SparkyStudios/Audio/Amplitude/Core/Playback/Bus.h>
 #include <SparkyStudios/Audio/Amplitude/Core/Playback/Channel.h>
+#include <SparkyStudios/Audio/Amplitude/Core/Playback/ChannelInstance.h>
 #include <SparkyStudios/Audio/Amplitude/Core/Room.h>
 #include <SparkyStudios/Audio/Amplitude/Sound/Attenuation.h>
 
@@ -285,6 +286,68 @@ namespace SparkyStudios::Audio::Amplitude
          * @return The current sample rate of the audio data in the layer.
          */
         virtual AmUInt32 GetSampleRate() const = 0;
+
+        /**
+         * @brief Checks if this layer is processing a multi-position channel.
+         *
+         * @return @c true if the channel has multiple position instances, @c false otherwise.
+         */
+        [[nodiscard]] virtual bool IsMultiPosition() const = 0;
+
+        /**
+         * @brief Gets the instancing mode for multi-position channels.
+         *
+         * @return The instancing mode.
+         *
+         * @see eChannelInstanceMode
+         */
+        [[nodiscard]] virtual eChannelInstanceMode GetInstancingMode() const = 0;
+
+        /**
+         * @brief Gets the number of active position instances.
+         *
+         * @return The number of instances. Returns 0 if instancing is not enabled.
+         */
+        [[nodiscard]] virtual AmSize GetInstanceCount() const = 0;
+
+        /**
+         * @brief Gets the location of a specific instance.
+         *
+         * @param[in] index The instance index.
+         *
+         * @return The world-space location of the instance.
+         */
+        [[nodiscard]] virtual AmVector3 GetInstanceLocation(AmSize index) const = 0;
+
+        /**
+         * @brief Gets the room associated with a specific instance.
+         *
+         * @param[in] index The instance index.
+         *
+         * @return The room associated with the instance.
+         */
+        [[nodiscard]] virtual Room GetInstanceRoom(AmSize index) const = 0;
+
+        /**
+         * @brief Gets the weight of a specific instance (for Blended mode).
+         *
+         * @param[in] index The instance index.
+         *
+         * @return The weight value for the instance.
+         */
+        [[nodiscard]] virtual AmReal32 GetInstanceWeight(AmSize index) const = 0;
+
+        /**
+         * @brief Gets the computed attenuation gain for a specific instance.
+         *
+         * This value is pre-computed during the frame update based on the instance's
+         * position relative to the listener.
+         *
+         * @param[in] index The instance index.
+         *
+         * @return The computed gain value for the instance.
+         */
+        [[nodiscard]] virtual AmReal32 GetInstanceGain(AmSize index) const = 0;
     };
 
     /**

@@ -15,6 +15,7 @@
 #include <SparkyStudios/Audio/Amplitude/Amplitude.h>
 
 #include <Core/Engine.h>
+#include <Core/Playback/ChannelInternalState.h>
 #include <Mixer/Amplimix.h>
 #include <Mixer/Pipeline.h>
 
@@ -440,6 +441,9 @@ namespace SparkyStudios::Audio::Amplitude
 
             UpdatePitch(&layer);
 
+            // Update cached instance data for multi-position processing
+            layer.UpdateInstanceData();
+
             hasMixedAtLeastOneLayer = true;
             MixLayer(&layer, &_scratchBuffer, frameCount);
 
@@ -848,8 +852,18 @@ namespace SparkyStudios::Audio::Amplitude
 
         if (_pipeline == nullptr || layer->pipeline == nullptr)
         {
-            amLogWarning("No active pipeline is set, this means no sound will be rendered. You should configure the Amplimix "
-                         "pipeline in your engine configuration file.");
+            amLogWarning(
+                "No active pipeline is set, this means no sound will be rendered. You should configure the Amplimix "
+                "pipeline in your engine configuration file.");
+            return;
+        }
+
+        // Check for separate mode instancing - process each instance independently
+        const auto& channel = layer->GetChannel();
+        if (channel.Valid() && channel.GetState()->IsInstancingEnabled() &&
+            channel.GetState()->GetInstancingMode() == eChannelInstanceMode_Separate && !layer->instanceData.empty())
+        {
+            MixLayerSeparateMode(layer, buffer, frameCount);
             return;
         }
 
@@ -1053,6 +1067,201 @@ namespace SparkyStudios::Audio::Amplitude
         }
     }
 
+    void AmplimixImpl::MixLayerSeparateMode(AmplimixLayerImpl* layer, AudioBuffer* buffer, AmUInt64 frameCount)
+    {
+        AmplimixLayerMutexLocker lock(layer);
+
+        if (layer->instanceData.empty())
+            return;
+
+        // load flag value atomically first
+        PlayStateFlag flag = AMPLIMIX_LOAD(&layer->flag);
+
+        // atomically load master gain
+        const AmReal32 gain = AMPLIMIX_LOAD(&_masterGain) * AMPLIMIX_LOAD(&layer->gain);
+
+#if defined(AM_SIMD_INTRINSICS)
+        auto bGain = simd_batch(gain);
+#else
+        const auto bGain = gain;
+#endif // AM_SIMD_INTRINSICS
+
+        // loop state
+        const bool loop = flag == ePSF_LOOP;
+
+        const AmUInt16 soundChannels = layer->snd->format.GetNumChannels();
+        const AmReal32 sampleRateRatio = AMPLIMIX_LOAD(&layer->sampleRateRatio);
+
+        AmUInt64 outSamples = frameCount;
+        AmUInt64 inSamples = frameCount;
+
+        if (sampleRateRatio != 1.0f)
+            inSamples = layer->dataConverter->GetRequiredInputFrameCount(outSamples) - layer->dataConverter->GetInputLatency();
+
+#if defined(AM_SIMD_INTRINSICS)
+        inSamples = AM_VALUE_ALIGN(inSamples, kProcessedFramesCount);
+#endif // AM_SIMD_INTRINSICS
+
+        const AmUInt64 start = layer->start;
+        const AmUInt64 end = layer->end;
+        bool allInstancesFinished = true;
+
+        // Get the channel's instance list for cursor updates
+        const auto& channel = layer->GetChannel();
+        if (!channel.Valid())
+            return;
+
+        auto& instances = channel.GetState()->GetInstances();
+
+        // Process each instance
+        for (AmSize instanceIndex = 0; instanceIndex < layer->instanceData.size(); ++instanceIndex)
+        {
+            auto& data = layer->instanceData[instanceIndex];
+
+            if (data.cursor >= end)
+                continue;
+
+            allInstancesFinished = false;
+
+            // Set instance context for pipeline nodes
+            layer->processingInstance = true;
+            layer->currentInstanceIndex = instanceIndex;
+
+            AmUInt64 instanceCursor = data.cursor;
+
+            // Create buffers for this instance
+            SoundChunk* in = SoundChunk::CreateChunk(inSamples, soundChannels, eMemoryPoolKind_Amplimix);
+            SoundChunk* transient = SoundChunk::CreateChunk(outSamples, 1, eMemoryPoolKind_Amplimix);
+            SoundChunk* out = SoundChunk::CreateChunk(transient->frames, 2, eMemoryPoolKind_Amplimix);
+
+            if (layer->snd->stream)
+            {
+                AmUInt64 c = inSamples;
+                while (c > 0 && flag != ePSF_MIN)
+                {
+                    flag = AMPLIMIX_LOAD(&layer->flag);
+                    if (flag == ePSF_MIN)
+                        break;
+
+                    const AmUInt64 chunkSize = AM_MIN(layer->snd->chunk->frames, c);
+                    AmUInt64 readLen = chunkSize;
+
+#if defined(AM_SIMD_INTRINSICS)
+                    readLen = AM_VALUE_ALIGN(readLen, kProcessedFramesCount);
+#endif // AM_SIMD_INTRINSICS
+
+                    readLen = OnSoundStream(this, layer, (instanceCursor + (inSamples - c)) % layer->snd->length, readLen);
+                    readLen = AM_MIN(readLen, chunkSize);
+
+                    if (readLen == 0)
+                        break;
+
+                    AudioBuffer::Copy(*layer->snd->chunk->buffer, 0, *in->buffer, inSamples - c, readLen);
+                    c -= readLen;
+                }
+            }
+            else
+            {
+                const AmUInt64 offset = instanceCursor % layer->snd->length;
+                const AmUInt64 remaining = layer->snd->chunk->frames - instanceCursor;
+
+                if (instanceCursor < layer->snd->chunk->frames && remaining < inSamples)
+                {
+                    AudioBuffer::Copy(*layer->snd->chunk->buffer, offset, *in->buffer, 0, remaining);
+                    AudioBuffer::Copy(*layer->snd->chunk->buffer, 0, *in->buffer, remaining, in->frames - remaining);
+                }
+                else
+                {
+                    AudioBuffer::Copy(*layer->snd->chunk->buffer, offset, *in->buffer, 0, in->frames);
+                }
+            }
+
+            // Convert sample rate
+            layer->dataConverter->Process(*in->buffer, inSamples, *transient->buffer, outSamples);
+
+            if (outSamples > 0 && flag >= ePSF_PLAY)
+            {
+                layer->pipeline->Execute(*transient->buffer, *out->buffer);
+
+                AmReal64 position = instanceCursor;
+                const AmReal64 step = static_cast<AmReal64>(inSamples) / static_cast<AmReal64>(outSamples);
+
+                // Mix into output buffer
+                for (AmUInt64 i = 0; i < outSamples; i += kProcessedFramesCount)
+                {
+                    position = AM_CLAMP(position, static_cast<AmReal64>(start), static_cast<AmReal64>(end));
+
+                    if (std::ceil(position) == end)
+                    {
+                        if (loop)
+                            position = start;
+                        else
+                            break;
+                    }
+
+                    switch (_device.mRequestedOutputChannels)
+                    {
+                    case PlaybackOutputChannels::Mono:
+                        MixMono(i, bGain, out->buffer->GetChannel(0), buffer->GetChannel(0));
+                        break;
+
+                    case PlaybackOutputChannels::Stereo:
+                        MixMono(i, bGain, out->buffer->GetChannel(0), buffer->GetChannel(0));
+                        MixMono(i, bGain, out->buffer->GetChannel(1), buffer->GetChannel(1));
+                        break;
+
+                    default:
+                        amLogWarning("The mixer cannot handle the requested output channels.");
+                        break;
+                    }
+
+                    position += step * kProcessedFramesCount;
+                }
+
+                instanceCursor += inSamples;
+                instanceCursor = AM_CLAMP(instanceCursor, start, end);
+            }
+
+            // Update the instance's cursor in the internal state
+            data.cursor = instanceCursor;
+
+            // Update the actual instance state (find it by index in the intrusive list)
+            AmSize idx = 0;
+            for (auto& instanceState : instances)
+            {
+                if (idx == instanceIndex)
+                {
+                    instanceState.SetCursor(instanceCursor);
+                    break;
+                }
+                ++idx;
+            }
+
+            // Reset pipeline for next instance
+            layer->pipeline->Reset();
+
+            SoundChunk::DestroyChunk(out);
+            SoundChunk::DestroyChunk(transient);
+            SoundChunk::DestroyChunk(in);
+        }
+
+        // Clear instance processing context
+        layer->processingInstance = false;
+        layer->currentInstanceIndex = 0;
+
+        // If all instances finished, trigger end callback
+        if (allInstancesFinished && !loop)
+        {
+            const MixerCommandCallback callback = [this, layer]() -> bool
+            {
+                OnSoundEnded(this, layer);
+                return true;
+            };
+
+            PushCommand({ callback });
+        }
+    }
+
     AmplimixLayerImpl* AmplimixImpl::GetLayer(AmUInt32 layer)
     {
         // get layer based on the lowest bits of layer id
@@ -1193,6 +1402,9 @@ namespace SparkyStudios::Audio::Amplitude
         if (snd == nullptr || snd->sound == nullptr)
             return kVector3Zero;
 
+        if (processingInstance && currentInstanceIndex < instanceData.size())
+            return instanceData[currentInstanceIndex].location;
+
         return snd->sound->GetChannel().GetLocation();
     }
 
@@ -1216,6 +1428,9 @@ namespace SparkyStudios::Audio::Amplitude
     {
         if (snd == nullptr || snd->sound == nullptr)
             return Room(nullptr);
+
+        if (processingInstance && currentInstanceIndex < instanceData.size())
+            return instanceData[currentInstanceIndex].room;
 
         return snd->sound->GetChannel().GetRoom();
     }
@@ -1299,5 +1514,100 @@ namespace SparkyStudios::Audio::Amplitude
 
         const AmReal32 ratio = AMPLIMIX_LOAD(&sampleRateRatio);
         return snd->format.GetSampleRate() * ratio;
+    }
+
+    bool AmplimixLayerImpl::IsMultiPosition() const
+    {
+        if (snd == nullptr || snd->sound == nullptr)
+            return false;
+
+        if (processingInstance)
+            return false;
+
+        const auto& channel = snd->sound->GetChannel();
+        if (!channel.Valid())
+            return false;
+
+        auto* channelState = channel.GetState();
+        return channelState->IsInstancingEnabled() && channelState->GetInstanceCount() > 0;
+    }
+
+    eChannelInstanceMode AmplimixLayerImpl::GetInstancingMode() const
+    {
+        if (snd == nullptr || snd->sound == nullptr)
+            return eChannelInstanceMode_Blended;
+
+        const auto& channel = snd->sound->GetChannel();
+        if (!channel.Valid())
+            return eChannelInstanceMode_Blended;
+
+        return channel.GetState()->GetInstancingMode();
+    }
+
+    AmSize AmplimixLayerImpl::GetInstanceCount() const
+    {
+        return instanceData.size();
+    }
+
+    AmVector3 AmplimixLayerImpl::GetInstanceLocation(AmSize index) const
+    {
+        if (index >= instanceData.size())
+            return kVector3Zero;
+
+        return instanceData[index].location;
+    }
+
+    Room AmplimixLayerImpl::GetInstanceRoom(AmSize index) const
+    {
+        if (index >= instanceData.size())
+            return Room();
+
+        return instanceData[index].room;
+    }
+
+    AmReal32 AmplimixLayerImpl::GetInstanceWeight(AmSize index) const
+    {
+        if (index >= instanceData.size())
+            return 1.0f;
+
+        return instanceData[index].weight;
+    }
+
+    AmReal32 AmplimixLayerImpl::GetInstanceGain(AmSize index) const
+    {
+        if (index >= instanceData.size())
+            return 1.0f;
+
+        return instanceData[index].computedGain;
+    }
+
+    void AmplimixLayerImpl::UpdateInstanceData()
+    {
+        instanceData.clear();
+
+        if (snd == nullptr || snd->sound == nullptr)
+            return;
+
+        const auto& channel = snd->sound->GetChannel();
+        if (!channel.Valid())
+            return;
+
+        auto* channelState = channel.GetState();
+        if (!channelState->IsInstancingEnabled())
+            return;
+
+        const auto& instances = channelState->GetInstances();
+        instanceData.reserve(instances.size());
+
+        for (const auto& instance : instances)
+        {
+            InstanceData data;
+            data.location = instance.GetLocation();
+            data.room = instance.GetRoom();
+            data.weight = instance.GetWeight();
+            data.computedGain = instance.GetComputedGain();
+            data.cursor = instance.GetCursor(); // For separate mode
+            instanceData.push_back(data);
+        }
     }
 } // namespace SparkyStudios::Audio::Amplitude

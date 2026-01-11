@@ -21,6 +21,7 @@
 #include <SparkyStudios/Audio/Amplitude/Core/Entity.h>
 #include <SparkyStudios/Audio/Amplitude/Core/Listener.h>
 #include <SparkyStudios/Audio/Amplitude/Core/Playback/ChannelEventListener.h>
+#include <SparkyStudios/Audio/Amplitude/Core/Playback/ChannelInstance.h>
 #include <SparkyStudios/Audio/Amplitude/Core/Room.h>
 
 namespace SparkyStudios::Audio::Amplitude
@@ -290,6 +291,98 @@ namespace SparkyStudios::Audio::Amplitude
          * @see ChannelEventCallback
          */
         void On(eChannelEvent event, ChannelEventCallback callback, void* userData = nullptr) const;
+
+        /**
+         * @brief Enables multi-position mode for this channel.
+         *
+         * When enabled, this channel can have multiple position instances, allowing
+         * the same sound to be perceived from multiple locations simultaneously.
+         *
+         * @param[in] mode The instance mode.
+         *
+         * @note Must be called before adding instances. The mode cannot be changed
+         * while instancing is already enabled.
+         *
+         * @see eChannelInstanceMode
+         * @see AddInstance
+         */
+        void EnableInstancing(eChannelInstanceMode mode) const;
+
+        /**
+         * @brief Disables multi-position mode, reverting to single-position behavior.
+         *
+         * All existing instances will be removed when instancing is disabled.
+         */
+        void DisableInstancing() const;
+
+        /**
+         * @brief Checks if multi-position instancing is enabled.
+         *
+         * @return @c true if instancing is enabled, @c false otherwise.
+         */
+        [[nodiscard]] bool IsInstancingEnabled() const;
+
+        /**
+         * @brief Gets the instancing mode.
+         *
+         * @return The current instancing mode.
+         *
+         * @see eChannelInstanceMode
+         */
+        [[nodiscard]] eChannelInstanceMode GetInstancingMode() const;
+
+        /**
+         * @brief Adds a new instance at the specified world position.
+         *
+         * Creates a new position instance for this channel. In Blended mode, all instances
+         * share the same playback cursor. In Separate mode, each instance has an independent
+         * cursor starting from the current playback position.
+         *
+         * @param[in] location The world position for the new instance.
+         *
+         * @return The created ChannelInstance handle.
+         *
+         * @note Instancing must be enabled before adding instances.
+         *
+         * @see EnableInstancing
+         * @see ChannelInstance
+         */
+        [[nodiscard]] ChannelInstance AddInstance(const AmVector3& location) const;
+
+        /**
+         * @brief Removes an instance by ID.
+         *
+         * @param[in] instanceId The ID of the instance to remove.
+         *
+         * @see ChannelInstance::GetId
+         */
+        void RemoveInstance(AmChannelInstanceID instanceId) const;
+
+        /**
+         * @brief Removes all instances.
+         *
+         * After calling this, the channel will have no position instances.
+         * Instancing will still be enabled with the same mode.
+         */
+        void ClearInstances() const;
+
+        /**
+         * @brief Gets an instance by ID.
+         *
+         * @param[in] instanceId The ID of the instance to retrieve.
+         *
+         * @return The ChannelInstance handle, or an invalid instance if not found.
+         *
+         * @see ChannelInstance::Valid
+         */
+        [[nodiscard]] ChannelInstance GetInstance(AmChannelInstanceID instanceId) const;
+
+        /**
+         * @brief Gets the number of active instances.
+         *
+         * @return The number of position instances.
+         */
+        [[nodiscard]] AmSize GetInstanceCount() const;
 
     private:
         /**

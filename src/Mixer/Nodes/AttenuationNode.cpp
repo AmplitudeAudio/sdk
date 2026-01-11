@@ -191,6 +191,7 @@ namespace SparkyStudios::Audio::Amplitude
         const Listener& listener = layer->GetListener();
 
         AmReal32 targetGain = 1.0f;
+        AmVector3 effectiveLocation = layer->GetLocation();
 
         // Compute attenuated gain based on spatialization
         {
@@ -198,23 +199,53 @@ namespace SparkyStudios::Audio::Amplitude
 
             if (listener.Valid())
             {
-                const Entity& entity = layer->GetEntity();
+                if (layer->IsMultiPosition())
+                {
+                    const AmSize instanceCount = layer->GetInstanceCount();
+                    AmReal32 totalWeight = 0.0f;
+                    AmReal32 blendedGain = 0.0f;
+                    AmVector3 weightedLocation = kVector3Zero;
 
-                if (spatialization == eSpatialization_PositionOrientation)
-                {
-                    AMPLITUDE_ASSERT(entity.Valid());
-                    targetGain *= attenuation->GetGain(entity, listener);
-                }
-                else if (spatialization == eSpatialization_HRTF && entity.Valid())
-                {
-                    targetGain *= attenuation->GetGain(entity, listener);
-                }
-                else if (spatialization == eSpatialization_Position)
-                {
-                    const AmVector3& location = layer->GetLocation();
+                    for (AmSize i = 0; i < instanceCount; ++i)
+                    {
+                        const AmVector3 location = layer->GetInstanceLocation(i);
+                        const AmReal32 weight = layer->GetInstanceWeight(i);
+                        const AmReal32 instanceGain = attenuation->GetGain(location, listener);
 
-                    // Position-based spatialization, or HRTF-based spatialization without entity
-                    targetGain *= attenuation->GetGain(location, listener);
+                        blendedGain += instanceGain * weight;
+                        weightedLocation = Add(weightedLocation, Scale(location, weight));
+                        totalWeight += weight;
+                    }
+
+                    // Normalize by total weight
+                    if (totalWeight > kEpsilon)
+                    {
+                        targetGain = blendedGain / totalWeight;
+                        effectiveLocation = Scale(weightedLocation, 1.0f / totalWeight);
+                    }
+                    else
+                    {
+                        targetGain = 0.0f;
+                    }
+                }
+                else
+                {
+                    const Entity& entity = layer->GetEntity();
+
+                    if (spatialization == eSpatialization_PositionOrientation)
+                    {
+                        AMPLITUDE_ASSERT(entity.Valid());
+                        targetGain *= attenuation->GetGain(entity, listener);
+                    }
+                    else if (spatialization == eSpatialization_HRTF && entity.Valid())
+                    {
+                        targetGain *= attenuation->GetGain(entity, listener);
+                    }
+                    else if (spatialization == eSpatialization_Position)
+                    {
+                        // Position-based spatialization, or HRTF-based spatialization without entity
+                        targetGain *= attenuation->GetGain(effectiveLocation, listener);
+                    }
                 }
             }
             else
@@ -227,14 +258,13 @@ namespace SparkyStudios::Audio::Amplitude
         if (Gain::IsZero(targetGain))
             return nullptr;
 
-        // Set and normalize gains
+        // Set and normalize gains for air absorption
         if (attenuation->IsAirAbsorptionEnabled() && listener.Valid())
         {
-            const AmVector3& soundLocation = layer->GetLocation();
             const AmVector3& listenerLocation = listener.GetLocation();
 
             for (AmUInt32 i = 0; i < kAmAirAbsorptionBandCount; ++i)
-                _gains[i] = attenuation->EvaluateAirAbsorption(soundLocation, listenerLocation, i);
+                _gains[i] = attenuation->EvaluateAirAbsorption(effectiveLocation, listenerLocation, i);
 
             AirAbsorptionEQFilter::Normalize(_gains, targetGain);
             _eqFilter.SetGains(_gains[0], _gains[1], _gains[2]);
