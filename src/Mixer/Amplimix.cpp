@@ -1113,6 +1113,11 @@ namespace SparkyStudios::Audio::Amplitude
 
         auto& instances = channel.GetState()->GetInstances();
 
+        // Pre-allocate buffers for instance processing
+        SoundChunk* in = SoundChunk::CreateChunk(inSamples, soundChannels, eMemoryPoolKind_Amplimix);
+        SoundChunk* transient = SoundChunk::CreateChunk(outSamples, 1, eMemoryPoolKind_Amplimix);
+        SoundChunk* out = SoundChunk::CreateChunk(outSamples, 2, eMemoryPoolKind_Amplimix);
+
         // Process each instance
         for (AmSize instanceIndex = 0; instanceIndex < layer->instanceData.size(); ++instanceIndex)
         {
@@ -1129,10 +1134,10 @@ namespace SparkyStudios::Audio::Amplitude
 
             AmUInt64 instanceCursor = data.cursor;
 
-            // Create buffers for this instance
-            SoundChunk* in = SoundChunk::CreateChunk(inSamples, soundChannels, eMemoryPoolKind_Amplimix);
-            SoundChunk* transient = SoundChunk::CreateChunk(outSamples, 1, eMemoryPoolKind_Amplimix);
-            SoundChunk* out = SoundChunk::CreateChunk(transient->frames, 2, eMemoryPoolKind_Amplimix);
+            // Clear buffers for reuse
+            in->buffer->Clear();
+            transient->buffer->Clear();
+            out->buffer->Clear();
 
             if (layer->snd->stream)
             {
@@ -1222,32 +1227,36 @@ namespace SparkyStudios::Audio::Amplitude
                 instanceCursor = AM_CLAMP(instanceCursor, start, end);
             }
 
-            // Update the instance's cursor in the internal state
+            // Update the instance's cursor in the cached data
             data.cursor = instanceCursor;
 
-            // Update the actual instance state (find it by index in the intrusive list)
-            AmSize idx = 0;
-            for (auto& instanceState : instances)
+            // Update the actual instance state
+            const AmChannelInstanceID instanceId = data.instanceId;
+            auto& instancesMap = channel.GetState()->GetInstancesMap();
+            auto it = instancesMap.find(instanceId);
+
+            if (it != instancesMap.end())
             {
-                if (idx == instanceIndex)
-                {
-                    instanceState.SetCursor(instanceCursor);
-                    break;
-                }
-                ++idx;
+                it->second->SetCursor(instanceCursor);
+            }
+            else
+            {
+                // Instance was removed during processing, skip update
+                amLogWarning("Instance " AM_ID_CHAR_FMT " was removed during audio processing, skipping cursor update.", instanceId);
             }
 
-            // Reset pipeline for next instance
+            // Reset pipeline state for next instance. This is required since each
+            // instance needs to be processed as a single sound object in separate mode.
             layer->pipeline->Reset();
-
-            SoundChunk::DestroyChunk(out);
-            SoundChunk::DestroyChunk(transient);
-            SoundChunk::DestroyChunk(in);
         }
 
         // Clear instance processing context
         layer->processingInstance = false;
         layer->currentInstanceIndex = 0;
+
+        SoundChunk::DestroyChunk(out);
+        SoundChunk::DestroyChunk(transient);
+        SoundChunk::DestroyChunk(in);
 
         // If all instances finished, trigger end callback
         if (allInstancesFinished && !loop)
@@ -1346,7 +1355,9 @@ namespace SparkyStudios::Audio::Amplitude
     {
         pipeline->Reset();
 
-        // Update pending states
+        // Clear room update flag to allow re-initialization for next processing pass
+        // This is important for per-instance processing in separate mode, where each
+        // instance may be in a different room and requires independent room handling
         const Room& room = GetRoom();
         if (room.Valid())
             room.GetState()->SetWasUpdated(false);
@@ -1602,6 +1613,7 @@ namespace SparkyStudios::Audio::Amplitude
         for (const auto& instance : instances)
         {
             InstanceData data;
+            data.instanceId = instance.GetId();
             data.location = instance.GetLocation();
             data.room = instance.GetRoom();
             data.weight = instance.GetWeight();

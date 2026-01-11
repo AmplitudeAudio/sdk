@@ -218,14 +218,18 @@ namespace SparkyStudios::Audio::Amplitude
                     }
 
                     // Normalize by total weight
-                    if (totalWeight > kEpsilon)
+                    constexpr AmReal32 kMinTotalWeight = 1e-3f;
+
+                    if (totalWeight > kMinTotalWeight)
                     {
-                        targetGain = blendedGain / totalWeight;
-                        effectiveLocation = Scale(weightedLocation, 1.0f / totalWeight);
+                        const AmReal32 invTotalWeight = 1.0f / totalWeight;
+                        targetGain = blendedGain * invTotalWeight;
+                        effectiveLocation = Scale(weightedLocation, invTotalWeight);
                     }
                     else
                     {
                         targetGain = 0.0f;
+                        effectiveLocation = kVector3Zero;
                     }
                 }
                 else

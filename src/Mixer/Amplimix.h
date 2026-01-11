@@ -91,6 +91,13 @@ namespace SparkyStudios::Audio::Amplitude
          */
         void Reset();
 
+        /**
+         * @brief Resets the pipeline to its initial state.
+         *
+         * This clears all stateful nodes (filters, reverbs, etc.) and resets
+         * room update flags. Should be called between instance processing in
+         * separate mode to ensure independent processing per spatial position.
+         */
         void ResetPipeline();
 
         [[nodiscard]] AmUInt32 GetId() const override;
@@ -129,6 +136,7 @@ namespace SparkyStudios::Audio::Amplitude
          */
         struct InstanceData
         {
+            AmChannelInstanceID instanceId;
             AmVector3 location;
             Room room;
             AmReal32 weight;

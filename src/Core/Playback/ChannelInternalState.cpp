@@ -821,6 +821,12 @@ namespace SparkyStudios::Audio::Amplitude
         if (!_instancingEnabled)
             return nullptr;
 
+        if (_instances.size() >= kAmMaxChannelInstances)
+        {
+            amLogWarning("Cannot add instance: maximum limit of %zu instances reached.", kAmMaxChannelInstances);
+            return nullptr;
+        }
+
         auto* instance = ampoolnew(eMemoryPoolKind_Engine, ChannelInstanceInternalState, this);
         instance->SetId(_nextInstanceId++);
         instance->SetLocation(location);

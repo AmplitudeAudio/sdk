@@ -430,6 +430,26 @@ namespace SparkyStudios::Audio::Amplitude
             return _instances;
         }
 
+        /**
+         * @brief Gets the instance map.
+         *
+         * @return Reference to the instance map.
+         */
+        [[nodiscard]] AM_INLINE std::map<AmChannelInstanceID, ChannelInstanceInternalState*>& GetInstancesMap()
+        {
+            return _instancesMap;
+        }
+
+        /**
+         * @brief Gets the instance map.
+         *
+         * @return Const reference to the instance map.
+         */
+        [[nodiscard]] AM_INLINE const std::map<AmChannelInstanceID, ChannelInstanceInternalState*>& GetInstancesMap() const
+        {
+            return _instancesMap;
+        }
+
         // The node that tracks the location in the priority list.
         fplutil::intrusive_list_node priority_node;
 
