@@ -43,6 +43,52 @@ namespace SparkyStudios::Audio::Amplitude
         ~SoundChunk();
     };
 
+    /**
+     * @brief Pool for reusing SoundChunk objects.
+     *
+     * This pool is optimized for usage in Amplimix layers, but can be used anywhere else. The pool grows
+     * lazily up to kMaxChunksPerPool and reuses chunks with matching or larger capacity.
+     */
+    struct SoundChunkPool
+    {
+        static constexpr AmSize kMaxChunksPerPool = 8;
+
+        struct PooledChunk
+        {
+            SoundChunk* chunk;
+            bool inUse;
+        };
+
+        PooledChunk chunks[kMaxChunksPerPool];
+        AmUInt32 allocated;
+        eMemoryPoolKind memoryPool;
+
+        SoundChunkPool();
+
+        /**
+         * @brief Acquires a chunk from the pool or allocates a new one.
+         *
+         * @param[in] frames Number of frames needed.
+         * @param[in] channels Number of channels needed.
+         * @return A SoundChunk pointer (never null).
+         */
+        SoundChunk* Acquire(AmUInt64 frames, AmUInt16 channels);
+
+        /**
+         * @brief Releases a chunk back to the pool.
+         *
+         * @param[in] chunk The chunk to release (may be null).
+         */
+        void Release(SoundChunk* chunk);
+
+        /**
+         * @brief Destroys all pooled chunks and resets the pool.
+         */
+        void Reset();
+
+        ~SoundChunkPool();
+    };
+
     struct SoundData
     {
         SoundData();

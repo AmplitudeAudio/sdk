@@ -84,6 +84,8 @@ namespace SparkyStudios::Audio::Amplitude
 
         std::recursive_mutex mutex; // mutex for thread-safe access
 
+        SoundChunkPool _chunkPool; // pool for reusable SoundChunk allocations
+
         ~AmplimixLayerImpl() override;
 
         /**

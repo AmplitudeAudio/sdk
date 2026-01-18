@@ -898,9 +898,9 @@ namespace SparkyStudios::Audio::Amplitude
         inSamples = AM_VALUE_ALIGN(inSamples, kProcessedFramesCount);
 #endif // AM_SIMD_INTRINSICS
 
-        SoundChunk* in = SoundChunk::CreateChunk(inSamples, soundChannels, eMemoryPoolKind_Amplimix);
-        SoundChunk* transient = SoundChunk::CreateChunk(outSamples, 1, eMemoryPoolKind_Amplimix);
-        SoundChunk* out = SoundChunk::CreateChunk(transient->frames, 2, eMemoryPoolKind_Amplimix);
+        SoundChunk* in = layer->_chunkPool.Acquire(inSamples, soundChannels);
+        SoundChunk* transient = layer->_chunkPool.Acquire(outSamples, 1);
+        SoundChunk* out = layer->_chunkPool.Acquire(transient->frames, 2);
 
         // if this sound is streaming, and we have a stream event callback
         if (layer->snd->stream)
@@ -1029,9 +1029,9 @@ namespace SparkyStudios::Audio::Amplitude
                 cursor = oldCursor;
         }
 
-        SoundChunk::DestroyChunk(out);
-        SoundChunk::DestroyChunk(transient);
-        SoundChunk::DestroyChunk(in);
+        layer->_chunkPool.Release(out);
+        layer->_chunkPool.Release(transient);
+        layer->_chunkPool.Release(in);
 
         // run callback if reached the end
         if (cursor == layer->end)
@@ -1114,9 +1114,9 @@ namespace SparkyStudios::Audio::Amplitude
         auto& instances = channel.GetState()->GetInstances();
 
         // Pre-allocate buffers for instance processing
-        SoundChunk* in = SoundChunk::CreateChunk(inSamples, soundChannels, eMemoryPoolKind_Amplimix);
-        SoundChunk* transient = SoundChunk::CreateChunk(outSamples, 1, eMemoryPoolKind_Amplimix);
-        SoundChunk* out = SoundChunk::CreateChunk(outSamples, 2, eMemoryPoolKind_Amplimix);
+        SoundChunk* in = layer->_chunkPool.Acquire(inSamples, soundChannels);
+        SoundChunk* transient = layer->_chunkPool.Acquire(outSamples, 1);
+        SoundChunk* out = layer->_chunkPool.Acquire(outSamples, 2);
 
         // Process each instance
         for (AmSize instanceIndex = 0; instanceIndex < layer->instanceData.size(); ++instanceIndex)
@@ -1254,9 +1254,9 @@ namespace SparkyStudios::Audio::Amplitude
         layer->processingInstance = false;
         layer->currentInstanceIndex = 0;
 
-        SoundChunk::DestroyChunk(out);
-        SoundChunk::DestroyChunk(transient);
-        SoundChunk::DestroyChunk(in);
+        layer->_chunkPool.Release(out);
+        layer->_chunkPool.Release(transient);
+        layer->_chunkPool.Release(in);
 
         // If all instances finished, trigger end callback
         if (allInstancesFinished && !loop)

@@ -72,6 +72,94 @@ namespace SparkyStudios::Audio::Amplitude
         buffer = nullptr;
     }
 
+    SoundChunkPool::SoundChunkPool()
+        : allocated(0)
+        , memoryPool(eMemoryPoolKind_Amplimix)
+    {
+        for (AmSize i = 0; i < kMaxChunksPerPool; ++i)
+        {
+            chunks[i].chunk = nullptr;
+            chunks[i].inUse = false;
+        }
+    }
+
+    SoundChunk* SoundChunkPool::Acquire(AmUInt64 frames, AmUInt16 channels)
+    {
+        // Search for reusable chunk with matching or larger capacity
+        for (AmSize i = 0; i < allocated; ++i)
+        {
+            if (!chunks[i].inUse && chunks[i].chunk != nullptr)
+            {
+                SoundChunk* chunk = chunks[i].chunk;
+                const AmUInt16 chunkChannels = chunk->buffer->GetChannelCount();
+
+                // Check if chunk has sufficient capacity
+                if (chunk->frames >= frames && chunkChannels == channels)
+                {
+                    chunks[i].inUse = true;
+                    chunk->buffer->Clear();
+                    return chunk;
+                }
+            }
+        }
+
+        SoundChunk* newChunk = SoundChunk::CreateChunk(frames, channels, memoryPool);
+
+        if (allocated < kMaxChunksPerPool)
+        {
+            chunks[allocated].chunk = newChunk;
+            chunks[allocated].inUse = true;
+            allocated++;
+        }
+        else
+        {
+            // Pool full - this chunk will be destroyed on Release
+            amLogWarning("SoundChunkPool exhausted (%zu chunks), falling back to direct allocation", kMaxChunksPerPool);
+        }
+
+        return newChunk;
+    }
+
+    void SoundChunkPool::Release(SoundChunk* chunk)
+    {
+        if (chunk == nullptr)
+            return;
+
+        // Find chunk in pool and mark as available
+        for (AmSize i = 0; i < allocated; ++i)
+        {
+            if (chunks[i].chunk == chunk)
+            {
+                chunks[i].inUse = false;
+                return;
+            }
+        }
+
+        // Not in pool (emergency allocation) - destroy it
+        SoundChunk::DestroyChunk(chunk);
+    }
+
+    void SoundChunkPool::Reset()
+    {
+        for (AmSize i = 0; i < allocated; ++i)
+        {
+            if (chunks[i].chunk != nullptr)
+            {
+                SoundChunk::DestroyChunk(chunks[i].chunk);
+                chunks[i].chunk = nullptr;
+            }
+
+            chunks[i].inUse = false;
+        }
+
+        allocated = 0;
+    }
+
+    SoundChunkPool::~SoundChunkPool()
+    {
+        Reset();
+    }
+
     SoundData::SoundData()
         : chunk(nullptr)
         , length(0)
