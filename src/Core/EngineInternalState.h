@@ -99,7 +99,7 @@ namespace SparkyStudios::Audio::Amplitude
 
     struct ListenerCache
     {
-        std::unordered_map<AmSize, void*> cache;
+        std::unordered_map<AmSize, ListenerInternalState*> cache;
 
         AM_INLINE void Clear()
         {

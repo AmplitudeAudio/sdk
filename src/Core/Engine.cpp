@@ -1235,12 +1235,20 @@ namespace SparkyStudios::Audio::Amplitude
         {
             std::size_t operator()(const ListenerCacheKey& key) const
             {
-                // Combine hashes using XOR and bit shifts
                 std::size_t h1 = std::hash<AmInt32>{}(key.gridX);
                 std::size_t h2 = std::hash<AmInt32>{}(key.gridY);
                 std::size_t h3 = std::hash<AmInt32>{}(key.gridZ);
                 std::size_t h4 = std::hash<int>{}(static_cast<int>(key.fetchMode));
-                return h1 ^ (h2 << 1) ^ (h3 << 2) ^ (h4 << 3);
+
+                std::size_t seed = 0;
+
+                // Combine using golden ratio constant (0x9e3779b9)
+                seed ^= h1 + 0x9e3779b9 + (seed << 6) + (seed >> 2);
+                seed ^= h2 + 0x9e3779b9 + (seed << 6) + (seed >> 2);
+                seed ^= h3 + 0x9e3779b9 + (seed << 6) + (seed >> 2);
+                seed ^= h4 + 0x9e3779b9 + (seed << 6) + (seed >> 2);
+
+                return seed;
             }
         };
     };
@@ -2465,7 +2473,9 @@ namespace SparkyStudios::Audio::Amplitude
         if (_state->paused)
             return;
 
-        // Clear per-frame caches
+        // It is safe to clear the listener cache here because it is only used to
+        // find the best listener for each channel. Listener positions are updated
+        // before the best listener is selected.
         _state->listenerCache.Clear();
 
         if (!_state->stopping)
