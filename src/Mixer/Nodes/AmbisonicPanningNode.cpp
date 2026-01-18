@@ -38,6 +38,8 @@ namespace SparkyStudios::Audio::Amplitude
         if (!listener.Valid())
             return nullptr;
 
+        const auto& listenerInvMatrix = listener.GetInverseMatrix();
+
         const ePanningMode mode = Engine::GetInstance()->GetPanningMode();
         const AmUInt32 order = AM_MAX(static_cast<AmUInt32>(mode), 1u);
 
@@ -55,7 +57,7 @@ namespace SparkyStudios::Audio::Amplitude
                 const AmReal32 weight = layer->GetInstanceWeight(i);
                 const AmReal32 instanceGain = layer->GetInstanceGain(i);
 
-                const auto& listenerSpacePosition = Transform(listener.GetInverseMatrix(), { .xyz = location, ._pad2 = 1.0f });
+                const auto& listenerSpacePosition = Transform(listenerInvMatrix, { .xyz = location, ._pad2 = 1.0f });
                 _source.SetPosition(SphericalPosition::ForHRTF(listenerSpacePosition.xyz), 0.25f);
 
                 // Create a temporary soundfield for this instance
@@ -84,7 +86,7 @@ namespace SparkyStudios::Audio::Amplitude
         }
         else
         {
-            const auto& listenerSpaceSourcePosition = Transform(listener.GetInverseMatrix(), { .xyz = layer->GetLocation(), ._pad2 = 1.0f });
+            const auto& listenerSpaceSourcePosition = Transform(listenerInvMatrix, { .xyz = layer->GetLocation(), ._pad2 = 1.0f });
             _source.SetPosition(SphericalPosition::ForHRTF(listenerSpaceSourcePosition.xyz), 0.25f);
             _source.Process(input->GetChannel(0), input->GetFrameCount(), &_soundField);
         }
