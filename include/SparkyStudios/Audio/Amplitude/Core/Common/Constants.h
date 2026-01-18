@@ -176,6 +176,13 @@ namespace SparkyStudios::Audio::Amplitude
      * @ingroup core
      */
     constexpr AmReal32 kHighCutoffFrequencies[kAmAirAbsorptionBandCount] = { 800.0f, 8000.0f, 22000.0f };
+
+    /**
+     * @brief The maximum number of channel instances supported per channel.
+     *
+     * @ingroup core
+     */
+    constexpr AmSize kAmMaxChannelInstances = 1024;
 } // namespace SparkyStudios::Audio::Amplitude
 
 #endif // _AM_CORE_COMMON_CONSTANTS_H

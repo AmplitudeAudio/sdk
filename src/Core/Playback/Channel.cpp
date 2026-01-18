@@ -199,4 +199,87 @@ namespace SparkyStudios::Audio::Amplitude
     {
         return _state->GetChannelStateId() == _stateId;
     }
+
+    void Channel::EnableInstancing(eChannelInstanceMode mode) const
+    {
+        AMPLITUDE_ASSERT(Valid());
+        if (!IsValidStateId())
+            return;
+
+        _state->EnableInstancing(mode);
+    }
+
+    void Channel::DisableInstancing() const
+    {
+        AMPLITUDE_ASSERT(Valid());
+        if (!IsValidStateId())
+            return;
+
+        _state->DisableInstancing();
+    }
+
+    bool Channel::IsInstancingEnabled() const
+    {
+        AMPLITUDE_ASSERT(Valid());
+        if (!IsValidStateId())
+            return false;
+
+        return _state->IsInstancingEnabled();
+    }
+
+    eChannelInstanceMode Channel::GetInstancingMode() const
+    {
+        AMPLITUDE_ASSERT(Valid());
+        if (!IsValidStateId())
+            return eChannelInstanceMode_Blended;
+
+        return _state->GetInstancingMode();
+    }
+
+    ChannelInstance Channel::AddInstance(const AmVector3& location) const
+    {
+        AMPLITUDE_ASSERT(Valid());
+        if (!IsValidStateId())
+            return ChannelInstance();
+
+        ChannelInstanceInternalState* state = _state->AddInstance(location);
+        return ChannelInstance(state);
+    }
+
+    void Channel::RemoveInstance(AmChannelInstanceID instanceId) const
+    {
+        AMPLITUDE_ASSERT(Valid());
+        if (!IsValidStateId())
+            return;
+
+        _state->RemoveInstance(instanceId);
+    }
+
+    void Channel::ClearInstances() const
+    {
+        AMPLITUDE_ASSERT(Valid());
+        if (!IsValidStateId())
+            return;
+
+        _state->ClearInstances();
+    }
+
+    ChannelInstance Channel::GetInstance(AmChannelInstanceID instanceId) const
+    {
+        AMPLITUDE_ASSERT(Valid());
+        if (!IsValidStateId())
+            return ChannelInstance();
+
+        ChannelInstanceInternalState* state = _state->GetInstance(instanceId);
+        return ChannelInstance(state);
+    }
+
+    AmSize Channel::GetInstanceCount() const
+    {
+        AMPLITUDE_ASSERT(Valid());
+        if (!IsValidStateId())
+            return 0;
+
+        return _state->GetInstanceCount();
+    }
 } // namespace SparkyStudios::Audio::Amplitude

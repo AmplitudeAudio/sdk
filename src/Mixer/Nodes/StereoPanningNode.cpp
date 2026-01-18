@@ -37,16 +37,49 @@ namespace SparkyStudios::Audio::Amplitude
         _output = AudioBuffer(input->GetFrameCount(), 2);
 
         constexpr AmReal32 kGain = 1.0f;
-        AmVector2 pannedGain = kVector2Zero;
 
         if (layer->GetSpatialization() == eSpatialization_None)
-            pannedGain = Gain::CalculateStereoPannedGain(kGain, 0.0f);
-        else
-            pannedGain = Gain::CalculateStereoPannedGain(kGain, layer->GetLocation(), listener.GetInverseMatrix());
+        {
+            const AmVector2 pannedGain = Gain::CalculateStereoPannedGain(kGain, 0.0f);
+            Gain::ApplyReplaceConstantGain(pannedGain.x, input->GetChannel(0), 0, _output[0], 0, _output.GetFrameCount());
+            Gain::ApplyReplaceConstantGain(pannedGain.y, input->GetChannel(0), 0, _output[1], 0, _output.GetFrameCount());
+        }
+        else if (layer->IsMultiPosition())
+        {
+            const AmSize instanceCount = layer->GetInstanceCount();
+            AmReal32 totalWeight = 0.0f;
+            AmVector2 blendedPan = kVector2Zero;
 
-        // Apply panning
-        Gain::ApplyReplaceConstantGain(pannedGain.x, input->GetChannel(0), 0, _output[0], 0, _output.GetFrameCount());
-        Gain::ApplyReplaceConstantGain(pannedGain.y, input->GetChannel(0), 0, _output[1], 0, _output.GetFrameCount());
+            for (AmSize i = 0; i < instanceCount; ++i)
+            {
+                const AmVector3 location = layer->GetInstanceLocation(i);
+                const AmReal32 weight = layer->GetInstanceWeight(i);
+                const AmReal32 instanceGain = layer->GetInstanceGain(i);
+
+                const AmVector2 pannedGain = Gain::CalculateStereoPannedGain(instanceGain, location, listener.GetInverseMatrix());
+
+                blendedPan.x += pannedGain.x * weight;
+                blendedPan.y += pannedGain.y * weight;
+                totalWeight += weight;
+            }
+
+            // Normalize by total weight
+            if (totalWeight > kEpsilon)
+            {
+                blendedPan.x /= totalWeight;
+                blendedPan.y /= totalWeight;
+            }
+
+            // Apply blended panning
+            Gain::ApplyReplaceConstantGain(blendedPan.x, input->GetChannel(0), 0, _output[0], 0, _output.GetFrameCount());
+            Gain::ApplyReplaceConstantGain(blendedPan.y, input->GetChannel(0), 0, _output[1], 0, _output.GetFrameCount());
+        }
+        else
+        {
+            const AmVector2 pannedGain = Gain::CalculateStereoPannedGain(kGain, layer->GetLocation(), listener.GetInverseMatrix());
+            Gain::ApplyReplaceConstantGain(pannedGain.x, input->GetChannel(0), 0, _output[0], 0, _output.GetFrameCount());
+            Gain::ApplyReplaceConstantGain(pannedGain.y, input->GetChannel(0), 0, _output[1], 0, _output.GetFrameCount());
+        }
 
         return &_output;
     }

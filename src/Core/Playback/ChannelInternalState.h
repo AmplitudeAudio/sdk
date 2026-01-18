@@ -17,11 +17,16 @@
 #ifndef _AM_IMPLEMENTATION_CORE_PLAYBACK_CHANNEL_INTERNAL_STATE_H
 #define _AM_IMPLEMENTATION_CORE_PLAYBACK_CHANNEL_INTERNAL_STATE_H
 
+#include <map>
+
 #include <SparkyStudios/Audio/Amplitude/Core/Common.h>
 
 #include <SparkyStudios/Audio/Amplitude/Core/Entity.h>
 #include <SparkyStudios/Audio/Amplitude/Core/Playback/Channel.h>
 #include <SparkyStudios/Audio/Amplitude/Core/Playback/ChannelEventListener.h>
+#include <SparkyStudios/Audio/Amplitude/Core/Playback/ChannelInstance.h>
+
+#include <Core/Playback/ChannelInstanceInternalState.h>
 #include <SparkyStudios/Audio/Amplitude/Sound/Collection.h>
 #include <SparkyStudios/Audio/Amplitude/Sound/Sound.h>
 #include <SparkyStudios/Audio/Amplitude/Sound/Switch.h>
@@ -61,6 +66,11 @@ namespace SparkyStudios::Audio::Amplitude
             , _location()
             , _channelStateId(kAmInvalidObjectId)
             , _dopplerFactors()
+            , _instancingEnabled(false)
+            , _instancingMode(eChannelInstanceMode_Blended)
+            , _nextInstanceId(1)
+            , _instances(&ChannelInstanceInternalState::instance_node)
+            , _instancesMap()
         {}
 
         // Updates the state enum based on whether this channel is stopped, playing,
@@ -319,6 +329,127 @@ namespace SparkyStudios::Audio::Amplitude
 
         void Trigger(eChannelEvent event);
 
+        /**
+         * @brief Enables multi-position instancing for this channel.
+         *
+         * @param mode The instance mode.
+         */
+        void EnableInstancing(eChannelInstanceMode mode);
+
+        /**
+         * @brief Disables multi-position instancing for this channel.
+         */
+        void DisableInstancing();
+
+        /**
+         * @brief Checks if instancing is enabled for this channel.
+         *
+         * @return @c true if instancing is enabled, @c false otherwise.
+         */
+        [[nodiscard]] AM_INLINE bool IsInstancingEnabled() const
+        {
+            return _instancingEnabled;
+        }
+
+        /**
+         * @brief Gets the instancing mode.
+         *
+         * @return The current instancing mode.
+         */
+        [[nodiscard]] AM_INLINE eChannelInstanceMode GetInstancingMode() const
+        {
+            return _instancingMode;
+        }
+
+        /**
+         * @brief Adds a new instance at the specified location.
+         *
+         * @param location The world-space location for the new instance.
+         *
+         * @return The internal state of the new instance.
+         */
+        ChannelInstanceInternalState* AddInstance(const AmVector3& location);
+
+        /**
+         * @brief Removes an instance by ID.
+         *
+         * @param instanceId The ID of the instance to remove.
+         */
+        void RemoveInstance(AmChannelInstanceID instanceId);
+
+        /**
+         * @brief Removes all instances.
+         */
+        void ClearInstances();
+
+        /**
+         * @brief Gets an instance by ID.
+         *
+         * @param instanceId The ID of the instance to retrieve.
+         *
+         * @return The internal state of the instance, or nullptr if not found.
+         */
+        [[nodiscard]] ChannelInstanceInternalState* GetInstance(AmChannelInstanceID instanceId);
+
+        /**
+         * @brief Gets an instance by ID (const version).
+         *
+         * @param instanceId The ID of the instance to retrieve.
+         *
+         * @return The internal state of the instance, or nullptr if not found.
+         */
+        [[nodiscard]] const ChannelInstanceInternalState* GetInstance(AmChannelInstanceID instanceId) const;
+
+        /**
+         * @brief Gets the number of active instances.
+         *
+         * @return The number of instances.
+         */
+        [[nodiscard]] AM_INLINE AmSize GetInstanceCount() const
+        {
+            return _instances.size();
+        }
+
+        /**
+         * @brief Gets the list of instances.
+         *
+         * @return Reference to the instance list.
+         */
+        [[nodiscard]] AM_INLINE ChannelInstanceList& GetInstances()
+        {
+            return _instances;
+        }
+
+        /**
+         * @brief Gets the list of instances (const version).
+         *
+         * @return Const reference to the instance list.
+         */
+        [[nodiscard]] AM_INLINE const ChannelInstanceList& GetInstances() const
+        {
+            return _instances;
+        }
+
+        /**
+         * @brief Gets the instance map.
+         *
+         * @return Reference to the instance map.
+         */
+        [[nodiscard]] AM_INLINE std::map<AmChannelInstanceID, ChannelInstanceInternalState*>& GetInstancesMap()
+        {
+            return _instancesMap;
+        }
+
+        /**
+         * @brief Gets the instance map.
+         *
+         * @return Const reference to the instance map.
+         */
+        [[nodiscard]] AM_INLINE const std::map<AmChannelInstanceID, ChannelInstanceInternalState*>& GetInstancesMap() const
+        {
+            return _instancesMap;
+        }
+
         // The node that tracks the location in the priority list.
         fplutil::intrusive_list_node priority_node;
 
@@ -396,6 +527,13 @@ namespace SparkyStudios::Audio::Amplitude
         std::map<AmRoomID, AmReal32> _roomGains;
 
         std::map<eChannelEvent, std::shared_ptr<ChannelEventListener>> _eventsMap;
+
+        // Multi-position instancing
+        bool _instancingEnabled;
+        eChannelInstanceMode _instancingMode;
+        AmChannelInstanceID _nextInstanceId;
+        ChannelInstanceList _instances;
+        std::map<AmChannelInstanceID, ChannelInstanceInternalState*> _instancesMap;
     };
 } // namespace SparkyStudios::Audio::Amplitude
 

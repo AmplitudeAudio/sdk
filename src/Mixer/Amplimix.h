@@ -91,6 +91,13 @@ namespace SparkyStudios::Audio::Amplitude
          */
         void Reset();
 
+        /**
+         * @brief Resets the pipeline to its initial state.
+         *
+         * This clears all stateful nodes (filters, reverbs, etc.) and resets
+         * room update flags. Should be called between instance processing in
+         * separate mode to ensure independent processing per spatial position.
+         */
         void ResetPipeline();
 
         [[nodiscard]] AmUInt32 GetId() const override;
@@ -116,6 +123,49 @@ namespace SparkyStudios::Audio::Amplitude
         [[nodiscard]] const std::shared_ptr<EffectInstance> GetEffect() const override;
         [[nodiscard]] const Attenuation* GetAttenuation() const override;
         [[nodiscard]] AmUInt32 GetSampleRate() const override;
+        [[nodiscard]] bool IsMultiPosition() const override;
+        [[nodiscard]] eChannelInstanceMode GetInstancingMode() const override;
+        [[nodiscard]] AmSize GetInstanceCount() const override;
+        [[nodiscard]] AmVector3 GetInstanceLocation(AmSize index) const override;
+        [[nodiscard]] Room GetInstanceRoom(AmSize index) const override;
+        [[nodiscard]] AmReal32 GetInstanceWeight(AmSize index) const override;
+        [[nodiscard]] AmReal32 GetInstanceGain(AmSize index) const override;
+
+        /**
+         * @brief Cached per-instance data for pipeline processing.
+         */
+        struct InstanceData
+        {
+            AmChannelInstanceID instanceId;
+            AmVector3 location;
+            Room room;
+            AmReal32 weight;
+            AmReal32 computedGain;
+            AmUInt64 cursor; // For separate mode
+        };
+
+        /**
+         * @brief Updates the cached instance data from the channel state.
+         */
+        void UpdateInstanceData();
+
+        /**
+         * @brief Cached instance data for multi-position processing.
+         */
+        std::vector<InstanceData> instanceData;
+
+        /**
+         * @brief Whether we are currently processing a specific instance (separate mode).
+         *
+         * When true, IsMultiPosition() returns false and GetLocation() returns
+         * the current instance's location.
+         */
+        bool processingInstance = false;
+
+        /**
+         * @brief The index of the current instance being processed (separate mode).
+         */
+        AmSize currentInstanceIndex = 0;
     };
 
     struct MixerCommand
@@ -224,6 +274,7 @@ namespace SparkyStudios::Audio::Amplitude
 
         void ExecuteCommands();
         void MixLayer(AmplimixLayerImpl* layer, AudioBuffer* buffer, AmUInt64 frameCount);
+        void MixLayerSeparateMode(AmplimixLayerImpl* layer, AudioBuffer* buffer, AmUInt64 frameCount);
         AmplimixLayerImpl* GetLayer(AmUInt32 layer);
         bool ShouldMix(AmplimixLayerImpl* layer);
         void UpdatePitch(AmplimixLayerImpl* layer);

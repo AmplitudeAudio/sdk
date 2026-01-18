@@ -793,4 +793,89 @@ namespace SparkyStudios::Audio::Amplitude
 
         return success;
     }
+
+    void ChannelInternalState::EnableInstancing(eChannelInstanceMode mode)
+    {
+        if (_instancingEnabled)
+            return; // Already enabled
+
+        _instancingEnabled = true;
+        _instancingMode = mode;
+        _nextInstanceId = 1;
+    }
+
+    void ChannelInternalState::DisableInstancing()
+    {
+        if (!_instancingEnabled)
+            return;
+
+        ClearInstances();
+
+        _instancingEnabled = false;
+        _instancingMode = eChannelInstanceMode_Blended;
+        _nextInstanceId = 1;
+    }
+
+    ChannelInstanceInternalState* ChannelInternalState::AddInstance(const AmVector3& location)
+    {
+        if (!_instancingEnabled)
+            return nullptr;
+
+        if (_instances.size() >= kAmMaxChannelInstances)
+        {
+            amLogWarning("Cannot add instance: maximum limit of %zu instances reached.", kAmMaxChannelInstances);
+            return nullptr;
+        }
+
+        auto* instance = ampoolnew(eMemoryPoolKind_Engine, ChannelInstanceInternalState, this);
+        instance->SetId(_nextInstanceId++);
+        instance->SetLocation(location);
+
+        // For separate mode, initialize cursor at 0 if channel is already playing
+        // This allows instances to start at different points in time
+        if (_instancingMode == eChannelInstanceMode_Separate && !_realChannel._channelLayersId.empty())
+            instance->SetCursor(0);
+
+        _instances.push_back(*instance);
+        _instancesMap[instance->GetId()] = instance;
+
+        return instance;
+    }
+
+    void ChannelInternalState::RemoveInstance(AmChannelInstanceID instanceId)
+    {
+        auto it = _instancesMap.find(instanceId);
+        if (it == _instancesMap.end())
+            return;
+
+        ChannelInstanceInternalState* instance = it->second;
+        instance->instance_node.remove();
+        _instancesMap.erase(it);
+
+        ampooldelete(eMemoryPoolKind_Engine, ChannelInstanceInternalState, instance);
+    }
+
+    void ChannelInternalState::ClearInstances()
+    {
+        while (!_instances.empty())
+        {
+            ChannelInstanceInternalState& instance = _instances.front();
+            instance.instance_node.remove();
+            ampooldelete(eMemoryPoolKind_Engine, ChannelInstanceInternalState, &instance);
+        }
+
+        _instancesMap.clear();
+    }
+
+    ChannelInstanceInternalState* ChannelInternalState::GetInstance(AmChannelInstanceID instanceId)
+    {
+        auto it = _instancesMap.find(instanceId);
+        return it != _instancesMap.end() ? it->second : nullptr;
+    }
+
+    const ChannelInstanceInternalState* ChannelInternalState::GetInstance(AmChannelInstanceID instanceId) const
+    {
+        auto it = _instancesMap.find(instanceId);
+        return it != _instancesMap.end() ? it->second : nullptr;
+    }
 } // namespace SparkyStudios::Audio::Amplitude

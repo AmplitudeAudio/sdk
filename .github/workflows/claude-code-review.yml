@@ -21,7 +21,7 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: read
-      pull-requests: read
+      pull-requests: write
       issues: read
       id-token: write
 
@@ -41,19 +41,36 @@ jobs:
             REPO: ${{ github.repository }}
             PR NUMBER: ${{ github.event.pull_request.number }}
 
-            Please review this pull request and provide feedback on:
-            - Code quality and best practices
-            - Potential bugs or issues
-            - Performance considerations
-            - Suggestions for improvements
-            - Security concerns
-            - Test coverage
+            Please perform a comprehensive code review of this pull request and provide detailed feedback.
 
-            Use the repository's CLAUDE.md for guidance on style and conventions. Be constructive and helpful in your feedback.
+            Review Focus Areas:
+            - Code quality and adherence to best practices (see CLAUDE.md for project conventions)
+            - Potential bugs, logic errors, or edge cases
+            - Performance considerations and optimization opportunities
+            - Security vulnerabilities (OWASP top 10, common CVEs)
+            - Memory management and resource leaks
+            - Thread safety and concurrency issues
+            - Test coverage and missing test cases
+            - Documentation completeness
+            - API design and usability
 
-            Use the GitHub MCP tools to create a proper PR review with comments.
-            You can use mcp__github__create_pending_pull_request_review to start a review
-            and mcp__github__submit_pull_request_review to submit it as a COMMENT (not APPROVE).
+            Review Guidelines:
+            1. Read the CLAUDE.md file to understand project-specific conventions (C++20, naming, formatting)
+            2. Examine all changed files thoroughly
+            3. Provide constructive, specific feedback with file:line references
+            4. Use confidence levels for issues (critical, moderate, suggestion)
+            5. Focus on significant issues rather than minor style nitpicks
+
+            Output Format:
+            - Create a GitHub PR review using the MCP tools
+            - Group feedback by severity (critical issues first)
+            - Include code snippets showing the issue and suggested fix when applicable
+            - Be professional, constructive, and helpful
+
+            IMPORTANT: Use the GitHub MCP tools to create and publish your review:
+            1. Use mcp__github__create_pending_pull_request_review to start a review
+            2. Add review comments for each issue found
+            3. Use mcp__github__submit_pull_request_review to publish as a COMMENT (not APPROVE or REQUEST_CHANGES)
           # See https://github.com/anthropics/claude-code-action/blob/main/docs/usage.md
           # or https://docs.claude.com/en/docs/claude-code/cli-reference for available options
-          claude_args: '--allowed-tools "mcp__github__create_pending_pull_request_review,mcp__github__submit_pull_request_review,Read,Grep,Glob,Bash(gh issue view:*),Bash(gh search:*),Bash(gh issue list:*),Bash(gh pr comment:*),Bash(gh pr diff:*),Bash(gh pr view:*),Bash(gh pr list:*)"'
+          claude_args: '--allowed-tools "mcp__github__create_pending_pull_request_review,mcp__github__create_pull_request_review_comment,mcp__github__submit_pull_request_review,Read,Grep,Glob,Bash(gh pr diff:*),Bash(gh pr view:*),Bash(gh pr list:*),Bash(gh pr files:*),Bash(gh api:*)"'
