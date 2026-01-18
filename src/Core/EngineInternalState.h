@@ -97,12 +97,22 @@ namespace SparkyStudios::Audio::Amplitude
     typedef std::vector<RoomInternalState> RoomStateVector;
     typedef fplutil::intrusive_list<RoomInternalState> RoomList;
 
+    struct ListenerCache
+    {
+        std::unordered_map<AmSize, void*> cache;
+
+        AM_INLINE void Clear()
+        {
+            cache.clear();
+        }
+    };
+
     struct ObstructionOcclusionState
     {
         Curve lpf;
         Curve gain;
 
-        void Init(const ObstructionOcclusionConfig* config)
+        AM_INLINE void Init(const ObstructionOcclusionConfig* config)
         {
             lpf = Curve();
             lpf.Initialize(config->lpf_curve());
@@ -198,6 +208,9 @@ namespace SparkyStudios::Audio::Amplitude
 
         // If true, channel priorities need to be re-sorted this frame.
         bool channelPriorityDirty;
+
+        // Cache listener lookup results per frame.
+        ListenerCache listenerCache;
 
         // A map of sound names to SoundCollections.
         SwitchContainerMap switch_container_map;
