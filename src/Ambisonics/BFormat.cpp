@@ -44,7 +44,8 @@ namespace SparkyStudios::Audio::Amplitude
         if (!AmbisonicComponent::Configure(order, is3D))
             return false;
 
-        _buffer.reset(ampoolnew(eMemoryPoolKind_SoundData, AudioBuffer, sampleCount, GetChannelCount()));
+        if (_buffer == nullptr || _buffer->GetFrameCount() != sampleCount || _buffer->GetChannelCount() != GetChannelCount())
+            _buffer.reset(ampoolnew(eMemoryPoolKind_SoundData, AudioBuffer, sampleCount, GetChannelCount()));
 
         return true;
     }

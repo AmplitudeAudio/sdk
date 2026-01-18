@@ -51,6 +51,12 @@ namespace SparkyStudios::Audio::Amplitude
             const AmSize instanceCount = layer->GetInstanceCount();
             AmReal32 totalWeight = 0.0f;
 
+            // Pre-allocate temporary buffers
+            BFormat tempField;
+            AudioBuffer scaledInput(input->GetFrameCount(), 1);
+
+            tempField.Configure(order, true, input->GetFrameCount());
+
             for (AmSize i = 0; i < instanceCount; ++i)
             {
                 const AmVector3 location = layer->GetInstanceLocation(i);
@@ -60,13 +66,11 @@ namespace SparkyStudios::Audio::Amplitude
                 const auto& listenerSpacePosition = Transform(listenerInvMatrix, { .xyz = location, ._pad2 = 1.0f });
                 _source.SetPosition(SphericalPosition::ForHRTF(listenerSpacePosition.xyz), 0.25f);
 
-                // Create a temporary soundfield for this instance
-                BFormat tempField;
-                tempField.Configure(order, true, input->GetFrameCount());
+                // Reset temporary buffers
                 tempField.Reset();
+                scaledInput.Clear();
 
                 // Scale input by weight and gain for this instance
-                AudioBuffer scaledInput(input->GetFrameCount(), 1);
                 const AmReal32 scaleFactor = weight * instanceGain;
                 ScalarMultiply(input->GetChannel(0).begin(), scaledInput[0].begin(), scaleFactor, input->GetFrameCount());
 
