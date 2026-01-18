@@ -77,7 +77,11 @@ namespace SparkyStudios::Audio::Amplitude
         if (_switchContainer && _switchContainer->GetBus().Valid())
             bus_node.remove();
 
-        _switchContainer = switchContainer;
+        if (_switchContainer != switchContainer)
+        {
+            _switchContainer = switchContainer;
+            _priorityDirty = true;
+        }
 
         if (_switchContainer && _switchContainer->GetBus().Valid())
             _switchContainer->GetBus().GetState()->GetPlayingSoundList().push_front(*this);
@@ -88,7 +92,11 @@ namespace SparkyStudios::Audio::Amplitude
         if (_collection && _collection->GetBus().Valid())
             bus_node.remove();
 
-        _collection = collection;
+        if (_collection != collection)
+        {
+            _collection = collection;
+            _priorityDirty = true;
+        }
 
         if (_collection && _collection->GetBus().Valid())
             _collection->GetBus().GetState()->GetPlayingSoundList().push_front(*this);
@@ -99,7 +107,11 @@ namespace SparkyStudios::Audio::Amplitude
         if (_sound && _sound->GetBus().Valid())
             bus_node.remove();
 
-        _sound = sound;
+        if (_sound != sound)
+        {
+            _sound = sound;
+            _priorityDirty = true;
+        }
 
         if (_sound && _sound->GetBus().Valid())
             _sound->GetBus().GetState()->GetPlayingSoundList().push_front(*this);
@@ -265,7 +277,12 @@ namespace SparkyStudios::Audio::Amplitude
             // Do not update gain when fading...
             return;
 
-        _gain = gain;
+        if (_gain != gain)
+        {
+            _gain = gain;
+            _priorityDirty = true;
+        }
+
         _realGain = gain;
 
         if (!Valid())
@@ -319,17 +336,30 @@ namespace SparkyStudios::Audio::Amplitude
 
     AmReal32 ChannelInternalState::Priority() const
     {
-        if (_switchContainer != nullptr)
-            return GetGain() * _switchContainer->GetPriority().GetValue();
+        if (_priorityDirty)
+        {
+            if (_switchContainer != nullptr)
+            {
+                _cachedPriority = GetGain() * _switchContainer->GetPriority().GetValue();
+            }
+            else if (_collection != nullptr)
+            {
+                _cachedPriority = GetGain() * _collection->GetPriority().GetValue();
+            }
+            else if (_sound != nullptr)
+            {
+                _cachedPriority = GetGain() * _sound->GetPriority().GetValue();
+            }
+            else
+            {
+                AMPLITUDE_ASSERT(false); // Should never fall in this case...
+                return 0.0f;
+            }
 
-        if (_collection != nullptr)
-            return GetGain() * _collection->GetPriority().GetValue();
+            _priorityDirty = false;
+        }
 
-        if (_sound != nullptr)
-            return GetGain() * _sound->GetPriority().GetValue();
-
-        AMPLITUDE_ASSERT(false); // Should never fall in this case...
-        return 0.0f;
+        return _cachedPriority;
     }
 
     void ChannelInternalState::AdvanceFrame([[maybe_unused]] AmTime deltaTime)

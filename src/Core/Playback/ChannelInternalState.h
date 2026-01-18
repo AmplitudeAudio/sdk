@@ -63,6 +63,8 @@ namespace SparkyStudios::Audio::Amplitude
             , _gain(1.0f)
             , _realGain(1.0f)
             , _pitch(1.0f)
+            , _cachedPriority(0.0f)
+            , _priorityDirty(true)
             , _location()
             , _channelStateId(kAmInvalidObjectId)
             , _dopplerFactors()
@@ -242,6 +244,15 @@ namespace SparkyStudios::Audio::Amplitude
         // Returns the priority of this channel based on its gain and priority
         // multiplier on the sound collection definition.
         [[nodiscard]] AmReal32 Priority() const;
+
+        /**
+         * @brief Checks if the priority cache is dirty.
+         * @return true if priority needs recalculation.
+         */
+        [[nodiscard]] AM_INLINE bool IsPriorityDirty() const
+        {
+            return _priorityDirty;
+        }
 
         /**
          * @brief Update this channel data per frames.
@@ -517,6 +528,10 @@ namespace SparkyStudios::Audio::Amplitude
 
         // The pitch of this channel.
         AmReal32 _pitch;
+
+        // Cached priority value to avoid recalculation
+        mutable AmReal32 _cachedPriority;
+        mutable bool _priorityDirty;
 
         // The location of this channel's sound.
         AmVector3 _location;

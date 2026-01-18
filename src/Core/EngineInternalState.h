@@ -123,6 +123,7 @@ namespace SparkyStudios::Audio::Amplitude
             , mute(true)
             , paused(true)
             , stopping(false)
+            , channelPriorityDirty(true)
             , switch_container_map()
             , switch_container_id_map()
             , collection_map()
@@ -194,6 +195,9 @@ namespace SparkyStudios::Audio::Amplitude
 
         // If true, the engine is fully initialized and ready to start playback.
         bool initialized;
+
+        // If true, channel priorities need to be re-sorted this frame.
+        bool channelPriorityDirty;
 
         // A map of sound names to SoundCollections.
         SwitchContainerMap switch_container_map;

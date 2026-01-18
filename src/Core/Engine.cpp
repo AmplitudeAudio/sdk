@@ -2465,13 +2465,22 @@ namespace SparkyStudios::Audio::Amplitude
         }
 
         for (auto&& state : _state->playing_channel_list)
+        {
             UpdateChannel(&state, _state);
+            if (state.IsPriorityDirty())
+                _state->channelPriorityDirty = true;
+        }
 
-        _state->playing_channel_list.sort(
-            [](const ChannelInternalState& a, const ChannelInternalState& b) -> bool
-            {
-                return a.Priority() < b.Priority();
-            });
+        // Only sort if any channel's priority changed
+        if (_state->channelPriorityDirty)
+        {
+            _state->playing_channel_list.sort(
+                [](const ChannelInternalState& a, const ChannelInternalState& b) -> bool
+                {
+                    return a.Priority() < b.Priority();
+                });
+            _state->channelPriorityDirty = false;
+        }
 
         UpdateRealChannels(&_state->playing_channel_list, &_state->real_channel_free_list, &_state->virtual_channel_free_list);
 
