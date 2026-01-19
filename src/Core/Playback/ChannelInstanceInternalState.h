@@ -17,7 +17,7 @@
 #ifndef _AM_IMPLEMENTATION_CORE_PLAYBACK_CHANNEL_INSTANCE_INTERNAL_STATE_H
 #define _AM_IMPLEMENTATION_CORE_PLAYBACK_CHANNEL_INSTANCE_INTERNAL_STATE_H
 
-#include <map>
+#include <unordered_map>
 
 #include <SparkyStudios/Audio/Amplitude/Core/Common.h>
 #include <SparkyStudios/Audio/Amplitude/Core/Playback/ChannelInstance.h>

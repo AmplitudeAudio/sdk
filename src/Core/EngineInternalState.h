@@ -16,6 +16,7 @@
 #define _AM_IMPLEMENTATION_CORE_ENGINE_INTERNAL_STATE_H
 
 #include <map>
+#include <unordered_map>
 #include <vector>
 
 #include <SparkyStudios/Audio/Amplitude/Amplitude.h>
