@@ -2520,8 +2520,23 @@ namespace SparkyStudios::Audio::Amplitude
             state.Update();
 
             if (!_state->track_environments)
+            {
+                bool needsRecalc = state.AreEnvironmentFactorsDirty();
+
                 for (auto&& env : _state->environment_list)
-                    state.SetEnvironmentFactor(env.GetId(), env.GetFactor(Entity(&state)));
+                {
+                    // Skip if cached and environment unchanged
+                    if (!needsRecalc && state.IsEnvironmentVersionCurrent(env.GetId(), env.GetVersion()))
+                        continue;
+
+                    // Recalculate and cache
+                    AmReal32 factor = env.GetFactor(Entity(&state));
+                    state.SetEnvironmentFactor(env.GetId(), factor);
+                    state.UpdateEnvironmentVersion(env.GetId(), env.GetVersion());
+                }
+
+                state.MarkEnvironmentFactorsClean();
+            }
         }
 
         for (auto&& bus : _state->buses)

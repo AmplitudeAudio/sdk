@@ -23,6 +23,7 @@ namespace SparkyStudios::Audio::Amplitude
         : _id(kAmInvalidObjectId)
         , _zone(nullptr)
         , _effect(nullptr)
+        , _version(0)
     {}
 
     AmEnvironmentID EnvironmentInternalState::GetId() const
@@ -38,6 +39,7 @@ namespace SparkyStudios::Audio::Amplitude
     void EnvironmentInternalState::SetLocation(const AmVector3& location)
     {
         _zone->SetLocation(location);
+        IncrementVersion();
     }
 
     const AmVector3& EnvironmentInternalState::GetLocation() const
@@ -48,6 +50,7 @@ namespace SparkyStudios::Audio::Amplitude
     void EnvironmentInternalState::SetOrientation(const Orientation& orientation)
     {
         _zone->SetOrientation(orientation);
+        IncrementVersion();
     }
 
     const Orientation& EnvironmentInternalState::GetOrientation()
@@ -106,6 +109,7 @@ namespace SparkyStudios::Audio::Amplitude
     void EnvironmentInternalState::SetZone(std::shared_ptr<Zone> zone)
     {
         _zone = zone;
+        IncrementVersion();
         Update();
     }
 
