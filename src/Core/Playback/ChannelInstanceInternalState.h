@@ -292,7 +292,7 @@ namespace SparkyStudios::Audio::Amplitude
         AmVector2 _pannedGain;
 
         // Per-listener Doppler factors
-        std::map<AmListenerID, AmReal32> _dopplerFactors;
+        std::unordered_map<AmListenerID, AmReal32> _dopplerFactors;
     };
 
     typedef fplutil::intrusive_list<ChannelInstanceInternalState> ChannelInstanceList;

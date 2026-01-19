@@ -91,7 +91,7 @@ namespace SparkyStudios::Audio::Amplitude
             const auto* effect = static_cast<const EffectImpl*>(handle.GetEffect());
             if (!_environmentFilters.contains(environment))
             {
-                const std::map<AmSoundID, std::shared_ptr<EffectInstance>> map{};
+                const std::unordered_map<AmSoundID, std::shared_ptr<EffectInstance>> map{};
                 _environmentFilters[environment] = std::move(map);
             }
 

@@ -213,7 +213,7 @@ namespace SparkyStudios::Audio::Amplitude
          *
          * @return The list of environments where this Entity belongs or has visited.
          */
-        [[nodiscard]] AM_INLINE const std::map<AmEnvironmentID, AmReal32>& GetEnvironments() const
+        [[nodiscard]] AM_INLINE const std::unordered_map<AmEnvironmentID, AmReal32>& GetEnvironments() const
         {
             return _environmentFactors;
         }
@@ -306,11 +306,11 @@ namespace SparkyStudios::Audio::Amplitude
         AmReal32 _directivity;
         AmReal32 _directivitySharpness;
 
-        std::map<AmEnvironmentID, AmReal32> _environmentFactors;
+        std::unordered_map<AmEnvironmentID, AmReal32> _environmentFactors;
 
         // Cache invalidation for environment factors
         bool _environmentFactorsDirty;
-        std::map<AmEnvironmentID, AmUInt32> _environmentVersions;
+        std::unordered_map<AmEnvironmentID, AmUInt32> _environmentVersions;
 
         // Keeps track of how many sounds are being played on this entity.
         ChannelList _playingSoundList;

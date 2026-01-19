@@ -222,7 +222,7 @@ namespace SparkyStudios::Audio::Amplitude
          *
          * @return The list of environments where this entity belongs or has visited.
          */
-        [[nodiscard]] const std::map<AmEnvironmentID, AmReal32>& GetEnvironments() const;
+        [[nodiscard]] const std::unordered_map<AmEnvironmentID, AmReal32>& GetEnvironments() const;
 
         /**
          * @brief Gets the number of active channels for this entity.

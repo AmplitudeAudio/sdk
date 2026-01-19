@@ -446,7 +446,7 @@ namespace SparkyStudios::Audio::Amplitude
          *
          * @return Reference to the instance map.
          */
-        [[nodiscard]] AM_INLINE std::map<AmChannelInstanceID, ChannelInstanceInternalState*>& GetInstancesMap()
+        [[nodiscard]] AM_INLINE std::unordered_map<AmChannelInstanceID, ChannelInstanceInternalState*>& GetInstancesMap()
         {
             return _instancesMap;
         }
@@ -456,7 +456,7 @@ namespace SparkyStudios::Audio::Amplitude
          *
          * @return Const reference to the instance map.
          */
-        [[nodiscard]] AM_INLINE const std::map<AmChannelInstanceID, ChannelInstanceInternalState*>& GetInstancesMap() const
+        [[nodiscard]] AM_INLINE const std::unordered_map<AmChannelInstanceID, ChannelInstanceInternalState*>& GetInstancesMap() const
         {
             return _instancesMap;
         }
@@ -538,8 +538,8 @@ namespace SparkyStudios::Audio::Amplitude
 
         AmUInt64 _channelStateId;
 
-        std::map<AmListenerID, AmReal32> _dopplerFactors;
-        std::map<AmRoomID, AmReal32> _roomGains;
+        std::unordered_map<AmListenerID, AmReal32> _dopplerFactors;
+        std::unordered_map<AmRoomID, AmReal32> _roomGains;
 
         std::map<eChannelEvent, std::shared_ptr<ChannelEventListener>> _eventsMap;
 
@@ -548,7 +548,7 @@ namespace SparkyStudios::Audio::Amplitude
         eChannelInstanceMode _instancingMode;
         AmChannelInstanceID _nextInstanceId;
         ChannelInstanceList _instances;
-        std::map<AmChannelInstanceID, ChannelInstanceInternalState*> _instancesMap;
+        std::unordered_map<AmChannelInstanceID, ChannelInstanceInternalState*> _instancesMap;
     };
 } // namespace SparkyStudios::Audio::Amplitude
 

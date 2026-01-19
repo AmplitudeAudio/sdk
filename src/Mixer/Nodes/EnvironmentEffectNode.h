@@ -33,7 +33,7 @@ namespace SparkyStudios::Audio::Amplitude
 
     private:
         AudioBuffer _output;
-        std::map<AmEnvironmentID, std::map<AmObjectID, std::shared_ptr<EffectInstance>>> _environmentFilters;
+        std::unordered_map<AmEnvironmentID, std::unordered_map<AmObjectID, std::shared_ptr<EffectInstance>>> _environmentFilters;
     };
 
     class EnvironmentEffectNode final : public Node

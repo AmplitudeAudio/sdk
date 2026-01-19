@@ -59,23 +59,23 @@ namespace SparkyStudios::Audio::Amplitude
     typedef std::map<AmOsString, AmEventID> EventIdMap;
     typedef std::map<AmOsString, AmBankID> SoundBankIdMap;
 
-    typedef std::map<AmSwitchContainerID, AmUniquePtr<SwitchContainerImpl, eMemoryPoolKind_Engine>> SwitchContainerMap;
+    typedef std::unordered_map<AmSwitchContainerID, AmUniquePtr<SwitchContainerImpl, eMemoryPoolKind_Engine>> SwitchContainerMap;
 
-    typedef std::map<AmCollectionID, AmUniquePtr<CollectionImpl, eMemoryPoolKind_Engine>> CollectionMap;
+    typedef std::unordered_map<AmCollectionID, AmUniquePtr<CollectionImpl, eMemoryPoolKind_Engine>> CollectionMap;
 
-    typedef std::map<AmSoundID, AmUniquePtr<SoundImpl, eMemoryPoolKind_Engine>> SoundMap;
+    typedef std::unordered_map<AmSoundID, AmUniquePtr<SoundImpl, eMemoryPoolKind_Engine>> SoundMap;
 
-    typedef std::map<AmAttenuationID, AmUniquePtr<AttenuationImpl, eMemoryPoolKind_Engine>> AttenuationMap;
+    typedef std::unordered_map<AmAttenuationID, AmUniquePtr<AttenuationImpl, eMemoryPoolKind_Engine>> AttenuationMap;
 
-    typedef std::map<AmSwitchID, AmUniquePtr<SwitchImpl, eMemoryPoolKind_Engine>> SwitchMap;
+    typedef std::unordered_map<AmSwitchID, AmUniquePtr<SwitchImpl, eMemoryPoolKind_Engine>> SwitchMap;
 
-    typedef std::map<AmRtpcID, AmUniquePtr<RtpcImpl, eMemoryPoolKind_Engine>> RtpcMap;
+    typedef std::unordered_map<AmRtpcID, AmUniquePtr<RtpcImpl, eMemoryPoolKind_Engine>> RtpcMap;
 
-    typedef std::map<AmEffectID, AmUniquePtr<EffectImpl, eMemoryPoolKind_Engine>> EffectMap;
+    typedef std::unordered_map<AmEffectID, AmUniquePtr<EffectImpl, eMemoryPoolKind_Engine>> EffectMap;
 
-    typedef std::map<AmEventID, AmUniquePtr<EventImpl, eMemoryPoolKind_Engine>> EventMap;
+    typedef std::unordered_map<AmEventID, AmUniquePtr<EventImpl, eMemoryPoolKind_Engine>> EventMap;
 
-    typedef std::map<AmBankID, AmUniquePtr<SoundBank, eMemoryPoolKind_Engine>> SoundBankMap;
+    typedef std::unordered_map<AmBankID, AmUniquePtr<SoundBank, eMemoryPoolKind_Engine>> SoundBankMap;
 
     typedef std::vector<std::shared_ptr<EventInstanceImpl>> EventInstanceVector;
 
