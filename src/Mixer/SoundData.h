@@ -55,8 +55,8 @@ namespace SparkyStudios::Audio::Amplitude
          * Maximum number of chunks that can be pooled.
          *
          * @note The value is set to 8 to optimize memory usage and performance. Since the pool is used for
-         * short-lived objects, and optimized for usage in Amplimix layers (which barely handle a few chunks at a time),
-         * it is recommended to keep this value low.
+         * short-lived objects, and optimized for usage in Amplimix layers (a layer is a single sound instance,
+         * and a single sound instance barely handles a few chunks at a time), it is recommended to keep this value low.
          */
         static constexpr AmSize kMaxChunksPerPool = 8;
 
