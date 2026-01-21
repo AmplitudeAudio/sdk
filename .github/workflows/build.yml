@@ -78,6 +78,7 @@ jobs:
             archiver: "7z a"
             arch: x86_64
             plat: linux
+            toolchain: clang
 
           - name: "macOS x64 Latest Clang"
             os: macos-15-intel
@@ -131,12 +132,11 @@ jobs:
       - name: Check out code
         uses: actions/checkout@v5
 
-      - name: Restore SDK Cache
-        uses: actions/cache/restore@v4
+      - name: Download SDK Artifact
+        uses: actions/download-artifact@v4
         with:
-          enableCrossOsArchive: true
+          name: sdk-${{ matrix.build_type }}-${{ matrix.config.arch }}-${{ matrix.config.plat }}${{ matrix.config.toolchain && format('-{0}', matrix.config.toolchain) || '' }}
           path: sdk
-          key: ${{ matrix.build_type }}-sdk-${{ matrix.config.arch }}-${{ matrix.config.plat }}
 
       - name: Pack
         shell: bash

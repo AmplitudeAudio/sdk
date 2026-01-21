@@ -278,6 +278,14 @@ jobs:
         working-directory: ${{ inputs.project-path }}
         run: xmake i -o sdk
 
+      - name: Upload SDK Artifact
+        if: matrix.build_type != 'coverage'
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ inputs.project-slug }}-${{ matrix.build_type }}-${{ matrix.config.arch }}-${{ matrix.config.plat }}${{ matrix.config.toolchain && format('-{0}', matrix.config.toolchain) || '' }}
+          path: ${{ inputs.project-path }}/sdk
+          retention-days: 1
+
       - name: Save SDK Cache
         if: matrix.build_type != 'coverage'
         uses: actions/cache/save@v4
