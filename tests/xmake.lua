@@ -116,9 +116,7 @@ for _, filepath in ipairs(os.dirs("**")) do
       add_tests("test", {run_timeout = 30000})
 
       on_test(function (target, opt)
-        import("lib.detect.find_tool")
-
-        local kcov = find_tool("kcov")
+        import("core.project.config")
 
         local project_dir = os.projectdir()
         local target_file = path.join(project_dir, target:targetfile())
@@ -126,23 +124,14 @@ for _, filepath in ipairs(os.dirs("**")) do
 
         os.cd("$(builddir)")
 
-        if not kcov then
-          ok, err = os.execv(target_file)
-        else
-          local coverage_dir = path.join(project_dir, "coverage/split_"..target:name())
-          local src_dir = path.join(project_dir, "src")
-          local include_dir = path.join(project_dir, "include")
-
+        if is_mode("coverage") then
+          local coverage_dir = path.join(project_dir, "coverage")
           os.mkdir(coverage_dir)
-
-          ok, err = os.execv(kcov.program, {
-            "--include-path=" .. src_dir .. "," .. include_dir,
-            "--exclude-path=" .. path.join(src_dir, "Utils"),
-            "--strip-path=" .. project_dir,
-            coverage_dir,
-            target_file
-          })
+          local profraw_file = path.join(coverage_dir, target:name() .. "-%p.profraw")
+          os.setenv("LLVM_PROFILE_FILE", profraw_file)
         end
+
+        ok, err = os.execv(target_file)
 
         if ok == 0 then
             return true

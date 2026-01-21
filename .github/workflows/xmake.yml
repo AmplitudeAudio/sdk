@@ -160,34 +160,14 @@ jobs:
           sudo apt-get update
           sudo apt-get install autoconf automake libtool pkg-config libltdl-dev
           if [[ "${{ matrix.config.toolchain }}" == "clang" ]]; then
-            sudo apt-get install clang
+            sudo apt-get install clang llvm
             clang --version
+            llvm-profdata --version
+            llvm-cov --version
           else
             gcc --version
           fi
           xmake --version
-
-      - name: Cache kcov build
-        if: startsWith(matrix.config.os, 'ubuntu')
-        uses: actions/cache@v4
-        id: kcov-cache
-        with:
-          path: /usr/local/bin/kcov
-          key: kcov-${{ matrix.config.os }}-v43
-
-      - name: Build and install kcov
-        if: startsWith(matrix.config.os, 'ubuntu') && steps.kcov-cache.outputs.cache-hit != 'true'
-        run: |
-          sudo apt-get install binutils-dev build-essential cmake libssl-dev libcurl4-openssl-dev libelf-dev libstdc++-12-dev zlib1g-dev libdw-dev libiberty-dev
-          git clone https://github.com/SimonKagstrom/kcov.git /tmp/kcov
-          cd /tmp/kcov
-          git checkout v43
-          mkdir build
-          cd build
-          cmake ..
-          make -j$(nproc)
-          sudo make install
-          kcov --version
 
       - name: Setup Android NDK
         id: setup-ndk
@@ -199,9 +179,10 @@ jobs:
       - name: Install dependencies on MacOS
         if: startsWith(matrix.config.os, 'macos')
         run: |
-          brew install p7zip kcov
-          kcov --version
+          brew install p7zip
           xmake --version
+          xcrun llvm-profdata --version || llvm-profdata --version
+          xcrun llvm-cov --version || llvm-cov --version
 
       - name: Install Local flatc (Android)
         if: matrix.config.plat == 'android'
@@ -238,7 +219,7 @@ jobs:
       - name: Configure
         working-directory: ${{ inputs.project-path }}
         run: |
-          xmake f -y -a ${{ matrix.config.arch }} -p ${{ matrix.config.plat }} -m ${{ matrix.build_type == 'coverage' && 'debug' || matrix.build_type }} ${{ matrix.config.toolchain && format('--toolchain={0}', matrix.config.toolchain) || '' }} --build_samples=n --build_tools=${{ matrix.config.plat == 'android' && 'n' || 'y' }} --unit_tests=${{ matrix.build_type == 'coverage' && 'y' || 'n' }} --build_assets=${{ matrix.build_type == 'coverage' && 'y' || 'n' }}
+          xmake f -y -a ${{ matrix.config.arch }} -p ${{ matrix.config.plat }} -m ${{ matrix.build_type }} ${{ matrix.config.toolchain && format('--toolchain={0}', matrix.config.toolchain) || '' }} --build_samples=n --build_tools=${{ matrix.config.plat == 'android' && 'n' || 'y' }} --unit_tests=${{ matrix.build_type == 'coverage' && 'y' || 'n' }} --build_assets=${{ matrix.build_type == 'coverage' && 'y' || 'n' }}
         env:
           AM_SDK_PATH: "${{ steps.sdk_path.outputs.path }}/sdk"
           AM_SDK_PLATFORM: "${{ matrix.config.arch }}-${{ matrix.config.plat }}"
@@ -259,17 +240,17 @@ jobs:
 
       - name: Generate coverage
         continue-on-error: true
-        if: matrix.build_type == 'coverage' && !startsWith(matrix.config.os, 'windows')
+        if: matrix.build_type == 'coverage' && (startsWith(matrix.config.os, 'macos') || matrix.config.toolchain == 'clang')
         working-directory: ${{ inputs.project-path }}
         run: |
           xmake b -y coverage_generate_test_report
 
       - name: Upload coverage to Codecov
         continue-on-error: true
-        if: matrix.build_type == 'coverage' && !startsWith(matrix.config.os, 'windows')
+        if: matrix.build_type == 'coverage' && (startsWith(matrix.config.os, 'macos') || matrix.config.toolchain == 'clang')
         uses: codecov/codecov-action@v5
         with:
-          directory: ${{ inputs.project-path }}/coverage/merged
+          files: ${{ inputs.project-path }}/coverage/merged/coverage.lcov
         env:
           CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
 
