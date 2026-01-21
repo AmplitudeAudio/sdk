@@ -16,32 +16,51 @@
 
 #include <Core/EngineInternalState.h>
 #include <Mixer/Nodes/AmbisonicPanningNode.h>
+#include <Utils/Utils.h>
 
 namespace SparkyStudios::Audio::Amplitude
 {
     AmbisonicPanningNodeInstance::AmbisonicPanningNodeInstance()
     {
         const ePanningMode mode = Engine::GetInstance()->GetPanningMode();
-        const AmUInt32 order = AM_MAX(static_cast<AmUInt32>(mode), 1u);
+        _ambisonicOrder = AM_MAX(static_cast<AmUInt32>(mode), 1u);
 
-        _source.Configure(order, true);
+        _source.Configure(_ambisonicOrder, true);
+    }
+
+    bool AmbisonicPanningNodeInstance::ShouldSkip() const
+    {
+        const auto* layer = GetLayer();
+
+        if (layer->GetSpatialization() != eSpatialization_HRTF)
+            return true;
+
+        const auto& listener = layer->GetListener();
+        return !listener.Valid();
+    }
+
+    void AmbisonicPanningNodeInstance::Configure(AmUInt64 frameCount, AmUInt16 channelCount)
+    {
+        NodeInstance::Configure(frameCount, channelCount);
+
+        _soundField.Configure(_ambisonicOrder, true, static_cast<AmUInt32>(frameCount));
+
+        _instanceSoundField.Configure(_ambisonicOrder, true, static_cast<AmUInt32>(frameCount));
+        _instanceScaledInput = AudioBuffer(frameCount, 1);
+    }
+
+    AmUInt16 AmbisonicPanningNodeInstance::GetOutputChannelCount() const
+    {
+        return static_cast<AmUInt16>(OrderToComponents(_ambisonicOrder, true));
     }
 
     const AudioBuffer* AmbisonicPanningNodeInstance::Process(const AudioBuffer* input)
     {
         const auto* layer = GetLayer();
 
-        if (const eSpatialization spatialization = layer->GetSpatialization(); spatialization != eSpatialization_HRTF)
-            return nullptr;
-
         const auto& listener = layer->GetListener();
-        if (!listener.Valid())
-            return nullptr;
+        const auto& listenerInvMatrix = listener.GetInverseMatrix();
 
-        const ePanningMode mode = Engine::GetInstance()->GetPanningMode();
-        const AmUInt32 order = AM_MAX(static_cast<AmUInt32>(mode), 1u);
-
-        _soundField.Configure(order, true, input->GetFrameCount());
         _soundField.Reset();
 
         if (layer->IsMultiPosition())
@@ -55,23 +74,21 @@ namespace SparkyStudios::Audio::Amplitude
                 const AmReal32 weight = layer->GetInstanceWeight(i);
                 const AmReal32 instanceGain = layer->GetInstanceGain(i);
 
-                const auto& listenerSpacePosition = Transform(listener.GetInverseMatrix(), { .xyz = location, ._pad2 = 1.0f });
+                const auto& listenerSpacePosition = Transform(listenerInvMatrix, { .xyz = location, ._pad2 = 1.0f });
                 _source.SetPosition(SphericalPosition::ForHRTF(listenerSpacePosition.xyz), 0.25f);
 
-                // Create a temporary soundfield for this instance
-                BFormat tempField;
-                tempField.Configure(order, true, input->GetFrameCount());
-                tempField.Reset();
+                // Reset temporary buffers
+                _instanceSoundField.Reset();
+                _instanceScaledInput.Clear();
 
                 // Scale input by weight and gain for this instance
-                AudioBuffer scaledInput(input->GetFrameCount(), 1);
                 const AmReal32 scaleFactor = weight * instanceGain;
-                ScalarMultiply(input->GetChannel(0).begin(), scaledInput[0].begin(), scaleFactor, input->GetFrameCount());
+                ScalarMultiply(input->GetChannel(0).begin(), _instanceScaledInput[0].begin(), scaleFactor, input->GetFrameCount());
 
-                _source.Process(scaledInput.GetChannel(0), input->GetFrameCount(), &tempField);
+                _source.Process(_instanceScaledInput.GetChannel(0), input->GetFrameCount(), &_instanceSoundField);
 
                 // Accumulate into main soundfield
-                _soundField += tempField;
+                _soundField += _instanceSoundField;
                 totalWeight += weight;
             }
 
@@ -84,7 +101,7 @@ namespace SparkyStudios::Audio::Amplitude
         }
         else
         {
-            const auto& listenerSpaceSourcePosition = Transform(listener.GetInverseMatrix(), { .xyz = layer->GetLocation(), ._pad2 = 1.0f });
+            const auto& listenerSpaceSourcePosition = Transform(listenerInvMatrix, { .xyz = layer->GetLocation(), ._pad2 = 1.0f });
             _source.SetPosition(SphericalPosition::ForHRTF(listenerSpaceSourcePosition.xyz), 0.25f);
             _source.Process(input->GetChannel(0), input->GetFrameCount(), &_soundField);
         }

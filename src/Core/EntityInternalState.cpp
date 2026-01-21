@@ -28,13 +28,19 @@ namespace SparkyStudios::Audio::Amplitude
         , _directivity(0.0f)
         , _directivitySharpness(1.0f)
         , _environmentFactors()
+        , _environmentFactorsDirty(true)
+        , _environmentVersions()
         , _playingSoundList(&ChannelInternalState::entity_node)
     {}
 
     void EntityInternalState::SetLocation(const AmVector3& location)
     {
+        if (_location == location)
+            return;
+
         _lastLocation = _location;
         _location = location;
+        _environmentFactorsDirty = true;
     }
 
     void EntityInternalState::SetDirectivity(AmReal32 directivity, AmReal32 directivitySharpness)

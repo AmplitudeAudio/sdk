@@ -52,7 +52,7 @@ namespace SparkyStudios::Audio::Amplitude
         const auto& lpfCurve = Engine::GetInstance()->GetObstructionCoefficientCurve();
         const auto& gainCurve = Engine::GetInstance()->GetObstructionGainCurve();
 
-        _output = AudioBuffer(frames, channels);
+        _output.Clear();
 
         if (const AmReal32 lpf = lpfCurve.Get(_currentObstruction); lpf > kEpsilon)
         {
@@ -64,7 +64,7 @@ namespace SparkyStudios::Audio::Amplitude
         }
         else
         {
-            _output = *input;
+            AudioBuffer::Copy(*input, 0, _output, 0, frames);
         }
 
         const AmReal32 gain = gainCurve.Get(_currentObstruction);

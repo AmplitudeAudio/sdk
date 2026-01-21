@@ -143,7 +143,7 @@ namespace SparkyStudios::Audio::Amplitude
         return _state->GetEnvironmentFactor(environment);
     }
 
-    const std::map<AmEnvironmentID, AmReal32>& Entity::GetEnvironments() const
+    const std::unordered_map<AmEnvironmentID, AmReal32>& Entity::GetEnvironments() const
     {
         AMPLITUDE_ASSERT(Valid());
         return _state->GetEnvironments();

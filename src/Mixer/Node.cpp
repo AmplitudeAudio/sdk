@@ -87,6 +87,27 @@ namespace SparkyStudios::Audio::Amplitude
         m_numParamsChanged |= 1 << index;
     }
 
+    void NodeInstance::Configure(AmUInt64 frameCount, AmUInt16 channelCount)
+    {
+        m_inputFrameCount = frameCount;
+        m_inputChannelCount = channelCount;
+    }
+
+    AmUInt64 NodeInstance::GetOutputFrameCount() const
+    {
+        return m_inputFrameCount;
+    }
+
+    AmUInt16 NodeInstance::GetOutputChannelCount() const
+    {
+        return m_inputChannelCount;
+    }
+
+    bool NodeInstance::ShouldSkip() const
+    {
+        return false;
+    }
+
     ProcessorNodeInstance::ProcessorNodeInstance(bool processOnEmptyInputBuffer)
         : m_provider(0)
         , _processingBuffer(nullptr)
@@ -123,6 +144,10 @@ namespace SparkyStudios::Audio::Amplitude
         if (_lastOutputBuffer != nullptr)
             return _lastOutputBuffer;
 
+        // Check if node should be skipped, so we avoid triggering upstream processing in dead paths.
+        if (ShouldSkip())
+            return nullptr;
+
         if (_processingBuffer == nullptr)
             Consume();
 
@@ -136,6 +161,17 @@ namespace SparkyStudios::Audio::Amplitude
     {
         _processingBuffer = nullptr;
         _lastOutputBuffer = nullptr;
+    }
+
+    void ProcessorNodeInstance::Configure(AmUInt64 frameCount, AmUInt16 channelCount)
+    {
+        NodeInstance::Configure(frameCount, channelCount);
+
+        const AmUInt64 outFrames = GetOutputFrameCount();
+        const AmUInt16 outChannels = GetOutputChannelCount();
+
+        if (_output.IsEmpty() || _output.GetFrameCount() != outFrames || _output.GetChannelCount() != outChannels)
+            _output = AudioBuffer(outFrames, outChannels);
     }
 
     MixerNodeInstance::MixerNodeInstance()
@@ -202,7 +238,7 @@ namespace SparkyStudios::Audio::Amplitude
             return nullptr;
 
         const auto& first = buffers.begin();
-        _mixBuffer = AudioBuffer((*first)->GetFrameCount(), (*first)->GetChannelCount());
+        _mixBuffer.Clear();
 
         for (const auto& input : buffers)
         {
@@ -222,6 +258,17 @@ namespace SparkyStudios::Audio::Amplitude
         _mixBuffer.Clear();
 
         _processed = false;
+    }
+
+    void MixerNodeInstance::Configure(AmUInt64 frameCount, AmUInt16 channelCount)
+    {
+        NodeInstance::Configure(frameCount, channelCount);
+
+        const AmUInt64 outFrames = GetOutputFrameCount();
+        const AmUInt16 outChannels = GetOutputChannelCount();
+
+        if (_mixBuffer.IsEmpty() || _mixBuffer.GetFrameCount() != outFrames || _mixBuffer.GetChannelCount() != outChannels)
+            _mixBuffer = AudioBuffer(outFrames, outChannels);
     }
 
     InputNodeInstance::InputNodeInstance()

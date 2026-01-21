@@ -28,9 +28,6 @@ namespace SparkyStudios::Audio::Amplitude
         HardClipNodeInstance();
 
         const AudioBuffer* Process(const AudioBuffer* input) override;
-
-    private:
-        AudioBuffer _output;
     };
 
     class HardClipNode final : public Node

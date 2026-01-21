@@ -38,8 +38,6 @@ namespace SparkyStudios::Audio::Amplitude
 
         AmReal32 _currentObstruction;
         std::shared_ptr<FilterInstance> _obstructionFilter;
-
-        AudioBuffer _output;
     };
 
     class ObstructionNode final : public Node

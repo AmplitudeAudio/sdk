@@ -164,9 +164,9 @@ namespace SparkyStudios::Audio::Amplitude
     private:
         SwitchImpl* _switch;
 
-        std::map<AmObjectID, std::vector<SwitchContainerItem>> _sounds;
-        std::map<AmObjectID, std::shared_ptr<FaderInstance>> _fadersIn;
-        std::map<AmObjectID, std::shared_ptr<FaderInstance>> _fadersOut;
+        std::unordered_map<AmObjectID, std::vector<SwitchContainerItem>> _sounds;
+        std::unordered_map<AmObjectID, std::shared_ptr<FaderInstance>> _fadersIn;
+        std::unordered_map<AmObjectID, std::shared_ptr<FaderInstance>> _fadersOut;
     };
 } // namespace SparkyStudios::Audio::Amplitude
 

@@ -175,7 +175,6 @@ namespace SparkyStudios::Audio::Amplitude
 
     AttenuationNodeInstance::AttenuationNodeInstance()
         : ProcessorNodeInstance(false)
-        , _output()
         , _gains{ 1.0f, 1.0f, 1.0f }
         , _eqFilter()
     {}
@@ -274,7 +273,7 @@ namespace SparkyStudios::Audio::Amplitude
             _eqFilter.SetGains(_gains[0], _gains[1], _gains[2]);
         }
 
-        _output = *input;
+        AudioBuffer::Copy(*input, 0, _output, 0, input->GetFrameCount());
 
         // Apply gain attenuation
         if (!Gain::IsOne(targetGain))

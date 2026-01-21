@@ -177,10 +177,10 @@ namespace SparkyStudios::Audio::Amplitude
         Scheduler* _worldScopeScheduler;
 
         // Entity scope sound schedulers
-        std::map<AmUInt64, Scheduler*> _entityScopeSchedulers;
+        std::unordered_map<AmUInt64, Scheduler*> _entityScopeSchedulers;
 
         std::vector<AmSoundID> _sounds;
-        std::map<AmSoundID, SoundInstanceSettings> _soundSettings;
+        std::unordered_map<AmSoundID, SoundInstanceSettings> _soundSettings;
     };
 } // namespace SparkyStudios::Audio::Amplitude
 

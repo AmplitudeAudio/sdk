@@ -27,7 +27,7 @@ namespace SparkyStudios::Audio::Amplitude
         if (sampleRate != _sampleRate)
             UpdateCoefficients(sampleRate);
 
-        _output = *input;
+        AudioBuffer::Copy(*input, 0, _output, 0, input->GetFrameCount());
 
         for (AmSize i = 0, l = _output.GetFrameCount(); i < l; i++)
         {

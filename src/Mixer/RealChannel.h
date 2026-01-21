@@ -204,18 +204,18 @@ namespace SparkyStudios::Audio::Amplitude
         [[nodiscard]] AmUInt32 FindFreeLayer(AmUInt32 layerIndex = 0) const;
 
         AmChannelID _channelId;
-        std::map<AmUInt32, AmUInt32> _channelLayersId;
+        std::unordered_map<AmUInt32, AmUInt32> _channelLayersId;
 
-        std::map<AmUInt32, bool> _stream;
-        std::map<AmUInt32, bool> _loop;
+        std::unordered_map<AmUInt32, bool> _stream;
+        std::unordered_map<AmUInt32, bool> _loop;
 
         AmReal32 _defaultGain;
-        std::map<AmUInt32, AmReal32> _gain;
+        std::unordered_map<AmUInt32, AmReal32> _gain;
         AmReal32 _pitch;
         AmReal32 _playSpeed;
 
         AmplimixImpl* _mixer;
-        std::map<AmUInt32, SoundInstance*> _activeSounds;
+        std::unordered_map<AmUInt32, SoundInstance*> _activeSounds;
 
         ChannelInternalState* _parentChannelState;
 

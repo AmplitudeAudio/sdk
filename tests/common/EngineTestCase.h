@@ -182,9 +182,6 @@ namespace SparkyStudios::Audio::Amplitude::Tests
             bool success = true;
             if (amEngine->IsInitialized())
             {
-                amEngine->SetDefaultListener(nullptr);
-                amEngine->RemoveListener(1);
-
                 success = amEngine->Deinitialize();
 
                 // Wait for the file system to complete loading.

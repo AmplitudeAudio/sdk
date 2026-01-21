@@ -932,7 +932,7 @@ namespace SparkyStudios::Audio::Amplitude
 
         _state->stopping = true;
 
-        _state->mixer.WaitForAudioMutex();
+        _state->mixer.Wait();
 
         // Stop all sounds
         StopAll();
@@ -1206,19 +1206,88 @@ namespace SparkyStudios::Audio::Amplitude
         return true;
     }
 
-    ListenerInternalState* FindBestListener(ListenerList& listeners, const AmVector3& location, eListenerFetchMode fetchMode)
+    /**
+     * @brief Cache key for FindBestListener lookups.
+     *
+     * Uses spatial quantization (10cm grid) to increase cache hit rates
+     * for nearby locations.
+     */
+    struct ListenerCacheKey
+    {
+        AmInt32 gridX, gridY, gridZ;
+        eListenerFetchMode fetchMode;
+
+        ListenerCacheKey(const AmVector3& location, eListenerFetchMode mode)
+            : fetchMode(mode)
+        {
+            constexpr AmReal32 kGridSize = 0.1f; // 10cm precision
+            gridX = static_cast<AmInt32>(std::floor(location.x / kGridSize));
+            gridY = static_cast<AmInt32>(std::floor(location.y / kGridSize));
+            gridZ = static_cast<AmInt32>(std::floor(location.z / kGridSize));
+        }
+
+        bool operator==(const ListenerCacheKey& other) const
+        {
+            return gridX == other.gridX && gridY == other.gridY && gridZ == other.gridZ && fetchMode == other.fetchMode;
+        }
+
+        struct Hash
+        {
+            std::size_t operator()(const ListenerCacheKey& key) const
+            {
+                std::size_t h1 = std::hash<AmInt32>{}(key.gridX);
+                std::size_t h2 = std::hash<AmInt32>{}(key.gridY);
+                std::size_t h3 = std::hash<AmInt32>{}(key.gridZ);
+                std::size_t h4 = std::hash<int>{}(static_cast<int>(key.fetchMode));
+
+                std::size_t seed = 0;
+
+                // Combine using golden ratio constant (0x9e3779b9)
+                seed ^= h1 + 0x9e3779b9 + (seed << 6) + (seed >> 2);
+                seed ^= h2 + 0x9e3779b9 + (seed << 6) + (seed >> 2);
+                seed ^= h3 + 0x9e3779b9 + (seed << 6) + (seed >> 2);
+                seed ^= h4 + 0x9e3779b9 + (seed << 6) + (seed >> 2);
+
+                return seed;
+            }
+        };
+    };
+
+    ListenerInternalState* FindBestListener(
+        ListenerList& listeners, const AmVector3& location, eListenerFetchMode fetchMode, ListenerCache* cache = nullptr)
     {
         if (listeners.empty())
             return nullptr;
+
+        // Fast paths for non-spatial modes
+        if (fetchMode == eListenerFetchMode_None)
+            return nullptr;
+
+        if (fetchMode == eListenerFetchMode_First)
+            return listeners.empty() ? nullptr : &*listeners.begin();
+
+        if (fetchMode == eListenerFetchMode_Last)
+            return listeners.empty() ? nullptr : &*--listeners.end();
+
+        ListenerCacheKey key(location, fetchMode);
+        AmSize hashValue = ListenerCacheKey::Hash{}(key);
+
+        // For spatial modes (Nearest/Farthest/Default), check cache if available
+        if (cache != nullptr)
+        {
+            auto it = cache->cache.find(hashValue);
+            if (it != cache->cache.end())
+                return static_cast<ListenerInternalState*>(it->second);
+        }
+
+        // Cache miss or cache disabled
+        ListenerInternalState* result = nullptr;
 
         ListenerList::iterator bestListener;
         const AmVector4 location4 = { location.x, location.y, location.z, 1.0f };
 
         switch (fetchMode)
         {
-        case eListenerFetchMode_None:
-            return nullptr;
-
         case eListenerFetchMode_Nearest:
             [[fallthrough]];
         case eListenerFetchMode_Farthest:
@@ -1238,18 +1307,7 @@ namespace SparkyStudios::Audio::Amplitude
                         distanceSquared = magnitudeSquared;
                     }
                 }
-            }
-            break;
-
-        case eListenerFetchMode_First:
-            {
-                bestListener = listeners.begin();
-            }
-            break;
-
-        case eListenerFetchMode_Last:
-            {
-                bestListener = listeners.end();
+                result = &*bestListener;
             }
             break;
 
@@ -1261,13 +1319,21 @@ namespace SparkyStudios::Audio::Amplitude
 
                 for (auto& listener : listeners)
                     if (listener.GetId() == state->GetId())
-                        return &listener;
-
-                return nullptr;
+                    {
+                        result = &listener;
+                        break;
+                    }
             }
+            break;
+
+        default:
+            break;
         }
 
-        return &*bestListener;
+        if (cache != nullptr)
+            cache->cache[hashValue] = result;
+
+        return result;
     }
 
     static void CalculateGainAndPitch(
@@ -2309,7 +2375,8 @@ namespace SparkyStudios::Audio::Amplitude
         bool isEntityScope = false;
 
         // Find the best listener for this channel.
-        ListenerInternalState* listener = FindBestListener(state->listener_list, channel->GetLocation(), state->listener_fetch_mode);
+        ListenerInternalState* listener =
+            FindBestListener(state->listener_list, channel->GetLocation(), state->listener_fetch_mode, &state->listenerCache);
 
         if (const SwitchContainer* switchContainer = channel->GetSwitchContainer(); switchContainer != nullptr)
         {
@@ -2406,6 +2473,11 @@ namespace SparkyStudios::Audio::Amplitude
         if (_state->paused)
             return;
 
+        // It is safe to clear the listener cache here because it is only used to
+        // find the best listener for each channel. Listener positions are updated
+        // before the best listener is selected.
+        _state->listenerCache.Clear();
+
         if (!_state->stopping)
         {
             std::lock_guard lock(_frameThreadMutex);
@@ -2448,8 +2520,23 @@ namespace SparkyStudios::Audio::Amplitude
             state.Update();
 
             if (!_state->track_environments)
+            {
+                bool needsRecalc = state.AreEnvironmentFactorsDirty();
+
                 for (auto&& env : _state->environment_list)
-                    state.SetEnvironmentFactor(env.GetId(), env.GetFactor(Entity(&state)));
+                {
+                    // Skip if cached and environment unchanged
+                    if (!needsRecalc && state.IsEnvironmentVersionCurrent(env.GetId(), env.GetVersion()))
+                        continue;
+
+                    // Recalculate and cache
+                    AmReal32 factor = env.GetFactor(Entity(&state));
+                    state.SetEnvironmentFactor(env.GetId(), factor);
+                    state.UpdateEnvironmentVersion(env.GetId(), env.GetVersion());
+                }
+
+                state.MarkEnvironmentFactorsClean();
+            }
         }
 
         for (auto&& bus : _state->buses)
@@ -2465,13 +2552,22 @@ namespace SparkyStudios::Audio::Amplitude
         }
 
         for (auto&& state : _state->playing_channel_list)
+        {
             UpdateChannel(&state, _state);
+            if (state.IsPriorityDirty())
+                _state->channelPriorityDirty = true;
+        }
 
-        _state->playing_channel_list.sort(
-            [](const ChannelInternalState& a, const ChannelInternalState& b) -> bool
-            {
-                return a.Priority() < b.Priority();
-            });
+        // Only sort if any channel's priority changed
+        if (_state->channelPriorityDirty)
+        {
+            _state->playing_channel_list.sort(
+                [](const ChannelInternalState& a, const ChannelInternalState& b) -> bool
+                {
+                    return a.Priority() < b.Priority();
+                });
+            _state->channelPriorityDirty = false;
+        }
 
         UpdateRealChannels(&_state->playing_channel_list, &_state->real_channel_free_list, &_state->virtual_channel_free_list);
 
@@ -2690,8 +2786,8 @@ namespace SparkyStudios::Audio::Amplitude
         }
 
         // Find the best listener for this channel.
-        ListenerInternalState* listener =
-            FindBestListener(_state->listener_list, isEntityScope ? entity.GetLocation() : location, _state->listener_fetch_mode);
+        ListenerInternalState* listener = FindBestListener(
+            _state->listener_list, isEntityScope ? entity.GetLocation() : location, _state->listener_fetch_mode, &_state->listenerCache);
 
         // Find where it belongs in the list.
         AmReal32 gain;
@@ -2771,8 +2867,8 @@ namespace SparkyStudios::Audio::Amplitude
         }
 
         // Find the best listener for this channel.
-        ListenerInternalState* listener =
-            FindBestListener(_state->listener_list, isEntityScope ? entity.GetLocation() : location, _state->listener_fetch_mode);
+        ListenerInternalState* listener = FindBestListener(
+            _state->listener_list, isEntityScope ? entity.GetLocation() : location, _state->listener_fetch_mode, &_state->listenerCache);
 
         // Find where it belongs in the list.
         AmReal32 gain;
@@ -2851,8 +2947,8 @@ namespace SparkyStudios::Audio::Amplitude
         }
 
         // Find the best listener for this channel.
-        ListenerInternalState* listener =
-            FindBestListener(_state->listener_list, isEntityScope ? entity.GetLocation() : location, _state->listener_fetch_mode);
+        ListenerInternalState* listener = FindBestListener(
+            _state->listener_list, isEntityScope ? entity.GetLocation() : location, _state->listener_fetch_mode, &_state->listenerCache);
 
         // Find where it belongs in the list.
         AmReal32 gain;

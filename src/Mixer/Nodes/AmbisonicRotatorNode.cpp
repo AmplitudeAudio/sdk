@@ -16,6 +16,7 @@
 
 #include <Core/Engine.h>
 #include <Mixer/Nodes/AmbisonicRotatorNode.h>
+#include <Utils/Utils.h>
 
 namespace SparkyStudios::Audio::Amplitude
 {
@@ -23,29 +24,43 @@ namespace SparkyStudios::Audio::Amplitude
         : ProcessorNodeInstance()
     {
         const ePanningMode mode = amEngine->GetPanningMode();
-        const AmUInt32 order = AM_MAX(static_cast<AmUInt32>(mode), 1u);
+        _ambisonicOrder = AM_MAX(static_cast<AmUInt32>(mode), 1u);
 
-        _rotator.Configure(order, true);
+        _rotator.Configure(_ambisonicOrder, true);
+    }
+
+    bool AmbisonicRotatorNodeInstance::ShouldSkip() const
+    {
+        const auto* layer = GetLayer();
+
+        if (layer->GetSpatialization() != eSpatialization_HRTF)
+            return true;
+
+        const auto& listener = layer->GetListener();
+        return !listener.Valid();
+    }
+
+    void AmbisonicRotatorNodeInstance::Configure(AmUInt64 frameCount, AmUInt16 channelCount)
+    {
+        NodeInstance::Configure(frameCount, channelCount);
+
+        _soundField.Configure(_ambisonicOrder, true, static_cast<AmUInt32>(frameCount));
+    }
+
+    AmUInt16 AmbisonicRotatorNodeInstance::GetOutputChannelCount() const
+    {
+        return static_cast<AmUInt16>(OrderToComponents(_ambisonicOrder, true));
     }
 
     const AudioBuffer* AmbisonicRotatorNodeInstance::Process(const AudioBuffer* input)
     {
         const auto* layer = GetLayer();
 
-        if (const eSpatialization spatialization = layer->GetSpatialization(); spatialization != eSpatialization_HRTF)
-            return nullptr;
-
         const auto& listener = layer->GetListener();
-        if (!listener.Valid())
-            return nullptr;
-
         const AmQuaternion listenerRotation = listener.GetOrientation().GetQuaternion();
         const AmQuaternion inverseListenerRotation = Inverse(listenerRotation);
 
-        const ePanningMode mode = amEngine->GetPanningMode();
-        const AmUInt32 order = AM_MAX(static_cast<AmUInt32>(mode), 1u);
-
-        _soundField.Configure(order, true, input->GetFrameCount());
+        _soundField.Reset();
 
         for (AmUInt32 i = 0, l = input->GetChannelCount(); i < l; ++i)
             _soundField.CopyStream(input->GetChannel(i), i, input->GetFrameCount());

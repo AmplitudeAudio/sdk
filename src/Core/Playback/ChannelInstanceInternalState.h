@@ -17,7 +17,7 @@
 #ifndef _AM_IMPLEMENTATION_CORE_PLAYBACK_CHANNEL_INSTANCE_INTERNAL_STATE_H
 #define _AM_IMPLEMENTATION_CORE_PLAYBACK_CHANNEL_INSTANCE_INTERNAL_STATE_H
 
-#include <map>
+#include <unordered_map>
 
 #include <SparkyStudios/Audio/Amplitude/Core/Common.h>
 #include <SparkyStudios/Audio/Amplitude/Core/Playback/ChannelInstance.h>
@@ -292,7 +292,7 @@ namespace SparkyStudios::Audio::Amplitude
         AmVector2 _pannedGain;
 
         // Per-listener Doppler factors
-        std::map<AmListenerID, AmReal32> _dopplerFactors;
+        std::unordered_map<AmListenerID, AmReal32> _dopplerFactors;
     };
 
     typedef fplutil::intrusive_list<ChannelInstanceInternalState> ChannelInstanceList;

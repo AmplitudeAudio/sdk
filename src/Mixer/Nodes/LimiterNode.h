@@ -49,8 +49,6 @@ namespace SparkyStudios::Audio::Amplitude
         AmReal32 _releaseCoeff;
 
         AmReal32 _enveloppe;
-
-        AudioBuffer _output;
     };
 
     class LimiterNode final : public Node

@@ -95,7 +95,7 @@ namespace SparkyStudios::Audio::Amplitude
         const AmReal32 lpf = lpfCurve.Get(_currentOcclusion);
         const AmReal32 coefficient = CalculateOcclusionFilterCoefficient(listenerDirectivity * soundDirectivity, lpf);
 
-        _output = AudioBuffer(frames, channels);
+        _output.Clear();
 
         if (coefficient > kEpsilon)
         {
@@ -107,7 +107,7 @@ namespace SparkyStudios::Audio::Amplitude
         }
         else
         {
-            _output = *input;
+            AudioBuffer::Copy(*input, 0, _output, 0, frames);
         }
 
         const AmReal32 gain = gainCurve.Get(_currentOcclusion);

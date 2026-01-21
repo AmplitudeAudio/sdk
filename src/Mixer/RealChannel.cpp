@@ -102,7 +102,7 @@ namespace SparkyStudios::Audio::Amplitude
             return false;
 
         bool success = true;
-        AmUInt32 layer = FindFreeLayer(_channelLayersId.empty() ? 1 : _channelLayersId.rbegin()->first);
+        AmUInt32 layer = FindFreeLayer(_channelLayersId.empty() ? 1 : _channelLayersId.begin()->first);
         std::vector<AmUInt32> layers;
 
         for (auto& instance : instances)

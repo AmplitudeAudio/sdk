@@ -213,7 +213,7 @@ namespace SparkyStudios::Audio::Amplitude
          *
          * @return The list of environments where this Entity belongs or has visited.
          */
-        [[nodiscard]] AM_INLINE const std::map<AmEnvironmentID, AmReal32>& GetEnvironments() const
+        [[nodiscard]] AM_INLINE const std::unordered_map<AmEnvironmentID, AmReal32>& GetEnvironments() const
         {
             return _environmentFactors;
         }
@@ -236,6 +236,57 @@ namespace SparkyStudios::Audio::Amplitude
             return _playingSoundList;
         }
 
+        /**
+         * @brief Checks if environment factors need recalculation.
+         *
+         * @return true if any environment factor cache is dirty.
+         */
+        [[nodiscard]] AM_INLINE bool AreEnvironmentFactorsDirty() const
+        {
+            return _environmentFactorsDirty;
+        }
+
+        /**
+         * @brief Marks environment factor cache as clean.
+         */
+        AM_INLINE void MarkEnvironmentFactorsClean()
+        {
+            _environmentFactorsDirty = false;
+        }
+
+        /**
+         * @brief Invalidates all cached environment factors.
+         */
+        AM_INLINE void InvalidateEnvironmentFactors()
+        {
+            _environmentFactorsDirty = true;
+        }
+
+        /**
+         * @brief Checks if an environment's cached version is current.
+         *
+         * @param[in] id The environment ID.
+         * @param[in] version The environment's current version.
+         *
+         * @return true if the cached version matches the current version.
+         */
+        [[nodiscard]] bool IsEnvironmentVersionCurrent(AmEnvironmentID id, AmUInt32 version) const
+        {
+            auto it = _environmentVersions.find(id);
+            return it != _environmentVersions.end() && it->second == version;
+        }
+
+        /**
+         * @brief Updates the cached version for an environment.
+         *
+         * @param[in] id The environment ID.
+         * @param[in] version The new version to cache.
+         */
+        void UpdateEnvironmentVersion(AmEnvironmentID id, AmUInt32 version)
+        {
+            _environmentVersions[id] = version;
+        }
+
         fplutil::intrusive_list_node node;
 
     private:
@@ -255,7 +306,11 @@ namespace SparkyStudios::Audio::Amplitude
         AmReal32 _directivity;
         AmReal32 _directivitySharpness;
 
-        std::map<AmEnvironmentID, AmReal32> _environmentFactors;
+        std::unordered_map<AmEnvironmentID, AmReal32> _environmentFactors;
+
+        // Cache invalidation for environment factors
+        bool _environmentFactorsDirty;
+        std::unordered_map<AmEnvironmentID, AmUInt32> _environmentVersions;
 
         // Keeps track of how many sounds are being played on this entity.
         ChannelList _playingSoundList;

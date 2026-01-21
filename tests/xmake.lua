@@ -118,7 +118,7 @@ for _, filepath in ipairs(os.dirs("**")) do
       on_test(function (target, opt)
         import("lib.detect.find_tool")
 
-        local kcov = find_tool("kcov_disabled")
+        local kcov = find_tool("kcov")
 
         local project_dir = os.projectdir()
         local target_file = path.join(project_dir, target:targetfile())

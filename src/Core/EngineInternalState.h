@@ -16,6 +16,7 @@
 #define _AM_IMPLEMENTATION_CORE_ENGINE_INTERNAL_STATE_H
 
 #include <map>
+#include <unordered_map>
 #include <vector>
 
 #include <SparkyStudios/Audio/Amplitude/Amplitude.h>
@@ -59,23 +60,23 @@ namespace SparkyStudios::Audio::Amplitude
     typedef std::map<AmOsString, AmEventID> EventIdMap;
     typedef std::map<AmOsString, AmBankID> SoundBankIdMap;
 
-    typedef std::map<AmSwitchContainerID, AmUniquePtr<SwitchContainerImpl, eMemoryPoolKind_Engine>> SwitchContainerMap;
+    typedef std::unordered_map<AmSwitchContainerID, AmUniquePtr<SwitchContainerImpl, eMemoryPoolKind_Engine>> SwitchContainerMap;
 
-    typedef std::map<AmCollectionID, AmUniquePtr<CollectionImpl, eMemoryPoolKind_Engine>> CollectionMap;
+    typedef std::unordered_map<AmCollectionID, AmUniquePtr<CollectionImpl, eMemoryPoolKind_Engine>> CollectionMap;
 
-    typedef std::map<AmSoundID, AmUniquePtr<SoundImpl, eMemoryPoolKind_Engine>> SoundMap;
+    typedef std::unordered_map<AmSoundID, AmUniquePtr<SoundImpl, eMemoryPoolKind_Engine>> SoundMap;
 
-    typedef std::map<AmAttenuationID, AmUniquePtr<AttenuationImpl, eMemoryPoolKind_Engine>> AttenuationMap;
+    typedef std::unordered_map<AmAttenuationID, AmUniquePtr<AttenuationImpl, eMemoryPoolKind_Engine>> AttenuationMap;
 
-    typedef std::map<AmSwitchID, AmUniquePtr<SwitchImpl, eMemoryPoolKind_Engine>> SwitchMap;
+    typedef std::unordered_map<AmSwitchID, AmUniquePtr<SwitchImpl, eMemoryPoolKind_Engine>> SwitchMap;
 
-    typedef std::map<AmRtpcID, AmUniquePtr<RtpcImpl, eMemoryPoolKind_Engine>> RtpcMap;
+    typedef std::unordered_map<AmRtpcID, AmUniquePtr<RtpcImpl, eMemoryPoolKind_Engine>> RtpcMap;
 
-    typedef std::map<AmEffectID, AmUniquePtr<EffectImpl, eMemoryPoolKind_Engine>> EffectMap;
+    typedef std::unordered_map<AmEffectID, AmUniquePtr<EffectImpl, eMemoryPoolKind_Engine>> EffectMap;
 
-    typedef std::map<AmEventID, AmUniquePtr<EventImpl, eMemoryPoolKind_Engine>> EventMap;
+    typedef std::unordered_map<AmEventID, AmUniquePtr<EventImpl, eMemoryPoolKind_Engine>> EventMap;
 
-    typedef std::map<AmBankID, AmUniquePtr<SoundBank, eMemoryPoolKind_Engine>> SoundBankMap;
+    typedef std::unordered_map<AmBankID, AmUniquePtr<SoundBank, eMemoryPoolKind_Engine>> SoundBankMap;
 
     typedef std::vector<std::shared_ptr<EventInstanceImpl>> EventInstanceVector;
 
@@ -97,12 +98,22 @@ namespace SparkyStudios::Audio::Amplitude
     typedef std::vector<RoomInternalState> RoomStateVector;
     typedef fplutil::intrusive_list<RoomInternalState> RoomList;
 
+    struct ListenerCache
+    {
+        std::unordered_map<AmSize, ListenerInternalState*> cache;
+
+        AM_INLINE void Clear()
+        {
+            cache.clear();
+        }
+    };
+
     struct ObstructionOcclusionState
     {
         Curve lpf;
         Curve gain;
 
-        void Init(const ObstructionOcclusionConfig* config)
+        AM_INLINE void Init(const ObstructionOcclusionConfig* config)
         {
             lpf = Curve();
             lpf.Initialize(config->lpf_curve());
@@ -123,6 +134,7 @@ namespace SparkyStudios::Audio::Amplitude
             , mute(true)
             , paused(true)
             , stopping(false)
+            , channelPriorityDirty(true)
             , switch_container_map()
             , switch_container_id_map()
             , collection_map()
@@ -194,6 +206,12 @@ namespace SparkyStudios::Audio::Amplitude
 
         // If true, the engine is fully initialized and ready to start playback.
         bool initialized;
+
+        // If true, channel priorities need to be re-sorted this frame.
+        bool channelPriorityDirty;
+
+        // Cache listener lookup results per frame.
+        ListenerCache listenerCache;
 
         // A map of sound names to SoundCollections.
         SwitchContainerMap switch_container_map;

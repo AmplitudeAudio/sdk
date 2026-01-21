@@ -27,8 +27,12 @@ namespace SparkyStudios::Audio::Amplitude
     public:
         const AudioBuffer* Process(const AudioBuffer* input) override;
 
-    private:
-        AudioBuffer _output;
+        [[nodiscard]] bool ShouldSkip() const override;
+
+        [[nodiscard]] AM_INLINE AmUInt16 GetOutputChannelCount() const override
+        {
+            return kAmStereoChannelCount;
+        }
     };
 
     class StereoPanningNode final : public Node

@@ -163,13 +163,36 @@ namespace SparkyStudios::Audio::Amplitude
          */
         void Update();
 
+        /**
+         * @brief Gets the version number of this Environment.
+         *
+         * The version is incremented whenever the environment changes (location, orientation, zone).
+         * Used for cache invalidation per entity.
+         *
+         * @return The current version number.
+         */
+        [[nodiscard]] AM_INLINE AmUInt32 GetVersion() const
+        {
+            return _version;
+        }
+
         fplutil::intrusive_list_node node;
 
     private:
+        /**
+         * @brief Increments the version counter to invalidate cached environment factors.
+         */
+        AM_INLINE void IncrementVersion()
+        {
+            ++_version;
+        }
+
         AmEnvironmentID _id;
 
         std::shared_ptr<Zone> _zone;
         const Effect* _effect;
+
+        AmUInt32 _version;
     };
 } // namespace SparkyStudios::Audio::Amplitude
 

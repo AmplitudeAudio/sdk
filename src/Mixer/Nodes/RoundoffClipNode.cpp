@@ -22,14 +22,14 @@ namespace SparkyStudios::Audio::Amplitude
 
     const AudioBuffer* RoundoffClipNodeInstance::Process(const AudioBuffer* input)
     {
-        _output = *input;
+        AudioBuffer::Copy(*input, 0, _output, 0, input->GetFrameCount());
 
-        for (AmSize c = 0; c < _output.GetChannelCount(); c++)
+        for (AmSize c = 0; c < input->GetChannelCount(); c++)
         {
-            const auto& inChannel = _output[c];
+            const auto& inChannel = input->GetChannel(c);
             /* */ auto& outChannel = _output[c];
 
-            for (AmSize i = 0, l = _output.GetFrameCount(); i < l; i++)
+            for (AmSize i = 0, l = input->GetFrameCount(); i < l; i++)
             {
                 const AmReal32& x = inChannel[i];
                 /* */ AmReal32& y = outChannel[i];

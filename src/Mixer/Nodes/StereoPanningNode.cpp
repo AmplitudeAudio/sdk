@@ -22,19 +22,23 @@
 
 namespace SparkyStudios::Audio::Amplitude
 {
+    bool StereoPanningNodeInstance::ShouldSkip() const
+    {
+        const auto* layer = GetLayer();
+        const auto& listener = layer->GetListener();
+        return !listener.Valid();
+    }
+
     const AudioBuffer* StereoPanningNodeInstance::Process(const AudioBuffer* input)
     {
         const auto* layer = GetLayer();
-
         const auto& listener = layer->GetListener();
-        if (!listener.Valid())
-            return nullptr;
+        const auto& listenerInvMatrix = listener.GetInverseMatrix();
 
         // Mono channels required for input
         AMPLITUDE_ASSERT(input->GetChannelCount() == 1);
 
-        // Stereo channels for output
-        _output = AudioBuffer(input->GetFrameCount(), 2);
+        _output.Clear();
 
         constexpr AmReal32 kGain = 1.0f;
 
@@ -56,7 +60,7 @@ namespace SparkyStudios::Audio::Amplitude
                 const AmReal32 weight = layer->GetInstanceWeight(i);
                 const AmReal32 instanceGain = layer->GetInstanceGain(i);
 
-                const AmVector2 pannedGain = Gain::CalculateStereoPannedGain(instanceGain, location, listener.GetInverseMatrix());
+                const AmVector2 pannedGain = Gain::CalculateStereoPannedGain(instanceGain, location, listenerInvMatrix);
 
                 blendedPan.x += pannedGain.x * weight;
                 blendedPan.y += pannedGain.y * weight;
@@ -76,7 +80,7 @@ namespace SparkyStudios::Audio::Amplitude
         }
         else
         {
-            const AmVector2 pannedGain = Gain::CalculateStereoPannedGain(kGain, layer->GetLocation(), listener.GetInverseMatrix());
+            const AmVector2 pannedGain = Gain::CalculateStereoPannedGain(kGain, layer->GetLocation(), listenerInvMatrix);
             Gain::ApplyReplaceConstantGain(pannedGain.x, input->GetChannel(0), 0, _output[0], 0, _output.GetFrameCount());
             Gain::ApplyReplaceConstantGain(pannedGain.y, input->GetChannel(0), 0, _output[1], 0, _output.GetFrameCount());
         }

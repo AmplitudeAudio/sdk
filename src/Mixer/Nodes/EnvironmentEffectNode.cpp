@@ -26,7 +26,7 @@
 namespace SparkyStudios::Audio::Amplitude
 {
     EnvironmentEffectNodeInstance::EnvironmentEffectNodeInstance()
-        : _output()
+        : _scratch()
         , _environmentFilters()
     {}
 
@@ -55,17 +55,34 @@ namespace SparkyStudios::Audio::Amplitude
         }
     }
 
-    const AudioBuffer* EnvironmentEffectNodeInstance::Process(const AudioBuffer* input)
+    void EnvironmentEffectNodeInstance::Configure(AmUInt64 frameCount, AmUInt16 channelCount)
+    {
+        ProcessorNodeInstance::Configure(frameCount, channelCount);
+
+        _scratch = AudioBuffer(frameCount, channelCount);
+    }
+
+    bool EnvironmentEffectNodeInstance::ShouldSkip() const
     {
         const auto* layer = GetLayer();
         const Entity& entity = layer->GetEntity();
 
         if (!entity.Valid())
-            return nullptr;
+            return true;
 
         const auto& environments = entity.GetEnvironments();
         if (environments.empty())
-            return nullptr;
+            return true;
+
+        return false;
+    }
+
+    const AudioBuffer* EnvironmentEffectNodeInstance::Process(const AudioBuffer* input)
+    {
+        const auto* layer = GetLayer();
+        const auto& entity = layer->GetEntity();
+        const auto& environments = entity.GetEnvironments();
+        const auto layerId = layer->GetId();
 
         std::vector<std::pair<AmEnvironmentID, AmReal32>> items(environments.begin(), environments.end());
         std::ranges::sort(
@@ -75,9 +92,7 @@ namespace SparkyStudios::Audio::Amplitude
                 return a.second > b.second;
             });
 
-        _output = AudioBuffer(input->GetFrameCount(), input->GetChannelCount());
-
-        const auto layerId = layer->GetId();
+        _output.Clear();
 
         for (const auto& [environment, amount] : items)
         {
@@ -91,22 +106,23 @@ namespace SparkyStudios::Audio::Amplitude
             const auto* effect = static_cast<const EffectImpl*>(handle.GetEffect());
             if (!_environmentFilters.contains(environment))
             {
-                const std::map<AmSoundID, std::shared_ptr<EffectInstance>> map{};
+                const std::unordered_map<AmSoundID, std::shared_ptr<EffectInstance>> map{};
                 _environmentFilters[environment] = std::move(map);
             }
 
             if (!_environmentFilters[environment].contains(layerId))
                 _environmentFilters[environment][layerId] = effect->CreateInstance();
 
-            AudioBuffer scratch(input->GetFrameCount(), input->GetChannelCount());
+            // Clear scratch and process effect
+            _scratch.Clear();
 
             {
                 auto filterInstance = _environmentFilters[environment][layerId]->GetFilter();
                 filterInstance->SetParameter(0, amount);
-                filterInstance->Process(*input, scratch, input->GetFrameCount(), layer->GetSampleRate());
+                filterInstance->Process(*input, _scratch, input->GetFrameCount(), layer->GetSampleRate());
             }
 
-            _output += scratch;
+            _output += _scratch;
         }
 
         return &_output;

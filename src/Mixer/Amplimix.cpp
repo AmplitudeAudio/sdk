@@ -417,7 +417,22 @@ namespace SparkyStudios::Audio::Amplitude
         if (!_initialized || amEngine->GetState() == nullptr || amEngine->IsStopping() || amEngine->IsPaused())
             return 0;
 
-        AmplimixMutexLocker lock(this);
+        // Mark that we're now mixing
+        _isMixing.store(true, std::memory_order_release);
+
+        // RAII guard to clear flag on exit
+        struct MixGuard
+        {
+            AmplimixImpl* self;
+            ~MixGuard()
+            {
+                {
+                    std::lock_guard<std::mutex> lock(self->_mixCompleteMutex);
+                    self->_isMixing.store(false, std::memory_order_release);
+                }
+                self->_mixCompleteCV.notify_all();
+            }
+        } mixGuard{ this };
 
         // clear the output buffer
         _scratchBuffer.Clear();
@@ -459,8 +474,6 @@ namespace SparkyStudios::Audio::Amplitude
 
             layer.ResetPipeline();
         }
-
-        lock.Unlock();
 
         ExecuteCommands();
 
@@ -852,9 +865,8 @@ namespace SparkyStudios::Audio::Amplitude
 
         if (_pipeline == nullptr || layer->pipeline == nullptr)
         {
-            amLogWarning(
-                "No active pipeline is set, this means no sound will be rendered. You should configure the Amplimix "
-                "pipeline in your engine configuration file.");
+            amLogWarning("No active pipeline is set, this means no sound will be rendered. You should configure the Amplimix "
+                         "pipeline in your engine configuration file.");
             return;
         }
 
@@ -898,9 +910,9 @@ namespace SparkyStudios::Audio::Amplitude
         inSamples = AM_VALUE_ALIGN(inSamples, kProcessedFramesCount);
 #endif // AM_SIMD_INTRINSICS
 
-        SoundChunk* in = SoundChunk::CreateChunk(inSamples, soundChannels, eMemoryPoolKind_Amplimix);
-        SoundChunk* transient = SoundChunk::CreateChunk(outSamples, 1, eMemoryPoolKind_Amplimix);
-        SoundChunk* out = SoundChunk::CreateChunk(transient->frames, 2, eMemoryPoolKind_Amplimix);
+        SoundChunk* in = layer->_chunkPool.Acquire(inSamples, soundChannels);
+        SoundChunk* transient = layer->_chunkPool.Acquire(outSamples, 1);
+        SoundChunk* out = layer->_chunkPool.Acquire(transient->frames, 2);
 
         // if this sound is streaming, and we have a stream event callback
         if (layer->snd->stream)
@@ -1029,9 +1041,9 @@ namespace SparkyStudios::Audio::Amplitude
                 cursor = oldCursor;
         }
 
-        SoundChunk::DestroyChunk(out);
-        SoundChunk::DestroyChunk(transient);
-        SoundChunk::DestroyChunk(in);
+        layer->_chunkPool.Release(out);
+        layer->_chunkPool.Release(transient);
+        layer->_chunkPool.Release(in);
 
         // run callback if reached the end
         if (cursor == layer->end)
@@ -1114,9 +1126,9 @@ namespace SparkyStudios::Audio::Amplitude
         auto& instances = channel.GetState()->GetInstances();
 
         // Pre-allocate buffers for instance processing
-        SoundChunk* in = SoundChunk::CreateChunk(inSamples, soundChannels, eMemoryPoolKind_Amplimix);
-        SoundChunk* transient = SoundChunk::CreateChunk(outSamples, 1, eMemoryPoolKind_Amplimix);
-        SoundChunk* out = SoundChunk::CreateChunk(outSamples, 2, eMemoryPoolKind_Amplimix);
+        SoundChunk* in = layer->_chunkPool.Acquire(inSamples, soundChannels);
+        SoundChunk* transient = layer->_chunkPool.Acquire(outSamples, 1);
+        SoundChunk* out = layer->_chunkPool.Acquire(outSamples, 2);
 
         // Process each instance
         for (AmSize instanceIndex = 0; instanceIndex < layer->instanceData.size(); ++instanceIndex)
@@ -1254,9 +1266,9 @@ namespace SparkyStudios::Audio::Amplitude
         layer->processingInstance = false;
         layer->currentInstanceIndex = 0;
 
-        SoundChunk::DestroyChunk(out);
-        SoundChunk::DestroyChunk(transient);
-        SoundChunk::DestroyChunk(in);
+        layer->_chunkPool.Release(out);
+        layer->_chunkPool.Release(transient);
+        layer->_chunkPool.Release(in);
 
         // If all instances finished, trigger end callback
         if (allInstancesFinished && !loop)
@@ -1335,12 +1347,19 @@ namespace SparkyStudios::Audio::Amplitude
         _insideAudioThreadMutex.insert_or_assign(Thread::GetCurrentThreadId(), false);
     }
 
-    void AmplimixImpl::WaitForAudioMutex()
+    void AmplimixImpl::Wait()
     {
-        while (_audioThreadMutex.try_lock_for(std::chrono::milliseconds(500)) == false)
-            std::this_thread::yield();
-
-        _audioThreadMutex.unlock();
+        std::unique_lock<std::mutex> lock(_mixCompleteMutex);
+        const auto timeout = std::chrono::milliseconds(5000);
+        if (!_mixCompleteCV.wait_for(
+                lock, timeout,
+                [this]()
+                {
+                    return !_isMixing.load(std::memory_order_acquire);
+                }))
+        {
+            amLogWarning("Amplimix::Wait timed out - forcing continue");
+        }
     }
 
     AmplimixLayerImpl::~AmplimixLayerImpl()
@@ -1594,6 +1613,8 @@ namespace SparkyStudios::Audio::Amplitude
 
     void AmplimixLayerImpl::UpdateInstanceData()
     {
+        AmplimixLayerMutexLocker lock(this);
+
         instanceData.clear();
 
         if (snd == nullptr || snd->sound == nullptr)

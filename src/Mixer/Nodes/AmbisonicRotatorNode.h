@@ -31,10 +31,18 @@ namespace SparkyStudios::Audio::Amplitude
 
         const AudioBuffer* Process(const AudioBuffer* input) override;
 
+        [[nodiscard]] bool ShouldSkip() const override;
+
+        void Configure(AmUInt64 frameCount, AmUInt16 channelCount) override;
+
+        [[nodiscard]] AmUInt16 GetOutputChannelCount() const override;
+
     private:
         AmbisonicOrientationProcessor _rotator;
 
         BFormat _soundField;
+
+        AmUInt32 _ambisonicOrder = 1;
     };
 
     class AmbisonicRotatorNode final : public Node

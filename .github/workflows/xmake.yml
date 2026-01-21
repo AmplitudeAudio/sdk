@@ -259,14 +259,14 @@ jobs:
 
       - name: Generate coverage
         continue-on-error: true
-        if: false && matrix.build_type == 'coverage' && !startsWith(matrix.config.os, 'windows')
+        if: matrix.build_type == 'coverage' && !startsWith(matrix.config.os, 'windows')
         working-directory: ${{ inputs.project-path }}
         run: |
           xmake b -y coverage_generate_test_report
 
       - name: Upload coverage to Codecov
         continue-on-error: true
-        if: false && matrix.build_type == 'coverage' && !startsWith(matrix.config.os, 'windows')
+        if: matrix.build_type == 'coverage' && !startsWith(matrix.config.os, 'windows')
         uses: codecov/codecov-action@v5
         with:
           directory: ${{ inputs.project-path }}/coverage/merged
@@ -277,6 +277,14 @@ jobs:
         if: matrix.build_type != 'coverage'
         working-directory: ${{ inputs.project-path }}
         run: xmake i -o sdk
+
+      - name: Upload SDK Artifact
+        if: matrix.build_type != 'coverage'
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ inputs.project-slug }}-${{ matrix.build_type }}-${{ matrix.config.arch }}-${{ matrix.config.plat }}${{ matrix.config.toolchain && format('-{0}', matrix.config.toolchain) || '' }}
+          path: ${{ inputs.project-path }}/sdk
+          retention-days: 1
 
       - name: Save SDK Cache
         if: matrix.build_type != 'coverage'
