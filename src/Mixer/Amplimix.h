@@ -17,6 +17,7 @@
 #ifndef _AM_IMPLEMENTATION_MIXER_AMPLIMIX_H
 #define _AM_IMPLEMENTATION_MIXER_AMPLIMIX_H
 
+#include <condition_variable>
 #include <mutex>
 #include <queue>
 
@@ -282,7 +283,7 @@ namespace SparkyStudios::Audio::Amplitude
         void UpdatePitch(AmplimixLayerImpl* layer);
         void LockAudioMutex();
         void UnlockAudioMutex();
-        void WaitForAudioMutex();
+        void Wait();
 
         bool _initialized;
 
@@ -290,6 +291,10 @@ namespace SparkyStudios::Audio::Amplitude
 
         std::recursive_timed_mutex _audioThreadMutex;
         std::unordered_map<AmThreadID, bool> _insideAudioThreadMutex;
+
+        _Atomic(bool) _isMixing{ false };
+        std::mutex _mixCompleteMutex;
+        std::condition_variable _mixCompleteCV;
 
         AmUInt32 _nextId;
         _Atomic(AmReal32) _masterGain{};
