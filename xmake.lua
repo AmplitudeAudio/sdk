@@ -25,17 +25,44 @@ add_repositories("repo xmake/repo", { rootdir = os.scriptdir() })
 add_rules("mode.debug", "mode.release")
 add_rules("plugin.compile_commands.autoupdate")
 
-if is_mode("coverage") then
-  set_symbols("debug")
-  set_optimize("none")
-  set_policy("build.ccache", false)
+-- Custom coverage mode rule for llvm-cov
+rule("mode.coverage.llvm")
+  on_config(function(target)
+    if is_mode("coverage") then
+      -- Enable debug symbols and disable optimization
+      if not target:get("symbols") then
+        target:set("symbols", "debug")
+      end
+      if not target:get("optimize") then
+        target:set("optimize", "none")
+      end
+      target:set("policy", "build.ccache", false)
 
-  -- Use llvm-cov source-based coverage flags for Clang
-  add_cxflags("-fprofile-instr-generate", "-fcoverage-mapping", { force = true })
-  add_mxflags("-fprofile-instr-generate", "-fcoverage-mapping", { force = true })
-  add_ldflags("-fprofile-instr-generate", "-fcoverage-mapping", { force = true })
-  add_shflags("-fprofile-instr-generate", "-fcoverage-mapping", { force = true })
-end
+      -- Only apply llvm-cov flags for Clang-based compilers
+      local dominated = false
+      if target:has_tool("cxx", "clang", "clangxx") then
+        dominated = true
+      elseif target:has_tool("cc", "clang") then
+        dominated = true
+      end
+
+      -- macOS always uses Clang
+      if is_plat("macosx", "iphoneos") then
+        dominated = true
+      end
+
+      if dominated then
+        target:add("cxflags", "-fprofile-instr-generate", "-fcoverage-mapping", { force = true })
+        target:add("mxflags", "-fprofile-instr-generate", "-fcoverage-mapping", { force = true })
+        target:add("ldflags", "-fprofile-instr-generate", "-fcoverage-mapping", { force = true })
+        target:add("shflags", "-fprofile-instr-generate", "-fcoverage-mapping", { force = true })
+      end
+    end
+  end)
+rule_end()
+
+-- Apply coverage rule to all targets
+add_rules("mode.coverage.llvm")
 
 -- Options
 option("build_assets")
