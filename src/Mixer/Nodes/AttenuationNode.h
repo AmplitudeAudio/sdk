@@ -60,8 +60,6 @@ namespace SparkyStudios::Audio::Amplitude
         const AudioBuffer* Process(const AudioBuffer* input) override;
 
     private:
-        AudioBuffer _output;
-
         std::array<AmReal32, kAmAirAbsorptionBandCount> _gains;
         AirAbsorptionEQFilter _eqFilter;
     };

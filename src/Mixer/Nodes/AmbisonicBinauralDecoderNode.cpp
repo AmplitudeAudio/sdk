@@ -29,12 +29,12 @@ namespace SparkyStudios::Audio::Amplitude
         if (mode != ePanningMode_Stereo && _hrirSphere == nullptr)
             mode = ePanningMode_Stereo;
 
-        const AmUInt32 order = AM_MAX(static_cast<AmUInt32>(mode), 1u);
+        _ambisonicOrder = AM_MAX(static_cast<AmUInt32>(mode), 1u);
 
         if (mode == ePanningMode_Stereo)
-            _decoder.Configure(order, true, eSpeakersPreset_Stereo);
+            _decoder.Configure(_ambisonicOrder, true, eSpeakersPreset_Stereo);
         else
-            _binauralizer.Configure(order, true, _hrirSphere.get());
+            _binauralizer.Configure(_ambisonicOrder, true, _hrirSphere.get());
     }
 
     const AudioBuffer* AmbisonicBinauralDecoderNodeInstance::Process(const AudioBuffer* input)
@@ -42,25 +42,26 @@ namespace SparkyStudios::Audio::Amplitude
         if (input->IsEmpty())
             return nullptr;
 
-        const auto* layer = GetLayer();
+        for (AmUInt32 i = 0, l = input->GetChannelCount(); i < l; ++i)
+            _soundField.CopyStream(input->GetChannel(i), i, input->GetFrameCount());
+
+        _output.Clear();
 
         const ePanningMode mode = Engine::GetInstance()->GetPanningMode();
-        const AmUInt32 order = AM_MAX(static_cast<AmUInt32>(mode), 1u);
-
-        BFormat soundField;
-        soundField.Configure(order, true, input->GetFrameCount());
-
-        for (AmUInt32 i = 0, l = input->GetChannelCount(); i < l; ++i)
-            soundField.CopyStream(input->GetChannel(i), i, input->GetFrameCount());
-
-        _output = AudioBuffer(input->GetFrameCount(), 2);
 
         if (mode == ePanningMode_Stereo)
-            _decoder.Process(&soundField, input->GetFrameCount(), _output);
+            _decoder.Process(&_soundField, input->GetFrameCount(), _output);
         else
-            _binauralizer.Process(&soundField, input->GetFrameCount(), _output);
+            _binauralizer.Process(&_soundField, input->GetFrameCount(), _output);
 
         return &_output;
+    }
+
+    void AmbisonicBinauralDecoderNodeInstance::Configure(AmUInt64 frameCount, AmUInt16 channelCount)
+    {
+        ProcessorNodeInstance::Configure(frameCount, channelCount);
+
+        _soundField.Configure(_ambisonicOrder, true, frameCount);
     }
 
     AmbisonicBinauralDecoderNode::AmbisonicBinauralDecoderNode()

@@ -12,7 +12,9 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+#include <queue>
 #include <ranges>
+#include <unordered_set>
 
 #include <SparkyStudios/Audio/Amplitude/Core/Memory.h>
 #include <SparkyStudios/Audio/Amplitude/IO/Log.h>
@@ -44,6 +46,9 @@ namespace SparkyStudios::Audio::Amplitude
 
     void PipelineInstanceImpl::Execute(const AudioBuffer& in, AudioBuffer& out)
     {
+        // Auto-configure if buffer dimensions changed
+        Configure(in.GetFrameCount(), in.GetChannelCount(), out.GetFrameCount(), out.GetChannelCount());
+
         // Copy the input buffer content
         _inputBuffer = in;
 
@@ -87,6 +92,131 @@ namespace SparkyStudios::Audio::Amplitude
             return;
 
         _nodeInstances[id] = std::make_pair(nodeName, nodeInstance);
+    }
+
+    bool PipelineInstanceImpl::NeedsReconfiguration(AmUInt64 inFrames, AmUInt16 inChannels, AmUInt64 outFrames, AmUInt16 outChannels) const
+    {
+        return !_isConfigured || _configuredInputFrameCount != inFrames || _configuredInputChannelCount != inChannels ||
+            _configuredOutputFrameCount != outFrames || _configuredOutputChannelCount != outChannels;
+    }
+
+    void PipelineInstanceImpl::Configure(
+        AmUInt64 inputFrameCount, AmUInt16 inputChannelCount, AmUInt64 outputFrameCount, AmUInt16 outputChannelCount)
+    {
+        if (!NeedsReconfiguration(inputFrameCount, inputChannelCount, outputFrameCount, outputChannelCount))
+            return;
+
+        _configuredInputFrameCount = inputFrameCount;
+        _configuredInputChannelCount = inputChannelCount;
+        _configuredOutputFrameCount = outputFrameCount;
+        _configuredOutputChannelCount = outputChannelCount;
+
+        ConfigureNodeGraph();
+
+        _isConfigured = true;
+    }
+
+    void PipelineInstanceImpl::ConfigureNodeGraph()
+    {
+        // Configure input node first
+        _inputNode->Configure(_configuredInputFrameCount, _configuredInputChannelCount);
+
+        // Build a map of node ID to its consumers for topological traversal
+        std::unordered_map<AmObjectID, std::vector<AmObjectID>> nodeConsumers;
+        std::unordered_map<AmObjectID, AmObjectID> nodeProvider; // For single-input processors
+        std::unordered_map<AmObjectID, std::vector<AmObjectID>> nodeProviders; // For multi-input mixers
+
+        // Collect connection information
+        for (const auto& [id, pair] : _nodeInstances)
+        {
+            const auto& node = pair.second;
+
+            if (const auto* processor = dynamic_cast<ProcessorNodeInstance*>(node.get()))
+            {
+                nodeProvider[id] = processor->GetProvider();
+                nodeConsumers[processor->GetProvider()].push_back(id);
+            }
+            else if (const auto* mixer = dynamic_cast<MixerNodeInstance*>(node.get()))
+            {
+                nodeProviders[id] = mixer->GetProviders();
+                for (const auto& providerId : mixer->GetProviders())
+                    nodeConsumers[providerId].push_back(id);
+            }
+        }
+
+        // Use BFS to configure nodes in topological order (from input to output)
+        std::unordered_set<AmObjectID> configured;
+        std::queue<AmObjectID> toProcess;
+
+        // Start with input node (ID from _inputNode)
+        const AmObjectID inputNodeId = _inputNode->GetId();
+        configured.insert(inputNodeId);
+
+        // Add all nodes that consume from input node
+        for (const auto& consumerId : nodeConsumers[inputNodeId])
+            toProcess.push(consumerId);
+
+        while (!toProcess.empty())
+        {
+            const AmObjectID currentId = toProcess.front();
+            toProcess.pop();
+
+            if (configured.contains(currentId))
+                continue;
+
+            // Get the node
+            auto nodeIt = _nodeInstances.find(currentId);
+            if (nodeIt == _nodeInstances.end())
+                continue;
+
+            const auto& node = nodeIt->second.second;
+
+            // Determine input dimensions from provider(s)
+            AmUInt64 inputFrames = 0;
+            AmUInt16 inputChannels = 0;
+
+            if (const auto* processor = dynamic_cast<ProcessorNodeInstance*>(node.get()))
+            {
+                // Single provider - get its output dimensions
+                const AmObjectID providerId = processor->GetProvider();
+                if (configured.contains(providerId))
+                {
+                    auto providerNode = GetNode(providerId);
+
+                    inputFrames = providerNode->GetOutputFrameCount();
+                    inputChannels = providerNode->GetOutputChannelCount();
+                }
+            }
+            else if (const auto* mixer = dynamic_cast<MixerNodeInstance*>(node.get()))
+            {
+                // Multiple providers - use first non-empty provider's dimensions
+                // (all providers should have matching dimensions for mixing)
+                for (const auto& providerId : mixer->GetProviders())
+                {
+                    if (configured.contains(providerId))
+                    {
+                        auto providerNode = GetNode(providerId);
+
+                        inputFrames = providerNode->GetOutputFrameCount();
+                        inputChannels = providerNode->GetOutputChannelCount();
+                        break;
+                    }
+                }
+            }
+
+            // Configure this node
+            node->Configure(inputFrames, inputChannels);
+            configured.insert(currentId);
+
+            // Add consumers of this node to the queue
+            for (const auto& consumerId : nodeConsumers[currentId])
+                if (!configured.contains(consumerId))
+                    toProcess.push(consumerId);
+        }
+
+        // Configure output node last
+        if (_outputNode != nullptr)
+            _outputNode->Configure(_configuredOutputFrameCount, _configuredOutputChannelCount);
     }
 
     PipelineImpl::~PipelineImpl()

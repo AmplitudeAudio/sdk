@@ -96,7 +96,62 @@ namespace SparkyStudios::Audio::Amplitude
          */
         virtual void SetParameter(AmSize index, AmReal32 value);
 
+        /**
+         * @brief Configures the node with the expected input buffer dimensions.
+         *
+         * This method is called during the pipeline configuration phase to allow
+         * nodes to pre-allocate their output buffers based on known input dimensions.
+         * The configuration is cached and only re-runs when dimensions change.
+         *
+         * @param[in] frameCount The expected number of frames in the input buffer.
+         * @param[in] channelCount The expected number of channels in the input buffer.
+         */
+        virtual void Configure(AmUInt64 frameCount, AmUInt16 channelCount);
+
+        /**
+         * @brief Gets the output frame count for this node.
+         *
+         * By default, returns the same frame count as the input. Override this method
+         * if the node changes the frame count (e.g., resampling nodes).
+         *
+         * @return The number of frames this node will output.
+         */
+        [[nodiscard]] virtual AmUInt64 GetOutputFrameCount() const;
+
+        /**
+         * @brief Gets the output channel count for this node.
+         *
+         * By default, returns the same channel count as the input. Override this method
+         * if the node changes the channel count (e.g., panning nodes that convert mono to stereo).
+         *
+         * @return The number of channels this node will output.
+         */
+        [[nodiscard]] virtual AmUInt16 GetOutputChannelCount() const;
+
+        /**
+         * @brief Determines if this node should be skipped during processing.
+         *
+         * Override this method to return @c true when the node cannot produce useful output
+         * based on current runtime conditions (e.g., wrong spatialization mode, no listener).
+         *
+         * When @c true, the @c Provide() method will return @c nullptr without calling @c Consume(),
+         * avoiding unnecessary upstream processing in dead paths.
+         *
+         * @return @c true if the node should be skipped, @c false otherwise.
+         */
+        [[nodiscard]] virtual bool ShouldSkip() const;
+
     protected:
+        /**
+         * @brief The expected input frame count for this node.
+         */
+        AmUInt64 m_inputFrameCount = 0;
+
+        /**
+         * @brief The expected input channel count for this node.
+         */
+        AmUInt16 m_inputChannelCount = 0;
+
         /**
          * @brief The unique identifier for the node instance in the pipeline.
          */
@@ -229,11 +284,41 @@ namespace SparkyStudios::Audio::Amplitude
          */
         void Reset() override;
 
+        /**
+         * @brief Configures the processor node with expected input dimensions.
+         *
+         * This override pre-allocates the output buffer based on the configured
+         * output frame count and channel count.
+         *
+         * @param[in] frameCount The expected number of frames in the input buffer.
+         * @param[in] channelCount The expected number of channels in the input buffer.
+         */
+        void Configure(AmUInt64 frameCount, AmUInt16 channelCount) override;
+
+        /**
+         * @brief Returns the ID of the input provider node for this processor.
+         *
+         * @return The ID of the provider node.
+         */
+        [[nodiscard]] AM_INLINE AmObjectID GetProvider() const
+        {
+            return m_provider;
+        }
+
     protected:
         /**
          * @brief The ID of the input provider node.
          */
         AmObjectID m_provider;
+
+        /**
+         * @brief The pre-allocated output buffer for this processor node.
+         *
+         * This buffer is allocated during the configuration phase based on the
+         * output frame count and channel count returned by GetOutputFrameCount()
+         * and GetOutputChannelCount().
+         */
+        AudioBuffer _output;
 
     private:
         const AudioBuffer* _processingBuffer;
@@ -297,15 +382,43 @@ namespace SparkyStudios::Audio::Amplitude
          */
         void Reset() override;
 
+        /**
+         * @brief Configures the mixer node with expected input dimensions.
+         *
+         * This override pre-allocates the mix buffer based on the configured
+         * frame count and channel count.
+         *
+         * @param[in] frameCount The expected number of frames in the input buffer.
+         * @param[in] channelCount The expected number of channels in the input buffer.
+         */
+        void Configure(AmUInt64 frameCount, AmUInt16 channelCount) override;
+
+        /**
+         * @brief Returns the IDs of the input provider nodes for this mixer.
+         *
+         * @return A const reference to the vector of provider node IDs.
+         */
+        [[nodiscard]] AM_INLINE const std::vector<AmObjectID>& GetProviders() const
+        {
+            return m_providers;
+        }
+
     protected:
         /**
          * @brief The IDs of the input provider nodes.
          */
         std::vector<AmObjectID> m_providers;
 
+        /**
+         * @brief The pre-allocated mix buffer for combining inputs.
+         *
+         * This buffer is allocated during the configuration phase and can be
+         * overridden by derived classes that need custom channel counts.
+         */
+        AudioBuffer _mixBuffer;
+
     private:
         std::vector<const AudioBuffer*> _processingBuffers;
-        AudioBuffer _mixBuffer;
         bool _processed;
     };
 

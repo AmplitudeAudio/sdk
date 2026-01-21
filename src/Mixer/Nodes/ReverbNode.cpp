@@ -66,6 +66,13 @@ namespace SparkyStudios::Audio::Amplitude
         }
     }
 
+    void ReverbNodeInstance::Configure(AmUInt64 frameCount, AmUInt16 channelCount)
+    {
+        ProcessorNodeInstance::Configure(frameCount, channelCount);
+
+        _tempBuffer = AudioBuffer(frameCount, channelCount);
+    }
+
     const AudioBuffer* ReverbNodeInstance::Process(const AudioBuffer* input)
     {
         const auto* layer = GetLayer();
@@ -79,16 +86,15 @@ namespace SparkyStudios::Audio::Amplitude
         if (roomGain < kEpsilon)
             return nullptr;
 
-        _output = AudioBuffer(input->GetFrameCount(), kAmStereoChannelCount);
+        _output.Clear();
+        _tempBuffer.Clear();
 
-        {
-            // Apply reflections gain
-            AudioBuffer temp(input->GetFrameCount(), kAmMonoChannelCount);
-            Gain::ApplyReplaceConstantGain(roomGain, input->GetChannel(0), 0, temp[0], 0, _output.GetFrameCount());
+        // Apply reflections gain
+        Gain::ApplyReplaceConstantGain(roomGain, input->GetChannel(0), 0, _tempBuffer[0], 0, _output.GetFrameCount());
 
-            // Apply reverberation
-            _model.ProcessReplace(temp[0].begin(), temp[0].begin(), _output[0].begin(), _output[1].begin(), temp.GetFrameCount(), 1);
-        }
+        // Apply reverberation
+        _model.ProcessReplace(
+            _tempBuffer[0].begin(), _tempBuffer[0].begin(), _output[0].begin(), _output[1].begin(), _tempBuffer.GetFrameCount(), 1);
 
         return &_output;
     }

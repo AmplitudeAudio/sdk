@@ -32,11 +32,18 @@ namespace SparkyStudios::Audio::Amplitude
         void Initialize(AmObjectID id, const AmplimixLayer* layer, const PipelineInstance* pipeline, AmSize paramCount) override;
         void Reset() override;
 
+        void Configure(AmUInt64 frameCount, AmUInt16 channelCount) override;
+
         const AudioBuffer* Process(const AudioBuffer* input) override;
+
+        [[nodiscard]] AM_INLINE AmUInt16 GetOutputChannelCount() const override
+        {
+            return kAmStereoChannelCount;
+        }
 
     private:
         Freeverb::ReverbModel _model;
-        AudioBuffer _output;
+        AudioBuffer _tempBuffer;
     };
 
     class ReverbNode final : public Node

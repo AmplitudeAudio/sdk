@@ -28,9 +28,6 @@ namespace SparkyStudios::Audio::Amplitude
         RoundoffClipNodeInstance();
 
         const AudioBuffer* Process(const AudioBuffer* input) override;
-
-    private:
-        AudioBuffer _output;
     };
 
     class RoundoffClipNode final : public Node

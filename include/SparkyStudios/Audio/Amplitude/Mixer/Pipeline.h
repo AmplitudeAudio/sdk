@@ -69,6 +69,24 @@ namespace SparkyStudios::Audio::Amplitude
          * @return The node with the specified ID, or @c nullptr if not found.
          */
         [[nodiscard]] virtual std::shared_ptr<NodeInstance> GetNode(AmObjectID id) const = 0;
+
+        /**
+         * @brief Configures the pipeline with the expected input and output buffer dimensions.
+         *
+         * This method is called automatically by Execute() when buffer dimensions change.
+         * It walks through the node graph and calls Configure() on each node, allowing
+         * them to pre-allocate their output buffers.
+         *
+         * The configuration is cached and only re-runs when dimensions change, avoiding
+         * unnecessary allocations on every frame.
+         *
+         * @param[in] inputFrameCount The expected number of frames in the input buffer.
+         * @param[in] inputChannelCount The expected number of channels in the input buffer.
+         * @param[in] outputFrameCount The expected number of frames in the output buffer.
+         * @param[in] outputChannelCount The expected number of channels in the output buffer.
+         */
+        virtual void Configure(
+            AmUInt64 inputFrameCount, AmUInt16 inputChannelCount, AmUInt64 outputFrameCount, AmUInt16 outputChannelCount) = 0;
     };
 
     /**

@@ -41,9 +41,22 @@ namespace SparkyStudios::Audio::Amplitude
 
         void Reset() override;
 
+        void Configure(
+            AmUInt64 inputFrameCount, AmUInt16 inputChannelCount, AmUInt64 outputFrameCount, AmUInt16 outputChannelCount) override;
+
         void AddNode(AmObjectID id, AmString nodeName, std::shared_ptr<NodeInstance> nodeInstance);
 
     private:
+        /**
+         * @brief Checks if the pipeline needs reconfiguration based on new dimensions.
+         */
+        [[nodiscard]] bool NeedsReconfiguration(AmUInt64 inFrames, AmUInt16 inChannels, AmUInt64 outFrames, AmUInt16 outChannels) const;
+
+        /**
+         * @brief Walks the node graph and configures each node with appropriate dimensions.
+         */
+        void ConfigureNodeGraph();
+
         std::unordered_map<AmObjectID, std::pair<AmString, std::shared_ptr<NodeInstance>>> _nodeInstances;
 
         std::shared_ptr<InputNodeInstance> _inputNode;
@@ -51,6 +64,13 @@ namespace SparkyStudios::Audio::Amplitude
 
         const AmplimixLayerImpl* _layer;
         AudioBuffer _inputBuffer;
+
+        // Configuration caching state
+        AmUInt64 _configuredInputFrameCount = 0;
+        AmUInt16 _configuredInputChannelCount = 0;
+        AmUInt64 _configuredOutputFrameCount = 0;
+        AmUInt16 _configuredOutputChannelCount = 0;
+        bool _isConfigured = false;
     };
 
     class PipelineImpl final

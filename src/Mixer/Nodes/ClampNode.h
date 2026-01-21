@@ -28,9 +28,6 @@ namespace SparkyStudios::Audio::Amplitude
         ClampNodeInstance();
 
         const AudioBuffer* Process(const AudioBuffer* input) override;
-
-    private:
-        AudioBuffer _output;
     };
 
     class ClampNode final : public Node

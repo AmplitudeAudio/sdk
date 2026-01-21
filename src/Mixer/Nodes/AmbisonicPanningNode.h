@@ -30,9 +30,20 @@ namespace SparkyStudios::Audio::Amplitude
 
         const AudioBuffer* Process(const AudioBuffer* input) override;
 
+        [[nodiscard]] bool ShouldSkip() const override;
+
+        void Configure(AmUInt64 frameCount, AmUInt16 channelCount) override;
+
+        [[nodiscard]] AmUInt16 GetOutputChannelCount() const override;
+
     private:
         AmbisonicSource _source;
         BFormat _soundField;
+
+        BFormat _instanceSoundField;
+        AudioBuffer _instanceScaledInput;
+
+        AmUInt32 _ambisonicOrder = 1;
     };
 
     class AmbisonicPanningNode final : public Node

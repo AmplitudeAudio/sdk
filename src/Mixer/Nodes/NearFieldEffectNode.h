@@ -28,11 +28,14 @@ namespace SparkyStudios::Audio::Amplitude
     public:
         const AudioBuffer* Process(const AudioBuffer* input) override;
 
+        [[nodiscard]] AM_INLINE AmUInt16 GetOutputChannelCount() const override
+        {
+            return kAmStereoChannelCount;
+        }
+
     private:
         GainProcessor _leftGainProcessor;
         GainProcessor _rightGainProcessor;
-
-        AudioBuffer _output;
     };
 
     class NearFieldEffectNode final : public Node

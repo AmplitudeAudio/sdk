@@ -29,10 +29,14 @@ namespace SparkyStudios::Audio::Amplitude
         EnvironmentEffectNodeInstance();
         ~EnvironmentEffectNodeInstance() override;
 
+        void Configure(AmUInt64 frameCount, AmUInt16 channelCount) override;
+
+        bool ShouldSkip() const override;
+
         const AudioBuffer* Process(const AudioBuffer* input) override;
 
     private:
-        AudioBuffer _output;
+        AudioBuffer _scratch;
         std::unordered_map<AmEnvironmentID, std::unordered_map<AmObjectID, std::shared_ptr<EffectInstance>>> _environmentFilters;
     };
 

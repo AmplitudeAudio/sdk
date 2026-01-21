@@ -38,8 +38,6 @@ namespace SparkyStudios::Audio::Amplitude
 
         AmReal32 _currentOcclusion;
         std::shared_ptr<FilterInstance> _occlusionFilter;
-
-        AudioBuffer _output;
     };
 
     class OcclusionNode final : public Node

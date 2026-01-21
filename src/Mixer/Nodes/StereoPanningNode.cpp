@@ -22,21 +22,23 @@
 
 namespace SparkyStudios::Audio::Amplitude
 {
+    bool StereoPanningNodeInstance::ShouldSkip() const
+    {
+        const auto* layer = GetLayer();
+        const auto& listener = layer->GetListener();
+        return !listener.Valid();
+    }
+
     const AudioBuffer* StereoPanningNodeInstance::Process(const AudioBuffer* input)
     {
         const auto* layer = GetLayer();
-
         const auto& listener = layer->GetListener();
-        if (!listener.Valid())
-            return nullptr;
-
         const auto& listenerInvMatrix = listener.GetInverseMatrix();
 
         // Mono channels required for input
         AMPLITUDE_ASSERT(input->GetChannelCount() == 1);
 
-        // Stereo channels for output
-        _output = AudioBuffer(input->GetFrameCount(), 2);
+        _output.Clear();
 
         constexpr AmReal32 kGain = 1.0f;
 

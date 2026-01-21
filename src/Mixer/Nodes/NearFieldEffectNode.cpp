@@ -66,8 +66,6 @@ namespace SparkyStudios::Audio::Amplitude
             return nullptr;
         }
 
-        _output = AudioBuffer(input->GetFrameCount(), 2);
-
         {
             NearFieldProcessor processor(layer->GetSampleRate(), input->GetFrameCount());
 
