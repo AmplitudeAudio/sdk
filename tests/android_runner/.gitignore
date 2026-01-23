@@ -1,0 +1,28 @@
+# Built APKs
+*.apk
+*.aab
+
+# Gradle files
+.gradle/
+build/
+!app/build.gradle
+!build.gradle
+
+# Local configuration
+local.properties
+
+# IntelliJ / Android Studio
+.idea/
+*.iml
+
+# Keystore files
+*.jks
+*.keystore
+
+# Generated files
+.externalNativeBuild/
+.cxx/
+
+# Test assets (should be copied from desktop build)
+app/src/main/assets/*
+!app/src/main/assets/.gitkeep

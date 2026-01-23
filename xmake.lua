@@ -390,10 +390,19 @@ end
 
 -- Build unit tests if enabled
 if has_config("unit_tests") then
-  includes("tests/xmake.lua")
+  if is_plat("android") then
+    -- Android: Use Gradle build system instead of XMake
+    -- Build with: cd tests/android_runner && ./gradlew assembleDebug
+    print("Note: Android tests use Gradle build system.")
+    print("  Build: cd tests/android_runner && ./gradlew assembleDebug")
+    print("  Install: ./gradlew installDebug")
+  else
+    -- Desktop and iOS: Use XMake build system
+    includes("tests/xmake.lua")
+  end
 
-  -- Add code coverage for non-MSVC compilers
-  if not is_plat("windows") then
+  -- Add code coverage for non-MSVC compilers (desktop only)
+  if not is_plat("windows", "iphoneos", "android") then
     target("coverage_generate_test_report")
       set_kind("phony")
       set_default(false)

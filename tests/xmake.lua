@@ -12,6 +12,14 @@
 -- See the License for the specific language governing permissions and
 -- limitations under the License.
 
+-- Include mobile test runners (platform-specific)
+if is_plat("iphoneos") then
+    includes("ios_runner/xmake.lua")
+end
+
+-- Desktop-only targets (tools and test infrastructure that require native execution)
+if not is_plat("iphoneos", "android") then
+
 target("generate_test_package")
   set_kind("phony")
 
@@ -74,9 +82,18 @@ target("common_test_shared")
   add_includedirs("$(builddir)/include", { public = true })
 target_end()
 
+end -- Desktop-only targets
+
+-- Note: Android uses Gradle/CMake build system
+-- See tests/android_runner/ for Android test runner
+
+-- Desktop test targets (CLI executables)
+-- These are not built on mobile platforms
+if not is_plat("iphoneos", "android") then
+
 for _, filepath in ipairs(os.dirs("**")) do
-  if filepath == "common" then
-    -- Skip common directory
+  if filepath == "common" or filepath == "ios_runner" or filepath == "android_runner" then
+    -- Skip common and mobile runner directories
     goto continue
   end
 
@@ -144,3 +161,5 @@ for _, filepath in ipairs(os.dirs("**")) do
 
   ::continue::
 end
+
+end -- if not is_plat("iphoneos", "android")

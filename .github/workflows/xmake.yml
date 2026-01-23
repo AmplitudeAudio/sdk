@@ -104,7 +104,7 @@ jobs:
         uses: jlumbroso/free-disk-space@main
         with:
           tool-cache: true
-          android: ${{ matrix.config.plat == 'android' }}
+          android: ${{ matrix.config.plat != 'android' }}
           dotnet: true
           haskell: true
           large-packages: true

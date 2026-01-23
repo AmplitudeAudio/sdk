@@ -14,6 +14,7 @@
 
 #pragma once
 
+#include "PlatformTestCase.h"
 #include "TestCase.h"
 
 namespace SparkyStudios::Audio::Amplitude::Tests
@@ -93,13 +94,19 @@ namespace SparkyStudios::Audio::Amplitude::Tests
 
             amLogDebug("Test run started");
 
-            _fileSystem = ampoolshared(eMemoryPoolKind_IO, DiskFileSystem);
+            // Use platform abstraction for file system creation
+            _fileSystem = CreatePlatformFileSystem();
 
             _invalidConsumerNodePlugin = Engine::RegisterExtension<InvalidConsumerNode>();
 
-            _fileSystem->SetBasePath(AM_OS_STRING("./samples/assets"));
+            // Use platform-appropriate assets path
+            _fileSystem->SetBasePath(GetPlatformAssetsBasePath());
 
-            Engine::AddPluginSearchPath(_fileSystem->ResolvePath(AM_OS_STRING("../")));
+            // Plugin search paths only work on desktop platforms
+            if (SupportsPluginLoading())
+            {
+                Engine::AddPluginSearchPath(_fileSystem->ResolvePath(AM_OS_STRING("../")));
+            }
 
             amEngine->SetFileSystem(_fileSystem);
 
@@ -193,7 +200,7 @@ namespace SparkyStudios::Audio::Amplitude::Tests
             return success;
         }
 
-        std::shared_ptr<DiskFileSystem> _fileSystem = nullptr;
+        std::shared_ptr<FileSystem> _fileSystem = nullptr;
 
     private:
         AmThreadHandle _threadHandle = nullptr;

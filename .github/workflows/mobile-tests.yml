@@ -1,0 +1,380 @@
+name: Mobile Test Runners
+
+on:
+  push:
+    branches: [main, develop]
+    paths:
+      - 'tests/ios_runner/**'
+      - 'tests/android_runner/**'
+      - 'tests/common/**'
+      - 'src/**'
+      - 'include/**'
+  pull_request:
+    branches: [main, develop]
+    paths:
+      - 'tests/ios_runner/**'
+      - 'tests/android_runner/**'
+      - 'tests/common/**'
+      - 'src/**'
+      - 'include/**'
+  workflow_dispatch:
+
+env:
+  # Android Emulator settings
+  ANDROID_API_LEVEL: 34
+  ANDROID_TARGET: google_apis
+  ANDROID_ARCH: x86_64
+
+jobs:
+  # Build and run iOS Test Runner on Simulator
+  ios-tests:
+    name: iOS Tests
+    runs-on: macos-15
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Setup XMake
+        uses: xmake-io/github-action-setup-xmake@v1
+        with:
+          xmake-version: latest
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Find flatc version
+        id: flatc_version
+        uses: tdemin/find-latest-tag@v1
+        with:
+          repo: https://github.com/google/flatbuffers.git
+
+      - name: Install flatc
+        run: |
+          curl -L -o flatc.zip "https://github.com/google/flatbuffers/releases/download/${{ steps.flatc_version.outputs.tag }}/Mac.flatc.binary.zip"
+          unzip flatc.zip -d flatc
+          chmod +x flatc/flatc
+          sudo mv flatc/flatc /usr/local/bin/
+          flatc --version
+
+      - name: Build Test Assets
+        run: |
+          xmake f -y -m debug --build_assets=y --build_tools=y
+          xmake b -y build_sample_project
+
+      - name: Build iOS Test Runner (x86_64 for Simulator)
+        run: |
+          xmake c -a
+          xmake f -y -p iphoneos -a x86_64 -m debug --unit_tests=y
+          xmake b -y AmplitudeTests_iOS
+
+      - name: List Available Simulators
+        run: xcrun simctl list devices available
+
+      - name: Boot iOS Simulator
+        run: |
+          # Find a suitable iPhone simulator
+          SIMULATOR_UDID=$(xcrun simctl list devices available -j | \
+            python3 -c "import json,sys; d=json.load(sys.stdin); \
+            devs=[dev for rt in d['devices'].values() for dev in rt if 'iPhone' in dev['name'] and dev['isAvailable']]; \
+            print(devs[0]['udid'] if devs else '')")
+
+          if [ -z "$SIMULATOR_UDID" ]; then
+            echo "No available iPhone simulator found"
+            exit 1
+          fi
+
+          echo "SIMULATOR_UDID=$SIMULATOR_UDID" >> $GITHUB_ENV
+          echo "Booting simulator: $SIMULATOR_UDID"
+          xcrun simctl boot "$SIMULATOR_UDID" || true
+
+          # Wait for simulator to be ready
+          echo "Waiting for simulator to boot..."
+          sleep 15
+
+      - name: Install App on Simulator
+        run: |
+          xcrun simctl install "$SIMULATOR_UDID" build/iphoneos/x86_64/debug/tests/AmplitudeTests.app
+
+      - name: Run Tests on iOS Simulator
+        id: ios_tests
+        run: |
+          # Launch the app with auto-run flag and capture logs
+          echo "Launching test app with auto-run..."
+
+          # Set environment variable for auto-run
+          xcrun simctl spawn "$SIMULATOR_UDID" defaults write com.amplitudeaudiosdk.tests AMPLITUDE_AUTORUN -bool true
+          xcrun simctl spawn "$SIMULATOR_UDID" defaults write com.amplitudeaudiosdk.tests AMPLITUDE_EXIT_ON_COMPLETE -bool true
+
+          # Launch and capture output (the app will exit when tests complete)
+          xcrun simctl launch --console-pty "$SIMULATOR_UDID" com.amplitudeaudiosdk.tests --autorun --exit-on-complete 2>&1 | tee ios_test_output.log &
+          APP_PID=$!
+
+          # Wait for tests to complete (timeout after 5 minutes)
+          TIMEOUT=300
+          ELAPSED=0
+          TEST_COMPLETE=false
+
+          while [ $ELAPSED -lt $TIMEOUT ]; do
+            # Check if app has exited or if we see the summary
+            if ! kill -0 $APP_PID 2>/dev/null; then
+              echo "App has exited"
+              TEST_COMPLETE=true
+              break
+            fi
+
+            if grep -q "TEST SUMMARY" ios_test_output.log 2>/dev/null; then
+              echo "Tests completed!"
+              TEST_COMPLETE=true
+              sleep 2  # Give it a moment to finish logging
+              break
+            fi
+
+            sleep 5
+            ELAPSED=$((ELAPSED + 5))
+            echo "Waiting for tests... ($ELAPSED seconds)"
+          done
+
+          # Kill the app if still running
+          kill $APP_PID 2>/dev/null || true
+
+          # Display results
+          echo ""
+          echo "=== Test Output ==="
+          cat ios_test_output.log || true
+          echo "==================="
+          echo ""
+
+          # Parse results
+          if grep -q "Failed: 0" ios_test_output.log && grep -q "Total:" ios_test_output.log; then
+            TOTAL=$(grep "Total:" ios_test_output.log | tail -1 | awk '{print $2}')
+            if [ "$TOTAL" != "0" ]; then
+              echo "✅ All tests passed!"
+              echo "status=success" >> $GITHUB_OUTPUT
+              exit 0
+            fi
+          fi
+
+          if grep -q "Failed:" ios_test_output.log; then
+            FAILED=$(grep "Failed:" ios_test_output.log | tail -1 | awk '{print $2}')
+            if [ "$FAILED" != "0" ]; then
+              echo "❌ Some tests failed!"
+              echo "status=failure" >> $GITHUB_OUTPUT
+              exit 1
+            fi
+          fi
+
+          echo "⚠️ Could not determine test results"
+          echo "status=unknown" >> $GITHUB_OUTPUT
+          exit 1
+
+      - name: Shutdown Simulator
+        if: always()
+        run: xcrun simctl shutdown "$SIMULATOR_UDID" || true
+
+      - name: Upload iOS Test Results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ios-test-results
+          path: ios_test_output.log
+          retention-days: 7
+
+      - name: Upload iOS Test Runner
+        uses: actions/upload-artifact@v4
+        with:
+          name: AmplitudeTests-iOS
+          path: build/iphoneos/x86_64/debug/tests/AmplitudeTests.app
+          retention-days: 7
+
+  # Build and run Android Test Runner on Emulator
+  android-tests:
+    name: Android Tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Free Disk Space
+        uses: jlumbroso/free-disk-space@main
+        with:
+          tool-cache: false
+          android: false
+          dotnet: true
+          haskell: true
+          large-packages: true
+          docker-images: true
+          swap-storage: true
+
+      - name: Enable KVM
+        run: |
+          echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
+          sudo udevadm control --reload-rules
+          sudo udevadm trigger --name-match=kvm
+
+      - name: Set up JDK
+        uses: actions/setup-java@v4
+        with:
+          java-version: '17'
+          distribution: 'temurin'
+
+      - name: Setup Android SDK
+        uses: android-actions/setup-android@v3
+
+      - name: Setup XMake
+        uses: xmake-io/github-action-setup-xmake@v1
+        with:
+          xmake-version: latest
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Find flatc version
+        id: flatc_version
+        uses: tdemin/find-latest-tag@v1
+        with:
+          repo: https://github.com/google/flatbuffers.git
+
+      - name: Install flatc
+        run: |
+          curl -L -o flatc.zip "https://github.com/google/flatbuffers/releases/download/${{ steps.flatc_version.outputs.tag }}/Linux.flatc.binary.g++-13.zip"
+          unzip flatc.zip -d flatc
+          chmod +x flatc/flatc
+          sudo mv flatc/flatc /usr/local/bin/
+          flatc --version
+
+      - name: Build Test Assets
+        run: |
+          xmake f -y -m debug --build_assets=y --build_tools=y
+          xmake b -y build_sample_project
+
+      - name: Setup Android NDK
+        id: setup-ndk
+        uses: nttld/setup-ndk@v1
+        with:
+          ndk-version: r27c
+
+      - name: Copy Assets to Android Project
+        run: |
+          mkdir -p tests/android_runner/app/src/main/assets
+          cp -r build/samples/assets/* tests/android_runner/app/src/main/assets/
+
+      - name: Build Amplitude SDK for Android (x86_64 for Emulator)
+        run: |
+          xmake c -a
+          xmake f -y -p android -a x86_64 -m debug
+          xmake b -y
+          xmake i -y -o sdk
+        env:
+          ANDROID_NDK_HOME: ${{ steps.setup-ndk.outputs.ndk-path }}
+
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: 8.5
+
+      - name: Build Android Test Runner
+        working-directory: tests/android_runner
+        run: gradle assembleDebug
+
+      - name: Run Tests on Android Emulator
+        uses: reactivecircus/android-emulator-runner@v2
+        with:
+          api-level: ${{ env.ANDROID_API_LEVEL }}
+          target: ${{ env.ANDROID_TARGET }}
+          arch: ${{ env.ANDROID_ARCH }}
+          profile: pixel_6
+          heap-size: 512M
+          ram-size: 4096M
+          emulator-options: -no-snapshot-save -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim
+          disable-animations: true
+          script: |
+            set -e
+
+            # Install the test app
+            echo "Installing test app..."
+            adb install -r tests/android_runner/app/build/outputs/apk/debug/app-debug.apk
+
+            # Clear logcat
+            adb logcat -c
+
+            # Start capturing logcat in background
+            adb logcat -v time AmplitudeTests:V *:S > android_test_output.log 2>&1 &
+            LOGCAT_PID=$!
+
+            # Launch the app with auto-run flags
+            echo "Launching test app with auto-run..."
+            adb shell am start -n com.amplitudeaudiosdk.tests/.TestRunnerActivity \
+              --ez autorun true \
+              --ez exit_on_complete true
+
+            # Wait for tests to complete
+            TIMEOUT=300
+            ELAPSED=0
+            TEST_COMPLETE=false
+
+            while [ $ELAPSED -lt $TIMEOUT ]; do
+              # Check for test summary in logcat
+              if grep -q "TEST SUMMARY" android_test_output.log 2>/dev/null; then
+                echo "Tests completed!"
+                TEST_COMPLETE=true
+                sleep 2  # Give it a moment to finish logging
+                break
+              fi
+
+              sleep 5
+              ELAPSED=$((ELAPSED + 5))
+              echo "Waiting for tests... ($ELAPSED seconds)"
+            done
+
+            # Stop logcat capture
+            kill $LOGCAT_PID 2>/dev/null || true
+
+            # Display results
+            echo ""
+            echo "=== Test Output ==="
+            cat android_test_output.log || true
+            echo "==================="
+            echo ""
+
+            # Parse results and set exit code
+            if grep -q "Failed: 0" android_test_output.log && grep -q "Total:" android_test_output.log; then
+              TOTAL=$(grep "Total:" android_test_output.log | tail -1 | awk '{print $2}')
+              if [ "$TOTAL" != "0" ]; then
+                echo "✅ All tests passed!"
+                exit 0
+              fi
+            fi
+
+            if grep -q "Failed:" android_test_output.log; then
+              FAILED=$(grep "Failed:" android_test_output.log | tail -1 | awk '{print $2}')
+              if [ "$FAILED" != "0" ]; then
+                echo "❌ Some tests failed!"
+                exit 1
+              fi
+            fi
+
+            echo "⚠️ Could not determine test results"
+            exit 1
+
+      - name: Upload Android Test Results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: android-test-results
+          path: android_test_output.log
+          retention-days: 7
+
+      - name: Upload Android Test Runner
+        uses: actions/upload-artifact@v4
+        with:
+          name: AmplitudeTests-Android
+          path: tests/android_runner/app/build/outputs/apk/debug/app-debug.apk
+          retention-days: 7
