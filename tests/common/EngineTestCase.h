@@ -68,7 +68,7 @@ namespace SparkyStudios::Audio::Amplitude::Tests
         }
     };
 
-    class EngineTestCase final : public TestCase
+    class EngineTestCase : public TestCase
     {
     public:
         static void run(AmVoidPtr listener)
@@ -168,8 +168,6 @@ namespace SparkyStudios::Audio::Amplitude::Tests
             MemoryManager::Deinitialize();
         }
 
-        void Run() override;
-
         [[nodiscard]] AM_INLINE bool IsRunning() const
         {
             return _running;
@@ -207,9 +205,4 @@ namespace SparkyStudios::Audio::Amplitude::Tests
         bool _running = false;
         std::shared_ptr<InvalidConsumerNode> _invalidConsumerNodePlugin = nullptr;
     };
-
-    std::shared_ptr<TestCase> MakeTestCase()
-    {
-        return std::make_shared<EngineTestCase>();
-    }
 } // namespace SparkyStudios::Audio::Amplitude::Tests

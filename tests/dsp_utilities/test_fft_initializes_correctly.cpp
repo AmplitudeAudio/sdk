@@ -15,20 +15,27 @@
 #include <SparkyStudios/Audio/Amplitude/Amplitude.h>
 
 #include "DSPTestCase.h"
+#include "TestRegistry.h"
 
 namespace SparkyStudios::Audio::Amplitude::Tests
 {
-    void DSPTestCase::Run()
+    AM_TEST_CASE(DSPTestCase, dsp_utilities, fft_initializes_correctly)
     {
-        FFT fft;
+    public:
+        void Run() override
+        {
+            FFT fft;
 
-        // Initialize with power-of-2 size
-        constexpr AmSize size = 1024;
-        fft.Initialize(size);
+            // Initialize with power-of-2 size
+            constexpr AmSize size = 1024;
+            fft.Initialize(size);
 
-        // Verify output size calculation
-        const AmUInt64 outputSize = FFT::GetOutputSize(size);
-        AM_EXPECT(outputSize > 0);
-        AM_EXPECT(outputSize == size / 2 + 1); // Complex output size for real FFT
-    }
+            // Verify output size calculation
+            const AmUInt64 outputSize = FFT::GetOutputSize(size);
+            AM_EXPECT(outputSize > 0);
+            AM_EXPECT(outputSize == size / 2 + 1); // Complex output size for real FFT
+        }
+    };
+
+    AM_REGISTER_TEST(dsp_utilities, fft_initializes_correctly);
 } // namespace SparkyStudios::Audio::Amplitude::Tests

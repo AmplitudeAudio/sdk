@@ -185,47 +185,81 @@ namespace SparkyStudios::Audio::Amplitude::Tests
     };
 
     /**
-     * @brief Helper macro for registering tests that work on all platforms.
+     * @brief Helper macro to concatenate tokens.
+     */
+#define AM_TEST_CONCAT_IMPL(a, b, c) a##__##b##__##c
+#define AM_TEST_CONCAT(a, b, c) AM_TEST_CONCAT_IMPL(a, b, c)
+
+    /**
+     * @brief Macro to define a test case class with a unique name.
+     *
+     * This macro generates a unique class name by combining the test group and test name,
+     * avoiding class name collisions when multiple tests inherit from the same base class.
      *
      * Usage:
-     * @code
-     * REGISTER_TEST(MyTestCase, "math", "vector_add");
+     * @code{cpp}
+     * AM_TEST_CASE(SimpleTestCase, core_room, cannot_create_valid_wrapper_without_state)
+     * {
+     *     void Run() override
+     *     {
+     *         // Test implementation
+     *     }
+     * };
+     * @endcode
+     *
+     * This generates a class named: core_room__cannot_create_valid_wrapper_without_state__test
+     */
+#define AM_TEST_CASE(BaseClass, TestGroup, TestName) class AM_TEST_CONCAT(TestGroup, TestName, test) final : public BaseClass
+
+    /**
+     * @brief Macro to register a test case defined with AM_TEST_CASE.
+     *
+     * This macro works in conjunction with AM_TEST_CASE to register the auto-generated
+     * class name with the test registry.
+     *
+     * Usage:
+     * @code{cpp}
+     * AM_TEST_CASE(SimpleTestCase, core_room, cannot_create_valid_wrapper_without_state)
+     * {
+     *     void Run() override { ... }
+     * };
+     * AM_REGISTER_TEST(core_room, cannot_create_valid_wrapper_without_state);
      * @endcode
      */
-#define REGISTER_TEST(TestClass, TestGroup, TestName)                                                                                      \
-    static bool _registered_##TestClass = []()                                                                                             \
+#define AM_REGISTER_TEST(TestGroup, TestName)                                                                                              \
+    static bool AM_TEST_CONCAT(__registered, TestGroup, TestName) = []()                                                                   \
     {                                                                                                                                      \
         TestInfo info;                                                                                                                     \
-        info.name = TestName;                                                                                                              \
-        info.group = TestGroup;                                                                                                            \
+        info.name = AM_TO_STRING(TestName);                                                                                                \
+        info.group = AM_TO_STRING(TestGroup);                                                                                              \
         info.factory = []()                                                                                                                \
         {                                                                                                                                  \
-            return std::make_shared<TestClass>();                                                                                          \
+            return std::make_shared<AM_TEST_CONCAT(TestGroup, TestName, test)>();                                                          \
         };                                                                                                                                 \
         TestRegistry::Instance().RegisterTest(info);                                                                                       \
         return true;                                                                                                                       \
     }()
 
     /**
-     * @brief Helper macro for registering tests that only work on desktop platforms.
+     * @brief Macro for registering tests that only work on desktop platforms.
      *
      * Use this for tests that require features not available on mobile, such as
      * plugin loading or specific file system access patterns.
      *
      * Usage:
-     * @code
-     * REGISTER_TEST_DESKTOP_ONLY(PluginLoadTest, "plugins", "load_codec");
+     * @code{cpp}
+     * AM_REGISTER_TEST_DESKTOP_ONLY(plugins, load_codec);
      * @endcode
      */
-#define REGISTER_TEST_DESKTOP_ONLY(TestClass, TestGroup, TestName)                                                                         \
-    static bool _registered_##TestClass = []()                                                                                             \
+#define AM_REGISTER_TEST_DESKTOP_ONLY(TestGroup, TestName)                                                                                 \
+    static bool AM_TEST_CONCAT(__registered, TestGroup, TestName) = []()                                                                   \
     {                                                                                                                                      \
         TestInfo info;                                                                                                                     \
-        info.name = TestName;                                                                                                              \
-        info.group = TestGroup;                                                                                                            \
+        info.name = AM_TO_STRING(TestName);                                                                                                \
+        info.group = AM_TO_STRING(TestGroup);                                                                                              \
         info.factory = []()                                                                                                                \
         {                                                                                                                                  \
-            return std::make_shared<TestClass>();                                                                                          \
+            return std::make_shared<AM_TEST_CONCAT(TestGroup, TestName, test)>();                                                          \
         };                                                                                                                                 \
         info.supportsIOS = false;                                                                                                          \
         info.supportsAndroid = false;                                                                                                      \
@@ -240,19 +274,19 @@ namespace SparkyStudios::Audio::Amplitude::Tests
      * dynamic library loading (iOS, Android).
      *
      * Usage:
-     * @code
-     * REGISTER_TEST_REQUIRES_PLUGINS(SharedLibTest, "plugins", "load_shared_lib");
+     * @code{cpp}
+     * AM_REGISTER_TEST_REQUIRES_PLUGINS(plugins, load_shared_lib);
      * @endcode
      */
-#define REGISTER_TEST_REQUIRES_PLUGINS(TestClass, TestGroup, TestName)                                                                     \
-    static bool _registered_##TestClass = []()                                                                                             \
+#define AM_REGISTER_TEST_REQUIRES_PLUGINS(TestGroup, TestName)                                                                             \
+    static bool AM_TEST_CONCAT(__registered, TestGroup, TestName) = []()                                                                   \
     {                                                                                                                                      \
         TestInfo info;                                                                                                                     \
-        info.name = TestName;                                                                                                              \
-        info.group = TestGroup;                                                                                                            \
+        info.name = AM_TO_STRING(TestName);                                                                                                \
+        info.group = AM_TO_STRING(TestGroup);                                                                                              \
         info.factory = []()                                                                                                                \
         {                                                                                                                                  \
-            return std::make_shared<TestClass>();                                                                                          \
+            return std::make_shared<AM_TEST_CONCAT(TestGroup, TestName, test)>();                                                          \
         };                                                                                                                                 \
         info.requiresPluginLoading = true;                                                                                                 \
         info.supportsIOS = false;                                                                                                          \
@@ -265,19 +299,19 @@ namespace SparkyStudios::Audio::Amplitude::Tests
      * @brief Helper macro for registering tests with custom platform flags.
      *
      * Usage:
-     * @code
-     * REGISTER_TEST_WITH_FLAGS(MyTest, "group", "name", true, false, true); // Desktop + Android only
+     * @code{cpp}
+     * AM_REGISTER_TEST_WITH_FLAGS(group, name, true, false, true); // Desktop + Android only
      * @endcode
      */
-#define REGISTER_TEST_WITH_FLAGS(TestClass, TestGroup, TestName, SupportsDesktop, SupportsIOS, SupportsAndroid)                            \
-    static bool _registered_##TestClass = []()                                                                                             \
+#define AM_REGISTER_TEST_WITH_FLAGS(TestGroup, TestName, SupportsDesktop, SupportsIOS, SupportsAndroid)                                    \
+    static bool AM_TEST_CONCAT(__registered, TestGroup, TestName) = []()                                                                   \
     {                                                                                                                                      \
         TestInfo info;                                                                                                                     \
-        info.name = TestName;                                                                                                              \
-        info.group = TestGroup;                                                                                                            \
+        info.name = AM_TO_STRING(TestName);                                                                                                \
+        info.group = AM_TO_STRING(TestGroup);                                                                                              \
         info.factory = []()                                                                                                                \
         {                                                                                                                                  \
-            return std::make_shared<TestClass>();                                                                                          \
+            return std::make_shared<AM_TEST_CONCAT(TestGroup, TestName, test)>();                                                          \
         };                                                                                                                                 \
         info.supportsDesktop = SupportsDesktop;                                                                                            \
         info.supportsIOS = SupportsIOS;                                                                                                    \

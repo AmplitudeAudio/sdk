@@ -17,62 +17,72 @@
 #include <Math/LinearAlgebra.h>
 
 #include "SimpleTestCase.h"
+#include "TestRegistry.h"
 
 using namespace SparkyStudios::Audio::Amplitude;
 
-void SimpleTestCase::Run()
+namespace SparkyStudios::Audio::Amplitude::Tests
 {
-    SphericalPosition position(AM_DegToRad * 45.0f, AM_DegToRad * 30.0f, 5.0f);
-
+    AM_TEST_CASE(SimpleTestCase, math_spherical_position, handles_polar_coordinates)
     {
-        const auto otherPosition = SphericalPosition(AM_DegToRad * 45.0f, AM_DegToRad * 30.0f, 5.0f);
-        const auto differentPosition = SphericalPosition(AM_DegToRad * 60.0f, AM_DegToRad * 45.0f, 5.0f);
+    public:
+        void Run() override
+        {
+            SphericalPosition position(AM_DegToRad * 45.0f, AM_DegToRad * 30.0f, 5.0f);
 
-        AM_EXPECT_EQ(position, position);
-        AM_EXPECT_EQ(position, otherPosition);
-        AM_EXPECT_NE(position, differentPosition);
-    }
+        {
+            const auto otherPosition = SphericalPosition(AM_DegToRad * 45.0f, AM_DegToRad * 30.0f, 5.0f);
+            const auto differentPosition = SphericalPosition(AM_DegToRad * 60.0f, AM_DegToRad * 45.0f, 5.0f);
 
-    {
-        AM_EXPECT_EQ(position.GetAzimuth(), AM_DegToRad * 45.0f);
-        AM_EXPECT_EQ(position.GetElevation(), AM_DegToRad * 30.0f);
-        AM_EXPECT_EQ(position.GetRadius(), 5.0f);
-    }
+            AM_EXPECT_EQ(position, position);
+            AM_EXPECT_EQ(position, otherPosition);
+            AM_EXPECT_NE(position, differentPosition);
+            }
 
-    {
-        const auto cartesianPosition = position.ToCartesian();
+        {
+            AM_EXPECT_EQ(position.GetAzimuth(), AM_DegToRad * 45.0f);
+            AM_EXPECT_EQ(position.GetElevation(), AM_DegToRad * 30.0f);
+            AM_EXPECT_EQ(position.GetRadius(), 5.0f);
+            }
 
-        AM_EXPECT_EQ(cartesianPosition.x, +5.0f * std::cos(position.GetElevation()) * std::cos(position.GetAzimuth()));
-        AM_EXPECT_EQ(cartesianPosition.y, -5.0f * std::cos(position.GetElevation()) * std::sin(position.GetAzimuth()));
-        AM_EXPECT_EQ(cartesianPosition.z, +5.0f * std::sin(position.GetElevation()));
-    }
+        {
+            const auto cartesianPosition = position.ToCartesian();
 
-    {
-        const auto flippedPosition = position.FlipAzimuth();
+            AM_EXPECT_EQ(cartesianPosition.x, +5.0f * std::cos(position.GetElevation()) * std::cos(position.GetAzimuth()));
+            AM_EXPECT_EQ(cartesianPosition.y, -5.0f * std::cos(position.GetElevation()) * std::sin(position.GetAzimuth()));
+            AM_EXPECT_EQ(cartesianPosition.z, +5.0f * std::sin(position.GetElevation()));
+            }
 
-        AM_EXPECT_EQ(flippedPosition.GetAzimuth(), -45.0f * AM_DegToRad);
-        AM_EXPECT_EQ(flippedPosition.GetElevation(), position.GetElevation());
-        AM_EXPECT_EQ(flippedPosition.GetRadius(), position.GetRadius());
-    }
+        {
+            const auto flippedPosition = position.FlipAzimuth();
 
-    {
-        position.SetAzimuth(AM_DegToRad * 60.0f);
-        position.SetElevation(AM_DegToRad * 45.0f);
-        position.SetRadius(10.0f);
+            AM_EXPECT_EQ(flippedPosition.GetAzimuth(), -45.0f * AM_DegToRad);
+            AM_EXPECT_EQ(flippedPosition.GetElevation(), position.GetElevation());
+            AM_EXPECT_EQ(flippedPosition.GetRadius(), position.GetRadius());
+            }
 
-        AM_EXPECT_EQ(position.GetAzimuth(), AM_DegToRad * 60.0f);
-        AM_EXPECT_EQ(position.GetElevation(), AM_DegToRad * 45.0f);
-        AM_EXPECT_EQ(position.GetRadius(), 10.0f);
-    }
+        {
+            position.SetAzimuth(AM_DegToRad * 60.0f);
+            position.SetElevation(AM_DegToRad * 45.0f);
+            position.SetRadius(10.0f);
 
-    {
-        const auto rotation = FromAxisAngle(kVector3UnitZ, AM_DegToRad * 90.0f);
-        const auto rotatedPosition = position.Rotate(rotation);
+            AM_EXPECT_EQ(position.GetAzimuth(), AM_DegToRad * 60.0f);
+            AM_EXPECT_EQ(position.GetElevation(), AM_DegToRad * 45.0f);
+            AM_EXPECT_EQ(position.GetRadius(), 10.0f);
+            }
 
-        const auto rotatedPosition2 = SphericalPosition::FromWorldSpace(RotateVector(position.ToCartesian(), rotation));
+        {
+            const auto rotation = FromAxisAngle(kVector3UnitZ, AM_DegToRad * 90.0f);
+            const auto rotatedPosition = position.Rotate(rotation);
 
-        AM_EXPECT_EQ(rotatedPosition.GetAzimuth(), rotatedPosition2.GetAzimuth());
-        AM_EXPECT_EQ(rotatedPosition.GetElevation(), rotatedPosition2.GetElevation());
-        AM_EXPECT_EQ(rotatedPosition.GetRadius(), rotatedPosition2.GetRadius());
-    }
-}
+            const auto rotatedPosition2 = SphericalPosition::FromWorldSpace(RotateVector(position.ToCartesian(), rotation));
+
+            AM_EXPECT_EQ(rotatedPosition.GetAzimuth(), rotatedPosition2.GetAzimuth());
+            AM_EXPECT_EQ(rotatedPosition.GetElevation(), rotatedPosition2.GetElevation());
+            AM_EXPECT_EQ(rotatedPosition.GetRadius(), rotatedPosition2.GetRadius());
+            }
+        }
+    };
+
+    AM_REGISTER_TEST(math_spherical_position, handles_polar_coordinates);
+} // namespace SparkyStudios::Audio::Amplitude::Tests

@@ -15,18 +15,25 @@
 #include <SparkyStudios/Audio/Amplitude/Amplitude.h>
 
 #include "EngineTestCase.h"
+#include "TestRegistry.h"
 
 using namespace SparkyStudios::Audio::Amplitude;
 
 namespace SparkyStudios::Audio::Amplitude::Tests
 {
-    void EngineTestCase::Run()
+    AM_TEST_CASE(EngineTestCase, core_engine, rtpc_cannot_set_values_lower_than_min)
     {
-        RtpcHandle rtpc1 = amEngine->GetRtpcHandle(1);
-        AM_EXPECT(rtpc1 != nullptr);
+    public:
+        void Run() override
+        {
+            RtpcHandle rtpc1 = amEngine->GetRtpcHandle(1);
+            AM_EXPECT(rtpc1 != nullptr);
 
-        // Test that RTPC cannot set values lower than min
-        rtpc1->SetValue(rtpc1->GetMinValue() * -2);
-        AM_EXPECT(rtpc1->GetValue() == rtpc1->GetMinValue());
-    }
+            // Test that RTPC cannot set values lower than min
+            rtpc1->SetValue(rtpc1->GetMinValue() * -2);
+            AM_EXPECT(rtpc1->GetValue() == rtpc1->GetMinValue());
+        }
+    };
+
+    AM_REGISTER_TEST(core_engine, rtpc_cannot_set_values_lower_than_min);
 } // namespace SparkyStudios::Audio::Amplitude::Tests

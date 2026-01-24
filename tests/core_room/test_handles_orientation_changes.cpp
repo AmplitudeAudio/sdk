@@ -17,83 +17,93 @@
 #include <Core/RoomInternalState.h>
 
 #include "SimpleTestCase.h"
+#include "TestRegistry.h"
 
 using namespace SparkyStudios::Audio::Amplitude;
 
-void SimpleTestCase::Run()
+namespace SparkyStudios::Audio::Amplitude::Tests
 {
-    RoomInternalState state;
-    state.SetId(1);
-
-    fplutil::intrusive_list room_list(&RoomInternalState::node);
-    room_list.push_back(state);
-
-    Room wrapper(&state);
-    AM_EXPECT_EQ(wrapper.GetState(), &state);
-
+    AM_TEST_CASE(SimpleTestCase, core_room, handles_orientation_changes)
     {
-        const auto direction = kVector3UnitX;
-        const auto up = kVector3UnitZ;
-        const auto orientation = Orientation(direction, up);
-        state.SetOrientation(orientation);
+    public:
+        void Run() override
+        {
+            RoomInternalState state;
+            state.SetId(1);
 
-        AM_EXPECT_EQ(state.GetDirection(), direction);
-        AM_EXPECT_EQ(wrapper.GetDirection(), direction);
+            fplutil::intrusive_list room_list(&RoomInternalState::node);
+            room_list.push_back(state);
 
-        AM_EXPECT_EQ(state.GetUp(), up);
-        AM_EXPECT_EQ(wrapper.GetUp(), up);
+            Room wrapper(&state);
+            AM_EXPECT_EQ(wrapper.GetState(), &state);
 
-        AM_EXPECT(std::memcmp(&state.GetOrientation(), &orientation, sizeof(Orientation)) == 0);
-        AM_EXPECT(std::memcmp(&state.GetOrientation(), &orientation, sizeof(Orientation)) == 0);
+            {
+                const auto direction = kVector3UnitX;
+                const auto up = kVector3UnitZ;
+                const auto orientation = Orientation(direction, up);
+                state.SetOrientation(orientation);
 
-        AM_EXPECT(std::memcmp(&wrapper.GetOrientation(), &orientation, sizeof(Orientation)) == 0);
-        AM_EXPECT(std::memcmp(&wrapper.GetOrientation(), &orientation, sizeof(Orientation)) == 0);
+                AM_EXPECT_EQ(state.GetDirection(), direction);
+                AM_EXPECT_EQ(wrapper.GetDirection(), direction);
 
-        state.Update();
+                AM_EXPECT_EQ(state.GetUp(), up);
+                AM_EXPECT_EQ(wrapper.GetUp(), up);
 
-        AM_EXPECT_EQ(state.GetDirection(), direction);
-        AM_EXPECT_EQ(wrapper.GetDirection(), direction);
+                AM_EXPECT(std::memcmp(&state.GetOrientation(), &orientation, sizeof(Orientation)) == 0);
+                AM_EXPECT(std::memcmp(&state.GetOrientation(), &orientation, sizeof(Orientation)) == 0);
 
-        AM_EXPECT_EQ(state.GetUp(), up);
-        AM_EXPECT_EQ(wrapper.GetUp(), up);
+                AM_EXPECT(std::memcmp(&wrapper.GetOrientation(), &orientation, sizeof(Orientation)) == 0);
+                AM_EXPECT(std::memcmp(&wrapper.GetOrientation(), &orientation, sizeof(Orientation)) == 0);
 
-        AM_EXPECT(std::memcmp(&state.GetOrientation(), &orientation, sizeof(Orientation)) == 0);
-        AM_EXPECT(std::memcmp(&state.GetOrientation(), &orientation, sizeof(Orientation)) == 0);
+                state.Update();
 
-        AM_EXPECT(std::memcmp(&wrapper.GetOrientation(), &orientation, sizeof(Orientation)) == 0);
-        AM_EXPECT(std::memcmp(&wrapper.GetOrientation(), &orientation, sizeof(Orientation)) == 0);
-    }
+                AM_EXPECT_EQ(state.GetDirection(), direction);
+                AM_EXPECT_EQ(wrapper.GetDirection(), direction);
 
-    {
-        const auto direction = kVector3UnitY;
-        const auto up = kVector3UnitX;
-        const auto orientation = Orientation(direction, up);
-        wrapper.SetOrientation(orientation);
+                AM_EXPECT_EQ(state.GetUp(), up);
+                AM_EXPECT_EQ(wrapper.GetUp(), up);
 
-        AM_EXPECT_EQ(state.GetDirection(), direction);
-        AM_EXPECT_EQ(wrapper.GetDirection(), direction);
+                AM_EXPECT(std::memcmp(&state.GetOrientation(), &orientation, sizeof(Orientation)) == 0);
+                AM_EXPECT(std::memcmp(&state.GetOrientation(), &orientation, sizeof(Orientation)) == 0);
 
-        AM_EXPECT_EQ(state.GetUp(), up);
-        AM_EXPECT_EQ(wrapper.GetUp(), up);
+                AM_EXPECT(std::memcmp(&wrapper.GetOrientation(), &orientation, sizeof(Orientation)) == 0);
+                AM_EXPECT(std::memcmp(&wrapper.GetOrientation(), &orientation, sizeof(Orientation)) == 0);
+            }
 
-        AM_EXPECT(std::memcmp(&state.GetOrientation(), &orientation, sizeof(Orientation)) == 0);
-        AM_EXPECT(std::memcmp(&state.GetOrientation(), &orientation, sizeof(Orientation)) == 0);
+            {
+                const auto direction = kVector3UnitY;
+                const auto up = kVector3UnitX;
+                const auto orientation = Orientation(direction, up);
+                wrapper.SetOrientation(orientation);
 
-        AM_EXPECT(std::memcmp(&wrapper.GetOrientation(), &orientation, sizeof(Orientation)) == 0);
-        AM_EXPECT(std::memcmp(&wrapper.GetOrientation(), &orientation, sizeof(Orientation)) == 0);
+                AM_EXPECT_EQ(state.GetDirection(), direction);
+                AM_EXPECT_EQ(wrapper.GetDirection(), direction);
 
-        wrapper.Update();
+                AM_EXPECT_EQ(state.GetUp(), up);
+                AM_EXPECT_EQ(wrapper.GetUp(), up);
 
-        AM_EXPECT_EQ(state.GetDirection(), direction);
-        AM_EXPECT_EQ(wrapper.GetDirection(), direction);
+                AM_EXPECT(std::memcmp(&state.GetOrientation(), &orientation, sizeof(Orientation)) == 0);
+                AM_EXPECT(std::memcmp(&state.GetOrientation(), &orientation, sizeof(Orientation)) == 0);
 
-        AM_EXPECT_EQ(state.GetUp(), up);
-        AM_EXPECT_EQ(wrapper.GetUp(), up);
+                AM_EXPECT(std::memcmp(&wrapper.GetOrientation(), &orientation, sizeof(Orientation)) == 0);
+                AM_EXPECT(std::memcmp(&wrapper.GetOrientation(), &orientation, sizeof(Orientation)) == 0);
 
-        AM_EXPECT(std::memcmp(&state.GetOrientation(), &orientation, sizeof(Orientation)) == 0);
-        AM_EXPECT(std::memcmp(&state.GetOrientation(), &orientation, sizeof(Orientation)) == 0);
+                wrapper.Update();
 
-        AM_EXPECT(std::memcmp(&wrapper.GetOrientation(), &orientation, sizeof(Orientation)) == 0);
-        AM_EXPECT(std::memcmp(&wrapper.GetOrientation(), &orientation, sizeof(Orientation)) == 0);
-    }
-}
+                AM_EXPECT_EQ(state.GetDirection(), direction);
+                AM_EXPECT_EQ(wrapper.GetDirection(), direction);
+
+                AM_EXPECT_EQ(state.GetUp(), up);
+                AM_EXPECT_EQ(wrapper.GetUp(), up);
+
+                AM_EXPECT(std::memcmp(&state.GetOrientation(), &orientation, sizeof(Orientation)) == 0);
+                AM_EXPECT(std::memcmp(&state.GetOrientation(), &orientation, sizeof(Orientation)) == 0);
+
+                AM_EXPECT(std::memcmp(&wrapper.GetOrientation(), &orientation, sizeof(Orientation)) == 0);
+                AM_EXPECT(std::memcmp(&wrapper.GetOrientation(), &orientation, sizeof(Orientation)) == 0);
+            }
+        }
+    };
+
+    AM_REGISTER_TEST(core_room, handles_orientation_changes);
+} // namespace SparkyStudios::Audio::Amplitude::Tests

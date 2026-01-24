@@ -15,46 +15,57 @@
 #include <SparkyStudios/Audio/Amplitude/Amplitude.h>
 
 #include "SimpleTestCase.h"
+#include "TestRegistry.h"
 
 using namespace SparkyStudios::Audio::Amplitude;
 
-void SimpleTestCase::Run()
+namespace SparkyStudios::Audio::Amplitude::Tests
 {
-    // Uncompressed file
+    AM_TEST_CASE(SimpleTestCase, fs_package_item_file, can_be_opened)
     {
-        PackageFileSystem fileSystem;
-        fileSystem.SetPlatformFileSystem<DiskFileSystem>();
-        fileSystem.SetBasePath(AM_OS_STRING("./samples/assets_uncompressed.ampk"));
+    public:
+        void Run() override
+        {
+            // Uncompressed file
+        {
+            PackageFileSystem fileSystem;
+            fileSystem.SetPlatformFileSystem<DiskFileSystem>();
+            fileSystem.SetBasePath(AM_OS_STRING("./samples/assets_uncompressed.ampk"));
 
-        fileSystem.StartOpenFileSystem();
-        while (!fileSystem.TryFinalizeOpenFileSystem())
+            fileSystem.StartOpenFileSystem();
+            while (!fileSystem.TryFinalizeOpenFileSystem())
             Thread::Sleep(1);
 
-        auto file = fileSystem.OpenFile(AM_OS_STRING("data/tests/file_read_test.txt"), eFileOpenMode_Read);
+            auto file = fileSystem.OpenFile(AM_OS_STRING("data/tests/file_read_test.txt"), eFileOpenMode_Read);
 
-        AM_EXPECT(file->IsValid());
-        AM_EXPECT(file->GetPath() == fileSystem.ResolvePath(AM_OS_STRING("data/tests/file_read_test.txt")));
-        AM_EXPECT(file->Length() == 2);
+            AM_EXPECT(file->IsValid());
+            AM_EXPECT(file->GetPath() == fileSystem.ResolvePath(AM_OS_STRING("data/tests/file_read_test.txt")));
+            AM_EXPECT(file->Length() == 2);
 
-        AM_EXPECT(fileSystem.OpenFile(AM_OS_STRING("some_random_file.ext")) == nullptr);
-    }
+            AM_EXPECT(fileSystem.OpenFile(AM_OS_STRING("some_random_file.ext")) == nullptr);
+            }
 
-    // Compressed file
-    {
-        PackageFileSystem fileSystem;
-        fileSystem.SetPlatformFileSystem<DiskFileSystem>();
-        fileSystem.SetBasePath(AM_OS_STRING("./samples/assets_compressed.ampk"));
+            // Compressed file
+        {
+            PackageFileSystem fileSystem;
+            fileSystem.SetPlatformFileSystem<DiskFileSystem>();
+            fileSystem.SetBasePath(AM_OS_STRING("./samples/assets_compressed.ampk"));
 
-        fileSystem.StartOpenFileSystem();
-        while (!fileSystem.TryFinalizeOpenFileSystem())
+            fileSystem.StartOpenFileSystem();
+            while (!fileSystem.TryFinalizeOpenFileSystem())
             Thread::Sleep(1);
 
-        auto file = fileSystem.OpenFile(AM_OS_STRING("data/tests/file_read_test.txt"), eFileOpenMode_Read);
+            auto file = fileSystem.OpenFile(AM_OS_STRING("data/tests/file_read_test.txt"), eFileOpenMode_Read);
 
-        AM_EXPECT(file->IsValid());
-        AM_EXPECT(file->GetPath() == fileSystem.ResolvePath(AM_OS_STRING("data/tests/file_read_test.txt")));
-        AM_EXPECT(file->Length() == 2);
+            AM_EXPECT(file->IsValid());
+            AM_EXPECT(file->GetPath() == fileSystem.ResolvePath(AM_OS_STRING("data/tests/file_read_test.txt")));
+            AM_EXPECT(file->Length() == 2);
 
-        AM_EXPECT(fileSystem.OpenFile(AM_OS_STRING("some_random_file.ext")) == nullptr);
-    }
-}
+            AM_EXPECT(fileSystem.OpenFile(AM_OS_STRING("some_random_file.ext")) == nullptr);
+            }
+        }
+    };
+
+    // PackageItemFile tests use DiskFileSystem paths that only work on desktop
+    AM_REGISTER_TEST_DESKTOP_ONLY(fs_package_item_file, can_be_opened);
+} // namespace SparkyStudios::Audio::Amplitude::Tests

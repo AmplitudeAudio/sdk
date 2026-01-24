@@ -12,16 +12,15 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+// Android-specific implementation of PlatformTestCase
+// This file is compiled only on Android
+
 #include "PlatformTestCase.h"
 
-#include <SparkyStudios/Audio/Amplitude/IO/DiskFileSystem.h>
-
 #if AM_PLATFORM_ANDROID
-#include <SparkyStudios/Audio/Amplitude/IO/Android/AssetManagerFileSystem.h>
-#endif
 
-// iOS platform has its own implementation in PlatformTestCase_iOS.mm
-#if !AM_PLATFORM_IOS
+#include <SparkyStudios/Audio/Amplitude/IO/Android/AssetManagerFileSystem.h>
+#include <SparkyStudios/Audio/Amplitude/IO/DiskFileSystem.h>
 
 namespace SparkyStudios::Audio::Amplitude::Tests
 {
@@ -30,52 +29,22 @@ namespace SparkyStudios::Audio::Amplitude::Tests
 
     std::shared_ptr<FileSystem> CreatePlatformFileSystem()
     {
-#if AM_PLATFORM_ANDROID
         if (g_platformTestConfig.assetManager != nullptr)
             return ampoolshared(eMemoryPoolKind_IO, AssetManagerFileSystem, g_platformTestConfig.assetManager);
 
         // Fallback for Android with direct file access (e.g., rooted devices, testing)
         amLogWarning("Android: No AssetManager configured, falling back to DiskFileSystem");
         return ampoolshared(eMemoryPoolKind_IO, DiskFileSystem);
-
-#else
-        // Desktop platforms use DiskFileSystem
-        return ampoolshared(eMemoryPoolKind_IO, DiskFileSystem);
-#endif
     }
 
     AmOsString GetPlatformAssetsBasePath()
     {
-#if AM_PLATFORM_ANDROID
         // Android AssetManager uses paths relative to assets/ folder
         if (g_platformTestConfig.assetsSubPath != nullptr)
             return AM_OS_STRING(g_platformTestConfig.assetsSubPath);
 
         return AM_OS_STRING("assets");
-
-#elif AM_PLATFORM_IOS
-        // iOS uses the bundle path provided by the app
-        if (g_platformTestConfig.bundlePath != nullptr)
-        {
-            AmOsString basePath = AM_OS_STRING(g_platformTestConfig.bundlePath);
-            basePath += AM_OS_STRING("/");
-
-            if (g_platformTestConfig.assetsSubPath != nullptr)
-                basePath += AM_OS_STRING(g_platformTestConfig.assetsSubPath);
-            else
-                basePath += AM_OS_STRING("assets");
-
-            return basePath;
-        }
-        // Fallback if bundle path is not set
-        amLogWarning("iOS: No bundle path configured, using default path");
-        return AM_OS_STRING("./assets");
-
-#else
-        // Desktop uses relative path from working directory
-        return AM_OS_STRING("./samples/assets");
-#endif
     }
 } // namespace SparkyStudios::Audio::Amplitude::Tests
 
-#endif // !AM_PLATFORM_IOS
+#endif // AM_PLATFORM_ANDROID

@@ -17,51 +17,58 @@
 #include <DSP/Filters/FlangerFilter.h>
 
 #include "SimpleTestCase.h"
+#include "TestRegistry.h"
 
 using namespace SparkyStudios::Audio::Amplitude;
 
 namespace SparkyStudios::Audio::Amplitude::Tests
 {
-    void SimpleTestCase::Run()
+    AM_TEST_CASE(SimpleTestCase, dsp_filters, can_register_and_create_flanger_filter)
     {
-        auto filter = amshared(FlangerFilter);
-        filter->Initialize(0.005f, 10.0f);
+    public:
+        void Run() override
+        {
+            auto filter = amshared(FlangerFilter);
+            filter->Initialize(0.005f, 10.0f);
 
-        Filter::Unregister(Filter::Find("Flanger"));
-        Filter::Register(filter);
+            Filter::Unregister(Filter::Find("Flanger"));
+            Filter::Register(filter);
 
-        AM_EXPECT_NOT(Filter::Find("Flanger") == nullptr);
-        AM_EXPECT(Filter::Find("Flanger")->GetName() == "Flanger");
+            AM_EXPECT_NOT(Filter::Find("Flanger") == nullptr);
+            AM_EXPECT(Filter::Find("Flanger")->GetName() == "Flanger");
 
-        auto instance = Filter::Construct("Flanger");
-        AM_EXPECT_NOT(instance == nullptr);
+            auto instance = Filter::Construct("Flanger");
+            AM_EXPECT_NOT(instance == nullptr);
 
-        // Test parameter count
-        AM_EXPECT(filter->GetParameterCount() == FlangerFilter::ATTRIBUTE_LAST);
-        AM_EXPECT(filter->GetParameterCount() == 3);
+            // Test parameter count
+            AM_EXPECT(filter->GetParameterCount() == FlangerFilter::ATTRIBUTE_LAST);
+            AM_EXPECT(filter->GetParameterCount() == 3);
 
-        // Test parameter names
-        AM_EXPECT(filter->GetParameterName(FlangerFilter::ATTRIBUTE_WET) == "Wet");
-        AM_EXPECT(filter->GetParameterName(FlangerFilter::ATTRIBUTE_DELAY) == "Delay");
-        AM_EXPECT(filter->GetParameterName(FlangerFilter::ATTRIBUTE_FREQUENCY) == "Frequency");
+            // Test parameter names
+            AM_EXPECT(filter->GetParameterName(FlangerFilter::ATTRIBUTE_WET) == "Wet");
+            AM_EXPECT(filter->GetParameterName(FlangerFilter::ATTRIBUTE_DELAY) == "Delay");
+            AM_EXPECT(filter->GetParameterName(FlangerFilter::ATTRIBUTE_FREQUENCY) == "Frequency");
 
-        // Test parameter types
-        AM_EXPECT(filter->GetParameterType(FlangerFilter::ATTRIBUTE_WET) == eParameterType_Float);
-        AM_EXPECT(filter->GetParameterType(FlangerFilter::ATTRIBUTE_DELAY) == eParameterType_Float);
-        AM_EXPECT(filter->GetParameterType(FlangerFilter::ATTRIBUTE_FREQUENCY) == eParameterType_Float);
+            // Test parameter types
+            AM_EXPECT(filter->GetParameterType(FlangerFilter::ATTRIBUTE_WET) == eParameterType_Float);
+            AM_EXPECT(filter->GetParameterType(FlangerFilter::ATTRIBUTE_DELAY) == eParameterType_Float);
+            AM_EXPECT(filter->GetParameterType(FlangerFilter::ATTRIBUTE_FREQUENCY) == eParameterType_Float);
 
-        // Test WET parameter boundaries
-        AM_EXPECT(filter->GetParameterMin(FlangerFilter::ATTRIBUTE_WET) == 0.0f);
-        AM_EXPECT(filter->GetParameterMax(FlangerFilter::ATTRIBUTE_WET) == 1.0f);
+            // Test WET parameter boundaries
+            AM_EXPECT(filter->GetParameterMin(FlangerFilter::ATTRIBUTE_WET) == 0.0f);
+            AM_EXPECT(filter->GetParameterMax(FlangerFilter::ATTRIBUTE_WET) == 1.0f);
 
-        // Test DELAY parameter boundaries
-        AM_EXPECT(filter->GetParameterMin(FlangerFilter::ATTRIBUTE_DELAY) == 0.001f);
-        AM_EXPECT(filter->GetParameterMax(FlangerFilter::ATTRIBUTE_DELAY) == 0.1f);
+            // Test DELAY parameter boundaries
+            AM_EXPECT(filter->GetParameterMin(FlangerFilter::ATTRIBUTE_DELAY) == 0.001f);
+            AM_EXPECT(filter->GetParameterMax(FlangerFilter::ATTRIBUTE_DELAY) == 0.1f);
 
-        // Test FREQUENCY parameter boundaries
-        AM_EXPECT(filter->GetParameterMin(FlangerFilter::ATTRIBUTE_FREQUENCY) == 0.1f);
-        AM_EXPECT(filter->GetParameterMax(FlangerFilter::ATTRIBUTE_FREQUENCY) == 100.0f);
+            // Test FREQUENCY parameter boundaries
+            AM_EXPECT(filter->GetParameterMin(FlangerFilter::ATTRIBUTE_FREQUENCY) == 0.1f);
+            AM_EXPECT(filter->GetParameterMax(FlangerFilter::ATTRIBUTE_FREQUENCY) == 100.0f);
 
-        Filter::Unregister(filter);
-    }
+            Filter::Unregister(filter);
+        }
+    };
+
+    AM_REGISTER_TEST(dsp_filters, can_register_and_create_flanger_filter);
 } // namespace SparkyStudios::Audio::Amplitude::Tests

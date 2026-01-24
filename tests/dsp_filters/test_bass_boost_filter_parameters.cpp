@@ -17,55 +17,62 @@
 #include <DSP/Filters/BassBoostFilter.h>
 
 #include "SimpleTestCase.h"
+#include "TestRegistry.h"
 
 using namespace SparkyStudios::Audio::Amplitude;
 
 namespace SparkyStudios::Audio::Amplitude::Tests
 {
-    void SimpleTestCase::Run()
+    AM_TEST_CASE(SimpleTestCase, dsp_filters, bass_boost_filter_parameters)
     {
-        auto filter = amshared(BassBoostFilter);
-        auto result = filter->Initialize(-1.0f);
-        AM_EXPECT_EQ(result, eErrorCode_InvalidParameter);
+    public:
+        void Run() override
+        {
+            auto filter = amshared(BassBoostFilter);
+            auto result = filter->Initialize(-1.0f);
+            AM_EXPECT_EQ(result, eErrorCode_InvalidParameter);
 
-        result = filter->Initialize(2.0f);
-        AM_EXPECT_EQ(result, eErrorCode_Success);
+            result = filter->Initialize(2.0f);
+            AM_EXPECT_EQ(result, eErrorCode_Success);
 
-        auto instance = filter->CreateInstance();
-        AM_EXPECT_NOT(instance == nullptr);
+            auto instance = filter->CreateInstance();
+            AM_EXPECT_NOT(instance == nullptr);
 
-        // Test parameter get/set
-        instance->SetParameter(BassBoostFilter::ATTRIBUTE_WET, 0.5f);
-        AM_EXPECT_EQ(instance->GetParameter(BassBoostFilter::ATTRIBUTE_WET), 0.5f);
+            // Test parameter get/set
+            instance->SetParameter(BassBoostFilter::ATTRIBUTE_WET, 0.5f);
+            AM_EXPECT_EQ(instance->GetParameter(BassBoostFilter::ATTRIBUTE_WET), 0.5f);
 
-        instance->SetParameter(BassBoostFilter::ATTRIBUTE_BOOST, 5.0f);
-        AM_EXPECT_EQ(instance->GetParameter(BassBoostFilter::ATTRIBUTE_BOOST), 5.0f);
+            instance->SetParameter(BassBoostFilter::ATTRIBUTE_BOOST, 5.0f);
+            AM_EXPECT_EQ(instance->GetParameter(BassBoostFilter::ATTRIBUTE_BOOST), 5.0f);
 
-        // Test with full wet
-        instance->SetParameter(BassBoostFilter::ATTRIBUTE_WET, 1.0f);
-        AM_EXPECT_EQ(instance->GetParameter(BassBoostFilter::ATTRIBUTE_WET), 1.0f);
+            // Test with full wet
+            instance->SetParameter(BassBoostFilter::ATTRIBUTE_WET, 1.0f);
+            AM_EXPECT_EQ(instance->GetParameter(BassBoostFilter::ATTRIBUTE_WET), 1.0f);
 
-        // Test with dry signal
-        instance->SetParameter(BassBoostFilter::ATTRIBUTE_WET, 0.0f);
-        AM_EXPECT_EQ(instance->GetParameter(BassBoostFilter::ATTRIBUTE_WET), 0.0f);
+            // Test with dry signal
+            instance->SetParameter(BassBoostFilter::ATTRIBUTE_WET, 0.0f);
+            AM_EXPECT_EQ(instance->GetParameter(BassBoostFilter::ATTRIBUTE_WET), 0.0f);
 
-        // Test with incorrect param
-        instance->SetParameter(BassBoostFilter::ATTRIBUTE_LAST, 5.0f);
-        AM_EXPECT_EQ(instance->GetParameter(BassBoostFilter::ATTRIBUTE_LAST), 0.0f);
+            // Test with incorrect param
+            instance->SetParameter(BassBoostFilter::ATTRIBUTE_LAST, 5.0f);
+            AM_EXPECT_EQ(instance->GetParameter(BassBoostFilter::ATTRIBUTE_LAST), 0.0f);
 
-        AM_EXPECT_EQ(filter->GetParameterCount(), 2);
+            AM_EXPECT_EQ(filter->GetParameterCount(), 2);
 
-        AM_EXPECT_EQ(filter->GetParameterMin(BassBoostFilter::ATTRIBUTE_WET), 0.0f);
-        AM_EXPECT_EQ(filter->GetParameterMin(BassBoostFilter::ATTRIBUTE_BOOST), 0.0f);
+            AM_EXPECT_EQ(filter->GetParameterMin(BassBoostFilter::ATTRIBUTE_WET), 0.0f);
+            AM_EXPECT_EQ(filter->GetParameterMin(BassBoostFilter::ATTRIBUTE_BOOST), 0.0f);
 
-        AM_EXPECT_EQ(filter->GetParameterMax(BassBoostFilter::ATTRIBUTE_WET), 1.0f);
-        AM_EXPECT_EQ(filter->GetParameterMax(BassBoostFilter::ATTRIBUTE_BOOST), 10.0f);
+            AM_EXPECT_EQ(filter->GetParameterMax(BassBoostFilter::ATTRIBUTE_WET), 1.0f);
+            AM_EXPECT_EQ(filter->GetParameterMax(BassBoostFilter::ATTRIBUTE_BOOST), 10.0f);
 
-        AM_EXPECT_EQ(filter->GetParameterType(BassBoostFilter::ATTRIBUTE_WET), eParameterType_Float);
-        AM_EXPECT_EQ(filter->GetParameterType(BassBoostFilter::ATTRIBUTE_BOOST), eParameterType_Float);
+            AM_EXPECT_EQ(filter->GetParameterType(BassBoostFilter::ATTRIBUTE_WET), eParameterType_Float);
+            AM_EXPECT_EQ(filter->GetParameterType(BassBoostFilter::ATTRIBUTE_BOOST), eParameterType_Float);
 
-        AM_EXPECT_EQ(filter->GetParameterName(BassBoostFilter::ATTRIBUTE_WET), "Wet");
-        AM_EXPECT_EQ(filter->GetParameterName(BassBoostFilter::ATTRIBUTE_BOOST), "Boost");
-        AM_EXPECT_EQ(filter->GetParameterName(BassBoostFilter::ATTRIBUTE_LAST), "Unknown");
-    }
+            AM_EXPECT_EQ(filter->GetParameterName(BassBoostFilter::ATTRIBUTE_WET), "Wet");
+            AM_EXPECT_EQ(filter->GetParameterName(BassBoostFilter::ATTRIBUTE_BOOST), "Boost");
+            AM_EXPECT_EQ(filter->GetParameterName(BassBoostFilter::ATTRIBUTE_LAST), "Unknown");
+        }
+    };
+
+    AM_REGISTER_TEST(dsp_filters, bass_boost_filter_parameters);
 } // namespace SparkyStudios::Audio::Amplitude::Tests

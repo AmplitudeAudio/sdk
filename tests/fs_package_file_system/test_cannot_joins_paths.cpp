@@ -15,17 +15,28 @@
 #include <SparkyStudios/Audio/Amplitude/Amplitude.h>
 
 #include "SimpleTestCase.h"
+#include "TestRegistry.h"
 
 using namespace SparkyStudios::Audio::Amplitude;
 
-void SimpleTestCase::Run()
+namespace SparkyStudios::Audio::Amplitude::Tests
 {
-    PackageFileSystem fileSystem;
-    fileSystem.SetPlatformFileSystem<DiskFileSystem>();
+    AM_TEST_CASE(SimpleTestCase, fs_package_file_system, cannot_joins_paths)
+    {
+    public:
+        void Run() override
+        {
+            PackageFileSystem fileSystem;
+            fileSystem.SetPlatformFileSystem<DiskFileSystem>();
 
-    AM_EXPECT(fileSystem.Join({ AM_OS_STRING("sounds"), AM_OS_STRING("test.wav") }) == AM_OS_STRING("sounds/test.wav"));
-    AM_EXPECT(fileSystem.Join({ AM_OS_STRING("../sample_project/sounds/../test.wav") }) == AM_OS_STRING("../sample_project/test.wav"));
-    AM_EXPECT(
-        fileSystem.Join({ AM_OS_STRING("./sounds"), AM_OS_STRING("../sounds/"), AM_OS_STRING("./test.wav") }) ==
-        AM_OS_STRING("sounds/test.wav"));
-}
+            AM_EXPECT(fileSystem.Join({ AM_OS_STRING("sounds"), AM_OS_STRING("test.wav") }) == AM_OS_STRING("sounds/test.wav"));
+            AM_EXPECT(fileSystem.Join({ AM_OS_STRING("../sample_project/sounds/../test.wav") }) == AM_OS_STRING("../sample_project/test.wav"));
+            AM_EXPECT(
+            fileSystem.Join({ AM_OS_STRING("./sounds"), AM_OS_STRING("../sounds/"), AM_OS_STRING("./test.wav") }) ==
+            AM_OS_STRING("sounds/test.wav"));
+        }
+    };
+
+    // PackageFileSystem tests use DiskFileSystem paths that only work on desktop
+    AM_REGISTER_TEST_DESKTOP_ONLY(fs_package_file_system, cannot_joins_paths);
+} // namespace SparkyStudios::Audio::Amplitude::Tests

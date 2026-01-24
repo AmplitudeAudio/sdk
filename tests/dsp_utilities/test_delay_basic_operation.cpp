@@ -17,51 +17,58 @@
 #include <DSP/Delay.h>
 
 #include "DSPTestCase.h"
+#include "TestRegistry.h"
 
 namespace SparkyStudios::Audio::Amplitude::Tests
 {
-    void DSPTestCase::Run()
+    AM_TEST_CASE(DSPTestCase, dsp_utilities, delay_basic_operation)
     {
-        constexpr AmSize maxDelay = 1000;
-        constexpr AmSize framesCount = 256;
+    public:
+        void Run() override
+        {
+            constexpr AmSize maxDelay = 1000;
+            constexpr AmSize framesCount = 256;
 
-        Delay delay(maxDelay, framesCount);
+            Delay delay(maxDelay, framesCount);
 
-        // Verify initialization
-        AM_EXPECT(delay.GetMaxDelay() == maxDelay);
-        AM_EXPECT(delay.GetDelayInSamples() == maxDelay + framesCount);
+            // Verify initialization
+            AM_EXPECT(delay.GetMaxDelay() == maxDelay);
+            AM_EXPECT(delay.GetDelayInSamples() == maxDelay + framesCount);
 
-        // Create test channel
-        AudioBuffer buffer(framesCount, 1);
-        AudioBufferChannel& channel = buffer[0];
+            // Create test channel
+            AudioBuffer buffer(framesCount, 1);
+            AudioBufferChannel& channel = buffer[0];
 
-        // Fill with impulse
-        channel[0] = 1.0f;
-        for (AmSize i = 1; i < framesCount; ++i)
+            // Fill with impulse
+            channel[0] = 1.0f;
+            for (AmSize i = 1; i < framesCount; ++i)
             channel[i] = 0.0f;
 
-        // Insert into delay line
-        delay.Insert(channel);
+            // Insert into delay line
+            delay.Insert(channel);
 
-        // Create output channel
-        AudioBuffer output(framesCount, 1);
-        AudioBufferChannel& outChannel = output[0];
+            // Create output channel
+            AudioBuffer output(framesCount, 1);
+            AudioBufferChannel& outChannel = output[0];
 
-        // Process with delay
-        constexpr AmSize delaySamples = 100;
-        delay.Process(outChannel, delaySamples);
+            // Process with delay
+            constexpr AmSize delaySamples = 100;
+            delay.Process(outChannel, delaySamples);
 
-        // First output should be mostly zeros since we're reading delayed data
-        AmSize firstValueIndex = 0;
-        for (AmSize i = 0; i < framesCount; ++i)
+            // First output should be mostly zeros since we're reading delayed data
+            AmSize firstValueIndex = 0;
+            for (AmSize i = 0; i < framesCount; ++i)
         {
             if (std::abs(outChannel[i]) > kEpsilon)
-            {
-                firstValueIndex = i;
-                break;
+        {
+            firstValueIndex = i;
+            break;
             }
-        }
+            }
 
-        AM_EXPECT(firstValueIndex == delaySamples); // First read should be zeros
-    }
+            AM_EXPECT(firstValueIndex == delaySamples); // First read should be zeros
+        }
+    };
+
+    AM_REGISTER_TEST(dsp_utilities, delay_basic_operation);
 } // namespace SparkyStudios::Audio::Amplitude::Tests

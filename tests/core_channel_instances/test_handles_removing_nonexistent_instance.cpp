@@ -15,41 +15,48 @@
 #include <SparkyStudios/Audio/Amplitude/Amplitude.h>
 
 #include "EngineTestCase.h"
+#include "TestRegistry.h"
 
 using namespace SparkyStudios::Audio::Amplitude;
 
 namespace SparkyStudios::Audio::Amplitude::Tests
 {
-    void EngineTestCase::Run()
+    AM_TEST_CASE(EngineTestCase, core_channel_instances, handles_removing_nonexistent_instance)
     {
-        SoundHandle test_sound_01 = amEngine->GetSoundHandle("test_sound_01");
+    public:
+        void Run() override
+        {
+            SoundHandle test_sound_01 = amEngine->GetSoundHandle("test_sound_01");
 
-        Channel channel = amEngine->Play(test_sound_01);
-        amEngine->WaitUntilFrames(2);
+            Channel channel = amEngine->Play(test_sound_01);
+            amEngine->WaitUntilFrames(2);
 
-        AM_EXPECT(channel.Valid());
+            AM_EXPECT(channel.Valid());
 
-        // Enable instancing
-        channel.EnableInstancing(eChannelInstanceMode_Blended);
+            // Enable instancing
+            channel.EnableInstancing(eChannelInstanceMode_Blended);
 
-        // Add some instances
-        ChannelInstance instance1 = channel.AddInstance({ 100.0f, 0.0f, 50.0f });
-        ChannelInstance instance2 = channel.AddInstance({ 120.0f, 0.0f, 80.0f });
+            // Add some instances
+            ChannelInstance instance1 = channel.AddInstance({ 100.0f, 0.0f, 50.0f });
+            ChannelInstance instance2 = channel.AddInstance({ 120.0f, 0.0f, 80.0f });
 
-        AM_EXPECT(channel.GetInstanceCount() == 2);
+            AM_EXPECT(channel.GetInstanceCount() == 2);
 
-        // Try to remove a non-existent instance - should not crash
-        channel.RemoveInstance(999999);
+            // Try to remove a non-existent instance - should not crash
+            channel.RemoveInstance(999999);
 
-        // Instance count should remain unchanged
-        AM_EXPECT(channel.GetInstanceCount() == 2);
+            // Instance count should remain unchanged
+            AM_EXPECT(channel.GetInstanceCount() == 2);
 
-        // Try to remove the same instance twice
-        channel.RemoveInstance(instance1.GetId());
-        AM_EXPECT(channel.GetInstanceCount() == 1);
+            // Try to remove the same instance twice
+            channel.RemoveInstance(instance1.GetId());
+            AM_EXPECT(channel.GetInstanceCount() == 1);
 
-        // Removing again should not crash or change count
-        channel.RemoveInstance(instance1.GetId());
-        AM_EXPECT(channel.GetInstanceCount() == 1);
-    }
+            // Removing again should not crash or change count
+            channel.RemoveInstance(instance1.GetId());
+            AM_EXPECT(channel.GetInstanceCount() == 1);
+        }
+    };
+
+    AM_REGISTER_TEST(core_channel_instances, handles_removing_nonexistent_instance);
 } // namespace SparkyStudios::Audio::Amplitude::Tests

@@ -17,20 +17,30 @@
 #include <Core/EntityInternalState.h>
 
 #include "SimpleTestCase.h"
+#include "TestRegistry.h"
 
 using namespace SparkyStudios::Audio::Amplitude;
 
-void SimpleTestCase::Run()
+namespace SparkyStudios::Audio::Amplitude::Tests
 {
-    EntityInternalState state;
-    state.SetId(1);
+    AM_TEST_CASE(SimpleTestCase, core_entity, cannot_create_valid_wrapper_without_state)
+    {
+    public:
+        void Run() override
+        {
+            EntityInternalState state;
+            state.SetId(1);
 
-    fplutil::intrusive_list entity_list(&EntityInternalState::node);
-    entity_list.push_back(state);
+            fplutil::intrusive_list entity_list(&EntityInternalState::node);
+            entity_list.push_back(state);
 
-    Entity wrapper2(nullptr);
-    AM_EXPECT_NOT(wrapper2.Valid());
+            Entity wrapper2(nullptr);
+            AM_EXPECT_NOT(wrapper2.Valid());
 
-    Entity wrapper3;
-    AM_EXPECT_NOT(wrapper3.Valid());
-}
+            Entity wrapper3;
+            AM_EXPECT_NOT(wrapper3.Valid());
+        }
+    };
+
+    AM_REGISTER_TEST(core_entity, cannot_create_valid_wrapper_without_state);
+} // namespace SparkyStudios::Audio::Amplitude::Tests

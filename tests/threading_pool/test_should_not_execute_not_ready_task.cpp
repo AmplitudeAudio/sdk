@@ -16,22 +16,32 @@
 
 #include "NeverReadyPoolTask.h"
 #include "SimpleTestCase.h"
+#include "TestRegistry.h"
 
 using namespace SparkyStudios::Audio::Amplitude;
 
-void SimpleTestCase::Run()
+namespace SparkyStudios::Audio::Amplitude::Tests
 {
-    Thread::Pool pool;
-    pool.Init(1);
+    AM_TEST_CASE(SimpleTestCase, threading_pool, should_not_execute_not_ready_task)
+    {
+    public:
+        void Run() override
+        {
+            Thread::Pool pool;
+            pool.Init(1);
 
-    auto task = amshared(NeverReadyPoolTask);
-    AM_EXPECT_NOT(task->IsExecuted());
+            auto task = amshared(NeverReadyPoolTask);
+            AM_EXPECT_NOT(task->IsExecuted());
 
-    pool.AddTask(task);
+            pool.AddTask(task);
 
-    Thread::Sleep(50); // Wait for the task to complete
-    AM_EXPECT_NOT(task->IsExecuted());
+            Thread::Sleep(50); // Wait for the task to complete
+            AM_EXPECT_NOT(task->IsExecuted());
 
-    AM_EXPECT(pool.HasTasks());
-    AM_EXPECT_EQ(pool.GetTaskCount(), 1);
-}
+            AM_EXPECT(pool.HasTasks());
+            AM_EXPECT_EQ(pool.GetTaskCount(), 1);
+        }
+    };
+
+    AM_REGISTER_TEST(threading_pool, should_not_execute_not_ready_task);
+} // namespace SparkyStudios::Audio::Amplitude::Tests

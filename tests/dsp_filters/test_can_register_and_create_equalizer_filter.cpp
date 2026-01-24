@@ -17,27 +17,34 @@
 #include <DSP/Filters/EqualizerFilter.h>
 
 #include "SimpleTestCase.h"
+#include "TestRegistry.h"
 
 using namespace SparkyStudios::Audio::Amplitude;
 
 namespace SparkyStudios::Audio::Amplitude::Tests
 {
-    void SimpleTestCase::Run()
+    AM_TEST_CASE(SimpleTestCase, dsp_filters, can_register_and_create_equalizer_filter)
     {
-        auto filter = amshared(EqualizerFilter);
-        filter->Initialize(1.0f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f);
-
-        Filter::Unregister(Filter::Find("Equalizer"));
-        Filter::Register(filter);
-
-        AM_EXPECT_NOT(Filter::Find("Equalizer") == nullptr);
-        AM_EXPECT(Filter::Find("Equalizer")->GetName() == "Equalizer");
-
+    public:
+        void Run() override
         {
-            auto instance = Filter::Construct("Equalizer");
-            AM_EXPECT_NOT(instance == nullptr);
-        }
+            auto filter = amshared(EqualizerFilter);
+            filter->Initialize(1.0f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f);
 
-        Filter::Unregister(filter);
-    }
+            Filter::Unregister(Filter::Find("Equalizer"));
+            Filter::Register(filter);
+
+            AM_EXPECT_NOT(Filter::Find("Equalizer") == nullptr);
+            AM_EXPECT(Filter::Find("Equalizer")->GetName() == "Equalizer");
+
+            {
+                auto instance = Filter::Construct("Equalizer");
+                AM_EXPECT_NOT(instance == nullptr);
+            }
+
+            Filter::Unregister(filter);
+        }
+    };
+
+    AM_REGISTER_TEST(dsp_filters, can_register_and_create_equalizer_filter);
 } // namespace SparkyStudios::Audio::Amplitude::Tests

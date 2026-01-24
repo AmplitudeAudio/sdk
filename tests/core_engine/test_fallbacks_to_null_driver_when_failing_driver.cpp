@@ -15,22 +15,29 @@
 #include <SparkyStudios/Audio/Amplitude/Amplitude.h>
 
 #include "EngineTestCase.h"
+#include "TestRegistry.h"
 #include "FailingDriver.h"
 
 using namespace SparkyStudios::Audio::Amplitude;
 
 namespace SparkyStudios::Audio::Amplitude::Tests
 {
-    void EngineTestCase::Run()
+    AM_TEST_CASE(EngineTestCase, core_engine, fallbacks_to_null_driver_when_failing_driver)
     {
-        auto failing = Engine::RegisterExtension<FailingDriver>();
+    public:
+        void Run() override
+        {
+            auto failing = Engine::RegisterExtension<FailingDriver>();
 
-        AM_EXPECT(Deinitialize());
-        AM_EXPECT(amEngine->Initialize(AM_OS_STRING("tests.invalid.failing_driver.config.amconfig")));
-        AM_EXPECT(amEngine->GetDriver()->GetName() != "failing");
-        AM_EXPECT(amEngine->GetDriver()->GetName() == "null");
-        AM_EXPECT(Deinitialize());
+            AM_EXPECT(Deinitialize());
+            AM_EXPECT(amEngine->Initialize(AM_OS_STRING("tests.invalid.failing_driver.config.amconfig")));
+            AM_EXPECT(amEngine->GetDriver()->GetName() != "failing");
+            AM_EXPECT(amEngine->GetDriver()->GetName() == "null");
+            AM_EXPECT(Deinitialize());
 
-        Engine::UnregisterExtension(failing);
-    }
+            Engine::UnregisterExtension(failing);
+        }
+    };
+
+    AM_REGISTER_TEST(core_engine, fallbacks_to_null_driver_when_failing_driver);
 } // namespace SparkyStudios::Audio::Amplitude::Tests

@@ -16,21 +16,28 @@
 
 #include "EngineTestCase.h"
 #include "FailingDriver.h"
+#include "TestRegistry.h"
 
 using namespace SparkyStudios::Audio::Amplitude;
 
 namespace SparkyStudios::Audio::Amplitude::Tests
 {
-    void EngineTestCase::Run()
+    AM_TEST_CASE(EngineTestCase, core_engine, cannot_initialize_with_failing_driver)
     {
-        auto failing = Engine::RegisterExtension<FailingDriver>();
+    public:
+        void Run() override
+        {
+            auto failing = Engine::RegisterExtension<FailingDriver>();
 
-        AM_EXPECT(Deinitialize());
-        Engine::UnregisterDefaultExtensions();
+            AM_EXPECT(Deinitialize());
+            Engine::UnregisterDefaultExtensions();
 
-        AM_EXPECT_NOT(amEngine->Initialize(AM_OS_STRING("tests.invalid.failing_driver.config.amconfig")));
-        AM_EXPECT(Deinitialize());
+            AM_EXPECT_NOT(amEngine->Initialize(AM_OS_STRING("tests.invalid.failing_driver.config.amconfig")));
+            AM_EXPECT(Deinitialize());
 
-        Engine::UnregisterExtension(failing);
-    }
+            Engine::UnregisterExtension(failing);
+        }
+    };
+
+    AM_REGISTER_TEST(core_engine, cannot_initialize_with_failing_driver);
 } // namespace SparkyStudios::Audio::Amplitude::Tests

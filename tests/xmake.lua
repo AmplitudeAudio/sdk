@@ -12,154 +12,65 @@
 -- See the License for the specific language governing permissions and
 -- limitations under the License.
 
--- Include mobile test runners (platform-specific)
+--
+-- Amplitude Audio SDK Test Infrastructure
+--
+-- This file orchestrates test runners for different platforms:
+--   - Desktop (Windows, Linux, macOS):  tests/runners/desktop/
+--   - iOS:                              tests/runners/ios/
+--   - Android:                          tests/runners/android/ (uses Gradle/CMake)
+--
+-- Usage:
+--   Desktop: xmake build amplitude_tests && ./amplitude_tests -v
+--   iOS:     xmake build AmplitudeTests_iOS
+--   Android: cd tests/runners/android && ./gradlew assembleDebug
+--
+
+-- Include platform-specific test runners
 if is_plat("iphoneos") then
-    includes("ios_runner/xmake.lua")
-end
+    -- iOS test runner (Xcode application)
+    includes("runners/ios/xmake.lua")
+elseif not is_plat("android") then
+    -- Desktop test runner (CLI executable)
+    -- Note: Android uses Gradle/CMake build system, not XMake
 
--- Desktop-only targets (tools and test infrastructure that require native execution)
-if not is_plat("iphoneos", "android") then
+    -- Desktop-only targets (tools and test infrastructure)
+    target("generate_test_package")
+        set_kind("phony")
 
-target("generate_test_package")
-  set_kind("phony")
+        add_deps("ampk", "build_sample_project")
 
-  add_deps("ampk", "build_sample_project")
+        on_build(function(target)
+            import("core.project.config")
+            import("core.project.project")
+            import("lib.detect.find_tool")
 
-  on_build(function(target)
-    import("core.project.config")
-    import("core.project.project")
-    import("lib.detect.find_tool")
+            local ampk = project.target("ampk")
 
-    local ampk = project.target("ampk")
+            local program = ampk:targetfile()
+            if program then
+                local assets_dir = path.join(path.absolute(config.builddir()), "samples/assets")
+                local output_uncompressed_dir = path.join(path.absolute(config.builddir()), "samples/assets_uncompressed.ampk")
+                local output_compressed_dir = path.join(path.absolute(config.builddir()), "samples/assets_compressed.ampk")
 
-    local program = ampk:targetfile()
-    if program then
-      local assets_dir = path.join(path.absolute(config.builddir()), "samples/assets")
-      local output_uncompressed_dir = path.join(path.absolute(config.builddir()), "samples/assets_uncompressed.ampk")
-      local output_compressed_dir = path.join(path.absolute(config.builddir()), "samples/assets_compressed.ampk")
-
-      os.exec("%s -q -c 0 %s %s", program, assets_dir, output_uncompressed_dir)
-      os.exec("%s -q -c 1 %s %s", program, assets_dir, output_compressed_dir)
-    else
-      print("ampk not found.")
-    end
-  end)
-target_end()
-
-target("test_plugin")
-  set_kind("shared")
-  set_targetdir("$(builddir)/$(plat)/$(arch)/$(mode)/shared")
-  add_defines("AM_BUILDSYSTEM_BUILDING_PLUGIN")
-
-  add_deps("Amplitude::Shared")
-
-  add_files("test_plugin/*.cpp")
-target_end()
-
-target("common_test_static")
-  set_kind("object")
-  set_policy("build.fence", true)
-
-  add_deps("Amplitude::Static", "build_sample_project", "generate_test_package", "ampk")
-
-  add_files("common/*.cpp")
-
-  add_includedirs("common", { public = true })
-  add_includedirs("$(projectdir)/src", { public = true })
-  add_includedirs("$(builddir)/include", { public = true })
-target_end()
-
-target("common_test_shared")
-  set_kind("object")
-  set_policy("build.fence", true)
-
-  add_deps("Amplitude::Shared", "build_sample_project", "generate_test_package", "ampk")
-
-  add_files("common/*.cpp")
-
-  add_includedirs("common", { public = true })
-  add_includedirs("$(projectdir)/src", { public = true })
-  add_includedirs("$(builddir)/include", { public = true })
-target_end()
-
-end -- Desktop-only targets
-
--- Note: Android uses Gradle/CMake build system
--- See tests/android_runner/ for Android test runner
-
--- Desktop test targets (CLI executables)
--- These are not built on mobile platforms
-if not is_plat("iphoneos", "android") then
-
-for _, filepath in ipairs(os.dirs("**")) do
-  if filepath == "common" or filepath == "ios_runner" or filepath == "android_runner" then
-    -- Skip common and mobile runner directories
-    goto continue
-  end
-
-  local name = path.basename(filepath)
-
-  local parts = {}
-  local first, rest = name:match("([^_]+)_(.+)")
-
-  if first and rest then
-    parts[1] = first
-    parts[2] = rest
-  else
-    parts[1] = name
-  end
-
-  local group = parts[1] or name
-  local target_name = parts[2] or name
-
-  for _, test_file in ipairs(os.files(name .. "/test_*.cpp")) do
-    local test_name = path.basename(test_file):gsub("^test_", "")
-    target(target_name .. "_" .. test_name)
-      set_kind("binary")
-      set_default(false)
-      set_group("test_" .. group)
-      set_rundir("$(builddir)")
-
-      if path.basename(test_file):sub(-8) == "__shared" then
-        set_targetdir("$(builddir)/$(plat)/$(arch)/$(mode)/shared")
-        add_deps("common_test_shared")
-      else
-        set_targetdir("$(builddir)/$(plat)/$(arch)/$(mode)/static")
-        add_deps("common_test_static")
-      end
-
-      add_files(test_file)
-
-      add_tests("test", {run_timeout = 30000})
-
-      on_test(function (target, opt)
-        import("core.project.config")
-
-        local project_dir = os.projectdir()
-        local target_file = path.join(project_dir, target:targetfile())
-        local ok, err
-
-        os.cd("$(builddir)")
-
-        if is_mode("coverage") then
-          local coverage_dir = path.join(project_dir, "coverage")
-          os.mkdir(coverage_dir)
-          local profraw_file = path.join(coverage_dir, target:name() .. "-%p.profraw")
-          os.setenv("LLVM_PROFILE_FILE", profraw_file)
-        end
-
-        ok, err = os.execv(target_file)
-
-        if ok == 0 then
-            return true
-        end
-
-        return false, err
-      end)
+                os.exec("%s -q -c 0 %s %s", program, assets_dir, output_uncompressed_dir)
+                os.exec("%s -q -c 1 %s %s", program, assets_dir, output_compressed_dir)
+            else
+                print("ampk not found.")
+            end
+        end)
     target_end()
-  end
 
-  ::continue::
+    target("test_plugin")
+        set_kind("shared")
+        set_targetdir("$(builddir)/$(plat)/$(arch)/$(mode)/shared")
+        add_defines("AM_BUILDSYSTEM_BUILDING_PLUGIN")
+
+        add_deps("Amplitude::Shared")
+
+        add_files("test_plugin/*.cpp")
+    target_end()
+
+    -- Include desktop test runner
+    includes("runners/desktop/xmake.lua")
 end
-
-end -- if not is_plat("iphoneos", "android")

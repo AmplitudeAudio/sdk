@@ -18,33 +18,40 @@
 #include <DSP/NearFieldProcessor.h>
 
 #include "DSPTestCase.h"
+#include "TestRegistry.h"
 
 namespace SparkyStudios::Audio::Amplitude::Tests
 {
-    void DSPTestCase::Run()
+    AM_TEST_CASE(DSPTestCase, dsp_utilities, near_field_processor_basic_operation)
     {
-        auto biquadFilter = Engine::RegisterExtension<BiquadResonantFilter>();
+    public:
+        void Run() override
+        {
+            auto biquadFilter = Engine::RegisterExtension<BiquadResonantFilter>();
 
-        constexpr AmUInt32 sampleRate = 48000;
-        constexpr AmUInt32 framesCount = 512;
+            constexpr AmUInt32 sampleRate = 48000;
+            constexpr AmUInt32 framesCount = 512;
 
-        NearFieldProcessor processor(sampleRate, framesCount);
+            NearFieldProcessor processor(sampleRate, framesCount);
 
-        // Create input and output buffers
-        AudioBuffer input(framesCount, 1);
-        AudioBuffer output(framesCount, 1);
+            // Create input and output buffers
+            AudioBuffer input(framesCount, 1);
+            AudioBuffer output(framesCount, 1);
 
-        // Generate test signal
-        for (AmSize i = 0; i < framesCount; ++i)
+            // Generate test signal
+            for (AmSize i = 0; i < framesCount; ++i)
             input[0][i] = std::sin(2.0f * AM_PI32 * 440.0f * static_cast<AmReal32>(i) / static_cast<AmReal32>(sampleRate));
 
-        // Process with HRTF disabled
-        processor.Process(input[0], output[0], false);
+            // Process with HRTF disabled
+            processor.Process(input[0], output[0], false);
 
-        // Verify output is non-zero and different from input
-        AM_EXPECT(EnsureHasNonZeroOutput(output));
-        AM_EXPECT_NOT(EnsureBufferEqual(input, output));
+            // Verify output is non-zero and different from input
+            AM_EXPECT(EnsureHasNonZeroOutput(output));
+            AM_EXPECT_NOT(EnsureBufferEqual(input, output));
 
-        Engine::UnregisterExtension(biquadFilter);
-    }
+            Engine::UnregisterExtension(biquadFilter);
+        }
+    };
+
+    AM_REGISTER_TEST(dsp_utilities, near_field_processor_basic_operation);
 } // namespace SparkyStudios::Audio::Amplitude::Tests

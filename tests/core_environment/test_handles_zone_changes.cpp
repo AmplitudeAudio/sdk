@@ -17,31 +17,41 @@
 #include <Core/EnvironmentInternalState.h>
 
 #include "SimpleTestCase.h"
+#include "TestRegistry.h"
 
 using namespace SparkyStudios::Audio::Amplitude;
 
-void SimpleTestCase::Run()
+namespace SparkyStudios::Audio::Amplitude::Tests
 {
-    EnvironmentInternalState state;
-    state.SetId(1);
+    AM_TEST_CASE(SimpleTestCase, core_environment, handles_zone_changes)
+    {
+    public:
+        void Run() override
+        {
+            EnvironmentInternalState state;
+            state.SetId(1);
 
-    fplutil::intrusive_list environment_list(&EnvironmentInternalState::node);
-    environment_list.push_back(state);
+            fplutil::intrusive_list environment_list(&EnvironmentInternalState::node);
+            environment_list.push_back(state);
 
-    auto inner = std::make_shared<SphereShape>(10);
-    auto outer = std::make_shared<SphereShape>(20);
-    auto zone = std::make_shared<SphereZone>(inner, outer);
+            auto inner = std::make_shared<SphereShape>(10);
+            auto outer = std::make_shared<SphereShape>(20);
+            auto zone = std::make_shared<SphereZone>(inner, outer);
 
-    // Test state directly
-    state.SetZone(zone);
-    AM_EXPECT_EQ(state.GetZone(), zone);
+            // Test state directly
+            state.SetZone(zone);
+            AM_EXPECT_EQ(state.GetZone(), zone);
 
-    // Test with wrapper
-    Environment wrapper(&state);
-    AM_EXPECT_EQ(wrapper.GetState(), &state);
+            // Test with wrapper
+            Environment wrapper(&state);
+            AM_EXPECT_EQ(wrapper.GetState(), &state);
 
-    wrapper.SetZone(zone);
-    AM_EXPECT_EQ(wrapper.GetZone(), zone);
+            wrapper.SetZone(zone);
+            AM_EXPECT_EQ(wrapper.GetZone(), zone);
 
-    AM_EXPECT_EQ(wrapper.GetZone(), state.GetZone());
-}
+            AM_EXPECT_EQ(wrapper.GetZone(), state.GetZone());
+        }
+    };
+
+    AM_REGISTER_TEST(core_environment, handles_zone_changes);
+} // namespace SparkyStudios::Audio::Amplitude::Tests

@@ -15,19 +15,26 @@
 #include <SparkyStudios/Audio/Amplitude/Amplitude.h>
 
 #include "EngineTestCase.h"
+#include "TestRegistry.h"
 
 using namespace SparkyStudios::Audio::Amplitude;
 
 namespace SparkyStudios::Audio::Amplitude::Tests
 {
-    void EngineTestCase::Run()
+    AM_TEST_CASE(EngineTestCase, core_engine, can_set_master_gain)
     {
-        // Test setting master gain to 0.1f
-        amEngine->SetMasterGain(0.1f);
-        AM_EXPECT(amEngine->GetMasterGain() == 0.1f);
+    public:
+        void Run() override
+        {
+            // Test setting master gain to 0.1f
+            amEngine->SetMasterGain(0.1f);
+            AM_EXPECT(amEngine->GetMasterGain() == 0.1f);
 
-        // Test setting master gain back to 1.0f
-        amEngine->SetMasterGain(1.0f);
-        AM_EXPECT(amEngine->GetMasterGain() == 1.0f);
-    }
+            // Test setting master gain back to 1.0f
+            amEngine->SetMasterGain(1.0f);
+            AM_EXPECT(amEngine->GetMasterGain() == 1.0f);
+        }
+    };
+
+    AM_REGISTER_TEST(core_engine, can_set_master_gain);
 } // namespace SparkyStudios::Audio::Amplitude::Tests

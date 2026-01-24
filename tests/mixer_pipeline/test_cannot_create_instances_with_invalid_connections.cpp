@@ -17,20 +17,30 @@
 #include <Mixer/Pipeline.h>
 
 #include "EngineTestCase.h"
+#include "TestRegistry.h"
 
 using namespace SparkyStudios::Audio::Amplitude;
 
-void EngineTestCase::Run()
+namespace SparkyStudios::Audio::Amplitude::Tests
 {
-    AmplimixLayerImpl layer;
+    AM_TEST_CASE(EngineTestCase, mixer_pipeline, cannot_create_instances_with_invalid_connections)
+    {
+    public:
+        void Run() override
+        {
+            AmplimixLayerImpl layer;
 
-    PipelineImpl pipeline;
-    pipeline.LoadDefinitionFromFile(
-        _fileSystem->OpenFile(
+            PipelineImpl pipeline;
+            pipeline.LoadDefinitionFromFile(
+            _fileSystem->OpenFile(
             _fileSystem->Join({ AM_OS_STRING("pipelines"), AM_OS_STRING("tests.invalid.invalid_producers_count.ampipeline") }),
             eFileOpenMode_Read),
-        nullptr);
+            nullptr);
 
-    auto instance = pipeline.CreateInstance(&layer);
-    AM_EXPECT(instance == nullptr);
-}
+            auto instance = pipeline.CreateInstance(&layer);
+            AM_EXPECT(instance == nullptr);
+        }
+    };
+
+    AM_REGISTER_TEST(mixer_pipeline, cannot_create_instances_with_invalid_connections);
+} // namespace SparkyStudios::Audio::Amplitude::Tests

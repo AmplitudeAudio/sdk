@@ -15,12 +15,22 @@
 #include <SparkyStudios/Audio/Amplitude/Amplitude.h>
 
 #include "SimpleTestCase.h"
+#include "TestRegistry.h"
 
 using namespace SparkyStudios::Audio::Amplitude;
 
-void SimpleTestCase::Run()
+namespace SparkyStudios::Audio::Amplitude::Tests
 {
-    AM_EXPECT_EQ(Lerp(0.0f, 0.0f, 1.0f), 0.0f);
-    AM_EXPECT_EQ(Lerp(1.0f, 0.0f, 1.0f), 1.0f);
-    AM_EXPECT_EQ(Lerp(0.5f, 2.0f, 100.0f), 51.0f);
-}
+    AM_TEST_CASE(SimpleTestCase, math_utils, lerp)
+    {
+    public:
+        void Run() override
+        {
+            AM_EXPECT_EQ(Lerp(0.0f, 0.0f, 1.0f), 0.0f);
+            AM_EXPECT_EQ(Lerp(1.0f, 0.0f, 1.0f), 1.0f);
+            AM_EXPECT_EQ(Lerp(0.5f, 2.0f, 100.0f), 51.0f);
+        }
+    };
+
+    AM_REGISTER_TEST(math_utils, lerp);
+} // namespace SparkyStudios::Audio::Amplitude::Tests

@@ -17,60 +17,67 @@
 #include <DSP/Filters/WaveShaperFilter.h>
 
 #include "DSPTestCase.h"
+#include "TestRegistry.h"
 
 using namespace SparkyStudios::Audio::Amplitude;
 
 namespace SparkyStudios::Audio::Amplitude::Tests
 {
-    void DSPTestCase::Run()
+    AM_TEST_CASE(DSPTestCase, dsp_filters, wave_shaper_filter_processes_audio)
     {
-        auto filter = amshared(WaveShaperFilter);
-        filter->Initialize(0.5f);
+    public:
+        void Run() override
+        {
+            auto filter = amshared(WaveShaperFilter);
+            filter->Initialize(0.5f);
 
-        auto instance = filter->CreateInstance();
-        AM_EXPECT_NOT(instance == nullptr);
+            auto instance = filter->CreateInstance();
+            AM_EXPECT_NOT(instance == nullptr);
 
-        // Create test audio buffers
-        constexpr AmUInt64 frameCount = 1024;
-        constexpr AmUInt16 channelCount = 2;
-        constexpr AmUInt32 sampleRate = 48000;
+            // Create test audio buffers
+            constexpr AmUInt64 frameCount = 1024;
+            constexpr AmUInt16 channelCount = 2;
+            constexpr AmUInt32 sampleRate = 48000;
 
-        AudioBuffer inputBuffer(frameCount, channelCount);
-        AudioBuffer outputBuffer(frameCount, channelCount);
+            AudioBuffer inputBuffer(frameCount, channelCount);
+            AudioBuffer outputBuffer(frameCount, channelCount);
 
-        // Fill input buffer with test signal
-        GenerateSineWave(inputBuffer, sampleRate);
+            // Fill input buffer with test signal
+            GenerateSineWave(inputBuffer, sampleRate);
 
-        // Process audio
-        instance->Process(inputBuffer, outputBuffer, frameCount, sampleRate);
+            // Process audio
+            instance->Process(inputBuffer, outputBuffer, frameCount, sampleRate);
 
-        // Verify output buffer has non-zero values (shaped signal)
-        AM_EXPECT(EnsureHasNonZeroOutput(outputBuffer));
+            // Verify output buffer has non-zero values (shaped signal)
+            AM_EXPECT(EnsureHasNonZeroOutput(outputBuffer));
 
-        // Test parameter changes with different amounts
-        instance->SetParameter(WaveShaperFilter::ATTRIBUTE_AMOUNT, -0.5f);
-        AM_EXPECT(instance->GetParameter(WaveShaperFilter::ATTRIBUTE_AMOUNT) == -0.5f);
+            // Test parameter changes with different amounts
+            instance->SetParameter(WaveShaperFilter::ATTRIBUTE_AMOUNT, -0.5f);
+            AM_EXPECT(instance->GetParameter(WaveShaperFilter::ATTRIBUTE_AMOUNT) == -0.5f);
 
-        outputBuffer.Clear();
-        instance->Process(inputBuffer, outputBuffer, frameCount, sampleRate);
-        AM_EXPECT(EnsureHasNonZeroOutput(outputBuffer));
+            outputBuffer.Clear();
+            instance->Process(inputBuffer, outputBuffer, frameCount, sampleRate);
+            AM_EXPECT(EnsureHasNonZeroOutput(outputBuffer));
 
-        instance->SetParameter(WaveShaperFilter::ATTRIBUTE_AMOUNT, 1.0f);
-        AM_EXPECT(instance->GetParameter(WaveShaperFilter::ATTRIBUTE_AMOUNT) == 1.0f);
+            instance->SetParameter(WaveShaperFilter::ATTRIBUTE_AMOUNT, 1.0f);
+            AM_EXPECT(instance->GetParameter(WaveShaperFilter::ATTRIBUTE_AMOUNT) == 1.0f);
 
-        outputBuffer.Clear();
-        instance->Process(inputBuffer, outputBuffer, frameCount, sampleRate);
-        AM_EXPECT(EnsureHasNonZeroOutput(outputBuffer));
+            outputBuffer.Clear();
+            instance->Process(inputBuffer, outputBuffer, frameCount, sampleRate);
+            AM_EXPECT(EnsureHasNonZeroOutput(outputBuffer));
 
-        // Test wet/dry mix
-        instance->SetParameter(WaveShaperFilter::ATTRIBUTE_WET, 0.0f);
-        AM_EXPECT(instance->GetParameter(WaveShaperFilter::ATTRIBUTE_WET) == 0.0f);
+            // Test wet/dry mix
+            instance->SetParameter(WaveShaperFilter::ATTRIBUTE_WET, 0.0f);
+            AM_EXPECT(instance->GetParameter(WaveShaperFilter::ATTRIBUTE_WET) == 0.0f);
 
-        outputBuffer.Clear();
+            outputBuffer.Clear();
 
-        // With dry signal, output should equal input
-        instance->Process(inputBuffer, outputBuffer, frameCount, sampleRate);
+            // With dry signal, output should equal input
+            instance->Process(inputBuffer, outputBuffer, frameCount, sampleRate);
 
-        AM_EXPECT(EnsureBufferEqual(inputBuffer, outputBuffer));
-    }
+            AM_EXPECT(EnsureBufferEqual(inputBuffer, outputBuffer));
+        }
+    };
+
+    AM_REGISTER_TEST(dsp_filters, wave_shaper_filter_processes_audio);
 } // namespace SparkyStudios::Audio::Amplitude::Tests

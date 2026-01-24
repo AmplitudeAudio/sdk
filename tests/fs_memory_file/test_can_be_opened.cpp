@@ -14,64 +14,76 @@
 
 #include <SparkyStudios/Audio/Amplitude/Amplitude.h>
 
+#include "PlatformTestCase.h"
 #include "SimpleTestCase.h"
+#include "TestRegistry.h"
 
 using namespace SparkyStudios::Audio::Amplitude;
 
-void SimpleTestCase::Run()
+namespace SparkyStudios::Audio::Amplitude::Tests
 {
-    MemoryFile file;
-    file.Open(2);
-
-    file.Seek(0, eFileSeekOrigin_Start);
-    file.Write8('O');
-    file.Write8('K');
-    file.Seek(0, eFileSeekOrigin_Start);
-
-    AM_EXPECT(file.IsValid());
-    AM_EXPECT(file.GetPath().empty());
-    AM_EXPECT(file.Length() == 2);
-    AM_EXPECT(file.GetPtr() != nullptr);
-
+    AM_TEST_CASE(SimpleTestCase, fs_memory_file, can_be_opened)
     {
-        DiskFileSystem fileSystem;
-        fileSystem.SetBasePath(AM_OS_STRING("./samples/assets"));
+    public:
+        void Run() override
+        {
+            MemoryFile file;
+            file.Open(2);
 
-        char ok[] = "OK";
+            file.Seek(0, eFileSeekOrigin_Start);
+            file.Write8('O');
+            file.Write8('K');
+            file.Seek(0, eFileSeekOrigin_Start);
 
-        file.Close();
-        AM_EXPECT(file.OpenMem(nullptr, 2) == eErrorCode_InvalidParameter);
-        AM_EXPECT_NOT(file.IsValid());
-        AM_EXPECT(file.OpenMem(reinterpret_cast<AmConstUInt8Buffer>(ok), 2, false, false) == eErrorCode_Success);
-        AM_EXPECT(file.IsValid());
-        AM_EXPECT(file.GetPtr() == ok);
+            AM_EXPECT(file.IsValid());
+            AM_EXPECT(file.GetPath().empty());
+            AM_EXPECT(file.Length() == 2);
+            AM_EXPECT(file.GetPtr() != nullptr);
 
-        file.Close();
-        AM_EXPECT(ok[0] == 'O');
-        AM_EXPECT(ok[1] == 'K');
-        AM_EXPECT(file.OpenMem(reinterpret_cast<AmConstUInt8Buffer>(ok), 2, true, true) == eErrorCode_Success);
-        AM_EXPECT(file.IsValid());
-        AM_EXPECT(file.Read(reinterpret_cast<AmUInt8Buffer>(ok), 2) == 2);
-        AM_EXPECT(ok[0] == 'O');
-        AM_EXPECT(ok[1] == 'K');
+            {
+                auto fileSystem = CreatePlatformFileSystem();
+                fileSystem->SetBasePath(GetPlatformAssetsBasePath());
 
-        file.Close();
-        AM_EXPECT(file.OpenToMem("") == eErrorCode_InvalidParameter);
-        AM_EXPECT_NOT(file.IsValid());
-        AM_EXPECT(file.OpenToMem(fileSystem.ResolvePath(AM_OS_STRING("test_data/diskfile_read_test.txt"))) == eErrorCode_Success);
-        AM_EXPECT(file.IsValid());
-        AM_EXPECT(file.Read(reinterpret_cast<AmUInt8Buffer>(ok), 2) == 2);
-        AM_EXPECT(ok[0] == 'O');
-        AM_EXPECT(ok[1] == 'K');
+                char ok[] = "OK";
 
-        file.Close();
-        DiskFile df(fileSystem.ResolvePath(AM_OS_STRING("test_data/diskfile_read_test.txt")), eFileOpenMode_Read, eFileOpenKind_Binary);
-        AM_EXPECT(file.OpenFileToMem(nullptr) == eErrorCode_InvalidParameter);
-        AM_EXPECT_NOT(file.IsValid());
-        AM_EXPECT(file.OpenFileToMem(&df) == eErrorCode_Success);
-        AM_EXPECT(file.IsValid());
-        AM_EXPECT(file.Read(reinterpret_cast<AmUInt8Buffer>(ok), 2) == 2);
-        AM_EXPECT(ok[0] == 'O');
-        AM_EXPECT(ok[1] == 'K');
-    }
-}
+                file.Close();
+                AM_EXPECT(file.OpenMem(nullptr, 2) == eErrorCode_InvalidParameter);
+                AM_EXPECT_NOT(file.IsValid());
+                AM_EXPECT(file.OpenMem(reinterpret_cast<AmConstUInt8Buffer>(ok), 2, false, false) == eErrorCode_Success);
+                AM_EXPECT(file.IsValid());
+                AM_EXPECT(file.GetPtr() == ok);
+
+                file.Close();
+                AM_EXPECT(ok[0] == 'O');
+                AM_EXPECT(ok[1] == 'K');
+                AM_EXPECT(file.OpenMem(reinterpret_cast<AmConstUInt8Buffer>(ok), 2, true, true) == eErrorCode_Success);
+                AM_EXPECT(file.IsValid());
+                AM_EXPECT(file.Read(reinterpret_cast<AmUInt8Buffer>(ok), 2) == 2);
+                AM_EXPECT(ok[0] == 'O');
+                AM_EXPECT(ok[1] == 'K');
+
+                file.Close();
+                AM_EXPECT(file.OpenToMem("") == eErrorCode_InvalidParameter);
+                AM_EXPECT_NOT(file.IsValid());
+                AM_EXPECT(file.OpenToMem(fileSystem->ResolvePath(AM_OS_STRING("test_data/diskfile_read_test.txt"))) == eErrorCode_Success);
+                AM_EXPECT(file.IsValid());
+                AM_EXPECT(file.Read(reinterpret_cast<AmUInt8Buffer>(ok), 2) == 2);
+                AM_EXPECT(ok[0] == 'O');
+                AM_EXPECT(ok[1] == 'K');
+
+                file.Close();
+                DiskFile df(
+                    fileSystem->ResolvePath(AM_OS_STRING("test_data/diskfile_read_test.txt")), eFileOpenMode_Read, eFileOpenKind_Binary);
+                AM_EXPECT(file.OpenFileToMem(nullptr) == eErrorCode_InvalidParameter);
+                AM_EXPECT_NOT(file.IsValid());
+                AM_EXPECT(file.OpenFileToMem(&df) == eErrorCode_Success);
+                AM_EXPECT(file.IsValid());
+                AM_EXPECT(file.Read(reinterpret_cast<AmUInt8Buffer>(ok), 2) == 2);
+                AM_EXPECT(ok[0] == 'O');
+                AM_EXPECT(ok[1] == 'K');
+            }
+        }
+    };
+
+    AM_REGISTER_TEST(fs_memory_file, can_be_opened);
+} // namespace SparkyStudios::Audio::Amplitude::Tests

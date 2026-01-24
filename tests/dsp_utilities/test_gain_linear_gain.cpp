@@ -17,28 +17,35 @@
 #include <DSP/Gain.h>
 
 #include "DSPTestCase.h"
+#include "TestRegistry.h"
 
 namespace SparkyStudios::Audio::Amplitude::Tests
 {
-    void DSPTestCase::Run()
+    AM_TEST_CASE(DSPTestCase, dsp_utilities, gain_linear_gain)
     {
-        constexpr AmSize frameCount = 100;
-        AudioBuffer input(frameCount, 1);
-        AudioBuffer output(frameCount, 1);
+    public:
+        void Run() override
+        {
+            constexpr AmSize frameCount = 100;
+            AudioBuffer input(frameCount, 1);
+            AudioBuffer output(frameCount, 1);
 
-        // Fill input with constant value
-        for (AmSize i = 0; i < frameCount; ++i)
+            // Fill input with constant value
+            for (AmSize i = 0; i < frameCount; ++i)
             input[0][i] = 1.0f;
 
-        // Test linear ramp from 0.0 to 1.0
-        constexpr AmReal32 startGain = 0.0f;
-        constexpr AmReal32 endGain = 1.0f;
+            // Test linear ramp from 0.0 to 1.0
+            constexpr AmReal32 startGain = 0.0f;
+            constexpr AmReal32 endGain = 1.0f;
 
-        Gain::ApplyReplaceLinearGain(startGain, endGain, input[0], 0, output[0], 0, frameCount);
+            Gain::ApplyReplaceLinearGain(startGain, endGain, input[0], 0, output[0], 0, frameCount);
 
-        // Verify linear interpolation
-        AM_EXPECT(std::abs(output[0][0] - 0.0f) < 0.01f); // Start near 0
-        AM_EXPECT(std::abs(output[0][frameCount / 2] - 0.5f) < 0.01f); // Middle near 0.5
-        AM_EXPECT(std::abs(output[0][frameCount - 1] - 0.99f) < 0.01f); // End near 1.0
-    }
+            // Verify linear interpolation
+            AM_EXPECT(std::abs(output[0][0] - 0.0f) < 0.01f); // Start near 0
+            AM_EXPECT(std::abs(output[0][frameCount / 2] - 0.5f) < 0.01f); // Middle near 0.5
+            AM_EXPECT(std::abs(output[0][frameCount - 1] - 0.99f) < 0.01f); // End near 1.0
+        }
+    };
+
+    AM_REGISTER_TEST(dsp_utilities, gain_linear_gain);
 } // namespace SparkyStudios::Audio::Amplitude::Tests

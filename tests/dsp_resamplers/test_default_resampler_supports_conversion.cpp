@@ -17,21 +17,28 @@
 #include <DSP/Resamplers/DefaultResampler.h>
 
 #include "SimpleTestCase.h"
+#include "TestRegistry.h"
 
 using namespace SparkyStudios::Audio::Amplitude;
 
 namespace SparkyStudios::Audio::Amplitude::Tests
 {
-    void SimpleTestCase::Run()
+    AM_TEST_CASE(SimpleTestCase, dsp_resamplers, default_resampler_supports_conversion)
     {
-        // Test supported conversions
-        AM_EXPECT(DefaultResamplerInstance::IsConversionSupported(44100, 48000));
-        AM_EXPECT(DefaultResamplerInstance::IsConversionSupported(48000, 44100));
-        AM_EXPECT(DefaultResamplerInstance::IsConversionSupported(22050, 44100));
-        AM_EXPECT(DefaultResamplerInstance::IsConversionSupported(44100, 22050));
+    public:
+        void Run() override
+        {
+            // Test supported conversions
+            AM_EXPECT(DefaultResamplerInstance::IsConversionSupported(44100, 48000));
+            AM_EXPECT(DefaultResamplerInstance::IsConversionSupported(48000, 44100));
+            AM_EXPECT(DefaultResamplerInstance::IsConversionSupported(22050, 44100));
+            AM_EXPECT(DefaultResamplerInstance::IsConversionSupported(44100, 22050));
 
-        // Same rate should be supported
-        AM_EXPECT(DefaultResamplerInstance::IsConversionSupported(44100, 44100));
-        AM_EXPECT(DefaultResamplerInstance::IsConversionSupported(48000, 48000));
-    }
+            // Same rate should be supported
+            AM_EXPECT(DefaultResamplerInstance::IsConversionSupported(44100, 44100));
+            AM_EXPECT(DefaultResamplerInstance::IsConversionSupported(48000, 48000));
+        }
+    };
+
+    AM_REGISTER_TEST(dsp_resamplers, default_resampler_supports_conversion);
 } // namespace SparkyStudios::Audio::Amplitude::Tests

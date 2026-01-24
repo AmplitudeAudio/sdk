@@ -15,13 +15,24 @@
 #include <SparkyStudios/Audio/Amplitude/Amplitude.h>
 
 #include "SimpleTestCase.h"
+#include "TestRegistry.h"
 
 using namespace SparkyStudios::Audio::Amplitude;
 
-void SimpleTestCase::Run()
+namespace SparkyStudios::Audio::Amplitude::Tests
 {
-    PackageFileSystem fileSystem;
+    AM_TEST_CASE(SimpleTestCase, fs_package_file_system, cannot_detect_directories)
+    {
+    public:
+        void Run() override
+        {
+            PackageFileSystem fileSystem;
 
-    AM_EXPECT_NOT(fileSystem.IsDirectory(AM_OS_STRING("sounds")));
-    AM_EXPECT_NOT(fileSystem.IsDirectory(AM_OS_STRING("tests.config.amconfig")));
-}
+            AM_EXPECT_NOT(fileSystem.IsDirectory(AM_OS_STRING("sounds")));
+            AM_EXPECT_NOT(fileSystem.IsDirectory(AM_OS_STRING("tests.config.amconfig")));
+        }
+    };
+
+    // PackageFileSystem tests use DiskFileSystem paths that only work on desktop
+    AM_REGISTER_TEST_DESKTOP_ONLY(fs_package_file_system, cannot_detect_directories);
+} // namespace SparkyStudios::Audio::Amplitude::Tests

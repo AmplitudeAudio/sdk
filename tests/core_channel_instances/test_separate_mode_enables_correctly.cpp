@@ -15,41 +15,48 @@
 #include <SparkyStudios/Audio/Amplitude/Amplitude.h>
 
 #include "EngineTestCase.h"
+#include "TestRegistry.h"
 
 using namespace SparkyStudios::Audio::Amplitude;
 
 namespace SparkyStudios::Audio::Amplitude::Tests
 {
-    void EngineTestCase::Run()
+    AM_TEST_CASE(EngineTestCase, core_channel_instances, separate_mode_enables_correctly)
     {
-        SoundHandle test_sound_01 = amEngine->GetSoundHandle("test_sound_01");
+    public:
+        void Run() override
+        {
+            SoundHandle test_sound_01 = amEngine->GetSoundHandle("test_sound_01");
 
-        Channel channel = amEngine->Play(test_sound_01);
-        amEngine->WaitUntilFrames(2);
+            Channel channel = amEngine->Play(test_sound_01);
+            amEngine->WaitUntilFrames(2);
 
-        AM_EXPECT(channel.Valid());
+            AM_EXPECT(channel.Valid());
 
-        // Enable separate mode
-        channel.EnableInstancing(eChannelInstanceMode_Separate);
-        AM_EXPECT(channel.GetInstancingMode() == eChannelInstanceMode_Separate);
+            // Enable separate mode
+            channel.EnableInstancing(eChannelInstanceMode_Separate);
+            AM_EXPECT(channel.GetInstancingMode() == eChannelInstanceMode_Separate);
 
-        // Add multiple instances
-        AM_UNUSED(channel.AddInstance({ 100.0f, 0.0f, 50.0f }));
-        AM_UNUSED(channel.AddInstance({ 120.0f, 0.0f, 80.0f }));
-        AM_UNUSED(channel.AddInstance({ 140.0f, 0.0f, 110.0f }));
+            // Add multiple instances
+            AM_UNUSED(channel.AddInstance({ 100.0f, 0.0f, 50.0f }));
+            AM_UNUSED(channel.AddInstance({ 120.0f, 0.0f, 80.0f }));
+            AM_UNUSED(channel.AddInstance({ 140.0f, 0.0f, 110.0f }));
 
-        AM_EXPECT(channel.GetInstanceCount() == 3);
+            AM_EXPECT(channel.GetInstanceCount() == 3);
 
-        // In separate mode, each instance has independent playback cursor
-        // We can't directly test the cursor independence without accessing internal state,
-        // but we can verify that the channel is playing and the mode is correct
-        AM_EXPECT(channel.Playing());
-        AM_EXPECT(channel.GetInstancingMode() == eChannelInstanceMode_Separate);
+            // In separate mode, each instance has independent playback cursor
+            // We can't directly test the cursor independence without accessing internal state,
+            // but we can verify that the channel is playing and the mode is correct
+            AM_EXPECT(channel.Playing());
+            AM_EXPECT(channel.GetInstancingMode() == eChannelInstanceMode_Separate);
 
-        // Advance a few frames to let the sound play
-        amEngine->WaitUntilFrames(10);
+            // Advance a few frames to let the sound play
+            amEngine->WaitUntilFrames(10);
 
-        // Channel should still be playing
-        AM_EXPECT(channel.Playing());
-    }
+            // Channel should still be playing
+            AM_EXPECT(channel.Playing());
+        }
+    };
+
+    AM_REGISTER_TEST(core_channel_instances, separate_mode_enables_correctly);
 } // namespace SparkyStudios::Audio::Amplitude::Tests

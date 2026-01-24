@@ -15,50 +15,57 @@
 #include <SparkyStudios/Audio/Amplitude/Amplitude.h>
 
 #include "DSPTestCase.h"
+#include "TestRegistry.h"
 
 namespace SparkyStudios::Audio::Amplitude::Tests
 {
-    void DSPTestCase::Run()
+    AM_TEST_CASE(DSPTestCase, dsp_utilities, audio_converter_mono_to_stereo)
     {
-        AudioConverter converter;
+    public:
+        void Run() override
+        {
+            AudioConverter converter;
 
-        // Configure for mono to stereo conversion (same sample rate)
-        AudioConverter::Settings settings;
-        settings.m_sourceSampleRate = 48000;
-        settings.m_targetSampleRate = 48000;
-        settings.m_sourceChannelCount = 1;
-        settings.m_targetChannelCount = 2;
+            // Configure for mono to stereo conversion (same sample rate)
+            AudioConverter::Settings settings;
+            settings.m_sourceSampleRate = 48000;
+            settings.m_targetSampleRate = 48000;
+            settings.m_sourceChannelCount = 1;
+            settings.m_targetChannelCount = 2;
 
-        AM_EXPECT(converter.Configure(settings));
+            AM_EXPECT(converter.Configure(settings));
 
-        // Create test buffers
-        constexpr AmUInt64 frameCount = 512;
-        AudioBuffer input(frameCount, 1);
-        AudioBuffer output(frameCount, 2);
+            // Create test buffers
+            constexpr AmUInt64 frameCount = 512;
+            AudioBuffer input(frameCount, 1);
+            AudioBuffer output(frameCount, 2);
 
-        // Generate test signal (mono)
-        for (AmUInt64 i = 0; i < frameCount; ++i)
+            // Generate test signal (mono)
+            for (AmUInt64 i = 0; i < frameCount; ++i)
             input[0][i] = static_cast<AmReal32>(i) / static_cast<AmReal32>(frameCount);
 
-        AmUInt64 inputFrames = frameCount;
-        AmUInt64 outputFrames = frameCount;
+            AmUInt64 inputFrames = frameCount;
+            AmUInt64 outputFrames = frameCount;
 
-        // Process
-        converter.Process(input, inputFrames, output, outputFrames);
+            // Process
+            converter.Process(input, inputFrames, output, outputFrames);
 
-        // Verify stereo output
-        AM_EXPECT(output.GetChannelCount() == 2);
-        AM_EXPECT(EnsureHasNonZeroOutput(output));
+            // Verify stereo output
+            AM_EXPECT(output.GetChannelCount() == 2);
+            AM_EXPECT(EnsureHasNonZeroOutput(output));
 
-        // Left and right channels should have similar values (scaled by 1/sqrt(2))
-        constexpr AmReal32 expectedScale = 0.7071f; // 1/sqrt(2)
-        constexpr AmReal32 tolerance = 0.01f;
+            // Left and right channels should have similar values (scaled by 1/sqrt(2))
+            constexpr AmReal32 expectedScale = 0.7071f; // 1/sqrt(2)
+            constexpr AmReal32 tolerance = 0.01f;
 
-        for (AmUInt64 i = 0; i < 10; ++i) // Check first 10 samples
+            for (AmUInt64 i = 0; i < 10; ++i) // Check first 10 samples
         {
             const AmReal32 expectedValue = input[0][i] * expectedScale;
             AM_EXPECT(std::abs(output[0][i] - expectedValue) < tolerance);
             AM_EXPECT(std::abs(output[1][i] - expectedValue) < tolerance);
+            }
         }
-    }
+    };
+
+    AM_REGISTER_TEST(dsp_utilities, audio_converter_mono_to_stereo);
 } // namespace SparkyStudios::Audio::Amplitude::Tests

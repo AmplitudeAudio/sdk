@@ -15,40 +15,50 @@
 #include <SparkyStudios/Audio/Amplitude/Amplitude.h>
 
 #include "SimpleTestCase.h"
+#include "TestRegistry.h"
 
 using namespace SparkyStudios::Audio::Amplitude;
 
-void SimpleTestCase::Run()
+namespace SparkyStudios::Audio::Amplitude::Tests
 {
-    // it can convert floating-point audio sample to fixed-point
+    AM_TEST_CASE(SimpleTestCase, math_utils, floating_point_to_fixed_point_conversion)
     {
-        constexpr AmReal32 value = 0.5f;
-        const AmInt32 fixedPointValue = AmFloatToFixedPoint(value);
-        AM_EXPECT(std::abs(fixedPointValue - 16384) < kEpsilon);
-    }
+    public:
+        void Run() override
+        {
+            // it can convert floating-point audio sample to fixed-point
+        {
+            constexpr AmReal32 value = 0.5f;
+            const AmInt32 fixedPointValue = AmFloatToFixedPoint(value);
+            AM_EXPECT(std::abs(fixedPointValue - 16384) < kEpsilon);
+            }
 
-    // it can convert 16-bit integer to 32-bit floating-point
-    {
-        constexpr AmInt16 fxp = 16384;
-        const AmReal32 value = AmInt16ToReal32(fxp);
-        AM_EXPECT(std::abs(value - 0.5f) < kEpsilon);
-    }
+            // it can convert 16-bit integer to 32-bit floating-point
+        {
+            constexpr AmInt16 fxp = 16384;
+            const AmReal32 value = AmInt16ToReal32(fxp);
+            AM_EXPECT(std::abs(value - 0.5f) < kEpsilon);
+            }
 
-    // it can convert 32-bit integer to 32-bit floating-point
-    {
-        constexpr AmInt32 value = 16384;
-        const AmReal32 fxp = AmInt32ToReal32(value);
-        AM_EXPECT(std::abs(fxp - 0.5f) < kEpsilon);
-    }
+            // it can convert 32-bit integer to 32-bit floating-point
+        {
+            constexpr AmInt32 value = 16384;
+            const AmReal32 fxp = AmInt32ToReal32(value);
+            AM_EXPECT(std::abs(fxp - 0.5f) < kEpsilon);
+            }
 
-    // it can convert 32-bit floating-point to 16-bit integer
-    {
-        constexpr AmReal32 value = 0.5f;
+            // it can convert 32-bit floating-point to 16-bit integer
+        {
+            constexpr AmReal32 value = 0.5f;
 
-        const AmInt16 fxp1 = AmReal32ToInt16(value, false);
-        AM_EXPECT((fxp1 - 16384) < kEpsilon);
+            const AmInt16 fxp1 = AmReal32ToInt16(value, false);
+            AM_EXPECT((fxp1 - 16384) < kEpsilon);
 
-        const AmInt16 fxp2 = AmReal32ToInt16(value, true);
-        AM_EXPECT((fxp2 - 16384) < kEpsilon);
-    }
-}
+            const AmInt16 fxp2 = AmReal32ToInt16(value, true);
+            AM_EXPECT((fxp2 - 16384) < kEpsilon);
+            }
+        }
+    };
+
+    AM_REGISTER_TEST(math_utils, floating_point_to_fixed_point_conversion);
+} // namespace SparkyStudios::Audio::Amplitude::Tests

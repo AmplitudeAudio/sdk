@@ -17,20 +17,30 @@
 #include <Core/RoomInternalState.h>
 
 #include "SimpleTestCase.h"
+#include "TestRegistry.h"
 
 using namespace SparkyStudios::Audio::Amplitude;
 
-void SimpleTestCase::Run()
+namespace SparkyStudios::Audio::Amplitude::Tests
 {
-    RoomInternalState state;
-    state.SetId(1);
+    AM_TEST_CASE(SimpleTestCase, core_room, can_clear_internal_state)
+    {
+    public:
+        void Run() override
+        {
+            RoomInternalState state;
+            state.SetId(1);
 
-    fplutil::intrusive_list room_list(&RoomInternalState::node);
-    room_list.push_back(state);
+            fplutil::intrusive_list room_list(&RoomInternalState::node);
+            room_list.push_back(state);
 
-    Room wrapper(&state);
-    AM_EXPECT_EQ(wrapper.GetState(), &state);
+            Room wrapper(&state);
+            AM_EXPECT_EQ(wrapper.GetState(), &state);
 
-    wrapper.Clear();
-    AM_EXPECT(wrapper.GetState() == nullptr);
-}
+            wrapper.Clear();
+            AM_EXPECT(wrapper.GetState() == nullptr);
+        }
+    };
+
+    AM_REGISTER_TEST(core_room, can_clear_internal_state);
+} // namespace SparkyStudios::Audio::Amplitude::Tests

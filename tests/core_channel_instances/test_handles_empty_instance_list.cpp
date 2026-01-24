@@ -15,40 +15,47 @@
 #include <SparkyStudios/Audio/Amplitude/Amplitude.h>
 
 #include "EngineTestCase.h"
+#include "TestRegistry.h"
 
 using namespace SparkyStudios::Audio::Amplitude;
 
 namespace SparkyStudios::Audio::Amplitude::Tests
 {
-    void EngineTestCase::Run()
+    AM_TEST_CASE(EngineTestCase, core_channel_instances, handles_empty_instance_list)
     {
-        SoundHandle test_sound_01 = amEngine->GetSoundHandle("test_sound_01");
+    public:
+        void Run() override
+        {
+            SoundHandle test_sound_01 = amEngine->GetSoundHandle("test_sound_01");
 
-        Channel channel = amEngine->Play(test_sound_01);
-        amEngine->WaitUntilFrames(2);
+            Channel channel = amEngine->Play(test_sound_01);
+            amEngine->WaitUntilFrames(2);
 
-        AM_EXPECT(channel.Valid());
+            AM_EXPECT(channel.Valid());
 
-        // Enable instancing without adding any instances
-        channel.EnableInstancing(eChannelInstanceMode_Blended);
-        AM_EXPECT(channel.GetInstanceCount() == 0);
+            // Enable instancing without adding any instances
+            channel.EnableInstancing(eChannelInstanceMode_Blended);
+            AM_EXPECT(channel.GetInstanceCount() == 0);
 
-        // The channel should still be valid and playing
-        // (behavior with empty instance list should fall back to single-position)
-        AM_EXPECT(channel.Playing());
+            // The channel should still be valid and playing
+            // (behavior with empty instance list should fall back to single-position)
+            AM_EXPECT(channel.Playing());
 
-        // Let the sound play
-        amEngine->WaitUntilFrames(10);
+            // Let the sound play
+            amEngine->WaitUntilFrames(10);
 
-        // Channel should still be playing
-        AM_EXPECT(channel.Playing());
+            // Channel should still be playing
+            AM_EXPECT(channel.Playing());
 
-        // Test separate mode with empty instances as well
-        channel.DisableInstancing();
-        channel.EnableInstancing(eChannelInstanceMode_Separate);
-        AM_EXPECT(channel.GetInstanceCount() == 0);
+            // Test separate mode with empty instances as well
+            channel.DisableInstancing();
+            channel.EnableInstancing(eChannelInstanceMode_Separate);
+            AM_EXPECT(channel.GetInstanceCount() == 0);
 
-        // Should still be playing
-        AM_EXPECT(channel.Playing());
-    }
+            // Should still be playing
+            AM_EXPECT(channel.Playing());
+        }
+    };
+
+    AM_REGISTER_TEST(core_channel_instances, handles_empty_instance_list);
 } // namespace SparkyStudios::Audio::Amplitude::Tests

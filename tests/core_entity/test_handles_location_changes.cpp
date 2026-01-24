@@ -17,43 +17,53 @@
 #include <Core/EntityInternalState.h>
 
 #include "SimpleTestCase.h"
+#include "TestRegistry.h"
 
 using namespace SparkyStudios::Audio::Amplitude;
 
-void SimpleTestCase::Run()
+namespace SparkyStudios::Audio::Amplitude::Tests
 {
-    EntityInternalState state;
-    state.SetId(1);
+    AM_TEST_CASE(SimpleTestCase, core_entity, handles_location_changes)
+    {
+    public:
+        void Run() override
+        {
+            EntityInternalState state;
+            state.SetId(1);
 
-    fplutil::intrusive_list entity_list(&EntityInternalState::node);
-    entity_list.push_back(state);
+            fplutil::intrusive_list entity_list(&EntityInternalState::node);
+            entity_list.push_back(state);
 
-    // Test state directly
-    const auto lastLocation = state.GetLocation();
-    const AmVector3 location = { 10, 20, 30 };
-    state.SetLocation(location);
+            // Test state directly
+            const auto lastLocation = state.GetLocation();
+            const AmVector3 location = { 10, 20, 30 };
+            state.SetLocation(location);
 
-    AM_EXPECT_EQ(state.GetLocation(), location);
+            AM_EXPECT_EQ(state.GetLocation(), location);
 
-    state.Update();
+            state.Update();
 
-    const auto& velocity = Sub(location, lastLocation);
-    AM_EXPECT_EQ(state.GetVelocity(), velocity);
+            const auto& velocity = Sub(location, lastLocation);
+            AM_EXPECT_EQ(state.GetVelocity(), velocity);
 
-    // Test with wrapper
-    Entity wrapper(&state);
-    AM_EXPECT_EQ(wrapper.GetState(), &state);
+            // Test with wrapper
+            Entity wrapper(&state);
+            AM_EXPECT_EQ(wrapper.GetState(), &state);
 
-    const auto lastWrapperLocation = state.GetLocation();
-    const auto wrapperLocation = AmVector3{ 100, 200, 300 };
-    wrapper.SetLocation(wrapperLocation);
+            const auto lastWrapperLocation = state.GetLocation();
+            const auto wrapperLocation = AmVector3{ 100, 200, 300 };
+            wrapper.SetLocation(wrapperLocation);
 
-    AM_EXPECT_EQ(wrapper.GetLocation(), wrapperLocation);
-    AM_EXPECT_EQ(wrapper.GetLocation(), state.GetLocation());
+            AM_EXPECT_EQ(wrapper.GetLocation(), wrapperLocation);
+            AM_EXPECT_EQ(wrapper.GetLocation(), state.GetLocation());
 
-    wrapper.Update();
+            wrapper.Update();
 
-    const auto wrapperVelocity = Sub(wrapperLocation, lastWrapperLocation);
-    AM_EXPECT_EQ(wrapper.GetVelocity(), wrapperVelocity);
-    AM_EXPECT_EQ(wrapper.GetVelocity(), state.GetVelocity());
-}
+            const auto wrapperVelocity = Sub(wrapperLocation, lastWrapperLocation);
+            AM_EXPECT_EQ(wrapper.GetVelocity(), wrapperVelocity);
+            AM_EXPECT_EQ(wrapper.GetVelocity(), state.GetVelocity());
+        }
+    };
+
+    AM_REGISTER_TEST(core_entity, handles_location_changes);
+} // namespace SparkyStudios::Audio::Amplitude::Tests

@@ -17,44 +17,51 @@
 #include <DSP/Filters/EqualizerFilter.h>
 
 #include "DSPTestCase.h"
+#include "TestRegistry.h"
 
 using namespace SparkyStudios::Audio::Amplitude;
 
 namespace SparkyStudios::Audio::Amplitude::Tests
 {
-    void DSPTestCase::Run()
+    AM_TEST_CASE(DSPTestCase, dsp_filters, equalizer_filter_processes_audio)
     {
-        auto filter = amshared(EqualizerFilter);
-        filter->Initialize(1.0f, 1.5f, 2.0f, 1.5f, 1.0f, 0.8f, 0.6f, 0.4f);
-
-        auto instance = filter->CreateInstance();
-        AM_EXPECT_NOT(instance == nullptr);
-
-        // Create test audio buffers
-        constexpr AmUInt64 frameCount = 2048;
-        constexpr AmUInt16 channelCount = 2;
-        constexpr AmUInt32 sampleRate = 48000;
-
-        AudioBuffer inputBuffer(frameCount, channelCount);
-        AudioBuffer outputBuffer(frameCount, channelCount);
-
-        // Fill input buffer with multi-frequency signal
-        for (AmUInt16 c = 0; c < channelCount; ++c)
+    public:
+        void Run() override
         {
-            for (AmUInt64 i = 0; i < frameCount; ++i)
+            auto filter = amshared(EqualizerFilter);
+            filter->Initialize(1.0f, 1.5f, 2.0f, 1.5f, 1.0f, 0.8f, 0.6f, 0.4f);
+
+            auto instance = filter->CreateInstance();
+            AM_EXPECT_NOT(instance == nullptr);
+
+            // Create test audio buffers
+            constexpr AmUInt64 frameCount = 2048;
+            constexpr AmUInt16 channelCount = 2;
+            constexpr AmUInt32 sampleRate = 48000;
+
+            AudioBuffer inputBuffer(frameCount, channelCount);
+            AudioBuffer outputBuffer(frameCount, channelCount);
+
+            // Fill input buffer with multi-frequency signal
+            for (AmUInt16 c = 0; c < channelCount; ++c)
             {
-                // Mix of low, mid, and high frequencies
-                inputBuffer[c][i] =
-                    0.3f * std::sin(2.0f * AM_PI32 * 100.0f * static_cast<AmReal32>(i) / static_cast<AmReal32>(sampleRate)) +
-                    0.3f * std::sin(2.0f * AM_PI32 * 1000.0f * static_cast<AmReal32>(i) / static_cast<AmReal32>(sampleRate)) +
-                    0.3f * std::sin(2.0f * AM_PI32 * 8000.0f * static_cast<AmReal32>(i) / static_cast<AmReal32>(sampleRate));
+                for (AmUInt64 i = 0; i < frameCount; ++i)
+                {
+                    // Mix of low, mid, and high frequencies
+                    inputBuffer[c][i] =
+                        0.3f * std::sin(2.0f * AM_PI32 * 100.0f * static_cast<AmReal32>(i) / static_cast<AmReal32>(sampleRate)) +
+                        0.3f * std::sin(2.0f * AM_PI32 * 1000.0f * static_cast<AmReal32>(i) / static_cast<AmReal32>(sampleRate)) +
+                        0.3f * std::sin(2.0f * AM_PI32 * 8000.0f * static_cast<AmReal32>(i) / static_cast<AmReal32>(sampleRate));
+                }
             }
+
+            // Process audio
+            instance->Process(inputBuffer, outputBuffer, frameCount, sampleRate);
+
+            // Verify output buffer has non-zero values
+            AM_EXPECT(EnsureHasNonZeroOutput(outputBuffer));
         }
+    };
 
-        // Process audio
-        instance->Process(inputBuffer, outputBuffer, frameCount, sampleRate);
-
-        // Verify output buffer has non-zero values
-        AM_EXPECT(EnsureHasNonZeroOutput(outputBuffer));
-    }
+    AM_REGISTER_TEST(dsp_filters, equalizer_filter_processes_audio);
 } // namespace SparkyStudios::Audio::Amplitude::Tests

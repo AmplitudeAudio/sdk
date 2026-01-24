@@ -15,19 +15,26 @@
 #include <SparkyStudios/Audio/Amplitude/Amplitude.h>
 
 #include "EngineTestCase.h"
+#include "TestRegistry.h"
 
 using namespace SparkyStudios::Audio::Amplitude;
 
 namespace SparkyStudios::Audio::Amplitude::Tests
 {
-    void EngineTestCase::Run()
+    AM_TEST_CASE(EngineTestCase, core_engine, can_play_sound_using_handle)
     {
-        SoundHandle test_sound_01 = amEngine->GetSoundHandle("test_sound_01");
+    public:
+        void Run() override
+        {
+            SoundHandle test_sound_01 = amEngine->GetSoundHandle("test_sound_01");
 
-        Channel channel = amEngine->Play(test_sound_01);
-        amEngine->WaitUntilFrames(2); // Playing is done in the next frame
+            Channel channel = amEngine->Play(test_sound_01);
+            amEngine->WaitUntilFrames(2); // Playing is done in the next frame
 
-        AM_EXPECT(channel.Valid());
-        AM_EXPECT(channel.Playing());
-    }
+            AM_EXPECT(channel.Valid());
+            AM_EXPECT(channel.Playing());
+        }
+    };
+
+    AM_REGISTER_TEST(core_engine, can_play_sound_using_handle);
 } // namespace SparkyStudios::Audio::Amplitude::Tests

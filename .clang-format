@@ -36,6 +36,8 @@ FixNamespaceComments: true
 IncludeBlocks: Preserve
 IndentCaseBlocks: true
 IndentCaseLabels: false
+Macros:
+  - 'AM_TEST_CASE(BaseClass, TestGroup, TestName)=class AM_TEST_CONCAT(TestGroup, TestName, test) final : public BaseClass'
 IndentPPDirectives: None
 IndentWidth: 4
 KeepEmptyLinesAtTheStartOfBlocks: false

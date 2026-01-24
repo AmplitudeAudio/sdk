@@ -17,24 +17,31 @@
 #include <DSP/Filters/FFTFilter.h>
 
 #include "SimpleTestCase.h"
+#include "TestRegistry.h"
 
 using namespace SparkyStudios::Audio::Amplitude;
 
 namespace SparkyStudios::Audio::Amplitude::Tests
 {
-    void SimpleTestCase::Run()
+    AM_TEST_CASE(SimpleTestCase, dsp_filters, can_register_and_create_fft_filter)
     {
-        auto filter = amshared(FFTFilter, "TestFFTFilter");
-        AM_EXPECT_NOT(filter == nullptr);
+    public:
+        void Run() override
+        {
+            auto filter = amshared(FFTFilter, "TestFFTFilter");
+            AM_EXPECT_NOT(filter == nullptr);
 
-        auto instance = filter->CreateInstance();
-        AM_EXPECT_NOT(instance == nullptr);
+            auto instance = filter->CreateInstance();
+            AM_EXPECT_NOT(instance == nullptr);
 
-        // Test basic functionality
-        AM_EXPECT_EQ(filter->GetParameterCount(), 1);
-        AM_EXPECT_EQ(filter->GetParameterName(0), "Wet");
-        AM_EXPECT_EQ(filter->GetParameterType(0), eParameterType_Float);
-        AM_EXPECT_EQ(filter->GetParameterMin(0), 0.0f);
-        AM_EXPECT_EQ(filter->GetParameterMax(0), 1.0f);
-    }
+            // Test basic functionality
+            AM_EXPECT_EQ(filter->GetParameterCount(), 1);
+            AM_EXPECT_EQ(filter->GetParameterName(0), "Wet");
+            AM_EXPECT_EQ(filter->GetParameterType(0), eParameterType_Float);
+            AM_EXPECT_EQ(filter->GetParameterMin(0), 0.0f);
+            AM_EXPECT_EQ(filter->GetParameterMax(0), 1.0f);
+        }
+    };
+
+    AM_REGISTER_TEST(dsp_filters, can_register_and_create_fft_filter);
 } // namespace SparkyStudios::Audio::Amplitude::Tests

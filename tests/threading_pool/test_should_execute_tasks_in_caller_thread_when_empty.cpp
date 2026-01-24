@@ -16,19 +16,29 @@
 
 #include "DummyPoolTask.h"
 #include "SimpleTestCase.h"
+#include "TestRegistry.h"
 
 using namespace SparkyStudios::Audio::Amplitude;
 
-void SimpleTestCase::Run()
+namespace SparkyStudios::Audio::Amplitude::Tests
 {
-    Thread::Pool pool;
-    pool.Init(0);
+    AM_TEST_CASE(SimpleTestCase, threading_pool, should_execute_tasks_in_caller_thread_when_empty)
+    {
+    public:
+        void Run() override
+        {
+            Thread::Pool pool;
+            pool.Init(0);
 
-    auto task = amshared(DummyPoolTask);
-    AM_EXPECT_NOT(task->IsExecuted());
+            auto task = amshared(DummyPoolTask);
+            AM_EXPECT_NOT(task->IsExecuted());
 
-    pool.AddTask(task);
+            pool.AddTask(task);
 
-    AM_EXPECT(task->IsExecuted());
-    AM_EXPECT_EQ(task->GetExecutingThreadId(), Thread::GetCurrentThreadId());
-}
+            AM_EXPECT(task->IsExecuted());
+            AM_EXPECT_EQ(task->GetExecutingThreadId(), Thread::GetCurrentThreadId());
+        }
+    };
+
+    AM_REGISTER_TEST(threading_pool, should_execute_tasks_in_caller_thread_when_empty);
+} // namespace SparkyStudios::Audio::Amplitude::Tests

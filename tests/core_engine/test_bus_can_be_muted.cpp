@@ -15,22 +15,29 @@
 #include <SparkyStudios/Audio/Amplitude/Amplitude.h>
 
 #include "EngineTestCase.h"
+#include "TestRegistry.h"
 
 using namespace SparkyStudios::Audio::Amplitude;
 
 namespace SparkyStudios::Audio::Amplitude::Tests
 {
-    void EngineTestCase::Run()
+    AM_TEST_CASE(EngineTestCase, core_engine, bus_can_be_muted)
     {
-        Bus bus = amEngine->FindBus(kAmMasterBusId);
-        AM_EXPECT(bus.Valid());
+    public:
+        void Run() override
+        {
+            Bus bus = amEngine->FindBus(kAmMasterBusId);
+            AM_EXPECT(bus.Valid());
 
-        // Test muting the bus
-        bus.SetMute(true);
-        AM_EXPECT(bus.IsMuted());
+            // Test muting the bus
+            bus.SetMute(true);
+            AM_EXPECT(bus.IsMuted());
 
-        // Test unmuting the bus
-        bus.SetMute(false);
-        AM_EXPECT_NOT(bus.IsMuted());
-    }
+            // Test unmuting the bus
+            bus.SetMute(false);
+            AM_EXPECT_NOT(bus.IsMuted());
+        }
+    };
+
+    AM_REGISTER_TEST(core_engine, bus_can_be_muted);
 } // namespace SparkyStudios::Audio::Amplitude::Tests

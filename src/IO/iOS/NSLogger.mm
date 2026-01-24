@@ -82,14 +82,14 @@ const char *getLevelPrefix(eLogMessageLevel level) {
   }
 }
 
-NSLogger::NSLogger(const char *logTag) : m_log(nullptr) {
-  m_log = os_log_create("com.amplitudeaudiosdk", logTag);
+NSLogger::NSLogger(const char* bundleId, const char* logTag) : m_log(nullptr) {
+  m_log = os_log_create(bundleId, logTag);
 }
 
 NSLogger::~NSLogger() { m_log = nullptr; }
 
-void NSLogger::Log(eLogMessageLevel level, const char *file, int line,
-                   const AmString &message) {
+void NSLogger::Log(eLogMessageLevel level, const char* file, int line,
+                   const AmString& message) {
   if (file == nullptr)
     file = "<unknown>";
 

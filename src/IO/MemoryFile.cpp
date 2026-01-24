@@ -19,7 +19,6 @@
 
 namespace SparkyStudios::Audio::Amplitude
 {
-
     MemoryFile::MemoryFile()
         : m_dataPtr(nullptr)
         , m_dataSize(0)

@@ -15,14 +15,24 @@
 #include <SparkyStudios/Audio/Amplitude/Amplitude.h>
 
 #include "SimpleTestCase.h"
+#include "TestRegistry.h"
 
 using namespace SparkyStudios::Audio::Amplitude;
 
-void SimpleTestCase::Run()
+namespace SparkyStudios::Audio::Amplitude::Tests
 {
-    const auto start = Thread::GetTimeMillis();
-    Thread::Sleep(110);
-    const auto end = Thread::GetTimeMillis();
+    AM_TEST_CASE(SimpleTestCase, threading_thread, can_sleep_a_thread_for_a_duration)
+    {
+    public:
+        void Run() override
+        {
+            const auto start = Thread::GetTimeMillis();
+            Thread::Sleep(110);
+            const auto end = Thread::GetTimeMillis();
 
-    AM_EXPECT((end - start) >= 100);
-}
+            AM_EXPECT((end - start) >= 100);
+        }
+    };
+
+    AM_REGISTER_TEST(threading_thread, can_sleep_a_thread_for_a_duration);
+} // namespace SparkyStudios::Audio::Amplitude::Tests

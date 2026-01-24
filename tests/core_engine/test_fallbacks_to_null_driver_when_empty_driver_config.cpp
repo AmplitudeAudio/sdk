@@ -15,16 +15,23 @@
 #include <SparkyStudios/Audio/Amplitude/Amplitude.h>
 
 #include "EngineTestCase.h"
+#include "TestRegistry.h"
 
 using namespace SparkyStudios::Audio::Amplitude;
 
 namespace SparkyStudios::Audio::Amplitude::Tests
 {
-    void EngineTestCase::Run()
+    AM_TEST_CASE(EngineTestCase, core_engine, fallbacks_to_null_driver_when_empty_driver_config)
     {
-        AM_EXPECT(Deinitialize());
-        AM_EXPECT(amEngine->Initialize(AM_OS_STRING("tests.invalid.unset_driver.config.amconfig")));
-        AM_EXPECT(amEngine->GetDriver()->GetName() == "null");
-        AM_EXPECT(Deinitialize());
-    }
+    public:
+        void Run() override
+        {
+            AM_EXPECT(Deinitialize());
+            AM_EXPECT(amEngine->Initialize(AM_OS_STRING("tests.invalid.unset_driver.config.amconfig")));
+            AM_EXPECT(amEngine->GetDriver()->GetName() == "null");
+            AM_EXPECT(Deinitialize());
+        }
+    };
+
+    AM_REGISTER_TEST(core_engine, fallbacks_to_null_driver_when_empty_driver_config);
 } // namespace SparkyStudios::Audio::Amplitude::Tests

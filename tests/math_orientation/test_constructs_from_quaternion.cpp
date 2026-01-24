@@ -17,40 +17,50 @@
 #include <Math/LinearAlgebra.h>
 
 #include "SimpleTestCase.h"
+#include "TestRegistry.h"
 
 using namespace SparkyStudios::Audio::Amplitude;
 
-void SimpleTestCase::Run()
+namespace SparkyStudios::Audio::Amplitude::Tests
 {
-    // Create a quaternion representing a 90-degree rotation around Z-axis
-    const AmQuaternion quaternion = FromAxisAngle(kVector3UnitZ, AM_DegToRad * 90.0f);
-
-    const Orientation orientation(quaternion);
-
-    // it should store the quaternion
+    AM_TEST_CASE(SimpleTestCase, math_orientation, constructs_from_quaternion)
     {
-        const AmQuaternion storedQuaternion = orientation.GetQuaternion();
+    public:
+        void Run() override
+        {
+            // Create a quaternion representing a 90-degree rotation around Z-axis
+            const AmQuaternion quaternion = FromAxisAngle(kVector3UnitZ, AM_DegToRad * 90.0f);
 
-        AM_EXPECT(std::abs(storedQuaternion.w - quaternion.w) < kEpsilon);
-        AM_EXPECT(std::abs(storedQuaternion.x - quaternion.x) < kEpsilon);
-        AM_EXPECT(std::abs(storedQuaternion.y - quaternion.y) < kEpsilon);
-        AM_EXPECT(std::abs(storedQuaternion.z - quaternion.z) < kEpsilon);
-    }
+            const Orientation orientation(quaternion);
 
-    // it should compute corresponding forward and up vectors
-    {
-        const auto forward = orientation.GetForward();
-        const auto up = orientation.GetUp();
+            // it should store the quaternion
+        {
+            const AmQuaternion storedQuaternion = orientation.GetQuaternion();
 
-        // Vectors should be normalized
-        AM_EXPECT(std::abs(Length(forward) - 1.0f) < kEpsilon);
-        AM_EXPECT(std::abs(Length(up) - 1.0f) < kEpsilon);
+            AM_EXPECT(std::abs(storedQuaternion.w - quaternion.w) < kEpsilon);
+            AM_EXPECT(std::abs(storedQuaternion.x - quaternion.x) < kEpsilon);
+            AM_EXPECT(std::abs(storedQuaternion.y - quaternion.y) < kEpsilon);
+            AM_EXPECT(std::abs(storedQuaternion.z - quaternion.z) < kEpsilon);
+            }
 
-        // For a 90-degree Z rotation, forward should be rotated from unit Y
-        const AmVector3 expectedForward = RotateVector(kVector3UnitY, quaternion);
-        const AmVector3 expectedUp = RotateVector(kVector3UnitZ, quaternion);
+            // it should compute corresponding forward and up vectors
+        {
+            const auto forward = orientation.GetForward();
+            const auto up = orientation.GetUp();
 
-        AM_EXPECT_EQ(forward, expectedForward);
-        AM_EXPECT_EQ(up, expectedUp);
-    }
-}
+            // Vectors should be normalized
+            AM_EXPECT(std::abs(Length(forward) - 1.0f) < kEpsilon);
+            AM_EXPECT(std::abs(Length(up) - 1.0f) < kEpsilon);
+
+            // For a 90-degree Z rotation, forward should be rotated from unit Y
+            const AmVector3 expectedForward = RotateVector(kVector3UnitY, quaternion);
+            const AmVector3 expectedUp = RotateVector(kVector3UnitZ, quaternion);
+
+            AM_EXPECT_EQ(forward, expectedForward);
+            AM_EXPECT_EQ(up, expectedUp);
+            }
+        }
+    };
+
+    AM_REGISTER_TEST(math_orientation, constructs_from_quaternion);
+} // namespace SparkyStudios::Audio::Amplitude::Tests

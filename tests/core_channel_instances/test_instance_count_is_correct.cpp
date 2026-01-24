@@ -15,48 +15,55 @@
 #include <SparkyStudios/Audio/Amplitude/Amplitude.h>
 
 #include "EngineTestCase.h"
+#include "TestRegistry.h"
 
 using namespace SparkyStudios::Audio::Amplitude;
 
 namespace SparkyStudios::Audio::Amplitude::Tests
 {
-    void EngineTestCase::Run()
+    AM_TEST_CASE(EngineTestCase, core_channel_instances, instance_count_is_correct)
     {
-        SoundHandle test_sound_01 = amEngine->GetSoundHandle("test_sound_01");
-
-        Channel channel = amEngine->Play(test_sound_01);
-        amEngine->WaitUntilFrames(2);
-
-        AM_EXPECT(channel.Valid());
-
-        // Enable instancing
-        channel.EnableInstancing(eChannelInstanceMode_Blended);
-
-        // Initial count should be 0
-        AM_EXPECT(channel.GetInstanceCount() == 0);
-
-        // Add multiple instances and verify count
-        for (AmSize i = 0; i < 10; ++i)
+    public:
+        void Run() override
         {
-            AM_UNUSED(channel.AddInstance({ static_cast<AmReal32>(i * 10.0f), 0.0f, 0.0f }));
-            AM_EXPECT(channel.GetInstanceCount() == i + 1);
-        }
+            SoundHandle test_sound_01 = amEngine->GetSoundHandle("test_sound_01");
 
-        // Remove instances and verify count
-        AmSize currentCount = channel.GetInstanceCount();
-        for (AmSize i = 0; i < 5; ++i)
-        {
-            ChannelInstance instance = channel.GetInstance(i + 1); // IDs start from 1
-            if (instance.Valid())
+            Channel channel = amEngine->Play(test_sound_01);
+            amEngine->WaitUntilFrames(2);
+
+            AM_EXPECT(channel.Valid());
+
+            // Enable instancing
+            channel.EnableInstancing(eChannelInstanceMode_Blended);
+
+            // Initial count should be 0
+            AM_EXPECT(channel.GetInstanceCount() == 0);
+
+            // Add multiple instances and verify count
+            for (AmSize i = 0; i < 10; ++i)
             {
-                channel.RemoveInstance(instance.GetId());
-                currentCount--;
-                AM_EXPECT(channel.GetInstanceCount() == currentCount);
+                AM_UNUSED(channel.AddInstance({ static_cast<AmReal32>(i * 10.0f), 0.0f, 0.0f }));
+                AM_EXPECT(channel.GetInstanceCount() == i + 1);
             }
-        }
 
-        // Clear all instances
-        channel.ClearInstances();
-        AM_EXPECT(channel.GetInstanceCount() == 0);
-    }
+            // Remove instances and verify count
+            AmSize currentCount = channel.GetInstanceCount();
+            for (AmSize i = 0; i < 5; ++i)
+            {
+                ChannelInstance instance = channel.GetInstance(i + 1); // IDs start from 1
+                if (instance.Valid())
+                {
+                    channel.RemoveInstance(instance.GetId());
+                    currentCount--;
+                    AM_EXPECT(channel.GetInstanceCount() == currentCount);
+                }
+            }
+
+            // Clear all instances
+            channel.ClearInstances();
+            AM_EXPECT(channel.GetInstanceCount() == 0);
+        }
+    };
+
+    AM_REGISTER_TEST(core_channel_instances, instance_count_is_correct);
 } // namespace SparkyStudios::Audio::Amplitude::Tests

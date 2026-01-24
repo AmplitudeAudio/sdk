@@ -15,55 +15,62 @@
 #include <SparkyStudios/Audio/Amplitude/Amplitude.h>
 
 #include "EngineTestCase.h"
+#include "TestRegistry.h"
 
 using namespace SparkyStudios::Audio::Amplitude;
 
 namespace SparkyStudios::Audio::Amplitude::Tests
 {
-    void EngineTestCase::Run()
+    AM_TEST_CASE(EngineTestCase, core_channel_instances, instances_can_have_different_rooms)
     {
-        SoundHandle test_sound_01 = amEngine->GetSoundHandle("test_sound_01");
+    public:
+        void Run() override
+        {
+            SoundHandle test_sound_01 = amEngine->GetSoundHandle("test_sound_01");
 
-        Channel channel = amEngine->Play(test_sound_01);
-        amEngine->WaitUntilFrames(2);
+            Channel channel = amEngine->Play(test_sound_01);
+            amEngine->WaitUntilFrames(2);
 
-        AM_EXPECT(channel.Valid());
+            AM_EXPECT(channel.Valid());
 
-        // Create test rooms
-        Room room1 = amEngine->AddRoom(1);
-        Room room2 = amEngine->AddRoom(2);
-        Room room3 = amEngine->AddRoom(3);
+            // Create test rooms
+            Room room1 = amEngine->AddRoom(1);
+            Room room2 = amEngine->AddRoom(2);
+            Room room3 = amEngine->AddRoom(3);
 
-        AM_EXPECT(room1.Valid());
-        AM_EXPECT(room2.Valid());
-        AM_EXPECT(room3.Valid());
+            AM_EXPECT(room1.Valid());
+            AM_EXPECT(room2.Valid());
+            AM_EXPECT(room3.Valid());
 
-        // Enable instancing
-        channel.EnableInstancing(eChannelInstanceMode_Blended);
+            // Enable instancing
+            channel.EnableInstancing(eChannelInstanceMode_Blended);
 
-        // Add instances with different rooms
-        ChannelInstance instance1 = channel.AddInstance({ 100.0f, 0.0f, 50.0f });
-        instance1.SetRoom(room1);
+            // Add instances with different rooms
+            ChannelInstance instance1 = channel.AddInstance({ 100.0f, 0.0f, 50.0f });
+            instance1.SetRoom(room1);
 
-        ChannelInstance instance2 = channel.AddInstance({ 120.0f, 0.0f, 80.0f });
-        instance2.SetRoom(room2);
+            ChannelInstance instance2 = channel.AddInstance({ 120.0f, 0.0f, 80.0f });
+            instance2.SetRoom(room2);
 
-        ChannelInstance instance3 = channel.AddInstance({ 140.0f, 0.0f, 110.0f });
-        instance3.SetRoom(room3);
+            ChannelInstance instance3 = channel.AddInstance({ 140.0f, 0.0f, 110.0f });
+            instance3.SetRoom(room3);
 
-        // Verify each instance has the correct room
-        AM_EXPECT(instance1.GetRoom().Valid());
-        AM_EXPECT(instance1.GetRoom().GetId() == room1.GetId());
+            // Verify each instance has the correct room
+            AM_EXPECT(instance1.GetRoom().Valid());
+            AM_EXPECT(instance1.GetRoom().GetId() == room1.GetId());
 
-        AM_EXPECT(instance2.GetRoom().Valid());
-        AM_EXPECT(instance2.GetRoom().GetId() == room2.GetId());
+            AM_EXPECT(instance2.GetRoom().Valid());
+            AM_EXPECT(instance2.GetRoom().GetId() == room2.GetId());
 
-        AM_EXPECT(instance3.GetRoom().Valid());
-        AM_EXPECT(instance3.GetRoom().GetId() == room3.GetId());
+            AM_EXPECT(instance3.GetRoom().Valid());
+            AM_EXPECT(instance3.GetRoom().GetId() == room3.GetId());
 
-        // Cleanup
-        amEngine->RemoveRoom(1);
-        amEngine->RemoveRoom(2);
-        amEngine->RemoveRoom(3);
-    }
+            // Cleanup
+            amEngine->RemoveRoom(1);
+            amEngine->RemoveRoom(2);
+            amEngine->RemoveRoom(3);
+        }
+    };
+
+    AM_REGISTER_TEST(core_channel_instances, instances_can_have_different_rooms);
 } // namespace SparkyStudios::Audio::Amplitude::Tests

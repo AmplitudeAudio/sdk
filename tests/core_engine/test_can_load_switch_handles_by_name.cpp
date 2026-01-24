@@ -15,18 +15,25 @@
 #include <SparkyStudios/Audio/Amplitude/Amplitude.h>
 
 #include "EngineTestCase.h"
+#include "TestRegistry.h"
 
 using namespace SparkyStudios::Audio::Amplitude;
 
 namespace SparkyStudios::Audio::Amplitude::Tests
 {
-    void EngineTestCase::Run()
+    AM_TEST_CASE(EngineTestCase, core_engine, can_load_switch_handles_by_name)
     {
-        // Test loading switch handles by name
-        SwitchHandle switch1 = amEngine->GetSwitchHandle("env");
-        SwitchHandle switch2 = amEngine->GetSwitchHandle("surface_type");
+    public:
+        void Run() override
+        {
+            // Test loading switch handles by name
+            SwitchHandle switch1 = amEngine->GetSwitchHandle("env");
+            SwitchHandle switch2 = amEngine->GetSwitchHandle("surface_type");
 
-        AM_EXPECT(switch1 != nullptr);
-        AM_EXPECT(switch2 != nullptr);
-    }
+            AM_EXPECT(switch1 != nullptr);
+            AM_EXPECT(switch2 != nullptr);
+        }
+    };
+
+    AM_REGISTER_TEST(core_engine, can_load_switch_handles_by_name);
 } // namespace SparkyStudios::Audio::Amplitude::Tests

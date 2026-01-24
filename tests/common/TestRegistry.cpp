@@ -25,7 +25,9 @@ namespace SparkyStudios::Audio::Amplitude::Tests
 
     void TestRegistry::RegisterTest(const TestInfo& info)
     {
-        _tests[info.name] = info;
+        // Use group/name as key to avoid collisions between tests with same name in different groups
+        std::string key = info.group + "/" + info.name;
+        _tests[key] = info;
     }
 
     std::shared_ptr<TestCase> TestRegistry::GetTestCase(const std::string& name) const

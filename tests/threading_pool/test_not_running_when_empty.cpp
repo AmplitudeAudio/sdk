@@ -15,13 +15,23 @@
 #include <SparkyStudios/Audio/Amplitude/Amplitude.h>
 
 #include "SimpleTestCase.h"
+#include "TestRegistry.h"
 
 using namespace SparkyStudios::Audio::Amplitude;
 
-void SimpleTestCase::Run()
+namespace SparkyStudios::Audio::Amplitude::Tests
 {
-    Thread::Pool pool;
-    pool.Init(0);
+    AM_TEST_CASE(SimpleTestCase, threading_pool, not_running_when_empty)
+    {
+    public:
+        void Run() override
+        {
+            Thread::Pool pool;
+            pool.Init(0);
 
-    AM_EXPECT_NOT(pool.IsRunning());
-}
+            AM_EXPECT_NOT(pool.IsRunning());
+        }
+    };
+
+    AM_REGISTER_TEST(threading_pool, not_running_when_empty);
+} // namespace SparkyStudios::Audio::Amplitude::Tests

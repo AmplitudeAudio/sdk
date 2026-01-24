@@ -1259,7 +1259,7 @@ namespace SparkyStudios::Audio::Amplitude
 
             // Reset pipeline state for next instance. This is required since each
             // instance needs to be processed as a single sound object in separate mode.
-            layer->pipeline->Reset();
+            layer->ResetPipeline();
         }
 
         // Clear instance processing context
@@ -1372,7 +1372,10 @@ namespace SparkyStudios::Audio::Amplitude
 
     void AmplimixLayerImpl::ResetPipeline()
     {
-        pipeline->Reset();
+        // Check if pipeline is valid before resetting
+        // The pipeline can be nullptr if the sound is being destroyed on another thread
+        if (pipeline != nullptr)
+            pipeline->Reset();
 
         // Clear room update flag to allow re-initialization for next processing pass
         // This is important for per-instance processing in separate mode, where each

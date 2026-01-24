@@ -17,28 +17,38 @@
 #include <Math/LinearAlgebra.h>
 
 #include "SimpleTestCase.h"
+#include "TestRegistry.h"
 
 using namespace SparkyStudios::Audio::Amplitude;
 
-void SimpleTestCase::Run()
+namespace SparkyStudios::Audio::Amplitude::Tests
 {
-    constexpr AmReal32 yaw = AM_DegToRad * 60.0f;
-    constexpr AmReal32 pitch = AM_DegToRad * 20.0f;
-    constexpr AmReal32 roll = AM_DegToRad * 10.0f;
-
-    const Orientation originalOrientation(yaw, pitch, roll);
-
+    AM_TEST_CASE(SimpleTestCase, math_orientation, is_consistent_between_representations)
     {
-        const Orientation reconstructedFromVectors(originalOrientation.GetForward(), originalOrientation.GetUp());
+    public:
+        void Run() override
+        {
+            constexpr AmReal32 yaw = AM_DegToRad * 60.0f;
+            constexpr AmReal32 pitch = AM_DegToRad * 20.0f;
+            constexpr AmReal32 roll = AM_DegToRad * 10.0f;
 
-        AM_EXPECT_EQ(originalOrientation.GetForward(), reconstructedFromVectors.GetForward());
-        AM_EXPECT_EQ(originalOrientation.GetUp(), reconstructedFromVectors.GetUp());
-    }
+            const Orientation originalOrientation(yaw, pitch, roll);
 
-    {
-        const Orientation reconstructedFromQuaternion(originalOrientation.GetQuaternion());
+        {
+            const Orientation reconstructedFromVectors(originalOrientation.GetForward(), originalOrientation.GetUp());
 
-        AM_EXPECT(Length(Sub(originalOrientation.GetForward(), reconstructedFromQuaternion.GetForward())) < kEpsilon);
-        AM_EXPECT(Length(Sub(originalOrientation.GetUp(), reconstructedFromQuaternion.GetUp())) < kEpsilon);
-    }
-}
+            AM_EXPECT_EQ(originalOrientation.GetForward(), reconstructedFromVectors.GetForward());
+            AM_EXPECT_EQ(originalOrientation.GetUp(), reconstructedFromVectors.GetUp());
+            }
+
+        {
+            const Orientation reconstructedFromQuaternion(originalOrientation.GetQuaternion());
+
+            AM_EXPECT(Length(Sub(originalOrientation.GetForward(), reconstructedFromQuaternion.GetForward())) < kEpsilon);
+            AM_EXPECT(Length(Sub(originalOrientation.GetUp(), reconstructedFromQuaternion.GetUp())) < kEpsilon);
+            }
+        }
+    };
+
+    AM_REGISTER_TEST(math_orientation, is_consistent_between_representations);
+} // namespace SparkyStudios::Audio::Amplitude::Tests

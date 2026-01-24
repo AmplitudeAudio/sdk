@@ -17,52 +17,59 @@
 #include <DSP/Filters/LofiFilter.h>
 
 #include "SimpleTestCase.h"
+#include "TestRegistry.h"
 
 using namespace SparkyStudios::Audio::Amplitude;
 
 namespace SparkyStudios::Audio::Amplitude::Tests
 {
-    void SimpleTestCase::Run()
+    AM_TEST_CASE(SimpleTestCase, dsp_filters, can_register_and_create_lofi_filter)
     {
-        auto filter = amshared(LofiFilter);
-        filter->Initialize(8000.0f, 8.0f);
+    public:
+        void Run() override
+        {
+            auto filter = amshared(LofiFilter);
+            filter->Initialize(8000.0f, 8.0f);
 
-        Filter::Unregister(Filter::Find("Lofi"));
-        Filter::Register(filter);
+            Filter::Unregister(Filter::Find("Lofi"));
+            Filter::Register(filter);
 
-        AM_EXPECT_NOT(Filter::Find("Lofi") == nullptr);
-        AM_EXPECT(Filter::Find("Lofi")->GetName() == "Lofi");
+            AM_EXPECT_NOT(Filter::Find("Lofi") == nullptr);
+            AM_EXPECT(Filter::Find("Lofi")->GetName() == "Lofi");
 
-        auto instance = Filter::Construct("Lofi");
-        AM_EXPECT_NOT(instance == nullptr);
+            auto instance = Filter::Construct("Lofi");
+            AM_EXPECT_NOT(instance == nullptr);
 
-        // Test parameter count
-        AM_EXPECT(filter->GetParameterCount() == LofiFilter::ATTRIBUTE_LAST);
-        AM_EXPECT(filter->GetParameterCount() == 3);
+            // Test parameter count
+            AM_EXPECT(filter->GetParameterCount() == LofiFilter::ATTRIBUTE_LAST);
+            AM_EXPECT(filter->GetParameterCount() == 3);
 
-        // Test parameter names
-        AM_EXPECT(filter->GetParameterName(LofiFilter::ATTRIBUTE_WET) == "Wet");
-        AM_EXPECT(filter->GetParameterName(LofiFilter::ATTRIBUTE_SAMPLERATE) == "Samplerate");
-        AM_EXPECT(filter->GetParameterName(LofiFilter::ATTRIBUTE_BITDEPTH) == "Bit Depth");
-        AM_EXPECT(filter->GetParameterName(LofiFilter::ATTRIBUTE_LAST) == "Unknown");
+            // Test parameter names
+            AM_EXPECT(filter->GetParameterName(LofiFilter::ATTRIBUTE_WET) == "Wet");
+            AM_EXPECT(filter->GetParameterName(LofiFilter::ATTRIBUTE_SAMPLERATE) == "Samplerate");
+            AM_EXPECT(filter->GetParameterName(LofiFilter::ATTRIBUTE_BITDEPTH) == "Bit Depth");
+            AM_EXPECT(filter->GetParameterName(LofiFilter::ATTRIBUTE_LAST) == "Unknown");
 
-        // Test parameter types
-        AM_EXPECT(filter->GetParameterType(LofiFilter::ATTRIBUTE_WET) == eParameterType_Float);
-        AM_EXPECT(filter->GetParameterType(LofiFilter::ATTRIBUTE_SAMPLERATE) == eParameterType_Float);
-        AM_EXPECT(filter->GetParameterType(LofiFilter::ATTRIBUTE_BITDEPTH) == eParameterType_Float);
+            // Test parameter types
+            AM_EXPECT(filter->GetParameterType(LofiFilter::ATTRIBUTE_WET) == eParameterType_Float);
+            AM_EXPECT(filter->GetParameterType(LofiFilter::ATTRIBUTE_SAMPLERATE) == eParameterType_Float);
+            AM_EXPECT(filter->GetParameterType(LofiFilter::ATTRIBUTE_BITDEPTH) == eParameterType_Float);
 
-        // Test WET parameter boundaries
-        AM_EXPECT(filter->GetParameterMin(LofiFilter::ATTRIBUTE_WET) == 0.0f);
-        AM_EXPECT(filter->GetParameterMax(LofiFilter::ATTRIBUTE_WET) == 1.0f);
+            // Test WET parameter boundaries
+            AM_EXPECT(filter->GetParameterMin(LofiFilter::ATTRIBUTE_WET) == 0.0f);
+            AM_EXPECT(filter->GetParameterMax(LofiFilter::ATTRIBUTE_WET) == 1.0f);
 
-        // Test SAMPLERATE parameter boundaries
-        AM_EXPECT(filter->GetParameterMin(LofiFilter::ATTRIBUTE_SAMPLERATE) == 100.0f);
-        AM_EXPECT(filter->GetParameterMax(LofiFilter::ATTRIBUTE_SAMPLERATE) == 22000.0f);
+            // Test SAMPLERATE parameter boundaries
+            AM_EXPECT(filter->GetParameterMin(LofiFilter::ATTRIBUTE_SAMPLERATE) == 100.0f);
+            AM_EXPECT(filter->GetParameterMax(LofiFilter::ATTRIBUTE_SAMPLERATE) == 22000.0f);
 
-        // Test BITDEPTH parameter boundaries
-        AM_EXPECT(filter->GetParameterMin(LofiFilter::ATTRIBUTE_BITDEPTH) == 0.5f);
-        AM_EXPECT(filter->GetParameterMax(LofiFilter::ATTRIBUTE_BITDEPTH) == 16.0f);
+            // Test BITDEPTH parameter boundaries
+            AM_EXPECT(filter->GetParameterMin(LofiFilter::ATTRIBUTE_BITDEPTH) == 0.5f);
+            AM_EXPECT(filter->GetParameterMax(LofiFilter::ATTRIBUTE_BITDEPTH) == 16.0f);
 
-        Filter::Unregister(filter);
-    }
+            Filter::Unregister(filter);
+        }
+    };
+
+    AM_REGISTER_TEST(dsp_filters, can_register_and_create_lofi_filter);
 } // namespace SparkyStudios::Audio::Amplitude::Tests

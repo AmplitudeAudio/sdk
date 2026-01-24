@@ -15,59 +15,69 @@
 #include <SparkyStudios/Audio/Amplitude/Amplitude.h>
 
 #include "SimpleTestCase.h"
+#include "TestRegistry.h"
 
 using namespace SparkyStudios::Audio::Amplitude;
 
-void SimpleTestCase::Run()
+namespace SparkyStudios::Audio::Amplitude::Tests
 {
-    // Test default constructor creates invalid Room
+    AM_TEST_CASE(SimpleTestCase, core_room, handles_default_constructor)
     {
-        Room defaultRoom;
+    public:
+        void Run() override
+        {
+            // Test default constructor creates invalid Room
+            {
+                Room defaultRoom;
 
-        AM_EXPECT(!defaultRoom.Valid());
-        AM_EXPECT_EQ(defaultRoom.GetId(), kAmInvalidObjectId);
-        AM_EXPECT_EQ(defaultRoom.GetState(), nullptr);
-    }
+                AM_EXPECT(!defaultRoom.Valid());
+                AM_EXPECT_EQ(defaultRoom.GetId(), kAmInvalidObjectId);
+                AM_EXPECT_EQ(defaultRoom.GetState(), nullptr);
+            }
 
-    // Test multiple default-constructed rooms
-    {
-        Room room1;
-        Room room2;
-        Room room3;
+            // Test multiple default-constructed rooms
+            {
+                Room room1;
+                Room room2;
+                Room room3;
 
-        AM_EXPECT(!room1.Valid());
-        AM_EXPECT(!room2.Valid());
-        AM_EXPECT(!room3.Valid());
+                AM_EXPECT(!room1.Valid());
+                AM_EXPECT(!room2.Valid());
+                AM_EXPECT(!room3.Valid());
 
-        AM_EXPECT_EQ(room1.GetId(), kAmInvalidObjectId);
-        AM_EXPECT_EQ(room2.GetId(), kAmInvalidObjectId);
-        AM_EXPECT_EQ(room3.GetId(), kAmInvalidObjectId);
+                AM_EXPECT_EQ(room1.GetId(), kAmInvalidObjectId);
+                AM_EXPECT_EQ(room2.GetId(), kAmInvalidObjectId);
+                AM_EXPECT_EQ(room3.GetId(), kAmInvalidObjectId);
 
-        AM_EXPECT_EQ(room1.GetState(), nullptr);
-        AM_EXPECT_EQ(room2.GetState(), nullptr);
-        AM_EXPECT_EQ(room3.GetState(), nullptr);
-    }
+                AM_EXPECT_EQ(room1.GetState(), nullptr);
+                AM_EXPECT_EQ(room2.GetState(), nullptr);
+                AM_EXPECT_EQ(room3.GetState(), nullptr);
+            }
 
-    // Test that Clear() works on default-constructed Room
-    {
-        Room room;
-        AM_EXPECT(!room.Valid());
+            // Test that Clear() works on default-constructed Room
+            {
+                Room room;
+                AM_EXPECT(!room.Valid());
 
-        room.Clear(); // Should not crash
-        AM_EXPECT(!room.Valid());
-        AM_EXPECT_EQ(room.GetId(), kAmInvalidObjectId);
-        AM_EXPECT_EQ(room.GetState(), nullptr);
-    }
+                room.Clear(); // Should not crash
+                AM_EXPECT(!room.Valid());
+                AM_EXPECT_EQ(room.GetId(), kAmInvalidObjectId);
+                AM_EXPECT_EQ(room.GetState(), nullptr);
+            }
 
-    // Test copy assignment from default-constructed Room
-    {
-        Room defaultRoom;
-        Room anotherRoom;
+            // Test copy assignment from default-constructed Room
+            {
+                Room defaultRoom;
+                Room anotherRoom;
 
-        anotherRoom = defaultRoom;
+                anotherRoom = defaultRoom;
 
-        AM_EXPECT(!anotherRoom.Valid());
-        AM_EXPECT_EQ(anotherRoom.GetId(), kAmInvalidObjectId);
-        AM_EXPECT_EQ(anotherRoom.GetState(), nullptr);
-    }
-}
+                AM_EXPECT(!anotherRoom.Valid());
+                AM_EXPECT_EQ(anotherRoom.GetId(), kAmInvalidObjectId);
+                AM_EXPECT_EQ(anotherRoom.GetState(), nullptr);
+            }
+        }
+    };
+
+    AM_REGISTER_TEST(core_room, handles_default_constructor);
+} // namespace SparkyStudios::Audio::Amplitude::Tests

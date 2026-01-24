@@ -17,37 +17,44 @@
 #include <DSP/Gain.h>
 
 #include "SimpleTestCase.h"
+#include "TestRegistry.h"
 
 namespace SparkyStudios::Audio::Amplitude::Tests
 {
-    void SimpleTestCase::Run()
+    AM_TEST_CASE(SimpleTestCase, dsp_utilities, gain_stereo_panning)
     {
-        constexpr AmReal32 gain = 1.0f;
+    public:
+        void Run() override
+        {
+            constexpr AmReal32 gain = 1.0f;
 
-        // Test center pan (0.0)
-        AmVector2 centerGains = Gain::CalculateStereoPannedGain(gain, 0.0f);
-        AM_EXPECT(std::abs(centerGains.x - centerGains.y) < 0.01f); // Left and right should be equal
+            // Test center pan (0.0)
+            AmVector2 centerGains = Gain::CalculateStereoPannedGain(gain, 0.0f);
+            AM_EXPECT(std::abs(centerGains.x - centerGains.y) < 0.01f); // Left and right should be equal
 
-        // Test full left (-1.0)
-        AmVector2 leftGains = Gain::CalculateStereoPannedGain(gain, -1.0f);
-        AM_EXPECT(leftGains.x > leftGains.y); // Left should be stronger
+            // Test full left (-1.0)
+            AmVector2 leftGains = Gain::CalculateStereoPannedGain(gain, -1.0f);
+            AM_EXPECT(leftGains.x > leftGains.y); // Left should be stronger
 
-        // Test full right (+1.0)
-        AmVector2 rightGains = Gain::CalculateStereoPannedGain(gain, 1.0f);
-        AM_EXPECT(rightGains.y > rightGains.x); // Right should be stronger
+            // Test full right (+1.0)
+            AmVector2 rightGains = Gain::CalculateStereoPannedGain(gain, 1.0f);
+            AM_EXPECT(rightGains.y > rightGains.x); // Right should be stronger
 
-        // Test with zero gain
-        AmVector2 zeroGains = Gain::CalculateStereoPannedGain(0.0f, 0.0f);
-        AM_EXPECT(Gain::IsZero(zeroGains.x));
-        AM_EXPECT(Gain::IsZero(zeroGains.y));
+            // Test with zero gain
+            AmVector2 zeroGains = Gain::CalculateStereoPannedGain(0.0f, 0.0f);
+            AM_EXPECT(Gain::IsZero(zeroGains.x));
+            AM_EXPECT(Gain::IsZero(zeroGains.y));
 
-        // Test IsZero and IsOne utilities
-        AM_EXPECT(Gain::IsZero(0.0f));
-        AM_EXPECT(Gain::IsZero(0.0001f));
-        AM_EXPECT_NOT(Gain::IsZero(0.1f));
+            // Test IsZero and IsOne utilities
+            AM_EXPECT(Gain::IsZero(0.0f));
+            AM_EXPECT(Gain::IsZero(0.0001f));
+            AM_EXPECT_NOT(Gain::IsZero(0.1f));
 
-        AM_EXPECT(Gain::IsOne(1.0f));
-        AM_EXPECT(Gain::IsOne(0.9999f));
-        AM_EXPECT_NOT(Gain::IsOne(0.5f));
-    }
+            AM_EXPECT(Gain::IsOne(1.0f));
+            AM_EXPECT(Gain::IsOne(0.9999f));
+            AM_EXPECT_NOT(Gain::IsOne(0.5f));
+        }
+    };
+
+    AM_REGISTER_TEST(dsp_utilities, gain_stereo_panning);
 } // namespace SparkyStudios::Audio::Amplitude::Tests

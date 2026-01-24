@@ -15,22 +15,29 @@
 #include <SparkyStudios/Audio/Amplitude/Amplitude.h>
 
 #include "EngineTestCase.h"
+#include "TestRegistry.h"
 
 using namespace SparkyStudios::Audio::Amplitude;
 
 namespace SparkyStudios::Audio::Amplitude::Tests
 {
-    void EngineTestCase::Run()
+    AM_TEST_CASE(EngineTestCase, core_engine, engine_can_fire_and_reset_event_by_id)
     {
-        // Test engine can fire and reset event by ID
-        EventCanceler c1 = amEngine->Trigger(5, amEngine->AddEntity(99));
-        AM_EXPECT(c1.Valid());
-        AM_EXPECT(c1.GetEvent()->IsRunning());
+    public:
+        void Run() override
+        {
+            // Test engine can fire and reset event by ID
+            EventCanceler c1 = amEngine->Trigger(5, amEngine->AddEntity(99));
+            AM_EXPECT(c1.Valid());
+            AM_EXPECT(c1.GetEvent()->IsRunning());
 
-        c1.Cancel();
-        AM_EXPECT_NOT(c1.GetEvent()->IsRunning());
+            c1.Cancel();
+            AM_EXPECT_NOT(c1.GetEvent()->IsRunning());
 
-        // Clean up
-        amEngine->RemoveEntity(99);
-    }
+            // Clean up
+            amEngine->RemoveEntity(99);
+        }
+    };
+
+    AM_REGISTER_TEST(core_engine, engine_can_fire_and_reset_event_by_id);
 } // namespace SparkyStudios::Audio::Amplitude::Tests

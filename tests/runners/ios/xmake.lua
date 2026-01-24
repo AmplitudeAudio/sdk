@@ -15,9 +15,10 @@
 -- iOS Test Runner Application
 -- This target builds an iOS application that runs the Amplitude SDK tests
 -- on iOS devices and simulators.
+--
+-- This file is only included when building for iOS (iphoneos platform).
 
-if is_plat("iphoneos") then
-  target("AmplitudeTests_iOS")
+target("AmplitudeTests_iOS")
     add_rules("xcode.application")
     set_kind("binary")
     set_basename("AmplitudeTests")
@@ -51,6 +52,18 @@ if is_plat("iphoneos") then
     add_files("$(projectdir)/tests/common/TestRegistry.cpp")
     add_files("$(projectdir)/tests/common/TestUtils.cpp")
     add_includedirs("$(projectdir)/tests/common")
+
+    -- All test files (they self-register via static initialization)
+    add_files("$(projectdir)/tests/core_*/test_*.cpp")
+    add_files("$(projectdir)/tests/dsp_*/test_*.cpp")
+    add_files("$(projectdir)/tests/fs_*/test_*.cpp")
+    add_files("$(projectdir)/tests/math_*/test_*.cpp")
+    add_files("$(projectdir)/tests/mixer_*/test_*.cpp")
+    add_files("$(projectdir)/tests/threading_*/test_*.cpp")
+    add_files("$(projectdir)/tests/hrtf_*/test_*.cpp")
+
+    -- Exclude shared library tests (not supported on iOS)
+    remove_files("$(projectdir)/tests/**/*__shared.cpp")
 
     -- Include directories
     add_includedirs("$(projectdir)/include")
@@ -87,5 +100,4 @@ if is_plat("iphoneos") then
         print("then copy the assets to the iOS build directory.")
       end
     end)
-  target_end()
-end
+target_end()

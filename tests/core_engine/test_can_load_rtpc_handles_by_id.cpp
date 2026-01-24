@@ -15,15 +15,22 @@
 #include <SparkyStudios/Audio/Amplitude/Amplitude.h>
 
 #include "EngineTestCase.h"
+#include "TestRegistry.h"
 
 using namespace SparkyStudios::Audio::Amplitude;
 
 namespace SparkyStudios::Audio::Amplitude::Tests
 {
-    void EngineTestCase::Run()
+    AM_TEST_CASE(EngineTestCase, core_engine, can_load_rtpc_handles_by_id)
     {
-        // Test loading RTPC handles by ID
-        RtpcHandle rtpc1 = amEngine->GetRtpcHandle(1);
-        AM_EXPECT(rtpc1 != nullptr);
-    }
+    public:
+        void Run() override
+        {
+            // Test loading RTPC handles by ID
+            RtpcHandle rtpc1 = amEngine->GetRtpcHandle(1);
+            AM_EXPECT(rtpc1 != nullptr);
+        }
+    };
+
+    AM_REGISTER_TEST(core_engine, can_load_rtpc_handles_by_id);
 } // namespace SparkyStudios::Audio::Amplitude::Tests

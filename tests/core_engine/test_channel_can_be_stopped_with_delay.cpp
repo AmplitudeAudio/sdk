@@ -15,32 +15,39 @@
 #include <SparkyStudios/Audio/Amplitude/Amplitude.h>
 
 #include "EngineTestCase.h"
+#include "TestRegistry.h"
 
 using namespace SparkyStudios::Audio::Amplitude;
 
 namespace SparkyStudios::Audio::Amplitude::Tests
 {
-    void EngineTestCase::Run()
+    AM_TEST_CASE(EngineTestCase, core_engine, channel_can_be_stopped_with_delay)
     {
-        AmVector3 location = { 10.0f, 20.0f, 30.0f };
-        AmReal32 userGain = 0.36f;
-        Channel channel = amEngine->Play(100, location, userGain);
-        amEngine->WaitUntilFrames(2); // Playing is done in the next frame
+    public:
+        void Run() override
+        {
+            AmVector3 location = { 10.0f, 20.0f, 30.0f };
+            AmReal32 userGain = 0.36f;
+            Channel channel = amEngine->Play(100, location, userGain);
+            amEngine->WaitUntilFrames(2); // Playing is done in the next frame
 
-        AM_EXPECT(channel.Valid());
-        AM_EXPECT(channel.Playing());
+            AM_EXPECT(channel.Valid());
+            AM_EXPECT(channel.Playing());
 
-        // Test stopping with delay
-        channel.Stop();
-        AM_EXPECT_EQ(channel.GetPlaybackState(), eChannelPlaybackState_FadingOut);
-        AM_EXPECT_NOT(channel.Playing());
-        amEngine->WaitUntilFrames(kMinFadeDuration);
-        AM_EXPECT_EQ(channel.GetPlaybackState(), eChannelPlaybackState_Stopped);
+            // Test stopping with delay
+            channel.Stop();
+            AM_EXPECT_EQ(channel.GetPlaybackState(), eChannelPlaybackState_FadingOut);
+            AM_EXPECT_NOT(channel.Playing());
+            amEngine->WaitUntilFrames(kMinFadeDuration);
+            AM_EXPECT_EQ(channel.GetPlaybackState(), eChannelPlaybackState_Stopped);
 
-        // Test that resumed stopped channel stays stopped
-        channel.Resume();
-        AM_EXPECT_NE(channel.GetPlaybackState(), eChannelPlaybackState_FadingIn);
-        AM_EXPECT_EQ(channel.GetPlaybackState(), eChannelPlaybackState_Stopped);
-        AM_EXPECT_NOT(channel.Playing());
-    }
+            // Test that resumed stopped channel stays stopped
+            channel.Resume();
+            AM_EXPECT_NE(channel.GetPlaybackState(), eChannelPlaybackState_FadingIn);
+            AM_EXPECT_EQ(channel.GetPlaybackState(), eChannelPlaybackState_Stopped);
+            AM_EXPECT_NOT(channel.Playing());
+        }
+    };
+
+    AM_REGISTER_TEST(core_engine, channel_can_be_stopped_with_delay);
 } // namespace SparkyStudios::Audio::Amplitude::Tests

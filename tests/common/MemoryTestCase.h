@@ -27,11 +27,5 @@ namespace SparkyStudios::Audio::Amplitude::Tests
         void TearDown() override
         {}
 
-        void Run() override;
     };
-
-    std::shared_ptr<TestCase> MakeTestCase()
-    {
-        return std::make_shared<MemoryTestCase>();
-    }
 } // namespace SparkyStudios::Audio::Amplitude::Tests

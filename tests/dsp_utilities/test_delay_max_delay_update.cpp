@@ -17,23 +17,30 @@
 #include <DSP/Delay.h>
 
 #include "SimpleTestCase.h"
+#include "TestRegistry.h"
 
 namespace SparkyStudios::Audio::Amplitude::Tests
 {
-    void SimpleTestCase::Run()
+    AM_TEST_CASE(SimpleTestCase, dsp_utilities, delay_max_delay_update)
     {
-        constexpr AmSize initialMaxDelay = 200;
-        constexpr AmSize framesCount = 128;
+    public:
+        void Run() override
+        {
+            constexpr AmSize initialMaxDelay = 200;
+            constexpr AmSize framesCount = 128;
 
-        Delay delay(initialMaxDelay, framesCount);
+            Delay delay(initialMaxDelay, framesCount);
 
-        AM_EXPECT(delay.GetMaxDelay() == initialMaxDelay);
+            AM_EXPECT(delay.GetMaxDelay() == initialMaxDelay);
 
-        // Update max delay
-        constexpr AmSize newMaxDelay = 500;
-        delay.SetMaxDelay(newMaxDelay);
+            // Update max delay
+            constexpr AmSize newMaxDelay = 500;
+            delay.SetMaxDelay(newMaxDelay);
 
-        AM_EXPECT(delay.GetMaxDelay() == newMaxDelay);
-        AM_EXPECT(delay.GetDelayInSamples() == newMaxDelay + framesCount);
-    }
+            AM_EXPECT(delay.GetMaxDelay() == newMaxDelay);
+            AM_EXPECT(delay.GetDelayInSamples() == newMaxDelay + framesCount);
+        }
+    };
+
+    AM_REGISTER_TEST(dsp_utilities, delay_max_delay_update);
 } // namespace SparkyStudios::Audio::Amplitude::Tests

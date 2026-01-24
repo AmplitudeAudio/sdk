@@ -15,6 +15,7 @@
 #import "AppDelegate.h"
 
 #include <SparkyStudios/Audio/Amplitude/Amplitude.h>
+#include <SparkyStudios/Audio/Amplitude/IO/iOS/NSLogger.h>
 
 using namespace SparkyStudios::Audio::Amplitude;
 
@@ -26,7 +27,7 @@ using namespace SparkyStudios::Audio::Amplitude;
     MemoryManager::Initialize();
 
     // Set up console logger for debugging
-    static ConsoleLogger logger(true);
+    static NSLogger logger("com.amplitudeaudiosdk.tests", "AmplitudeTests");
     Logger::SetLogger(&logger);
 
     NSLog(@"Amplitude Test Runner initialized");

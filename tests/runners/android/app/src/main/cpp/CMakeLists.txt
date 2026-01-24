@@ -53,8 +53,8 @@ elseif(${ANDROID_ABI} STREQUAL "x86")
 endif()
 
 # Path to Amplitude SDK root directory
-# This assumes the android_runner is in tests/android_runner/
-set(AMPLITUDE_SDK_DIR "${CMAKE_CURRENT_SOURCE_DIR}/../../../../../..")
+# This assumes the android_runner is in tests/runners/android/
+set(AMPLITUDE_SDK_DIR "${CMAKE_CURRENT_SOURCE_DIR}/../../../../../../..")
 
 # Normalize the path
 get_filename_component(AMPLITUDE_SDK_DIR "${AMPLITUDE_SDK_DIR}" ABSOLUTE)
@@ -79,17 +79,32 @@ if(EXISTS "${AMPLITUDE_INCLUDE_DIR}")
   message(STATUS "Using generated headers from: ${AMPLITUDE_INCLUDE_DIR}")
 endif()
 
-# Test common sources
+# Test common sources (platform-specific)
 set(TEST_COMMON_SOURCES
-    ${AMPLITUDE_SDK_DIR}/tests/common/PlatformTestCase.cpp
+    ${AMPLITUDE_SDK_DIR}/tests/common/PlatformTestCase_Android.cpp
     ${AMPLITUDE_SDK_DIR}/tests/common/TestRegistry.cpp
     ${AMPLITUDE_SDK_DIR}/tests/common/TestUtils.cpp
 )
+
+# Collect all test source files (they self-register via static initialization)
+file(GLOB_RECURSE TEST_SOURCES
+    ${AMPLITUDE_SDK_DIR}/tests/core_*/test_*.cpp
+    ${AMPLITUDE_SDK_DIR}/tests/dsp_*/test_*.cpp
+    ${AMPLITUDE_SDK_DIR}/tests/fs_*/test_*.cpp
+    ${AMPLITUDE_SDK_DIR}/tests/math_*/test_*.cpp
+    ${AMPLITUDE_SDK_DIR}/tests/mixer_*/test_*.cpp
+    ${AMPLITUDE_SDK_DIR}/tests/threading_*/test_*.cpp
+    ${AMPLITUDE_SDK_DIR}/tests/hrtf_*/test_*.cpp
+)
+
+# Exclude shared library tests (not supported on Android)
+list(FILTER TEST_SOURCES EXCLUDE REGEX ".*__shared\\.cpp$")
 
 # Native test bridge library
 add_library(amplitude_tests SHARED
     native_test_bridge.cpp
     ${TEST_COMMON_SOURCES}
+    ${TEST_SOURCES}
 )
 
 # Try to find pre-built Amplitude library

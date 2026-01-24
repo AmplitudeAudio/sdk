@@ -17,36 +17,46 @@
 #include <Core/EntityInternalState.h>
 
 #include "SimpleTestCase.h"
+#include "TestRegistry.h"
 
 using namespace SparkyStudios::Audio::Amplitude;
 
-void SimpleTestCase::Run()
+namespace SparkyStudios::Audio::Amplitude::Tests
 {
-    EntityInternalState state;
-    state.SetId(1);
+    AM_TEST_CASE(SimpleTestCase, core_entity, handles_directivity_changes)
+    {
+    public:
+        void Run() override
+        {
+            EntityInternalState state;
+            state.SetId(1);
 
-    fplutil::intrusive_list entity_list(&EntityInternalState::node);
-    entity_list.push_back(state);
+            fplutil::intrusive_list entity_list(&EntityInternalState::node);
+            entity_list.push_back(state);
 
-    // Test state directly
-    constexpr auto directivity = 0.5f;
-    constexpr auto sharpness = 1.5f;
-    state.SetDirectivity(directivity, sharpness);
+            // Test state directly
+            constexpr auto directivity = 0.5f;
+            constexpr auto sharpness = 1.5f;
+            state.SetDirectivity(directivity, sharpness);
 
-    AM_EXPECT_EQ(state.GetDirectivity(), directivity);
-    AM_EXPECT_EQ(state.GetDirectivitySharpness(), sharpness);
+            AM_EXPECT_EQ(state.GetDirectivity(), directivity);
+            AM_EXPECT_EQ(state.GetDirectivitySharpness(), sharpness);
 
-    // Test with wrapper
-    Entity wrapper(&state);
-    AM_EXPECT_EQ(wrapper.GetState(), &state);
+            // Test with wrapper
+            Entity wrapper(&state);
+            AM_EXPECT_EQ(wrapper.GetState(), &state);
 
-    constexpr auto wrapperDirectivity = 0.8f;
-    constexpr auto wrapperSharpness = 2.0f;
-    wrapper.SetDirectivity(wrapperDirectivity, wrapperSharpness);
+            constexpr auto wrapperDirectivity = 0.8f;
+            constexpr auto wrapperSharpness = 2.0f;
+            wrapper.SetDirectivity(wrapperDirectivity, wrapperSharpness);
 
-    AM_EXPECT_EQ(wrapper.GetDirectivity(), wrapperDirectivity);
-    AM_EXPECT_EQ(wrapper.GetDirectivitySharpness(), wrapperSharpness);
+            AM_EXPECT_EQ(wrapper.GetDirectivity(), wrapperDirectivity);
+            AM_EXPECT_EQ(wrapper.GetDirectivitySharpness(), wrapperSharpness);
 
-    AM_EXPECT_EQ(wrapper.GetDirectivity(), state.GetDirectivity());
-    AM_EXPECT_EQ(wrapper.GetDirectivitySharpness(), state.GetDirectivitySharpness());
-}
+            AM_EXPECT_EQ(wrapper.GetDirectivity(), state.GetDirectivity());
+            AM_EXPECT_EQ(wrapper.GetDirectivitySharpness(), state.GetDirectivitySharpness());
+        }
+    };
+
+    AM_REGISTER_TEST(core_entity, handles_directivity_changes);
+} // namespace SparkyStudios::Audio::Amplitude::Tests

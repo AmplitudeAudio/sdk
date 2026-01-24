@@ -15,18 +15,25 @@
 #include <SparkyStudios/Audio/Amplitude/Amplitude.h>
 
 #include "EngineTestCase.h"
+#include "TestRegistry.h"
 
 using namespace SparkyStudios::Audio::Amplitude;
 
 namespace SparkyStudios::Audio::Amplitude::Tests
 {
-    void EngineTestCase::Run()
+    AM_TEST_CASE(EngineTestCase, core_engine, can_load_sound_banks)
     {
-        // Test loading the same sound bank again
-        AM_EXPECT(amEngine->LoadSoundBank(AM_OS_STRING("tests.init.ambank")));
+    public:
+        void Run() override
+        {
+            // Test loading the same sound bank again
+            AM_EXPECT(amEngine->LoadSoundBank(AM_OS_STRING("tests.init.ambank")));
 
-        // Test loading other sound banks
-        AM_EXPECT(amEngine->LoadSoundBank(AM_OS_STRING("sample_01.ambank")));
-        AM_EXPECT(amEngine->LoadSoundBank(AM_OS_STRING("sample_02.ambank")));
-    }
+            // Test loading other sound banks
+            AM_EXPECT(amEngine->LoadSoundBank(AM_OS_STRING("sample_01.ambank")));
+            AM_EXPECT(amEngine->LoadSoundBank(AM_OS_STRING("sample_02.ambank")));
+        }
+    };
+
+    AM_REGISTER_TEST(core_engine, can_load_sound_banks);
 } // namespace SparkyStudios::Audio::Amplitude::Tests

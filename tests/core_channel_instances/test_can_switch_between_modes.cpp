@@ -15,46 +15,53 @@
 #include <SparkyStudios/Audio/Amplitude/Amplitude.h>
 
 #include "EngineTestCase.h"
+#include "TestRegistry.h"
 
 using namespace SparkyStudios::Audio::Amplitude;
 
 namespace SparkyStudios::Audio::Amplitude::Tests
 {
-    void EngineTestCase::Run()
+    AM_TEST_CASE(EngineTestCase, core_channel_instances, can_switch_between_modes)
     {
-        SoundHandle test_sound_01 = amEngine->GetSoundHandle("test_sound_01");
+    public:
+        void Run() override
+        {
+            SoundHandle test_sound_01 = amEngine->GetSoundHandle("test_sound_01");
 
-        Channel channel = amEngine->Play(test_sound_01);
-        amEngine->WaitUntilFrames(2);
+            Channel channel = amEngine->Play(test_sound_01);
+            amEngine->WaitUntilFrames(2);
 
-        AM_EXPECT(channel.Valid());
+            AM_EXPECT(channel.Valid());
 
-        // Start with blended mode
-        channel.EnableInstancing(eChannelInstanceMode_Blended);
-        AM_EXPECT(channel.GetInstancingMode() == eChannelInstanceMode_Blended);
+            // Start with blended mode
+            channel.EnableInstancing(eChannelInstanceMode_Blended);
+            AM_EXPECT(channel.GetInstancingMode() == eChannelInstanceMode_Blended);
 
-        // Add instances
-        AM_UNUSED(channel.AddInstance({ 100.0f, 0.0f, 50.0f }));
-        AM_UNUSED(channel.AddInstance({ 120.0f, 0.0f, 80.0f }));
-        AM_EXPECT(channel.GetInstanceCount() == 2);
+            // Add instances
+            AM_UNUSED(channel.AddInstance({ 100.0f, 0.0f, 50.0f }));
+            AM_UNUSED(channel.AddInstance({ 120.0f, 0.0f, 80.0f }));
+            AM_EXPECT(channel.GetInstanceCount() == 2);
 
-        // Switch to separate mode (note: this should clear existing instances based on implementation)
-        channel.DisableInstancing();
-        channel.EnableInstancing(eChannelInstanceMode_Separate);
-        AM_EXPECT(channel.GetInstancingMode() == eChannelInstanceMode_Separate);
+            // Switch to separate mode (note: this should clear existing instances based on implementation)
+            channel.DisableInstancing();
+            channel.EnableInstancing(eChannelInstanceMode_Separate);
+            AM_EXPECT(channel.GetInstancingMode() == eChannelInstanceMode_Separate);
 
-        // Add instances in separate mode
-        AM_UNUSED(channel.AddInstance({ 100.0f, 0.0f, 50.0f }));
-        AM_UNUSED(channel.AddInstance({ 120.0f, 0.0f, 80.0f }));
-        AM_UNUSED(channel.AddInstance({ 140.0f, 0.0f, 110.0f }));
-        AM_EXPECT(channel.GetInstanceCount() == 3);
+            // Add instances in separate mode
+            AM_UNUSED(channel.AddInstance({ 100.0f, 0.0f, 50.0f }));
+            AM_UNUSED(channel.AddInstance({ 120.0f, 0.0f, 80.0f }));
+            AM_UNUSED(channel.AddInstance({ 140.0f, 0.0f, 110.0f }));
+            AM_EXPECT(channel.GetInstanceCount() == 3);
 
-        // Switch back to blended mode
-        channel.DisableInstancing();
-        channel.EnableInstancing(eChannelInstanceMode_Blended);
-        AM_EXPECT(channel.GetInstancingMode() == eChannelInstanceMode_Blended);
+            // Switch back to blended mode
+            channel.DisableInstancing();
+            channel.EnableInstancing(eChannelInstanceMode_Blended);
+            AM_EXPECT(channel.GetInstancingMode() == eChannelInstanceMode_Blended);
 
-        // Verify channel is still playing
-        AM_EXPECT(channel.Playing());
-    }
+            // Verify channel is still playing
+            AM_EXPECT(channel.Playing());
+        }
+    };
+
+    AM_REGISTER_TEST(core_channel_instances, can_switch_between_modes);
 } // namespace SparkyStudios::Audio::Amplitude::Tests

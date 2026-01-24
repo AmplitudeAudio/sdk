@@ -15,23 +15,33 @@
 #include <SparkyStudios/Audio/Amplitude/Amplitude.h>
 
 #include "EngineTestCase.h"
+#include "TestRegistry.h"
 
 using namespace SparkyStudios::Audio::Amplitude;
 
-void EngineTestCase::Run()
+namespace SparkyStudios::Audio::Amplitude::Tests
 {
-    std::shared_ptr<Fader> fader = Fader::Find("SCurveSmooth");
-    constexpr BezierCurveControlPoints cp1 = { 0.64f, 0.0f, 0.36f, 1.0f };
-    const BezierCurveControlPoints cp2 = fader->GetControlPoints();
-    AM_EXPECT((cp1.x1 == cp2.x1 && cp1.y1 == cp2.y1 && cp1.x2 == cp2.x2 && cp1.y2 == cp2.y2));
+    AM_TEST_CASE(EngineTestCase, core_faders, scurve_smooth)
+    {
+    public:
+        void Run() override
+        {
+            std::shared_ptr<Fader> fader = Fader::Find("SCurveSmooth");
+            constexpr BezierCurveControlPoints cp1 = { 0.64f, 0.0f, 0.36f, 1.0f };
+            const BezierCurveControlPoints cp2 = fader->GetControlPoints();
+            AM_EXPECT((cp1.x1 == cp2.x1 && cp1.y1 == cp2.y1 && cp1.x2 == cp2.x2 && cp1.y2 == cp2.y2));
 
-    auto instance = Fader::Construct("SCurveSmooth");
+            auto instance = Fader::Construct("SCurveSmooth");
 
-    instance->Set(0.0, 1.0, kAmSecond);
+            instance->Set(0.0, 1.0, kAmSecond);
 
-    AM_EXPECT(instance->GetFromPercentage(0.00) == 0.0);
-    AM_EXPECT(instance->GetFromPercentage(0.25) - 0.07274458735701822 < kEpsilon);
-    AM_EXPECT(instance->GetFromPercentage(0.50) - 0.50000008381902017 < kEpsilon);
-    AM_EXPECT(instance->GetFromPercentage(0.75) - 0.92725541264298184 < kEpsilon);
-    AM_EXPECT(instance->GetFromPercentage(1.00) == 1.0);
-}
+            AM_EXPECT(instance->GetFromPercentage(0.00) == 0.0);
+            AM_EXPECT(instance->GetFromPercentage(0.25) - 0.07274458735701822 < kEpsilon);
+            AM_EXPECT(instance->GetFromPercentage(0.50) - 0.50000008381902017 < kEpsilon);
+            AM_EXPECT(instance->GetFromPercentage(0.75) - 0.92725541264298184 < kEpsilon);
+            AM_EXPECT(instance->GetFromPercentage(1.00) == 1.0);
+        }
+    };
+
+    AM_REGISTER_TEST(core_faders, scurve_smooth);
+} // namespace SparkyStudios::Audio::Amplitude::Tests

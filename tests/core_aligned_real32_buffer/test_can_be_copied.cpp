@@ -15,22 +15,32 @@
 #include <SparkyStudios/Audio/Amplitude/Amplitude.h>
 
 #include "SimpleTestCase.h"
+#include "TestRegistry.h"
 
 using namespace SparkyStudios::Audio::Amplitude;
 
-void SimpleTestCase::Run()
+namespace SparkyStudios::Audio::Amplitude::Tests
 {
-    AmAlignedReal32Buffer buffer;
-    buffer.Init(1024);
+    AM_TEST_CASE(SimpleTestCase, core_aligned_real32_buffer, can_be_copied)
+    {
+    public:
+        void Run() override
+        {
+            AmAlignedReal32Buffer buffer;
+            buffer.Init(1024);
 
-    AmAlignedReal32Buffer buffer2;
-    buffer2.Init(1024);
+            AmAlignedReal32Buffer buffer2;
+            buffer2.Init(1024);
 
-    for (AmUInt32 i = 0; i < 1024; ++i)
-        buffer2[i] = 1.0f;
+            for (AmUInt32 i = 0; i < 1024; ++i)
+                buffer2[i] = 1.0f;
 
-    buffer.CopyFrom(buffer2);
+            buffer.CopyFrom(buffer2);
 
-    for (AmUInt32 i = 0; i < 1024; ++i)
-        AM_EXPECT(buffer[i] == 1.0f);
-}
+            for (AmUInt32 i = 0; i < 1024; ++i)
+                AM_EXPECT(buffer[i] == 1.0f);
+        }
+    };
+
+    AM_REGISTER_TEST(core_aligned_real32_buffer, can_be_copied);
+} // namespace SparkyStudios::Audio::Amplitude::Tests

@@ -15,47 +15,54 @@
 #include <SparkyStudios/Audio/Amplitude/Amplitude.h>
 
 #include "EngineTestCase.h"
+#include "TestRegistry.h"
 
 using namespace SparkyStudios::Audio::Amplitude;
 
 namespace SparkyStudios::Audio::Amplitude::Tests
 {
-    void EngineTestCase::Run()
+    AM_TEST_CASE(EngineTestCase, core_engine, can_register_environments)
     {
-        // Test adding environments
-        Environment e1 = amEngine->AddEnvironment(1);
-        Environment e2 = amEngine->AddEnvironment(2);
+    public:
+        void Run() override
+        {
+            // Test adding environments
+            Environment e1 = amEngine->AddEnvironment(1);
+            Environment e2 = amEngine->AddEnvironment(2);
 
-        AM_EXPECT(e1.Valid());
-        AM_EXPECT(e2.Valid());
+            AM_EXPECT(e1.Valid());
+            AM_EXPECT(e2.Valid());
 
-        // Test adding environment with existing ID should return same environment
-        Environment e3 = amEngine->AddEnvironment(1);
-        AM_EXPECT(e3.Valid());
-        AM_EXPECT_EQ(e3.GetState(), e1.GetState());
+            // Test adding environment with existing ID should return same environment
+            Environment e3 = amEngine->AddEnvironment(1);
+            AM_EXPECT(e3.Valid());
+            AM_EXPECT_EQ(e3.GetState(), e1.GetState());
 
-        // Test getting existing environment
-        Environment e4 = amEngine->GetEnvironment(2);
-        AM_EXPECT(e4.Valid());
-        AM_EXPECT_EQ(e4.GetState(), e2.GetState());
+            // Test getting existing environment
+            Environment e4 = amEngine->GetEnvironment(2);
+            AM_EXPECT(e4.Valid());
+            AM_EXPECT_EQ(e4.GetState(), e2.GetState());
 
-        // Test getting non-existing environment
-        Environment e5 = amEngine->GetEnvironment(3);
-        AM_EXPECT_NOT(e5.Valid());
+            // Test getting non-existing environment
+            Environment e5 = amEngine->GetEnvironment(3);
+            AM_EXPECT_NOT(e5.Valid());
 
-        // Test removing environments
-        amEngine->RemoveEnvironment(1);
-        amEngine->RemoveEnvironment(&e2);
-        amEngine->RemoveEnvironment(3); // Non-existing environment should not cause issues
+            // Test removing environments
+            amEngine->RemoveEnvironment(1);
+            amEngine->RemoveEnvironment(&e2);
+            amEngine->RemoveEnvironment(3); // Non-existing environment should not cause issues
 
-        AM_EXPECT_NOT(e1.Valid());
-        AM_EXPECT_NOT(e2.Valid());
-        AM_EXPECT_NOT(e3.Valid());
-        AM_EXPECT_NOT(e4.Valid());
-        AM_EXPECT_NOT(e5.Valid());
+            AM_EXPECT_NOT(e1.Valid());
+            AM_EXPECT_NOT(e2.Valid());
+            AM_EXPECT_NOT(e3.Valid());
+            AM_EXPECT_NOT(e4.Valid());
+            AM_EXPECT_NOT(e5.Valid());
 
-        // Test getting environment with invalid ID
-        Environment e6 = amEngine->GetEnvironment(kAmInvalidObjectId);
-        AM_EXPECT_NOT(e6.Valid());
-    }
+            // Test getting environment with invalid ID
+            Environment e6 = amEngine->GetEnvironment(kAmInvalidObjectId);
+            AM_EXPECT_NOT(e6.Valid());
+        }
+    };
+
+    AM_REGISTER_TEST(core_engine, can_register_environments);
 } // namespace SparkyStudios::Audio::Amplitude::Tests

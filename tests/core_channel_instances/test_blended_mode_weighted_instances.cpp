@@ -15,42 +15,49 @@
 #include <SparkyStudios/Audio/Amplitude/Amplitude.h>
 
 #include "EngineTestCase.h"
+#include "TestRegistry.h"
 
 using namespace SparkyStudios::Audio::Amplitude;
 
 namespace SparkyStudios::Audio::Amplitude::Tests
 {
-    void EngineTestCase::Run()
+    AM_TEST_CASE(EngineTestCase, core_channel_instances, blended_mode_weighted_instances)
     {
-        SoundHandle test_sound_01 = amEngine->GetSoundHandle("test_sound_01");
+    public:
+        void Run() override
+        {
+            SoundHandle test_sound_01 = amEngine->GetSoundHandle("test_sound_01");
 
-        Channel channel = amEngine->Play(test_sound_01);
-        amEngine->WaitUntilFrames(2);
+            Channel channel = amEngine->Play(test_sound_01);
+            amEngine->WaitUntilFrames(2);
 
-        AM_EXPECT(channel.Valid());
+            AM_EXPECT(channel.Valid());
 
-        // Enable blended mode
-        channel.EnableInstancing(eChannelInstanceMode_Blended);
+            // Enable blended mode
+            channel.EnableInstancing(eChannelInstanceMode_Blended);
 
-        // Add instances with different weights
-        ChannelInstance instance1 = channel.AddInstance({ 100.0f, 0.0f, 50.0f });
-        instance1.SetWeight(1.0f);
+            // Add instances with different weights
+            ChannelInstance instance1 = channel.AddInstance({ 100.0f, 0.0f, 50.0f });
+            instance1.SetWeight(1.0f);
 
-        ChannelInstance instance2 = channel.AddInstance({ 120.0f, 0.0f, 80.0f });
-        instance2.SetWeight(0.5f);
+            ChannelInstance instance2 = channel.AddInstance({ 120.0f, 0.0f, 80.0f });
+            instance2.SetWeight(0.5f);
 
-        ChannelInstance instance3 = channel.AddInstance({ 140.0f, 0.0f, 110.0f });
-        instance3.SetWeight(1.5f);
+            ChannelInstance instance3 = channel.AddInstance({ 140.0f, 0.0f, 110.0f });
+            instance3.SetWeight(1.5f);
 
-        // Verify weights are set correctly
-        AM_EXPECT(std::abs(instance1.GetWeight() - 1.0f) < kEpsilon);
-        AM_EXPECT(std::abs(instance2.GetWeight() - 0.5f) < kEpsilon);
-        AM_EXPECT(std::abs(instance3.GetWeight() - 1.5f) < kEpsilon);
+            // Verify weights are set correctly
+            AM_EXPECT(std::abs(instance1.GetWeight() - 1.0f) < kEpsilon);
+            AM_EXPECT(std::abs(instance2.GetWeight() - 0.5f) < kEpsilon);
+            AM_EXPECT(std::abs(instance3.GetWeight() - 1.5f) < kEpsilon);
 
-        // Let the sound play with weighted blending
-        amEngine->WaitUntilFrames(10);
+            // Let the sound play with weighted blending
+            amEngine->WaitUntilFrames(10);
 
-        // Channel should be playing with weighted blend attenuation
-        AM_EXPECT(channel.Playing());
-    }
+            // Channel should be playing with weighted blend attenuation
+            AM_EXPECT(channel.Playing());
+        }
+    };
+
+    AM_REGISTER_TEST(core_channel_instances, blended_mode_weighted_instances);
 } // namespace SparkyStudios::Audio::Amplitude::Tests

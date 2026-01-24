@@ -15,14 +15,21 @@
 #include <SparkyStudios/Audio/Amplitude/Amplitude.h>
 
 #include "EngineTestCase.h"
+#include "TestRegistry.h"
 
 using namespace SparkyStudios::Audio::Amplitude;
 
 namespace SparkyStudios::Audio::Amplitude::Tests
 {
-    void EngineTestCase::Run()
+    AM_TEST_CASE(EngineTestCase, core_engine, cannot_register_default_plugins_after_initialization)
     {
-        AM_EXPECT(amEngine->IsInitialized());
-        AM_EXPECT_NOT(Engine::RegisterDefaultExtensions());
-    }
+    public:
+        void Run() override
+        {
+            AM_EXPECT(amEngine->IsInitialized());
+            AM_EXPECT_NOT(Engine::RegisterDefaultExtensions());
+        }
+    };
+
+    AM_REGISTER_TEST(core_engine, cannot_register_default_plugins_after_initialization);
 } // namespace SparkyStudios::Audio::Amplitude::Tests

@@ -15,27 +15,37 @@
 #include <SparkyStudios/Audio/Amplitude/Amplitude.h>
 
 #include "SimpleTestCase.h"
+#include "TestRegistry.h"
 
 using namespace SparkyStudios::Audio::Amplitude;
 
-void SimpleTestCase::Run()
+namespace SparkyStudios::Audio::Amplitude::Tests
 {
-    const auto from = CartesianCoordinateSystem::Default();
-    const auto to = CartesianCoordinateSystem::AmbiX();
+    AM_TEST_CASE(SimpleTestCase, math_cartesian_coordinate_system, can_convert_from_point)
+    {
+    public:
+        void Run() override
+        {
+            const auto from = CartesianCoordinateSystem::Default();
+            const auto to = CartesianCoordinateSystem::AmbiX();
 
-    constexpr auto point = AmVector3{ 1, 2, 3 };
+            constexpr auto point = AmVector3{ 1, 2, 3 };
 
-    const auto convertedPoint = CartesianCoordinateSystem::Convert(point, from, to);
-    const auto convertedBackPoint = CartesianCoordinateSystem::Convert(convertedPoint, to, from);
+            const auto convertedPoint = CartesianCoordinateSystem::Convert(point, from, to);
+            const auto convertedBackPoint = CartesianCoordinateSystem::Convert(convertedPoint, to, from);
 
-    AM_EXPECT_EQ(convertedPoint, (AmVector3{ 2, -1, 3 }));
-    AM_EXPECT_EQ(convertedBackPoint, point);
+            AM_EXPECT_EQ(convertedPoint, (AmVector3{ 2, -1, 3 }));
+            AM_EXPECT_EQ(convertedBackPoint, point);
 
-    const auto converter = CartesianCoordinateSystem::Converter(from, to);
+            const auto converter = CartesianCoordinateSystem::Converter(from, to);
 
-    const auto convertedPoint2 = converter.Forward(point);
-    const auto convertedBackPoint2 = converter.Backward(convertedPoint);
+            const auto convertedPoint2 = converter.Forward(point);
+            const auto convertedBackPoint2 = converter.Backward(convertedPoint);
 
-    AM_EXPECT_EQ(convertedPoint2, convertedPoint);
-    AM_EXPECT_EQ(convertedBackPoint2, point);
-}
+            AM_EXPECT_EQ(convertedPoint2, convertedPoint);
+            AM_EXPECT_EQ(convertedBackPoint2, point);
+        }
+    };
+
+    AM_REGISTER_TEST(math_cartesian_coordinate_system, can_convert_from_point);
+} // namespace SparkyStudios::Audio::Amplitude::Tests

@@ -15,19 +15,26 @@
 #include <SparkyStudios/Audio/Amplitude/Amplitude.h>
 
 #include "EngineTestCase.h"
+#include "TestRegistry.h"
 
 using namespace SparkyStudios::Audio::Amplitude;
 
 namespace SparkyStudios::Audio::Amplitude::Tests
 {
-    void EngineTestCase::Run()
+    AM_TEST_CASE(EngineTestCase, core_engine, can_access_buses)
     {
-        // Test accessing buses by name and ID that should exist
-        AM_EXPECT(amEngine->FindBus("master").Valid());
-        AM_EXPECT(amEngine->FindBus(1).Valid());
+    public:
+        void Run() override
+        {
+            // Test accessing buses by name and ID that should exist
+            AM_EXPECT(amEngine->FindBus("master").Valid());
+            AM_EXPECT(amEngine->FindBus(1).Valid());
 
-        // Test accessing buses that should not exist
-        AM_EXPECT_NOT(amEngine->FindBus("invalid").Valid());
-        AM_EXPECT_NOT(amEngine->FindBus(120198434).Valid());
-    }
+            // Test accessing buses that should not exist
+            AM_EXPECT_NOT(amEngine->FindBus("invalid").Valid());
+            AM_EXPECT_NOT(amEngine->FindBus(120198434).Valid());
+        }
+    };
+
+    AM_REGISTER_TEST(core_engine, can_access_buses);
 } // namespace SparkyStudios::Audio::Amplitude::Tests

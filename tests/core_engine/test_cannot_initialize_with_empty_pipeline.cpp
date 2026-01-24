@@ -15,15 +15,22 @@
 #include <SparkyStudios/Audio/Amplitude/Amplitude.h>
 
 #include "EngineTestCase.h"
+#include "TestRegistry.h"
 
 using namespace SparkyStudios::Audio::Amplitude;
 
 namespace SparkyStudios::Audio::Amplitude::Tests
 {
-    void EngineTestCase::Run()
+    AM_TEST_CASE(EngineTestCase, core_engine, cannot_initialize_with_empty_pipeline)
     {
-        AM_EXPECT(Deinitialize());
-        AM_EXPECT_NOT(amEngine->Initialize(AM_OS_STRING("tests.invalid.empty_pipeline.config.amconfig")));
-        AM_EXPECT(Deinitialize());
-    }
+    public:
+        void Run() override
+        {
+            AM_EXPECT(Deinitialize());
+            AM_EXPECT_NOT(amEngine->Initialize(AM_OS_STRING("tests.invalid.empty_pipeline.config.amconfig")));
+            AM_EXPECT(Deinitialize());
+        }
+    };
+
+    AM_REGISTER_TEST(core_engine, cannot_initialize_with_empty_pipeline);
 } // namespace SparkyStudios::Audio::Amplitude::Tests

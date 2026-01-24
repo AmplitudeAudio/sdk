@@ -15,13 +15,20 @@
 #include <SparkyStudios/Audio/Amplitude/Amplitude.h>
 
 #include "EngineTestCase.h"
+#include "TestRegistry.h"
 
 using namespace SparkyStudios::Audio::Amplitude;
 
 namespace SparkyStudios::Audio::Amplitude::Tests
 {
-    void EngineTestCase::Run()
+    AM_TEST_CASE(EngineTestCase, core_engine, instance_is_never_nullptr)
     {
-        AM_EXPECT(amEngine != nullptr);
-    }
+    public:
+        void Run() override
+        {
+            AM_EXPECT(amEngine != nullptr);
+        }
+    };
+
+    AM_REGISTER_TEST(core_engine, instance_is_never_nullptr);
 } // namespace SparkyStudios::Audio::Amplitude::Tests

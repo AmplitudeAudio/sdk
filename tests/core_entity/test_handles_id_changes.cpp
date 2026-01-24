@@ -17,26 +17,36 @@
 #include <Core/EntityInternalState.h>
 
 #include "SimpleTestCase.h"
+#include "TestRegistry.h"
 
 using namespace SparkyStudios::Audio::Amplitude;
 
-void SimpleTestCase::Run()
+namespace SparkyStudios::Audio::Amplitude::Tests
 {
-    EntityInternalState state;
-    state.SetId(1);
+    AM_TEST_CASE(SimpleTestCase, core_entity, handles_id_changes)
+    {
+    public:
+        void Run() override
+        {
+            EntityInternalState state;
+            state.SetId(1);
 
-    fplutil::intrusive_list entity_list(&EntityInternalState::node);
-    entity_list.push_back(state);
+            fplutil::intrusive_list entity_list(&EntityInternalState::node);
+            entity_list.push_back(state);
 
-    // Test state directly
-    AM_EXPECT_EQ(state.GetId(), 1);
+            // Test state directly
+            AM_EXPECT_EQ(state.GetId(), 1);
 
-    state.SetId(5);
-    AM_EXPECT_EQ(state.GetId(), 5);
+            state.SetId(5);
+            AM_EXPECT_EQ(state.GetId(), 5);
 
-    // Test with wrapper
-    Entity wrapper(&state);
-    AM_EXPECT_EQ(wrapper.GetState(), &state);
-    AM_EXPECT_EQ(wrapper.GetId(), 5);
-    AM_EXPECT_EQ(wrapper.GetId(), state.GetId());
-}
+            // Test with wrapper
+            Entity wrapper(&state);
+            AM_EXPECT_EQ(wrapper.GetState(), &state);
+            AM_EXPECT_EQ(wrapper.GetId(), 5);
+            AM_EXPECT_EQ(wrapper.GetId(), state.GetId());
+        }
+    };
+
+    AM_REGISTER_TEST(core_entity, handles_id_changes);
+} // namespace SparkyStudios::Audio::Amplitude::Tests

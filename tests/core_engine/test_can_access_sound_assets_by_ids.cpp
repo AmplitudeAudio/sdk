@@ -15,16 +15,23 @@
 #include <SparkyStudios/Audio/Amplitude/Amplitude.h>
 
 #include "EngineTestCase.h"
+#include "TestRegistry.h"
 
 using namespace SparkyStudios::Audio::Amplitude;
 
 namespace SparkyStudios::Audio::Amplitude::Tests
 {
-    void EngineTestCase::Run()
+    AM_TEST_CASE(EngineTestCase, core_engine, can_access_sound_assets_by_ids)
     {
-        // Test accessing sound assets by IDs
-        AM_EXPECT(amEngine->GetSoundHandle(2) != nullptr);
-        AM_EXPECT(amEngine->GetSoundHandle(100) != nullptr);
-        AM_EXPECT(amEngine->GetSoundHandle(1) != nullptr);
-    }
+    public:
+        void Run() override
+        {
+            // Test accessing sound assets by IDs
+            AM_EXPECT(amEngine->GetSoundHandle(2) != nullptr);
+            AM_EXPECT(amEngine->GetSoundHandle(100) != nullptr);
+            AM_EXPECT(amEngine->GetSoundHandle(1) != nullptr);
+        }
+    };
+
+    AM_REGISTER_TEST(core_engine, can_access_sound_assets_by_ids);
 } // namespace SparkyStudios::Audio::Amplitude::Tests

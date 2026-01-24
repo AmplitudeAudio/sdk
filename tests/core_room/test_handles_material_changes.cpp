@@ -17,62 +17,72 @@
 #include <Core/RoomInternalState.h>
 
 #include "SimpleTestCase.h"
+#include "TestRegistry.h"
 
 using namespace SparkyStudios::Audio::Amplitude;
 
-void SimpleTestCase::Run()
+namespace SparkyStudios::Audio::Amplitude::Tests
 {
-    RoomInternalState state;
-    state.SetId(1);
-
-    fplutil::intrusive_list room_list(&RoomInternalState::node);
-    room_list.push_back(state);
-
-    Room wrapper(&state);
-    AM_EXPECT_EQ(wrapper.GetState(), &state);
+    AM_TEST_CASE(SimpleTestCase, core_room, handles_material_changes)
     {
-        state.SetWallMaterial(eRoomWall_Front, RoomWallMaterial(eRoomWallMaterialType_Metal));
-        state.SetWallMaterial(eRoomWall_Back, RoomWallMaterial(eRoomWallMaterialType_Marble));
+    public:
+        void Run() override
+        {
+            RoomInternalState state;
+            state.SetId(1);
 
-        AM_EXPECT_EQ(state.GetWallMaterial(eRoomWall_Front), RoomWallMaterial(eRoomWallMaterialType_Metal));
-        AM_EXPECT_EQ(wrapper.GetWallMaterial(eRoomWall_Front), RoomWallMaterial(eRoomWallMaterialType_Metal));
+            fplutil::intrusive_list room_list(&RoomInternalState::node);
+            room_list.push_back(state);
 
-        AM_EXPECT_EQ(state.GetWallMaterial(eRoomWall_Back), RoomWallMaterial(eRoomWallMaterialType_Marble));
-        AM_EXPECT_EQ(wrapper.GetWallMaterial(eRoomWall_Back), RoomWallMaterial(eRoomWallMaterialType_Marble));
+            Room wrapper(&state);
+            AM_EXPECT_EQ(wrapper.GetState(), &state);
+            {
+                state.SetWallMaterial(eRoomWall_Front, RoomWallMaterial(eRoomWallMaterialType_Metal));
+                state.SetWallMaterial(eRoomWall_Back, RoomWallMaterial(eRoomWallMaterialType_Marble));
 
-        AM_EXPECT_EQ(state.GetWallMaterial(eRoomWall_Bottom), RoomWallMaterial(eRoomWallMaterialType_Transparent));
-        AM_EXPECT_EQ(wrapper.GetWallMaterial(eRoomWall_Bottom), RoomWallMaterial(eRoomWallMaterialType_Transparent));
+                AM_EXPECT_EQ(state.GetWallMaterial(eRoomWall_Front), RoomWallMaterial(eRoomWallMaterialType_Metal));
+                AM_EXPECT_EQ(wrapper.GetWallMaterial(eRoomWall_Front), RoomWallMaterial(eRoomWallMaterialType_Metal));
 
-        AM_EXPECT_EQ(state.GetWallMaterial(eRoomWall_Top), RoomWallMaterial(eRoomWallMaterialType_Transparent));
-        AM_EXPECT_EQ(wrapper.GetWallMaterial(eRoomWall_Top), RoomWallMaterial(eRoomWallMaterialType_Transparent));
+                AM_EXPECT_EQ(state.GetWallMaterial(eRoomWall_Back), RoomWallMaterial(eRoomWallMaterialType_Marble));
+                AM_EXPECT_EQ(wrapper.GetWallMaterial(eRoomWall_Back), RoomWallMaterial(eRoomWallMaterialType_Marble));
 
-        AM_EXPECT_EQ(state.GetWallMaterial(eRoomWall_Left), RoomWallMaterial(eRoomWallMaterialType_Transparent));
-        AM_EXPECT_EQ(wrapper.GetWallMaterial(eRoomWall_Left), RoomWallMaterial(eRoomWallMaterialType_Transparent));
+                AM_EXPECT_EQ(state.GetWallMaterial(eRoomWall_Bottom), RoomWallMaterial(eRoomWallMaterialType_Transparent));
+                AM_EXPECT_EQ(wrapper.GetWallMaterial(eRoomWall_Bottom), RoomWallMaterial(eRoomWallMaterialType_Transparent));
 
-        AM_EXPECT_EQ(state.GetWallMaterial(eRoomWall_Right), RoomWallMaterial(eRoomWallMaterialType_Transparent));
-        AM_EXPECT_EQ(wrapper.GetWallMaterial(eRoomWall_Right), RoomWallMaterial(eRoomWallMaterialType_Transparent));
-    }
+                AM_EXPECT_EQ(state.GetWallMaterial(eRoomWall_Top), RoomWallMaterial(eRoomWallMaterialType_Transparent));
+                AM_EXPECT_EQ(wrapper.GetWallMaterial(eRoomWall_Top), RoomWallMaterial(eRoomWallMaterialType_Transparent));
 
-    {
-        wrapper.SetWallMaterial(eRoomWall_Left, RoomWallMaterial(eRoomWallMaterialType_Wood));
-        wrapper.SetWallMaterial(eRoomWall_Right, RoomWallMaterial(eRoomWallMaterialType_Glass));
+                AM_EXPECT_EQ(state.GetWallMaterial(eRoomWall_Left), RoomWallMaterial(eRoomWallMaterialType_Transparent));
+                AM_EXPECT_EQ(wrapper.GetWallMaterial(eRoomWall_Left), RoomWallMaterial(eRoomWallMaterialType_Transparent));
 
-        AM_EXPECT_EQ(state.GetWallMaterial(eRoomWall_Left), RoomWallMaterial(eRoomWallMaterialType_Wood));
-        AM_EXPECT_EQ(wrapper.GetWallMaterial(eRoomWall_Left), RoomWallMaterial(eRoomWallMaterialType_Wood));
+                AM_EXPECT_EQ(state.GetWallMaterial(eRoomWall_Right), RoomWallMaterial(eRoomWallMaterialType_Transparent));
+                AM_EXPECT_EQ(wrapper.GetWallMaterial(eRoomWall_Right), RoomWallMaterial(eRoomWallMaterialType_Transparent));
+            }
 
-        AM_EXPECT_EQ(state.GetWallMaterial(eRoomWall_Right), RoomWallMaterial(eRoomWallMaterialType_Glass));
-        AM_EXPECT_EQ(wrapper.GetWallMaterial(eRoomWall_Right), RoomWallMaterial(eRoomWallMaterialType_Glass));
+            {
+                wrapper.SetWallMaterial(eRoomWall_Left, RoomWallMaterial(eRoomWallMaterialType_Wood));
+                wrapper.SetWallMaterial(eRoomWall_Right, RoomWallMaterial(eRoomWallMaterialType_Glass));
 
-        AM_EXPECT_EQ(state.GetWallMaterial(eRoomWall_Front), RoomWallMaterial(eRoomWallMaterialType_Metal));
-        AM_EXPECT_EQ(wrapper.GetWallMaterial(eRoomWall_Front), RoomWallMaterial(eRoomWallMaterialType_Metal));
+                AM_EXPECT_EQ(state.GetWallMaterial(eRoomWall_Left), RoomWallMaterial(eRoomWallMaterialType_Wood));
+                AM_EXPECT_EQ(wrapper.GetWallMaterial(eRoomWall_Left), RoomWallMaterial(eRoomWallMaterialType_Wood));
 
-        AM_EXPECT_EQ(state.GetWallMaterial(eRoomWall_Back), RoomWallMaterial(eRoomWallMaterialType_Marble));
-        AM_EXPECT_EQ(wrapper.GetWallMaterial(eRoomWall_Back), RoomWallMaterial(eRoomWallMaterialType_Marble));
+                AM_EXPECT_EQ(state.GetWallMaterial(eRoomWall_Right), RoomWallMaterial(eRoomWallMaterialType_Glass));
+                AM_EXPECT_EQ(wrapper.GetWallMaterial(eRoomWall_Right), RoomWallMaterial(eRoomWallMaterialType_Glass));
 
-        AM_EXPECT_EQ(state.GetWallMaterial(eRoomWall_Bottom), RoomWallMaterial(eRoomWallMaterialType_Transparent));
-        AM_EXPECT_EQ(wrapper.GetWallMaterial(eRoomWall_Bottom), RoomWallMaterial(eRoomWallMaterialType_Transparent));
+                AM_EXPECT_EQ(state.GetWallMaterial(eRoomWall_Front), RoomWallMaterial(eRoomWallMaterialType_Metal));
+                AM_EXPECT_EQ(wrapper.GetWallMaterial(eRoomWall_Front), RoomWallMaterial(eRoomWallMaterialType_Metal));
 
-        AM_EXPECT_EQ(state.GetWallMaterial(eRoomWall_Top), RoomWallMaterial(eRoomWallMaterialType_Transparent));
-        AM_EXPECT_EQ(wrapper.GetWallMaterial(eRoomWall_Top), RoomWallMaterial(eRoomWallMaterialType_Transparent));
-    }
-}
+                AM_EXPECT_EQ(state.GetWallMaterial(eRoomWall_Back), RoomWallMaterial(eRoomWallMaterialType_Marble));
+                AM_EXPECT_EQ(wrapper.GetWallMaterial(eRoomWall_Back), RoomWallMaterial(eRoomWallMaterialType_Marble));
+
+                AM_EXPECT_EQ(state.GetWallMaterial(eRoomWall_Bottom), RoomWallMaterial(eRoomWallMaterialType_Transparent));
+                AM_EXPECT_EQ(wrapper.GetWallMaterial(eRoomWall_Bottom), RoomWallMaterial(eRoomWallMaterialType_Transparent));
+
+                AM_EXPECT_EQ(state.GetWallMaterial(eRoomWall_Top), RoomWallMaterial(eRoomWallMaterialType_Transparent));
+                AM_EXPECT_EQ(wrapper.GetWallMaterial(eRoomWall_Top), RoomWallMaterial(eRoomWallMaterialType_Transparent));
+            }
+        }
+    };
+
+    AM_REGISTER_TEST(core_room, handles_material_changes);
+} // namespace SparkyStudios::Audio::Amplitude::Tests

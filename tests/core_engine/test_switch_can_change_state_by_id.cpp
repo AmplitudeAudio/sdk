@@ -15,35 +15,42 @@
 #include <SparkyStudios/Audio/Amplitude/Amplitude.h>
 
 #include "EngineTestCase.h"
+#include "TestRegistry.h"
 
 using namespace SparkyStudios::Audio::Amplitude;
 
 namespace SparkyStudios::Audio::Amplitude::Tests
 {
-    void EngineTestCase::Run()
+    AM_TEST_CASE(EngineTestCase, core_engine, switch_can_change_state_by_id)
     {
-        SwitchHandle envSwitch = amEngine->GetSwitchHandle("env");
-        AM_EXPECT(envSwitch != nullptr);
+    public:
+        void Run() override
+        {
+            SwitchHandle envSwitch = amEngine->GetSwitchHandle("env");
+            AM_EXPECT(envSwitch != nullptr);
 
-        // Test setting switch state by ID
-        envSwitch->SetState(2);
-        AM_EXPECT(envSwitch->GetState().m_name == "desert");
+            // Test setting switch state by ID
+            envSwitch->SetState(2);
+            AM_EXPECT(envSwitch->GetState().m_name == "desert");
 
-        // Test setting invalid ID (should keep previous state)
-        envSwitch->SetState(5);
-        AM_EXPECT(envSwitch->GetState().m_name != "snow");
-        AM_EXPECT(envSwitch->GetState().m_name == "desert");
+            // Test setting invalid ID (should keep previous state)
+            envSwitch->SetState(5);
+            AM_EXPECT(envSwitch->GetState().m_name != "snow");
+            AM_EXPECT(envSwitch->GetState().m_name == "desert");
 
-        // Test engine can change state by handle and ID
-        amEngine->SetSwitchState(envSwitch, 1);
-        AM_EXPECT(envSwitch->GetState().m_name == "forest");
+            // Test engine can change state by handle and ID
+            amEngine->SetSwitchState(envSwitch, 1);
+            AM_EXPECT(envSwitch->GetState().m_name == "forest");
 
-        // Test engine can change state by ID and ID
-        amEngine->SetSwitchState(envSwitch->GetId(), 1);
-        AM_EXPECT(envSwitch->GetState().m_name == "forest");
+            // Test engine can change state by ID and ID
+            amEngine->SetSwitchState(envSwitch->GetId(), 1);
+            AM_EXPECT(envSwitch->GetState().m_name == "forest");
 
-        // Test engine can change state by name and ID
-        amEngine->SetSwitchState(envSwitch->GetName(), 1);
-        AM_EXPECT(envSwitch->GetState().m_name == "forest");
-    }
+            // Test engine can change state by name and ID
+            amEngine->SetSwitchState(envSwitch->GetName(), 1);
+            AM_EXPECT(envSwitch->GetState().m_name == "forest");
+        }
+    };
+
+    AM_REGISTER_TEST(core_engine, switch_can_change_state_by_id);
 } // namespace SparkyStudios::Audio::Amplitude::Tests

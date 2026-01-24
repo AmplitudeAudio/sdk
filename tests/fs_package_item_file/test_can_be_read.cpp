@@ -15,108 +15,119 @@
 #include <SparkyStudios/Audio/Amplitude/Amplitude.h>
 
 #include "SimpleTestCase.h"
+#include "TestRegistry.h"
 
 using namespace SparkyStudios::Audio::Amplitude;
 
-void SimpleTestCase::Run()
+namespace SparkyStudios::Audio::Amplitude::Tests
 {
-    // Uncompressed file
+    AM_TEST_CASE(SimpleTestCase, fs_package_item_file, can_be_read)
     {
-        PackageFileSystem fileSystem;
-        fileSystem.SetPlatformFileSystem<DiskFileSystem>();
-        fileSystem.SetBasePath(AM_OS_STRING("./samples/assets_uncompressed.ampk"));
+    public:
+        void Run() override
+        {
+            // Uncompressed file
+        {
+            PackageFileSystem fileSystem;
+            fileSystem.SetPlatformFileSystem<DiskFileSystem>();
+            fileSystem.SetBasePath(AM_OS_STRING("./samples/assets_uncompressed.ampk"));
 
-        fileSystem.StartOpenFileSystem();
-        while (!fileSystem.TryFinalizeOpenFileSystem())
+            fileSystem.StartOpenFileSystem();
+            while (!fileSystem.TryFinalizeOpenFileSystem())
             Thread::Sleep(1);
 
-        auto file = fileSystem.OpenFile(AM_OS_STRING("data/tests/file_read_test.txt"), eFileOpenMode_Read);
+            auto file = fileSystem.OpenFile(AM_OS_STRING("data/tests/file_read_test.txt"), eFileOpenMode_Read);
 
-        file->Seek(1, eFileSeekOrigin_Start);
-        AM_EXPECT(file->Position() == 1);
-        AM_EXPECT(file->Read8() == 'K');
-        file->Seek(-2, eFileSeekOrigin_End);
-        AM_EXPECT(file->Position() == 0);
-        AM_EXPECT(file->Read8() == 'O');
-        file->Seek(-1, eFileSeekOrigin_Current);
-        AM_EXPECT(file->Position() == 0);
-        AM_EXPECT(file->Read8() == 'O');
-        file->Seek(1234, eFileSeekOrigin_Start);
-        AM_EXPECT(file->Position() == 2);
-        AM_EXPECT(file->Read8() == 0);
+            file->Seek(1, eFileSeekOrigin_Start);
+            AM_EXPECT(file->Position() == 1);
+            AM_EXPECT(file->Read8() == 'K');
+            file->Seek(-2, eFileSeekOrigin_End);
+            AM_EXPECT(file->Position() == 0);
+            AM_EXPECT(file->Read8() == 'O');
+            file->Seek(-1, eFileSeekOrigin_Current);
+            AM_EXPECT(file->Position() == 0);
+            AM_EXPECT(file->Read8() == 'O');
+            file->Seek(1234, eFileSeekOrigin_Start);
+            AM_EXPECT(file->Position() == 2);
+            AM_EXPECT(file->Read8() == 0);
 
-        file->Seek(1, eFileSeekOrigin_Start);
-        file->Seek(0, eFileSeekOrigin_Current);
-        AM_EXPECT(file->Position() == 1);
-        AM_EXPECT(file->Read8() == 'K');
+            file->Seek(1, eFileSeekOrigin_Start);
+            file->Seek(0, eFileSeekOrigin_Current);
+            AM_EXPECT(file->Position() == 1);
+            AM_EXPECT(file->Read8() == 'K');
 
-        file->Seek(1, eFileSeekOrigin_Start);
-        file->Seek(1, eFileSeekOrigin_Start);
-        AM_EXPECT(file->Position() == 1);
-        AM_EXPECT(file->Read8() == 'K');
+            file->Seek(1, eFileSeekOrigin_Start);
+            file->Seek(1, eFileSeekOrigin_Start);
+            AM_EXPECT(file->Position() == 1);
+            AM_EXPECT(file->Read8() == 'K');
 
-        file->Seek(1, eFileSeekOrigin_Start);
-        file->Seek(-1, eFileSeekOrigin_End);
-        AM_EXPECT(file->Position() == 1);
-        AM_EXPECT(file->Read8() == 'K');
+            file->Seek(1, eFileSeekOrigin_Start);
+            file->Seek(-1, eFileSeekOrigin_End);
+            AM_EXPECT(file->Position() == 1);
+            AM_EXPECT(file->Read8() == 'K');
 
-        file->Seek(0, eFileSeekOrigin_Start);
-        auto* content = static_cast<AmUInt8Buffer>(ammalloc(2));
-        AM_EXPECT(file->Read(content, 2) == 2);
-        AM_EXPECT(content[0] == 'O');
-        AM_EXPECT(content[1] == 'K');
-        AM_EXPECT(file->Position() == file->Length());
-        AM_EXPECT(file->Eof());
-        amfree(content);
-    }
+            file->Seek(0, eFileSeekOrigin_Start);
+            auto* content = static_cast<AmUInt8Buffer>(ammalloc(2));
+            AM_EXPECT(file->Read(content, 2) == 2);
+            AM_EXPECT(content[0] == 'O');
+            AM_EXPECT(content[1] == 'K');
+            AM_EXPECT(file->Position() == file->Length());
+            AM_EXPECT(file->Eof());
+            amfree(content);
+            }
 
-    // Compressed file
-    {
-        PackageFileSystem fileSystem;
-        fileSystem.SetPlatformFileSystem<DiskFileSystem>();
-        fileSystem.SetBasePath(AM_OS_STRING("./samples/assets_compressed.ampk"));
+            // Compressed file
+        {
+            PackageFileSystem fileSystem;
+            fileSystem.SetPlatformFileSystem<DiskFileSystem>();
+            fileSystem.SetBasePath(AM_OS_STRING("./samples/assets_compressed.ampk"));
 
-        fileSystem.StartOpenFileSystem();
-        while (!fileSystem.TryFinalizeOpenFileSystem())
+            fileSystem.StartOpenFileSystem();
+            while (!fileSystem.TryFinalizeOpenFileSystem())
             Thread::Sleep(1);
 
-        auto file = fileSystem.OpenFile(AM_OS_STRING("data/tests/file_read_test.txt"), eFileOpenMode_Read);
+            auto file = fileSystem.OpenFile(AM_OS_STRING("data/tests/file_read_test.txt"), eFileOpenMode_Read);
 
-        file->Seek(1, eFileSeekOrigin_Start);
-        AM_EXPECT(file->Position() == 1);
-        AM_EXPECT(file->Read8() == 'K');
-        file->Seek(-2, eFileSeekOrigin_End);
-        AM_EXPECT(file->Position() == 0);
-        AM_EXPECT(file->Read8() == 'O');
-        file->Seek(-1, eFileSeekOrigin_Current);
-        AM_EXPECT(file->Position() == 0);
-        AM_EXPECT(file->Read8() == 'O');
-        file->Seek(1234, eFileSeekOrigin_Start);
-        AM_EXPECT(file->Position() == 2);
-        AM_EXPECT(file->Read8() == 0);
+            file->Seek(1, eFileSeekOrigin_Start);
+            AM_EXPECT(file->Position() == 1);
+            AM_EXPECT(file->Read8() == 'K');
+            file->Seek(-2, eFileSeekOrigin_End);
+            AM_EXPECT(file->Position() == 0);
+            AM_EXPECT(file->Read8() == 'O');
+            file->Seek(-1, eFileSeekOrigin_Current);
+            AM_EXPECT(file->Position() == 0);
+            AM_EXPECT(file->Read8() == 'O');
+            file->Seek(1234, eFileSeekOrigin_Start);
+            AM_EXPECT(file->Position() == 2);
+            AM_EXPECT(file->Read8() == 0);
 
-        file->Seek(1, eFileSeekOrigin_Start);
-        file->Seek(0, eFileSeekOrigin_Current);
-        AM_EXPECT(file->Position() == 1);
-        AM_EXPECT(file->Read8() == 'K');
+            file->Seek(1, eFileSeekOrigin_Start);
+            file->Seek(0, eFileSeekOrigin_Current);
+            AM_EXPECT(file->Position() == 1);
+            AM_EXPECT(file->Read8() == 'K');
 
-        file->Seek(1, eFileSeekOrigin_Start);
-        file->Seek(1, eFileSeekOrigin_Start);
-        AM_EXPECT(file->Position() == 1);
-        AM_EXPECT(file->Read8() == 'K');
+            file->Seek(1, eFileSeekOrigin_Start);
+            file->Seek(1, eFileSeekOrigin_Start);
+            AM_EXPECT(file->Position() == 1);
+            AM_EXPECT(file->Read8() == 'K');
 
-        file->Seek(1, eFileSeekOrigin_Start);
-        file->Seek(-1, eFileSeekOrigin_End);
-        AM_EXPECT(file->Position() == 1);
-        AM_EXPECT(file->Read8() == 'K');
+            file->Seek(1, eFileSeekOrigin_Start);
+            file->Seek(-1, eFileSeekOrigin_End);
+            AM_EXPECT(file->Position() == 1);
+            AM_EXPECT(file->Read8() == 'K');
 
-        file->Seek(0, eFileSeekOrigin_Start);
-        auto* content = static_cast<AmUInt8Buffer>(ammalloc(2));
-        AM_EXPECT(file->Read(content, 2) == 2);
-        AM_EXPECT(content[0] == 'O');
-        AM_EXPECT(content[1] == 'K');
-        AM_EXPECT(file->Position() == file->Length());
-        AM_EXPECT(file->Eof());
-        amfree(content);
-    }
-}
+            file->Seek(0, eFileSeekOrigin_Start);
+            auto* content = static_cast<AmUInt8Buffer>(ammalloc(2));
+            AM_EXPECT(file->Read(content, 2) == 2);
+            AM_EXPECT(content[0] == 'O');
+            AM_EXPECT(content[1] == 'K');
+            AM_EXPECT(file->Position() == file->Length());
+            AM_EXPECT(file->Eof());
+            amfree(content);
+            }
+        }
+    };
+
+    // PackageItemFile tests use DiskFileSystem paths that only work on desktop
+    AM_REGISTER_TEST_DESKTOP_ONLY(fs_package_item_file, can_be_read);
+} // namespace SparkyStudios::Audio::Amplitude::Tests

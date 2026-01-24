@@ -15,27 +15,37 @@
 #include <SparkyStudios/Audio/Amplitude/Amplitude.h>
 
 #include "SimpleTestCase.h"
+#include "TestRegistry.h"
 
 using namespace SparkyStudios::Audio::Amplitude;
 
-void SimpleTestCase::Run()
+namespace SparkyStudios::Audio::Amplitude::Tests
 {
-    auto inner = amshared(CapsuleShape, 25, 50);
-    auto outer = amshared(CapsuleShape, 50, 100);
-    std::shared_ptr<Zone> zone = amshared(CapsuleZone, inner, outer);
+    AM_TEST_CASE(SimpleTestCase, math_capsule_zone, handles_orientation_changes)
+    {
+    public:
+        void Run() override
+        {
+            auto inner = amshared(CapsuleShape, 25, 50);
+            auto outer = amshared(CapsuleShape, 50, 100);
+            std::shared_ptr<Zone> zone = amshared(CapsuleZone, inner, outer);
 
-    const auto direction = kVector3UnitX;
-    const auto up = kVector3UnitZ;
-    const auto newOrientation = Orientation(direction, up);
-    zone->SetOrientation(newOrientation);
+            const auto direction = kVector3UnitX;
+            const auto up = kVector3UnitZ;
+            const auto newOrientation = Orientation(direction, up);
+            zone->SetOrientation(newOrientation);
 
-    constexpr auto kOrientationSize = sizeof(Orientation);
+            constexpr auto kOrientationSize = sizeof(Orientation);
 
-    AM_EXPECT(std::memcmp(&zone->GetOrientation(), &newOrientation, kOrientationSize) == 0);
+            AM_EXPECT(std::memcmp(&zone->GetOrientation(), &newOrientation, kOrientationSize) == 0);
 
-    AM_EXPECT(std::memcmp(&inner->GetOrientation(), &newOrientation, kOrientationSize) == 0);
-    AM_EXPECT(std::memcmp(&outer->GetOrientation(), &newOrientation, kOrientationSize) == 0);
+            AM_EXPECT(std::memcmp(&inner->GetOrientation(), &newOrientation, kOrientationSize) == 0);
+            AM_EXPECT(std::memcmp(&outer->GetOrientation(), &newOrientation, kOrientationSize) == 0);
 
-    AM_EXPECT_EQ(zone->GetDirection(), newOrientation.GetForward());
-    AM_EXPECT_EQ(zone->GetUp(), newOrientation.GetUp());
-}
+            AM_EXPECT_EQ(zone->GetDirection(), newOrientation.GetForward());
+            AM_EXPECT_EQ(zone->GetUp(), newOrientation.GetUp());
+        }
+    };
+
+    AM_REGISTER_TEST(math_capsule_zone, handles_orientation_changes);
+} // namespace SparkyStudios::Audio::Amplitude::Tests

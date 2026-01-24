@@ -15,20 +15,30 @@
 #include <SparkyStudios/Audio/Amplitude/Amplitude.h>
 
 #include "SimpleTestCase.h"
+#include "TestRegistry.h"
 
 using namespace SparkyStudios::Audio::Amplitude;
 
-void SimpleTestCase::Run()
+namespace SparkyStudios::Audio::Amplitude::Tests
 {
-    auto inner = amshared(SphereShape, 50);
-    auto outer = amshared(SphereShape, 100);
-    std::shared_ptr<Zone> zone = amshared(SphereZone, inner, outer);
+    AM_TEST_CASE(SimpleTestCase, math_sphere_zone, handles_location_changes)
+    {
+    public:
+        void Run() override
+        {
+            auto inner = amshared(SphereShape, 50);
+            auto outer = amshared(SphereShape, 100);
+            std::shared_ptr<Zone> zone = amshared(SphereZone, inner, outer);
 
-    const AmVector3 newLocation = { 10, 20, 30 };
-    zone->SetLocation(newLocation);
+            const AmVector3 newLocation = { 10, 20, 30 };
+            zone->SetLocation(newLocation);
 
-    AM_EXPECT_EQ(zone->GetLocation(), newLocation);
+            AM_EXPECT_EQ(zone->GetLocation(), newLocation);
 
-    AM_EXPECT_EQ(inner->GetLocation(), newLocation);
-    AM_EXPECT_EQ(outer->GetLocation(), newLocation);
-}
+            AM_EXPECT_EQ(inner->GetLocation(), newLocation);
+            AM_EXPECT_EQ(outer->GetLocation(), newLocation);
+        }
+    };
+
+    AM_REGISTER_TEST(math_sphere_zone, handles_location_changes);
+} // namespace SparkyStudios::Audio::Amplitude::Tests

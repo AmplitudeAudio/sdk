@@ -15,50 +15,57 @@
 #include <SparkyStudios/Audio/Amplitude/Amplitude.h>
 
 #include "DSPTestCase.h"
+#include "TestRegistry.h"
 
 namespace SparkyStudios::Audio::Amplitude::Tests
 {
-    void DSPTestCase::Run()
+    AM_TEST_CASE(DSPTestCase, dsp_utilities, convolver_processes_audio)
     {
-        // Create an impulse response
-        constexpr AmSize irLen = 512;
-        std::vector<AmAudioSample> ir(irLen);
+    public:
+        void Run() override
+        {
+            // Create an impulse response
+            constexpr AmSize irLen = 512;
+            std::vector<AmAudioSample> ir(irLen);
 
-        // Simple decaying impulse
-        for (AmSize i = 0; i < irLen; ++i)
+            // Simple decaying impulse
+            for (AmSize i = 0; i < irLen; ++i)
             ir[i] = std::exp(-static_cast<AmReal32>(i) / 100.0f);
 
-        Convolver convolver;
-        constexpr AmSize blockSize = 256;
-        AM_EXPECT(convolver.Init(blockSize, ir.data(), irLen));
+            Convolver convolver;
+            constexpr AmSize blockSize = 256;
+            AM_EXPECT(convolver.Init(blockSize, ir.data(), irLen));
 
-        // Create input signal
-        constexpr AmSize inputLen = 1024;
-        std::vector<AmAudioSample> input(inputLen);
-        std::vector<AmAudioSample> output(inputLen);
+            // Create input signal
+            constexpr AmSize inputLen = 1024;
+            std::vector<AmAudioSample> input(inputLen);
+            std::vector<AmAudioSample> output(inputLen);
 
-        // Generate test signal (impulse)
-        input[0] = 1.0f;
-        for (AmSize i = 1; i < inputLen; ++i)
+            // Generate test signal (impulse)
+            input[0] = 1.0f;
+            for (AmSize i = 1; i < inputLen; ++i)
             input[i] = 0.0f;
 
-        // Process
-        convolver.Process(input.data(), output.data(), inputLen);
+            // Process
+            convolver.Process(input.data(), output.data(), inputLen);
 
-        // Verify output is non-zero and different from input
-        bool hasOutput = false;
-        bool isDifferent = false;
+            // Verify output is non-zero and different from input
+            bool hasOutput = false;
+            bool isDifferent = false;
 
-        for (AmSize i = 0; i < inputLen; ++i)
+            for (AmSize i = 0; i < inputLen; ++i)
         {
             if (std::abs(output[i]) > kEpsilon)
-                hasOutput = true;
+            hasOutput = true;
 
             if (std::abs(output[i] - input[i]) > kEpsilon)
-                isDifferent = true;
-        }
+            isDifferent = true;
+            }
 
-        AM_EXPECT(hasOutput);
-        AM_EXPECT(isDifferent);
-    }
+            AM_EXPECT(hasOutput);
+            AM_EXPECT(isDifferent);
+        }
+    };
+
+    AM_REGISTER_TEST(dsp_utilities, convolver_processes_audio);
 } // namespace SparkyStudios::Audio::Amplitude::Tests

@@ -17,33 +17,43 @@
 #include <Core/RoomInternalState.h>
 
 #include "SimpleTestCase.h"
+#include "TestRegistry.h"
 
 using namespace SparkyStudios::Audio::Amplitude;
 
-void SimpleTestCase::Run()
+namespace SparkyStudios::Audio::Amplitude::Tests
 {
-    RoomInternalState state;
-    state.SetId(1);
-
-    fplutil::intrusive_list room_list(&RoomInternalState::node);
-    room_list.push_back(state);
-
-    Room wrapper(&state);
-    AM_EXPECT_EQ(wrapper.GetState(), &state);
-
+    AM_TEST_CASE(SimpleTestCase, core_room, handles_gain_changes)
     {
-        constexpr auto kGain = 0.5f;
+    public:
+        void Run() override
+        {
+            RoomInternalState state;
+            state.SetId(1);
 
-        state.SetGain(kGain);
-        AM_EXPECT_EQ(state.GetGain(), kGain);
-        AM_EXPECT_EQ(wrapper.GetGain(), kGain);
-    }
+            fplutil::intrusive_list room_list(&RoomInternalState::node);
+            room_list.push_back(state);
 
-    {
-        constexpr auto kGain = 1.0f;
+            Room wrapper(&state);
+            AM_EXPECT_EQ(wrapper.GetState(), &state);
 
-        wrapper.SetGain(kGain);
-        AM_EXPECT_EQ(wrapper.GetGain(), kGain);
-        AM_EXPECT_EQ(state.GetGain(), kGain);
-    }
-}
+            {
+                constexpr auto kGain = 0.5f;
+
+                state.SetGain(kGain);
+                AM_EXPECT_EQ(state.GetGain(), kGain);
+                AM_EXPECT_EQ(wrapper.GetGain(), kGain);
+            }
+
+            {
+                constexpr auto kGain = 1.0f;
+
+                wrapper.SetGain(kGain);
+                AM_EXPECT_EQ(wrapper.GetGain(), kGain);
+                AM_EXPECT_EQ(state.GetGain(), kGain);
+            }
+        }
+    };
+
+    AM_REGISTER_TEST(core_room, handles_gain_changes);
+} // namespace SparkyStudios::Audio::Amplitude::Tests

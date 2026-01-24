@@ -15,33 +15,40 @@
 #include <SparkyStudios/Audio/Amplitude/Amplitude.h>
 
 #include "SimpleTestCase.h"
+#include "TestRegistry.h"
 
 using namespace SparkyStudios::Audio::Amplitude;
 
 namespace SparkyStudios::Audio::Amplitude::Tests
 {
-    void SimpleTestCase::Run()
+    AM_TEST_CASE(SimpleTestCase, core_audio_buffer, cross_fader_functionality)
     {
-        // Create input and output buffers
-        AudioBuffer in(10, 1);
-        AudioBuffer out(10, 1);
-
-        // Initialize both buffers with 1.0f
-        for (size_t i = 0; i < 10; ++i)
+    public:
+        void Run() override
         {
-            in[0][i] = 1.0f;
-            out[0][i] = 1.0f;
+            // Create input and output buffers
+            AudioBuffer in(10, 1);
+            AudioBuffer out(10, 1);
+
+            // Initialize both buffers with 1.0f
+            for (size_t i = 0; i < 10; ++i)
+            {
+                in[0][i] = 1.0f;
+                out[0][i] = 1.0f;
+            }
+
+            // Create fade buffer
+            AudioBuffer fade(10, 1);
+
+            // Test cross-fading functionality
+            AudioBufferCrossFader crossfader(10);
+            crossfader.CrossFade(in, out, fade);
+
+            // Verify the result
+            for (size_t i = 0; i < 10; ++i)
+                AM_EXPECT(std::abs(1.0f - fade[0][i]) < kEpsilon);
         }
+    };
 
-        // Create fade buffer
-        AudioBuffer fade(10, 1);
-
-        // Test cross-fading functionality
-        AudioBufferCrossFader crossfader(10);
-        crossfader.CrossFade(in, out, fade);
-
-        // Verify the result
-        for (size_t i = 0; i < 10; ++i)
-            AM_EXPECT(std::abs(1.0f - fade[0][i]) < kEpsilon);
-    }
+    AM_REGISTER_TEST(core_audio_buffer, cross_fader_functionality);
 } // namespace SparkyStudios::Audio::Amplitude::Tests

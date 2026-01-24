@@ -17,36 +17,43 @@
 #include <DSP/Gain.h>
 
 #include "DSPTestCase.h"
+#include "TestRegistry.h"
 
 namespace SparkyStudios::Audio::Amplitude::Tests
 {
-    void DSPTestCase::Run()
+    AM_TEST_CASE(DSPTestCase, dsp_utilities, gain_constant_gain)
     {
-        constexpr AmSize frameCount = 256;
-        AudioBuffer input(frameCount, 1);
-        AudioBuffer output(frameCount, 1);
+    public:
+        void Run() override
+        {
+            constexpr AmSize frameCount = 256;
+            AudioBuffer input(frameCount, 1);
+            AudioBuffer output(frameCount, 1);
 
-        // Fill input with constant value
-        for (AmSize i = 0; i < frameCount; ++i)
+            // Fill input with constant value
+            for (AmSize i = 0; i < frameCount; ++i)
             input[0][i] = 1.0f;
 
-        // Test replace with gain of 0.5
-        constexpr AmReal32 gain = 0.5f;
-        Gain::ApplyReplaceConstantGain(gain, input[0], 0, output[0], 0, frameCount);
+            // Test replace with gain of 0.5
+            constexpr AmReal32 gain = 0.5f;
+            Gain::ApplyReplaceConstantGain(gain, input[0], 0, output[0], 0, frameCount);
 
-        // Verify output
-        for (AmSize i = 0; i < frameCount; ++i)
+            // Verify output
+            for (AmSize i = 0; i < frameCount; ++i)
             AM_EXPECT(std::abs(output[0][i] - 0.5f) < kEpsilon);
 
-        // Test accumulate
-        output[0].clear();
-        for (AmSize i = 0; i < frameCount; ++i)
+            // Test accumulate
+            output[0].clear();
+            for (AmSize i = 0; i < frameCount; ++i)
             output[0][i] = 0.25f;
 
-        Gain::ApplyAccumulateConstantGain(gain, input[0], 0, output[0], 0, frameCount);
+            Gain::ApplyAccumulateConstantGain(gain, input[0], 0, output[0], 0, frameCount);
 
-        // Verify accumulated output (0.25 + 0.5 = 0.75)
-        for (AmSize i = 0; i < frameCount; ++i)
+            // Verify accumulated output (0.25 + 0.5 = 0.75)
+            for (AmSize i = 0; i < frameCount; ++i)
             AM_EXPECT(std::abs(output[0][i] - 0.75f) < kEpsilon);
-    }
+        }
+    };
+
+    AM_REGISTER_TEST(dsp_utilities, gain_constant_gain);
 } // namespace SparkyStudios::Audio::Amplitude::Tests

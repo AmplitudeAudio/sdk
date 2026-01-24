@@ -17,20 +17,30 @@
 #include <Core/ListenerInternalState.h>
 
 #include "SimpleTestCase.h"
+#include "TestRegistry.h"
 
 using namespace SparkyStudios::Audio::Amplitude;
 
-void SimpleTestCase::Run()
+namespace SparkyStudios::Audio::Amplitude::Tests
 {
-    ListenerInternalState state;
-    state.SetId(1);
+    AM_TEST_CASE(SimpleTestCase, core_listener, cannot_create_valid_wrapper_without_state)
+    {
+    public:
+        void Run() override
+        {
+            ListenerInternalState state;
+            state.SetId(1);
 
-    fplutil::intrusive_list listener_list(&ListenerInternalState::node);
-    listener_list.push_back(state);
+            fplutil::intrusive_list listener_list(&ListenerInternalState::node);
+            listener_list.push_back(state);
 
-    Listener wrapper2(nullptr);
-    AM_EXPECT_NOT(wrapper2.Valid());
+            Listener wrapper2(nullptr);
+            AM_EXPECT_NOT(wrapper2.Valid());
 
-    Listener wrapper3;
-    AM_EXPECT_NOT(wrapper3.Valid());
-}
+            Listener wrapper3;
+            AM_EXPECT_NOT(wrapper3.Valid());
+        }
+    };
+
+    AM_REGISTER_TEST(core_listener, cannot_create_valid_wrapper_without_state);
+} // namespace SparkyStudios::Audio::Amplitude::Tests

@@ -18,66 +18,76 @@
 #include <Core/ListenerInternalState.h>
 
 #include "SimpleTestCase.h"
+#include "TestRegistry.h"
 
 using namespace SparkyStudios::Audio::Amplitude;
 
-void SimpleTestCase::Run()
+namespace SparkyStudios::Audio::Amplitude::Tests
 {
-    auto inner = amshared(ConeShape, 50, 50);
-    auto outer = amshared(ConeShape, 100, 100);
-    std::shared_ptr<Zone> zone = amshared(ConeZone, inner, outer);
-
-    constexpr AmVector3 innerPoint = { 25, 25, 0 };
-    constexpr AmVector3 outerPoint = { 175, 175, 0 };
-    constexpr AmVector3 middlePoint1 = { 0.0f, 87.5f, 0.0f };
-    constexpr AmVector3 middlePoint2 = { 25.0f, 75.0f, 0.0f };
-
-    AM_EXPECT_EQ(zone->GetFactor(innerPoint), 1.0f);
-    AM_EXPECT_EQ(zone->GetFactor(outerPoint), 0.0f);
-    AM_EXPECT_EQ(zone->GetFactor(middlePoint1), 0.25f);
-    AM_EXPECT_EQ(zone->GetFactor(middlePoint2), 0.5f);
-
+    AM_TEST_CASE(SimpleTestCase, math_cone_zone, computes_correct_factors)
     {
-        EntityInternalState innerState;
-        EntityInternalState outerState;
-        EntityInternalState middleState1;
-        EntityInternalState middleState2;
+    public:
+        void Run() override
+        {
+            auto inner = amshared(ConeShape, 50, 50);
+            auto outer = amshared(ConeShape, 100, 100);
+            std::shared_ptr<Zone> zone = amshared(ConeZone, inner, outer);
 
-        innerState.SetLocation(innerPoint);
-        outerState.SetLocation(outerPoint);
-        middleState1.SetLocation(middlePoint1);
-        middleState2.SetLocation(middlePoint2);
+            constexpr AmVector3 innerPoint = { 25, 25, 0 };
+            constexpr AmVector3 outerPoint = { 175, 175, 0 };
+            constexpr AmVector3 middlePoint1 = { 0.0f, 87.5f, 0.0f };
+            constexpr AmVector3 middlePoint2 = { 25.0f, 75.0f, 0.0f };
 
-        Entity innerEntity = InitTestEntity(&innerState);
-        Entity outerEntity = InitTestEntity(&outerState);
-        Entity middleEntity1 = InitTestEntity(&middleState1);
-        Entity middleEntity2 = InitTestEntity(&middleState2);
+            AM_EXPECT_EQ(zone->GetFactor(innerPoint), 1.0f);
+            AM_EXPECT_EQ(zone->GetFactor(outerPoint), 0.0f);
+            AM_EXPECT_EQ(zone->GetFactor(middlePoint1), 0.25f);
+            AM_EXPECT_EQ(zone->GetFactor(middlePoint2), 0.5f);
 
-        AM_EXPECT_EQ(zone->GetFactor(innerEntity), 1.0f);
-        AM_EXPECT_EQ(zone->GetFactor(outerEntity), 0.0f);
-        AM_EXPECT_EQ(zone->GetFactor(middleEntity1), 0.25f);
-        AM_EXPECT_EQ(zone->GetFactor(middleEntity2), 0.5f);
-    }
+        {
+            EntityInternalState innerState;
+            EntityInternalState outerState;
+            EntityInternalState middleState1;
+            EntityInternalState middleState2;
 
-    {
-        ListenerInternalState innerState;
-        ListenerInternalState outerState;
-        ListenerInternalState middleState1;
-        ListenerInternalState middleState2;
+            innerState.SetLocation(innerPoint);
+            outerState.SetLocation(outerPoint);
+            middleState1.SetLocation(middlePoint1);
+            middleState2.SetLocation(middlePoint2);
 
-        innerState.SetLocation(innerPoint);
-        outerState.SetLocation(outerPoint);
-        middleState1.SetLocation(middlePoint1);
-        middleState2.SetLocation(middlePoint2);
+            Entity innerEntity = InitTestEntity(&innerState);
+            Entity outerEntity = InitTestEntity(&outerState);
+            Entity middleEntity1 = InitTestEntity(&middleState1);
+            Entity middleEntity2 = InitTestEntity(&middleState2);
 
-        Listener innerListener = InitTestListener(&innerState);
-        Listener outerListener = InitTestListener(&outerState);
-        Listener middleListener1 = InitTestListener(&middleState1);
-        Listener middleListener2 = InitTestListener(&middleState2);
+            AM_EXPECT_EQ(zone->GetFactor(innerEntity), 1.0f);
+            AM_EXPECT_EQ(zone->GetFactor(outerEntity), 0.0f);
+            AM_EXPECT_EQ(zone->GetFactor(middleEntity1), 0.25f);
+            AM_EXPECT_EQ(zone->GetFactor(middleEntity2), 0.5f);
+            }
 
-        AM_EXPECT_EQ(zone->GetFactor(innerListener), 1.0f);
-        AM_EXPECT_EQ(zone->GetFactor(outerListener), 0.0f);
-        AM_EXPECT_EQ(zone->GetFactor(middleListener1), 0.25f);
-        AM_EXPECT_EQ(zone->GetFactor(middleListener2), 0.5f);
-    }
-}
+        {
+            ListenerInternalState innerState;
+            ListenerInternalState outerState;
+            ListenerInternalState middleState1;
+            ListenerInternalState middleState2;
+
+            innerState.SetLocation(innerPoint);
+            outerState.SetLocation(outerPoint);
+            middleState1.SetLocation(middlePoint1);
+            middleState2.SetLocation(middlePoint2);
+
+            Listener innerListener = InitTestListener(&innerState);
+            Listener outerListener = InitTestListener(&outerState);
+            Listener middleListener1 = InitTestListener(&middleState1);
+            Listener middleListener2 = InitTestListener(&middleState2);
+
+            AM_EXPECT_EQ(zone->GetFactor(innerListener), 1.0f);
+            AM_EXPECT_EQ(zone->GetFactor(outerListener), 0.0f);
+            AM_EXPECT_EQ(zone->GetFactor(middleListener1), 0.25f);
+            AM_EXPECT_EQ(zone->GetFactor(middleListener2), 0.5f);
+            }
+        }
+    };
+
+    AM_REGISTER_TEST(math_cone_zone, computes_correct_factors);
+} // namespace SparkyStudios::Audio::Amplitude::Tests

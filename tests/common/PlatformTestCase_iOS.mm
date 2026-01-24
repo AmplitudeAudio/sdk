@@ -47,6 +47,7 @@ namespace SparkyStudios::Audio::Amplitude::Tests
 
             return basePath;
         }
+
         // Fallback if bundle path is not set
         amLogWarning("iOS: No bundle path configured, using default path");
         return AM_OS_STRING("./assets");

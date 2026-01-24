@@ -18,40 +18,47 @@
 #include <DSP/NearFieldProcessor.h>
 
 #include "DSPTestCase.h"
+#include "TestRegistry.h"
 
 namespace SparkyStudios::Audio::Amplitude::Tests
 {
-    void DSPTestCase::Run()
+    AM_TEST_CASE(DSPTestCase, dsp_utilities, near_field_processor_with_hrtf)
     {
-        auto biquadFilter = Engine::RegisterExtension<BiquadResonantFilter>();
+    public:
+        void Run() override
+        {
+            auto biquadFilter = Engine::RegisterExtension<BiquadResonantFilter>();
 
-        constexpr AmUInt32 sampleRate = 48000;
-        constexpr AmUInt32 framesCount = 512;
+            constexpr AmUInt32 sampleRate = 48000;
+            constexpr AmUInt32 framesCount = 512;
 
-        NearFieldProcessor processor(sampleRate, framesCount);
+            NearFieldProcessor processor(sampleRate, framesCount);
 
-        // Create buffers
-        AudioBuffer input(framesCount, 1);
-        AudioBuffer outputWithoutHrtf(framesCount, 1);
-        AudioBuffer outputWithHrtf(framesCount, 1);
+            // Create buffers
+            AudioBuffer input(framesCount, 1);
+            AudioBuffer outputWithoutHrtf(framesCount, 1);
+            AudioBuffer outputWithHrtf(framesCount, 1);
 
-        // Generate test signal
-        for (AmSize i = 0; i < framesCount; ++i)
+            // Generate test signal
+            for (AmSize i = 0; i < framesCount; ++i)
             input[0][i] = std::sin(2.0f * AM_PI32 * 1000.0f * static_cast<AmReal32>(i) / static_cast<AmReal32>(sampleRate));
 
-        // Process without HRTF
-        processor.Process(input[0], outputWithoutHrtf[0], false);
+            // Process without HRTF
+            processor.Process(input[0], outputWithoutHrtf[0], false);
 
-        // Process with HRTF (includes delay compensation)
-        processor.Process(input[0], outputWithHrtf[0], true);
+            // Process with HRTF (includes delay compensation)
+            processor.Process(input[0], outputWithHrtf[0], true);
 
-        // Both outputs should have non-zero values
-        AM_EXPECT(EnsureHasNonZeroOutput(outputWithoutHrtf));
-        AM_EXPECT(EnsureHasNonZeroOutput(outputWithHrtf));
+            // Both outputs should have non-zero values
+            AM_EXPECT(EnsureHasNonZeroOutput(outputWithoutHrtf));
+            AM_EXPECT(EnsureHasNonZeroOutput(outputWithHrtf));
 
-        // Outputs with and without HRTF should differ due to delay compensation
-        AM_EXPECT_NOT(EnsureBufferEqual(outputWithoutHrtf, outputWithHrtf));
+            // Outputs with and without HRTF should differ due to delay compensation
+            AM_EXPECT_NOT(EnsureBufferEqual(outputWithoutHrtf, outputWithHrtf));
 
-        Engine::UnregisterExtension(biquadFilter);
-    }
+            Engine::UnregisterExtension(biquadFilter);
+        }
+    };
+
+    AM_REGISTER_TEST(dsp_utilities, near_field_processor_with_hrtf);
 } // namespace SparkyStudios::Audio::Amplitude::Tests
