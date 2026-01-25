@@ -90,11 +90,13 @@
 
 #include <SparkyStudios/Audio/Amplitude/IO/ConsoleLogger.h>
 #include <SparkyStudios/Audio/Amplitude/IO/DiskFile.h>
+#include <SparkyStudios/Audio/Amplitude/IO/FileLogger.h>
 #include <SparkyStudios/Audio/Amplitude/IO/DiskFileSystem.h>
 #include <SparkyStudios/Audio/Amplitude/IO/File.h>
 #include <SparkyStudios/Audio/Amplitude/IO/FileSystem.h>
 #include <SparkyStudios/Audio/Amplitude/IO/Log.h>
 #include <SparkyStudios/Audio/Amplitude/IO/MemoryFile.h>
+#include <SparkyStudios/Audio/Amplitude/IO/NullLogger.h>
 #include <SparkyStudios/Audio/Amplitude/IO/PackageFileSystem.h>
 #include <SparkyStudios/Audio/Amplitude/IO/PackageItemFile.h>
 #include <SparkyStudios/Audio/Amplitude/IO/Resource.h>
