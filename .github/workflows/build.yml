@@ -150,7 +150,7 @@ jobs:
             NOTICE
             README.md
             sdk/
-          name: ${{ matrix.build_type }}_sdk_${{ matrix.config.arch }}-${{ matrix.config.plat }}
+          name: ${{ matrix.build_type }}_sdk_${{ matrix.config.arch }}-${{ matrix.config.plat }}${{ matrix.config.toolchain && format('-{0}', matrix.config.toolchain) || '' }}
 
       - name: Upload release asset
         if: github.event_name == 'release' && (github.event.action == 'published' || github.event.action == 'created')

@@ -4,16 +4,16 @@ on:
   push:
     branches: [main, develop]
     paths:
-      - 'tests/ios_runner/**'
-      - 'tests/android_runner/**'
+      - 'tests/runners/ios/**'
+      - 'tests/runners/android/**'
       - 'tests/common/**'
       - 'src/**'
       - 'include/**'
   pull_request:
     branches: [main, develop]
     paths:
-      - 'tests/ios_runner/**'
-      - 'tests/android_runner/**'
+      - 'tests/runners/ios/**'
+      - 'tests/runners/android/**'
       - 'tests/common/**'
       - 'src/**'
       - 'include/**'
@@ -263,8 +263,8 @@ jobs:
 
       - name: Copy Assets to Android Project
         run: |
-          mkdir -p tests/android_runner/app/src/main/assets
-          cp -r build/samples/assets/* tests/android_runner/app/src/main/assets/
+          mkdir -p tests/runners/android/app/src/main/assets
+          cp -r build/samples/assets/* tests/runners/android/app/src/main/assets/
 
       - name: Build Amplitude SDK for Android (x86_64 for Emulator)
         run: |
@@ -281,7 +281,7 @@ jobs:
           gradle-version: 8.5
 
       - name: Build Android Test Runner
-        working-directory: tests/android_runner
+        working-directory: tests/runners/android
         run: gradle assembleDebug
 
       - name: Run Tests on Android Emulator
@@ -300,7 +300,7 @@ jobs:
 
             # Install the test app
             echo "Installing test app..."
-            adb install -r tests/android_runner/app/build/outputs/apk/debug/app-debug.apk
+            adb install -r tests/runners/android/app/build/outputs/apk/debug/app-debug.apk
 
             # Clear logcat
             adb logcat -c
@@ -376,5 +376,5 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: AmplitudeTests-Android
-          path: tests/android_runner/app/build/outputs/apk/debug/app-debug.apk
+          path: tests/runners/android/app/build/outputs/apk/debug/app-debug.apk
           retention-days: 7
