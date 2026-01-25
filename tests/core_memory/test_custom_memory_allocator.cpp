@@ -212,13 +212,13 @@ namespace
 #if defined(_MSC_VER)
             AmVoidPtr ptr = _aligned_malloc(size, alignment);
 #else
-            AmVoidPtr ptr = std::aligned_alloc(alignment, AM_VALUE_ALIGN(size, alignment));
+            AmVoidPtr ptr = nullptr;
+            if (posix_memalign(&ptr, alignment, AM_VALUE_ALIGN(size, alignment)) != 0)
+                return nullptr;
 #endif
 
             if (ptr != nullptr)
-            {
                 _allocations[ptr] = { size, alignment };
-            }
 
             return ptr;
         }
@@ -231,7 +231,7 @@ namespace
 #if defined(_MSC_VER)
             _aligned_free(ptr);
 #else
-            std::free(ptr);
+            free(ptr);
 #endif
         }
 

@@ -18,19 +18,20 @@
 -- This file orchestrates test runners for different platforms:
 --   - Desktop (Windows, Linux, macOS):  tests/runners/desktop/
 --   - iOS:                              tests/runners/ios/
---   - Android:                          tests/runners/android/ (uses Gradle/CMake)
+--   - Android:                          tests/runners/android/
 --
 -- Usage:
---   Desktop: xmake build amplitude_tests && ./amplitude_tests -v
+--   Desktop: xmake build amplitude_tests
 --   iOS:     xmake build AmplitudeTests_iOS
---   Android: cd tests/runners/android && ./gradlew assembleDebug
+--   Android: xmake build AmplitudeTests_Android
 --
 
 -- Include platform-specific test runners
 if is_plat("iphoneos") then
-    -- iOS test runner (Xcode application)
     includes("runners/ios/xmake.lua")
-elseif not is_plat("android") then
+elseif is_plat("android") then
+    includes("runners/android/xmake.lua")
+else
     target("test_plugin")
         set_kind("shared")
         set_targetdir("$(builddir)/$(plat)/$(arch)/$(mode)/shared")
@@ -41,6 +42,5 @@ elseif not is_plat("android") then
         add_files("test_plugin/*.cpp")
     target_end()
 
-    -- Include desktop test runner
     includes("runners/desktop/xmake.lua")
 end

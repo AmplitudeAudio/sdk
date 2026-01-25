@@ -187,9 +187,12 @@ if is_plat("macosx") or is_plat("iphoneos") then
   add_defines("AM_FFT_APPLE_ACCELERATE")
 end
 
--- Android-specific libraries
+-- Android-specific libraries and flags
 if is_plat("android") then
   add_syslinks("android", "log")
+  -- Position-independent code is required for Android native apps
+  -- (all code, including static libraries, must be PIC for the final .so)
+  add_cxflags("-fPIC", { force = true })
 end
 
 -- Plugins disabled on iOS/Android due to:
@@ -390,16 +393,7 @@ end
 
 -- Build unit tests if enabled
 if has_config("unit_tests") then
-  if is_plat("android") then
-    -- Android: Use Gradle build system instead of XMake
-    -- Build with: cd tests/android_runner && ./gradlew assembleDebug
-    print("Note: Android tests use Gradle build system.")
-    print("  Build: cd tests/android_runner && ./gradlew assembleDebug")
-    print("  Install: ./gradlew installDebug")
-  else
-    -- Desktop and iOS: Use XMake build system
-    includes("tests/xmake.lua")
-  end
+  includes("tests/xmake.lua")
 
   if not is_plat("android") and not is_plat("iphoneos") then
     target("generate_test_package")

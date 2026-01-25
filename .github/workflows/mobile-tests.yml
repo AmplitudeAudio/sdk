@@ -262,28 +262,13 @@ jobs:
         with:
           ndk-version: r27c
 
-      - name: Copy Assets to Android Project
-        run: |
-          mkdir -p tests/runners/android/app/src/main/assets
-          cp -r build/samples/assets/* tests/runners/android/app/src/main/assets/
-
-      - name: Build Amplitude SDK for Android (x86_64 for Emulator)
+      - name: Build Android Test Runner via XMake
         run: |
           xmake c -a
-          xmake f -y -p android -a x86_64 -m debug
-          xmake b -y
-          xmake i -y -o sdk
+          xmake f -y -p android -a x86_64 -m debug --unit_tests=y
+          xmake b -y AmplitudeTests_Android
         env:
           ANDROID_NDK_HOME: ${{ steps.setup-ndk.outputs.ndk-path }}
-
-      - name: Setup Gradle
-        uses: gradle/actions/setup-gradle@v4
-        with:
-          gradle-version: 8.5
-
-      - name: Build Android Test Runner
-        working-directory: tests/runners/android
-        run: gradle assembleDebug
 
       - name: Run Tests on Android Emulator
         uses: reactivecircus/android-emulator-runner@v2
@@ -301,7 +286,7 @@ jobs:
 
             # Install the test app
             echo "Installing test app..."
-            adb install -r tests/runners/android/app/build/outputs/apk/debug/app-debug.apk
+            adb install -r build/android/x86_64/debug/tests/AmplitudeTests_Android.apk
 
             # Clear logcat
             adb logcat -c
@@ -310,11 +295,9 @@ jobs:
             adb logcat -v time AmplitudeTests:V *:S > android_test_output.log 2>&1 &
             LOGCAT_PID=$!
 
-            # Launch the app with auto-run flags
-            echo "Launching test app with auto-run..."
-            adb shell am start -n com.amplitudeaudiosdk.tests/.TestRunnerActivity \
-              --ez autorun true \
-              --ez exit_on_complete true
+            # Launch the app
+            echo "Launching test app..."
+            adb shell am start -n com.amplitudeaudiosdk.tests/android.app.NativeActivity
 
             # Wait for tests to complete
             TIMEOUT=300
@@ -377,5 +360,5 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: AmplitudeTests-Android
-          path: tests/runners/android/app/build/outputs/apk/debug/app-debug.apk
+          path: build/android/x86_64/debug/tests/AmplitudeTests_Android.apk
           retention-days: 7

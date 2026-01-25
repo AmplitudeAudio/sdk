@@ -83,6 +83,11 @@
 #define EIGEN_DONT_VECTORIZE
 #endif // AMPLITUDE_DISABLE_SIMD
 
+// Default alignment if no SIMD architecture is detected
+#ifndef AM_SIMD_ALIGNMENT
+#define AM_SIMD_ALIGNMENT 16
+#endif
+
 #ifndef M_PI
 /// Define the value of Pi if the platform doesn't do that
 #define M_PI 3.14159265358979323846264f // from CRC
