@@ -175,7 +175,7 @@ namespace SparkyStudios::Audio::Amplitude
 
     bool LoadFile(const std::shared_ptr<File>& file, AmString* dest)
     {
-        if (!file->IsValid())
+        if (!file || !file->IsValid())
         {
             amLogError("The file is not valid.");
             return false;

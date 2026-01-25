@@ -26,6 +26,5 @@ namespace SparkyStudios::Audio::Amplitude::Tests
 
         void TearDown() override
         {}
-
     };
 } // namespace SparkyStudios::Audio::Amplitude::Tests
