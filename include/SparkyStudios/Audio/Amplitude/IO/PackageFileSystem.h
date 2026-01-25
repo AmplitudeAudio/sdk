@@ -240,6 +240,14 @@ namespace SparkyStudios::Audio::Amplitude
         }
 
         /**
+         * @brief Sets the platform file system to use for opening and reading
+         * the package file.
+         *
+         * @param[in] fileSystem The file system to use.
+         */
+        void SetPlatformFileSystem(std::shared_ptr<FileSystem> fileSystem);
+
+        /**
          * @brief Returns if the package file is valid and loaded.
          *
          * @return @c true if the package file is valid and loaded, @c false otherwise.
@@ -256,7 +264,7 @@ namespace SparkyStudios::Audio::Amplitude
          */
         static void LoadPackage(AmVoidPtr pParam);
 
-        AmUniquePtr<FileSystem, eMemoryPoolKind_IO> _fileSystem;
+        std::shared_ptr<FileSystem> _fileSystem;
 
         AmOsString _packagePath;
         std::shared_ptr<File> _packageFile;

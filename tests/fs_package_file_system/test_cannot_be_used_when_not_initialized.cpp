@@ -29,19 +29,18 @@ namespace SparkyStudios::Audio::Amplitude::Tests
             PackageFileSystem fileSystem;
 
             // cannot check if files exists
-        {
-            AM_EXPECT_NOT(fileSystem.Exists(AM_OS_STRING("tests.config.amconfig")));
-            AM_EXPECT_NOT(fileSystem.Exists(AM_OS_STRING("some_random_file.ext")));
+            {
+                AM_EXPECT_NOT(fileSystem.Exists(AM_OS_STRING("tests.config.amconfig")));
+                AM_EXPECT_NOT(fileSystem.Exists(AM_OS_STRING("some_random_file.ext")));
             }
 
             // cannot open files
-        {
-            AM_EXPECT(fileSystem.OpenFile(AM_OS_STRING("tests.config.amconfig")) == nullptr);
-            AM_EXPECT(fileSystem.OpenFile(AM_OS_STRING("some_random_file.ext")) == nullptr);
+            {
+                AM_EXPECT(fileSystem.OpenFile(AM_OS_STRING("tests.config.amconfig")) == nullptr);
+                AM_EXPECT(fileSystem.OpenFile(AM_OS_STRING("some_random_file.ext")) == nullptr);
             }
         }
     };
 
-    // PackageFileSystem tests use DiskFileSystem paths that only work on desktop
-    AM_REGISTER_TEST_DESKTOP_ONLY(fs_package_file_system, cannot_be_used_when_not_initialized);
+    AM_REGISTER_TEST(fs_package_file_system, cannot_be_used_when_not_initialized);
 } // namespace SparkyStudios::Audio::Amplitude::Tests

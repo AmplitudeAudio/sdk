@@ -41,7 +41,7 @@ namespace SparkyStudios::Audio::Amplitude
             Thread::Release(_loadingThreadHandle);
 
         _packageFile.reset();
-        _fileSystem.reset(nullptr);
+        _fileSystem.reset();
         _initialized = false;
         _valid = false;
         _header = {};
@@ -224,6 +224,12 @@ namespace SparkyStudios::Audio::Amplitude
         return _packageFile == nullptr;
     }
 
+    void PackageFileSystem::SetPlatformFileSystem(std::shared_ptr<FileSystem> fileSystem)
+    {
+        AMPLITUDE_ASSERT(fileSystem != nullptr);
+        _fileSystem = fileSystem;
+    }
+
     bool PackageFileSystem::IsValid() const
     {
         return _valid;
@@ -235,7 +241,7 @@ namespace SparkyStudios::Audio::Amplitude
 
         pFileSystem->_packageFile = pFileSystem->_fileSystem->OpenFile(pFileSystem->_packagePath);
 
-        if (!pFileSystem->_packageFile->IsValid())
+        if (pFileSystem->_packageFile == nullptr || !pFileSystem->_packageFile->IsValid())
         {
             amLogError("Invalid package file at: " AM_OS_CHAR_FMT, pFileSystem->_packagePath.c_str());
             pFileSystem->_initialized = true;

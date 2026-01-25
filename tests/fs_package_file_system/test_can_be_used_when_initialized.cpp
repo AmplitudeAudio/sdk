@@ -14,6 +14,7 @@
 
 #include <SparkyStudios/Audio/Amplitude/Amplitude.h>
 
+#include "PlatformTestCase.h"
 #include "SimpleTestCase.h"
 #include "TestRegistry.h"
 
@@ -26,11 +27,14 @@ namespace SparkyStudios::Audio::Amplitude::Tests
     public:
         void Run() override
         {
+            auto platformFileSystem = CreatePlatformFileSystem();
+            platformFileSystem->SetBasePath(platformFileSystem->Join({ GetPlatformAssetsBasePath(), AM_OS_STRING("..") }));
+
             // Uncompressed file
             {
                 PackageFileSystem filesystem;
-                filesystem.SetPlatformFileSystem<DiskFileSystem>();
-                filesystem.SetBasePath(AM_OS_STRING("./samples/assets_uncompressed.ampk"));
+                filesystem.SetPlatformFileSystem(platformFileSystem);
+                filesystem.SetBasePath(AM_OS_STRING("./assets_uncompressed.ampk"));
 
                 filesystem.StartOpenFileSystem();
                 while (!filesystem.TryFinalizeOpenFileSystem())
@@ -38,8 +42,7 @@ namespace SparkyStudios::Audio::Amplitude::Tests
 
                 // can sets the base path
                 {
-                    AM_EXPECT(
-                        filesystem.GetBasePath() == std::filesystem::current_path() / AM_OS_STRING("samples/assets_uncompressed.ampk"));
+                    AM_EXPECT(filesystem.GetBasePath() == platformFileSystem->ResolvePath(AM_OS_STRING("assets_uncompressed.ampk")));
                 }
 
                 // can check if files exists
@@ -75,8 +78,8 @@ namespace SparkyStudios::Audio::Amplitude::Tests
             // Compressed file
             {
                 PackageFileSystem filesystem;
-                filesystem.SetPlatformFileSystem<DiskFileSystem>();
-                filesystem.SetBasePath(AM_OS_STRING("./samples/assets_compressed.ampk"));
+                filesystem.SetPlatformFileSystem(platformFileSystem);
+                filesystem.SetBasePath(AM_OS_STRING("./assets_compressed.ampk"));
 
                 filesystem.StartOpenFileSystem();
                 while (!filesystem.TryFinalizeOpenFileSystem())
@@ -84,7 +87,7 @@ namespace SparkyStudios::Audio::Amplitude::Tests
 
                 // can sets the base path
                 {
-                    AM_EXPECT(filesystem.GetBasePath() == std::filesystem::current_path() / AM_OS_STRING("samples/assets_compressed.ampk"));
+                    AM_EXPECT(filesystem.GetBasePath() == platformFileSystem->ResolvePath(AM_OS_STRING("assets_compressed.ampk")));
                 }
 
                 // can check if files exists
@@ -119,6 +122,5 @@ namespace SparkyStudios::Audio::Amplitude::Tests
         }
     };
 
-    // PackageFileSystem tests use DiskFileSystem paths that only work on desktop
-    AM_REGISTER_TEST_DESKTOP_ONLY(fs_package_file_system, can_be_used_when_initialized);
+    AM_REGISTER_TEST(fs_package_file_system, can_be_used_when_initialized);
 } // namespace SparkyStudios::Audio::Amplitude::Tests

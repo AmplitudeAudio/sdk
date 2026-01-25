@@ -62,13 +62,14 @@ jobs:
 
       - name: Build Test Assets
         run: |
-          xmake f -y -m debug --build_assets=y --build_tools=y
+          xmake f -y -m debug --build_assets=y --build_tools=y --unit_tests=y
           xmake b -y build_sample_project
+          xmake b -y generate_test_package
 
-      - name: Build iOS Test Runner (x86_64 for Simulator)
+      - name: Build iOS Test Runner
         run: |
           xmake c -a
-          xmake f -y -p iphoneos -a x86_64 -m debug --unit_tests=y
+          xmake f -y -p iphoneos -m debug --unit_tests=y --appledev=simulator
           xmake b -y AmplitudeTests_iOS
 
       - name: List Available Simulators
@@ -97,7 +98,7 @@ jobs:
 
       - name: Install App on Simulator
         run: |
-          xcrun simctl install "$SIMULATOR_UDID" build/iphoneos/x86_64/debug/tests/AmplitudeTests.app
+          xcrun simctl install "$SIMULATOR_UDID" build/iphoneos/arm64/debug/tests/AmplitudeTests.app
 
       - name: Run Tests on iOS Simulator
         id: ios_tests
@@ -187,7 +188,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: AmplitudeTests-iOS
-          path: build/iphoneos/x86_64/debug/tests/AmplitudeTests.app
+          path: build/iphoneos/arm64/debug/tests/AmplitudeTests.app
           retention-days: 7
 
   # Build and run Android Test Runner on Emulator

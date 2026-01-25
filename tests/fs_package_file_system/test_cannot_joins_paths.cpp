@@ -14,6 +14,7 @@
 
 #include <SparkyStudios/Audio/Amplitude/Amplitude.h>
 
+#include "PlatformTestCase.h"
 #include "SimpleTestCase.h"
 #include "TestRegistry.h"
 
@@ -27,16 +28,16 @@ namespace SparkyStudios::Audio::Amplitude::Tests
         void Run() override
         {
             PackageFileSystem fileSystem;
-            fileSystem.SetPlatformFileSystem<DiskFileSystem>();
+            fileSystem.SetPlatformFileSystem(CreatePlatformFileSystem());
 
             AM_EXPECT(fileSystem.Join({ AM_OS_STRING("sounds"), AM_OS_STRING("test.wav") }) == AM_OS_STRING("sounds/test.wav"));
-            AM_EXPECT(fileSystem.Join({ AM_OS_STRING("../sample_project/sounds/../test.wav") }) == AM_OS_STRING("../sample_project/test.wav"));
             AM_EXPECT(
-            fileSystem.Join({ AM_OS_STRING("./sounds"), AM_OS_STRING("../sounds/"), AM_OS_STRING("./test.wav") }) ==
-            AM_OS_STRING("sounds/test.wav"));
+                fileSystem.Join({ AM_OS_STRING("../sample_project/sounds/../test.wav") }) == AM_OS_STRING("../sample_project/test.wav"));
+            AM_EXPECT(
+                fileSystem.Join({ AM_OS_STRING("./sounds"), AM_OS_STRING("../sounds/"), AM_OS_STRING("./test.wav") }) ==
+                AM_OS_STRING("sounds/test.wav"));
         }
     };
 
-    // PackageFileSystem tests use DiskFileSystem paths that only work on desktop
-    AM_REGISTER_TEST_DESKTOP_ONLY(fs_package_file_system, cannot_joins_paths);
+    AM_REGISTER_TEST(fs_package_file_system, cannot_joins_paths);
 } // namespace SparkyStudios::Audio::Amplitude::Tests

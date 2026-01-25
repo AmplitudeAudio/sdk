@@ -33,6 +33,5 @@ namespace SparkyStudios::Audio::Amplitude::Tests
         }
     };
 
-    // PackageFileSystem tests use DiskFileSystem paths that only work on desktop
-    AM_REGISTER_TEST_DESKTOP_ONLY(fs_package_file_system, cannot_detect_directories);
+    AM_REGISTER_TEST(fs_package_file_system, cannot_detect_directories);
 } // namespace SparkyStudios::Audio::Amplitude::Tests

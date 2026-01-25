@@ -30,11 +30,11 @@ namespace SparkyStudios::Audio::Amplitude::Tests
 
             AM_EXPECT(fileSystem.ResolvePath(AM_OS_STRING("sounds/test.wav")) == AM_OS_STRING("sounds/test.wav"));
             AM_EXPECT(
-            fileSystem.ResolvePath(AM_OS_STRING("../../samples/assets/sounds/../test.wav")) == AM_OS_STRING("../../samples/assets/test.wav"));
+                fileSystem.ResolvePath(AM_OS_STRING("../../samples/assets/sounds/../test.wav")) ==
+                AM_OS_STRING("../../samples/assets/test.wav"));
             AM_EXPECT(fileSystem.ResolvePath(AM_OS_STRING("./sounds/../sounds/./test.wav")) == AM_OS_STRING("sounds/test.wav"));
         }
     };
 
-    // PackageFileSystem tests use DiskFileSystem paths that only work on desktop
-    AM_REGISTER_TEST_DESKTOP_ONLY(fs_package_file_system, resolves_paths);
+    AM_REGISTER_TEST(fs_package_file_system, resolves_paths);
 } // namespace SparkyStudios::Audio::Amplitude::Tests

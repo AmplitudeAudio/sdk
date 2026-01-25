@@ -14,6 +14,7 @@
 
 #include <SparkyStudios/Audio/Amplitude/Amplitude.h>
 
+#include "PlatformTestCase.h"
 #include "SimpleTestCase.h"
 #include "TestRegistry.h"
 
@@ -27,17 +28,16 @@ namespace SparkyStudios::Audio::Amplitude::Tests
         void Run() override
         {
             PackageFileSystem fileSystem;
-            fileSystem.SetPlatformFileSystem<DiskFileSystem>();
-            fileSystem.SetBasePath(AM_OS_STRING("./samples/invalid.ampk"));
+            fileSystem.SetPlatformFileSystem(CreatePlatformFileSystem());
+            fileSystem.SetBasePath(AM_OS_STRING("./invalid.ampk"));
 
             fileSystem.StartOpenFileSystem();
             while (!fileSystem.TryFinalizeOpenFileSystem())
-            Thread::Sleep(1);
+                Thread::Sleep(1);
 
             AM_EXPECT_NOT(fileSystem.IsValid());
         }
     };
 
-    // PackageFileSystem tests use DiskFileSystem paths that only work on desktop
-    AM_REGISTER_TEST_DESKTOP_ONLY(fs_package_file_system, cannot_load_invalid_packages);
+    AM_REGISTER_TEST(fs_package_file_system, cannot_load_invalid_packages);
 } // namespace SparkyStudios::Audio::Amplitude::Tests

@@ -31,36 +31,6 @@ if is_plat("iphoneos") then
     -- iOS test runner (Xcode application)
     includes("runners/ios/xmake.lua")
 elseif not is_plat("android") then
-    -- Desktop test runner (CLI executable)
-    -- Note: Android uses Gradle/CMake build system, not XMake
-
-    -- Desktop-only targets (tools and test infrastructure)
-    target("generate_test_package")
-        set_kind("phony")
-
-        add_deps("ampk", "build_sample_project")
-
-        on_build(function(target)
-            import("core.project.config")
-            import("core.project.project")
-            import("lib.detect.find_tool")
-
-            local ampk = project.target("ampk")
-
-            local program = ampk:targetfile()
-            if program then
-                local assets_dir = path.join(path.absolute(config.builddir()), "samples/assets")
-                local output_uncompressed_dir = path.join(path.absolute(config.builddir()), "samples/assets_uncompressed.ampk")
-                local output_compressed_dir = path.join(path.absolute(config.builddir()), "samples/assets_compressed.ampk")
-
-                os.exec("%s -q -c 0 %s %s", program, assets_dir, output_uncompressed_dir)
-                os.exec("%s -q -c 1 %s %s", program, assets_dir, output_compressed_dir)
-            else
-                print("ampk not found.")
-            end
-        end)
-    target_end()
-
     target("test_plugin")
         set_kind("shared")
         set_targetdir("$(builddir)/$(plat)/$(arch)/$(mode)/shared")
