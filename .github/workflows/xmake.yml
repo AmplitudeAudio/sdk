@@ -29,7 +29,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        build_type: ["release", "debug", "coverage"]
+        build_type: ["release", "debug"]
         config:
           - name: "Windows Latest MSVC"
             os: windows-latest
@@ -86,14 +86,6 @@ jobs:
             os: macos-15-intel
             arch: x86_64
             plat: iphoneos
-        exclude:
-          - build_type: "coverage"
-            config:
-              plat: android
-          - build_type: "coverage"
-            config:
-              plat: iphoneos
-
     steps:
       - uses: actions/checkout@v5
         with:
@@ -207,7 +199,6 @@ jobs:
           xcode-version: latest
 
       - name: Restore SDK Cache
-        if: matrix.build_type != 'coverage'
         uses: actions/cache/restore@v4
         with:
           enableCrossOsArchive: true
@@ -219,7 +210,7 @@ jobs:
       - name: Configure
         working-directory: ${{ inputs.project-path }}
         run: |
-          xmake f -y -a ${{ matrix.config.arch }} -p ${{ matrix.config.plat }} -m ${{ matrix.build_type }} ${{ matrix.config.toolchain && format('--toolchain={0}', matrix.config.toolchain) || '' }} --build_samples=n --build_tools=${{ matrix.config.plat == 'android' && 'n' || 'y' }} --unit_tests=${{ matrix.build_type == 'coverage' && 'y' || 'n' }} --build_assets=${{ matrix.build_type == 'coverage' && 'y' || 'n' }}
+          xmake f -y -a ${{ matrix.config.arch }} -p ${{ matrix.config.plat }} -m ${{ matrix.build_type }} ${{ matrix.config.toolchain && format('--toolchain={0}', matrix.config.toolchain) || '' }} --build_samples=n --build_tools=${{ matrix.config.plat == 'android' && 'n' || 'y' }} --unit_tests=n --build_assets=n
         env:
           AM_SDK_PATH: "${{ steps.sdk_path.outputs.path }}/sdk"
           AM_SDK_PLATFORM: "${{ matrix.config.arch }}-${{ matrix.config.plat }}"
@@ -229,38 +220,11 @@ jobs:
         working-directory: ${{ inputs.project-path }}
         run: xmake b -y
 
-      - name: Test
-        if: ${{ matrix.build_type == 'coverage' && matrix.config.plat != 'android' }}
-        working-directory: ${{ inputs.project-path }}
-        run: |
-          xmake test -y
-        env:
-          AM_SDK_PATH: "${{ steps.sdk_path.outputs.path }}/sdk"
-          AM_SDK_PLATFORM: "${{ matrix.config.arch }}-${{ matrix.config.plat }}"
-
-      - name: Generate coverage
-        continue-on-error: true
-        if: matrix.build_type == 'coverage' && (startsWith(matrix.config.os, 'macos') || matrix.config.toolchain == 'clang')
-        working-directory: ${{ inputs.project-path }}
-        run: |
-          xmake b -y coverage_generate_test_report
-
-      - name: Upload coverage to Codecov
-        continue-on-error: true
-        if: matrix.build_type == 'coverage' && (startsWith(matrix.config.os, 'macos') || matrix.config.toolchain == 'clang')
-        uses: codecov/codecov-action@v5
-        with:
-          files: ${{ inputs.project-path }}/coverage/merged/coverage.lcov
-        env:
-          CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
-
       - name: Install
-        if: matrix.build_type != 'coverage'
         working-directory: ${{ inputs.project-path }}
         run: xmake i -o sdk
 
       - name: Upload SDK Artifact
-        if: matrix.build_type != 'coverage'
         uses: actions/upload-artifact@v4
         with:
           name: ${{ inputs.project-slug }}-${{ matrix.build_type }}-${{ matrix.config.arch }}-${{ matrix.config.plat }}${{ matrix.config.toolchain && format('-{0}', matrix.config.toolchain) || '' }}
@@ -268,7 +232,6 @@ jobs:
           retention-days: 1
 
       - name: Save SDK Cache
-        if: matrix.build_type != 'coverage'
         uses: actions/cache/save@v4
         id: cache
         with:

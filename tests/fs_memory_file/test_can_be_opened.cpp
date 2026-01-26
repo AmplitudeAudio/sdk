@@ -89,7 +89,7 @@ namespace SparkyStudios::Audio::Amplitude::Tests
             file.Close();
             AM_EXPECT(file.OpenToMem("") == eErrorCode_InvalidParameter);
             AM_EXPECT_NOT(file.IsValid());
-            AM_EXPECT(file.OpenToMem(AM_OS_STRING("test_data/diskfile_read_test.txt")) == eErrorCode_Success);
+            AM_EXPECT(file.OpenToMem(fileSystem->ResolvePath(AM_OS_STRING("test_data/diskfile_read_test.txt"))) == eErrorCode_Success);
             AM_EXPECT(file.IsValid());
             AM_EXPECT(file.Read(reinterpret_cast<AmUInt8Buffer>(ok), 2) == 2);
             AM_EXPECT(ok[0] == 'O');

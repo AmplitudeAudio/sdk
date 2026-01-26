@@ -75,14 +75,23 @@ namespace SparkyStudios::Audio::Amplitude::Thread
         ::Sleep(milliseconds);
     }
 
-    void Wait(AmThreadHandle threadHandle)
+    void Wait(AmThreadHandle& threadHandle)
     {
+        if (!threadHandle)
+            return;
+
         auto* threadHandleData = static_cast<AmThreadHandleData*>(threadHandle);
         ::WaitForSingleObject(threadHandleData->thread, INFINITE);
+        ampooldelete(eMemoryPoolKind_IO, AmThreadData, threadHandleData->data);
+        ampooldelete(eMemoryPoolKind_IO, AmThreadHandleData, threadHandleData);
+        threadHandle = nullptr;
     }
 
     void Release(AmThreadHandle& threadHandle)
     {
+        if (!threadHandle)
+            return;
+
         auto* threadHandleData = static_cast<AmThreadHandleData*>(threadHandle);
         ::CloseHandle(threadHandleData->thread);
         ampooldelete(eMemoryPoolKind_IO, AmThreadData, threadHandleData->data);
