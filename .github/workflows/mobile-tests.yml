@@ -253,8 +253,9 @@ jobs:
 
       - name: Build Test Assets
         run: |
-          xmake f -y -m debug --build_assets=y --build_tools=y
+          xmake f -y -m debug --build_assets=y --build_tools=y --unit_tests=y
           xmake b -y build_sample_project
+          xmake b -y generate_test_package
 
       - name: Setup Android NDK
         id: setup-ndk
@@ -262,7 +263,7 @@ jobs:
         with:
           ndk-version: r27c
 
-      - name: Build Android Test Runner via XMake
+      - name: Build Android Test Runner
         run: |
           xmake c -a
           xmake f -y -p android -a x86_64 -m debug --unit_tests=y

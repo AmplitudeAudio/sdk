@@ -58,7 +58,7 @@ namespace SparkyStudios::Audio::Amplitude
         else
         {
             auto fs = engine->GetFileSystem();
-            const AmOsString& filePath = fs->ResolvePath(fs->Join({ AM_OS_STRING("switch_containers"), filename }));
+            const AmOsString& filePath = fs->Join({ AM_OS_STRING("switch_containers"), filename });
 
             // This is a new switch container, load it and update it.
             auto switch_container = ampoolunique(eMemoryPoolKind_Engine, SwitchContainerImpl);
@@ -94,7 +94,7 @@ namespace SparkyStudios::Audio::Amplitude
         else
         {
             auto fs = engine->GetFileSystem();
-            const AmOsString& filePath = fs->ResolvePath(fs->Join({ AM_OS_STRING("collections"), filename }));
+            const AmOsString& filePath = fs->Join({ AM_OS_STRING("collections"), filename });
 
             // This is a new collection, load it and update it.
             auto collection = ampoolunique(eMemoryPoolKind_Engine, CollectionImpl);
@@ -130,7 +130,7 @@ namespace SparkyStudios::Audio::Amplitude
         else
         {
             auto fs = engine->GetFileSystem();
-            const AmOsString& filePath = fs->ResolvePath(fs->Join({ AM_OS_STRING("sounds"), filename }));
+            const AmOsString& filePath = fs->Join({ AM_OS_STRING("sounds"), filename });
 
             // This is a new sound, load it and update it.
             auto sound = ampoolunique(eMemoryPoolKind_Engine, SoundImpl);
@@ -168,7 +168,7 @@ namespace SparkyStudios::Audio::Amplitude
         else
         {
             auto fs = engine->GetFileSystem();
-            const AmOsString& filePath = fs->ResolvePath(fs->Join({ AM_OS_STRING("events"), filename }));
+            const AmOsString& filePath = fs->Join({ AM_OS_STRING("events"), filename });
 
             // This is a new event, load it and update it.
             auto event = ampoolunique(eMemoryPoolKind_Engine, EventImpl);
@@ -204,7 +204,7 @@ namespace SparkyStudios::Audio::Amplitude
         else
         {
             auto fs = engine->GetFileSystem();
-            const AmOsString& filePath = fs->ResolvePath(fs->Join({ AM_OS_STRING("attenuators"), filename }));
+            const AmOsString& filePath = fs->Join({ AM_OS_STRING("attenuators"), filename });
 
             // This is a new event, load it and update it.
             auto attenuation = ampoolunique(eMemoryPoolKind_Engine, AttenuationImpl);
@@ -240,7 +240,7 @@ namespace SparkyStudios::Audio::Amplitude
         else
         {
             auto fs = engine->GetFileSystem();
-            const AmOsString& filePath = fs->ResolvePath(fs->Join({ AM_OS_STRING("switches"), filename }));
+            const AmOsString& filePath = fs->Join({ AM_OS_STRING("switches"), filename });
 
             // This is a new event, load it and update it.
             auto _switch = ampoolunique(eMemoryPoolKind_Engine, SwitchImpl);
@@ -278,7 +278,7 @@ namespace SparkyStudios::Audio::Amplitude
         else
         {
             auto fs = engine->GetFileSystem();
-            const AmOsString& filePath = fs->ResolvePath(fs->Join({ AM_OS_STRING("rtpc"), filename }));
+            const AmOsString& filePath = fs->Join({ AM_OS_STRING("rtpc"), filename });
 
             // This is a new rtpc, load it and update it.
             auto rtpc = ampoolunique(eMemoryPoolKind_Engine, RtpcImpl);
@@ -316,7 +316,7 @@ namespace SparkyStudios::Audio::Amplitude
         else
         {
             auto fs = engine->GetFileSystem();
-            const AmOsString& filePath = fs->ResolvePath(fs->Join({ AM_OS_STRING("effects"), filename }));
+            const AmOsString& filePath = fs->Join({ AM_OS_STRING("effects"), filename });
 
             // This is a new effect, load it and update it.
             auto effect = ampoolunique(eMemoryPoolKind_Engine, EffectImpl);
@@ -346,7 +346,7 @@ namespace SparkyStudios::Audio::Amplitude
     bool SoundBank::Initialize(const AmOsString& filename, Engine* engine)
     {
         auto fs = engine->GetFileSystem();
-        const AmOsString& filePath = fs->ResolvePath(fs->Join({ AM_OS_STRING("soundbanks"), filename }));
+        const AmOsString& filePath = fs->Join({ AM_OS_STRING("soundbanks"), filename });
 
         if (!LoadFile(fs->OpenFile(filePath), &_soundBankDefSource))
             return false;

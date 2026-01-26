@@ -7,3 +7,6 @@
 *.keystore
 
 # XMake build artifacts are in the root build/ directory
+
+# Generated assets directory (copied during build for APK bundling)
+apk_assets/

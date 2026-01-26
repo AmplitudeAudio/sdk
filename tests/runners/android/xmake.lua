@@ -42,7 +42,8 @@ target("AmplitudeTests_Android")
         android_sdk_version = "34",
         keystore = "debug.jks",
         keystore_pass = "123456",
-        android_manifest = "AndroidManifest.xml"
+        android_manifest = "AndroidManifest.xml",
+        android_assets = "apk_assets"
     })
 
     -- Output directory
@@ -84,22 +85,36 @@ target("AmplitudeTests_Android")
     -- Suppress warnings for third-party code
     add_cxflags("-Wno-shorten-64-to-32", "-Wno-sign-conversion", {force = true})
 
-    -- Bundle test assets after build
+    -- Bundle test assets before build
     -- Note: Assets must be pre-built on a desktop platform first
-    after_build(function(target)
+    before_build(function(target)
         import("core.project.config")
 
-        local assets_src = path.join(config.builddir(), "samples/assets")
-        local apk_assets = path.join(target:targetdir(), "assets")
+        local samples_dir = path.join(config.builddir(), "samples")
+        local assets_src = path.join(samples_dir, "assets")
+        local android_assets_dir = path.join(os.scriptdir(), "apk_assets")
+
+        -- Clean and recreate the assets directory
+        os.tryrm(android_assets_dir)
+        os.mkdir(path.join(android_assets_dir, "amplitude_assets"))
 
         if os.isdir(assets_src) then
-            os.mkdir(apk_assets)
-            os.cp(assets_src .. "/*", apk_assets)
-            print("Bundled test assets to: " .. apk_assets)
+            -- Copy all asset files
+            os.cp(assets_src .. "/*", path.join(android_assets_dir, "amplitude_assets"))
+            print("Prepared test assets for APK bundling: " .. android_assets_dir)
+
+            -- Also copy the .ampk package files if they exist
+            for _, file in ipairs({ "assets_compressed.ampk", "assets_uncompressed.ampk" }) do
+                local src_path = path.join(samples_dir, file)
+                if os.isfile(src_path) then
+                    os.cp(src_path, android_assets_dir)
+                    print("  Added: " .. file)
+                end
+            end
         else
             print("Warning: Test assets not found at: " .. assets_src)
-            print("Run 'xmake build build_sample_project' on a desktop platform first,")
-            print("then copy the assets to the Android build directory.")
+            print("Run 'xmake b build_sample_project' on a desktop platform first.")
+            print("The APK will be built without test assets.")
         end
     end)
 target_end()

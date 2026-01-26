@@ -61,7 +61,7 @@ namespace SparkyStudios::Audio::Amplitude
          *
          * @ingroup core
          */
-        AM_API_PUBLIC void Wait(AmThreadHandle thread);
+        AM_API_PUBLIC void Wait(AmThreadHandle& thread);
 
         /**
          * @brief Manually stops a thread execution.

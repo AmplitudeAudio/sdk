@@ -17,7 +17,6 @@
 #include <SparkyStudios/Audio/Amplitude/IO/PackageItemFile.h>
 
 #include <algorithm>
-#include <ranges>
 
 namespace SparkyStudios::Audio::Amplitude
 {
@@ -207,7 +206,6 @@ namespace SparkyStudios::Audio::Amplitude
             return true;
 
         Thread::Wait(_loadingThreadHandle);
-        Thread::Release(_loadingThreadHandle);
 
         return true;
     }

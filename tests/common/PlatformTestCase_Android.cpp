@@ -41,7 +41,7 @@ namespace SparkyStudios::Audio::Amplitude::Tests
     {
         // Android AssetManager uses paths relative to assets/ folder
         if (g_platformTestConfig.assetsSubPath != nullptr)
-            return AM_OS_STRING(g_platformTestConfig.assetsSubPath);
+            return g_platformTestConfig.assetsSubPath;
 
         return AM_OS_STRING("assets");
     }

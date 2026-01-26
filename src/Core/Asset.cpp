@@ -47,9 +47,8 @@ namespace SparkyStudios::Audio::Amplitude
     bool AssetImpl<Id, Definition>::LoadDefinitionFromPath(const AmOsString& path, std::shared_ptr<EngineInternalState> state)
     {
         auto fs = Engine::GetInstance()->GetFileSystem();
-        const AmOsString& rp = fs->ResolvePath(path);
 
-        return LoadDefinitionFromFile(fs->OpenFile(rp), state);
+        return LoadDefinitionFromFile(fs->OpenFile(path), state);
     }
 
     template<typename Id, typename Definition>

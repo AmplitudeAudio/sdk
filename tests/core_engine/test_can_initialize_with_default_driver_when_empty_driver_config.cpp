@@ -21,16 +21,19 @@ using namespace SparkyStudios::Audio::Amplitude;
 
 namespace SparkyStudios::Audio::Amplitude::Tests
 {
-    AM_TEST_CASE(EngineTestCase, core_engine, can_initialize_with_default_driver_when_empty_driver_config){
-        public : void Run() override{ Driver::SetDefault("null");
+    AM_TEST_CASE(EngineTestCase, core_engine, can_initialize_with_default_driver_when_empty_driver_config)
+    {
+    public:
+        void Run() override
+        {
+            Driver::SetDefault("null");
 
-    AM_EXPECT(Deinitialize());
-    AM_EXPECT(amEngine->Initialize(AM_OS_STRING("tests.invalid.unset_driver.config.amconfig")));
-    AM_EXPECT(amEngine->GetDriver()->GetName() == "null");
-    AM_EXPECT(Deinitialize());
-} // namespace SparkyStudios::Audio::Amplitude::Tests
-}
-;
+            AM_EXPECT(Deinitialize());
+            AM_EXPECT(amEngine->Initialize(AM_OS_STRING("tests.invalid.unset_driver.config.amconfig")));
+            AM_EXPECT(amEngine->GetDriver()->GetName() == "null");
+            AM_EXPECT(Deinitialize());
+        } // namespace SparkyStudios::Audio::Amplitude::Tests
+    };
 
-AM_REGISTER_TEST(core_engine, can_initialize_with_default_driver_when_empty_driver_config);
+    AM_REGISTER_TEST(core_engine, can_initialize_with_default_driver_when_empty_driver_config);
 } // namespace SparkyStudios::Audio::Amplitude::Tests

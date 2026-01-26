@@ -58,7 +58,7 @@ namespace SparkyStudios::Audio::Amplitude::Tests
          *
          * Defaults to "assets".
          */
-        const char* assetsSubPath = "assets";
+        const AmOsChar* assetsSubPath = AM_OS_STRING("assets");
     };
 
     /**

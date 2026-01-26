@@ -138,7 +138,7 @@ namespace SparkyStudios::Audio::Amplitude
          *
          * @return The result of the operation.
          */
-        AmResult OpenFileToMem(File* file);
+        AmResult OpenFileToMem(std::shared_ptr<File> file);
 
     private:
         AmUInt8Buffer m_dataPtr;

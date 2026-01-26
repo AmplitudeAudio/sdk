@@ -95,14 +95,14 @@ static bool InitializeTestEnvironment(struct android_app* app)
 
     // Configure platform test settings
     g_platformTestConfig.assetManager = app->activity->assetManager;
-    g_platformTestConfig.assetsSubPath = "assets";
+    g_platformTestConfig.assetsSubPath = AM_OS_STRING("amplitude_assets");
 
     // Initialize Amplitude memory manager
     MemoryManager::Initialize();
     LOGI("Memory manager initialized");
 
     // Set up LogcatLogger for Amplitude logging
-    gLogger = ampoolnew(eMemoryPoolKind_IO, LogcatLogger, LOG_TAG);
+    gLogger = new LogcatLogger(LOG_TAG);
     Logger::SetLogger(gLogger);
     LOGI("Logger registered");
 
@@ -117,7 +117,7 @@ static void DeinitializeTestEnvironment()
     LOGI("Deinitializing Amplitude test environment...");
 
     Logger::SetLogger(nullptr);
-    ampooldelete(eMemoryPoolKind_IO, LogcatLogger, gLogger);
+    delete gLogger;
     gLogger = nullptr;
 
     MemoryManager::Deinitialize();

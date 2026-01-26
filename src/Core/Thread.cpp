@@ -145,14 +145,23 @@ namespace SparkyStudios::Audio::Amplitude::Thread
         nanosleep(&req, nullptr);
     }
 
-    void Wait(AmThreadHandle threadHandle)
+    void Wait(AmThreadHandle& threadHandle)
     {
-        const auto* threadHandleData = static_cast<AmThreadHandleData*>(threadHandle);
+        if (!threadHandle)
+            return;
+
+        auto* threadHandleData = static_cast<AmThreadHandleData*>(threadHandle);
         pthread_join(threadHandleData->thread, nullptr);
+        ampooldelete(eMemoryPoolKind_IO, AmThreadData, threadHandleData->data);
+        ampooldelete(eMemoryPoolKind_IO, AmThreadHandleData, threadHandleData);
+        threadHandle = nullptr;
     }
 
     void Release(AmThreadHandle& threadHandle)
     {
+        if (!threadHandle)
+            return;
+
         auto* threadHandleData = static_cast<AmThreadHandleData*>(threadHandle);
         pthread_detach(threadHandleData->thread);
         ampooldelete(eMemoryPoolKind_IO, AmThreadData, threadHandleData->data);
@@ -245,10 +254,7 @@ namespace SparkyStudios::Audio::Amplitude::Thread
         _running = false;
 
         for (AmUInt32 i = 0; i < _threadCount; i++)
-        {
             Wait(_thread[i]);
-            Release(_thread[i]);
-        }
 
         ampoolfree(eMemoryPoolKind_IO, _thread);
     }

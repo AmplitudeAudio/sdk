@@ -65,18 +65,7 @@ namespace SparkyStudios::Audio::Amplitude::Tests
                 file.Close();
                 AM_EXPECT(file.OpenToMem("") == eErrorCode_InvalidParameter);
                 AM_EXPECT_NOT(file.IsValid());
-                AM_EXPECT(file.OpenToMem(fileSystem->ResolvePath(AM_OS_STRING("test_data/diskfile_read_test.txt"))) == eErrorCode_Success);
-                AM_EXPECT(file.IsValid());
-                AM_EXPECT(file.Read(reinterpret_cast<AmUInt8Buffer>(ok), 2) == 2);
-                AM_EXPECT(ok[0] == 'O');
-                AM_EXPECT(ok[1] == 'K');
-
-                file.Close();
-                DiskFile df(
-                    fileSystem->ResolvePath(AM_OS_STRING("test_data/diskfile_read_test.txt")), eFileOpenMode_Read, eFileOpenKind_Binary);
-                AM_EXPECT(file.OpenFileToMem(nullptr) == eErrorCode_InvalidParameter);
-                AM_EXPECT_NOT(file.IsValid());
-                AM_EXPECT(file.OpenFileToMem(&df) == eErrorCode_Success);
+                AM_EXPECT(file.OpenFileToMem(fileSystem->OpenFile(AM_OS_STRING("test_data/diskfile_read_test.txt"))) == eErrorCode_Success);
                 AM_EXPECT(file.IsValid());
                 AM_EXPECT(file.Read(reinterpret_cast<AmUInt8Buffer>(ok), 2) == 2);
                 AM_EXPECT(ok[0] == 'O');
@@ -85,5 +74,29 @@ namespace SparkyStudios::Audio::Amplitude::Tests
         }
     };
 
+    AM_TEST_CASE(SimpleTestCase, fs_memory_file, can_be_opened_with_disk_file)
+    {
+    public:
+        void Run() override
+        {
+            MemoryFile file;
+
+            char ok[] = "OK";
+
+            auto fileSystem = CreatePlatformFileSystem();
+            fileSystem->SetBasePath(GetPlatformAssetsBasePath());
+
+            file.Close();
+            AM_EXPECT(file.OpenToMem("") == eErrorCode_InvalidParameter);
+            AM_EXPECT_NOT(file.IsValid());
+            AM_EXPECT(file.OpenToMem(AM_OS_STRING("test_data/diskfile_read_test.txt")) == eErrorCode_Success);
+            AM_EXPECT(file.IsValid());
+            AM_EXPECT(file.Read(reinterpret_cast<AmUInt8Buffer>(ok), 2) == 2);
+            AM_EXPECT(ok[0] == 'O');
+            AM_EXPECT(ok[1] == 'K');
+        }
+    };
+
     AM_REGISTER_TEST(fs_memory_file, can_be_opened);
+    AM_REGISTER_TEST_DESKTOP_ONLY(fs_memory_file, can_be_opened_with_disk_file);
 } // namespace SparkyStudios::Audio::Amplitude::Tests
