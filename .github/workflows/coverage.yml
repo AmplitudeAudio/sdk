@@ -285,8 +285,7 @@ jobs:
           ram-size: 4096M
           emulator-options: -no-snapshot-save -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim
           disable-animations: true
-          script: >-
-            bash -lc 'set -eu; echo "Installing test app..."; adb install -r build/android/x86_64/debug/tests/AmplitudeTests_Android.apk; adb logcat -c; adb logcat -v time AmplitudeTests:V *:S > android_test_output.log 2>&1 & LOGCAT_PID=$!; echo "Launching test app..."; adb shell am start -n com.amplitudeaudiosdk.tests/android.app.NativeActivity; TIMEOUT=600; ELAPSED=0; while [ "$ELAPSED" -lt "$TIMEOUT" ]; do if grep -q "TEST SUMMARY" android_test_output.log 2>/dev/null; then echo "Tests completed!"; sleep 2; break; fi; sleep 5; ELAPSED=$((ELAPSED + 5)); echo "Waiting for tests... ($ELAPSED seconds)"; done; kill "$LOGCAT_PID" 2>/dev/null || true; echo ""; echo "=== Test Output ==="; cat android_test_output.log || true; echo "==================="; echo ""; if grep -q "Failed: 0" android_test_output.log && grep -q "Total:" android_test_output.log; then TOTAL=$(grep "Total:" android_test_output.log | tail -1 | awk "{print \\$2}"); if [ "$TOTAL" != "0" ]; then echo "All tests passed!"; exit 0; fi; fi; if grep -q "Failed:" android_test_output.log; then FAILED=$(grep "Failed:" android_test_output.log | tail -1 | awk "{print \\$2}"); if [ "$FAILED" != "0" ]; then echo "Some tests failed!"; exit 1; fi; fi; echo "Could not determine test results"; exit 1;'
+          script: bash .github/scripts/run_android_tests.sh
 
       - name: Upload Android Test Results
         if: always()

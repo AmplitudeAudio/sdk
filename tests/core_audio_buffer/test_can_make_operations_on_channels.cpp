@@ -29,7 +29,11 @@ namespace SparkyStudios::Audio::Amplitude::Tests
         {
             // Create and populate buffer1 using raw buffer access
             AudioBuffer buffer1(123, 2);
+#ifdef AM_SIMD_INTRINSICS
             const AmSize alignedSize = FindNextAlignedArrayIndex<AmReal32>(123, AM_SIMD_ALIGNMENT);
+#else
+            const AmSize alignedSize = 123;
+#endif
             for (AmSize i = 0; i < 2; ++i)
                 for (AmSize j = 0; j < 123; j++)
                     buffer1.GetData().GetBuffer()[alignedSize * i + j] = (123.0f * i) + j;
