@@ -15,31 +15,38 @@
 #include <SparkyStudios/Audio/Amplitude/Amplitude.h>
 
 #include "DSPTestCase.h"
+#include "TestRegistry.h"
 
 namespace SparkyStudios::Audio::Amplitude::Tests
 {
-    void DSPTestCase::Run()
+    AM_TEST_CASE(DSPTestCase, dsp_utilities, convolver_can_reset)
     {
-        // Create an impulse response
-        constexpr AmSize irLen = 512;
-        std::vector<AmAudioSample> ir(irLen);
+    public:
+        void Run() override
+        {
+            // Create an impulse response
+            constexpr AmSize irLen = 512;
+            std::vector<AmAudioSample> ir(irLen);
 
-        for (AmSize i = 0; i < irLen; ++i)
+            for (AmSize i = 0; i < irLen; ++i)
             ir[i] = 0.5f;
 
-        Convolver convolver;
-        constexpr AmSize blockSize = 256;
-        AM_EXPECT(convolver.Init(blockSize, ir.data(), irLen));
+            Convolver convolver;
+            constexpr AmSize blockSize = 256;
+            AM_EXPECT(convolver.Init(blockSize, ir.data(), irLen));
 
-        // Verify initialized state
-        AM_EXPECT(convolver.GetSegmentCount() > 0);
-        AM_EXPECT(convolver.GetSegmentSize() > 0);
+            // Verify initialized state
+            AM_EXPECT(convolver.GetSegmentCount() > 0);
+            AM_EXPECT(convolver.GetSegmentSize() > 0);
 
-        // Reset
-        convolver.Reset();
+            // Reset
+            convolver.Reset();
 
-        // Verify reset state
-        AM_EXPECT(convolver.GetSegmentCount() == 0);
-        AM_EXPECT(convolver.GetSegmentSize() == 0);
-    }
+            // Verify reset state
+            AM_EXPECT(convolver.GetSegmentCount() == 0);
+            AM_EXPECT(convolver.GetSegmentSize() == 0);
+        }
+    };
+
+    AM_REGISTER_TEST(dsp_utilities, convolver_can_reset);
 } // namespace SparkyStudios::Audio::Amplitude::Tests

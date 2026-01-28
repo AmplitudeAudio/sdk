@@ -15,11 +15,21 @@
 #include <SparkyStudios/Audio/Amplitude/Amplitude.h>
 
 #include "SimpleTestCase.h"
+#include "TestRegistry.h"
 
 using namespace SparkyStudios::Audio::Amplitude;
 
-void SimpleTestCase::Run()
+namespace SparkyStudios::Audio::Amplitude::Tests
 {
-    const auto count = Thread::GetCPUCount();
-    AM_EXPECT(count >= 1);
-}
+    AM_TEST_CASE(SimpleTestCase, threading_thread, can_get_the_cpu_count)
+    {
+    public:
+        void Run() override
+        {
+            const auto count = Thread::GetCPUCount();
+            AM_EXPECT(count >= 1);
+        }
+    };
+
+    AM_REGISTER_TEST(threading_thread, can_get_the_cpu_count);
+} // namespace SparkyStudios::Audio::Amplitude::Tests

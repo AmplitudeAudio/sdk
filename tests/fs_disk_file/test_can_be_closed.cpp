@@ -14,19 +14,30 @@
 
 #include <SparkyStudios/Audio/Amplitude/Amplitude.h>
 
+#include "PlatformTestCase.h"
 #include "SimpleTestCase.h"
+#include "TestRegistry.h"
 
 using namespace SparkyStudios::Audio::Amplitude;
 
-void SimpleTestCase::Run()
+namespace SparkyStudios::Audio::Amplitude::Tests
 {
-    DiskFileSystem fileSystem;
-    fileSystem.SetBasePath(AM_OS_STRING("./samples/assets"));
+    AM_TEST_CASE(SimpleTestCase, fs_disk_file, can_be_closed)
+    {
+    public:
+        void Run() override
+        {
+            auto fileSystem = CreatePlatformFileSystem();
+            fileSystem->SetBasePath(GetPlatformAssetsBasePath());
 
-    const auto& file = fileSystem.OpenFile(AM_OS_STRING("test_data/diskfile_read_test.txt"), eFileOpenMode_Read);
+            const auto& file = fileSystem->OpenFile(AM_OS_STRING("test_data/diskfile_read_test.txt"), eFileOpenMode_Read);
 
-    static_cast<DiskFile*>(file.get())->Close();
-    AM_EXPECT_NOT(file->IsValid());
-    AM_EXPECT(file->Length() == 0);
-    AM_EXPECT(file->GetPtr() == nullptr);
-}
+            file->Close();
+            AM_EXPECT_NOT(file->IsValid());
+            AM_EXPECT(file->Length() == 0);
+            AM_EXPECT(file->GetPtr() == nullptr);
+        }
+    };
+
+    AM_REGISTER_TEST(fs_disk_file, can_be_closed);
+} // namespace SparkyStudios::Audio::Amplitude::Tests

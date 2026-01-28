@@ -17,71 +17,78 @@
 #include <DSP/Filters/BiquadResonantFilter.h>
 
 #include "DSPTestCase.h"
+#include "TestRegistry.h"
 
 using namespace SparkyStudios::Audio::Amplitude;
 
 namespace SparkyStudios::Audio::Amplitude::Tests
 {
-    void DSPTestCase::Run()
+    AM_TEST_CASE(DSPTestCase, dsp_filters, biquad_resonant_filter_processes_audio)
     {
-        constexpr AmUInt64 frameCount = 1024;
-        constexpr AmUInt16 channelCount = 2;
-        constexpr AmUInt32 sampleRate = 48000;
-
-        AudioBuffer inputBuffer(frameCount, channelCount);
-        AudioBuffer outputBuffer(frameCount, channelCount);
-
-        // Fill input buffer with test signal
-        GenerateSineWave(inputBuffer, sampleRate);
-
-        // Test Low-Pass filter
+    public:
+        void Run() override
         {
-            auto filter = amshared(BiquadResonantFilter);
-            filter->InitializeLowPass(2000.0f, 0.707107f);
-            auto instance = filter->CreateInstance();
+            constexpr AmUInt64 frameCount = 1024;
+            constexpr AmUInt16 channelCount = 2;
+            constexpr AmUInt32 sampleRate = 48000;
 
-            instance->Process(inputBuffer, outputBuffer, frameCount, sampleRate);
+            AudioBuffer inputBuffer(frameCount, channelCount);
+            AudioBuffer outputBuffer(frameCount, channelCount);
 
-            AM_EXPECT(EnsureHasNonZeroOutput(outputBuffer));
+            // Fill input buffer with test signal
+            GenerateSineWave(inputBuffer, sampleRate);
+
+            // Test Low-Pass filter
+            {
+                auto filter = amshared(BiquadResonantFilter);
+                filter->InitializeLowPass(2000.0f, 0.707107f);
+                auto instance = filter->CreateInstance();
+
+                instance->Process(inputBuffer, outputBuffer, frameCount, sampleRate);
+
+                AM_EXPECT(EnsureHasNonZeroOutput(outputBuffer));
+            }
+
+            outputBuffer.Clear();
+
+            // Test High-Pass filter
+            {
+                auto filter = amshared(BiquadResonantFilter);
+                filter->InitializeHighPass(500.0f, 0.707107f);
+                auto instance = filter->CreateInstance();
+
+                instance->Process(inputBuffer, outputBuffer, frameCount, sampleRate);
+
+                AM_EXPECT(EnsureHasNonZeroOutput(outputBuffer));
+            }
+
+            outputBuffer.Clear();
+
+            // Test Band-Pass filter
+            {
+                auto filter = amshared(BiquadResonantFilter);
+                filter->InitializeBandPass(1000.0f, 1.0f);
+                auto instance = filter->CreateInstance();
+
+                instance->Process(inputBuffer, outputBuffer, frameCount, sampleRate);
+
+                AM_EXPECT(EnsureHasNonZeroOutput(outputBuffer));
+            }
+
+            outputBuffer.Clear();
+
+            // Test Notch filter
+            {
+                auto filter = amshared(BiquadResonantFilter);
+                filter->InitializeNotching(1000.0f, 5.0f);
+                auto instance = filter->CreateInstance();
+
+                instance->Process(inputBuffer, outputBuffer, frameCount, sampleRate);
+
+                AM_EXPECT(EnsureHasNonZeroOutput(outputBuffer));
+            }
         }
+    };
 
-        outputBuffer.Clear();
-
-        // Test High-Pass filter
-        {
-            auto filter = amshared(BiquadResonantFilter);
-            filter->InitializeHighPass(500.0f, 0.707107f);
-            auto instance = filter->CreateInstance();
-
-            instance->Process(inputBuffer, outputBuffer, frameCount, sampleRate);
-
-            AM_EXPECT(EnsureHasNonZeroOutput(outputBuffer));
-        }
-
-        outputBuffer.Clear();
-
-        // Test Band-Pass filter
-        {
-            auto filter = amshared(BiquadResonantFilter);
-            filter->InitializeBandPass(1000.0f, 1.0f);
-            auto instance = filter->CreateInstance();
-
-            instance->Process(inputBuffer, outputBuffer, frameCount, sampleRate);
-
-            AM_EXPECT(EnsureHasNonZeroOutput(outputBuffer));
-        }
-
-        outputBuffer.Clear();
-
-        // Test Notch filter
-        {
-            auto filter = amshared(BiquadResonantFilter);
-            filter->InitializeNotching(1000.0f, 5.0f);
-            auto instance = filter->CreateInstance();
-
-            instance->Process(inputBuffer, outputBuffer, frameCount, sampleRate);
-
-            AM_EXPECT(EnsureHasNonZeroOutput(outputBuffer));
-        }
-    }
+    AM_REGISTER_TEST(dsp_filters, biquad_resonant_filter_processes_audio);
 } // namespace SparkyStudios::Audio::Amplitude::Tests

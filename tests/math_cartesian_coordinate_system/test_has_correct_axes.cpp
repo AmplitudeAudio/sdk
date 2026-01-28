@@ -17,57 +17,67 @@
 #include <Math/LinearAlgebra.h>
 
 #include "SimpleTestCase.h"
+#include "TestRegistry.h"
 
 using namespace SparkyStudios::Audio::Amplitude;
 
-void SimpleTestCase::Run()
+namespace SparkyStudios::Audio::Amplitude::Tests
 {
-    // Right-handed Z-Up Cartesian Coordinate System
+    AM_TEST_CASE(SimpleTestCase, math_cartesian_coordinate_system, has_correct_axes)
     {
-        const CartesianCoordinateSystem coordinateSystem = CartesianCoordinateSystem::RightHandedZUp();
+    public:
+        void Run() override
+        {
+            // Right-handed Z-Up Cartesian Coordinate System
+        {
+            const CartesianCoordinateSystem coordinateSystem = CartesianCoordinateSystem::RightHandedZUp();
 
-        AM_EXPECT_EQ(coordinateSystem.GetRightVector(), kVector3UnitX);
-        AM_EXPECT_EQ(coordinateSystem.GetUpVector(), kVector3UnitZ);
-        AM_EXPECT_EQ(coordinateSystem.GetForwardVector(), kVector3UnitY);
-    }
+            AM_EXPECT_EQ(coordinateSystem.GetRightVector(), kVector3UnitX);
+            AM_EXPECT_EQ(coordinateSystem.GetUpVector(), kVector3UnitZ);
+            AM_EXPECT_EQ(coordinateSystem.GetForwardVector(), kVector3UnitY);
+            }
 
-    // Left-handed Z-Up Cartesian Coordinate System
-    {
-        const CartesianCoordinateSystem coordinateSystem = CartesianCoordinateSystem::LeftHandedZUp();
+            // Left-handed Z-Up Cartesian Coordinate System
+        {
+            const CartesianCoordinateSystem coordinateSystem = CartesianCoordinateSystem::LeftHandedZUp();
 
-        AM_EXPECT_EQ(coordinateSystem.GetRightVector(), kVector3UnitX);
-        AM_EXPECT_EQ(coordinateSystem.GetUpVector(), kVector3UnitZ);
-        AM_EXPECT_EQ(coordinateSystem.GetForwardVector(), Negate(kVector3UnitY));
-    }
+            AM_EXPECT_EQ(coordinateSystem.GetRightVector(), kVector3UnitX);
+            AM_EXPECT_EQ(coordinateSystem.GetUpVector(), kVector3UnitZ);
+            AM_EXPECT_EQ(coordinateSystem.GetForwardVector(), Negate(kVector3UnitY));
+            }
 
-    // Right-handed Y-Up Cartesian Coordinate System
-    {
-        const CartesianCoordinateSystem coordinateSystem = CartesianCoordinateSystem::RightHandedYUp();
+            // Right-handed Y-Up Cartesian Coordinate System
+        {
+            const CartesianCoordinateSystem coordinateSystem = CartesianCoordinateSystem::RightHandedYUp();
 
-        AM_EXPECT_EQ(coordinateSystem.GetRightVector(), kVector3UnitX);
-        AM_EXPECT_EQ(coordinateSystem.GetUpVector(), kVector3UnitY);
-        AM_EXPECT_EQ(coordinateSystem.GetForwardVector(), Negate(kVector3UnitZ));
-    }
+            AM_EXPECT_EQ(coordinateSystem.GetRightVector(), kVector3UnitX);
+            AM_EXPECT_EQ(coordinateSystem.GetUpVector(), kVector3UnitY);
+            AM_EXPECT_EQ(coordinateSystem.GetForwardVector(), Negate(kVector3UnitZ));
+            }
 
-    // Left-handed Y-Up Cartesian Coordinate System
-    {
-        const CartesianCoordinateSystem coordinateSystem = CartesianCoordinateSystem::LeftHandedYUp();
+            // Left-handed Y-Up Cartesian Coordinate System
+        {
+            const CartesianCoordinateSystem coordinateSystem = CartesianCoordinateSystem::LeftHandedYUp();
 
-        AM_EXPECT_EQ(coordinateSystem.GetRightVector(), kVector3UnitX);
-        AM_EXPECT_EQ(coordinateSystem.GetUpVector(), kVector3UnitY);
-        AM_EXPECT_EQ(coordinateSystem.GetForwardVector(), kVector3UnitZ);
-    }
+            AM_EXPECT_EQ(coordinateSystem.GetRightVector(), kVector3UnitX);
+            AM_EXPECT_EQ(coordinateSystem.GetUpVector(), kVector3UnitY);
+            AM_EXPECT_EQ(coordinateSystem.GetForwardVector(), kVector3UnitZ);
+            }
 
-    // Arbitrary Cartesian Coordinate System
-    {
-        constexpr auto rightVector = CartesianCoordinateSystem::Axis::NegativeX;
-        constexpr auto upVector = CartesianCoordinateSystem::Axis::PositiveY;
-        constexpr auto forwardVector = CartesianCoordinateSystem::Axis::NegativeZ;
+            // Arbitrary Cartesian Coordinate System
+        {
+            constexpr auto rightVector = CartesianCoordinateSystem::Axis::NegativeX;
+            constexpr auto upVector = CartesianCoordinateSystem::Axis::PositiveY;
+            constexpr auto forwardVector = CartesianCoordinateSystem::Axis::NegativeZ;
 
-        const CartesianCoordinateSystem coordinateSystem(rightVector, forwardVector, upVector);
+            const CartesianCoordinateSystem coordinateSystem(rightVector, forwardVector, upVector);
 
-        AM_EXPECT_EQ(coordinateSystem.GetRightVector(), CartesianCoordinateSystem::GetVector(rightVector));
-        AM_EXPECT_EQ(coordinateSystem.GetUpVector(), CartesianCoordinateSystem::GetVector(upVector));
-        AM_EXPECT_EQ(coordinateSystem.GetForwardVector(), CartesianCoordinateSystem::GetVector(forwardVector));
-    }
-}
+            AM_EXPECT_EQ(coordinateSystem.GetRightVector(), CartesianCoordinateSystem::GetVector(rightVector));
+            AM_EXPECT_EQ(coordinateSystem.GetUpVector(), CartesianCoordinateSystem::GetVector(upVector));
+            AM_EXPECT_EQ(coordinateSystem.GetForwardVector(), CartesianCoordinateSystem::GetVector(forwardVector));
+            }
+        }
+    };
+
+    AM_REGISTER_TEST(math_cartesian_coordinate_system, has_correct_axes);
+} // namespace SparkyStudios::Audio::Amplitude::Tests

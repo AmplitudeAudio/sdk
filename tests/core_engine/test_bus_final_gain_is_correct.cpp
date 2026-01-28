@@ -15,25 +15,32 @@
 #include <SparkyStudios/Audio/Amplitude/Amplitude.h>
 
 #include "EngineTestCase.h"
+#include "TestRegistry.h"
 
 using namespace SparkyStudios::Audio::Amplitude;
 
 namespace SparkyStudios::Audio::Amplitude::Tests
 {
-    void EngineTestCase::Run()
+    AM_TEST_CASE(EngineTestCase, core_engine, bus_final_gain_is_correct)
     {
-        Bus bus = amEngine->FindBus(kAmMasterBusId);
-        AM_EXPECT(bus.Valid());
+    public:
+        void Run() override
+        {
+            Bus bus = amEngine->FindBus(kAmMasterBusId);
+            AM_EXPECT(bus.Valid());
 
-        // Test that final gain is correct initially
-        AM_EXPECT_EQ(bus.GetFinalGain(), 1.0f);
+            // Test that final gain is correct initially
+            AM_EXPECT_EQ(bus.GetFinalGain(), 1.0f);
 
-        // Change gain and wait for it to take effect
-        bus.SetGain(0.5f);
-        Thread::Sleep(kAmSecond);
-        AM_EXPECT_EQ(bus.GetFinalGain(), 0.5f);
+            // Change gain and wait for it to take effect
+            bus.SetGain(0.5f);
+            Thread::Sleep(kAmSecond);
+            AM_EXPECT_EQ(bus.GetFinalGain(), 0.5f);
 
-        // Reset gain to default
-        bus.SetGain(1.0f);
-    }
+            // Reset gain to default
+            bus.SetGain(1.0f);
+        }
+    };
+
+    AM_REGISTER_TEST(core_engine, bus_final_gain_is_correct);
 } // namespace SparkyStudios::Audio::Amplitude::Tests

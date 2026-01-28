@@ -15,17 +15,27 @@
 #include <SparkyStudios/Audio/Amplitude/Amplitude.h>
 
 #include "SimpleTestCase.h"
+#include "TestRegistry.h"
 
 using namespace SparkyStudios::Audio::Amplitude;
 
-void SimpleTestCase::Run()
+namespace SparkyStudios::Audio::Amplitude::Tests
 {
-    DiskFileSystem fileSystem;
-    fileSystem.SetBasePath(AM_OS_STRING("./samples/assets"));
+    AM_TEST_CASE(SimpleTestCase, fs_disk_file_system, can_be_opened)
+    {
+    public:
+        void Run() override
+        {
+            DiskFileSystem fileSystem;
+            fileSystem.SetBasePath(AM_OS_STRING("./samples/assets"));
 
-    const auto& cp = std::filesystem::current_path() / AM_OS_STRING("samples/assets");
-    AM_EXPECT(cp == fileSystem.GetBasePath());
+            const auto& cp = std::filesystem::current_path() / AM_OS_STRING("samples/assets");
+            AM_EXPECT(cp == fileSystem.GetBasePath());
 
-    fileSystem.StartOpenFileSystem();
-    AM_EXPECT(fileSystem.TryFinalizeOpenFileSystem());
-}
+            fileSystem.StartOpenFileSystem();
+            AM_EXPECT(fileSystem.TryFinalizeOpenFileSystem());
+        }
+    };
+
+    AM_REGISTER_TEST_DESKTOP_ONLY(fs_disk_file_system, can_be_opened);
+} // namespace SparkyStudios::Audio::Amplitude::Tests

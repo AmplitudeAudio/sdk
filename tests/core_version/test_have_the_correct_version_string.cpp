@@ -15,14 +15,24 @@
 #include <SparkyStudios/Audio/Amplitude/Amplitude.h>
 
 #include "SimpleTestCase.h"
+#include "TestRegistry.h"
 
 using namespace SparkyStudios::Audio::Amplitude;
 
-void SimpleTestCase::Run()
+namespace SparkyStudios::Audio::Amplitude::Tests
 {
-    const auto& version = amVersion;
-    AM_EXPECT_EQ(
-        version.text,
-        "Amplitude Audio SDK " AM_TO_STRING(AM_VERSION_MAJOR) "." AM_TO_STRING(AM_VERSION_MINOR) "." AM_TO_STRING(
-            AM_VERSION_PATCH) "#" AM_VERSION_BUILD);
-}
+    AM_TEST_CASE(SimpleTestCase, core_version, have_the_correct_version_string)
+    {
+    public:
+        void Run() override
+        {
+            const auto& version = amVersion;
+            AM_EXPECT_EQ(
+                version.text,
+                "Amplitude Audio SDK " AM_TO_STRING(AM_VERSION_MAJOR) "." AM_TO_STRING(AM_VERSION_MINOR) "." AM_TO_STRING(
+                    AM_VERSION_PATCH) "#" AM_VERSION_BUILD);
+        }
+    };
+
+    AM_REGISTER_TEST(core_version, have_the_correct_version_string);
+} // namespace SparkyStudios::Audio::Amplitude::Tests

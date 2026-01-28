@@ -298,7 +298,7 @@ namespace SparkyStudios::Audio::Amplitude
         _stream = definition->stream();
         _loop = loopConfig != nullptr && loopConfig->enabled();
         _loopCount = loopConfig ? loopConfig->loop_count() : 0;
-        m_filename = fs->ResolvePath(fs->Join({ AM_OS_STRING("data"), AM_STRING_TO_OS_STRING(definition->path()->str()) }));
+        m_filename = fs->Join({ AM_OS_STRING("data"), AM_STRING_TO_OS_STRING(definition->path()->str()) });
 
         RtpcValue::Init(m_gain, definition->gain(), 1);
         RtpcValue::Init(_nearFieldGain, definition->near_field_gain(), 1);

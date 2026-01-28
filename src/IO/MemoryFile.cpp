@@ -19,7 +19,6 @@
 
 namespace SparkyStudios::Audio::Amplitude
 {
-
     MemoryFile::MemoryFile()
         : m_dataPtr(nullptr)
         , m_dataSize(0)
@@ -170,7 +169,7 @@ namespace SparkyStudios::Audio::Amplitude
         return eErrorCode_Success;
     }
 
-    AmResult MemoryFile::OpenFileToMem(File* file)
+    AmResult MemoryFile::OpenFileToMem(std::shared_ptr<File> file)
     {
         if (!file)
             return eErrorCode_InvalidParameter;

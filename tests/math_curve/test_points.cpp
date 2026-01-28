@@ -15,18 +15,28 @@
 #include <SparkyStudios/Audio/Amplitude/Amplitude.h>
 
 #include "SimpleTestCase.h"
+#include "TestRegistry.h"
 
 using namespace SparkyStudios::Audio::Amplitude;
 
-void SimpleTestCase::Run()
+namespace SparkyStudios::Audio::Amplitude::Tests
 {
-    CurvePoint a{ 0.5, 1.0f };
-    CurvePoint b{ 1.0, 2.0f };
-    CurvePoint c{ 0.5, 1.0f };
+    AM_TEST_CASE(SimpleTestCase, math_curve, points)
+    {
+    public:
+        void Run() override
+        {
+            CurvePoint a{ 0.5, 1.0f };
+            CurvePoint b{ 1.0, 2.0f };
+            CurvePoint c{ 0.5, 1.0f };
 
-    AM_EXPECT_EQ(a, a);
-    AM_EXPECT_EQ(a, c);
+            AM_EXPECT_EQ(a, a);
+            AM_EXPECT_EQ(a, c);
 
-    AM_EXPECT_NE(a, b);
-    AM_EXPECT_NE(c, b);
-}
+            AM_EXPECT_NE(a, b);
+            AM_EXPECT_NE(c, b);
+        }
+    };
+
+    AM_REGISTER_TEST(math_curve, points);
+} // namespace SparkyStudios::Audio::Amplitude::Tests

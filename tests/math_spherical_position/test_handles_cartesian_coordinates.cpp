@@ -17,23 +17,33 @@
 #include <Math/LinearAlgebra.h>
 
 #include "SimpleTestCase.h"
+#include "TestRegistry.h"
 
 using namespace SparkyStudios::Audio::Amplitude;
 
-void SimpleTestCase::Run()
+namespace SparkyStudios::Audio::Amplitude::Tests
 {
-    constexpr AmVector3 cartesianPosition = { 5.0f, 3.0f, 4.0f };
-    SphericalPosition position = SphericalPosition::FromWorldSpace(cartesianPosition);
-
-    AM_EXPECT_EQ(position.GetAzimuth(), -std::atan2(cartesianPosition.y, cartesianPosition.x));
-    AM_EXPECT_EQ(position.GetElevation(), std::atan2(cartesianPosition.z, Length(cartesianPosition.xy)));
-    AM_EXPECT_EQ(position.GetRadius(), Length(cartesianPosition));
-
+    AM_TEST_CASE(SimpleTestCase, math_spherical_position, handles_cartesian_coordinates)
     {
-        const auto sphericalPosition = SphericalPosition::ForHRTF(cartesianPosition);
+    public:
+        void Run() override
+        {
+            constexpr AmVector3 cartesianPosition = { 5.0f, 3.0f, 4.0f };
+            SphericalPosition position = SphericalPosition::FromWorldSpace(cartesianPosition);
 
-        AM_EXPECT_EQ(sphericalPosition.GetAzimuth(), 90.0f * AM_DegToRad - std::atan2(cartesianPosition.y, cartesianPosition.x));
-        AM_EXPECT_EQ(sphericalPosition.GetElevation(), std::atan2(cartesianPosition.z, Length(cartesianPosition.xy)));
-        AM_EXPECT_EQ(sphericalPosition.GetRadius(), Length(cartesianPosition));
-    }
-}
+            AM_EXPECT_EQ(position.GetAzimuth(), -std::atan2(cartesianPosition.y, cartesianPosition.x));
+            AM_EXPECT_EQ(position.GetElevation(), std::atan2(cartesianPosition.z, Length(cartesianPosition.xy)));
+            AM_EXPECT_EQ(position.GetRadius(), Length(cartesianPosition));
+
+        {
+            const auto sphericalPosition = SphericalPosition::ForHRTF(cartesianPosition);
+
+            AM_EXPECT_EQ(sphericalPosition.GetAzimuth(), 90.0f * AM_DegToRad - std::atan2(cartesianPosition.y, cartesianPosition.x));
+            AM_EXPECT_EQ(sphericalPosition.GetElevation(), std::atan2(cartesianPosition.z, Length(cartesianPosition.xy)));
+            AM_EXPECT_EQ(sphericalPosition.GetRadius(), Length(cartesianPosition));
+            }
+        }
+    };
+
+    AM_REGISTER_TEST(math_spherical_position, handles_cartesian_coordinates);
+} // namespace SparkyStudios::Audio::Amplitude::Tests

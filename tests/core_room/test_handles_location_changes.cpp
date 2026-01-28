@@ -17,43 +17,53 @@
 #include <Core/RoomInternalState.h>
 
 #include "SimpleTestCase.h"
+#include "TestRegistry.h"
 
 using namespace SparkyStudios::Audio::Amplitude;
 
-void SimpleTestCase::Run()
+namespace SparkyStudios::Audio::Amplitude::Tests
 {
-    RoomInternalState state;
-    state.SetId(1);
-
-    fplutil::intrusive_list room_list(&RoomInternalState::node);
-    room_list.push_back(state);
-
-    Room wrapper(&state);
-    AM_EXPECT_EQ(wrapper.GetState(), &state);
-
+    AM_TEST_CASE(SimpleTestCase, core_room, handles_location_changes)
     {
-        constexpr AmVector3 location = { 10, 20, 30 };
-        state.SetLocation(location);
+    public:
+        void Run() override
+        {
+            RoomInternalState state;
+            state.SetId(1);
 
-        AM_EXPECT_EQ(state.GetLocation(), location);
-        AM_EXPECT_EQ(wrapper.GetLocation(), location);
+            fplutil::intrusive_list room_list(&RoomInternalState::node);
+            room_list.push_back(state);
 
-        state.Update();
+            Room wrapper(&state);
+            AM_EXPECT_EQ(wrapper.GetState(), &state);
 
-        AM_EXPECT_EQ(state.GetLocation(), location);
-        AM_EXPECT_EQ(wrapper.GetLocation(), location);
-    }
+            {
+                constexpr AmVector3 location = { 10, 20, 30 };
+                state.SetLocation(location);
 
-    {
-        constexpr AmVector3 location = { 30, 20, 10 };
-        wrapper.SetLocation(location);
+                AM_EXPECT_EQ(state.GetLocation(), location);
+                AM_EXPECT_EQ(wrapper.GetLocation(), location);
 
-        AM_EXPECT_EQ(state.GetLocation(), location);
-        AM_EXPECT_EQ(wrapper.GetLocation(), location);
+                state.Update();
 
-        wrapper.Update();
+                AM_EXPECT_EQ(state.GetLocation(), location);
+                AM_EXPECT_EQ(wrapper.GetLocation(), location);
+            }
 
-        AM_EXPECT_EQ(state.GetLocation(), location);
-        AM_EXPECT_EQ(wrapper.GetLocation(), location);
-    }
-}
+            {
+                constexpr AmVector3 location = { 30, 20, 10 };
+                wrapper.SetLocation(location);
+
+                AM_EXPECT_EQ(state.GetLocation(), location);
+                AM_EXPECT_EQ(wrapper.GetLocation(), location);
+
+                wrapper.Update();
+
+                AM_EXPECT_EQ(state.GetLocation(), location);
+                AM_EXPECT_EQ(wrapper.GetLocation(), location);
+            }
+        }
+    };
+
+    AM_REGISTER_TEST(core_room, handles_location_changes);
+} // namespace SparkyStudios::Audio::Amplitude::Tests

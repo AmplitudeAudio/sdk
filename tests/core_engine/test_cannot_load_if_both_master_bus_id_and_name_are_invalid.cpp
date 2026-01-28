@@ -15,15 +15,22 @@
 #include <SparkyStudios/Audio/Amplitude/Amplitude.h>
 
 #include "EngineTestCase.h"
+#include "TestRegistry.h"
 
 using namespace SparkyStudios::Audio::Amplitude;
 
 namespace SparkyStudios::Audio::Amplitude::Tests
 {
-    void EngineTestCase::Run()
+    AM_TEST_CASE(EngineTestCase, core_engine, cannot_load_if_both_master_bus_id_and_name_are_invalid)
     {
-        AM_EXPECT(Deinitialize());
-        AM_EXPECT_NOT(amEngine->Initialize(AM_OS_STRING("tests.invalid.wrong_master_bus.config.amconfig")));
-        AM_EXPECT(Deinitialize());
-    }
+    public:
+        void Run() override
+        {
+            AM_EXPECT(Deinitialize());
+            AM_EXPECT_NOT(amEngine->Initialize(AM_OS_STRING("tests.invalid.wrong_master_bus.config.amconfig")));
+            AM_EXPECT(Deinitialize());
+        }
+    };
+
+    AM_REGISTER_TEST(core_engine, cannot_load_if_both_master_bus_id_and_name_are_invalid);
 } // namespace SparkyStudios::Audio::Amplitude::Tests

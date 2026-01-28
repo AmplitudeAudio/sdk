@@ -80,28 +80,32 @@ namespace SparkyStudios::Audio::Amplitude::Tests
         {
             ++_failedCount;
 
-            constexpr size_t bufferLen = 4096;
-            char buffer[bufferLen];
-            int formatted = std::snprintf(buffer, bufferLen, "[TEST FAILURE] %s: %s", failureType, message);
-            amLogger->Error(file, line, AmString(buffer).substr(0, formatted));
+            if (amLogger != nullptr)
+            {
+                constexpr size_t bufferLen = 4096;
+                char buffer[bufferLen];
+                int formatted = std::snprintf(buffer, bufferLen, "[TEST FAILURE] %s: %s", failureType, message);
+                amLogger->Error(file, line, AmString(buffer).substr(0, formatted));
+            }
         }
 
         virtual void ReportSuccess(const char* failureType, const char* message, const char* file = "", int line = 0)
         {
             ++_passedCount;
 
-            constexpr size_t bufferLen = 4096;
-            char buffer[bufferLen];
-            int formatted = std::snprintf(buffer, bufferLen, "%s: %s", failureType, message);
-            amLogger->Success(file, line, AmString(buffer).substr(0, formatted));
+            if (amLogger != nullptr)
+            {
+                constexpr size_t bufferLen = 4096;
+                char buffer[bufferLen];
+                int formatted = std::snprintf(buffer, bufferLen, "%s: %s", failureType, message);
+                amLogger->Success(file, line, AmString(buffer).substr(0, formatted));
+            }
         }
 
     private:
         AmInt32 _passedCount;
         AmInt32 _failedCount;
     };
-
-    std::shared_ptr<TestCase> MakeTestCase();
 } // namespace SparkyStudios::Audio::Amplitude::Tests
 
 using namespace SparkyStudios::Audio::Amplitude::Tests;

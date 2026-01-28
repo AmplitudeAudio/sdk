@@ -15,64 +15,75 @@
 #include <SparkyStudios/Audio/Amplitude/Amplitude.h>
 
 #include "EngineTestCase.h"
+#include "TestRegistry.h"
 
 using namespace SparkyStudios::Audio::Amplitude;
 
 namespace SparkyStudios::Audio::Amplitude::Tests
 {
-    void EngineTestCase::Run()
+    AM_TEST_CASE(EngineTestCase, core_engine, event_trigger_on_finish_callback)
     {
-        EventHandle event1 = amEngine->GetEventHandle("play_throw");
-        AM_EXPECT(event1 != nullptr);
-
+    public:
+        void Run() override
         {
-            // Test event can fire and reset
-            EventCanceler c1 = amEngine->Trigger(event1, amEngine->AddEntity(99));
-            AM_EXPECT(c1.Valid());
-            AM_EXPECT(c1.GetEvent()->IsRunning());
+            EventHandle event1 = amEngine->GetEventHandle("play_throw");
+            AM_EXPECT(event1 != nullptr);
 
-            bool isFinished = false;
-            bool isAborted = false;
-            c1.GetEvent()->OnFinish([&isFinished, &isAborted](bool aborted) {
-                isFinished = true;
-                isAborted = aborted;
-            });
+            {
+                // Test event can fire and reset
+                EventCanceler c1 = amEngine->Trigger(event1, amEngine->AddEntity(99));
+                AM_EXPECT(c1.Valid());
+                AM_EXPECT(c1.GetEvent()->IsRunning());
 
-            AM_EXPECT_NOT(isFinished);
-            AM_EXPECT_NOT(isAborted);
-            Thread::Sleep(10000);
-            AM_EXPECT(isFinished);
-            AM_EXPECT_NOT(isAborted);
+                bool isFinished = false;
+                bool isAborted = false;
+                c1.GetEvent()->OnFinish(
+                    [&isFinished, &isAborted](bool aborted)
+                    {
+                        isFinished = true;
+                        isAborted = aborted;
+                    });
 
-            AM_EXPECT_NOT(c1.GetEvent()->IsRunning());
+                AM_EXPECT_NOT(isFinished);
+                AM_EXPECT_NOT(isAborted);
+                Thread::Sleep(10000);
+                AM_EXPECT(isFinished);
+                AM_EXPECT_NOT(isAborted);
 
-            // Clean up
-            amEngine->RemoveEntity(99);
+                AM_EXPECT_NOT(c1.GetEvent()->IsRunning());
+
+                // Clean up
+                amEngine->RemoveEntity(99);
+            }
+
+            {
+                // Test event can fire and reset
+                EventCanceler c1 = amEngine->Trigger(event1, amEngine->AddEntity(97));
+                AM_EXPECT(c1.Valid());
+                AM_EXPECT(c1.GetEvent()->IsRunning());
+
+                bool isFinished = false;
+                bool isAborted = false;
+                c1.GetEvent()->OnFinish(
+                    [&isFinished, &isAborted](bool aborted)
+                    {
+                        isFinished = true;
+                        isAborted = aborted;
+                    });
+
+                AM_EXPECT_NOT(isFinished);
+                AM_EXPECT_NOT(isAborted);
+                c1.Cancel();
+                AM_EXPECT(isFinished);
+                AM_EXPECT(isAborted);
+
+                AM_EXPECT_NOT(c1.GetEvent()->IsRunning());
+
+                // Clean up
+                amEngine->RemoveEntity(97);
+            }
         }
+    };
 
-        {
-            // Test event can fire and reset
-            EventCanceler c1 = amEngine->Trigger(event1, amEngine->AddEntity(97));
-            AM_EXPECT(c1.Valid());
-            AM_EXPECT(c1.GetEvent()->IsRunning());
-
-            bool isFinished = false;
-            bool isAborted = false;
-            c1.GetEvent()->OnFinish([&isFinished, &isAborted](bool aborted) {
-                isFinished = true;
-                isAborted = aborted;
-            });
-
-            AM_EXPECT_NOT(isFinished);
-            AM_EXPECT_NOT(isAborted);
-            c1.Cancel();
-            AM_EXPECT(isFinished);
-            AM_EXPECT(isAborted);
-
-            AM_EXPECT_NOT(c1.GetEvent()->IsRunning());
-
-            // Clean up
-            amEngine->RemoveEntity(97);
-        }
-    }
+    AM_REGISTER_TEST(core_engine, event_trigger_on_finish_callback);
 } // namespace SparkyStudios::Audio::Amplitude::Tests

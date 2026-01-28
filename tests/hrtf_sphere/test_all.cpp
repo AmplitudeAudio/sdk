@@ -17,73 +17,84 @@
 #include <HRTF/HRIRSphere.h>
 #include <Math/LinearAlgebra.h>
 
+#include "PlatformTestCase.h"
 #include "SimpleTestCase.h"
+#include "TestRegistry.h"
 
 using namespace SparkyStudios::Audio::Amplitude;
 
-void SimpleTestCase::Run()
+namespace SparkyStudios::Audio::Amplitude::Tests
 {
-    HRIRSphereImpl sphere;
-    AM_EXPECT_NOT(sphere.IsLoaded());
+    AM_TEST_CASE(SimpleTestCase, hrtf_sphere, all)
+    {
+    public:
+        void Run() override
+        {
+            HRIRSphereImpl sphere;
+            AM_EXPECT_NOT(sphere.IsLoaded());
 
-    auto fs = ampoolshared(eMemoryPoolKind_IO, DiskFileSystem);
-    fs->SetBasePath(AM_OS_STRING("./samples/assets"));
+            auto fs = CreatePlatformFileSystem();
+            fs->SetBasePath(GetPlatformAssetsBasePath());
 
-    sphere.SetResource(AM_OS_STRING("./data/baker_a_101_lp_512.amir"));
-    sphere.Load(fs);
-    AM_EXPECT_NOT(sphere.IsLoaded());
+            sphere.SetResource(AM_OS_STRING("./data/baker_a_101_lp_512.amir"));
+            sphere.Load(fs);
+            AM_EXPECT_NOT(sphere.IsLoaded());
 
-    sphere.SetResource(AM_OS_STRING("./data/throw_01.wav"));
-    sphere.Load(fs);
-    AM_EXPECT_NOT(sphere.IsLoaded());
+            sphere.SetResource(AM_OS_STRING("./data/throw_01.wav"));
+            sphere.Load(fs);
+            AM_EXPECT_NOT(sphere.IsLoaded());
 
-    sphere.SetResource(AM_OS_STRING("./data/sadie_h12.amir"));
-    sphere.Load(fs);
+            sphere.SetResource(AM_OS_STRING("./data/sadie_h12.amir"));
+            sphere.Load(fs);
 
-    AM_EXPECT(sphere.IsLoaded());
-    AM_EXPECT(sphere.GetPath() == AM_OS_STRING("./data/sadie_h12.amir"));
+            AM_EXPECT(sphere.IsLoaded());
+            AM_EXPECT(sphere.GetPath() == AM_OS_STRING("./data/sadie_h12.amir"));
 
-    AM_EXPECT(sphere.GetVertices().size() == sphere.GetVertexCount());
-    AM_EXPECT(sphere.GetVertexCount() == 2114);
+            AM_EXPECT(sphere.GetVertices().size() == sphere.GetVertexCount());
+            AM_EXPECT(sphere.GetVertexCount() == 2114);
 
-    AM_EXPECT(sphere.GetFaces().size() == sphere.GetFaceCount());
-    AM_EXPECT(sphere.GetFaceCount() == 4224);
+            AM_EXPECT(sphere.GetFaces().size() == sphere.GetFaceCount());
+            AM_EXPECT(sphere.GetFaceCount() == 4224);
 
-    AM_EXPECT(sphere.GetIRLength() == 256);
-    AM_EXPECT(sphere.GetSampleRate() == 48000);
+            AM_EXPECT(sphere.GetIRLength() == 256);
+            AM_EXPECT(sphere.GetSampleRate() == 48000);
 
-    HRIRSphereVertex vertex = sphere.GetVertex(0);
+            HRIRSphereVertex vertex = sphere.GetVertex(0);
 
-    AmAlignedReal32Buffer l, r;
-    l.Init(256);
-    r.Init(256);
+            AmAlignedReal32Buffer l, r;
+            l.Init(256);
+            r.Init(256);
 
-    AmVector3 direction = { 0.0f, 0.0f, -1.2f };
+            AmVector3 direction = { 0.0f, 0.0f, -1.2f };
 
-    sphere.SetSamplingMode(eHRIRSphereSamplingMode_Bilinear);
-    AM_EXPECT(sphere.GetSamplingMode() == eHRIRSphereSamplingMode_Bilinear);
-    sphere.Sample(direction, l.GetBuffer(), r.GetBuffer());
-    AM_EXPECT(std::memcmp(l.GetBuffer(), vertex.m_LeftIR.data(), 256 * sizeof(AmReal32)) == 0);
-    AM_EXPECT(std::memcmp(r.GetBuffer(), vertex.m_RightIR.data(), 256 * sizeof(AmReal32)) == 0);
+            sphere.SetSamplingMode(eHRIRSphereSamplingMode_Bilinear);
+            AM_EXPECT(sphere.GetSamplingMode() == eHRIRSphereSamplingMode_Bilinear);
+            sphere.Sample(direction, l.GetBuffer(), r.GetBuffer());
+            AM_EXPECT(std::memcmp(l.GetBuffer(), vertex.m_LeftIR.data(), 256 * sizeof(AmReal32)) == 0);
+            AM_EXPECT(std::memcmp(r.GetBuffer(), vertex.m_RightIR.data(), 256 * sizeof(AmReal32)) == 0);
 
-    l.Clear();
-    r.Clear();
+            l.Clear();
+            r.Clear();
 
-    sphere.SetSamplingMode(eHRIRSphereSamplingMode_NearestNeighbor);
-    AM_EXPECT(sphere.GetSamplingMode() == eHRIRSphereSamplingMode_NearestNeighbor);
-    sphere.Sample(direction, l.GetBuffer(), r.GetBuffer());
-    AM_EXPECT(std::memcmp(l.GetBuffer(), vertex.m_LeftIR.data(), 256 * sizeof(AmReal32)) == 0);
-    AM_EXPECT(std::memcmp(r.GetBuffer(), vertex.m_RightIR.data(), 256 * sizeof(AmReal32)) == 0);
+            sphere.SetSamplingMode(eHRIRSphereSamplingMode_NearestNeighbor);
+            AM_EXPECT(sphere.GetSamplingMode() == eHRIRSphereSamplingMode_NearestNeighbor);
+            sphere.Sample(direction, l.GetBuffer(), r.GetBuffer());
+            AM_EXPECT(std::memcmp(l.GetBuffer(), vertex.m_LeftIR.data(), 256 * sizeof(AmReal32)) == 0);
+            AM_EXPECT(std::memcmp(r.GetBuffer(), vertex.m_RightIR.data(), 256 * sizeof(AmReal32)) == 0);
 
-    direction.z = -1.0f;
+            direction.z = -1.0f;
 
-    sphere.Sample(direction, l.GetBuffer(), r.GetBuffer());
-    AM_EXPECT(std::memcmp(l.GetBuffer(), vertex.m_LeftIR.data(), 256 * sizeof(AmReal32)) == 0);
-    AM_EXPECT(std::memcmp(r.GetBuffer(), vertex.m_RightIR.data(), 256 * sizeof(AmReal32)) == 0);
+            sphere.Sample(direction, l.GetBuffer(), r.GetBuffer());
+            AM_EXPECT(std::memcmp(l.GetBuffer(), vertex.m_LeftIR.data(), 256 * sizeof(AmReal32)) == 0);
+            AM_EXPECT(std::memcmp(r.GetBuffer(), vertex.m_RightIR.data(), 256 * sizeof(AmReal32)) == 0);
 
-    AmMatrix4 rotation = Rotation(FromAxisAngle(kVector3UnitZ, 90.0f * AM_DegToRad));
-    sphere.Transform(rotation);
+            AmMatrix4 rotation = Rotation(FromAxisAngle(kVector3UnitZ, 90.0f * AM_DegToRad));
+            sphere.Transform(rotation);
 
-    HRIRSphereVertex transformedVertex = sphere.GetVertex(0);
-    AM_EXPECT(transformedVertex.m_Position == Transform(rotation, { .xyz = vertex.m_Position, ._pad2 = 1.0f }).xyz);
-}
+            HRIRSphereVertex transformedVertex = sphere.GetVertex(0);
+            AM_EXPECT(transformedVertex.m_Position == Transform(rotation, { .xyz = vertex.m_Position, ._pad2 = 1.0f }).xyz);
+        }
+    };
+
+    AM_REGISTER_TEST(hrtf_sphere, all);
+} // namespace SparkyStudios::Audio::Amplitude::Tests

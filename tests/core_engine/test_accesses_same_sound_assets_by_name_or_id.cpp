@@ -15,18 +15,25 @@
 #include <SparkyStudios/Audio/Amplitude/Amplitude.h>
 
 #include "EngineTestCase.h"
+#include "TestRegistry.h"
 
 using namespace SparkyStudios::Audio::Amplitude;
 
 namespace SparkyStudios::Audio::Amplitude::Tests
 {
-    void EngineTestCase::Run()
+    AM_TEST_CASE(EngineTestCase, core_engine, accesses_same_sound_assets_by_name_or_id)
     {
-        // Test that sound assets are the same when fetched by name or ID
-        for (AmUInt32 id = 1; id <= 8; ++id)
+    public:
+        void Run() override
         {
-            const auto name = "throw_0" + std::to_string(id);
-            AM_EXPECT_EQ(amEngine->GetSoundHandle(name), amEngine->GetSoundHandle(id));
+            // Test that sound assets are the same when fetched by name or ID
+            for (AmUInt32 id = 1; id <= 8; ++id)
+            {
+                const auto name = "throw_0" + std::to_string(id);
+                AM_EXPECT_EQ(amEngine->GetSoundHandle(name), amEngine->GetSoundHandle(id));
+            }
         }
-    }
+    };
+
+    AM_REGISTER_TEST(core_engine, accesses_same_sound_assets_by_name_or_id);
 } // namespace SparkyStudios::Audio::Amplitude::Tests

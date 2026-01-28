@@ -17,35 +17,42 @@
 #include <DSP/Filters/BassBoostFilter.h>
 
 #include "DSPTestCase.h"
+#include "TestRegistry.h"
 
 using namespace SparkyStudios::Audio::Amplitude;
 
 namespace SparkyStudios::Audio::Amplitude::Tests
 {
-    void DSPTestCase::Run()
+    AM_TEST_CASE(DSPTestCase, dsp_filters, bass_boost_filter_processes_audio)
     {
-        auto filter = amshared(BassBoostFilter);
-        filter->Initialize(2.0f);
+    public:
+        void Run() override
+        {
+            auto filter = amshared(BassBoostFilter);
+            filter->Initialize(2.0f);
 
-        auto instance = filter->CreateInstance();
-        AM_EXPECT_NOT(instance == nullptr);
+            auto instance = filter->CreateInstance();
+            AM_EXPECT_NOT(instance == nullptr);
 
-        // Create test audio buffers
-        constexpr AmUInt64 frameCount = 1024;
-        constexpr AmUInt16 channelCount = 2;
-        constexpr AmUInt32 sampleRate = 48000;
+            // Create test audio buffers
+            constexpr AmUInt64 frameCount = 1024;
+            constexpr AmUInt16 channelCount = 2;
+            constexpr AmUInt32 sampleRate = 48000;
 
-        AudioBuffer inputBuffer(frameCount, channelCount);
-        AudioBuffer outputBuffer(frameCount, channelCount);
+            AudioBuffer inputBuffer(frameCount, channelCount);
+            AudioBuffer outputBuffer(frameCount, channelCount);
 
-        // Fill input buffer with test signal
-        GenerateSineWave(inputBuffer, sampleRate);
+            // Fill input buffer with test signal
+            GenerateSineWave(inputBuffer, sampleRate);
 
-        // Process audio
-        instance->Process(inputBuffer, outputBuffer, frameCount, sampleRate);
+            // Process audio
+            instance->Process(inputBuffer, outputBuffer, frameCount, sampleRate);
 
-        // Verify output buffer is not empty and differs from input
-        AM_EXPECT(EnsureHasNonZeroOutput(outputBuffer));
-        AM_EXPECT_NOT(EnsureBufferEqual(inputBuffer, outputBuffer));
-    }
+            // Verify output buffer is not empty and differs from input
+            AM_EXPECT(EnsureHasNonZeroOutput(outputBuffer));
+            AM_EXPECT_NOT(EnsureBufferEqual(inputBuffer, outputBuffer));
+        }
+    };
+
+    AM_REGISTER_TEST(dsp_filters, bass_boost_filter_processes_audio);
 } // namespace SparkyStudios::Audio::Amplitude::Tests

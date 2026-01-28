@@ -71,8 +71,6 @@ namespace SparkyStudios::Audio::Amplitude
             CallDeviceNotificationCallback(eDeviceNotification_Stopped, _deviceData.mDeviceDescription, this);
 
             Thread::Wait(_thread);
-            Thread::Release(_thread);
-            _thread = nullptr;
 
             _deviceData.mOutputBufferSize = 0;
 

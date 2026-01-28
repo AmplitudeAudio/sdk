@@ -18,79 +18,89 @@
 
 #include "SimpleTestCase.h"
 #include "SparkyStudios/Audio/Amplitude/Core/Room.h"
+#include "TestRegistry.h"
 
 using namespace SparkyStudios::Audio::Amplitude;
 
-void SimpleTestCase::Run()
+namespace SparkyStudios::Audio::Amplitude::Tests
 {
-    RoomInternalState state;
-    state.SetId(1);
-
-    fplutil::intrusive_list room_list(&RoomInternalState::node);
-    room_list.push_back(state);
-
-    Room wrapper(&state);
-    AM_EXPECT_EQ(wrapper.GetState(), &state);
-
-    // Test SetWallMaterials sets all six walls to different materials in one call
+    AM_TEST_CASE(SimpleTestCase, core_room, handles_set_wall_materials_all_at_once)
     {
-        RoomWallMaterial leftMaterial(eRoomWallMaterialType_Wood);
-        RoomWallMaterial rightMaterial(eRoomWallMaterialType_Metal);
-        RoomWallMaterial floorMaterial(eRoomWallMaterialType_Marble);
-        RoomWallMaterial ceilingMaterial(eRoomWallMaterialType_Glass);
-        RoomWallMaterial frontMaterial(eRoomWallMaterialType_Transparent);
-        RoomWallMaterial backMaterial(eRoomWallMaterialType_ConcreteUnpainted);
+    public:
+        void Run() override
+        {
+            RoomInternalState state;
+            state.SetId(1);
 
-        wrapper.SetWallMaterials(leftMaterial, rightMaterial, floorMaterial, ceilingMaterial, frontMaterial, backMaterial);
+            fplutil::intrusive_list room_list(&RoomInternalState::node);
+            room_list.push_back(state);
 
-        // Verify each wall has the correct material through wrapper
-        AM_EXPECT_EQ(wrapper.GetWallMaterial(eRoomWall_Left), leftMaterial);
-        AM_EXPECT_EQ(wrapper.GetWallMaterial(eRoomWall_Right), rightMaterial);
-        AM_EXPECT_EQ(wrapper.GetWallMaterial(eRoomWall_Floor), floorMaterial);
-        AM_EXPECT_EQ(wrapper.GetWallMaterial(eRoomWall_Ceiling), ceilingMaterial);
-        AM_EXPECT_EQ(wrapper.GetWallMaterial(eRoomWall_Front), frontMaterial);
-        AM_EXPECT_EQ(wrapper.GetWallMaterial(eRoomWall_Back), backMaterial);
+            Room wrapper(&state);
+            AM_EXPECT_EQ(wrapper.GetState(), &state);
 
-        // Also verify through state
-        AM_EXPECT_EQ(state.GetWallMaterial(eRoomWall_Left), leftMaterial);
-        AM_EXPECT_EQ(state.GetWallMaterial(eRoomWall_Right), rightMaterial);
-        AM_EXPECT_EQ(state.GetWallMaterial(eRoomWall_Floor), floorMaterial);
-        AM_EXPECT_EQ(state.GetWallMaterial(eRoomWall_Ceiling), ceilingMaterial);
-        AM_EXPECT_EQ(state.GetWallMaterial(eRoomWall_Front), frontMaterial);
-        AM_EXPECT_EQ(state.GetWallMaterial(eRoomWall_Back), backMaterial);
-    }
+            // Test SetWallMaterials sets all six walls to different materials in one call
+            {
+                RoomWallMaterial leftMaterial(eRoomWallMaterialType_Wood);
+                RoomWallMaterial rightMaterial(eRoomWallMaterialType_Metal);
+                RoomWallMaterial floorMaterial(eRoomWallMaterialType_Marble);
+                RoomWallMaterial ceilingMaterial(eRoomWallMaterialType_Glass);
+                RoomWallMaterial frontMaterial(eRoomWallMaterialType_Transparent);
+                RoomWallMaterial backMaterial(eRoomWallMaterialType_ConcreteUnpainted);
 
-    // Test SetWallMaterials with same materials for some walls
-    {
-        RoomWallMaterial commonMaterial(eRoomWallMaterialType_Wood);
-        RoomWallMaterial specialMaterial(eRoomWallMaterialType_Glass);
+                wrapper.SetWallMaterials(leftMaterial, rightMaterial, floorMaterial, ceilingMaterial, frontMaterial, backMaterial);
 
-        wrapper.SetWallMaterials(
-            commonMaterial, // left
-            commonMaterial, // right
-            specialMaterial, // floor
-            specialMaterial, // ceiling
-            commonMaterial, // front
-            commonMaterial // back
-        );
+                // Verify each wall has the correct material through wrapper
+                AM_EXPECT_EQ(wrapper.GetWallMaterial(eRoomWall_Left), leftMaterial);
+                AM_EXPECT_EQ(wrapper.GetWallMaterial(eRoomWall_Right), rightMaterial);
+                AM_EXPECT_EQ(wrapper.GetWallMaterial(eRoomWall_Floor), floorMaterial);
+                AM_EXPECT_EQ(wrapper.GetWallMaterial(eRoomWall_Ceiling), ceilingMaterial);
+                AM_EXPECT_EQ(wrapper.GetWallMaterial(eRoomWall_Front), frontMaterial);
+                AM_EXPECT_EQ(wrapper.GetWallMaterial(eRoomWall_Back), backMaterial);
 
-        // Verify materials are set correctly
-        AM_EXPECT_EQ(wrapper.GetWallMaterial(eRoomWall_Left), commonMaterial);
-        AM_EXPECT_EQ(wrapper.GetWallMaterial(eRoomWall_Right), commonMaterial);
-        AM_EXPECT_EQ(wrapper.GetWallMaterial(eRoomWall_Floor), specialMaterial);
-        AM_EXPECT_EQ(wrapper.GetWallMaterial(eRoomWall_Ceiling), specialMaterial);
-        AM_EXPECT_EQ(wrapper.GetWallMaterial(eRoomWall_Front), commonMaterial);
-        AM_EXPECT_EQ(wrapper.GetWallMaterial(eRoomWall_Back), commonMaterial);
+                // Also verify through state
+                AM_EXPECT_EQ(state.GetWallMaterial(eRoomWall_Left), leftMaterial);
+                AM_EXPECT_EQ(state.GetWallMaterial(eRoomWall_Right), rightMaterial);
+                AM_EXPECT_EQ(state.GetWallMaterial(eRoomWall_Floor), floorMaterial);
+                AM_EXPECT_EQ(state.GetWallMaterial(eRoomWall_Ceiling), ceilingMaterial);
+                AM_EXPECT_EQ(state.GetWallMaterial(eRoomWall_Front), frontMaterial);
+                AM_EXPECT_EQ(state.GetWallMaterial(eRoomWall_Back), backMaterial);
+            }
 
-        // Verify common materials are equal to each other
-        AM_EXPECT_EQ(wrapper.GetWallMaterial(eRoomWall_Left), wrapper.GetWallMaterial(eRoomWall_Right));
-        AM_EXPECT_EQ(wrapper.GetWallMaterial(eRoomWall_Left), wrapper.GetWallMaterial(eRoomWall_Front));
-        AM_EXPECT_EQ(wrapper.GetWallMaterial(eRoomWall_Left), wrapper.GetWallMaterial(eRoomWall_Back));
+            // Test SetWallMaterials with same materials for some walls
+            {
+                RoomWallMaterial commonMaterial(eRoomWallMaterialType_Wood);
+                RoomWallMaterial specialMaterial(eRoomWallMaterialType_Glass);
 
-        // Verify special materials are equal to each other
-        AM_EXPECT_EQ(wrapper.GetWallMaterial(eRoomWall_Floor), wrapper.GetWallMaterial(eRoomWall_Ceiling));
+                wrapper.SetWallMaterials(
+                    commonMaterial, // left
+                    commonMaterial, // right
+                    specialMaterial, // floor
+                    specialMaterial, // ceiling
+                    commonMaterial, // front
+                    commonMaterial // back
+                );
 
-        // Verify common and special materials are different
-        AM_EXPECT(wrapper.GetWallMaterial(eRoomWall_Left) != wrapper.GetWallMaterial(eRoomWall_Floor));
-    }
-}
+                // Verify materials are set correctly
+                AM_EXPECT_EQ(wrapper.GetWallMaterial(eRoomWall_Left), commonMaterial);
+                AM_EXPECT_EQ(wrapper.GetWallMaterial(eRoomWall_Right), commonMaterial);
+                AM_EXPECT_EQ(wrapper.GetWallMaterial(eRoomWall_Floor), specialMaterial);
+                AM_EXPECT_EQ(wrapper.GetWallMaterial(eRoomWall_Ceiling), specialMaterial);
+                AM_EXPECT_EQ(wrapper.GetWallMaterial(eRoomWall_Front), commonMaterial);
+                AM_EXPECT_EQ(wrapper.GetWallMaterial(eRoomWall_Back), commonMaterial);
+
+                // Verify common materials are equal to each other
+                AM_EXPECT_EQ(wrapper.GetWallMaterial(eRoomWall_Left), wrapper.GetWallMaterial(eRoomWall_Right));
+                AM_EXPECT_EQ(wrapper.GetWallMaterial(eRoomWall_Left), wrapper.GetWallMaterial(eRoomWall_Front));
+                AM_EXPECT_EQ(wrapper.GetWallMaterial(eRoomWall_Left), wrapper.GetWallMaterial(eRoomWall_Back));
+
+                // Verify special materials are equal to each other
+                AM_EXPECT_EQ(wrapper.GetWallMaterial(eRoomWall_Floor), wrapper.GetWallMaterial(eRoomWall_Ceiling));
+
+                // Verify common and special materials are different
+                AM_EXPECT(wrapper.GetWallMaterial(eRoomWall_Left) != wrapper.GetWallMaterial(eRoomWall_Floor));
+            }
+        }
+    };
+
+    AM_REGISTER_TEST(core_room, handles_set_wall_materials_all_at_once);
+} // namespace SparkyStudios::Audio::Amplitude::Tests

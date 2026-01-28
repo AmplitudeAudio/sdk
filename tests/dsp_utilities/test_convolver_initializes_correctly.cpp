@@ -15,13 +15,17 @@
 #include <SparkyStudios/Audio/Amplitude/Amplitude.h>
 
 #include "DSPTestCase.h"
+#include "TestRegistry.h"
 
 namespace SparkyStudios::Audio::Amplitude::Tests
 {
-    void DSPTestCase::Run()
+    AM_TEST_CASE(DSPTestCase, dsp_utilities, convolver_initializes_correctly)
     {
-        constexpr AmSize blockSize = 256;
-        constexpr AmSize irLen = 512;
+    public:
+        void Run() override
+        {
+            constexpr AmSize blockSize = 256;
+            constexpr AmSize irLen = 512;
 
         {
             // Create an impulse response
@@ -35,7 +39,7 @@ namespace SparkyStudios::Audio::Amplitude::Tests
             // Verify segment size and count
             AM_EXPECT(convolver.GetSegmentSize() == 512); // 2 * blockSize
             AM_EXPECT(convolver.GetSegmentCount() == 2); // ceil(512 / 256)
-        }
+            }
 
         {
             // Create an impulse response
@@ -49,14 +53,14 @@ namespace SparkyStudios::Audio::Amplitude::Tests
             // Verify segment size and count
             AM_EXPECT(convolver.GetSegmentSize() == 0); // Empty IR
             AM_EXPECT(convolver.GetSegmentCount() == 0); // Empty IR
-        }
+            }
 
         {
             // Create an impulse response
             std::vector<AmAudioSample> ir(irLen, 0.0f);
 
             for (AmSize i = 0; i < irLen / 2; ++i)
-                ir[i] = 1.0f;
+            ir[i] = 1.0f;
 
             Convolver convolver;
 
@@ -66,6 +70,9 @@ namespace SparkyStudios::Audio::Amplitude::Tests
             // Verify segment size and count
             AM_EXPECT(convolver.GetSegmentSize() == 512); // 2 * blockSize
             AM_EXPECT(convolver.GetSegmentCount() == 1); // ceil(512 / 2 / 256)
+            }
         }
-    }
+    };
+
+    AM_REGISTER_TEST(dsp_utilities, convolver_initializes_correctly);
 } // namespace SparkyStudios::Audio::Amplitude::Tests

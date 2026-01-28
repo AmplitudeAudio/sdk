@@ -15,41 +15,48 @@
 #include <SparkyStudios/Audio/Amplitude/Amplitude.h>
 
 #include "EngineTestCase.h"
+#include "TestRegistry.h"
 
 using namespace SparkyStudios::Audio::Amplitude;
 
 namespace SparkyStudios::Audio::Amplitude::Tests
 {
-    void EngineTestCase::Run()
+    AM_TEST_CASE(EngineTestCase, core_channel_instances, returns_invalid_instance_for_nonexistent_id)
     {
-        SoundHandle test_sound_01 = amEngine->GetSoundHandle("test_sound_01");
+    public:
+        void Run() override
+        {
+            SoundHandle test_sound_01 = amEngine->GetSoundHandle("test_sound_01");
 
-        Channel channel = amEngine->Play(test_sound_01);
-        amEngine->WaitUntilFrames(2);
+            Channel channel = amEngine->Play(test_sound_01);
+            amEngine->WaitUntilFrames(2);
 
-        AM_EXPECT(channel.Valid());
+            AM_EXPECT(channel.Valid());
 
-        // Enable instancing
-        channel.EnableInstancing(eChannelInstanceMode_Blended);
+            // Enable instancing
+            channel.EnableInstancing(eChannelInstanceMode_Blended);
 
-        // Try to get an instance with invalid ID
-        ChannelInstance invalidInstance = channel.GetInstance(999999);
-        AM_EXPECT(!invalidInstance.Valid());
+            // Try to get an instance with invalid ID
+            ChannelInstance invalidInstance = channel.GetInstance(999999);
+            AM_EXPECT(!invalidInstance.Valid());
 
-        // Add an instance
-        ChannelInstance validInstance = channel.AddInstance({ 100.0f, 0.0f, 50.0f });
-        AM_EXPECT(validInstance.Valid());
+            // Add an instance
+            ChannelInstance validInstance = channel.AddInstance({ 100.0f, 0.0f, 50.0f });
+            AM_EXPECT(validInstance.Valid());
 
-        // Try to get the valid instance
-        ChannelInstance retrievedInstance = channel.GetInstance(validInstance.GetId());
-        AM_EXPECT(retrievedInstance.Valid());
-        AM_EXPECT(retrievedInstance.GetId() == validInstance.GetId());
+            // Try to get the valid instance
+            ChannelInstance retrievedInstance = channel.GetInstance(validInstance.GetId());
+            AM_EXPECT(retrievedInstance.Valid());
+            AM_EXPECT(retrievedInstance.GetId() == validInstance.GetId());
 
-        // Remove the instance
-        channel.RemoveInstance(validInstance.GetId());
+            // Remove the instance
+            channel.RemoveInstance(validInstance.GetId());
 
-        // Try to get the removed instance - should be invalid
-        ChannelInstance removedInstance = channel.GetInstance(validInstance.GetId());
-        AM_EXPECT(!removedInstance.Valid());
-    }
+            // Try to get the removed instance - should be invalid
+            ChannelInstance removedInstance = channel.GetInstance(validInstance.GetId());
+            AM_EXPECT(!removedInstance.Valid());
+        }
+    };
+
+    AM_REGISTER_TEST(core_channel_instances, returns_invalid_instance_for_nonexistent_id);
 } // namespace SparkyStudios::Audio::Amplitude::Tests

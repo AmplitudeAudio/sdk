@@ -17,34 +17,41 @@
 #include <DSP/Delay.h>
 
 #include "DSPTestCase.h"
+#include "TestRegistry.h"
 
 namespace SparkyStudios::Audio::Amplitude::Tests
 {
-    void DSPTestCase::Run()
+    AM_TEST_CASE(DSPTestCase, dsp_utilities, delay_can_clear)
     {
-        constexpr AmSize maxDelay = 500;
-        constexpr AmSize framesCount = 128;
+    public:
+        void Run() override
+        {
+            constexpr AmSize maxDelay = 500;
+            constexpr AmSize framesCount = 128;
 
-        Delay delay(maxDelay, framesCount);
+            Delay delay(maxDelay, framesCount);
 
-        // Create and insert test data
-        AudioBuffer buffer(framesCount, 1);
-        AudioBufferChannel& channel = buffer[0];
+            // Create and insert test data
+            AudioBuffer buffer(framesCount, 1);
+            AudioBufferChannel& channel = buffer[0];
 
-        for (AmSize i = 0; i < framesCount; ++i)
+            for (AmSize i = 0; i < framesCount; ++i)
             channel[i] = 1.0f;
 
-        delay.Insert(channel);
+            delay.Insert(channel);
 
-        // Clear the delay line
-        delay.Clear();
+            // Clear the delay line
+            delay.Clear();
 
-        // Process and verify output is zeros
-        AudioBuffer output(framesCount, 1);
-        AudioBufferChannel& outChannel = output[0];
+            // Process and verify output is zeros
+            AudioBuffer output(framesCount, 1);
+            AudioBufferChannel& outChannel = output[0];
 
-        delay.Process(outChannel, 10);
+            delay.Process(outChannel, 10);
 
-        AM_EXPECT(EnsureHasZeroOutput(output));
-    }
+            AM_EXPECT(EnsureHasZeroOutput(output));
+        }
+    };
+
+    AM_REGISTER_TEST(dsp_utilities, delay_can_clear);
 } // namespace SparkyStudios::Audio::Amplitude::Tests

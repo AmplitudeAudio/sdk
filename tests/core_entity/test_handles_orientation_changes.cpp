@@ -17,37 +17,47 @@
 #include <Core/EntityInternalState.h>
 
 #include "SimpleTestCase.h"
+#include "TestRegistry.h"
 
 using namespace SparkyStudios::Audio::Amplitude;
 
-void SimpleTestCase::Run()
+namespace SparkyStudios::Audio::Amplitude::Tests
 {
-    EntityInternalState state;
-    state.SetId(1);
+    AM_TEST_CASE(SimpleTestCase, core_entity, handles_orientation_changes)
+    {
+    public:
+        void Run() override
+        {
+            EntityInternalState state;
+            state.SetId(1);
 
-    fplutil::intrusive_list entity_list(&EntityInternalState::node);
-    entity_list.push_back(state);
+            fplutil::intrusive_list entity_list(&EntityInternalState::node);
+            entity_list.push_back(state);
 
-    // Test state directly
-    const auto direction = kVector3UnitX;
-    const auto up = kVector3UnitZ;
-    state.SetOrientation(Orientation(direction, up));
+            // Test state directly
+            const auto direction = kVector3UnitX;
+            const auto up = kVector3UnitZ;
+            state.SetOrientation(Orientation(direction, up));
 
-    AM_EXPECT_EQ(state.GetDirection(), direction);
-    AM_EXPECT_EQ(state.GetUp(), up);
+            AM_EXPECT_EQ(state.GetDirection(), direction);
+            AM_EXPECT_EQ(state.GetUp(), up);
 
-    // Test with wrapper
-    Entity wrapper(&state);
-    AM_EXPECT_EQ(wrapper.GetState(), &state);
+            // Test with wrapper
+            Entity wrapper(&state);
+            AM_EXPECT_EQ(wrapper.GetState(), &state);
 
-    const auto wrapperDirection = kVector3UnitY;
-    const auto wrapperUp = kVector3UnitX;
-    const auto wrapperOrientation = Orientation(wrapperDirection, wrapperUp);
-    wrapper.SetOrientation(wrapperOrientation);
+            const auto wrapperDirection = kVector3UnitY;
+            const auto wrapperUp = kVector3UnitX;
+            const auto wrapperOrientation = Orientation(wrapperDirection, wrapperUp);
+            wrapper.SetOrientation(wrapperOrientation);
 
-    AM_EXPECT_EQ(wrapper.GetDirection(), wrapperDirection);
-    AM_EXPECT_EQ(wrapper.GetUp(), wrapperUp);
+            AM_EXPECT_EQ(wrapper.GetDirection(), wrapperDirection);
+            AM_EXPECT_EQ(wrapper.GetUp(), wrapperUp);
 
-    AM_EXPECT_EQ(wrapper.GetDirection(), state.GetDirection());
-    AM_EXPECT_EQ(wrapper.GetUp(), state.GetUp());
-}
+            AM_EXPECT_EQ(wrapper.GetDirection(), state.GetDirection());
+            AM_EXPECT_EQ(wrapper.GetUp(), state.GetUp());
+        }
+    };
+
+    AM_REGISTER_TEST(core_entity, handles_orientation_changes);
+} // namespace SparkyStudios::Audio::Amplitude::Tests

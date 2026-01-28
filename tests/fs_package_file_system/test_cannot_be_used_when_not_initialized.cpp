@@ -15,22 +15,32 @@
 #include <SparkyStudios/Audio/Amplitude/Amplitude.h>
 
 #include "SimpleTestCase.h"
+#include "TestRegistry.h"
 
 using namespace SparkyStudios::Audio::Amplitude;
 
-void SimpleTestCase::Run()
+namespace SparkyStudios::Audio::Amplitude::Tests
 {
-    PackageFileSystem fileSystem;
-
-    // cannot check if files exists
+    AM_TEST_CASE(SimpleTestCase, fs_package_file_system, cannot_be_used_when_not_initialized)
     {
-        AM_EXPECT_NOT(fileSystem.Exists(AM_OS_STRING("tests.config.amconfig")));
-        AM_EXPECT_NOT(fileSystem.Exists(AM_OS_STRING("some_random_file.ext")));
-    }
+    public:
+        void Run() override
+        {
+            PackageFileSystem fileSystem;
 
-    // cannot open files
-    {
-        AM_EXPECT(fileSystem.OpenFile(AM_OS_STRING("tests.config.amconfig")) == nullptr);
-        AM_EXPECT(fileSystem.OpenFile(AM_OS_STRING("some_random_file.ext")) == nullptr);
-    }
-}
+            // cannot check if files exists
+            {
+                AM_EXPECT_NOT(fileSystem.Exists(AM_OS_STRING("tests.config.amconfig")));
+                AM_EXPECT_NOT(fileSystem.Exists(AM_OS_STRING("some_random_file.ext")));
+            }
+
+            // cannot open files
+            {
+                AM_EXPECT(fileSystem.OpenFile(AM_OS_STRING("tests.config.amconfig")) == nullptr);
+                AM_EXPECT(fileSystem.OpenFile(AM_OS_STRING("some_random_file.ext")) == nullptr);
+            }
+        }
+    };
+
+    AM_REGISTER_TEST(fs_package_file_system, cannot_be_used_when_not_initialized);
+} // namespace SparkyStudios::Audio::Amplitude::Tests

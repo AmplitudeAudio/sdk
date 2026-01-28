@@ -15,19 +15,29 @@
 #include <SparkyStudios/Audio/Amplitude/Amplitude.h>
 
 #include "SimpleTestCase.h"
+#include "TestRegistry.h"
 
 using namespace SparkyStudios::Audio::Amplitude;
 
-void SimpleTestCase::Run()
+namespace SparkyStudios::Audio::Amplitude::Tests
 {
-    const auto zero = Orientation::Zero();
+    AM_TEST_CASE(SimpleTestCase, math_orientation, zero_orientation)
+    {
+    public:
+        void Run() override
+        {
+            const auto zero = Orientation::Zero();
 
-    // Test that Zero() creates an orientation with zero angles
-    AM_EXPECT_EQ(zero.GetYaw(), 0.0f);
-    AM_EXPECT_EQ(zero.GetPitch(), 0.0f);
-    AM_EXPECT_EQ(zero.GetRoll(), 0.0f);
+            // Test that Zero() creates an orientation with zero angles
+            AM_EXPECT_EQ(zero.GetYaw(), 0.0f);
+            AM_EXPECT_EQ(zero.GetPitch(), 0.0f);
+            AM_EXPECT_EQ(zero.GetRoll(), 0.0f);
 
-    // Test forward and up vectors for zero orientations
-    AM_EXPECT_EQ(zero.GetForward(), kVector3UnitY);
-    AM_EXPECT_EQ(zero.GetUp(), kVector3UnitZ);
-}
+            // Test forward and up vectors for zero orientations
+            AM_EXPECT_EQ(zero.GetForward(), kVector3UnitY);
+            AM_EXPECT_EQ(zero.GetUp(), kVector3UnitZ);
+        }
+    };
+
+    AM_REGISTER_TEST(math_orientation, zero_orientation);
+} // namespace SparkyStudios::Audio::Amplitude::Tests

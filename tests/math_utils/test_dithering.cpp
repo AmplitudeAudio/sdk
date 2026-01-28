@@ -15,11 +15,21 @@
 #include <SparkyStudios/Audio/Amplitude/Amplitude.h>
 
 #include "SimpleTestCase.h"
+#include "TestRegistry.h"
 
 using namespace SparkyStudios::Audio::Amplitude;
 
-void SimpleTestCase::Run()
+namespace SparkyStudios::Audio::Amplitude::Tests
 {
-    // This is only to increase coverage, as the dithering function is a simple function that always returns a value
-    AmDitherReal32(1.0f / INT16_MIN, 1.0f / INT16_MAX);
-}
+    AM_TEST_CASE(SimpleTestCase, math_utils, dithering)
+    {
+    public:
+        void Run() override
+        {
+            // This is only to increase coverage, as the dithering function is a simple function that always returns a value
+            AmDitherReal32(1.0f / INT16_MIN, 1.0f / INT16_MAX);
+        }
+    };
+
+    AM_REGISTER_TEST(math_utils, dithering);
+} // namespace SparkyStudios::Audio::Amplitude::Tests

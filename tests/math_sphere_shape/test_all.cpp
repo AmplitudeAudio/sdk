@@ -15,58 +15,68 @@
 #include <SparkyStudios/Audio/Amplitude/Amplitude.h>
 
 #include "SimpleTestCase.h"
+#include "TestRegistry.h"
 
 using namespace SparkyStudios::Audio::Amplitude;
 
-void SimpleTestCase::Run()
+namespace SparkyStudios::Audio::Amplitude::Tests
 {
-    SphereShape shape(50);
-
+    AM_TEST_CASE(SimpleTestCase, math_sphere_shape, all)
     {
-        SphereShape other(100);
-        SphereShape some(50);
-        SphereShape clone(50);
-        clone.SetLocation({ 100, 100, 100 });
+    public:
+        void Run() override
+        {
+            SphereShape shape(50);
 
-        AM_EXPECT(shape == some);
-        AM_EXPECT(shape != other);
-        AM_EXPECT_NOT(shape == clone);
-    }
+        {
+            SphereShape other(100);
+            SphereShape some(50);
+            SphereShape clone(50);
+            clone.SetLocation({ 100, 100, 100 });
 
-    constexpr AmVector3 inner = { 25, 25, 25 };
-    constexpr AmVector3 outer = { 100, 100, 100 };
-    constexpr AmVector3 center = { 0, 0, 0 };
-    constexpr AmVector3 surfacePoint = { 0, 0, 50 };
+            AM_EXPECT(shape == some);
+            AM_EXPECT(shape != other);
+            AM_EXPECT_NOT(shape == clone);
+            }
 
-    AM_EXPECT(shape.GetRadius() == 50);
-    AM_EXPECT(shape.GetDiameter() == 100);
+            constexpr AmVector3 inner = { 25, 25, 25 };
+            constexpr AmVector3 outer = { 100, 100, 100 };
+            constexpr AmVector3 center = { 0, 0, 0 };
+            constexpr AmVector3 surfacePoint = { 0, 0, 50 };
 
-    AM_EXPECT(shape.GetShortestDistanceToEdge(inner) == shape.GetRadius() - Length(inner));
-    AM_EXPECT(shape.GetShortestDistanceToEdge(outer) == shape.GetRadius() - Length(outer));
-    AM_EXPECT(shape.GetShortestDistanceToEdge(surfacePoint) == 0.0f);
+            AM_EXPECT(shape.GetRadius() == 50);
+            AM_EXPECT(shape.GetDiameter() == 100);
 
-    AM_EXPECT(shape.Contains(inner));
-    AM_EXPECT_NOT(shape.Contains(outer));
-    AM_EXPECT(shape.Contains(surfacePoint));
+            AM_EXPECT(shape.GetShortestDistanceToEdge(inner) == shape.GetRadius() - Length(inner));
+            AM_EXPECT(shape.GetShortestDistanceToEdge(outer) == shape.GetRadius() - Length(outer));
+            AM_EXPECT(shape.GetShortestDistanceToEdge(surfacePoint) == 0.0f);
 
-    {
-        shape.SetRadius(100);
+            AM_EXPECT(shape.Contains(inner));
+            AM_EXPECT_NOT(shape.Contains(outer));
+            AM_EXPECT(shape.Contains(surfacePoint));
 
-        AM_EXPECT(shape.GetRadius() == 100);
-        AM_EXPECT(shape.GetDiameter() == 200);
-    }
+        {
+            shape.SetRadius(100);
 
-    {
-        constexpr AmVector3 location = { 100, 100, 100 };
-        shape.SetLocation(location);
+            AM_EXPECT(shape.GetRadius() == 100);
+            AM_EXPECT(shape.GetDiameter() == 200);
+            }
 
-        AM_EXPECT(shape.GetLocation() == location);
-    }
+        {
+            constexpr AmVector3 location = { 100, 100, 100 };
+            shape.SetLocation(location);
 
-    {
-        const Orientation orientation = Orientation(FromAxisAngle({ 0.5, 0.5, 0.5 }, AM_PI32));
-        shape.SetOrientation(orientation);
+            AM_EXPECT(shape.GetLocation() == location);
+            }
 
-        AM_EXPECT(std::memcmp(&shape.GetOrientation(), &orientation, sizeof(Orientation)) == 0);
-    }
-}
+        {
+            const Orientation orientation = Orientation(FromAxisAngle({ 0.5, 0.5, 0.5 }, AM_PI32));
+            shape.SetOrientation(orientation);
+
+            AM_EXPECT(std::memcmp(&shape.GetOrientation(), &orientation, sizeof(Orientation)) == 0);
+            }
+        }
+    };
+
+    AM_REGISTER_TEST(math_sphere_shape, all);
+} // namespace SparkyStudios::Audio::Amplitude::Tests

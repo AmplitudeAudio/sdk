@@ -15,37 +15,44 @@
 #include <SparkyStudios/Audio/Amplitude/Amplitude.h>
 
 #include "DSPTestCase.h"
+#include "TestRegistry.h"
 
 namespace SparkyStudios::Audio::Amplitude::Tests
 {
-    void DSPTestCase::Run()
+    AM_TEST_CASE(DSPTestCase, dsp_utilities, fft_forward_backward)
     {
-        FFT fft;
-        constexpr AmSize size = 512;
-        fft.Initialize(size);
+    public:
+        void Run() override
+        {
+            FFT fft;
+            constexpr AmSize size = 512;
+            fft.Initialize(size);
 
-        // Create test signal
-        AudioBuffer input(size, 1);
-        AudioBuffer output(size, 1);
+            // Create test signal
+            AudioBuffer input(size, 1);
+            AudioBuffer output(size, 1);
 
-        // Generate sine wave
-        GenerateSineWave(input, size);
+            // Generate sine wave
+            GenerateSineWave(input, size);
 
-        // Forward FFT
-        SplitComplex splitComplex;
-        fft.Forward(input[0].begin(), splitComplex);
+            // Forward FFT
+            SplitComplex splitComplex;
+            fft.Forward(input[0].begin(), splitComplex);
 
-        // Verify complex output
-        AM_EXPECT(splitComplex.GetSize() > 0);
-        AM_EXPECT(splitComplex.re() != nullptr);
-        AM_EXPECT(splitComplex.im() != nullptr);
+            // Verify complex output
+            AM_EXPECT(splitComplex.GetSize() > 0);
+            AM_EXPECT(splitComplex.re() != nullptr);
+            AM_EXPECT(splitComplex.im() != nullptr);
 
-        // Backward FFT
-        fft.Backward(output[0].begin(), splitComplex);
+            // Backward FFT
+            fft.Backward(output[0].begin(), splitComplex);
 
-        // Verify reconstruction (allowing for some numerical error)
-        constexpr AmReal32 tolerance = 0.01f;
-        for (AmSize i = 0; i < size; ++i)
+            // Verify reconstruction (allowing for some numerical error)
+            constexpr AmReal32 tolerance = 0.01f;
+            for (AmSize i = 0; i < size; ++i)
             AM_EXPECT(std::abs(output[0][i] - input[0][i]) < tolerance);
-    }
+        }
+    };
+
+    AM_REGISTER_TEST(dsp_utilities, fft_forward_backward);
 } // namespace SparkyStudios::Audio::Amplitude::Tests

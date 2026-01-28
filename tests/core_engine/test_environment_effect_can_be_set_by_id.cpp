@@ -15,28 +15,35 @@
 #include <SparkyStudios/Audio/Amplitude/Amplitude.h>
 
 #include "EngineTestCase.h"
+#include "TestRegistry.h"
 
 using namespace SparkyStudios::Audio::Amplitude;
 
 namespace SparkyStudios::Audio::Amplitude::Tests
 {
-    void EngineTestCase::Run()
+    AM_TEST_CASE(EngineTestCase, core_engine, environment_effect_can_be_set_by_id)
     {
-        const auto environment = amEngine->AddEnvironment(1234);
+    public:
+        void Run() override
+        {
+            const auto environment = amEngine->AddEnvironment(1234);
 
-        // Set up zone for the environment
-        auto inner = amshared(SphereShape, 10);
-        auto outer = amshared(SphereShape, 20);
-        auto zone = amshared(SphereZone, inner, outer);
-        environment.SetZone(zone);
+            // Set up zone for the environment
+            auto inner = amshared(SphereShape, 10);
+            auto outer = amshared(SphereShape, 20);
+            auto zone = amshared(SphereZone, inner, outer);
+            environment.SetZone(zone);
 
-        // Test setting effect by ID
-        environment.SetEffect(2);
+            // Test setting effect by ID
+            environment.SetEffect(2);
 
-        // Verify it returns the new effect
-        AM_EXPECT_EQ(environment.GetEffect(), amEngine->GetEffectHandle(2));
+            // Verify it returns the new effect
+            AM_EXPECT_EQ(environment.GetEffect(), amEngine->GetEffectHandle(2));
 
-        // Clean up
-        amEngine->RemoveEnvironment(1234);
-    }
+            // Clean up
+            amEngine->RemoveEnvironment(1234);
+        }
+    };
+
+    AM_REGISTER_TEST(core_engine, environment_effect_can_be_set_by_id);
 } // namespace SparkyStudios::Audio::Amplitude::Tests

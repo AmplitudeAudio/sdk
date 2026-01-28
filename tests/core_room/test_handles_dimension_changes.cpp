@@ -17,96 +17,106 @@
 #include <Core/RoomInternalState.h>
 
 #include "SimpleTestCase.h"
+#include "TestRegistry.h"
 
 using namespace SparkyStudios::Audio::Amplitude;
 
-void SimpleTestCase::Run()
+namespace SparkyStudios::Audio::Amplitude::Tests
 {
-    RoomInternalState state;
-    state.SetId(1);
-
-    fplutil::intrusive_list room_list(&RoomInternalState::node);
-    room_list.push_back(state);
-
-    Room wrapper(&state);
-    AM_EXPECT_EQ(wrapper.GetState(), &state);
-
-    // Test SetDimensions through state
+    AM_TEST_CASE(SimpleTestCase, core_room, handles_dimension_changes)
     {
-        constexpr AmVector3 dimensions = { 100, 100, 100 };
-        state.SetDimensions(dimensions);
+    public:
+        void Run() override
+        {
+            RoomInternalState state;
+            state.SetId(1);
 
-        AM_EXPECT_EQ(state.GetDimensions(), dimensions);
-        AM_EXPECT_EQ(wrapper.GetDimensions(), dimensions);
+            fplutil::intrusive_list room_list(&RoomInternalState::node);
+            room_list.push_back(state);
 
-        const BoxShape boxShape(50, 50, 50);
-        AM_EXPECT_EQ(state.GetShape(), boxShape);
-        AM_EXPECT_EQ(wrapper.GetShape(), boxShape);
-    }
+            Room wrapper(&state);
+            AM_EXPECT_EQ(wrapper.GetState(), &state);
 
-    // Test SetDimensions through wrapper
-    {
-        const AmVector3 dimensions = { 200.0f, 150.0f, 100.0f };
-        wrapper.SetDimensions(dimensions);
+            // Test SetDimensions through state
+            {
+                constexpr AmVector3 dimensions = { 100, 100, 100 };
+                state.SetDimensions(dimensions);
 
-        // Verify dimensions are set correctly through wrapper
-        AM_EXPECT_EQ(wrapper.GetDimensions(), dimensions);
-        AM_EXPECT_EQ(state.GetDimensions(), dimensions);
+                AM_EXPECT_EQ(state.GetDimensions(), dimensions);
+                AM_EXPECT_EQ(wrapper.GetDimensions(), dimensions);
 
-        // Verify the shape is updated accordingly (half dimensions)
-        const BoxShape expectedShape(100.0f, 50.0f, 75.0f);
-        AM_EXPECT_EQ(wrapper.GetShape(), expectedShape);
-        AM_EXPECT_EQ(state.GetShape(), expectedShape);
+                const BoxShape boxShape(50, 50, 50);
+                AM_EXPECT_EQ(state.GetShape(), boxShape);
+                AM_EXPECT_EQ(wrapper.GetShape(), boxShape);
+            }
 
-        // Verify volume calculation
-        const AmReal32 expectedVolume = dimensions.x * dimensions.y * dimensions.z;
-        AM_EXPECT_EQ(wrapper.GetVolume(), expectedVolume);
-        AM_EXPECT_EQ(state.GetVolume(), expectedVolume);
-    }
+            // Test SetDimensions through wrapper
+            {
+                const AmVector3 dimensions = { 200.0f, 150.0f, 100.0f };
+                wrapper.SetDimensions(dimensions);
 
-    // Test SetDimensions with different values
-    {
-        const AmVector3 newDimensions = { 500.0f, 300.0f, 400.0f };
-        wrapper.SetDimensions(newDimensions);
+                // Verify dimensions are set correctly through wrapper
+                AM_EXPECT_EQ(wrapper.GetDimensions(), dimensions);
+                AM_EXPECT_EQ(state.GetDimensions(), dimensions);
 
-        // Verify new dimensions
-        AM_EXPECT_EQ(wrapper.GetDimensions(), newDimensions);
-        AM_EXPECT_EQ(state.GetDimensions(), newDimensions);
+                // Verify the shape is updated accordingly (half dimensions)
+                const BoxShape expectedShape(100.0f, 50.0f, 75.0f);
+                AM_EXPECT_EQ(wrapper.GetShape(), expectedShape);
+                AM_EXPECT_EQ(state.GetShape(), expectedShape);
 
-        // Verify the shape is updated
-        const BoxShape newExpectedShape(250.0f, 200.0f, 150.0f);
-        AM_EXPECT_EQ(wrapper.GetShape(), newExpectedShape);
-        AM_EXPECT_EQ(state.GetShape(), newExpectedShape);
+                // Verify volume calculation
+                const AmReal32 expectedVolume = dimensions.x * dimensions.y * dimensions.z;
+                AM_EXPECT_EQ(wrapper.GetVolume(), expectedVolume);
+                AM_EXPECT_EQ(state.GetVolume(), expectedVolume);
+            }
 
-        // Verify new volume
-        const AmReal32 newExpectedVolume = newDimensions.x * newDimensions.y * newDimensions.z;
-        AM_EXPECT_EQ(wrapper.GetVolume(), newExpectedVolume);
-        AM_EXPECT_EQ(state.GetVolume(), newExpectedVolume);
-    }
+            // Test SetDimensions with different values
+            {
+                const AmVector3 newDimensions = { 500.0f, 300.0f, 400.0f };
+                wrapper.SetDimensions(newDimensions);
 
-    // Test SetDimensions with zero values (edge case)
-    {
-        const AmVector3 zeroDimensions = { 0.0f, 0.0f, 0.0f };
-        wrapper.SetDimensions(zeroDimensions);
+                // Verify new dimensions
+                AM_EXPECT_EQ(wrapper.GetDimensions(), newDimensions);
+                AM_EXPECT_EQ(state.GetDimensions(), newDimensions);
 
-        AM_EXPECT_EQ(wrapper.GetDimensions(), zeroDimensions);
-        AM_EXPECT_EQ(state.GetDimensions(), zeroDimensions);
-        AM_EXPECT_EQ(wrapper.GetVolume(), 0.0f);
-        AM_EXPECT_EQ(state.GetVolume(), 0.0f);
-    }
+                // Verify the shape is updated
+                const BoxShape newExpectedShape(250.0f, 200.0f, 150.0f);
+                AM_EXPECT_EQ(wrapper.GetShape(), newExpectedShape);
+                AM_EXPECT_EQ(state.GetShape(), newExpectedShape);
 
-    // Test SetDimensions with very small values
-    {
-        const AmVector3 smallDimensions = { 1.0f, 1.0f, 1.0f };
-        wrapper.SetDimensions(smallDimensions);
+                // Verify new volume
+                const AmReal32 newExpectedVolume = newDimensions.x * newDimensions.y * newDimensions.z;
+                AM_EXPECT_EQ(wrapper.GetVolume(), newExpectedVolume);
+                AM_EXPECT_EQ(state.GetVolume(), newExpectedVolume);
+            }
 
-        AM_EXPECT_EQ(wrapper.GetDimensions(), smallDimensions);
-        AM_EXPECT_EQ(state.GetDimensions(), smallDimensions);
-        AM_EXPECT_EQ(wrapper.GetVolume(), 1.0f);
-        AM_EXPECT_EQ(state.GetVolume(), 1.0f);
+            // Test SetDimensions with zero values (edge case)
+            {
+                const AmVector3 zeroDimensions = { 0.0f, 0.0f, 0.0f };
+                wrapper.SetDimensions(zeroDimensions);
 
-        const BoxShape smallExpectedShape(0.5f, 0.5f, 0.5f);
-        AM_EXPECT_EQ(wrapper.GetShape(), smallExpectedShape);
-        AM_EXPECT_EQ(state.GetShape(), smallExpectedShape);
-    }
-}
+                AM_EXPECT_EQ(wrapper.GetDimensions(), zeroDimensions);
+                AM_EXPECT_EQ(state.GetDimensions(), zeroDimensions);
+                AM_EXPECT_EQ(wrapper.GetVolume(), 0.0f);
+                AM_EXPECT_EQ(state.GetVolume(), 0.0f);
+            }
+
+            // Test SetDimensions with very small values
+            {
+                const AmVector3 smallDimensions = { 1.0f, 1.0f, 1.0f };
+                wrapper.SetDimensions(smallDimensions);
+
+                AM_EXPECT_EQ(wrapper.GetDimensions(), smallDimensions);
+                AM_EXPECT_EQ(state.GetDimensions(), smallDimensions);
+                AM_EXPECT_EQ(wrapper.GetVolume(), 1.0f);
+                AM_EXPECT_EQ(state.GetVolume(), 1.0f);
+
+                const BoxShape smallExpectedShape(0.5f, 0.5f, 0.5f);
+                AM_EXPECT_EQ(wrapper.GetShape(), smallExpectedShape);
+                AM_EXPECT_EQ(state.GetShape(), smallExpectedShape);
+            }
+        }
+    };
+
+    AM_REGISTER_TEST(core_room, handles_dimension_changes);
+} // namespace SparkyStudios::Audio::Amplitude::Tests

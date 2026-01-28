@@ -15,32 +15,39 @@
 #include <SparkyStudios/Audio/Amplitude/Amplitude.h>
 
 #include "EngineTestCase.h"
+#include "TestRegistry.h"
 
 using namespace SparkyStudios::Audio::Amplitude;
 
 namespace SparkyStudios::Audio::Amplitude::Tests
 {
-    void EngineTestCase::Run()
+    AM_TEST_CASE(EngineTestCase, core_channel_instances, instances_cleared_on_disable)
     {
-        SoundHandle test_sound_01 = amEngine->GetSoundHandle("test_sound_01");
+    public:
+        void Run() override
+        {
+            SoundHandle test_sound_01 = amEngine->GetSoundHandle("test_sound_01");
 
-        Channel channel = amEngine->Play(test_sound_01);
-        amEngine->WaitUntilFrames(2);
+            Channel channel = amEngine->Play(test_sound_01);
+            amEngine->WaitUntilFrames(2);
 
-        AM_EXPECT(channel.Valid());
+            AM_EXPECT(channel.Valid());
 
-        // Enable instancing
-        channel.EnableInstancing(eChannelInstanceMode_Blended);
+            // Enable instancing
+            channel.EnableInstancing(eChannelInstanceMode_Blended);
 
-        // Add instances
-        AM_UNUSED(channel.AddInstance({ 100.0f, 0.0f, 50.0f }));
-        AM_UNUSED(channel.AddInstance({ 120.0f, 0.0f, 80.0f }));
-        AM_UNUSED(channel.AddInstance({ 140.0f, 0.0f, 110.0f }));
+            // Add instances
+            AM_UNUSED(channel.AddInstance({ 100.0f, 0.0f, 50.0f }));
+            AM_UNUSED(channel.AddInstance({ 120.0f, 0.0f, 80.0f }));
+            AM_UNUSED(channel.AddInstance({ 140.0f, 0.0f, 110.0f }));
 
-        AM_EXPECT(channel.GetInstanceCount() == 3);
+            AM_EXPECT(channel.GetInstanceCount() == 3);
 
-        // Disable instancing - should clear all instances
-        channel.DisableInstancing();
-        AM_EXPECT(channel.GetInstanceCount() == 0);
-    }
+            // Disable instancing - should clear all instances
+            channel.DisableInstancing();
+            AM_EXPECT(channel.GetInstanceCount() == 0);
+        }
+    };
+
+    AM_REGISTER_TEST(core_channel_instances, instances_cleared_on_disable);
 } // namespace SparkyStudios::Audio::Amplitude::Tests

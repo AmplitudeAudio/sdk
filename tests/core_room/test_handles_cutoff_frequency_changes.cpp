@@ -17,22 +17,32 @@
 #include <Core/RoomInternalState.h>
 
 #include "SimpleTestCase.h"
+#include "TestRegistry.h"
 
 using namespace SparkyStudios::Audio::Amplitude;
 
-void SimpleTestCase::Run()
+namespace SparkyStudios::Audio::Amplitude::Tests
 {
-    RoomInternalState state;
-    state.SetId(1);
+    AM_TEST_CASE(SimpleTestCase, core_room, handles_cutoff_frequency_changes)
+    {
+    public:
+        void Run() override
+        {
+            RoomInternalState state;
+            state.SetId(1);
 
-    fplutil::intrusive_list room_list(&RoomInternalState::node);
-    room_list.push_back(state);
+            fplutil::intrusive_list room_list(&RoomInternalState::node);
+            room_list.push_back(state);
 
-    Room wrapper(&state);
-    AM_EXPECT_EQ(wrapper.GetState(), &state);
+            Room wrapper(&state);
+            AM_EXPECT_EQ(wrapper.GetState(), &state);
 
-    constexpr auto kCutoffFrequency = 1000.0f;
-    state.SetCutOffFrequency(kCutoffFrequency);
+            constexpr auto kCutoffFrequency = 1000.0f;
+            state.SetCutOffFrequency(kCutoffFrequency);
 
-    AM_EXPECT_EQ(state.GetCutOffFrequency(), kCutoffFrequency);
-}
+            AM_EXPECT_EQ(state.GetCutOffFrequency(), kCutoffFrequency);
+        }
+    };
+
+    AM_REGISTER_TEST(core_room, handles_cutoff_frequency_changes);
+} // namespace SparkyStudios::Audio::Amplitude::Tests

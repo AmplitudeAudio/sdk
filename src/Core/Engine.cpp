@@ -175,7 +175,7 @@ namespace SparkyStudios::Audio::Amplitude
 
     bool LoadFile(const std::shared_ptr<File>& file, AmString* dest)
     {
-        if (!file->IsValid())
+        if (!file || !file->IsValid())
         {
             amLogError("The file is not valid.");
             return false;
@@ -717,7 +717,7 @@ namespace SparkyStudios::Audio::Amplitude
     {
         std::lock_guard lock(_updateMutex);
 
-        _configFilePath = _fs->ResolvePath(configFile);
+        _configFilePath = configFile;
 
         if (!LoadFile(_fs->OpenFile(_configFilePath), &_configSrc))
         {
@@ -767,15 +767,16 @@ namespace SparkyStudios::Audio::Amplitude
 
         if (_audioDriver == nullptr)
         {
-            amLogCritical("Failed to load the specified driver, the default driver, and the null driver. Please check your engine "
-                          "configuration, and ensure that all the needed plugins are loaded.");
+            amLogCritical(
+                "Failed to load the specified driver, the default driver, and the null driver. Please check your engine "
+                "configuration, and ensure that all the needed plugins are loaded.");
             Deinitialize();
             return false;
         }
 
         // Load the pipeline from the specified file
         if (const AmOsString& pipelineFilePath =
-                _fs->ResolvePath(_fs->Join({ AM_OS_STRING("pipelines"), AM_STRING_TO_OS_STRING(config->mixer()->pipeline()->c_str()) }));
+                _fs->Join({ AM_OS_STRING("pipelines"), AM_STRING_TO_OS_STRING(config->mixer()->pipeline()->c_str()) });
             !_state->pipeline.LoadDefinitionFromPath(pipelineFilePath, _state))
         {
             amLogCritical("Could not load the pipeline asset.");
@@ -799,8 +800,9 @@ namespace SparkyStudios::Audio::Amplitude
         }
         else if (_state->panning_mode != ePanningMode_Stereo)
         {
-            amLogCritical("The HRTF configuration is missing, but the panning mode is not stereo. Please provide an HRTF configuration, or "
-                          "set the panning mode to Stereo.");
+            amLogCritical(
+                "The HRTF configuration is missing, but the panning mode is not stereo. Please provide an HRTF configuration, or "
+                "set the panning mode to Stereo.");
             Deinitialize();
             return false;
         }
@@ -832,7 +834,7 @@ namespace SparkyStudios::Audio::Amplitude
         InitializeRoomFreeList(&_state->room_state_free_list, &_state->room_state_memory, config->game()->rooms());
 
         // Load the audio buses.
-        if (const AmOsString& busesFilePath = _fs->ResolvePath(AM_STRING_TO_OS_STRING(config->buses_file()->c_str()));
+        if (const AmOsString& busesFilePath = AM_STRING_TO_OS_STRING(config->buses_file()->c_str());
             !LoadFile(_fs->OpenFile(busesFilePath), &_state->buses_source))
         {
             amLogCritical("Could not load audio bus file.");

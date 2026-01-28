@@ -17,30 +17,40 @@
 #include <Core/EntityInternalState.h>
 
 #include "SimpleTestCase.h"
+#include "TestRegistry.h"
 
 using namespace SparkyStudios::Audio::Amplitude;
 
-void SimpleTestCase::Run()
+namespace SparkyStudios::Audio::Amplitude::Tests
 {
-    EntityInternalState state;
-    state.SetId(1);
+    AM_TEST_CASE(SimpleTestCase, core_entity, handles_occlusion_changes)
+    {
+    public:
+        void Run() override
+        {
+            EntityInternalState state;
+            state.SetId(1);
 
-    fplutil::intrusive_list entity_list(&EntityInternalState::node);
-    entity_list.push_back(state);
+            fplutil::intrusive_list entity_list(&EntityInternalState::node);
+            entity_list.push_back(state);
 
-    // Test state directly
-    constexpr AmReal32 occlusion = 0.43f;
-    state.SetOcclusion(occlusion);
+            // Test state directly
+            constexpr AmReal32 occlusion = 0.43f;
+            state.SetOcclusion(occlusion);
 
-    AM_EXPECT_EQ(state.GetOcclusion(), occlusion);
+            AM_EXPECT_EQ(state.GetOcclusion(), occlusion);
 
-    // Test with wrapper
-    Entity wrapper(&state);
-    AM_EXPECT_EQ(wrapper.GetState(), &state);
+            // Test with wrapper
+            Entity wrapper(&state);
+            AM_EXPECT_EQ(wrapper.GetState(), &state);
 
-    constexpr AmReal32 wrapperOcclusion = 0.73f;
-    wrapper.SetOcclusion(wrapperOcclusion);
+            constexpr AmReal32 wrapperOcclusion = 0.73f;
+            wrapper.SetOcclusion(wrapperOcclusion);
 
-    AM_EXPECT_EQ(wrapper.GetOcclusion(), wrapperOcclusion);
-    AM_EXPECT_EQ(wrapper.GetOcclusion(), state.GetOcclusion());
-}
+            AM_EXPECT_EQ(wrapper.GetOcclusion(), wrapperOcclusion);
+            AM_EXPECT_EQ(wrapper.GetOcclusion(), state.GetOcclusion());
+        }
+    };
+
+    AM_REGISTER_TEST(core_entity, handles_occlusion_changes);
+} // namespace SparkyStudios::Audio::Amplitude::Tests

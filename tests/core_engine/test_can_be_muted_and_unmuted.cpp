@@ -15,19 +15,26 @@
 #include <SparkyStudios/Audio/Amplitude/Amplitude.h>
 
 #include "EngineTestCase.h"
+#include "TestRegistry.h"
 
 using namespace SparkyStudios::Audio::Amplitude;
 
 namespace SparkyStudios::Audio::Amplitude::Tests
 {
-    void EngineTestCase::Run()
+    AM_TEST_CASE(EngineTestCase, core_engine, can_be_muted_and_unmuted)
     {
-        // Test muting
-        amEngine->SetMute(true);
-        AM_EXPECT(amEngine->IsMuted());
+    public:
+        void Run() override
+        {
+            // Test muting
+            amEngine->SetMute(true);
+            AM_EXPECT(amEngine->IsMuted());
 
-        // Test unmuting
-        amEngine->SetMute(false);
-        AM_EXPECT_NOT(amEngine->IsMuted());
-    }
+            // Test unmuting
+            amEngine->SetMute(false);
+            AM_EXPECT_NOT(amEngine->IsMuted());
+        }
+    };
+
+    AM_REGISTER_TEST(core_engine, can_be_muted_and_unmuted);
 } // namespace SparkyStudios::Audio::Amplitude::Tests

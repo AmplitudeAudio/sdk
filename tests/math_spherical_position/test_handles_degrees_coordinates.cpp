@@ -17,18 +17,28 @@
 #include <Math/LinearAlgebra.h>
 
 #include "SimpleTestCase.h"
+#include "TestRegistry.h"
 
 using namespace SparkyStudios::Audio::Amplitude;
 
-void SimpleTestCase::Run()
+namespace SparkyStudios::Audio::Amplitude::Tests
 {
-    constexpr auto azimuth = 45.0f;
-    constexpr auto elevation = 30.0f;
-    constexpr auto radius = 5.0f;
+    AM_TEST_CASE(SimpleTestCase, math_spherical_position, handles_degrees_coordinates)
+    {
+    public:
+        void Run() override
+        {
+            constexpr auto azimuth = 45.0f;
+            constexpr auto elevation = 30.0f;
+            constexpr auto radius = 5.0f;
 
-    const auto sphericalPosition = SphericalPosition::FromDegrees(azimuth, elevation, radius);
+            const auto sphericalPosition = SphericalPosition::FromDegrees(azimuth, elevation, radius);
 
-    AM_EXPECT_EQ(sphericalPosition.GetAzimuth(), azimuth * AM_DegToRad);
-    AM_EXPECT_EQ(sphericalPosition.GetElevation(), elevation * AM_DegToRad);
-    AM_EXPECT_EQ(sphericalPosition.GetRadius(), radius);
-}
+            AM_EXPECT_EQ(sphericalPosition.GetAzimuth(), azimuth * AM_DegToRad);
+            AM_EXPECT_EQ(sphericalPosition.GetElevation(), elevation * AM_DegToRad);
+            AM_EXPECT_EQ(sphericalPosition.GetRadius(), radius);
+        }
+    };
+
+    AM_REGISTER_TEST(math_spherical_position, handles_degrees_coordinates);
+} // namespace SparkyStudios::Audio::Amplitude::Tests

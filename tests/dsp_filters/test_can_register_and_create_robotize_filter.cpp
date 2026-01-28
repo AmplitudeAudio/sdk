@@ -17,51 +17,58 @@
 #include <DSP/Filters/RobotizeFilter.h>
 
 #include "SimpleTestCase.h"
+#include "TestRegistry.h"
 
 using namespace SparkyStudios::Audio::Amplitude;
 
 namespace SparkyStudios::Audio::Amplitude::Tests
 {
-    void SimpleTestCase::Run()
+    AM_TEST_CASE(SimpleTestCase, dsp_filters, can_register_and_create_robotize_filter)
     {
-        auto filter = amshared(RobotizeFilter);
-        filter->Initialize(30.0f, RobotizeFilter::WAVE_SIN);
+    public:
+        void Run() override
+        {
+            auto filter = amshared(RobotizeFilter);
+            filter->Initialize(30.0f, RobotizeFilter::WAVE_SIN);
 
-        Filter::Unregister(Filter::Find("Robotize"));
-        Filter::Register(filter);
+            Filter::Unregister(Filter::Find("Robotize"));
+            Filter::Register(filter);
 
-        AM_EXPECT_NOT(Filter::Find("Robotize") == nullptr);
-        AM_EXPECT(Filter::Find("Robotize")->GetName() == "Robotize");
+            AM_EXPECT_NOT(Filter::Find("Robotize") == nullptr);
+            AM_EXPECT(Filter::Find("Robotize")->GetName() == "Robotize");
 
-        auto instance = Filter::Construct("Robotize");
-        AM_EXPECT_NOT(instance == nullptr);
+            auto instance = Filter::Construct("Robotize");
+            AM_EXPECT_NOT(instance == nullptr);
 
-        // Test parameter count
-        AM_EXPECT(filter->GetParameterCount() == RobotizeFilter::ATTRIBUTE_LAST);
-        AM_EXPECT(filter->GetParameterCount() == 3);
+            // Test parameter count
+            AM_EXPECT(filter->GetParameterCount() == RobotizeFilter::ATTRIBUTE_LAST);
+            AM_EXPECT(filter->GetParameterCount() == 3);
 
-        // Test parameter names
-        AM_EXPECT(filter->GetParameterName(RobotizeFilter::ATTRIBUTE_WET) == "Wet");
-        AM_EXPECT(filter->GetParameterName(RobotizeFilter::ATTRIBUTE_FREQUENCY) == "Frequency");
-        AM_EXPECT(filter->GetParameterName(RobotizeFilter::ATTRIBUTE_WAVEFORM) == "Waveform");
+            // Test parameter names
+            AM_EXPECT(filter->GetParameterName(RobotizeFilter::ATTRIBUTE_WET) == "Wet");
+            AM_EXPECT(filter->GetParameterName(RobotizeFilter::ATTRIBUTE_FREQUENCY) == "Frequency");
+            AM_EXPECT(filter->GetParameterName(RobotizeFilter::ATTRIBUTE_WAVEFORM) == "Waveform");
 
-        // Test parameter types
-        AM_EXPECT(filter->GetParameterType(RobotizeFilter::ATTRIBUTE_WET) == eParameterType_Float);
-        AM_EXPECT(filter->GetParameterType(RobotizeFilter::ATTRIBUTE_FREQUENCY) == eParameterType_Float);
-        AM_EXPECT(filter->GetParameterType(RobotizeFilter::ATTRIBUTE_WAVEFORM) == eParameterType_Int);
+            // Test parameter types
+            AM_EXPECT(filter->GetParameterType(RobotizeFilter::ATTRIBUTE_WET) == eParameterType_Float);
+            AM_EXPECT(filter->GetParameterType(RobotizeFilter::ATTRIBUTE_FREQUENCY) == eParameterType_Float);
+            AM_EXPECT(filter->GetParameterType(RobotizeFilter::ATTRIBUTE_WAVEFORM) == eParameterType_Int);
 
-        // Test WET parameter boundaries
-        AM_EXPECT(filter->GetParameterMin(RobotizeFilter::ATTRIBUTE_WET) == 0.0f);
-        AM_EXPECT(filter->GetParameterMax(RobotizeFilter::ATTRIBUTE_WET) == 1.0f);
+            // Test WET parameter boundaries
+            AM_EXPECT(filter->GetParameterMin(RobotizeFilter::ATTRIBUTE_WET) == 0.0f);
+            AM_EXPECT(filter->GetParameterMax(RobotizeFilter::ATTRIBUTE_WET) == 1.0f);
 
-        // Test FREQUENCY parameter boundaries
-        AM_EXPECT(filter->GetParameterMin(RobotizeFilter::ATTRIBUTE_FREQUENCY) == 0.1f);
-        AM_EXPECT(filter->GetParameterMax(RobotizeFilter::ATTRIBUTE_FREQUENCY) == 100.0f);
+            // Test FREQUENCY parameter boundaries
+            AM_EXPECT(filter->GetParameterMin(RobotizeFilter::ATTRIBUTE_FREQUENCY) == 0.1f);
+            AM_EXPECT(filter->GetParameterMax(RobotizeFilter::ATTRIBUTE_FREQUENCY) == 100.0f);
 
-        // Test WAVEFORM parameter boundaries
-        AM_EXPECT(filter->GetParameterMin(RobotizeFilter::ATTRIBUTE_WAVEFORM) == 0.0f);
-        AM_EXPECT(filter->GetParameterMax(RobotizeFilter::ATTRIBUTE_WAVEFORM) == RobotizeFilter::WAVE_LAST - 1);
+            // Test WAVEFORM parameter boundaries
+            AM_EXPECT(filter->GetParameterMin(RobotizeFilter::ATTRIBUTE_WAVEFORM) == 0.0f);
+            AM_EXPECT(filter->GetParameterMax(RobotizeFilter::ATTRIBUTE_WAVEFORM) == RobotizeFilter::WAVE_LAST - 1);
 
-        Filter::Unregister(filter);
-    }
+            Filter::Unregister(filter);
+        }
+    };
+
+    AM_REGISTER_TEST(dsp_filters, can_register_and_create_robotize_filter);
 } // namespace SparkyStudios::Audio::Amplitude::Tests

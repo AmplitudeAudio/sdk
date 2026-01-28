@@ -17,43 +17,53 @@
 #include <Math/LinearAlgebra.h>
 
 #include "SimpleTestCase.h"
+#include "TestRegistry.h"
 
 using namespace SparkyStudios::Audio::Amplitude;
 
-void SimpleTestCase::Run()
+namespace SparkyStudios::Audio::Amplitude::Tests
 {
-    constexpr AmVector3 forward = kVector3UnitY;
-    constexpr AmVector3 up = kVector3UnitZ;
-
-    const Orientation orientation(forward, up);
-
-    // it should normalize and store the vectors
+    AM_TEST_CASE(SimpleTestCase, math_orientation, constructs_from_forward_up_vectors)
     {
-        const auto storedForward = orientation.GetForward();
-        const auto storedUp = orientation.GetUp();
+    public:
+        void Run() override
+        {
+            constexpr AmVector3 forward = kVector3UnitY;
+            constexpr AmVector3 up = kVector3UnitZ;
 
-        // Vectors should be normalized
-        AM_EXPECT(std::abs(Length(storedForward) - 1.0f) < kEpsilon);
-        AM_EXPECT(std::abs(Length(storedUp) - 1.0f) < kEpsilon);
+            const Orientation orientation(forward, up);
 
-        // Should match normalized input vectors
-        AM_EXPECT_EQ(storedForward, Normalize(forward));
-        AM_EXPECT_EQ(storedUp, Normalize(up));
-    }
+            // it should normalize and store the vectors
+        {
+            const auto storedForward = orientation.GetForward();
+            const auto storedUp = orientation.GetUp();
 
-    // it should compute corresponding Euler angles
-    {
-        // ZYX angles should be computed from the vectors
-        const auto yaw = orientation.GetYaw();
-        const auto pitch = orientation.GetPitch();
-        const auto roll = orientation.GetRoll();
+            // Vectors should be normalized
+            AM_EXPECT(std::abs(Length(storedForward) - 1.0f) < kEpsilon);
+            AM_EXPECT(std::abs(Length(storedUp) - 1.0f) < kEpsilon);
 
-        // Reconstructed vectors from angles should match the original
-        const Orientation reconstructed(yaw, pitch, roll);
-        const auto reconstructedForward = reconstructed.GetForward();
-        const auto reconstructedUp = reconstructed.GetUp();
+            // Should match normalized input vectors
+            AM_EXPECT_EQ(storedForward, Normalize(forward));
+            AM_EXPECT_EQ(storedUp, Normalize(up));
+            }
 
-        AM_EXPECT_EQ(reconstructedForward, orientation.GetForward());
-        AM_EXPECT_EQ(reconstructedUp, orientation.GetUp());
-    }
-}
+            // it should compute corresponding Euler angles
+        {
+            // ZYX angles should be computed from the vectors
+            const auto yaw = orientation.GetYaw();
+            const auto pitch = orientation.GetPitch();
+            const auto roll = orientation.GetRoll();
+
+            // Reconstructed vectors from angles should match the original
+            const Orientation reconstructed(yaw, pitch, roll);
+            const auto reconstructedForward = reconstructed.GetForward();
+            const auto reconstructedUp = reconstructed.GetUp();
+
+            AM_EXPECT_EQ(reconstructedForward, orientation.GetForward());
+            AM_EXPECT_EQ(reconstructedUp, orientation.GetUp());
+            }
+        }
+    };
+
+    AM_REGISTER_TEST(math_orientation, constructs_from_forward_up_vectors);
+} // namespace SparkyStudios::Audio::Amplitude::Tests

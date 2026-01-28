@@ -32,12 +32,5 @@ namespace SparkyStudios::Audio::Amplitude::Tests
 
             MemoryManager::Deinitialize();
         }
-
-        void Run() override;
     };
-
-    std::shared_ptr<TestCase> MakeTestCase()
-    {
-        return std::make_shared<SimpleTestCase>();
-    }
 } // namespace SparkyStudios::Audio::Amplitude::Tests

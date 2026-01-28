@@ -17,41 +17,48 @@
 #include <DSP/Resamplers/DefaultResampler.h>
 
 #include "DSPTestCase.h"
+#include "TestRegistry.h"
 
 using namespace SparkyStudios::Audio::Amplitude;
 
 namespace SparkyStudios::Audio::Amplitude::Tests
 {
-    void DSPTestCase::Run()
+    AM_TEST_CASE(DSPTestCase, dsp_resamplers, default_resampler_processes_audio)
     {
-        auto resampler = amshared(DefaultResampler);
-        auto instance = resampler->CreateInstance();
+    public:
+        void Run() override
+        {
+            auto resampler = amshared(DefaultResampler);
+            auto instance = resampler->CreateInstance();
 
-        constexpr AmUInt16 channelCount = 2;
-        constexpr AmUInt32 sampleRateIn = 44100;
-        constexpr AmUInt32 sampleRateOut = 48000;
-        constexpr AmUInt64 inputFrames = 1024;
+            constexpr AmUInt16 channelCount = 2;
+            constexpr AmUInt32 sampleRateIn = 44100;
+            constexpr AmUInt32 sampleRateOut = 48000;
+            constexpr AmUInt64 inputFrames = 1024;
 
-        instance->Initialize(channelCount, sampleRateIn, sampleRateOut);
+            instance->Initialize(channelCount, sampleRateIn, sampleRateOut);
 
-        // Create test audio buffers
-        AudioBuffer inputBuffer(inputFrames, channelCount);
-        const AmUInt64 expectedOutputFrames = instance->GetExpectedOutputFrames(inputFrames);
-        AudioBuffer outputBuffer(expectedOutputFrames, channelCount);
+            // Create test audio buffers
+            AudioBuffer inputBuffer(inputFrames, channelCount);
+            const AmUInt64 expectedOutputFrames = instance->GetExpectedOutputFrames(inputFrames);
+            AudioBuffer outputBuffer(expectedOutputFrames, channelCount);
 
-        // Fill input buffer with test signal
-        GenerateSineWave(inputBuffer, sampleRateIn);
+            // Fill input buffer with test signal
+            GenerateSineWave(inputBuffer, sampleRateIn);
 
-        AmUInt64 processedInputFrames = inputFrames;
-        AmUInt64 processedOutputFrames = expectedOutputFrames;
+            AmUInt64 processedInputFrames = inputFrames;
+            AmUInt64 processedOutputFrames = expectedOutputFrames;
 
-        // Process audio
-        const bool result = instance->Process(inputBuffer, processedInputFrames, outputBuffer, processedOutputFrames);
+            // Process audio
+            const bool result = instance->Process(inputBuffer, processedInputFrames, outputBuffer, processedOutputFrames);
 
-        AM_EXPECT(result);
-        AM_EXPECT(processedOutputFrames > 0);
+            AM_EXPECT(result);
+            AM_EXPECT(processedOutputFrames > 0);
 
-        // Verify output buffer is not empty
-        AM_EXPECT(EnsureHasNonZeroOutput(outputBuffer));
-    }
+            // Verify output buffer is not empty
+            AM_EXPECT(EnsureHasNonZeroOutput(outputBuffer));
+        }
+    };
+
+    AM_REGISTER_TEST(dsp_resamplers, default_resampler_processes_audio);
 } // namespace SparkyStudios::Audio::Amplitude::Tests

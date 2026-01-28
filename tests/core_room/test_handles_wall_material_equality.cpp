@@ -15,46 +15,56 @@
 #include <SparkyStudios/Audio/Amplitude/Amplitude.h>
 
 #include "SimpleTestCase.h"
+#include "TestRegistry.h"
 
 using namespace SparkyStudios::Audio::Amplitude;
 
-void SimpleTestCase::Run()
+namespace SparkyStudios::Audio::Amplitude::Tests
 {
-    // Test equality operator with same material types
+    AM_TEST_CASE(SimpleTestCase, core_room, handles_wall_material_equality)
     {
-        RoomWallMaterial material1(eRoomWallMaterialType_Metal);
-        RoomWallMaterial material2(eRoomWallMaterialType_Metal);
+    public:
+        void Run() override
+        {
+            // Test equality operator with same material types
+            {
+                RoomWallMaterial material1(eRoomWallMaterialType_Metal);
+                RoomWallMaterial material2(eRoomWallMaterialType_Metal);
 
-        AM_EXPECT(material1 == material2);
-        AM_EXPECT(!(material1 != material2));
-    }
+                AM_EXPECT(material1 == material2);
+                AM_EXPECT(!(material1 != material2));
+            }
 
-    // Test inequality operator with different material types
-    {
-        RoomWallMaterial material1(eRoomWallMaterialType_Metal);
-        RoomWallMaterial material2(eRoomWallMaterialType_Wood);
+            // Test inequality operator with different material types
+            {
+                RoomWallMaterial material1(eRoomWallMaterialType_Metal);
+                RoomWallMaterial material2(eRoomWallMaterialType_Wood);
 
-        AM_EXPECT(material1 != material2);
-        AM_EXPECT(!(material1 == material2));
-    }
+                AM_EXPECT(material1 != material2);
+                AM_EXPECT(!(material1 == material2));
+            }
 
-    // Test equality with multiple different material types
-    {
-        RoomWallMaterial glass1(eRoomWallMaterialType_Glass);
-        RoomWallMaterial glass2(eRoomWallMaterialType_Glass);
-        RoomWallMaterial marble(eRoomWallMaterialType_Marble);
-        RoomWallMaterial transparent(eRoomWallMaterialType_Transparent);
+            // Test equality with multiple different material types
+            {
+                RoomWallMaterial glass1(eRoomWallMaterialType_Glass);
+                RoomWallMaterial glass2(eRoomWallMaterialType_Glass);
+                RoomWallMaterial marble(eRoomWallMaterialType_Marble);
+                RoomWallMaterial transparent(eRoomWallMaterialType_Transparent);
 
-        AM_EXPECT(glass1 == glass2);
-        AM_EXPECT(glass1 != marble);
-        AM_EXPECT(glass1 != transparent);
-        AM_EXPECT(marble != transparent);
-    }
+                AM_EXPECT(glass1 == glass2);
+                AM_EXPECT(glass1 != marble);
+                AM_EXPECT(glass1 != transparent);
+                AM_EXPECT(marble != transparent);
+            }
 
-    // Test self-equality
-    {
-        RoomWallMaterial material(eRoomWallMaterialType_Wood);
-        AM_EXPECT(material == material);
-        AM_EXPECT(!(material != material));
-    }
-}
+            // Test self-equality
+            {
+                RoomWallMaterial material(eRoomWallMaterialType_Wood);
+                AM_EXPECT(material == material);
+                AM_EXPECT(!(material != material));
+            }
+        }
+    };
+
+    AM_REGISTER_TEST(core_room, handles_wall_material_equality);
+} // namespace SparkyStudios::Audio::Amplitude::Tests

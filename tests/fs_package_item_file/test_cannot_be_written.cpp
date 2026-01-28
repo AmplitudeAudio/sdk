@@ -14,22 +14,36 @@
 
 #include <SparkyStudios/Audio/Amplitude/Amplitude.h>
 
+#include "PlatformTestCase.h"
 #include "SimpleTestCase.h"
+#include "TestRegistry.h"
 
 using namespace SparkyStudios::Audio::Amplitude;
 
-void SimpleTestCase::Run()
+namespace SparkyStudios::Audio::Amplitude::Tests
 {
-    PackageFileSystem fileSystem;
-    fileSystem.SetPlatformFileSystem<DiskFileSystem>();
-    fileSystem.SetBasePath(AM_OS_STRING("./samples/assets_uncompressed.ampk"));
+    AM_TEST_CASE(SimpleTestCase, fs_package_item_file, cannot_be_written)
+    {
+    public:
+        void Run() override
+        {
+            auto platformFileSystem = CreatePlatformFileSystem();
+            platformFileSystem->SetBasePath(platformFileSystem->Join({ GetPlatformAssetsBasePath(), AM_OS_STRING("..") }));
 
-    fileSystem.StartOpenFileSystem();
-    while (!fileSystem.TryFinalizeOpenFileSystem())
-        Thread::Sleep(1);
+            PackageFileSystem fileSystem;
+            fileSystem.SetPlatformFileSystem(platformFileSystem);
+            fileSystem.SetBasePath(AM_OS_STRING("./assets_uncompressed.ampk"));
 
-    auto file = fileSystem.OpenFile(AM_OS_STRING("data/tests/file_read_test.txt"), eFileOpenMode_Read);
+            fileSystem.StartOpenFileSystem();
+            while (!fileSystem.TryFinalizeOpenFileSystem())
+                Thread::Sleep(1);
 
-    AM_EXPECT(file->Write8('O') == 0);
-    AM_EXPECT(file->Write8('K') == 0);
-}
+            auto file = fileSystem.OpenFile(AM_OS_STRING("data/tests/file_read_test.txt"), eFileOpenMode_Read);
+
+            AM_EXPECT(file->Write8('O') == 0);
+            AM_EXPECT(file->Write8('K') == 0);
+        }
+    };
+
+    AM_REGISTER_TEST(fs_package_item_file, cannot_be_written);
+} // namespace SparkyStudios::Audio::Amplitude::Tests

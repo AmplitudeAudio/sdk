@@ -17,27 +17,34 @@
 #include <DSP/Filters/DelayFilter.h>
 
 #include "SimpleTestCase.h"
+#include "TestRegistry.h"
 
 using namespace SparkyStudios::Audio::Amplitude;
 
 namespace SparkyStudios::Audio::Amplitude::Tests
 {
-    void SimpleTestCase::Run()
+    AM_TEST_CASE(SimpleTestCase, dsp_filters, can_register_and_create_delay_filter)
     {
-        auto filter = amshared(DelayFilter);
-        filter->Initialize(0.3f, 0.7f);
-
-        Filter::Unregister(Filter::Find("Delay"));
-        Filter::Register(filter);
-
-        AM_EXPECT_NOT(Filter::Find("Delay") == nullptr);
-        AM_EXPECT(Filter::Find("Delay")->GetName() == "Delay");
-
+    public:
+        void Run() override
         {
-            auto instance = Filter::Construct("Delay");
-            AM_EXPECT_NOT(instance == nullptr);
-        }
+            auto filter = amshared(DelayFilter);
+            filter->Initialize(0.3f, 0.7f);
 
-        Filter::Unregister(filter);
-    }
+            Filter::Unregister(Filter::Find("Delay"));
+            Filter::Register(filter);
+
+            AM_EXPECT_NOT(Filter::Find("Delay") == nullptr);
+            AM_EXPECT(Filter::Find("Delay")->GetName() == "Delay");
+
+            {
+                auto instance = Filter::Construct("Delay");
+                AM_EXPECT_NOT(instance == nullptr);
+            }
+
+            Filter::Unregister(filter);
+        }
+    };
+
+    AM_REGISTER_TEST(dsp_filters, can_register_and_create_delay_filter);
 } // namespace SparkyStudios::Audio::Amplitude::Tests

@@ -17,27 +17,37 @@
 #include <Core/ListenerInternalState.h>
 
 #include "SimpleTestCase.h"
+#include "TestRegistry.h"
 
 using namespace SparkyStudios::Audio::Amplitude;
 
-void SimpleTestCase::Run()
+namespace SparkyStudios::Audio::Amplitude::Tests
 {
-    ListenerInternalState state;
-    state.SetId(1);
+    AM_TEST_CASE(SimpleTestCase, core_listener, handles_directivity_changes)
+    {
+    public:
+        void Run() override
+        {
+            ListenerInternalState state;
+            state.SetId(1);
 
-    fplutil::intrusive_list listener_list(&ListenerInternalState::node);
-    listener_list.push_back(state);
+            fplutil::intrusive_list listener_list(&ListenerInternalState::node);
+            listener_list.push_back(state);
 
-    Listener wrapper(&state);
-    AM_EXPECT_EQ(wrapper.GetState(), &state);
+            Listener wrapper(&state);
+            AM_EXPECT_EQ(wrapper.GetState(), &state);
 
-    constexpr auto directivity = 0.5f;
-    constexpr auto sharpness = 1.5f;
-    state.SetDirectivity(directivity, sharpness);
+            constexpr auto directivity = 0.5f;
+            constexpr auto sharpness = 1.5f;
+            state.SetDirectivity(directivity, sharpness);
 
-    AM_EXPECT_EQ(state.GetDirectivity(), directivity);
-    AM_EXPECT_EQ(state.GetDirectivitySharpness(), sharpness);
+            AM_EXPECT_EQ(state.GetDirectivity(), directivity);
+            AM_EXPECT_EQ(state.GetDirectivitySharpness(), sharpness);
 
-    AM_EXPECT_EQ(wrapper.GetDirectivity(), directivity);
-    AM_EXPECT_EQ(wrapper.GetDirectivitySharpness(), sharpness);
-}
+            AM_EXPECT_EQ(wrapper.GetDirectivity(), directivity);
+            AM_EXPECT_EQ(wrapper.GetDirectivitySharpness(), sharpness);
+        }
+    };
+
+    AM_REGISTER_TEST(core_listener, handles_directivity_changes);
+} // namespace SparkyStudios::Audio::Amplitude::Tests

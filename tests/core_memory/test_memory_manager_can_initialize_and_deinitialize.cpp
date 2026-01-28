@@ -15,27 +15,37 @@
 #include <SparkyStudios/Audio/Amplitude/Amplitude.h>
 
 #include "MemoryTestCase.h"
+#include "TestRegistry.h"
 
 using namespace SparkyStudios::Audio::Amplitude;
 
-void MemoryTestCase::Run()
+namespace SparkyStudios::Audio::Amplitude::Tests
 {
-    // Test that memory manager can initialize with default allocator
-    AM_EXPECT(!MemoryManager::IsInitialized());
+    AM_TEST_CASE(MemoryTestCase, core_memory, memory_manager_can_initialize_and_deinitialize)
+    {
+    public:
+        void Run() override
+        {
+            // Test that memory manager can initialize with default allocator
+            AM_EXPECT(!MemoryManager::IsInitialized());
 
-    MemoryManager::Initialize(nullptr);
-    AM_EXPECT(MemoryManager::IsInitialized());
-    AM_EXPECT(MemoryManager::GetInstance() != nullptr);
+            MemoryManager::Initialize(nullptr);
+            AM_EXPECT(MemoryManager::IsInitialized());
+            AM_EXPECT(MemoryManager::GetInstance() != nullptr);
 
-    MemoryManager::Deinitialize();
-    AM_EXPECT_NOT(MemoryManager::IsInitialized());
+            MemoryManager::Deinitialize();
+            AM_EXPECT_NOT(MemoryManager::IsInitialized());
 
-    // Test that memory manager can initialize with custom allocator
-    auto customAllocator = std::make_unique<DefaultMemoryAllocator>(2, 8 * 1024 * 1024);
-    MemoryManager::Initialize(std::move(customAllocator));
-    AM_EXPECT(MemoryManager::IsInitialized());
-    AM_EXPECT(MemoryManager::GetInstance() != nullptr);
+            // Test that memory manager can initialize with custom allocator
+            auto customAllocator = std::make_unique<DefaultMemoryAllocator>(2, 8 * 1024 * 1024);
+            MemoryManager::Initialize(std::move(customAllocator));
+            AM_EXPECT(MemoryManager::IsInitialized());
+            AM_EXPECT(MemoryManager::GetInstance() != nullptr);
 
-    MemoryManager::Deinitialize();
-    AM_EXPECT_NOT(MemoryManager::IsInitialized());
-}
+            MemoryManager::Deinitialize();
+            AM_EXPECT_NOT(MemoryManager::IsInitialized());
+        }
+    };
+
+    AM_REGISTER_TEST(core_memory, memory_manager_can_initialize_and_deinitialize);
+} // namespace SparkyStudios::Audio::Amplitude::Tests

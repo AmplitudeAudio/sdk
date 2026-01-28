@@ -17,42 +17,52 @@
 #include <Core/ListenerInternalState.h>
 
 #include "SimpleTestCase.h"
+#include "TestRegistry.h"
 
 using namespace SparkyStudios::Audio::Amplitude;
 
-void SimpleTestCase::Run()
+namespace SparkyStudios::Audio::Amplitude::Tests
 {
-    ListenerInternalState state;
-    state.SetId(1);
+    AM_TEST_CASE(SimpleTestCase, core_listener, handles_orientation_changes)
+    {
+    public:
+        void Run() override
+        {
+            ListenerInternalState state;
+            state.SetId(1);
 
-    fplutil::intrusive_list listener_list(&ListenerInternalState::node);
-    listener_list.push_back(state);
+            fplutil::intrusive_list listener_list(&ListenerInternalState::node);
+            listener_list.push_back(state);
 
-    Listener wrapper(&state);
-    AM_EXPECT_EQ(wrapper.GetState(), &state);
+            Listener wrapper(&state);
+            AM_EXPECT_EQ(wrapper.GetState(), &state);
 
-    const auto direction = kVector3UnitX;
-    const auto up = kVector3UnitZ;
-    const auto orientation = Orientation(direction, up);
-    state.SetOrientation(orientation);
+            const auto direction = kVector3UnitX;
+            const auto up = kVector3UnitZ;
+            const auto orientation = Orientation(direction, up);
+            state.SetOrientation(orientation);
 
-    AM_EXPECT_EQ(state.GetDirection(), direction);
-    AM_EXPECT_EQ(wrapper.GetDirection(), direction);
+            AM_EXPECT_EQ(state.GetDirection(), direction);
+            AM_EXPECT_EQ(wrapper.GetDirection(), direction);
 
-    AM_EXPECT_EQ(state.GetUp(), up);
-    AM_EXPECT_EQ(wrapper.GetUp(), up);
+            AM_EXPECT_EQ(state.GetUp(), up);
+            AM_EXPECT_EQ(wrapper.GetUp(), up);
 
-    AM_EXPECT(std::memcmp(&state.GetOrientation(), &orientation, sizeof(Orientation)) == 0);
-    AM_EXPECT(std::memcmp(&state.GetOrientation(), &orientation, sizeof(Orientation)) == 0);
+            AM_EXPECT(std::memcmp(&state.GetOrientation(), &orientation, sizeof(Orientation)) == 0);
+            AM_EXPECT(std::memcmp(&state.GetOrientation(), &orientation, sizeof(Orientation)) == 0);
 
-    state.Update();
+            state.Update();
 
-    AM_EXPECT_EQ(state.GetDirection(), direction);
-    AM_EXPECT_EQ(wrapper.GetDirection(), direction);
+            AM_EXPECT_EQ(state.GetDirection(), direction);
+            AM_EXPECT_EQ(wrapper.GetDirection(), direction);
 
-    AM_EXPECT_EQ(state.GetUp(), up);
-    AM_EXPECT_EQ(wrapper.GetUp(), up);
+            AM_EXPECT_EQ(state.GetUp(), up);
+            AM_EXPECT_EQ(wrapper.GetUp(), up);
 
-    AM_EXPECT(std::memcmp(&state.GetOrientation(), &orientation, sizeof(Orientation)) == 0);
-    AM_EXPECT(std::memcmp(&state.GetOrientation(), &orientation, sizeof(Orientation)) == 0);
-}
+            AM_EXPECT(std::memcmp(&state.GetOrientation(), &orientation, sizeof(Orientation)) == 0);
+            AM_EXPECT(std::memcmp(&state.GetOrientation(), &orientation, sizeof(Orientation)) == 0);
+        }
+    };
+
+    AM_REGISTER_TEST(core_listener, handles_orientation_changes);
+} // namespace SparkyStudios::Audio::Amplitude::Tests

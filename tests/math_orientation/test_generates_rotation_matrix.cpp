@@ -17,39 +17,49 @@
 #include <Math/LinearAlgebra.h>
 
 #include "SimpleTestCase.h"
+#include "TestRegistry.h"
 
 using namespace SparkyStudios::Audio::Amplitude;
 
-void SimpleTestCase::Run()
+namespace SparkyStudios::Audio::Amplitude::Tests
 {
-    constexpr AmReal32 yaw = AM_DegToRad * 45.0f;
-    constexpr AmReal32 pitch = AM_DegToRad * 30.0f;
-    constexpr AmReal32 roll = AM_DegToRad * 15.0f;
-
-    const Orientation orientation(yaw, pitch, roll);
-    const AmMatrix3 rotationMatrix = orientation.GetRotationMatrix();
-
-    // it should produce a valid rotation matrix
+    AM_TEST_CASE(SimpleTestCase, math_orientation, generates_rotation_matrix)
     {
-        // Check if it's orthogonal (R * R^T = I)
-        constexpr AmMatrix3 identity = kMatrix3Identity;
-        const AmMatrix3 product = Mul(rotationMatrix, Transpose(rotationMatrix));
+    public:
+        void Run() override
+        {
+            constexpr AmReal32 yaw = AM_DegToRad * 45.0f;
+            constexpr AmReal32 pitch = AM_DegToRad * 30.0f;
+            constexpr AmReal32 roll = AM_DegToRad * 15.0f;
 
-        for (int i = 0; i < 3; ++i)
+            const Orientation orientation(yaw, pitch, roll);
+            const AmMatrix3 rotationMatrix = orientation.GetRotationMatrix();
+
+            // it should produce a valid rotation matrix
+        {
+            // Check if it's orthogonal (R * R^T = I)
+            constexpr AmMatrix3 identity = kMatrix3Identity;
+            const AmMatrix3 product = Mul(rotationMatrix, Transpose(rotationMatrix));
+
+            for (int i = 0; i < 3; ++i)
             for (int j = 0; j < 3; ++j)
-                AM_EXPECT(std::abs(product[i][j] - identity[i][j]) < kEpsilon);
+            AM_EXPECT(std::abs(product[i][j] - identity[i][j]) < kEpsilon);
 
-        // Check determinant is 1 (proper rotation)
-        const AmReal32 det = Determinant(rotationMatrix);
-        AM_EXPECT(std::abs(det - 1.0f) < kEpsilon);
-    }
+            // Check determinant is 1 (proper rotation)
+            const AmReal32 det = Determinant(rotationMatrix);
+            AM_EXPECT(std::abs(det - 1.0f) < kEpsilon);
+            }
 
-    // it should correctly transform the unit vectors
-    {
-        const AmVector3 transformedY = Transform(rotationMatrix, kVector3UnitY);
-        const AmVector3 transformedZ = Transform(rotationMatrix, kVector3UnitZ);
+            // it should correctly transform the unit vectors
+        {
+            const AmVector3 transformedY = Transform(rotationMatrix, kVector3UnitY);
+            const AmVector3 transformedZ = Transform(rotationMatrix, kVector3UnitZ);
 
-        AM_EXPECT_EQ(transformedY, orientation.GetForward());
-        AM_EXPECT_EQ(transformedZ, orientation.GetUp());
-    }
-}
+            AM_EXPECT_EQ(transformedY, orientation.GetForward());
+            AM_EXPECT_EQ(transformedZ, orientation.GetUp());
+            }
+        }
+    };
+
+    AM_REGISTER_TEST(math_orientation, generates_rotation_matrix);
+} // namespace SparkyStudios::Audio::Amplitude::Tests

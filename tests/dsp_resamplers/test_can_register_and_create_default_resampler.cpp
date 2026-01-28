@@ -17,24 +17,31 @@
 #include <DSP/Resamplers/DefaultResampler.h>
 
 #include "SimpleTestCase.h"
+#include "TestRegistry.h"
 
 using namespace SparkyStudios::Audio::Amplitude;
 
 namespace SparkyStudios::Audio::Amplitude::Tests
 {
-    void SimpleTestCase::Run()
+    AM_TEST_CASE(SimpleTestCase, dsp_resamplers, can_register_and_create_default_resampler)
     {
-        auto resampler = amshared(DefaultResampler);
+    public:
+        void Run() override
+        {
+            auto resampler = amshared(DefaultResampler);
 
-        Resampler::Unregister(Resampler::Find("default"));
-        Resampler::Register(resampler);
+            Resampler::Unregister(Resampler::Find("default"));
+            Resampler::Register(resampler);
 
-        AM_EXPECT_NOT(Resampler::Find("default") == nullptr);
-        AM_EXPECT(Resampler::Find("default")->GetName() == "default");
+            AM_EXPECT_NOT(Resampler::Find("default") == nullptr);
+            AM_EXPECT(Resampler::Find("default")->GetName() == "default");
 
-        auto instance = Resampler::Construct("default");
-        AM_EXPECT_NOT(instance == nullptr);
+            auto instance = Resampler::Construct("default");
+            AM_EXPECT_NOT(instance == nullptr);
 
-        Resampler::Unregister(resampler);
-    }
+            Resampler::Unregister(resampler);
+        }
+    };
+
+    AM_REGISTER_TEST(dsp_resamplers, can_register_and_create_default_resampler);
 } // namespace SparkyStudios::Audio::Amplitude::Tests

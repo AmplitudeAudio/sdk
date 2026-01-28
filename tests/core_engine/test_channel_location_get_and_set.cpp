@@ -15,33 +15,40 @@
 #include <SparkyStudios/Audio/Amplitude/Amplitude.h>
 
 #include "EngineTestCase.h"
+#include "TestRegistry.h"
 
 using namespace SparkyStudios::Audio::Amplitude;
 
 namespace SparkyStudios::Audio::Amplitude::Tests
 {
-    void EngineTestCase::Run()
+    AM_TEST_CASE(EngineTestCase, core_engine, channel_location_get_and_set)
     {
-        AmVector3 location = { 10.0f, 20.0f, 30.0f };
-        AmReal32 userGain = 0.36f;
-        Channel channel = amEngine->Play(100, location, userGain);
-        amEngine->WaitUntilFrames(2); // Playing is done in the next frame
+    public:
+        void Run() override
+        {
+            AmVector3 location = { 10.0f, 20.0f, 30.0f };
+            AmReal32 userGain = 0.36f;
+            Channel channel = amEngine->Play(100, location, userGain);
+            amEngine->WaitUntilFrames(2); // Playing is done in the next frame
 
-        AM_EXPECT(channel.Valid());
-        AM_EXPECT(channel.Playing());
+            AM_EXPECT(channel.Valid());
+            AM_EXPECT(channel.Playing());
 
-        // Test that channel returns the correct initial location
-        AmVector3 result = channel.GetLocation();
-        AM_EXPECT_EQ(result, location);
+            // Test that channel returns the correct initial location
+            AmVector3 result = channel.GetLocation();
+            AM_EXPECT_EQ(result, location);
 
-        // Test updating location
-        AmVector3 newLocation = { 100.0f, 200.0f, 300.0f };
-        channel.SetLocation(newLocation);
+            // Test updating location
+            AmVector3 newLocation = { 100.0f, 200.0f, 300.0f };
+            channel.SetLocation(newLocation);
 
-        // Test that channel returns the new location
-        AmVector3 result2 = channel.GetLocation();
-        AM_EXPECT_EQ(result2, newLocation);
+            // Test that channel returns the new location
+            AmVector3 result2 = channel.GetLocation();
+            AM_EXPECT_EQ(result2, newLocation);
 
-        channel.Stop(0);
-    }
+            channel.Stop(0);
+        }
+    };
+
+    AM_REGISTER_TEST(core_engine, channel_location_get_and_set);
 } // namespace SparkyStudios::Audio::Amplitude::Tests

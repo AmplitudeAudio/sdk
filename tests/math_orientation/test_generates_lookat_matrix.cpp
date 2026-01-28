@@ -17,26 +17,36 @@
 #include <Math/LinearAlgebra.h>
 
 #include "SimpleTestCase.h"
+#include "TestRegistry.h"
 
 using namespace SparkyStudios::Audio::Amplitude;
 
-void SimpleTestCase::Run()
+namespace SparkyStudios::Audio::Amplitude::Tests
 {
-    const Orientation orientation(0.0f, 0.0f, 0.0f); // Zero orientation
-    constexpr AmVector3 eye = { 5.0f, 5.0f, 5.0f };
-
-    const AmMatrix4 lookAtMatrix = orientation.GetLookAtMatrix(eye);
-
-    // it should produce a valid transformation matrix
+    AM_TEST_CASE(SimpleTestCase, math_orientation, generates_lookat_matrix)
     {
-        // The matrix should be invertible
-        const AmReal32 det = Determinant(lookAtMatrix);
-        AM_EXPECT(std::abs(det) > kEpsilon);
-    }
+    public:
+        void Run() override
+        {
+            const Orientation orientation(0.0f, 0.0f, 0.0f); // Zero orientation
+            constexpr AmVector3 eye = { 5.0f, 5.0f, 5.0f };
 
-    // it should incorporate the eye position
-    {
-        // The translation part should be related to the eye position
-        AM_EXPECT(((lookAtMatrix[3][0] != 0.0f) || (lookAtMatrix[3][1] != 0.0f) || (lookAtMatrix[3][2] != 0.0f)));
-    }
-}
+            const AmMatrix4 lookAtMatrix = orientation.GetLookAtMatrix(eye);
+
+            // it should produce a valid transformation matrix
+        {
+            // The matrix should be invertible
+            const AmReal32 det = Determinant(lookAtMatrix);
+            AM_EXPECT(std::abs(det) > kEpsilon);
+            }
+
+            // it should incorporate the eye position
+        {
+            // The translation part should be related to the eye position
+            AM_EXPECT(((lookAtMatrix[3][0] != 0.0f) || (lookAtMatrix[3][1] != 0.0f) || (lookAtMatrix[3][2] != 0.0f)));
+            }
+        }
+    };
+
+    AM_REGISTER_TEST(math_orientation, generates_lookat_matrix);
+} // namespace SparkyStudios::Audio::Amplitude::Tests

@@ -15,17 +15,27 @@
 #include <SparkyStudios/Audio/Amplitude/Amplitude.h>
 
 #include "SimpleTestCase.h"
+#include "TestRegistry.h"
 
 using namespace SparkyStudios::Audio::Amplitude;
 
-void SimpleTestCase::Run()
+namespace SparkyStudios::Audio::Amplitude::Tests
 {
-    constexpr AmReal32 p1 = 0.0f;
-    constexpr AmReal32 p2 = 1.0f;
-    constexpr AmReal32 p3 = 2.0f;
-    constexpr AmReal32 p4 = 3.0f;
+    AM_TEST_CASE(SimpleTestCase, math_utils, catmull_rom)
+    {
+    public:
+        void Run() override
+        {
+            constexpr AmReal32 p1 = 0.0f;
+            constexpr AmReal32 p2 = 1.0f;
+            constexpr AmReal32 p3 = 2.0f;
+            constexpr AmReal32 p4 = 3.0f;
 
-    AM_EXPECT_EQ(CatmullRom(0.0f, p1, p2, p3, p4), 1.0f);
-    AM_EXPECT_EQ(CatmullRom(1.0f, p1, p2, p3, p4), 2.0f);
-    AM_EXPECT_EQ(CatmullRom(0.5f, p1, p2, p3, p4), 1.5f);
-}
+            AM_EXPECT_EQ(CatmullRom(0.0f, p1, p2, p3, p4), 1.0f);
+            AM_EXPECT_EQ(CatmullRom(1.0f, p1, p2, p3, p4), 2.0f);
+            AM_EXPECT_EQ(CatmullRom(0.5f, p1, p2, p3, p4), 1.5f);
+        }
+    };
+
+    AM_REGISTER_TEST(math_utils, catmull_rom);
+} // namespace SparkyStudios::Audio::Amplitude::Tests

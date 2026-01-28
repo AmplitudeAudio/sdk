@@ -15,26 +15,33 @@
 #include <SparkyStudios/Audio/Amplitude/Amplitude.h>
 
 #include "EngineTestCase.h"
+#include "TestRegistry.h"
 
 using namespace SparkyStudios::Audio::Amplitude;
 
 namespace SparkyStudios::Audio::Amplitude::Tests
 {
-    void EngineTestCase::Run()
+    AM_TEST_CASE(EngineTestCase, core_engine, can_play_switch_container_using_handle)
     {
-        Entity entity = amEngine->AddEntity(100);
-        SwitchContainerHandle footsteps = amEngine->GetSwitchContainerHandle("footsteps");
+    public:
+        void Run() override
+        {
+            Entity entity = amEngine->AddEntity(100);
+            SwitchContainerHandle footsteps = amEngine->GetSwitchContainerHandle("footsteps");
 
-        Channel channel = amEngine->Play(footsteps);
-        AM_EXPECT_NOT(channel.Valid()); // switch container is entity scoped
+            Channel channel = amEngine->Play(footsteps);
+            AM_EXPECT_NOT(channel.Valid()); // switch container is entity scoped
 
-        channel = amEngine->Play(footsteps, entity);
-        amEngine->WaitUntilFrames(2); // Playing is done in the next frame
+            channel = amEngine->Play(footsteps, entity);
+            amEngine->WaitUntilFrames(2); // Playing is done in the next frame
 
-        AM_EXPECT(channel.Valid());
-        AM_EXPECT(channel.Playing());
+            AM_EXPECT(channel.Valid());
+            AM_EXPECT(channel.Playing());
 
-        // Clean up
-        amEngine->RemoveEntity(100);
-    }
+            // Clean up
+            amEngine->RemoveEntity(100);
+        }
+    };
+
+    AM_REGISTER_TEST(core_engine, can_play_switch_container_using_handle);
 } // namespace SparkyStudios::Audio::Amplitude::Tests

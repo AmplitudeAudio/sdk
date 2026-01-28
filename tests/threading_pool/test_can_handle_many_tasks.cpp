@@ -16,26 +16,36 @@
 
 #include "DummyPoolTask.h"
 #include "SimpleTestCase.h"
+#include "TestRegistry.h"
 
 using namespace SparkyStudios::Audio::Amplitude;
 
-void SimpleTestCase::Run()
+namespace SparkyStudios::Audio::Amplitude::Tests
 {
-    Thread::Pool pool;
-    pool.Init(1);
-
-    const AmThreadID threadId = Thread::GetCurrentThreadId();
-
-    for (size_t i = 0; i < AM_MAX_THREAD_POOL_TASKS + 100; i++)
+    AM_TEST_CASE(SimpleTestCase, threading_pool, can_handle_many_tasks)
     {
-        auto task = std::make_shared<DummyPoolTask>(threadId);
-        AM_EXPECT_NOT(task->IsExecuted());
+    public:
+        void Run() override
+        {
+            Thread::Pool pool;
+            pool.Init(1);
 
-        bool mayExecuteWorkInCallerThread = pool.GetTaskCount() >= AM_MAX_THREAD_POOL_TASKS;
+            const AmThreadID threadId = Thread::GetCurrentThreadId();
 
-        pool.AddTask(task);
+            for (size_t i = 0; i < AM_MAX_THREAD_POOL_TASKS + 100; i++)
+        {
+            auto task = std::make_shared<DummyPoolTask>(threadId);
+            AM_EXPECT_NOT(task->IsExecuted());
 
-        if (mayExecuteWorkInCallerThread && task->IsExecuted())
+            bool mayExecuteWorkInCallerThread = pool.GetTaskCount() >= AM_MAX_THREAD_POOL_TASKS;
+
+            pool.AddTask(task);
+
+            if (mayExecuteWorkInCallerThread && task->IsExecuted())
             AM_EXPECT(task->GetExecutingThreadId() == threadId);
-    }
-}
+            }
+        }
+    };
+
+    AM_REGISTER_TEST(threading_pool, can_handle_many_tasks);
+} // namespace SparkyStudios::Audio::Amplitude::Tests

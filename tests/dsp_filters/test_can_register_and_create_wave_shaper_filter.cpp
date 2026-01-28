@@ -17,45 +17,52 @@
 #include <DSP/Filters/WaveShaperFilter.h>
 
 #include "SimpleTestCase.h"
+#include "TestRegistry.h"
 
 using namespace SparkyStudios::Audio::Amplitude;
 
 namespace SparkyStudios::Audio::Amplitude::Tests
 {
-    void SimpleTestCase::Run()
+    AM_TEST_CASE(SimpleTestCase, dsp_filters, can_register_and_create_wave_shaper_filter)
     {
-        auto filter = amshared(WaveShaperFilter);
-        filter->Initialize(5.0f);
+    public:
+        void Run() override
+        {
+            auto filter = amshared(WaveShaperFilter);
+            filter->Initialize(5.0f);
 
-        Filter::Unregister(Filter::Find("WaveShaper"));
-        Filter::Register(filter);
+            Filter::Unregister(Filter::Find("WaveShaper"));
+            Filter::Register(filter);
 
-        AM_EXPECT_NOT(Filter::Find("WaveShaper") == nullptr);
-        AM_EXPECT(Filter::Find("WaveShaper")->GetName() == "WaveShaper");
+            AM_EXPECT_NOT(Filter::Find("WaveShaper") == nullptr);
+            AM_EXPECT(Filter::Find("WaveShaper")->GetName() == "WaveShaper");
 
-        auto instance = Filter::Construct("WaveShaper");
-        AM_EXPECT_NOT(instance == nullptr);
+            auto instance = Filter::Construct("WaveShaper");
+            AM_EXPECT_NOT(instance == nullptr);
 
-        // Test parameter count
-        AM_EXPECT(filter->GetParameterCount() == WaveShaperFilter::ATTRIBUTE_LAST);
-        AM_EXPECT(filter->GetParameterCount() == 2);
+            // Test parameter count
+            AM_EXPECT(filter->GetParameterCount() == WaveShaperFilter::ATTRIBUTE_LAST);
+            AM_EXPECT(filter->GetParameterCount() == 2);
 
-        // Test parameter names
-        AM_EXPECT(filter->GetParameterName(WaveShaperFilter::ATTRIBUTE_WET) == "Wet");
-        AM_EXPECT(filter->GetParameterName(WaveShaperFilter::ATTRIBUTE_AMOUNT) == "Amount");
+            // Test parameter names
+            AM_EXPECT(filter->GetParameterName(WaveShaperFilter::ATTRIBUTE_WET) == "Wet");
+            AM_EXPECT(filter->GetParameterName(WaveShaperFilter::ATTRIBUTE_AMOUNT) == "Amount");
 
-        // Test parameter types
-        AM_EXPECT(filter->GetParameterType(WaveShaperFilter::ATTRIBUTE_WET) == eParameterType_Float);
-        AM_EXPECT(filter->GetParameterType(WaveShaperFilter::ATTRIBUTE_AMOUNT) == eParameterType_Float);
+            // Test parameter types
+            AM_EXPECT(filter->GetParameterType(WaveShaperFilter::ATTRIBUTE_WET) == eParameterType_Float);
+            AM_EXPECT(filter->GetParameterType(WaveShaperFilter::ATTRIBUTE_AMOUNT) == eParameterType_Float);
 
-        // Test WET parameter boundaries
-        AM_EXPECT(filter->GetParameterMin(WaveShaperFilter::ATTRIBUTE_WET) == 0.0f);
-        AM_EXPECT(filter->GetParameterMax(WaveShaperFilter::ATTRIBUTE_WET) == 1.0f);
+            // Test WET parameter boundaries
+            AM_EXPECT(filter->GetParameterMin(WaveShaperFilter::ATTRIBUTE_WET) == 0.0f);
+            AM_EXPECT(filter->GetParameterMax(WaveShaperFilter::ATTRIBUTE_WET) == 1.0f);
 
-        // Test AMOUNT parameter boundaries
-        AM_EXPECT(filter->GetParameterMin(WaveShaperFilter::ATTRIBUTE_AMOUNT) == -1.0f);
-        AM_EXPECT(filter->GetParameterMax(WaveShaperFilter::ATTRIBUTE_AMOUNT) == 1.0f);
+            // Test AMOUNT parameter boundaries
+            AM_EXPECT(filter->GetParameterMin(WaveShaperFilter::ATTRIBUTE_AMOUNT) == -1.0f);
+            AM_EXPECT(filter->GetParameterMax(WaveShaperFilter::ATTRIBUTE_AMOUNT) == 1.0f);
 
-        Filter::Unregister(filter);
-    }
+            Filter::Unregister(filter);
+        }
+    };
+
+    AM_REGISTER_TEST(dsp_filters, can_register_and_create_wave_shaper_filter);
 } // namespace SparkyStudios::Audio::Amplitude::Tests

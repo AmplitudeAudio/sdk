@@ -1,0 +1,436 @@
+name: Tests & Coverage
+
+on:
+  push:
+    branches: [main, develop]
+    paths:
+      - 'tests/**'
+      - 'src/**'
+      - 'include/**'
+  pull_request:
+    branches: [main, develop]
+    paths:
+      - 'tests/**'
+      - 'src/**'
+      - 'include/**'
+  workflow_dispatch:
+
+env:
+  # Android Emulator settings
+  ANDROID_API_LEVEL: 34
+  ANDROID_TARGET: google_apis
+  ANDROID_ARCH: x86_64
+
+jobs:
+  # Build and run iOS Test Runner on Simulator
+  ios-tests:
+    name: iOS Tests
+    runs-on: macos-15
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Setup XMake
+        uses: xmake-io/github-action-setup-xmake@v1
+        with:
+          xmake-version: latest
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Find flatc version
+        id: flatc_version
+        uses: tdemin/find-latest-tag@v1
+        with:
+          repo: https://github.com/google/flatbuffers.git
+
+      - name: Install flatc
+        run: |
+          curl -L -o flatc.zip "https://github.com/google/flatbuffers/releases/download/${{ steps.flatc_version.outputs.tag }}/Mac.flatc.binary.zip"
+          unzip flatc.zip -d flatc
+          chmod +x flatc/flatc
+          sudo mv flatc/flatc /usr/local/bin/
+          flatc --version
+
+      - name: Build Test Assets
+        run: |
+          xmake f -y -m debug --build_assets=y --build_tools=y --unit_tests=y
+          xmake b -y build_sample_project
+          xmake b -y generate_test_package
+
+      - name: Build iOS Test Runner
+        run: |
+          xmake c -a
+          xmake f -y -p iphoneos -m debug --unit_tests=y --appledev=simulator
+          xmake b -y AmplitudeTests_iOS
+
+      - name: List Available Simulators
+        run: xcrun simctl list devices available
+
+      - name: Boot iOS Simulator
+        run: |
+          # Find a suitable iPhone simulator
+          SIMULATOR_UDID=$(xcrun simctl list devices available -j | \
+            python3 -c "import json,sys; d=json.load(sys.stdin); \
+            devs=[dev for rt in d['devices'].values() for dev in rt if 'iPhone' in dev['name'] and dev['isAvailable']]; \
+            print(devs[0]['udid'] if devs else '')")
+
+          if [ -z "$SIMULATOR_UDID" ]; then
+            echo "No available iPhone simulator found"
+            exit 1
+          fi
+
+          echo "SIMULATOR_UDID=$SIMULATOR_UDID" >> $GITHUB_ENV
+          echo "Booting simulator: $SIMULATOR_UDID"
+          xcrun simctl boot "$SIMULATOR_UDID" || true
+
+          # Wait for simulator to be ready
+          echo "Waiting for simulator to boot..."
+          sleep 15
+
+      - name: Install App on Simulator
+        run: |
+          xcrun simctl install "$SIMULATOR_UDID" build/iphoneos/arm64/debug/tests/AmplitudeTests.app
+
+      - name: Run Tests on iOS Simulator
+        id: ios_tests
+        run: |
+          # Launch the app with auto-run flag and capture logs
+          echo "Launching test app with auto-run..."
+
+          # Set environment variable for auto-run
+          xcrun simctl spawn "$SIMULATOR_UDID" defaults write com.amplitudeaudiosdk.tests AMPLITUDE_AUTORUN -bool true
+          xcrun simctl spawn "$SIMULATOR_UDID" defaults write com.amplitudeaudiosdk.tests AMPLITUDE_EXIT_ON_COMPLETE -bool true
+
+          # Launch and capture output (the app will exit when tests complete)
+          xcrun simctl launch --console-pty "$SIMULATOR_UDID" com.amplitudeaudiosdk.tests --autorun --exit-on-complete 2>&1 | tee ios_test_output.log &
+          APP_PID=$!
+
+          # Wait for tests to complete (timeout after 10 minutes)
+          TIMEOUT=600
+          ELAPSED=0
+          TEST_COMPLETE=false
+
+          while [ $ELAPSED -lt $TIMEOUT ]; do
+            # Check if app has exited or if we see the summary
+            if ! kill -0 $APP_PID 2>/dev/null; then
+              echo "App has exited"
+              TEST_COMPLETE=true
+              break
+            fi
+
+            if grep -q "TEST SUMMARY" ios_test_output.log 2>/dev/null; then
+              echo "Tests completed!"
+              TEST_COMPLETE=true
+              sleep 2  # Give it a moment to finish logging
+              break
+            fi
+
+            sleep 5
+            ELAPSED=$((ELAPSED + 5))
+            echo "Waiting for tests... ($ELAPSED seconds)"
+          done
+
+          # Kill the app if still running
+          kill $APP_PID 2>/dev/null || true
+
+          # Display results
+          echo ""
+          echo "=== Test Output ==="
+          cat ios_test_output.log || true
+          echo "==================="
+          echo ""
+
+          # Parse results
+          if grep -q "Failed: 0" ios_test_output.log && grep -q "Total:" ios_test_output.log; then
+            TOTAL=$(grep "Total:" ios_test_output.log | tail -1 | awk '{print $2}')
+            if [ "$TOTAL" != "0" ]; then
+              echo "All tests passed!"
+              echo "status=success" >> $GITHUB_OUTPUT
+              exit 0
+            fi
+          fi
+
+          if grep -q "Failed:" ios_test_output.log; then
+            FAILED=$(grep "Failed:" ios_test_output.log | tail -1 | awk '{print $2}')
+            if [ "$FAILED" != "0" ]; then
+              echo "Some tests failed!"
+              echo "status=failure" >> $GITHUB_OUTPUT
+              exit 1
+            fi
+          fi
+
+          echo "Could not determine test results"
+          echo "status=unknown" >> $GITHUB_OUTPUT
+          exit 1
+
+      - name: Shutdown Simulator
+        if: always()
+        run: xcrun simctl shutdown "$SIMULATOR_UDID" || true
+
+      - name: Upload iOS Test Results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ios-test-results
+          path: ios_test_output.log
+          retention-days: 7
+
+      - name: Upload iOS Test Runner
+        uses: actions/upload-artifact@v4
+        with:
+          name: AmplitudeTests-iOS
+          path: build/iphoneos/arm64/debug/tests/AmplitudeTests.app
+          retention-days: 7
+
+  # Build and run Android Test Runner on Emulator
+  android-tests:
+    name: Android Tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Free Disk Space
+        uses: jlumbroso/free-disk-space@main
+        with:
+          tool-cache: false
+          android: false
+          dotnet: true
+          haskell: true
+          large-packages: true
+          docker-images: true
+          swap-storage: true
+
+      - name: Enable KVM
+        run: |
+          echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
+          sudo udevadm control --reload-rules
+          sudo udevadm trigger --name-match=kvm
+
+      - name: Set up JDK
+        uses: actions/setup-java@v4
+        with:
+          java-version: '17'
+          distribution: 'temurin'
+
+      - name: Setup Android SDK
+        uses: android-actions/setup-android@v3
+
+      - name: Setup XMake
+        uses: xmake-io/github-action-setup-xmake@v1
+        with:
+          xmake-version: latest
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Find flatc version
+        id: flatc_version
+        uses: tdemin/find-latest-tag@v1
+        with:
+          repo: https://github.com/google/flatbuffers.git
+
+      - name: Install flatc
+        run: |
+          curl -L -o flatc.zip "https://github.com/google/flatbuffers/releases/download/${{ steps.flatc_version.outputs.tag }}/Linux.flatc.binary.g++-13.zip"
+          unzip flatc.zip -d flatc
+          chmod +x flatc/flatc
+          sudo mv flatc/flatc /usr/local/bin/
+          flatc --version
+
+      - name: Build Test Assets
+        run: |
+          xmake f -y -m debug --build_assets=y --build_tools=y --unit_tests=y
+          xmake b -y build_sample_project
+          xmake b -y generate_test_package
+
+      - name: Setup Android NDK
+        id: setup-ndk
+        uses: nttld/setup-ndk@v1
+        with:
+          ndk-version: r27c
+
+      - name: Generate Debug Keystore
+        run: |
+          keytool -genkey -v -keystore tests/runners/android/debug.jks \
+            -storepass 123456 -alias androiddebugkey -keypass 123456 \
+            -keyalg RSA -keysize 2048 -validity 10000 \
+            -dname "CN=Android Debug,O=Android,C=US"
+
+      - name: Build Android Test Runner
+        run: |
+          xmake c -a
+          xmake f -y -p android -a x86_64 -m debug --unit_tests=y
+          xmake b -y AmplitudeTests_Android
+        env:
+          ANDROID_NDK_HOME: ${{ steps.setup-ndk.outputs.ndk-path }}
+
+      - name: Run Tests on Android Emulator
+        uses: reactivecircus/android-emulator-runner@v2
+        with:
+          api-level: ${{ env.ANDROID_API_LEVEL }}
+          target: ${{ env.ANDROID_TARGET }}
+          arch: ${{ env.ANDROID_ARCH }}
+          profile: pixel_6
+          heap-size: 512M
+          ram-size: 4096M
+          emulator-options: -no-snapshot-save -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim
+          disable-animations: true
+          script: bash .github/scripts/run_android_tests.sh
+
+      - name: Upload Android Test Results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: android-test-results
+          path: android_test_output.log
+          retention-days: 7
+
+      - name: Upload Android Test Runner
+        uses: actions/upload-artifact@v4
+        with:
+          name: AmplitudeTests-Android
+          path: build/android/x86_64/debug/tests/AmplitudeTests_Android.apk
+          retention-days: 7
+
+  # Desktop tests with coverage
+  desktop-tests:
+    name: "Desktop Tests - ${{ matrix.config.name }}"
+    runs-on: ${{ matrix.config.os }}
+    timeout-minutes: 60
+    strategy:
+      fail-fast: false
+      matrix:
+        config:
+          - name: "Windows Latest MSVC"
+            os: windows-latest
+            arch: x64
+            plat: windows
+
+          - name: "Ubuntu Latest GCC"
+            os: ubuntu-24.04
+            arch: x86_64
+            plat: linux
+
+          - name: "Ubuntu Latest Clang"
+            toolchain: clang
+            os: ubuntu-24.04
+            arch: x86_64
+            plat: linux
+
+          - name: "macOS x64 Latest Clang"
+            os: macos-15-intel
+            arch: x86_64
+            plat: macosx
+
+          - name: "macOS arm64 Latest Clang"
+            os: macos-15
+            arch: arm64
+            plat: macosx
+
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          submodules: recursive
+
+      - name: Free Disk Space (Ubuntu)
+        if: startsWith(matrix.config.os, 'ubuntu')
+        uses: jlumbroso/free-disk-space@main
+        with:
+          tool-cache: true
+          android: true
+          dotnet: true
+          haskell: true
+          large-packages: true
+          docker-images: true
+          swap-storage: true
+
+      - name: Setup xmake
+        uses: xmake-io/github-action-setup-xmake@v1
+        with:
+          xmake-version: latest
+          actions-cache-folder: ".xmake-cache"
+          actions-cache-key: coverage-${{ matrix.config.arch }}-${{ matrix.config.plat }}
+
+      - name: Setup python
+        uses: actions/setup-python@v6
+        with:
+          python-version: "3.14"
+
+      - name: Install dependencies on Windows
+        if: startsWith(matrix.config.os, 'windows')
+        run: |
+          choco install curl
+          xmake --version
+
+      - name: Install dependencies on Ubuntu
+        if: startsWith(matrix.config.os, 'ubuntu')
+        run: |
+          sudo apt-get update
+          sudo apt-get install autoconf automake libtool pkg-config libltdl-dev
+          if [[ "${{ matrix.config.toolchain }}" == "clang" ]]; then
+            sudo apt-get install clang llvm
+            clang --version
+            llvm-profdata --version
+            llvm-cov --version
+          else
+            gcc --version
+          fi
+          xmake --version
+
+      - name: Install dependencies on MacOS
+        if: startsWith(matrix.config.os, 'macos')
+        run: |
+          brew install p7zip
+          xmake --version
+          xcrun llvm-profdata --version || llvm-profdata --version
+          xcrun llvm-cov --version || llvm-cov --version
+
+      - name: Setup Latest Xcode version
+        if: startsWith(matrix.config.os, 'macos')
+        uses: maxim-lobanov/setup-xcode@v1.6.0
+        with:
+          xcode-version: latest
+
+      - name: Configure
+        run: |
+          xmake f -y -a ${{ matrix.config.arch }} -p ${{ matrix.config.plat }} -m coverage ${{ matrix.config.toolchain && format('--toolchain={0}', matrix.config.toolchain) || '' }} --build_samples=n --build_tools=y --unit_tests=y --build_assets=y
+
+      - name: Build
+        run: xmake b -y
+
+      - name: Test
+        run: xmake test -y
+
+      - name: Generate coverage
+        continue-on-error: true
+        if: startsWith(matrix.config.os, 'macos') || matrix.config.toolchain == 'clang'
+        run: xmake b -y coverage_generate_test_report
+
+      - name: Upload coverage to Codecov
+        continue-on-error: true
+        if: startsWith(matrix.config.os, 'macos') || matrix.config.toolchain == 'clang'
+        uses: codecov/codecov-action@v5
+        with:
+          files: coverage/merged/coverage.lcov
+        env:
+          CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
+
+      - name: Upload Test Results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: desktop-test-results-${{ matrix.config.arch }}-${{ matrix.config.plat }}${{ matrix.config.toolchain && format('-{0}', matrix.config.toolchain) || '' }}
+          path: |
+            build/**/test_*.log
+            coverage/merged/coverage.lcov
+          retention-days: 7

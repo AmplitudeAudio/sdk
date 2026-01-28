@@ -15,18 +15,25 @@
 #include <SparkyStudios/Audio/Amplitude/Amplitude.h>
 
 #include "EngineTestCase.h"
+#include "TestRegistry.h"
 
 using namespace SparkyStudios::Audio::Amplitude;
 
 namespace SparkyStudios::Audio::Amplitude::Tests
 {
-    void EngineTestCase::Run()
+    AM_TEST_CASE(EngineTestCase, core_engine, rtpc_cannot_set_values_higher_than_max)
     {
-        RtpcHandle rtpc1 = amEngine->GetRtpcHandle(1);
-        AM_EXPECT(rtpc1 != nullptr);
+    public:
+        void Run() override
+        {
+            RtpcHandle rtpc1 = amEngine->GetRtpcHandle(1);
+            AM_EXPECT(rtpc1 != nullptr);
 
-        // Test that RTPC cannot set values higher than max
-        rtpc1->SetValue(rtpc1->GetMaxValue() * 2);
-        AM_EXPECT(rtpc1->GetValue() == rtpc1->GetMaxValue());
-    }
+            // Test that RTPC cannot set values higher than max
+            rtpc1->SetValue(rtpc1->GetMaxValue() * 2);
+            AM_EXPECT(rtpc1->GetValue() == rtpc1->GetMaxValue());
+        }
+    };
+
+    AM_REGISTER_TEST(core_engine, rtpc_cannot_set_values_higher_than_max);
 } // namespace SparkyStudios::Audio::Amplitude::Tests

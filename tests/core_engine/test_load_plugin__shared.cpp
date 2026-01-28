@@ -15,39 +15,46 @@
 #include <SparkyStudios/Audio/Amplitude/Amplitude.h>
 
 #include "SimpleTestCase.h"
+#include "TestRegistry.h"
 
 using namespace SparkyStudios::Audio::Amplitude;
 
 namespace SparkyStudios::Audio::Amplitude::Tests
 {
-    void SimpleTestCase::Run()
+    AM_TEST_CASE(SimpleTestCase, core_engine, load_plugin)
     {
-        // Test loading a valid plugin
-        AmVoidPtr handle = Engine::LoadPlugin(AM_OS_STRING("test_plugin"));
-        AM_EXPECT(handle != nullptr);
+    public:
+        void Run() override
+        {
+            // Test loading a valid plugin
+            AmVoidPtr handle = Engine::LoadPlugin(AM_OS_STRING("test_plugin"));
+            AM_EXPECT(handle != nullptr);
 
-        // Test loading a non-existent plugin (should return nullptr)
-        AmVoidPtr invalidHandle = Engine::LoadPlugin(AM_OS_STRING("non_existent_plugin"));
-        AM_EXPECT(invalidHandle == nullptr);
+            // Test loading a non-existent plugin (should return nullptr)
+            AmVoidPtr invalidHandle = Engine::LoadPlugin(AM_OS_STRING("non_existent_plugin"));
+            AM_EXPECT(invalidHandle == nullptr);
 
-        // Test loading with empty plugin name (should return nullptr)
-        AmVoidPtr emptyHandle = Engine::LoadPlugin(AM_OS_STRING(""));
-        AM_EXPECT(emptyHandle == nullptr);
+            // Test loading with empty plugin name (should return nullptr)
+            AmVoidPtr emptyHandle = Engine::LoadPlugin(AM_OS_STRING(""));
+            AM_EXPECT(emptyHandle == nullptr);
 
-        // Test plugin search paths functionality
-        Engine::AddPluginSearchPath(AM_OS_STRING("test_plugins"));
+            // Test plugin search paths functionality
+            Engine::AddPluginSearchPath(AM_OS_STRING("test_plugins"));
 
-        // Try loading the test plugin again (should still work)
-        AmVoidPtr handleWithPath = Engine::LoadPlugin(AM_OS_STRING("test_plugin"));
-        AM_EXPECT(handleWithPath != nullptr);
+            // Try loading the test plugin again (should still work)
+            AmVoidPtr handleWithPath = Engine::LoadPlugin(AM_OS_STRING("test_plugin"));
+            AM_EXPECT(handleWithPath != nullptr);
 
-        // Clean up - remove the search path
-        Engine::RemovePluginSearchPath(AM_OS_STRING("test_plugins"));
+            // Clean up - remove the search path
+            Engine::RemovePluginSearchPath(AM_OS_STRING("test_plugins"));
 
-        // Test removing non-existent search path (should not crash)
-        Engine::RemovePluginSearchPath(AM_OS_STRING("non_existent_path"));
+            // Test removing non-existent search path (should not crash)
+            Engine::RemovePluginSearchPath(AM_OS_STRING("non_existent_path"));
 
-        // Test adding empty search path (should not crash)
-        Engine::AddPluginSearchPath(AM_OS_STRING(""));
-    }
+            // Test adding empty search path (should not crash)
+            Engine::AddPluginSearchPath(AM_OS_STRING(""));
+        }
+    };
+
+    AM_REGISTER_TEST_REQUIRES_PLUGINS(core_engine, load_plugin);
 } // namespace SparkyStudios::Audio::Amplitude::Tests

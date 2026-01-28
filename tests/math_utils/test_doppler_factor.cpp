@@ -18,16 +18,26 @@
 #include <Utils/Utils.h>
 
 #include "SimpleTestCase.h"
+#include "TestRegistry.h"
 
 using namespace SparkyStudios::Audio::Amplitude;
 
-void SimpleTestCase::Run()
+namespace SparkyStudios::Audio::Amplitude::Tests
 {
-    constexpr AmReal32 soundSpeed = 343.0f;
-    constexpr AmVector3 source = { 10.0f, 25.0f, 1.0f };
-    constexpr AmVector3 listener = { 0.0f, 0.0f, 0.0f };
+    AM_TEST_CASE(SimpleTestCase, math_utils, doppler_factor)
+    {
+    public:
+        void Run() override
+        {
+            constexpr AmReal32 soundSpeed = 343.0f;
+            constexpr AmVector3 source = { 10.0f, 25.0f, 1.0f };
+            constexpr AmVector3 listener = { 0.0f, 0.0f, 0.0f };
 
-    const AmReal32 dopplerFactor = ComputeDopplerFactor(Sub(source, listener), source, listener, soundSpeed, 1.0f);
+            const AmReal32 dopplerFactor = ComputeDopplerFactor(Sub(source, listener), source, listener, soundSpeed, 1.0f);
 
-    AM_EXPECT(std::abs(dopplerFactor - 0.927166343f) < kEpsilon);
-}
+            AM_EXPECT(std::abs(dopplerFactor - 0.927166343f) < kEpsilon);
+        }
+    };
+
+    AM_REGISTER_TEST(math_utils, doppler_factor);
+} // namespace SparkyStudios::Audio::Amplitude::Tests

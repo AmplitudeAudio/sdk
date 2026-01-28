@@ -17,27 +17,37 @@
 #include <Math/LinearAlgebra.h>
 
 #include "SimpleTestCase.h"
+#include "TestRegistry.h"
 
 using namespace SparkyStudios::Audio::Amplitude;
 
-void SimpleTestCase::Run()
+namespace SparkyStudios::Audio::Amplitude::Tests
 {
-    const auto from = CartesianCoordinateSystem::Default();
-    const auto to = CartesianCoordinateSystem::AmbiX();
+    AM_TEST_CASE(SimpleTestCase, math_cartesian_coordinate_system, can_convert_from_scalar)
+    {
+    public:
+        void Run() override
+        {
+            const auto from = CartesianCoordinateSystem::Default();
+            const auto to = CartesianCoordinateSystem::AmbiX();
 
-    constexpr auto scalar = 5.0f;
+            constexpr auto scalar = 5.0f;
 
-    const auto convertedScalar = CartesianCoordinateSystem::Convert(scalar, from, to);
-    const auto convertedBackScalar = CartesianCoordinateSystem::Convert(convertedScalar, to, from);
+            const auto convertedScalar = CartesianCoordinateSystem::Convert(scalar, from, to);
+            const auto convertedBackScalar = CartesianCoordinateSystem::Convert(convertedScalar, to, from);
 
-    AM_EXPECT_EQ(convertedScalar, scalar);
-    AM_EXPECT_EQ(convertedBackScalar, scalar);
+            AM_EXPECT_EQ(convertedScalar, scalar);
+            AM_EXPECT_EQ(convertedBackScalar, scalar);
 
-    const auto converter = CartesianCoordinateSystem::Converter(from, to);
+            const auto converter = CartesianCoordinateSystem::Converter(from, to);
 
-    const auto convertedScalar2 = converter.Forward(scalar);
-    const auto convertedBackScalar2 = converter.Backward(convertedScalar);
+            const auto convertedScalar2 = converter.Forward(scalar);
+            const auto convertedBackScalar2 = converter.Backward(convertedScalar);
 
-    AM_EXPECT_EQ(convertedScalar2, scalar);
-    AM_EXPECT_EQ(convertedBackScalar2, scalar);
-}
+            AM_EXPECT_EQ(convertedScalar2, scalar);
+            AM_EXPECT_EQ(convertedBackScalar2, scalar);
+        }
+    };
+
+    AM_REGISTER_TEST(math_cartesian_coordinate_system, can_convert_from_scalar);
+} // namespace SparkyStudios::Audio::Amplitude::Tests

@@ -16,54 +16,65 @@
 #include <Utils/Utils.h>
 
 #include "SimpleTestCase.h"
+#include "TestRegistry.h"
 
 using namespace SparkyStudios::Audio::Amplitude;
 
 namespace SparkyStudios::Audio::Amplitude::Tests
 {
-    void SimpleTestCase::Run()
+    AM_TEST_CASE(SimpleTestCase, core_audio_buffer, can_make_operations_on_channels)
     {
-        // Create and populate buffer1 using raw buffer access
-        AudioBuffer buffer1(123, 2);
-        const AmSize alignedSize = FindNextAlignedArrayIndex<AmReal32>(123, AM_SIMD_ALIGNMENT);
-        for (AmSize i = 0; i < 2; ++i)
-            for (AmSize j = 0; j < 123; j++)
-                buffer1.GetData().GetBuffer()[alignedSize * i + j] = (123.0f * i) + j;
+    public:
+        void Run() override
+        {
+            // Create and populate buffer1 using raw buffer access
+            AudioBuffer buffer1(123, 2);
+#ifdef AM_SIMD_INTRINSICS
+            const AmSize alignedSize = FindNextAlignedArrayIndex<AmReal32>(123, AM_SIMD_ALIGNMENT);
+#else
+            const AmSize alignedSize = 123;
+#endif
+            for (AmSize i = 0; i < 2; ++i)
+                for (AmSize j = 0; j < 123; j++)
+                    buffer1.GetData().GetBuffer()[alignedSize * i + j] = (123.0f * i) + j;
 
-        // Create and populate buffer2 using channel indexing
-        AudioBuffer buffer2(123, 2);
-        for (AmSize i = 0; i < 2; ++i)
-            for (AmSize j = 0; j < 123; ++j)
-                buffer2[i][j] = (123.0f * i) + j;
+            // Create and populate buffer2 using channel indexing
+            AudioBuffer buffer2(123, 2);
+            for (AmSize i = 0; i < 2; ++i)
+                for (AmSize j = 0; j < 123; ++j)
+                    buffer2[i][j] = (123.0f * i) + j;
 
-        // Create empty buffer3 and verify it's zeroed
-        AudioBuffer buffer3(123, 2);
-        for (AmSize i = 0; i < 2; ++i)
-            for (AmSize j = 0; j < 123; ++j)
-                AM_EXPECT(buffer3[i][j] == 0);
+            // Create empty buffer3 and verify it's zeroed
+            AudioBuffer buffer3(123, 2);
+            for (AmSize i = 0; i < 2; ++i)
+                for (AmSize j = 0; j < 123; ++j)
+                    AM_EXPECT(buffer3[i][j] == 0);
 
-        // Test addition operation
-        buffer1 += buffer2;
-        for (AmSize i = 0; i < 2; ++i)
-            for (AmSize j = 0; j < 123; ++j)
-                AM_EXPECT(buffer1[i][j] == ((123.0f * i) + j) * 2.0f);
+            // Test addition operation
+            buffer1 += buffer2;
+            for (AmSize i = 0; i < 2; ++i)
+                for (AmSize j = 0; j < 123; ++j)
+                    AM_EXPECT(buffer1[i][j] == ((123.0f * i) + j) * 2.0f);
 
-        // Test subtraction operation
-        buffer2 -= buffer1;
-        for (AmSize i = 0; i < 2; ++i)
-            for (AmSize j = 0; j < 123; ++j)
-                AM_EXPECT(buffer2[i][j] == ((123.0f * i) + j) * -1.0f);
+            // Test subtraction operation
+            buffer2 -= buffer1;
+            for (AmSize i = 0; i < 2; ++i)
+                for (AmSize j = 0; j < 123; ++j)
+                    AM_EXPECT(buffer2[i][j] == ((123.0f * i) + j) * -1.0f);
 
-        // Test multiplication with buffer (should zero out buffer1)
-        buffer1 *= buffer3;
-        for (AmSize i = 0; i < 2; ++i)
-            for (AmSize j = 0; j < 123; ++j)
-                AM_EXPECT(buffer1[i][j] == 0);
+            // Test multiplication with buffer (should zero out buffer1)
+            buffer1 *= buffer3;
+            for (AmSize i = 0; i < 2; ++i)
+                for (AmSize j = 0; j < 123; ++j)
+                    AM_EXPECT(buffer1[i][j] == 0);
 
-        // Test scalar multiplication
-        buffer2 *= -1;
-        for (AmSize i = 0; i < 2; ++i)
-            for (AmSize j = 0; j < 123; ++j)
-                AM_EXPECT(buffer2[i][j] == (123.0f * i) + j);
-    }
+            // Test scalar multiplication
+            buffer2 *= -1;
+            for (AmSize i = 0; i < 2; ++i)
+                for (AmSize j = 0; j < 123; ++j)
+                    AM_EXPECT(buffer2[i][j] == (123.0f * i) + j);
+        }
+    };
+
+    AM_REGISTER_TEST(core_audio_buffer, can_make_operations_on_channels);
 } // namespace SparkyStudios::Audio::Amplitude::Tests

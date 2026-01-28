@@ -15,27 +15,34 @@
 #include <SparkyStudios/Audio/Amplitude/Amplitude.h>
 
 #include "EngineTestCase.h"
+#include "TestRegistry.h"
 
 using namespace SparkyStudios::Audio::Amplitude;
 
 namespace SparkyStudios::Audio::Amplitude::Tests
 {
-    void EngineTestCase::Run()
+    AM_TEST_CASE(EngineTestCase, core_engine, bus_gain_can_be_faded)
     {
-        Bus bus = amEngine->FindBus(kAmMasterBusId);
-        AM_EXPECT(bus.Valid());
+    public:
+        void Run() override
+        {
+            Bus bus = amEngine->FindBus(kAmMasterBusId);
+            AM_EXPECT(bus.Valid());
 
-        // Set initial gain
-        bus.SetGain(1.0f);
+            // Set initial gain
+            bus.SetGain(1.0f);
 
-        // Test fading to lower value
-        bus.FadeTo(0.5f, kMinFadeDuration);
-        Thread::Sleep(kAmSecond);
-        AM_EXPECT_EQ(bus.GetGain(), 0.5f);
+            // Test fading to lower value
+            bus.FadeTo(0.5f, kMinFadeDuration);
+            Thread::Sleep(kAmSecond);
+            AM_EXPECT_EQ(bus.GetGain(), 0.5f);
 
-        // Test fading to higher value
-        bus.FadeTo(1.0f, kMinFadeDuration);
-        Thread::Sleep(kAmSecond);
-        AM_EXPECT_EQ(bus.GetGain(), 1.0f);
-    }
+            // Test fading to higher value
+            bus.FadeTo(1.0f, kMinFadeDuration);
+            Thread::Sleep(kAmSecond);
+            AM_EXPECT_EQ(bus.GetGain(), 1.0f);
+        }
+    };
+
+    AM_REGISTER_TEST(core_engine, bus_gain_can_be_faded);
 } // namespace SparkyStudios::Audio::Amplitude::Tests

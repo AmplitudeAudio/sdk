@@ -5,10 +5,9 @@ on:
     types: [opened, synchronize, ready_for_review, reopened]
     # Optional: Only run on specific file changes
     # paths:
-    #   - "src/**/*.ts"
-    #   - "src/**/*.tsx"
-    #   - "src/**/*.js"
-    #   - "src/**/*.jsx"
+    #   - "src/**/*.cpp"
+    #   - "src/**/*.h"
+    #   - "include/**/*.h"
 
 jobs:
   claude-review:
@@ -21,24 +20,95 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: read
-      pull-requests: read
-      issues: read
+      pull-requests: write
+      issues: write
       id-token: write
 
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
         with:
-          fetch-depth: 1
+          fetch-depth: 0
 
       - name: Run Claude Code Review
         id: claude-review
         uses: anthropics/claude-code-action@v1
         with:
           claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
-          plugin_marketplaces: 'https://github.com/anthropics/claude-code.git'
-          plugins: 'code-review@claude-code-plugins'
-          prompt: '/code-review:code-review ${{ github.repository }}/pull/${{ github.event.pull_request.number }}'
+          use_sticky_comment: true
+          prompt: |
+            REPO: ${{ github.repository }}
+            PR NUMBER: ${{ github.event.pull_request.number }}
+
+            You are reviewing a pull request for the Amplitude Audio SDK - a C++ cross-platform audio engine for games.
+
+            ## IMPORTANT: First read CLAUDE.md for project-specific conventions
+
+            ## Code Style Requirements
+
+            ### Formatting
+            - C++20 standard
+            - 140 character column limit
+            - 4 spaces indentation (no tabs)
+            - Allman brace style (braces on new lines)
+            - Pointer/Reference left-aligned: `Type* ptr`, `Type& ref`
+
+            ### Naming Conventions
+            - Classes/Structs: PascalCase (`Engine`, `AudioBuffer`)
+            - Functions/Methods: PascalCase (`Initialize()`, `GetInstance()`)
+            - Variables: camelCase (`sampleRate`, `channelCount`)
+            - Private Members: _camelCase (`_passedCount`, `_fileSystem`)
+            - Constants: PascalCase (`kFrameDelta`, `kAmSecond`)
+            - Macros: AM_ prefix (`AM_API_PUBLIC`, `AM_EXPECT`)
+            - Namespaces: PascalCase (`SparkyStudios::Audio::Amplitude`)
+
+            ### Required Elements
+            - Include guards: `#ifndef _AM_MODULE_FILE_H` / `#define _AM_MODULE_FILE_H` / `#endif`
+            - Copyright header in all files (Apache 2.0 license)
+            - Doxygen documentation for public APIs (`@brief`, `@param`, `@return`)
+
+            ## Architecture Patterns to Verify
+
+            - Singleton access via `amEngine` macro
+            - Handle types (typedef'd pointers): `SoundHandle`, `CollectionHandle`
+            - Memory pool allocation: `ampoolshared(eMemoryPoolKind_*, Type)`
+            - Thread safety: STL mutex for synchronization
+            - Async file ops: `StartOpen/TryFinalize` pattern
+
+            ## Test Requirements
+
+            - Tests inherit from: `TestCase`, `EngineTestCase`, `SimpleTestCase`, `MemoryTestCase`, `DSPTestCase`
+            - Test assertions use: `AM_EXPECT(condition)`
+            - Test file pattern: `tests/<group>_<module>/test_<name>.cpp`
+
+            ## Review Focus Areas
+
+            1. **Memory Management** - No allocations in real-time audio paths, proper pool usage
+            2. **Thread Safety** - Mutex usage, no data races in audio processing
+            3. **Cross-Platform** - Code works on Windows, Linux, macOS, Android, iOS
+            4. **Performance** - Real-time audio constraints, avoid allocations in `Process()` calls
+            5. **API Consistency** - Follows existing patterns and naming conventions
+            6. **Test Coverage** - New functionality has corresponding tests
+            7. **Documentation** - Doxygen comments for public APIs
+
+            ## Review Guidelines
+
+            1. Focus on significant issues, not minor style nitpicks (use .clang-format for style)
+            2. Provide specific file:line references
+            3. Classify issues as: 🔴 Critical, 🟡 Moderate, 💡 Suggestion
+            4. Include code snippets showing issue and recommended fix
+            5. Be constructive and professional
+
+            ## Output Instructions
+
+            Use the GitHub MCP tools to create a proper PR review with inline comments:
+            1. Use `mcp__github__create_pending_pull_request_review` to start a review
+            2. Use `mcp__github__add_comment_to_pending_review` to add inline comments on specific lines
+            3. Use `mcp__github__submit_pull_request_review` to publish as COMMENT
+
+            Post inline comments directly on the problematic code lines, not just a summary comment.
+
+          claude_args: |
+            --allowedTools "mcp__github__create_pending_pull_request_review,mcp__github__create_pull_request_review_comment,mcp__github__submit_pull_request_review,mcp__github__add_comment_to_pending_review,mcp__github__get_pull_request_diff,mcp__github__get_pull_request_files,mcp__github__create_and_submit_pull_request_review,mcp__github__delete_pending_pull_request_review,mcp__github_comment__update_claude_comment,Read,Grep,Glob,Bash(gh pr diff:*),Bash(gh pr view:*),Bash(gh pr list:*),Bash(gh pr files:*),Bash(gh api:*)"
           # See https://github.com/anthropics/claude-code-action/blob/main/docs/usage.md
           # or https://code.claude.com/docs/en/cli-reference for available options
-

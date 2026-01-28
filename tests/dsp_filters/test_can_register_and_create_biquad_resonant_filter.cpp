@@ -17,27 +17,34 @@
 #include <DSP/Filters/BiquadResonantFilter.h>
 
 #include "SimpleTestCase.h"
+#include "TestRegistry.h"
 
 using namespace SparkyStudios::Audio::Amplitude;
 
 namespace SparkyStudios::Audio::Amplitude::Tests
 {
-    void SimpleTestCase::Run()
+    AM_TEST_CASE(SimpleTestCase, dsp_filters, can_register_and_create_biquad_resonant_filter)
     {
-        auto filter = amshared(BiquadResonantFilter);
-        filter->InitializeLowPass(1000.0f, 0.707107f);
-
-        Filter::Unregister(Filter::Find("BiquadResonant"));
-        Filter::Register(filter);
-
-        AM_EXPECT_NOT(Filter::Find("BiquadResonant") == nullptr);
-        AM_EXPECT(Filter::Find("BiquadResonant")->GetName() == "BiquadResonant");
-
+    public:
+        void Run() override
         {
-            auto instance = Filter::Construct("BiquadResonant");
-            AM_EXPECT_NOT(instance == nullptr);
-        }
+            auto filter = amshared(BiquadResonantFilter);
+            filter->InitializeLowPass(1000.0f, 0.707107f);
 
-        Filter::Unregister(filter);
-    }
+            Filter::Unregister(Filter::Find("BiquadResonant"));
+            Filter::Register(filter);
+
+            AM_EXPECT_NOT(Filter::Find("BiquadResonant") == nullptr);
+            AM_EXPECT(Filter::Find("BiquadResonant")->GetName() == "BiquadResonant");
+
+            {
+                auto instance = Filter::Construct("BiquadResonant");
+                AM_EXPECT_NOT(instance == nullptr);
+            }
+
+            Filter::Unregister(filter);
+        }
+    };
+
+    AM_REGISTER_TEST(dsp_filters, can_register_and_create_biquad_resonant_filter);
 } // namespace SparkyStudios::Audio::Amplitude::Tests

@@ -17,63 +17,70 @@
 #include <DSP/Filters/MonoPoleFilter.h>
 
 #include "SimpleTestCase.h"
+#include "TestRegistry.h"
 
 using namespace SparkyStudios::Audio::Amplitude;
 
 namespace SparkyStudios::Audio::Amplitude::Tests
 {
-    void SimpleTestCase::Run()
+    AM_TEST_CASE(SimpleTestCase, dsp_filters, monopole_filter_parameters)
     {
-        auto filter = amshared(MonoPoleFilter);
-        // Test failure paths - negative coefficient
-        auto result = filter->Initialize(-1.0f);
-        AM_EXPECT_EQ(result, eErrorCode_InvalidParameter);
+    public:
+        void Run() override
+        {
+            auto filter = amshared(MonoPoleFilter);
+            // Test failure paths - negative coefficient
+            auto result = filter->Initialize(-1.0f);
+            AM_EXPECT_EQ(result, eErrorCode_InvalidParameter);
 
-        // Test failure paths - coefficient > 1.0f
-        result = filter->Initialize(2.0f);
-        AM_EXPECT_EQ(result, eErrorCode_InvalidParameter);
+            // Test failure paths - coefficient > 1.0f
+            result = filter->Initialize(2.0f);
+            AM_EXPECT_EQ(result, eErrorCode_InvalidParameter);
 
-        // Test success path
-        result = filter->Initialize(0.5f);
-        AM_EXPECT_EQ(result, eErrorCode_Success);
+            // Test success path
+            result = filter->Initialize(0.5f);
+            AM_EXPECT_EQ(result, eErrorCode_Success);
 
-        auto instance = filter->CreateInstance();
-        AM_EXPECT_NOT(instance == nullptr);
+            auto instance = filter->CreateInstance();
+            AM_EXPECT_NOT(instance == nullptr);
 
-        // Test parameter get/set
-        instance->SetParameter(MonoPoleFilter::ATTRIBUTE_WET, 0.5f);
-        AM_EXPECT_EQ(instance->GetParameter(MonoPoleFilter::ATTRIBUTE_WET), 0.5f);
+            // Test parameter get/set
+            instance->SetParameter(MonoPoleFilter::ATTRIBUTE_WET, 0.5f);
+            AM_EXPECT_EQ(instance->GetParameter(MonoPoleFilter::ATTRIBUTE_WET), 0.5f);
 
-        instance->SetParameter(MonoPoleFilter::ATTRIBUTE_COEFFICIENT, 0.8f);
-        AM_EXPECT_EQ(instance->GetParameter(MonoPoleFilter::ATTRIBUTE_COEFFICIENT), 0.8f);
+            instance->SetParameter(MonoPoleFilter::ATTRIBUTE_COEFFICIENT, 0.8f);
+            AM_EXPECT_EQ(instance->GetParameter(MonoPoleFilter::ATTRIBUTE_COEFFICIENT), 0.8f);
 
-        // Test with full wet
-        instance->SetParameter(MonoPoleFilter::ATTRIBUTE_WET, 1.0f);
-        AM_EXPECT_EQ(instance->GetParameter(MonoPoleFilter::ATTRIBUTE_WET), 1.0f);
+            // Test with full wet
+            instance->SetParameter(MonoPoleFilter::ATTRIBUTE_WET, 1.0f);
+            AM_EXPECT_EQ(instance->GetParameter(MonoPoleFilter::ATTRIBUTE_WET), 1.0f);
 
-        // Test with dry signal
-        instance->SetParameter(MonoPoleFilter::ATTRIBUTE_WET, 0.0f);
-        AM_EXPECT_EQ(instance->GetParameter(MonoPoleFilter::ATTRIBUTE_WET), 0.0f);
+            // Test with dry signal
+            instance->SetParameter(MonoPoleFilter::ATTRIBUTE_WET, 0.0f);
+            AM_EXPECT_EQ(instance->GetParameter(MonoPoleFilter::ATTRIBUTE_WET), 0.0f);
 
-        // Test with incorrect param
-        instance->SetParameter(MonoPoleFilter::ATTRIBUTE_LAST, 5.0f);
-        AM_EXPECT_EQ(instance->GetParameter(MonoPoleFilter::ATTRIBUTE_LAST), 0.0f);
+            // Test with incorrect param
+            instance->SetParameter(MonoPoleFilter::ATTRIBUTE_LAST, 5.0f);
+            AM_EXPECT_EQ(instance->GetParameter(MonoPoleFilter::ATTRIBUTE_LAST), 0.0f);
 
-        AM_EXPECT_EQ(filter->GetParameterCount(), 2);
+            AM_EXPECT_EQ(filter->GetParameterCount(), 2);
 
-        AM_EXPECT_EQ(filter->GetParameterMin(MonoPoleFilter::ATTRIBUTE_WET), 0.0f);
-        AM_EXPECT_EQ(filter->GetParameterMin(MonoPoleFilter::ATTRIBUTE_COEFFICIENT), 0.0f);
-        AM_EXPECT_EQ(filter->GetParameterMin(MonoPoleFilter::ATTRIBUTE_LAST), 0.0f);
+            AM_EXPECT_EQ(filter->GetParameterMin(MonoPoleFilter::ATTRIBUTE_WET), 0.0f);
+            AM_EXPECT_EQ(filter->GetParameterMin(MonoPoleFilter::ATTRIBUTE_COEFFICIENT), 0.0f);
+            AM_EXPECT_EQ(filter->GetParameterMin(MonoPoleFilter::ATTRIBUTE_LAST), 0.0f);
 
-        AM_EXPECT_EQ(filter->GetParameterMax(MonoPoleFilter::ATTRIBUTE_WET), 1.0f);
-        AM_EXPECT_EQ(filter->GetParameterMax(MonoPoleFilter::ATTRIBUTE_COEFFICIENT), 1.0f);
-        AM_EXPECT_EQ(filter->GetParameterMax(MonoPoleFilter::ATTRIBUTE_LAST), 0.0f);
+            AM_EXPECT_EQ(filter->GetParameterMax(MonoPoleFilter::ATTRIBUTE_WET), 1.0f);
+            AM_EXPECT_EQ(filter->GetParameterMax(MonoPoleFilter::ATTRIBUTE_COEFFICIENT), 1.0f);
+            AM_EXPECT_EQ(filter->GetParameterMax(MonoPoleFilter::ATTRIBUTE_LAST), 0.0f);
 
-        AM_EXPECT_EQ(filter->GetParameterType(MonoPoleFilter::ATTRIBUTE_WET), eParameterType_Float);
-        AM_EXPECT_EQ(filter->GetParameterType(MonoPoleFilter::ATTRIBUTE_COEFFICIENT), eParameterType_Float);
+            AM_EXPECT_EQ(filter->GetParameterType(MonoPoleFilter::ATTRIBUTE_WET), eParameterType_Float);
+            AM_EXPECT_EQ(filter->GetParameterType(MonoPoleFilter::ATTRIBUTE_COEFFICIENT), eParameterType_Float);
 
-        AM_EXPECT_EQ(filter->GetParameterName(MonoPoleFilter::ATTRIBUTE_WET), "Wet");
-        AM_EXPECT_EQ(filter->GetParameterName(MonoPoleFilter::ATTRIBUTE_COEFFICIENT), "Coefficient");
-        AM_EXPECT_EQ(filter->GetParameterName(MonoPoleFilter::ATTRIBUTE_LAST), "Unknown");
-    }
+            AM_EXPECT_EQ(filter->GetParameterName(MonoPoleFilter::ATTRIBUTE_WET), "Wet");
+            AM_EXPECT_EQ(filter->GetParameterName(MonoPoleFilter::ATTRIBUTE_COEFFICIENT), "Coefficient");
+            AM_EXPECT_EQ(filter->GetParameterName(MonoPoleFilter::ATTRIBUTE_LAST), "Unknown");
+        }
+    };
+
+    AM_REGISTER_TEST(dsp_filters, monopole_filter_parameters);
 } // namespace SparkyStudios::Audio::Amplitude::Tests

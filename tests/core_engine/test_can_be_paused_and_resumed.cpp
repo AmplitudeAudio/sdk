@@ -15,19 +15,26 @@
 #include <SparkyStudios/Audio/Amplitude/Amplitude.h>
 
 #include "EngineTestCase.h"
+#include "TestRegistry.h"
 
 using namespace SparkyStudios::Audio::Amplitude;
 
 namespace SparkyStudios::Audio::Amplitude::Tests
 {
-    void EngineTestCase::Run()
+    AM_TEST_CASE(EngineTestCase, core_engine, can_be_paused_and_resumed)
     {
-        // Test pausing
-        amEngine->Pause(true);
-        AM_EXPECT(amEngine->IsPaused());
+    public:
+        void Run() override
+        {
+            // Test pausing
+            amEngine->Pause(true);
+            AM_EXPECT(amEngine->IsPaused());
 
-        // Test resuming
-        amEngine->Pause(false);
-        AM_EXPECT_NOT(amEngine->IsPaused());
-    }
+            // Test resuming
+            amEngine->Pause(false);
+            AM_EXPECT_NOT(amEngine->IsPaused());
+        }
+    };
+
+    AM_REGISTER_TEST(core_engine, can_be_paused_and_resumed);
 } // namespace SparkyStudios::Audio::Amplitude::Tests

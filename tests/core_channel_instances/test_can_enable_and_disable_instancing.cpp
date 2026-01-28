@@ -15,39 +15,46 @@
 #include <SparkyStudios/Audio/Amplitude/Amplitude.h>
 
 #include "EngineTestCase.h"
+#include "TestRegistry.h"
 
 using namespace SparkyStudios::Audio::Amplitude;
 
 namespace SparkyStudios::Audio::Amplitude::Tests
 {
-    void EngineTestCase::Run()
+    AM_TEST_CASE(EngineTestCase, core_channel_instances, can_enable_and_disable_instancing)
     {
-        SoundHandle test_sound_01 = amEngine->GetSoundHandle("test_sound_01");
+    public:
+        void Run() override
+        {
+            SoundHandle test_sound_01 = amEngine->GetSoundHandle("test_sound_01");
 
-        Channel channel = amEngine->Play(test_sound_01);
-        amEngine->WaitUntilFrames(2);
+            Channel channel = amEngine->Play(test_sound_01);
+            amEngine->WaitUntilFrames(2);
 
-        AM_EXPECT(channel.Valid());
+            AM_EXPECT(channel.Valid());
 
-        // Test initial state - instancing should be disabled
-        AM_EXPECT(!channel.IsInstancingEnabled());
+            // Test initial state - instancing should be disabled
+            AM_EXPECT(!channel.IsInstancingEnabled());
 
-        // Enable blended mode
-        channel.EnableInstancing(eChannelInstanceMode_Blended);
-        AM_EXPECT(channel.IsInstancingEnabled());
-        AM_EXPECT(channel.GetInstancingMode() == eChannelInstanceMode_Blended);
+            // Enable blended mode
+            channel.EnableInstancing(eChannelInstanceMode_Blended);
+            AM_EXPECT(channel.IsInstancingEnabled());
+            AM_EXPECT(channel.GetInstancingMode() == eChannelInstanceMode_Blended);
 
-        // Disable instancing
-        channel.DisableInstancing();
-        AM_EXPECT(!channel.IsInstancingEnabled());
+            // Disable instancing
+            channel.DisableInstancing();
+            AM_EXPECT(!channel.IsInstancingEnabled());
 
-        // Enable separate mode
-        channel.EnableInstancing(eChannelInstanceMode_Separate);
-        AM_EXPECT(channel.IsInstancingEnabled());
-        AM_EXPECT(channel.GetInstancingMode() == eChannelInstanceMode_Separate);
+            // Enable separate mode
+            channel.EnableInstancing(eChannelInstanceMode_Separate);
+            AM_EXPECT(channel.IsInstancingEnabled());
+            AM_EXPECT(channel.GetInstancingMode() == eChannelInstanceMode_Separate);
 
-        // Disable again
-        channel.DisableInstancing();
-        AM_EXPECT(!channel.IsInstancingEnabled());
-    }
+            // Disable again
+            channel.DisableInstancing();
+            AM_EXPECT(!channel.IsInstancingEnabled());
+        }
+    };
+
+    AM_REGISTER_TEST(core_channel_instances, can_enable_and_disable_instancing);
 } // namespace SparkyStudios::Audio::Amplitude::Tests

@@ -15,47 +15,54 @@
 #include <SparkyStudios/Audio/Amplitude/Amplitude.h>
 
 #include "EngineTestCase.h"
+#include "TestRegistry.h"
 
 using namespace SparkyStudios::Audio::Amplitude;
 
 namespace SparkyStudios::Audio::Amplitude::Tests
 {
-    void EngineTestCase::Run()
+    AM_TEST_CASE(EngineTestCase, core_engine, can_register_entities)
     {
-        // Test adding entities
-        Entity e1 = amEngine->AddEntity(1);
-        Entity e2 = amEngine->AddEntity(2);
+    public:
+        void Run() override
+        {
+            // Test adding entities
+            Entity e1 = amEngine->AddEntity(1);
+            Entity e2 = amEngine->AddEntity(2);
 
-        AM_EXPECT(e1.Valid());
-        AM_EXPECT(e2.Valid());
+            AM_EXPECT(e1.Valid());
+            AM_EXPECT(e2.Valid());
 
-        // Test adding entity with existing ID should return same entity
-        Entity e3 = amEngine->AddEntity(1);
-        AM_EXPECT(e3.Valid());
-        AM_EXPECT_EQ(e3.GetState(), e1.GetState());
+            // Test adding entity with existing ID should return same entity
+            Entity e3 = amEngine->AddEntity(1);
+            AM_EXPECT(e3.Valid());
+            AM_EXPECT_EQ(e3.GetState(), e1.GetState());
 
-        // Test getting existing entity
-        Entity e4 = amEngine->GetEntity(2);
-        AM_EXPECT(e4.Valid());
-        AM_EXPECT_EQ(e4.GetState(), e2.GetState());
+            // Test getting existing entity
+            Entity e4 = amEngine->GetEntity(2);
+            AM_EXPECT(e4.Valid());
+            AM_EXPECT_EQ(e4.GetState(), e2.GetState());
 
-        // Test getting non-existing entity
-        Entity e5 = amEngine->GetEntity(3);
-        AM_EXPECT_NOT(e5.Valid());
+            // Test getting non-existing entity
+            Entity e5 = amEngine->GetEntity(3);
+            AM_EXPECT_NOT(e5.Valid());
 
-        // Test removing entities
-        amEngine->RemoveEntity(1);
-        amEngine->RemoveEntity(&e2);
-        amEngine->RemoveEntity(3); // Non-existing entity should not cause issues
+            // Test removing entities
+            amEngine->RemoveEntity(1);
+            amEngine->RemoveEntity(&e2);
+            amEngine->RemoveEntity(3); // Non-existing entity should not cause issues
 
-        AM_EXPECT_NOT(e1.Valid());
-        AM_EXPECT_NOT(e2.Valid());
-        AM_EXPECT_NOT(e3.Valid());
-        AM_EXPECT_NOT(e4.Valid());
-        AM_EXPECT_NOT(e5.Valid());
+            AM_EXPECT_NOT(e1.Valid());
+            AM_EXPECT_NOT(e2.Valid());
+            AM_EXPECT_NOT(e3.Valid());
+            AM_EXPECT_NOT(e4.Valid());
+            AM_EXPECT_NOT(e5.Valid());
 
-        // Test getting entity with invalid ID
-        Entity e6 = amEngine->GetEntity(kAmInvalidObjectId);
-        AM_EXPECT_NOT(e6.Valid());
-    }
+            // Test getting entity with invalid ID
+            Entity e6 = amEngine->GetEntity(kAmInvalidObjectId);
+            AM_EXPECT_NOT(e6.Valid());
+        }
+    };
+
+    AM_REGISTER_TEST(core_engine, can_register_entities);
 } // namespace SparkyStudios::Audio::Amplitude::Tests

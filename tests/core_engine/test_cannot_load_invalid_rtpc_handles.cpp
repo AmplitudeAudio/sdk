@@ -15,27 +15,34 @@
 #include <SparkyStudios/Audio/Amplitude/Amplitude.h>
 
 #include "EngineTestCase.h"
+#include "TestRegistry.h"
 
 using namespace SparkyStudios::Audio::Amplitude;
 
 namespace SparkyStudios::Audio::Amplitude::Tests
 {
-    void EngineTestCase::Run()
+    AM_TEST_CASE(EngineTestCase, core_engine, cannot_load_invalid_rtpc_handles)
     {
-        // Test loading invalid RTPC handles
-        RtpcHandle invalidRtpc1 = amEngine->GetRtpcHandle("invalid_rtpc");
-        AM_EXPECT(invalidRtpc1 == nullptr);
+    public:
+        void Run() override
+        {
+            // Test loading invalid RTPC handles
+            RtpcHandle invalidRtpc1 = amEngine->GetRtpcHandle("invalid_rtpc");
+            AM_EXPECT(invalidRtpc1 == nullptr);
 
-        RtpcHandle invalidRtpc2 = amEngine->GetRtpcHandle(99999);
-        AM_EXPECT(invalidRtpc2 == nullptr);
+            RtpcHandle invalidRtpc2 = amEngine->GetRtpcHandle(99999);
+            AM_EXPECT(invalidRtpc2 == nullptr);
 
-        // Test setting RTPC values with invalid RTPC IDs (should not crash)
-        amEngine->SetRtpcValue(99999, 1);
+            // Test setting RTPC values with invalid RTPC IDs (should not crash)
+            amEngine->SetRtpcValue(99999, 1);
 
-        // Test setting RTPC values with invalid RTPC names (should not crash)
-        amEngine->SetRtpcValue("invalid_rtpc", 1);
+            // Test setting RTPC values with invalid RTPC names (should not crash)
+            amEngine->SetRtpcValue("invalid_rtpc", 1);
 
-        // Test setting RTPC values with invalid RTPC handles (should not crash)
-        amEngine->SetRtpcValue(invalidRtpc1, 1);
-    }
+            // Test setting RTPC values with invalid RTPC handles (should not crash)
+            amEngine->SetRtpcValue(invalidRtpc1, 1);
+        }
+    };
+
+    AM_REGISTER_TEST(core_engine, cannot_load_invalid_rtpc_handles);
 } // namespace SparkyStudios::Audio::Amplitude::Tests

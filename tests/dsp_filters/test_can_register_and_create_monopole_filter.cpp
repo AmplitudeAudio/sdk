@@ -17,45 +17,52 @@
 #include <DSP/Filters/MonoPoleFilter.h>
 
 #include "SimpleTestCase.h"
+#include "TestRegistry.h"
 
 using namespace SparkyStudios::Audio::Amplitude;
 
 namespace SparkyStudios::Audio::Amplitude::Tests
 {
-    void SimpleTestCase::Run()
+    AM_TEST_CASE(SimpleTestCase, dsp_filters, can_register_and_create_monopole_filter)
     {
-        auto filter = amshared(MonoPoleFilter);
-        filter->Initialize(0.5f);
+    public:
+        void Run() override
+        {
+            auto filter = amshared(MonoPoleFilter);
+            filter->Initialize(0.5f);
 
-        Filter::Unregister(Filter::Find("MonoPole"));
-        Filter::Register(filter);
+            Filter::Unregister(Filter::Find("MonoPole"));
+            Filter::Register(filter);
 
-        AM_EXPECT_NOT(Filter::Find("MonoPole") == nullptr);
-        AM_EXPECT(Filter::Find("MonoPole")->GetName() == "MonoPole");
+            AM_EXPECT_NOT(Filter::Find("MonoPole") == nullptr);
+            AM_EXPECT(Filter::Find("MonoPole")->GetName() == "MonoPole");
 
-        auto instance = Filter::Construct("MonoPole");
-        AM_EXPECT_NOT(instance == nullptr);
+            auto instance = Filter::Construct("MonoPole");
+            AM_EXPECT_NOT(instance == nullptr);
 
-        // Test parameter count
-        AM_EXPECT(filter->GetParameterCount() == MonoPoleFilter::ATTRIBUTE_LAST);
-        AM_EXPECT(filter->GetParameterCount() == 2);
+            // Test parameter count
+            AM_EXPECT(filter->GetParameterCount() == MonoPoleFilter::ATTRIBUTE_LAST);
+            AM_EXPECT(filter->GetParameterCount() == 2);
 
-        // Test parameter names
-        AM_EXPECT(filter->GetParameterName(MonoPoleFilter::ATTRIBUTE_WET) == "Wet");
-        AM_EXPECT(filter->GetParameterName(MonoPoleFilter::ATTRIBUTE_COEFFICIENT) == "Coefficient");
+            // Test parameter names
+            AM_EXPECT(filter->GetParameterName(MonoPoleFilter::ATTRIBUTE_WET) == "Wet");
+            AM_EXPECT(filter->GetParameterName(MonoPoleFilter::ATTRIBUTE_COEFFICIENT) == "Coefficient");
 
-        // Test parameter types
-        AM_EXPECT(filter->GetParameterType(MonoPoleFilter::ATTRIBUTE_WET) == eParameterType_Float);
-        AM_EXPECT(filter->GetParameterType(MonoPoleFilter::ATTRIBUTE_COEFFICIENT) == eParameterType_Float);
+            // Test parameter types
+            AM_EXPECT(filter->GetParameterType(MonoPoleFilter::ATTRIBUTE_WET) == eParameterType_Float);
+            AM_EXPECT(filter->GetParameterType(MonoPoleFilter::ATTRIBUTE_COEFFICIENT) == eParameterType_Float);
 
-        // Test WET parameter boundaries
-        AM_EXPECT(filter->GetParameterMin(MonoPoleFilter::ATTRIBUTE_WET) == 0.0f);
-        AM_EXPECT(filter->GetParameterMax(MonoPoleFilter::ATTRIBUTE_WET) == 1.0f);
+            // Test WET parameter boundaries
+            AM_EXPECT(filter->GetParameterMin(MonoPoleFilter::ATTRIBUTE_WET) == 0.0f);
+            AM_EXPECT(filter->GetParameterMax(MonoPoleFilter::ATTRIBUTE_WET) == 1.0f);
 
-        // Test COEFFICIENT parameter boundaries
-        AM_EXPECT(filter->GetParameterMin(MonoPoleFilter::ATTRIBUTE_COEFFICIENT) == 0.0f);
-        AM_EXPECT(filter->GetParameterMax(MonoPoleFilter::ATTRIBUTE_COEFFICIENT) == 1.0f);
+            // Test COEFFICIENT parameter boundaries
+            AM_EXPECT(filter->GetParameterMin(MonoPoleFilter::ATTRIBUTE_COEFFICIENT) == 0.0f);
+            AM_EXPECT(filter->GetParameterMax(MonoPoleFilter::ATTRIBUTE_COEFFICIENT) == 1.0f);
 
-        Filter::Unregister(filter);
-    }
+            Filter::Unregister(filter);
+        }
+    };
+
+    AM_REGISTER_TEST(dsp_filters, can_register_and_create_monopole_filter);
 } // namespace SparkyStudios::Audio::Amplitude::Tests

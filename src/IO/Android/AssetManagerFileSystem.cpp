@@ -18,7 +18,6 @@
 #include <SparkyStudios/Audio/Amplitude/IO/Android/AssetManagerFile.h>
 #include <SparkyStudios/Audio/Amplitude/IO/Android/AssetManagerFileSystem.h>
 
-#include <ranges>
 #include <sstream>
 #include <vector>
 

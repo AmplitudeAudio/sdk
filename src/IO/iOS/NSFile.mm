@@ -62,7 +62,10 @@ NSFile::~NSFile() { Close(); }
 AmOsString NSFile::GetPath() const { return m_path; }
 
 bool NSFile::Eof() const {
-  return [m_fileHandle offsetInFile] >= [m_fileHandle seekToEndOfFile];
+  unsigned long long currentOffset = [m_fileHandle offsetInFile];
+  unsigned long long length = [m_fileHandle seekToEndOfFile];
+  [m_fileHandle seekToFileOffset:currentOffset];
+  return currentOffset >= length;
 }
 
 AmSize NSFile::Read(AmUInt8Buffer dst, AmSize bytes) const {
@@ -111,6 +114,8 @@ bool NSFile::IsValid() const { return m_isValid; }
 void NSFile::Close() {
   if (m_fileHandle) {
     [m_fileHandle closeFile];
+    m_fileHandle = nil;
+    m_isValid = false;
   }
 }
 } // namespace SparkyStudios::Audio::Amplitude

@@ -17,30 +17,40 @@
 #include <Core/EntityInternalState.h>
 
 #include "SimpleTestCase.h"
+#include "TestRegistry.h"
 
 using namespace SparkyStudios::Audio::Amplitude;
 
-void SimpleTestCase::Run()
+namespace SparkyStudios::Audio::Amplitude::Tests
 {
-    EntityInternalState state;
-    state.SetId(1);
+    AM_TEST_CASE(SimpleTestCase, core_entity, handles_obstruction_changes)
+    {
+    public:
+        void Run() override
+        {
+            EntityInternalState state;
+            state.SetId(1);
 
-    fplutil::intrusive_list entity_list(&EntityInternalState::node);
-    entity_list.push_back(state);
+            fplutil::intrusive_list entity_list(&EntityInternalState::node);
+            entity_list.push_back(state);
 
-    // Test state directly
-    constexpr AmReal32 obstruction = 0.67f;
-    state.SetObstruction(obstruction);
+            // Test state directly
+            constexpr AmReal32 obstruction = 0.67f;
+            state.SetObstruction(obstruction);
 
-    AM_EXPECT_EQ(state.GetObstruction(), obstruction);
+            AM_EXPECT_EQ(state.GetObstruction(), obstruction);
 
-    // Test with wrapper
-    Entity wrapper(&state);
-    AM_EXPECT_EQ(wrapper.GetState(), &state);
+            // Test with wrapper
+            Entity wrapper(&state);
+            AM_EXPECT_EQ(wrapper.GetState(), &state);
 
-    constexpr AmReal32 wrapperObstruction = 0.85f;
-    wrapper.SetObstruction(wrapperObstruction);
+            constexpr AmReal32 wrapperObstruction = 0.85f;
+            wrapper.SetObstruction(wrapperObstruction);
 
-    AM_EXPECT_EQ(wrapper.GetObstruction(), wrapperObstruction);
-    AM_EXPECT_EQ(wrapper.GetObstruction(), state.GetObstruction());
-}
+            AM_EXPECT_EQ(wrapper.GetObstruction(), wrapperObstruction);
+            AM_EXPECT_EQ(wrapper.GetObstruction(), state.GetObstruction());
+        }
+    };
+
+    AM_REGISTER_TEST(core_entity, handles_obstruction_changes);
+} // namespace SparkyStudios::Audio::Amplitude::Tests

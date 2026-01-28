@@ -15,54 +15,64 @@
 #include <SparkyStudios/Audio/Amplitude/Amplitude.h>
 
 #include "SimpleTestCase.h"
+#include "TestRegistry.h"
 #include "TestUtils.h"
 
 using namespace SparkyStudios::Audio::Amplitude;
 
-void SimpleTestCase::Run()
+namespace SparkyStudios::Audio::Amplitude::Tests
 {
-    CapsuleShape shape(50, 100);
-
+    AM_TEST_CASE(SimpleTestCase, math_capsule_shape, all)
     {
-        CapsuleShape other(50, 200);
-        CapsuleShape some(50, 100);
-        CapsuleShape clone(50, 100);
-        clone.SetLocation({ 100, 100, 100 });
+    public:
+        void Run() override
+        {
+            CapsuleShape shape(50, 100);
 
-        AM_EXPECT_EQ(shape, some);
-        AM_EXPECT_NE(shape, other);
-        AM_EXPECT_NE(shape, clone);
-    }
+        {
+            CapsuleShape other(50, 200);
+            CapsuleShape some(50, 100);
+            CapsuleShape clone(50, 100);
+            clone.SetLocation({ 100, 100, 100 });
 
-    constexpr AmVector3 inner = { 0, 0, 75 };
-    constexpr AmVector3 outer = { 0, 150, 0 };
-    constexpr AmVector3 center = { 0, 0, 0 };
-    constexpr AmVector3 surfacePoint = { 50, 0, 50 };
+            AM_EXPECT_EQ(shape, some);
+            AM_EXPECT_NE(shape, other);
+            AM_EXPECT_NE(shape, clone);
+            }
 
-    AM_EXPECT_EQ(shape.GetRadius(), 50);
-    AM_EXPECT_EQ(shape.GetDiameter(), 100);
-    AM_EXPECT_EQ(shape.GetHalfHeight(), 100);
-    AM_EXPECT_EQ(shape.GetHeight(), 200);
+            constexpr AmVector3 inner = { 0, 0, 75 };
+            constexpr AmVector3 outer = { 0, 150, 0 };
+            constexpr AmVector3 center = { 0, 0, 0 };
+            constexpr AmVector3 surfacePoint = { 50, 0, 50 };
 
-    AM_EXPECT_EQ(shape.GetShortestDistanceToEdge(inner), 25.0f);
-    AM_EXPECT_EQ(shape.GetShortestDistanceToEdge(outer), -100.0f);
-    AM_EXPECT_EQ(shape.GetShortestDistanceToEdge(surfacePoint), 0.0f);
+            AM_EXPECT_EQ(shape.GetRadius(), 50);
+            AM_EXPECT_EQ(shape.GetDiameter(), 100);
+            AM_EXPECT_EQ(shape.GetHalfHeight(), 100);
+            AM_EXPECT_EQ(shape.GetHeight(), 200);
 
-    AM_EXPECT(shape.Contains(inner));
-    AM_EXPECT_NOT(shape.Contains(outer));
-    AM_EXPECT(shape.Contains(surfacePoint));
+            AM_EXPECT_EQ(shape.GetShortestDistanceToEdge(inner), 25.0f);
+            AM_EXPECT_EQ(shape.GetShortestDistanceToEdge(outer), -100.0f);
+            AM_EXPECT_EQ(shape.GetShortestDistanceToEdge(surfacePoint), 0.0f);
 
-    {
-        shape.SetRadius(100);
+            AM_EXPECT(shape.Contains(inner));
+            AM_EXPECT_NOT(shape.Contains(outer));
+            AM_EXPECT(shape.Contains(surfacePoint));
 
-        AM_EXPECT_EQ(shape.GetRadius(), 100);
-        AM_EXPECT_EQ(shape.GetDiameter(), 200);
-    }
+        {
+            shape.SetRadius(100);
 
-    {
-        shape.SetHalfHeight(50);
+            AM_EXPECT_EQ(shape.GetRadius(), 100);
+            AM_EXPECT_EQ(shape.GetDiameter(), 200);
+            }
 
-        AM_EXPECT_EQ(shape.GetHalfHeight(), 50);
-        AM_EXPECT_EQ(shape.GetHeight(), 100);
-    }
-}
+        {
+            shape.SetHalfHeight(50);
+
+            AM_EXPECT_EQ(shape.GetHalfHeight(), 50);
+            AM_EXPECT_EQ(shape.GetHeight(), 100);
+            }
+        }
+    };
+
+    AM_REGISTER_TEST(math_capsule_shape, all);
+} // namespace SparkyStudios::Audio::Amplitude::Tests

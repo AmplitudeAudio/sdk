@@ -39,8 +39,6 @@ namespace SparkyStudios::Audio::Amplitude::Tests
             MemoryManager::Deinitialize();
         }
 
-        void Run() override;
-
     protected:
         void GenerateSineWave(AudioBuffer& buffer, AmUInt32 sampleRate, AmReal32 dcOffset = 0.0f)
         {
@@ -81,9 +79,4 @@ namespace SparkyStudios::Audio::Amplitude::Tests
     private:
         std::shared_ptr<DefaultResampler> _resampler;
     };
-
-    std::shared_ptr<TestCase> MakeTestCase()
-    {
-        return std::make_shared<DSPTestCase>();
-    }
 } // namespace SparkyStudios::Audio::Amplitude::Tests

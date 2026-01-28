@@ -15,17 +15,24 @@
 #include <SparkyStudios/Audio/Amplitude/Amplitude.h>
 
 #include "EngineTestCase.h"
+#include "TestRegistry.h"
 
 using namespace SparkyStudios::Audio::Amplitude;
 
 namespace SparkyStudios::Audio::Amplitude::Tests
 {
-    void EngineTestCase::Run()
+    AM_TEST_CASE(EngineTestCase, core_engine, bus_id_is_correct)
     {
-        Bus bus = amEngine->FindBus(kAmMasterBusId);
-        AM_EXPECT(bus.Valid());
+    public:
+        void Run() override
+        {
+            Bus bus = amEngine->FindBus(kAmMasterBusId);
+            AM_EXPECT(bus.Valid());
 
-        // Test that bus ID is correct
-        AM_EXPECT_EQ(bus.GetId(), kAmMasterBusId);
-    }
+            // Test that bus ID is correct
+            AM_EXPECT_EQ(bus.GetId(), kAmMasterBusId);
+        }
+    };
+
+    AM_REGISTER_TEST(core_engine, bus_id_is_correct);
 } // namespace SparkyStudios::Audio::Amplitude::Tests

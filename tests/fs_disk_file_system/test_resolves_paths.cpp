@@ -15,24 +15,34 @@
 #include <SparkyStudios/Audio/Amplitude/Amplitude.h>
 
 #include "SimpleTestCase.h"
+#include "TestRegistry.h"
 
 using namespace SparkyStudios::Audio::Amplitude;
 
-void SimpleTestCase::Run()
+namespace SparkyStudios::Audio::Amplitude::Tests
 {
-    DiskFileSystem fileSystem;
-    fileSystem.SetBasePath(AM_OS_STRING("./samples/assets"));
+    AM_TEST_CASE(SimpleTestCase, fs_disk_file_system, resolves_paths)
+    {
+    public:
+        void Run() override
+        {
+            DiskFileSystem fileSystem;
+            fileSystem.SetBasePath(AM_OS_STRING("./samples/assets"));
 
-    const auto& cp = std::filesystem::current_path() / AM_OS_STRING("samples/assets");
-    AM_EXPECT(cp == fileSystem.GetBasePath());
+            const auto& cp = std::filesystem::current_path() / AM_OS_STRING("samples/assets");
+            AM_EXPECT(cp == fileSystem.GetBasePath());
 
-    AM_EXPECT(
-        fileSystem.ResolvePath(AM_OS_STRING("sounds/test.wav")) ==
-        (cp / AM_OS_STRING("sounds/test.wav")).lexically_normal().make_preferred().native());
-    AM_EXPECT(
-        fileSystem.ResolvePath(AM_OS_STRING("../../samples/assets/sounds/../test.wav")) ==
-        (cp / AM_OS_STRING("test.wav")).lexically_normal().make_preferred().native());
-    AM_EXPECT(
-        fileSystem.ResolvePath(AM_OS_STRING("./sounds/../sounds/./test.wav")) ==
-        (cp / AM_OS_STRING("sounds/test.wav")).lexically_normal().make_preferred().native());
-}
+            AM_EXPECT(
+                fileSystem.ResolvePath(AM_OS_STRING("sounds/test.wav")) ==
+                (cp / AM_OS_STRING("sounds/test.wav")).lexically_normal().make_preferred().native());
+            AM_EXPECT(
+                fileSystem.ResolvePath(AM_OS_STRING("../../samples/assets/sounds/../test.wav")) ==
+                (cp / AM_OS_STRING("test.wav")).lexically_normal().make_preferred().native());
+            AM_EXPECT(
+                fileSystem.ResolvePath(AM_OS_STRING("./sounds/../sounds/./test.wav")) ==
+                (cp / AM_OS_STRING("sounds/test.wav")).lexically_normal().make_preferred().native());
+        }
+    };
+
+    AM_REGISTER_TEST_DESKTOP_ONLY(fs_disk_file_system, resolves_paths);
+} // namespace SparkyStudios::Audio::Amplitude::Tests

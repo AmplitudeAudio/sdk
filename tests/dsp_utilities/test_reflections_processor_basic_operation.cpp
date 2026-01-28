@@ -20,35 +20,42 @@
 #include <DSP/ReflectionsProcessor.h>
 
 #include "DSPTestCase.h"
+#include "TestRegistry.h"
 
 namespace SparkyStudios::Audio::Amplitude::Tests
 {
-    void DSPTestCase::Run()
+    AM_TEST_CASE(DSPTestCase, dsp_utilities, reflections_processor_basic_operation)
     {
-        auto monopoleFilter = Engine::RegisterExtension<MonoPoleFilter>();
+    public:
+        void Run() override
+        {
+            auto monopoleFilter = Engine::RegisterExtension<MonoPoleFilter>();
 
-        constexpr AmUInt32 sampleRate = 48000;
-        constexpr AmSize frameCount = 512;
+            constexpr AmUInt32 sampleRate = 48000;
+            constexpr AmSize frameCount = 512;
 
-        ReflectionsProcessor processor(sampleRate, frameCount);
+            ReflectionsProcessor processor(sampleRate, frameCount);
 
-        // Create input buffer (mono)
-        AudioBuffer input(frameCount, 1);
+            // Create input buffer (mono)
+            AudioBuffer input(frameCount, 1);
 
-        // Generate test signal
-        GenerateSineWave(input, sampleRate);
+            // Generate test signal
+            GenerateSineWave(input, sampleRate);
 
-        // Create output BFormat buffer
-        BFormat output;
-        output.Configure(1, true, frameCount);
+            // Create output BFormat buffer
+            BFormat output;
+            output.Configure(1, true, frameCount);
 
-        // Process without room state (should produce output but minimal processing)
-        processor.Process(input, &output);
+            // Process without room state (should produce output but minimal processing)
+            processor.Process(input, &output);
 
-        // Verify the processor runs without errors
-        AM_EXPECT(output.GetChannelCount() >= kAmFirstOrderAmbisonicChannelCount);
-        AM_EXPECT(output.GetSampleCount() == frameCount);
+            // Verify the processor runs without errors
+            AM_EXPECT(output.GetChannelCount() >= kAmFirstOrderAmbisonicChannelCount);
+            AM_EXPECT(output.GetSampleCount() == frameCount);
 
-        Engine::UnregisterExtension(monopoleFilter);
-    }
+            Engine::UnregisterExtension(monopoleFilter);
+        }
+    };
+
+    AM_REGISTER_TEST(dsp_utilities, reflections_processor_basic_operation);
 } // namespace SparkyStudios::Audio::Amplitude::Tests

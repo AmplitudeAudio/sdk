@@ -17,34 +17,41 @@
 #include <DSP/Resamplers/DefaultResampler.h>
 
 #include "SimpleTestCase.h"
+#include "TestRegistry.h"
 
 using namespace SparkyStudios::Audio::Amplitude;
 
 namespace SparkyStudios::Audio::Amplitude::Tests
 {
-    void SimpleTestCase::Run()
+    AM_TEST_CASE(SimpleTestCase, dsp_resamplers, default_resampler_can_reset)
     {
-        auto resampler = amshared(DefaultResampler);
-        auto instance = resampler->CreateInstance();
+    public:
+        void Run() override
+        {
+            auto resampler = amshared(DefaultResampler);
+            auto instance = resampler->CreateInstance();
 
-        constexpr AmUInt16 channelCount = 2;
-        constexpr AmUInt32 sampleRateIn = 44100;
-        constexpr AmUInt32 sampleRateOut = 48000;
+            constexpr AmUInt16 channelCount = 2;
+            constexpr AmUInt32 sampleRateIn = 44100;
+            constexpr AmUInt32 sampleRateOut = 48000;
 
-        instance->Initialize(channelCount, sampleRateIn, sampleRateOut);
+            instance->Initialize(channelCount, sampleRateIn, sampleRateOut);
 
-        // Reset should not cause any issues
-        instance->Reset();
+            // Reset should not cause any issues
+            instance->Reset();
 
-        AM_EXPECT(instance->GetChannelCount() == channelCount);
-        AM_EXPECT(instance->GetSampleRateIn() == sampleRateIn);
-        AM_EXPECT(instance->GetSampleRateOut() == sampleRateOut);
+            AM_EXPECT(instance->GetChannelCount() == channelCount);
+            AM_EXPECT(instance->GetSampleRateIn() == sampleRateIn);
+            AM_EXPECT(instance->GetSampleRateOut() == sampleRateOut);
 
-        // Clear should clean up everything
-        instance->Clear();
+            // Clear should clean up everything
+            instance->Clear();
 
-        AM_EXPECT(instance->GetChannelCount() == 0);
-        AM_EXPECT(instance->GetSampleRateIn() == 0);
-        AM_EXPECT(instance->GetSampleRateOut() == 0);
-    }
+            AM_EXPECT(instance->GetChannelCount() == 0);
+            AM_EXPECT(instance->GetSampleRateIn() == 0);
+            AM_EXPECT(instance->GetSampleRateOut() == 0);
+        }
+    };
+
+    AM_REGISTER_TEST(dsp_resamplers, default_resampler_can_reset);
 } // namespace SparkyStudios::Audio::Amplitude::Tests

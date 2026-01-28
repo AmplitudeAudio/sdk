@@ -25,6 +25,45 @@ add_repositories("repo xmake/repo", { rootdir = os.scriptdir() })
 add_rules("mode.debug", "mode.release")
 add_rules("plugin.compile_commands.autoupdate")
 
+-- Custom coverage mode rule for llvm-cov
+rule("mode.coverage.llvm")
+  on_config(function(target)
+    if is_mode("coverage") then
+      -- Enable debug symbols and disable optimization
+      if not target:get("symbols") then
+        target:set("symbols", "debug")
+      end
+      if not target:get("optimize") then
+        target:set("optimize", "none")
+      end
+      target:set("policy", "build.ccache", false)
+
+      -- Only apply llvm-cov flags for Clang-based compilers
+      local dominated = false
+      if target:has_tool("cxx", "clang", "clangxx") then
+        dominated = true
+      elseif target:has_tool("cc", "clang") then
+        dominated = true
+      end
+
+      -- macOS always uses Clang
+      if is_plat("macosx", "iphoneos") then
+        dominated = true
+      end
+
+      if dominated then
+        target:add("cxflags", "-fprofile-instr-generate", "-fcoverage-mapping", { force = true })
+        target:add("mxflags", "-fprofile-instr-generate", "-fcoverage-mapping", { force = true })
+        target:add("ldflags", "-fprofile-instr-generate", "-fcoverage-mapping", { force = true })
+        target:add("shflags", "-fprofile-instr-generate", "-fcoverage-mapping", { force = true })
+      end
+    end
+  end)
+rule_end()
+
+-- Apply coverage rule to all targets
+add_rules("mode.coverage.llvm")
+
 -- Options
 option("build_assets")
   set_default(false)
@@ -148,9 +187,12 @@ if is_plat("macosx") or is_plat("iphoneos") then
   add_defines("AM_FFT_APPLE_ACCELERATE")
 end
 
--- Android-specific libraries
+-- Android-specific libraries and flags
 if is_plat("android") then
   add_syslinks("android", "log")
+  -- Position-independent code is required for Android native apps
+  -- (all code, including static libraries, must be PIC for the final .so)
+  add_cxflags("-fPIC", { force = true })
 end
 
 -- Plugins disabled on iOS/Android due to:
@@ -353,39 +395,160 @@ end
 if has_config("unit_tests") then
   includes("tests/xmake.lua")
 
-  -- Add code coverage for non-MSVC compilers
-  if not is_plat("windows") then
+  if not is_plat("android") and not is_plat("iphoneos") then
+    target("generate_test_package")
+      set_kind("phony")
+
+      add_deps("ampk", "build_sample_project")
+
+      on_build(function(target)
+        import("core.project.config")
+        import("core.project.project")
+        import("lib.detect.find_tool")
+
+        local ampk = project.target("ampk")
+
+        local program = ampk:targetfile()
+        if program then
+          local assets_dir = path.join(path.absolute(config.builddir()), "samples/assets")
+          local output_uncompressed_dir = path.join(path.absolute(config.builddir()), "samples/assets_uncompressed.ampk")
+          local output_compressed_dir = path.join(path.absolute(config.builddir()), "samples/assets_compressed.ampk")
+
+          os.exec("%s -q -c 0 %s %s", program, assets_dir, output_uncompressed_dir)
+          os.exec("%s -q -c 1 %s %s", program, assets_dir, output_compressed_dir)
+        else
+          print("ampk not found.")
+        end
+      end)
+    target_end()
+  end
+
+  -- Add code coverage for non-MSVC compilers (desktop only)
+  if not is_plat("windows", "iphoneos", "android") then
     target("coverage_generate_test_report")
       set_kind("phony")
       set_default(false)
 
       on_build(function(target)
         import("lib.detect.find_program")
+        import("core.project.config")
+        import("core.project.project")
 
-        -- Find required tools
-        local kcov = find_program("kcov")
+        -- Find required LLVM tools (try xcrun on macOS first)
+        local llvm_profdata = find_program("llvm-profdata")
+        local llvm_cov = find_program("llvm-cov")
+        local use_xcrun = false
 
-        if not kcov then
-          raise("kcov not found. Please install kcov package.")
+        -- On macOS, try xcrun if direct lookup fails
+        if is_plat("macosx") then
+          local xcrun = find_program("xcrun")
+          if xcrun and (not llvm_profdata or not llvm_cov) then
+            use_xcrun = true
+            llvm_profdata = xcrun
+            llvm_cov = xcrun
+          end
+        end
+
+        if not llvm_profdata then
+          raise("llvm-profdata not found. Please install LLVM toolchain.")
+        end
+
+        if not llvm_cov then
+          raise("llvm-cov not found. Please install LLVM toolchain.")
         end
 
         local coverage_dir = path.join(os.projectdir(), "coverage")
         local merged_dir = path.join(coverage_dir, "merged")
-        local split_dir = path.join(coverage_dir, "split_*")
+        local profdata_file = path.join(coverage_dir, "coverage.profdata")
+        local lcov_file = path.join(merged_dir, "coverage.lcov")
 
-        local sources = {}
-        for _, dir in ipairs(os.dirs(split_dir)) do
-          table.insert(sources, dir)
+        -- Ensure output directories exist
+        os.mkdir(coverage_dir)
+        os.mkdir(merged_dir)
+
+        -- Find all .profraw files generated by tests
+        local profraw_files = os.files(path.join(coverage_dir, "*.profraw"))
+
+        if #profraw_files == 0 then
+          raise("No .profraw files found. Run tests first with coverage mode enabled.")
         end
 
-        -- Generate HTML report
-        print("Generating HTML coverage report...")
-        os.execv(kcov, {
-          "--merge", merged_dir, unpack(sources)
-        })
+        -- Merge all .profraw files into a single .profdata file
+        print("Merging %d profile files...", #profraw_files)
+        local merge_args = {}
+        if use_xcrun then
+          table.insert(merge_args, "llvm-profdata")
+        end
+        table.insert(merge_args, "merge")
+        table.insert(merge_args, "-sparse")
+        for _, f in ipairs(profraw_files) do
+          table.insert(merge_args, f)
+        end
+        table.insert(merge_args, "-o")
+        table.insert(merge_args, profdata_file)
+        os.execv(llvm_profdata, merge_args)
 
-        print("Coverage report generated at: %s", merged_dir)
-        print("Open %s to view the report", path.join(merged_dir, "index.html"))
+        -- Collect all test binaries for coverage export
+        local test_binaries = {}
+        for _, t in pairs(project.targets()) do
+          if t:get("group") and t:get("group"):startswith("test_") then
+            local targetfile = t:targetfile()
+            if targetfile and os.isfile(targetfile) then
+              table.insert(test_binaries, targetfile)
+            end
+          end
+        end
+
+        if #test_binaries == 0 then
+          raise("No test binaries found.")
+        end
+
+        -- Generate lcov format report
+        print("Generating lcov coverage report...")
+        local export_args = {}
+        if use_xcrun then
+          table.insert(export_args, "llvm-cov")
+        end
+        table.insert(export_args, "export")
+        table.insert(export_args, test_binaries[1])
+        for i = 2, #test_binaries do
+          table.insert(export_args, "-object")
+          table.insert(export_args, test_binaries[i])
+        end
+        table.insert(export_args, "-instr-profile=" .. profdata_file)
+        table.insert(export_args, "-format=lcov")
+        table.insert(export_args, "-ignore-filename-regex=.*/tests/.*")
+        table.insert(export_args, "-ignore-filename-regex=.*/Utils/.*")
+        table.insert(export_args, "-ignore-filename-regex=.*/build/.*")
+
+        local lcov_content = os.iorunv(llvm_cov, export_args)
+        io.writefile(lcov_file, lcov_content)
+
+        -- Also generate HTML report
+        print("Generating HTML coverage report...")
+        local html_dir = path.join(merged_dir, "html")
+        os.mkdir(html_dir)
+        local show_args = {}
+        if use_xcrun then
+          table.insert(show_args, "llvm-cov")
+        end
+        table.insert(show_args, "show")
+        table.insert(show_args, test_binaries[1])
+        for i = 2, #test_binaries do
+          table.insert(show_args, "-object")
+          table.insert(show_args, test_binaries[i])
+        end
+        table.insert(show_args, "-instr-profile=" .. profdata_file)
+        table.insert(show_args, "-format=html")
+        table.insert(show_args, "-output-dir=" .. html_dir)
+        table.insert(show_args, "-ignore-filename-regex=.*/tests/.*")
+        table.insert(show_args, "-ignore-filename-regex=.*/Utils/.*")
+        table.insert(show_args, "-ignore-filename-regex=.*/build/.*")
+        os.execv(llvm_cov, show_args)
+
+        print("Coverage report generated:")
+        print("  lcov: %s", lcov_file)
+        print("  HTML: %s", path.join(html_dir, "index.html"))
       end)
     target_end()
 
@@ -401,15 +564,9 @@ if has_config("unit_tests") then
         print("Cleaning coverage data...")
         os.rm(coverage_dir)
 
-        -- Remove gcov data files
-        local gcda_files = os.files(path.join(config.builddir(), "**.gcda"))
-        local gcno_files = os.files(path.join(config.builddir(), "**.gcno"))
-
-        for _, file in ipairs(gcda_files) do
-          os.rm(file)
-        end
-
-        for _, file in ipairs(gcno_files) do
+        -- Remove profraw files from build directory
+        local profraw_files = os.files(path.join(config.builddir(), "**.profraw"))
+        for _, file in ipairs(profraw_files) do
           os.rm(file)
         end
 

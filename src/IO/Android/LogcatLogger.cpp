@@ -67,7 +67,7 @@ namespace SparkyStudios::Audio::Amplitude
         case eLogMessageLevel_Critical:
             return ANDROID_LOG_FATAL;
         case eLogMessageLevel_Success:
-            return ANDROID_LOG_UNKNOWN;
+            return ANDROID_LOG_INFO;
         default:
             return ANDROID_LOG_DEFAULT;
         }

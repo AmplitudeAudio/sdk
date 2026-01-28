@@ -15,14 +15,24 @@
 #include <SparkyStudios/Audio/Amplitude/Amplitude.h>
 
 #include "SimpleTestCase.h"
+#include "TestRegistry.h"
 
 using namespace SparkyStudios::Audio::Amplitude;
 
-void SimpleTestCase::Run()
+namespace SparkyStudios::Audio::Amplitude::Tests
 {
-    AM_EXPECT_EQ(FindGCD(12, 18), 6);
-    AM_EXPECT_EQ(FindGCD(20, 30), 10);
-    AM_EXPECT_EQ(FindGCD(48, 144), 48);
-    AM_EXPECT_EQ(FindGCD(-100, 200), 100);
-    AM_EXPECT_EQ(FindGCD(0, 200), 200);
-}
+    AM_TEST_CASE(SimpleTestCase, math_utils, gcd)
+    {
+    public:
+        void Run() override
+        {
+            AM_EXPECT_EQ(FindGCD(12, 18), 6);
+            AM_EXPECT_EQ(FindGCD(20, 30), 10);
+            AM_EXPECT_EQ(FindGCD(48, 144), 48);
+            AM_EXPECT_EQ(FindGCD(-100, 200), 100);
+            AM_EXPECT_EQ(FindGCD(0, 200), 200);
+        }
+    };
+
+    AM_REGISTER_TEST(math_utils, gcd);
+} // namespace SparkyStudios::Audio::Amplitude::Tests

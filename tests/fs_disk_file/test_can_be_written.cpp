@@ -15,43 +15,54 @@
 #include <SparkyStudios/Audio/Amplitude/Amplitude.h>
 
 #include "SimpleTestCase.h"
+#include "TestRegistry.h"
 
 using namespace SparkyStudios::Audio::Amplitude;
 
-void SimpleTestCase::Run()
+namespace SparkyStudios::Audio::Amplitude::Tests
 {
-    DiskFileSystem fileSystem;
-    fileSystem.SetBasePath(AM_OS_STRING("./samples/assets"));
-
-    const auto& file = fileSystem.OpenFile(AM_OS_STRING("test_data/diskfile_write_test.txt"), eFileOpenMode_ReadWrite);
-
-    file->Seek(0, eFileSeekOrigin_Start);
-    AM_EXPECT(file->Write8('K') == 1);
-    AM_EXPECT(file->Write8('O') == 1);
-
-    file->Seek(0, eFileSeekOrigin_Start);
-    AM_EXPECT(file->Read8() == 'K');
-    AM_EXPECT(file->Read8() == 'O');
-
+    AM_TEST_CASE(SimpleTestCase, fs_disk_file, can_be_written)
     {
-        file->Seek(0, eFileSeekOrigin_Start);
-        auto* content = static_cast<AmUInt8Buffer>(ammalloc(2));
-        content[0] = 'O';
-        content[1] = 'K';
-        AM_EXPECT(file->Write(content, 2) == 2);
-        AM_EXPECT(file->Position() == file->Length());
-        AM_EXPECT(file->Eof());
-        amfree(content);
-    }
+    public:
+        void Run() override
+        {
+            DiskFileSystem fileSystem;
+            fileSystem.SetBasePath(AM_OS_STRING("./samples/assets"));
 
-    {
-        file->Seek(0);
-        auto* content = static_cast<AmUInt8Buffer>(ammalloc(2));
-        AM_EXPECT(file->Read(content, file->Length()) == file->Length());
-        AM_EXPECT(content[0] == 'O');
-        AM_EXPECT(content[1] == 'K');
-        AM_EXPECT(file->Position() == file->Length());
-        AM_EXPECT(file->Eof());
-        amfree(content);
-    }
-}
+            const auto& file = fileSystem.OpenFile(AM_OS_STRING("test_data/diskfile_write_test.txt"), eFileOpenMode_ReadWrite);
+
+            file->Seek(0, eFileSeekOrigin_Start);
+            AM_EXPECT(file->Write8('K') == 1);
+            AM_EXPECT(file->Write8('O') == 1);
+
+            file->Seek(0, eFileSeekOrigin_Start);
+            AM_EXPECT(file->Read8() == 'K');
+            AM_EXPECT(file->Read8() == 'O');
+
+            {
+                file->Seek(0, eFileSeekOrigin_Start);
+                auto* content = static_cast<AmUInt8Buffer>(ammalloc(2));
+                content[0] = 'O';
+                content[1] = 'K';
+                AM_EXPECT(file->Write(content, 2) == 2);
+                AM_EXPECT(file->Position() == file->Length());
+                AM_EXPECT(file->Eof());
+                amfree(content);
+            }
+
+            {
+                file->Seek(0);
+                auto* content = static_cast<AmUInt8Buffer>(ammalloc(2));
+                AM_EXPECT(file->Read(content, file->Length()) == file->Length());
+                AM_EXPECT(content[0] == 'O');
+                AM_EXPECT(content[1] == 'K');
+                AM_EXPECT(file->Position() == file->Length());
+                AM_EXPECT(file->Eof());
+                amfree(content);
+            }
+        }
+    };
+
+    // DiskFileSystem tests use hardcoded paths that only work on desktop
+    AM_REGISTER_TEST_DESKTOP_ONLY(fs_disk_file, can_be_written);
+} // namespace SparkyStudios::Audio::Amplitude::Tests

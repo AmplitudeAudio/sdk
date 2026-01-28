@@ -15,26 +15,33 @@
 #include <SparkyStudios/Audio/Amplitude/Amplitude.h>
 
 #include "EngineTestCase.h"
+#include "TestRegistry.h"
 
 using namespace SparkyStudios::Audio::Amplitude;
 
 namespace SparkyStudios::Audio::Amplitude::Tests
 {
-    void EngineTestCase::Run()
+    AM_TEST_CASE(EngineTestCase, core_engine, channel_can_be_cleared)
     {
-        AmVector3 location = { 10.0f, 20.0f, 30.0f };
-        AmReal32 userGain = 0.36f;
-        Channel channel = amEngine->Play(100, location, userGain);
-        amEngine->WaitUntilFrames(2); // Playing is done in the next frame
+    public:
+        void Run() override
+        {
+            AmVector3 location = { 10.0f, 20.0f, 30.0f };
+            AmReal32 userGain = 0.36f;
+            Channel channel = amEngine->Play(100, location, userGain);
+            amEngine->WaitUntilFrames(2); // Playing is done in the next frame
 
-        AM_EXPECT(channel.Valid());
-        AM_EXPECT(channel.Playing());
+            AM_EXPECT(channel.Valid());
+            AM_EXPECT(channel.Playing());
 
-        // Stop the channel first
-        channel.Stop(0);
+            // Stop the channel first
+            channel.Stop(0);
 
-        // Test that channel can be cleared
-        channel.Clear();
-        AM_EXPECT_NOT(channel.Valid());
-    }
+            // Test that channel can be cleared
+            channel.Clear();
+            AM_EXPECT_NOT(channel.Valid());
+        }
+    };
+
+    AM_REGISTER_TEST(core_engine, channel_can_be_cleared);
 } // namespace SparkyStudios::Audio::Amplitude::Tests
