@@ -222,10 +222,27 @@ using namespace SparkyStudios::Audio::Amplitude::Tests;
             return NO;
         }
 
-        // Run the test
-        testCase->SetUp();
-        testCase->Run();
-        testCase->TearDown();
+        // Run the test with C++ exception handling
+        try
+        {
+            testCase->SetUp();
+            testCase->Run();
+            testCase->TearDown();
+        }
+        catch (const std::exception& e)
+        {
+            [self logMessageOnMainThread:[NSString stringWithFormat:@"  C++ Exception: %s", e.what()]];
+            // Try to clean up
+            try { testCase->TearDown(); } catch (...) {}
+            return NO;
+        }
+        catch (...)
+        {
+            [self logMessageOnMainThread:@"  C++ Exception: Unknown"];
+            // Try to clean up
+            try { testCase->TearDown(); } catch (...) {}
+            return NO;
+        }
 
         // Log test details
         [self logMessageOnMainThread:[NSString stringWithFormat:@"  Expectations: %d passed, %d failed",
@@ -235,7 +252,7 @@ using namespace SparkyStudios::Audio::Amplitude::Tests;
     }
     @catch (NSException *exception)
     {
-        [self logMessageOnMainThread:[NSString stringWithFormat:@"  Exception: %@", exception.reason]];
+        [self logMessageOnMainThread:[NSString stringWithFormat:@"  ObjC Exception: %@", exception.reason]];
         return NO;
     }
 }
