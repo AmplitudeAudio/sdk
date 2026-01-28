@@ -46,7 +46,7 @@ namespace SparkyStudios::Audio::Amplitude
          * @param[in] logTag A custom category to use when logging. This is used along
          * with the subsystem identifier for organizing and filtering logs. Defaults to @b AM.
          */
-        explicit NSLogger(const char* bundleId, const char* logTag = "AM");
+        explicit NSLogger(const char* bundleId = "com.amplitudeaudiosdk", const char* logTag = "AM");
 
         /**
          * @brief Destructor that releases allocated resources.
