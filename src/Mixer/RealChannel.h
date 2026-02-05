@@ -201,21 +201,28 @@ namespace SparkyStudios::Audio::Amplitude
         void SetOcclusion(AmReal32 occlusion);
 
     private:
+        /**
+         * @brief Holds all per-layer data for a single audio layer on the channel.
+         */
+        struct LayerData
+        {
+            AmUInt32 mixerLayerId = kAmInvalidObjectId; ///< Mixer layer ID returned by AmplimixImpl::Play()
+            bool isStream = false;                      ///< Whether this layer is streaming audio
+            bool isLoop = false;                        ///< Whether this layer should loop
+            AmReal32 gain = 1.0f;                       ///< Per-layer gain value (defaults to unity)
+            SoundInstance* soundInstance = nullptr;      ///< The sound instance playing on this layer
+        };
+
         [[nodiscard]] AmUInt32 FindFreeLayer(AmUInt32 layerIndex = 0) const;
 
         AmChannelID _channelId;
-        std::unordered_map<AmUInt32, AmUInt32> _channelLayersId;
-
-        std::unordered_map<AmUInt32, bool> _stream;
-        std::unordered_map<AmUInt32, bool> _loop;
+        std::unordered_map<AmUInt32, LayerData> _layers;
 
         AmReal32 _defaultGain;
-        std::unordered_map<AmUInt32, AmReal32> _gain;
         AmReal32 _pitch;
         AmReal32 _playSpeed;
 
         AmplimixImpl* _mixer;
-        std::unordered_map<AmUInt32, SoundInstance*> _activeSounds;
 
         ChannelInternalState* _parentChannelState;
 
