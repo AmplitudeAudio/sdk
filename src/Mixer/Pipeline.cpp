@@ -64,8 +64,8 @@ namespace SparkyStudios::Audio::Amplitude
 
     std::shared_ptr<NodeInstance> PipelineInstanceImpl::GetNode(AmObjectID id) const
     {
-        if (_nodeInstances.contains(id))
-            return _nodeInstances.at(id).second;
+        if (const auto it = _nodeInstances.find(id); it != _nodeInstances.end())
+            return it->second.second;
 
         if (_inputNode != nullptr && _inputNode->GetId() == id)
             return _inputNode;

@@ -324,6 +324,7 @@ namespace SparkyStudios::Audio::Amplitude
         const AudioBuffer* _processingBuffer;
         const AudioBuffer* _lastOutputBuffer;
         bool _processOnEmptyInputBuffer;
+        ProviderNodeInstance* _cachedProvider;
     };
 
     /**
@@ -420,6 +421,7 @@ namespace SparkyStudios::Audio::Amplitude
     private:
         std::vector<const AudioBuffer*> _processingBuffers;
         bool _processed;
+        std::vector<ProviderNodeInstance*> _cachedProviders;
     };
 
     /**
@@ -523,6 +525,7 @@ namespace SparkyStudios::Audio::Amplitude
     private:
         AmObjectID _provider;
         AudioBuffer* _buffer;
+        ProviderNodeInstance* _cachedProvider;
     };
 
     /**
