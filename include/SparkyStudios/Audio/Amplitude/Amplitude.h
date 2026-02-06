@@ -95,6 +95,7 @@
 #include <SparkyStudios/Audio/Amplitude/IO/File.h>
 #include <SparkyStudios/Audio/Amplitude/IO/FileSystem.h>
 #include <SparkyStudios/Audio/Amplitude/IO/Log.h>
+#include <SparkyStudios/Audio/Amplitude/IO/MappedFile.h>
 #include <SparkyStudios/Audio/Amplitude/IO/MemoryFile.h>
 #include <SparkyStudios/Audio/Amplitude/IO/NullLogger.h>
 #include <SparkyStudios/Audio/Amplitude/IO/PackageFileSystem.h>
