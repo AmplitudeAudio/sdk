@@ -107,6 +107,12 @@ namespace SparkyStudios::Audio::Amplitude
         const bool _isCompressed;
         const AmSize _headerSize;
         mutable AmInt64 _currentPosition;
+
+        mutable AmUInt8* _compressedBuffer;
+        mutable AmSize _compressedBufferCapacity;
+        mutable AmUInt8* _decompressedBuffer;
+        mutable AmSize _decompressedBufferCapacity;
+        mutable AmSize _cachedChunkIndex;
     };
 } // namespace SparkyStudios::Audio::Amplitude
 
