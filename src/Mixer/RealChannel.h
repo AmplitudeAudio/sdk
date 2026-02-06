@@ -17,6 +17,7 @@
 #ifndef _AM_IMPLEMENTATION_MIXER_REAL_CHANNEL_H
 #define _AM_IMPLEMENTATION_MIXER_REAL_CHANNEL_H
 
+#include <unordered_set>
 #include <vector>
 
 #include <SparkyStudios/Audio/Amplitude/Core/Playback/Channel.h>
@@ -226,7 +227,7 @@ namespace SparkyStudios::Audio::Amplitude
 
         ChannelInternalState* _parentChannelState;
 
-        std::vector<AmSoundID> _playedSounds;
+        std::unordered_set<AmSoundID> _playedSounds;
     };
 } // namespace SparkyStudios::Audio::Amplitude
 

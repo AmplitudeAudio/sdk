@@ -54,7 +54,7 @@ namespace SparkyStudios::Audio::Amplitude
         }
     }
 
-    Sound* RandomScheduler::Select(const std::vector<AmSoundID>& toSkip)
+    Sound* RandomScheduler::Select(const std::unordered_set<AmSoundID>& toSkip)
     {
     Pick:
         AmReal32 selection = static_cast<AmReal32>(std::rand()) / static_cast<AmReal32>(RAND_MAX) * _probabilitiesSum;
@@ -65,7 +65,7 @@ namespace SparkyStudios::Audio::Amplitude
 
             if (selection <= 0)
             {
-                if (auto foundIt = std::ranges::find(toSkip, _sounds[i]->GetId()); foundIt != toSkip.end())
+                if (toSkip.contains(_sounds[i]->GetId()))
                     // Try to pick the next sound, since this one needs to be skipped
                     goto Pick;
 

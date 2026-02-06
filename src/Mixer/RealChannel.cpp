@@ -53,7 +53,7 @@ namespace SparkyStudios::Audio::Amplitude
 
     void RealChannel::MarkAsPlayed(const Sound* sound)
     {
-        _playedSounds.push_back(sound->GetId());
+        _playedSounds.insert(sound->GetId());
     }
 
     bool RealChannel::AllSoundsHasPlayed() const
@@ -61,16 +61,11 @@ namespace SparkyStudios::Audio::Amplitude
         if (_parentChannelState->GetCollection() == nullptr)
             return false;
 
-        bool result = true;
         for (auto&& sound : _parentChannelState->GetCollection()->GetSounds())
-        {
-            if (auto foundIt = std::ranges::find(_playedSounds, sound); foundIt != _playedSounds.end())
-                continue;
+            if (!_playedSounds.contains(sound))
+                return false;
 
-            result = false;
-            break;
-        }
-        return result;
+        return true;
     }
 
     void RealChannel::ClearPlayedSounds()

@@ -17,9 +17,9 @@
 #ifndef _AM_IMPLEMENTATION_SOUND_SCHEDULER_H
 #define _AM_IMPLEMENTATION_SOUND_SCHEDULER_H
 
-#include <SparkyStudios/Audio/Amplitude/Core/Common.h>
+#include <unordered_set>
 
-#include <vector>
+#include <SparkyStudios/Audio/Amplitude/Core/Common.h>
 
 namespace SparkyStudios::Audio::Amplitude
 {
@@ -60,7 +60,7 @@ namespace SparkyStudios::Audio::Amplitude
          *
          * @return The selected sound.
          */
-        virtual Sound* Select(const std::vector<AmSoundID>& toSkip) = 0;
+        virtual Sound* Select(const std::unordered_set<AmSoundID>& toSkip) = 0;
 
         /**
          * @brief Resets the internal state of the scheduler.

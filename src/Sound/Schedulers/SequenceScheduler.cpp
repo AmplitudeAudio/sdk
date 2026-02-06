@@ -46,7 +46,7 @@ namespace SparkyStudios::Audio::Amplitude
         }
     }
 
-    Sound* SequenceScheduler::Select(const std::vector<AmSoundID>& toSkip)
+    Sound* SequenceScheduler::Select(const std::unordered_set<AmSoundID>& toSkip)
     {
         const auto count = static_cast<AmInt32>(_sounds.size());
 
