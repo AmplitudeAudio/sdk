@@ -63,7 +63,6 @@ namespace SparkyStudios::Audio::Amplitude
         std::shared_ptr<OutputNodeInstance> _outputNode;
 
         const AmplimixLayerImpl* _layer;
-        AudioBuffer _inputBuffer;
 
         // Configuration caching state
         AmUInt64 _configuredInputFrameCount = 0;

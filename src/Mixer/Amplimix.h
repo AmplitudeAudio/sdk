@@ -19,10 +19,10 @@
 
 #include <condition_variable>
 #include <mutex>
-#include <queue>
 
 #include <SparkyStudios/Audio/Amplitude/Core/Common.h>
 #include <SparkyStudios/Audio/Amplitude/Core/Device.h>
+#include <SparkyStudios/Audio/Amplitude/Core/MPSCQueue.h>
 #include <SparkyStudios/Audio/Amplitude/Core/Thread.h>
 #include <SparkyStudios/Audio/Amplitude/DSP/AudioConverter.h>
 #include <SparkyStudios/Audio/Amplitude/Mixer/Amplimix.h>
@@ -34,8 +34,6 @@
 #include <Utils/Utils.h>
 
 #include "engine_config_definition_generated.h"
-
-#define _Atomic(X) std::atomic<X>
 
 namespace SparkyStudios::Audio::Amplitude
 {
@@ -64,35 +62,37 @@ namespace SparkyStudios::Audio::Amplitude
     {
     public:
         AmUInt32 id = kAmInvalidObjectId; // playing id
-        _Atomic(PlayStateFlag) flag; // state
-        _Atomic(AmUInt64) cursor; // cursor
-        _Atomic(AmReal32) gain; // gain
-        _Atomic(AmReal32) pitch; // pitch
+        std::atomic<PlayStateFlag> flag; // state
+        std::atomic<AmUInt64> cursor; // cursor
+        std::atomic<AmReal32> gain; // gain
+        std::atomic<AmReal32> pitch; // pitch
         SoundData* snd = nullptr; // sound data
         AmUInt64 start = 0, end = 0; // start and end frames
 
-        _Atomic(AmReal32) obstruction; // obstruction factor
-        _Atomic(AmReal32) occlusion; // occlusion factor
+        std::atomic<AmReal32> obstruction; // obstruction factor
+        std::atomic<AmReal32> occlusion; // occlusion factor
 
-        _Atomic(AmReal32) userPlaySpeed; // user-defined sound playback speed
-        _Atomic(AmReal32) playSpeed; // current sound playback speed
-        _Atomic(AmReal32) targetPlaySpeed; // computed (real) sound playback speed
-        _Atomic(AmReal32) sampleRateRatio; // sample rate ratio
-        _Atomic(AmReal32) baseSampleRateRatio; // base sample rate ratio
+        std::atomic<AmReal32> userPlaySpeed; // user-defined sound playback speed
+        std::atomic<AmReal32> playSpeed; // current sound playback speed
+        std::atomic<AmReal32> targetPlaySpeed; // computed (real) sound playback speed
+        std::atomic<AmReal32> sampleRateRatio; // sample rate ratio
+        std::atomic<AmReal32> baseSampleRateRatio; // base sample rate ratio
 
         AudioConverter* dataConverter = nullptr; // miniaudio resampler & channel converter
         std::shared_ptr<PipelineInstance> pipeline = nullptr; // pipeline for this layer
-
-        std::recursive_mutex mutex; // mutex for thread-safe access
 
         SoundChunkPool _chunkPool; // pool for reusable SoundChunk allocations
 
         ~AmplimixLayerImpl() override;
 
         /**
-         * @brief Resets the layer.
+         * @brief Destroys the layer's pipeline and sound reference.
+         *
+         * Releases the pipeline instance and the sound data pointer,
+         * then sets the layer flag to ePSF_MIN. Safe to call even if
+         * the layer has no sound attached.
          */
-        void Reset();
+        void Destroy();
 
         /**
          * @brief Resets the pipeline to its initial state.
@@ -272,6 +272,10 @@ namespace SparkyStudios::Audio::Amplitude
 
         static void IncrementSoundLoopCount(SoundInstance* sound);
 
+        AmUInt32 GetLayerIndex(const AmplimixLayerImpl* layer) const;
+        void ActivateLayer(AmUInt32 layerIndex);
+        void DeactivateLayer(AmUInt32 layerIndex);
+
     private:
         friend class EngineImpl;
 
@@ -287,23 +291,28 @@ namespace SparkyStudios::Audio::Amplitude
 
         bool _initialized;
 
-        std::queue<MixerCommand> _commandsStack;
+        MPSCQueue<MixerCommand, 512> _commandsStack;
 
         std::recursive_timed_mutex _audioThreadMutex;
-        std::unordered_map<AmThreadID, bool> _insideAudioThreadMutex;
 
-        _Atomic(bool) _isMixing{ false };
+        std::atomic<bool> _isMixing{ false };
         std::mutex _mixCompleteMutex;
         std::condition_variable _mixCompleteCV;
 
         AmUInt32 _nextId;
-        _Atomic(AmReal32) _masterGain{};
+        std::atomic<AmReal32> _masterGain{};
         AmplimixLayerImpl _layers[kAmplimixLayersCount];
+        AmUInt32 _activeLayerIndices[kAmplimixLayersCount];
+        AmUInt32 _activeLayerCount = 0;
         AmUInt64 _remainingFrames;
 
         Pipeline* _pipeline = nullptr;
 
         DeviceDescription _device;
+
+        // Atomic snapshots of device fields read by the audio thread.
+        std::atomic<AmUInt32> _mixOutputSampleRate{};
+        std::atomic<PlaybackOutputChannels> _mixOutputChannels{};
 
         AudioBuffer _scratchBuffer;
 

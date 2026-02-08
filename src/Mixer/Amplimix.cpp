@@ -19,11 +19,14 @@
 #include <Mixer/Amplimix.h>
 #include <Mixer/Pipeline.h>
 
-#include <thread>
-
 #define AMPLIMIX_STORE(A, C) std::atomic_store_explicit(A, (C), std::memory_order_release)
 #define AMPLIMIX_LOAD(A) std::atomic_load_explicit(A, std::memory_order_acquire)
 #define AMPLIMIX_CSWAP(A, E, C) std::atomic_compare_exchange_strong_explicit(A, E, C, std::memory_order_acq_rel, std::memory_order_acquire)
+
+// Relaxed load/store for independently meaningful values (gain, cursor, etc.)
+// where no ordering with other memory operations is required.
+#define AMPLIMIX_LOAD_RELAXED(A) std::atomic_load_explicit(A, std::memory_order_relaxed)
+#define AMPLIMIX_STORE_RELAXED(A, C) std::atomic_store_explicit(A, (C), std::memory_order_relaxed)
 
 namespace SparkyStudios::Audio::Amplitude
 {
@@ -68,64 +71,12 @@ namespace SparkyStudios::Audio::Amplitude
         bool m_locked = false;
     };
 
-    struct AmplimixLayerMutexLocker
-    {
-        explicit AmplimixLayerMutexLocker(AmplimixLayerImpl* layer)
-            : m_layer(layer)
-            , _haveLocked(false)
-        {
-            Lock();
-        }
-
-        ~AmplimixLayerMutexLocker()
-        {
-            Unlock();
-        }
-
-    public:
-        void Lock()
-        {
-            if (_haveLocked)
-                return; // Avoid double locking in same instance
-
-            m_layer->mutex.lock();
-
-            MarkLayerAsLocked();
-        }
-
-        void Unlock()
-        {
-            if (!_haveLocked)
-                return;
-
-            m_layer->mutex.unlock();
-
-            MarkLayerAsUnlocked();
-        }
-
-    private:
-        void MarkLayerAsLocked()
-        {
-            _haveLocked = true;
-        }
-
-        void MarkLayerAsUnlocked()
-        {
-            _haveLocked = false;
-        }
-
-        AmplimixLayerImpl* m_layer;
-        bool _haveLocked;
-    };
-
     constexpr AmUInt32 kProcessedFramesCount = GetSimdBlockSize();
 
     static void OnSoundDestroyed(AmplimixImpl* mixer, AmplimixLayerImpl* layer);
 
     static bool ShouldLoopSound(AmplimixImpl* mixer, AmplimixLayerImpl* layer)
     {
-        AmplimixLayerMutexLocker lock(layer);
-
         const auto* sound = layer->snd->sound.get();
         const AmUInt32 loopCount = sound->GetSettings().m_loopCount;
 
@@ -134,8 +85,6 @@ namespace SparkyStudios::Audio::Amplitude
 
     static void OnSoundStarted(AmplimixImpl* mixer, AmplimixLayerImpl* layer)
     {
-        AmplimixLayerMutexLocker lock(layer);
-
         const auto* sound = layer->snd->sound.get();
         amLogDebug("Started sound: '" AM_OS_CHAR_FMT "'.", sound->GetSound()->GetPath().c_str());
 
@@ -147,8 +96,6 @@ namespace SparkyStudios::Audio::Amplitude
 
     static void OnSoundPaused(AmplimixImpl* mixer, AmplimixLayerImpl* layer)
     {
-        AmplimixLayerMutexLocker lock(layer);
-
         const auto* sound = layer->snd->sound.get();
         amLogDebug("Paused sound: '" AM_OS_CHAR_FMT "'.", sound->GetSound()->GetPath().c_str());
 
@@ -160,8 +107,6 @@ namespace SparkyStudios::Audio::Amplitude
 
     static void OnSoundResumed(AmplimixImpl* mixer, AmplimixLayerImpl* layer)
     {
-        AmplimixLayerMutexLocker lock(layer);
-
         const auto* sound = layer->snd->sound.get();
         amLogDebug("Resumed sound: '" AM_OS_CHAR_FMT "'.", sound->GetSound()->GetPath().c_str());
 
@@ -173,8 +118,6 @@ namespace SparkyStudios::Audio::Amplitude
 
     static void OnSoundStopped(AmplimixImpl* mixer, AmplimixLayerImpl* layer)
     {
-        AmplimixLayerMutexLocker lock(layer);
-
         const auto* sound = layer->snd->sound.get();
         amLogDebug("Stopped sound: '" AM_OS_CHAR_FMT "'.", sound->GetSound()->GetPath().c_str());
 
@@ -186,8 +129,6 @@ namespace SparkyStudios::Audio::Amplitude
 
     static bool OnSoundLooped(AmplimixImpl* mixer, AmplimixLayerImpl* layer)
     {
-        AmplimixLayerMutexLocker lock(layer);
-
         auto* sound = layer->snd->sound.get();
         amLogDebug("Looped sound: '" AM_OS_CHAR_FMT "'.", sound->GetSound()->GetPath().c_str());
 
@@ -208,8 +149,6 @@ namespace SparkyStudios::Audio::Amplitude
 
     static AmUInt64 OnSoundStream(AmplimixImpl* mixer, AmplimixLayerImpl* layer, AmUInt64 offset, AmUInt64 frames)
     {
-        AmplimixLayerMutexLocker lock(layer);
-
         if (!layer->snd->stream)
             return 0;
 
@@ -219,8 +158,6 @@ namespace SparkyStudios::Audio::Amplitude
 
     static void OnSoundEnded(AmplimixImpl* mixer, AmplimixLayerImpl* layer)
     {
-        AmplimixLayerMutexLocker lock(layer);
-
         auto* sound = layer->snd->sound.get();
         amLogDebug("Ended sound: '" AM_OS_CHAR_FMT "'.", sound->GetSound()->GetPath().c_str());
 
@@ -299,19 +236,11 @@ namespace SparkyStudios::Audio::Amplitude
 
     static void OnSoundDestroyed(AmplimixImpl* mixer, AmplimixLayerImpl* layer)
     {
-        AmplimixLayerMutexLocker lock(layer);
-
         if (layer->snd == nullptr)
             return;
 
-        // Clean up the pipeline
-        layer->pipeline = nullptr;
-
-        // Clean up the sound instance
-        layer->snd->sound.reset();
-        layer->snd = nullptr;
-
-        AMPLIMIX_STORE(&layer->flag, ePSF_MIN);
+        mixer->DeactivateLayer(mixer->GetLayerIndex(layer));
+        layer->Destroy();
     }
 
     static void MixMono(AmUInt64 index, const simd_batch& gain, const AudioBufferChannel& in, AudioBufferChannel& out)
@@ -330,7 +259,6 @@ namespace SparkyStudios::Audio::Amplitude
         : _initialized(false)
         , _commandsStack()
         , _audioThreadMutex()
-        , _insideAudioThreadMutex()
         , _nextId(0)
         , _masterGain()
         , _layers()
@@ -369,6 +297,10 @@ namespace SparkyStudios::Audio::Amplitude
         _device.mRequestedOutputChannels = PlaybackOutputChannels::Stereo; // For now, only support stereo output.
         _device.mRequestedOutputFormat = static_cast<PlaybackOutputFormat>(config->output()->format());
 
+        // Publish to atomic snapshots for audio-thread reads
+        AMPLIMIX_STORE_RELAXED(&_mixOutputSampleRate, _device.mRequestedOutputSampleRate);
+        AMPLIMIX_STORE_RELAXED(&_mixOutputChannels, _device.mRequestedOutputChannels);
+
         _initialized = true;
 
         return true;
@@ -381,12 +313,13 @@ namespace SparkyStudios::Audio::Amplitude
 
         AMPLITUDE_ASSERT(!IsInsideThreadMutex());
 
-        _initialized = false;
+        // Drain any pending deferred commands
+        ExecuteCommands();
 
+        _initialized = false;
         _pipeline = nullptr;
 
-        for (auto& layer : _layers)
-            layer.Reset();
+        _activeLayerCount = 0;
     }
 
     void AmplimixImpl::UpdateDevice(
@@ -401,6 +334,10 @@ namespace SparkyStudios::Audio::Amplitude
         _device.mDeviceOutputSampleRate = deviceOutputSampleRate;
         _device.mDeviceOutputChannels = deviceOutputChannels;
         _device.mDeviceOutputFormat = deviceOutputFormat;
+
+        // Publish to atomic snapshots for audio-thread reads
+        AMPLIMIX_STORE_RELAXED(&_mixOutputSampleRate, _device.mRequestedOutputSampleRate);
+        AMPLIMIX_STORE_RELAXED(&_mixOutputChannels, _device.mRequestedOutputChannels);
     }
 
     void AmplimixImpl::SetAfterMixCallback(AfterMixCallback callback)
@@ -446,10 +383,12 @@ namespace SparkyStudios::Audio::Amplitude
 
         // begin actual mixing
         bool hasMixedAtLeastOneLayer = false;
-        for (auto&& layer : _layers)
+        for (AmUInt32 i = 0; i < _activeLayerCount; ++i)
         {
             if (amEngine->IsStopping())
                 break; // Stop mixing if engine is stopping
+
+            auto& layer = _layers[_activeLayerIndices[i]];
 
             if (!ShouldMix(&layer))
                 continue;
@@ -556,8 +495,8 @@ namespace SparkyStudios::Audio::Amplitude
             // atomically set cursor to start position based on given argument
             AMPLIMIX_STORE(&lay->cursor, lay->start);
 
-            const AmReal32 baseRatio =
-                static_cast<AmReal32>(sound->format.GetSampleRate()) / static_cast<AmReal32>(_device.mRequestedOutputSampleRate);
+            const AmUInt32 reqSampleRate = AMPLIMIX_LOAD_RELAXED(&_mixOutputSampleRate);
+            const AmReal32 baseRatio = static_cast<AmReal32>(sound->format.GetSampleRate()) / static_cast<AmReal32>(reqSampleRate);
             // store the base sample rate ratio for this source
             AMPLIMIX_STORE(&lay->baseSampleRateRatio, baseRatio);
             // store the initial value for sample rate ratio
@@ -567,9 +506,7 @@ namespace SparkyStudios::Audio::Amplitude
             lay->dataConverter = ampoolnew(eMemoryPoolKind_Amplimix, AudioConverter);
 
             const auto soundChannels = static_cast<AmUInt32>(sound->format.GetNumChannels());
-
             const AmUInt32 soundSampleRate = sound->format.GetSampleRate();
-            const AmUInt32 reqSampleRate = _device.mRequestedOutputSampleRate;
 
             AudioConverter::Settings converterSettings{};
             converterSettings.m_sourceChannelCount = soundChannels;
@@ -585,6 +522,10 @@ namespace SparkyStudios::Audio::Amplitude
 
             // store flag last, releasing the layer to the mixer thread
             AMPLIMIX_STORE(&lay->flag, flag);
+
+            // Add to active layer list
+            ActivateLayer(GetLayerIndex(lay));
+
             OnSoundStarted(this, lay);
         }
 
@@ -594,100 +535,67 @@ namespace SparkyStudios::Audio::Amplitude
     bool AmplimixImpl::SetObstruction(AmUInt32 id, AmUInt32 layer, AmReal32 obstruction)
     {
         auto* lay = GetLayer(layer);
-        AmplimixLayerMutexLocker lock(lay);
 
-        // check id and state flag to make sure the id is valid
-        if (id != lay->id || AMPLIMIX_LOAD(&lay->flag) <= ePSF_STOP)
-        {
-            // return failure
+        if (AMPLIMIX_LOAD(&lay->flag) <= ePSF_STOP || id != lay->id)
             return false;
-        }
 
-        // store the obstruction factor in the layer
         AMPLIMIX_STORE(&lay->obstruction, obstruction);
 
-        // return success
         return true;
     }
 
     bool AmplimixImpl::SetOcclusion(AmUInt32 id, AmUInt32 layer, AmReal32 occlusion)
     {
         auto* lay = GetLayer(layer);
-        AmplimixLayerMutexLocker lock(lay);
 
-        // check id and state flag to make sure the id is valid
-        if (id != lay->id || AMPLIMIX_LOAD(&lay->flag) <= ePSF_STOP)
-        {
-            // return failure
+        if (AMPLIMIX_LOAD(&lay->flag) <= ePSF_STOP || id != lay->id)
             return false;
-        }
 
-        // store the occlusion factor in the layer
         AMPLIMIX_STORE(&lay->occlusion, occlusion);
 
-        // return success
         return true;
     }
 
     bool AmplimixImpl::SetGain(AmUInt32 id, AmUInt32 layer, AmReal32 gain)
     {
         auto* lay = GetLayer(layer);
-        AmplimixLayerMutexLocker lock(lay);
 
-        // check id and state flag to make sure the id is valid
-        if (id != lay->id || AMPLIMIX_LOAD(&lay->flag) <= ePSF_STOP)
-        {
-            // return failure
+        if (AMPLIMIX_LOAD(&lay->flag) <= ePSF_STOP || id != lay->id)
             return false;
-        }
 
-        // store the gain
         AMPLIMIX_STORE(&lay->gain, gain);
 
-        // return success
         return true;
     }
 
     bool AmplimixImpl::SetPitch(AmUInt32 id, AmUInt32 layer, AmReal32 pitch)
     {
         auto* lay = GetLayer(layer);
-        AmplimixLayerMutexLocker lock(lay);
 
-        // check id and state flag to make sure the id is valid
-        if ((id == lay->id) && (AMPLIMIX_LOAD(&lay->flag) > ePSF_STOP))
-        {
-            // store the pitch value atomically
-            AMPLIMIX_STORE(&lay->pitch, pitch);
-            // return success
-            return true;
-        }
+        if (AMPLIMIX_LOAD(&lay->flag) <= ePSF_STOP || id != lay->id)
+            return false;
 
-        // return failure
-        return false;
+        AMPLIMIX_STORE(&lay->pitch, pitch);
+
+        return true;
     }
 
     bool AmplimixImpl::SetCursor(AmUInt32 id, AmUInt32 layer, AmUInt64 cursor)
     {
         auto* lay = GetLayer(layer);
-        AmplimixLayerMutexLocker lock(lay);
 
-        // check id and state flag to make sure the id is valid
-        if ((id == lay->id) && (AMPLIMIX_LOAD(&lay->flag) > ePSF_STOP))
-        {
+        if (AMPLIMIX_LOAD(&lay->flag) <= ePSF_STOP || id != lay->id)
+            return false;
+
 #if defined(AM_SIMD_INTRINSICS)
-            // clamp cursor and truncate to multiple of 16 before storing
-            AMPLIMIX_STORE(&lay->cursor, AM_CLAMP(cursor, lay->start, lay->end) & ~(kProcessedFramesCount - 1));
+        // clamp cursor and truncate to multiple of kProcessedFramesCount before storing
+        AMPLIMIX_STORE(&lay->cursor, AM_CLAMP(cursor, lay->start, lay->end) & ~(kProcessedFramesCount - 1));
 #else
-            // clamp cursor and store it
-            AMPLIMIX_STORE(&lay->cursor, AM_CLAMP(cursor, lay->start, lay->end));
+        // clamp cursor and store it
+        AMPLIMIX_STORE(&lay->cursor, AM_CLAMP(cursor, lay->start, lay->end));
 #endif // AM_SIMD_INTRINSICS
 
-            // return success
-            return true;
-        }
-
-        // return failure
-        return false;
+        return true;
     }
 
     bool AmplimixImpl::SetPlayState(AmUInt32 id, AmUInt32 layer, PlayStateFlag flag)
@@ -723,8 +631,14 @@ namespace SparkyStudios::Audio::Amplitude
             {
                 if (flag == ePSF_STOP)
                 {
-                    // Destroy the sound instance on stop
-                    OnSoundDestroyed(this, lay);
+                    // Defer sound destruction to the audio thread via command queue.
+                    // The CAS to ePSF_STOP prevents ShouldMix() from returning true,
+                    // so the audio thread will not access this layer during the next mix cycle.
+                    PushCommand({ [this, lay]() -> bool
+                                  {
+                                      OnSoundDestroyed(this, lay);
+                                      return true;
+                                  } });
                 }
 
                 return true;
@@ -739,7 +653,6 @@ namespace SparkyStudios::Audio::Amplitude
     {
         // get layer based on the lowest bits of id
         auto* lay = GetLayer(layer);
-        AmplimixLayerMutexLocker lock(lay);
 
         // check id and state flag to make sure the id is valid
         if (PlayStateFlag flag; (id == lay->id) && ((flag = AMPLIMIX_LOAD(&lay->flag)) > ePSF_STOP))
@@ -755,23 +668,18 @@ namespace SparkyStudios::Audio::Amplitude
     bool AmplimixImpl::SetPlaySpeed(AmUInt32 id, AmUInt32 layer, AmReal32 speed)
     {
         auto* lay = GetLayer(layer);
-        AmplimixLayerMutexLocker lock(lay);
 
-        // check id and state flag to make sure the id is valid
-        if ((id == lay->id) && (AMPLIMIX_LOAD(&lay->flag) > ePSF_STOP))
-        {
-            AMPLIMIX_STORE(&lay->userPlaySpeed, speed);
-            // return success
-            return true;
-        }
+        if (AMPLIMIX_LOAD(&lay->flag) <= ePSF_STOP || id != lay->id)
+            return false;
 
-        // return failure
-        return false;
+        AMPLIMIX_STORE(&lay->userPlaySpeed, speed);
+
+        return true;
     }
 
     void AmplimixImpl::SetMasterGain(AmReal32 gain)
     {
-        AMPLIMIX_STORE(&_masterGain, gain);
+        AMPLIMIX_STORE_RELAXED(&_masterGain, gain);
     }
 
     void AmplimixImpl::StopAll()
@@ -814,17 +722,21 @@ namespace SparkyStudios::Audio::Amplitude
         }
     }
 
+    static thread_local bool tl_insideAudioMutex = false;
+
     bool AmplimixImpl::IsInsideThreadMutex() const
     {
-        if (const AmUInt64 threadId = Thread::GetCurrentThreadId(); _insideAudioThreadMutex.contains(threadId))
-            return _insideAudioThreadMutex.at(threadId);
-
-        return false;
+        return tl_insideAudioMutex;
     }
 
     void AmplimixImpl::PushCommand(const MixerCommand& command)
     {
-        _commandsStack.push(command);
+        if (!_commandsStack.TryEnqueue(command))
+        {
+            amLogWarning("Amplimix command queue full, executing command inline.");
+            if (command.callback)
+                command.callback();
+        }
     }
 
     const Pipeline* AmplimixImpl::GetPipeline() const
@@ -844,19 +756,14 @@ namespace SparkyStudios::Audio::Amplitude
 
     void AmplimixImpl::ExecuteCommands()
     {
-        while (!_commandsStack.empty())
-        {
-            if (const auto& command = _commandsStack.front(); command.callback)
+        MixerCommand command;
+        while (_commandsStack.TryDequeue(command))
+            if (command.callback)
                 AM_UNUSED(command.callback());
-
-            _commandsStack.pop();
-        }
     }
 
     void AmplimixImpl::MixLayer(AmplimixLayerImpl* layer, AudioBuffer* buffer, AmUInt64 frameCount)
     {
-        AmplimixLayerMutexLocker lock(layer);
-
         if (layer->snd == nullptr)
         {
             AMPLITUDE_ASSERT(false); // This should technically never appear
@@ -910,7 +817,7 @@ namespace SparkyStudios::Audio::Amplitude
         inSamples = AM_VALUE_ALIGN(inSamples, kProcessedFramesCount);
 #endif // AM_SIMD_INTRINSICS
 
-        SoundChunk* in = layer->_chunkPool.Acquire(inSamples, soundChannels);
+        SoundChunk* in = layer->_chunkPool.Acquire(inSamples, soundChannels, false);
         SoundChunk* transient = layer->_chunkPool.Acquire(outSamples, 1);
         SoundChunk* out = layer->_chunkPool.Acquire(transient->frames, 2);
 
@@ -1048,41 +955,22 @@ namespace SparkyStudios::Audio::Amplitude
         // run callback if reached the end
         if (cursor == layer->end)
         {
-            // We are in the audio thread mutex here
-            const MixerCommandCallback callback = [this, layer, loop]() -> bool
+            if (!loop)
             {
-                // stop playback unless looping
-                if (!loop)
-                {
-                    OnSoundEnded(this, layer);
-                }
+                OnSoundEnded(this, layer);
+            }
+            else
+            {
+                if (ShouldLoopSound(this, layer))
+                    AMPLIMIX_CSWAP(&layer->cursor, &layer->end, layer->start);
                 else
-                {
-                    // call the onLoop callback
-                    if (ShouldLoopSound(this, layer))
-                    {
-                        // wrap around if allowed looping again
-                        AMPLIMIX_CSWAP(&layer->cursor, &layer->end, layer->start);
-                    }
-                    else
-                    {
-                        // stop playback
-                        OnSoundEnded(this, layer);
-                    }
-                }
-
-                return true;
-            };
-
-            // Postpone call outside the audio thread mutex
-            PushCommand({ callback });
+                    OnSoundEnded(this, layer);
+            }
         }
     }
 
     void AmplimixImpl::MixLayerSeparateMode(AmplimixLayerImpl* layer, AudioBuffer* buffer, AmUInt64 frameCount)
     {
-        AmplimixLayerMutexLocker lock(layer);
-
         if (layer->instanceData.empty())
             return;
 
@@ -1126,7 +1014,7 @@ namespace SparkyStudios::Audio::Amplitude
         auto& instances = channel.GetState()->GetInstances();
 
         // Pre-allocate buffers for instance processing
-        SoundChunk* in = layer->_chunkPool.Acquire(inSamples, soundChannels);
+        SoundChunk* in = layer->_chunkPool.Acquire(inSamples, soundChannels, false);
         SoundChunk* transient = layer->_chunkPool.Acquire(outSamples, 1);
         SoundChunk* out = layer->_chunkPool.Acquire(outSamples, 2);
 
@@ -1272,15 +1160,7 @@ namespace SparkyStudios::Audio::Amplitude
 
         // If all instances finished, trigger end callback
         if (allInstancesFinished && !loop)
-        {
-            const MixerCommandCallback callback = [this, layer]() -> bool
-            {
-                OnSoundEnded(this, layer);
-                return true;
-            };
-
-            PushCommand({ callback });
-        }
+            OnSoundEnded(this, layer);
     }
 
     AmplimixLayerImpl* AmplimixImpl::GetLayer(AmUInt32 layer)
@@ -1289,10 +1169,31 @@ namespace SparkyStudios::Audio::Amplitude
         return &_layers[layer & kAmplimixLayersMask];
     }
 
+    AmUInt32 AmplimixImpl::GetLayerIndex(const AmplimixLayerImpl* layer) const
+    {
+        return static_cast<AmUInt32>(layer - _layers);
+    }
+
+    void AmplimixImpl::ActivateLayer(AmUInt32 layerIndex)
+    {
+        _activeLayerIndices[_activeLayerCount++] = layerIndex;
+    }
+
+    void AmplimixImpl::DeactivateLayer(AmUInt32 layerIndex)
+    {
+        for (AmUInt32 i = 0; i < _activeLayerCount; ++i)
+        {
+            if (_activeLayerIndices[i] == layerIndex)
+            {
+                // Swap with last element for O(1) removal
+                _activeLayerIndices[i] = _activeLayerIndices[--_activeLayerCount];
+                return;
+            }
+        }
+    }
+
     bool AmplimixImpl::ShouldMix(AmplimixLayerImpl* layer)
     {
-        AmplimixLayerMutexLocker lock(layer);
-
         if (layer->snd == nullptr)
             return false;
 
@@ -1305,8 +1206,6 @@ namespace SparkyStudios::Audio::Amplitude
 
     void AmplimixImpl::UpdatePitch(AmplimixLayerImpl* layer)
     {
-        AmplimixLayerMutexLocker lock(layer);
-
         const AmReal32 pitch = AMPLIMIX_LOAD(&layer->pitch);
         const AmReal32 speed = AMPLIMIX_LOAD(&layer->userPlaySpeed);
 
@@ -1336,15 +1235,14 @@ namespace SparkyStudios::Audio::Amplitude
     void AmplimixImpl::LockAudioMutex()
     {
         _audioThreadMutex.lock();
-        _insideAudioThreadMutex.insert_or_assign(Thread::GetCurrentThreadId(), true);
+        tl_insideAudioMutex = true;
     }
 
     void AmplimixImpl::UnlockAudioMutex()
     {
         AMPLITUDE_ASSERT(IsInsideThreadMutex());
-
+        tl_insideAudioMutex = false;
         _audioThreadMutex.unlock();
-        _insideAudioThreadMutex.insert_or_assign(Thread::GetCurrentThreadId(), false);
     }
 
     void AmplimixImpl::Wait()
@@ -1363,11 +1261,29 @@ namespace SparkyStudios::Audio::Amplitude
     }
 
     AmplimixLayerImpl::~AmplimixLayerImpl()
-    {}
-
-    void AmplimixLayerImpl::Reset()
     {
-        ampooldelete(eMemoryPoolKind_Amplimix, AudioConverter, dataConverter);
+        Destroy();
+    }
+
+    void AmplimixLayerImpl::Destroy()
+    {
+        if (dataConverter != nullptr)
+        {
+            ampooldelete(eMemoryPoolKind_Amplimix, AudioConverter, dataConverter);
+            dataConverter = nullptr;
+        }
+
+        pipeline = nullptr;
+
+        if (snd != nullptr)
+        {
+            snd->sound.reset();
+            snd = nullptr;
+        }
+
+        _chunkPool.Reset();
+
+        AMPLIMIX_STORE(&flag, ePSF_MIN);
     }
 
     void AmplimixLayerImpl::ResetPipeline()
@@ -1402,32 +1318,32 @@ namespace SparkyStudios::Audio::Amplitude
 
     AmUInt64 AmplimixLayerImpl::GetCurrentPosition() const
     {
-        return AMPLIMIX_LOAD(&cursor);
+        return AMPLIMIX_LOAD_RELAXED(&cursor);
     }
 
     AmReal32 AmplimixLayerImpl::GetGain() const
     {
-        return AMPLIMIX_LOAD(&gain);
+        return AMPLIMIX_LOAD_RELAXED(&gain);
     }
 
     AmReal32 AmplimixLayerImpl::GetPitch() const
     {
-        return AMPLIMIX_LOAD(&pitch);
+        return AMPLIMIX_LOAD_RELAXED(&pitch);
     }
 
     AmReal32 AmplimixLayerImpl::GetObstruction() const
     {
-        return AMPLIMIX_LOAD(&obstruction);
+        return AMPLIMIX_LOAD_RELAXED(&obstruction);
     }
 
     AmReal32 AmplimixLayerImpl::GetOcclusion() const
     {
-        return AMPLIMIX_LOAD(&occlusion);
+        return AMPLIMIX_LOAD_RELAXED(&occlusion);
     }
 
     AmReal32 AmplimixLayerImpl::GetPlaySpeed() const
     {
-        return AMPLIMIX_LOAD(&playSpeed);
+        return AMPLIMIX_LOAD_RELAXED(&playSpeed);
     }
 
     AmVector3 AmplimixLayerImpl::GetLocation() const
@@ -1545,7 +1461,7 @@ namespace SparkyStudios::Audio::Amplitude
         if (snd == nullptr || snd->sound == nullptr)
             return 0;
 
-        const AmReal32 ratio = AMPLIMIX_LOAD(&sampleRateRatio);
+        const AmReal32 ratio = AMPLIMIX_LOAD_RELAXED(&sampleRateRatio);
         return snd->format.GetSampleRate() * ratio;
     }
 
@@ -1616,8 +1532,6 @@ namespace SparkyStudios::Audio::Amplitude
 
     void AmplimixLayerImpl::UpdateInstanceData()
     {
-        AmplimixLayerMutexLocker lock(this);
-
         instanceData.clear();
 
         if (snd == nullptr || snd->sound == nullptr)

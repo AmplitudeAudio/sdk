@@ -83,7 +83,7 @@ namespace SparkyStudios::Audio::Amplitude
         }
     }
 
-    SoundChunk* SoundChunkPool::Acquire(AmUInt64 frames, AmUInt16 channels)
+    SoundChunk* SoundChunkPool::Acquire(AmUInt64 frames, AmUInt16 channels, bool clearOnAcquire)
     {
         // Search for reusable chunk with matching or larger capacity
         for (AmSize i = 0; i < allocated; ++i)
@@ -97,7 +97,8 @@ namespace SparkyStudios::Audio::Amplitude
                 if (chunk->frames >= frames && chunkChannels == channels)
                 {
                     chunks[i].inUse = true;
-                    chunk->buffer->Clear();
+                    if (clearOnAcquire)
+                        chunk->buffer->Clear();
                     return chunk;
                 }
             }

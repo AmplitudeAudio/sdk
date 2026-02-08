@@ -169,6 +169,8 @@ namespace SparkyStudios::Audio::Amplitude
         bool _srcInitialized;
 
         Settings _settings;
+
+        AudioBuffer _tempBuffer;
     };
 } // namespace SparkyStudios::Audio::Amplitude
 

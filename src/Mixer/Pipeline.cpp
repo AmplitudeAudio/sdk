@@ -49,11 +49,7 @@ namespace SparkyStudios::Audio::Amplitude
         // Auto-configure if buffer dimensions changed
         Configure(in.GetFrameCount(), in.GetChannelCount(), out.GetFrameCount(), out.GetChannelCount());
 
-        // Copy the input buffer content
-        _inputBuffer = in;
-
-        // Set the input and output buffers for the pipeline
-        _inputNode->SetInput(&_inputBuffer);
+        _inputNode->SetInput(const_cast<AudioBuffer*>(&in));
         _outputNode->SetOutput(&out);
 
         // Consume data from the output node.

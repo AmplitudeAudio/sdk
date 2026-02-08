@@ -316,7 +316,7 @@ static void run(AmVoidPtr param)
 
 int main(int argc, char* argv[])
 {
-#if defined(_DEBUG) || defined(DEBUG) || (defined(__GNUC__) && !defined(__OPTIMIZE__))
+#ifdef AM_DEBUG
     ConsoleLogger logger(true);
 #else
     ConsoleLogger logger(false);
