@@ -160,10 +160,10 @@ namespace SparkyStudios::Audio::Amplitude
 
     AmSize MappedFile::Read(AmUInt8Buffer dst, AmSize bytes) const
     {
-        if (m_dataPtr == nullptr)
+        if (m_dataPtr == nullptr || m_offset >= m_dataSize)
             return 0;
 
-        if (m_offset + bytes >= m_dataSize)
+        if (bytes > m_dataSize - m_offset)
             bytes = m_dataSize - m_offset;
 
         std::memcpy(dst, m_dataPtr + m_offset, bytes);
@@ -186,15 +186,16 @@ namespace SparkyStudios::Audio::Amplitude
 
     void MappedFile::Seek(AmInt64 offset, eFileSeekOrigin origin)
     {
-        if (origin == eFileSeekOrigin_Start)
-            m_offset = offset;
-        else if (origin == eFileSeekOrigin_Current)
-            m_offset += offset;
-        else if (origin == eFileSeekOrigin_End)
-            m_offset = m_dataSize + offset;
+        AmInt64 newOffset = 0;
 
-        if (m_dataSize > 0 && m_offset > m_dataSize - 1)
-            m_offset = m_dataSize - 1;
+        if (origin == eFileSeekOrigin_Start)
+            newOffset = offset;
+        else if (origin == eFileSeekOrigin_Current)
+            newOffset = static_cast<AmInt64>(m_offset) + offset;
+        else if (origin == eFileSeekOrigin_End)
+            newOffset = static_cast<AmInt64>(m_dataSize) + offset;
+
+        m_offset = AM_CLAMP(newOffset, 0, static_cast<AmInt64>(m_dataSize));
     }
 
     AmSize MappedFile::Position() const
