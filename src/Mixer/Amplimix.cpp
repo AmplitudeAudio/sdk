@@ -171,7 +171,12 @@ namespace SparkyStudios::Audio::Amplitude
 
             channelState->Trigger(eChannelEvent_End);
 
-            OnSoundDestroyed(mixer, layer);
+            mixer->PushCommand({ [mixer, layer]() -> bool
+                                 {
+                                     OnSoundDestroyed(mixer, layer);
+                                     return true;
+                                 } });
+
             return;
         }
 
@@ -182,8 +187,11 @@ namespace SparkyStudios::Audio::Amplitude
 
             channelState->Trigger(eChannelEvent_End);
 
-            // Destroy the sound instance on end
-            OnSoundDestroyed(mixer, layer);
+            mixer->PushCommand({ [mixer, layer]() -> bool
+                                 {
+                                     OnSoundDestroyed(mixer, layer);
+                                     return true;
+                                 } });
         }
         else if (sound->GetSettings().m_kind == SoundKind::Switched)
         {
@@ -192,8 +200,11 @@ namespace SparkyStudios::Audio::Amplitude
 
             channelState->Trigger(eChannelEvent_End);
 
-            // Destroy the sound instance on stop
-            OnSoundDestroyed(mixer, layer);
+            mixer->PushCommand({ [mixer, layer]() -> bool
+                                 {
+                                     OnSoundDestroyed(mixer, layer);
+                                     return true;
+                                 } });
         }
         else if (sound->GetSettings().m_kind == SoundKind::Contained)
         {
@@ -219,13 +230,14 @@ namespace SparkyStudios::Audio::Amplitude
 
                     // Play the collection again only if the channel is still playing.
                     if (channelState->GetRealChannel().Playing())
-                    {
                         channelState->Play();
-                    }
                 }
 
-                // Delete the current sound instance.
-                OnSoundDestroyed(mixer, layer);
+                mixer->PushCommand({ [mixer, layer]() -> bool
+                                     {
+                                         OnSoundDestroyed(mixer, layer);
+                                         return true;
+                                     } });
             }
         }
         else
@@ -319,7 +331,7 @@ namespace SparkyStudios::Audio::Amplitude
         _initialized = false;
         _pipeline = nullptr;
 
-        _activeLayerCount = 0;
+        AMPLIMIX_STORE_RELAXED(&_activeLayerCount, 0);
     }
 
     void AmplimixImpl::UpdateDevice(
@@ -383,7 +395,9 @@ namespace SparkyStudios::Audio::Amplitude
 
         // begin actual mixing
         bool hasMixedAtLeastOneLayer = false;
-        for (AmUInt32 i = 0; i < _activeLayerCount; ++i)
+        const AmUInt32 activeLayerCount = AMPLIMIX_LOAD_RELAXED(&_activeLayerCount);
+
+        for (AmUInt32 i = 0; i < activeLayerCount; ++i)
         {
             if (amEngine->IsStopping())
                 break; // Stop mixing if engine is stopping
@@ -523,8 +537,12 @@ namespace SparkyStudios::Audio::Amplitude
             // store flag last, releasing the layer to the mixer thread
             AMPLIMIX_STORE(&lay->flag, flag);
 
-            // Add to active layer list
-            ActivateLayer(GetLayerIndex(lay));
+            PushCommand({ [this, lay]() -> bool
+                          {
+                              // Add to active layer list
+                              ActivateLayer(GetLayerIndex(lay));
+                              return true;
+                          } });
 
             OnSoundStarted(this, lay);
         }
@@ -1176,7 +1194,9 @@ namespace SparkyStudios::Audio::Amplitude
 
     void AmplimixImpl::ActivateLayer(AmUInt32 layerIndex)
     {
-        _activeLayerIndices[_activeLayerCount++] = layerIndex;
+        AmUInt32 activeLayerCount = AMPLIMIX_LOAD_RELAXED(&_activeLayerCount);
+        _activeLayerIndices[activeLayerCount++] = layerIndex;
+        AMPLIMIX_STORE_RELAXED(&_activeLayerCount, activeLayerCount);
     }
 
     void AmplimixImpl::DeactivateLayer(AmUInt32 layerIndex)

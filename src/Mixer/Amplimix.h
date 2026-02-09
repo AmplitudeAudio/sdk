@@ -303,7 +303,7 @@ namespace SparkyStudios::Audio::Amplitude
         std::atomic<AmReal32> _masterGain{};
         AmplimixLayerImpl _layers[kAmplimixLayersCount];
         AmUInt32 _activeLayerIndices[kAmplimixLayersCount];
-        AmUInt32 _activeLayerCount = 0;
+        std::atomic<AmUInt32> _activeLayerCount = 0;
         AmUInt64 _remainingFrames;
 
         Pipeline* _pipeline = nullptr;
