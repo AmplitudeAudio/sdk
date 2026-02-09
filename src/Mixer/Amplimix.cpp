@@ -12,6 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+#include <thread>
+
 #include <SparkyStudios/Audio/Amplitude/Amplitude.h>
 
 #include <Core/Engine.h>
@@ -248,6 +250,9 @@ namespace SparkyStudios::Audio::Amplitude
 
     static void OnSoundDestroyed(AmplimixImpl* mixer, AmplimixLayerImpl* layer)
     {
+        // Null guard: multiple deferred commands may target the same layer in one
+        // ExecuteCommands() pass (e.g., HaltInternal queues via SetPlayState + OnSoundEnded
+        // queues another). The first call nulls snd via Destroy(); subsequent calls are no-ops.
         if (layer->snd == nullptr)
             return;
 
@@ -486,7 +491,9 @@ namespace SparkyStudios::Audio::Amplitude
             // Initialize this layer's pipeline
             lay->pipeline = _pipeline->CreateInstance(lay);
 
-            // fill in non-atomic layer data along with truncating start and end
+            // All non-atomic writes (id, snd, start, end) happen before the release-store
+            // to lay->flag below. The audio thread's acquire-load on flag in ShouldMix()
+            // establishes happens-before, guaranteeing these fields are visible.
             lay->id = id;
             lay->snd = sound;
 
@@ -749,12 +756,29 @@ namespace SparkyStudios::Audio::Amplitude
 
     void AmplimixImpl::PushCommand(const MixerCommand& command)
     {
-        if (!_commandsStack.TryEnqueue(command))
+        // Fast path
+        if (_commandsStack.TryEnqueue(command))
+            return;
+
+        // Spin briefly — the audio thread drains at callback rate (~5ms)
+        for (int i = 0; i < 256; ++i)
         {
-            amLogWarning("Amplimix command queue full, executing command inline.");
-            if (command.callback)
-                command.callback();
+            std::this_thread::yield();
+            if (_commandsStack.TryEnqueue(command))
+                return;
         }
+
+        // Wait for the current mix cycle to finish (drains the queue)
+        amLogWarning("Amplimix command queue full, waiting for mix cycle to drain.");
+        Wait();
+
+        if (_commandsStack.TryEnqueue(command))
+            return;
+
+        // Last resort: Mix() is confirmed idle (Wait returned), so inline is safe.
+        amLogWarning("Amplimix command queue still full after wait. Executing command inline (mixer idle).");
+        if (command.callback)
+            command.callback();
     }
 
     const Pipeline* AmplimixImpl::GetPipeline() const
@@ -782,6 +806,9 @@ namespace SparkyStudios::Audio::Amplitude
 
     void AmplimixImpl::MixLayer(AmplimixLayerImpl* layer, AudioBuffer* buffer, AmUInt64 frameCount)
     {
+        // snd is guaranteed non-null here: ShouldMix() already verified flag > ePSF_HALT
+        // (acquire), and Destroy() (which nulls snd) only runs in ExecuteCommands() after
+        // this loop. The assert below is a defense-in-depth check.
         if (layer->snd == nullptr)
         {
             AMPLITUDE_ASSERT(false); // This should technically never appear
@@ -1214,14 +1241,18 @@ namespace SparkyStudios::Audio::Amplitude
 
     bool AmplimixImpl::ShouldMix(AmplimixLayerImpl* layer)
     {
-        if (layer->snd == nullptr)
-            return false;
-
-        // load flag value
+        // Acquire-load flag first to establish happens-before with the
+        // release-store in PlayAdvanced (which writes snd before setting flag).
         PlayStateFlag flag = AMPLIMIX_LOAD(&layer->flag);
 
-        // return if flag is not cleared
-        return (flag > ePSF_HALT);
+        if (flag <= ePSF_HALT)
+            return false;
+
+        // After the acquire on flag, snd is guaranteed non-null because:
+        // - PlayAdvanced writes snd before release-storing flag > ePSF_HALT
+        // - Destroy() (which nulls snd) only runs in ExecuteCommands() after the mix loop
+        AMPLITUDE_ASSERT(layer->snd != nullptr);
+        return true;
     }
 
     void AmplimixImpl::UpdatePitch(AmplimixLayerImpl* layer)
@@ -1287,6 +1318,9 @@ namespace SparkyStudios::Audio::Amplitude
 
     void AmplimixLayerImpl::Destroy()
     {
+        // This method runs only inside ExecuteCommands(), which executes after
+        // the mix loop in Mix(). Therefore no audio-thread reads of snd can
+        // race with the null assignment below.
         if (dataConverter != nullptr)
         {
             ampooldelete(eMemoryPoolKind_Amplimix, AudioConverter, dataConverter);
