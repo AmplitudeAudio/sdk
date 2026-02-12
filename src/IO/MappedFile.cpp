@@ -166,6 +166,9 @@ namespace SparkyStudios::Audio::Amplitude
         if (bytes > m_dataSize - m_offset)
             bytes = m_dataSize - m_offset;
 
+        if (bytes == 0)
+            return 0;
+
         std::memcpy(dst, m_dataPtr + m_offset, bytes);
         m_offset += bytes;
 

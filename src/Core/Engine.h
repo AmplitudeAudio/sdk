@@ -18,6 +18,7 @@
 #define _AM_IMPLEMENTATION_CORE_ENGINE_H
 
 #include <SparkyStudios/Audio/Amplitude/Core/Engine.h>
+#include <SparkyStudios/Audio/Amplitude/Core/MPSCQueue.h>
 
 #include <Core/EngineInternalState.h>
 
@@ -219,11 +220,11 @@ namespace SparkyStudios::Audio::Amplitude
         // The list of paths in which search for plugins.
         static std::set<AmOsString> _pluginSearchPaths;
 
-        mutable std::mutex _frameThreadMutex;
+        mutable std::recursive_mutex _frameThreadMutex;
         mutable std::recursive_mutex _updateMutex;
 
         // The list of pending next frame callbacks.
-        mutable std::queue<std::function<void(AmTime)>> _nextFrameCallbacks;
+        mutable MPSCQueue<std::function<void(AmTime)>, 1024> _nextFrameCallbacks;
 
         // The path to the config file.
         AmOsString _configFilePath;

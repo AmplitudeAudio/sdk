@@ -77,6 +77,15 @@ namespace SparkyStudios::Audio::Amplitude
 
     static void OnSoundDestroyed(AmplimixImpl* mixer, AmplimixLayerImpl* layer);
 
+    static void TriggerChannelEvents(ChannelInternalState* channelState, eChannelEvent event)
+    {
+        amEngine->OnNextFrame(
+            [channelState, event](AmTime)
+            {
+                channelState->Trigger(event);
+            });
+    }
+
     static bool ShouldLoopSound(AmplimixImpl* mixer, AmplimixLayerImpl* layer)
     {
         const auto* sound = layer->snd->sound.get();
@@ -88,51 +97,51 @@ namespace SparkyStudios::Audio::Amplitude
     static void OnSoundStarted(AmplimixImpl* mixer, AmplimixLayerImpl* layer)
     {
         const auto* sound = layer->snd->sound.get();
-        amLogDebug("Started sound: '" AM_OS_CHAR_FMT "'.", sound->GetSound()->GetPath().c_str());
+        amLogDebug("Started sound: '" AM_OS_CHAR_FMT "'.", sound->GetSound()->GetName().c_str());
 
         const auto channel = sound->GetChannel();
         auto* channelState = channel.GetState();
 
-        channelState->Trigger(eChannelEvent_Begin);
+        TriggerChannelEvents(channelState, eChannelEvent_Begin);
     }
 
     static void OnSoundPaused(AmplimixImpl* mixer, AmplimixLayerImpl* layer)
     {
         const auto* sound = layer->snd->sound.get();
-        amLogDebug("Paused sound: '" AM_OS_CHAR_FMT "'.", sound->GetSound()->GetPath().c_str());
+        amLogDebug("Paused sound: '" AM_OS_CHAR_FMT "'.", sound->GetSound()->GetName().c_str());
 
         const auto channel = sound->GetChannel();
         auto* channelState = channel.GetState();
 
-        channelState->Trigger(eChannelEvent_Pause);
+        TriggerChannelEvents(channelState, eChannelEvent_Pause);
     }
 
     static void OnSoundResumed(AmplimixImpl* mixer, AmplimixLayerImpl* layer)
     {
         const auto* sound = layer->snd->sound.get();
-        amLogDebug("Resumed sound: '" AM_OS_CHAR_FMT "'.", sound->GetSound()->GetPath().c_str());
+        amLogDebug("Resumed sound: '" AM_OS_CHAR_FMT "'.", sound->GetSound()->GetName().c_str());
 
         const auto channel = sound->GetChannel();
         auto* channelState = channel.GetState();
 
-        channelState->Trigger(eChannelEvent_Resume);
+        TriggerChannelEvents(channelState, eChannelEvent_Resume);
     }
 
     static void OnSoundStopped(AmplimixImpl* mixer, AmplimixLayerImpl* layer)
     {
         const auto* sound = layer->snd->sound.get();
-        amLogDebug("Stopped sound: '" AM_OS_CHAR_FMT "'.", sound->GetSound()->GetPath().c_str());
+        amLogDebug("Stopped sound: '" AM_OS_CHAR_FMT "'.", sound->GetSound()->GetName().c_str());
 
         const auto channel = sound->GetChannel();
         auto* channelState = channel.GetState();
 
-        channelState->Trigger(eChannelEvent_Stop);
+        TriggerChannelEvents(channelState, eChannelEvent_Stop);
     }
 
     static bool OnSoundLooped(AmplimixImpl* mixer, AmplimixLayerImpl* layer)
     {
         auto* sound = layer->snd->sound.get();
-        amLogDebug("Looped sound: '" AM_OS_CHAR_FMT "'.", sound->GetSound()->GetPath().c_str());
+        amLogDebug("Looped sound: '" AM_OS_CHAR_FMT "'.", sound->GetSound()->GetName().c_str());
 
         AmplimixImpl::IncrementSoundLoopCount(sound);
 
@@ -143,7 +152,7 @@ namespace SparkyStudios::Audio::Amplitude
             const auto channel = sound->GetChannel();
             auto* channelState = channel.GetState();
 
-            channelState->Trigger(eChannelEvent_Loop);
+            TriggerChannelEvents(channelState, eChannelEvent_Loop);
         }
 
         return shouldLoop;
@@ -161,52 +170,32 @@ namespace SparkyStudios::Audio::Amplitude
     static void OnSoundEnded(AmplimixImpl* mixer, AmplimixLayerImpl* layer)
     {
         auto* sound = layer->snd->sound.get();
-        amLogDebug("Ended sound: '" AM_OS_CHAR_FMT "'.", sound->GetSound()->GetPath().c_str());
+        amLogDebug("Ended sound: '" AM_OS_CHAR_FMT "'.", sound->GetSound()->GetName().c_str());
 
         const auto channel = sound->GetChannel();
         auto* channelState = channel.GetState();
 
-        if (const auto* engine = static_cast<const EngineImpl*>(Engine::GetInstance()); engine->GetState()->stopping)
+        auto haltCallback = [channelState]() -> bool
         {
-            // Stop playing the sound
+            TriggerChannelEvents(channelState, eChannelEvent_End);
             channelState->HaltInternal();
 
-            channelState->Trigger(eChannelEvent_End);
+            return true;
+        };
 
-            mixer->PushCommand({ [mixer, layer]() -> bool
-                                 {
-                                     OnSoundDestroyed(mixer, layer);
-                                     return true;
-                                 } });
-
+        if (const auto* engine = static_cast<const EngineImpl*>(Engine::GetInstance()); engine->GetState()->stopping)
+        {
+            mixer->PushCommand({ haltCallback });
             return;
         }
 
         if (sound->GetSettings().m_kind == SoundKind::Standalone)
         {
-            // Stop playing the sound
-            channelState->HaltInternal();
-
-            channelState->Trigger(eChannelEvent_End);
-
-            mixer->PushCommand({ [mixer, layer]() -> bool
-                                 {
-                                     OnSoundDestroyed(mixer, layer);
-                                     return true;
-                                 } });
+            mixer->PushCommand({ haltCallback });
         }
         else if (sound->GetSettings().m_kind == SoundKind::Switched)
         {
-            // Stop playing the sound
-            channelState->HaltInternal();
-
-            channelState->Trigger(eChannelEvent_End);
-
-            mixer->PushCommand({ [mixer, layer]() -> bool
-                                 {
-                                     OnSoundDestroyed(mixer, layer);
-                                     return true;
-                                 } });
+            mixer->PushCommand({ haltCallback });
         }
         else if (sound->GetSettings().m_kind == SoundKind::Contained)
         {
@@ -215,31 +204,20 @@ namespace SparkyStudios::Audio::Amplitude
 
             if (const CollectionDefinition* config = collection->GetDefinition(); config->play_mode() == CollectionPlayMode_PlayAll)
             {
-                if (channelState->Valid())
-                {
-                    channelState->GetRealChannel().MarkAsPlayed(sound->GetSound());
-                    if (channelState->GetRealChannel().AllSoundsHasPlayed())
+                amEngine->OnNextFrame(
+                    [collection, channelState, sound, mixer, haltCallback](AmTime)
                     {
-                        channelState->GetRealChannel().ClearPlayedSounds();
-                        if (config->play_mode() == CollectionPlayMode_PlayAll)
+                        channelState->GetRealChannel().MarkAsPlayed(sound->GetSound());
+                        if (channelState->GetRealChannel().AllSoundsHasPlayed())
                         {
-                            // Stop playing the collection
-                            channelState->HaltInternal();
-
-                            channelState->Trigger(eChannelEvent_End);
+                            channelState->GetRealChannel().ClearPlayedSounds();
+                            mixer->PushCommand({ haltCallback });
                         }
-                    }
 
-                    // Play the collection again only if the channel is still playing.
-                    if (channelState->GetRealChannel().Playing())
-                        channelState->Play();
-                }
-
-                mixer->PushCommand({ [mixer, layer]() -> bool
-                                     {
-                                         OnSoundDestroyed(mixer, layer);
-                                         return true;
-                                     } });
+                        // Play the collection again only if the channel is still playing.
+                        if (channelState->GetRealChannel().Playing())
+                            channelState->Play();
+                    });
             }
         }
         else
@@ -332,6 +310,9 @@ namespace SparkyStudios::Audio::Amplitude
 
         // Drain any pending deferred commands
         ExecuteCommands();
+
+        for (auto& layer : _layers)
+            layer.Destroy();
 
         _initialized = false;
         _pipeline = nullptr;
@@ -760,22 +741,24 @@ namespace SparkyStudios::Audio::Amplitude
         if (_commandsStack.TryEnqueue(command))
             return;
 
-        // Spin briefly — the audio thread drains at callback rate (~5ms)
-        for (int i = 0; i < 256; ++i)
+        if (!IsInsideThreadMutex())
         {
-            std::this_thread::yield();
+            // Spin briefly — the audio thread drains at callback rate (~5ms)
+            for (int i = 0; i < 256; ++i)
+            {
+                std::this_thread::yield();
+                if (_commandsStack.TryEnqueue(command))
+                    return;
+            }
+
+            // Wait for the current mix cycle to finish (drains the queue)
+            amLogWarning("Amplimix command queue full, waiting for mix cycle to drain.");
+            Wait();
+
             if (_commandsStack.TryEnqueue(command))
                 return;
         }
 
-        // Wait for the current mix cycle to finish (drains the queue)
-        amLogWarning("Amplimix command queue full, waiting for mix cycle to drain.");
-        Wait();
-
-        if (_commandsStack.TryEnqueue(command))
-            return;
-
-        // Last resort: Mix() is confirmed idle (Wait returned), so inline is safe.
         amLogWarning("Amplimix command queue still full after wait. Executing command inline (mixer idle).");
         if (command.callback)
             command.callback();

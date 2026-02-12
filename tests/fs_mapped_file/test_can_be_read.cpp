@@ -72,7 +72,7 @@ namespace SparkyStudios::Audio::Amplitude::Tests
 
             // Seek past end clamps
             file.Seek(1234, eFileSeekOrigin_Start);
-            AM_EXPECT(file.Position() == 1); // Clamped to m_dataSize - 1
+            AM_EXPECT(file.Position() == 2);
         }
     };
 

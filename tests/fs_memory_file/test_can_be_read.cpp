@@ -48,8 +48,8 @@ namespace SparkyStudios::Audio::Amplitude::Tests
             AM_EXPECT(file.Position() == 0);
             AM_EXPECT(file.Read8() == 'O');
             file.Seek(1234, eFileSeekOrigin_Start);
-            AM_EXPECT(file.Position() == 1);
-            AM_EXPECT(file.Read8() == 'K');
+            AM_EXPECT(file.Position() == 2);
+            AM_EXPECT(file.Read8() == 0);
 
             file.Seek(0, eFileSeekOrigin_Start);
             auto* content = static_cast<AmUInt8Buffer>(ammalloc(2));
