@@ -97,7 +97,7 @@ namespace SparkyStudios::Audio::Amplitude
     static void OnSoundStarted(AmplimixImpl* mixer, AmplimixLayerImpl* layer)
     {
         const auto* sound = layer->snd->sound.get();
-        amLogDebug("Started sound: '" AM_OS_CHAR_FMT "'.", sound->GetSound()->GetName().c_str());
+        amLogDebug("Started sound: '%s'.", sound->GetSound()->GetName().c_str());
 
         const auto channel = sound->GetChannel();
         auto* channelState = channel.GetState();
@@ -108,7 +108,7 @@ namespace SparkyStudios::Audio::Amplitude
     static void OnSoundPaused(AmplimixImpl* mixer, AmplimixLayerImpl* layer)
     {
         const auto* sound = layer->snd->sound.get();
-        amLogDebug("Paused sound: '" AM_OS_CHAR_FMT "'.", sound->GetSound()->GetName().c_str());
+        amLogDebug("Paused sound: '%s'.", sound->GetSound()->GetName().c_str());
 
         const auto channel = sound->GetChannel();
         auto* channelState = channel.GetState();
@@ -119,7 +119,7 @@ namespace SparkyStudios::Audio::Amplitude
     static void OnSoundResumed(AmplimixImpl* mixer, AmplimixLayerImpl* layer)
     {
         const auto* sound = layer->snd->sound.get();
-        amLogDebug("Resumed sound: '" AM_OS_CHAR_FMT "'.", sound->GetSound()->GetName().c_str());
+        amLogDebug("Resumed sound: '%s'.", sound->GetSound()->GetName().c_str());
 
         const auto channel = sound->GetChannel();
         auto* channelState = channel.GetState();
@@ -130,7 +130,7 @@ namespace SparkyStudios::Audio::Amplitude
     static void OnSoundStopped(AmplimixImpl* mixer, AmplimixLayerImpl* layer)
     {
         const auto* sound = layer->snd->sound.get();
-        amLogDebug("Stopped sound: '" AM_OS_CHAR_FMT "'.", sound->GetSound()->GetName().c_str());
+        amLogDebug("Stopped sound: '%s'.", sound->GetSound()->GetName().c_str());
 
         const auto channel = sound->GetChannel();
         auto* channelState = channel.GetState();
@@ -141,7 +141,7 @@ namespace SparkyStudios::Audio::Amplitude
     static bool OnSoundLooped(AmplimixImpl* mixer, AmplimixLayerImpl* layer)
     {
         auto* sound = layer->snd->sound.get();
-        amLogDebug("Looped sound: '" AM_OS_CHAR_FMT "'.", sound->GetSound()->GetName().c_str());
+        amLogDebug("Looped sound: '%s'.", sound->GetSound()->GetName().c_str());
 
         AmplimixImpl::IncrementSoundLoopCount(sound);
 
@@ -170,7 +170,7 @@ namespace SparkyStudios::Audio::Amplitude
     static void OnSoundEnded(AmplimixImpl* mixer, AmplimixLayerImpl* layer)
     {
         auto* sound = layer->snd->sound.get();
-        amLogDebug("Ended sound: '" AM_OS_CHAR_FMT "'.", sound->GetSound()->GetName().c_str());
+        amLogDebug("Ended sound: '%s'.", sound->GetSound()->GetName().c_str());
 
         const auto channel = sound->GetChannel();
         auto* channelState = channel.GetState();
