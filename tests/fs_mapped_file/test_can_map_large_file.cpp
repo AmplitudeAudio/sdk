@@ -32,11 +32,11 @@ namespace SparkyStudios::Audio::Amplitude::Tests
         {
             auto path = std::filesystem::temp_directory_path() / "am_mapped_file_test.bin";
 
-            AmFileHandle fp;
+            AmFileHandle fp = nullptr;
             #if AM_PLATFORM_WIN
                     _wfopen_s(&fp, path.c_str(), AM_OS_STRING("wb"));
             #else
-                    fp = fopen(path.c_str(), op.c_str());
+                    fp = fopen(path.c_str(), AM_OS_STRING("wb"));
             #endif
 
             if (fp == nullptr)
@@ -148,11 +148,11 @@ namespace SparkyStudios::Audio::Amplitude::Tests
             constexpr AmSize kFileSize = 2 * 1024 * 1024; // 2 MB
             auto path = std::filesystem::temp_directory_path() / "am_mapped_file_seq_test.bin";
 
-            AmFileHandle fp;
+            AmFileHandle fp = nullptr;
             #if AM_PLATFORM_WIN
                     _wfopen_s(&fp, path.c_str(), AM_OS_STRING("wb"));
             #else
-                    fp = fopen(path.c_str(), op.c_str());
+                    fp = fopen(path.c_str(), AM_OS_STRING("wb"));
             #endif
             AM_EXPECT(fp != nullptr);
 

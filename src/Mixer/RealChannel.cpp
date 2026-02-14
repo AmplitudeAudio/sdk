@@ -162,7 +162,7 @@ namespace SparkyStudios::Audio::Amplitude
         const AmUInt32 mixerLayerId = it->second.mixerLayerId;
         SoundInstance* soundInstance = it->second.soundInstance;
 
-        const MixerCommandCallback callback = [&, layer, mixerLayerId, soundInstance]() -> bool
+        const MixerCommandCallback callback = [this, layer, mixerLayerId, soundInstance]() -> bool
         {
             _mixer->SetPlayState(_channelId, mixerLayerId, ePSF_MIN);
 

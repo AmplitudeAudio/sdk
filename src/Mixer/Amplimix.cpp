@@ -1211,12 +1211,14 @@ namespace SparkyStudios::Audio::Amplitude
 
     void AmplimixImpl::DeactivateLayer(AmUInt32 layerIndex)
     {
-        for (AmUInt32 i = 0; i < _activeLayerCount; ++i)
+        AmUInt32 activeLayerCount = AMPLIMIX_LOAD_RELAXED(&_activeLayerCount);
+        for (AmUInt32 i = 0; i < activeLayerCount; ++i)
         {
             if (_activeLayerIndices[i] == layerIndex)
             {
                 // Swap with last element for O(1) removal
-                _activeLayerIndices[i] = _activeLayerIndices[--_activeLayerCount];
+                _activeLayerIndices[i] = _activeLayerIndices[--activeLayerCount];
+                AMPLIMIX_STORE_RELAXED(&_activeLayerCount, activeLayerCount);
                 return;
             }
         }

@@ -78,15 +78,13 @@ namespace SparkyStudios::Audio::Amplitude
 
                 if (ch.m_CompressedSize > _compressedBufferCapacity)
                 {
-                    _compressedBuffer = static_cast<AmUInt8*>(
-                        ampoolrealloc(eMemoryPoolKind_IO, _compressedBuffer, ch.m_CompressedSize));
+                    _compressedBuffer = static_cast<AmUInt8*>(ampoolrealloc(eMemoryPoolKind_IO, _compressedBuffer, ch.m_CompressedSize));
                     _compressedBufferCapacity = ch.m_CompressedSize;
                 }
 
                 if (ch.m_Size > _decompressedBufferCapacity)
                 {
-                    _decompressedBuffer = static_cast<AmUInt8*>(
-                        ampoolrealloc(eMemoryPoolKind_IO, _decompressedBuffer, ch.m_Size));
+                    _decompressedBuffer = static_cast<AmUInt8*>(ampoolrealloc(eMemoryPoolKind_IO, _decompressedBuffer, ch.m_Size));
                     _decompressedBufferCapacity = ch.m_Size;
                     _cachedChunkIndex = std::numeric_limits<AmSize>::max();
                 }
@@ -96,11 +94,13 @@ namespace SparkyStudios::Audio::Amplitude
                     _packageFile->Seek(GetBasePosition() + ch.m_Offset, eFileSeekOrigin_Start);
                     _packageFile->Read(_compressedBuffer, ch.m_CompressedSize);
 
-                    LZ4_decompress_safe(
-                        reinterpret_cast<char*>(_compressedBuffer),
-                        reinterpret_cast<char*>(_decompressedBuffer),
-                        ch.m_CompressedSize,
-                        ch.m_Size);
+                    const int decompressedSize = LZ4_decompress_safe(
+                        reinterpret_cast<char*>(_compressedBuffer), reinterpret_cast<char*>(_decompressedBuffer),
+                        static_cast<int>(ch.m_CompressedSize), static_cast<int>(ch.m_Size));
+
+                    // Decompression failed; return the number of bytes successfully read so far.
+                    if (decompressedSize < 0)
+                        return bytes - remaining;
 
                     _cachedChunkIndex = ci;
                 }

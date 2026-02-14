@@ -44,12 +44,12 @@ namespace SparkyStudios::Audio::Amplitude
             _inputNode = nullptr;
     }
 
-    void PipelineInstanceImpl::Execute(const AudioBuffer& in, AudioBuffer& out)
+    void PipelineInstanceImpl::Execute(AudioBuffer& in, AudioBuffer& out)
     {
         // Auto-configure if buffer dimensions changed
         Configure(in.GetFrameCount(), in.GetChannelCount(), out.GetFrameCount(), out.GetChannelCount());
 
-        _inputNode->SetInput(const_cast<AudioBuffer*>(&in));
+        _inputNode->SetInput(&in);
         _outputNode->SetOutput(&out);
 
         // Consume data from the output node.

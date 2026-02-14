@@ -46,11 +46,11 @@ namespace SparkyStudios::Audio::Amplitude
         /**
          * @brief Executes the pipeline for the given layer.
          *
-         * @param[in] in The input buffer to process. This buffer is passed to the input
-         * node of the pipeline.
+         * @param[in,out] in The input buffer to process. This buffer may be modified in-place
+         * by the input node's filter. It is passed to the input node of the pipeline.
          * @param[out] out The output buffer where the output node will fill processed data.
          */
-        virtual void Execute(const AudioBuffer& in, AudioBuffer& out) = 0;
+        virtual void Execute(AudioBuffer& in, AudioBuffer& out) = 0;
 
         /**
          * @brief Resets the internal state for all nodes in the pipeline.
