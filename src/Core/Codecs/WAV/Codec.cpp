@@ -15,6 +15,8 @@
 #define DR_WAV_IMPLEMENTATION
 #include "dr_wav.h"
 
+#include <cstring>
+
 #include <Core/Codecs/WAV/Codec.h>
 #include <Utils/Utils.h>
 
@@ -197,7 +199,7 @@ namespace SparkyStudios::Audio::Amplitude
             return 0;
 
         AmAlignedReal32Buffer buffer;
-        buffer.Init(length);
+        buffer.Init(length * _wav.channels);
 
         Interleave(in, 0, buffer.GetBuffer(), 0, length, _wav.channels);
 
@@ -216,7 +218,33 @@ namespace SparkyStudios::Audio::Amplitude
 
     bool WAVCodec::CanHandleFile(std::shared_ptr<File> file) const
     {
-        const auto& path = file->GetPath();
-        return path.find(AM_OS_STRING(".wav")) != AmOsString::npos;
+        if (!file)
+            return false;
+
+        const auto pos = file->Position();
+        file->Seek(0, eFileSeekOrigin_Start);
+
+        // Read RIFF header (12) + fmt chunk tag (4) + fmt chunk size (4) + format tag (2) = 22 bytes
+        AmUInt8 header[22] = {};
+        const bool hasEnoughData = file->Read(header, sizeof(header)) == sizeof(header);
+
+        file->Seek(static_cast<AmInt64>(pos), eFileSeekOrigin_Start);
+
+        if (!hasEnoughData)
+            return false;
+
+        // Verify RIFF WAVE container
+        if (std::memcmp(header, "RIFF", 4) != 0 || std::memcmp(header + 8, "WAVE", 4) != 0)
+            return false;
+
+        // Verify "fmt " sub-chunk follows the RIFF header
+        if (std::memcmp(header + 12, "fmt ", 4) != 0)
+            return false;
+
+        // Read the format tag (little-endian uint16 at offset 20)
+        const auto formatTag = static_cast<AmUInt16>(header[20] | (header[21] << 8));
+
+        // Accept standard WAV formats; reject IMA/DVI ADPCM (0x11) which is handled by the AMS codec
+        return formatTag != DR_WAVE_FORMAT_DVI_ADPCM;
     }
 } // namespace SparkyStudios::Audio::Amplitude

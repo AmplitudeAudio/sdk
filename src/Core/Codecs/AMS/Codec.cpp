@@ -653,9 +653,15 @@ namespace SparkyStudios::Audio::Amplitude
         if (!file)
             return false;
 
-        const auto& path = file->GetPath();
-        const std::filesystem::path filePath(path);
+        const auto pos = file->Position();
+        file->Seek(0, eFileSeekOrigin_Start);
 
-        return filePath.extension() == AM_OS_STRING(".ams");
+        SoundFormat tempFormat;
+        AmUInt16 tempBlockSize = 0;
+        const bool result = ReadHeader(file, tempFormat, tempBlockSize);
+
+        file->Seek(static_cast<AmInt64>(pos), eFileSeekOrigin_Start);
+
+        return result;
     }
 } // namespace SparkyStudios::Audio::Amplitude

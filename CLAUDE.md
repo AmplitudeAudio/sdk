@@ -111,9 +111,20 @@ The SDK is organized into major modules:
 
 ### Test Framework
 
-- Tests located in `tests/` directory
-- XMake configuration at `tests/xmake.lua`
-- Tests cover core functionality: memory, rooms, etc.
+- Tests located in `tests/` directory, organized by module (e.g., `tests/core_engine/`, `tests/dsp_*/`, `tests/math_*/`)
+- Each test is a separate `.cpp` file that self-registers via static initialization
+- XMake configuration at `tests/xmake.lua` with platform-specific runners in `tests/runners/`
+- Tests cover core functionality: engine, audio buffers, DSP, math, threading, HRTF, etc.
+
+### Running Tests
+
+- **Run all tests:** `xmake test` (this automatically builds the SDK and test targets first -- no separate build step needed)
+- **Configure for tests:** `xmake f --unit_tests=y` (must be enabled before running tests)
+- **Build tests only:** `xmake build amplitude_tests`
+- **List all tests:** `./amplitude_tests -l`
+- **Run with verbose output:** `./amplitude_tests -v`
+- **Run a specific test group:** `./amplitude_tests -g core_engine`
+- **Filter tests by name:** `./amplitude_tests --filter memory`
 
 ### CI/CD
 
@@ -121,7 +132,7 @@ The SDK is organized into major modules:
 - Build workflow: `build.yml`
 - XMake workflow: `xmake.yml`
 - Ubuntu Latest Clang builds included
-- Code coverage via Codecov
+- Code coverage via Codecov (uses `mode.coverage.llvm` rule with `llvm-profdata` and `llvm-cov`)
 
 ### Test Guidelines
 
@@ -129,6 +140,7 @@ The SDK is organized into major modules:
 - Ensure cross-platform compatibility
 - Test edge cases and error conditions
 - Verify memory management and cleanup
+- Test files follow the naming pattern `tests/<module>_<component>/test_<description>.cpp`
 
 ## Building and Dependencies
 

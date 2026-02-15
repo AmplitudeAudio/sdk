@@ -15,6 +15,8 @@
 #define DR_MP3_IMPLEMENTATION
 #include "dr_mp3.h"
 
+#include <cstring>
+
 #include <Core/Codecs/MP3/Codec.h>
 #include <Utils/Utils.h>
 
@@ -169,7 +171,25 @@ namespace SparkyStudios::Audio::Amplitude
 
     bool MP3Codec::CanHandleFile(std::shared_ptr<File> file) const
     {
-        const auto& path = file->GetPath();
-        return path.find(AM_OS_STRING(".mp3")) != AmOsString::npos;
+        if (!file)
+            return false;
+
+        const auto pos = file->Position();
+        file->Seek(0, eFileSeekOrigin_Start);
+
+        AmUInt8 header[3] = {};
+        const auto bytesRead = file->Read(header, sizeof(header));
+
+        file->Seek(static_cast<AmInt64>(pos), eFileSeekOrigin_Start);
+
+        if (bytesRead < 2)
+            return false;
+
+        // Check for ID3v2 tag
+        if (bytesRead >= 3 && std::memcmp(header, "ID3", 3) == 0)
+            return true;
+
+        // Check for MPEG audio frame sync word (first 11 bits all set)
+        return header[0] == 0xFF && (header[1] & 0xE0) == 0xE0;
     }
 } // namespace SparkyStudios::Audio::Amplitude
