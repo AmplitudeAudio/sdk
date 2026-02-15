@@ -49,8 +49,14 @@ namespace SparkyStudios::Audio::Amplitude
 
     AmSize MemoryFile::Read(AmUInt8Buffer dst, AmSize bytes) const
     {
-        if (m_offset + bytes >= m_dataSize)
+        if (m_dataPtr == nullptr || m_offset >= m_dataSize)
+            return 0;
+
+        if (bytes > m_dataSize - m_offset)
             bytes = m_dataSize - m_offset;
+
+        if (bytes == 0)
+            return 0;
 
         std::memcpy(dst, m_dataPtr + m_offset, bytes);
         m_offset += bytes;
@@ -60,6 +66,9 @@ namespace SparkyStudios::Audio::Amplitude
 
     AmSize MemoryFile::Write(AmConstUInt8Buffer src, AmSize bytes)
     {
+        if (m_dataPtr == nullptr || m_offset >= m_dataSize)
+            return 0;
+
         const auto bytesToWrite = std::min(bytes, m_dataSize - m_offset);
 
         std::memcpy(m_dataPtr + m_offset, src, bytesToWrite);
@@ -75,15 +84,16 @@ namespace SparkyStudios::Audio::Amplitude
 
     void MemoryFile::Seek(AmInt64 offset, eFileSeekOrigin origin)
     {
-        if (origin == eFileSeekOrigin_Start)
-            m_offset = offset;
-        else if (origin == eFileSeekOrigin_Current)
-            m_offset += offset;
-        else if (origin == eFileSeekOrigin_End)
-            m_offset = m_dataSize + offset;
+        AmInt64 newOffset = 0;
 
-        if (m_offset > m_dataSize - 1)
-            m_offset = m_dataSize - 1;
+        if (origin == eFileSeekOrigin_Start)
+            newOffset = offset;
+        else if (origin == eFileSeekOrigin_Current)
+            newOffset = static_cast<AmInt64>(m_offset) + offset;
+        else if (origin == eFileSeekOrigin_End)
+            newOffset = static_cast<AmInt64>(m_dataSize) + offset;
+
+        m_offset = AM_CLAMP(newOffset, 0, static_cast<AmInt64>(m_dataSize));
     }
 
     AmSize MemoryFile::Position() const

@@ -26,6 +26,7 @@ namespace SparkyStudios::Audio::Amplitude::Tests
     public:
         void Run() override
         {
+#if !defined(AM_NO_MEMORY_STATS)
             // Initialize memory manager
             MemoryManager::Initialize(nullptr);
 
@@ -167,6 +168,7 @@ namespace SparkyStudios::Audio::Amplitude::Tests
             AM_EXPECT(amMemory->TotalReservedMemorySize(eMemoryPoolKind_Codec) == initialCodec);
 
             MemoryManager::Deinitialize();
+#endif // !defined(AM_NO_MEMORY_STATS)
         }
     };
 

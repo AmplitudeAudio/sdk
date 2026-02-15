@@ -44,12 +44,8 @@ namespace SparkyStudios::Audio::Amplitude
 
     void ChannelInternalState::Reset()
     {
-        _realChannel._channelLayersId.clear();
-        _realChannel._activeSounds.clear();
+        _realChannel._layers.clear();
         _realChannel._playedSounds.clear();
-        _realChannel._stream.clear();
-        _realChannel._loop.clear();
-        _realChannel._gain.clear();
 
         _dopplerFactors.clear();
         _channelState = eChannelPlaybackState_Stopped;
@@ -319,7 +315,7 @@ namespace SparkyStudios::Audio::Amplitude
         if (Playing())
         {
             // Resume playing the audio.
-            if (!_realChannel._channelLayersId.empty())
+            if (!_realChannel._layers.empty())
             {
                 Play();
             }
@@ -460,8 +456,8 @@ namespace SparkyStudios::Audio::Amplitude
 
                 // Build a map for faster layer lookup
                 std::unordered_map<AmObjectID, AmUInt32> soundToLayer;
-                for (const auto& [layerId, sound] : _realChannel._activeSounds)
-                    soundToLayer[sound->GetSettings().m_id] = layerId;
+                for (const auto& [layerId, layerData] : _realChannel._layers)
+                    soundToLayer[layerData.soundInstance->GetSettings().m_id] = layerId;
 
                 bool isAtLeastOneFadeInRunning = false;
                 bool isAtLeastOneFadeOutRunning = false;
@@ -863,7 +859,7 @@ namespace SparkyStudios::Audio::Amplitude
 
         // For separate mode, initialize cursor at 0 if channel is already playing
         // This allows instances to start at different points in time
-        if (_instancingMode == eChannelInstanceMode_Separate && !_realChannel._channelLayersId.empty())
+        if (_instancingMode == eChannelInstanceMode_Separate && !_realChannel._layers.empty())
             instance->SetCursor(0);
 
         _instances.push_back(*instance);

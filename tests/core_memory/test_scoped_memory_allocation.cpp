@@ -26,6 +26,7 @@ namespace SparkyStudios::Audio::Amplitude::Tests
     public:
         void Run() override
         {
+#if !defined(AM_NO_MEMORY_STATS)
             // Initialize memory manager
             MemoryManager::Initialize(nullptr);
 
@@ -138,6 +139,7 @@ namespace SparkyStudios::Audio::Amplitude::Tests
             } // Memory should be automatically freed even if exceptions occurred
 
             MemoryManager::Deinitialize();
+#endif // !defined(AM_NO_MEMORY_STATS)
         }
     };
 

@@ -77,9 +77,10 @@ namespace SparkyStudios::Audio::Amplitude
          *
          * @param[in] frames Number of frames needed.
          * @param[in] channels Number of channels needed.
+         * @param[in] clearOnAcquire If true (default), clears the buffer. Set to false when the caller will immediately overwrite it.
          * @return A SoundChunk pointer (never null).
          */
-        SoundChunk* Acquire(AmUInt64 frames, AmUInt16 channels);
+        SoundChunk* Acquire(AmUInt64 frames, AmUInt16 channels, bool clearOnAcquire = true);
 
         /**
          * @brief Releases a chunk back to the pool.

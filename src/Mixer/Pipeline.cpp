@@ -44,16 +44,12 @@ namespace SparkyStudios::Audio::Amplitude
             _inputNode = nullptr;
     }
 
-    void PipelineInstanceImpl::Execute(const AudioBuffer& in, AudioBuffer& out)
+    void PipelineInstanceImpl::Execute(AudioBuffer& in, AudioBuffer& out)
     {
         // Auto-configure if buffer dimensions changed
         Configure(in.GetFrameCount(), in.GetChannelCount(), out.GetFrameCount(), out.GetChannelCount());
 
-        // Copy the input buffer content
-        _inputBuffer = in;
-
-        // Set the input and output buffers for the pipeline
-        _inputNode->SetInput(&_inputBuffer);
+        _inputNode->SetInput(&in);
         _outputNode->SetOutput(&out);
 
         // Consume data from the output node.
@@ -64,8 +60,8 @@ namespace SparkyStudios::Audio::Amplitude
 
     std::shared_ptr<NodeInstance> PipelineInstanceImpl::GetNode(AmObjectID id) const
     {
-        if (_nodeInstances.contains(id))
-            return _nodeInstances.at(id).second;
+        if (const auto it = _nodeInstances.find(id); it != _nodeInstances.end())
+            return it->second.second;
 
         if (_inputNode != nullptr && _inputNode->GetId() == id)
             return _inputNode;

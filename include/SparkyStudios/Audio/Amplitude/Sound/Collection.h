@@ -17,6 +17,8 @@
 #ifndef _AM_SOUND_COLLECTION_H
 #define _AM_SOUND_COLLECTION_H
 
+#include <unordered_set>
+
 #include <SparkyStudios/Audio/Amplitude/Core/Entity.h>
 
 #include <SparkyStudios/Audio/Amplitude/Sound/Sound.h>
@@ -48,7 +50,7 @@ namespace SparkyStudios::Audio::Amplitude
          *
          * @return The selected Sound.
          */
-        [[nodiscard]] virtual Sound* SelectFromWorld(const std::vector<AmSoundID>& toSkip) const = 0;
+        [[nodiscard]] virtual Sound* SelectFromWorld(const std::unordered_set<AmSoundID>& toSkip) const = 0;
 
         /**
          * @brief Returns a Sound from this collection from an Entity scope.
@@ -60,7 +62,7 @@ namespace SparkyStudios::Audio::Amplitude
          *
          * @return The selected Sound.
          */
-        virtual Sound* SelectFromEntity(const Entity& entity, const std::vector<AmSoundID>& toSkip) = 0;
+        virtual Sound* SelectFromEntity(const Entity& entity, const std::unordered_set<AmSoundID>& toSkip) = 0;
 
         /**
          * @brief Resets the internal state of the scheduler running for the given Entity.

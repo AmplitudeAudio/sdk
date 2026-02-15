@@ -35,7 +35,7 @@ namespace SparkyStudios::Audio::Amplitude
 
         ~PipelineInstanceImpl() override;
 
-        void Execute(const AudioBuffer& inputBuffer, AudioBuffer& outputBuffer) override;
+        void Execute(AudioBuffer& inputBuffer, AudioBuffer& outputBuffer) override;
 
         std::shared_ptr<NodeInstance> GetNode(AmObjectID id) const override;
 
@@ -63,7 +63,6 @@ namespace SparkyStudios::Audio::Amplitude
         std::shared_ptr<OutputNodeInstance> _outputNode;
 
         const AmplimixLayerImpl* _layer;
-        AudioBuffer _inputBuffer;
 
         // Configuration caching state
         AmUInt64 _configuredInputFrameCount = 0;

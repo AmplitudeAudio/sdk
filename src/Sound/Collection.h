@@ -128,12 +128,12 @@ namespace SparkyStudios::Audio::Amplitude
         /**
          * @copydoc Collection::SelectFromWorld
          */
-        [[nodiscard]] Sound* SelectFromWorld(const std::vector<AmSoundID>& toSkip) const override;
+        [[nodiscard]] Sound* SelectFromWorld(const std::unordered_set<AmSoundID>& toSkip) const override;
 
         /**
          * @copydoc Collection::SelectFromEntity
          */
-        Sound* SelectFromEntity(const Entity& entity, const std::vector<AmSoundID>& toSkip) override;
+        Sound* SelectFromEntity(const Entity& entity, const std::unordered_set<AmSoundID>& toSkip) override;
 
         /**
          * @copydoc Collection::ResetEntityScopeScheduler

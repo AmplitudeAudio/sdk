@@ -113,6 +113,7 @@ namespace SparkyStudios::Audio::Amplitude
         , _processingBuffer(nullptr)
         , _lastOutputBuffer(nullptr)
         , _processOnEmptyInputBuffer(processOnEmptyInputBuffer)
+        , _cachedProvider(nullptr)
     {}
 
     void ProcessorNodeInstance::Consume()
@@ -122,18 +123,22 @@ namespace SparkyStudios::Audio::Amplitude
 
         AMPLITUDE_ASSERT(m_provider != kAmInvalidObjectId);
 
-        const auto node = m_pipeline->GetNode(m_provider);
-        AMPLITUDE_ASSERT(node != nullptr);
+        if (_cachedProvider == nullptr)
+        {
+            const auto node = m_pipeline->GetNode(m_provider);
+            AMPLITUDE_ASSERT(node != nullptr);
 
-        const auto provider = std::dynamic_pointer_cast<ProviderNodeInstance>(node);
-        AMPLITUDE_ASSERT(provider != nullptr);
+            _cachedProvider = dynamic_cast<ProviderNodeInstance*>(node.get());
+            AMPLITUDE_ASSERT(_cachedProvider != nullptr);
+        }
 
-        _processingBuffer = provider->Provide();
+        _processingBuffer = _cachedProvider->Provide();
     }
 
     void ProcessorNodeInstance::Connect(AmObjectID provider)
     {
         m_provider = provider;
+        _cachedProvider = nullptr;
     }
 
     const AudioBuffer* ProcessorNodeInstance::Provide()
@@ -178,6 +183,7 @@ namespace SparkyStudios::Audio::Amplitude
         : _processingBuffers()
         , _mixBuffer()
         , _processed(false)
+        , _cachedProviders()
     {}
 
     void MixerNodeInstance::Consume()
@@ -188,29 +194,38 @@ namespace SparkyStudios::Audio::Amplitude
         if (m_providers.empty())
             return;
 
-        _processingBuffers.clear();
-        for (const auto& providerId : m_providers)
+        if (_cachedProviders.empty())
         {
-            AMPLITUDE_ASSERT(providerId != kAmInvalidObjectId);
+            _cachedProviders.reserve(m_providers.size());
+            for (const auto& providerId : m_providers)
+            {
+                AMPLITUDE_ASSERT(providerId != kAmInvalidObjectId);
 
-            auto node = m_pipeline->GetNode(providerId);
-            AMPLITUDE_ASSERT(node != nullptr);
+                auto node = m_pipeline->GetNode(providerId);
+                AMPLITUDE_ASSERT(node != nullptr);
 
-            auto provider = std::dynamic_pointer_cast<ProviderNodeInstance>(node);
-            AMPLITUDE_ASSERT(provider != nullptr);
+                auto* provider = dynamic_cast<ProviderNodeInstance*>(node.get());
+                AMPLITUDE_ASSERT(provider != nullptr);
 
-            _processingBuffers.push_back(provider->Provide());
+                _cachedProviders.push_back(provider);
+            }
         }
+
+        _processingBuffers.clear();
+        for (auto* provider : _cachedProviders)
+            _processingBuffers.push_back(provider->Provide());
     }
 
     void MixerNodeInstance::Connect(AmObjectID provider)
     {
         m_providers.push_back(provider);
+        _cachedProviders.clear();
     }
 
     void MixerNodeInstance::Connect(const std::vector<AmObjectID>& providers)
     {
         m_providers = providers;
+        _cachedProviders.clear();
     }
 
     const AudioBuffer* MixerNodeInstance::Provide()
@@ -304,6 +319,7 @@ namespace SparkyStudios::Audio::Amplitude
     OutputNodeInstance::OutputNodeInstance()
         : _provider(0)
         , _buffer(nullptr)
+        , _cachedProvider(nullptr)
     {}
 
     void OutputNodeInstance::SetOutput(AudioBuffer* buffer)
@@ -314,6 +330,7 @@ namespace SparkyStudios::Audio::Amplitude
     void OutputNodeInstance::Connect(AmObjectID provider)
     {
         _provider = provider;
+        _cachedProvider = nullptr;
     }
 
     void OutputNodeInstance::Consume()
@@ -326,13 +343,16 @@ namespace SparkyStudios::Audio::Amplitude
 
         AMPLITUDE_ASSERT(_provider != kAmInvalidObjectId);
 
-        auto node = m_pipeline->GetNode(_provider);
-        AMPLITUDE_ASSERT(node != nullptr);
+        if (_cachedProvider == nullptr)
+        {
+            auto node = m_pipeline->GetNode(_provider);
+            AMPLITUDE_ASSERT(node != nullptr);
 
-        const auto provider = std::dynamic_pointer_cast<ProviderNodeInstance>(node);
-        AMPLITUDE_ASSERT(provider != nullptr);
+            _cachedProvider = dynamic_cast<ProviderNodeInstance*>(node.get());
+            AMPLITUDE_ASSERT(_cachedProvider != nullptr);
+        }
 
-        const auto* output = provider->Provide();
+        const auto* output = _cachedProvider->Provide();
         if (output == nullptr)
             return;
 

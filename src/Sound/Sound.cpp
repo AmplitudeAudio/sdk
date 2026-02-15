@@ -144,6 +144,7 @@ namespace SparkyStudios::Audio::Amplitude
     {
         return AssetImpl::GetId();
     }
+
     const AmString& SoundImpl::GetName() const
     {
         return AssetImpl::GetName();

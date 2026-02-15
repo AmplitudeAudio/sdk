@@ -33,7 +33,7 @@ namespace SparkyStudios::Audio::Amplitude
 
         [[nodiscard]] bool Valid() const override;
         void Init(const CollectionDefinition* definition) override;
-        Sound* Select(const std::vector<AmSoundID>& toSkip) override;
+        Sound* Select(const std::unordered_set<AmSoundID>& toSkip) override;
         void Reset() override;
 
     private:

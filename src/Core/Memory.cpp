@@ -148,8 +148,8 @@ namespace SparkyStudios::Audio::Amplitude
 
     MemoryManager::MemoryManager(std::unique_ptr<MemoryAllocator> allocator)
         : _allocator(std::move(allocator))
-        , _memAllocations()
 #if !defined(AM_NO_MEMORY_STATS)
+        , _memAllocations()
         , _memPoolsStats()
 #endif
     {
@@ -159,64 +159,73 @@ namespace SparkyStudios::Audio::Amplitude
 
     MemoryManager::~MemoryManager()
     {
+#if !defined(AM_NO_MEMORY_STATS)
         // Clear the allocations set to prevent container leak
         _memAllocations.clear();
+#endif
 
         _allocator.reset(nullptr);
     }
 
+#if !defined(AM_NO_MEMORY_STATS)
     void MemoryManager::RemoveAllocation(const Allocation& allocation)
     {
+        std::lock_guard<std::mutex> lock(_allocationsMutex);
         if (const auto& it = _memAllocations.find(allocation); it != _memAllocations.end())
             _memAllocations.erase(it);
     }
 
     void MemoryManager::AddAllocation(const Allocation& allocation)
     {
+        std::lock_guard<std::mutex> lock(_allocationsMutex);
         _memAllocations.insert(allocation);
     }
+#endif
 
     AmVoidPtr MemoryManager::Malloc(eMemoryPoolKind pool, AmSize size, const char* file, AmUInt32 line)
     {
+        AmVoidPtr ptr = _allocator->Malloc(pool, size);
+
 #if !defined(AM_NO_MEMORY_STATS)
         _memPoolsStats[pool].maxMemoryUsed.fetch_add(size, std::memory_order_relaxed);
         _memPoolsStats[pool].allocCount.fetch_add(1, std::memory_order_relaxed);
+        AddAllocation({ pool, ptr, SizeOf(pool, ptr), file, line });
 #endif
 
-        AmVoidPtr ptr = _allocator->Malloc(pool, size);
-
-        AddAllocation({ pool, ptr, SizeOf(pool, ptr), file, line });
         return ptr;
     }
 
     AmVoidPtr MemoryManager::Malign(eMemoryPoolKind pool, AmSize size, AmUInt32 alignment, const char* file, AmUInt32 line)
     {
+        AmVoidPtr ptr = _allocator->Malign(pool, size, alignment);
+
 #if !defined(AM_NO_MEMORY_STATS)
         _memPoolsStats[pool].maxMemoryUsed.fetch_add(size, std::memory_order_relaxed);
         _memPoolsStats[pool].allocCount.fetch_add(1, std::memory_order_relaxed);
-#endif
-
-        AmVoidPtr ptr = _allocator->Malign(pool, size, alignment);
-
         AddAllocation({ pool, ptr, SizeOf(pool, ptr), file, line });
+#endif
 
         return ptr;
     }
 
     AmVoidPtr MemoryManager::Realloc(eMemoryPoolKind pool, AmVoidPtr address, AmSize size, const char* file, AmUInt32 line)
     {
+        AmVoidPtr ptr = _allocator->Realloc(pool, address, size);
+
 #if !defined(AM_NO_MEMORY_STATS)
         if (address == nullptr)
         {
             _memPoolsStats[pool].maxMemoryUsed.fetch_add(size, std::memory_order_relaxed);
             _memPoolsStats[pool].allocCount.fetch_add(1, std::memory_order_relaxed);
         }
+
+        {
+            std::lock_guard<std::mutex> lock(_allocationsMutex);
+            if (const auto& it = _memAllocations.find({ pool, address }); it != _memAllocations.end())
+                _memAllocations.erase(it);
+            _memAllocations.insert({ pool, ptr, SizeOf(pool, ptr), file, line });
+        }
 #endif
-
-        AmVoidPtr ptr = _allocator->Realloc(pool, address, size);
-
-        RemoveAllocation({ pool, address });
-        AddAllocation({ pool, ptr, SizeOf(pool, ptr), file, line });
 
         return ptr;
     }
@@ -224,35 +233,45 @@ namespace SparkyStudios::Audio::Amplitude
     AmVoidPtr MemoryManager::Realign(
         eMemoryPoolKind pool, AmVoidPtr address, AmSize size, AmUInt32 alignment, const char* file, AmUInt32 line)
     {
+        AmVoidPtr ptr = _allocator->Realign(pool, address, size, alignment);
+
 #if !defined(AM_NO_MEMORY_STATS)
         if (address == nullptr)
         {
             _memPoolsStats[pool].maxMemoryUsed.fetch_add(size, std::memory_order_relaxed);
             _memPoolsStats[pool].allocCount.fetch_add(1, std::memory_order_relaxed);
         }
+
+        {
+            std::lock_guard<std::mutex> lock(_allocationsMutex);
+            if (const auto& it = _memAllocations.find({ pool, address }); it != _memAllocations.end())
+                _memAllocations.erase(it);
+            _memAllocations.insert({ pool, ptr, SizeOf(pool, ptr), file, line });
+        }
 #endif
-
-        AmVoidPtr ptr = _allocator->Realign(pool, address, size, alignment);
-
-        RemoveAllocation({ pool, address });
-        AddAllocation({ pool, ptr, SizeOf(pool, ptr), file, line });
 
         return ptr;
     }
 
     void MemoryManager::Free(eMemoryPoolKind pool, AmVoidPtr address)
     {
-#if !defined(AM_NO_MEMORY_STATS)
-        _memPoolsStats[pool].freeCount.fetch_add(1, std::memory_order_relaxed);
-#endif
-
         _allocator->Free(pool, address);
 
+#if !defined(AM_NO_MEMORY_STATS)
+        _memPoolsStats[pool].freeCount.fetch_add(1, std::memory_order_relaxed);
         RemoveAllocation({ pool, address });
+#endif
     }
 
+    AmSize MemoryManager::SizeOf(eMemoryPoolKind pool, AmVoidPtr address) const
+    {
+        return _allocator->SizeOf(pool, address);
+    }
+
+#if !defined(AM_NO_MEMORY_STATS)
     AmSize MemoryManager::TotalReservedMemorySize(eMemoryPoolKind pool) const
     {
+        std::lock_guard<std::mutex> lock(_allocationsMutex);
         AmSize total = 0;
         for (const auto& allocation : _memAllocations)
             if (allocation.pool == pool)
@@ -263,6 +282,7 @@ namespace SparkyStudios::Audio::Amplitude
 
     AmSize MemoryManager::TotalReservedMemorySize() const
     {
+        std::lock_guard<std::mutex> lock(_allocationsMutex);
         AmSize total = 0;
         for (const auto& allocation : _memAllocations)
             total += allocation.size;
@@ -270,12 +290,6 @@ namespace SparkyStudios::Audio::Amplitude
         return total;
     }
 
-    AmSize MemoryManager::SizeOf(eMemoryPoolKind pool, AmVoidPtr address) const
-    {
-        return _allocator->SizeOf(pool, address);
-    }
-
-#if !defined(AM_NO_MEMORY_STATS)
     AmString MemoryManager::GetMemoryPoolName(const eMemoryPoolKind pool)
     {
         static std::unordered_map<eMemoryPoolKind, std::string> gMemoryPoolNames = {
@@ -297,6 +311,8 @@ namespace SparkyStudios::Audio::Amplitude
 
     AmString MemoryManager::InspectMemoryLeaks() const
     {
+        std::lock_guard<std::mutex> lock(_allocationsMutex);
+
         if (_memAllocations.empty())
             return "No memory leaks detected";
 

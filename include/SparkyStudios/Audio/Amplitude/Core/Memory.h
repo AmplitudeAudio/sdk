@@ -20,10 +20,11 @@
 #include <SparkyStudios/Audio/Amplitude/Core/Common.h>
 
 #include <memory>
-#include <set>
 
 #if !defined(AM_NO_MEMORY_STATS)
 #include <atomic>
+#include <mutex>
+#include <set>
 #include <unordered_map>
 #endif
 
@@ -708,6 +709,17 @@ namespace SparkyStudios::Audio::Amplitude
         void Free(eMemoryPoolKind pool, AmVoidPtr address);
 
         /**
+         * @brief Gets the size of the given memory block.
+         *
+         * @param[in] pool The memory pool to get the size from.
+         * @param[in] address The address of the memory block.
+         *
+         * @return The size of the given memory block.
+         */
+        [[nodiscard]] AmSize SizeOf(eMemoryPoolKind pool, AmVoidPtr address) const;
+
+#if !defined(AM_NO_MEMORY_STATS)
+        /**
          * @brief Gets the total allocated size of the specified pool.
          *
          * @param[in] pool The memory pool to get the total allocated size from.
@@ -723,17 +735,6 @@ namespace SparkyStudios::Audio::Amplitude
          */
         [[nodiscard]] AmSize TotalReservedMemorySize() const;
 
-        /**
-         * @brief Gets the size of the given memory block.
-         *
-         * @param[in] pool The memory pool to get the size from.
-         * @param[in] address The address of the memory block.
-         *
-         * @return The size of the given memory block.
-         */
-        [[nodiscard]] AmSize SizeOf(eMemoryPoolKind pool, AmVoidPtr address) const;
-
-#if !defined(AM_NO_MEMORY_STATS)
         /**
          * @brief Gets the name of the given memory pool.
          *
@@ -765,14 +766,14 @@ namespace SparkyStudios::Audio::Amplitude
         explicit MemoryManager(std::unique_ptr<MemoryAllocator> allocator);
         ~MemoryManager();
 
+        std::unique_ptr<MemoryAllocator> _allocator;
+
+#if !defined(AM_NO_MEMORY_STATS)
         void RemoveAllocation(const Allocation& allocation);
         void AddAllocation(const Allocation& allocation);
 
-        std::unique_ptr<MemoryAllocator> _allocator;
-
+        mutable std::mutex _allocationsMutex;
         std::set<Allocation> _memAllocations;
-
-#if !defined(AM_NO_MEMORY_STATS)
         std::unordered_map<eMemoryPoolKind, MemoryPoolStats> _memPoolsStats;
 #endif
     };

@@ -58,10 +58,35 @@ namespace SparkyStudios::Audio::Amplitude
         AMPLITUDE_ASSERT(in.size() >= inOffset + frames);
         AMPLITUDE_ASSERT(out.size() >= outOffset + frames);
 
-        const AmReal32 step = 1.0f / frames;
+        const AmReal32 invFrames = 1.0f / static_cast<AmReal32>(frames);
+        const AmReal32 gainDelta = endGain - startGain;
 
-        for (AmSize j = 0; j < frames; ++j)
-            out[j + outOffset] = in[j + inOffset] * Lerp(step * j, startGain, endGain);
+        AmSize j = 0;
+
+#if defined(AM_SIMD_INTRINSICS)
+        constexpr AmSize blockSize = GetSimdBlockSize();
+        const AmSize simdEnd = (frames / blockSize) * blockSize;
+
+        if (simdEnd > 0)
+        {
+            alignas(AM_SIMD_ALIGNMENT) AmReal32 gainValues[blockSize];
+            for (AmSize i = 0; i < blockSize; ++i)
+                gainValues[i] = startGain + gainDelta * (invFrames * static_cast<AmReal32>(i));
+
+            auto gainVec = xsimd::load_aligned<simd_arch>(gainValues);
+            const auto stepVec = simd_batch(gainDelta * invFrames * static_cast<AmReal32>(blockSize));
+
+            for (; j < simdEnd; j += blockSize)
+            {
+                const auto inVec = xsimd::load_aligned<simd_arch>(&in[j + inOffset]);
+                xsimd::store_aligned<simd_arch>(&out[j + outOffset], inVec * gainVec);
+                gainVec += stepVec;
+            }
+        }
+#endif // AM_SIMD_INTRINSICS
+
+        for (; j < frames; ++j)
+            out[j + outOffset] = in[j + inOffset] * (startGain + gainDelta * (invFrames * static_cast<AmReal32>(j)));
     }
 
     void Gain::ApplyAccumulateLinearGain(
@@ -76,10 +101,36 @@ namespace SparkyStudios::Audio::Amplitude
         AMPLITUDE_ASSERT(in.size() >= inOffset + frames);
         AMPLITUDE_ASSERT(out.size() >= outOffset + frames);
 
-        const AmReal32 step = 1.0f / frames;
+        const AmReal32 invFrames = 1.0f / static_cast<AmReal32>(frames);
+        const AmReal32 gainDelta = endGain - startGain;
 
-        for (AmSize j = 0; j < frames; ++j)
-            out[j + outOffset] += in[j + inOffset] * Lerp(step * j, startGain, endGain);
+        AmSize j = 0;
+
+#if defined(AM_SIMD_INTRINSICS)
+        constexpr AmSize blockSize = GetSimdBlockSize();
+        const AmSize simdEnd = (frames / blockSize) * blockSize;
+
+        if (simdEnd > 0)
+        {
+            alignas(AM_SIMD_ALIGNMENT) AmReal32 gainValues[blockSize];
+            for (AmSize i = 0; i < blockSize; ++i)
+                gainValues[i] = startGain + gainDelta * (invFrames * static_cast<AmReal32>(i));
+
+            auto gainVec = xsimd::load_aligned<simd_arch>(gainValues);
+            const auto stepVec = simd_batch(gainDelta * invFrames * static_cast<AmReal32>(blockSize));
+
+            for (; j < simdEnd; j += blockSize)
+            {
+                const auto inVec = xsimd::load_aligned<simd_arch>(&in[j + inOffset]);
+                const auto outVec = xsimd::load_aligned<simd_arch>(&out[j + outOffset]);
+                xsimd::store_aligned<simd_arch>(&out[j + outOffset], xsimd::fma(inVec, gainVec, outVec));
+                gainVec += stepVec;
+            }
+        }
+#endif // AM_SIMD_INTRINSICS
+
+        for (; j < frames; ++j)
+            out[j + outOffset] += in[j + inOffset] * (startGain + gainDelta * (invFrames * static_cast<AmReal32>(j)));
     }
 
     void Gain::ApplyReplaceGain(
@@ -240,10 +291,50 @@ namespace SparkyStudios::Audio::Amplitude
         const AmReal32 step = (endGain - startGain) / static_cast<AmReal32>(rampLength);
 
         AmReal32 currentGain = startGain;
+        AmSize frame = 0;
 
+#if defined(AM_SIMD_INTRINSICS)
+        constexpr AmSize blockSize = GetSimdBlockSize();
+        const AmSize simdEnd = (length / blockSize) * blockSize;
+
+        if (simdEnd > 0)
+        {
+            // Build initial gain vector: {g, g+s, g+2s, g+3s, ...}
+            alignas(AM_SIMD_ALIGNMENT) AmReal32 gainValues[blockSize];
+            for (AmSize i = 0; i < blockSize; ++i)
+                gainValues[i] = currentGain + step * static_cast<AmReal32>(i);
+
+            auto gainVec = xsimd::load_aligned<simd_arch>(gainValues);
+            const auto stepVec = simd_batch(step * static_cast<AmReal32>(blockSize));
+
+            if (accumulate)
+            {
+                for (; frame < simdEnd; frame += blockSize)
+                {
+                    const auto inVec = xsimd::load_aligned<simd_arch>(in + frame);
+                    const auto outVec = xsimd::load_aligned<simd_arch>(out + frame);
+                    xsimd::store_aligned<simd_arch>(out + frame, xsimd::fma(inVec, gainVec, outVec));
+                    gainVec += stepVec;
+                }
+            }
+            else
+            {
+                for (; frame < simdEnd; frame += blockSize)
+                {
+                    const auto inVec = xsimd::load_aligned<simd_arch>(in + frame);
+                    xsimd::store_aligned<simd_arch>(out + frame, inVec * gainVec);
+                    gainVec += stepVec;
+                }
+            }
+
+            currentGain = startGain + step * static_cast<AmReal32>(simdEnd);
+        }
+#endif // AM_SIMD_INTRINSICS
+
+        // Scalar tail
         if (accumulate)
         {
-            for (AmSize frame = 0; frame < length; ++frame)
+            for (; frame < length; ++frame)
             {
                 out[frame] += currentGain * in[frame];
                 currentGain += step;
@@ -251,7 +342,7 @@ namespace SparkyStudios::Audio::Amplitude
         }
         else
         {
-            for (AmSize frame = 0; frame < length; ++frame)
+            for (; frame < length; ++frame)
             {
                 out[frame] = currentGain * in[frame];
                 currentGain += step;

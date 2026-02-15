@@ -51,7 +51,7 @@ namespace SparkyStudios::Audio::Amplitude
         m_scope = eScope_World;
     }
 
-    Sound* CollectionImpl::SelectFromWorld(const std::vector<AmSoundID>& toSkip) const
+    Sound* CollectionImpl::SelectFromWorld(const std::unordered_set<AmSoundID>& toSkip) const
     {
         const CollectionDefinition* definition = GetDefinition();
         if (_worldScopeScheduler == nullptr || !_worldScopeScheduler->Valid())
@@ -63,7 +63,7 @@ namespace SparkyStudios::Audio::Amplitude
         return _worldScopeScheduler->Select(toSkip);
     }
 
-    Sound* CollectionImpl::SelectFromEntity(const Entity& entity, const std::vector<AmSoundID>& toSkip)
+    Sound* CollectionImpl::SelectFromEntity(const Entity& entity, const std::unordered_set<AmSoundID>& toSkip)
     {
         const CollectionDefinition* definition = GetDefinition();
         if (const auto findIt = _entityScopeSchedulers.find(entity.GetId()); findIt == _entityScopeSchedulers.end())

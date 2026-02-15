@@ -36,14 +36,11 @@ namespace SparkyStudios::Audio::Amplitude
 
     RealChannel::RealChannel(ChannelInternalState* parent)
         : _channelId(kAmInvalidObjectId)
-        , _channelLayersId()
-        , _stream()
-        , _loop()
-        , _gain()
+        , _layers()
+        , _defaultGain(1.0f)
         , _pitch(1.0f)
         , _playSpeed(1.0f)
         , _mixer(nullptr)
-        , _activeSounds()
         , _parentChannelState(parent)
         , _playedSounds()
     {}
@@ -56,7 +53,7 @@ namespace SparkyStudios::Audio::Amplitude
 
     void RealChannel::MarkAsPlayed(const Sound* sound)
     {
-        _playedSounds.push_back(sound->GetId());
+        _playedSounds.insert(sound->GetId());
     }
 
     bool RealChannel::AllSoundsHasPlayed() const
@@ -64,16 +61,11 @@ namespace SparkyStudios::Audio::Amplitude
         if (_parentChannelState->GetCollection() == nullptr)
             return false;
 
-        bool result = true;
         for (auto&& sound : _parentChannelState->GetCollection()->GetSounds())
-        {
-            if (auto foundIt = std::ranges::find(_playedSounds, sound); foundIt != _playedSounds.end())
-                continue;
+            if (!_playedSounds.contains(sound))
+                return false;
 
-            result = false;
-            break;
-        }
-        return result;
+        return true;
     }
 
     void RealChannel::ClearPlayedSounds()
@@ -102,7 +94,7 @@ namespace SparkyStudios::Audio::Amplitude
             return false;
 
         bool success = true;
-        AmUInt32 layer = FindFreeLayer(_channelLayersId.empty() ? 1 : _channelLayersId.begin()->first);
+        AmUInt32 layer = FindFreeLayer(_layers.empty() ? 1 : _layers.begin()->first);
         std::vector<AmUInt32> layers;
 
         for (auto& instance : instances)
@@ -128,31 +120,32 @@ namespace SparkyStudios::Audio::Amplitude
     {
         AMPLITUDE_ASSERT(sound != nullptr);
 
-        _activeSounds[layer] = sound;
-        _activeSounds[layer]->SetChannel(this);
-        _activeSounds[layer]->Load();
+        LayerData& data = _layers[layer];
+        data.soundInstance = sound;
+        data.soundInstance->SetChannel(this);
+        data.soundInstance->Load();
 
         if (sound->GetUserData() == nullptr)
         {
-            _channelLayersId[layer] = kAmInvalidObjectId;
+            data.mixerLayerId = kAmInvalidObjectId;
             amLogError("The sound was not loaded successfully.");
             return false;
         }
 
-        _loop[layer] = sound->GetSound()->IsLoop();
-        _stream[layer] = sound->GetSound()->IsStream();
+        data.isLoop = sound->GetSound()->IsLoop();
+        data.isStream = sound->GetSound()->IsStream();
+        data.gain = _defaultGain;
 
-        const PlayStateFlag loops = _loop[layer] ? ePSF_LOOP : ePSF_PLAY;
+        const PlayStateFlag loops = data.isLoop ? ePSF_LOOP : ePSF_PLAY;
 
-        _channelLayersId[layer] =
+        data.mixerLayerId =
             _mixer->Play(static_cast<SoundData*>(sound->GetUserData()), loops, GetGain(layer), _pitch, _playSpeed, _channelId, 0);
 
-        // Check if playing the sound was successful, and display the error if it was not.
-        const bool success = _channelLayersId[layer] != kAmInvalidObjectId;
+        const bool success = data.mixerLayerId != kAmInvalidObjectId;
         if (!success)
         {
-            _channelLayersId[layer] = kAmInvalidObjectId;
-            amLogError("Could not play sound '" AM_OS_CHAR_FMT "'.", _activeSounds[layer]->GetSound()->GetPath().c_str());
+            data.mixerLayerId = kAmInvalidObjectId;
+            amLogError("Could not play sound '" AM_OS_CHAR_FMT "'.", data.soundInstance->GetSound()->GetPath().c_str());
         }
 
         return success;
@@ -162,17 +155,19 @@ namespace SparkyStudios::Audio::Amplitude
     {
         AMPLITUDE_ASSERT(Valid());
 
-        if (_channelLayersId[layer] == kAmInvalidObjectId)
+        const auto it = _layers.find(layer);
+        if (it == _layers.end() || it->second.mixerLayerId == kAmInvalidObjectId)
             return;
 
-        const MixerCommandCallback callback = [&, layer]() -> bool
+        const AmUInt32 mixerLayerId = it->second.mixerLayerId;
+        SoundInstance* soundInstance = it->second.soundInstance;
+
+        const MixerCommandCallback callback = [this, layer, mixerLayerId, soundInstance]() -> bool
         {
-            _mixer->SetPlayState(_channelId, _channelLayersId[layer], ePSF_MIN);
+            _mixer->SetPlayState(_channelId, mixerLayerId, ePSF_MIN);
 
-            _channelLayersId.erase(layer);
-
-            ampooldelete(eMemoryPoolKind_Engine, SoundInstance, _activeSounds[layer]);
-            _activeSounds.erase(layer);
+            ampooldelete(eMemoryPoolKind_Engine, SoundInstance, soundInstance);
+            _layers.erase(layer);
 
             return true;
         };
@@ -190,37 +185,41 @@ namespace SparkyStudios::Audio::Amplitude
     {
         AMPLITUDE_ASSERT(Valid());
 
-        bool playing = true;
-        for (auto&& layer : _channelLayersId)
+        if (_layers.empty())
+            return false;
+
+        for (const auto& [layerIdx, data] : _layers)
         {
-            if (layer.second == 0)
+            if (data.mixerLayerId == 0)
                 continue;
 
-            playing &= Playing(layer.first);
+            if (!Playing(layerIdx))
+                return false;
         }
 
-        return playing;
+        return true;
     }
 
     bool RealChannel::Playing(AmUInt32 layer) const
     {
         AMPLITUDE_ASSERT(Valid());
 
-        const AmUInt32 state = _mixer->GetPlayState(_channelId, _channelLayersId.at(layer));
+        const auto& data = _layers.at(layer);
+        const AmUInt32 state = _mixer->GetPlayState(_channelId, data.mixerLayerId);
         if (state < ePSF_PLAY)
             return false;
 
         if (const auto* collection = _parentChannelState->GetCollection(); collection == nullptr)
         {
-            return !_loop.at(layer) && state == ePSF_PLAY || _loop.at(layer) && state == ePSF_LOOP;
+            return (!data.isLoop && state == ePSF_PLAY) || (data.isLoop && state == ePSF_LOOP);
         }
         else
         {
             const CollectionPlayMode mode = static_cast<const CollectionImpl*>(collection)->GetDefinition()->play_mode();
 
-            return mode == CollectionPlayMode_PlayOne && !_loop.at(layer) ? state == ePSF_PLAY
-                : mode == CollectionPlayMode_PlayOne && _loop.at(layer)   ? state == ePSF_LOOP
-                                                                          : _channelId != kAmInvalidObjectId;
+            return mode == CollectionPlayMode_PlayOne && !data.isLoop ? state == ePSF_PLAY
+                : mode == CollectionPlayMode_PlayOne && data.isLoop   ? state == ePSF_LOOP
+                                                                      : _channelId != kAmInvalidObjectId;
         }
     }
 
@@ -228,34 +227,37 @@ namespace SparkyStudios::Audio::Amplitude
     {
         AMPLITUDE_ASSERT(Valid());
 
-        bool paused = true;
-        for (auto&& layer : _channelLayersId)
+        if (_layers.empty())
+            return false;
+
+        for (const auto& [layerIdx, data] : _layers)
         {
-            if (layer.second == 0)
+            if (data.mixerLayerId == 0)
                 continue;
 
-            paused &= Paused(layer.first);
+            if (!Paused(layerIdx))
+                return false;
         }
 
-        return paused;
+        return true;
     }
 
     bool RealChannel::Paused(AmUInt32 layer) const
     {
         AMPLITUDE_ASSERT(Valid());
-        return _mixer->GetPlayState(_channelId, _channelLayersId.at(layer)) == ePSF_HALT;
+        return _mixer->GetPlayState(_channelId, _layers.at(layer).mixerLayerId) == ePSF_HALT;
     }
 
     void RealChannel::SetGain(const AmReal32 gain)
     {
         AMPLITUDE_ASSERT(Valid());
 
-        for (auto&& layer : _channelLayersId)
+        for (auto&& [layerIdx, data] : _layers)
         {
-            if (layer.second == 0)
+            if (data.mixerLayerId == 0)
                 continue;
 
-            SetGain(gain, layer.first);
+            SetGain(gain, layerIdx);
         }
 
         _defaultGain = gain;
@@ -263,25 +265,27 @@ namespace SparkyStudios::Audio::Amplitude
 
     void RealChannel::SetGain(AmReal32 gain, AmUInt32 layer)
     {
+        auto& data = _layers.at(layer);
         AmReal32 finalGain = gain;
-        if (_activeSounds[layer]->GetSettings().m_kind != SoundKind::Standalone)
-            finalGain = gain * _activeSounds[layer]->GetSettings().m_gain.GetValue();
+        if (data.soundInstance->GetSettings().m_kind != SoundKind::Standalone)
+            finalGain = gain * data.soundInstance->GetSettings().m_gain.GetValue();
 
-        _mixer->SetGain(_channelId, _channelLayersId[layer], finalGain);
-
-        _gain[layer] = gain;
+        _mixer->SetGain(_channelId, data.mixerLayerId, finalGain);
+        data.gain = gain;
     }
 
     AmReal32 RealChannel::GetGain(AmUInt32 layer) const
     {
         AMPLITUDE_ASSERT(Valid());
-        return _gain.contains(layer) ? _gain.at(layer) : _defaultGain;
+        if (const auto it = _layers.find(layer); it != _layers.end())
+            return it->second.gain;
+        return _defaultGain;
     }
 
     bool RealChannel::Halt(AmUInt32 layer)
     {
         AMPLITUDE_ASSERT(Valid());
-        return _mixer->SetPlayState(_channelId, _channelLayersId[layer], ePSF_STOP);
+        return _mixer->SetPlayState(_channelId, _layers.at(layer).mixerLayerId, ePSF_STOP);
     }
 
     bool RealChannel::Halt()
@@ -289,7 +293,7 @@ namespace SparkyStudios::Audio::Amplitude
         AMPLITUDE_ASSERT(Valid());
 
         bool success = true;
-        for (const auto& layer : _channelLayersId | std::views::keys)
+        for (const auto& layer : _layers | std::views::keys)
             success &= Halt(layer);
 
         return success;
@@ -298,7 +302,7 @@ namespace SparkyStudios::Audio::Amplitude
     bool RealChannel::Pause(AmUInt32 layer)
     {
         AMPLITUDE_ASSERT(Valid());
-        return _mixer->SetPlayState(_channelId, _channelLayersId[layer], ePSF_HALT);
+        return _mixer->SetPlayState(_channelId, _layers.at(layer).mixerLayerId, ePSF_HALT);
     }
 
     bool RealChannel::Pause()
@@ -306,7 +310,7 @@ namespace SparkyStudios::Audio::Amplitude
         AMPLITUDE_ASSERT(Valid());
 
         bool success = true;
-        for (const auto& layer : _channelLayersId | std::views::keys)
+        for (const auto& layer : _layers | std::views::keys)
             success &= Pause(layer);
 
         return success;
@@ -315,7 +319,7 @@ namespace SparkyStudios::Audio::Amplitude
     bool RealChannel::Resume(AmUInt32 layer)
     {
         AMPLITUDE_ASSERT(Valid());
-        return _mixer->SetPlayState(_channelId, _channelLayersId[layer], _loop[layer] ? ePSF_LOOP : ePSF_PLAY);
+        return _mixer->SetPlayState(_channelId, _layers.at(layer).mixerLayerId, _layers.at(layer).isLoop ? ePSF_LOOP : ePSF_PLAY);
     }
 
     bool RealChannel::Resume()
@@ -323,7 +327,7 @@ namespace SparkyStudios::Audio::Amplitude
         AMPLITUDE_ASSERT(Valid());
 
         bool success = true;
-        for (const auto& layer : _channelLayersId | std::views::keys)
+        for (const auto& layer : _layers | std::views::keys)
             success &= Resume(layer);
 
         return success;
@@ -333,16 +337,16 @@ namespace SparkyStudios::Audio::Amplitude
     {
         AMPLITUDE_ASSERT(Valid());
 
-        for (auto&& layer : _channelLayersId)
+        for (auto&& [layerIdx, data] : _layers)
         {
-            if (layer.second == 0)
+            if (data.mixerLayerId == 0)
                 continue;
 
             AmReal32 finalPitch = pitch;
-            if (_activeSounds[layer.first]->GetSettings().m_kind != SoundKind::Standalone)
-                finalPitch = pitch * _activeSounds[layer.first]->GetSettings().m_pitch.GetValue();
+            if (data.soundInstance->GetSettings().m_kind != SoundKind::Standalone)
+                finalPitch = pitch * data.soundInstance->GetSettings().m_pitch.GetValue();
 
-            _mixer->SetPitch(_channelId, layer.second, finalPitch);
+            _mixer->SetPitch(_channelId, data.mixerLayerId, finalPitch);
         }
 
         _pitch = pitch;
@@ -352,12 +356,12 @@ namespace SparkyStudios::Audio::Amplitude
     {
         AMPLITUDE_ASSERT(Valid());
 
-        for (auto&& layer : _channelLayersId)
+        for (const auto& [layerIdx, data] : _layers)
         {
-            if (layer.second == 0)
+            if (data.mixerLayerId == 0)
                 continue;
 
-            _mixer->SetPlaySpeed(_channelId, layer.second, speed);
+            _mixer->SetPlaySpeed(_channelId, data.mixerLayerId, speed);
         }
 
         _playSpeed = speed;
@@ -367,12 +371,12 @@ namespace SparkyStudios::Audio::Amplitude
     {
         AMPLITUDE_ASSERT(Valid());
 
-        for (auto&& layer : _channelLayersId)
+        for (const auto& [layerIdx, data] : _layers)
         {
-            if (layer.second == 0)
+            if (data.mixerLayerId == 0)
                 continue;
 
-            _mixer->SetObstruction(_channelId, layer.second, obstruction);
+            _mixer->SetObstruction(_channelId, data.mixerLayerId, obstruction);
         }
     }
 
@@ -380,18 +384,18 @@ namespace SparkyStudios::Audio::Amplitude
     {
         AMPLITUDE_ASSERT(Valid());
 
-        for (auto&& layer : _channelLayersId)
+        for (const auto& [layerIdx, data] : _layers)
         {
-            if (layer.second == 0)
+            if (data.mixerLayerId == 0)
                 continue;
 
-            _mixer->SetOcclusion(_channelId, layer.second, occlusion);
+            _mixer->SetOcclusion(_channelId, data.mixerLayerId, occlusion);
         }
     }
 
     AmUInt32 RealChannel::FindFreeLayer(AmUInt32 layerIndex) const
     {
-        while (_channelLayersId.contains(layerIndex))
+        while (_layers.contains(layerIndex))
             layerIndex++;
 
         return layerIndex;

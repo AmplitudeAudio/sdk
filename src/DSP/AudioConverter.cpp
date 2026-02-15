@@ -56,34 +56,41 @@ namespace SparkyStudios::Audio::Amplitude
 
         _settings = settings;
 
+        // Pre-allocate the temp buffer for channel conversion
+        if (_channelConversionMode == kChannelConversionModeMonoToStereo)
+            _tempBuffer = AudioBuffer(kAmMaxSupportedFrameCount, 2);
+        else if (_channelConversionMode == kChannelConversionModeStereoToMono)
+            _tempBuffer = AudioBuffer(kAmMaxSupportedFrameCount, 1);
+
         return true;
     }
 
     void AudioConverter::Process(const AudioBuffer& input, AmUInt64& inputFrames, AudioBuffer& output, AmUInt64& outputFrames)
     {
-        AudioBuffer temp;
         if (_channelConversionMode == kChannelConversionModeDisabled)
         {
-            // No channel conversion required, just copy the input to the output.
-            temp = input;
-        }
-        else if (_channelConversionMode == kChannelConversionModeMonoToStereo)
-        {
-            temp = AudioBuffer(input.GetFrameCount(), 2);
-            ConvertStereoFromMono(input, temp);
-        }
-        else if (_channelConversionMode == kChannelConversionModeStereoToMono)
-        {
-            temp = AudioBuffer(input.GetFrameCount(), 1);
-            ConvertMonoFromStereo(input, temp);
+            // No channel conversion required, pass input directly
+            if (_needResampling)
+                _resampler->Process(input, inputFrames, output, outputFrames);
+            else
+                AudioBuffer::Copy(input, 0, output, 0, outputFrames);
+            return;
         }
 
-        AMPLITUDE_ASSERT(temp.GetChannelCount() == output.GetChannelCount());
+        // Reuse pre-allocated temp buffer for channel conversion
+        _tempBuffer.Clear();
+
+        if (_channelConversionMode == kChannelConversionModeMonoToStereo)
+            ConvertStereoFromMono(input, _tempBuffer);
+        else if (_channelConversionMode == kChannelConversionModeStereoToMono)
+            ConvertMonoFromStereo(input, _tempBuffer);
+
+        AMPLITUDE_ASSERT(_tempBuffer.GetChannelCount() == output.GetChannelCount());
 
         if (_needResampling)
-            _resampler->Process(temp, inputFrames, output, outputFrames);
+            _resampler->Process(_tempBuffer, inputFrames, output, outputFrames);
         else
-            AudioBuffer::Copy(temp, 0, output, 0, outputFrames);
+            AudioBuffer::Copy(_tempBuffer, 0, output, 0, outputFrames);
     }
 
     void AudioConverter::SetSampleRate(AmUInt64 sourceSampleRate, AmUInt64 targetSampleRate)
@@ -135,7 +142,7 @@ namespace SparkyStudios::Audio::Amplitude
     {
         AMPLITUDE_ASSERT(input.GetChannelCount() == 1);
         AMPLITUDE_ASSERT(output.GetChannelCount() == 2);
-        AMPLITUDE_ASSERT(input.GetFrameCount() == output.GetFrameCount());
+        AMPLITUDE_ASSERT(input.GetFrameCount() <= output.GetFrameCount());
 
         auto& left = output[0];
         auto& right = output[1];
@@ -149,10 +156,10 @@ namespace SparkyStudios::Audio::Amplitude
     {
         AMPLITUDE_ASSERT(input.GetChannelCount() == 2);
         AMPLITUDE_ASSERT(output.GetChannelCount() == 1);
-        AMPLITUDE_ASSERT(input.GetFrameCount() == output.GetFrameCount());
+        AMPLITUDE_ASSERT(input.GetFrameCount() <= output.GetFrameCount());
 
         const AmSize length = input.GetFrameCount();
-        AmSize remaining = input.GetFrameCount();
+        AmSize remaining = length;
         const AmReal32 invSqrt2 = InverseSquareRoot(2);
 
         const auto& left = input[0];

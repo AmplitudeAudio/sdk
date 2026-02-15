@@ -15,6 +15,8 @@
 #include <SparkyStudios/Audio/Amplitude/Core/Memory.h>
 #include <SparkyStudios/Audio/Amplitude/IO/PackageItemFile.h>
 
+#include <limits>
+
 #include <lz4.h>
 
 namespace SparkyStudios::Audio::Amplitude
@@ -24,12 +26,23 @@ namespace SparkyStudios::Audio::Amplitude
         , _isCompressed(item->m_CompressedBlockSize > 0)
         , _headerSize(headerSize)
         , _packageFile(packageFile)
+        , _compressedBuffer(nullptr)
+        , _compressedBufferCapacity(0)
+        , _decompressedBuffer(nullptr)
+        , _decompressedBufferCapacity(0)
+        , _cachedChunkIndex(std::numeric_limits<AmSize>::max())
     {
         Seek(0, eFileSeekOrigin_Start);
     }
 
     PackageItemFile::~PackageItemFile()
     {
+        if (_compressedBuffer != nullptr)
+            ampoolfree(eMemoryPoolKind_IO, _compressedBuffer);
+
+        if (_decompressedBuffer != nullptr)
+            ampoolfree(eMemoryPoolKind_IO, _decompressedBuffer);
+
         _packageFile.reset();
     }
 
@@ -53,33 +66,56 @@ namespace SparkyStudios::Audio::Amplitude
 
         if (_isCompressed)
         {
-            AmSize readSize = 0;
-
             const AmSize firstChunk = _currentPosition / _description->m_CompressedBlockSize;
             const AmSize lastChunk = (_currentPosition + bytes - 1) / _description->m_CompressedBlockSize;
 
+            AmUInt8* dstPtr = dst;
             AmSize remaining = bytes;
+
             for (AmSize ci = firstChunk; ci <= lastChunk; ++ci)
             {
                 const auto& ch = _description->m_CompressedChunks[ci];
-                std::vector<AmUInt8> compressed(ch.m_CompressedSize);
 
-                _packageFile->Seek(GetBasePosition() + ch.m_Offset, eFileSeekOrigin_Start);
-                _packageFile->Read(compressed.data(), ch.m_CompressedSize);
+                if (ch.m_CompressedSize > _compressedBufferCapacity)
+                {
+                    _compressedBuffer = static_cast<AmUInt8*>(ampoolrealloc(eMemoryPoolKind_IO, _compressedBuffer, ch.m_CompressedSize));
+                    _compressedBufferCapacity = ch.m_CompressedSize;
+                }
 
-                std::vector<char> decompressed(ch.m_Size);
-                LZ4_decompress_safe(reinterpret_cast<char*>(compressed.data()), decompressed.data(), ch.m_CompressedSize, ch.m_Size);
+                if (ch.m_Size > _decompressedBufferCapacity)
+                {
+                    _decompressedBuffer = static_cast<AmUInt8*>(ampoolrealloc(eMemoryPoolKind_IO, _decompressedBuffer, ch.m_Size));
+                    _decompressedBufferCapacity = ch.m_Size;
+                    _cachedChunkIndex = std::numeric_limits<AmSize>::max();
+                }
 
-                AmSize chunkStartOffset = (ci == firstChunk) ? _currentPosition % _description->m_CompressedBlockSize : 0;
-                AmSize copyLen = std::min(ch.m_Size - chunkStartOffset, remaining);
+                if (_cachedChunkIndex != ci)
+                {
+                    _packageFile->Seek(GetBasePosition() + ch.m_Offset, eFileSeekOrigin_Start);
+                    _packageFile->Read(_compressedBuffer, ch.m_CompressedSize);
 
-                std::memcpy(dst, decompressed.data() + chunkStartOffset, copyLen);
+                    const int decompressedSize = LZ4_decompress_safe(
+                        reinterpret_cast<char*>(_compressedBuffer), reinterpret_cast<char*>(_decompressedBuffer),
+                        static_cast<int>(ch.m_CompressedSize), static_cast<int>(ch.m_Size));
 
+                    // Decompression failed; return the number of bytes successfully read so far.
+                    if (decompressedSize < 0)
+                        return bytes - remaining;
+
+                    _cachedChunkIndex = ci;
+                }
+
+                const AmSize chunkStartOffset = (ci == firstChunk) ? _currentPosition % _description->m_CompressedBlockSize : 0;
+                const AmSize copyLen = AM_MIN(ch.m_Size - chunkStartOffset, remaining);
+
+                std::memcpy(dstPtr, _decompressedBuffer + chunkStartOffset, copyLen);
+
+                dstPtr += copyLen;
                 remaining -= copyLen;
             }
 
             _currentPosition += bytes - remaining;
-            return bytes;
+            return bytes - remaining;
         }
 
         _packageFile->Seek(GetBasePosition() + _currentPosition, eFileSeekOrigin_Start);
@@ -154,6 +190,22 @@ namespace SparkyStudios::Audio::Amplitude
     {
         if (_packageFile == nullptr)
             return;
+
+        if (_compressedBuffer != nullptr)
+        {
+            ampoolfree(eMemoryPoolKind_IO, _compressedBuffer);
+            _compressedBuffer = nullptr;
+            _compressedBufferCapacity = 0;
+        }
+
+        if (_decompressedBuffer != nullptr)
+        {
+            ampoolfree(eMemoryPoolKind_IO, _decompressedBuffer);
+            _decompressedBuffer = nullptr;
+            _decompressedBufferCapacity = 0;
+        }
+
+        _cachedChunkIndex = std::numeric_limits<AmSize>::max();
 
         _packageFile->Close();
         _packageFile.reset();
