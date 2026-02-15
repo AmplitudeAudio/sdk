@@ -15,7 +15,10 @@
 // Based on ADPCM-XQ, Copyright (c) 2015 David Bryant.
 // https://github.com/dbry/adpcm-xq
 
+#include <climits>
+#include <cstdlib>
 #include <cstring>
+
 #include <Utils/Audio/Compression/ADPCM/ADPCM.h>
 
 #define CLIP(v, a, b) v = AM_CLAMP(v, a, b)
@@ -39,45 +42,41 @@ namespace SparkyStudios::Audio::Amplitude::Compression::ADPCM
         -1, -1, -1, -1, 2, 4, 6, 8
     };
 
-    static void set_decode_parameters(std::shared_ptr<Context> ctx, AmConstInt32Buffer init_pcmdata, AmConstInt8Buffer init_index)
+    static void set_decode_parameters(Context* ctx, AmConstInt32Buffer init_pcmdata, AmConstInt8Buffer init_index)
     {
-        int ch;
-
-        for (ch = 0; ch < ctx->numChannels; ch++)
+        for (int ch = 0; ch < ctx->numChannels; ch++)
         {
             ctx->channels[ch].pcmData = init_pcmdata[ch];
             ctx->channels[ch].index = init_index[ch];
         }
     }
 
-    static void get_decode_parameters(std::shared_ptr<Context> ctx, AmInt32* init_pcmdata, AmInt8* init_index)
+    static void get_decode_parameters(Context* ctx, AmInt32* init_pcmdata, AmInt8* init_index)
     {
-        int ch;
-
-        for (ch = 0; ch < ctx->numChannels; ch++)
+        for (int ch = 0; ch < ctx->numChannels; ch++)
         {
             init_pcmdata[ch] = ctx->channels[ch].pcmData;
             init_index[ch] = ctx->channels[ch].index;
         }
     }
 
-    static double minimum_error(const Channel* pchan, int nch, AmInt32 csample, AmConstInt16Buffer sample, int depth, int* best_nibble)
+    static AmUInt64 minimum_error(
+        const Channel* pchan, int nch, AmInt32 csample, AmConstInt16Buffer sample, int depth, int* best_nibble, AmUInt64 max_error)
     {
-        AmInt32 delta = csample - pchan->pcmData;
+        const AmInt32 delta = csample - pchan->pcmData;
         Channel chan = *pchan;
-        int step = stepTable[chan.index];
+        const int step = stepTable[chan.index];
         int trial_delta = (step >> 3);
-        int nibble, nibble2;
-        double min_error;
+        int nibble;
 
         if (delta < 0)
         {
-            int mag = (-delta << 2) / step;
+            const int mag = (-delta << 2) / step;
             nibble = 0x8 | (mag > 7 ? 7 : mag);
         }
         else
         {
-            int mag = (delta << 2) / step;
+            const int mag = (delta << 2) / step;
             nibble = mag > 7 ? 7 : mag;
         }
 
@@ -94,22 +93,24 @@ namespace SparkyStudios::Audio::Amplitude::Compression::ADPCM
         CLIP(chan.pcmData, -32768, 32767);
         if (best_nibble)
             *best_nibble = nibble;
-        min_error = (double)(chan.pcmData - csample) * (chan.pcmData - csample);
+        auto min_error = static_cast<AmUInt64>(chan.pcmData - csample) * static_cast<AmUInt64>(chan.pcmData - csample);
 
-        if (depth)
-        {
-            chan.index += indexTable[nibble & 0x07];
-            CLIP(chan.index, 0, 88);
-            min_error += minimum_error(&chan, nch, sample[nch], sample + nch, depth - 1, nullptr);
-        }
-        else
+        if (!depth || min_error >= max_error)
             return min_error;
 
-        for (nibble2 = 0; nibble2 <= 0xF; ++nibble2)
-        {
-            double error;
+        chan.index += indexTable[nibble & 0x07];
+        CLIP(chan.index, 0, 88);
+        min_error += minimum_error(&chan, nch, sample[nch], sample + nch, depth - 1, nullptr, max_error - min_error);
 
+        for (int nibble2 = 0; nibble2 <= 0xF; ++nibble2)
+        {
             if (nibble2 == nibble)
+                continue;
+
+            // Skip nibbles whose signed delta is too far from the initial estimate.
+            const int d1 = nibble < 8 ? nibble + 1 : 7 - nibble;
+            const int d2 = nibble2 < 8 ? nibble2 + 1 : 7 - nibble2;
+            if ((nibble2 & 0x7) != 0x7 && std::abs(d1 - d2) > 3)
                 continue;
 
             chan = *pchan;
@@ -127,13 +128,14 @@ namespace SparkyStudios::Audio::Amplitude::Compression::ADPCM
             chan.pcmData += trial_delta;
             CLIP(chan.pcmData, -32768, 32767);
 
-            error = (double)(chan.pcmData - csample) * (chan.pcmData - csample);
+            auto error = static_cast<AmUInt64>(chan.pcmData - csample) * static_cast<AmUInt64>(chan.pcmData - csample);
+            const AmUInt64 threshold = max_error < min_error ? max_error : min_error;
 
-            if (error < min_error)
+            if (error < threshold)
             {
                 chan.index += indexTable[nibble2 & 0x07];
                 CLIP(chan.index, 0, 88);
-                error += minimum_error(&chan, nch, sample[nch], sample + nch, depth - 1, nullptr);
+                error += minimum_error(&chan, nch, sample[nch], sample + nch, depth - 1, nullptr, threshold - error);
 
                 if (error < min_error)
                 {
@@ -147,7 +149,7 @@ namespace SparkyStudios::Audio::Amplitude::Compression::ADPCM
         return min_error;
     }
 
-    static uint8_t encode_sample(std::shared_ptr<Context> ctx, int ch, const AmInt16* sample, int num_samples)
+    static uint8_t encode_sample(Context* ctx, int ch, const AmInt16* sample, int num_samples)
     {
         Channel* pchan = ctx->channels + ch;
         AmInt32 csample = *sample;
@@ -188,7 +190,7 @@ namespace SparkyStudios::Audio::Amplitude::Compression::ADPCM
         if (depth > ctx->lookAhead)
             depth = ctx->lookAhead;
 
-        minimum_error(pchan, ctx->numChannels, csample, sample, depth, &nibble);
+        minimum_error(pchan, ctx->numChannels, csample, sample, depth, &nibble, UINT64_MAX);
 
         if (nibble & 1)
             trial_delta += (step >> 2);
@@ -210,7 +212,7 @@ namespace SparkyStudios::Audio::Amplitude::Compression::ADPCM
         return nibble;
     }
 
-    static void encode_chunks(std::shared_ptr<Context> ctx, uint8_t** outbuf, size_t& outbufsize, const AmInt16** inbuf, int inbufcount)
+    static void encode_chunks(Context* ctx, uint8_t** outbuf, size_t& outbufsize, const AmInt16** inbuf, int inbufcount)
     {
         const AmInt16* pcmbuf;
         int chunks, ch, i;
@@ -265,11 +267,10 @@ namespace SparkyStudios::Audio::Amplitude::Compression::ADPCM
         return ctx;
     }
 
-    bool Compress(std::shared_ptr<Context> ctx, AmUInt8Buffer out, AmSize& outSize, AmConstInt16Buffer in, AmSize sampleCount)
+    bool Compress(Context* ctx, AmUInt8Buffer out, AmSize& outSize, AmConstInt16Buffer in, AmSize sampleCount)
     {
         AmInt32 init_pcmdata[2];
         AmInt8 init_index[2];
-        int ch;
 
         outSize = 0;
 
@@ -278,7 +279,7 @@ namespace SparkyStudios::Audio::Amplitude::Compression::ADPCM
 
         get_decode_parameters(ctx, init_pcmdata, init_index);
 
-        for (ch = 0; ch < ctx->numChannels; ch++)
+        for (int ch = 0; ch < ctx->numChannels; ch++)
         {
             init_pcmdata[ch] = *in++;
             out[0] = init_pcmdata[ch];

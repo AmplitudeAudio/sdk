@@ -171,7 +171,7 @@ namespace SparkyStudios::Audio::Amplitude::Compression::ADPCM
      *
      * @return bool
      */
-    bool Compress(std::shared_ptr<Context> ctx, AmUInt8Buffer out, AmSize& outSize, AmConstInt16Buffer in, AmSize sampleCount);
+    bool Compress(Context* ctx, AmUInt8Buffer out, AmSize& outSize, AmConstInt16Buffer in, AmSize sampleCount);
 
     /**
      * @brief Decompresses the block of ADPCM data into PCM. This requires no context because ADPCM blocks

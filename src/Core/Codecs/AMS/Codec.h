@@ -34,6 +34,7 @@ namespace SparkyStudios::Audio::Amplitude
                 , _initialized(false)
                 , _file()
                 , _blockSize(0)
+                , _samplesPerBlock(0)
             {}
 
             bool Open(std::shared_ptr<File> file) override;
@@ -50,6 +51,10 @@ namespace SparkyStudios::Audio::Amplitude
             bool _initialized;
             std::shared_ptr<File> _file;
             AmUInt16 _blockSize;
+            AmUInt32 _samplesPerBlock;
+
+            ScopedMemoryAllocation _adpcmBlockBuffer;
+            ScopedMemoryAllocation _pcmBlockBuffer;
         };
 
         class AMSEncoder final : public Encoder

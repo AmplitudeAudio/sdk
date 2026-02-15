@@ -12,88 +12,101 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+#include <bit>
+#include <cstring>
+
 #include <Core/Codecs/AMS/Codec.h>
 
 using namespace SparkyStudios::Audio::Amplitude::Compression::ADPCM;
 
-// This runtime macro is not strictly needed because the code is endian-safe,
-// but including it improves performance on little-endian systems because we
-// can avoid a couple loops through the audio.
-#define IS_BIG_ENDIAN (*(uint16_t*)"\0\xff" < 0x0100)
-
 namespace SparkyStudios::Audio::Amplitude
 {
+    static constexpr bool kIsBigEndian = (std::endian::native == std::endian::big);
+
     static void little_endian_to_native(void* data, const char* format)
     {
-        char* i = const_cast<char*>(format);
-        auto* cp = (unsigned char*)data;
-        AmInt32 temp;
+        if constexpr (!kIsBigEndian)
+            return; // no-op on little-endian; the data is already in native order
 
-        while (*i)
+        auto* cp = static_cast<unsigned char*>(data);
+        const char* f = format;
+
+        while (*f)
         {
-            switch (*i)
+            switch (*f)
             {
             case 'L':
-                temp = cp[0] + ((AmInt32)cp[1] << 8) + ((AmInt32)cp[2] << 16) + ((AmInt32)cp[3] << 24);
-                *(AmInt32*)cp = temp;
-                cp += 4;
+                {
+                    const AmInt32 temp = cp[0] + (static_cast<AmInt32>(cp[1]) << 8) + (static_cast<AmInt32>(cp[2]) << 16) +
+                        (static_cast<AmInt32>(cp[3]) << 24);
+                    std::memcpy(cp, &temp, sizeof(temp));
+                    cp += 4;
+                }
                 break;
 
             case 'S':
-                temp = cp[0] + (cp[1] << 8);
-                *(short*)cp = (short)temp;
-                cp += 2;
+                {
+                    const auto temp = static_cast<AmInt16>(cp[0] + (cp[1] << 8));
+                    std::memcpy(cp, &temp, sizeof(temp));
+                    cp += 2;
+                }
                 break;
 
             default:
-                if (isdigit((unsigned char)*i))
-                    cp += *i - '0';
-
+                if (isdigit(static_cast<unsigned char>(*f)))
+                    cp += *f - '0';
                 break;
             }
 
-            i += 1;
+            ++f;
         }
     }
 
     static void native_to_little_endian(void* data, const char* format)
     {
-        char* i = const_cast<char*>(format);
-        auto* cp = (unsigned char*)data;
-        AmInt32 temp;
+        if constexpr (!kIsBigEndian)
+            return; // no-op on little-endian
 
-        while (*i)
+        auto* cp = static_cast<unsigned char*>(data);
+        const char* f = format;
+
+        while (*f)
         {
-            switch (*i)
+            switch (*f)
             {
             case 'L':
-                temp = *(AmInt32*)cp;
-                *cp++ = (unsigned char)temp;
-                *cp++ = (unsigned char)(temp >> 8);
-                *cp++ = (unsigned char)(temp >> 16);
-                *cp++ = (unsigned char)(temp >> 24);
+                {
+                    AmInt32 temp;
+                    std::memcpy(&temp, cp, sizeof(temp));
+                    *cp++ = static_cast<unsigned char>(temp);
+                    *cp++ = static_cast<unsigned char>(temp >> 8);
+                    *cp++ = static_cast<unsigned char>(temp >> 16);
+                    *cp++ = static_cast<unsigned char>(temp >> 24);
+                }
                 break;
 
             case 'S':
-                temp = *(short*)cp;
-                *cp++ = (unsigned char)temp;
-                *cp++ = (unsigned char)(temp >> 8);
+                {
+                    AmInt16 temp;
+                    std::memcpy(&temp, cp, sizeof(temp));
+                    *cp++ = static_cast<unsigned char>(temp);
+                    *cp++ = static_cast<unsigned char>(temp >> 8);
+                }
                 break;
 
             default:
-                if (isdigit((unsigned char)*i))
-                    cp += *i - '0';
-
+                if (isdigit(static_cast<unsigned char>(*f)))
+                    cp += *f - '0';
                 break;
             }
 
-            i += 1;
+            ++f;
         }
     }
 
     static bool ReadHeader(std::shared_ptr<File> file, SoundFormat& format, AmUInt16& blockSize)
     {
-        AmInt32 fmt = 0, res = 0, bits_per_sample, sample_rate, num_channels;
+        AmInt32 fmt = 0, bits_per_sample, sample_rate, num_channels;
         AmUInt32 fact_samples = 0;
         AmSize num_samples = 0;
 
@@ -103,17 +116,18 @@ namespace SparkyStudios::Audio::Amplitude
 
         // read initial RIFF form header
 
-        if (file->Read((AmUInt8Buffer)&riff_chunk_header, sizeof(RIFFHeader)) != sizeof(RIFFHeader) ||
-            strncmp((char*)riff_chunk_header.chunkID, "RIFF", 4) != 0 || strncmp((char*)riff_chunk_header.chunkFormat, "WAVE", 4) != 0)
+        if (file->Read(reinterpret_cast<AmUInt8Buffer>(&riff_chunk_header), sizeof(RIFFHeader)) != sizeof(RIFFHeader) ||
+            std::strncmp(reinterpret_cast<const char*>(riff_chunk_header.chunkID), "RIFF", 4) != 0 ||
+            std::strncmp(reinterpret_cast<const char*>(riff_chunk_header.chunkFormat), "WAVE", 4) != 0)
         {
             return false;
         }
 
-        // loop through all elements of the RIFF wav header (until the data chuck)
+        // loop through all elements of the RIFF wav header (until the data chunk)
 
         while (true)
         {
-            if (file->Read((AmUInt8Buffer)&chunk_header, sizeof(FMTHeader)) != sizeof(FMTHeader))
+            if (file->Read(reinterpret_cast<AmUInt8Buffer>(&chunk_header), sizeof(FMTHeader)) != sizeof(FMTHeader))
             {
                 return false;
             }
@@ -123,12 +137,12 @@ namespace SparkyStudios::Audio::Amplitude
             // if it's the format chunk, we want to get some info out of there and
             // make sure it's a .wav file we can handle
 
-            if (!strncmp((char*)chunk_header.chunkID, "fmt ", 4))
+            if (!std::strncmp(reinterpret_cast<const char*>(chunk_header.chunkID), "fmt ", 4))
             {
                 bool supported = true;
 
                 if (chunk_header.chunkSize < 16 || chunk_header.chunkSize > sizeof(WAVEHeaderEx) ||
-                    file->Read((AmUInt8Buffer)&wave_header, chunk_header.chunkSize) != chunk_header.chunkSize)
+                    file->Read(reinterpret_cast<AmUInt8Buffer>(&wave_header), chunk_header.chunkSize) != chunk_header.chunkSize)
                 {
                     return false;
                 }
@@ -175,28 +189,20 @@ namespace SparkyStudios::Audio::Amplitude
                     return false;
                 }
             }
-            else if (!strncmp((char*)chunk_header.chunkID, "fact", 4))
+            else if (!std::strncmp(reinterpret_cast<const char*>(chunk_header.chunkID), "fact", 4))
             {
-                if (chunk_header.chunkSize < 4 || file->Read((AmUInt8Buffer)&fact_samples, sizeof(fact_samples)) != sizeof(fact_samples))
+                if (chunk_header.chunkSize < 4 ||
+                    file->Read(reinterpret_cast<AmUInt8Buffer>(&fact_samples), sizeof(fact_samples)) != sizeof(fact_samples))
                 {
                     return false;
                 }
 
                 if (chunk_header.chunkSize > 4)
                 {
-                    int bytes_to_skip = chunk_header.chunkSize - 4;
-                    char dummy;
-
-                    while (bytes_to_skip--)
-                    {
-                        if (!file->Read((AmUInt8Buffer)&dummy, 1))
-                        {
-                            return false;
-                        }
-                    }
+                    file->Seek(static_cast<AmInt64>(chunk_header.chunkSize - 4), eFileSeekOrigin_Current);
                 }
             }
-            else if (!strncmp((char*)chunk_header.chunkID, "data", 4))
+            else if (!std::strncmp(reinterpret_cast<const char*>(chunk_header.chunkID), "data", 4))
             {
                 // on the data chunk, get size and exit parsing loop
 
@@ -221,8 +227,8 @@ namespace SparkyStudios::Audio::Amplitude
                 }
                 else
                 {
-                    int complete_blocks = chunk_header.chunkSize / wave_header.head.blockAlign;
-                    int leftover_bytes = chunk_header.chunkSize % wave_header.head.blockAlign;
+                    const int complete_blocks = chunk_header.chunkSize / wave_header.head.blockAlign;
+                    const int leftover_bytes = chunk_header.chunkSize % wave_header.head.blockAlign;
                     int samples_last_block;
 
                     num_samples = complete_blocks * wave_header.head.validBitsPerSample;
@@ -267,17 +273,9 @@ namespace SparkyStudios::Audio::Amplitude
                 break;
             }
             else
-            { // just ignore unknown chunks
-                int bytes_to_eat = (chunk_header.chunkSize + 1) & ~1L;
-                char dummy;
-
-                while (bytes_to_eat--)
-                {
-                    if (!file->Read((AmUInt8Buffer)&dummy, 1))
-                    {
-                        return false;
-                    }
-                }
+            {
+                const auto bytes_to_eat = static_cast<AmInt64>((chunk_header.chunkSize + 1) & ~1L);
+                file->Seek(bytes_to_eat, eFileSeekOrigin_Current);
             }
         }
 
@@ -292,41 +290,27 @@ namespace SparkyStudios::Audio::Amplitude
     {
         ADPCMHeader header;
 
-        AmInt32 blockSize = (samplesPerBlock - 1) / (format.GetNumChannels() ^ 3) + (format.GetNumChannels() * 4);
-        AmSize numBlocks = format.GetFramesCount() / samplesPerBlock;
-        AmInt32 leftOverSamples = format.GetFramesCount() % samplesPerBlock;
+        const AmInt32 blockSize = (samplesPerBlock - 1) / (format.GetNumChannels() ^ 3) + (format.GetNumChannels() * 4);
+        const AmSize numBlocks = format.GetFramesCount() / samplesPerBlock;
+        const AmInt32 leftOverSamples = format.GetFramesCount() % samplesPerBlock;
         AmSize totalDataBytes = numBlocks * blockSize;
 
         if (leftOverSamples)
         {
-            AmInt32 lastBlockSamples = ((leftOverSamples + 6) & ~7) + 1;
-            AmInt32 lastBlockSize = (lastBlockSamples - 1) / (format.GetNumChannels() ^ 3) + (format.GetNumChannels() * 4);
+            const AmInt32 lastBlockSamples = ((leftOverSamples + 6) & ~7) + 1;
+            const AmInt32 lastBlockSize = (lastBlockSamples - 1) / (format.GetNumChannels() ^ 3) + (format.GetNumChannels() * 4);
             totalDataBytes += lastBlockSize;
         }
 
-        memset(&header, 0, sizeof(header));
+        std::memset(&header, 0, sizeof(header));
 
         // ========== RIFF HEADER
-#if AM_PLATFORM_WIN
-        strncpy_s((char*)header.riff.chunkID, 4, "RIFF", sizeof(header.riff.chunkID));
-#else
-        strncpy((char*)header.riff.chunkID, "RIFF", sizeof(header.riff.chunkID));
-#endif
+        std::memcpy(header.riff.chunkID, "RIFF", 4);
         header.riff.chunkSize = sizeof(RIFFHeader) + sizeof(WAVEHeader) + sizeof(DATAHeader) + totalDataBytes;
-
-#if AM_PLATFORM_WIN
-        strncpy_s((char*)header.riff.chunkFormat, 4, "WAVE", sizeof(header.riff.chunkFormat));
-#else
-        strncpy((char*)header.riff.chunkFormat, "WAVE", sizeof(header.riff.chunkFormat));
-#endif
+        std::memcpy(header.riff.chunkFormat, "WAVE", 4);
 
         // ========== FORMAT HEADER
-#if AM_PLATFORM_WIN
-        strncpy_s((char*)header.fmt.chunkID, 4, "fmt ", sizeof(header.fmt.chunkID));
-#else
-        strncpy((char*)header.fmt.chunkID, "fmt ", sizeof(header.fmt.chunkID));
-#endif
-
+        std::memcpy(header.fmt.chunkID, "fmt ", 4);
         header.fmt.chunkSize = sizeof(WAVEHeader);
 
         // ========== WAVE HEADER
@@ -340,22 +324,12 @@ namespace SparkyStudios::Audio::Amplitude
         header.wave.validBitsPerSample = samplesPerBlock;
 
         // ========== FACT HEADER
-#if AM_PLATFORM_WIN
-        strncpy_s((char*)header.fact.chunkID, 4, "fact", sizeof(header.fact.chunkID));
-#else
-        strncpy((char*)header.fact.chunkID, "fact", sizeof(header.fact.chunkID));
-#endif
-
+        std::memcpy(header.fact.chunkID, "fact", 4);
         header.fact.totalSamples = format.GetFramesCount();
         header.fact.chunkSize = 4;
 
         // ========== DATA HEADER
-#if AM_PLATFORM_WIN
-        strncpy_s((char*)header.data.chunkID, 4, "data", sizeof(header.data.chunkID));
-#else
-        strncpy((char*)header.data.chunkID, "data", sizeof(header.data.chunkID));
-#endif
-
+        std::memcpy(header.data.chunkID, "data", 4);
         header.data.chunkSize = totalDataBytes;
 
         // write the RIFF chunks up to just before the data starts
@@ -366,62 +340,7 @@ namespace SparkyStudios::Audio::Amplitude
         native_to_little_endian(&header.fact, HEADER_FMT_FACT);
         native_to_little_endian(&header.data, HEADER_FMT_CHUNK);
 
-        return file->Write((AmConstUInt8Buffer)&header, sizeof(header));
-    }
-
-    static AmUInt64 Decode(
-        std::shared_ptr<File> file, const SoundFormat& format, AudioBuffer* out, AmUInt64 offset, AmUInt64 length, AmUInt32 blockSize)
-    {
-        const AmUInt32 numChannels = format.GetNumChannels();
-        const AmUInt32 frameSize = format.GetFrameSize();
-        const AmUInt32 samplesPerBlock = (blockSize - numChannels * 4) * (numChannels ^ 3) + 1;
-
-        auto pcm_block = static_cast<AmInt16Buffer>(ampoolmalloc(eMemoryPoolKind_Codec, samplesPerBlock * frameSize));
-        auto adpcm_block = static_cast<AmUInt8Buffer>(ampoolmalloc(eMemoryPoolKind_Codec, blockSize));
-
-        if (!pcm_block || !adpcm_block)
-        {
-            return 0;
-        }
-
-        auto* output16 = static_cast<AmInt16Buffer>(ampoolmalloc(eMemoryPoolKind_Codec, length * numChannels * sizeof(AmInt16)));
-
-        if (!output16)
-        {
-            ampoolfree(eMemoryPoolKind_Codec, pcm_block);
-            ampoolfree(eMemoryPoolKind_Codec, adpcm_block);
-            return 0;
-        }
-
-        if (file->Read(adpcm_block, blockSize) != blockSize)
-        {
-            ampoolfree(eMemoryPoolKind_Codec, pcm_block);
-            ampoolfree(eMemoryPoolKind_Codec, adpcm_block);
-            return 0;
-        }
-
-        if (Decompress(pcm_block, adpcm_block, blockSize, numChannels) != samplesPerBlock)
-        {
-            ampoolfree(eMemoryPoolKind_Codec, pcm_block);
-            ampoolfree(eMemoryPoolKind_Codec, adpcm_block);
-            return 0;
-        }
-
-        const AmUInt64 oo = (offset % blockSize) * numChannels;
-        std::memcpy(output16, pcm_block + oo, length * frameSize);
-
-        for (AmUInt16 c = 0; c < numChannels; c++)
-        {
-            auto& channel = out->GetChannel(c);
-            for (AmUInt64 i = 0; i < length; i++)
-                channel[i] = AmInt16ToReal32(output16[i * numChannels + c]);
-        }
-
-        ampoolfree(eMemoryPoolKind_Codec, output16);
-        ampoolfree(eMemoryPoolKind_Codec, pcm_block);
-        ampoolfree(eMemoryPoolKind_Codec, adpcm_block);
-
-        return length;
+        return file->Write(reinterpret_cast<AmConstUInt8Buffer>(&header), sizeof(header));
     }
 
     static AmUInt64 Encode(
@@ -443,17 +362,16 @@ namespace SparkyStudios::Audio::Amplitude
         if (!adpcm_block.Address())
             return 0;
 
-        // Calculate maximum possible samples needed including padding for the last block
         AmUInt64 maxSamplesNeeded = length;
-        AmUInt64 lastBlockSamples = length % samplesPerBlock;
+        const AmUInt64 lastBlockSamples = length % samplesPerBlock;
         if (lastBlockSamples > 0)
         {
-            AmUInt32 lastBlockAdpcmSamples = ((lastBlockSamples + 6) & ~7) + 1;
+            const AmUInt32 lastBlockAdpcmSamples = ((lastBlockSamples + 6) & ~7) + 1;
             maxSamplesNeeded += (lastBlockAdpcmSamples - lastBlockSamples);
         }
 
         ScopedMemoryAllocation input16(eMemoryPoolKind_Codec, maxSamplesNeeded * numChannels * sizeof(AmInt16), __FILE__, __LINE__);
-        AmInt16* input16_buffer = input16.PointerOf<AmInt16>();
+        auto* input16_buffer = input16.PointerOf<AmInt16>();
         AmInt16* buffer_end = input16_buffer + maxSamplesNeeded * numChannels;
 
         if (!input16.Address())
@@ -477,20 +395,22 @@ namespace SparkyStudios::Audio::Amplitude
             {
                 this_block_adpcm_samples = ((length + 6) & ~7) + 1;
                 blockSize = (this_block_adpcm_samples - 1) / (numChannels ^ 3) + (numChannels * 4);
-                this_block_pcm_samples = length;
+                this_block_pcm_samples = static_cast<AmUInt32>(length);
             }
 
             AmInt16Buffer pcm_block = input16_buffer + offset * numChannels;
 
-            if (IS_BIG_ENDIAN)
+            if constexpr (kIsBigEndian)
             {
                 AmUInt32 count = this_block_pcm_samples * numChannels;
                 auto* cp = reinterpret_cast<unsigned char*>(pcm_block);
 
                 while (count--)
                 {
-                    const int16_t temp = cp[0] + (cp[1] << 8);
-                    *reinterpret_cast<int16_t*>(cp) = temp;
+                    AmInt16 temp;
+                    std::memcpy(&temp, cp, sizeof(temp));
+                    const auto swapped = static_cast<AmInt16>(cp[0] + (cp[1] << 8));
+                    std::memcpy(cp, &swapped, sizeof(swapped));
                     cp += 2;
                 }
             }
@@ -500,8 +420,9 @@ namespace SparkyStudios::Audio::Amplitude
 
             if (this_block_adpcm_samples > this_block_pcm_samples)
             {
-                AmInt16 *dst = pcm_block + this_block_pcm_samples * numChannels, *src = dst - numChannels;
-                int dups = (this_block_adpcm_samples - this_block_pcm_samples) * numChannels;
+                AmInt16* dst = pcm_block + this_block_pcm_samples * numChannels;
+                AmInt16* src = dst - numChannels;
+                int dups = static_cast<int>((this_block_adpcm_samples - this_block_pcm_samples) * numChannels);
 
                 while (dups--)
                 {
@@ -521,12 +442,12 @@ namespace SparkyStudios::Audio::Amplitude
                 for (AmUInt32 i = this_block_adpcm_samples * numChannels; i -= numChannels;)
                 {
                     average_deltas[0] -= average_deltas[0] >> 3;
-                    average_deltas[0] += std::abs((AmInt32)pcm_block[i] - pcm_block[i - numChannels]);
+                    average_deltas[0] += std::abs(static_cast<AmInt32>(pcm_block[i]) - pcm_block[i - numChannels]);
 
                     if (numChannels == 2)
                     {
                         average_deltas[1] -= average_deltas[1] >> 3;
-                        average_deltas[1] += std::abs((AmInt32)pcm_block[i - 1] - pcm_block[i + 1]);
+                        average_deltas[1] += std::abs(static_cast<AmInt32>(pcm_block[i - 1]) - pcm_block[i + 1]);
                     }
                 }
 
@@ -536,7 +457,7 @@ namespace SparkyStudios::Audio::Amplitude
                 ctx = CreateContext(numChannels, lookAhead, noiseShaping, average_deltas);
             }
 
-            Compress(ctx, adpcm_block.PointerOf<AmUInt8>(), num_bytes, pcm_block, this_block_adpcm_samples);
+            Compress(ctx.get(), adpcm_block.PointerOf<AmUInt8>(), num_bytes, pcm_block, this_block_adpcm_samples);
 
             if (num_bytes != blockSize)
                 return 0;
@@ -565,6 +486,19 @@ namespace SparkyStudios::Audio::Amplitude
             return false;
         }
 
+        const AmUInt32 numChannels = m_format.GetNumChannels();
+        _samplesPerBlock = (_blockSize - numChannels * 4) * (numChannels ^ 3) + 1;
+
+        _adpcmBlockBuffer = ScopedMemoryAllocation(eMemoryPoolKind_Codec, _blockSize, __FILE__, __LINE__);
+        _pcmBlockBuffer =
+            ScopedMemoryAllocation(eMemoryPoolKind_Codec, _samplesPerBlock * numChannels * sizeof(AmInt16), __FILE__, __LINE__);
+
+        if (!_adpcmBlockBuffer.Address() || !_pcmBlockBuffer.Address())
+        {
+            amLogError("The AMS codec failed to allocate decode buffers for: '" AM_OS_CHAR_FMT "'", file->GetPath().c_str());
+            return false;
+        }
+
         _initialized = true;
 
         return true;
@@ -576,7 +510,11 @@ namespace SparkyStudios::Audio::Amplitude
         {
             _file.reset();
 
+            _adpcmBlockBuffer = ScopedMemoryAllocation();
+            _pcmBlockBuffer = ScopedMemoryAllocation();
+
             m_format = SoundFormat();
+            _samplesPerBlock = 0;
             _initialized = false;
         }
 
@@ -589,10 +527,7 @@ namespace SparkyStudios::Audio::Amplitude
         if (!_initialized)
             return 0;
 
-        if (!Seek(0))
-            return 0;
-
-        return Decode(_file, m_format, out, 0, m_format.GetFramesCount(), _blockSize);
+        return Stream(out, 0, 0, m_format.GetFramesCount());
     }
 
     AmUInt64 AMSCodec::AMSDecoder::Stream(AudioBuffer* out, AmUInt64 bufferOffset, AmUInt64 seekOffset, AmUInt64 length)
@@ -603,19 +538,59 @@ namespace SparkyStudios::Audio::Amplitude
         if (!Seek(seekOffset))
             return 0;
 
-        return Decode(_file, m_format, out, seekOffset, length, _blockSize);
+        const AmUInt32 numChannels = m_format.GetNumChannels();
+        auto* adpcm_block = _adpcmBlockBuffer.PointerOf<AmUInt8>();
+        auto* pcm_block = _pcmBlockBuffer.PointerOf<AmInt16>();
+
+        // The offset within the first block to start reading from.
+        // Seek() has positioned the file at the start of the block containing seekOffset.
+        AmUInt64 startSampleInBlock = seekOffset % _samplesPerBlock;
+        AmUInt64 samplesDecoded = 0;
+
+        while (samplesDecoded < length)
+        {
+            const AmSize bytesRead = _file->Read(adpcm_block, _blockSize);
+            if (bytesRead == 0)
+                break; // EOF
+
+            const AmInt32 decompressedSamples = Decompress(pcm_block, adpcm_block, bytesRead, numChannels);
+            if (decompressedSamples <= 0)
+                break;
+
+            if (startSampleInBlock >= static_cast<AmUInt64>(decompressedSamples))
+                break;
+
+            const AmUInt64 availableFromBlock = static_cast<AmUInt64>(decompressedSamples) - startSampleInBlock;
+            const AmUInt64 samplesToTake = std::min(availableFromBlock, length - samplesDecoded);
+
+            // Deinterleave Int16 PCM into per-channel Float32.
+            for (AmUInt16 c = 0; c < numChannels; c++)
+            {
+                auto& channel = out->GetChannel(c);
+                for (AmUInt64 i = 0; i < samplesToTake; i++)
+                {
+                    channel[bufferOffset + samplesDecoded + i] = AmInt16ToReal32(pcm_block[(startSampleInBlock + i) * numChannels + c]);
+                }
+            }
+
+            samplesDecoded += samplesToTake;
+
+            startSampleInBlock = 0;
+        }
+
+        return samplesDecoded;
     }
 
     bool AMSCodec::AMSDecoder::Seek(AmUInt64 offset)
     {
-        const AmUInt32 numChannels = m_format.GetNumChannels();
-        const AmUInt32 samplesPerBlock = (_blockSize - numChannels * 4) * (numChannels ^ 3) + 1;
-        const AmUInt32 steps = offset / samplesPerBlock;
+        if (!_initialized || _samplesPerBlock == 0)
+            return false;
 
-        offset = steps * _blockSize;
-        _file->Seek(sizeof(ADPCMHeader) + offset, eFileSeekOrigin_Start);
+        const AmUInt32 steps = static_cast<AmUInt32>(offset / _samplesPerBlock);
+        const AmUInt64 fileOffset = static_cast<AmUInt64>(steps) * _blockSize;
+        _file->Seek(static_cast<AmInt64>(sizeof(ADPCMHeader) + fileOffset), eFileSeekOrigin_Start);
 
-        return true;
+        return _file->Position() == sizeof(ADPCMHeader) + fileOffset;
     }
 
     bool AMSCodec::AMSEncoder::Open(std::shared_ptr<File> file)
@@ -647,7 +622,10 @@ namespace SparkyStudios::Audio::Amplitude
 
     AmUInt64 AMSCodec::AMSEncoder::Write(AudioBuffer* in, AmUInt64 offset, AmUInt64 length)
     {
-        _file->Seek(sizeof(ADPCMHeader) + offset, eFileSeekOrigin_Start);
+        if (!_initialized)
+            return 0;
+
+        _file->Seek(static_cast<AmInt64>(sizeof(ADPCMHeader) + offset), eFileSeekOrigin_Start);
         return Encode(_file, m_format, in, length, _samplesPerBlock, _lookAhead, _noiseShaping);
     }
 
@@ -672,7 +650,12 @@ namespace SparkyStudios::Audio::Amplitude
 
     bool AMSCodec::CanHandleFile(std::shared_ptr<File> file) const
     {
+        if (!file)
+            return false;
+
         const auto& path = file->GetPath();
-        return path.find(AM_OS_STRING(".ams")) != AmOsString::npos;
+        const std::filesystem::path filePath(path);
+
+        return filePath.extension() == AM_OS_STRING(".ams");
     }
 } // namespace SparkyStudios::Audio::Amplitude
