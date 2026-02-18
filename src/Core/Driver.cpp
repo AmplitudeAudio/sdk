@@ -41,6 +41,12 @@ namespace SparkyStudios::Audio::Amplitude
         return c;
     }
 
+    static AmString& defaultDriverName()
+    {
+        static AmString name;
+        return name;
+    }
+
     Driver::Driver(AmString name)
         : m_name(std::move(name))
         , m_deviceDescription()
@@ -90,10 +96,17 @@ namespace SparkyStudios::Audio::Amplitude
 
     std::shared_ptr<Driver> Driver::Default()
     {
-        if (const DriverRegistry& drivers = driverRegistry(); !drivers.empty())
-            return drivers.rbegin()->second;
+        const DriverRegistry& drivers = driverRegistry();
 
-        return nullptr;
+        if (drivers.empty())
+            return nullptr;
+
+        const AmString& defaultName = defaultDriverName();
+        if (!defaultName.empty())
+            if (const auto& it = drivers.find(defaultName); it != drivers.end())
+                return it->second;
+
+        return drivers.rbegin()->second;
     }
 
     std::shared_ptr<Driver> Driver::Find(const AmString& name)
@@ -108,16 +121,13 @@ namespace SparkyStudios::Audio::Amplitude
     void Driver::SetDefault(const AmString& name)
     {
         DriverRegistry& drivers = driverRegistry();
-        for (auto i = drivers.cbegin(), e = drivers.cend(); i != e; ++i)
-        {
-            if (i->second->m_name == name)
-            {
-                std::pair<AmString, std::shared_ptr<Driver>> node = DriverImpl(i->first, i->second);
-                drivers.erase(i);
-                drivers.insert(node);
-                return;
-            }
-        }
+        if (const auto& it = drivers.find(name); it != drivers.end())
+            defaultDriverName() = name;
+    }
+
+    void Driver::ResetDefault()
+    {
+        defaultDriverName().clear();
     }
 
     void Driver::LockRegistry()

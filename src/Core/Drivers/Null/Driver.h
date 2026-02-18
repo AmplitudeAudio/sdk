@@ -21,13 +21,6 @@
 
 namespace SparkyStudios::Audio::Amplitude
 {
-    struct NullDriverDeviceData
-    {
-        AmUInt32 mOutputBufferSize;
-        DeviceDescription mDeviceDescription;
-        bool mRunning;
-    };
-
     class NullDriver final : public Driver
     {
     public:
@@ -41,12 +34,16 @@ namespace SparkyStudios::Audio::Amplitude
 
         bool EnumerateDevices(std::vector<DeviceDescription>& devices) override;
 
+        AM_INLINE bool IsRunning() const
+        {
+            return _running;
+        }
+
     private:
         bool _initialized;
+        bool _running;
 
         AmThreadHandle _thread;
-
-        NullDriverDeviceData _deviceData;
     };
 } // namespace SparkyStudios::Audio::Amplitude
 

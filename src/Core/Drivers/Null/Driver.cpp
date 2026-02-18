@@ -20,14 +20,14 @@ namespace SparkyStudios::Audio::Amplitude
 {
     static void null_mix(void* param)
     {
-        const auto* data = static_cast<NullDriverDeviceData*>(param);
+        const auto* data = static_cast<NullDriver*>(param);
 
-        while (data->mRunning)
+        while (data->IsRunning())
         {
             if (Engine::GetInstance()->IsStopping())
                 break;
 
-            Engine::GetInstance()->GetMixer()->Mix(nullptr, data->mOutputBufferSize);
+            Engine::GetInstance()->GetMixer()->Mix(nullptr, data->GetDeviceDescription().mOutputBufferSize);
             Thread::Sleep(10);
         }
     }
@@ -35,8 +35,8 @@ namespace SparkyStudios::Audio::Amplitude
     NullDriver::NullDriver()
         : Driver("null")
         , _initialized(false)
+        , _running(false)
         , _thread(nullptr)
-        , _deviceData()
     {}
 
     NullDriver::~NullDriver()
@@ -49,16 +49,19 @@ namespace SparkyStudios::Audio::Amplitude
         if (_initialized)
             return true;
 
+        m_deviceDescription = device;
+
         CallDeviceNotificationCallback(eDeviceNotification_Opened, device, this);
+        m_deviceDescription.mDeviceState = eDeviceState_Opened;
 
-        _deviceData.mOutputBufferSize = device.mOutputBufferSize / static_cast<AmUInt32>(device.mRequestedOutputChannels);
-        _deviceData.mDeviceDescription = device;
-        _deviceData.mRunning = true;
+        _running = true;
 
-        _thread = Thread::CreateThread(null_mix, &_deviceData);
+        _thread = Thread::CreateThread(null_mix, this);
 
         _initialized = true;
+
         CallDeviceNotificationCallback(eDeviceNotification_Started, device, this);
+        m_deviceDescription.mDeviceState = eDeviceState_Started;
 
         return true;
     }
@@ -67,15 +70,15 @@ namespace SparkyStudios::Audio::Amplitude
     {
         if (_initialized)
         {
-            _deviceData.mRunning = false;
-            CallDeviceNotificationCallback(eDeviceNotification_Stopped, _deviceData.mDeviceDescription, this);
+            _running = false;
+            CallDeviceNotificationCallback(eDeviceNotification_Stopped, m_deviceDescription, this);
 
             Thread::Wait(_thread);
 
-            _deviceData.mOutputBufferSize = 0;
+            m_deviceDescription.mOutputBufferSize = 0;
 
             _initialized = false;
-            CallDeviceNotificationCallback(eDeviceNotification_Closed, _deviceData.mDeviceDescription, this);
+            CallDeviceNotificationCallback(eDeviceNotification_Closed, m_deviceDescription, this);
         }
 
         return true;

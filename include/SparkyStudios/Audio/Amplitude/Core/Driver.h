@@ -132,11 +132,22 @@ namespace SparkyStudios::Audio::Amplitude
         /**
          * @brief Set the default diver to use in the engine.
          *
-         * This method will overwrite the default driver set from the loaded engine configuration.
+         * This method will overwrite the default
+         * driver set from the loaded engine configuration.
          *
-         * @param[in] name The name of the audio driver. Must be registered before.
+         * @param[in] name The name of the audio driver. Must be
+         * registered before.
          */
         static void SetDefault(const AmString& name);
+
+        /**
+         * @brief Resets the default driver setting.
+         *
+         * After calling this method, @c Default() will return
+         * the last registered driver
+         * instead of a specifically set default.
+         */
+        static void ResetDefault();
 
         /**
          * @brief Locks the drivers' registry.
