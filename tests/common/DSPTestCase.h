@@ -14,6 +14,8 @@
 
 #pragma once
 
+#include <vector>
+
 #include <DSP/Resamplers/DefaultResampler.h>
 
 #include "TestCase.h"
@@ -74,6 +76,121 @@ namespace SparkyStudios::Audio::Amplitude::Tests
                         return false;
 
             return true;
+        }
+
+        // --- Signal generation helpers ---
+
+        void GenerateSineWaveAtFrequency(
+            AudioBuffer& buffer, AmUInt32 sampleRate, AmReal32 frequency, AmReal32 amplitude = 1.0f)
+        {
+            for (AmUInt16 c = 0, m = buffer.GetChannelCount(); c < m; ++c)
+                for (AmUInt64 i = 0, n = buffer.GetFrameCount(); i < n; ++i)
+                    buffer[c][i] = amplitude *
+                        std::sin(2.0f * AM_PI32 * frequency * static_cast<AmReal32>(i) / static_cast<AmReal32>(sampleRate));
+        }
+
+        void GenerateMultiTone(
+            AudioBuffer& buffer, AmUInt32 sampleRate, const std::vector<AmReal32>& frequencies, AmReal32 amplitude = 0.3f)
+        {
+            for (AmUInt16 c = 0, m = buffer.GetChannelCount(); c < m; ++c)
+            {
+                for (AmUInt64 i = 0, n = buffer.GetFrameCount(); i < n; ++i)
+                {
+                    AmReal32 sample = 0.0f;
+                    for (AmReal32 freq : frequencies)
+                        sample += amplitude *
+                            std::sin(2.0f * AM_PI32 * freq * static_cast<AmReal32>(i) / static_cast<AmReal32>(sampleRate));
+                    buffer[c][i] = sample;
+                }
+            }
+        }
+
+        void GenerateImpulse(AudioBuffer& buffer, AmReal32 amplitude = 1.0f, AmUInt64 position = 0)
+        {
+            for (AmUInt16 c = 0, m = buffer.GetChannelCount(); c < m; ++c)
+                for (AmUInt64 i = 0, n = buffer.GetFrameCount(); i < n; ++i)
+                    buffer[c][i] = (i == position) ? amplitude : 0.0f;
+        }
+
+        // --- Signal analysis helpers ---
+
+        AmReal32 CalculateRMS(const AudioBuffer& buffer)
+        {
+            AmReal64 sum = 0.0;
+            AmUInt64 count = 0;
+            for (AmUInt16 c = 0, m = buffer.GetChannelCount(); c < m; ++c)
+            {
+                for (AmUInt64 i = 0, n = buffer.GetFrameCount(); i < n; ++i)
+                {
+                    sum += static_cast<AmReal64>(buffer[c][i]) * static_cast<AmReal64>(buffer[c][i]);
+                    ++count;
+                }
+            }
+            return static_cast<AmReal32>(std::sqrt(sum / static_cast<AmReal64>(count)));
+        }
+
+        AmReal32 CalculatePeak(const AudioBuffer& buffer)
+        {
+            AmReal32 peak = 0.0f;
+            for (AmUInt16 c = 0, m = buffer.GetChannelCount(); c < m; ++c)
+                for (AmUInt64 i = 0, n = buffer.GetFrameCount(); i < n; ++i)
+                    peak = std::max(peak, std::abs(buffer[c][i]));
+            return peak;
+        }
+
+        AmReal32 CalculateDCOffset(const AudioBuffer& buffer)
+        {
+            AmReal64 sum = 0.0;
+            AmUInt64 count = 0;
+            for (AmUInt16 c = 0, m = buffer.GetChannelCount(); c < m; ++c)
+            {
+                for (AmUInt64 i = 0, n = buffer.GetFrameCount(); i < n; ++i)
+                {
+                    sum += static_cast<AmReal64>(buffer[c][i]);
+                    ++count;
+                }
+            }
+            return static_cast<AmReal32>(sum / static_cast<AmReal64>(count));
+        }
+
+        // --- Signal assertion helpers ---
+
+        void ExpectRMSNear(AmReal32 expected, const AudioBuffer& buffer, AmReal32 tolerance = 0.01f)
+        {
+            AmReal32 actual = CalculateRMS(buffer);
+            AM_EXPECT(std::abs(expected - actual) <= tolerance);
+        }
+
+        void ExpectPeakNear(AmReal32 expected, const AudioBuffer& buffer, AmReal32 tolerance = 0.01f)
+        {
+            AmReal32 actual = CalculatePeak(buffer);
+            AM_EXPECT(std::abs(expected - actual) <= tolerance);
+        }
+
+        void ExpectNoDCOffset(const AudioBuffer& buffer, AmReal32 tolerance = 0.01f)
+        {
+            AM_EXPECT(std::abs(CalculateDCOffset(buffer)) <= tolerance);
+        }
+
+        void ExpectSilent(const AudioBuffer& buffer, AmReal32 threshold = 0.001f)
+        {
+            AM_EXPECT(CalculateRMS(buffer) < threshold);
+        }
+
+        void ExpectNotSilent(const AudioBuffer& buffer, AmReal32 threshold = 0.001f)
+        {
+            AM_EXPECT(CalculateRMS(buffer) >= threshold);
+        }
+
+        void ExpectGainApplied(
+            const AudioBuffer& input, const AudioBuffer& output, AmReal32 expectedGain, AmReal32 tolerance = 0.1f)
+        {
+            AmReal32 inputRMS = CalculateRMS(input);
+            if (inputRMS < 1e-6f)
+                return;
+            AmReal32 outputRMS = CalculateRMS(output);
+            AmReal32 actualGain = outputRMS / inputRMS;
+            AM_EXPECT(std::abs(expectedGain - actualGain) <= tolerance);
         }
 
     private:
