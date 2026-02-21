@@ -76,6 +76,16 @@ namespace SparkyStudios::Audio::Amplitude::Tests
         virtual void Run() = 0;
 
     protected:
+        void ExpectFloatNear(AmReal32 expected, AmReal32 actual, AmReal32 tolerance = 0.0001f, const char* file = "", int line = 0)
+        {
+            Expect(std::abs(expected - actual) <= tolerance, "ExpectFloatNear", file, line);
+        }
+
+        void ExpectDoubleNear(AmReal64 expected, AmReal64 actual, AmReal64 tolerance = 0.0001, const char* file = "", int line = 0)
+        {
+            Expect(std::abs(expected - actual) <= tolerance, "ExpectDoubleNear", file, line);
+        }
+
         virtual void ReportFailure(const char* failureType, const char* message, const char* file = "", int line = 0)
         {
             ++_failedCount;

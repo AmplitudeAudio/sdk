@@ -142,6 +142,80 @@ namespace SparkyStudios::Audio::Amplitude::Tests
         std::vector<AmReal32> _instanceGains;
     };
 
+    /**
+     * @brief Simple mock attenuation for testing AttenuationNode without engine.
+     *
+     * Implements a linear distance-based gain falloff:
+     *   gain = max(0, 1 - distance / maxDistance)
+     */
+    class MockAttenuation : public Attenuation
+    {
+    public:
+        explicit MockAttenuation(AmReal64 maxDistance = 100.0)
+            : _maxDistance(maxDistance)
+        {}
+
+        [[nodiscard]] AmAttenuationID GetId() const override { return 1; }
+        [[nodiscard]] const AmString& GetName() const override { static AmString name = "MockAttenuation"; return name; }
+
+        [[nodiscard]] AmReal32 GetGain(const AmVector3& soundLocation, const Listener& listener) const override
+        {
+            const AmReal32 distance = Length(Sub(soundLocation, listener.GetLocation()));
+            return std::max(0.0f, 1.0f - distance / static_cast<AmReal32>(_maxDistance));
+        }
+
+        [[nodiscard]] AmReal32 GetGain(const Entity& entity, const Listener& listener) const override
+        {
+            return GetGain(entity.GetLocation(), listener);
+        }
+
+        [[nodiscard]] AttenuationZone* GetShape() const override { return nullptr; }
+        [[nodiscard]] const Curve& GetGainCurve() const override { static Curve c; return c; }
+        [[nodiscard]] AmReal64 GetMaxDistance() const override { return _maxDistance; }
+        [[nodiscard]] bool IsAirAbsorptionEnabled() const override { return false; }
+        [[nodiscard]] AmReal32 EvaluateAirAbsorption(const AmVector3&, const AmVector3&, AmUInt32) const override { return 1.0f; }
+
+    private:
+        AmReal64 _maxDistance;
+    };
+
+    /**
+     * @brief Minimal mock Sound for testing nodes that need GetNearFieldGain().
+     */
+    class MockSound : public Sound
+    {
+    public:
+        explicit MockSound(AmReal32 nearFieldGain = 1.0f)
+        {
+            _nearFieldGain.Init(nearFieldGain);
+            _gain.Init(1.0f);
+            _pitch.Init(1.0f);
+            _priority.Init(1.0f);
+        }
+
+        [[nodiscard]] bool IsStream() const override { return false; }
+        [[nodiscard]] bool IsLoop() const override { return false; }
+        [[nodiscard]] const RtpcValue& GetNearFieldGain() const override { return _nearFieldGain; }
+        [[nodiscard]] const RtpcValue& GetGain() const override { return _gain; }
+        [[nodiscard]] const RtpcValue& GetPitch() const override { return _pitch; }
+        [[nodiscard]] const RtpcValue& GetPriority() const override { return _priority; }
+        [[nodiscard]] const Effect* GetEffect() const override { return nullptr; }
+        [[nodiscard]] const Attenuation* GetAttenuation() const override { return nullptr; }
+        [[nodiscard]] Bus GetBus() const override { return {}; }
+        [[nodiscard]] eSpatialization GetSpatialization() const override { return eSpatialization_Position; }
+        [[nodiscard]] eScope GetScope() const override { return eScope_World; }
+        [[nodiscard]] AmSoundID GetId() const override { return 1; }
+        [[nodiscard]] const AmString& GetName() const override { static AmString name = "MockSound"; return name; }
+        [[nodiscard]] const AmOsString& GetPath() const override { static AmOsString path; return path; }
+        void Load(std::shared_ptr<const FileSystem>) override {}
+
+    private:
+        RtpcValue _nearFieldGain;
+        RtpcValue _gain;
+        RtpcValue _pitch;
+        RtpcValue _priority;
+    };
+
     class NodeTestCase : public SimpleTestCase
     {
     public:

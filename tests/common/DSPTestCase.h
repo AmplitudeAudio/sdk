@@ -18,27 +18,23 @@
 
 #include <DSP/Resamplers/DefaultResampler.h>
 
-#include "TestCase.h"
+#include "ComponentTestCase.h"
 
 namespace SparkyStudios::Audio::Amplitude::Tests
 {
-    class DSPTestCase : public TestCase
+    class DSPTestCase : public ComponentTestCase
     {
     public:
         void SetUp() override
         {
-            MemoryManager::Initialize();
-
+            ComponentTestCase::SetUp();
             _resampler = Engine::RegisterExtension<DefaultResampler>();
         }
 
         void TearDown() override
         {
             Engine::UnregisterExtension(_resampler);
-
-            amEngine->DestroyInstance();
-
-            MemoryManager::Deinitialize();
+            ComponentTestCase::TearDown();
         }
 
     protected:
