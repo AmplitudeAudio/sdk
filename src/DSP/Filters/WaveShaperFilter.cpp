@@ -98,7 +98,7 @@ namespace SparkyStudios::Audio::Amplitude
         const AmReal32 p = std::abs(x) * k + 1.0f;
         const AmReal32 q = (1.0f + k) * x;
 
-        y = x * (q / p);
+        y = q / p;
         y = x + (y - x) * m_parameters[WaveShaperFilter::ATTRIBUTE_WET];
 
         return static_cast<AmAudioSample>(y);
