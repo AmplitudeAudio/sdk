@@ -67,6 +67,7 @@ target("amplitude_tests")
     add_deps("common_test_static")
 
     -- All test files (they self-register via static initialization)
+    add_files("$(projectdir)/tests/ambisonics_*/test_*.cpp")
     add_files("$(projectdir)/tests/core_*/test_*.cpp")
     add_files("$(projectdir)/tests/dsp_*/test_*.cpp")
     add_files("$(projectdir)/tests/fs_*/test_*.cpp")
