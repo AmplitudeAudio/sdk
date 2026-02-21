@@ -148,11 +148,16 @@ namespace SparkyStudios::Audio::Amplitude
         }
 
         drwav_data_format format;
-        format.container = drwav_container_riff; // <-- drwav_container_riff = normal WAV files, drwav_container_w64 = Sony Wave64.
-        format.format = DR_WAVE_FORMAT_PCM; // <-- Any of the DR_WAVE_FORMAT_* codes.
-        format.channels = m_format.GetNumChannels(); // <-- Only 2 channels are supported for now.
+        format.container = drwav_container_riff;
+        format.channels = m_format.GetNumChannels();
         format.sampleRate = m_format.GetSampleRate();
         format.bitsPerSample = m_format.GetBitsPerSample();
+
+        // Select the WAV format tag based on the sample type
+        if (m_format.GetSampleType() == eAudioSampleFormat_Float32 && m_format.GetBitsPerSample() == 32)
+            format.format = DR_WAVE_FORMAT_IEEE_FLOAT;
+        else
+            format.format = DR_WAVE_FORMAT_PCM;
 
         _file = file;
         const auto* codec = static_cast<const WAVCodec*>(m_codec);
@@ -198,11 +203,35 @@ namespace SparkyStudios::Audio::Amplitude
         if (!_initialized)
             return 0;
 
+        const AmUInt64 totalSamples = length * _wav.channels;
+
         AmAlignedReal32Buffer buffer;
-        buffer.Init(length * _wav.channels);
+        buffer.Init(totalSamples);
 
         Interleave(in, 0, buffer.GetBuffer(), 0, length, _wav.channels);
 
+        // For IEEE float format, write float32 data directly
+        if (_wav.translatedFormatTag == DR_WAVE_FORMAT_IEEE_FLOAT)
+        {
+            return drwav_write_pcm_frames(&_wav, length, buffer.GetBuffer());
+        }
+
+        // For PCM format, convert float32 to the appropriate integer format before writing
+        if (_wav.bitsPerSample == 16)
+        {
+            std::vector<drwav_int16> pcmBuffer(totalSamples);
+            drwav_f32_to_s16(pcmBuffer.data(), buffer.GetBuffer(), static_cast<size_t>(totalSamples));
+            return drwav_write_pcm_frames(&_wav, length, pcmBuffer.data());
+        }
+
+        if (_wav.bitsPerSample == 32)
+        {
+            std::vector<drwav_int32> pcmBuffer(totalSamples);
+            drwav_f32_to_s32(pcmBuffer.data(), buffer.GetBuffer(), static_cast<size_t>(totalSamples));
+            return drwav_write_pcm_frames(&_wav, length, pcmBuffer.data());
+        }
+
+        // For other bit depths (8, 24, etc.), write float data as-is (best-effort)
         return drwav_write_pcm_frames(&_wav, length, buffer.GetBuffer());
     }
 
