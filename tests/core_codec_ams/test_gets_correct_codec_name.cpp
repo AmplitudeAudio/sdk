@@ -16,14 +16,14 @@
 
 #include <Core/Codecs/AMS/Codec.h>
 
-#include "SimpleTestCase.h"
+#include "ComponentTestCase.h"
 #include "TestRegistry.h"
 
 using namespace SparkyStudios::Audio::Amplitude;
 
 namespace SparkyStudios::Audio::Amplitude::Tests
 {
-    AM_TEST_CASE(SimpleTestCase, core_codec_ams, gets_correct_codec_name)
+    AM_TEST_CASE(ComponentTestCase, core_codec_ams, gets_correct_codec_name)
     {
     public:
         void Run() override

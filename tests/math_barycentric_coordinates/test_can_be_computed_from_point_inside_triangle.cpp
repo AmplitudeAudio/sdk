@@ -16,14 +16,14 @@
 
 #include <Math/LinearAlgebra.h>
 
-#include "SimpleTestCase.h"
+#include "PureUnitTestCase.h"
 #include "TestRegistry.h"
 
 using namespace SparkyStudios::Audio::Amplitude;
 
 namespace SparkyStudios::Audio::Amplitude::Tests
 {
-    AM_TEST_CASE(SimpleTestCase, math_barycentric_coordinates, can_be_computed_from_point_inside_triangle)
+    AM_TEST_CASE(PureUnitTestCase, math_barycentric_coordinates, can_be_computed_from_point_inside_triangle)
     {
     public:
         void Run() override

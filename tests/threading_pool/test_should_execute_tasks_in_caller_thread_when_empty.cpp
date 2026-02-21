@@ -15,14 +15,14 @@
 #include <SparkyStudios/Audio/Amplitude/Amplitude.h>
 
 #include "DummyPoolTask.h"
-#include "SimpleTestCase.h"
+#include "ComponentTestCase.h"
 #include "TestRegistry.h"
 
 using namespace SparkyStudios::Audio::Amplitude;
 
 namespace SparkyStudios::Audio::Amplitude::Tests
 {
-    AM_TEST_CASE(SimpleTestCase, threading_pool, should_execute_tasks_in_caller_thread_when_empty)
+    AM_TEST_CASE(ComponentTestCase, threading_pool, should_execute_tasks_in_caller_thread_when_empty)
     {
     public:
         void Run() override

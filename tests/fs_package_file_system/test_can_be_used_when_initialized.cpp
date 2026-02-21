@@ -15,14 +15,14 @@
 #include <SparkyStudios/Audio/Amplitude/Amplitude.h>
 
 #include "PlatformTestCase.h"
-#include "SimpleTestCase.h"
+#include "ComponentTestCase.h"
 #include "TestRegistry.h"
 
 using namespace SparkyStudios::Audio::Amplitude;
 
 namespace SparkyStudios::Audio::Amplitude::Tests
 {
-    AM_TEST_CASE(SimpleTestCase, fs_package_file_system, can_be_used_when_initialized)
+    AM_TEST_CASE(ComponentTestCase, fs_package_file_system, can_be_used_when_initialized)
     {
     public:
         void Run() override

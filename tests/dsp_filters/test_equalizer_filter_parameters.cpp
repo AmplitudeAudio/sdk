@@ -16,14 +16,14 @@
 
 #include <DSP/Filters/EqualizerFilter.h>
 
-#include "SimpleTestCase.h"
+#include "ComponentTestCase.h"
 #include "TestRegistry.h"
 
 using namespace SparkyStudios::Audio::Amplitude;
 
 namespace SparkyStudios::Audio::Amplitude::Tests
 {
-    AM_TEST_CASE(SimpleTestCase, dsp_filters, equalizer_filter_parameters)
+    AM_TEST_CASE(ComponentTestCase, dsp_filters, equalizer_filter_parameters)
     {
     public:
         void Run() override

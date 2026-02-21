@@ -16,12 +16,12 @@
 
 #include <DSP/Delay.h>
 
-#include "SimpleTestCase.h"
+#include "ComponentTestCase.h"
 #include "TestRegistry.h"
 
 namespace SparkyStudios::Audio::Amplitude::Tests
 {
-    AM_TEST_CASE(SimpleTestCase, dsp_utilities, delay_max_delay_update)
+    AM_TEST_CASE(ComponentTestCase, dsp_utilities, delay_max_delay_update)
     {
     public:
         void Run() override

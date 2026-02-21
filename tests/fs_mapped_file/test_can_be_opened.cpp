@@ -15,14 +15,14 @@
 #include <SparkyStudios/Audio/Amplitude/Amplitude.h>
 
 #include "PlatformTestCase.h"
-#include "SimpleTestCase.h"
+#include "ComponentTestCase.h"
 #include "TestRegistry.h"
 
 using namespace SparkyStudios::Audio::Amplitude;
 
 namespace SparkyStudios::Audio::Amplitude::Tests
 {
-    AM_TEST_CASE(SimpleTestCase, fs_mapped_file, can_be_opened_with_small_file)
+    AM_TEST_CASE(ComponentTestCase, fs_mapped_file, can_be_opened_with_small_file)
     {
     public:
         void Run() override
@@ -44,7 +44,7 @@ namespace SparkyStudios::Audio::Amplitude::Tests
         }
     };
 
-    AM_TEST_CASE(SimpleTestCase, fs_mapped_file, can_be_opened_with_constructor)
+    AM_TEST_CASE(ComponentTestCase, fs_mapped_file, can_be_opened_with_constructor)
     {
     public:
         void Run() override
@@ -60,7 +60,7 @@ namespace SparkyStudios::Audio::Amplitude::Tests
         }
     };
 
-    AM_TEST_CASE(SimpleTestCase, fs_mapped_file, rejects_empty_path)
+    AM_TEST_CASE(ComponentTestCase, fs_mapped_file, rejects_empty_path)
     {
     public:
         void Run() override
@@ -71,7 +71,7 @@ namespace SparkyStudios::Audio::Amplitude::Tests
         }
     };
 
-    AM_TEST_CASE(SimpleTestCase, fs_mapped_file, rejects_nonexistent_file)
+    AM_TEST_CASE(ComponentTestCase, fs_mapped_file, rejects_nonexistent_file)
     {
     public:
         void Run() override
@@ -82,7 +82,7 @@ namespace SparkyStudios::Audio::Amplitude::Tests
         }
     };
 
-    AM_TEST_CASE(SimpleTestCase, fs_mapped_file, can_reopen_after_close)
+    AM_TEST_CASE(ComponentTestCase, fs_mapped_file, can_reopen_after_close)
     {
     public:
         void Run() override
@@ -107,7 +107,7 @@ namespace SparkyStudios::Audio::Amplitude::Tests
         }
     };
 
-    AM_TEST_CASE(SimpleTestCase, fs_mapped_file, open_cleans_previous_state)
+    AM_TEST_CASE(ComponentTestCase, fs_mapped_file, open_cleans_previous_state)
     {
     public:
         void Run() override

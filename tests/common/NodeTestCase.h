@@ -19,7 +19,7 @@
 
 #include <Core/ListenerInternalState.h>
 
-#include "SimpleTestCase.h"
+#include "ComponentTestCase.h"
 
 namespace SparkyStudios::Audio::Amplitude::Tests
 {
@@ -216,19 +216,19 @@ namespace SparkyStudios::Audio::Amplitude::Tests
         RtpcValue _priority;
     };
 
-    class NodeTestCase : public SimpleTestCase
+    class NodeTestCase : public ComponentTestCase
     {
     public:
         void SetUp() override
         {
-            SimpleTestCase::SetUp();
+            ComponentTestCase::SetUp();
             _mockLayer = std::make_unique<SpatialMockLayer>();
         }
 
         void TearDown() override
         {
             _mockLayer.reset();
-            SimpleTestCase::TearDown();
+            ComponentTestCase::TearDown();
         }
 
     protected:

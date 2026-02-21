@@ -16,7 +16,7 @@
 
 #include <DSP/Filters/DCRemovalFilter.h>
 
-#include "SimpleTestCase.h"
+#include "ComponentTestCase.h"
 #include "TestRegistry.h"
 #include "SparkyStudios/Audio/Amplitude/Core/Common/Constants.h"
 
@@ -24,7 +24,7 @@ using namespace SparkyStudios::Audio::Amplitude;
 
 namespace SparkyStudios::Audio::Amplitude::Tests
 {
-    AM_TEST_CASE(SimpleTestCase, dsp_filters, dc_removal_filter_parameters)
+    AM_TEST_CASE(ComponentTestCase, dsp_filters, dc_removal_filter_parameters)
     {
     public:
         void Run() override

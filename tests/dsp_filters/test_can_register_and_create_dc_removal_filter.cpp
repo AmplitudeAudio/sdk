@@ -16,14 +16,14 @@
 
 #include <DSP/Filters/DCRemovalFilter.h>
 
-#include "SimpleTestCase.h"
+#include "ComponentTestCase.h"
 #include "TestRegistry.h"
 
 using namespace SparkyStudios::Audio::Amplitude;
 
 namespace SparkyStudios::Audio::Amplitude::Tests
 {
-    AM_TEST_CASE(SimpleTestCase, dsp_filters, can_register_and_create_dc_removal_filter)
+    AM_TEST_CASE(ComponentTestCase, dsp_filters, can_register_and_create_dc_removal_filter)
     {
     public:
         void Run() override

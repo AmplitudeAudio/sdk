@@ -18,14 +18,14 @@
 
 #include <Core/Codecs/WAV/Codec.h>
 
-#include "SimpleTestCase.h"
+#include "ComponentTestCase.h"
 #include "TestRegistry.h"
 
 using namespace SparkyStudios::Audio::Amplitude;
 
 namespace SparkyStudios::Audio::Amplitude::Tests
 {
-    AM_TEST_CASE(SimpleTestCase, core_codec_wav, can_identify_wav_content)
+    AM_TEST_CASE(ComponentTestCase, core_codec_wav, can_identify_wav_content)
     {
     public:
         void Run() override

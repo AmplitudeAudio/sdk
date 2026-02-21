@@ -14,14 +14,14 @@
 
 #include <SparkyStudios/Audio/Amplitude/Amplitude.h>
 
-#include "SimpleTestCase.h"
+#include "PureUnitTestCase.h"
 #include "TestRegistry.h"
 
 using namespace SparkyStudios::Audio::Amplitude;
 
 namespace SparkyStudios::Audio::Amplitude::Tests
 {
-    AM_TEST_CASE(SimpleTestCase, math_cartesian_coordinate_system, can_convert_from_point)
+    AM_TEST_CASE(PureUnitTestCase, math_cartesian_coordinate_system, can_convert_from_point)
     {
     public:
         void Run() override

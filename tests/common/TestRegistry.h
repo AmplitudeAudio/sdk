@@ -198,7 +198,7 @@ namespace SparkyStudios::Audio::Amplitude::Tests
      *
      * Usage:
      * @code{cpp}
-     * AM_TEST_CASE(SimpleTestCase, core_room, cannot_create_valid_wrapper_without_state)
+     * AM_TEST_CASE(ComponentTestCase, core_room, cannot_create_valid_wrapper_without_state)
      * {
      *     void Run() override
      *     {
@@ -219,7 +219,7 @@ namespace SparkyStudios::Audio::Amplitude::Tests
      *
      * Usage:
      * @code{cpp}
-     * AM_TEST_CASE(SimpleTestCase, core_room, cannot_create_valid_wrapper_without_state)
+     * AM_TEST_CASE(ComponentTestCase, core_room, cannot_create_valid_wrapper_without_state)
      * {
      *     void Run() override { ... }
      * };

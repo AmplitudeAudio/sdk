@@ -14,7 +14,7 @@
 
 #include <SparkyStudios/Audio/Amplitude/Amplitude.h>
 
-#include "SimpleTestCase.h"
+#include "ComponentTestCase.h"
 #include "TestRegistry.h"
 
 #include <filesystem>
@@ -25,7 +25,7 @@ using namespace SparkyStudios::Audio::Amplitude;
 
 namespace SparkyStudios::Audio::Amplitude::Tests
 {
-    AM_TEST_CASE(SimpleTestCase, io_logger, file_logger_truncates_by_default)
+    AM_TEST_CASE(ComponentTestCase, io_logger, file_logger_truncates_by_default)
     {
     public:
         void Run() override

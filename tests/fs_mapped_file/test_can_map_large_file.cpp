@@ -17,7 +17,7 @@
 #include <cstdio>
 #include <filesystem>
 
-#include "SimpleTestCase.h"
+#include "ComponentTestCase.h"
 #include "TestRegistry.h"
 
 using namespace SparkyStudios::Audio::Amplitude;
@@ -65,7 +65,7 @@ namespace SparkyStudios::Audio::Amplitude::Tests
         }
     } // anonymous namespace
 
-    AM_TEST_CASE(SimpleTestCase, fs_mapped_file, maps_large_file_on_desktop)
+    AM_TEST_CASE(ComponentTestCase, fs_mapped_file, maps_large_file_on_desktop)
     {
     public:
         void Run() override
@@ -112,7 +112,7 @@ namespace SparkyStudios::Audio::Amplitude::Tests
         }
     };
 
-    AM_TEST_CASE(SimpleTestCase, fs_mapped_file, small_file_uses_heap_fallback)
+    AM_TEST_CASE(ComponentTestCase, fs_mapped_file, small_file_uses_heap_fallback)
     {
     public:
         void Run() override
@@ -139,7 +139,7 @@ namespace SparkyStudios::Audio::Amplitude::Tests
         }
     };
 
-    AM_TEST_CASE(SimpleTestCase, fs_mapped_file, seek_and_read_large_file)
+    AM_TEST_CASE(ComponentTestCase, fs_mapped_file, seek_and_read_large_file)
     {
     public:
         void Run() override
@@ -195,7 +195,7 @@ namespace SparkyStudios::Audio::Amplitude::Tests
         }
     };
 
-    AM_TEST_CASE(SimpleTestCase, fs_mapped_file, write_returns_zero_on_mapped)
+    AM_TEST_CASE(ComponentTestCase, fs_mapped_file, write_returns_zero_on_mapped)
     {
     public:
         void Run() override
@@ -221,7 +221,7 @@ namespace SparkyStudios::Audio::Amplitude::Tests
         }
     };
 
-    AM_TEST_CASE(SimpleTestCase, fs_mapped_file, can_reopen_large_file)
+    AM_TEST_CASE(ComponentTestCase, fs_mapped_file, can_reopen_large_file)
     {
     public:
         void Run() override

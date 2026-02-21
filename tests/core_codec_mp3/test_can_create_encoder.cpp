@@ -16,14 +16,14 @@
 
 #include <Core/Codecs/MP3/Codec.h>
 
-#include "SimpleTestCase.h"
+#include "ComponentTestCase.h"
 #include "TestRegistry.h"
 
 using namespace SparkyStudios::Audio::Amplitude;
 
 namespace SparkyStudios::Audio::Amplitude::Tests
 {
-    AM_TEST_CASE(SimpleTestCase, core_codec_mp3, can_create_encoder)
+    AM_TEST_CASE(ComponentTestCase, core_codec_mp3, can_create_encoder)
     {
     public:
         void Run() override

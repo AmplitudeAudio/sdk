@@ -14,14 +14,14 @@
 
 #include <SparkyStudios/Audio/Amplitude/Amplitude.h>
 
-#include "SimpleTestCase.h"
+#include "PureUnitTestCase.h"
 #include "TestRegistry.h"
 
 using namespace SparkyStudios::Audio::Amplitude;
 
 namespace SparkyStudios::Audio::Amplitude::Tests
 {
-    AM_TEST_CASE(SimpleTestCase, threading_thread, can_sleep_a_thread_for_a_duration)
+    AM_TEST_CASE(PureUnitTestCase, threading_thread, can_sleep_a_thread_for_a_duration)
     {
     public:
         void Run() override

@@ -16,14 +16,14 @@
 
 #include <Sound/Rtpc.h>
 
-#include "SimpleTestCase.h"
+#include "ComponentTestCase.h"
 #include "TestRegistry.h"
 
 using namespace SparkyStudios::Audio::Amplitude;
 
 namespace SparkyStudios::Audio::Amplitude::Tests
 {
-    AM_TEST_CASE(SimpleTestCase, core_rtpc_impl, default_state)
+    AM_TEST_CASE(ComponentTestCase, core_rtpc_impl, default_state)
     {
     public:
         void Run() override

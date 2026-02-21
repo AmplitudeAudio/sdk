@@ -16,14 +16,14 @@
 
 #include <Math/LinearAlgebra.h>
 
-#include "SimpleTestCase.h"
+#include "PureUnitTestCase.h"
 #include "TestRegistry.h"
 
 using namespace SparkyStudios::Audio::Amplitude;
 
 namespace SparkyStudios::Audio::Amplitude::Tests
 {
-    AM_TEST_CASE(SimpleTestCase, math_orientation, is_consistent_between_representations)
+    AM_TEST_CASE(PureUnitTestCase, math_orientation, is_consistent_between_representations)
     {
     public:
         void Run() override

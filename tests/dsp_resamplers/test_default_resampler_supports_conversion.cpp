@@ -16,14 +16,14 @@
 
 #include <DSP/Resamplers/DefaultResampler.h>
 
-#include "SimpleTestCase.h"
+#include "ComponentTestCase.h"
 #include "TestRegistry.h"
 
 using namespace SparkyStudios::Audio::Amplitude;
 
 namespace SparkyStudios::Audio::Amplitude::Tests
 {
-    AM_TEST_CASE(SimpleTestCase, dsp_resamplers, default_resampler_supports_conversion)
+    AM_TEST_CASE(ComponentTestCase, dsp_resamplers, default_resampler_supports_conversion)
     {
     public:
         void Run() override

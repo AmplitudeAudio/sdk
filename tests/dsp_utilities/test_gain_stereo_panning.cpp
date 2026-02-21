@@ -16,12 +16,12 @@
 
 #include <DSP/Gain.h>
 
-#include "SimpleTestCase.h"
+#include "ComponentTestCase.h"
 #include "TestRegistry.h"
 
 namespace SparkyStudios::Audio::Amplitude::Tests
 {
-    AM_TEST_CASE(SimpleTestCase, dsp_utilities, gain_stereo_panning)
+    AM_TEST_CASE(ComponentTestCase, dsp_utilities, gain_stereo_panning)
     {
     public:
         void Run() override

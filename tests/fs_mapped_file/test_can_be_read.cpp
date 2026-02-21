@@ -15,14 +15,14 @@
 #include <SparkyStudios/Audio/Amplitude/Amplitude.h>
 
 #include "PlatformTestCase.h"
-#include "SimpleTestCase.h"
+#include "ComponentTestCase.h"
 #include "TestRegistry.h"
 
 using namespace SparkyStudios::Audio::Amplitude;
 
 namespace SparkyStudios::Audio::Amplitude::Tests
 {
-    AM_TEST_CASE(SimpleTestCase, fs_mapped_file, can_read_data)
+    AM_TEST_CASE(ComponentTestCase, fs_mapped_file, can_read_data)
     {
     public:
         void Run() override
@@ -42,7 +42,7 @@ namespace SparkyStudios::Audio::Amplitude::Tests
         }
     };
 
-    AM_TEST_CASE(SimpleTestCase, fs_mapped_file, can_read_with_seek)
+    AM_TEST_CASE(ComponentTestCase, fs_mapped_file, can_read_with_seek)
     {
     public:
         void Run() override
@@ -76,7 +76,7 @@ namespace SparkyStudios::Audio::Amplitude::Tests
         }
     };
 
-    AM_TEST_CASE(SimpleTestCase, fs_mapped_file, reports_eof)
+    AM_TEST_CASE(ComponentTestCase, fs_mapped_file, reports_eof)
     {
     public:
         void Run() override
@@ -99,7 +99,7 @@ namespace SparkyStudios::Audio::Amplitude::Tests
         }
     };
 
-    AM_TEST_CASE(SimpleTestCase, fs_mapped_file, read_clamps_at_eof)
+    AM_TEST_CASE(ComponentTestCase, fs_mapped_file, read_clamps_at_eof)
     {
     public:
         void Run() override
@@ -121,7 +121,7 @@ namespace SparkyStudios::Audio::Amplitude::Tests
         }
     };
 
-    AM_TEST_CASE(SimpleTestCase, fs_mapped_file, getptr_returns_buffer)
+    AM_TEST_CASE(ComponentTestCase, fs_mapped_file, getptr_returns_buffer)
     {
     public:
         void Run() override
@@ -141,7 +141,7 @@ namespace SparkyStudios::Audio::Amplitude::Tests
         }
     };
 
-    AM_TEST_CASE(SimpleTestCase, fs_mapped_file, read_on_invalid_file_returns_zero)
+    AM_TEST_CASE(ComponentTestCase, fs_mapped_file, read_on_invalid_file_returns_zero)
     {
     public:
         void Run() override

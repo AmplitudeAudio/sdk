@@ -18,14 +18,14 @@
 #include <Math/LinearAlgebra.h>
 
 #include "PlatformTestCase.h"
-#include "SimpleTestCase.h"
+#include "ComponentTestCase.h"
 #include "TestRegistry.h"
 
 using namespace SparkyStudios::Audio::Amplitude;
 
 namespace SparkyStudios::Audio::Amplitude::Tests
 {
-    AM_TEST_CASE(SimpleTestCase, hrtf_sphere, all)
+    AM_TEST_CASE(ComponentTestCase, hrtf_sphere, all)
     {
     public:
         void Run() override

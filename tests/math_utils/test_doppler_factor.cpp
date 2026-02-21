@@ -17,14 +17,14 @@
 #include <Math/LinearAlgebra.h>
 #include <Utils/Utils.h>
 
-#include "SimpleTestCase.h"
+#include "PureUnitTestCase.h"
 #include "TestRegistry.h"
 
 using namespace SparkyStudios::Audio::Amplitude;
 
 namespace SparkyStudios::Audio::Amplitude::Tests
 {
-    AM_TEST_CASE(SimpleTestCase, math_utils, doppler_factor)
+    AM_TEST_CASE(PureUnitTestCase, math_utils, doppler_factor)
     {
     public:
         void Run() override

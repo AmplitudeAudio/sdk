@@ -16,7 +16,7 @@
 
 #include <Core/RoomInternalState.h>
 
-#include "SimpleTestCase.h"
+#include "ComponentTestCase.h"
 #include "SparkyStudios/Audio/Amplitude/Core/Room.h"
 #include "TestRegistry.h"
 
@@ -24,7 +24,7 @@ using namespace SparkyStudios::Audio::Amplitude;
 
 namespace SparkyStudios::Audio::Amplitude::Tests
 {
-    AM_TEST_CASE(SimpleTestCase, core_room, handles_set_wall_materials_all_at_once)
+    AM_TEST_CASE(ComponentTestCase, core_room, handles_set_wall_materials_all_at_once)
     {
     public:
         void Run() override

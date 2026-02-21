@@ -16,14 +16,14 @@
 
 #include <Core/EnvironmentInternalState.h>
 
-#include "SimpleTestCase.h"
+#include "ComponentTestCase.h"
 #include "TestRegistry.h"
 
 using namespace SparkyStudios::Audio::Amplitude;
 
 namespace SparkyStudios::Audio::Amplitude::Tests
 {
-    AM_TEST_CASE(SimpleTestCase, core_environment, handles_id_changes)
+    AM_TEST_CASE(ComponentTestCase, core_environment, handles_id_changes)
     {
     public:
         void Run() override
