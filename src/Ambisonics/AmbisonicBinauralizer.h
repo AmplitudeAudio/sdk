@@ -20,6 +20,7 @@
 #include <SparkyStudios/Audio/Amplitude/DSP/Convolver.h>
 
 #include <Ambisonics/AmbisonicDecoder.h>
+#include <Ambisonics/AmbisonicShelfFilter.h>
 #include <Ambisonics/BFormat.h>
 #include <HRTF/HRIRSphere.h>
 
@@ -30,7 +31,7 @@ namespace SparkyStudios::Audio::Amplitude
     public:
         AmbisonicBinauralizer();
 
-        bool Configure(AmUInt32 order, bool is3D, const HRIRSphere* hrirSphere);
+        bool Configure(AmUInt32 order, bool is3D, AmUInt32 maxBlockSize, AmUInt32 sampleRate, const HRIRSphere* hrirSphere);
 
         void Reset() override;
 
@@ -49,6 +50,7 @@ namespace SparkyStudios::Audio::Amplitude
         void SetUpSpeakers();
 
         AmbisonicDecoder _decoder;
+        AmbisonicShelfFilter _shelfFilter;
 
         const HRIRSphere* _hrir;
         AudioBuffer _accumulatedHRIR[2];

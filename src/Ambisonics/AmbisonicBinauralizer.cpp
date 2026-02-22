@@ -27,12 +27,15 @@ namespace SparkyStudios::Audio::Amplitude
         , _hrir(nullptr)
     {}
 
-    bool AmbisonicBinauralizer::Configure(AmUInt32 order, bool is3D, const HRIRSphere* hrirSphere)
+    bool AmbisonicBinauralizer::Configure(AmUInt32 order, bool is3D, AmUInt32 maxBlockSize, AmUInt32 sampleRate, const HRIRSphere* hrirSphere)
     {
         if (hrirSphere == nullptr)
             return false;
 
         if (!AmbisonicComponent::Configure(order, is3D))
+            return false;
+
+        if (!_shelfFilter.Configure(order, is3D, maxBlockSize, sampleRate))
             return false;
 
         _hrir = hrirSphere;
@@ -119,13 +122,17 @@ namespace SparkyStudios::Audio::Amplitude
     }
 
     void AmbisonicBinauralizer::Reset()
-    {}
+    {
+        _shelfFilter.Reset();
+    }
 
     void AmbisonicBinauralizer::Refresh()
     {}
 
     void AmbisonicBinauralizer::Process(BFormat* input, AmUInt32 samples, AudioBuffer& output)
     {
+        _shelfFilter.Process(input, samples);
+
         AudioBuffer scratch(samples, 2);
         auto& scratchL = scratch[0];
         auto& scratchR = scratch[1];

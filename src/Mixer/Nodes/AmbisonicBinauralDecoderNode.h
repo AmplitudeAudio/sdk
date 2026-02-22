@@ -47,6 +47,7 @@ namespace SparkyStudios::Audio::Amplitude
         AmbisonicDecoder _decoder;
         BFormat _soundField;
         AmUInt32 _ambisonicOrder = 1;
+        bool _configured = false;
     };
 
     class AmbisonicBinauralDecoderNode final : public Node

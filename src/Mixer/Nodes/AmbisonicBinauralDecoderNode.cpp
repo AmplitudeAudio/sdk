@@ -33,8 +33,6 @@ namespace SparkyStudios::Audio::Amplitude
 
         if (mode == ePanningMode_Stereo)
             _decoder.Configure(_ambisonicOrder, true, eSpeakersPreset_Stereo);
-        else
-            _binauralizer.Configure(_ambisonicOrder, true, _hrirSphere.get());
     }
 
     const AudioBuffer* AmbisonicBinauralDecoderNodeInstance::Process(const AudioBuffer* input)
@@ -62,6 +60,16 @@ namespace SparkyStudios::Audio::Amplitude
         ProcessorNodeInstance::Configure(frameCount, channelCount);
 
         _soundField.Configure(_ambisonicOrder, true, frameCount);
+
+        if (!_configured)
+        {
+            const ePanningMode mode = Engine::GetInstance()->GetPanningMode();
+            if (mode != ePanningMode_Stereo && _hrirSphere != nullptr)
+                _binauralizer.Configure(
+                    _ambisonicOrder, true, static_cast<AmUInt32>(frameCount), m_layer->GetSampleRate(), _hrirSphere.get());
+
+            _configured = true;
+        }
     }
 
     AmbisonicBinauralDecoderNode::AmbisonicBinauralDecoderNode()
