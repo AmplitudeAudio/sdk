@@ -36,7 +36,7 @@ namespace SparkyStudios::Audio::Amplitude::Tests
             AM_EXPECT_EQ(static_cast<AmSize>(1), node.GetMaxInputCount());
             AM_EXPECT_EQ(static_cast<AmSize>(1), node.GetMinInputCount());
 
-            AM_EXPECT_EQ(AmString("Thresold (dB)"), node.GetParameterName(0));
+            AM_EXPECT_EQ(AmString("Threshold (dB)"), node.GetParameterName(0));
             AM_EXPECT(std::abs(node.GetParameterMin(0) - (-60.0f)) < 1e-6f);
             AM_EXPECT(std::abs(node.GetParameterMax(0) - 0.0f) < 1e-6f);
 

@@ -117,6 +117,7 @@ namespace SparkyStudios::Audio::Amplitude
     // ---
     static std::shared_ptr<BassBoostFilter> sBassBoostFilterPlugin = nullptr;
     static std::shared_ptr<BiquadResonantFilter> sBiquadResonantFilterPlugin = nullptr;
+    static std::shared_ptr<CompressorFilter> sCompressorFilterPlugin = nullptr;
     static std::shared_ptr<DCRemovalFilter> sDCRemovalFilterPlugin = nullptr;
     static std::shared_ptr<DelayFilter> sDelayFilterPlugin = nullptr;
     static std::shared_ptr<EqualizerFilter> sEqualizerFilterPlugin = nullptr;
@@ -437,6 +438,7 @@ namespace SparkyStudios::Audio::Amplitude
         // ---
         sBassBoostFilterPlugin = RegisterExtension<BassBoostFilter>();
         sBiquadResonantFilterPlugin = RegisterExtension<BiquadResonantFilter>();
+        sCompressorFilterPlugin = RegisterExtension<CompressorFilter>();
         sDCRemovalFilterPlugin = RegisterExtension<DCRemovalFilter>();
         sDelayFilterPlugin = RegisterExtension<DelayFilter>();
         sEqualizerFilterPlugin = RegisterExtension<EqualizerFilter>();

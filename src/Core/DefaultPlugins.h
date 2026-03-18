@@ -55,6 +55,7 @@
 
 #include <DSP/Filters/BassBoostFilter.h>
 #include <DSP/Filters/BiquadResonantFilter.h>
+#include <DSP/Filters/CompressorFilter.h>
 #include <DSP/Filters/DCRemovalFilter.h>
 #include <DSP/Filters/DelayFilter.h>
 #include <DSP/Filters/EqualizerFilter.h>

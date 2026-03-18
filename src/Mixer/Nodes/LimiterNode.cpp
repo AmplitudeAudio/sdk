@@ -42,7 +42,7 @@ namespace SparkyStudios::Audio::Amplitude
             else
                 _enveloppe = peak + (_enveloppe - peak) * _releaseCoeff;
 
-            AmReal32 gain = _enveloppe > GetParameter(ATTRIBUTE_THRESOLD_DB) ? GetParameter(ATTRIBUTE_THRESOLD_DB) / _enveloppe : 1.0f;
+            AmReal32 gain = _enveloppe > GetParameter(ATTRIBUTE_THRESHOLD_DB) ? GetParameter(ATTRIBUTE_THRESHOLD_DB) / _enveloppe : 1.0f;
 
             for (AmSize c = 0, m = _output.GetChannelCount(); c < m; c++)
                 _output[c][i] *= gain;
@@ -63,7 +63,7 @@ namespace SparkyStudios::Audio::Amplitude
 
     void LimiterNodeInstance::SetParameter(AmSize index, AmReal32 value)
     {
-        if (index == ATTRIBUTE_THRESOLD_DB)
+        if (index == ATTRIBUTE_THRESHOLD_DB)
             value = std::pow(10.0f, value / 20.0f);
 
         ProcessorNodeInstance::SetParameter(index, value);

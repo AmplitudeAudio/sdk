@@ -27,7 +27,7 @@ namespace SparkyStudios::Audio::Amplitude
     public:
         enum ATTRIBUTES
         {
-            ATTRIBUTE_THRESOLD_DB = 0,
+            ATTRIBUTE_THRESHOLD_DB = 0,
             ATTRIBUTE_ATTACK_MS,
             ATTRIBUTE_RELEASE_MS,
             ATTRIBUTE_LAST
@@ -91,7 +91,7 @@ namespace SparkyStudios::Audio::Amplitude
             switch (index)
             {
             case 0:
-                return "Thresold (dB)";
+                return "Threshold (dB)";
             case 1:
                 return "Attack (ms)";
             case 2:

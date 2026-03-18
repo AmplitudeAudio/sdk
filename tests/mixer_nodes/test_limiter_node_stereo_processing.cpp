@@ -37,7 +37,7 @@ namespace SparkyStudios::Audio::Amplitude::Tests
             auto* processor = AsProcessor(instance);
             AM_EXPECT_NOT(processor == nullptr);
 
-            instance->SetParameter(LimiterNodeInstance::ATTRIBUTE_THRESOLD_DB, -6.0f);
+            instance->SetParameter(LimiterNodeInstance::ATTRIBUTE_THRESHOLD_DB, -6.0f);
             instance->SetParameter(LimiterNodeInstance::ATTRIBUTE_ATTACK_MS, 1.0f);
             instance->SetParameter(LimiterNodeInstance::ATTRIBUTE_RELEASE_MS, 50.0f);
             instance->Reset();

@@ -10,3 +10,4 @@ ignore:
   - src/Utils/
   - samples/
   - tools/
+  - tests/
