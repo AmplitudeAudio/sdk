@@ -135,20 +135,20 @@ namespace SparkyStudios::Audio::Amplitude
             , paused(true)
             , stopping(false)
             , channelPriorityDirty(true)
-            , switch_container_map()
-            , switch_container_id_map()
-            , collection_map()
-            , collection_id_map()
-            , attenuation_map()
-            , attenuation_id_map()
-            , switch_map()
-            , switch_id_map()
             , rtpc_map()
             , rtpc_id_map()
+            , switch_map()
+            , switch_id_map()
+            , attenuation_map()
+            , attenuation_id_map()
             , effect_map()
             , effect_id_map()
             , sound_map()
             , sound_id_map()
+            , collection_map()
+            , collection_id_map()
+            , switch_container_map()
+            , switch_container_id_map()
             , event_map()
             , event_id_map()
             , running_events()
@@ -219,61 +219,38 @@ namespace SparkyStudios::Audio::Amplitude
         // Cache listener lookup results per frame.
         ListenerCache listenerCache;
 
-        // A map of sound names to SoundCollections.
-        SwitchContainerMap switch_container_map;
-
-        // A map of file names to sound ids to determine if a file needs to be loaded.
-        SwitchContainerIdMap switch_container_id_map;
-
-        // A map of sound names to SoundCollections.
-        CollectionMap collection_map;
-
-        // A map of file names to sound ids to determine if a file needs to be loaded.
-        CollectionIdMap collection_id_map;
-
-        // A map of attenuation ids to Attenuation (declared before sounds that reference them)
-        AttenuationMap attenuation_map;
-
-        // A map of file names to attenuation ids to determine if a file needs to be loaded.
-        AttenuationIdMap attenuation_id_map;
+        // A map of RTPC ids to Rtpc (declared before sounds that reference them)
+        RtpcMap rtpc_map;
+        RtpcIdMap rtpc_id_map;
 
         // A map of switch ids to Switch (declared before sounds that reference them)
         SwitchMap switch_map;
-
-        // A map of file names to switch ids to determine if a file needs to be loaded.
         SwitchIdMap switch_id_map;
 
-        // A map of RTPC ids to Rtpc (declared before sounds that reference them)
-        RtpcMap rtpc_map;
-
-        // A map of file names to RTPC ids to determine if a file needs to be loaded.
-        RtpcIdMap rtpc_id_map;
+        // A map of attenuation ids to Attenuation (declared before sounds that reference them)
+        AttenuationMap attenuation_map;
+        AttenuationIdMap attenuation_id_map;
 
         // A map of effect ids to Effect (declared before sounds that reference them)
         EffectMap effect_map;
-
-        // A map of file names to effect ids to determine if a file needs to be loaded.
         EffectIdMap effect_id_map;
 
         // A map of sound names to SoundCollections.
         SoundMap sound_map;
-
-        // A map of file names to sound ids to determine if a file needs to be loaded.
         SoundIdMap sound_id_map;
 
-        // A map of event names to EventInternalStates.
-        EventMap event_map;
+        CollectionMap collection_map;
+        CollectionIdMap collection_id_map;
 
-        // A map of file names to event ids to determine if a file needs to be loaded.
+        SwitchContainerMap switch_container_map;
+        SwitchContainerIdMap switch_container_id_map;
+
+        EventMap event_map;
         EventIdMap event_id_map;
 
-        // A vector of currently active events.
         EventInstanceVector running_events;
 
-        // A map of sound banks id to SoundBank.
         SoundBankIdMap sound_bank_id_map;
-
-        // Hold the sounds banks.
         SoundBankMap sound_bank_map;
 
         // Hold the pipelines.
