@@ -17,7 +17,7 @@ local cpu_archs = {
     flags = { { value = "-msse2", tools = { "gcc", "clang", "icc" } }, { value = "/arch:SSE2", tools = { "cl", "clang_cl", "icl" } } },
     define = { "AM_BUILDSYSTEM_ARCH_X86_SSE2", "__SSE2__" },
     suffix = "-x86_sse2",
-    test = [[#if !defined(__x86_64__) && !defined(__i386__) && !defined(__i686__)
+    test = [[#if !defined(__x86_64__) && !defined(__i386__) && !defined(__i686__) && !defined(_M_X64) && !defined(_M_IX86)
 #error X86_SSE2 is only supported on x86/x86_64 targets.
 #endif
 
@@ -56,7 +56,7 @@ int main()
     flags = { { value = "-msse3", tools = { "gcc", "clang", "icc" } }, { value = "/arch:SSE2", tools = { "cl", "clang_cl", "icl" } }, { value = "/arch:AVX", tools = { "cl", "clang_cl", "icl" } } },
     define = { "AM_BUILDSYSTEM_ARCH_X86_SSE3", "__SSE3__" },
     suffix = "-x86_sse3",
-    test = [[#if !defined(__x86_64__) && !defined(__i386__) && !defined(__i686__)
+    test = [[#if !defined(__x86_64__) && !defined(__i386__) && !defined(__i686__) && !defined(_M_X64) && !defined(_M_IX86)
 #error X86_SSE3 is only supported on x86/x86_64 targets.
 #endif
 
@@ -95,7 +95,7 @@ int main()
     flags = { { value = "-mssse3", tools = { "gcc", "clang", "icc" } }, { value = "/arch:SSE2", tools = { "cl", "clang_cl", "icl" } }, { value = "/arch:AVX", tools = { "cl", "clang_cl", "icl" } } },
     define = { "AM_BUILDSYSTEM_ARCH_X86_SSSE3", "__SSSE3__" },
     suffix = "-x86_ssse3",
-    test = [[#if !defined(__x86_64__) && !defined(__i386__) && !defined(__i686__)
+    test = [[#if !defined(__x86_64__) && !defined(__i386__) && !defined(__i686__) && !defined(_M_X64) && !defined(_M_IX86)
 #error X86_SSSE3 is only supported on x86/x86_64 targets.
 #endif
 
@@ -134,7 +134,7 @@ int main()
     flags = { { value = "-msse4.1", tools = { "gcc", "clang", "icc" } }, { value = "/arch:SSE2", tools = { "cl", "clang_cl", "icl" } }, { value = "/arch:AVX", tools = { "cl", "clang_cl", "icl" } } },
     define = { "AM_BUILDSYSTEM_ARCH_X86_SSE4_1", "__SSE4_1__" },
     suffix = "-x86_sse4_1",
-    test = [[#if !defined(__x86_64__) && !defined(__i386__) && !defined(__i686__)
+    test = [[#if !defined(__x86_64__) && !defined(__i386__) && !defined(__i686__) && !defined(_M_X64) && !defined(_M_IX86)
 #error X86_SSE4_1 is only supported on x86/x86_64 targets.
 #endif
 
@@ -171,9 +171,9 @@ int main()
   },
   X86_POPCNT = {
     flags = { { value = "-mssse3", tools = { "gcc", "clang", "icc" } }, { value = "-mpopcnt", tools = { "gcc", "clang", "icc" } }, { value = "/arch:AVX", tools = { "cl", "clang_cl", "icl" } } },
-    define = { "AM_BUILDSYSTEM_ARCH_X86_POPCNT_INSN" },
+    define = { "AM_BUILDSYSTEM_ARCH_X86_POPCNT" },
     suffix = "-x86_popcnt",
-    test = [[#if !defined(__x86_64__) && !defined(__i386__) && !defined(__i686__)
+    test = [[#if !defined(__x86_64__) && !defined(__i386__) && !defined(__i686__) && !defined(_M_X64) && !defined(_M_IX86)
 #error X86_POPCNT is only supported on x86/x86_64 targets.
 #endif
 
@@ -207,7 +207,7 @@ int main()
     flags = { { value = "-mavx", tools = { "gcc", "clang", "icc" } }, { value = "/arch:AVX", tools = { "cl", "clang_cl", "icl" } } },
     define = { "AM_BUILDSYSTEM_ARCH_X86_AVX", "__AVX__" },
     suffix = "-x86_avx",
-    test = [[#if !defined(__x86_64__) && !defined(__i386__) && !defined(__i686__)
+    test = [[#if !defined(__x86_64__) && !defined(__i386__) && !defined(__i686__) && !defined(_M_X64) && !defined(_M_IX86)
 #error X86_AVX is only supported on x86/x86_64 targets.
 #endif
 
@@ -253,7 +253,7 @@ int main()
     flags = { { value = "-mavx2", tools = { "gcc", "clang", "icc" } }, { value = "-xCORE-AVX2", tools = { "icc" } }, { value = "/arch:AVX2", tools = { "cl", "clang_cl", "icl" } }, { value = "/arch:CORE-AVX2", tools = { "icl" } } },
     define = { "AM_BUILDSYSTEM_ARCH_X86_AVX2", "__AVX2__" },
     suffix = "-x86_avx2",
-    test = [[#if !defined(__x86_64__) && !defined(__i386__) && !defined(__i686__)
+    test = [[#if !defined(__x86_64__) && !defined(__i386__) && !defined(__i686__) && !defined(_M_X64) && !defined(_M_IX86)
 #error X86_AVX2 is only supported on x86/x86_64 targets.
 #endif
 
@@ -292,12 +292,12 @@ int main()
     p = prevent_optimization(p);
 }]]
   },
-  ARM_FMA3 = {
+  X86_FMA3 = {
     flags = { { value = "-mfma", tools = { "gcc", "clang", "icc" } }, { value = "-xCORE-AVX2", tools = { "icc" } }, { value = "/arch:AVX2", tools = { "cl", "clang_cl", "icl" } }, { value = "/arch:CORE-AVX2", tools = { "icl" } } },
     define = { "AM_BUILDSYSTEM_ARCH_X86_FMA3", "__FMA__" },
     suffix = "-x86_fma3",
-    test = [[#if !defined(__x86_64__) && !defined(__i386__) && !defined(__i686__)
-#error ARM_FMA3 is only supported on x86/x86_64 targets.
+    test = [[#if !defined(__x86_64__) && !defined(__i386__) && !defined(__i686__) && !defined(_M_X64) && !defined(_M_IX86)
+#error X86_FMA3 is only supported on x86/x86_64 targets.
 #endif
 
 #include <immintrin.h>
@@ -335,7 +335,7 @@ int main()
     flags = { { value = "-mfpu=neon", tools = { "gcc", "clang", "icc" } } },
     define = { "AM_BUILDSYSTEM_ARCH_ARM_NEON" },
     suffix = "-arm_neon",
-    test = [[#if defined(__aarch64__)
+    test = [[#if defined(__aarch64__) || defined(_M_ARM64)
 #error ARM_NEON is only supported on 32-bit ARM targets.
 #endif
 #if defined(__clang_major__)
@@ -379,7 +379,7 @@ int main()
     flags = { { value = "-mcpu=generic+simd", tools = { "gcc", "clang", "icc" } } },
     define = { "AM_BUILDSYSTEM_ARCH_ARM_NEON" },
     suffix = "-arm64_neon",
-    test = [[#if !defined(__aarch64__)
+    test = [[#if !defined(__aarch64__) && !defined(_M_ARM64)
 #error ARM64_NEON is only supported on AArch64 targets.
 #endif
 
