@@ -30,9 +30,9 @@ namespace SparkyStudios::Audio::Amplitude::Tests
             AM_EXPECT(surfaceSwitch != nullptr);
 
             // Define switch states
-            const SwitchState metal{ 3, "metal" };
-            const SwitchState snow{ 5, "snow" };
-            const SwitchState forest{ 1, "forest" };
+            const SwitchState metal{ 13, "metal" };
+            const SwitchState snow{ 15, "snow" };
+            const SwitchState forest{ 11, "forest" };
             const SwitchState invalid{};
 
             // Test setting switch state by value
