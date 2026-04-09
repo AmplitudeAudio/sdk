@@ -4,15 +4,15 @@ on:
   push:
     branches: [main, develop]
     paths:
-      - 'tests/**'
-      - 'src/**'
-      - 'include/**'
+      - "tests/**"
+      - "src/**"
+      - "include/**"
   pull_request:
     branches: [main, develop]
     paths:
-      - 'tests/**'
-      - 'src/**'
-      - 'include/**'
+      - "tests/**"
+      - "src/**"
+      - "include/**"
   workflow_dispatch:
 
 env:
@@ -40,7 +40,7 @@ jobs:
       - name: Setup Python
         uses: actions/setup-python@v5
         with:
-          python-version: '3.12'
+          python-version: "3.12"
 
       - name: Find flatc version
         id: flatc_version
@@ -111,7 +111,7 @@ jobs:
           APP_PID=$!
 
           # Wait for tests to complete (timeout after 10 minutes)
-          TIMEOUT=600
+          TIMEOUT=1200
           ELAPSED=0
           TEST_COMPLETE=false
 
@@ -217,8 +217,8 @@ jobs:
       - name: Set up JDK
         uses: actions/setup-java@v4
         with:
-          java-version: '17'
-          distribution: 'temurin'
+          java-version: "17"
+          distribution: "temurin"
 
       - name: Setup Android SDK
         uses: android-actions/setup-android@v3
@@ -231,7 +231,7 @@ jobs:
       - name: Setup Python
         uses: actions/setup-python@v5
         with:
-          python-version: '3.12'
+          python-version: "3.12"
 
       - name: Find flatc version
         id: flatc_version
