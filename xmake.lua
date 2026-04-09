@@ -165,7 +165,7 @@ end
 
 if has_config("build_tools") and not is_plat("android") and not is_plat("iphoneos") then
   add_requires("cli11")
-  add_requires("libmysofa")
+  add_requires("libmysofa 1.3.2")
 end
 
 -- Apply debug/release specific defines
