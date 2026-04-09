@@ -17,7 +17,11 @@ local cpu_archs = {
     flags = { { value = "-msse2", tools = { "gcc", "clang", "icc" } }, { value = "/arch:SSE2", tools = { "cl", "clang_cl", "icl" } } },
     define = { "AM_BUILDSYSTEM_ARCH_X86_SSE2", "__SSE2__" },
     suffix = "-x86_sse2",
-    test = [[#include <emmintrin.h>
+    test = [[#if !defined(__x86_64__) && !defined(__i386__) && !defined(__i686__) && !defined(_M_X64) && !defined(_M_IX86)
+#error X86_SSE2 is only supported on x86/x86_64 targets.
+#endif
+
+#include <emmintrin.h>
 #include <iostream>
 
 char* prevent_optimization(char* ptr)
@@ -52,7 +56,11 @@ int main()
     flags = { { value = "-msse3", tools = { "gcc", "clang", "icc" } }, { value = "/arch:SSE2", tools = { "cl", "clang_cl", "icl" } }, { value = "/arch:AVX", tools = { "cl", "clang_cl", "icl" } } },
     define = { "AM_BUILDSYSTEM_ARCH_X86_SSE3", "__SSE3__" },
     suffix = "-x86_sse3",
-    test = [[#include <pmmintrin.h>
+    test = [[#if !defined(__x86_64__) && !defined(__i386__) && !defined(__i686__) && !defined(_M_X64) && !defined(_M_IX86)
+#error X86_SSE3 is only supported on x86/x86_64 targets.
+#endif
+
+#include <pmmintrin.h>
 #include <iostream>
 
 char* prevent_optimization(char* ptr)
@@ -87,7 +95,11 @@ int main()
     flags = { { value = "-mssse3", tools = { "gcc", "clang", "icc" } }, { value = "/arch:SSE2", tools = { "cl", "clang_cl", "icl" } }, { value = "/arch:AVX", tools = { "cl", "clang_cl", "icl" } } },
     define = { "AM_BUILDSYSTEM_ARCH_X86_SSSE3", "__SSSE3__" },
     suffix = "-x86_ssse3",
-    test = [[#include <tmmintrin.h>
+    test = [[#if !defined(__x86_64__) && !defined(__i386__) && !defined(__i686__) && !defined(_M_X64) && !defined(_M_IX86)
+#error X86_SSSE3 is only supported on x86/x86_64 targets.
+#endif
+
+#include <tmmintrin.h>
 #include <iostream>
 
 char* prevent_optimization(char* ptr)
@@ -122,7 +134,11 @@ int main()
     flags = { { value = "-msse4.1", tools = { "gcc", "clang", "icc" } }, { value = "/arch:SSE2", tools = { "cl", "clang_cl", "icl" } }, { value = "/arch:AVX", tools = { "cl", "clang_cl", "icl" } } },
     define = { "AM_BUILDSYSTEM_ARCH_X86_SSE4_1", "__SSE4_1__" },
     suffix = "-x86_sse4_1",
-    test = [[#include <smmintrin.h>
+    test = [[#if !defined(__x86_64__) && !defined(__i386__) && !defined(__i686__) && !defined(_M_X64) && !defined(_M_IX86)
+#error X86_SSE4_1 is only supported on x86/x86_64 targets.
+#endif
+
+#include <smmintrin.h>
 #include <iostream>
 
 char* prevent_optimization(char* ptr)
@@ -155,9 +171,13 @@ int main()
   },
   X86_POPCNT = {
     flags = { { value = "-mssse3", tools = { "gcc", "clang", "icc" } }, { value = "-mpopcnt", tools = { "gcc", "clang", "icc" } }, { value = "/arch:AVX", tools = { "cl", "clang_cl", "icl" } } },
-    define = { "AM_BUILDSYSTEM_ARCH_X86_POPCNT_INSN" },
+    define = { "AM_BUILDSYSTEM_ARCH_X86_POPCNT" },
     suffix = "-x86_popcnt",
-    test = [[#include <nmmintrin.h>
+    test = [[#if !defined(__x86_64__) && !defined(__i386__) && !defined(__i686__) && !defined(_M_X64) && !defined(_M_IX86)
+#error X86_POPCNT is only supported on x86/x86_64 targets.
+#endif
+
+#include <nmmintrin.h>
 #include <iostream>
 
 unsigned* prevent_optimization(unsigned* ptr)
@@ -187,7 +207,11 @@ int main()
     flags = { { value = "-mavx", tools = { "gcc", "clang", "icc" } }, { value = "/arch:AVX", tools = { "cl", "clang_cl", "icl" } } },
     define = { "AM_BUILDSYSTEM_ARCH_X86_AVX", "__AVX__" },
     suffix = "-x86_avx",
-    test = [[#include <immintrin.h>
+    test = [[#if !defined(__x86_64__) && !defined(__i386__) && !defined(__i686__) && !defined(_M_X64) && !defined(_M_IX86)
+#error X86_AVX is only supported on x86/x86_64 targets.
+#endif
+
+#include <immintrin.h>
 #include <iostream>
 
 #if (__clang_major__ == 3) && (__clang_minor__ == 6)
@@ -229,7 +253,11 @@ int main()
     flags = { { value = "-mavx2", tools = { "gcc", "clang", "icc" } }, { value = "-xCORE-AVX2", tools = { "icc" } }, { value = "/arch:AVX2", tools = { "cl", "clang_cl", "icl" } }, { value = "/arch:CORE-AVX2", tools = { "icl" } } },
     define = { "AM_BUILDSYSTEM_ARCH_X86_AVX2", "__AVX2__" },
     suffix = "-x86_avx2",
-    test = [[#include <immintrin.h>
+    test = [[#if !defined(__x86_64__) && !defined(__i386__) && !defined(__i686__) && !defined(_M_X64) && !defined(_M_IX86)
+#error X86_AVX2 is only supported on x86/x86_64 targets.
+#endif
+
+#include <immintrin.h>
 #include <iostream>
 
 #if (__clang_major__ == 3) && (__clang_minor__ == 6)
@@ -264,11 +292,15 @@ int main()
     p = prevent_optimization(p);
 }]]
   },
-  ARM_FMA3 = {
+  X86_FMA3 = {
     flags = { { value = "-mfma", tools = { "gcc", "clang", "icc" } }, { value = "-xCORE-AVX2", tools = { "icc" } }, { value = "/arch:AVX2", tools = { "cl", "clang_cl", "icl" } }, { value = "/arch:CORE-AVX2", tools = { "icl" } } },
     define = { "AM_BUILDSYSTEM_ARCH_X86_FMA3", "__FMA__" },
     suffix = "-x86_fma3",
-    test = [[#include <immintrin.h>
+    test = [[#if !defined(__x86_64__) && !defined(__i386__) && !defined(__i686__) && !defined(_M_X64) && !defined(_M_IX86)
+#error X86_FMA3 is only supported on x86/x86_64 targets.
+#endif
+
+#include <immintrin.h>
 #include <iostream>
 
 char* prevent_optimization(char* ptr)
@@ -303,7 +335,10 @@ int main()
     flags = { { value = "-mfpu=neon", tools = { "gcc", "clang", "icc" } } },
     define = { "AM_BUILDSYSTEM_ARCH_ARM_NEON" },
     suffix = "-arm_neon",
-    test = [[#if defined(__clang_major__)
+    test = [[#if defined(__aarch64__) || defined(_M_ARM64)
+#error ARM_NEON is only supported on 32-bit ARM targets.
+#endif
+#if defined(__clang_major__)
 #if (__clang_major__ < 3) || ((__clang_major__ == 3) && (__clang_minor__ <= 3))
 #error NEON is not supported on clang 3.3 and earlier.
 #endif
@@ -344,7 +379,11 @@ int main()
     flags = { { value = "-mcpu=generic+simd", tools = { "gcc", "clang", "icc" } } },
     define = { "AM_BUILDSYSTEM_ARCH_ARM_NEON" },
     suffix = "-arm64_neon",
-    test = [[#include <arm_neon.h>
+    test = [[#if !defined(__aarch64__) && !defined(_M_ARM64)
+#error ARM64_NEON is only supported on AArch64 targets.
+#endif
+
+#include <arm_neon.h>
 #include <iostream>
 
 char* prevent_optimization(char* ptr)
@@ -398,7 +437,7 @@ local function is_arch_supported(arch)
 end
 
 function am_get_supported_archs()
-  local supported = {}
+  local supported = { }
   for arch, _ in pairs(cpu_archs) do
     if is_arch_supported(arch) then
       table.insert(supported, arch)

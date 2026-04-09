@@ -201,12 +201,138 @@ namespace SparkyStudios::Audio::Amplitude
 
     // Returns this channel to the appropriate free list based on whether it's
     // backed by a real channel or not.
-    void InsertIntoFreeList(std::shared_ptr<EngineInternalState> state, ChannelInternalState* channel)
+    void InsertIntoFreeList(const std::shared_ptr<EngineInternalState>& state, ChannelInternalState* channel)
     {
         channel->Remove();
         channel->Reset();
         FreeList* list = channel->IsReal() ? &state->real_channel_free_list : &state->virtual_channel_free_list;
         list->push_front(*channel);
+    }
+
+    void DereferenceSound(const std::shared_ptr<EngineInternalState>& state, AmSoundID id)
+    {
+        if (const auto it = state->sound_map.find(id); it != state->sound_map.end())
+        {
+            if (it->second->GetRefCounter()->Decrement() == 0)
+            {
+                for (auto channelIt = state->playing_channel_list.begin(); channelIt != state->playing_channel_list.end();)
+                {
+                    auto current = channelIt++;
+                    if (current->GetSound() == it->second.get())
+                    {
+                        current->Halt();
+                        InsertIntoFreeList(state, &*current);
+                    }
+                }
+
+                it->second->ReleaseReferences(state);
+                state->sound_map.erase(it);
+            }
+        }
+    }
+
+    void DereferenceCollection(const std::shared_ptr<EngineInternalState>& state, AmCollectionID id)
+    {
+        if (const auto it = state->collection_map.find(id); it != state->collection_map.end())
+        {
+            if (it->second->GetRefCounter()->Decrement() == 0)
+            {
+                for (auto channelIt = state->playing_channel_list.begin(); channelIt != state->playing_channel_list.end();)
+                {
+                    auto current = channelIt++;
+                    if (current->GetCollection() == it->second.get())
+                    {
+                        current->Halt();
+                        InsertIntoFreeList(state, &*current);
+                    }
+                }
+
+                it->second->ReleaseReferences(state);
+                state->collection_map.erase(it);
+            }
+        }
+    }
+
+    void DereferenceSwitchContainer(const std::shared_ptr<EngineInternalState>& state, AmSwitchContainerID id)
+    {
+        if (const auto it = state->switch_container_map.find(id); it != state->switch_container_map.end())
+        {
+            if (it->second->GetRefCounter()->Decrement() == 0)
+            {
+                for (auto channelIt = state->playing_channel_list.begin(); channelIt != state->playing_channel_list.end();)
+                {
+                    auto current = channelIt++;
+                    if (current->GetSwitchContainer() == it->second.get())
+                    {
+                        current->Halt();
+                        InsertIntoFreeList(state, &*current);
+                    }
+                }
+
+                it->second->ReleaseReferences(state);
+                state->switch_container_map.erase(it);
+            }
+        }
+    }
+
+    void DereferenceEffect(const std::shared_ptr<EngineInternalState>& state, AmEffectID id)
+    {
+        if (const auto it = state->effect_map.find(id); it != state->effect_map.end())
+        {
+            if (it->second->GetRefCounter()->Decrement() == 0)
+            {
+                it->second->ReleaseReferences(state);
+                state->effect_map.erase(it);
+            }
+        }
+    }
+
+    void DereferenceAttenuation(const std::shared_ptr<EngineInternalState>& state, AmAttenuationID id)
+    {
+        if (const auto it = state->attenuation_map.find(id); it != state->attenuation_map.end())
+        {
+            if (it->second->GetRefCounter()->Decrement() == 0)
+            {
+                it->second->ReleaseReferences(state);
+                state->attenuation_map.erase(it);
+            }
+        }
+    }
+
+    void DereferenceSwitch(const std::shared_ptr<EngineInternalState>& state, AmSwitchID id)
+    {
+        if (const auto it = state->switch_map.find(id); it != state->switch_map.end())
+        {
+            if (it->second->GetRefCounter()->Decrement() == 0)
+            {
+                it->second->ReleaseReferences(state);
+                state->switch_map.erase(it);
+            }
+        }
+    }
+
+    void DereferenceRtpc(const std::shared_ptr<EngineInternalState>& state, AmRtpcID id)
+    {
+        if (const auto it = state->rtpc_map.find(id); it != state->rtpc_map.end())
+        {
+            if (it->second->GetRefCounter()->Decrement() == 0)
+            {
+                it->second->ReleaseReferences(state);
+                state->rtpc_map.erase(it);
+            }
+        }
+    }
+
+    void DereferenceEvent(const std::shared_ptr<EngineInternalState>& state, AmEventID id)
+    {
+        if (const auto it = state->event_map.find(id); it != state->event_map.end())
+        {
+            if (it->second->GetRefCounter()->Decrement() == 0)
+            {
+                it->second->ReleaseReferences(state);
+                state->event_map.erase(it);
+            }
+        }
     }
 
     void AssignBestRoom(ChannelInternalState* newChannel, const AmVector3& location, std::shared_ptr<EngineInternalState> state)
@@ -497,6 +623,7 @@ namespace SparkyStudios::Audio::Amplitude
         // ---
         UnregisterExtension(sBassBoostFilterPlugin);
         UnregisterExtension(sBiquadResonantFilterPlugin);
+        UnregisterExtension(sCompressorFilterPlugin);
         UnregisterExtension(sDCRemovalFilterPlugin);
         UnregisterExtension(sDelayFilterPlugin);
         UnregisterExtension(sEqualizerFilterPlugin);
@@ -550,7 +677,7 @@ namespace SparkyStudios::Audio::Amplitude
         gAmplitude.reset();
     }
 
-    std::shared_ptr<BusInternalState> FindBusInternalState(std::shared_ptr<EngineInternalState> state, AmBusID id)
+    std::shared_ptr<BusInternalState> FindBusInternalState(const std::shared_ptr<EngineInternalState>& state, AmBusID id)
     {
         if (const auto it = std::ranges::find_if(
                 state->buses,
@@ -566,7 +693,7 @@ namespace SparkyStudios::Audio::Amplitude
         return nullptr;
     }
 
-    std::shared_ptr<BusInternalState> FindBusInternalState(std::shared_ptr<EngineInternalState> state, const AmString& name)
+    std::shared_ptr<BusInternalState> FindBusInternalState(const std::shared_ptr<EngineInternalState>& state, const AmString& name)
     {
         if (const auto it = std::ranges::find_if(
                 state->buses,
@@ -583,7 +710,7 @@ namespace SparkyStudios::Audio::Amplitude
     }
 
     static bool PopulateChildBuses(
-        std::shared_ptr<EngineInternalState> state, std::shared_ptr<BusInternalState> parent, const BusIdList* childIdList)
+        const std::shared_ptr<EngineInternalState>& state, const std::shared_ptr<BusInternalState>& parent, const BusIdList* childIdList)
     {
         std::vector<std::shared_ptr<BusInternalState>>* output = &parent->GetChildBuses();
 
@@ -606,8 +733,8 @@ namespace SparkyStudios::Audio::Amplitude
     }
 
     static bool PopulateDuckBuses(
-        std::shared_ptr<EngineInternalState> state,
-        std::shared_ptr<BusInternalState> parent,
+        const std::shared_ptr<EngineInternalState>& state,
+        const std::shared_ptr<BusInternalState>& parent,
         const DuckBusDefinitionList* duckBusDefinitionList)
     {
         DuckBusList* output = &parent->GetDuckBuses();
@@ -769,8 +896,9 @@ namespace SparkyStudios::Audio::Amplitude
 
         if (_audioDriver == nullptr)
         {
-            amLogCritical("Failed to load the specified driver, the default driver, and the null driver. Please check your engine "
-                          "configuration, and ensure that all the needed plugins are loaded.");
+            amLogCritical(
+                "Failed to load the specified driver, the default driver, and the null driver. Please check your engine "
+                "configuration, and ensure that all the needed plugins are loaded.");
             Deinitialize();
             return false;
         }
@@ -801,8 +929,9 @@ namespace SparkyStudios::Audio::Amplitude
         }
         else if (_state->panning_mode != ePanningMode_Stereo)
         {
-            amLogCritical("The HRTF configuration is missing, but the panning mode is not stereo. Please provide an HRTF configuration, or "
-                          "set the panning mode to Stereo.");
+            amLogCritical(
+                "The HRTF configuration is missing, but the panning mode is not stereo. Please provide an HRTF configuration, or "
+                "set the panning mode to Stereo.");
             Deinitialize();
             return false;
         }
@@ -2352,7 +2481,7 @@ namespace SparkyStudios::Audio::Amplitude
         return _state->paused;
     }
 
-    void EraseFinishedSounds(std::shared_ptr<EngineInternalState> state)
+    void EraseFinishedSounds(const std::shared_ptr<EngineInternalState>& state)
     {
         PriorityList& list = state->playing_channel_list;
         for (auto channelInternalState = list.begin(); channelInternalState != list.end();)

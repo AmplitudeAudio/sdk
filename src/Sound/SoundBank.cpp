@@ -375,18 +375,7 @@ namespace SparkyStudios::Audio::Amplitude
         if (id_iter == state->switch_container_id_map.end())
             return false;
 
-        const AmSwitchContainerID id = id_iter->second;
-
-        const auto switch_container_iter = state->switch_container_map.find(id);
-        if (switch_container_iter == state->switch_container_map.end())
-            return false;
-
-        if (switch_container_iter->second->GetRefCounter()->Decrement() == 0)
-        {
-            switch_container_iter->second->ReleaseReferences(state);
-            state->switch_container_map.erase(switch_container_iter);
-        }
-
+        DereferenceSwitchContainer(state, id_iter->second);
         return true;
     }
 
@@ -396,18 +385,7 @@ namespace SparkyStudios::Audio::Amplitude
         if (id_iter == state->collection_id_map.end())
             return false;
 
-        const AmCollectionID id = id_iter->second;
-
-        const auto collection_iter = state->collection_map.find(id);
-        if (collection_iter == state->collection_map.end())
-            return false;
-
-        if (collection_iter->second->GetRefCounter()->Decrement() == 0)
-        {
-            collection_iter->second->ReleaseReferences(state);
-            state->collection_map.erase(collection_iter);
-        }
-
+        DereferenceCollection(state, id_iter->second);
         return true;
     }
 
@@ -417,18 +395,7 @@ namespace SparkyStudios::Audio::Amplitude
         if (id_iter == state->sound_id_map.end())
             return false;
 
-        const AmSoundID id = id_iter->second;
-
-        const auto sound_iter = state->sound_map.find(id);
-        if (sound_iter == state->sound_map.end())
-            return false;
-
-        if (sound_iter->second->GetRefCounter()->Decrement() == 0)
-        {
-            sound_iter->second->ReleaseReferences(state);
-            state->sound_map.erase(sound_iter);
-        }
-
+        DereferenceSound(state, id_iter->second);
         return true;
     }
 
@@ -438,18 +405,7 @@ namespace SparkyStudios::Audio::Amplitude
         if (id_iter == state->event_id_map.end())
             return false;
 
-        const AmEventID id = id_iter->second;
-
-        const auto event_iter = state->event_map.find(id);
-        if (event_iter == state->event_map.end())
-            return false;
-
-        if (event_iter->second->GetRefCounter()->Decrement() == 0)
-        {
-            event_iter->second->ReleaseReferences(state);
-            state->event_map.erase(event_iter);
-        }
-
+        DereferenceEvent(state, id_iter->second);
         return true;
     }
 
@@ -459,18 +415,7 @@ namespace SparkyStudios::Audio::Amplitude
         if (id_iter == state->attenuation_id_map.end())
             return false;
 
-        const AmAttenuationID id = id_iter->second;
-
-        const auto attenuation_iter = state->attenuation_map.find(id);
-        if (attenuation_iter == state->attenuation_map.end())
-            return false;
-
-        if (attenuation_iter->second->GetRefCounter()->Decrement() == 0)
-        {
-            attenuation_iter->second->ReleaseReferences(state);
-            state->attenuation_map.erase(attenuation_iter);
-        }
-
+        DereferenceAttenuation(state, id_iter->second);
         return true;
     }
 
@@ -480,18 +425,7 @@ namespace SparkyStudios::Audio::Amplitude
         if (id_iter == state->switch_id_map.end())
             return false;
 
-        const AmSwitchID id = id_iter->second;
-
-        const auto switch_iter = state->switch_map.find(id);
-        if (switch_iter == state->switch_map.end())
-            return false;
-
-        if (switch_iter->second->GetRefCounter()->Decrement() == 0)
-        {
-            switch_iter->second->ReleaseReferences(state);
-            state->switch_map.erase(switch_iter);
-        }
-
+        DereferenceSwitch(state, id_iter->second);
         return true;
     }
 
@@ -501,18 +435,7 @@ namespace SparkyStudios::Audio::Amplitude
         if (id_iter == state->effect_id_map.end())
             return false;
 
-        const AmSwitchID id = id_iter->second;
-
-        const auto effect_iter = state->effect_map.find(id);
-        if (effect_iter == state->effect_map.end())
-            return false;
-
-        if (effect_iter->second->GetRefCounter()->Decrement() == 0)
-        {
-            effect_iter->second->ReleaseReferences(state);
-            state->effect_map.erase(effect_iter);
-        }
-
+        DereferenceEffect(state, id_iter->second);
         return true;
     }
 
@@ -522,18 +445,7 @@ namespace SparkyStudios::Audio::Amplitude
         if (id_iter == state->rtpc_id_map.end())
             return false;
 
-        const AmSwitchID id = id_iter->second;
-
-        const auto rtpc_iter = state->rtpc_map.find(id);
-        if (rtpc_iter == state->rtpc_map.end())
-            return false;
-
-        if (rtpc_iter->second->GetRefCounter()->Decrement() == 0)
-        {
-            rtpc_iter->second->ReleaseReferences(state);
-            state->rtpc_map.erase(rtpc_iter);
-        }
-
+        DereferenceRtpc(state, id_iter->second);
         return true;
     }
 

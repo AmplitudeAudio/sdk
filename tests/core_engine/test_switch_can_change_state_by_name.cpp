@@ -31,24 +31,24 @@ namespace SparkyStudios::Audio::Amplitude::Tests
 
             // Test setting switch state by name
             envSwitch->SetState("desert");
-            AM_EXPECT(envSwitch->GetState().m_id == 2);
+            AM_EXPECT(envSwitch->GetState().m_id == 22);
 
             // Test setting invalid name (should keep previous state)
             envSwitch->SetState("metal");
-            AM_EXPECT(envSwitch->GetState().m_id != 3);
-            AM_EXPECT(envSwitch->GetState().m_id == 2);
+            AM_EXPECT(envSwitch->GetState().m_id != 23);
+            AM_EXPECT(envSwitch->GetState().m_id == 22);
 
             // Test engine can change state by handle and name
             amEngine->SetSwitchState(envSwitch, "forest");
-            AM_EXPECT(envSwitch->GetState().m_id == 1);
+            AM_EXPECT(envSwitch->GetState().m_id == 21);
 
             // Test engine can change state by ID and name
             amEngine->SetSwitchState(envSwitch->GetId(), "forest");
-            AM_EXPECT(envSwitch->GetState().m_id == 1);
+            AM_EXPECT(envSwitch->GetState().m_id == 21);
 
             // Test engine can change state by name and name
             amEngine->SetSwitchState(envSwitch->GetName(), "forest");
-            AM_EXPECT(envSwitch->GetState().m_id == 1);
+            AM_EXPECT(envSwitch->GetState().m_id == 21);
         }
     };
 

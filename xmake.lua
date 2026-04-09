@@ -27,7 +27,7 @@ add_rules("plugin.compile_commands.autoupdate")
 
 -- Custom coverage mode rule for llvm-cov
 rule("mode.coverage.llvm")
-  on_config(function(target)
+  on_config( function (target)
     if is_mode("coverage") then
       -- Enable debug symbols and disable optimization
       if not target:get("symbols") then
@@ -77,7 +77,7 @@ option("build_samples")
   set_showmenu(true)
   set_description("Build samples")
 
-  after_check(function (option)
+  after_check( function (option)
     if option:enabled() then
       option:dep("build_assets"):enable(true)
     end
@@ -97,7 +97,7 @@ option("unit_tests")
   set_showmenu(true)
   set_description("Enable Unit Testing")
 
-  after_check(function (option)
+  after_check( function (option)
     if option:enabled() then
       option:dep("build_assets"):enable(true)
       option:dep("build_tools"):enable(true)
@@ -114,7 +114,7 @@ option("as_package")
   set_showmenu(true)
   set_description("Configure as a package. This is useful when using Amplitude from sources instead of SDK installation.")
 
-  after_check(function (option)
+  after_check( function (option)
     if option:enabled() then
       option:dep("build_assets"):enable(false)
       option:dep("build_samples"):enable(false)
@@ -124,13 +124,12 @@ option("as_package")
   end)
 option_end()
 
-_ARCH_CACHE = {}
+_ARCH_CACHE = { }
 
 -- Hooks
-on_config(function(target)
+on_config( function (target)
   import("xmake.cpu")
   import("xmake.platform")
-  import("core.project.config")
 
   if _ARCH_CACHE == nil or #_ARCH_CACHE == 0 then
     _ARCH_CACHE = cpu.am_get_supported_archs()
@@ -166,7 +165,7 @@ end
 
 if has_config("build_tools") and not is_plat("android") and not is_plat("iphoneos") then
   add_requires("cli11")
-  add_requires("libmysofa")
+  add_requires("libmysofa 1.3.2")
 end
 
 -- Apply debug/release specific defines
@@ -214,7 +213,7 @@ target("generate_includes")
   set_default(false)
   set_policy("build.fence", true)
 
-  on_build(function(target)
+  on_build( function (target)
     import("core.project.config")
     import("lib.detect.find_tool")
 
@@ -247,7 +246,7 @@ target("build_binary_schemas")
   set_default(false)
   set_policy("build.fence", true)
 
-  on_build(function(target)
+  on_build( function (target)
     import("core.project.config")
     import("lib.detect.find_program")
     import("lib.detect.find_tool")
@@ -356,7 +355,7 @@ if has_config("build_assets") then
   target("build_sample_project")
     set_kind("phony")
 
-    on_build(function(target)
+    on_build( function (target)
       import("core.project.config")
       import("lib.detect.find_program")
       import("lib.detect.find_tool")
@@ -401,7 +400,7 @@ if has_config("unit_tests") then
 
       add_deps("ampk", "build_sample_project")
 
-      on_build(function(target)
+      on_build( function (target)
         import("core.project.config")
         import("core.project.project")
         import("lib.detect.find_tool")
@@ -429,7 +428,7 @@ if has_config("unit_tests") then
       set_kind("phony")
       set_default(false)
 
-      on_build(function(target)
+      on_build( function (target)
         import("lib.detect.find_program")
         import("core.project.config")
         import("core.project.project")
@@ -442,7 +441,7 @@ if has_config("unit_tests") then
         -- On macOS, try xcrun if direct lookup fails
         if is_plat("macosx") then
           local xcrun = find_program("xcrun")
-          if xcrun and (not llvm_profdata or not llvm_cov) then
+          if xcrun and ( not llvm_profdata or not llvm_cov) then
             use_xcrun = true
             llvm_profdata = xcrun
             llvm_cov = xcrun
@@ -475,7 +474,7 @@ if has_config("unit_tests") then
 
         -- Merge all .profraw files into a single .profdata file
         print("Merging %d profile files...", #profraw_files)
-        local merge_args = {}
+        local merge_args = { }
         if use_xcrun then
           table.insert(merge_args, "llvm-profdata")
         end
@@ -489,7 +488,7 @@ if has_config("unit_tests") then
         os.execv(llvm_profdata, merge_args)
 
         -- Collect all test binaries for coverage export
-        local test_binaries = {}
+        local test_binaries = { }
         for _, t in pairs(project.targets()) do
           if t:get("group") and t:get("group"):startswith("test_") then
             local targetfile = t:targetfile()
@@ -505,7 +504,7 @@ if has_config("unit_tests") then
 
         -- Generate lcov format report
         print("Generating lcov coverage report...")
-        local export_args = {}
+        local export_args = { }
         if use_xcrun then
           table.insert(export_args, "llvm-cov")
         end
@@ -528,7 +527,7 @@ if has_config("unit_tests") then
         print("Generating HTML coverage report...")
         local html_dir = path.join(merged_dir, "html")
         os.mkdir(html_dir)
-        local show_args = {}
+        local show_args = { }
         if use_xcrun then
           table.insert(show_args, "llvm-cov")
         end
@@ -556,7 +555,7 @@ if has_config("unit_tests") then
       set_kind("phony")
       set_default(false)
 
-      on_build(function(target)
+      on_build( function (target)
         import("core.project.config")
 
         local coverage_dir = path.join(os.projectdir(), "coverage")

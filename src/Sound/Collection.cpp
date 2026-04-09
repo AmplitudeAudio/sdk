@@ -255,13 +255,12 @@ namespace SparkyStudios::Audio::Amplitude
         AMPLITUDE_ASSERT(m_id != kAmInvalidObjectId);
 
         if (m_effect)
-            m_effect->GetRefCounter()->Decrement();
+            DereferenceEffect(state, m_effect->GetId());
 
         if (m_attenuation)
-            m_attenuation->GetRefCounter()->Decrement();
+            DereferenceAttenuation(state, m_attenuation->GetId());
 
         for (auto&& sound : _sounds)
-            if (auto findIt = state->sound_map.find(sound); findIt != state->sound_map.end())
-                findIt->second->GetRefCounter()->Decrement();
+            DereferenceSound(state, sound);
     }
 } // namespace SparkyStudios::Audio::Amplitude
