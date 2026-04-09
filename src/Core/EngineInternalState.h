@@ -321,26 +321,30 @@ namespace SparkyStudios::Audio::Amplitude
      * @brief Removes all the finished sounds from the playing list.
      * @param state The engine state to update.
      */
-    void EraseFinishedSounds(std::shared_ptr<EngineInternalState> state);
+    void EraseFinishedSounds(const std::shared_ptr<EngineInternalState>& state);
 
     // Returns this channel to the appropriate free list based on whether it's
     // backed by a real channel or not.
-    void InsertIntoFreeList(std::shared_ptr<EngineInternalState> state, ChannelInternalState* channel);
+    void InsertIntoFreeList(const std::shared_ptr<EngineInternalState>& state, ChannelInternalState* channel);
 
-    void DereferenceSound(std::shared_ptr<EngineInternalState> state, AmSoundID id);
-    void DereferenceCollection(std::shared_ptr<EngineInternalState> state, AmCollectionID id);
-    void DereferenceSwitchContainer(std::shared_ptr<EngineInternalState> state, AmSwitchContainerID id);
-    void DereferenceEffect(std::shared_ptr<EngineInternalState> state, AmEffectID id);
-    void DereferenceAttenuation(std::shared_ptr<EngineInternalState> state, AmAttenuationID id);
-    void DereferenceSwitch(std::shared_ptr<EngineInternalState> state, AmSwitchID id);
-    void DereferenceRtpc(std::shared_ptr<EngineInternalState> state, AmRtpcID id);
-    void DereferenceEvent(std::shared_ptr<EngineInternalState> state, AmEventID id);
+    // Dereference functions decrement an object's ref count and, if it reaches zero,
+    // release its sub-references and erase it from the state map. The dependency graph
+    // is always acyclic (RTPC/Switch/Attenuation/Effect -> Sound/Collection -> SwitchContainer -> Event)
+    // so ReleaseReferences can be called on any object in the graph without risk.
+    void DereferenceSound(const std::shared_ptr<EngineInternalState>& state, AmSoundID id);
+    void DereferenceCollection(const std::shared_ptr<EngineInternalState>& state, AmCollectionID id);
+    void DereferenceSwitchContainer(const std::shared_ptr<EngineInternalState>& state, AmSwitchContainerID id);
+    void DereferenceEffect(const std::shared_ptr<EngineInternalState>& state, AmEffectID id);
+    void DereferenceAttenuation(const std::shared_ptr<EngineInternalState>& state, AmAttenuationID id);
+    void DereferenceSwitch(const std::shared_ptr<EngineInternalState>& state, AmSwitchID id);
+    void DereferenceRtpc(const std::shared_ptr<EngineInternalState>& state, AmRtpcID id);
+    void DereferenceEvent(const std::shared_ptr<EngineInternalState>& state, AmEventID id);
 
     // Find a bus with the given ID.
-    std::shared_ptr<BusInternalState> FindBusInternalState(std::shared_ptr<EngineInternalState> state, AmBusID id);
+    std::shared_ptr<BusInternalState> FindBusInternalState(const std::shared_ptr<EngineInternalState>& state, AmBusID id);
 
     // Find a bus with the given name.
-    std::shared_ptr<BusInternalState> FindBusInternalState(std::shared_ptr<EngineInternalState> state, const AmString& name);
+    std::shared_ptr<BusInternalState> FindBusInternalState(const std::shared_ptr<EngineInternalState>& state, const AmString& name);
 
     // Given a playing sound, find where a new sound with the given priority should
     // be inserted into the list.

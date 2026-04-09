@@ -201,7 +201,7 @@ namespace SparkyStudios::Audio::Amplitude
 
     // Returns this channel to the appropriate free list based on whether it's
     // backed by a real channel or not.
-    void InsertIntoFreeList(std::shared_ptr<EngineInternalState> state, ChannelInternalState* channel)
+    void InsertIntoFreeList(const std::shared_ptr<EngineInternalState>& state, ChannelInternalState* channel)
     {
         channel->Remove();
         channel->Reset();
@@ -209,7 +209,7 @@ namespace SparkyStudios::Audio::Amplitude
         list->push_front(*channel);
     }
 
-    void DereferenceSound(std::shared_ptr<EngineInternalState> state, AmSoundID id)
+    void DereferenceSound(const std::shared_ptr<EngineInternalState>& state, AmSoundID id)
     {
         if (const auto it = state->sound_map.find(id); it != state->sound_map.end())
         {
@@ -231,7 +231,7 @@ namespace SparkyStudios::Audio::Amplitude
         }
     }
 
-    void DereferenceCollection(std::shared_ptr<EngineInternalState> state, AmCollectionID id)
+    void DereferenceCollection(const std::shared_ptr<EngineInternalState>& state, AmCollectionID id)
     {
         if (const auto it = state->collection_map.find(id); it != state->collection_map.end())
         {
@@ -253,7 +253,7 @@ namespace SparkyStudios::Audio::Amplitude
         }
     }
 
-    void DereferenceSwitchContainer(std::shared_ptr<EngineInternalState> state, AmSwitchContainerID id)
+    void DereferenceSwitchContainer(const std::shared_ptr<EngineInternalState>& state, AmSwitchContainerID id)
     {
         if (const auto it = state->switch_container_map.find(id); it != state->switch_container_map.end())
         {
@@ -275,7 +275,7 @@ namespace SparkyStudios::Audio::Amplitude
         }
     }
 
-    void DereferenceEffect(std::shared_ptr<EngineInternalState> state, AmEffectID id)
+    void DereferenceEffect(const std::shared_ptr<EngineInternalState>& state, AmEffectID id)
     {
         if (const auto it = state->effect_map.find(id); it != state->effect_map.end())
         {
@@ -287,7 +287,7 @@ namespace SparkyStudios::Audio::Amplitude
         }
     }
 
-    void DereferenceAttenuation(std::shared_ptr<EngineInternalState> state, AmAttenuationID id)
+    void DereferenceAttenuation(const std::shared_ptr<EngineInternalState>& state, AmAttenuationID id)
     {
         if (const auto it = state->attenuation_map.find(id); it != state->attenuation_map.end())
         {
@@ -299,7 +299,7 @@ namespace SparkyStudios::Audio::Amplitude
         }
     }
 
-    void DereferenceSwitch(std::shared_ptr<EngineInternalState> state, AmSwitchID id)
+    void DereferenceSwitch(const std::shared_ptr<EngineInternalState>& state, AmSwitchID id)
     {
         if (const auto it = state->switch_map.find(id); it != state->switch_map.end())
         {
@@ -311,7 +311,7 @@ namespace SparkyStudios::Audio::Amplitude
         }
     }
 
-    void DereferenceRtpc(std::shared_ptr<EngineInternalState> state, AmRtpcID id)
+    void DereferenceRtpc(const std::shared_ptr<EngineInternalState>& state, AmRtpcID id)
     {
         if (const auto it = state->rtpc_map.find(id); it != state->rtpc_map.end())
         {
@@ -323,7 +323,7 @@ namespace SparkyStudios::Audio::Amplitude
         }
     }
 
-    void DereferenceEvent(std::shared_ptr<EngineInternalState> state, AmEventID id)
+    void DereferenceEvent(const std::shared_ptr<EngineInternalState>& state, AmEventID id)
     {
         if (const auto it = state->event_map.find(id); it != state->event_map.end())
         {
@@ -623,6 +623,7 @@ namespace SparkyStudios::Audio::Amplitude
         // ---
         UnregisterExtension(sBassBoostFilterPlugin);
         UnregisterExtension(sBiquadResonantFilterPlugin);
+        UnregisterExtension(sCompressorFilterPlugin);
         UnregisterExtension(sDCRemovalFilterPlugin);
         UnregisterExtension(sDelayFilterPlugin);
         UnregisterExtension(sEqualizerFilterPlugin);
@@ -676,7 +677,7 @@ namespace SparkyStudios::Audio::Amplitude
         gAmplitude.reset();
     }
 
-    std::shared_ptr<BusInternalState> FindBusInternalState(std::shared_ptr<EngineInternalState> state, AmBusID id)
+    std::shared_ptr<BusInternalState> FindBusInternalState(const std::shared_ptr<EngineInternalState>& state, AmBusID id)
     {
         if (const auto it = std::ranges::find_if(
                 state->buses,
@@ -692,7 +693,7 @@ namespace SparkyStudios::Audio::Amplitude
         return nullptr;
     }
 
-    std::shared_ptr<BusInternalState> FindBusInternalState(std::shared_ptr<EngineInternalState> state, const AmString& name)
+    std::shared_ptr<BusInternalState> FindBusInternalState(const std::shared_ptr<EngineInternalState>& state, const AmString& name)
     {
         if (const auto it = std::ranges::find_if(
                 state->buses,
@@ -709,7 +710,7 @@ namespace SparkyStudios::Audio::Amplitude
     }
 
     static bool PopulateChildBuses(
-        std::shared_ptr<EngineInternalState> state, std::shared_ptr<BusInternalState> parent, const BusIdList* childIdList)
+        const std::shared_ptr<EngineInternalState>& state, const std::shared_ptr<BusInternalState>& parent, const BusIdList* childIdList)
     {
         std::vector<std::shared_ptr<BusInternalState>>* output = &parent->GetChildBuses();
 
@@ -732,8 +733,8 @@ namespace SparkyStudios::Audio::Amplitude
     }
 
     static bool PopulateDuckBuses(
-        std::shared_ptr<EngineInternalState> state,
-        std::shared_ptr<BusInternalState> parent,
+        const std::shared_ptr<EngineInternalState>& state,
+        const std::shared_ptr<BusInternalState>& parent,
         const DuckBusDefinitionList* duckBusDefinitionList)
     {
         DuckBusList* output = &parent->GetDuckBuses();
@@ -2480,7 +2481,7 @@ namespace SparkyStudios::Audio::Amplitude
         return _state->paused;
     }
 
-    void EraseFinishedSounds(std::shared_ptr<EngineInternalState> state)
+    void EraseFinishedSounds(const std::shared_ptr<EngineInternalState>& state)
     {
         PriorityList& list = state->playing_channel_list;
         for (auto channelInternalState = list.begin(); channelInternalState != list.end();)
