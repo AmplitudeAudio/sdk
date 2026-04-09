@@ -323,6 +323,19 @@ namespace SparkyStudios::Audio::Amplitude
      */
     void EraseFinishedSounds(std::shared_ptr<EngineInternalState> state);
 
+    // Returns this channel to the appropriate free list based on whether it's
+    // backed by a real channel or not.
+    void InsertIntoFreeList(std::shared_ptr<EngineInternalState> state, ChannelInternalState* channel);
+
+    void DereferenceSound(std::shared_ptr<EngineInternalState> state, AmSoundID id);
+    void DereferenceCollection(std::shared_ptr<EngineInternalState> state, AmCollectionID id);
+    void DereferenceSwitchContainer(std::shared_ptr<EngineInternalState> state, AmSwitchContainerID id);
+    void DereferenceEffect(std::shared_ptr<EngineInternalState> state, AmEffectID id);
+    void DereferenceAttenuation(std::shared_ptr<EngineInternalState> state, AmAttenuationID id);
+    void DereferenceSwitch(std::shared_ptr<EngineInternalState> state, AmSwitchID id);
+    void DereferenceRtpc(std::shared_ptr<EngineInternalState> state, AmRtpcID id);
+    void DereferenceEvent(std::shared_ptr<EngineInternalState> state, AmEventID id);
+
     // Find a bus with the given ID.
     std::shared_ptr<BusInternalState> FindBusInternalState(std::shared_ptr<EngineInternalState> state, AmBusID id);
 

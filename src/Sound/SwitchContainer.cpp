@@ -234,18 +234,21 @@ namespace SparkyStudios::Audio::Amplitude
         if (m_attenuation)
             m_attenuation->GetRefCounter()->Increment();
 
-        for (auto&& id : _sounds | std::ranges::views::keys)
+        for (const auto& items : _sounds | std::ranges::views::values)
         {
-            if (auto findIt = state->sound_map.find(id); findIt != state->sound_map.end())
+            for (const auto& item : items)
             {
-                findIt->second->GetRefCounter()->Increment();
-                continue;
-            }
+                if (auto findIt = state->sound_map.find(item.m_id); findIt != state->sound_map.end())
+                {
+                    findIt->second->GetRefCounter()->Increment();
+                    continue;
+                }
 
-            if (auto findIt = state->collection_map.find(id); findIt != state->collection_map.end())
-            {
-                findIt->second->GetRefCounter()->Increment();
-                continue;
+                if (auto findIt = state->collection_map.find(item.m_id); findIt != state->collection_map.end())
+                {
+                    findIt->second->GetRefCounter()->Increment();
+                    continue;
+                }
             }
         }
     }
@@ -254,26 +257,20 @@ namespace SparkyStudios::Audio::Amplitude
     {
         AMPLITUDE_ASSERT(m_id != kAmInvalidObjectId);
 
-        _switch->GetRefCounter()->Decrement();
+        DereferenceSwitch(state, _switch->GetId());
 
         if (m_effect)
-            m_effect->GetRefCounter()->Decrement();
+            DereferenceEffect(state, m_effect->GetId());
 
         if (m_attenuation)
-            m_attenuation->GetRefCounter()->Decrement();
+            DereferenceAttenuation(state, m_attenuation->GetId());
 
-        for (auto&& id : _sounds | std::ranges::views::keys)
+        for (const auto& items : _sounds | std::ranges::views::values)
         {
-            if (auto findIt = state->sound_map.find(id); findIt != state->sound_map.end())
+            for (const auto& item : items)
             {
-                findIt->second->GetRefCounter()->Decrement();
-                continue;
-            }
-
-            if (auto findIt = state->collection_map.find(id); findIt != state->collection_map.end())
-            {
-                findIt->second->GetRefCounter()->Decrement();
-                continue;
+                DereferenceSound(state, item.m_id);
+                DereferenceCollection(state, item.m_id);
             }
         }
     }

@@ -343,10 +343,10 @@ namespace SparkyStudios::Audio::Amplitude
         AMPLITUDE_ASSERT(m_id != kAmInvalidObjectId);
 
         if (m_effect)
-            m_effect->GetRefCounter()->Decrement();
+            DereferenceEffect(state, m_effect->GetId());
 
         if (m_attenuation)
-            m_attenuation->GetRefCounter()->Decrement();
+            DereferenceAttenuation(state, m_attenuation->GetId());
     }
 
     const AmOsString& SoundImpl::GetPath() const
@@ -500,7 +500,11 @@ namespace SparkyStudios::Audio::Amplitude
 
         _decoder = nullptr;
 
-        _parent->GetRefCounter()->Decrement();
+        if (auto state = amEngine->GetState())
+            DereferenceSound(state, _parent->GetId());
+        else
+            _parent->GetRefCounter()->Decrement();
+
         _parent = nullptr;
     }
 
