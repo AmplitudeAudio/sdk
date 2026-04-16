@@ -121,6 +121,62 @@ else ()
     set(AM_ARCH_ARM 0 CACHE INTERNAL "Arch")
 endif ()
 
+# SDK Platform Identifier
+# Derives AM_SDK_PLATFORM from detected arch and platform, matching the
+# "{arch}-{plat}" format used by xmake (e.g. "x86_64-linux", "arm64-macosx").
+
+# Determine arch string (xmake arch names)
+if (AM_PLATFORM_ANDROID)
+    if (AM_ARCH_X86_64)
+        set(_am_arch "x86_64")
+    elseif (AM_ARCH_X86)
+        set(_am_arch "x86")
+    elseif (AM_ARCH_ARM_64)
+        set(_am_arch "arm64-v8a")
+    elseif (AM_ARCH_ARM_V7)
+        set(_am_arch "armeabi-v7a")
+    endif ()
+elseif (AM_PLATFORM_WIN)
+    if (AM_ARCH_X86_64)
+        set(_am_arch "x64")
+    elseif (AM_ARCH_X86)
+        set(_am_arch "x86")
+    elseif (AM_ARCH_ARM_64)
+        set(_am_arch "arm64")
+    endif ()
+else ()
+    if (AM_ARCH_X86_64)
+        set(_am_arch "x86_64")
+    elseif (AM_ARCH_X86)
+        set(_am_arch "i386")
+    elseif (AM_ARCH_ARM_64)
+        set(_am_arch "arm64")
+    elseif (AM_ARCH_ARM_V7)
+        set(_am_arch "armv7")
+    else ()
+        set(_am_arch "${CMAKE_SYSTEM_PROCESSOR}")
+    endif ()
+endif ()
+
+# Determine platform string (xmake plat names)
+if (AM_PLATFORM_ANDROID)
+    set(_am_plat "android")
+elseif (AM_PLATFORM_IOS)
+    set(_am_plat "iphoneos")
+elseif (AM_PLATFORM_MACOS)
+    set(_am_plat "macosx")
+elseif (AM_PLATFORM_WIN)
+    set(_am_plat "windows")
+elseif (AM_PLATFORM_LINUX)
+    set(_am_plat "linux")
+elseif (AM_PLATFORM_EMSCRIPTEN)
+    set(_am_plat "wasm")
+else ()
+    string(TOLOWER "${CMAKE_SYSTEM_NAME}" _am_plat)
+endif ()
+
+set(AM_SDK_PLATFORM "${_am_arch}-${_am_plat}" CACHE STRING "The platform identifier for Amplitude Audio SDK libraries (e.g. x86_64-linux, arm64-macosx).")
+
 # Targets
 # Every platforms supports static library.
 set(AM_BUILDSYSTEM_SUPPORTS_STATIC 1 CACHE INTERNAL "Build System Supports Static")
@@ -159,6 +215,8 @@ function(am_apply_detected_platform_defines TARGET_NAME)
             AM_ARCH_ARM_64
             AM_ARCH_ARM_V7
             AM_ARCH_ARM
+
+            AM_SDK_PLATFORM
     )
         target_compile_definitions(${TARGET_NAME} PUBLIC ${_var}=${${_var}})
     endforeach ()
