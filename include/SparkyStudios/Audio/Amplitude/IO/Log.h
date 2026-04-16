@@ -41,7 +41,7 @@
         constexpr size_t bufferLen = 4096;                                                                                                 \
         char buffer[bufferLen];                                                                                                            \
         int formatted = std::snprintf(buffer, bufferLen, _message_, ##__VA_ARGS__);                                                        \
-        amLogger->_level_(__FILE__, __LINE__, AmString(buffer).substr(0, formatted));                                                      \
+        amLogger->_level_(__FILE__, __LINE__, SparkyStudios::Audio::Amplitude::AmString(buffer).substr(0, formatted));                                                      \
     }                                                                                                                                      \
     (void)0
 
