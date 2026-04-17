@@ -59,7 +59,6 @@ gen/
 cfft.config.json
 am_build/
 scripts/__pycache__
-tools/ampm/gen.resources.*
 coverage/
 
 # CLangd cache
