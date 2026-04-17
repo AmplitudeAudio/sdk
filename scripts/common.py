@@ -23,7 +23,6 @@ import subprocess
 import sys
 from pathlib import Path
 
-
 # The path to the Amplitude Audio SDK
 SDK_PATH = os.getenv("AM_SDK_PATH") or os.getcwd()
 
@@ -94,11 +93,11 @@ class BuildError(Exception):
     message: str
     """The error message."""
 
-    def __init__(self, argv: list[str], error_code: int, message: str | None = None):
+    def __init__(self, argv: list[str], error_code: int, message: str = ""):
         Exception.__init__(self)
         self.argv = argv
         self.error_code = error_code
-        self.message = message if message else ""
+        self.message = message
 
 
 class CommandOptions(object):
@@ -391,7 +390,7 @@ def handle_build_error(error: BuildError) -> None:
     )
 
 
-def get_amplitude_project_path() -> Path | None:
+def get_amplitude_project_path() -> Path:
     """
     Returns the path to the Amplitude project directory.
 
@@ -399,10 +398,10 @@ def get_amplitude_project_path() -> Path | None:
     Amplitude Studio.
 
     Returns:
-        The path to the Amplitude project directory, or None if it could not be found.
+        The path to the Amplitude project directory.
     """
 
-    project_path: Path | None = None
+    project_path: Path = None
     try:
         project_path = Path(os.getenv("AM_PROJECT_PATH") or "")
     finally:
