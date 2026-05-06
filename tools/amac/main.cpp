@@ -130,7 +130,10 @@ struct AppContext
             ->usage("Usage: amac [OPTIONS] INPUT_FILE OUTPUT_FILE")
             ->footer("amac -e -4 -b 12 input_pcm.wav output_adpcm.ams");
 
-        app.add_flag("-l,--no-logo", options.noLogo, "Hide logo and copyright notice.")->default_val(false)->default_str("false")->group("Global");
+        app.add_flag("-l,--no-logo", options.noLogo, "Hide logo and copyright notice.")
+            ->default_val(false)
+            ->default_str("false")
+            ->group("Global");
 
         app.add_flag("-v,--verbose", options.verbose, "Verbose mode. Display all messages")
             ->default_val(false)
@@ -297,7 +300,7 @@ static int process(const AmOsString& inFileName, const AmOsString& outFileName, 
         }
 
         encoder->SetEncodingParams(
-            blockSize, samplesPerBlock, state.lookAhead,
+            samplesPerBlock, state.lookAhead,
             state.noiseShaping ? (sampleRate > 64000 ? Compression::ADPCM::eNSM_STATIC : Compression::ADPCM::eNSM_DYNAMIC)
                                : Compression::ADPCM::eNSM_OFF);
 

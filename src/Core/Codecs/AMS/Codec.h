@@ -64,7 +64,6 @@ namespace SparkyStudios::Audio::Amplitude
                 : Encoder(codec)
                 , _initialized(false)
                 , _file()
-                , _blockSize(2048)
                 , _samplesPerBlock(2041)
                 , _lookAhead(3)
                 , _noiseShaping(Compression::ADPCM::eNSM_OFF)
@@ -77,12 +76,11 @@ namespace SparkyStudios::Audio::Amplitude
             AmUInt64 Write(AudioBuffer* in, AmUInt64 offset, AmUInt64 length) override;
 
             void SetEncodingParams(
-                AmUInt32 blockSize, AmUInt32 samplesPerBlock, AmUInt32 lookAhead, Compression::ADPCM::NoiseShapingMode noiseShaping);
+                AmUInt32 samplesPerBlock, AmUInt32 lookAhead, Compression::ADPCM::NoiseShapingMode noiseShaping);
 
         private:
             bool _initialized;
             std::shared_ptr<File> _file;
-            AmUInt32 _blockSize;
             AmUInt32 _samplesPerBlock;
             AmUInt32 _lookAhead;
             Compression::ADPCM::NoiseShapingMode _noiseShaping;

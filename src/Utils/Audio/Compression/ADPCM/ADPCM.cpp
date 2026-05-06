@@ -15,13 +15,12 @@
 // Based on ADPCM-XQ, Copyright (c) 2015 David Bryant.
 // https://github.com/dbry/adpcm-xq
 
-#include <climits>
+#include <algorithm>
+#include <cstdint>
 #include <cstdlib>
 #include <cstring>
 
 #include <Utils/Audio/Compression/ADPCM/ADPCM.h>
-
-#define CLIP(v, a, b) v = AM_CLAMP(v, a, b)
 
 namespace SparkyStudios::Audio::Amplitude::Compression::ADPCM
 {
@@ -42,6 +41,15 @@ namespace SparkyStudios::Audio::Amplitude::Compression::ADPCM
         -1, -1, -1, -1, 2, 4, 6, 8
     };
 
+    static inline AmInt32 decodeNibble(int nibble, int step)
+    {
+        AmInt32 delta = step >> 3;
+        delta += (nibble & 1) ? (step >> 2) : 0;
+        delta += (nibble & 2) ? (step >> 1) : 0;
+        delta += (nibble & 4) ? step : 0;
+        return (nibble & 8) ? -delta : delta;
+    }
+
     static void set_decode_parameters(Context* ctx, AmConstInt32Buffer init_pcmdata, AmConstInt8Buffer init_index)
     {
         for (int ch = 0; ch < ctx->numChannels; ch++)
@@ -51,22 +59,12 @@ namespace SparkyStudios::Audio::Amplitude::Compression::ADPCM
         }
     }
 
-    static void get_decode_parameters(Context* ctx, AmInt32* init_pcmdata, AmInt8* init_index)
-    {
-        for (int ch = 0; ch < ctx->numChannels; ch++)
-        {
-            init_pcmdata[ch] = ctx->channels[ch].pcmData;
-            init_index[ch] = ctx->channels[ch].index;
-        }
-    }
-
     static AmUInt64 minimum_error(
         const Channel* pchan, int nch, AmInt32 csample, AmConstInt16Buffer sample, int depth, int* best_nibble, AmUInt64 max_error)
     {
         const AmInt32 delta = csample - pchan->pcmData;
         Channel chan = *pchan;
         const int step = stepTable[chan.index];
-        int trial_delta = (step >> 3);
         int nibble;
 
         if (delta < 0)
@@ -80,17 +78,8 @@ namespace SparkyStudios::Audio::Amplitude::Compression::ADPCM
             nibble = mag > 7 ? 7 : mag;
         }
 
-        if (nibble & 1)
-            trial_delta += (step >> 2);
-        if (nibble & 2)
-            trial_delta += (step >> 1);
-        if (nibble & 4)
-            trial_delta += step;
-        if (nibble & 8)
-            trial_delta = -trial_delta;
-
-        chan.pcmData += trial_delta;
-        CLIP(chan.pcmData, -32768, 32767);
+        chan.pcmData += decodeNibble(nibble, step);
+        chan.pcmData = std::clamp(chan.pcmData, -32768, 32767);
         if (best_nibble)
             *best_nibble = nibble;
         auto min_error = static_cast<AmUInt64>(chan.pcmData - csample) * static_cast<AmUInt64>(chan.pcmData - csample);
@@ -99,7 +88,7 @@ namespace SparkyStudios::Audio::Amplitude::Compression::ADPCM
             return min_error;
 
         chan.index += indexTable[nibble & 0x07];
-        CLIP(chan.index, 0, 88);
+        chan.index = std::clamp(chan.index, static_cast<AmInt8>(0), static_cast<AmInt8>(88));
         min_error += minimum_error(&chan, nch, sample[nch], sample + nch, depth - 1, nullptr, max_error - min_error);
 
         for (int nibble2 = 0; nibble2 <= 0xF; ++nibble2)
@@ -114,19 +103,8 @@ namespace SparkyStudios::Audio::Amplitude::Compression::ADPCM
                 continue;
 
             chan = *pchan;
-            trial_delta = (step >> 3);
-
-            if (nibble2 & 1)
-                trial_delta += (step >> 2);
-            if (nibble2 & 2)
-                trial_delta += (step >> 1);
-            if (nibble2 & 4)
-                trial_delta += step;
-            if (nibble2 & 8)
-                trial_delta = -trial_delta;
-
-            chan.pcmData += trial_delta;
-            CLIP(chan.pcmData, -32768, 32767);
+            chan.pcmData += decodeNibble(nibble2, step);
+            chan.pcmData = std::clamp(chan.pcmData, -32768, 32767);
 
             auto error = static_cast<AmUInt64>(chan.pcmData - csample) * static_cast<AmUInt64>(chan.pcmData - csample);
             const AmUInt64 threshold = max_error < min_error ? max_error : min_error;
@@ -134,7 +112,7 @@ namespace SparkyStudios::Audio::Amplitude::Compression::ADPCM
             if (error < threshold)
             {
                 chan.index += indexTable[nibble2 & 0x07];
-                CLIP(chan.index, 0, 88);
+                chan.index = std::clamp(chan.index, static_cast<AmInt8>(0), static_cast<AmInt8>(88));
                 error += minimum_error(&chan, nch, sample[nch], sample + nch, depth - 1, nullptr, threshold - error);
 
                 if (error < min_error)
@@ -155,7 +133,6 @@ namespace SparkyStudios::Audio::Amplitude::Compression::ADPCM
         AmInt32 csample = *sample;
         int depth = num_samples - 1, nibble;
         int step = stepTable[pchan->index];
-        int trial_delta = (step >> 3);
 
         if (ctx->noiseShaping == eNSM_DYNAMIC)
         {
@@ -192,19 +169,10 @@ namespace SparkyStudios::Audio::Amplitude::Compression::ADPCM
 
         minimum_error(pchan, ctx->numChannels, csample, sample, depth, &nibble, UINT64_MAX);
 
-        if (nibble & 1)
-            trial_delta += (step >> 2);
-        if (nibble & 2)
-            trial_delta += (step >> 1);
-        if (nibble & 4)
-            trial_delta += step;
-        if (nibble & 8)
-            trial_delta = -trial_delta;
-
-        pchan->pcmData += trial_delta;
+        pchan->pcmData += decodeNibble(nibble, step);
         pchan->index += indexTable[nibble & 0x07];
-        CLIP(pchan->index, 0, 88);
-        CLIP(pchan->pcmData, -32768, 32767);
+        pchan->index = std::clamp(pchan->index, static_cast<AmInt8>(0), static_cast<AmInt8>(88));
+        pchan->pcmData = std::clamp(pchan->pcmData, -32768, 32767);
 
         if (ctx->noiseShaping)
             pchan->error += pchan->pcmData;
@@ -240,6 +208,19 @@ namespace SparkyStudios::Audio::Amplitude::Compression::ADPCM
         }
     }
 
+    /**
+     * @brief Creates an ADPCM codec context with the given parameters.
+     *
+     * @param numChannels    Number of audio channels (1 or 2).
+     * @param lookAhead      Encoder look-ahead depth (0 = no look-ahead).
+     * @param noiseShaping   Noise-shaping mode applied during encoding.
+     * @param initialDeltas  Pointer to a 2-element array of initial step deltas used to
+     *                       seed the step-index table.  The second element is read even
+     *                       when @p numChannels is 1 — it is simply ignored in that case.
+     *                       Passing a single-element array is undefined behaviour.
+     *
+     * @return A shared pointer to the newly allocated @ref Context.
+     */
     std::shared_ptr<Context> CreateContext(int numChannels, int lookAhead, NoiseShapingMode noiseShaping, AmInt32 initialDeltas[2])
     {
         auto ctx = ampoolshared(eMemoryPoolKind_Codec, Context);
@@ -256,7 +237,7 @@ namespace SparkyStudios::Audio::Amplitude::Compression::ADPCM
         {
             for (i = 0; i <= 88; i++)
             {
-                if (i == 88 || initialDeltas[ch] < ((AmInt32)stepTable[i] + stepTable[i + 1]) / 2)
+                if (i == 88 || initialDeltas[ch] < (static_cast<AmInt32>(stepTable[i]) + stepTable[i + 1]) / 2)
                 {
                     ctx->channels[ch].index = i;
                     break;
@@ -267,6 +248,18 @@ namespace SparkyStudios::Audio::Amplitude::Compression::ADPCM
         return ctx;
     }
 
+    /**
+     * @brief Encodes PCM samples into ADPCM.
+     *
+     * @param ctx         Encoder context created with @ref CreateContext.
+     * @param out         Output buffer.  Caller must provide at least
+     *                    @c (sampleCount-1)/(channels^3) + channels*4 bytes.
+     * @param outSize     Receives the number of bytes written to @p out.
+     * @param in          Interleaved signed 16-bit PCM input samples.
+     * @param sampleCount Total number of PCM samples across all channels.
+     *
+     * @return @c true on success.
+     */
     bool Compress(Context* ctx, AmUInt8Buffer out, AmSize& outSize, AmConstInt16Buffer in, AmSize sampleCount)
     {
         AmInt32 init_pcmdata[2];
@@ -277,7 +270,8 @@ namespace SparkyStudios::Audio::Amplitude::Compression::ADPCM
         if (!sampleCount)
             return true;
 
-        get_decode_parameters(ctx, init_pcmdata, init_index);
+        for (int ch = 0; ch < ctx->numChannels; ch++)
+            init_index[ch] = ctx->channels[ch].index;
 
         for (int ch = 0; ch < ctx->numChannels; ch++)
         {
@@ -297,18 +291,30 @@ namespace SparkyStudios::Audio::Amplitude::Compression::ADPCM
         return true;
     }
 
+    /**
+     * @brief Decodes an ADPCM block into signed 16-bit PCM samples.
+     *
+     * @param out      Output buffer for decoded PCM.  Caller must provide at least
+     *                 @c ((inSize - channels*4) / (channels*4)) * 8 * channels + channels
+     *                 int16 slots (i.e. samplesPerBlock * channels worst-case).
+     * @param in       Raw ADPCM input block (header + encoded nibble data).
+     * @param inSize   Size in bytes of the input block.
+     * @param channels Number of interleaved audio channels (1 or 2).
+     *
+     * @return Total number of PCM samples decoded (across all channels), or 0 on error.
+     */
     AmInt32 Decompress(AmInt16Buffer out, AmConstUInt8Buffer in, AmSize inSize, AmUInt32 channels)
     {
-        int ch, samples = 1, chunks;
+        AmUInt32 ch, samples = 1, chunks;
         AmInt32 pcmData[2];
         AmInt8 index[2];
 
-        if (inSize < (uint32_t)channels * 4)
+        if (inSize < static_cast<AmSize>(channels) * 4)
             return 0;
 
         for (ch = 0; ch < channels; ch++)
         {
-            *out++ = pcmData[ch] = (AmInt16)(in[0] | (in[1] << 8));
+            *out++ = pcmData[ch] = static_cast<AmInt16>(in[0] | (in[1] << 8));
             index[ch] = in[2];
 
             if (index[ch] < 0 || index[ch] > 88 || in[3]) // sanitize the input a little...
@@ -323,44 +329,27 @@ namespace SparkyStudios::Audio::Amplitude::Compression::ADPCM
 
         while (chunks--)
         {
-            int ch, i;
+            AmUInt32 ch, i;
 
             for (ch = 0; ch < channels; ++ch)
             {
                 for (i = 0; i < 4; ++i)
                 {
-                    int step = stepTable[index[ch]], delta = step >> 3;
+                    const int low  = *in & 0xF;
+                    const int high = (*in >> 4) & 0xF;
 
-                    if (*in & 1)
-                        delta += (step >> 2);
-                    if (*in & 2)
-                        delta += (step >> 1);
-                    if (*in & 4)
-                        delta += step;
-                    if (*in & 8)
-                        delta = -delta;
-
-                    pcmData[ch] += delta;
-                    index[ch] += indexTable[*in & 0x7];
-                    CLIP(index[ch], 0, 88);
-                    CLIP(pcmData[ch], -32768, 32767);
+                    int step = stepTable[index[ch]];
+                    pcmData[ch] += decodeNibble(low, step);
+                    index[ch]   += indexTable[low & 0x7];
+                    index[ch]   = std::clamp(index[ch], static_cast<AmInt8>(0), static_cast<AmInt8>(88));
+                    pcmData[ch] = std::clamp(pcmData[ch], -32768, 32767);
                     out[i * 2 * channels] = pcmData[ch];
 
-                    step = stepTable[index[ch]], delta = step >> 3;
-
-                    if (*in & 0x10)
-                        delta += (step >> 2);
-                    if (*in & 0x20)
-                        delta += (step >> 1);
-                    if (*in & 0x40)
-                        delta += step;
-                    if (*in & 0x80)
-                        delta = -delta;
-
-                    pcmData[ch] += delta;
-                    index[ch] += indexTable[(*in >> 4) & 0x7];
-                    CLIP(index[ch], 0, 88);
-                    CLIP(pcmData[ch], -32768, 32767);
+                    step = stepTable[index[ch]];
+                    pcmData[ch] += decodeNibble(high, step);
+                    index[ch]   += indexTable[high & 0x7];
+                    index[ch]   = std::clamp(index[ch], static_cast<AmInt8>(0), static_cast<AmInt8>(88));
+                    pcmData[ch] = std::clamp(pcmData[ch], -32768, 32767);
                     out[(i * 2 + 1) * channels] = pcmData[ch];
 
                     in++;

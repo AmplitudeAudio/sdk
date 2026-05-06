@@ -14,6 +14,7 @@
 
 #include <bit>
 #include <cstring>
+#include <limits>
 
 #include <Core/Codecs/AMS/Codec.h>
 
@@ -23,7 +24,9 @@ namespace SparkyStudios::Audio::Amplitude
 {
     static constexpr bool kIsBigEndian = (std::endian::native == std::endian::big);
 
-    static void little_endian_to_native(void* data, const char* format)
+    namespace
+    {
+    void little_endian_to_native(void* data, const char* format)
     {
         if constexpr (!kIsBigEndian)
             return; // no-op on little-endian; the data is already in native order
@@ -62,7 +65,7 @@ namespace SparkyStudios::Audio::Amplitude
         }
     }
 
-    static void native_to_little_endian(void* data, const char* format)
+    void native_to_little_endian(void* data, const char* format)
     {
         if constexpr (!kIsBigEndian)
             return; // no-op on little-endian
@@ -104,7 +107,15 @@ namespace SparkyStudios::Audio::Amplitude
         }
     }
 
-    static bool ReadHeader(std::shared_ptr<File> file, SoundFormat& format, AmUInt16& blockSize)
+    /**
+     * @brief Parses the RIFF/WAVE/IMA-ADPCM header from @p file and populates @p format and @p blockSize.
+     *
+     * @pre The file's read cursor must be positioned at byte 0 (start of RIFF header).
+     * @post On success, @p format and @p blockSize are fully populated and the cursor sits at the first ADPCM data byte.
+     *
+     * @return @c true on success; @c false if the file is not a valid IMA-ADPCM WAV or contains unsupported parameters.
+     */
+    bool ReadHeader(std::shared_ptr<File> file, SoundFormat& format, AmUInt16& blockSize)
     {
         AmInt32 fmt = 0, bits_per_sample, sample_rate, num_channels;
         AmUInt32 fact_samples = 0;
@@ -125,6 +136,7 @@ namespace SparkyStudios::Audio::Amplitude
 
         // loop through all elements of the RIFF wav header (until the data chunk)
 
+        bool fmt_seen = false;
         while (true)
         {
             if (file->Read(reinterpret_cast<AmUInt8Buffer>(&chunk_header), sizeof(FMTHeader)) != sizeof(FMTHeader))
@@ -172,6 +184,7 @@ namespace SparkyStudios::Audio::Amplitude
                     if (bits_per_sample != 4)
                         supported = false; // Invalid ADPCM format
 
+                    // IMA-ADPCM convention: validBitsPerSample stores samplesPerBlock (not bit depth).
                     if (wave_header.head.validBitsPerSample !=
                         (wave_header.head.blockAlign - wave_header.head.numChannels * 4) * (wave_header.head.numChannels ^ 3) + 1)
                     {
@@ -188,6 +201,8 @@ namespace SparkyStudios::Audio::Amplitude
                 {
                     return false;
                 }
+
+                fmt_seen = true;
             }
             else if (!std::strncmp(reinterpret_cast<const char*>(chunk_header.chunkID), "fact", 4))
             {
@@ -206,10 +221,8 @@ namespace SparkyStudios::Audio::Amplitude
             {
                 // on the data chunk, get size and exit parsing loop
 
-                if (!wave_header.head.numChannels)
-                { // make sure we saw a "fmt" chunk...
+                if (!fmt_seen)
                     return false;
-                }
 
                 if (!chunk_header.chunkSize)
                 {
@@ -286,10 +299,20 @@ namespace SparkyStudios::Audio::Amplitude
         return true;
     }
 
-    static bool WriteHeader(std::shared_ptr<File> file, SoundFormat& format, AmUInt32 samplesPerBlock)
+    /**
+     * @brief Writes the RIFF/WAVE/IMA-ADPCM header to @p file based on @p format and @p samplesPerBlock.
+     *
+     * @pre @p file must be open for writing and positioned at byte 0.
+     * @pre @p format must have valid channel count (1 or 2), sample rate, and frame count set.
+     * @post On success, the complete ADPCMHeader is written and the cursor sits at the first data byte position.
+     *
+     * @return @c true if the header was written successfully; @c false if the output would exceed RIFF 32-bit size limits.
+     */
+    bool WriteHeader(std::shared_ptr<File> file, SoundFormat& format, AmUInt32 samplesPerBlock)
     {
-        ADPCMHeader header;
+        ADPCMHeader header{};
 
+        // numChannels XOR 3 yields 2 for mono, 1 for stereo — divisor in IMA samplesPerBlock formula.
         const AmInt32 blockSize = (samplesPerBlock - 1) / (format.GetNumChannels() ^ 3) + (format.GetNumChannels() * 4);
         const AmSize numBlocks = format.GetFramesCount() / samplesPerBlock;
         const AmInt32 leftOverSamples = format.GetFramesCount() % samplesPerBlock;
@@ -302,15 +325,17 @@ namespace SparkyStudios::Audio::Amplitude
             totalDataBytes += lastBlockSize;
         }
 
-        std::memset(&header, 0, sizeof(header));
+        const AmSize chunkSize = sizeof(RIFFHeader) + sizeof(WAVEHeader) + sizeof(DATAHeader) + totalDataBytes;
+        if (chunkSize > std::numeric_limits<AmUInt32>::max() || totalDataBytes > std::numeric_limits<AmUInt32>::max())
+        {
+            amLogError("AMS codec: file too large for RIFF/WAV 32-bit size fields");
+            return false;
+        }
 
         // ========== RIFF HEADER
-        std::memcpy(header.riff.chunkID, "RIFF", 4);
         header.riff.chunkSize = sizeof(RIFFHeader) + sizeof(WAVEHeader) + sizeof(DATAHeader) + totalDataBytes;
-        std::memcpy(header.riff.chunkFormat, "WAVE", 4);
 
         // ========== FORMAT HEADER
-        std::memcpy(header.fmt.chunkID, "fmt ", 4);
         header.fmt.chunkSize = sizeof(WAVEHeader);
 
         // ========== WAVE HEADER
@@ -321,15 +346,14 @@ namespace SparkyStudios::Audio::Amplitude
         header.wave.blockAlign = blockSize;
         header.wave.bitsPerSample = 4; // <- 4 for ADPCM
         header.wave.extendedSize = 2;
+        // IMA-ADPCM repurposes validBitsPerSample to store samplesPerBlock.
         header.wave.validBitsPerSample = samplesPerBlock;
 
         // ========== FACT HEADER
-        std::memcpy(header.fact.chunkID, "fact", 4);
         header.fact.totalSamples = format.GetFramesCount();
         header.fact.chunkSize = 4;
 
         // ========== DATA HEADER
-        std::memcpy(header.data.chunkID, "data", 4);
         header.data.chunkSize = totalDataBytes;
 
         // write the RIFF chunks up to just before the data starts
@@ -343,7 +367,16 @@ namespace SparkyStudios::Audio::Amplitude
         return file->Write(reinterpret_cast<AmConstUInt8Buffer>(&header), sizeof(header));
     }
 
-    static AmUInt64 Encode(
+    /**
+     * @brief Encodes PCM audio from @p in into IMA-ADPCM blocks and writes them to @p file.
+     *
+     * @pre @p in must have at least @p length frames and @p format.GetNumChannels() channels.
+     * @pre @p file must be open for writing and positioned at the start of the data chunk.
+     * @post On success, all encoded blocks are written to @p file.
+     *
+     * @return The number of PCM frames successfully encoded and written, or 0 on allocation or write failure.
+     */
+    AmUInt64 Encode(
         std::shared_ptr<File> file,
         SoundFormat& format,
         AudioBuffer* in,
@@ -372,16 +405,25 @@ namespace SparkyStudios::Audio::Amplitude
 
         ScopedMemoryAllocation input16(eMemoryPoolKind_Codec, maxSamplesNeeded * numChannels * sizeof(AmInt16), __FILE__, __LINE__);
         auto* input16_buffer = input16.PointerOf<AmInt16>();
-        AmInt16* buffer_end = input16_buffer + maxSamplesNeeded * numChannels;
 
         if (!input16.Address())
             return 0;
 
-        for (AmUInt16 c = 0; c < numChannels; c++)
+        if (numChannels == 1)
         {
-            const auto& channel = in->GetChannel(c);
+            const auto& ch0 = in->GetChannel(0);
             for (AmUInt64 i = 0; i < length; i++)
-                input16_buffer[i * numChannels + c] = AmReal32ToInt16(channel[i], true);
+                input16_buffer[i] = AmReal32ToInt16(ch0[i], true);
+        }
+        else
+        {
+            const auto& ch0 = in->GetChannel(0);
+            const auto& ch1 = in->GetChannel(1);
+            for (AmUInt64 i = 0; i < length; i++)
+            {
+                input16_buffer[i * 2]     = AmReal32ToInt16(ch0[i], true);
+                input16_buffer[i * 2 + 1] = AmReal32ToInt16(ch1[i], true);
+            }
         }
 
         AmUInt64 offset = 0;
@@ -389,7 +431,7 @@ namespace SparkyStudios::Audio::Amplitude
         {
             AmUInt32 this_block_adpcm_samples = samplesPerBlock;
             AmUInt32 this_block_pcm_samples = samplesPerBlock;
-            AmSize num_bytes;
+            AmSize num_bytes = 0;
 
             if (this_block_pcm_samples > length)
             {
@@ -400,20 +442,7 @@ namespace SparkyStudios::Audio::Amplitude
 
             AmInt16Buffer pcm_block = input16_buffer + offset * numChannels;
 
-            if constexpr (kIsBigEndian)
-            {
-                AmUInt32 count = this_block_pcm_samples * numChannels;
-                auto* cp = reinterpret_cast<unsigned char*>(pcm_block);
-
-                while (count--)
-                {
-                    AmInt16 temp;
-                    std::memcpy(&temp, cp, sizeof(temp));
-                    const auto swapped = static_cast<AmInt16>(cp[0] + (cp[1] << 8));
-                    std::memcpy(cp, &swapped, sizeof(swapped));
-                    cp += 2;
-                }
-            }
+            // TODO: big-endian encoder path needs audit if a BE platform is supported
 
             // if this is the last block, and it's not full, duplicate the last sample(s) so we don't
             // create problems for the lookAhead
@@ -471,6 +500,7 @@ namespace SparkyStudios::Audio::Amplitude
 
         return offset;
     }
+    } // anonymous namespace
 
     AMSCodec::AMSCodec()
         : Codec("ams")
@@ -542,6 +572,10 @@ namespace SparkyStudios::Audio::Amplitude
         auto* adpcm_block = _adpcmBlockBuffer.PointerOf<AmUInt8>();
         auto* pcm_block = _pcmBlockBuffer.PointerOf<AmInt16>();
 
+        // Cache channel views once — avoids repeated GetChannel() lookups in the inner loop.
+        AmReal32* ch0 = out->GetChannel(0).begin();
+        AmReal32* ch1 = numChannels == 2 ? out->GetChannel(1).begin() : nullptr;
+
         // The offset within the first block to start reading from.
         // Seek() has positioned the file at the start of the block containing seekOffset.
         AmUInt64 startSampleInBlock = seekOffset % _samplesPerBlock;
@@ -564,12 +598,18 @@ namespace SparkyStudios::Audio::Amplitude
             const AmUInt64 samplesToTake = std::min(availableFromBlock, length - samplesDecoded);
 
             // Deinterleave Int16 PCM into per-channel Float32.
-            for (AmUInt16 c = 0; c < numChannels; c++)
+            if (numChannels == 1)
             {
-                auto& channel = out->GetChannel(c);
+                for (AmUInt64 i = 0; i < samplesToTake; i++)
+                    ch0[bufferOffset + samplesDecoded + i] = AmInt16ToReal32(pcm_block[startSampleInBlock + i]);
+            }
+            else
+            {
                 for (AmUInt64 i = 0; i < samplesToTake; i++)
                 {
-                    channel[bufferOffset + samplesDecoded + i] = AmInt16ToReal32(pcm_block[(startSampleInBlock + i) * numChannels + c]);
+                    const AmUInt64 base = (startSampleInBlock + i) * 2;
+                    ch0[bufferOffset + samplesDecoded + i] = AmInt16ToReal32(pcm_block[base]);
+                    ch1[bufferOffset + samplesDecoded + i] = AmInt16ToReal32(pcm_block[base + 1]);
                 }
             }
 
@@ -625,14 +665,15 @@ namespace SparkyStudios::Audio::Amplitude
         if (!_initialized)
             return 0;
 
-        _file->Seek(static_cast<AmInt64>(sizeof(ADPCMHeader) + offset), eFileSeekOrigin_Start);
+        AMPLITUDE_ASSERT(offset == 0 && "AMSEncoder::Write currently only supports offset == 0; partial writes are not implemented");
+        _file->Seek(static_cast<AmInt64>(sizeof(ADPCMHeader)), eFileSeekOrigin_Start);
         return Encode(_file, m_format, in, length, _samplesPerBlock, _lookAhead, _noiseShaping);
     }
 
     void AMSCodec::AMSEncoder::SetEncodingParams(
-        AmUInt32 blockSize, AmUInt32 samplesPerBlock, AmUInt32 lookAhead, NoiseShapingMode noiseShaping)
+        AmUInt32 samplesPerBlock, AmUInt32 lookAhead, NoiseShapingMode noiseShaping)
     {
-        _blockSize = blockSize;
+        // _blockSize is intentionally not stored here; WriteHeader recomputes it from _samplesPerBlock.
         _samplesPerBlock = samplesPerBlock;
         _lookAhead = lookAhead;
         _noiseShaping = noiseShaping;
