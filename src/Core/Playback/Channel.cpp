@@ -116,6 +116,24 @@ namespace SparkyStudios::Audio::Amplitude
             _state->FadeIn(duration);
     }
 
+    bool Channel::Seek(AmTime position) const
+    {
+        AMPLITUDE_ASSERT(Valid());
+        if (!IsValidStateId())
+            return false;
+
+        return _state->Seek(position);
+    }
+
+    AmTime Channel::GetPlaybackPosition() const
+    {
+        AMPLITUDE_ASSERT(Valid());
+        if (IsValidStateId())
+            return _state->GetPlaybackPosition();
+
+        return 0.0;
+    }
+
     const AmVector3& Channel::GetLocation() const
     {
         AMPLITUDE_ASSERT(Valid());

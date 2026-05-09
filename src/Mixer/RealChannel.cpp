@@ -333,6 +333,58 @@ namespace SparkyStudios::Audio::Amplitude
         return success;
     }
 
+    bool RealChannel::Seek(AmTime position)
+    {
+        AMPLITUDE_ASSERT(Valid());
+
+        if (_layers.size() != 1)
+        {
+            amLogWarning("Cannot seek real channel " AM_ID_CHAR_FMT ". Seeking is only supported on single-layer channels.", _channelId);
+            return false;
+        }
+
+        auto& data = _layers.begin()->second;
+        if (data.mixerLayerId == kAmInvalidObjectId || data.soundInstance == nullptr)
+            return false;
+
+        const auto* soundData = static_cast<const SoundData*>(data.soundInstance->GetUserData());
+        if (soundData == nullptr || soundData->format.GetSampleRate() == 0)
+            return false;
+
+        const AmTime clampedPosition = std::max<AmTime>(position, 0.0);
+        const AmUInt64 cursor = static_cast<AmUInt64>(clampedPosition * static_cast<AmTime>(soundData->format.GetSampleRate()) / kAmSecond);
+
+        return _mixer->SetCursor(_channelId, data.mixerLayerId, cursor);
+    }
+
+    AmTime RealChannel::GetPlaybackPosition() const
+    {
+        AMPLITUDE_ASSERT(Valid());
+
+        if (_layers.size() != 1)
+        {
+            amLogWarning(
+                "Cannot query playback position for real channel " AM_ID_CHAR_FMT
+                ". Playback position is only supported on single-layer channels.",
+                _channelId);
+            return 0.0;
+        }
+
+        const auto& data = _layers.begin()->second;
+        if (data.mixerLayerId == kAmInvalidObjectId || data.soundInstance == nullptr)
+            return 0.0;
+
+        const auto* soundData = static_cast<const SoundData*>(data.soundInstance->GetUserData());
+        if (soundData == nullptr || soundData->format.GetSampleRate() == 0)
+            return 0.0;
+
+        AmUInt64 cursor = 0;
+        if (!_mixer->GetCursor(_channelId, data.mixerLayerId, cursor))
+            return 0.0;
+
+        return static_cast<AmTime>(cursor) * kAmSecond / static_cast<AmTime>(soundData->format.GetSampleRate());
+    }
+
     void RealChannel::SetPitch(AmReal32 pitch)
     {
         AMPLITUDE_ASSERT(Valid());

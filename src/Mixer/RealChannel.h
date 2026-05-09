@@ -89,6 +89,24 @@ namespace SparkyStudios::Audio::Amplitude
         bool Resume(AmUInt32 layer);
         bool Resume();
 
+        /**
+         * @brief Seek the real channel to the given playback position.
+         *
+         * @param position The playback
+         * position in milliseconds.
+         *
+         * @return @c true on success, @c false otherwise.
+         */
+        bool Seek(AmTime position);
+
+        /**
+         * @brief Get the current playback position.
+         *
+         * @return The current playback position in
+         * milliseconds.
+         */
+        [[nodiscard]] AmTime GetPlaybackPosition() const;
+
         void Destroy(AmUInt32 layer = kAmInvalidObjectId);
 
         /**
@@ -211,7 +229,7 @@ namespace SparkyStudios::Audio::Amplitude
             bool isStream = false;                      ///< Whether this layer is streaming audio
             bool isLoop = false;                        ///< Whether this layer should loop
             AmReal32 gain = 1.0f;                       ///< Per-layer gain value (defaults to unity)
-            SoundInstance* soundInstance = nullptr;      ///< The sound instance playing on this layer
+            SoundInstance* soundInstance = nullptr;     ///< The sound instance playing on this layer
         };
 
         [[nodiscard]] AmUInt32 FindFreeLayer(AmUInt32 layerIndex = 0) const;
