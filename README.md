@@ -35,22 +35,22 @@ The quickest way to get started with the SDK is to have a look on the [sample pr
 
 This is a list of some features provided by Amplitude:
 
-- [Spatial Audio, HRTF, and Ambisonic Rendering](https://docs.amplitudeaudiosdk.com/nightly/getting-started/introduction/#spatial-audio-hrtf-and-ambisonic-rendering)
-- [Data-driven Development](https://docs.amplitudeaudiosdk.com/nightly/getting-started/introduction/#data-driven-development)
-- [Plugin Architecture](https://docs.amplitudeaudiosdk.com/nightly/getting-started/introduction/#plugin-architecture)
-- [Drivers and Codecs](https://docs.amplitudeaudiosdk.com/nightly/getting-started/introduction/#drivers-and-codecs)
-- [Customizable Pipeline](https://docs.amplitudeaudiosdk.com/nightly/getting-started/introduction/#customizable-pipeline)
-- [Sound banks Management](https://docs.amplitudeaudiosdk.com/nightly/getting-started/introduction/#sound-banks-management)
-- [Sound Objects](https://docs.amplitudeaudiosdk.com/nightly/getting-started/introduction/#sound-objects)
-- [Game and Engine Synchronization](https://docs.amplitudeaudiosdk.com/nightly/getting-started/introduction/#game-and-engine-synchronization)
-- [Game Entities](https://docs.amplitudeaudiosdk.com/nightly/getting-started/introduction/#game-entities)
-- [Listeners](https://docs.amplitudeaudiosdk.com/nightly/getting-started/introduction/#listeners)
-- [Customizable Attenuation Models](https://docs.amplitudeaudiosdk.com/nightly/getting-started/introduction/#customizable-attenuation-models)
-- [Sound Effects](https://docs.amplitudeaudiosdk.com/nightly/getting-started/introduction/#sound-effects)
-- [Sound Events](https://docs.amplitudeaudiosdk.com/nightly/getting-started/introduction/#sound-events)
-- [Buses Management and Auto-ducking](https://docs.amplitudeaudiosdk.com/nightly/getting-started/introduction/#buses-management-and-auto-ducking)
-- [Channel Priority](https://docs.amplitudeaudiosdk.com/nightly/getting-started/introduction/#channel-priority)
-- [CLI Tools](https://docs.amplitudeaudiosdk.com/nightly/getting-started/introduction/#cli-tools)
+- [Spatial Audio, HRTF, and Ambisonic Rendering](https://docs.amplitudeaudiosdk.com/nightly/deep-dive/introduction/#spatial-audio-hrtf-and-ambisonic-rendering)
+- [Data-driven Development](https://docs.amplitudeaudiosdk.com/nightly/deep-dive/introduction/#data-driven-development)
+- [Plugin Architecture](https://docs.amplitudeaudiosdk.com/nightly/deep-dive/introduction/#plugin-architecture)
+- [Drivers and Codecs](https://docs.amplitudeaudiosdk.com/nightly/deep-dive/introduction/#drivers-and-codecs)
+- [Customizable Pipeline](https://docs.amplitudeaudiosdk.com/nightly/deep-dive/introduction/#customizable-pipeline)
+- [Sound banks Management](https://docs.amplitudeaudiosdk.com/nightly/deep-dive/introduction/#sound-banks-management)
+- [Sound Objects](https://docs.amplitudeaudiosdk.com/nightly/deep-dive/introduction/#sound-objects)
+- [Game and Engine Synchronization](https://docs.amplitudeaudiosdk.com/nightly/deep-dive/introduction/#game-and-engine-synchronization)
+- [Game Entities](https://docs.amplitudeaudiosdk.com/nightly/deep-dive/introduction/#game-entities)
+- [Listeners](https://docs.amplitudeaudiosdk.com/nightly/deep-dive/introduction/#listeners)
+- [Customizable Attenuation Models](https://docs.amplitudeaudiosdk.com/nightly/deep-dive/introduction/#customizable-attenuation-models)
+- [Sound Effects](https://docs.amplitudeaudiosdk.com/nightly/deep-dive/introduction/#sound-effects)
+- [Sound Events](https://docs.amplitudeaudiosdk.com/nightly/deep-dive/introduction/#sound-events)
+- [Buses Management and Auto-ducking](https://docs.amplitudeaudiosdk.com/nightly/deep-dive/introduction/#buses-management-and-auto-ducking)
+- [Channel Priority](https://docs.amplitudeaudiosdk.com/nightly/deep-dive/introduction/#channel-priority)
+- [CLI Tools](https://docs.amplitudeaudiosdk.com/nightly/reference/cli-tools/)
 
 ## Supported Platforms
 
