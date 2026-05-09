@@ -59,7 +59,14 @@ namespace SparkyStudios::Audio::Amplitude::Tests
 
             filter.Process(&newBuffer, 512);
 
-            AM_EXPECT(true);
+            // After reset, filter state is cleared, so output should match the first process call
+            for (AmUInt32 ch = 0; ch < buffer.GetChannelCount(); ++ch)
+            {
+                for (AmUInt32 i = 0; i < 512; ++i)
+                {
+                    ExpectFloatNear(buffer.GetSample(ch, i), newBuffer.GetSample(ch, i), 0.01f);
+                }
+            }
         }
     };
 

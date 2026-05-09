@@ -27,7 +27,8 @@ namespace SparkyStudios::Audio::Amplitude
         , _hrir(nullptr)
     {}
 
-    bool AmbisonicBinauralizer::Configure(AmUInt32 order, bool is3D, AmUInt32 maxBlockSize, AmUInt32 sampleRate, const HRIRSphere* hrirSphere)
+    bool AmbisonicBinauralizer::Configure(
+        AmUInt32 order, bool is3D, AmUInt32 maxBlockSize, AmUInt32 sampleRate, const HRIRSphere* hrirSphere)
     {
         if (hrirSphere == nullptr)
             return false;

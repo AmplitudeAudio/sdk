@@ -189,6 +189,11 @@ namespace SparkyStudios::Audio::Amplitude
 
         LinkwitzRileyFilter m_crossoverFilter;
         BFormat m_lowPassBuffer;
+        AudioBuffer m_tempInputBuffer;
+        std::vector<const AmReal32*> m_inputPtrs;
+        std::vector<AmReal32*> m_lpPtrs;
+        std::vector<AmReal32*> m_hpPtrs;
+        std::vector<AmUInt32> m_channelOrders;
         std::vector<AmReal32> m_highFreqGains;
         AmUInt32 m_maxBlockSize;
         AmUInt32 m_sampleRate;

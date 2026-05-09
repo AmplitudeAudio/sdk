@@ -75,9 +75,12 @@ namespace SparkyStudios::Audio::Amplitude::Tests
             BFormat buffer;
             buffer.Configure(1, true, 512);
 
+            AudioBuffer& audioBuffer = *buffer.GetBuffer();
+            GenerateSineWaveAtFrequency(audioBuffer, 48000, 440.0f, 0.5f);
+
             filter.Process(&buffer, 0);
 
-            AM_EXPECT(true);
+            ExpectNotSilent(audioBuffer, 0.01f);
         }
     };
 
@@ -102,7 +105,7 @@ namespace SparkyStudios::Audio::Amplitude::Tests
 
             filter.Process(&buffer, maxBlockSize * 2);
 
-            AM_EXPECT(true);
+            ExpectNotSilent(audioBuffer, 0.01f);
         }
     };
 
@@ -118,9 +121,12 @@ namespace SparkyStudios::Audio::Amplitude::Tests
             BFormat buffer;
             buffer.Configure(1, true, 512);
 
+            AudioBuffer& audioBuffer = *buffer.GetBuffer();
+            GenerateSineWaveAtFrequency(audioBuffer, 48000, 440.0f, 0.5f);
+
             filter.Process(&buffer, 512);
 
-            AM_EXPECT(true);
+            ExpectNotSilent(audioBuffer, 0.01f);
         }
     };
 
@@ -243,4 +249,90 @@ namespace SparkyStudios::Audio::Amplitude::Tests
     };
 
     AM_REGISTER_TEST(ambisonics_shelf_filter, process_preserves_dc_free_signal);
+
+    AM_TEST_CASE(DSPTestCase, ambisonics_shelf_filter, process_dc_signal_stable)
+    {
+    public:
+        void Run() override
+        {
+            constexpr AmUInt32 sampleCount = 512;
+            constexpr AmUInt32 sampleRate = 48000;
+
+            AmbisonicShelfFilter filter;
+            AM_EXPECT(filter.Configure(1, true, sampleCount, sampleRate));
+
+            BFormat buffer;
+            AM_EXPECT(buffer.Configure(1, true, sampleCount));
+
+            AudioBuffer& audioBuffer = *buffer.GetBuffer();
+            for (AmUInt16 c = 0; c < audioBuffer.GetChannelCount(); ++c)
+                for (AmUInt64 i = 0; i < audioBuffer.GetFrameCount(); ++i)
+                    audioBuffer[c][i] = 1.0f;
+
+            filter.Process(&buffer, sampleCount);
+
+            // With DC input, the low-pass passes through (gain ~1) and high-pass is attenuated (gain ~0).
+            // The max-rE gain for order 0 is ~1.0, for order 1 is ~0.666.
+            // Output should be approximately lp + gain * hp ≈ 1.0 + gain * 0 = 1.0 for all channels.
+            // We skip the first 100 samples to allow the 4th-order IIR filter transients to settle.
+            for (AmUInt16 c = 0; c < audioBuffer.GetChannelCount(); ++c)
+            {
+                for (AmUInt64 i = 100; i < audioBuffer.GetFrameCount(); ++i)
+                {
+                    ExpectFloatNear(1.0f, audioBuffer[c][i], 0.1f);
+                }
+            }
+        }
+    };
+
+    AM_REGISTER_TEST(ambisonics_shelf_filter, process_dc_signal_stable);
+
+    AM_TEST_CASE(DSPTestCase, ambisonics_shelf_filter, process_multi_block_continuity)
+    {
+    public:
+        void Run() override
+        {
+            constexpr AmUInt32 blockSize = 256;
+            constexpr AmUInt32 sampleRate = 48000;
+            constexpr AmUInt32 totalSamples = 512;
+
+            AmbisonicShelfFilter filter;
+            AM_EXPECT(filter.Configure(1, true, blockSize, sampleRate));
+
+            BFormat inputBuffer;
+            AM_EXPECT(inputBuffer.Configure(1, true, totalSamples));
+
+            AudioBuffer& audioBuffer = *inputBuffer.GetBuffer();
+            GenerateSineWaveAtFrequency(audioBuffer, sampleRate, 440.0f, 0.5f);
+
+            // Process in two blocks
+            BFormat block1, block2;
+            AM_EXPECT(block1.Configure(1, true, blockSize));
+            AM_EXPECT(block2.Configure(1, true, blockSize));
+
+            for (AmUInt16 c = 0; c < audioBuffer.GetChannelCount(); ++c)
+            {
+                std::memcpy(block1.GetBufferChannel(c).begin(), audioBuffer[c].begin(), sizeof(AmReal32) * blockSize);
+                std::memcpy(block2.GetBufferChannel(c).begin(), audioBuffer[c].begin() + blockSize, sizeof(AmReal32) * blockSize);
+            }
+
+            filter.Process(&block1, blockSize);
+            filter.Process(&block2, blockSize);
+
+            // Output should not be silent and should be continuous (no massive jumps)
+            ExpectNotSilent(*block1.GetBuffer(), 0.01f);
+            ExpectNotSilent(*block2.GetBuffer(), 0.01f);
+
+            // Check that the last sample of block1 and first sample of block2 are reasonably close
+            // (they won't be exact due to filter state, but with the buffer corruption bug they differ wildly)
+            for (AmUInt16 c = 0; c < block1.GetBuffer()->GetChannelCount(); ++c)
+            {
+                AmReal32 endBlock1 = block1.GetBufferChannel(c)[blockSize - 1];
+                AmReal32 startBlock2 = block2.GetBufferChannel(c)[0];
+                AM_EXPECT(std::abs(endBlock1 - startBlock2) < 0.5f);
+            }
+        }
+    };
+
+    AM_REGISTER_TEST(ambisonics_shelf_filter, process_multi_block_continuity);
 } // namespace SparkyStudios::Audio::Amplitude::Tests

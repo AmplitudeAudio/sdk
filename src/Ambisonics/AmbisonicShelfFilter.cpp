@@ -32,8 +32,7 @@ namespace SparkyStudios::Audio::Amplitude
         , m_sampleRate(0)
         , m_speedOfSound(343.0f)
         , m_configured(false)
-    {
-    }
+    {}
 
     AmbisonicShelfFilter::~AmbisonicShelfFilter() = default;
 
@@ -60,6 +59,14 @@ namespace SparkyStudios::Audio::Amplitude
         if (!m_lowPassBuffer.Configure(order, is3D, maxBlockSize))
             return false;
 
+        m_tempInputBuffer = AudioBuffer(maxBlockSize, m_channelCount);
+        m_inputPtrs.resize(m_channelCount);
+        m_lpPtrs.resize(m_channelCount);
+        m_hpPtrs.resize(m_channelCount);
+        m_channelOrders.resize(m_channelCount);
+        for (AmUInt32 ch = 0; ch < m_channelCount; ++ch)
+            m_channelOrders[ch] = ChannelToOrder(ch);
+
         m_highFreqGains = ComputeMaxReGains(order, is3D);
 
         m_configured = true;
@@ -71,14 +78,11 @@ namespace SparkyStudios::Audio::Amplitude
         m_crossoverFilter.Reset();
 
         if (m_lowPassBuffer.GetBuffer() != nullptr)
-        {
             m_lowPassBuffer.GetBuffer()->Clear();
-        }
     }
 
     void AmbisonicShelfFilter::Refresh()
-    {
-    }
+    {}
 
     std::vector<AmReal32> AmbisonicShelfFilter::GetMaxReGains() const
     {
@@ -88,9 +92,7 @@ namespace SparkyStudios::Audio::Amplitude
     void AmbisonicShelfFilter::SetHighFrequencyGains(const std::vector<AmReal32>& gains)
     {
         if (gains.size() == m_order + 1)
-        {
             m_highFreqGains = gains;
-        }
     }
 
     AmReal32 AmbisonicShelfFilter::GetCrossoverFrequency() const
@@ -106,42 +108,30 @@ namespace SparkyStudios::Audio::Amplitude
         if (sampleCount > m_maxBlockSize)
             return;
 
-        std::vector<const AmReal32*> inputPtrs(m_channelCount);
-        std::vector<AmReal32*> lpPtrs(m_channelCount);
-        std::vector<AmReal32*> hpPtrs(m_channelCount);
-
         for (AmUInt32 ch = 0; ch < m_channelCount; ++ch)
         {
-            inputPtrs[ch] = buffer->GetBufferChannel(ch).begin();
-            lpPtrs[ch] = m_lowPassBuffer.GetBufferChannel(ch).begin();
-            hpPtrs[ch] = buffer->GetBufferChannel(ch).begin();
-        }
-
-        AudioBuffer tempInput(m_channelCount, sampleCount);
-        for (AmUInt32 ch = 0; ch < m_channelCount; ++ch)
-        {
-            std::copy(inputPtrs[ch], inputPtrs[ch] + sampleCount, tempInput[ch].begin());
+            m_lpPtrs[ch] = m_lowPassBuffer.GetBufferChannel(ch).begin();
+            m_hpPtrs[ch] = buffer->GetBufferChannel(ch).begin();
         }
 
         for (AmUInt32 ch = 0; ch < m_channelCount; ++ch)
         {
-            inputPtrs[ch] = tempInput[ch].begin();
+            const AmReal32* src = buffer->GetBufferChannel(ch).begin();
+            std::copy(src, src + sampleCount, m_tempInputBuffer[ch].begin());
+            m_inputPtrs[ch] = m_tempInputBuffer[ch].begin();
         }
 
-        m_crossoverFilter.Process(inputPtrs.data(), lpPtrs.data(), hpPtrs.data(), sampleCount);
+        m_crossoverFilter.Process(m_inputPtrs.data(), m_lpPtrs.data(), m_hpPtrs.data(), sampleCount);
 
         for (AmUInt32 ch = 0; ch < m_channelCount; ++ch)
         {
-            const AmUInt32 order = ChannelToOrder(ch);
-            const AmReal32 gain = m_highFreqGains[order];
+            const AmReal32 gain = m_highFreqGains[m_channelOrders[ch]];
 
-            AmReal32* hpData = hpPtrs[ch];
-            const AmReal32* lpData = lpPtrs[ch];
+            AmReal32* hpData = m_hpPtrs[ch];
+            const AmReal32* lpData = m_lpPtrs[ch];
 
             for (AmUInt32 i = 0; i < sampleCount; ++i)
-            {
                 hpData[i] = gain * hpData[i] + lpData[i];
-            }
         }
     }
 
@@ -159,7 +149,8 @@ namespace SparkyStudios::Audio::Amplitude
 
         for (AmUInt32 i = 1; i < n; ++i)
         {
-            pCurrent = ((2.0f * static_cast<AmReal32>(i) + 1.0f) * x * pPrev1 - static_cast<AmReal32>(i) * pPrev2) / static_cast<AmReal32>(i + 1);
+            pCurrent =
+                ((2.0f * static_cast<AmReal32>(i) + 1.0f) * x * pPrev1 - static_cast<AmReal32>(i) * pPrev2) / static_cast<AmReal32>(i + 1);
 
             pPrev2 = pPrev1;
             pPrev1 = pCurrent;
