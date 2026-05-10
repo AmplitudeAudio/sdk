@@ -343,7 +343,7 @@ namespace SparkyStudios::Audio::Amplitude
             return false;
         }
 
-        auto& data = _layers.begin()->second;
+        const auto& data = _layers.begin()->second;
         if (data.mixerLayerId == kAmInvalidObjectId || data.soundInstance == nullptr)
             return false;
 
@@ -354,7 +354,17 @@ namespace SparkyStudios::Audio::Amplitude
         const AmTime clampedPosition = std::max<AmTime>(position, 0.0);
         const AmUInt64 cursor = static_cast<AmUInt64>(clampedPosition * static_cast<AmTime>(soundData->format.GetSampleRate()) / kAmSecond);
 
-        return _mixer->SetCursor(_channelId, data.mixerLayerId, cursor);
+        const AmUInt32 mixerLayerId = data.mixerLayerId;
+        const MixerCommandCallback callback = [this, mixerLayerId, cursor]() -> bool
+        {
+            if (!_mixer->SetCursor(_channelId, mixerLayerId, cursor))
+                return false;
+
+            return _mixer->ResetLayerState(_channelId, mixerLayerId);
+        };
+
+        _mixer->PushCommand({ callback });
+        return true;
     }
 
     AmTime RealChannel::GetPlaybackPosition() const

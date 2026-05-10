@@ -231,8 +231,8 @@ namespace SparkyStudios::Audio::Amplitude
         // Resumes this channel if it is paused.
         void Resume();
 
-        // Seeks this channel to the specified position, in milliseconds.
-        bool Seek(AmTime position);
+        // Sets this channel's playback position, in milliseconds.
+        bool SetPlaybackPosition(AmTime position);
 
         // Gets this channel's current playback position, in milliseconds.
         [[nodiscard]] AmTime GetPlaybackPosition() const;

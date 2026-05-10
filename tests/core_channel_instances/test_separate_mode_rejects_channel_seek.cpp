@@ -36,7 +36,7 @@ namespace SparkyStudios::Audio::Amplitude::Tests
             channel.EnableInstancing(eChannelInstanceMode_Separate);
             AM_UNUSED(channel.AddInstance({ 100.0f, 0.0f, 50.0f }));
 
-            AM_EXPECT_NOT(channel.Seek(10.0));
+            AM_EXPECT_NOT(channel.SetPlaybackPosition(10.0));
             AM_EXPECT_EQ(channel.GetPlaybackPosition(), 0.0);
 
             channel.Stop(0);

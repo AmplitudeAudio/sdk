@@ -77,7 +77,6 @@ namespace SparkyStudios::Audio::Amplitude
         std::atomic<AmReal32> targetPlaySpeed; // computed (real) sound playback speed
         std::atomic<AmReal32> sampleRateRatio; // sample rate ratio
         std::atomic<AmReal32> baseSampleRateRatio; // base sample rate ratio
-        std::atomic_bool resetRequested; // converter and pipeline reset request
 
         AudioConverter* dataConverter = nullptr; // miniaudio resampler & channel converter
         std::shared_ptr<PipelineInstance> pipeline = nullptr; // pipeline for this layer
@@ -245,6 +244,8 @@ namespace SparkyStudios::Audio::Amplitude
         bool SetCursor(AmUInt32 id, AmUInt32 layer, AmUInt64 cursor);
 
         bool GetCursor(AmUInt32 id, AmUInt32 layer, AmUInt64& cursor);
+
+        bool ResetLayerState(AmUInt32 id, AmUInt32 layer);
 
         bool SetPlayState(AmUInt32 id, AmUInt32 layer, PlayStateFlag flag);
 

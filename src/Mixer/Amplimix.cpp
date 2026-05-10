@@ -503,9 +503,6 @@ namespace SparkyStudios::Audio::Amplitude
             AMPLIMIX_STORE(&lay->baseSampleRateRatio, baseRatio);
             // store the initial value for sample rate ratio
             AMPLIMIX_STORE(&lay->sampleRateRatio, baseRatio * pitch * speed);
-            // clear stale reset requests from earlier plays on this layer
-            AMPLIMIX_STORE(&lay->resetRequested, false);
-
             // Initialize the converter
             lay->dataConverter = ampoolnew(eMemoryPoolKind_Amplimix, AudioConverter);
 
@@ -603,8 +600,6 @@ namespace SparkyStudios::Audio::Amplitude
         AMPLIMIX_STORE(&lay->cursor, AM_CLAMP(cursor, lay->start, lay->end));
 #endif // AM_SIMD_INTRINSICS
 
-        AMPLIMIX_STORE(&lay->resetRequested, true);
-
         return true;
     }
 
@@ -616,6 +611,21 @@ namespace SparkyStudios::Audio::Amplitude
             return false;
 
         cursor = AMPLIMIX_LOAD(&lay->cursor);
+
+        return true;
+    }
+
+    bool AmplimixImpl::ResetLayerState(AmUInt32 id, AmUInt32 layer)
+    {
+        auto* lay = GetLayer(layer);
+
+        if (AMPLIMIX_LOAD(&lay->flag) <= ePSF_STOP || id != lay->id)
+            return false;
+
+        if (lay->dataConverter != nullptr)
+            lay->dataConverter->Reset();
+
+        lay->ResetPipeline();
 
         return true;
     }
@@ -819,13 +829,6 @@ namespace SparkyStudios::Audio::Amplitude
             amLogWarning("No active pipeline is set, this means no sound will be rendered. You should configure the Amplimix "
                          "pipeline in your engine configuration file.");
             return;
-        }
-
-        if (AMPLIMIX_LOAD(&layer->resetRequested))
-        {
-            AMPLIMIX_STORE(&layer->resetRequested, false);
-            layer->dataConverter->Reset();
-            layer->pipeline->Reset();
         }
 
         // Check for separate mode instancing - process each instance independently

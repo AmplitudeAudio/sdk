@@ -219,7 +219,7 @@ namespace SparkyStudios::Audio::Amplitude
             _channelState = eChannelPlaybackState_Playing;
     }
 
-    bool ChannelInternalState::Seek(AmTime position)
+    bool ChannelInternalState::SetPlaybackPosition(AmTime position)
     {
         if (!Valid())
             return false;

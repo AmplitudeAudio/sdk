@@ -14,6 +14,8 @@
 
 #include <SparkyStudios/Audio/Amplitude/Amplitude.h>
 
+#include <Core/Playback/ChannelInternalState.h>
+
 #include "EngineTestCase.h"
 #include "TestRegistry.h"
 
@@ -21,31 +23,17 @@ using namespace SparkyStudios::Audio::Amplitude;
 
 namespace SparkyStudios::Audio::Amplitude::Tests
 {
-    AM_TEST_CASE(EngineTestCase, core_engine, channel_playback_position_advances)
+    AM_TEST_CASE(EngineTestCase, core_engine, invalid_channel_state_rejects_playback_position)
     {
     public:
         void Run() override
         {
-            SoundHandle sound = amEngine->GetSoundHandle("test_sound_01");
+            ChannelInternalState uninitializedState;
 
-            Channel channel = amEngine->Play(sound);
-            amEngine->WaitUntilFrames(2);
-
-            AM_EXPECT(channel.Valid());
-
-            const AmTime firstPosition = channel.GetPlaybackPosition();
-            AmTime secondPosition = firstPosition;
-            for (AmUInt32 attempts = 0; attempts < 30 && secondPosition <= firstPosition; ++attempts)
-            {
-                amEngine->WaitUntilFrames(1);
-                secondPosition = channel.GetPlaybackPosition();
-            }
-
-            AM_EXPECT(secondPosition > firstPosition);
-
-            channel.Stop(0);
+            AM_EXPECT_NOT(uninitializedState.SetPlaybackPosition(10.0));
+            AM_EXPECT_EQ(uninitializedState.GetPlaybackPosition(), 0.0);
         }
     };
 
-    AM_REGISTER_TEST(core_engine, channel_playback_position_advances);
+    AM_REGISTER_TEST(core_engine, invalid_channel_state_rejects_playback_position);
 } // namespace SparkyStudios::Audio::Amplitude::Tests

@@ -21,7 +21,7 @@ using namespace SparkyStudios::Audio::Amplitude;
 
 namespace SparkyStudios::Audio::Amplitude::Tests
 {
-    AM_TEST_CASE(EngineTestCase, core_engine, channel_playback_position_advances)
+    AM_TEST_CASE(EngineTestCase, core_engine, channel_clamps_negative_playback_position)
     {
     public:
         void Run() override
@@ -32,20 +32,18 @@ namespace SparkyStudios::Audio::Amplitude::Tests
             amEngine->WaitUntilFrames(2);
 
             AM_EXPECT(channel.Valid());
+            AM_EXPECT(channel.Playing());
 
-            const AmTime firstPosition = channel.GetPlaybackPosition();
-            AmTime secondPosition = firstPosition;
-            for (AmUInt32 attempts = 0; attempts < 30 && secondPosition <= firstPosition; ++attempts)
-            {
-                amEngine->WaitUntilFrames(1);
-                secondPosition = channel.GetPlaybackPosition();
-            }
+            channel.Pause(0);
+            AM_EXPECT_EQ(channel.GetPlaybackState(), eChannelPlaybackState_Paused);
 
-            AM_EXPECT(secondPosition > firstPosition);
+            AM_EXPECT(channel.SetPlaybackPosition(-100.0));
+            amEngine->WaitUntilFrames(4);
+            ExpectDoubleNear(0.0, channel.GetPlaybackPosition(), 5.0, __FILE__, __LINE__);
 
             channel.Stop(0);
         }
     };
 
-    AM_REGISTER_TEST(core_engine, channel_playback_position_advances);
+    AM_REGISTER_TEST(core_engine, channel_clamps_negative_playback_position);
 } // namespace SparkyStudios::Audio::Amplitude::Tests

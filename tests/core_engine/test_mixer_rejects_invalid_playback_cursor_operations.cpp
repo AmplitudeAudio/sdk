@@ -14,6 +14,9 @@
 
 #include <SparkyStudios/Audio/Amplitude/Amplitude.h>
 
+#include <Core/Engine.h>
+#include <Mixer/Amplimix.h>
+
 #include "EngineTestCase.h"
 #include "TestRegistry.h"
 
@@ -21,31 +24,19 @@ using namespace SparkyStudios::Audio::Amplitude;
 
 namespace SparkyStudios::Audio::Amplitude::Tests
 {
-    AM_TEST_CASE(EngineTestCase, core_engine, channel_playback_position_advances)
+    AM_TEST_CASE(EngineTestCase, core_engine, mixer_rejects_invalid_playback_cursor_operations)
     {
     public:
         void Run() override
         {
-            SoundHandle sound = amEngine->GetSoundHandle("test_sound_01");
+            AmplimixImpl& mixer = amEngine->GetState()->mixer;
+            AmUInt64 cursor = 0;
 
-            Channel channel = amEngine->Play(sound);
-            amEngine->WaitUntilFrames(2);
-
-            AM_EXPECT(channel.Valid());
-
-            const AmTime firstPosition = channel.GetPlaybackPosition();
-            AmTime secondPosition = firstPosition;
-            for (AmUInt32 attempts = 0; attempts < 30 && secondPosition <= firstPosition; ++attempts)
-            {
-                amEngine->WaitUntilFrames(1);
-                secondPosition = channel.GetPlaybackPosition();
-            }
-
-            AM_EXPECT(secondPosition > firstPosition);
-
-            channel.Stop(0);
+            AM_EXPECT_NOT(mixer.SetCursor(kAmInvalidObjectId, 0, 10));
+            AM_EXPECT_NOT(mixer.GetCursor(kAmInvalidObjectId, 0, cursor));
+            AM_EXPECT_NOT(mixer.ResetLayerState(kAmInvalidObjectId, 0));
         }
     };
 
-    AM_REGISTER_TEST(core_engine, channel_playback_position_advances);
+    AM_REGISTER_TEST(core_engine, mixer_rejects_invalid_playback_cursor_operations);
 } // namespace SparkyStudios::Audio::Amplitude::Tests
