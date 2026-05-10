@@ -503,6 +503,7 @@ namespace SparkyStudios::Audio::Amplitude
             AMPLIMIX_STORE(&lay->baseSampleRateRatio, baseRatio);
             // store the initial value for sample rate ratio
             AMPLIMIX_STORE(&lay->sampleRateRatio, baseRatio * pitch * speed);
+
             // Initialize the converter
             lay->dataConverter = ampoolnew(eMemoryPoolKind_Amplimix, AudioConverter);
 

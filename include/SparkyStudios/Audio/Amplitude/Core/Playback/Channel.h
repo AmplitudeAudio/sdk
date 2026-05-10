@@ -215,8 +215,8 @@ namespace SparkyStudios::Audio::Amplitude
         /**
          * @brief Gets the location of this channel in the game environment.
          *
-         * If the audio on this channel
-         * doesn't support positional data, this method will return an invalid location.
+         * If the audio on this channel doesn't support positional data, this method will
+         * return an invalid location.
          *
          * @return The location of this channel.
          */

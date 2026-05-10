@@ -41,6 +41,7 @@ namespace SparkyStudios::Audio::Amplitude::Tests
             AM_EXPECT(channel.GetInstancingMode() == eChannelInstanceMode_Blended);
 
             constexpr AmTime seekPosition = 1000.0;
+            AM_EXPECT(channel.GetPlaybackPosition() < seekPosition);
             AM_EXPECT(channel.SetPlaybackPosition(seekPosition));
             amEngine->WaitUntilFrames(4);
 

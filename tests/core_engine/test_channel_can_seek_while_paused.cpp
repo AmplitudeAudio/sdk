@@ -37,7 +37,8 @@ namespace SparkyStudios::Audio::Amplitude::Tests
             channel.Pause(0);
             AM_EXPECT_EQ(channel.GetPlaybackState(), eChannelPlaybackState_Paused);
 
-            constexpr AmTime seekPosition = 25.0;
+            constexpr AmTime seekPosition = 1000.0;
+            AM_EXPECT(channel.GetPlaybackPosition() < seekPosition);
             AM_EXPECT(channel.SetPlaybackPosition(seekPosition));
             amEngine->WaitUntilFrames(4);
             ExpectDoubleNear(seekPosition, channel.GetPlaybackPosition(), 5.0, __FILE__, __LINE__);

@@ -92,8 +92,7 @@ namespace SparkyStudios::Audio::Amplitude
         /**
          * @brief Seek the real channel to the given playback position.
          *
-         * @param position The playback
-         * position in milliseconds.
+         * @param position The playback position in milliseconds.
          *
          * @return @c true on success, @c false otherwise.
          */
@@ -102,8 +101,7 @@ namespace SparkyStudios::Audio::Amplitude
         /**
          * @brief Get the current playback position.
          *
-         * @return The current playback position in
-         * milliseconds.
+         * @return The current playback position in milliseconds.
          */
         [[nodiscard]] AmTime GetPlaybackPosition() const;
 
