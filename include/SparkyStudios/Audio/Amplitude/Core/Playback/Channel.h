@@ -197,6 +197,22 @@ namespace SparkyStudios::Audio::Amplitude
         void Resume(AmTime duration = kMinFadeDuration) const;
 
         /**
+         * @brief Sets this channel's playback position.
+         *
+         * @param[in] position The playback position in milliseconds.
+         *
+         * @return @c true if the playback position was set, @c false otherwise.
+         */
+        bool SetPlaybackPosition(AmTime position) const;
+
+        /**
+         * @brief Gets this channel's current playback position.
+         *
+         * @return The current playback position in milliseconds.
+         */
+        [[nodiscard]] AmTime GetPlaybackPosition() const;
+
+        /**
          * @brief Gets the location of this channel in the game environment.
          *
          * If the audio on this channel doesn't support positional data, this method will

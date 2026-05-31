@@ -134,7 +134,6 @@ namespace SparkyStudios::Audio::Amplitude
 
     void AudioConverter::Reset()
     {
-        _channelConversionMode = kChannelConversionModeDisabled;
         _resampler->Reset();
     }
 

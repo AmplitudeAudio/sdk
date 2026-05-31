@@ -219,6 +219,38 @@ namespace SparkyStudios::Audio::Amplitude
             _channelState = eChannelPlaybackState_Playing;
     }
 
+    bool ChannelInternalState::SetPlaybackPosition(AmTime position)
+    {
+        if (!Valid())
+            return false;
+
+        if (_instancingEnabled && _instancingMode == eChannelInstanceMode_Separate)
+        {
+            amLogWarning(
+                "Cannot seek channel " AM_ID_CHAR_FMT ". Separate instanced rendering uses divergent playback cursors.", _channelStateId);
+            return false;
+        }
+
+        return _realChannel.Seek(position);
+    }
+
+    AmTime ChannelInternalState::GetPlaybackPosition() const
+    {
+        if (!Valid())
+            return 0.0;
+
+        if (_instancingEnabled && _instancingMode == eChannelInstanceMode_Separate)
+        {
+            amLogWarning(
+                "Cannot query playback position for channel " AM_ID_CHAR_FMT
+                ". Separate instanced rendering uses divergent playback cursors.",
+                _channelStateId);
+            return 0.0;
+        }
+
+        return _realChannel.GetPlaybackPosition();
+    }
+
     void ChannelInternalState::FadeIn(AmTime duration)
     {
         if (Playing() || !Valid() || _channelState == eChannelPlaybackState_FadingIn)

@@ -243,6 +243,10 @@ namespace SparkyStudios::Audio::Amplitude
 
         bool SetCursor(AmUInt32 id, AmUInt32 layer, AmUInt64 cursor);
 
+        bool GetCursor(AmUInt32 id, AmUInt32 layer, AmUInt64& cursor);
+
+        bool ResetLayerState(AmUInt32 id, AmUInt32 layer);
+
         bool SetPlayState(AmUInt32 id, AmUInt32 layer, PlayStateFlag flag);
 
         bool SetPlaySpeed(AmUInt32 id, AmUInt32 layer, AmReal32 speed);

@@ -1,4 +1,4 @@
-// Copyright (c) 2021-present Sparky Studios. All rights reserved.
+// Copyright (c) 2026-present Sparky Studios. All rights reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -21,20 +21,35 @@ using namespace SparkyStudios::Audio::Amplitude;
 
 namespace SparkyStudios::Audio::Amplitude::Tests
 {
-    AM_TEST_CASE(EngineTestCase, core_engine, can_play_sound_using_name)
+    AM_TEST_CASE(EngineTestCase, core_engine, channel_can_seek_while_paused)
     {
     public:
         void Run() override
         {
-            Channel channel = amEngine->Play("test_sound_01");
-            amEngine->WaitUntilFrames(2); // Playing is done in the next frame
+            SoundHandle sound = amEngine->GetSoundHandle("test_sound_01");
+
+            Channel channel = amEngine->Play(sound);
+            amEngine->WaitUntilFrames(2);
 
             AM_EXPECT(channel.Valid());
+            AM_EXPECT(channel.Playing());
+
+            channel.Pause(0);
+            AM_EXPECT_EQ(channel.GetPlaybackState(), eChannelPlaybackState_Paused);
+
+            constexpr AmTime seekPosition = 1000.0;
+            AM_EXPECT(channel.GetPlaybackPosition() < seekPosition);
+            AM_EXPECT(channel.SetPlaybackPosition(seekPosition));
+            amEngine->WaitUntilFrames(4);
+            ExpectDoubleNear(seekPosition, channel.GetPlaybackPosition(), 5.0, __FILE__, __LINE__);
+
+            channel.Resume(0);
+            AM_EXPECT_EQ(channel.GetPlaybackState(), eChannelPlaybackState_Playing);
             AM_EXPECT(channel.Playing());
 
             channel.Stop(0);
         }
     };
 
-    AM_REGISTER_TEST(core_engine, can_play_sound_using_name);
+    AM_REGISTER_TEST(core_engine, channel_can_seek_while_paused);
 } // namespace SparkyStudios::Audio::Amplitude::Tests

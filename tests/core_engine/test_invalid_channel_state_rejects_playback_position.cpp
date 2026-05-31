@@ -1,4 +1,4 @@
-// Copyright (c) 2021-present Sparky Studios. All rights reserved.
+// Copyright (c) 2026-present Sparky Studios. All rights reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -14,6 +14,8 @@
 
 #include <SparkyStudios/Audio/Amplitude/Amplitude.h>
 
+#include <Core/Playback/ChannelInternalState.h>
+
 #include "EngineTestCase.h"
 #include "TestRegistry.h"
 
@@ -21,20 +23,17 @@ using namespace SparkyStudios::Audio::Amplitude;
 
 namespace SparkyStudios::Audio::Amplitude::Tests
 {
-    AM_TEST_CASE(EngineTestCase, core_engine, can_play_sound_using_name)
+    AM_TEST_CASE(EngineTestCase, core_engine, invalid_channel_state_rejects_playback_position)
     {
     public:
         void Run() override
         {
-            Channel channel = amEngine->Play("test_sound_01");
-            amEngine->WaitUntilFrames(2); // Playing is done in the next frame
+            ChannelInternalState uninitializedState;
 
-            AM_EXPECT(channel.Valid());
-            AM_EXPECT(channel.Playing());
-
-            channel.Stop(0);
+            AM_EXPECT_NOT(uninitializedState.SetPlaybackPosition(10.0));
+            AM_EXPECT_EQ(uninitializedState.GetPlaybackPosition(), 0.0);
         }
     };
 
-    AM_REGISTER_TEST(core_engine, can_play_sound_using_name);
+    AM_REGISTER_TEST(core_engine, invalid_channel_state_rejects_playback_position);
 } // namespace SparkyStudios::Audio::Amplitude::Tests

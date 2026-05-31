@@ -604,6 +604,33 @@ namespace SparkyStudios::Audio::Amplitude
         return true;
     }
 
+    bool AmplimixImpl::GetCursor(AmUInt32 id, AmUInt32 layer, AmUInt64& cursor)
+    {
+        auto* lay = GetLayer(layer);
+
+        if (AMPLIMIX_LOAD(&lay->flag) <= ePSF_STOP || id != lay->id)
+            return false;
+
+        cursor = AMPLIMIX_LOAD(&lay->cursor);
+
+        return true;
+    }
+
+    bool AmplimixImpl::ResetLayerState(AmUInt32 id, AmUInt32 layer)
+    {
+        auto* lay = GetLayer(layer);
+
+        if (AMPLIMIX_LOAD(&lay->flag) <= ePSF_STOP || id != lay->id)
+            return false;
+
+        if (lay->dataConverter != nullptr)
+            lay->dataConverter->Reset();
+
+        lay->ResetPipeline();
+
+        return true;
+    }
+
     bool AmplimixImpl::SetPlayState(AmUInt32 id, AmUInt32 layer, PlayStateFlag flag)
     {
         // return failure if given flag invalid
