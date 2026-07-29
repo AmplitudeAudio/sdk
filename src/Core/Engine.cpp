@@ -916,6 +916,12 @@ namespace SparkyStudios::Audio::Amplitude
         // Store the panning mode
         _state->panning_mode = static_cast<ePanningMode>(config->mixer()->panning_mode());
 
+        // Store the resampler name
+        if (config->mixer()->resampler() != nullptr && !config->mixer()->resampler()->empty())
+            _state->resampler = config->mixer()->resampler()->str();
+        else
+            _state->resampler = "default";
+
         if (const auto* hrtfConfig = config->hrtf(); hrtfConfig != nullptr)
         {
             // Store the HRIR sampling mode
@@ -2867,6 +2873,11 @@ namespace SparkyStudios::Audio::Amplitude
     std::shared_ptr<const HRIRSphere> EngineImpl::GetHRIRSphere() const
     {
         return _state->hrir_sphere;
+    }
+
+    const AmString& EngineImpl::GetResampler() const
+    {
+        return _state->resampler;
     }
 
     Channel EngineImpl::GetChannel(AmChannelID channelID) const

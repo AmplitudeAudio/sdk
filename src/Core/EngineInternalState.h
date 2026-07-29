@@ -184,6 +184,7 @@ namespace SparkyStudios::Audio::Amplitude
             , panning_mode(ePanningMode_Stereo)
             , hrir_sampling_mode(eHRIRSphereSamplingMode_NearestNeighbor)
             , hrir_sphere(nullptr)
+            , resampler("default")
             , version(nullptr)
         {}
 
@@ -313,6 +314,8 @@ namespace SparkyStudios::Audio::Amplitude
         eHRIRSphereSamplingMode hrir_sampling_mode;
 
         std::shared_ptr<HRIRSphereImpl> hrir_sphere;
+
+        AmString resampler;
 
         const struct AmVersion* version;
     };

@@ -292,6 +292,12 @@ namespace SparkyStudios::Audio::Amplitude
         _device.mRequestedOutputChannels = PlaybackOutputChannels::Stereo; // For now, only support stereo output.
         _device.mRequestedOutputFormat = static_cast<PlaybackOutputFormat>(config->output()->format());
 
+        // Store the resampler name
+        if (config->mixer()->resampler() != nullptr && !config->mixer()->resampler()->empty())
+            _resamplerName = config->mixer()->resampler()->str();
+        else
+            _resamplerName = "default";
+
         // Publish to atomic snapshots for audio-thread reads
         AMPLIMIX_STORE_RELAXED(&_mixOutputSampleRate, _device.mRequestedOutputSampleRate);
         AMPLIMIX_STORE_RELAXED(&_mixOutputChannels, _device.mRequestedOutputChannels);
@@ -505,7 +511,7 @@ namespace SparkyStudios::Audio::Amplitude
             AMPLIMIX_STORE(&lay->sampleRateRatio, baseRatio * pitch * speed);
 
             // Initialize the converter
-            lay->dataConverter = ampoolnew(eMemoryPoolKind_Amplimix, AudioConverter);
+            lay->dataConverter = ampoolnew(eMemoryPoolKind_Amplimix, AudioConverter, _resamplerName);
 
             const auto soundChannels = static_cast<AmUInt32>(sound->format.GetNumChannels());
             const AmUInt32 soundSampleRate = sound->format.GetSampleRate();

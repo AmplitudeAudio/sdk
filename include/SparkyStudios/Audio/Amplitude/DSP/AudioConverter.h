@@ -62,8 +62,17 @@ namespace SparkyStudios::Audio::Amplitude
 
         /**
          * @brief Default constructor.
+         *
+         * Uses the @c "default" resampler for sample rate conversion.
          */
         AudioConverter();
+
+        /**
+         * @brief Constructs an audio converter with the specified resampler.
+         *
+         * @param[in] resamplerName The name of the resampler to use for sample rate conversion.
+         */
+        explicit AudioConverter(const AmString& resamplerName);
 
         /**
          * @brief Destroys the instance and release associated resources.

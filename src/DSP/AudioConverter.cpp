@@ -21,12 +21,18 @@
 namespace SparkyStudios::Audio::Amplitude
 {
     AudioConverter::AudioConverter()
+        : AudioConverter("default")
+    {}
+
+    AudioConverter::AudioConverter(const AmString& resamplerName)
         : _resampler(nullptr)
         , _channelConversionMode(kChannelConversionModeDisabled)
         , _needResampling(false)
         , _srcInitialized(false)
     {
-        _resampler = Resampler::Construct("default");
+        _resampler = Resampler::Construct(resamplerName);
+        if (_resampler == nullptr)
+            _resampler = Resampler::Construct("default");
         Reset();
     }
 

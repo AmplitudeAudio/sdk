@@ -295,6 +295,8 @@ namespace SparkyStudios::Audio::Amplitude
 
         bool _initialized;
 
+        AmString _resamplerName;
+
         MPSCQueue<MixerCommand, kAmplimixLayersCount> _commandsStack;
 
         std::recursive_timed_mutex _audioThreadMutex;

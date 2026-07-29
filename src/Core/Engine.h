@@ -206,6 +206,7 @@ namespace SparkyStudios::Audio::Amplitude
         [[nodiscard]] ePanningMode GetPanningMode() const override;
         [[nodiscard]] eHRIRSphereSamplingMode GetHRIRSphereSamplingMode() const override;
         [[nodiscard]] std::shared_ptr<const HRIRSphere> GetHRIRSphere() const override;
+        [[nodiscard]] const AmString& GetResampler() const override;
         [[nodiscard]] Channel GetChannel(AmChannelID channelID) const override;
         [[nodiscard]] bool IsStopping() const override;
 
