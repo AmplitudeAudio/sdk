@@ -17,6 +17,9 @@
 #ifndef _AM_IMPLEMENTATION_MIXER_NODES_ENVIRONMENT_EFFECT_NODE_H
 #define _AM_IMPLEMENTATION_MIXER_NODES_ENVIRONMENT_EFFECT_NODE_H
 
+#include <utility>
+#include <vector>
+
 #include <SparkyStudios/Audio/Amplitude/Core/Memory.h>
 #include <SparkyStudios/Audio/Amplitude/Mixer/Node.h>
 #include <SparkyStudios/Audio/Amplitude/Sound/Effect.h>
@@ -38,6 +41,7 @@ namespace SparkyStudios::Audio::Amplitude
     private:
         AudioBuffer _scratch;
         std::unordered_map<AmEnvironmentID, std::unordered_map<AmObjectID, std::shared_ptr<EffectInstance>>> _environmentFilters;
+        std::vector<std::pair<AmEnvironmentID, AmReal32>> _items;
     };
 
     class EnvironmentEffectNode final : public Node

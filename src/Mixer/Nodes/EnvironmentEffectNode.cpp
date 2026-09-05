@@ -28,7 +28,11 @@ namespace SparkyStudios::Audio::Amplitude
     EnvironmentEffectNodeInstance::EnvironmentEffectNodeInstance()
         : _scratch()
         , _environmentFilters()
-    {}
+        , _items()
+    {
+        // Entities rarely touch more than a handful of environments; 64 is a generous hint.
+        _items.reserve(64);
+    }
 
     EnvironmentEffectNodeInstance::~EnvironmentEffectNodeInstance()
     {
@@ -84,9 +88,10 @@ namespace SparkyStudios::Audio::Amplitude
         const auto& environments = entity.GetEnvironments();
         const auto layerId = layer->GetId();
 
-        std::vector<std::pair<AmEnvironmentID, AmReal32>> items(environments.begin(), environments.end());
+        _items.clear();
+        _items.insert(_items.end(), environments.begin(), environments.end());
         std::ranges::sort(
-            items,
+            _items,
             [](const std::pair<AmEnvironmentID, AmReal32>& a, const std::pair<AmEnvironmentID, AmReal32>& b) -> bool
             {
                 return a.second > b.second;
@@ -94,7 +99,7 @@ namespace SparkyStudios::Audio::Amplitude
 
         _output.Clear();
 
-        for (const auto& [environment, amount] : items)
+        for (const auto& [environment, amount] : _items)
         {
             if (amount < kEpsilon)
                 continue;
