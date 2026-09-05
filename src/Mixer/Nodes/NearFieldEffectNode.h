@@ -23,9 +23,15 @@
 
 namespace SparkyStudios::Audio::Amplitude
 {
+    class NearFieldProcessor;
+
     class NearFieldEffectNodeInstance final : public ProcessorNodeInstance
     {
     public:
+        ~NearFieldEffectNodeInstance() override;
+
+        void Configure(AmUInt64 frameCount, AmUInt16 channelCount) override;
+
         const AudioBuffer* Process(const AudioBuffer* input) override;
 
         [[nodiscard]] AM_INLINE AmUInt16 GetOutputChannelCount() const override
@@ -36,6 +42,8 @@ namespace SparkyStudios::Audio::Amplitude
     private:
         GainProcessor _leftGainProcessor;
         GainProcessor _rightGainProcessor;
+
+        NearFieldProcessor* _processor = nullptr;
     };
 
     class NearFieldEffectNode final : public Node

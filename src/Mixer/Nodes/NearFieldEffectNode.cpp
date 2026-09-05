@@ -27,6 +27,8 @@ namespace SparkyStudios::Audio::Amplitude
 
     const AudioBuffer* NearFieldEffectNodeInstance::Process(const AudioBuffer* input)
     {
+        AMPLITUDE_ASSERT(_processor != nullptr);
+
         // Only mono input is supported for this node.
         AMPLITUDE_ASSERT(input->GetChannelCount() == 1);
 
@@ -67,22 +69,40 @@ namespace SparkyStudios::Audio::Amplitude
         }
 
         {
-            NearFieldProcessor processor(layer->GetSampleRate(), input->GetFrameCount());
-
             const auto& inChannel = input->GetChannel(0);
             auto& outChannelLeft = _output.GetChannel(0);
             auto& outChannelRight = _output.GetChannel(1);
 
-            // Apply bass boost and delay compensation(if necessary) to the input signal
+            // Apply bass boost and delay compensation (if necessary) to the input signal
             // and place it temporarily in the right output channel. This way we avoid
             // allocating a temporary buffer.
-            processor.Process(inChannel, outChannelRight, layer->GetSpatialization() == eSpatialization_HRTF);
+            _processor->Process(inChannel, outChannelRight, layer->GetSpatialization() == eSpatialization_HRTF);
 
             _leftGainProcessor.ApplyGain(leftGainTarget, outChannelRight, 0, outChannelLeft, 0, input->GetFrameCount(), false);
             _rightGainProcessor.ApplyGain(rightGainTarget, outChannelRight, 0, outChannelRight, 0, input->GetFrameCount(), false);
         }
 
         return &_output;
+    }
+
+    NearFieldEffectNodeInstance::~NearFieldEffectNodeInstance()
+    {
+        ampooldelete(eMemoryPoolKind_Amplimix, NearFieldProcessor, _processor);
+        _processor = nullptr;
+    }
+
+    void NearFieldEffectNodeInstance::Configure(AmUInt64 frameCount, AmUInt16 channelCount)
+    {
+        ProcessorNodeInstance::Configure(frameCount, channelCount);
+
+        if (_processor != nullptr)
+        {
+            ampooldelete(eMemoryPoolKind_Amplimix, NearFieldProcessor, _processor);
+            _processor = nullptr;
+        }
+
+        // The processor owns biquad filter states and a delay line: it must persist across audio blocks.
+        _processor = ampoolnew(eMemoryPoolKind_Amplimix, NearFieldProcessor, GetLayer()->GetSampleRate(), frameCount);
     }
 
     NearFieldEffectNode::NearFieldEffectNode()
