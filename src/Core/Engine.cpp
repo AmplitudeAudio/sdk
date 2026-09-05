@@ -2679,7 +2679,7 @@ namespace SparkyStudios::Audio::Amplitude
 
         if (_state->master_bus)
         {
-            const AmReal32 masterGain = _state->mute ? 0.0f : _state->master_gain;
+            const AmReal32 masterGain = _state->mute.load() ? 0.0f : _state->master_gain.load();
             _state->master_bus->AdvanceFrame(delta, masterGain);
         }
 

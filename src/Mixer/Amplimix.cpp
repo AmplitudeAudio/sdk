@@ -360,7 +360,10 @@ namespace SparkyStudios::Audio::Amplitude
             // Enforce the output buffer to be null before calling Mix
             *outBuffer = nullptr;
 
-        if (!_initialized || _engineState == nullptr || _engine->IsStopping() || _engine->IsPaused())
+        const bool stopping = _engineState != nullptr && _engineState->stopping.load(std::memory_order_acquire);
+        const bool paused = _engineState != nullptr && _engineState->paused.load(std::memory_order_acquire);
+
+        if (!_initialized || _engineState == nullptr || stopping || paused)
             return 0;
 
         // Mark that we're now mixing
@@ -396,7 +399,7 @@ namespace SparkyStudios::Audio::Amplitude
 
         for (AmUInt32 i = 0; i < activeLayerCount; ++i)
         {
-            if (_engine->IsStopping())
+            if (_engineState->stopping.load(std::memory_order_relaxed))
                 break; // Stop mixing if engine is stopping
 
             auto& layer = _layers[_activeLayerIndices[i]];

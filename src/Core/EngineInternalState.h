@@ -15,6 +15,7 @@
 #ifndef _AM_IMPLEMENTATION_CORE_ENGINE_INTERNAL_STATE_H
 #define _AM_IMPLEMENTATION_CORE_ENGINE_INTERNAL_STATE_H
 
+#include <atomic>
 #include <map>
 #include <unordered_map>
 #include <vector>
@@ -199,17 +200,19 @@ namespace SparkyStudios::Audio::Amplitude
         // The master bus, cached to prevent needless lookups.
         std::shared_ptr<BusInternalState> master_bus;
 
+        // Written on the game thread only; read on the audio callback thread. Do not write these from the audio thread.
+
         // The gain applied to all buses.
-        AmReal32 master_gain;
+        std::atomic<AmReal32> master_gain;
 
         // If true, the master gain is ignored and all channels have a gain of 0.
-        bool mute;
+        std::atomic<bool> mute;
 
         // If true, the entire audio engine has paused all playback.
-        bool paused;
+        std::atomic<bool> paused;
 
         // If true, the engine is in the process of shutting down.
-        bool stopping;
+        std::atomic<bool> stopping;
 
         // If true, the engine is fully initialized and ready to start playback.
         bool initialized;
@@ -288,11 +291,13 @@ namespace SparkyStudios::Audio::Amplitude
         RoomStateVector room_state_memory;
         std::vector<RoomInternalState*> room_state_free_list;
 
+        // Written on the game thread only; read on the audio callback thread. Do not write these from the audio thread.
+
         // The current frame, i.e. the number of times AdvanceFrame has been called.
-        AmUInt64 current_frame;
+        std::atomic<AmUInt64> current_frame;
 
         // The total elapsed time in milliseconds since the start of the game.
-        AmTime total_time;
+        std::atomic<AmTime> total_time;
 
         // The way Amplitude should fetch the best listener for an audio source.
         eListenerFetchMode listener_fetch_mode;
