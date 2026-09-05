@@ -287,7 +287,6 @@ namespace SparkyStudios::Audio::Amplitude
             return false;
         }
 
-        _engine = amEngine;
         _engineState = amEngine->GetState().get();
 
         _device.mOutputBufferSize = config->output()->buffer_size();
@@ -325,7 +324,6 @@ namespace SparkyStudios::Audio::Amplitude
 
         _initialized = false;
         _pipeline = nullptr;
-        _engine = nullptr;
         _engineState = nullptr;
 
         AMPLIMIX_STORE_RELAXED(&_activeLayerCount, 0);
@@ -537,15 +535,12 @@ namespace SparkyStudios::Audio::Amplitude
             }
 
             // Pre-warm the layer's chunk pool so the audio thread never allocates.
-            // mOutputBufferSize is a sample count; divide by the output channel count
-            // to get the nominal callback frame count (both drivers deliver
-            // mOutputBufferSize / channels frames per callback). Not oversized on
-            // purpose: the pipeline processes whole buffer capacities, so an oversized
-            // transient/output chunk would make every node process (and statefully
-            // advance by) more frames than the callback actually delivered. A callback
+            // mOutputBufferSize is a sample count. A callback
             // larger than the nominal period grows the pool once, then matches
-            // thereafter (lock-free, documented fallback). Runtime pitch increases
-            // can also still grow the pool lazily (documented limitation).
+            // thereafter; a smaller one keeps the oversized chunk (Acquire reuses by
+            // capacity) and the pipeline auto-configures nodes to the buffer capacity,
+            // processing silent padding and advancing effects — a sustained size change
+            // re-runs every node's Configure on the audio thread.
             const auto outChannels = static_cast<AmInt16>(_device.mRequestedOutputChannels);
             const AmUInt64 outFrames = _device.mOutputBufferSize / outChannels;
             const AmUInt64 inFrames = lay->dataConverter->GetRequiredInputFrameCount(outFrames);

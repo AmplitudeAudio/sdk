@@ -296,11 +296,10 @@ namespace SparkyStudios::Audio::Amplitude
         void UnlockAudioMutex();
         void Wait();
 
-        // Cached engine access for the audio thread. Engine::GetInstance() locks a mutex
+        // Cached engine state for the audio thread. Engine::GetInstance() locks a mutex
         // and GetState() copies a shared_ptr; neither may run in the mix callback.
         // Valid from Init() until Deinit(); the engine state outlives the mixer by
         // deinitialization order.
-        EngineImpl* _engine = nullptr;
         EngineInternalState* _engineState = nullptr;
 
         bool _initialized;

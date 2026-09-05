@@ -86,6 +86,7 @@ namespace SparkyStudios::Audio::Amplitude
     void FFTFilterInstance::Process(const AudioBuffer& in, AudioBuffer& out, AmUInt64 frames, AmUInt32 sampleRate)
     {
         AMPLITUDE_ASSERT(_sumPhase != nullptr && _lastPhase != nullptr);
+        AMPLITUDE_ASSERT(in.GetChannelCount() <= kAmMaxSupportedChannelCount);
 
         FilterInstance::Process(in, out, frames, sampleRate);
     }
