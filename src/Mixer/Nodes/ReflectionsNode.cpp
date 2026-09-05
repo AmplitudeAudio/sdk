@@ -45,6 +45,13 @@ namespace SparkyStudios::Audio::Amplitude
         Reset();
     }
 
+    void ReflectionsNodeInstance::Configure(AmUInt64 frameCount, AmUInt16 channelCount)
+    {
+        ProcessorNodeInstance::Configure(frameCount, channelCount);
+
+        _tempBuffer = AudioBuffer(frameCount, kAmMonoChannelCount);
+    }
+
     const AudioBuffer* ReflectionsNodeInstance::Process(const AudioBuffer* input)
     {
         if (input == nullptr)
@@ -76,13 +83,14 @@ namespace SparkyStudios::Audio::Amplitude
 
         _output.Reset();
 
+        AMPLITUDE_ASSERT(input->GetFrameCount() <= _tempBuffer.GetFrameCount());
+
         {
             // Apply reflections gain
-            AudioBuffer temp(input->GetFrameCount(), kAmMonoChannelCount);
-            Gain::ApplyReplaceConstantGain(roomGain, input->GetChannel(0), 0, temp[0], 0, _output.GetSampleCount());
+            Gain::ApplyReplaceConstantGain(roomGain, input->GetChannel(0), 0, _tempBuffer[0], 0, _output.GetSampleCount());
 
             // Process reflections
-            _reflectionsProcessor->Process(temp, &_output);
+            _reflectionsProcessor->Process(_tempBuffer, &_output);
         }
 
         // Rotate the reflections to match the listener's orientation

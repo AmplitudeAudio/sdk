@@ -34,6 +34,8 @@ namespace SparkyStudios::Audio::Amplitude
 
         void Initialize(AmObjectID id, const AmplimixLayer* layer, const PipelineInstance* pipeline, AmSize paramCount) override;
 
+        void Configure(AmUInt64 frameCount, AmUInt16 channelCount) override;
+
         const AudioBuffer* Process(const AudioBuffer* input) override;
 
         void Reset() override;
@@ -44,6 +46,7 @@ namespace SparkyStudios::Audio::Amplitude
 
         BFormat _output;
         AudioBuffer _silenceBuffer;
+        AudioBuffer _tempBuffer;
 
         AmSize _numFramesProcessedOnEmptyInput;
     };
