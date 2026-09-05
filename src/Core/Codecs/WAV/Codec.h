@@ -49,6 +49,7 @@ namespace SparkyStudios::Audio::Amplitude
             std::shared_ptr<File> _file;
             bool _initialized;
             drwav _wav;
+            AmAlignedReal32Buffer _scratch;
         };
 
         class WAVEncoder final : public Encoder

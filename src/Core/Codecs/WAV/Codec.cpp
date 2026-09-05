@@ -122,12 +122,19 @@ namespace SparkyStudios::Audio::Amplitude
         if (!Seek(seekOffset))
             return 0;
 
-        AmAlignedReal32Buffer buffer;
-        buffer.Init(length * _wav.channels);
+        const AmUInt32 scratchSize = static_cast<AmUInt32>(length * _wav.channels);
+        if (_scratch.GetSize() < scratchSize)
+        {
+            if (_scratch.Init(scratchSize, true) != eErrorCode_Success)
+            {
+                _scratch.Release(); // reset so the next Stream call retries the allocation
+                return 0;
+            }
+        }
 
-        const AmUInt64 read = drwav_read_pcm_frames_f32(&_wav, length, buffer.GetBuffer());
+        const AmUInt64 read = drwav_read_pcm_frames_f32(&_wav, length, _scratch.GetBuffer());
 
-        Deinterleave(buffer.GetBuffer(), 0, out->GetData().GetBuffer(), bufferOffset, length, _wav.channels);
+        Deinterleave(_scratch.GetBuffer(), 0, out->GetData().GetBuffer(), bufferOffset, length, _wav.channels);
 
         return read;
     }

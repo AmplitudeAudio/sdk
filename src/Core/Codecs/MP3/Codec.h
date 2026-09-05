@@ -49,6 +49,7 @@ namespace SparkyStudios::Audio::Amplitude
             std::shared_ptr<File> _file;
             bool _initialized;
             drmp3 _mp3;
+            AmAlignedReal32Buffer _scratch;
         };
 
         class MP3Encoder final : public Encoder
