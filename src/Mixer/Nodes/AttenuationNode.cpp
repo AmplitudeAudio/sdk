@@ -48,6 +48,9 @@ namespace SparkyStudios::Audio::Amplitude
         , _lowShelfFilter{ nullptr, nullptr }
         , _peakingFilter{ nullptr, nullptr }
         , _highShelfFilter{ nullptr, nullptr }
+        , _tempBuffer()
+        , _crossfadeBuffer()
+        , _crossFader(nullptr)
         , _currentSet(0)
         , _needUpdateGains(false)
     {
@@ -62,6 +65,23 @@ namespace SparkyStudios::Audio::Amplitude
             _peakingFilter[i] = nullptr;
             _highShelfFilter[i] = nullptr;
         }
+
+        if (_crossFader != nullptr)
+        {
+            ampooldelete(eMemoryPoolKind_Amplimix, AudioBufferCrossFader, _crossFader);
+            _crossFader = nullptr;
+        }
+    }
+
+    void AirAbsorptionEQFilter::Configure(AmUInt64 frameCount, AmUInt16 channelCount)
+    {
+        _tempBuffer = AudioBuffer(frameCount, channelCount);
+        _crossfadeBuffer = AudioBuffer(frameCount, channelCount);
+
+        if (_crossFader != nullptr)
+            ampooldelete(eMemoryPoolKind_Amplimix, AudioBufferCrossFader, _crossFader);
+
+        _crossFader = ampoolnew(eMemoryPoolKind_Amplimix, AudioBufferCrossFader, frameCount);
     }
 
     void AirAbsorptionEQFilter::SetGains(AmReal32 gainLow, AmReal32 gainMid, AmReal32 gainHigh)
@@ -93,7 +113,9 @@ namespace SparkyStudios::Audio::Amplitude
     {
         if (_needUpdateGains)
         {
-            AudioBufferCrossFader crossFader(input.GetFrameCount());
+            AMPLITUDE_ASSERT(_crossFader != nullptr);
+            AMPLITUDE_ASSERT(_tempBuffer.GetFrameCount() >= input.GetFrameCount());
+            AMPLITUDE_ASSERT(_crossfadeBuffer.GetFrameCount() >= input.GetFrameCount());
 
             const AmUInt32 previousSet = _currentSet;
             _currentSet = 1 - _currentSet;
@@ -125,12 +147,14 @@ namespace SparkyStudios::Audio::Amplitude
             _highShelfFilter[_currentSet]->SetParameter(
                 BiquadResonantFilter::ATTRIBUTE_GAIN, _highShelfFilter[previousSet]->GetParameter(BiquadResonantFilter::ATTRIBUTE_GAIN));
 
-            AudioBuffer temp(input.GetFrameCount(), input.GetChannelCount());
+            // Render the previous and current gain sets into distinct member buffers:
+            // CrossFade asserts that its destination does not alias either input buffer.
+            // The current set is the fade-to target (arg1), so the block ends on it,
+            // matching the behavior of the old (aliasing) call.
+            ApplyFilters(previousSet, input, _tempBuffer, sampleRate);
+            ApplyFilters(_currentSet, input, _crossfadeBuffer, sampleRate);
 
-            ApplyFilters(previousSet, input, temp, sampleRate);
-            ApplyFilters(_currentSet, input, output, sampleRate);
-
-            crossFader.CrossFade(output, temp, output);
+            _crossFader->CrossFade(_crossfadeBuffer, _tempBuffer, output);
 
             _needUpdateGains = false;
         }
@@ -178,6 +202,13 @@ namespace SparkyStudios::Audio::Amplitude
         , _gains{ 1.0f, 1.0f, 1.0f }
         , _eqFilter()
     {}
+
+    void AttenuationNodeInstance::Configure(AmUInt64 frameCount, AmUInt16 channelCount)
+    {
+        ProcessorNodeInstance::Configure(frameCount, channelCount);
+
+        _eqFilter.Configure(frameCount, channelCount);
+    }
 
     const AudioBuffer* AttenuationNodeInstance::Process(const AudioBuffer* input)
     {

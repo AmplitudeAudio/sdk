@@ -25,6 +25,7 @@
 namespace SparkyStudios::Audio::Amplitude
 {
     class AmplimixLayer;
+    class AudioBufferCrossFader;
 
     class AirAbsorptionEQFilter final
     {
@@ -33,6 +34,8 @@ namespace SparkyStudios::Audio::Amplitude
 
         AirAbsorptionEQFilter();
         ~AirAbsorptionEQFilter();
+
+        void Configure(AmUInt64 frameCount, AmUInt16 channelCount);
 
         void SetGains(AmReal32 gainLow, AmReal32 gainMid, AmReal32 gainHigh);
 
@@ -48,6 +51,10 @@ namespace SparkyStudios::Audio::Amplitude
         std::shared_ptr<FilterInstance> _peakingFilter[2];
         std::shared_ptr<FilterInstance> _highShelfFilter[2];
 
+        AudioBuffer _tempBuffer;
+        AudioBuffer _crossfadeBuffer;
+        AudioBufferCrossFader* _crossFader;
+
         AmUInt32 _currentSet;
         bool _needUpdateGains;
     };
@@ -56,6 +63,8 @@ namespace SparkyStudios::Audio::Amplitude
     {
     public:
         AttenuationNodeInstance();
+
+        void Configure(AmUInt64 frameCount, AmUInt16 channelCount) override;
 
         const AudioBuffer* Process(const AudioBuffer* input) override;
 
