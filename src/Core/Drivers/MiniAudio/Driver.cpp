@@ -16,6 +16,7 @@
 #include <Core/Engine.h>
 
 #include <Mixer/Amplimix.h>
+#include <Utils/ScopedDenormalFlush.h>
 
 namespace SparkyStudios::Audio::Amplitude
 {
@@ -65,6 +66,8 @@ namespace SparkyStudios::Audio::Amplitude
     static void miniaudio_mixer(ma_device* pDevice, AmVoidPtr pOutput, AmConstVoidPtr pInput, ma_uint32 frameCount)
     {
         AM_UNUSED(pInput);
+
+        ScopedDenormalFlush denormalFlush;
 
         const auto* driver = static_cast<MiniAudioDriver*>(pDevice->pUserData);
 

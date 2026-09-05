@@ -15,11 +15,14 @@
 #include <Core/Drivers/Null/Driver.h>
 
 #include <Mixer/Amplimix.h>
+#include <Utils/ScopedDenormalFlush.h>
 
 namespace SparkyStudios::Audio::Amplitude
 {
     static void null_mix(void* param)
     {
+        ScopedDenormalFlush denormalFlush;
+
         const auto* data = static_cast<NullDriver*>(param);
 
         while (data->IsRunning())
