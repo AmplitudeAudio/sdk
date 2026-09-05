@@ -119,6 +119,8 @@ namespace SparkyStudios::Audio::Amplitude
             _convR[c].Init(_hrir->GetIRLength(), _accumulatedHRIR[1][c].begin(), _hrir->GetIRLength());
         }
 
+        _scratch = AudioBuffer(maxBlockSize, kAmStereoChannelCount);
+
         return true;
     }
 
@@ -134,9 +136,10 @@ namespace SparkyStudios::Audio::Amplitude
     {
         _shelfFilter.Process(input, samples);
 
-        AudioBuffer scratch(samples, 2);
-        auto& scratchL = scratch[0];
-        auto& scratchR = scratch[1];
+        AMPLITUDE_ASSERT(samples <= _scratch.GetFrameCount());
+
+        auto& scratchL = _scratch[0];
+        auto& scratchR = _scratch[1];
 
         auto& outputL = output[0];
         auto& outputR = output[1];

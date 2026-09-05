@@ -54,6 +54,7 @@ namespace SparkyStudios::Audio::Amplitude
 
         const HRIRSphere* _hrir;
         AudioBuffer _accumulatedHRIR[2];
+        AudioBuffer _scratch;
 
         Convolver _convL[16];
         Convolver _convR[16];
