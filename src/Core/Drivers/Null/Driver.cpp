@@ -25,12 +25,14 @@ namespace SparkyStudios::Audio::Amplitude
 
         const auto* data = static_cast<NullDriver*>(param);
 
+        const auto channelsCount = static_cast<AmInt16>(data->GetDeviceDescription().mRequestedOutputChannels);
+
         while (data->IsRunning())
         {
             if (Engine::GetInstance()->IsStopping())
                 break;
 
-            Engine::GetInstance()->GetMixer()->Mix(nullptr, data->GetDeviceDescription().mOutputBufferSize);
+            Engine::GetInstance()->GetMixer()->Mix(nullptr, data->GetDeviceDescription().mOutputBufferSize / channelsCount);
             Thread::Sleep(10);
         }
     }

@@ -223,7 +223,7 @@ namespace SparkyStudios::Audio::Amplitude
         AmUInt32 mDeviceOutputSampleRate;
 
         /**
-         * @brief The device output buffer size.
+         * @brief The device output buffer size, in samples (frames × output channels).
          */
         AmUInt32 mOutputBufferSize;
 

@@ -530,14 +530,14 @@ namespace SparkyStudios::Audio::Amplitude
 
             // Pre-warm the layer's chunk pool so the audio thread never allocates.
             // mOutputBufferSize is a sample count; divide by the output channel count
-            // to get the nominal callback frame count (same expression the miniaudio
-            // driver uses for periodSizeInFrames). Not oversized on purpose: the pipeline
-            // processes whole buffer capacities, so an oversized transient/output chunk
-            // would make every node process (and statefully advance by) more frames than
-            // the callback actually delivered. The Null driver passes mOutputBufferSize
-            // to Mix() as frames, so its first mix grows the pool once (lock-free,
-            // documented fallback). Runtime pitch increases can also still grow the
-            // pool lazily (documented limitation).
+            // to get the nominal callback frame count (both drivers deliver
+            // mOutputBufferSize / channels frames per callback). Not oversized on
+            // purpose: the pipeline processes whole buffer capacities, so an oversized
+            // transient/output chunk would make every node process (and statefully
+            // advance by) more frames than the callback actually delivered. A callback
+            // larger than the nominal period grows the pool once, then matches
+            // thereafter (lock-free, documented fallback). Runtime pitch increases
+            // can also still grow the pool lazily (documented limitation).
             const auto outChannels = static_cast<AmInt16>(_device.mRequestedOutputChannels);
             const AmUInt64 outFrames = _device.mOutputBufferSize / outChannels;
             const AmUInt64 inFrames = lay->dataConverter->GetRequiredInputFrameCount(outFrames);
