@@ -287,6 +287,9 @@ namespace SparkyStudios::Audio::Amplitude
             return false;
         }
 
+        _engine = amEngine;
+        _engineState = amEngine->GetState().get();
+
         _device.mOutputBufferSize = config->output()->buffer_size();
         _device.mRequestedOutputSampleRate = config->output()->frequency();
         _device.mRequestedOutputChannels = PlaybackOutputChannels::Stereo; // For now, only support stereo output.
@@ -322,6 +325,8 @@ namespace SparkyStudios::Audio::Amplitude
 
         _initialized = false;
         _pipeline = nullptr;
+        _engine = nullptr;
+        _engineState = nullptr;
 
         AMPLIMIX_STORE_RELAXED(&_activeLayerCount, 0);
     }
@@ -355,7 +360,7 @@ namespace SparkyStudios::Audio::Amplitude
             // Enforce the output buffer to be null before calling Mix
             *outBuffer = nullptr;
 
-        if (!_initialized || amEngine->GetState() == nullptr || amEngine->IsStopping() || amEngine->IsPaused())
+        if (!_initialized || _engineState == nullptr || _engine->IsStopping() || _engine->IsPaused())
             return 0;
 
         // Mark that we're now mixing
@@ -391,7 +396,7 @@ namespace SparkyStudios::Audio::Amplitude
 
         for (AmUInt32 i = 0; i < activeLayerCount; ++i)
         {
-            if (amEngine->IsStopping())
+            if (_engine->IsStopping())
                 break; // Stop mixing if engine is stopping
 
             auto& layer = _layers[_activeLayerIndices[i]];

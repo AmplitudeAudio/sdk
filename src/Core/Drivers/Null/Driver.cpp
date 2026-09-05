@@ -27,12 +27,18 @@ namespace SparkyStudios::Audio::Amplitude
 
         const auto channelsCount = static_cast<AmInt16>(data->GetDeviceDescription().mRequestedOutputChannels);
 
+        // Cache engine access outside the loop: Engine::GetInstance() locks a mutex.
+        auto* engine = Engine::GetInstance();
+        auto* mixer = engine != nullptr ? engine->GetMixer() : nullptr;
+
         while (data->IsRunning())
         {
-            if (Engine::GetInstance()->IsStopping())
+            if (engine == nullptr || engine->IsStopping())
                 break;
 
-            Engine::GetInstance()->GetMixer()->Mix(nullptr, data->GetDeviceDescription().mOutputBufferSize / channelsCount);
+            if (mixer != nullptr)
+                mixer->Mix(nullptr, data->GetDeviceDescription().mOutputBufferSize / channelsCount);
+
             Thread::Sleep(10);
         }
     }

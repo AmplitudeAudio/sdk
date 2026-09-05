@@ -23,6 +23,8 @@
 
 namespace SparkyStudios::Audio::Amplitude
 {
+    class Amplimix;
+
     class MiniAudioDriver final : public Driver
     {
     public:
@@ -36,11 +38,22 @@ namespace SparkyStudios::Audio::Amplitude
 
         bool EnumerateDevices(std::vector<DeviceDescription>& devices) override;
 
+        /**
+         * @brief Gets the cached mixer instance used by the audio callback.
+         *
+         * @return The mixer, or nullptr before Open() completes.
+         */
+        [[nodiscard]] AM_INLINE Amplimix* GetMixer() const
+        {
+            return _mixer;
+        }
+
     protected:
         friend void miniaudio_device_notification(const ma_device_notification* pNotification);
 
     private:
         bool _initialized;
+        Amplimix* _mixer;
         ma_device _device;
 
         ma_log_callback _logCallback;

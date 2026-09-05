@@ -71,8 +71,12 @@ namespace SparkyStudios::Audio::Amplitude
 
         const auto* driver = static_cast<MiniAudioDriver*>(pDevice->pUserData);
 
+        auto* mixer = driver->GetMixer();
+        if (mixer == nullptr)
+            return;
+
         AudioBuffer* pOutputBuffer = nullptr;
-        frameCount = amEngine->GetMixer()->Mix(&pOutputBuffer, frameCount);
+        frameCount = mixer->Mix(&pOutputBuffer, frameCount);
 
         if (pOutputBuffer == nullptr || frameCount == 0)
             return;
@@ -132,6 +136,7 @@ namespace SparkyStudios::Audio::Amplitude
     MiniAudioDriver::MiniAudioDriver()
         : Driver("miniaudio")
         , _initialized(false)
+        , _mixer(nullptr)
         , _device()
         , _logCallback()
         , _log()
@@ -199,6 +204,8 @@ namespace SparkyStudios::Audio::Amplitude
 
             m_deviceDescription = device;
 
+            _mixer = amEngine->GetMixer();
+
             m_deviceDescription.mDeviceID = 0; // TODO: Compute a proper device ID
             m_deviceDescription.mDeviceName = AmString(_device.playback.name);
             m_deviceDescription.mDeviceOutputSampleRate = _device.playback.internalSampleRate;
@@ -238,6 +245,8 @@ namespace SparkyStudios::Audio::Amplitude
             amLogCritical("Unable to close the audio device.");
             return false;
         }
+
+        _mixer = nullptr;
 
         m_deviceDescription.mDeviceState = eDeviceState_Closed;
 

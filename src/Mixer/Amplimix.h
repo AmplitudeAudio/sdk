@@ -43,6 +43,9 @@ namespace SparkyStudios::Audio::Amplitude
 
     class AmplimixImpl;
 
+    class EngineImpl;
+    struct EngineInternalState;
+
     /**
      * @brief The callback to execute when running a mixer command.
      */
@@ -292,6 +295,13 @@ namespace SparkyStudios::Audio::Amplitude
         void LockAudioMutex();
         void UnlockAudioMutex();
         void Wait();
+
+        // Cached engine access for the audio thread. Engine::GetInstance() locks a mutex
+        // and GetState() copies a shared_ptr; neither may run in the mix callback.
+        // Valid from Init() until Deinit(); the engine state outlives the mixer by
+        // deinitialization order.
+        EngineImpl* _engine = nullptr;
+        EngineInternalState* _engineState = nullptr;
 
         bool _initialized;
 

@@ -17,6 +17,8 @@
 #ifndef _AM_IMPLEMENTATION_CORE_DRIVERS_NULL_DRIVER_H
 #define _AM_IMPLEMENTATION_CORE_DRIVERS_NULL_DRIVER_H
 
+#include <atomic>
+
 #include <SparkyStudios/Audio/Amplitude/Amplitude.h>
 
 namespace SparkyStudios::Audio::Amplitude
@@ -41,7 +43,7 @@ namespace SparkyStudios::Audio::Amplitude
 
     private:
         bool _initialized;
-        bool _running;
+        std::atomic<bool> _running;
 
         AmThreadHandle _thread;
     };
