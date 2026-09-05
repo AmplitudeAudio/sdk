@@ -49,6 +49,9 @@ namespace SparkyStudios::Audio::Amplitude::Tests
             AM_EXPECT(out->frames >= 512);
             AM_EXPECT(out->buffer->GetChannelCount() == 2);
 
+            // All three shapes served from the pre-warmed pool, no new allocation
+            AM_EXPECT(pool.allocated == 3);
+
             pool.Release(out);
             pool.Release(transient);
             pool.Release(in);
@@ -56,7 +59,12 @@ namespace SparkyStudios::Audio::Amplitude::Tests
             // Re-acquiring a smaller shape must reuse a pooled chunk (no new allocation)
             SoundChunk* again = pool.Acquire(512, 2);
             AM_EXPECT_NOT(again == nullptr);
+            AM_EXPECT(again == in || again == out);
             pool.Release(again);
+
+            // Pre-warm is safe to call multiple times: no additional chunks are allocated
+            pool.PreWarm(1024, 2, 512);
+            AM_EXPECT(pool.allocated == 3);
         }
     };
 
