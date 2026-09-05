@@ -69,25 +69,23 @@ namespace SparkyStudios::Audio::Amplitude
     void FFTFilterInstance::InitializeFFT()
     {
         _temp = static_cast<AmReal32Buffer>(ampoolmalloc(eMemoryPoolKind_Filtering, STFT_WINDOW_SIZE * sizeof(AmReal32)));
+
+        // Cache the FFT plan and the complex scratch buffer
+        _fft.Initialize(STFT_WINDOW_SIZE);
+        _sc.Resize(FFT::GetOutputSize(STFT_WINDOW_SIZE), true);
+
+        // Phase accumulators are indexed by (bin + channel * STFT_WINDOW_SIZE)
+        const AmSize phaseSize = STFT_WINDOW_SIZE * kAmMaxSupportedChannelCount * sizeof(AmReal32);
+        _sumPhase = static_cast<AmReal32Buffer>(ampoolmalloc(eMemoryPoolKind_Filtering, phaseSize));
+        _lastPhase = static_cast<AmReal32Buffer>(ampoolmalloc(eMemoryPoolKind_Filtering, phaseSize));
+
+        std::memset(_sumPhase, 0, phaseSize);
+        std::memset(_lastPhase, 0, phaseSize);
     }
 
     void FFTFilterInstance::Process(const AudioBuffer& in, AudioBuffer& out, AmUInt64 frames, AmUInt32 sampleRate)
     {
-        if (_sumPhase == nullptr)
-        {
-            _sumPhase = static_cast<AmReal32Buffer>(
-                ampoolmalloc(eMemoryPoolKind_Filtering, STFT_WINDOW_SIZE * in.GetChannelCount() * sizeof(AmReal32)));
-
-            std::memset(_sumPhase, 0, sizeof(AmReal32) * STFT_WINDOW_SIZE * in.GetChannelCount());
-        }
-
-        if (_lastPhase == nullptr)
-        {
-            _lastPhase = static_cast<AmReal32Buffer>(
-                ampoolmalloc(eMemoryPoolKind_Filtering, STFT_WINDOW_SIZE * in.GetChannelCount() * sizeof(AmReal32)));
-
-            std::memset(_lastPhase, 0, sizeof(AmReal32) * STFT_WINDOW_SIZE * in.GetChannelCount());
-        }
+        AMPLITUDE_ASSERT(_sumPhase != nullptr && _lastPhase != nullptr);
 
         FilterInstance::Process(in, out, frames, sampleRate);
     }
@@ -112,16 +110,11 @@ namespace SparkyStudios::Audio::Amplitude
                 std::memset(_temp + framesToProcess, 0, sizeof(AmReal32) * (STFT_WINDOW_SIZE - framesToProcess));
 
             {
-                FFT fft;
-                SplitComplex sc;
+                _fft.Forward(_temp, _sc);
 
-                fft.Initialize(STFT_WINDOW_SIZE);
+                ProcessFFTChannel(_sc, channel, STFT_WINDOW_HALF, in.GetChannelCount(), sampleRate);
 
-                fft.Forward(_temp, sc);
-
-                ProcessFFTChannel(sc, channel, STFT_WINDOW_HALF, in.GetChannelCount(), sampleRate);
-
-                fft.Backward(_temp, sc);
+                _fft.Backward(_temp, _sc);
             }
 
             for (AmUInt32 i = 0; i < framesToProcess; i++)

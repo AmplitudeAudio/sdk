@@ -17,6 +17,7 @@
 #ifndef _AM_IMPLEMENTATION_DSP_FILTERS_FFT_FILTER_H
 #define _AM_IMPLEMENTATION_DSP_FILTERS_FFT_FILTER_H
 
+#include <SparkyStudios/Audio/Amplitude/DSP/FFT.h>
 #include <SparkyStudios/Audio/Amplitude/DSP/Filter.h>
 #include <SparkyStudios/Audio/Amplitude/DSP/SplitComplex.h>
 
@@ -56,6 +57,9 @@ namespace SparkyStudios::Audio::Amplitude
         void InitializeFFT();
 
     private:
+        FFT _fft;
+        SplitComplex _sc;
+
         AmReal32Buffer _temp = nullptr;
         AmReal32Buffer _sumPhase = nullptr;
         AmReal32Buffer _lastPhase = nullptr;
