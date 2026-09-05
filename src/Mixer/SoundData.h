@@ -83,6 +83,19 @@ namespace SparkyStudios::Audio::Amplitude
         SoundChunk* Acquire(AmUInt64 frames, AmUInt16 channels, bool clearOnAcquire = true);
 
         /**
+         * @brief Pre-allocates the chunks a layer needs per mix batch so the audio thread never grows the pool.
+         *
+         * Acquires and immediately releases the three chunk shapes used per mix batch
+         * (input, mono transient, stereo output). Safe to call multiple times; only the
+         * missing shapes are allocated.
+         *
+         * @param[in] inFrames The input chunk capacity, in frames.
+         * @param[in] inChannels The input chunk channel count.
+         * @param[in] outFrames The output/transient chunk capacity, in frames.
+         */
+        void PreWarm(AmUInt64 inFrames, AmUInt16 inChannels, AmUInt64 outFrames);
+
+        /**
          * @brief Releases a chunk back to the pool.
          *
          * @param[in] chunk The chunk to release (may be null).
