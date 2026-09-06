@@ -12,6 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+#include <atomic>
+
 #include <SparkyStudios/Audio/Amplitude/Amplitude.h>
 
 #include <Core/Engine.h>
@@ -22,7 +24,7 @@
 
 namespace SparkyStudios::Audio::Amplitude
 {
-    static AmObjectID gLastSoundInstanceID = 0;
+    static std::atomic<AmObjectID> gLastSoundInstanceID{ 0 };
 
     void SoundImpl::DestroyInstance(SoundInstance* soundInstance)
     {
@@ -364,7 +366,7 @@ namespace SparkyStudios::Audio::Amplitude
         , _decoder(nullptr)
         , _settings(std::move(settings))
         , _currentLoopCount(0)
-        , _id(++gLastSoundInstanceID)
+        , _id(gLastSoundInstanceID.fetch_add(1, std::memory_order_relaxed) + 1)
     {
         if (_effect != nullptr)
             _effectInstance = _effect->CreateInstance();

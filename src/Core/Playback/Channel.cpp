@@ -14,6 +14,8 @@
 
 #include <utility>
 
+#include <atomic>
+
 #include <SparkyStudios/Audio/Amplitude/Core/Common.h>
 #include <SparkyStudios/Audio/Amplitude/Core/Playback/Channel.h>
 
@@ -21,7 +23,7 @@
 
 namespace SparkyStudios::Audio::Amplitude
 {
-    static AmUInt64 globalStateId = 0;
+    static std::atomic<AmUInt64> globalStateId{ 0 };
 
     Channel::Channel()
         : _state(nullptr)
@@ -41,7 +43,7 @@ namespace SparkyStudios::Audio::Amplitude
         }
         else
         {
-            _stateId = ++globalStateId;
+            _stateId = globalStateId.fetch_add(1, std::memory_order_relaxed) + 1;
             state->SetChannelStateId(_stateId);
         }
     }
