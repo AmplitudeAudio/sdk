@@ -192,6 +192,23 @@ namespace SparkyStudios::Audio::Amplitude
          * @internal
          */
         ChannelInstanceInternalState* _state;
+
+        /**
+         * @brief The instance id captured when this handle was created.
+         *
+         * @internal
+         */
+        AmChannelInstanceID _id;
+
+        /**
+         * @brief The state generation captured when this handle was created.
+         *
+         * Used together with @c _id to detect that the state has been recycled
+         * by the memory pool after the instance was removed.
+         *
+         * @internal
+         */
+        AmUInt64 _generation;
     };
 } // namespace SparkyStudios::Audio::Amplitude
 

@@ -80,6 +80,37 @@ namespace SparkyStudios::Audio::Amplitude
         }
 
         /**
+         * @brief Gets the generation of this instance state.
+         *
+         * The generation changes every time the state is recycled, allowing
+         * @c ChannelInstance handles to detect staleness after pool reuse.
+         *
+         * @return The generation value.
+         */
+        [[nodiscard]] AM_INLINE AmUInt64 GetGeneration() const
+        {
+            return _generation;
+        }
+
+        /**
+         * @brief Sets the generation of this instance state.
+         *
+         * @param generation The generation value.
+         */
+        AM_INLINE void SetGeneration(AmUInt64 generation)
+        {
+            _generation = generation;
+        }
+
+        /**
+         * @brief Invalidates this state before it is returned to the memory pool.
+         *
+         * Must be called before deleting the state so that stale handles observe
+         * a mismatched id/generation instead of reading recycled values.
+         */
+        void Invalidate();
+
+        /**
          * @brief Gets the world location of this instance.
          *
          * @return The world-space position.
@@ -270,6 +301,7 @@ namespace SparkyStudios::Audio::Amplitude
 
     private:
         AmChannelInstanceID _instanceId;
+        AmUInt64 _generation = 0;
         ChannelInternalState* _parentChannel;
 
         // Position

@@ -59,6 +59,13 @@ namespace SparkyStudios::Audio::Amplitude
         _computedGain = 1.0f;
         _pannedGain = kVector2One;
         _dopplerFactors.clear();
+        _generation = 0;
+    }
+
+    void ChannelInstanceInternalState::Invalidate()
+    {
+        _instanceId = kAmInvalidObjectId;
+        _generation = 0;
     }
 
     void ChannelInstanceInternalState::SetRoom(const Room& room)

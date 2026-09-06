@@ -13,6 +13,7 @@
 // limitations under the License.
 
 #include <algorithm>
+#include <atomic>
 #include <ranges>
 
 #include <SparkyStudios/Audio/Amplitude/Amplitude.h>
@@ -31,6 +32,8 @@
 
 namespace SparkyStudios::Audio::Amplitude
 {
+    static std::atomic<AmUInt64> gChannelInstanceGeneration{ 1 };
+
     // Removes this channel state from all lists.
     void ChannelInternalState::Remove()
     {
@@ -887,6 +890,7 @@ namespace SparkyStudios::Audio::Amplitude
 
         auto* instance = ampoolnew(eMemoryPoolKind_Engine, ChannelInstanceInternalState, this);
         instance->SetId(_nextInstanceId++);
+        instance->SetGeneration(gChannelInstanceGeneration.fetch_add(1, std::memory_order_relaxed));
         instance->SetLocation(location);
 
         // For separate mode, initialize cursor at 0 if channel is already playing
@@ -910,6 +914,7 @@ namespace SparkyStudios::Audio::Amplitude
         instance->instance_node.remove();
         _instancesMap.erase(it);
 
+        instance->Invalidate();
         ampooldelete(eMemoryPoolKind_Engine, ChannelInstanceInternalState, instance);
     }
 
@@ -919,6 +924,7 @@ namespace SparkyStudios::Audio::Amplitude
         {
             ChannelInstanceInternalState& instance = _instances.front();
             instance.instance_node.remove();
+            instance.Invalidate();
             ampooldelete(eMemoryPoolKind_Engine, ChannelInstanceInternalState, &instance);
         }
 

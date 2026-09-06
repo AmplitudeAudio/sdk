@@ -20,25 +20,31 @@ namespace SparkyStudios::Audio::Amplitude
 {
     ChannelInstance::ChannelInstance()
         : _state(nullptr)
+        , _id(kAmInvalidObjectId)
+        , _generation(0)
     {}
 
     ChannelInstance::ChannelInstance(ChannelInstanceInternalState* state)
         : _state(state)
+        , _id(state != nullptr ? state->GetId() : kAmInvalidObjectId)
+        , _generation(state != nullptr ? state->GetGeneration() : 0)
     {}
 
     void ChannelInstance::Clear()
     {
         _state = nullptr;
+        _id = kAmInvalidObjectId;
+        _generation = 0;
     }
 
     bool ChannelInstance::Valid() const
     {
-        return _state != nullptr && _state->GetId() != kAmInvalidObjectId && _state->instance_node.in_list();
+        return _state != nullptr && _id != kAmInvalidObjectId && _state->GetId() == _id && _state->GetGeneration() == _generation;
     }
 
     AmChannelInstanceID ChannelInstance::GetId() const
     {
-        return _state != nullptr ? _state->GetId() : kAmInvalidObjectId;
+        return _id;
     }
 
     const AmVector3& ChannelInstance::GetLocation() const
