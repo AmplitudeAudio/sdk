@@ -14,6 +14,8 @@
 
 #include <Core/Playback/ChannelInstanceInternalState.h>
 
+#include <Core/Playback/ChannelInternalState.h>
+
 namespace SparkyStudios::Audio::Amplitude
 {
     ChannelInstanceInternalState::ChannelInstanceInternalState()
@@ -68,9 +70,29 @@ namespace SparkyStudios::Audio::Amplitude
         _generation = 0;
     }
 
+    void ChannelInstanceInternalState::SetLocation(const AmVector3& location)
+    {
+        _previousLocation = _location;
+        _location = location;
+
+        if (_parentChannel != nullptr)
+            _parentChannel->PublishInstanceSnapshot();
+    }
+
     void ChannelInstanceInternalState::SetRoom(const Room& room)
     {
         _room = room;
+
+        if (_parentChannel != nullptr)
+            _parentChannel->PublishInstanceSnapshot();
+    }
+
+    void ChannelInstanceInternalState::SetWeight(AmReal32 weight)
+    {
+        _weight = AM_MAX(weight, 0.0f);
+
+        if (_parentChannel != nullptr)
+            _parentChannel->PublishInstanceSnapshot();
     }
 
     void ChannelInstanceInternalState::AdvanceCursor(AmUInt64 frames, AmUInt64 soundLength, bool loop)

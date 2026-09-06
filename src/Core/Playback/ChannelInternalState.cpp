@@ -69,6 +69,15 @@ namespace SparkyStudios::Audio::Amplitude
             listener = nullptr;
 
         _eventsMap.clear();
+
+        ClearInstances();
+
+        _instancingEnabled = false;
+        _instancingMode = eChannelInstanceMode_Blended;
+        _nextInstanceId = 1;
+
+        _room = Room();
+        _activeListener = Listener();
     }
 
     void ChannelInternalState::SetSwitchContainer(SwitchContainerImpl* switchContainer)
@@ -863,6 +872,8 @@ namespace SparkyStudios::Audio::Amplitude
         _instancingEnabled = true;
         _instancingMode = mode;
         _nextInstanceId = 1;
+
+        PublishInstanceSnapshot();
     }
 
     void ChannelInternalState::DisableInstancing()
@@ -891,7 +902,9 @@ namespace SparkyStudios::Audio::Amplitude
         auto* instance = ampoolnew(eMemoryPoolKind_Engine, ChannelInstanceInternalState, this);
         instance->SetId(_nextInstanceId++);
         instance->SetGeneration(gChannelInstanceGeneration.fetch_add(1, std::memory_order_relaxed));
-        instance->SetLocation(location);
+
+        instance->_location = location;
+        instance->_previousLocation = location;
 
         // For separate mode, initialize cursor at 0 if channel is already playing
         // This allows instances to start at different points in time
@@ -900,6 +913,8 @@ namespace SparkyStudios::Audio::Amplitude
 
         _instances.push_back(*instance);
         _instancesMap[instance->GetId()] = instance;
+
+        PublishInstanceSnapshot();
 
         return instance;
     }
@@ -916,6 +931,8 @@ namespace SparkyStudios::Audio::Amplitude
 
         instance->Invalidate();
         ampooldelete(eMemoryPoolKind_Engine, ChannelInstanceInternalState, instance);
+
+        PublishInstanceSnapshot();
     }
 
     void ChannelInternalState::ClearInstances()
@@ -929,6 +946,71 @@ namespace SparkyStudios::Audio::Amplitude
         }
 
         _instancesMap.clear();
+
+        PublishInstanceSnapshot();
+    }
+
+    void ChannelInternalState::PublishInstanceSnapshot()
+    {
+        // Lazily allocate the cursor write-back slots. Only instanced channels pay for it.
+        if (_instancingEnabled && _instanceSnapshotState.cursors == nullptr)
+        {
+            _instanceSnapshotState.cursors = std::make_unique<ChannelInstanceCursorSlot[]>(kAmMaxChannelInstances);
+            for (AmSize i = 0; i < kAmMaxChannelInstances; ++i)
+            {
+                _instanceSnapshotState.cursors[i].id.store(kAmInvalidObjectId, std::memory_order_relaxed);
+                _instanceSnapshotState.cursors[i].cursor.store(0, std::memory_order_relaxed);
+            }
+        }
+
+        // Drain audio-thread cursor write-backs into the authoritative states, using
+        // the currently published snapshot's slot pairing.
+        if (_instanceSnapshotState.cursors != nullptr)
+        {
+            const auto& published =
+                _instanceSnapshotState.snapshots[_instanceSnapshotState.publishedSnapshot.load(std::memory_order_acquire)];
+            for (AmSize i = 0; i < published.size(); ++i)
+            {
+                const AmChannelInstanceID id = _instanceSnapshotState.cursors[i].id.load(std::memory_order_acquire);
+                if (id == kAmInvalidObjectId || id != published[i].instanceId)
+                    continue;
+
+                if (auto it = _instancesMap.find(id); it != _instancesMap.end())
+                    it->second->SetCursor(_instanceSnapshotState.cursors[i].cursor.load(std::memory_order_acquire));
+            }
+        }
+
+        // Rebuild the back buffer from the authoritative list.
+        const AmUInt32 current = _instanceSnapshotState.publishedSnapshot.load(std::memory_order_relaxed);
+        const AmUInt32 next = 1 - current;
+        auto& snapshot = _instanceSnapshotState.snapshots[next];
+
+        snapshot.clear();
+        snapshot.reserve(_instances.size());
+        for (const auto& instance : _instances)
+        {
+            ChannelInstanceData data;
+            data.instanceId = instance.GetId();
+            data.location = instance.GetLocation();
+            data.room = instance.GetRoom();
+            data.weight = instance.GetWeight();
+            data.computedGain = instance.GetComputedGain();
+            data.cursor = instance.GetCursor();
+            snapshot.push_back(data);
+        }
+
+        // Re-pair the write-back slots with the new snapshot before publishing it.
+        if (_instanceSnapshotState.cursors != nullptr)
+        {
+            for (AmSize i = 0; i < kAmMaxChannelInstances; ++i)
+            {
+                const AmChannelInstanceID id = i < snapshot.size() ? snapshot[i].instanceId : kAmInvalidObjectId;
+                _instanceSnapshotState.cursors[i].id.store(id, std::memory_order_release);
+            }
+        }
+
+        // Publish: this release store pairs with the acquire load in AcquireInstanceSnapshot().
+        _instanceSnapshotState.publishedSnapshot.store(next, std::memory_order_release);
     }
 
     ChannelInstanceInternalState* ChannelInternalState::GetInstance(AmChannelInstanceID instanceId)

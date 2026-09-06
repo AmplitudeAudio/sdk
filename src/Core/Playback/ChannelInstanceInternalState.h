@@ -17,6 +17,7 @@
 #ifndef _AM_IMPLEMENTATION_CORE_PLAYBACK_CHANNEL_INSTANCE_INTERNAL_STATE_H
 #define _AM_IMPLEMENTATION_CORE_PLAYBACK_CHANNEL_INSTANCE_INTERNAL_STATE_H
 
+#include <atomic>
 #include <unordered_map>
 
 #include <SparkyStudios/Audio/Amplitude/Core/Common.h>
@@ -28,6 +29,38 @@
 namespace SparkyStudios::Audio::Amplitude
 {
     class ChannelInternalState;
+
+    /**
+     * @brief Immutable snapshot of a single channel instance, for audio-thread consumption.
+     *
+     * The game thread owns @c ChannelInstanceInternalState objects and publishes
+     * snapshots of them; the audio thread only ever reads these plain-data copies.
+     */
+    struct ChannelInstanceData
+    {
+        AmChannelInstanceID instanceId;
+        AmVector3 location;
+        Room room;
+        AmReal32 weight;
+        AmReal32 computedGain;
+        AmUInt64 cursor; ///< Initial cursor, used when a layer (re)discovers the instance (separate mode).
+    };
+
+    /**
+     * @brief Cursor write-back slot for separate-mode playback.
+     *
+     * The audio thread writes the latest cursor, the game thread drains it into the
+     * authoritative state at publish time. The @c id is written by the game thread at
+     * publish time and checked by the audio thread before storing, so a store is never
+     * applied to an instance whose id doesn't match. A store that passed the check but
+     * races a re-pair may be drained into the slot's new owner or dropped; both are
+     * bounded and harmless for cursor write-back.
+     */
+    struct ChannelInstanceCursorSlot
+    {
+        std::atomic<AmChannelInstanceID> id;
+        std::atomic<AmUInt64> cursor;
+    };
 
     /**
      * @brief Internal state for a single channel instance (position).
@@ -123,13 +156,11 @@ namespace SparkyStudios::Audio::Amplitude
         /**
          * @brief Sets the world location of this instance.
          *
+         * Publishes a new instance snapshot on the parent channel.
+         *
          * @param location The new world-space position.
          */
-        AM_INLINE void SetLocation(const AmVector3& location)
-        {
-            _previousLocation = _location;
-            _location = location;
-        }
+        void SetLocation(const AmVector3& location);
 
         /**
          * @brief Gets the previous frame's location.
@@ -171,12 +202,11 @@ namespace SparkyStudios::Audio::Amplitude
         /**
          * @brief Sets the attenuation weight for blended mode.
          *
+         * Publishes a new instance snapshot on the parent channel.
+         *
          * @param weight The weight (clamped to be non-negative).
          */
-        AM_INLINE void SetWeight(AmReal32 weight)
-        {
-            _weight = AM_MAX(weight, 0.0f);
-        }
+        void SetWeight(AmReal32 weight);
 
         /**
          * @brief Gets the parent channel that owns this instance.

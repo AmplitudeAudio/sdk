@@ -17,7 +17,10 @@
 #ifndef _AM_IMPLEMENTATION_CORE_PLAYBACK_CHANNEL_INTERNAL_STATE_H
 #define _AM_IMPLEMENTATION_CORE_PLAYBACK_CHANNEL_INTERNAL_STATE_H
 
+#include <array>
+#include <atomic>
 #include <map>
+#include <memory>
 
 #include <SparkyStudios/Audio/Amplitude/Core/Common.h>
 
@@ -73,6 +76,7 @@ namespace SparkyStudios::Audio::Amplitude
             , _nextInstanceId(1)
             , _instances(&ChannelInstanceInternalState::instance_node)
             , _instancesMap()
+            , _instanceSnapshotState()
         {}
 
         // Updates the state enum based on whether this channel is stopped, playing,
@@ -467,6 +471,43 @@ namespace SparkyStudios::Audio::Amplitude
             return _instancesMap;
         }
 
+        /**
+         * @brief Publishes an immutable snapshot of the current instances for the audio thread.
+         *
+         * Rebuilds the back buffer from the authoritative instance list, drains the
+         * cursor write-back slots, then atomically swaps the published index.
+         *
+         * @note Game thread only. Must be called after every mutation of the instance
+         * containers or of any instance's published properties.
+         */
+        void PublishInstanceSnapshot();
+
+        /**
+         * @brief Acquires the latest published instance snapshot.
+         *
+         * @return The published snapshot. Remains valid and immutable until the next
+         * publish, which only ever mutates the other buffer.
+         *
+         * @note Audio thread only.
+         */
+        [[nodiscard]] const std::vector<ChannelInstanceData>* AcquireInstanceSnapshot() const
+        {
+            return &_instanceSnapshotState.snapshots[_instanceSnapshotState.publishedSnapshot.load(std::memory_order_acquire)];
+        }
+
+        /**
+         * @brief Gets the cursor write-back slots, paired by index with the published snapshot.
+         *
+         * @return The slot array, or @c nullptr when instancing has never been enabled
+         * on this channel.
+         *
+         * @note Audio thread: write only, after checking the slot's @c id matches.
+         */
+        [[nodiscard]] ChannelInstanceCursorSlot* GetInstanceCursorSlots() const
+        {
+            return _instanceSnapshotState.cursors.get();
+        }
+
         // The node that tracks the location in the priority list.
         fplutil::intrusive_list_node priority_node;
 
@@ -549,12 +590,51 @@ namespace SparkyStudios::Audio::Amplitude
 
         std::map<eChannelEvent, std::shared_ptr<ChannelEventListener>> _eventsMap;
 
+        /**
+         * @brief Double-buffered instance snapshot state.
+         *
+         * Elements are constructed in place by a single resize() at engine init and
+         * never actually relocated; the move constructor only exists to satisfy the
+         * vector's compile-time move-insertability requirement.
+         */
+        struct InstanceSnapshotState
+        {
+            InstanceSnapshotState() = default;
+            InstanceSnapshotState(const InstanceSnapshotState&) = delete;
+            InstanceSnapshotState& operator=(const InstanceSnapshotState&) = delete;
+            InstanceSnapshotState(InstanceSnapshotState&& other) noexcept
+                : snapshots(std::move(other.snapshots))
+                , publishedSnapshot(other.publishedSnapshot.load(std::memory_order_relaxed))
+                , cursors(std::move(other.cursors))
+            {}
+            InstanceSnapshotState& operator=(InstanceSnapshotState&& other) noexcept
+            {
+                snapshots = std::move(other.snapshots);
+                publishedSnapshot.store(other.publishedSnapshot.load(std::memory_order_relaxed), std::memory_order_relaxed);
+                cursors = std::move(other.cursors);
+                return *this;
+            }
+
+            // Audio-thread instance snapshots (double-buffered). The game thread rebuilds
+            // the back buffer and release-stores the swapped index; the audio thread
+            // acquire-loads the index and reads the published buffer.
+            std::array<std::vector<ChannelInstanceData>, 2> snapshots;
+            std::atomic<AmUInt32> publishedSnapshot;
+
+            // Lazily allocated cursor write-back slots (only instanced channels pay for
+            // them). Deliberately never freed while the channel is alive: the audio thread
+            // may hold the pointer across a callback boundary. Released with the state.
+            std::unique_ptr<ChannelInstanceCursorSlot[]> cursors;
+        };
+
         // Multi-position instancing
         bool _instancingEnabled;
         eChannelInstanceMode _instancingMode;
         AmChannelInstanceID _nextInstanceId;
         ChannelInstanceList _instances;
         std::unordered_map<AmChannelInstanceID, ChannelInstanceInternalState*> _instancesMap;
+
+        InstanceSnapshotState _instanceSnapshotState;
     };
 } // namespace SparkyStudios::Audio::Amplitude
 
