@@ -1540,7 +1540,7 @@ namespace SparkyStudios::Audio::Amplitude
         if (snd == nullptr || snd->sound == nullptr)
             return nullptr;
 
-        return amEngine->GetAttenuationHandle(snd->sound->GetSettings().m_attenuationID);
+        return snd->sound->GetSettings().m_attenuation;
     }
 
     AmUInt32 AmplimixLayerImpl::GetSampleRate() const

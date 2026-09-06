@@ -73,6 +73,7 @@ namespace SparkyStudios::Audio::Amplitude
         RtpcValue m_pitch;
         bool m_loop;
         AmUInt32 m_loopCount;
+        const Attenuation* m_attenuation = nullptr;
     };
 
     class SoundImpl final

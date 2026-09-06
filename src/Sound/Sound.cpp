@@ -392,6 +392,16 @@ namespace SparkyStudios::Audio::Amplitude
         }
 
         _parent->GetRefCounter()->Increment();
+
+        if (_settings.m_attenuationID != kAmInvalidObjectId)
+        {
+            if (const auto state = amEngine->GetState())
+            {
+                const auto& attenuations = state->attenuation_map;
+                if (const auto it = attenuations.find(_settings.m_attenuationID); it != attenuations.end())
+                    _settings.m_attenuation = it->second.get();
+            }
+        }
     }
 
     SoundInstance::~SoundInstance()
