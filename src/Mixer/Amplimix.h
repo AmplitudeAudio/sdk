@@ -28,6 +28,7 @@
 #include <SparkyStudios/Audio/Amplitude/Mixer/Amplimix.h>
 #include <SparkyStudios/Audio/Amplitude/Mixer/Pipeline.h>
 
+#include <Core/Playback/ChannelInstanceInternalState.h>
 #include <Mixer/SoundData.h>
 
 #include <Utils/miniaudio/miniaudio_utils.h>
@@ -139,19 +140,17 @@ namespace SparkyStudios::Audio::Amplitude
 
         /**
          * @brief Cached per-instance data for pipeline processing.
+         *
+         * Alias of the Core snapshot record; see @c ChannelInstanceData.
          */
-        struct InstanceData
-        {
-            AmChannelInstanceID instanceId;
-            AmVector3 location;
-            Room room;
-            AmReal32 weight;
-            AmReal32 computedGain;
-            AmUInt64 cursor; // For separate mode
-        };
+        using InstanceData = ChannelInstanceData;
 
         /**
-         * @brief Updates the cached instance data from the channel state.
+         * @brief Updates the cached instance data from the channel's published snapshot.
+         *
+         * Reads the immutable snapshot published by the game thread (never the
+         * game-owned containers), preserving layer-side cursors for instances whose
+         * id was already present.
          */
         void UpdateInstanceData();
 
@@ -159,6 +158,12 @@ namespace SparkyStudios::Audio::Amplitude
          * @brief Cached instance data for multi-position processing.
          */
         std::vector<InstanceData> instanceData;
+
+        /**
+         * @brief Scratch storage used by UpdateInstanceData() to preserve cursors
+         * across snapshot refreshes without allocating on the audio thread.
+         */
+        std::vector<InstanceData> previousInstanceData;
 
         /**
          * @brief Whether we are currently processing a specific instance (separate mode).

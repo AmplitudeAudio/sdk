@@ -1086,12 +1086,13 @@ namespace SparkyStudios::Audio::Amplitude
         const AmUInt64 end = layer->end;
         bool allInstancesFinished = true;
 
-        // Get the channel's instance list for cursor updates
+        // Get the channel for cursor write-back through the atomic slots. The game-owned
+        // instance containers are never touched from the audio thread.
         const auto& channel = layer->GetChannel();
         if (!channel.Valid())
             return;
 
-        auto& instances = channel.GetState()->GetInstances();
+        auto* channelState = channel.GetState();
 
         // Pre-allocate buffers for instance processing
         SoundChunk* in = layer->_chunkPool.Acquire(inSamples, soundChannels, false);
@@ -1210,19 +1211,14 @@ namespace SparkyStudios::Audio::Amplitude
             // Update the instance's cursor in the cached data
             data.cursor = instanceCursor;
 
-            // Update the actual instance state
-            const AmChannelInstanceID instanceId = data.instanceId;
-            auto& instancesMap = channel.GetState()->GetInstancesMap();
-            auto it = instancesMap.find(instanceId);
-
-            if (it != instancesMap.end())
+            // Write the cursor back through the channel's write-back slots, so the
+            // game thread can restore it if this layer is recreated. The id check
+            // drops stores that race a re-publication.
+            if (auto* slots = channelState->GetInstanceCursorSlots(); slots != nullptr && instanceIndex < kAmMaxChannelInstances)
             {
-                it->second->SetCursor(instanceCursor);
-            }
-            else
-            {
-                // Instance was removed during processing, skip update
-                amLogWarning("Instance " AM_ID_CHAR_FMT " was removed during audio processing, skipping cursor update.", instanceId);
+                auto& slot = slots[instanceIndex];
+                if (slot.id.load(std::memory_order_acquire) == data.instanceId)
+                    slot.cursor.store(instanceCursor, std::memory_order_release);
             }
 
             // Reset pipeline state for next instance. This is required since each
@@ -1623,7 +1619,8 @@ namespace SparkyStudios::Audio::Amplitude
 
     void AmplimixLayerImpl::UpdateInstanceData()
     {
-        instanceData.clear();
+        previousInstanceData.clear();
+        previousInstanceData.swap(instanceData);
 
         if (snd == nullptr || snd->sound == nullptr)
             return;
@@ -1636,18 +1633,24 @@ namespace SparkyStudios::Audio::Amplitude
         if (!channelState->IsInstancingEnabled())
             return;
 
-        const auto& instances = channelState->GetInstances();
-        instanceData.reserve(instances.size());
+        const auto* snapshot = channelState->AcquireInstanceSnapshot();
 
-        for (const auto& instance : instances)
+        instanceData.reserve(snapshot->size());
+        for (const auto& entry : *snapshot)
         {
-            InstanceData data;
-            data.instanceId = instance.GetId();
-            data.location = instance.GetLocation();
-            data.room = instance.GetRoom();
-            data.weight = instance.GetWeight();
-            data.computedGain = instance.GetComputedGain();
-            data.cursor = instance.GetCursor(); // For separate mode
+            InstanceData data = entry;
+
+            // Preserve the layer-side cursor for instances that were already present;
+            // the snapshot's cursor is only the initial value for (re)discovered ones.
+            for (const auto& prev : previousInstanceData)
+            {
+                if (prev.instanceId == entry.instanceId)
+                {
+                    data.cursor = prev.cursor;
+                    break;
+                }
+            }
+
             instanceData.push_back(data);
         }
     }
