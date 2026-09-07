@@ -164,6 +164,11 @@ namespace SparkyStudios::Audio::Amplitude
                     *r++ = *b++;
                     *i++ = *b++;
                 }
+
+                const size_t size2 = _size / 2;
+                re[size2] = im[0];
+                im[0] = 0.0f;
+                im[size2] = 0.0f;
             }
         }
 
@@ -180,6 +185,8 @@ namespace SparkyStudios::Audio::Amplitude
                     *b++ = *r++;
                     *b++ = *i++;
                 }
+
+                _buffer[1] = re[_size / 2];
             }
 
             pffft_transform_ordered(_pffft_setup, _buffer, _buffer, _scratch, PFFFT_BACKWARD);
