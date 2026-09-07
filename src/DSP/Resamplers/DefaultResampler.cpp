@@ -184,14 +184,22 @@ namespace SparkyStudios::Audio::Amplitude
 
     void DefaultResamplerInstance::Initialize(AmUInt16 channelCount, AmUInt32 sampleRateIn, AmUInt32 sampleRateOut)
     {
-        // Convert sampling rates to be relatively prime.
-        AMPLITUDE_ASSERT(sampleRateIn > 0);
-        AMPLITUDE_ASSERT(sampleRateOut > 0);
         AMPLITUDE_ASSERT(channelCount > 0);
 
-        const AmInt64 gcd = FindGCD(sampleRateOut, sampleRateIn);
-        const AmUInt64 destination = static_cast<AmUInt64>(sampleRateOut / gcd);
-        const AmUInt64 source = static_cast<AmUInt64>(sampleRateIn / gcd);
+        // This method is total by contract, and AmplimixImpl::UpdatePitch can reach it with a rate of zero in
+        // release builds, where the assertions above are compiled out. Clamp instead of asserting.
+        sampleRateIn = AM_MAX(sampleRateIn, 1U);
+        sampleRateOut = AM_MAX(sampleRateOut, 1U);
+
+        // Reduce the rate pair, approximating it when it cannot be represented within the filter budget.
+        // This keeps max(_upRate, _downRate) <= kMaxPolyphaseRate, which bounds every buffer written by
+        // GenerateInterpolatingFilter() and ArrangeFilterAsPolyphase().
+        const AmRational ratio = ApproximateRational(sampleRateOut, sampleRateIn, kMaxPolyphaseRate);
+
+        const AmUInt64 destination = ratio.numerator;
+        const AmUInt64 source = ratio.denominator;
+
+        _conversionExact = ratio.exact;
 
         // Obtain the size of the _state before _coefficientsPerPhase is updated in GenerateInterpolatingFilter().
         const AmUInt64 oldStateSize = _coefficientsPerPhase > 0 ? _coefficientsPerPhase - 1 : 0;

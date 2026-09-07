@@ -140,6 +140,26 @@ namespace SparkyStudios::Audio::Amplitude
         }
 
         /**
+         * @brief Gets the interpolator rate of the internal rational ratio.
+         *
+         * @return The up rate. Never greater than @c kMaxPolyphaseRate.
+         */
+        [[nodiscard]] AmUInt64 GetUpRate() const
+        {
+            return _upRate;
+        }
+
+        /**
+         * @brief Gets the decimator rate of the internal rational ratio.
+         *
+         * @return The down rate. Never greater than @c kMaxPolyphaseRate.
+         */
+        [[nodiscard]] AmUInt64 GetDownRate() const
+        {
+            return _downRate;
+        }
+
+        /**
          * @copydoc ResamplerInstance::Clear
          */
         void Clear() override;
@@ -219,6 +239,9 @@ namespace SparkyStudios::Audio::Amplitude
         // Source and destination sample rates.
         AmUInt32 _sampleRateIn = 0;
         AmUInt32 _sampleRateOut = 0;
+
+        // Whether the current rate pair is converted exactly, or approximated to fit the filter budget.
+        bool _conversionExact = true;
     };
 
     class DefaultResampler final : public Resampler
