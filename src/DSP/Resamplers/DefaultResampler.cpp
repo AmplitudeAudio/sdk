@@ -272,13 +272,14 @@ namespace SparkyStudios::Audio::Amplitude
         const AmUInt64 newFrameCount = _coefficientsPerPhase > 0 ? _coefficientsPerPhase - 1 : 0;
         if (oldFrameCount != newFrameCount)
         {
-            const AmUInt64 minSize = std::min(newFrameCount, oldFrameCount);
-            const AmUInt64 maxSize = std::max(newFrameCount, oldFrameCount);
+            const AmUInt64 stateCapacity = static_cast<AmUInt64>(_state.GetFrameCount());
+            const AmUInt64 minSize = AM_MIN(std::min(newFrameCount, oldFrameCount), stateCapacity);
+            const AmUInt64 maxSize = AM_MIN(std::max(newFrameCount, oldFrameCount), stateCapacity);
 
             for (AmUInt64 channel = 0; channel < _channelCount; ++channel)
             {
                 auto& state_channel = _state[channel];
-                AMPLITUDE_ASSERT(state_channel.begin() + maxSize < state_channel.end());
+                AMPLITUDE_ASSERT(state_channel.begin() + maxSize <= state_channel.end());
                 std::fill(state_channel.begin() + minSize, state_channel.begin() + maxSize, 0.0f);
             }
         }
@@ -293,6 +294,9 @@ namespace SparkyStudios::Audio::Amplitude
 
         AmUInt64 filterLength = maxRate * kTransitionBandwidthRatio;
         filterLength += filterLength % 2;
+
+        // Defense in depth: Initialize() snaps the rate pair so this clamp cannot trigger.
+        filterLength = AM_MIN(filterLength, static_cast<AmUInt64>(_temporaryFilterCoefficients.GetFrameCount()));
 
         auto* filterChannel = &_temporaryFilterCoefficients[0];
         filterChannel->clear();
@@ -318,6 +322,8 @@ namespace SparkyStudios::Audio::Amplitude
         _transposedFilterCoefficients.Clear();
         auto& transposedCoefficientsChannel = _transposedFilterCoefficients[0];
 
+        const AmUInt64 transposedCapacity = static_cast<AmUInt64>(_transposedFilterCoefficients.GetFrameCount());
+
         for (AmUInt64 i = 0; i < _upRate; ++i)
         {
             for (AmUInt64 j = 0; j < _coefficientsPerPhase; ++j)
@@ -326,6 +332,9 @@ namespace SparkyStudios::Audio::Amplitude
                     continue;
 
                 const AmUInt64 coeffIndex = (_coefficientsPerPhase - 1 - j) + i * _coefficientsPerPhase;
+                if (coeffIndex >= transposedCapacity)
+                    continue;
+
                 transposedCoefficientsChannel[coeffIndex] = filter[j * _upRate + i];
             }
         }
