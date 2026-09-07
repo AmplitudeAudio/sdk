@@ -139,7 +139,7 @@ namespace SparkyStudios::Audio::Amplitude
             const AmReal32 r = fft.re()[s];
             const AmReal32 i = fft.im()[s];
 
-            fft.re()[s] = std::sqrt(r * r + i * i) * 2.0f;
+            fft.re()[s] = std::sqrt(r * r + i * i);
             fft.im()[s] = std::atan2(i, r);
         }
     }
