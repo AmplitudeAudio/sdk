@@ -312,6 +312,12 @@ static int process(const AmOsString& inFileName, const AmOsString& outFileName, 
             auto resampler = Resampler::Construct("default");
             resampler->Initialize(numChannels, sampleRate, state.resampling.targetSampleRate);
 
+            if (!resampler->IsConversionExact(sampleRate, state.resampling.targetSampleRate))
+                log(stderr,
+                    "Warning: %d Hz cannot be converted to %d Hz exactly. The ratio will be approximated. Consider a target "
+                    "sample rate that shares more factors with the source.\n",
+                    sampleRate, state.resampling.targetSampleRate);
+
             AmUInt64 f = resampler->GetExpectedOutputFrames(numSamples);
             AudioBuffer output(f, numChannels);
 

@@ -12,6 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+#include <SparkyStudios/Audio/Amplitude/IO/Log.h>
 #include <SparkyStudios/Audio/Amplitude/DSP/AudioConverter.h>
 
 #include <Utils/Utils.h>
@@ -43,6 +44,9 @@ namespace SparkyStudios::Audio::Amplitude
 
     bool AudioConverter::Configure(const Settings& settings)
     {
+        if (settings.m_sourceSampleRate == 0 || settings.m_targetSampleRate == 0)
+            return false; // Invalid sample rates
+
         if (settings.m_sourceChannelCount == settings.m_targetChannelCount)
             _channelConversionMode = kChannelConversionModeDisabled;
         else if (settings.m_sourceChannelCount == 1 && settings.m_targetChannelCount == 2)
@@ -58,6 +62,12 @@ namespace SparkyStudios::Audio::Amplitude
         {
             _resampler->Initialize(settings.m_targetChannelCount, settings.m_sourceSampleRate, settings.m_targetSampleRate);
             _srcInitialized = true;
+
+            if (!_resampler->IsConversionExact(settings.m_sourceSampleRate, settings.m_targetSampleRate))
+                amLogWarning(
+                    "The conversion from %u Hz to %u Hz cannot be represented exactly by the resampler. The ratio will be "
+                    "approximated, which shifts playback rate by less than 0.001 percent.",
+                    settings.m_sourceSampleRate, settings.m_targetSampleRate);
         }
 
         _settings = settings;
