@@ -107,6 +107,14 @@ namespace SparkyStudios::Audio::Amplitude
             ampoolfree(eMemoryPoolKind_Filtering, _carry);
             _carry = nullptr;
         }
+
+        if (_scratch != nullptr)
+        {
+            ampoolfree(eMemoryPoolKind_Filtering, _scratch);
+            _scratch = nullptr;
+        }
+
+        _scratchCapacity = 0;
     }
 
     void FFTFilterInstance::InitializeFFT()
@@ -168,6 +176,26 @@ namespace SparkyStudios::Audio::Amplitude
         const auto& inChannel = in[channel];
         auto& outChannel = out[channel];
 
+        const AmReal32* input = inChannel.begin();
+
+        if (input == outChannel.begin() && frames > 0)
+        {
+            if (_scratchCapacity < frames)
+            {
+                if (_scratch != nullptr)
+                {
+                    ampoolfree(eMemoryPoolKind_Filtering, _scratch);
+                    _scratch = nullptr;
+                }
+
+                _scratch = static_cast<AmReal32Buffer>(ampoolmalloc(eMemoryPoolKind_Filtering, frames * sizeof(AmReal32)));
+                _scratchCapacity = frames;
+            }
+
+            std::memcpy(_scratch, input, frames * sizeof(AmReal32));
+            input = _scratch;
+        }
+
         AmReal32* inHistory = _inHistory + channel * STFT_WINDOW_HALF;
         AmReal32* ola = _ola + channel * STFT_WINDOW_SIZE;
         AmReal32* wetFifo = _wetFifo + channel * STFT_WINDOW_SIZE;
@@ -190,7 +218,7 @@ namespace SparkyStudios::Audio::Amplitude
                 const AmUInt32 needed = STFT_WINDOW_HALF - carryCount;
 
                 for (AmUInt32 i = 0; i < needed; ++i, ++inPos)
-                    carry[carryCount + i] = inChannel[inPos];
+                    carry[carryCount + i] = input[inPos];
 
                 // Analysis frame: previous half-window followed by the new samples.
                 std::memcpy(_temp, inHistory, STFT_WINDOW_HALF * sizeof(AmReal32));
@@ -230,7 +258,7 @@ namespace SparkyStudios::Audio::Amplitude
         {
             carryCount = static_cast<AmUInt32>(frames - inPos);
             for (AmUInt32 i = 0; i < carryCount; ++i, ++inPos)
-                carry[i] = inChannel[inPos];
+                carry[i] = input[inPos];
         }
     }
 

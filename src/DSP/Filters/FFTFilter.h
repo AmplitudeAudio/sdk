@@ -74,6 +74,12 @@ namespace SparkyStudios::Audio::Amplitude
         AmReal32Buffer _dryFifo = nullptr; // STFT_WINDOW_SIZE per channel
         AmReal32Buffer _carry = nullptr; // STFT_WINDOW_HALF per channel
 
+        // In-place staging buffer (grows on demand). Used to decouple the input
+        // from the output when a channel is processed in-place, since the engine
+        // writes output samples before the corresponding input is consumed.
+        AmReal32Buffer _scratch = nullptr;
+        AmUInt64 _scratchCapacity = 0;
+
         AmUInt32 _fifoHead[kAmMaxSupportedChannelCount] = {};
         AmUInt32 _fifoCount[kAmMaxSupportedChannelCount] = {};
         AmUInt32 _carryCount[kAmMaxSupportedChannelCount] = {};
