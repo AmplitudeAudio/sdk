@@ -315,6 +315,125 @@ namespace SparkyStudios::Audio::Amplitude
     }
 
     /**
+     * @brief A rational number, used to express a sample rate conversion ratio.
+     *
+     * @ingroup math
+     */
+    struct AmRational
+    {
+        AmUInt64 numerator;   ///< The numerator of the ratio.
+        AmUInt64 denominator; ///< The denominator of the ratio.
+        bool exact;           ///< @c true when the reduced input already fit within the requested bound.
+    };
+
+    /**
+     * @brief Finds the closest rational approximation of @c numerator / @c denominator whose terms are
+     * both lower than or equal to @c maxTerm.
+     *
+     * The reduced input is returned unchanged when it already fits, with @c exact set to @c true. Otherwise
+     * the best continued-fraction convergent or semiconvergent within the bound is returned, with @c exact
+     * set to @c false.
+     *
+     * The computation uses integer arithmetic only, performs no allocation, and runs in a bounded number of
+     * steps, so it is safe to call from the audio thread and produces identical results on every platform.
+     *
+     * @param[in] numerator The numerator of the ratio to approximate. Must be greater than zero.
+     * @param[in] denominator The denominator of the ratio to approximate. Must be greater than zero.
+     * @param[in] maxTerm The maximum value allowed for both terms of the result. Must be greater than zero.
+     *
+     * @return The approximated ratio. Both terms are lower than or equal to @c maxTerm, and the denominator
+     * is never zero.
+     *
+     * @ingroup math
+     */
+    AM_API_PRIVATE AM_INLINE AmRational ApproximateRational(AmUInt64 numerator, AmUInt64 denominator, AmUInt64 maxTerm)
+    {
+        AMPLITUDE_ASSERT(numerator > 0 && denominator > 0 && maxTerm > 0);
+
+        const auto gcd = static_cast<AmUInt64>(FindGCD(static_cast<AmInt64>(numerator), static_cast<AmInt64>(denominator)));
+
+        const AmUInt64 a = numerator / gcd;
+        const AmUInt64 b = denominator / gcd;
+
+        if (a <= maxTerm && b <= maxTerm)
+            return { a, b, true };
+
+        // Continued fraction expansion of a / b. h is the convergent numerator, k its denominator.
+        AmUInt64 hm2 = 0, hm1 = 1;
+        AmUInt64 km2 = 1, km1 = 0;
+        AmUInt64 x = a, y = b;
+
+        while (y != 0)
+        {
+            const AmUInt64 t = x / y;
+            const AmUInt64 h = t * hm1 + hm2;
+            const AmUInt64 k = t * km1 + km2;
+
+            if (h > maxTerm || k > maxTerm)
+            {
+                // Largest semiconvergent that still fits the bound.
+                AmUInt64 low = 0, high = t;
+                while (low < high)
+                {
+                    const AmUInt64 mid = (low + high + 1) / 2;
+                    if ((mid * hm1 + hm2) <= maxTerm && (mid * km1 + km2) <= maxTerm)
+                        low = mid;
+                    else
+                        high = mid - 1;
+                }
+
+                AmUInt64 bestNumerator = hm1;
+                AmUInt64 bestDenominator = km1;
+
+                if (low > 0)
+                {
+                    const AmUInt64 candidateNumerator = low * hm1 + hm2;
+                    const AmUInt64 candidateDenominator = low * km1 + km2;
+
+                    if (bestDenominator == 0)
+                    {
+                        bestNumerator = candidateNumerator;
+                        bestDenominator = candidateDenominator;
+                    }
+                    else
+                    {
+                        // Compare |a/b - p/q| for both candidates without leaving integer arithmetic:
+                        // |a*q - b*p| / q, cross-multiplied by the other denominator.
+                        const AmUInt64 bestLeft = a * bestDenominator;
+                        const AmUInt64 bestRight = b * bestNumerator;
+                        const AmUInt64 bestError = bestLeft > bestRight ? bestLeft - bestRight : bestRight - bestLeft;
+
+                        const AmUInt64 candidateLeft = a * candidateDenominator;
+                        const AmUInt64 candidateRight = b * candidateNumerator;
+                        const AmUInt64 candidateError =
+                            candidateLeft > candidateRight ? candidateLeft - candidateRight : candidateRight - candidateLeft;
+
+                        if (candidateError * bestDenominator <= bestError * candidateDenominator)
+                        {
+                            bestNumerator = candidateNumerator;
+                            bestDenominator = candidateDenominator;
+                        }
+                    }
+                }
+
+                return { bestNumerator, bestDenominator, false };
+            }
+
+            hm2 = hm1;
+            hm1 = h;
+            km2 = km1;
+            km1 = k;
+
+            const AmUInt64 remainder = x - t * y;
+            x = y;
+            y = remainder;
+        }
+
+        // Unreachable: the early return above covers every pair that fits the bound.
+        return { hm1, km1, hm1 <= maxTerm && km1 <= maxTerm };
+    }
+
+    /**
      * @brief Calculates the inverse square root of a number using Quake III's implementation.
      *
      * @param[in] x The number to calculate the inverse square root of.
