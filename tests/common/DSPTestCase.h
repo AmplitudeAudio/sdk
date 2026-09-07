@@ -129,13 +129,12 @@ namespace SparkyStudios::Audio::Amplitude::Tests
 
         // --- Signal generation helpers ---
 
-        void GenerateSineWaveAtFrequency(
-            AudioBuffer& buffer, AmUInt32 sampleRate, AmReal32 frequency, AmReal32 amplitude = 1.0f)
+        void GenerateSineWaveAtFrequency(AudioBuffer& buffer, AmUInt32 sampleRate, AmReal32 frequency, AmReal32 amplitude = 1.0f)
         {
             for (AmUInt16 c = 0, m = buffer.GetChannelCount(); c < m; ++c)
                 for (AmUInt64 i = 0, n = buffer.GetFrameCount(); i < n; ++i)
-                    buffer[c][i] = amplitude *
-                        std::sin(2.0f * AM_PI32 * frequency * static_cast<AmReal32>(i) / static_cast<AmReal32>(sampleRate));
+                    buffer[c][i] =
+                        amplitude * std::sin(2.0f * AM_PI32 * frequency * static_cast<AmReal32>(i) / static_cast<AmReal32>(sampleRate));
         }
 
         void GenerateMultiTone(
@@ -147,8 +146,8 @@ namespace SparkyStudios::Audio::Amplitude::Tests
                 {
                     AmReal32 sample = 0.0f;
                     for (AmReal32 freq : frequencies)
-                        sample += amplitude *
-                            std::sin(2.0f * AM_PI32 * freq * static_cast<AmReal32>(i) / static_cast<AmReal32>(sampleRate));
+                        sample +=
+                            amplitude * std::sin(2.0f * AM_PI32 * freq * static_cast<AmReal32>(i) / static_cast<AmReal32>(sampleRate));
                     buffer[c][i] = sample;
                 }
             }
@@ -231,8 +230,7 @@ namespace SparkyStudios::Audio::Amplitude::Tests
             AM_EXPECT(CalculateRMS(buffer) >= threshold);
         }
 
-        void ExpectGainApplied(
-            const AudioBuffer& input, const AudioBuffer& output, AmReal32 expectedGain, AmReal32 tolerance = 0.1f)
+        void ExpectGainApplied(const AudioBuffer& input, const AudioBuffer& output, AmReal32 expectedGain, AmReal32 tolerance = 0.1f)
         {
             AmReal32 inputRMS = CalculateRMS(input);
             if (inputRMS < 1e-6f)

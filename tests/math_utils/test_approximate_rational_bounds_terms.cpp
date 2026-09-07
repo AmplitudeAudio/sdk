@@ -47,9 +47,9 @@ namespace SparkyStudios::Audio::Amplitude::Tests
                 const AmRational down441 = ApproximateRational(rate, 44100, maxTerm);
 
                 filePathBounded = up48.numerator <= maxTerm && up48.denominator <= maxTerm && up48.denominator > 0 &&
-                    down48.numerator <= maxTerm && down48.denominator <= maxTerm && down48.denominator > 0 &&
-                    up441.numerator <= maxTerm && up441.denominator <= maxTerm && up441.denominator > 0 &&
-                    down441.numerator <= maxTerm && down441.denominator <= maxTerm && down441.denominator > 0;
+                    down48.numerator <= maxTerm && down48.denominator <= maxTerm && down48.denominator > 0 && up441.numerator <= maxTerm &&
+                    up441.denominator <= maxTerm && up441.denominator > 0 && down441.numerator <= maxTerm &&
+                    down441.denominator <= maxTerm && down441.denominator > 0;
             }
             AM_EXPECT(filePathBounded);
         }

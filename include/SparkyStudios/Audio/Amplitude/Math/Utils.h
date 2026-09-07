@@ -337,6 +337,10 @@ namespace SparkyStudios::Audio::Amplitude
      * The computation uses integer arithmetic only, performs no allocation, and runs in a bounded number of
      * steps, so it is safe to call from the audio thread and produces identical results on every platform.
      *
+     * The comparison arithmetic assumes terms small enough that the cross-products a * q and b * p fit in 64
+     * bits; the resampler calls it with 32-bit sample rates and a maxTerm of 1170, which is safely within that
+     * domain.
+     *
      * @param[in] numerator The numerator of the ratio to approximate. Must be greater than zero.
      * @param[in] denominator The denominator of the ratio to approximate. Must be greater than zero.
      * @param[in] maxTerm The maximum value allowed for both terms of the result. Must be greater than zero.

@@ -12,8 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include <SparkyStudios/Audio/Amplitude/IO/Log.h>
 #include <SparkyStudios/Audio/Amplitude/DSP/AudioConverter.h>
+#include <SparkyStudios/Audio/Amplitude/IO/Log.h>
 
 #include <Utils/Utils.h>
 
@@ -66,7 +66,7 @@ namespace SparkyStudios::Audio::Amplitude
             if (!_resampler->IsConversionExact(settings.m_sourceSampleRate, settings.m_targetSampleRate))
                 amLogWarning(
                     "The conversion from %u Hz to %u Hz cannot be represented exactly by the resampler. The ratio will be "
-                    "approximated, which shifts playback rate by less than 0.001 percent.",
+                    "approximated, which shifts playback rate by less than one cent.",
                     settings.m_sourceSampleRate, settings.m_targetSampleRate);
         }
 
