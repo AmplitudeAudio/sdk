@@ -67,12 +67,12 @@ namespace SparkyStudios::Audio::Amplitude
         // Streaming overlap-add state (per channel). The pipeline has a fixed
         // latency of 2 hops (256 samples): the dry FIFO keeps the wet/dry mix
         // time-aligned.
-        AmReal32Buffer _window = nullptr;    // STFT_WINDOW_SIZE
+        AmReal32Buffer _window = nullptr; // STFT_WINDOW_SIZE
         AmReal32Buffer _inHistory = nullptr; // STFT_WINDOW_HALF per channel
-        AmReal32Buffer _ola = nullptr;       // STFT_WINDOW_SIZE per channel
-        AmReal32Buffer _wetFifo = nullptr;   // STFT_WINDOW_SIZE per channel
-        AmReal32Buffer _dryFifo = nullptr;   // STFT_WINDOW_SIZE per channel
-        AmReal32Buffer _carry = nullptr;     // STFT_WINDOW_HALF per channel
+        AmReal32Buffer _ola = nullptr; // STFT_WINDOW_SIZE per channel
+        AmReal32Buffer _wetFifo = nullptr; // STFT_WINDOW_SIZE per channel
+        AmReal32Buffer _dryFifo = nullptr; // STFT_WINDOW_SIZE per channel
+        AmReal32Buffer _carry = nullptr; // STFT_WINDOW_HALF per channel
 
         AmUInt32 _fifoHead[kAmMaxSupportedChannelCount] = {};
         AmUInt32 _fifoCount[kAmMaxSupportedChannelCount] = {};

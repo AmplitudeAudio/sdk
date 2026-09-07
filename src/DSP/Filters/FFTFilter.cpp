@@ -130,7 +130,8 @@ namespace SparkyStudios::Audio::Amplitude
 
         // Streaming overlap-add state, per channel.
         _window = static_cast<AmReal32Buffer>(ampoolmalloc(eMemoryPoolKind_Filtering, n * sizeof(AmReal32)));
-        _inHistory = static_cast<AmReal32Buffer>(ampoolmalloc(eMemoryPoolKind_Filtering, h * kAmMaxSupportedChannelCount * sizeof(AmReal32)));
+        _inHistory =
+            static_cast<AmReal32Buffer>(ampoolmalloc(eMemoryPoolKind_Filtering, h * kAmMaxSupportedChannelCount * sizeof(AmReal32)));
         _ola = static_cast<AmReal32Buffer>(ampoolmalloc(eMemoryPoolKind_Filtering, n * kAmMaxSupportedChannelCount * sizeof(AmReal32)));
         _wetFifo = static_cast<AmReal32Buffer>(ampoolmalloc(eMemoryPoolKind_Filtering, n * kAmMaxSupportedChannelCount * sizeof(AmReal32)));
         _dryFifo = static_cast<AmReal32Buffer>(ampoolmalloc(eMemoryPoolKind_Filtering, n * kAmMaxSupportedChannelCount * sizeof(AmReal32)));
@@ -247,13 +248,13 @@ namespace SparkyStudios::Audio::Amplitude
 
     void FFTFilterInstance::MagPhase2MagFreq(SplitComplex& fft, AmUInt32 samples, AmUInt32 sampleRate, AmUInt16 channel)
     {
-        const AmReal32 stepSize = static_cast<AmReal32>(samples) / static_cast<AmReal32>(sampleRate);
-        const AmReal32 expect = (stepSize / static_cast<AmReal32>(samples)) * 2.0f * AM_PI32;
-        const AmReal32 freqPerBin = static_cast<AmReal32>(sampleRate) / static_cast<AmReal32>(samples);
+        // Expected per-hop phase advance for bin s: 2*pi*s*H/N.
+        const AmReal32 expect = 2.0f * AM_PI32 * (static_cast<AmReal32>(STFT_WINDOW_HALF) / static_cast<AmReal32>(STFT_WINDOW_SIZE));
+        const AmReal32 freqPerBin = static_cast<AmReal32>(sampleRate) / static_cast<AmReal32>(STFT_WINDOW_SIZE);
 
         for (AmUInt32 s = 0; s < samples; s++)
         {
-            // get true frequency from synthesis arrays
+            // get true frequency from analysis arrays
             const AmReal32 pha = fft.im()[s];
 
             // compute phase difference
@@ -273,8 +274,8 @@ namespace SparkyStudios::Audio::Amplitude
 
             freq -= AM_PI32 * static_cast<AmReal32>(qpd);
 
-            // get deviation from bin frequency from the +/- Pi interval
-            freq = samples * freq / (2.0f * AM_PI32);
+            // get deviation from bin frequency, in bins: dphi per bin is 2*pi*H/N
+            freq = freq * (static_cast<AmReal32>(STFT_WINDOW_SIZE) / (2.0f * AM_PI32 * static_cast<AmReal32>(STFT_WINDOW_HALF)));
 
             // compute the k-th partials' true frequency
             freq = s * freqPerBin + freq * freqPerBin;
@@ -286,9 +287,9 @@ namespace SparkyStudios::Audio::Amplitude
 
     void FFTFilterInstance::MagFreq2MagPhase(SplitComplex& fft, AmUInt32 samples, AmUInt32 sampleRate, AmUInt16 channel)
     {
-        const AmReal32 stepSize = static_cast<AmReal32>(samples) / static_cast<AmReal32>(sampleRate);
-        const AmReal32 expect = (stepSize / static_cast<AmReal32>(samples)) * 2.0f * AM_PI32;
-        const AmReal32 freqPerBin = static_cast<AmReal32>(sampleRate) / static_cast<AmReal32>(samples);
+        // Expected per-hop phase advance for bin s: 2*pi*s*H/N.
+        const AmReal32 expect = 2.0f * AM_PI32 * (static_cast<AmReal32>(STFT_WINDOW_HALF) / static_cast<AmReal32>(STFT_WINDOW_SIZE));
+        const AmReal32 freqPerBin = static_cast<AmReal32>(sampleRate) / static_cast<AmReal32>(STFT_WINDOW_SIZE);
 
         for (AmUInt32 s = 0; s < samples; s++)
         {
@@ -303,8 +304,8 @@ namespace SparkyStudios::Audio::Amplitude
             // get bin deviation from freq deviation
             pha /= freqPerBin;
 
-            // take osamp into account
-            pha = (pha / static_cast<AmReal32>(samples)) * AM_PI32 * 2.0f;
+            // convert the bin deviation into a per-hop phase advance
+            pha *= 2.0f * AM_PI32 * (static_cast<AmReal32>(STFT_WINDOW_HALF) / static_cast<AmReal32>(STFT_WINDOW_SIZE));
 
             // add the overlap phase advance back in
             pha += static_cast<AmReal32>(s) * expect;

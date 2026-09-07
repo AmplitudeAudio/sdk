@@ -83,10 +83,8 @@ namespace SparkyStudios::Audio::Amplitude
         if (index >= ATTRIBUTE_LAST)
             return "Unknown";
 
-        static const AmString names[ATTRIBUTE_LAST] = {
-            "Wet", "Band 1", "Band 2", "Band 3", "Band 4",
-            "Band 5", "Band 6", "Band 7", "Band 8"
-        };
+        static const AmString names[ATTRIBUTE_LAST] = { "Wet",    "Band 1", "Band 2", "Band 3", "Band 4",
+                                                        "Band 5", "Band 6", "Band 7", "Band 8" };
 
         return names[index];
     }
