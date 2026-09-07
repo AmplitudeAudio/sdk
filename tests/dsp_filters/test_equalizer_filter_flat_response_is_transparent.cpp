@@ -45,9 +45,12 @@ namespace SparkyStudios::Audio::Amplitude::Tests
 
             instance->Process(input, output, frameCount, sampleRate);
 
-            // A flat EQ must be near-transparent: output == input within fp error.
-            for (AmUInt64 i = 0; i < frameCount; ++i)
-                AM_EXPECT(std::abs(output[0][i] - input[0][i]) < 1e-3f);
+            // The overlap-add pipeline has a fixed latency of 2 hops (256 samples);
+            // the first 256 outputs are priming zeros, then output == input delayed.
+            for (AmUInt64 i = 0; i < 256; ++i)
+                AM_EXPECT(std::abs(output[0][i]) < 1e-3f);
+            for (AmUInt64 i = 256; i < frameCount; ++i)
+                AM_EXPECT(std::abs(output[0][i] - input[0][i - 256]) < 1e-3f);
         }
     };
 

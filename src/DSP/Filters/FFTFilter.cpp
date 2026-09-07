@@ -21,17 +21,24 @@
 
 #define STFT_WINDOW_SIZE 256 // must be power of two
 #define STFT_WINDOW_HALF 128
-#define STFT_WINDOW_TWICE 512
+
+namespace
+{
+    using namespace SparkyStudios::Audio::Amplitude;
+
+    // Writes STFT_WINDOW_HALF samples into a ring buffer of STFT_WINDOW_SIZE
+    // capacity at the given position, handling the wrap-around.
+    void RingWrite(AmReal32Buffer fifo, AmUInt32 position, const AmReal32* samples)
+    {
+        const AmUInt32 first = std::min<AmUInt32>(STFT_WINDOW_HALF, STFT_WINDOW_SIZE - position);
+        std::memcpy(fifo + position, samples, first * sizeof(AmReal32));
+        if (first < STFT_WINDOW_HALF)
+            std::memcpy(fifo, samples + first, (STFT_WINDOW_HALF - first) * sizeof(AmReal32));
+    }
+} // namespace
 
 namespace SparkyStudios::Audio::Amplitude
 {
-    // Create a hamming window of STFT_WINDOW_SIZE samples in buffer
-    AM_API_PRIVATE void hamming(AmReal32Buffer buffer)
-    {
-        for (int i = 0; i < STFT_WINDOW_SIZE; i++)
-            buffer[i] = 0.54 - (0.46f * std::cos(2.0 * M_PI * (i / ((STFT_WINDOW_SIZE - 1) * 1.0))));
-    }
-
     FFTFilter::FFTFilter(const std::string& name)
         : Filter(name)
     {}
@@ -64,23 +71,85 @@ namespace SparkyStudios::Audio::Amplitude
             ampoolfree(eMemoryPoolKind_Filtering, _lastPhase);
             _lastPhase = nullptr;
         }
+
+        if (_window != nullptr)
+        {
+            ampoolfree(eMemoryPoolKind_Filtering, _window);
+            _window = nullptr;
+        }
+
+        if (_inHistory != nullptr)
+        {
+            ampoolfree(eMemoryPoolKind_Filtering, _inHistory);
+            _inHistory = nullptr;
+        }
+
+        if (_ola != nullptr)
+        {
+            ampoolfree(eMemoryPoolKind_Filtering, _ola);
+            _ola = nullptr;
+        }
+
+        if (_wetFifo != nullptr)
+        {
+            ampoolfree(eMemoryPoolKind_Filtering, _wetFifo);
+            _wetFifo = nullptr;
+        }
+
+        if (_dryFifo != nullptr)
+        {
+            ampoolfree(eMemoryPoolKind_Filtering, _dryFifo);
+            _dryFifo = nullptr;
+        }
+
+        if (_carry != nullptr)
+        {
+            ampoolfree(eMemoryPoolKind_Filtering, _carry);
+            _carry = nullptr;
+        }
     }
 
     void FFTFilterInstance::InitializeFFT()
     {
-        _temp = static_cast<AmReal32Buffer>(ampoolmalloc(eMemoryPoolKind_Filtering, STFT_WINDOW_SIZE * sizeof(AmReal32)));
+        constexpr AmUInt32 n = STFT_WINDOW_SIZE;
+        constexpr AmUInt32 h = STFT_WINDOW_HALF;
+
+        _temp = static_cast<AmReal32Buffer>(ampoolmalloc(eMemoryPoolKind_Filtering, n * sizeof(AmReal32)));
 
         // Cache the FFT plan and the complex scratch buffer
-        _fft.Initialize(STFT_WINDOW_SIZE);
-        _sc.Resize(FFT::GetOutputSize(STFT_WINDOW_SIZE), true);
+        _fft.Initialize(n);
+        _sc.Resize(FFT::GetOutputSize(n), true);
 
         // Phase accumulators are indexed by (bin + channel * STFT_WINDOW_SIZE)
-        const AmSize phaseSize = STFT_WINDOW_SIZE * kAmMaxSupportedChannelCount * sizeof(AmReal32);
+        const AmSize phaseSize = n * kAmMaxSupportedChannelCount * sizeof(AmReal32);
         _sumPhase = static_cast<AmReal32Buffer>(ampoolmalloc(eMemoryPoolKind_Filtering, phaseSize));
         _lastPhase = static_cast<AmReal32Buffer>(ampoolmalloc(eMemoryPoolKind_Filtering, phaseSize));
 
         std::memset(_sumPhase, 0, phaseSize);
         std::memset(_lastPhase, 0, phaseSize);
+
+        // Streaming overlap-add state, per channel.
+        _window = static_cast<AmReal32Buffer>(ampoolmalloc(eMemoryPoolKind_Filtering, n * sizeof(AmReal32)));
+        _inHistory = static_cast<AmReal32Buffer>(ampoolmalloc(eMemoryPoolKind_Filtering, h * kAmMaxSupportedChannelCount * sizeof(AmReal32)));
+        _ola = static_cast<AmReal32Buffer>(ampoolmalloc(eMemoryPoolKind_Filtering, n * kAmMaxSupportedChannelCount * sizeof(AmReal32)));
+        _wetFifo = static_cast<AmReal32Buffer>(ampoolmalloc(eMemoryPoolKind_Filtering, n * kAmMaxSupportedChannelCount * sizeof(AmReal32)));
+        _dryFifo = static_cast<AmReal32Buffer>(ampoolmalloc(eMemoryPoolKind_Filtering, n * kAmMaxSupportedChannelCount * sizeof(AmReal32)));
+        _carry = static_cast<AmReal32Buffer>(ampoolmalloc(eMemoryPoolKind_Filtering, h * kAmMaxSupportedChannelCount * sizeof(AmReal32)));
+
+        // Triangular COLA synthesis window: w(i) + w(i + H) == 1 for 50% overlap.
+        for (AmUInt32 i = 0; i < n; ++i)
+            _window[i] = 1.0f - std::abs(2.0f * static_cast<AmReal32>(i) / static_cast<AmReal32>(n) - 1.0f);
+
+        std::memset(_inHistory, 0, h * kAmMaxSupportedChannelCount * sizeof(AmReal32));
+        std::memset(_ola, 0, n * kAmMaxSupportedChannelCount * sizeof(AmReal32));
+        std::memset(_wetFifo, 0, n * kAmMaxSupportedChannelCount * sizeof(AmReal32));
+        std::memset(_dryFifo, 0, n * kAmMaxSupportedChannelCount * sizeof(AmReal32));
+        std::memset(_carry, 0, h * kAmMaxSupportedChannelCount * sizeof(AmReal32));
+
+        // Prime both FIFOs with one hop of silence. Together with the first hop's
+        // zero half-window emission this yields the fixed 256-sample latency.
+        for (AmUInt32 c = 0; c < kAmMaxSupportedChannelCount; ++c)
+            _fifoCount[c] = h;
     }
 
     void FFTFilterInstance::Process(const AudioBuffer& in, AudioBuffer& out, AmUInt64 frames, AmUInt32 sampleRate)
@@ -93,42 +162,74 @@ namespace SparkyStudios::Audio::Amplitude
 
     void FFTFilterInstance::ProcessChannel(const AudioBuffer& in, AudioBuffer& out, AmUInt16 channel, AmUInt64 frames, AmUInt32 sampleRate)
     {
+        AMPLITUDE_ASSERT(channel < kAmMaxSupportedChannelCount);
+
         const auto& inChannel = in[channel];
         auto& outChannel = out[channel];
 
-        AmUInt32 offset = 0;
+        AmReal32* inHistory = _inHistory + channel * STFT_WINDOW_HALF;
+        AmReal32* ola = _ola + channel * STFT_WINDOW_SIZE;
+        AmReal32* wetFifo = _wetFifo + channel * STFT_WINDOW_SIZE;
+        AmReal32* dryFifo = _dryFifo + channel * STFT_WINDOW_SIZE;
+        AmReal32* carry = _carry + channel * STFT_WINDOW_HALF;
 
-        while (offset < frames)
+        AmUInt32& fifoHead = _fifoHead[channel];
+        AmUInt32& fifoCount = _fifoCount[channel];
+        AmUInt32& carryCount = _carryCount[channel];
+
+        AmUInt64 inPos = 0;
+
+        for (AmUInt64 outPos = 0; outPos < frames; ++outPos)
         {
-            AmUInt32 framesToProcess = frames - offset;
-            if (framesToProcess > STFT_WINDOW_SIZE)
-                framesToProcess = STFT_WINDOW_SIZE;
-
-            for (AmUInt32 i = 0; i < framesToProcess; i++)
-                _temp[i] = inChannel[i + offset];
-
-            if (framesToProcess < STFT_WINDOW_SIZE)
-                std::memset(_temp + framesToProcess, 0, sizeof(AmReal32) * (STFT_WINDOW_SIZE - framesToProcess));
-
+            if (fifoCount == 0)
             {
+                // Complete the pending hop with new input. The FIFO invariant
+                // (fifoCount + carryCount == STFT_WINDOW_HALF at call boundaries)
+                // guarantees enough input remains for a full hop.
+                const AmUInt32 needed = STFT_WINDOW_HALF - carryCount;
+
+                for (AmUInt32 i = 0; i < needed; ++i, ++inPos)
+                    carry[carryCount + i] = inChannel[inPos];
+
+                // Analysis frame: previous half-window followed by the new samples.
+                std::memcpy(_temp, inHistory, STFT_WINDOW_HALF * sizeof(AmReal32));
+                std::memcpy(_temp + STFT_WINDOW_HALF, carry, STFT_WINDOW_HALF * sizeof(AmReal32));
+
                 _fft.Forward(_temp, _sc);
-
                 ProcessFFTChannel(_sc, channel, STFT_WINDOW_HALF, in.GetChannelCount(), sampleRate);
-
                 _fft.Backward(_temp, _sc);
+
+                // Overlap-add with the COLA synthesis window.
+                for (AmUInt32 i = 0; i < STFT_WINDOW_SIZE; ++i)
+                    ola[i] += _temp[i] * _window[i];
+
+                // Emit the finalized half-window, and the time-aligned dry samples
+                // (the input half-window processed one hop ago).
+                RingWrite(wetFifo, fifoHead, ola);
+                RingWrite(dryFifo, fifoHead, inHistory);
+                fifoCount += STFT_WINDOW_HALF;
+
+                std::memmove(ola, ola + STFT_WINDOW_HALF, STFT_WINDOW_HALF * sizeof(AmReal32));
+                std::memset(ola + STFT_WINDOW_HALF, 0, STFT_WINDOW_HALF * sizeof(AmReal32));
+
+                std::memcpy(inHistory, carry, STFT_WINDOW_HALF * sizeof(AmReal32));
+                carryCount = 0;
             }
 
-            for (AmUInt32 i = 0; i < framesToProcess; i++)
-            {
-                const AmReal32 x = inChannel[i + offset];
-                /* */ AmReal32 y = _temp[i];
+            const AmReal32 dry = dryFifo[fifoHead];
+            const AmReal32 wet = wetFifo[fifoHead];
+            fifoHead = (fifoHead + 1) % STFT_WINDOW_SIZE;
+            --fifoCount;
 
-                y = x + (y - x) * m_parameters[0];
+            outChannel[outPos] = static_cast<AmAudioSample>(dry + (wet - dry) * m_parameters[0]);
+        }
 
-                outChannel[i + offset] = static_cast<AmAudioSample>(y);
-            }
-
-            offset += framesToProcess;
+        // Stash the remaining input for the next call.
+        if (inPos < frames)
+        {
+            carryCount = static_cast<AmUInt32>(frames - inPos);
+            for (AmUInt32 i = 0; i < carryCount; ++i, ++inPos)
+                carry[i] = inChannel[inPos];
         }
     }
 
@@ -228,11 +329,9 @@ namespace SparkyStudios::Audio::Amplitude
     void FFTFilterInstance::ProcessFFTChannel(SplitComplex& fft, AmUInt16 channel, AmUInt64 frames, AmUInt16 channels, AmUInt32 sampleRate)
     {
         Comp2MagPhase(fft, frames);
-        MagPhase2MagFreq(fft, frames, sampleRate, channel);
 
         // Identity transform
 
-        MagFreq2MagPhase(fft, frames, sampleRate, channel);
         MagPhase2Comp(fft, frames);
     }
 } // namespace SparkyStudios::Audio::Amplitude
