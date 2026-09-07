@@ -36,12 +36,14 @@ namespace SparkyStudios::Audio::Amplitude
     // buffer is the binding constraint: it holds upRate * kCoefficientsPerPhase coefficients.
     constexpr AmUInt64 kMaxPolyphaseRate = kResamplerFilterCapacity / kCoefficientsPerPhase;
 
-    // Frames of input history kept between buffers. Only kCoefficientsPerPhase - 1 are ever used.
-    constexpr AmUInt64 kResamplerStateFrames = 16;
+    // Frames of input history kept between buffers. Process() shifts this history with iterators taken from the
+    // end of the channel, so the capacity must equal the history length exactly: a larger buffer makes the newest
+    // input land past the frames the filter reads back.
+    constexpr AmUInt64 kResamplerStateFrames = kCoefficientsPerPhase - 1;
 
     static_assert(kMaxPolyphaseRate * kTransitionBandwidthRatio + 1 <= kResamplerFilterCapacity);
     static_assert(kMaxPolyphaseRate * kCoefficientsPerPhase <= kResamplerFilterCapacity);
-    static_assert(kResamplerStateFrames >= kCoefficientsPerPhase - 1);
+    static_assert(kResamplerStateFrames == kCoefficientsPerPhase - 1);
 
     class DefaultResamplerInstance final : public ResamplerInstance
     {
@@ -239,9 +241,6 @@ namespace SparkyStudios::Audio::Amplitude
         // Source and destination sample rates.
         AmUInt32 _sampleRateIn = 0;
         AmUInt32 _sampleRateOut = 0;
-
-        // Whether the current rate pair is converted exactly, or approximated to fit the filter budget.
-        bool _conversionExact = true;
     };
 
     class DefaultResampler final : public Resampler

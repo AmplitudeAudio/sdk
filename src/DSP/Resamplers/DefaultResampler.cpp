@@ -199,7 +199,10 @@ namespace SparkyStudios::Audio::Amplitude
         const AmUInt64 destination = ratio.numerator;
         const AmUInt64 source = ratio.denominator;
 
-        _conversionExact = ratio.exact;
+        // Reported unconditionally: two different rate pairs can reduce (or snap) to the same ratio, and the
+        // accessors are documented to return what the caller requested.
+        _sampleRateIn = sampleRateIn;
+        _sampleRateOut = sampleRateOut;
 
         // Obtain the size of the _state before _coefficientsPerPhase is updated in GenerateInterpolatingFilter().
         const AmUInt64 oldStateSize = _coefficientsPerPhase > 0 ? _coefficientsPerPhase - 1 : 0;
@@ -207,9 +210,6 @@ namespace SparkyStudios::Audio::Amplitude
         {
             _upRate = destination;
             _downRate = source;
-
-            _sampleRateIn = sampleRateIn;
-            _sampleRateOut = sampleRateOut;
 
             if (IsIdentity())
             {
