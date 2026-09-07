@@ -46,6 +46,59 @@ namespace SparkyStudios::Audio::Amplitude::Tests
                         std::sin(2.0f * AM_PI32 * 1000.0f * static_cast<AmReal32>(i) / static_cast<AmReal32>(sampleRate)) + dcOffset;
         }
 
+        /**
+         * @brief Drives a resampler instance through rate pairs that are hostile to fixed-size filter buffers.
+         *
+         * Any resampler, bundled or plugin-provided, must survive this sweep: the interface contract requires
+         * Initialize() and SetSampleRate() to accept every positive rate pair without reading or writing out of
+         * bounds, approximating the ratio when it cannot be represented exactly.
+         *
+         * @param[in] instance The resampler instance to exercise.
+         * @param[in] channelCount The channel count to configure.
+         *
+         * @return @c true when every conversion produced a plausible frame count.
+         */
+        static bool RunResamplerConformanceSweep(ResamplerInstance& instance, AmUInt16 channelCount = 1)
+        {
+            constexpr AmUInt32 sourceRates[] = { 8000, 11025, 22050, 22254, 32000, 32075, 44056, 44100, 48000, 96000, 192000 };
+            constexpr AmUInt32 targetRates[] = { 44100, 48000, 96000 };
+            constexpr AmUInt64 inputFrames = 256;
+
+            for (const AmUInt32 sourceSampleRate : sourceRates)
+            {
+                for (const AmUInt32 targetSampleRate : targetRates)
+                {
+                    instance.Initialize(channelCount, sourceSampleRate, targetSampleRate);
+
+                    AudioBuffer inputBuffer(inputFrames, channelCount);
+                    const AmUInt64 expectedOutputFrames = instance.GetExpectedOutputFrames(inputFrames);
+
+                    if (expectedOutputFrames == 0)
+                        return false;
+
+                    AudioBuffer outputBuffer(expectedOutputFrames, channelCount);
+
+                    AmUInt64 processedInputFrames = inputFrames;
+                    AmUInt64 processedOutputFrames = expectedOutputFrames;
+
+                    if (!instance.Process(inputBuffer, processedInputFrames, outputBuffer, processedOutputFrames))
+                        return false;
+
+                    if (processedOutputFrames > expectedOutputFrames)
+                        return false;
+                }
+            }
+
+            // Pitch path: ratios expressed in thousandths, as AmplimixImpl::UpdatePitch does.
+            for (AmUInt32 s = 1; s <= 4000; ++s)
+                instance.SetSampleRate(s, 1000);
+
+            // Degenerate input the mixer can produce in release builds.
+            instance.SetSampleRate(0, 1000);
+
+            return true;
+        }
+
         bool EnsureHasNonZeroOutput(const AudioBuffer& buffer)
         {
             bool hasOutput = false;
