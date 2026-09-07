@@ -52,6 +52,10 @@ namespace SparkyStudios::Audio::Amplitude
         /**
          * @brief Initializes the resampler instance.
          *
+         * @note Implementations must accept any pair of positive sample rates and must never read or write
+         * outside their buffers for any input. When the requested ratio cannot be represented exactly, the
+         * implementation must approximate it as closely as it can and keep converting.
+         *
          * @param[in] channelCount The number of channels in the audio data.
          * @param[in] sampleRateIn The input sample rate.
          * @param[in] sampleRateOut The output sample rate.
@@ -73,13 +77,36 @@ namespace SparkyStudios::Audio::Amplitude
         /**
          * @brief Changes the input and output sample rate.
          *
+         * @note This method may be called from the audio thread on every mix block, as the mixer maps
+         * playback speed changes to a rate ratio. Implementations must not allocate, lock, log, or block
+         * here, and must follow the same total-function contract as @c Initialize.
+         *
          * @param[in] sampleRateIn The new input sample rate.
          * @param[in] sampleRateOut The new output sample rate.
          */
         virtual void SetSampleRate(AmUInt32 sampleRateIn, AmUInt32 sampleRateOut) = 0;
 
         /**
+         * @brief Checks whether the given conversion is performed exactly, with no approximation of the ratio.
+         *
+         * Every conversion is supported: an implementation that cannot represent a ratio exactly approximates
+         * it. This query reports which of the two happens, so tools and asset pipelines can warn about rates
+         * that will be approximated.
+         *
+         * @param[in] sampleRateIn The input sample rate.
+         * @param[in] sampleRateOut The output sample rate.
+         *
+         * @return @c true if the conversion is exact, @c false if the ratio is approximated.
+         */
+        [[nodiscard]] virtual bool IsConversionExact(AmUInt32 sampleRateIn, AmUInt32 sampleRateOut) const
+        {
+            return true;
+        }
+
+        /**
          * @brief Gets the current input sample rate.
+         *
+         * @note This is the rate that was requested, not the internal approximation.
          *
          * @return The current input sample rate.
          */
@@ -87,6 +114,8 @@ namespace SparkyStudios::Audio::Amplitude
 
         /**
          * @brief Gets the current output sample rate.
+         *
+         * @note This is the rate that was requested, not the internal approximation.
          *
          * @return The current output sample rate.
          */

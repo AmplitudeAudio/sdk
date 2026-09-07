@@ -21,20 +21,37 @@
 
 namespace SparkyStudios::Audio::Amplitude
 {
+    // The value below was chosen empirically as a tradeoff between execution time
+    // and filter rolloff wrt. cutoff frequency.
+    constexpr AmUInt64 kTransitionBandwidthRatio = 13;
+
+    // Number of filter coefficients per polyphase branch. This is exactly 14 for every maxRate >= 2, because
+    // GenerateInterpolatingFilter() pads filterLength = 13 * maxRate up to the next multiple of maxRate.
+    constexpr AmUInt64 kCoefficientsPerPhase = 14;
+
+    // Capacity, in frames, of the two coefficient buffers held by each resampler instance.
+    constexpr AmUInt64 kResamplerFilterCapacity = 16384;
+
+    // Maximum reduced rate term the polyphase filter can represent within the buffers above. The transposed
+    // buffer is the binding constraint: it holds upRate * kCoefficientsPerPhase coefficients.
+    constexpr AmUInt64 kMaxPolyphaseRate = kResamplerFilterCapacity / kCoefficientsPerPhase;
+
+    // Frames of input history kept between buffers. Only kCoefficientsPerPhase - 1 are ever used.
+    constexpr AmUInt64 kResamplerStateFrames = 16;
+
+    static_assert(kMaxPolyphaseRate * kTransitionBandwidthRatio + 1 <= kResamplerFilterCapacity);
+    static_assert(kMaxPolyphaseRate * kCoefficientsPerPhase <= kResamplerFilterCapacity);
+    static_assert(kResamplerStateFrames >= kCoefficientsPerPhase - 1);
+
     class DefaultResamplerInstance final : public ResamplerInstance
     {
         friend class AudioConverter;
 
     public:
         /**
-         * @brief Checks if the given conversion is supported.
-         *
-         * @param source The source frequency in Hz.
-         * @param destination The destination frequency in Hz.
-         *
-         * @return @c true if the conversion is supported, @c false otherwise.
+         * @copydoc ResamplerInstance::IsConversionExact
          */
-        static bool IsConversionSupported(AmUInt64 source, AmUInt64 destination);
+        [[nodiscard]] bool IsConversionExact(AmUInt32 sampleRateIn, AmUInt32 sampleRateOut) const override;
 
         /**
          * @brief Constructs a new @c Resampler.

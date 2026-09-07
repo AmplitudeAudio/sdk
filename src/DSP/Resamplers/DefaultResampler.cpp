@@ -23,22 +23,12 @@
 
 namespace SparkyStudios::Audio::Amplitude
 {
-    // The value below was chosen empirically as a tradeoff between execution time
-    // and filter rolloff wrt. cutoff frequency.
-    constexpr AmUInt64 kTransitionBandwidthRatio = 13;
-
-    bool DefaultResamplerInstance::IsConversionSupported(AmUInt64 source, AmUInt64 destination)
+    bool DefaultResamplerInstance::IsConversionExact(AmUInt32 sampleRateIn, AmUInt32 sampleRateOut) const
     {
-        AMPLITUDE_ASSERT(source > 0 && destination > 0);
+        if (sampleRateIn == 0 || sampleRateOut == 0)
+            return false;
 
-        // Determines whether sample rates are supported based upon whether our
-        // maximum filter length is big enough to hold the corresponding
-        // interpolation filter.
-        const AmInt64 maxRate = std::max(source, destination) / FindGCD(source, destination);
-        AmUInt64 filterLength = maxRate * kTransitionBandwidthRatio;
-        filterLength += filterLength % 2;
-
-        return filterLength <= kAmMaxSupportedFrameCount;
+        return ApproximateRational(sampleRateOut, sampleRateIn, kMaxPolyphaseRate).exact;
     }
 
     DefaultResamplerInstance::DefaultResamplerInstance()
