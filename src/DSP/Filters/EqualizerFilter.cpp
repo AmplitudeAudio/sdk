@@ -147,15 +147,15 @@ namespace SparkyStudios::Audio::Amplitude
     void EqualizerFilterInstance::ProcessFFTChannel(
         SplitComplex& fft, AmUInt16 channel, AmUInt64 frames, AmUInt16 channels, AmUInt32 sampleRate)
     {
-        const auto halfSize = frames / 2;
+        Comp2MagPhase(fft, frames);
 
-        Comp2MagPhase(fft, halfSize);
+        const AmUInt32 bandSize = frames / 8;
 
-        for (AmUInt32 p = 0, l = halfSize; p < l; p++)
+        for (AmUInt32 p = 0, l = frames; p < l; p++)
         {
-            const auto i = static_cast<AmInt32>(std::floor(std::sqrt(p / static_cast<AmReal32>(halfSize)) * (halfSize)));
+            const auto i = static_cast<AmUInt32>(std::floor(std::sqrt(p / static_cast<AmReal32>(frames)) * static_cast<AmReal32>(frames)));
 
-            AmInt32 p2 = (i / (frames / 16));
+            AmInt32 p2 = static_cast<AmInt32>(i / bandSize);
             AmInt32 p1 = p2 - 1;
             AmInt32 p0 = p1 - 1;
             AmInt32 p3 = p2 + 1;
@@ -164,16 +164,15 @@ namespace SparkyStudios::Audio::Amplitude
                 p1 = 0;
             if (p0 < 0)
                 p0 = 0;
+            if (p2 > 7)
+                p2 = 7;
             if (p3 > 7)
                 p3 = 7;
 
-            const AmReal32 v = static_cast<AmReal32>(i % (frames / 16)) / static_cast<AmReal32>(frames / 16);
+            const AmReal32 v = static_cast<AmReal32>(i % bandSize) / static_cast<AmReal32>(bandSize);
             fft.re()[p] *= CatmullRom(v, m_parameters[p0 + 1], m_parameters[p1 + 1], m_parameters[p2 + 1], m_parameters[p3 + 1]);
         }
 
-        std::memset(fft.re() + halfSize, 0, sizeof(AmReal32) * halfSize);
-        std::memset(fft.im() + halfSize, 0, sizeof(AmReal32) * halfSize);
-
-        MagPhase2Comp(fft, halfSize);
+        MagPhase2Comp(fft, frames);
     }
 } // namespace SparkyStudios::Audio::Amplitude
