@@ -38,9 +38,9 @@ namespace SparkyStudios::Audio::Amplitude
         , _lastProcessedSample(0)
         , _channelCount(0)
         , _coefficientsPerPhase(0)
-        , _transposedFilterCoefficients(kAmMaxSupportedFrameCount, 1)
-        , _temporaryFilterCoefficients(kAmMaxSupportedFrameCount, 1)
-        , _state(kAmMaxSupportedFrameCount, kAmMaxSupportedChannelCount)
+        , _transposedFilterCoefficients(kResamplerFilterCapacity, 1)
+        , _temporaryFilterCoefficients(kResamplerFilterCapacity, 1)
+        , _state(kResamplerStateFrames, kAmMaxSupportedChannelCount)
     {
         _state.Clear();
     }
