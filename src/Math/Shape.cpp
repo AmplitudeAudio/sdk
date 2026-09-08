@@ -329,8 +329,7 @@ namespace SparkyStudios::Audio::Amplitude
         closestPoint.z = std::clamp(relativeLocation.z, -_halfHeight, _halfHeight);
 
         // Transform back to world space
-        const AmVector4 worldPoint = Transform(m_lookAtMatrix, { closestPoint.x, closestPoint.y, closestPoint.z, 1.0f });
-        return worldPoint.xyz;
+        return Add(GetLocation(), Transform(GetOrientation().GetRotationMatrix(), closestPoint));
     }
 
     std::span<const AmVector3> BoxShape::GetCorners() const
@@ -351,14 +350,16 @@ namespace SparkyStudios::Audio::Amplitude
 
     void BoxShape::Update()
     {
-        _corners[0] = Transform(m_lookAtMatrix, { -_halfWidth, -_halfDepth, -_halfHeight, 1.0f }).xyz;
-        _corners[1] = Transform(m_lookAtMatrix, { -_halfWidth, _halfDepth, -_halfHeight, 1.0f }).xyz;
-        _corners[2] = Transform(m_lookAtMatrix, { _halfWidth, -_halfDepth, -_halfHeight, 1.0f }).xyz;
-        _corners[3] = Transform(m_lookAtMatrix, { -_halfWidth, -_halfDepth, _halfHeight, 1.0f }).xyz;
-        _corners[4] = Transform(m_lookAtMatrix, { _halfWidth, _halfDepth, _halfHeight, 1.0f }).xyz;
-        _corners[5] = Transform(m_lookAtMatrix, { _halfWidth, -_halfDepth, _halfHeight, 1.0f }).xyz;
-        _corners[6] = Transform(m_lookAtMatrix, { -_halfWidth, _halfDepth, _halfHeight, 1.0f }).xyz;
-        _corners[7] = Transform(m_lookAtMatrix, { _halfWidth, _halfDepth, -_halfHeight, 1.0f }).xyz;
+        const AmMatrix3 rotation = m_orientation.GetRotationMatrix();
+
+        _corners[0] = Add(m_location, Transform(rotation, AmVector3{ -_halfWidth, -_halfDepth, -_halfHeight }));
+        _corners[1] = Add(m_location, Transform(rotation, AmVector3{ -_halfWidth, _halfDepth, -_halfHeight }));
+        _corners[2] = Add(m_location, Transform(rotation, AmVector3{ _halfWidth, -_halfDepth, -_halfHeight }));
+        _corners[3] = Add(m_location, Transform(rotation, AmVector3{ -_halfWidth, -_halfDepth, _halfHeight }));
+        _corners[4] = Add(m_location, Transform(rotation, AmVector3{ _halfWidth, _halfDepth, _halfHeight }));
+        _corners[5] = Add(m_location, Transform(rotation, AmVector3{ -_halfWidth, _halfDepth, _halfHeight }));
+        _corners[6] = Add(m_location, Transform(rotation, AmVector3{ _halfWidth, _halfDepth, -_halfHeight }));
+        _corners[7] = Add(m_location, Transform(rotation, AmVector3{ _halfWidth, -_halfDepth, _halfHeight }));
 
         _p1 = _corners[0];
         _p2 = _corners[1];
@@ -505,8 +506,10 @@ namespace SparkyStudios::Audio::Amplitude
     {
         const AmReal32 halfHeight = _halfHeight - _radius;
 
-        _a = Transform(m_lookAtMatrix, { 0.0f, 0.0f, halfHeight, 1.0f }).xyz;
-        _b = Transform(m_lookAtMatrix, { 0.0f, 0.0f, -halfHeight, 1.0f }).xyz;
+        const AmMatrix3 rotation = m_orientation.GetRotationMatrix();
+
+        _a = Add(m_location, Transform(rotation, AmVector3{ 0.0f, 0.0f, halfHeight }));
+        _b = Add(m_location, Transform(rotation, AmVector3{ 0.0f, 0.0f, -halfHeight }));
 
         m_needUpdate = false;
     }
