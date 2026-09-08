@@ -253,12 +253,14 @@ namespace SparkyStudios::Audio::Amplitude
             outChannel[outPos] = static_cast<AmAudioSample>(dry + (wet - dry) * m_parameters[0]);
         }
 
-        // Stash the remaining input for the next call.
+        // Stash the remaining input for the next call. Any carry left over from
+        // a previous sub-hop call is still pending consumption, so append.
         if (inPos < frames)
         {
-            carryCount = static_cast<AmUInt32>(frames - inPos);
-            for (AmUInt32 i = 0; i < carryCount; ++i, ++inPos)
-                carry[i] = input[inPos];
+            const AmUInt32 remaining = static_cast<AmUInt32>(frames - inPos);
+            for (AmUInt32 i = 0; i < remaining; ++i, ++inPos)
+                carry[carryCount + i] = input[inPos];
+            carryCount += remaining;
         }
     }
 
@@ -292,8 +294,10 @@ namespace SparkyStudios::Audio::Amplitude
             // subtract expected phase difference
             freq -= static_cast<AmReal32>(s) * expect;
 
-            // map delta phase into +/- Pi interval
-            auto qpd = static_cast<AmInt32>(std::floor(freq / AM_PI32));
+            // map delta phase into +/- Pi interval (truncation toward zero, as
+            // in the reference phase vocoder: floor would mis-wrap values in
+            // (-Pi, 0) by an extra 2*Pi, i.e. a +2-bin true-frequency error)
+            auto qpd = static_cast<AmInt32>(freq / AM_PI32);
 
             if (qpd >= 0)
                 qpd += qpd & 1;
