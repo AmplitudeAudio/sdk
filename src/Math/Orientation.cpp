@@ -18,6 +18,8 @@
 
 #include <Math/LinearAlgebra.h>
 
+#include <algorithm>
+
 namespace SparkyStudios::Audio::Amplitude
 {
     Orientation Orientation::Zero()
@@ -112,20 +114,16 @@ namespace SparkyStudios::Audio::Amplitude
 
     void Orientation::ComputeZYXAngles()
     {
-        auto right = Cross(_forward, _up);
-        auto up = Cross(right, _forward);
+        // Rebuild the orthonormal basis of the rotation. Engine convention:
+        // +X right, +Y forward, +Z up (see CartesianCoordinateSystem::Default()).
+        const AmVector3 right = Normalize(Cross(_forward, _up));
+        const AmVector3 up = Normalize(Cross(right, _forward));
 
-        if (Dot(up, _up) < 0)
-            up = Negate(up);
-
-        // Compute yaw (rotation around Z-axis)
-        _yaw = -std::atan2(_forward.x, right.x);
-
-        // Compute pitch (rotation around Y-axis)
-        _pitch = std::asin(-up.x);
-
-        // Compute roll (rotation around X-axis)
-        _roll = -std::atan2(_up.y, _up.z);
+        // Invert R = Rz(yaw) * Ry(pitch) * Rx(roll) from the basis vectors:
+        // right = R * +X, forward = R * +Y, up = R * +Z.
+        _yaw = std::atan2(right.y, right.x);
+        _pitch = std::asin(std::clamp(-right.z, -1.0f, 1.0f));
+        _roll = std::atan2(_forward.z, up.z);
     }
 
     void Orientation::ComputeZYZAngles()

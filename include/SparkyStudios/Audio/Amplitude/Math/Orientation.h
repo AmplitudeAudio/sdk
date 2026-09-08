@@ -44,9 +44,9 @@ namespace SparkyStudios::Audio::Amplitude
         /**
          * @brief Constructs an orientation instance with the given yaw, pitch, and roll angles.
          *
-         * @param[in] yaw The angle of rotation around the X-axis in radians.
+         * @param[in] yaw The angle of rotation around the Z-axis in radians.
          * @param[in] pitch The angle of rotation around the Y-axis in radians.
-         * @param[in] roll The angle of rotation around the Z-axis in radians.
+         * @param[in] roll The angle of rotation around the X-axis in radians.
          */
         Orientation(AmReal32 yaw, AmReal32 pitch, AmReal32 roll);
 
