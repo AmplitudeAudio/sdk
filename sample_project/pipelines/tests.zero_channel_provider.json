@@ -1,0 +1,1 @@
+{"id":101,"name":"tests.zero_channel_provider","nodes":[{"id":1,"name":"Input","consume":[]},{"id":2,"name":"ZeroChannelProvider","consume":[1]},{"id":9,"name":"Output","consume":[2]}]}
