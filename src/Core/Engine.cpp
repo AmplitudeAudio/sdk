@@ -124,6 +124,7 @@ namespace SparkyStudios::Audio::Amplitude
     static std::shared_ptr<FlangerFilter> sFlangerFilterPlugin = nullptr;
     static std::shared_ptr<LofiFilter> sLofiFilterPlugin = nullptr;
     static std::shared_ptr<MonoPoleFilter> sMonoPoleFilterPlugin = nullptr;
+    static std::shared_ptr<PitchShiftFilter> sPitchShiftFilterPlugin = nullptr;
     static std::shared_ptr<RobotizeFilter> sRobotizeFilterPlugin = nullptr;
     static std::shared_ptr<WaveShaperFilter> sWaveShaperFilterPlugin = nullptr;
     // ---
@@ -571,6 +572,7 @@ namespace SparkyStudios::Audio::Amplitude
         sFlangerFilterPlugin = RegisterExtension<FlangerFilter>();
         sLofiFilterPlugin = RegisterExtension<LofiFilter>();
         sMonoPoleFilterPlugin = RegisterExtension<MonoPoleFilter>();
+        sPitchShiftFilterPlugin = RegisterExtension<PitchShiftFilter>();
         sRobotizeFilterPlugin = RegisterExtension<RobotizeFilter>();
         sWaveShaperFilterPlugin = RegisterExtension<WaveShaperFilter>();
         // ---
@@ -630,6 +632,7 @@ namespace SparkyStudios::Audio::Amplitude
         UnregisterExtension(sFlangerFilterPlugin);
         UnregisterExtension(sLofiFilterPlugin);
         UnregisterExtension(sMonoPoleFilterPlugin);
+        UnregisterExtension(sPitchShiftFilterPlugin);
         UnregisterExtension(sRobotizeFilterPlugin);
         UnregisterExtension(sWaveShaperFilterPlugin);
         // ---

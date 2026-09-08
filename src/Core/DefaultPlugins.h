@@ -62,6 +62,7 @@
 #include <DSP/Filters/FlangerFilter.h>
 #include <DSP/Filters/LofiFilter.h>
 #include <DSP/Filters/MonoPoleFilter.h>
+#include <DSP/Filters/PitchShiftFilter.h>
 #include <DSP/Filters/RobotizeFilter.h>
 #include <DSP/Filters/WaveShaperFilter.h>
 
