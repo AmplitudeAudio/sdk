@@ -35,6 +35,14 @@ namespace SparkyStudios::Audio::Amplitude::Tests
             AudioBuffer input(totalFrames, channelCount);
             GenerateMultiTone(input, sampleRate, { 100.0f, 1000.0f, 6000.0f }, 0.25f);
 
+            // GenerateMultiTone writes the same samples to every channel, which
+            // would make a per-channel state cross-leak invisible. Give channel 1
+            // its own multi-tone content.
+            for (AmUInt64 i = 0; i < totalFrames; ++i)
+                input[1][i] = 0.2f * std::sin(2.0f * AM_PI32 * 200.0f * static_cast<AmReal32>(i) / sampleRate) +
+                    0.2f * std::sin(2.0f * AM_PI32 * 2500.0f * static_cast<AmReal32>(i) / sampleRate) +
+                    0.2f * std::sin(2.0f * AM_PI32 * 9000.0f * static_cast<AmReal32>(i) / sampleRate);
+
             // One-shot processing, stereo.
             auto filterA = amshared(BassBoostFilter);
             filterA->Initialize(2.0f);

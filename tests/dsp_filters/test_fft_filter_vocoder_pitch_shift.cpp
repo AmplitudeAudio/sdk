@@ -48,6 +48,13 @@ namespace
         std::vector<AmReal32> DominantTrueFrequency;
         std::vector<AmReal32> ShiftedTrueFrequency;
 
+        // Per analysis hop: true frequency of a non-dominant bin whose phase
+        // deviation is negative (bin 3 for the 440 Hz input), before scaling.
+        // This bin is sensitive to the phase-wrap mode in MagPhase2MagFreq:
+        // the simulation measures 439.86 Hz with the reference truncation
+        // wrap, and 814.86 Hz (+2 bins) with a floor-based wrap.
+        std::vector<AmReal32> NegativeDeviationBinFrequency;
+
     protected:
         void ProcessFFTChannel(SplitComplex& fft, AmUInt16 channel, AmUInt64 frames, AmUInt16 channels, AmUInt32 sampleRate) override
         {
@@ -67,6 +74,7 @@ namespace
                 }
             }
             DominantTrueFrequency.push_back(fft.im()[dominantBin]);
+            NegativeDeviationBinFrequency.push_back(fft.im()[kNegativeDeviationBin]);
 
             for (AmUInt32 s = 0; s < static_cast<AmUInt32>(frames); ++s)
                 fft.im()[s] *= kShiftFactor;
@@ -79,6 +87,7 @@ namespace
 
     private:
         static constexpr AmReal32 kShiftFactor = 1.5f;
+        static constexpr AmUInt32 kNegativeDeviationBin = 3;
     };
 
     // Estimates the dominant frequency of a mono buffer segment with an FFT
@@ -165,6 +174,14 @@ namespace SparkyStudios::Audio::Amplitude::Tests
 
                 // ...and clearly not identity.
                 AM_EXPECT(instance.ShiftedTrueFrequency[h] > inputFrequency * 1.2f);
+
+                // Wrap-sensitive non-dominant bin: its phase deviation is
+                // negative, so a floor-based wrap mis-wraps it by +2*Pi (+2
+                // bins = +375 Hz). The simulation of this exact scenario
+                // measures 439.86 Hz (hop range 427.86-453.57) with the
+                // reference truncation wrap and 814.86 Hz with floor, so a
+                // +/-25 Hz bound passes only under truncation.
+                AM_EXPECT(std::abs(instance.NegativeDeviationBinFrequency[h] - 439.86f) <= 25.0f);
             }
 
             // Output signature. In-place per-bin frequency scaling is NOT a
