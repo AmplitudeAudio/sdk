@@ -180,7 +180,11 @@ namespace SparkyStudios::Audio::Amplitude
         const auto* face = _tree.Query(dir);
 
         if (face == nullptr)
+        {
+            std::memset(leftHRIR, 0, GetIRLength() * sizeof(AmReal32));
+            std::memset(rightHRIR, 0, GetIRLength() * sizeof(AmReal32));
             return;
+        }
 
         // If we are very close to any vertex, just return the HRIR of that vertex
         {
@@ -205,6 +209,8 @@ namespace SparkyStudios::Audio::Amplitude
             if (!BarycentricCoordinates::RayTriangleIntersection(
                     kVector3Zero, dir, { vertexA.m_Position, vertexB.m_Position, vertexC.m_Position }, barycenter))
             {
+                std::memset(leftHRIR, 0, GetIRLength() * sizeof(AmReal32));
+                std::memset(rightHRIR, 0, GetIRLength() * sizeof(AmReal32));
                 return;
             }
 
@@ -227,7 +233,11 @@ namespace SparkyStudios::Audio::Amplitude
         const auto* face = _tree.Query(dir);
 
         if (face == nullptr)
+        {
+            std::memset(leftHRIR, 0, GetIRLength() * sizeof(AmReal32));
+            std::memset(rightHRIR, 0, GetIRLength() * sizeof(AmReal32));
             return;
+        }
 
         // If we are very close to any vertex, just return the HRIR of that vertex
         {
@@ -252,32 +262,32 @@ namespace SparkyStudios::Audio::Amplitude
             if (!BarycentricCoordinates::RayTriangleIntersection(
                     kVector3Zero, dir, { vertexA.m_Position, vertexB.m_Position, vertexC.m_Position }, barycenter))
             {
+                std::memset(leftHRIR, 0, GetIRLength() * sizeof(AmReal32));
+                std::memset(rightHRIR, 0, GetIRLength() * sizeof(AmReal32));
                 return;
             }
 
             const AmSize length = vertexA.m_LeftIR.size();
-            const AmReal32 min = std::min({ barycenter.m_U, barycenter.m_V, barycenter.m_W });
+            const AmReal32 max = std::max({ barycenter.m_U, barycenter.m_V, barycenter.m_W });
 
-            if (min == barycenter.m_V)
+            // Barycentric weight ~1 at the closest vertex: U -> A, V -> B, W -> C
+            // (same convention as the bilinear path above).
+            if (max == barycenter.m_U)
             {
                 std::memcpy(leftHRIR, vertexA.m_LeftIR.data(), length * sizeof(AmReal32));
                 std::memcpy(rightHRIR, vertexA.m_RightIR.data(), length * sizeof(AmReal32));
                 return;
             }
 
-            if (min == barycenter.m_U)
+            if (max == barycenter.m_V)
             {
                 std::memcpy(leftHRIR, vertexB.m_LeftIR.data(), length * sizeof(AmReal32));
                 std::memcpy(rightHRIR, vertexB.m_RightIR.data(), length * sizeof(AmReal32));
                 return;
             }
 
-            if (min == barycenter.m_W)
-            {
-                std::memcpy(leftHRIR, vertexC.m_LeftIR.data(), length * sizeof(AmReal32));
-                std::memcpy(rightHRIR, vertexC.m_RightIR.data(), length * sizeof(AmReal32));
-                return;
-            }
+            std::memcpy(leftHRIR, vertexC.m_LeftIR.data(), length * sizeof(AmReal32));
+            std::memcpy(rightHRIR, vertexC.m_RightIR.data(), length * sizeof(AmReal32));
         }
     }
 
