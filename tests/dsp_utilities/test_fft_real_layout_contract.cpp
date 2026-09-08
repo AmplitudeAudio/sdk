@@ -56,6 +56,23 @@ namespace SparkyStudios::Audio::Amplitude::Tests
             fft.Backward(output[0].begin(), spectrum);
             for (AmSize i = 0; i < size; ++i)
                 AM_EXPECT(std::abs(output[0][i] - input[0][i]) < 1e-3f);
+
+            // Add a mid-bin sinusoid (bin 10 of 256: exactly 10 cycles per
+            // window) so the mid-bin unpack path is covered explicitly.
+            for (AmSize i = 0; i < size; ++i)
+                input[0][i] += 0.125f * std::sin(2.0f * AM_PI32 * 10.0f * static_cast<AmReal32>(i) / static_cast<AmReal32>(size));
+
+            fft.Forward(input[0].begin(), spectrum);
+
+            // An integer number of cycles lands entirely in one bin.
+            const AmReal32 binMag = std::sqrt(spectrum.re()[10] * spectrum.re()[10] + spectrum.im()[10] * spectrum.im()[10]);
+            AM_EXPECT(std::abs(binMag - static_cast<AmReal32>(size) * 0.125f * 0.5f) < 0.5f);
+
+            // Round trip with DC + Nyquist + mid-bin content must still reconstruct.
+            AudioBuffer midBinOutput(size, 1);
+            fft.Backward(midBinOutput[0].begin(), spectrum);
+            for (AmSize i = 0; i < size; ++i)
+                AM_EXPECT(std::abs(midBinOutput[0][i] - input[0][i]) < 1e-3f);
         }
     };
 
