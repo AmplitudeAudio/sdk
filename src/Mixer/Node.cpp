@@ -356,7 +356,38 @@ namespace SparkyStudios::Audio::Amplitude
         if (output == nullptr)
             return;
 
-        *_buffer = *output;
+        // Fast path: the pipeline produced exactly the layout the caller pre-sized.
+        if (_buffer->GetChannelCount() == output->GetChannelCount())
+        {
+            *_buffer = *output;
+            return;
+        }
+
+        // The pipeline produced a different channel count than the output buffer the
+        // caller pre-sized -- for example a mono result for a stereo output buffer when
+        // the graph contains no up-mixing node.  Assigning `*_buffer = *output` here
+        // would resize `_buffer` to the pipeline's channel count and break callers that
+        // rely on their requested output layout: Amplimix always hands the pipeline a
+        // stereo output chunk and then indexes both of its channels directly, so a
+        // shrunk buffer makes it read a channel that no longer exists.  Fill the caller's
+        // layout in place instead, broadcasting the last available source channel when
+        // the pipeline produced fewer channels than requested and dropping the extra
+        // source channels when it produced more.
+        const AmSize outputChannelCount = _buffer->GetChannelCount();
+        const AmSize sourceChannelCount = output->GetChannelCount();
+        if (sourceChannelCount == 0)
+            return;
+
+        const AmSize frameCount = AM_MIN(_buffer->GetFrameCount(), output->GetFrameCount());
+        for (AmSize channel = 0; channel < outputChannelCount; ++channel)
+        {
+            const AmSize sourceChannel = channel < sourceChannelCount ? channel : sourceChannelCount - 1;
+            const auto& source = output->GetChannel(sourceChannel);
+            auto& destination = _buffer->GetChannel(channel);
+
+            for (AmSize frame = 0; frame < frameCount; ++frame)
+                destination[frame] = source[frame];
+        }
     }
 
     void OutputNodeInstance::Reset()
