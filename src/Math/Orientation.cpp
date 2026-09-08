@@ -128,17 +128,30 @@ namespace SparkyStudios::Audio::Amplitude
 
     void Orientation::ComputeZYZAngles()
     {
-        if (const AmMatrix3 rotation = GetRotationMatrix(); std::abs(rotation[2][2]) - 1.0f < 0.0f)
+        const auto rotation = Mat3ToEigen(GetRotationMatrix());
+
+        constexpr AmReal32 kGimbalEpsilon = 1e-6f;
+
+        if (std::abs(rotation(2, 2)) < 1.0f - kGimbalEpsilon)
         {
-            _alpha = std::atan2(rotation[2][1], rotation[2][0]);
-            _beta = std::acos(rotation[2][2]);
-            _gamma = std::atan2(rotation[1][2], -rotation[0][2]);
+            // R = Rz(alpha) * Ry(beta) * Rz(gamma)
+            _alpha = std::atan2(rotation(1, 2), rotation(0, 2));
+            _beta = std::acos(std::clamp(rotation(2, 2), -1.0f, 1.0f));
+            _gamma = std::atan2(rotation(2, 1), -rotation(2, 0));
+        }
+        else if (rotation(2, 2) > 0.0f)
+        {
+            // beta == 0: R collapses to Rz(alpha + gamma); fold into gamma.
+            _alpha = 0.0f;
+            _beta = 0.0f;
+            _gamma = std::atan2(rotation(1, 0), rotation(0, 0));
         }
         else
         {
-            _alpha = 0;
-            _beta = rotation[2][2] < 0 ? AM_PI32 : 0.0f;
-            _gamma = std::atan2(rotation[1][0], rotation[0][0]);
+            // beta == pi: R(0,0) = -cos(gamma), R(1,0) = sin(gamma) with alpha folded to 0.
+            _alpha = 0.0f;
+            _beta = AM_PI32;
+            _gamma = std::atan2(rotation(1, 0), -rotation(0, 0));
         }
     }
 
