@@ -229,66 +229,32 @@ namespace SparkyStudios::Audio::Amplitude
 
     void HRIRSphereImpl::SampleNearestNeighbor(const AmVector3& direction, AmReal32* leftHRIR, AmReal32* rightHRIR) const
     {
-        const auto& dir = Scale(direction, 10.0f);
-        const auto* face = _tree.Query(dir);
+        const AmVector3 dir = Normalize(direction);
 
-        if (face == nullptr)
+        const HRIRSphereVertex* closest = nullptr;
+        AmReal32 bestDot = -2.0f;
+
+        for (const auto& vertex : _vertices)
         {
-            std::memset(leftHRIR, 0, GetIRLength() * sizeof(AmReal32));
-            std::memset(rightHRIR, 0, GetIRLength() * sizeof(AmReal32));
+            const AmReal32 d = Dot(dir, Normalize(vertex.m_Position));
+            if (d > bestDot)
+            {
+                bestDot = d;
+                closest = &vertex;
+            }
+        }
+
+        const AmSize length = GetIRLength();
+
+        if (closest == nullptr)
+        {
+            std::memset(leftHRIR, 0, length * sizeof(AmReal32));
+            std::memset(rightHRIR, 0, length * sizeof(AmReal32));
             return;
         }
 
-        // If we are very close to any vertex, just return the HRIR of that vertex
-        {
-            const auto* vertex = GetClosestVertex(direction, face);
-
-            if (vertex != nullptr)
-            {
-                const AmSize length = vertex->m_LeftIR.size();
-                std::memcpy(leftHRIR, vertex->m_LeftIR.data(), length * sizeof(AmReal32));
-                std::memcpy(rightHRIR, vertex->m_RightIR.data(), length * sizeof(AmReal32));
-                return;
-            }
-        }
-
-        const auto& vertexA = _vertices[face->m_A];
-        const auto& vertexB = _vertices[face->m_B];
-        const auto& vertexC = _vertices[face->m_C];
-
-        // Otherwise, perform nearest neighbor interpolation
-        {
-            BarycentricCoordinates barycenter;
-            if (!BarycentricCoordinates::RayTriangleIntersection(
-                    kVector3Zero, dir, { vertexA.m_Position, vertexB.m_Position, vertexC.m_Position }, barycenter))
-            {
-                std::memset(leftHRIR, 0, GetIRLength() * sizeof(AmReal32));
-                std::memset(rightHRIR, 0, GetIRLength() * sizeof(AmReal32));
-                return;
-            }
-
-            const AmSize length = vertexA.m_LeftIR.size();
-            const AmReal32 max = std::max({ barycenter.m_U, barycenter.m_V, barycenter.m_W });
-
-            // Barycentric weight ~1 at the closest vertex: U -> A, V -> B, W -> C
-            // (same convention as the bilinear path above).
-            if (max == barycenter.m_U)
-            {
-                std::memcpy(leftHRIR, vertexA.m_LeftIR.data(), length * sizeof(AmReal32));
-                std::memcpy(rightHRIR, vertexA.m_RightIR.data(), length * sizeof(AmReal32));
-                return;
-            }
-
-            if (max == barycenter.m_V)
-            {
-                std::memcpy(leftHRIR, vertexB.m_LeftIR.data(), length * sizeof(AmReal32));
-                std::memcpy(rightHRIR, vertexB.m_RightIR.data(), length * sizeof(AmReal32));
-                return;
-            }
-
-            std::memcpy(leftHRIR, vertexC.m_LeftIR.data(), length * sizeof(AmReal32));
-            std::memcpy(rightHRIR, vertexC.m_RightIR.data(), length * sizeof(AmReal32));
-        }
+        std::memcpy(leftHRIR, closest->m_LeftIR.data(), length * sizeof(AmReal32));
+        std::memcpy(rightHRIR, closest->m_RightIR.data(), length * sizeof(AmReal32));
     }
 
     const HRIRSphereVertex* HRIRSphereImpl::GetClosestVertex(const AmVector3& position, const Face* face) const
