@@ -1494,12 +1494,11 @@ namespace SparkyStudios::Audio::Amplitude
             *pitch *= channel->GetDopplerFactor(listener->GetId());
     }
 
-    // Given the priority of a node, and the list of ChannelInternalStates sorted by
-    // priority, find the location in the list where the node would be inserted.
-    // Note that the node should be inserted using InsertAfter. If the node you want
-    // to insert turns out to be the highest priority node, this will return the
-    // list terminator (and inserting after the terminator will put it at the front
-    // of the list).
+    // Given the priority of a node, and the list of ChannelInternalStates sorted descending
+    // by priority, find the location in the list where the node should be inserted before.
+    // Incumbents with equal priority are preserved ahead of the new node. If the node
+    // is highest priority, this returns begin(). If it is lower than or equal to the lowest
+    // active sound, this returns end().
     PriorityList::iterator FindInsertionPoint(PriorityList* list, const AmReal32 priority)
     {
         PriorityList::reverse_iterator it;
@@ -1513,24 +1512,21 @@ namespace SparkyStudios::Audio::Amplitude
         return it.base();
     }
 
-    // Given a location to insert a node, take an ChannelInternalState from the
+    // Given a location to insert a node, take a ChannelInternalState from the
     // appropriate list and insert it there. Return the new ChannelInternalState.
     //
-    // There are three places an ChannelInternalState may be taken from. First, if
+    // There are three places a ChannelInternalState may be taken from. First, if
     // there are any real channels available in the real channel free list, use one
     // of those so that your channel can play.
     //
     // If there are no real channels, then use a free virtual channel instead so
     // that your channel can at least be tracked.
     //
-    // If there are no real or virtual channels, use the node in the priority list,
-    // remove it from the list, and insert it in the new insertion point. This
-    // causes the lowest priority sound to stop being tracked.
+    // If there are no real or virtual channels, evict the lowest priority playing sound
+    // if the new sound has strictly higher priority.
     //
-    // If the node you are trying to insert is the lowest priority, do nothing and
-    // return a nullptr.
-    //
-    // This function could use some unit tests b/20752976
+    // If the node you are trying to insert has lower or equal priority compared to the lowest
+    // playing sound, do nothing and return a nullptr.
     ChannelInternalState* FindFreeChannelInternalState(
         PriorityList::iterator insertionPoint,
         PriorityList* list,
