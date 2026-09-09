@@ -1505,8 +1505,10 @@ namespace SparkyStudios::Audio::Amplitude
         PriorityList::reverse_iterator it;
 
         for (it = list->rbegin(); it != list->rend(); ++it)
-            if (const AmReal32 p = it->Priority(); p > priority)
+        {
+            if (const AmReal32 p = it->Priority(); p >= priority)
                 break;
+        }
 
         return it.base();
     }
