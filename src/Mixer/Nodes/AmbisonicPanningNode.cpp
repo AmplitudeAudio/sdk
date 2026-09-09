@@ -59,7 +59,7 @@ namespace SparkyStudios::Audio::Amplitude
         const auto* layer = GetLayer();
 
         const auto& listener = layer->GetListener();
-        const auto& listenerInvMatrix = listener.GetInverseMatrix();
+        const AmVector3 listenerPosition = listener.GetLocation();
 
         _soundField.Reset();
 
@@ -74,8 +74,8 @@ namespace SparkyStudios::Audio::Amplitude
                 const AmReal32 weight = layer->GetInstanceWeight(i);
                 const AmReal32 instanceGain = layer->GetInstanceGain(i);
 
-                const auto& listenerSpacePosition = Transform(listenerInvMatrix, { .xyz = location, ._pad2 = 1.0f });
-                _source.SetPosition(SphericalPosition::ForHRTF(listenerSpacePosition.xyz), 0.25f);
+                // World-locked encode: direction from listener to instance, in world space.
+                _source.SetPosition(SphericalPosition::ForHRTF(Sub(location, listenerPosition)), 0.25f);
 
                 // Reset temporary buffers
                 _instanceSoundField.Reset();
@@ -101,8 +101,8 @@ namespace SparkyStudios::Audio::Amplitude
         }
         else
         {
-            const auto& listenerSpaceSourcePosition = Transform(listenerInvMatrix, { .xyz = layer->GetLocation(), ._pad2 = 1.0f });
-            _source.SetPosition(SphericalPosition::ForHRTF(listenerSpaceSourcePosition.xyz), 0.25f);
+            // World-locked encode: direction from listener to source, in world space.
+            _source.SetPosition(SphericalPosition::ForHRTF(Sub(layer->GetLocation(), listenerPosition)), 0.25f);
             _source.Process(input->GetChannel(0), input->GetFrameCount(), &_soundField);
         }
 

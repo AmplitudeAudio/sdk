@@ -14,6 +14,8 @@
 
 #include <SparkyStudios/Audio/Amplitude/Mixer/Amplimix.h>
 
+#include <SparkyStudios/Audio/Amplitude/Math/CartesianCoordinateSystem.h>
+
 #include <Core/Engine.h>
 #include <Mixer/Nodes/AmbisonicRotatorNode.h>
 #include <Utils/Utils.h>
@@ -57,15 +59,19 @@ namespace SparkyStudios::Audio::Amplitude
         const auto* layer = GetLayer();
 
         const auto& listener = layer->GetListener();
-        const AmQuaternion listenerRotation = listener.GetOrientation().GetQuaternion();
-        const AmQuaternion inverseListenerRotation = Inverse(listenerRotation);
+
+        // Express the listener rotation in the AmbiX field frame. The orientation
+        // processor moves scene directions by the inverse of the supplied orientation,
+        // so passing the listener rotation head-ifies the world-locked field.
+        const CartesianCoordinateSystem::Converter engineToAmbiX(
+            CartesianCoordinateSystem::Default(), CartesianCoordinateSystem::AmbiX());
+        _rotator.SetOrientation(Orientation(Inverse(engineToAmbiX.Forward(listener.GetOrientation().GetQuaternion()))));
 
         _soundField.Reset();
 
         for (AmUInt32 i = 0, l = input->GetChannelCount(); i < l; ++i)
             _soundField.CopyStream(input->GetChannel(i), i, input->GetFrameCount());
 
-        _rotator.SetOrientation(Orientation(inverseListenerRotation));
         _rotator.Process(&_soundField, input->GetFrameCount());
 
         return _soundField.GetBuffer();
