@@ -1531,7 +1531,7 @@ namespace SparkyStudios::Audio::Amplitude
     // return a nullptr.
     //
     // This function could use some unit tests b/20752976
-    static ChannelInternalState* FindFreeChannelInternalState(
+    ChannelInternalState* FindFreeChannelInternalState(
         PriorityList::iterator insertionPoint,
         PriorityList* list,
         FreeList* realChannelFreeList,
@@ -1554,10 +1554,10 @@ namespace SparkyStudios::Audio::Amplitude
             virtualChannelFreeList->pop_front();
             PriorityList::insert_before(*insertionPoint, *newChannel, &ChannelInternalState::priority_node);
         }
-        else if (&*insertionPoint != &list->back())
+        else if (insertionPoint != list->end())
         {
-            // If there are no free sounds, and the new sound is not the lowest priority
-            // sound, evict the lowest priority sound.
+            // If there are no free channels, and the new sound is strictly higher priority
+            // than the lowest priority sound, evict the lowest priority sound.
             newChannel = &list->back();
             newChannel->Halt();
 

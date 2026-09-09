@@ -358,6 +358,15 @@ namespace SparkyStudios::Audio::Amplitude
     // be inserted into the list.
     PriorityList::iterator FindInsertionPoint(PriorityList* list, AmReal32 priority);
 
+    // Given a playing sound's insertion point and the current priority and free lists,
+    // find or allocate a ChannelInternalState for the new sound.
+    ChannelInternalState* FindFreeChannelInternalState(
+        PriorityList::iterator insertionPoint,
+        PriorityList* list,
+        FreeList* realChannelFreeList,
+        FreeList* virtualChannelFreeList,
+        bool paused);
+
     // Given a list of listeners and a location, find which listener is closest.
     // Additionally, return the square of the distance between the closest listener
     // and the location, as well as the given location translated into listener
