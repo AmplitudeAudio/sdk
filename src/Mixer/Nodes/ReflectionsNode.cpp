@@ -15,6 +15,8 @@
 #include <Core/Engine.h>
 #include <Mixer/Nodes/ReflectionsNode.h>
 
+#include <SparkyStudios/Audio/Amplitude/Math/CartesianCoordinateSystem.h>
+
 namespace SparkyStudios::Audio::Amplitude
 {
     ReflectionsNodeInstance::ReflectionsNodeInstance()
@@ -93,8 +95,11 @@ namespace SparkyStudios::Audio::Amplitude
             _reflectionsProcessor->Process(_tempBuffer, &_output);
         }
 
-        // Rotate the reflections to match the listener's orientation
-        _orientationProcessor.SetOrientation(Orientation(Inverse(listener.GetOrientation().GetQuaternion())));
+        // Rotate the reflections from room space to world space. The listener rotation
+        // is applied later by the AmbisonicRotator node, before binaural decode.
+        const CartesianCoordinateSystem::Converter engineToAmbiX(
+            CartesianCoordinateSystem::Default(), CartesianCoordinateSystem::AmbiX());
+        _orientationProcessor.SetOrientation(Orientation(Inverse(engineToAmbiX.Forward(room.GetOrientation().GetQuaternion()))));
         _orientationProcessor.Process(&_output, _output.GetSampleCount());
 
         return _output.GetBuffer();

@@ -34,10 +34,6 @@ namespace SparkyStudios::Audio::Amplitude
     bool AmbisonicRotatorNodeInstance::ShouldSkip() const
     {
         const auto* layer = GetLayer();
-
-        if (layer->GetSpatialization() != eSpatialization_HRTF)
-            return true;
-
         const auto& listener = layer->GetListener();
         return !listener.Valid();
     }
@@ -60,9 +56,9 @@ namespace SparkyStudios::Audio::Amplitude
 
         const auto& listener = layer->GetListener();
 
-        // Express the listener rotation in the AmbiX field frame. The orientation
-        // processor moves scene directions by the inverse of the supplied orientation,
-        // so passing the listener rotation head-ifies the world-locked field.
+        // The orientation processor moves scene directions by the inverse of the supplied orientation,
+        // and the SDK's ears-centered field (ForHRTF +90 deg azimuth) reverses the rotation sense,
+        // so the inverse of the AmbiX-frame listener rotation is supplied.
         const CartesianCoordinateSystem::Converter engineToAmbiX(
             CartesianCoordinateSystem::Default(), CartesianCoordinateSystem::AmbiX());
         _rotator.SetOrientation(Orientation(Inverse(engineToAmbiX.Forward(listener.GetOrientation().GetQuaternion()))));
