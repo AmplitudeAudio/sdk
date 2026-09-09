@@ -12,6 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+#include <algorithm>
+
 #include <Ambisonics/AmbisonicSource.h>
 #include <Utils/Utils.h>
 
@@ -53,13 +55,14 @@ namespace SparkyStudios::Audio::Amplitude
             for (AmUInt32 c = 0; c < m_channelCount; c++)
             {
                 auto& channelBuffer = output->_buffer->GetChannel(c);
-                const auto nInterpSamples = static_cast<AmUInt32>(std::round(_interpolationDuration * samples));
-                const AmReal32 deltaCoeff = (m_coefficients[c] - _oldCoefficients[c]) / static_cast<AmReal32>(nInterpSamples);
+                const auto nInterpSamples =
+                    std::clamp(static_cast<AmUInt32>(std::round(_interpolationDuration * samples)), 1u, samples);
+                const AmReal32 deltaCoeff = m_coefficients[c] - _oldCoefficients[c];
 
                 for (AmUInt32 i = 0; i < nInterpSamples; i++)
                 {
-                    const AmReal32 fInterp = static_cast<AmReal32>(i) * deltaCoeff;
-                    channelBuffer[i] = input[i] * (fInterp * m_coefficients[c] + (1.f - fInterp) * _oldCoefficients[c]);
+                    const AmReal32 fInterp = static_cast<AmReal32>(i) / static_cast<AmReal32>(nInterpSamples);
+                    channelBuffer[i] = input[i] * (_oldCoefficients[c] + fInterp * deltaCoeff);
                 }
 
                 // once interpolation has finished
@@ -89,13 +92,14 @@ namespace SparkyStudios::Audio::Amplitude
             for (AmUInt32 c = 0; c < m_channelCount; c++)
             {
                 auto& channelBuffer = output->_buffer->GetChannel(c);
-                const auto nInterpSamples = static_cast<AmUInt32>(std::round(_interpolationDuration * samples));
-                const AmReal32 deltaCoeff = (m_coefficients[c] - _oldCoefficients[c]) / static_cast<AmReal32>(nInterpSamples);
+                const auto nInterpSamples =
+                    std::clamp(static_cast<AmUInt32>(std::round(_interpolationDuration * samples)), 1u, samples);
+                const AmReal32 deltaCoeff = m_coefficients[c] - _oldCoefficients[c];
 
                 for (AmUInt32 i = 0; i < nInterpSamples; i++)
                 {
-                    const AmReal32 fInterp = static_cast<AmReal32>(i) * deltaCoeff;
-                    channelBuffer[i + offset] += input[i] * (fInterp * m_coefficients[c] + (1.f - fInterp) * _oldCoefficients[c]) * gain;
+                    const AmReal32 fInterp = static_cast<AmReal32>(i) / static_cast<AmReal32>(nInterpSamples);
+                    channelBuffer[i + offset] += input[i] * (_oldCoefficients[c] + fInterp * deltaCoeff) * gain;
                 }
 
                 // once interpolation has finished
