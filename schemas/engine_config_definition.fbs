@@ -171,7 +171,7 @@ table HRTFConfig {
   amir_file:string (required);
 
   /// The HRIR sampling mode.
-  hrir_sampling:HRIRSphereSamplingMode = NearestNeighbor;
+  hrir_sampling:HRIRSphereSamplingMode = Bilinear;
 }
 
 table EngineConfigDefinition {
