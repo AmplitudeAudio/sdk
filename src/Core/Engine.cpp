@@ -2696,11 +2696,7 @@ namespace SparkyStudios::Audio::Amplitude
         // Only sort if any channel's priority changed
         if (_state->channelPriorityDirty)
         {
-            _state->playing_channel_list.sort(
-                [](const ChannelInternalState& a, const ChannelInternalState& b) -> bool
-                {
-                    return a.Priority() < b.Priority();
-                });
+            _state->playing_channel_list.sort(ChannelPriorityComparator{});
             _state->channelPriorityDirty = false;
         }
 

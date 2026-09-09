@@ -372,6 +372,14 @@ namespace SparkyStudios::Audio::Amplitude
     bool LoadFile(const std::shared_ptr<File>& file, AmString* dest);
 
     AmUInt32 GetMaxNumberOfChannels(const EngineConfigDefinition* config);
+
+    struct ChannelPriorityComparator
+    {
+        bool operator()(const ChannelInternalState& a, const ChannelInternalState& b) const
+        {
+            return a.Priority() > b.Priority();
+        }
+    };
 } // namespace SparkyStudios::Audio::Amplitude
 
 #endif // _AM_IMPLEMENTATION_CORE_ENGINE_INTERNAL_STATE_H
