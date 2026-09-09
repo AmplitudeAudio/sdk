@@ -71,9 +71,6 @@ namespace SparkyStudios::Audio::Amplitude
 
         _vertices.resize(_header.m_VertexCount);
 
-        AmUInt32 i = 0;
-        std::vector<AmVector3> vertices(_header.m_VertexCount);
-
         for (auto& vertex : _vertices)
         {
             file->Read(reinterpret_cast<AmUInt8Buffer>(&vertex.m_Position), sizeof(AmVector3));
@@ -87,22 +84,19 @@ namespace SparkyStudios::Audio::Amplitude
             file->Read(reinterpret_cast<AmUInt8Buffer>(&vertex.m_LeftDelay), sizeof(AmReal32));
 
             file->Read(reinterpret_cast<AmUInt8Buffer>(&vertex.m_RightDelay), sizeof(AmReal32));
-
-            vertices[i] = vertex.m_Position;
-            ++i;
         }
 
         const AmUInt32 faceCount = indices.size() / 3;
         _faces.resize(faceCount);
 
-        for (i = 0; i < faceCount; ++i)
+        for (AmUInt32 i = 0; i < faceCount; ++i)
         {
             _faces[i].m_A = indices[i * 3 + 0];
             _faces[i].m_B = indices[i * 3 + 1];
             _faces[i].m_C = indices[i * 3 + 2];
         }
 
-        _tree.Build(vertices, _faces);
+        RebuildIndexes();
 
         _loaded = true;
     }
@@ -167,6 +161,29 @@ namespace SparkyStudios::Audio::Amplitude
     {
         for (auto& vertex : _vertices)
             vertex.m_Position = Amplitude::Transform(matrix, AmVector4{ .xyz = vertex.m_Position, ._pad2 = 1.0f }).xyz;
+
+        // Vertex positions changed: both geometry-derived indexes must follow.
+        RebuildIndexes();
+    }
+
+    void HRIRSphereImpl::RebuildIndexes()
+    {
+        // The face BSP is built over raw positions; the nearest-neighbor KD-tree over
+        // normalized positions (over unit vectors, max-Dot == min-Euclidean).
+        std::vector<AmVector3> positions;
+        positions.reserve(_vertices.size());
+
+        std::vector<AmVector3> normals;
+        normals.reserve(_vertices.size());
+
+        for (const auto& vertex : _vertices)
+        {
+            positions.push_back(vertex.m_Position);
+            normals.push_back(Normalize(vertex.m_Position));
+        }
+
+        _tree.Build(positions, _faces);
+        _nearestIndex.Build(normals);
     }
 
     bool HRIRSphereImpl::IsLoaded() const
@@ -230,31 +247,20 @@ namespace SparkyStudios::Audio::Amplitude
     void HRIRSphereImpl::SampleNearestNeighbor(const AmVector3& direction, AmReal32* leftHRIR, AmReal32* rightHRIR) const
     {
         const AmVector3 dir = Normalize(direction);
-
-        const HRIRSphereVertex* closest = nullptr;
-        AmReal32 bestDot = -2.0f;
-
-        for (const auto& vertex : _vertices)
-        {
-            const AmReal32 d = Dot(dir, Normalize(vertex.m_Position));
-            if (d > bestDot)
-            {
-                bestDot = d;
-                closest = &vertex;
-            }
-        }
-
         const AmSize length = GetIRLength();
 
-        if (closest == nullptr)
+        const AmSize index = _nearestIndex.FindNearest(dir);
+
+        if (index == KDTree::kInvalidIndex)
         {
             std::memset(leftHRIR, 0, length * sizeof(AmReal32));
             std::memset(rightHRIR, 0, length * sizeof(AmReal32));
             return;
         }
 
-        std::memcpy(leftHRIR, closest->m_LeftIR.data(), length * sizeof(AmReal32));
-        std::memcpy(rightHRIR, closest->m_RightIR.data(), length * sizeof(AmReal32));
+        const auto& vertex = _vertices[index];
+        std::memcpy(leftHRIR, vertex.m_LeftIR.data(), length * sizeof(AmReal32));
+        std::memcpy(rightHRIR, vertex.m_RightIR.data(), length * sizeof(AmReal32));
     }
 
     const HRIRSphereVertex* HRIRSphereImpl::GetClosestVertex(const AmVector3& position, const Face* face) const

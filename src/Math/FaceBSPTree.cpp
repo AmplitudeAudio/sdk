@@ -22,6 +22,8 @@ namespace SparkyStudios::Audio::Amplitude
 {
     void FaceBSPTree::Build(const std::vector<AmVector3>& points, const std::vector<Face>& faces)
     {
+        _nodes.clear();
+
         std::vector<Edge> edges;
         GetEdges(faces, edges);
 

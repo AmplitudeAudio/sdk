@@ -21,6 +21,7 @@
 
 #include <IO/Resource.h>
 #include <Math/FaceBSPTree.h>
+#include <Math/KDTree.h>
 
 namespace SparkyStudios::Audio::Amplitude
 {
@@ -63,11 +64,22 @@ namespace SparkyStudios::Audio::Amplitude
         void SampleNearestNeighbor(const AmVector3& direction, AmReal32* leftHRIR, AmReal32* rightHRIR) const;
         const HRIRSphereVertex* GetClosestVertex(const AmVector3& position, const Face* face) const;
 
+        /**
+         * @brief Rebuilds the face BSP tree and the nearest-neighbor KD-tree index from the
+         * current vertex positions.
+         *
+         * Both trees bake geometry-derived data at build time (split planes / point
+         * positions), so any mutation of @ref _vertices — load or transform — must refresh
+         * them or lookups go stale.
+         */
+        void RebuildIndexes();
+
         eHRIRSphereSamplingMode _samplingMode;
         HRIRSphereFileHeaderDescription _header;
         std::vector<HRIRSphereVertex> _vertices;
         std::vector<Face> _faces;
         FaceBSPTree _tree;
+        KDTree _nearestIndex;
 
         bool _loaded;
     };
