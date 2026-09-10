@@ -17,13 +17,14 @@
 
 #include <Utils/Freeverb/ReverbModel.h>
 
-#include <vector>
+#include <algorithm>
 
 namespace SparkyStudios::Audio::Amplitude
 {
     FreeverbReverbInstance::FreeverbReverbInstance(FreeverbReverb* parent)
         : ReverbInstance(parent)
         , _model(std::make_unique<Freeverb::ReverbModel>())
+        , _scratchBuffer(kAmMaxSupportedFrameCount, 2)
     {
         _model->SetWidth(1.0f);
         _model->SetWet(1.0f);
@@ -40,6 +41,9 @@ namespace SparkyStudios::Audio::Amplitude
             _model->SetSampleRate(sampleRate);
             _model->Mute();
         }
+
+        if (_scratchBuffer.GetFrameCount() == 0)
+            _scratchBuffer = AudioBuffer(kAmMaxSupportedFrameCount, 2);
     }
 
     void FreeverbReverbInstance::Reset()
@@ -57,13 +61,16 @@ namespace SparkyStudios::Audio::Amplitude
         }
     }
 
+    void FreeverbReverbInstance::Configure(AmUInt64 frames)
+    {
+        if (_scratchBuffer.GetFrameCount() < frames)
+            _scratchBuffer = AudioBuffer(frames, 2);
+    }
+
     void FreeverbReverbInstance::Process(const AudioBuffer& in, AudioBuffer& out, AmUInt64 frames, AmUInt32 sampleRate)
     {
         if (_model == nullptr || frames == 0 || in.GetChannelCount() == 0 || out.GetChannelCount() == 0)
             return;
-
-        if (_model->GetSampleRate() != sampleRate)
-            Initialize(sampleRate);
 
         const AmReal32* inL = in[0].begin();
         const AmReal32* inR = in.GetChannelCount() > 1 ? in[1].begin() : inL;
@@ -74,11 +81,24 @@ namespace SparkyStudios::Audio::Amplitude
         }
         else
         {
-            std::vector<AmReal32> tempL(frames);
-            std::vector<AmReal32> tempR(frames);
-            _model->ProcessReplace(inL, inR, tempL.data(), tempR.data(), frames, 1);
-            for (AmUInt64 f = 0; f < frames; ++f)
-                out[0][f] = 0.5f * (tempL[f] + tempR[f]);
+            if (_scratchBuffer.IsEmpty())
+                return;
+
+            AmUInt64 remaining = frames;
+            AmUInt64 offset = 0;
+            const AmUInt64 chunkSize = _scratchBuffer.GetFrameCount();
+
+            while (remaining > 0)
+            {
+                const AmUInt64 chunk = std::min(remaining, chunkSize);
+                _model->ProcessReplace(inL + offset, inR + offset, _scratchBuffer[0].begin(), _scratchBuffer[1].begin(), chunk, 1);
+
+                for (AmUInt64 f = 0; f < chunk; ++f)
+                    out[0][offset + f] = 0.5f * (_scratchBuffer[0][f] + _scratchBuffer[1][f]);
+
+                offset += chunk;
+                remaining -= chunk;
+            }
         }
     }
 

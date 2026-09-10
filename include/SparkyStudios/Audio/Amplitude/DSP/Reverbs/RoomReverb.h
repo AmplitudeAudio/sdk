@@ -67,6 +67,11 @@ namespace SparkyStudios::Audio::Amplitude
         void SetRoomParameters(AmReal32 roomSize, AmReal32 absorption) override;
 
         /**
+         * @copydoc ReverbInstance::Configure
+         */
+        void Configure(AmUInt64 frames) override;
+
+        /**
          * @copydoc ReverbInstance::Process
          */
         void Process(const AudioBuffer& in, AudioBuffer& out, AmUInt64 frames, AmUInt32 sampleRate) override;

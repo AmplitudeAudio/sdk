@@ -21,7 +21,7 @@ namespace SparkyStudios::Audio::Amplitude
 {
     DattoroReverbInstance::DattoroReverbInstance(DattoroReverb* parent)
         : ReverbInstance(parent)
-        , _reverb(nullptr)
+        , _reverb(std::make_unique<Internal::DattoroReverb>(48000))
         , _sampleRate(48000)
     {}
 
@@ -44,13 +44,13 @@ namespace SparkyStudios::Audio::Amplitude
         // Internal::DattoroReverb currently uses fixed tuned parameters
     }
 
+    void DattoroReverbInstance::Configure(AmUInt64 frames)
+    {}
+
     void DattoroReverbInstance::Process(const AudioBuffer& in, AudioBuffer& out, AmUInt64 frames, AmUInt32 sampleRate)
     {
-        if (frames == 0 || in.GetChannelCount() == 0 || out.GetChannelCount() == 0)
+        if (_reverb == nullptr || frames == 0 || in.GetChannelCount() == 0 || out.GetChannelCount() == 0)
             return;
-
-        if (_reverb == nullptr || _sampleRate != sampleRate)
-            Initialize(sampleRate);
 
         for (AmUInt64 f = 0; f < frames; ++f)
         {

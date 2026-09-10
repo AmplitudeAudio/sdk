@@ -73,6 +73,14 @@ namespace SparkyStudios::Audio::Amplitude
         virtual void SetRoomParameters(AmReal32 roomSize, AmReal32 absorption) = 0;
 
         /**
+         * @brief Configures the reverb instance for the specified frame count.
+         *
+         * @param[in] frames The number of audio frames per process call.
+         */
+        virtual void Configure(AmUInt64 frames)
+        {}
+
+        /**
          * @brief Processes audio frames through the reverb instance.
          *
          * @param[in] in The input buffer.

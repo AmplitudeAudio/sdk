@@ -21,7 +21,7 @@ namespace SparkyStudios::Audio::Amplitude
 {
     RoomReverbInstance::RoomReverbInstance(RoomReverb* parent)
         : ReverbInstance(parent)
-        , _reverb(nullptr)
+        , _reverb(std::make_unique<Internal::RoomReverb>(48000))
         , _sampleRate(48000)
     {}
 
@@ -48,13 +48,13 @@ namespace SparkyStudios::Audio::Amplitude
         }
     }
 
+    void RoomReverbInstance::Configure(AmUInt64 frames)
+    {}
+
     void RoomReverbInstance::Process(const AudioBuffer& in, AudioBuffer& out, AmUInt64 frames, AmUInt32 sampleRate)
     {
-        if (frames == 0 || in.GetChannelCount() == 0 || out.GetChannelCount() == 0)
+        if (_reverb == nullptr || frames == 0 || in.GetChannelCount() == 0 || out.GetChannelCount() == 0)
             return;
-
-        if (_reverb == nullptr || _sampleRate != sampleRate)
-            Initialize(sampleRate);
 
         for (AmUInt64 f = 0; f < frames; ++f)
         {
