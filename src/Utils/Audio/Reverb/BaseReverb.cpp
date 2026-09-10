@@ -14,6 +14,8 @@
 
 #include <Utils/Audio/Reverb/BaseReverb.h>
 
+#include <cmath>
+
 namespace SparkyStudios::Audio::Amplitude
 {
     BaseReverb::BaseReverb(AmUInt64 sampleRate)
@@ -31,18 +33,20 @@ namespace SparkyStudios::Audio::Amplitude
         std::memset(_lowPassCombCutoff, 0, kNumFilterSize);
         std::memset(_sy, 0, kSizeOfSample * 2);
 
-        const AmUInt32 maxDelaySamples = static_cast<AmUInt32>(sampleRate / 6);
+        const AmUInt32 maxAllPassDelay = sampleRate > 0 ? static_cast<AmUInt32>(std::ceil(sampleRate * (1000.0f / 48000.0f))) : 1000u;
+        const AmUInt32 maxCombDelay = sampleRate > 0 ? static_cast<AmUInt32>(std::ceil(sampleRate * (2500.0f / 48000.0f))) : 2500u;
+        const AmUInt32 maxEarlyRefDelay = sampleRate > 0 ? static_cast<AmUInt32>(sampleRate / 10.0f) : 4800u;
 
         for (auto& i : _arrayAllPass)
-            i.Init(sampleRate, maxDelaySamples);
+            i.Init(sampleRate, maxAllPassDelay);
 
         for (auto& i : _arrayLowPass)
             i.Init(sampleRate, 1);
 
         for (auto& i : _arrayTwo)
-            i.Init(sampleRate, maxDelaySamples);
+            i.Init(sampleRate, maxCombDelay);
 
-        _earlyRef.Init(sampleRate, maxDelaySamples);
+        _earlyRef.Init(sampleRate, maxEarlyRefDelay);
 
         _numSamplesMS = sampleRate / kAmSecond;
         _y = 0.0f;
@@ -215,7 +219,9 @@ namespace SparkyStudios::Audio::Amplitude
 
     void BaseReverb::LimitNumFilters(AmUInt32& numFilters, AmUInt32 startIndex)
     {
-        numFilters += startIndex;
-        numFilters = AM_CLAMP(numFilters, 0, kNumFilters - 1);
+        if (numFilters + startIndex > kNumFilters)
+            numFilters = kNumFilters;
+        else
+            numFilters += startIndex;
     }
 } // namespace SparkyStudios::Audio::Amplitude

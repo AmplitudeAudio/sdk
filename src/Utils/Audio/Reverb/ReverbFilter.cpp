@@ -14,6 +14,8 @@
 
 #include <Utils/Audio/Reverb/ReverbFilter.h>
 
+#include <algorithm>
+
 namespace SparkyStudios::Audio::Amplitude
 {
     ReverbFilters::ReverbFilters()
@@ -30,6 +32,8 @@ namespace SparkyStudios::Audio::Amplitude
     {
         const AmUInt32 delaySize = maxDelaySamples > 0 ? maxDelaySamples : (sampleRate > 0 ? static_cast<AmUInt32>(sampleRate / 6) : 1u);
         _delayLines.resize(delaySize, 0.0f);
+        _delayIndex = 0;
+        _delaySize = static_cast<AmInt32>(delaySize);
         _initialized = true;
     }
 
@@ -41,7 +45,13 @@ namespace SparkyStudios::Audio::Amplitude
 
     AmReal32 ReverbFilters::Comb1(AmReal32 x, AmInt32 size)
     {
-        _delaySize = size;
+        if (_delayLines.size() == 0)
+            return x;
+
+        _delaySize = std::max(1, std::min(size, static_cast<AmInt32>(_delayLines.size())));
+        if (_delayIndex >= _delaySize)
+            _delayIndex = 0;
+
         _y = _delayLines[_delayIndex];
         _delayLines[_delayIndex] = x + _feedback * _y;
         _delayIndex != _delaySize - 1 ? _delayIndex++ : _delayIndex = 0;
@@ -51,7 +61,13 @@ namespace SparkyStudios::Audio::Amplitude
 
     AmReal32 ReverbFilters::CombFeedForward(AmReal32 x, AmInt32 size)
     {
-        _delaySize = size;
+        if (_delayLines.size() == 0)
+            return x;
+
+        _delaySize = std::max(1, std::min(size, static_cast<AmInt32>(_delayLines.size())));
+        if (_delayIndex >= _delaySize)
+            _delayIndex = 0;
+
         _y = x + _delayLines[_delayIndex];
         _delayLines[_delayIndex] = x;
         _delayIndex != _delaySize - 1 ? _delayIndex++ : _delayIndex = 0;
@@ -61,7 +77,13 @@ namespace SparkyStudios::Audio::Amplitude
 
     AmReal32 ReverbFilters::CombFeedBack(AmReal32 x, AmInt32 size, AmReal32 fb)
     {
-        _delaySize = size;
+        if (_delayLines.size() == 0)
+            return x;
+
+        _delaySize = std::max(1, std::min(size, static_cast<AmInt32>(_delayLines.size())));
+        if (_delayIndex >= _delaySize)
+            _delayIndex = 0;
+
         _y = x + _delayLines[_delayIndex] * fb;
         _delayLines[_delayIndex] = _y;
         _delayIndex != _delaySize - 1 ? _delayIndex++ : _delayIndex = 0;
@@ -71,7 +93,13 @@ namespace SparkyStudios::Audio::Amplitude
 
     AmReal32 ReverbFilters::LowPassCombFeedBack(AmReal32 x, AmInt32 size, AmReal32 fb, AmReal32 cutOff)
     {
-        _delaySize = size;
+        if (_delayLines.size() == 0)
+            return x;
+
+        _delaySize = std::max(1, std::min(size, static_cast<AmInt32>(_delayLines.size())));
+        if (_delayIndex >= _delaySize)
+            _delayIndex = 0;
+
         _y = x + LowPass(_delayLines[_delayIndex], 1.0f - cutOff) * fb;
         _delayLines[_delayIndex] = _y;
         _delayIndex != _delaySize - 1 ? _delayIndex++ : _delayIndex = 0;
@@ -81,7 +109,13 @@ namespace SparkyStudios::Audio::Amplitude
 
     AmReal32 ReverbFilters::AllPass(AmReal32 x, AmInt32 size)
     {
-        _delaySize = size;
+        if (_delayLines.size() == 0)
+            return x;
+
+        _delaySize = std::max(1, std::min(size, static_cast<AmInt32>(_delayLines.size())));
+        if (_delayIndex >= _delaySize)
+            _delayIndex = 0;
+
         x += _delayLines[_delayIndex] * _gainCoeff;
         _y = _delayLines[_delayIndex] + (x * (-_gainCoeff));
         _delayLines[_delayIndex] = x;
@@ -92,7 +126,13 @@ namespace SparkyStudios::Audio::Amplitude
 
     AmReal32 ReverbFilters::AllPass(AmReal32 x, AmInt32 size, AmReal32 feedBack)
     {
-        _delaySize = size;
+        if (_delayLines.size() == 0)
+            return x;
+
+        _delaySize = std::max(1, std::min(size, static_cast<AmInt32>(_delayLines.size())));
+        if (_delayIndex >= _delaySize)
+            _delayIndex = 0;
+
         x += _delayLines[_delayIndex] * feedBack;
         _y = _delayLines[_delayIndex] + (x * (-feedBack));
         _delayLines[_delayIndex] = x;
@@ -106,12 +146,21 @@ namespace SparkyStudios::Audio::Amplitude
         SparkyStudios::Audio::Amplitude::AmInt32 size,
         SparkyStudios::Audio::Amplitude::AmInt32 tap)
     {
-        _delaySize = size;
+        if (_delayLines.size() == 0)
+            return x;
+
+        _delaySize = std::max(1, std::min(size, static_cast<AmInt32>(_delayLines.size())));
+        if (_delayIndex >= _delaySize)
+            _delayIndex = 0;
+
         x += _delayLines[_delayIndex] * _gainCoeff;
 
         AmInt32 t = _delayIndex + tap;
         if (t >= _delaySize - 1)
             t -= _delaySize;
+
+        if (t < 0 || t >= static_cast<AmInt32>(_delayLines.size()))
+            t = 0;
 
         _y = _delayLines[t];
         _delayLines[_delayIndex] = x;
@@ -125,7 +174,13 @@ namespace SparkyStudios::Audio::Amplitude
 
     AmReal32 ReverbFilters::OneTap(AmReal32 x, AmInt32 size)
     {
-        _delaySize = size;
+        if (_delayLines.size() == 0)
+            return x;
+
+        _delaySize = std::max(1, std::min(size, static_cast<AmInt32>(_delayLines.size())));
+        if (_delayIndex >= _delaySize)
+            _delayIndex = 0;
+
         _y = _delayLines[_delayIndex];
         _delayLines[_delayIndex] = x;
         _delayIndex != _delaySize - 1 ? _delayIndex++ : _delayIndex = 0;
@@ -135,16 +190,24 @@ namespace SparkyStudios::Audio::Amplitude
 
     AmReal32 ReverbFilters::TapDelay(AmReal32 x, AmInt32 size, AmReal32Buffer taps, AmInt32 numTaps)
     {
+        if (_delayLines.size() == 0)
+            return x;
+
         _y = 0.0f;
-        _delaySize = size;
+        _delaySize = std::max(1, std::min(size, static_cast<AmInt32>(_delayLines.size())));
+        if (_delayIndex >= _delaySize)
+            _delayIndex = 0;
 
         for (AmInt32 i = 0; i < numTaps; i++)
         {
-            AmInt32 t = (AmInt32)(taps[i] * (size - 1));
+            AmInt32 t = (AmInt32)(taps[i] * (_delaySize - 1));
             AmInt32 y = _delayIndex + t;
 
             if (y > _delaySize - 1)
                 y -= _delaySize;
+
+            if (y < 0 || y >= static_cast<AmInt32>(_delayLines.size()))
+                y = 0;
 
             _y += _delayLines[y];
         }
@@ -157,16 +220,24 @@ namespace SparkyStudios::Audio::Amplitude
 
     AmReal32 ReverbFilters::TapDelayWithGain(AmReal32 x, AmInt32 size, AmReal32Buffer taps, AmInt32 numTaps, AmReal32Buffer gain)
     {
+        if (_delayLines.size() == 0)
+            return x;
+
         _y = 0.0f;
-        _delaySize = size;
+        _delaySize = std::max(1, std::min(size, static_cast<AmInt32>(_delayLines.size())));
+        if (_delayIndex >= _delaySize)
+            _delayIndex = 0;
 
         for (AmInt32 i = 0; i < numTaps; i++)
         {
-            AmInt32 t = (AmInt32)(taps[i] * (size - 1));
+            AmInt32 t = (AmInt32)(taps[i] * (_delaySize - 1));
             AmInt32 y = _delayIndex + t;
 
             if (y > _delaySize - 1)
                 y -= _delaySize;
+
+            if (y < 0 || y >= static_cast<AmInt32>(_delayLines.size()))
+                y = 0;
 
             _y += _delayLines[y] * gain[i];
         }
@@ -179,11 +250,20 @@ namespace SparkyStudios::Audio::Amplitude
 
     AmReal32 ReverbFilters::TapDelayPos(AmReal32 x, AmInt32 size, AmInt32Buffer taps, AmInt32 numTaps)
     {
+        if (_delayLines.size() == 0)
+            return x;
+
         _y = 0.0f;
-        _delaySize = size;
+        _delaySize = std::max(1, std::min(size, static_cast<AmInt32>(_delayLines.size())));
+        if (_delayIndex >= _delaySize)
+            _delayIndex = 0;
 
         for (AmInt32 i = 0; i < numTaps; i++)
-            _y += _delayLines[taps[i]];
+        {
+            AmInt32 idx = taps[i];
+            if (idx >= 0 && idx < static_cast<AmInt32>(_delayLines.size()))
+                _y += _delayLines[idx];
+        }
 
         _delayLines[_delayIndex] = x;
         _delayIndex != _delaySize - 1 ? _delayIndex++ : _delayIndex = 0;
@@ -193,9 +273,15 @@ namespace SparkyStudios::Audio::Amplitude
 
     AmReal32 ReverbFilters::GetTap(AmInt32 tap)
     {
+        if (_delayLines.size() == 0 || _delaySize <= 0)
+            return 0.0f;
+
         AmInt32 t = _delayIndex + tap;
         if (t > _delaySize - 1)
             t -= _delaySize;
+
+        if (t < 0 || t >= static_cast<AmInt32>(_delayLines.size()))
+            t = 0;
 
         _y = _delayLines[t];
         return _delayLines[t];
