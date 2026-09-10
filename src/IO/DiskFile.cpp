@@ -42,7 +42,16 @@ namespace SparkyStudios::Audio::Amplitude
 
     bool DiskFile::Eof() const
     {
+        if (m_fileHandle == nullptr)
+            return true;
+
+        if (feof(m_fileHandle) != 0)
+            return true;
+
         const long pos = ftell(m_fileHandle);
+        if (pos < 0)
+            return true;
+
         const bool value = fgetc(m_fileHandle) == EOF;
         fseek(m_fileHandle, pos, SEEK_SET);
         return value;
@@ -50,35 +59,53 @@ namespace SparkyStudios::Audio::Amplitude
 
     AmSize DiskFile::Read(AmUInt8Buffer dst, AmSize bytes) const
     {
+        if (m_fileHandle == nullptr || bytes == 0 || dst == nullptr)
+            return 0;
+
         return fread(dst, 1, bytes, m_fileHandle);
     }
 
     AmSize DiskFile::Write(AmConstUInt8Buffer src, AmSize bytes)
     {
+        if (m_fileHandle == nullptr || bytes == 0 || src == nullptr)
+            return 0;
+
         return fwrite(src, 1, bytes, m_fileHandle);
     }
 
     AmSize DiskFile::Length() const
     {
-        if (!m_fileHandle)
+        if (m_fileHandle == nullptr)
             return 0;
 
         const long pos = ftell(m_fileHandle);
-        fseek(m_fileHandle, 0, SEEK_END);
-        const auto len = static_cast<AmUInt32>(ftell(m_fileHandle));
+        if (pos < 0)
+            return 0;
+
+        if (fseek(m_fileHandle, 0, SEEK_END) != 0)
+            return 0;
+
+        const long len = ftell(m_fileHandle);
         fseek(m_fileHandle, pos, SEEK_SET);
 
-        return len;
+        return len < 0 ? 0 : static_cast<AmSize>(len);
     }
 
     void DiskFile::Seek(AmInt64 offset, eFileSeekOrigin origin)
     {
+        if (m_fileHandle == nullptr)
+            return;
+
         fseek(m_fileHandle, offset, origin);
     }
 
     AmSize DiskFile::Position() const
     {
-        return static_cast<AmSize>(ftell(m_fileHandle));
+        if (m_fileHandle == nullptr)
+            return 0;
+
+        const long pos = ftell(m_fileHandle);
+        return pos < 0 ? 0 : static_cast<AmSize>(pos);
     }
 
     AmVoidPtr DiskFile::GetPtr() const
