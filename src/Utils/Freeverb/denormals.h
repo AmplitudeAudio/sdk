@@ -20,8 +20,13 @@
 #ifndef SS_AMPLITUDE_AUDIO_DENORMALS_H
 #define SS_AMPLITUDE_AUDIO_DENORMALS_H
 
+#include <cmath>
+
 #define undenormalise(sample)                                                                                                              \
-    if (((*(unsigned int*)&sample) & 0x7f800000) == 0)                                                                                     \
-    sample = 0.0f
+    do                                                                                                                                     \
+    {                                                                                                                                      \
+        if (std::abs(sample) < 1.0e-15f)                                                                                                   \
+            sample = 0.0f;                                                                                                                 \
+    } while (0)
 
 #endif // SS_AMPLITUDE_AUDIO_DENORMALS_H

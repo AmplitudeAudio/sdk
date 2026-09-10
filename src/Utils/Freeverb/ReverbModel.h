@@ -20,6 +20,8 @@
 #ifndef SS_AMPLITUDE_AUDIO_REVMODEL_H
 #define SS_AMPLITUDE_AUDIO_REVMODEL_H
 
+#include <vector>
+
 #include <SparkyStudios/Audio/Amplitude/Core/Common.h>
 
 #include "AllPass.h"
@@ -53,9 +55,12 @@ namespace Freeverb
         AmReal32 GetWidth() const;
         void SetMode(AmReal32 value);
         AmReal32 GetMode() const;
+        void SetSampleRate(AmUInt32 sampleRate);
+        AmUInt32 GetSampleRate() const;
 
     private:
         void Update();
+        void AllocateBuffers();
 
     private:
         AmReal32 _gain;
@@ -68,9 +73,7 @@ namespace Freeverb
 
         bool _dirty;
 
-        // The following are all declared inline
-        // to remove the need for dynamic allocation
-        // with its subsequent error-checking messiness
+        AmUInt32 _sampleRate;
 
         // Comb filters
         Comb _combL[kNumCombs];
@@ -80,33 +83,13 @@ namespace Freeverb
         AllPass _allPassL[kNumAllPasses];
         AllPass _allPassR[kNumAllPasses];
 
-        // Buffers for the combs
-        AmReal32 _bufCombL1[kCombTuningL1];
-        AmReal32 _bufCombR1[kCombTuningR1];
-        AmReal32 _bufCombL2[kCombTuningL2];
-        AmReal32 _bufCombR2[kCombTuningR2];
-        AmReal32 _bufCombL3[kCombTuningL3];
-        AmReal32 _bufCombR3[kCombTuningR3];
-        AmReal32 _bufCombL4[kCombTuningL4];
-        AmReal32 _bufCombR4[kCombTuningR4];
-        AmReal32 _bufCombL5[kCombTuningL5];
-        AmReal32 _bufCombR5[kCombTuningR5];
-        AmReal32 _bufCombL6[kCombTuningL6];
-        AmReal32 _bufCombR6[kCombTuningR6];
-        AmReal32 _bufCombL7[kCombTuningL7];
-        AmReal32 _bufCombR7[kCombTuningR7];
-        AmReal32 _bufCombL8[kCombTuningL8];
-        AmReal32 _bufCombR8[kCombTuningR8];
+        // Dynamically sized buffers for the combs
+        std::vector<AmReal32> _bufCombL[kNumCombs];
+        std::vector<AmReal32> _bufCombR[kNumCombs];
 
-        // Buffers for the allpasses
-        AmReal32 _bufAllPassL1[kAllPassTuningL1];
-        AmReal32 _bufAllPassR1[kAllPassTuningR1];
-        AmReal32 _bufAllPassL2[kAllPassTuningL2];
-        AmReal32 _bufAllPassR2[kAllPassTuningR2];
-        AmReal32 _bufAllPassL3[kAllPassTuningL3];
-        AmReal32 _bufAllPassR3[kAllPassTuningR3];
-        AmReal32 _bufAllPassL4[kAllPassTuningL4];
-        AmReal32 _bufAllPassR4[kAllPassTuningR4];
+        // Dynamically sized buffers for the allpasses
+        std::vector<AmReal32> _bufAllPassL[kNumAllPasses];
+        std::vector<AmReal32> _bufAllPassR[kNumAllPasses];
     };
 } // namespace Freeverb
 

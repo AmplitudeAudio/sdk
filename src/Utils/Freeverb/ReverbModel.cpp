@@ -22,32 +22,10 @@
 namespace Freeverb
 {
     ReverbModel::ReverbModel()
+        : _sampleRate(44100)
     {
-        // Tie the components to their buffers
-        _combL[0].SetBuffer(_bufCombL1, kCombTuningL1);
-        _combR[0].SetBuffer(_bufCombR1, kCombTuningR1);
-        _combL[1].SetBuffer(_bufCombL2, kCombTuningL2);
-        _combR[1].SetBuffer(_bufCombR2, kCombTuningR2);
-        _combL[2].SetBuffer(_bufCombL3, kCombTuningL3);
-        _combR[2].SetBuffer(_bufCombR3, kCombTuningR3);
-        _combL[3].SetBuffer(_bufCombL4, kCombTuningL4);
-        _combR[3].SetBuffer(_bufCombR4, kCombTuningR4);
-        _combL[4].SetBuffer(_bufCombL5, kCombTuningL5);
-        _combR[4].SetBuffer(_bufCombR5, kCombTuningR5);
-        _combL[5].SetBuffer(_bufCombL6, kCombTuningL6);
-        _combR[5].SetBuffer(_bufCombR6, kCombTuningR6);
-        _combL[6].SetBuffer(_bufCombL7, kCombTuningL7);
-        _combR[6].SetBuffer(_bufCombR7, kCombTuningR7);
-        _combL[7].SetBuffer(_bufCombL8, kCombTuningL8);
-        _combR[7].SetBuffer(_bufCombR8, kCombTuningR8);
-        _allPassL[0].SetBuffer(_bufAllPassL1, kAllPassTuningL1);
-        _allPassR[0].SetBuffer(_bufAllPassR1, kAllPassTuningR1);
-        _allPassL[1].SetBuffer(_bufAllPassL2, kAllPassTuningL2);
-        _allPassR[1].SetBuffer(_bufAllPassR2, kAllPassTuningR2);
-        _allPassL[2].SetBuffer(_bufAllPassL3, kAllPassTuningL3);
-        _allPassR[2].SetBuffer(_bufAllPassR3, kAllPassTuningR3);
-        _allPassL[3].SetBuffer(_bufAllPassL4, kAllPassTuningL4);
-        _allPassR[3].SetBuffer(_bufAllPassR4, kAllPassTuningR4);
+        // Allocate buffers for the default 44.1kHz sample rate
+        AllocateBuffers();
 
         // Set default values
         _allPassL[0].SetFeedback(0.5f);
@@ -114,8 +92,11 @@ namespace Freeverb
             }
 
             // Calculate output REPLACING anything already there
-            outL = outL * _wet1 + outR * _wet2 + *inputL * _dry;
-            outR = outR * _wet1 + outL * _wet2 + *inputR * _dry;
+            const AmReal32 resultL = outL * _wet1 + outR * _wet2 + *inputL * _dry;
+            const AmReal32 resultR = outR * _wet1 + outL * _wet2 + *inputR * _dry;
+
+            outL = resultL;
+            outR = resultR;
 
             undenormalise(outL);
             undenormalise(outR);
@@ -202,6 +183,56 @@ namespace Freeverb
         }
 
         _dirty = false;
+    }
+
+    void ReverbModel::AllocateBuffers()
+    {
+        const AmReal32 scale = static_cast<AmReal32>(_sampleRate) / 44100.0f;
+
+        constexpr AmInt32 kCombTuningL[kNumCombs] = {
+            kCombTuningL1, kCombTuningL2, kCombTuningL3, kCombTuningL4, kCombTuningL5, kCombTuningL6, kCombTuningL7, kCombTuningL8};
+        constexpr AmInt32 kCombTuningR[kNumCombs] = {
+            kCombTuningR1, kCombTuningR2, kCombTuningR3, kCombTuningR4, kCombTuningR5, kCombTuningR6, kCombTuningR7, kCombTuningR8};
+        constexpr AmInt32 kAllPassTuningL[kNumAllPasses] = { kAllPassTuningL1, kAllPassTuningL2, kAllPassTuningL3, kAllPassTuningL4 };
+        constexpr AmInt32 kAllPassTuningR[kNumAllPasses] = { kAllPassTuningR1, kAllPassTuningR2, kAllPassTuningR3, kAllPassTuningR4 };
+
+        for (AmInt32 i = 0; i < kNumCombs; i++)
+        {
+            const auto sizeL = static_cast<AmInt32>(std::round(kCombTuningL[i] * scale));
+            const auto sizeR = static_cast<AmInt32>(std::round(kCombTuningR[i] * scale));
+            _bufCombL[i].assign(sizeL, 0.0f);
+            _bufCombR[i].assign(sizeR, 0.0f);
+            _combL[i].SetBuffer(_bufCombL[i].data(), sizeL);
+            _combR[i].SetBuffer(_bufCombR[i].data(), sizeR);
+        }
+
+        for (AmInt32 i = 0; i < kNumAllPasses; i++)
+        {
+            const auto sizeL = static_cast<AmInt32>(std::round(kAllPassTuningL[i] * scale));
+            const auto sizeR = static_cast<AmInt32>(std::round(kAllPassTuningR[i] * scale));
+            _bufAllPassL[i].assign(sizeL, 0.0f);
+            _bufAllPassR[i].assign(sizeR, 0.0f);
+            _allPassL[i].SetBuffer(_bufAllPassL[i].data(), sizeL);
+            _allPassR[i].SetBuffer(_bufAllPassR[i].data(), sizeR);
+        }
+    }
+
+    void ReverbModel::SetSampleRate(AmUInt32 sampleRate)
+    {
+        if (sampleRate == 0)
+            sampleRate = 44100;
+
+        if (_sampleRate == sampleRate)
+            return;
+
+        _sampleRate = sampleRate;
+        AllocateBuffers();
+        Mute();
+    }
+
+    AmUInt32 ReverbModel::GetSampleRate() const
+    {
+        return _sampleRate;
     }
 
     // The following get/set functions are not inlined, because
