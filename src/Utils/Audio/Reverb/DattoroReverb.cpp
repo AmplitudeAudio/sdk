@@ -14,7 +14,7 @@
 
 #include <Utils/Audio/Reverb/DattoroReverb.h>
 
-namespace SparkyStudios::Audio::Amplitude
+namespace SparkyStudios::Audio::Amplitude::Internal
 {
     DattoroReverb::DattoroReverb(AmUInt64 sampleRate)
         : BaseReverb(sampleRate)

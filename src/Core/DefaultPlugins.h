@@ -68,6 +68,14 @@
 
 #pragma endregion
 
+#pragma region Default Reverbs
+
+#include <DSP/Reverbs/DattoroReverb.h>
+#include <DSP/Reverbs/FreeverbReverb.h>
+#include <DSP/Reverbs/RoomReverb.h>
+
+#pragma endregion
+
 #pragma region Default Pipeline Nodes
 
 #include <Mixer/Nodes/AmbisonicBinauralDecoderNode.h>
@@ -76,8 +84,8 @@
 #include <Mixer/Nodes/AmbisonicRotatorNode.h>
 #include <Mixer/Nodes/AttenuationNode.h>
 #include <Mixer/Nodes/ClampNode.h>
-#include <Mixer/Nodes/HardClipNode.h>
 #include <Mixer/Nodes/EnvironmentEffectNode.h>
+#include <Mixer/Nodes/HardClipNode.h>
 #include <Mixer/Nodes/InputNode.h>
 #include <Mixer/Nodes/LimiterNode.h>
 #include <Mixer/Nodes/NearFieldEffectNode.h>

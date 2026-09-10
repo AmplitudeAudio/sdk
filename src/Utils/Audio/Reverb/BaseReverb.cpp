@@ -16,7 +16,7 @@
 
 #include <cmath>
 
-namespace SparkyStudios::Audio::Amplitude
+namespace SparkyStudios::Audio::Amplitude::Internal
 {
     BaseReverb::BaseReverb(AmUInt64 sampleRate)
         : _sampleRate(sampleRate)

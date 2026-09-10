@@ -21,7 +21,7 @@
 
 #include <Utils/Audio/Reverb/ReverbFilter.h>
 
-namespace SparkyStudios::Audio::Amplitude
+namespace SparkyStudios::Audio::Amplitude::Internal
 {
     class BaseReverb
     {

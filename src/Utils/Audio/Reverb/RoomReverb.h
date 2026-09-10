@@ -21,7 +21,7 @@
 
 #include <Utils/Audio/Reverb/BaseReverb.h>
 
-namespace SparkyStudios::Audio::Amplitude
+namespace SparkyStudios::Audio::Amplitude::Internal
 {
     class RoomReverb : public BaseReverb
     {

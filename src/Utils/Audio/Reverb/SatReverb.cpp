@@ -14,7 +14,7 @@
 
 #include <Utils/Audio/Reverb/SatReverb.h>
 
-namespace SparkyStudios::Audio::Amplitude
+namespace SparkyStudios::Audio::Amplitude::Internal
 {
     SatReverb::SatReverb(AmUInt64 sampleRate)
         : BaseReverb(sampleRate)

@@ -14,7 +14,7 @@
 
 #include <Utils/Audio/Reverb/RoomReverb.h>
 
-namespace SparkyStudios::Audio::Amplitude
+namespace SparkyStudios::Audio::Amplitude::Internal
 {
     RoomReverb::RoomReverb(AmUInt64 sampleRate)
         : BaseReverb(sampleRate)

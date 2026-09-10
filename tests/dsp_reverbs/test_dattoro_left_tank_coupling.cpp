@@ -19,6 +19,7 @@
 #include "TestRegistry.h"
 
 using namespace SparkyStudios::Audio::Amplitude;
+using namespace SparkyStudios::Audio::Amplitude::Internal;
 
 namespace SparkyStudios::Audio::Amplitude::Tests
 {

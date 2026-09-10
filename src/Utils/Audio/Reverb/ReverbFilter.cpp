@@ -16,7 +16,7 @@
 
 #include <algorithm>
 
-namespace SparkyStudios::Audio::Amplitude
+namespace SparkyStudios::Audio::Amplitude::Internal
 {
     ReverbFilters::ReverbFilters()
     {

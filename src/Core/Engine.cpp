@@ -128,6 +128,10 @@ namespace SparkyStudios::Audio::Amplitude
     static std::shared_ptr<RobotizeFilter> sRobotizeFilterPlugin = nullptr;
     static std::shared_ptr<WaveShaperFilter> sWaveShaperFilterPlugin = nullptr;
     // ---
+    static std::shared_ptr<FreeverbReverb> sFreeverbPlugin = nullptr;
+    static std::shared_ptr<DattoroReverb> sDattorroPlugin = nullptr;
+    static std::shared_ptr<RoomReverb> sRoomReverbPlugin = nullptr;
+    // ---
     static std::shared_ptr<AmbisonicBinauralDecoderNode> sAmbisonicBinauralDecoderNodePlugin = nullptr;
     static std::shared_ptr<AmbisonicMixerNode> sAmbisonicMixerNodePlugin = nullptr;
     static std::shared_ptr<AmbisonicPanningNode> sAmbisonicPanningNodePlugin = nullptr;
@@ -576,6 +580,10 @@ namespace SparkyStudios::Audio::Amplitude
         sRobotizeFilterPlugin = RegisterExtension<RobotizeFilter>();
         sWaveShaperFilterPlugin = RegisterExtension<WaveShaperFilter>();
         // ---
+        sFreeverbPlugin = RegisterExtension<FreeverbReverb>();
+        sDattorroPlugin = RegisterExtension<DattoroReverb>();
+        sRoomReverbPlugin = RegisterExtension<RoomReverb>();
+        // ---
         sAmbisonicBinauralDecoderNodePlugin = RegisterExtension<AmbisonicBinauralDecoderNode>();
         sAmbisonicMixerNodePlugin = RegisterExtension<AmbisonicMixerNode>();
         sAmbisonicPanningNodePlugin = RegisterExtension<AmbisonicPanningNode>();
@@ -635,6 +643,10 @@ namespace SparkyStudios::Audio::Amplitude
         UnregisterExtension(sPitchShiftFilterPlugin);
         UnregisterExtension(sRobotizeFilterPlugin);
         UnregisterExtension(sWaveShaperFilterPlugin);
+        // ---
+        UnregisterExtension(sFreeverbPlugin);
+        UnregisterExtension(sDattorroPlugin);
+        UnregisterExtension(sRoomReverbPlugin);
         // ---
         UnregisterExtension(sAmbisonicBinauralDecoderNodePlugin);
         UnregisterExtension(sAmbisonicMixerNodePlugin);
