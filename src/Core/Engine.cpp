@@ -148,6 +148,9 @@ namespace SparkyStudios::Audio::Amplitude
     static std::shared_ptr<OutputNode> sOutputNodePlugin = nullptr;
     static std::shared_ptr<ReflectionsNode> sReflectionsNodePlugin = nullptr;
     static std::shared_ptr<ReverbNode> sReverbNodePlugin = nullptr;
+    static std::shared_ptr<ReverbNode> sFreeverbNodePlugin = nullptr;
+    static std::shared_ptr<ReverbNode> sDattorroNodePlugin = nullptr;
+    static std::shared_ptr<ReverbNode> sRoomReverbNodePlugin = nullptr;
     static std::shared_ptr<RoundoffClipNode> sRoundoffClipNodePlugin = nullptr;
     static std::shared_ptr<StereoMixerNode> sStereoMixerNodePlugin = nullptr;
     static std::shared_ptr<StereoPanningNode> sStereoPanningNodePlugin = nullptr;
@@ -600,6 +603,9 @@ namespace SparkyStudios::Audio::Amplitude
         sOutputNodePlugin = RegisterExtension<OutputNode>();
         sReflectionsNodePlugin = RegisterExtension<ReflectionsNode>();
         sReverbNodePlugin = RegisterExtension<ReverbNode>();
+        sFreeverbNodePlugin = RegisterExtension<ReverbNode>("Freeverb");
+        sDattorroNodePlugin = RegisterExtension<ReverbNode>("Dattorro");
+        sRoomReverbNodePlugin = RegisterExtension<ReverbNode>("RoomReverb");
         sRoundoffClipNodePlugin = RegisterExtension<RoundoffClipNode>();
         sStereoMixerNodePlugin = RegisterExtension<StereoMixerNode>();
         sStereoPanningNodePlugin = RegisterExtension<StereoPanningNode>();
@@ -664,6 +670,9 @@ namespace SparkyStudios::Audio::Amplitude
         UnregisterExtension(sOutputNodePlugin);
         UnregisterExtension(sReflectionsNodePlugin);
         UnregisterExtension(sReverbNodePlugin);
+        UnregisterExtension(sFreeverbNodePlugin);
+        UnregisterExtension(sDattorroNodePlugin);
+        UnregisterExtension(sRoomReverbNodePlugin);
         UnregisterExtension(sRoundoffClipNodePlugin);
         UnregisterExtension(sStereoMixerNodePlugin);
         UnregisterExtension(sStereoPanningNodePlugin);

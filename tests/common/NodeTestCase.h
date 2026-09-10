@@ -222,17 +222,21 @@ namespace SparkyStudios::Audio::Amplitude::Tests
         void SetUp() override
         {
             ComponentTestCase::SetUp();
+            Engine::RegisterDefaultExtensions();
             _mockLayer = std::make_unique<SpatialMockLayer>();
         }
 
         void TearDown() override
         {
             _mockLayer.reset();
+            Engine::UnregisterDefaultExtensions();
             ComponentTestCase::TearDown();
         }
 
     protected:
         SpatialMockLayer& GetMockLayer() { return *_mockLayer; }
+        const AmplimixLayer* GetLayer() const { return _mockLayer.get(); }
+        AmplimixLayer* GetLayer() { return _mockLayer.get(); }
 
         template<typename NodeType>
         std::shared_ptr<NodeInstance> CreateAndConfigureNode(AmUInt64 frameCount, AmUInt16 channelCount)

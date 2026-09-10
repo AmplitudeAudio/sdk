@@ -337,6 +337,11 @@ namespace SparkyStudios::Audio::Amplitude
 
         [[nodiscard]] AmReal32 GetRoomGain(AmRoomID room) const;
 
+        AM_INLINE void SetRoomGain(AmRoomID room, AmReal32 gain)
+        {
+            _roomGains[room] = gain;
+        }
+
         void HaltInternal();
 
         /**

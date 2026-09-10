@@ -16,54 +16,81 @@
 #include <DSP/Gain.h>
 #include <Mixer/Nodes/ReverbNode.h>
 
+#include <algorithm>
 #include <numeric>
 
 namespace SparkyStudios::Audio::Amplitude
 {
     ReverbNodeInstance::ReverbNodeInstance()
+        : ReverbNodeInstance("Freeverb")
+    {}
+
+    ReverbNodeInstance::ReverbNodeInstance(AmString algorithmName)
         : ProcessorNodeInstance(false)
+        , _algorithmName(std::move(algorithmName))
+        , _reverbInstance(nullptr)
+        , _tempBuffer()
     {}
 
     void ReverbNodeInstance::Initialize(AmObjectID id, const AmplimixLayer* layer, const PipelineInstance* pipeline, AmSize paramCount)
     {
         ProcessorNodeInstance::Initialize(id, layer, pipeline, paramCount);
-        Reset();
 
-        _model.SetWidth(1);
-        _model.SetWet(1);
-        _model.SetDry(0);
-        _model.SetMode(0);
+        if (const auto reverb = Reverb::Find(_algorithmName); reverb != nullptr)
+        {
+            _reverbInstance = reverb->CreateInstance();
+            if (_reverbInstance != nullptr)
+            {
+                AmUInt32 sampleRate = layer != nullptr ? layer->GetSampleRate() : 0;
+                if (sampleRate == 0)
+                    sampleRate = 48000;
+
+                _reverbInstance->Initialize(sampleRate);
+            }
+        }
+        else
+        {
+            amLogWarning("Failed to find reverb algorithm '%s'.", _algorithmName.c_str());
+        }
+
+        Reset();
     }
 
     void ReverbNodeInstance::Reset()
     {
         ProcessorNodeInstance::Reset();
 
-        const Room& room = GetLayer()->GetRoom();
-        if (!room.Valid() || !room.GetState()->WasUpdated())
+        if (_reverbInstance != nullptr)
+            _reverbInstance->Reset();
+
+        const auto* layer = GetLayer();
+        if (layer == nullptr)
+            return;
+
+        const Room& room = layer->GetRoom();
+        if (!room.Valid())
             return;
 
         // Set room size
-        {
-            AmReal32 maxSurface = 0.0f;
+        AmReal32 maxSurface = 0.0f;
 
-            for (AmUInt32 i = 0; i < kAmRoomSurfaceCount; ++i)
-                if (const AmReal32 surface = room.GetSurfaceArea(static_cast<eRoomWall>(i)); surface > maxSurface)
-                    maxSurface = surface;
+        for (AmUInt32 i = 0; i < kAmRoomSurfaceCount; ++i)
+            if (const AmReal32 surface = room.GetSurfaceArea(static_cast<eRoomWall>(i)); surface > maxSurface)
+                maxSurface = surface;
 
-            const AmReal32 roomSize = room.GetVolume() / (maxSurface * std::sqrt(maxSurface));
-
-            _model.SetRoomSize(roomSize);
-        }
+        const AmReal32 roomSize = maxSurface > 0.0f ? room.GetVolume() / (maxSurface * std::sqrt(maxSurface)) : 0.0f;
 
         // Set room total absorption
+        AmReal32 absorption = 0.0f;
+        if (room.GetState() != nullptr)
         {
             const auto* roomCoefficients = room.GetState()->GetCoefficients();
-            const AmReal32 absorption =
-                std::accumulate(roomCoefficients, roomCoefficients + kAmRoomSurfaceCount, 0.0f) / kAmRoomSurfaceCount;
-
-            _model.SetDamp(absorption);
+            if (roomCoefficients != nullptr)
+                absorption = std::accumulate(roomCoefficients, roomCoefficients + kAmRoomSurfaceCount, 0.0f) / kAmRoomSurfaceCount;
         }
+
+        if (_reverbInstance != nullptr)
+            _reverbInstance->SetRoomParameters(roomSize, absorption);
     }
 
     void ReverbNodeInstance::Configure(AmUInt64 frameCount, AmUInt16 channelCount)
@@ -71,17 +98,29 @@ namespace SparkyStudios::Audio::Amplitude
         ProcessorNodeInstance::Configure(frameCount, channelCount);
 
         _tempBuffer = AudioBuffer(frameCount, channelCount);
+
+        if (_reverbInstance != nullptr)
+            _reverbInstance->Configure(frameCount);
     }
 
     const AudioBuffer* ReverbNodeInstance::Process(const AudioBuffer* input)
     {
+        if (_reverbInstance == nullptr || input == nullptr || input->IsEmpty())
+            return nullptr;
+
         const auto* layer = GetLayer();
+        if (layer == nullptr)
+            return nullptr;
 
         const Room& room = layer->GetRoom();
         if (!room.Valid())
             return nullptr;
 
-        const AmReal32 roomGain = layer->GetChannel().GetState()->GetRoomGain(room.GetId());
+        const Channel& channel = layer->GetChannel();
+        if (!channel.Valid() || channel.GetState() == nullptr)
+            return nullptr;
+
+        const AmReal32 roomGain = channel.GetState()->GetRoomGain(room.GetId());
 
         if (roomGain < kEpsilon)
             return nullptr;
@@ -89,17 +128,32 @@ namespace SparkyStudios::Audio::Amplitude
         _output.Clear();
         _tempBuffer.Clear();
 
-        // Apply reflections gain
-        Gain::ApplyReplaceConstantGain(roomGain, input->GetChannel(0), 0, _tempBuffer[0], 0, _output.GetFrameCount());
+        const AmUInt64 frames = input->GetFrameCount();
+        const AmUInt32 sampleRate = layer->GetSampleRate();
 
-        // Apply reverberation
-        _model.ProcessReplace(
-            _tempBuffer[0].begin(), _tempBuffer[0].begin(), _output[0].begin(), _output[1].begin(), _tempBuffer.GetFrameCount(), 1);
+        for (AmUInt16 c = 0; c < _tempBuffer.GetChannelCount(); ++c)
+        {
+            const auto& inChannel = input->GetChannel(std::min(c, static_cast<AmUInt16>(input->GetChannelCount() - 1)));
+            Gain::ApplyReplaceConstantGain(roomGain, inChannel, 0, _tempBuffer[c], 0, frames);
+        }
+
+        _reverbInstance->Process(_tempBuffer, _output, frames, sampleRate);
 
         return &_output;
     }
 
     ReverbNode::ReverbNode()
         : Node("Reverb")
+        , _algorithmName("Freeverb")
+    {}
+
+    ReverbNode::ReverbNode(AmString algorithmName)
+        : Node(algorithmName)
+        , _algorithmName(std::move(algorithmName))
+    {}
+
+    ReverbNode::ReverbNode(AmString name, AmString algorithmName)
+        : Node(std::move(name))
+        , _algorithmName(std::move(algorithmName))
     {}
 } // namespace SparkyStudios::Audio::Amplitude

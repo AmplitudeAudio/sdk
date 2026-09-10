@@ -18,9 +18,8 @@
 #define _AM_IMPLEMENTATION_MIXER_NODES_REVERB_NODE_H
 
 #include <SparkyStudios/Audio/Amplitude/Core/Memory.h>
+#include <SparkyStudios/Audio/Amplitude/DSP/Reverb.h>
 #include <SparkyStudios/Audio/Amplitude/Mixer/Node.h>
-
-#include <Utils/Freeverb/ReverbModel.h>
 
 namespace SparkyStudios::Audio::Amplitude
 {
@@ -28,6 +27,7 @@ namespace SparkyStudios::Audio::Amplitude
     {
     public:
         ReverbNodeInstance();
+        explicit ReverbNodeInstance(AmString algorithmName);
 
         void Initialize(AmObjectID id, const AmplimixLayer* layer, const PipelineInstance* pipeline, AmSize paramCount) override;
         void Reset() override;
@@ -42,7 +42,8 @@ namespace SparkyStudios::Audio::Amplitude
         }
 
     private:
-        Freeverb::ReverbModel _model;
+        AmString _algorithmName;
+        std::shared_ptr<ReverbInstance> _reverbInstance;
         AudioBuffer _tempBuffer;
     };
 
@@ -50,10 +51,12 @@ namespace SparkyStudios::Audio::Amplitude
     {
     public:
         ReverbNode();
+        explicit ReverbNode(AmString algorithmName);
+        ReverbNode(AmString name, AmString algorithmName);
 
         [[nodiscard]] AM_INLINE std::shared_ptr<NodeInstance> CreateInstance() const override
         {
-            return ampoolshared(eMemoryPoolKind_Amplimix, ReverbNodeInstance);
+            return ampoolshared(eMemoryPoolKind_Amplimix, ReverbNodeInstance, _algorithmName);
         }
 
         [[nodiscard]] AM_INLINE bool CanConsume() const override
@@ -75,6 +78,14 @@ namespace SparkyStudios::Audio::Amplitude
         {
             return 1;
         }
+
+        [[nodiscard]] AM_INLINE const AmString& GetAlgorithmName() const
+        {
+            return _algorithmName;
+        }
+
+    private:
+        AmString _algorithmName;
     };
 } // namespace SparkyStudios::Audio::Amplitude
 
