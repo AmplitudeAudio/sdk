@@ -19,6 +19,7 @@
 namespace SparkyStudios::Audio::Amplitude
 {
     BaseReverb::BaseReverb(AmUInt64 sampleRate)
+        : _sampleRate(sampleRate)
     {
         const constexpr AmUInt32 kSizeOfSample = sizeof(AmReal32);
         const constexpr AmUInt32 kNumFilterSize = kSizeOfSample * kNumFilters;
@@ -33,18 +34,18 @@ namespace SparkyStudios::Audio::Amplitude
         std::memset(_lowPassCombCutoff, 0, kNumFilterSize);
         std::memset(_sy, 0, kSizeOfSample * 2);
 
-        const AmUInt32 maxAllPassDelay = sampleRate > 0 ? static_cast<AmUInt32>(std::ceil(sampleRate * (1000.0f / 48000.0f))) : 1000u;
-        const AmUInt32 maxCombDelay = sampleRate > 0 ? static_cast<AmUInt32>(std::ceil(sampleRate * (2500.0f / 48000.0f))) : 2500u;
-        const AmUInt32 maxEarlyRefDelay = sampleRate > 0 ? static_cast<AmUInt32>(sampleRate / 10.0f) : 4800u;
+        const AmUInt32 maxAllPassDelay = sampleRate > 0 ? static_cast<AmUInt32>(sampleRate * 800 / 48000) : 800u;
+        const AmUInt32 maxCombDelay = sampleRate > 0 ? static_cast<AmUInt32>(sampleRate * 2000 / 48000) : 2000u;
+        const AmUInt32 maxEarlyRefDelay = sampleRate > 0 ? static_cast<AmUInt32>(sampleRate / 10) : 4800u;
 
-        for (auto& i : _arrayAllPass)
-            i.Init(sampleRate, maxAllPassDelay);
+        for (AmUInt32 i = 0; i < kInitialActiveAllPass; ++i)
+            _arrayAllPass[i].Init(sampleRate, maxAllPassDelay);
 
         for (auto& i : _arrayLowPass)
             i.Init(sampleRate, 1);
 
-        for (auto& i : _arrayTwo)
-            i.Init(sampleRate, maxCombDelay);
+        for (AmUInt32 i = 0; i < kInitialActiveCombs; ++i)
+            _arrayTwo[i].Init(sampleRate, maxCombDelay);
 
         _earlyRef.Init(sampleRate, maxEarlyRefDelay);
 
@@ -93,15 +94,27 @@ namespace SparkyStudios::Audio::Amplitude
     void BaseReverb::SetCombTimesMS(const AmReal32* times, AmUInt32 numSet)
     {
         LimitNumFilters(numSet, 0);
+        const AmUInt32 maxCombDelay = _sampleRate > 0 ? static_cast<AmUInt32>(_sampleRate * 2000 / 48000) : 2000u;
         for (AmUInt32 i = 0; i < numSet; ++i)
+        {
             _feedBackComb[i] = MSToDelLength(times[i]);
+            const auto requiredSize = static_cast<size_t>(std::max(0.0f, std::ceil(_feedBackComb[i])));
+            if (_arrayTwo[i]._delayLines.size() == 0 || _arrayTwo[i]._delayLines.size() < requiredSize)
+                _arrayTwo[i].Init(_sampleRate, std::max(maxCombDelay, static_cast<AmUInt32>(requiredSize)));
+        }
     }
 
     void BaseReverb::SetAllPassTimesMS(const AmReal32* times, AmUInt32 numSet)
     {
         LimitNumFilters(numSet, 0);
+        const AmUInt32 maxAllPassDelay = _sampleRate > 0 ? static_cast<AmUInt32>(_sampleRate * 800 / 48000) : 800u;
         for (AmUInt32 i = 0; i < numSet; ++i)
+        {
             _feedBackAllPass[i] = MSToDelLength(times[i]);
+            const auto requiredSize = static_cast<size_t>(std::max(0.0f, std::ceil(_feedBackAllPass[i])));
+            if (_arrayAllPass[i]._delayLines.size() == 0 || _arrayAllPass[i]._delayLines.size() < requiredSize)
+                _arrayAllPass[i].Init(_sampleRate, std::max(maxAllPassDelay, static_cast<AmUInt32>(requiredSize)));
+        }
     }
 
     AmReal32 BaseReverb::SerialAllPass(AmReal32 x, AmInt32 firstFilter, AmUInt32 numFilters)
@@ -180,15 +193,27 @@ namespace SparkyStudios::Audio::Amplitude
     void BaseReverb::SetCombTimes(const AmReal32* times, AmUInt32 numSet)
     {
         LimitNumFilters(numSet, 0);
+        const AmUInt32 maxCombDelay = _sampleRate > 0 ? static_cast<AmUInt32>(_sampleRate * 2000 / 48000) : 2000u;
         for (AmUInt32 i = 0; i < numSet; ++i)
+        {
             _feedBackComb[i] = times[i];
+            const auto requiredSize = static_cast<size_t>(std::max(0.0f, std::ceil(times[i])));
+            if (_arrayTwo[i]._delayLines.size() == 0 || _arrayTwo[i]._delayLines.size() < requiredSize)
+                _arrayTwo[i].Init(_sampleRate, std::max(maxCombDelay, static_cast<AmUInt32>(requiredSize)));
+        }
     }
 
     void BaseReverb::SetAllPassTimes(const AmReal32* times, AmUInt32 numSet)
     {
         LimitNumFilters(numSet, 0);
+        const AmUInt32 maxAllPassDelay = _sampleRate > 0 ? static_cast<AmUInt32>(_sampleRate * 800 / 48000) : 800u;
         for (AmUInt32 i = 0; i < numSet; ++i)
+        {
             _feedBackAllPass[i] = times[i];
+            const auto requiredSize = static_cast<size_t>(std::max(0.0f, std::ceil(times[i])));
+            if (_arrayAllPass[i]._delayLines.size() == 0 || _arrayAllPass[i]._delayLines.size() < requiredSize)
+                _arrayAllPass[i].Init(_sampleRate, std::max(maxAllPassDelay, static_cast<AmUInt32>(requiredSize)));
+        }
     }
 
     void BaseReverb::SetLowPassCombCutOff(const AmReal32* cutoffs, AmUInt32 numSet)

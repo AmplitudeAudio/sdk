@@ -30,6 +30,8 @@ namespace SparkyStudios::Audio::Amplitude
 
     protected:
         static constexpr AmUInt32 kNumFilters = 32;
+        static constexpr AmUInt32 kInitialActiveCombs = 16;
+        static constexpr AmUInt32 kInitialActiveAllPass = 8;
 
         AmReal32 ParallelLowPassComb(AmReal32 x, AmInt32 firstFilter, AmUInt32 numFilters);
         AmReal32 SerialAllPass(AmReal32 x, AmInt32 firstFilter, AmUInt32 numFilters);
@@ -74,6 +76,7 @@ namespace SparkyStudios::Audio::Amplitude
 
         AmReal32 _accumulator;
         AmReal32 _numSamplesMS;
+        AmUInt64 _sampleRate = 0;
 
         ReverbFilters _earlyRef;
         AmReal32 _taps[kNumFilters];
