@@ -33,7 +33,7 @@ namespace SparkyStudios::Audio::Amplitude::Tests
             AM_EXPECT(cp == fileSystem.GetBasePath());
 
             AM_EXPECT(fileSystem.OpenFile(AM_OS_STRING("tests.config.amconfig"), eFileOpenMode_Read)->IsValid());
-            AM_EXPECT_NOT(fileSystem.OpenFile(AM_OS_STRING("some_random_file.ext"), eFileOpenMode_Read)->IsValid());
+            AM_EXPECT(fileSystem.OpenFile(AM_OS_STRING("some_random_file.ext"), eFileOpenMode_Read) == nullptr);
         }
     };
 
