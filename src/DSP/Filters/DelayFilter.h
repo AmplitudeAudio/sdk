@@ -31,6 +31,8 @@ namespace SparkyStudios::Audio::Amplitude
 
         void Process(const AudioBuffer& in, AudioBuffer& out, AmUInt64 frames, AmUInt32 sampleRate) override;
 
+        void SetParameter(AmUInt32 parameterIndex, AmReal32 value) override;
+
     protected:
         AmAudioSample ProcessSample(AmAudioSample sample, AmUInt16 channel, AmUInt32 sampleRate) override;
 

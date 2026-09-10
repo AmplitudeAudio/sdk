@@ -32,7 +32,7 @@ namespace SparkyStudios::Audio::Amplitude
             return eErrorCode_InvalidParameter;
 
         _delay = delay;
-        _decay = decay;
+        _decay = std::clamp(decay, 0.0f, 0.999f);
         _delayStart = delayStart;
 
         return eErrorCode_Success;
@@ -98,7 +98,7 @@ namespace SparkyStudios::Audio::Amplitude
         Initialize(parent->GetParameterCount());
 
         m_parameters[DelayFilter::ATTRIBUTE_DELAY] = parent->_delay;
-        m_parameters[DelayFilter::ATTRIBUTE_DECAY] = parent->_decay;
+        m_parameters[DelayFilter::ATTRIBUTE_DECAY] = std::clamp(parent->_decay, 0.0f, 0.999f);
         m_parameters[DelayFilter::ATTRIBUTE_DELAY_START] = parent->_delayStart;
     }
 
@@ -110,27 +110,47 @@ namespace SparkyStudios::Audio::Amplitude
         ampoolfree(eMemoryPoolKind_Filtering, _buffer);
     }
 
+    void DelayFilterInstance::SetParameter(AmUInt32 parameterIndex, AmReal32 value)
+    {
+        if (parameterIndex == DelayFilter::ATTRIBUTE_DECAY)
+            value = std::clamp(value, 0.0f, 0.999f);
+
+        FilterInstance::SetParameter(parameterIndex, value);
+    }
+
     void DelayFilterInstance::Process(const AudioBuffer& in, AudioBuffer& out, AmUInt64 frames, AmUInt32 sampleRate)
     {
         const AmUInt16 channels = in.GetChannelCount();
 
         InitializeBuffer(channels, sampleRate);
 
+        if (m_parameters[DelayFilter::ATTRIBUTE_DELAY] < (1.0f / static_cast<AmReal32>(sampleRate)))
+        {
+            for (AmUInt16 c = 0; c < channels; c++)
+                for (AmUInt64 f = 0; f < frames; f++)
+                    out[c][f] = in[c][f];
+            return;
+        }
+
+        const AmUInt32 startOffset = _offset;
+
         for (AmUInt16 c = 0; c < channels; c++)
         {
             const auto& inChannel = in[c];
             auto& outChannel = out[c];
 
-            _offset = 0;
+            AmUInt32 offset = startOffset;
 
             for (AmUInt64 f = 0; f < frames; f++)
             {
-                _bufferOffset = c * _bufferLength + _offset;
+                _bufferOffset = c * _bufferLength + offset;
 
                 outChannel[f] = ProcessSample(inChannel[f], c, sampleRate);
-                _offset = (_offset + 1) % _bufferLength;
+                offset = (offset + 1) % _bufferLength;
             }
         }
+
+        _offset = (startOffset + static_cast<AmUInt32>(frames)) % _bufferLength;
     }
 
     AmAudioSample DelayFilterInstance::ProcessSample(AmAudioSample sample, AmUInt16 channel, AmUInt32 sampleRate)
@@ -163,10 +183,13 @@ namespace SparkyStudios::Audio::Amplitude
     void DelayFilterInstance::InitializeBuffer(AmUInt16 channels, AmUInt32 sampleRate)
     {
         const auto maxSamples =
-            static_cast<AmUInt32>(std::ceil(m_parameters[DelayFilter::ATTRIBUTE_DELAY] * static_cast<AmReal32>(sampleRate)));
+            std::max(1u, static_cast<AmUInt32>(std::ceil(m_parameters[DelayFilter::ATTRIBUTE_DELAY] * static_cast<AmReal32>(sampleRate))));
 
-        if (_buffer == nullptr)
+        if (_buffer == nullptr || maxSamples > _bufferMaxLength)
         {
+            if (_buffer != nullptr)
+                ampoolfree(eMemoryPoolKind_Filtering, _buffer);
+
             _offset = 0;
             _bufferOffset = 0;
 
@@ -178,8 +201,6 @@ namespace SparkyStudios::Audio::Amplitude
         }
 
         _bufferLength = maxSamples;
-        if (_bufferLength > _bufferMaxLength)
-            _bufferLength = _bufferMaxLength;
     }
 
 } // namespace SparkyStudios::Audio::Amplitude
