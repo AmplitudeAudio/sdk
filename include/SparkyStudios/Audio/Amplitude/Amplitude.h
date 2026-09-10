@@ -84,6 +84,7 @@
 #include <SparkyStudios/Audio/Amplitude/DSP/FFT.h>
 #include <SparkyStudios/Audio/Amplitude/DSP/Filter.h>
 #include <SparkyStudios/Audio/Amplitude/DSP/Resampler.h>
+#include <SparkyStudios/Audio/Amplitude/DSP/Reverb.h>
 #include <SparkyStudios/Audio/Amplitude/DSP/SplitComplex.h>
 
 #include <SparkyStudios/Audio/Amplitude/HRTF/HRIRSphere.h>
