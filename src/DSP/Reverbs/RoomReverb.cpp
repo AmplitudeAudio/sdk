@@ -35,8 +35,8 @@ namespace SparkyStudios::Audio::Amplitude
 
     void RoomReverbInstance::Reset()
     {
-        if (_sampleRate > 0)
-            _reverb = std::make_unique<Internal::RoomReverb>(_sampleRate);
+        if (_reverb != nullptr)
+            _reverb->Mute();
     }
 
     void RoomReverbInstance::SetRoomParameters(AmReal32 roomSize, AmReal32 absorption)

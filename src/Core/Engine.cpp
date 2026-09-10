@@ -893,6 +893,7 @@ namespace SparkyStudios::Audio::Amplitude
         Filter::LockRegistry();
         Fader::LockRegistry();
         Node::LockRegistry();
+        Reverb::LockRegistry();
 
         // Create the internal engine state
         _state = ampoolshared(eMemoryPoolKind_Engine, EngineInternalState);
@@ -1136,6 +1137,7 @@ namespace SparkyStudios::Audio::Amplitude
         Filter::UnlockRegistry();
         Fader::UnlockRegistry();
         Node::UnlockRegistry();
+        Reverb::UnlockRegistry();
 
         return true;
     }

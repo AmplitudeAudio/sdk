@@ -93,13 +93,11 @@ namespace SparkyStudios::Audio::Amplitude::Internal
         AmReal32 b = _arrayLowPass[0].LowPass(a, 0.8f);
         AmReal32 c = SerialAllPass(b, 0, 2, _gains[0]);
         AmReal32 d = SerialAllPass(c, 2, 2, _gains[1]);
-        AmReal32 tempSigL = _sigL;
-
-        tempSigL = d + _gains[4] * _sigR;
-        _sigR = d + _gains[4] * tempSigL;
-
-        _sigL = _arrayAllPass[4].AllPass(tempSigL, _feedBackAllPass[4], _gains[2]);
-        tempSigL = _delays[0].OneTap(_sigL, _fixedDelayLengths[0]);
+        const AmReal32 oldSigL = _sigL;
+        const AmReal32 inL = d + _gains[4] * _sigR;
+        _sigR = d + _gains[4] * oldSigL;
+        _sigL = _arrayAllPass[4].AllPass(inL, _feedBackAllPass[4], _gains[2]);
+        _sigL = _delays[0].OneTap(_sigL, _fixedDelayLengths[0]);
         _tap[0] = _delays[0].GetTap(_tapPos[0]);
         _tap[1] = _delays[0].GetTap(_tapPos[1]);
         _tap[11] = _delays[0].GetTap(_tapPos[11]);
@@ -140,5 +138,22 @@ namespace SparkyStudios::Audio::Amplitude::Internal
 
         for (AmUInt32 i = 0, m = inChannel.size(); i < m; i++)
             Process(inChannel[i], outLChannel[i], outRChannel[i]);
+    }
+
+    void DattoroReverb::SetRoomParameters(AmReal32 roomSize, AmReal32 absorption)
+    {
+        _gains[4] = AM_CLAMP(roomSize, 0.0f, 1.0f);
+    }
+
+    void DattoroReverb::Mute()
+    {
+        BaseReverb::Mute();
+
+        for (auto& delay : _delays)
+            delay.Mute();
+
+        std::memset(_tap, 0, sizeof(AmReal32) * kNumDattaroTaps);
+        _sigL = 0.0f;
+        _sigR = 0.0f;
     }
 } // namespace SparkyStudios::Audio::Amplitude

@@ -37,6 +37,17 @@ namespace SparkyStudios::Audio::Amplitude::Internal
         _initialized = true;
     }
 
+    void ReverbFilters::Mute()
+    {
+        if (_delayLines.size() > 0)
+            _delayLines = 0.0f;
+
+        _delayIndex = 0;
+        _a = 0.0f;
+        _y = 0.0f;
+        _lastLowPassY = 0.0f;
+    }
+
     AmReal32 ReverbFilters::TwoPoint(AmReal32 x)
     {
         _a = 0.5f * (x + _a);
@@ -156,7 +167,7 @@ namespace SparkyStudios::Audio::Amplitude::Internal
         x += _delayLines[_delayIndex] * _gainCoeff;
 
         AmInt32 t = _delayIndex + tap;
-        if (t >= _delaySize - 1)
+        if (t >= _delaySize)
             t -= _delaySize;
 
         if (t < 0 || t >= static_cast<AmInt32>(_delayLines.size()))

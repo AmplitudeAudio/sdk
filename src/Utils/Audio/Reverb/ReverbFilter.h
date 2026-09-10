@@ -29,6 +29,7 @@ namespace SparkyStudios::Audio::Amplitude::Internal
         explicit ReverbFilters();
 
         void Init(AmUInt64 sampleRate, AmUInt32 maxDelaySamples = 0);
+        void Mute();
 
         AmReal32 TwoPoint(AmReal32 x);
         AmReal32 Comb1(AmReal32 x, AmInt32 size);

@@ -35,13 +35,14 @@ namespace SparkyStudios::Audio::Amplitude
 
     void DattoroReverbInstance::Reset()
     {
-        if (_sampleRate > 0)
-            _reverb = std::make_unique<Internal::DattoroReverb>(_sampleRate);
+        if (_reverb != nullptr)
+            _reverb->Mute();
     }
 
     void DattoroReverbInstance::SetRoomParameters(AmReal32 roomSize, AmReal32 absorption)
     {
-        // Internal::DattoroReverb currently uses fixed tuned parameters
+        if (_reverb != nullptr)
+            _reverb->SetRoomParameters(roomSize, absorption);
     }
 
     void DattoroReverbInstance::Configure(AmUInt64 frames)

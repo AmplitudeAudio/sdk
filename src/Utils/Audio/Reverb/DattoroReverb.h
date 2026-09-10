@@ -28,6 +28,9 @@ namespace SparkyStudios::Audio::Amplitude::Internal
     public:
         DattoroReverb(AmUInt64 sampleRate);
 
+        void SetRoomParameters(AmReal32 roomSize, AmReal32 absorption);
+        void Mute() override;
+
         void Process(AmReal32 x, AmReal32& l, AmReal32& r);
         void Process(const AudioBuffer& input, AudioBuffer& output);
 

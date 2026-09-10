@@ -94,6 +94,7 @@ namespace SparkyStudios::Audio::Amplitude
         _bufferOffset = 0;
         _bufferMaxLength = 0;
         _offset = 0;
+        _bufferChannelCount = 0;
 
         Initialize(parent->GetParameterCount());
 
@@ -128,7 +129,7 @@ namespace SparkyStudios::Audio::Amplitude
         {
             for (AmUInt16 c = 0; c < channels; c++)
                 for (AmUInt64 f = 0; f < frames; f++)
-                    out[c][f] = in[c][f];
+                    out[c][f] = in[c][f] * m_parameters[DelayFilter::ATTRIBUTE_WET];
             return;
         }
 
@@ -185,7 +186,7 @@ namespace SparkyStudios::Audio::Amplitude
         const auto maxSamples =
             std::max(1u, static_cast<AmUInt32>(std::ceil(m_parameters[DelayFilter::ATTRIBUTE_DELAY] * static_cast<AmReal32>(sampleRate))));
 
-        if (_buffer == nullptr || maxSamples > _bufferMaxLength)
+        if (_buffer == nullptr || maxSamples > _bufferMaxLength || channels > _bufferChannelCount)
         {
             if (_buffer != nullptr)
                 ampoolfree(eMemoryPoolKind_Filtering, _buffer);
@@ -194,6 +195,7 @@ namespace SparkyStudios::Audio::Amplitude
             _bufferOffset = 0;
 
             _bufferMaxLength = maxSamples;
+            _bufferChannelCount = channels;
             const AmUInt32 size = _bufferMaxLength * channels * sizeof(AmReal32);
 
             _buffer = static_cast<AmReal32Buffer>(ampoolmalloc(eMemoryPoolKind_Filtering, size));

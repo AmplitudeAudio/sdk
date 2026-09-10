@@ -79,6 +79,25 @@ namespace SparkyStudios::Audio::Amplitude::Internal
         _feedBackComb[2] = 150.0f;
     }
 
+    void BaseReverb::Mute()
+    {
+        for (auto& filter : _arrayAllPass)
+            filter.Mute();
+
+        for (auto& filter : _arrayLowPass)
+            filter.Mute();
+
+        for (auto& filter : _arrayTwo)
+            filter.Mute();
+
+        _earlyRef.Mute();
+
+        std::memset(_feedBackSignal, 0, sizeof(_feedBackSignal));
+        std::memset(_sy, 0, sizeof(_sy));
+        _y = 0.0f;
+        _accumulator = 0.0f;
+    }
+
     AmReal32 BaseReverb::ParallelLowPassComb(AmReal32 x, AmInt32 firstFilter, AmUInt32 numFilters)
     {
         _accumulator = 0.0f;

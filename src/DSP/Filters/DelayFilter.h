@@ -44,6 +44,7 @@ namespace SparkyStudios::Audio::Amplitude
         AmUInt32 _bufferMaxLength;
         AmUInt32 _bufferOffset;
         AmUInt32 _offset;
+        AmUInt16 _bufferChannelCount = 0;
     };
 
     class DelayFilter final : public Filter

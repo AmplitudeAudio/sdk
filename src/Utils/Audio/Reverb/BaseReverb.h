@@ -27,6 +27,9 @@ namespace SparkyStudios::Audio::Amplitude::Internal
     {
     public:
         BaseReverb(AmUInt64 sampleRate);
+        virtual ~BaseReverb() = default;
+
+        virtual void Mute();
 
     protected:
         static constexpr AmUInt32 kNumFilters = 32;

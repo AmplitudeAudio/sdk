@@ -56,7 +56,7 @@ namespace SparkyStudios::Audio::Amplitude
     {
         if (_model != nullptr)
         {
-            _model->SetRoomSize(roomSize);
+            _model->SetRoomSize(AM_CLAMP(roomSize, 0.0f, 1.0f));
             _model->SetDamp(absorption);
         }
     }
