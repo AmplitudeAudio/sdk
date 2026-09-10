@@ -42,10 +42,6 @@ namespace SparkyStudios::Audio::Amplitude::Tests
             {
                 ReportFailure("Expectation failed", message, file, line);
             }
-            else
-            {
-                ReportSuccess("Expectation passed", message, file, line);
-            }
         }
 
         // Returns true if any expectation failed during the test
