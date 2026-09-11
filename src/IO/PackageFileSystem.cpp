@@ -28,8 +28,8 @@ namespace SparkyStudios::Audio::Amplitude
     PackageFileSystem::PackageFileSystem()
         : _packageFile(nullptr)
         , _loadingThreadHandle(nullptr)
-        , _initialized{false}
-        , _valid{false}
+        , _initialized{ false }
+        , _valid{ false }
         , _header()
         , _headerSize(0)
     {}
@@ -187,6 +187,9 @@ namespace SparkyStudios::Audio::Amplitude
         if (_packageFile != nullptr)
             StartCloseFileSystem();
 
+        _header.m_Items.clear();
+        _itemIndices.clear();
+        _headerSize = 0;
         _initialized.store(false, std::memory_order_release);
         _valid.store(false, std::memory_order_release);
         _loadingThreadHandle = Thread::CreateThread(&PackageFileSystem::LoadPackage, this);
@@ -203,7 +206,7 @@ namespace SparkyStudios::Audio::Amplitude
             _loadingThreadHandle = nullptr;
         }
 
-        return _valid.load(std::memory_order_acquire);
+        return true;
     }
 
     void PackageFileSystem::StartCloseFileSystem()
@@ -220,9 +223,11 @@ namespace SparkyStudios::Audio::Amplitude
             _packageFile.reset();
         }
 
+        _header.m_Items.clear();
+        _itemIndices.clear();
+        _headerSize = 0;
         _initialized.store(false, std::memory_order_release);
         _valid.store(false, std::memory_order_release);
-        _itemIndices.clear();
     }
 
     bool PackageFileSystem::TryFinalizeCloseFileSystem()
@@ -293,7 +298,8 @@ namespace SparkyStudios::Audio::Amplitude
             AmSize itemsCount = pFileSystem->_packageFile->Read64();
             if (itemsCount > kMaxPackageItems)
             {
-                amLogError("Package item count exceeds sanity limit (%zu > %zu): " AM_OS_CHAR_FMT, itemsCount, kMaxPackageItems,
+                amLogError(
+                    "Package item count exceeds sanity limit (%zu > %zu): " AM_OS_CHAR_FMT, itemsCount, kMaxPackageItems,
                     pFileSystem->_packagePath.c_str());
                 itemsCount = kMaxPackageItems;
             }
@@ -317,12 +323,21 @@ namespace SparkyStudios::Audio::Amplitude
                     // Compressed Block Size
                     item.m_CompressedBlockSize = pFileSystem->_packageFile->Read64();
 
+                    if (item.m_Offset > packageLength || item.m_Size > packageLength - item.m_Offset)
+                    {
+                        amLogError("Package item out of bounds: " AM_OS_CHAR_FMT, pFileSystem->_packagePath.c_str());
+                        pFileSystem->_header.m_Items.clear();
+                        pFileSystem->_initialized.store(true, std::memory_order_release);
+                        return;
+                    }
+
                     // Item Chunks
                     AmSize chunksCount = pFileSystem->_packageFile->Read64();
                     if (chunksCount > kMaxPackageChunks)
                     {
-                        amLogError("Package chunk count exceeds sanity limit (%zu > %zu): " AM_OS_CHAR_FMT, chunksCount,
-                            kMaxPackageChunks, pFileSystem->_packagePath.c_str());
+                        amLogError(
+                            "Package chunk count exceeds sanity limit (%zu > %zu): " AM_OS_CHAR_FMT, chunksCount, kMaxPackageChunks,
+                            pFileSystem->_packagePath.c_str());
                         chunksCount = kMaxPackageChunks;
                     }
 
@@ -341,6 +356,14 @@ namespace SparkyStudios::Audio::Amplitude
 
                             // Chunk Compressed Size
                             chunk.m_CompressedSize = pFileSystem->_packageFile->Read64();
+
+                            if (chunk.m_Offset > packageLength || chunk.m_CompressedSize > packageLength - chunk.m_Offset)
+                            {
+                                amLogError("Package chunk out of bounds: " AM_OS_CHAR_FMT, pFileSystem->_packagePath.c_str());
+                                pFileSystem->_header.m_Items.clear();
+                                pFileSystem->_initialized.store(true, std::memory_order_release);
+                                return;
+                            }
                         }
                     }
                 }
