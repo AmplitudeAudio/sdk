@@ -54,6 +54,7 @@ namespace
         bool verbose = false;
         std::string groupFilter;
         std::string nameFilter;
+        std::string testFilter;
     };
 
     void PrintHelp(const char* programName)
@@ -67,10 +68,12 @@ namespace
         std::cout << "  -g, --group GROUP   Run tests in specified group only\n";
         std::cout << "  -v, --verbose       Verbose output\n";
         std::cout << "  --filter PATTERN    Run tests matching pattern (substring match)\n";
+        std::cout << "  --test=PATTERN      Run tests matching pattern or wildcard\n";
         std::cout << "\nExamples:\n";
         std::cout << "  " << programName << " -l                    List all tests\n";
         std::cout << "  " << programName << " -g core_engine        Run core_engine tests\n";
         std::cout << "  " << programName << " --filter memory       Run tests containing 'memory'\n";
+        std::cout << "  " << programName << " --test=fs_disk_file_* Run fs_disk_file tests\n";
         std::cout << "  " << programName << " -v                    Run all tests with verbose output\n";
     }
 
@@ -102,9 +105,57 @@ namespace
             {
                 options.nameFilter = argv[++i];
             }
+            else if (arg.starts_with("--filter="))
+            {
+                options.nameFilter = arg.substr(9);
+            }
+            else if (arg == "--test" && i + 1 < argc)
+            {
+                options.testFilter = argv[++i];
+            }
+            else if (arg.starts_with("--test="))
+            {
+                options.testFilter = arg.substr(7);
+            }
         }
 
         return options;
+    }
+
+    bool MatchesTestFilter(const std::string& name, const TestInfo* info, const RunOptions& options)
+    {
+        if (!options.groupFilter.empty() && info->group != options.groupFilter)
+            return false;
+
+        if (!options.nameFilter.empty() && name.find(options.nameFilter) == std::string::npos)
+            return false;
+
+        if (!options.testFilter.empty())
+        {
+            const std::string flatName = info->group + "_" + info->name;
+            if (options.testFilter.ends_with('*'))
+            {
+                const std::string prefix = options.testFilter.substr(0, options.testFilter.size() - 1);
+                if (prefix.ends_with('_'))
+                {
+                    const std::string groupCandidate = prefix.substr(0, prefix.size() - 1);
+                    if (info->group != groupCandidate)
+                        return false;
+                }
+                else if (!flatName.starts_with(prefix) && !name.starts_with(prefix))
+                {
+                    return false;
+                }
+            }
+            else
+            {
+                if (flatName != options.testFilter && name != options.testFilter && info->name != options.testFilter &&
+                    flatName.find(options.testFilter) == std::string::npos && name.find(options.testFilter) == std::string::npos)
+                    return false;
+            }
+        }
+
+        return true;
     }
 
     void ListTests(const std::vector<std::string>& testNames, const RunOptions& options)
@@ -120,10 +171,7 @@ namespace
                 continue;
 
             // Apply filters
-            if (!options.groupFilter.empty() && info->group != options.groupFilter)
-                continue;
-
-            if (!options.nameFilter.empty() && name.find(options.nameFilter) == std::string::npos)
+            if (!MatchesTestFilter(name, info, options))
                 continue;
 
             // Print group header if changed
@@ -210,10 +258,7 @@ namespace
             if (!info)
                 continue;
 
-            if (!options.groupFilter.empty() && info->group != options.groupFilter)
-                continue;
-
-            if (!options.nameFilter.empty() && name.find(options.nameFilter) == std::string::npos)
+            if (!MatchesTestFilter(name, info, options))
                 continue;
 
             testsToRun.push_back(name);
@@ -296,11 +341,11 @@ namespace
 
 int main(int argc, char* argv[])
 {
-    // Set up a console logger for test output
-    static ConsoleLogger logger(false); // Don't display file and line for cleaner output
-    Logger::SetLogger(&logger);
-
+    static ConsoleLogger logger(false);
     RunOptions options = ParseArgs(argc, argv);
+
+    if (options.verbose)
+        Logger::SetLogger(&logger);
 
     if (options.showHelp)
     {
@@ -312,7 +357,7 @@ int main(int argc, char* argv[])
     std::vector<std::string> testNames = TestRegistry::Instance().GetPlatformTests();
 
     // Sort tests for consistent ordering
-    std::sort(testNames.begin(), testNames.end());
+    std::ranges::sort(testNames);
 
     if (options.listTests)
     {
