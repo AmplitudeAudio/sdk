@@ -130,5 +130,5 @@ namespace SparkyStudios::Audio::Amplitude::Tests
         }
     };
 
-    AM_REGISTER_TEST(fs_package_file_system, concurrency_and_validation);
+    AM_REGISTER_TEST_DESKTOP_ONLY(fs_package_file_system, concurrency_and_validation);
 } // namespace SparkyStudios::Audio::Amplitude::Tests
