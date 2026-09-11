@@ -66,25 +66,45 @@ namespace SparkyStudios::Audio::Amplitude
 
         if (_isCompressed)
         {
+            if (_description->m_CompressedBlockSize == 0 || _description->m_CompressedChunks.empty())
+                return 0;
+
             const AmSize firstChunk = _currentPosition / _description->m_CompressedBlockSize;
             const AmSize lastChunk = (_currentPosition + bytes - 1) / _description->m_CompressedBlockSize;
+
+            if (firstChunk >= _description->m_CompressedChunks.size())
+                return 0;
+
+            const AmSize boundedLastChunk = AM_MIN(lastChunk, _description->m_CompressedChunks.size() - 1);
 
             AmUInt8* dstPtr = dst;
             AmSize remaining = bytes;
 
-            for (AmSize ci = firstChunk; ci <= lastChunk; ++ci)
+            for (AmSize ci = firstChunk; ci <= boundedLastChunk; ++ci)
             {
                 const auto& ch = _description->m_CompressedChunks[ci];
 
                 if (ch.m_CompressedSize > _compressedBufferCapacity)
                 {
-                    _compressedBuffer = static_cast<AmUInt8*>(ampoolrealloc(eMemoryPoolKind_IO, _compressedBuffer, ch.m_CompressedSize));
+                    AmVoidPtr newBuf = ampoolrealloc(eMemoryPoolKind_IO, _compressedBuffer, ch.m_CompressedSize);
+                    if (newBuf == nullptr)
+                    {
+                        _currentPosition += (bytes - remaining);
+                        return bytes - remaining;
+                    }
+                    _compressedBuffer = static_cast<AmUInt8*>(newBuf);
                     _compressedBufferCapacity = ch.m_CompressedSize;
                 }
 
                 if (ch.m_Size > _decompressedBufferCapacity)
                 {
-                    _decompressedBuffer = static_cast<AmUInt8*>(ampoolrealloc(eMemoryPoolKind_IO, _decompressedBuffer, ch.m_Size));
+                    AmVoidPtr newBuf = ampoolrealloc(eMemoryPoolKind_IO, _decompressedBuffer, ch.m_Size);
+                    if (newBuf == nullptr)
+                    {
+                        _currentPosition += (bytes - remaining);
+                        return bytes - remaining;
+                    }
+                    _decompressedBuffer = static_cast<AmUInt8*>(newBuf);
                     _decompressedBufferCapacity = ch.m_Size;
                     _cachedChunkIndex = std::numeric_limits<AmSize>::max();
                 }
@@ -98,9 +118,12 @@ namespace SparkyStudios::Audio::Amplitude
                         reinterpret_cast<char*>(_compressedBuffer), reinterpret_cast<char*>(_decompressedBuffer),
                         static_cast<int>(ch.m_CompressedSize), static_cast<int>(ch.m_Size));
 
-                    // Decompression failed; return the number of bytes successfully read so far.
+                    // Decompression failed; advance position by bytes read so far and return.
                     if (decompressedSize < 0)
+                    {
+                        _currentPosition += (bytes - remaining);
                         return bytes - remaining;
+                    }
 
                     _cachedChunkIndex = ci;
                 }
