@@ -108,14 +108,19 @@ namespace SparkyStudios::Audio::Amplitude
     }
 
     /**
-     * @brief Parses the RIFF/WAVE/IMA-ADPCM header from @p file and populates @p format and @p blockSize.
+     * @brief Parses the RIFF/WAVE/IMA-ADPCM header from @p file and populates @p format, @p blockSize, and @p dataChunkOffset.
      *
      * @pre The file's read cursor must be positioned at byte 0 (start of RIFF header).
      * @post On success, @p format and @p blockSize are fully populated and the cursor sits at the first ADPCM data byte.
      *
+     * @param[in] file The file to read the header from.
+     * @param[out] format The sound format populated from the header.
+     * @param[out] blockSize The block size populated from the header.
+     * @param[out] dataChunkOffset The file offset where audio data begins.
+     *
      * @return @c true on success; @c false if the file is not a valid IMA-ADPCM WAV or contains unsupported parameters.
      */
-    bool ReadHeader(std::shared_ptr<File> file, SoundFormat& format, AmUInt16& blockSize)
+    bool ReadHeader(std::shared_ptr<File> file, SoundFormat& format, AmUInt16& blockSize, AmUInt64& dataChunkOffset)
     {
         AmInt32 fmt = 0, bits_per_sample, sample_rate, num_channels;
         AmUInt32 fact_samples = 0;
@@ -136,8 +141,11 @@ namespace SparkyStudios::Audio::Amplitude
 
         // loop through all elements of the RIFF wav header (until the data chunk)
 
+        constexpr AmSize kMaxRiffChunks = 256;
+        AmSize chunksProcessed = 0;
+
         bool fmt_seen = false;
-        while (true)
+        while (chunksProcessed++ < kMaxRiffChunks)
         {
             if (file->Read(reinterpret_cast<AmUInt8Buffer>(&chunk_header), sizeof(FMTHeader)) != sizeof(FMTHeader))
             {
@@ -283,14 +291,24 @@ namespace SparkyStudios::Audio::Amplitude
 
                 num_channels = wave_header.head.numChannels;
                 sample_rate = wave_header.head.sampleRate;
+                dataChunkOffset = file->Position();
                 break;
             }
             else
             {
-                const auto bytes_to_eat = static_cast<AmInt64>((chunk_header.chunkSize + 1) & ~1L);
+                const AmUInt64 chunkSize64 = chunk_header.chunkSize;
+                const AmInt64 bytes_to_eat = static_cast<AmInt64>((chunkSize64 + 1) & ~AmUInt64(1));
+                const AmSize prevPos = file->Position();
+
                 file->Seek(bytes_to_eat, eFileSeekOrigin_Current);
+
+                if (file->Position() <= prevPos || file->Eof())
+                    return false;
             }
         }
+
+        if (dataChunkOffset == 0)
+            return false;
 
         format.SetAll(sample_rate, num_channels, bits_per_sample, num_samples, num_channels * sizeof(AmInt16), eAudioSampleFormat_Int16);
 
@@ -510,7 +528,7 @@ namespace SparkyStudios::Audio::Amplitude
     {
         _file = file;
 
-        if (!ReadHeader(_file, m_format, _blockSize))
+        if (!ReadHeader(_file, m_format, _blockSize, _dataChunkOffset))
         {
             amLogError("The AMS codec cannot handle the file: '" AM_OS_CHAR_FMT "'", file->GetPath().c_str());
             return false;
@@ -545,6 +563,7 @@ namespace SparkyStudios::Audio::Amplitude
 
             m_format = SoundFormat();
             _samplesPerBlock = 0;
+            _dataChunkOffset = 0;
             _initialized = false;
         }
 
@@ -628,9 +647,10 @@ namespace SparkyStudios::Audio::Amplitude
 
         const AmUInt32 steps = static_cast<AmUInt32>(offset / _samplesPerBlock);
         const AmUInt64 fileOffset = static_cast<AmUInt64>(steps) * _blockSize;
-        _file->Seek(static_cast<AmInt64>(sizeof(ADPCMHeader) + fileOffset), eFileSeekOrigin_Start);
+        const AmUInt64 targetPosition = _dataChunkOffset + fileOffset;
+        _file->Seek(static_cast<AmInt64>(targetPosition), eFileSeekOrigin_Start);
 
-        return _file->Position() == sizeof(ADPCMHeader) + fileOffset;
+        return _file->Position() == targetPosition;
     }
 
     bool AMSCodec::AMSEncoder::Open(std::shared_ptr<File> file)
@@ -699,7 +719,8 @@ namespace SparkyStudios::Audio::Amplitude
 
         SoundFormat tempFormat;
         AmUInt16 tempBlockSize = 0;
-        const bool result = ReadHeader(file, tempFormat, tempBlockSize);
+        AmUInt64 tempDataChunkOffset = 0;
+        const bool result = ReadHeader(file, tempFormat, tempBlockSize, tempDataChunkOffset);
 
         file->Seek(static_cast<AmInt64>(pos), eFileSeekOrigin_Start);
 

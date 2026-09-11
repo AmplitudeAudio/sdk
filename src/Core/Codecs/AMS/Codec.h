@@ -35,6 +35,7 @@ namespace SparkyStudios::Audio::Amplitude
                 , _file()
                 , _blockSize(0)
                 , _samplesPerBlock(0)
+                , _dataChunkOffset(0)
             {}
 
             bool Open(std::shared_ptr<File> file) override;
@@ -52,6 +53,7 @@ namespace SparkyStudios::Audio::Amplitude
             std::shared_ptr<File> _file;
             AmUInt16 _blockSize;
             AmUInt32 _samplesPerBlock;
+            AmUInt64 _dataChunkOffset;
 
             ScopedMemoryAllocation _adpcmBlockBuffer;
             ScopedMemoryAllocation _pcmBlockBuffer;
