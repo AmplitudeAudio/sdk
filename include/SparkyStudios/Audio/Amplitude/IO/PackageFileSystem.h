@@ -21,6 +21,9 @@
 #include <SparkyStudios/Audio/Amplitude/Core/Thread.h>
 #include <SparkyStudios/Audio/Amplitude/IO/FileSystem.h>
 
+#include <atomic>
+#include <unordered_map>
+
 namespace SparkyStudios::Audio::Amplitude
 {
     /**
@@ -270,11 +273,12 @@ namespace SparkyStudios::Audio::Amplitude
         std::shared_ptr<File> _packageFile;
 
         AmThreadHandle _loadingThreadHandle;
-        mutable bool _initialized;
-        bool _valid;
+        std::atomic<bool> _initialized{false};
+        std::atomic<bool> _valid{false};
 
         PackageFileHeaderDescription _header;
         AmSize _headerSize;
+        std::unordered_map<AmOsString, AmSize> _itemIndices;
     };
 } // namespace SparkyStudios::Audio::Amplitude
 

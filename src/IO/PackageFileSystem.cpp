@@ -28,8 +28,8 @@ namespace SparkyStudios::Audio::Amplitude
     PackageFileSystem::PackageFileSystem()
         : _packageFile(nullptr)
         , _loadingThreadHandle(nullptr)
-        , _initialized(false)
-        , _valid(false)
+        , _initialized{false}
+        , _valid{false}
         , _header()
         , _headerSize(0)
     {}
@@ -37,14 +37,16 @@ namespace SparkyStudios::Audio::Amplitude
     PackageFileSystem::~PackageFileSystem()
     {
         if (_loadingThreadHandle != nullptr)
-            Thread::Release(_loadingThreadHandle);
+        {
+            Thread::Wait(_loadingThreadHandle);
+            _loadingThreadHandle = nullptr;
+        }
 
-        _packageFile.reset();
-        _fileSystem.reset();
-        _initialized = false;
-        _valid = false;
-        _header = {};
-        _headerSize = 0;
+        if (_packageFile != nullptr)
+        {
+            _packageFile->Close();
+            _packageFile.reset();
+        }
     }
 
     void PackageFileSystem::SetBasePath(const AmOsString& basePath)
@@ -139,14 +141,7 @@ namespace SparkyStudios::Audio::Amplitude
         if (!IsValid())
             return false;
 
-        const auto it = std::ranges::find_if(
-            _header.m_Items,
-            [&path](const PackageFileItemDescription& item)
-            {
-                return AM_STRING_TO_OS_STRING(item.m_Name) == path;
-            });
-
-        return it != _header.m_Items.end();
+        return _itemIndices.contains(path);
     }
 
     bool PackageFileSystem::IsDirectory(const AmOsString& path) const
@@ -173,48 +168,61 @@ namespace SparkyStudios::Audio::Amplitude
         if (!IsValid())
             return nullptr;
 
-        const auto it = std::ranges::find_if(
-            _header.m_Items,
-            [&path](const PackageFileItemDescription& item)
-            {
-                return AM_STRING_TO_OS_STRING(item.m_Name) == path;
-            });
-
-        if (it == _header.m_Items.end())
+        const auto it = _itemIndices.find(path);
+        if (it == _itemIndices.end())
             return nullptr;
 
-        return ampoolshared(eMemoryPoolKind_IO, PackageItemFile, &*it, _fileSystem->OpenFile(_packagePath), _headerSize);
+        const auto& item = _header.m_Items[it->second];
+        return ampoolshared(eMemoryPoolKind_IO, PackageItemFile, &item, _fileSystem->OpenFile(_packagePath), _headerSize);
     }
 
     void PackageFileSystem::StartOpenFileSystem()
     {
         if (_loadingThreadHandle != nullptr)
-            Thread::Release(_loadingThreadHandle);
+        {
+            Thread::Wait(_loadingThreadHandle);
+            _loadingThreadHandle = nullptr;
+        }
 
         if (_packageFile != nullptr)
             StartCloseFileSystem();
 
+        _initialized.store(false, std::memory_order_release);
+        _valid.store(false, std::memory_order_release);
         _loadingThreadHandle = Thread::CreateThread(&PackageFileSystem::LoadPackage, this);
     }
 
     bool PackageFileSystem::TryFinalizeOpenFileSystem()
     {
-        if (!_initialized)
+        if (!_initialized.load(std::memory_order_acquire))
             return false;
 
-        if (_loadingThreadHandle == nullptr)
-            return true;
+        if (_loadingThreadHandle != nullptr)
+        {
+            Thread::Wait(_loadingThreadHandle);
+            _loadingThreadHandle = nullptr;
+        }
 
-        Thread::Wait(_loadingThreadHandle);
-
-        return true;
+        return _valid.load(std::memory_order_acquire);
     }
 
     void PackageFileSystem::StartCloseFileSystem()
     {
-        _packageFile->Close();
-        _packageFile.reset();
-        _initialized = false;
+        if (_loadingThreadHandle != nullptr)
+        {
+            Thread::Wait(_loadingThreadHandle);
+            _loadingThreadHandle = nullptr;
+        }
+
+        if (_packageFile != nullptr)
+        {
+            _packageFile->Close();
+            _packageFile.reset();
+        }
+
+        _initialized.store(false, std::memory_order_release);
+        _valid.store(false, std::memory_order_release);
+        _itemIndices.clear();
     }
 
     bool PackageFileSystem::TryFinalizeCloseFileSystem()
@@ -230,19 +238,30 @@ namespace SparkyStudios::Audio::Amplitude
 
     bool PackageFileSystem::IsValid() const
     {
-        return _valid;
+        return _valid.load(std::memory_order_acquire);
     }
 
     void PackageFileSystem::LoadPackage(AmVoidPtr pParam)
     {
         auto* pFileSystem = static_cast<PackageFileSystem*>(pParam);
 
+        constexpr AmSize kMaxPackageItems = 1000000;
+        constexpr AmSize kMaxPackageChunks = 10000000;
+
         pFileSystem->_packageFile = pFileSystem->_fileSystem->OpenFile(pFileSystem->_packagePath);
 
         if (pFileSystem->_packageFile == nullptr || !pFileSystem->_packageFile->IsValid())
         {
             amLogError("Invalid package file at: " AM_OS_CHAR_FMT, pFileSystem->_packagePath.c_str());
-            pFileSystem->_initialized = true;
+            pFileSystem->_initialized.store(true, std::memory_order_release);
+            return;
+        }
+
+        const AmSize packageLength = pFileSystem->_packageFile->Length();
+        if (packageLength < sizeof(AmUInt32) + sizeof(AmUInt16) + sizeof(AmUInt8))
+        {
+            amLogError("Package file too small to contain a valid header: " AM_OS_CHAR_FMT, pFileSystem->_packagePath.c_str());
+            pFileSystem->_initialized.store(true, std::memory_order_release);
             return;
         }
 
@@ -254,7 +273,7 @@ namespace SparkyStudios::Audio::Amplitude
                 pFileSystem->_header.m_Header[2] != 'P' || pFileSystem->_header.m_Header[3] != 'K')
             {
                 amLogError("Invalid package file at: " AM_OS_CHAR_FMT, pFileSystem->_packagePath.c_str());
-                pFileSystem->_initialized = true;
+                pFileSystem->_initialized.store(true, std::memory_order_release);
                 return;
             }
 
@@ -263,7 +282,7 @@ namespace SparkyStudios::Audio::Amplitude
             if (pFileSystem->_header.m_Version > kLastPackageFileVersion)
             {
                 amLogError("Unsupported package file version at: " AM_OS_CHAR_FMT, pFileSystem->_packagePath.c_str());
-                pFileSystem->_initialized = true;
+                pFileSystem->_initialized.store(true, std::memory_order_release);
                 return;
             }
 
@@ -271,12 +290,20 @@ namespace SparkyStudios::Audio::Amplitude
             pFileSystem->_header.m_CompressionMode = static_cast<ePackageFileCompressionMode>(pFileSystem->_packageFile->Read8());
 
             // Item Descriptions
-            if (const AmSize itemsCount = pFileSystem->_packageFile->Read64(); itemsCount > 0)
+            AmSize itemsCount = pFileSystem->_packageFile->Read64();
+            if (itemsCount > kMaxPackageItems)
             {
-                pFileSystem->_header.m_Items.resize(itemsCount);
+                amLogError("Package item count exceeds sanity limit (%zu > %zu): " AM_OS_CHAR_FMT, itemsCount, kMaxPackageItems,
+                    pFileSystem->_packagePath.c_str());
+                itemsCount = kMaxPackageItems;
+            }
+
+            if (itemsCount > 0)
+            {
+                pFileSystem->_header.m_Items.reserve(itemsCount);
                 for (AmSize i = 0; i < itemsCount; i++)
                 {
-                    auto& item = pFileSystem->_header.m_Items[i];
+                    auto& item = pFileSystem->_header.m_Items.emplace_back();
 
                     // Item Name/Path
                     item.m_Name = pFileSystem->_packageFile->ReadString();
@@ -291,12 +318,20 @@ namespace SparkyStudios::Audio::Amplitude
                     item.m_CompressedBlockSize = pFileSystem->_packageFile->Read64();
 
                     // Item Chunks
-                    if (const AmSize chunksCount = pFileSystem->_packageFile->Read64(); chunksCount > 0)
+                    AmSize chunksCount = pFileSystem->_packageFile->Read64();
+                    if (chunksCount > kMaxPackageChunks)
                     {
-                        item.m_CompressedChunks.resize(chunksCount);
+                        amLogError("Package chunk count exceeds sanity limit (%zu > %zu): " AM_OS_CHAR_FMT, chunksCount,
+                            kMaxPackageChunks, pFileSystem->_packagePath.c_str());
+                        chunksCount = kMaxPackageChunks;
+                    }
+
+                    if (chunksCount > 0)
+                    {
+                        item.m_CompressedChunks.reserve(chunksCount);
                         for (AmSize j = 0; j < chunksCount; j++)
                         {
-                            auto& chunk = item.m_CompressedChunks[j];
+                            auto& chunk = item.m_CompressedChunks.emplace_back();
 
                             // Chunk Offset
                             chunk.m_Offset = pFileSystem->_packageFile->Read64();
@@ -312,9 +347,12 @@ namespace SparkyStudios::Audio::Amplitude
             }
         }
 
-        pFileSystem->_valid = true;
-        pFileSystem->_initialized = true;
+        pFileSystem->_itemIndices.reserve(pFileSystem->_header.m_Items.size());
+        for (AmSize i = 0; i < pFileSystem->_header.m_Items.size(); ++i)
+            pFileSystem->_itemIndices[AM_STRING_TO_OS_STRING(pFileSystem->_header.m_Items[i].m_Name)] = i;
 
         pFileSystem->_headerSize = pFileSystem->_packageFile->Position();
+        pFileSystem->_valid.store(true, std::memory_order_release);
+        pFileSystem->_initialized.store(true, std::memory_order_release);
     }
 } // namespace SparkyStudios::Audio::Amplitude
