@@ -24,12 +24,11 @@ using namespace SparkyStudios::Audio::Amplitude;
 namespace SparkyStudios::Audio::Amplitude::Tests
 {
     /**
-     * @brief Executing a pipeline whose graph produces fewer channels than the caller's
-     * output buffer must keep the caller's layout and broadcast the produced channel.
+     * @brief Executing a pipeline whose graph produces the channel count of the caller's
+     * output buffer copies the result verbatim and keeps the caller's layout.
      *
-     * Amplimix always hands the pipeline a stereo output chunk and then indexes both
-     * channels, so a mono-producing graph (here a plain Input -> Output passthrough) must
-     * not shrink that chunk.
+     * The graph is a plain Input -> Output passthrough, so a mono input yields a mono
+     * result, which matches the mono output buffer.
      */
     AM_TEST_CASE(EngineTestCase, mixer_pipeline, execute_preserves_output_channel_layout)
     {
@@ -38,7 +37,6 @@ namespace SparkyStudios::Audio::Amplitude::Tests
         {
             constexpr AmUInt64 frameCount = 256;
             constexpr AmUInt16 monoChannels = 1;
-            constexpr AmUInt16 stereoChannels = 2;
 
             AmplimixLayerImpl layer;
 
@@ -58,21 +56,16 @@ namespace SparkyStudios::Audio::Amplitude::Tests
             for (AmUInt64 i = 0; i < frameCount; ++i)
                 input[0][i] = static_cast<AmReal32>(i) / static_cast<AmReal32>(frameCount);
 
-            AudioBuffer output(frameCount, stereoChannels);
+            AudioBuffer output(frameCount, monoChannels);
             instance->Execute(input, output);
 
-            // The caller's layout must survive a mono-producing graph.
-            AM_EXPECT_EQ(output.GetChannelCount(), stereoChannels);
+            AM_EXPECT_EQ(output.GetChannelCount(), monoChannels);
             AM_EXPECT_EQ(output.GetFrameCount(), frameCount);
-            if (output.GetChannelCount() != stereoChannels || output.GetFrameCount() != frameCount)
+            if (output.GetChannelCount() != monoChannels || output.GetFrameCount() != frameCount)
                 return;
 
-            // The single produced channel is broadcast to every output channel.
             for (AmUInt64 i = 0; i < frameCount; ++i)
-            {
                 AM_EXPECT_EQ(output[0][i], input[0][i]);
-                AM_EXPECT_EQ(output[1][i], input[0][i]);
-            }
         }
     };
 

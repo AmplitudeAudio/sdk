@@ -24,17 +24,19 @@ using namespace SparkyStudios::Audio::Amplitude;
 namespace SparkyStudios::Audio::Amplitude::Tests
 {
     /**
-     * @brief When the pipeline produces more frames than the caller's output buffer holds,
-     * only the frames that fit are copied and the output buffer keeps its own frame count.
+     * @brief When the pipeline produces fewer frames than the caller's output buffer holds,
+     * the produced frames are copied, the remaining frames are left untouched, and the
+     * output buffer keeps its own frame count.
      */
-    AM_TEST_CASE(EngineTestCase, mixer_pipeline, execute_clamps_to_output_frame_count)
+    AM_TEST_CASE(EngineTestCase, mixer_pipeline, execute_keeps_frames_beyond_pipeline_output)
     {
     public:
         void Run() override
         {
-            constexpr AmUInt64 inputFrameCount = 512;
-            constexpr AmUInt64 outputFrameCount = 256;
+            constexpr AmUInt64 inputFrameCount = 256;
+            constexpr AmUInt64 outputFrameCount = 512;
             constexpr AmUInt16 monoChannels = 1;
+            constexpr AmReal32 sentinel = 0.25f;
 
             AmplimixLayerImpl layer;
 
@@ -52,9 +54,12 @@ namespace SparkyStudios::Audio::Amplitude::Tests
 
             AudioBuffer input(inputFrameCount, monoChannels);
             for (AmUInt64 i = 0; i < inputFrameCount; ++i)
-                input[0][i] = static_cast<AmReal32>(i) / static_cast<AmReal32>(inputFrameCount);
+                input[0][i] = 0.5f + static_cast<AmReal32>(i) / static_cast<AmReal32>(2 * inputFrameCount);
 
             AudioBuffer output(outputFrameCount, monoChannels);
+            for (AmUInt64 i = 0; i < outputFrameCount; ++i)
+                output[0][i] = sentinel;
+
             instance->Execute(input, output);
 
             AM_EXPECT_EQ(output.GetChannelCount(), monoChannels);
@@ -62,11 +67,14 @@ namespace SparkyStudios::Audio::Amplitude::Tests
             if (output.GetChannelCount() != monoChannels || output.GetFrameCount() != outputFrameCount)
                 return;
 
-            // Only the frames that fit the caller's buffer are copied.
-            for (AmUInt64 i = 0; i < outputFrameCount; ++i)
+            for (AmUInt64 i = 0; i < inputFrameCount; ++i)
                 AM_EXPECT_EQ(output[0][i], input[0][i]);
+
+            // Frames beyond what the pipeline produced are not written.
+            for (AmUInt64 i = inputFrameCount; i < outputFrameCount; ++i)
+                AM_EXPECT_EQ(output[0][i], sentinel);
         }
     };
 
-    AM_REGISTER_TEST(mixer_pipeline, execute_clamps_to_output_frame_count);
+    AM_REGISTER_TEST(mixer_pipeline, execute_keeps_frames_beyond_pipeline_output);
 } // namespace SparkyStudios::Audio::Amplitude::Tests

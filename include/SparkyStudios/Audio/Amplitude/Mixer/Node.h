@@ -503,10 +503,10 @@ namespace SparkyStudios::Audio::Amplitude
         /**
          * @brief Sets the output of the pipeline.
          *
-         * The buffer keeps the frame and channel layout it was given: when the pipeline
-         * produces the same channel count, the result is copied verbatim; when it produces
-         * fewer channels, the last produced channel is broadcast to the remaining output
-         * channels; when it produces more, the extra channels are dropped.
+         * The buffer keeps the frame and channel layout it was given. The pipeline graph
+         * must produce the same channel count as this buffer; a different channel count
+         * means the pipeline asset has an incorrect graph, which is asserted. Only the
+         * frames common to the pipeline result and this buffer are copied.
          *
          * @param[in] buffer The buffer to set as the output.
          */
