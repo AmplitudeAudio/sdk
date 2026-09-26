@@ -1,0 +1,1 @@
+{"id":100,"name":"tests.mono_passthrough","nodes":[{"id":1,"name":"Input","consume":[]},{"id":9,"name":"Output","consume":[1]}]}

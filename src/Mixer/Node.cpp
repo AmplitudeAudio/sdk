@@ -356,7 +356,16 @@ namespace SparkyStudios::Audio::Amplitude
         if (output == nullptr)
             return;
 
-        *_buffer = *output;
+        // A channel count other than the one requested through Pipeline::Execute() means the
+        // pipeline asset has an incorrect graph (e.g. no panning/mixing node before the output).
+        const bool hasExpectedChannelCount = output->GetChannelCount() == _buffer->GetChannelCount();
+        AMPLITUDE_ASSERT(hasExpectedChannelCount);
+        if (!hasExpectedChannelCount)
+            return;
+
+        // Frame counts follow the caller's buffers, not the graph: pooled chunks may be larger than requested.
+        const AmSize frameCount = AM_MIN(_buffer->GetFrameCount(), output->GetFrameCount());
+        AudioBuffer::Copy(*output, 0, *_buffer, 0, frameCount);
     }
 
     void OutputNodeInstance::Reset()
