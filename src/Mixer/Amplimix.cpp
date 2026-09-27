@@ -844,6 +844,15 @@ namespace SparkyStudios::Audio::Amplitude
         return true;
     }
 
+    AmSize AmplimixImpl::GetInstancePipelineCount(AmUInt32 id, AmUInt32 layer) const
+    {
+        const AmplimixLayerImpl& lay = _layers[layer & kAmplimixLayersMask];
+        if (lay.id != id || AMPLIMIX_LOAD(&lay.flag) == ePSF_MIN || lay.instancePipelines == nullptr)
+            return 0;
+
+        return lay.instancePipelines->GetSize();
+    }
+
     void AmplimixImpl::SetMasterGain(AmReal32 gain)
     {
         AMPLIMIX_STORE_RELAXED(&_masterGain, gain);

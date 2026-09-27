@@ -501,6 +501,11 @@ namespace SparkyStudios::Audio::Amplitude
         }
 
         /**
+         * @brief Gets the currently published instance snapshot (game thread only).
+         */
+        [[nodiscard]] const std::vector<ChannelInstanceData>& GetPublishedInstanceSnapshot() const;
+
+        /**
          * @brief Gets the cursor write-back slots, paired by index with the published snapshot.
          *
          * @return The slot array, or @c nullptr when instancing has never been enabled

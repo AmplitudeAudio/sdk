@@ -12,6 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+#include <algorithm>
 #include <cassert>
 #include <ranges>
 
@@ -49,6 +50,7 @@ namespace SparkyStudios::Audio::Amplitude
     {
         _channelId = i;
         _mixer = &amEngine->GetState()->mixer;
+        _instancePipelineOverflowWarned = false;
     }
 
     void RealChannel::MarkAsPlayed(const Sound* sound)
@@ -121,6 +123,11 @@ namespace SparkyStudios::Audio::Amplitude
         AMPLITUDE_ASSERT(sound != nullptr);
 
         LayerData& data = _layers[layer];
+
+        // A (re)used layer starts without per-instance pipelines.
+        data.instanceTableInstalled = false;
+        data.attachedInstanceIds.clear();
+
         data.soundInstance = sound;
         data.soundInstance->SetChannel(this);
         data.soundInstance->Load();
@@ -147,6 +154,10 @@ namespace SparkyStudios::Audio::Amplitude
             data.mixerLayerId = kAmInvalidObjectId;
             amLogError("Could not play sound '" AM_OS_CHAR_FMT "'.", data.soundInstance->GetSound()->GetPath().c_str());
         }
+
+        // A sound that starts on a channel already in separate mode gets its instance pipelines now.
+        if (success)
+            SyncCurrentInstancePipelines();
 
         return success;
     }
@@ -453,6 +464,101 @@ namespace SparkyStudios::Audio::Amplitude
 
             _mixer->SetOcclusion(_channelId, data.mixerLayerId, occlusion);
         }
+    }
+
+    void RealChannel::SyncInstancePipelines(const std::vector<ChannelInstanceData>& instances)
+    {
+        if (!Valid())
+            return;
+
+        const AmSize cap = _mixer->GetMaxInstancePipelines();
+
+        for (auto& [layerIndex, data] : _layers)
+        {
+            if (data.mixerLayerId == kAmInvalidObjectId)
+                continue;
+
+            // Detach pipelines of instances that are gone.
+            for (auto it = data.attachedInstanceIds.begin(); it != data.attachedInstanceIds.end();)
+            {
+                const AmChannelInstanceID id = *it;
+                const bool alive = std::ranges::any_of(
+                    instances,
+                    [id](const ChannelInstanceData& instance)
+                    {
+                        return instance.instanceId == id;
+                    });
+
+                if (alive)
+                {
+                    ++it;
+                    continue;
+                }
+
+                AM_UNUSED(_mixer->DetachInstancePipeline(_channelId, data.mixerLayerId, id));
+                it = data.attachedInstanceIds.erase(it);
+            }
+
+            if (cap == 0 || instances.empty())
+                continue;
+
+            if (!data.instanceTableInstalled)
+                data.instanceTableInstalled = _mixer->InstallInstancePipelineTable(_channelId, data.mixerLayerId);
+
+            if (!data.instanceTableInstalled)
+                continue;
+
+            // Attach pipelines for new instances, up to the cap.
+            for (const auto& instance : instances)
+            {
+                if (std::ranges::find(data.attachedInstanceIds, instance.instanceId) != data.attachedInstanceIds.end())
+                    continue;
+
+                if (data.attachedInstanceIds.size() >= cap)
+                {
+                    if (!_instancePipelineOverflowWarned)
+                    {
+                        amLogWarning(
+                            "Channel instance pipelines cap (%zu) reached: extra instances share one pipeline.",
+                            static_cast<size_t>(cap));
+                        _instancePipelineOverflowWarned = true;
+                    }
+
+                    break;
+                }
+
+                if (_mixer->AttachInstancePipeline(_channelId, data.mixerLayerId, instance.instanceId))
+                    data.attachedInstanceIds.push_back(instance.instanceId);
+            }
+        }
+    }
+
+    AmSize RealChannel::GetAttachedInstancePipelineCount() const
+    {
+        AmSize count = 0;
+        for (const auto& [layerIndex, data] : _layers)
+            count += data.attachedInstanceIds.size();
+
+        return count;
+    }
+
+    std::vector<AmUInt32> RealChannel::GetMixerLayerIds() const
+    {
+        std::vector<AmUInt32> ids;
+        for (const auto& [layerIndex, data] : _layers)
+            if (data.mixerLayerId != kAmInvalidObjectId)
+                ids.push_back(data.mixerLayerId);
+
+        return ids;
+    }
+
+    void RealChannel::SyncCurrentInstancePipelines()
+    {
+        if (_parentChannelState == nullptr || !_parentChannelState->IsInstancingEnabled() ||
+            _parentChannelState->GetInstancingMode() != eChannelInstanceMode_Separate)
+            return;
+
+        SyncInstancePipelines(_parentChannelState->GetPublishedInstanceSnapshot());
     }
 
     AmUInt32 RealChannel::FindFreeLayer(AmUInt32 layerIndex) const

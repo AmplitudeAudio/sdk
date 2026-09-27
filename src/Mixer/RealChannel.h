@@ -26,6 +26,8 @@
 #include <SparkyStudios/Audio/Amplitude/Sound/Fader.h>
 #include <SparkyStudios/Audio/Amplitude/Sound/Sound.h>
 
+#include <Core/Playback/ChannelInstanceInternalState.h>
+
 namespace SparkyStudios::Audio::Amplitude
 {
     class SoundInstance;
@@ -217,6 +219,26 @@ namespace SparkyStudios::Audio::Amplitude
          */
         void SetOcclusion(AmReal32 occlusion);
 
+        /**
+         * @brief Keeps every playing layer's per-instance pipelines in step with @p instances (game thread).
+         *
+         * Creates pipelines for new instance IDs (up to the mixer's cap) and detaches pipelines of removed IDs.
+         * Pass an empty list to detach everything.
+         */
+        void SyncInstancePipelines(const std::vector<ChannelInstanceData>& instances);
+
+        /**
+         * @brief Gets the number of per-instance pipelines attached across this channel's layers (game-side view).
+         */
+        [[nodiscard]] AmSize GetAttachedInstancePipelineCount() const;
+
+        /**
+         * @brief Gets the mixer layer IDs of this channel's playing layers (for tests and diagnostics).
+         *
+         * Pair each ID with GetID() to query the mixer, e.g. AmplimixImpl::GetInstancePipelineCount().
+         */
+        [[nodiscard]] std::vector<AmUInt32> GetMixerLayerIds() const;
+
     private:
         /**
          * @brief Holds all per-layer data for a single audio layer on the channel.
@@ -224,6 +246,8 @@ namespace SparkyStudios::Audio::Amplitude
         struct LayerData
         {
             AmUInt32 mixerLayerId = kAmInvalidObjectId; ///< Mixer layer ID returned by AmplimixImpl::Play()
+            bool instanceTableInstalled = false; ///< The mixer layer has an instance pipeline table (game-side mirror).
+            std::vector<AmChannelInstanceID> attachedInstanceIds; ///< Instance IDs with an attached pipeline (game-side mirror).
             bool isStream = false;                      ///< Whether this layer is streaming audio
             bool isLoop = false;                        ///< Whether this layer should loop
             AmReal32 gain = 1.0f;                       ///< Per-layer gain value (defaults to unity)
@@ -231,6 +255,8 @@ namespace SparkyStudios::Audio::Amplitude
         };
 
         [[nodiscard]] AmUInt32 FindFreeLayer(AmUInt32 layerIndex = 0) const;
+
+        void SyncCurrentInstancePipelines();
 
         AmChannelID _channelId;
         std::unordered_map<AmUInt32, LayerData> _layers;
@@ -244,6 +270,8 @@ namespace SparkyStudios::Audio::Amplitude
         ChannelInternalState* _parentChannelState;
 
         std::unordered_set<AmSoundID> _playedSounds;
+
+        bool _instancePipelineOverflowWarned = false;
     };
 } // namespace SparkyStudios::Audio::Amplitude
 

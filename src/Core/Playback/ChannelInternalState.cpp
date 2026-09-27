@@ -1011,6 +1011,20 @@ namespace SparkyStudios::Audio::Amplitude
 
         // Publish: this release store pairs with the acquire load in AcquireInstanceSnapshot().
         _instanceSnapshotState.publishedSnapshot.store(next, std::memory_order_release);
+
+        // Keep per-instance mixer pipelines in step with the published instances (game thread). Blended mode
+        // and disabled instancing use the shared layer pipeline, so they sync with an empty list.
+        if (_realChannel.Valid())
+        {
+            static const std::vector<ChannelInstanceData> kNoInstances;
+            const bool separate = _instancingEnabled && _instancingMode == eChannelInstanceMode_Separate;
+            _realChannel.SyncInstancePipelines(separate ? snapshot : kNoInstances);
+        }
+    }
+
+    const std::vector<ChannelInstanceData>& ChannelInternalState::GetPublishedInstanceSnapshot() const
+    {
+        return _instanceSnapshotState.snapshots[_instanceSnapshotState.publishedSnapshot.load(std::memory_order_acquire)];
     }
 
     ChannelInstanceInternalState* ChannelInternalState::GetInstance(AmChannelInstanceID instanceId)

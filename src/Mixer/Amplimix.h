@@ -326,6 +326,16 @@ namespace SparkyStudios::Audio::Amplitude
          */
         bool DetachInstancePipeline(AmUInt32 id, AmUInt32 layer, AmChannelInstanceID instanceId);
 
+        /**
+         * @brief Gets the number of per-instance pipelines attached to a layer playing for @p id.
+         *
+         * Diagnostic accessor for tests: reads audio-thread-owned state without synchronization; call only after
+         * the mixer has run the pending commands (e.g. after Engine::WaitUntilFrames).
+         *
+         * @return The number of attached pipelines, or 0 if the layer is not playing for @p id or has no table.
+         */
+        [[nodiscard]] AmSize GetInstancePipelineCount(AmUInt32 id, AmUInt32 layer) const;
+
         [[nodiscard]] const Pipeline* GetPipeline() const;
 
         [[nodiscard]] Pipeline* GetPipeline();
