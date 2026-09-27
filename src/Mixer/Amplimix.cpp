@@ -238,18 +238,6 @@ namespace SparkyStudios::Audio::Amplitude
         layer->Destroy();
     }
 
-    static void MixMono(AmUInt64 index, const simd_batch& gain, const AudioBufferChannel& in, AudioBufferChannel& out)
-    {
-#if defined(AM_SIMD_INTRINSICS)
-        const auto x = xsimd::load_aligned<simd_arch>(&in[index]);
-        const auto y = xsimd::load_aligned<simd_arch>(&out[index]);
-
-        xsimd::store_aligned<simd_arch>(&out[index], xsimd::fma(x, gain, y));
-#else
-        out[index] += in[index] * gain;
-#endif // AM_SIMD_INTRINSICS
-    }
-
     AmplimixImpl::AmplimixImpl(AmReal32 masterGain)
         : _initialized(false)
         , _commandsStack()
@@ -546,6 +534,14 @@ namespace SparkyStudios::Audio::Amplitude
             const AmUInt64 inFrames = lay->dataConverter->GetRequiredInputFrameCount(outFrames);
 
             lay->_chunkPool.PreWarm(inFrames, static_cast<AmUInt16>(soundChannels), outFrames);
+
+            // The first mixed block snaps to the target gain; later changes ramp. These writes are
+            // published to the audio thread by the release-store to lay->flag below.
+            for (auto& processor : lay->_mixGain)
+            {
+                processor.Invalidate();
+                processor.SetMinRampFrames(GainRampMinFrames(reqSampleRate));
+            }
 
             // store flag last, releasing the layer to the mixer thread
             AMPLIMIX_STORE(&lay->flag, flag);
@@ -875,11 +871,9 @@ namespace SparkyStudios::Audio::Amplitude
         // atomically load master gain
         const AmReal32 gain = AMPLIMIX_LOAD(&_masterGain) * AMPLIMIX_LOAD(&layer->gain);
 
-#if defined(AM_SIMD_INTRINSICS)
-        auto bGain = simd_batch(gain);
-#else
-        const auto bGain = gain;
-#endif // AM_SIMD_INTRINSICS
+        // Amplimix::Init only requests Mono or Stereo output.
+        const auto outputChannels = static_cast<AmUInt16>(_device.mRequestedOutputChannels);
+        AMPLITUDE_ASSERT(outputChannels >= 1 && outputChannels <= kAmplimixMaxOutputChannels);
 
         // loop state
         const bool loop = flag == ePSF_LOOP;
@@ -967,7 +961,8 @@ namespace SparkyStudios::Audio::Amplitude
 
             const AmReal64 step = static_cast<AmReal64>(inSamples) / static_cast<AmReal64>(outSamples);
 
-            // regular playback
+            // regular playback: find how many frames to mix, then mix them with one ramped pass
+            AmUInt64 mixedFrames = 0;
             for (AmUInt64 i = 0; i < outSamples; i += kProcessedFramesCount)
             {
                 position = AM_CLAMP(position, start, end);
@@ -995,25 +990,12 @@ namespace SparkyStudios::Audio::Amplitude
                     }
                 }
 
-                switch (_device.mRequestedOutputChannels)
-                {
-                case PlaybackOutputChannels::Mono:
-                    // lGain is always equal to rGain on mono
-                    MixMono(i, bGain, out->buffer->GetChannel(0), buffer->GetChannel(0));
-                    break;
-
-                case PlaybackOutputChannels::Stereo:
-                    MixMono(i, bGain, out->buffer->GetChannel(0), buffer->GetChannel(0));
-                    MixMono(i, bGain, out->buffer->GetChannel(1), buffer->GetChannel(1));
-                    break;
-
-                default:
-                    amLogWarning("The mixer cannot handle the requested output channels.");
-                    break;
-                }
-
+                mixedFrames = AM_MIN(i + kProcessedFramesCount, outSamples);
                 position += step * kProcessedFramesCount;
             }
+
+            if (outputChannels <= kAmplimixMaxOutputChannels)
+                MixLayerWithGain(layer->_mixGain, outputChannels, gain, *out->buffer, *buffer, mixedFrames);
 
             cursor += inSamples;
 
@@ -1060,11 +1042,9 @@ namespace SparkyStudios::Audio::Amplitude
         // atomically load master gain
         const AmReal32 gain = AMPLIMIX_LOAD(&_masterGain) * AMPLIMIX_LOAD(&layer->gain);
 
-#if defined(AM_SIMD_INTRINSICS)
-        auto bGain = simd_batch(gain);
-#else
-        const auto bGain = gain;
-#endif // AM_SIMD_INTRINSICS
+        // Amplimix::Init only requests Mono or Stereo output.
+        const auto outputChannels = static_cast<AmUInt16>(_device.mRequestedOutputChannels);
+        AMPLITUDE_ASSERT(outputChannels >= 1 && outputChannels <= kAmplimixMaxOutputChannels);
 
         // loop state
         const bool loop = flag == ePSF_LOOP;
@@ -1172,7 +1152,8 @@ namespace SparkyStudios::Audio::Amplitude
                 AmReal64 position = instanceCursor;
                 const AmReal64 step = static_cast<AmReal64>(inSamples) / static_cast<AmReal64>(outSamples);
 
-                // Mix into output buffer
+                // Find how many frames this instance mixes, then mix them with the layer's shared ramp
+                AmUInt64 mixedFrames = 0;
                 for (AmUInt64 i = 0; i < outSamples; i += kProcessedFramesCount)
                 {
                     position = AM_CLAMP(position, static_cast<AmReal64>(start), static_cast<AmReal64>(end));
@@ -1185,24 +1166,12 @@ namespace SparkyStudios::Audio::Amplitude
                             break;
                     }
 
-                    switch (_device.mRequestedOutputChannels)
-                    {
-                    case PlaybackOutputChannels::Mono:
-                        MixMono(i, bGain, out->buffer->GetChannel(0), buffer->GetChannel(0));
-                        break;
-
-                    case PlaybackOutputChannels::Stereo:
-                        MixMono(i, bGain, out->buffer->GetChannel(0), buffer->GetChannel(0));
-                        MixMono(i, bGain, out->buffer->GetChannel(1), buffer->GetChannel(1));
-                        break;
-
-                    default:
-                        amLogWarning("The mixer cannot handle the requested output channels.");
-                        break;
-                    }
-
+                    mixedFrames = AM_MIN(i + kProcessedFramesCount, outSamples);
                     position += step * kProcessedFramesCount;
                 }
+
+                if (outputChannels <= kAmplimixMaxOutputChannels)
+                    MixLayerInstanceWithGain(layer->_mixGain, outputChannels, gain, *out->buffer, *buffer, mixedFrames);
 
                 instanceCursor += inSamples;
                 instanceCursor = AM_CLAMP(instanceCursor, start, end);
@@ -1225,6 +1194,12 @@ namespace SparkyStudios::Audio::Amplitude
             // instance needs to be processed as a single sound object in separate mode.
             layer->ResetPipeline();
         }
+
+        // Every instance mixed through a copy of the layer ramp; advance it once for this block.
+        // Use frameCount (not outSamples) since outSamples may have been left at 0 by the last
+        // instance's dataConverter->Process() call even though other instances were mixed.
+        if (outputChannels <= kAmplimixMaxOutputChannels)
+            AdvanceLayerGain(layer->_mixGain, outputChannels, gain, frameCount);
 
         // Clear instance processing context
         layer->processingInstance = false;

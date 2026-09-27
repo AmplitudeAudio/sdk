@@ -30,6 +30,7 @@
 
 #include <Core/Playback/ChannelInstanceInternalState.h>
 #include <Mixer/SoundData.h>
+#include <Mixer/LayerGainMixer.h>
 
 #include <Utils/miniaudio/miniaudio_utils.h>
 #include <Utils/Utils.h>
@@ -86,6 +87,7 @@ namespace SparkyStudios::Audio::Amplitude
         std::shared_ptr<PipelineInstance> pipeline = nullptr; // pipeline for this layer
 
         SoundChunkPool _chunkPool; // pool for reusable SoundChunk allocations
+        GainProcessor _mixGain[kAmplimixMaxOutputChannels]; // master x layer gain ramps, audio-thread owned after publication
 
         ~AmplimixLayerImpl() override;
 
