@@ -37,18 +37,16 @@ namespace SparkyStudios::Audio::Amplitude
 
         const AudioBuffer* Process(const AudioBuffer* input) override;
 
-        void Reset() override;
-
         void SetParameter(AmSize index, AmReal32 value) override;
 
     private:
         void UpdateCoefficients(AmReal32 sampleRate);
 
-        AmReal32 _sampleRate;
-        AmReal32 _attackCoeff;
-        AmReal32 _releaseCoeff;
+        AmReal32 _sampleRate = 0.0f;
+        AmReal32 _attackCoeff = 0.0f;
+        AmReal32 _releaseCoeff = 0.0f;
 
-        AmReal32 _enveloppe;
+        AmReal32 _enveloppe = 0.0f;
     };
 
     class LimiterNode final : public Node

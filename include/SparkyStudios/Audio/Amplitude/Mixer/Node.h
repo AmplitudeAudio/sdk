@@ -72,10 +72,14 @@ namespace SparkyStudios::Audio::Amplitude
         [[nodiscard]] const AmplimixLayer* GetLayer() const;
 
         /**
-         * @brief Resets the node instance's internal state.
+         * @brief Clears the per-block cached results of the node instance.
          *
-         * @warning Amplimix should call this function automatically, each time the pipeline is
-         * about to be executed. Call it manually only if you know what you're doing.
+         * Amplimix calls this function automatically before every pipeline execution, i.e. once per
+         * audio block. Implementations must only clear per-block caches here. DSP history (filter
+         * state, delay lines, envelopes, gain ramps) must persist across blocks and must not be
+         * reset in this function.
+         *
+         * @warning Call it manually only if you know what you're doing.
          */
         virtual void Reset() = 0;
 

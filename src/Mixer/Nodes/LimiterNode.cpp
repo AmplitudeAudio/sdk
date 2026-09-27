@@ -51,22 +51,16 @@ namespace SparkyStudios::Audio::Amplitude
         return &_output;
     }
 
-    void LimiterNodeInstance::Reset()
-    {
-        ProcessorNodeInstance::Reset();
-
-        _sampleRate = 0.0f;
-        _attackCoeff = 0.0f;
-        _releaseCoeff = 0.0f;
-        _enveloppe = 0.0f;
-    }
-
     void LimiterNodeInstance::SetParameter(AmSize index, AmReal32 value)
     {
         if (index == ATTRIBUTE_THRESHOLD_DB)
             value = std::pow(10.0f, value / 20.0f);
 
         ProcessorNodeInstance::SetParameter(index, value);
+
+        // The attack/release coefficients depend on these parameters: recompute them on the next block.
+        if (index == ATTRIBUTE_ATTACK_MS || index == ATTRIBUTE_RELEASE_MS)
+            _sampleRate = 0.0f;
     }
 
     void LimiterNodeInstance::UpdateCoefficients(AmReal32 sampleRate)
