@@ -114,6 +114,10 @@ table AudioMixerConfig {
   /// If empty, or the given resampler name is not registered,
   /// the default resampler will be used instead.
   resampler:string;
+
+  /// Maximum number of per-instance pipelines a separate-mode layer may own.
+  /// Instances beyond this share the layer's pipeline. 0 disables per-instance pipelines.
+  max_instance_pipelines:uint = 32;
 }
 
 /// The default obstruction/occlusion curve applied on sound's

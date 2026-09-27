@@ -30,6 +30,7 @@
 
 #include <Core/Playback/ChannelInstanceInternalState.h>
 #include <Mixer/SoundData.h>
+#include <Mixer/InstancePipelineTable.h>
 #include <Mixer/LayerGainMixer.h>
 
 #include <Utils/miniaudio/miniaudio_utils.h>
@@ -87,7 +88,9 @@ namespace SparkyStudios::Audio::Amplitude
         std::shared_ptr<PipelineInstance> pipeline = nullptr; // pipeline for this layer
 
         SoundChunkPool _chunkPool; // pool for reusable SoundChunk allocations
+        std::shared_ptr<InstancePipelineTable> instancePipelines; // per-instance pipelines (separate mode), set by mixer commands
         GainProcessor _mixGain[kAmplimixMaxOutputChannels]; // master x layer gain ramps, audio-thread owned after publication
+        AmUInt64 pipelineFrames = 0; // frames per-instance pipelines are pre-configured with, set by PlayAdvanced
 
         ~AmplimixLayerImpl() override;
 
@@ -103,11 +106,15 @@ namespace SparkyStudios::Audio::Amplitude
         /**
          * @brief Resets the pipeline to its initial state.
          *
-         * This clears all stateful nodes (filters, reverbs, etc.) and resets
-         * room update flags. Should be called between instance processing in
-         * separate mode to ensure independent processing per spatial position.
+         * This clears the pipeline's per-block caches and the room update flag; node DSP state persists.
+         * Should be called between instance processing in separate mode, when instances share this pipeline.
          */
         void ResetPipeline();
+
+        /**
+         * @brief Clears the room update flag so the next instance can re-initialize room handling.
+         */
+        void ResetRoomUpdateFlag();
 
         [[nodiscard]] AmUInt32 GetId() const override;
         [[nodiscard]] AmUInt64 GetStartPosition() const override;
@@ -275,6 +282,42 @@ namespace SparkyStudios::Audio::Amplitude
 
         void PushCommand(const MixerCommand& command);
 
+        /**
+         * @brief Default value of the engine config @c mixer.max_instance_pipelines field.
+         */
+        static constexpr AmSize kDefaultMaxInstancePipelines = 32;
+
+        /**
+         * @brief Gets the maximum number of per-instance pipelines a separate-mode layer may own.
+         */
+        [[nodiscard]] AmSize GetMaxInstancePipelines() const;
+
+        /**
+         * @brief Sets the maximum number of per-instance pipelines a separate-mode layer may own. 0 disables them.
+         */
+        void SetMaxInstancePipelines(AmSize count);
+
+        /**
+         * @brief Gives a playing layer an empty instance pipeline table (game thread).
+         *
+         * @return @c false if per-instance pipelines are disabled or the layer is not playing for @p id.
+         */
+        bool InstallInstancePipelineTable(AmUInt32 id, AmUInt32 layer);
+
+        /**
+         * @brief Creates a pipeline for @p instanceId on the game thread and attaches it to the layer.
+         *
+         * @return @c false if the layer is not playing for @p id or no pipeline could be created.
+         */
+        bool AttachInstancePipeline(AmUInt32 id, AmUInt32 layer, AmChannelInstanceID instanceId);
+
+        /**
+         * @brief Detaches the pipeline of @p instanceId from the layer; it is released after the mix.
+         *
+         * @return @c false if the layer is not playing for @p id.
+         */
+        bool DetachInstancePipeline(AmUInt32 id, AmUInt32 layer, AmChannelInstanceID instanceId);
+
         [[nodiscard]] const Pipeline* GetPipeline() const;
 
         [[nodiscard]] Pipeline* GetPipeline();
@@ -329,6 +372,7 @@ namespace SparkyStudios::Audio::Amplitude
         AmUInt64 _remainingFrames;
 
         Pipeline* _pipeline = nullptr;
+        AmSize _maxInstancePipelines = kDefaultMaxInstancePipelines;
 
         DeviceDescription _device;
 

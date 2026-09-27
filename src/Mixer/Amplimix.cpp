@@ -288,6 +288,8 @@ namespace SparkyStudios::Audio::Amplitude
         else
             _resamplerName = "default";
 
+        _maxInstancePipelines = config->mixer()->max_instance_pipelines();
+
         // Publish to atomic snapshots for audio-thread reads
         AMPLIMIX_STORE_RELAXED(&_mixOutputSampleRate, _device.mRequestedOutputSampleRate);
         AMPLIMIX_STORE_RELAXED(&_mixOutputChannels, _device.mRequestedOutputChannels);
@@ -535,6 +537,16 @@ namespace SparkyStudios::Audio::Amplitude
 
             lay->_chunkPool.PreWarm(inFrames, static_cast<AmUInt16>(soundChannels), outFrames);
 
+            // Per-instance pipelines are configured for the mono/stereo chunks the mixer hands to Execute().
+            // Read their frame count from the pool (in the mixer's acquisition order) so it matches exactly.
+            {
+                SoundChunk* in = lay->_chunkPool.Acquire(inFrames, static_cast<AmUInt16>(soundChannels), false);
+                SoundChunk* transient = lay->_chunkPool.Acquire(outFrames, static_cast<AmUInt16>(kAmMonoChannelCount), false);
+                lay->pipelineFrames = transient->buffer->GetFrameCount();
+                lay->_chunkPool.Release(transient);
+                lay->_chunkPool.Release(in);
+            }
+
             // The first mixed block snaps to the target gain; later changes ramp. These writes are
             // published to the audio thread by the release-store to lay->flag below.
             for (auto& processor : lay->_mixGain)
@@ -727,6 +739,107 @@ namespace SparkyStudios::Audio::Amplitude
             return false;
 
         AMPLIMIX_STORE(&lay->userPlaySpeed, speed);
+
+        return true;
+    }
+
+    AmSize AmplimixImpl::GetMaxInstancePipelines() const
+    {
+        return _maxInstancePipelines;
+    }
+
+    void AmplimixImpl::SetMaxInstancePipelines(AmSize count)
+    {
+        _maxInstancePipelines = count;
+    }
+
+    bool AmplimixImpl::InstallInstancePipelineTable(AmUInt32 id, AmUInt32 layer)
+    {
+        if (_maxInstancePipelines == 0)
+            return false;
+
+        AmplimixMutexLocker lock(this);
+
+        auto* lay = GetLayer(layer);
+        if (lay->id != id || AMPLIMIX_LOAD(&lay->flag) <= ePSF_STOP)
+            return false;
+
+        // Built here, on the game thread, with all its slots: the audio thread never allocates for it.
+        auto table = std::make_shared<InstancePipelineTable>(_maxInstancePipelines);
+
+        PushCommand({ [lay, id, table]() -> bool
+                      {
+                          // Drop the command if the layer finished or was reused since it was pushed.
+                          if (lay->id != id || AMPLIMIX_LOAD(&lay->flag) == ePSF_MIN)
+                              return true;
+
+                          lay->instancePipelines = table;
+                          return true;
+                      } });
+
+        return true;
+    }
+
+    bool AmplimixImpl::AttachInstancePipeline(AmUInt32 id, AmUInt32 layer, AmChannelInstanceID instanceId)
+    {
+        if (_pipeline == nullptr)
+            return false;
+
+        auto* lay = GetLayer(layer);
+        AmUInt64 frames = 0;
+
+        {
+            AmplimixMutexLocker lock(this);
+            if (lay->id != id || AMPLIMIX_LOAD(&lay->flag) <= ePSF_STOP)
+                return false;
+
+            frames = lay->pipelineFrames;
+        }
+
+        // Created and configured without holding the mixer lock, so the audio thread is never blocked by it. Configuring
+        // here, with the mono input and stereo output the mixer passes to Execute(), keeps the first Execute() from allocating.
+        std::shared_ptr<PipelineInstance> pipeline = _pipeline->CreateInstance(lay);
+        if (pipeline == nullptr)
+            return false;
+
+        if (frames > 0)
+            pipeline->Configure(frames, static_cast<AmUInt16>(kAmMonoChannelCount), frames, static_cast<AmUInt16>(kAmStereoChannelCount));
+
+        AmplimixMutexLocker lock(this);
+
+        // The layer may have finished or been reused while the pipeline was being built.
+        if (lay->id != id || AMPLIMIX_LOAD(&lay->flag) <= ePSF_STOP)
+            return false;
+
+        PushCommand({ [lay, id, instanceId, pipeline]() -> bool
+                      {
+                          if (lay->id != id || AMPLIMIX_LOAD(&lay->flag) == ePSF_MIN || lay->instancePipelines == nullptr)
+                              return true;
+
+                          AM_UNUSED(lay->instancePipelines->Attach(instanceId, pipeline));
+                          return true;
+                      } });
+
+        return true;
+    }
+
+    bool AmplimixImpl::DetachInstancePipeline(AmUInt32 id, AmUInt32 layer, AmChannelInstanceID instanceId)
+    {
+        AmplimixMutexLocker lock(this);
+
+        auto* lay = GetLayer(layer);
+        if (lay->id != id || AMPLIMIX_LOAD(&lay->flag) == ePSF_MIN)
+            return false;
+
+        PushCommand({ [lay, id, instanceId]() -> bool
+                      {
+                          if (lay->id != id || lay->instancePipelines == nullptr)
+                              return true;
+
+                          // Released at the end of this command, after the mix (same as AmplimixLayerImpl::Destroy).
+                          AM_UNUSED(lay->instancePipelines->Detach(instanceId));
+                          return true;
+                      } });
 
         return true;
     }
@@ -1095,6 +1208,10 @@ namespace SparkyStudios::Audio::Amplitude
 
             AmUInt64 instanceCursor = data.cursor;
 
+            // Instances with their own pipeline keep independent node state; others share the layer pipeline.
+            PipelineInstance* instancePipeline =
+                layer->instancePipelines != nullptr ? layer->instancePipelines->Find(data.instanceId) : nullptr;
+
             // Clear buffers for reuse
             in->buffer->Clear();
             transient->buffer->Clear();
@@ -1147,7 +1264,10 @@ namespace SparkyStudios::Audio::Amplitude
 
             if (outSamples > 0 && flag >= ePSF_PLAY)
             {
-                layer->pipeline->Execute(*transient->buffer, *out->buffer);
+                if (instancePipeline != nullptr)
+                    instancePipeline->Execute(*transient->buffer, *out->buffer);
+                else
+                    layer->pipeline->Execute(*transient->buffer, *out->buffer);
 
                 AmReal64 position = instanceCursor;
                 const AmReal64 step = static_cast<AmReal64>(inSamples) / static_cast<AmReal64>(outSamples);
@@ -1190,9 +1310,17 @@ namespace SparkyStudios::Audio::Amplitude
                     slot.cursor.store(instanceCursor, std::memory_order_release);
             }
 
-            // Reset pipeline state for next instance. This is required since each
-            // instance needs to be processed as a single sound object in separate mode.
-            layer->ResetPipeline();
+            // Clear per-block caches before the next instance. A per-instance pipeline keeps its DSP state;
+            // the shared pipeline is reset between instances as before.
+            if (instancePipeline != nullptr)
+            {
+                instancePipeline->Reset();
+                layer->ResetRoomUpdateFlag();
+            }
+            else
+            {
+                layer->ResetPipeline();
+            }
         }
 
         // Every instance mixed through a copy of the layer ramp; advance it once for this block.
@@ -1336,6 +1464,7 @@ namespace SparkyStudios::Audio::Amplitude
         }
 
         pipeline = nullptr;
+        instancePipelines = nullptr;
 
         if (snd != nullptr)
         {
@@ -1355,6 +1484,11 @@ namespace SparkyStudios::Audio::Amplitude
         if (pipeline != nullptr)
             pipeline->Reset();
 
+        ResetRoomUpdateFlag();
+    }
+
+    void AmplimixLayerImpl::ResetRoomUpdateFlag()
+    {
         // Clear room update flag to allow re-initialization for next processing pass
         // This is important for per-instance processing in separate mode, where each
         // instance may be in a different room and requires independent room handling
