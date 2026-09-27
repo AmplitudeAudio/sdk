@@ -44,6 +44,7 @@ namespace SparkyStudios::Audio::Amplitude
     private:
         void EnsureFilters();
         void ApplyFilters(AmUInt32 set, const AudioBuffer& input, AudioBuffer& output, AmReal32 sampleRate);
+        void CopyFilterState(AmUInt32 fromSet, AmUInt32 toSet);
 
         BiquadResonantFilter _eqFilterFactory;
 

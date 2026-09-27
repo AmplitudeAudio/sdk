@@ -23,6 +23,15 @@ namespace SparkyStudios::Audio::Amplitude
     constexpr AmReal32 kQ = 0.707107f; // sqrt(0.5)
     constexpr AmReal32 kMaxEQGain = 0.0625f;
 
+    namespace
+    {
+        BiquadResonantFilterInstance* AsBiquad(const std::shared_ptr<FilterInstance>& filter)
+        {
+            // EnsureFilters() only creates instances from a BiquadResonantFilter factory.
+            return static_cast<BiquadResonantFilterInstance*>(filter.get());
+        }
+    } // namespace
+
     void AirAbsorptionEQFilter::Normalize(std::array<AmReal32, kAmAirAbsorptionBandCount>& gains, AmReal32& overallGain)
     {
         if (const auto maxGain = std::max({ gains[0], gains[1], gains[2] }); maxGain < kEpsilon)
@@ -86,82 +95,52 @@ namespace SparkyStudios::Audio::Amplitude
 
     void AirAbsorptionEQFilter::SetGains(AmReal32 gainLow, AmReal32 gainMid, AmReal32 gainHigh)
     {
-        const AmReal32 oldGainLow = _lowShelfFilter[_currentSet]->GetParameter(BiquadResonantFilter::ATTRIBUTE_GAIN);
-        const AmReal32 oldGainMid = _peakingFilter[_currentSet]->GetParameter(BiquadResonantFilter::ATTRIBUTE_GAIN);
-        const AmReal32 oldGainHigh = _highShelfFilter[_currentSet]->GetParameter(BiquadResonantFilter::ATTRIBUTE_GAIN);
+        const AmReal32 activeLow = _lowShelfFilter[_currentSet]->GetParameter(BiquadResonantFilter::ATTRIBUTE_GAIN);
+        const AmReal32 activeMid = _peakingFilter[_currentSet]->GetParameter(BiquadResonantFilter::ATTRIBUTE_GAIN);
+        const AmReal32 activeHigh = _highShelfFilter[_currentSet]->GetParameter(BiquadResonantFilter::ATTRIBUTE_GAIN);
 
-        if (std::abs(gainLow - oldGainLow) > kEpsilon)
-        {
-            _lowShelfFilter[_currentSet]->SetParameter(BiquadResonantFilter::ATTRIBUTE_GAIN, gainLow);
-            _needUpdateGains = true;
-        }
+        const bool changed = std::abs(gainLow - activeLow) > kEpsilon || std::abs(gainMid - activeMid) > kEpsilon ||
+            std::abs(gainHigh - activeHigh) > kEpsilon;
 
-        if (std::abs(gainMid - oldGainMid) > kEpsilon)
-        {
-            _peakingFilter[_currentSet]->SetParameter(BiquadResonantFilter::ATTRIBUTE_GAIN, gainMid);
-            _needUpdateGains = true;
-        }
+        // The latest call wins: matching the active set cancels any pending change.
+        _needUpdateGains = changed;
 
-        if (std::abs(gainHigh - oldGainHigh) > kEpsilon)
-        {
-            _highShelfFilter[_currentSet]->SetParameter(BiquadResonantFilter::ATTRIBUTE_GAIN, gainHigh);
-            _needUpdateGains = true;
-        }
+        if (!changed)
+            return;
+
+        // Stage all three gains into the inactive set; Process() crossfades to it.
+        const AmUInt32 nextSet = 1 - _currentSet;
+        _lowShelfFilter[nextSet]->SetParameter(BiquadResonantFilter::ATTRIBUTE_GAIN, gainLow);
+        _peakingFilter[nextSet]->SetParameter(BiquadResonantFilter::ATTRIBUTE_GAIN, gainMid);
+        _highShelfFilter[nextSet]->SetParameter(BiquadResonantFilter::ATTRIBUTE_GAIN, gainHigh);
     }
 
     void AirAbsorptionEQFilter::Process(const AudioBuffer& input, AudioBuffer& output, AmReal32 sampleRate)
     {
-        if (_needUpdateGains)
-        {
-            AMPLITUDE_ASSERT(_crossFader != nullptr);
-            AMPLITUDE_ASSERT(_tempBuffer.GetFrameCount() >= input.GetFrameCount());
-            AMPLITUDE_ASSERT(_crossfadeBuffer.GetFrameCount() >= input.GetFrameCount());
-
-            const AmUInt32 previousSet = _currentSet;
-            _currentSet = 1 - _currentSet;
-
-            _lowShelfFilter[_currentSet]->SetParameter(
-                BiquadResonantFilter::ATTRIBUTE_FREQUENCY,
-                _lowShelfFilter[previousSet]->GetParameter(BiquadResonantFilter::ATTRIBUTE_FREQUENCY));
-            _lowShelfFilter[_currentSet]->SetParameter(
-                BiquadResonantFilter::ATTRIBUTE_RESONANCE,
-                _lowShelfFilter[previousSet]->GetParameter(BiquadResonantFilter::ATTRIBUTE_RESONANCE));
-            _lowShelfFilter[_currentSet]->SetParameter(
-                BiquadResonantFilter::ATTRIBUTE_GAIN, _lowShelfFilter[previousSet]->GetParameter(BiquadResonantFilter::ATTRIBUTE_GAIN));
-
-            _peakingFilter[_currentSet]->SetParameter(
-                BiquadResonantFilter::ATTRIBUTE_FREQUENCY,
-                _peakingFilter[previousSet]->GetParameter(BiquadResonantFilter::ATTRIBUTE_FREQUENCY));
-            _peakingFilter[_currentSet]->SetParameter(
-                BiquadResonantFilter::ATTRIBUTE_RESONANCE,
-                _peakingFilter[previousSet]->GetParameter(BiquadResonantFilter::ATTRIBUTE_RESONANCE));
-            _peakingFilter[_currentSet]->SetParameter(
-                BiquadResonantFilter::ATTRIBUTE_GAIN, _peakingFilter[previousSet]->GetParameter(BiquadResonantFilter::ATTRIBUTE_GAIN));
-
-            _highShelfFilter[_currentSet]->SetParameter(
-                BiquadResonantFilter::ATTRIBUTE_FREQUENCY,
-                _highShelfFilter[previousSet]->GetParameter(BiquadResonantFilter::ATTRIBUTE_FREQUENCY));
-            _highShelfFilter[_currentSet]->SetParameter(
-                BiquadResonantFilter::ATTRIBUTE_RESONANCE,
-                _highShelfFilter[previousSet]->GetParameter(BiquadResonantFilter::ATTRIBUTE_RESONANCE));
-            _highShelfFilter[_currentSet]->SetParameter(
-                BiquadResonantFilter::ATTRIBUTE_GAIN, _highShelfFilter[previousSet]->GetParameter(BiquadResonantFilter::ATTRIBUTE_GAIN));
-
-            // Render the previous and current gain sets into distinct member buffers:
-            // CrossFade asserts that its destination does not alias either input buffer.
-            // The current set is the fade-to target (arg1), so the block ends on it,
-            // matching the behavior of the old (aliasing) call.
-            ApplyFilters(previousSet, input, _tempBuffer, sampleRate);
-            ApplyFilters(_currentSet, input, _crossfadeBuffer, sampleRate);
-
-            _crossFader->CrossFade(_crossfadeBuffer, _tempBuffer, output);
-
-            _needUpdateGains = false;
-        }
-        else
+        if (!_needUpdateGains)
         {
             ApplyFilters(_currentSet, input, output, sampleRate);
+            return;
         }
+
+        AMPLITUDE_ASSERT(_crossFader != nullptr);
+        AMPLITUDE_ASSERT(_tempBuffer.GetFrameCount() >= input.GetFrameCount());
+        AMPLITUDE_ASSERT(_crossfadeBuffer.GetFrameCount() >= input.GetFrameCount());
+
+        const AmUInt32 nextSet = 1 - _currentSet;
+
+        // Start the new set from the active set's history so it does not ring from stale state.
+        CopyFilterState(_currentSet, nextSet);
+
+        // Render old and new responses into distinct buffers: CrossFade asserts its output aliases neither input.
+        ApplyFilters(_currentSet, input, _tempBuffer, sampleRate);
+        ApplyFilters(nextSet, input, _crossfadeBuffer, sampleRate);
+
+        // Fade the new response in and the old one out; the block ends on the new response.
+        _crossFader->CrossFade(_crossfadeBuffer, _tempBuffer, output);
+
+        _currentSet = nextSet;
+        _needUpdateGains = false;
     }
 
     void AirAbsorptionEQFilter::EnsureFilters()
@@ -195,6 +174,13 @@ namespace SparkyStudios::Audio::Amplitude
         _lowShelfFilter[set]->Process(input, output, input.GetFrameCount(), sampleRate);
         _peakingFilter[set]->Process(output, output, input.GetFrameCount(), sampleRate);
         _highShelfFilter[set]->Process(output, output, input.GetFrameCount(), sampleRate);
+    }
+
+    void AirAbsorptionEQFilter::CopyFilterState(AmUInt32 fromSet, AmUInt32 toSet)
+    {
+        AsBiquad(_lowShelfFilter[toSet])->CopyStateFrom(*AsBiquad(_lowShelfFilter[fromSet]));
+        AsBiquad(_peakingFilter[toSet])->CopyStateFrom(*AsBiquad(_peakingFilter[fromSet]));
+        AsBiquad(_highShelfFilter[toSet])->CopyStateFrom(*AsBiquad(_highShelfFilter[fromSet]));
     }
 
     AttenuationNodeInstance::AttenuationNodeInstance()
