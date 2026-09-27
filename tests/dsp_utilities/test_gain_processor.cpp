@@ -44,8 +44,9 @@ namespace SparkyStudios::Audio::Amplitude::Tests
             // Verify output has non-zero values (ramped from 0 to 1)
             AM_EXPECT(EnsureHasNonZeroOutput(output));
 
-            // Current gain should be at target
-            AM_EXPECT(std::abs(processor.GetGain() - (frameCount / 2048.0f)) < 0.01f);
+            // The 0 -> 1 ramp lasts max(frameCount, kDefaultGainRampMinFrames) = 256 frames, so it completes in this block.
+            AM_EXPECT_EQ(processor.GetGain(), 1.0f);
+            AM_EXPECT_NOT(processor.IsRamping());
 
             // Test SetGain
             processor.SetGain(0.5f);

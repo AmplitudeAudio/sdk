@@ -12,13 +12,17 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+#include <algorithm>
+#include <cmath>
+#include <cstdint>
+#include <cstring>
+
 #include <DSP/Gain.h>
 #include <Utils/Utils.h>
 
 namespace SparkyStudios::Audio::Amplitude
 {
     constexpr AmReal32 kGainThreshold = 0.001f;
-    constexpr AmSize kUnitRampLength = 2048;
 
     void Gain::ApplyReplaceConstantGain(
         AmReal32 gain, const AudioBufferChannel& in, AmSize inOffset, AudioBufferChannel& out, AmSize outOffset, AmSize frames)
@@ -26,12 +30,18 @@ namespace SparkyStudios::Audio::Amplitude
         AMPLITUDE_ASSERT(in.size() >= inOffset + frames);
         AMPLITUDE_ASSERT(out.size() >= outOffset + frames);
 
+        const AmReal32* src = in.begin() + inOffset;
+        AmReal32* dst = out.begin() + outOffset;
+
         if (IsZero(gain))
-            out.clear();
+            std::fill_n(dst, frames, 0.0f);
         else if (IsOne(gain))
-            out = in;
+        {
+            if (src != dst)
+                std::memmove(dst, src, frames * sizeof(AmReal32));
+        }
         else
-            ScalarMultiply(in.begin() + inOffset, out.begin() + outOffset, gain, frames);
+            ScalarMultiply(src, dst, gain, frames);
     }
 
     void Gain::ApplyAccumulateConstantGain(
@@ -40,10 +50,10 @@ namespace SparkyStudios::Audio::Amplitude
         AMPLITUDE_ASSERT(in.size() >= inOffset + frames);
         AMPLITUDE_ASSERT(out.size() >= outOffset + frames);
 
-        if (IsOne(gain))
-            out += in;
-        else if (!IsZero(gain))
-            ScalarMultiplyAccumulate(in.begin() + inOffset, out.begin() + outOffset, gain, frames);
+        if (IsZero(gain))
+            return;
+
+        ScalarMultiplyAccumulate(in.begin() + inOffset, out.begin() + outOffset, gain, frames);
     }
 
     void Gain::ApplyReplaceLinearGain(
@@ -212,15 +222,32 @@ namespace SparkyStudios::Audio::Amplitude
                  0.5f * (1.0f + std::cos((AM_DegToRad * +90.0f) - sourcePosition.GetAzimuth()) * cosTheta) * gain };
     }
 
+    namespace
+    {
+        AM_INLINE bool IsSimdAligned(const AmReal32* ptr)
+        {
+#if defined(AM_SIMD_INTRINSICS)
+            return reinterpret_cast<std::uintptr_t>(ptr) % AM_SIMD_ALIGNMENT == 0;
+#else
+            return true;
+#endif // AM_SIMD_INTRINSICS
+        }
+    } // namespace
+
     GainProcessor::GainProcessor()
         : _currentGain(0.0f)
+        , _targetGain(0.0f)
+        , _step(0.0f)
+        , _remainingFrames(0)
+        , _minRampFrames(kDefaultGainRampMinFrames)
         , _isInitialized(false)
     {}
 
     GainProcessor::GainProcessor(AmReal32 initialGain)
-        : _currentGain(initialGain)
-        , _isInitialized(true)
-    {}
+        : GainProcessor()
+    {
+        Reset(initialGain);
+    }
 
     void GainProcessor::ApplyGain(
         AmReal32 gain,
@@ -231,71 +258,114 @@ namespace SparkyStudios::Audio::Amplitude
         AmSize frames,
         bool accumulate)
     {
-        if (!_isInitialized)
-            SetGain(0.0f);
-
         AMPLITUDE_ASSERT(inOffset + frames <= in.size());
         AMPLITUDE_ASSERT(outOffset + frames <= out.size());
 
-        AmSize rampLength = std::abs(gain - _currentGain) * kUnitRampLength;
+        if (frames == 0)
+            return;
 
-#if defined(AM_SIMD_INTRINSICS)
-        rampLength = AM_MAX(rampLength, GetSimdBlockSize());
-        rampLength = AM_VALUE_ALIGN(rampLength, GetSimdBlockSize());
-#endif
+        const AmSize rampFrames = BeginBlock(gain, frames);
+        const AmReal32* src = in.begin() + inOffset;
+        AmReal32* dst = out.begin() + outOffset;
 
-        if (rampLength > 0)
-            _currentGain =
-                LinearGainRamp(rampLength, _currentGain, gain, in.begin() + inOffset, out.begin() + outOffset, frames, accumulate);
-        else
-            _currentGain = gain;
+        if (rampFrames > 0)
+            LinearGainRamp(_currentGain, _step, src, dst, rampFrames, accumulate);
 
-        if (rampLength < frames)
-        {
-            if (Gain::IsZero(_currentGain))
-            {
-                if (!accumulate)
-                    std::fill(out.begin() + outOffset + rampLength, out.end(), 0.0f);
+        EndRamp(rampFrames);
 
-                return;
-            }
-            else if (Gain::IsOne(_currentGain) && !accumulate)
-            {
-                if (&in != &out)
-                    std::copy(in.begin() + inOffset + rampLength, in.end(), out.begin() + outOffset + rampLength);
+        if (rampFrames < frames)
+            ConstantGain(_currentGain, src + rampFrames, dst + rampFrames, frames - rampFrames, accumulate);
+    }
 
-                return;
-            }
+    void GainProcessor::Advance(AmReal32 gain, AmSize frames)
+    {
+        if (frames == 0)
+            return;
 
-            if (accumulate)
-                Gain::ApplyAccumulateConstantGain(
-                    _currentGain, in, inOffset + rampLength, out, outOffset + rampLength, frames - rampLength);
-            else
-                Gain::ApplyReplaceConstantGain(_currentGain, in, inOffset + rampLength, out, outOffset + rampLength, frames - rampLength);
-        }
+        EndRamp(BeginBlock(gain, frames));
+    }
+
+    void GainProcessor::Reset(AmReal32 gain)
+    {
+        if (!std::isfinite(gain))
+            gain = 0.0f;
+
+        _currentGain = gain;
+        _targetGain = gain;
+        _step = 0.0f;
+        _remainingFrames = 0;
+        _isInitialized = true;
     }
 
     void GainProcessor::SetGain(AmReal32 gain)
     {
-        _currentGain = gain;
-        _isInitialized = true;
+        Reset(gain);
     }
 
-    AmReal32 GainProcessor::LinearGainRamp(
-        AmSize rampLength, AmReal32 startGain, AmReal32 endGain, const AmReal32* in, AmReal32* out, AmSize frames, bool accumulate)
+    void GainProcessor::Invalidate()
     {
-        AMPLITUDE_ASSERT(out != nullptr);
-        AMPLITUDE_ASSERT(rampLength > 0);
+        _currentGain = 0.0f;
+        _targetGain = 0.0f;
+        _step = 0.0f;
+        _remainingFrames = 0;
+        _isInitialized = false;
+    }
 
-        const AmSize length = AM_MIN(rampLength, frames);
-        const AmReal32 step = (endGain - startGain) / static_cast<AmReal32>(rampLength);
+    void GainProcessor::SetMinRampFrames(AmSize frames)
+    {
+        _minRampFrames = AM_MAX(frames, AmSize(1));
+    }
+
+    AmSize GainProcessor::BeginBlock(AmReal32 gain, AmSize frames)
+    {
+        if (!std::isfinite(gain))
+            gain = 0.0f;
+
+        if (!_isInitialized)
+        {
+            Reset(gain);
+            return 0;
+        }
+
+        if (std::abs(gain - _targetGain) > kEpsilon)
+        {
+            AmSize length = AM_MAX(frames, _minRampFrames);
+
+#if defined(AM_SIMD_INTRINSICS)
+            length = AM_VALUE_ALIGN(length, GetSimdBlockSize());
+#endif // AM_SIMD_INTRINSICS
+
+            _targetGain = gain;
+            _remainingFrames = length;
+            _step = (_targetGain - _currentGain) / static_cast<AmReal32>(length);
+        }
+
+        return AM_MIN(frames, _remainingFrames);
+    }
+
+    void GainProcessor::EndRamp(AmSize rampFrames)
+    {
+        if (rampFrames == 0)
+            return;
+
+        _remainingFrames -= rampFrames;
+
+        if (_remainingFrames == 0)
+            _currentGain = _targetGain; // Land exactly on the target, no float drift.
+        else
+            _currentGain += _step * static_cast<AmReal32>(rampFrames);
+    }
+
+    void GainProcessor::LinearGainRamp(AmReal32 startGain, AmReal32 step, const AmReal32* in, AmReal32* out, AmSize frames, bool accumulate)
+    {
+        AMPLITUDE_ASSERT(in != nullptr && out != nullptr);
 
         AmReal32 currentGain = startGain;
         AmSize frame = 0;
 
 #if defined(AM_SIMD_INTRINSICS)
         constexpr AmSize blockSize = GetSimdBlockSize();
-        const AmSize simdEnd = (length / blockSize) * blockSize;
+        const AmSize simdEnd = IsSimdAligned(in) && IsSimdAligned(out) ? (frames / blockSize) * blockSize : 0;
 
         if (simdEnd > 0)
         {
@@ -331,10 +401,9 @@ namespace SparkyStudios::Audio::Amplitude
         }
 #endif // AM_SIMD_INTRINSICS
 
-        // Scalar tail
         if (accumulate)
         {
-            for (; frame < length; ++frame)
+            for (; frame < frames; ++frame)
             {
                 out[frame] += currentGain * in[frame];
                 currentGain += step;
@@ -342,13 +411,46 @@ namespace SparkyStudios::Audio::Amplitude
         }
         else
         {
-            for (; frame < length; ++frame)
+            for (; frame < frames; ++frame)
             {
                 out[frame] = currentGain * in[frame];
                 currentGain += step;
             }
         }
+    }
 
-        return currentGain;
+    void GainProcessor::ConstantGain(AmReal32 gain, const AmReal32* in, AmReal32* out, AmSize frames, bool accumulate)
+    {
+        if (Gain::IsZero(gain))
+        {
+            if (!accumulate)
+                std::fill_n(out, frames, 0.0f);
+
+            return;
+        }
+
+        const bool aligned = IsSimdAligned(in) && IsSimdAligned(out);
+
+        if (accumulate)
+        {
+            if (aligned)
+                ScalarMultiplyAccumulate(in, out, gain, frames);
+            else
+                for (AmSize i = 0; i < frames; ++i)
+                    out[i] += in[i] * gain;
+
+            return;
+        }
+
+        if (Gain::IsOne(gain))
+        {
+            if (in != out)
+                std::memmove(out, in, frames * sizeof(AmReal32));
+        }
+        else if (aligned)
+            ScalarMultiply(in, out, gain, frames);
+        else
+            for (AmSize i = 0; i < frames; ++i)
+                out[i] = in[i] * gain;
     }
 } // namespace SparkyStudios::Audio::Amplitude
