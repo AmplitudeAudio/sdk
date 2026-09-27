@@ -71,7 +71,7 @@ namespace SparkyStudios::Audio::Amplitude::Tests
             GetMockLayer().SetRoom(room);
             GetMockLayer().SetChannel(channel);
 
-            // Reset should now adapt room parameters from geometry
+            // Room parameters are adapted from geometry on the next Process()
             instance->Reset();
 
             // Process multiple blocks to allow the delay line tail to emerge

@@ -52,23 +52,11 @@ namespace SparkyStudios::Audio::Amplitude
         {
             amLogWarning("Failed to find reverb algorithm '%s'.", _algorithmName.c_str());
         }
-
-        Reset();
     }
 
-    void ReverbNodeInstance::Reset()
+    void ReverbNodeInstance::UpdateRoomParameters(const Room& room)
     {
-        ProcessorNodeInstance::Reset();
-
-        if (_reverbInstance != nullptr)
-            _reverbInstance->Reset();
-
-        const auto* layer = GetLayer();
-        if (layer == nullptr)
-            return;
-
-        const Room& room = layer->GetRoom();
-        if (!room.Valid())
+        if (_reverbInstance == nullptr)
             return;
 
         // Set room size
@@ -89,8 +77,7 @@ namespace SparkyStudios::Audio::Amplitude
                 absorption = std::accumulate(roomCoefficients, roomCoefficients + kAmRoomSurfaceCount, 0.0f) / kAmRoomSurfaceCount;
         }
 
-        if (_reverbInstance != nullptr)
-            _reverbInstance->SetRoomParameters(roomSize, absorption);
+        _reverbInstance->SetRoomParameters(roomSize, absorption);
     }
 
     void ReverbNodeInstance::Configure(AmUInt64 frameCount, AmUInt16 channelCount)
@@ -110,20 +97,37 @@ namespace SparkyStudios::Audio::Amplitude
 
         const auto* layer = GetLayer();
         if (layer == nullptr)
+        {
+            MuteTail();
             return nullptr;
+        }
 
         const Room& room = layer->GetRoom();
         if (!room.Valid())
+        {
+            MuteTail();
             return nullptr;
+        }
+
+        // Only parameters change here; the reverb's delay lines keep their tail across blocks.
+        UpdateRoomParameters(room);
 
         const Channel& channel = layer->GetChannel();
         if (!channel.Valid() || channel.GetState() == nullptr)
+        {
+            MuteTail();
             return nullptr;
+        }
 
         const AmReal32 roomGain = channel.GetState()->GetRoomGain(room.GetId());
 
         if (roomGain < kEpsilon)
+        {
+            MuteTail();
             return nullptr;
+        }
+
+        _active = true;
 
         _output.Clear();
         _tempBuffer.Clear();
@@ -140,6 +144,16 @@ namespace SparkyStudios::Audio::Amplitude
         _reverbInstance->Process(_tempBuffer, _output, frames, sampleRate);
 
         return &_output;
+    }
+
+    void ReverbNodeInstance::MuteTail()
+    {
+        // The tail is not rendered while the node is skipped; drop it instead of replaying it later.
+        if (!_active)
+            return;
+
+        _reverbInstance->Reset();
+        _active = false;
     }
 
     ReverbNode::ReverbNode()

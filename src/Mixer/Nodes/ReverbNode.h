@@ -23,6 +23,8 @@
 
 namespace SparkyStudios::Audio::Amplitude
 {
+    class Room;
+
     class ReverbNodeInstance final : public ProcessorNodeInstance
     {
     public:
@@ -30,7 +32,6 @@ namespace SparkyStudios::Audio::Amplitude
         explicit ReverbNodeInstance(AmString algorithmName);
 
         void Initialize(AmObjectID id, const AmplimixLayer* layer, const PipelineInstance* pipeline, AmSize paramCount) override;
-        void Reset() override;
 
         void Configure(AmUInt64 frameCount, AmUInt16 channelCount) override;
 
@@ -42,9 +43,17 @@ namespace SparkyStudios::Audio::Amplitude
         }
 
     private:
+        void UpdateRoomParameters(const Room& room);
+
+        /**
+         * @brief Clears the reverb tail once when the node stops processing, so it doesn't replay when processing resumes.
+         */
+        void MuteTail();
+
         AmString _algorithmName;
         std::shared_ptr<ReverbInstance> _reverbInstance;
         AudioBuffer _tempBuffer;
+        bool _active = false; // whether the last Process() call ran the reverb
     };
 
     class ReverbNode final : public Node
