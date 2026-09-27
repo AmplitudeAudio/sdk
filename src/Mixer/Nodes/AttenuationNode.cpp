@@ -278,8 +278,8 @@ namespace SparkyStudios::Audio::Amplitude
         const AmUInt64 frames = input->GetFrameCount();
         const AmUInt16 channels = _output.GetChannelCount();
 
-        // Separate-mode instances share this node within a block: each instance snaps to its own gain.
-        if (layer->GetInstancingMode() == eChannelInstanceMode_Separate && layer->GetInstanceCount() > 0)
+        // Instances sharing one pipeline within a block must not ramp from each other's gain.
+        if (layer->IsSharingPipelineAcrossInstances())
             for (AmUInt16 c = 0; c < channels; ++c)
                 _gain[c].Invalidate();
 

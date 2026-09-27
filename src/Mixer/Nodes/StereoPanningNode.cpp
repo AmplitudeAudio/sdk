@@ -42,8 +42,8 @@ namespace SparkyStudios::Audio::Amplitude
             for (auto& processor : _panGain)
                 processor.SetMinRampFrames(GainRampMinFrames(sampleRate));
 
-        // Separate-mode instances share this node within a block: each instance snaps to its own pan.
-        if (layer->GetInstancingMode() == eChannelInstanceMode_Separate && layer->GetInstanceCount() > 0)
+        // Instances sharing one pipeline within a block must not ramp from each other's pan.
+        if (layer->IsSharingPipelineAcrossInstances())
             for (auto& processor : _panGain)
                 processor.Invalidate();
 

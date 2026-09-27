@@ -96,6 +96,7 @@ namespace SparkyStudios::Audio::Amplitude::Tests
         void SetOcclusion(AmReal32 occlusion) { _occlusion = occlusion; }
 
         void SetMultiPosition(bool enabled) { _multiPosition = enabled; }
+        void SetSharingPipelineAcrossInstances(bool v) { _sharingPipelineAcrossInstances = v; }
         void AddInstance(const AmVector3& location, AmReal32 weight, AmReal32 gain)
         {
             _instanceLocations.push_back(location);
@@ -124,6 +125,7 @@ namespace SparkyStudios::Audio::Amplitude::Tests
         AmVector3 GetInstanceLocation(AmSize i) const override { return _instanceLocations[i]; }
         AmReal32 GetInstanceWeight(AmSize i) const override { return _instanceWeights[i]; }
         AmReal32 GetInstanceGain(AmSize i) const override { return _instanceGains[i]; }
+        bool IsSharingPipelineAcrossInstances() const override { return _sharingPipelineAcrossInstances; }
 
     private:
         eSpatialization _spatialization;
@@ -137,6 +139,7 @@ namespace SparkyStudios::Audio::Amplitude::Tests
         AmReal32 _obstruction;
         AmReal32 _occlusion;
         bool _multiPosition;
+        bool _sharingPipelineAcrossInstances = false;
         std::vector<AmVector3> _instanceLocations;
         std::vector<AmReal32> _instanceWeights;
         std::vector<AmReal32> _instanceGains;

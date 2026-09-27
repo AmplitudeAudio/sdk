@@ -348,6 +348,20 @@ namespace SparkyStudios::Audio::Amplitude
          * @return The computed gain value for the instance.
          */
         [[nodiscard]] virtual AmReal32 GetInstanceGain(AmSize index) const = 0;
+
+        /**
+         * @brief Tells whether the layer is currently rendering one of several separate-mode instances
+         * through a pipeline shared by those instances.
+         *
+         * Stateful nodes should not carry per-block state (such as gain ramps) from one instance to the
+         * next in that case.
+         *
+         * @return @c true while a shared pipeline processes a separate-mode instance, @c false otherwise.
+         */
+        [[nodiscard]] virtual bool IsSharingPipelineAcrossInstances() const
+        {
+            return false;
+        }
     };
 
     /**

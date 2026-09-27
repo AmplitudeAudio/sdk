@@ -173,7 +173,7 @@ namespace SparkyStudios::Audio::Amplitude::Tests
 
     AM_REGISTER_TEST(mixer_nodes, attenuation_node_first_silent_block_then_fades_in);
 
-    AM_TEST_CASE(AttenuationRampTestCase, mixer_nodes, attenuation_node_separate_mode_snaps_per_instance)
+    AM_TEST_CASE(AttenuationRampTestCase, mixer_nodes, attenuation_node_separate_mode_keeps_ramp)
     {
     public:
         void Run() override
@@ -182,23 +182,50 @@ namespace SparkyStudios::Audio::Amplitude::Tests
             auto instance = CreateAndConfigureNode<AttenuationNode>(kFrames, 1);
             auto* processor = AsProcessor(instance);
 
-            // A non-empty instance list puts the mock in separate-mode instancing, matching the
-            // condition MixLayerSeparateMode() runs under. IsMultiPosition() stays false, so the
-            // gain still comes from SetLocation()/GetLocation(), not from the instance list itself.
+            // Separate mode: each instance now has its own pipeline, so this node belongs to one instance
+            // and must keep ramping across blocks like in regular mode.
             GetMockLayer().AddInstance({ 0.0f, 0.0f, -5.0f }, 1.0f, 1.0f);
 
-            AM_EXPECT_NOT(ProcessAt(processor, 5.0f) == nullptr);
+            const AudioBuffer* near = ProcessAt(processor, 5.0f);
+            AM_EXPECT_NOT(near == nullptr);
+            const AmReal32 lastNear = (*near)[0][kFrames - 1];
 
-            // Separate-mode instances share this node within a block: the next instance snaps
-            // instead of ramping from the previous instance's gain.
-            const AudioBuffer* other = ProcessAt(processor, 50.0f);
-            AM_EXPECT_NOT(other == nullptr);
-            for (AmUInt64 i = 0; i < kFrames; ++i)
-                AM_EXPECT(std::abs((*other)[0][i] - GainAt(50.0f)) < kTolerance);
+            const AudioBuffer* far = ProcessAt(processor, 50.0f);
+            AM_EXPECT_NOT(far == nullptr);
+
+            const AmReal32 slope = (GainAt(5.0f) - GainAt(50.0f)) / static_cast<AmReal32>(kFrames);
+            AM_EXPECT(std::abs((*far)[0][0] - lastNear) <= slope + kTolerance);
+            AM_EXPECT(std::abs((*far)[0][kFrames - 1] - (GainAt(50.0f) + slope)) < kTolerance);
 
             GetMockLayer().ClearInstances();
         }
     };
 
-    AM_REGISTER_TEST(mixer_nodes, attenuation_node_separate_mode_snaps_per_instance);
+    AM_REGISTER_TEST(mixer_nodes, attenuation_node_separate_mode_keeps_ramp);
+
+    AM_TEST_CASE(AttenuationRampTestCase, mixer_nodes, attenuation_node_shared_instance_pipeline_snaps)
+    {
+    public:
+        void Run() override
+        {
+            SetUpScene();
+            auto instance = CreateAndConfigureNode<AttenuationNode>(kFrames, 1);
+            auto* processor = AsProcessor(instance);
+
+            // Instances without their own pipeline share this node within a block: each one snaps to its own gain.
+            GetMockLayer().SetSharingPipelineAcrossInstances(true);
+
+            AM_EXPECT_NOT(ProcessAt(processor, 5.0f) == nullptr);
+
+            const AudioBuffer* far = ProcessAt(processor, 50.0f);
+            AM_EXPECT_NOT(far == nullptr);
+
+            for (AmUInt64 i = 0; i < kFrames; ++i)
+                AM_EXPECT(std::abs((*far)[0][i] - GainAt(50.0f)) < kTolerance);
+
+            GetMockLayer().SetSharingPipelineAcrossInstances(false);
+        }
+    };
+
+    AM_REGISTER_TEST(mixer_nodes, attenuation_node_shared_instance_pipeline_snaps);
 } // namespace SparkyStudios::Audio::Amplitude::Tests

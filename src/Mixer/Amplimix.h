@@ -146,6 +146,7 @@ namespace SparkyStudios::Audio::Amplitude
         [[nodiscard]] Room GetInstanceRoom(AmSize index) const override;
         [[nodiscard]] AmReal32 GetInstanceWeight(AmSize index) const override;
         [[nodiscard]] AmReal32 GetInstanceGain(AmSize index) const override;
+        [[nodiscard]] bool IsSharingPipelineAcrossInstances() const override;
 
         /**
          * @brief Cached per-instance data for pipeline processing.
@@ -181,6 +182,13 @@ namespace SparkyStudios::Audio::Amplitude
          * the current instance's location.
          */
         bool processingInstance = false;
+
+        /**
+         * @brief Whether the instance being processed (separate mode) renders through the shared layer pipeline.
+         *
+         * True for instances without their own pipeline (overflow, or per-instance pipelines disabled).
+         */
+        bool sharedInstancePipeline = false;
 
         /**
          * @brief The index of the current instance being processed (separate mode).

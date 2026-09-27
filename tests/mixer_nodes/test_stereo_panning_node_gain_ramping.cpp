@@ -108,7 +108,7 @@ namespace SparkyStudios::Audio::Amplitude::Tests
 
     AM_REGISTER_TEST(mixer_nodes, stereo_panning_node_pan_change_is_continuous);
 
-    AM_TEST_CASE(PanningRampTestCase, mixer_nodes, stereo_panning_node_separate_mode_snaps_per_instance)
+    AM_TEST_CASE(PanningRampTestCase, mixer_nodes, stereo_panning_node_separate_mode_keeps_ramp)
     {
     public:
         void Run() override
@@ -117,15 +117,39 @@ namespace SparkyStudios::Audio::Amplitude::Tests
             auto instance = CreateAndConfigureNode<StereoPanningNode>(kFrames, 1);
             auto* processor = AsProcessor(instance);
 
-            // A non-empty instance list puts the mock in separate-mode instancing, matching the
-            // condition the node checks under. IsMultiPosition() stays false, so the pan still
-            // comes from SetLocation()/GetLocation(), not from the instance list itself.
+            // Separate mode: each instance now has its own pipeline, so the pan keeps ramping.
             GetMockLayer().AddInstance({ -10.0f, 0.0f, 0.0f }, 1.0f, 1.0f);
 
             const AudioBuffer left = ProcessAt(processor, { -10.0f, 0.0f, 0.0f });
+            const AudioBuffer right = ProcessAt(processor, { 10.0f, 0.0f, 0.0f });
 
-            // Separate-mode instances share this node within a block: the next instance snaps
-            // instead of ramping from the previous instance's pan.
+            for (AmUInt16 c = 0; c < 2; ++c)
+            {
+                const AmReal32 slope = std::abs(right[c][kFrames - 1] - left[c][kFrames - 1]) / static_cast<AmReal32>(kFrames - 1);
+                AM_EXPECT(std::abs(right[c][0] - left[c][kFrames - 1]) <= slope + kTolerance);
+            }
+
+            AM_EXPECT(right[1][kFrames - 1] > right[0][kFrames - 1]);
+
+            GetMockLayer().ClearInstances();
+        }
+    };
+
+    AM_REGISTER_TEST(mixer_nodes, stereo_panning_node_separate_mode_keeps_ramp);
+
+    AM_TEST_CASE(PanningRampTestCase, mixer_nodes, stereo_panning_node_shared_instance_pipeline_snaps)
+    {
+    public:
+        void Run() override
+        {
+            SetUpScene();
+            auto instance = CreateAndConfigureNode<StereoPanningNode>(kFrames, 1);
+            auto* processor = AsProcessor(instance);
+
+            // Instances without their own pipeline share this node within a block: each one snaps to its own pan.
+            GetMockLayer().SetSharingPipelineAcrossInstances(true);
+
+            AM_UNUSED(ProcessAt(processor, { -10.0f, 0.0f, 0.0f }));
             const AudioBuffer right = ProcessAt(processor, { 10.0f, 0.0f, 0.0f });
 
             for (AmUInt16 c = 0; c < 2; ++c)
@@ -133,11 +157,10 @@ namespace SparkyStudios::Audio::Amplitude::Tests
                     AM_EXPECT(std::abs(right[c][i] - right[c][0]) < kTolerance);
 
             AM_EXPECT(right[1][0] > right[0][0]);
-            AM_EXPECT(left[0][0] > left[1][0]);
 
-            GetMockLayer().ClearInstances();
+            GetMockLayer().SetSharingPipelineAcrossInstances(false);
         }
     };
 
-    AM_REGISTER_TEST(mixer_nodes, stereo_panning_node_separate_mode_snaps_per_instance);
+    AM_REGISTER_TEST(mixer_nodes, stereo_panning_node_shared_instance_pipeline_snaps);
 } // namespace SparkyStudios::Audio::Amplitude::Tests

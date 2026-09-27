@@ -1211,6 +1211,7 @@ namespace SparkyStudios::Audio::Amplitude
             // Instances with their own pipeline keep independent node state; others share the layer pipeline.
             PipelineInstance* instancePipeline =
                 layer->instancePipelines != nullptr ? layer->instancePipelines->Find(data.instanceId) : nullptr;
+            layer->sharedInstancePipeline = (instancePipeline == nullptr);
 
             // Clear buffers for reuse
             in->buffer->Clear();
@@ -1331,6 +1332,7 @@ namespace SparkyStudios::Audio::Amplitude
 
         // Clear instance processing context
         layer->processingInstance = false;
+        layer->sharedInstancePipeline = false;
         layer->currentInstanceIndex = 0;
 
         layer->_chunkPool.Release(out);
@@ -1724,6 +1726,11 @@ namespace SparkyStudios::Audio::Amplitude
             return 1.0f;
 
         return instanceData[index].computedGain;
+    }
+
+    bool AmplimixLayerImpl::IsSharingPipelineAcrossInstances() const
+    {
+        return processingInstance && sharedInstancePipeline;
     }
 
     void AmplimixLayerImpl::UpdateInstanceData()
