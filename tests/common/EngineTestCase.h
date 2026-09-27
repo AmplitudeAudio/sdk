@@ -14,6 +14,8 @@
 
 #pragma once
 
+#include <atomic>
+
 #include "PlatformTestCase.h"
 #include "TestCase.h"
 
@@ -131,7 +133,7 @@ namespace SparkyStudios::Audio::Amplitude::Tests
             // Engine::LoadPlugin(AM_OS_STRING("AmplitudeVorbisCodecPlugin_d"));
             // Engine::LoadPlugin(AM_OS_STRING("AmplitudeFlacCodecPlugin_d"));
 
-            _running = true;
+            _running.store(true, std::memory_order_release);
 
             _threadHandle = Thread::CreateThread(run, this);
 
@@ -170,16 +172,17 @@ namespace SparkyStudios::Audio::Amplitude::Tests
 
         [[nodiscard]] AM_INLINE bool IsRunning() const
         {
-            return _running;
+            return _running.load(std::memory_order_acquire);
         }
 
     protected:
         bool Deinitialize()
         {
-            _running = false;
+            _running.store(false, std::memory_order_release);
 
+            // Join the engine thread before the engine goes away: it calls into amEngine every iteration.
             if (_threadHandle)
-                Thread::Release(_threadHandle);
+                Thread::Wait(_threadHandle);
 
             bool success = true;
             if (amEngine->IsInitialized())
@@ -199,7 +202,7 @@ namespace SparkyStudios::Audio::Amplitude::Tests
 
     private:
         AmThreadHandle _threadHandle = nullptr;
-        bool _running = false;
+        std::atomic<bool> _running{ false };
         std::shared_ptr<InvalidConsumerNode> _invalidConsumerNodePlugin = nullptr;
     };
 } // namespace SparkyStudios::Audio::Amplitude::Tests
