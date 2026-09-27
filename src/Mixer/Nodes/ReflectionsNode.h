@@ -17,6 +17,8 @@
 #ifndef _AM_IMPLEMENTATION_MIXER_NODES_REFLECTIONS_NODE_H
 #define _AM_IMPLEMENTATION_MIXER_NODES_REFLECTIONS_NODE_H
 
+#include <array>
+
 #include <SparkyStudios/Audio/Amplitude/Core/Memory.h>
 #include <SparkyStudios/Audio/Amplitude/Mixer/Node.h>
 
@@ -26,6 +28,38 @@
 
 namespace SparkyStudios::Audio::Amplitude
 {
+    class RoomInternalState;
+
+    /**
+     * @brief Tells whether early reflections must be recomputed for a room and listener.
+     *
+     * Remembers the last room state, listener location and speed of sound it was asked about, and
+     * reports a change when any value that affects the reflections differs.
+     */
+    class ReflectionsUpdateTracker
+    {
+    public:
+        /**
+         * @brief Returns @c true when the reflections must be recomputed, and remembers the given state.
+         *
+         * @param[in] roomState The room the listener is in. @c nullptr means no room: returns @c false.
+         * @param[in] listenerLocation The listener's world location.
+         * @param[in] speedOfSound The engine speed of sound.
+         */
+        bool Changed(const RoomInternalState* roomState, const AmVector3& listenerLocation, AmReal32 speedOfSound);
+
+    private:
+        bool _hasState = false;
+        const RoomInternalState* _roomState = nullptr;
+        AmVector3 _listenerLocation{};
+        AmVector3 _roomLocation{};
+        AmQuaternion _roomOrientation{};
+        AmVector3 _roomDimensions{};
+        std::array<AmReal32, kAmRoomSurfaceCount> _coefficients{};
+        AmReal32 _cutOffFrequency = 0.0f;
+        AmReal32 _speedOfSound = 0.0f;
+    };
+
     class ReflectionsNodeInstance final : public ProcessorNodeInstance
     {
     public:
@@ -38,8 +72,6 @@ namespace SparkyStudios::Audio::Amplitude
 
         const AudioBuffer* Process(const AudioBuffer* input) override;
 
-        void Reset() override;
-
     private:
         AmbisonicOrientationProcessor _orientationProcessor;
         ReflectionsProcessor* _reflectionsProcessor;
@@ -49,6 +81,8 @@ namespace SparkyStudios::Audio::Amplitude
         AudioBuffer _tempBuffer;
 
         AmSize _numFramesProcessedOnEmptyInput;
+
+        ReflectionsUpdateTracker _updateTracker;
     };
 
     class ReflectionsNode final : public Node

@@ -13,12 +13,48 @@
 // limitations under the License.
 
 #include <Core/Engine.h>
+#include <Core/RoomInternalState.h>
 #include <Mixer/Nodes/ReflectionsNode.h>
 
 #include <SparkyStudios/Audio/Amplitude/Math/CartesianCoordinateSystem.h>
 
 namespace SparkyStudios::Audio::Amplitude
 {
+    bool ReflectionsUpdateTracker::Changed(const RoomInternalState* roomState, const AmVector3& listenerLocation, AmReal32 speedOfSound)
+    {
+        if (roomState == nullptr)
+        {
+            _hasState = false;
+            return false;
+        }
+
+        const AmReal32* coefficients = roomState->GetCoefficients();
+
+        bool changed = !_hasState || roomState != _roomState || !(listenerLocation == _listenerLocation) ||
+            !(roomState->GetLocation() == _roomLocation) || !(roomState->GetOrientation().GetQuaternion() == _roomOrientation) ||
+            !(roomState->GetDimensions() == _roomDimensions) || roomState->GetCutOffFrequency() != _cutOffFrequency ||
+            speedOfSound != _speedOfSound;
+
+        for (AmSize i = 0; !changed && i < kAmRoomSurfaceCount; ++i)
+            changed = coefficients[i] != _coefficients[i];
+
+        if (!changed)
+            return false;
+
+        _hasState = true;
+        _roomState = roomState;
+        _listenerLocation = listenerLocation;
+        _roomLocation = roomState->GetLocation();
+        _roomOrientation = roomState->GetOrientation().GetQuaternion();
+        _roomDimensions = roomState->GetDimensions();
+        _cutOffFrequency = roomState->GetCutOffFrequency();
+        _speedOfSound = speedOfSound;
+        for (AmSize i = 0; i < kAmRoomSurfaceCount; ++i)
+            _coefficients[i] = coefficients[i];
+
+        return true;
+    }
+
     ReflectionsNodeInstance::ReflectionsNodeInstance()
         : ProcessorNodeInstance(true)
         , _reflectionsProcessor(nullptr)
@@ -43,8 +79,6 @@ namespace SparkyStudios::Audio::Amplitude
 
         _output.Configure(1, true, amEngine->GetSamplesPerStream());
         _silenceBuffer = AudioBuffer(amEngine->GetSamplesPerStream(), kAmMonoChannelCount);
-
-        Reset();
     }
 
     void ReflectionsNodeInstance::Configure(AmUInt64 frameCount, AmUInt16 channelCount)
@@ -83,6 +117,12 @@ namespace SparkyStudios::Audio::Amplitude
         if (!listener.Valid())
             return nullptr;
 
+        // Recompute reflections only when the room, the listener or the speed of sound changed.
+        const AmVector3& listenerLocation = listener.GetLocation();
+        const AmReal32 speedOfSound = amEngine->GetSoundSpeed();
+        if (_updateTracker.Changed(room.GetState(), listenerLocation, speedOfSound))
+            _reflectionsProcessor->Update(room.GetState(), listenerLocation, speedOfSound);
+
         _output.Reset();
 
         AMPLITUDE_ASSERT(input->GetFrameCount() <= _tempBuffer.GetFrameCount());
@@ -103,22 +143,6 @@ namespace SparkyStudios::Audio::Amplitude
         _orientationProcessor.Process(&_output, _output.GetSampleCount());
 
         return _output.GetBuffer();
-    }
-
-    void ReflectionsNodeInstance::Reset()
-    {
-        ProcessorNodeInstance::Reset();
-
-        const auto* layer = GetLayer();
-        if (layer == nullptr)
-            return;
-
-        const auto& listener = layer->GetListener();
-        if (!listener.Valid())
-            return;
-
-        const auto& room = layer->GetRoom();
-        _reflectionsProcessor->Update(room.GetState(), listener.GetLocation(), amEngine->GetSoundSpeed());
     }
 
     ReflectionsNode::ReflectionsNode()
