@@ -34,6 +34,16 @@ namespace SparkyStudios::Audio::Amplitude
         explicit BiquadResonantFilterInstance(BiquadResonantFilter* parent);
         ~BiquadResonantFilterInstance() override = default;
 
+        /**
+         * @brief Copies the filter history of every channel from @p other.
+         *
+         * The filter is Direct Form I, so its history (previous inputs and outputs) stays valid across a
+         * coefficient change. Copying it into a filter with new coefficients avoids a transient from stale state.
+         *
+         * @param[in] other The filter instance to copy the history from.
+         */
+        void CopyStateFrom(const BiquadResonantFilterInstance& other);
+
     protected:
         void ProcessChannel(const AudioBuffer& in, AudioBuffer& out, AmUInt16 channel, AmUInt64 frames, AmUInt32 sampleRate) override;
 

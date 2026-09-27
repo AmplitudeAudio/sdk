@@ -12,6 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+#include <algorithm>
+
 #include <SparkyStudios/Audio/Amplitude/Core/Memory.h>
 
 #include <DSP/Filters/BiquadResonantFilter.h>
@@ -172,6 +174,11 @@ namespace SparkyStudios::Audio::Amplitude
         _sampleRate = 44100;
 
         ComputeBiquadResonantParams();
+    }
+
+    void BiquadResonantFilterInstance::CopyStateFrom(const BiquadResonantFilterInstance& other)
+    {
+        std::copy(std::begin(other._state), std::end(other._state), std::begin(_state));
     }
 
     void BiquadResonantFilterInstance::ProcessChannel(
