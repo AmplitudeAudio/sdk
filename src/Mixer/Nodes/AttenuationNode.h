@@ -21,6 +21,7 @@
 #include <SparkyStudios/Audio/Amplitude/Mixer/Node.h>
 
 #include <DSP/Filters/BiquadResonantFilter.h>
+#include <DSP/Gain.h>
 
 namespace SparkyStudios::Audio::Amplitude
 {
@@ -72,6 +73,7 @@ namespace SparkyStudios::Audio::Amplitude
     private:
         std::array<AmReal32, kAmAirAbsorptionBandCount> _gains;
         AirAbsorptionEQFilter _eqFilter;
+        GainProcessor _gain[kAmMaxSupportedChannelCount];
     };
 
     class AttenuationNode final : public Node

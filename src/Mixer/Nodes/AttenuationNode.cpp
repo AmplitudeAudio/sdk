@@ -275,11 +275,23 @@ namespace SparkyStudios::Audio::Amplitude
             }
         }
 
-        if (Gain::IsZero(targetGain))
-            return nullptr;
+        const AmUInt64 frames = input->GetFrameCount();
+        const AmUInt16 channels = _output.GetChannelCount();
 
-        // Set and normalize gains for air absorption
-        if (attenuation->IsAirAbsorptionEnabled() && listener.Valid())
+        // Separate-mode instances share this node within a block: each instance snaps to its own gain.
+        if (layer->GetInstancingMode() == eChannelInstanceMode_Separate && layer->GetInstanceCount() > 0)
+            for (AmUInt16 c = 0; c < channels; ++c)
+                _gain[c].Invalidate();
+
+        if (const AmUInt32 sampleRate = layer->GetSampleRate(); sampleRate > 0)
+            for (AmUInt16 c = 0; c < channels; ++c)
+                _gain[c].SetMinRampFrames(GainRampMinFrames(sampleRate));
+
+        const bool applyAirAbsorption = attenuation->IsAirAbsorptionEnabled() && listener.Valid();
+
+        // Normalize() may zero targetGain, so air absorption is evaluated before the cull check.
+        // While fading out, band gains are not re-evaluated: the EQ keeps its last setting.
+        if (applyAirAbsorption && !Gain::IsZero(targetGain))
         {
             const AmVector3& listenerLocation = listener.GetLocation();
 
@@ -290,15 +302,21 @@ namespace SparkyStudios::Audio::Amplitude
             _eqFilter.SetGains(_gains[0], _gains[1], _gains[2]);
         }
 
-        AudioBuffer::Copy(*input, 0, _output, 0, input->GetFrameCount());
+        // Cull only once the gain has fully ramped down (or was never audible). Leaving the processors
+        // initialized at 0 makes a later re-entry fade in instead of jumping.
+        const bool silent = !_gain[0].IsInitialized() || (Gain::IsZero(_gain[0].GetGain()) && !_gain[0].IsRamping());
+        if (Gain::IsZero(targetGain) && silent)
+        {
+            for (AmUInt16 c = 0; c < channels; ++c)
+                _gain[c].Reset(0.0f);
 
-        // Apply gain attenuation
-        if (!Gain::IsOne(targetGain))
-            for (AmSize c = 0; c < _output.GetChannelCount(); ++c)
-                Gain::ApplyReplaceConstantGain(targetGain, input->GetChannel(c), 0, _output[c], 0, input->GetFrameCount());
+            return nullptr;
+        }
 
-        // Apply air absorption EQ filter
-        if (attenuation->IsAirAbsorptionEnabled() && listener.Valid())
+        for (AmUInt16 c = 0; c < channels; ++c)
+            _gain[c].ApplyGain(targetGain, input->GetChannel(c), 0, _output[c], 0, frames, false);
+
+        if (applyAirAbsorption)
             _eqFilter.Process(_output, _output, layer->GetSampleRate());
 
         return &_output;

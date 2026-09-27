@@ -113,8 +113,9 @@ namespace SparkyStudios::Audio::Amplitude::Tests
             const AudioBuffer* outFar = processor->Process(&input);
             AM_EXPECT_NOT(outFar == nullptr);
 
+            // The gain ramps from the near level across this block, so compare the settled last quarter.
             AmReal32 farPeak = 0.0f;
-            for (AmUInt64 i = 0; i < frameCount; ++i)
+            for (AmUInt64 i = frameCount - frameCount / 4; i < frameCount; ++i)
                 farPeak = std::max(farPeak, std::abs((*outFar)[0][i]));
 
             // Both outputs must be finite and non-silent. The EQ gains are in dB and
