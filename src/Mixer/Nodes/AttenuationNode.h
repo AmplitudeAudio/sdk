@@ -38,6 +38,9 @@ namespace SparkyStudios::Audio::Amplitude
 
         void Configure(AmUInt64 frameCount, AmUInt16 channelCount);
 
+        /**
+         * @brief Sets the EQ band gains, in dB (0 dB leaves a band untouched).
+         */
         void SetGains(AmReal32 gainLow, AmReal32 gainMid, AmReal32 gainHigh);
 
         void Process(const AudioBuffer& input, AudioBuffer& output, AmReal32 sampleRate);

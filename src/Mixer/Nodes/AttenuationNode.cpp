@@ -23,6 +23,11 @@ namespace SparkyStudios::Audio::Amplitude
     constexpr AmReal32 kQ = 0.707107f; // sqrt(0.5)
     constexpr AmReal32 kMaxEQGain = 0.0625f;
 
+    AM_INLINE AmReal32 ToEQGainDb(AmReal32 linearGain)
+    {
+        return 20.0f * std::log10(std::max(linearGain, kMaxEQGain));
+    }
+
     namespace
     {
         BiquadResonantFilterInstance* AsBiquad(const std::shared_ptr<FilterInstance>& filter)
@@ -299,7 +304,7 @@ namespace SparkyStudios::Audio::Amplitude
                 _gains[i] = attenuation->EvaluateAirAbsorption(effectiveLocation, listenerLocation, i);
 
             AirAbsorptionEQFilter::Normalize(_gains, targetGain);
-            _eqFilter.SetGains(_gains[0], _gains[1], _gains[2]);
+            _eqFilter.SetGains(ToEQGainDb(_gains[0]), ToEQGainDb(_gains[1]), ToEQGainDb(_gains[2]));
         }
 
         // Cull only once the gain has fully ramped down (or was never audible). Leaving the processors
