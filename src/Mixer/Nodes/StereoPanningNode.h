@@ -20,6 +20,8 @@
 #include <SparkyStudios/Audio/Amplitude/Core/Memory.h>
 #include <SparkyStudios/Audio/Amplitude/Mixer/Node.h>
 
+#include <DSP/Gain.h>
+
 namespace SparkyStudios::Audio::Amplitude
 {
     class StereoPanningNodeInstance final : public ProcessorNodeInstance
@@ -33,6 +35,11 @@ namespace SparkyStudios::Audio::Amplitude
         {
             return kAmStereoChannelCount;
         }
+
+    private:
+        void ApplyPan(const AudioBuffer* input, const AmVector2& pannedGain);
+
+        GainProcessor _panGain[kAmStereoChannelCount];
     };
 
     class StereoPanningNode final : public Node

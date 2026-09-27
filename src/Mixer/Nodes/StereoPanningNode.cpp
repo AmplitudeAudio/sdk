@@ -38,15 +38,20 @@ namespace SparkyStudios::Audio::Amplitude
         // Mono channels required for input
         AMPLITUDE_ASSERT(input->GetChannelCount() == 1);
 
-        _output.Clear();
+        if (const AmUInt32 sampleRate = layer->GetSampleRate(); sampleRate > 0)
+            for (auto& processor : _panGain)
+                processor.SetMinRampFrames(GainRampMinFrames(sampleRate));
+
+        // Separate-mode instances share this node within a block: each instance snaps to its own pan.
+        if (layer->GetInstancingMode() == eChannelInstanceMode_Separate && layer->GetInstanceCount() > 0)
+            for (auto& processor : _panGain)
+                processor.Invalidate();
 
         constexpr AmReal32 kGain = 1.0f;
 
         if (layer->GetSpatialization() == eSpatialization_None)
         {
-            const AmVector2 pannedGain = Gain::CalculateStereoPannedGain(kGain, 0.0f);
-            Gain::ApplyReplaceConstantGain(pannedGain.x, input->GetChannel(0), 0, _output[0], 0, _output.GetFrameCount());
-            Gain::ApplyReplaceConstantGain(pannedGain.y, input->GetChannel(0), 0, _output[1], 0, _output.GetFrameCount());
+            ApplyPan(input, Gain::CalculateStereoPannedGain(kGain, 0.0f));
         }
         else if (layer->IsMultiPosition())
         {
@@ -74,18 +79,22 @@ namespace SparkyStudios::Audio::Amplitude
                 blendedPan.y /= totalWeight;
             }
 
-            // Apply blended panning
-            Gain::ApplyReplaceConstantGain(blendedPan.x, input->GetChannel(0), 0, _output[0], 0, _output.GetFrameCount());
-            Gain::ApplyReplaceConstantGain(blendedPan.y, input->GetChannel(0), 0, _output[1], 0, _output.GetFrameCount());
+            ApplyPan(input, blendedPan);
         }
         else
         {
-            const AmVector2 pannedGain = Gain::CalculateStereoPannedGain(kGain, layer->GetLocation(), listenerInvMatrix);
-            Gain::ApplyReplaceConstantGain(pannedGain.x, input->GetChannel(0), 0, _output[0], 0, _output.GetFrameCount());
-            Gain::ApplyReplaceConstantGain(pannedGain.y, input->GetChannel(0), 0, _output[1], 0, _output.GetFrameCount());
+            ApplyPan(input, Gain::CalculateStereoPannedGain(kGain, layer->GetLocation(), listenerInvMatrix));
         }
 
         return &_output;
+    }
+
+    void StereoPanningNodeInstance::ApplyPan(const AudioBuffer* input, const AmVector2& pannedGain)
+    {
+        const AmSize frames = _output.GetFrameCount();
+
+        _panGain[0].ApplyGain(pannedGain.x, input->GetChannel(0), 0, _output[0], 0, frames, false);
+        _panGain[1].ApplyGain(pannedGain.y, input->GetChannel(0), 0, _output[1], 0, frames, false);
     }
 
     StereoPanningNode::StereoPanningNode()
