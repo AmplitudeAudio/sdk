@@ -190,8 +190,17 @@ namespace SparkyStudios::Audio::Amplitude
         _header.m_Items.clear();
         _itemIndices.clear();
         _headerSize = 0;
-        _initialized.store(false, std::memory_order_release);
         _valid.store(false, std::memory_order_release);
+
+        // The package file is read through the platform file system: without it, opening ends as an invalid file system.
+        if (_fileSystem == nullptr)
+        {
+            amLogError("Cannot open the package file system: no platform file system set. Call SetPlatformFileSystem() first.");
+            _initialized.store(true, std::memory_order_release);
+            return;
+        }
+
+        _initialized.store(false, std::memory_order_release);
         _loadingThreadHandle = Thread::CreateThread(&PackageFileSystem::LoadPackage, this);
     }
 

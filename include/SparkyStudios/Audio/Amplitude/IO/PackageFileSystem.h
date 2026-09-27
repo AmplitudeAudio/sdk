@@ -239,7 +239,8 @@ namespace SparkyStudios::Audio::Amplitude
             if (IsValid())
                 return;
 
-            _fileSystem.reset(ampoolnew(eMemoryPoolKind_IO, TFileSystem, std::forward<Args>(args)...));
+            // Pool-aware shared pointer: the file system is released through the pool it was allocated from.
+            _fileSystem = ampoolshared(eMemoryPoolKind_IO, TFileSystem, std::forward<Args>(args)...);
         }
 
         /**
