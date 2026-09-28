@@ -55,7 +55,8 @@ namespace SparkyStudios::Audio::Amplitude::Fidelity
     [[nodiscard]] Signal MakeSine(std::size_t length, double sampleRate, double frequency, double amplitude, double phase = 0.0);
 
     /**
-     * @brief Gain of a raised-cosine fade-in over the first @p fadeLength samples and fade-out over the last ones.
+     * @brief Gain of a smooth fade-in over the first @p fadeLength samples and fade-out over the last ones (a raised cosine
+     * of a raised cosine, continuous up to the third derivative).
      *
      * The gain is 0 at both ends and 0.5 at fadeLength / 2 from either end.
      */
