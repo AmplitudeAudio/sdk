@@ -23,3 +23,57 @@ target("amplitude_fidelity_lib")
 
   add_files("src/**.cpp")
 target_end()
+
+target("amplitude_fidelity")
+  set_kind("binary")
+  set_targetdir("$(builddir)/bin")
+  set_group("tools")
+  set_rundir("$(builddir)")
+
+  add_deps("amplitude_fidelity_lib")
+  add_packages("cli11")
+
+  add_includedirs("$(projectdir)/src", "$(builddir)/include")
+
+  add_files("main.cpp")
+target_end()
+
+if has_config("build_assets") then
+  target("build_fidelity_project")
+    set_kind("phony")
+
+    add_deps("amplitude_fidelity", "build_binary_schemas")
+
+    on_build(function (target)
+      import("core.project.config")
+      import("core.project.project")
+      import("lib.detect.find_program")
+      import("lib.detect.find_tool")
+
+      local python = find_program("python3") or find_program("python")
+      if not python then
+        raise("Python not found. Cannot build the fidelity project.")
+      end
+
+      local flatc = find_tool("flatc", { paths = { "$(env PATH)", "$(projectdir)/bin" } })
+      if not flatc then
+        raise("flatc not found. Cannot build the fidelity project.")
+      end
+
+      local build_dir = path.absolute(config.builddir())
+      local project_dir = path.join(build_dir, "fidelity", "project")
+      local assets_dir = path.join(build_dir, "fidelity", "assets")
+      local source_dir = path.join(os.projectdir(), "tools", "fidelity", "project")
+
+      os.mkdir(project_dir)
+      os.mkdir(assets_dir)
+      os.cp(path.join(source_dir, "**"), project_dir, { rootdir = source_dir })
+
+      local tool = path.absolute(project.target("amplitude_fidelity"):targetfile())
+      os.execv(tool, { "--generate-assets", "--project", project_dir, "--assets", assets_dir })
+
+      os.exec("%s %s -p %s -b %s -f %s -s %s", python, path.join(os.projectdir(), "scripts", "build_project.py"),
+        project_dir, assets_dir, flatc.program, path.join(os.projectdir(), "schemas"))
+    end)
+  target_end()
+end
