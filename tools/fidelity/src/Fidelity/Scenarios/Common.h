@@ -70,6 +70,12 @@ namespace SparkyStudios::Audio::Amplitude::Fidelity
     [[nodiscard]] std::vector<std::string> StimulusNames(std::initializer_list<StimulusKind> kinds);
 
     /**
+     * @brief Level of an above-Nyquist tone folded back to sampleRate - f, relative to the tone as it would reach the
+     * output (dBc).
+     */
+    [[nodiscard]] double AliasLevelDbc(std::span<const double> steady, double sampleRate, const StimulusSpec& spec);
+
+    /**
      * @brief Median of the finite values; NaN when there are none.
      */
     [[nodiscard]] double MedianFinite(std::vector<double> values);

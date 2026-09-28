@@ -26,6 +26,7 @@
 #include <Fidelity/Analysis/Click.h>
 #include <Fidelity/Analysis/Envelope.h>
 #include <Fidelity/Analysis/Integrity.h>
+#include <Fidelity/Analysis/Spectrum.h>
 #include <Fidelity/AssetGenerator.h>
 #include <Fidelity/Targets.h>
 
@@ -155,6 +156,12 @@ namespace SparkyStudios::Audio::Amplitude::Fidelity
                 names.push_back(spec.name);
 
         return names;
+    }
+
+    double AliasLevelDbc(std::span<const double> steady, double sampleRate, const StimulusSpec& spec)
+    {
+        const PowerSpectrum spectrum = AveragedPowerSpectrum(steady, sampleRate, 32768);
+        return DbFromPower(BandPower(spectrum, sampleRate - spec.frequencyHz, 8) / 0.5) - DbFromAmplitude(spec.amplitude * CenterPanGain());
     }
 
     double MedianFinite(std::vector<double> values)
