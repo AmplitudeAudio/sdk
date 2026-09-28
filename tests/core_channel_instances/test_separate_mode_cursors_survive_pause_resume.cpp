@@ -42,27 +42,27 @@ namespace SparkyStudios::Audio::Amplitude::Tests
             ChannelInstance instance = channel.AddInstance({ 100.0f, 0.0f, 50.0f });
             AM_EXPECT(instance.Valid());
 
-            // Let playback advance, then force a publish so the write-back cursors
-            // are drained into the channel state where the test can observe them.
-            amEngine->WaitUntilFrames(6);
-            instance.SetLocation({ 101.0f, 0.0f, 50.0f });
+            // The audio thread writes the instance cursor back once per mix; each publish (forced here by
+            // moving the instance) drains it into the channel state where the test can observe it.
+            AmReal32 x = 100.0f;
+            auto drainedCursor = [&]()
+            {
+                x += 0.01f;
+                instance.SetLocation({ x, 0.0f, 50.0f });
+                return instance.GetState()->GetCursor();
+            };
 
+            // Let playback advance.
+            AM_EXPECT(WaitUntil([&]() { return drainedCursor() > 0; }));
             const AmUInt64 cursorBeforePause = instance.GetState()->GetCursor();
-            AM_EXPECT(cursorBeforePause > 0);
 
             channel.Pause();
             amEngine->WaitUntilFrames(3);
 
             channel.Resume();
-            amEngine->WaitUntilFrames(3);
-
-            // Force a publish to drain the cursors again.
-            instance.SetLocation({ 102.0f, 0.0f, 50.0f });
-
-            const AmUInt64 cursorAfterResume = instance.GetState()->GetCursor();
 
             // Continued playback: the cursor must not have restarted from zero.
-            AM_EXPECT(cursorAfterResume > cursorBeforePause);
+            AM_EXPECT(WaitUntil([&]() { return drainedCursor() > cursorBeforePause; }));
         }
     };
 

@@ -176,6 +176,37 @@ namespace SparkyStudios::Audio::Amplitude::Tests
         }
 
     protected:
+        /**
+         * @brief The frame cap used by @c WaitUntil() (about 5 seconds at 60 frames per second).
+         */
+        static constexpr AmUInt64 kMaxWaitFrames = 300;
+
+        /**
+         * @brief Advances engine frames until @p condition holds, or until @p maxFrames frames elapsed.
+         *
+         * Audio-thread effects (mixer commands such as seeks, cursor write-backs, mixer-side state, sound-end
+         * callbacks) land on the audio callback period, which is unrelated to game frames: wait for the effect
+         * itself instead of a fixed number of frames.
+         *
+         * @param[in] condition Returns @c true once the awaited effect is visible.
+         * @param[in] maxFrames The maximum number of frames to wait.
+         *
+         * @return @c true if @p condition held before the cap was reached.
+         */
+        template<typename Predicate>
+        [[nodiscard]] bool WaitUntil(Predicate&& condition, AmUInt64 maxFrames = kMaxWaitFrames)
+        {
+            for (AmUInt64 frame = 0; frame < maxFrames; ++frame)
+            {
+                if (condition())
+                    return true;
+
+                amEngine->WaitUntilFrames(1);
+            }
+
+            return condition();
+        }
+
         bool Deinitialize()
         {
             _running.store(false, std::memory_order_release);

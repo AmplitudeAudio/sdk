@@ -43,7 +43,9 @@ namespace SparkyStudios::Audio::Amplitude::Tests
             constexpr AmTime seekPosition = 1000.0;
             AM_EXPECT(channel.GetPlaybackPosition() < seekPosition);
             AM_EXPECT(channel.SetPlaybackPosition(seekPosition));
-            amEngine->WaitUntilFrames(4);
+
+            // The seek is applied by a mixer command on the audio thread.
+            AM_EXPECT(WaitUntil([&]() { return channel.GetPlaybackPosition() >= seekPosition; }));
 
             const AmTime playbackPosition = channel.GetPlaybackPosition();
             AM_EXPECT(playbackPosition >= seekPosition);

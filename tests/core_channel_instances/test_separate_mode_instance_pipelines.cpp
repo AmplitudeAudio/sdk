@@ -46,16 +46,6 @@ namespace SparkyStudios::Audio::Amplitude::Tests
             return count;
         }
 
-        // The mixer runs pending commands once per device callback, which may span several game frames.
-        AmSize WaitForMixerPipelineCount(const Channel& channel, AmSize expected)
-        {
-            constexpr AmUInt32 kMaxWaitFrames = 60;
-            for (AmUInt32 i = 0; i < kMaxWaitFrames && MixerPipelineCount(channel) != expected; ++i)
-                amEngine->WaitUntilFrames(1);
-
-            return MixerPipelineCount(channel);
-        }
-
         Channel PlaySeparateModeChannel()
         {
             SoundHandle sound = amEngine->GetSoundHandle("test_sound_01");
@@ -82,14 +72,14 @@ namespace SparkyStudios::Audio::Amplitude::Tests
             // Let the audio thread run the attach commands and mix through the new pipelines.
             amEngine->WaitUntilFrames(4);
             AM_EXPECT(channel.Playing());
-            AM_EXPECT_EQ(WaitForMixerPipelineCount(channel, 3), 3);
+            AM_EXPECT(WaitUntil([&]() { return MixerPipelineCount(channel) == 3; }));
 
             channel.RemoveInstance(b.GetId());
             AM_EXPECT_EQ(AttachedCount(channel), 2);
 
             amEngine->WaitUntilFrames(2);
             AM_EXPECT(channel.Playing());
-            AM_EXPECT_EQ(WaitForMixerPipelineCount(channel, 2), 2);
+            AM_EXPECT(WaitUntil([&]() { return MixerPipelineCount(channel) == 2; }));
 
             channel.Stop();
             amEngine->WaitUntilFrames(2);
@@ -115,7 +105,7 @@ namespace SparkyStudios::Audio::Amplitude::Tests
 
             amEngine->WaitUntilFrames(3);
             AM_EXPECT(channel.Playing());
-            AM_EXPECT_EQ(WaitForMixerPipelineCount(channel, 2), 2);
+            AM_EXPECT(WaitUntil([&]() { return MixerPipelineCount(channel) == 2; }));
 
             // Removing the instance that never got a pipeline leaves the attached ones alone.
             channel.RemoveInstance(overflow.GetId());
@@ -153,7 +143,7 @@ namespace SparkyStudios::Audio::Amplitude::Tests
 
             amEngine->WaitUntilFrames(3);
             AM_EXPECT(channel.Playing());
-            AM_EXPECT_EQ(WaitForMixerPipelineCount(channel, 0), 0);
+            AM_EXPECT(WaitUntil([&]() { return MixerPipelineCount(channel) == 0; }));
 
             channel.Stop();
             amEngine->WaitUntilFrames(2);

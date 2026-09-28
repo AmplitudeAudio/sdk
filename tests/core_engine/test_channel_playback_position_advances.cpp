@@ -33,15 +33,9 @@ namespace SparkyStudios::Audio::Amplitude::Tests
 
             AM_EXPECT(channel.Valid());
 
+            // The cursor is advanced by the audio thread, once per mix.
             const AmTime firstPosition = channel.GetPlaybackPosition();
-            AmTime secondPosition = firstPosition;
-            for (AmUInt32 attempts = 0; attempts < 30 && secondPosition <= firstPosition; ++attempts)
-            {
-                amEngine->WaitUntilFrames(1);
-                secondPosition = channel.GetPlaybackPosition();
-            }
-
-            AM_EXPECT(secondPosition > firstPosition);
+            AM_EXPECT(WaitUntil([&]() { return channel.GetPlaybackPosition() > firstPosition; }));
 
             channel.Stop(0);
         }

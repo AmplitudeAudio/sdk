@@ -12,6 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+#include <atomic>
+
 #include <SparkyStudios/Audio/Amplitude/Amplitude.h>
 
 #include "EngineTestCase.h"
@@ -35,19 +37,19 @@ namespace SparkyStudios::Audio::Amplitude::Tests
                 AM_EXPECT(c1.Valid());
                 AM_EXPECT(c1.GetEvent()->IsRunning());
 
-                bool isFinished = false;
-                bool isAborted = false;
+                // Set on the engine thread when the played sound ends (an audio-thread callback).
+                std::atomic<bool> isFinished{ false };
+                std::atomic<bool> isAborted{ false };
                 c1.GetEvent()->OnFinish(
                     [&isFinished, &isAborted](bool aborted)
                     {
-                        isFinished = true;
                         isAborted = aborted;
+                        isFinished = true;
                     });
 
                 AM_EXPECT_NOT(isFinished);
                 AM_EXPECT_NOT(isAborted);
-                Thread::Sleep(10000);
-                AM_EXPECT(isFinished);
+                AM_EXPECT(WaitUntil([&]() { return isFinished.load(); }, 600));
                 AM_EXPECT_NOT(isAborted);
 
                 AM_EXPECT_NOT(c1.GetEvent()->IsRunning());

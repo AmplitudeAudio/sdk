@@ -12,6 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+#include <cmath>
+
 #include <SparkyStudios/Audio/Amplitude/Amplitude.h>
 
 #include "EngineTestCase.h"
@@ -40,7 +42,9 @@ namespace SparkyStudios::Audio::Amplitude::Tests
             constexpr AmTime seekPosition = 1000.0;
             AM_EXPECT(channel.GetPlaybackPosition() < seekPosition);
             AM_EXPECT(channel.SetPlaybackPosition(seekPosition));
-            amEngine->WaitUntilFrames(4);
+
+            // The seek is applied by a mixer command on the audio thread.
+            AM_EXPECT(WaitUntil([&]() { return std::abs(channel.GetPlaybackPosition() - seekPosition) <= 5.0; }));
             ExpectDoubleNear(seekPosition, channel.GetPlaybackPosition(), 5.0, __FILE__, __LINE__);
 
             channel.Resume(0);
