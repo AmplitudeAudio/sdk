@@ -19,6 +19,7 @@
 #include <Mixer/InstancePipelineTable.h>
 
 #include "ComponentTestCase.h"
+#include "DSPTestCase.h"
 #include "TestRegistry.h"
 #include "TestUtils.h"
 
@@ -96,4 +97,47 @@ namespace SparkyStudios::Audio::Amplitude::Tests
     };
 
     AM_REGISTER_TEST(mixer_pipeline, instance_pipeline_table);
+
+    AM_TEST_CASE(DSPTestCase, mixer_pipeline, instance_pipeline_table_owns_converters)
+    {
+    public:
+        void Run() override
+        {
+            InstancePipelineTable table(3);
+
+            auto a = std::make_shared<FakePipelineInstance>();
+            auto b = std::make_shared<FakePipelineInstance>();
+            auto converterA = std::make_shared<AudioConverter>();
+            auto converterB = std::make_shared<AudioConverter>();
+
+            AM_EXPECT(table.Attach(1, a, converterA));
+            AM_EXPECT(table.Attach(2, b, converterB));
+            AM_EXPECT(table.Attach(3, std::make_shared<FakePipelineInstance>()));
+
+            // Each instance finds its own converter; one attached without a converter has none.
+            AM_EXPECT(table.FindConverter(1) == converterA.get());
+            AM_EXPECT(table.FindConverter(2) == converterB.get());
+            AM_EXPECT(table.FindConverter(3) == nullptr);
+            AM_EXPECT(table.FindConverter(4) == nullptr);
+
+            AmSize visited = 0;
+            table.ForEachConverter(
+                [&](AudioConverter& converter)
+                {
+                    AM_EXPECT(&converter == converterA.get() || &converter == converterB.get());
+                    ++visited;
+                });
+            AM_EXPECT_EQ(visited, 2);
+
+            // Detaching an instance releases its converter with its pipeline.
+            AM_EXPECT(table.Detach(1) == a);
+            AM_EXPECT(table.FindConverter(1) == nullptr);
+            AM_EXPECT_EQ(converterA.use_count(), 1);
+
+            table.Clear();
+            AM_EXPECT_EQ(converterB.use_count(), 1);
+        }
+    };
+
+    AM_REGISTER_TEST(mixer_pipeline, instance_pipeline_table_owns_converters);
 } // namespace SparkyStudios::Audio::Amplitude::Tests

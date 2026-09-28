@@ -139,6 +139,12 @@ namespace SparkyStudios::Audio::Amplitude
         [[nodiscard]] AmUInt64 GetOutputLatency() const;
 
         /**
+         * @brief Returns the current conversion settings, including the sample rates last set with @c SetSampleRate().
+         * @return The current conversion settings.
+         */
+        [[nodiscard]] const Settings& GetSettings() const;
+
+        /**
          * @brief Resets the internal state of the converter.
          */
         void Reset();

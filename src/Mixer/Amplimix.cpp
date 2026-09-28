@@ -226,6 +226,17 @@ namespace SparkyStudios::Audio::Amplitude
         }
     }
 
+    static AudioConverter::Settings MakeLayerConverterSettings(const SoundFormat& format, AmUInt32 outputSampleRate)
+    {
+        AudioConverter::Settings settings{};
+        settings.m_sourceChannelCount = format.GetNumChannels();
+        settings.m_targetChannelCount = 1; // Sound is always processed as mono
+        settings.m_sourceSampleRate = format.GetSampleRate();
+        settings.m_targetSampleRate = outputSampleRate;
+
+        return settings;
+    }
+
     static void OnSoundDestroyed(AmplimixImpl* mixer, AmplimixLayerImpl* layer)
     {
         // Null guard: multiple deferred commands may target the same layer in one
@@ -521,15 +532,8 @@ namespace SparkyStudios::Audio::Amplitude
             lay->dataConverter = ampoolnew(eMemoryPoolKind_Amplimix, AudioConverter, _resamplerName);
 
             const auto soundChannels = static_cast<AmUInt32>(sound->format.GetNumChannels());
-            const AmUInt32 soundSampleRate = sound->format.GetSampleRate();
 
-            AudioConverter::Settings converterSettings{};
-            converterSettings.m_sourceChannelCount = soundChannels;
-            converterSettings.m_targetChannelCount = 1; // Sound is always processed as mono
-            converterSettings.m_sourceSampleRate = soundSampleRate;
-            converterSettings.m_targetSampleRate = reqSampleRate;
-
-            if (!lay->dataConverter->Configure(converterSettings))
+            if (!lay->dataConverter->Configure(MakeLayerConverterSettings(sound->format, reqSampleRate)))
             {
                 amLogError("Cannot process frames. Unable to initialize the samples data converter.");
                 return 0;
@@ -670,6 +674,13 @@ namespace SparkyStudios::Audio::Amplitude
 
         if (lay->dataConverter != nullptr)
             lay->dataConverter->Reset();
+
+        if (lay->instancePipelines != nullptr)
+            lay->instancePipelines->ForEachConverter(
+                [](AudioConverter& converter)
+                {
+                    converter.Reset();
+                });
 
         lay->ResetPipeline();
 
@@ -830,6 +841,11 @@ namespace SparkyStudios::Audio::Amplitude
         if (frames > 0)
             pipeline->Configure(frames, static_cast<AmUInt16>(kAmMonoChannelCount), frames, static_cast<AmUInt16>(kAmStereoChannelCount));
 
+        // The resampler keeps filter history across blocks, so each instance needs its own.
+        auto converter = ampoolshared(eMemoryPoolKind_Amplimix, AudioConverter, _resamplerName);
+        if (!converter->Configure(MakeLayerConverterSettings(lay->snd->format, AMPLIMIX_LOAD_RELAXED(&_mixOutputSampleRate))))
+            return false;
+
         AmplimixMutexLocker lock(this);
 
         // The layer may have finished or been reused while the pipeline was being built.
@@ -837,12 +853,19 @@ namespace SparkyStudios::Audio::Amplitude
             return false;
 
         PushCommand(
-            { [lay, id, instanceId, pipeline]() -> bool
+            { [lay, id, instanceId, pipeline, converter]() -> bool
               {
                   if (lay->id != id || AMPLIMIX_LOAD(&lay->flag) == ePSF_MIN || lay->instancePipelines == nullptr)
                       return true;
 
-                  AM_UNUSED(lay->instancePipelines->Attach(instanceId, pipeline));
+                  // Start at the layer's current rate, which pitch and play speed changes may have moved.
+                  if (lay->dataConverter != nullptr)
+                  {
+                      const auto& current = lay->dataConverter->GetSettings();
+                      converter->SetSampleRate(current.m_sourceSampleRate, current.m_targetSampleRate);
+                  }
+
+                  AM_UNUSED(lay->instancePipelines->Attach(instanceId, pipeline, converter));
                   return true;
               } });
 
@@ -1239,15 +1262,31 @@ namespace SparkyStudios::Audio::Amplitude
         const AmUInt16 soundChannels = layer->snd->format.GetNumChannels();
         const AmReal32 sampleRateRatio = AMPLIMIX_LOAD(&layer->sampleRateRatio);
 
-        AmUInt64 outSamples = frameCount;
-        AmUInt64 inSamples = frameCount;
+        // Each instance resamples through its own converter when it has one, and through the layer's otherwise.
+        const auto instanceConverter = [layer](const AmplimixLayerImpl::InstanceData& data)
+        {
+            AudioConverter* converter =
+                layer->instancePipelines != nullptr ? layer->instancePipelines->FindConverter(data.instanceId) : nullptr;
+            return converter != nullptr ? converter : layer->dataConverter;
+        };
 
-        if (sampleRateRatio != 1.0f)
-            inSamples = layer->dataConverter->GetRequiredInputFrameCount(outSamples) - layer->dataConverter->GetInputLatency();
+        const auto requiredInputFrames = [sampleRateRatio, frameCount](const AudioConverter* converter)
+        {
+            AmUInt64 frames = frameCount;
+            if (sampleRateRatio != 1.0f)
+                frames = converter->GetRequiredInputFrameCount(frameCount) - converter->GetInputLatency();
 
 #if defined(AM_SIMD_INTRINSICS)
-        inSamples = AM_VALUE_ALIGN(inSamples, kProcessedFramesCount);
+            frames = AM_VALUE_ALIGN(frames, kProcessedFramesCount);
 #endif // AM_SIMD_INTRINSICS
+
+            return frames;
+        };
+
+        // Converters may differ by a frame in what they need: size the shared input chunk for the largest.
+        AmUInt64 maxInSamples = requiredInputFrames(layer->dataConverter);
+        for (const auto& data : layer->instanceData)
+            maxInSamples = AM_MAX(maxInSamples, requiredInputFrames(instanceConverter(data)));
 
         const AmUInt64 start = layer->start;
         const AmUInt64 end = layer->end;
@@ -1262,9 +1301,9 @@ namespace SparkyStudios::Audio::Amplitude
         auto* channelState = channel.GetState();
 
         // Pre-allocate buffers for instance processing
-        SoundChunk* in = layer->_chunkPool.Acquire(inSamples, soundChannels, false);
-        SoundChunk* transient = layer->_chunkPool.Acquire(outSamples, 1);
-        SoundChunk* out = layer->_chunkPool.Acquire(outSamples, 2);
+        SoundChunk* in = layer->_chunkPool.Acquire(maxInSamples, soundChannels, false);
+        SoundChunk* transient = layer->_chunkPool.Acquire(frameCount, 1);
+        SoundChunk* out = layer->_chunkPool.Acquire(frameCount, 2);
 
         // Process each instance
         for (AmSize instanceIndex = 0; instanceIndex < layer->instanceData.size(); ++instanceIndex)
@@ -1281,6 +1320,11 @@ namespace SparkyStudios::Audio::Amplitude
             layer->currentInstanceIndex = instanceIndex;
 
             AmUInt64 instanceCursor = data.cursor;
+
+            // Per-instance counts: Process() rewrites them with what this instance consumed and produced.
+            AudioConverter* converter = instanceConverter(data);
+            AmUInt64 inSamples = requiredInputFrames(converter);
+            AmUInt64 outSamples = frameCount;
 
             // Instances with their own pipeline keep independent node state; others share the layer pipeline.
             PipelineInstance* instancePipeline =
@@ -1335,7 +1379,7 @@ namespace SparkyStudios::Audio::Amplitude
             }
 
             // Convert sample rate
-            layer->dataConverter->Process(*in->buffer, inSamples, *transient->buffer, outSamples);
+            converter->Process(*in->buffer, inSamples, *transient->buffer, outSamples);
 
             if (outSamples > 0 && flag >= ePSF_PLAY)
             {
@@ -1399,8 +1443,6 @@ namespace SparkyStudios::Audio::Amplitude
         }
 
         // Every instance mixed through a copy of the layer ramp; advance it once for this block.
-        // Use frameCount (not outSamples) since outSamples may have been left at 0 by the last
-        // instance's dataConverter->Process() call even though other instances were mixed.
         if (outputChannels <= kAmplimixMaxOutputChannels)
             AdvanceLayerGain(layer->_mixGain, outputChannels, gain, frameCount);
 
@@ -1490,6 +1532,13 @@ namespace SparkyStudios::Audio::Amplitude
 
             AMPLITUDE_ASSERT(s != 0);
             layer->dataConverter->SetSampleRate(s, t);
+
+            if (layer->instancePipelines != nullptr)
+                layer->instancePipelines->ForEachConverter(
+                    [s, t](AudioConverter& converter)
+                    {
+                        converter.SetSampleRate(s, t);
+                    });
 
             AMPLIMIX_STORE(&layer->playSpeed, currentSpeed);
         }

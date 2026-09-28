@@ -21,8 +21,8 @@ namespace SparkyStudios::Audio::Amplitude
         , _size(0)
     {}
 
-    bool InstancePipelineTable::Attach(AmChannelInstanceID id,
-                                       std::shared_ptr<PipelineInstance> pipeline)
+    bool InstancePipelineTable::Attach(
+        AmChannelInstanceID id, std::shared_ptr<PipelineInstance> pipeline, std::shared_ptr<AudioConverter> converter)
     {
         if (id == kAmInvalidObjectId || pipeline == nullptr || Find(id) != nullptr)
             return false;
@@ -34,6 +34,7 @@ namespace SparkyStudios::Audio::Amplitude
 
             slot.id = id;
             slot.pipeline = std::move(pipeline);
+            slot.converter = std::move(converter);
             ++_size;
             return true;
         }
@@ -52,6 +53,7 @@ namespace SparkyStudios::Audio::Amplitude
                 continue;
 
             slot.id = kAmInvalidObjectId;
+            slot.converter = nullptr;
             --_size;
             return std::move(slot.pipeline);
         }
@@ -71,12 +73,25 @@ namespace SparkyStudios::Audio::Amplitude
         return nullptr;
     }
 
+    AudioConverter* InstancePipelineTable::FindConverter(AmChannelInstanceID id) const
+    {
+        if (id == kAmInvalidObjectId)
+            return nullptr;
+
+        for (const auto& slot : _slots)
+            if (slot.id == id)
+                return slot.converter.get();
+
+        return nullptr;
+    }
+
     void InstancePipelineTable::Clear()
     {
         for (auto& slot : _slots)
         {
             slot.id = kAmInvalidObjectId;
             slot.pipeline = nullptr;
+            slot.converter = nullptr;
         }
 
         _size = 0;

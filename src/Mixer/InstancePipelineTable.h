@@ -21,13 +21,14 @@
 #include <vector>
 
 #include <SparkyStudios/Audio/Amplitude/Amplitude.h>
+#include <SparkyStudios/Audio/Amplitude/DSP/AudioConverter.h>
 #include <SparkyStudios/Audio/Amplitude/Mixer/Pipeline.h>
 
 namespace SparkyStudios::Audio::Amplitude
 {
     /**
-     * @brief Fixed-capacity map from a channel instance ID to the pipeline that renders that
-     * instance.
+     * @brief Fixed-capacity map from a channel instance ID to the pipeline, and the sample rate
+     * converter, that render that instance.
      *
      * All slots are allocated by the constructor, on the game thread. @c Attach, @c Detach, @c
      * Find and @c Clear only fill, empty and scan existing slots, so they never allocate.
@@ -40,15 +41,16 @@ namespace SparkyStudios::Audio::Amplitude
         explicit InstancePipelineTable(AmSize capacity);
 
         /**
-         * @brief Stores @p pipeline for @p id in a free slot.
+         * @brief Stores @p pipeline, and its optional @p converter, for @p id in a free slot.
          *
          * @return @c false if @p id is invalid, @p pipeline is null, @p id is already present,
          * or the table is full.
          */
-        bool Attach(AmChannelInstanceID id, std::shared_ptr<PipelineInstance> pipeline);
+        bool Attach(
+            AmChannelInstanceID id, std::shared_ptr<PipelineInstance> pipeline, std::shared_ptr<AudioConverter> converter = nullptr);
 
         /**
-         * @brief Removes the pipeline stored for @p id.
+         * @brief Removes the pipeline stored for @p id, releasing its converter.
          *
          * @return The removed pipeline, or @c nullptr if @p id was not present.
          */
@@ -58,6 +60,22 @@ namespace SparkyStudios::Audio::Amplitude
          * @brief Gets the pipeline stored for @p id, or @c nullptr if absent.
          */
         [[nodiscard]] PipelineInstance* Find(AmChannelInstanceID id) const;
+
+        /**
+         * @brief Gets the converter stored for @p id, or @c nullptr if absent.
+         */
+        [[nodiscard]] AudioConverter* FindConverter(AmChannelInstanceID id) const;
+
+        /**
+         * @brief Calls @p callback with every stored converter.
+         */
+        template<typename Callback>
+        void ForEachConverter(Callback&& callback) const
+        {
+            for (const auto& slot : _slots)
+                if (slot.id != kAmInvalidObjectId && slot.converter != nullptr)
+                    callback(*slot.converter);
+        }
 
         /**
          * @brief Empties every slot.
@@ -73,6 +91,7 @@ namespace SparkyStudios::Audio::Amplitude
         {
             AmChannelInstanceID id = kAmInvalidObjectId;
             std::shared_ptr<PipelineInstance> pipeline;
+            std::shared_ptr<AudioConverter> converter;
         };
 
         std::vector<Slot> _slots;

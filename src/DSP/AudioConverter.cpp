@@ -148,6 +148,11 @@ namespace SparkyStudios::Audio::Amplitude
         return _resampler->GetOutputLatency();
     }
 
+    const AudioConverter::Settings& AudioConverter::GetSettings() const
+    {
+        return _settings;
+    }
+
     void AudioConverter::Reset()
     {
         _resampler->Reset();
