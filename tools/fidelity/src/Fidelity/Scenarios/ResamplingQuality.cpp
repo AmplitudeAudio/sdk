@@ -51,11 +51,7 @@ namespace SparkyStudios::Audio::Amplitude::Fidelity
             }
 
             // The tone lies above the output band: anything left of it was folded back by the resampler.
-            const PowerSpectrum spectrum = AveragedPowerSpectrum(steady, fs, 32768);
-            const double alias = fs - f;
-            out.Add(
-                "alias.levelDbc" + suffix, DbFromPower(BandPower(spectrum, alias, 8) / 0.5) - DbFromAmplitude(spec.amplitude), "dBc",
-                Better::Lower, Targets::kMaxSpurDbc);
+            out.Add("alias.levelDbc" + suffix, AliasLevelDbc(steady, fs, spec), "dBc", Better::Lower, Targets::kMaxSpurDbc);
             out.Add("alias.totalDbfs" + suffix, DbFromAmplitude(Rms(steady)), "dBFS", Better::Lower);
         }
 
