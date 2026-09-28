@@ -29,6 +29,16 @@ namespace SparkyStudios::Audio::Amplitude::Fidelity
     [[nodiscard]] std::unique_ptr<Scenario> MakeResamplingQualityScenario();
 
     /**
+     * @brief P2: start and stop (clicks, stop fade shape, silence after the stop).
+     */
+    [[nodiscard]] std::unique_ptr<Scenario> MakeStartStopScenario();
+
+    /**
+     * @brief P3: pause, resume and seek (clicks, source position continuity, seek latency).
+     */
+    [[nodiscard]] std::unique_ptr<Scenario> MakeTransportScenario();
+
+    /**
      * @brief Registers the playback-core scenarios (P1-P8).
      */
     void RegisterPlaybackScenarios(ScenarioRegistry& registry);
