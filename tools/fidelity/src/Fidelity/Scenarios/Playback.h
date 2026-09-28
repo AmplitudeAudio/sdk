@@ -49,6 +49,21 @@ namespace SparkyStudios::Audio::Amplitude::Fidelity
     [[nodiscard]] std::unique_ptr<Scenario> MakeEndOfSoundScenario();
 
     /**
+     * @brief P5: a streamed sound must null against the same sound played from memory.
+     */
+    [[nodiscard]] std::unique_ptr<Scenario> MakeStreamingEquivalenceScenario();
+
+    /**
+     * @brief P6: static playback must null between block sizes 256 and 4096.
+     */
+    [[nodiscard]] std::unique_ptr<Scenario> MakeBlockSizeIndependenceScenario();
+
+    /**
+     * @brief P8: variable device callback sizes must null against fixed-size blocks.
+     */
+    [[nodiscard]] std::unique_ptr<Scenario> MakeVariableCallbackScenario();
+
+    /**
      * @brief Registers the playback-core scenarios (P1-P8).
      */
     void RegisterPlaybackScenarios(ScenarioRegistry& registry);
