@@ -12,6 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+#include <algorithm>
+
 #include <SparkyStudios/Audio/Amplitude/IO/Log.h>
 #include <SparkyStudios/Audio/Amplitude/Math/BarycentricCoordinates.h>
 
@@ -21,6 +23,42 @@
 
 namespace SparkyStudios::Audio::Amplitude
 {
+    namespace
+    {
+        /**
+         * @brief Checks the header counts against the bytes left in the file, before anything is allocated from them.
+         *
+         * @return The reason the header is rejected, or @c nullptr when it is valid.
+         */
+        const char* ValidateHeader(const HRIRSphereFileHeaderDescription& header, AmSize fileLength, AmSize position)
+        {
+            if (header.m_VertexCount == 0 || header.m_IRLength == 0 || header.m_IndexCount == 0)
+                return "has no vertices, faces, or impulse response";
+
+            if (header.m_IndexCount % 3 != 0)
+                return "has an index count that is not a multiple of 3";
+
+            AmSize remaining = position < fileLength ? fileLength - position : 0;
+
+            const AmSize indexBytes = static_cast<AmSize>(header.m_IndexCount) * sizeof(AmUInt32);
+            if (indexBytes > remaining)
+                return "is truncated";
+
+            remaining -= indexBytes;
+
+            // Position, two impulse responses, and two delays per vertex.
+            constexpr AmSize kFixedVertexBytes = sizeof(AmVector3) + 2 * sizeof(AmReal32);
+            if (header.m_IRLength > (remaining / 2) / sizeof(AmReal32))
+                return "is truncated";
+
+            const AmSize vertexBytes = kFixedVertexBytes + 2 * static_cast<AmSize>(header.m_IRLength) * sizeof(AmReal32);
+            if (header.m_VertexCount > remaining / vertexBytes)
+                return "is truncated";
+
+            return nullptr;
+        }
+    } // namespace
+
     HRIRSphereImpl::HRIRSphereImpl()
         : ResourceImpl()
         , _samplingMode(eHRIRSphereSamplingMode_NearestNeighbor)
@@ -50,11 +88,14 @@ namespace SparkyStudios::Audio::Amplitude
         }
 
         const auto file = loader->OpenFile(m_filename);
+        if (file == nullptr || !file->IsValid())
+        {
+            amLogError("Failed to load HRIRSphere: " AM_OS_CHAR_FMT " cannot be opened.", m_filename.c_str());
+            return;
+        }
 
         // Read the header magic
-        file->Read(_header.m_Header, 4);
-
-        if (std::strncmp(reinterpret_cast<char*>(_header.m_Header), "AMIR", 4) != 0)
+        if (file->Read(_header.m_Header, 4) != 4 || std::strncmp(reinterpret_cast<char*>(_header.m_Header), "AMIR", 4) != 0)
         {
             amLogError("Failed to load HRIRSphere: " AM_OS_CHAR_FMT " is not a valid HRIRSphere file.", m_filename.c_str());
             return;
@@ -66,24 +107,47 @@ namespace SparkyStudios::Audio::Amplitude
         _header.m_VertexCount = file->Read32();
         _header.m_IndexCount = file->Read32();
 
+        if (const char* reason = ValidateHeader(_header, file->Length(), file->Position()); reason != nullptr)
+        {
+            amLogError("Failed to load HRIRSphere: " AM_OS_CHAR_FMT " %s.", m_filename.c_str(), reason);
+            return;
+        }
+
+        const auto readExactly = [&file](AmVoidPtr dst, AmSize bytes)
+        {
+            return file->Read(static_cast<AmUInt8Buffer>(dst), bytes) == bytes;
+        };
+
         std::vector<AmUInt32> indices(_header.m_IndexCount);
-        file->Read(reinterpret_cast<AmUInt8Buffer>(indices.data()), _header.m_IndexCount * sizeof(AmUInt32));
+        bool complete = readExactly(indices.data(), _header.m_IndexCount * sizeof(AmUInt32));
 
         _vertices.resize(_header.m_VertexCount);
 
+        const AmSize irBytes = _header.m_IRLength * sizeof(AmReal32);
         for (auto& vertex : _vertices)
         {
-            file->Read(reinterpret_cast<AmUInt8Buffer>(&vertex.m_Position), sizeof(AmVector3));
-
             vertex.m_LeftIR.resize(_header.m_IRLength);
-            file->Read(reinterpret_cast<AmUInt8Buffer>(vertex.m_LeftIR.data()), _header.m_IRLength * sizeof(AmReal32));
-
             vertex.m_RightIR.resize(_header.m_IRLength);
-            file->Read(reinterpret_cast<AmUInt8Buffer>(vertex.m_RightIR.data()), _header.m_IRLength * sizeof(AmReal32));
 
-            file->Read(reinterpret_cast<AmUInt8Buffer>(&vertex.m_LeftDelay), sizeof(AmReal32));
+            complete = complete && readExactly(&vertex.m_Position, sizeof(AmVector3)) && readExactly(vertex.m_LeftIR.data(), irBytes) &&
+                readExactly(vertex.m_RightIR.data(), irBytes) && readExactly(&vertex.m_LeftDelay, sizeof(AmReal32)) &&
+                readExactly(&vertex.m_RightDelay, sizeof(AmReal32));
+        }
 
-            file->Read(reinterpret_cast<AmUInt8Buffer>(&vertex.m_RightDelay), sizeof(AmReal32));
+        const bool indicesInRange = std::all_of(
+            indices.begin(), indices.end(),
+            [this](AmUInt32 index)
+            {
+                return index < _header.m_VertexCount;
+            });
+
+        if (!complete || !indicesInRange)
+        {
+            amLogError(
+                "Failed to load HRIRSphere: " AM_OS_CHAR_FMT " %s.", m_filename.c_str(),
+                complete ? "has a face referencing a missing vertex" : "is truncated");
+            _vertices.clear();
+            return;
         }
 
         const AmUInt32 faceCount = indices.size() / 3;
