@@ -16,6 +16,28 @@
 
 namespace SparkyStudios::Audio::Amplitude
 {
+    namespace
+    {
+        // 64-bit variants of ftell/fseek: long is 32-bit on Windows, which caps plain ftell/fseek at 2 GB.
+        AmInt64 TellFile(AmFileHandle file)
+        {
+#if AM_PLATFORM_WIN
+            return _ftelli64(file);
+#else
+            return ftello(file);
+#endif
+        }
+
+        int SeekFile(AmFileHandle file, AmInt64 offset, int origin)
+        {
+#if AM_PLATFORM_WIN
+            return _fseeki64(file, offset, origin);
+#else
+            return fseeko(file, static_cast<off_t>(offset), origin);
+#endif
+        }
+    } // namespace
+
     DiskFile::DiskFile()
         : DiskFile(nullptr)
     {}
@@ -48,12 +70,12 @@ namespace SparkyStudios::Audio::Amplitude
         if (feof(m_fileHandle) != 0)
             return true;
 
-        const long pos = ftell(m_fileHandle);
+        const AmInt64 pos = TellFile(m_fileHandle);
         if (pos < 0)
             return true;
 
         const bool value = fgetc(m_fileHandle) == EOF;
-        fseek(m_fileHandle, pos, SEEK_SET);
+        SeekFile(m_fileHandle, pos, SEEK_SET);
         return value;
     }
 
@@ -78,15 +100,15 @@ namespace SparkyStudios::Audio::Amplitude
         if (m_fileHandle == nullptr)
             return 0;
 
-        const long pos = ftell(m_fileHandle);
+        const AmInt64 pos = TellFile(m_fileHandle);
         if (pos < 0)
             return 0;
 
-        if (fseek(m_fileHandle, 0, SEEK_END) != 0)
+        if (SeekFile(m_fileHandle, 0, SEEK_END) != 0)
             return 0;
 
-        const long len = ftell(m_fileHandle);
-        fseek(m_fileHandle, pos, SEEK_SET);
+        const AmInt64 len = TellFile(m_fileHandle);
+        SeekFile(m_fileHandle, pos, SEEK_SET);
 
         return len < 0 ? 0 : static_cast<AmSize>(len);
     }
@@ -96,7 +118,7 @@ namespace SparkyStudios::Audio::Amplitude
         if (m_fileHandle == nullptr)
             return;
 
-        fseek(m_fileHandle, offset, origin);
+        SeekFile(m_fileHandle, offset, origin);
     }
 
     AmSize DiskFile::Position() const
@@ -104,7 +126,7 @@ namespace SparkyStudios::Audio::Amplitude
         if (m_fileHandle == nullptr)
             return 0;
 
-        const long pos = ftell(m_fileHandle);
+        const AmInt64 pos = TellFile(m_fileHandle);
         return pos < 0 ? 0 : static_cast<AmSize>(pos);
     }
 
