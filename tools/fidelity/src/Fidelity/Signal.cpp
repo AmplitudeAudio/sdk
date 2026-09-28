@@ -92,11 +92,19 @@ namespace SparkyStudios::Audio::Amplitude::Fidelity
         if (fadeLength == 0)
             return 1.0;
 
+        // Raised cosine of a raised cosine: continuous up to the third derivative, so the fade itself leaves no
+        // broadband energy for the click detector to find (a plain raised cosine reads about -116 dBFS above 4 kHz).
+        const auto shape = [](double t)
+        {
+            const double inner = 0.5 - 0.5 * std::cos(std::numbers::pi * t);
+            return 0.5 - 0.5 * std::cos(std::numbers::pi * inner);
+        };
+
         if (n < fadeLength)
-            return 0.5 - 0.5 * std::cos(std::numbers::pi * static_cast<double>(n) / static_cast<double>(fadeLength));
+            return shape(static_cast<double>(n) / static_cast<double>(fadeLength));
 
         if (n + fadeLength >= total)
-            return 0.5 - 0.5 * std::cos(std::numbers::pi * static_cast<double>(total - 1 - n) / static_cast<double>(fadeLength));
+            return shape(static_cast<double>(total - 1 - n) / static_cast<double>(fadeLength));
 
         return 1.0;
     }
