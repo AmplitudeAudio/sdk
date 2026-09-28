@@ -21,6 +21,8 @@ namespace SparkyStudios::Audio::Amplitude::Fidelity
         registry.Add(MakeResamplingQualityScenario());
         registry.Add(MakeStartStopScenario());
         registry.Add(MakeTransportScenario());
+        registry.Add(MakeLoopSeamScenario());
+        registry.Add(MakeEndOfSoundScenario());
     }
 
     void RegisterAllScenarios(ScenarioRegistry& registry)

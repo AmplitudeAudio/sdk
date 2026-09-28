@@ -39,6 +39,16 @@ namespace SparkyStudios::Audio::Amplitude::Fidelity
     [[nodiscard]] std::unique_ptr<Scenario> MakeTransportScenario();
 
     /**
+     * @brief P4: loop seam of a seamless looping tone.
+     */
+    [[nodiscard]] std::unique_ptr<Scenario> MakeLoopSeamScenario();
+
+    /**
+     * @brief P7: end of sound (length, tail).
+     */
+    [[nodiscard]] std::unique_ptr<Scenario> MakeEndOfSoundScenario();
+
+    /**
      * @brief Registers the playback-core scenarios (P1-P8).
      */
     void RegisterPlaybackScenarios(ScenarioRegistry& registry);
