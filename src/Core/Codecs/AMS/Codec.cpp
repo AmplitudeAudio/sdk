@@ -130,6 +130,9 @@ namespace SparkyStudios::Audio::Amplitude
         FMTHeader chunk_header;
         WAVEHeaderEx wave_header;
 
+        // A reused decoder may still hold the offset of a previous file.
+        dataChunkOffset = 0;
+
         // read initial RIFF form header
 
         if (file->Read(reinterpret_cast<AmUInt8Buffer>(&riff_chunk_header), sizeof(RIFFHeader)) != sizeof(RIFFHeader) ||

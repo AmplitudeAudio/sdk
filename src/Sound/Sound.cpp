@@ -371,6 +371,9 @@ namespace SparkyStudios::Audio::Amplitude
         if (_effect != nullptr)
             _effectInstance = _effect->CreateInstance();
 
+        // Taken before any early return: Destroy() always releases it.
+        _parent->GetRefCounter()->Increment();
+
         if (_parent->_stream)
         {
             const auto filename = _parent->GetPath();
@@ -382,6 +385,11 @@ namespace SparkyStudios::Audio::Amplitude
             }
 
             const auto file = amEngine->GetFileSystem()->OpenFile(filename);
+            if (file == nullptr || !file->IsValid())
+            {
+                amLogError("Cannot load the sound: unable to open '" AM_OS_CHAR_FMT "'.", filename.c_str());
+                return;
+            }
 
             _decoder = _parent->_codec->CreateDecoder();
             if (!_decoder->Open(file))
@@ -390,8 +398,6 @@ namespace SparkyStudios::Audio::Amplitude
                 return;
             }
         }
-
-        _parent->GetRefCounter()->Increment();
 
         if (_settings.m_attenuationID != kAmInvalidObjectId)
         {
