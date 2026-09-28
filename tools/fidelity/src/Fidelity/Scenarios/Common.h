@@ -19,6 +19,7 @@
 
 #include <cstdint>
 #include <initializer_list>
+#include <memory>
 #include <span>
 #include <string>
 #include <vector>
@@ -52,8 +53,10 @@ namespace SparkyStudios::Audio::Amplitude::Fidelity
 
     /**
      * @brief A timeline that plays @p soundName at kLeadIn (action "play").
+     *
+     * When @p played is set, it receives whether the engine returned a valid channel.
      */
-    [[nodiscard]] ActionFactory PlayOnly(const std::string& soundName);
+    [[nodiscard]] ActionFactory PlayOnly(const std::string& soundName, std::shared_ptr<bool> played = nullptr);
 
     /**
      * @brief Sets out.error and returns false when channel 0 peaks under -60 dBFS in [begin, end).

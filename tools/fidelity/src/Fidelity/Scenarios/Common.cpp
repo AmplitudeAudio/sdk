@@ -59,15 +59,17 @@ namespace SparkyStudios::Audio::Amplitude::Fidelity
         return settings;
     }
 
-    ActionFactory PlayOnly(const std::string& soundName)
+    ActionFactory PlayOnly(const std::string& soundName, std::shared_ptr<bool> played)
     {
-        return [soundName]()
+        return [soundName, played]()
         {
             return std::vector<TimedAction>{
                 { kLeadIn, "play",
-                  [soundName]()
+                  [soundName, played]()
                   {
-                      AM_UNUSED(amEngine->Play(amEngine->GetSoundHandle(soundName)));
+                      const Channel channel = amEngine->Play(amEngine->GetSoundHandle(soundName));
+                      if (played != nullptr)
+                          *played = channel.Valid();
                   } },
             };
         };

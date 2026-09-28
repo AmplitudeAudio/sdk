@@ -14,6 +14,7 @@
 
 #include <algorithm>
 #include <cmath>
+#include <memory>
 
 #include <Fidelity/Analysis/FrequencyResponse.h>
 #include <Fidelity/Analysis/Spectrum.h>
@@ -91,12 +92,22 @@ namespace SparkyStudios::Audio::Amplitude::Fidelity
                 const std::uint64_t duration = kLeadIn + outFrames + Seconds(0.1, point.outputRate);
 
                 Capture capture;
-                if (!RenderDeterministic(context, IsolatedSettings(point, duration), PlayOnly(SoundName(*spec, false)), "", out, capture))
+                auto played = std::make_shared<bool>(false);
+                if (!RenderDeterministic(
+                        context, IsolatedSettings(point, duration), PlayOnly(SoundName(*spec, false), played), "", out, capture))
                     return;
 
                 const double fs = capture.sampleRate;
                 const std::uint64_t playEnd = kLeadIn + outFrames;
                 const bool expectsSilence = spec->kind == StimulusKind::Sine && spec->frequencyHz >= fs / 2.0;
+                if (expectsSilence && !*played)
+                {
+                    // Silence is the correct output here, so it cannot prove the sound played: the channel must.
+                    out.error = "no signal: the sound did not play";
+                    out.capture = std::move(capture);
+                    return;
+                }
+
                 if (!expectsSilence && !RequireSignal(out, capture, kLeadIn, playEnd))
                 {
                     out.capture = std::move(capture);
