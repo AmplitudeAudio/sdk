@@ -13,6 +13,7 @@
 // limitations under the License.
 
 #include <algorithm>
+#include <cmath>
 
 #include <Fidelity/Analysis/FrequencyResponse.h>
 #include <Fidelity/Analysis/Spectrum.h>
@@ -43,6 +44,9 @@ namespace SparkyStudios::Audio::Amplitude::Fidelity
                 out.Add("spectrum.worstSpurDbc" + suffix, r.worstSpurDbc, "dBc", Better::Lower, Targets::kMaxSpurDbc);
                 out.Add("spectrum.worstSpurHz" + suffix, r.worstSpurHz, "Hz", Better::Lower);
                 out.Add("spectrum.noiseFloorDbfs" + suffix, r.noiseFloorDbfs, "dBFS", Better::Lower);
+                out.Add(
+                    "spectrum.frequencyErrorCents" + suffix, std::abs(r.frequencyErrorCents), "cents", Better::Lower,
+                    Targets::kMaxPitchRmsDeviationCents);
                 return;
             }
 
