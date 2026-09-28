@@ -135,6 +135,12 @@ int main(int argc, char** argv)
         return 1;
     }
 
+    if (!writeBaseline.empty() && filter != "*")
+    {
+        std::cerr << "--write-baseline requires every scenario (no --filter): a partial baseline un-gates the rest.\n";
+        return 1;
+    }
+
     const std::vector<const Scenario*> selected = registry.Match(filter);
     if (selected.empty())
     {
@@ -184,6 +190,12 @@ int main(int argc, char** argv)
     {
         std::cerr << "Cannot write the report to " << options.outDir.string() << ".\n";
         return 1;
+    }
+
+    if (!writeBaseline.empty() && measurementErrors)
+    {
+        std::cerr << "Not writing the baseline: some measurements failed (listed above).\n";
+        return 2;
     }
 
     if (!writeBaseline.empty() && !WriteTsv(writeBaseline, results))

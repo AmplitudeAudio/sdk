@@ -22,7 +22,8 @@ namespace SparkyStudios::Audio::Amplitude::Tests
 {
     using namespace SparkyStudios::Audio::Amplitude::Fidelity;
 
-    // Metrics that meet their target must keep meeting it; the others must not get worse than the committed baseline.
+    // Metrics that meet their target must keep meeting it; the others must not get worse than the committed baseline;
+    // every gated metric must be in the baseline.
     AM_TEST_CASE(PureUnitTestCase, fidelity_regression, quick_grid_holds_baseline)
     {
     public:
@@ -56,7 +57,9 @@ namespace SparkyStudios::Audio::Amplitude::Tests
 
             for (const Comparison& comparison : CompareToBaseline(results, *baseline))
             {
-                const bool held = comparison.verdict != Verdict::Regressed && comparison.verdict != Verdict::Missing;
+                // A metric absent from the baseline is not gated at all, so it fails until the baseline is regenerated.
+                const bool held = comparison.verdict != Verdict::Regressed && comparison.verdict != Verdict::Missing &&
+                    comparison.verdict != Verdict::New;
                 if (!held)
                     amLogError(
                         "fidelity: %s %s (current %f, baseline %f)", VerdictName(comparison.verdict), comparison.key.c_str(),

@@ -17,6 +17,7 @@
 #include <algorithm>
 #include <cmath>
 #include <cstdio>
+#include <cstdlib>
 #include <fstream>
 #include <limits>
 #include <set>
@@ -221,6 +222,24 @@ namespace SparkyStudios::Audio::Amplitude::Fidelity
         if (!file)
             return std::nullopt;
 
+        // The whole field must be a number ("nan" allowed for values); anything else rejects the file.
+        const auto parse = [](const std::string& text, bool allowNan, double& value)
+        {
+            if (allowNan && text == "nan")
+            {
+                value = std::numeric_limits<double>::quiet_NaN();
+                return true;
+            }
+
+            if (text.empty())
+                return false;
+
+            char* end = nullptr;
+            value = std::strtod(text.c_str(), &end);
+            return end == text.c_str() + text.size() && std::isfinite(value);
+        };
+
+        // A damaged baseline is refused as a whole: a skipped line would silently drop its metric from the gate.
         Baseline baseline;
         std::string line;
         while (std::getline(file, line))
@@ -229,15 +248,30 @@ namespace SparkyStudios::Audio::Amplitude::Fidelity
                 continue;
 
             const std::vector<std::string> fields = Split(line, '\t');
-            if (fields.size() != 5)
-                continue;
+            if (fields.size() != 5 || fields[0].empty() || baseline.contains(fields[0]))
+                return std::nullopt;
 
             BaselineEntry entry;
-            entry.value = fields[1] == "nan" ? std::numeric_limits<double>::quiet_NaN() : std::stod(fields[1]);
+            if (!parse(fields[1], true, entry.value))
+                return std::nullopt;
+
             entry.unit = fields[2];
-            entry.better = fields[3] == "higher" ? Better::Higher : Better::Lower;
+
+            if (fields[3] == "lower")
+                entry.better = Better::Lower;
+            else if (fields[3] == "higher")
+                entry.better = Better::Higher;
+            else
+                return std::nullopt;
+
             if (fields[4] != "-")
-                entry.target = std::stod(fields[4]);
+            {
+                double target = 0.0;
+                if (!parse(fields[4], false, target))
+                    return std::nullopt;
+
+                entry.target = target;
+            }
 
             baseline[fields[0]] = entry;
         }
