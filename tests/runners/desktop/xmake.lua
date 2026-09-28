@@ -64,7 +64,7 @@ target("amplitude_tests")
     set_targetdir("$(builddir)/$(plat)/$(arch)/$(mode)/static")
     set_rundir("$(builddir)")
 
-    add_deps("common_test_static")
+    add_deps("common_test_static", "amplitude_fidelity_lib")
 
     -- All test files (they self-register via static initialization)
     add_files("$(projectdir)/tests/ambisonics_*/test_*.cpp")
@@ -74,6 +74,7 @@ target("amplitude_tests")
     add_files("$(projectdir)/tests/hrtf_*/test_*.cpp")
     add_files("$(projectdir)/tests/math_*/test_*.cpp")
     add_files("$(projectdir)/tests/mixer_*/test_*.cpp")
+    add_files("$(projectdir)/tests/fidelity_*/test_*.cpp")
     add_files("$(projectdir)/tests/threading_*/test_*.cpp")
 
     -- Runner main
