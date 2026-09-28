@@ -30,8 +30,10 @@ namespace SparkyStudios::Audio::Amplitude::Fidelity
      */
     struct NullOptions
     {
-        /// Largest alignment lag searched, in samples, in both directions.
+        /// Largest distance from lagCenter searched, in samples, in both directions.
         std::size_t maxLag = 4096;
+        /// Centre of the lag search: a coarse lag from elsewhere (e.g. OnsetSample of both signals), refined here.
+        std::int64_t lagCenter = 0;
         /// Least-squares gain match of b onto a before subtracting.
         bool matchGain = true;
         /// Samples excluded at both ends of the overlap.
@@ -61,6 +63,11 @@ namespace SparkyStudios::Audio::Amplitude::Fidelity
      * @brief Aligns @p b to @p a by cross-correlation, optionally gain-matches it, and measures a - g * b.
      */
     [[nodiscard]] NullResult AnalyzeNull(std::span<const double> a, std::span<const double> b, const NullOptions& options);
+
+    /**
+     * @brief Index of the first sample whose magnitude reaches @p threshold; x.size() when none does.
+     */
+    [[nodiscard]] std::size_t OnsetSample(std::span<const double> x, double threshold);
 
     /**
      * @brief Number of samples whose bit patterns differ; a length difference counts as that many differences.

@@ -26,9 +26,18 @@ namespace SparkyStudios::Audio::Amplitude::Fidelity
     {
         void NullCompare(const Capture& a, const Capture& b, Measurement& out)
         {
+            const Signal x = ChannelSignal(a, 0);
+            const Signal y = ChannelSignal(b, 0);
+
+            // Renders can start blocks apart, and a tone correlates almost as well one period away: take the lag from
+            // the onsets and only refine it by correlation.
+            constexpr double kOnsetLevel = 1e-3;
             NullOptions options;
             options.matchGain = false;
-            const NullResult r = AnalyzeNull(ChannelSignal(a, 0), ChannelSignal(b, 0), options);
+            options.lagCenter =
+                static_cast<std::int64_t>(OnsetSample(x, kOnsetLevel)) - static_cast<std::int64_t>(OnsetSample(y, kOnsetLevel));
+            options.maxLag = 64;
+            const NullResult r = AnalyzeNull(x, y, options);
 
             out.Add("null.residualPeakDbfs", r.residualPeakDbfs, "dBFS", Better::Lower, Targets::kMaxNullResidualDbfs);
             out.Add("null.residualRmsDbfs", r.residualRmsDbfs, "dBFS", Better::Lower);
