@@ -64,7 +64,7 @@ target("amplitude_tests")
     set_targetdir("$(builddir)/$(plat)/$(arch)/$(mode)/static")
     set_rundir("$(builddir)")
 
-    add_deps("common_test_static", "amplitude_fidelity_lib")
+    add_deps("common_test_static", "amplitude_fidelity_lib", "build_fidelity_project")
 
     -- All test files (they self-register via static initialization)
     add_files("$(projectdir)/tests/ambisonics_*/test_*.cpp")

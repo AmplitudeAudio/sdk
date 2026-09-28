@@ -64,6 +64,9 @@ namespace SparkyStudios::Audio::Amplitude::Tests
             }
 
             const std::string bank = ReadText(paths.project / "soundbanks" / "fidelity.json");
+            for (const char* list : { "switch_containers", "collections", "events", "attenuators", "switches", "rtpc", "effects" })
+                AM_EXPECT(bank.find("\"" + std::string(list) + "\":[]") != std::string::npos);
+
             for (const StimulusSpec& spec : StimulusCatalog())
             {
                 AM_EXPECT(bank.find("\"fidelity/" + spec.name + ".amsound\"") != std::string::npos);

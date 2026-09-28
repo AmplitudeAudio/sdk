@@ -140,7 +140,9 @@ namespace SparkyStudios::Audio::Amplitude::Fidelity
                 ok;
 
         std::ostringstream bank;
-        bank << "{\"id\":" << kSoundBankId << ",\"name\":\"fidelity\",\"sounds\":[";
+        // The engine reads every list of a soundbank without a null check, so the empty ones are written explicitly.
+        bank << "{\"id\":" << kSoundBankId << ",\"name\":\"fidelity\",\"switch_containers\":[],\"collections\":[],\"events\":[],"
+             << "\"attenuators\":[],\"switches\":[],\"rtpc\":[],\"effects\":[],\"sounds\":[";
 
         const std::vector<StimulusSpec>& catalog = StimulusCatalog();
         for (std::size_t i = 0; i < catalog.size(); ++i)
