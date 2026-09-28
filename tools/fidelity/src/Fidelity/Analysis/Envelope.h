@@ -89,6 +89,40 @@ namespace SparkyStudios::Audio::Amplitude::Fidelity
     [[nodiscard]] double CrossingTime(std::span<const double> envelope, double level, double searchBegin, bool rising);
 
     /**
+     * @brief Moving-average length of TimingEnvelope() (about 2 ms at 48 kHz, odd so the average is centred): long enough to flatten a
+     * single-sample dip and its analytic-signal ringing, short enough to keep a hard cut within a sample of its place.
+     */
+    constexpr std::size_t kTimingSmoothing = 97;
+
+    /**
+     * @brief How long the envelope must stay past a threshold for SustainedCrossing() to accept the crossing.
+     */
+    constexpr std::size_t kTimingHold = 96;
+
+    /**
+     * @brief Envelope of @p x smoothed for timing measurements (see kTimingSmoothing).
+     */
+    [[nodiscard]] Signal TimingEnvelope(std::span<const double> x);
+
+    /**
+     * @brief Median of the envelope over [begin, end): the level a capture actually plays at. Timing thresholds are
+     * fractions of this, never of the nominal level.
+     */
+    [[nodiscard]] double PlateauLevel(std::span<const double> envelope, std::size_t begin, std::size_t end);
+
+    /**
+     * @brief Like CrossingTime(), but only accepts a crossing after which the envelope stays past @p level for
+     * @p hold samples; -1 when there is none.
+     */
+    [[nodiscard]] double SustainedCrossing(
+        std::span<const double> envelope, double level, double searchBegin, bool rising, std::size_t hold);
+
+    /**
+     * @brief The last time the envelope falls through @p level, searching backward from its end; -1 when it never does.
+     */
+    [[nodiscard]] double LastFallingCrossing(std::span<const double> envelope, double level);
+
+    /**
      * @brief Timing of the 10 % to 90 % part of a move of the envelope from @p from to @p to.
      */
     struct FadeTiming

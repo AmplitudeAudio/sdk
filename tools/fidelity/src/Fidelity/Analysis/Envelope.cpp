@@ -159,6 +159,59 @@ namespace SparkyStudios::Audio::Amplitude::Fidelity
         return -1.0;
     }
 
+    Signal TimingEnvelope(std::span<const double> x)
+    {
+        return MovingAverage(Envelope(x), kTimingSmoothing);
+    }
+
+    double PlateauLevel(std::span<const double> envelope, std::size_t begin, std::size_t end)
+    {
+        end = std::min(end, envelope.size());
+        if (end <= begin)
+            return 0.0;
+
+        std::vector<double> values(
+            envelope.begin() + static_cast<std::ptrdiff_t>(begin), envelope.begin() + static_cast<std::ptrdiff_t>(end));
+        auto middle = values.begin() + static_cast<std::ptrdiff_t>(values.size() / 2);
+        std::nth_element(values.begin(), middle, values.end());
+        return *middle;
+    }
+
+    double SustainedCrossing(std::span<const double> envelope, double level, double searchBegin, bool rising, std::size_t hold)
+    {
+        double from = searchBegin;
+        while (true)
+        {
+            const double crossing = CrossingTime(envelope, level, from, rising);
+            if (crossing < 0.0)
+                return -1.0;
+
+            const auto first = static_cast<std::size_t>(std::ceil(crossing));
+            const std::size_t last = std::min(envelope.size(), first + hold);
+            bool held = true;
+            for (std::size_t i = first; i < last && held; ++i)
+                held = rising ? envelope[i] >= level : envelope[i] <= level;
+
+            if (held)
+                return crossing;
+
+            from = static_cast<double>(first);
+        }
+    }
+
+    double LastFallingCrossing(std::span<const double> envelope, double level)
+    {
+        for (std::size_t i = envelope.size(); i-- > 1;)
+        {
+            const double a = envelope[i - 1];
+            const double b = envelope[i];
+            if (a > level && b <= level)
+                return static_cast<double>(i - 1) + (level - a) / (b - a);
+        }
+
+        return -1.0;
+    }
+
     FadeTiming MeasureFade(std::span<const double> envelope, double sampleRate, double from, double to, double searchBegin)
     {
         FadeTiming timing;
