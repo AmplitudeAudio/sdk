@@ -129,6 +129,11 @@ namespace SparkyStudios::Audio::Amplitude
                 }
 
                 const AmSize chunkStartOffset = (ci == firstChunk) ? _currentPosition % _description->m_CompressedBlockSize : 0;
+
+                // A chunk shorter than the block leaves nothing to copy past its end.
+                if (chunkStartOffset >= ch.m_Size)
+                    break;
+
                 const AmSize copyLen = AM_MIN(ch.m_Size - chunkStartOffset, remaining);
 
                 std::memcpy(dstPtr, _decompressedBuffer + chunkStartOffset, copyLen);

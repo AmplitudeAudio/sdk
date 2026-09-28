@@ -172,8 +172,15 @@ namespace SparkyStudios::Audio::Amplitude
         if (it == _itemIndices.end())
             return nullptr;
 
+        const auto packageFile = _fileSystem->OpenFile(_packagePath);
+        if (packageFile == nullptr || !packageFile->IsValid())
+        {
+            amLogError("Cannot open the package item: unable to reopen the package at " AM_OS_CHAR_FMT, _packagePath.c_str());
+            return nullptr;
+        }
+
         const auto& item = _header.m_Items[it->second];
-        return ampoolshared(eMemoryPoolKind_IO, PackageItemFile, &item, _fileSystem->OpenFile(_packagePath), _headerSize);
+        return ampoolshared(eMemoryPoolKind_IO, PackageItemFile, &item, packageFile, _headerSize);
     }
 
     void PackageFileSystem::StartOpenFileSystem()
@@ -262,6 +269,22 @@ namespace SparkyStudios::Audio::Amplitude
         constexpr AmSize kMaxPackageItems = 1000000;
         constexpr AmSize kMaxPackageChunks = 10000000;
 
+        // Smallest on-disk records: an item is a name length plus four 64-bit fields, a chunk is three 64-bit fields.
+        constexpr AmSize kMinItemRecordSize = sizeof(AmUInt32) + 4 * sizeof(AmUInt64);
+        constexpr AmSize kMinChunkRecordSize = 3 * sizeof(AmUInt64);
+
+        const auto rejectPackage = [pFileSystem]()
+        {
+            pFileSystem->_header.m_Items.clear();
+            pFileSystem->_initialized.store(true, std::memory_order_release);
+        };
+
+        const auto remainingBytes = [pFileSystem](AmSize length)
+        {
+            const AmSize position = pFileSystem->_packageFile->Position();
+            return position < length ? length - position : 0;
+        };
+
         pFileSystem->_packageFile = pFileSystem->_fileSystem->OpenFile(pFileSystem->_packagePath);
 
         if (pFileSystem->_packageFile == nullptr || !pFileSystem->_packageFile->IsValid())
@@ -304,13 +327,14 @@ namespace SparkyStudios::Audio::Amplitude
             pFileSystem->_header.m_CompressionMode = static_cast<ePackageFileCompressionMode>(pFileSystem->_packageFile->Read8());
 
             // Item Descriptions
-            AmSize itemsCount = pFileSystem->_packageFile->Read64();
-            if (itemsCount > kMaxPackageItems)
+            const AmSize itemsCount = pFileSystem->_packageFile->Read64();
+            if (itemsCount > kMaxPackageItems || itemsCount > remainingBytes(packageLength) / kMinItemRecordSize)
             {
                 amLogError(
-                    "Package item count exceeds sanity limit (%zu > %zu): " AM_OS_CHAR_FMT, itemsCount, kMaxPackageItems,
+                    "Package item count (%zu) exceeds the sanity limit or the package size: " AM_OS_CHAR_FMT, itemsCount,
                     pFileSystem->_packagePath.c_str());
-                itemsCount = kMaxPackageItems;
+                rejectPackage();
+                return;
             }
 
             if (itemsCount > 0)
@@ -335,19 +359,19 @@ namespace SparkyStudios::Audio::Amplitude
                     if (item.m_Offset > packageLength || item.m_Size > packageLength - item.m_Offset)
                     {
                         amLogError("Package item out of bounds: " AM_OS_CHAR_FMT, pFileSystem->_packagePath.c_str());
-                        pFileSystem->_header.m_Items.clear();
-                        pFileSystem->_initialized.store(true, std::memory_order_release);
+                        rejectPackage();
                         return;
                     }
 
                     // Item Chunks
-                    AmSize chunksCount = pFileSystem->_packageFile->Read64();
-                    if (chunksCount > kMaxPackageChunks)
+                    const AmSize chunksCount = pFileSystem->_packageFile->Read64();
+                    if (chunksCount > kMaxPackageChunks || chunksCount > remainingBytes(packageLength) / kMinChunkRecordSize)
                     {
                         amLogError(
-                            "Package chunk count exceeds sanity limit (%zu > %zu): " AM_OS_CHAR_FMT, chunksCount, kMaxPackageChunks,
+                            "Package chunk count (%zu) exceeds the sanity limit or the package size: " AM_OS_CHAR_FMT, chunksCount,
                             pFileSystem->_packagePath.c_str());
-                        chunksCount = kMaxPackageChunks;
+                        rejectPackage();
+                        return;
                     }
 
                     if (chunksCount > 0)
@@ -369,8 +393,7 @@ namespace SparkyStudios::Audio::Amplitude
                             if (chunk.m_Offset > packageLength || chunk.m_CompressedSize > packageLength - chunk.m_Offset)
                             {
                                 amLogError("Package chunk out of bounds: " AM_OS_CHAR_FMT, pFileSystem->_packagePath.c_str());
-                                pFileSystem->_header.m_Items.clear();
-                                pFileSystem->_initialized.store(true, std::memory_order_release);
+                                rejectPackage();
                                 return;
                             }
                         }
