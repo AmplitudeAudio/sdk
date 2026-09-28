@@ -91,6 +91,8 @@ namespace SparkyStudios::Audio::Amplitude
         std::shared_ptr<InstancePipelineTable> instancePipelines; // per-instance pipelines (separate mode), set by mixer commands
         GainProcessor _mixGain[kAmplimixMaxOutputChannels]; // master x layer gain ramps, audio-thread owned after publication
         AmUInt64 pipelineFrames = 0; // frames per-instance pipelines are pre-configured with, set by PlayAdvanced
+        std::atomic<AmUInt32> pins{ 0 }; // game-thread readers keeping the layer alive, see AmplimixImpl::PinLayer
+        std::atomic<bool> destroyPending{ false }; // a destroy deferred while pinned, run by the last unpin
 
         ~AmplimixLayerImpl() override;
 
@@ -335,6 +337,20 @@ namespace SparkyStudios::Audio::Amplitude
          * @return The number of attached pipelines, or 0 if the layer is not playing for @p id or has no table.
          */
         [[nodiscard]] AmSize GetInstancePipelineCount(AmUInt32 id, AmUInt32 layer) const;
+
+        /**
+         * @brief Keeps a playing layer from being destroyed while the game thread reads it outside the audio thread's control.
+         *
+         * A destroy requested while the layer is pinned is deferred until the last @c UnpinLayer().
+         *
+         * @return @c false if the layer is not playing for @p id; the layer is not pinned then.
+         */
+        [[nodiscard]] bool PinLayer(AmUInt32 id, AmUInt32 layer);
+
+        /**
+         * @brief Releases a pin taken by a successful @c PinLayer(), running any destroy it deferred.
+         */
+        void UnpinLayer(AmUInt32 layer);
 
         [[nodiscard]] const Pipeline* GetPipeline() const;
 

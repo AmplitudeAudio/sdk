@@ -234,6 +234,17 @@ namespace SparkyStudios::Audio::Amplitude
         if (layer->snd == nullptr)
             return;
 
+        // A pinned layer is being read by the game thread (AmplimixImpl::PinLayer): leave the destroy to the last unpin.
+        layer->destroyPending.store(true, std::memory_order_seq_cst);
+        std::atomic_thread_fence(std::memory_order_seq_cst);
+
+        if (layer->pins.load(std::memory_order_seq_cst) > 0)
+            return;
+
+        // An unpin that raced with this call may already have claimed the destroy and queued it again.
+        if (!layer->destroyPending.exchange(false, std::memory_order_seq_cst))
+            return;
+
         mixer->DeactivateLayer(mixer->GetLayerIndex(layer));
         layer->Destroy();
     }
@@ -558,12 +569,13 @@ namespace SparkyStudios::Audio::Amplitude
             // store flag last, releasing the layer to the mixer thread
             AMPLIMIX_STORE(&lay->flag, flag);
 
-            PushCommand({ [this, lay]() -> bool
-                          {
-                              // Add to active layer list
-                              ActivateLayer(GetLayerIndex(lay));
-                              return true;
-                          } });
+            PushCommand(
+                { [this, lay]() -> bool
+                  {
+                      // Add to active layer list
+                      ActivateLayer(GetLayerIndex(lay));
+                      return true;
+                  } });
 
             OnSoundStarted(this, lay);
         }
@@ -700,11 +712,12 @@ namespace SparkyStudios::Audio::Amplitude
                     // Defer sound destruction to the audio thread via command queue.
                     // The CAS to ePSF_STOP prevents ShouldMix() from returning true,
                     // so the audio thread will not access this layer during the next mix cycle.
-                    PushCommand({ [this, lay]() -> bool
-                                  {
-                                      OnSoundDestroyed(this, lay);
-                                      return true;
-                                  } });
+                    PushCommand(
+                        { [this, lay]() -> bool
+                          {
+                              OnSoundDestroyed(this, lay);
+                              return true;
+                          } });
                 }
 
                 return true;
@@ -767,15 +780,16 @@ namespace SparkyStudios::Audio::Amplitude
         // Built here, on the game thread, with all its slots: the audio thread never allocates for it.
         auto table = std::make_shared<InstancePipelineTable>(_maxInstancePipelines);
 
-        PushCommand({ [lay, id, table]() -> bool
-                      {
-                          // Drop the command if the layer finished or was reused since it was pushed.
-                          if (lay->id != id || AMPLIMIX_LOAD(&lay->flag) == ePSF_MIN)
-                              return true;
+        PushCommand(
+            { [lay, id, table]() -> bool
+              {
+                  // Drop the command if the layer finished or was reused since it was pushed.
+                  if (lay->id != id || AMPLIMIX_LOAD(&lay->flag) == ePSF_MIN)
+                      return true;
 
-                          lay->instancePipelines = table;
-                          return true;
-                      } });
+                  lay->instancePipelines = table;
+                  return true;
+              } });
 
         return true;
     }
@@ -785,14 +799,25 @@ namespace SparkyStudios::Audio::Amplitude
         if (_pipeline == nullptr)
             return false;
 
+        if (!PinLayer(id, layer))
+            return false;
+
+        struct LayerPinGuard
+        {
+            AmplimixImpl* mixer;
+            AmUInt32 layer;
+
+            ~LayerPinGuard()
+            {
+                mixer->UnpinLayer(layer);
+            }
+        } pinGuard{ .mixer = this, .layer = layer };
+
         auto* lay = GetLayer(layer);
         AmUInt64 frames = 0;
 
         {
             AmplimixMutexLocker lock(this);
-            if (lay->id != id || AMPLIMIX_LOAD(&lay->flag) <= ePSF_STOP)
-                return false;
-
             frames = lay->pipelineFrames;
         }
 
@@ -811,14 +836,15 @@ namespace SparkyStudios::Audio::Amplitude
         if (lay->id != id || AMPLIMIX_LOAD(&lay->flag) <= ePSF_STOP)
             return false;
 
-        PushCommand({ [lay, id, instanceId, pipeline]() -> bool
-                      {
-                          if (lay->id != id || AMPLIMIX_LOAD(&lay->flag) == ePSF_MIN || lay->instancePipelines == nullptr)
-                              return true;
+        PushCommand(
+            { [lay, id, instanceId, pipeline]() -> bool
+              {
+                  if (lay->id != id || AMPLIMIX_LOAD(&lay->flag) == ePSF_MIN || lay->instancePipelines == nullptr)
+                      return true;
 
-                          AM_UNUSED(lay->instancePipelines->Attach(instanceId, pipeline));
-                          return true;
-                      } });
+                  AM_UNUSED(lay->instancePipelines->Attach(instanceId, pipeline));
+                  return true;
+              } });
 
         return true;
     }
@@ -831,15 +857,16 @@ namespace SparkyStudios::Audio::Amplitude
         if (lay->id != id || AMPLIMIX_LOAD(&lay->flag) == ePSF_MIN)
             return false;
 
-        PushCommand({ [lay, id, instanceId]() -> bool
-                      {
-                          if (lay->id != id || lay->instancePipelines == nullptr)
-                              return true;
+        PushCommand(
+            { [lay, id, instanceId]() -> bool
+              {
+                  if (lay->id != id || lay->instancePipelines == nullptr)
+                      return true;
 
-                          // Released at the end of this command, after the mix (same as AmplimixLayerImpl::Destroy).
-                          AM_UNUSED(lay->instancePipelines->Detach(instanceId));
-                          return true;
-                      } });
+                  // Released at the end of this command, after the mix (same as AmplimixLayerImpl::Destroy).
+                  AM_UNUSED(lay->instancePipelines->Detach(instanceId));
+                  return true;
+              } });
 
         return true;
     }
@@ -851,6 +878,43 @@ namespace SparkyStudios::Audio::Amplitude
             return 0;
 
         return lay.instancePipelines->GetSize();
+    }
+
+    bool AmplimixImpl::PinLayer(AmUInt32 id, AmUInt32 layer)
+    {
+        AmplimixMutexLocker lock(this);
+
+        auto* lay = GetLayer(layer);
+        lay->pins.fetch_add(1, std::memory_order_seq_cst);
+
+        // Pairs with the fence in OnSoundDestroyed(): either this check sees the stop, or the destroy sees the pin.
+        std::atomic_thread_fence(std::memory_order_seq_cst);
+
+        if (lay->id != id || AMPLIMIX_LOAD(&lay->flag) <= ePSF_STOP)
+        {
+            UnpinLayer(layer);
+            return false;
+        }
+
+        return true;
+    }
+
+    void AmplimixImpl::UnpinLayer(AmUInt32 layer)
+    {
+        auto* lay = GetLayer(layer);
+        if (lay->pins.fetch_sub(1, std::memory_order_seq_cst) != 1)
+            return;
+
+        // The audio thread skipped a destroy while the layer was pinned: queue it again.
+        if (lay->destroyPending.exchange(false, std::memory_order_seq_cst))
+        {
+            PushCommand(
+                { [this, lay]() -> bool
+                  {
+                      OnSoundDestroyed(this, lay);
+                      return true;
+                  } });
+        }
     }
 
     void AmplimixImpl::SetMasterGain(AmReal32 gain)
@@ -970,8 +1034,9 @@ namespace SparkyStudios::Audio::Amplitude
 
         if (_pipeline == nullptr || layer->pipeline == nullptr)
         {
-            amLogWarning("No active pipeline is set, this means no sound will be rendered. You should configure the Amplimix "
-                         "pipeline in your engine configuration file.");
+            amLogWarning(
+                "No active pipeline is set, this means no sound will be rendered. You should configure the Amplimix "
+                "pipeline in your engine configuration file.");
             return;
         }
 
@@ -1484,6 +1549,7 @@ namespace SparkyStudios::Audio::Amplitude
         }
 
         _chunkPool.Reset();
+        destroyPending.store(false, std::memory_order_relaxed);
 
         AMPLIMIX_STORE(&flag, ePSF_MIN);
     }
