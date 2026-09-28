@@ -16,6 +16,7 @@
 
 #include <algorithm>
 #include <cmath>
+#include <exception>
 
 #include <SparkyStudios/Audio/Amplitude/Amplitude.h>
 #include <SparkyStudios/Audio/Amplitude/IO/DiskFileSystem.h>
@@ -177,9 +178,25 @@ namespace SparkyStudios::Audio::Amplitude::Fidelity
 
         RenderOutcome outcome;
         if (amEngine->Initialize(AmOsString(std::filesystem::path(settings.configFile).native())))
-            outcome = RunLockStep(settings, std::move(actions));
+        {
+            // Whatever an action throws, the engine below must still be torn down: the next render needs a fresh one.
+            try
+            {
+                outcome = RunLockStep(settings, std::move(actions));
+            } catch (const std::exception& exception)
+            {
+                outcome = {};
+                outcome.error = std::string("render aborted: ") + exception.what();
+            } catch (...)
+            {
+                outcome = {};
+                outcome.error = "render aborted: unknown exception";
+            }
+        }
         else
+        {
             outcome.error = "engine initialization failed with config '" + settings.configFile + "'";
+        }
 
         amEngine->Deinitialize();
         Engine::UnregisterDefaultExtensions();
