@@ -12,15 +12,11 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include <algorithm>
-#include <cmath>
-
-#include <Fidelity/Analysis/Analytic.h>
-#include <Fidelity/Analysis/Envelope.h>
 #include <Fidelity/Analysis/Spectrum.h>
 #include <Fidelity/AssetGenerator.h>
 #include <Fidelity/Scenarios/Common.h>
 #include <Fidelity/Scenarios/Playback.h>
+#include <Fidelity/Scenarios/Timing.h>
 #include <Fidelity/Targets.h>
 
 namespace SparkyStudios::Audio::Amplitude::Fidelity
@@ -137,35 +133,7 @@ namespace SparkyStudios::Audio::Amplitude::Fidelity
 
                 AddClickMetrics(out, capture, 4000.0, kLeadIn, duration);
 
-                const Signal x = ChannelSignal(capture, 0);
-                const Signal envelope = Envelope(x);
-                const double level = spec->amplitude * CenterPanGain();
-                const double ratio = fs / spec->sampleRate;
-
-                const double start = CrossingTime(envelope, 0.5 * level, static_cast<double>(kLeadIn), true);
-                const double end =
-                    start < 0.0 ? -1.0 : CrossingTime(envelope, 0.5 * level, start + static_cast<double>(outFrames) / 2.0, false);
-                if (start < 0.0 || end < 0.0)
-                {
-                    out.error = "cannot locate the start and end of the sound";
-                    out.capture = std::move(capture);
-                    return;
-                }
-
-                const double fadeOut = static_cast<double>(FadeFrames(*spec)) * ratio;
-                AddIntegrityMetrics(
-                    out, capture, static_cast<std::uint64_t>(start + fadeOut), static_cast<std::uint64_t>(std::max(start, end - fadeOut)));
-
-                const double expected = static_cast<double>(StimulusFrameCount(*spec) - 1 - FadeFrames(*spec)) * ratio;
-                out.Add(
-                    "length.errorSamples", std::abs((end - start) - expected), "samples", Better::Lower, Targets::kMaxLengthErrorSamples);
-
-                const auto tailBegin = static_cast<std::size_t>(end + fadeOut + 256.0);
-                if (tailBegin < x.size())
-                    out.Add(
-                        "tail.peakDbfs", DbFromAmplitude(Peak(std::span<const double>(x.data() + tailBegin, x.size() - tailBegin))), "dBFS",
-                        Better::Lower, Targets::kMaxTailDbfs);
-
+                MeasureEndOfSound(capture, *spec, kLeadIn, outFrames, out);
                 out.capture = std::move(capture);
             }
         };

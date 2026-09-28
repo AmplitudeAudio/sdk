@@ -12,18 +12,14 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include <algorithm>
-#include <cmath>
 #include <memory>
 
 #include <SparkyStudios/Audio/Amplitude/Amplitude.h>
 
-#include <Fidelity/Analysis/Analytic.h>
-#include <Fidelity/Analysis/Envelope.h>
-#include <Fidelity/Analysis/Pitch.h>
 #include <Fidelity/AssetGenerator.h>
 #include <Fidelity/Scenarios/Common.h>
 #include <Fidelity/Scenarios/Playback.h>
+#include <Fidelity/Scenarios/Timing.h>
 #include <Fidelity/Targets.h>
 
 namespace SparkyStudios::Audio::Amplitude::Fidelity
@@ -92,50 +88,7 @@ namespace SparkyStudios::Audio::Amplitude::Fidelity
                 AddIntegrityMetrics(out, capture, kLeadIn + Seconds(0.05, fs), stopAt);
                 AddClickMetrics(out, capture, 4000.0, kLeadIn, duration);
 
-                const Signal x = ChannelSignal(capture, 0);
-                const Signal envelope = Envelope(x);
-                const double level = spec.amplitude * CenterPanGain();
-
-                const double onset = CrossingTime(envelope, 0.5 * level, static_cast<double>(kLeadIn), true);
-                if (onset >= 0.0)
-                    out.Add("start.latencyMs", (onset - static_cast<double>(kLeadIn)) / fs * 1000.0, "ms", Better::Lower);
-
-                const double departure = CrossingTime(envelope, 0.999 * level, static_cast<double>(stopAt), false);
-                if (departure < 0.0)
-                {
-                    out.error = "the stop fade was not found";
-                    out.capture = std::move(capture);
-                    return;
-                }
-
-                out.Add("stop.latencyMs", (departure - static_cast<double>(stopAt)) / fs * 1000.0, "ms", Better::Lower);
-
-                const FadeTiming timing = MeasureFade(envelope, fs, level, 0.0, departure);
-                if (timing.found)
-                    out.Add("stop.fadeMs", timing.durationMs, "ms", Better::Lower);
-
-                if (fade > 0.0)
-                {
-                    const double fadeSamples = fade / 1000.0 * fs;
-                    double worst = 0.0;
-                    for (auto i = static_cast<std::size_t>(std::ceil(departure)); i < envelope.size(); ++i)
-                    {
-                        const double expected = level * (1.0 - (static_cast<double>(i) - departure) / fadeSamples);
-                        if (expected < 0.01 * level)
-                            break;
-
-                        worst = std::max(worst, std::abs(DbFromAmplitude(envelope[i] / expected)));
-                    }
-
-                    out.Add("stop.fadeCurveErrorDb", worst, "dB", Better::Lower, Targets::kMaxRampErrorDb);
-                }
-
-                const std::uint64_t tailBegin = stopAt + Seconds(0.1, fs);
-                if (tailBegin < x.size())
-                    out.Add(
-                        "stop.tailDbfs", DbFromAmplitude(Peak(std::span<const double>(x.data() + tailBegin, x.size() - tailBegin))), "dBFS",
-                        Better::Lower, Targets::kMaxTailDbfs);
-
+                MeasureStopTiming(capture, spec, kLeadIn, stopAt, fade, out);
                 out.capture = std::move(capture);
             }
         };
@@ -225,60 +178,10 @@ namespace SparkyStudios::Audio::Amplitude::Fidelity
                 AddIntegrityMetrics(out, capture, 0, 0);
                 AddClickMetrics(out, capture, 4000.0, kLeadIn, duration);
 
-                const Signal x = ChannelSignal(capture, 0);
-                const Signal envelope = Envelope(x);
-                const double level = spec.amplitude * CenterPanGain();
-                const Signal tau = EstimateChirpSourceTime(x, fs, ChirpModelOf(spec), 0.9 * level);
-
-                // Source position minus output time, in output samples; constant while the sound plays at speed 1.
-                const auto offset = [&](std::uint64_t from, std::uint64_t to)
-                {
-                    std::vector<double> values;
-                    for (std::uint64_t i = from; i < std::min<std::uint64_t>(to, tau.size()); ++i)
-                        values.push_back(tau[i] * fs - static_cast<double>(i));
-
-                    return MedianFinite(std::move(values));
-                };
-
                 if (pause)
-                {
-                    const double before = offset(first - Seconds(0.3, fs), first - Seconds(0.05, fs));
-                    const double after = offset(second + Seconds(0.1, fs), second + Seconds(0.4, fs));
-                    const double stopEdge = FadeZero(envelope, level, static_cast<double>(first), false);
-                    const double startEdge = FadeZero(envelope, level, static_cast<double>(second), true);
-
-                    if (!std::isfinite(before) || !std::isfinite(after) || stopEdge < 0.0 || startEdge < 0.0)
-                    {
-                        out.error = "cannot locate the pause and resume edges";
-                        out.capture = std::move(capture);
-                        return;
-                    }
-
-                    out.Add(
-                        "resume.positionErrorSamples", std::abs((after + startEdge) - (before + stopEdge)), "samples", Better::Lower,
-                        Targets::kMaxResumePositionErrorSamples);
-
-                    const FadeTiming pauseFade = MeasureFade(envelope, fs, level, 0.0, static_cast<double>(first));
-                    const FadeTiming resumeFade = MeasureFade(envelope, fs, 0.0, level, static_cast<double>(second));
-                    if (pauseFade.found)
-                        out.Add("pause.fadeMs", pauseFade.durationMs, "ms", Better::Lower);
-                    if (resumeFade.found)
-                        out.Add("resume.fadeMs", resumeFade.durationMs, "ms", Better::Lower);
-                }
+                    MeasurePauseResume(capture, spec, first, second, out);
                 else
-                {
-                    const double after = offset(first + Seconds(0.2, fs), first + Seconds(0.6, fs));
-                    if (!std::isfinite(after))
-                    {
-                        out.error = "cannot track the chirp after the seek";
-                        out.capture = std::move(capture);
-                        return;
-                    }
-
-                    // The output sample where the source was at the seek target.
-                    const double effect = seekSeconds * fs - after;
-                    out.Add("seek.latencyMs", (effect - static_cast<double>(first)) / fs * 1000.0, "ms", Better::Lower);
-                }
+                    MeasureSeek(capture, spec, first, seekSeconds, out);
 
                 out.capture = std::move(capture);
             }
