@@ -17,6 +17,7 @@
 #include <algorithm>
 #include <bit>
 #include <cmath>
+#include <limits>
 
 #include <Fidelity/Analysis/Fft.h>
 
@@ -43,10 +44,14 @@ namespace SparkyStudios::Audio::Amplitude::Fidelity
             fa[k] *= std::conj(fb[k]);
         Fft(fa, true);
 
-        const auto maxLag = static_cast<std::int64_t>(std::min(options.maxLag, size / 2 - 1));
-        double best = fa[0].real();
-        std::int64_t bestLag = 0;
-        for (std::int64_t m = -maxLag; m <= maxLag; ++m)
+        // Search [lagCenter - maxLag, lagCenter + maxLag], within the lags the circular correlation holds unaliased.
+        const auto limit = static_cast<std::int64_t>(size / 2 - 1);
+        const auto maxLag = static_cast<std::int64_t>(options.maxLag);
+        const std::int64_t lo = std::max(-limit, options.lagCenter - maxLag);
+        const std::int64_t hi = std::min(limit, options.lagCenter + maxLag);
+        double best = -std::numeric_limits<double>::infinity();
+        std::int64_t bestLag = std::clamp(options.lagCenter, -limit, limit);
+        for (std::int64_t m = lo; m <= hi; ++m)
         {
             const std::size_t index = m >= 0 ? static_cast<std::size_t>(m) : size - static_cast<std::size_t>(-m);
             if (fa[index].real() > best)
@@ -111,6 +116,15 @@ namespace SparkyStudios::Audio::Amplitude::Fidelity
         }
 
         return result;
+    }
+
+    std::size_t OnsetSample(std::span<const double> x, double threshold)
+    {
+        for (std::size_t i = 0; i < x.size(); ++i)
+            if (std::abs(x[i]) >= threshold)
+                return i;
+
+        return x.size();
     }
 
     std::size_t CountDifferences(std::span<const float> a, std::span<const float> b)
