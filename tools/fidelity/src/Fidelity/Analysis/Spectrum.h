@@ -57,6 +57,8 @@ namespace SparkyStudios::Audio::Amplitude::Fidelity
         std::size_t harmonics = 10;
         double bandLowHz = 20.0;
         double bandHighHz = 20000.0;
+        /// The tone is searched within this many cents of fundamentalHz.
+        double searchCents = 50.0;
     };
 
     /**
@@ -72,6 +74,10 @@ namespace SparkyStudios::Audio::Amplitude::Fidelity
         double worstSpurHz = 0.0;
         /// Median in-band bin outside the fundamental and harmonics, relative to a full-scale sine.
         double noiseFloorDbfs = -400.0;
+        /// Frequency of the tone found near SpectrumOptions::fundamentalHz.
+        double measuredFundamentalHz = 0.0;
+        /// How far the tone is from SpectrumOptions::fundamentalHz.
+        double frequencyErrorCents = 0.0;
     };
 
     /**

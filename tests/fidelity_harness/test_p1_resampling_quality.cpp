@@ -50,8 +50,8 @@ namespace SparkyStudios::Audio::Amplitude::Tests
 
             const Measurement tone = measure("sine_997_44100");
             AM_EXPECT(tone.error.empty());
-            for (const char* name :
-                 { "determinism.mismatches", "integrity.nan", "spectrum.thdnDb", "spectrum.worstSpurDbc", "click.worstDbfs" })
+            for (const char* name : { "determinism.mismatches", "integrity.nan", "spectrum.thdnDb", "spectrum.worstSpurDbc",
+                                      "spectrum.frequencyErrorCents", "click.worstDbfs" })
                 expectFinite(tone, name);
             AM_EXPECT(!tone.capture.channels.empty());
 

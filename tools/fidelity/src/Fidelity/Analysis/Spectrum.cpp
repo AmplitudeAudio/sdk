@@ -96,71 +96,102 @@ namespace SparkyStudios::Audio::Amplitude::Fidelity
 
         const auto lobe = static_cast<std::int64_t>(options.mainLobeBins);
         const auto last = static_cast<std::int64_t>(spectrum.power.size()) - 1;
+        const auto power = [&](std::int64_t k)
+        {
+            return spectrum.power[static_cast<std::size_t>(k)];
+        };
+
+        // The tone is searched near the nominal frequency: the engine's output is not guaranteed to sit exactly on it.
+        const double searchLo = options.fundamentalHz * std::exp2(-options.searchCents / 1200.0);
+        const double searchHi = options.fundamentalHz * std::exp2(options.searchCents / 1200.0);
+        const auto kSearchLo = std::max<std::int64_t>(1, static_cast<std::int64_t>(std::floor(searchLo / spectrum.binHz)));
+        const auto kSearchHi = std::min<std::int64_t>(last - 1, static_cast<std::int64_t>(std::ceil(searchHi / spectrum.binHz)));
+        if (kSearchHi < kSearchLo)
+            return result;
+
+        std::int64_t peak = kSearchLo;
+        for (std::int64_t k = kSearchLo; k <= kSearchHi; ++k)
+            if (power(k) > power(peak))
+                peak = k;
+
+        if (power(peak) <= 0.0)
+            return result;
+
+        // Parabolic interpolation of the log power around the peak bin (the window's main lobe is close to Gaussian).
+        double delta = 0.0;
+        {
+            const double a = std::log(std::max(power(peak - 1), 1e-300));
+            const double b = std::log(power(peak));
+            const double c = std::log(std::max(power(peak + 1), 1e-300));
+            const double denominator = a - 2.0 * b + c;
+            if (denominator < 0.0)
+                delta = std::clamp(0.5 * (a - c) / denominator, -0.5, 0.5);
+        }
+
+        result.measuredFundamentalHz = (static_cast<double>(peak) + delta) * spectrum.binHz;
+        result.frequencyErrorCents = CentsBetween(result.measuredFundamentalHz, options.fundamentalHz);
+        const double f0 = result.measuredFundamentalHz;
+
         const double bandHigh = std::min(options.bandHighHz, static_cast<double>(last - lobe) * spectrum.binHz);
         const auto kLow = static_cast<std::int64_t>(std::ceil(options.bandLowHz / spectrum.binHz));
         const auto kHigh = static_cast<std::int64_t>(std::floor(bandHigh / spectrum.binHz));
 
         std::vector<bool> masked(spectrum.power.size(), false);
-        const auto mask = [&](double frequency)
+        const auto mask = [&](std::int64_t center)
         {
-            const auto center = static_cast<std::int64_t>(std::llround(frequency / spectrum.binHz));
             for (std::int64_t k = std::max<std::int64_t>(0, center - lobe); k <= std::min(last, center + lobe); ++k)
                 masked[static_cast<std::size_t>(k)] = true;
         };
 
-        const double fundamental = BandPower(spectrum, options.fundamentalHz, options.mainLobeBins);
-        if (fundamental <= 0.0)
-            return result;
+        double fundamental = 0.0;
+        for (std::int64_t k = std::max<std::int64_t>(0, peak - lobe); k <= std::min(last, peak + lobe); ++k)
+            fundamental += power(k);
 
         result.fundamentalDbfs = DbFromPower(fundamental / 0.5);
-        mask(options.fundamentalHz);
+        mask(peak);
 
         double harmonicPower = 0.0;
         for (std::size_t h = 2; h <= options.harmonics; ++h)
         {
-            const double frequency = options.fundamentalHz * static_cast<double>(h);
+            const double frequency = f0 * static_cast<double>(h);
             if (frequency > bandHigh)
                 break;
 
             harmonicPower += BandPower(spectrum, frequency, options.mainLobeBins);
-            mask(frequency);
+            mask(static_cast<std::int64_t>(std::llround(frequency / spectrum.binHz)));
         }
 
         result.thdDb = DbFromPower(harmonicPower / fundamental);
 
-        const auto fundamentalBin = static_cast<std::int64_t>(std::llround(options.fundamentalHz / spectrum.binHz));
         double residual = 0.0;
         std::vector<double> floorBins;
         for (std::int64_t k = kLow; k <= kHigh; ++k)
         {
-            const double p = spectrum.power[static_cast<std::size_t>(k)];
-            if (std::llabs(k - fundamentalBin) > lobe)
-                residual += p;
+            if (std::llabs(k - peak) > lobe)
+                residual += power(k);
 
             if (!masked[static_cast<std::size_t>(k)])
-                floorBins.push_back(p);
+                floorBins.push_back(power(k));
         }
 
         result.thdnDb = DbFromPower(residual / fundamental);
         result.sinadDb = -result.thdnDb;
 
+        // Worst spur: the loudest unmasked in-band bin, summed over its own lobe without the masked bins.
         std::int64_t spurBin = -1;
-        double spurPeak = -1.0;
         for (std::int64_t k = kLow; k <= kHigh; ++k)
-        {
-            const double p = spectrum.power[static_cast<std::size_t>(k)];
-            if (!masked[static_cast<std::size_t>(k)] && p > spurPeak)
-            {
-                spurPeak = p;
+            if (!masked[static_cast<std::size_t>(k)] && (spurBin < 0 || power(k) > power(spurBin)))
                 spurBin = k;
-            }
-        }
 
         if (spurBin >= 0)
         {
-            const double spurHz = static_cast<double>(spurBin) * spectrum.binHz;
-            result.worstSpurDbc = DbFromPower(BandPower(spectrum, spurHz, options.mainLobeBins) / fundamental);
-            result.worstSpurHz = spurHz;
+            double spurPower = 0.0;
+            for (std::int64_t k = std::max<std::int64_t>(0, spurBin - lobe); k <= std::min(last, spurBin + lobe); ++k)
+                if (!masked[static_cast<std::size_t>(k)])
+                    spurPower += power(k);
+
+            result.worstSpurDbc = DbFromPower(spurPower / fundamental);
+            result.worstSpurHz = static_cast<double>(spurBin) * spectrum.binHz;
         }
 
         if (!floorBins.empty())
