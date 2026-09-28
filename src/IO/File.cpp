@@ -48,6 +48,16 @@ namespace SparkyStudios::Audio::Amplitude
     {
         const AmUInt32 len = Read32();
 
+        // A length past the end of the file is corrupt: skip to the end so callers' bounds checks fail.
+        const AmSize position = Position();
+        const AmSize length = Length();
+        if (position > length || len > length - position)
+        {
+            // Reads already move the position of a const file.
+            const_cast<File*>(this)->Seek(0, eFileSeekOrigin_End);
+            return {};
+        }
+
         AmString s;
         s.resize(len);
         Read(reinterpret_cast<AmUInt8Buffer>(s.data()), len);
