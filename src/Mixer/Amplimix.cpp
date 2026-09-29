@@ -548,7 +548,7 @@ namespace SparkyStudios::Audio::Amplitude
             // re-runs every node's Configure on the audio thread.
             const auto outChannels = static_cast<AmInt16>(_device.mRequestedOutputChannels);
             const AmUInt64 outFrames = _device.mOutputBufferSize / outChannels;
-            const AmUInt64 inFrames = lay->dataConverter->GetRequiredInputFrameCount(outFrames);
+            const AmUInt64 inFrames = lay->dataConverter->GetInputFramesNeeded(outFrames) + kProcessedFramesCount;
 
             lay->_chunkPool.PreWarm(inFrames, static_cast<AmUInt16>(soundChannels), outFrames);
 
@@ -860,10 +860,7 @@ namespace SparkyStudios::Audio::Amplitude
 
                   // Start at the layer's current rate, which pitch and play speed changes may have moved.
                   if (lay->dataConverter != nullptr)
-                  {
-                      const auto& current = lay->dataConverter->GetSettings();
-                      converter->SetSampleRate(current.m_sourceSampleRate, current.m_targetSampleRate);
-                  }
+                      converter->SetRatio(static_cast<AmReal64>(AMPLIMIX_LOAD(&lay->sampleRateRatio)));
 
                   AM_UNUSED(lay->instancePipelines->Attach(instanceId, pipeline, converter));
                   return true;
@@ -1095,7 +1092,7 @@ namespace SparkyStudios::Audio::Amplitude
         AmUInt64 inSamples = frameCount;
 
         if (sampleRateRatio != 1.0f)
-            inSamples = layer->dataConverter->GetRequiredInputFrameCount(outSamples) - layer->dataConverter->GetInputLatency();
+            inSamples = layer->dataConverter->GetInputFramesNeeded(outSamples);
 
 #if defined(AM_SIMD_INTRINSICS)
         inSamples = AM_VALUE_ALIGN(inSamples, kProcessedFramesCount);
@@ -1274,7 +1271,7 @@ namespace SparkyStudios::Audio::Amplitude
         {
             AmUInt64 frames = frameCount;
             if (sampleRateRatio != 1.0f)
-                frames = converter->GetRequiredInputFrameCount(frameCount) - converter->GetInputLatency();
+                frames = converter->GetInputFramesNeeded(frameCount);
 
 #if defined(AM_SIMD_INTRINSICS)
             frames = AM_VALUE_ALIGN(frames, kProcessedFramesCount);
@@ -1527,17 +1524,13 @@ namespace SparkyStudios::Audio::Amplitude
             AMPLIMIX_STORE(&layer->targetPlaySpeed, playSpeed);
             AMPLIMIX_STORE(&layer->sampleRateRatio, sampleRateRatio);
 
-            const AmUInt64 t = 1000;
-            const AmUInt64 s = (AmUInt64)(sampleRateRatio * t);
-
-            AMPLITUDE_ASSERT(s != 0);
-            layer->dataConverter->SetSampleRate(s, t);
+            layer->dataConverter->SetRatio(sampleRateRatio);
 
             if (layer->instancePipelines != nullptr)
                 layer->instancePipelines->ForEachConverter(
-                    [s, t](AudioConverter& converter)
+                    [sampleRateRatio](AudioConverter& converter)
                     {
-                        converter.SetSampleRate(s, t);
+                        converter.SetRatio(sampleRateRatio);
                     });
 
             AMPLIMIX_STORE(&layer->playSpeed, currentSpeed);

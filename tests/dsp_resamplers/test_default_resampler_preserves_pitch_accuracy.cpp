@@ -55,11 +55,11 @@ namespace SparkyStudios::Audio::Amplitude::Tests
                     inputBuffer[0][i] =
                         std::sin(2.0f * AM_PI32 * frequency * static_cast<AmReal32>(phase) / static_cast<AmReal32>(sampleRateIn));
 
-                const AmUInt64 expectedOutputFrames = instance->GetExpectedOutputFrames(blockFrames);
-                AudioBuffer outputBuffer(expectedOutputFrames, channelCount);
+                const AmUInt64 capacity = blockFrames * sampleRateOut / sampleRateIn + 2;
+                AudioBuffer outputBuffer(capacity, channelCount);
 
                 AmUInt64 processedInputFrames = blockFrames;
-                AmUInt64 processedOutputFrames = expectedOutputFrames;
+                AmUInt64 processedOutputFrames = capacity;
 
                 AM_EXPECT(instance->Process(inputBuffer, processedInputFrames, outputBuffer, processedOutputFrames));
 

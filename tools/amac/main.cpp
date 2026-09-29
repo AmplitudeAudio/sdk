@@ -318,8 +318,10 @@ static int process(const AmOsString& inFileName, const AmOsString& outFileName, 
                     "sample rate that shares more factors with the source.\n",
                     sampleRate, state.resampling.targetSampleRate);
 
-            AmUInt64 f = resampler->GetExpectedOutputFrames(numSamples);
-            AudioBuffer output(f, numChannels);
+            // Upper bound on how many output frames the whole input buffer could produce.
+            const AmUInt64 capacity = numSamples * state.resampling.targetSampleRate / sampleRate + 2;
+            AmUInt64 f = capacity;
+            AudioBuffer output(capacity, numChannels);
 
             resampler->Process(pcmData, numSamples, output, f);
 

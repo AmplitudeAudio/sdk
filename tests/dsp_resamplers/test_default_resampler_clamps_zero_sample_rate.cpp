@@ -36,24 +36,24 @@ namespace SparkyStudios::Audio::Amplitude::Tests
 
             instance->Initialize(channelCount, 48000, 48000);
 
-            // AmplimixImpl::UpdatePitch computes s = (AmUInt64)(ratio * 1000), which truncates to 0 for very
-            // small ratios. The instance must survive this and stay usable.
-            instance->SetSampleRate(0, 1000);
+            // A speed ratio scaled by 1000 truncates to 0 for very small ratios: the instance must survive it and stay
+            // usable.
+            instance->Initialize(channelCount, 0, 1000);
 
             AM_EXPECT(instance->GetDownRate() > 0);
             AM_EXPECT(instance->GetUpRate() <= kMaxPolyphaseRate);
             AM_EXPECT(instance->GetDownRate() <= kMaxPolyphaseRate);
 
-            instance->SetSampleRate(48000, 48000);
+            instance->Initialize(channelCount, 48000, 48000);
 
             AudioBuffer inputBuffer(inputFrames, channelCount);
             GenerateSineWave(inputBuffer, 48000);
 
-            const AmUInt64 expectedOutputFrames = instance->GetExpectedOutputFrames(inputFrames);
-            AudioBuffer outputBuffer(expectedOutputFrames, channelCount);
+            const AmUInt64 capacity = inputFrames * 48000 / 48000 + 2;
+            AudioBuffer outputBuffer(capacity, channelCount);
 
             AmUInt64 processedInputFrames = inputFrames;
-            AmUInt64 processedOutputFrames = expectedOutputFrames;
+            AmUInt64 processedOutputFrames = capacity;
 
             AM_EXPECT(instance->Process(inputBuffer, processedInputFrames, outputBuffer, processedOutputFrames));
         }

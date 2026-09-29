@@ -63,28 +63,32 @@ namespace SparkyStudios::Audio::Amplitude
         virtual void Initialize(AmUInt16 channelCount, AmUInt32 sampleRateIn, AmUInt32 sampleRateOut) = 0;
 
         /**
-         * @brief Processes the audio data.
+         * @brief Resamples audio data.
          *
-         * @param[in] input The input audio data.
-         * @param[in,out] inputFrames The number of frames in the input buffer.
-         * @param[out] output The output audio data.
-         * @param[in,out] outputFrames The number of frames in the output buffer.
+         * Contract, required from every implementation:
+         * - The call consumes only the input it needs for the output it produces, and reports both counts.
+         * - The output never depends on input that has not been received yet.
+         * - The only internal state is filter history and phase: the output sequence does not depend on how the input
+         *   and the output are split across calls.
          *
-         * @return @c true if the resampling was successful, @c false otherwise.
+         * @param[in] input The input buffer.
+         * @param[in,out] inputFrames The number of available input frames; on return, the number of frames consumed.
+         * @param[out] output The output buffer.
+         * @param[in,out] outputFrames The number of output frames wanted; on return, the number of frames produced.
+         *
+         * @return @c true on success, @c false otherwise.
          */
         virtual bool Process(const AudioBuffer& input, AmUInt64& inputFrames, AudioBuffer& output, AmUInt64& outputFrames) = 0;
 
         /**
-         * @brief Changes the input and output sample rate.
+         * @brief Sets the conversion ratio, pitch and playback speed included.
          *
-         * @note This method may be called from the audio thread on every mix block, as the mixer maps
-         * playback speed changes to a rate ratio. Implementations must not allocate, lock, log, or block
-         * here, and must follow the same total-function contract as @c Initialize.
+         * Implementations that cannot represent the ratio exactly approximate it, as @c Initialize() does.
+         * Non-finite or non-positive values are treated as 1.
          *
-         * @param[in] sampleRateIn The new input sample rate.
-         * @param[in] sampleRateOut The new output sample rate.
+         * @param[in] inputPerOutput The number of input frames consumed per output frame.
          */
-        virtual void SetSampleRate(AmUInt32 sampleRateIn, AmUInt32 sampleRateOut) = 0;
+        virtual void SetRatio(AmReal64 inputPerOutput) = 0;
 
         /**
          * @brief Checks whether the given conversion is performed exactly, with no approximation of the ratio.
@@ -129,36 +133,24 @@ namespace SparkyStudios::Audio::Amplitude
         [[nodiscard]] virtual AmUInt16 GetChannelCount() const = 0;
 
         /**
-         * @brief Returns the required number of frames to have as input for the given number of output frames.
+         * @brief Returns the exact number of input frames the next @c Process() call needs to produce the given output.
          *
-         * @param[in] outputFrameCount The number of output frames.
+         * Counts from the first frame of the next input, taking the current phase into account.
          *
-         * @return The input frame count needed to produce the given output frame count.
+         * @param[in] outputFrameCount The number of output frames wanted.
+         *
+         * @return The input frame count needed; 0 when @p outputFrameCount is 0.
          */
-        [[nodiscard]] virtual AmUInt64 GetRequiredInputFrames(AmUInt64 outputFrameCount) const = 0;
+        [[nodiscard]] virtual AmUInt64 GetInputFramesNeeded(AmUInt64 outputFrameCount) const = 0;
 
         /**
-         * @brief Returns the expected number of frames to have as output for the given number of input frames.
+         * @brief Returns the filter group delay, in input frames.
          *
-         * @param[in] inputFrameCount The number of input frames.
+         * A stream that ends flushes the filter by feeding twice this many zero frames, plus one.
          *
-         * @return The expected number of output frames for the given input frame count.
+         * @return The group delay in input frames.
          */
-        [[nodiscard]] virtual AmUInt64 GetExpectedOutputFrames(AmUInt64 inputFrameCount) const = 0;
-
-        /**
-         * @brief Returns the current input latency in frames.
-         *
-         * @return The resampler's current input latency in frames.
-         */
-        [[nodiscard]] virtual AmUInt64 GetInputLatency() const = 0;
-
-        /**
-         * @brief Returns the current output latency in frames.
-         *
-         * @return The resampler's current output latency in frames.
-         */
-        [[nodiscard]] virtual AmUInt64 GetOutputLatency() const = 0;
+        [[nodiscard]] virtual AmUInt64 GetLatency() const = 0;
 
         /**
          * @brief Resets the internal resampler state.

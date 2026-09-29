@@ -408,7 +408,8 @@ void resampleIR(const AppOptions& state, AudioBuffer& buffer, AmUInt32& sampleRa
     auto resampler = Resampler::Construct("default");
     resampler->Initialize(2, sampleRate, state.resampling.targetSampleRate);
 
-    auto resampledTotalFrames = resampler->GetExpectedOutputFrames(irLength);
+    // Upper bound on how many output frames the whole IR buffer could produce.
+    auto resampledTotalFrames = irLength * state.resampling.targetSampleRate / sampleRate + 2;
     AudioBuffer resampledBuffer(resampledTotalFrames, 2);
 
     resampler->Process(buffer, irLength, resampledBuffer, resampledTotalFrames);

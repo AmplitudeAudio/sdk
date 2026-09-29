@@ -40,14 +40,14 @@ namespace SparkyStudios::Audio::Amplitude::Tests
 
             // Create test audio buffers
             AudioBuffer inputBuffer(inputFrames, channelCount);
-            const AmUInt64 expectedOutputFrames = instance->GetExpectedOutputFrames(inputFrames);
-            AudioBuffer outputBuffer(expectedOutputFrames, channelCount);
+            const AmUInt64 capacity = inputFrames * sampleRateOut / sampleRateIn + 2;
+            AudioBuffer outputBuffer(capacity, channelCount);
 
             // Fill input buffer with test signal
             GenerateSineWave(inputBuffer, sampleRateIn);
 
             AmUInt64 processedInputFrames = inputFrames;
-            AmUInt64 processedOutputFrames = expectedOutputFrames;
+            AmUInt64 processedOutputFrames = capacity;
 
             // Process audio
             const bool result = instance->Process(inputBuffer, processedInputFrames, outputBuffer, processedOutputFrames);

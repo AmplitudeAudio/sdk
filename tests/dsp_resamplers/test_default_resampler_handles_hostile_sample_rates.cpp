@@ -48,15 +48,15 @@ namespace SparkyStudios::Audio::Amplitude::Tests
                 AudioBuffer inputBuffer(inputFrames, channelCount);
                 GenerateSineWave(inputBuffer, sourceSampleRate);
 
-                const AmUInt64 expectedOutputFrames = instance->GetExpectedOutputFrames(inputFrames);
-                AudioBuffer outputBuffer(expectedOutputFrames, channelCount);
+                const AmUInt64 capacity = inputFrames * targetSampleRate / sourceSampleRate + 2;
+                AudioBuffer outputBuffer(capacity, channelCount);
 
                 AmUInt64 processedInputFrames = inputFrames;
-                AmUInt64 processedOutputFrames = expectedOutputFrames;
+                AmUInt64 processedOutputFrames = capacity;
 
                 AM_EXPECT(instance->Process(inputBuffer, processedInputFrames, outputBuffer, processedOutputFrames));
                 AM_EXPECT(processedOutputFrames > 0);
-                AM_EXPECT(processedOutputFrames <= expectedOutputFrames);
+                AM_EXPECT(processedOutputFrames <= capacity);
             }
         }
     };

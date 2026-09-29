@@ -89,7 +89,10 @@ namespace SparkyStudios::Audio::Amplitude
             if (_needResampling)
                 _resampler->Process(input, inputFrames, output, outputFrames);
             else
+            {
+                inputFrames = outputFrames = AM_MIN(inputFrames, outputFrames);
                 AudioBuffer::Copy(input, 0, output, 0, outputFrames);
+            }
             return;
         }
 
@@ -120,7 +123,7 @@ namespace SparkyStudios::Audio::Amplitude
             return;
 
         if (_srcInitialized)
-            _resampler->SetSampleRate(sourceSampleRate, targetSampleRate);
+            _resampler->SetRatio(static_cast<AmReal64>(sourceSampleRate) / static_cast<AmReal64>(targetSampleRate));
         else
         {
             _resampler->Initialize(_settings.m_targetChannelCount, sourceSampleRate, targetSampleRate);
@@ -128,24 +131,27 @@ namespace SparkyStudios::Audio::Amplitude
         }
     }
 
-    AmUInt64 AudioConverter::GetRequiredInputFrameCount(AmUInt64 outputFrameCount) const
+    void AudioConverter::SetRatio(AmReal64 inputPerOutput)
     {
-        return _resampler->GetRequiredInputFrames(outputFrameCount);
+        _needResampling = !(inputPerOutput == 1.0 && _settings.m_sourceSampleRate == _settings.m_targetSampleRate);
+
+        if (!_srcInitialized)
+        {
+            _resampler->Initialize(_settings.m_targetChannelCount, _settings.m_sourceSampleRate, _settings.m_targetSampleRate);
+            _srcInitialized = true;
+        }
+
+        _resampler->SetRatio(inputPerOutput);
     }
 
-    AmUInt64 AudioConverter::GetExpectedOutputFrameCount(AmUInt64 inputFrameCount) const
+    AmUInt64 AudioConverter::GetInputFramesNeeded(AmUInt64 outputFrameCount) const
     {
-        return _resampler->GetExpectedOutputFrames(inputFrameCount);
+        return _needResampling ? _resampler->GetInputFramesNeeded(outputFrameCount) : outputFrameCount;
     }
 
-    AmUInt64 AudioConverter::GetInputLatency() const
+    AmUInt64 AudioConverter::GetLatency() const
     {
-        return _resampler->GetInputLatency();
-    }
-
-    AmUInt64 AudioConverter::GetOutputLatency() const
-    {
-        return _resampler->GetOutputLatency();
+        return _needResampling ? _resampler->GetLatency() : 0;
     }
 
     const AudioConverter::Settings& AudioConverter::GetSettings() const
