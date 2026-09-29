@@ -13,6 +13,8 @@
 // limitations under the License.
 
 #include <cstdlib>
+#include <utility>
+#include <vector>
 
 #include <SparkyStudios/Audio/Amplitude/Amplitude.h>
 
@@ -318,15 +320,57 @@ static int process(const AmOsString& inFileName, const AmOsString& outFileName, 
                     "sample rate that shares more factors with the source.\n",
                     sampleRate, state.resampling.targetSampleRate);
 
-            // Upper bound on how many output frames the whole input buffer could produce.
-            const AmUInt64 capacity = numSamples * state.resampling.targetSampleRate / sampleRate + 2;
-            AmUInt64 f = capacity;
-            AudioBuffer output(capacity, numChannels);
+            constexpr AmUInt64 kOutputChunkFrames = 8192;
+            std::vector<AudioBuffer> chunks;
+            std::vector<AmUInt64> chunkFrames;
+            AmUInt64 offset = 0;
+            AmUInt64 totalOutFrames = 0;
 
-            resampler->Process(pcmData, numSamples, output, f);
+            while (offset < numSamples)
+            {
+                const AmUInt64 want = kOutputChunkFrames;
+                const AmUInt64 needed = AM_MIN(resampler->GetInputFramesNeeded(want), numSamples - offset);
+
+                AudioBuffer chunkIn(needed, numChannels);
+                AudioBuffer::Copy(pcmData, offset, chunkIn, 0, needed);
+
+                AudioBuffer chunkOut(want, numChannels);
+                AmUInt64 inFrames = needed;
+                AmUInt64 outFrames = want;
+
+                if (!resampler->Process(chunkIn, inFrames, chunkOut, outFrames))
+                {
+                    log(stderr, "Error while resampling \"" AM_OS_CHAR_FMT "\".\n", inFileName.c_str());
+                    return EXIT_FAILURE;
+                }
+
+                if (inFrames == 0 && outFrames == 0)
+                {
+                    // No progress: bail instead of looping or silently truncating.
+                    log(stderr, "Resampling stalled while converting \"" AM_OS_CHAR_FMT "\".\n", inFileName.c_str());
+                    return EXIT_FAILURE;
+                }
+
+                if (outFrames > 0)
+                {
+                    chunks.push_back(std::move(chunkOut));
+                    chunkFrames.push_back(outFrames);
+                    totalOutFrames += outFrames;
+                }
+
+                offset += inFrames;
+            }
+
+            AudioBuffer output(totalOutFrames, numChannels);
+            AmUInt64 writeOffset = 0;
+            for (AmSize i = 0; i < chunks.size(); ++i)
+            {
+                AudioBuffer::Copy(chunks[i], 0, output, writeOffset, chunkFrames[i]);
+                writeOffset += chunkFrames[i];
+            }
 
             sampleRate = state.resampling.targetSampleRate;
-            numSamples = f;
+            numSamples = totalOutFrames;
 
             pcmData = output;
 
