@@ -15,6 +15,7 @@
 #include <SparkyStudios/Audio/Amplitude/Amplitude.h>
 
 #include <Core/Engine.h>
+#include <Core/EngineInternalState.h>
 #include <Mixer/Amplimix.h>
 
 #include "EngineTestCase.h"
@@ -24,18 +25,23 @@ using namespace SparkyStudios::Audio::Amplitude;
 
 namespace SparkyStudios::Audio::Amplitude::Tests
 {
-    AM_TEST_CASE(EngineTestCase, core_engine, mixer_rejects_invalid_playback_cursor_operations)
+    AM_TEST_CASE(EngineTestCase, core_engine, audio_clock_advances_with_mix)
     {
     public:
         void Run() override
         {
             const AmplimixImpl& mixer = amEngine->GetState()->mixer;
-            AmUInt64 cursor = 0;
+            const AmUInt64 before = mixer.GetAudioClock();
+            amEngine->WaitUntilFrames(10);
+            const AmUInt64 after = mixer.GetAudioClock();
 
-            AM_EXPECT_NOT(mixer.GetVoicePosition(kAmInvalidObjectId, 0, cursor));
-            AM_EXPECT(mixer.GetVoiceState(kAmInvalidObjectId, 0) == eVoiceState::Idle);
+            // The clock counts rendered frames only, in whole blocks.
+            AM_EXPECT(after > before);
+            const DeviceDescription& device = mixer.GetDeviceDescription();
+            const AmUInt64 block = device.mOutputBufferSize / static_cast<AmUInt64>(device.mRequestedOutputChannels);
+            AM_EXPECT_EQ(0ULL, (after - before) % block);
         }
     };
 
-    AM_REGISTER_TEST(core_engine, mixer_rejects_invalid_playback_cursor_operations);
+    AM_REGISTER_TEST(core_engine, audio_clock_advances_with_mix);
 } // namespace SparkyStudios::Audio::Amplitude::Tests

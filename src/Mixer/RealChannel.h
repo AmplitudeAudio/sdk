@@ -239,15 +239,37 @@ namespace SparkyStudios::Audio::Amplitude
          */
         [[nodiscard]] std::vector<AmUInt32> GetMixerLayerIds() const;
 
+        /**
+         * @brief Checks whether one of this channel's layers still plays @p sound on the mixer layer @p mixerLayerId.
+         *
+         * A voice event for a channel that was reset and reused since does not pass this check.
+         */
+        [[nodiscard]] bool OwnsMixerLayer(AmUInt32 mixerLayerId, const SoundInstance* sound) const;
+
+        /**
+         * @brief Forgets the layer bound to the mixer layer @p mixerLayerId, once its voice finished (game thread).
+         *
+         * The mixer owns and destroys the layer's sound instance.
+         */
+        void ForgetMixerLayer(AmUInt32 mixerLayerId);
+
+        /**
+         * @brief Checks whether a layer that was stopped still renders on the mixer (its voice fades out).
+         */
+        [[nodiscard]] bool HasSoundingLayers() const;
+
     private:
         /**
          * @brief Holds all per-layer data for a single audio layer on the channel.
          */
         struct LayerData
         {
-            AmUInt32 mixerLayerId = kAmInvalidObjectId; ///< Mixer layer ID returned by AmplimixImpl::Play()
+            AmUInt32 mixerLayerId = kAmInvalidObjectId; ///< Mixer layer ID returned by AmplimixImpl::StartVoice()
             bool instanceTableInstalled = false; ///< The mixer layer has an instance pipeline table (game-side mirror).
             std::vector<AmChannelInstanceID> attachedInstanceIds; ///< Instance IDs with an attached pipeline (game-side mirror).
+            std::vector<AmChannelInstanceID> attachedStreamIds; ///< Instance IDs with an attached stream (game-side mirror).
+            bool paused = false; ///< Last transport command was a pause (game-side mirror).
+            bool stopping = false; ///< A stop was posted; waiting for Finished.
             bool isStream = false;                      ///< Whether this layer is streaming audio
             bool isLoop = false;                        ///< Whether this layer should loop
             AmReal32 gain = 1.0f;                       ///< Per-layer gain value (defaults to unity)

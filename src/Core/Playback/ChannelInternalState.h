@@ -36,6 +36,7 @@
 #include <SparkyStudios/Audio/Amplitude/Sound/SwitchContainer.h>
 
 #include <Mixer/RealChannel.h>
+#include <Mixer/Voice/VoiceTypes.h>
 #include <Utils/intrusive_list.h>
 
 namespace SparkyStudios::Audio::Amplitude
@@ -343,6 +344,26 @@ namespace SparkyStudios::Audio::Amplitude
         }
 
         void HaltInternal();
+
+        /**
+         * @brief Gets the name of the fader used by this channel's transport fades.
+         */
+        [[nodiscard]] const AmString& GetFaderName() const;
+
+        /**
+         * @brief Called on the game thread when a voice of this channel finished a fade-out.
+         *
+         * @param mixerLayerId The mixer layer of the voice.
+         * @param target What the fade-out ended in.
+         * @param frame The audio-clock frame the fade reached zero at.
+         * @param sourcePosition The source frame the voice stopped at, for paused and released voices.
+         */
+        void OnVoiceFadedOut(AmUInt32 mixerLayerId, eVoiceFadeTarget target, AmUInt64 frame, AmUInt64 sourcePosition);
+
+        /**
+         * @brief Triggers @p event at the start of the next engine frame, unless this channel was reused in between.
+         */
+        void TriggerOnNextFrame(eChannelEvent event);
 
         /**
          * @brief Registers a callback for a channel event.

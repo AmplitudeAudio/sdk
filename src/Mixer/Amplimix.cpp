@@ -73,170 +73,6 @@ namespace SparkyStudios::Audio::Amplitude
         bool m_locked = false;
     };
 
-    constexpr AmUInt32 kProcessedFramesCount = GetSimdBlockSize();
-
-    static void OnSoundDestroyed(AmplimixImpl* mixer, AmplimixLayerImpl* layer);
-
-    static void TriggerChannelEvents(ChannelInternalState* channelState, eChannelEvent event)
-    {
-        amEngine->OnNextFrame(
-            [channelState, event](AmTime)
-            {
-                channelState->Trigger(event);
-            });
-    }
-
-    static bool ShouldLoopSound(AmplimixImpl* mixer, AmplimixLayerImpl* layer)
-    {
-        const auto* sound = layer->snd->sound.get();
-        const AmUInt32 loopCount = sound->GetSettings().m_loopCount;
-
-        return sound->GetCurrentLoopCount() != loopCount;
-    }
-
-    static void OnSoundStarted(AmplimixImpl* mixer, AmplimixLayerImpl* layer)
-    {
-        const auto* sound = layer->snd->sound.get();
-        amLogDebug("Started sound: '%s'.", sound->GetSound()->GetName().c_str());
-
-        const auto channel = sound->GetChannel();
-        auto* channelState = channel.GetState();
-
-        TriggerChannelEvents(channelState, eChannelEvent_Begin);
-    }
-
-    static void OnSoundPaused(AmplimixImpl* mixer, AmplimixLayerImpl* layer)
-    {
-        const auto* sound = layer->snd->sound.get();
-        amLogDebug("Paused sound: '%s'.", sound->GetSound()->GetName().c_str());
-
-        const auto channel = sound->GetChannel();
-        auto* channelState = channel.GetState();
-
-        TriggerChannelEvents(channelState, eChannelEvent_Pause);
-    }
-
-    static void OnSoundResumed(AmplimixImpl* mixer, AmplimixLayerImpl* layer)
-    {
-        const auto* sound = layer->snd->sound.get();
-        amLogDebug("Resumed sound: '%s'.", sound->GetSound()->GetName().c_str());
-
-        const auto channel = sound->GetChannel();
-        auto* channelState = channel.GetState();
-
-        TriggerChannelEvents(channelState, eChannelEvent_Resume);
-    }
-
-    static void OnSoundStopped(AmplimixImpl* mixer, AmplimixLayerImpl* layer)
-    {
-        const auto* sound = layer->snd->sound.get();
-        amLogDebug("Stopped sound: '%s'.", sound->GetSound()->GetName().c_str());
-
-        const auto channel = sound->GetChannel();
-        auto* channelState = channel.GetState();
-
-        TriggerChannelEvents(channelState, eChannelEvent_Stop);
-    }
-
-    static bool OnSoundLooped(AmplimixImpl* mixer, AmplimixLayerImpl* layer)
-    {
-        auto* sound = layer->snd->sound.get();
-        amLogDebug("Looped sound: '%s'.", sound->GetSound()->GetName().c_str());
-
-        AmplimixImpl::IncrementSoundLoopCount(sound);
-
-        const bool shouldLoop = ShouldLoopSound(mixer, layer);
-
-        if (shouldLoop)
-        {
-            const auto channel = sound->GetChannel();
-            auto* channelState = channel.GetState();
-
-            TriggerChannelEvents(channelState, eChannelEvent_Loop);
-        }
-
-        return shouldLoop;
-    }
-
-    static AmUInt64 OnSoundStream(AmplimixImpl* mixer, AmplimixLayerImpl* layer, AmUInt64 offset, AmUInt64 frames)
-    {
-        if (!layer->snd->stream)
-            return 0;
-
-        const auto* sound = layer->snd->sound.get();
-        return sound->GetAudio(offset, frames);
-    }
-
-    static void OnSoundEnded(AmplimixImpl* mixer, AmplimixLayerImpl* layer)
-    {
-        auto* sound = layer->snd->sound.get();
-        amLogDebug("Ended sound: '%s'.", sound->GetSound()->GetName().c_str());
-
-        const auto channel = sound->GetChannel();
-        auto* channelState = channel.GetState();
-
-        auto haltCallback = [channelState]() -> bool
-        {
-            TriggerChannelEvents(channelState, eChannelEvent_End);
-            channelState->HaltInternal();
-
-            return true;
-        };
-
-        if (const auto* engine = static_cast<const EngineImpl*>(Engine::GetInstance()); engine->GetState()->stopping)
-        {
-            mixer->PushCommand({ haltCallback });
-            return;
-        }
-
-        if (sound->GetSettings().m_kind == SoundKind::Standalone)
-        {
-            mixer->PushCommand({ haltCallback });
-        }
-        else if (sound->GetSettings().m_kind == SoundKind::Switched)
-        {
-            mixer->PushCommand({ haltCallback });
-        }
-        else if (sound->GetSettings().m_kind == SoundKind::Contained)
-        {
-            const CollectionImpl* collection = sound->GetCollection();
-            AMPLITUDE_ASSERT(collection != nullptr); // Should always have a collection for contained sound instances.
-
-            if (const CollectionDefinition* config = collection->GetDefinition(); config->play_mode() == CollectionPlayMode_PlayAll)
-            {
-                amEngine->OnNextFrame(
-                    [collection, channelState, sound, mixer, haltCallback](AmTime)
-                    {
-                        channelState->GetRealChannel().MarkAsPlayed(sound->GetSound());
-                        if (channelState->GetRealChannel().AllSoundsHasPlayed())
-                        {
-                            channelState->GetRealChannel().ClearPlayedSounds();
-                            mixer->PushCommand({ haltCallback });
-                        }
-
-                        // Play the collection again only if the channel is still playing.
-                        if (channelState->GetRealChannel().Playing())
-                            channelState->Play();
-                    });
-            }
-        }
-        else
-        {
-            AMPLITUDE_ASSERT(false); // Should never fall in this case.
-        }
-    }
-
-    static AudioConverter::Settings MakeLayerConverterSettings(const SoundFormat& format, AmUInt32 outputSampleRate)
-    {
-        AudioConverter::Settings settings{};
-        settings.m_sourceChannelCount = format.GetNumChannels();
-        settings.m_targetChannelCount = 1; // Sound is always processed as mono
-        settings.m_sourceSampleRate = format.GetSampleRate();
-        settings.m_targetSampleRate = outputSampleRate;
-
-        return settings;
-    }
-
     static void OnSoundDestroyed(AmplimixImpl* mixer, AmplimixLayerImpl* layer)
     {
         // Null guard: multiple deferred commands may target the same layer in one
@@ -267,7 +103,8 @@ namespace SparkyStudios::Audio::Amplitude
         , _nextId(0)
         , _masterGain()
         , _layers()
-        , _remainingFrames(0)
+        , _voiceCommands(std::make_unique<VoiceCommandQueue>())
+        , _voiceEvents(std::make_unique<VoiceEventQueue>())
         , _pipeline(nullptr)
         , _device()
         , _scratchBuffer(kAmMaxSupportedFrameCount, kAmMaxSupportedChannelCount)
@@ -312,6 +149,9 @@ namespace SparkyStudios::Audio::Amplitude
 
         _maxInstancePipelines = config->mixer()->max_instance_pipelines();
 
+        UpdateVoiceBlockFrames();
+        _voiceOutbox.reserve(256);
+
         // Publish to atomic snapshots for audio-thread reads
         AMPLIMIX_STORE_RELAXED(&_mixOutputSampleRate, _device.mRequestedOutputSampleRate);
         AMPLIMIX_STORE_RELAXED(&_mixOutputChannels, _device.mRequestedOutputChannels);
@@ -354,6 +194,8 @@ namespace SparkyStudios::Audio::Amplitude
         _device.mDeviceOutputChannels = deviceOutputChannels;
         _device.mDeviceOutputFormat = deviceOutputFormat;
 
+        UpdateVoiceBlockFrames();
+
         // Publish to atomic snapshots for audio-thread reads
         AMPLIMIX_STORE_RELAXED(&_mixOutputSampleRate, _device.mRequestedOutputSampleRate);
         AMPLIMIX_STORE_RELAXED(&_mixOutputChannels, _device.mRequestedOutputChannels);
@@ -362,6 +204,12 @@ namespace SparkyStudios::Audio::Amplitude
     void AmplimixImpl::SetAfterMixCallback(AfterMixCallback callback)
     {
         _afterMixCallback = callback;
+    }
+
+    void AmplimixImpl::UpdateVoiceBlockFrames()
+    {
+        const auto channels = static_cast<AmUInt64>(_device.mRequestedOutputChannels);
+        _voiceBlockFrames = channels > 0 ? AM_MAX(static_cast<AmUInt64>(_device.mOutputBufferSize) / channels, 1ULL) : 1ULL;
     }
 
     AmUInt64 AmplimixImpl::Mix(AudioBuffer** outBuffer, AmUInt64 frameCount)
@@ -396,89 +244,64 @@ namespace SparkyStudios::Audio::Amplitude
         // clear the output buffer
         _scratchBuffer.Clear();
 
-        // determine remaining number of frames
-#if defined(AM_SIMD_INTRINSICS)
-        _remainingFrames = AM_VALUE_ALIGN(frameCount, GetSimdBlockSize()) - frameCount;
-#else
-        _remainingFrames = 0; // Should not have remaining frames without SIMD optimization
-#endif // AM_SIMD_INTRINSICS
+        // Mixer commands pushed before a transport command (e.g. an instance stream attached before a resume) apply
+        // before it; transport commands flushed by the game thread then land on the first frame of this block.
+        ExecuteCommands();
+        DrainVoiceCommands();
 
-        // begin actual mixing
-        bool hasMixedAtLeastOneLayer = false;
+        const AmUInt64 clock = _audioClock.load(std::memory_order_relaxed);
+        const AmUInt64 step = _voiceBlockFrames > 0 ? _voiceBlockFrames : frameCount;
         const AmUInt32 activeLayerCount = AMPLIMIX_LOAD_RELAXED(&_activeLayerCount);
+        bool hasMixedAtLeastOneLayer = false;
 
-        for (AmUInt32 i = 0; i < activeLayerCount; ++i)
+        // Callbacks larger than the nominal block are rendered in nominal sub-blocks: voices size their buffers once.
+        for (AmUInt64 offset = 0; offset < frameCount; offset += step)
         {
-            if (_engineState->stopping.load(std::memory_order_relaxed))
-                break; // Stop mixing if engine is stopping
+            const AmUInt64 frames = AM_MIN(step, frameCount - offset);
 
-            auto& layer = _layers[_activeLayerIndices[i]];
-
-            if (!ShouldMix(&layer))
-                continue;
-
-            UpdatePitch(&layer);
-
-            // Update cached instance data for multi-position processing
-            layer.UpdateInstanceData();
-
-            hasMixedAtLeastOneLayer = true;
-            MixLayer(&layer, &_scratchBuffer, frameCount);
-
-#if defined(AM_SIMD_ALIGNMENT)
-            // If we have mixed more frames than required, move back the cursor
-            if (_remainingFrames > 0)
+            for (AmUInt32 i = 0; i < activeLayerCount; ++i)
             {
-                AmUInt64 cursor = AMPLIMIX_LOAD(&layer.cursor);
-                cursor -= _remainingFrames;
-                AMPLIMIX_STORE(&layer.cursor, cursor);
-            }
-#endif // AM_SIMD_ALIGNMENT
+                if (_engineState->stopping.load(std::memory_order_relaxed))
+                    break; // Stop mixing if engine is stopping
 
-            layer.ResetPipeline();
+                auto& layer = _layers[_activeLayerIndices[i]];
+
+                if (!ShouldMix(&layer))
+                {
+                    // A finished voice keeps the events a full queue could not take: publish them once there is room.
+                    if (layer.voice != nullptr && layer.slot.load(std::memory_order_acquire) == eLayerSlot::Live)
+                        layer.voice->GetMailbox().Publish(*_voiceEvents);
+
+                    continue;
+                }
+
+                if (offset == 0)
+                    layer.UpdateInstanceData();
+
+                hasMixedAtLeastOneLayer |= MixVoice(&layer, &_scratchBuffer, offset, frames, clock + offset);
+            }
         }
 
+        _audioClock.store(clock + frameCount, std::memory_order_release);
         ExecuteCommands();
 
-        if (hasMixedAtLeastOneLayer)
-        {
-            // Run the after-mix callback if available
-            if (_afterMixCallback != nullptr)
-                _afterMixCallback(this, &_scratchBuffer, frameCount);
+        if (!hasMixedAtLeastOneLayer)
+            return 0;
 
-            if (outBuffer != nullptr)
-                *outBuffer = &_scratchBuffer;
+        // Run the after-mix callback if available
+        if (_afterMixCallback != nullptr)
+            _afterMixCallback(this, &_scratchBuffer, frameCount);
 
-            return frameCount;
-        }
+        if (outBuffer != nullptr)
+            *outBuffer = &_scratchBuffer;
 
-        return 0;
+        return frameCount;
     }
 
-    AmUInt32 AmplimixImpl::Play(
-        SoundData* sound, PlayStateFlag flag, AmReal32 gain, AmReal32 pitch, AmReal32 speed, AmUInt32 id, AmUInt32 layer)
+    AmUInt32 AmplimixImpl::StartVoice(SoundData* sound, const VoiceStartOptions& options, AmUInt32 id, AmUInt32 layer)
     {
-        return PlayAdvanced(sound, flag, gain, pitch, speed, 0, sound->length, id, layer);
-    }
-
-    AmUInt32 AmplimixImpl::PlayAdvanced(
-        SoundData* sound,
-        PlayStateFlag flag,
-        AmReal32 gain,
-        AmReal32 pitch,
-        AmReal32 speed,
-        AmUInt64 startFrame,
-        AmUInt64 endFrame,
-        AmUInt32 id,
-        AmUInt32 layer)
-    {
-        if (flag <= ePSF_MIN || flag >= ePSF_MAX)
-            return 0; // invalid flag
-
-        if (endFrame - startFrame < kProcessedFramesCount || endFrame < kProcessedFramesCount)
-            return 0; // invalid frame range
-
-        AmplimixMutexLocker lock(this);
+        if (sound == nullptr || sound->length == 0)
+            return 0;
 
         // define a layer id
         layer = layer == 0 ? ++_nextId : layer;
@@ -487,102 +310,81 @@ namespace SparkyStudios::Audio::Amplitude
         if (id == 0)
             id = kAmplimixLayersCount;
 
-        // get layer for next sound handle id
         auto* lay = GetLayer(layer);
+        if (lay->slot.load(std::memory_order_acquire) != eLayerSlot::Free)
+            return 0;
 
-        // check if corresponding layer is free
-        if (AMPLIMIX_LOAD(&lay->flag) == ePSF_MIN)
+        const AmUInt32 outputRate = AMPLIMIX_LOAD_RELAXED(&_mixOutputSampleRate);
+
+        VoiceSettings settings;
+        settings.source = MakeVoiceSource(sound);
+        settings.regionStart = 0;
+        settings.regionEnd = sound->length;
+        settings.loop = options.loop;
+        settings.loopCount = options.loopCount;
+        settings.startPosition = options.startPosition;
+        settings.startFrame = options.startFrame;
+        settings.fadeIn = options.fadeIn;
+        settings.outputRate = outputRate;
+        settings.maxBlockFrames = _voiceBlockFrames;
+        settings.resamplerName = _resamplerName;
+        settings.curve = options.faderName.empty() ? nullptr : Fader::Construct(options.faderName);
+        settings.speed = AM_MAX(options.pitch * options.speed, 0.001f);
+        settings.layer = layer;
+        settings.id = id;
+
+        auto* voice = ampoolnew(eMemoryPoolKind_Amplimix, Voice);
+        if (!voice->Initialize(settings))
         {
-            // Initialize this layer's pipeline
-            lay->pipeline = _pipeline->CreateInstance(lay);
-
-            // All non-atomic writes (id, snd, start, end) happen before the release-store
-            // to lay->flag below. The audio thread's acquire-load on flag in ShouldMix()
-            // establishes happens-before, guaranteeing these fields are visible.
-            lay->id = id;
-            lay->snd = sound;
-
-#if defined(AM_SIMD_INTRINSICS)
-            lay->start = startFrame & ~(kProcessedFramesCount - 1);
-            lay->end = endFrame & ~(kProcessedFramesCount - 1);
-#else
-            lay->start = startFrame;
-            lay->end = endFrame;
-#endif // AM_SIMD_INTRINSICS
-
-            // store the gain
-            AMPLIMIX_STORE(&lay->gain, gain);
-            // store the pitch
-            AMPLIMIX_STORE(&lay->pitch, pitch);
-            // store the playback speed
-            AMPLIMIX_STORE(&lay->userPlaySpeed, speed);
-            // initial value for the current speed
-            AMPLIMIX_STORE(&lay->playSpeed, pitch * speed);
-            // atomically set cursor to start position based on given argument
-            AMPLIMIX_STORE(&lay->cursor, lay->start);
-
-            const AmUInt32 reqSampleRate = AMPLIMIX_LOAD_RELAXED(&_mixOutputSampleRate);
-            const AmReal32 baseRatio = static_cast<AmReal32>(sound->format.GetSampleRate()) / static_cast<AmReal32>(reqSampleRate);
-            // store the base sample rate ratio for this source
-            AMPLIMIX_STORE(&lay->baseSampleRateRatio, baseRatio);
-            // store the initial value for sample rate ratio
-            AMPLIMIX_STORE(&lay->sampleRateRatio, baseRatio * pitch * speed);
-
-            // Initialize the converter
-            lay->dataConverter = ampoolnew(eMemoryPoolKind_Amplimix, AudioConverter, _resamplerName);
-
-            const auto soundChannels = static_cast<AmUInt32>(sound->format.GetNumChannels());
-
-            if (!lay->dataConverter->Configure(MakeLayerConverterSettings(sound->format, reqSampleRate)))
-            {
-                amLogError("Cannot process frames. Unable to initialize the samples data converter.");
-                return 0;
-            }
-
-            // Pre-warm the layer's chunk pool so the audio thread never allocates.
-            // mOutputBufferSize is a sample count. A callback
-            // larger than the nominal period grows the pool once, then matches
-            // thereafter; a smaller one keeps the oversized chunk (Acquire reuses by
-            // capacity) and the pipeline auto-configures nodes to the buffer capacity,
-            // processing silent padding and advancing effects — a sustained size change
-            // re-runs every node's Configure on the audio thread.
-            const auto outChannels = static_cast<AmInt16>(_device.mRequestedOutputChannels);
-            const AmUInt64 outFrames = _device.mOutputBufferSize / outChannels;
-            const AmUInt64 inFrames = lay->dataConverter->GetInputFramesNeeded(outFrames) + kProcessedFramesCount;
-
-            lay->_chunkPool.PreWarm(inFrames, static_cast<AmUInt16>(soundChannels), outFrames);
-
-            // Per-instance pipelines are configured for the mono/stereo chunks the mixer hands to Execute().
-            // Read their frame count from the pool (in the mixer's acquisition order) so it matches exactly.
-            {
-                SoundChunk* in = lay->_chunkPool.Acquire(inFrames, static_cast<AmUInt16>(soundChannels), false);
-                SoundChunk* transient = lay->_chunkPool.Acquire(outFrames, static_cast<AmUInt16>(kAmMonoChannelCount), false);
-                lay->pipelineFrames = transient->buffer->GetFrameCount();
-                lay->_chunkPool.Release(transient);
-                lay->_chunkPool.Release(in);
-            }
-
-            // The first mixed block snaps to the target gain; later changes ramp. These writes are
-            // published to the audio thread by the release-store to lay->flag below.
-            for (auto& processor : lay->_mixGain)
-            {
-                processor.Invalidate();
-                processor.SetMinRampFrames(GainRampMinFrames(reqSampleRate));
-            }
-
-            // store flag last, releasing the layer to the mixer thread
-            AMPLIMIX_STORE(&lay->flag, flag);
-
-            PushCommand(
-                { [this, lay]() -> bool
-                  {
-                      // Add to active layer list
-                      ActivateLayer(GetLayerIndex(lay));
-                      return true;
-                  } });
-
-            OnSoundStarted(this, lay);
+            ampooldelete(eMemoryPoolKind_Amplimix, Voice, voice);
+            amLogError("Cannot start the voice: invalid source or output format.");
+            return 0;
         }
+
+        if (_pipeline == nullptr)
+            amLogWarning(
+                "No active pipeline is set, this sound will not be rendered. Configure the Amplimix pipeline in the engine configuration.");
+
+        // The layer is Free and not in the active list: the audio thread does not touch it until ActivateLayer runs.
+        lay->pipeline = _pipeline != nullptr ? _pipeline->CreateInstance(lay) : nullptr;
+        lay->id = id;
+        lay->snd = sound;
+        lay->voice = voice;
+        lay->start = 0;
+        lay->end = sound->length;
+        lay->currentSpeed = static_cast<AmReal32>(settings.speed);
+        lay->releaseRequested = false;
+        lay->voiceState.store(voice->GetPublishedState(), std::memory_order_relaxed);
+        lay->voicePosition.store(voice->GetPublishedPosition(), std::memory_order_relaxed);
+        AMPLIMIX_STORE(&lay->gain, options.gain);
+        AMPLIMIX_STORE(&lay->pitch, options.pitch);
+        AMPLIMIX_STORE(&lay->userPlaySpeed, options.speed);
+
+        // Pre-warm the pool so the audio thread never allocates: a mono render and a stereo pipeline output.
+        lay->_chunkPool.PreWarm(_voiceBlockFrames, kAmMonoChannelCount, _voiceBlockFrames);
+        {
+            SoundChunk* mono = lay->_chunkPool.Acquire(_voiceBlockFrames, kAmMonoChannelCount, false);
+            lay->pipelineFrames = mono->buffer->GetFrameCount();
+            lay->_chunkPool.Release(mono);
+        }
+
+        // The first mixed block snaps to the target gain; later changes ramp. These writes are published to the audio
+        // thread by the release-store to lay->slot below.
+        for (auto& processor : lay->_mixGain)
+        {
+            processor.Invalidate();
+            processor.SetMinRampFrames(GainRampMinFrames(outputRate));
+        }
+
+        lay->slot.store(eLayerSlot::Live, std::memory_order_release);
+
+        PushCommand(
+            { [this, lay]() -> bool
+              {
+                  // Add to active layer list
+                  ActivateLayer(GetLayerIndex(lay));
+                  return true;
+              } });
 
         return layer;
     }
@@ -591,7 +393,7 @@ namespace SparkyStudios::Audio::Amplitude
     {
         auto* lay = GetLayer(layer);
 
-        if (AMPLIMIX_LOAD(&lay->flag) <= ePSF_STOP || id != lay->id)
+        if (lay->slot.load(std::memory_order_acquire) != eLayerSlot::Live || id != lay->id)
             return false;
 
         AMPLIMIX_STORE(&lay->obstruction, obstruction);
@@ -603,7 +405,7 @@ namespace SparkyStudios::Audio::Amplitude
     {
         auto* lay = GetLayer(layer);
 
-        if (AMPLIMIX_LOAD(&lay->flag) <= ePSF_STOP || id != lay->id)
+        if (lay->slot.load(std::memory_order_acquire) != eLayerSlot::Live || id != lay->id)
             return false;
 
         AMPLIMIX_STORE(&lay->occlusion, occlusion);
@@ -615,7 +417,7 @@ namespace SparkyStudios::Audio::Amplitude
     {
         auto* lay = GetLayer(layer);
 
-        if (AMPLIMIX_LOAD(&lay->flag) <= ePSF_STOP || id != lay->id)
+        if (lay->slot.load(std::memory_order_acquire) != eLayerSlot::Live || id != lay->id)
             return false;
 
         AMPLIMIX_STORE(&lay->gain, gain);
@@ -627,7 +429,7 @@ namespace SparkyStudios::Audio::Amplitude
     {
         auto* lay = GetLayer(layer);
 
-        if (AMPLIMIX_LOAD(&lay->flag) <= ePSF_STOP || id != lay->id)
+        if (lay->slot.load(std::memory_order_acquire) != eLayerSlot::Live || id != lay->id)
             return false;
 
         AMPLIMIX_STORE(&lay->pitch, pitch);
@@ -635,131 +437,11 @@ namespace SparkyStudios::Audio::Amplitude
         return true;
     }
 
-    bool AmplimixImpl::SetCursor(AmUInt32 id, AmUInt32 layer, AmUInt64 cursor)
-    {
-        auto* lay = GetLayer(layer);
-
-        if (AMPLIMIX_LOAD(&lay->flag) <= ePSF_STOP || id != lay->id)
-            return false;
-
-#if defined(AM_SIMD_INTRINSICS)
-        // clamp cursor and truncate to multiple of kProcessedFramesCount before storing
-        AMPLIMIX_STORE(&lay->cursor, AM_CLAMP(cursor, lay->start, lay->end) & ~(kProcessedFramesCount - 1));
-#else
-        // clamp cursor and store it
-        AMPLIMIX_STORE(&lay->cursor, AM_CLAMP(cursor, lay->start, lay->end));
-#endif // AM_SIMD_INTRINSICS
-
-        return true;
-    }
-
-    bool AmplimixImpl::GetCursor(AmUInt32 id, AmUInt32 layer, AmUInt64& cursor)
-    {
-        auto* lay = GetLayer(layer);
-
-        if (AMPLIMIX_LOAD(&lay->flag) <= ePSF_STOP || id != lay->id)
-            return false;
-
-        cursor = AMPLIMIX_LOAD(&lay->cursor);
-
-        return true;
-    }
-
-    bool AmplimixImpl::ResetLayerState(AmUInt32 id, AmUInt32 layer)
-    {
-        auto* lay = GetLayer(layer);
-
-        if (AMPLIMIX_LOAD(&lay->flag) <= ePSF_STOP || id != lay->id)
-            return false;
-
-        if (lay->dataConverter != nullptr)
-            lay->dataConverter->Reset();
-
-        if (lay->instancePipelines != nullptr)
-            lay->instancePipelines->ForEachConverter(
-                [](AudioConverter& converter)
-                {
-                    converter.Reset();
-                });
-
-        lay->ResetPipeline();
-
-        return true;
-    }
-
-    bool AmplimixImpl::SetPlayState(AmUInt32 id, AmUInt32 layer, PlayStateFlag flag)
-    {
-        // return failure if given flag invalid
-        if (flag >= ePSF_MAX)
-            return false;
-
-        AmplimixMutexLocker lock(this);
-
-        // get layer based on the lowest bits of id
-        auto* lay = GetLayer(layer);
-
-        // check id and state flag to make sure the id is valid
-        if (PlayStateFlag prev; (id == lay->id) && ((prev = AMPLIMIX_LOAD(&lay->flag)) >= ePSF_STOP))
-        {
-            // return success if already in desired state
-            if (prev == flag)
-                return true;
-
-            // run appropriate callback
-            if (prev == ePSF_STOP && (flag == ePSF_PLAY || flag == ePSF_LOOP))
-                OnSoundStarted(this, lay);
-            else if ((prev == ePSF_PLAY || prev == ePSF_LOOP) && flag == ePSF_HALT)
-                OnSoundPaused(this, lay);
-            else if (prev == ePSF_HALT && (flag == ePSF_PLAY || flag == ePSF_LOOP))
-                OnSoundResumed(this, lay);
-            else if (prev != ePSF_STOP && flag == ePSF_STOP)
-                OnSoundStopped(this, lay);
-
-            // swap if flag has not changed and return if successful
-            if (AMPLIMIX_CSWAP(&lay->flag, &prev, flag))
-            {
-                if (flag == ePSF_STOP)
-                {
-                    // Defer sound destruction to the audio thread via command queue.
-                    // The CAS to ePSF_STOP prevents ShouldMix() from returning true,
-                    // so the audio thread will not access this layer during the next mix cycle.
-                    PushCommand(
-                        { [this, lay]() -> bool
-                          {
-                              OnSoundDestroyed(this, lay);
-                              return true;
-                          } });
-                }
-
-                return true;
-            }
-        }
-
-        // return failure
-        return false;
-    }
-
-    PlayStateFlag AmplimixImpl::GetPlayState(AmUInt32 id, AmUInt32 layer)
-    {
-        // get layer based on the lowest bits of id
-        auto* lay = GetLayer(layer);
-
-        // check id and state flag to make sure the id is valid
-        if (PlayStateFlag flag; (id == lay->id) && ((flag = AMPLIMIX_LOAD(&lay->flag)) > ePSF_STOP))
-        {
-            // return the found flag
-            return flag;
-        }
-
-        // return failure
-        return ePSF_MIN;
-    }
-
     bool AmplimixImpl::SetPlaySpeed(AmUInt32 id, AmUInt32 layer, AmReal32 speed)
     {
         auto* lay = GetLayer(layer);
 
-        if (AMPLIMIX_LOAD(&lay->flag) <= ePSF_STOP || id != lay->id)
+        if (lay->slot.load(std::memory_order_acquire) != eLayerSlot::Live || id != lay->id)
             return false;
 
         AMPLIMIX_STORE(&lay->userPlaySpeed, speed);
@@ -779,26 +461,23 @@ namespace SparkyStudios::Audio::Amplitude
 
     bool AmplimixImpl::InstallInstancePipelineTable(AmUInt32 id, AmUInt32 layer)
     {
-        if (_maxInstancePipelines == 0)
-            return false;
-
-        AmplimixMutexLocker lock(this);
-
         auto* lay = GetLayer(layer);
-        if (lay->id != id || AMPLIMIX_LOAD(&lay->flag) <= ePSF_STOP)
+        if (lay->id != id || lay->slot.load(std::memory_order_acquire) != eLayerSlot::Live)
             return false;
 
-        // Built here, on the game thread, with all its slots: the audio thread never allocates for it.
-        auto table = std::make_shared<InstancePipelineTable>(_maxInstancePipelines);
+        // Built here, on the game thread, with all their slots: the audio thread never allocates for them.
+        auto pipelines = std::make_shared<InstancePipelineTable>(_maxInstancePipelines);
+        auto streams = std::make_shared<InstanceStreamTable>(kAmMaxChannelInstances);
 
         PushCommand(
-            { [lay, id, table]() -> bool
+            { [lay, id, pipelines, streams]() -> bool
               {
                   // Drop the command if the layer finished or was reused since it was pushed.
-                  if (lay->id != id || AMPLIMIX_LOAD(&lay->flag) == ePSF_MIN)
+                  if (lay->id != id || lay->slot.load(std::memory_order_acquire) != eLayerSlot::Live)
                       return true;
 
-                  lay->instancePipelines = table;
+                  lay->instancePipelines = pipelines;
+                  lay->instanceStreams = streams;
                   return true;
               } });
 
@@ -824,16 +503,13 @@ namespace SparkyStudios::Audio::Amplitude
             }
         } pinGuard{ .mixer = this, .layer = layer };
 
+        // Pinned: the layer cannot be destroyed or reused while the pipeline is built. pipelineFrames is written by
+        // StartVoice() on this thread.
         auto* lay = GetLayer(layer);
-        AmUInt64 frames = 0;
+        const AmUInt64 frames = lay->pipelineFrames;
 
-        {
-            AmplimixMutexLocker lock(this);
-            frames = lay->pipelineFrames;
-        }
-
-        // Created and configured without holding the mixer lock, so the audio thread is never blocked by it. Configuring
-        // here, with the mono input and stereo output the mixer passes to Execute(), keeps the first Execute() from allocating.
+        // Created and configured on the game thread, so the audio thread is never blocked by it. Configuring here, with
+        // the mono input and stereo output the mixer passes to Execute(), keeps the first Execute() from allocating.
         std::shared_ptr<PipelineInstance> pipeline = _pipeline->CreateInstance(lay);
         if (pipeline == nullptr)
             return false;
@@ -841,28 +517,17 @@ namespace SparkyStudios::Audio::Amplitude
         if (frames > 0)
             pipeline->Configure(frames, static_cast<AmUInt16>(kAmMonoChannelCount), frames, static_cast<AmUInt16>(kAmStereoChannelCount));
 
-        // The resampler keeps filter history across blocks, so each instance needs its own.
-        auto converter = ampoolshared(eMemoryPoolKind_Amplimix, AudioConverter, _resamplerName);
-        if (!converter->Configure(MakeLayerConverterSettings(lay->snd->format, AMPLIMIX_LOAD_RELAXED(&_mixOutputSampleRate))))
-            return false;
-
-        AmplimixMutexLocker lock(this);
-
-        // The layer may have finished or been reused while the pipeline was being built.
-        if (lay->id != id || AMPLIMIX_LOAD(&lay->flag) <= ePSF_STOP)
+        if (lay->id != id || lay->slot.load(std::memory_order_acquire) != eLayerSlot::Live)
             return false;
 
         PushCommand(
-            { [lay, id, instanceId, pipeline, converter]() -> bool
+            { [lay, id, instanceId, pipeline]() -> bool
               {
-                  if (lay->id != id || AMPLIMIX_LOAD(&lay->flag) == ePSF_MIN || lay->instancePipelines == nullptr)
+                  if (lay->id != id || lay->slot.load(std::memory_order_acquire) != eLayerSlot::Live ||
+                      lay->instancePipelines == nullptr)
                       return true;
 
-                  // Start at the layer's current rate, which pitch and play speed changes may have moved.
-                  if (lay->dataConverter != nullptr)
-                      converter->SetRatio(static_cast<AmReal64>(AMPLIMIX_LOAD(&lay->sampleRateRatio)));
-
-                  AM_UNUSED(lay->instancePipelines->Attach(instanceId, pipeline, converter));
+                  AM_UNUSED(lay->instancePipelines->Attach(instanceId, pipeline));
                   return true;
               } });
 
@@ -874,7 +539,7 @@ namespace SparkyStudios::Audio::Amplitude
         AmplimixMutexLocker lock(this);
 
         auto* lay = GetLayer(layer);
-        if (lay->id != id || AMPLIMIX_LOAD(&lay->flag) == ePSF_MIN)
+        if (lay->id != id || lay->slot.load(std::memory_order_acquire) != eLayerSlot::Live)
             return false;
 
         PushCommand(
@@ -894,7 +559,7 @@ namespace SparkyStudios::Audio::Amplitude
     AmSize AmplimixImpl::GetInstancePipelineCount(AmUInt32 id, AmUInt32 layer) const
     {
         const AmplimixLayerImpl& lay = _layers[layer & kAmplimixLayersMask];
-        if (lay.id != id || AMPLIMIX_LOAD(&lay.flag) == ePSF_MIN || lay.instancePipelines == nullptr)
+        if (lay.id != id || lay.slot.load(std::memory_order_acquire) != eLayerSlot::Live || lay.instancePipelines == nullptr)
             return 0;
 
         return lay.instancePipelines->GetSize();
@@ -910,7 +575,7 @@ namespace SparkyStudios::Audio::Amplitude
         // Pairs with the fence in OnSoundDestroyed(): either this check sees the stop, or the destroy sees the pin.
         std::atomic_thread_fence(std::memory_order_seq_cst);
 
-        if (lay->id != id || AMPLIMIX_LOAD(&lay->flag) <= ePSF_STOP)
+        if (lay->id != id || lay->slot.load(std::memory_order_acquire) != eLayerSlot::Live)
         {
             UnpinLayer(layer);
             return false;
@@ -944,42 +609,258 @@ namespace SparkyStudios::Audio::Amplitude
 
     void AmplimixImpl::StopAll()
     {
-        AmplimixMutexLocker lock(this);
-
-        // go through all active layers and set their states to the stop state
-        for (auto&& lay : _layers)
-        {
-            // check if active and set to stop if true
-            if (AMPLIMIX_LOAD(&lay.flag) > ePSF_STOP)
-                AMPLIMIX_STORE(&lay.flag, ePSF_STOP);
-        }
+        for (AmUInt32 i = 0; i < kAmplimixLayersCount; ++i)
+            if (_layers[i].slot.load(std::memory_order_acquire) == eLayerSlot::Live)
+                PostVoiceCommand(_layers[i].id, i, eVoiceCommandKind::Stop);
     }
 
     void AmplimixImpl::HaltAll()
     {
-        AmplimixMutexLocker lock(this);
-
-        // go through all playing layers and set their states to halt
-        for (auto&& lay : _layers)
-        {
-            // check if playing or looping and try to swap
-            if (PlayStateFlag flag; (flag = AMPLIMIX_LOAD(&lay.flag)) > ePSF_HALT)
-                AMPLIMIX_CSWAP(&lay.flag, &flag, ePSF_HALT);
-        }
+        for (AmUInt32 i = 0; i < kAmplimixLayersCount; ++i)
+            if (_layers[i].slot.load(std::memory_order_acquire) == eLayerSlot::Live)
+                PostVoiceCommand(_layers[i].id, i, eVoiceCommandKind::Pause);
     }
 
     void AmplimixImpl::PlayAll()
     {
-        AmplimixMutexLocker lock(this);
+        for (AmUInt32 i = 0; i < kAmplimixLayersCount; ++i)
+            if (_layers[i].slot.load(std::memory_order_acquire) == eLayerSlot::Live)
+                PostVoiceCommand(_layers[i].id, i, eVoiceCommandKind::Resume);
+    }
 
-        // go through all halted layers and set their states to play
-        for (auto&& lay : _layers)
+    void AmplimixImpl::PostVoiceCommand(
+        AmUInt32 id, AmUInt32 layer, eVoiceCommandKind kind, AmTime duration, AmUInt64 position, AmUInt64 frame)
+    {
+        std::lock_guard<std::mutex> lock(_voiceOutboxMutex);
+        _voiceOutbox.push_back(VoiceCommand{ layer, id, kind, frame, duration, position });
+    }
+
+    void AmplimixImpl::FlushVoiceCommands()
+    {
+        std::lock_guard<std::mutex> lock(_voiceOutboxMutex);
+
+        // A full queue keeps the rest for the next frame: nothing is dropped.
+        AmSize sent = 0;
+        while (sent < _voiceOutbox.size() && _voiceCommands->TryEnqueue(_voiceOutbox[sent]))
+            ++sent;
+
+        _voiceOutbox.erase(_voiceOutbox.begin(), _voiceOutbox.begin() + static_cast<std::ptrdiff_t>(sent));
+    }
+
+    void AmplimixImpl::DrainVoiceCommands()
+    {
+        VoiceCommand command;
+        while (_voiceCommands->TryDequeue(command))
         {
-            // need to reset each time
-            PlayStateFlag flag = ePSF_HALT;
-            // swap the flag to play if it is on halt
-            AMPLIMIX_CSWAP(&lay.flag, &flag, ePSF_PLAY);
+            auto* lay = GetLayer(command.layer);
+            if (lay->id != command.id || lay->slot.load(std::memory_order_acquire) != eLayerSlot::Live || lay->voice == nullptr)
+                continue;
+
+            lay->voice->Enqueue(command);
         }
+    }
+
+    eVoiceState AmplimixImpl::GetVoiceState(AmUInt32 id, AmUInt32 layer) const
+    {
+        const AmplimixLayerImpl& lay = _layers[layer & kAmplimixLayersMask];
+        // Read from the layer, never from the voice: the audio thread may destroy the voice once its release is pushed.
+        if (lay.id != id || lay.slot.load(std::memory_order_acquire) != eLayerSlot::Live)
+            return eVoiceState::Idle;
+
+        return lay.voiceState.load(std::memory_order_acquire);
+    }
+
+    bool AmplimixImpl::GetVoicePosition(AmUInt32 id, AmUInt32 layer, AmUInt64& position) const
+    {
+        const AmplimixLayerImpl& lay = _layers[layer & kAmplimixLayersMask];
+        if (lay.id != id || lay.slot.load(std::memory_order_acquire) != eLayerSlot::Live)
+            return false;
+
+        position = lay.voicePosition.load(std::memory_order_acquire);
+        return true;
+    }
+
+    AmUInt64 AmplimixImpl::GetAudioClock() const
+    {
+        return _audioClock.load(std::memory_order_acquire);
+    }
+
+    void AmplimixImpl::ReleaseLayer(AmUInt32 id, AmUInt32 layer)
+    {
+        auto* lay = GetLayer(layer);
+        if (lay->id != id || lay->slot.load(std::memory_order_acquire) != eLayerSlot::Live || lay->releaseRequested)
+            return;
+
+        // Game thread only: from here on nothing on the game thread reads the voice or the sound of this layer.
+        lay->releaseRequested = true;
+
+        PushCommand(
+            { [this, lay, id]() -> bool
+              {
+                  if (lay->id == id)
+                      OnSoundDestroyed(this, lay);
+                  return true;
+              } });
+    }
+
+    void AmplimixImpl::DiscardVoice(AmUInt32 id, AmUInt32 layer)
+    {
+        // The layer owns the sound instance: destroying the layer after the mix deletes it, whether or not the voice
+        // finished. The caller must not delete the instance itself.
+        ReleaseLayer(id, layer);
+    }
+
+    bool AmplimixImpl::AttachInstanceStream(AmUInt32 id, AmUInt32 layer, AmChannelInstanceID instanceId)
+    {
+        if (!PinLayer(id, layer))
+            return false;
+
+        auto* lay = GetLayer(layer);
+        auto stream = ampoolshared(eMemoryPoolKind_Amplimix, VoiceStreamSlot);
+        const bool ready = lay->voice != nullptr && lay->voice->InitializeSlot(*stream, lay->start);
+        UnpinLayer(layer);
+
+        if (!ready)
+            return false;
+
+        PushCommand(
+            { [lay, id, instanceId, stream]() -> bool
+              {
+                  if (lay->id != id || lay->slot.load(std::memory_order_acquire) != eLayerSlot::Live || lay->instanceStreams == nullptr)
+                      return true;
+
+                  // Start where the instance is: its cursor lives on the audio thread.
+                  for (const auto& data : lay->instanceData)
+                  {
+                      if (data.instanceId != instanceId)
+                          continue;
+
+                      stream->reader.Seek(data.cursor);
+                      break;
+                  }
+
+                  AM_UNUSED(lay->instanceStreams->Attach(instanceId, stream));
+                  return true;
+              } });
+
+        return true;
+    }
+
+    bool AmplimixImpl::DetachInstanceStream(AmUInt32 id, AmUInt32 layer, AmChannelInstanceID instanceId)
+    {
+        auto* lay = GetLayer(layer);
+        if (lay->id != id || lay->slot.load(std::memory_order_acquire) != eLayerSlot::Live)
+            return false;
+
+        PushCommand(
+            { [lay, id, instanceId]() -> bool
+              {
+                  if (lay->id == id && lay->instanceStreams != nullptr)
+                      AM_UNUSED(lay->instanceStreams->Detach(instanceId)); // released after the mix, like pipelines
+                  return true;
+              } });
+
+        return true;
+    }
+
+    void AmplimixImpl::DispatchVoiceEvents()
+    {
+        VoiceEvent event;
+        while (_voiceEvents->TryDequeue(event))
+            HandleVoiceEvent(event);
+    }
+
+    void AmplimixImpl::HandleVoiceEvent(const VoiceEvent& event)
+    {
+        if (event.kind == eVoiceEventKind::Error)
+            amLogError("Voice on layer %u failed to render and was stopped.", event.layer);
+
+        AmplimixLayerImpl* layer = GetLayer(event.layer);
+
+        // A layer whose release was pushed may be destroyed by the audio thread at any time: never read its sound.
+        if (layer->id != event.id || layer->slot.load(std::memory_order_acquire) != eLayerSlot::Live || layer->releaseRequested ||
+            layer->snd == nullptr)
+            return;
+
+        SoundInstance* sound = layer->snd->sound.get();
+        ChannelInternalState* channelState = sound != nullptr ? sound->GetChannel().GetState() : nullptr;
+
+        // The channel may have been reset and reused since: only the channel that still owns this layer hears the event.
+        const bool owned = channelState != nullptr && channelState->GetRealChannel().OwnsMixerLayer(event.layer, sound);
+
+        switch (event.kind)
+        {
+        case eVoiceEventKind::Started:
+            if (owned)
+                channelState->Trigger(eChannelEvent_Begin);
+            break;
+
+        case eVoiceEventKind::Looped:
+            for (AmUInt32 i = 0; i < event.count; ++i)
+            {
+                IncrementSoundLoopCount(sound);
+                if (owned)
+                    channelState->Trigger(eChannelEvent_Loop);
+            }
+            break;
+
+        case eVoiceEventKind::FadedOut:
+            if (owned)
+                channelState->OnVoiceFadedOut(event.layer, event.target, event.frame, event.sourcePosition);
+            break;
+
+        case eVoiceEventKind::Ended:
+            if (owned)
+                HandleVoiceEnded(layer, channelState);
+            break;
+
+        case eVoiceEventKind::Finished:
+            if (owned)
+                channelState->GetRealChannel().ForgetMixerLayer(event.layer);
+            ReleaseLayer(event.id, event.layer);
+            break;
+
+        case eVoiceEventKind::Error:
+            if (owned)
+                channelState->HaltInternal();
+            break;
+
+        case eVoiceEventKind::Count:
+            break;
+        }
+    }
+
+    void AmplimixImpl::HandleVoiceEnded(AmplimixLayerImpl* layer, ChannelInternalState* channelState)
+    {
+        const SoundInstance* sound = layer->snd->sound.get();
+        amLogDebug("Ended sound: '%s'.", sound->GetSound()->GetName().c_str());
+
+        const bool stopping = _engineState != nullptr && _engineState->stopping.load(std::memory_order_acquire);
+        if (stopping || sound->GetSettings().m_kind != SoundKind::Contained)
+        {
+            channelState->Trigger(eChannelEvent_End);
+            channelState->HaltInternal();
+            return;
+        }
+
+        // PlayAll collections chain the next sound; PlayOne ones do nothing here.
+        const CollectionImpl* collection = sound->GetCollection();
+        AMPLITUDE_ASSERT(collection != nullptr); // Should always have a collection for contained sound instances.
+        if (collection->GetDefinition()->play_mode() != CollectionPlayMode_PlayAll)
+            return;
+
+        RealChannel& realChannel = channelState->GetRealChannel();
+        realChannel.MarkAsPlayed(sound->GetSound());
+        if (realChannel.AllSoundsHasPlayed())
+        {
+            realChannel.ClearPlayedSounds();
+            channelState->Trigger(eChannelEvent_End);
+            channelState->HaltInternal();
+        }
+
+        // Play the collection again only if the channel is still playing.
+        if (realChannel.Playing())
+            channelState->Play();
     }
 
     static thread_local bool tl_insideAudioMutex = false;
@@ -1041,393 +922,136 @@ namespace SparkyStudios::Audio::Amplitude
                 AM_UNUSED(command.callback());
     }
 
-    void AmplimixImpl::MixLayer(AmplimixLayerImpl* layer, AudioBuffer* buffer, AmUInt64 frameCount)
+    bool AmplimixImpl::MixVoice(AmplimixLayerImpl* layer, AudioBuffer* buffer, AmUInt64 offset, AmUInt64 frames, AmUInt64 blockClock)
     {
-        // snd is guaranteed non-null here: ShouldMix() already verified flag > ePSF_HALT
-        // (acquire), and Destroy() (which nulls snd) only runs in ExecuteCommands() after
-        // this loop. The assert below is a defense-in-depth check.
-        if (layer->snd == nullptr)
-        {
-            AMPLITUDE_ASSERT(false); // This should technically never appear
-            return;
-        }
-
-        if (_pipeline == nullptr || layer->pipeline == nullptr)
-        {
-            amLogWarning(
-                "No active pipeline is set, this means no sound will be rendered. You should configure the Amplimix "
-                "pipeline in your engine configuration file.");
-            return;
-        }
-
-        // Check for separate mode instancing - process each instance independently
-        const auto& channel = layer->GetChannel();
-        if (channel.Valid() && channel.GetState()->IsInstancingEnabled() &&
-            channel.GetState()->GetInstancingMode() == eChannelInstanceMode_Separate && !layer->instanceData.empty())
-        {
-            MixLayerSeparateMode(layer, buffer, frameCount);
-            return;
-        }
-
-        // load flag value atomically first
-        PlayStateFlag flag = AMPLIMIX_LOAD(&layer->flag);
-
-        // atomically load cursor
-        AmUInt64 cursor = AMPLIMIX_LOAD(&layer->cursor);
-
-        // atomically load master gain
-        const AmReal32 gain = AMPLIMIX_LOAD(&_masterGain) * AMPLIMIX_LOAD(&layer->gain);
+        Voice* voice = layer->voice;
+        voice->SetSpeed(UpdateSpeed(layer));
+        voice->BeginBlock(blockClock, frames);
 
         // Amplimix::Init only requests Mono or Stereo output.
         const auto outputChannels = static_cast<AmUInt16>(_device.mRequestedOutputChannels);
         AMPLITUDE_ASSERT(outputChannels >= 1 && outputChannels <= kAmplimixMaxOutputChannels);
 
-        // loop state
-        const bool loop = flag == ePSF_LOOP;
+        const AmReal32 gain = AMPLIMIX_LOAD(&_masterGain) * AMPLIMIX_LOAD(&layer->gain);
+        const bool audible = voice->IsAudible() && layer->pipeline != nullptr;
 
-        const AmUInt16 soundChannels = layer->snd->format.GetNumChannels();
-        const AmReal32 sampleRateRatio = AMPLIMIX_LOAD(&layer->sampleRateRatio);
-
-        AmUInt64 outSamples = frameCount;
-        AmUInt64 inSamples = frameCount;
-
-        if (sampleRateRatio != 1.0f)
-            inSamples = layer->dataConverter->GetInputFramesNeeded(outSamples);
-
-#if defined(AM_SIMD_INTRINSICS)
-        inSamples = AM_VALUE_ALIGN(inSamples, kProcessedFramesCount);
-#endif // AM_SIMD_INTRINSICS
-
-        SoundChunk* in = layer->_chunkPool.Acquire(inSamples, soundChannels, false);
-        SoundChunk* transient = layer->_chunkPool.Acquire(outSamples, 1);
-        SoundChunk* out = layer->_chunkPool.Acquire(transient->frames, 2);
-
-        // if this sound is streaming, and we have a stream event callback
-        if (layer->snd->stream)
+        if (!audible)
         {
-            // mix sound per chunk of streamed data
-            AmUInt64 c = inSamples;
-            while (c > 0 && flag != ePSF_MIN)
-            {
-                // update flag value
-                flag = AMPLIMIX_LOAD(&layer->flag);
-
-                if (flag == ePSF_MIN)
-                    break;
-
-                const AmUInt64 chunkSize = AM_MIN(layer->snd->chunk->frames, c);
-                /* */ AmUInt64 readLen = chunkSize;
-
-#if defined(AM_SIMD_INTRINSICS)
-                readLen = AM_VALUE_ALIGN(readLen, kProcessedFramesCount);
-#endif // AM_SIMD_INTRINSICS
-
-                readLen = OnSoundStream(this, layer, (cursor + (inSamples - c)) % layer->snd->length, readLen);
-                readLen = AM_MIN(readLen, chunkSize);
-
-                // having 0 here mainly means that we have reached
-                // the end of the stream and the audio is not looping.
-                if (readLen == 0)
-                    break;
-
-                AudioBuffer::Copy(*layer->snd->chunk->buffer, 0, *in->buffer, inSamples - c, readLen);
-
-                c -= readLen;
-            }
+            AdvanceLayerGain(layer->_mixGain, outputChannels, gain, frames);
+        }
+        else if (IsSeparateMode(layer))
+        {
+            MixVoiceInstances(layer, buffer, offset, frames, gain, outputChannels);
         }
         else
         {
-            // Compute offset
-            const AmUInt64 offset = cursor % layer->snd->length;
-            const AmUInt64 remaining = layer->snd->chunk->frames - cursor;
+            SoundChunk* mono = layer->_chunkPool.Acquire(frames, kAmMonoChannelCount);
+            SoundChunk* out = layer->_chunkPool.Acquire(mono->frames, kAmStereoChannelCount);
 
-            if (cursor < layer->snd->chunk->frames && remaining < inSamples)
-            {
-                AudioBuffer::Copy(*layer->snd->chunk->buffer, offset, *in->buffer, 0, remaining);
-                AudioBuffer::Copy(*layer->snd->chunk->buffer, 0, *in->buffer, remaining, inSamples - remaining);
-            }
-            else
-            {
-                AudioBuffer::Copy(*layer->snd->chunk->buffer, offset, *in->buffer, 0, inSamples);
-            }
+            voice->RenderPrimary(*mono->buffer);
+            layer->pipeline->Execute(*mono->buffer, *out->buffer);
+            voice->ApplyGain(*out->buffer);
+            MixLayerWithGain(layer->_mixGain, outputChannels, gain, *out->buffer, *buffer, offset, frames);
+
+            layer->_chunkPool.Release(out);
+            layer->_chunkPool.Release(mono);
         }
 
-        layer->dataConverter->Process(*in->buffer, inSamples, *transient->buffer, outSamples);
+        voice->EndBlock();
+        layer->voicePosition.store(voice->GetPublishedPosition(), std::memory_order_release);
+        layer->voiceState.store(voice->GetPublishedState(), std::memory_order_release);
+        voice->GetMailbox().Publish(*_voiceEvents);
+        layer->ResetPipeline();
 
-        if (outSamples > 0 && flag >= ePSF_PLAY)
-        {
-            // Cache cursor
-            AmUInt64 oldCursor = cursor;
-
-            // Execute Pipeline
-            layer->pipeline->Execute(*transient->buffer, *out->buffer);
-
-            /* */ AmReal64 position = cursor;
-            const AmUInt64 start = layer->start;
-            const AmUInt64 end = layer->end;
-
-            const AmReal64 step = static_cast<AmReal64>(inSamples) / static_cast<AmReal64>(outSamples);
-
-            // regular playback: find how many frames to mix, then mix them with one ramped pass
-            AmUInt64 mixedFrames = 0;
-            for (AmUInt64 i = 0; i < outSamples; i += kProcessedFramesCount)
-            {
-                position = AM_CLAMP(position, start, end);
-
-                // check if cursor at end
-                if (std::ceil(position) == end)
-                {
-                    // quit unless looping
-                    if (!loop)
-                        break;
-
-                    // call the onLoop callback
-                    if (OnSoundLooped(this, layer))
-                    {
-                        // wrap around if allowed looping again
-                        position = start;
-                    }
-                    else
-                    {
-                        // reset data converter
-                        layer->dataConverter->Reset();
-
-                        // stop playback
-                        break;
-                    }
-                }
-
-                mixedFrames = AM_MIN(i + kProcessedFramesCount, outSamples);
-                position += step * kProcessedFramesCount;
-            }
-
-            if (outputChannels <= kAmplimixMaxOutputChannels)
-                MixLayerWithGain(layer->_mixGain, outputChannels, gain, *out->buffer, *buffer, mixedFrames);
-
-            cursor += inSamples;
-
-#if defined(AM_SIMD_INTRINSICS)
-            // cursor = AM_VALUE_ALIGN(cursor, kProcessedFramesCount);
-#endif // AM_SIMD_INTRINSICS
-
-            cursor = AM_CLAMP(cursor, layer->start, layer->end);
-
-            // swap back cursor if unchanged
-            if (!AMPLIMIX_CSWAP(&layer->cursor, &oldCursor, cursor))
-                cursor = oldCursor;
-        }
-
-        layer->_chunkPool.Release(out);
-        layer->_chunkPool.Release(transient);
-        layer->_chunkPool.Release(in);
-
-        // run callback if reached the end
-        if (cursor == layer->end)
-        {
-            if (!loop)
-            {
-                OnSoundEnded(this, layer);
-            }
-            else
-            {
-                if (ShouldLoopSound(this, layer))
-                    AMPLIMIX_CSWAP(&layer->cursor, &layer->end, layer->start);
-                else
-                    OnSoundEnded(this, layer);
-            }
-        }
+        return audible;
     }
 
-    void AmplimixImpl::MixLayerSeparateMode(AmplimixLayerImpl* layer, AudioBuffer* buffer, AmUInt64 frameCount)
+    bool AmplimixImpl::IsSeparateMode(const AmplimixLayerImpl* layer)
     {
-        if (layer->instanceData.empty())
-            return;
-
-        // load flag value atomically first
-        PlayStateFlag flag = AMPLIMIX_LOAD(&layer->flag);
-
-        // atomically load master gain
-        const AmReal32 gain = AMPLIMIX_LOAD(&_masterGain) * AMPLIMIX_LOAD(&layer->gain);
-
-        // Amplimix::Init only requests Mono or Stereo output.
-        const auto outputChannels = static_cast<AmUInt16>(_device.mRequestedOutputChannels);
-        AMPLITUDE_ASSERT(outputChannels >= 1 && outputChannels <= kAmplimixMaxOutputChannels);
-
-        // loop state
-        const bool loop = flag == ePSF_LOOP;
-
-        const AmUInt16 soundChannels = layer->snd->format.GetNumChannels();
-        const AmReal32 sampleRateRatio = AMPLIMIX_LOAD(&layer->sampleRateRatio);
-
-        // Each instance resamples through its own converter when it has one, and through the layer's otherwise.
-        const auto instanceConverter = [layer](const AmplimixLayerImpl::InstanceData& data)
-        {
-            AudioConverter* converter =
-                layer->instancePipelines != nullptr ? layer->instancePipelines->FindConverter(data.instanceId) : nullptr;
-            return converter != nullptr ? converter : layer->dataConverter;
-        };
-
-        const auto requiredInputFrames = [sampleRateRatio, frameCount](const AudioConverter* converter)
-        {
-            AmUInt64 frames = frameCount;
-            if (sampleRateRatio != 1.0f)
-                frames = converter->GetInputFramesNeeded(frameCount);
-
-#if defined(AM_SIMD_INTRINSICS)
-            frames = AM_VALUE_ALIGN(frames, kProcessedFramesCount);
-#endif // AM_SIMD_INTRINSICS
-
-            return frames;
-        };
-
-        // Converters may differ by a frame in what they need: size the shared input chunk for the largest.
-        AmUInt64 maxInSamples = requiredInputFrames(layer->dataConverter);
-        for (const auto& data : layer->instanceData)
-            maxInSamples = AM_MAX(maxInSamples, requiredInputFrames(instanceConverter(data)));
-
-        const AmUInt64 start = layer->start;
-        const AmUInt64 end = layer->end;
-        bool allInstancesFinished = true;
-
-        // Get the channel for cursor write-back through the atomic slots. The game-owned
-        // instance containers are never touched from the audio thread.
         const auto& channel = layer->GetChannel();
-        if (!channel.Valid())
-            return;
+        return channel.Valid() && channel.GetState()->IsInstancingEnabled() &&
+            channel.GetState()->GetInstancingMode() == eChannelInstanceMode_Separate && !layer->instanceData.empty();
+    }
 
-        auto* channelState = channel.GetState();
+    AmReal64 AmplimixImpl::UpdateSpeed(AmplimixLayerImpl* layer)
+    {
+        const AmReal32 target = AM_MAX(AMPLIMIX_LOAD(&layer->pitch) * AMPLIMIX_LOAD(&layer->userPlaySpeed), 0.001f);
 
-        // Pre-allocate buffers for instance processing
-        SoundChunk* in = layer->_chunkPool.Acquire(maxInSamples, soundChannels, false);
-        SoundChunk* transient = layer->_chunkPool.Acquire(frameCount, 1);
-        SoundChunk* out = layer->_chunkPool.Acquire(frameCount, 2);
-
-        // Process each instance
-        for (AmSize instanceIndex = 0; instanceIndex < layer->instanceData.size(); ++instanceIndex)
+        if (layer->currentSpeed != target)
         {
-            auto& data = layer->instanceData[instanceIndex];
+            // Ease toward the target, and settle exactly so the resampler is not re-tuned every block.
+            const AmReal32 next = Lerp(0.75f, layer->currentSpeed, target);
+            layer->currentSpeed = std::abs(next - target) < 1e-6f ? target : next;
+        }
 
-            if (data.cursor >= end)
+        return layer->currentSpeed;
+    }
+
+    void AmplimixImpl::MixVoiceInstances(
+        AmplimixLayerImpl* layer, AudioBuffer* buffer, AmUInt64 offset, AmUInt64 frames, AmReal32 gain, AmUInt16 outputChannels)
+    {
+        Voice* voice = layer->voice;
+
+        // Cursor write-back goes through the channel's atomic slots: the game-owned instance containers are never
+        // touched from the audio thread.
+        auto* channelState = layer->GetChannel().GetState();
+
+        SoundChunk* mono = layer->_chunkPool.Acquire(frames, kAmMonoChannelCount);
+        SoundChunk* out = layer->_chunkPool.Acquire(mono->frames, kAmStereoChannelCount);
+
+        bool allFinished = true;
+        AmUInt64 lastFinish = 0;
+
+        for (AmSize index = 0; index < layer->instanceData.size(); ++index)
+        {
+            auto& data = layer->instanceData[index];
+
+            // An instance renders once its stream is attached; until then (one block at most) it is silent.
+            VoiceStreamSlot* slot = layer->instanceStreams != nullptr ? layer->instanceStreams->Find(data.instanceId) : nullptr;
+            if (slot == nullptr)
+            {
+                allFinished = false;
                 continue;
+            }
 
-            allInstancesFinished = false;
+            if (slot->stream.IsFinished())
+                continue;
 
             // Set instance context for pipeline nodes
             layer->processingInstance = true;
-            layer->currentInstanceIndex = instanceIndex;
-
-            AmUInt64 instanceCursor = data.cursor;
-
-            // Per-instance counts: Process() rewrites them with what this instance consumed and produced.
-            AudioConverter* converter = instanceConverter(data);
-            AmUInt64 inSamples = requiredInputFrames(converter);
-            AmUInt64 outSamples = frameCount;
+            layer->currentInstanceIndex = index;
 
             // Instances with their own pipeline keep independent node state; others share the layer pipeline.
             PipelineInstance* instancePipeline =
                 layer->instancePipelines != nullptr ? layer->instancePipelines->Find(data.instanceId) : nullptr;
-            layer->sharedInstancePipeline = (instancePipeline == nullptr);
+            layer->sharedInstancePipeline = instancePipeline == nullptr;
 
-            // Clear buffers for reuse
-            in->buffer->Clear();
-            transient->buffer->Clear();
+            mono->buffer->Clear();
             out->buffer->Clear();
 
-            if (layer->snd->stream)
-            {
-                AmUInt64 c = inSamples;
-                while (c > 0 && flag != ePSF_MIN)
-                {
-                    flag = AMPLIMIX_LOAD(&layer->flag);
-                    if (flag == ePSF_MIN)
-                        break;
+            slot->stream.SetSpeed(voice->GetSpeed());
+            const auto report = voice->Render(*slot, *mono->buffer);
+            (instancePipeline != nullptr ? instancePipeline : layer->pipeline.get())->Execute(*mono->buffer, *out->buffer);
+            voice->ApplyGain(*out->buffer);
+            MixLayerInstanceWithGain(layer->_mixGain, outputChannels, gain, *out->buffer, *buffer, offset, frames);
 
-                    const AmUInt64 chunkSize = AM_MIN(layer->snd->chunk->frames, c);
-                    AmUInt64 readLen = chunkSize;
-
-#if defined(AM_SIMD_INTRINSICS)
-                    readLen = AM_VALUE_ALIGN(readLen, kProcessedFramesCount);
-#endif // AM_SIMD_INTRINSICS
-
-                    readLen = OnSoundStream(this, layer, (instanceCursor + (inSamples - c)) % layer->snd->length, readLen);
-                    readLen = AM_MIN(readLen, chunkSize);
-
-                    if (readLen == 0)
-                        break;
-
-                    AudioBuffer::Copy(*layer->snd->chunk->buffer, 0, *in->buffer, inSamples - c, readLen);
-                    c -= readLen;
-                }
-            }
+            data.cursor = slot->stream.IsFinished() ? layer->end : slot->stream.GetSourcePosition(slot->reader);
+            if (report.finished)
+                lastFinish = AM_MAX(lastFinish, report.finishedFrame);
             else
-            {
-                const AmUInt64 offset = instanceCursor % layer->snd->length;
-                const AmUInt64 remaining = layer->snd->chunk->frames - instanceCursor;
+                allFinished = false;
 
-                if (instanceCursor < layer->snd->chunk->frames && remaining < inSamples)
-                {
-                    AudioBuffer::Copy(*layer->snd->chunk->buffer, offset, *in->buffer, 0, remaining);
-                    AudioBuffer::Copy(*layer->snd->chunk->buffer, 0, *in->buffer, remaining, inSamples - remaining);
-                }
-                else
-                {
-                    AudioBuffer::Copy(*layer->snd->chunk->buffer, offset, *in->buffer, 0, inSamples);
-                }
+            // Write the cursor back through the channel's write-back slots, so the game thread can restore it if this
+            // layer is recreated. The id check drops stores that race a re-publication.
+            if (auto* slots = channelState->GetInstanceCursorSlots(); slots != nullptr && index < kAmMaxChannelInstances)
+            {
+                auto& cursorSlot = slots[index];
+                if (cursorSlot.id.load(std::memory_order_acquire) == data.instanceId)
+                    cursorSlot.cursor.store(data.cursor, std::memory_order_release);
             }
 
-            // Convert sample rate
-            converter->Process(*in->buffer, inSamples, *transient->buffer, outSamples);
-
-            if (outSamples > 0 && flag >= ePSF_PLAY)
-            {
-                if (instancePipeline != nullptr)
-                    instancePipeline->Execute(*transient->buffer, *out->buffer);
-                else
-                    layer->pipeline->Execute(*transient->buffer, *out->buffer);
-
-                AmReal64 position = instanceCursor;
-                const AmReal64 step = static_cast<AmReal64>(inSamples) / static_cast<AmReal64>(outSamples);
-
-                // Find how many frames this instance mixes, then mix them with the layer's shared ramp
-                AmUInt64 mixedFrames = 0;
-                for (AmUInt64 i = 0; i < outSamples; i += kProcessedFramesCount)
-                {
-                    position = AM_CLAMP(position, static_cast<AmReal64>(start), static_cast<AmReal64>(end));
-
-                    if (std::ceil(position) == end)
-                    {
-                        if (loop)
-                            position = start;
-                        else
-                            break;
-                    }
-
-                    mixedFrames = AM_MIN(i + kProcessedFramesCount, outSamples);
-                    position += step * kProcessedFramesCount;
-                }
-
-                if (outputChannels <= kAmplimixMaxOutputChannels)
-                    MixLayerInstanceWithGain(layer->_mixGain, outputChannels, gain, *out->buffer, *buffer, mixedFrames);
-
-                instanceCursor += inSamples;
-                instanceCursor = AM_CLAMP(instanceCursor, start, end);
-            }
-
-            // Update the instance's cursor in the cached data
-            data.cursor = instanceCursor;
-
-            // Write the cursor back through the channel's write-back slots, so the
-            // game thread can restore it if this layer is recreated. The id check
-            // drops stores that race a re-publication.
-            if (auto* slots = channelState->GetInstanceCursorSlots(); slots != nullptr && instanceIndex < kAmMaxChannelInstances)
-            {
-                auto& slot = slots[instanceIndex];
-                if (slot.id.load(std::memory_order_acquire) == data.instanceId)
-                    slot.cursor.store(instanceCursor, std::memory_order_release);
-            }
-
-            // Clear per-block caches before the next instance. A per-instance pipeline keeps its DSP state;
-            // the shared pipeline is reset between instances as before.
+            // Clear per-block caches before the next instance. A per-instance pipeline keeps its DSP state; the shared
+            // pipeline is reset between instances.
             if (instancePipeline != nullptr)
             {
                 instancePipeline->Reset();
@@ -1440,8 +1064,7 @@ namespace SparkyStudios::Audio::Amplitude
         }
 
         // Every instance mixed through a copy of the layer ramp; advance it once for this block.
-        if (outputChannels <= kAmplimixMaxOutputChannels)
-            AdvanceLayerGain(layer->_mixGain, outputChannels, gain, frameCount);
+        AdvanceLayerGain(layer->_mixGain, outputChannels, gain, frames);
 
         // Clear instance processing context
         layer->processingInstance = false;
@@ -1449,12 +1072,10 @@ namespace SparkyStudios::Audio::Amplitude
         layer->currentInstanceIndex = 0;
 
         layer->_chunkPool.Release(out);
-        layer->_chunkPool.Release(transient);
-        layer->_chunkPool.Release(in);
+        layer->_chunkPool.Release(mono);
 
-        // If all instances finished, trigger end callback
-        if (allInstancesFinished && !loop)
-            OnSoundEnded(this, layer);
+        if (allFinished)
+            voice->NotifySourcesFinished(lastFinish);
     }
 
     AmplimixLayerImpl* AmplimixImpl::GetLayer(AmUInt32 layer)
@@ -1492,49 +1113,12 @@ namespace SparkyStudios::Audio::Amplitude
 
     bool AmplimixImpl::ShouldMix(AmplimixLayerImpl* layer)
     {
-        // Acquire-load flag first to establish happens-before with the
-        // release-store in PlayAdvanced (which writes snd before setting flag).
-        PlayStateFlag flag = AMPLIMIX_LOAD(&layer->flag);
-
-        if (flag <= ePSF_HALT)
+        // Acquire pairs with the release in StartVoice(): voice, snd and pipeline are visible once the slot is Live.
+        if (layer->slot.load(std::memory_order_acquire) != eLayerSlot::Live || layer->voice == nullptr)
             return false;
 
-        // After the acquire on flag, snd is guaranteed non-null because:
-        // - PlayAdvanced writes snd before release-storing flag > ePSF_HALT
-        // - Destroy() (which nulls snd) only runs in ExecuteCommands() after the mix loop
-        AMPLITUDE_ASSERT(layer->snd != nullptr);
-        return true;
-    }
-
-    void AmplimixImpl::UpdatePitch(AmplimixLayerImpl* layer)
-    {
-        const AmReal32 pitch = AMPLIMIX_LOAD(&layer->pitch);
-        const AmReal32 speed = AMPLIMIX_LOAD(&layer->userPlaySpeed);
-
-        /* */ AmReal32 currentSpeed = AMPLIMIX_LOAD(&layer->playSpeed);
-        const AmReal32 playSpeed = AM_MAX(pitch * speed, 0.001f);
-
-        if (currentSpeed != playSpeed)
-        {
-            currentSpeed = Lerp(0.75f, currentSpeed, playSpeed);
-
-            const AmReal32 baseSampleRateRatio = AMPLIMIX_LOAD(&layer->baseSampleRateRatio);
-            const AmReal32 sampleRateRatio = baseSampleRateRatio * currentSpeed;
-
-            AMPLIMIX_STORE(&layer->targetPlaySpeed, playSpeed);
-            AMPLIMIX_STORE(&layer->sampleRateRatio, sampleRateRatio);
-
-            layer->dataConverter->SetRatio(sampleRateRatio);
-
-            if (layer->instancePipelines != nullptr)
-                layer->instancePipelines->ForEachConverter(
-                    [sampleRateRatio](AudioConverter& converter)
-                    {
-                        converter.SetRatio(sampleRateRatio);
-                    });
-
-            AMPLIMIX_STORE(&layer->playSpeed, currentSpeed);
-        }
+        // A finished voice waits for the game thread to release it; nothing left to render.
+        return layer->voice->GetState() != eVoiceState::Finished;
     }
 
     void AmplimixImpl::LockAudioMutex()
@@ -1575,14 +1159,15 @@ namespace SparkyStudios::Audio::Amplitude
         // This method runs only inside ExecuteCommands(), which executes after
         // the mix loop in Mix(). Therefore no audio-thread reads of snd can
         // race with the null assignment below.
-        if (dataConverter != nullptr)
+        if (voice != nullptr)
         {
-            ampooldelete(eMemoryPoolKind_Amplimix, AudioConverter, dataConverter);
-            dataConverter = nullptr;
+            ampooldelete(eMemoryPoolKind_Amplimix, Voice, voice);
+            voice = nullptr;
         }
 
         pipeline = nullptr;
         instancePipelines = nullptr;
+        instanceStreams = nullptr;
 
         if (snd != nullptr)
         {
@@ -1592,8 +1177,9 @@ namespace SparkyStudios::Audio::Amplitude
 
         _chunkPool.Reset();
         destroyPending.store(false, std::memory_order_relaxed);
+        voiceState.store(eVoiceState::Idle, std::memory_order_relaxed);
 
-        AMPLIMIX_STORE(&flag, ePSF_MIN);
+        slot.store(eLayerSlot::Free, std::memory_order_release);
     }
 
     void AmplimixLayerImpl::ResetPipeline()
@@ -1633,7 +1219,7 @@ namespace SparkyStudios::Audio::Amplitude
 
     AmUInt64 AmplimixLayerImpl::GetCurrentPosition() const
     {
-        return AMPLIMIX_LOAD_RELAXED(&cursor);
+        return voice != nullptr ? voice->GetPublishedPosition() : start;
     }
 
     AmReal32 AmplimixLayerImpl::GetGain() const
@@ -1658,7 +1244,7 @@ namespace SparkyStudios::Audio::Amplitude
 
     AmReal32 AmplimixLayerImpl::GetPlaySpeed() const
     {
-        return AMPLIMIX_LOAD_RELAXED(&playSpeed);
+        return currentSpeed;
     }
 
     AmVector3 AmplimixLayerImpl::GetLocation() const
@@ -1773,11 +1359,12 @@ namespace SparkyStudios::Audio::Amplitude
 
     AmUInt32 AmplimixLayerImpl::GetSampleRate() const
     {
-        if (snd == nullptr || snd->sound == nullptr)
+        if (snd == nullptr || snd->sound == nullptr || voice == nullptr)
             return 0;
 
-        const AmReal32 ratio = AMPLIMIX_LOAD_RELAXED(&sampleRateRatio);
-        return snd->format.GetSampleRate() * ratio;
+        // Source rate times the playback ratio (source rate / output rate x speed).
+        const AmReal64 rate = snd->format.GetSampleRate();
+        return static_cast<AmUInt32>(rate * (rate / voice->GetOutputRate()) * currentSpeed);
     }
 
     bool AmplimixLayerImpl::IsMultiPosition() const

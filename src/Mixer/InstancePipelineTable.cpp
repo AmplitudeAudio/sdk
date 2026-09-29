@@ -21,8 +21,7 @@ namespace SparkyStudios::Audio::Amplitude
         , _size(0)
     {}
 
-    bool InstancePipelineTable::Attach(
-        AmChannelInstanceID id, std::shared_ptr<PipelineInstance> pipeline, std::shared_ptr<AudioConverter> converter)
+    bool InstancePipelineTable::Attach(AmChannelInstanceID id, std::shared_ptr<PipelineInstance> pipeline)
     {
         if (id == kAmInvalidObjectId || pipeline == nullptr || Find(id) != nullptr)
             return false;
@@ -34,7 +33,6 @@ namespace SparkyStudios::Audio::Amplitude
 
             slot.id = id;
             slot.pipeline = std::move(pipeline);
-            slot.converter = std::move(converter);
             ++_size;
             return true;
         }
@@ -53,7 +51,6 @@ namespace SparkyStudios::Audio::Amplitude
                 continue;
 
             slot.id = kAmInvalidObjectId;
-            slot.converter = nullptr;
             --_size;
             return std::move(slot.pipeline);
         }
@@ -73,25 +70,12 @@ namespace SparkyStudios::Audio::Amplitude
         return nullptr;
     }
 
-    AudioConverter* InstancePipelineTable::FindConverter(AmChannelInstanceID id) const
-    {
-        if (id == kAmInvalidObjectId)
-            return nullptr;
-
-        for (const auto& slot : _slots)
-            if (slot.id == id)
-                return slot.converter.get();
-
-        return nullptr;
-    }
-
     void InstancePipelineTable::Clear()
     {
         for (auto& slot : _slots)
         {
             slot.id = kAmInvalidObjectId;
             slot.pipeline = nullptr;
-            slot.converter = nullptr;
         }
 
         _size = 0;
@@ -103,6 +87,61 @@ namespace SparkyStudios::Audio::Amplitude
     }
 
     AmSize InstancePipelineTable::GetSize() const
+    {
+        return _size;
+    }
+
+    InstanceStreamTable::InstanceStreamTable(AmSize capacity)
+        : _slots(capacity)
+    {}
+
+    bool InstanceStreamTable::Attach(AmChannelInstanceID id, std::shared_ptr<VoiceStreamSlot> stream)
+    {
+        if (id == kAmInvalidObjectId || stream == nullptr || Find(id) != nullptr)
+            return false;
+
+        for (auto& slot : _slots)
+        {
+            if (slot.id != kAmInvalidObjectId)
+                continue;
+
+            slot.id = id;
+            slot.stream = std::move(stream);
+            ++_size;
+            return true;
+        }
+
+        return false;
+    }
+
+    std::shared_ptr<VoiceStreamSlot> InstanceStreamTable::Detach(AmChannelInstanceID id)
+    {
+        for (auto& slot : _slots)
+        {
+            if (id == kAmInvalidObjectId || slot.id != id)
+                continue;
+
+            slot.id = kAmInvalidObjectId;
+            --_size;
+            return std::move(slot.stream);
+        }
+
+        return nullptr;
+    }
+
+    VoiceStreamSlot* InstanceStreamTable::Find(AmChannelInstanceID id) const
+    {
+        if (id == kAmInvalidObjectId)
+            return nullptr;
+
+        for (const auto& slot : _slots)
+            if (slot.id == id)
+                return slot.stream.get();
+
+        return nullptr;
+    }
+
+    AmSize InstanceStreamTable::GetSize() const
     {
         return _size;
     }

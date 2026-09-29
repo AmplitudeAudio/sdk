@@ -25,6 +25,7 @@
 #include <Core/Playback/ChannelInternalState.h>
 #include <Sound/Sound.h>
 
+#include <Mixer/Amplimix.h>
 #include <Mixer/RealChannel.h>
 
 #include "collection_definition_generated.h"
@@ -127,6 +128,7 @@ namespace SparkyStudios::Audio::Amplitude
         // A (re)used layer starts without per-instance pipelines.
         data.instanceTableInstalled = false;
         data.attachedInstanceIds.clear();
+        data.attachedStreamIds.clear();
 
         data.soundInstance = sound;
         data.soundInstance->SetChannel(this);
@@ -143,10 +145,17 @@ namespace SparkyStudios::Audio::Amplitude
         data.isStream = sound->GetSound()->IsStream();
         data.gain = _defaultGain;
 
-        const PlayStateFlag loops = data.isLoop ? ePSF_LOOP : ePSF_PLAY;
+        VoiceStartOptions options;
+        options.loop = data.isLoop;
+        options.loopCount = sound->GetSettings().m_loopCount;
+        options.gain = GetGain(layer);
+        options.pitch = _pitch;
+        options.speed = _playSpeed;
+        options.faderName = _parentChannelState->GetFaderName();
 
-        data.mixerLayerId =
-            _mixer->Play(static_cast<SoundData*>(sound->GetUserData()), loops, GetGain(layer), _pitch, _playSpeed, _channelId, 0);
+        data.mixerLayerId = _mixer->StartVoice(static_cast<SoundData*>(sound->GetUserData()), options, _channelId, 0);
+        data.paused = false;
+        data.stopping = false;
 
         const bool success = data.mixerLayerId != kAmInvalidObjectId;
         if (!success)
@@ -170,45 +179,30 @@ namespace SparkyStudios::Audio::Amplitude
         if (it == _layers.end() || it->second.mixerLayerId == kAmInvalidObjectId)
             return;
 
-        const AmUInt32 mixerLayerId = it->second.mixerLayerId;
-        SoundInstance* soundInstance = it->second.soundInstance;
-
-        const MixerCommandCallback callback = [this, layer, mixerLayerId, soundInstance]() -> bool
-        {
-            _mixer->SetPlayState(_channelId, mixerLayerId, ePSF_MIN);
-
-            ampooldelete(eMemoryPoolKind_Engine, SoundInstance, soundInstance);
-            _layers.erase(layer);
-
-            return true;
-        };
-
-        if (_mixer->IsInsideThreadMutex())
-        {
-            _mixer->PushCommand({ callback });
-            return;
-        }
-
-        AM_UNUSED(callback());
+        // The mixer layer owns the sound instance (through its sound data) and deletes it when it is destroyed, after
+        // the current mix: deleting it here would free the sound data the voice is still rendering.
+        _mixer->DiscardVoice(_channelId, it->second.mixerLayerId);
+        _layers.erase(it);
     }
 
     bool RealChannel::Playing() const
     {
         AMPLITUDE_ASSERT(Valid());
 
-        if (_layers.empty())
-            return false;
-
+        bool any = false;
         for (const auto& [layerIdx, data] : _layers)
         {
-            if (data.mixerLayerId == 0)
+            // Layers fading out after a stop or a steal are forgotten on Finished: they do not count.
+            if (data.mixerLayerId == 0 || data.stopping)
                 continue;
 
             if (!Playing(layerIdx))
                 return false;
+
+            any = true;
         }
 
-        return true;
+        return any;
     }
 
     bool RealChannel::Playing(AmUInt32 layer) const
@@ -216,47 +210,43 @@ namespace SparkyStudios::Audio::Amplitude
         AMPLITUDE_ASSERT(Valid());
 
         const auto& data = _layers.at(layer);
-        const AmUInt32 state = _mixer->GetPlayState(_channelId, data.mixerLayerId);
-        if (state < ePSF_PLAY)
+        if (data.paused || data.stopping)
             return false;
 
-        if (const auto* collection = _parentChannelState->GetCollection(); collection == nullptr)
-        {
-            return (!data.isLoop && state == ePSF_PLAY) || (data.isLoop && state == ePSF_LOOP);
-        }
-        else
+        if (const auto* collection = _parentChannelState->GetCollection(); collection != nullptr)
         {
             const CollectionPlayMode mode = static_cast<const CollectionImpl*>(collection)->GetDefinition()->play_mode();
-
-            return mode == CollectionPlayMode_PlayOne && !data.isLoop ? state == ePSF_PLAY
-                : mode == CollectionPlayMode_PlayOne && data.isLoop   ? state == ePSF_LOOP
-                                                                      : _channelId != kAmInvalidObjectId;
+            if (mode == CollectionPlayMode_PlayAll)
+                return _channelId != kAmInvalidObjectId; // the collection chains sounds: the channel plays between them
         }
+
+        const eVoiceState state = _mixer->GetVoiceState(_channelId, data.mixerLayerId);
+        return state != eVoiceState::Idle && state != eVoiceState::Finished;
     }
 
     bool RealChannel::Paused() const
     {
         AMPLITUDE_ASSERT(Valid());
 
-        if (_layers.empty())
-            return false;
-
+        bool any = false;
         for (const auto& [layerIdx, data] : _layers)
         {
-            if (data.mixerLayerId == 0)
+            if (data.mixerLayerId == 0 || data.stopping)
                 continue;
 
             if (!Paused(layerIdx))
                 return false;
+
+            any = true;
         }
 
-        return true;
+        return any;
     }
 
     bool RealChannel::Paused(AmUInt32 layer) const
     {
         AMPLITUDE_ASSERT(Valid());
-        return _mixer->GetPlayState(_channelId, _layers.at(layer).mixerLayerId) == ePSF_HALT;
+        return _layers.at(layer).paused;
     }
 
     void RealChannel::SetGain(const AmReal32 gain)
@@ -296,7 +286,10 @@ namespace SparkyStudios::Audio::Amplitude
     bool RealChannel::Halt(AmUInt32 layer)
     {
         AMPLITUDE_ASSERT(Valid());
-        return _mixer->SetPlayState(_channelId, _layers.at(layer).mixerLayerId, ePSF_STOP);
+        auto& data = _layers.at(layer);
+        _mixer->PostVoiceCommand(_channelId, data.mixerLayerId, eVoiceCommandKind::Stop);
+        data.stopping = true;
+        return true;
     }
 
     bool RealChannel::Halt()
@@ -313,7 +306,10 @@ namespace SparkyStudios::Audio::Amplitude
     bool RealChannel::Pause(AmUInt32 layer)
     {
         AMPLITUDE_ASSERT(Valid());
-        return _mixer->SetPlayState(_channelId, _layers.at(layer).mixerLayerId, ePSF_HALT);
+        auto& data = _layers.at(layer);
+        _mixer->PostVoiceCommand(_channelId, data.mixerLayerId, eVoiceCommandKind::Pause);
+        data.paused = true;
+        return true;
     }
 
     bool RealChannel::Pause()
@@ -330,7 +326,10 @@ namespace SparkyStudios::Audio::Amplitude
     bool RealChannel::Resume(AmUInt32 layer)
     {
         AMPLITUDE_ASSERT(Valid());
-        return _mixer->SetPlayState(_channelId, _layers.at(layer).mixerLayerId, _layers.at(layer).isLoop ? ePSF_LOOP : ePSF_PLAY);
+        auto& data = _layers.at(layer);
+        _mixer->PostVoiceCommand(_channelId, data.mixerLayerId, eVoiceCommandKind::Resume);
+        data.paused = false;
+        return true;
     }
 
     bool RealChannel::Resume()
@@ -365,16 +364,7 @@ namespace SparkyStudios::Audio::Amplitude
         const AmTime clampedPosition = std::max<AmTime>(position, 0.0);
         const AmUInt64 cursor = static_cast<AmUInt64>(clampedPosition * static_cast<AmTime>(soundData->format.GetSampleRate()) / kAmSecond);
 
-        const AmUInt32 mixerLayerId = data.mixerLayerId;
-        const MixerCommandCallback callback = [this, mixerLayerId, cursor]() -> bool
-        {
-            if (!_mixer->SetCursor(_channelId, mixerLayerId, cursor))
-                return false;
-
-            return _mixer->ResetLayerState(_channelId, mixerLayerId);
-        };
-
-        _mixer->PushCommand({ callback });
+        _mixer->PostVoiceCommand(_channelId, data.mixerLayerId, eVoiceCommandKind::Seek, 0.0, cursor);
         return true;
     }
 
@@ -400,7 +390,7 @@ namespace SparkyStudios::Audio::Amplitude
             return 0.0;
 
         AmUInt64 cursor = 0;
-        if (!_mixer->GetCursor(_channelId, data.mixerLayerId, cursor))
+        if (!_mixer->GetVoicePosition(_channelId, data.mixerLayerId, cursor))
             return 0.0;
 
         return static_cast<AmTime>(cursor) * kAmSecond / static_cast<AmTime>(soundData->format.GetSampleRate());
@@ -499,13 +489,47 @@ namespace SparkyStudios::Audio::Amplitude
                 it = data.attachedInstanceIds.erase(it);
             }
 
-            if (cap == 0 || instances.empty())
+            for (auto it = data.attachedStreamIds.begin(); it != data.attachedStreamIds.end();)
+            {
+                const AmChannelInstanceID id = *it;
+                const bool alive = std::ranges::any_of(
+                    instances,
+                    [id](const ChannelInstanceData& instance)
+                    {
+                        return instance.instanceId == id;
+                    });
+
+                if (alive)
+                {
+                    ++it;
+                    continue;
+                }
+
+                AM_UNUSED(_mixer->DetachInstanceStream(_channelId, data.mixerLayerId, id));
+                it = data.attachedStreamIds.erase(it);
+            }
+
+            if (instances.empty())
                 continue;
 
             if (!data.instanceTableInstalled)
                 data.instanceTableInstalled = _mixer->InstallInstancePipelineTable(_channelId, data.mixerLayerId);
 
             if (!data.instanceTableInstalled)
+                continue;
+
+            // Every instance renders through its own stream, so it keeps its own cursor and resampler phase.
+            for (const auto& instance : instances)
+            {
+                if (std::ranges::find(data.attachedStreamIds, instance.instanceId) != data.attachedStreamIds.end())
+                    continue;
+
+                if (_mixer->AttachInstanceStream(_channelId, data.mixerLayerId, instance.instanceId))
+                    data.attachedStreamIds.push_back(instance.instanceId);
+            }
+
+            // Per-instance pipelines are capped; instances beyond the cap share the layer pipeline.
+            if (cap == 0)
                 continue;
 
             // Attach pipelines for new instances, up to the cap.
@@ -550,6 +574,45 @@ namespace SparkyStudios::Audio::Amplitude
                 ids.push_back(data.mixerLayerId);
 
         return ids;
+    }
+
+    bool RealChannel::OwnsMixerLayer(AmUInt32 mixerLayerId, const SoundInstance* sound) const
+    {
+        for (const auto& [index, data] : _layers)
+            if (data.mixerLayerId == mixerLayerId && data.soundInstance == sound)
+                return true;
+
+        return false;
+    }
+
+    void RealChannel::ForgetMixerLayer(AmUInt32 mixerLayerId)
+    {
+        for (auto it = _layers.begin(); it != _layers.end(); ++it)
+        {
+            if (it->second.mixerLayerId != mixerLayerId)
+                continue;
+
+            _layers.erase(it);
+            return;
+        }
+    }
+
+    bool RealChannel::HasSoundingLayers() const
+    {
+        if (!Valid())
+            return false;
+
+        for (const auto& [index, data] : _layers)
+        {
+            if (!data.stopping || data.mixerLayerId == kAmInvalidObjectId)
+                continue;
+
+            const eVoiceState state = _mixer->GetVoiceState(_channelId, data.mixerLayerId);
+            if (state != eVoiceState::Idle && state != eVoiceState::Finished)
+                return true;
+        }
+
+        return false;
     }
 
     void RealChannel::SyncCurrentInstancePipelines()

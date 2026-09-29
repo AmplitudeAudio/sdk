@@ -18,13 +18,14 @@
 #define _AM_IMPLEMENTATION_MIXER_AMPLIMIX_H
 
 #include <condition_variable>
+#include <memory>
 #include <mutex>
+#include <vector>
 
 #include <SparkyStudios/Audio/Amplitude/Core/Common.h>
 #include <SparkyStudios/Audio/Amplitude/Core/Device.h>
 #include <SparkyStudios/Audio/Amplitude/Core/MPSCQueue.h>
 #include <SparkyStudios/Audio/Amplitude/Core/Thread.h>
-#include <SparkyStudios/Audio/Amplitude/DSP/AudioConverter.h>
 #include <SparkyStudios/Audio/Amplitude/Mixer/Amplimix.h>
 #include <SparkyStudios/Audio/Amplitude/Mixer/Pipeline.h>
 
@@ -32,6 +33,7 @@
 #include <Mixer/SoundData.h>
 #include <Mixer/InstancePipelineTable.h>
 #include <Mixer/LayerGainMixer.h>
+#include <Mixer/Voice/Voice.h>
 
 #include <Utils/miniaudio/miniaudio_utils.h>
 #include <Utils/Utils.h>
@@ -48,28 +50,43 @@ namespace SparkyStudios::Audio::Amplitude
 
     class EngineImpl;
     struct EngineInternalState;
+    class ChannelInternalState;
 
     /**
      * @brief The callback to execute when running a mixer command.
      */
     typedef std::function<bool()> MixerCommandCallback;
 
-    enum PlayStateFlag : AmUInt8
+    /// Lifetime of a mixer layer slot. Live from StartVoice() until Destroy().
+    enum class eLayerSlot : AmUInt8
     {
-        ePSF_MIN = 0,
-        ePSF_STOP = 1,
-        ePSF_HALT = 2,
-        ePSF_PLAY = 3,
-        ePSF_LOOP = 4,
-        ePSF_MAX,
+        Free = 0,
+        Live,
+    };
+
+    /// How StartVoice() starts a sound.
+    struct VoiceStartOptions
+    {
+        bool loop = false;
+        AmUInt32 loopCount = 0; ///< Total plays when looping; 0 loops forever.
+        AmReal32 gain = 1.0f;
+        AmReal32 pitch = 1.0f;
+        AmReal32 speed = 1.0f;
+        AmUInt64 startFrame = kVoiceAsap; ///< Audio-clock frame of the first sample.
+        AmUInt64 startPosition = 0; ///< First source frame.
+        AmTime fadeIn = 0.0; ///< Milliseconds; 0 starts at unity.
+        AmString faderName; ///< Transport fade curve; empty is linear.
     };
 
     class AmplimixLayerImpl final : public AmplimixLayer
     {
     public:
         AmUInt32 id = kAmInvalidObjectId; // playing id
-        std::atomic<PlayStateFlag> flag; // state
-        std::atomic<AmUInt64> cursor; // cursor
+        std::atomic<eLayerSlot> slot{ eLayerSlot::Free }; // Live from StartVoice() until Destroy()
+        Voice* voice = nullptr; // created by StartVoice() (game thread), deleted by Destroy()
+        AmReal32 currentSpeed = 1.0f; // smoothed pitch x play speed, audio thread
+        std::atomic<eVoiceState> voiceState{ eVoiceState::Idle }; // voice state after the last block, for any thread
+        std::atomic<AmUInt64> voicePosition{ 0 }; // voice source position after the last block, for any thread
         std::atomic<AmReal32> gain; // gain
         std::atomic<AmReal32> pitch; // pitch
         SoundData* snd = nullptr; // sound data
@@ -79,29 +96,25 @@ namespace SparkyStudios::Audio::Amplitude
         std::atomic<AmReal32> occlusion; // occlusion factor
 
         std::atomic<AmReal32> userPlaySpeed; // user-defined sound playback speed
-        std::atomic<AmReal32> playSpeed; // current sound playback speed
-        std::atomic<AmReal32> targetPlaySpeed; // computed (real) sound playback speed
-        std::atomic<AmReal32> sampleRateRatio; // sample rate ratio
-        std::atomic<AmReal32> baseSampleRateRatio; // base sample rate ratio
 
-        AudioConverter* dataConverter = nullptr; // miniaudio resampler & channel converter
         std::shared_ptr<PipelineInstance> pipeline = nullptr; // pipeline for this layer
 
         SoundChunkPool _chunkPool; // pool for reusable SoundChunk allocations
         std::shared_ptr<InstancePipelineTable> instancePipelines; // per-instance pipelines (separate mode), set by mixer commands
+        std::shared_ptr<InstanceStreamTable> instanceStreams; // per-instance voice streams (separate mode), set by mixer commands
         GainProcessor _mixGain[kAmplimixMaxOutputChannels]; // master x layer gain ramps, audio-thread owned after publication
-        AmUInt64 pipelineFrames = 0; // frames per-instance pipelines are pre-configured with, set by PlayAdvanced
+        AmUInt64 pipelineFrames = 0; // frames per-instance pipelines are pre-configured with, set by StartVoice
         std::atomic<AmUInt32> pins{ 0 }; // game-thread readers keeping the layer alive, see AmplimixImpl::PinLayer
         std::atomic<bool> destroyPending{ false }; // a destroy deferred while pinned, run by the last unpin
+        bool releaseRequested = false; // game thread only: a release or discard was pushed, the layer may be destroyed
 
         ~AmplimixLayerImpl() override;
 
         /**
          * @brief Destroys the layer's pipeline and sound reference.
          *
-         * Releases the pipeline instance and the sound data pointer,
-         * then sets the layer flag to ePSF_MIN. Safe to call even if
-         * the layer has no sound attached.
+         * Releases the voice, the pipeline instance and the sound data pointer,
+         * then frees the layer slot. Safe to call even if the layer has no sound attached.
          */
         void Destroy();
 
@@ -247,18 +260,78 @@ namespace SparkyStudios::Audio::Amplitude
 
         AmUInt64 Mix(AudioBuffer** outBuffer, AmUInt64 frameCount) override;
 
-        AmUInt32 Play(SoundData* sound, PlayStateFlag flag, AmReal32 gain, AmReal32 pitch, AmReal32 speed, AmUInt32 id, AmUInt32 layer);
+        /**
+         * @brief Starts @p sound on a new voice (game thread).
+         *
+         * @param sound The sound data to render. The layer owns it from here until the layer is destroyed.
+         * @param options How the voice starts.
+         * @param id The owner id checked by every later call on the layer.
+         * @param layer The layer handle to use, or 0 to allocate one.
+         *
+         * @return The layer handle, or 0 if the voice could not start.
+         */
+        AmUInt32 StartVoice(SoundData* sound, const VoiceStartOptions& options, AmUInt32 id, AmUInt32 layer);
 
-        AmUInt32 PlayAdvanced(
-            SoundData* sound,
-            PlayStateFlag flag,
-            AmReal32 gain,
-            AmReal32 pitch,
-            AmReal32 speed,
-            AmUInt64 startFrame,
-            AmUInt64 endFrame,
-            AmUInt32 id,
-            AmUInt32 layer);
+        /**
+         * @brief Records a transport command for a voice (game thread). Sent by the next @c FlushVoiceCommands().
+         */
+        void PostVoiceCommand(
+            AmUInt32 id, AmUInt32 layer, eVoiceCommandKind kind, AmTime duration = 0.0, AmUInt64 position = 0, AmUInt64 frame = kVoiceAsap);
+
+        /**
+         * @brief Sends the recorded voice commands to the audio thread (game thread, once per frame).
+         *
+         * Commands that do not fit are kept for the next flush: nothing is dropped.
+         */
+        void FlushVoiceCommands();
+
+        /**
+         * @brief Handles the events published by voices and fires the matching channel callbacks (game thread).
+         */
+        void DispatchVoiceEvents();
+
+        /**
+         * @brief Gets the state last published by the voice of a layer.
+         *
+         * @return @c eVoiceState::Idle when the layer is gone or not playing for @p id.
+         */
+        [[nodiscard]] eVoiceState GetVoiceState(AmUInt32 id, AmUInt32 layer) const;
+
+        /**
+         * @brief Gets the source position last published by the voice of a layer.
+         *
+         * @return @c false when the layer is gone or not playing for @p id.
+         */
+        [[nodiscard]] bool GetVoicePosition(AmUInt32 id, AmUInt32 layer, AmUInt64& position) const;
+
+        /**
+         * @brief Gets the number of output frames rendered since the mixer was initialized.
+         */
+        [[nodiscard]] AmUInt64 GetAudioClock() const;
+
+        /**
+         * @brief Destroys a layer whose voice finished, after the current mix (game thread).
+         */
+        void ReleaseLayer(AmUInt32 id, AmUInt32 layer);
+
+        /**
+         * @brief Destroys a layer without waiting for its voice to finish, after the current mix (game thread).
+         */
+        void DiscardVoice(AmUInt32 id, AmUInt32 layer);
+
+        /**
+         * @brief Gives a separate-mode instance its own voice stream, starting at the instance cursor (game thread).
+         *
+         * @return @c false if the layer is not playing for @p id or the stream could not be created.
+         */
+        bool AttachInstanceStream(AmUInt32 id, AmUInt32 layer, AmChannelInstanceID instanceId);
+
+        /**
+         * @brief Removes the voice stream of a separate-mode instance; it is released after the mix (game thread).
+         *
+         * @return @c false if the layer is not playing for @p id.
+         */
+        bool DetachInstanceStream(AmUInt32 id, AmUInt32 layer, AmChannelInstanceID instanceId);
 
         bool SetObstruction(AmUInt32 id, AmUInt32 layer, AmReal32 obstruction);
 
@@ -268,24 +341,23 @@ namespace SparkyStudios::Audio::Amplitude
 
         bool SetPitch(AmUInt32 id, AmUInt32 layer, AmReal32 pitch);
 
-        bool SetCursor(AmUInt32 id, AmUInt32 layer, AmUInt64 cursor);
-
-        bool GetCursor(AmUInt32 id, AmUInt32 layer, AmUInt64& cursor);
-
-        bool ResetLayerState(AmUInt32 id, AmUInt32 layer);
-
-        bool SetPlayState(AmUInt32 id, AmUInt32 layer, PlayStateFlag flag);
-
         bool SetPlaySpeed(AmUInt32 id, AmUInt32 layer, AmReal32 speed);
-
-        PlayStateFlag GetPlayState(AmUInt32 id, AmUInt32 layer);
 
         void SetMasterGain(AmReal32 gain);
 
+        /**
+         * @brief Posts a stop to every live voice (game thread).
+         */
         void StopAll();
 
+        /**
+         * @brief Posts a pause to every live voice (game thread).
+         */
         void HaltAll();
 
+        /**
+         * @brief Posts a resume to every live voice (game thread).
+         */
         void PlayAll();
 
         [[nodiscard]] bool IsInsideThreadMutex() const;
@@ -308,9 +380,9 @@ namespace SparkyStudios::Audio::Amplitude
         void SetMaxInstancePipelines(AmSize count);
 
         /**
-         * @brief Gives a playing layer an empty instance pipeline table (game thread).
+         * @brief Gives a playing layer empty instance pipeline and instance stream tables (game thread).
          *
-         * @return @c false if per-instance pipelines are disabled or the layer is not playing for @p id.
+         * @return @c false if the layer is not playing for @p id.
          */
         bool InstallInstancePipelineTable(AmUInt32 id, AmUInt32 layer);
 
@@ -371,11 +443,17 @@ namespace SparkyStudios::Audio::Amplitude
         friend class EngineImpl;
 
         void ExecuteCommands();
-        void MixLayer(AmplimixLayerImpl* layer, AudioBuffer* buffer, AmUInt64 frameCount);
-        void MixLayerSeparateMode(AmplimixLayerImpl* layer, AudioBuffer* buffer, AmUInt64 frameCount);
+        void UpdateVoiceBlockFrames();
+        void DrainVoiceCommands();
+        void HandleVoiceEvent(const VoiceEvent& event);
+        void HandleVoiceEnded(AmplimixLayerImpl* layer, ChannelInternalState* channelState);
+        bool MixVoice(AmplimixLayerImpl* layer, AudioBuffer* buffer, AmUInt64 offset, AmUInt64 frames, AmUInt64 blockClock);
+        void MixVoiceInstances(
+            AmplimixLayerImpl* layer, AudioBuffer* buffer, AmUInt64 offset, AmUInt64 frames, AmReal32 gain, AmUInt16 outputChannels);
+        [[nodiscard]] static bool IsSeparateMode(const AmplimixLayerImpl* layer);
+        static AmReal64 UpdateSpeed(AmplimixLayerImpl* layer);
         AmplimixLayerImpl* GetLayer(AmUInt32 layer);
         bool ShouldMix(AmplimixLayerImpl* layer);
-        void UpdatePitch(AmplimixLayerImpl* layer);
         void LockAudioMutex();
         void UnlockAudioMutex();
         void Wait();
@@ -403,7 +481,13 @@ namespace SparkyStudios::Audio::Amplitude
         AmplimixLayerImpl _layers[kAmplimixLayersCount];
         AmUInt32 _activeLayerIndices[kAmplimixLayersCount];
         std::atomic<AmUInt32> _activeLayerCount = 0;
-        AmUInt64 _remainingFrames;
+
+        std::unique_ptr<VoiceCommandQueue> _voiceCommands;
+        std::unique_ptr<VoiceEventQueue> _voiceEvents;
+        std::vector<VoiceCommand> _voiceOutbox; // game side only, guarded by _voiceOutboxMutex
+        std::mutex _voiceOutboxMutex; // transport may be called from any game-side thread; never taken by the audio thread
+        std::atomic<AmUInt64> _audioClock{ 0 };
+        AmUInt64 _voiceBlockFrames = 0;
 
         Pipeline* _pipeline = nullptr;
         AmSize _maxInstancePipelines = kDefaultMaxInstancePipelines;

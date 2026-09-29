@@ -2525,7 +2525,10 @@ namespace SparkyStudios::Audio::Amplitude
         {
             auto current = channelInternalState++;
             current->UpdateState();
-            if (current->Stopped())
+
+            // A stopped channel is recycled once its voices finished their de-click: until then they still render
+            // through its state (location, gain, room). An engine that is stopping recycles everything at once.
+            if (current->Stopped() && (state->stopping || !current->GetRealChannel().HasSoundingLayers()))
             {
                 InsertIntoFreeList(state, &*current);
             }
@@ -2646,6 +2649,10 @@ namespace SparkyStudios::Audio::Amplitude
         // before the best listener is selected.
         _state->listenerCache.Clear();
 
+        // Voice events fire the channel callbacks before the frame callbacks run and before finished channels are
+        // recycled: callbacks they schedule for the next frame (a stop after a natural end) still see their channel.
+        _state->mixer.DispatchVoiceEvents();
+
         {
             std::lock_guard lock(_frameThreadMutex);
 
@@ -2745,6 +2752,7 @@ namespace SparkyStudios::Audio::Amplitude
         }
 
         ++_state->current_frame;
+        _state->mixer.FlushVoiceCommands();
         _state->total_time += delta;
     }
 

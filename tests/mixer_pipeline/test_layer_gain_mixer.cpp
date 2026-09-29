@@ -58,13 +58,13 @@ namespace SparkyStudios::Audio::Amplitude::Tests
             Configure(processors, 0.25f);
 
             Fill(out, 0.0f);
-            MixLayerWithGain(processors, 2, 0.25f, in, out, kFrames);
+            MixLayerWithGain(processors, 2, 0.25f, in, out, 0, kFrames);
             const AmReal32 lastFirstBlock = out[0][kFrames - 1];
             AM_EXPECT(std::abs(lastFirstBlock - 0.25f) < kTolerance);
 
             // Accumulates onto existing content, ramping 0.25 -> 1 across the block.
             Fill(out, 0.1f);
-            MixLayerWithGain(processors, 2, 1.0f, in, out, kFrames);
+            MixLayerWithGain(processors, 2, 1.0f, in, out, 0, kFrames);
 
             const AmReal32 step = 0.75f / static_cast<AmReal32>(kFrames);
             for (AmUInt16 c = 0; c < 2; ++c)
@@ -99,7 +99,7 @@ namespace SparkyStudios::Audio::Amplitude::Tests
             // Block 1: every instance sees the same 0 -> 1 ramp (first half of 256 frames).
             Fill(out, 0.0f);
             for (AmUInt32 n = 0; n < instances; ++n)
-                MixLayerInstanceWithGain(processors, 2, 1.0f, in, out, frames);
+                MixLayerInstanceWithGain(processors, 2, 1.0f, in, out, 0, frames);
 
             for (AmSize i = 0; i < frames; ++i)
                 AM_EXPECT(std::abs(out[0][i] - instances * static_cast<AmReal32>(i) / 256.0f) < kTolerance);
@@ -115,7 +115,7 @@ namespace SparkyStudios::Audio::Amplitude::Tests
             // Block 2 continues the same ramp (second half).
             Fill(out, 0.0f);
             for (AmUInt32 n = 0; n < instances; ++n)
-                MixLayerInstanceWithGain(processors, 2, 1.0f, in, out, frames);
+                MixLayerInstanceWithGain(processors, 2, 1.0f, in, out, 0, frames);
 
             for (AmSize i = 0; i < frames; ++i)
                 AM_EXPECT(std::abs(out[1][i] - instances * (0.5f + static_cast<AmReal32>(i) / 256.0f)) < kTolerance);
@@ -137,7 +137,7 @@ namespace SparkyStudios::Audio::Amplitude::Tests
             GainProcessor processors[kAmplimixMaxOutputChannels];
             Configure(processors, 0.5f);
 
-            MixLayerWithGain(processors, 1, 0.5f, in, out, kFrames);
+            MixLayerWithGain(processors, 1, 0.5f, in, out, 0, kFrames);
 
             for (AmSize i = 0; i < kFrames; ++i)
             {

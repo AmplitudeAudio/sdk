@@ -219,7 +219,10 @@ namespace SparkyStudios::Audio::Amplitude
             return;
 
         if (_realChannel.Pause())
+        {
             _channelState = eChannelPlaybackState_Paused;
+            TriggerOnNextFrame(eChannelEvent_Pause);
+        }
     }
 
     void ChannelInternalState::Resume()
@@ -228,7 +231,10 @@ namespace SparkyStudios::Audio::Amplitude
             return;
 
         if (_realChannel.Resume())
+        {
             _channelState = eChannelPlaybackState_Playing;
+            TriggerOnNextFrame(eChannelEvent_Resume);
+        }
     }
 
     bool ChannelInternalState::SetPlaybackPosition(AmTime position)
@@ -275,7 +281,10 @@ namespace SparkyStudios::Audio::Amplitude
         _realGain = 0.0f;
 
         if (_realChannel.Resume())
+        {
             _channelState = eChannelPlaybackState_FadingIn;
+            TriggerOnNextFrame(eChannelEvent_Resume);
+        }
         else
         {
             _realChannel.SetGain(_gain);
@@ -732,7 +741,35 @@ namespace SparkyStudios::Audio::Amplitude
             return;
 
         if (_realChannel.Halt())
+        {
             _channelState = eChannelPlaybackState_Stopped;
+            TriggerOnNextFrame(eChannelEvent_Stop);
+        }
+    }
+
+    const AmString& ChannelInternalState::GetFaderName() const
+    {
+        return _faderName;
+    }
+
+    void ChannelInternalState::OnVoiceFadedOut(AmUInt32 mixerLayerId, eVoiceFadeTarget target, AmUInt64 frame, AmUInt64 sourcePosition)
+    {
+        AM_UNUSED(mixerLayerId);
+        AM_UNUSED(target);
+        AM_UNUSED(frame);
+        AM_UNUSED(sourcePosition);
+    }
+
+    void ChannelInternalState::TriggerOnNextFrame(eChannelEvent event)
+    {
+        const AmUInt64 stateId = _channelStateId;
+        amEngine->OnNextFrame(
+            [this, stateId, event](AmTime)
+            {
+                // The channel may have been reused in between.
+                if (_channelStateId == stateId)
+                    Trigger(event);
+            });
     }
 
     bool ChannelInternalState::PlaySwitchContainerStateUpdate(
