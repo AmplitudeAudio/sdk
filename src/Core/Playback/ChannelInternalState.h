@@ -62,6 +62,8 @@ namespace SparkyStudios::Audio::Amplitude
             , _previousSwitchContainerStateId(kAmInvalidObjectId)
             , _fader(nullptr)
             , _targetFadeOutState(eChannelPlaybackState_Stopped)
+            , _fadeInEndTime(0.0)
+            , _stopEventPending(false)
             , _entity()
             , _userGain(1.0f)
             , _gain(1.0f)
@@ -558,7 +560,8 @@ namespace SparkyStudios::Audio::Amplitude
         fplutil::intrusive_list_node room_node;
 
     private:
-        bool PlaySwitchContainerStateUpdate(const std::vector<SwitchContainerItem>& previous, const std::vector<SwitchContainerItem>& next);
+        bool PlaySwitchContainerStateUpdate(
+            const std::vector<SwitchContainerItem>& previous, const std::vector<SwitchContainerItem>& next, AmTime fadeIn = 0.0);
         bool PlaySwitchContainer();
         bool PlayCollection();
         bool PlaySound();
@@ -587,6 +590,12 @@ namespace SparkyStudios::Audio::Amplitude
 
         // The target state of the fade out transition. Must be either Paused or Stopped.
         eChannelPlaybackState _targetFadeOutState;
+
+        // The engine time at which the current audio-rate fade-in is expected to be over.
+        AmTime _fadeInEndTime;
+
+        // Whether a Stop event is still owed once the voice's fade-out event arrives.
+        bool _stopEventPending;
 
         // The entity which is playing the sound of this channel.
         Entity _entity;

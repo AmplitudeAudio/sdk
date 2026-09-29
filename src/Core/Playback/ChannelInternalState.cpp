@@ -58,6 +58,8 @@ namespace SparkyStudios::Audio::Amplitude
         _fader = nullptr;
         _faderName = "";
         _targetFadeOutState = eChannelPlaybackState_Stopped;
+        _fadeInEndTime = 0.0;
+        _stopEventPending = false;
         _entity = Entity();
         _userGain = 0.0f;
         _gain = 0.0f;
@@ -274,22 +276,15 @@ namespace SparkyStudios::Audio::Amplitude
         if (Playing() || !Valid() || _channelState == eChannelPlaybackState_FadingIn)
             return;
 
-        _fader->Set(0.0f, _gain, duration);
-        _fader->Start(amEngine->GetTotalTime());
+        _realChannel.SetGain(_gain);
+        _realGain = _gain;
 
-        _realChannel.SetGain(0.0f);
-        _realGain = 0.0f;
+        if (!_realChannel.ResumeWithFade(duration))
+            return;
 
-        if (_realChannel.Resume())
-        {
-            _channelState = eChannelPlaybackState_FadingIn;
-            TriggerOnNextFrame(eChannelEvent_Resume);
-        }
-        else
-        {
-            _realChannel.SetGain(_gain);
-            _realGain = _gain;
-        }
+        _channelState = eChannelPlaybackState_FadingIn;
+        _fadeInEndTime = amEngine->GetTotalTime() + AM_MAX(duration, kDeclickFade);
+        TriggerOnNextFrame(eChannelEvent_Resume);
     }
 
     void ChannelInternalState::FadeOut(AmTime duration, eChannelPlaybackState targetState)
@@ -297,26 +292,24 @@ namespace SparkyStudios::Audio::Amplitude
         if (Stopped() || Paused() || _channelState == eChannelPlaybackState_FadingOut)
             return;
 
-        // If the sound is muted, no need to fade out
-        if (_realGain <= kEpsilon)
+        if (_realGain <= kEpsilon || !Valid())
         {
             if (targetState == eChannelPlaybackState_Stopped)
                 return Halt();
 
             if (targetState == eChannelPlaybackState_Paused)
                 return Pause();
+
+            return;
         }
 
-        if (!Valid())
+        const eVoiceCommandKind kind = targetState == eChannelPlaybackState_Stopped ? eVoiceCommandKind::Stop : eVoiceCommandKind::Pause;
+        if (!_realChannel.FadeOut(duration, kind))
             return;
-
-        _realChannel.SetGain(_gain);
-
-        _fader->Set(_gain, 0.0f, duration);
-        _fader->Start(amEngine->GetTotalTime());
 
         _channelState = eChannelPlaybackState_FadingOut;
         _targetFadeOutState = targetState;
+        _stopEventPending = targetState == eChannelPlaybackState_Stopped;
     }
 
     void ChannelInternalState::SetGain(const AmReal32 gain)
@@ -465,55 +458,10 @@ namespace SparkyStudios::Audio::Amplitude
                 const std::vector<SwitchContainerItem>& previousItems = _switchContainer->GetSoundObjects(_playingSwitchContainerStateId);
                 std::vector<SwitchContainerItem> nextItems = _switchContainer->GetSoundObjects(switchStateId);
 
-                for (const auto& item : previousItems)
-                {
-                    if (item.m_continueBetweenStates)
-                    {
-                        auto it = std::find_if(
-                            nextItems.begin(), nextItems.end(),
-                            [id = item.m_id](const SwitchContainerItem& nextItem)
-                            {
-                                return nextItem.m_id == id;
-                            });
-
-                        if (it != nextItems.end())
-                        {
-                            nextItems.erase(it);
-                            continue;
-                        }
-                    }
-
-                    const auto out = _switchContainer->GetFaderOut(item.m_id);
-                    out->Set(_gain, 0.0f);
-                    out->Start(currentTime);
-                }
-
-                for (const auto& item : nextItems)
-                {
-                    const auto in = _switchContainer->GetFaderIn(item.m_id);
-                    in->Set(0.0f, _gain);
-                    in->Start(currentTime);
-                }
-
-                _previousSwitchContainerStateId = _playingSwitchContainerStateId;
-                PlaySwitchContainerStateUpdate(previousItems, nextItems);
-                _playingSwitchContainerStateId = switchStateId;
-
-                _channelState = eChannelPlaybackState_SwitchingState;
-            }
-
-            if (_channelState == eChannelPlaybackState_SwitchingState)
-            {
-                const std::vector<SwitchContainerItem>& previousItems = _switchContainer->GetSoundObjects(_previousSwitchContainerStateId);
-                std::vector<SwitchContainerItem> nextItems = _switchContainer->GetSoundObjects(_playingSwitchContainerStateId);
-
-                // Build a map for faster layer lookup
+                // Build a map for faster layer lookup, before the outgoing items' layers are faded out.
                 std::unordered_map<AmObjectID, AmUInt32> soundToLayer;
                 for (const auto& [layerId, layerData] : _realChannel._layers)
                     soundToLayer[layerData.soundInstance->GetSettings().m_id] = layerId;
-
-                bool isAtLeastOneFadeInRunning = false;
-                bool isAtLeastOneFadeOutRunning = false;
 
                 const bool isReal = IsReal();
 
@@ -535,122 +483,28 @@ namespace SparkyStudios::Audio::Amplitude
                         }
                     }
 
-                    auto layerIt = soundToLayer.find(item.m_id);
-                    if (layerIt == soundToLayer.end())
-                        continue;
-
-                    AmUInt32 layer = layerIt->second;
-                    const auto out = _switchContainer->GetFaderOut(item.m_id);
-                    if (out->GetState() == eFaderState_Stopped)
-                        continue;
-
-                    const AmReal32 gain = out->GetFromTime(currentTime);
-                    isAtLeastOneFadeOutRunning = true;
-
+                    // Old layers finish on their own and are forgotten on their Finished event.
                     if (isReal)
-                        _realChannel.SetGain(gain, layer);
-
-                    if (gain <= kEpsilon)
-                    {
-                        out->SetState(eFaderState_Stopped);
-                        // Fading out transition complete. Now we can halt the channel layer
-                        _realChannel.Halt(layer);
-                    }
+                        if (const auto layerIt = soundToLayer.find(item.m_id); layerIt != soundToLayer.end())
+                            _realChannel.FadeOutLayer(layerIt->second, _switchContainer->GetFaderOut(item.m_id)->GetDuration());
                 }
 
+                // The new voices start together with the largest fade-in duration among them.
+                AmTime fadeIn = 0.0;
                 for (const auto& item : nextItems)
-                {
-                    auto layerIt = soundToLayer.find(item.m_id);
-                    if (layerIt == soundToLayer.end())
-                        continue;
+                    fadeIn = AM_MAX(fadeIn, _switchContainer->GetFaderIn(item.m_id)->GetDuration());
 
-                    AmUInt32 layer = layerIt->second;
-                    const auto in = _switchContainer->GetFaderIn(item.m_id);
-                    if (in->GetState() == eFaderState_Stopped)
-                        continue;
-
-                    const AmReal32 gain = in->GetFromTime(currentTime);
-                    isAtLeastOneFadeInRunning = true;
-
-                    if (isReal)
-                        _realChannel.SetGain(gain, layer);
-
-                    if (_gain - gain <= kEpsilon)
-                        in->SetState(eFaderState_Stopped);
-                }
-
-                if (!isAtLeastOneFadeInRunning && !isAtLeastOneFadeOutRunning)
-                {
-                    _channelState = eChannelPlaybackState_Playing;
-                    _previousSwitchContainerStateId = _playingSwitchContainerStateId;
-                }
-            }
-        }
-
-        // Update the fading in animation if necessary
-        if (_channelState == eChannelPlaybackState_FadingIn)
-        {
-            if (_fader != nullptr && _fader->GetState() == eFaderState_Active)
-            {
-                _realGain = _fader->GetFromTime(currentTime);
-
-                if (IsReal())
-                    _realChannel.SetGain(_realGain);
-
-                if (_gain - _realGain <= kEpsilon)
-                {
-                    _fader->SetState(eFaderState_Stopped);
-
-                    // Fading in transition complete. Now we mark the channel as playing.
-                    _channelState = eChannelPlaybackState_Playing;
-                }
-            }
-            else
-            {
-                // No fader is defined, no fading occurs
-                if (IsReal())
-                    _realChannel.SetGain(_gain);
+                _previousSwitchContainerStateId = _playingSwitchContainerStateId;
+                PlaySwitchContainerStateUpdate(previousItems, nextItems, fadeIn);
+                _playingSwitchContainerStateId = switchStateId;
 
                 _channelState = eChannelPlaybackState_Playing;
-                _realGain = _gain;
             }
         }
 
-        // Update the fading out animation if necessary
-        if (_channelState == eChannelPlaybackState_FadingOut)
-        {
-            if (_fader != nullptr && _fader->GetState() == eFaderState_Active)
-            {
-                _realGain = _fader->GetFromTime(currentTime);
-
-                if (IsReal())
-                    _realChannel.SetGain(_realGain);
-
-                if (_realGain <= kEpsilon)
-                {
-                    _fader->SetState(eFaderState_Stopped);
-
-                    // Fading out transition complete. Now we can halt or pause the channel.
-                    if (_targetFadeOutState == eChannelPlaybackState_Stopped)
-                        Halt();
-                    else if (_targetFadeOutState == eChannelPlaybackState_Paused)
-                        Pause();
-                }
-            }
-            else
-            {
-                // No fader is defined, no fading occurs
-                if (IsReal())
-                    _realChannel.SetGain(0.0f);
-
-                if (_targetFadeOutState == eChannelPlaybackState_Stopped)
-                    Halt();
-                else if (_targetFadeOutState == eChannelPlaybackState_Paused)
-                    Pause();
-
-                _realGain = 0.0f;
-            }
-        }
+        // Fades render in the voice; the channel only needs to know when a fade-in is over.
+        if (_channelState == eChannelPlaybackState_FadingIn && currentTime >= _fadeInEndTime)
+            _channelState = eChannelPlaybackState_Playing;
     }
 
     AmObjectID ChannelInternalState::GetPlayingObjectId() const
@@ -754,10 +608,34 @@ namespace SparkyStudios::Audio::Amplitude
 
     void ChannelInternalState::OnVoiceFadedOut(AmUInt32 mixerLayerId, eVoiceFadeTarget target, AmUInt64 frame, AmUInt64 sourcePosition)
     {
-        AM_UNUSED(mixerLayerId);
-        AM_UNUSED(target);
         AM_UNUSED(frame);
         AM_UNUSED(sourcePosition);
+
+        switch (target)
+        {
+        case eVoiceFadeTarget::Paused:
+            _realChannel.MarkLayerPaused(mixerLayerId);
+            if (_channelState == eChannelPlaybackState_FadingOut && _targetFadeOutState == eChannelPlaybackState_Paused &&
+                _realChannel.Paused())
+            {
+                _channelState = eChannelPlaybackState_Paused;
+                _realGain = 0.0f;
+                Trigger(eChannelEvent_Pause);
+            }
+            break;
+
+        case eVoiceFadeTarget::Stopped:
+            // The layer is forgotten on its Finished event; UpdateState() stops the channel when none is left.
+            if (_stopEventPending)
+            {
+                _stopEventPending = false;
+                Trigger(eChannelEvent_Stop);
+            }
+            break;
+
+        default:
+            break;
+        }
     }
 
     void ChannelInternalState::TriggerOnNextFrame(eChannelEvent event)
@@ -773,7 +651,7 @@ namespace SparkyStudios::Audio::Amplitude
     }
 
     bool ChannelInternalState::PlaySwitchContainerStateUpdate(
-        const std::vector<SwitchContainerItem>& previous, const std::vector<SwitchContainerItem>& next)
+        const std::vector<SwitchContainerItem>& previous, const std::vector<SwitchContainerItem>& next, AmTime fadeIn)
     {
         const SwitchContainerDefinition* definition = _switchContainer->GetDefinition();
 
@@ -824,7 +702,10 @@ namespace SparkyStudios::Audio::Amplitude
                 eMemoryPoolKind_Amplimix, SoundInstance, sound, settings, static_cast<const EffectImpl*>(_switchContainer->GetEffect())));
         }
 
-        const bool success = _realChannel.Play(instances);
+        RealChannelPlayOptions options;
+        options.fadeIn = fadeIn;
+
+        const bool success = _realChannel.Play(instances, options);
         if (!success)
             for (SoundInstance* instance : instances)
                 SoundImpl::DestroyInstance(instance);

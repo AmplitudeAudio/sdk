@@ -27,6 +27,7 @@
 #include <SparkyStudios/Audio/Amplitude/Sound/Sound.h>
 
 #include <Core/Playback/ChannelInstanceInternalState.h>
+#include <Mixer/Voice/VoiceTypes.h>
 
 namespace SparkyStudios::Audio::Amplitude
 {
@@ -36,6 +37,17 @@ namespace SparkyStudios::Audio::Amplitude
     class ChannelInternalState;
 
     class AmplimixImpl;
+
+    /**
+     * @brief Options taken by @c RealChannel::Play, shared across the layers started together.
+     */
+    struct RealChannelPlayOptions
+    {
+        AmTime fadeIn = 0.0; ///< Milliseconds; forwarded to VoiceStartOptions::fadeIn.
+        AmUInt64 startPosition = 0;
+        AmUInt64 startPositionClock = kVoiceAsap;
+        AmUInt64 startFrame = kVoiceAsap;
+    };
 
     /**
      * @brief A RealChannel represents a channel of audio on the mixer.
@@ -66,12 +78,12 @@ namespace SparkyStudios::Audio::Amplitude
         /**
          * @brief Play all the sound instances on the real channel.
          */
-        bool Play(const std::vector<SoundInstance*>& instances);
+        bool Play(const std::vector<SoundInstance*>& instances, const RealChannelPlayOptions& options = {});
 
         /**
          * @brief Play the audio on the real channel.
          */
-        bool Play(SoundInstance* sound, AmUInt32 layer = kAmInvalidObjectId);
+        bool Play(SoundInstance* sound, AmUInt32 layer = kAmInvalidObjectId, const RealChannelPlayOptions& options = {});
 
         /**
          * @brief Halt the real channel so it may be re-used. However, this virtual channel may still be considered playing.
@@ -93,6 +105,44 @@ namespace SparkyStudios::Audio::Amplitude
          */
         bool Resume(AmUInt32 layer);
         bool Resume();
+
+        /**
+         * @brief Fades a stop or pause across every layer, rendered by each voice's audio-rate envelope.
+         *
+         * Unlike @c Halt / @c Pause, the layer keeps reporting "playing" until the voice posts the matching
+         * @c eVoiceFadeTarget event: the channel only settles once the fade actually finished rendering.
+         *
+         * @param duration The fade duration, in milliseconds.
+         * @param kind Either @c eVoiceCommandKind::Stop or @c eVoiceCommandKind::Pause.
+         *
+         * @return @c false when this channel has no layer to fade.
+         */
+        bool FadeOut(AmTime duration, eVoiceCommandKind kind);
+
+        /**
+         * @brief Fades a single layer out to a stop, rendered by its voice's audio-rate envelope.
+         *
+         * Used by switch-container state transitions to fade out the layer of an outgoing item.
+         *
+         * @param layer The layer index to fade out.
+         * @param duration The fade duration, in milliseconds.
+         */
+        void FadeOutLayer(AmUInt32 layer, AmTime duration);
+
+        /**
+         * @brief Resumes every layer with an audio-rate fade-in.
+         *
+         * @param duration The fade duration, in milliseconds.
+         *
+         * @return @c false when this channel has no layer to resume.
+         */
+        bool ResumeWithFade(AmTime duration);
+
+        /**
+         * @brief Marks the layer bound to @p mixerLayerId as paused (game-side mirror), once its voice's fade-out
+         * finished with the @c eVoiceFadeTarget::Paused target.
+         */
+        void MarkLayerPaused(AmUInt32 mixerLayerId);
 
         /**
          * @brief Seek the real channel to the given playback position.

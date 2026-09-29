@@ -91,7 +91,7 @@ namespace SparkyStudios::Audio::Amplitude
         return _channelId != kAmInvalidObjectId && _mixer != nullptr && _parentChannelState != nullptr;
     }
 
-    bool RealChannel::Play(const std::vector<SoundInstance*>& instances)
+    bool RealChannel::Play(const std::vector<SoundInstance*>& instances, const RealChannelPlayOptions& options)
     {
         if (instances.empty())
             return false;
@@ -102,7 +102,7 @@ namespace SparkyStudios::Audio::Amplitude
 
         for (auto& instance : instances)
         {
-            success &= Play(instance, layer);
+            success &= Play(instance, layer, options);
             layers.push_back(layer);
 
             if (!success)
@@ -119,7 +119,7 @@ namespace SparkyStudios::Audio::Amplitude
         return success;
     }
 
-    bool RealChannel::Play(SoundInstance* sound, AmUInt32 layer)
+    bool RealChannel::Play(SoundInstance* sound, AmUInt32 layer, const RealChannelPlayOptions& playOptions)
     {
         AMPLITUDE_ASSERT(sound != nullptr);
 
@@ -152,6 +152,7 @@ namespace SparkyStudios::Audio::Amplitude
         options.pitch = _pitch;
         options.speed = _playSpeed;
         options.faderName = _parentChannelState->GetFaderName();
+        options.fadeIn = playOptions.fadeIn;
 
         data.mixerLayerId = _mixer->StartVoice(static_cast<SoundData*>(sound->GetUserData()), options, _channelId, 0);
         data.paused = false;
@@ -364,6 +365,44 @@ namespace SparkyStudios::Audio::Amplitude
                 success &= Resume(layer);
 
         return success;
+    }
+
+    bool RealChannel::FadeOut(AmTime duration, eVoiceCommandKind kind)
+    {
+        AMPLITUDE_ASSERT(Valid());
+        AMPLITUDE_ASSERT(kind == eVoiceCommandKind::Stop || kind == eVoiceCommandKind::Pause);
+
+        // No game-side flag here: the layer keeps "playing" until the voice reports the end of the fade.
+        for (const auto& [index, data] : _layers)
+            _mixer->PostVoiceCommand(_channelId, data.mixerLayerId, kind, duration);
+
+        return !_layers.empty();
+    }
+
+    void RealChannel::FadeOutLayer(AmUInt32 layer, AmTime duration)
+    {
+        AMPLITUDE_ASSERT(Valid());
+        _mixer->PostVoiceCommand(_channelId, _layers.at(layer).mixerLayerId, eVoiceCommandKind::Stop, duration);
+    }
+
+    bool RealChannel::ResumeWithFade(AmTime duration)
+    {
+        AMPLITUDE_ASSERT(Valid());
+
+        for (auto& [index, data] : _layers)
+        {
+            _mixer->PostVoiceCommand(_channelId, data.mixerLayerId, eVoiceCommandKind::Resume, duration);
+            data.paused = false;
+        }
+
+        return !_layers.empty();
+    }
+
+    void RealChannel::MarkLayerPaused(AmUInt32 mixerLayerId)
+    {
+        for (auto& [index, data] : _layers)
+            if (data.mixerLayerId == mixerLayerId)
+                data.paused = true;
     }
 
     bool RealChannel::Seek(AmTime position)
