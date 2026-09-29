@@ -562,6 +562,7 @@ namespace SparkyStudios::Audio::Amplitude
     private:
         bool PlaySwitchContainerStateUpdate(
             const std::vector<SwitchContainerItem>& previous, const std::vector<SwitchContainerItem>& next, AmTime fadeIn = 0.0);
+        [[nodiscard]] bool IsFadingOutToStopped() const;
         bool PlaySwitchContainer();
         bool PlayCollection();
         bool PlaySound();

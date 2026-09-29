@@ -217,7 +217,7 @@ namespace SparkyStudios::Audio::Amplitude
 
     void ChannelInternalState::Pause()
     {
-        if (Paused() || !Valid())
+        if (Paused() || !Valid() || IsFadingOutToStopped())
             return;
 
         if (_realChannel.Pause())
@@ -229,7 +229,7 @@ namespace SparkyStudios::Audio::Amplitude
 
     void ChannelInternalState::Resume()
     {
-        if (Playing() || !Valid())
+        if (Playing() || !Valid() || IsFadingOutToStopped())
             return;
 
         if (_realChannel.Resume())
@@ -273,7 +273,7 @@ namespace SparkyStudios::Audio::Amplitude
 
     void ChannelInternalState::FadeIn(AmTime duration)
     {
-        if (Playing() || !Valid() || _channelState == eChannelPlaybackState_FadingIn)
+        if (Playing() || !Valid() || _channelState == eChannelPlaybackState_FadingIn || IsFadingOutToStopped())
             return;
 
         _realChannel.SetGain(_gain);
@@ -289,7 +289,13 @@ namespace SparkyStudios::Audio::Amplitude
 
     void ChannelInternalState::FadeOut(AmTime duration, eChannelPlaybackState targetState)
     {
-        if (Stopped() || Paused() || _channelState == eChannelPlaybackState_FadingOut)
+        if (Stopped() || Paused())
+            return;
+
+        // A stop fade in progress is never interrupted (by another stop fade or by a pause fade); a pause fade in
+        // progress may be overridden by a stop fade, which lets the voice restart its fade from the current gain.
+        if (_channelState == eChannelPlaybackState_FadingOut &&
+            (_targetFadeOutState == eChannelPlaybackState_Stopped || targetState == eChannelPlaybackState_Paused))
             return;
 
         if (_realGain <= kEpsilon || !Valid())
@@ -576,9 +582,27 @@ namespace SparkyStudios::Audio::Amplitude
         case eChannelPlaybackState_Stopped:
         case eChannelPlaybackState_Pending:
             break;
+
+        case eChannelPlaybackState_FadingOut:
+            if (_targetFadeOutState == eChannelPlaybackState_Paused)
+            {
+                if (!Valid() || _realChannel._layers.empty())
+                {
+                    _channelState = eChannelPlaybackState_Stopped;
+                }
+                else if (_realChannel.Paused())
+                {
+                    _channelState = eChannelPlaybackState_Paused;
+                    _realGain = 0.0f;
+                    Trigger(eChannelEvent_Pause);
+                }
+
+                break;
+            }
+
+            [[fallthrough]];
         case eChannelPlaybackState_FadingIn:
         case eChannelPlaybackState_Playing:
-        case eChannelPlaybackState_FadingOut:
             if (!Valid() || !_realChannel.Playing())
             {
                 _channelState = eChannelPlaybackState_Stopped;
@@ -597,6 +621,10 @@ namespace SparkyStudios::Audio::Amplitude
         if (_realChannel.Halt())
         {
             _channelState = eChannelPlaybackState_Stopped;
+
+            // An immediate halt fires its own Stop right below; a stale fade-out event for a stop fade this halt
+            // superseded must not fire a second one.
+            _stopEventPending = false;
             TriggerOnNextFrame(eChannelEvent_Stop);
         }
     }
@@ -604,6 +632,11 @@ namespace SparkyStudios::Audio::Amplitude
     const AmString& ChannelInternalState::GetFaderName() const
     {
         return _faderName;
+    }
+
+    bool ChannelInternalState::IsFadingOutToStopped() const
+    {
+        return _channelState == eChannelPlaybackState_FadingOut && _targetFadeOutState == eChannelPlaybackState_Stopped;
     }
 
     void ChannelInternalState::OnVoiceFadedOut(AmUInt32 mixerLayerId, eVoiceFadeTarget target, AmUInt64 frame, AmUInt64 sourcePosition)
@@ -614,14 +647,8 @@ namespace SparkyStudios::Audio::Amplitude
         switch (target)
         {
         case eVoiceFadeTarget::Paused:
-            _realChannel.MarkLayerPaused(mixerLayerId);
-            if (_channelState == eChannelPlaybackState_FadingOut && _targetFadeOutState == eChannelPlaybackState_Paused &&
-                _realChannel.Paused())
-            {
-                _channelState = eChannelPlaybackState_Paused;
-                _realGain = 0.0f;
-                Trigger(eChannelEvent_Pause);
-            }
+            if (_channelState == eChannelPlaybackState_FadingOut && _targetFadeOutState == eChannelPlaybackState_Paused)
+                _realChannel.MarkLayerPaused(mixerLayerId);
             break;
 
         case eVoiceFadeTarget::Stopped:

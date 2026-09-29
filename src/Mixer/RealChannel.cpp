@@ -372,30 +372,52 @@ namespace SparkyStudios::Audio::Amplitude
         AMPLITUDE_ASSERT(Valid());
         AMPLITUDE_ASSERT(kind == eVoiceCommandKind::Stop || kind == eVoiceCommandKind::Pause);
 
-        // No game-side flag here: the layer keeps "playing" until the voice reports the end of the fade.
+        // A layer whose voice failed to start has no mixer layer: posting to it would target slot 0.
+        bool any = false;
         for (const auto& [index, data] : _layers)
-            _mixer->PostVoiceCommand(_channelId, data.mixerLayerId, kind, duration);
+        {
+            if (data.mixerLayerId == kAmInvalidObjectId)
+                continue;
 
-        return !_layers.empty();
+            // No game-side flag here: the layer keeps "playing" until the voice reports the end of the fade.
+            _mixer->PostVoiceCommand(_channelId, data.mixerLayerId, kind, duration);
+            any = true;
+        }
+
+        return any;
     }
 
     void RealChannel::FadeOutLayer(AmUInt32 layer, AmTime duration)
     {
         AMPLITUDE_ASSERT(Valid());
-        _mixer->PostVoiceCommand(_channelId, _layers.at(layer).mixerLayerId, eVoiceCommandKind::Stop, duration);
+        auto& data = _layers.at(layer);
+
+        // A layer whose voice failed to start has no mixer layer: posting to it would target slot 0.
+        if (data.mixerLayerId == kAmInvalidObjectId)
+            return;
+
+        _mixer->PostVoiceCommand(_channelId, data.mixerLayerId, eVoiceCommandKind::Stop, duration);
+
+        data.stopping = true;
     }
 
     bool RealChannel::ResumeWithFade(AmTime duration)
     {
         AMPLITUDE_ASSERT(Valid());
 
+        // A layer whose voice failed to start has no mixer layer: posting to it would target slot 0.
+        bool any = false;
         for (auto& [index, data] : _layers)
         {
+            if (data.mixerLayerId == kAmInvalidObjectId)
+                continue;
+
             _mixer->PostVoiceCommand(_channelId, data.mixerLayerId, eVoiceCommandKind::Resume, duration);
             data.paused = false;
+            any = true;
         }
 
-        return !_layers.empty();
+        return any;
     }
 
     void RealChannel::MarkLayerPaused(AmUInt32 mixerLayerId)
