@@ -73,27 +73,12 @@ namespace SparkyStudios::Audio::Amplitude
         bool m_locked = false;
     };
 
-    static void OnSoundDestroyed(AmplimixImpl* mixer, AmplimixLayerImpl* layer)
+    // Audio thread: whether a mixer command may still act on the layer. A detached layer belongs to the game thread,
+    // which destroys it; the audio thread never touches it again.
+    static bool IsLiveForCommand(const AmplimixLayerImpl* layer, AmUInt32 id)
     {
-        // Null guard: multiple deferred commands may target the same layer in one
-        // ExecuteCommands() pass (e.g., HaltInternal queues via SetPlayState + OnSoundEnded
-        // queues another). The first call nulls snd via Destroy(); subsequent calls are no-ops.
-        if (layer->snd == nullptr)
-            return;
-
-        // A pinned layer is being read by the game thread (AmplimixImpl::PinLayer): leave the destroy to the last unpin.
-        layer->destroyPending.store(true, std::memory_order_seq_cst);
-        std::atomic_thread_fence(std::memory_order_seq_cst);
-
-        if (layer->pins.load(std::memory_order_seq_cst) > 0)
-            return;
-
-        // An unpin that raced with this call may already have claimed the destroy and queued it again.
-        if (!layer->destroyPending.exchange(false, std::memory_order_seq_cst))
-            return;
-
-        mixer->DeactivateLayer(mixer->GetLayerIndex(layer));
-        layer->Destroy();
+        return layer->slot.load(std::memory_order_acquire) == eLayerSlot::Live && !layer->detached.load(std::memory_order_relaxed) &&
+            layer->id == id;
     }
 
     AmplimixImpl::AmplimixImpl(AmReal32 masterGain)
@@ -151,6 +136,7 @@ namespace SparkyStudios::Audio::Amplitude
 
         UpdateVoiceBlockFrames();
         _voiceOutbox.reserve(256);
+        _pendingDestroys.reserve(256);
 
         // Publish to atomic snapshots for audio-thread reads
         AMPLIMIX_STORE_RELAXED(&_mixOutputSampleRate, _device.mRequestedOutputSampleRate);
@@ -168,11 +154,13 @@ namespace SparkyStudios::Audio::Amplitude
 
         AMPLITUDE_ASSERT(!IsInsideThreadMutex());
 
-        // Drain any pending deferred commands
+        // Drain any pending deferred commands. No mix can run any more: layers are destroyed here synchronously.
         ExecuteCommands();
 
         for (auto& layer : _layers)
             layer.Destroy();
+
+        _pendingDestroys.clear();
 
         _initialized = false;
         _pipeline = nullptr;
@@ -354,6 +342,7 @@ namespace SparkyStudios::Audio::Amplitude
         lay->end = sound->length;
         lay->currentSpeed = static_cast<AmReal32>(settings.speed);
         lay->releaseRequested = false;
+        lay->detached.store(false, std::memory_order_relaxed);
         lay->voiceState.store(voice->GetPublishedState(), std::memory_order_relaxed);
         lay->voicePosition.store(voice->GetPublishedPosition(), std::memory_order_relaxed);
         AMPLIMIX_STORE(&lay->gain, options.gain);
@@ -473,7 +462,7 @@ namespace SparkyStudios::Audio::Amplitude
             { [lay, id, pipelines, streams]() -> bool
               {
                   // Drop the command if the layer finished or was reused since it was pushed.
-                  if (lay->id != id || lay->slot.load(std::memory_order_acquire) != eLayerSlot::Live)
+                  if (!IsLiveForCommand(lay, id))
                       return true;
 
                   lay->instancePipelines = pipelines;
@@ -523,8 +512,7 @@ namespace SparkyStudios::Audio::Amplitude
         PushCommand(
             { [lay, id, instanceId, pipeline]() -> bool
               {
-                  if (lay->id != id || lay->slot.load(std::memory_order_acquire) != eLayerSlot::Live ||
-                      lay->instancePipelines == nullptr)
+                  if (!IsLiveForCommand(lay, id) || lay->instancePipelines == nullptr)
                       return true;
 
                   AM_UNUSED(lay->instancePipelines->Attach(instanceId, pipeline));
@@ -545,10 +533,10 @@ namespace SparkyStudios::Audio::Amplitude
         PushCommand(
             { [lay, id, instanceId]() -> bool
               {
-                  if (lay->id != id || lay->instancePipelines == nullptr)
+                  if (!IsLiveForCommand(lay, id) || lay->instancePipelines == nullptr)
                       return true;
 
-                  // Released at the end of this command, after the mix (same as AmplimixLayerImpl::Destroy).
+                  // Released at the end of this command, after the mix.
                   AM_UNUSED(lay->instancePipelines->Detach(instanceId));
                   return true;
               } });
@@ -572,10 +560,11 @@ namespace SparkyStudios::Audio::Amplitude
         auto* lay = GetLayer(layer);
         lay->pins.fetch_add(1, std::memory_order_seq_cst);
 
-        // Pairs with the fence in OnSoundDestroyed(): either this check sees the stop, or the destroy sees the pin.
+        // Pairs with the fence in TryDestroyLayer(): either this check sees the destroy, or the destroy sees the pin.
         std::atomic_thread_fence(std::memory_order_seq_cst);
 
-        if (lay->id != id || lay->slot.load(std::memory_order_acquire) != eLayerSlot::Live)
+        if (lay->destroyPending.load(std::memory_order_seq_cst) || lay->id != id ||
+            lay->slot.load(std::memory_order_acquire) != eLayerSlot::Live)
         {
             UnpinLayer(layer);
             return false;
@@ -586,20 +575,8 @@ namespace SparkyStudios::Audio::Amplitude
 
     void AmplimixImpl::UnpinLayer(AmUInt32 layer)
     {
-        auto* lay = GetLayer(layer);
-        if (lay->pins.fetch_sub(1, std::memory_order_seq_cst) != 1)
-            return;
-
-        // The audio thread skipped a destroy while the layer was pinned: queue it again.
-        if (lay->destroyPending.exchange(false, std::memory_order_seq_cst))
-        {
-            PushCommand(
-                { [this, lay]() -> bool
-                  {
-                      OnSoundDestroyed(this, lay);
-                      return true;
-                  } });
-        }
+        // A released layer skipped while pinned is destroyed by the next DestroyDetachedLayers() sweep.
+        GetLayer(layer)->pins.fetch_sub(1, std::memory_order_seq_cst);
     }
 
     void AmplimixImpl::SetMasterGain(AmReal32 gain)
@@ -653,7 +630,7 @@ namespace SparkyStudios::Audio::Amplitude
         while (_voiceCommands->TryDequeue(command))
         {
             auto* lay = GetLayer(command.layer);
-            if (lay->id != command.id || lay->slot.load(std::memory_order_acquire) != eLayerSlot::Live || lay->voice == nullptr)
+            if (!IsLiveForCommand(lay, command.id) || lay->voice == nullptr)
                 continue;
 
             lay->voice->Enqueue(command);
@@ -694,13 +671,54 @@ namespace SparkyStudios::Audio::Amplitude
         // Game thread only: from here on nothing on the game thread reads the voice or the sound of this layer.
         lay->releaseRequested = true;
 
+        // The audio thread only takes the layer out of its active list; the game thread destroys it once it sees the
+        // layer detached and unpinned (DestroyDetachedLayers), so the audio thread never frees or locks for it.
         PushCommand(
             { [this, lay, id]() -> bool
               {
-                  if (lay->id == id)
-                      OnSoundDestroyed(this, lay);
+                  if (!IsLiveForCommand(lay, id))
+                      return true;
+
+                  DeactivateLayer(GetLayerIndex(lay));
+                  lay->detached.store(true, std::memory_order_release);
                   return true;
               } });
+
+        _pendingDestroys.push_back(GetLayerIndex(lay));
+    }
+
+    bool AmplimixImpl::TryDestroyLayer(AmplimixLayerImpl* layer)
+    {
+        if (!layer->detached.load(std::memory_order_acquire))
+            return false;
+
+        // Pairs with the fence in PinLayer(): either this check sees the pin, or the pin sees the destroy and fails.
+        layer->destroyPending.store(true, std::memory_order_seq_cst);
+        std::atomic_thread_fence(std::memory_order_seq_cst);
+
+        if (layer->pins.load(std::memory_order_seq_cst) > 0)
+        {
+            layer->destroyPending.store(false, std::memory_order_seq_cst);
+            return false;
+        }
+
+        layer->Destroy();
+        return true;
+    }
+
+    void AmplimixImpl::DestroyDetachedLayers()
+    {
+        if (_pendingDestroys.empty())
+            return;
+
+        // Destroying a layer deletes its sound instance, which may release a sound and halt channels: work on a copy so
+        // a release made meanwhile lands in the list for the next sweep.
+        std::vector<AmUInt32> pending;
+        pending.swap(_pendingDestroys);
+
+        for (const AmUInt32 index : pending)
+            if (!TryDestroyLayer(&_layers[index]))
+                _pendingDestroys.push_back(index);
     }
 
     void AmplimixImpl::DiscardVoice(AmUInt32 id, AmUInt32 layer)
@@ -726,7 +744,7 @@ namespace SparkyStudios::Audio::Amplitude
         PushCommand(
             { [lay, id, instanceId, stream]() -> bool
               {
-                  if (lay->id != id || lay->slot.load(std::memory_order_acquire) != eLayerSlot::Live || lay->instanceStreams == nullptr)
+                  if (!IsLiveForCommand(lay, id) || lay->instanceStreams == nullptr)
                       return true;
 
                   // Start where the instance is: its cursor lives on the audio thread.
@@ -755,7 +773,7 @@ namespace SparkyStudios::Audio::Amplitude
         PushCommand(
             { [lay, id, instanceId]() -> bool
               {
-                  if (lay->id == id && lay->instanceStreams != nullptr)
+                  if (IsLiveForCommand(lay, id) && lay->instanceStreams != nullptr)
                       AM_UNUSED(lay->instanceStreams->Detach(instanceId)); // released after the mix, like pipelines
                   return true;
               } });
@@ -765,6 +783,9 @@ namespace SparkyStudios::Audio::Amplitude
 
     void AmplimixImpl::DispatchVoiceEvents()
     {
+        // Layers the audio thread detached since the last frame are destroyed here, on the game thread.
+        DestroyDetachedLayers();
+
         VoiceEvent event;
         while (_voiceEvents->TryDequeue(event))
             HandleVoiceEvent(event);
@@ -1156,9 +1177,8 @@ namespace SparkyStudios::Audio::Amplitude
 
     void AmplimixLayerImpl::Destroy()
     {
-        // This method runs only inside ExecuteCommands(), which executes after
-        // the mix loop in Mix(). Therefore no audio-thread reads of snd can
-        // race with the null assignment below.
+        // Runs on the game thread once the audio thread detached the layer (AmplimixImpl::TryDestroyLayer), or from
+        // Deinit() when no mix can run: the audio thread never reads the layer while it is torn down.
         if (voice != nullptr)
         {
             ampooldelete(eMemoryPoolKind_Amplimix, Voice, voice);
@@ -1177,6 +1197,7 @@ namespace SparkyStudios::Audio::Amplitude
 
         _chunkPool.Reset();
         destroyPending.store(false, std::memory_order_relaxed);
+        detached.store(false, std::memory_order_relaxed);
         voiceState.store(eVoiceState::Idle, std::memory_order_relaxed);
 
         slot.store(eLayerSlot::Free, std::memory_order_release);

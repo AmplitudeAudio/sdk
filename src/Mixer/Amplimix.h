@@ -83,6 +83,7 @@ namespace SparkyStudios::Audio::Amplitude
     public:
         AmUInt32 id = kAmInvalidObjectId; // playing id
         std::atomic<eLayerSlot> slot{ eLayerSlot::Free }; // Live from StartVoice() until Destroy()
+        std::atomic<bool> detached{ false }; // set by the audio thread once it no longer touches the layer
         Voice* voice = nullptr; // created by StartVoice() (game thread), deleted by Destroy()
         AmReal32 currentSpeed = 1.0f; // smoothed pitch x play speed, audio thread
         std::atomic<eVoiceState> voiceState{ eVoiceState::Idle }; // voice state after the last block, for any thread
@@ -105,13 +106,13 @@ namespace SparkyStudios::Audio::Amplitude
         GainProcessor _mixGain[kAmplimixMaxOutputChannels]; // master x layer gain ramps, audio-thread owned after publication
         AmUInt64 pipelineFrames = 0; // frames per-instance pipelines are pre-configured with, set by StartVoice
         std::atomic<AmUInt32> pins{ 0 }; // game-thread readers keeping the layer alive, see AmplimixImpl::PinLayer
-        std::atomic<bool> destroyPending{ false }; // a destroy deferred while pinned, run by the last unpin
+        std::atomic<bool> destroyPending{ false }; // the game thread is destroying the layer: pins fail, see PinLayer
         bool releaseRequested = false; // game thread only: a release or discard was pushed, the layer may be destroyed
 
         ~AmplimixLayerImpl() override;
 
         /**
-         * @brief Destroys the layer's pipeline and sound reference.
+         * @brief Destroys the layer's pipeline and sound reference (game thread, or the mixer shutdown).
          *
          * Releases the voice, the pipeline instance and the sound data pointer,
          * then frees the layer slot. Safe to call even if the layer has no sound attached.
@@ -443,6 +444,8 @@ namespace SparkyStudios::Audio::Amplitude
         friend class EngineImpl;
 
         void ExecuteCommands();
+        void DestroyDetachedLayers();
+        bool TryDestroyLayer(AmplimixLayerImpl* layer);
         void UpdateVoiceBlockFrames();
         void DrainVoiceCommands();
         void HandleVoiceEvent(const VoiceEvent& event);
@@ -485,6 +488,7 @@ namespace SparkyStudios::Audio::Amplitude
         std::unique_ptr<VoiceCommandQueue> _voiceCommands;
         std::unique_ptr<VoiceEventQueue> _voiceEvents;
         std::vector<VoiceCommand> _voiceOutbox; // game side only, guarded by _voiceOutboxMutex
+        std::vector<AmUInt32> _pendingDestroys; // game thread only: released layers waiting for detach and unpin
         std::mutex _voiceOutboxMutex; // transport may be called from any game-side thread; never taken by the audio thread
         std::atomic<AmUInt64> _audioClock{ 0 };
         AmUInt64 _voiceBlockFrames = 0;

@@ -12,6 +12,10 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+#include <memory>
+#include <string>
+#include <vector>
+
 #include <SparkyStudios/Audio/Amplitude/Amplitude.h>
 
 #include <Core/Engine.h>
@@ -20,55 +24,127 @@
 #include <Mixer/Amplimix.h>
 #include <Mixer/RealChannel.h>
 
-#include "EngineTestCase.h"
-#include "TestRegistry.h"
+#include <Fidelity/AssetGenerator.h>
+#include <Fidelity/RenderSession.h>
+#include <Fidelity/Stimuli.h>
 
-using namespace SparkyStudios::Audio::Amplitude;
+#include "PureUnitTestCase.h"
+#include "TestRegistry.h"
 
 namespace SparkyStudios::Audio::Amplitude::Tests
 {
-    AM_TEST_CASE(EngineTestCase, core_engine, stale_finished_event_does_not_touch_reused_channel)
+    using namespace SparkyStudios::Audio::Amplitude::Fidelity;
+
+    namespace
+    {
+        struct ReuseProbe
+        {
+            Channel first;
+            Channel second;
+            ChannelInternalState* firstState = nullptr;
+            AmUInt32 channelId = 0;
+            AmUInt32 firstLayer = 0;
+            bool reused = false;
+            int secondBegins = 0;
+            int secondEnds = 0;
+            int secondStops = 0;
+            int observedBegins = 0;
+            int observedEnds = 0;
+            int observedStops = 0;
+            bool secondPlaying = false;
+            AmSize secondLayers = 0;
+            eVoiceState firstLayerState = eVoiceState::Scheduled;
+        };
+
+        void Count(ChannelEventInfo info)
+        {
+            ++*static_cast<int*>(info.m_userData);
+        }
+    } // namespace
+
+    // A voice ends naturally while its channel is recycled and handed to a new sound before the voice's Ended and
+    // Finished events are dispatched (the engine recycles at once when a sound is unloaded or a channel is stolen).
+    // Those stale events must release the old mixer layer but never reach the new sound: no End, no Stop, no halt.
+    AM_TEST_CASE(PureUnitTestCase, core_engine, stale_finished_event_does_not_touch_reused_channel)
     {
     public:
         void Run() override
         {
-            SoundHandle sound = amEngine->GetSoundHandle("test_sound_01");
+            constexpr std::uint64_t kPlayAt = 4800;
+            constexpr std::uint64_t kFrameSamples = 800;
+            constexpr std::uint64_t kSettleSamples = 24000;
 
-            // Stop a voice and immediately start another: the free list hands the stopped channel state to the new
-            // sound while the old voice is still de-clicking. The old voice's Finished must release only its own layer.
-            for (int round = 0; round < 8; ++round)
+            const std::string sound = SoundName(*FindStimulus("sine_997_44100"), false);
+
+            RenderSettings settings;
+            settings.configFile = ConfigName("isolated", 1024, 48000, ".config.amconfig");
+            settings.durationSamples = kPlayAt + 2 * 48000 + 2 * kSettleSamples;
+
+            auto probe = std::make_shared<ReuseProbe>();
+            std::vector<TimedAction> actions{ { kPlayAt, "play",
+                                                [probe, sound]()
+                                                {
+                                                    probe->first = amEngine->Play(amEngine->GetSoundHandle(sound));
+                                                    probe->firstState = probe->first.GetState();
+                                                } } };
+
+            for (std::uint64_t at = kPlayAt + kFrameSamples; at < settings.durationSamples; at += kFrameSamples)
             {
-                Channel first = amEngine->Play(sound);
-                AM_EXPECT(WaitUntil(
-                    [&]()
-                    {
-                        return first.Playing();
-                    }));
-                ChannelInternalState* firstState = first.GetState();
+                actions.push_back({ at, "watch",
+                                    [probe, sound]()
+                                    {
+                                        const AmplimixImpl& mixer = amEngine->GetState()->mixer;
 
-                first.Stop(0.0);
-                Channel second = amEngine->Play(sound);
-                AM_EXPECT(WaitUntil(
-                    [&]()
-                    {
-                        return second.Playing();
-                    }));
+                                        if (!probe->reused)
+                                        {
+                                            const RealChannel& realChannel = probe->firstState->GetRealChannel();
+                                            const std::vector<AmUInt32> layers = realChannel.GetMixerLayerIds();
+                                            if (layers.size() != 1)
+                                                return;
 
-                // Long enough for the first voice's Finished to be dispatched.
-                amEngine->WaitUntilFrames(10);
-                AM_EXPECT(second.Playing());
-                AM_EXPECT_EQ(1ULL, second.GetState()->GetRealChannel().GetMixerLayerIds().size());
+                                            probe->channelId = realChannel.GetID();
+                                            probe->firstLayer = layers.front();
 
-                if (second.GetState() == firstState)
-                    amLogDebug("Round %d reused the channel state.", round);
+                                            // Wait until the source ended: its Ended (and maybe Finished) event is
+                                            // published but not dispatched yet, the frame below dispatches it.
+                                            const eVoiceState state = mixer.GetVoiceState(probe->channelId, probe->firstLayer);
+                                            if (state != eVoiceState::Ending && state != eVoiceState::Finished)
+                                                return;
 
-                second.Stop(0.0);
-                AM_EXPECT(WaitUntil(
-                    [&]()
-                    {
-                        return !second.Playing();
-                    }));
+                                            // Recycle the channel at once, as unloading a sound does, and reuse it.
+                                            InsertIntoFreeList(amEngine->GetState(), probe->firstState);
+                                            probe->second = amEngine->Play(amEngine->GetSoundHandle(sound));
+                                            probe->reused = probe->second.GetState() == probe->firstState;
+                                            probe->second.On(eChannelEvent_Begin, &Count, &probe->secondBegins);
+                                            probe->second.On(eChannelEvent_End, &Count, &probe->secondEnds);
+                                            probe->second.On(eChannelEvent_Stop, &Count, &probe->secondStops);
+                                            return;
+                                        }
+
+                                        // Observed during playback: the engine teardown after the render stops every
+                                        // channel and fires Stop.
+                                        probe->observedBegins = probe->secondBegins;
+                                        probe->observedEnds = probe->secondEnds;
+                                        probe->observedStops = probe->secondStops;
+                                        probe->secondPlaying = probe->second.Playing();
+                                        probe->secondLayers = probe->second.GetState()->GetRealChannel().GetMixerLayerIds().size();
+                                        probe->firstLayerState = mixer.GetVoiceState(probe->channelId, probe->firstLayer);
+                                    } });
             }
+
+            const RenderOutcome outcome = Render(kDefaultAssetsPath, settings, std::move(actions));
+            AM_EXPECT(outcome.error.empty());
+
+            // The scenario was reached: the new sound got the old sound's channel state.
+            AM_EXPECT(probe->reused);
+
+            // The stale events released the old layer and left the new sound alone.
+            AM_EXPECT(probe->firstLayerState == eVoiceState::Idle);
+            AM_EXPECT(probe->secondPlaying);
+            AM_EXPECT_EQ(1ULL, probe->secondLayers);
+            AM_EXPECT_EQ(1, probe->observedBegins);
+            AM_EXPECT_EQ(0, probe->observedEnds);
+            AM_EXPECT_EQ(0, probe->observedStops);
         }
     };
 

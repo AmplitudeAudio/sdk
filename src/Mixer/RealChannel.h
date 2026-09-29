@@ -75,6 +75,9 @@ namespace SparkyStudios::Audio::Amplitude
 
         /**
          * @brief Halt the real channel so it may be re-used. However, this virtual channel may still be considered playing.
+         *
+         * The per-layer overloads of Halt, Pause and Resume return @c false when the layer has no mixer layer (nothing is
+         * posted); the channel-wide overloads skip such layers.
          */
         bool Halt(AmUInt32 layer);
         bool Halt();
@@ -254,7 +257,7 @@ namespace SparkyStudios::Audio::Amplitude
         void ForgetMixerLayer(AmUInt32 mixerLayerId);
 
         /**
-         * @brief Checks whether a layer that was stopped still renders on the mixer (its voice fades out).
+         * @brief Checks whether a stopped layer still waits for its voice's Finished event (the voice fades out).
          */
         [[nodiscard]] bool HasSoundingLayers() const;
 

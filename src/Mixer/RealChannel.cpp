@@ -220,8 +220,10 @@ namespace SparkyStudios::Audio::Amplitude
                 return _channelId != kAmInvalidObjectId; // the collection chains sounds: the channel plays between them
         }
 
-        const eVoiceState state = _mixer->GetVoiceState(_channelId, data.mixerLayerId);
-        return state != eVoiceState::Idle && state != eVoiceState::Finished;
+        // The game side learns that a voice ended only from its events: Ended halts the channel and Finished forgets
+        // the layer. A Finished state published by the audio thread before those events are dispatched must not stop
+        // the channel early (it would be recycled without its End and Stop callbacks). Idle means the layer is gone.
+        return _mixer->GetVoiceState(_channelId, data.mixerLayerId) != eVoiceState::Idle;
     }
 
     bool RealChannel::Paused() const
@@ -287,6 +289,11 @@ namespace SparkyStudios::Audio::Amplitude
     {
         AMPLITUDE_ASSERT(Valid());
         auto& data = _layers.at(layer);
+
+        // A layer whose voice failed to start has no mixer layer: posting to it would target slot 0.
+        if (data.mixerLayerId == kAmInvalidObjectId)
+            return false;
+
         _mixer->PostVoiceCommand(_channelId, data.mixerLayerId, eVoiceCommandKind::Stop);
         data.stopping = true;
         return true;
@@ -296,9 +303,11 @@ namespace SparkyStudios::Audio::Amplitude
     {
         AMPLITUDE_ASSERT(Valid());
 
+        // Layers without a mixer layer have nothing to post to and do not fail the channel-wide command.
         bool success = true;
-        for (const auto& layer : _layers | std::views::keys)
-            success &= Halt(layer);
+        for (const auto& [layer, data] : _layers)
+            if (data.mixerLayerId != kAmInvalidObjectId)
+                success &= Halt(layer);
 
         return success;
     }
@@ -307,6 +316,11 @@ namespace SparkyStudios::Audio::Amplitude
     {
         AMPLITUDE_ASSERT(Valid());
         auto& data = _layers.at(layer);
+
+        // A layer whose voice failed to start has no mixer layer: posting to it would target slot 0.
+        if (data.mixerLayerId == kAmInvalidObjectId)
+            return false;
+
         _mixer->PostVoiceCommand(_channelId, data.mixerLayerId, eVoiceCommandKind::Pause);
         data.paused = true;
         return true;
@@ -316,9 +330,11 @@ namespace SparkyStudios::Audio::Amplitude
     {
         AMPLITUDE_ASSERT(Valid());
 
+        // Layers without a mixer layer have nothing to post to and do not fail the channel-wide command.
         bool success = true;
-        for (const auto& layer : _layers | std::views::keys)
-            success &= Pause(layer);
+        for (const auto& [layer, data] : _layers)
+            if (data.mixerLayerId != kAmInvalidObjectId)
+                success &= Pause(layer);
 
         return success;
     }
@@ -327,6 +343,11 @@ namespace SparkyStudios::Audio::Amplitude
     {
         AMPLITUDE_ASSERT(Valid());
         auto& data = _layers.at(layer);
+
+        // A layer whose voice failed to start has no mixer layer: posting to it would target slot 0.
+        if (data.mixerLayerId == kAmInvalidObjectId)
+            return false;
+
         _mixer->PostVoiceCommand(_channelId, data.mixerLayerId, eVoiceCommandKind::Resume);
         data.paused = false;
         return true;
@@ -336,9 +357,11 @@ namespace SparkyStudios::Audio::Amplitude
     {
         AMPLITUDE_ASSERT(Valid());
 
+        // Layers without a mixer layer have nothing to post to and do not fail the channel-wide command.
         bool success = true;
-        for (const auto& layer : _layers | std::views::keys)
-            success &= Resume(layer);
+        for (const auto& [layer, data] : _layers)
+            if (data.mixerLayerId != kAmInvalidObjectId)
+                success &= Resume(layer);
 
         return success;
     }
@@ -607,8 +630,8 @@ namespace SparkyStudios::Audio::Amplitude
             if (!data.stopping || data.mixerLayerId == kAmInvalidObjectId)
                 continue;
 
-            const eVoiceState state = _mixer->GetVoiceState(_channelId, data.mixerLayerId);
-            if (state != eVoiceState::Idle && state != eVoiceState::Finished)
+            // Stopping layers are forgotten on their Finished event; Idle covers a layer that is already gone.
+            if (_mixer->GetVoiceState(_channelId, data.mixerLayerId) != eVoiceState::Idle)
                 return true;
         }
 
