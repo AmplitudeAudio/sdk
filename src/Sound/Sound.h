@@ -243,6 +243,16 @@ namespace SparkyStudios::Audio::Amplitude
          */
         [[nodiscard]] bool IsLoop() const override;
 
+        /**
+         * @brief Gets the format of this sound's decoded audio.
+         *
+         * @return The sound format.
+         */
+        [[nodiscard]] AM_INLINE const SoundFormat& GetFormat() const
+        {
+            return _format;
+        }
+
     private:
         bool _loaded;
 

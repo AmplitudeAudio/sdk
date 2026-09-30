@@ -36,6 +36,7 @@
 #include <SparkyStudios/Audio/Amplitude/Sound/SwitchContainer.h>
 
 #include <Mixer/RealChannel.h>
+#include <Mixer/Voice/VirtualCursor.h>
 #include <Mixer/Voice/VoiceTypes.h>
 #include <Utils/intrusive_list.h>
 
@@ -254,6 +255,32 @@ namespace SparkyStudios::Audio::Amplitude
         // Devirtualizes a virtual channel. This transfers ownership of the given
         // channel's channel_id to this channel.
         void Devirtualize(ChannelInternalState* other);
+
+        /**
+         * @brief Fades this channel's voices out for virtualization (@c kStealFade) and anchors its virtual cursor,
+         * so it can keep being tracked as virtual once its real channel is taken away.
+         *
+         * Called on the channel losing its real channel, before the real channel id is handed to another.
+         */
+        void Demote();
+
+        /**
+         * @brief Restarts this channel on its (freshly assigned) real channel, at the virtual cursor if one is
+         * anchored; falls back to a full @c Play() for collections, switch containers, and sounds that were never
+         * anchored.
+         *
+         * @return @c true on success.
+         */
+        bool Promote();
+
+        /**
+         * @brief Anchors this channel's virtual cursor: @p position is the source frame heard at audio-clock frame
+         * @p clock.
+         *
+         * A no-op for channels not playing a single @c Sound (collections, switch containers) or whose sound format
+         * is not yet known.
+         */
+        void AnchorVirtualCursor(AmUInt64 position, AmUInt64 clock);
 
         // Returns the priority of this channel based on its gain and priority
         // multiplier on the sound collection definition.
@@ -577,6 +604,9 @@ namespace SparkyStudios::Audio::Amplitude
 
         // The real channel feeding the mixer with audio data.
         RealChannel _realChannel;
+
+        // Where this channel's audio would be, tracked while it has no real channel of its own.
+        VirtualCursor _virtualCursor;
 
         // Whether this channel is currently playing, stopped, fading out, etc.
         eChannelPlaybackState _channelState;

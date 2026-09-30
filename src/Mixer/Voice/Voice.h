@@ -52,6 +52,8 @@ namespace SparkyStudios::Audio::Amplitude
         AmUInt32 loopCount = 0;           ///< Total plays when looping; 0 loops forever.
         AmUInt64 startPosition = 0;       ///< First source frame heard.
         AmUInt64 startFrame = kVoiceAsap; ///< Audio-clock frame of the first sample.
+        AmUInt64 startPositionClock = kVoiceAsap; ///< Audio-clock frame at which startPosition would have been heard;
+                                                   ///< the voice advances it to its real start frame.
         AmTime fadeIn = 0.0;              ///< Fade-in at start in milliseconds; 0 starts at unity.
         AmUInt32 outputRate = 48000;
         AmUInt64 maxBlockFrames = 1024;   ///< Largest block BeginBlock() may be given.

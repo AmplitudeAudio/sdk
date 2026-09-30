@@ -15,6 +15,7 @@
 #include <algorithm>
 #include <cmath>
 
+#include <Mixer/Voice/VirtualCursor.h>
 #include <Mixer/Voice/Voice.h>
 
 namespace SparkyStudios::Audio::Amplitude
@@ -327,6 +328,23 @@ namespace SparkyStudios::Audio::Amplitude
     {
         _state = eVoiceState::Playing;
         _started = true;
+
+        // Resuming a virtual cursor: startPosition is the source frame that was heard at startPositionClock, so
+        // advance the primary reader to where the cursor would be by this actual start frame.
+        if (_settings.startPositionClock != kVoiceAsap && frame > _settings.startPositionClock)
+        {
+            VoiceStreamSlot& slot = _slots[_primary];
+            const AmReal64 rate = static_cast<AmReal64>(_settings.source.sampleRate) * _speed / static_cast<AmReal64>(_settings.outputRate);
+
+            VirtualCursor cursor;
+            cursor.Anchor(
+                _settings.startPosition, _settings.startPositionClock, rate, slot.reader.GetRegionStart(), slot.reader.GetRegionEnd(),
+                slot.reader.IsLooping());
+
+            slot.reader.Seek(cursor.PositionAt(frame));
+            slot.stream.Reset();
+        }
+
         Post(eVoiceEventKind::Started, frame);
 
         if (_settings.fadeIn > 0.0)

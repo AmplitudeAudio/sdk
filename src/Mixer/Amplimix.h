@@ -74,6 +74,8 @@ namespace SparkyStudios::Audio::Amplitude
         AmReal32 speed = 1.0f;
         AmUInt64 startFrame = kVoiceAsap; ///< Audio-clock frame of the first sample.
         AmUInt64 startPosition = 0; ///< First source frame.
+        AmUInt64 startPositionClock = kVoiceAsap; ///< Audio-clock frame at which startPosition would have been heard;
+                                                   ///< the voice advances it to its real start frame.
         AmTime fadeIn = 0.0; ///< Milliseconds; 0 starts at unity.
         AmString faderName; ///< Transport fade curve; empty is linear.
     };

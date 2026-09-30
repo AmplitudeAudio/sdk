@@ -312,6 +312,7 @@ namespace SparkyStudios::Audio::Amplitude
         settings.loopCount = options.loopCount;
         settings.startPosition = options.startPosition;
         settings.startFrame = options.startFrame;
+        settings.startPositionClock = options.startPositionClock;
         settings.fadeIn = options.fadeIn;
         settings.outputRate = outputRate;
         settings.maxBlockFrames = _voiceBlockFrames;

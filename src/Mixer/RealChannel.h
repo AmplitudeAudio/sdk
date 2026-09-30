@@ -40,12 +40,14 @@ namespace SparkyStudios::Audio::Amplitude
 
     /**
      * @brief Options taken by @c RealChannel::Play, shared across the layers started together.
+     *
+     * @c startPosition and @c startPositionClock let a fresh voice resume at a virtual cursor's live position.
      */
     struct RealChannelPlayOptions
     {
         AmTime fadeIn = 0.0; ///< Milliseconds; forwarded to VoiceStartOptions::fadeIn.
-        AmUInt64 startPosition = 0;
-        AmUInt64 startPositionClock = kVoiceAsap;
+        AmUInt64 startPosition = 0; ///< First source frame heard; forwarded to VoiceStartOptions::startPosition.
+        AmUInt64 startPositionClock = kVoiceAsap; ///< Audio-clock frame startPosition was heard at, if any.
         AmUInt64 startFrame = kVoiceAsap;
     };
 
@@ -93,6 +95,15 @@ namespace SparkyStudios::Audio::Amplitude
          */
         bool Halt(AmUInt32 layer);
         bool Halt();
+
+        /**
+         * @brief Fades every layer out for virtualization, over @c kStealFade (game thread).
+         *
+         * Unlike @c Halt, the layer's voice is released rather than stopped: its mixer layer (and @c id) stays
+         * alive, fading toward silence, until the voice finishes on its own. The layer is marked @c stopping so it
+         * no longer counts toward @c Playing() / @c Paused(), the same way a departing switch-container layer does.
+         */
+        void Release();
 
         /**
          * @brief Pause the real channel.

@@ -153,6 +153,8 @@ namespace SparkyStudios::Audio::Amplitude
         options.speed = _playSpeed;
         options.faderName = _parentChannelState->GetFaderName();
         options.fadeIn = playOptions.fadeIn;
+        options.startPosition = playOptions.startPosition;
+        options.startPositionClock = playOptions.startPositionClock;
 
         data.mixerLayerId = _mixer->StartVoice(static_cast<SoundData*>(sound->GetUserData()), options, _channelId, 0);
         data.paused = false;
@@ -311,6 +313,21 @@ namespace SparkyStudios::Audio::Amplitude
                 success &= Halt(layer);
 
         return success;
+    }
+
+    void RealChannel::Release()
+    {
+        AMPLITUDE_ASSERT(Valid());
+
+        for (auto& [index, data] : _layers)
+        {
+            // A layer whose voice failed to start has no mixer layer: posting to it would target slot 0.
+            if (data.mixerLayerId == kAmInvalidObjectId)
+                continue;
+
+            _mixer->PostVoiceCommand(_channelId, data.mixerLayerId, eVoiceCommandKind::Release, kStealFade);
+            data.stopping = true;
+        }
     }
 
     bool RealChannel::Pause(AmUInt32 layer)
