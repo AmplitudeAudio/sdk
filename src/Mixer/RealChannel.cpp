@@ -427,14 +427,13 @@ namespace SparkyStudios::Audio::Amplitude
                 data.paused = true;
     }
 
-    void RealChannel::MarkAllLayersStopping()
+    void RealChannel::ClearAllLayersPaused()
     {
         for (auto& [index, data] : _layers)
         {
             if (data.mixerLayerId == kAmInvalidObjectId)
                 continue;
 
-            data.stopping = true;
             data.paused = false;
         }
     }
@@ -689,6 +688,12 @@ namespace SparkyStudios::Audio::Amplitude
                 continue;
 
             _layers.erase(it);
+
+            // This runs while voice events are dispatched, early in AdvanceFrame: checking the state now queues a
+            // still-owed Stop before EraseFinishedSounds() recycles the channel later in the same frame.
+            if (_layers.empty() && _parentChannelState != nullptr)
+                _parentChannelState->UpdateState();
+
             return;
         }
     }

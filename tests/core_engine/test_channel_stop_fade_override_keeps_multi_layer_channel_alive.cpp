@@ -39,9 +39,9 @@ namespace SparkyStudios::Audio::Amplitude::Tests
         }
     } // namespace
 
-    // A Stop(fade) overriding a Pause(fade) on a multi-layer channel where one layer is already (game-side)
-    // marked paused and the other is still fading: the channel must not be recycled (both mixer layers still
-    // rendering their stop fade) until both are actually forgotten, and must fire exactly one Stop event.
+    // A Stop(fade) overriding a Pause(fade) on a multi-layer channel where one layer is already (game-side) marked
+    // paused and the other is still fading: the channel stays FadingOut while either voice still renders its stop fade,
+    // is not recycled until both are forgotten, and fires exactly one Stop event once it settles.
     AM_TEST_CASE(EngineTestCase, core_engine, channel_stop_fade_override_keeps_multi_layer_channel_alive)
     {
     public:
@@ -88,21 +88,27 @@ namespace SparkyStudios::Audio::Amplitude::Tests
             // Stop overrides the pause fade while layer 0 is (game-side) marked paused and layer 1 is still
             // fading: both real voices are still far from Idle at this point.
             channel.Stop(200.0);
+            AM_EXPECT(state->GetChannelState() == eChannelPlaybackState_FadingOut);
 
-            AM_EXPECT(WaitUntil([&]() { return state->Stopped(); }));
-
-            // The channel must not have been recycled yet: neither voice has actually finished.
+            // While either voice still renders its stop fade, the channel stays FadingOut, is not recycled and has not
+            // fired Stop yet.
+            amEngine->WaitUntilFrames(2);
+            AM_EXPECT(
+                mixer.GetVoiceState(channelId, layer0MixerId) != eVoiceState::Idle ||
+                mixer.GetVoiceState(channelId, layer1MixerId) != eVoiceState::Idle);
+            AM_EXPECT(state->GetChannelState() == eChannelPlaybackState_FadingOut);
             AM_EXPECT_EQ(originalStateId, state->GetChannelStateId());
-            AM_EXPECT(mixer.GetVoiceState(channelId, layer0MixerId) != eVoiceState::Idle);
-            AM_EXPECT(mixer.GetVoiceState(channelId, layer1MixerId) != eVoiceState::Idle);
+            AM_EXPECT_EQ(0, stops.load());
 
-            // Both voices eventually finish and get released; only then may the channel be recycled.
+            // Both voices eventually finish and get released; only then does the channel settle Stopped, and
+            // only then may it be recycled.
             AM_EXPECT(WaitUntil(
                 [&]()
                 {
                     return mixer.GetVoiceState(channelId, layer0MixerId) == eVoiceState::Idle &&
                         mixer.GetVoiceState(channelId, layer1MixerId) == eVoiceState::Idle;
                 }));
+            AM_EXPECT(WaitUntil([&]() { return state->Stopped(); }));
 
             amEngine->WaitUntilFrames(10);
             AM_EXPECT_EQ(1, stops.load());

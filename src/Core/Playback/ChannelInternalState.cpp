@@ -322,9 +322,11 @@ namespace SparkyStudios::Audio::Amplitude
             return;
 
         if (overridingPauseFade)
-            // Treat every layer as departing, as Halt() does: the channel stays alive until each one is forgotten
-            // instead of settling on stale paused flags.
-            _realChannel.MarkAllLayersStopping();
+            // Clear the stale paused flags so RealChannel::Playing() reads the voices' own state: the channel stays
+            // FadingOut until every voice is forgotten, and SettleStopped() covers a paused voice that finishes without
+            // FadedOut{Stopped}. The layers are not marked stopping: Playing() would skip them and settle the channel a
+            // whole fade early.
+            _realChannel.ClearAllLayersPaused();
 
         _channelState = eChannelPlaybackState_FadingOut;
         _targetFadeOutState = targetState;

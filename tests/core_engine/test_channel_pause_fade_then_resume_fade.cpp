@@ -57,6 +57,7 @@ namespace SparkyStudios::Audio::Amplitude::Tests
 
             const AmTime pausedAt = channel.GetPlaybackPosition();
             amEngine->WaitUntilFrames(10);
+            AM_EXPECT_EQ(1, pauses.load()); // exactly one, even after several more frames
             AM_EXPECT_EQ(pausedAt, channel.GetPlaybackPosition()); // frozen
 
             channel.Resume(100.0);

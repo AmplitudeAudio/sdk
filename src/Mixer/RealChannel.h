@@ -145,12 +145,12 @@ namespace SparkyStudios::Audio::Amplitude
         void MarkLayerPaused(AmUInt32 mixerLayerId);
 
         /**
-         * @brief Marks every layer as stopping and clears its paused flag.
+         * @brief Clears the paused flag on every layer.
          *
-         * Used when a stop fade overrides a pause fade in progress: paused layers must stop blocking @c Playing() and
-         * @c Paused(), and must not be recycled before their voice finishes.
+         * Used when a stop fade overrides a pause fade in progress, so paused layers stop reading as not playing. The
+         * layers are not marked @c stopping: the channel stays @c FadingOut until every voice finishes.
          */
-        void MarkAllLayersStopping();
+        void ClearAllLayersPaused();
 
         /**
          * @brief Seek the real channel to the given playback position.
@@ -310,7 +310,8 @@ namespace SparkyStudios::Audio::Amplitude
         /**
          * @brief Forgets the layer bound to the mixer layer @p mixerLayerId, once its voice finished (game thread).
          *
-         * The mixer owns and destroys the layer's sound instance.
+         * The mixer owns and destroys the layer's sound instance. When this was the last layer, the parent channel's
+         * state is checked at once, so a still-owed Stop event fires before the channel can be recycled.
          */
         void ForgetMixerLayer(AmUInt32 mixerLayerId);
 
