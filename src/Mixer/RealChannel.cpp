@@ -427,6 +427,18 @@ namespace SparkyStudios::Audio::Amplitude
                 data.paused = true;
     }
 
+    void RealChannel::MarkAllLayersStopping()
+    {
+        for (auto& [index, data] : _layers)
+        {
+            if (data.mixerLayerId == kAmInvalidObjectId)
+                continue;
+
+            data.stopping = true;
+            data.paused = false;
+        }
+    }
+
     bool RealChannel::Seek(AmTime position)
     {
         AMPLITUDE_ASSERT(Valid());

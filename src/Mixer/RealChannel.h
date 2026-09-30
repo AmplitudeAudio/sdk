@@ -145,6 +145,14 @@ namespace SparkyStudios::Audio::Amplitude
         void MarkLayerPaused(AmUInt32 mixerLayerId);
 
         /**
+         * @brief Marks every layer as stopping and clears its paused flag.
+         *
+         * Used when a stop fade overrides a pause fade in progress: paused layers must stop blocking @c Playing() and
+         * @c Paused(), and must not be recycled before their voice finishes.
+         */
+        void MarkAllLayersStopping();
+
+        /**
          * @brief Seek the real channel to the given playback position.
          *
          * @param position The playback position in milliseconds.

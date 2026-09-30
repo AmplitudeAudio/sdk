@@ -64,6 +64,7 @@ namespace SparkyStudios::Audio::Amplitude
             , _targetFadeOutState(eChannelPlaybackState_Stopped)
             , _fadeInEndTime(0.0)
             , _stopEventPending(false)
+            , _stopFired(false)
             , _entity()
             , _userGain(1.0f)
             , _gain(1.0f)
@@ -563,6 +564,13 @@ namespace SparkyStudios::Audio::Amplitude
         bool PlaySwitchContainerStateUpdate(
             const std::vector<SwitchContainerItem>& previous, const std::vector<SwitchContainerItem>& next, AmTime fadeIn = 0.0);
         [[nodiscard]] bool IsFadingOutToStopped() const;
+
+        // Settles the channel to Stopped from UpdateState() and fires the Stop event if it is still owed.
+        void SettleStopped();
+
+        // Fires eChannelEvent_Stop at most once per play: several paths can reach it for the same stop.
+        void TriggerStopOnce();
+
         bool PlaySwitchContainer();
         bool PlayCollection();
         bool PlaySound();
@@ -597,6 +605,9 @@ namespace SparkyStudios::Audio::Amplitude
 
         // Whether a Stop event is still owed once the voice's fade-out event arrives.
         bool _stopEventPending;
+
+        // Whether eChannelEvent_Stop already fired for the current play. Reset in Play().
+        bool _stopFired;
 
         // The entity which is playing the sound of this channel.
         Entity _entity;

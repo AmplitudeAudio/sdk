@@ -50,7 +50,10 @@ namespace SparkyStudios::Audio::Amplitude::Tests
             channel.Pause(200.0);
             AM_EXPECT(channel.GetState()->GetChannelState() == eChannelPlaybackState_FadingOut);
             AM_EXPECT(WaitUntil([&]() { return channel.GetState()->Paused(); }));
-            AM_EXPECT_EQ(1, pauses.load());
+
+            // The Pause event fires via TriggerOnNextFrame (it runs inside EraseFinishedSounds' channel-list
+            // iteration), one frame after the channel state itself settles to Paused.
+            AM_EXPECT(WaitUntil([&]() { return pauses.load() == 1; }));
 
             const AmTime pausedAt = channel.GetPlaybackPosition();
             amEngine->WaitUntilFrames(10);

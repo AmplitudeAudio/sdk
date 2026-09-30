@@ -60,6 +60,7 @@ namespace SparkyStudios::Audio::Amplitude
         _targetFadeOutState = eChannelPlaybackState_Stopped;
         _fadeInEndTime = 0.0;
         _stopEventPending = false;
+        _stopFired = false;
         _entity = Entity();
         _userGain = 0.0f;
         _gain = 0.0f;
@@ -171,6 +172,8 @@ namespace SparkyStudios::Audio::Amplitude
 
     bool ChannelInternalState::Play()
     {
+        _stopFired = false;
+
         if (_switchContainer != nullptr)
             return PlaySwitchContainer();
 
@@ -292,6 +295,11 @@ namespace SparkyStudios::Audio::Amplitude
         if (Stopped() || Paused())
             return;
 
+        // A stop fade overriding a pause fade: layers may already be paused, and a paused voice finishes without
+        // posting FadedOut{Stopped}. Checked before the guard below changes _channelState.
+        const bool overridingPauseFade = _channelState == eChannelPlaybackState_FadingOut &&
+            _targetFadeOutState == eChannelPlaybackState_Paused && targetState == eChannelPlaybackState_Stopped;
+
         // A stop fade in progress is never interrupted (by another stop fade or by a pause fade); a pause fade in
         // progress may be overridden by a stop fade, which lets the voice restart its fade from the current gain.
         if (_channelState == eChannelPlaybackState_FadingOut &&
@@ -312,6 +320,11 @@ namespace SparkyStudios::Audio::Amplitude
         const eVoiceCommandKind kind = targetState == eChannelPlaybackState_Stopped ? eVoiceCommandKind::Stop : eVoiceCommandKind::Pause;
         if (!_realChannel.FadeOut(duration, kind))
             return;
+
+        if (overridingPauseFade)
+            // Treat every layer as departing, as Halt() does: the channel stays alive until each one is forgotten
+            // instead of settling on stale paused flags.
+            _realChannel.MarkAllLayersStopping();
 
         _channelState = eChannelPlaybackState_FadingOut;
         _targetFadeOutState = targetState;
@@ -588,13 +601,16 @@ namespace SparkyStudios::Audio::Amplitude
             {
                 if (!Valid() || _realChannel._layers.empty())
                 {
-                    _channelState = eChannelPlaybackState_Stopped;
+                    SettleStopped();
                 }
                 else if (_realChannel.Paused())
                 {
                     _channelState = eChannelPlaybackState_Paused;
                     _realGain = 0.0f;
-                    Trigger(eChannelEvent_Pause);
+
+                    // Deferred: this runs inside EraseFinishedSounds' channel-list iteration, and a callback that
+                    // calls Play() with a full pool could otherwise evict list->back() and disturb the iterator.
+                    TriggerOnNextFrame(eChannelEvent_Pause);
                 }
 
                 break;
@@ -605,7 +621,7 @@ namespace SparkyStudios::Audio::Amplitude
         case eChannelPlaybackState_Playing:
             if (!Valid() || !_realChannel.Playing())
             {
-                _channelState = eChannelPlaybackState_Stopped;
+                SettleStopped();
             }
             break;
         default:
@@ -625,7 +641,7 @@ namespace SparkyStudios::Audio::Amplitude
             // An immediate halt fires its own Stop right below; a stale fade-out event for a stop fade this halt
             // superseded must not fire a second one.
             _stopEventPending = false;
-            TriggerOnNextFrame(eChannelEvent_Stop);
+            TriggerStopOnce();
         }
     }
 
@@ -637,6 +653,28 @@ namespace SparkyStudios::Audio::Amplitude
     bool ChannelInternalState::IsFadingOutToStopped() const
     {
         return _channelState == eChannelPlaybackState_FadingOut && _targetFadeOutState == eChannelPlaybackState_Stopped;
+    }
+
+    void ChannelInternalState::SettleStopped()
+    {
+        _channelState = eChannelPlaybackState_Stopped;
+
+        // A layer whose voice was already paused finishes without FadedOut{Stopped}: the Stop event is still owed, fire
+        // it once here.
+        if (_stopEventPending)
+        {
+            _stopEventPending = false;
+            TriggerStopOnce();
+        }
+    }
+
+    void ChannelInternalState::TriggerStopOnce()
+    {
+        if (_stopFired)
+            return;
+
+        _stopFired = true;
+        TriggerOnNextFrame(eChannelEvent_Stop);
     }
 
     void ChannelInternalState::OnVoiceFadedOut(AmUInt32 mixerLayerId, eVoiceFadeTarget target, AmUInt64 frame, AmUInt64 sourcePosition)
@@ -656,7 +694,7 @@ namespace SparkyStudios::Audio::Amplitude
             if (_stopEventPending)
             {
                 _stopEventPending = false;
-                Trigger(eChannelEvent_Stop);
+                TriggerStopOnce();
             }
             break;
 
