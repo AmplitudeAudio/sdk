@@ -66,6 +66,7 @@ namespace SparkyStudios::Audio::Amplitude
             , _fadeInEndTime(0.0)
             , _stopEventPending(false)
             , _stopFired(false)
+            , _pendingEventCount(0)
             , _entity()
             , _userGain(1.0f)
             , _gain(1.0f)
@@ -407,6 +408,17 @@ namespace SparkyStudios::Audio::Amplitude
         void Trigger(eChannelEvent event);
 
         /**
+         * @brief Checks whether a @c TriggerOnNextFrame() event is still queued and has not fired yet.
+         *
+         * A channel with pending events must not be recycled (its state reused by @c Reset()): the deferred
+         * callback checks @c GetChannelStateId(), which @c Reset() zeroes, and would silently drop the event.
+         */
+        [[nodiscard]] AM_INLINE bool HasPendingEvents() const
+        {
+            return _pendingEventCount > 0;
+        }
+
+        /**
          * @brief Enables multi-position instancing for this channel.
          *
          * @param mode The instance mode.
@@ -638,6 +650,9 @@ namespace SparkyStudios::Audio::Amplitude
 
         // Whether eChannelEvent_Stop already fired for the current play. Reset in Play().
         bool _stopFired;
+
+        // TriggerOnNextFrame() events queued but not fired yet.
+        AmUInt32 _pendingEventCount;
 
         // The entity which is playing the sound of this channel.
         Entity _entity;

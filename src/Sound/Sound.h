@@ -382,6 +382,16 @@ namespace SparkyStudios::Audio::Amplitude
         [[nodiscard]] AmUInt32 GetCurrentLoopCount() const;
 
         /**
+         * @brief Overrides the number of remaining loop plays (0 loops forever), counting the one about to start.
+         *
+         * Used to resume a promoted virtual channel with only the loop passes it had left, instead of the sound's
+         * full loop count.
+         *
+         * @param loopCount The number of remaining loop plays.
+         */
+        void SetLoopCount(AmUInt32 loopCount);
+
+        /**
          * @brief Gets the effect applied to this SoundInstance, if any.
          *
          * @return An EffectInstance object if an effect was applied to the sound which have

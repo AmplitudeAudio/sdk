@@ -157,6 +157,7 @@ namespace SparkyStudios::Audio::Amplitude
         options.startPositionClock = playOptions.startPositionClock;
 
         data.mixerLayerId = _mixer->StartVoice(static_cast<SoundData*>(sound->GetUserData()), options, _channelId, 0);
+        data.startedChannelId = _channelId;
         data.paused = false;
         data.stopping = false;
 
@@ -717,7 +718,9 @@ namespace SparkyStudios::Audio::Amplitude
 
     bool RealChannel::HasSoundingLayers() const
     {
-        if (!Valid())
+        // Not gated on Valid(): a demoted channel has lost its real channel id but its voices keep releasing on
+        // layers started with the old one, and must not be recycled (Reset() clears the listener they still read).
+        if (_mixer == nullptr)
             return false;
 
         for (const auto& [index, data] : _layers)
@@ -726,7 +729,7 @@ namespace SparkyStudios::Audio::Amplitude
                 continue;
 
             // Stopping layers are forgotten on their Finished event; Idle covers a layer that is already gone.
-            if (_mixer->GetVoiceState(_channelId, data.mixerLayerId) != eVoiceState::Idle)
+            if (_mixer->GetVoiceState(data.startedChannelId, data.mixerLayerId) != eVoiceState::Idle)
                 return true;
         }
 

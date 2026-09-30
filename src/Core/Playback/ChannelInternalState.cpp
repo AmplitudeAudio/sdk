@@ -62,6 +62,7 @@ namespace SparkyStudios::Audio::Amplitude
         _fadeInEndTime = 0.0;
         _stopEventPending = false;
         _stopFired = false;
+        _pendingEventCount = 0;
         _entity = Entity();
         _userGain = 0.0f;
         _gain = 0.0f;
@@ -403,14 +404,30 @@ namespace SparkyStudios::Audio::Amplitude
         // The cursor uses the pitch and speed at the moment it is anchored; later changes while virtual are ignored.
         const AmReal64 rate = static_cast<AmReal64>(format.GetSampleRate()) * _realChannel._pitch * _realChannel._playSpeed /
             static_cast<AmReal64>(outputRate);
-        _virtualCursor.Anchor(position, clock, rate, 0, format.GetFramesCount(), _sound->IsLoop());
+        // A finite loop count keeps ending on time while virtual: count the pass this position falls in and every pass
+        // still ahead of it (0 loops forever, the sound's own convention). The passes already done are known while a
+        // layer still exists (a demotion), and none are when a sound starts virtual.
+        const AmUInt32 totalLoops = _sound->GetDefinition()->loop()->loop_count();
+        AmUInt32 loopsRemaining = totalLoops;
+        if (totalLoops != 0 && !_realChannel._layers.empty())
+        {
+            const SoundInstance* instance = _realChannel._layers.begin()->second.soundInstance;
+            const AmUInt32 done = instance != nullptr ? instance->GetCurrentLoopCount() : 0;
+            loopsRemaining = done < totalLoops ? totalLoops - done : 1;
+        }
+
+        _virtualCursor.Anchor(position, clock, rate, 0, format.GetFramesCount(), _sound->IsLoop(), loopsRemaining);
     }
 
     void ChannelInternalState::Demote()
     {
-        // Provisional anchor from what the game thread knows; the voice's Released event refines it to the exact
-        // frame once the fade-out actually finishes rendering.
-        if (_sound != nullptr && !_realChannel._layers.empty())
+        // Only Playing and fading-in channels stay virtual with a cursor. A channel fading toward a stop or a pause, or
+        // paused, gets none: UpdateState() settles it Stopped, with one Stop event, once its real channel is gone,
+        // since the fade cannot finish without a voice.
+        // Provisional anchor from what the game thread knows; the voice's Released event refines it to the exact frame
+        // once the fade-out actually finishes rendering.
+        const bool keepsCursor = _channelState == eChannelPlaybackState_Playing || _channelState == eChannelPlaybackState_FadingIn;
+        if (keepsCursor && _sound != nullptr && !_realChannel._layers.empty())
         {
             AmUInt64 position = 0;
             const auto& data = _realChannel._layers.begin()->second;
@@ -432,6 +449,12 @@ namespace SparkyStudios::Audio::Amplitude
         options.startPositionClock = _virtualCursor.GetAnchorClock();
 
         SoundInstance* instance = _sound->CreateInstance();
+
+        // A finite loop count keeps counting down while virtual: resume with the passes left now, not the full count.
+        if (const AmUInt32 loopsLeft = _virtualCursor.LoopsRemainingAt(amEngine->GetState()->mixer.GetAudioClock());
+            _sound->IsLoop() && loopsLeft != 0)
+            instance->SetLoopCount(loopsLeft);
+
         const bool success = _realChannel.Play(instance, kAmInvalidObjectId, options);
         if (!success)
             SoundImpl::DestroyInstance(instance);
@@ -622,7 +645,8 @@ namespace SparkyStudios::Audio::Amplitude
 
     void ChannelInternalState::Trigger(eChannelEvent event)
     {
-        if (!Valid())
+        // A virtual channel is alive but not real: its End and Stop events must still fire.
+        if (!IsAlive())
             return;
 
         if (_eventsMap[event] == nullptr)
@@ -774,7 +798,7 @@ namespace SparkyStudios::Audio::Amplitude
         case eVoiceFadeTarget::Released:
             // This channel was demoted (or already virtual) and its voice just finished fading out for
             // virtualization: refine the provisional anchor Demote() took with the exact frame the voice reached.
-            if (!IsReal())
+            if (!IsReal() && _virtualCursor.IsAnchored())
                 AnchorVirtualCursor(sourcePosition, frame);
             break;
 
@@ -786,12 +810,18 @@ namespace SparkyStudios::Audio::Amplitude
     void ChannelInternalState::TriggerOnNextFrame(eChannelEvent event)
     {
         const AmUInt64 stateId = _channelStateId;
+        ++_pendingEventCount;
         amEngine->OnNextFrame(
             [this, stateId, event](AmTime)
             {
-                // The channel may have been reused in between.
-                if (_channelStateId == stateId)
-                    Trigger(event);
+                // The channel may have been reused in between (Reset() already zeroed the pending count then).
+                if (_channelStateId != stateId)
+                    return;
+
+                if (_pendingEventCount > 0)
+                    --_pendingEventCount;
+
+                Trigger(event);
             });
     }
 

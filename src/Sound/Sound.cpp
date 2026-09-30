@@ -561,6 +561,11 @@ namespace SparkyStudios::Audio::Amplitude
         return _currentLoopCount;
     }
 
+    void SoundInstance::SetLoopCount(AmUInt32 loopCount)
+    {
+        _settings.m_loopCount = loopCount;
+    }
+
     const std::shared_ptr<EffectInstance> SoundInstance::GetEffect() const
     {
         return _effectInstance;

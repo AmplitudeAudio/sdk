@@ -2528,7 +2528,7 @@ namespace SparkyStudios::Audio::Amplitude
 
             // A stopped channel is recycled once its voices finished their de-click: until then they still render
             // through its state (location, gain, room). An engine that is stopping recycles everything at once.
-            if (current->Stopped() && (state->stopping || !current->GetRealChannel().HasSoundingLayers()))
+            if (current->Stopped() && !current->HasPendingEvents() && (state->stopping || !current->GetRealChannel().HasSoundingLayers()))
             {
                 InsertIntoFreeList(state, &*current);
             }

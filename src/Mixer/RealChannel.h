@@ -338,6 +338,7 @@ namespace SparkyStudios::Audio::Amplitude
         struct LayerData
         {
             AmUInt32 mixerLayerId = kAmInvalidObjectId; ///< Mixer layer ID returned by AmplimixImpl::StartVoice()
+            AmChannelID startedChannelId = kAmInvalidObjectId; ///< The channel id the voice was started with (it outlives a steal).
             bool instanceTableInstalled = false; ///< The mixer layer has an instance pipeline table (game-side mirror).
             std::vector<AmChannelInstanceID> attachedInstanceIds; ///< Instance IDs with an attached pipeline (game-side mirror).
             std::vector<AmChannelInstanceID> attachedStreamIds; ///< Instance IDs with an attached stream (game-side mirror).

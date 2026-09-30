@@ -17,6 +17,8 @@
 #ifndef _AM_IMPLEMENTATION_MIXER_VOICE_VIRTUAL_CURSOR_H
 #define _AM_IMPLEMENTATION_MIXER_VOICE_VIRTUAL_CURSOR_H
 
+#include <limits>
+
 #include <SparkyStudios/Audio/Amplitude/Core/Common.h>
 
 namespace SparkyStudios::Audio::Amplitude
@@ -27,6 +29,9 @@ namespace SparkyStudios::Audio::Amplitude
     class VirtualCursor
     {
     public:
+        /// Sentinel meaning "no finite end": the cursor loops forever.
+        static constexpr AmUInt64 kUnbounded = std::numeric_limits<AmUInt64>::max();
+
         /**
          * @brief Anchors the cursor: @p position is the source frame heard at audio-clock frame @p clock.
          *
@@ -37,9 +42,17 @@ namespace SparkyStudios::Audio::Amplitude
          * @param regionStart The first frame of the playable region.
          * @param regionEnd The first frame past the playable region.
          * @param loop Whether the region loops.
+         * @param loopsRemaining Only meaningful when @p loop is true: how many full passes of the region remain,
+         * counting the one @p position falls in; 0 means it loops forever (the engine's own convention).
          */
         void Anchor(
-            AmUInt64 position, AmUInt64 clock, AmReal64 sourceFramesPerOutputFrame, AmUInt64 regionStart, AmUInt64 regionEnd, bool loop);
+            AmUInt64 position,
+            AmUInt64 clock,
+            AmReal64 sourceFramesPerOutputFrame,
+            AmUInt64 regionStart,
+            AmUInt64 regionEnd,
+            bool loop,
+            AmUInt32 loopsRemaining = 0);
 
         /**
          * @brief Clears the anchor.
@@ -54,14 +67,21 @@ namespace SparkyStudios::Audio::Amplitude
         /**
          * @brief Gets the source frame the cursor would be at, at audio-clock frame @p clock.
          *
-         * Clocks before the anchor do not rewind: the anchor position is returned.
+         * Clocks before the anchor do not rewind: the anchor position is returned. A finite loop count that ran out
+         * by @p clock clamps at the end of its region, like a non-looping cursor.
          */
         [[nodiscard]] AmUInt64 PositionAt(AmUInt64 clock) const;
 
         /**
-         * @brief Checks whether a non-looping cursor reached the end of its region by audio-clock frame @p clock.
+         * @brief Checks whether the cursor reached the end of its region (or of a finite loop count) by @p clock.
          */
         [[nodiscard]] bool HasEnded(AmUInt64 clock) const;
+
+        /**
+         * @brief Gets how many full passes of the region remain at audio-clock frame @p clock, counting a partial
+         * one still in progress; 0 when the cursor loops forever or is not looping at all.
+         */
+        [[nodiscard]] AmUInt32 LoopsRemainingAt(AmUInt64 clock) const;
 
         [[nodiscard]] AmUInt64 GetAnchorPosition() const
         {
@@ -83,6 +103,9 @@ namespace SparkyStudios::Audio::Amplitude
         AmUInt64 _end = 0;
         bool _loop = false;
         bool _anchored = false;
+
+        // Absolute (unwrapped) frame at which a finite loop count runs out; kUnbounded when it never does.
+        AmUInt64 _endUnwrapped = kUnbounded;
     };
 } // namespace SparkyStudios::Audio::Amplitude
 
