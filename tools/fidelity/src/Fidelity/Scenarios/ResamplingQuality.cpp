@@ -115,7 +115,7 @@ namespace SparkyStudios::Audio::Amplitude::Fidelity
                 }
 
                 AddIntegrityMetrics(
-                    out, capture, expectsSilence ? 0 : kLeadIn + Seconds(0.05, fs), expectsSilence ? 0 : playEnd - Seconds(0.05, fs));
+                    out, capture, expectsSilence ? 0 : OnsetFrame(capture, kLeadIn) + Seconds(0.05, fs), expectsSilence ? 0 : playEnd - Seconds(0.05, fs));
 
                 const std::uint64_t margin = Seconds(spec->fadeSeconds + 0.1, fs);
                 const std::uint64_t begin = kLeadIn + margin;

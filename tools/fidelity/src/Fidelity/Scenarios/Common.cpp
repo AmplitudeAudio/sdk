@@ -37,6 +37,17 @@ namespace SparkyStudios::Audio::Amplitude::Fidelity
         return static_cast<std::uint64_t>(std::llround(seconds * rate));
     }
 
+    std::uint64_t OnsetFrame(const Capture& capture, std::uint64_t from)
+    {
+        std::uint64_t onset = std::numeric_limits<std::uint64_t>::max();
+        for (const auto& channel : capture.channels)
+            for (std::uint64_t i = from; i < channel.size() && i < onset; ++i)
+                if (channel[i] != 0.0f)
+                    onset = i;
+
+        return onset == std::numeric_limits<std::uint64_t>::max() ? from : onset;
+    }
+
     std::uint64_t OutputFrames(const StimulusSpec& spec, std::uint32_t outputRate)
     {
         return static_cast<std::uint64_t>(

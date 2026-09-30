@@ -26,6 +26,8 @@ namespace SparkyStudios::Audio::Amplitude::Fidelity
         registry.Add(MakeStreamingEquivalenceScenario());
         registry.Add(MakeBlockSizeIndependenceScenario());
         registry.Add(MakeVariableCallbackScenario());
+        registry.Add(MakeScheduledSpliceScenario());
+        registry.Add(MakeScheduledStartScenario());
     }
 
     void RegisterAllScenarios(ScenarioRegistry& registry)

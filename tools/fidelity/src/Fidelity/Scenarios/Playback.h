@@ -64,7 +64,17 @@ namespace SparkyStudios::Audio::Amplitude::Fidelity
     [[nodiscard]] std::unique_ptr<Scenario> MakeVariableCallbackScenario();
 
     /**
-     * @brief Registers the playback-core scenarios (P1-P8).
+     * @brief P9: a scheduled stop and a scheduled start on the same audio-clock frame splice without a click.
+     */
+    [[nodiscard]] std::unique_ptr<Scenario> MakeScheduledSpliceScenario();
+
+    /**
+     * @brief P10: a scheduled start lands on its audio-clock frame.
+     */
+    [[nodiscard]] std::unique_ptr<Scenario> MakeScheduledStartScenario();
+
+    /**
+     * @brief Registers the playback-core scenarios (P1-P10).
      */
     void RegisterPlaybackScenarios(ScenarioRegistry& registry);
 } // namespace SparkyStudios::Audio::Amplitude::Fidelity
