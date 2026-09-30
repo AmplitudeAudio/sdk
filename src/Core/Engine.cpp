@@ -2779,6 +2779,16 @@ namespace SparkyStudios::Audio::Amplitude
         return _state->total_time;
     }
 
+    AmUInt64 EngineImpl::GetAudioClock() const
+    {
+        return _state->mixer.GetAudioClock();
+    }
+
+    AmUInt32 EngineImpl::GetAudioClockRate() const
+    {
+        return _state->mixer.GetDeviceDescription().mRequestedOutputSampleRate;
+    }
+
     const AmVersion* EngineImpl::Version() const
     {
         return _state->version;

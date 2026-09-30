@@ -41,7 +41,8 @@ namespace SparkyStudios::Audio::Amplitude
     /**
      * @brief Options taken by @c RealChannel::Play, shared across the layers started together.
      *
-     * @c startPosition and @c startPositionClock let a fresh voice resume at a virtual cursor's live position.
+     * @c startPosition and @c startPositionClock let a fresh voice resume at a virtual cursor's live position;
+     * @c startFrame is the audio-clock frame of the voice's first audible sample.
      */
     struct RealChannelPlayOptions
     {
@@ -128,7 +129,7 @@ namespace SparkyStudios::Audio::Amplitude
          *
          * @return @c false when this channel has no layer to fade.
          */
-        bool FadeOut(AmTime duration, eVoiceCommandKind kind);
+        bool FadeOut(AmTime duration, eVoiceCommandKind kind, AmUInt64 clock = kVoiceAsap);
 
         /**
          * @brief Fades a single layer out to a stop, rendered by its voice's audio-rate envelope.
@@ -147,7 +148,7 @@ namespace SparkyStudios::Audio::Amplitude
          *
          * @return @c false when this channel has no layer to resume.
          */
-        bool ResumeWithFade(AmTime duration);
+        bool ResumeWithFade(AmTime duration, AmUInt64 clock = kVoiceAsap);
 
         /**
          * @brief Marks the layer bound to @p mixerLayerId as paused (game-side mirror), once its voice's fade-out
@@ -170,7 +171,16 @@ namespace SparkyStudios::Audio::Amplitude
          *
          * @return @c true on success, @c false otherwise.
          */
-        bool Seek(AmTime position);
+        bool Seek(AmTime position, AmUInt64 clock = kVoiceAsap);
+
+        /**
+         * @brief Gets the audio-clock frame a layer was scheduled to start at.
+         *
+         * @param[in] mixerLayerId The mixer layer id.
+         *
+         * @return The requested start frame, or @c kVoiceAsap when the layer was not scheduled or is unknown.
+         */
+        [[nodiscard]] AmUInt64 GetRequestedStartFrame(AmUInt32 mixerLayerId) const;
 
         /**
          * @brief Get the current playback position.
@@ -342,6 +352,7 @@ namespace SparkyStudios::Audio::Amplitude
             bool instanceTableInstalled = false; ///< The mixer layer has an instance pipeline table (game-side mirror).
             std::vector<AmChannelInstanceID> attachedInstanceIds; ///< Instance IDs with an attached pipeline (game-side mirror).
             std::vector<AmChannelInstanceID> attachedStreamIds; ///< Instance IDs with an attached stream (game-side mirror).
+            AmUInt64 requestedStartFrame = kVoiceAsap; ///< Audio-clock frame the start was scheduled at.
             bool paused = false; ///< Last transport command was a pause (game-side mirror).
             bool stopping = false; ///< A stop was posted; waiting for Finished.
             bool isStream = false;                      ///< Whether this layer is streaming audio

@@ -62,6 +62,7 @@ namespace SparkyStudios::Audio::Amplitude
     {
         _fifoCount = 0;
         _inputConsumed = 0;
+        _primedInput = 0;
         _endInput = 0;
         _endSeen = false;
         _finished = false;
@@ -202,6 +203,6 @@ namespace SparkyStudios::Audio::Amplitude
         if (reader.IsEnded())
             return reader.GetCursor();
 
-        return reader.Rewind(_fifoCount);
+        return reader.Rewind(_fifoCount + _primedInput);
     }
 } // namespace SparkyStudios::Audio::Amplitude

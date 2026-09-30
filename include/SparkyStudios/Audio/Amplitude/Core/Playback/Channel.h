@@ -175,6 +175,17 @@ namespace SparkyStudios::Audio::Amplitude
         void Stop(AmTime duration = kMinFadeDuration) const;
 
         /**
+         * @brief Stops the channel at an exact frame of the audio clock.
+         *
+         * A duration of 0 still applies a short de-click fade. The channel enters the fading-out state at the call and
+         * settles when the fade ends.
+         *
+         * @param[in] duration The fade out duration before to stop the channel.
+         * @param[in] clock The frame, on @c Engine::GetAudioClock(), at which the stop begins.
+         */
+        void Stop(AmTime duration, AmUInt64 clock) const;
+
+        /**
          * @brief Pauses the channel.
          *
          * @note A paused channel may be resumed where it left off.
@@ -184,6 +195,16 @@ namespace SparkyStudios::Audio::Amplitude
          * @see Resume
          */
         void Pause(AmTime duration = kMinFadeDuration) const;
+
+        /**
+         * @brief Pauses the channel at an exact frame of the audio clock.
+         *
+         * A duration of 0 still applies a short de-click fade.
+         *
+         * @param[in] duration The fade out duration before to pause the channel.
+         * @param[in] clock The frame, on @c Engine::GetAudioClock(), at which the pause begins.
+         */
+        void Pause(AmTime duration, AmUInt64 clock) const;
 
         /**
          * @brief Resumes the channel.
@@ -197,6 +218,16 @@ namespace SparkyStudios::Audio::Amplitude
         void Resume(AmTime duration = kMinFadeDuration) const;
 
         /**
+         * @brief Resumes the channel at an exact frame of the audio clock.
+         *
+         * A duration of 0 still applies a short de-click fade.
+         *
+         * @param[in] duration The fade-in duration after resuming the channel.
+         * @param[in] clock The frame, on @c Engine::GetAudioClock(), at which the resume begins.
+         */
+        void Resume(AmTime duration, AmUInt64 clock) const;
+
+        /**
          * @brief Sets this channel's playback position.
          *
          * @param[in] position The playback position in milliseconds.
@@ -204,6 +235,28 @@ namespace SparkyStudios::Audio::Amplitude
          * @return @c true if the playback position was set, @c false otherwise.
          */
         bool SetPlaybackPosition(AmTime position) const;
+
+        /**
+         * @brief Sets this channel's playback position at an exact frame of the audio clock.
+         *
+         * @param[in] position The playback position in milliseconds.
+         * @param[in] clock The frame, on @c Engine::GetAudioClock(), at which the seek lands.
+         *
+         * @return @c true if the seek was scheduled, @c false otherwise.
+         */
+        bool SetPlaybackPosition(AmTime position, AmUInt64 clock) const;
+
+        /**
+         * @brief Starts this channel at an exact frame of the audio clock.
+         *
+         * Only valid on the frame the channel was returned by @c Engine::Play(), before the engine processes it.
+         *
+         * @param[in] clock The audio-clock frame of the first sample. A frame already in the past starts the sound as soon
+         * as possible.
+         *
+         * @return @c true when the start was scheduled, @c false when the channel already started.
+         */
+        bool ScheduleStart(AmUInt64 clock) const;
 
         /**
          * @brief Gets this channel's current playback position.

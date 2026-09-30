@@ -155,6 +155,8 @@ namespace SparkyStudios::Audio::Amplitude
         options.fadeIn = playOptions.fadeIn;
         options.startPosition = playOptions.startPosition;
         options.startPositionClock = playOptions.startPositionClock;
+        options.startFrame = playOptions.startFrame;
+        data.requestedStartFrame = playOptions.startFrame;
 
         data.mixerLayerId = _mixer->StartVoice(static_cast<SoundData*>(sound->GetUserData()), options, _channelId, 0);
         data.startedChannelId = _channelId;
@@ -385,7 +387,7 @@ namespace SparkyStudios::Audio::Amplitude
         return success;
     }
 
-    bool RealChannel::FadeOut(AmTime duration, eVoiceCommandKind kind)
+    bool RealChannel::FadeOut(AmTime duration, eVoiceCommandKind kind, AmUInt64 clock)
     {
         AMPLITUDE_ASSERT(Valid());
         AMPLITUDE_ASSERT(kind == eVoiceCommandKind::Stop || kind == eVoiceCommandKind::Pause);
@@ -398,7 +400,7 @@ namespace SparkyStudios::Audio::Amplitude
                 continue;
 
             // No game-side flag here: the layer keeps "playing" until the voice reports the end of the fade.
-            _mixer->PostVoiceCommand(_channelId, data.mixerLayerId, kind, duration);
+            _mixer->PostVoiceCommand(_channelId, data.mixerLayerId, kind, duration, 0, clock);
             any = true;
         }
 
@@ -419,7 +421,7 @@ namespace SparkyStudios::Audio::Amplitude
         data.stopping = true;
     }
 
-    bool RealChannel::ResumeWithFade(AmTime duration)
+    bool RealChannel::ResumeWithFade(AmTime duration, AmUInt64 clock)
     {
         AMPLITUDE_ASSERT(Valid());
 
@@ -430,12 +432,21 @@ namespace SparkyStudios::Audio::Amplitude
             if (data.mixerLayerId == kAmInvalidObjectId)
                 continue;
 
-            _mixer->PostVoiceCommand(_channelId, data.mixerLayerId, eVoiceCommandKind::Resume, duration);
+            _mixer->PostVoiceCommand(_channelId, data.mixerLayerId, eVoiceCommandKind::Resume, duration, 0, clock);
             data.paused = false;
             any = true;
         }
 
         return any;
+    }
+
+    AmUInt64 RealChannel::GetRequestedStartFrame(AmUInt32 mixerLayerId) const
+    {
+        for (const auto& [index, data] : _layers)
+            if (data.mixerLayerId == mixerLayerId)
+                return data.requestedStartFrame;
+
+        return kVoiceAsap;
     }
 
     void RealChannel::MarkLayerPaused(AmUInt32 mixerLayerId)
@@ -456,7 +467,7 @@ namespace SparkyStudios::Audio::Amplitude
         }
     }
 
-    bool RealChannel::Seek(AmTime position)
+    bool RealChannel::Seek(AmTime position, AmUInt64 clock)
     {
         AMPLITUDE_ASSERT(Valid());
 
@@ -477,7 +488,7 @@ namespace SparkyStudios::Audio::Amplitude
         const AmTime clampedPosition = std::max<AmTime>(position, 0.0);
         const AmUInt64 cursor = static_cast<AmUInt64>(clampedPosition * static_cast<AmTime>(soundData->format.GetSampleRate()) / kAmSecond);
 
-        _mixer->PostVoiceCommand(_channelId, data.mixerLayerId, eVoiceCommandKind::Seek, 0.0, cursor);
+        _mixer->PostVoiceCommand(_channelId, data.mixerLayerId, eVoiceCommandKind::Seek, 0.0, cursor, clock);
         return true;
     }
 

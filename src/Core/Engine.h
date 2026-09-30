@@ -73,6 +73,8 @@ namespace SparkyStudios::Audio::Amplitude
         void WaitUntilNextFrame() const override;
         void WaitUntilFrames(AmUInt64 frameCount) const override;
         [[nodiscard]] AmTime GetTotalTime() const override;
+        [[nodiscard]] AmUInt64 GetAudioClock() const override;
+        [[nodiscard]] AmUInt32 GetAudioClockRate() const override;
         bool LoadSoundBank(const AmOsString& filename) override;
         bool LoadSoundBank(const AmOsString& filename, AmBankID& outID) override;
         bool LoadSoundBankFromMemoryView(AmConstVoidPtr ptr, AmSize size) override;

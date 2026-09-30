@@ -814,7 +814,13 @@ namespace SparkyStudios::Audio::Amplitude
         {
         case eVoiceEventKind::Started:
             if (owned)
+            {
+                const AmUInt64 requested = channelState->GetRealChannel().GetRequestedStartFrame(event.layer);
+                if (requested != kVoiceAsap && event.frame > requested)
+                    amLogDebug("Scheduled start landed %llu frames late.", static_cast<unsigned long long>(event.frame - requested));
+
                 channelState->Trigger(eChannelEvent_Begin);
+            }
             break;
 
         case eVoiceEventKind::Looped:

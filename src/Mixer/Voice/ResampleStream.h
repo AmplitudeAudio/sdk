@@ -118,6 +118,37 @@ namespace SparkyStudios::Audio::Amplitude
             return _baseRatio * _speed;
         }
 
+        /**
+         * @brief Gets the resampler's group delay, in source frames.
+         *
+         * @return The start latency of the resampler.
+         */
+        [[nodiscard]] AmUInt64 GetLatency() const
+        {
+            return _resampler->GetLatency();
+        }
+
+        /**
+         * @brief Gets the number of source frames the resampler has consumed since the last reset.
+         *
+         * @return The consumed source frame count.
+         */
+        [[nodiscard]] AmUInt64 GetInputConsumed() const
+        {
+            return _inputConsumed;
+        }
+
+        /**
+         * @brief Records source frames consumed by discarded priming output, so @c GetSourcePosition() keeps reporting the
+         * source frame the next audible output maps to. Cleared by @c Reset().
+         *
+         * @param[in] frames The number of source frames the priming consumed.
+         */
+        void AddPrimedInput(AmUInt64 frames)
+        {
+            _primedInput += frames;
+        }
+
     private:
         void Refill(SourceReader& reader, AmUInt64 frames, AmUInt64 produced, PullReport& report);
         void Consume(AmUInt64 frames);
@@ -129,6 +160,7 @@ namespace SparkyStudios::Audio::Amplitude
         AudioBuffer _scratch;
         AmUInt64 _fifoCount = 0;
         AmUInt64 _inputConsumed = 0;
+        AmUInt64 _primedInput = 0;
         AmUInt64 _endInput = 0;
         AmUInt64 _tail = 1;
         AmReal64 _baseRatio = 1.0;

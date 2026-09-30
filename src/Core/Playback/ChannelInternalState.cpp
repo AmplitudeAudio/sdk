@@ -60,6 +60,7 @@ namespace SparkyStudios::Audio::Amplitude
         _faderName = "";
         _targetFadeOutState = eChannelPlaybackState_Stopped;
         _fadeInEndTime = 0.0;
+        _scheduledStartFrame = kVoiceAsap;
         _stopEventPending = false;
         _stopFired = false;
         _pendingEventCount = 0;
@@ -244,7 +245,7 @@ namespace SparkyStudios::Audio::Amplitude
         }
     }
 
-    bool ChannelInternalState::SetPlaybackPosition(AmTime position)
+    bool ChannelInternalState::SetPlaybackPosition(AmTime position, AmUInt64 clock)
     {
         if (!Valid())
             return false;
@@ -256,7 +257,7 @@ namespace SparkyStudios::Audio::Amplitude
             return false;
         }
 
-        return _realChannel.Seek(position);
+        return _realChannel.Seek(position, clock);
     }
 
     AmTime ChannelInternalState::GetPlaybackPosition() const
@@ -276,7 +277,19 @@ namespace SparkyStudios::Audio::Amplitude
         return _realChannel.GetPlaybackPosition();
     }
 
-    void ChannelInternalState::FadeIn(AmTime duration)
+    bool ChannelInternalState::ScheduleStart(AmUInt64 clock)
+    {
+        if (_channelState != eChannelPlaybackState_Pending)
+        {
+            amLogWarning("Cannot schedule the start of channel " AM_ID_CHAR_FMT ": it already started.", _channelStateId);
+            return false;
+        }
+
+        _scheduledStartFrame = clock;
+        return true;
+    }
+
+    void ChannelInternalState::FadeIn(AmTime duration, AmUInt64 clock)
     {
         if (Playing() || !Valid() || _channelState == eChannelPlaybackState_FadingIn || IsFadingOutToStopped())
             return;
@@ -284,15 +297,22 @@ namespace SparkyStudios::Audio::Amplitude
         _realChannel.SetGain(_gain);
         _realGain = _gain;
 
-        if (!_realChannel.ResumeWithFade(duration))
+        if (!_realChannel.ResumeWithFade(duration, clock))
             return;
 
         _channelState = eChannelPlaybackState_FadingIn;
-        _fadeInEndTime = amEngine->GetTotalTime() + AM_MAX(duration, kDeclickFade);
+        AmTime delay = 0.0;
+        if (clock != kVoiceAsap)
+        {
+            const AmUInt64 now = amEngine->GetAudioClock();
+            delay = static_cast<AmTime>(clock > now ? clock - now : 0) * kAmSecond / static_cast<AmTime>(amEngine->GetAudioClockRate());
+        }
+
+        _fadeInEndTime = amEngine->GetTotalTime() + delay + AM_MAX(duration, kDeclickFade);
         TriggerOnNextFrame(eChannelEvent_Resume);
     }
 
-    void ChannelInternalState::FadeOut(AmTime duration, eChannelPlaybackState targetState)
+    void ChannelInternalState::FadeOut(AmTime duration, eChannelPlaybackState targetState, AmUInt64 clock)
     {
         if (Stopped() || Paused())
             return;
@@ -308,7 +328,7 @@ namespace SparkyStudios::Audio::Amplitude
             (_targetFadeOutState == eChannelPlaybackState_Stopped || targetState == eChannelPlaybackState_Paused))
             return;
 
-        if (_realGain <= kEpsilon || !Valid())
+        if ((clock == kVoiceAsap && _realGain <= kEpsilon) || !Valid())
         {
             if (targetState == eChannelPlaybackState_Stopped)
                 return Halt();
@@ -320,7 +340,7 @@ namespace SparkyStudios::Audio::Amplitude
         }
 
         const eVoiceCommandKind kind = targetState == eChannelPlaybackState_Stopped ? eVoiceCommandKind::Stop : eVoiceCommandKind::Pause;
-        if (!_realChannel.FadeOut(duration, kind))
+        if (!_realChannel.FadeOut(duration, kind, clock))
             return;
 
         if (overridingPauseFade)
@@ -879,6 +899,8 @@ namespace SparkyStudios::Audio::Amplitude
 
         RealChannelPlayOptions options;
         options.fadeIn = fadeIn;
+        options.startFrame = _scheduledStartFrame;
+        _scheduledStartFrame = kVoiceAsap;
 
         const bool success = _realChannel.Play(instances, options);
         if (!success)
@@ -930,7 +952,11 @@ namespace SparkyStudios::Audio::Amplitude
 
         SoundInstance* instance = sound->CreateInstance();
 
-        const bool success = !IsReal() || _realChannel.Play(instance);
+        RealChannelPlayOptions options;
+        options.startFrame = _scheduledStartFrame;
+        _scheduledStartFrame = kVoiceAsap;
+
+        const bool success = !IsReal() || _realChannel.Play(instance, kAmInvalidObjectId, options);
         if (!success)
             SoundImpl::DestroyInstance(instance);
 
@@ -957,7 +983,11 @@ namespace SparkyStudios::Audio::Amplitude
 
         SoundInstance* instance = _sound->CreateInstance();
 
-        const bool success = _realChannel.Play(instance);
+        RealChannelPlayOptions options;
+        options.startFrame = _scheduledStartFrame;
+        _scheduledStartFrame = kVoiceAsap;
+
+        const bool success = _realChannel.Play(instance, kAmInvalidObjectId, options);
         if (!success)
             SoundImpl::DestroyInstance(instance);
 

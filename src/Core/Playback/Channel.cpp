@@ -118,6 +118,45 @@ namespace SparkyStudios::Audio::Amplitude
             _state->FadeIn(duration);
     }
 
+    void Channel::Stop(AmTime duration, AmUInt64 clock) const
+    {
+        AMPLITUDE_ASSERT(Valid());
+        if (!IsValidStateId() || _state->Stopped())
+            return;
+
+        _state->FadeOut(duration, eChannelPlaybackState_Stopped, clock);
+    }
+
+    void Channel::Pause(AmTime duration, AmUInt64 clock) const
+    {
+        AMPLITUDE_ASSERT(Valid());
+        if (!IsValidStateId() || _state->Paused())
+            return;
+
+        _state->FadeOut(duration, eChannelPlaybackState_Paused, clock);
+    }
+
+    void Channel::Resume(AmTime duration, AmUInt64 clock) const
+    {
+        AMPLITUDE_ASSERT(Valid());
+        if (!IsValidStateId() || _state->Playing() || _state->Stopped())
+            return;
+
+        _state->FadeIn(duration, clock);
+    }
+
+    bool Channel::SetPlaybackPosition(AmTime position, AmUInt64 clock) const
+    {
+        AMPLITUDE_ASSERT(Valid());
+        return IsValidStateId() && _state->SetPlaybackPosition(position, clock);
+    }
+
+    bool Channel::ScheduleStart(AmUInt64 clock) const
+    {
+        AMPLITUDE_ASSERT(Valid());
+        return IsValidStateId() && _state->ScheduleStart(clock);
+    }
+
     bool Channel::SetPlaybackPosition(AmTime position) const
     {
         AMPLITUDE_ASSERT(Valid());

@@ -200,6 +200,7 @@ namespace SparkyStudios::Audio::Amplitude
         void Finish(AmUInt64 frame);
         void Post(eVoiceEventKind kind, AmUInt64 frame, eVoiceFadeTarget target = eVoiceFadeTarget::None, AmUInt32 count = 1);
         void ArmSeek(AmUInt64 position);
+        void Prime(VoiceStreamSlot& slot);
         void RenderPlayRange(AudioBuffer& mono, AmUInt64 begin, AmUInt64 end);
         void HandlePrimaryReport(const ResampleStream::PullReport& report, AmUInt64 offset);
 
@@ -227,6 +228,7 @@ namespace SparkyStudios::Audio::Amplitude
         AmUInt64 _fadeEnd = 0;
         eVoiceFadeTarget _fadeTarget = eVoiceFadeTarget::None;
         bool _positionPending = false;
+        bool _primePending = false;
         bool _audible = false;
         bool _sourceDone = false;
         AmUInt64 _crossfadeFrames = 1;

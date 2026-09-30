@@ -319,6 +319,7 @@ namespace SparkyStudios::Audio::Amplitude
                 VoiceStreamSlot& slot = _slots[_primary];
                 slot.reader.Seek(command.position);
                 slot.stream.Reset();
+                _primePending = true;
             }
             break;
         }
@@ -344,6 +345,8 @@ namespace SparkyStudios::Audio::Amplitude
             slot.reader.Seek(cursor.PositionAt(frame));
             slot.stream.Reset();
         }
+
+        _primePending = true;
 
         Post(eVoiceEventKind::Started, frame);
 
@@ -447,6 +450,12 @@ namespace SparkyStudios::Audio::Amplitude
         auto& out = mono[0];
         AmUInt64 a = begin;
 
+        if (_primePending && _crossfadeRemaining == 0 && !_sourceDone)
+        {
+            Prime(_slots[_primary]);
+            _primePending = false;
+        }
+
         if (_crossfadeRemaining > 0)
         {
             const AmUInt64 n = AM_MIN(end - a, _crossfadeRemaining);
@@ -496,10 +505,29 @@ namespace SparkyStudios::Audio::Amplitude
         to.reader.Seek(position);
         to.stream.Reset();
         to.stream.SetSpeed(_speed);
+        Prime(to);
 
         _crossfadeRemaining = _crossfadeFrames;
         _crossfadePosition = 0;
         _sourceDone = false;
+    }
+
+    void Voice::Prime(VoiceStreamSlot& slot)
+    {
+        // Discard the filter's group delay so source frame 0 lands on the start frame, not GetLatency() frames later.
+        // Rounded down: the kernel is not symmetric at every ratio, and rounding up would drop the impulse peak itself.
+        const AmReal64 ratio = slot.stream.GetRatio();
+        const auto frames = static_cast<AmUInt64>(std::floor(static_cast<AmReal64>(slot.stream.GetLatency()) / ratio));
+        const auto chunk = static_cast<AmUInt64>(_scratch.GetFrameCount());
+
+        for (AmUInt64 done = 0; done < frames && chunk > 0;)
+        {
+            const AmUInt64 n = AM_MIN(frames - done, chunk);
+            const AmUInt64 before = slot.stream.GetInputConsumed();
+            AM_UNUSED(slot.stream.Pull(slot.reader, _scratch[0], 0, n));
+            slot.stream.AddPrimedInput(slot.stream.GetInputConsumed() - before);
+            done += n;
+        }
     }
 
     void Voice::HandlePrimaryReport(const ResampleStream::PullReport& report, AmUInt64 offset)

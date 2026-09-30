@@ -242,16 +242,20 @@ namespace SparkyStudios::Audio::Amplitude
         void Resume();
 
         // Sets this channel's playback position, in milliseconds.
-        bool SetPlaybackPosition(AmTime position);
+        bool SetPlaybackPosition(AmTime position, AmUInt64 clock = kVoiceAsap);
 
         // Gets this channel's current playback position, in milliseconds.
         [[nodiscard]] AmTime GetPlaybackPosition() const;
 
         // Fade in over the specified number of milliseconds.
-        void FadeIn(AmTime duration);
+        void FadeIn(AmTime duration, AmUInt64 clock = kVoiceAsap);
 
         // Fade out over the specified number of milliseconds.
-        void FadeOut(AmTime duration, eChannelPlaybackState targetState = eChannelPlaybackState_Stopped);
+        void FadeOut(
+            AmTime duration, eChannelPlaybackState targetState = eChannelPlaybackState_Stopped, AmUInt64 clock = kVoiceAsap);
+
+        // Schedules the first sample of a pending channel at a frame of the audio clock.
+        bool ScheduleStart(AmUInt64 clock);
 
         // Devirtualizes a virtual channel. This transfers ownership of the given
         // channel's channel_id to this channel.
@@ -644,6 +648,9 @@ namespace SparkyStudios::Audio::Amplitude
 
         // The engine time at which the current audio-rate fade-in is expected to be over.
         AmTime _fadeInEndTime;
+
+        // The audio-clock frame the pending channel was scheduled to start at; consumed by the first Play.
+        AmUInt64 _scheduledStartFrame = kVoiceAsap;
 
         // Whether a Stop event is still owed once the voice's fade-out event arrives.
         bool _stopEventPending;

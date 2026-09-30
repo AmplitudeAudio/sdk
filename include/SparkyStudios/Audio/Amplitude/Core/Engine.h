@@ -245,6 +245,23 @@ namespace SparkyStudios::Audio::Amplitude
          */
         [[nodiscard]] virtual AmTime GetTotalTime() const = 0;
 
+        /**
+         * @brief Gets the audio clock: the number of output frames the mixer has rendered since initialization.
+         *
+         * Scheduled transport calls (@c Channel::ScheduleStart(), @c Channel::Stop() with a clock, ...) take frames on
+         * this clock. It advances only while the mixer renders, never while the engine is paused.
+         *
+         * @return The audio clock in frames.
+         */
+        [[nodiscard]] virtual AmUInt64 GetAudioClock() const = 0;
+
+        /**
+         * @brief Gets the rate of the audio clock, in frames per second: the mixer output sample rate.
+         *
+         * @return The audio clock rate.
+         */
+        [[nodiscard]] virtual AmUInt32 GetAudioClockRate() const = 0;
+
 #pragma endregion
 
 #pragma region Sound Bank Management
