@@ -284,11 +284,9 @@ namespace SparkyStudios::Audio::Amplitude
         case eVoiceCommandKind::Resume:
             if (_state == eVoiceState::Paused || (_state == eVoiceState::FadingOut && _fadeTarget == eVoiceFadeTarget::Paused))
             {
+                // A voice paused before it ever started begins now, exactly as a scheduled start would.
                 if (!_started)
-                {
-                    _started = true;
-                    Post(eVoiceEventKind::Started, frame);
-                }
+                    StartPlaying(frame);
 
                 _state = eVoiceState::Playing;
                 BeginFade(1.0f, command.duration, frame, eVoiceFadeTarget::None);
@@ -320,6 +318,9 @@ namespace SparkyStudios::Audio::Amplitude
                 slot.reader.Seek(command.position);
                 slot.stream.Reset();
                 _primePending = true;
+
+                // The explicit position wins over a virtual cursor this voice was resuming from.
+                _settings.startPositionClock = kVoiceAsap;
             }
             break;
         }
@@ -424,7 +425,8 @@ namespace SparkyStudios::Audio::Amplitude
                 {
                     if (_seeks[seek].offset <= a)
                     {
-                        ArmSeek(_seeks[seek++].position);
+                        ArmSeek(_seeks[seek].position, _seeks[seek].offset);
+                        ++seek;
                         continue;
                     }
 
@@ -452,7 +454,7 @@ namespace SparkyStudios::Audio::Amplitude
 
         if (_primePending && _crossfadeRemaining == 0 && !_sourceDone)
         {
-            Prime(_slots[_primary]);
+            HandlePrimaryReport(Prime(_slots[_primary]), a);
             _primePending = false;
         }
 
@@ -492,7 +494,7 @@ namespace SparkyStudios::Audio::Amplitude
         }
     }
 
-    void Voice::ArmSeek(AmUInt64 position)
+    void Voice::ArmSeek(AmUInt64 position, AmUInt64 offset)
     {
         // A seek during a crossfade promotes the incoming stream to outgoing only once it dominates (at or past the
         // midpoint). Before that the outgoing stream is the louder one: keep it and re-target the incoming slot, which
@@ -505,14 +507,17 @@ namespace SparkyStudios::Audio::Amplitude
         to.reader.Seek(position);
         to.stream.Reset();
         to.stream.SetSpeed(_speed);
-        Prime(to);
+        HandlePrimaryReport(Prime(to), offset);
+
+        // The incoming stream is primed here, so the start priming must not run a second time on top of it.
+        _primePending = false;
 
         _crossfadeRemaining = _crossfadeFrames;
         _crossfadePosition = 0;
         _sourceDone = false;
     }
 
-    void Voice::Prime(VoiceStreamSlot& slot)
+    ResampleStream::PullReport Voice::Prime(VoiceStreamSlot& slot)
     {
         // Discard the filter's group delay so source frame 0 lands on the start frame, not GetLatency() frames later.
         // Rounded down: the kernel is not symmetric at every ratio, and rounding up would drop the impulse peak itself.
@@ -520,14 +525,30 @@ namespace SparkyStudios::Audio::Amplitude
         const auto frames = static_cast<AmUInt64>(std::floor(static_cast<AmReal64>(slot.stream.GetLatency()) / ratio));
         const auto chunk = static_cast<AmUInt64>(_scratch.GetFrameCount());
 
+        // The discarded output still crossed loop seams and may have reached the end: keep those events, stamped at the
+        // frame the priming stands in for.
+        ResampleStream::PullReport total;
+
         for (AmUInt64 done = 0; done < frames && chunk > 0;)
         {
             const AmUInt64 n = AM_MIN(frames - done, chunk);
             const AmUInt64 before = slot.stream.GetInputConsumed();
-            AM_UNUSED(slot.stream.Pull(slot.reader, _scratch[0], 0, n));
+            const auto report = slot.stream.Pull(slot.reader, _scratch[0], 0, n);
             slot.stream.AddPrimedInput(slot.stream.GetInputConsumed() - before);
             done += n;
+
+            total.wraps += report.wraps;
+            total.ended |= report.ended;
+            total.finished |= report.finished;
+            total.error |= report.error;
         }
+
+        return total;
+    }
+
+    void Voice::PrimeStream(VoiceStreamSlot& slot)
+    {
+        AM_UNUSED(Prime(slot));
     }
 
     void Voice::HandlePrimaryReport(const ResampleStream::PullReport& report, AmUInt64 offset)

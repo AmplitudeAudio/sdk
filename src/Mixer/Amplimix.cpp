@@ -758,6 +758,9 @@ namespace SparkyStudios::Audio::Amplitude
                       break;
                   }
 
+                  // Discard the filter's group delay, so the instance lines up with the primary path.
+                  lay->voice->PrimeStream(*stream);
+
                   AM_UNUSED(lay->instanceStreams->Attach(instanceId, stream));
                   return true;
               } });

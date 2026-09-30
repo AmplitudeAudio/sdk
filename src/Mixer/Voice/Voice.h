@@ -165,6 +165,12 @@ namespace SparkyStudios::Audio::Amplitude
             return _mailbox;
         }
 
+        /**
+         * @brief Discards the resampler's group delay on an extra stream (separate-mode instance), so it lines up with the
+         * primary path. Audio thread; call once after the stream is positioned.
+         */
+        void PrimeStream(VoiceStreamSlot& slot);
+
         VoiceStreamSlot& GetPrimarySlot()
         {
             return _slots[_primary];
@@ -199,8 +205,8 @@ namespace SparkyStudios::Audio::Amplitude
         void FinishFade(AmUInt64 frame);
         void Finish(AmUInt64 frame);
         void Post(eVoiceEventKind kind, AmUInt64 frame, eVoiceFadeTarget target = eVoiceFadeTarget::None, AmUInt32 count = 1);
-        void ArmSeek(AmUInt64 position);
-        void Prime(VoiceStreamSlot& slot);
+        void ArmSeek(AmUInt64 position, AmUInt64 offset);
+        ResampleStream::PullReport Prime(VoiceStreamSlot& slot);
         void RenderPlayRange(AudioBuffer& mono, AmUInt64 begin, AmUInt64 end);
         void HandlePrimaryReport(const ResampleStream::PullReport& report, AmUInt64 offset);
 
