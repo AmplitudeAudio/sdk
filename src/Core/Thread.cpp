@@ -49,6 +49,7 @@ namespace SparkyStudios::Audio::Amplitude::Thread
     {
         auto* p = static_cast<AmThreadData*>(d);
         p->mFunc(p->mParam);
+        ampooldelete(eMemoryPoolKind_IO, AmThreadData, p);
         return 0;
     }
 
@@ -61,7 +62,10 @@ namespace SparkyStudios::Audio::Amplitude::Thread
         HANDLE h = ::CreateThread(nullptr, 0, ThreadFunc, (LPVOID)d, 0, nullptr);
 
         if (nullptr == h)
+        {
+            ampooldelete(eMemoryPoolKind_IO, AmThreadData, d);
             return nullptr;
+        }
 
         auto* threadHandle = ampoolnew(eMemoryPoolKind_IO, AmThreadHandleData);
         threadHandle->thread = h;
@@ -82,7 +86,7 @@ namespace SparkyStudios::Audio::Amplitude::Thread
 
         auto* threadHandleData = static_cast<AmThreadHandleData*>(threadHandle);
         ::WaitForSingleObject(threadHandleData->thread, INFINITE);
-        ampooldelete(eMemoryPoolKind_IO, AmThreadData, threadHandleData->data);
+        ::CloseHandle(threadHandleData->thread);
         ampooldelete(eMemoryPoolKind_IO, AmThreadHandleData, threadHandleData);
         threadHandle = nullptr;
     }
@@ -94,7 +98,19 @@ namespace SparkyStudios::Audio::Amplitude::Thread
 
         auto* threadHandleData = static_cast<AmThreadHandleData*>(threadHandle);
         ::CloseHandle(threadHandleData->thread);
-        ampooldelete(eMemoryPoolKind_IO, AmThreadData, threadHandleData->data);
+        ampooldelete(eMemoryPoolKind_IO, AmThreadHandleData, threadHandleData);
+        threadHandle = nullptr;
+    }
+
+    void Terminate(AmThreadHandle& threadHandle)
+    {
+        if (!threadHandle)
+            return;
+
+        auto* threadHandleData = static_cast<AmThreadHandleData*>(threadHandle);
+        ::TerminateThread(threadHandleData->thread, 0);
+        ::WaitForSingleObject(threadHandleData->thread, INFINITE);
+        ::CloseHandle(threadHandleData->thread);
         ampooldelete(eMemoryPoolKind_IO, AmThreadHandleData, threadHandleData);
         threadHandle = nullptr;
     }
@@ -119,6 +135,7 @@ namespace SparkyStudios::Audio::Amplitude::Thread
     {
         auto* p = static_cast<AmThreadData*>(d);
         p->mFunc(p->mParam);
+        ampooldelete(eMemoryPoolKind_IO, AmThreadData, p);
         return nullptr;
     }
 
@@ -161,7 +178,6 @@ namespace SparkyStudios::Audio::Amplitude::Thread
 
         auto* threadHandleData = static_cast<AmThreadHandleData*>(threadHandle);
         pthread_join(threadHandleData->thread, nullptr);
-        ampooldelete(eMemoryPoolKind_IO, AmThreadData, threadHandleData->data);
         ampooldelete(eMemoryPoolKind_IO, AmThreadHandleData, threadHandleData);
         threadHandle = nullptr;
     }
@@ -173,7 +189,18 @@ namespace SparkyStudios::Audio::Amplitude::Thread
 
         auto* threadHandleData = static_cast<AmThreadHandleData*>(threadHandle);
         pthread_detach(threadHandleData->thread);
-        ampooldelete(eMemoryPoolKind_IO, AmThreadData, threadHandleData->data);
+        ampooldelete(eMemoryPoolKind_IO, AmThreadHandleData, threadHandleData);
+        threadHandle = nullptr;
+    }
+
+    void Terminate(AmThreadHandle& threadHandle)
+    {
+        if (!threadHandle)
+            return;
+
+        auto* threadHandleData = static_cast<AmThreadHandleData*>(threadHandle);
+        pthread_cancel(threadHandleData->thread);
+        pthread_join(threadHandleData->thread, nullptr);
         ampooldelete(eMemoryPoolKind_IO, AmThreadHandleData, threadHandleData);
         threadHandle = nullptr;
     }

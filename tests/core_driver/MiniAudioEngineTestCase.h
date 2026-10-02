@@ -113,7 +113,7 @@ namespace SparkyStudios::Audio::Amplitude::Tests
             _running = false;
 
             if (_threadHandle)
-                Thread::Release(_threadHandle);
+                Thread::Wait(_threadHandle);
 
             bool success = true;
             if (amEngine->IsInitialized())

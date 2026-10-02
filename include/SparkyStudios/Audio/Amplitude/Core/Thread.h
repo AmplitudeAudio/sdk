@@ -64,13 +64,41 @@ namespace SparkyStudios::Audio::Amplitude
         AM_API_PUBLIC void Wait(AmThreadHandle& thread);
 
         /**
-         * @brief Manually stops a thread execution.
+         * @brief Detaches the given thread without waiting for it.
          *
-         * @param[in] thread The handle of the thread to stop.
+         * The thread keeps running until its function returns, then releases its own resources
+         * automatically. After this call the handle is invalid, and the thread can no longer
+         * be waited on nor have its exit code queried.
+         *
+         * Use this only when the thread is guaranteed to stop on its own. If the thread touches
+         * state that the caller is about to destroy, use @ref Wait instead, since detaching gives no
+         * guarantee about when the thread actually finishes.
+         *
+         * @param[in] thread The handle of the thread to detach. Set to @c nullptr on return.
          *
          * @ingroup core
          */
         AM_API_PUBLIC void Release(AmThreadHandle& thread);
+
+        /**
+         * @brief Forcibly kills the given thread and waits for it to be gone.
+         *
+         * This is a last resort for threads that refuse to stop on their own. It skips C++ stack
+         * unwinding, so destructors for locals in every frame of the thread are not run, thread-local
+         * destructors are not run, and any lock or resource the thread holds is leaked or left
+         * inconsistent. On Windows, thread-local CRT state may not be flushed either.
+         *
+         * Prefer signalling the thread to stop and calling @ref Wait. Only use this when the thread
+         * cannot be given a way to stop, for example because its function is not under your control.
+         *
+         * @warning A thread killed before it returns does not release the bookkeeping allocated for
+         * it, which is retained by the IO memory pool rather than reclaimed.
+         *
+         * @param[in] thread The handle of the thread to terminate. Set to @c nullptr on return.
+         *
+         * @ingroup core
+         */
+        AM_API_PUBLIC void Terminate(AmThreadHandle& thread);
 
         /**
          * @brief Gets the total execution time in milliseconds for the calling thread.
