@@ -27,6 +27,7 @@
 #include <unistd.h>
 #endif
 
+#include <csignal>
 #include <cmath>
 #include <thread>
 
@@ -199,7 +200,14 @@ namespace SparkyStudios::Audio::Amplitude::Thread
             return;
 
         auto* threadHandleData = static_cast<AmThreadHandleData*>(threadHandle);
+
+#if AM_PLATFORM_ANDROID
+        const auto tid = static_cast<pid_t>(threadHandleData->thread);
+        syscall(__NR_tgkill, tid, tid, SIGKILL);
+#else
         pthread_cancel(threadHandleData->thread);
+#endif
+
         pthread_join(threadHandleData->thread, nullptr);
         ampooldelete(eMemoryPoolKind_IO, AmThreadHandleData, threadHandleData);
         threadHandle = nullptr;
