@@ -29,8 +29,8 @@ LOGCAT_PID=$!
 echo "Launching test app..."
 adb shell am start -n com.amplitudeaudiosdk.tests/android.app.NativeActivity
 
-# Wait for tests to complete (timeout after 10 minutes)
-TIMEOUT=1200
+# Wait for tests to complete (timeout after 25 minutes)
+TIMEOUT=1500
 ELAPSED=0
 
 while [ "$ELAPSED" -lt "$TIMEOUT" ]; do

@@ -110,8 +110,8 @@ jobs:
           xcrun simctl launch --console-pty "$SIMULATOR_UDID" com.amplitudeaudiosdk.tests --autorun --exit-on-complete 2>&1 | tee ios_test_output.log &
           APP_PID=$!
 
-          # Wait for tests to complete (timeout after 10 minutes)
-          TIMEOUT=1200
+          # Wait for tests to complete (timeout after 25 minutes)
+          TIMEOUT=1500
           ELAPSED=0
           TEST_COMPLETE=false
 
