@@ -137,7 +137,7 @@ namespace SparkyStudios::Audio::Amplitude::Tests
 
             _threadHandle = Thread::CreateThread(run, this);
 
-            amEngine->Initialize(AM_OS_STRING("tests.config.amconfig"));
+            AM_EXPECT(amEngine->Initialize(AM_OS_STRING("tests.config.amconfig")));
 
             amEngine->EnsureSoundBankLoaded(AM_OS_STRING("tests.init.ambank"));
 

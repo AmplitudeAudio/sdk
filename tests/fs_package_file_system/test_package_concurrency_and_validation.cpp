@@ -86,6 +86,10 @@ namespace SparkyStudios::Audio::Amplitude::Tests
                     AM_EXPECT(!badItemFS.Exists(AM_OS_STRING("bad_item.txt")));
                     AM_EXPECT(badItemFS.OpenFile(AM_OS_STRING("bad_item.txt"), eFileOpenMode_Read) == nullptr);
 
+                    // Release the package handle before deleting: Windows refuses to remove a file that is still open.
+                    badItemFS.StartCloseFileSystem();
+                    AM_EXPECT(badItemFS.TryFinalizeCloseFileSystem());
+
                     std::filesystem::remove(std::filesystem::path(badItemPackage));
                 }
             }
@@ -123,6 +127,10 @@ namespace SparkyStudios::Audio::Amplitude::Tests
                     AM_EXPECT(!badChunkFS.IsValid());
                     AM_EXPECT(!badChunkFS.Exists(AM_OS_STRING("bad_chunk_item.txt")));
                     AM_EXPECT(badChunkFS.OpenFile(AM_OS_STRING("bad_chunk_item.txt"), eFileOpenMode_Read) == nullptr);
+
+                    // Release the package handle before deleting: Windows refuses to remove a file that is still open.
+                    badChunkFS.StartCloseFileSystem();
+                    AM_EXPECT(badChunkFS.TryFinalizeCloseFileSystem());
 
                     std::filesystem::remove(std::filesystem::path(badChunkPackage));
                 }

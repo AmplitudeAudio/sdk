@@ -119,8 +119,13 @@ namespace SparkyStudios::Audio::Amplitude::Tests
             OpenPackage(packageFS, platformFS, path);
             AM_EXPECT(packageFS.IsValid());
 
-            // Each item reopens the package: once it is gone, OpenFile must fail instead of returning an unusable item.
+            // Each item reopens the package, so a package that has gone away must fail instead of
+            // returning an unusable item.
+            packageFS.StartCloseFileSystem();
+            AM_EXPECT(packageFS.TryFinalizeCloseFileSystem());
+
             std::filesystem::remove(std::filesystem::path(path));
+            AM_EXPECT(!packageFS.IsValid());
             AM_EXPECT(packageFS.OpenFile(AM_OS_STRING("item.txt"), eFileOpenMode_Read) == nullptr);
         }
     };

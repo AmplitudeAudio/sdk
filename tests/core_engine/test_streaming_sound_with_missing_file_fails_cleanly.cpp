@@ -19,8 +19,6 @@
 #include "EngineTestCase.h"
 #include "TestRegistry.h"
 
-#include <filesystem>
-
 using namespace SparkyStudios::Audio::Amplitude;
 
 namespace SparkyStudios::Audio::Amplitude::Tests
@@ -36,13 +34,14 @@ namespace SparkyStudios::Audio::Amplitude::Tests
 
             const AmInt32 refCountBefore = sound->GetRefCounter()->GetCount();
 
-            // Hide the stream's file so opening it fails when the instance is created.
-            const std::filesystem::path filePath(_fileSystem->ResolvePath(sound->GetPath()));
-            const std::filesystem::path hiddenPath = filePath.string() + ".hidden";
+            // Point the file system at a base path that holds no assets, so opening the stream fails
+            // when the instance is created.
+            const AmOsString basePath = _fileSystem->GetBasePath();
+            _fileSystem->SetBasePath(AM_OS_STRING("this-path-does-not-exist"));
 
-            std::filesystem::rename(filePath, hiddenPath);
             SoundInstance* instance = sound->CreateInstance();
-            std::filesystem::rename(hiddenPath, filePath);
+
+            _fileSystem->SetBasePath(basePath);
 
             AM_EXPECT(instance != nullptr);
             AM_EXPECT(instance->Valid());

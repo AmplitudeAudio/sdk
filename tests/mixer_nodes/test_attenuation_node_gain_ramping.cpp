@@ -23,6 +23,14 @@
 #include "TestRegistry.h"
 #include "TestUtils.h"
 
+#ifdef near
+#undef near
+#endif
+
+#ifdef far
+#undef far
+#endif
+
 namespace SparkyStudios::Audio::Amplitude::Tests
 {
     namespace

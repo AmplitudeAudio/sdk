@@ -356,7 +356,7 @@ namespace SparkyStudios::Audio::Amplitude
                     // Compressed Block Size
                     item.m_CompressedBlockSize = pFileSystem->_packageFile->Read64();
 
-                    if (item.m_Offset > packageLength || item.m_Size > packageLength - item.m_Offset)
+                    if (item.m_Offset > packageLength)
                     {
                         amLogError("Package item out of bounds: " AM_OS_CHAR_FMT, pFileSystem->_packagePath.c_str());
                         rejectPackage();
@@ -397,6 +397,21 @@ namespace SparkyStudios::Audio::Amplitude
                                 return;
                             }
                         }
+                    }
+
+                    AmSize itemExtent = item.m_Size;
+                    if (item.m_CompressedBlockSize != 0)
+                    {
+                        itemExtent = 0;
+                        for (const auto& chunk : item.m_CompressedChunks)
+                            itemExtent += chunk.m_CompressedSize;
+                    }
+
+                    if (itemExtent > packageLength - item.m_Offset)
+                    {
+                        amLogError("Package item out of bounds: " AM_OS_CHAR_FMT, pFileSystem->_packagePath.c_str());
+                        rejectPackage();
+                        return;
                     }
                 }
             }
