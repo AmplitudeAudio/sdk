@@ -929,8 +929,15 @@ namespace SparkyStudios::Audio::Amplitude
         }
 
         // Load the pipeline from the specified file
-        if (const AmOsString& pipelineFilePath =
-                _fs->Join({ AM_OS_STRING("pipelines"), AM_STRING_TO_OS_STRING(config->mixer()->pipeline()->c_str()) });
+        const auto* pipelineName = config->mixer() != nullptr ? config->mixer()->pipeline() : nullptr;
+        if (pipelineName == nullptr || pipelineName->empty())
+        {
+            amLogCritical("Could not load the pipeline asset: no pipeline is configured.");
+            Deinitialize();
+            return false;
+        }
+
+        if (const AmOsString& pipelineFilePath = _fs->Join({ AM_OS_STRING("pipelines"), AM_STRING_TO_OS_STRING(pipelineName->c_str()) });
             !_state->pipeline.LoadDefinitionFromPath(pipelineFilePath, _state))
         {
             amLogCritical("Could not load the pipeline asset.");

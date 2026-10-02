@@ -154,6 +154,13 @@ namespace SparkyStudios::Audio::Amplitude
         if (filePath.empty())
             return eErrorCode_InvalidParameter;
 
+        // fopen() succeeds on a directory on POSIX, but the resulting handle is not a readable file:
+        // seeking to its end reports a length of INT64_MAX. Reject directories here so callers never
+        // see a "valid" file whose Length() is nonsense.
+        std::error_code error;
+        if (std::filesystem::is_directory(filePath, error))
+            return eErrorCode_InvalidParameter;
+
         AmOsString op{};
 
         switch (mode)
