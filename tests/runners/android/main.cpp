@@ -166,46 +166,46 @@ static void RunAllTests(struct android_app* app)
             continue;
         }
 
+        bool exceptionThrown = false;
+
+        // Setup and run tests
         try
         {
             testCase->SetUp();
             testCase->Run();
-            testCase->TearDown();
-
-            if (!testCase->HasFailure())
-            {
-                LOGI("  PASSED");
-                passedCount++;
-            }
-            else
-            {
-                LOGE("  FAILED");
-                failedCount++;
-            }
         } catch (const std::exception& e)
         {
             LOGE("  EXCEPTION: %s", e.what());
-            failedCount++;
-
-            try
-            {
-                testCase->TearDown();
-            } catch (...)
-            {
-                // Ignore cleanup errors
-            }
+            exceptionThrown = true;
         } catch (...)
         {
             LOGE("  EXCEPTION: Unknown");
-            failedCount++;
+            exceptionThrown = true;
+        }
 
-            try
-            {
-                testCase->TearDown();
-            } catch (...)
-            {
-                // Ignore cleanup errors
-            }
+        // Teardown
+        try
+        {
+            testCase->TearDown();
+        } catch (const std::exception& e)
+        {
+            LOGE("  TEARDOWN EXCEPTION: %s", e.what());
+            exceptionThrown = true;
+        } catch (...)
+        {
+            LOGE("  TEARDOWN EXCEPTION: Unknown");
+            exceptionThrown = true;
+        }
+
+        if (!exceptionThrown && !testCase->HasFailure())
+        {
+            LOGI("  PASSED");
+            passedCount++;
+        }
+        else
+        {
+            LOGE("  FAILED");
+            failedCount++;
         }
     }
 

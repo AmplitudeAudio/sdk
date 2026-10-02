@@ -214,11 +214,11 @@ namespace
 
         auto startTime = std::chrono::high_resolution_clock::now();
 
+        // Setup and run tests
         try
         {
             testCase->SetUp();
             testCase->Run();
-            testCase->TearDown();
 
             result.passedExpectations = testCase->PassedCount();
             result.failedExpectations = testCase->FailedCount();
@@ -231,6 +231,20 @@ namespace
         {
             result.passed = false;
             result.errorMessage = "Unknown exception";
+        }
+
+        // Teardown
+        try
+        {
+            testCase->TearDown();
+        } catch (const std::exception& e)
+        {
+            result.passed = false;
+            result.errorMessage += std::string("\nTearDown exception: ") + e.what();
+        } catch (...)
+        {
+            result.passed = false;
+            result.errorMessage += "\nTearDown exception: unknown";
         }
 
         auto endTime = std::chrono::high_resolution_clock::now();

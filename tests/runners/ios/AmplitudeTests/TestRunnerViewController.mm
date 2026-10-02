@@ -223,24 +223,40 @@ using namespace SparkyStudios::Audio::Amplitude::Tests;
         }
 
         // Run the test with C++ exception handling
+        NSString* exceptionMessage = @"";
+
+        // Setup and run tests
         try
         {
             testCase->SetUp();
             testCase->Run();
+        }
+        catch (const std::exception& e)
+        {
+            exceptionMessage = [NSString stringWithFormat:@"  C++ Exception: %s", e.what()];
+        }
+        catch (...)
+        {
+            exceptionMessage = @"  C++ Exception: Unknown";
+        }
+
+        // Teardown
+        try
+        {
             testCase->TearDown();
         }
         catch (const std::exception& e)
         {
-            [self logMessageOnMainThread:[NSString stringWithFormat:@"  C++ Exception: %s", e.what()]];
-            // Try to clean up
-            try { testCase->TearDown(); } catch (...) {}
-            return NO;
+            exceptionMessage = [exceptionMessage stringByAppendingFormat:@"  TearDown exception: %s", e.what()];
         }
         catch (...)
         {
-            [self logMessageOnMainThread:@"  C++ Exception: Unknown"];
-            // Try to clean up
-            try { testCase->TearDown(); } catch (...) {}
+            exceptionMessage = [exceptionMessage stringByAppendingString:@"  TearDown exception: unknown"];
+        }
+
+        if (exceptionMessage.length > 0)
+        {
+            [self logMessageOnMainThread:exceptionMessage];
             return NO;
         }
 
