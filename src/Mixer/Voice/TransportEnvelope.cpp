@@ -14,6 +14,8 @@
 
 #include <cmath>
 
+#include <SparkyStudios/Audio/Amplitude/Math/Utils.h>
+
 #include <Mixer/Voice/TransportEnvelope.h>
 
 namespace SparkyStudios::Audio::Amplitude
@@ -58,14 +60,18 @@ namespace SparkyStudios::Audio::Amplitude
             if (_position < _length)
             {
                 ++_position;
-                _gain = _position == _length ? _target : Interpolate(_position);
+
+                if (_position == _length)
+                    _gain = _target;
+                else
+                    _gain = static_cast<AmReal32>(_declick ? Evaluate(_position) : Interpolate(_position));
             }
 
             gains[offset + i] = _gain;
         }
     }
 
-    AmReal32 TransportEnvelope::Interpolate(AmUInt64 position)
+    AmReal64 TransportEnvelope::Interpolate(AmUInt64 position)
     {
         // position is the 1-based end of the frame: frame k has the value at (k + 1) / L.
         const AmUInt64 start = (position - 1) / kSegmentFrames * kSegmentFrames;
@@ -76,22 +82,42 @@ namespace SparkyStudios::Audio::Amplitude
             _knotStart = start;
             _knotFrom = Evaluate(start);
             _knotTo = Evaluate(end);
+            _slopeFrom = Slope(start);
+            _slopeTo = Slope(end);
         }
 
-        const AmReal32 t = static_cast<AmReal32>(position - start) / static_cast<AmReal32>(end - start);
-        return _knotFrom + (_knotTo - _knotFrom) * t;
+        // Cubic Hermite between the knots, with the curve's own slopes: the result is C1 at every knot, so no corner
+        // train is added to the curve.
+        const auto width = static_cast<AmReal64>(end - start);
+        const AmReal64 t = static_cast<AmReal64>(position - start) / width;
+        const AmReal64 t2 = t * t;
+        const AmReal64 t3 = t2 * t;
+
+        return (2.0 * t3 - 3.0 * t2 + 1.0) * _knotFrom + (t3 - 2.0 * t2 + t) * width * _slopeFrom + (-2.0 * t3 + 3.0 * t2) * _knotTo +
+            (t3 - t2) * width * _slopeTo;
     }
 
-    AmReal32 TransportEnvelope::Evaluate(AmUInt64 position)
+    AmReal64 TransportEnvelope::Slope(AmUInt64 position)
+    {
+        // Central difference over one frame (one-sided at the fade ends), in gain per frame.
+        const AmUInt64 low = position > 0 ? position - 1 : 0;
+        const AmUInt64 high = AM_MIN(position + 1, _length);
+        return (Evaluate(high) - Evaluate(low)) / static_cast<AmReal64>(high - low);
+    }
+
+    AmReal64 TransportEnvelope::Evaluate(AmUInt64 position)
     {
         const AmReal64 p = static_cast<AmReal64>(position) / static_cast<AmReal64>(_length);
+        const auto from = static_cast<AmReal64>(_from);
+        const auto target = static_cast<AmReal64>(_target);
 
+        // The de-click is a raised cosine, evaluated exactly on every frame (see Render).
         if (_declick)
-            return _from + (_target - _from) * static_cast<AmReal32>(0.5 - 0.5 * std::cos(3.14159265358979323846 * p));
+            return from + (target - from) * (0.5 - 0.5 * std::cos(AM_PI * p));
 
         if (_curve != nullptr)
-            return static_cast<AmReal32>(_curve->GetFromPercentage(p));
+            return _curve->GetFromPercentage(p);
 
-        return _from + (_target - _from) * static_cast<AmReal32>(p);
+        return from + (target - from) * p;
     }
 } // namespace SparkyStudios::Audio::Amplitude

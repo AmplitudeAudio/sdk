@@ -15,6 +15,8 @@
 #include <algorithm>
 #include <cmath>
 
+#include <SparkyStudios/Audio/Amplitude/Math/Utils.h>
+
 #include <Mixer/Voice/VirtualCursor.h>
 #include <Mixer/Voice/Voice.h>
 
@@ -22,7 +24,7 @@ namespace SparkyStudios::Audio::Amplitude
 {
     namespace
     {
-        constexpr AmReal64 kHalfPi = 1.57079632679489661923;
+        constexpr AmReal64 kHalfPi = AM_PI / 2.0;
     } // namespace
 
     bool Voice::Initialize(const VoiceSettings& settings)

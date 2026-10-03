@@ -27,7 +27,8 @@
 namespace SparkyStudios::Audio::Amplitude
 {
     /**
-     * @brief Audio-rate transport gain: fades evaluated on the fader curve every 32 frames, linear in between.
+     * @brief Audio-rate transport gain: the de-click is a raised cosine evaluated on every frame; fader curves are evaluated every 32 frames and
+     * joined by cubic Hermite interpolation.
      *
      * @c Initialize() runs on the game thread; the rest is audio-thread safe.
      */
@@ -68,8 +69,9 @@ namespace SparkyStudios::Audio::Amplitude
         }
 
     private:
-        AmReal32 Evaluate(AmUInt64 position);
-        AmReal32 Interpolate(AmUInt64 position);
+        AmReal64 Evaluate(AmUInt64 position);
+        AmReal64 Slope(AmUInt64 position);
+        AmReal64 Interpolate(AmUInt64 position);
 
         std::shared_ptr<FaderInstance> _curve;
         AmUInt32 _rate = 48000;
@@ -80,8 +82,10 @@ namespace SparkyStudios::Audio::Amplitude
         AmUInt64 _position = 0;
         bool _declick = false;
         AmUInt64 _knotStart = std::numeric_limits<AmUInt64>::max();
-        AmReal32 _knotFrom = 0.0f;
-        AmReal32 _knotTo = 0.0f;
+        AmReal64 _knotFrom = 0.0;
+        AmReal64 _knotTo = 0.0;
+        AmReal64 _slopeFrom = 0.0;
+        AmReal64 _slopeTo = 0.0;
     };
 } // namespace SparkyStudios::Audio::Amplitude
 

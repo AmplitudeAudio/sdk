@@ -43,11 +43,27 @@ namespace SparkyStudios::Audio::Amplitude::Tests
             AudioBuffer gains(length, 1);
             envelope.Render(gains[0], 0, length);
 
-            // Knots every 32 frames are exact; frames between them are within the curve's local slope.
-            for (AmUInt64 k = 31; k < length; k += 32)
+            // Every frame, not just the knots, follows the curve: the knots are joined by cubic Hermite with the curve's
+            // own slopes.
+            for (AmUInt64 k = 0; k < length; ++k)
             {
                 const auto expected = static_cast<AmReal32>(reference->GetFromPercentage(static_cast<AmReal64>(k + 1) / static_cast<AmReal64>(length)));
                 AM_EXPECT(std::abs(gains[0][k] - expected) < 1e-5f);
+            }
+
+            // A short fade bends sharply within one knot span; the Hermite slopes keep the error small there too.
+            TransportEnvelope shortEnvelope;
+            shortEnvelope.Initialize(Fader::Construct("SCurveSmooth"), 48000);
+            shortEnvelope.SetGain(1.0f);
+            const AmUInt64 shortLength = shortEnvelope.FadeTo(0.0f, 10.0);
+            AudioBuffer shortGains(shortLength, 1);
+            shortEnvelope.Render(shortGains[0], 0, shortLength);
+
+            for (AmUInt64 k = 0; k < shortLength; ++k)
+            {
+                const auto expected =
+                    static_cast<AmReal32>(reference->GetFromPercentage(static_cast<AmReal64>(k + 1) / static_cast<AmReal64>(shortLength)));
+                AM_EXPECT(std::abs(shortGains[0][k] - expected) < 5e-4f); // measured 1.7e-4; a chord between knots misses by about 3e-3
             }
         }
     };
