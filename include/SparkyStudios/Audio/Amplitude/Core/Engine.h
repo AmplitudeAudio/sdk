@@ -219,8 +219,11 @@ namespace SparkyStudios::Audio::Amplitude
          * before doing the actual frame update.
          *
          * @param[in] callback The callback to be called when the next frame is ready.
+         *
+         * @return @c true if the callback was queued, @c false if the queue is full: the callback is then dropped and
+         * the caller must handle it another way.
          */
-        virtual void OnNextFrame(std::function<void(AmTime delta)> callback) const = 0;
+        virtual bool OnNextFrame(std::function<void(AmTime delta)> callback) const = 0;
 
         /**
          * @brief Waits until the next frame is ready.

@@ -889,8 +889,8 @@ namespace SparkyStudios::Audio::Amplitude
             channelState->HaltInternal();
         }
 
-        // Play the collection again only if the channel is still playing.
-        if (realChannel.Playing())
+        // Play the collection again only if the channel is still playing: not while it fades toward a stop.
+        if (!channelState->IsFadingOutToStopped() && realChannel.Playing())
             channelState->Play();
     }
 

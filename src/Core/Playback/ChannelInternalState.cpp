@@ -64,6 +64,8 @@ namespace SparkyStudios::Audio::Amplitude
         _stopEventPending = false;
         _stopFired = false;
         _pendingEventCount = 0;
+        _deferredEvents = 0;
+        _virtualPaused = false;
         _entity = Entity();
         _userGain = 0.0f;
         _gain = 0.0f;
@@ -235,6 +237,12 @@ namespace SparkyStudios::Audio::Amplitude
 
     void ChannelInternalState::Resume()
     {
+        if (_virtualPaused && Paused() && IsAlive())
+        {
+            AM_UNUSED(ResumeFrozen(kStealFade));
+            return;
+        }
+
         if (Playing() || !Valid() || IsFadingOutToStopped())
             return;
 
@@ -291,6 +299,12 @@ namespace SparkyStudios::Audio::Amplitude
 
     void ChannelInternalState::FadeIn(AmTime duration, AmUInt64 clock)
     {
+        if (_virtualPaused && Paused() && IsAlive())
+        {
+            AM_UNUSED(ResumeFrozen(duration));
+            return;
+        }
+
         if (Playing() || !Valid() || _channelState == eChannelPlaybackState_FadingIn || IsFadingOutToStopped())
             return;
 
@@ -314,8 +328,17 @@ namespace SparkyStudios::Audio::Amplitude
 
     void ChannelInternalState::FadeOut(AmTime duration, eChannelPlaybackState targetState, AmUInt64 clock)
     {
-        if (Stopped() || Paused())
+        if (Stopped())
             return;
+
+        // Nothing sounds while paused, so there is nothing to fade: a stop takes effect at once. Pausing again is a no-op.
+        if (Paused())
+        {
+            if (targetState == eChannelPlaybackState_Stopped)
+                Halt();
+
+            return;
+        }
 
         // A stop fade overriding a pause fade: layers may already be paused, and a paused voice finishes without
         // posting FadedOut{Stopped}. Checked before the guard below changes _channelState.
@@ -402,10 +425,9 @@ namespace SparkyStudios::Audio::Amplitude
         // Transfer the real channel id to this channel.
         std::swap(_realChannel._channelId, other->_realChannel._channelId);
 
+        // A paused channel gets its real channel but no voice: Resume() starts it from its frozen position.
         if (Playing())
             Promote();
-        else if (Paused())
-            Resume();
     }
 
     void ChannelInternalState::AnchorVirtualCursor(AmUInt64 position, AmUInt64 clock)
@@ -441,30 +463,60 @@ namespace SparkyStudios::Audio::Amplitude
 
     void ChannelInternalState::Demote()
     {
-        // Only Playing and fading-in channels stay virtual with a cursor. A channel fading toward a stop or a pause, or
-        // paused, gets none: UpdateState() settles it Stopped, with one Stop event, once its real channel is gone,
-        // since the fade cannot finish without a voice.
+        // Playing, fading-in and paused channels stay virtual with a cursor; a paused one keeps it frozen until the
+        // game resumes it. A channel fading toward a stop or a pause gets none: UpdateState() settles it Stopped, with
+        // one Stop event, once its real channel is gone, since the fade cannot finish without a voice.
         // Provisional anchor from what the game thread knows; the voice's Released event refines it to the exact frame
         // once the fade-out actually finishes rendering.
-        const bool keepsCursor = _channelState == eChannelPlaybackState_Playing || _channelState == eChannelPlaybackState_FadingIn;
+        const bool paused = _channelState == eChannelPlaybackState_Paused;
+        const bool keepsCursor =
+            paused || _channelState == eChannelPlaybackState_Playing || _channelState == eChannelPlaybackState_FadingIn;
         if (keepsCursor && _sound != nullptr && !_realChannel._layers.empty())
         {
             AmUInt64 position = 0;
             const auto& data = _realChannel._layers.begin()->second;
             if (_realChannel._mixer->GetVoicePosition(_realChannel._channelId, data.mixerLayerId, position))
-                AnchorVirtualCursor(position, _realChannel._mixer->GetAudioClock());
+            {
+                // A voice still waiting for its scheduled start is not heard before that frame.
+                AmUInt64 clock = _realChannel._mixer->GetAudioClock();
+                if (data.requestedStartFrame != kVoiceAsap)
+                    clock = AM_MAX(clock, data.requestedStartFrame);
+
+                AnchorVirtualCursor(position, clock);
+            }
         }
+
+        _virtualPaused = paused;
 
         _realChannel.Release();
     }
 
-    bool ChannelInternalState::Promote()
+    bool ChannelInternalState::ResumeFrozen(AmTime fadeIn)
+    {
+        // The cursor was frozen while paused: it runs again from here.
+        if (_virtualCursor.IsAnchored())
+            AnchorVirtualCursor(_virtualCursor.GetAnchorPosition(), amEngine->GetState()->mixer.GetAudioClock());
+
+        _virtualPaused = false;
+        _channelState = eChannelPlaybackState_Playing;
+
+        if (IsReal() && !Promote(fadeIn))
+        {
+            SettleStopped();
+            return false;
+        }
+
+        TriggerOnNextFrame(eChannelEvent_Resume);
+        return true;
+    }
+
+    bool ChannelInternalState::Promote(AmTime fadeIn)
     {
         if (_sound == nullptr || !_virtualCursor.IsAnchored())
             return Play(); // Collections, switch containers and never-anchored sounds restart from the beginning.
 
         RealChannelPlayOptions options;
-        options.fadeIn = kStealFade;
+        options.fadeIn = fadeIn;
         options.startPosition = _virtualCursor.GetAnchorPosition();
         options.startPositionClock = _virtualCursor.GetAnchorClock();
 
@@ -779,13 +831,10 @@ namespace SparkyStudios::Audio::Amplitude
     {
         _channelState = eChannelPlaybackState_Stopped;
 
-        // A layer whose voice was already paused finishes without FadedOut{Stopped}: the Stop event is still owed, fire
-        // it once here.
-        if (_stopEventPending)
-        {
-            _stopEventPending = false;
-            TriggerStopOnce();
-        }
+        // Every path to Stopped owes exactly one Stop event: a stop fade that overrode a pause fade, a voice that
+        // errored or finished while priming, a paused channel that lost its layers. TriggerStopOnce() dedups.
+        _stopEventPending = false;
+        TriggerStopOnce();
     }
 
     void ChannelInternalState::TriggerStopOnce()
@@ -819,7 +868,11 @@ namespace SparkyStudios::Audio::Amplitude
             // This channel was demoted (or already virtual) and its voice just finished fading out for
             // virtualization: refine the provisional anchor Demote() took with the exact frame the voice reached.
             if (!IsReal() && _virtualCursor.IsAnchored())
-                AnchorVirtualCursor(sourcePosition, frame);
+            {
+                // A voice still waiting for its scheduled start is not heard before that frame.
+                const AmUInt64 requested = _realChannel.GetRequestedStartFrame(mixerLayerId);
+                AnchorVirtualCursor(sourcePosition, requested != kVoiceAsap ? AM_MAX(frame, requested) : frame);
+            }
             break;
 
         default:
@@ -831,7 +884,7 @@ namespace SparkyStudios::Audio::Amplitude
     {
         const AmUInt64 stateId = _channelStateId;
         ++_pendingEventCount;
-        amEngine->OnNextFrame(
+        const bool queued = amEngine->OnNextFrame(
             [this, stateId, event](AmTime)
             {
                 // The channel may have been reused in between (Reset() already zeroed the pending count then).
@@ -843,6 +896,23 @@ namespace SparkyStudios::Audio::Amplitude
 
                 Trigger(event);
             });
+
+        // The engine's callback queue is full: the event waits on the channel and fires from EraseFinishedSounds().
+        if (!queued)
+        {
+            --_pendingEventCount;
+            _deferredEvents |= 1U << static_cast<AmUInt32>(event);
+        }
+    }
+
+    void ChannelInternalState::DrainDeferredEvents()
+    {
+        const AmUInt32 events = _deferredEvents;
+        _deferredEvents = 0;
+
+        for (AmUInt32 event = 0; event <= static_cast<AmUInt32>(eChannelEvent_Loop); ++event)
+            if ((events & (1U << event)) != 0)
+                Trigger(static_cast<eChannelEvent>(event));
     }
 
     bool ChannelInternalState::PlaySwitchContainerStateUpdate(
@@ -950,13 +1020,17 @@ namespace SparkyStudios::Audio::Amplitude
         if (_channelState != eChannelPlaybackState_FadingIn && _channelState != eChannelPlaybackState_FadingOut)
             _channelState = eChannelPlaybackState_Playing;
 
-        SoundInstance* instance = sound->CreateInstance();
-
         RealChannelPlayOptions options;
         options.startFrame = _scheduledStartFrame;
         _scheduledStartFrame = kVoiceAsap;
 
-        const bool success = !IsReal() || _realChannel.Play(instance, kAmInvalidObjectId, options);
+        // A virtual channel has nothing to attach an instance to: creating one would leak it.
+        if (!IsReal())
+            return true;
+
+        SoundInstance* instance = sound->CreateInstance();
+
+        const bool success = _realChannel.Play(instance, kAmInvalidObjectId, options);
         if (!success)
             SoundImpl::DestroyInstance(instance);
 
@@ -977,7 +1051,13 @@ namespace SparkyStudios::Audio::Amplitude
         if (!IsReal())
         {
             // A sound that starts virtual still has to end on time: anchor its cursor at its start, now.
-            AnchorVirtualCursor(0, amEngine->GetState()->mixer.GetAudioClock());
+            // A scheduled start is not heard before its frame.
+            AmUInt64 clock = amEngine->GetState()->mixer.GetAudioClock();
+            if (_scheduledStartFrame != kVoiceAsap)
+                clock = AM_MAX(clock, _scheduledStartFrame);
+
+            _scheduledStartFrame = kVoiceAsap;
+            AnchorVirtualCursor(0, clock);
             return true;
         }
 

@@ -356,6 +356,10 @@ namespace SparkyStudios::Audio::Amplitude
          * @param[in] callback The callback function.
          * @param[in] userData The user data to pass to the callback.
          *
+         * @note Events fire when the voice reports them, or on the next frame, not at the moment of the call. The
+         * @p userData must outlive the channel's Stop event, including the Stop that @c Engine::Deinitialize() raises
+         * for channels still playing. There is no way to unregister a callback.
+         *
          * @see eChannelEvent
          * @see ChannelEventCallback
          */

@@ -79,8 +79,8 @@ namespace SparkyStudios::Audio::Amplitude
         FadedOut,
         Looped,
         Ended,
+        Error, ///< Ordered before Finished: the game side must hear it while the layer still exists.
         Finished,
-        Error,
         Count,
     };
 

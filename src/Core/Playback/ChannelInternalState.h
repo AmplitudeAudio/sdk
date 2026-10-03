@@ -67,6 +67,8 @@ namespace SparkyStudios::Audio::Amplitude
             , _stopEventPending(false)
             , _stopFired(false)
             , _pendingEventCount(0)
+            , _deferredEvents(0)
+            , _virtualPaused(false)
             , _entity()
             , _userGain(1.0f)
             , _gain(1.0f)
@@ -276,7 +278,10 @@ namespace SparkyStudios::Audio::Amplitude
          *
          * @return @c true on success.
          */
-        bool Promote();
+        bool Promote(AmTime fadeIn = kStealFade);
+
+        // Resumes a channel that was paused while virtual, from the position it froze at.
+        bool ResumeFrozen(AmTime fadeIn);
 
         /**
          * @brief Anchors this channel's virtual cursor: @p position is the source frame heard at audio-clock frame
@@ -419,8 +424,28 @@ namespace SparkyStudios::Audio::Amplitude
          */
         [[nodiscard]] AM_INLINE bool HasPendingEvents() const
         {
-            return _pendingEventCount > 0;
+            return _pendingEventCount > 0 || _deferredEvents != 0;
         }
+
+        /**
+         * @brief Checks whether an event could not be queued for the next frame (the engine's callback queue was full)
+         * and still waits for @c DrainDeferredEvents().
+         */
+        [[nodiscard]] AM_INLINE bool HasDeferredEvents() const
+        {
+            return _deferredEvents != 0;
+        }
+
+        /**
+         * @brief Fires the events that could not be queued for the next frame. Called by the engine once per frame,
+         * outside the channel list iteration.
+         */
+        void DrainDeferredEvents();
+
+        // Whether this channel is currently fading out toward Stopped: Pause()/Resume()/FadeIn() must do nothing
+        // while a stop fade owns the channel.
+        [[nodiscard]] bool IsFadingOutToStopped() const;
+
 
         /**
          * @brief Enables multi-position instancing for this channel.
@@ -606,7 +631,6 @@ namespace SparkyStudios::Audio::Amplitude
     private:
         bool PlaySwitchContainerStateUpdate(
             const std::vector<SwitchContainerItem>& previous, const std::vector<SwitchContainerItem>& next, AmTime fadeIn = 0.0);
-        [[nodiscard]] bool IsFadingOutToStopped() const;
 
         // Settles the channel to Stopped from UpdateState() and fires the Stop event if it is still owed.
         void SettleStopped();
@@ -660,6 +684,14 @@ namespace SparkyStudios::Audio::Amplitude
 
         // TriggerOnNextFrame() events queued but not fired yet.
         AmUInt32 _pendingEventCount;
+
+        // Events (one bit per eChannelEvent) that could not be queued because the engine's callback queue was full.
+        // EraseFinishedSounds() drains them, so a full queue never loses a Stop or an End.
+        AmUInt32 _deferredEvents;
+
+        // The channel was paused when it lost its real channel: it stays virtual, with a frozen cursor, until it is
+        // resumed.
+        bool _virtualPaused;
 
         // The entity which is playing the sound of this channel.
         Entity _entity;

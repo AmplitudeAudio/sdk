@@ -69,7 +69,7 @@ namespace SparkyStudios::Audio::Amplitude
         void StartCloseFileSystem() override;
         bool TryFinalizeCloseFileSystem() override;
         void AdvanceFrame(AmTime delta) const override;
-        void OnNextFrame(std::function<void(AmTime delta)> callback) const override;
+        bool OnNextFrame(std::function<void(AmTime delta)> callback) const override;
         void WaitUntilNextFrame() const override;
         void WaitUntilFrames(AmUInt64 frameCount) const override;
         [[nodiscard]] AmTime GetTotalTime() const override;
