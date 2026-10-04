@@ -49,6 +49,7 @@ namespace SparkyStudios::Audio::Amplitude
         _crossfadeFrames = AM_MAX(MillisecondsToFrames(kSeekCrossfade, settings.outputRate), 1ULL);
         _crossfadeRemaining = 0;
         _crossfadePosition = 0;
+        _incomingReport = {};
         _commandCount = _segmentCount = _seekCount = 0;
         _mailbox.Clear();
 
@@ -467,7 +468,7 @@ namespace SparkyStudios::Audio::Amplitude
             VoiceStreamSlot& to = _slots[1 - _primary];
 
             AM_UNUSED(from.stream.Pull(from.reader, _scratch[0], a, n));
-            const auto report = to.stream.Pull(to.reader, out, a, n);
+            MergeIncomingReport(to.stream.Pull(to.reader, out, a, n));
 
             for (AmUInt64 i = 0; i < n; ++i)
             {
@@ -483,9 +484,15 @@ namespace SparkyStudios::Audio::Amplitude
             _crossfadePosition += n;
             _crossfadeRemaining -= n;
             if (_crossfadeRemaining == 0)
+            {
+                // The incoming stream is primary now: only here does what it reported (a seek that primed past the end, a
+                // loop seam) concern the voice. Until then the outgoing stream keeps sounding.
                 _primary = 1 - _primary;
+                const auto report = _incomingReport;
+                _incomingReport = {};
+                HandlePrimaryReport(report, a + n);
+            }
 
-            HandlePrimaryReport(report, a);
             a += n;
         }
 
@@ -506,21 +513,44 @@ namespace SparkyStudios::Audio::Amplitude
         // midpoint). Before that the outgoing stream is the louder one: keep it and re-target the incoming slot, which
         // avoids a cut.
         if (_crossfadeRemaining > 0 && _crossfadePosition >= _crossfadeFrames / 2)
+        {
             _primary = 1 - _primary;
+
+            // The promoted stream is primary: what it reported so far counts now.
+            const auto promoted = _incomingReport;
+            _incomingReport = {};
+            HandlePrimaryReport(promoted, offset);
+        }
+
+        // The seek reopens the source: the outgoing stream plays on for the crossfade.
+        _sourceDone = false;
 
         VoiceStreamSlot& to = _slots[1 - _primary];
         to.reader = _slots[_primary].reader;
         to.reader.Seek(position);
         to.stream.Reset();
         to.stream.SetSpeed(_speed);
-        HandlePrimaryReport(Prime(to), offset);
+
+        // Priming may run into loop seams or the end of the source. Those belong to the incoming stream: they are applied
+        // once it becomes primary, never now, or a seek near the end would finish the voice and cut the outgoing stream.
+        _incomingReport = {};
+        MergeIncomingReport(Prime(to));
 
         // The incoming stream is primed here, so the start priming must not run a second time on top of it.
         _primePending = false;
 
         _crossfadeRemaining = _crossfadeFrames;
         _crossfadePosition = 0;
-        _sourceDone = false;
+        AM_UNUSED(offset);
+    }
+
+    void Voice::MergeIncomingReport(const ResampleStream::PullReport& report)
+    {
+        // Frames are relative to the block that applies the report (the crossfade's end), so only the flags and counts are kept.
+        _incomingReport.wraps += report.wraps;
+        _incomingReport.ended |= report.ended;
+        _incomingReport.finished |= report.finished;
+        _incomingReport.error |= report.error;
     }
 
     ResampleStream::PullReport Voice::Prime(VoiceStreamSlot& slot)

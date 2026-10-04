@@ -207,6 +207,7 @@ namespace SparkyStudios::Audio::Amplitude
         void Post(eVoiceEventKind kind, AmUInt64 frame, eVoiceFadeTarget target = eVoiceFadeTarget::None, AmUInt32 count = 1);
         void ArmSeek(AmUInt64 position, AmUInt64 offset);
         ResampleStream::PullReport Prime(VoiceStreamSlot& slot);
+        void MergeIncomingReport(const ResampleStream::PullReport& report);
         void RenderPlayRange(AudioBuffer& mono, AmUInt64 begin, AmUInt64 end);
         void HandlePrimaryReport(const ResampleStream::PullReport& report, AmUInt64 offset);
 
@@ -240,6 +241,8 @@ namespace SparkyStudios::Audio::Amplitude
         AmUInt64 _crossfadeFrames = 1;
         AmUInt64 _crossfadeRemaining = 0;
         AmUInt64 _crossfadePosition = 0;
+        /// What the incoming stream reported (priming, pulls) during the crossfade: it only counts once it is primary.
+        ResampleStream::PullReport _incomingReport;
         AmReal64 _speed = 1.0;
         AmUInt32 _lateCommands = 0;
         AmUInt32 _evictedCommands = 0;
