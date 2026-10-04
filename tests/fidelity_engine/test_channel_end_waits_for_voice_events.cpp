@@ -56,7 +56,7 @@ namespace SparkyStudios::Audio::Amplitude::Tests
     // The audio thread may publish a voice's Finished state before the game thread dispatches its Ended and Finished
     // events. The lock-step render runs a check after every mix, before the frame that dispatches the events: the real
     // channel must keep playing until End fires, otherwise the engine could recycle the channel without End and Stop.
-    AM_TEST_CASE(PureUnitTestCase, core_engine, channel_end_waits_for_voice_events)
+    AM_TEST_CASE(PureUnitTestCase, fidelity_engine, channel_end_waits_for_voice_events)
     {
     public:
         void Run() override
@@ -108,5 +108,5 @@ namespace SparkyStudios::Audio::Amplitude::Tests
         }
     };
 
-    AM_REGISTER_TEST(core_engine, channel_end_waits_for_voice_events);
+    AM_REGISTER_TEST(fidelity_engine, channel_end_waits_for_voice_events);
 } // namespace SparkyStudios::Audio::Amplitude::Tests

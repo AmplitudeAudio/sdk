@@ -60,7 +60,7 @@ namespace SparkyStudios::Audio::Amplitude::Tests
     // A Pause(0)/pause fade completing in the voice posts a FadedOut{Paused} event; if the game calls Resume()
     // before the engine dispatches that event, the stale event must not re-mark the (now genuinely playing again)
     // layer as paused, which would make RealChannel::Playing() lie and UpdateState() drop the still-sounding voice.
-    AM_TEST_CASE(PureUnitTestCase, core_engine, channel_resume_survives_a_stale_faded_out_paused_event)
+    AM_TEST_CASE(PureUnitTestCase, fidelity_engine, channel_resume_survives_a_stale_faded_out_paused_event)
     {
     public:
         void Run() override
@@ -140,5 +140,5 @@ namespace SparkyStudios::Audio::Amplitude::Tests
         }
     };
 
-    AM_REGISTER_TEST(core_engine, channel_resume_survives_a_stale_faded_out_paused_event);
+    AM_REGISTER_TEST(fidelity_engine, channel_resume_survives_a_stale_faded_out_paused_event);
 } // namespace SparkyStudios::Audio::Amplitude::Tests

@@ -61,7 +61,7 @@ namespace SparkyStudios::Audio::Amplitude::Tests
     // case finishes a Paused voice immediately, without ever posting FadedOut{Stopped}. The channel must still
     // settle to Stopped and fire exactly one Stop event (via UpdateState()'s SettleStopped() backstop), not get
     // stuck FadingOut forever with _stopEventPending never consumed.
-    AM_TEST_CASE(PureUnitTestCase, core_engine, channel_stop_overrides_a_completed_pause_fade)
+    AM_TEST_CASE(PureUnitTestCase, fidelity_engine, channel_stop_overrides_a_completed_pause_fade)
     {
     public:
         void Run() override
@@ -139,5 +139,5 @@ namespace SparkyStudios::Audio::Amplitude::Tests
         }
     };
 
-    AM_REGISTER_TEST(core_engine, channel_stop_overrides_a_completed_pause_fade);
+    AM_REGISTER_TEST(fidelity_engine, channel_stop_overrides_a_completed_pause_fade);
 } // namespace SparkyStudios::Audio::Amplitude::Tests

@@ -65,7 +65,7 @@ namespace SparkyStudios::Audio::Amplitude::Tests
     // A voice ends naturally while its channel is recycled and handed to a new sound before the voice's Ended and
     // Finished events are dispatched (the engine recycles at once when a sound is unloaded or a channel is stolen).
     // Those stale events must release the old mixer layer but never reach the new sound: no End, no Stop, no halt.
-    AM_TEST_CASE(PureUnitTestCase, core_engine, stale_finished_event_does_not_touch_reused_channel)
+    AM_TEST_CASE(PureUnitTestCase, fidelity_engine, stale_finished_event_does_not_touch_reused_channel)
     {
     public:
         void Run() override
@@ -148,5 +148,5 @@ namespace SparkyStudios::Audio::Amplitude::Tests
         }
     };
 
-    AM_REGISTER_TEST(core_engine, stale_finished_event_does_not_touch_reused_channel);
+    AM_REGISTER_TEST(fidelity_engine, stale_finished_event_does_not_touch_reused_channel);
 } // namespace SparkyStudios::Audio::Amplitude::Tests
