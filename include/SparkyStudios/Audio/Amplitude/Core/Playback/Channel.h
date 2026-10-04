@@ -177,8 +177,8 @@ namespace SparkyStudios::Audio::Amplitude
         /**
          * @brief Stops the channel at an exact frame of the audio clock.
          *
-         * A duration of 0 still applies a short de-click fade. The channel enters the fading-out state at the call and
-         * settles when the fade ends.
+         * A duration of 0 still applies a short de-click fade. The channel keeps playing until @p clock, then settles
+         * when the fade ends.
          *
          * @param[in] duration The fade out duration before to stop the channel.
          * @param[in] clock The frame, on @c Engine::GetAudioClock(), at which the stop begins.

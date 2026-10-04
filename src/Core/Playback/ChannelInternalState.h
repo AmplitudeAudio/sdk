@@ -69,6 +69,9 @@ namespace SparkyStudios::Audio::Amplitude
             , _pendingEventCount(0)
             , _deferredEvents(0)
             , _virtualPaused(false)
+            , _hasScheduledCommand(false)
+            , _scheduledTarget(eChannelPlaybackState_Stopped)
+            , _scheduledCommandFrame(kVoiceAsap)
             , _entity()
             , _userGain(1.0f)
             , _gain(1.0f)
@@ -442,6 +445,12 @@ namespace SparkyStudios::Audio::Amplitude
          */
         void DrainDeferredEvents();
 
+        /**
+         * @brief Moves the channel into the fade of a scheduled Stop or Pause once the audio clock reached its frame.
+         * Called every frame and when the voice reports the fade.
+         */
+        void ActivateScheduledCommand();
+
         // Whether this channel is currently fading out toward Stopped: Pause()/Resume()/FadeIn() must do nothing
         // while a stop fade owns the channel.
         [[nodiscard]] bool IsFadingOutToStopped() const;
@@ -688,6 +697,13 @@ namespace SparkyStudios::Audio::Amplitude
         // Events (one bit per eChannelEvent) that could not be queued because the engine's callback queue was full.
         // EraseFinishedSounds() drains them, so a full queue never loses a Stop or an End.
         AmUInt32 _deferredEvents;
+
+        // A Stop or Pause the game scheduled at a future frame of the audio clock. The voice carries the command out at
+        // that frame; until then the channel keeps its state (gains still update, Pause and Resume still work) and an
+        // immediate Stop overrides it.
+        bool _hasScheduledCommand;
+        eChannelPlaybackState _scheduledTarget;
+        AmUInt64 _scheduledCommandFrame;
 
         // The channel was paused when it lost its real channel: it stays virtual, with a frozen cursor, until it is
         // resumed.

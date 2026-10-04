@@ -43,9 +43,13 @@ namespace SparkyStudios::Audio::Amplitude::Tests
             const AmUInt64 target = amEngine->GetAudioClock() + amEngine->GetAudioClockRate() * 2; // two seconds
             AM_EXPECT(channel.ScheduleStart(target));
 
-            amEngine->WaitUntilFrames(10); // well under the two seconds
-            AM_EXPECT_EQ(0, begins.load());
-            AM_EXPECT(amEngine->GetAudioClock() < target);
+            amEngine->WaitUntilFrames(10);
+
+            // The null driver renders faster than real time, so a descheduled game thread can see the clock pass the
+            // target: read the count first, then the clock, and only require the start to have waited when it began.
+            const int seenBegins = begins.load();
+            const AmUInt64 seenClock = amEngine->GetAudioClock();
+            AM_EXPECT(seenBegins == 0 || seenClock >= target);
 
             AM_EXPECT(WaitUntil([&]() { return begins.load() == 1; }));
             AM_EXPECT(amEngine->GetAudioClock() >= target);

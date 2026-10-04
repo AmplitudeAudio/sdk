@@ -66,6 +66,8 @@ namespace SparkyStudios::Audio::Amplitude
         _pendingEventCount = 0;
         _deferredEvents = 0;
         _virtualPaused = false;
+        _hasScheduledCommand = false;
+        _scheduledCommandFrame = kVoiceAsap;
         _entity = Entity();
         _userGain = 0.0f;
         _gain = 0.0f;
@@ -366,6 +368,19 @@ namespace SparkyStudios::Audio::Amplitude
         if (!_realChannel.FadeOut(duration, kind, clock))
             return;
 
+        // A command for a later frame does not change the channel yet: it keeps playing (and following its emitter) until
+        // the clock gets there. A stop that is not scheduled overrides a scheduled one.
+        if (clock != kVoiceAsap && clock > amEngine->GetAudioClock())
+        {
+            _hasScheduledCommand = true;
+            _scheduledTarget = targetState;
+            _scheduledCommandFrame = clock;
+            return;
+        }
+
+        if (targetState == eChannelPlaybackState_Stopped)
+            _hasScheduledCommand = false;
+
         if (overridingPauseFade)
             // Clear the stale paused flags so RealChannel::Playing() reads the voices' own state: the channel stays
             // FadingOut until every voice is forgotten, and SettleStopped() covers a paused voice that finishes without
@@ -376,6 +391,45 @@ namespace SparkyStudios::Audio::Amplitude
         _channelState = eChannelPlaybackState_FadingOut;
         _targetFadeOutState = targetState;
         _stopEventPending = targetState == eChannelPlaybackState_Stopped;
+    }
+
+    void ChannelInternalState::ActivateScheduledCommand()
+    {
+        if (!_hasScheduledCommand)
+            return;
+
+        _hasScheduledCommand = false;
+
+        if (Stopped())
+            return;
+
+        if (_scheduledTarget == eChannelPlaybackState_Stopped)
+        {
+            // Paused channels have nothing to fade: they stop at once.
+            if (Paused())
+            {
+                Halt();
+                return;
+            }
+
+            if (IsFadingOutToStopped())
+                return;
+
+            // The stop overrides a pause fade the same way an immediate one does.
+            if (_channelState == eChannelPlaybackState_FadingOut)
+                _realChannel.ClearAllLayersPaused();
+
+            _channelState = eChannelPlaybackState_FadingOut;
+            _targetFadeOutState = eChannelPlaybackState_Stopped;
+            _stopEventPending = true;
+            return;
+        }
+
+        if (Paused() || IsFadingOutToStopped() || _channelState == eChannelPlaybackState_FadingOut)
+            return;
+
+        _channelState = eChannelPlaybackState_FadingOut;
+        _targetFadeOutState = eChannelPlaybackState_Paused;
     }
 
     void ChannelInternalState::SetGain(const AmReal32 gain)
@@ -565,6 +619,9 @@ namespace SparkyStudios::Audio::Amplitude
 
     void ChannelInternalState::AdvanceFrame([[maybe_unused]] AmTime deltaTime)
     {
+        if (_hasScheduledCommand && amEngine->GetAudioClock() >= _scheduledCommandFrame)
+            ActivateScheduledCommand();
+
         // Skip paused and stopped channels
         if (_channelState == eChannelPlaybackState_Paused || _channelState == eChannelPlaybackState_Stopped)
             return;
@@ -791,6 +848,9 @@ namespace SparkyStudios::Audio::Amplitude
 
     void ChannelInternalState::HaltInternal()
     {
+        // An immediate stop overrides a scheduled one.
+        _hasScheduledCommand = false;
+
         if (!Valid())
         {
             // A virtual channel (real from the start, or already demoted) has nothing rendering to fade: it stops
@@ -848,6 +908,11 @@ namespace SparkyStudios::Audio::Amplitude
 
     void ChannelInternalState::OnVoiceFadedOut(AmUInt32 mixerLayerId, eVoiceFadeTarget target, AmUInt64 frame, AmUInt64 sourcePosition)
     {
+        // The voice finished the fade of a scheduled command before the frame update noticed the clock got there.
+        if (_hasScheduledCommand && ((target == eVoiceFadeTarget::Stopped && _scheduledTarget == eChannelPlaybackState_Stopped) ||
+                                     (target == eVoiceFadeTarget::Paused && _scheduledTarget == eChannelPlaybackState_Paused)))
+            ActivateScheduledCommand();
+
         switch (target)
         {
         case eVoiceFadeTarget::Paused:
