@@ -85,8 +85,14 @@ namespace SparkyStudios::Audio::Amplitude::Tests
             for (int frame = 0; frame < 60; ++frame)
             {
                 // While the released voice renders, the channel is kept and keeps the listener it reads; Reset() would
-                // clear it (the AmbisonicRotatorNode reads it through Listener::GetOrientation()).
-                if (mixer.GetVoiceState(oldId, layers[0]) != eVoiceState::Idle && (!state->IsAlive() || !state->GetListener().Valid()))
+                // clear it (the AmbisonicRotatorNode reads it through Listener::GetOrientation()). The channel is read
+                // first: a voice still rendering after that cannot have finished before the channel was recycled. A
+                // finished voice no longer renders, even while its layer waits for a later sweep.
+                const bool recycled = !state->IsAlive() || !state->GetListener().Valid();
+                const eVoiceState voiceState = mixer.GetVoiceState(oldId, layers[0]);
+                const bool rendering =
+                    voiceState == eVoiceState::Playing || voiceState == eVoiceState::FadingOut || voiceState == eVoiceState::Ending;
+                if (recycled && rendering)
                     recycledWhileRendering = true;
 
                 amEngine->WaitUntilFrames(1);

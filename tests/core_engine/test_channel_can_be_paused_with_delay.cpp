@@ -38,14 +38,20 @@ namespace SparkyStudios::Audio::Amplitude::Tests
             channel.Pause();
             AM_EXPECT_EQ(channel.GetPlaybackState(), eChannelPlaybackState_FadingOut);
             AM_EXPECT_NOT(channel.Playing());
-            amEngine->WaitUntilFrames(2);
-            AM_EXPECT(channel.GetPlaybackState() == eChannelPlaybackState_Paused);
+            AM_EXPECT(WaitUntil(
+                [&]()
+                {
+                    return channel.GetPlaybackState() == eChannelPlaybackState_Paused;
+                }));
 
             // Test resuming with delay
             channel.Resume();
             AM_EXPECT_EQ(channel.GetPlaybackState(), eChannelPlaybackState_FadingIn);
-            amEngine->WaitUntilFrames(2);
-            AM_EXPECT_EQ(channel.GetPlaybackState(), eChannelPlaybackState_Playing);
+            AM_EXPECT(WaitUntil(
+                [&]()
+                {
+                    return channel.GetPlaybackState() == eChannelPlaybackState_Playing;
+                }));
             AM_EXPECT(channel.Playing());
         }
     };

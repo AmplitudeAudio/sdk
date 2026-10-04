@@ -47,14 +47,15 @@ namespace SparkyStudios::Audio::Amplitude::Tests
             channel.On(eChannelEvent_Stop, &CountEvent, &stops);
             AM_EXPECT(WaitUntil([&]() { return channel.Playing(); }));
 
-            // 200 ms is about 12 frames at 60 fps: the channel stays fading for most of them.
+            // The null driver renders faster than real time: the fade is measured on the audio clock, not in frames.
+            const AmUInt64 stopClock = amEngine->GetAudioClock();
             channel.Stop(200.0);
-            AM_EXPECT(channel.GetState()->GetChannelState() == eChannelPlaybackState_FadingOut);
-            amEngine->WaitUntilFrames(3);
             AM_EXPECT(channel.GetState()->GetChannelState() == eChannelPlaybackState_FadingOut);
             AM_EXPECT_EQ(0, stops.load());
 
+            // Stop fires once the voice rendered the whole fade, never before.
             AM_EXPECT(WaitUntil([&]() { return stops.load() == 1; }));
+            AM_EXPECT(amEngine->GetAudioClock() - stopClock >= amEngine->GetAudioClockRate() / 5);
             AM_EXPECT(WaitUntil([&]() { return !channel.Valid() || channel.GetState()->Stopped(); }));
         }
     };

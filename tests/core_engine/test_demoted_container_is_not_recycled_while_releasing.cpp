@@ -99,11 +99,13 @@ namespace SparkyStudios::Audio::Amplitude::Tests
             bool recycledWhileRendering = false;
             for (int frame = 0; frame < 60; ++frame)
             {
-                // A voice that finished (its layer is only destroyed on a later sweep) no longer renders.
+                // The channel is read first: a voice still rendering after that cannot have finished before the channel
+                // was recycled. A finished voice (its layer is only destroyed on a later sweep) no longer renders.
+                const bool recycled = !state->IsAlive() || !state->GetListener().Valid();
                 const eVoiceState voiceState = mixer.GetVoiceState(oldId, layers[0]);
                 const bool rendering =
                     voiceState == eVoiceState::Playing || voiceState == eVoiceState::FadingOut || voiceState == eVoiceState::Ending;
-                if (rendering && (!state->IsAlive() || !state->GetListener().Valid()))
+                if (recycled && rendering)
                     recycledWhileRendering = true;
 
                 amEngine->WaitUntilFrames(1);
