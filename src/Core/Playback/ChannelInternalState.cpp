@@ -402,6 +402,29 @@ namespace SparkyStudios::Audio::Amplitude
         if (Stopped())
             return;
 
+        // A channel that lost its real channel since the command was scheduled has nothing rendering to fade, and the
+        // voice that carried the command is gone: resolve the command here.
+        if (!Valid())
+        {
+            if (_scheduledTarget == eChannelPlaybackState_Stopped)
+            {
+                HaltInternal();
+                return;
+            }
+
+            if (!Paused() && IsAlive() && _virtualCursor.IsAnchored())
+            {
+                // Same as a demoted paused channel: the cursor is frozen here until the game resumes it.
+                const AmUInt64 now = amEngine->GetState()->mixer.GetAudioClock();
+                AnchorVirtualCursor(_virtualCursor.PositionAt(now), now);
+                _virtualPaused = true;
+                _channelState = eChannelPlaybackState_Paused;
+                TriggerOnNextFrame(eChannelEvent_Pause);
+            }
+
+            return;
+        }
+
         if (_scheduledTarget == eChannelPlaybackState_Stopped)
         {
             // Paused channels have nothing to fade: they stop at once.
