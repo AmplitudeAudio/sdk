@@ -38,8 +38,33 @@ namespace SparkyStudios::Audio::Amplitude::Tests
             AudioBuffer gains(1000, 1);
             envelope.Render(gains[0], 0, 1000);
 
+            // The two ends are rounded over 0.5 ms (24 frames) each, so the ramp has no slope corner; everything between
+            // stays the straight ramp.
+            constexpr AmReal64 length = 480.0;
+            constexpr AmReal64 corner = 24.0;
+            const auto ease = [](AmReal64 d)
+            {
+                const AmReal64 u = d / corner;
+                return corner * u * u * (2.0 - u);
+            };
+
             for (AmUInt64 k = 0; k < 480; ++k)
-                AM_EXPECT(std::abs(gains[0][k] - (1.0f - static_cast<AmReal32>(k + 1) / 480.0f)) < 1e-5f);
+            {
+                const auto x = static_cast<AmReal64>(k + 1);
+                AmReal64 warped = x;
+                if (x < corner)
+                    warped = ease(x);
+                else if (length - x < corner)
+                    warped = length - ease(length - x);
+
+                AM_EXPECT(std::abs(gains[0][k] - static_cast<AmReal32>(1.0 - warped / length)) < 1e-5f);
+            }
+
+            // No corner: the first and last steps are tiny (a plain ramp steps 1 / 480 = 2.1e-3 from the first frame), and
+            // the step never changes abruptly.
+            AM_EXPECT(1.0f - gains[0][0] < 5e-4f);
+            for (AmUInt64 k = 2; k < 480; ++k)
+                AM_EXPECT(std::abs((gains[0][k] - gains[0][k - 1]) - (gains[0][k - 1] - gains[0][k - 2])) < 1e-3f);
             for (AmUInt64 k = 479; k < 1000; ++k)
                 AM_EXPECT_EQ(0.0f, gains[0][k]);
 

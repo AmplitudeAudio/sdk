@@ -12,6 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+#include <algorithm>
 #include <cmath>
 
 #include <SparkyStudios/Audio/Amplitude/Amplitude.h>
@@ -43,11 +44,29 @@ namespace SparkyStudios::Audio::Amplitude::Tests
             AudioBuffer gains(length, 1);
             envelope.Render(gains[0], 0, length);
 
+            // The envelope rounds both ends of the fade over 0.5 ms (at most a quarter of the fade): the curve is read
+            // through that time warp, which is the identity in between.
+            const auto warp = [](AmReal64 x, AmReal64 total)
+            {
+                const AmReal64 w = std::min(24.0, total / 4.0);
+                const auto ease = [w](AmReal64 d)
+                {
+                    const AmReal64 u = d / w;
+                    return w * u * u * (2.0 - u);
+                };
+
+                if (x < w)
+                    return ease(x);
+                if (total - x < w)
+                    return total - ease(total - x);
+                return x;
+            };
+
             // Every frame, not just the knots, follows the curve: the knots are joined by cubic Hermite with the curve's
             // own slopes.
             for (AmUInt64 k = 0; k < length; ++k)
             {
-                const auto expected = static_cast<AmReal32>(reference->GetFromPercentage(static_cast<AmReal64>(k + 1) / static_cast<AmReal64>(length)));
+                const auto expected = static_cast<AmReal32>(reference->GetFromPercentage(warp(static_cast<AmReal64>(k + 1), static_cast<AmReal64>(length)) / static_cast<AmReal64>(length)));
                 AM_EXPECT(std::abs(gains[0][k] - expected) < 1e-5f);
             }
 
@@ -62,7 +81,7 @@ namespace SparkyStudios::Audio::Amplitude::Tests
             for (AmUInt64 k = 0; k < shortLength; ++k)
             {
                 const auto expected =
-                    static_cast<AmReal32>(reference->GetFromPercentage(static_cast<AmReal64>(k + 1) / static_cast<AmReal64>(shortLength)));
+                    static_cast<AmReal32>(reference->GetFromPercentage(warp(static_cast<AmReal64>(k + 1), static_cast<AmReal64>(shortLength)) / static_cast<AmReal64>(shortLength)));
                 AM_EXPECT(std::abs(shortGains[0][k] - expected) < 5e-4f); // measured 1.7e-4; a chord between knots misses by about 3e-3
             }
         }

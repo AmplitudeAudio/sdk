@@ -69,8 +69,9 @@ namespace SparkyStudios::Audio::Amplitude
         }
 
     private:
-        AmReal64 Evaluate(AmUInt64 position);
+        AmReal64 Evaluate(AmReal64 position);
         AmReal64 Slope(AmUInt64 position);
+        [[nodiscard]] AmReal64 Round(AmReal64 position) const;
         AmReal64 Interpolate(AmUInt64 position);
 
         std::shared_ptr<FaderInstance> _curve;
@@ -81,6 +82,7 @@ namespace SparkyStudios::Audio::Amplitude
         AmUInt64 _length = 0;
         AmUInt64 _position = 0;
         bool _declick = false;
+        AmReal64 _cornerFrames = 0.0;
         AmUInt64 _knotStart = std::numeric_limits<AmUInt64>::max();
         AmReal64 _knotFrom = 0.0;
         AmReal64 _knotTo = 0.0;

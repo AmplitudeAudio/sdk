@@ -49,8 +49,14 @@ namespace SparkyStudios::Audio::Amplitude::Tests
 
             for (AmUInt64 i = 0; i < 300; ++i)
                 AM_EXPECT_EQ(1.0f, run.gains[i]);
-            for (AmUInt64 k = 0; k < 480; ++k)
-                AM_EXPECT(std::abs(run.gains[300 + k] - (1.0f - static_cast<AmReal32>(k + 1) / 480.0f)) < 1e-5f);
+
+            // The fade is rounded at both ends (no slope corner), so it is not a straight ramp: it starts flat, passes the
+            // middle at one half exactly, only goes down, and ends on zero.
+            AM_EXPECT(1.0f - run.gains[300] < 5e-4f);
+            AM_EXPECT(std::abs(run.gains[300 + 239] - 0.5f) < 1e-4f);
+            for (AmUInt64 k = 1; k < 480; ++k)
+                AM_EXPECT(run.gains[300 + k] <= run.gains[300 + k - 1]);
+            AM_EXPECT_EQ(0.0f, run.gains[300 + 479]);
 
             // The source keeps playing under the fade; after it, nothing is rendered.
             AM_EXPECT_EQ(1.0f, run.source[779]);

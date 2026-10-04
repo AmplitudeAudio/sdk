@@ -472,7 +472,11 @@ namespace SparkyStudios::Audio::Amplitude
             for (AmUInt64 i = 0; i < n; ++i)
             {
                 const AmReal64 t = (static_cast<AmReal64>(_crossfadePosition + i) + 0.5) / static_cast<AmReal64>(_crossfadeFrames);
-                const AmReal64 angle = t * kHalfPi;
+
+                // The time is warped through a raised cosine, so the incoming gain starts and the outgoing gain ends with a
+                // zero slope (no corner), and the power stays constant.
+                const AmReal64 warped = 0.5 - 0.5 * std::cos(AM_PI * t);
+                const AmReal64 angle = warped * kHalfPi;
                 out[a + i] = static_cast<AmReal32>(_scratch[0][a + i] * std::cos(angle) + out[a + i] * std::sin(angle));
             }
 
