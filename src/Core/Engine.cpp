@@ -13,11 +13,14 @@
 // limitations under the License.
 
 #include <algorithm>
+#include <chrono>
 #include <filesystem>
 #include <memory>
 #include <queue>
 #include <ranges>
+#include <thread>
 #include <unordered_map>
+#include <vector>
 
 #include <SparkyStudios/Audio/Amplitude/Amplitude.h>
 
@@ -217,21 +220,71 @@ namespace SparkyStudios::Audio::Amplitude
         list->push_front(*channel);
     }
 
+    /**
+     * @brief Waits until the voices of a halted channel finished rendering.
+     *
+     * Halt() only posts a de-clicked stop: until the fade ends, the voice still reads the channel's state and its sound
+     * objects, so neither may be recycled before. The caller holds the frame thread out, so finished layers are
+     * forgotten here. The wait is bounded for an engine that is not mixing (e.g. a stopped device).
+     *
+     * @return @c true when no voice of the channel is sounding anymore.
+     */
+    bool DrainHaltedChannel(const std::shared_ptr<EngineInternalState>& state, ChannelInternalState* channel)
+    {
+        constexpr AmUInt64 kDrainTimeoutMs = 2000;
+
+        const auto begin = std::chrono::steady_clock::now();
+        while (channel->GetRealChannel().HasSoundingLayers())
+        {
+            if (std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now() - begin).count() >
+                static_cast<std::chrono::milliseconds::rep>(kDrainTimeoutMs))
+            {
+                amLogWarning("Timed out waiting for the voices of an unloaded sound to finish.");
+                return false;
+            }
+
+            std::this_thread::sleep_for(std::chrono::milliseconds(1));
+
+            // The caller holds the frame thread out, so nothing else forgets a finished layer: do what a frame would.
+            state->mixer.DispatchVoiceEvents();
+        }
+
+        return true;
+    }
+
+    /// Halts the channels whose object matches, waits for their voices to finish, then recycles them.
+    template<typename Matches>
+    void HaltAndRecycleChannels(const std::shared_ptr<EngineInternalState>& state, Matches&& matches)
+    {
+        std::vector<ChannelInternalState*> halted;
+        for (auto& channel : state->playing_channel_list)
+        {
+            if (!matches(channel))
+                continue;
+
+            channel.Halt();
+            halted.push_back(&channel);
+        }
+
+        for (ChannelInternalState* channel : halted)
+        {
+            DrainHaltedChannel(state, channel);
+            InsertIntoFreeList(state, channel);
+        }
+    }
+
     void DereferenceSound(const std::shared_ptr<EngineInternalState>& state, AmSoundID id)
     {
         if (const auto it = state->sound_map.find(id); it != state->sound_map.end())
         {
             if (it->second->GetRefCounter()->Decrement() == 0)
             {
-                for (auto channelIt = state->playing_channel_list.begin(); channelIt != state->playing_channel_list.end();)
-                {
-                    auto current = channelIt++;
-                    if (current->GetSound() == it->second.get())
+                HaltAndRecycleChannels(
+                    state,
+                    [&](const ChannelInternalState& channel)
                     {
-                        current->Halt();
-                        InsertIntoFreeList(state, &*current);
-                    }
-                }
+                        return channel.GetSound() == it->second.get();
+                    });
 
                 it->second->ReleaseReferences(state);
                 state->sound_map.erase(it);
@@ -245,15 +298,12 @@ namespace SparkyStudios::Audio::Amplitude
         {
             if (it->second->GetRefCounter()->Decrement() == 0)
             {
-                for (auto channelIt = state->playing_channel_list.begin(); channelIt != state->playing_channel_list.end();)
-                {
-                    auto current = channelIt++;
-                    if (current->GetCollection() == it->second.get())
+                HaltAndRecycleChannels(
+                    state,
+                    [&](const ChannelInternalState& channel)
                     {
-                        current->Halt();
-                        InsertIntoFreeList(state, &*current);
-                    }
-                }
+                        return channel.GetCollection() == it->second.get();
+                    });
 
                 it->second->ReleaseReferences(state);
                 state->collection_map.erase(it);
@@ -267,15 +317,12 @@ namespace SparkyStudios::Audio::Amplitude
         {
             if (it->second->GetRefCounter()->Decrement() == 0)
             {
-                for (auto channelIt = state->playing_channel_list.begin(); channelIt != state->playing_channel_list.end();)
-                {
-                    auto current = channelIt++;
-                    if (current->GetSwitchContainer() == it->second.get())
+                HaltAndRecycleChannels(
+                    state,
+                    [&](const ChannelInternalState& channel)
                     {
-                        current->Halt();
-                        InsertIntoFreeList(state, &*current);
-                    }
-                }
+                        return channel.GetSwitchContainer() == it->second.get();
+                    });
 
                 it->second->ReleaseReferences(state);
                 state->switch_container_map.erase(it);
@@ -3032,7 +3079,9 @@ namespace SparkyStudios::Audio::Amplitude
                 {
                     amLogError("Failed to play switch container: %s.", handle->GetName().c_str());
 
-                    // Error playing the sound, put it back in the free list.
+                    // Error playing the sound, put it back in the free list. A voice that started and was discarded may still
+                    // be in the mix being rendered: let that mix end before the channel state it reads is reset.
+                    _state->mixer.Wait();
                     InsertIntoFreeList(_state, newChannel);
                 }
         };
@@ -3116,7 +3165,9 @@ namespace SparkyStudios::Audio::Amplitude
                 {
                     amLogError("Failed to play collection: %s.", handle->GetName().c_str());
 
-                    // Error playing the sound, put it back in the free list.
+                    // Error playing the sound, put it back in the free list. A voice that started and was discarded may still
+                    // be in the mix being rendered: let that mix end before the channel state it reads is reset.
+                    _state->mixer.Wait();
                     InsertIntoFreeList(_state, newChannel);
                 }
         };
@@ -3199,7 +3250,9 @@ namespace SparkyStudios::Audio::Amplitude
                 {
                     amLogError("Failed to play sound: %s.", handle->GetName().c_str());
 
-                    // Error playing the sound, put it back in the free list.
+                    // Error playing the sound, put it back in the free list. A voice that started and was discarded may still
+                    // be in the mix being rendered: let that mix end before the channel state it reads is reset.
+                    _state->mixer.Wait();
                     InsertIntoFreeList(_state, newChannel);
                 }
         };

@@ -54,7 +54,10 @@ namespace SparkyStudios::Audio::Amplitude
     {
         const auto* layer = GetLayer();
 
-        const auto& listener = layer->GetListener();
+        // Read once: the channel's listener is reset when its channel is recycled, which can happen after ShouldSkip().
+        const Listener listener = layer->GetListener();
+        if (!listener.Valid())
+            return nullptr;
 
         // The orientation processor moves scene directions by the inverse of the supplied orientation,
         // and the SDK's ears-centered field (ForHRTF +90 deg azimuth) reverses the rotation sense,
