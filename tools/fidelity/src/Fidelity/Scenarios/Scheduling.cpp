@@ -195,7 +195,8 @@ namespace SparkyStudios::Audio::Amplitude::Fidelity
                 const Signal x = ChannelSignal(stopOnly, 0);
                 const Signal envelope = TimingEnvelope(x);
                 const double plateau = PlateauLevel(envelope, *frame - Seconds(0.3, fs), *frame - Seconds(0.02, fs));
-                const double half = SustainedCrossing(envelope, 0.5 * plateau, static_cast<double>(*frame - Seconds(0.01, fs)), false, kTimingHold);
+                const double half =
+                    SustainedCrossing(envelope, 0.5 * plateau, static_cast<double>(*frame - Seconds(0.01, fs)), false, kTimingHold);
                 if (plateau <= 0.0 || half < 0.0)
                 {
                     out.error = "cannot locate the scheduled stop";

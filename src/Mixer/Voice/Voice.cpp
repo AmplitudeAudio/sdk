@@ -307,7 +307,7 @@ namespace SparkyStudios::Audio::Amplitude
             else if (_state == eVoiceState::Paused || _state == eVoiceState::Scheduled)
             {
                 // Cancel any crossfade left over from a seek that armed before the voice stopped sounding: promote
-                // the incoming stream first if it had already become dominant, per the same rule RenderPrimary uses.
+                // the incoming stream first if it had already become dominant (at or past the crossfade's midpoint, as in ArmSeek).
                 if (_crossfadeRemaining > 0)
                 {
                     if (_crossfadePosition >= _crossfadeFrames / 2)

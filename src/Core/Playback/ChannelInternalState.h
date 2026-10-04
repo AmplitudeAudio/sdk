@@ -61,7 +61,6 @@ namespace SparkyStudios::Audio::Amplitude
             , _sound(nullptr)
             , _playingSwitchContainerStateId(kAmInvalidObjectId)
             , _previousSwitchContainerStateId(kAmInvalidObjectId)
-            , _fader(nullptr)
             , _targetFadeOutState(eChannelPlaybackState_Stopped)
             , _fadeInEndTime(0.0)
             , _stopEventPending(false)
@@ -672,8 +671,7 @@ namespace SparkyStudios::Audio::Amplitude
         AmObjectID _playingSwitchContainerStateId;
         AmObjectID _previousSwitchContainerStateId;
 
-        // The sound fader of this channel.
-        std::shared_ptr<FaderInstance> _fader;
+        // The name of the fader that shapes this channel's transport fades (the voice constructs it).
         AmString _faderName;
 
         // The target state of the fade out transition. Must be either Paused or Stopped.

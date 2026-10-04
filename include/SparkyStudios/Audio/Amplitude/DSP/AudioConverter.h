@@ -108,16 +108,25 @@ namespace SparkyStudios::Audio::Amplitude
 
         /**
          * @brief Sets the resampling ratio (input frames per output frame), pitch and speed included.
+         *
+         * @param[in] inputPerOutput The number of input frames consumed per output frame. Non-finite or non-positive values
+         * mean 1.
          */
         void SetRatio(AmReal64 inputPerOutput);
 
         /**
          * @brief Returns the exact number of input frames needed to produce the given output frame count.
+         *
+         * @param[in] outputFrameCount The number of output frames to produce.
+         *
+         * @return The number of input frames the next @c Process() call consumes to produce them.
          */
         [[nodiscard]] AmUInt64 GetInputFramesNeeded(AmUInt64 outputFrameCount) const;
 
         /**
          * @brief Returns the resampler group delay in input frames.
+         *
+         * @return The number of input frames between the first input frame and the first output frame that reflects it.
          */
         [[nodiscard]] AmUInt64 GetLatency() const;
 

@@ -27,8 +27,8 @@
 namespace SparkyStudios::Audio::Amplitude
 {
     /**
-     * @brief Audio-rate transport gain: the de-click is a raised cosine evaluated on every frame; fader curves are evaluated every 32 frames and
-     * joined by cubic Hermite interpolation.
+     * @brief Audio-rate transport gain: the de-click is a raised cosine evaluated on every frame; fader curves are evaluated every 32
+     * frames and joined by cubic Hermite interpolation.
      *
      * @c Initialize() runs on the game thread; the rest is audio-thread safe.
      */

@@ -715,6 +715,7 @@ namespace SparkyStudios::Audio::Amplitude
         // Destroying a layer deletes its sound instance, which may release a sound and halt channels: work on a copy so
         // a release made meanwhile lands in the list for the next sweep.
         std::vector<AmUInt32> pending;
+        pending.reserve(_pendingDestroys.capacity());
         pending.swap(_pendingDestroys);
 
         for (const AmUInt32 index : pending)
@@ -802,7 +803,7 @@ namespace SparkyStudios::Audio::Amplitude
 
         AmplimixLayerImpl* layer = GetLayer(event.layer);
 
-        // A layer whose release was pushed may be destroyed by the audio thread at any time: never read its sound.
+        // A layer whose release was requested is destroyed on the game thread at the next sweep: never read its sound.
         if (layer->id != event.id || layer->slot.load(std::memory_order_acquire) != eLayerSlot::Live || layer->releaseRequested ||
             layer->snd == nullptr)
             return;

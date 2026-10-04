@@ -56,7 +56,6 @@ namespace SparkyStudios::Audio::Amplitude
         _switchContainer = nullptr;
         _collection = nullptr;
         _sound = nullptr;
-        _fader = nullptr;
         _faderName = "";
         _targetFadeOutState = eChannelPlaybackState_Stopped;
         _fadeInEndTime = 0.0;
@@ -1054,10 +1053,7 @@ namespace SparkyStudios::Audio::Amplitude
 
         const SwitchContainerDefinition* definition = _switchContainer->GetDefinition();
 
-        _fader = nullptr;
-
         _faderName = definition->fader()->str();
-        _fader = Fader::Construct(_faderName);
 
         _channelState = eChannelPlaybackState_Playing;
 
@@ -1083,7 +1079,6 @@ namespace SparkyStudios::Audio::Amplitude
                                            : static_cast<SoundImpl*>(_collection->SelectFromWorld(_realChannel._playedSounds));
 
         _faderName = definition->fader()->str();
-        _fader = Fader::Construct(_faderName);
 
         if (_channelState != eChannelPlaybackState_FadingIn && _channelState != eChannelPlaybackState_FadingOut)
             _channelState = eChannelPlaybackState_Playing;
@@ -1112,7 +1107,6 @@ namespace SparkyStudios::Audio::Amplitude
         const SoundDefinition* definition = _sound->GetDefinition();
 
         _faderName = definition->fader()->str();
-        _fader = Fader::Construct(_faderName);
 
         _channelState = eChannelPlaybackState_Playing;
 

@@ -29,7 +29,8 @@ namespace SparkyStudios::Audio::Amplitude::Tests
 {
     namespace
     {
-        std::vector<AmReal32> PullAll(const AudioBuffer& source, AmUInt32 sourceRate, AmUInt32 outputRate, AmUInt64 block, AmUInt64 total, bool& exact)
+        std::vector<AmReal32> PullAll(
+            const AudioBuffer& source, AmUInt32 sourceRate, AmUInt32 outputRate, AmUInt64 block, AmUInt64 total, bool& exact)
         {
             SourceReader reader;
             reader.Initialize(MemorySource(source, sourceRate), 0, 0, true, 0);
@@ -66,7 +67,8 @@ namespace SparkyStudios::Audio::Amplitude::Tests
             {
                 AudioBuffer source(4000, 1);
                 for (AmUInt64 i = 0; i < 4000; ++i)
-                    source[0][i] = static_cast<AmReal32>(0.5 * std::sin(2.0 * 3.14159265358979323846 * 997.0 * static_cast<AmReal64>(i) / rates[0]));
+                    source[0][i] =
+                        static_cast<AmReal32>(0.5 * std::sin(2.0 * 3.14159265358979323846 * 997.0 * static_cast<AmReal64>(i) / rates[0]));
 
                 bool exact = false;
                 const std::vector<AmReal32> expected = PullAll(source, rates[0], rates[1], kTotal, kTotal, exact);

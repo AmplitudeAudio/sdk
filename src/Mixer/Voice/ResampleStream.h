@@ -62,7 +62,8 @@ namespace SparkyStudios::Audio::Amplitude
          *
          * @return @c true on success, @c false if any parameter is invalid or the resampler is not registered.
          */
-        bool Initialize(const AmString& resamplerName, AmUInt32 sourceRate, AmUInt32 outputRate, AmUInt16 sourceChannels, AmUInt64 maxBlockFrames);
+        bool Initialize(
+            const AmString& resamplerName, AmUInt32 sourceRate, AmUInt32 outputRate, AmUInt16 sourceChannels, AmUInt64 maxBlockFrames);
 
         /**
          * @brief Sets pitch times playback speed; 1 plays at the native rate. Non-finite or non-positive values mean 1.

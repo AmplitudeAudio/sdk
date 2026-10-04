@@ -186,8 +186,7 @@ namespace SparkyStudios::Audio::Amplitude
     {
         AMPLITUDE_ASSERT(channelCount > 0);
 
-        // This method is total by contract, and AmplimixImpl::UpdatePitch can reach it with a rate of zero in
-        // release builds, where the assertions above are compiled out. Clamp instead of asserting.
+        // A rate of zero can reach this in release builds, where the assertions above are compiled out: clamp it.
         sampleRateIn = AM_MAX(sampleRateIn, 1U);
         sampleRateOut = AM_MAX(sampleRateOut, 1U);
 

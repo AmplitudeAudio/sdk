@@ -36,7 +36,8 @@ namespace SparkyStudios::Audio::Amplitude::Tests
 
         // Pulls totalOut frames in blocks of blockSize, feeding exactly GetInputFramesNeeded() frames each call and
         // re-feeding whatever was not consumed, like a FIFO would.
-        bool Stream(ResamplerInstance& r, const std::vector<AmReal32>& source, AmUInt64 blockSize, AmUInt64 totalOut, std::vector<AmReal32>& out)
+        bool Stream(
+            ResamplerInstance& r, const std::vector<AmReal32>& source, AmUInt64 blockSize, AmUInt64 totalOut, std::vector<AmReal32>& out)
         {
             AmUInt64 read = 0;
             out.clear();

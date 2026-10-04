@@ -66,7 +66,8 @@ namespace SparkyStudios::Audio::Amplitude::Tests
             // own slopes.
             for (AmUInt64 k = 0; k < length; ++k)
             {
-                const auto expected = static_cast<AmReal32>(reference->GetFromPercentage(warp(static_cast<AmReal64>(k + 1), static_cast<AmReal64>(length)) / static_cast<AmReal64>(length)));
+                const auto expected = static_cast<AmReal32>(reference->GetFromPercentage(
+                    warp(static_cast<AmReal64>(k + 1), static_cast<AmReal64>(length)) / static_cast<AmReal64>(length)));
                 AM_EXPECT(std::abs(gains[0][k] - expected) < 1e-5f);
             }
 
@@ -80,8 +81,8 @@ namespace SparkyStudios::Audio::Amplitude::Tests
 
             for (AmUInt64 k = 0; k < shortLength; ++k)
             {
-                const auto expected =
-                    static_cast<AmReal32>(reference->GetFromPercentage(warp(static_cast<AmReal64>(k + 1), static_cast<AmReal64>(shortLength)) / static_cast<AmReal64>(shortLength)));
+                const auto expected = static_cast<AmReal32>(reference->GetFromPercentage(
+                    warp(static_cast<AmReal64>(k + 1), static_cast<AmReal64>(shortLength)) / static_cast<AmReal64>(shortLength)));
                 AM_EXPECT(std::abs(shortGains[0][k] - expected) < 5e-4f); // measured 1.7e-4; a chord between knots misses by about 3e-3
             }
         }
