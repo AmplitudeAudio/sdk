@@ -27,8 +27,8 @@
 #include <unistd.h>
 #endif
 
-#include <csignal>
 #include <cmath>
+#include <csignal>
 #include <thread>
 
 namespace SparkyStudios::Audio::Amplitude::Thread
@@ -132,6 +132,30 @@ namespace SparkyStudios::Audio::Amplitude::Thread
         AmThreadData* data;
     };
 
+#if AM_PLATFORM_ANDROID
+    namespace
+    {
+        constexpr int kTerminateSignal = SIGUSR2;
+
+        void ExitThreadOnSignal(int)
+        {
+            pthread_exit(nullptr);
+        }
+
+        void InstallTerminateHandler()
+        {
+            static const bool installed = []()
+            {
+                struct sigaction action = {};
+                action.sa_handler = ExitThreadOnSignal;
+                sigemptyset(&action.sa_mask);
+                return sigaction(kTerminateSignal, &action, nullptr) == 0;
+            }();
+            AM_UNUSED(installed);
+        }
+    } // namespace
+#endif
+
     static AmVoidPtr ThreadFunc(AmVoidPtr d)
     {
         auto* p = static_cast<AmThreadData*>(d);
@@ -202,8 +226,8 @@ namespace SparkyStudios::Audio::Amplitude::Thread
         auto* threadHandleData = static_cast<AmThreadHandleData*>(threadHandle);
 
 #if AM_PLATFORM_ANDROID
-        const auto tid = static_cast<pid_t>(threadHandleData->thread);
-        syscall(__NR_tgkill, tid, tid, SIGKILL);
+        InstallTerminateHandler();
+        pthread_kill(threadHandleData->thread, kTerminateSignal);
 #else
         pthread_cancel(threadHandleData->thread);
 #endif
