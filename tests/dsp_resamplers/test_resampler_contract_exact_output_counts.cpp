@@ -32,29 +32,36 @@ namespace SparkyStudios::Audio::Amplitude::Tests
             constexpr AmUInt32 kRates[][2] = { { 44100, 48000 }, { 48000, 44100 }, { 22050, 48000 }, { 96000, 48000 }, { 48000, 48000 } };
             constexpr AmUInt64 kBlocks[] = { 1, 7, 256, 1024, 4096 };
 
-            for (const auto& rates : kRates)
+            // The sinc presets read up to 40 zero crossings at the 4x stretch cap (161 frames) ahead of the next
+            // output's centre, so the input buffer has to leave room for the read-ahead on top of the block itself.
+            constexpr AmUInt64 kReadAheadHeadroom = 256;
+
+            for (const char* name : kResamplerPresets)
             {
-                for (const AmUInt64 block : kBlocks)
+                for (const auto& rates : kRates)
                 {
-                    auto instance = Resampler::Construct("default");
-                    instance->Initialize(1, rates[0], rates[1]);
-
-                    AudioBuffer input(block * 4 + 64, 1);
-                    AudioBuffer output(block, 1);
-
-                    for (int call = 0; call < 8; ++call)
+                    for (const AmUInt64 block : kBlocks)
                     {
-                        const AmUInt64 needed = instance->GetInputFramesNeeded(block);
-                        AM_EXPECT(needed <= input.GetFrameCount());
+                        auto instance = Resampler::Construct(name);
+                        instance->Initialize(1, rates[0], rates[1]);
 
-                        for (AmUInt64 i = 0; i < needed; ++i)
-                            input[0][i] = 0.25f;
+                        AudioBuffer input(block * 4 + kReadAheadHeadroom, 1);
+                        AudioBuffer output(block, 1);
 
-                        AmUInt64 inFrames = needed;
-                        AmUInt64 outFrames = block;
-                        AM_EXPECT(instance->Process(input, inFrames, output, outFrames));
-                        AM_EXPECT_EQ(block, outFrames);
-                        AM_EXPECT(inFrames <= needed);
+                        for (int call = 0; call < 8; ++call)
+                        {
+                            const AmUInt64 needed = instance->GetInputFramesNeeded(block);
+                            AM_EXPECT(needed <= input.GetFrameCount());
+
+                            for (AmUInt64 i = 0; i < needed; ++i)
+                                input[0][i] = 0.25f;
+
+                            AmUInt64 inFrames = needed;
+                            AmUInt64 outFrames = block;
+                            AM_EXPECT(instance->Process(input, inFrames, output, outFrames));
+                            AM_EXPECT_EQ(block, outFrames);
+                            AM_EXPECT(inFrames <= needed);
+                        }
                     }
                 }
             }

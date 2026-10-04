@@ -78,27 +78,34 @@ namespace SparkyStudios::Audio::Amplitude::Tests
             constexpr AmUInt64 kBlocks[] = { 1, 7, 256, 1023 };
             constexpr AmUInt64 kTotal = 8192;
 
-            for (const auto& rates : kRates)
+            for (const char* name : kResamplerPresets)
             {
-                const std::vector<AmReal32> source = Sine(kTotal * 3, 997.0, rates[0]);
-
-                auto reference = Resampler::Construct("default");
-                reference->Initialize(1, rates[0], rates[1]);
-                std::vector<AmReal32> expected;
-                AM_EXPECT(Stream(*reference, source, kTotal, kTotal, expected));
-
-                for (const AmUInt64 block : kBlocks)
+                for (const auto& rates : kRates)
                 {
-                    auto instance = Resampler::Construct("default");
-                    instance->Initialize(1, rates[0], rates[1]);
-                    std::vector<AmReal32> actual;
-                    AM_EXPECT(Stream(*instance, source, block, kTotal, actual));
+                    const std::vector<AmReal32> source = Sine(kTotal * 3, 997.0, rates[0]);
 
-                    AmReal32 worst = 0.0f;
-                    for (AmSize i = 0; i < kTotal; ++i)
-                        worst = std::max(worst, std::abs(actual[i] - expected[i]));
+                    auto reference = Resampler::Construct(name);
+                    reference->Initialize(1, rates[0], rates[1]);
+                    std::vector<AmReal32> expected;
+                    AM_EXPECT(Stream(*reference, source, kTotal, kTotal, expected));
 
-                    AM_EXPECT(worst < 1e-6f);
+                    for (const AmUInt64 block : kBlocks)
+                    {
+                        auto instance = Resampler::Construct(name);
+                        instance->Initialize(1, rates[0], rates[1]);
+                        std::vector<AmReal32> actual;
+                        AM_EXPECT(Stream(*instance, source, block, kTotal, actual));
+
+                        AM_EXPECT_EQ(expected.size(), actual.size());
+
+                        AmReal32 worst = 0.0f;
+                        const AmSize compared = std::min<AmSize>(kTotal, std::min(expected.size(), actual.size()));
+                        for (AmSize i = 0; i < compared; ++i)
+                            worst = std::max(worst, std::abs(actual[i] - expected[i]));
+
+                        AM_EXPECT(compared == kTotal);
+                        AM_EXPECT(worst < 1e-6f);
+                    }
                 }
             }
         }
