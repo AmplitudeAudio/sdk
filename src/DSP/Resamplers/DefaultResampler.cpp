@@ -14,6 +14,7 @@
 // limitations under the License.
 
 #include <algorithm>
+#include <cmath>
 #include <numeric>
 
 #include <SparkyStudios/Audio/Amplitude/Math/Utils.h>
@@ -53,14 +54,13 @@ namespace SparkyStudios::Audio::Amplitude
         AMPLITUDE_ASSERT(input.GetChannelCount() == _channelCount);
         AMPLITUDE_ASSERT(output.GetChannelCount() == _channelCount);
 
-        // AMPLITUDE_ASSERT(output.GetFrameCount() >= GetExpectedOutputFrames(inputFrames));
-        // AMPLITUDE_ASSERT(output.GetFrameCount() <= GetMaxOutputLength(inputFrames));
-
         output.Clear();
 
         if (IsIdentity())
         {
-            output = input;
+            const AmUInt64 frames = AM_MIN(inputFrames, outputFrames);
+            AudioBuffer::Copy(input, 0, output, 0, frames);
+            inputFrames = outputFrames = frames;
             return true;
         }
 
@@ -114,118 +114,95 @@ namespace SparkyStudios::Audio::Amplitude
         }
 
         AMPLITUDE_ASSERT(inputSample >= inputFrames || outputSample >= outputFrames);
-        _lastProcessedSample = AM_MAX(inputSample, inputFrames) - inputFrames;
 
-        // Take care of the state buffer.
-        if (const AmInt64 remainingSamples = static_cast<AmInt64>(_coefficientsPerPhase) - 1 - static_cast<AmInt64>(inputFrames);
-            remainingSamples > 0)
-        {
-            for (AmUInt64 channel = 0; channel < _channelCount; ++channel)
-            {
-                // Copy end of the state buffer to the beginning.
-                auto& stateChannel = _state[channel];
-                AMPLITUDE_ASSERT(static_cast<AmInt64>(stateChannel.size()) >= remainingSamples);
-                std::copy_n(stateChannel.end() - remainingSamples, remainingSamples, stateChannel.begin());
+        // Only the frames before inputSample are consumed: inputSample itself is the newest frame of the next output.
+        const AmUInt64 consumed = AM_MIN(inputSample, inputFrames);
+        PushHistory(input, consumed);
+        _lastProcessedSample = inputSample - consumed;
 
-                // Then copy input to the end of the buffer.
-                std::copy_n(input[channel].begin(), inputFrames, stateChannel.end() - inputFrames);
-            }
-        }
-        else
-        {
-            for (AmUInt64 channel = 0; channel < _channelCount; ++channel)
-            {
-                AMPLITUDE_ASSERT(_coefficientsPerPhase > 0U);
-                AMPLITUDE_ASSERT(input[channel].size() > _coefficientsPerPhase - 1);
-
-                // Copy the last of the input samples into the state buffer.
-                std::copy_n(input[channel].end() - (_coefficientsPerPhase - 1), _coefficientsPerPhase - 1, _state[channel].begin());
-            }
-        }
-
-        inputFrames = inputSample;
+        inputFrames = consumed;
         outputFrames = outputSample;
 
         return true;
     }
 
-    AmUInt64 DefaultResamplerInstance::GetMaxOutputLength(AmUInt64 inputLength) const
+    void DefaultResamplerInstance::PushHistory(const AudioBuffer& input, AmUInt64 frames)
     {
-        if (IsIdentity())
-            return inputLength;
+        const AmUInt64 historyFrames = _coefficientsPerPhase > 0 ? _coefficientsPerPhase - 1 : 0;
+        if (historyFrames == 0 || frames == 0)
+            return;
 
-        AMPLITUDE_ASSERT(_downRate > 0 && _upRate > 0);
+        for (AmUInt64 channel = 0; channel < _channelCount; ++channel)
+        {
+            auto& state = _state[channel];
 
-        // The + 1 takes care of the case where:
-        // (_timeModuloUpRate + _upRate * _lastProcessedSample) < ((inputLength * _upRate) % _downRate)
-        // The output length will be equal to the return value or the return value -1.
-        return (inputLength * _upRate) / _downRate + 1;
+            if (frames >= historyFrames)
+            {
+                std::copy_n(input[channel].begin() + (frames - historyFrames), historyFrames, state.begin());
+                continue;
+            }
+
+            // Shift the kept history left, then append the new frames.
+            std::copy(state.begin() + frames, state.begin() + historyFrames, state.begin());
+            std::copy_n(input[channel].begin(), frames, state.begin() + (historyFrames - frames));
+        }
     }
 
-    AmUInt64 DefaultResamplerInstance::GetExpectedOutputFrames(AmUInt64 inputLength) const
+    AmUInt64 DefaultResamplerInstance::GetInputFramesNeeded(AmUInt64 outputFrameCount) const
     {
+        if (outputFrameCount == 0)
+            return 0;
+
         if (IsIdentity())
-            return inputLength;
+            return outputFrameCount;
 
-        const AmUInt64 maxLength = GetMaxOutputLength(inputLength);
-        if ((_timeModuloUpRate + _upRate * _lastProcessedSample) >= ((inputLength * _upRate) % _downRate))
-            return maxLength - 1;
-
-        return maxLength;
+        // Output j uses input frames up to _lastProcessedSample + floor((_timeModuloUpRate + j * _downRate) / _upRate).
+        const AmUInt64 newest = _lastProcessedSample + (_timeModuloUpRate + (outputFrameCount - 1) * _downRate) / _upRate;
+        return newest + 1;
     }
 
-    AmUInt64 DefaultResamplerInstance::GetRequiredInputFrames(AmUInt64 outputLength) const
+    AmUInt64 DefaultResamplerInstance::GetLatency() const
     {
-        if (IsIdentity())
-            return outputLength;
+        if (IsIdentity() || _upRate == 0)
+            return 0;
 
-        return (outputLength * _downRate) / _upRate;
+        // The sinc is centred on filterLength / 2 taps at the up-sampled rate.
+        return (_filterLength / 2 + _upRate - 1) / _upRate;
+    }
+
+    void DefaultResamplerInstance::SetRatio(AmReal64 inputPerOutput)
+    {
+        if (!std::isfinite(inputPerOutput) || inputPerOutput <= 0.0)
+            inputPerOutput = 1.0;
+
+        constexpr AmReal64 kScale = static_cast<AmReal64>(1ULL << 30);
+        const auto out = static_cast<AmUInt64>(kScale);
+        const auto in = AM_MAX(static_cast<AmUInt64>(std::llround(inputPerOutput * kScale)), 1ULL);
+
+        ApplyRational(ApproximateRational(out, in, kMaxPolyphaseRate));
     }
 
     void DefaultResamplerInstance::Initialize(AmUInt16 channelCount, AmUInt32 sampleRateIn, AmUInt32 sampleRateOut)
     {
         AMPLITUDE_ASSERT(channelCount > 0);
 
-        // This method is total by contract, and AmplimixImpl::UpdatePitch can reach it with a rate of zero in
-        // release builds, where the assertions above are compiled out. Clamp instead of asserting.
+        // A rate of zero can reach this in release builds, where the assertions above are compiled out: clamp it.
         sampleRateIn = AM_MAX(sampleRateIn, 1U);
         sampleRateOut = AM_MAX(sampleRateOut, 1U);
-
-        // Reduce the rate pair, approximating it when it cannot be represented within the filter budget.
-        // This keeps max(_upRate, _downRate) <= kMaxPolyphaseRate, which bounds every buffer written by
-        // GenerateInterpolatingFilter() and ArrangeFilterAsPolyphase().
-        const AmRational ratio = ApproximateRational(sampleRateOut, sampleRateIn, kMaxPolyphaseRate);
-
-        const AmUInt64 destination = ratio.numerator;
-        const AmUInt64 source = ratio.denominator;
 
         // Reported unconditionally: two different rate pairs can reduce (or snap) to the same ratio, and the
         // accessors are documented to return what the caller requested.
         _sampleRateIn = sampleRateIn;
         _sampleRateOut = sampleRateOut;
 
-        // Obtain the size of the _state before _coefficientsPerPhase is updated in GenerateInterpolatingFilter().
+        // Obtain the size of the _state before _coefficientsPerPhase is updated in ApplyRational().
         const AmUInt64 oldStateSize = _coefficientsPerPhase > 0 ? _coefficientsPerPhase - 1 : 0;
-        if ((destination != _upRate) || (source != _downRate))
-        {
-            _upRate = destination;
-            _downRate = source;
 
-            if (IsIdentity())
-            {
-                _channelCount = channelCount;
-                return;
-            }
+        // Reduce the rate pair, approximating it when it cannot be represented within the filter budget.
+        // This keeps max(_upRate, _downRate) <= kMaxPolyphaseRate, which bounds every buffer written by
+        // GenerateInterpolatingFilter() and ArrangeFilterAsPolyphase().
+        ApplyRational(ApproximateRational(sampleRateOut, sampleRateIn, kMaxPolyphaseRate));
 
-            // Create transposed multirate filters from sincs.
-            GenerateInterpolatingFilter(sampleRateIn);
-
-            // Reset the time variable as it may be longer than the new filter length if
-            // we switched from upsampling to downsampling.
-            _timeModuloUpRate = 0;
-        }
-
-        // Update the state buffer.
         if (_channelCount != channelCount)
         {
             _channelCount = channelCount;
@@ -233,16 +210,35 @@ namespace SparkyStudios::Audio::Amplitude
         }
     }
 
+    void DefaultResamplerInstance::ApplyRational(const AmRational& ratio)
+    {
+        const AmUInt64 destination = ratio.numerator;
+        const AmUInt64 source = ratio.denominator;
+
+        if (destination == _upRate && source == _downRate)
+            return;
+
+        const AmUInt64 oldStateSize = _coefficientsPerPhase > 0 ? _coefficientsPerPhase - 1 : 0;
+
+        _upRate = destination;
+        _downRate = source;
+
+        if (IsIdentity())
+            return;
+
+        // The cutoff depends on the ratio only: any rate works as the reference here.
+        GenerateInterpolatingFilter(_upRate * 1000);
+        _timeModuloUpRate = 0;
+
+        if (_channelCount > 0)
+            InitializeStateBuffer(oldStateSize);
+    }
+
     void DefaultResamplerInstance::Reset()
     {
         _timeModuloUpRate = 0;
         _lastProcessedSample = 0;
         _state.Clear();
-    }
-
-    void DefaultResamplerInstance::SetSampleRate(AmUInt32 sampleRateIn, AmUInt32 sampleRateOut)
-    {
-        Initialize(_channelCount, sampleRateIn, sampleRateOut);
     }
 
     void DefaultResamplerInstance::Clear()
@@ -253,6 +249,7 @@ namespace SparkyStudios::Audio::Amplitude
         _downRate = 0;
         _channelCount = 0;
         _coefficientsPerPhase = 0;
+        _filterLength = 0;
         _transposedFilterCoefficients.Clear();
         _temporaryFilterCoefficients.Clear();
 
@@ -297,6 +294,7 @@ namespace SparkyStudios::Audio::Amplitude
 
         // Defense in depth: Initialize() snaps the rate pair so this clamp cannot trigger.
         filterLength = AM_MIN(filterLength, static_cast<AmUInt64>(_temporaryFilterCoefficients.GetFrameCount()));
+        _filterLength = filterLength;
 
         auto* filterChannel = &_temporaryFilterCoefficients[0];
         filterChannel->clear();

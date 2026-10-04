@@ -68,7 +68,7 @@ namespace SparkyStudios::Audio::Amplitude::Fidelity
                     return;
                 }
 
-                const std::uint64_t begin = kLeadIn + Seconds(0.05, fs);
+                const std::uint64_t begin = OnsetFrame(capture, kLeadIn) + Seconds(0.05, fs);
                 AddIntegrityMetrics(out, capture, begin, duration - 2048);
                 AddClickMetrics(out, capture, 4000.0, begin, duration);
 

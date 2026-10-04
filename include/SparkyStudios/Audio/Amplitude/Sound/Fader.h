@@ -198,6 +198,13 @@ namespace SparkyStudios::Audio::Amplitude
          */
         void Start(AmTime time = 0.0);
 
+        /**
+         * @brief Gets the duration of the transition.
+         *
+         * @return The transition duration in milliseconds.
+         */
+        [[nodiscard]] AmTime GetDuration() const;
+
     protected:
         /**
          * @brief Value to fade from (origin value).

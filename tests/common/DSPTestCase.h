@@ -71,30 +71,33 @@ namespace SparkyStudios::Audio::Amplitude::Tests
                     instance.Initialize(channelCount, sourceSampleRate, targetSampleRate);
 
                     AudioBuffer inputBuffer(inputFrames, channelCount);
-                    const AmUInt64 expectedOutputFrames = instance.GetExpectedOutputFrames(inputFrames);
 
-                    if (expectedOutputFrames == 0)
+                    // Upper bound on how many output frames these input frames could ever produce.
+                    const AmUInt64 capacity = inputFrames * targetSampleRate / sourceSampleRate + 2;
+
+                    if (capacity == 0)
                         return false;
 
-                    AudioBuffer outputBuffer(expectedOutputFrames, channelCount);
+                    AudioBuffer outputBuffer(capacity, channelCount);
 
                     AmUInt64 processedInputFrames = inputFrames;
-                    AmUInt64 processedOutputFrames = expectedOutputFrames;
+                    AmUInt64 processedOutputFrames = capacity;
 
                     if (!instance.Process(inputBuffer, processedInputFrames, outputBuffer, processedOutputFrames))
                         return false;
 
-                    if (processedOutputFrames > expectedOutputFrames)
+                    if (processedOutputFrames > capacity)
                         return false;
                 }
             }
 
-            // Pitch path: ratios expressed in thousandths, as AmplimixImpl::UpdatePitch does.
+            // Pitch path: ratios expressed in thousandths. Initialize() is used rather than SetRatio(): the point of
+            // this sweep is surviving hostile rate pairs, which take its clamping path.
             for (AmUInt32 s = 1; s <= 4000; ++s)
-                instance.SetSampleRate(s, 1000);
+                instance.Initialize(channelCount, s, 1000);
 
             // Degenerate input the mixer can produce in release builds.
-            instance.SetSampleRate(0, 1000);
+            instance.Initialize(channelCount, 0, 1000);
 
             return true;
         }

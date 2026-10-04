@@ -29,17 +29,23 @@ namespace SparkyStudios::Audio::Amplitude
     constexpr AmUInt16 kAmplimixMaxOutputChannels = 2;
 
     /**
-     * @brief Accumulates @p frames frames of @p in into @p out with a per-channel ramped gain.
+     * @brief Accumulates @p frames frames of @p in into @p out, starting at @p outOffset, with a per-channel ramped gain.
      *
      * Advances @p processors: call once per layer per block.
      */
     AM_INLINE void MixLayerWithGain(
-        GainProcessor* processors, AmUInt16 channelCount, AmReal32 gain, const AudioBuffer& in, AudioBuffer& out, AmSize frames)
+        GainProcessor* processors,
+        AmUInt16 channelCount,
+        AmReal32 gain,
+        const AudioBuffer& in,
+        AudioBuffer& out,
+        AmSize outOffset,
+        AmSize frames)
     {
         AMPLITUDE_ASSERT(channelCount <= kAmplimixMaxOutputChannels);
 
         for (AmUInt16 c = 0; c < channelCount; ++c)
-            processors[c].ApplyGain(gain, in.GetChannel(c), 0, out.GetChannel(c), 0, frames, true);
+            processors[c].ApplyGain(gain, in.GetChannel(c), 0, out.GetChannel(c), outOffset, frames, true);
     }
 
     /**
@@ -49,14 +55,20 @@ namespace SparkyStudios::Audio::Amplitude
      * Call @c AdvanceLayerGain() once after all instances.
      */
     AM_INLINE void MixLayerInstanceWithGain(
-        const GainProcessor* processors, AmUInt16 channelCount, AmReal32 gain, const AudioBuffer& in, AudioBuffer& out, AmSize frames)
+        const GainProcessor* processors,
+        AmUInt16 channelCount,
+        AmReal32 gain,
+        const AudioBuffer& in,
+        AudioBuffer& out,
+        AmSize outOffset,
+        AmSize frames)
     {
         AMPLITUDE_ASSERT(channelCount <= kAmplimixMaxOutputChannels);
 
         for (AmUInt16 c = 0; c < channelCount; ++c)
         {
             GainProcessor instanceProcessor = processors[c];
-            instanceProcessor.ApplyGain(gain, in.GetChannel(c), 0, out.GetChannel(c), 0, frames, true);
+            instanceProcessor.ApplyGain(gain, in.GetChannel(c), 0, out.GetChannel(c), outOffset, frames, true);
         }
     }
 

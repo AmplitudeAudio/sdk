@@ -219,8 +219,11 @@ namespace SparkyStudios::Audio::Amplitude
          * before doing the actual frame update.
          *
          * @param[in] callback The callback to be called when the next frame is ready.
+         *
+         * @return @c true if the callback was queued, @c false if the queue is full: the callback is then dropped and
+         * the caller must handle it another way.
          */
-        virtual void OnNextFrame(std::function<void(AmTime delta)> callback) const = 0;
+        virtual bool OnNextFrame(std::function<void(AmTime delta)> callback) const = 0;
 
         /**
          * @brief Waits until the next frame is ready.
@@ -244,6 +247,23 @@ namespace SparkyStudios::Audio::Amplitude
          * @return The total elapsed time in milliseconds since the start of the engine.
          */
         [[nodiscard]] virtual AmTime GetTotalTime() const = 0;
+
+        /**
+         * @brief Gets the audio clock: the number of output frames the mixer has rendered since initialization.
+         *
+         * Scheduled transport calls (@c Channel::ScheduleStart(), @c Channel::Stop() with a clock, ...) take frames on
+         * this clock. It advances only while the mixer renders, never while the engine is paused.
+         *
+         * @return The audio clock in frames.
+         */
+        [[nodiscard]] virtual AmUInt64 GetAudioClock() const = 0;
+
+        /**
+         * @brief Gets the rate of the audio clock, in frames per second: the mixer output sample rate.
+         *
+         * @return The audio clock rate.
+         */
+        [[nodiscard]] virtual AmUInt32 GetAudioClockRate() const = 0;
 
 #pragma endregion
 

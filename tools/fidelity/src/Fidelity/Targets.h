@@ -52,6 +52,9 @@ namespace SparkyStudios::Audio::Amplitude::Fidelity::Targets
     constexpr double kMaxResumePositionErrorSamples = 1.0;
     constexpr double kMaxLengthErrorSamples = 2.0;
     constexpr double kMaxTailDbfs = -120.0;
+
+    /// A scheduled start or stop lands within this many samples of its audio-clock frame.
+    constexpr double kMaxScheduleErrorSamples = 2.0;
 } // namespace SparkyStudios::Audio::Amplitude::Fidelity::Targets
 
 /**

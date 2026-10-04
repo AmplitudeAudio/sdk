@@ -85,7 +85,7 @@ namespace SparkyStudios::Audio::Amplitude::Fidelity
                     return;
                 }
 
-                AddIntegrityMetrics(out, capture, kLeadIn + Seconds(0.05, fs), stopAt);
+                AddIntegrityMetrics(out, capture, OnsetFrame(capture, kLeadIn) + Seconds(0.05, fs), stopAt);
                 AddClickMetrics(out, capture, 4000.0, kLeadIn, duration);
 
                 MeasureStopTiming(capture, spec, kLeadIn, stopAt, fade, out);

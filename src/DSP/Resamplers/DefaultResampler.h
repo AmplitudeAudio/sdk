@@ -61,30 +61,24 @@ namespace SparkyStudios::Audio::Amplitude
         DefaultResamplerInstance();
 
         /**
-         * @brief Computes the maximum length of the output buffer from the given
-         * input length, knowing the source and destination frequencies. The actual
-         * output length will be either the returned value or one less.
-         *
-         * @param inputLength The length of the input buffer.
-         *
-         * @return The maximum length of the output buffer.
-         */
-        [[nodiscard]] AmUInt64 GetMaxOutputLength(AmUInt64 inputLength) const;
-
-        /**
          * @copydoc ResamplerInstance::Process
          */
         bool Process(const AudioBuffer& input, AmUInt64& inputFrames, AudioBuffer& output, AmUInt64& outputFrames) override;
 
         /**
-         * @copydoc ResamplerInstance::GetExpectedOutputFrames
+         * @copydoc ResamplerInstance::SetRatio
          */
-        [[nodiscard]] AmUInt64 GetExpectedOutputFrames(AmUInt64 inputLength) const override;
+        void SetRatio(AmReal64 inputPerOutput) override;
 
         /**
-         * @copydoc ResamplerInstance::GetRequiredInputFrames
+         * @copydoc ResamplerInstance::GetInputFramesNeeded
          */
-        [[nodiscard]] AmUInt64 GetRequiredInputFrames(AmUInt64 outputLength) const override;
+        [[nodiscard]] AmUInt64 GetInputFramesNeeded(AmUInt64 outputFrameCount) const override;
+
+        /**
+         * @copydoc ResamplerInstance::GetLatency
+         */
+        [[nodiscard]] AmUInt64 GetLatency() const override;
 
         /**
          * @copydoc ResamplerInstance::Initialize
@@ -95,11 +89,6 @@ namespace SparkyStudios::Audio::Amplitude
          * @copydoc ResamplerInstance::Reset
          */
         void Reset() override;
-
-        /**
-         * @copydoc ResamplerInstance::SetSampleRate
-         */
-        void SetSampleRate(AmUInt32 sampleRateIn, AmUInt32 sampleRateOut) override;
 
         /**
          * @copydoc ResamplerInstance::GetSampleRateIn
@@ -123,22 +112,6 @@ namespace SparkyStudios::Audio::Amplitude
         [[nodiscard]] AM_INLINE AmUInt16 GetChannelCount() const override
         {
             return _channelCount;
-        }
-
-        /**
-         * @copydoc ResamplerInstance::GetInputLatency
-         */
-        [[nodiscard]] AM_INLINE AmUInt64 GetInputLatency() const override
-        {
-            return 0;
-        }
-
-        /**
-         * @copydoc ResamplerInstance::GetOutputLatency
-         */
-        [[nodiscard]] AM_INLINE AmUInt64 GetOutputLatency() const override
-        {
-            return 0;
         }
 
         /**
@@ -211,6 +184,21 @@ namespace SparkyStudios::Audio::Amplitude
             return _upRate == _downRate;
         }
 
+        /**
+         * @brief Applies a reduced up/down rate pair, (re)generating the filter and state buffer as needed.
+         *
+         * @param ratio The reduced rate pair to apply. The numerator becomes @c _upRate, the denominator @c _downRate.
+         */
+        void ApplyRational(const AmRational& ratio);
+
+        /**
+         * @brief Pushes the trailing frames of @p input into the filter history, for use by the next @c Process() call.
+         *
+         * @param input The input buffer whose trailing frames are copied into history.
+         * @param frames The number of leading frames of @p input that were actually consumed.
+         */
+        void PushHistory(const AudioBuffer& input, AmUInt64 frames);
+
         // Rate of the interpolator section of the rational sampling rate converter.
         AmUInt64 _upRate;
 
@@ -228,6 +216,9 @@ namespace SparkyStudios::Audio::Amplitude
 
         // Number of filter coefficients in each phase of the polyphase filter.
         AmUInt64 _coefficientsPerPhase;
+
+        // Total number of coefficients in the (non-polyphase) filter, before arranging into phases.
+        AmUInt64 _filterLength = 0;
 
         // Filter coefficients stored in polyphase form.
         AudioBuffer _transposedFilterCoefficients;

@@ -243,6 +243,16 @@ namespace SparkyStudios::Audio::Amplitude
          */
         [[nodiscard]] bool IsLoop() const override;
 
+        /**
+         * @brief Gets the format of this sound's decoded audio.
+         *
+         * @return The sound format.
+         */
+        [[nodiscard]] AM_INLINE const SoundFormat& GetFormat() const
+        {
+            return _format;
+        }
+
     private:
         bool _loaded;
 
@@ -370,6 +380,16 @@ namespace SparkyStudios::Audio::Amplitude
          * @return The number of times this sound instance have looped.
          */
         [[nodiscard]] AmUInt32 GetCurrentLoopCount() const;
+
+        /**
+         * @brief Overrides the number of remaining loop plays (0 loops forever), counting the one about to start.
+         *
+         * Used to resume a promoted virtual channel with only the loop passes it had left, instead of the sound's
+         * full loop count.
+         *
+         * @param loopCount The number of remaining loop plays.
+         */
+        void SetLoopCount(AmUInt32 loopCount);
 
         /**
          * @brief Gets the effect applied to this SoundInstance, if any.

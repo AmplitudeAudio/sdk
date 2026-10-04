@@ -13,11 +13,14 @@
 // limitations under the License.
 
 #include <algorithm>
+#include <chrono>
 #include <filesystem>
 #include <memory>
 #include <queue>
 #include <ranges>
+#include <thread>
 #include <unordered_map>
+#include <vector>
 
 #include <SparkyStudios/Audio/Amplitude/Amplitude.h>
 
@@ -217,21 +220,81 @@ namespace SparkyStudios::Audio::Amplitude
         list->push_front(*channel);
     }
 
+    /**
+     * @brief Waits until the voices of halted channels finished rendering.
+     *
+     * Halt() only posts a de-clicked stop: until the fade ends, the voice still reads the channel's state and its sound
+     * objects, so neither may be recycled before. The caller holds the frame thread out, so finished layers are
+     * forgotten here. One deadline bounds the wait for an engine that is not mixing (e.g. a stopped device).
+     *
+     * @return @c true when no voice of these channels is sounding anymore.
+     */
+    bool DrainHaltedChannels(const std::shared_ptr<EngineInternalState>& state, const std::vector<ChannelInternalState*>& channels)
+    {
+        constexpr std::chrono::milliseconds kDrainTimeout(2000);
+
+        const auto deadline = std::chrono::steady_clock::now() + kDrainTimeout;
+        const auto sounding = [&channels]()
+        {
+            return std::ranges::any_of(
+                channels,
+                [](const ChannelInternalState* channel)
+                {
+                    return channel->GetRealChannel().HasSoundingLayers();
+                });
+        };
+
+        while (sounding())
+        {
+            if (std::chrono::steady_clock::now() > deadline)
+            {
+                amLogWarning("Timed out waiting for the voices of an unloaded sound to finish.");
+                return false;
+            }
+
+            std::this_thread::sleep_for(std::chrono::milliseconds(1));
+
+            // The caller holds the frame thread out, so nothing else forgets a finished layer: do what a frame would.
+            state->mixer.DispatchVoiceEvents();
+        }
+
+        return true;
+    }
+
+    /// Halts the channels whose object matches, waits for their voices to finish, then recycles them.
+    template<typename Matches>
+    void HaltAndRecycleChannels(const std::shared_ptr<EngineInternalState>& state, Matches&& matches)
+    {
+        std::vector<ChannelInternalState*> halted;
+        for (auto& channel : state->playing_channel_list)
+        {
+            if (!matches(channel))
+                continue;
+
+            channel.Halt();
+            halted.push_back(&channel);
+        }
+
+        if (halted.empty())
+            return;
+
+        DrainHaltedChannels(state, halted);
+        for (ChannelInternalState* channel : halted)
+            InsertIntoFreeList(state, channel);
+    }
+
     void DereferenceSound(const std::shared_ptr<EngineInternalState>& state, AmSoundID id)
     {
         if (const auto it = state->sound_map.find(id); it != state->sound_map.end())
         {
             if (it->second->GetRefCounter()->Decrement() == 0)
             {
-                for (auto channelIt = state->playing_channel_list.begin(); channelIt != state->playing_channel_list.end();)
-                {
-                    auto current = channelIt++;
-                    if (current->GetSound() == it->second.get())
+                HaltAndRecycleChannels(
+                    state,
+                    [&](const ChannelInternalState& channel)
                     {
-                        current->Halt();
-                        InsertIntoFreeList(state, &*current);
-                    }
-                }
+                        return channel.GetSound() == it->second.get();
+                    });
 
                 it->second->ReleaseReferences(state);
                 state->sound_map.erase(it);
@@ -245,15 +308,12 @@ namespace SparkyStudios::Audio::Amplitude
         {
             if (it->second->GetRefCounter()->Decrement() == 0)
             {
-                for (auto channelIt = state->playing_channel_list.begin(); channelIt != state->playing_channel_list.end();)
-                {
-                    auto current = channelIt++;
-                    if (current->GetCollection() == it->second.get())
+                HaltAndRecycleChannels(
+                    state,
+                    [&](const ChannelInternalState& channel)
                     {
-                        current->Halt();
-                        InsertIntoFreeList(state, &*current);
-                    }
-                }
+                        return channel.GetCollection() == it->second.get();
+                    });
 
                 it->second->ReleaseReferences(state);
                 state->collection_map.erase(it);
@@ -267,15 +327,12 @@ namespace SparkyStudios::Audio::Amplitude
         {
             if (it->second->GetRefCounter()->Decrement() == 0)
             {
-                for (auto channelIt = state->playing_channel_list.begin(); channelIt != state->playing_channel_list.end();)
-                {
-                    auto current = channelIt++;
-                    if (current->GetSwitchContainer() == it->second.get())
+                HaltAndRecycleChannels(
+                    state,
+                    [&](const ChannelInternalState& channel)
                     {
-                        current->Halt();
-                        InsertIntoFreeList(state, &*current);
-                    }
-                }
+                        return channel.GetSwitchContainer() == it->second.get();
+                    });
 
                 it->second->ReleaseReferences(state);
                 state->switch_container_map.erase(it);
@@ -2521,11 +2578,28 @@ namespace SparkyStudios::Audio::Amplitude
     void EraseFinishedSounds(const std::shared_ptr<EngineInternalState>& state)
     {
         PriorityList& list = state->playing_channel_list;
+
+        // Events whose next-frame callback could not be queued fire here. They run before the list is walked: a callback
+        // may call Play() on a full pool, which can evict a channel and would disturb the iteration below.
+        {
+            std::vector<std::pair<ChannelInternalState*, AmUInt64>> deferred;
+            for (auto& channel : list)
+                if (channel.HasDeferredEvents())
+                    deferred.emplace_back(&channel, channel.GetChannelStateId());
+
+            for (const auto& [channel, stateId] : deferred)
+                if (channel->GetChannelStateId() == stateId)
+                    channel->DrainDeferredEvents();
+        }
+
         for (auto channelInternalState = list.begin(); channelInternalState != list.end();)
         {
             auto current = channelInternalState++;
             current->UpdateState();
-            if (current->Stopped())
+
+            // A stopped channel is recycled once its voices finished their de-click: until then they still render
+            // through its state (location, gain, room). An engine that is stopping recycles everything at once.
+            if (current->Stopped() && !current->HasPendingEvents() && (state->stopping || !current->GetRealChannel().HasSoundingLayers()))
             {
                 InsertIntoFreeList(state, &*current);
             }
@@ -2592,7 +2666,9 @@ namespace SparkyStudios::Audio::Amplitude
         auto reverseIterator = priorityList->rbegin();
         for (auto state = priorityList->begin(); state != priorityList->end(); ++state)
         {
-            if (!state->IsReal())
+            // A channel the game paused while it was virtual stays virtual until it is resumed: it must not take a real
+            // channel from a sound that is audible.
+            if (!state->IsReal() && !state->Paused())
             {
                 // First check if there are any free real channels.
                 if (!realFreeList->empty())
@@ -2645,6 +2721,10 @@ namespace SparkyStudios::Audio::Amplitude
         // find the best listener for each channel. Listener positions are updated
         // before the best listener is selected.
         _state->listenerCache.Clear();
+
+        // Voice events fire the channel callbacks before the frame callbacks run and before finished channels are
+        // recycled: callbacks they schedule for the next frame (a stop after a natural end) still see their channel.
+        _state->mixer.DispatchVoiceEvents();
 
         {
             std::lock_guard lock(_frameThreadMutex);
@@ -2745,13 +2825,14 @@ namespace SparkyStudios::Audio::Amplitude
         }
 
         ++_state->current_frame;
+        _state->mixer.FlushVoiceCommands();
         _state->total_time += delta;
     }
 
-    void EngineImpl::OnNextFrame(std::function<void(AmTime delta)> callback) const
+    bool EngineImpl::OnNextFrame(std::function<void(AmTime delta)> callback) const
     {
         std::lock_guard lock(_frameThreadMutex);
-        _nextFrameCallbacks.TryEnqueue(std::move(callback));
+        return _nextFrameCallbacks.TryEnqueue(std::move(callback));
     }
 
     void EngineImpl::WaitUntilNextFrame() const
@@ -2769,6 +2850,16 @@ namespace SparkyStudios::Audio::Amplitude
     AmTime EngineImpl::GetTotalTime() const
     {
         return _state->total_time;
+    }
+
+    AmUInt64 EngineImpl::GetAudioClock() const
+    {
+        return _state->mixer.GetAudioClock();
+    }
+
+    AmUInt32 EngineImpl::GetAudioClockRate() const
+    {
+        return _state->mixer.GetDeviceDescription().mRequestedOutputSampleRate;
     }
 
     const AmVersion* EngineImpl::Version() const
@@ -2992,17 +3083,22 @@ namespace SparkyStudios::Audio::Amplitude
         newChannel->SetListener(Listener(listener));
 
         // Attempt to play the channel, if the engine is paused, the channel will be played later.
-        OnNextFrame(
-            [this, newChannel, handle](AmTime delta)
-            {
+        const auto playChannel = [this, newChannel, handle](AmTime delta)
+        {
                 if (!newChannel->Play())
                 {
                     amLogError("Failed to play switch container: %s.", handle->GetName().c_str());
 
-                    // Error playing the sound, put it back in the free list.
+                    // Error playing the sound, put it back in the free list. A voice that started and was discarded may still
+                    // be in the mix being rendered: let that mix end before the channel state it reads is reset.
+                    _state->mixer.Wait();
                     InsertIntoFreeList(_state, newChannel);
                 }
-            });
+        };
+
+        // A full callback queue would leave the channel pending forever: play it right away instead.
+        if (!OnNextFrame(playChannel))
+            playChannel(0.0);
 
         return Channel(newChannel);
     }
@@ -3073,17 +3169,22 @@ namespace SparkyStudios::Audio::Amplitude
         newChannel->SetListener(Listener(listener));
 
         // Attempt to play the channel, if the engine is paused, the channel will be played later.
-        OnNextFrame(
-            [this, newChannel, handle](AmTime delta)
-            {
+        const auto playChannel = [this, newChannel, handle](AmTime delta)
+        {
                 if (!newChannel->Play())
                 {
                     amLogError("Failed to play collection: %s.", handle->GetName().c_str());
 
-                    // Error playing the sound, put it back in the free list.
+                    // Error playing the sound, put it back in the free list. A voice that started and was discarded may still
+                    // be in the mix being rendered: let that mix end before the channel state it reads is reset.
+                    _state->mixer.Wait();
                     InsertIntoFreeList(_state, newChannel);
                 }
-            });
+        };
+
+        // A full callback queue would leave the channel pending forever: play it right away instead.
+        if (!OnNextFrame(playChannel))
+            playChannel(0.0);
 
         return Channel(newChannel);
     }
@@ -3153,17 +3254,22 @@ namespace SparkyStudios::Audio::Amplitude
         newChannel->SetListener(Listener(listener));
 
         // Attempt to play the channel, if the engine is paused, the channel will be played later.
-        OnNextFrame(
-            [this, newChannel, handle](AmTime delta)
-            {
+        const auto playChannel = [this, newChannel, handle](AmTime delta)
+        {
                 if (!newChannel->Play())
                 {
                     amLogError("Failed to play sound: %s.", handle->GetName().c_str());
 
-                    // Error playing the sound, put it back in the free list.
+                    // Error playing the sound, put it back in the free list. A voice that started and was discarded may still
+                    // be in the mix being rendered: let that mix end before the channel state it reads is reset.
+                    _state->mixer.Wait();
                     InsertIntoFreeList(_state, newChannel);
                 }
-            });
+        };
+
+        // A full callback queue would leave the channel pending forever: play it right away instead.
+        if (!OnNextFrame(playChannel))
+            playChannel(0.0);
 
         return Channel(newChannel);
     }

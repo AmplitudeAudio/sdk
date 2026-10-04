@@ -28,8 +28,8 @@ namespace SparkyStudios::Audio::Amplitude::Tests
     public:
         void Run() override
         {
-            // AmplimixImpl::UpdatePitch maps playback speed to SetSampleRate(ratio * 1000, 1000) on the audio
-            // thread. Ratios from 1.261 upwards used to overflow the coefficient buffers.
+            // Speed changes reach the resampler as hostile rate pairs: ratios from 1.261 upwards overflowed the
+            // coefficient buffers. Initialize() takes the same clamping path.
             constexpr AmUInt16 channelCount = 1;
             constexpr AmUInt64 inputFrames = 256;
 
@@ -41,7 +41,7 @@ namespace SparkyStudios::Audio::Amplitude::Tests
             bool bounded = true;
             for (AmUInt32 s = 1; s <= 4000 && bounded; ++s)
             {
-                instance->SetSampleRate(s, 1000);
+                instance->Initialize(channelCount, s, 1000);
 
                 bounded = instance->GetUpRate() <= kMaxPolyphaseRate && instance->GetDownRate() <= kMaxPolyphaseRate;
 
@@ -51,11 +51,11 @@ namespace SparkyStudios::Audio::Amplitude::Tests
                     AudioBuffer inputBuffer(inputFrames, channelCount);
                     GenerateSineWave(inputBuffer, 48000);
 
-                    const AmUInt64 expectedOutputFrames = instance->GetExpectedOutputFrames(inputFrames);
-                    AudioBuffer outputBuffer(expectedOutputFrames, channelCount);
+                    const AmUInt64 capacity = inputFrames * 1000 / s + 2;
+                    AudioBuffer outputBuffer(capacity, channelCount);
 
                     AmUInt64 processedInputFrames = inputFrames;
-                    AmUInt64 processedOutputFrames = expectedOutputFrames;
+                    AmUInt64 processedOutputFrames = capacity;
 
                     AM_EXPECT(instance->Process(inputBuffer, processedInputFrames, outputBuffer, processedOutputFrames));
                 }

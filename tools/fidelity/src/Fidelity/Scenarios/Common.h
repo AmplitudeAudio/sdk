@@ -63,6 +63,11 @@ namespace SparkyStudios::Audio::Amplitude::Fidelity
      */
     bool RequireSignal(Measurement& out, const Capture& capture, std::uint64_t begin, std::uint64_t end);
 
+    /**
+     * @brief First frame at or after @p from where any channel is non-zero, or @p from when there is none.
+     */
+    [[nodiscard]] std::uint64_t OnsetFrame(const Capture& capture, std::uint64_t from);
+
     void AddIntegrityMetrics(Measurement& out, const Capture& capture, std::uint64_t signalBegin, std::uint64_t signalEnd);
 
     /**

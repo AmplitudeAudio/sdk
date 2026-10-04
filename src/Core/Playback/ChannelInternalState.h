@@ -36,6 +36,8 @@
 #include <SparkyStudios/Audio/Amplitude/Sound/SwitchContainer.h>
 
 #include <Mixer/RealChannel.h>
+#include <Mixer/Voice/VirtualCursor.h>
+#include <Mixer/Voice/VoiceTypes.h>
 #include <Utils/intrusive_list.h>
 
 namespace SparkyStudios::Audio::Amplitude
@@ -59,8 +61,16 @@ namespace SparkyStudios::Audio::Amplitude
             , _sound(nullptr)
             , _playingSwitchContainerStateId(kAmInvalidObjectId)
             , _previousSwitchContainerStateId(kAmInvalidObjectId)
-            , _fader(nullptr)
             , _targetFadeOutState(eChannelPlaybackState_Stopped)
+            , _fadeInEndTime(0.0)
+            , _stopEventPending(false)
+            , _stopFired(false)
+            , _pendingEventCount(0)
+            , _deferredEvents(0)
+            , _virtualPaused(false)
+            , _hasScheduledCommand(false)
+            , _scheduledTarget(eChannelPlaybackState_Stopped)
+            , _scheduledCommandFrame(kVoiceAsap)
             , _entity()
             , _userGain(1.0f)
             , _gain(1.0f)
@@ -236,20 +246,53 @@ namespace SparkyStudios::Audio::Amplitude
         void Resume();
 
         // Sets this channel's playback position, in milliseconds.
-        bool SetPlaybackPosition(AmTime position);
+        bool SetPlaybackPosition(AmTime position, AmUInt64 clock = kVoiceAsap);
 
         // Gets this channel's current playback position, in milliseconds.
         [[nodiscard]] AmTime GetPlaybackPosition() const;
 
         // Fade in over the specified number of milliseconds.
-        void FadeIn(AmTime duration);
+        void FadeIn(AmTime duration, AmUInt64 clock = kVoiceAsap);
 
         // Fade out over the specified number of milliseconds.
-        void FadeOut(AmTime duration, eChannelPlaybackState targetState = eChannelPlaybackState_Stopped);
+        void FadeOut(
+            AmTime duration, eChannelPlaybackState targetState = eChannelPlaybackState_Stopped, AmUInt64 clock = kVoiceAsap);
+
+        // Schedules the first sample of a pending channel at a frame of the audio clock.
+        bool ScheduleStart(AmUInt64 clock);
 
         // Devirtualizes a virtual channel. This transfers ownership of the given
         // channel's channel_id to this channel.
         void Devirtualize(ChannelInternalState* other);
+
+        /**
+         * @brief Fades this channel's voices out for virtualization (@c kStealFade) and anchors its virtual cursor,
+         * so it can keep being tracked as virtual once its real channel is taken away.
+         *
+         * Called on the channel losing its real channel, before the real channel id is handed to another.
+         */
+        void Demote();
+
+        /**
+         * @brief Restarts this channel on its (freshly assigned) real channel, at the virtual cursor if one is
+         * anchored; falls back to a full @c Play() for collections, switch containers, and sounds that were never
+         * anchored.
+         *
+         * @return @c true on success.
+         */
+        bool Promote(AmTime fadeIn = kStealFade);
+
+        // Resumes a channel that was paused while virtual, from the position it froze at.
+        bool ResumeFrozen(AmTime fadeIn);
+
+        /**
+         * @brief Anchors this channel's virtual cursor: @p position is the source frame heard at audio-clock frame
+         * @p clock.
+         *
+         * A no-op for channels not playing a single @c Sound (collections, switch containers) or whose sound format
+         * is not yet known.
+         */
+        void AnchorVirtualCursor(AmUInt64 position, AmUInt64 clock);
 
         // Returns the priority of this channel based on its gain and priority
         // multiplier on the sound collection definition.
@@ -345,6 +388,26 @@ namespace SparkyStudios::Audio::Amplitude
         void HaltInternal();
 
         /**
+         * @brief Gets the name of the fader used by this channel's transport fades.
+         */
+        [[nodiscard]] const AmString& GetFaderName() const;
+
+        /**
+         * @brief Called on the game thread when a voice of this channel finished a fade-out.
+         *
+         * @param mixerLayerId The mixer layer of the voice.
+         * @param target What the fade-out ended in.
+         * @param frame The audio-clock frame the fade reached zero at.
+         * @param sourcePosition The source frame the voice stopped at, for paused and released voices.
+         */
+        void OnVoiceFadedOut(AmUInt32 mixerLayerId, eVoiceFadeTarget target, AmUInt64 frame, AmUInt64 sourcePosition);
+
+        /**
+         * @brief Triggers @p event at the start of the next engine frame, unless this channel was reused in between.
+         */
+        void TriggerOnNextFrame(eChannelEvent event);
+
+        /**
          * @brief Registers a callback for a channel event.
          *
          * @param event The channel event.
@@ -354,6 +417,43 @@ namespace SparkyStudios::Audio::Amplitude
         void On(eChannelEvent event, ChannelEventCallback callback, void* userData = nullptr);
 
         void Trigger(eChannelEvent event);
+
+        /**
+         * @brief Checks whether a @c TriggerOnNextFrame() event is still queued and has not fired yet.
+         *
+         * A channel with pending events must not be recycled (its state reused by @c Reset()): the deferred
+         * callback checks @c GetChannelStateId(), which @c Reset() zeroes, and would silently drop the event.
+         */
+        [[nodiscard]] AM_INLINE bool HasPendingEvents() const
+        {
+            return _pendingEventCount > 0 || _deferredEvents != 0;
+        }
+
+        /**
+         * @brief Checks whether an event could not be queued for the next frame (the engine's callback queue was full)
+         * and still waits for @c DrainDeferredEvents().
+         */
+        [[nodiscard]] AM_INLINE bool HasDeferredEvents() const
+        {
+            return _deferredEvents != 0;
+        }
+
+        /**
+         * @brief Fires the events that could not be queued for the next frame. Called by the engine once per frame,
+         * outside the channel list iteration.
+         */
+        void DrainDeferredEvents();
+
+        /**
+         * @brief Moves the channel into the fade of a scheduled Stop or Pause once the audio clock reached its frame.
+         * Called every frame and when the voice reports the fade.
+         */
+        void ActivateScheduledCommand();
+
+        // Whether this channel is currently fading out toward Stopped: Pause()/Resume()/FadeIn() must do nothing
+        // while a stop fade owns the channel.
+        [[nodiscard]] bool IsFadingOutToStopped() const;
+
 
         /**
          * @brief Enables multi-position instancing for this channel.
@@ -537,13 +637,24 @@ namespace SparkyStudios::Audio::Amplitude
         fplutil::intrusive_list_node room_node;
 
     private:
-        bool PlaySwitchContainerStateUpdate(const std::vector<SwitchContainerItem>& previous, const std::vector<SwitchContainerItem>& next);
+        bool PlaySwitchContainerStateUpdate(
+            const std::vector<SwitchContainerItem>& previous, const std::vector<SwitchContainerItem>& next, AmTime fadeIn = 0.0);
+
+        // Settles the channel to Stopped from UpdateState() and fires the Stop event if it is still owed.
+        void SettleStopped();
+
+        // Fires eChannelEvent_Stop at most once per play: several paths can reach it for the same stop.
+        void TriggerStopOnce();
+
         bool PlaySwitchContainer();
         bool PlayCollection();
         bool PlaySound();
 
         // The real channel feeding the mixer with audio data.
         RealChannel _realChannel;
+
+        // Where this channel's audio would be, tracked while it has no real channel of its own.
+        VirtualCursor _virtualCursor;
 
         // Whether this channel is currently playing, stopped, fading out, etc.
         eChannelPlaybackState _channelState;
@@ -560,12 +671,41 @@ namespace SparkyStudios::Audio::Amplitude
         AmObjectID _playingSwitchContainerStateId;
         AmObjectID _previousSwitchContainerStateId;
 
-        // The sound fader of this channel.
-        std::shared_ptr<FaderInstance> _fader;
+        // The name of the fader that shapes this channel's transport fades (the voice constructs it).
         AmString _faderName;
 
         // The target state of the fade out transition. Must be either Paused or Stopped.
         eChannelPlaybackState _targetFadeOutState;
+
+        // The engine time at which the current audio-rate fade-in is expected to be over.
+        AmTime _fadeInEndTime;
+
+        // The audio-clock frame the pending channel was scheduled to start at; consumed by the first Play.
+        AmUInt64 _scheduledStartFrame = kVoiceAsap;
+
+        // Whether a Stop event is still owed once the voice's fade-out event arrives.
+        bool _stopEventPending;
+
+        // Whether eChannelEvent_Stop already fired for the current play. Reset in Play().
+        bool _stopFired;
+
+        // TriggerOnNextFrame() events queued but not fired yet.
+        AmUInt32 _pendingEventCount;
+
+        // Events (one bit per eChannelEvent) that could not be queued because the engine's callback queue was full.
+        // EraseFinishedSounds() drains them, so a full queue never loses a Stop or an End.
+        AmUInt32 _deferredEvents;
+
+        // A Stop or Pause the game scheduled at a future frame of the audio clock. The voice carries the command out at
+        // that frame; until then the channel keeps its state (gains still update, Pause and Resume still work) and an
+        // immediate Stop overrides it.
+        bool _hasScheduledCommand;
+        eChannelPlaybackState _scheduledTarget;
+        AmUInt64 _scheduledCommandFrame;
+
+        // The channel was paused when it lost its real channel: it stays virtual, with a frozen cursor, until it is
+        // resumed.
+        bool _virtualPaused;
 
         // The entity which is playing the sound of this channel.
         Entity _entity;
