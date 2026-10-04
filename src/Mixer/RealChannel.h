@@ -80,8 +80,20 @@ namespace SparkyStudios::Audio::Amplitude
 
         /**
          * @brief Play all the sound instances on the real channel.
+         *
+         * On failure every layer this call created is removed, and the call returns @c false. The instances of the
+         * layers that had already started are owned by the mixer (destroyed with their layer); they are appended to
+         * @p owned so the caller destroys only the others.
+         *
+         * @param[in] instances The sound instances to play, one layer each.
+         * @param[in] options The play options.
+         * @param[out] owned When not null, receives the instances the mixer took ownership of on failure.
+         *
+         * @return @c true when every instance started.
          */
-        bool Play(const std::vector<SoundInstance*>& instances, const RealChannelPlayOptions& options = {});
+        bool Play(
+            const std::vector<SoundInstance*>& instances, const RealChannelPlayOptions& options = {},
+            std::vector<SoundInstance*>* owned = nullptr);
 
         /**
          * @brief Play the audio on the real channel.
@@ -320,6 +332,14 @@ namespace SparkyStudios::Audio::Amplitude
          * Pair each ID with GetID() to query the mixer, e.g. AmplimixImpl::GetInstancePipelineCount().
          */
         [[nodiscard]] std::vector<AmUInt32> GetMixerLayerIds() const;
+
+        /**
+         * @brief Gets the number of layers this channel tracks, started or not.
+         */
+        [[nodiscard]] AmSize GetLayerCount() const
+        {
+            return _layers.size();
+        }
 
         /**
          * @brief Checks whether one of this channel's layers still plays @p sound on the mixer layer @p mixerLayerId.

@@ -972,10 +972,13 @@ namespace SparkyStudios::Audio::Amplitude
         options.startFrame = _scheduledStartFrame;
         _scheduledStartFrame = kVoiceAsap;
 
-        const bool success = _realChannel.Play(instances, options);
+        // On failure the layers that already started own (and delete) their instances: destroy only the others.
+        std::vector<SoundInstance*> owned;
+        const bool success = _realChannel.Play(instances, options, &owned);
         if (!success)
             for (SoundInstance* instance : instances)
-                SoundImpl::DestroyInstance(instance);
+                if (std::ranges::find(owned, instance) == owned.end())
+                    SoundImpl::DestroyInstance(instance);
 
         return success;
     }

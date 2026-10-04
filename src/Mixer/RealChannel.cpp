@@ -91,32 +91,38 @@ namespace SparkyStudios::Audio::Amplitude
         return _channelId != kAmInvalidObjectId && _mixer != nullptr && _parentChannelState != nullptr;
     }
 
-    bool RealChannel::Play(const std::vector<SoundInstance*>& instances, const RealChannelPlayOptions& options)
+    bool RealChannel::Play(
+        const std::vector<SoundInstance*>& instances, const RealChannelPlayOptions& options, std::vector<SoundInstance*>* owned)
     {
         if (instances.empty())
             return false;
 
-        bool success = true;
         AmUInt32 layer = FindFreeLayer(_layers.empty() ? 1 : _layers.begin()->first);
         std::vector<AmUInt32> layers;
+        layers.reserve(instances.size());
 
-        for (auto& instance : instances)
+        for (SoundInstance* instance : instances)
         {
-            success &= Play(instance, layer, options);
-            layers.push_back(layer);
-
-            if (!success)
+            // A failed Play(instance, layer) removes its own layer: only the layers started before it remain.
+            if (!Play(instance, layer, options))
             {
-                for (auto&& l : layers)
-                    Destroy(l);
+                // Each started layer owns its sound instance and deletes it with the layer: the caller must not.
+                for (std::size_t i = 0; i < layers.size(); ++i)
+                {
+                    Destroy(layers[i]);
+
+                    if (owned != nullptr)
+                        owned->push_back(instances[i]);
+                }
 
                 return false;
             }
 
+            layers.push_back(layer);
             layer = FindFreeLayer(layer);
         }
 
-        return success;
+        return true;
     }
 
     bool RealChannel::Play(SoundInstance* sound, AmUInt32 layer, const RealChannelPlayOptions& playOptions)
@@ -136,8 +142,10 @@ namespace SparkyStudios::Audio::Amplitude
 
         if (sound->GetUserData() == nullptr)
         {
-            data.mixerLayerId = kAmInvalidObjectId;
             amLogError("The sound was not loaded successfully.");
+
+            // The caller keeps the instance: leave no layer pointing at it.
+            _layers.erase(layer);
             return false;
         }
 
@@ -166,8 +174,11 @@ namespace SparkyStudios::Audio::Amplitude
         const bool success = data.mixerLayerId != kAmInvalidObjectId;
         if (!success)
         {
-            data.mixerLayerId = kAmInvalidObjectId;
             amLogError("Could not play sound '" AM_OS_CHAR_FMT "'.", data.soundInstance->GetSound()->GetPath().c_str());
+
+            // The caller keeps the instance: leave no layer pointing at it.
+            _layers.erase(layer);
+            return false;
         }
 
         // A sound that starts on a channel already in separate mode gets its instance pipelines now.
