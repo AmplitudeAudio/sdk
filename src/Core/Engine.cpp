@@ -221,23 +221,32 @@ namespace SparkyStudios::Audio::Amplitude
     }
 
     /**
-     * @brief Waits until the voices of a halted channel finished rendering.
+     * @brief Waits until the voices of halted channels finished rendering.
      *
      * Halt() only posts a de-clicked stop: until the fade ends, the voice still reads the channel's state and its sound
      * objects, so neither may be recycled before. The caller holds the frame thread out, so finished layers are
-     * forgotten here. The wait is bounded for an engine that is not mixing (e.g. a stopped device).
+     * forgotten here. One deadline bounds the wait for an engine that is not mixing (e.g. a stopped device).
      *
-     * @return @c true when no voice of the channel is sounding anymore.
+     * @return @c true when no voice of these channels is sounding anymore.
      */
-    bool DrainHaltedChannel(const std::shared_ptr<EngineInternalState>& state, ChannelInternalState* channel)
+    bool DrainHaltedChannels(const std::shared_ptr<EngineInternalState>& state, const std::vector<ChannelInternalState*>& channels)
     {
-        constexpr AmUInt64 kDrainTimeoutMs = 2000;
+        constexpr std::chrono::milliseconds kDrainTimeout(2000);
 
-        const auto begin = std::chrono::steady_clock::now();
-        while (channel->GetRealChannel().HasSoundingLayers())
+        const auto deadline = std::chrono::steady_clock::now() + kDrainTimeout;
+        const auto sounding = [&channels]()
         {
-            if (std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now() - begin).count() >
-                static_cast<std::chrono::milliseconds::rep>(kDrainTimeoutMs))
+            return std::ranges::any_of(
+                channels,
+                [](const ChannelInternalState* channel)
+                {
+                    return channel->GetRealChannel().HasSoundingLayers();
+                });
+        };
+
+        while (sounding())
+        {
+            if (std::chrono::steady_clock::now() > deadline)
             {
                 amLogWarning("Timed out waiting for the voices of an unloaded sound to finish.");
                 return false;
@@ -266,11 +275,12 @@ namespace SparkyStudios::Audio::Amplitude
             halted.push_back(&channel);
         }
 
+        if (halted.empty())
+            return;
+
+        DrainHaltedChannels(state, halted);
         for (ChannelInternalState* channel : halted)
-        {
-            DrainHaltedChannel(state, channel);
             InsertIntoFreeList(state, channel);
-        }
     }
 
     void DereferenceSound(const std::shared_ptr<EngineInternalState>& state, AmSoundID id)
