@@ -194,7 +194,9 @@ namespace SparkyStudios::Audio::Amplitude
             }
         }
 
-        // Input frames map to output frames through the ratio; exact to within a frame, which events need.
+        // Input frames map to output frames through the mean ratio. At a constant ratio that is exact to within a frame;
+        // during a ramp the frames between here and the event follow the ramp, not its mean, so an event lands up to
+        // |end - start| * frames / 8 output frames off -- a few frames for an engine glide, well inside a block.
         const AmReal64 ratio = GetRatio();
         const auto toOutput = [&](AmUInt64 readOffset)
         {

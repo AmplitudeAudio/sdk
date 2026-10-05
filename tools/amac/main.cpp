@@ -320,12 +320,6 @@ static int process(const AmOsString& inFileName, const AmOsString& outFileName, 
             auto resampler = Resampler::Construct("default");
             resampler->Initialize(numChannels, sampleRate, state.resampling.targetSampleRate);
 
-            if (!resampler->IsConversionExact(sampleRate, state.resampling.targetSampleRate))
-                log(stderr,
-                    "Warning: %d Hz cannot be converted to %d Hz exactly. The ratio will be approximated. Consider a target "
-                    "sample rate that shares more factors with the source.\n",
-                    sampleRate, state.resampling.targetSampleRate);
-
             constexpr AmUInt64 kOutputChunkFrames = 8192;
             const AmUInt64 targetRate = state.resampling.targetSampleRate;
             const AmUInt64 expectedOut = (numSamples * targetRate + sampleRate - 1) / sampleRate;

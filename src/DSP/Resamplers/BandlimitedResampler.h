@@ -147,8 +147,9 @@ namespace SparkyStudios::Audio::Amplitude
         /**
          * @brief Gets the current input-per-output ratio.
          *
-         * A ramp reports its mean, the ratio the stream advances by over the ramp: this is the value a caller sizes
-         * buffers and maps positions from, and the value ResampleStream::GetRatio() reports above the instance.
+         * A ramp in progress reports its mean, the ratio the stream advances by over the ramp: this is the value a
+         * caller sizes buffers and maps positions from. Once the ramp is spent the instance holds its end value, and
+         * reports that.
          */
         [[nodiscard]] AmReal64 GetRatio() const
         {
@@ -169,9 +170,6 @@ namespace SparkyStudios::Audio::Amplitude
 
         /// Sizes the kernel for @p ratio and returns the read-ahead it needs, in 32.32 frames.
         AmUInt64 ApplyRatio(AmReal64 ratio);
-
-        /// Evaluates the preset kernel at a distance in input frames from the output's centre.
-        [[nodiscard]] AmReal32 Weight(AmReal64 distance) const;
 
         /// Convolves one output frame with the weights of its time, for every channel.
         void RenderFrame(const AudioBuffer& input, AudioBuffer& output, AmUInt64 time, AmUInt64 reach, AmUInt64 index);

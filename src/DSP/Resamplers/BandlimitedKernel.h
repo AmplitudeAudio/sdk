@@ -90,6 +90,15 @@ namespace SparkyStudios::Audio::Amplitude
         }
 
         /**
+         * @brief Per-entry difference to the next entry, @c GetTable()[i + 1] - @c GetTable()[i], with the same layout as
+         * the table: interpolating between entries is one multiply-add.
+         */
+        [[nodiscard]] const AmReal32* GetDeltas() const
+        {
+            return _deltas.data();
+        }
+
+        /**
          * @brief Gets the number of meaningful entries, zeroCrossings * phases.
          */
         [[nodiscard]] AmUInt64 GetTableSize() const
@@ -100,6 +109,7 @@ namespace SparkyStudios::Audio::Amplitude
     private:
         BandlimitedKernelSpec _spec;
         std::vector<AmReal32> _table;
+        std::vector<AmReal32> _deltas;
     };
 } // namespace SparkyStudios::Audio::Amplitude
 

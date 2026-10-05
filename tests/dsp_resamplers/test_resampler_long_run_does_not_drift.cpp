@@ -55,6 +55,12 @@ namespace SparkyStudios::Audio::Amplitude::Tests
             // frames consumed against the frames actually produced, not against kTotal.
             const AmReal64 exact = static_cast<AmReal64>(producedTotal) * 44100.0 / 48000.0;
             AM_EXPECT(std::abs(static_cast<AmReal64>(consumed) - exact) <= 1.0);
+
+            // And to the frame: the accumulator is 32.32 fixed point, so the input consumed is exactly the frames
+            // produced times the quantised step, with nothing rounded along the way. A float ratio accumulated per
+            // block drifts by a fraction of a frame over this run and misses this.
+            const auto step = static_cast<AmUInt64>(std::llround(44100.0 / 48000.0 * 4294967296.0));
+            AM_EXPECT_EQ((producedTotal * step) >> 32, consumed);
         }
     };
 

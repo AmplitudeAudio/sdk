@@ -116,6 +116,11 @@ namespace SparkyStudios::Audio::Amplitude
         _rampStepStart = toStep(inputPerOutputStart);
         _rampStepEnd = toStep(inputPerOutputEnd);
         _rampFrames = outputFrames;
+
+        // A ramp over no frames is a constant ratio at its end value, which is also what a call keeps past the frames
+        // a ramp spans: collapsing it here keeps the reported mean and the read-ahead on that value.
+        if (_rampFrames == 0)
+            _rampStepStart = _rampStepEnd;
         _rampPos = 0;
 
         // The read-ahead and the read-ahead estimate are sized for the widest ratio of the ramp, so neither the
@@ -165,16 +170,17 @@ namespace SparkyStudios::Audio::Amplitude
 
     AmUInt64 BandlimitedResamplerInstance::StepAt(AmUInt64 position) const
     {
-        if (_rampFrames <= 1 || _rampStepStart == _rampStepEnd)
+        if (_rampFrames == 0 || _rampStepStart == _rampStepEnd)
             return _rampStepEnd;
 
-        const auto u = static_cast<AmReal64>(AM_MIN(position, _rampFrames - 1)) / static_cast<AmReal64>(_rampFrames - 1);
+        // Each frame takes the ramp at its own midpoint, so the steps sum to exactly the mean of the two ends. Past the
+        // ramp, u stays at its end: GetInputFramesNeeded() sizes the read-ahead for the ramp's widest step.
+        const auto u =
+            AM_MIN(static_cast<AmReal64>(position) + 0.5, static_cast<AmReal64>(_rampFrames)) / static_cast<AmReal64>(_rampFrames);
 
-        // Smoothstep, so the step matches in value and in slope at both ends of the ramp: consecutive blocks join
-        // without a kink, which is what a click at the boundary is made of.
-        const auto s = static_cast<AmReal64>(static_cast<AmReal32>(u * u * (3.0f - 2.0f * u)));
-
-        const auto step = static_cast<AmReal64>(_rampStepStart) * (1.0 - s) + static_cast<AmReal64>(_rampStepEnd) * s;
+        // Linear in the ratio, so the read position stays a straight line within each block. An eased ratio bends it
+        // the same way every block, which phase-modulates the tone at the block rate.
+        const auto step = static_cast<AmReal64>(_rampStepStart) * (1.0 - u) + static_cast<AmReal64>(_rampStepEnd) * u;
         return AM_MAX(static_cast<AmUInt64>(std::llround(step)), 1ULL);
     }
 
@@ -193,8 +199,10 @@ namespace SparkyStudios::Audio::Amplitude
         if (outputFrameCount == 0)
             return 0;
 
-        // (outputFrameCount - 1) * _maxStep is 32.32 frames: cap the request where that product would wrap.
-        const AmUInt64 maxCount = (std::numeric_limits<AmUInt64>::max() / _maxStep) + 1;
+        // The read-ahead below adds _frac (under kOne), the reach and one more step to (outputFrameCount - 1) * _maxStep,
+        // all in 32.32 frames: cap the request where that sum would wrap.
+        const AmUInt64 headroom = std::numeric_limits<AmUInt64>::max() - kOne - _reach - _maxStep;
+        const AmUInt64 maxCount = headroom / _maxStep + 1;
         outputFrameCount = AM_MIN(outputFrameCount, maxCount);
 
         const AmUInt64 reach = CurrentReach();
@@ -242,31 +250,14 @@ namespace SparkyStudios::Audio::Amplitude
         _frac = time & (kOne - 1);
         _rampPos += produced;
 
+        // A spent ramp holds its end value: collapse it so the read-ahead and the kernel shrink back to that ratio
+        // instead of staying sized for the widest step of a ramp that is over.
+        if (ramping && _rampPos >= _rampFrames)
+            SetRatio(static_cast<AmReal64>(_rampStepEnd) / static_cast<AmReal64>(kOne));
+
         inputFrames = consumed;
         outputFrames = produced;
         return true;
-    }
-
-    AmReal32 BandlimitedResamplerInstance::Weight(AmReal64 distance) const
-    {
-        switch (_preset)
-        {
-        case eResamplerPreset::Linear:
-            return distance < 1.0 ? static_cast<AmReal32>(1.0 - distance) : 0.0f;
-        case eResamplerPreset::Cubic:
-            return CubicWeight(distance);
-        default:
-            {
-                const AmReal64 p = distance * _tableScale;
-                const auto i = static_cast<AmUInt64>(p);
-                if (i >= _kernel->GetTableSize())
-                    return 0.0f;
-
-                const AmReal32* table = _kernel->GetTable();
-                const auto f = static_cast<AmReal32>(p - static_cast<AmReal64>(i));
-                return (table[i] + f * (table[i + 1] - table[i])) * _gain;
-            }
-        }
     }
 
     void BandlimitedResamplerInstance::RenderFrame(
@@ -280,10 +271,39 @@ namespace SparkyStudios::Audio::Amplitude
 
         // The weights depend only on each frame's distance to the output time: computed once, in fixed point so the
         // result does not depend on how the input is split across calls, and applied to every channel.
-        for (AmUInt64 k = 0; k < count; ++k)
+        const auto distanceAt = [&](AmUInt64 k)
         {
             const AmInt64 distance = (first + static_cast<AmInt64>(k)) * static_cast<AmInt64>(kOne) - signedTime;
-            _weights[k] = Weight(std::abs(static_cast<AmReal64>(distance)) / static_cast<AmReal64>(kOne));
+            return std::abs(static_cast<AmReal64>(distance)) / static_cast<AmReal64>(kOne);
+        };
+
+        switch (_preset)
+        {
+        case eResamplerPreset::Linear:
+            for (AmUInt64 k = 0; k < count; ++k)
+            {
+                const AmReal64 d = distanceAt(k);
+                _weights[k] = d < 1.0 ? static_cast<AmReal32>(1.0 - d) : 0.0f;
+            }
+            break;
+        case eResamplerPreset::Cubic:
+            for (AmUInt64 k = 0; k < count; ++k)
+                _weights[k] = CubicWeight(distanceAt(k));
+            break;
+        default:
+            {
+                const AmReal32* table = _kernel->GetTable();
+                const AmReal32* deltas = _kernel->GetDeltas();
+                const AmUInt64 size = _kernel->GetTableSize();
+                for (AmUInt64 k = 0; k < count; ++k)
+                {
+                    const AmReal64 p = distanceAt(k) * _tableScale;
+                    const auto i = static_cast<AmUInt64>(p);
+                    const auto f = static_cast<AmReal32>(p - static_cast<AmReal64>(i));
+                    _weights[k] = i < size ? (table[i] + f * deltas[i]) * _gain : 0.0f;
+                }
+            }
+            break;
         }
 
         for (AmUInt16 c = 0; c < _channels; ++c)

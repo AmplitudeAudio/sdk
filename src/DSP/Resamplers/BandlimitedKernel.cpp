@@ -60,6 +60,10 @@ namespace SparkyStudios::Audio::Amplitude
 
             _table[i] = static_cast<AmReal32>(sinc * window);
         }
+
+        _deltas.assign(size + 2, 0.0f);
+        for (AmUInt64 i = 0; i + 1 < _table.size(); ++i)
+            _deltas[i] = _table[i + 1] - _table[i];
     }
 
     AmReal32 BandlimitedKernel::Evaluate(AmReal64 distance) const
@@ -70,6 +74,6 @@ namespace SparkyStudios::Audio::Amplitude
 
         const auto i = static_cast<AmUInt64>(p);
         const auto f = static_cast<AmReal32>(p - static_cast<AmReal64>(i));
-        return _table[i] + f * (_table[i + 1] - _table[i]);
+        return _table[i] + f * _deltas[i];
     }
 } // namespace SparkyStudios::Audio::Amplitude

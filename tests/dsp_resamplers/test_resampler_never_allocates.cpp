@@ -32,8 +32,8 @@ namespace SparkyStudios::Audio::Amplitude::Tests
         {
 #if !defined(AM_NO_MEMORY_STATS)
             // Counts every allocation made through the Amplitude memory pools. The per-frame path touches only the
-            // buffers built by Initialize(), so nothing here goes through a pool: SetRatio(), GetInputFramesNeeded(),
-            // Process() and Reset() must all run on preallocated storage.
+            // buffers built by Initialize(), so nothing here goes through a pool: SetRatio(), SetRatioRamp(),
+            // GetInputFramesNeeded(), Process() and Reset() must all run on preallocated storage.
             const auto allocations = []()
             {
                 AmUInt64 total = 0;
@@ -52,14 +52,22 @@ namespace SparkyStudios::Audio::Amplitude::Tests
                 const AmUInt64 before = allocations();
                 for (AmUInt32 i = 0; i < 1000; ++i)
                 {
-                    r->SetRatio(0.5 + static_cast<AmReal64>(i % 70) * 0.05);
+                    // Every other block ramps, so the per-frame kernel resizing of a ramp runs as often as the
+                    // constant path, and so does the collapse at the end of each ramp.
+                    const AmReal64 ratio = 0.5 + static_cast<AmReal64>(i % 70) * 0.05;
+                    if (i % 2 == 0)
+                        r->SetRatio(ratio);
+                    else
+                        r->SetRatioRamp(ratio, 3.95 - ratio + 0.5, 512);
+
                     AmUInt64 inFrames = r->GetInputFramesNeeded(512);
                     AM_EXPECT(inFrames <= in.GetFrameCount());
                     AmUInt64 outFrames = 512;
                     r->Process(in, inFrames, out, outFrames);
                     AM_EXPECT_EQ(512ULL, outFrames);
-                    if (i % 100 == 0)
-                        r->Reset();
+
+                    // A seek, every block.
+                    r->Reset();
                 }
 
                 AM_EXPECT_EQ(before, allocations());
