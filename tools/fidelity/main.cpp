@@ -24,6 +24,7 @@
 #include <Fidelity/AssetGenerator.h>
 #include <Fidelity/RenderSession.h>
 #include <Fidelity/Report.h>
+#include <Fidelity/ResamplerBench.h>
 #include <Fidelity/Scenario.h>
 
 using namespace SparkyStudios::Audio::Amplitude::Fidelity;
@@ -93,6 +94,7 @@ int main(int argc, char** argv)
     std::string assets = kDefaultAssetsPath;
     std::string project;
     std::string resampler;
+    bool bench = false;
 
     app.add_flag("--list", list, "List scenarios and exit.");
     app.add_option("--filter", filter, "Glob on scenario ids, e.g. \"P*\".");
@@ -105,8 +107,18 @@ int main(int argc, char** argv)
     app.add_flag("--generate-assets", generate, "Generate the fidelity project files and stimuli, then exit.");
     app.add_option("--project", project, "Project directory written by --generate-assets.");
     app.add_option("--resampler", resampler, "Render with this registered resampler instead of the config's (default: the config's).");
+    app.add_flag("--bench-resamplers", bench, "Time the built-in resamplers and exit (use a release build).");
 
     CLI11_PARSE(app, argc, argv);
+
+    if (bench)
+    {
+        std::cout << "preset\tratio\trealtime voices (" << BuildMode() << ")\n";
+        for (const ResamplerBenchRow& row : RunResamplerBench(10.0))
+            std::cout << row.preset << "\t" << row.ratio << "\t" << row.realtimeVoices << "\n";
+
+        return 0;
+    }
 
     if (generate)
     {
