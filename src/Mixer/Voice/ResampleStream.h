@@ -41,11 +41,11 @@ namespace SparkyStudios::Audio::Amplitude
             AmUInt32 wraps = 0;
             AmUInt64 firstWrapFrame = 0; ///< Output frame, relative to the pull start, of the first loop seam.
             bool ended = false;
-            AmUInt64 endFrame = 0;       ///< Output frame, relative to the pull start, of the source end.
-            bool finished = false;       ///< The filter tail after the end has been flushed.
+            AmUInt64 endFrame = 0; ///< Output frame, relative to the pull start, of the source end.
+            bool finished = false; ///< The filter tail after the end has been flushed.
             AmUInt64 finishedFrame = 0;
             bool starved = false;
-            bool error = false;          ///< The resampler made no progress twice in a row; the rest is silence.
+            bool error = false; ///< The resampler made no progress twice in a row; the rest is silence.
         };
 
         /// Extra FIFO room on top of the largest read-ahead, so a refill never has to wait for a consume.
@@ -180,6 +180,9 @@ namespace SparkyStudios::Audio::Amplitude
         AmUInt64 _tail = 1;
         AmReal64 _baseRatio = 1.0;
         AmReal64 _speed = 1.0;
+        AmReal64 _speedRampStart = 1.0;
+        AmReal64 _speedRampEnd = 1.0;
+        AmUInt64 _speedRampFrames = 0;
         AmUInt16 _sourceChannels = 1;
         bool _endSeen = false;
         bool _finished = false;

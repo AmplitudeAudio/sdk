@@ -34,6 +34,8 @@ namespace SparkyStudios::Audio::Amplitude
         _resampler->Initialize(1, sourceRate, outputRate);
         _baseRatio = static_cast<AmReal64>(sourceRate) / static_cast<AmReal64>(outputRate);
         _speed = 1.0;
+        _speedRampStart = _speedRampEnd = 1.0;
+        _speedRampFrames = 0;
         _sourceChannels = sourceChannels;
 
         // Size the FIFO for kFifoRatio blocks plus the widest read-ahead, measured at that ratio.
@@ -63,10 +65,14 @@ namespace SparkyStudios::Audio::Amplitude
         if (!std::isfinite(endSpeed) || endSpeed <= 0.0)
             endSpeed = 1.0;
 
-        // _speed is the previous ramp's mean, not its end: a start equal to it is also equal to the previous start, so
-        // this collapses to "the previous ramp was a constant one" and nothing is being dropped.
-        if (startSpeed == _speed && endSpeed == _speed)
+        // Compare the whole ramp, not its mean: a (0.5, 1.5) ramp and a constant 1.0 share a mean, and dropping the
+        // call would leave the stream ramping on a value the caller has retracted.
+        if (startSpeed == _speedRampStart && endSpeed == _speedRampEnd && outputFrames == _speedRampFrames)
             return;
+
+        _speedRampStart = startSpeed;
+        _speedRampEnd = endSpeed;
+        _speedRampFrames = outputFrames;
 
         // The mean is what the ramp advances the stream by, so it is what GetRatio() and the tail report.
         _speed = 0.5 * (startSpeed + endSpeed);
