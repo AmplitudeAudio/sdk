@@ -95,6 +95,10 @@ namespace SparkyStudios::Audio::Amplitude::Fidelity
 
         StimulusSpec Pitched(StimulusSpec spec, double pitch)
         {
+            // spec.pitch divides a frame count.
+            if (!(pitch > 0.0))
+                pitch = 1.0;
+
             spec.name += "_pitch" + std::to_string(static_cast<int>(pitch));
             spec.pitch = pitch;
             return spec;
@@ -116,7 +120,7 @@ namespace SparkyStudios::Audio::Amplitude::Fidelity
             catalog.push_back(Sine(10000.0, 22050)); // images at 22050 - 10000 Hz when upsampled
             catalog.push_back(Sine(30000.0, 96000)); // above a 48 kHz output's Nyquist: folds back if not filtered
             catalog.push_back(Sine(5000.0, 16000)); // a common voice and dialogue rate
-            catalog.push_back(Pitched(Sine(8000.0, 48000), 2.0)); // 16 kHz heard: the stretched kernel's passband
+            catalog.push_back(Pitched(Sine(8000.0, 48000), 2.0)); // 16 kHz heard at 48 kHz -> 48 kHz: the identity-ratio path, no stretch
             catalog.push_back(Pitched(Sine(15000.0, 48000), 2.0)); // 30 kHz heard: must be filtered, not folded back
 
             for (const std::uint32_t rate : { 16000u, 22050u, 44100u, 48000u, 96000u })

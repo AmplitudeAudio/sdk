@@ -14,6 +14,7 @@
 
 #include <Fidelity/AssetGenerator.h>
 
+#include <charconv>
 #include <fstream>
 #include <iostream>
 #include <iterator>
@@ -52,11 +53,20 @@ namespace SparkyStudios::Audio::Amplitude::Fidelity
             return true;
         }
 
+        /// The shortest decimal that reads back as @p value. An ostream's default precision is six significant digits,
+        /// which would rewrite the number the engine then loads.
+        std::string JsonNumber(double value)
+        {
+            char buffer[64];
+            const auto [end, error] = std::to_chars(buffer, buffer + sizeof(buffer), value);
+            return error == std::errc{} ? std::string(buffer, end) : "0";
+        }
+
         std::string CurveJson(double y0, double y1)
         {
             std::ostringstream json;
-            json << "{ \"parts\": [ { \"start\": { \"x\": 0, \"y\": " << y0 << " }, \"end\": { \"x\": 1, \"y\": " << y1
-                 << " }, \"fader\": \"Linear\" } ] }";
+            json << "{ \"parts\": [ { \"start\": { \"x\": 0, \"y\": " << JsonNumber(y0)
+                 << " }, \"end\": { \"x\": 1, \"y\": " << JsonNumber(y1) << " }, \"fader\": \"Linear\" } ] }";
             return json.str();
         }
 
@@ -85,7 +95,8 @@ namespace SparkyStudios::Audio::Amplitude::Fidelity
             const bool loop = spec.kind == StimulusKind::LoopSine;
             std::ostringstream json;
             json << "{\"id\":" << id << ",\"name\":\"" << SoundName(spec, streamed) << "\",\"effect\":0,"
-                 << "\"gain\":{\"kind\":\"Static\",\"value\":1},\"pitch\":{\"kind\":\"Static\",\"value\":" << spec.pitch << "},\"bus\":1,"
+                 << "\"gain\":{\"kind\":\"Static\",\"value\":1},\"pitch\":{\"kind\":\"Static\",\"value\":" << JsonNumber(spec.pitch)
+                 << "},\"bus\":1,"
                  << "\"priority\":{\"kind\":\"Static\",\"value\":1},\"spatialization\":0,\"attenuation\":0,\"scope\":0,"
                  << "\"fader\":\"Linear\",\"stream\":" << (streamed ? "true" : "false")
                  << ",\"loop\":{\"enabled\":" << (loop ? "true" : "false") << ",\"loop_count\":" << (loop ? 1000 : 0) << "},"
