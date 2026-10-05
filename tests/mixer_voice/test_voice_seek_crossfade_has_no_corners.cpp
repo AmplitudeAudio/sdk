@@ -55,7 +55,10 @@ namespace SparkyStudios::Audio::Amplitude::Tests
                 // The crossfade really ran: the output ends on the other level.
                 AM_EXPECT(std::abs(run.source[2500] - (rising ? 1.0f : 0.0f)) < 1e-3f);
 
-                // A corner is a jump of the step size: about 3.4e-3 per frame at the ends of an 8 ms linear crossfade.
+                // A corner is a jump in the step itself, so it is the second difference that catches one. With a linear time
+                // axis the warped gain would leave the start of an 8 ms crossfade at a step of about 4.1e-3 per
+                // frame; the raised cosine starts and ends at zero slope instead, and the bound below has nothing
+                // to catch.
                 AmReal32 worst = 0.0f;
                 for (AmUInt64 i = 900; i < 1800; ++i)
                     worst = std::max(worst, std::abs((run.source[i + 1] - run.source[i]) - (run.source[i] - run.source[i - 1])));

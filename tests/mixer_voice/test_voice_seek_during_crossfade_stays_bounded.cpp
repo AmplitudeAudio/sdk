@@ -81,7 +81,7 @@ namespace SparkyStudios::Audio::Amplitude::Tests
             }
 
             // Two seeks 10 frames apart: the second lands while the first crossfade's incoming stream (posA) is only
-            // 10/240 of the way in, far from dominant, so its abandoned contribution must stay weighted down instead
+            // 10/384 of the way in, far from dominant, so its abandoned contribution must stay weighted down instead
             // of being swapped in whole.
             {
                 auto voice = std::make_unique<Voice>();
