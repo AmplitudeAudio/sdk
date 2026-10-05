@@ -34,7 +34,6 @@ namespace SparkyStudios::Audio::Amplitude
         _resampler->Initialize(1, sourceRate, outputRate);
         _baseRatio = static_cast<AmReal64>(sourceRate) / static_cast<AmReal64>(outputRate);
         _speed = 1.0;
-        _resampler->SetRatio(_baseRatio);
         _sourceChannels = sourceChannels;
 
         // Size the FIFO for kFifoRatio blocks plus the widest read-ahead, measured at that ratio.

@@ -31,9 +31,9 @@ namespace SparkyStudios::Audio::Amplitude::Tests
     public:
         void Run() override
         {
-            // Upsampling 8000 Hz to 48000 Hz in 8-frame blocks: the 80-tap kernel reads 40 frames ahead, so every
-            // Process() call consumes only part of what it is given and the rest is carried into the next one. Only a
-            // correct history carry keeps the output continuous across the seams.
+            // Upsampling 8000 Hz to 48000 Hz, one 8-frame block at a time: every Process() call is asked for the output a
+            // single block can produce, so it consumes about 8 input frames and leaves the rest of `pending` for the
+            // next call. Only a correct history carry keeps the output continuous across the seams.
             constexpr AmUInt16 channelCount = 1;
             constexpr AmUInt32 sampleRateIn = 8000;
             constexpr AmUInt32 sampleRateOut = 48000;
@@ -41,7 +41,7 @@ namespace SparkyStudios::Audio::Amplitude::Tests
             constexpr AmUInt32 blockCount = 64;
             constexpr AmReal32 frequency = 200.0f;
 
-            auto resampler = std::make_shared<BandlimitedResampler>("default", eResamplerPreset::SincBest);
+            auto resampler = amshared(BandlimitedResampler, "default", eResamplerPreset::SincBest);
             auto instance = resampler->CreateInstance();
 
             instance->Initialize(channelCount, sampleRateIn, sampleRateOut);
@@ -58,10 +58,14 @@ namespace SparkyStudios::Audio::Amplitude::Tests
 
                 while (!pending.empty())
                 {
+                    // The kernel reads far ahead, so the whole pending window has to be visible in the buffer or
+                    // Process() has nothing to render yet. The 8-frame boundary is instead what bounds the request:
+                    // no more output than one block can produce, so no more input than one block is consumed.
                     AudioBuffer inputBuffer(pending.size(), channelCount);
                     std::copy(pending.begin(), pending.end(), inputBuffer[0].begin());
 
-                    const AmUInt64 capacity = pending.size() * sampleRateOut / sampleRateIn + 2;
+                    const AmUInt64 block = AM_MIN(pending.size(), blockFrames);
+                    const AmUInt64 capacity = block * sampleRateOut / sampleRateIn + 2;
                     AudioBuffer outputBuffer(capacity, channelCount);
 
                     AmUInt64 processedInputFrames = pending.size();
@@ -72,7 +76,8 @@ namespace SparkyStudios::Audio::Amplitude::Tests
                     for (AmUInt64 i = 0; i < processedOutputFrames; ++i)
                         resampled.push_back(outputBuffer[0][i]);
 
-                    if (processedInputFrames == 0 && processedOutputFrames == 0)
+                    // A resampler that produces without consuming would never let `pending` shrink.
+                    if (processedInputFrames == 0)
                         break;
 
                     pending.erase(pending.begin(), pending.begin() + static_cast<std::ptrdiff_t>(processedInputFrames));

@@ -28,7 +28,7 @@ namespace SparkyStudios::Audio::Amplitude::Tests
     public:
         void Run() override
         {
-            auto resampler = std::make_shared<BandlimitedResampler>("default", eResamplerPreset::SincBest);
+            auto resampler = amshared(BandlimitedResampler, "default", eResamplerPreset::SincBest);
             auto instance = resampler->CreateInstance();
 
             constexpr AmUInt16 channelCount = 2;

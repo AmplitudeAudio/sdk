@@ -155,7 +155,7 @@ namespace SparkyStudios::Audio::Amplitude
          * A stream that ends keeps feeding zeros until @c GetInputFramesNeeded(1) frames past its end, plus twice this
          * delay, are consumed.
          *
-         * @return The group delay in input frames.
+         * @return The output delay in input frames.
          */
         [[nodiscard]] virtual AmUInt64 GetLatency() const = 0;
 

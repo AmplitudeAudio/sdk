@@ -38,7 +38,7 @@ namespace SparkyStudios::Audio::Amplitude::Tests
             constexpr AmUInt32 blockCount = 8;
             constexpr AmReal32 frequency = 1000.0f;
 
-            auto resampler = std::make_shared<BandlimitedResampler>("default", eResamplerPreset::SincBest);
+            auto resampler = amshared(BandlimitedResampler, "default", eResamplerPreset::SincBest);
             auto instance = resampler->CreateInstance();
 
             instance->Initialize(channelCount, sampleRateIn, sampleRateOut);

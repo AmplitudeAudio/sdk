@@ -308,6 +308,12 @@ static int process(const AmOsString& inFileName, const AmOsString& outFileName, 
 
         if (state.resampling.enabled)
         {
+            if (sampleRate == 0)
+            {
+                log(stderr, "Error: \"" AM_OS_CHAR_FMT "\" declares a sample rate of 0 Hz. Cannot resample it.\n", inFileName.c_str());
+                return EXIT_FAILURE;
+            }
+
             if (state.verbose)
                 log(stdout, "Resampling input data from %d Hz to %d Hz...\n", sampleRate, state.resampling.targetSampleRate);
 

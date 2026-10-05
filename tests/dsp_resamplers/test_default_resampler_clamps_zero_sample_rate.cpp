@@ -32,7 +32,7 @@ namespace SparkyStudios::Audio::Amplitude::Tests
             constexpr AmUInt64 inputFrames = 1024;
             constexpr AmUInt64 outputFrames = 512;
 
-            auto resampler = std::make_shared<BandlimitedResampler>("default", eResamplerPreset::SincBest);
+            auto resampler = amshared(BandlimitedResampler, "default", eResamplerPreset::SincBest);
             auto instance = resampler->CreateInstance();
 
             // A rate of zero reaches the mixer in release builds: the instance must clamp it and stay usable.

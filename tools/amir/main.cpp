@@ -408,6 +408,13 @@ bool resampleIR(const AppOptions& state, AudioBuffer& buffer, AmUInt32& sampleRa
     if (!state.resampling.enabled)
         return true;
 
+    if (sampleRate == 0)
+    {
+        // The caller names the file it was processing.
+        log(stderr, "\tThe IR declares a sample rate of 0 Hz. Nothing to resample from.\n");
+        return false;
+    }
+
     auto resampler = Resampler::Construct("default");
     resampler->Initialize(2, sampleRate, state.resampling.targetSampleRate);
 
