@@ -146,6 +146,9 @@ namespace SparkyStudios::Audio::Amplitude
 
         /**
          * @brief Gets the current input-per-output ratio.
+         *
+         * A ramp reports its mean, the ratio the stream advances by over the ramp: this is the value a caller sizes
+         * buffers and maps positions from, and the value ResampleStream::GetRatio() reports above the instance.
          */
         [[nodiscard]] AmReal64 GetRatio() const
         {
@@ -184,7 +187,8 @@ namespace SparkyStudios::Audio::Amplitude
         std::vector<AmReal32> _weights;
         std::vector<AmReal32> _gather;
 
-        AmUInt64 _step = kOne;
+        /// The widest accumulator step of the current ratio or ramp, in 32.32 frames: the sizing bound.
+        AmUInt64 _maxStep = kOne;
         AmUInt64 _rampStepStart = kOne;
         AmUInt64 _rampStepEnd = kOne;
         AmUInt64 _rampFrames = 0;

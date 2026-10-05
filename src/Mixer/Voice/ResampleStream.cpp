@@ -63,6 +63,8 @@ namespace SparkyStudios::Audio::Amplitude
         if (!std::isfinite(endSpeed) || endSpeed <= 0.0)
             endSpeed = 1.0;
 
+        // _speed is the previous ramp's mean, not its end: a start equal to it is also equal to the previous start, so
+        // this collapses to "the previous ramp was a constant one" and nothing is being dropped.
         if (startSpeed == _speed && endSpeed == _speed)
             return;
 
@@ -88,6 +90,8 @@ namespace SparkyStudios::Audio::Amplitude
     {
         // Every output whose kernel reaches the source end must be produced: past the end the stream feeds zeros until
         // the next output's centre is a read-ahead beyond it. A resampler with a delay also needs that delay flushed.
+        // Under a ramp this is the read-ahead at the ramp's widest point, which is conservative: it holds the
+        // stream until the end of the ramp even where the live ratio would already have reached it.
         _tail = 2 * _resampler->GetLatency() + _resampler->GetInputFramesNeeded(1);
     }
 

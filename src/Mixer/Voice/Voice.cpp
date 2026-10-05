@@ -124,7 +124,9 @@ namespace SparkyStudios::Audio::Amplitude
         if (!std::isfinite(endSpeed) || endSpeed <= 0.0)
             endSpeed = 1.0;
 
-        if (startSpeed == _speedRampStart && endSpeed == _speedRampEnd)
+        // The published ramp is the whole of ApplySpeedTo()'s state, so a call that only shortens or lengthens it
+        // still republishes: dropping it would leave a stream that joins mid-ramp replaying a stale span.
+        if (startSpeed == _speedRampStart && endSpeed == _speedRampEnd && outputFrames == _speedRampFrames)
             return;
 
         _speedRampStart = startSpeed;

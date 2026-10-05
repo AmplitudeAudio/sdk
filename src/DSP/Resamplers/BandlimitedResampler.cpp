@@ -120,11 +120,14 @@ namespace SparkyStudios::Audio::Amplitude
 
         // The read-ahead and the read-ahead estimate are sized for the widest ratio of the ramp, so neither the
         // availability check nor GetInputFramesNeeded() can be caught short by a ramp that speeds the stream up.
-        _step = AM_MAX(_rampStepStart, _rampStepEnd);
-        _ratio = static_cast<AmReal64>(_step) / static_cast<AmReal64>(kOne);
-        _reach = AM_MAX(
-            ApplyRatio(static_cast<AmReal64>(_rampStepStart) / static_cast<AmReal64>(kOne)),
-            ApplyRatio(static_cast<AmReal64>(_rampStepEnd) / static_cast<AmReal64>(kOne)));
+        _maxStep = AM_MAX(_rampStepStart, _rampStepEnd);
+        _ratio = 0.5 * (static_cast<AmReal64>(_rampStepStart) + static_cast<AmReal64>(_rampStepEnd)) / static_cast<AmReal64>(kOne);
+
+        // ApplyRatio() writes the shared kernel state, so the two endpoints are sized one after the other into named
+        // locals rather than as the arguments of one call, whose evaluation order is unspecified.
+        const AmUInt64 reachStart = ApplyRatio(static_cast<AmReal64>(_rampStepStart) / static_cast<AmReal64>(kOne));
+        const AmUInt64 reachEnd = ApplyRatio(static_cast<AmReal64>(_rampStepEnd) / static_cast<AmReal64>(kOne));
+        _reach = AM_MAX(reachStart, reachEnd);
     }
 
     AmUInt64 BandlimitedResamplerInstance::ApplyRatio(AmReal64 ratio)
@@ -139,23 +142,25 @@ namespace SparkyStudios::Audio::Amplitude
             break;
         default:
             _stretch = std::clamp(ratio, 1.0, kMaxKernelStretch);
+
+            // Only the table-driven presets read the table scale; Linear and Cubic evaluate their kernel directly.
+            _tableScale = static_cast<AmReal64>(_kernel->GetPhases()) / _stretch;
             break;
         }
 
-        const AmUInt64 reach = _preset == eResamplerPreset::Linear
-            ? kOne
-            : (_preset == eResamplerPreset::Cubic
-                   ? 2 * kOne
-                   : static_cast<AmUInt64>(
-                         std::llround(static_cast<AmReal64>(_kernel->GetZeroCrossings()) * _stretch * static_cast<AmReal64>(kOne))));
-
-        _tableScale = _preset == eResamplerPreset::Linear || _preset == eResamplerPreset::Cubic
-            ? 0.0
-            : static_cast<AmReal64>(_kernel->GetPhases()) / _stretch;
-
         // A kernel stretched by s cuts at 1/s of Nyquist and has a DC gain of s.
         _gain = static_cast<AmReal32>(1.0 / _stretch);
-        return reach;
+
+        switch (_preset)
+        {
+        case eResamplerPreset::Linear:
+            return kOne;
+        case eResamplerPreset::Cubic:
+            return 2 * kOne;
+        default:
+            return static_cast<AmUInt64>(
+                std::llround(static_cast<AmReal64>(_kernel->GetZeroCrossings()) * _stretch * static_cast<AmReal64>(kOne)));
+        }
     }
 
     AmUInt64 BandlimitedResamplerInstance::StepAt(AmUInt64 position) const
@@ -180,7 +185,7 @@ namespace SparkyStudios::Audio::Amplitude
         if (_rampStepStart != _rampStepEnd)
             return _reach;
 
-        return _step == kOne && _frac == 0 ? 0 : _reach;
+        return _maxStep == kOne && _frac == 0 ? 0 : _reach;
     }
 
     AmUInt64 BandlimitedResamplerInstance::GetInputFramesNeeded(AmUInt64 outputFrameCount) const
@@ -188,14 +193,14 @@ namespace SparkyStudios::Audio::Amplitude
         if (outputFrameCount == 0)
             return 0;
 
-        // (outputFrameCount - 1) * _step is 32.32 frames: cap the request where that product would wrap.
-        const AmUInt64 maxCount = (std::numeric_limits<AmUInt64>::max() / _step) + 1;
+        // (outputFrameCount - 1) * _maxStep is 32.32 frames: cap the request where that product would wrap.
+        const AmUInt64 maxCount = (std::numeric_limits<AmUInt64>::max() / _maxStep) + 1;
         outputFrameCount = AM_MIN(outputFrameCount, maxCount);
 
         const AmUInt64 reach = CurrentReach();
-        const AmUInt64 last = _frac + (outputFrameCount - 1) * _step;
+        const AmUInt64 last = _frac + (outputFrameCount - 1) * _maxStep;
         const AmUInt64 top = reach == 0 ? (last >> 32) : ((last + reach - 1) >> 32);
-        const AmUInt64 consumedAfter = (last + _step) >> 32;
+        const AmUInt64 consumedAfter = (last + _maxStep) >> 32;
 
         return AM_MAX(top + 1, consumedAfter);
     }
@@ -208,19 +213,24 @@ namespace SparkyStudios::Audio::Amplitude
         const AmUInt64 wanted = AM_MIN(outputFrames, static_cast<AmUInt64>(output.GetFrameCount()));
         const AmUInt64 reach = CurrentReach();
 
+        // Without a live ramp the ratio cannot change within the call, so the kernel stays sized by the ApplyRatio()
+        // that SetRatio() or SetRatioRamp() already ran at the ratio StepAt() reports for every frame.
+        const bool ramping = _rampStepStart != _rampStepEnd;
+
         AmUInt64 time = _frac;
         AmUInt64 produced = 0;
         while (produced < wanted)
         {
             // The kernel follows the ratio of this very output frame, so the cutoff and the gain track the pitch
             // through the ramp instead of holding the value the whole ramp was sized for.
-            const AmUInt64 step = StepAt(_rampPos + produced);
+            const AmUInt64 step = ramping ? StepAt(_rampPos + produced) : _rampStepEnd;
 
             const AmUInt64 top = reach == 0 ? (time >> 32) : ((time + reach - 1) >> 32);
             if (top >= available || ((time + step) >> 32) > available)
                 break;
 
-            AM_UNUSED(ApplyRatio(static_cast<AmReal64>(step) / static_cast<AmReal64>(kOne)));
+            if (ramping)
+                AM_UNUSED(ApplyRatio(static_cast<AmReal64>(step) / static_cast<AmReal64>(kOne)));
 
             RenderFrame(input, output, time, reach, produced);
             time += step;

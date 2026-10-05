@@ -111,6 +111,9 @@ namespace SparkyStudios::Audio::Amplitude
          * The sum of the input consumed over the ramp is that of the mean ratio, whichever way an implementation gets
          * there, so a caller can size buffers and map positions from the mean.
          *
+         * @warning This default implementation collapses the ramp to its mean: the stream advances correctly, but the
+         * read position is the staircase described above. Override it to vary the ratio per output frame.
+         *
          * Audio-thread safe and allocation-free, like @c SetRatio().
          *
          * @param[in] inputPerOutputStart The input frames consumed per output frame, at the first output frame.
