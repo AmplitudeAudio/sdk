@@ -13,6 +13,8 @@
 // limitations under the License.
 
 #include <cstddef>
+#include <set>
+#include <string>
 #include <vector>
 
 #include <Fidelity/ResamplerBench.h>
@@ -33,6 +35,14 @@ namespace SparkyStudios::Audio::Amplitude::Tests
             AM_EXPECT_EQ(std::size_t{ 16 }, rows.size()); // 4 presets x 4 ratios
             for (const auto& row : rows)
                 AM_EXPECT(row.realtimeVoices > 0.0);
+
+            // Sixteen rows of the same preset would satisfy the count and the timings, so name the four.
+            std::set<std::string> presets;
+            for (const auto& row : rows)
+                presets.insert(row.preset);
+
+            const std::set<std::string> expected{ "linear", "cubic", "sinc", "sinc_best" };
+            AM_EXPECT(presets == expected);
         }
     };
 

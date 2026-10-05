@@ -64,6 +64,10 @@ namespace SparkyStudios::Audio::Amplitude::Tests
 
                 AM_EXPECT_EQ(before, allocations());
             }
+#else
+            // The pool counters do not exist in a release build, so this would otherwise register a green test
+            // that asserted nothing. Say so rather than pass quietly.
+            AM_EXPECT(false);
 #endif
         }
     };

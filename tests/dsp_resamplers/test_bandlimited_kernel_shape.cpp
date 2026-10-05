@@ -40,6 +40,7 @@ namespace SparkyStudios::Audio::Amplitude::Tests
 
                 AM_EXPECT_EQ(0.0f, kernel.Evaluate(static_cast<AmReal64>(spec.zeroCrossings) + 0.5));
 
+                // The table holds the right half only: Evaluate() mirrors negative distances onto it.
                 for (const AmReal64 d : { 0.1, 0.5, 1.37, 7.9 })
                     AM_EXPECT_EQ(kernel.Evaluate(d), kernel.Evaluate(-d));
             }
