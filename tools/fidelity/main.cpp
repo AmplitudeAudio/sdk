@@ -92,6 +92,7 @@ int main(int argc, char** argv)
     std::string writeBaseline;
     std::string assets = kDefaultAssetsPath;
     std::string project;
+    std::string resampler;
 
     app.add_flag("--list", list, "List scenarios and exit.");
     app.add_option("--filter", filter, "Glob on scenario ids, e.g. \"P*\".");
@@ -103,6 +104,7 @@ int main(int argc, char** argv)
     app.add_option("--assets", assets, "Fidelity asset directory.");
     app.add_flag("--generate-assets", generate, "Generate the fidelity project files and stimuli, then exit.");
     app.add_option("--project", project, "Project directory written by --generate-assets.");
+    app.add_option("--resampler", resampler, "Render with this registered resampler instead of the config's (default: the config's).");
 
     CLI11_PARSE(app, argc, argv);
 
@@ -141,6 +143,12 @@ int main(int argc, char** argv)
         return 1;
     }
 
+    if (!writeBaseline.empty() && !resampler.empty() && resampler != "default")
+    {
+        std::cerr << "--write-baseline records the default resampler only.\n";
+        return 1;
+    }
+
     const std::vector<const Scenario*> selected = registry.Match(filter);
     if (selected.empty())
     {
@@ -162,6 +170,7 @@ int main(int argc, char** argv)
     RunContext context;
     context.assets = assets;
     context.grid = mode;
+    context.resampler = resampler;
 
     std::vector<ScenarioResult> results;
     bool measurementErrors = false;
@@ -185,6 +194,7 @@ int main(int argc, char** argv)
     options.writeWavs = !noWav;
     options.gitSha = GitSha();
     options.buildMode = BuildMode();
+    options.resampler = resampler.empty() ? "config" : resampler;
 
     if (!WriteReport(results, options, baseline ? &*baseline : nullptr))
     {

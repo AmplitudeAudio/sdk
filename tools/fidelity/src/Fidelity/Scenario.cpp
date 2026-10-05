@@ -173,14 +173,17 @@ namespace SparkyStudios::Audio::Amplitude::Fidelity
         Measurement& out,
         Capture& capture)
     {
-        RenderOutcome first = Render(context.assets, settings, makeActions());
+        RenderSettings local = settings;
+        local.resampler = context.resampler;
+
+        RenderOutcome first = Render(context.assets, local, makeActions());
         if (!first.error.empty())
         {
             out.error = first.error;
             return false;
         }
 
-        const RenderOutcome second = Render(context.assets, settings, makeActions());
+        const RenderOutcome second = Render(context.assets, local, makeActions());
         if (!second.error.empty())
         {
             out.error = second.error;

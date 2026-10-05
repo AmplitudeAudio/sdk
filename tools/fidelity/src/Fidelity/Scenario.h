@@ -140,6 +140,8 @@ namespace SparkyStudios::Audio::Amplitude::Fidelity
     {
         std::filesystem::path assets = kDefaultAssetsPath;
         GridMode grid = GridMode::Quick;
+        /// When not empty, every render of this run uses the registered resampler with this name.
+        std::string resampler;
     };
 
     /**

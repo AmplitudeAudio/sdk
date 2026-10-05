@@ -34,6 +34,7 @@ namespace SparkyStudios::Audio::Amplitude::Fidelity
         bool writeWavs = true;
         std::string gitSha = "unknown";
         std::string buildMode = "unknown";
+        std::string resampler = "config";
     };
 
     /**

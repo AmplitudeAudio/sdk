@@ -75,6 +75,8 @@ namespace SparkyStudios::Audio::Amplitude::Fidelity
         double jitterAmount = 0.25;
         std::uint64_t jitterSeed = 1;
         std::uint64_t durationSamples = 0;
+        /// When not empty, the registered resampler with this name renders in place of "default".
+        std::string resampler;
     };
 
     /**

@@ -84,7 +84,7 @@ namespace SparkyStudios::Audio::Amplitude::Fidelity
             const bool loop = spec.kind == StimulusKind::LoopSine;
             std::ostringstream json;
             json << "{\"id\":" << id << ",\"name\":\"" << SoundName(spec, streamed) << "\",\"effect\":0,"
-                 << "\"gain\":{\"kind\":\"Static\",\"value\":1},\"pitch\":{\"kind\":\"Static\",\"value\":1},\"bus\":1,"
+                 << "\"gain\":{\"kind\":\"Static\",\"value\":1},\"pitch\":{\"kind\":\"Static\",\"value\":" << spec.pitch << "},\"bus\":1,"
                  << "\"priority\":{\"kind\":\"Static\",\"value\":1},\"spatialization\":0,\"attenuation\":0,\"scope\":0,"
                  << "\"fader\":\"Linear\",\"stream\":" << (streamed ? "true" : "false")
                  << ",\"loop\":{\"enabled\":" << (loop ? "true" : "false") << ",\"loop_count\":" << (loop ? 1000 : 0) << "},"

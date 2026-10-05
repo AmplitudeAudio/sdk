@@ -37,7 +37,7 @@ namespace SparkyStudios::Audio::Amplitude::Tests
             // A 30 kHz tone folded to 18 kHz at 48 kHz, 20 dB under the panned tone level.
             const double level = spec->amplitude * CenterPanGain() * AmplitudeFromDb(-20.0);
             const Signal folded = MakeSine(96000, 48000.0, 48000.0 - spec->frequencyHz, level);
-            AM_EXPECT(std::abs(AliasLevelDbc(folded, 48000.0, *spec) - (-20.0)) <= 0.1);
+            AM_EXPECT(std::abs(AliasLevelDbc(folded, 48000.0, *spec, spec->frequencyHz) - (-20.0)) <= 0.1);
         }
     };
 

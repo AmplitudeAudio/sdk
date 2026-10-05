@@ -330,7 +330,8 @@ namespace SparkyStudios::Audio::Amplitude::Fidelity
         // report.json
         std::ostringstream json;
         json << "{\n  \"harness\": \"amplitude_fidelity\",\n  \"version\": 1,\n  \"git\": \"" << JsonEscape(options.gitSha)
-             << "\",\n  \"build\": \"" << JsonEscape(options.buildMode) << "\",\n  \"scenarios\": [";
+             << "\",\n  \"build\": \"" << JsonEscape(options.buildMode) << "\",\n  \"resampler\": \"" << JsonEscape(options.resampler)
+             << "\",\n  \"scenarios\": [";
         for (std::size_t s = 0; s < results.size(); ++s)
         {
             const ScenarioResult& result = results[s];
@@ -403,7 +404,7 @@ namespace SparkyStudios::Audio::Amplitude::Fidelity
 
         std::ostringstream md;
         md << "# Fidelity report\n\n";
-        md << "Git `" << options.gitSha << "` · build " << options.buildMode << "\n\n";
+        md << "Git `" << options.gitSha << "` · build " << options.buildMode << " · resampler " << options.resampler << "\n\n";
         md << "| Scenarios | Gated metrics | Meet target | Measurement errors |" << (baseline != nullptr ? " Regressed vs baseline |" : "")
            << "\n";
         md << "|---|---|---|---|" << (baseline != nullptr ? "---|" : "") << "\n";
