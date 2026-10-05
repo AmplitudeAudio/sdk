@@ -1,8 +1,7 @@
 # Changelog
 
 All notable changes to the Amplitude Audio SDK are recorded here. The format follows
-[Keep a Changelog](https://keepachangelog.com/en/1.1.0/). The project is pre-1.0 and has not adopted a
-versioning policy; the build reports its own `AM_VERSION_*` values.
+[Keep a Changelog](https://keepachangelog.com/en/1.1.0/). The build reports its own `AM_VERSION_*` values.
 
 ## [Unreleased]
 
