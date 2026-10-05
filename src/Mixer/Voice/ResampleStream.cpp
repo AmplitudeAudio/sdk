@@ -45,6 +45,7 @@ namespace SparkyStudios::Audio::Amplitude
 
         const auto blockInput = static_cast<AmUInt64>(std::ceil(kFifoRatio * static_cast<AmReal64>(maxBlockFrames)));
         const AmUInt64 capacity = blockInput + 2 * reach + kFifoMargin;
+        _prerollFrames = reach;
         _fifo = AudioBuffer(capacity, 1);
         _source = AudioBuffer(capacity, sourceChannels);
         _scratch = AudioBuffer(maxBlockFrames, 1);
@@ -90,6 +91,37 @@ namespace SparkyStudios::Audio::Amplitude
         _finished = false;
         _resampler->Reset();
         UpdateTail();
+    }
+
+    void ResampleStream::Seek(SourceReader& reader, AmUInt64 position)
+    {
+        reader.Seek(position);
+        Reset();
+
+        // A restart at the region start plays from the top, after silence, even in a loop. Elsewhere a loop has its tail
+        // before its start, and any other source nothing.
+        const AmUInt64 start = reader.GetRegionStart();
+        const AmUInt64 played = reader.GetCursor() - start;
+        if (played == 0)
+            return;
+
+        const AmUInt64 length = reader.GetRegionEnd() - start;
+        const AmUInt64 frames = AM_MIN(_prerollFrames, played + (reader.IsLooping() ? length : 0));
+        const AmUInt64 tail = frames - AM_MIN(frames, played);
+
+        // A copy reads the frames, each part exactly up to its end, so no seam, end or loop count is involved.
+        SourceReader preroll = reader;
+        SourceReadReport read;
+        if (tail > 0)
+        {
+            preroll.Seek(reader.GetRegionEnd() - tail);
+            preroll.Read(_source, 0, tail, read);
+        }
+
+        preroll.Seek(reader.GetCursor() - (frames - tail));
+        preroll.Read(_source, tail, frames - tail, read);
+        Downmix(frames, 0);
+        _resampler->PrimeHistory(_fifo, frames);
     }
 
     void ResampleStream::UpdateTail()
@@ -171,28 +203,7 @@ namespace SparkyStudios::Audio::Amplitude
         SourceReadReport read;
         reader.Read(_source, 0, frames, read);
 
-        auto& fifo = _fifo[0];
-        if (_sourceChannels == 1)
-        {
-            std::copy_n(_source[0].begin(), frames, fifo.begin() + _fifoCount);
-        }
-        else if (_sourceChannels == 2)
-        {
-            const AmReal32 scale = InverseSquareRoot(2);
-            for (AmUInt64 i = 0; i < frames; ++i)
-                fifo[_fifoCount + i] = (_source[0][i] + _source[1][i]) * scale;
-        }
-        else
-        {
-            const AmReal32 scale = 1.0f / static_cast<AmReal32>(_sourceChannels);
-            for (AmUInt64 i = 0; i < frames; ++i)
-            {
-                AmReal32 sum = 0.0f;
-                for (AmUInt16 c = 0; c < _sourceChannels; ++c)
-                    sum += _source[c][i];
-                fifo[_fifoCount + i] = sum * scale;
-            }
-        }
+        Downmix(frames, _fifoCount);
 
         // Input frames map to output frames through the mean ratio. At a constant ratio that is exact to within a frame;
         // during a ramp the frames between here and the event follow the ramp, not its mean, so an event lands up to
@@ -221,6 +232,32 @@ namespace SparkyStudios::Audio::Amplitude
 
         report.starved |= read.starved;
         _fifoCount += frames;
+    }
+
+    void ResampleStream::Downmix(AmUInt64 frames, AmUInt64 offset)
+    {
+        auto& fifo = _fifo[0];
+        if (_sourceChannels == 1)
+        {
+            std::copy_n(_source[0].begin(), frames, fifo.begin() + offset);
+        }
+        else if (_sourceChannels == 2)
+        {
+            const AmReal32 scale = InverseSquareRoot(2);
+            for (AmUInt64 i = 0; i < frames; ++i)
+                fifo[offset + i] = (_source[0][i] + _source[1][i]) * scale;
+        }
+        else
+        {
+            const AmReal32 scale = 1.0f / static_cast<AmReal32>(_sourceChannels);
+            for (AmUInt64 i = 0; i < frames; ++i)
+            {
+                AmReal32 sum = 0.0f;
+                for (AmUInt16 c = 0; c < _sourceChannels; ++c)
+                    sum += _source[c][i];
+                fifo[offset + i] = sum * scale;
+            }
+        }
     }
 
     void ResampleStream::Consume(AmUInt64 frames)

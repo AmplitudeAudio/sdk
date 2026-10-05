@@ -140,6 +140,11 @@ namespace SparkyStudios::Audio::Amplitude
         void Reset() override;
 
         /**
+         * @copydoc ResamplerInstance::PrimeHistory
+         */
+        void PrimeHistory(const AudioBuffer& input, AmUInt64 frames) override;
+
+        /**
          * @copydoc ResamplerInstance::Clear
          */
         void Clear() override;

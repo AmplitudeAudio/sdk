@@ -362,6 +362,12 @@ namespace SparkyStudios::Audio::Amplitude
         _history.Clear();
     }
 
+    void BandlimitedResamplerInstance::PrimeHistory(const AudioBuffer& input, AmUInt64 frames)
+    {
+        AMPLITUDE_ASSERT(input.GetChannelCount() == _channels && frames <= input.GetFrameCount());
+        PushHistory(input, frames);
+    }
+
     void BandlimitedResamplerInstance::Clear()
     {
         Reset();

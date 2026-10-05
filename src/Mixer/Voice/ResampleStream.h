@@ -105,6 +105,20 @@ namespace SparkyStudios::Audio::Amplitude
         void Reset();
 
         /**
+         * @brief Moves @p reader to @p position and restarts the stream there, its resampler history filled with the
+         * source frames that precede the position.
+         *
+         * The first outputs then read real signal on their left, as they would have in a stream that played up to the
+         * position, rather than starting on silence with the ringing of an abrupt onset. A looping source takes those
+         * frames across its seam; any other source has nothing before its region start, where the history stays silent.
+         * A restart exactly at the region start plays from the top: its history is silent, looping or not.
+         *
+         * @param[in,out] reader The source reader this stream pulls from.
+         * @param[in] position The source frame to restart at.
+         */
+        void Seek(SourceReader& reader, AmUInt64 position);
+
+        /**
          * @brief Returns the next source frame not yet consumed by the resampler, wrapped into the loop region.
          *
          * @param[in] reader The source reader this stream has been pulling from.
@@ -166,6 +180,7 @@ namespace SparkyStudios::Audio::Amplitude
 
     private:
         void Refill(SourceReader& reader, AmUInt64 frames, AmUInt64 produced, PullReport& report);
+        void Downmix(AmUInt64 frames, AmUInt64 offset);
         void Consume(AmUInt64 frames);
         void UpdateTail();
 
@@ -177,6 +192,7 @@ namespace SparkyStudios::Audio::Amplitude
         AmUInt64 _inputConsumed = 0;
         AmUInt64 _primedInput = 0;
         AmUInt64 _endInput = 0;
+        AmUInt64 _prerollFrames = 0;
         AmUInt64 _tail = 1;
         AmReal64 _baseRatio = 1.0;
         AmReal64 _speed = 1.0;

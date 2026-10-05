@@ -196,6 +196,27 @@ namespace SparkyStudios::Audio::Amplitude
         virtual void Reset() = 0;
 
         /**
+         * @brief Fills the history with the input that precedes the next one, as if it had just been consumed.
+         *
+         * A stream that restarts mid-signal -- a seek, or a start at an offset -- calls this after @c Reset() and before
+         * the next @c Process(), with the frames just before its new position. The first outputs then read real signal on
+         * their left instead of zeros, and start without the ringing of an abrupt onset. The phase is left untouched.
+         *
+         * @warning This default implementation ignores the frames: the stream restarts on a silent history.
+         *
+         * Audio-thread safe and allocation-free.
+         *
+         * @param[in] input The frames before the next input, on every channel.
+         * @param[in] frames The number of frames of @p input to take, from its start. An implementation keeps the last
+         * ones it needs.
+         */
+        virtual void PrimeHistory(const AudioBuffer& input, AmUInt64 frames)
+        {
+            AM_UNUSED(input);
+            AM_UNUSED(frames);
+        }
+
+        /**
          * @brief Cleans up the internal resampler state and allocated data.
          *
          * @note This method is called when the resampler is about to be destroyed.

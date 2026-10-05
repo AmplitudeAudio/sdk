@@ -72,12 +72,12 @@ namespace SparkyStudios::Audio::Amplitude
     bool Voice::InitializeSlot(VoiceStreamSlot& slot, AmUInt64 position) const
     {
         slot.reader.Initialize(_settings.source, _settings.regionStart, _settings.regionEnd, _settings.loop, _settings.loopCount);
-        slot.reader.Seek(position);
-
         if (!slot.stream.Initialize(
                 _settings.resamplerName, _settings.source.sampleRate, _settings.outputRate, _settings.source.channels,
                 _settings.maxBlockFrames))
             return false;
+
+        slot.stream.Seek(slot.reader, position);
 
         slot.stream.SetSpeed(_settings.speed);
         return true;
@@ -337,8 +337,7 @@ namespace SparkyStudios::Audio::Amplitude
                 }
 
                 VoiceStreamSlot& slot = _slots[_primary];
-                slot.reader.Seek(command.position);
-                slot.stream.Reset();
+                slot.stream.Seek(slot.reader, command.position);
                 _primePending = true;
 
                 // The explicit position wins over a virtual cursor this voice was resuming from.
@@ -365,8 +364,7 @@ namespace SparkyStudios::Audio::Amplitude
                 _settings.startPosition, _settings.startPositionClock, rate, slot.reader.GetRegionStart(), slot.reader.GetRegionEnd(),
                 slot.reader.IsLooping());
 
-            slot.reader.Seek(cursor.PositionAt(frame));
-            slot.stream.Reset();
+            slot.stream.Seek(slot.reader, cursor.PositionAt(frame));
         }
 
         _primePending = true;
@@ -464,8 +462,7 @@ namespace SparkyStudios::Audio::Amplitude
         for (; seek < _seekCount; ++seek)
         {
             VoiceStreamSlot& slot = _slots[_primary];
-            slot.reader.Seek(_seeks[seek].position);
-            slot.stream.Reset();
+            slot.stream.Seek(slot.reader, _seeks[seek].position);
         }
     }
 
@@ -546,8 +543,7 @@ namespace SparkyStudios::Audio::Amplitude
 
         VoiceStreamSlot& to = _slots[1 - _primary];
         to.reader = _slots[_primary].reader;
-        to.reader.Seek(position);
-        to.stream.Reset();
+        to.stream.Seek(to.reader, position);
         ApplySpeedTo(to.stream);
 
         // Priming may run into loop seams or the end of the source. Those belong to the incoming stream: they are applied
