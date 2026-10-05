@@ -88,6 +88,13 @@ namespace SparkyStudios::Audio::Amplitude::Tests
             // close to the full amplitude, so a 0.1 threshold separates the two cases with a wide margin.
             AM_EXPECT(resampled.size() > 256);
 
+            // A resampler that emitted nothing would satisfy the jump bound with a largestJump of 0: the length
+            // check above says frames came out, and this says they carried the tone.
+            AmReal32 peak = 0.0f;
+            for (const AmReal32 sample : resampled)
+                peak = std::max(peak, std::abs(sample));
+            AM_EXPECT(peak > 0.25f);
+
             AmReal32 largestJump = 0.0f;
             for (AmSize i = 128; i < resampled.size(); ++i)
             {

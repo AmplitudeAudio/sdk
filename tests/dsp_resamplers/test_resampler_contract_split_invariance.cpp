@@ -89,6 +89,12 @@ namespace SparkyStudios::Audio::Amplitude::Tests
                     std::vector<AmReal32> expected;
                     AM_EXPECT(Stream(*reference, source, kTotal, kTotal, expected));
 
+                    // Split invariance below is also satisfied by silence: make sure the tone survived at all.
+                    AmReal32 peak = 0.0f;
+                    for (const AmReal32 sample : expected)
+                        peak = std::max(peak, std::abs(sample));
+                    AM_EXPECT(peak > 0.25f);
+
                     for (const AmUInt64 block : kBlocks)
                     {
                         auto instance = Resampler::Construct(name);

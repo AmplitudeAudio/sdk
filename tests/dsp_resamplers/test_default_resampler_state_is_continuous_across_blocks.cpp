@@ -70,6 +70,13 @@ namespace SparkyStudios::Audio::Amplitude::Tests
             // caused by a lost state carry produces a jump close to the full amplitude.
             AM_EXPECT(resampled.size() > 64);
 
+            // A resampler that emitted nothing would satisfy the jump bound with a largestJump of 0: the length
+            // check above says frames came out, and this says they carried the tone.
+            AmReal32 peak = 0.0f;
+            for (const AmReal32 sample : resampled)
+                peak = std::max(peak, std::abs(sample));
+            AM_EXPECT(peak > 0.25f);
+
             AmReal32 largestJump = 0.0f;
             for (AmSize i = 32; i < resampled.size(); ++i)
             {
