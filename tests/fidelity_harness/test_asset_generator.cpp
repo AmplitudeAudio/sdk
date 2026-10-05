@@ -76,6 +76,10 @@ namespace SparkyStudios::Audio::Amplitude::Tests
             AM_EXPECT(glide.find(std::string("\"name\":\"") + kGlideSoundName + "\"") != std::string::npos);
             AM_EXPECT(glide.find("\"kind\":\"RTPC\"") != std::string::npos);
 
+            // RTPC curves are normalised over [min, max] before evaluation, so the keys run over [0, 1]. The glide
+            // writes the identity mapping; the raw pitch range (0.25 to 4) would map to nothing and silence the curve.
+            AM_EXPECT(glide.find("\"start\":{\"x\":0,\"y\":0.25},\"end\":{\"x\":1,\"y\":4}") != std::string::npos);
+
             for (const StimulusSpec& spec : StimulusCatalog())
             {
                 AM_EXPECT(bank.find("\"fidelity/" + spec.name + ".amsound\"") != std::string::npos);
