@@ -29,6 +29,8 @@ namespace SparkyStudios::Audio::Amplitude::Fidelity
 {
     namespace
     {
+        constexpr std::string_view kResamplerHeader = "# resampler\t";
+
         std::string Number(double value)
         {
             if (!std::isfinite(value))
@@ -194,10 +196,19 @@ namespace SparkyStudios::Audio::Amplitude::Fidelity
         return 0.0;
     }
 
-    std::string ToTsv(const std::vector<ScenarioResult>& results)
+    std::string_view ResamplerPreset(std::string_view selected)
+    {
+        if (selected.empty() || selected == "config" || selected == "default")
+            return "default";
+
+        return selected;
+    }
+
+    std::string ToTsv(const std::vector<ScenarioResult>& results, std::string_view resampler)
     {
         std::ostringstream tsv;
         tsv << "# key\tvalue\tunit\tbetter\ttarget\n";
+        tsv << kResamplerHeader << resampler << "\n";
         for (const ScenarioResult& result : results)
             for (const Measurement& measurement : result.measurements)
                 for (const Metric& metric : measurement.metrics)
@@ -207,16 +218,16 @@ namespace SparkyStudios::Audio::Amplitude::Fidelity
         return tsv.str();
     }
 
-    bool WriteTsv(const std::filesystem::path& path, const std::vector<ScenarioResult>& results)
+    bool WriteTsv(const std::filesystem::path& path, const std::vector<ScenarioResult>& results, std::string_view resampler)
     {
         std::error_code error;
         if (path.has_parent_path())
             std::filesystem::create_directories(path.parent_path(), error);
 
-        return WriteText(path, ToTsv(results));
+        return WriteText(path, ToTsv(results, resampler));
     }
 
-    std::optional<Baseline> ReadTsv(const std::filesystem::path& path)
+    std::optional<Baseline> ReadTsv(const std::filesystem::path& path, std::string* resampler)
     {
         std::ifstream file(path);
         if (!file)
@@ -241,11 +252,22 @@ namespace SparkyStudios::Audio::Amplitude::Fidelity
 
         // A damaged baseline is refused as a whole: a skipped line would silently drop its metric from the gate.
         Baseline baseline;
+        if (resampler != nullptr)
+            *resampler = "default";
+
         std::string line;
         while (std::getline(file, line))
         {
-            if (line.empty() || line[0] == '#')
+            if (line.empty())
                 continue;
+
+            if (line[0] == '#')
+            {
+                if (resampler != nullptr && line.starts_with(kResamplerHeader))
+                    *resampler = line.substr(kResamplerHeader.size());
+
+                continue;
+            }
 
             const std::vector<std::string> fields = Split(line, '\t');
             if (fields.size() != 5 || fields[0].empty() || baseline.contains(fields[0]))
@@ -376,7 +398,7 @@ namespace SparkyStudios::Audio::Amplitude::Fidelity
         json << "\n  ]\n}\n";
 
         bool ok = WriteText(options.outDir / "report.json", json.str());
-        ok = WriteTsv(options.outDir / "metrics.tsv", results) && ok;
+        ok = WriteTsv(options.outDir / "metrics.tsv", results, ResamplerPreset(options.resampler)) && ok;
 
         // summary.md
         std::size_t gated = 0;

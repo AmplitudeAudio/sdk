@@ -71,6 +71,17 @@ namespace SparkyStudios::Audio::Amplitude::Fidelity
     [[nodiscard]] const char* VerdictName(Verdict verdict);
 
     /**
+     * @brief The preset a metrics TSV records for a run made with @p selected.
+     *
+     * "config", "default" and no selection at all render the same way, so they record the same name.
+     *
+     * @param[in] selected The --resampler selection, empty when the option was not passed.
+     *
+     * @return @p selected, or "default" when the run rendered through the default resampler.
+     */
+    [[nodiscard]] std::string_view ResamplerPreset(std::string_view selected);
+
+    /**
      * @brief "<scenario>|<variant>|<grid key>|<metric>".
      */
     [[nodiscard]] std::string MetricKey(const std::string& scenario, const Measurement& measurement, const Metric& metric);
@@ -84,10 +95,26 @@ namespace SparkyStudios::Audio::Amplitude::Fidelity
 
     /**
      * @brief Every metric as "key \t value \t unit \t better \t target" lines ("nan" and "-" for missing values).
+     *
+     * The header names the preset the numbers were rendered with, so a file written by another preset can be refused
+     * instead of read as a regression.
+     *
+     * @param[in] results The run to serialise.
+     * @param[in] resampler The preset the run rendered with, as returned by ResamplerPreset().
      */
-    [[nodiscard]] std::string ToTsv(const std::vector<ScenarioResult>& results);
-    bool WriteTsv(const std::filesystem::path& path, const std::vector<ScenarioResult>& results);
-    [[nodiscard]] std::optional<Baseline> ReadTsv(const std::filesystem::path& path);
+    [[nodiscard]] std::string ToTsv(const std::vector<ScenarioResult>& results, std::string_view resampler = "default");
+    bool WriteTsv(const std::filesystem::path& path, const std::vector<ScenarioResult>& results, std::string_view resampler = "default");
+
+    /**
+     * @brief Reads a metrics TSV written by ToTsv().
+     *
+     * @param[in] path The file to read.
+     * @param[out] resampler When not null, receives the preset named in the header. A file that names none predates
+     *                       the header and is read as the default preset, the only one --write-baseline accepts.
+     *
+     * @return The metrics, or nullopt when the file is unreadable or damaged.
+     */
+    [[nodiscard]] std::optional<Baseline> ReadTsv(const std::filesystem::path& path, std::string* resampler = nullptr);
 
     /**
      * @brief Compares the gated metrics (those with a target) with a baseline.
