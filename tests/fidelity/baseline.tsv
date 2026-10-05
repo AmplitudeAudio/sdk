@@ -1,4 +1,5 @@
 # key	value	unit	better	target
+# resampler	default
 P1|sine_997_22050|b1024_f60_j0_r48000|determinism.mismatches	0.000000	count	lower	0.000000
 P1|sine_997_22050|b1024_f60_j0_r48000|integrity.nan	0.000000	count	lower	0.000000
 P1|sine_997_22050|b1024_f60_j0_r48000|integrity.inf	0.000000	count	lower	0.000000
@@ -417,8 +418,8 @@ P4|loop_sine_48000|b1024_f60_j0_r48000|integrity.clipped	0.000000	count	lower	0.
 P4|loop_sine_48000|b1024_f60_j0_r48000|integrity.dropouts	0.000000	count	lower	0.000000
 P4|loop_sine_48000|b1024_f60_j0_r48000|click.worstDbfs	-400.000000	dBFS	lower	-90.000000
 P4|loop_sine_48000|b1024_f60_j0_r48000|click.events	0.000000	count	lower	-
-P4|loop_sine_48000|b1024_f60_j0_r48000|click.bandPeakDbfs	-32.730233	dBFS	lower	-
-P4|loop_sine_48000|b1024_f60_j0_r48000|spectrum.thdnDb	-152.410646	dB	lower	-100.000000
+P4|loop_sine_48000|b1024_f60_j0_r48000|click.bandPeakDbfs	-32.757915	dBFS	lower	-
+P4|loop_sine_48000|b1024_f60_j0_r48000|spectrum.thdnDb	-152.374695	dB	lower	-100.000000
 P7|sine_997_22050|b1024_f60_j0_r48000|determinism.mismatches	0.000000	count	lower	0.000000
 P7|sine_997_22050|b1024_f60_j0_r48000|click.worstDbfs	-400.000000	dBFS	lower	-90.000000
 P7|sine_997_22050|b1024_f60_j0_r48000|click.events	0.000000	count	lower	-
@@ -559,12 +560,16 @@ P10|sine_997_96000|b1024_f60_j0_r48000|click.worstDbfs	-400.000000	dBFS	lower	-9
 P10|sine_997_96000|b1024_f60_j0_r48000|click.events	0.000000	count	lower	-
 P10|sine_997_96000|b1024_f60_j0_r48000|click.bandPeakDbfs	-139.236985	dBFS	lower	-
 P11|loop_sine_48000|b1024_f60_j0_r48000|determinism.mismatches	0.000000	count	lower	0.000000
-P11|loop_sine_48000|b1024_f60_j0_r48000|click.worstDbfs	-400.000000	dBFS	lower	-90.000000
-P11|loop_sine_48000|b1024_f60_j0_r48000|click.events	0.000000	count	lower	-
-P11|loop_sine_48000|b1024_f60_j0_r48000|click.bandPeakDbfs	-39.180530	dBFS	lower	-
-P11|loop_sine_48000|b1024_f60_j0_r48000|holdLow.worstSpurDbc	-145.446867	dBc	lower	-90.000000
-P11|loop_sine_48000|b1024_f60_j0_r48000|holdLow.frequencyErrorCents	0.004832	cents	lower	1.000000
-P11|loop_sine_48000|b1024_f60_j0_r48000|holdHigh.worstSpurDbc	-178.869342	dBc	lower	-90.000000
-P11|loop_sine_48000|b1024_f60_j0_r48000|holdHigh.frequencyErrorCents	0.001208	cents	lower	1.000000
-P11|loop_sine_48000|b1024_f60_j0_r48000|glide.rmsDeviationCents	42.589850	cents	lower	-
-P11|loop_sine_48000|b1024_f60_j0_r48000|glide.largestStepCents	3.322397	cents	lower	-
+P11|loop_sine_48000|b1024_f60_j0_r48000|click.worstDbfs	-115.663167	dBFS	lower	-90.000000
+P11|loop_sine_48000|b1024_f60_j0_r48000|click.events	14.000000	count	lower	-
+P11|loop_sine_48000|b1024_f60_j0_r48000|click.bandPeakDbfs	-39.207010	dBFS	lower	-
+P11|loop_sine_48000|b1024_f60_j0_r48000|holdLow.worstSpurDbc	-163.777998	dBc	lower	-90.000000
+P11|loop_sine_48000|b1024_f60_j0_r48000|holdLow.frequencyErrorCents	0.004997	cents	lower	1.000000
+P11|loop_sine_48000|b1024_f60_j0_r48000|holdHigh.worstSpurDbc	-157.583982	dBc	lower	-90.000000
+P11|loop_sine_48000|b1024_f60_j0_r48000|holdHigh.frequencyErrorCents	0.001203	cents	lower	1.000000
+P11|loop_sine_48000|b1024_f60_j0_r48000|glide.rmsDeviationCents	42.541977	cents	lower	-
+P11|loop_sine_48000|b1024_f60_j0_r48000|glide.largestStepCents	2.404927	cents	lower	-
+P11|loop_sine_48000|b1024_f60_j0_r48000|glideUp.sidebandDbc	-76.495854	dBc	lower	-
+P11|loop_sine_48000|b1024_f60_j0_r48000|glideUp.sidebandCarrierDbfs	-12.041702	dBFS	lower	-
+P11|loop_sine_48000|b1024_f60_j0_r48000|glideDown.sidebandDbc	-71.033724	dBc	lower	-
+P11|loop_sine_48000|b1024_f60_j0_r48000|glideDown.sidebandCarrierDbfs	-12.042353	dBFS	lower	-

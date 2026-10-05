@@ -14,8 +14,17 @@ All notable changes to the Amplitude Audio SDK are recorded here. The format fol
   leaves the read position a staircase, audible as a click at every block boundary while a pitch glides — but
   adding a virtual shifts the vtable layout, so a binary built against an earlier SDK must be recompiled.
 
+- A seek crossfades over 8 ms instead of 5 ms. A seek restarts the resampler from an empty history, and the longer
+  fade keeps the band-limited onset of the new position below the click floor.
+
 ### Fixed
 
 - The mixer ramped the playback ratio across each block instead of stepping it once per block. A moving pitch
   — a glide, Doppler, a playback-rate change — no longer leaves a staircase in the resampler's read position,
   which was audible as a click at every block boundary.
+
+### Known issues
+
+- A transport fade with the `Linear` fader still ticks faintly at its start and end, about -85 dBFS against the
+  -90 dBFS target (fidelity scenarios P2 `default_fade` and P3 `pause_resume`). It does not depend on the resampler;
+  it is the corner of the fade curve itself, and is left to a follow-up on fade shapes.
