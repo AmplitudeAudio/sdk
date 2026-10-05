@@ -42,20 +42,18 @@ namespace SparkyStudios::Audio::Amplitude::Tests
         // or the block stops short of the output it promised and the mixer hears a gap.
         struct Shortfall
         {
-            AmUInt64 requested = 0;
             AmUInt64 produced = 0;
             AmUInt64 needed = 0;
             AmUInt64 consumed = 0;
         };
 
-        Shortfall Try(ResamplerInstance& resampler, const std::vector<AmReal32>& source, AmUInt64 frames, AmUInt64 offset)
+        Shortfall Try(ResamplerInstance& resampler, const std::vector<AmReal32>& source, AmUInt64 frames)
         {
             const AmUInt64 needed = resampler.GetInputFramesNeeded(frames);
 
             AudioBuffer in(source.size(), 1);
             for (AmUInt64 i = 0; i < source.size(); ++i)
                 in[0][i] = source[i];
-            AM_UNUSED(offset);
 
             AudioBuffer out(frames, 1);
             AmUInt64 inFrames = needed;
@@ -63,7 +61,7 @@ namespace SparkyStudios::Audio::Amplitude::Tests
             if (!resampler.Process(in, inFrames, out, outFrames))
                 return {};
 
-            return { frames, outFrames, needed, inFrames };
+            return { outFrames, needed, inFrames };
         }
     } // namespace
 
@@ -95,14 +93,14 @@ namespace SparkyStudios::Audio::Amplitude::Tests
                         instance->Initialize(1, 48000, 48000);
                         instance->SetRatioRamp(ramp[0], ramp[1], frames);
 
-                        const Shortfall first = Try(*instance, source, block, 0);
+                        const Shortfall first = Try(*instance, source, block);
                         AM_EXPECT(instance->GetInputFramesNeeded(0) == 0);
-                        AM_EXPECT_EQ(first.requested, first.produced);
+                        AM_EXPECT_EQ(block, first.produced);
 
                         // Asking again mid-ramp must stay valid: the phase has moved on, and the second call
                         // covers the part of the ramp that follows the frames already produced.
-                        const Shortfall second = Try(*instance, source, block, 0);
-                        AM_EXPECT_EQ(second.requested, second.produced);
+                        const Shortfall second = Try(*instance, source, block);
+                        AM_EXPECT_EQ(block, second.produced);
                         AM_EXPECT(second.needed > 0);
 
                         // The estimate covers what was read, with the identity shortcut taken into account.
