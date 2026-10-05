@@ -36,7 +36,7 @@ namespace SparkyStudios::Audio::Amplitude
     constexpr AmTime kStealFade = 10.0;
 
     /// Length of the equal-power crossfade that makes a seek click-free, in milliseconds.
-    constexpr AmTime kSeekCrossfade = 5.0;
+    constexpr AmTime kSeekCrossfade = 8.0;
 
     /// Capacity of the engine-wide voice command and event queues.
     constexpr AmSize kVoiceQueueCapacity = 4096;

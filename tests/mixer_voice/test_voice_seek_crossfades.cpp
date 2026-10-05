@@ -46,12 +46,16 @@ namespace SparkyStudios::Audio::Amplitude::Tests
 
             AM_EXPECT_EQ(ramp[0][999], run.source[999]);
 
-            // Inside the 240-frame crossfade the output lies between the old and the new position.
+            // The seek lands on frame 1000 and the crossfade runs for kSeekCrossfade (8 ms) after it, so the first
+            // frame that plays the new position outright is 1000 + 384.
+            constexpr AmUInt64 crossfadeEnd = 1384;
+
+            // Inside the crossfade the output lies between the old and the new position.
             const AmReal32 mid = run.source[1120];
             AM_EXPECT(mid > ramp[0][1120] && mid < ramp[0][10120] * 1.5f);
 
             // After it, the new position plays exactly.
-            AM_EXPECT_EQ(ramp[0][10250], run.source[1250]);
+            AM_EXPECT_EQ(ramp[0][10000 + crossfadeEnd - 1000], run.source[crossfadeEnd]);
         }
     };
 

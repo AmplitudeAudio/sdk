@@ -38,7 +38,7 @@ namespace SparkyStudios::Audio::Amplitude::Tests
             const AudioBuffer ramp = MakeRamp(44100, 1.0f / 65536.0f);
             const AmUInt64 length = 44100;
             const AmUInt64 seekClock = 1024;
-            const AmUInt64 crossfade = 240; // kSeekCrossfade (5 ms) at 48 kHz
+            const AmUInt64 crossfade = 384; // kSeekCrossfade (8 ms) at 48 kHz
 
             auto voice = std::make_unique<Voice>();
             AM_EXPECT(voice->Initialize(MakeVoiceSettings(ramp, 44100, 256)));
