@@ -1,19 +1,19 @@
 # Changelog
 
 All notable changes to the Amplitude Audio SDK are recorded here. The format follows
-[Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and the project uses
-[Semantic Versioning](https://semver.org/spec/v2.0.0.html).
+[Keep a Changelog](https://keepachangelog.com/en/1.1.0/). The project is pre-1.0 and has not adopted a
+versioning policy; the build reports its own `AM_VERSION_*` values.
 
 ## [Unreleased]
 
 ### Changed
 
-- **`ResamplerInstance::SetRatioRamp` (new virtual, source-compatible but not binary-compatible).**
+- **`ResamplerInstance::SetRatioRamp` (new virtual; an ABI break for out-of-tree resampler plugins).**
   `AM_API_PUBLIC` resampler implementations can now vary the conversion ratio across the output frames of a
-  block instead of stepping it at the boundary. A plugin built against an earlier SDK still loads and runs;
-  a plugin that does not override it keeps the mean-ratio behaviour, which advances the stream correctly but
-  leaves the read position a staircase — audible as a click at every block boundary while a pitch glides.
-  Recompile out-of-tree plugins against this SDK to pick up the smoother path.
+  block instead of stepping it at the boundary. The header change is source-compatible — a plugin that does not
+  override it inherits the base class's mean-ratio implementation, which advances the stream correctly but
+  leaves the read position a staircase, audible as a click at every block boundary while a pitch glides — but
+  adding a virtual shifts the vtable layout, so a binary built against an earlier SDK must be recompiled.
 
 ### Fixed
 
