@@ -85,6 +85,11 @@ namespace SparkyStudios::Audio::Amplitude
         void SetRatio(AmReal64 inputPerOutput) override;
 
         /**
+         * @copydoc ResamplerInstance::SetRatioRamp
+         */
+        void SetRatioRamp(AmReal64 inputPerOutputStart, AmReal64 inputPerOutputEnd, AmUInt64 outputFrames) override;
+
+        /**
          * @copydoc ResamplerInstance::IsConversionExact
          */
         [[nodiscard]] bool IsConversionExact(AmUInt32 sampleRateIn, AmUInt32 sampleRateOut) const override
@@ -156,6 +161,12 @@ namespace SparkyStudios::Audio::Amplitude
         /// The read-ahead in use, in 32.32 frames: zero at identity, where an output needs its centre frame only.
         [[nodiscard]] AmUInt64 CurrentReach() const;
 
+        /// The accumulator step, in 32.32 frames, of the output frame at @p position within the current ramp.
+        [[nodiscard]] AmUInt64 StepAt(AmUInt64 position) const;
+
+        /// Sizes the kernel for @p ratio and returns the read-ahead it needs, in 32.32 frames.
+        AmUInt64 ApplyRatio(AmReal64 ratio);
+
         /// Evaluates the preset kernel at a distance in input frames from the output's centre.
         [[nodiscard]] AmReal32 Weight(AmReal64 distance) const;
 
@@ -174,6 +185,10 @@ namespace SparkyStudios::Audio::Amplitude
         std::vector<AmReal32> _gather;
 
         AmUInt64 _step = kOne;
+        AmUInt64 _rampStepStart = kOne;
+        AmUInt64 _rampStepEnd = kOne;
+        AmUInt64 _rampFrames = 0;
+        AmUInt64 _rampPos = 0;
         AmUInt64 _frac = 0;
         AmUInt64 _reach = kOne;
         AmReal64 _ratio = 1.0;

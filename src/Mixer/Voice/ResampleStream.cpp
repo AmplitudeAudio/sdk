@@ -53,14 +53,22 @@ namespace SparkyStudios::Audio::Amplitude
 
     void ResampleStream::SetSpeed(AmReal64 speed)
     {
-        if (!std::isfinite(speed) || speed <= 0.0)
-            speed = 1.0;
+        SetSpeedRamp(speed, speed, 0);
+    }
 
-        if (speed == _speed)
+    void ResampleStream::SetSpeedRamp(AmReal64 startSpeed, AmReal64 endSpeed, AmUInt64 outputFrames)
+    {
+        if (!std::isfinite(startSpeed) || startSpeed <= 0.0)
+            startSpeed = 1.0;
+        if (!std::isfinite(endSpeed) || endSpeed <= 0.0)
+            endSpeed = 1.0;
+
+        if (startSpeed == _speed && endSpeed == _speed)
             return;
 
-        _speed = speed;
-        _resampler->SetRatio(GetRatio());
+        // The mean is what the ramp advances the stream by, so it is what GetRatio() and the tail report.
+        _speed = 0.5 * (startSpeed + endSpeed);
+        _resampler->SetRatioRamp(_baseRatio * startSpeed, _baseRatio * endSpeed, outputFrames);
         UpdateTail();
     }
 

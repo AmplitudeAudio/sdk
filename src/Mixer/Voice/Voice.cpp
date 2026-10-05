@@ -34,6 +34,7 @@ namespace SparkyStudios::Audio::Amplitude
 
         _settings = settings;
         _speed = settings.speed > 0.0 && std::isfinite(settings.speed) ? settings.speed : 1.0;
+        _speedRampStart = _speedRampEnd = _speed;
         _settings.speed = _speed;
 
         for (auto& slot : _slots)
@@ -113,15 +114,31 @@ namespace SparkyStudios::Audio::Amplitude
 
     void Voice::SetSpeed(AmReal64 speed)
     {
-        if (!std::isfinite(speed) || speed <= 0.0)
-            speed = 1.0;
+        SetSpeedRamp(speed, speed, 0);
+    }
 
-        if (speed == _speed)
+    void Voice::SetSpeedRamp(AmReal64 startSpeed, AmReal64 endSpeed, AmUInt64 outputFrames)
+    {
+        if (!std::isfinite(startSpeed) || startSpeed <= 0.0)
+            startSpeed = 1.0;
+        if (!std::isfinite(endSpeed) || endSpeed <= 0.0)
+            endSpeed = 1.0;
+
+        if (startSpeed == _speedRampStart && endSpeed == _speedRampEnd)
             return;
 
-        _speed = speed;
+        _speedRampStart = startSpeed;
+        _speedRampEnd = endSpeed;
+        _speedRampFrames = outputFrames;
+        _speed = 0.5 * (startSpeed + endSpeed);
+
         for (auto& slot : _slots)
-            slot.stream.SetSpeed(speed);
+            slot.stream.SetSpeedRamp(startSpeed, endSpeed, outputFrames);
+    }
+
+    void Voice::ApplySpeedTo(ResampleStream& stream) const
+    {
+        stream.SetSpeedRamp(_speedRampStart, _speedRampEnd, _speedRampFrames);
     }
 
     AmUInt64 Voice::EffectiveFrame(const VoiceCommand& command) const
@@ -529,7 +546,7 @@ namespace SparkyStudios::Audio::Amplitude
         to.reader = _slots[_primary].reader;
         to.reader.Seek(position);
         to.stream.Reset();
-        to.stream.SetSpeed(_speed);
+        ApplySpeedTo(to.stream);
 
         // Priming may run into loop seams or the end of the source. Those belong to the incoming stream: they are applied
         // once it becomes primary, never now, or a seek near the end would finish the voice and cut the outgoing stream.

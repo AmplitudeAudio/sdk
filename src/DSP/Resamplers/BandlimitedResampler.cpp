@@ -99,36 +99,87 @@ namespace SparkyStudios::Audio::Amplitude
 
     void BandlimitedResamplerInstance::SetRatio(AmReal64 inputPerOutput)
     {
-        if (!std::isfinite(inputPerOutput) || inputPerOutput <= 0.0)
-            inputPerOutput = 1.0;
+        SetRatioRamp(inputPerOutput, inputPerOutput, 0);
+    }
 
-        _ratio = std::clamp(inputPerOutput, kMinRatio, kMaxRatio);
-        _step = AM_MAX(static_cast<AmUInt64>(std::llround(_ratio * static_cast<AmReal64>(kOne))), 1ULL);
+    void BandlimitedResamplerInstance::SetRatioRamp(AmReal64 inputPerOutputStart, AmReal64 inputPerOutputEnd, AmUInt64 outputFrames)
+    {
+        const auto toStep = [](AmReal64 ratio)
+        {
+            if (!std::isfinite(ratio) || ratio <= 0.0)
+                ratio = 1.0;
 
+            ratio = std::clamp(ratio, kMinRatio, kMaxRatio);
+            return AM_MAX(static_cast<AmUInt64>(std::llround(ratio * static_cast<AmReal64>(kOne))), 1ULL);
+        };
+
+        _rampStepStart = toStep(inputPerOutputStart);
+        _rampStepEnd = toStep(inputPerOutputEnd);
+        _rampFrames = outputFrames;
+        _rampPos = 0;
+
+        // The read-ahead and the read-ahead estimate are sized for the widest ratio of the ramp, so neither the
+        // availability check nor GetInputFramesNeeded() can be caught short by a ramp that speeds the stream up.
+        _step = AM_MAX(_rampStepStart, _rampStepEnd);
+        _ratio = static_cast<AmReal64>(_step) / static_cast<AmReal64>(kOne);
+        _reach = AM_MAX(
+            ApplyRatio(static_cast<AmReal64>(_rampStepStart) / static_cast<AmReal64>(kOne)),
+            ApplyRatio(static_cast<AmReal64>(_rampStepEnd) / static_cast<AmReal64>(kOne)));
+    }
+
+    AmUInt64 BandlimitedResamplerInstance::ApplyRatio(AmReal64 ratio)
+    {
         switch (_preset)
         {
         case eResamplerPreset::Linear:
             _stretch = 1.0;
-            _reach = kOne;
             break;
         case eResamplerPreset::Cubic:
             _stretch = 1.0;
-            _reach = 2 * kOne;
             break;
         default:
-            _stretch = std::clamp(_ratio, 1.0, kMaxKernelStretch);
-            _reach = static_cast<AmUInt64>(
-                std::llround(static_cast<AmReal64>(_kernel->GetZeroCrossings()) * _stretch * static_cast<AmReal64>(kOne)));
-            _tableScale = static_cast<AmReal64>(_kernel->GetPhases()) / _stretch;
+            _stretch = std::clamp(ratio, 1.0, kMaxKernelStretch);
             break;
         }
 
+        const AmUInt64 reach = _preset == eResamplerPreset::Linear
+            ? kOne
+            : (_preset == eResamplerPreset::Cubic
+                   ? 2 * kOne
+                   : static_cast<AmUInt64>(
+                         std::llround(static_cast<AmReal64>(_kernel->GetZeroCrossings()) * _stretch * static_cast<AmReal64>(kOne))));
+
+        _tableScale = _preset == eResamplerPreset::Linear || _preset == eResamplerPreset::Cubic
+            ? 0.0
+            : static_cast<AmReal64>(_kernel->GetPhases()) / _stretch;
+
         // A kernel stretched by s cuts at 1/s of Nyquist and has a DC gain of s.
         _gain = static_cast<AmReal32>(1.0 / _stretch);
+        return reach;
+    }
+
+    AmUInt64 BandlimitedResamplerInstance::StepAt(AmUInt64 position) const
+    {
+        if (_rampFrames <= 1 || _rampStepStart == _rampStepEnd)
+            return _rampStepEnd;
+
+        const auto u = static_cast<AmReal64>(AM_MIN(position, _rampFrames - 1)) / static_cast<AmReal64>(_rampFrames - 1);
+
+        // Smoothstep, so the step matches in value and in slope at both ends of the ramp: consecutive blocks join
+        // without a kink, which is what a click at the boundary is made of.
+        const auto s = static_cast<AmReal64>(static_cast<AmReal32>(u * u * (3.0f - 2.0f * u)));
+
+        const auto step = static_cast<AmReal64>(_rampStepStart) * (1.0 - s) + static_cast<AmReal64>(_rampStepEnd) * s;
+        return AM_MAX(static_cast<AmUInt64>(std::llround(step)), 1ULL);
     }
 
     AmUInt64 BandlimitedResamplerInstance::CurrentReach() const
     {
+        // A ramp never collapses to the identity shortcut: its frames move off the centre at their own step, so even
+        // the ones that land on a whole frame need their kernel.
+        if (_rampStepStart != _rampStepEnd)
+            return _reach;
+
         return _step == kOne && _frac == 0 ? 0 : _reach;
     }
 
@@ -161,18 +212,25 @@ namespace SparkyStudios::Audio::Amplitude
         AmUInt64 produced = 0;
         while (produced < wanted)
         {
+            // The kernel follows the ratio of this very output frame, so the cutoff and the gain track the pitch
+            // through the ramp instead of holding the value the whole ramp was sized for.
+            const AmUInt64 step = StepAt(_rampPos + produced);
+
             const AmUInt64 top = reach == 0 ? (time >> 32) : ((time + reach - 1) >> 32);
-            if (top >= available || ((time + _step) >> 32) > available)
+            if (top >= available || ((time + step) >> 32) > available)
                 break;
 
+            AM_UNUSED(ApplyRatio(static_cast<AmReal64>(step) / static_cast<AmReal64>(kOne)));
+
             RenderFrame(input, output, time, reach, produced);
-            time += _step;
+            time += step;
             ++produced;
         }
 
         const AmUInt64 consumed = time >> 32;
         PushHistory(input, consumed);
         _frac = time & (kOne - 1);
+        _rampPos += produced;
 
         inputFrames = consumed;
         outputFrames = produced;
@@ -270,6 +328,7 @@ namespace SparkyStudios::Audio::Amplitude
     void BandlimitedResamplerInstance::Reset()
     {
         _frac = 0;
+        _rampPos = 0;
         _history.Clear();
     }
 

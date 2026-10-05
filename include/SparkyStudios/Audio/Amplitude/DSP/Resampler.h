@@ -96,6 +96,34 @@ namespace SparkyStudios::Audio::Amplitude
         virtual void SetRatio(AmReal64 inputPerOutput) = 0;
 
         /**
+         * @brief Sets the conversion ratio to follow a ramp across the output frames of the next call.
+         *
+         * A mixer whose speed moves during a block -- pitch, Doppler, playback rate -- publishes a ramp rather than a
+         * step. Holding one constant ratio for the whole block makes the read position a staircase, and a staircase
+         * whose steps move is audible as a click at every block boundary. An implementation that varies the ratio per
+         * output frame makes the read position continuous, and the click with it.
+         *
+         * The ramp covers @p outputFrames output frames from the first frame @c Process() produces after this call; a
+         * call producing more frames than that keeps the end value. Several calls may share one ramp, as a block split
+         * into segments makes several: each consumes the part of the ramp that follows the frames already produced.
+         * @p outputFrames of 0, or a start equal to the end, is a constant ratio.
+         *
+         * The sum of the input consumed over the ramp is that of the mean ratio, whichever way an implementation gets
+         * there, so a caller can size buffers and map positions from the mean.
+         *
+         * Audio-thread safe and allocation-free, like @c SetRatio().
+         *
+         * @param[in] inputPerOutputStart The input frames consumed per output frame, at the first output frame.
+         * @param[in] inputPerOutputEnd The input frames consumed per output frame, at the last output frame of the ramp.
+         * @param[in] outputFrames The number of output frames the ramp spans.
+         */
+        virtual void SetRatioRamp(AmReal64 inputPerOutputStart, AmReal64 inputPerOutputEnd, AmUInt64 outputFrames)
+        {
+            AM_UNUSED(outputFrames);
+            SetRatio(0.5 * (inputPerOutputStart + inputPerOutputEnd));
+        }
+
+        /**
          * @brief Checks whether the given conversion is performed exactly, with no approximation of the ratio.
          *
          * Every conversion is supported: an implementation that cannot represent a ratio exactly approximates

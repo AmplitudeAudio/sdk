@@ -76,6 +76,17 @@ namespace SparkyStudios::Audio::Amplitude
         void SetSpeed(AmReal64 speed);
 
         /**
+         * @brief Ramps the speed across the next @p outputFrames output frames instead of stepping it at the boundary.
+         *
+         * @copydetails ResamplerInstance::SetRatioRamp
+         *
+         * @param[in] startSpeed The playback speed at the first of those output frames.
+         * @param[in] endSpeed The playback speed at the last of those output frames.
+         * @param[in] outputFrames The number of output frames the ramp spans.
+         */
+        void SetSpeedRamp(AmReal64 startSpeed, AmReal64 endSpeed, AmUInt64 outputFrames);
+
+        /**
          * @brief Writes exactly @p frames frames into @p out from @p offset.
          *
          * @param[in] reader The source reader to pull frames from.
