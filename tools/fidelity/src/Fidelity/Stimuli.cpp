@@ -120,7 +120,9 @@ namespace SparkyStudios::Audio::Amplitude::Fidelity
             catalog.push_back(Sine(10000.0, 22050)); // images at 22050 - 10000 Hz when upsampled
             catalog.push_back(Sine(30000.0, 96000)); // above a 48 kHz output's Nyquist: folds back if not filtered
             catalog.push_back(Sine(5000.0, 16000)); // a common voice and dialogue rate
-            catalog.push_back(Pitched(Sine(8000.0, 48000), 2.0)); // 16 kHz heard at 48 kHz -> 48 kHz: the identity-ratio path, no stretch
+            // Pitched 2x on a 48 kHz output: ratio 2, kernel stretched 2x. At the resampler that is the same conversion
+            // as a 96 kHz source; what these add is the engine's pitch path in front of it.
+            catalog.push_back(Pitched(Sine(8000.0, 48000), 2.0)); // 16 kHz heard: inside the stretched kernel's passband
             catalog.push_back(Pitched(Sine(15000.0, 48000), 2.0)); // 30 kHz heard: must be filtered, not folded back
 
             for (const std::uint32_t rate : { 16000u, 22050u, 44100u, 48000u, 96000u })
@@ -128,8 +130,8 @@ namespace SparkyStudios::Audio::Amplitude::Fidelity
 
             catalog.push_back(Pink(44100));
             catalog.push_back(Pink(48000));
-            catalog.push_back(Loop(44100, 1050.0)); // 42 samples per cycle
-            catalog.push_back(Loop(48000, 1000.0)); // 48 samples per cycle
+            catalog.push_back(Loop(44100, 1050.0)); // 1050 whole cycles a second: seamless at the loop point
+            catalog.push_back(Loop(48000, 997.0)); // not 1000 Hz, which lands on the analysis bin centres
             catalog.push_back(Chirp(44100));
             return catalog;
         }

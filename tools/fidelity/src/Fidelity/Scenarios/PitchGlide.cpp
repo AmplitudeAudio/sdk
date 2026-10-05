@@ -21,6 +21,7 @@
 #include <SparkyStudios/Audio/Amplitude/Amplitude.h>
 
 #include <Fidelity/Analysis/Pitch.h>
+#include <Fidelity/Analysis/Sideband.h>
 #include <Fidelity/Analysis/Spectrum.h>
 #include <Fidelity/AssetGenerator.h>
 #include <Fidelity/Scenarios/Common.h>
@@ -31,7 +32,8 @@ namespace SparkyStudios::Audio::Amplitude::Fidelity
 {
     namespace
     {
-        constexpr double kSourceHz = 1000.0; // loop_sine_48000
+        constexpr double kSourceHz = 997.0; // loop_sine_48000: 1000 Hz is exactly 48 samples per period, so it lands on
+                                            // bin centres and hides any tuning error it would be there to expose.
         constexpr double kLow = 0.5;
         constexpr double kHigh = 2.0;
         constexpr double kHold = 1.0;
@@ -101,6 +103,32 @@ namespace SparkyStudios::Audio::Amplitude::Fidelity
             out.Add(
                 name + ".frequencyErrorCents", std::abs(r.frequencyErrorCents), "cents", Better::Lower,
                 Targets::kMaxPitchRmsDeviationCents);
+        }
+
+        /// Sidebands against the carrier, over one stretch of the glide.
+        ///
+        /// Reported, not gated: an eased ramp reads -73.7 / -68.8 dBc (up / down) on the quick grid against -76.5 /
+        /// -71.0 for a straight one, too close to the interpolator's own block-rate content for a threshold.
+        /// test_resampler_ratio_ramp_joins_smoothly gates the ramp shape instead.
+        void MeasureGlideSidebands(
+            const Signal& x,
+            const Signal& expected,
+            double fs,
+            double blockRateHz,
+            std::uint64_t begin,
+            std::uint64_t end,
+            const std::string& name,
+            Measurement& out)
+        {
+            GlideSidebandOptions options;
+            options.begin = static_cast<std::size_t>(begin);
+            options.end = static_cast<std::size_t>(end);
+            options.sampleRate = fs;
+            options.blockRateHz = blockRateHz;
+
+            const GlideSidebandResult r = AnalyzeGlideSidebands(x, expected, options);
+            out.Add(name + ".sidebandDbc", r.sidebandDbc, "dBc", Better::Lower);
+            out.Add(name + ".sidebandCarrierDbfs", r.carrierDbfs, "dBFS", Better::Lower);
         }
 
         class PitchGlideScenario final : public Scenario
@@ -178,6 +206,16 @@ namespace SparkyStudios::Audio::Amplitude::Fidelity
                 const PitchResult pitch = AnalyzePitch(x, fs, options);
                 out.Add("glide.rmsDeviationCents", pitch.rmsDeviationCents, "cents", Better::Lower);
                 out.Add("glide.largestStepCents", pitch.largestStepCents, "cents", Better::Lower);
+
+                // Only the glides ramp the ratio. Each is measured on its own, 50 ms in from either end: a hold inside
+                // the window would add carrier and dilute the sidebands.
+                const double blockRateHz = fs / static_cast<double>(point.blockSize);
+                constexpr double kGlideTrim = 0.05;
+                MeasureGlideSidebands(
+                    x, pitch.frequencyHz, fs, blockRateHz, at(kHold + kGlideTrim), at(kHold + kGlide - kGlideTrim), "glideUp", out);
+                MeasureGlideSidebands(
+                    x, pitch.frequencyHz, fs, blockRateHz, at(2.0 * kHold + kGlide + kGlideTrim),
+                    at(2.0 * kHold + 2.0 * kGlide - kGlideTrim), "glideDown", out);
 
                 out.capture = std::move(capture);
             }
