@@ -15,6 +15,8 @@
 #include <algorithm>
 #include <chrono>
 #include <cstdint>
+#include <cstdio>
+#include <limits>
 
 #include <SparkyStudios/Audio/Amplitude/Amplitude.h>
 
@@ -28,23 +30,33 @@ namespace SparkyStudios::Audio::Amplitude::Fidelity
         constexpr std::uint64_t kBlock = 512;
         constexpr std::uint32_t kRate = 48000;
 
-        /// Blocks the untimed warm-up renders, so table building and first touch stay out of the clock.
+        /// Blocks the untimed warm-up renders, so the first touch of the buffers stays out of the clock.
         constexpr std::uint64_t kWarmUpBlocks = 16;
 
-        /// Renders @p outputFrames of audio in kBlock-sized blocks, from a fixed input buffer the stream never advances past.
-        void RenderBlocks(ResamplerInstance& resampler, const AudioBuffer& input, AudioBuffer& output, std::uint64_t outputFrames)
+        /// Renders @p outputFrames of audio in kBlock-sized blocks, from a fixed input buffer the stream never advances
+        /// past. Returns false as soon as a block produces less than it owes: the input buffer is too small to feed the
+        /// ratio, and the loop would otherwise credit the missing frames as if it had produced them.
+        bool RenderBlocks(ResamplerInstance& resampler, const AudioBuffer& input, AudioBuffer& output, std::uint64_t outputFrames)
         {
-            for (std::uint64_t produced = 0; produced < outputFrames; produced += kBlock)
+            for (std::uint64_t rendered = 0; rendered < outputFrames; rendered += kBlock)
             {
                 AmUInt64 inputFrames = resampler.GetInputFramesNeeded(kBlock);
-                AmUInt64 wanted = kBlock;
-                resampler.Process(input, inputFrames, output, wanted);
+                AmUInt64 produced = kBlock;
+                resampler.Process(input, inputFrames, output, produced);
+
+                // Only the last block can legitimately stop short: it asks for a full kBlock but owes the remainder.
+                if (produced < AM_MIN(kBlock, outputFrames - rendered))
+                    return false;
             }
+
+            return true;
         }
     } // namespace
 
     std::vector<ResamplerBenchRow> RunResamplerBench(double seconds)
     {
+        // Owns the extension registry for its duration: it registers the defaults on the way in and unregisters them on
+        // the way out, so the registry is left empty rather than as it was found. RenderSession::Render() does the same.
         const bool ownsMemory = !MemoryManager::IsInitialized();
         if (ownsMemory)
             MemoryManager::Initialize();
@@ -71,21 +83,35 @@ namespace SparkyStudios::Audio::Amplitude::Fidelity
                 const std::shared_ptr<ResamplerInstance> r = Resampler::Construct(preset);
                 if (r == nullptr)
                 {
-                    // A missing preset is a harness setup failure; a zero keeps the row count and fails loudly on it.
-                    rows.push_back({ preset, ratio, 0.0 });
+                    // A missing preset is a harness setup failure; a NaN keeps the row count, prints as `nan` rather than
+                    // as a plausible zero, and fails any check on the throughput.
+                    rows.push_back({ preset, ratio, std::numeric_limits<double>::quiet_NaN() });
                     continue;
                 }
 
                 r->Initialize(1, kRate, kRate);
                 r->SetRatio(ratio);
 
-                // Building the kernel table and touching the buffers for the first time are one-time costs: warm the
-                // path with a fixed, short pass whose result is discarded, so the clock only sees the steady state.
-                RenderBlocks(*r, in, out, kWarmUpBlocks * kBlock);
+                // Touching the buffers, the i-cache and the branch predictors are one-time costs: warm the path with a
+                // fixed, short pass whose result is discarded, so the clock only sees the steady state. The kernel table
+                // is not one of them -- it is built inside Resampler::Construct(), before this pass.
+                const bool warmed = RenderBlocks(*r, in, out, kWarmUpBlocks * kBlock);
 
                 const auto start = std::chrono::steady_clock::now();
-                RenderBlocks(*r, in, out, total);
+                const bool starved = !warmed || !RenderBlocks(*r, in, out, total);
                 const double elapsed = std::chrono::duration<double>(std::chrono::steady_clock::now() - start).count();
+
+                if (starved)
+                {
+                    // The input buffer is sized for ratios up to 4. A starved block would read as too fast: report NaN.
+                    std::fprintf(
+                        stderr,
+                        "resampler bench: '%s' at ratio %.9g is starved: a %llu-frame input buffer cannot feed "
+                        "%llu-frame output blocks, so the cell under-rendered and its throughput reads too high.\n",
+                        preset, ratio, static_cast<unsigned long long>(in.GetFrameCount()), static_cast<unsigned long long>(kBlock));
+                    rows.push_back({ preset, ratio, std::numeric_limits<double>::quiet_NaN() });
+                    continue;
+                }
 
                 rows.push_back({ preset, ratio, seconds / std::max(elapsed, 1e-9) });
             }

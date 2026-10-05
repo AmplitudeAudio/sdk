@@ -113,7 +113,12 @@ int main(int argc, char** argv)
 
     if (bench)
     {
-        std::cout << "preset\tratio\trealtime voices (" << BuildMode() << ")\n";
+        std::cout << "preset\tratio\trealtime voices (mono, resample-only, " << BuildMode() << ")\n";
+        // The table is read as data, so what it does and does not measure has to travel with it.
+        std::cout << "# 'realtime voices' counts mono, resample-only voices per core: no source synthesis, no mixer or\n"
+                     "# attenuation chain. A ratio of 1 is a pass-through, not a measurement: the kernel reach is zero\n"
+                     "# there, so every preset collapses to a single tap and the row times dispatch, not filtering.\n"
+                     "# A nan is a cell that could not be measured (see stderr).\n";
         for (const ResamplerBenchRow& row : RunResamplerBench(10.0))
             std::cout << row.preset << "\t" << row.ratio << "\t" << row.realtimeVoices << "\n";
 
