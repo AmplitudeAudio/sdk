@@ -54,13 +54,33 @@ namespace SparkyStudios::Audio::Amplitude::Tests
             return inFrames;
         }
 
-        // The largest sample-to-sample jump, which is where a kink in the read position shows up as a click.
-        AmReal32 LargestJump(const std::vector<AmReal32>& x)
+        // The frequency of a tone over a window, from the interpolated positions of its rising zero crossings.
+        // Interpolating is what makes a short window usable: a plain count is quantised to one cycle per window,
+        // which is coarser than the frequency steps this test is trying to measure.
+        AmReal64 Frequency(const std::vector<AmReal32>& x, AmUInt64 begin, AmUInt64 end, AmReal64 rate)
         {
-            AmReal32 worst = 0.0f;
-            for (std::size_t i = 1; i < x.size(); ++i)
-                worst = std::max(worst, std::abs(x[i] - x[i - 1]));
-            return worst;
+            AmReal64 first = 0.0;
+            AmReal64 last = 0.0;
+            AmReal64 crossings = 0.0;
+
+            for (AmUInt64 i = begin + 1; i < end; ++i)
+            {
+                const auto a = static_cast<AmReal64>(x[i - 1]);
+                const auto b = static_cast<AmReal64>(x[i]);
+                if (!(a <= 0.0 && b > 0.0))
+                    continue;
+
+                const auto at = static_cast<AmReal64>(i) - a / (b - a);
+                if (crossings == 0.0)
+                    first = at;
+                last = at;
+                crossings += 1.0;
+            }
+
+            if (crossings < 2.0 || last <= first)
+                return 0.0;
+
+            return rate * (crossings - 1.0) / (last - first);
         }
     } // namespace
 
@@ -72,10 +92,18 @@ namespace SparkyStudios::Audio::Amplitude::Tests
             // Two ramps published back to back must join the way the ends of a ramp are built to join: the first
             // lands exactly on its end value with no slope left, the second leaves its start value with none. The
             // render is a constant-frequency tone, so a step in the read position is a jump in the output.
+            //
+            // The two ramps deliberately span different amounts, because equal spans join smoothly under any
+            // interpolation: a linear ramp across 0.75 and a linear ramp across 0.75 meet with the same slope, so
+            // that configuration cannot tell a C1 join from a C0 one. Differing spans are what make the junction
+            // a genuine test of whether the slope survives it.
             constexpr AmReal64 kFirst = 0.5;
             constexpr AmReal64 kMiddle = 1.25;
-            constexpr AmReal64 kLast = 2.0;
+            constexpr AmReal64 kLast = 3.0;
             constexpr AmUInt64 kFrames = 1024;
+            constexpr AmUInt64 kProbe = 128;
+            constexpr AmReal64 kRate = 48000.0;
+            constexpr auto kProbes = static_cast<AmSize>(kFrames / kProbe);
 
             const auto meanFrames = [](AmReal64 start, AmReal64 end)
             {
@@ -84,19 +112,22 @@ namespace SparkyStudios::Audio::Amplitude::Tests
 
             for (const char* name : kResamplerPresets)
             {
-                const std::vector<AmReal32> source = Sine(kFrames * 8 + 8192, 3000.0, 48000.0);
+                const std::vector<AmReal32> source = Sine(kFrames * 8 + 8192, 3000.0, kRate);
 
                 auto joined = Resampler::Construct(name);
                 joined->Initialize(1, 48000, 48000);
                 std::vector<AmReal32> across;
                 AmUInt64 read = 0;
 
+                // Pulled in probes, so a ramp also spans several Process() calls.
                 joined->SetRatioRamp(kFirst, kMiddle, kFrames);
-                read += Pull(*joined, source, kFrames, across);
+                for (AmUInt64 i = 0; i < kFrames; i += kProbe)
+                    read += Pull(*joined, source, kProbe, across);
                 const AmUInt64 firstConsumed = read;
 
                 joined->SetRatioRamp(kMiddle, kLast, kFrames);
-                read += Pull(*joined, source, kFrames, across);
+                for (AmUInt64 i = 0; i < kFrames; i += kProbe)
+                    read += Pull(*joined, source, kProbe, across);
                 const AmUInt64 secondConsumed = read - firstConsumed;
 
                 AM_EXPECT_EQ(across.size(), static_cast<AmSize>(2 * kFrames));
@@ -111,13 +142,40 @@ namespace SparkyStudios::Audio::Amplitude::Tests
                 if (instance != nullptr)
                     AM_EXPECT(std::abs(instance->GetRatio() - 0.5 * (kMiddle + kLast)) < 1e-12);
 
-                // The junction is no rougher than either ramp's interior: a step in the read position would put the
-                // largest jump of the whole render exactly there.
-                const auto interior = std::max(
-                    LargestJump(std::vector<AmReal32>(across.begin(), across.begin() + kFrames)),
-                    LargestJump(std::vector<AmReal32>(across.begin() + kFrames, across.end())));
-                const auto junction = static_cast<AmSize>(kFrames);
-                AM_EXPECT(std::abs(across[junction] - across[junction - 1]) <= interior * 1.5f);
+                // What a C1 join means is that the read position's *derivative* -- the step, and so the rendered
+                // frequency -- is continuous across the boundary. Measuring the biggest sample-to-sample jump
+                // cannot see that: the read position is continuous either way, so a kink in its slope barely moves
+                // any individual sample, and the carrier dominates the measurement. Measure the slope directly
+                // instead, as the frequency each window renders, and compare the step across the junction with the
+                // steps inside the ramps.
+                std::vector<AmReal64> frequency;
+                frequency.reserve(2 * kProbes);
+                for (AmSize i = 0; i < 2 * kProbes; ++i)
+                    frequency.push_back(Frequency(across, i * kProbe, (i + 1) * kProbe, kRate));
+
+                AM_EXPECT(*std::min_element(frequency.begin(), frequency.end()) > 0.0);
+
+                std::vector<AmReal64> change;
+                for (std::size_t i = 1; i < frequency.size(); ++i)
+                    change.push_back(std::abs(frequency[i] - frequency[i - 1]) / frequency[i - 1]);
+
+                // kProbes - 1 is the step from the last window of the first ramp into the first window of the
+                // second; every other step lies inside a ramp.
+                const AmReal64 junction = change[kProbes - 1];
+                AmReal64 interior = 0.0;
+                for (std::size_t i = 0; i < change.size(); ++i)
+                {
+                    if (i == kProbes - 1)
+                        continue;
+                    interior = std::max(interior, change[i]);
+                }
+
+                // A break in the slope at the junction would show up as the largest step in the render. With the
+                // slope eased to zero on both sides it is instead among the smallest, so the boundary is bounded
+                // well below the ramps' interiors rather than merely at par with them: the eased implementation
+                // measures about 0.16 of the interior, a linear ramp across the junction about 0.63.
+                AM_EXPECT(junction <= interior);
+                AM_EXPECT(junction <= interior * 0.3);
             }
         }
     };
