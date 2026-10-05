@@ -555,7 +555,8 @@ namespace SparkyStudios::Audio::Amplitude
 
     ResampleStream::PullReport Voice::Prime(VoiceStreamSlot& slot)
     {
-        // Discard the filter's group delay so source frame 0 lands on the start frame, not GetLatency() frames later.
+        // Discard the resampler's reported delay so source frame 0 lands on the start frame. The built-in resamplers
+        // report none; a plugin with a delay is compensated here.
         // Rounded down: the kernel is not symmetric at every ratio, and rounding up would drop the impulse peak itself.
         const AmReal64 ratio = slot.stream.GetRatio();
         const auto frames = static_cast<AmUInt64>(std::floor(static_cast<AmReal64>(slot.stream.GetLatency()) / ratio));

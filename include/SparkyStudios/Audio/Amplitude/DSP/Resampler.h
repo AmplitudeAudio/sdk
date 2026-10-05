@@ -52,6 +52,8 @@ namespace SparkyStudios::Audio::Amplitude
         /**
          * @brief Initializes the resampler instance.
          *
+         * @note Runs on the game thread and may allocate.
+         *
          * @note Implementations must accept any pair of positive sample rates and must never read or write
          * outside their buffers for any input. When the requested ratio cannot be represented exactly, the
          * implementation must approximate it as closely as it can and keep converting.
@@ -70,6 +72,7 @@ namespace SparkyStudios::Audio::Amplitude
          * - The output never depends on input that has not been received yet.
          * - The only internal state is filter history and phase: the output sequence does not depend on how the input
          *   and the output are split across calls.
+         * - Runs on the audio thread: it never allocates, locks or logs.
          *
          * @param[in] input The input buffer.
          * @param[in,out] inputFrames The number of available input frames; on return, the number of frames consumed.
@@ -83,7 +86,9 @@ namespace SparkyStudios::Audio::Amplitude
         /**
          * @brief Sets the conversion ratio, pitch and playback speed included.
          *
-         * Implementations that cannot represent the ratio exactly approximate it, as @c Initialize() does.
+         * Audio-thread safe and allocation-free. Changing the ratio keeps the phase: the output stays continuous.
+         * Implementations that cannot represent the ratio exactly approximate it.
+         *
          * Non-finite or non-positive values are treated as 1.
          *
          * @param[in] inputPerOutput The number of input frames consumed per output frame.
@@ -144,16 +149,18 @@ namespace SparkyStudios::Audio::Amplitude
         [[nodiscard]] virtual AmUInt64 GetInputFramesNeeded(AmUInt64 outputFrameCount) const = 0;
 
         /**
-         * @brief Returns the filter group delay, in input frames.
+         * @brief Returns the output delay relative to the input, in input frames. The built-in resamplers centre their
+         * kernel on the output time and report 0; their read-ahead is part of @c GetInputFramesNeeded().
          *
-         * A stream that ends flushes the filter by feeding twice this many zero frames, plus one.
+         * A stream that ends keeps feeding zeros until @c GetInputFramesNeeded(1) frames past its end, plus twice this
+         * delay, are consumed.
          *
          * @return The group delay in input frames.
          */
         [[nodiscard]] virtual AmUInt64 GetLatency() const = 0;
 
         /**
-         * @brief Resets the internal resampler state.
+         * @brief Resets the internal resampler state (history and phase). Audio-thread safe.
          */
         virtual void Reset() = 0;
 

@@ -99,7 +99,11 @@ namespace SparkyStudios::Audio::Amplitude
 #endif
 
     // Default Plugins instances
-    static std::shared_ptr<DefaultResampler> sDefaultResamplerPlugin = nullptr;
+    static std::shared_ptr<BandlimitedResampler> sDefaultResamplerPlugin = nullptr;
+    static std::shared_ptr<BandlimitedResampler> sLinearResamplerPlugin = nullptr;
+    static std::shared_ptr<BandlimitedResampler> sCubicResamplerPlugin = nullptr;
+    static std::shared_ptr<BandlimitedResampler> sSincResamplerPlugin = nullptr;
+    static std::shared_ptr<BandlimitedResampler> sSincBestResamplerPlugin = nullptr;
     // ---
     static std::shared_ptr<ConstantFader> sConstantFaderPlugin = nullptr;
     static std::shared_ptr<EaseFader> sEaseFaderPlugin = nullptr;
@@ -608,7 +612,11 @@ namespace SparkyStudios::Audio::Amplitude
         // Ensure to clean up registries
         UnregisterDefaultExtensions();
 
-        sDefaultResamplerPlugin = RegisterExtension<DefaultResampler>();
+        sDefaultResamplerPlugin = RegisterExtension<BandlimitedResampler>("default", eResamplerPreset::SincBest);
+        sLinearResamplerPlugin = RegisterExtension<BandlimitedResampler>("linear", eResamplerPreset::Linear);
+        sCubicResamplerPlugin = RegisterExtension<BandlimitedResampler>("cubic", eResamplerPreset::Cubic);
+        sSincResamplerPlugin = RegisterExtension<BandlimitedResampler>("sinc", eResamplerPreset::Sinc);
+        sSincBestResamplerPlugin = RegisterExtension<BandlimitedResampler>("sinc_best", eResamplerPreset::SincBest);
         // ---
         sConstantFaderPlugin = RegisterExtension<ConstantFader>();
         sEaseFaderPlugin = RegisterExtension<EaseFader>();
@@ -676,6 +684,10 @@ namespace SparkyStudios::Audio::Amplitude
             return false; // Cannot unregister the default plugins when the engine is already initialized.
 
         UnregisterExtension(sDefaultResamplerPlugin);
+        UnregisterExtension(sLinearResamplerPlugin);
+        UnregisterExtension(sCubicResamplerPlugin);
+        UnregisterExtension(sSincResamplerPlugin);
+        UnregisterExtension(sSincBestResamplerPlugin);
         // ---
         UnregisterExtension(sConstantFaderPlugin);
         UnregisterExtension(sEaseFaderPlugin);

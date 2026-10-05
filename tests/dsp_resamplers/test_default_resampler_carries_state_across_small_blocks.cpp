@@ -17,7 +17,7 @@
 
 #include <SparkyStudios/Audio/Amplitude/Amplitude.h>
 
-#include <DSP/Resamplers/DefaultResampler.h>
+#include <DSP/Resamplers/BandlimitedResampler.h>
 
 #include "DSPTestCase.h"
 #include "TestRegistry.h"
@@ -31,10 +31,9 @@ namespace SparkyStudios::Audio::Amplitude::Tests
     public:
         void Run() override
         {
-            // Upsampling 8000 Hz to 48000 Hz with a small device buffer asks for fewer input frames than the
-            // filter history (_coefficientsPerPhase - 1 = 13), which takes the remainingSamples > 0 branch of
-            // Process(). That branch shifts the history relative to the end of the state channel, so it is only
-            // correct while the channel capacity equals the history length.
+            // Upsampling 8000 Hz to 48000 Hz in 8-frame blocks: the 80-tap kernel reads 40 frames ahead, so every
+            // Process() call consumes only part of what it is given and the rest is carried into the next one. Only a
+            // correct history carry keeps the output continuous across the seams.
             constexpr AmUInt16 channelCount = 1;
             constexpr AmUInt32 sampleRateIn = 8000;
             constexpr AmUInt32 sampleRateOut = 48000;
@@ -42,31 +41,42 @@ namespace SparkyStudios::Audio::Amplitude::Tests
             constexpr AmUInt32 blockCount = 64;
             constexpr AmReal32 frequency = 200.0f;
 
-            auto resampler = amshared(DefaultResampler);
+            auto resampler = std::make_shared<BandlimitedResampler>("default", eResamplerPreset::SincBest);
             auto instance = resampler->CreateInstance();
 
             instance->Initialize(channelCount, sampleRateIn, sampleRateOut);
 
             std::vector<AmReal32> resampled;
+            std::vector<AmReal32> pending;
             AmUInt64 phase = 0;
 
             for (AmUInt32 block = 0; block < blockCount; ++block)
             {
-                AudioBuffer inputBuffer(blockFrames, channelCount);
                 for (AmUInt64 i = 0; i < blockFrames; ++i, ++phase)
-                    inputBuffer[0][i] =
-                        std::sin(2.0f * AM_PI32 * frequency * static_cast<AmReal32>(phase) / static_cast<AmReal32>(sampleRateIn));
+                    pending.push_back(
+                        std::sin(2.0f * AM_PI32 * frequency * static_cast<AmReal32>(phase) / static_cast<AmReal32>(sampleRateIn)));
 
-                const AmUInt64 capacity = blockFrames * sampleRateOut / sampleRateIn + 2;
-                AudioBuffer outputBuffer(capacity, channelCount);
+                while (!pending.empty())
+                {
+                    AudioBuffer inputBuffer(pending.size(), channelCount);
+                    std::copy(pending.begin(), pending.end(), inputBuffer[0].begin());
 
-                AmUInt64 processedInputFrames = blockFrames;
-                AmUInt64 processedOutputFrames = capacity;
+                    const AmUInt64 capacity = pending.size() * sampleRateOut / sampleRateIn + 2;
+                    AudioBuffer outputBuffer(capacity, channelCount);
 
-                AM_EXPECT(instance->Process(inputBuffer, processedInputFrames, outputBuffer, processedOutputFrames));
+                    AmUInt64 processedInputFrames = pending.size();
+                    AmUInt64 processedOutputFrames = capacity;
 
-                for (AmUInt64 i = 0; i < processedOutputFrames; ++i)
-                    resampled.push_back(outputBuffer[0][i]);
+                    AM_EXPECT(instance->Process(inputBuffer, processedInputFrames, outputBuffer, processedOutputFrames));
+
+                    for (AmUInt64 i = 0; i < processedOutputFrames; ++i)
+                        resampled.push_back(outputBuffer[0][i]);
+
+                    if (processedInputFrames == 0 && processedOutputFrames == 0)
+                        break;
+
+                    pending.erase(pending.begin(), pending.begin() + static_cast<std::ptrdiff_t>(processedInputFrames));
+                }
             }
 
             // A 200 Hz sine sampled at 48 kHz moves at most 0.027 per sample. A lost state carry produces jumps

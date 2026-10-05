@@ -412,18 +412,24 @@ bool resampleIR(const AppOptions& state, AudioBuffer& buffer, AmUInt32& sampleRa
     resampler->Initialize(2, sampleRate, state.resampling.targetSampleRate);
 
     constexpr AmUInt64 kOutputChunkFrames = 8192;
+    const AmUInt64 targetRate = state.resampling.targetSampleRate;
+    const AmUInt64 expectedOut = (irLength * targetRate + sampleRate - 1) / sampleRate;
     std::vector<AudioBuffer> chunks;
     std::vector<AmUInt64> chunkFrames;
     AmUInt64 offset = 0;
     AmUInt64 totalOutFrames = 0;
 
-    while (offset < irLength)
+    // The resampler reads ahead of each output: past the end of the IR it is fed zeros.
+    while (totalOutFrames < expectedOut)
     {
-        const AmUInt64 want = kOutputChunkFrames;
-        const AmUInt64 needed = AM_MIN(resampler->GetInputFramesNeeded(want), irLength - offset);
+        const AmUInt64 want = AM_MIN(kOutputChunkFrames, expectedOut - totalOutFrames);
+        const AmUInt64 needed = resampler->GetInputFramesNeeded(want);
+        const AmUInt64 available = offset < irLength ? AM_MIN(needed, irLength - offset) : 0;
 
         AudioBuffer chunkIn(needed, 2);
-        AudioBuffer::Copy(buffer, offset, chunkIn, 0, needed);
+        chunkIn.Clear();
+        if (available > 0)
+            AudioBuffer::Copy(buffer, offset, chunkIn, 0, available);
 
         AudioBuffer chunkOut(want, 2);
         AmUInt64 inFrames = needed;

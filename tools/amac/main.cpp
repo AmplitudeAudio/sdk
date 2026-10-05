@@ -321,18 +321,24 @@ static int process(const AmOsString& inFileName, const AmOsString& outFileName, 
                     sampleRate, state.resampling.targetSampleRate);
 
             constexpr AmUInt64 kOutputChunkFrames = 8192;
+            const AmUInt64 targetRate = state.resampling.targetSampleRate;
+            const AmUInt64 expectedOut = (numSamples * targetRate + sampleRate - 1) / sampleRate;
             std::vector<AudioBuffer> chunks;
             std::vector<AmUInt64> chunkFrames;
             AmUInt64 offset = 0;
             AmUInt64 totalOutFrames = 0;
 
-            while (offset < numSamples)
+            // The resampler reads ahead of each output: past the end of the file it is fed zeros.
+            while (totalOutFrames < expectedOut)
             {
-                const AmUInt64 want = kOutputChunkFrames;
-                const AmUInt64 needed = AM_MIN(resampler->GetInputFramesNeeded(want), numSamples - offset);
+                const AmUInt64 want = AM_MIN(kOutputChunkFrames, expectedOut - totalOutFrames);
+                const AmUInt64 needed = resampler->GetInputFramesNeeded(want);
+                const AmUInt64 available = offset < numSamples ? AM_MIN(needed, numSamples - offset) : 0;
 
                 AudioBuffer chunkIn(needed, numChannels);
-                AudioBuffer::Copy(pcmData, offset, chunkIn, 0, needed);
+                chunkIn.Clear();
+                if (available > 0)
+                    AudioBuffer::Copy(pcmData, offset, chunkIn, 0, available);
 
                 AudioBuffer chunkOut(want, numChannels);
                 AmUInt64 inFrames = needed;

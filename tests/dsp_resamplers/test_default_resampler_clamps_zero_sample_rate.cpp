@@ -14,7 +14,7 @@
 
 #include <SparkyStudios/Audio/Amplitude/Amplitude.h>
 
-#include <DSP/Resamplers/DefaultResampler.h>
+#include <DSP/Resamplers/BandlimitedResampler.h>
 
 #include "DSPTestCase.h"
 #include "TestRegistry.h"
@@ -29,33 +29,31 @@ namespace SparkyStudios::Audio::Amplitude::Tests
         void Run() override
         {
             constexpr AmUInt16 channelCount = 1;
-            constexpr AmUInt64 inputFrames = 256;
+            constexpr AmUInt64 inputFrames = 1024;
+            constexpr AmUInt64 outputFrames = 512;
 
-            auto resampler = amshared(DefaultResampler);
-            auto instance = std::static_pointer_cast<DefaultResamplerInstance>(resampler->CreateInstance());
+            auto resampler = std::make_shared<BandlimitedResampler>("default", eResamplerPreset::SincBest);
+            auto instance = resampler->CreateInstance();
 
-            instance->Initialize(channelCount, 48000, 48000);
-
-            // A speed ratio scaled by 1000 truncates to 0 for very small ratios: the instance must survive it and stay
-            // usable.
+            // A rate of zero reaches the mixer in release builds: the instance must clamp it and stay usable.
             instance->Initialize(channelCount, 0, 1000);
 
-            AM_EXPECT(instance->GetDownRate() > 0);
-            AM_EXPECT(instance->GetUpRate() <= kMaxPolyphaseRate);
-            AM_EXPECT(instance->GetDownRate() <= kMaxPolyphaseRate);
+            AM_EXPECT(instance->GetSampleRateIn() > 0);
+            AM_EXPECT(instance->GetSampleRateOut() == 1000);
 
             instance->Initialize(channelCount, 48000, 48000);
 
             AudioBuffer inputBuffer(inputFrames, channelCount);
             GenerateSineWave(inputBuffer, 48000);
 
-            const AmUInt64 capacity = inputFrames * 48000 / 48000 + 2;
-            AudioBuffer outputBuffer(capacity, channelCount);
+            AudioBuffer outputBuffer(outputFrames, channelCount);
 
             AmUInt64 processedInputFrames = inputFrames;
-            AmUInt64 processedOutputFrames = capacity;
+            AmUInt64 processedOutputFrames = outputFrames;
 
             AM_EXPECT(instance->Process(inputBuffer, processedInputFrames, outputBuffer, processedOutputFrames));
+            AM_EXPECT_EQ(outputFrames, processedOutputFrames);
+            AM_EXPECT(EnsureHasNonZeroOutput(outputBuffer));
         }
     };
 

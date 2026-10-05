@@ -48,8 +48,11 @@ namespace SparkyStudios::Audio::Amplitude
             bool error = false;          ///< The resampler made no progress twice in a row; the rest is silence.
         };
 
-        /// Extra FIFO room beyond two blocks, for the filter reach at high ratios.
-        static constexpr AmUInt64 kFifoHeadroom = 1024;
+        /// Extra FIFO room on top of the largest read-ahead, so a refill never has to wait for a consume.
+        static constexpr AmUInt64 kFifoMargin = 64;
+
+        /// Ratio the FIFO is sized for; above it Pull() refills in steps.
+        static constexpr AmReal64 kFifoRatio = 4.0;
 
         /**
          * @brief Allocates the FIFO and source-read buffers and constructs the resampler instance.

@@ -34,9 +34,16 @@ namespace SparkyStudios::Audio::Amplitude
         _resampler->Initialize(1, sourceRate, outputRate);
         _baseRatio = static_cast<AmReal64>(sourceRate) / static_cast<AmReal64>(outputRate);
         _speed = 1.0;
+        _resampler->SetRatio(_baseRatio);
         _sourceChannels = sourceChannels;
 
-        const AmUInt64 capacity = 2 * maxBlockFrames + kFifoHeadroom;
+        // Size the FIFO for kFifoRatio blocks plus the widest read-ahead, measured at that ratio.
+        _resampler->SetRatio(kFifoRatio);
+        const AmUInt64 reach = _resampler->GetInputFramesNeeded(1);
+        _resampler->SetRatio(_baseRatio);
+
+        const auto blockInput = static_cast<AmUInt64>(std::ceil(kFifoRatio * static_cast<AmReal64>(maxBlockFrames)));
+        const AmUInt64 capacity = blockInput + 2 * reach + kFifoMargin;
         _fifo = AudioBuffer(capacity, 1);
         _source = AudioBuffer(capacity, sourceChannels);
         _scratch = AudioBuffer(maxBlockFrames, 1);
@@ -72,7 +79,9 @@ namespace SparkyStudios::Audio::Amplitude
 
     void ResampleStream::UpdateTail()
     {
-        _tail = 2 * _resampler->GetLatency() + 1;
+        // Every output whose kernel reaches the source end must be produced: past the end the stream feeds zeros until
+        // the next output's centre is a read-ahead beyond it. A resampler with a delay also needs that delay flushed.
+        _tail = 2 * _resampler->GetLatency() + _resampler->GetInputFramesNeeded(1);
     }
 
     ResampleStream::PullReport ResampleStream::Pull(SourceReader& reader, AudioBufferChannel& out, AmUInt64 offset, AmUInt64 frames)
@@ -91,6 +100,8 @@ namespace SparkyStudios::Audio::Amplitude
 
             AmUInt64 inFrames = _fifoCount;
             AmUInt64 outFrames = want;
+            const AmUInt64 consumedBefore = _inputConsumed;
+            const AmUInt64 producedBefore = report.produced;
             if (!_resampler->Process(_fifo, inFrames, _scratch, outFrames))
                 inFrames = outFrames = 0;
 
@@ -103,7 +114,13 @@ namespace SparkyStudios::Audio::Amplitude
             {
                 _finished = true;
                 report.finished = true;
-                report.finishedFrame = report.produced;
+
+                // One Process() call covers a whole round, so map the input frame the flush completed at back onto the
+                // output frame it lands on: reporting the end of the round would place it a whole block too late.
+                const AmUInt64 threshold = _endInput + _tail;
+                const AmUInt64 from = threshold - consumedBefore;
+                const auto offsetFrames = static_cast<AmUInt64>(static_cast<AmReal64>(from) / GetRatio());
+                report.finishedFrame = AM_MIN(producedBefore + offsetFrames, report.produced);
             }
 
             if (outFrames > 0)

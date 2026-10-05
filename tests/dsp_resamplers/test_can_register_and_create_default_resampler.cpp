@@ -14,7 +14,7 @@
 
 #include <SparkyStudios/Audio/Amplitude/Amplitude.h>
 
-#include <DSP/Resamplers/DefaultResampler.h>
+#include <DSP/Resamplers/BandlimitedResampler.h>
 
 #include "ComponentTestCase.h"
 #include "TestRegistry.h"
@@ -28,7 +28,7 @@ namespace SparkyStudios::Audio::Amplitude::Tests
     public:
         void Run() override
         {
-            auto resampler = amshared(DefaultResampler);
+            auto resampler = std::make_shared<BandlimitedResampler>("default", eResamplerPreset::SincBest);
 
             Resampler::Unregister(Resampler::Find("default"));
             Resampler::Register(resampler);
@@ -38,6 +38,9 @@ namespace SparkyStudios::Audio::Amplitude::Tests
 
             auto instance = Resampler::Construct("default");
             AM_EXPECT_NOT(instance == nullptr);
+
+            // The built-in presets interpolate at any real ratio, so no rate pair is ever approximated.
+            AM_EXPECT(instance->IsConversionExact(44100, 48000));
 
             Resampler::Unregister(resampler);
         }

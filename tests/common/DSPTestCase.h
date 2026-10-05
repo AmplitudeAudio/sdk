@@ -19,7 +19,6 @@
 #include <vector>
 
 #include <DSP/Resamplers/BandlimitedResampler.h>
-#include <DSP/Resamplers/DefaultResampler.h>
 
 #include "ComponentTestCase.h"
 
@@ -29,12 +28,12 @@ namespace SparkyStudios::Audio::Amplitude::Tests
     {
     public:
         /// The names under which the built-in band-limited resampler presets are registered, cheapest first.
-        static constexpr std::array<const char*, 4> kResamplerPresets{ "linear", "cubic", "sinc", "sinc_best" };
+        static constexpr std::array<const char*, 5> kResamplerPresets{ "linear", "cubic", "sinc", "sinc_best", "default" };
 
         void SetUp() override
         {
             ComponentTestCase::SetUp();
-            _resampler = Engine::RegisterExtension<DefaultResampler>();
+            _resampler = Engine::RegisterExtension<BandlimitedResampler>("default", eResamplerPreset::SincBest);
 
             _presets.push_back(Engine::RegisterExtension<BandlimitedResampler>("linear", eResamplerPreset::Linear));
             _presets.push_back(Engine::RegisterExtension<BandlimitedResampler>("cubic", eResamplerPreset::Cubic));
@@ -65,7 +64,7 @@ namespace SparkyStudios::Audio::Amplitude::Tests
          * @brief Drives a resampler instance through rate pairs that are hostile to fixed-size filter buffers.
          *
          * Any resampler, bundled or plugin-provided, must survive this sweep: the interface contract requires
-         * Initialize() and SetSampleRate() to accept every positive rate pair without reading or writing out of
+         * Initialize() and SetRatio() to accept every positive rate pair without reading or writing out of
          * bounds, approximating the ratio when it cannot be represented exactly.
          *
          * @param[in] instance The resampler instance to exercise.
@@ -259,7 +258,7 @@ namespace SparkyStudios::Audio::Amplitude::Tests
         }
 
     private:
-        std::shared_ptr<DefaultResampler> _resampler;
+        std::shared_ptr<BandlimitedResampler> _resampler;
         std::vector<std::shared_ptr<BandlimitedResampler>> _presets;
     };
 } // namespace SparkyStudios::Audio::Amplitude::Tests
