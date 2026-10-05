@@ -27,6 +27,12 @@
 
 namespace SparkyStudios::Audio::Amplitude::Fidelity
 {
+    /// Engine name of the looping sine whose pitch the RTPC drives.
+    constexpr const char* kGlideSoundName = "fidelity.glide";
+
+    /// Engine name of the RTPC the glide sound's pitch curve follows.
+    constexpr const char* kGlideRtpcName = "fidelity_pitch";
+
     /**
      * @brief Where the generated project (JSON sources) and the compiled assets (with stimulus WAVs) live.
      */
