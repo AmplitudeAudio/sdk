@@ -141,6 +141,12 @@ namespace SparkyStudios::Audio::Amplitude::Fidelity
                     return;
                 }
 
+                // Two timelines are in play and they are not offset equally across output rates: the commands go out on
+                // the action timeline (kLeadIn + Seconds(t, fs)), while the audio starts at the observed onset --
+                // 321 frames after kLeadIn at 48 kHz against 1345 at 44.1 kHz, a whole 1024-frame block apart.
+                // Anything that compares the render against a *command* is anchored on the action timeline, so the
+                // mismatch reported is the engine's own lag and not the anchor. Anything that reads the render itself --
+                // the click window and the hold windows -- stays on the observed onset.
                 const std::uint64_t onset = OnsetFrame(capture, kLeadIn);
                 AddClickMetrics(out, capture, 4000.0, onset + Seconds(0.05, fs), playEnd);
 
@@ -148,6 +154,10 @@ namespace SparkyStudios::Audio::Amplitude::Fidelity
                 const auto at = [&](double t)
                 {
                     return onset + Seconds(t, fs);
+                };
+                const auto commanded = [&](double t)
+                {
+                    return kLeadIn + Seconds(t, fs);
                 };
 
                 // The holds start a quarter second in, once the per-block pitch easing has settled.
@@ -157,13 +167,13 @@ namespace SparkyStudios::Audio::Amplitude::Fidelity
                 Signal expected(x.size(), 0.0);
                 for (std::size_t i = 0; i < expected.size(); ++i)
                 {
-                    const double t = (static_cast<double>(i) - static_cast<double>(onset)) / fs;
+                    const double t = (static_cast<double>(i) - static_cast<double>(kLeadIn)) / fs;
                     expected[i] = kSourceHz * CommandedPitch(std::max(0.0, t));
                 }
 
                 PitchOptions options;
-                options.begin = at(kHold);
-                options.end = at(2.0 * kHold + 2.0 * kGlide);
+                options.begin = commanded(kHold);
+                options.end = commanded(2.0 * kHold + 2.0 * kGlide);
                 options.expectedHz = std::move(expected);
                 const PitchResult pitch = AnalyzePitch(x, fs, options);
                 out.Add("glide.rmsDeviationCents", pitch.rmsDeviationCents, "cents", Better::Lower);
