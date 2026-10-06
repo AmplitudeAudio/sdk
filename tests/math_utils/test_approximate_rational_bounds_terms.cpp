@@ -28,7 +28,7 @@ namespace SparkyStudios::Audio::Amplitude::Tests
         {
             constexpr AmUInt64 maxTerm = 1170;
 
-            // Pitch path: a speed change reaches the resampler as a (1000, s) rate pair (see DefaultResamplerInstance::SetRatio).
+            // A thousandth-ratio sweep: the smallest ratio a pitch multiplier produces must still reduce inside the term budget.
             bool pitchPathBounded = true;
             for (AmUInt64 s = 1; s <= 4000 && pitchPathBounded; ++s)
             {

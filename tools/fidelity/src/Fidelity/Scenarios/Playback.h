@@ -74,7 +74,12 @@ namespace SparkyStudios::Audio::Amplitude::Fidelity
     [[nodiscard]] std::unique_ptr<Scenario> MakeScheduledStartScenario();
 
     /**
-     * @brief Registers the playback-core scenarios (P1-P10).
+     * @brief P11: a continuous pitch glide stays click-free and lands on its pitch.
+     */
+    [[nodiscard]] std::unique_ptr<Scenario> MakePitchGlideScenario();
+
+    /**
+     * @brief Registers the playback-core scenarios (P1-P11).
      */
     void RegisterPlaybackScenarios(ScenarioRegistry& registry);
 } // namespace SparkyStudios::Audio::Amplitude::Fidelity

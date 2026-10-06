@@ -14,6 +14,7 @@
 
 #include <Fidelity/AssetGenerator.h>
 
+#include <charconv>
 #include <fstream>
 #include <iostream>
 #include <iterator>
@@ -27,6 +28,7 @@ namespace SparkyStudios::Audio::Amplitude::Fidelity
     {
         constexpr std::uint64_t kFirstSoundId = 910000;
         constexpr std::uint64_t kSoundBankId = 910;
+        constexpr std::uint64_t kGlideRtpcId = 9101;
 
         bool WriteIfChanged(const std::filesystem::path& path, std::string_view content)
         {
@@ -51,11 +53,20 @@ namespace SparkyStudios::Audio::Amplitude::Fidelity
             return true;
         }
 
+        /// The shortest decimal that reads back as @p value. An ostream's default precision is six significant digits,
+        /// which would rewrite the number the engine then loads.
+        std::string JsonNumber(double value)
+        {
+            char buffer[64];
+            const auto [end, error] = std::to_chars(buffer, buffer + sizeof(buffer), value);
+            return error == std::errc{} ? std::string(buffer, end) : "0";
+        }
+
         std::string CurveJson(double y0, double y1)
         {
             std::ostringstream json;
-            json << "{ \"parts\": [ { \"start\": { \"x\": 0, \"y\": " << y0 << " }, \"end\": { \"x\": 1, \"y\": " << y1
-                 << " }, \"fader\": \"Linear\" } ] }";
+            json << "{ \"parts\": [ { \"start\": { \"x\": 0, \"y\": " << JsonNumber(y0)
+                 << " }, \"end\": { \"x\": 1, \"y\": " << JsonNumber(y1) << " }, \"fader\": \"Linear\" } ] }";
             return json.str();
         }
 
@@ -84,11 +95,27 @@ namespace SparkyStudios::Audio::Amplitude::Fidelity
             const bool loop = spec.kind == StimulusKind::LoopSine;
             std::ostringstream json;
             json << "{\"id\":" << id << ",\"name\":\"" << SoundName(spec, streamed) << "\",\"effect\":0,"
-                 << "\"gain\":{\"kind\":\"Static\",\"value\":1},\"pitch\":{\"kind\":\"Static\",\"value\":1},\"bus\":1,"
+                 << "\"gain\":{\"kind\":\"Static\",\"value\":1},\"pitch\":{\"kind\":\"Static\",\"value\":" << JsonNumber(spec.pitch)
+                 << "},\"bus\":1,"
                  << "\"priority\":{\"kind\":\"Static\",\"value\":1},\"spatialization\":0,\"attenuation\":0,\"scope\":0,"
                  << "\"fader\":\"Linear\",\"stream\":" << (streamed ? "true" : "false")
                  << ",\"loop\":{\"enabled\":" << (loop ? "true" : "false") << ",\"loop_count\":" << (loop ? 1000 : 0) << "},"
                  << "\"near_field_gain\":{\"kind\":\"Static\",\"value\":0},\"path\":\"fidelity/" << spec.name << ".wav\"}\n";
+            return json.str();
+        }
+
+        /// The glide sound's pitch curve. The engine normalises a curve's x over the RTPC's own value range, so the
+        /// identity over [0.25, 4] is a straight run from 0 to 1 in x.
+        std::string GlideSoundJson(std::uint64_t id)
+        {
+            std::ostringstream json;
+            json << "{\"id\":" << id << ",\"name\":\"" << kGlideSoundName << "\",\"effect\":0,"
+                 << "\"gain\":{\"kind\":\"Static\",\"value\":1},"
+                 << "\"pitch\":{\"kind\":\"RTPC\",\"value\":1,\"rtpc\":{\"id\":" << kGlideRtpcId << ",\"curve\":{\"parts\":[{"
+                 << "\"start\":{\"x\":0,\"y\":0.25},\"end\":{\"x\":1,\"y\":4},\"fader\":\"Linear\"}]}}},"
+                 << "\"bus\":1,\"priority\":{\"kind\":\"Static\",\"value\":1},\"spatialization\":0,\"attenuation\":0,\"scope\":0,"
+                 << "\"fader\":\"Linear\",\"stream\":false,\"loop\":{\"enabled\":true,\"loop_count\":0},"
+                 << "\"near_field_gain\":{\"kind\":\"Static\",\"value\":0},\"path\":\"fidelity/loop_sine_48000.wav\"}\n";
             return json.str();
         }
     } // namespace
@@ -122,8 +149,9 @@ namespace SparkyStudios::Audio::Amplitude::Fidelity
         std::error_code error;
         const std::filesystem::path sounds = paths.project / "sounds" / "fidelity";
         const std::filesystem::path banks = paths.project / "soundbanks";
+        const std::filesystem::path rtpcs = paths.project / "rtpc";
         const std::filesystem::path data = paths.assets / "data" / "fidelity";
-        for (const auto& directory : { sounds, banks, data })
+        for (const auto& directory : { sounds, banks, rtpcs, data })
         {
             std::filesystem::create_directories(directory, error);
             if (error)
@@ -134,6 +162,11 @@ namespace SparkyStudios::Audio::Amplitude::Fidelity
         }
 
         bool ok = true;
+        const std::string rtpc = "{\"id\":" + std::to_string(kGlideRtpcId) + ",\"name\":\"" + kGlideRtpcName +
+            "\",\"min_value\":0.25,\"max_value\":4,\"default_value\":1,\"fade_settings\":{\"enabled\":false,"
+            "\"fade_attack\":{\"duration\":0,\"fader\":\"Linear\"},\"fade_release\":{\"duration\":0,\"fader\":\"Linear\"}}}\n";
+        ok = WriteIfChanged(rtpcs / "fidelity_pitch.json", rtpc) && ok;
+
         for (const ConfigVariant& variant : IsolatedConfigVariants())
             ok = WriteIfChanged(
                      paths.project / ConfigName("isolated", variant.blockSize, variant.outputRate, ".config.json"), ConfigJson(variant)) &&
@@ -142,7 +175,7 @@ namespace SparkyStudios::Audio::Amplitude::Fidelity
         std::ostringstream bank;
         // The engine reads every list of a soundbank without a null check, so the empty ones are written explicitly.
         bank << "{\"id\":" << kSoundBankId << ",\"name\":\"fidelity\",\"switch_containers\":[],\"collections\":[],\"events\":[],"
-             << "\"attenuators\":[],\"switches\":[],\"rtpc\":[],\"effects\":[],\"sounds\":[";
+             << "\"attenuators\":[],\"switches\":[],\"rtpc\":[\"fidelity_pitch.amrtpc\"],\"effects\":[],\"sounds\":[";
 
         const std::vector<StimulusSpec>& catalog = StimulusCatalog();
         for (std::size_t i = 0; i < catalog.size(); ++i)
@@ -160,7 +193,10 @@ namespace SparkyStudios::Audio::Amplitude::Fidelity
             ok = WriteIfChanged(data / (spec.name + ".wav"), std::string_view(wav.data(), wav.size())) && ok;
         }
 
-        bank << "]}\n";
+        // The glide sound carries no catalog spec: its pitch comes from the RTPC at run time.
+        ok = WriteIfChanged(sounds / "glide.json", GlideSoundJson(kFirstSoundId + 2 * catalog.size())) && ok;
+
+        bank << ",\"fidelity/glide.amsound\"]}\n";
         ok = WriteIfChanged(banks / "fidelity.json", bank.str()) && ok;
         return ok;
     }

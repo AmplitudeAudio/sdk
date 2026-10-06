@@ -19,6 +19,7 @@
 #include <exception>
 
 #include <SparkyStudios/Audio/Amplitude/Amplitude.h>
+#include <SparkyStudios/Audio/Amplitude/DSP/Resampler.h>
 #include <SparkyStudios/Audio/Amplitude/IO/DiskFileSystem.h>
 
 #include <Utils/ScopedDenormalFlush.h>
@@ -29,6 +30,24 @@ namespace SparkyStudios::Audio::Amplitude::Fidelity
 {
     namespace
     {
+        /// Registered as "default" so the engine picks it up whatever its config names; forwards to another resampler.
+        class ResamplerAlias final : public Resampler
+        {
+        public:
+            explicit ResamplerAlias(std::string target)
+                : Resampler("default")
+                , _target(std::move(target))
+            {}
+
+            std::shared_ptr<ResamplerInstance> CreateInstance() override
+            {
+                return Resampler::Construct(_target);
+            }
+
+        private:
+            std::string _target;
+        };
+
         RenderOutcome RunLockStep(const RenderSettings& settings, std::vector<TimedAction> actions)
         {
             RenderOutcome outcome;
@@ -176,6 +195,27 @@ namespace SparkyStudios::Audio::Amplitude::Fidelity
         Driver::Unregister(Driver::Find("miniaudio"));
         auto driver = Engine::RegisterExtension<OfflineDriver>();
 
+        std::shared_ptr<ResamplerAlias> alias;
+        if (!settings.resampler.empty() && settings.resampler != "default")
+        {
+            if (Resampler::Find(settings.resampler) == nullptr)
+            {
+                RenderOutcome failed;
+                failed.error = "unknown resampler '" + settings.resampler + "'";
+                Engine::UnregisterDefaultExtensions();
+                Engine::UnregisterExtension(driver);
+                amEngine->DestroyInstance();
+                fileSystem.reset();
+                if (ownsMemory)
+                    MemoryManager::Deinitialize();
+
+                return failed;
+            }
+
+            Resampler::Unregister(Resampler::Find("default"));
+            alias = Engine::RegisterExtension<ResamplerAlias>(settings.resampler);
+        }
+
         RenderOutcome outcome;
         if (amEngine->Initialize(AmOsString(std::filesystem::path(settings.configFile).native())))
         {
@@ -199,6 +239,9 @@ namespace SparkyStudios::Audio::Amplitude::Fidelity
         }
 
         amEngine->Deinitialize();
+        if (alias != nullptr)
+            Engine::UnregisterExtension(alias);
+
         Engine::UnregisterDefaultExtensions();
         Engine::UnregisterExtension(driver);
         amEngine->DestroyInstance();

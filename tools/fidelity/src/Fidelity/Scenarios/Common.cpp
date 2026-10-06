@@ -51,7 +51,7 @@ namespace SparkyStudios::Audio::Amplitude::Fidelity
     std::uint64_t OutputFrames(const StimulusSpec& spec, std::uint32_t outputRate)
     {
         return static_cast<std::uint64_t>(
-            std::ceil(static_cast<double>(StimulusFrameCount(spec)) * outputRate / static_cast<double>(spec.sampleRate)));
+            std::ceil(static_cast<double>(StimulusFrameCount(spec)) * outputRate / (static_cast<double>(spec.sampleRate) * spec.pitch)));
     }
 
     double CenterPanGain()
@@ -171,10 +171,10 @@ namespace SparkyStudios::Audio::Amplitude::Fidelity
         return names;
     }
 
-    double AliasLevelDbc(std::span<const double> steady, double sampleRate, const StimulusSpec& spec)
+    double AliasLevelDbc(std::span<const double> steady, double sampleRate, const StimulusSpec& spec, double frequencyHz)
     {
         const PowerSpectrum spectrum = AveragedPowerSpectrum(steady, sampleRate, 32768);
-        return DbFromPower(BandPower(spectrum, sampleRate - spec.frequencyHz, 8) / 0.5) - DbFromAmplitude(spec.amplitude * CenterPanGain());
+        return DbFromPower(BandPower(spectrum, sampleRate - frequencyHz, 8) / 0.5) - DbFromAmplitude(spec.amplitude * CenterPanGain());
     }
 
     double MedianFinite(std::vector<double> values)

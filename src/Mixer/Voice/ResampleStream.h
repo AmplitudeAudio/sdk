@@ -41,15 +41,18 @@ namespace SparkyStudios::Audio::Amplitude
             AmUInt32 wraps = 0;
             AmUInt64 firstWrapFrame = 0; ///< Output frame, relative to the pull start, of the first loop seam.
             bool ended = false;
-            AmUInt64 endFrame = 0;       ///< Output frame, relative to the pull start, of the source end.
-            bool finished = false;       ///< The filter tail after the end has been flushed.
+            AmUInt64 endFrame = 0; ///< Output frame, relative to the pull start, of the source end.
+            bool finished = false; ///< The filter tail after the end has been flushed.
             AmUInt64 finishedFrame = 0;
             bool starved = false;
-            bool error = false;          ///< The resampler made no progress twice in a row; the rest is silence.
+            bool error = false; ///< The resampler made no progress twice in a row; the rest is silence.
         };
 
-        /// Extra FIFO room beyond two blocks, for the filter reach at high ratios.
-        static constexpr AmUInt64 kFifoHeadroom = 1024;
+        /// Extra FIFO room on top of the largest read-ahead, so a refill never has to wait for a consume.
+        static constexpr AmUInt64 kFifoMargin = 64;
+
+        /// Ratio the FIFO is sized for; above it Pull() refills in steps.
+        static constexpr AmReal64 kFifoRatio = 4.0;
 
         /**
          * @brief Allocates the FIFO and source-read buffers and constructs the resampler instance.
@@ -73,6 +76,17 @@ namespace SparkyStudios::Audio::Amplitude
         void SetSpeed(AmReal64 speed);
 
         /**
+         * @brief Ramps the speed across the next @p outputFrames output frames instead of stepping it at the boundary.
+         *
+         * @copydetails ResamplerInstance::SetRatioRamp
+         *
+         * @param[in] startSpeed The playback speed at the first of those output frames.
+         * @param[in] endSpeed The playback speed at the last of those output frames.
+         * @param[in] outputFrames The number of output frames the ramp spans.
+         */
+        void SetSpeedRamp(AmReal64 startSpeed, AmReal64 endSpeed, AmUInt64 outputFrames);
+
+        /**
          * @brief Writes exactly @p frames frames into @p out from @p offset.
          *
          * @param[in] reader The source reader to pull frames from.
@@ -89,6 +103,20 @@ namespace SparkyStudios::Audio::Amplitude
          * @brief Drops the FIFO and the resampler history (after a reader seek).
          */
         void Reset();
+
+        /**
+         * @brief Moves @p reader to @p position and restarts the stream there, its resampler history filled with the
+         * source frames that precede the position.
+         *
+         * The first outputs then read real signal on their left, as they would have in a stream that played up to the
+         * position, rather than starting on silence with the ringing of an abrupt onset. A looping source takes those
+         * frames across its seam; any other source has nothing before its region start, where the history stays silent.
+         * A restart exactly at the region start plays from the top: its history is silent, looping or not.
+         *
+         * @param[in,out] reader The source reader this stream pulls from.
+         * @param[in] position The source frame to restart at.
+         */
+        void Seek(SourceReader& reader, AmUInt64 position);
 
         /**
          * @brief Returns the next source frame not yet consumed by the resampler, wrapped into the loop region.
@@ -152,6 +180,7 @@ namespace SparkyStudios::Audio::Amplitude
 
     private:
         void Refill(SourceReader& reader, AmUInt64 frames, AmUInt64 produced, PullReport& report);
+        void Downmix(AmUInt64 frames, AmUInt64 offset);
         void Consume(AmUInt64 frames);
         void UpdateTail();
 
@@ -163,9 +192,13 @@ namespace SparkyStudios::Audio::Amplitude
         AmUInt64 _inputConsumed = 0;
         AmUInt64 _primedInput = 0;
         AmUInt64 _endInput = 0;
+        AmUInt64 _prerollFrames = 0;
         AmUInt64 _tail = 1;
         AmReal64 _baseRatio = 1.0;
         AmReal64 _speed = 1.0;
+        AmReal64 _speedRampStart = 1.0;
+        AmReal64 _speedRampEnd = 1.0;
+        AmUInt64 _speedRampFrames = 0;
         AmUInt16 _sourceChannels = 1;
         bool _endSeen = false;
         bool _finished = false;

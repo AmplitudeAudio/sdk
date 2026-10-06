@@ -24,6 +24,7 @@
 #include <Fidelity/AssetGenerator.h>
 #include <Fidelity/RenderSession.h>
 #include <Fidelity/Report.h>
+#include <Fidelity/ResamplerBench.h>
 #include <Fidelity/Scenario.h>
 
 using namespace SparkyStudios::Audio::Amplitude::Fidelity;
@@ -44,28 +45,57 @@ namespace
         return buffer;
     }
 
-    std::string GitSha()
+    std::string RunCommand(const char* command)
     {
 #if defined(_WIN32)
-        FILE* pipe = _popen("git rev-parse --short HEAD 2>NUL", "r");
+        FILE* pipe = _popen(command, "r");
 #else
-        FILE* pipe = popen("git rev-parse --short HEAD 2>/dev/null", "r");
+        FILE* pipe = popen(command, "r");
 #endif
         if (pipe == nullptr)
-            return "unknown";
+            return {};
 
-        char buffer[64] = {};
-        const bool read = std::fgets(buffer, sizeof(buffer), pipe) != nullptr;
+        std::string output;
+        char buffer[256] = {};
+        while (std::fgets(buffer, sizeof(buffer), pipe) != nullptr)
+            output += buffer;
+
 #if defined(_WIN32)
         _pclose(pipe);
 #else
         pclose(pipe);
 #endif
-        std::string sha = read ? buffer : "unknown";
+        return output;
+    }
+
+    std::string GitSha()
+    {
+#if defined(_WIN32)
+        const std::string output = RunCommand("git rev-parse --short HEAD 2>NUL");
+
+        // Untracked files are left out: a repository can carry notes and scratch files forever, and a suffix that
+        // is always on says nothing about whether the binary that took the measurement matches HEAD.
+        const bool dirty = !RunCommand("git status --porcelain --untracked-files=no 2>NUL").empty();
+#else
+        const std::string output = RunCommand("git rev-parse --short HEAD 2>/dev/null");
+        const bool dirty = !RunCommand("git status --porcelain --untracked-files=no 2>/dev/null").empty();
+#endif
+        if (output.empty())
+            return "unknown";
+
+        std::string sha = output.substr(0, output.find('\n'));
         while (!sha.empty() && (sha.back() == '\n' || sha.back() == '\r'))
             sha.pop_back();
 
-        return sha.empty() ? "unknown" : sha;
+        if (sha.empty())
+            return "unknown";
+
+        // A measurement taken from a tree that has been edited away from HEAD is not a measurement of HEAD, and the
+        // two must stay apart in report.json and summary.md.
+        if (dirty)
+            sha += "-dirty";
+
+        return sha;
     }
 
     const char* BuildMode()
@@ -92,6 +122,8 @@ int main(int argc, char** argv)
     std::string writeBaseline;
     std::string assets = kDefaultAssetsPath;
     std::string project;
+    std::string resampler;
+    bool bench = false;
 
     app.add_flag("--list", list, "List scenarios and exit.");
     app.add_option("--filter", filter, "Glob on scenario ids, e.g. \"P*\".");
@@ -103,8 +135,28 @@ int main(int argc, char** argv)
     app.add_option("--assets", assets, "Fidelity asset directory.");
     app.add_flag("--generate-assets", generate, "Generate the fidelity project files and stimuli, then exit.");
     app.add_option("--project", project, "Project directory written by --generate-assets.");
+    app.add_option("--resampler", resampler, "Render with this registered resampler instead of the config's (default: the config's).");
+    app.add_flag("--bench-resamplers", bench, "Time the built-in resamplers and exit (use a release build).");
 
     CLI11_PARSE(app, argc, argv);
+
+    if (bench)
+    {
+        std::cout << "preset\tratio\trealtime voices (mono, resample-only, " << BuildMode() << ")\n";
+        // The table is read as data, so what it does and does not measure has to travel with it.
+        std::cout << "# 'realtime voices' counts mono, resample-only voices per core: no source synthesis, no mixer or\n"
+                     "# attenuation chain. One run per cell: these are spot readings, not averages.\n"
+                     "# A ratio of 1 is a pass-through, not a measurement: the kernel reach is zero\n"
+                     "# there, so every preset collapses to a single tap and the row times dispatch, not filtering.\n"
+                     "# A ratio of 4 is kMaxKernelStretch, the cap the sinc presets clamp to: the kernel is as wide\n"
+                     "# there as it ever gets and throughput plateaus, so do not read the decline past it as\n"
+                     "# the cost of a further downsample.\n"
+                     "# A nan is a cell that could not be measured (see stderr).\n";
+        for (const ResamplerBenchRow& row : RunResamplerBench(10.0))
+            std::cout << row.preset << "\t" << row.ratio << "\t" << row.realtimeVoices << "\n";
+
+        return 0;
+    }
 
     if (generate)
     {
@@ -141,6 +193,14 @@ int main(int argc, char** argv)
         return 1;
     }
 
+    if (!writeBaseline.empty() && !resampler.empty() && resampler != "default")
+    {
+        std::cerr << "--write-baseline records the default resampler only.\n";
+        return 1;
+    }
+
+    const std::string preset{ ResamplerPreset(resampler) };
+
     const std::vector<const Scenario*> selected = registry.Match(filter);
     if (selected.empty())
     {
@@ -151,10 +211,20 @@ int main(int argc, char** argv)
     std::optional<Baseline> baseline;
     if (!baselinePath.empty())
     {
-        baseline = ReadTsv(baselinePath);
+        std::string baselineResampler;
+        baseline = ReadTsv(baselinePath, &baselineResampler);
         if (!baseline)
         {
             std::cerr << "Cannot read the baseline '" << baselinePath << "'.\n";
+            return 1;
+        }
+
+        // The preset decides every number in the file: comparing a run rendered by one preset against a baseline
+        // rendered by another measures the preset, not the code, and reports the difference as a regression.
+        if (baselineResampler != preset)
+        {
+            std::cerr << "The baseline '" << baselinePath << "' was rendered with the '" << baselineResampler
+                      << "' resampler; this run uses '" << preset << "'.\n";
             return 1;
         }
     }
@@ -162,6 +232,7 @@ int main(int argc, char** argv)
     RunContext context;
     context.assets = assets;
     context.grid = mode;
+    context.resampler = resampler;
 
     std::vector<ScenarioResult> results;
     bool measurementErrors = false;
@@ -185,6 +256,7 @@ int main(int argc, char** argv)
     options.writeWavs = !noWav;
     options.gitSha = GitSha();
     options.buildMode = BuildMode();
+    options.resampler = resampler.empty() ? "config" : resampler;
 
     if (!WriteReport(results, options, baseline ? &*baseline : nullptr))
     {
@@ -198,7 +270,7 @@ int main(int argc, char** argv)
         return 2;
     }
 
-    if (!writeBaseline.empty() && !WriteTsv(writeBaseline, results))
+    if (!writeBaseline.empty() && !WriteTsv(writeBaseline, results, preset))
     {
         std::cerr << "Cannot write the baseline to " << writeBaseline << ".\n";
         return 1;

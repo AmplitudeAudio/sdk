@@ -17,7 +17,7 @@
 
 #include <SparkyStudios/Audio/Amplitude/Amplitude.h>
 
-#include <DSP/Resamplers/DefaultResampler.h>
+#include <DSP/Resamplers/BandlimitedResampler.h>
 
 #include "DSPTestCase.h"
 #include "TestRegistry.h"
@@ -31,10 +31,9 @@ namespace SparkyStudios::Audio::Amplitude::Tests
     public:
         void Run() override
         {
-            // Upsampling 8000 Hz to 48000 Hz with a small device buffer asks for fewer input frames than the
-            // filter history (_coefficientsPerPhase - 1 = 13), which takes the remainingSamples > 0 branch of
-            // Process(). That branch shifts the history relative to the end of the state channel, so it is only
-            // correct while the channel capacity equals the history length.
+            // Upsampling 8000 Hz to 48000 Hz, one 8-frame block at a time: every Process() call is asked for the output a
+            // single block can produce, so it consumes about 8 input frames and leaves the rest of `pending` for the
+            // next call. Only a correct history carry keeps the output continuous across the seams.
             constexpr AmUInt16 channelCount = 1;
             constexpr AmUInt32 sampleRateIn = 8000;
             constexpr AmUInt32 sampleRateOut = 48000;
@@ -42,36 +41,59 @@ namespace SparkyStudios::Audio::Amplitude::Tests
             constexpr AmUInt32 blockCount = 64;
             constexpr AmReal32 frequency = 200.0f;
 
-            auto resampler = amshared(DefaultResampler);
+            auto resampler = amshared(BandlimitedResampler, "default", eResamplerPreset::SincBest);
             auto instance = resampler->CreateInstance();
 
             instance->Initialize(channelCount, sampleRateIn, sampleRateOut);
 
             std::vector<AmReal32> resampled;
+            std::vector<AmReal32> pending;
             AmUInt64 phase = 0;
 
             for (AmUInt32 block = 0; block < blockCount; ++block)
             {
-                AudioBuffer inputBuffer(blockFrames, channelCount);
                 for (AmUInt64 i = 0; i < blockFrames; ++i, ++phase)
-                    inputBuffer[0][i] =
-                        std::sin(2.0f * AM_PI32 * frequency * static_cast<AmReal32>(phase) / static_cast<AmReal32>(sampleRateIn));
+                    pending.push_back(
+                        std::sin(2.0f * AM_PI32 * frequency * static_cast<AmReal32>(phase) / static_cast<AmReal32>(sampleRateIn)));
 
-                const AmUInt64 capacity = blockFrames * sampleRateOut / sampleRateIn + 2;
-                AudioBuffer outputBuffer(capacity, channelCount);
+                while (!pending.empty())
+                {
+                    // The kernel reads far ahead, so the whole pending window has to be visible in the buffer or
+                    // Process() has nothing to render yet. The 8-frame boundary is instead what bounds the request:
+                    // no more output than one block can produce, so no more input than one block is consumed.
+                    AudioBuffer inputBuffer(pending.size(), channelCount);
+                    std::copy(pending.begin(), pending.end(), inputBuffer[0].begin());
 
-                AmUInt64 processedInputFrames = blockFrames;
-                AmUInt64 processedOutputFrames = capacity;
+                    const AmUInt64 block = AM_MIN(pending.size(), blockFrames);
+                    const AmUInt64 capacity = block * sampleRateOut / sampleRateIn + 2;
+                    AudioBuffer outputBuffer(capacity, channelCount);
 
-                AM_EXPECT(instance->Process(inputBuffer, processedInputFrames, outputBuffer, processedOutputFrames));
+                    AmUInt64 processedInputFrames = pending.size();
+                    AmUInt64 processedOutputFrames = capacity;
 
-                for (AmUInt64 i = 0; i < processedOutputFrames; ++i)
-                    resampled.push_back(outputBuffer[0][i]);
+                    AM_EXPECT(instance->Process(inputBuffer, processedInputFrames, outputBuffer, processedOutputFrames));
+
+                    for (AmUInt64 i = 0; i < processedOutputFrames; ++i)
+                        resampled.push_back(outputBuffer[0][i]);
+
+                    // A resampler that produces without consuming would never let `pending` shrink.
+                    if (processedInputFrames == 0)
+                        break;
+
+                    pending.erase(pending.begin(), pending.begin() + static_cast<std::ptrdiff_t>(processedInputFrames));
+                }
             }
 
             // A 200 Hz sine sampled at 48 kHz moves at most 0.027 per sample. A lost state carry produces jumps
             // close to the full amplitude, so a 0.1 threshold separates the two cases with a wide margin.
             AM_EXPECT(resampled.size() > 256);
+
+            // A resampler that emitted nothing would satisfy the jump bound with a largestJump of 0: the length
+            // check above says frames came out, and this says they carried the tone.
+            AmReal32 peak = 0.0f;
+            for (const AmReal32 sample : resampled)
+                peak = std::max(peak, std::abs(sample));
+            AM_EXPECT(peak > 0.25f);
 
             AmReal32 largestJump = 0.0f;
             for (AmSize i = 128; i < resampled.size(); ++i)

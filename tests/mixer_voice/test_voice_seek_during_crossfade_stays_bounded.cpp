@@ -31,7 +31,7 @@ namespace SparkyStudios::Audio::Amplitude::Tests
     namespace
     {
         constexpr AmReal64 kHalfPi = 1.57079632679489661923;
-        constexpr AmUInt64 kCrossfadeFrames = 240; // kSeekCrossfade (5 ms) at 48 kHz.
+        constexpr AmUInt64 kCrossfadeFrames = 384; // kSeekCrossfade (8 ms) at 48 kHz.
 
         AmReal32 MaxDelta(const std::vector<AmReal32>& source, AmUInt64 begin, AmUInt64 end)
         {
@@ -81,7 +81,7 @@ namespace SparkyStudios::Audio::Amplitude::Tests
             }
 
             // Two seeks 10 frames apart: the second lands while the first crossfade's incoming stream (posA) is only
-            // 10/240 of the way in, far from dominant, so its abandoned contribution must stay weighted down instead
+            // 10/384 of the way in, far from dominant, so its abandoned contribution must stay weighted down instead
             // of being swapped in whole.
             {
                 auto voice = std::make_unique<Voice>();

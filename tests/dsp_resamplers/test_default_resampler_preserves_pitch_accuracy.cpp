@@ -17,7 +17,7 @@
 
 #include <SparkyStudios/Audio/Amplitude/Amplitude.h>
 
-#include <DSP/Resamplers/DefaultResampler.h>
+#include <DSP/Resamplers/BandlimitedResampler.h>
 
 #include "DSPTestCase.h"
 #include "TestRegistry.h"
@@ -31,8 +31,8 @@ namespace SparkyStudios::Audio::Amplitude::Tests
     public:
         void Run() override
         {
-            // 44056 Hz is the rate whose exact ratio (6000 / 5507) does not fit the filter budget, so it is
-            // snapped to 1071 / 983. The measured pitch error must stay far below anything audible.
+            // 44056 Hz to 48000 Hz is a rate pair with no small common factor, so an implementation that snapped
+            // the ratio would drift audibly. The measured pitch error must stay far below anything audible.
             constexpr AmUInt16 channelCount = 1;
             constexpr AmUInt32 sampleRateIn = 44056;
             constexpr AmUInt32 sampleRateOut = 48000;
@@ -40,7 +40,7 @@ namespace SparkyStudios::Audio::Amplitude::Tests
             constexpr AmUInt32 blockCount = 4;
             constexpr AmReal32 frequency = 1000.0f;
 
-            auto resampler = amshared(DefaultResampler);
+            auto resampler = amshared(BandlimitedResampler, "default", eResamplerPreset::SincBest);
             auto instance = resampler->CreateInstance();
 
             instance->Initialize(channelCount, sampleRateIn, sampleRateOut);

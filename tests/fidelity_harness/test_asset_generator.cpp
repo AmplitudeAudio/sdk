@@ -64,8 +64,21 @@ namespace SparkyStudios::Audio::Amplitude::Tests
             }
 
             const std::string bank = ReadText(paths.project / "soundbanks" / "fidelity.json");
-            for (const char* list : { "switch_containers", "collections", "events", "attenuators", "switches", "rtpc", "effects" })
+            for (const char* list : { "switch_containers", "collections", "events", "attenuators", "switches", "effects" })
                 AM_EXPECT(bank.find("\"" + std::string(list) + "\":[]") != std::string::npos);
+
+            // The glide sound's pitch comes from this RTPC, so the bank's list is not empty.
+            AM_EXPECT(bank.find("\"rtpc\":[\"fidelity_pitch.amrtpc\"]") != std::string::npos);
+            AM_EXPECT(bank.find("\"fidelity/glide.amsound\"") != std::string::npos);
+            AM_EXPECT(std::filesystem::exists(paths.project / "rtpc" / "fidelity_pitch.json"));
+
+            const std::string glide = ReadText(paths.project / "sounds" / "fidelity" / "glide.json");
+            AM_EXPECT(glide.find(std::string("\"name\":\"") + kGlideSoundName + "\"") != std::string::npos);
+            AM_EXPECT(glide.find("\"kind\":\"RTPC\"") != std::string::npos);
+
+            // RTPC curves are normalised over [min, max] before evaluation, so the keys run over [0, 1]. The glide
+            // writes the identity mapping; the raw pitch range (0.25 to 4) would map to nothing and silence the curve.
+            AM_EXPECT(glide.find("\"start\":{\"x\":0,\"y\":0.25},\"end\":{\"x\":1,\"y\":4}") != std::string::npos);
 
             for (const StimulusSpec& spec : StimulusCatalog())
             {

@@ -34,6 +34,7 @@ namespace SparkyStudios::Audio::Amplitude
 
         _settings = settings;
         _speed = settings.speed > 0.0 && std::isfinite(settings.speed) ? settings.speed : 1.0;
+        _speedRampStart = _speedRampEnd = _speed;
         _settings.speed = _speed;
 
         for (auto& slot : _slots)
@@ -71,12 +72,12 @@ namespace SparkyStudios::Audio::Amplitude
     bool Voice::InitializeSlot(VoiceStreamSlot& slot, AmUInt64 position) const
     {
         slot.reader.Initialize(_settings.source, _settings.regionStart, _settings.regionEnd, _settings.loop, _settings.loopCount);
-        slot.reader.Seek(position);
-
         if (!slot.stream.Initialize(
                 _settings.resamplerName, _settings.source.sampleRate, _settings.outputRate, _settings.source.channels,
                 _settings.maxBlockFrames))
             return false;
+
+        slot.stream.Seek(slot.reader, position);
 
         slot.stream.SetSpeed(_settings.speed);
         return true;
@@ -113,15 +114,33 @@ namespace SparkyStudios::Audio::Amplitude
 
     void Voice::SetSpeed(AmReal64 speed)
     {
-        if (!std::isfinite(speed) || speed <= 0.0)
-            speed = 1.0;
+        SetSpeedRamp(speed, speed, 0);
+    }
 
-        if (speed == _speed)
+    void Voice::SetSpeedRamp(AmReal64 startSpeed, AmReal64 endSpeed, AmUInt64 outputFrames)
+    {
+        if (!std::isfinite(startSpeed) || startSpeed <= 0.0)
+            startSpeed = 1.0;
+        if (!std::isfinite(endSpeed) || endSpeed <= 0.0)
+            endSpeed = 1.0;
+
+        // The published ramp is the whole of ApplySpeedTo()'s state, so a call that only shortens or lengthens it
+        // still republishes: dropping it would leave a stream that joins mid-ramp replaying a stale span.
+        if (startSpeed == _speedRampStart && endSpeed == _speedRampEnd && outputFrames == _speedRampFrames)
             return;
 
-        _speed = speed;
+        _speedRampStart = startSpeed;
+        _speedRampEnd = endSpeed;
+        _speedRampFrames = outputFrames;
+        _speed = 0.5 * (startSpeed + endSpeed);
+
         for (auto& slot : _slots)
-            slot.stream.SetSpeed(speed);
+            slot.stream.SetSpeedRamp(startSpeed, endSpeed, outputFrames);
+    }
+
+    void Voice::ApplySpeedTo(ResampleStream& stream) const
+    {
+        stream.SetSpeedRamp(_speedRampStart, _speedRampEnd, _speedRampFrames);
     }
 
     AmUInt64 Voice::EffectiveFrame(const VoiceCommand& command) const
@@ -318,8 +337,7 @@ namespace SparkyStudios::Audio::Amplitude
                 }
 
                 VoiceStreamSlot& slot = _slots[_primary];
-                slot.reader.Seek(command.position);
-                slot.stream.Reset();
+                slot.stream.Seek(slot.reader, command.position);
                 _primePending = true;
 
                 // The explicit position wins over a virtual cursor this voice was resuming from.
@@ -346,8 +364,7 @@ namespace SparkyStudios::Audio::Amplitude
                 _settings.startPosition, _settings.startPositionClock, rate, slot.reader.GetRegionStart(), slot.reader.GetRegionEnd(),
                 slot.reader.IsLooping());
 
-            slot.reader.Seek(cursor.PositionAt(frame));
-            slot.stream.Reset();
+            slot.stream.Seek(slot.reader, cursor.PositionAt(frame));
         }
 
         _primePending = true;
@@ -445,8 +462,7 @@ namespace SparkyStudios::Audio::Amplitude
         for (; seek < _seekCount; ++seek)
         {
             VoiceStreamSlot& slot = _slots[_primary];
-            slot.reader.Seek(_seeks[seek].position);
-            slot.stream.Reset();
+            slot.stream.Seek(slot.reader, _seeks[seek].position);
         }
     }
 
@@ -527,9 +543,8 @@ namespace SparkyStudios::Audio::Amplitude
 
         VoiceStreamSlot& to = _slots[1 - _primary];
         to.reader = _slots[_primary].reader;
-        to.reader.Seek(position);
-        to.stream.Reset();
-        to.stream.SetSpeed(_speed);
+        to.stream.Seek(to.reader, position);
+        ApplySpeedTo(to.stream);
 
         // Priming may run into loop seams or the end of the source. Those belong to the incoming stream: they are applied
         // once it becomes primary, never now, or a seek near the end would finish the voice and cut the outgoing stream.
@@ -555,7 +570,8 @@ namespace SparkyStudios::Audio::Amplitude
 
     ResampleStream::PullReport Voice::Prime(VoiceStreamSlot& slot)
     {
-        // Discard the filter's group delay so source frame 0 lands on the start frame, not GetLatency() frames later.
+        // Discard the resampler's reported delay so source frame 0 lands on the start frame. The built-in resamplers
+        // report none; a plugin with a delay is compensated here.
         // Rounded down: the kernel is not symmetric at every ratio, and rounding up would drop the impulse peak itself.
         const AmReal64 ratio = slot.stream.GetRatio();
         const auto frames = static_cast<AmUInt64>(std::floor(static_cast<AmReal64>(slot.stream.GetLatency()) / ratio));

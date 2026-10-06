@@ -34,9 +34,18 @@ namespace SparkyStudios::Audio::Amplitude
         _resampler->Initialize(1, sourceRate, outputRate);
         _baseRatio = static_cast<AmReal64>(sourceRate) / static_cast<AmReal64>(outputRate);
         _speed = 1.0;
+        _speedRampStart = _speedRampEnd = 1.0;
+        _speedRampFrames = 0;
         _sourceChannels = sourceChannels;
 
-        const AmUInt64 capacity = 2 * maxBlockFrames + kFifoHeadroom;
+        // Size the FIFO for kFifoRatio blocks plus the widest read-ahead, measured at that ratio.
+        _resampler->SetRatio(kFifoRatio);
+        const AmUInt64 reach = _resampler->GetInputFramesNeeded(1);
+        _resampler->SetRatio(_baseRatio);
+
+        const auto blockInput = static_cast<AmUInt64>(std::ceil(kFifoRatio * static_cast<AmReal64>(maxBlockFrames)));
+        const AmUInt64 capacity = blockInput + 2 * reach + kFifoMargin;
+        _prerollFrames = reach;
         _fifo = AudioBuffer(capacity, 1);
         _source = AudioBuffer(capacity, sourceChannels);
         _scratch = AudioBuffer(maxBlockFrames, 1);
@@ -47,14 +56,28 @@ namespace SparkyStudios::Audio::Amplitude
 
     void ResampleStream::SetSpeed(AmReal64 speed)
     {
-        if (!std::isfinite(speed) || speed <= 0.0)
-            speed = 1.0;
+        SetSpeedRamp(speed, speed, 0);
+    }
 
-        if (speed == _speed)
+    void ResampleStream::SetSpeedRamp(AmReal64 startSpeed, AmReal64 endSpeed, AmUInt64 outputFrames)
+    {
+        if (!std::isfinite(startSpeed) || startSpeed <= 0.0)
+            startSpeed = 1.0;
+        if (!std::isfinite(endSpeed) || endSpeed <= 0.0)
+            endSpeed = 1.0;
+
+        // Compare the whole ramp, not its mean: a (0.5, 1.5) ramp and a constant 1.0 share a mean, and dropping the
+        // call would leave the stream ramping on a value the caller has retracted.
+        if (startSpeed == _speedRampStart && endSpeed == _speedRampEnd && outputFrames == _speedRampFrames)
             return;
 
-        _speed = speed;
-        _resampler->SetRatio(GetRatio());
+        _speedRampStart = startSpeed;
+        _speedRampEnd = endSpeed;
+        _speedRampFrames = outputFrames;
+
+        // The mean is what the ramp advances the stream by, so it is what GetRatio() and the tail report.
+        _speed = 0.5 * (startSpeed + endSpeed);
+        _resampler->SetRatioRamp(_baseRatio * startSpeed, _baseRatio * endSpeed, outputFrames);
         UpdateTail();
     }
 
@@ -70,9 +93,44 @@ namespace SparkyStudios::Audio::Amplitude
         UpdateTail();
     }
 
+    void ResampleStream::Seek(SourceReader& reader, AmUInt64 position)
+    {
+        reader.Seek(position);
+        Reset();
+
+        // A restart at the region start plays from the top, after silence, even in a loop. Elsewhere a loop has its tail
+        // before its start, and any other source nothing.
+        const AmUInt64 start = reader.GetRegionStart();
+        const AmUInt64 played = reader.GetCursor() - start;
+        if (played == 0)
+            return;
+
+        const AmUInt64 length = reader.GetRegionEnd() - start;
+        const AmUInt64 frames = AM_MIN(_prerollFrames, played + (reader.IsLooping() ? length : 0));
+        const AmUInt64 tail = frames - AM_MIN(frames, played);
+
+        // A copy reads the frames, each part exactly up to its end, so no seam, end or loop count is involved.
+        SourceReader preroll = reader;
+        SourceReadReport read;
+        if (tail > 0)
+        {
+            preroll.Seek(reader.GetRegionEnd() - tail);
+            preroll.Read(_source, 0, tail, read);
+        }
+
+        preroll.Seek(reader.GetCursor() - (frames - tail));
+        preroll.Read(_source, tail, frames - tail, read);
+        Downmix(frames, 0);
+        _resampler->PrimeHistory(_fifo, frames);
+    }
+
     void ResampleStream::UpdateTail()
     {
-        _tail = 2 * _resampler->GetLatency() + 1;
+        // Every output whose kernel reaches the source end must be produced: past the end the stream feeds zeros until
+        // the next output's centre is a read-ahead beyond it. A resampler with a delay also needs that delay flushed.
+        // Under a ramp this is the read-ahead at the ramp's widest point, which is conservative: it holds the
+        // stream until the end of the ramp even where the live ratio would already have reached it.
+        _tail = 2 * _resampler->GetLatency() + _resampler->GetInputFramesNeeded(1);
     }
 
     ResampleStream::PullReport ResampleStream::Pull(SourceReader& reader, AudioBufferChannel& out, AmUInt64 offset, AmUInt64 frames)
@@ -91,6 +149,8 @@ namespace SparkyStudios::Audio::Amplitude
 
             AmUInt64 inFrames = _fifoCount;
             AmUInt64 outFrames = want;
+            const AmUInt64 consumedBefore = _inputConsumed;
+            const AmUInt64 producedBefore = report.produced;
             if (!_resampler->Process(_fifo, inFrames, _scratch, outFrames))
                 inFrames = outFrames = 0;
 
@@ -103,7 +163,13 @@ namespace SparkyStudios::Audio::Amplitude
             {
                 _finished = true;
                 report.finished = true;
-                report.finishedFrame = report.produced;
+
+                // One Process() call covers a whole round, so map the input frame the flush completed at back onto the
+                // output frame it lands on: reporting the end of the round would place it a whole block too late.
+                const AmUInt64 threshold = _endInput + _tail;
+                const AmUInt64 from = threshold - consumedBefore;
+                const auto offsetFrames = static_cast<AmUInt64>(static_cast<AmReal64>(from) / GetRatio());
+                report.finishedFrame = AM_MIN(producedBefore + offsetFrames, report.produced);
             }
 
             if (outFrames > 0)
@@ -137,30 +203,11 @@ namespace SparkyStudios::Audio::Amplitude
         SourceReadReport read;
         reader.Read(_source, 0, frames, read);
 
-        auto& fifo = _fifo[0];
-        if (_sourceChannels == 1)
-        {
-            std::copy_n(_source[0].begin(), frames, fifo.begin() + _fifoCount);
-        }
-        else if (_sourceChannels == 2)
-        {
-            const AmReal32 scale = InverseSquareRoot(2);
-            for (AmUInt64 i = 0; i < frames; ++i)
-                fifo[_fifoCount + i] = (_source[0][i] + _source[1][i]) * scale;
-        }
-        else
-        {
-            const AmReal32 scale = 1.0f / static_cast<AmReal32>(_sourceChannels);
-            for (AmUInt64 i = 0; i < frames; ++i)
-            {
-                AmReal32 sum = 0.0f;
-                for (AmUInt16 c = 0; c < _sourceChannels; ++c)
-                    sum += _source[c][i];
-                fifo[_fifoCount + i] = sum * scale;
-            }
-        }
+        Downmix(frames, _fifoCount);
 
-        // Input frames map to output frames through the ratio; exact to within a frame, which events need.
+        // Input frames map to output frames through the mean ratio. At a constant ratio that is exact to within a frame;
+        // during a ramp the frames between here and the event follow the ramp, not its mean, so an event lands up to
+        // |end - start| * frames / 8 output frames off -- a few frames for an engine glide, well inside a block.
         const AmReal64 ratio = GetRatio();
         const auto toOutput = [&](AmUInt64 readOffset)
         {
@@ -185,6 +232,32 @@ namespace SparkyStudios::Audio::Amplitude
 
         report.starved |= read.starved;
         _fifoCount += frames;
+    }
+
+    void ResampleStream::Downmix(AmUInt64 frames, AmUInt64 offset)
+    {
+        auto& fifo = _fifo[0];
+        if (_sourceChannels == 1)
+        {
+            std::copy_n(_source[0].begin(), frames, fifo.begin() + offset);
+        }
+        else if (_sourceChannels == 2)
+        {
+            const AmReal32 scale = InverseSquareRoot(2);
+            for (AmUInt64 i = 0; i < frames; ++i)
+                fifo[offset + i] = (_source[0][i] + _source[1][i]) * scale;
+        }
+        else
+        {
+            const AmReal32 scale = 1.0f / static_cast<AmReal32>(_sourceChannels);
+            for (AmUInt64 i = 0; i < frames; ++i)
+            {
+                AmReal32 sum = 0.0f;
+                for (AmUInt16 c = 0; c < _sourceChannels; ++c)
+                    sum += _source[c][i];
+                fifo[offset + i] = sum * scale;
+            }
+        }
     }
 
     void ResampleStream::Consume(AmUInt64 frames)

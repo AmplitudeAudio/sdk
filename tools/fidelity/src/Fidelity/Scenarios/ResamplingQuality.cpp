@@ -29,7 +29,7 @@ namespace SparkyStudios::Audio::Amplitude::Fidelity
     {
         void MeasureTone(const StimulusSpec& spec, std::span<const double> steady, double fs, const std::string& suffix, Measurement& out)
         {
-            const double f = spec.frequencyHz;
+            const double f = spec.frequencyHz * spec.pitch;
             if (f < fs / 2.0)
             {
                 SpectrumOptions options;
@@ -52,7 +52,7 @@ namespace SparkyStudios::Audio::Amplitude::Fidelity
             }
 
             // The tone lies above the output band: anything left of it was folded back by the resampler.
-            out.Add("alias.levelDbc" + suffix, AliasLevelDbc(steady, fs, spec), "dBc", Better::Lower, Targets::kMaxSpurDbc);
+            out.Add("alias.levelDbc" + suffix, AliasLevelDbc(steady, fs, spec, f), "dBc", Better::Lower, Targets::kMaxSpurDbc);
             out.Add("alias.totalDbfs" + suffix, DbFromAmplitude(Rms(steady)), "dBFS", Better::Lower);
         }
 
@@ -99,7 +99,7 @@ namespace SparkyStudios::Audio::Amplitude::Fidelity
 
                 const double fs = capture.sampleRate;
                 const std::uint64_t playEnd = kLeadIn + outFrames;
-                const bool expectsSilence = spec->kind == StimulusKind::Sine && spec->frequencyHz >= fs / 2.0;
+                const bool expectsSilence = spec->kind == StimulusKind::Sine && spec->frequencyHz * spec->pitch >= fs / 2.0;
                 if (expectsSilence && !*played)
                 {
                     // Silence is the correct output here, so it cannot prove the sound played: the channel must.
@@ -153,8 +153,8 @@ namespace SparkyStudios::Audio::Amplitude::Fidelity
                     }
                 }
 
-                if (spec->kind == StimulusKind::Sine && 2.0 * spec->frequencyHz <= 0.45 * fs)
-                    AddClickMetrics(out, capture, std::max(4000.0, 2.0 * spec->frequencyHz), begin, end);
+                if (spec->kind == StimulusKind::Sine && 2.0 * spec->frequencyHz * spec->pitch <= 0.45 * fs)
+                    AddClickMetrics(out, capture, std::max(4000.0, 2.0 * spec->frequencyHz * spec->pitch), begin, end);
 
                 out.capture = std::move(capture);
             }

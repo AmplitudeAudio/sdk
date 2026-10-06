@@ -957,7 +957,7 @@ namespace SparkyStudios::Audio::Amplitude
     bool AmplimixImpl::MixVoice(AmplimixLayerImpl* layer, AudioBuffer* buffer, AmUInt64 offset, AmUInt64 frames, AmUInt64 blockClock)
     {
         Voice* voice = layer->voice;
-        voice->SetSpeed(UpdateSpeed(layer));
+        UpdateSpeed(layer, frames);
         voice->BeginBlock(blockClock, frames);
 
         // Amplimix::Init only requests Mono or Stereo output.
@@ -1005,18 +1005,23 @@ namespace SparkyStudios::Audio::Amplitude
             channel.GetState()->GetInstancingMode() == eChannelInstanceMode_Separate && !layer->instanceData.empty();
     }
 
-    AmReal64 AmplimixImpl::UpdateSpeed(AmplimixLayerImpl* layer)
+    void AmplimixImpl::UpdateSpeed(AmplimixLayerImpl* layer, AmUInt64 frames)
     {
         const AmReal32 target = AM_MAX(AMPLIMIX_LOAD(&layer->pitch) * AMPLIMIX_LOAD(&layer->userPlaySpeed), 0.001f);
 
-        if (layer->currentSpeed != target)
+        AmReal32 end = layer->currentSpeed;
+        if (end != target)
         {
-            // Ease toward the target, and settle exactly so the resampler is not re-tuned every block.
-            const AmReal32 next = Lerp(0.75f, layer->currentSpeed, target);
-            layer->currentSpeed = std::abs(next - target) < 1e-6f ? target : next;
+            // Ease toward the target, and settle exactly so the ramp collapses and the resampler is not re-tuned.
+            const AmReal32 next = Lerp(0.75f, end, target);
+            end = std::abs(next - target) < 1e-6f ? target : next;
         }
 
-        return layer->currentSpeed;
+        // The ratio is ramped across the block's frames instead of being held at one value for all of them. A target
+        // that moves every block -- a glide, Doppler, a rate change -- would otherwise leave the read position a
+        // staircase, and a staircase that moves is audible as a click at every block boundary.
+        layer->voice->SetSpeedRamp(layer->currentSpeed, end, frames);
+        layer->currentSpeed = end;
     }
 
     void AmplimixImpl::MixVoiceInstances(
@@ -1061,7 +1066,7 @@ namespace SparkyStudios::Audio::Amplitude
             mono->buffer->Clear();
             out->buffer->Clear();
 
-            slot->stream.SetSpeed(voice->GetSpeed());
+            voice->ApplySpeedTo(slot->stream);
             const auto report = voice->Render(*slot, *mono->buffer);
             (instancePipeline != nullptr ? instancePipeline : layer->pipeline.get())->Execute(*mono->buffer, *out->buffer);
             voice->ApplyGain(*out->buffer);

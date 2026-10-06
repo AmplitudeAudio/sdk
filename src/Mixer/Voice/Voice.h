@@ -88,6 +88,23 @@ namespace SparkyStudios::Audio::Amplitude
         void SetSpeed(AmReal64 speed);
 
         /**
+         * @brief Ramps the speed across the next @p outputFrames output frames instead of stepping it at the boundary.
+         *
+         * Every stream the voice pulls is given the same ramp, including the extra streams separate-mode instances mix,
+         * so a moving pitch stays continuous in all of them.
+         *
+         * @param[in] startSpeed The speed at the first of those output frames.
+         * @param[in] endSpeed The speed at the last of those output frames.
+         * @param[in] outputFrames The number of output frames the ramp spans.
+         */
+        void SetSpeedRamp(AmReal64 startSpeed, AmReal64 endSpeed, AmUInt64 outputFrames);
+
+        /**
+         * @brief Gives @p stream the speed ramp currently published by the voice, restarting it at its first frame.
+         */
+        void ApplySpeedTo(ResampleStream& stream) const;
+
+        /**
          * @brief Applies due commands and transitions, splits the block into segments and computes its gain curve.
          */
         void BeginBlock(AmUInt64 blockClock, AmUInt64 frames);
@@ -244,6 +261,9 @@ namespace SparkyStudios::Audio::Amplitude
         /// What the incoming stream reported (priming, pulls) during the crossfade: it only counts once it is primary.
         ResampleStream::PullReport _incomingReport;
         AmReal64 _speed = 1.0;
+        AmReal64 _speedRampStart = 1.0;
+        AmReal64 _speedRampEnd = 1.0;
+        AmUInt64 _speedRampFrames = 0;
         AmUInt32 _lateCommands = 0;
         AmUInt32 _evictedCommands = 0;
 

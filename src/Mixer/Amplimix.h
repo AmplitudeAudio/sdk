@@ -456,7 +456,7 @@ namespace SparkyStudios::Audio::Amplitude
         void MixVoiceInstances(
             AmplimixLayerImpl* layer, AudioBuffer* buffer, AmUInt64 offset, AmUInt64 frames, AmReal32 gain, AmUInt16 outputChannels);
         [[nodiscard]] static bool IsSeparateMode(const AmplimixLayerImpl* layer);
-        static AmReal64 UpdateSpeed(AmplimixLayerImpl* layer);
+        static void UpdateSpeed(AmplimixLayerImpl* layer, AmUInt64 frames);
         AmplimixLayerImpl* GetLayer(AmUInt32 layer);
         bool ShouldMix(AmplimixLayerImpl* layer);
         void LockAudioMutex();

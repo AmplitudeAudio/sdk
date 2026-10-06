@@ -19,7 +19,7 @@
 
 #pragma region Default Resamplers
 
-#include <DSP/Resamplers/DefaultResampler.h>
+#include <DSP/Resamplers/BandlimitedResampler.h>
 
 #pragma endregion
 

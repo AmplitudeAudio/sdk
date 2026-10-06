@@ -110,7 +110,8 @@ table AudioMixerConfig {
   /// The name of the pipeline asset file to load.
   pipeline:string (required);
 
-  /// The name of the resampler to use.
+  /// The name of the resampler to use. Built-in names, from cheapest to best:
+  /// "linear", "cubic", "sinc", "sinc_best". "default" is "sinc_best".
   /// If empty, or the given resampler name is not registered,
   /// the default resampler will be used instead.
   resampler:string;

@@ -57,6 +57,8 @@ namespace SparkyStudios::Audio::Amplitude::Fidelity
         /// Raised-cosine fade at both ends.
         double fadeSeconds = 0.0;
         std::uint64_t seed = 0;
+        /// Static pitch the sound plays at; the heard frequency is frequencyHz * pitch.
+        double pitch = 1.0;
     };
 
     [[nodiscard]] const std::vector<StimulusSpec>& StimulusCatalog();
