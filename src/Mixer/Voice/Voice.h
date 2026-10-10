@@ -22,6 +22,7 @@
 #include <memory>
 
 #include <SparkyStudios/Audio/Amplitude/Core/AudioBuffer.h>
+#include <SparkyStudios/Audio/Amplitude/DSP/ChannelLayout.h>
 #include <SparkyStudios/Audio/Amplitude/Sound/Fader.h>
 
 #include <Mixer/Voice/ResampleStream.h>
@@ -69,6 +70,7 @@ namespace SparkyStudios::Audio::Amplitude
      *
      * @c Initialize() and @c InitializeSlot() run on the game thread and allocate. Everything else runs on the audio thread
      * and never allocates, locks or logs. The published getters are safe from any thread.
+     * A source whose channel count has no named layout (3, 5, 7, more than 8) is refused by Initialize().
      */
     class Voice
     {
@@ -110,14 +112,14 @@ namespace SparkyStudios::Audio::Amplitude
         void BeginBlock(AmUInt64 blockClock, AmUInt64 frames);
 
         /**
-         * @brief Renders the primary stream into channel 0 of @p mono, handling seeks and the source end.
+         * @brief Renders the primary stream into @p source, one channel per source channel, handling seeks and the source end.
          */
-        void RenderPrimary(AudioBuffer& mono);
+        void RenderPrimary(AudioBuffer& source);
 
         /**
          * @brief Renders an extra stream (separate-mode instance) with this block's segments. Does not change state.
          */
-        ResampleStream::PullReport Render(VoiceStreamSlot& slot, AudioBuffer& mono);
+        ResampleStream::PullReport Render(VoiceStreamSlot& slot, AudioBuffer& source);
 
         /**
          * @brief Multiplies every channel of @p output by this block's gain curve. May be called once per pipeline output.
@@ -152,6 +154,22 @@ namespace SparkyStudios::Audio::Amplitude
         [[nodiscard]] AmUInt32 GetOutputRate() const
         {
             return _settings.outputRate;
+        }
+
+        /**
+         * @brief Gets the number of channels the voice renders (the source's).
+         */
+        [[nodiscard]] AmUInt16 GetChannelCount() const
+        {
+            return _settings.source.channels;
+        }
+
+        /**
+         * @brief Gets the layout of the source. Valid once @c Initialize() succeeded.
+         */
+        [[nodiscard]] const ChannelLayout& GetChannelLayout() const
+        {
+            return *ChannelLayout::FromChannelCount(_settings.source.channels);
         }
 
         [[nodiscard]] eVoiceState GetPublishedState() const
@@ -225,7 +243,7 @@ namespace SparkyStudios::Audio::Amplitude
         void ArmSeek(AmUInt64 position, AmUInt64 offset);
         ResampleStream::PullReport Prime(VoiceStreamSlot& slot);
         void MergeIncomingReport(const ResampleStream::PullReport& report);
-        void RenderPlayRange(AudioBuffer& mono, AmUInt64 begin, AmUInt64 end);
+        void RenderPlayRange(AudioBuffer& source, AmUInt64 begin, AmUInt64 end);
         void HandlePrimaryReport(const ResampleStream::PullReport& report, AmUInt64 offset);
 
         VoiceSettings _settings;

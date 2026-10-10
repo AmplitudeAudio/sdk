@@ -40,7 +40,7 @@ namespace SparkyStudios::Audio::Amplitude::Tests
             AM_EXPECT(stream.Initialize("default", 48000, 48000, 1, 256));
 
             AudioBuffer out(256, 1);
-            const auto report = stream.Pull(reader, out[0], 0, 256);
+            const auto report = stream.Pull(reader, out, 0, 256);
             AM_EXPECT_EQ(2U, report.wraps);
             AM_EXPECT_EQ(100ULL, report.firstWrapFrame);
             AM_EXPECT_EQ(99.0f, out[0][99]);

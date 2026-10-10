@@ -45,7 +45,7 @@ namespace SparkyStudios::Audio::Amplitude::Tests
             for (AmUInt64 done = 0; done < total; done += block)
             {
                 const AmUInt64 n = std::min(block, total - done);
-                const auto report = stream.Pull(reader, buffer[0], done, n);
+                const auto report = stream.Pull(reader, buffer, done, n);
                 exact &= report.produced == n && !report.error;
             }
 

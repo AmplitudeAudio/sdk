@@ -353,12 +353,30 @@ namespace SparkyStudios::Audio::Amplitude
         AMPLIMIX_STORE(&lay->pitch, options.pitch);
         AMPLIMIX_STORE(&lay->userPlaySpeed, options.speed);
 
-        // Pre-warm the pool so the audio thread never allocates: a mono render and a stereo pipeline output.
-        lay->_chunkPool.PreWarm(_voiceBlockFrames, kAmMonoChannelCount, _voiceBlockFrames);
+        // Pre-warm the pool so the audio thread never allocates: the voice's render and the pipeline's output.
+        const AmUInt16 sourceChannels = voice->GetChannelCount();
+        const AmUInt16 outputChannels = GetOutputChannelCount();
+        lay->_chunkPool.PreWarm(_voiceBlockFrames, sourceChannels, outputChannels);
         {
-            SoundChunk* mono = lay->_chunkPool.Acquire(_voiceBlockFrames, kAmMonoChannelCount, false);
-            lay->pipelineFrames = mono->buffer->GetFrameCount();
-            lay->_chunkPool.Release(mono);
+            SoundChunk* in = lay->_chunkPool.Acquire(_voiceBlockFrames, sourceChannels, false);
+            lay->pipelineFrames = in->buffer->GetFrameCount();
+            lay->_chunkPool.Release(in);
+        }
+
+        // Configured here, on the game thread, with the sound's channels in and the output layout out, so the first
+        // Execute() has nothing left to allocate. A graph that cannot render this sound refuses it.
+        if (lay->pipeline != nullptr &&
+            !lay->pipeline->Configure(lay->pipelineFrames, sourceChannels, lay->pipelineFrames, outputChannels))
+        {
+            amLogError(
+                "Cannot start the voice: the pipeline cannot render a %u-channel sound to %u channels.", static_cast<AmUInt32>(sourceChannels),
+                static_cast<AmUInt32>(outputChannels));
+
+            lay->pipeline = nullptr;
+            lay->snd = nullptr;
+            lay->voice = nullptr;
+            ampooldelete(eMemoryPoolKind_Amplimix, Voice, voice);
+            return 0;
         }
 
         // The first mixed block snaps to the target gain; later changes ramp. These writes are published to the audio
@@ -380,6 +398,11 @@ namespace SparkyStudios::Audio::Amplitude
               } });
 
         return layer;
+    }
+
+    AmUInt16 AmplimixImpl::GetOutputChannelCount() const
+    {
+        return static_cast<AmUInt16>(_device.mRequestedOutputChannels);
     }
 
     bool AmplimixImpl::SetObstruction(AmUInt32 id, AmUInt32 layer, AmReal32 obstruction)
@@ -502,13 +525,13 @@ namespace SparkyStudios::Audio::Amplitude
         const AmUInt64 frames = lay->pipelineFrames;
 
         // Created and configured on the game thread, so the audio thread is never blocked by it. Configuring here, with
-        // the mono input and stereo output the mixer passes to Execute(), keeps the first Execute() from allocating.
+        // the sound's channels in and the output layout out, keeps the first Execute() from allocating.
         std::shared_ptr<PipelineInstance> pipeline = _pipeline->CreateInstance(lay);
         if (pipeline == nullptr)
             return false;
 
-        if (frames > 0)
-            pipeline->Configure(frames, static_cast<AmUInt16>(kAmMonoChannelCount), frames, static_cast<AmUInt16>(kAmStereoChannelCount));
+        if (frames > 0 && !pipeline->Configure(frames, lay->voice->GetChannelCount(), frames, GetOutputChannelCount()))
+            return false;
 
         if (lay->id != id || lay->slot.load(std::memory_order_acquire) != eLayerSlot::Live)
             return false;
@@ -963,8 +986,7 @@ namespace SparkyStudios::Audio::Amplitude
         UpdateSpeed(layer, frames);
         voice->BeginBlock(blockClock, frames);
 
-        // Amplimix::Init only requests Mono or Stereo output.
-        const auto outputChannels = static_cast<AmUInt16>(_device.mRequestedOutputChannels);
+        const AmUInt16 outputChannels = GetOutputChannelCount();
         AMPLITUDE_ASSERT(outputChannels >= 1 && outputChannels <= kAmplimixMaxOutputChannels);
 
         const AmReal32 gain = AMPLIMIX_LOAD(&_masterGain) * AMPLIMIX_LOAD(&layer->gain);
@@ -980,16 +1002,16 @@ namespace SparkyStudios::Audio::Amplitude
         }
         else
         {
-            SoundChunk* mono = layer->_chunkPool.Acquire(frames, kAmMonoChannelCount);
-            SoundChunk* out = layer->_chunkPool.Acquire(mono->frames, kAmStereoChannelCount);
+            SoundChunk* source = layer->_chunkPool.Acquire(frames, voice->GetChannelCount());
+            SoundChunk* out = layer->_chunkPool.Acquire(source->frames, outputChannels);
 
-            voice->RenderPrimary(*mono->buffer);
-            layer->pipeline->Execute(*mono->buffer, *out->buffer);
+            voice->RenderPrimary(*source->buffer);
+            layer->pipeline->Execute(*source->buffer, *out->buffer);
             voice->ApplyGain(*out->buffer);
             MixLayerWithGain(layer->_mixGain, outputChannels, gain, *out->buffer, *buffer, offset, frames);
 
             layer->_chunkPool.Release(out);
-            layer->_chunkPool.Release(mono);
+            layer->_chunkPool.Release(source);
         }
 
         voice->EndBlock();
@@ -1036,8 +1058,8 @@ namespace SparkyStudios::Audio::Amplitude
         // touched from the audio thread.
         auto* channelState = layer->GetChannel().GetState();
 
-        SoundChunk* mono = layer->_chunkPool.Acquire(frames, kAmMonoChannelCount);
-        SoundChunk* out = layer->_chunkPool.Acquire(mono->frames, kAmStereoChannelCount);
+        SoundChunk* source = layer->_chunkPool.Acquire(frames, voice->GetChannelCount());
+        SoundChunk* out = layer->_chunkPool.Acquire(source->frames, outputChannels);
 
         bool allFinished = true;
         AmUInt64 lastFinish = 0;
@@ -1066,12 +1088,12 @@ namespace SparkyStudios::Audio::Amplitude
                 layer->instancePipelines != nullptr ? layer->instancePipelines->Find(data.instanceId) : nullptr;
             layer->sharedInstancePipeline = instancePipeline == nullptr;
 
-            mono->buffer->Clear();
+            source->buffer->Clear();
             out->buffer->Clear();
 
             voice->ApplySpeedTo(slot->stream);
-            const auto report = voice->Render(*slot, *mono->buffer);
-            (instancePipeline != nullptr ? instancePipeline : layer->pipeline.get())->Execute(*mono->buffer, *out->buffer);
+            const auto report = voice->Render(*slot, *source->buffer);
+            (instancePipeline != nullptr ? instancePipeline : layer->pipeline.get())->Execute(*source->buffer, *out->buffer);
             voice->ApplyGain(*out->buffer);
             MixLayerInstanceWithGain(layer->_mixGain, outputChannels, gain, *out->buffer, *buffer, offset, frames);
 
@@ -1112,7 +1134,7 @@ namespace SparkyStudios::Audio::Amplitude
         layer->currentInstanceIndex = 0;
 
         layer->_chunkPool.Release(out);
-        layer->_chunkPool.Release(mono);
+        layer->_chunkPool.Release(source);
 
         if (allFinished)
             voice->NotifySourcesFinished(lastFinish);

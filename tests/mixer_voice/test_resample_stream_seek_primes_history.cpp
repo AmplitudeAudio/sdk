@@ -38,7 +38,7 @@ namespace SparkyStudios::Audio::Amplitude::Tests
             while (result.size() < frames)
             {
                 const AmUInt64 n = AM_MIN(kBlock, frames - result.size());
-                AM_UNUSED(stream.Pull(reader, out[0], 0, n));
+                AM_UNUSED(stream.Pull(reader, out, 0, n));
                 result.insert(result.end(), out[0].begin(), out[0].begin() + n);
             }
 

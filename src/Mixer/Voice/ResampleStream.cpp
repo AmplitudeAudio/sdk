@@ -31,7 +31,7 @@ namespace SparkyStudios::Audio::Amplitude
         if (_resampler == nullptr)
             return false;
 
-        _resampler->Initialize(1, sourceRate, outputRate);
+        _resampler->Initialize(sourceChannels, sourceRate, outputRate);
         _baseRatio = static_cast<AmReal64>(sourceRate) / static_cast<AmReal64>(outputRate);
         _speed = 1.0;
         _speedRampStart = _speedRampEnd = 1.0;
@@ -46,9 +46,8 @@ namespace SparkyStudios::Audio::Amplitude
         const auto blockInput = static_cast<AmUInt64>(std::ceil(kFifoRatio * static_cast<AmReal64>(maxBlockFrames)));
         const AmUInt64 capacity = blockInput + 2 * reach + kFifoMargin;
         _prerollFrames = reach;
-        _fifo = AudioBuffer(capacity, 1);
-        _source = AudioBuffer(capacity, sourceChannels);
-        _scratch = AudioBuffer(maxBlockFrames, 1);
+        _fifo = AudioBuffer(capacity, sourceChannels);
+        _scratch = AudioBuffer(maxBlockFrames, sourceChannels);
 
         Reset();
         return true;
@@ -109,18 +108,18 @@ namespace SparkyStudios::Audio::Amplitude
         const AmUInt64 frames = AM_MIN(_prerollFrames, played + (reader.IsLooping() ? length : 0));
         const AmUInt64 tail = frames - AM_MIN(frames, played);
 
-        // A copy reads the frames, each part exactly up to its end, so no seam, end or loop count is involved.
+        // A copy reads the frames, each part exactly up to its end, so no seam, end or loop count is involved. The FIFO
+        // is empty after Reset(): it holds the frames only until PrimeHistory() has taken them.
         SourceReader preroll = reader;
         SourceReadReport read;
         if (tail > 0)
         {
             preroll.Seek(reader.GetRegionEnd() - tail);
-            preroll.Read(_source, 0, tail, read);
+            preroll.Read(_fifo, 0, tail, read);
         }
 
         preroll.Seek(reader.GetCursor() - (frames - tail));
-        preroll.Read(_source, tail, frames - tail, read);
-        Downmix(frames, 0);
+        preroll.Read(_fifo, tail, frames - tail, read);
         _resampler->PrimeHistory(_fifo, frames);
     }
 
@@ -133,7 +132,7 @@ namespace SparkyStudios::Audio::Amplitude
         _tail = 2 * _resampler->GetLatency() + _resampler->GetInputFramesNeeded(1);
     }
 
-    ResampleStream::PullReport ResampleStream::Pull(SourceReader& reader, AudioBufferChannel& out, AmUInt64 offset, AmUInt64 frames)
+    ResampleStream::PullReport ResampleStream::Pull(SourceReader& reader, AudioBuffer& out, AmUInt64 offset, AmUInt64 frames)
     {
         PullReport report;
         AmUInt32 stalls = 0;
@@ -154,7 +153,8 @@ namespace SparkyStudios::Audio::Amplitude
             if (!_resampler->Process(_fifo, inFrames, _scratch, outFrames))
                 inFrames = outFrames = 0;
 
-            std::copy_n(_scratch[0].begin(), outFrames, out.begin() + offset + report.produced);
+            for (AmUInt16 c = 0; c < _sourceChannels; ++c)
+                std::copy_n(_scratch[c].begin(), outFrames, out[c].begin() + offset + report.produced);
             Consume(inFrames);
             _inputConsumed += inFrames;
             report.produced += outFrames;
@@ -181,7 +181,8 @@ namespace SparkyStudios::Audio::Amplitude
             if (++stalls < 2)
                 continue;
 
-            std::fill(out.begin() + offset + report.produced, out.begin() + offset + frames, 0.0f);
+            for (AmUInt16 c = 0; c < _sourceChannels; ++c)
+                std::fill(out[c].begin() + offset + report.produced, out[c].begin() + offset + frames, 0.0f);
             report.produced = frames;
             report.error = true;
             break;
@@ -201,9 +202,7 @@ namespace SparkyStudios::Audio::Amplitude
             return;
 
         SourceReadReport read;
-        reader.Read(_source, 0, frames, read);
-
-        Downmix(frames, _fifoCount);
+        reader.Read(_fifo, _fifoCount, frames, read);
 
         // Input frames map to output frames through the mean ratio. At a constant ratio that is exact to within a frame;
         // during a ramp the frames between here and the event follow the ramp, not its mean, so an event lands up to
@@ -234,40 +233,18 @@ namespace SparkyStudios::Audio::Amplitude
         _fifoCount += frames;
     }
 
-    void ResampleStream::Downmix(AmUInt64 frames, AmUInt64 offset)
-    {
-        auto& fifo = _fifo[0];
-        if (_sourceChannels == 1)
-        {
-            std::copy_n(_source[0].begin(), frames, fifo.begin() + offset);
-        }
-        else if (_sourceChannels == 2)
-        {
-            const AmReal32 scale = InverseSquareRoot(2);
-            for (AmUInt64 i = 0; i < frames; ++i)
-                fifo[offset + i] = (_source[0][i] + _source[1][i]) * scale;
-        }
-        else
-        {
-            const AmReal32 scale = 1.0f / static_cast<AmReal32>(_sourceChannels);
-            for (AmUInt64 i = 0; i < frames; ++i)
-            {
-                AmReal32 sum = 0.0f;
-                for (AmUInt16 c = 0; c < _sourceChannels; ++c)
-                    sum += _source[c][i];
-                fifo[offset + i] = sum * scale;
-            }
-        }
-    }
-
     void ResampleStream::Consume(AmUInt64 frames)
     {
         AMPLITUDE_ASSERT(frames <= _fifoCount);
         if (frames == 0)
             return;
 
-        auto& fifo = _fifo[0];
-        std::copy(fifo.begin() + frames, fifo.begin() + _fifoCount, fifo.begin());
+        for (AmUInt16 c = 0; c < _sourceChannels; ++c)
+        {
+            auto& fifo = _fifo[c];
+            std::copy(fifo.begin() + frames, fifo.begin() + _fifoCount, fifo.begin());
+        }
+
         _fifoCount -= frames;
     }
 

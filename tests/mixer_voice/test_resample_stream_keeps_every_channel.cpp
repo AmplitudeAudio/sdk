@@ -13,7 +13,6 @@
 // limitations under the License.
 
 #include <cmath>
-#include <vector>
 
 #include <SparkyStudios/Audio/Amplitude/Amplitude.h>
 
@@ -27,7 +26,7 @@ using namespace SparkyStudios::Audio::Amplitude;
 
 namespace SparkyStudios::Audio::Amplitude::Tests
 {
-    AM_TEST_CASE(DSPTestCase, mixer_voice, resample_stream_downmixes_to_mono)
+    AM_TEST_CASE(DSPTestCase, mixer_voice, resample_stream_keeps_every_channel)
     {
     public:
         void Run() override
@@ -44,17 +43,18 @@ namespace SparkyStudios::Audio::Amplitude::Tests
 
             ResampleStream stream;
             AM_EXPECT(stream.Initialize("default", 48000, 48000, 2, 64));
+            AM_EXPECT_EQ(2, stream.GetChannelCount());
 
-            AudioBuffer out(64, 1);
-            AM_UNUSED(stream.Pull(reader, out[0], 0, 64));
+            AudioBuffer out(64, 2);
+            AM_UNUSED(stream.Pull(reader, out, 0, 64));
 
-            // Same downmix as AudioConverter::ConvertMonoFromStereo: (L + R) / sqrt(2). InverseSquareRoot() is a fast
-            // approximation, accurate to about 1.33e-4 for this input: the tolerance covers that error.
-            const AmReal32 expected = (0.5f + 0.25f) / std::sqrt(2.0f);
             for (AmUInt64 i = 0; i < 64; ++i)
-                AM_EXPECT(std::abs(out[0][i] - expected) < 2e-4f);
+            {
+                AM_EXPECT(std::abs(out[0][i] - 0.5f) < 1e-6f);
+                AM_EXPECT(std::abs(out[1][i] - 0.25f) < 1e-6f);
+            }
         }
     };
 
-    AM_REGISTER_TEST(mixer_voice, resample_stream_downmixes_to_mono);
+    AM_REGISTER_TEST(mixer_voice, resample_stream_keeps_every_channel);
 } // namespace SparkyStudios::Audio::Amplitude::Tests

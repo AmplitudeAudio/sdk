@@ -30,7 +30,7 @@ namespace SparkyStudios::Audio::Amplitude::Tests
         {
             StolenScenario scenario;
             const bool ready = StartStolenScenario(
-                scenario, amEngine->GetSoundHandle("test_sound_03"),
+                scenario, amEngine->GetSoundHandle("test_sound_06"),
                 [](AmUInt64 frames)
                 {
                     amEngine->WaitUntilFrames(frames);

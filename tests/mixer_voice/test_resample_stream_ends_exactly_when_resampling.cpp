@@ -49,7 +49,7 @@ namespace SparkyStudios::Audio::Amplitude::Tests
             AmUInt64 finishedFrame = 0;
             for (AmUInt64 pull = 0; pull < 12 && !finished; ++pull)
             {
-                const ResampleStream::PullReport report = stream.Pull(reader, out[0], 0, 256);
+                const ResampleStream::PullReport report = stream.Pull(reader, out, 0, 256);
                 if (report.ended)
                 {
                     ended = true;

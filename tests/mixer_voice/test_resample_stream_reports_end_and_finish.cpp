@@ -43,11 +43,11 @@ namespace SparkyStudios::Audio::Amplitude::Tests
             ResampleStream::PullReport report;
             for (int pull = 0; pull < 3; ++pull)
             {
-                report = stream.Pull(reader, out[0], 0, 256);
+                report = stream.Pull(reader, out, 0, 256);
                 AM_EXPECT_NOT(report.ended);
             }
 
-            report = stream.Pull(reader, out[0], 0, 256); // frames 768..1023
+            report = stream.Pull(reader, out, 0, 256); // frames 768..1023
             AM_EXPECT(report.ended);
             AM_EXPECT_EQ(232ULL, report.endFrame);
             AM_EXPECT(report.finished);

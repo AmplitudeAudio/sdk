@@ -43,7 +43,7 @@ namespace SparkyStudios::Audio::Amplitude::Tests
             AudioBuffer out(1024, 1);
             for (int pull = 0; pull < 20; ++pull)
             {
-                const ResampleStream::PullReport report = stream.Pull(reader, out[0], 0, 1024);
+                const ResampleStream::PullReport report = stream.Pull(reader, out, 0, 1024);
                 AM_EXPECT_EQ(1024ULL, report.produced);
                 AM_EXPECT_NOT(report.error);
             }

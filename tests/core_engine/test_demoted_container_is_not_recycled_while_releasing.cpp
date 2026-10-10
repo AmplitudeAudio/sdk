@@ -40,7 +40,13 @@ namespace SparkyStudios::Audio::Amplitude::Tests
             std::vector<Channel> low;
             std::vector<AmChannelID> realIds;
             for (int i = 0; i < 50; ++i)
+            {
                 low.push_back(play(i, 0.5f));
+
+                // Starting a voice configures its pipeline, which takes a while: slowed down, the first voices are still
+                // playing when the last one starts, so the steal below finds a real channel to take.
+                low.back().GetState()->SetPitch(0.1f);
+            }
 
             amEngine->WaitUntilFrames(2);
             for (const auto& channel : low)

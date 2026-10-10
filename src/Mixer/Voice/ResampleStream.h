@@ -27,7 +27,7 @@
 namespace SparkyStudios::Audio::Amplitude
 {
     /**
-     * @brief Produces exactly the number of mono output frames asked for, pulling source frames through a FIFO.
+     * @brief Produces exactly the number of output frames asked for, on every source channel, pulling source frames through a FIFO.
      *
      * Unused input stays in the FIFO and the resampler keeps its phase, so the output does not depend on how it is
      * split into pulls. @c Initialize() allocates (game thread); everything else is audio-thread safe.
@@ -60,7 +60,7 @@ namespace SparkyStudios::Audio::Amplitude
          * @param[in] resamplerName The name of the registered resampler to construct, e.g. "default".
          * @param[in] sourceRate The source sample rate.
          * @param[in] outputRate The output sample rate.
-         * @param[in] sourceChannels The number of channels the source provides; downmixed to mono.
+         * @param[in] sourceChannels The number of channels the source provides; every one is resampled.
          * @param[in] maxBlockFrames The largest number of output frames a single @c Pull() call will ever request.
          *
          * @return @c true on success, @c false if any parameter is invalid or the resampler is not registered.
@@ -90,14 +90,14 @@ namespace SparkyStudios::Audio::Amplitude
          * @brief Writes exactly @p frames frames into @p out from @p offset.
          *
          * @param[in] reader The source reader to pull frames from.
-         * @param[out] out The output channel to write into.
+         * @param[out] out The buffer to write into; it has the source's channel count.
          * @param[in] offset The offset, in @p out, of the first frame to write.
          * @param[in] frames The number of frames to write.
          *
          * @return A report describing loop seams, source end, filter flush completion and errors encountered
          * during the pull, with every frame index relative to the start of this pull.
          */
-        PullReport Pull(SourceReader& reader, AudioBufferChannel& out, AmUInt64 offset, AmUInt64 frames);
+        PullReport Pull(SourceReader& reader, AudioBuffer& out, AmUInt64 offset, AmUInt64 frames);
 
         /**
          * @brief Drops the FIFO and the resampler history (after a reader seek).
@@ -135,6 +135,14 @@ namespace SparkyStudios::Audio::Amplitude
         [[nodiscard]] bool IsFinished() const
         {
             return _finished;
+        }
+
+        /**
+         * @brief Gets the number of channels the stream produces (the source's).
+         */
+        [[nodiscard]] AmUInt16 GetChannelCount() const
+        {
+            return _sourceChannels;
         }
 
         /**
@@ -180,13 +188,11 @@ namespace SparkyStudios::Audio::Amplitude
 
     private:
         void Refill(SourceReader& reader, AmUInt64 frames, AmUInt64 produced, PullReport& report);
-        void Downmix(AmUInt64 frames, AmUInt64 offset);
         void Consume(AmUInt64 frames);
         void UpdateTail();
 
         std::shared_ptr<ResamplerInstance> _resampler;
         AudioBuffer _fifo;
-        AudioBuffer _source;
         AudioBuffer _scratch;
         AmUInt64 _fifoCount = 0;
         AmUInt64 _inputConsumed = 0;

@@ -25,11 +25,18 @@ namespace SparkyStudios::Audio::Amplitude
     namespace
     {
         constexpr AmReal64 kHalfPi = AM_PI / 2.0;
+
+        void Silence(AudioBuffer& buffer, AmUInt64 begin, AmUInt64 end)
+        {
+            for (AmSize c = 0; c < buffer.GetChannelCount(); ++c)
+                std::fill(buffer[c].begin() + begin, buffer[c].begin() + end, 0.0f);
+        }
     } // namespace
 
     bool Voice::Initialize(const VoiceSettings& settings)
     {
-        if (!settings.source.IsValid() || settings.outputRate == 0 || settings.maxBlockFrames == 0)
+        if (!settings.source.IsValid() || settings.outputRate == 0 || settings.maxBlockFrames == 0 ||
+            ChannelLayout::FromChannelCount(settings.source.channels) == nullptr)
             return false;
 
         _settings = settings;
@@ -45,7 +52,7 @@ namespace SparkyStudios::Audio::Amplitude
         _envelope.Initialize(settings.curve, settings.outputRate);
         _envelope.SetGain(settings.fadeIn > 0.0 ? 0.0f : 1.0f);
         _gains = AudioBuffer(settings.maxBlockFrames, 1);
-        _scratch = AudioBuffer(settings.maxBlockFrames, 1);
+        _scratch = AudioBuffer(settings.maxBlockFrames, settings.source.channels);
 
         _crossfadeFrames = AM_MAX(MillisecondsToFrames(kSeekCrossfade, settings.outputRate), 1ULL);
         _crossfadeRemaining = 0;
@@ -422,9 +429,8 @@ namespace SparkyStudios::Audio::Amplitude
         _mailbox.Post(VoiceEvent{ _settings.layer, _settings.id, kind, target, frame, 0, count });
     }
 
-    void Voice::RenderPrimary(AudioBuffer& mono)
+    void Voice::RenderPrimary(AudioBuffer& source)
     {
-        auto& out = mono[0];
         AmSize seek = 0;
 
         for (AmSize s = 0; s < _segmentCount; ++s)
@@ -436,7 +442,7 @@ namespace SparkyStudios::Audio::Amplitude
             {
                 if (!segment.play || _sourceDone)
                 {
-                    std::fill(out.begin() + a, out.begin() + segment.end, 0.0f);
+                    Silence(source, a, segment.end);
                     break;
                 }
 
@@ -453,7 +459,7 @@ namespace SparkyStudios::Audio::Amplitude
                     b = AM_MIN(b, _seeks[seek].offset);
                 }
 
-                RenderPlayRange(mono, a, b);
+                RenderPlayRange(source, a, b);
                 a = b;
             }
         }
@@ -466,9 +472,8 @@ namespace SparkyStudios::Audio::Amplitude
         }
     }
 
-    void Voice::RenderPlayRange(AudioBuffer& mono, AmUInt64 begin, AmUInt64 end)
+    void Voice::RenderPlayRange(AudioBuffer& source, AmUInt64 begin, AmUInt64 end)
     {
-        auto& out = mono[0];
         AmUInt64 a = begin;
 
         if (_primePending && _crossfadeRemaining == 0 && !_sourceDone)
@@ -483,9 +488,10 @@ namespace SparkyStudios::Audio::Amplitude
             VoiceStreamSlot& from = _slots[_primary];
             VoiceStreamSlot& to = _slots[1 - _primary];
 
-            AM_UNUSED(from.stream.Pull(from.reader, _scratch[0], a, n));
-            MergeIncomingReport(to.stream.Pull(to.reader, out, a, n));
+            AM_UNUSED(from.stream.Pull(from.reader, _scratch, a, n));
+            MergeIncomingReport(to.stream.Pull(to.reader, source, a, n));
 
+            const AmSize channels = source.GetChannelCount();
             for (AmUInt64 i = 0; i < n; ++i)
             {
                 const AmReal64 t = (static_cast<AmReal64>(_crossfadePosition + i) + 0.5) / static_cast<AmReal64>(_crossfadeFrames);
@@ -494,7 +500,11 @@ namespace SparkyStudios::Audio::Amplitude
                 // zero slope (no corner), and the power stays constant.
                 const AmReal64 warped = 0.5 - 0.5 * std::cos(AM_PI * t);
                 const AmReal64 angle = warped * kHalfPi;
-                out[a + i] = static_cast<AmReal32>(_scratch[0][a + i] * std::cos(angle) + out[a + i] * std::sin(angle));
+                const AmReal64 fadeOut = std::cos(angle);
+                const AmReal64 fadeIn = std::sin(angle);
+
+                for (AmSize c = 0; c < channels; ++c)
+                    source[c][a + i] = static_cast<AmReal32>(_scratch[c][a + i] * fadeOut + source[c][a + i] * fadeIn);
             }
 
             _crossfadePosition += n;
@@ -515,11 +525,11 @@ namespace SparkyStudios::Audio::Amplitude
         if (a < end && !_sourceDone)
         {
             VoiceStreamSlot& slot = _slots[_primary];
-            HandlePrimaryReport(slot.stream.Pull(slot.reader, out, a, end - a), a);
+            HandlePrimaryReport(slot.stream.Pull(slot.reader, source, a, end - a), a);
         }
         else if (a < end)
         {
-            std::fill(out.begin() + a, out.begin() + end, 0.0f);
+            Silence(source, a, end);
         }
     }
 
@@ -585,7 +595,7 @@ namespace SparkyStudios::Audio::Amplitude
         {
             const AmUInt64 n = AM_MIN(frames - done, chunk);
             const AmUInt64 before = slot.stream.GetInputConsumed();
-            const auto report = slot.stream.Pull(slot.reader, _scratch[0], 0, n);
+            const auto report = slot.stream.Pull(slot.reader, _scratch, 0, n);
             slot.stream.AddPrimedInput(slot.stream.GetInputConsumed() - before);
             done += n;
 
@@ -639,21 +649,20 @@ namespace SparkyStudios::Audio::Amplitude
         }
     }
 
-    ResampleStream::PullReport Voice::Render(VoiceStreamSlot& slot, AudioBuffer& mono)
+    ResampleStream::PullReport Voice::Render(VoiceStreamSlot& slot, AudioBuffer& source)
     {
         ResampleStream::PullReport total;
-        auto& out = mono[0];
 
         for (AmSize s = 0; s < _segmentCount; ++s)
         {
             const Segment& segment = _segments[s];
             if (!segment.play || _sourceDone)
             {
-                std::fill(out.begin() + segment.begin, out.begin() + segment.end, 0.0f);
+                Silence(source, segment.begin, segment.end);
                 continue;
             }
 
-            const auto report = slot.stream.Pull(slot.reader, out, segment.begin, segment.end - segment.begin);
+            const auto report = slot.stream.Pull(slot.reader, source, segment.begin, segment.end - segment.begin);
             total.produced += report.produced;
             total.error |= report.error;
             total.starved |= report.starved;

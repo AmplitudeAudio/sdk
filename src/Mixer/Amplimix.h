@@ -373,6 +373,11 @@ namespace SparkyStudios::Audio::Amplitude
         static constexpr AmSize kDefaultMaxInstancePipelines = 32;
 
         /**
+         * @brief Gets the number of channels the mixer renders.
+         */
+        [[nodiscard]] AmUInt16 GetOutputChannelCount() const;
+
+        /**
          * @brief Gets the maximum number of per-instance pipelines a separate-mode layer may own.
          */
         [[nodiscard]] AmSize GetMaxInstancePipelines() const;
