@@ -80,6 +80,7 @@
 #include <SparkyStudios/Audio/Amplitude/Core/Version.h>
 
 #include <SparkyStudios/Audio/Amplitude/DSP/AudioConverter.h>
+#include <SparkyStudios/Audio/Amplitude/DSP/ChannelLayout.h>
 #include <SparkyStudios/Audio/Amplitude/DSP/Convolver.h>
 #include <SparkyStudios/Audio/Amplitude/DSP/FFT.h>
 #include <SparkyStudios/Audio/Amplitude/DSP/Filter.h>
