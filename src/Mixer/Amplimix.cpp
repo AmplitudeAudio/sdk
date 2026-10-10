@@ -202,6 +202,9 @@ namespace SparkyStudios::Audio::Amplitude
 
     AmUInt64 AmplimixImpl::Mix(AudioBuffer** outBuffer, AmUInt64 frameCount)
     {
+        // Anything logged while mixing is queued for the game thread: no lock, no allocation, no I/O here.
+        const Logger::ScopedAudioThread audioThread;
+
         if (outBuffer != nullptr)
             // Enforce the output buffer to be null before calling Mix
             *outBuffer = nullptr;

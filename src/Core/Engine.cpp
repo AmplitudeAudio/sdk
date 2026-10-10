@@ -56,10 +56,6 @@ int _NSGetExecutablePath(char* buf, uint32_t* bufSize);
 #endif
 #endif
 
-#if AM_PLATFORM_WIN
-#undef CreateMutex
-#endif
-
 namespace SparkyStudios::Audio::Amplitude
 {
     typedef flatbuffers::Vector<uint64_t> BusIdList;
@@ -1190,6 +1186,9 @@ namespace SparkyStudios::Audio::Amplitude
 
         if (_state->mixer.IsInitialized())
             _state->mixer.Deinit();
+
+        // The audio thread is gone: write what it still had queued.
+        AM_NULLSAFE(amLogger)->Flush();
 
         // Unload sound banks
         while (HasLoadedSoundBanks())
@@ -2838,6 +2837,7 @@ namespace SparkyStudios::Audio::Amplitude
 
         ++_state->current_frame;
         _state->mixer.FlushVoiceCommands();
+        AM_NULLSAFE(amLogger)->Flush();
         _state->total_time += delta;
     }
 
@@ -3097,15 +3097,15 @@ namespace SparkyStudios::Audio::Amplitude
         // Attempt to play the channel, if the engine is paused, the channel will be played later.
         const auto playChannel = [this, newChannel, handle](AmTime delta)
         {
-                if (!newChannel->Play())
-                {
-                    amLogError("Failed to play switch container: %s.", handle->GetName().c_str());
+            if (!newChannel->Play())
+            {
+                amLogError("Failed to play switch container: %s.", handle->GetName().c_str());
 
-                    // Error playing the sound, put it back in the free list. A voice that started and was discarded may still
-                    // be in the mix being rendered: let that mix end before the channel state it reads is reset.
-                    _state->mixer.Wait();
-                    InsertIntoFreeList(_state, newChannel);
-                }
+                // Error playing the sound, put it back in the free list. A voice that started and was discarded may still
+                // be in the mix being rendered: let that mix end before the channel state it reads is reset.
+                _state->mixer.Wait();
+                InsertIntoFreeList(_state, newChannel);
+            }
         };
 
         // A full callback queue would leave the channel pending forever: play it right away instead.
@@ -3183,15 +3183,15 @@ namespace SparkyStudios::Audio::Amplitude
         // Attempt to play the channel, if the engine is paused, the channel will be played later.
         const auto playChannel = [this, newChannel, handle](AmTime delta)
         {
-                if (!newChannel->Play())
-                {
-                    amLogError("Failed to play collection: %s.", handle->GetName().c_str());
+            if (!newChannel->Play())
+            {
+                amLogError("Failed to play collection: %s.", handle->GetName().c_str());
 
-                    // Error playing the sound, put it back in the free list. A voice that started and was discarded may still
-                    // be in the mix being rendered: let that mix end before the channel state it reads is reset.
-                    _state->mixer.Wait();
-                    InsertIntoFreeList(_state, newChannel);
-                }
+                // Error playing the sound, put it back in the free list. A voice that started and was discarded may still
+                // be in the mix being rendered: let that mix end before the channel state it reads is reset.
+                _state->mixer.Wait();
+                InsertIntoFreeList(_state, newChannel);
+            }
         };
 
         // A full callback queue would leave the channel pending forever: play it right away instead.
@@ -3268,15 +3268,15 @@ namespace SparkyStudios::Audio::Amplitude
         // Attempt to play the channel, if the engine is paused, the channel will be played later.
         const auto playChannel = [this, newChannel, handle](AmTime delta)
         {
-                if (!newChannel->Play())
-                {
-                    amLogError("Failed to play sound: %s.", handle->GetName().c_str());
+            if (!newChannel->Play())
+            {
+                amLogError("Failed to play sound: %s.", handle->GetName().c_str());
 
-                    // Error playing the sound, put it back in the free list. A voice that started and was discarded may still
-                    // be in the mix being rendered: let that mix end before the channel state it reads is reset.
-                    _state->mixer.Wait();
-                    InsertIntoFreeList(_state, newChannel);
-                }
+                // Error playing the sound, put it back in the free list. A voice that started and was discarded may still
+                // be in the mix being rendered: let that mix end before the channel state it reads is reset.
+                _state->mixer.Wait();
+                InsertIntoFreeList(_state, newChannel);
+            }
         };
 
         // A full callback queue would leave the channel pending forever: play it right away instead.

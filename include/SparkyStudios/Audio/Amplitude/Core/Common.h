@@ -187,6 +187,29 @@
  */
 #define AM_TO_STRING(X) AM_STRING_EXPAND(X)
 
+/**
+ * @brief Executes a nullsafe call.
+ *
+ * @code{cpp}
+ * // Before
+ * if (auto& logger = (Logger::GetLogger())) logger->Flush();
+ * @endcode
+ *
+ * Since `AM_NULLSAFE` is a macro that expands to `if`, you can use `else` keyword:
+ *
+ * ```cpp
+ * AM_NULLSAFE(amLogger)->Success(...); else FallbackLogFunction(...);
+ * ```
+ *
+ * and even combine multiple `AM_NULLSAFE` statements:
+ *
+ * ```cpp
+ * AM_NULLSAFE(switch)->GetGain(); else AM_NULLSAFE(collection)->GetGain(); else sound->GetGain();
+ * ```
+ * @ingroup core
+ */
+#define AM_NULLSAFE(_x_) if(decltype(auto) _tmp = (_x_))_tmp
+
 namespace SparkyStudios::Audio::Amplitude
 {
     /**
