@@ -2956,6 +2956,11 @@ namespace SparkyStudios::Audio::Amplitude
         return _state->samples_per_stream;
     }
 
+    const ChannelLayout& EngineImpl::GetOutputLayout() const
+    {
+        return _state->mixer.GetOutputLayout();
+    }
+
     bool EngineImpl::IsGameTrackingEnvironmentAmounts() const
     {
         return _state->track_environments;

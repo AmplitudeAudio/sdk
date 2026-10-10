@@ -123,7 +123,8 @@ namespace SparkyStudios::Audio::Amplitude
 
         _device.mOutputBufferSize = config->output()->buffer_size();
         _device.mRequestedOutputSampleRate = config->output()->frequency();
-        _device.mRequestedOutputChannels = PlaybackOutputChannels::Stereo; // For now, only support stereo output.
+        // Default is resolved against the device when the driver opens it (UpdateDevice).
+        _device.mRequestedOutputChannels = static_cast<PlaybackOutputChannels>(config->output()->channels());
         _device.mRequestedOutputFormat = static_cast<PlaybackOutputFormat>(config->output()->format());
 
         // Store the resampler name
@@ -181,6 +182,11 @@ namespace SparkyStudios::Audio::Amplitude
         _device.mDeviceOutputSampleRate = deviceOutputSampleRate;
         _device.mDeviceOutputChannels = deviceOutputChannels;
         _device.mDeviceOutputFormat = deviceOutputFormat;
+
+        // The layout is chosen once: pipelines are configured for it, and the device converts if it changes later.
+        if (_device.mRequestedOutputChannels == PlaybackOutputChannels::Default)
+            _device.mRequestedOutputChannels = static_cast<PlaybackOutputChannels>(
+                ChannelLayout::LargestFitting(static_cast<AmUInt16>(deviceOutputChannels)).GetChannelCount());
 
         UpdateVoiceBlockFrames();
 
@@ -398,6 +404,11 @@ namespace SparkyStudios::Audio::Amplitude
               } });
 
         return layer;
+    }
+
+    const ChannelLayout& AmplimixImpl::GetOutputLayout() const
+    {
+        return ChannelLayout::LargestFitting(GetOutputChannelCount());
     }
 
     AmUInt16 AmplimixImpl::GetOutputChannelCount() const

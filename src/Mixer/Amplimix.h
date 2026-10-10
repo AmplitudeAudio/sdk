@@ -378,6 +378,11 @@ namespace SparkyStudios::Audio::Amplitude
         [[nodiscard]] AmUInt16 GetOutputChannelCount() const;
 
         /**
+         * @brief Gets the channel layout the mixer renders. Fixed once the device is opened.
+         */
+        [[nodiscard]] const ChannelLayout& GetOutputLayout() const;
+
+        /**
          * @brief Gets the maximum number of per-instance pipelines a separate-mode layer may own.
          */
         [[nodiscard]] AmSize GetMaxInstancePipelines() const;

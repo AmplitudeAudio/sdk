@@ -228,7 +228,7 @@ namespace SparkyStudios::Audio::Amplitude::Tests
 
             _threadHandle = Thread::CreateThread(run, this);
 
-            AM_EXPECT(amEngine->Initialize(AM_OS_STRING("tests.config.amconfig")));
+            AM_EXPECT(amEngine->Initialize(GetConfigFile()));
 
             amEngine->EnsureSoundBankLoaded(AM_OS_STRING("tests.init.ambank"));
 
@@ -266,6 +266,12 @@ namespace SparkyStudios::Audio::Amplitude::Tests
         [[nodiscard]] AM_INLINE bool IsRunning() const
         {
             return _running.load(std::memory_order_acquire);
+        }
+
+        /// The compiled engine config the fixture initializes with.
+        [[nodiscard]] virtual const AmOsChar* GetConfigFile() const
+        {
+            return AM_OS_STRING("tests.config.amconfig");
         }
 
     protected:

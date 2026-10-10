@@ -16,6 +16,7 @@
 #include <thread>
 
 #include <Core/Drivers/Null/Driver.h>
+#include <Core/Engine.h>
 
 #include <Mixer/Amplimix.h>
 #include <Utils/ScopedDenormalFlush.h>
@@ -83,6 +84,15 @@ namespace SparkyStudios::Audio::Amplitude
             return true;
 
         m_deviceDescription = device;
+
+        // No device to ask: Default renders stereo.
+        if (m_deviceDescription.mRequestedOutputChannels == PlaybackOutputChannels::Default)
+            m_deviceDescription.mRequestedOutputChannels = PlaybackOutputChannels::Stereo;
+
+        if (auto* mixer = amEngine->GetMixer(); mixer != nullptr)
+            mixer->UpdateDevice(
+                0, "null", m_deviceDescription.mRequestedOutputSampleRate, m_deviceDescription.mRequestedOutputChannels,
+                m_deviceDescription.mRequestedOutputFormat);
 
         CallDeviceNotificationCallback(eDeviceNotification_Opened, device, this);
         m_deviceDescription.mDeviceState = eDeviceState_Opened;

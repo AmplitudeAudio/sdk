@@ -30,6 +30,8 @@
 #include <SparkyStudios/Audio/Amplitude/Core/Room.h>
 #include <SparkyStudios/Audio/Amplitude/Core/Version.h>
 
+#include <SparkyStudios/Audio/Amplitude/DSP/ChannelLayout.h>
+
 #include <SparkyStudios/Audio/Amplitude/HRTF/HRIRSphere.h>
 
 #include <SparkyStudios/Audio/Amplitude/Mixer/Amplimix.h>
@@ -1696,6 +1698,16 @@ namespace SparkyStudios::Audio::Amplitude
          * @return The number of samples per stream.
          */
         [[nodiscard]] virtual AmUInt32 GetSamplesPerStream() const = 0;
+
+        /**
+         * @brief Gets the channel layout the engine renders to the device.
+         *
+         * Set by the engine configuration's @c output.channels; @c Default resolves to the device's native layout when
+         * the device opens.
+         *
+         * @return The output channel layout.
+         */
+        [[nodiscard]] virtual const ChannelLayout& GetOutputLayout() const = 0;
 
         /**
          * @brief Checks whether the game is tracking environment amounts himself.

@@ -90,6 +90,10 @@ table PlaybackOutputConfig {
 
   /// The output buffer format.
   format:ePlaybackOutputFormat = Float32;
+
+  /// The output channel layout. Default takes the device's native layout (the largest of Mono, Stereo, Quad, 5.1 and
+  /// 7.1 that fits it).
+  channels:ePlaybackOutputChannels = Stereo;
 }
 
 /// Audio mixer configuration
