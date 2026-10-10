@@ -193,9 +193,10 @@ namespace SparkyStudios::Audio::Amplitude
         };
 
         /**
-         * @brief The longest message, in characters, kept when it is logged from an audio thread. A longer one is cut.
+         * @brief The longest message, in characters, kept when it is logged from an audio thread. A longer one is cut, and
+         * ends with "..." to show it.
          */
-        static constexpr AmSize kMaxQueuedMessageLength = 192;
+        static constexpr AmSize kMaxQueuedMessageLength = 256;
 
         /**
          * @brief Creates the logger.
@@ -301,7 +302,7 @@ namespace SparkyStudios::Audio::Amplitude
          * @brief Logs a message with this logger.
          *
          * Prefer the @c amLog macros. From an audio thread, the message is queued (and cut to
-         * @c kMaxQueuedMessageLength characters); from any other thread, it is written at once.
+         * @c kMaxQueuedMessageLength characters, ending with "..."); from any other thread, it is written at once.
          *
          * @param[in] level The level of the log message.
          * @param[in] file The file where the message was logged.

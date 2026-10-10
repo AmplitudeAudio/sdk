@@ -112,8 +112,21 @@ namespace SparkyStudios::Audio::Amplitude
             entry.level = level;
             entry.line = line;
             entry.file = file;
-            entry.length = static_cast<AmUInt32>(length < kMaxQueuedMessageLength ? length : kMaxQueuedMessageLength);
-            std::memcpy(entry.message, message, entry.length);
+
+            if (length <= kMaxQueuedMessageLength)
+            {
+                entry.length = static_cast<AmUInt32>(length);
+                std::memcpy(entry.message, message, entry.length);
+            }
+            else
+            {
+                // Too long for an entry: keep the start, and end with a marker so the cut is visible.
+                constexpr AmSize kMarkerLength = 3;
+                entry.length = static_cast<AmUInt32>(kMaxQueuedMessageLength);
+                std::memcpy(entry.message, message, kMaxQueuedMessageLength - kMarkerLength);
+                std::memcpy(entry.message + kMaxQueuedMessageLength - kMarkerLength, "...", kMarkerLength);
+            }
+
             entry.message[entry.length] = '\0';
 
             if (!_logEntries->TryEnqueue(entry))

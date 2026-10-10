@@ -25,7 +25,7 @@ using namespace SparkyStudios::Audio::Amplitude;
 
 namespace SparkyStudios::Audio::Amplitude::Tests
 {
-    // The queue keeps fixed-size entries: a longer message logged from an audio thread is cut, not dropped.
+    // The queue keeps fixed-size entries: a longer message logged from an audio thread is cut, with a marker, not dropped.
     AM_TEST_CASE(PureUnitTestCase, io_logger, logger_cuts_long_audio_thread_messages)
     {
     public:
@@ -37,18 +37,28 @@ namespace SparkyStudios::Audio::Amplitude::Tests
             {
                 const Logger::ScopedAudioThread audioThread;
                 const std::string longMessage(Logger::kMaxQueuedMessageLength + 100, 'x');
+                const std::string exactMessage(Logger::kMaxQueuedMessageLength, 'y');
                 amLogInfo("%s", longMessage.c_str());
+                amLogInfo("%s", exactMessage.c_str());
                 amLogInfo("short");
             }
 
             amLogger->Flush();
 
             const auto entries = capture.Entries();
-            AM_EXPECT_EQ(2u, entries.size());
-            if (entries.size() == 2)
+            AM_EXPECT_EQ(3u, entries.size());
+            if (entries.size() == 3)
             {
                 AM_EXPECT_EQ(static_cast<AmSize>(Logger::kMaxQueuedMessageLength), entries[0].second.size());
-                AM_EXPECT(entries[1].second == "short");
+
+                // The start is kept, and the end is replaced with the marker.
+                const AmSize kept = Logger::kMaxQueuedMessageLength - 3;
+                AM_EXPECT(entries[0].second.compare(0, kept, std::string(kept, 'x')) == 0);
+                AM_EXPECT(entries[0].second.compare(kept, 3, "...") == 0);
+
+                // A message that exactly fits is kept whole, with no marker.
+                AM_EXPECT(entries[1].second == std::string(Logger::kMaxQueuedMessageLength, 'y'));
+                AM_EXPECT(entries[2].second == "short");
             }
         }
     };
