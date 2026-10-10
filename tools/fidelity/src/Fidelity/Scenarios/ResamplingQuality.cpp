@@ -38,7 +38,7 @@ namespace SparkyStudios::Audio::Amplitude::Fidelity
                 const SpectrumResult r = AnalyzeSpectrum(steady, fs, options);
 
                 out.Add(
-                    "spectrum.levelErrorDb" + suffix, r.fundamentalDbfs - DbFromAmplitude(spec.amplitude * CenterPanGain()), "dB",
+                    "spectrum.levelErrorDb" + suffix, r.fundamentalDbfs - DbFromAmplitude(spec.amplitude * OutputChannelGain(spec)), "dB",
                     Better::Lower);
                 out.Add("spectrum.thdDb" + suffix, r.thdDb, "dB", Better::Lower);
                 out.Add("spectrum.thdnDb" + suffix, r.thdnDb, "dB", Better::Lower, Targets::kMaxThdnDb);
@@ -145,7 +145,7 @@ namespace SparkyStudios::Audio::Amplitude::Fidelity
                         }
                     case StimulusKind::PinkNoise:
                         out.Add(
-                            "level.errorDb" + suffix, DbFromAmplitude(Rms(steady)) - DbFromAmplitude(spec->amplitude * CenterPanGain()),
+                            "level.errorDb" + suffix, DbFromAmplitude(Rms(steady)) - DbFromAmplitude(spec->amplitude * OutputChannelGain(*spec)),
                             "dB", Better::Lower);
                         break;
                     default:

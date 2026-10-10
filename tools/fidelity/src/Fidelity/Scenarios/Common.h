@@ -42,9 +42,15 @@ namespace SparkyStudios::Audio::Amplitude::Fidelity
     [[nodiscard]] std::uint64_t OutputFrames(const StimulusSpec& spec, std::uint32_t outputRate);
 
     /**
-     * @brief Left (= right) gain the stereo panner applies to a non-spatialized sound.
+     * @brief Left (= right) gain a non-spatialized mono sound reaches the stereo output with: 1/√2 (constant power).
      */
     [[nodiscard]] double CenterPanGain();
+
+    /**
+     * @brief Per-channel gain of a non-spatialized stimulus on the stereo output: 1 for a stereo stimulus (played as
+     * is), CenterPanGain() for a mono one.
+     */
+    [[nodiscard]] double OutputChannelGain(const StimulusSpec& spec);
 
     /**
      * @brief Settings for the isolated config matching @p point.

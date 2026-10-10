@@ -56,7 +56,12 @@ namespace SparkyStudios::Audio::Amplitude::Fidelity
 
     double CenterPanGain()
     {
-        return SparkyStudios::Audio::Amplitude::Gain::CalculateStereoPannedGain(1.0f, 0.0f).x;
+        return 1.0 / std::sqrt(2.0);
+    }
+
+    double OutputChannelGain(const StimulusSpec& spec)
+    {
+        return spec.channels >= 2 ? 1.0 : CenterPanGain();
     }
 
     RenderSettings IsolatedSettings(const GridPoint& point, std::uint64_t durationSamples)
@@ -174,7 +179,7 @@ namespace SparkyStudios::Audio::Amplitude::Fidelity
     double AliasLevelDbc(std::span<const double> steady, double sampleRate, const StimulusSpec& spec, double frequencyHz)
     {
         const PowerSpectrum spectrum = AveragedPowerSpectrum(steady, sampleRate, 32768);
-        return DbFromPower(BandPower(spectrum, sampleRate - frequencyHz, 8) / 0.5) - DbFromAmplitude(spec.amplitude * CenterPanGain());
+        return DbFromPower(BandPower(spectrum, sampleRate - frequencyHz, 8) / 0.5) - DbFromAmplitude(spec.amplitude * OutputChannelGain(spec));
     }
 
     double MedianFinite(std::vector<double> values)

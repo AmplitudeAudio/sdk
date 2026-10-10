@@ -17,7 +17,7 @@
 #include <SparkyStudios/Audio/Amplitude/Amplitude.h>
 
 #include <DSP/Gain.h>
-#include <Mixer/Nodes/StereoPanningNode.h>
+#include <Mixer/Nodes/SpeakerPanningNode.h>
 
 #include "NodeTestCase.h"
 #include "TestRegistry.h"
@@ -79,13 +79,13 @@ namespace SparkyStudios::Audio::Amplitude::Tests
         AudioBuffer _input;
     };
 
-    AM_TEST_CASE(PanningRampTestCase, mixer_nodes, stereo_panning_node_pan_change_is_continuous)
+    AM_TEST_CASE(PanningRampTestCase, mixer_nodes, speaker_panning_node_pan_change_is_continuous)
     {
     public:
         void Run() override
         {
             SetUpScene();
-            auto instance = CreateAndConfigureNode<StereoPanningNode>(kFrames, 1);
+            auto instance = CreateAndConfigureNode<SpeakerPanningNode>(kFrames, 1);
             auto* processor = AsProcessor(instance);
 
             const AudioBuffer left = ProcessAt(processor, { -10.0f, 0.0f, 0.0f });
@@ -106,15 +106,15 @@ namespace SparkyStudios::Audio::Amplitude::Tests
         }
     };
 
-    AM_REGISTER_TEST(mixer_nodes, stereo_panning_node_pan_change_is_continuous);
+    AM_REGISTER_TEST(mixer_nodes, speaker_panning_node_pan_change_is_continuous);
 
-    AM_TEST_CASE(PanningRampTestCase, mixer_nodes, stereo_panning_node_separate_mode_keeps_ramp)
+    AM_TEST_CASE(PanningRampTestCase, mixer_nodes, speaker_panning_node_separate_mode_keeps_ramp)
     {
     public:
         void Run() override
         {
             SetUpScene();
-            auto instance = CreateAndConfigureNode<StereoPanningNode>(kFrames, 1);
+            auto instance = CreateAndConfigureNode<SpeakerPanningNode>(kFrames, 1);
             auto* processor = AsProcessor(instance);
 
             // Separate mode: each instance now has its own pipeline, so the pan keeps ramping.
@@ -135,15 +135,15 @@ namespace SparkyStudios::Audio::Amplitude::Tests
         }
     };
 
-    AM_REGISTER_TEST(mixer_nodes, stereo_panning_node_separate_mode_keeps_ramp);
+    AM_REGISTER_TEST(mixer_nodes, speaker_panning_node_separate_mode_keeps_ramp);
 
-    AM_TEST_CASE(PanningRampTestCase, mixer_nodes, stereo_panning_node_shared_instance_pipeline_snaps)
+    AM_TEST_CASE(PanningRampTestCase, mixer_nodes, speaker_panning_node_shared_instance_pipeline_snaps)
     {
     public:
         void Run() override
         {
             SetUpScene();
-            auto instance = CreateAndConfigureNode<StereoPanningNode>(kFrames, 1);
+            auto instance = CreateAndConfigureNode<SpeakerPanningNode>(kFrames, 1);
             auto* processor = AsProcessor(instance);
 
             // Instances without their own pipeline share this node within a block: each one snaps to its own pan.
@@ -162,5 +162,5 @@ namespace SparkyStudios::Audio::Amplitude::Tests
         }
     };
 
-    AM_REGISTER_TEST(mixer_nodes, stereo_panning_node_shared_instance_pipeline_snaps);
+    AM_REGISTER_TEST(mixer_nodes, speaker_panning_node_shared_instance_pipeline_snaps);
 } // namespace SparkyStudios::Audio::Amplitude::Tests

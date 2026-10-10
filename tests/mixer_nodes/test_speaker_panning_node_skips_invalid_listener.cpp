@@ -14,7 +14,7 @@
 
 #include <SparkyStudios/Audio/Amplitude/Amplitude.h>
 
-#include <Mixer/Nodes/StereoPanningNode.h>
+#include <Mixer/Nodes/SpeakerPanningNode.h>
 
 #include "NodeTestCase.h"
 #include "TestRegistry.h"
@@ -23,7 +23,7 @@ using namespace SparkyStudios::Audio::Amplitude;
 
 namespace SparkyStudios::Audio::Amplitude::Tests
 {
-    AM_TEST_CASE(NodeTestCase, mixer_nodes, stereo_panning_node_skips_invalid_listener)
+    AM_TEST_CASE(NodeTestCase, mixer_nodes, speaker_panning_node_skips_invalid_listener)
     {
     public:
         void Run() override
@@ -34,13 +34,19 @@ namespace SparkyStudios::Audio::Amplitude::Tests
             // Default listener is invalid (nullptr state)
             // SpatialMockLayer default listener is default-constructed Listener{}
 
-            auto instance = CreateAndConfigureNode<StereoPanningNode>(frameCount, monoChannels);
+            auto instance = CreateAndConfigureNode<SpeakerPanningNode>(frameCount, monoChannels);
             auto* processor = AsProcessor(instance);
             AM_EXPECT_NOT(processor == nullptr);
 
+            // A spatialized sound has nothing to pan against without a listener.
+            GetMockLayer().SetSpatialization(eSpatialization_Position);
             AM_EXPECT(processor->ShouldSkip());
+
+            // A 2D sound needs no listener.
+            GetMockLayer().SetSpatialization(eSpatialization_None);
+            AM_EXPECT_NOT(processor->ShouldSkip());
         }
     };
 
-    AM_REGISTER_TEST(mixer_nodes, stereo_panning_node_skips_invalid_listener);
+    AM_REGISTER_TEST(mixer_nodes, speaker_panning_node_skips_invalid_listener);
 } // namespace SparkyStudios::Audio::Amplitude::Tests

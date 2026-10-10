@@ -156,7 +156,8 @@ namespace SparkyStudios::Audio::Amplitude
     static std::shared_ptr<ReverbNode> sRoomReverbNodePlugin = nullptr;
     static std::shared_ptr<RoundoffClipNode> sRoundoffClipNodePlugin = nullptr;
     static std::shared_ptr<StereoMixerNode> sStereoMixerNodePlugin = nullptr;
-    static std::shared_ptr<StereoPanningNode> sStereoPanningNodePlugin = nullptr;
+    static std::shared_ptr<SpeakerPanningNode> sSpeakerPanningNodePlugin = nullptr;
+    static std::shared_ptr<SpeakerPanningNode> sStereoPanningNodePlugin = nullptr;
 
     static AmUniquePtr<EngineImpl, eMemoryPoolKind_Engine> gAmplitude = nullptr;
     static std::mutex gInstanceMutex;
@@ -669,7 +670,9 @@ namespace SparkyStudios::Audio::Amplitude
         sRoomReverbNodePlugin = RegisterExtension<ReverbNode>("RoomReverb");
         sRoundoffClipNodePlugin = RegisterExtension<RoundoffClipNode>();
         sStereoMixerNodePlugin = RegisterExtension<StereoMixerNode>();
-        sStereoPanningNodePlugin = RegisterExtension<StereoPanningNode>();
+        sSpeakerPanningNodePlugin = RegisterExtension<SpeakerPanningNode>();
+        // The old name stays an alias so existing pipeline assets load.
+        sStereoPanningNodePlugin = RegisterExtension<SpeakerPanningNode>("StereoPanning");
 
         return true;
     }
@@ -740,6 +743,7 @@ namespace SparkyStudios::Audio::Amplitude
         UnregisterExtension(sRoomReverbNodePlugin);
         UnregisterExtension(sRoundoffClipNodePlugin);
         UnregisterExtension(sStereoMixerNodePlugin);
+        UnregisterExtension(sSpeakerPanningNodePlugin);
         UnregisterExtension(sStereoPanningNodePlugin);
 
         return true;

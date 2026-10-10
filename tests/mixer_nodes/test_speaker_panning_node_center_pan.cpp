@@ -14,7 +14,7 @@
 
 #include <SparkyStudios/Audio/Amplitude/Amplitude.h>
 
-#include <Mixer/Nodes/StereoPanningNode.h>
+#include <Mixer/Nodes/SpeakerPanningNode.h>
 
 #include "NodeTestCase.h"
 #include "TestRegistry.h"
@@ -24,7 +24,7 @@ using namespace SparkyStudios::Audio::Amplitude;
 
 namespace SparkyStudios::Audio::Amplitude::Tests
 {
-    AM_TEST_CASE(NodeTestCase, mixer_nodes, stereo_panning_node_pans_to_right)
+    AM_TEST_CASE(NodeTestCase, mixer_nodes, speaker_panning_node_center_pan)
     {
     public:
         void Run() override
@@ -32,7 +32,7 @@ namespace SparkyStudios::Audio::Amplitude::Tests
             constexpr AmUInt64 frameCount = 256;
             constexpr AmUInt16 monoChannels = 1;
 
-            // Listener at origin, looking along -Z, up is +Y
+            // Create a valid listener at origin, looking forward
             ListenerInternalState listenerState;
             listenerState.SetLocation({ 0.0f, 0.0f, 0.0f });
             listenerState.SetOrientation(Orientation({ 0.0f, 0.0f, -1.0f }, { 0.0f, 1.0f, 0.0f }));
@@ -40,14 +40,14 @@ namespace SparkyStudios::Audio::Amplitude::Tests
             Listener listener = InitTestListener(&listenerState);
             GetMockLayer().SetListener(listener);
 
-            // Source to the right of the listener
-            GetMockLayer().SetSpatialization(eSpatialization_Position);
-            GetMockLayer().SetLocation({ 10.0f, 0.0f, 0.0f });
+            // eSpatialization_None → center panning
+            GetMockLayer().SetSpatialization(eSpatialization_None);
 
-            auto instance = CreateAndConfigureNode<StereoPanningNode>(frameCount, monoChannels);
+            auto instance = CreateAndConfigureNode<SpeakerPanningNode>(frameCount, monoChannels);
             auto* processor = AsProcessor(instance);
             AM_EXPECT_NOT(processor == nullptr);
 
+            // Fill mono input with constant value
             AudioBuffer input(frameCount, monoChannels);
             for (AmUInt64 i = 0; i < frameCount; ++i)
                 input[0][i] = 1.0f;
@@ -56,19 +56,14 @@ namespace SparkyStudios::Audio::Amplitude::Tests
             AM_EXPECT_NOT(output == nullptr);
             AM_EXPECT_EQ(output->GetChannelCount(), 2);
 
-            // Compute average energy per channel
-            AmReal32 leftEnergy = 0.0f;
-            AmReal32 rightEnergy = 0.0f;
+            // Centred, constant power: -3.01 dB on each side.
             for (AmUInt64 i = 0; i < frameCount; ++i)
             {
-                leftEnergy += (*output)[0][i] * (*output)[0][i];
-                rightEnergy += (*output)[1][i] * (*output)[1][i];
+                AM_EXPECT(std::abs((*output)[0][i] - 0.70710678f) < 1e-6f);
+                AM_EXPECT(std::abs((*output)[1][i] - 0.70710678f) < 1e-6f);
             }
-
-            // Source to the right → right channel should have more energy
-            AM_EXPECT(rightEnergy > leftEnergy);
         }
     };
 
-    AM_REGISTER_TEST(mixer_nodes, stereo_panning_node_pans_to_right);
+    AM_REGISTER_TEST(mixer_nodes, speaker_panning_node_center_pan);
 } // namespace SparkyStudios::Audio::Amplitude::Tests
