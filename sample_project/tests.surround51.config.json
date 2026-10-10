@@ -10,7 +10,7 @@
     "panning_mode": "BinauralHighQuality",
     "active_channels": 50,
     "virtual_channels": 100,
-    "pipeline": "default.ampipeline"
+    "pipeline": "surround.ampipeline"
   },
   "hrtf": {
     "amir_file": "data/sadie_h12.amir"
