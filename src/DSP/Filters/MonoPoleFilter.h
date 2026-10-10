@@ -17,6 +17,8 @@
 #ifndef _AM_IMPLEMENTATION_DSP_FILTERS_MONOPOLE_FILTER_H
 #define _AM_IMPLEMENTATION_DSP_FILTERS_MONOPOLE_FILTER_H
 
+#include <array>
+
 #include <SparkyStudios/Audio/Amplitude/DSP/Filter.h>
 
 namespace SparkyStudios::Audio::Amplitude
@@ -33,7 +35,7 @@ namespace SparkyStudios::Audio::Amplitude
         AmAudioSample ProcessSample(AmAudioSample sample, AmUInt16 channel, AmUInt32 sampleRate) override;
 
     private:
-        AmAudioSample _previousSample = 0.0f;
+        std::array<AmAudioSample, kAmMaxSupportedChannelCount> _previousSample{};
     };
 
     class MonoPoleFilter : public Filter

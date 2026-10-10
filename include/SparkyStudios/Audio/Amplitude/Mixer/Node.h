@@ -19,12 +19,37 @@
 
 #include <SparkyStudios/Audio/Amplitude/Core/AudioBuffer.h>
 #include <SparkyStudios/Audio/Amplitude/Core/Common.h>
+#include <SparkyStudios/Audio/Amplitude/DSP/ChannelLayout.h>
 #include <SparkyStudios/Audio/Amplitude/DSP/Filter.h>
 
 namespace SparkyStudios::Audio::Amplitude
 {
     class AmplimixLayer;
     class PipelineInstance;
+
+    /**
+     * @brief How a node takes the channels of its provider.
+     *
+     * @ingroup mixer
+     */
+    enum eNodeChannelPolicy : AmUInt8
+    {
+        /**
+         * @brief The default. While the provider still carries the sound's own channels (no Custom node upstream), the
+         * node receives their ITU mono fold-down; after a Custom node it receives its provider's channels unchanged.
+         */
+        eNodeChannelPolicy_Mono = 0,
+
+        /**
+         * @brief The node processes every channel of its provider and outputs as many.
+         */
+        eNodeChannelPolicy_PerChannel,
+
+        /**
+         * @brief The node handles layouts itself and reports its own output channel count.
+         */
+        eNodeChannelPolicy_Custom,
+    };
 
     /**
      * @brief An instance of an Amplimix pipeline node.
@@ -145,7 +170,26 @@ namespace SparkyStudios::Audio::Amplitude
          */
         [[nodiscard]] virtual bool ShouldSkip() const;
 
+        /**
+         * @brief Sets the channel layout the pipeline renders to. The pipeline calls it before @c Configure().
+         *
+         * @param[in] layout The output layout of the pipeline.
+         */
+        void SetPipelineOutputLayout(eChannelLayout layout);
+
+        /**
+         * @brief Gets the channel layout the pipeline renders to (stereo until the pipeline sets it).
+         *
+         * @return The output layout of the pipeline.
+         */
+        [[nodiscard]] const ChannelLayout& GetPipelineOutputLayout() const;
+
     protected:
+        /**
+         * @brief The channel layout the pipeline renders to.
+         */
+        eChannelLayout m_pipelineOutputLayout = eChannelLayout_Stereo;
+
         /**
          * @brief The expected input frame count for this node.
          */
@@ -300,6 +344,22 @@ namespace SparkyStudios::Audio::Amplitude
         void Configure(AmUInt64 frameCount, AmUInt16 channelCount) override;
 
         /**
+         * @brief Makes @c Consume() hand @c Process() the ITU mono fold-down of the provider's channels. The pipeline
+         * calls it at configure time; it allocates.
+         *
+         * @param[in] frameCount The largest block the provider produces.
+         * @param[in] sourceChannelCount The provider's channel count.
+         *
+         * @return @c false when no named layout has @p sourceChannelCount channels.
+         */
+        bool EnableFoldDown(AmUInt64 frameCount, AmUInt16 sourceChannelCount);
+
+        /**
+         * @brief Makes @c Consume() hand @c Process() the provider's buffer unchanged.
+         */
+        void DisableFoldDown();
+
+        /**
          * @brief Returns the ID of the input provider node for this processor.
          *
          * @return The ID of the provider node.
@@ -329,6 +389,8 @@ namespace SparkyStudios::Audio::Amplitude
         const AudioBuffer* _lastOutputBuffer;
         bool _processOnEmptyInputBuffer;
         ProviderNodeInstance* _cachedProvider;
+        ChannelMatrix _foldDown{};
+        AudioBuffer _foldBuffer;
     };
 
     /**
@@ -531,6 +593,14 @@ namespace SparkyStudios::Audio::Amplitude
          */
         void Reset() override;
 
+        /**
+         * @brief Gets the ID of the node this output consumes.
+         */
+        [[nodiscard]] AM_INLINE AmObjectID GetProvider() const
+        {
+            return _provider;
+        }
+
     private:
         AmObjectID _provider;
         AudioBuffer* _buffer;
@@ -601,6 +671,16 @@ namespace SparkyStudios::Audio::Amplitude
          * @return The minimum number of input connections the node can have.
          */
         [[nodiscard]] virtual AmSize GetMinInputCount() const = 0;
+
+        /**
+         * @brief Gets how the node's instances take the channels of their provider.
+         *
+         * Nodes written before channel policies existed keep the default, @c eNodeChannelPolicy_Mono, which matches the
+         * mono input they were written for.
+         *
+         * @return The node's channel policy.
+         */
+        [[nodiscard]] virtual eNodeChannelPolicy GetChannelPolicy() const;
 
         /**
          * @brief Returns the number of parameters accepted by this node.

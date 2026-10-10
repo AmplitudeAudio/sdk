@@ -46,8 +46,12 @@ namespace SparkyStudios::Audio::Amplitude
 
     void PipelineInstanceImpl::Execute(AudioBuffer& in, AudioBuffer& out)
     {
-        // Auto-configure if buffer dimensions changed
-        Configure(in.GetFrameCount(), in.GetChannelCount(), out.GetFrameCount(), out.GetChannelCount());
+        // Configured on the game thread beforehand; this only re-runs when the caller's dimensions change.
+        if (!Configure(in.GetFrameCount(), in.GetChannelCount(), out.GetFrameCount(), out.GetChannelCount()))
+        {
+            out.Clear();
+            return;
+        }
 
         _inputNode->SetInput(&in);
         _outputNode->SetOutput(&out);
@@ -92,63 +96,63 @@ namespace SparkyStudios::Audio::Amplitude
 
     bool PipelineInstanceImpl::NeedsReconfiguration(AmUInt64 inFrames, AmUInt16 inChannels, AmUInt64 outFrames, AmUInt16 outChannels) const
     {
-        return !_isConfigured || _configuredInputFrameCount != inFrames || _configuredInputChannelCount != inChannels ||
+        return !_hasConfiguration || _configuredInputFrameCount != inFrames || _configuredInputChannelCount != inChannels ||
             _configuredOutputFrameCount != outFrames || _configuredOutputChannelCount != outChannels;
     }
 
-    void PipelineInstanceImpl::Configure(
+    bool PipelineInstanceImpl::Configure(
         AmUInt64 inputFrameCount, AmUInt16 inputChannelCount, AmUInt64 outputFrameCount, AmUInt16 outputChannelCount)
     {
         if (!NeedsReconfiguration(inputFrameCount, inputChannelCount, outputFrameCount, outputChannelCount))
-            return;
+            return _isConfigured;
 
         _configuredInputFrameCount = inputFrameCount;
         _configuredInputChannelCount = inputChannelCount;
         _configuredOutputFrameCount = outputFrameCount;
         _configuredOutputChannelCount = outputChannelCount;
+        _hasConfiguration = true;
 
-        ConfigureNodeGraph();
-
-        _isConfigured = true;
+        _isConfigured = ConfigureNodeGraph();
+        return _isConfigured;
     }
 
-    void PipelineInstanceImpl::ConfigureNodeGraph()
+    bool PipelineInstanceImpl::ConfigureNodeGraph()
     {
-        // Configure input node first
+        const ChannelLayout* outputLayout = ChannelLayout::FromChannelCount(_configuredOutputChannelCount);
+        if (outputLayout == nullptr)
+        {
+            amLogError(
+                "A pipeline cannot render %u channels: the output must be mono, stereo, quad, 5.1 or 7.1.",
+                static_cast<AmUInt32>(_configuredOutputChannelCount));
+            return false;
+        }
+
+        _inputNode->SetPipelineOutputLayout(outputLayout->GetType());
         _inputNode->Configure(_configuredInputFrameCount, _configuredInputChannelCount);
 
         // Build a map of node ID to its consumers for topological traversal
         std::unordered_map<AmObjectID, std::vector<AmObjectID>> nodeConsumers;
-        std::unordered_map<AmObjectID, AmObjectID> nodeProvider; // For single-input processors
-        std::unordered_map<AmObjectID, std::vector<AmObjectID>> nodeProviders; // For multi-input mixers
-
-        // Collect connection information
         for (const auto& [id, pair] : _nodeInstances)
         {
             const auto& node = pair.second;
 
             if (const auto* processor = dynamic_cast<ProcessorNodeInstance*>(node.get()))
-            {
-                nodeProvider[id] = processor->GetProvider();
                 nodeConsumers[processor->GetProvider()].push_back(id);
-            }
             else if (const auto* mixer = dynamic_cast<MixerNodeInstance*>(node.get()))
-            {
-                nodeProviders[id] = mixer->GetProviders();
                 for (const auto& providerId : mixer->GetProviders())
                     nodeConsumers[providerId].push_back(id);
-            }
         }
 
-        // Use BFS to configure nodes in topological order (from input to output)
         std::unordered_set<AmObjectID> configured;
         std::queue<AmObjectID> toProcess;
 
-        // Start with input node (ID from _inputNode)
+        // Nodes whose output still carries the sound's own channels: no Custom node upstream.
+        std::unordered_set<AmObjectID> sourceLayout;
+
         const AmObjectID inputNodeId = _inputNode->GetId();
         configured.insert(inputNodeId);
+        sourceLayout.insert(inputNodeId);
 
-        // Add all nodes that consume from input node
         for (const auto& consumerId : nodeConsumers[inputNodeId])
             toProcess.push(consumerId);
 
@@ -160,59 +164,118 @@ namespace SparkyStudios::Audio::Amplitude
             if (configured.contains(currentId))
                 continue;
 
-            // Get the node
             auto nodeIt = _nodeInstances.find(currentId);
             if (nodeIt == _nodeInstances.end())
                 continue;
 
             const auto& node = nodeIt->second.second;
+            const auto policyIt = _policies.find(currentId);
+            const eNodeChannelPolicy policy = policyIt != _policies.end() ? policyIt->second : eNodeChannelPolicy_Mono;
 
-            // Determine input dimensions from provider(s)
-            AmUInt64 inputFrames = 0;
-            AmUInt16 inputChannels = 0;
+            node->SetPipelineOutputLayout(outputLayout->GetType());
 
-            if (const auto* processor = dynamic_cast<ProcessorNodeInstance*>(node.get()))
+            if (auto* processor = dynamic_cast<ProcessorNodeInstance*>(node.get()))
             {
-                // Single provider - get its output dimensions
                 const AmObjectID providerId = processor->GetProvider();
-                if (configured.contains(providerId))
-                {
-                    auto providerNode = GetNode(providerId);
+                const auto provider = GetNode(providerId);
 
-                    inputFrames = providerNode->GetOutputFrameCount();
-                    inputChannels = providerNode->GetOutputChannelCount();
+                const AmUInt64 inputFrames = provider->GetOutputFrameCount();
+                AmUInt16 inputChannels = provider->GetOutputChannelCount();
+                const bool fromSource = sourceLayout.contains(providerId);
+
+                if (policy == eNodeChannelPolicy_Mono && fromSource && inputChannels > 1)
+                {
+                    if (!processor->EnableFoldDown(inputFrames, inputChannels))
+                    {
+                        amLogError(
+                            "Cannot fold %u channels down to mono for node " AM_ID_CHAR_FMT ": no channel layout has that many channels.",
+                            static_cast<AmUInt32>(inputChannels), currentId);
+                        return false;
+                    }
+
+                    inputChannels = 1;
                 }
+                else
+                {
+                    processor->DisableFoldDown();
+                }
+
+                node->Configure(inputFrames, inputChannels);
+
+                if (fromSource && policy != eNodeChannelPolicy_Custom)
+                    sourceLayout.insert(currentId);
             }
             else if (const auto* mixer = dynamic_cast<MixerNodeInstance*>(node.get()))
             {
-                // Multiple providers - use first non-empty provider's dimensions
-                // (all providers should have matching dimensions for mixing)
+                // A mixer sums its providers sample by sample: it waits for all of them, and they must agree.
+                AmUInt64 inputFrames = 0;
+                AmUInt16 inputChannels = 0;
+                bool ready = true;
+                bool allFromSource = true;
+
                 for (const auto& providerId : mixer->GetProviders())
                 {
-                    if (configured.contains(providerId))
+                    if (!configured.contains(providerId))
                     {
-                        auto providerNode = GetNode(providerId);
-
-                        inputFrames = providerNode->GetOutputFrameCount();
-                        inputChannels = providerNode->GetOutputChannelCount();
+                        ready = false;
                         break;
                     }
+
+                    const auto provider = GetNode(providerId);
+                    if (inputChannels == 0)
+                    {
+                        inputFrames = provider->GetOutputFrameCount();
+                        inputChannels = provider->GetOutputChannelCount();
+                    }
+                    else if (provider->GetOutputChannelCount() != inputChannels)
+                    {
+                        amLogError(
+                            "The mixer node " AM_ID_CHAR_FMT " sums providers of %u and %u channels: its providers must produce the same "
+                            "layout.",
+                            currentId, static_cast<AmUInt32>(inputChannels), static_cast<AmUInt32>(provider->GetOutputChannelCount()));
+                        return false;
+                    }
+
+                    allFromSource &= sourceLayout.contains(providerId);
                 }
+
+                // Pushed again when its next provider is configured.
+                if (!ready)
+                    continue;
+
+                node->Configure(inputFrames, inputChannels);
+
+                if (allFromSource)
+                    sourceLayout.insert(currentId);
             }
 
-            // Configure this node
-            node->Configure(inputFrames, inputChannels);
             configured.insert(currentId);
 
-            // Add consumers of this node to the queue
             for (const auto& consumerId : nodeConsumers[currentId])
                 if (!configured.contains(consumerId))
                     toProcess.push(consumerId);
         }
 
-        // Configure output node last
-        if (_outputNode != nullptr)
-            _outputNode->Configure(_configuredOutputFrameCount, _configuredOutputChannelCount);
+        // The last node must produce what the caller's output buffer holds.
+        const AmObjectID lastId = _outputNode->GetProvider();
+        const auto last = GetNode(lastId);
+        if (last == nullptr || !configured.contains(lastId))
+        {
+            amLogError("The pipeline's output node is not reachable from its input node.");
+            return false;
+        }
+
+        if (last->GetOutputChannelCount() != _configuredOutputChannelCount)
+        {
+            amLogError(
+                "The pipeline produces %u channels but its output takes %u: pan or mix to the output layout before the output node.",
+                static_cast<AmUInt32>(last->GetOutputChannelCount()), static_cast<AmUInt32>(_configuredOutputChannelCount));
+            return false;
+        }
+
+        _outputNode->SetPipelineOutputLayout(outputLayout->GetType());
+        _outputNode->Configure(_configuredOutputFrameCount, _configuredOutputChannelCount);
+        return true;
     }
 
     PipelineImpl::~PipelineImpl()
@@ -274,6 +337,7 @@ namespace SparkyStudios::Audio::Amplitude
                 }
 
                 instance->AddNode(nodeId, nodeName, nodeInstance);
+                instance->_policies[nodeId] = node->GetChannelPolicy();
             }
 
             const flatbuffers::uoffset_t paramCount = nodeDef->parameters() ? nodeDef->parameters()->size() : 0;

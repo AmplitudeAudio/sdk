@@ -51,6 +51,11 @@ namespace SparkyStudios::Audio::Amplitude
         {
             return 1;
         }
+
+        [[nodiscard]] AM_INLINE eNodeChannelPolicy GetChannelPolicy() const override
+        {
+            return eNodeChannelPolicy_Custom;
+        }
     };
 } // namespace SparkyStudios::Audio::Amplitude
 

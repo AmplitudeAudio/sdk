@@ -39,8 +39,10 @@ namespace SparkyStudios::Audio::Amplitude::Tests
                 return nullptr;
             }
 
-            void Configure(AmUInt64, AmUInt16, AmUInt64, AmUInt16) override
-            {}
+            bool Configure(AmUInt64, AmUInt16, AmUInt64, AmUInt16) override
+            {
+                return true;
+            }
         };
     } // namespace
 
