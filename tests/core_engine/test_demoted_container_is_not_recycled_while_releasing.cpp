@@ -99,6 +99,13 @@ namespace SparkyStudios::Audio::Amplitude::Tests
 
             const AmplimixImpl& mixer = amEngine->GetState()->mixer;
 
+            // The scenario is only reached if the stolen voice is still rendering (its release has not finished): a test
+            // that missed it would pass without checking anything.
+            const eVoiceState stolenState = mixer.GetVoiceState(oldId, layers[0]);
+            AM_EXPECT(stolenState == eVoiceState::Playing || stolenState == eVoiceState::FadingOut || stolenState == eVoiceState::Ending);
+            if (stolenState != eVoiceState::Playing && stolenState != eVoiceState::FadingOut && stolenState != eVoiceState::Ending)
+                return;
+
             // Stopped at once, while the release is still running.
             state->Halt();
 
