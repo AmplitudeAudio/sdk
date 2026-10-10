@@ -214,6 +214,11 @@ namespace SparkyStudios::Audio::Amplitude
         return _nearFieldGain;
     }
 
+    const RtpcValue& SoundImpl::GetSpread() const
+    {
+        return _spread;
+    }
+
     const RtpcValue& SoundImpl::GetPitch() const
     {
         return SoundObjectImpl::GetPitch();
@@ -305,6 +310,7 @@ namespace SparkyStudios::Audio::Amplitude
 
         RtpcValue::Init(m_gain, definition->gain(), 1);
         RtpcValue::Init(_nearFieldGain, definition->near_field_gain(), 1);
+        RtpcValue::Init(_spread, definition->spread(), kAmSpreadNative);
         RtpcValue::Init(m_pitch, definition->pitch(), 1);
         RtpcValue::Init(m_priority, definition->priority(), 1);
 

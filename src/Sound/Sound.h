@@ -193,6 +193,11 @@ namespace SparkyStudios::Audio::Amplitude
         [[nodiscard]] const RtpcValue& GetNearFieldGain() const override;
 
         /**
+         * @copydoc Sound::GetSpread
+         */
+        [[nodiscard]] const RtpcValue& GetSpread() const override;
+
+        /**
          * @copydoc SoundObject::GetPitch
          */
         [[nodiscard]] const RtpcValue& GetPitch() const override;
@@ -268,6 +273,7 @@ namespace SparkyStudios::Audio::Amplitude
         RefCounter _soundDataRefCounter;
 
         RtpcValue _nearFieldGain;
+        RtpcValue _spread;
 
         SoundInstanceSettings _settings;
     };

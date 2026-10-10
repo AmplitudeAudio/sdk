@@ -110,6 +110,11 @@ namespace SparkyStudios::Audio::Amplitude
         }
 
         /**
+         * @copydoc Attenuation::GetSpreadFactor
+         */
+        [[nodiscard]] AmReal32 GetSpreadFactor(AmReal64 distance) const override;
+
+        /**
          * @copydoc Attenuation::GetMaxDistance
          */
         [[nodiscard]] AM_INLINE AmReal64 GetMaxDistance() const override
@@ -147,6 +152,8 @@ namespace SparkyStudios::Audio::Amplitude
         AmUniquePtr<AttenuationZone, eMemoryPoolKind_Engine> _shape;
 
         Curve _gainCurve;
+        Curve _spreadCurve;
+        bool _hasSpreadCurve = false;
 
         bool _airAbsorptionEnabled;
         std::array<AmReal32, kAmAirAbsorptionBandCount> _airAbsorptionCoefficients;

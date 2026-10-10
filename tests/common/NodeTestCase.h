@@ -174,12 +174,24 @@ namespace SparkyStudios::Audio::Amplitude::Tests
 
         [[nodiscard]] AttenuationZone* GetShape() const override { return nullptr; }
         [[nodiscard]] const Curve& GetGainCurve() const override { static Curve c; return c; }
+
+        [[nodiscard]] AmReal32 GetSpreadFactor(AmReal64) const override
+        {
+            return _spreadFactor;
+        }
+
+        void SetSpreadFactor(AmReal32 factor)
+        {
+            _spreadFactor = factor;
+        }
+
         [[nodiscard]] AmReal64 GetMaxDistance() const override { return _maxDistance; }
         [[nodiscard]] bool IsAirAbsorptionEnabled() const override { return false; }
         [[nodiscard]] AmReal32 EvaluateAirAbsorption(const AmVector3&, const AmVector3&, AmUInt32) const override { return 1.0f; }
 
     private:
         AmReal64 _maxDistance;
+        AmReal32 _spreadFactor = 1.0f;
     };
 
     /**
@@ -191,6 +203,7 @@ namespace SparkyStudios::Audio::Amplitude::Tests
         explicit MockSound(AmReal32 nearFieldGain = 1.0f)
         {
             _nearFieldGain.Init(nearFieldGain);
+            _spread.Init(kAmSpreadNative);
             _gain.Init(1.0f);
             _pitch.Init(1.0f);
             _priority.Init(1.0f);
@@ -199,6 +212,17 @@ namespace SparkyStudios::Audio::Amplitude::Tests
         [[nodiscard]] bool IsStream() const override { return false; }
         [[nodiscard]] bool IsLoop() const override { return false; }
         [[nodiscard]] const RtpcValue& GetNearFieldGain() const override { return _nearFieldGain; }
+
+        [[nodiscard]] const RtpcValue& GetSpread() const override
+        {
+            return _spread;
+        }
+
+        void SetSpread(AmReal32 spread)
+        {
+            _spread.Init(spread);
+        }
+
         [[nodiscard]] const RtpcValue& GetGain() const override { return _gain; }
         [[nodiscard]] const RtpcValue& GetPitch() const override { return _pitch; }
         [[nodiscard]] const RtpcValue& GetPriority() const override { return _priority; }
@@ -214,6 +238,7 @@ namespace SparkyStudios::Audio::Amplitude::Tests
 
     private:
         RtpcValue _nearFieldGain;
+        RtpcValue _spread;
         RtpcValue _gain;
         RtpcValue _pitch;
         RtpcValue _priority;

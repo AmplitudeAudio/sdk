@@ -122,6 +122,15 @@ namespace SparkyStudios::Audio::Amplitude
         [[nodiscard]] virtual const Curve& GetGainCurve() const = 0;
 
         /**
+         * @brief Returns the factor applied to a sound's spread at the given distance from the listener.
+         *
+         * @param[in] distance The distance between the sound and the listener.
+         *
+         * @return The spread curve at @p distance clamped to [0, 1], or 1 when the attenuation has no spread curve.
+         */
+        [[nodiscard]] virtual AmReal32 GetSpreadFactor(AmReal64 distance) const = 0;
+
+        /**
          * @brief Returns the maximum distance for a fully attenuated sound
          *
          * @return The maximum sound attenuation distance.

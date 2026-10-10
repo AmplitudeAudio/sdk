@@ -63,6 +63,16 @@ namespace SparkyStudios::Audio::Amplitude
          * @return The sound object near field effect gain.
          */
         [[nodiscard]] virtual const RtpcValue& GetNearFieldGain() const = 0;
+
+        /**
+         * @brief Gets the spread of the sound object: the width of its image in degrees, 0 to 360.
+         *
+         * Each channel of a multichannel sound is placed as a virtual emitter around the sound's direction. The value is
+         * @c kAmSpreadNative when the definition sets none, which means the native width of the asset's layout.
+         *
+         * @return The sound object spread.
+         */
+        [[nodiscard]] virtual const RtpcValue& GetSpread() const = 0;
     };
 } // namespace SparkyStudios::Audio::Amplitude
 
