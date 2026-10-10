@@ -155,7 +155,8 @@ namespace SparkyStudios::Audio::Amplitude
     static std::shared_ptr<ReverbNode> sDattorroNodePlugin = nullptr;
     static std::shared_ptr<ReverbNode> sRoomReverbNodePlugin = nullptr;
     static std::shared_ptr<RoundoffClipNode> sRoundoffClipNodePlugin = nullptr;
-    static std::shared_ptr<StereoMixerNode> sStereoMixerNodePlugin = nullptr;
+    static std::shared_ptr<MixerNode> sMixerNodePlugin = nullptr;
+    static std::shared_ptr<MixerNode> sStereoMixerNodePlugin = nullptr;
     static std::shared_ptr<SpeakerPanningNode> sSpeakerPanningNodePlugin = nullptr;
     static std::shared_ptr<SpeakerPanningNode> sStereoPanningNodePlugin = nullptr;
 
@@ -669,7 +670,9 @@ namespace SparkyStudios::Audio::Amplitude
         sDattorroNodePlugin = RegisterExtension<ReverbNode>("Dattorro");
         sRoomReverbNodePlugin = RegisterExtension<ReverbNode>("RoomReverb");
         sRoundoffClipNodePlugin = RegisterExtension<RoundoffClipNode>();
-        sStereoMixerNodePlugin = RegisterExtension<StereoMixerNode>();
+        sMixerNodePlugin = RegisterExtension<MixerNode>();
+        // The old name stays an alias so existing pipeline assets load.
+        sStereoMixerNodePlugin = RegisterExtension<MixerNode>("StereoMixer");
         sSpeakerPanningNodePlugin = RegisterExtension<SpeakerPanningNode>();
         // The old name stays an alias so existing pipeline assets load.
         sStereoPanningNodePlugin = RegisterExtension<SpeakerPanningNode>("StereoPanning");
@@ -742,6 +745,7 @@ namespace SparkyStudios::Audio::Amplitude
         UnregisterExtension(sDattorroNodePlugin);
         UnregisterExtension(sRoomReverbNodePlugin);
         UnregisterExtension(sRoundoffClipNodePlugin);
+        UnregisterExtension(sMixerNodePlugin);
         UnregisterExtension(sStereoMixerNodePlugin);
         UnregisterExtension(sSpeakerPanningNodePlugin);
         UnregisterExtension(sStereoPanningNodePlugin);

@@ -36,7 +36,7 @@ namespace SparkyStudios::Audio::Amplitude
 
         [[nodiscard]] AM_INLINE AmUInt16 GetOutputChannelCount() const override
         {
-            return kAmStereoChannelCount;
+            return GetPipelineOutputLayout().GetChannelCount();
         }
 
         void Configure(AmUInt64 frameCount, AmUInt16 channelCount) override;
@@ -46,6 +46,8 @@ namespace SparkyStudios::Audio::Amplitude
         AmbisonicBinauralizer _binauralizer;
         AmbisonicDecoder _decoder;
         BFormat _soundField;
+        AudioBuffer _stereo;
+        ChannelMatrix _toOutput{};
         AmUInt32 _ambisonicOrder = 1;
         bool _configured = false;
     };

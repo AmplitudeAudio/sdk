@@ -17,9 +17,12 @@
 #ifndef _AM_IMPLEMENTATION_MIXER_NODES_NEAR_FIELD_EFFECT_NODE_H
 #define _AM_IMPLEMENTATION_MIXER_NODES_NEAR_FIELD_EFFECT_NODE_H
 
+#include <array>
+
 #include <SparkyStudios/Audio/Amplitude/Mixer/Node.h>
 
 #include <DSP/Gain.h>
+#include <DSP/SpeakerPanner.h>
 
 namespace SparkyStudios::Audio::Amplitude
 {
@@ -36,12 +39,12 @@ namespace SparkyStudios::Audio::Amplitude
 
         [[nodiscard]] AM_INLINE AmUInt16 GetOutputChannelCount() const override
         {
-            return kAmStereoChannelCount;
+            return GetPipelineOutputLayout().GetChannelCount();
         }
 
     private:
-        GainProcessor _leftGainProcessor;
-        GainProcessor _rightGainProcessor;
+        std::array<GainProcessor, kAmMaxLayoutChannelCount> _speakerGains{};
+        AudioBuffer _boosted;
 
         NearFieldProcessor* _processor = nullptr;
     };

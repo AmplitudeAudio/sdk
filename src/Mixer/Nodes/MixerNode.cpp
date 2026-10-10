@@ -12,11 +12,11 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include <Mixer/Nodes/StereoMixerNode.h>
+#include <Mixer/Nodes/MixerNode.h>
 
 namespace SparkyStudios::Audio::Amplitude
 {
-    StereoMixerNode::StereoMixerNode()
-        : Node("StereoMixer")
+    MixerNode::MixerNode(AmString name)
+        : Node(std::move(name))
     {}
 } // namespace SparkyStudios::Audio::Amplitude

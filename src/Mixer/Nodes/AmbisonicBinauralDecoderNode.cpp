@@ -14,9 +14,12 @@
 
 #include <Mixer/Nodes/AmbisonicBinauralDecoderNode.h>
 
+#include <atomic>
+
 #include <Ambisonics/AmbisonicDecoder.h>
 #include <Ambisonics/BFormat.h>
 #include <Core/EngineInternalState.h>
+#include <DSP/ChannelMap.h>
 
 namespace SparkyStudios::Audio::Amplitude
 {
@@ -43,14 +46,16 @@ namespace SparkyStudios::Audio::Amplitude
         for (AmUInt32 i = 0, l = input->GetChannelCount(); i < l; ++i)
             _soundField.CopyStream(input->GetChannel(i), i, input->GetFrameCount());
 
-        _output.Clear();
+        _stereo.Clear();
 
         const ePanningMode mode = Engine::GetInstance()->GetPanningMode();
 
         if (mode == ePanningMode_Stereo)
-            _decoder.Process(&_soundField, input->GetFrameCount(), _output);
+            _decoder.Process(&_soundField, input->GetFrameCount(), _stereo);
         else
-            _binauralizer.Process(&_soundField, input->GetFrameCount(), _output);
+            _binauralizer.Process(&_soundField, input->GetFrameCount(), _stereo);
+
+        ApplyChannelMap(_toOutput, _stereo, _output, input->GetFrameCount());
 
         return &_output;
     }
@@ -60,6 +65,17 @@ namespace SparkyStudios::Audio::Amplitude
         ProcessorNodeInstance::Configure(frameCount, channelCount);
 
         _soundField.Configure(_ambisonicOrder, true, frameCount);
+
+        _stereo = AudioBuffer(frameCount, kAmStereoChannelCount);
+        _toOutput = BuildChannelMap(ChannelLayout::Get(eChannelLayout_Stereo), GetPipelineOutputLayout());
+
+        // Binaural is a headphone render: on any other output it feeds L and R only. Said once per run, on the game thread.
+        static std::atomic<bool> warned{ false };
+        if (GetPipelineOutputLayout().GetType() != eChannelLayout_Stereo && !warned.exchange(true))
+            amLogWarning(
+                "AmbisonicBinauralDecoder renders for headphones: on a %u-channel output it feeds L and R only. Use "
+                "AmbisonicSpeakerDecoder for speakers.",
+                static_cast<AmUInt32>(GetPipelineOutputLayout().GetChannelCount()));
 
         if (!_configured)
         {

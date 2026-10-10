@@ -95,7 +95,7 @@
 #include <Mixer/Nodes/ReflectionsNode.h>
 #include <Mixer/Nodes/ReverbNode.h>
 #include <Mixer/Nodes/RoundoffClipNode.h>
-#include <Mixer/Nodes/StereoMixerNode.h>
+#include <Mixer/Nodes/MixerNode.h>
 #include <Mixer/Nodes/SpeakerPanningNode.h>
 
 #pragma endregion

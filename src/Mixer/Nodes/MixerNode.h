@@ -14,18 +14,21 @@
 
 #pragma once
 
-#ifndef _AM_IMPLEMENTATION_MIXER_NODES_STEREO_MIXER_NODE_H
-#define _AM_IMPLEMENTATION_MIXER_NODES_STEREO_MIXER_NODE_H
+#ifndef _AM_IMPLEMENTATION_MIXER_NODES_MIXER_NODE_H
+#define _AM_IMPLEMENTATION_MIXER_NODES_MIXER_NODE_H
 
 #include <SparkyStudios/Audio/Amplitude/Core/Memory.h>
 #include <SparkyStudios/Audio/Amplitude/Mixer/Node.h>
 
 namespace SparkyStudios::Audio::Amplitude
 {
-    class StereoMixerNode final : public Node
+    /**
+     * @brief Sums its providers. They must produce the same channel count; the pipeline refuses the graph otherwise.
+     */
+    class MixerNode final : public Node
     {
     public:
-        StereoMixerNode();
+        explicit MixerNode(AmString name = "Mixer");
 
         [[nodiscard]] AM_INLINE std::shared_ptr<NodeInstance> CreateInstance() const override
         {
@@ -59,4 +62,4 @@ namespace SparkyStudios::Audio::Amplitude
     };
 } // namespace SparkyStudios::Audio::Amplitude
 
-#endif // _AM_IMPLEMENTATION_MIXER_NODES_STEREO_MIXER_NODE_H
+#endif // _AM_IMPLEMENTATION_MIXER_NODES_MIXER_NODE_H
