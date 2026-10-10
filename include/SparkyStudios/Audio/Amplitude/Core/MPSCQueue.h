@@ -16,6 +16,7 @@
 #define _AM_CORE_MPSCQUEUE_H
 
 #include <atomic>
+#include <cstddef>
 
 #include <SparkyStudios/Audio/Amplitude/Core/Common.h>
 

@@ -17,7 +17,12 @@
 #ifndef _AM_IO_LOG_H
 #define _AM_IO_LOG_H
 
+#include <atomic>
+#include <memory>
+#include <mutex>
+
 #include <SparkyStudios/Audio/Amplitude/Core/Common.h>
+#include <SparkyStudios/Audio/Amplitude/Core/MPSCQueue.h>
 
 /**
  * @brief The global logger instance.
@@ -40,8 +45,9 @@
     {                                                                                                                                      \
         constexpr size_t bufferLen = 4096;                                                                                                 \
         char buffer[bufferLen];                                                                                                            \
-        int formatted = std::snprintf(buffer, bufferLen, _message_, ##__VA_ARGS__);                                                        \
-        amLogger->_level_(__FILE__, __LINE__, SparkyStudios::Audio::Amplitude::AmString(buffer).substr(0, formatted));                                                      \
+        const int formatted = std::snprintf(buffer, bufferLen, _message_, ##__VA_ARGS__);                                                  \
+        const size_t length = formatted < 0 ? 0 : (static_cast<size_t>(formatted) < bufferLen ? static_cast<size_t>(formatted) : bufferLen - 1); \
+        amLogger->Write(SparkyStudios::Audio::Amplitude::eLogMessageLevel_##_level_, __FILE__, __LINE__, buffer, length);                  \
     }                                                                                                                                      \
     (void)0
 
@@ -153,18 +159,56 @@ namespace SparkyStudios::Audio::Amplitude
      * Base class used to perform logging. Implementations of this class can display or store
      * log messages wherever they are needed.
      *
+     * Messages logged from the audio thread (see @c Logger::ScopedAudioThread) are never written there: they are
+     * copied into a lock-free queue, and written by the next @c Flush(), which the engine calls once per frame. Messages
+     * logged from any other thread are written at once, after the ones still queued, so the order is kept.
+     *
      * @ingroup io
      */
     class AM_API_PUBLIC Logger
     {
     public:
         /**
-         * @brief Default destructor.
+         * @brief Marks the calling thread as an audio thread while it is alive.
+         *
+         * Logging from a marked thread never takes a lock, allocates or writes: the message is queued for @c Flush().
+         * The mixer marks the thread that runs it. Scopes can be nested.
          */
-        virtual ~Logger() = default;
+        class AM_API_PUBLIC ScopedAudioThread
+        {
+        public:
+            ScopedAudioThread();
+            ~ScopedAudioThread();
+
+            ScopedAudioThread(const ScopedAudioThread&) = delete;
+            ScopedAudioThread& operator=(const ScopedAudioThread&) = delete;
+
+        private:
+            bool _previous;
+        };
+
+        /**
+         * @brief The longest message, in characters, kept when it is logged from an audio thread. A longer one is cut.
+         */
+        static constexpr AmSize kMaxQueuedMessageLength = 192;
+
+        /**
+         * @brief Creates the logger.
+         */
+        Logger();
+
+        /**
+         * @brief Destroys the logger, and unregisters it if it is the global one.
+         *
+         * Messages still queued are lost: a logger that writes somewhere should call @c Flush() in its own destructor,
+         * while it can still write.
+         */
+        virtual ~Logger();
 
         /**
          * @brief Sets the logger instance to use when calling @c amLogger
+         *
+         * Messages still queued on the logger being replaced are written first.
          *
          * @param[in] loggerInstance The logger instance.
          */
@@ -231,6 +275,28 @@ namespace SparkyStudios::Audio::Amplitude
          */
         void Success(const char* file, int line, const AmString& message);
 
+        /**
+         * @brief Logs a message with the given level.
+         *
+         * This is what the @c amLog macros call. From an audio thread, the message is queued (and cut to
+         * @c kMaxQueuedMessageLength characters); from any other thread, it is written at once.
+         *
+         * @param[in] level The level of the log message.
+         * @param[in] file The file where the message was logged.
+         * @param[in] line The line where the message was logged.
+         * @param[in] message The message, not necessarily null-terminated.
+         * @param[in] length The length of @p message.
+         */
+        void Write(eLogMessageLevel level, const char* file, int line, const char* message, AmSize length);
+
+        /**
+         * @brief Writes the messages queued from the audio thread.
+         *
+         * Safe to call from any thread but an audio thread, and from several at once: writes are serialized. If the queue
+         * overflowed, one warning reports how many messages were dropped.
+         */
+        void Flush();
+
     protected:
         /**
          * @brief Logs a message with the given level.
@@ -241,6 +307,24 @@ namespace SparkyStudios::Audio::Amplitude
          * @param[in] message The message to log.
          */
         virtual void Log(eLogMessageLevel level, const char* file, int line, const AmString& message) = 0;
+
+    private:
+        struct LogEntry
+        {
+            eLogMessageLevel level;
+            int line;
+            const char* file;
+            AmUInt32 length;
+            char message[kMaxQueuedMessageLength + 1];
+        };
+
+        static constexpr AmSize kQueueCapacity = 256;
+
+        void Drain();
+
+        std::unique_ptr<MPSCQueue<LogEntry, kQueueCapacity>> _logEntries;
+        std::atomic<AmUInt32> _droppedEntries;
+        std::recursive_mutex _writeMutex;
     };
 } // namespace SparkyStudios::Audio::Amplitude
 

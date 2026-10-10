@@ -37,6 +37,9 @@ namespace SparkyStudios::Audio::Amplitude
 
     FileLogger::~FileLogger()
     {
+        // Write what the audio thread queued before the file closes.
+        Flush();
+
         if (m_file.is_open())
             m_file.close();
     }
