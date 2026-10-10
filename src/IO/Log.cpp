@@ -12,6 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+#include <atomic>
 #include <cstring>
 #include <string>
 
@@ -19,7 +20,7 @@
 
 namespace SparkyStudios::Audio::Amplitude
 {
-    static Logger* gLogger = nullptr;
+    static std::atomic<Logger*> gLogger{ nullptr };
 
     // Set while the thread is inside a Logger::ScopedAudioThread.
     static thread_local bool gIsAudioThread = false;
@@ -43,52 +44,58 @@ namespace SparkyStudios::Audio::Amplitude
     Logger::~Logger()
     {
         // A destroyed logger must not stay the global one: SetLogger() and the macros would reach it.
-        if (gLogger == this)
-            gLogger = nullptr;
+        Logger* self = this;
+        gLogger.compare_exchange_strong(self, nullptr);
     }
 
     void Logger::SetLogger(Logger* loggerInstance)
     {
         // Whatever the audio thread queued for the logger going away is written now, while it is still alive.
-        if (gLogger != nullptr && gLogger != loggerInstance)
-            gLogger->Flush();
+        Logger* previous = gLogger.exchange(loggerInstance);
 
-        gLogger = loggerInstance;
+        if (previous != nullptr && previous != loggerInstance)
+            previous->Flush();
     }
 
     Logger* Logger::GetLogger()
     {
-        return gLogger;
+        return gLogger.load();
+    }
+
+    void Logger::Emit(eLogMessageLevel level, const char* file, int line, const char* message, AmSize length)
+    {
+        if (Logger* logger = gLogger.load())
+            logger->Write(level, file, line, message, length);
     }
 
     void Logger::Debug(const char* file, int line, const AmString& message)
     {
-        Write(eLogMessageLevel_Debug, file, line, message.data(), message.size());
+        Emit(eLogMessageLevel_Debug, file, line, message.data(), message.size());
     }
 
     void Logger::Info(const char* file, int line, const AmString& message)
     {
-        Write(eLogMessageLevel_Info, file, line, message.data(), message.size());
+        Emit(eLogMessageLevel_Info, file, line, message.data(), message.size());
     }
 
     void Logger::Warning(const char* file, int line, const AmString& message)
     {
-        Write(eLogMessageLevel_Warning, file, line, message.data(), message.size());
+        Emit(eLogMessageLevel_Warning, file, line, message.data(), message.size());
     }
 
     void Logger::Error(const char* file, int line, const AmString& message)
     {
-        Write(eLogMessageLevel_Error, file, line, message.data(), message.size());
+        Emit(eLogMessageLevel_Error, file, line, message.data(), message.size());
     }
 
     void Logger::Critical(const char* file, int line, const AmString& message)
     {
-        Write(eLogMessageLevel_Critical, file, line, message.data(), message.size());
+        Emit(eLogMessageLevel_Critical, file, line, message.data(), message.size());
     }
 
     void Logger::Success(const char* file, int line, const AmString& message)
     {
-        Write(eLogMessageLevel_Success, file, line, message.data(), message.size());
+        Emit(eLogMessageLevel_Success, file, line, message.data(), message.size());
     }
 
     void Logger::Write(eLogMessageLevel level, const char* file, int line, const char* message, AmSize length)
@@ -135,7 +142,8 @@ namespace SparkyStudios::Audio::Amplitude
 
         if (const AmUInt32 dropped = _droppedEntries.exchange(0, std::memory_order_relaxed); dropped > 0)
         {
-            const AmString report = std::to_string(dropped) + " log message(s) logged from the audio thread were dropped: the log queue was full.";
+            const AmString report =
+                std::to_string(dropped) + " log message(s) logged from the audio thread were dropped: the log queue was full.";
             Log(eLogMessageLevel_Warning, __FILE__, __LINE__, report);
         }
     }

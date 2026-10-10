@@ -46,8 +46,10 @@
         constexpr size_t bufferLen = 4096;                                                                                                 \
         char buffer[bufferLen];                                                                                                            \
         const int formatted = std::snprintf(buffer, bufferLen, _message_, ##__VA_ARGS__);                                                  \
-        const size_t length = formatted < 0 ? 0 : (static_cast<size_t>(formatted) < bufferLen ? static_cast<size_t>(formatted) : bufferLen - 1); \
-        amLogger->Write(SparkyStudios::Audio::Amplitude::eLogMessageLevel_##_level_, __FILE__, __LINE__, buffer, length);                  \
+        const size_t length =                                                                                                              \
+            formatted < 0 ? 0 : (static_cast<size_t>(formatted) < bufferLen ? static_cast<size_t>(formatted) : bufferLen - 1);             \
+        SparkyStudios::Audio::Amplitude::Logger::Emit(                                                                                     \
+            SparkyStudios::Audio::Amplitude::eLogMessageLevel_##_level_, __FILE__, __LINE__, buffer, length);                              \
     }                                                                                                                                      \
     (void)0
 
@@ -163,6 +165,9 @@ namespace SparkyStudios::Audio::Amplitude
      * copied into a lock-free queue, and written by the next @c Flush(), which the engine calls once per frame. Messages
      * logged from any other thread are written at once, after the ones still queued, so the order is kept.
      *
+     * @warning The global logger is meant to be installed once during engine setup. It is not meant to be swapped, or
+     * destroyed while the engine runs. The installed logger must be kept alive until the engine is deinitialized.
+     *
      * @ingroup io
      */
     class AM_API_PUBLIC Logger
@@ -210,6 +215,9 @@ namespace SparkyStudios::Audio::Amplitude
          *
          * Messages still queued on the logger being replaced are written first.
          *
+         * Call it before initializing the engine, and again (with the previous logger, or @c nullptr) only after the
+         * engine is deinitialized.
+         *
          * @param[in] loggerInstance The logger instance.
          */
         static void SetLogger(Logger* loggerInstance);
@@ -220,6 +228,20 @@ namespace SparkyStudios::Audio::Amplitude
          * @return The logger instance.
          */
         static Logger* GetLogger();
+
+        /**
+         * @brief Logs a message with the global logger, if there is one.
+         *
+         * This is what the @c amLog macros call: the global logger is read once, so it cannot go away between the test
+         * and the call.
+         *
+         * @param[in] level The level of the log message.
+         * @param[in] file The file where the message was logged.
+         * @param[in] line The line where the message was logged.
+         * @param[in] message The message, not necessarily null-terminated.
+         * @param[in] length The length of @p message.
+         */
+        static void Emit(eLogMessageLevel level, const char* file, int line, const char* message, AmSize length);
 
         /**
          * @brief Logs a debug message.
@@ -276,9 +298,9 @@ namespace SparkyStudios::Audio::Amplitude
         void Success(const char* file, int line, const AmString& message);
 
         /**
-         * @brief Logs a message with the given level.
+         * @brief Logs a message with this logger.
          *
-         * This is what the @c amLog macros call. From an audio thread, the message is queued (and cut to
+         * Prefer the @c amLog macros. From an audio thread, the message is queued (and cut to
          * @c kMaxQueuedMessageLength characters); from any other thread, it is written at once.
          *
          * @param[in] level The level of the log message.
