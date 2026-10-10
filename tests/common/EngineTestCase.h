@@ -182,6 +182,16 @@ namespace SparkyStudios::Audio::Amplitude::Tests
         static constexpr AmUInt64 kMaxWaitFrames = 300;
 
         /**
+         * @brief The frame cap for waits on the audio clock while all the real channels are mixed (about 60 seconds at 60
+         * frames per second).
+         *
+         * With every real channel playing, an unoptimised build mixes several times slower than real time, and a CI
+         * runner or an emulator slower still: the audio clock then advances at a fraction of the wall clock, and
+         * @c kMaxWaitFrames runs out before the clock got where the test needs it.
+         */
+        static constexpr AmUInt64 kMaxMixedWaitFrames = 3600;
+
+        /**
          * @brief Advances engine frames until @p condition holds, or until @p maxFrames frames elapsed.
          *
          * Audio-thread effects (mixer commands such as seeks, cursor write-backs, mixer-side state, sound-end

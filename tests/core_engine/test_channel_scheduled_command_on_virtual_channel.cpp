@@ -26,7 +26,7 @@ namespace SparkyStudios::Audio::Amplitude::Tests
 {
     namespace
     {
-        /// Fills the pool with looping sounds, schedules @p target for the quietest one one second ahead, then lets a louder
+        /// Fills the pool with looping sounds, schedules @p target for the quietest one half a second ahead, then lets a louder
         /// sound take its real channel. Returns the scheduled frame; @p low and @p high keep the channels alive.
         inline AmUInt64 ScheduleThenSteal(
             std::vector<Channel>& low, Channel& high, EventCounter* counter, eChannelPlaybackState target, AmUInt64& scheduled)
@@ -41,7 +41,7 @@ namespace SparkyStudios::Audio::Amplitude::Tests
 
             amEngine->WaitUntilFrames(2);
 
-            scheduled = amEngine->GetAudioClock() + amEngine->GetAudioClockRate();
+            scheduled = amEngine->GetAudioClock() + amEngine->GetAudioClockRate() / 2;
             if (target == eChannelPlaybackState_Stopped)
                 low.back().Stop(0.0, scheduled);
             else
@@ -76,7 +76,8 @@ namespace SparkyStudios::Audio::Amplitude::Tests
                 [&]()
                 {
                     return counter->stopped.load() > 0;
-                }));
+                },
+                kMaxMixedWaitFrames));
             AM_EXPECT(low.back().GetState()->Stopped());
             AM_EXPECT(amEngine->GetAudioClock() < scheduled + amEngine->GetAudioClockRate() / 2);
 
@@ -110,7 +111,8 @@ namespace SparkyStudios::Audio::Amplitude::Tests
                 [&]()
                 {
                     return amEngine->GetAudioClock() > scheduled;
-                }));
+                },
+                kMaxMixedWaitFrames));
             amEngine->WaitUntilFrames(10);
 
             ChannelInternalState* state = low.back().GetState();

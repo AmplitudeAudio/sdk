@@ -62,7 +62,7 @@ namespace SparkyStudios::Audio::Amplitude::Tests
                 {
                     return counter.ended.load() > 0;
                 },
-                1500));
+                kMaxMixedWaitFrames));
 
             amEngine->WaitUntilFrames(10);
             AM_EXPECT_EQ(1, counter.ended.load());
