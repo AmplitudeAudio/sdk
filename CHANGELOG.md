@@ -18,6 +18,19 @@ All notable changes to the Amplitude Audio SDK are recorded here. The format fol
   (`PerChannel`) or handles layouts itself (`Custom`). Source stays compatible; binaries must be recompiled.
   `PipelineInstance::Configure` now returns `bool`: a pipeline whose mixer providers disagree on the channel count, or
   whose last node does not produce the output layout, is refused and the sound does not play.
+  Plugin API:
+  - `NodeInstance::SetPipelineOutputLayout` / `GetPipelineOutputLayout`: `Custom` nodes read the output layout here.
+    A new protected member shifts the `NodeInstance` layout.
+  - `ProcessorNodeInstance::EnableFoldDown` / `DisableFoldDown`.
+  - `OutputNodeInstance::GetProvider`.
+  - New pure virtuals `Sound::GetSpread()` and `Attenuation::GetSpreadFactor()` (source-breaking for implementers).
+
+- Assets with 3, 5, 7 or more than 8 channels no longer play (they were averaged to mono before); the engine logs the
+  reason. Supported: mono, stereo, quad, 5.1, 7.1.
+
+- With no `spread` set, a 3D multichannel sound now plays at its asset's native width (stereo +-30 degrees) instead of
+  as a mono point; uncorrelated stereo content is up to +3 dB louder than before. Set `spread` to 0 to keep the old
+  point-source behaviour.
 
 - `StereoPanning` and `StereoMixer` are now `SpeakerPanning` and `Mixer`. The old names stay registered as aliases,
   so existing pipeline assets load unchanged.
@@ -53,3 +66,9 @@ All notable changes to the Amplitude Audio SDK are recorded here. The format fol
 - A transport fade with the `Linear` fader still ticks faintly at its start and end, about -85 dBFS against the
   -90 dBFS target (fidelity scenarios P2 `default_fade` and P3 `pause_resume`). It does not depend on the resampler;
   it is the corner of the fade curve itself, and is left to a follow-up on fade shapes.
+- On a 5.1 output, a source orbiting across the narrow C-R pair ticks at about -89.9 dBFS at block starts against the
+  -90 dBFS target (fidelity scenario S1), from per-block pan gain targets.
+- `AmbisonicSpeakerDecoder` uses a basic decoder: on irregular layouts (5.1) rear imaging leaks (a front-left source
+  reaches Rs more than Ls).
+- Starting a sound configures its pipeline on the game thread, about 15 ms per voice in a debug build with the default
+  pipeline; instance reuse is planned.
