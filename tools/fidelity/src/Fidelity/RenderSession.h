@@ -66,7 +66,7 @@ namespace SparkyStudios::Audio::Amplitude::Fidelity
     {
         /// Compiled config name, e.g. "fidelity.isolated.b1024.config.amconfig".
         std::string configFile;
-        /// Frames per Mix call; must equal the config's buffer_size / 2.
+        /// Frames per Mix call; must equal the config's buffer_size / its channel count.
         std::uint32_t blockSize = 1024;
         /// When not empty, Mix is called with these frame counts in turn instead of blockSize.
         std::vector<std::uint32_t> blockSequence;

@@ -130,6 +130,14 @@ namespace SparkyStudios::Audio::Amplitude::Fidelity
 
             catalog.push_back(Pink(44100));
             catalog.push_back(Pink(48000));
+
+            // Spread sweep (S2): the two channels must be uncorrelated for the output power to follow the weights.
+            StimulusSpec independent = Pink(48000);
+            independent.name = "pink_stereo_independent_48000";
+            independent.channels = 2;
+            independent.durationSeconds = 4.0;
+            independent.independentChannels = true;
+            catalog.push_back(independent);
             catalog.push_back(Loop(44100, 1050.0)); // 1050 whole cycles a second: seamless at the loop point
             catalog.push_back(Loop(48000, 997.0)); // not 1000 Hz, which lands on the analysis bin centres
             catalog.push_back(Chirp(44100));
@@ -145,6 +153,15 @@ namespace SparkyStudios::Audio::Amplitude::Fidelity
             for (std::size_t i = 0; i < n; ++i)
             {
                 const double white = random.Symmetric();
+                if (spec.independentChannels)
+                {
+                    // Flat spectrum: pink noise is dominated by a few low-frequency cycles per window, so two independent
+                    // pink channels keep a cross-correlation of 0.1 - 0.15 over 100 ms, which the spread sweep would read
+                    // as a power error. White channels average it out (about 0.01).
+                    x[i] = white;
+                    continue;
+                }
+
                 b0 = 0.99886 * b0 + white * 0.0555179;
                 b1 = 0.99332 * b1 + white * 0.0750759;
                 b2 = 0.96900 * b2 + white * 0.1538520;
@@ -244,13 +261,26 @@ namespace SparkyStudios::Audio::Amplitude::Fidelity
         return {};
     }
 
+    Signal RenderStimulusChannel(const StimulusSpec& spec, std::size_t channel)
+    {
+        if (!spec.independentChannels || channel == 0)
+            return RenderStimulusChannel(spec);
+
+        StimulusSpec own = spec;
+        own.seed = spec.seed + channel;
+        return RenderStimulusChannel(own);
+    }
+
     std::vector<float> RenderStimulusInterleaved(const StimulusSpec& spec)
     {
-        const Signal channel = RenderStimulusChannel(spec);
-        std::vector<float> interleaved(channel.size() * spec.channels);
-        for (std::size_t i = 0; i < channel.size(); ++i)
+        std::vector<Signal> channels;
+        for (std::size_t c = 0; c < spec.channels; ++c)
+            channels.push_back(RenderStimulusChannel(spec, c));
+
+        std::vector<float> interleaved(channels[0].size() * spec.channels);
+        for (std::size_t i = 0; i < channels[0].size(); ++i)
             for (std::size_t c = 0; c < spec.channels; ++c)
-                interleaved[i * spec.channels + c] = static_cast<float>(channel[i]);
+                interleaved[i * spec.channels + c] = static_cast<float>(channels[c][i]);
 
         return interleaved;
     }

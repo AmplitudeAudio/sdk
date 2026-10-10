@@ -79,6 +79,22 @@ namespace SparkyStudios::Audio::Amplitude::Fidelity
     [[nodiscard]] std::unique_ptr<Scenario> MakePitchGlideScenario();
 
     /**
+     * @brief P12: static pan law on stereo and 5.1 against the analytic constant-power pan, and F8 (a stereo asset
+     * against a mono one).
+     */
+    [[nodiscard]] std::unique_ptr<Scenario> MakePanLawScenario();
+
+    /**
+     * @brief S1: a tone orbiting the listener on stereo and 5.1 (total power, clicks).
+     */
+    [[nodiscard]] std::unique_ptr<Scenario> MakeOrbitScenario();
+
+    /**
+     * @brief S2: spread swept from 0 to 360 on independent stereo noise (output power against the spread weights).
+     */
+    [[nodiscard]] std::unique_ptr<Scenario> MakeSpreadSweepScenario();
+
+    /**
      * @brief Registers the playback-core scenarios (P1-P11).
      */
     void RegisterPlaybackScenarios(ScenarioRegistry& registry);

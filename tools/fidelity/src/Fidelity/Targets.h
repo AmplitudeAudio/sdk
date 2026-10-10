@@ -49,6 +49,18 @@ namespace SparkyStudios::Audio::Amplitude::Fidelity::Targets
     /// Largest spatial trajectory step relative to the expected per-window change.
     constexpr double kMaxSpatialStepRatio = 1.5;
 
+    /// Per-speaker level of a static panned tone against the analytic constant-power pan.
+    constexpr double kMaxPanLevelErrorDb = 0.1;
+
+    /// Speakers the analytic pan leaves silent, against the tone.
+    constexpr double kMaxPanCrosstalkDbc = -100.0;
+
+    /// Total power of a tone orbiting the listener, against its median.
+    constexpr double kMaxOrbitPowerDeviationDb = 0.2;
+
+    /// Output power of uncorrelated channels against the spread weights.
+    constexpr double kMaxSpreadPowerErrorDb = 0.2;
+
     constexpr double kMaxResumePositionErrorSamples = 1.0;
     constexpr double kMaxLengthErrorSamples = 2.0;
     constexpr double kMaxTailDbfs = -120.0;

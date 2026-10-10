@@ -29,6 +29,7 @@ namespace SparkyStudios::Audio::Amplitude::Fidelity
         constexpr std::uint64_t kFirstSoundId = 910000;
         constexpr std::uint64_t kSoundBankId = 910;
         constexpr std::uint64_t kGlideRtpcId = 9101;
+        constexpr std::uint64_t kSpreadRtpcId = 9102;
 
         bool WriteIfChanged(const std::filesystem::path& path, std::string_view content)
         {
@@ -75,10 +76,12 @@ namespace SparkyStudios::Audio::Amplitude::Fidelity
             std::ostringstream json;
             json << "{\n"
                  << "  \"driver\": \"offline\",\n"
-                 << "  \"output\": { \"frequency\": " << variant.outputRate << ", \"buffer_size\": " << 2 * variant.blockSize
-                 << ", \"format\": \"Float32\" },\n"
+                 << "  \"output\": { \"frequency\": " << variant.outputRate << ", \"buffer_size\": " << variant.channels * variant.blockSize
+                 << ", \"format\": \"Float32\", \"channels\": \""
+                 << (variant.channels == 8 ? "Surround_7_1" : variant.channels == 6 ? "Surround_5_1" : "Stereo") << "\" },\n"
                  << "  \"mixer\": { \"panning_mode\": \"Stereo\", \"active_channels\": 50, \"virtual_channels\": 100, "
-                 << "\"pipeline\": \"fidelity.stereo.ampipeline\" },\n"
+                 << "\"pipeline\": \"" << (variant.channels == 2 ? "fidelity.stereo.ampipeline" : "fidelity.surround.ampipeline")
+                 << "\" },\n"
                  << "  \"game\": {\n"
                  << "    \"listener_fetch_mode\": \"Nearest\", \"track_environments\": false, \"listeners\": 100, \"entities\": 4096,\n"
                  << "    \"environments\": 512, \"rooms\": 1024, \"doppler_factor\": 1.0, \"sound_speed\": 343,\n"
@@ -118,7 +121,43 @@ namespace SparkyStudios::Audio::Amplitude::Fidelity
                  << "\"near_field_gain\":{\"kind\":\"Static\",\"value\":0},\"path\":\"fidelity/loop_sine_48000.wav\"}\n";
             return json.str();
         }
+
+        /// The 997 Hz loop, positional, no attenuation: the pan scenarios place it with a channel location.
+        std::string PositionalSineJson(std::uint64_t id)
+        {
+            std::ostringstream json;
+            json << "{\"id\":" << id << ",\"name\":\"" << kPositionalSineName << "\",\"effect\":0,"
+                 << "\"gain\":{\"kind\":\"Static\",\"value\":1},\"pitch\":{\"kind\":\"Static\",\"value\":1},"
+                 << "\"bus\":1,\"priority\":{\"kind\":\"Static\",\"value\":1},\"spatialization\":1,\"attenuation\":0,\"scope\":0,"
+                 << "\"fader\":\"Linear\",\"stream\":false,\"loop\":{\"enabled\":true,\"loop_count\":0},"
+                 << "\"near_field_gain\":{\"kind\":\"Static\",\"value\":0},\"path\":\"fidelity/loop_sine_48000.wav\"}\n";
+            return json.str();
+        }
+
+        /// Independent stereo pink noise, positional, its spread following the fidelity_spread RTPC (identity over 0 - 360).
+        std::string SpreadSweepJson(std::uint64_t id)
+        {
+            std::ostringstream json;
+            json << "{\"id\":" << id << ",\"name\":\"" << kSpreadSweepSoundName << "\",\"effect\":0,"
+                 << "\"gain\":{\"kind\":\"Static\",\"value\":1},\"pitch\":{\"kind\":\"Static\",\"value\":1},"
+                 << "\"bus\":1,\"priority\":{\"kind\":\"Static\",\"value\":1},\"spatialization\":1,\"attenuation\":0,\"scope\":0,"
+                 << "\"fader\":\"Linear\",\"stream\":false,\"loop\":{\"enabled\":false,\"loop_count\":0},"
+                 << "\"near_field_gain\":{\"kind\":\"Static\",\"value\":0},\"path\":\"fidelity/pink_stereo_independent_48000.wav\","
+                 << "\"spread\":{\"kind\":\"RTPC\",\"value\":0,\"rtpc\":{\"id\":" << kSpreadRtpcId << ",\"curve\":{\"parts\":[{"
+                 << "\"start\":{\"x\":0,\"y\":0},\"end\":{\"x\":1,\"y\":360},\"fader\":\"Linear\"}]}}}}\n";
+            return json.str();
+        }
     } // namespace
+
+    std::vector<ConfigVariant> SurroundConfigVariants()
+    {
+        return { { 1024, 48000, 6 }, { 1024, 48000, 8 } };
+    }
+
+    std::string ConfigKind(const ConfigVariant& variant)
+    {
+        return variant.channels == 8 ? "surround71" : variant.channels == 6 ? "surround51" : "isolated";
+    }
 
     std::vector<ConfigVariant> IsolatedConfigVariants()
     {
@@ -167,15 +206,25 @@ namespace SparkyStudios::Audio::Amplitude::Fidelity
             "\"fade_attack\":{\"duration\":0,\"fader\":\"Linear\"},\"fade_release\":{\"duration\":0,\"fader\":\"Linear\"}}}\n";
         ok = WriteIfChanged(rtpcs / "fidelity_pitch.json", rtpc) && ok;
 
-        for (const ConfigVariant& variant : IsolatedConfigVariants())
+        const std::string spreadRtpc = "{\"id\":" + std::to_string(kSpreadRtpcId) + ",\"name\":\"" + kSpreadRtpcName +
+            "\",\"min_value\":0,\"max_value\":360,\"default_value\":0,\"fade_settings\":{\"enabled\":false,"
+            "\"fade_attack\":{\"duration\":0,\"fader\":\"Linear\"},\"fade_release\":{\"duration\":0,\"fader\":\"Linear\"}}}\n";
+        ok = WriteIfChanged(rtpcs / "fidelity_spread.json", spreadRtpc) && ok;
+
+        std::vector<ConfigVariant> configs = IsolatedConfigVariants();
+        for (const ConfigVariant& variant : SurroundConfigVariants())
+            configs.push_back(variant);
+
+        for (const ConfigVariant& variant : configs)
             ok = WriteIfChanged(
-                     paths.project / ConfigName("isolated", variant.blockSize, variant.outputRate, ".config.json"), ConfigJson(variant)) &&
+                     paths.project / ConfigName(ConfigKind(variant), variant.blockSize, variant.outputRate, ".config.json"),
+                     ConfigJson(variant)) &&
                 ok;
 
         std::ostringstream bank;
         // The engine reads every list of a soundbank without a null check, so the empty ones are written explicitly.
         bank << "{\"id\":" << kSoundBankId << ",\"name\":\"fidelity\",\"switch_containers\":[],\"collections\":[],\"events\":[],"
-             << "\"attenuators\":[],\"switches\":[],\"rtpc\":[\"fidelity_pitch.amrtpc\"],\"effects\":[],\"sounds\":[";
+             << "\"attenuators\":[],\"switches\":[],\"rtpc\":[\"fidelity_pitch.amrtpc\",\"fidelity_spread.amrtpc\"],\"effects\":[],\"sounds\":[";
 
         const std::vector<StimulusSpec>& catalog = StimulusCatalog();
         for (std::size_t i = 0; i < catalog.size(); ++i)
@@ -196,7 +245,10 @@ namespace SparkyStudios::Audio::Amplitude::Fidelity
         // The glide sound carries no catalog spec: its pitch comes from the RTPC at run time.
         ok = WriteIfChanged(sounds / "glide.json", GlideSoundJson(kFirstSoundId + 2 * catalog.size())) && ok;
 
-        bank << ",\"fidelity/glide.amsound\"]}\n";
+        ok = WriteIfChanged(sounds / "positional_sine.json", PositionalSineJson(kFirstSoundId + 2 * catalog.size() + 1)) && ok;
+        ok = WriteIfChanged(sounds / "spread_sweep.json", SpreadSweepJson(kFirstSoundId + 2 * catalog.size() + 2)) && ok;
+
+        bank << ",\"fidelity/glide.amsound\",\"fidelity/positional_sine.amsound\",\"fidelity/spread_sweep.amsound\"]}\n";
         ok = WriteIfChanged(banks / "fidelity.json", bank.str()) && ok;
         return ok;
     }

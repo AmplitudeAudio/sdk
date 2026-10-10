@@ -67,10 +67,23 @@ namespace SparkyStudios::Audio::Amplitude::Tests
             for (const char* list : { "switch_containers", "collections", "events", "attenuators", "switches", "effects" })
                 AM_EXPECT(bank.find("\"" + std::string(list) + "\":[]") != std::string::npos);
 
-            // The glide sound's pitch comes from this RTPC, so the bank's list is not empty.
-            AM_EXPECT(bank.find("\"rtpc\":[\"fidelity_pitch.amrtpc\"]") != std::string::npos);
+            // The glide sound's pitch and the spread sweep's spread come from these RTPCs, so the bank's list is not empty.
+            AM_EXPECT(bank.find("\"rtpc\":[\"fidelity_pitch.amrtpc\",\"fidelity_spread.amrtpc\"]") != std::string::npos);
             AM_EXPECT(bank.find("\"fidelity/glide.amsound\"") != std::string::npos);
             AM_EXPECT(std::filesystem::exists(paths.project / "rtpc" / "fidelity_pitch.json"));
+
+            AM_EXPECT(bank.find("\"fidelity/positional_sine.amsound\"") != std::string::npos);
+            AM_EXPECT(bank.find("\"fidelity/spread_sweep.amsound\"") != std::string::npos);
+            AM_EXPECT(std::filesystem::exists(paths.project / "rtpc" / "fidelity_spread.json"));
+
+            for (const ConfigVariant& variant : SurroundConfigVariants())
+            {
+                const std::string text =
+                    ReadText(paths.project / ConfigName(ConfigKind(variant), variant.blockSize, variant.outputRate, ".config.json"));
+                AM_EXPECT(text.find("\"buffer_size\": " + std::to_string(variant.channels * variant.blockSize)) != std::string::npos);
+                AM_EXPECT(text.find(variant.channels == 8 ? "\"Surround_7_1\"" : "\"Surround_5_1\"") != std::string::npos);
+                AM_EXPECT(text.find("fidelity.surround.ampipeline") != std::string::npos);
+            }
 
             const std::string glide = ReadText(paths.project / "sounds" / "fidelity" / "glide.json");
             AM_EXPECT(glide.find(std::string("\"name\":\"") + kGlideSoundName + "\"") != std::string::npos);

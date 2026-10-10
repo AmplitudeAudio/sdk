@@ -90,6 +90,16 @@ namespace SparkyStudios::Audio::Amplitude::Fidelity
     [[nodiscard]] double AliasLevelDbc(std::span<const double> steady, double sampleRate, const StimulusSpec& spec, double frequencyHz);
 
     /**
+     * @brief Constant-power pairwise panning written from its definition (tangent law, normalised so the pair's
+     * squares sum to 1): the reference the pan scenarios compare against.
+     *
+     * @param azimuth Degrees, positive to the left.
+     * @param speakerAzimuths One azimuth per output channel, in degrees; NaN marks the LFE, which gets 0. A two-speaker
+     * layout folds the rear to the front and clamps to the pair.
+     */
+    [[nodiscard]] std::vector<double> AnalyticPanGains(double azimuth, const std::vector<double>& speakerAzimuths);
+
+    /**
      * @brief Median of the finite values; NaN when there are none.
      */
     [[nodiscard]] double MedianFinite(std::vector<double> values);

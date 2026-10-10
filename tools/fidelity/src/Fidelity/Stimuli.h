@@ -59,6 +59,9 @@ namespace SparkyStudios::Audio::Amplitude::Fidelity
         std::uint64_t seed = 0;
         /// Static pitch the sound plays at; the heard frequency is frequencyHz * pitch.
         double pitch = 1.0;
+        /// Noise only: each channel draws its own noise (seed + channel) instead of carrying the same signal, and the noise is
+        /// white, so that short windows of two channels are uncorrelated.
+        bool independentChannels = false;
     };
 
     [[nodiscard]] const std::vector<StimulusSpec>& StimulusCatalog();
@@ -70,6 +73,10 @@ namespace SparkyStudios::Audio::Amplitude::Fidelity
      * @brief One channel of the stimulus; every channel of a multi-channel stimulus carries the same signal.
      */
     [[nodiscard]] Signal RenderStimulusChannel(const StimulusSpec& spec);
+    /**
+     * @brief Channel @p channel of the stimulus: the same as every other channel unless independentChannels is set.
+     */
+    [[nodiscard]] Signal RenderStimulusChannel(const StimulusSpec& spec, std::size_t channel);
     [[nodiscard]] std::vector<float> RenderStimulusInterleaved(const StimulusSpec& spec);
 
     [[nodiscard]] SweepModel SweepModelOf(const StimulusSpec& spec);

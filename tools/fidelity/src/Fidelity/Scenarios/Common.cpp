@@ -18,6 +18,7 @@
 #include <cmath>
 #include <limits>
 #include <memory>
+#include <vector>
 
 #include <SparkyStudios/Audio/Amplitude/Amplitude.h>
 
@@ -230,5 +231,65 @@ namespace SparkyStudios::Audio::Amplitude::Fidelity
 
         const double slope = (low - high) / (t20 - t80);
         return t20 - low / slope;
+    }
+
+    std::vector<double> AnalyticPanGains(double azimuth, const std::vector<double>& speakerAzimuths)
+    {
+        constexpr double kRadians = 3.14159265358979323846 / 180.0;
+        const auto wrap360 = [](double degrees)
+        {
+            const double wrapped = std::fmod(degrees, 360.0);
+            return wrapped < 0.0 ? wrapped + 360.0 : wrapped;
+        };
+
+        std::vector<double> gains(speakerAzimuths.size(), 0.0);
+        std::vector<std::size_t> ring;
+        for (std::size_t c = 0; c < speakerAzimuths.size(); ++c)
+            if (!std::isnan(speakerAzimuths[c]))
+                ring.push_back(c);
+
+        std::sort(
+            ring.begin(), ring.end(),
+            [&](std::size_t a, std::size_t b)
+            {
+                return speakerAzimuths[a] < speakerAzimuths[b];
+            });
+
+        if (ring.size() == 1)
+        {
+            gains[ring[0]] = 1.0;
+            return gains;
+        }
+
+        double a = std::remainder(azimuth, 360.0);
+        const std::size_t pairs = ring.size() == 2 ? 1 : ring.size();
+        if (ring.size() == 2)
+        {
+            if (a > 90.0)
+                a = 180.0 - a;
+            else if (a < -90.0)
+                a = -180.0 - a;
+
+            a = std::clamp(a, speakerAzimuths[ring[0]], speakerAzimuths[ring[1]]);
+        }
+
+        for (std::size_t j = 0; j < pairs; ++j)
+        {
+            const std::size_t first = ring[j];
+            const std::size_t second = ring[(j + 1) % ring.size()];
+            const double span = wrap360(speakerAzimuths[second] - speakerAzimuths[first]);
+            const double t = wrap360(a - speakerAzimuths[first]);
+            if (t > span)
+                continue;
+
+            const double g1 = std::sin((span - t) * kRadians);
+            const double g2 = std::sin(t * kRadians);
+            const double norm = std::hypot(g1, g2);
+            gains[first] = g1 / norm;
+            gains[second] = g2 / norm;
+            break;
+        }
+
+        return gains;
     }
 } // namespace SparkyStudios::Audio::Amplitude::Fidelity

@@ -29,6 +29,9 @@ namespace SparkyStudios::Audio::Amplitude::Fidelity
         registry.Add(MakeScheduledSpliceScenario());
         registry.Add(MakeScheduledStartScenario());
         registry.Add(MakePitchGlideScenario());
+        registry.Add(MakePanLawScenario());
+        registry.Add(MakeOrbitScenario());
+        registry.Add(MakeSpreadSweepScenario());
     }
 
     void RegisterAllScenarios(ScenarioRegistry& registry)

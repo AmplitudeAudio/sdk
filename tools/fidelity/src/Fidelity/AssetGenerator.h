@@ -30,6 +30,15 @@ namespace SparkyStudios::Audio::Amplitude::Fidelity
     /// Engine name of the looping sine whose pitch the RTPC drives.
     constexpr const char* kGlideSoundName = "fidelity.glide";
 
+    /// Engine name of the 997 Hz loop played as a positional sound (the pan scenarios place it with a location).
+    constexpr const char* kPositionalSineName = "fidelity.positional_sine";
+
+    /// Engine name of the independent stereo pink noise whose spread follows an RTPC.
+    constexpr const char* kSpreadSweepSoundName = "fidelity.spread_sweep";
+
+    /// Engine name of the RTPC the spread sweep's spread curve follows (0 - 360).
+    constexpr const char* kSpreadRtpcName = "fidelity_spread";
+
     /// Engine name of the RTPC the glide sound's pitch curve follows.
     constexpr const char* kGlideRtpcName = "fidelity_pitch";
 
@@ -49,12 +58,24 @@ namespace SparkyStudios::Audio::Amplitude::Fidelity
     {
         std::uint32_t blockSize = 1024;
         std::uint32_t outputRate = 48000;
+        /// Output channels: 2 (stereo), 6 (5.1) or 8 (7.1).
+        std::uint16_t channels = 2;
     };
 
     /**
      * @brief Block sizes 256/1024/4096 at 48 kHz and 44.1 kHz.
      */
     [[nodiscard]] std::vector<ConfigVariant> IsolatedConfigVariants();
+
+    /**
+     * @brief 5.1 and 7.1 at block 1024, 48 kHz.
+     */
+    [[nodiscard]] std::vector<ConfigVariant> SurroundConfigVariants();
+
+    /**
+     * @brief "isolated" for stereo, "surround51", "surround71".
+     */
+    [[nodiscard]] std::string ConfigKind(const ConfigVariant& variant);
 
     /**
      * @brief "fidelity.<kind>.b<blockSize>[.r<rate>]<extension>"; the rate is omitted at 48 kHz.
