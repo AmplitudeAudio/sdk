@@ -335,7 +335,17 @@ namespace SparkyStudios::Audio::Amplitude
         if (!voice->Initialize(settings))
         {
             ampooldelete(eMemoryPoolKind_Amplimix, Voice, voice);
-            amLogError("Cannot start the voice: invalid source or output format.");
+
+            if (const AmUInt16 channels = settings.source.channels; ChannelLayout::FromChannelCount(channels) == nullptr)
+            {
+                amLogError(
+                    "Cannot start the voice: a %u-channel asset has no channel layout (supported: 1, 2, 4, 6 or 8 channels).",
+                    static_cast<AmUInt32>(channels));
+            }
+            else
+            {
+                amLogError("Cannot start the voice: invalid source or output format.");
+            }
             return 0;
         }
 
@@ -413,6 +423,10 @@ namespace SparkyStudios::Audio::Amplitude
 
     AmUInt16 AmplimixImpl::GetOutputChannelCount() const
     {
+        // No driver has called UpdateDevice yet: the output is stereo until the device reports its own layout.
+        if (_device.mRequestedOutputChannels == PlaybackOutputChannels::Default)
+            return 2;
+
         return static_cast<AmUInt16>(_device.mRequestedOutputChannels);
     }
 
@@ -542,7 +556,12 @@ namespace SparkyStudios::Audio::Amplitude
             return false;
 
         if (frames > 0 && !pipeline->Configure(frames, lay->voice->GetChannelCount(), frames, GetOutputChannelCount()))
+        {
+            amLogError(
+                "Cannot attach the instance pipeline: it cannot render a %u-channel sound to %u channels.",
+                static_cast<AmUInt32>(lay->voice->GetChannelCount()), static_cast<AmUInt32>(GetOutputChannelCount()));
             return false;
+        }
 
         if (lay->id != id || lay->slot.load(std::memory_order_acquire) != eLayerSlot::Live)
             return false;

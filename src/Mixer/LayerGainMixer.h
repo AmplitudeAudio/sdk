@@ -24,7 +24,7 @@
 namespace SparkyStudios::Audio::Amplitude
 {
     /**
-     * @brief Maximum number of output channels the mixer renders (mono or stereo).
+     * @brief Maximum number of output channels the mixer renders (7.1).
      */
     constexpr AmUInt16 kAmplimixMaxOutputChannels = 8;
 
