@@ -108,7 +108,11 @@ namespace SparkyStudios::Audio::Amplitude
 
         const auto* layer = GetLayer();
         const auto& room = layer->GetRoom();
-        const AmReal32 roomGain = layer->GetChannel().GetState()->GetRoomGain(room.GetId());
+        const Channel& channel = layer->GetChannel();
+        if (!channel.Valid() || channel.GetState() == nullptr)
+            return nullptr;
+
+        const AmReal32 roomGain = channel.GetState()->GetRoomGain(room.GetId());
 
         if (roomGain < kEpsilon)
             return nullptr;

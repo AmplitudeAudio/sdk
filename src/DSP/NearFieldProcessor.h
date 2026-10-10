@@ -52,6 +52,10 @@ namespace SparkyStudios::Audio::Amplitude
         // so we can write it directly to the output channel.
         AudioBuffer _lowPassBuffer;
 
+        // Scratch copies of the input and output channels, allocated once so Process() never allocates.
+        AudioBuffer _tempIn;
+        AudioBuffer _tempOut;
+
         // Delay used to delay the incoming input mono buffer.
         Delay _delay;
     };
