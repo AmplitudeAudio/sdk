@@ -1,0 +1,93 @@
+// Copyright (c) 2026-present Sparky Studios. All rights reserved.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+#pragma once
+
+#ifndef _AM_IMPLEMENTATION_MIXER_NODES_AMBISONIC_SPEAKER_DECODER_NODE_H
+#define _AM_IMPLEMENTATION_MIXER_NODES_AMBISONIC_SPEAKER_DECODER_NODE_H
+
+#include <array>
+
+#include <SparkyStudios/Audio/Amplitude/Core/Memory.h>
+#include <SparkyStudios/Audio/Amplitude/Mixer/Node.h>
+
+#include <Ambisonics/AmbisonicDecoder.h>
+#include <Ambisonics/BFormat.h>
+
+namespace SparkyStudios::Audio::Amplitude
+{
+    /**
+     * @brief Decodes a sound field onto the pipeline's output speakers.
+     *
+     * The decoder is set up from the output layout's non-LFE speakers, placed in the encoder's convention; the LFE stays
+     * silent.
+     */
+    class AmbisonicSpeakerDecoderNodeInstance final : public ProcessorNodeInstance
+    {
+    public:
+        AmbisonicSpeakerDecoderNodeInstance();
+
+        void Configure(AmUInt64 frameCount, AmUInt16 channelCount) override;
+
+        const AudioBuffer* Process(const AudioBuffer* input) override;
+
+        [[nodiscard]] AmUInt16 GetOutputChannelCount() const override;
+
+    private:
+        AmbisonicDecoder _decoder;
+        BFormat _soundField;
+        AudioBuffer _speakers;
+        std::array<AmUInt16, kAmMaxLayoutChannelCount> _speakerChannel{};
+        AmUInt16 _speakerCount = 0;
+        AmUInt32 _ambisonicOrder = 1;
+    };
+
+    class AmbisonicSpeakerDecoderNode final : public Node
+    {
+    public:
+        AmbisonicSpeakerDecoderNode();
+
+        [[nodiscard]] AM_INLINE std::shared_ptr<NodeInstance> CreateInstance() const override
+        {
+            return ampoolshared(eMemoryPoolKind_Amplimix, AmbisonicSpeakerDecoderNodeInstance);
+        }
+
+        [[nodiscard]] AM_INLINE bool CanConsume() const override
+        {
+            return true;
+        }
+
+        [[nodiscard]] AM_INLINE bool CanProduce() const override
+        {
+            return true;
+        }
+
+        [[nodiscard]] AM_INLINE AmSize GetMaxInputCount() const override
+        {
+            return 1;
+        }
+
+        [[nodiscard]] AM_INLINE AmSize GetMinInputCount() const override
+        {
+            return 1;
+        }
+
+        [[nodiscard]] AM_INLINE eNodeChannelPolicy GetChannelPolicy() const override
+        {
+            return eNodeChannelPolicy_Custom;
+        }
+    };
+} // namespace SparkyStudios::Audio::Amplitude
+
+#endif // _AM_IMPLEMENTATION_MIXER_NODES_AMBISONIC_SPEAKER_DECODER_NODE_H

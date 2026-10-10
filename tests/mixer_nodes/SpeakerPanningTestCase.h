@@ -21,6 +21,7 @@
 #include <Mixer/Nodes/SpeakerPanningNode.h>
 
 #include "NodeTestCase.h"
+#include "PlatformTestCase.h"
 #include "TestUtils.h"
 
 namespace SparkyStudios::Audio::Amplitude::Tests
@@ -104,5 +105,43 @@ namespace SparkyStudios::Audio::Amplitude::Tests
         }
 
         ListenerInternalState _listenerState;
+    };
+    /// A SpeakerPanningTestCase with a running engine (tests.config.amconfig), for nodes that read the engine's panning
+    /// mode when they are constructed.
+    class EngineSpeakerPanningTestCase : public SpeakerPanningTestCase
+    {
+    public:
+        void SetUp() override
+        {
+            SpeakerPanningTestCase::SetUp();
+
+            _fileSystem = CreatePlatformFileSystem();
+            _fileSystem->SetBasePath(GetPlatformAssetsBasePath());
+            amEngine->SetFileSystem(_fileSystem);
+
+            amEngine->StartOpenFileSystem();
+            while (!amEngine->TryFinalizeOpenFileSystem())
+                Thread::Sleep(1);
+
+            amEngine->Initialize(AM_OS_STRING("tests.config.amconfig"));
+        }
+
+        void TearDown() override
+        {
+            if (amEngine->IsInitialized())
+            {
+                amEngine->Deinitialize();
+
+                amEngine->StartCloseFileSystem();
+                while (!amEngine->TryFinalizeCloseFileSystem())
+                    Thread::Sleep(1);
+            }
+
+            _fileSystem.reset();
+            SpeakerPanningTestCase::TearDown();
+        }
+
+    private:
+        std::shared_ptr<FileSystem> _fileSystem;
     };
 } // namespace SparkyStudios::Audio::Amplitude::Tests

@@ -81,6 +81,7 @@
 #include <Mixer/Nodes/AmbisonicBinauralDecoderNode.h>
 #include <Mixer/Nodes/AmbisonicMixerNode.h>
 #include <Mixer/Nodes/AmbisonicPanningNode.h>
+#include <Mixer/Nodes/AmbisonicSpeakerDecoderNode.h>
 #include <Mixer/Nodes/AmbisonicRotatorNode.h>
 #include <Mixer/Nodes/AttenuationNode.h>
 #include <Mixer/Nodes/ClampNode.h>

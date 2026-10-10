@@ -25,7 +25,8 @@ namespace SparkyStudios::Audio::Amplitude
         const ePanningMode mode = Engine::GetInstance()->GetPanningMode();
         _ambisonicOrder = AM_MAX(static_cast<AmUInt32>(mode), 1u);
 
-        _source.Configure(_ambisonicOrder, true);
+        for (auto& source : _sources)
+            source.Configure(_ambisonicOrder, true);
     }
 
     bool AmbisonicPanningNodeInstance::ShouldSkip() const
@@ -43,15 +44,43 @@ namespace SparkyStudios::Audio::Amplitude
     {
         NodeInstance::Configure(frameCount, channelCount);
 
-        _soundField.Configure(_ambisonicOrder, true, static_cast<AmUInt32>(frameCount));
+        const ChannelLayout* source = ChannelLayout::FromChannelCount(channelCount);
+        _sourceLayout = source != nullptr ? source : &ChannelLayout::LargestFitting(channelCount);
 
-        _instanceSoundField.Configure(_ambisonicOrder, true, static_cast<AmUInt32>(frameCount));
-        _instanceScaledInput = AudioBuffer(frameCount, 1);
+        _soundField.Configure(_ambisonicOrder, true, static_cast<AmUInt32>(frameCount));
+        _emitterField.Configure(_ambisonicOrder, true, static_cast<AmUInt32>(frameCount));
+        _scaledInput = AudioBuffer(frameCount, 1);
     }
 
     AmUInt16 AmbisonicPanningNodeInstance::GetOutputChannelCount() const
     {
         return static_cast<AmUInt16>(OrderToComponents(_ambisonicOrder, true));
+    }
+
+    void AmbisonicPanningNodeInstance::EncodeEmitters(
+        const AudioBuffer* input, const AmVector3& location, const AmVector3& listenerPosition, AmReal32 spread, AmReal32 gain)
+    {
+        // World-locked encode: direction from listener to source, in world space; the rotator applies the listener's
+        // orientation afterwards.
+        const SphericalPosition centre = SphericalPosition::ForHRTF(Sub(location, listenerPosition));
+        const SpreadEmitterSet emitters = SpreadEmitters::Compute(*_sourceLayout, 0.0f, 0.0f, spread);
+        const AmUInt64 frames = input->GetFrameCount();
+
+        for (AmUInt16 e = 0; e < emitters.count; ++e)
+        {
+            const SpreadEmitter& emitter = emitters.emitters[e];
+
+            // Offsets turn around the vertical axis. The encoder's azimuth is negative to the left, the emitter's positive.
+            const SphericalPosition position(
+                centre.GetAzimuth() - emitter.azimuth * AM_DegToRad, centre.GetElevation(), centre.GetRadius());
+            _sources[e].SetPosition(position, 0.25f);
+
+            ScalarMultiply(input->GetChannel(emitter.channel).begin(), _scaledInput[0].begin(), gain * emitter.weight, frames);
+
+            _emitterField.Reset();
+            _sources[e].Process(_scaledInput.GetChannel(0), static_cast<AmUInt32>(frames), &_emitterField);
+            _soundField += _emitterField;
+        }
     }
 
     const AudioBuffer* AmbisonicPanningNodeInstance::Process(const AudioBuffer* input)
@@ -61,49 +90,33 @@ namespace SparkyStudios::Audio::Amplitude
         const auto& listener = layer->GetListener();
         const AmVector3 listenerPosition = listener.GetLocation();
 
+        AmReal32 setting = kAmSpreadNative;
+        if (const Sound* sound = layer->GetSound(); sound != nullptr)
+            setting = sound->GetSpread().GetValue();
+
+        AmReal32 spread = SpreadEmitters::Resolve(setting, *_sourceLayout);
+        if (const Attenuation* attenuation = layer->GetAttenuation(); attenuation != nullptr)
+            spread *= attenuation->GetSpreadFactor(Length(Sub(layer->GetLocation(), listenerPosition)));
+
         _soundField.Reset();
 
         if (layer->IsMultiPosition())
         {
-            const AmSize instanceCount = layer->GetInstanceCount();
             AmReal32 totalWeight = 0.0f;
-
-            for (AmSize i = 0; i < instanceCount; ++i)
+            for (AmSize i = 0, count = layer->GetInstanceCount(); i < count; ++i)
             {
-                const AmVector3 location = layer->GetInstanceLocation(i);
                 const AmReal32 weight = layer->GetInstanceWeight(i);
-                const AmReal32 instanceGain = layer->GetInstanceGain(i);
-
-                // World-locked encode: direction from listener to instance, in world space.
-                _source.SetPosition(SphericalPosition::ForHRTF(Sub(location, listenerPosition)), 0.25f);
-
-                // Reset temporary buffers
-                _instanceSoundField.Reset();
-                _instanceScaledInput.Clear();
-
-                // Scale input by weight and gain for this instance
-                const AmReal32 scaleFactor = weight * instanceGain;
-                ScalarMultiply(input->GetChannel(0).begin(), _instanceScaledInput[0].begin(), scaleFactor, input->GetFrameCount());
-
-                _source.Process(_instanceScaledInput.GetChannel(0), input->GetFrameCount(), &_instanceSoundField);
-
-                // Accumulate into main soundfield
-                _soundField += _instanceSoundField;
+                EncodeEmitters(input, layer->GetInstanceLocation(i), listenerPosition, spread, weight * layer->GetInstanceGain(i));
                 totalWeight += weight;
             }
 
             // Normalize by total weight if needed
             if (totalWeight > kEpsilon && totalWeight != 1.0f)
-            {
-                const AmReal32 normFactor = 1.0f / totalWeight;
-                _soundField *= normFactor;
-            }
+                _soundField *= 1.0f / totalWeight;
         }
         else
         {
-            // World-locked encode: direction from listener to source, in world space.
-            _source.SetPosition(SphericalPosition::ForHRTF(Sub(layer->GetLocation(), listenerPosition)), 0.25f);
-            _source.Process(input->GetChannel(0), input->GetFrameCount(), &_soundField);
+            EncodeEmitters(input, layer->GetLocation(), listenerPosition, spread, 1.0f);
         }
 
         return _soundField.GetBuffer();

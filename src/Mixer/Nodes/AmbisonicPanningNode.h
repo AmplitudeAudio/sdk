@@ -19,7 +19,10 @@
 
 #include <SparkyStudios/Audio/Amplitude/Amplitude.h>
 
+#include <array>
+
 #include <Ambisonics/AmbisonicSource.h>
+#include <DSP/SpreadEmitters.h>
 
 namespace SparkyStudios::Audio::Amplitude
 {
@@ -37,11 +40,15 @@ namespace SparkyStudios::Audio::Amplitude
         [[nodiscard]] AmUInt16 GetOutputChannelCount() const override;
 
     private:
-        AmbisonicSource _source;
-        BFormat _soundField;
+        void EncodeEmitters(
+            const AudioBuffer* input, const AmVector3& location, const AmVector3& listenerPosition, AmReal32 spread, AmReal32 gain);
 
-        BFormat _instanceSoundField;
-        AudioBuffer _instanceScaledInput;
+        /// One encoder per emitter, so each keeps its own coefficient interpolation.
+        std::array<AmbisonicSource, kAmMaxLayoutChannelCount> _sources;
+        BFormat _soundField;
+        BFormat _emitterField;
+        AudioBuffer _scaledInput;
+        const ChannelLayout* _sourceLayout = &ChannelLayout::Get(eChannelLayout_Mono);
 
         AmUInt32 _ambisonicOrder = 1;
     };
@@ -74,6 +81,11 @@ namespace SparkyStudios::Audio::Amplitude
         [[nodiscard]] AM_INLINE AmSize GetMinInputCount() const override
         {
             return 1;
+        }
+
+        [[nodiscard]] AM_INLINE eNodeChannelPolicy GetChannelPolicy() const override
+        {
+            return eNodeChannelPolicy_Custom;
         }
     };
 } // namespace SparkyStudios::Audio::Amplitude
