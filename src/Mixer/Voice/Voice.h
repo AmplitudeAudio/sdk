@@ -84,7 +84,7 @@ namespace SparkyStudios::Audio::Amplitude
         /**
          * @brief Queues a command, ordered by frame. Commands are never dropped: when full, the latest-stamped pending
          * command is evicted to make room and @c GetEvictedCommandCount() counts it. An evicted Seek that carried a
-         * stream reports it with a @c StreamDropped event.
+         * stream reports it with a @c StreamDropped event (unless the voice is reading that stream).
          *
          * A streamed voice must always be given a stream with a Seek (even a seek to the current region): a stream-less
          * seek would remap the cursor on the ring the voice is already reading, which may be released. Debug builds
@@ -264,6 +264,8 @@ namespace SparkyStudios::Audio::Amplitude
             const StreamSource* stream = nullptr);
         void PostStreamSwapped(AmUInt64 frame);
         void PostStreamDropped(const StreamSource* stream, AmUInt64 frame);
+        void RetireStream(const StreamSource* stream);
+        void FlushRetired(AmUInt64 frame);
         void CancelCrossfade(AmUInt64 frame);
         void BindDirect(StreamSource* stream, AmUInt64 position, AmUInt64 frame);
         void ArmSeek(AmUInt64 position, AmUInt64 offset, StreamSource* stream);
@@ -300,6 +302,10 @@ namespace SparkyStudios::Audio::Amplitude
         bool _seekOnStart = false; ///< A streamed voice seeks to its start position in StartPlaying().
         StreamSource* _current = nullptr;  ///< The stream the primary slot reads: what StreamSwapped reports.
         StreamSource* _incoming = nullptr; ///< A distinct stream bound to the incoming slot of a crossfade in flight, else null.
+        /// Streams that stopped being read during the operation in progress. FlushRetired() reports each once, minus the
+        /// streams the voice still reads or is adopting.
+        std::array<const StreamSource*, 2 * kMaxPendingCommands + 4> _retired{};
+        AmSize _retiredCount = 0;
         bool _audible = false;
         bool _sourceDone = false;
         AmUInt64 _crossfadeFrames = 1;

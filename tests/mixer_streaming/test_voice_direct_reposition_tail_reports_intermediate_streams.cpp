@@ -48,10 +48,11 @@ namespace SparkyStudios::Audio::Amplitude::Tests
                 }
             });
 
-            const auto dropped = EventsOf(run, eVoiceEventKind::StreamDropped);
-            AM_EXPECT_EQ(static_cast<AmSize>(1), dropped.size());
-            if (dropped.size() == 1)
-                AM_EXPECT(dropped[0].stream == s2.get());
+            // The intermediate seek's stream and the replaced current stream are each dropped once; s3 never is.
+            AM_EXPECT_EQ(static_cast<AmSize>(2), EventsOf(run, eVoiceEventKind::StreamDropped).size());
+            AM_EXPECT_EQ(static_cast<AmSize>(1), CountDropped(run, s1.get()));
+            AM_EXPECT_EQ(static_cast<AmSize>(1), CountDropped(run, s2.get()));
+            AM_EXPECT_EQ(static_cast<AmSize>(0), CountDropped(run, s3.get()));
 
             const auto swapped = EventsOf(run, eVoiceEventKind::StreamSwapped);
             AM_EXPECT_EQ(static_cast<AmSize>(1), swapped.size());
