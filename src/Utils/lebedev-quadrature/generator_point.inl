@@ -13,6 +13,7 @@ void generate_oh_symmetric_points
 
 
 template <>
+inline
 void generate_oh_symmetric_points<OhPointGen::points_6>
 (double a, double b, double c, vec &x, vec &y, vec &z) 
 {
@@ -28,6 +29,7 @@ void generate_oh_symmetric_points<OhPointGen::points_6>
 
 
 template <>
+inline
 void generate_oh_symmetric_points<OhPointGen::points_12>
 (double a, double b, double c, vec &x, vec &y, vec &z)
 {
@@ -43,6 +45,7 @@ void generate_oh_symmetric_points<OhPointGen::points_12>
 
 
 template <>
+inline
 void generate_oh_symmetric_points<OhPointGen::points_8>
 (double a, double b, double c, vec &x, vec &y, vec &z)
 {
@@ -57,6 +60,7 @@ void generate_oh_symmetric_points<OhPointGen::points_8>
 
 
 template <>
+inline
 void generate_oh_symmetric_points<OhPointGen::points_24>
 (double a, double b, double c, vec &x, vec &y, vec &z)
 {
@@ -75,6 +79,7 @@ void generate_oh_symmetric_points<OhPointGen::points_24>
 
 
 template <>
+inline
 void generate_oh_symmetric_points<OhPointGen::points_24_axis>
 (double a, double b, double c, vec &x, vec &y, vec &z)
 {
@@ -93,6 +98,7 @@ void generate_oh_symmetric_points<OhPointGen::points_24_axis>
 
 
 template <>
+inline
 void generate_oh_symmetric_points<OhPointGen::points_48>
 (double a, double b, double c, vec &x, vec &y, vec &z)
 {

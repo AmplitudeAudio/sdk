@@ -96,6 +96,7 @@ std::vector<GeneratorPoint> make_generator_points();
 
 
 template <>
+inline
 std::vector<GeneratorPoint>
 make_generator_points<QuadratureOrder::order_6>()
 {
@@ -107,6 +108,7 @@ make_generator_points<QuadratureOrder::order_6>()
 
 
 template <>
+inline
 std::vector<GeneratorPoint>
 make_generator_points<QuadratureOrder::order_14>()
 {
@@ -119,6 +121,7 @@ make_generator_points<QuadratureOrder::order_14>()
 
 
 template <>
+inline
 std::vector<GeneratorPoint>
 make_generator_points<QuadratureOrder::order_26>()
 {
@@ -132,6 +135,7 @@ make_generator_points<QuadratureOrder::order_26>()
 
 
 template <>
+inline
 std::vector<GeneratorPoint>
 make_generator_points<QuadratureOrder::order_38>()
 {
@@ -145,6 +149,7 @@ make_generator_points<QuadratureOrder::order_38>()
 
 
 template <>
+inline
 std::vector<GeneratorPoint>
 make_generator_points<QuadratureOrder::order_50>()
 {
@@ -159,6 +164,7 @@ make_generator_points<QuadratureOrder::order_50>()
 
 
 template <>
+inline
 std::vector<GeneratorPoint>
 make_generator_points<QuadratureOrder::order_74>()
 {
@@ -174,6 +180,7 @@ make_generator_points<QuadratureOrder::order_74>()
 
 
 template <>
+inline
 std::vector<GeneratorPoint>
 make_generator_points<QuadratureOrder::order_86>()
 {
@@ -189,6 +196,7 @@ make_generator_points<QuadratureOrder::order_86>()
 
 
 template <>
+inline
 std::vector<GeneratorPoint>
 make_generator_points<QuadratureOrder::order_110>()
 {
@@ -205,6 +213,7 @@ make_generator_points<QuadratureOrder::order_110>()
 
 
 template <>
+inline
 std::vector<GeneratorPoint>
 make_generator_points<QuadratureOrder::order_146>()
 {
@@ -222,6 +231,7 @@ make_generator_points<QuadratureOrder::order_146>()
 
 
 template <>
+inline
 std::vector<GeneratorPoint>
 make_generator_points<QuadratureOrder::order_170>()
 {
@@ -240,6 +250,7 @@ make_generator_points<QuadratureOrder::order_170>()
 
 
 template <>
+inline
 std::vector<GeneratorPoint>
 make_generator_points<QuadratureOrder::order_194>()
 {
@@ -259,6 +270,7 @@ make_generator_points<QuadratureOrder::order_194>()
 
 
 template <>
+inline
 std::vector<GeneratorPoint>
 make_generator_points<QuadratureOrder::order_230>()
 {
@@ -279,6 +291,7 @@ make_generator_points<QuadratureOrder::order_230>()
 
 
 template <>
+inline
 std::vector<GeneratorPoint>
 make_generator_points<QuadratureOrder::order_266>()
 {
@@ -300,6 +313,7 @@ make_generator_points<QuadratureOrder::order_266>()
 
 
 template <>
+inline
 std::vector<GeneratorPoint>
 make_generator_points<QuadratureOrder::order_302>()
 {
@@ -322,6 +336,7 @@ make_generator_points<QuadratureOrder::order_302>()
 
 
 template <>
+inline
 std::vector<GeneratorPoint>
 make_generator_points<QuadratureOrder::order_350>()
 {
@@ -345,6 +360,7 @@ make_generator_points<QuadratureOrder::order_350>()
 
 
 template <>
+inline
 std::vector<GeneratorPoint>
 make_generator_points<QuadratureOrder::order_434>()
 {
@@ -371,6 +387,7 @@ make_generator_points<QuadratureOrder::order_434>()
 
 
 template <>
+inline
 std::vector<GeneratorPoint>
 make_generator_points<QuadratureOrder::order_590>()
 {
@@ -401,6 +418,7 @@ make_generator_points<QuadratureOrder::order_590>()
 
 
 template <>
+inline
 std::vector<GeneratorPoint>
 make_generator_points<QuadratureOrder::order_770>()
 {
@@ -436,6 +454,7 @@ make_generator_points<QuadratureOrder::order_770>()
 
 
 template <>
+inline
 std::vector<GeneratorPoint>
 make_generator_points<QuadratureOrder::order_974>()
 {
@@ -476,6 +495,7 @@ make_generator_points<QuadratureOrder::order_974>()
 
 
 template <>
+inline
 std::vector<GeneratorPoint>
 make_generator_points<QuadratureOrder::order_1202>()
 {
@@ -522,6 +542,7 @@ make_generator_points<QuadratureOrder::order_1202>()
 
 
 template <>
+inline
 std::vector<GeneratorPoint>
 make_generator_points<QuadratureOrder::order_1454>()
 {
@@ -574,6 +595,7 @@ make_generator_points<QuadratureOrder::order_1454>()
 
 
 template <>
+inline
 std::vector<GeneratorPoint>
 make_generator_points<QuadratureOrder::order_1730>()
 {
@@ -633,6 +655,7 @@ make_generator_points<QuadratureOrder::order_1730>()
 
 
 template <>
+inline
 std::vector<GeneratorPoint>
 make_generator_points<QuadratureOrder::order_2030>()
 {
@@ -699,6 +722,7 @@ make_generator_points<QuadratureOrder::order_2030>()
 
 
 template <>
+inline
 std::vector<GeneratorPoint>
 make_generator_points<QuadratureOrder::order_2354>()
 {
@@ -773,6 +797,7 @@ make_generator_points<QuadratureOrder::order_2354>()
 
 
 template <>
+inline
 std::vector<GeneratorPoint>
 make_generator_points<QuadratureOrder::order_2702>()
 {
@@ -855,6 +880,7 @@ make_generator_points<QuadratureOrder::order_2702>()
 
 
 template <>
+inline
 std::vector<GeneratorPoint>
 make_generator_points<QuadratureOrder::order_3074>()
 {
@@ -946,6 +972,7 @@ make_generator_points<QuadratureOrder::order_3074>()
 
 
 template <>
+inline
 std::vector<GeneratorPoint>
 make_generator_points<QuadratureOrder::order_3470>()
 {
@@ -1046,6 +1073,7 @@ make_generator_points<QuadratureOrder::order_3470>()
 
 
 template <>
+inline
 std::vector<GeneratorPoint>
 make_generator_points<QuadratureOrder::order_3890>()
 {
@@ -1156,6 +1184,7 @@ make_generator_points<QuadratureOrder::order_3890>()
 
 
 template <>
+inline
 std::vector<GeneratorPoint>
 make_generator_points<QuadratureOrder::order_4334>()
 {
@@ -1276,6 +1305,7 @@ make_generator_points<QuadratureOrder::order_4334>()
 
 
 template <>
+inline
 std::vector<GeneratorPoint>
 make_generator_points<QuadratureOrder::order_4802>()
 {
@@ -1407,6 +1437,7 @@ make_generator_points<QuadratureOrder::order_4802>()
 
 
 template <>
+inline
 std::vector<GeneratorPoint>
 make_generator_points<QuadratureOrder::order_5294>()
 {
@@ -1549,6 +1580,7 @@ make_generator_points<QuadratureOrder::order_5294>()
 
 
 template <>
+inline
 std::vector<GeneratorPoint>
 make_generator_points<QuadratureOrder::order_5810>()
 {
