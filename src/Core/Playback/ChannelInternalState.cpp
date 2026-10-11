@@ -525,7 +525,7 @@ namespace SparkyStudios::Audio::Amplitude
         // A finite loop count keeps ending on time while virtual: count the pass this position falls in and every pass
         // still ahead of it (0 loops forever, the sound's own convention). The passes already done are known while a
         // layer still exists (a demotion), and none are when a sound starts virtual.
-        const AmUInt32 totalLoops = _sound->GetDefinition()->loop()->loop_count();
+        const AmUInt32 totalLoops = _sound->GetLoopCount();
         AmUInt32 loopsRemaining = totalLoops;
         if (totalLoops != 0 && !_realChannel._layers.empty())
         {
@@ -931,8 +931,9 @@ namespace SparkyStudios::Audio::Amplitude
     void ChannelInternalState::OnVoiceFadedOut(AmUInt32 mixerLayerId, eVoiceFadeTarget target, AmUInt64 frame, AmUInt64 sourcePosition)
     {
         // The voice finished the fade of a scheduled command before the frame update noticed the clock got there.
-        if (_hasScheduledCommand && ((target == eVoiceFadeTarget::Stopped && _scheduledTarget == eChannelPlaybackState_Stopped) ||
-                                     (target == eVoiceFadeTarget::Paused && _scheduledTarget == eChannelPlaybackState_Paused)))
+        if (_hasScheduledCommand &&
+            ((target == eVoiceFadeTarget::Stopped && _scheduledTarget == eChannelPlaybackState_Stopped) ||
+             (target == eVoiceFadeTarget::Paused && _scheduledTarget == eChannelPlaybackState_Paused)))
             ActivateScheduledCommand();
 
         switch (target)
@@ -1047,7 +1048,7 @@ namespace SparkyStudios::Audio::Amplitude
             settings.m_nearFieldGain = sound->GetNearFieldGain();
             settings.m_pitch = item.m_pitch;
             settings.m_loop = sound->IsLoop();
-            settings.m_loopCount = sound->GetDefinition()->loop()->loop_count();
+            settings.m_loopCount = sound->GetLoopCount();
             settings.m_effectID = definition->effect();
 
             instances.push_back(ampoolnew(
@@ -1113,6 +1114,12 @@ namespace SparkyStudios::Audio::Amplitude
         // A virtual channel has nothing to attach an instance to: creating one would leak it.
         if (!IsReal())
             return true;
+
+        if (sound == nullptr)
+        {
+            amLogWarning("Collection %s did not select any sound to play.", definition->name()->c_str());
+            return false;
+        }
 
         SoundInstance* instance = sound->CreateInstance();
 

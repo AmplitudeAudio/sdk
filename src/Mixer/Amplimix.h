@@ -17,7 +17,7 @@
 #ifndef _AM_IMPLEMENTATION_MIXER_AMPLIMIX_H
 #define _AM_IMPLEMENTATION_MIXER_AMPLIMIX_H
 
-#include <condition_variable>
+#include <chrono>
 #include <memory>
 #include <mutex>
 #include <vector>
@@ -30,9 +30,9 @@
 #include <SparkyStudios/Audio/Amplitude/Mixer/Pipeline.h>
 
 #include <Core/Playback/ChannelInstanceInternalState.h>
-#include <Mixer/SoundData.h>
 #include <Mixer/InstancePipelineTable.h>
 #include <Mixer/LayerGainMixer.h>
+#include <Mixer/SoundData.h>
 #include <Mixer/Voice/Voice.h>
 
 #include <Utils/miniaudio/miniaudio_utils.h>
@@ -75,7 +75,7 @@ namespace SparkyStudios::Audio::Amplitude
         AmUInt64 startFrame = kVoiceAsap; ///< Audio-clock frame of the first sample.
         AmUInt64 startPosition = 0; ///< First source frame.
         AmUInt64 startPositionClock = kVoiceAsap; ///< Audio-clock frame at which startPosition would have been heard;
-                                                   ///< the voice advances it to its real start frame.
+                                                  ///< the voice advances it to its real start frame.
         AmTime fadeIn = 0.0; ///< Milliseconds; 0 starts at unity.
         AmString faderName; ///< Transport fade curve; empty is linear.
     };
@@ -452,6 +452,29 @@ namespace SparkyStudios::Audio::Amplitude
         void ActivateLayer(AmUInt32 layerIndex);
         void DeactivateLayer(AmUInt32 layerIndex);
 
+        /**
+         * @brief Waits for the mix in progress, if any, to complete.
+         *
+         * Callable from any thread except the audio thread. The audio thread never takes a lock or signals for this: it only clears an
+         * atomic flag with release ordering at the end of @c Mix(), and this method polls that flag with acquire loads, sleeping briefly
+         * between polls.
+         *
+         * @param[in] timeout The longest time to wait before giving up.
+         *
+         * @return @c true if no mix was in progress when returning, @c false if the wait timed out.
+         */
+        bool Wait(std::chrono::milliseconds timeout = std::chrono::milliseconds(5000));
+
+#ifdef AM_TESTING
+        /**
+         * @brief Diagnostic hook for tests: forces the "mix in progress" flag that @c Wait() polls.
+         *
+         * Not for use outside tests: the audio thread owns the flag. Setting it while the engine mixes races with it.
+         * The build has no unit-test define to compile this out with, so it stays in every build.
+         */
+        void SetMixInProgressForTesting(bool inProgress);
+#endif
+
     private:
         friend class EngineImpl;
 
@@ -471,7 +494,6 @@ namespace SparkyStudios::Audio::Amplitude
         bool ShouldMix(AmplimixLayerImpl* layer);
         void LockAudioMutex();
         void UnlockAudioMutex();
-        void Wait();
 
         // Cached engine state for the audio thread. Engine::GetInstance() locks a mutex
         // and GetState() copies a shared_ptr; neither may run in the mix callback.
@@ -487,9 +509,9 @@ namespace SparkyStudios::Audio::Amplitude
 
         std::recursive_timed_mutex _audioThreadMutex;
 
+        // Set while Mix() runs, cleared with release ordering when it ends. Written by the audio thread with plain atomic
+        // stores only (no lock, no notification); the game thread polls it from Wait().
         std::atomic<bool> _isMixing{ false };
-        std::mutex _mixCompleteMutex;
-        std::condition_variable _mixCompleteCV;
 
         AmUInt32 _nextId;
         std::atomic<AmReal32> _masterGain{};

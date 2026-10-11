@@ -204,6 +204,11 @@ else
   add_defines("AM_PLUGINS_UNSUPPORTED")
 end
 
+-- Unit test flags
+if has_config("unit_tests") then
+  add_defines("AM_TESTING")
+end
+
 -- Add packages
 add_packages("flatbuffers", "xsimd", "eigen", "miniaudio", "lz4")
 

@@ -230,14 +230,18 @@ namespace SparkyStudios::Audio::Amplitude
         /**
          * @brief Waits until the next frame is ready.
          *
-         * @note This method blocks the current thread until the next frame is ready.
+         * @note This method blocks the current thread until the next frame is ready. It returns early when the engine
+         * is paused or stopping, because no frame is produced in those states. It must not be called from the thread
+         * that drives AdvanceFrame().
          */
         virtual void WaitUntilNextFrame() const = 0;
 
         /**
          * @brief Waits until the specified number of frames are ready.
          *
-         * @note This method blocks the current thread until the specified number of frames is ready.
+         * @note This method blocks the current thread until the specified number of frames is ready. It returns early
+         * when the engine is paused or stopping, because no frame is produced in those states. It must not be called
+         * from the thread that drives AdvanceFrame().
          *
          * @param[in] frameCount The number of frames to wait until.
          */

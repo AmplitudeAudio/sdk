@@ -162,6 +162,11 @@ namespace SparkyStudios::Audio::Amplitude
         return _loop;
     }
 
+    AmUInt32 SoundImpl::GetLoopCount() const
+    {
+        return _loopCount;
+    }
+
     void SoundImpl::Load(std::shared_ptr<const FileSystem> loader)
     {
         if (_loaded)

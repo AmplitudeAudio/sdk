@@ -249,6 +249,13 @@ namespace SparkyStudios::Audio::Amplitude
         [[nodiscard]] bool IsLoop() const override;
 
         /**
+         * @brief Gets the number of loops this sound plays.
+         *
+         * @return The loop count, or 0 (loop forever when looping) if the definition has no loop block.
+         */
+        [[nodiscard]] AmUInt32 GetLoopCount() const;
+
+        /**
          * @brief Gets the format of this sound's decoded audio.
          *
          * @return The sound format.

@@ -39,7 +39,8 @@ namespace SparkyStudios::Audio::Amplitude
 
     void SequenceScheduler::Init(const CollectionDefinition* definition)
     {
-        for (size_t i = 0; i < definition->sounds()->size(); ++i)
+        const size_t count = definition->sounds() != nullptr ? definition->sounds()->size() : 0;
+        for (size_t i = 0; i < count; ++i)
         {
             const auto* entry = definition->sounds()->GetAs<SequenceSchedulerCollectionEntry>(i);
             _sounds.push_back(amEngine->GetSoundHandle(entry->sound()));
@@ -49,6 +50,10 @@ namespace SparkyStudios::Audio::Amplitude
     Sound* SequenceScheduler::Select(const std::unordered_set<AmSoundID>& toSkip)
     {
         const auto count = static_cast<AmInt32>(_sounds.size());
+
+        // Nothing to schedule: indexing the list below would read out of bounds.
+        if (count == 0)
+            return nullptr;
 
         if (_nextIndex == count || _nextIndex == -1)
         {

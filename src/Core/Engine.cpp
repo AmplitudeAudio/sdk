@@ -2350,7 +2350,7 @@ namespace SparkyStudios::Audio::Amplitude
 
     Listener EngineImpl::GetListener(AmListenerID id) const
     {
-        if (id == kAmInvalidObjectId || _state->listener_state_free_list.empty())
+        if (id == kAmInvalidObjectId)
             return Listener(nullptr);
 
         const auto findIt = std::ranges::find_if(
@@ -2365,7 +2365,7 @@ namespace SparkyStudios::Audio::Amplitude
 
     void EngineImpl::RemoveListener(AmListenerID id) const
     {
-        if (id == kAmInvalidObjectId || _state->listener_state_free_list.empty())
+        if (id == kAmInvalidObjectId)
             return;
 
         if (const auto findIt = std::ranges::find_if(
@@ -2470,7 +2470,7 @@ namespace SparkyStudios::Audio::Amplitude
 
     Environment EngineImpl::GetEnvironment(AmEnvironmentID id) const
     {
-        if (id == kAmInvalidObjectId || _state->environment_state_free_list.empty())
+        if (id == kAmInvalidObjectId)
             return Environment(nullptr);
 
         const auto findIt = std::ranges::find_if(
@@ -2495,7 +2495,7 @@ namespace SparkyStudios::Audio::Amplitude
 
     void EngineImpl::RemoveEnvironment(AmEnvironmentID id) const
     {
-        if (id == kAmInvalidObjectId || _state->environment_state_free_list.empty())
+        if (id == kAmInvalidObjectId)
             return;
 
         if (const auto findIt = std::ranges::find_if(
@@ -2530,7 +2530,7 @@ namespace SparkyStudios::Audio::Amplitude
 
     Room EngineImpl::GetRoom(AmRoomID id) const
     {
-        if (id == kAmInvalidObjectId || _state->room_state_free_list.empty())
+        if (id == kAmInvalidObjectId)
             return Room(nullptr);
 
         const auto findIt = std::ranges::find_if(
@@ -2555,7 +2555,7 @@ namespace SparkyStudios::Audio::Amplitude
 
     void EngineImpl::RemoveRoom(AmRoomID id) const
     {
-        if (id == kAmInvalidObjectId || _state->room_state_free_list.empty())
+        if (id == kAmInvalidObjectId)
             return;
 
         if (const auto findIt = std::ranges::find_if(
@@ -2888,7 +2888,13 @@ namespace SparkyStudios::Audio::Amplitude
     {
         const AmUInt64 nextFrame = _state->current_frame + frameCount;
         while (_state->current_frame < nextFrame)
+        {
+            // No frame is produced while the engine is paused or stopping: do not wait for one forever.
+            if (_state->paused || _state->stopping)
+                return;
+
             Thread::Sleep(1);
+        }
     }
 
     AmTime EngineImpl::GetTotalTime() const

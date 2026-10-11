@@ -230,11 +230,7 @@ namespace SparkyStudios::Audio::Amplitude
             AmplimixImpl* self;
             ~MixGuard()
             {
-                {
-                    std::lock_guard<std::mutex> lock(self->_mixCompleteMutex);
-                    self->_isMixing.store(false, std::memory_order_release);
-                }
-                self->_mixCompleteCV.notify_all();
+                self->_isMixing.store(false, std::memory_order_release);
             }
         } mixGuard{ this };
 
@@ -381,12 +377,11 @@ namespace SparkyStudios::Audio::Amplitude
 
         // Configured here, on the game thread, with the sound's channels in and the output layout out, so the first
         // Execute() has nothing left to allocate. A graph that cannot render this sound refuses it.
-        if (lay->pipeline != nullptr &&
-            !lay->pipeline->Configure(lay->pipelineFrames, sourceChannels, lay->pipelineFrames, outputChannels))
+        if (lay->pipeline != nullptr && !lay->pipeline->Configure(lay->pipelineFrames, sourceChannels, lay->pipelineFrames, outputChannels))
         {
             amLogError(
-                "Cannot start the voice: the pipeline cannot render a %u-channel sound to %u channels.", static_cast<AmUInt32>(sourceChannels),
-                static_cast<AmUInt32>(outputChannels));
+                "Cannot start the voice: the pipeline cannot render a %u-channel sound to %u channels.",
+                static_cast<AmUInt32>(sourceChannels), static_cast<AmUInt32>(outputChannels));
 
             lay->pipeline = nullptr;
             lay->snd = nullptr;
@@ -1226,20 +1221,30 @@ namespace SparkyStudios::Audio::Amplitude
         _audioThreadMutex.unlock();
     }
 
-    void AmplimixImpl::Wait()
+    bool AmplimixImpl::Wait(const std::chrono::milliseconds timeout)
     {
-        std::unique_lock<std::mutex> lock(_mixCompleteMutex);
-        const auto timeout = std::chrono::milliseconds(5000);
-        if (!_mixCompleteCV.wait_for(
-                lock, timeout,
-                [this]()
-                {
-                    return !_isMixing.load(std::memory_order_acquire);
-                }))
+        const auto deadline = std::chrono::steady_clock::now() + timeout;
+
+        while (_isMixing.load(std::memory_order_acquire))
         {
-            amLogWarning("Amplimix::Wait timed out - forcing continue");
+            if (std::chrono::steady_clock::now() >= deadline)
+            {
+                amLogWarning("Amplimix::Wait timed out - forcing continue");
+                return false;
+            }
+
+            std::this_thread::sleep_for(std::chrono::microseconds(50));
         }
+
+        return true;
     }
+
+#ifdef AM_TESTING
+    void AmplimixImpl::SetMixInProgressForTesting(const bool inProgress)
+    {
+        _isMixing.store(inProgress, std::memory_order_release);
+    }
+#endif
 
     AmplimixLayerImpl::~AmplimixLayerImpl()
     {
