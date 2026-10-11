@@ -26,6 +26,8 @@
 
 namespace SparkyStudios::Audio::Amplitude
 {
+    class StreamSource;
+
     /// Target frame meaning "the first frame of the next block the voice renders".
     constexpr AmUInt64 kVoiceAsap = std::numeric_limits<AmUInt64>::max();
 
@@ -78,6 +80,8 @@ namespace SparkyStudios::Audio::Amplitude
         Started = 0,
         FadedOut,
         Looped,
+        Underrun,      ///< A streamed read ran short; the missing frames were silence.
+        StreamSwapped, ///< A seek finished switching to its pending stream; the previous stream is no longer read.
         Ended,
         Error, ///< Ordered before Finished: the game side must hear it while the layer still exists.
         Finished,
@@ -92,6 +96,7 @@ namespace SparkyStudios::Audio::Amplitude
         AmUInt64 frame = kVoiceAsap;                   ///< Audio-clock frame the command applies at.
         AmTime duration = 0.0;                         ///< Fade duration in milliseconds.
         AmUInt64 position = 0;                         ///< Source frame, for seeks.
+        StreamSource* stream = nullptr;                ///< For seeks: the pending stream to bind. Null for in-memory voices.
     };
 
     struct VoiceEvent

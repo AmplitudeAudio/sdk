@@ -206,6 +206,19 @@ namespace SparkyStudios::Audio::Amplitude
          */
         void PrimeStream(VoiceStreamSlot& slot);
 
+        /**
+         * @brief Binds both slots to @p stream. Game thread, before the voice is activated.
+         */
+        void BindStream(StreamSource* stream);
+
+        /**
+         * @brief Gets the history frames the primary resampler reads ahead of an output: the preroll a stream plan needs.
+         */
+        [[nodiscard]] AmUInt64 GetPrerollFrames() const
+        {
+            return _slots[_primary].stream.GetPrerollFrames();
+        }
+
         VoiceStreamSlot& GetPrimarySlot()
         {
             return _slots[_primary];
@@ -223,6 +236,7 @@ namespace SparkyStudios::Audio::Amplitude
         {
             AmUInt64 offset;
             AmUInt64 position;
+            StreamSource* stream = nullptr;
         };
 
         [[nodiscard]] static AmUInt64 SortKey(const VoiceCommand& command);
@@ -240,7 +254,7 @@ namespace SparkyStudios::Audio::Amplitude
         void FinishFade(AmUInt64 frame);
         void Finish(AmUInt64 frame);
         void Post(eVoiceEventKind kind, AmUInt64 frame, eVoiceFadeTarget target = eVoiceFadeTarget::None, AmUInt32 count = 1);
-        void ArmSeek(AmUInt64 position, AmUInt64 offset);
+        void ArmSeek(AmUInt64 position, AmUInt64 offset, StreamSource* stream);
         ResampleStream::PullReport Prime(VoiceStreamSlot& slot);
         void MergeIncomingReport(const ResampleStream::PullReport& report);
         void RenderPlayRange(AudioBuffer& source, AmUInt64 begin, AmUInt64 end);
@@ -271,6 +285,8 @@ namespace SparkyStudios::Audio::Amplitude
         eVoiceFadeTarget _fadeTarget = eVoiceFadeTarget::None;
         bool _positionPending = false;
         bool _primePending = false;
+        bool _seekOnStart = false; ///< A streamed voice seeks to its start position in StartPlaying().
+        StreamSource* _retiring = nullptr; ///< The stream of the slot being crossfaded out by a seek that bound a new one.
         bool _audible = false;
         bool _sourceDone = false;
         AmUInt64 _crossfadeFrames = 1;

@@ -114,6 +114,14 @@ namespace SparkyStudios::Audio::Amplitude
          */
         [[nodiscard]] AmUInt64 Rewind(AmUInt64 frames) const;
 
+        /**
+         * @brief Gets the stream this reader reads, or null for an in-memory source.
+         */
+        [[nodiscard]] StreamSource* GetStream() const
+        {
+            return _source.stream;
+        }
+
         [[nodiscard]] AmUInt64 GetCursor() const
         {
             return _cursor;
