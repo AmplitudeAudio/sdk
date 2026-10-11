@@ -102,9 +102,13 @@ namespace SparkyStudios::Audio::Amplitude
         _fft.Initialize(_segSize);
         _fftBuffer.Resize(_segSize);
 
-        // Prepare segments
+        // Prepare segments: the history starts silent
         for (AmSize i = 0; i < _segCount; ++i)
-            _segments.push_back(ampoolnew(eMemoryPoolKind_Filtering, SplitComplex, _fftComplexSize));
+        {
+            auto* segment = ampoolnew(eMemoryPoolKind_Filtering, SplitComplex, _fftComplexSize);
+            segment->Clear();
+            _segments.push_back(segment);
+        }
 
         // Prepare IR
         for (AmSize i = 0; i < _segCount; ++i)
@@ -148,8 +152,8 @@ namespace SparkyStudios::Audio::Amplitude
             const AmSize inputBufferPos = _inputBufferFill;
             std::memcpy(_inputBuffer.GetBuffer() + inputBufferPos, input + processed, processing * sizeof(AmAudioSample));
 
-            // Forward FFT
-            CopyAndPad(_fftBuffer, _inputBuffer.GetBuffer(), processing);
+            // Forward FFT over the whole block: the samples buffered by earlier calls are part of it
+            CopyAndPad(_fftBuffer, _inputBuffer.GetBuffer(), _blockSize);
             _fft.Forward(_fftBuffer.GetBuffer(), *_segments[_current]);
 
             // Complex multiplication
@@ -170,7 +174,10 @@ namespace SparkyStudios::Audio::Amplitude
             _fft.Backward(_fftBuffer.GetBuffer(), _conv);
 
             // Add overlap
-            Sum(output + processed, _fftBuffer.GetBuffer() + inputBufferPos, _overlap.GetBuffer() + inputBufferPos, processing);
+            const AmAudioSample* result = _fftBuffer.GetBuffer() + inputBufferPos;
+            const AmAudioSample* overlap = _overlap.GetBuffer() + inputBufferPos;
+            for (AmSize i = 0; i < processing; ++i)
+                output[processed + i] = result[i] + overlap[i];
 
             // Input buffer full => Next block
             _inputBufferFill += processing;
