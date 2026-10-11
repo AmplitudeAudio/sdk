@@ -47,7 +47,7 @@ namespace SparkyStudios::Audio::Amplitude::Tests
             channel.EnableInstancing(eChannelInstanceMode_Separate);
 
             // Every decode takes a while: the instance's prefill is still pending when it is removed.
-            RecordingState::Get().SetDelay(250);
+            RecordingState::Get().SetDelay(1000);
 
             ChannelInstance instance = channel.AddInstance({ 5.0f, 0.0f, 0.0f });
             AM_EXPECT(FramesUntil(
