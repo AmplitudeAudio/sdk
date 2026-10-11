@@ -83,7 +83,8 @@ namespace SparkyStudios::Audio::Amplitude::Tests
         {
             AmbisonicSource source;
             source.Configure(order, true);
-            source.SetPosition(SphericalPosition(static_cast<AmReal32>(-azimuth * AM_DegToRad), static_cast<AmReal32>(elevation * AM_DegToRad), 1.0f));
+            source.SetPosition(
+                SphericalPosition(static_cast<AmReal32>(-azimuth * AM_DegToRad), static_cast<AmReal32>(elevation * AM_DegToRad), 1.0f));
 
             std::vector<AmReal64> y(OrderToComponents(order, true));
             for (AmUInt32 c = 0; c < y.size(); ++c)
@@ -93,7 +94,8 @@ namespace SparkyStudios::Audio::Amplitude::Tests
 
         /// Speaker gains for a direction: the matrix, its columns weighted per degree by @p weights.
         static std::vector<AmReal64> Decode(
-            const SpeakerDecodingMatrix& m, const ChannelLayout& layout, const std::vector<AmReal64>& y, const std::vector<AmReal64>& weights)
+            const SpeakerDecodingMatrix& m, const ChannelLayout& layout, const std::vector<AmReal64>& y,
+            const std::vector<AmReal64>& weights)
         {
             std::vector<AmReal64> g(layout.GetChannelCount(), 0.0);
             for (AmUInt16 s = 0; s < layout.GetChannelCount(); ++s)

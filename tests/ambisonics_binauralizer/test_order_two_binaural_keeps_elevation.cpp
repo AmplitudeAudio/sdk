@@ -39,6 +39,8 @@ namespace SparkyStudios::Audio::Amplitude::Tests
             AmbisonicDecoder decoder;
             AM_EXPECT(decoder.Configure(2, true, eSpeakersPreset_DodecahedronFaces));
             AM_EXPECT(decoder.GetSpeakerCount() == 20);
+            if (decoder.GetSpeakerCount() != 20)
+                return;
 
             constexpr AmReal32 expected[20][2] = { { -69.1f, 90.0f },  { -69.1f, -90.0f }, { -35.3f, 45.0f },  { -35.3f, 135.0f },
                                                    { -35.3f, -45.0f }, { -35.3f, -135.0f }, { -20.9f, 180.0f }, { -20.9f, 0.0f },

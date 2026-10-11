@@ -13,6 +13,7 @@
 // limitations under the License.
 
 #include <cmath>
+#include <mutex>
 
 #include <SparkyStudios/Audio/Amplitude/Amplitude.h>
 
@@ -70,7 +71,8 @@ namespace SparkyStudios::Audio::Amplitude::Tests
                 for (AmUInt64 i = 0; i < frames; ++i)
                 {
                     seed = seed * 1664525u + 1013904223u;
-                    input[c][i] = (static_cast<AmReal32>(seed >> 8) / static_cast<AmReal32>(1u << 24) - 0.5f) / static_cast<AmReal32>(c + 1);
+                    const AmReal32 uniform = static_cast<AmReal32>(seed >> 8) / static_cast<AmReal32>(1u << 24);
+                    input[c][i] = (uniform - 0.5f) / static_cast<AmReal32>(c + 1);
                 }
 
             const AudioBuffer* out = AsProcessor(a)->Process(&input);
@@ -101,9 +103,32 @@ namespace SparkyStudios::Audio::Amplitude::Tests
             }
             AM_EXPECT(maxDiff <= 1e-5f);
 
+            // A W-only input (a tone on the omnidirectional channel) reaches every non-LFE speaker and not the LFE.
+            AudioBuffer wOnly(frames, components);
+            for (AmUInt16 c = 0; c < components; ++c)
+                for (AmUInt64 i = 0; i < frames; ++i)
+                    wOnly[c][i] = c == 0 ? 0.5f * std::sin(0.05f * static_cast<AmReal32>(i)) : 0.0f;
+
+            const AudioBuffer* wOut = AsProcessor(a)->Process(&wOnly);
+            AM_EXPECT(wOut != nullptr);
+            for (AmUInt16 s = 0; wOut != nullptr && s < layout.GetChannelCount(); ++s)
+            {
+                AmReal64 energy = 0.0;
+                for (AmUInt64 i = 0; i < frames; ++i)
+                    energy += static_cast<AmReal64>((*wOut)[s][i]) * (*wOut)[s][i];
+
+                if (layout.IsLfe(s))
+                    AM_EXPECT(energy == 0.0);
+                else
+                    AM_EXPECT(energy > 0.0);
+            }
+
             // The matrix outlives the engine's cache.
             std::weak_ptr<const SpeakerDecodingMatrix> weak = na->GetMatrix();
-            amEngine->GetState()->speaker_decoders.clear();
+            {
+                std::lock_guard<std::mutex> lock(amEngine->GetState()->speaker_decoders_mutex);
+                amEngine->GetState()->speaker_decoders.clear();
+            }
             AM_EXPECT(weak.lock() != nullptr);
 
             // Stereo renders (folded front image) instead of refusing.

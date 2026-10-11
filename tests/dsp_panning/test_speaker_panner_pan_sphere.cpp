@@ -53,7 +53,8 @@ namespace SparkyStudios::Audio::Amplitude::Tests
                 {
                     for (AmInt32 azimuth = -180; azimuth < 180; azimuth += 5)
                     {
-                        const SpeakerGains g = SpeakerPanner::PanSphere(static_cast<AmReal32>(azimuth), static_cast<AmReal32>(elevation), layout);
+                        const SpeakerGains g =
+                            SpeakerPanner::PanSphere(static_cast<AmReal32>(azimuth), static_cast<AmReal32>(elevation), layout);
                         AmReal64 power = 0.0;
                         for (AmUInt16 c = 0; c < layout.GetChannelCount(); ++c)
                         {
