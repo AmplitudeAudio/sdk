@@ -31,6 +31,28 @@ namespace SparkyStudios::Audio::Amplitude::Fidelity
 {
     namespace
     {
+        /// The engine's own frame (Z up, forward +Y), which the ambisonic nodes work in: the fidelity frame of SceneSetup() would
+        /// read as a 90 degree pitch there.
+        TimedAction EngineFrameSceneSetup()
+        {
+            return { 0, "scene", []()
+                     {
+                         const Listener listener = amEngine->AddListener(1);
+                         listener.SetLocation({ 0.0f, 0.0f, 0.0f });
+                         listener.SetOrientation(Orientation({ 0.0f, 1.0f, 0.0f }, { 0.0f, 0.0f, 1.0f }));
+                         amEngine->SetDefaultListener(1);
+                     } };
+        }
+
+        /// Source 10 m away at @p azimuth degrees (positive to the left) on the horizontal plane of the engine frame.
+        AmVector3 EngineFrameLocationAt(double azimuth)
+        {
+            constexpr double kPi = 3.14159265358979323846;
+            constexpr double kDistance = 10.0;
+            const double radians = azimuth * kPi / 180.0;
+            return { static_cast<AmReal32>(-std::sin(radians) * kDistance), static_cast<AmReal32>(std::cos(radians) * kDistance), 0.0f };
+        }
+
         constexpr std::size_t kLfeChannel = 3;
         constexpr std::size_t kLeftSurroundChannel = 4;
         constexpr std::size_t kRightSurroundChannel = 5;
@@ -81,10 +103,11 @@ namespace SparkyStudios::Audio::Amplitude::Fidelity
                 const ActionFactory factory = [hold]()
                 {
                     auto channel = std::make_shared<Channel>();
-                    std::vector<TimedAction> actions{ SceneSetup(),
+                    std::vector<TimedAction> actions{ EngineFrameSceneSetup(),
                                                       { kLeadIn, "play", [channel]()
                                                         {
-                                                            *channel = amEngine->Play(amEngine->GetSoundHandle(kHrtfNoiseName), LocationAt(0.0));
+                                                            *channel = amEngine->Play(
+                                                                amEngine->GetSoundHandle(kHrtfNoiseName), EngineFrameLocationAt(0.0));
                                                         } } };
 
                     for (std::size_t k = 1; k < kSteps; ++k)
@@ -93,7 +116,7 @@ namespace SparkyStudios::Audio::Amplitude::Fidelity
                         actions.push_back({ kLeadIn + hold * k, "move", [channel, angle]()
                                             {
                                                 if (channel->Valid())
-                                                    channel->SetLocation(LocationAt(angle));
+                                                    channel->SetLocation(EngineFrameLocationAt(angle));
                                             } });
                     }
 

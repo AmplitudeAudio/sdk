@@ -143,7 +143,7 @@ namespace SparkyStudios::Audio::Amplitude::Fidelity
             return json.str();
         }
 
-        /// The white noise (pink_48000) loop, HRTF-spatialized, no attenuation: the ambisonic scenarios place it with a location.
+        /// The seeded white noise (white_48000) loop, HRTF-spatialized, no attenuation: the ambisonic scenarios place it with a location.
         std::string HrtfNoiseJson(std::uint64_t id)
         {
             std::ostringstream json;
@@ -151,7 +151,7 @@ namespace SparkyStudios::Audio::Amplitude::Fidelity
                  << "\"gain\":{\"kind\":\"Static\",\"value\":1},\"pitch\":{\"kind\":\"Static\",\"value\":1},"
                  << "\"bus\":1,\"priority\":{\"kind\":\"Static\",\"value\":1},\"spatialization\":3,\"attenuation\":0,\"scope\":0,"
                  << "\"fader\":\"Linear\",\"stream\":false,\"loop\":{\"enabled\":true,\"loop_count\":0},"
-                 << "\"near_field_gain\":{\"kind\":\"Static\",\"value\":0},\"path\":\"fidelity/pink_48000.wav\"}\n";
+                 << "\"near_field_gain\":{\"kind\":\"Static\",\"value\":0},\"path\":\"fidelity/white_48000.wav\"}\n";
             return json.str();
         }
 
@@ -280,6 +280,10 @@ namespace SparkyStudios::Audio::Amplitude::Fidelity
         ok = WriteIfChanged(sounds / "positional_sine.json", PositionalSineJson(kFirstSoundId + 2 * catalog.size() + 1)) && ok;
         ok = WriteIfChanged(sounds / "spread_sweep.json", SpreadSweepJson(kFirstSoundId + 2 * catalog.size() + 2)) && ok;
 
+        const StimulusSpec& white = WhiteNoiseSpec();
+        const std::vector<char> whiteWav =
+            EncodeWavFloat32(white.sampleRate, white.channels, RenderStimulusInterleaved(white));
+        ok = WriteIfChanged(data / (white.name + ".wav"), std::string_view(whiteWav.data(), whiteWav.size())) && ok;
         ok = WriteIfChanged(sounds / "hrtf_noise.json", HrtfNoiseJson(kFirstSoundId + 2 * catalog.size() + 3)) && ok;
 
         bank << ",\"fidelity/glide.amsound\",\"fidelity/positional_sine.amsound\",\"fidelity/spread_sweep.amsound\","

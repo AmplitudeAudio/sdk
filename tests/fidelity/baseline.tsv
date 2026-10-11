@@ -715,8 +715,8 @@ S2|surround51|b1024_f60_j0_r48000|integrity.denormals	0.000000	count	lower	0.000
 S2|surround51|b1024_f60_j0_r48000|integrity.clipped	0.000000	count	lower	0.000000
 S2|surround51|b1024_f60_j0_r48000|integrity.dropouts	0.000000	count	lower	0.000000
 A1|surround51|b1024_f60_j0_r48000|determinism.mismatches	0.000000	count	lower	0.000000
-A1|surround51|b1024_f60_j0_r48000|ambisonic.orbitSpreadDb	2.635685	dB	lower	2.000000
-A1|surround51|b1024_f60_j0_r48000|ambisonic.frontLeftRearLeakDb	-3.678501	dB	lower	-3.000000
+A1|surround51|b1024_f60_j0_r48000|ambisonic.orbitSpreadDb	1.975248	dB	lower	2.000000
+A1|surround51|b1024_f60_j0_r48000|ambisonic.frontLeftRearLeakDb	-6.511324	dB	lower	-3.000000
 A1|surround51|b1024_f60_j0_r48000|ambisonic.lfeDbfs	-200.000000	dBFS	lower	-120.000000
 A1|surround51|b1024_f60_j0_r48000|integrity.nan	0.000000	count	lower	0.000000
 A1|surround51|b1024_f60_j0_r48000|integrity.inf	0.000000	count	lower	0.000000

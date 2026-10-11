@@ -65,6 +65,12 @@ namespace SparkyStudios::Audio::Amplitude::Fidelity
     };
 
     [[nodiscard]] const std::vector<StimulusSpec>& StimulusCatalog();
+    /**
+     * @brief Seeded white noise (mono, 48 kHz, 12 s, the pink stimulus's RMS, no fades) for the looping ambisonic scenario.
+     * Not part of StimulusCatalog(): it only feeds A1, so no other scenario gains rows.
+     */
+    [[nodiscard]] const StimulusSpec& WhiteNoiseSpec();
+
     [[nodiscard]] const StimulusSpec* FindStimulus(std::string_view name);
     [[nodiscard]] std::size_t StimulusFrameCount(const StimulusSpec& spec);
     [[nodiscard]] std::size_t FadeFrames(const StimulusSpec& spec);

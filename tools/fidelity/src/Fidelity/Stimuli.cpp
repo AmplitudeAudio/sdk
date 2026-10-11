@@ -195,6 +195,20 @@ namespace SparkyStudios::Audio::Amplitude::Fidelity
         return catalog;
     }
 
+    const StimulusSpec& WhiteNoiseSpec()
+    {
+        static const StimulusSpec spec = []()
+        {
+            StimulusSpec white = Pink(48000);
+            white.name = "white_48000";
+            white.durationSeconds = 12.0;
+            white.fadeSeconds = 0.0;
+            white.independentChannels = true; // the noise generator's flat-spectrum branch
+            return white;
+        }();
+        return spec;
+    }
+
     const StimulusSpec* FindStimulus(std::string_view name)
     {
         for (const StimulusSpec& spec : StimulusCatalog())

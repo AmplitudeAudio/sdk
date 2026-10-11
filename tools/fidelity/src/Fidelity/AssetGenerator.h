@@ -33,7 +33,7 @@ namespace SparkyStudios::Audio::Amplitude::Fidelity
     /// Engine name of the 997 Hz loop played as a positional sound (the pan scenarios place it with a location).
     constexpr const char* kPositionalSineName = "fidelity.positional_sine";
 
-    /// Engine name of the looping white noise (pink_48000) played with HRTF spatialization: the ambisonic scenarios place it
+    /// Engine name of the looping white noise (white_48000, not in the stimulus catalog) played with HRTF spatialization: the ambisonic scenarios place it
     /// with a location.
     constexpr const char* kHrtfNoiseName = "fidelity.hrtf_noise";
 
