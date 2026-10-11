@@ -94,7 +94,6 @@ namespace SparkyStudios::Audio::Amplitude
             }
         }
 
-
         /**
          * @internal
          * @brief Process-wide cache of immutable FFT plans, keyed by size.
@@ -205,6 +204,9 @@ namespace SparkyStudios::Audio::Amplitude
                     plan->setup = pffft_new_setup(static_cast<int>(n), PFFFT_REAL);
                     return plan;
                 });
+
+            // PFFFT rejects sizes that are not a multiple of 32.
+            assert(_plan->setup != nullptr);
 
             _buffer = static_cast<float*>(pffft_aligned_malloc(_size * sizeof(float)));
             _scratch = static_cast<float*>(pffft_aligned_malloc(_size * sizeof(float)));
