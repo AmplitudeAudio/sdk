@@ -52,9 +52,11 @@ namespace SparkyStudios::Audio::Amplitude
     /**
      * @brief Owns streamed sources and decodes them ahead of their readers on a worker thread.
      *
-     * Threading: Create(), Retire(), CollectRetired(), Start(), Stop() and WakeUp() are game thread only. The worker is
-     * the only producer of the registered sources. A retired source is freed by the game thread, only after the worker
-     * acknowledged it, so the worker never touches freed memory.
+     * Threading: Create(), CollectRetired(), Start(), Stop() and WakeUp() are game thread only. Retire() may be called
+     * from any game-side thread, including while Stop() is joining the worker: the source is then queued and freed
+     * after the join. Retire() must not run concurrently with the destructor. The worker is the only producer of the
+     * registered sources. A retired source is freed only after the worker acknowledged it (or immediately when the
+     * worker is not running and not being joined), so the worker never touches freed memory.
      */
     class StreamingThread
     {
@@ -176,6 +178,7 @@ namespace SparkyStudios::Audio::Amplitude
         StreamingSettings _settings;
         AmThreadHandle _thread = nullptr;
         std::atomic<bool> _running{ false };
+        bool _stopping = false; ///< Set under _mutex while Stop() joins the worker.
 
         std::mutex _mutex;
         std::condition_variable _wake;

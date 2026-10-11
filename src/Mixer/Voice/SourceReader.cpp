@@ -68,9 +68,9 @@ namespace SparkyStudios::Audio::Amplitude
         if (!_source.IsStreamed())
             return;
 
-        if (!_source.stream->IndexOf(_cursor, _ringIndex))
+        if (!_source.stream->IndexOf(_cursor, _ringIndex) || _ringIndex < _source.stream->GetRing().GetReleaseIndex())
         {
-            // The frame is outside the plan: slip to the oldest frame the ring still holds.
+            // The frame is outside the plan, or already released: slip to the oldest frame the ring still holds.
             _ringIndex = _source.stream->GetRing().GetReleaseIndex();
             _cursor = _source.stream->SourceFrameOf(_ringIndex);
         }
