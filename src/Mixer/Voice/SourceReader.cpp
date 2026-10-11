@@ -15,18 +15,13 @@
 #include <algorithm>
 
 #include <Mixer/SoundData.h>
+#include <Mixer/Streaming/StreamSource.h>
 #include <Mixer/Voice/SourceReader.h>
-#include <Sound/Sound.h>
 
 namespace SparkyStudios::Audio::Amplitude
 {
     namespace
     {
-        AmUInt64 DecodeSoundInstance(void* context, AmUInt64 offset, AmUInt64 frames)
-        {
-            return static_cast<SoundInstance*>(context)->GetAudio(offset, frames);
-        }
-
         void ZeroFrames(AudioBuffer& out, AmUInt64 offset, AmUInt64 frames)
         {
             for (AmSize c = 0; c < out.GetChannelCount(); ++c)
@@ -40,17 +35,11 @@ namespace SparkyStudios::Audio::Amplitude
         if (data == nullptr || data->chunk == nullptr)
             return source;
 
-        source.buffer = data->chunk->buffer;
+        // A streamed sound has no whole-sound buffer: the mixer binds its ring through VoiceSource::stream.
+        source.buffer = data->stream ? nullptr : data->chunk->buffer;
         source.length = data->length;
         source.channels = data->format.GetNumChannels();
         source.sampleRate = data->format.GetSampleRate();
-
-        if (data->stream)
-        {
-            source.decode = &DecodeSoundInstance;
-            source.context = data->sound.get();
-            source.decodeCapacity = data->chunk->frames;
-        }
 
         return source;
     }
@@ -64,6 +53,27 @@ namespace SparkyStudios::Audio::Amplitude
         _remainingWraps = !loop ? 0 : loopCount == 0 ? kInfiniteWraps : loopCount - 1;
         _cursor = _start;
         _ended = _end <= _start;
+        _ringIndex = 0;
+        MapCursorToRing();
+    }
+
+    void SourceReader::BindStream(StreamSource* stream)
+    {
+        _source.stream = stream;
+        _ringIndex = 0;
+    }
+
+    void SourceReader::MapCursorToRing()
+    {
+        if (!_source.IsStreamed())
+            return;
+
+        if (!_source.stream->IndexOf(_cursor, _ringIndex))
+        {
+            // The frame is outside the plan: slip to the oldest frame the ring still holds.
+            _ringIndex = _source.stream->GetRing().GetReleaseIndex();
+            _cursor = _source.stream->SourceFrameOf(_ringIndex);
+        }
     }
 
     AmUInt64 SourceReader::Read(AudioBuffer& out, AmUInt64 offset, AmUInt64 frames, SourceReadReport& report)
@@ -111,11 +121,20 @@ namespace SparkyStudios::Audio::Amplitude
 
             if (got < wanted)
             {
-                // A stream that runs dry before its known end is treated as the end.
-                report.starved = true;
-                _ended = true;
-                report.ended = true;
-                report.endOffset = written;
+                const StreamRing& ring = _source.stream->GetRing();
+                if (ring.IsFailed() || ring.GetEndIndex() <= _ringIndex)
+                {
+                    // A failed stream, or one that ended before the region end, ends the source here.
+                    _ended = true;
+                    report.ended = true;
+                    report.endOffset = written;
+                    continue;
+                }
+
+                // Underrun: the rest of this read is silence and the cursor holds, so nothing is skipped.
+                report.underrun = true;
+                ZeroFrames(out, offset + written, frames - written);
+                break;
             }
         }
 
@@ -126,6 +145,7 @@ namespace SparkyStudios::Audio::Amplitude
     {
         _ended = _end <= _start;
         _cursor = _ended ? _start : AM_CLAMP(frame, _start, _end - 1);
+        MapCursorToRing();
     }
 
     AmUInt64 SourceReader::Rewind(AmUInt64 frames) const
@@ -150,18 +170,16 @@ namespace SparkyStudios::Audio::Amplitude
             return frames;
         }
 
-        AmUInt64 copied = 0;
-        while (copied < frames)
-        {
-            const AmUInt64 wanted = AM_MIN(frames - copied, _source.decodeCapacity);
-            const AmUInt64 got = _source.decode(_source.context, _cursor + copied, wanted);
-            AudioBuffer::Copy(*_source.buffer, 0, out, offset + copied, got);
-            copied += got;
+        StreamSource* stream = _source.stream;
+        StreamRing& ring = stream->GetRing();
 
-            if (got < wanted)
-                break;
-        }
+        if (stream->IsSynchronous() && ring.GetWriteIndex() < _ringIndex + frames)
+            stream->Fill(_ringIndex + frames - ring.GetWriteIndex());
 
-        return copied;
+        const AmUInt64 got = ring.Read(_ringIndex, out, offset, frames);
+        _ringIndex += got;
+        if (_releasesRing)
+            ring.Release(_ringIndex);
+        return got;
     }
 } // namespace SparkyStudios::Audio::Amplitude
