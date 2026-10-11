@@ -253,10 +253,10 @@ namespace SparkyStudios::Audio::Amplitude
         }
     }
 
-    void StreamingThread::UpdateRates(std::vector<Entry>& entries, AmReal64 elapsedSeconds)
+    bool StreamingThread::UpdateRates(std::vector<Entry>& entries, AmReal64 elapsedSeconds)
     {
         if (elapsedSeconds < kMinRateWindow)
-            return;
+            return false;
 
         for (auto& entry : entries)
         {
@@ -268,22 +268,15 @@ namespace SparkyStudios::Audio::Amplitude
             }
             entry.lastRelease = release;
         }
+
+        return true;
     }
 
-    void StreamingThread::DropRetired(std::vector<Candidate>& candidates)
+    bool StreamingThread::HasPendingWork()
     {
+        // A wake covers new, unsuspended and woken sources; a retire request must be acknowledged promptly.
         std::lock_guard lock(_mutex);
-        if (_retireRequests.empty())
-            return;
-
-        candidates.erase(
-            std::remove_if(
-                candidates.begin(), candidates.end(),
-                [this](const Candidate& c)
-                {
-                    return std::find(_retireRequests.begin(), _retireRequests.end(), c.source) != _retireRequests.end();
-                }),
-            candidates.end());
+        return _wakePending || !_retireRequests.empty();
     }
 
     void StreamingThread::Pass()
@@ -295,6 +288,7 @@ namespace SparkyStudios::Audio::Amplitude
             _acknowledged.insert(_acknowledged.end(), _retireRequests.begin(), _retireRequests.end());
             _retireRequests.clear();
             _active = _sources;
+            _wakePending = false; // everything signalled so far is covered by the snapshot
         }
 
         if (_active.empty())
@@ -305,8 +299,8 @@ namespace SparkyStudios::Audio::Amplitude
 
         // 2. Estimate how long each source's buffered audio lasts.
         const AmInt64 now = NowTicks();
-        UpdateRates(_active, static_cast<AmReal64>(now - _lastPassTicks) / 1.0e6);
-        _lastPassTicks = now;
+        if (UpdateRates(_active, static_cast<AmReal64>(now - _lastPassTicks) / 1.0e6))
+            _lastPassTicks = now;
 
         _candidates.clear();
         AmUInt64 maxCapacity = 0;
@@ -355,7 +349,9 @@ namespace SparkyStudios::Audio::Amplitude
 
             for (auto it = _candidates.begin(); it != _candidates.end();)
             {
-                if (!_running.load(std::memory_order_acquire))
+                // Between two fills: end the pass when new work arrived, the next one re-snapshots and re-prioritizes.
+                // A source retired meanwhile is acknowledged by that next pass, so it is never filled after it.
+                if (!_running.load(std::memory_order_acquire) || HasPendingWork())
                     return;
 
                 const AmUInt64 written = it->source->Fill(_settings.chunkFrames);
@@ -369,9 +365,6 @@ namespace SparkyStudios::Audio::Amplitude
 
             if (!wroteAny)
                 break;
-
-            // 4. A source retired meanwhile is not filled again; it is acknowledged on the next pass, after this one.
-            DropRetired(_candidates);
         }
     }
 } // namespace SparkyStudios::Audio::Amplitude
