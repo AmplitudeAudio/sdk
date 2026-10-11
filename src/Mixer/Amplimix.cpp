@@ -890,6 +890,11 @@ namespace SparkyStudios::Audio::Amplitude
             }
             break;
 
+        case eVoiceEventKind::Underrun:
+        case eVoiceEventKind::StreamSwapped:
+            // Handled with streamed sounds.
+            break;
+
         case eVoiceEventKind::FadedOut:
             if (owned)
                 channelState->OnVoiceFadedOut(event.layer, event.target, event.frame, event.sourcePosition);
