@@ -1161,6 +1161,19 @@ namespace SparkyStudios::Audio::Amplitude
             return false;
         }
 
+        // Create the streaming thread, started once the audio device is open
+        {
+            StreamingSettings streamingSettings;
+            if (const auto* streaming = config->streaming(); streaming != nullptr)
+            {
+                streamingSettings.bufferMs = static_cast<AmTime>(streaming->buffer_ms());
+                streamingSettings.prefillMs = static_cast<AmTime>(streaming->prefill_ms());
+                streamingSettings.synchronous = streaming->synchronous();
+            }
+
+            _state->streaming.reset(ampoolnew(eMemoryPoolKind_Engine, StreamingThread, streamingSettings));
+        }
+
         // Initialize audio mixer
         if (!_state->mixer.Init(config))
         {
@@ -1277,6 +1290,9 @@ namespace SparkyStudios::Audio::Amplitude
         // Warm the shared speaker decoder of the output layout so no voice builds it.
         AM_UNUSED(GetSpeakerDecodingMatrix(AM_MAX(static_cast<AmUInt32>(_state->panning_mode), 1u), GetOutputLayout()));
 
+        // The device is open: start decoding streamed sounds
+        _state->streaming->Start();
+
         // Mark the engine as ready
         _state->paused = false;
         _state->initialized = true;
@@ -1312,8 +1328,15 @@ namespace SparkyStudios::Audio::Amplitude
         if (_audioDriver != nullptr)
             _audioDriver->Close();
 
+        // Stop the streaming thread after the audio thread is gone and before the mixer releases its voices
+        if (_state->streaming != nullptr)
+            _state->streaming->Stop();
+
         if (_state->mixer.IsInitialized())
             _state->mixer.Deinit();
+
+        if (_state->streaming != nullptr)
+            _state->streaming->CollectRetired();
 
         // The audio thread is gone: write what it still had queued.
         AM_NULLSAFE(amLogger)->Flush();
@@ -3053,6 +3076,11 @@ namespace SparkyStudios::Audio::Amplitude
     }
 
 #pragma region Amplimix
+
+    AmUInt64 EngineImpl::GetStreamUnderrunCount() const
+    {
+        return _state != nullptr && _state->streaming != nullptr ? _state->streaming->GetUnderrunCount() : 0;
+    }
 
     AmplimixImpl* EngineImpl::GetMixer() const
     {

@@ -125,6 +125,14 @@ namespace SparkyStudios::Audio::Amplitude
         AmUInt64 Fill(AmUInt64 maxFrames);
 
         /**
+         * @brief Forgets which thread fills this source, so another thread may take over.
+         *
+         * Call it only while no thread is inside Fill(), after handing the producer role over (debug builds only
+         * track the producer thread).
+         */
+        void ReleaseProducer();
+
+        /**
          * @brief Whether nothing more will be written (the end is marked or the stream failed).
          *
          * Any thread.

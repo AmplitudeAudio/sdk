@@ -86,10 +86,21 @@ namespace SparkyStudios::Audio::Amplitude
     void StreamSource::AssertProducerThread()
     {
 #if !defined(NDEBUG)
+        // A synchronous source is filled by its consumer: first by the game thread, then by the rendering thread.
+        if (_synchronous)
+            return;
+
         const AmUInt64 self = static_cast<AmUInt64>(Thread::GetCurrentThreadId());
         AmUInt64 expected = 0;
         if (!_producerThread.compare_exchange_strong(expected, self))
             AMPLITUDE_ASSERT(expected == self);
+#endif
+    }
+
+    void StreamSource::ReleaseProducer()
+    {
+#if !defined(NDEBUG)
+        _producerThread.store(0, std::memory_order_relaxed);
 #endif
     }
 
