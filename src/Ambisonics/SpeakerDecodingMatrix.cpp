@@ -110,8 +110,8 @@ namespace SparkyStudios::Audio::Amplitude
         for (std::size_t k = 0; k < x.size(); ++k)
         {
             // Any orientation of the grid is a valid quadrature: x is front, y left, z up here.
-            const AmReal64 azimuth = std::atan2(y[k], x[k]) * 180.0 / 3.14159265358979323846;
-            const AmReal64 elevation = std::asin(std::clamp(z[k], -1.0, 1.0)) * 180.0 / 3.14159265358979323846;
+            const AmReal64 azimuth = std::atan2(y[k], x[k]) * 180.0 / AM_PI;
+            const AmReal64 elevation = std::asin(std::clamp(z[k], -1.0, 1.0)) * 180.0 / AM_PI;
 
             // The encoder's azimuth is negative to the left.
             source.SetPosition(SphericalPosition(
@@ -142,7 +142,7 @@ namespace SparkyStudios::Audio::Amplitude
 
         // Max-rE above the shelf crossover, scaled to the low band's energy.
         std::vector<AmReal64> maxRe(order + 1);
-        const AmReal64 cosine = std::cos(kMaxReAngleDegrees / (order + 1.51) * 3.14159265358979323846 / 180.0);
+        const AmReal64 cosine = std::cos(kMaxReAngleDegrees / (order + 1.51) * AM_PI / 180.0);
         for (AmUInt32 l = 0; l <= order; ++l)
             maxRe[l] = Legendre(l, cosine);
         const AmReal64 match = 1.0 / std::sqrt(MeanEnergy(rows, grid, gridWeights, maxRe, outputs, channels));
