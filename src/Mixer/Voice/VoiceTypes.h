@@ -83,26 +83,32 @@ namespace SparkyStudios::Audio::Amplitude
         Underrun,      ///< A streamed read ran short; the missing frames were silence.
 
         /**
-         * @brief The stream the voice reads changed. @c VoiceEvent::stream is the voice's current stream AFTER the event.
+         * @brief The voice's current stream changed. @c VoiceEvent::stream is the stream the voice reads after the event.
          *
+         * Informational: it says nothing about any other stream (the replaced one is reported by @c StreamDropped).
          * Posted when a crossfade ends and promotes its incoming stream, or when a seek binds a stream directly (paused,
          * scheduled, source already finished). Never posted when the current stream is unchanged. Coalesced: one slot
-         * per voice that always holds the newest current stream, so a later event supersedes an earlier one. Every
-         * stream the game side issued before the reported one is no longer read (adopted then replaced, or dropped).
-         * The pointer is identity only: the consumer must never dereference it on the audio thread.
+         * per voice that always holds the newest current stream. The pointer is identity only: the consumer must never
+         * dereference it on the audio thread.
+         *
+         * Consumer contract: retire X on @c StreamDropped(X); adopt on @c StreamSwapped(X). Streams still held when the
+         * voice ends (@c Finished) are retired by the consumer when the layer is destroyed.
          */
         StreamSwapped,
 
         /**
-         * @brief A pending stream bound to a seek was never adopted; the voice will not read it. @c VoiceEvent::stream
-         * is that stream (identity only, never dereferenced by the consumer).
+         * @brief @c VoiceEvent::stream is no longer read by this voice and never will be again: the consumer may retire
+         * it (after the usual deferred/ack retire). Identity only, never dereferenced by the consumer.
          *
-         * Posted for a stream seek on an Idle/Finished voice, a seek that drops an incoming stream before the crossfade
-         * midpoint, and a seek evicted from a full command queue. Not coalesced: each dropped stream is published in
-         * order. The mailbox holds @c VoiceEventMailbox::kMaxDroppedStreams of them; on overflow a single event with a
-         * null @c stream is published instead, meaning "an unknown number of dropped streams were lost": the game
-         * side must then retire every stream it issued before the current one (the last @c StreamSwapped identity),
-         * and the rest as soon as a later @c StreamSwapped or the voice's end proves them dead.
+         * Posted for every stream that stops being read: a stream seek that was never adopted (Idle/Finished voice,
+         * evicted from a full command queue, left unconsumed, replaced before the crossfade midpoint, superseded by a
+         * later seek of the same block) and the previous current stream whenever the current one changes. Never posted
+         * for the current stream, for the stream being adopted, or for a stream seek that re-sends one of them. Each
+         * stream is reported once per time it stops being read. Not coalesced: published in order.
+         *
+         * The mailbox holds @c VoiceEventMailbox::kMaxDroppedStreams of them; on overflow a single event with a null
+         * @c stream is published instead, meaning "a drop was lost": the consumer must keep every stream it holds for
+         * this voice alive until the voice ends and must never retire anything because of it.
          */
         StreamDropped,
         Ended,

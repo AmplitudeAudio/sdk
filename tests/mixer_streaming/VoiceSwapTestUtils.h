@@ -69,6 +69,24 @@ namespace SparkyStudios::Audio::Amplitude::Tests
                 events.push_back(event);
         return events;
     }
+
+    inline AmSize CountDropped(const VoiceRun& run, const StreamSource* stream)
+    {
+        AmSize count = 0;
+        for (const auto& event : run.events)
+            if (event.kind == eVoiceEventKind::StreamDropped && event.stream == stream)
+                ++count;
+        return count;
+    }
+
+    inline AmSize CountSwapped(const VoiceRun& run, const StreamSource* stream)
+    {
+        AmSize count = 0;
+        for (const auto& event : run.events)
+            if (event.kind == eVoiceEventKind::StreamSwapped && event.stream == stream)
+                ++count;
+        return count;
+    }
 } // namespace SparkyStudios::Audio::Amplitude::Tests
 
 #endif // _AM_TESTS_MIXER_STREAMING_VOICE_SWAP_TEST_UTILS_H

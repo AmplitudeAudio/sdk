@@ -62,10 +62,11 @@ namespace SparkyStudios::Audio::Amplitude::Tests
             AM_EXPECT(voice.GetState() == eVoiceState::Paused);
 
             // The incoming stream lost the cancelled crossfade: reported dropped, never swapped to.
-            const auto dropped = EventsOf(run, eVoiceEventKind::StreamDropped);
-            AM_EXPECT_EQ(static_cast<AmSize>(1), dropped.size());
-            if (dropped.size() == 1)
-                AM_EXPECT(dropped[0].stream == s2.get());
+            // Then the paused voice moves to s3: s2 (never read) and s1 (replaced) are dropped once each, s3 never.
+            AM_EXPECT_EQ(static_cast<AmSize>(2), EventsOf(run, eVoiceEventKind::StreamDropped).size());
+            AM_EXPECT_EQ(static_cast<AmSize>(1), CountDropped(run, s1.get()));
+            AM_EXPECT_EQ(static_cast<AmSize>(1), CountDropped(run, s2.get()));
+            AM_EXPECT_EQ(static_cast<AmSize>(0), CountDropped(run, s3.get()));
 
             // Only the seek that binds a new stream swaps; the one that kept the current stream does not.
             const auto swapped = EventsOf(run, eVoiceEventKind::StreamSwapped);

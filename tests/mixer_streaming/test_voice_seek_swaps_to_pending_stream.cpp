@@ -19,6 +19,7 @@
 
 #include "../mixer_voice/VoiceTestUtils.h"
 #include "DSPTestCase.h"
+#include "VoiceSwapTestUtils.h"
 #include "StreamTestDecoder.h"
 #include "TestRegistry.h"
 
@@ -82,7 +83,12 @@ namespace SparkyStudios::Audio::Amplitude::Tests
             if (swapped != nullptr)
                 AM_EXPECT(swapped->stream == &b);
 
-            AM_EXPECT(FindEvent(run, eVoiceEventKind::StreamDropped) == nullptr);
+            // The replaced stream is reported dropped, exactly once; the adopted one never is.
+            AM_EXPECT_EQ(static_cast<AmSize>(1), EventsOf(run, eVoiceEventKind::StreamDropped).size());
+            const VoiceEvent* dropped = FindEvent(run, eVoiceEventKind::StreamDropped);
+            if (dropped != nullptr)
+                AM_EXPECT(dropped->stream == &a);
+
             AM_EXPECT(FindEvent(run, eVoiceEventKind::Underrun) == nullptr);
 
             for (AmUInt64 i = 0; i < kSeekFrame; ++i)
