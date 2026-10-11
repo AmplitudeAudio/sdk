@@ -891,6 +891,7 @@ namespace SparkyStudios::Audio::Amplitude
 
         case eVoiceEventKind::Underrun:
         case eVoiceEventKind::StreamSwapped:
+        case eVoiceEventKind::StreamDropped:
             // Handled with streamed sounds.
             break;
 

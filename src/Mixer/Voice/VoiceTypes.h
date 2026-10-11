@@ -81,7 +81,30 @@ namespace SparkyStudios::Audio::Amplitude
         FadedOut,
         Looped,
         Underrun,      ///< A streamed read ran short; the missing frames were silence.
-        StreamSwapped, ///< A seek finished switching to its pending stream; the previous stream is no longer read.
+
+        /**
+         * @brief The stream the voice reads changed. @c VoiceEvent::stream is the voice's current stream AFTER the event.
+         *
+         * Posted when a crossfade ends and promotes its incoming stream, or when a seek binds a stream directly (paused,
+         * scheduled, source already finished). Never posted when the current stream is unchanged. Coalesced: one slot
+         * per voice that always holds the newest current stream, so a later event supersedes an earlier one. Every
+         * stream the game side issued before the reported one is no longer read (adopted then replaced, or dropped).
+         * The pointer is identity only: the consumer must never dereference it on the audio thread.
+         */
+        StreamSwapped,
+
+        /**
+         * @brief A pending stream bound to a seek was never adopted; the voice will not read it. @c VoiceEvent::stream
+         * is that stream (identity only, never dereferenced by the consumer).
+         *
+         * Posted for a stream seek on an Idle/Finished voice, a seek that drops an incoming stream before the crossfade
+         * midpoint, and a seek evicted from a full command queue. Not coalesced: each dropped stream is published in
+         * order. The mailbox holds @c VoiceEventMailbox::kMaxDroppedStreams of them; on overflow a single event with a
+         * null @c stream is published instead, meaning "an unknown number of dropped streams were lost": the game
+         * side must then retire every stream it issued before the current one (the last @c StreamSwapped identity),
+         * and the rest as soon as a later @c StreamSwapped or the voice's end proves them dead.
+         */
+        StreamDropped,
         Ended,
         Error, ///< Ordered before Finished: the game side must hear it while the layer still exists.
         Finished,
@@ -108,6 +131,7 @@ namespace SparkyStudios::Audio::Amplitude
         AmUInt64 frame = 0;                            ///< Audio-clock frame the event happened at.
         AmUInt64 sourcePosition = 0;                   ///< Source frame, for FadedOut{Paused, Released}.
         AmUInt32 count = 1;                            ///< Number of loops, for Looped.
+        const StreamSource* stream = nullptr;          ///< For StreamSwapped / StreamDropped: identity only, never dereferenced.
     };
 
     using VoiceCommandQueue = SPSCQueue<VoiceCommand, kVoiceQueueCapacity>;
@@ -123,6 +147,10 @@ namespace SparkyStudios::Audio::Amplitude
 
     /**
      * @brief Events of one voice waiting to be published: at most one per kind, loops coalesced.
+     *
+     * @c StreamDropped is the exception: dropped streams are kept in a fixed list (never coalesced) so none is lost,
+     * with a documented overflow fallback. A later @c StreamSwapped overwrites the pending one, so the slot always
+     * holds the newest current stream, also when the queue was full and the earlier one is still pending.
      *
      * Audio thread only. Never allocates.
      */
@@ -144,6 +172,9 @@ namespace SparkyStudios::Audio::Amplitude
          */
         void Publish(VoiceEventQueue& queue);
 
+        /// Dropped streams kept before falling back to a single null-stream overflow event.
+        static constexpr AmSize kMaxDroppedStreams = 64;
+
         [[nodiscard]] bool IsEmpty() const;
 
         void Clear();
@@ -151,8 +182,16 @@ namespace SparkyStudios::Audio::Amplitude
     private:
         static constexpr AmSize kKinds = static_cast<AmSize>(eVoiceEventKind::Count);
 
+        bool PublishDropped(VoiceEventQueue& queue);
+
         std::array<VoiceEvent, kKinds> _events{};
         std::array<bool, kKinds> _pending{};
+
+        std::array<VoiceEvent, kMaxDroppedStreams> _dropped{};
+        AmSize _droppedHead = 0;
+        AmSize _droppedCount = 0;
+        bool _overflow = false;
+        VoiceEvent _overflowEvent{};
     };
 } // namespace SparkyStudios::Audio::Amplitude
 

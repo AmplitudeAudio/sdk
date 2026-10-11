@@ -21,6 +21,22 @@ namespace SparkyStudios::Audio::Amplitude
         const auto index = static_cast<AmSize>(event.kind);
         AMPLITUDE_ASSERT(index < kKinds);
 
+        if (event.kind == eVoiceEventKind::StreamDropped)
+        {
+            if (_droppedCount < kMaxDroppedStreams)
+            {
+                _dropped[_droppedCount++] = event;
+            }
+            else
+            {
+                _overflow = true;
+                _overflowEvent = event;
+                _overflowEvent.stream = nullptr;
+            }
+
+            return;
+        }
+
         if (_pending[index] && event.kind == eVoiceEventKind::Looped)
         {
             _events[index].count += event.count;
@@ -42,6 +58,14 @@ namespace SparkyStudios::Audio::Amplitude
     {
         for (AmSize index = 0; index < kKinds; ++index)
         {
+            if (index == static_cast<AmSize>(eVoiceEventKind::StreamDropped))
+            {
+                if (!PublishDropped(queue))
+                    return;
+
+                continue;
+            }
+
             if (!_pending[index])
                 continue;
 
@@ -52,8 +76,34 @@ namespace SparkyStudios::Audio::Amplitude
         }
     }
 
+    bool VoiceEventMailbox::PublishDropped(VoiceEventQueue& queue)
+    {
+        while (_droppedHead < _droppedCount)
+        {
+            if (!queue.TryEnqueue(_dropped[_droppedHead]))
+                return false;
+
+            ++_droppedHead;
+        }
+
+        _droppedHead = _droppedCount = 0;
+
+        if (_overflow)
+        {
+            if (!queue.TryEnqueue(_overflowEvent))
+                return false;
+
+            _overflow = false;
+        }
+
+        return true;
+    }
+
     bool VoiceEventMailbox::IsEmpty() const
     {
+        if (_droppedHead < _droppedCount || _overflow)
+            return false;
+
         for (const bool pending : _pending)
             if (pending)
                 return false;
@@ -64,5 +114,7 @@ namespace SparkyStudios::Audio::Amplitude
     void VoiceEventMailbox::Clear()
     {
         _pending.fill(false);
+        _droppedHead = _droppedCount = 0;
+        _overflow = false;
     }
 } // namespace SparkyStudios::Audio::Amplitude

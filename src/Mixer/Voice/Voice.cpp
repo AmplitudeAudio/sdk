@@ -50,7 +50,8 @@ namespace SparkyStudios::Audio::Amplitude
 
         _primary = 0;
         _seekOnStart = settings.source.IsStreamed();
-        _retiring = nullptr;
+        _current = settings.source.stream;
+        _incoming = nullptr;
         _envelope.Initialize(settings.curve, settings.outputRate);
         _envelope.SetGain(settings.fadeIn > 0.0 ? 0.0f : 1.0f);
         _gains = AudioBuffer(settings.maxBlockFrames, 1);
@@ -98,6 +99,8 @@ namespace SparkyStudios::Audio::Amplitude
     {
         _slots[0].reader.BindStream(stream);
         _slots[1].reader.BindStream(stream);
+        _current = stream;
+        _incoming = nullptr;
     }
 
     AmUInt64 Voice::SortKey(const VoiceCommand& command)
@@ -116,6 +119,10 @@ namespace SparkyStudios::Audio::Amplitude
         {
             --count;
             ++_evictedCommands;
+
+            // An evicted stream seek will never be adopted: report its stream so the game side can retire it.
+            if (_commands[count].kind == eVoiceCommandKind::Seek)
+                PostStreamDropped(_commands[count].stream, _blockClock);
         }
 
         AmSize index = count;
@@ -191,6 +198,10 @@ namespace SparkyStudios::Audio::Amplitude
     void Voice::BeginBlock(AmUInt64 blockClock, AmUInt64 frames)
     {
         AMPLITUDE_ASSERT(frames <= _gains.GetFrameCount());
+
+        // A seek left over from a block that never rendered the primary stream is dropped, not leaked.
+        for (AmSize i = 0; i < _seekCount; ++i)
+            PostStreamDropped(_seeks[i].stream, _blockClock);
 
         _blockClock = blockClock;
         _blockFrames = frames;
@@ -333,48 +344,77 @@ namespace SparkyStudios::Audio::Amplitude
             break;
 
         case eVoiceCommandKind::Seek:
+            // A streamed voice reads one ring at a time: a seek must hand it the stream to read next.
+            AMPLITUDE_ASSERT(command.stream != nullptr || !_settings.source.IsStreamed());
+
             if (IsSounding())
             {
                 if (_seekCount < _seeks.size())
                     _seeks[_seekCount++] = { frame - _blockClock, command.position, command.stream };
+                else
+                    PostStreamDropped(command.stream, frame);
 
                 if (_state == eVoiceState::Ending)
                     _state = eVoiceState::Playing;
             }
             else if (_state == eVoiceState::Paused || _state == eVoiceState::Scheduled)
             {
-                // Cancel any crossfade left over from a seek that armed before the voice stopped sounding: promote
-                // the incoming stream first if it had already become dominant (at or past the crossfade's midpoint, as in ArmSeek).
-                if (_crossfadeRemaining > 0)
-                {
-                    if (_crossfadePosition >= _crossfadeFrames / 2)
-                        _primary = 1 - _primary;
-
-                    _crossfadeRemaining = 0;
-
-                    // The stream that lost the cancelled crossfade is no longer read.
-                    if (_retiring != nullptr)
-                        Post(eVoiceEventKind::StreamSwapped, frame);
-
-                    _retiring = nullptr;
-                }
-
-                VoiceStreamSlot& slot = _slots[_primary];
-                if (command.stream != nullptr)
-                {
-                    slot.reader.BindStream(command.stream);
-                    Post(eVoiceEventKind::StreamSwapped, frame);
-                }
-
-                slot.stream.Seek(slot.reader, command.position);
+                // Cancel any crossfade left over from a seek that armed before the voice stopped sounding.
+                CancelCrossfade(frame);
+                BindDirect(command.stream, command.position, frame);
                 _primePending = true;
                 _seekOnStart = false;
 
                 // The explicit position wins over a virtual cursor this voice was resuming from.
                 _settings.startPositionClock = kVoiceAsap;
             }
+            else
+            {
+                // Idle or Finished: the voice cannot seek, so the stream it carried is never adopted.
+                PostStreamDropped(command.stream, frame);
+            }
             break;
         }
+    }
+
+    void Voice::CancelCrossfade(AmUInt64 frame)
+    {
+        if (_crossfadeRemaining == 0)
+            return;
+
+        // Promote the incoming stream first if it had already become dominant (at or past the midpoint, as in ArmSeek).
+        if (_crossfadePosition >= _crossfadeFrames / 2)
+        {
+            _primary = 1 - _primary;
+
+            // The outgoing stream is no longer read; the incoming one is current now.
+            if (_incoming != nullptr)
+            {
+                _current = _incoming;
+                PostStreamSwapped(frame);
+            }
+        }
+        else
+        {
+            // The incoming stream lost: it is never read.
+            PostStreamDropped(_incoming, frame);
+        }
+
+        _incoming = nullptr;
+        _crossfadeRemaining = 0;
+    }
+
+    void Voice::BindDirect(StreamSource* stream, AmUInt64 position, AmUInt64 frame)
+    {
+        VoiceStreamSlot& slot = _slots[_primary];
+        if (stream != nullptr && stream != _current)
+        {
+            slot.reader.BindStream(stream);
+            _current = stream;
+            PostStreamSwapped(frame);
+        }
+
+        slot.stream.Seek(slot.reader, position);
     }
 
     void Voice::StartPlaying(AmUInt64 frame)
@@ -456,9 +496,20 @@ namespace SparkyStudios::Audio::Amplitude
         Post(eVoiceEventKind::Finished, frame);
     }
 
-    void Voice::Post(eVoiceEventKind kind, AmUInt64 frame, eVoiceFadeTarget target, AmUInt32 count)
+    void Voice::Post(eVoiceEventKind kind, AmUInt64 frame, eVoiceFadeTarget target, AmUInt32 count, const StreamSource* stream)
     {
-        _mailbox.Post(VoiceEvent{ _settings.layer, _settings.id, kind, target, frame, 0, count });
+        _mailbox.Post(VoiceEvent{ _settings.layer, _settings.id, kind, target, frame, 0, count, stream });
+    }
+
+    void Voice::PostStreamSwapped(AmUInt64 frame)
+    {
+        Post(eVoiceEventKind::StreamSwapped, frame, eVoiceFadeTarget::None, 1, _current);
+    }
+
+    void Voice::PostStreamDropped(const StreamSource* stream, AmUInt64 frame)
+    {
+        if (stream != nullptr)
+            Post(eVoiceEventKind::StreamDropped, frame, eVoiceFadeTarget::None, 1, stream);
     }
 
     void Voice::RenderPrimary(AudioBuffer& source)
@@ -496,19 +547,28 @@ namespace SparkyStudios::Audio::Amplitude
             }
         }
 
-        // A seek that landed where nothing plays (the source already finished) repositions directly.
-        for (; seek < _seekCount; ++seek)
+        // A seek that landed where nothing plays (the source already finished) repositions directly. Only the last
+        // seek's position matters, and only the last stream seek's stream is adopted: earlier ones are dropped.
+        if (seek < _seekCount)
         {
-            VoiceStreamSlot& slot = _slots[_primary];
-            if (_seeks[seek].stream != nullptr)
+            CancelCrossfade(_blockClock + _seeks[seek].offset);
+
+            StreamSource* stream = nullptr;
+            for (AmSize i = seek; i < _seekCount; ++i)
             {
-                slot.reader.BindStream(_seeks[seek].stream);
-                Post(eVoiceEventKind::StreamSwapped, _blockClock + _seeks[seek].offset);
-                _retiring = nullptr;
+                if (_seeks[i].stream == nullptr)
+                    continue;
+
+                PostStreamDropped(stream, _blockClock + _seeks[i].offset);
+                stream = _seeks[i].stream;
             }
 
-            slot.stream.Seek(slot.reader, _seeks[seek].position);
+            const SeekOp& last = _seeks[_seekCount - 1];
+            BindDirect(stream, last.position, _blockClock + last.offset);
         }
+
+        // Every seek is consumed: BeginBlock() only finds leftovers when a block never rendered the primary stream.
+        _seekCount = 0;
     }
 
     void Voice::RenderPlayRange(AudioBuffer& source, AmUInt64 begin, AmUInt64 end)
@@ -559,10 +619,12 @@ namespace SparkyStudios::Audio::Amplitude
                 _incomingReport = {};
                 HandlePrimaryReport(report, a + n);
 
-                if (_retiring != nullptr)
+                // The incoming stream is current now; the outgoing one is no longer read.
+                if (_incoming != nullptr)
                 {
-                    Post(eVoiceEventKind::StreamSwapped, _blockClock + a + n);
-                    _retiring = nullptr;
+                    _current = _incoming;
+                    _incoming = nullptr;
+                    PostStreamSwapped(_blockClock + a + n);
                 }
             }
 
@@ -594,18 +656,20 @@ namespace SparkyStudios::Audio::Amplitude
             _incomingReport = {};
             HandlePrimaryReport(promoted, offset);
 
-            // The promoted stream is primary: the stream it replaced is no longer read.
-            if (_retiring != nullptr)
+            // The promoted stream is current: the stream it replaced is no longer read.
+            if (_incoming != nullptr)
             {
-                Post(eVoiceEventKind::StreamSwapped, _blockClock + offset);
-                _retiring = nullptr;
+                _current = _incoming;
+                PostStreamSwapped(_blockClock + offset);
             }
         }
-        else if (_crossfadeRemaining > 0 && stream != nullptr && _retiring != nullptr)
+        else if (_crossfadeRemaining > 0)
         {
-            // The incoming stream is dropped before it ever became primary: it is no longer read either.
-            Post(eVoiceEventKind::StreamSwapped, _blockClock + offset);
+            // The incoming stream is replaced before it ever became primary: it is never read.
+            PostStreamDropped(_incoming, _blockClock + offset);
         }
+
+        _incoming = nullptr;
 
         // The seek reopens the source: the outgoing stream plays on for the crossfade.
         _sourceDone = false;
@@ -615,11 +679,7 @@ namespace SparkyStudios::Audio::Amplitude
         if (stream != nullptr)
         {
             to.reader.BindStream(stream);
-            _retiring = _slots[_primary].reader.GetStream();
-        }
-        else
-        {
-            _retiring = nullptr;
+            _incoming = stream != _current ? stream : nullptr;
         }
 
         to.stream.Seek(to.reader, position);
