@@ -152,7 +152,7 @@ namespace SparkyStudios::Audio::Amplitude
             // Beta rotation
             rChannel[i] = _tempSamples[eBFormatChannel_R] * (0.75f * _cos2Beta + 0.25f) + _tempSamples[eBFormatChannel_U] * (0.5f * sqrt3 * AM_SQUARED(_sinBeta)) + _tempSamples[eBFormatChannel_S] * (sqrt3 * _sinBeta * _cosBeta);
             sChannel[i] = _tempSamples[eBFormatChannel_S] * _cos2Beta - _tempSamples[eBFormatChannel_R] * _cosBeta * _sinBeta * sqrt3 + _tempSamples[eBFormatChannel_U] * _cosBeta * _sinBeta;
-            tChannel[i] = _tempSamples[eBFormatChannel_V] * _sinBeta - _tempSamples[eBFormatChannel_T] * _cosBeta;
+            tChannel[i] = _tempSamples[eBFormatChannel_V] * _sinBeta + _tempSamples[eBFormatChannel_T] * _cosBeta;
             uChannel[i] = _tempSamples[eBFormatChannel_U] * (0.25f * _cos2Beta + 0.75f) - _tempSamples[eBFormatChannel_S] * _cosBeta * _sinBeta + _tempSamples[eBFormatChannel_R] * (0.5f * sqrt3 * AM_SQUARED(_sinBeta));
             vChannel[i] = _tempSamples[eBFormatChannel_V] * _cosBeta - _tempSamples[eBFormatChannel_T] * _sinBeta;
 
@@ -198,8 +198,8 @@ namespace SparkyStudios::Audio::Amplitude
             // Beta rotation
             qChannel[i] = 0.125f * _tempSamples[eBFormatChannel_Q] * (5.f + 3.f * _cos2Beta) - sqrt3_2 * _tempSamples[eBFormatChannel_O] * _cosBeta * _sinBeta + 0.25f * sqrt15 * _tempSamples[eBFormatChannel_M] * powf(_sinBeta, 2.0f);
             oChannel[i] = _tempSamples[eBFormatChannel_O] * _cos2Beta - sqrt5_2 * _tempSamples[eBFormatChannel_M] * _cosBeta * _sinBeta + sqrt3_2 * _tempSamples[eBFormatChannel_Q] * _cosBeta * _sinBeta;
-            mChannel[i] = 0.125f * _tempSamples[eBFormatChannel_M] * (3.f + 5.f * _cos2Beta) - sqrt5_2 * _tempSamples[eBFormatChannel_O] * _cosBeta * _sinBeta + 0.25f * sqrt15 * _tempSamples[eBFormatChannel_Q] * powf(_sinBeta, 2.0f);
-            kChannel[i] = 0.25f * _tempSamples[eBFormatChannel_K] * _cosBeta * (-1.f + 15.f * _cos2Beta) + 0.5f * sqrt15 * _tempSamples[eBFormatChannel_N] * _cosBeta * powf(_sinBeta, 2.f) + 0.5f * sqrt5_2 * _tempSamples[eBFormatChannel_P] * powf(_sinBeta, 3.f) + 0.125f * sqrt3_2 * _tempSamples[eBFormatChannel_L] * (_sinBeta + 5.f * _sin3Beta);
+            mChannel[i] = 0.125f * _tempSamples[eBFormatChannel_M] * (3.f + 5.f * _cos2Beta) + sqrt5_2 * _tempSamples[eBFormatChannel_O] * _cosBeta * _sinBeta + 0.25f * sqrt15 * _tempSamples[eBFormatChannel_Q] * powf(_sinBeta, 2.0f);
+            kChannel[i] = 0.125f * _tempSamples[eBFormatChannel_K] * (3.f * _cosBeta + 5.f * _cos3Beta) + 0.5f * sqrt15 * _tempSamples[eBFormatChannel_N] * _cosBeta * powf(_sinBeta, 2.f) + 0.5f * sqrt5_2 * _tempSamples[eBFormatChannel_P] * powf(_sinBeta, 3.f) + 0.125f * sqrt3_2 * _tempSamples[eBFormatChannel_L] * (_sinBeta + 5.f * _sin3Beta);
             lChannel[i] = 0.0625f * _tempSamples[eBFormatChannel_L] * (_cosBeta + 15.f * _cos3Beta) + 0.25f * sqrt5_2 * _tempSamples[eBFormatChannel_N] * (1.f + 3.f * _cos2Beta) * _sinBeta + 0.25f * sqrt15 * _tempSamples[eBFormatChannel_P] * _cosBeta * powf(_sinBeta, 2.f) - 0.125f * sqrt3_2 * _tempSamples[eBFormatChannel_K] * (_sinBeta + 5.f * _sin3Beta);
             nChannel[i] = 0.125f * _tempSamples[eBFormatChannel_N] * (5.f * _cosBeta + 3.f * _cos3Beta) + 0.25f * sqrt3_2 * _tempSamples[eBFormatChannel_P] * (3.f + _cos2Beta) * _sinBeta + 0.5f * sqrt15 * _tempSamples[eBFormatChannel_K] * _cosBeta * powf(_sinBeta, 2.f) + 0.125f * sqrt5_2 * _tempSamples[eBFormatChannel_L] * (_sinBeta - 3.f * _sin3Beta);
             pChannel[i] = 0.0625f * _tempSamples[eBFormatChannel_P] * (15.f * _cosBeta + _cos3Beta) - 0.25f * sqrt3_2 * _tempSamples[eBFormatChannel_N] * (3.f + _cos2Beta) * _sinBeta + 0.25f * sqrt15 * _tempSamples[eBFormatChannel_L] * _cosBeta * powf(_sinBeta, 2.f) - 0.5f * sqrt5_2 * _tempSamples[eBFormatChannel_K] * powf(_sinBeta, 3.f);
