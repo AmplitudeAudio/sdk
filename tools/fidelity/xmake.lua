@@ -67,6 +67,8 @@ if has_config("build_assets") then
 
       os.mkdir(project_dir)
       os.mkdir(assets_dir)
+      os.mkdir(path.join(assets_dir, "data"))
+      os.cp(path.join(os.projectdir(), "assets", "data", "sadie_h12.amir"), path.join(assets_dir, "data", "sadie_h12.amir"))
       os.cp(path.join(source_dir, "**"), project_dir, { rootdir = source_dir })
 
       local tool = path.absolute(project.target("amplitude_fidelity"):targetfile())

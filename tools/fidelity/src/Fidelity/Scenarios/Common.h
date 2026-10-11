@@ -24,6 +24,8 @@
 #include <string>
 #include <vector>
 
+#include <SparkyStudios/Audio/Amplitude/Amplitude.h>
+
 #include <Fidelity/Scenario.h>
 #include <Fidelity/Stimuli.h>
 
@@ -80,6 +82,29 @@ namespace SparkyStudios::Audio::Amplitude::Fidelity
      * @brief Click detection on every channel; events in [begin, end) count.
      */
     void AddClickMetrics(Measurement& out, const Capture& capture, double highPassHz, std::uint64_t begin, std::uint64_t end);
+
+    /**
+     * @brief Listener position for a source at @p azimuth: the engine tests' frame (listener at the origin facing -Z,
+     * +Y up, azimuth positive to the left), 10 m away.
+     */
+    [[nodiscard]] AmVector3 LocationAt(double azimuth);
+
+    /**
+     * @brief The action (at frame 0) that adds the default listener at the origin, facing -Z with +Y up.
+     */
+    [[nodiscard]] TimedAction SceneSetup();
+
+    /**
+     * @brief Mean square of every channel over [begin, end).
+     */
+    [[nodiscard]] std::vector<double> ChannelPowers(const Capture& capture, std::uint64_t begin, std::uint64_t end);
+
+    /**
+     * @brief Integrity of a panned render. NaN, Inf, denormals and clipping are checked per channel, but a channel the
+     * pan leaves silent is not a dropout: dropouts are searched on the sum of the channels' magnitudes, which is zero
+     * only when the whole output is.
+     */
+    void AddPanIntegrityMetrics(Measurement& out, const Capture& capture, std::uint64_t begin, std::uint64_t end);
 
     [[nodiscard]] std::vector<std::string> StimulusNames(std::initializer_list<StimulusKind> kinds);
 

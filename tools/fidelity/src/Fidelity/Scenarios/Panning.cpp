@@ -32,7 +32,6 @@ namespace SparkyStudios::Audio::Amplitude::Fidelity
 {
     namespace
     {
-        constexpr double kPi = 3.14159265358979323846;
         constexpr double kStepSeconds = 1.0 / 60.0;
 
         struct OutputLayout
@@ -60,44 +59,12 @@ namespace SparkyStudios::Audio::Amplitude::Fidelity
             return Layouts()[0];
         }
 
-        /// Same frame as the engine tests: listener at the origin facing -Z, +Y up, azimuth positive to the left.
-        AmVector3 LocationAt(double azimuth)
-        {
-            constexpr double kDistance = 10.0;
-            const double radians = azimuth * kPi / 180.0;
-            return { static_cast<AmReal32>(-std::sin(radians) * kDistance), 0.0f, static_cast<AmReal32>(-std::cos(radians) * kDistance) };
-        }
-
         RenderSettings SettingsFor(const OutputLayout& layout, const GridPoint& point, std::uint64_t duration)
         {
             RenderSettings settings = IsolatedSettings(point, duration);
             ConfigVariant variant{ point.blockSize, point.outputRate, layout.channels };
             settings.configFile = ConfigName(ConfigKind(variant), point.blockSize, point.outputRate, ".config.amconfig");
             return settings;
-        }
-
-        TimedAction SceneSetup()
-        {
-            return { 0, "scene", []()
-                     {
-                         const Listener listener = amEngine->AddListener(1);
-                         listener.SetLocation({ 0.0f, 0.0f, 0.0f });
-                         listener.SetOrientation(Orientation({ 0.0f, 0.0f, -1.0f }, { 0.0f, 1.0f, 0.0f }));
-                         amEngine->SetDefaultListener(1);
-                     } };
-        }
-
-        /// Mean square of every channel over [begin, end).
-        std::vector<double> ChannelPowers(const Capture& capture, std::uint64_t begin, std::uint64_t end)
-        {
-            std::vector<double> powers;
-            for (std::size_t c = 0; c < capture.channels.size(); ++c)
-            {
-                const Signal x = ChannelSignal(capture, c);
-                const double rms = Rms(std::span<const double>(x.data() + begin, end - begin));
-                powers.push_back(rms * rms);
-            }
-            return powers;
         }
 
         bool RequireAnySignal(Measurement& out, const Capture& capture, std::uint64_t begin, std::uint64_t end)
@@ -109,45 +76,6 @@ namespace SparkyStudios::Audio::Amplitude::Fidelity
             out.error = "no signal on any channel";
             out.capture = capture;
             return false;
-        }
-
-        /**
-         * Integrity of a panned render. NaN, Inf, denormals and clipping are checked per channel, but a channel the pan
-         * leaves silent is not a dropout: dropouts are searched on the sum of the channels' magnitudes, which is zero
-         * only when the whole output is.
-         */
-        void AddPanIntegrityMetrics(Measurement& out, const Capture& capture, std::uint64_t begin, std::uint64_t end)
-        {
-            std::vector<float> total;
-            for (const auto& channel : capture.channels)
-            {
-                if (total.empty())
-                    total.assign(channel.size(), 0.0f);
-
-                for (std::size_t i = 0; i < channel.size(); ++i)
-                    total[i] += std::abs(channel[i]);
-            }
-
-            IntegrityOptions options;
-            options.signalBegin = static_cast<std::size_t>(begin);
-            options.signalEnd = static_cast<std::size_t>(end);
-            const IntegrityResult sum = AnalyzeIntegrity(total, options);
-
-            std::size_t nan = 0, inf = 0, denormals = 0, clipped = 0;
-            for (const auto& channel : capture.channels)
-            {
-                const IntegrityResult r = AnalyzeIntegrity(channel, IntegrityOptions{});
-                nan += r.nanCount;
-                inf += r.infCount;
-                denormals += r.denormalCount;
-                clipped += r.clippedCount;
-            }
-
-            out.Add("integrity.nan", static_cast<double>(nan), "count", Better::Lower, Targets::kMaxNanCount);
-            out.Add("integrity.inf", static_cast<double>(inf), "count", Better::Lower, Targets::kMaxInfCount);
-            out.Add("integrity.denormals", static_cast<double>(denormals), "count", Better::Lower, Targets::kMaxDenormalCount);
-            out.Add("integrity.clipped", static_cast<double>(clipped), "count", Better::Lower, Targets::kMaxClippedSamples);
-            out.Add("integrity.dropouts", static_cast<double>(sum.dropoutCount), "count", Better::Lower, Targets::kMaxDropouts);
         }
 
         class PanLawScenario final : public Scenario

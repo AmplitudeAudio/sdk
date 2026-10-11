@@ -95,6 +95,12 @@ namespace SparkyStudios::Audio::Amplitude::Fidelity
     [[nodiscard]] std::unique_ptr<Scenario> MakeSpreadSweepScenario();
 
     /**
+     * @brief A1: white noise orbiting the listener through the ambisonic pipeline on 5.1 (decoded energy spread, front-left
+     * rear leak, LFE silence).
+     */
+    [[nodiscard]] std::unique_ptr<Scenario> MakeAmbisonicOrbitScenario();
+
+    /**
      * @brief Registers the playback-core scenarios (P1-P11).
      */
     void RegisterPlaybackScenarios(ScenarioRegistry& registry);

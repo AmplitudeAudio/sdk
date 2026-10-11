@@ -71,6 +71,14 @@ namespace SparkyStudios::Audio::Amplitude::Fidelity
             return json.str();
         }
 
+        const char* Pipeline(const ConfigVariant& variant)
+        {
+            if (variant.ambisonic)
+                return "fidelity.ambisonic-surround.ampipeline";
+
+            return variant.channels == 2 ? "fidelity.stereo.ampipeline" : "fidelity.surround.ampipeline";
+        }
+
         std::string ConfigJson(const ConfigVariant& variant)
         {
             std::ostringstream json;
@@ -79,9 +87,10 @@ namespace SparkyStudios::Audio::Amplitude::Fidelity
                  << "  \"output\": { \"frequency\": " << variant.outputRate << ", \"buffer_size\": " << variant.channels * variant.blockSize
                  << ", \"format\": \"Float32\", \"channels\": \""
                  << (variant.channels == 8 ? "Surround_7_1" : variant.channels == 6 ? "Surround_5_1" : "Stereo") << "\" },\n"
-                 << "  \"mixer\": { \"panning_mode\": \"Stereo\", \"active_channels\": 50, \"virtual_channels\": 100, "
-                 << "\"pipeline\": \"" << (variant.channels == 2 ? "fidelity.stereo.ampipeline" : "fidelity.surround.ampipeline")
-                 << "\" },\n"
+                 << "  \"mixer\": { \"panning_mode\": \"" << (variant.ambisonic ? "BinauralHighQuality" : "Stereo")
+                 << "\", \"active_channels\": 50, \"virtual_channels\": 100, "
+                 << "\"pipeline\": \"" << Pipeline(variant) << "\" },\n"
+                 << (variant.ambisonic ? "  \"hrtf\": { \"amir_file\": \"data/sadie_h12.amir\", \"hrir_sampling\": \"Bilinear\" },\n" : "")
                  << "  \"game\": {\n"
                  << "    \"listener_fetch_mode\": \"Nearest\", \"track_environments\": false, \"listeners\": 100, \"entities\": 4096,\n"
                  << "    \"environments\": 512, \"rooms\": 1024, \"doppler_factor\": 1.0, \"sound_speed\": 343,\n"
@@ -134,6 +143,18 @@ namespace SparkyStudios::Audio::Amplitude::Fidelity
             return json.str();
         }
 
+        /// The white noise (pink_48000) loop, HRTF-spatialized, no attenuation: the ambisonic scenarios place it with a location.
+        std::string HrtfNoiseJson(std::uint64_t id)
+        {
+            std::ostringstream json;
+            json << "{\"id\":" << id << ",\"name\":\"" << kHrtfNoiseName << "\",\"effect\":0,"
+                 << "\"gain\":{\"kind\":\"Static\",\"value\":1},\"pitch\":{\"kind\":\"Static\",\"value\":1},"
+                 << "\"bus\":1,\"priority\":{\"kind\":\"Static\",\"value\":1},\"spatialization\":3,\"attenuation\":0,\"scope\":0,"
+                 << "\"fader\":\"Linear\",\"stream\":false,\"loop\":{\"enabled\":true,\"loop_count\":0},"
+                 << "\"near_field_gain\":{\"kind\":\"Static\",\"value\":0},\"path\":\"fidelity/pink_48000.wav\"}\n";
+            return json.str();
+        }
+
         /// Independent stereo pink noise, positional, its spread following the fidelity_spread RTPC (identity over 0 - 360).
         std::string SpreadSweepJson(std::uint64_t id)
         {
@@ -154,8 +175,16 @@ namespace SparkyStudios::Audio::Amplitude::Fidelity
         return { { 1024, 48000, 6 }, { 1024, 48000, 8 } };
     }
 
+    std::vector<ConfigVariant> AmbisonicConfigVariants()
+    {
+        return { { 1024, 48000, 6, true } };
+    }
+
     std::string ConfigKind(const ConfigVariant& variant)
     {
+        if (variant.ambisonic)
+            return "ambisonic51";
+
         return variant.channels == 8 ? "surround71" : variant.channels == 6 ? "surround51" : "isolated";
     }
 
@@ -215,6 +244,9 @@ namespace SparkyStudios::Audio::Amplitude::Fidelity
         for (const ConfigVariant& variant : SurroundConfigVariants())
             configs.push_back(variant);
 
+        for (const ConfigVariant& variant : AmbisonicConfigVariants())
+            configs.push_back(variant);
+
         for (const ConfigVariant& variant : configs)
             ok = WriteIfChanged(
                      paths.project / ConfigName(ConfigKind(variant), variant.blockSize, variant.outputRate, ".config.json"),
@@ -248,7 +280,10 @@ namespace SparkyStudios::Audio::Amplitude::Fidelity
         ok = WriteIfChanged(sounds / "positional_sine.json", PositionalSineJson(kFirstSoundId + 2 * catalog.size() + 1)) && ok;
         ok = WriteIfChanged(sounds / "spread_sweep.json", SpreadSweepJson(kFirstSoundId + 2 * catalog.size() + 2)) && ok;
 
-        bank << ",\"fidelity/glide.amsound\",\"fidelity/positional_sine.amsound\",\"fidelity/spread_sweep.amsound\"]}\n";
+        ok = WriteIfChanged(sounds / "hrtf_noise.json", HrtfNoiseJson(kFirstSoundId + 2 * catalog.size() + 3)) && ok;
+
+        bank << ",\"fidelity/glide.amsound\",\"fidelity/positional_sine.amsound\",\"fidelity/spread_sweep.amsound\","
+             << "\"fidelity/hrtf_noise.amsound\"]}\n";
         ok = WriteIfChanged(banks / "fidelity.json", bank.str()) && ok;
         return ok;
     }

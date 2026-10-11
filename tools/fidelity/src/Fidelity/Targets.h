@@ -61,6 +61,15 @@ namespace SparkyStudios::Audio::Amplitude::Fidelity::Targets
     /// Output power of uncorrelated channels against the spread weights.
     constexpr double kMaxSpreadPowerErrorDb = 0.2;
 
+    /// A1: decoded energy over a full orbit on 5.1, max/min (spec 2026-10-11 §7).
+    constexpr double kMaxAmbisonicOrbitSpreadDb = 2.0;
+
+    /// A1: Rs energy over Ls energy for a source at +30 degrees (front left) on 5.1.
+    constexpr double kMaxAmbisonicFrontLeftRearLeakDb = -3.0;
+
+    /// A1: the LFE channel stays silent on the ambisonic branch.
+    constexpr double kMaxAmbisonicLfeDbfs = -120.0;
+
     constexpr double kMaxResumePositionErrorSamples = 1.0;
     constexpr double kMaxLengthErrorSamples = 2.0;
     constexpr double kMaxTailDbfs = -120.0;

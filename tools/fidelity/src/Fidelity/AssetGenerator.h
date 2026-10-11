@@ -33,6 +33,10 @@ namespace SparkyStudios::Audio::Amplitude::Fidelity
     /// Engine name of the 997 Hz loop played as a positional sound (the pan scenarios place it with a location).
     constexpr const char* kPositionalSineName = "fidelity.positional_sine";
 
+    /// Engine name of the looping white noise (pink_48000) played with HRTF spatialization: the ambisonic scenarios place it
+    /// with a location.
+    constexpr const char* kHrtfNoiseName = "fidelity.hrtf_noise";
+
     /// Engine name of the independent stereo pink noise whose spread follows an RTPC.
     constexpr const char* kSpreadSweepSoundName = "fidelity.spread_sweep";
 
@@ -60,6 +64,8 @@ namespace SparkyStudios::Audio::Amplitude::Fidelity
         std::uint32_t outputRate = 48000;
         /// Output channels: 2 (stereo), 6 (5.1) or 8 (7.1).
         std::uint16_t channels = 2;
+        /// Renders through the ambisonic pipeline in BinauralHighQuality mode (needs the HRIR sphere).
+        bool ambisonic = false;
     };
 
     /**
@@ -73,7 +79,12 @@ namespace SparkyStudios::Audio::Amplitude::Fidelity
     [[nodiscard]] std::vector<ConfigVariant> SurroundConfigVariants();
 
     /**
-     * @brief "isolated" for stereo, "surround51", "surround71".
+     * @brief 5.1, block 1024, 48 kHz, ambisonic.
+     */
+    [[nodiscard]] std::vector<ConfigVariant> AmbisonicConfigVariants();
+
+    /**
+     * @brief "isolated" for stereo, "surround51", "surround71", "ambisonic51".
      */
     [[nodiscard]] std::string ConfigKind(const ConfigVariant& variant);
 
