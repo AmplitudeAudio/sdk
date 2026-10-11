@@ -792,7 +792,8 @@ namespace SparkyStudios::Audio::Amplitude
             std::lock_guard streamLock(_streamMutex);
 
             auto* lay = GetLayer(layer);
-            if (lay->id == id && lay->streaming != nullptr && lay->slot.load(std::memory_order_acquire) == eLayerSlot::Live)
+            if (lay->id == id && lay->streaming != nullptr && lay->slot.load(std::memory_order_acquire) == eLayerSlot::Live
+                && !lay->releaseRequested)
             {
                 lay->stopRequested = true;
                 lay->hasQueuedSeek = false;

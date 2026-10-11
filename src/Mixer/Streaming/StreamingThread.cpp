@@ -97,6 +97,7 @@ namespace SparkyStudios::Audio::Amplitude
 
         {
             std::lock_guard lock(_mutex);
+            _stopping = true;
             _running.store(false, std::memory_order_release);
         }
         _wake.notify_all();
@@ -106,6 +107,7 @@ namespace SparkyStudios::Audio::Amplitude
 
         // The worker is gone: nothing can reach the pending requests, so they are acknowledged now.
         std::lock_guard lock(_mutex);
+        _stopping = false;
         _acknowledged.insert(_acknowledged.end(), _retireRequests.begin(), _retireRequests.end());
         _retireRequests.clear();
     }
@@ -173,7 +175,8 @@ namespace SparkyStudios::Audio::Amplitude
 
             _sources.erase(it);
 
-            if (_running.load(std::memory_order_acquire))
+            // While Stop() is joining, the worker may still be filling the source: queue it for the acknowledgment.
+            if (_stopping || _running.load(std::memory_order_acquire))
             {
                 _retireRequests.push_back(source);
                 _wake.notify_one();
