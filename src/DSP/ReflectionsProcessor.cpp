@@ -69,7 +69,7 @@ namespace SparkyStudios::Audio::Amplitude
         _lowPassFilter->SetParameter(MonoPoleFilter::ATTRIBUTE_COEFFICIENT, lowPassCoefficient);
 
         const AmVector3& relativeListenerPosition =
-            GetRelativeDirection(roomState->GetLocation(), Inverse(roomState->GetOrientation().GetQuaternion()), listenerPosition);
+            GetRelativeDirection(roomState->GetLocation(), roomState->GetOrientation().GetQuaternion(), listenerPosition);
 
         ComputeReflections(relativeListenerPosition, roomState->GetDimensions(), speedOfSound, roomState->GetCoefficients());
 
@@ -127,7 +127,8 @@ namespace SparkyStudios::Audio::Amplitude
             return;
         }
 
-        // Calculate the distance of the listener to each wall.
+        // Calculate the distance of the listener to each wall, in eRoomWall order. The room frame is the engine's:
+        // X right (width), Y forward (depth), Z up (height).
         // Since all the sources are 'attached' to the listener in the computation
         // of reflections, the distance traveled is arbitrary. So, we add 1.0f to
         // the computed distance in order to avoid delay time approaching 0 and the
@@ -135,8 +136,8 @@ namespace SparkyStudios::Audio::Amplitude
         const AmVector3 offsets = Scale(dimensions, 0.5f);
         const AmReal32 distances[kAmRoomSurfaceCount] = {
             offsets[0] + relativeListenerPosition[0] + 1.0f, offsets[0] - relativeListenerPosition[0] + 1.0f,
-            offsets[1] - relativeListenerPosition[1] + 1.0f, offsets[1] + relativeListenerPosition[1] + 1.0f,
-            offsets[2] + relativeListenerPosition[2] + 1.0f, offsets[2] - relativeListenerPosition[2] + 1.0f
+            offsets[2] + relativeListenerPosition[2] + 1.0f, offsets[2] - relativeListenerPosition[2] + 1.0f,
+            offsets[1] - relativeListenerPosition[1] + 1.0f, offsets[1] + relativeListenerPosition[1] + 1.0f
         };
 
         for (AmSize i = 0; i < kAmRoomSurfaceCount; ++i)
@@ -179,16 +180,16 @@ namespace SparkyStudios::Audio::Amplitude
                 // Apply reflections gain
                 _gainProcessors[i].ApplyGain(_gains[i], delayChannel, 0, delayChannel, 0, delayChannel.size(), false);
 
-                // Apply ambisonic reflection encoding
+                // Apply ambisonic reflection encoding. The field matches the panning node's: X forward, Y right, Z up.
                 output[eBFormatChannel_W] += delayChannel;
                 switch (static_cast<eRoomWall>(i))
                 {
                 case eRoomWall_Left: // Left wall reflection
-                    output[eBFormatChannel_Y] += delayChannel;
+                    output[eBFormatChannel_Y] -= delayChannel;
                     break;
 
                 case eRoomWall_Right: // Right wall reflection
-                    output[eBFormatChannel_Y] -= delayChannel;
+                    output[eBFormatChannel_Y] += delayChannel;
                     break;
 
                 case eRoomWall_Bottom: // Floor reflection

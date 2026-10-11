@@ -31,33 +31,40 @@ namespace SparkyStudios::Audio::Amplitude::Tests
     public:
         void Run() override
         {
+            // Room yawed +90 degrees about Z (engine frame): its front wall faces engine -X, its left side.
+            CheckFrontWall(Orientation(AM_PI32 / 2.0f, 0.0f, 0.0f), 0.0f, -1.0f, 0.0f);
+
+            // Room pitched up 90 degrees: its front wall faces engine +Z.
+            CheckFrontWall(Orientation({ 0.0f, 0.0f, 1.0f }, { 0.0f, -1.0f, 0.0f }), 0.0f, 0.0f, 1.0f);
+        }
+
+    private:
+        // Rotates the room's front direction (+X in the field: X forward, Y right, Z up) with the composition used by
+        // ReflectionsNode, and checks where the rotated room's front wall faces in the world.
+        void CheckFrontWall(const Orientation& room, AmReal32 x, AmReal32 y, AmReal32 z)
+        {
             constexpr AmUInt32 kSamples = 8;
 
-            // FOA field with energy at AmbiX +X (the "front wall" direction in room frame).
             BFormat field;
             AM_EXPECT(field.Configure(1, true, kSamples));
             field.Reset();
             for (AmUInt32 i = 0; i < kSamples; ++i)
                 field.GetBufferChannel(eBFormatChannel_X)[i] = 1.0f;
 
-            // Room yawed +90 degrees about Z (engine frame). The composition used by
-            // ReflectionsNode: Orientation(Inverse(engineToAmbiX.Forward(roomQ))).
-            const AmQuaternion roomQ = Orientation(AM_PI32 / 2.0f, 0.0f, 0.0f).GetQuaternion();
-            const CartesianCoordinateSystem::Converter engineToAmbiX(
-                CartesianCoordinateSystem::Default(), CartesianCoordinateSystem::AmbiX());
+            using Axis = CartesianCoordinateSystem::Axis;
+            const CartesianCoordinateSystem::Converter engineToField(
+                CartesianCoordinateSystem::Default(), CartesianCoordinateSystem(Axis::PositiveY, Axis::PositiveX, Axis::PositiveZ));
 
             AmbisonicOrientationProcessor processor;
             AM_EXPECT(processor.Configure(1, true));
-            processor.SetOrientation(Orientation(Inverse(engineToAmbiX.Forward(roomQ))));
-            processor.Refresh(); // idempotent
+            processor.SetOrientation(Orientation(engineToField.Forward(Inverse(room.GetQuaternion()))));
             processor.Process(&field, kSamples);
 
-            // The room's front direction (+X AmbiX) must move to where the rotated room's
-            // front wall faces in world: engine -X, i.e. AmbiX +Y.
             for (AmUInt32 i = 0; i < kSamples; ++i)
             {
-                AM_EXPECT(std::abs(field.GetBufferChannel(eBFormatChannel_X)[i]) < 1e-4f);
-                AM_EXPECT(std::abs(field.GetBufferChannel(eBFormatChannel_Y)[i] - 1.0f) < 1e-4f);
+                AM_EXPECT(std::abs(field.GetBufferChannel(eBFormatChannel_X)[i] - x) < 1e-4f);
+                AM_EXPECT(std::abs(field.GetBufferChannel(eBFormatChannel_Y)[i] - y) < 1e-4f);
+                AM_EXPECT(std::abs(field.GetBufferChannel(eBFormatChannel_Z)[i] - z) < 1e-4f);
             }
         }
     };

@@ -78,6 +78,13 @@ All notable changes to the Amplitude Audio SDK are recorded here. The format fol
   which was audible as a click at every block boundary.
 - `Convolver` convolves calls that start mid-block correctly, starts its history silent, and no longer overlap-adds
   with aligned SIMD loads at unaligned offsets (a debug assert, and a fault on SSE).
+- `AmbisonicRotator` reversed rotations about the listener's right axis (pitch): a pitched listener, or one in a Y-up
+  world, heard the ambisonic branch front-to-back swapped. The node converted the listener rotation as if the field were
+  AmbiX, but the panning node encodes a mirrored field (Y to the right). The orientation processor's pitch step also had
+  wrong T, M and K terms at second and third order, which garbled those channels for every listener, yawed ones included.
+- Room reflections arrive from the right walls. They came from the mirrored side (left and right swapped), the front and
+  back walls were timed from the listener's height and the floor and ceiling from its depth, and a rotated room placed
+  the listener with the room's rotation instead of its inverse and turned the reflections the wrong way about pitch.
 
 ### Known issues
 
@@ -88,6 +95,3 @@ All notable changes to the Amplitude Audio SDK are recorded here. The format fol
   -90 dBFS target (fidelity scenario S1), from per-block pan gain targets.
 - The direct `SpeakerPanning` path ignores elevation (an overhead source pans by azimuth), while the same source on
   the ambisonic branch spreads over every speaker.
-- `AmbisonicRotator` reverses rotations about the listener's right axis (pitch): a pitched listener, or one in a Y-up
-  world (forward -Z, up +Y), hears the ambisonic branch front-to-back swapped. Yaw and roll are correct. The fidelity
-  scenario A1 places its listener in the engine's Z-up frame until this is fixed.
