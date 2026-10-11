@@ -53,6 +53,16 @@ All notable changes to the Amplitude Audio SDK are recorded here. The format fol
   `core_engine` tests in a debug build (`AmbisonicBinauralizer::Configure`: 9871 to 143), an estimated 1.3 ms per voice from
   about 15 ms; binaural decoding fell from 8.1% to 3.8% of the mix time.
 
+- `AmbisonicSpeakerDecoder` decodes with AllRAD (ITU-R BS.2127 style): the sound field is decoded onto a 1202-point
+  Lebedev grid and each direction is panned with the speaker pan law, extended to the sphere with imaginary poles, then
+  split in two bands by the ambisonic shelf filter with energy-matched max-rE above the crossover. Decoders are built
+  once per output layout and order and shared by every voice. On 5.1 at third order, the high-band loudness spread over
+  a full orbit falls from 10.7 to 1.8 dB, and a front-left source now reaches Ls about 6.8 dB more than Rs (it reached
+  Rs 1.5 dB more). The fidelity scenario A1 measures it through the engine: 1.85 dB spread and -6.5 dB rear leak.
+
+- Second-order binaural (`BinauralMediumQuality`) decodes on a 20-point dodecahedron instead of a 12-speaker
+  horizontal ring, so it keeps elevation.
+
 ### Added
 
 - Surround output. The engine configuration's new `output.channels` renders Mono, Stereo, Quad, 5.1 or 7.1 (default
@@ -76,5 +86,8 @@ All notable changes to the Amplitude Audio SDK are recorded here. The format fol
   it is the corner of the fade curve itself, and is left to a follow-up on fade shapes.
 - On a 5.1 output, a source orbiting across the narrow C-R pair ticks at about -89.9 dBFS at block starts against the
   -90 dBFS target (fidelity scenario S1), from per-block pan gain targets.
-- `AmbisonicSpeakerDecoder` uses a basic decoder: on irregular layouts (5.1) rear imaging leaks (a front-left source
-  reaches Rs more than Ls).
+- The direct `SpeakerPanning` path ignores elevation (an overhead source pans by azimuth), while the same source on
+  the ambisonic branch spreads over every speaker.
+- `AmbisonicRotator` reverses rotations about the listener's right axis (pitch): a pitched listener, or one in a Y-up
+  world (forward -Z, up +Y), hears the ambisonic branch front-to-back swapped. Yaw and roll are correct. The fidelity
+  scenario A1 places its listener in the engine's Z-up frame until this is fixed.
