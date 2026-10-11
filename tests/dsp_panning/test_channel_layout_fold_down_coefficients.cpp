@@ -29,7 +29,7 @@ namespace SparkyStudios::Audio::Amplitude::Tests
         void Run() override
         {
             constexpr AmReal32 k = 0.70710678f;
-            const auto near = [](AmReal32 a, AmReal32 b)
+            const auto isClose = [](AmReal32 a, AmReal32 b)
             {
                 return std::abs(a - b) < 1e-6f;
             };
@@ -37,7 +37,7 @@ namespace SparkyStudios::Audio::Amplitude::Tests
             {
                 AmUInt16 i = 0;
                 for (const AmReal32 value : expected)
-                    AM_EXPECT(near(m.gains[row][i++], value));
+                    AM_EXPECT(isClose(m.gains[row][i++], value));
             };
 
             const auto& mono = ChannelLayout::Get(eChannelLayout_Mono);

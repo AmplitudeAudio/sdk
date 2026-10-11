@@ -35,7 +35,7 @@ namespace SparkyStudios::Audio::Amplitude::Tests
             const double lfe = std::numeric_limits<double>::quiet_NaN();
             const std::vector<double> stereo{ 30.0, -30.0 };
             const std::vector<double> s51{ 30.0, -30.0, 0.0, lfe, 110.0, -110.0 };
-            const auto near = [](const std::vector<double>& gains, std::initializer_list<double> expected)
+            const auto isClose = [](const std::vector<double>& gains, std::initializer_list<double> expected)
             {
                 std::size_t i = 0;
                 bool ok = true;
@@ -44,12 +44,12 @@ namespace SparkyStudios::Audio::Amplitude::Tests
                 return ok;
             };
 
-            AM_EXPECT(near(AnalyticPanGains(0.0, stereo), { k, k }));
-            AM_EXPECT(near(AnalyticPanGains(30.0, stereo), { 1.0, 0.0 }));
-            AM_EXPECT(near(AnalyticPanGains(90.0, stereo), { 1.0, 0.0 }));
-            AM_EXPECT(near(AnalyticPanGains(180.0, stereo), { k, k }));
-            AM_EXPECT(near(AnalyticPanGains(0.0, s51), { 0.0, 0.0, 1.0, 0.0, 0.0, 0.0 }));
-            AM_EXPECT(near(AnalyticPanGains(180.0, s51), { 0.0, 0.0, 0.0, 0.0, k, k }));
+            AM_EXPECT(isClose(AnalyticPanGains(0.0, stereo), { k, k }));
+            AM_EXPECT(isClose(AnalyticPanGains(30.0, stereo), { 1.0, 0.0 }));
+            AM_EXPECT(isClose(AnalyticPanGains(90.0, stereo), { 1.0, 0.0 }));
+            AM_EXPECT(isClose(AnalyticPanGains(180.0, stereo), { k, k }));
+            AM_EXPECT(isClose(AnalyticPanGains(0.0, s51), { 0.0, 0.0, 1.0, 0.0, 0.0, 0.0 }));
+            AM_EXPECT(isClose(AnalyticPanGains(180.0, s51), { 0.0, 0.0, 0.0, 0.0, k, k }));
 
             // Between L (30) and Ls (110), the tangent law normalised for power.
             const std::vector<double> g = AnalyticPanGains(90.0, s51);

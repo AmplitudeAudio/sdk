@@ -31,7 +31,7 @@ namespace SparkyStudios::Audio::Amplitude::Tests
         void Run() override
         {
             constexpr AmReal32 k = 0.70710678f;
-            const auto near = [](AmReal32 a, AmReal32 b)
+            const auto isClose = [](AmReal32 a, AmReal32 b)
             {
                 return std::abs(a - b) < 1e-4f;
             };
@@ -41,8 +41,8 @@ namespace SparkyStudios::Audio::Amplitude::Tests
                 AmUInt16 e = 0;
                 for (const auto& [azimuth, weight] : azimuthWeight)
                 {
-                    AM_EXPECT(near(set.emitters[e].azimuth, azimuth));
-                    AM_EXPECT(near(set.emitters[e].weight, weight));
+                    AM_EXPECT(isClose(set.emitters[e].azimuth, azimuth));
+                    AM_EXPECT(isClose(set.emitters[e].weight, weight));
                     ++e;
                 }
             };
@@ -73,9 +73,9 @@ namespace SparkyStudios::Audio::Amplitude::Tests
             const ChannelMatrix fold = ChannelLayout::GetFoldDownMatrix(s51, ChannelLayout::Get(eChannelLayout_Mono));
             for (AmUInt16 e = 0; e < zero51.count; ++e)
             {
-                AM_EXPECT(near(zero51.emitters[e].azimuth, 25.0f));
-                AM_EXPECT(near(zero51.emitters[e].elevation, 10.0f));
-                AM_EXPECT(near(zero51.emitters[e].weight, fold.gains[0][zero51.emitters[e].channel]));
+                AM_EXPECT(isClose(zero51.emitters[e].azimuth, 25.0f));
+                AM_EXPECT(isClose(zero51.emitters[e].elevation, 10.0f));
+                AM_EXPECT(isClose(zero51.emitters[e].weight, fold.gains[0][zero51.emitters[e].channel]));
             }
 
             // Mono: one emitter at the centre, unit weight, whatever the spread.
