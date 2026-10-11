@@ -51,8 +51,6 @@ namespace SparkyStudios::Audio::Amplitude
         // 2D Speaker Setup
         eSpeakersPreset_Mono,
         eSpeakersPreset_Stereo,
-        eSpeakersPreset_Surround_5_1,
-        eSpeakersPreset_Surround_7_1,
         // 3D Speaker Setup
         eSpeakersPreset_CubePoints,
         eSpeakersPreset_DodecahedronFaces,
