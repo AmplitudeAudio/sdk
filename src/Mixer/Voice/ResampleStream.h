@@ -44,7 +44,7 @@ namespace SparkyStudios::Audio::Amplitude
             AmUInt64 endFrame = 0; ///< Output frame, relative to the pull start, of the source end.
             bool finished = false; ///< The filter tail after the end has been flushed.
             AmUInt64 finishedFrame = 0;
-            bool starved = false;
+            bool underrun = false; ///< The stream could not keep up: part of the pull is silence and the position holds.
             bool error = false; ///< The resampler made no progress twice in a row; the rest is silence.
         };
 
@@ -166,6 +166,14 @@ namespace SparkyStudios::Audio::Amplitude
         }
 
         /**
+         * @brief Gets the number of history frames the resampler reads ahead of an output (the preroll length).
+         */
+        [[nodiscard]] AmUInt64 GetPrerollFrames() const
+        {
+            return _prerollFrames;
+        }
+
+        /**
          * @brief Gets the number of source frames the resampler has consumed since the last reset.
          *
          * @return The consumed source frame count.
@@ -187,7 +195,7 @@ namespace SparkyStudios::Audio::Amplitude
         }
 
     private:
-        void Refill(SourceReader& reader, AmUInt64 frames, AmUInt64 produced, PullReport& report);
+        bool Refill(SourceReader& reader, AmUInt64 frames, AmUInt64 produced, PullReport& report);
         void Consume(AmUInt64 frames);
         void UpdateTail();
 

@@ -665,7 +665,7 @@ namespace SparkyStudios::Audio::Amplitude
             const auto report = slot.stream.Pull(slot.reader, source, segment.begin, segment.end - segment.begin);
             total.produced += report.produced;
             total.error |= report.error;
-            total.starved |= report.starved;
+            total.underrun |= report.underrun;
 
             if (report.ended && !total.ended)
             {

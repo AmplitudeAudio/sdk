@@ -14,8 +14,10 @@
 
 #include <SparkyStudios/Audio/Amplitude/Amplitude.h>
 
+#include <Mixer/Streaming/StreamSource.h>
 #include <Mixer/Voice/SourceReader.h>
 
+#include "../mixer_streaming/StreamTestDecoder.h"
 #include "ComponentTestCase.h"
 #include "TestRegistry.h"
 #include "VoiceTestUtils.h"
@@ -26,20 +28,28 @@ namespace SparkyStudios::Audio::Amplitude::Tests
 {
     namespace
     {
-        struct FakeStream
-        {
-            AudioBuffer buffer{ 7, 1 };  // decode capacity of 7 frames
-            AmUInt64 length = 20;
-            AmUInt64 dryAfter = 1000;    // returns nothing past this frame
-        };
+        constexpr AmUInt64 kLength = 12;
 
-        AmUInt64 Decode(void* context, AmUInt64 offset, AmUInt64 frames)
+        StreamPlan MakePlan(bool loop)
         {
-            auto* stream = static_cast<FakeStream*>(context);
-            AmUInt64 n = 0;
-            for (; n < frames && offset + n < stream->length && offset + n < stream->dryAfter; ++n)
-                stream->buffer[0][n] = static_cast<AmReal32>(offset + n);
-            return n;
+            StreamPlan plan;
+            plan.regionStart = 0;
+            plan.regionEnd = kLength;
+            plan.loop = loop;
+            plan.remainingWraps = loop ? SourceReader::kInfiniteWraps : 0;
+            plan.start = 0;
+            plan.target = 0;
+            return plan;
+        }
+
+        VoiceSource MakeSource(StreamSource& stream)
+        {
+            VoiceSource source;
+            source.stream = &stream;
+            source.length = kLength;
+            source.channels = 1;
+            source.sampleRate = 48000;
+            return source;
         }
     } // namespace
 
@@ -48,35 +58,45 @@ namespace SparkyStudios::Audio::Amplitude::Tests
     public:
         void Run() override
         {
-            FakeStream stream;
-            VoiceSource source;
-            source.buffer = &stream.buffer;
-            source.decode = &Decode;
-            source.context = &stream;
-            source.decodeCapacity = 7;
-            source.length = 20;
-            source.channels = 1;
-            source.sampleRate = 48000;
+            AudioBuffer out(40, 1);
 
-            SourceReader reader;
-            reader.Initialize(source, 0, 0, true, 0);
+            // A non-looping stream ends at its length, read in chunks; a synchronous source fills inline.
+            {
+                auto decoder = std::make_shared<StreamTestDecoder>(kLength, 1);
+                StreamSource stream(decoder, MakePlan(false), 64, 1, 5, 48000, true);
 
-            AudioBuffer out(45, 1);
-            SourceReadReport report;
-            AM_EXPECT_EQ(45ULL, reader.Read(out, 0, 45, report));
-            AM_EXPECT_EQ(2U, report.wraps);
-            for (AmUInt64 i = 0; i < 45; ++i)
-                AM_EXPECT_EQ(static_cast<AmReal32>(i % 20), out[0][i]);
+                SourceReader reader;
+                reader.Initialize(MakeSource(stream), 0, 0, false, 0);
 
-            // A stream that runs dry before its end is treated as ended.
-            stream.dryAfter = 12;
-            SourceReader starved;
-            starved.Initialize(source, 0, 0, false, 0);
-            report = {};
-            AM_EXPECT_EQ(12ULL, starved.Read(out, 0, 45, report));
-            AM_EXPECT(report.starved);
-            AM_EXPECT(report.ended);
-            AM_EXPECT_EQ(12ULL, report.endOffset);
+                SourceReadReport report;
+                AmUInt64 delivered = 0;
+                for (AmUInt64 done = 0; done < 40; done += 8)
+                    delivered += reader.Read(out, done, 8, report);
+
+                AM_EXPECT_EQ(kLength, delivered);
+                AM_EXPECT(report.ended);
+                AM_EXPECT(!report.underrun);
+                AM_EXPECT_EQ(kLength % 8, report.endOffset);
+                for (AmUInt64 i = 0; i < kLength; ++i)
+                    AM_EXPECT_EQ(StreamTestDecoder::ValueAt(i, 0), out[0][i]);
+                for (AmUInt64 i = kLength; i < 40; ++i)
+                    AM_EXPECT_EQ(0.0f, out[0][i]);
+            }
+
+            // A looping region wraps twice over 30 frames.
+            {
+                auto decoder = std::make_shared<StreamTestDecoder>(kLength, 1);
+                StreamSource stream(decoder, MakePlan(true), 64, 1, 5, 48000, true);
+
+                SourceReader reader;
+                reader.Initialize(MakeSource(stream), 0, 0, true, 0);
+
+                SourceReadReport report;
+                AM_EXPECT_EQ(30ULL, reader.Read(out, 0, 30, report));
+                AM_EXPECT_EQ(2U, report.wraps);
+                for (AmUInt64 i = 0; i < 30; ++i)
+                    AM_EXPECT_EQ(StreamTestDecoder::ValueAt(i % kLength, 0), out[0][i]);
+            }
         }
     };
 
