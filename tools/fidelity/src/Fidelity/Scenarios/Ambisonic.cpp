@@ -17,12 +17,14 @@
 #include <cstdint>
 #include <limits>
 #include <memory>
+#include <span>
 #include <string>
 #include <vector>
 
 #include <SparkyStudios/Audio/Amplitude/Amplitude.h>
 
 #include <Fidelity/AssetGenerator.h>
+#include <Fidelity/Stimuli.h>
 #include <Fidelity/Scenarios/Common.h>
 #include <Fidelity/Scenarios/Playback.h>
 #include <Fidelity/Targets.h>
@@ -128,7 +130,9 @@ namespace SparkyStudios::Audio::Amplitude::Fidelity
                     return;
 
                 const std::uint64_t onset = OnsetFrame(capture, kLeadIn);
+                const Signal source = RenderStimulusChannel(WhiteNoiseSpec());
                 std::vector<std::vector<double>> steps;
+                std::vector<double> sourcePowers;
                 for (std::size_t k = 0; k < kSteps; ++k)
                 {
                     const std::uint64_t begin = onset + hold * k + Seconds(kSettleSeconds, fs);
@@ -141,16 +145,25 @@ namespace SparkyStudios::Audio::Amplitude::Fidelity
                     }
 
                     steps.push_back(ChannelPowers(capture, begin, end));
+
+                    // The noise's own energy in the same window: a finite segment carries more or less than another.
+                    const std::size_t length = static_cast<std::size_t>(end - begin);
+                    const std::size_t offset = static_cast<std::size_t>(begin - onset) % (source.size() - length);
+                    const double rms = Rms(std::span<const double>(source.data() + offset, length));
+                    sourcePowers.push_back(rms * rms);
                 }
 
                 double maxTotal = 0.0;
                 double minTotal = std::numeric_limits<double>::max();
-                for (const std::vector<double>& powers : steps)
+                for (std::size_t k = 0; k < steps.size(); ++k)
                 {
+                    const std::vector<double>& powers = steps[k];
                     double total = 0.0;
                     for (std::size_t c = 0; c < powers.size(); ++c)
                         if (c != kLfeChannel)
                             total += powers[c];
+
+                    total /= std::max(sourcePowers[k], 1e-20);
 
                     maxTotal = std::max(maxTotal, total);
                     minTotal = std::min(minTotal, total);
