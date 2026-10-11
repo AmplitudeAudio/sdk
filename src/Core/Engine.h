@@ -59,7 +59,10 @@ namespace SparkyStudios::Audio::Amplitude
         [[nodiscard]] std::shared_ptr<EngineInternalState> GetState() const;
 
         /**
-         * @brief Gets the shared AllRAD decoder of a layout and order, building and caching it on first use. Game thread.
+         * @brief Gets the shared AllRAD decoder of a layout and order, building and caching it on first use.
+         *
+         * Called from the speaker decoder node's Configure, which normally runs on the game thread. A dimension change can re-run
+         * Configure on the audio thread, where a cache hit for the node's own matrix is skipped entirely.
          *
          * @return The matrix, or nullptr when it cannot be built.
          */

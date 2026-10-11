@@ -336,7 +336,8 @@ namespace SparkyStudios::Audio::Amplitude
         std::map<std::pair<AmUInt8, AmUInt32>, std::shared_ptr<const SpeakerDecodingMatrix>> speaker_decoders;
 
         /**
-         * @brief Guards speaker_decoders (game thread only).
+         * @brief Guards speaker_decoders. Taken from the speaker decoder node's Configure, normally on the game thread; a dimension change
+         * can re-run it on the audio thread, where a matrix the node already holds never reaches the cache.
          */
         std::mutex speaker_decoders_mutex;
 

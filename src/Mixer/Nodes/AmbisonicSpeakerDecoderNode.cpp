@@ -45,11 +45,15 @@ namespace SparkyStudios::Audio::Amplitude
         _speakerCount = 0;
 
         const ChannelLayout& output = GetPipelineOutputLayout();
-        _matrix = amEngine->GetSpeakerDecodingMatrix(_ambisonicOrder, output);
+
+        // A reconfigure that only changes the frame count keeps the matrix, so it never takes the engine's cache mutex.
+        if (_matrix == nullptr || _matrix->GetLayout() != output.GetType() || _matrix->GetOrder() != _ambisonicOrder)
+            _matrix = amEngine->GetSpeakerDecodingMatrix(_ambisonicOrder, output);
 
         if (_matrix == nullptr ||
             !_shelfFilter.Configure(_ambisonicOrder, true, static_cast<AmUInt32>(frameCount), m_layer->GetSampleRate()))
         {
+            _matrix = nullptr;
             static std::atomic<bool> warned{ false };
             if (!warned.exchange(true))
                 amLogWarning("AmbisonicSpeakerDecoder could not set up decoding for order %u: the node renders silence.", _ambisonicOrder);
