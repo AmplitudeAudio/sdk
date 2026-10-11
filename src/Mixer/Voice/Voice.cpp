@@ -44,13 +44,15 @@ namespace SparkyStudios::Audio::Amplitude
         _speedRampStart = _speedRampEnd = _speed;
         _settings.speed = _speed;
 
+        // Slots bind the current stream: set it first so a re-initialized voice never reads the previous one.
+        _current = settings.source.stream;
+
         for (auto& slot : _slots)
             if (!InitializeSlot(slot, settings.startPosition))
                 return false;
 
         _primary = 0;
         _seekOnStart = settings.source.IsStreamed();
-        _current = settings.source.stream;
         _incoming = nullptr;
         _envelope.Initialize(settings.curve, settings.outputRate);
         _envelope.SetGain(settings.fadeIn > 0.0 ? 0.0f : 1.0f);
@@ -81,10 +83,15 @@ namespace SparkyStudios::Audio::Amplitude
 
     bool Voice::InitializeSlot(VoiceStreamSlot& slot, AmUInt64 position) const
     {
-        // A streamed source always carries a bound stream: never the stand-in the voice was created over.
-        AMPLITUDE_ASSERT(!_settings.source.IsStreamed() || _settings.source.stream != nullptr);
+        // A streamed source always carries a bound stream: never the stand-in the voice was created over, and never a
+        // stream the voice has swapped away from (settings are not updated by swaps): read the voice's current stream.
+        VoiceSource source = _settings.source;
+        if (source.IsStreamed() && _current != nullptr)
+            source.stream = _current;
 
-        slot.reader.Initialize(_settings.source, _settings.regionStart, _settings.regionEnd, _settings.loop, _settings.loopCount);
+        AMPLITUDE_ASSERT(!source.IsStreamed() || source.stream != nullptr);
+
+        slot.reader.Initialize(source, _settings.regionStart, _settings.regionEnd, _settings.loop, _settings.loopCount);
         if (!slot.stream.Initialize(
                 _settings.resamplerName, _settings.source.sampleRate, _settings.outputRate, _settings.source.channels,
                 _settings.maxBlockFrames))

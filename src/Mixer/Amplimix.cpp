@@ -936,6 +936,11 @@ namespace SparkyStudios::Audio::Amplitude
 
     bool AmplimixImpl::AttachInstanceStream(AmUInt32 id, AmUInt32 layer, AmChannelInstanceID instanceId)
     {
+        // Task 7 gives each instance its own stream; until then streamed layers do not mix per-instance voices. The layer
+        // plays through the voice's single path (see IsSeparateMode), so nothing is attached and no stream is touched.
+        if (GetLayer(layer)->streaming != nullptr)
+            return false;
+
         if (!PinLayer(id, layer))
             return false;
 
@@ -962,10 +967,6 @@ namespace SparkyStudios::Audio::Amplitude
                       stream->reader.Seek(data.cursor);
                       break;
                   }
-
-                  // The voice may have swapped streams since the slot was initialized: read the one it reads now.
-                  if (StreamSource* current = lay->voice->GetCurrentStream(); current != nullptr)
-                      stream->reader.BindStream(current);
 
                   // Discard the filter's group delay, so the instance lines up with the primary path.
                   lay->voice->PrimeStream(*stream);
@@ -1443,6 +1444,9 @@ namespace SparkyStudios::Audio::Amplitude
 
     bool AmplimixImpl::IsSeparateMode(const AmplimixLayerImpl* layer)
     {
+        if (layer->streaming != nullptr)
+            return false;
+
         return layer->instancingEnabled && layer->instancingMode == eChannelInstanceMode_Separate && !layer->instanceData.empty();
     }
 
