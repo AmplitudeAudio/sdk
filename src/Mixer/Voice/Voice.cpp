@@ -81,6 +81,9 @@ namespace SparkyStudios::Audio::Amplitude
 
     bool Voice::InitializeSlot(VoiceStreamSlot& slot, AmUInt64 position) const
     {
+        // A streamed source always carries a bound stream: never the stand-in the voice was created over.
+        AMPLITUDE_ASSERT(!_settings.source.IsStreamed() || _settings.source.stream != nullptr);
+
         slot.reader.Initialize(_settings.source, _settings.regionStart, _settings.regionEnd, _settings.loop, _settings.loopCount);
         if (!slot.stream.Initialize(
                 _settings.resamplerName, _settings.source.sampleRate, _settings.outputRate, _settings.source.channels,
@@ -97,6 +100,8 @@ namespace SparkyStudios::Audio::Amplitude
 
     void Voice::BindStream(StreamSource* stream)
     {
+        // The stand-in the voice was created over dies with its creator: settings must never keep pointing at it.
+        _settings.source.stream = stream;
         _slots[0].reader.BindStream(stream);
         _slots[1].reader.BindStream(stream);
         _current = stream;

@@ -39,6 +39,7 @@ namespace SparkyStudios::Audio::Amplitude::Tests
         std::atomic<AmInt32> closed{ 0 };
         std::atomic<AmUInt64> streamCalls{ 0 };
         std::atomic<AmUInt64> completedStreamCalls{ 0 };
+        std::atomic<AmInt64> firstSeekOffset{ -1 }; ///< the seekOffset of the first Stream call, -1 before any
     };
 
     /// Process-wide record of the decoders the RecordingCodec created. Test fixtures reset it.
@@ -217,6 +218,9 @@ namespace SparkyStudios::Audio::Amplitude::Tests
                 {
                     RecordingState::Get().NoteStream();
                     _record->streamCalls.fetch_add(1);
+
+                    AmInt64 unset = -1;
+                    _record->firstSeekOffset.compare_exchange_strong(unset, static_cast<AmInt64>(seekOffset));
                 }
 
                 if (const AmInt32 delay = RecordingState::Get().GetDelay(); delay > 0 && _record != nullptr)
