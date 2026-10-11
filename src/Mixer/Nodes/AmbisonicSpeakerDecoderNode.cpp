@@ -13,10 +13,13 @@
 // limitations under the License.
 
 #include <algorithm>
+#include <atomic>
 
 #include <SparkyStudios/Audio/Amplitude/Amplitude.h>
 
+#include <Core/Engine.h>
 #include <Mixer/Nodes/AmbisonicSpeakerDecoderNode.h>
+#include <Utils/Utils.h>
 
 namespace SparkyStudios::Audio::Amplitude
 {
@@ -38,19 +41,36 @@ namespace SparkyStudios::Audio::Amplitude
 
         _soundField.Configure(_ambisonicOrder, true, static_cast<AmUInt32>(frameCount));
 
-        const ChannelLayout& output = GetPipelineOutputLayout();
+        _ready = false;
         _speakerCount = 0;
+
+        const ChannelLayout& output = GetPipelineOutputLayout();
+        _matrix = amEngine->GetSpeakerDecodingMatrix(_ambisonicOrder, output);
+
+        if (_matrix == nullptr ||
+            !_shelfFilter.Configure(_ambisonicOrder, true, static_cast<AmUInt32>(frameCount), m_layer->GetSampleRate()))
+        {
+            static std::atomic<bool> warned{ false };
+            if (!warned.exchange(true))
+                amLogWarning("AmbisonicSpeakerDecoder could not set up decoding for order %u: the node renders silence.", _ambisonicOrder);
+            return;
+        }
+
+        _shelfFilter.SetHighFrequencyGains(_matrix->GetHighFrequencyGains());
+
+        // Coefficients cached per speaker so Process reads a flat table.
         for (AmUInt16 c = 0; c < output.GetChannelCount(); ++c)
-            if (!output.IsLfe(c))
-                _speakerChannel[_speakerCount++] = c;
+        {
+            if (output.IsLfe(c))
+                continue;
 
-        // A custom set-up from the layout itself: the encoder's azimuth is negative to the left.
-        _decoder.Configure(_ambisonicOrder, true, eSpeakersPreset_Custom, _speakerCount);
-        for (AmUInt16 s = 0; s < _speakerCount; ++s)
-            _decoder.SetSpeakerPosition(s, SphericalPosition(-output.GetAzimuth(_speakerChannel[s]) * AM_DegToRad, 0.0f, 1.0f));
-        _decoder.Refresh();
+            _speakerChannel[_speakerCount] = c;
+            for (AmUInt32 a = 0; a < _matrix->GetChannelCount(); ++a)
+                _coefficients[_speakerCount][a] = _matrix->GetCoefficient(c, a);
+            ++_speakerCount;
+        }
 
-        _speakers = AudioBuffer(frameCount, _speakerCount);
+        _ready = true;
     }
 
     const AudioBuffer* AmbisonicSpeakerDecoderNodeInstance::Process(const AudioBuffer* input)
@@ -58,17 +78,23 @@ namespace SparkyStudios::Audio::Amplitude
         if (input->IsEmpty())
             return nullptr;
 
-        const AmUInt64 frames = AM_MIN(static_cast<AmUInt64>(input->GetFrameCount()), static_cast<AmUInt64>(_speakers.GetFrameCount()));
+        _output.Clear();
+        if (!_ready)
+            return &_output;
+
+        const AmUInt32 frames = static_cast<AmUInt32>(AM_MIN(input->GetFrameCount(), _output.GetFrameCount()));
 
         for (AmUInt32 i = 0, l = input->GetChannelCount(); i < l; ++i)
-            _soundField.CopyStream(input->GetChannel(i), i, static_cast<AmUInt32>(frames));
+            _soundField.CopyStream(input->GetChannel(i), i, frames);
 
-        _speakers.Clear();
-        _decoder.Process(&_soundField, static_cast<AmUInt32>(frames), _speakers);
+        _shelfFilter.Process(&_soundField, frames);
 
-        _output.Clear();
         for (AmUInt16 s = 0; s < _speakerCount; ++s)
-            std::copy_n(_speakers[s].begin(), frames, _output[_speakerChannel[s]].begin());
+        {
+            AmReal32* out = _output[_speakerChannel[s]].begin();
+            for (AmUInt32 c = 0; c < _matrix->GetChannelCount(); ++c)
+                ScalarMultiplyAccumulate(_soundField.GetBufferChannel(c).begin(), out, _coefficients[s][c], frames);
+        }
 
         return &_output;
     }

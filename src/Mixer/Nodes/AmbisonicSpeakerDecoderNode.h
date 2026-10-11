@@ -22,16 +22,15 @@
 #include <SparkyStudios/Audio/Amplitude/Core/Memory.h>
 #include <SparkyStudios/Audio/Amplitude/Mixer/Node.h>
 
-#include <Ambisonics/AmbisonicDecoder.h>
+#include <Ambisonics/AmbisonicShelfFilter.h>
 #include <Ambisonics/BFormat.h>
+#include <Ambisonics/SpeakerDecodingMatrix.h>
 
 namespace SparkyStudios::Audio::Amplitude
 {
     /**
-     * @brief Decodes a sound field onto the pipeline's output speakers.
-     *
-     * The decoder is set up from the output layout's non-LFE speakers, placed in the encoder's convention; the LFE stays
-     * silent.
+     * @brief Decodes a sound field onto the pipeline's output speakers with the engine's shared AllRAD decoder, dual-band
+     * (AmbisonicShelfFilter); the LFE stays silent.
      */
     class AmbisonicSpeakerDecoderNodeInstance final : public ProcessorNodeInstance
     {
@@ -44,13 +43,23 @@ namespace SparkyStudios::Audio::Amplitude
 
         [[nodiscard]] AmUInt16 GetOutputChannelCount() const override;
 
+        /**
+         * @brief Gets the shared decoder in use, or nullptr when the node could not be set up.
+         */
+        [[nodiscard]] const std::shared_ptr<const SpeakerDecodingMatrix>& GetMatrix() const
+        {
+            return _matrix;
+        }
+
     private:
-        AmbisonicDecoder _decoder;
         BFormat _soundField;
-        AudioBuffer _speakers;
+        AmbisonicShelfFilter _shelfFilter;
+        std::shared_ptr<const SpeakerDecodingMatrix> _matrix;
+        std::array<std::array<AmReal32, SpeakerDecodingMatrix::kMaxAmbisonicChannels>, kAmMaxLayoutChannelCount> _coefficients{};
         std::array<AmUInt16, kAmMaxLayoutChannelCount> _speakerChannel{};
         AmUInt16 _speakerCount = 0;
         AmUInt32 _ambisonicOrder = 1;
+        bool _ready = false;
     };
 
     class AmbisonicSpeakerDecoderNode final : public Node

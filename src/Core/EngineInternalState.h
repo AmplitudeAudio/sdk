@@ -17,6 +17,8 @@
 
 #include <atomic>
 #include <map>
+#include <memory>
+#include <mutex>
 #include <unordered_map>
 #include <vector>
 
@@ -30,6 +32,7 @@
 #include <Core/RoomInternalState.h>
 
 #include <Ambisonics/BinauralDecodingFilters.h>
+#include <Ambisonics/SpeakerDecodingMatrix.h>
 #include <Core/Event.h>
 #include <HRTF/HRIRSphere.h>
 #include <Mixer/Amplimix.h>
@@ -326,6 +329,16 @@ namespace SparkyStudios::Audio::Amplitude
          * @brief The binaural decoding filters shared by every voice, built at init in a binaural panning mode.
          */
         std::shared_ptr<const BinauralDecodingFilters> binaural_filters;
+
+        /**
+         * @brief AllRAD speaker decoders shared by every voice, keyed by (output layout, ambisonic order).
+         */
+        std::map<std::pair<AmUInt8, AmUInt32>, std::shared_ptr<const SpeakerDecodingMatrix>> speaker_decoders;
+
+        /**
+         * @brief Guards speaker_decoders (game thread only).
+         */
+        std::mutex speaker_decoders_mutex;
 
         AmString resampler;
 

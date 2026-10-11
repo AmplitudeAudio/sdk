@@ -58,6 +58,13 @@ namespace SparkyStudios::Audio::Amplitude
          */
         [[nodiscard]] std::shared_ptr<EngineInternalState> GetState() const;
 
+        /**
+         * @brief Gets the shared AllRAD decoder of a layout and order, building and caching it on first use. Game thread.
+         *
+         * @return The matrix, or nullptr when it cannot be built.
+         */
+        std::shared_ptr<const SpeakerDecodingMatrix> GetSpeakerDecodingMatrix(AmUInt32 order, const ChannelLayout& layout);
+
         [[nodiscard]] const struct AmVersion* Version() const override;
         bool Initialize(const AmOsString& configFile) override;
         bool Deinitialize() override;

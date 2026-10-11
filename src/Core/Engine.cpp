@@ -1169,6 +1169,9 @@ namespace SparkyStudios::Audio::Amplitude
             }
         }
 
+        // Warm the shared speaker decoder of the output layout so no voice builds it.
+        AM_UNUSED(GetSpeakerDecodingMatrix(AM_MAX(static_cast<AmUInt32>(_state->panning_mode), 1u), GetOutputLayout()));
+
         // Mark the engine as ready
         _state->paused = false;
         _state->initialized = true;
@@ -1216,6 +1219,12 @@ namespace SparkyStudios::Audio::Amplitude
 
         // Release the shared binaural filters (voices still holding them keep them alive)
         _state->binaural_filters.reset();
+
+        // Release the shared speaker decoders (nodes still holding them keep them alive)
+        {
+            std::lock_guard<std::mutex> lock(_state->speaker_decoders_mutex);
+            _state->speaker_decoders.clear();
+        }
 
         // Release HRIR sphere
         if (_state->hrir_sphere != nullptr)
@@ -2966,6 +2975,17 @@ namespace SparkyStudios::Audio::Amplitude
     AmUInt32 EngineImpl::GetSamplesPerStream() const
     {
         return _state->samples_per_stream;
+    }
+
+    std::shared_ptr<const SpeakerDecodingMatrix> EngineImpl::GetSpeakerDecodingMatrix(AmUInt32 order, const ChannelLayout& layout)
+    {
+        std::lock_guard<std::mutex> lock(_state->speaker_decoders_mutex);
+
+        auto& slot = _state->speaker_decoders[{ static_cast<AmUInt8>(layout.GetType()), order }];
+        if (slot == nullptr)
+            slot = SpeakerDecodingMatrix::Build(order, layout);
+
+        return slot;
     }
 
     const ChannelLayout& EngineImpl::GetOutputLayout() const
