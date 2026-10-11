@@ -148,7 +148,14 @@ namespace SparkyStudios::Audio::Amplitude::Fidelity
 
                     // The noise's own energy in the same window: a finite segment carries more or less than another.
                     const std::size_t length = static_cast<std::size_t>(end - begin);
-                    const std::size_t offset = static_cast<std::size_t>(begin - onset) % (source.size() - length);
+                    const std::size_t offset = static_cast<std::size_t>(begin - onset);
+                    if (offset + length > source.size())
+                    {
+                        out.error = "orbit longer than the white stimulus";
+                        out.capture = std::move(capture);
+                        return;
+                    }
+
                     const double rms = Rms(std::span<const double>(source.data() + offset, length));
                     sourcePowers.push_back(rms * rms);
                 }
