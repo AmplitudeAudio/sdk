@@ -169,8 +169,8 @@ namespace SparkyStudios::Audio::Amplitude
         static void Run(AmVoidPtr param);
 
         void Pass();
-        void UpdateRates(std::vector<Entry>& entries, AmReal64 elapsedSeconds);
-        void DropRetired(std::vector<Candidate>& candidates);
+        bool UpdateRates(std::vector<Entry>& entries, AmReal64 elapsedSeconds);
+        bool HasPendingWork();
         static void Free(StreamSource* source);
 
         StreamingSettings _settings;

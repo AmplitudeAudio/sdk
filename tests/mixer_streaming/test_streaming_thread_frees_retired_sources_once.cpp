@@ -61,6 +61,8 @@ namespace SparkyStudios::Audio::Amplitude::Tests
 
             // Retire in a different order, across passes. Nothing is closed before an acknowledgement.
             thread.Retire(sources[1]);
+            // Retire defers the free: the worker may still hold the source until it acknowledges.
+            AM_EXPECT(!decoders[1]->IsClosed());
             thread.Retire(sources[1]); // a second retire of the same source is ignored
             for (int i = 0; i < 200 && !decoders[1]->IsClosed(); ++i)
             {

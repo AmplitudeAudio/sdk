@@ -100,7 +100,7 @@ namespace SparkyStudios::Audio::Amplitude::Tests
             plan.regionStart = 0;
             plan.regionEnd = 48000 * 10;
 
-            // The worker is not running yet at Create? It is: the first fill happens on the worker, inside Stream().
+            // The worker is already running here, so the first fill happens on the worker, inside the slow Stream() call.
             StreamSource* source = thread.Create(decoder, plan, 2, 48000);
             Thread::Sleep(20); // the worker is inside the 200 ms Stream() call
 
