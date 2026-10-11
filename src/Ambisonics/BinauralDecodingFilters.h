@@ -24,6 +24,7 @@
 #include <SparkyStudios/Audio/Amplitude/HRTF/HRIRSphere.h>
 
 #include <SparkyStudios/Audio/Amplitude/Core/AudioBuffer.h>
+#include <SparkyStudios/Audio/Amplitude/DSP/FFT.h>
 
 #include <DSP/ConvolverKernel.h>
 
@@ -92,6 +93,8 @@ namespace SparkyStudios::Audio::Amplitude
         bool _is3D = true;
         AmUInt32 _channelCount = 0;
         std::vector<std::shared_ptr<const ConvolverKernel>> _kernels[2];
+        // Keeps the shared FFT plan of the kernels' segment size alive for the filters' lifetime.
+        FFT _planKeeper;
     };
 } // namespace SparkyStudios::Audio::Amplitude
 

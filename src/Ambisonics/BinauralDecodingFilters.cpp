@@ -111,6 +111,8 @@ namespace SparkyStudios::Audio::Amplitude
         filters->_hrirs[0] = std::move(accumulated[0]);
         filters->_hrirs[1] = std::move(accumulated[1]);
 
+        filters->_planKeeper.Initialize(2 * NextPowerOf2(hrirLength));
+
         for (AmUInt32 ear = 0; ear < 2; ++ear)
         {
             filters->_kernels[ear].reserve(channels);
