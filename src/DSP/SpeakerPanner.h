@@ -62,6 +62,19 @@ namespace SparkyStudios::Audio::Amplitude
          * @param[in] layout The output layout.
          */
         static SpeakerGains Pan(AmReal32 azimuth, AmReal32 elevation, const ChannelLayout& layout);
+
+        /**
+         * @brief Gets the speaker gains for a direction on the sphere. The gains satisfy Σg² = 1; the LFE gain is always 0.
+         *
+         * The speaker pair is found as Pan finds it (stereo folds the rear to the front). The direction is then split
+         * by VBAP between that pair and an imaginary speaker straight up (elevation ≥ 0) or straight down, whose share
+         * is spread evenly over every speaker. On the horizon the gains equal Pan's.
+         *
+         * @param[in] azimuth Degrees, positive to the left.
+         * @param[in] elevation Degrees, positive up; clamped to [-90, 90].
+         * @param[in] layout The output layout.
+         */
+        static SpeakerGains PanSphere(AmReal32 azimuth, AmReal32 elevation, const ChannelLayout& layout);
     };
 } // namespace SparkyStudios::Audio::Amplitude
 
