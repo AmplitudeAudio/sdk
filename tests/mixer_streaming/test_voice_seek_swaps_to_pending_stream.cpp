@@ -77,7 +77,12 @@ namespace SparkyStudios::Audio::Amplitude::Tests
                 }
             });
 
-            AM_EXPECT(FindEvent(run, eVoiceEventKind::StreamSwapped) != nullptr);
+            const VoiceEvent* swapped = FindEvent(run, eVoiceEventKind::StreamSwapped);
+            AM_EXPECT(swapped != nullptr);
+            if (swapped != nullptr)
+                AM_EXPECT(swapped->stream == &b);
+
+            AM_EXPECT(FindEvent(run, eVoiceEventKind::StreamDropped) == nullptr);
             AM_EXPECT(FindEvent(run, eVoiceEventKind::Underrun) == nullptr);
 
             for (AmUInt64 i = 0; i < kSeekFrame; ++i)
