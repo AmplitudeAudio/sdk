@@ -71,11 +71,12 @@ namespace SparkyStudios::Audio::Amplitude
             AmReal64 direction = 0.0;
         };
 
-        /// Finds the pair for a ring of at least two speakers, as Pan always has.
-        PairLocation LocatePair(
-            AmReal32 azimuth, const ChannelLayout& layout, const std::array<AmUInt16, kAmMaxLayoutChannelCount>& ring, AmUInt16 count)
+        /// Finds the pair for a ring of at least two speakers, as Pan always has. Returns false when none holds the direction
+        /// (only a NaN azimuth gets there).
+        bool LocatePair(
+            AmReal32 azimuth, const ChannelLayout& layout, const std::array<AmUInt16, kAmMaxLayoutChannelCount>& ring, AmUInt16 count,
+            PairLocation& pair)
         {
-            PairLocation pair;
             AmReal64 direction = WrapDegrees(azimuth);
 
             if (count == 2)
@@ -94,7 +95,7 @@ namespace SparkyStudios::Audio::Amplitude
                 pair.firstAzimuth = right;
                 pair.span = left - right;
                 pair.direction = std::clamp(direction, right, left);
-                return pair;
+                return true;
             }
 
             for (AmUInt16 j = 0; j < count; ++j)
@@ -110,12 +111,12 @@ namespace SparkyStudios::Audio::Amplitude
                     pair.firstAzimuth = first;
                     pair.span = span;
                     pair.direction = direction;
-                    return pair;
+                    return true;
                 }
             }
 
-            AMPLITUDE_ASSERT(false); // The ring closes the circle: some pair always contains the direction.
-            return pair;
+            AMPLITUDE_ASSERT(false); // The ring closes the circle: some pair always contains a finite direction.
+            return false;
         }
     } // namespace
 
@@ -160,7 +161,10 @@ namespace SparkyStudios::Audio::Amplitude
             return gains;
         }
 
-        const PairLocation pair = LocatePair(azimuth, layout, ring, count);
+        PairLocation pair;
+        if (!LocatePair(azimuth, layout, ring, count, pair))
+            return gains;
+
         PanPair(pair.direction, pair.firstAzimuth, pair.span, pair.first, pair.second, gains);
         return gains;
     }
@@ -177,13 +181,20 @@ namespace SparkyStudios::Audio::Amplitude
             return gains;
         }
 
-        const PairLocation pair = LocatePair(azimuth, layout, ring, count);
+        PairLocation pair;
+        if (!LocatePair(azimuth, layout, ring, count, pair))
+            return gains;
+
         const AmReal64 el = std::clamp(static_cast<AmReal64>(elevation), -90.0, 90.0) * kDegreesToRadians;
         const AmReal64 t = Wrap360(pair.direction - pair.firstAzimuth) * kDegreesToRadians;
         const AmReal64 span = pair.span * kDegreesToRadians;
 
         // VBAP: the direction is cos(el) on the pair's arc plus |sin(el)| on the pole.
         const AmReal64 sinSpan = std::sin(span);
+        AMPLITUDE_ASSERT(sinSpan > 0.0); // No layout has a gap of 180 degrees or more between neighbouring speakers.
+        if (sinSpan <= 0.0)
+            return gains;
+
         const AmReal64 g1 = std::cos(el) * std::sin(span - t) / sinSpan;
         const AmReal64 g2 = std::cos(el) * std::sin(t) / sinSpan;
         const AmReal64 pole = std::abs(std::sin(el));
