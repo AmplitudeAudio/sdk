@@ -307,6 +307,7 @@ namespace SparkyStudios::Audio::Amplitude
             : detail::AudioFFTImpl()
             , _size(0)
             , _plan()
+            , _ip()
             , _buffer()
         {}
 
@@ -320,6 +321,7 @@ namespace SparkyStudios::Audio::Amplitude
 
             _size = size;
             _plan.reset();
+            _ip.clear();
             _buffer.clear();
 
             if (_size == 0)
@@ -339,6 +341,8 @@ namespace SparkyStudios::Audio::Amplitude
                     return plan;
                 });
 
+            // bitrv2() rewrites the ip table on every transform, so each instance owns its copy; only w is shared.
+            _ip = _plan->ip;
             _buffer.resize(_size);
         }
 
@@ -347,7 +351,7 @@ namespace SparkyStudios::Audio::Amplitude
             // Convert into the format as required by the Ooura FFT
             detail::ConvertBuffer(_buffer.data(), data, _size);
 
-            rdft(static_cast<int>(_size), +1, _buffer.data(), Ip(), W());
+            rdft(static_cast<int>(_size), +1, _buffer.data(), _ip.data(), W());
 
             // Convert back to split-complex
             {
@@ -383,19 +387,14 @@ namespace SparkyStudios::Audio::Amplitude
                 _buffer[1] = re[_size / 2];
             }
 
-            rdft(static_cast<int>(_size), -1, _buffer.data(), Ip(), W());
+            rdft(static_cast<int>(_size), -1, _buffer.data(), _ip.data(), W());
 
             // Convert back to split-complex
             detail::ScaleBuffer(data, _buffer.data(), 2.0 / static_cast<double>(_size), _size);
         }
 
     private:
-        // rdft() takes mutable pointers but only reads the tables once makewt()/makect() have sized them for _size.
-        int* Ip() const
-        {
-            return const_cast<int*>(_plan->ip.data());
-        }
-
+        // Only w is shared between instances: rdft() reads it and never writes it once makewt()/makect() have filled it.
         double* W() const
         {
             return const_cast<double*>(_plan->w.data());
@@ -403,6 +402,7 @@ namespace SparkyStudios::Audio::Amplitude
 
         size_t _size;
         std::shared_ptr<const OouraPlan> _plan;
+        std::vector<int> _ip;
         std::vector<double> _buffer;
 
         void rdft(int n, int isgn, double* a, int* ip, double* w)
