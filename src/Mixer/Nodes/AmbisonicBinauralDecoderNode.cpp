@@ -18,6 +18,7 @@
 
 #include <Ambisonics/AmbisonicDecoder.h>
 #include <Ambisonics/BFormat.h>
+#include <Core/Engine.h>
 #include <Core/EngineInternalState.h>
 #include <DSP/ChannelMap.h>
 
@@ -81,8 +82,17 @@ namespace SparkyStudios::Audio::Amplitude
         {
             const ePanningMode mode = Engine::GetInstance()->GetPanningMode();
             if (mode != ePanningMode_Stereo && _hrirSphere != nullptr)
-                _binauralizer.Configure(
-                    _ambisonicOrder, true, static_cast<AmUInt32>(frameCount), m_layer->GetSampleRate(), _hrirSphere.get());
+            {
+                const AmUInt32 maxBlockSize = static_cast<AmUInt32>(frameCount);
+                const AmUInt32 sampleRate = m_layer->GetSampleRate();
+
+                // The engine built the filters at init; a node only builds its own when they are missing.
+                if (const auto& shared = amEngine->GetState()->binaural_filters;
+                    shared != nullptr && shared->GetOrder() == _ambisonicOrder && shared->Is3D())
+                    _binauralizer.Configure(_ambisonicOrder, true, maxBlockSize, sampleRate, shared);
+                else
+                    _binauralizer.Configure(_ambisonicOrder, true, maxBlockSize, sampleRate, _hrirSphere.get());
+            }
 
             _configured = true;
         }

@@ -1040,6 +1040,15 @@ namespace SparkyStudios::Audio::Amplitude
             _state->hrir_sphere->SetResource(AM_STRING_TO_OS_STRING(config->hrtf()->amir_file()->c_str()));
             _state->hrir_sphere->SetSamplingMode(_state->hrir_sampling_mode);
             _state->hrir_sphere->Load(GetFileSystem());
+
+            if (_state->panning_mode != ePanningMode_Stereo && _state->hrir_sphere->IsLoaded())
+            {
+                const AmUInt32 order = AM_MAX(static_cast<AmUInt32>(_state->panning_mode), 1u);
+                _state->binaural_filters = BinauralDecodingFilters::Build(order, true, *_state->hrir_sphere);
+
+                if (_state->binaural_filters == nullptr)
+                    amLogWarning("Could not prebuild the binaural decoding filters for order %u: each voice will build its own.", order);
+            }
         }
         else if (_state->panning_mode != ePanningMode_Stereo)
         {
@@ -1204,6 +1213,9 @@ namespace SparkyStudios::Audio::Amplitude
         // Unload sound banks
         while (HasLoadedSoundBanks())
             UnloadSoundBanks();
+
+        // Release the shared binaural filters (voices still holding them keep them alive)
+        _state->binaural_filters.reset();
 
         // Release HRIR sphere
         if (_state->hrir_sphere != nullptr)

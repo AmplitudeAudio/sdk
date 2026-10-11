@@ -29,6 +29,7 @@
 #include <Core/Playback/ChannelInternalState.h>
 #include <Core/RoomInternalState.h>
 
+#include <Ambisonics/BinauralDecodingFilters.h>
 #include <Core/Event.h>
 #include <HRTF/HRIRSphere.h>
 #include <Mixer/Amplimix.h>
@@ -185,6 +186,7 @@ namespace SparkyStudios::Audio::Amplitude
             , panning_mode(ePanningMode_Stereo)
             , hrir_sampling_mode(eHRIRSphereSamplingMode_NearestNeighbor)
             , hrir_sphere(nullptr)
+            , binaural_filters(nullptr)
             , resampler("default")
             , version(nullptr)
         {}
@@ -319,6 +321,11 @@ namespace SparkyStudios::Audio::Amplitude
         eHRIRSphereSamplingMode hrir_sampling_mode;
 
         std::shared_ptr<HRIRSphereImpl> hrir_sphere;
+
+        /**
+         * @brief The binaural decoding filters shared by every voice, built at init in a binaural panning mode.
+         */
+        std::shared_ptr<const BinauralDecodingFilters> binaural_filters;
 
         AmString resampler;
 

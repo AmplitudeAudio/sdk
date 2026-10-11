@@ -21,6 +21,7 @@
 #include <SparkyStudios/Audio/Amplitude/Mixer/Node.h>
 
 #include <Ambisonics/AmbisonicBinauralizer.h>
+#include <Ambisonics/AmbisonicDecoder.h>
 #include <Ambisonics/BFormat.h>
 #include <HRTF/HRIRSphere.h>
 #include <Mixer/Pipeline.h>
@@ -40,6 +41,14 @@ namespace SparkyStudios::Audio::Amplitude
         }
 
         void Configure(AmUInt64 frameCount, AmUInt16 channelCount) override;
+
+        /**
+         * @brief Gets the binauralizer of this node.
+         */
+        [[nodiscard]] const AmbisonicBinauralizer& GetBinauralizer() const
+        {
+            return _binauralizer;
+        }
 
     private:
         std::shared_ptr<const HRIRSphere> _hrirSphere;
