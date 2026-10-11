@@ -355,17 +355,23 @@ namespace SparkyStudios::Audio::Amplitude
         void SetUserData(AmVoidPtr userData);
 
         /**
-         * @brief Renders audio data.
+         * @brief Moves the stream decoder out of this instance (game thread).
          *
-         * The audio data is read from the audio file loaded by this
-         * Sound. This function is mostly for internal uses.
+         * Streamed instances only. The caller owns the decoder from here on and is responsible for closing it; the
+         * instance no longer closes it in Destroy().
          *
-         * @param offset The offset in the audio data to start reading from.
-         * @param frames The number of audio frames to read.
-         *
-         * @return The number of frames read.
+         * @return The decoder, or @c nullptr if this instance is not streamed, has no decoder, or already gave it away.
          */
-        [[nodiscard]] AmUInt64 GetAudio(AmUInt64 offset, AmUInt64 frames) const;
+        [[nodiscard]] std::shared_ptr<Codec::Decoder> TakeStreamDecoder();
+
+        /**
+         * @brief Opens a new decoder on the file of this instance (game thread).
+         *
+         * Used to give every extra stream (a seek, an instance) its own decoder position.
+         *
+         * @return The opened decoder, or @c nullptr on failure (logged).
+         */
+        [[nodiscard]] std::shared_ptr<Codec::Decoder> OpenStreamDecoder() const;
 
         /**
          * @brief Destroys the audio sample loaded by this Sound and

@@ -33,6 +33,7 @@
 #include <Mixer/InstancePipelineTable.h>
 #include <Mixer/LayerGainMixer.h>
 #include <Mixer/SoundData.h>
+#include <Mixer/Streaming/StreamingThread.h>
 #include <Mixer/Voice/Voice.h>
 
 #include <Utils/miniaudio/miniaudio_utils.h>
@@ -110,6 +111,27 @@ namespace SparkyStudios::Audio::Amplitude
         std::atomic<AmUInt32> pins{ 0 }; // game-thread readers keeping the layer alive, see AmplimixImpl::PinLayer
         std::atomic<bool> destroyPending{ false }; // the game thread is destroying the layer: pins fail, see PinLayer
         bool releaseRequested = false; // game thread only: a release or discard was pushed, the layer may be destroyed
+
+        // Streamed sounds, game thread only (guarded by AmplimixImpl::_streamMutex). The audio thread only reads rings.
+        StreamingThread* streaming = nullptr; // the streaming thread that owns this layer's sources, set by StartVoice
+        StreamSource* stream = nullptr; // the stream the voice reads (game-side bookkeeping only)
+        StreamSource* pendingStream = nullptr; // filling for a seek that is not posted yet, or posted and not yet adopted
+        AmUInt64 pendingPosition = 0;
+        AmUInt64 pendingClock = kVoiceAsap;
+        bool swapPosted = false; // a Seek with a stream was posted; waiting for StreamSwapped or StreamDropped
+        bool hasQueuedSeek = false; // a seek requested while a swap was in flight (the newest wins)
+        AmUInt64 queuedPosition = 0;
+        AmUInt64 queuedClock = kVoiceAsap;
+        bool activationPending = false; // waiting for the start prefill
+        bool suppressBegin = false; // a stop arrived before the voice was activated: the channel never begins
+        bool underrunWarned = false;
+        bool dropsLost = false; // the voice reported a lost StreamDropped: streams are kept until the layer is destroyed
+        bool streamLoop = false; // the sound loops
+        AmUInt32 streamWraps = 0; // wraps allowed at start (SourceReader::kInfiniteWraps for forever)
+        AmUInt32 loopsSeen = 0; // wraps reported by Looped events so far
+        AmUInt64 prerollFrames = 0; // preroll a stream plan needs, cached from the voice at start
+        std::vector<StreamSource*> heldStreams; // every stream this layer created and has not retired yet
+        std::vector<StreamSource*> instanceSources; // owned instance streams, retired with the layer
 
         ~AmplimixLayerImpl() override;
 
@@ -307,7 +329,29 @@ namespace SparkyStudios::Audio::Amplitude
          * @brief Records a transport command for a voice (game thread). Sent by the next @c FlushVoiceCommands().
          */
         void PostVoiceCommand(
-            AmUInt32 id, AmUInt32 layer, eVoiceCommandKind kind, AmTime duration = 0.0, AmUInt64 position = 0, AmUInt64 frame = kVoiceAsap);
+            AmUInt32 id,
+            AmUInt32 layer,
+            eVoiceCommandKind kind,
+            AmTime duration = 0.0,
+            AmUInt64 position = 0,
+            AmUInt64 frame = kVoiceAsap,
+            StreamSource* stream = nullptr);
+
+        /**
+         * @brief Seeks a voice to a source position (game thread).
+         *
+         * An in-memory voice gets a plain @c Seek command. A streamed voice gets a fresh stream planned at @p position:
+         * the seek is posted once that stream holds its prefill. A seek requested while another is in flight is queued
+         * (the newest wins) and runs when the voice reports the swap.
+         *
+         * @param id The owner id checked against the layer.
+         * @param layer The layer handle.
+         * @param position The source frame to seek to.
+         * @param clock The audio-clock frame the seek applies at, or @c kVoiceAsap.
+         *
+         * @return @c false if the layer is not playing for @p id or no stream could be created.
+         */
+        bool SeekVoice(AmUInt32 id, AmUInt32 layer, AmUInt64 position, AmUInt64 clock);
 
         /**
          * @brief Sends the recorded voice commands to the audio thread (game thread, once per frame).
@@ -511,6 +555,13 @@ namespace SparkyStudios::Audio::Amplitude
         bool TryDestroyLayer(AmplimixLayerImpl* layer);
         void UpdateVoiceBlockFrames();
         void DrainVoiceCommands();
+        void UpdateStreams();
+        void PushActivation(AmplimixLayerImpl* layer);
+        void PostStreamSeek(AmplimixLayerImpl* layer);
+        bool SeekStreamedLayer(AmplimixLayerImpl* layer, AmUInt64 position, AmUInt64 clock);
+        void HandleStreamDropped(AmplimixLayerImpl* layer, StreamSource* stream);
+        void RunQueuedSeek(AmplimixLayerImpl* layer);
+        void HandleStreamSwapped(AmplimixLayerImpl* layer, const StreamSource* stream);
         void HandleVoiceEvent(const VoiceEvent& event);
         void HandleVoiceEnded(AmplimixLayerImpl* layer, ChannelInternalState* channelState);
         bool MixVoice(AmplimixLayerImpl* layer, AudioBuffer* buffer, AmUInt64 offset, AmUInt64 frames, AmUInt64 blockClock);
@@ -551,6 +602,7 @@ namespace SparkyStudios::Audio::Amplitude
         std::unique_ptr<VoiceEventQueue> _voiceEvents;
         std::vector<VoiceCommand> _voiceOutbox; // game side only, guarded by _voiceOutboxMutex
         std::vector<AmUInt32> _pendingDestroys; // game thread only: released layers waiting for detach and unpin
+        std::recursive_mutex _streamMutex; // guards the streamed-layer bookkeeping; game side only, never taken by the audio thread
         std::mutex _voiceOutboxMutex; // transport may be called from any game-side thread; never taken by the audio thread
         std::atomic<AmUInt64> _audioClock{ 0 };
         AmUInt64 _voiceBlockFrames = 0;

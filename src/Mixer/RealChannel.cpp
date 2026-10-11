@@ -499,8 +499,7 @@ namespace SparkyStudios::Audio::Amplitude
         const AmTime clampedPosition = std::max<AmTime>(position, 0.0);
         const AmUInt64 cursor = static_cast<AmUInt64>(clampedPosition * static_cast<AmTime>(soundData->format.GetSampleRate()) / kAmSecond);
 
-        _mixer->PostVoiceCommand(_channelId, data.mixerLayerId, eVoiceCommandKind::Seek, 0.0, cursor, clock);
-        return true;
+        return _mixer->SeekVoice(_channelId, data.mixerLayerId, cursor, clock);
     }
 
     AmTime RealChannel::GetPlaybackPosition() const
