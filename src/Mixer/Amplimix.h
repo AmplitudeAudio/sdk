@@ -141,6 +141,49 @@ namespace SparkyStudios::Audio::Amplitude
         std::vector<StreamSource*> heldStreams; // every stream this layer created and has not retired yet
         std::vector<StreamSource*> instanceSources; // owned instance streams, retired with the layer
 
+        /// Where the audio thread reports how a streamed instance's reader ended up after its attach seek.
+        struct InstanceSlipProbe
+        {
+            static constexpr AmUInt32 kPending = 0; ///< The attach command did not run yet.
+            static constexpr AmUInt32 kExact = 1; ///< The reader sits at the planned cursor.
+            static constexpr AmUInt32 kSlipped = 2; ///< The reader slipped to another frame than the planned cursor.
+
+            std::atomic<AmUInt32> state{ kPending };
+            std::atomic<AmUInt64> actual{ 0 }; ///< The reader cursor after the seek (valid once not pending).
+        };
+
+        /// A streamed instance whose attach waits for its stream's prefill (game thread, see UpdateStreams).
+        struct PendingInstanceAttach
+        {
+            AmChannelInstanceID instanceId = kAmInvalidObjectId;
+            std::shared_ptr<VoiceStreamSlot> slot;
+            StreamSource* source = nullptr; ///< Owned by the layer through instanceSources.
+            AmUInt64 cursor = 0; ///< The source frame the stream was planned at.
+            std::shared_ptr<InstanceSlipProbe> probe;
+        };
+
+        /// A streamed instance the layer created a stream for (game thread).
+        struct InstanceStreamEntry
+        {
+            AmChannelInstanceID instanceId = kAmInvalidObjectId;
+            StreamSource* source = nullptr; ///< Owned by the layer through instanceSources.
+            AmUInt64 cursor = 0; ///< The planned cursor.
+            std::shared_ptr<VoiceStreamSlot> slot; ///< Shared with the audio thread: its use count tells when it let go.
+            std::shared_ptr<InstanceSlipProbe> probe;
+            bool slipReported = false;
+        };
+
+        /// A detached instance stream: retired once the audio thread dropped every reference to its slot.
+        struct RetiringInstanceStream
+        {
+            std::shared_ptr<VoiceStreamSlot> slot;
+            StreamSource* source = nullptr;
+        };
+
+        std::vector<PendingInstanceAttach> pendingAttaches; // instances whose stream is still filling
+        std::vector<InstanceStreamEntry> instanceEntries; // instances with a stream, attached or pending
+        std::vector<RetiringInstanceStream> retiringInstances; // detached instance streams not retired yet
+
         ~AmplimixLayerImpl() override;
 
         /**
@@ -405,9 +448,18 @@ namespace SparkyStudios::Audio::Amplitude
         /**
          * @brief Gives a separate-mode instance its own voice stream, starting at the instance cursor (game thread).
          *
+         * A streamed layer opens a decoder of its own for the instance and plans its ring at @p cursor; the attach is
+         * pushed once that stream holds its prefill (until then the instance is silent). The attach is recorded as soon
+         * as the stream exists: a pending attach is never created twice.
+         *
+         * @param id The channel id owning the layer.
+         * @param layer The layer.
+         * @param instanceId The instance to attach.
+         * @param cursor The instance's last published cursor, in source frames.
+         *
          * @return @c false if the layer is not playing for @p id or the stream could not be created.
          */
-        bool AttachInstanceStream(AmUInt32 id, AmUInt32 layer, AmChannelInstanceID instanceId);
+        bool AttachInstanceStream(AmUInt32 id, AmUInt32 layer, AmChannelInstanceID instanceId, AmUInt64 cursor = 0);
 
         /**
          * @brief Removes the voice stream of a separate-mode instance; it is released after the mix (game thread).
@@ -563,6 +615,9 @@ namespace SparkyStudios::Audio::Amplitude
             AmUInt32 swapsPosted = 0;
             AmUInt32 swapsAdopted = 0;
             AmUInt32 swapsDropped = 0;
+            AmUInt32 pendingInstanceAttaches = 0; ///< instance streams waiting for their prefill
+            AmUInt32 instanceStreams = 0; ///< instance streams attached or pending
+            AmUInt32 retiringInstanceStreams = 0; ///< detached instance streams waiting for the audio thread to let go
         };
 
         [[nodiscard]] StreamDiagnostics GetStreamDiagnosticsForTesting();
@@ -577,6 +632,8 @@ namespace SparkyStudios::Audio::Amplitude
         void UpdateVoiceBlockFrames();
         void DrainVoiceCommands();
         void UpdateStreams();
+        bool AttachStreamedInstance(AmplimixLayerImpl* layer, AmUInt32 id, AmChannelInstanceID instanceId, AmUInt64 cursor);
+        void PushInstanceAttach(AmplimixLayerImpl* layer, AmUInt32 id, const AmplimixLayerImpl::PendingInstanceAttach& attach);
         void PushActivation(AmplimixLayerImpl* layer);
         void PostStreamSeek(AmplimixLayerImpl* layer);
         bool SeekStreamedLayer(AmplimixLayerImpl* layer, AmUInt64 position, AmUInt64 clock);

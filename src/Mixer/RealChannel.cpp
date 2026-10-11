@@ -658,7 +658,7 @@ namespace SparkyStudios::Audio::Amplitude
                 if (std::ranges::find(data.attachedStreamIds, instance.instanceId) != data.attachedStreamIds.end())
                     continue;
 
-                if (_mixer->AttachInstanceStream(_channelId, data.mixerLayerId, instance.instanceId))
+                if (_mixer->AttachInstanceStream(_channelId, data.mixerLayerId, instance.instanceId, instance.cursor))
                     data.attachedStreamIds.push_back(instance.instanceId);
             }
 

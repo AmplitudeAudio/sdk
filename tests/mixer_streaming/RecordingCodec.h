@@ -328,7 +328,7 @@ namespace SparkyStudios::Audio::Amplitude::Tests
 
             _codecPlugin = Engine::RegisterExtension<RecordingCodec>();
 
-            InitializeConfig(AM_OS_STRING("tests.config.amconfig"));
+            InitializeConfig(GetConfigPath());
             LoadSoundBank(AM_OS_STRING("tests.init.ambank"));
 
             amEngine->StartLoadSoundFiles();
@@ -365,6 +365,12 @@ namespace SparkyStudios::Audio::Amplitude::Tests
         }
 
     protected:
+        /// The engine configuration the fixture boots with. Fixtures needing another one override it.
+        [[nodiscard]] virtual AmOsString GetConfigPath() const
+        {
+            return AM_OS_STRING("tests.config.amconfig");
+        }
+
         /// Runs one game frame and gives the audio and streaming threads a moment.
         static void Frame()
         {

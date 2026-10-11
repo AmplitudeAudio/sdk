@@ -81,13 +81,19 @@ namespace SparkyStudios::Audio::Amplitude
         return true;
     }
 
-    bool Voice::InitializeSlot(VoiceStreamSlot& slot, AmUInt64 position) const
+    bool Voice::InitializeSlot(VoiceStreamSlot& slot, AmUInt64 position, StreamSource* stream) const
     {
         // A streamed source always carries a bound stream: never the stand-in the voice was created over, and never a
         // stream the voice has swapped away from (settings are not updated by swaps): read the voice's current stream.
         VoiceSource source = _settings.source;
-        if (source.IsStreamed() && _current != nullptr)
-            source.stream = _current;
+        if (source.IsStreamed())
+        {
+            // A slot with its own stream never looks at the voice's current one: the audio thread owns it and swaps it.
+            if (stream != nullptr)
+                source.stream = stream;
+            else if (_current != nullptr)
+                source.stream = _current;
+        }
 
         AMPLITUDE_ASSERT(!source.IsStreamed() || source.stream != nullptr);
 

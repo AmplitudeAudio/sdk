@@ -79,7 +79,17 @@ namespace SparkyStudios::Audio::Amplitude
         static constexpr AmSize kMaxSegments = 2 * kMaxPendingCommands + 8;
 
         bool Initialize(const VoiceSettings& settings);
-        bool InitializeSlot(VoiceStreamSlot& slot, AmUInt64 position) const;
+
+        /**
+         * @brief Initializes a slot over the voice's settings (game thread).
+         *
+         * @param slot The slot to initialize.
+         * @param position The first source frame, for an in-memory source (a streamed source is positioned by the caller
+         * once its ring holds frames).
+         * @param stream For a streamed source: the stream the slot's reader is bound to, when it must not read the voice's
+         * own current stream (an instance slot owns its stream). Null binds the voice's current stream.
+         */
+        bool InitializeSlot(VoiceStreamSlot& slot, AmUInt64 position, StreamSource* stream = nullptr) const;
 
         /**
          * @brief Queues a command, ordered by frame. Commands are never dropped: when full, the latest-stamped pending
