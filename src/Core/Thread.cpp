@@ -22,6 +22,7 @@
 #else
 #include <ctime>
 #include <pthread.h>
+#include <sys/resource.h>
 #include <sys/syscall.h>
 #include <sys/types.h>
 #include <unistd.h>
@@ -124,6 +125,12 @@ namespace SparkyStudios::Audio::Amplitude::Thread
     AmThreadID GetCurrentThreadId()
     {
         return ::GetCurrentThreadId();
+    }
+
+    bool SetCurrentThreadPriority(eThreadPriority priority)
+    {
+        const int value = priority == eThreadPriority::AboveNormal ? THREAD_PRIORITY_ABOVE_NORMAL : THREAD_PRIORITY_NORMAL;
+        return ::SetThreadPriority(::GetCurrentThread(), value) != 0;
     }
 #else // pthreads
     struct AmThreadHandleData
@@ -253,6 +260,17 @@ namespace SparkyStudios::Audio::Amplitude::Thread
 #else
         pid_t tid = syscall(__NR_gettid);
         return static_cast<AmThreadID>(tid);
+#endif
+    }
+
+    bool SetCurrentThreadPriority(eThreadPriority priority)
+    {
+#if AM_PLATFORM_APPLE
+        const qos_class_t qos = priority == eThreadPriority::AboveNormal ? QOS_CLASS_USER_INITIATED : QOS_CLASS_DEFAULT;
+        return pthread_set_qos_class_self_np(qos, 0) == 0;
+#else
+        const int nice = priority == eThreadPriority::AboveNormal ? -5 : 0;
+        return setpriority(PRIO_PROCESS, static_cast<id_t>(syscall(__NR_gettid)), nice) == 0;
 #endif
     }
 #endif
