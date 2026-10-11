@@ -33,6 +33,7 @@ namespace SparkyStudios::Audio::Amplitude::Fidelity
         registry.Add(MakeOrbitScenario());
         registry.Add(MakeSpreadSweepScenario());
         registry.Add(MakeAmbisonicOrbitScenario());
+        registry.Add(MakeStreamedLoopSeekScenario());
     }
 
     void RegisterAllScenarios(ScenarioRegistry& registry)
