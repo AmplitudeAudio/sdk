@@ -46,11 +46,12 @@ All notable changes to the Amplitude Audio SDK are recorded here. The format fol
 
 - A seek crossfades over 8 ms instead of 5 ms. A seek restarts the resampler from an empty history, and the longer
   fade keeps the band-limited onset of the new position below the click floor.
+
 - Binaural decoding filters are built once at engine init and shared by every voice. Each decoder sums its ambisonic
   channels in the frequency domain (16 forward and 2 inverse FFTs per block at order 3, from 32 and 32), and FFT plans
   are shared per size. Starting a voice with the default pipeline dropped from 10745 to 910 profile samples over the
-  `core_engine` tests in a debug build (`AmbisonicBinauralizer::Configure`: 9871 to 143), about 1.3 ms per voice from
-  15 ms; binaural decoding fell from 8.1% to 3.8% of the mix time.
+  `core_engine` tests in a debug build (`AmbisonicBinauralizer::Configure`: 9871 to 143), an estimated 1.3 ms per voice from
+  about 15 ms; binaural decoding fell from 8.1% to 3.8% of the mix time.
 
 ### Added
 
@@ -65,7 +66,8 @@ All notable changes to the Amplitude Audio SDK are recorded here. The format fol
 - The mixer ramped the playback ratio across each block instead of stepping it once per block. A moving pitch
   — a glide, Doppler, a playback-rate change — no longer leaves a staircase in the resampler's read position,
   which was audible as a click at every block boundary.
-- `Convolver` convolves calls that start mid-block correctly and starts its history silent.
+- `Convolver` convolves calls that start mid-block correctly, starts its history silent, and no longer overlap-adds
+  with aligned SIMD loads at unaligned offsets (a debug assert, and a fault on SSE).
 
 ### Known issues
 
