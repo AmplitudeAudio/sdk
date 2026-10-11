@@ -87,11 +87,18 @@ namespace SparkyStudios::Audio::Amplitude
                 const AmUInt32 sampleRate = m_layer->GetSampleRate();
 
                 // The engine built the filters at init; a node only builds its own when they are missing.
-                if (const auto& shared = amEngine->GetState()->binaural_filters;
+                bool ready;
+                if (const auto shared = amEngine->GetState()->binaural_filters;
                     shared != nullptr && shared->GetOrder() == _ambisonicOrder && shared->Is3D())
-                    _binauralizer.Configure(_ambisonicOrder, true, maxBlockSize, sampleRate, shared);
+                    ready = _binauralizer.Configure(_ambisonicOrder, true, maxBlockSize, sampleRate, shared);
                 else
-                    _binauralizer.Configure(_ambisonicOrder, true, maxBlockSize, sampleRate, _hrirSphere.get());
+                    ready = _binauralizer.Configure(_ambisonicOrder, true, maxBlockSize, sampleRate, _hrirSphere.get());
+
+                static std::atomic<bool> failed{ false };
+                if (!ready && !failed.exchange(true))
+                    amLogWarning(
+                        "AmbisonicBinauralDecoder could not set up binaural decoding for order %u: the node renders silence.",
+                        _ambisonicOrder);
             }
 
             _configured = true;
