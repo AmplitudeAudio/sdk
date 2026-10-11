@@ -28,6 +28,8 @@ namespace SparkyStudios::Audio::Amplitude
     bool AmbisonicBinauralizer::Configure(
         AmUInt32 order, bool is3D, AmUInt32 maxBlockSize, AmUInt32 sampleRate, std::shared_ptr<const BinauralDecodingFilters> filters)
     {
+        _filters.reset();
+
         if (filters == nullptr || filters->GetOrder() != order || filters->Is3D() != is3D)
             return false;
 
