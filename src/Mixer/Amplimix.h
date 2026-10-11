@@ -110,7 +110,7 @@ namespace SparkyStudios::Audio::Amplitude
         AmUInt64 pipelineFrames = 0; // frames per-instance pipelines are pre-configured with, set by StartVoice
         std::atomic<AmUInt32> pins{ 0 }; // game-thread readers keeping the layer alive, see AmplimixImpl::PinLayer
         std::atomic<bool> destroyPending{ false }; // the game thread is destroying the layer: pins fail, see PinLayer
-        bool releaseRequested = false; // game thread only: a release or discard was pushed, the layer may be destroyed
+        std::atomic<bool> releaseRequested{ false }; // a release or discard was pushed, the layer may be destroyed
 
         // Streamed sounds, game thread only (guarded by AmplimixImpl::_streamMutex). The audio thread only reads rings.
         StreamingThread* streaming = nullptr; // the streaming thread that owns this layer's sources, set by StartVoice
@@ -119,13 +119,21 @@ namespace SparkyStudios::Audio::Amplitude
         AmUInt64 pendingPosition = 0;
         AmUInt64 pendingClock = kVoiceAsap;
         bool swapPosted = false; // a Seek with a stream was posted; waiting for StreamSwapped or StreamDropped
+        AmUInt32 swapsPosted = 0; // seeks posted to the voice with a stream (diagnostics)
+        AmUInt32 swapsAdopted = 0; // posted seeks that ended in a StreamSwapped adopting their stream (diagnostics)
+        AmUInt32 swapsDropped = 0; // posted seeks that ended in a StreamDropped of their pending stream (diagnostics)
         bool hasQueuedSeek = false; // a seek requested while a swap was in flight (the newest wins)
         AmUInt64 queuedPosition = 0;
         AmUInt64 queuedClock = kVoiceAsap;
-        bool activationPending = false; // waiting for the start prefill
-        bool suppressBegin = false; // a stop arrived before the voice was activated: the channel never begins
+        std::atomic<bool> activationPending{ false }; // waiting for the start prefill
+        std::atomic<bool> suppressBegin{ false }; // a stop arrived before the voice was activated: the channel never begins
+        std::atomic<bool> stopRequested{ false }; // a Stop or Release was posted: no more seeks are planned or posted
+        std::atomic<bool> muted{ false }; // stopped before it was heard: the gain stays at zero
         bool underrunWarned = false;
-        bool dropsLost = false; // the voice reported a lost StreamDropped: streams are kept until the layer is destroyed
+        // The voice reported a lost StreamDropped: streams are never retired because of it (they stay held until their own
+        // Dropped or the layer is destroyed), and the swapPosted gate is lifted since the in-flight stream may be the one
+        // whose drop was lost. Seeks then post fresh streams without waiting; the voice resolves them in order.
+        bool dropsLost = false;
         bool streamLoop = false; // the sound loops
         AmUInt32 streamWraps = 0; // wraps allowed at start (SourceReader::kInfiniteWraps for forever)
         AmUInt32 loopsSeen = 0; // wraps reported by Looped events so far
@@ -545,6 +553,19 @@ namespace SparkyStudios::Audio::Amplitude
          * The build has no unit-test define to compile this out with, so it stays in every build.
          */
         void SetMixInProgressForTesting(bool inProgress);
+
+        /// Game-side stream bookkeeping summed over the live streamed layers (tests only).
+        struct StreamDiagnostics
+        {
+            bool swapPosted = false; ///< a layer has a seek posted and not yet resolved
+            bool hasPending = false; ///< a layer holds a planned stream that the voice has not adopted
+            bool hasQueuedSeek = false; ///< a layer holds a seek waiting for the in-flight one
+            AmUInt32 swapsPosted = 0;
+            AmUInt32 swapsAdopted = 0;
+            AmUInt32 swapsDropped = 0;
+        };
+
+        [[nodiscard]] StreamDiagnostics GetStreamDiagnosticsForTesting();
 #endif
 
     private:

@@ -218,6 +218,14 @@ namespace SparkyStudios::Audio::Amplitude
         void BindStream(StreamSource* stream);
 
         /**
+         * @brief Gets the stream the primary slot reads now. Audio thread only: it changes when a seek swaps streams.
+         */
+        [[nodiscard]] StreamSource* GetCurrentStream() const
+        {
+            return _current;
+        }
+
+        /**
          * @brief Gets the history frames the primary resampler reads ahead of an output: the preroll a stream plan needs.
          */
         [[nodiscard]] AmUInt64 GetPrerollFrames() const

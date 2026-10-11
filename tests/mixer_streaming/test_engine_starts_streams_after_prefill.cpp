@@ -109,6 +109,12 @@ namespace SparkyStudios::Audio::Amplitude::Tests
                     }));
             }
 
+            // The first decode of the first decoder starts at the first frame of the file (nothing before it to preroll).
+            const auto decoders = RecordingState::Get().GetDecoders();
+            AM_EXPECT(!decoders.empty());
+            if (!decoders.empty())
+                AM_EXPECT_EQ(0LL, decoders.front()->firstSeekOffset.load());
+
             RecordingState::Get().SetDelay(0);
             channel.Stop(0);
         }
