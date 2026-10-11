@@ -53,6 +53,12 @@ namespace SparkyStudios::Audio::Amplitude::Tests
         }
 
     private:
+        // The FFT backend is not bit-reproducible across buffers, so spectra are compared within float tolerance.
+        static bool Near(AmReal32 a, AmReal32 b)
+        {
+            return std::abs(a - b) <= 1e-6f * std::max(1.0f, std::abs(b));
+        }
+
         static std::vector<AmAudioSample> MakeIR(AmSize irLen)
         {
             std::vector<AmAudioSample> ir(irLen);
@@ -94,7 +100,7 @@ namespace SparkyStudios::Audio::Amplitude::Tests
 
                 const SplitComplex& actual = kernel->GetSegment(s);
                 for (AmSize i = 0; i < kernel->GetComplexSize(); ++i)
-                    same = same && actual.re()[i] == expected.re()[i] && actual.im()[i] == expected.im()[i];
+                    same = same && Near(actual.re()[i], expected.re()[i]) && Near(actual.im()[i], expected.im()[i]);
             }
 
             AM_EXPECT(same);
