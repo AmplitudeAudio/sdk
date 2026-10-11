@@ -63,8 +63,16 @@ All notable changes to the Amplitude Audio SDK are recorded here. The format fol
 - Second-order binaural (`BinauralMediumQuality`) decodes on a 20-point dodecahedron instead of a 12-speaker
   horizontal ring, so it keeps elevation.
 
+- Streamed sounds are decoded on a dedicated streaming thread instead of the audio thread. Each reader (a voice, or a
+  multi-position instance) gets a decoded ring kept `buffer_ms` ahead (500 ms by default); the audio callback only copies
+  from it. A streamed sound starts, and a seek takes effect, once `prefill_ms` (60 ms) is decoded, usually one or two
+  frames later on a warm disk. A slow disk now causes a reported underrun (silence, the stream resumes where it stopped)
+  instead of ending the sound.
+
 ### Added
 
+- The engine configuration's optional `streaming` table: `buffer_ms`, `prefill_ms` and `synchronous` (decode on the
+  rendering thread, for offline rendering).
 - Surround output. The engine configuration's new `output.channels` renders Mono, Stereo, Quad, 5.1 or 7.1 (default
   Stereo); `Default` takes the device's native layout. `Engine::GetOutputLayout()` reports the active layout.
 - `AmbisonicSpeakerDecoder` decodes the ambisonic branch to the output speakers; `sample_project/pipelines/surround.json`
