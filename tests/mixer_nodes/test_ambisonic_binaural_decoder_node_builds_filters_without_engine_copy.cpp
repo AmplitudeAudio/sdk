@@ -38,8 +38,7 @@ namespace SparkyStudios::Audio::Amplitude::Tests
         {
             // Without the engine's copy, the node builds its own filters and still renders.
             auto state = amEngine->GetState();
-            const auto saved = state->binaural_filters;
-            std::weak_ptr<const BinauralDecodingFilters> engineCopy = saved;
+            auto saved = state->binaural_filters;
             state->binaural_filters.reset();
 
             constexpr AmUInt64 frameCount = 512;
@@ -73,9 +72,37 @@ namespace SparkyStudios::Audio::Amplitude::Tests
                 energy += (*output)[0][i] * (*output)[0][i] + (*output)[1][i] * (*output)[1][i];
             AM_EXPECT(energy > 0.0f);
 
-            // Filters outlive their engine owner while a user holds them.
+            // A node that took the engine's filters keeps them alive once the engine lets go.
             state->binaural_filters = saved;
-            AM_EXPECT(engineCopy.lock() != nullptr);
+
+            auto second = nodeFactory.CreateInstance();
+            second->Initialize(1, &mockLayer, nullptr, nodeFactory.GetParameterCount());
+            second->Configure(frameCount, ambiChannels);
+
+            auto* secondNode = dynamic_cast<AmbisonicBinauralDecoderNodeInstance*>(second.get());
+            AM_EXPECT(secondNode != nullptr);
+            AM_EXPECT(secondNode->GetBinauralizer().GetFilters().get() == saved.get());
+
+            std::weak_ptr<const BinauralDecodingFilters> weak = saved;
+            saved.reset();
+            state->binaural_filters.reset();
+
+            AM_EXPECT(weak.lock() != nullptr);
+
+            const AudioBuffer* secondOutput = secondNode->Process(&input);
+            AM_EXPECT(secondOutput != nullptr);
+
+            AmReal32 secondEnergy = 0.0f;
+            for (AmUInt64 i = 0; i < frameCount; ++i)
+                secondEnergy += (*secondOutput)[0][i] * (*secondOutput)[0][i] + (*secondOutput)[1][i] * (*secondOutput)[1][i];
+            AM_EXPECT(secondEnergy > 0.0f);
+
+            secondNode = nullptr;
+            second.reset();
+            AM_EXPECT(weak.expired());
+
+            // Leave a normal engine behind for the tests that follow.
+            state->binaural_filters = BinauralDecodingFilters::Build(3, true, *amEngine->GetHRIRSphere());
         }
     };
 
