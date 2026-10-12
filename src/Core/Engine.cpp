@@ -13,6 +13,7 @@
 // limitations under the License.
 
 #include <algorithm>
+#include <atomic>
 #include <chrono>
 #include <filesystem>
 #include <memory>
@@ -162,6 +163,8 @@ namespace SparkyStudios::Audio::Amplitude
     static std::shared_ptr<SpeakerPanningNode> sStereoPanningNodePlugin = nullptr;
 
     static AmUniquePtr<EngineImpl, eMemoryPoolKind_Engine> gAmplitude = nullptr;
+
+    static std::atomic<EngineImpl*> gAmplitudeInstance = nullptr;
     static std::mutex gInstanceMutex;
 
     std::set<AmOsString> EngineImpl::_pluginSearchPaths = {};
@@ -762,11 +765,17 @@ namespace SparkyStudios::Audio::Amplitude
         if (!MemoryManager::IsInitialized())
             return nullptr;
 
+        if (EngineImpl* instance = gAmplitudeInstance.load(std::memory_order_acquire); instance != nullptr)
+            return instance;
+
         std::lock_guard lock(gInstanceMutex);
 
         // Amplitude Engine unique instance.
         if (gAmplitude == nullptr)
+        {
             gAmplitude.reset(ampoolnew(eMemoryPoolKind_Engine, EngineImpl));
+            gAmplitudeInstance.store(gAmplitude.get(), std::memory_order_release);
+        }
 
         return gAmplitude.get();
     }
@@ -774,6 +783,12 @@ namespace SparkyStudios::Audio::Amplitude
     void Engine::DestroyInstance()
     {
         std::lock_guard lock(gInstanceMutex);
+
+        // The engine must be deinitialized before it is destroyed.
+        AMPLITUDE_ASSERT(gAmplitude == nullptr || !gAmplitude->IsInitialized());
+
+        // Unpublish the instance before destroying it.
+        gAmplitudeInstance.store(nullptr, std::memory_order_release);
         gAmplitude.reset();
     }
 
@@ -2929,7 +2944,7 @@ namespace SparkyStudios::Audio::Amplitude
 
 #pragma region Amplimix
 
-    Amplimix* EngineImpl::GetMixer() const
+    AmplimixImpl* EngineImpl::GetMixer() const
     {
         return &_state->mixer;
     }

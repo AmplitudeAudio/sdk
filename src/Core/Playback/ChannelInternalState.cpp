@@ -319,11 +319,11 @@ namespace SparkyStudios::Audio::Amplitude
         AmTime delay = 0.0;
         if (clock != kVoiceAsap)
         {
-            const AmUInt64 now = amEngine->GetAudioClock();
-            delay = static_cast<AmTime>(clock > now ? clock - now : 0) * kAmSecond / static_cast<AmTime>(amEngine->GetAudioClockRate());
+            const AmUInt64 now = _engine->GetAudioClock();
+            delay = static_cast<AmTime>(clock > now ? clock - now : 0) * kAmSecond / static_cast<AmTime>(_engine->GetAudioClockRate());
         }
 
-        _fadeInEndTime = amEngine->GetTotalTime() + delay + AM_MAX(duration, kDeclickFade);
+        _fadeInEndTime = _engine->GetTotalTime() + delay + AM_MAX(duration, kDeclickFade);
         TriggerOnNextFrame(eChannelEvent_Resume);
     }
 
@@ -369,7 +369,7 @@ namespace SparkyStudios::Audio::Amplitude
 
         // A command for a later frame does not change the channel yet: it keeps playing (and following its emitter) until
         // the clock gets there. A stop that is not scheduled overrides a scheduled one.
-        if (clock != kVoiceAsap && clock > amEngine->GetAudioClock())
+        if (clock != kVoiceAsap && clock > _engine->GetAudioClock())
         {
             _hasScheduledCommand = true;
             _scheduledTarget = targetState;
@@ -415,7 +415,7 @@ namespace SparkyStudios::Audio::Amplitude
             if (!Paused() && IsAlive() && _virtualCursor.IsAnchored())
             {
                 // Same as a demoted paused channel: the cursor is frozen here until the game resumes it.
-                const AmUInt64 now = amEngine->GetState()->mixer.GetAudioClock();
+                const AmUInt64 now = _engine->GetMixer()->GetAudioClock();
                 AnchorVirtualCursor(_virtualCursor.PositionAt(now), now);
                 _virtualPaused = true;
                 _channelState = eChannelPlaybackState_Paused;
@@ -506,6 +506,11 @@ namespace SparkyStudios::Audio::Amplitude
             Promote();
     }
 
+    EngineImpl* ChannelInternalState::ResolveEngine()
+    {
+        return amEngine;
+    }
+
     void ChannelInternalState::AnchorVirtualCursor(AmUInt64 position, AmUInt64 clock)
     {
         // Virtual cursors cover channels playing a single Sound only: a collection's or switch container's position
@@ -514,7 +519,7 @@ namespace SparkyStudios::Audio::Amplitude
             return;
 
         const SoundFormat& format = _sound->GetFormat();
-        const AmplimixImpl& mixer = amEngine->GetState()->mixer;
+        const AmplimixImpl& mixer = *_engine->GetMixer();
         const AmUInt32 outputRate = mixer.GetDeviceDescription().mRequestedOutputSampleRate;
         if (format.GetSampleRate() == 0 || format.GetFramesCount() == 0 || outputRate == 0)
             return;
@@ -571,7 +576,7 @@ namespace SparkyStudios::Audio::Amplitude
     {
         // The cursor was frozen while paused: it runs again from here.
         if (_virtualCursor.IsAnchored())
-            AnchorVirtualCursor(_virtualCursor.GetAnchorPosition(), amEngine->GetState()->mixer.GetAudioClock());
+            AnchorVirtualCursor(_virtualCursor.GetAnchorPosition(), _engine->GetMixer()->GetAudioClock());
 
         _virtualPaused = false;
         _channelState = eChannelPlaybackState_Playing;
@@ -599,7 +604,7 @@ namespace SparkyStudios::Audio::Amplitude
         SoundInstance* instance = _sound->CreateInstance();
 
         // A finite loop count keeps counting down while virtual: resume with the passes left now, not the full count.
-        if (const AmUInt32 loopsLeft = _virtualCursor.LoopsRemainingAt(amEngine->GetState()->mixer.GetAudioClock());
+        if (const AmUInt32 loopsLeft = _virtualCursor.LoopsRemainingAt(_engine->GetMixer()->GetAudioClock());
             _sound->IsLoop() && loopsLeft != 0)
             instance->SetLoopCount(loopsLeft);
 
@@ -641,26 +646,26 @@ namespace SparkyStudios::Audio::Amplitude
 
     void ChannelInternalState::AdvanceFrame([[maybe_unused]] AmTime deltaTime)
     {
-        if (_hasScheduledCommand && amEngine->GetAudioClock() >= _scheduledCommandFrame)
+        if (_hasScheduledCommand && _engine->GetAudioClock() >= _scheduledCommandFrame)
             ActivateScheduledCommand();
 
         // Skip paused and stopped channels
         if (_channelState == eChannelPlaybackState_Paused || _channelState == eChannelPlaybackState_Stopped)
             return;
 
-        const AmTime currentTime = amEngine->GetTotalTime();
+        const AmTime currentTime = _engine->GetTotalTime();
 
         // Update Doppler factors
         if (_entity.Valid())
         {
-            for (auto&& listener : amEngine->GetState()->listener_list)
+            for (auto&& listener : _engine->GetState()->listener_list)
             {
                 if (listener.GetId() == kAmInvalidObjectId)
                     continue;
 
                 _dopplerFactors[listener.GetId()] = ComputeDopplerFactor(
                     Sub(_entity.GetLocation(), listener.GetLocation()), _entity.GetVelocity(), listener.GetVelocity(),
-                    amEngine->GetSoundSpeed(), amEngine->GetDopplerFactor());
+                    _engine->GetSoundSpeed(), _engine->GetDopplerFactor());
             }
         }
 
@@ -853,7 +858,7 @@ namespace SparkyStudios::Audio::Amplitude
                 // A collection's or switch container's position spans several sounds: a virtual one stops at once.
                 SettleStopped();
             }
-            else if (_virtualCursor.HasEnded(amEngine->GetState()->mixer.GetAudioClock()))
+            else if (_virtualCursor.HasEnded(_engine->GetMixer()->GetAudioClock()))
             {
                 // The virtual cursor ran off the end of the sound: settle exactly like a real channel's natural end
                 // (End then Stop), since nothing else will ever tell this channel its voice is done.
@@ -972,7 +977,7 @@ namespace SparkyStudios::Audio::Amplitude
     {
         const AmUInt64 stateId = _channelStateId;
         ++_pendingEventCount;
-        const bool queued = amEngine->OnNextFrame(
+        const bool queued = _engine->OnNextFrame(
             [this, stateId, event](AmTime)
             {
                 // The channel may have been reused in between (Reset() already zeroed the pending count then).
@@ -1021,14 +1026,14 @@ namespace SparkyStudios::Audio::Amplitude
 
             SoundImpl* sound;
 
-            if (Collection* collection = amEngine->GetCollectionHandle(item.m_id); collection != nullptr)
+            if (Collection* collection = _engine->GetCollectionHandle(item.m_id); collection != nullptr)
             {
                 sound = _entity.Valid() ? static_cast<SoundImpl*>(collection->SelectFromEntity(_entity, _realChannel._playedSounds))
                                         : static_cast<SoundImpl*>(collection->SelectFromWorld(_realChannel._playedSounds));
             }
             else
             {
-                sound = static_cast<SoundImpl*>(amEngine->GetSoundHandle(item.m_id));
+                sound = static_cast<SoundImpl*>(_engine->GetSoundHandle(item.m_id));
             }
 
             if (!sound)
@@ -1144,7 +1149,7 @@ namespace SparkyStudios::Audio::Amplitude
         {
             // A sound that starts virtual still has to end on time: anchor its cursor at its start, now.
             // A scheduled start is not heard before its frame.
-            AmUInt64 clock = amEngine->GetState()->mixer.GetAudioClock();
+            AmUInt64 clock = _engine->GetMixer()->GetAudioClock();
             if (_scheduledStartFrame != kVoiceAsap)
                 clock = AM_MAX(clock, _scheduledStartFrame);
 

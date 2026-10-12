@@ -50,7 +50,7 @@ namespace SparkyStudios::Audio::Amplitude
     void RealChannel::Initialize(AmChannelID i)
     {
         _channelId = i;
-        _mixer = &amEngine->GetState()->mixer;
+        _mixer = amEngine->GetMixer();
         _instancePipelineOverflowWarned = false;
     }
 

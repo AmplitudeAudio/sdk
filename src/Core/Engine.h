@@ -24,7 +24,7 @@
 
 #include "engine_config_definition_generated.h"
 
-#define amEngine dynamic_cast<EngineImpl*>(SparkyStudios::Audio::Amplitude::Engine::GetInstance())
+#define amEngine static_cast<EngineImpl*>(SparkyStudios::Audio::Amplitude::Engine::GetInstance())
 
 namespace SparkyStudios::Audio::Amplitude
 {
@@ -197,7 +197,7 @@ namespace SparkyStudios::Audio::Amplitude
         void SetRtpcValue(AmRtpcID id, double value) const override;
         void SetRtpcValue(const AmString& name, double value) const override;
         [[nodiscard]] std::shared_ptr<Driver> GetDriver() const override;
-        [[nodiscard]] Amplimix* GetMixer() const override;
+        [[nodiscard]] AmplimixImpl* GetMixer() const override;
         [[nodiscard]] const AmOsString& GetConfigurationPath() const override;
         [[nodiscard]] AmReal32 GetSoundSpeed() const override;
         [[nodiscard]] AmReal32 GetDopplerFactor() const override;

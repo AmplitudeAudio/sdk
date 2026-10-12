@@ -46,6 +46,7 @@ namespace SparkyStudios::Audio::Amplitude
     class SoundImpl;
     class CollectionImpl;
     class SwitchContainerImpl;
+    class EngineImpl;
 
     typedef fplutil::intrusive_list<class ChannelInternalState> ChannelList;
 
@@ -54,7 +55,8 @@ namespace SparkyStudios::Audio::Amplitude
     {
     public:
         ChannelInternalState()
-            : _realChannel(this)
+            : _engine(ResolveEngine())
+            , _realChannel(this)
             , _channelState(eChannelPlaybackState_Stopped)
             , _switchContainer(nullptr)
             , _collection(nullptr)
@@ -649,6 +651,12 @@ namespace SparkyStudios::Audio::Amplitude
         bool PlaySwitchContainer();
         bool PlayCollection();
         bool PlaySound();
+
+        // Resolves the engine instance cached by new channel states.
+        static EngineImpl* ResolveEngine();
+
+        // The engine this channel belongs to. Valid until the engine instance is destroyed, which callers must only do after deinitializing it.
+        EngineImpl* _engine;
 
         // The real channel feeding the mixer with audio data.
         RealChannel _realChannel;

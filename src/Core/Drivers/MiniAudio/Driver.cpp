@@ -125,7 +125,7 @@ namespace SparkyStudios::Audio::Amplitude
         driver->m_deviceDescription.mDeviceOutputFormat =
             static_cast<PlaybackOutputFormat>(pNotification->pDevice->playback.internalFormat);
 
-        if (auto* mixer = amEngine->GetMixer(); mixer != nullptr)
+        if (auto* mixer = driver->_mixer; mixer != nullptr)
         {
             mixer->UpdateDevice(
                 driver->m_deviceDescription.mDeviceID, driver->m_deviceDescription.mDeviceName,
@@ -260,7 +260,7 @@ namespace SparkyStudios::Audio::Amplitude
 
             CallDeviceNotificationCallback(eDeviceNotification_Opened, m_deviceDescription, this);
 
-            amEngine->GetMixer()->UpdateDevice(
+            _mixer->UpdateDevice(
                 m_deviceDescription.mDeviceID, m_deviceDescription.mDeviceName, m_deviceDescription.mDeviceOutputSampleRate,
                 static_cast<PlaybackOutputChannels>(channelsCount), m_deviceDescription.mDeviceOutputFormat);
 

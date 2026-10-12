@@ -1907,6 +1907,10 @@ namespace SparkyStudios::Audio::Amplitude
 
         /**
          * @brief Destroys the unique instance of the Amplitude Engine.
+         *
+         * The engine must be deinitialized with Deinitialize() before calling this method. Internal objects keep a
+         * reference to the engine instance for their whole lifetime, so any Channel, Event or other handle obtained from
+         * the engine is invalid once the instance is destroyed.
          */
         static void DestroyInstance();
 
