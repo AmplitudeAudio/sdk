@@ -15,6 +15,8 @@
 #include <Core/Drivers/MiniAudio/Driver.h>
 #include <Core/Engine.h>
 
+#include <SparkyStudios/Audio/Amplitude/DSP/ChannelLayout.h>
+
 #include <Mixer/Amplimix.h>
 #include <Utils/ScopedDenormalFlush.h>
 
@@ -36,6 +38,31 @@ namespace SparkyStudios::Audio::Amplitude
     {
         AM_UNUSED(pUserData);
         ampoolfree(eMemoryPoolKind_Amplimix, p);
+    }
+
+    static ma_channel ToMiniaudioChannel(eSpeaker speaker)
+    {
+        switch (speaker)
+        {
+        case eSpeaker_FrontLeft:
+            return MA_CHANNEL_FRONT_LEFT;
+        case eSpeaker_FrontRight:
+            return MA_CHANNEL_FRONT_RIGHT;
+        case eSpeaker_FrontCenter:
+            return MA_CHANNEL_FRONT_CENTER;
+        case eSpeaker_LowFrequency:
+            return MA_CHANNEL_LFE;
+        case eSpeaker_BackLeft:
+            return MA_CHANNEL_BACK_LEFT;
+        case eSpeaker_BackRight:
+            return MA_CHANNEL_BACK_RIGHT;
+        case eSpeaker_SideLeft:
+            return MA_CHANNEL_SIDE_LEFT;
+        case eSpeaker_SideRight:
+            return MA_CHANNEL_SIDE_RIGHT;
+        }
+
+        return MA_CHANNEL_NONE;
     }
 
     static void miniaudio_log(void* pUserData, ma_uint32 level, const char* pMessage)
@@ -98,7 +125,7 @@ namespace SparkyStudios::Audio::Amplitude
         driver->m_deviceDescription.mDeviceOutputFormat =
             static_cast<PlaybackOutputFormat>(pNotification->pDevice->playback.internalFormat);
 
-        if (auto* mixer = amEngine->GetMixer(); mixer != nullptr)
+        if (auto* mixer = driver->_mixer; mixer != nullptr)
         {
             mixer->UpdateDevice(
                 driver->m_deviceDescription.mDeviceID, driver->m_deviceDescription.mDeviceName,
@@ -174,7 +201,21 @@ namespace SparkyStudios::Audio::Amplitude
                 return false;
             }
 
-            const auto channelsCount = static_cast<AmInt16>(device.mRequestedOutputChannels);
+            // Default: the largest named layout the device's native format holds.
+            auto channels = static_cast<AmUInt16>(device.mRequestedOutputChannels);
+            if (channels == 0)
+            {
+                ma_uint32 native = 0;
+                ma_device_info info;
+                if (ma_context_get_device_info(&_context, ma_device_type_playback, nullptr, &info) == MA_SUCCESS)
+                    for (ma_uint32 i = 0; i < info.nativeDataFormatCount; ++i)
+                        native = AM_MAX(native, info.nativeDataFormats[i].channels);
+
+                channels = ChannelLayout::LargestFitting(static_cast<AmUInt16>(native)).GetChannelCount();
+            }
+
+            const ChannelLayout& layout = ChannelLayout::LargestFitting(channels);
+            const auto channelsCount = static_cast<AmInt16>(layout.GetChannelCount());
 
             ma_device_config deviceConfig = ma_device_config_init(ma_device_type_playback);
             deviceConfig.noClip = true;
@@ -191,7 +232,10 @@ namespace SparkyStudios::Audio::Amplitude
             deviceConfig.pUserData = static_cast<void*>(this);
             deviceConfig.resampling.algorithm = ma_resample_algorithm_linear;
 
-            ma_channel_map_init_standard(ma_standard_channel_map_vorbis, deviceConfig.playback.pChannelMap, channelsCount, channelsCount);
+            // The mixer renders WAV / SMPTE order; tell the device explicitly which speaker each channel feeds.
+            for (AmUInt16 c = 0; c < layout.GetChannelCount(); ++c)
+                deviceConfig.playback.pChannelMap[c] =
+                    layout.GetChannelCount() == 1 ? MA_CHANNEL_MONO : ToMiniaudioChannel(layout.GetSpeaker(c));
 
             _initialized = ma_device_init(&_context, &deviceConfig, &_device) == MA_SUCCESS;
             if (!_initialized)
@@ -203,6 +247,7 @@ namespace SparkyStudios::Audio::Amplitude
             }
 
             m_deviceDescription = device;
+            m_deviceDescription.mRequestedOutputChannels = static_cast<PlaybackOutputChannels>(channelsCount);
 
             _mixer = amEngine->GetMixer();
 
@@ -215,9 +260,9 @@ namespace SparkyStudios::Audio::Amplitude
 
             CallDeviceNotificationCallback(eDeviceNotification_Opened, m_deviceDescription, this);
 
-            amEngine->GetMixer()->UpdateDevice(
+            _mixer->UpdateDevice(
                 m_deviceDescription.mDeviceID, m_deviceDescription.mDeviceName, m_deviceDescription.mDeviceOutputSampleRate,
-                m_deviceDescription.mDeviceOutputChannels, m_deviceDescription.mDeviceOutputFormat);
+                static_cast<PlaybackOutputChannels>(channelsCount), m_deviceDescription.mDeviceOutputFormat);
 
             ampoolfree(eMemoryPoolKind_Engine, deviceConfig.playback.pChannelMap);
         }

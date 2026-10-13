@@ -1,0 +1,1 @@
+{"id":3,"name":"fidelity.ambisonic-surround","nodes":[{"id":1,"name":"Input","consume":[]},{"id":2,"name":"Attenuation","consume":[1]},{"id":3,"name":"AmbisonicPanning","consume":[2]},{"id":4,"name":"AmbisonicRotator","consume":[3]},{"id":5,"name":"AmbisonicSpeakerDecoder","consume":[4]},{"id":9,"name":"Output","consume":[5]}]}

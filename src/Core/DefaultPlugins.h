@@ -19,7 +19,7 @@
 
 #pragma region Default Resamplers
 
-#include <DSP/Resamplers/DefaultResampler.h>
+#include <DSP/Resamplers/BandlimitedResampler.h>
 
 #pragma endregion
 
@@ -81,6 +81,7 @@
 #include <Mixer/Nodes/AmbisonicBinauralDecoderNode.h>
 #include <Mixer/Nodes/AmbisonicMixerNode.h>
 #include <Mixer/Nodes/AmbisonicPanningNode.h>
+#include <Mixer/Nodes/AmbisonicSpeakerDecoderNode.h>
 #include <Mixer/Nodes/AmbisonicRotatorNode.h>
 #include <Mixer/Nodes/AttenuationNode.h>
 #include <Mixer/Nodes/ClampNode.h>
@@ -95,8 +96,8 @@
 #include <Mixer/Nodes/ReflectionsNode.h>
 #include <Mixer/Nodes/ReverbNode.h>
 #include <Mixer/Nodes/RoundoffClipNode.h>
-#include <Mixer/Nodes/StereoMixerNode.h>
-#include <Mixer/Nodes/StereoPanningNode.h>
+#include <Mixer/Nodes/MixerNode.h>
+#include <Mixer/Nodes/SpeakerPanningNode.h>
 
 #pragma endregion
 

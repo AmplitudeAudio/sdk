@@ -1,0 +1,1 @@
+{"id":102,"name":"tests.custom_then_mono_probe","nodes":[{"id":1,"name":"Input","consume":[]},{"id":2,"name":"TestCustomProbe","consume":[1]},{"id":3,"name":"TestMonoProbe","consume":[2]},{"id":9,"name":"Output","consume":[3]}]}

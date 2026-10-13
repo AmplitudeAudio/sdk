@@ -52,6 +52,8 @@ namespace SparkyStudios::Audio::Amplitude
         /**
          * @brief Initializes the resampler instance.
          *
+         * @note Runs on the game thread and may allocate.
+         *
          * @note Implementations must accept any pair of positive sample rates and must never read or write
          * outside their buffers for any input. When the requested ratio cannot be represented exactly, the
          * implementation must approximate it as closely as it can and keep converting.
@@ -63,28 +65,66 @@ namespace SparkyStudios::Audio::Amplitude
         virtual void Initialize(AmUInt16 channelCount, AmUInt32 sampleRateIn, AmUInt32 sampleRateOut) = 0;
 
         /**
-         * @brief Processes the audio data.
+         * @brief Resamples audio data.
          *
-         * @param[in] input The input audio data.
-         * @param[in,out] inputFrames The number of frames in the input buffer.
-         * @param[out] output The output audio data.
-         * @param[in,out] outputFrames The number of frames in the output buffer.
+         * Contract, required from every implementation:
+         * - The call consumes only the input it needs for the output it produces, and reports both counts.
+         * - The output never depends on input that has not been received yet.
+         * - The only internal state is filter history and phase: the output sequence does not depend on how the input
+         *   and the output are split across calls.
+         * - Runs on the audio thread: it never allocates, locks or logs.
          *
-         * @return @c true if the resampling was successful, @c false otherwise.
+         * @param[in] input The input buffer.
+         * @param[in,out] inputFrames The number of available input frames; on return, the number of frames consumed.
+         * @param[out] output The output buffer.
+         * @param[in,out] outputFrames The number of output frames wanted; on return, the number of frames produced.
+         *
+         * @return @c true on success, @c false otherwise.
          */
         virtual bool Process(const AudioBuffer& input, AmUInt64& inputFrames, AudioBuffer& output, AmUInt64& outputFrames) = 0;
 
         /**
-         * @brief Changes the input and output sample rate.
+         * @brief Sets the conversion ratio, pitch and playback speed included.
          *
-         * @note This method may be called from the audio thread on every mix block, as the mixer maps
-         * playback speed changes to a rate ratio. Implementations must not allocate, lock, log, or block
-         * here, and must follow the same total-function contract as @c Initialize.
+         * Audio-thread safe and allocation-free. Changing the ratio keeps the phase: the output stays continuous.
+         * Implementations that cannot represent the ratio exactly approximate it.
          *
-         * @param[in] sampleRateIn The new input sample rate.
-         * @param[in] sampleRateOut The new output sample rate.
+         * Non-finite or non-positive values are treated as 1.
+         *
+         * @param[in] inputPerOutput The number of input frames consumed per output frame.
          */
-        virtual void SetSampleRate(AmUInt32 sampleRateIn, AmUInt32 sampleRateOut) = 0;
+        virtual void SetRatio(AmReal64 inputPerOutput) = 0;
+
+        /**
+         * @brief Sets the conversion ratio to follow a ramp across the output frames of the next call.
+         *
+         * A mixer whose speed moves during a block -- pitch, Doppler, playback rate -- publishes a ramp rather than a
+         * step. Holding one constant ratio for the whole block makes the read position a staircase, and a staircase
+         * whose steps move is audible as a click at every block boundary. An implementation that varies the ratio per
+         * output frame makes the read position continuous, and the click with it.
+         *
+         * The ramp covers @p outputFrames output frames from the first frame @c Process() produces after this call; a
+         * call producing more frames than that keeps the end value. Several calls may share one ramp, as a block split
+         * into segments makes several: each consumes the part of the ramp that follows the frames already produced.
+         * @p outputFrames of 0, or a start equal to the end, is a constant ratio.
+         *
+         * The sum of the input consumed over the ramp is that of the mean ratio, whichever way an implementation gets
+         * there, so a caller can size buffers and map positions from the mean.
+         *
+         * @warning This default implementation collapses the ramp to its mean: the stream advances correctly, but the
+         * read position is the staircase described above. Override it to vary the ratio per output frame.
+         *
+         * Audio-thread safe and allocation-free, like @c SetRatio().
+         *
+         * @param[in] inputPerOutputStart The input frames consumed per output frame, at the first output frame.
+         * @param[in] inputPerOutputEnd The input frames consumed per output frame, at the last output frame of the ramp.
+         * @param[in] outputFrames The number of output frames the ramp spans.
+         */
+        virtual void SetRatioRamp(AmReal64 inputPerOutputStart, AmReal64 inputPerOutputEnd, AmUInt64 outputFrames)
+        {
+            AM_UNUSED(outputFrames);
+            SetRatio(0.5 * (inputPerOutputStart + inputPerOutputEnd));
+        }
 
         /**
          * @brief Checks whether the given conversion is performed exactly, with no approximation of the ratio.
@@ -129,41 +169,52 @@ namespace SparkyStudios::Audio::Amplitude
         [[nodiscard]] virtual AmUInt16 GetChannelCount() const = 0;
 
         /**
-         * @brief Returns the required number of frames to have as input for the given number of output frames.
+         * @brief Returns the exact number of input frames the next @c Process() call needs to produce the given output.
          *
-         * @param[in] outputFrameCount The number of output frames.
+         * Counts from the first frame of the next input, taking the current phase into account.
          *
-         * @return The input frame count needed to produce the given output frame count.
+         * @param[in] outputFrameCount The number of output frames wanted.
+         *
+         * @return The input frame count needed; 0 when @p outputFrameCount is 0.
          */
-        [[nodiscard]] virtual AmUInt64 GetRequiredInputFrames(AmUInt64 outputFrameCount) const = 0;
+        [[nodiscard]] virtual AmUInt64 GetInputFramesNeeded(AmUInt64 outputFrameCount) const = 0;
 
         /**
-         * @brief Returns the expected number of frames to have as output for the given number of input frames.
+         * @brief Returns the output delay relative to the input, in input frames. The built-in resamplers centre their
+         * kernel on the output time and report 0; their read-ahead is part of @c GetInputFramesNeeded().
          *
-         * @param[in] inputFrameCount The number of input frames.
+         * A stream that ends keeps feeding zeros until @c GetInputFramesNeeded(1) frames past its end, plus twice this
+         * delay, are consumed.
          *
-         * @return The expected number of output frames for the given input frame count.
+         * @return The output delay in input frames.
          */
-        [[nodiscard]] virtual AmUInt64 GetExpectedOutputFrames(AmUInt64 inputFrameCount) const = 0;
+        [[nodiscard]] virtual AmUInt64 GetLatency() const = 0;
 
         /**
-         * @brief Returns the current input latency in frames.
-         *
-         * @return The resampler's current input latency in frames.
-         */
-        [[nodiscard]] virtual AmUInt64 GetInputLatency() const = 0;
-
-        /**
-         * @brief Returns the current output latency in frames.
-         *
-         * @return The resampler's current output latency in frames.
-         */
-        [[nodiscard]] virtual AmUInt64 GetOutputLatency() const = 0;
-
-        /**
-         * @brief Resets the internal resampler state.
+         * @brief Resets the internal resampler state (history and phase). Audio-thread safe.
          */
         virtual void Reset() = 0;
+
+        /**
+         * @brief Fills the history with the input that precedes the next one, as if it had just been consumed.
+         *
+         * A stream that restarts mid-signal -- a seek, or a start at an offset -- calls this after @c Reset() and before
+         * the next @c Process(), with the frames just before its new position. The first outputs then read real signal on
+         * their left instead of zeros, and start without the ringing of an abrupt onset. The phase is left untouched.
+         *
+         * @warning This default implementation ignores the frames: the stream restarts on a silent history.
+         *
+         * Audio-thread safe and allocation-free.
+         *
+         * @param[in] input The frames before the next input, on every channel.
+         * @param[in] frames The number of frames of @p input to take, from its start. An implementation keeps the last
+         * ones it needs.
+         */
+        virtual void PrimeHistory(const AudioBuffer& input, AmUInt64 frames)
+        {
+            AM_UNUSED(input);
+            AM_UNUSED(frames);
+        }
 
         /**
          * @brief Cleans up the internal resampler state and allocated data.

@@ -21,6 +21,7 @@
 #include <SparkyStudios/Audio/Amplitude/Mixer/Node.h>
 
 #include <Ambisonics/AmbisonicBinauralizer.h>
+#include <Ambisonics/AmbisonicDecoder.h>
 #include <Ambisonics/BFormat.h>
 #include <HRTF/HRIRSphere.h>
 #include <Mixer/Pipeline.h>
@@ -36,16 +37,26 @@ namespace SparkyStudios::Audio::Amplitude
 
         [[nodiscard]] AM_INLINE AmUInt16 GetOutputChannelCount() const override
         {
-            return kAmStereoChannelCount;
+            return GetPipelineOutputLayout().GetChannelCount();
         }
 
         void Configure(AmUInt64 frameCount, AmUInt16 channelCount) override;
+
+        /**
+         * @brief Gets the binauralizer of this node.
+         */
+        [[nodiscard]] const AmbisonicBinauralizer& GetBinauralizer() const
+        {
+            return _binauralizer;
+        }
 
     private:
         std::shared_ptr<const HRIRSphere> _hrirSphere;
         AmbisonicBinauralizer _binauralizer;
         AmbisonicDecoder _decoder;
         BFormat _soundField;
+        AudioBuffer _stereo;
+        ChannelMatrix _toOutput{};
         AmUInt32 _ambisonicOrder = 1;
         bool _configured = false;
     };
@@ -78,6 +89,11 @@ namespace SparkyStudios::Audio::Amplitude
         [[nodiscard]] AM_INLINE AmSize GetMinInputCount() const override
         {
             return 1;
+        }
+
+        [[nodiscard]] AM_INLINE eNodeChannelPolicy GetChannelPolicy() const override
+        {
+            return eNodeChannelPolicy_Custom;
         }
     };
 } // namespace SparkyStudios::Audio::Amplitude

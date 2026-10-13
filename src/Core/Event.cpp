@@ -31,6 +31,7 @@ namespace SparkyStudios::Audio::Amplitude
         , _targets()
         , _accumulatedTime(0.0)
         , _parent(parent)
+        , _engine(nullptr)
     {}
 
     void EventAction::Initialize(const EventActionDefinition* definition)
@@ -196,12 +197,12 @@ namespace SparkyStudios::Audio::Amplitude
             }
 
             for (auto&& target : _targets)
-                _playingChannels.push_back(amEngine->Play(target, entity));
+                _playingChannels.push_back(_engine->Play(target, entity));
         }
         else
         {
             for (auto&& target : _targets)
-                _playingChannels.push_back(amEngine->Play(target));
+                _playingChannels.push_back(_engine->Play(target));
         }
     }
 
@@ -222,8 +223,10 @@ namespace SparkyStudios::Audio::Amplitude
         }
         else
         {
+            const auto state = _engine->GetState();
+
             for (auto&& target : _targets)
-                for (auto&& item : amEngine->GetState()->playing_channel_list)
+                for (auto&& item : state->playing_channel_list)
                     if (target == item.GetPlayingObjectId())
                         item.Pause();
         }
@@ -246,8 +249,10 @@ namespace SparkyStudios::Audio::Amplitude
         }
         else
         {
+            const auto state = _engine->GetState();
+
             for (auto&& target : _targets)
-                for (auto&& item : amEngine->GetState()->playing_channel_list)
+                for (auto&& item : state->playing_channel_list)
                     if (target == item.GetPlayingObjectId())
                         item.Resume();
         }
@@ -270,8 +275,10 @@ namespace SparkyStudios::Audio::Amplitude
         }
         else
         {
+            const auto state = _engine->GetState();
+
             for (auto&& target : _targets)
-                for (auto&& item : amEngine->GetState()->playing_channel_list)
+                for (auto&& item : state->playing_channel_list)
                     if (target == item.GetPlayingObjectId())
                         item.Halt();
         }
@@ -285,7 +292,7 @@ namespace SparkyStudios::Audio::Amplitude
     void EventAction::ExecuteMute(const Entity& entity, bool mute)
     {
         for (auto&& target : _targets)
-            if (Bus bus = amEngine->FindBus(target); bus.Valid())
+            if (Bus bus = _engine->FindBus(target); bus.Valid())
                 bus.SetMute(mute);
     }
 
@@ -320,8 +327,10 @@ namespace SparkyStudios::Audio::Amplitude
         }
         else
         {
+            const auto state = _engine->GetState();
+
             for (auto&& target : _targets)
-                for (auto&& item : amEngine->GetState()->playing_channel_list)
+                for (auto&& item : state->playing_channel_list)
                     if (target == item.GetPlayingObjectId() && item.Valid() && item.GetChannelState() == eChannelPlaybackState_Playing)
                         return true;
         }
@@ -346,8 +355,10 @@ namespace SparkyStudios::Audio::Amplitude
         }
         else
         {
+            const auto state = _engine->GetState();
+
             for (auto&& target : _targets)
-                for (auto&& item : amEngine->GetState()->playing_channel_list)
+                for (auto&& item : state->playing_channel_list)
                     if (target == item.GetPlayingObjectId() && item.Valid() && item.GetChannelState() == eChannelPlaybackState_Paused)
                         return true;
         }
@@ -372,8 +383,10 @@ namespace SparkyStudios::Audio::Amplitude
         }
         else
         {
+            const auto state = _engine->GetState();
+
             for (auto&& target : _targets)
-                for (auto&& item : amEngine->GetState()->playing_channel_list)
+                for (auto&& item : state->playing_channel_list)
                     if (target == item.GetPlayingObjectId() && item.Valid() && item.GetChannelState() != eChannelPlaybackState_Stopped)
                         return true;
         }
@@ -389,7 +402,7 @@ namespace SparkyStudios::Audio::Amplitude
     bool EventAction::IsExecutingMute(const Entity& entity, bool mute) const
     {
         for (auto&& target : _targets)
-            if (Bus bus = amEngine->FindBus(target); bus.Valid() && bus.IsMuted() != mute)
+            if (Bus bus = _engine->FindBus(target); bus.Valid() && bus.IsMuted() != mute)
                 return true;
 
         return false;
@@ -463,6 +476,8 @@ namespace SparkyStudios::Audio::Amplitude
 
         _runMode = definition->run_mode();
 
+        EngineImpl* engine = amEngine;
+
         const flatbuffers::uoffset_t actions_count = definition->actions() ? definition->actions()->size() : 0;
         _actions.resize(actions_count);
 
@@ -472,6 +487,7 @@ namespace SparkyStudios::Audio::Amplitude
 
             EventAction& action = _actions[i];
             action._parent = this;
+            action._engine = engine;
             action.Initialize(item);
         }
 

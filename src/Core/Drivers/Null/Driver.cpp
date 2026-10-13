@@ -12,7 +12,11 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+#include <chrono>
+#include <thread>
+
 #include <Core/Drivers/Null/Driver.h>
+#include <Core/Engine.h>
 
 #include <Mixer/Amplimix.h>
 #include <Utils/ScopedDenormalFlush.h>
@@ -31,15 +35,34 @@ namespace SparkyStudios::Audio::Amplitude
         auto* engine = Engine::GetInstance();
         auto* mixer = engine != nullptr ? engine->GetMixer() : nullptr;
 
+        using Clock = std::chrono::steady_clock;
+
+        const auto& description = data->GetDeviceDescription();
+        const AmUInt64 frames = channelsCount > 0 ? description.mOutputBufferSize / channelsCount : 0;
+        const AmUInt32 sampleRate = description.mRequestedOutputSampleRate;
+
+        const auto period = std::chrono::duration_cast<Clock::duration>(
+            std::chrono::duration<double>(sampleRate > 0 ? static_cast<double>(frames) / sampleRate : 0.01));
+
+        constexpr auto maxLag = std::chrono::milliseconds(100);
+
+        auto deadline = Clock::now();
+
         while (data->IsRunning())
         {
             if (engine == nullptr || engine->IsStopping())
                 break;
 
             if (mixer != nullptr)
-                mixer->Mix(nullptr, data->GetDeviceDescription().mOutputBufferSize / channelsCount);
+                mixer->Mix(nullptr, static_cast<AmUInt64>(frames));
 
-            Thread::Sleep(10);
+            deadline += period;
+
+            const auto now = Clock::now();
+            if (now > deadline + maxLag)
+                deadline = now;
+            else if (now < deadline)
+                std::this_thread::sleep_until(deadline);
         }
     }
 
@@ -61,6 +84,15 @@ namespace SparkyStudios::Audio::Amplitude
             return true;
 
         m_deviceDescription = device;
+
+        // No device to ask: Default renders stereo.
+        if (m_deviceDescription.mRequestedOutputChannels == PlaybackOutputChannels::Default)
+            m_deviceDescription.mRequestedOutputChannels = PlaybackOutputChannels::Stereo;
+
+        if (auto* mixer = amEngine->GetMixer(); mixer != nullptr)
+            mixer->UpdateDevice(
+                0, "null", m_deviceDescription.mRequestedOutputSampleRate, m_deviceDescription.mRequestedOutputChannels,
+                m_deviceDescription.mRequestedOutputFormat);
 
         CallDeviceNotificationCallback(eDeviceNotification_Opened, device, this);
         m_deviceDescription.mDeviceState = eDeviceState_Opened;

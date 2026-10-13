@@ -13,11 +13,15 @@
 // limitations under the License.
 
 #include <algorithm>
+#include <atomic>
+#include <chrono>
 #include <filesystem>
 #include <memory>
 #include <queue>
 #include <ranges>
+#include <thread>
 #include <unordered_map>
+#include <vector>
 
 #include <SparkyStudios/Audio/Amplitude/Amplitude.h>
 
@@ -51,10 +55,6 @@ int _NSGetExecutablePath(char* buf, uint32_t* bufSize);
 #include <limits.h>
 #include <unistd.h>
 #endif
-#endif
-
-#if AM_PLATFORM_WIN
-#undef CreateMutex
 #endif
 
 namespace SparkyStudios::Audio::Amplitude
@@ -96,7 +96,11 @@ namespace SparkyStudios::Audio::Amplitude
 #endif
 
     // Default Plugins instances
-    static std::shared_ptr<DefaultResampler> sDefaultResamplerPlugin = nullptr;
+    static std::shared_ptr<BandlimitedResampler> sDefaultResamplerPlugin = nullptr;
+    static std::shared_ptr<BandlimitedResampler> sLinearResamplerPlugin = nullptr;
+    static std::shared_ptr<BandlimitedResampler> sCubicResamplerPlugin = nullptr;
+    static std::shared_ptr<BandlimitedResampler> sSincResamplerPlugin = nullptr;
+    static std::shared_ptr<BandlimitedResampler> sSincBestResamplerPlugin = nullptr;
     // ---
     static std::shared_ptr<ConstantFader> sConstantFaderPlugin = nullptr;
     static std::shared_ptr<EaseFader> sEaseFaderPlugin = nullptr;
@@ -136,6 +140,7 @@ namespace SparkyStudios::Audio::Amplitude
     static std::shared_ptr<AmbisonicMixerNode> sAmbisonicMixerNodePlugin = nullptr;
     static std::shared_ptr<AmbisonicPanningNode> sAmbisonicPanningNodePlugin = nullptr;
     static std::shared_ptr<AmbisonicRotatorNode> sAmbisonicRotatorNodePlugin = nullptr;
+    static std::shared_ptr<AmbisonicSpeakerDecoderNode> sAmbisonicSpeakerDecoderNodePlugin = nullptr;
     static std::shared_ptr<AttenuationNode> sAttenuationNodePlugin = nullptr;
     static std::shared_ptr<ClampNode> sClampNodePlugin = nullptr;
     static std::shared_ptr<HardClipNode> sHardClipNodePlugin = nullptr;
@@ -152,10 +157,14 @@ namespace SparkyStudios::Audio::Amplitude
     static std::shared_ptr<ReverbNode> sDattorroNodePlugin = nullptr;
     static std::shared_ptr<ReverbNode> sRoomReverbNodePlugin = nullptr;
     static std::shared_ptr<RoundoffClipNode> sRoundoffClipNodePlugin = nullptr;
-    static std::shared_ptr<StereoMixerNode> sStereoMixerNodePlugin = nullptr;
-    static std::shared_ptr<StereoPanningNode> sStereoPanningNodePlugin = nullptr;
+    static std::shared_ptr<MixerNode> sMixerNodePlugin = nullptr;
+    static std::shared_ptr<MixerNode> sStereoMixerNodePlugin = nullptr;
+    static std::shared_ptr<SpeakerPanningNode> sSpeakerPanningNodePlugin = nullptr;
+    static std::shared_ptr<SpeakerPanningNode> sStereoPanningNodePlugin = nullptr;
 
     static AmUniquePtr<EngineImpl, eMemoryPoolKind_Engine> gAmplitude = nullptr;
+
+    static std::atomic<EngineImpl*> gAmplitudeInstance = nullptr;
     static std::mutex gInstanceMutex;
 
     std::set<AmOsString> EngineImpl::_pluginSearchPaths = {};
@@ -217,21 +226,81 @@ namespace SparkyStudios::Audio::Amplitude
         list->push_front(*channel);
     }
 
+    /**
+     * @brief Waits until the voices of halted channels finished rendering.
+     *
+     * Halt() only posts a de-clicked stop: until the fade ends, the voice still reads the channel's state and its sound
+     * objects, so neither may be recycled before. The caller holds the frame thread out, so finished layers are
+     * forgotten here. One deadline bounds the wait for an engine that is not mixing (e.g. a stopped device).
+     *
+     * @return @c true when no voice of these channels is sounding anymore.
+     */
+    bool DrainHaltedChannels(const std::shared_ptr<EngineInternalState>& state, const std::vector<ChannelInternalState*>& channels)
+    {
+        constexpr std::chrono::milliseconds kDrainTimeout(2000);
+
+        const auto deadline = std::chrono::steady_clock::now() + kDrainTimeout;
+        const auto sounding = [&channels]()
+        {
+            return std::ranges::any_of(
+                channels,
+                [](const ChannelInternalState* channel)
+                {
+                    return channel->GetRealChannel().HasSoundingLayers();
+                });
+        };
+
+        while (sounding())
+        {
+            if (std::chrono::steady_clock::now() > deadline)
+            {
+                amLogWarning("Timed out waiting for the voices of an unloaded sound to finish.");
+                return false;
+            }
+
+            std::this_thread::sleep_for(std::chrono::milliseconds(1));
+
+            // The caller holds the frame thread out, so nothing else forgets a finished layer: do what a frame would.
+            state->mixer.DispatchVoiceEvents();
+        }
+
+        return true;
+    }
+
+    /// Halts the channels whose object matches, waits for their voices to finish, then recycles them.
+    template<typename Matches>
+    void HaltAndRecycleChannels(const std::shared_ptr<EngineInternalState>& state, Matches&& matches)
+    {
+        std::vector<ChannelInternalState*> halted;
+        for (auto& channel : state->playing_channel_list)
+        {
+            if (!matches(channel))
+                continue;
+
+            channel.Halt();
+            halted.push_back(&channel);
+        }
+
+        if (halted.empty())
+            return;
+
+        DrainHaltedChannels(state, halted);
+        for (ChannelInternalState* channel : halted)
+            InsertIntoFreeList(state, channel);
+    }
+
     void DereferenceSound(const std::shared_ptr<EngineInternalState>& state, AmSoundID id)
     {
         if (const auto it = state->sound_map.find(id); it != state->sound_map.end())
         {
             if (it->second->GetRefCounter()->Decrement() == 0)
             {
-                for (auto channelIt = state->playing_channel_list.begin(); channelIt != state->playing_channel_list.end();)
-                {
-                    auto current = channelIt++;
-                    if (current->GetSound() == it->second.get())
+                HaltAndRecycleChannels(
+                    state,
+                    [&](const ChannelInternalState& channel)
                     {
-                        current->Halt();
-                        InsertIntoFreeList(state, &*current);
-                    }
-                }
+                        return channel.GetSound() == it->second.get();
+                    });
 
                 it->second->ReleaseReferences(state);
                 state->sound_map.erase(it);
@@ -245,15 +314,12 @@ namespace SparkyStudios::Audio::Amplitude
         {
             if (it->second->GetRefCounter()->Decrement() == 0)
             {
-                for (auto channelIt = state->playing_channel_list.begin(); channelIt != state->playing_channel_list.end();)
-                {
-                    auto current = channelIt++;
-                    if (current->GetCollection() == it->second.get())
+                HaltAndRecycleChannels(
+                    state,
+                    [&](const ChannelInternalState& channel)
                     {
-                        current->Halt();
-                        InsertIntoFreeList(state, &*current);
-                    }
-                }
+                        return channel.GetCollection() == it->second.get();
+                    });
 
                 it->second->ReleaseReferences(state);
                 state->collection_map.erase(it);
@@ -267,15 +333,12 @@ namespace SparkyStudios::Audio::Amplitude
         {
             if (it->second->GetRefCounter()->Decrement() == 0)
             {
-                for (auto channelIt = state->playing_channel_list.begin(); channelIt != state->playing_channel_list.end();)
-                {
-                    auto current = channelIt++;
-                    if (current->GetSwitchContainer() == it->second.get())
+                HaltAndRecycleChannels(
+                    state,
+                    [&](const ChannelInternalState& channel)
                     {
-                        current->Halt();
-                        InsertIntoFreeList(state, &*current);
-                    }
-                }
+                        return channel.GetSwitchContainer() == it->second.get();
+                    });
 
                 it->second->ReleaseReferences(state);
                 state->switch_container_map.erase(it);
@@ -551,7 +614,11 @@ namespace SparkyStudios::Audio::Amplitude
         // Ensure to clean up registries
         UnregisterDefaultExtensions();
 
-        sDefaultResamplerPlugin = RegisterExtension<DefaultResampler>();
+        sDefaultResamplerPlugin = RegisterExtension<BandlimitedResampler>("default", eResamplerPreset::SincBest);
+        sLinearResamplerPlugin = RegisterExtension<BandlimitedResampler>("linear", eResamplerPreset::Linear);
+        sCubicResamplerPlugin = RegisterExtension<BandlimitedResampler>("cubic", eResamplerPreset::Cubic);
+        sSincResamplerPlugin = RegisterExtension<BandlimitedResampler>("sinc", eResamplerPreset::Sinc);
+        sSincBestResamplerPlugin = RegisterExtension<BandlimitedResampler>("sinc_best", eResamplerPreset::SincBest);
         // ---
         sConstantFaderPlugin = RegisterExtension<ConstantFader>();
         sEaseFaderPlugin = RegisterExtension<EaseFader>();
@@ -591,6 +658,7 @@ namespace SparkyStudios::Audio::Amplitude
         sAmbisonicMixerNodePlugin = RegisterExtension<AmbisonicMixerNode>();
         sAmbisonicPanningNodePlugin = RegisterExtension<AmbisonicPanningNode>();
         sAmbisonicRotatorNodePlugin = RegisterExtension<AmbisonicRotatorNode>();
+        sAmbisonicSpeakerDecoderNodePlugin = RegisterExtension<AmbisonicSpeakerDecoderNode>();
         sAttenuationNodePlugin = RegisterExtension<AttenuationNode>();
         sClampNodePlugin = RegisterExtension<ClampNode>();
         sHardClipNodePlugin = RegisterExtension<HardClipNode>();
@@ -607,8 +675,12 @@ namespace SparkyStudios::Audio::Amplitude
         sDattorroNodePlugin = RegisterExtension<ReverbNode>("Dattorro");
         sRoomReverbNodePlugin = RegisterExtension<ReverbNode>("RoomReverb");
         sRoundoffClipNodePlugin = RegisterExtension<RoundoffClipNode>();
-        sStereoMixerNodePlugin = RegisterExtension<StereoMixerNode>();
-        sStereoPanningNodePlugin = RegisterExtension<StereoPanningNode>();
+        sMixerNodePlugin = RegisterExtension<MixerNode>();
+        // The old name stays an alias so existing pipeline assets load.
+        sStereoMixerNodePlugin = RegisterExtension<MixerNode>("StereoMixer");
+        sSpeakerPanningNodePlugin = RegisterExtension<SpeakerPanningNode>();
+        // The old name stays an alias so existing pipeline assets load.
+        sStereoPanningNodePlugin = RegisterExtension<SpeakerPanningNode>("StereoPanning");
 
         return true;
     }
@@ -619,6 +691,10 @@ namespace SparkyStudios::Audio::Amplitude
             return false; // Cannot unregister the default plugins when the engine is already initialized.
 
         UnregisterExtension(sDefaultResamplerPlugin);
+        UnregisterExtension(sLinearResamplerPlugin);
+        UnregisterExtension(sCubicResamplerPlugin);
+        UnregisterExtension(sSincResamplerPlugin);
+        UnregisterExtension(sSincBestResamplerPlugin);
         // ---
         UnregisterExtension(sConstantFaderPlugin);
         UnregisterExtension(sEaseFaderPlugin);
@@ -658,6 +734,7 @@ namespace SparkyStudios::Audio::Amplitude
         UnregisterExtension(sAmbisonicMixerNodePlugin);
         UnregisterExtension(sAmbisonicPanningNodePlugin);
         UnregisterExtension(sAmbisonicRotatorNodePlugin);
+        UnregisterExtension(sAmbisonicSpeakerDecoderNodePlugin);
         UnregisterExtension(sAttenuationNodePlugin);
         UnregisterExtension(sClampNodePlugin);
         UnregisterExtension(sHardClipNodePlugin);
@@ -674,7 +751,9 @@ namespace SparkyStudios::Audio::Amplitude
         UnregisterExtension(sDattorroNodePlugin);
         UnregisterExtension(sRoomReverbNodePlugin);
         UnregisterExtension(sRoundoffClipNodePlugin);
+        UnregisterExtension(sMixerNodePlugin);
         UnregisterExtension(sStereoMixerNodePlugin);
+        UnregisterExtension(sSpeakerPanningNodePlugin);
         UnregisterExtension(sStereoPanningNodePlugin);
 
         return true;
@@ -686,11 +765,17 @@ namespace SparkyStudios::Audio::Amplitude
         if (!MemoryManager::IsInitialized())
             return nullptr;
 
+        if (EngineImpl* instance = gAmplitudeInstance.load(std::memory_order_acquire); instance != nullptr)
+            return instance;
+
         std::lock_guard lock(gInstanceMutex);
 
         // Amplitude Engine unique instance.
         if (gAmplitude == nullptr)
+        {
             gAmplitude.reset(ampoolnew(eMemoryPoolKind_Engine, EngineImpl));
+            gAmplitudeInstance.store(gAmplitude.get(), std::memory_order_release);
+        }
 
         return gAmplitude.get();
     }
@@ -698,6 +783,12 @@ namespace SparkyStudios::Audio::Amplitude
     void Engine::DestroyInstance()
     {
         std::lock_guard lock(gInstanceMutex);
+
+        // The engine must be deinitialized before it is destroyed.
+        AMPLITUDE_ASSERT(gAmplitude == nullptr || !gAmplitude->IsInitialized());
+
+        // Unpublish the instance before destroying it.
+        gAmplitudeInstance.store(nullptr, std::memory_order_release);
         gAmplitude.reset();
     }
 
@@ -964,6 +1055,15 @@ namespace SparkyStudios::Audio::Amplitude
             _state->hrir_sphere->SetResource(AM_STRING_TO_OS_STRING(config->hrtf()->amir_file()->c_str()));
             _state->hrir_sphere->SetSamplingMode(_state->hrir_sampling_mode);
             _state->hrir_sphere->Load(GetFileSystem());
+
+            if (_state->panning_mode != ePanningMode_Stereo && _state->hrir_sphere->IsLoaded())
+            {
+                const AmUInt32 order = AM_MAX(static_cast<AmUInt32>(_state->panning_mode), 1u);
+                _state->binaural_filters = BinauralDecodingFilters::Build(order, true, *_state->hrir_sphere);
+
+                if (_state->binaural_filters == nullptr)
+                    amLogWarning("Could not prebuild the binaural decoding filters for order %u: each voice will build its own.", order);
+            }
         }
         else if (_state->panning_mode != ePanningMode_Stereo)
         {
@@ -1084,6 +1184,9 @@ namespace SparkyStudios::Audio::Amplitude
             }
         }
 
+        // Warm the shared speaker decoder of the output layout so no voice builds it.
+        AM_UNUSED(GetSpeakerDecodingMatrix(AM_MAX(static_cast<AmUInt32>(_state->panning_mode), 1u), GetOutputLayout()));
+
         // Mark the engine as ready
         _state->paused = false;
         _state->initialized = true;
@@ -1122,9 +1225,21 @@ namespace SparkyStudios::Audio::Amplitude
         if (_state->mixer.IsInitialized())
             _state->mixer.Deinit();
 
+        // The audio thread is gone: write what it still had queued.
+        AM_NULLSAFE(amLogger)->Flush();
+
         // Unload sound banks
         while (HasLoadedSoundBanks())
             UnloadSoundBanks();
+
+        // Release the shared binaural filters (voices still holding them keep them alive)
+        _state->binaural_filters.reset();
+
+        // Release the shared speaker decoders (nodes still holding them keep them alive)
+        {
+            std::lock_guard<std::mutex> lock(_state->speaker_decoders_mutex);
+            _state->speaker_decoders.clear();
+        }
 
         // Release HRIR sphere
         if (_state->hrir_sphere != nullptr)
@@ -2250,7 +2365,7 @@ namespace SparkyStudios::Audio::Amplitude
 
     Listener EngineImpl::GetListener(AmListenerID id) const
     {
-        if (id == kAmInvalidObjectId || _state->listener_state_free_list.empty())
+        if (id == kAmInvalidObjectId)
             return Listener(nullptr);
 
         const auto findIt = std::ranges::find_if(
@@ -2265,7 +2380,7 @@ namespace SparkyStudios::Audio::Amplitude
 
     void EngineImpl::RemoveListener(AmListenerID id) const
     {
-        if (id == kAmInvalidObjectId || _state->listener_state_free_list.empty())
+        if (id == kAmInvalidObjectId)
             return;
 
         if (const auto findIt = std::ranges::find_if(
@@ -2370,7 +2485,7 @@ namespace SparkyStudios::Audio::Amplitude
 
     Environment EngineImpl::GetEnvironment(AmEnvironmentID id) const
     {
-        if (id == kAmInvalidObjectId || _state->environment_state_free_list.empty())
+        if (id == kAmInvalidObjectId)
             return Environment(nullptr);
 
         const auto findIt = std::ranges::find_if(
@@ -2395,7 +2510,7 @@ namespace SparkyStudios::Audio::Amplitude
 
     void EngineImpl::RemoveEnvironment(AmEnvironmentID id) const
     {
-        if (id == kAmInvalidObjectId || _state->environment_state_free_list.empty())
+        if (id == kAmInvalidObjectId)
             return;
 
         if (const auto findIt = std::ranges::find_if(
@@ -2430,7 +2545,7 @@ namespace SparkyStudios::Audio::Amplitude
 
     Room EngineImpl::GetRoom(AmRoomID id) const
     {
-        if (id == kAmInvalidObjectId || _state->room_state_free_list.empty())
+        if (id == kAmInvalidObjectId)
             return Room(nullptr);
 
         const auto findIt = std::ranges::find_if(
@@ -2455,7 +2570,7 @@ namespace SparkyStudios::Audio::Amplitude
 
     void EngineImpl::RemoveRoom(AmRoomID id) const
     {
-        if (id == kAmInvalidObjectId || _state->room_state_free_list.empty())
+        if (id == kAmInvalidObjectId)
             return;
 
         if (const auto findIt = std::ranges::find_if(
@@ -2521,11 +2636,28 @@ namespace SparkyStudios::Audio::Amplitude
     void EraseFinishedSounds(const std::shared_ptr<EngineInternalState>& state)
     {
         PriorityList& list = state->playing_channel_list;
+
+        // Events whose next-frame callback could not be queued fire here. They run before the list is walked: a callback
+        // may call Play() on a full pool, which can evict a channel and would disturb the iteration below.
+        {
+            std::vector<std::pair<ChannelInternalState*, AmUInt64>> deferred;
+            for (auto& channel : list)
+                if (channel.HasDeferredEvents())
+                    deferred.emplace_back(&channel, channel.GetChannelStateId());
+
+            for (const auto& [channel, stateId] : deferred)
+                if (channel->GetChannelStateId() == stateId)
+                    channel->DrainDeferredEvents();
+        }
+
         for (auto channelInternalState = list.begin(); channelInternalState != list.end();)
         {
             auto current = channelInternalState++;
             current->UpdateState();
-            if (current->Stopped())
+
+            // A stopped channel is recycled once its voices finished their de-click: until then they still render
+            // through its state (location, gain, room). An engine that is stopping recycles everything at once.
+            if (current->Stopped() && !current->HasPendingEvents() && (state->stopping || !current->GetRealChannel().HasSoundingLayers()))
             {
                 InsertIntoFreeList(state, &*current);
             }
@@ -2592,7 +2724,9 @@ namespace SparkyStudios::Audio::Amplitude
         auto reverseIterator = priorityList->rbegin();
         for (auto state = priorityList->begin(); state != priorityList->end(); ++state)
         {
-            if (!state->IsReal())
+            // A channel the game paused while it was virtual stays virtual until it is resumed: it must not take a real
+            // channel from a sound that is audible.
+            if (!state->IsReal() && !state->Paused())
             {
                 // First check if there are any free real channels.
                 if (!realFreeList->empty())
@@ -2645,6 +2779,10 @@ namespace SparkyStudios::Audio::Amplitude
         // find the best listener for each channel. Listener positions are updated
         // before the best listener is selected.
         _state->listenerCache.Clear();
+
+        // Voice events fire the channel callbacks before the frame callbacks run and before finished channels are
+        // recycled: callbacks they schedule for the next frame (a stop after a natural end) still see their channel.
+        _state->mixer.DispatchVoiceEvents();
 
         {
             std::lock_guard lock(_frameThreadMutex);
@@ -2745,13 +2883,15 @@ namespace SparkyStudios::Audio::Amplitude
         }
 
         ++_state->current_frame;
+        _state->mixer.FlushVoiceCommands();
+        AM_NULLSAFE(amLogger)->Flush();
         _state->total_time += delta;
     }
 
-    void EngineImpl::OnNextFrame(std::function<void(AmTime delta)> callback) const
+    bool EngineImpl::OnNextFrame(std::function<void(AmTime delta)> callback) const
     {
         std::lock_guard lock(_frameThreadMutex);
-        _nextFrameCallbacks.TryEnqueue(std::move(callback));
+        return _nextFrameCallbacks.TryEnqueue(std::move(callback));
     }
 
     void EngineImpl::WaitUntilNextFrame() const
@@ -2763,12 +2903,28 @@ namespace SparkyStudios::Audio::Amplitude
     {
         const AmUInt64 nextFrame = _state->current_frame + frameCount;
         while (_state->current_frame < nextFrame)
+        {
+            // No frame is produced while the engine is paused or stopping: do not wait for one forever.
+            if (_state->paused || _state->stopping)
+                return;
+
             Thread::Sleep(1);
+        }
     }
 
     AmTime EngineImpl::GetTotalTime() const
     {
         return _state->total_time;
+    }
+
+    AmUInt64 EngineImpl::GetAudioClock() const
+    {
+        return _state->mixer.GetAudioClock();
+    }
+
+    AmUInt32 EngineImpl::GetAudioClockRate() const
+    {
+        return _state->mixer.GetDeviceDescription().mRequestedOutputSampleRate;
     }
 
     const AmVersion* EngineImpl::Version() const
@@ -2788,7 +2944,7 @@ namespace SparkyStudios::Audio::Amplitude
 
 #pragma region Amplimix
 
-    Amplimix* EngineImpl::GetMixer() const
+    AmplimixImpl* EngineImpl::GetMixer() const
     {
         return &_state->mixer;
     }
@@ -2840,6 +2996,22 @@ namespace SparkyStudios::Audio::Amplitude
     AmUInt32 EngineImpl::GetSamplesPerStream() const
     {
         return _state->samples_per_stream;
+    }
+
+    std::shared_ptr<const SpeakerDecodingMatrix> EngineImpl::GetSpeakerDecodingMatrix(AmUInt32 order, const ChannelLayout& layout)
+    {
+        std::lock_guard<std::mutex> lock(_state->speaker_decoders_mutex);
+
+        auto& slot = _state->speaker_decoders[{ static_cast<AmUInt8>(layout.GetType()), order }];
+        if (slot == nullptr)
+            slot = SpeakerDecodingMatrix::Build(order, layout);
+
+        return slot;
+    }
+
+    const ChannelLayout& EngineImpl::GetOutputLayout() const
+    {
+        return _state->mixer.GetOutputLayout();
     }
 
     bool EngineImpl::IsGameTrackingEnvironmentAmounts() const
@@ -2992,17 +3164,22 @@ namespace SparkyStudios::Audio::Amplitude
         newChannel->SetListener(Listener(listener));
 
         // Attempt to play the channel, if the engine is paused, the channel will be played later.
-        OnNextFrame(
-            [this, newChannel, handle](AmTime delta)
+        const auto playChannel = [this, newChannel, handle](AmTime delta)
+        {
+            if (!newChannel->Play())
             {
-                if (!newChannel->Play())
-                {
-                    amLogError("Failed to play switch container: %s.", handle->GetName().c_str());
+                amLogError("Failed to play switch container: %s.", handle->GetName().c_str());
 
-                    // Error playing the sound, put it back in the free list.
-                    InsertIntoFreeList(_state, newChannel);
-                }
-            });
+                // Error playing the sound, put it back in the free list. A voice that started and was discarded may still
+                // be in the mix being rendered: let that mix end before the channel state it reads is reset.
+                _state->mixer.Wait();
+                InsertIntoFreeList(_state, newChannel);
+            }
+        };
+
+        // A full callback queue would leave the channel pending forever: play it right away instead.
+        if (!OnNextFrame(playChannel))
+            playChannel(0.0);
 
         return Channel(newChannel);
     }
@@ -3073,17 +3250,22 @@ namespace SparkyStudios::Audio::Amplitude
         newChannel->SetListener(Listener(listener));
 
         // Attempt to play the channel, if the engine is paused, the channel will be played later.
-        OnNextFrame(
-            [this, newChannel, handle](AmTime delta)
+        const auto playChannel = [this, newChannel, handle](AmTime delta)
+        {
+            if (!newChannel->Play())
             {
-                if (!newChannel->Play())
-                {
-                    amLogError("Failed to play collection: %s.", handle->GetName().c_str());
+                amLogError("Failed to play collection: %s.", handle->GetName().c_str());
 
-                    // Error playing the sound, put it back in the free list.
-                    InsertIntoFreeList(_state, newChannel);
-                }
-            });
+                // Error playing the sound, put it back in the free list. A voice that started and was discarded may still
+                // be in the mix being rendered: let that mix end before the channel state it reads is reset.
+                _state->mixer.Wait();
+                InsertIntoFreeList(_state, newChannel);
+            }
+        };
+
+        // A full callback queue would leave the channel pending forever: play it right away instead.
+        if (!OnNextFrame(playChannel))
+            playChannel(0.0);
 
         return Channel(newChannel);
     }
@@ -3153,17 +3335,22 @@ namespace SparkyStudios::Audio::Amplitude
         newChannel->SetListener(Listener(listener));
 
         // Attempt to play the channel, if the engine is paused, the channel will be played later.
-        OnNextFrame(
-            [this, newChannel, handle](AmTime delta)
+        const auto playChannel = [this, newChannel, handle](AmTime delta)
+        {
+            if (!newChannel->Play())
             {
-                if (!newChannel->Play())
-                {
-                    amLogError("Failed to play sound: %s.", handle->GetName().c_str());
+                amLogError("Failed to play sound: %s.", handle->GetName().c_str());
 
-                    // Error playing the sound, put it back in the free list.
-                    InsertIntoFreeList(_state, newChannel);
-                }
-            });
+                // Error playing the sound, put it back in the free list. A voice that started and was discarded may still
+                // be in the mix being rendered: let that mix end before the channel state it reads is reset.
+                _state->mixer.Wait();
+                InsertIntoFreeList(_state, newChannel);
+            }
+        };
+
+        // A full callback queue would leave the channel pending forever: play it right away instead.
+        if (!OnNextFrame(playChannel))
+            playChannel(0.0);
 
         return Channel(newChannel);
     }

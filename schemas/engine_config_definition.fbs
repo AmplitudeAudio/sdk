@@ -90,6 +90,10 @@ table PlaybackOutputConfig {
 
   /// The output buffer format.
   format:ePlaybackOutputFormat = Float32;
+
+  /// The output channel layout. Default takes the device's native layout (the largest of Mono, Stereo, Quad, 5.1 and
+  /// 7.1 that fits it).
+  channels:ePlaybackOutputChannels = Stereo;
 }
 
 /// Audio mixer configuration
@@ -110,7 +114,8 @@ table AudioMixerConfig {
   /// The name of the pipeline asset file to load.
   pipeline:string (required);
 
-  /// The name of the resampler to use.
+  /// The name of the resampler to use. Built-in names, from cheapest to best:
+  /// "linear", "cubic", "sinc", "sinc_best". "default" is "sinc_best".
   /// If empty, or the given resampler name is not registered,
   /// the default resampler will be used instead.
   resampler:string;

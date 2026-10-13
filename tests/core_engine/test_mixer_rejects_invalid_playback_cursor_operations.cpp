@@ -29,12 +29,11 @@ namespace SparkyStudios::Audio::Amplitude::Tests
     public:
         void Run() override
         {
-            AmplimixImpl& mixer = amEngine->GetState()->mixer;
+            const AmplimixImpl& mixer = amEngine->GetState()->mixer;
             AmUInt64 cursor = 0;
 
-            AM_EXPECT_NOT(mixer.SetCursor(kAmInvalidObjectId, 0, 10));
-            AM_EXPECT_NOT(mixer.GetCursor(kAmInvalidObjectId, 0, cursor));
-            AM_EXPECT_NOT(mixer.ResetLayerState(kAmInvalidObjectId, 0));
+            AM_EXPECT_NOT(mixer.GetVoicePosition(kAmInvalidObjectId, 0, cursor));
+            AM_EXPECT(mixer.GetVoiceState(kAmInvalidObjectId, 0) == eVoiceState::Idle);
         }
     };
 

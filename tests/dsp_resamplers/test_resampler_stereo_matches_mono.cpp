@@ -1,0 +1,127 @@
+// Copyright (c) 2026-present Sparky Studios. All rights reserved.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+#include <cmath>
+#include <functional>
+#include <vector>
+
+#include <SparkyStudios/Audio/Amplitude/Amplitude.h>
+
+#include "DSPTestCase.h"
+#include "TestRegistry.h"
+
+using namespace SparkyStudios::Audio::Amplitude;
+
+namespace SparkyStudios::Audio::Amplitude::Tests
+{
+    namespace
+    {
+        std::vector<AmReal32> Sine(AmSize frames, AmReal64 hz, AmReal64 rate, AmReal64 amplitude = 0.5)
+        {
+            std::vector<AmReal32> x(frames);
+            for (AmSize i = 0; i < frames; ++i)
+                x[i] = static_cast<AmReal32>(amplitude * std::sin(2.0 * AM_PI * hz * static_cast<AmReal64>(i) / rate));
+            return x;
+        }
+
+        // Pulls total frames in blocks, feeding GetInputFramesNeeded() frames each call (zeros past the source end).
+        // before(block) runs before each block, e.g. to change the ratio.
+        std::vector<AmReal32> RunBlocks(
+            ResamplerInstance& r,
+            const std::vector<AmReal32>& source,
+            AmUInt64 block,
+            AmUInt64 total,
+            const std::function<void(AmUInt64)>& before = nullptr)
+        {
+            std::vector<AmReal32> out;
+            AmUInt64 read = 0;
+            AmUInt64 index = 0;
+            while (out.size() < total)
+            {
+                if (before)
+                    before(index++);
+
+                const AmUInt64 want = std::min<AmUInt64>(block, total - out.size());
+                const AmUInt64 needed = r.GetInputFramesNeeded(want);
+                AudioBuffer in(std::max<AmUInt64>(needed, 1), 1);
+                for (AmUInt64 i = 0; i < needed; ++i)
+                    in[0][i] = read + i < source.size() ? source[read + i] : 0.0f;
+
+                AudioBuffer o(want, 1);
+                AmUInt64 inFrames = needed;
+                AmUInt64 outFrames = want;
+                r.Process(in, inFrames, o, outFrames);
+                read += inFrames;
+                for (AmUInt64 i = 0; i < outFrames; ++i)
+                    out.push_back(o[0][i]);
+
+                if (outFrames == 0 && inFrames == 0)
+                    break;
+            }
+
+            return out;
+        }
+    } // namespace
+
+    AM_TEST_CASE(DSPTestCase, dsp_resamplers, resampler_stereo_matches_mono)
+    {
+    public:
+        void Run() override
+        {
+            const std::vector<AmReal32> left = Sine(8192, 997.0, 44100.0);
+            const std::vector<AmReal32> right = Sine(8192, 3001.0, 44100.0, 0.3);
+
+            for (const char* name : kResamplerPresets)
+            {
+                auto stereo = Resampler::Construct(name);
+                stereo->Initialize(2, 44100, 48000);
+                const AmUInt64 needed = stereo->GetInputFramesNeeded(4096);
+                AM_EXPECT(needed <= 8192);
+
+                AudioBuffer in(needed, 2);
+                for (AmUInt64 i = 0; i < needed; ++i)
+                {
+                    in[0][i] = left[i];
+                    in[1][i] = right[i];
+                }
+
+                AudioBuffer out(4096, 2);
+                AmUInt64 inFrames = needed;
+                AmUInt64 outFrames = 4096;
+                stereo->Process(in, inFrames, out, outFrames);
+                AM_EXPECT_EQ(4096ULL, outFrames);
+
+                // Each channel must be exactly what the same preset produces for that channel alone.
+                for (AmUInt16 c = 0; c < 2; ++c)
+                {
+                    auto mono = Resampler::Construct(name);
+                    mono->Initialize(1, 44100, 48000);
+                    const std::vector<AmReal32> expected = RunBlocks(*mono, c == 0 ? left : right, 4096, 4096);
+                    AM_EXPECT_EQ(std::size_t{ 4096 }, expected.size());
+
+                    // An all-silent channel would match a silent mono run trivially: make sure there is a signal.
+                    AmReal32 peak = 0.0f;
+                    for (const AmReal32 sample : expected)
+                        peak = std::max(peak, std::abs(sample));
+                    AM_EXPECT(peak > 0.1f);
+
+                    for (AmUInt64 i = 0; i < 4096; ++i)
+                        AM_EXPECT_EQ(expected[i], out[c][i]);
+                }
+            }
+        }
+    };
+
+    AM_REGISTER_TEST(dsp_resamplers, resampler_stereo_matches_mono);
+} // namespace SparkyStudios::Audio::Amplitude::Tests

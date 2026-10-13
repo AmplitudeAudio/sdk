@@ -82,6 +82,11 @@ table SoundDefinition {
 
   /// Path to the audio sample file.
   path:string;
+
+  /// Width of the sound's image in degrees (0 - 360), for sounds with more than one channel. Each channel is placed as
+  /// a virtual emitter around the sound's direction. 0 collapses the channels to the sound's direction; absent means
+  /// the native width of the asset's layout (60 for stereo, 220 for 5.1). Ignored for mono assets.
+  spread:RtpcCompatibleValue;
 }
 
 root_type SoundDefinition;

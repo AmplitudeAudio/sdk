@@ -108,7 +108,11 @@ namespace SparkyStudios::Audio::Amplitude
 
         const auto* layer = GetLayer();
         const auto& room = layer->GetRoom();
-        const AmReal32 roomGain = layer->GetChannel().GetState()->GetRoomGain(room.GetId());
+        const Channel& channel = layer->GetChannel();
+        if (!channel.Valid() || channel.GetState() == nullptr)
+            return nullptr;
+
+        const AmReal32 roomGain = channel.GetState()->GetRoomGain(room.GetId());
 
         if (roomGain < kEpsilon)
             return nullptr;
@@ -135,11 +139,13 @@ namespace SparkyStudios::Audio::Amplitude
             _reflectionsProcessor->Process(_tempBuffer, &_output);
         }
 
-        // Rotate the reflections from room space to world space. The listener rotation
-        // is applied later by the AmbisonicRotator node, before binaural decode.
-        const CartesianCoordinateSystem::Converter engineToAmbiX(
-            CartesianCoordinateSystem::Default(), CartesianCoordinateSystem::AmbiX());
-        _orientationProcessor.SetOrientation(Orientation(Inverse(engineToAmbiX.Forward(room.GetOrientation().GetQuaternion()))));
+        // Rotate the reflections from room space to world space. The listener rotation is applied later by the
+        // AmbisonicRotator node, before binaural decode. The field's axes are X forward, Y right, Z up (the engine frame
+        // mirrored), and the orientation processor moves directions by the inverse of the orientation it is given.
+        using Axis = CartesianCoordinateSystem::Axis;
+        const CartesianCoordinateSystem::Converter engineToField(
+            CartesianCoordinateSystem::Default(), CartesianCoordinateSystem(Axis::PositiveY, Axis::PositiveX, Axis::PositiveZ));
+        _orientationProcessor.SetOrientation(Orientation(engineToField.Forward(Inverse(room.GetOrientation().GetQuaternion()))));
         _orientationProcessor.Process(&_output, _output.GetSampleCount());
 
         return _output.GetBuffer();

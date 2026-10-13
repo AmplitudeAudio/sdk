@@ -115,6 +115,14 @@ namespace SparkyStudios::Audio::Amplitude
     constexpr AmSize kAmStereoChannelCount = 2;
 
     /**
+     * @brief The gain of -3.01 dB, 1/sqrt(2): constant-power panning midway between two speakers, and the ITU-R BS.775
+     * fold-down coefficient.
+     *
+     * @ingroup core
+     */
+    constexpr AmReal32 kAmMinus3dB = 0.70710678118654752f;
+
+    /**
      * @brief The number of channels in a 5.1-surround audio source.
      *
      * @ingroup core

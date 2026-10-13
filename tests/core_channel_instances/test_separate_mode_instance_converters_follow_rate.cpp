@@ -40,6 +40,20 @@ namespace SparkyStudios::Audio::Amplitude::Tests
 
             return count;
         }
+
+        // A pause lands on the audio thread one block after the frame that flushes it, then fades out over the transport
+        // de-click: wait for the voices to report it instead of a number of frames.
+        bool VoicesPaused(const Channel& channel)
+        {
+            const RealChannel& realChannel = channel.GetState()->GetRealChannel();
+            const AmplimixImpl& mixer = amEngine->GetState()->mixer;
+
+            for (const AmUInt32 layerId : realChannel.GetMixerLayerIds())
+                if (mixer.GetVoiceState(realChannel.GetID(), layerId) != eVoiceState::Paused)
+                    return false;
+
+            return true;
+        }
     } // namespace
 
     // With a cap of 1, instance A resamples through its own converter while instance B overflows onto the layer's
@@ -68,7 +82,11 @@ namespace SparkyStudios::Audio::Amplitude::Tests
             AM_EXPECT(channel.Playing());
 
             channel.Pause();
-            amEngine->WaitUntilFrames(5);
+            AM_EXPECT(WaitUntil(
+                [&]()
+                {
+                    return VoicesPaused(channel);
+                }));
 
             ChannelInstance a = channel.AddInstance({ 10.0f, 0.0f, 0.0f });
             ChannelInstance b = channel.AddInstance({ -10.0f, 0.0f, 0.0f });
@@ -97,7 +115,11 @@ namespace SparkyStudios::Audio::Amplitude::Tests
                 }));
 
             channel.Pause();
-            amEngine->WaitUntilFrames(5);
+            AM_EXPECT(WaitUntil(
+                [&]()
+                {
+                    return VoicesPaused(channel);
+                }));
             drain();
 
             const AmUInt64 cursorA = a.GetState()->GetCursor();

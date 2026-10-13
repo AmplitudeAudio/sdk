@@ -27,6 +27,7 @@
 #include <SparkyStudios/Audio/Amplitude/Sound/Sound.h>
 
 #include <Core/Playback/ChannelInstanceInternalState.h>
+#include <Mixer/Voice/VoiceTypes.h>
 
 namespace SparkyStudios::Audio::Amplitude
 {
@@ -36,6 +37,20 @@ namespace SparkyStudios::Audio::Amplitude
     class ChannelInternalState;
 
     class AmplimixImpl;
+
+    /**
+     * @brief Options taken by @c RealChannel::Play, shared across the layers started together.
+     *
+     * @c startPosition and @c startPositionClock let a fresh voice resume at a virtual cursor's live position;
+     * @c startFrame is the audio-clock frame of the voice's first audible sample.
+     */
+    struct RealChannelPlayOptions
+    {
+        AmTime fadeIn = 0.0; ///< Milliseconds; forwarded to VoiceStartOptions::fadeIn.
+        AmUInt64 startPosition = 0; ///< First source frame heard; forwarded to VoiceStartOptions::startPosition.
+        AmUInt64 startPositionClock = kVoiceAsap; ///< Audio-clock frame startPosition was heard at, if any.
+        AmUInt64 startFrame = kVoiceAsap;
+    };
 
     /**
      * @brief A RealChannel represents a channel of audio on the mixer.
@@ -65,19 +80,43 @@ namespace SparkyStudios::Audio::Amplitude
 
         /**
          * @brief Play all the sound instances on the real channel.
+         *
+         * On failure every layer this call created is removed, and the call returns @c false. The instances of the
+         * layers that had already started are owned by the mixer (destroyed with their layer); they are appended to
+         * @p owned so the caller destroys only the others.
+         *
+         * @param[in] instances The sound instances to play, one layer each.
+         * @param[in] options The play options.
+         * @param[out] owned When not null, receives the instances the mixer took ownership of on failure.
+         *
+         * @return @c true when every instance started.
          */
-        bool Play(const std::vector<SoundInstance*>& instances);
+        bool Play(
+            const std::vector<SoundInstance*>& instances, const RealChannelPlayOptions& options = {},
+            std::vector<SoundInstance*>* owned = nullptr);
 
         /**
          * @brief Play the audio on the real channel.
          */
-        bool Play(SoundInstance* sound, AmUInt32 layer = kAmInvalidObjectId);
+        bool Play(SoundInstance* sound, AmUInt32 layer = kAmInvalidObjectId, const RealChannelPlayOptions& options = {});
 
         /**
          * @brief Halt the real channel so it may be re-used. However, this virtual channel may still be considered playing.
+         *
+         * The per-layer overloads of Halt, Pause and Resume return @c false when the layer has no mixer layer (nothing is
+         * posted); the channel-wide overloads skip such layers.
          */
         bool Halt(AmUInt32 layer);
         bool Halt();
+
+        /**
+         * @brief Fades every layer out for virtualization, over @c kStealFade (game thread).
+         *
+         * Unlike @c Halt, the layer's voice is released rather than stopped: its mixer layer (and @c id) stays
+         * alive, fading toward silence, until the voice finishes on its own. The layer is marked @c stopping so it
+         * no longer counts toward @c Playing() / @c Paused(), the same way a departing switch-container layer does.
+         */
+        void Release();
 
         /**
          * @brief Pause the real channel.
@@ -92,13 +131,68 @@ namespace SparkyStudios::Audio::Amplitude
         bool Resume();
 
         /**
+         * @brief Fades a stop or pause across every layer, rendered by each voice's audio-rate envelope.
+         *
+         * Unlike @c Halt / @c Pause, the layer keeps reporting "playing" until the voice posts the matching
+         * @c eVoiceFadeTarget event: the channel only settles once the fade actually finished rendering.
+         *
+         * @param duration The fade duration, in milliseconds.
+         * @param kind Either @c eVoiceCommandKind::Stop or @c eVoiceCommandKind::Pause.
+         *
+         * @return @c false when this channel has no layer to fade.
+         */
+        bool FadeOut(AmTime duration, eVoiceCommandKind kind, AmUInt64 clock = kVoiceAsap);
+
+        /**
+         * @brief Fades a single layer out to a stop, rendered by its voice's audio-rate envelope.
+         *
+         * Used by switch-container state transitions to fade out the layer of an outgoing item.
+         *
+         * @param layer The layer index to fade out.
+         * @param duration The fade duration, in milliseconds.
+         */
+        void FadeOutLayer(AmUInt32 layer, AmTime duration);
+
+        /**
+         * @brief Resumes every layer with an audio-rate fade-in.
+         *
+         * @param duration The fade duration, in milliseconds.
+         *
+         * @return @c false when this channel has no layer to resume.
+         */
+        bool ResumeWithFade(AmTime duration, AmUInt64 clock = kVoiceAsap);
+
+        /**
+         * @brief Marks the layer bound to @p mixerLayerId as paused (game-side mirror), once its voice's fade-out
+         * finished with the @c eVoiceFadeTarget::Paused target.
+         */
+        void MarkLayerPaused(AmUInt32 mixerLayerId);
+
+        /**
+         * @brief Clears the paused flag on every layer.
+         *
+         * Used when a stop fade overrides a pause fade in progress, so paused layers stop reading as not playing. The
+         * layers are not marked @c stopping: the channel stays @c FadingOut until every voice finishes.
+         */
+        void ClearAllLayersPaused();
+
+        /**
          * @brief Seek the real channel to the given playback position.
          *
          * @param position The playback position in milliseconds.
          *
          * @return @c true on success, @c false otherwise.
          */
-        bool Seek(AmTime position);
+        bool Seek(AmTime position, AmUInt64 clock = kVoiceAsap);
+
+        /**
+         * @brief Gets the audio-clock frame a layer was scheduled to start at.
+         *
+         * @param[in] mixerLayerId The mixer layer id.
+         *
+         * @return The requested start frame, or @c kVoiceAsap when the layer was not scheduled or is unknown.
+         */
+        [[nodiscard]] AmUInt64 GetRequestedStartFrame(AmUInt32 mixerLayerId) const;
 
         /**
          * @brief Get the current playback position.
@@ -239,15 +333,48 @@ namespace SparkyStudios::Audio::Amplitude
          */
         [[nodiscard]] std::vector<AmUInt32> GetMixerLayerIds() const;
 
+        /**
+         * @brief Gets the number of layers this channel tracks, started or not.
+         */
+        [[nodiscard]] AmSize GetLayerCount() const
+        {
+            return _layers.size();
+        }
+
+        /**
+         * @brief Checks whether one of this channel's layers still plays @p sound on the mixer layer @p mixerLayerId.
+         *
+         * A voice event for a channel that was reset and reused since does not pass this check.
+         */
+        [[nodiscard]] bool OwnsMixerLayer(AmUInt32 mixerLayerId, const SoundInstance* sound) const;
+
+        /**
+         * @brief Forgets the layer bound to the mixer layer @p mixerLayerId, once its voice finished (game thread).
+         *
+         * The mixer owns and destroys the layer's sound instance. When this was the last layer, the parent channel's
+         * state is checked at once, so a still-owed Stop event fires before the channel can be recycled.
+         */
+        void ForgetMixerLayer(AmUInt32 mixerLayerId);
+
+        /**
+         * @brief Checks whether a stopped layer still waits for its voice's Finished event (the voice fades out).
+         */
+        [[nodiscard]] bool HasSoundingLayers() const;
+
     private:
         /**
          * @brief Holds all per-layer data for a single audio layer on the channel.
          */
         struct LayerData
         {
-            AmUInt32 mixerLayerId = kAmInvalidObjectId; ///< Mixer layer ID returned by AmplimixImpl::Play()
+            AmUInt32 mixerLayerId = kAmInvalidObjectId; ///< Mixer layer ID returned by AmplimixImpl::StartVoice()
+            AmChannelID startedChannelId = kAmInvalidObjectId; ///< The channel id the voice was started with (it outlives a steal).
             bool instanceTableInstalled = false; ///< The mixer layer has an instance pipeline table (game-side mirror).
             std::vector<AmChannelInstanceID> attachedInstanceIds; ///< Instance IDs with an attached pipeline (game-side mirror).
+            std::vector<AmChannelInstanceID> attachedStreamIds; ///< Instance IDs with an attached stream (game-side mirror).
+            AmUInt64 requestedStartFrame = kVoiceAsap; ///< Audio-clock frame the start was scheduled at.
+            bool paused = false; ///< Last transport command was a pause (game-side mirror).
+            bool stopping = false; ///< A stop was posted; waiting for Finished.
             bool isStream = false;                      ///< Whether this layer is streaming audio
             bool isLoop = false;                        ///< Whether this layer should loop
             AmReal32 gain = 1.0f;                       ///< Per-layer gain value (defaults to unity)

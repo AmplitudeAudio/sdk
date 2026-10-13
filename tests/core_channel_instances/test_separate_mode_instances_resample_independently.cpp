@@ -27,6 +27,23 @@ using namespace SparkyStudios::Audio::Amplitude;
 
 namespace SparkyStudios::Audio::Amplitude::Tests
 {
+    namespace
+    {
+        // A pause lands on the audio thread one block after the frame that flushes it, then fades out over the transport
+        // de-click: wait for the voices to report it instead of a number of frames.
+        bool VoicesPaused(const Channel& channel)
+        {
+            const RealChannel& realChannel = channel.GetState()->GetRealChannel();
+            const AmplimixImpl& mixer = amEngine->GetState()->mixer;
+
+            for (const AmUInt32 layerId : realChannel.GetMixerLayerIds())
+                if (mixer.GetVoiceState(realChannel.GetID(), layerId) != eVoiceState::Paused)
+                    return false;
+
+            return true;
+        }
+    } // namespace
+
     // test_sound_01 is 44.1 kHz and the test device runs at 48 kHz, so every instance goes through the resampler.
     AM_TEST_CASE(EngineTestCase, core_channel_instances, separate_mode_instances_resample_independently)
     {
@@ -43,7 +60,11 @@ namespace SparkyStudios::Audio::Amplitude::Tests
             // Added while paused, and resumed once both render through their own pipeline and converter: both start
             // at cursor 0 and must advance by the same amount every block.
             channel.Pause();
-            amEngine->WaitUntilFrames(5);
+            AM_EXPECT(WaitUntil(
+                [&]()
+                {
+                    return VoicesPaused(channel);
+                }));
 
             ChannelInstance a = channel.AddInstance({ 10.0f, 0.0f, 0.0f });
             ChannelInstance b = channel.AddInstance({ -10.0f, 0.0f, 0.0f });
@@ -79,7 +100,11 @@ namespace SparkyStudios::Audio::Amplitude::Tests
 
             // Freeze playback so both cursors are read from the same block.
             channel.Pause();
-            amEngine->WaitUntilFrames(5);
+            AM_EXPECT(WaitUntil(
+                [&]()
+                {
+                    return VoicesPaused(channel);
+                }));
             drain();
 
             const AmUInt64 cursorA = a.GetState()->GetCursor();

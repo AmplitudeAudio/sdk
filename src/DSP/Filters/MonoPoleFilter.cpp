@@ -21,7 +21,6 @@ namespace SparkyStudios::Audio::Amplitude
 {
     MonoPoleFilterInstance::MonoPoleFilterInstance(MonoPoleFilter* parent)
         : FilterInstance(parent)
-        , _previousSample(0.0f)
     {
         Initialize(MonoPoleFilter::ATTRIBUTE_LAST);
         SetParameter(MonoPoleFilter::ATTRIBUTE_COEFFICIENT, parent->_coefficient);
@@ -30,16 +29,17 @@ namespace SparkyStudios::Audio::Amplitude
     AmAudioSample MonoPoleFilterInstance::ProcessSample(AmAudioSample sample, AmUInt16 channel, AmUInt32 sampleRate)
     {
         const AmReal32 coefficient = m_parameters[MonoPoleFilter::ATTRIBUTE_COEFFICIENT];
+        AmAudioSample& previous = _previousSample[channel];
 
         if (coefficient < kEpsilon)
         {
-            _previousSample = sample;
+            previous = sample;
             return 0.0f;
         }
 
         const AmReal32 x = sample;
-        /* */ AmReal32 y = coefficient * (_previousSample - x) + x;
-        _previousSample = y;
+        /* */ AmReal32 y = coefficient * (previous - x) + x;
+        previous = y;
 
         y = x + (y - x) * m_parameters[MonoPoleFilter::ATTRIBUTE_WET];
 

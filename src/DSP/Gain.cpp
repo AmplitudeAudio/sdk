@@ -178,50 +178,6 @@ namespace SparkyStudios::Audio::Amplitude
         return AM_ABS(k) < kGainThreshold;
     }
 
-    AmVector2 Gain::CalculateStereoPannedGain(AmReal32 gain, AmVector3 sourcePosition, AmMatrix4 listenerViewMatrix)
-    {
-        if (IsZero(gain))
-            return kVector2Zero;
-
-        const auto& listenerSpaceSourcePosition =
-            Transform(listenerViewMatrix, { sourcePosition.x, sourcePosition.y, sourcePosition.z, 1.0f });
-        if (SquaredLength(listenerSpaceSourcePosition.xyz) <= kEpsilon)
-            return CalculateStereoPannedGain(gain, 0);
-
-        const AmVector3 direction = Normalize(listenerSpaceSourcePosition.xyz);
-
-        return CalculateStereoPannedGain(gain, SphericalPosition::ForHRTF(direction));
-    }
-
-    AmVector2 Gain::CalculateStereoPannedGain(AmReal32 gain, AmReal32 pan)
-    {
-        if (IsZero(gain))
-            return kVector2Zero;
-
-        // Clamp pan to its valid range of -1.0f to 1.0f inclusive
-        pan = AM_CLAMP(pan, -1.0f, 1.0f);
-
-        // Convert gain and pan to left and right gain
-        // This formula is explained in the following paper:
-        // http://www.rs-met.com/documents/tutorials/PanRules.pdf
-        const AmReal32 p = static_cast<AmReal32>(M_PI) * (pan + 1.0f) / 4.0f;
-        const AmReal32 left = std::cos(p);
-        const AmReal32 right = std::sin(p);
-
-        return { left * left * gain, right * right * gain };
-    }
-
-    AmVector2 Gain::CalculateStereoPannedGain(AmReal32 gain, SphericalPosition sourcePosition)
-    {
-        if (IsZero(gain))
-            return kVector2Zero;
-
-        const AmReal32 cosTheta = std::cos(sourcePosition.GetElevation());
-
-        return { 0.5f * (1.0f + std::cos((AM_DegToRad * -90.0f) - sourcePosition.GetAzimuth()) * cosTheta) * gain,
-                 0.5f * (1.0f + std::cos((AM_DegToRad * +90.0f) - sourcePosition.GetAzimuth()) * cosTheta) * gain };
-    }
-
     namespace
     {
         AM_INLINE bool IsSimdAligned(const AmReal32* ptr)

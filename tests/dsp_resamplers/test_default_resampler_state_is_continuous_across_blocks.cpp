@@ -17,7 +17,7 @@
 
 #include <SparkyStudios/Audio/Amplitude/Amplitude.h>
 
-#include <DSP/Resamplers/DefaultResampler.h>
+#include <DSP/Resamplers/BandlimitedResampler.h>
 
 #include "DSPTestCase.h"
 #include "TestRegistry.h"
@@ -38,7 +38,7 @@ namespace SparkyStudios::Audio::Amplitude::Tests
             constexpr AmUInt32 blockCount = 8;
             constexpr AmReal32 frequency = 1000.0f;
 
-            auto resampler = amshared(DefaultResampler);
+            auto resampler = amshared(BandlimitedResampler, "default", eResamplerPreset::SincBest);
             auto instance = resampler->CreateInstance();
 
             instance->Initialize(channelCount, sampleRateIn, sampleRateOut);
@@ -53,11 +53,11 @@ namespace SparkyStudios::Audio::Amplitude::Tests
                     inputBuffer[0][i] =
                         std::sin(2.0f * AM_PI32 * frequency * static_cast<AmReal32>(phase) / static_cast<AmReal32>(sampleRateIn));
 
-                const AmUInt64 expectedOutputFrames = instance->GetExpectedOutputFrames(blockFrames);
-                AudioBuffer outputBuffer(expectedOutputFrames, channelCount);
+                const AmUInt64 capacity = blockFrames * sampleRateOut / sampleRateIn + 2;
+                AudioBuffer outputBuffer(capacity, channelCount);
 
                 AmUInt64 processedInputFrames = blockFrames;
-                AmUInt64 processedOutputFrames = expectedOutputFrames;
+                AmUInt64 processedOutputFrames = capacity;
 
                 AM_EXPECT(instance->Process(inputBuffer, processedInputFrames, outputBuffer, processedOutputFrames));
 
@@ -69,6 +69,13 @@ namespace SparkyStudios::Audio::Amplitude::Tests
             // then assert no sample-to-sample jump exceeds a generous bound: a discontinuity at a block seam
             // caused by a lost state carry produces a jump close to the full amplitude.
             AM_EXPECT(resampled.size() > 64);
+
+            // A resampler that emitted nothing would satisfy the jump bound with a largestJump of 0: the length
+            // check above says frames came out, and this says they carried the tone.
+            AmReal32 peak = 0.0f;
+            for (const AmReal32 sample : resampled)
+                peak = std::max(peak, std::abs(sample));
+            AM_EXPECT(peak > 0.25f);
 
             AmReal32 largestJump = 0.0f;
             for (AmSize i = 32; i < resampled.size(); ++i)

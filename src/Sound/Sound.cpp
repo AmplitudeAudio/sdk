@@ -162,6 +162,11 @@ namespace SparkyStudios::Audio::Amplitude
         return _loop;
     }
 
+    AmUInt32 SoundImpl::GetLoopCount() const
+    {
+        return _loopCount;
+    }
+
     void SoundImpl::Load(std::shared_ptr<const FileSystem> loader)
     {
         if (_loaded)
@@ -212,6 +217,11 @@ namespace SparkyStudios::Audio::Amplitude
     const RtpcValue& SoundImpl::GetNearFieldGain() const
     {
         return _nearFieldGain;
+    }
+
+    const RtpcValue& SoundImpl::GetSpread() const
+    {
+        return _spread;
     }
 
     const RtpcValue& SoundImpl::GetPitch() const
@@ -305,6 +315,7 @@ namespace SparkyStudios::Audio::Amplitude
 
         RtpcValue::Init(m_gain, definition->gain(), 1);
         RtpcValue::Init(_nearFieldGain, definition->near_field_gain(), 1);
+        RtpcValue::Init(_spread, definition->spread(), kAmSpreadNative);
         RtpcValue::Init(m_pitch, definition->pitch(), 1);
         RtpcValue::Init(m_priority, definition->priority(), 1);
 
@@ -559,6 +570,11 @@ namespace SparkyStudios::Audio::Amplitude
     AmUInt32 SoundInstance::GetCurrentLoopCount() const
     {
         return _currentLoopCount;
+    }
+
+    void SoundInstance::SetLoopCount(AmUInt32 loopCount)
+    {
+        _settings.m_loopCount = loopCount;
     }
 
     const std::shared_ptr<EffectInstance> SoundInstance::GetEffect() const

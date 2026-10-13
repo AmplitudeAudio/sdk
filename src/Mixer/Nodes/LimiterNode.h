@@ -79,6 +79,11 @@ namespace SparkyStudios::Audio::Amplitude
             return 1;
         }
 
+        [[nodiscard]] AM_INLINE eNodeChannelPolicy GetChannelPolicy() const override
+        {
+            return eNodeChannelPolicy_PerChannel;
+        }
+
         [[nodiscard]] AM_INLINE AmSize GetParameterCount() const override
         {
             return 3;

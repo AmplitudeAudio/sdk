@@ -44,13 +44,13 @@ namespace SparkyStudios::Audio::Amplitude::Tests
             for (AmUInt64 i = 0; i < inputFrames; ++i)
             input[c][i] = std::sin(2.0f * AM_PI32 * 440.0f * static_cast<AmReal32>(i) / 44100.0f);
 
-            // Calculate expected output frame count
-            const AmUInt64 expectedOutputFrames = converter.GetExpectedOutputFrameCount(inputFrames);
-            AM_EXPECT(expectedOutputFrames > inputFrames); // Should be upsampled
+            // Calculate a generous output capacity bound (upsampling from 44.1kHz to 48kHz).
+            const AmUInt64 capacity = inputFrames * settings.m_targetSampleRate / settings.m_sourceSampleRate + 2;
+            AM_EXPECT(capacity > inputFrames); // Should be upsampled
 
-            AudioBuffer output(expectedOutputFrames, 2);
+            AudioBuffer output(capacity, 2);
             AmUInt64 actualInputFrames = inputFrames;
-            AmUInt64 actualOutputFrames = expectedOutputFrames;
+            AmUInt64 actualOutputFrames = capacity;
 
             // Process
             converter.Process(input, actualInputFrames, output, actualOutputFrames);

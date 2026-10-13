@@ -25,6 +25,7 @@
 
 namespace SparkyStudios::Audio::Amplitude
 {
+    class EngineImpl;
     class EventImpl;
 
     /**
@@ -115,6 +116,7 @@ namespace SparkyStudios::Audio::Amplitude
         AmTime _accumulatedTime;
 
         EventImpl* _parent;
+        EngineImpl* _engine;
     };
 
     class EventInstanceImpl final : public EventInstance

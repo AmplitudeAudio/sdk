@@ -13,6 +13,7 @@
 // limitations under the License.
 
 #include <Core/Engine.h>
+#include <DSP/ChannelMap.h>
 #include <DSP/Gain.h>
 #include <Mixer/Nodes/ReverbNode.h>
 
@@ -86,6 +87,10 @@ namespace SparkyStudios::Audio::Amplitude
 
         _tempBuffer = AudioBuffer(frameCount, channelCount);
 
+        // The reverb renders stereo; the channel map places it on the output (L and R on surround, folded on mono).
+        _stereo = AudioBuffer(frameCount, kAmStereoChannelCount);
+        _toOutput = BuildChannelMap(ChannelLayout::Get(eChannelLayout_Stereo), GetPipelineOutputLayout());
+
         if (_reverbInstance != nullptr)
             _reverbInstance->Configure(frameCount);
     }
@@ -129,7 +134,7 @@ namespace SparkyStudios::Audio::Amplitude
 
         _active = true;
 
-        _output.Clear();
+        _stereo.Clear();
         _tempBuffer.Clear();
 
         const AmUInt64 frames = input->GetFrameCount();
@@ -141,7 +146,8 @@ namespace SparkyStudios::Audio::Amplitude
             Gain::ApplyReplaceConstantGain(roomGain, inChannel, 0, _tempBuffer[c], 0, frames);
         }
 
-        _reverbInstance->Process(_tempBuffer, _output, frames, sampleRate);
+        _reverbInstance->Process(_tempBuffer, _stereo, frames, sampleRate);
+        ApplyChannelMap(_toOutput, _stereo, _output, frames);
 
         return &_output;
     }

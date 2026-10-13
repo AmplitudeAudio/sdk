@@ -70,6 +70,95 @@ namespace SparkyStudios::Audio::Amplitude::Tests
         }
     };
 
+    /// Records the buffer a node receives and passes it through.
+    class ChannelProbeNodeInstance final : public ProcessorNodeInstance
+    {
+    public:
+        const AudioBuffer* Process(const AudioBuffer* input) override
+        {
+            receivedChannels = static_cast<AmUInt16>(input->GetChannelCount());
+            firstSample = input->GetChannel(0)[0];
+            AudioBuffer::Copy(*input, 0, _output, 0, input->GetFrameCount());
+            return &_output;
+        }
+
+        AmUInt16 receivedChannels = 0;
+        AmReal32 firstSample = 0.0f;
+    };
+
+    /// A plugin node that does not declare a channel policy: the default, Mono.
+    class MonoProbeNode final : public Node
+    {
+    public:
+        MonoProbeNode()
+            : Node("TestMonoProbe")
+        {}
+
+        [[nodiscard]] AM_INLINE std::shared_ptr<NodeInstance> CreateInstance() const override
+        {
+            return ampoolshared(eMemoryPoolKind_Amplimix, ChannelProbeNodeInstance);
+        }
+
+        [[nodiscard]] AM_INLINE bool CanConsume() const override
+        {
+            return true;
+        }
+
+        [[nodiscard]] AM_INLINE bool CanProduce() const override
+        {
+            return true;
+        }
+
+        [[nodiscard]] AM_INLINE AmSize GetMaxInputCount() const override
+        {
+            return 1;
+        }
+
+        [[nodiscard]] AM_INLINE AmSize GetMinInputCount() const override
+        {
+            return 1;
+        }
+    };
+
+    /// A pass-through node declaring the Custom policy: what follows it no longer carries the source layout.
+    class CustomProbeNode final : public Node
+    {
+    public:
+        CustomProbeNode()
+            : Node("TestCustomProbe")
+        {}
+
+        [[nodiscard]] AM_INLINE std::shared_ptr<NodeInstance> CreateInstance() const override
+        {
+            return ampoolshared(eMemoryPoolKind_Amplimix, ChannelProbeNodeInstance);
+        }
+
+        [[nodiscard]] AM_INLINE bool CanConsume() const override
+        {
+            return true;
+        }
+
+        [[nodiscard]] AM_INLINE bool CanProduce() const override
+        {
+            return true;
+        }
+
+        [[nodiscard]] AM_INLINE AmSize GetMaxInputCount() const override
+        {
+            return 1;
+        }
+
+        [[nodiscard]] AM_INLINE AmSize GetMinInputCount() const override
+        {
+            return 1;
+        }
+
+        [[nodiscard]] AM_INLINE eNodeChannelPolicy GetChannelPolicy() const override
+        {
+            return eNodeChannelPolicy_Custom;
+        }
+    };
+
     class EngineTestCase : public TestCase
     {
     public:
@@ -100,6 +189,8 @@ namespace SparkyStudios::Audio::Amplitude::Tests
             _fileSystem = CreatePlatformFileSystem();
 
             _invalidConsumerNodePlugin = Engine::RegisterExtension<InvalidConsumerNode>();
+            _monoProbeNodePlugin = Engine::RegisterExtension<MonoProbeNode>();
+            _customProbeNodePlugin = Engine::RegisterExtension<CustomProbeNode>();
 
             // Use platform-appropriate assets path
             _fileSystem->SetBasePath(GetPlatformAssetsBasePath());
@@ -137,7 +228,7 @@ namespace SparkyStudios::Audio::Amplitude::Tests
 
             _threadHandle = Thread::CreateThread(run, this);
 
-            AM_EXPECT(amEngine->Initialize(AM_OS_STRING("tests.config.amconfig")));
+            AM_EXPECT(amEngine->Initialize(GetConfigFile()));
 
             amEngine->EnsureSoundBankLoaded(AM_OS_STRING("tests.init.ambank"));
 
@@ -160,6 +251,8 @@ namespace SparkyStudios::Audio::Amplitude::Tests
             Engine::UnregisterDefaultExtensions();
 
             Engine::UnregisterExtension(_invalidConsumerNodePlugin);
+            Engine::UnregisterExtension(_monoProbeNodePlugin);
+            Engine::UnregisterExtension(_customProbeNodePlugin);
 
             amEngine->DestroyInstance();
 
@@ -175,11 +268,27 @@ namespace SparkyStudios::Audio::Amplitude::Tests
             return _running.load(std::memory_order_acquire);
         }
 
+        /// The compiled engine config the fixture initializes with.
+        [[nodiscard]] virtual const AmOsChar* GetConfigFile() const
+        {
+            return AM_OS_STRING("tests.config.amconfig");
+        }
+
     protected:
         /**
          * @brief The frame cap used by @c WaitUntil() (about 5 seconds at 60 frames per second).
          */
         static constexpr AmUInt64 kMaxWaitFrames = 300;
+
+        /**
+         * @brief The frame cap for waits on the audio clock while all the real channels are mixed (about 60 seconds at 60
+         * frames per second).
+         *
+         * With every real channel playing, an unoptimised build mixes several times slower than real time, and a CI
+         * runner or an emulator slower still: the audio clock then advances at a fraction of the wall clock, and
+         * @c kMaxWaitFrames runs out before the clock got where the test needs it.
+         */
+        static constexpr AmUInt64 kMaxMixedWaitFrames = 3600;
 
         /**
          * @brief Advances engine frames until @p condition holds, or until @p maxFrames frames elapsed.
@@ -235,5 +344,7 @@ namespace SparkyStudios::Audio::Amplitude::Tests
         AmThreadHandle _threadHandle = nullptr;
         std::atomic<bool> _running{ false };
         std::shared_ptr<InvalidConsumerNode> _invalidConsumerNodePlugin = nullptr;
+        std::shared_ptr<MonoProbeNode> _monoProbeNodePlugin = nullptr;
+        std::shared_ptr<CustomProbeNode> _customProbeNodePlugin = nullptr;
     };
 } // namespace SparkyStudios::Audio::Amplitude::Tests

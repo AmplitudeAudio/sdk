@@ -113,6 +113,17 @@ namespace SparkyStudios::Audio::Amplitude
         std::unique_ptr<detail::AudioFFTImpl> _impl;
         size_t _size;
     };
+
+    /**
+     * @internal
+     * @brief Gets how many live FFT instances share the plan of the given size.
+     *
+     * @param size The FFT size.
+     *
+     * @return The number of instances using the plan, or 0 when none is alive (always 0 with FFTW3, whose plans are not
+     * shared).
+     */
+    size_t GetFFTPlanUseCount(size_t size);
 } // namespace SparkyStudios::Audio::Amplitude
 
 #endif // Header guard

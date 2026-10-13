@@ -29,58 +29,54 @@ namespace SparkyStudios::Audio::Amplitude
     {
         AMPLITUDE_ASSERT(_processor != nullptr);
 
-        // Only mono input is supported for this node.
+        // Mono policy: before the panner, the pipeline hands this node the sound's mono fold-down.
         AMPLITUDE_ASSERT(input->GetChannelCount() == 1);
 
         const auto* layer = GetLayer();
+        const ChannelLayout& output = GetPipelineOutputLayout();
+        const AmUInt64 frames = input->GetFrameCount();
 
-        AmVector2 pannedGain = { 0.0f, 0.0f };
-
-        AmReal32 nearFieldGain = layer->GetSound()->GetNearFieldGain().GetValue();
-        if (nearFieldGain > 0.0f)
+        SpeakerGains targets{};
+        const Sound* sound = layer->GetSound();
+        const Listener listener = layer->GetListener();
+        if (sound != nullptr && listener.Valid())
         {
-            const auto& listener = layer->GetListener();
-
+            const AmReal32 nearFieldGain = sound->GetNearFieldGain().GetValue();
             const AmReal32 distance = Length(Sub(listener.GetLocation(), layer->GetLocation()));
 
             AmReal32 nearFieldFactor = 0.0f;
-            if (distance < kNearFieldMaxDistance)
+            if (nearFieldGain > 0.0f && distance < kNearFieldMaxDistance)
                 nearFieldFactor = (1.0f / std::max(distance, kNearFieldMinDistance)) - 1.0f;
 
-            pannedGain = Gain::CalculateStereoPannedGain(
-                nearFieldFactor * nearFieldGain / kNearFieldMaxGain, layer->GetLocation(), listener.GetInverseMatrix());
+            if (const AmReal32 gain = nearFieldFactor * nearFieldGain / kNearFieldMaxGain; !Gain::IsZero(gain))
+            {
+                AmReal32 azimuth = 0.0f;
+                AmReal32 elevation = 0.0f;
+                AM_UNUSED(ListenerRelativeDirection(layer->GetLocation(), listener.GetInverseMatrix(), azimuth, elevation));
+
+                const SpeakerGains pan = SpeakerPanner::Pan(azimuth, elevation, output);
+                for (AmUInt16 o = 0; o < output.GetChannelCount(); ++o)
+                    targets[o] = gain * pan[o];
+            }
         }
 
-        const AmReal32 leftGainCurrent = _leftGainProcessor.GetGain();
-        const AmReal32 rightGainCurrent = _rightGainProcessor.GetGain();
+        bool silent = true;
+        for (AmUInt16 o = 0; o < output.GetChannelCount(); ++o)
+            silent &= Gain::IsZero(_speakerGains[o].GetGain()) && Gain::IsZero(targets[o]);
 
-        const AmReal32 leftGainTarget = pannedGain.x;
-        const AmReal32 rightGainTarget = pannedGain.y;
-
-        const bool isLeftGainZero = Gain::IsZero(leftGainCurrent) && Gain::IsZero(leftGainTarget);
-        const bool isRightGainZero = Gain::IsZero(rightGainCurrent) && Gain::IsZero(rightGainTarget);
-
-        if (isLeftGainZero && isRightGainZero)
+        if (silent)
         {
-            _leftGainProcessor.SetGain(0.0f);
-            _rightGainProcessor.SetGain(0.0f);
+            for (auto& processor : _speakerGains)
+                processor.SetGain(0.0f);
 
             return nullptr;
         }
 
-        {
-            const auto& inChannel = input->GetChannel(0);
-            auto& outChannelLeft = _output.GetChannel(0);
-            auto& outChannelRight = _output.GetChannel(1);
+        // Bass boost and delay compensation once, then the boost is panned like the sound itself.
+        _processor->Process(input->GetChannel(0), _boosted[0], layer->GetSpatialization() == eSpatialization_HRTF);
 
-            // Apply bass boost and delay compensation (if necessary) to the input signal
-            // and place it temporarily in the right output channel. This way we avoid
-            // allocating a temporary buffer.
-            _processor->Process(inChannel, outChannelRight, layer->GetSpatialization() == eSpatialization_HRTF);
-
-            _leftGainProcessor.ApplyGain(leftGainTarget, outChannelRight, 0, outChannelLeft, 0, input->GetFrameCount(), false);
-            _rightGainProcessor.ApplyGain(rightGainTarget, outChannelRight, 0, outChannelRight, 0, input->GetFrameCount(), false);
-        }
+        for (AmUInt16 o = 0; o < output.GetChannelCount(); ++o)
+            _speakerGains[o].ApplyGain(targets[o], _boosted[0], 0, _output[o], 0, frames, false);
 
         return &_output;
     }
@@ -103,6 +99,11 @@ namespace SparkyStudios::Audio::Amplitude
 
         // The processor owns biquad filter states and a delay line: it must persist across audio blocks.
         _processor = ampoolnew(eMemoryPoolKind_Amplimix, NearFieldProcessor, GetLayer()->GetSampleRate(), frameCount);
+
+        _boosted = AudioBuffer(frameCount, 1);
+
+        for (auto& processor : _speakerGains)
+            processor.Invalidate();
     }
 
     NearFieldEffectNode::NearFieldEffectNode()

@@ -54,14 +54,18 @@ namespace SparkyStudios::Audio::Amplitude
     {
         const auto* layer = GetLayer();
 
-        const auto& listener = layer->GetListener();
+        // Read once: the channel's listener is reset when its channel is recycled, which can happen after ShouldSkip().
+        const Listener listener = layer->GetListener();
+        if (!listener.Valid())
+            return nullptr;
 
-        // The orientation processor moves scene directions by the inverse of the supplied orientation,
-        // and the SDK's ears-centered field (ForHRTF +90 deg azimuth) reverses the rotation sense,
-        // so the inverse of the AmbiX-frame listener rotation is supplied.
-        const CartesianCoordinateSystem::Converter engineToAmbiX(
-            CartesianCoordinateSystem::Default(), CartesianCoordinateSystem::AmbiX());
-        _rotator.SetOrientation(Orientation(Inverse(engineToAmbiX.Forward(listener.GetOrientation().GetQuaternion()))));
+        // The panning node encodes with ForHRTF, so the field's axes are X forward, Y right, Z up: the engine frame
+        // mirrored, not AmbiX. The orientation processor moves directions by the inverse of the orientation it is
+        // given, so it is given the listener rotation in the field's frame, and takes world directions to the listener's.
+        using Axis = CartesianCoordinateSystem::Axis;
+        const CartesianCoordinateSystem::Converter engineToField(
+            CartesianCoordinateSystem::Default(), CartesianCoordinateSystem(Axis::PositiveY, Axis::PositiveX, Axis::PositiveZ));
+        _rotator.SetOrientation(Orientation(engineToField.Forward(listener.GetOrientation().GetQuaternion())));
 
         _soundField.Reset();
 

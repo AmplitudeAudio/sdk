@@ -55,6 +55,9 @@ table AttenuationDefinition {
 
   /// The air absorption model for this attenuation.
   air_absorption:AttenuationAirAbsorptionDefinition;
+
+  /// Factor (0 - 1) applied to the sound's spread according to the distance from the listener. Absent means 1.
+  spread_curve:CurveDefinition;
 }
 
 root_type AttenuationDefinition;

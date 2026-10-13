@@ -39,7 +39,7 @@ namespace SparkyStudios::Audio::Amplitude
 
         [[nodiscard]] AM_INLINE AmUInt16 GetOutputChannelCount() const override
         {
-            return kAmStereoChannelCount;
+            return GetPipelineOutputLayout().GetChannelCount();
         }
 
     private:
@@ -53,6 +53,8 @@ namespace SparkyStudios::Audio::Amplitude
         AmString _algorithmName;
         std::shared_ptr<ReverbInstance> _reverbInstance;
         AudioBuffer _tempBuffer;
+        AudioBuffer _stereo;
+        ChannelMatrix _toOutput{};
         bool _active = false; // whether the last Process() call ran the reverb
     };
 

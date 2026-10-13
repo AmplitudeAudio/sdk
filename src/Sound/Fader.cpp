@@ -210,6 +210,11 @@ namespace SparkyStudios::Audio::Amplitude
         m_state = eFaderState_Active;
     }
 
+    AmTime FaderInstance::GetDuration() const
+    {
+        return m_time;
+    }
+
     static FaderRegistry& faderRegistry()
     {
         static FaderRegistry r;

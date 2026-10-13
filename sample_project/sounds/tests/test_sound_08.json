@@ -1,0 +1,16 @@
+{
+  "id": 9998,
+  "name": "test_sound_08",
+  "effect": 0,
+  "gain": { "kind": "Static", "value": 1 },
+  "pitch": { "kind": "Static", "value": 1 },
+  "bus": 1,
+  "priority": { "kind": "Static", "value": 1 },
+  "spatialization": 0,
+  "attenuation": 0,
+  "scope": 0,
+  "fader": "Linear",
+  "stream": false,
+  "near_field_gain": { "kind": "Static", "value": 0 },
+  "path": "tests/test_sound_01.wav"
+}

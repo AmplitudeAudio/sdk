@@ -14,6 +14,8 @@
 
 #include <SparkyStudios/Audio/Amplitude/Sound/Attenuation.h>
 
+#include <algorithm>
+
 #include <Math/LinearAlgebra.h>
 #include <Sound/Attenuation.h>
 
@@ -44,6 +46,14 @@ namespace SparkyStudios::Audio::Amplitude
         return _shape->GetAttenuationFactor(this, entity, listener);
     }
 
+    AmReal32 AttenuationImpl::GetSpreadFactor(AmReal64 distance) const
+    {
+        if (!_hasSpreadCurve)
+            return 1.0f;
+
+        return std::clamp(_spreadCurve.Get(distance), 0.0f, 1.0f);
+    }
+
     AttenuationZone* AttenuationImpl::GetShape() const
     {
         return _shape.get();
@@ -63,6 +73,9 @@ namespace SparkyStudios::Audio::Amplitude
         _maxDistance = definition->max_distance();
 
         _gainCurve.Initialize(definition->gain_curve());
+
+        _hasSpreadCurve = definition->spread_curve() != nullptr;
+        _spreadCurve.Initialize(definition->spread_curve());
 
         _shape.reset(AttenuationZoneImpl::Create(definition->shape()));
 

@@ -86,7 +86,10 @@ NSLogger::NSLogger(const char* bundleId, const char* logTag) : m_log(nullptr) {
   m_log = os_log_create(bundleId, logTag);
 }
 
-NSLogger::~NSLogger() { m_log = nullptr; }
+NSLogger::~NSLogger() {
+  Flush();
+  m_log = nullptr;
+}
 
 void NSLogger::Log(eLogMessageLevel level, const char* file, int line,
                    const AmString& message) {

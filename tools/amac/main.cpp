@@ -13,6 +13,8 @@
 // limitations under the License.
 
 #include <cstdlib>
+#include <utility>
+#include <vector>
 
 #include <SparkyStudios/Audio/Amplitude/Amplitude.h>
 
@@ -306,25 +308,75 @@ static int process(const AmOsString& inFileName, const AmOsString& outFileName, 
 
         if (state.resampling.enabled)
         {
+            if (sampleRate == 0)
+            {
+                log(stderr, "Error: \"" AM_OS_CHAR_FMT "\" declares a sample rate of 0 Hz. Cannot resample it.\n", inFileName.c_str());
+                return EXIT_FAILURE;
+            }
+
             if (state.verbose)
                 log(stdout, "Resampling input data from %d Hz to %d Hz...\n", sampleRate, state.resampling.targetSampleRate);
 
             auto resampler = Resampler::Construct("default");
             resampler->Initialize(numChannels, sampleRate, state.resampling.targetSampleRate);
 
-            if (!resampler->IsConversionExact(sampleRate, state.resampling.targetSampleRate))
-                log(stderr,
-                    "Warning: %d Hz cannot be converted to %d Hz exactly. The ratio will be approximated. Consider a target "
-                    "sample rate that shares more factors with the source.\n",
-                    sampleRate, state.resampling.targetSampleRate);
+            constexpr AmUInt64 kOutputChunkFrames = 8192;
+            const AmUInt64 targetRate = state.resampling.targetSampleRate;
+            const AmUInt64 expectedOut = (numSamples * targetRate + sampleRate - 1) / sampleRate;
+            std::vector<AudioBuffer> chunks;
+            std::vector<AmUInt64> chunkFrames;
+            AmUInt64 offset = 0;
+            AmUInt64 totalOutFrames = 0;
 
-            AmUInt64 f = resampler->GetExpectedOutputFrames(numSamples);
-            AudioBuffer output(f, numChannels);
+            // The resampler reads ahead of each output: past the end of the file it is fed zeros.
+            while (totalOutFrames < expectedOut)
+            {
+                const AmUInt64 want = AM_MIN(kOutputChunkFrames, expectedOut - totalOutFrames);
+                const AmUInt64 needed = resampler->GetInputFramesNeeded(want);
+                const AmUInt64 available = offset < numSamples ? AM_MIN(needed, numSamples - offset) : 0;
 
-            resampler->Process(pcmData, numSamples, output, f);
+                AudioBuffer chunkIn(needed, numChannels);
+                chunkIn.Clear();
+                if (available > 0)
+                    AudioBuffer::Copy(pcmData, offset, chunkIn, 0, available);
+
+                AudioBuffer chunkOut(want, numChannels);
+                AmUInt64 inFrames = needed;
+                AmUInt64 outFrames = want;
+
+                if (!resampler->Process(chunkIn, inFrames, chunkOut, outFrames))
+                {
+                    log(stderr, "Error while resampling \"" AM_OS_CHAR_FMT "\".\n", inFileName.c_str());
+                    return EXIT_FAILURE;
+                }
+
+                if (inFrames == 0 && outFrames == 0)
+                {
+                    // No progress: bail instead of looping or silently truncating.
+                    log(stderr, "Resampling stalled while converting \"" AM_OS_CHAR_FMT "\".\n", inFileName.c_str());
+                    return EXIT_FAILURE;
+                }
+
+                if (outFrames > 0)
+                {
+                    chunks.push_back(std::move(chunkOut));
+                    chunkFrames.push_back(outFrames);
+                    totalOutFrames += outFrames;
+                }
+
+                offset += inFrames;
+            }
+
+            AudioBuffer output(totalOutFrames, numChannels);
+            AmUInt64 writeOffset = 0;
+            for (AmSize i = 0; i < chunks.size(); ++i)
+            {
+                AudioBuffer::Copy(chunks[i], 0, output, writeOffset, chunkFrames[i]);
+                writeOffset += chunkFrames[i];
+            }
 
             sampleRate = state.resampling.targetSampleRate;
-            numSamples = f;
+            numSamples = totalOutFrames;
 
             pcmData = output;
 

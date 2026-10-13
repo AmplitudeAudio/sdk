@@ -30,41 +30,33 @@ namespace SparkyStudios::Audio::Amplitude::Tests
         {
             SoundChunkPool pool;
 
-            // Pre-warm mirrors MixLayer's per-batch usage: input, mono transient, stereo output
-            pool.PreWarm(1024, 2, 512);
+            // Pre-warm mirrors a layer's per-block usage: the voice's render and the pipeline's output.
+            pool.PreWarm(512, 6, 2);
 
-            // All three shapes must be served from the pool
-            SoundChunk* in = pool.Acquire(1024, 2);
-            SoundChunk* transient = pool.Acquire(512, 1);
+            SoundChunk* in = pool.Acquire(512, 6);
             SoundChunk* out = pool.Acquire(512, 2);
 
             AM_EXPECT_NOT(in == nullptr);
-            AM_EXPECT_NOT(transient == nullptr);
             AM_EXPECT_NOT(out == nullptr);
-
-            AM_EXPECT(in->frames >= 1024);
-            AM_EXPECT(in->buffer->GetChannelCount() == 2);
-            AM_EXPECT(transient->frames >= 512);
-            AM_EXPECT(transient->buffer->GetChannelCount() == 1);
+            AM_EXPECT(in->frames >= 512);
+            AM_EXPECT(in->buffer->GetChannelCount() == 6);
             AM_EXPECT(out->frames >= 512);
             AM_EXPECT(out->buffer->GetChannelCount() == 2);
 
-            // All three shapes served from the pre-warmed pool, no new allocation
-            AM_EXPECT(pool.allocated == 3);
+            // Both shapes served from the pre-warmed pool, no new allocation
+            AM_EXPECT(pool.allocated == 2);
 
             pool.Release(out);
-            pool.Release(transient);
             pool.Release(in);
 
-            // Re-acquiring a smaller shape must reuse a pooled chunk (no new allocation)
-            SoundChunk* again = pool.Acquire(512, 2);
-            AM_EXPECT_NOT(again == nullptr);
-            AM_EXPECT(again == in || again == out);
-            pool.Release(again);
-
             // Pre-warm is safe to call multiple times: no additional chunks are allocated
-            pool.PreWarm(1024, 2, 512);
-            AM_EXPECT(pool.allocated == 3);
+            pool.PreWarm(512, 6, 2);
+            AM_EXPECT(pool.allocated == 2);
+
+            // Matching input and output shapes share one warmed chunk each, both in use at once.
+            SoundChunkPool same;
+            same.PreWarm(256, 2, 2);
+            AM_EXPECT(same.allocated == 2);
         }
     };
 

@@ -24,7 +24,7 @@
 
 #include "engine_config_definition_generated.h"
 
-#define amEngine dynamic_cast<EngineImpl*>(SparkyStudios::Audio::Amplitude::Engine::GetInstance())
+#define amEngine static_cast<EngineImpl*>(SparkyStudios::Audio::Amplitude::Engine::GetInstance())
 
 namespace SparkyStudios::Audio::Amplitude
 {
@@ -58,6 +58,16 @@ namespace SparkyStudios::Audio::Amplitude
          */
         [[nodiscard]] std::shared_ptr<EngineInternalState> GetState() const;
 
+        /**
+         * @brief Gets the shared AllRAD decoder of a layout and order, building and caching it on first use.
+         *
+         * Called from the speaker decoder node's Configure, which normally runs on the game thread. A dimension change can re-run
+         * Configure on the audio thread, where a cache hit for the node's own matrix is skipped entirely.
+         *
+         * @return The matrix, or nullptr when it cannot be built.
+         */
+        std::shared_ptr<const SpeakerDecodingMatrix> GetSpeakerDecodingMatrix(AmUInt32 order, const ChannelLayout& layout);
+
         [[nodiscard]] const struct AmVersion* Version() const override;
         bool Initialize(const AmOsString& configFile) override;
         bool Deinitialize() override;
@@ -69,10 +79,12 @@ namespace SparkyStudios::Audio::Amplitude
         void StartCloseFileSystem() override;
         bool TryFinalizeCloseFileSystem() override;
         void AdvanceFrame(AmTime delta) const override;
-        void OnNextFrame(std::function<void(AmTime delta)> callback) const override;
+        bool OnNextFrame(std::function<void(AmTime delta)> callback) const override;
         void WaitUntilNextFrame() const override;
         void WaitUntilFrames(AmUInt64 frameCount) const override;
         [[nodiscard]] AmTime GetTotalTime() const override;
+        [[nodiscard]] AmUInt64 GetAudioClock() const override;
+        [[nodiscard]] AmUInt32 GetAudioClockRate() const override;
         bool LoadSoundBank(const AmOsString& filename) override;
         bool LoadSoundBank(const AmOsString& filename, AmBankID& outID) override;
         bool LoadSoundBankFromMemoryView(AmConstVoidPtr ptr, AmSize size) override;
@@ -185,7 +197,7 @@ namespace SparkyStudios::Audio::Amplitude
         void SetRtpcValue(AmRtpcID id, double value) const override;
         void SetRtpcValue(const AmString& name, double value) const override;
         [[nodiscard]] std::shared_ptr<Driver> GetDriver() const override;
-        [[nodiscard]] Amplimix* GetMixer() const override;
+        [[nodiscard]] AmplimixImpl* GetMixer() const override;
         [[nodiscard]] const AmOsString& GetConfigurationPath() const override;
         [[nodiscard]] AmReal32 GetSoundSpeed() const override;
         [[nodiscard]] AmReal32 GetDopplerFactor() const override;
@@ -194,6 +206,7 @@ namespace SparkyStudios::Audio::Amplitude
         [[nodiscard]] AmUInt32 GetActiveEnvironmentsCount() const override;
         [[nodiscard]] AmUInt32 GetActiveRoomsCount() const override;
         [[nodiscard]] AmUInt32 GetSamplesPerStream() const override;
+        [[nodiscard]] const ChannelLayout& GetOutputLayout() const override;
         [[nodiscard]] bool IsGameTrackingEnvironmentAmounts() const override;
         [[nodiscard]] AmUInt32 GetMaxListenersCount() const override;
         [[nodiscard]] AmUInt32 GetMaxEntitiesCount() const override;

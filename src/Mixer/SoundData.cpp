@@ -121,14 +121,12 @@ namespace SparkyStudios::Audio::Amplitude
         return newChunk;
     }
 
-    void SoundChunkPool::PreWarm(AmUInt64 inFrames, AmUInt16 inChannels, AmUInt64 outFrames)
+    void SoundChunkPool::PreWarm(AmUInt64 frames, AmUInt16 inChannels, AmUInt16 outChannels)
     {
-        SoundChunk* in = Acquire(inFrames, inChannels, false);
-        SoundChunk* transient = Acquire(outFrames, static_cast<AmUInt16>(kAmMonoChannelCount), false);
-        SoundChunk* out = Acquire(outFrames, static_cast<AmUInt16>(kAmStereoChannelCount), false);
+        SoundChunk* in = Acquire(frames, inChannels, false);
+        SoundChunk* out = Acquire(frames, outChannels, false);
 
         Release(out);
-        Release(transient);
         Release(in);
     }
 

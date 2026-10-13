@@ -39,7 +39,10 @@ namespace SparkyStudios::Audio::Amplitude
         /**
          * @brief Default destructor.
          */
-        ~ConsoleLogger() override = default;
+        ~ConsoleLogger() override
+        {
+            Flush();
+        }
 
     protected:
         /**

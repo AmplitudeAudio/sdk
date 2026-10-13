@@ -19,6 +19,7 @@
 #include <SparkyStudios/Audio/Amplitude/Mixer/Node.h>
 #include <SparkyStudios/Audio/Amplitude/Mixer/Pipeline.h>
 
+#include <DSP/ChannelMap.h>
 #include <Sound/Effect.h>
 #include <Utils/Utils.h>
 
@@ -108,6 +109,39 @@ namespace SparkyStudios::Audio::Amplitude
         return false;
     }
 
+    void NodeInstance::SetPipelineOutputLayout(eChannelLayout layout)
+    {
+        m_pipelineOutputLayout = layout;
+    }
+
+    const ChannelLayout& NodeInstance::GetPipelineOutputLayout() const
+    {
+        return ChannelLayout::Get(m_pipelineOutputLayout);
+    }
+
+    bool ProcessorNodeInstance::EnableFoldDown(AmUInt64 frameCount, AmUInt16 sourceChannelCount)
+    {
+        const ChannelLayout* source = ChannelLayout::FromChannelCount(sourceChannelCount);
+        if (source == nullptr)
+            return false;
+
+        _foldDown = ChannelLayout::GetFoldDownMatrix(*source, ChannelLayout::Get(eChannelLayout_Mono));
+        if (_foldBuffer.IsEmpty() || _foldBuffer.GetFrameCount() != frameCount)
+            _foldBuffer = AudioBuffer(frameCount, 1);
+
+        return true;
+    }
+
+    void ProcessorNodeInstance::DisableFoldDown()
+    {
+        _foldDown = {};
+    }
+
+    eNodeChannelPolicy Node::GetChannelPolicy() const
+    {
+        return eNodeChannelPolicy_Mono;
+    }
+
     ProcessorNodeInstance::ProcessorNodeInstance(bool processOnEmptyInputBuffer)
         : m_provider(0)
         , _processingBuffer(nullptr)
@@ -133,6 +167,14 @@ namespace SparkyStudios::Audio::Amplitude
         }
 
         _processingBuffer = _cachedProvider->Provide();
+
+        // A Mono-policy node before the panner takes the fold-down of the sound's channels.
+        if (_processingBuffer != nullptr && _foldDown.inputCount > 1)
+        {
+            const AmUInt64 frames = AM_MIN(static_cast<AmUInt64>(_processingBuffer->GetFrameCount()), _foldBuffer.GetFrameCount());
+            ApplyChannelMap(_foldDown, *_processingBuffer, _foldBuffer, frames);
+            _processingBuffer = &_foldBuffer;
+        }
     }
 
     void ProcessorNodeInstance::Connect(AmObjectID provider)

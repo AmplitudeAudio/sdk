@@ -24,6 +24,9 @@
 #include <cassert>
 #include <cmath>
 #include <cstring>
+#include <memory>
+#include <mutex>
+#include <unordered_map>
 
 #if defined(AM_FFT_INTEL_IPP)
 #define AM_FFT_INTEL_IPP_USED
@@ -91,11 +94,66 @@ namespace SparkyStudios::Audio::Amplitude
             }
         }
 
+        /**
+         * @internal
+         * @brief Process-wide cache of immutable FFT plans, keyed by size.
+         *
+         * Plans are shared between instances and freed with their last user. The mutex is taken only when an instance is
+         * initialised, never by fft() or ifft().
+         */
+        template<typename Plan>
+        class PlanCache
+        {
+        public:
+            template<typename Factory>
+            std::shared_ptr<const Plan> Acquire(size_t size, Factory&& make)
+            {
+                std::lock_guard<std::mutex> lock(_mutex);
+
+                auto& slot = _plans[size];
+                if (auto plan = slot.lock())
+                    return plan;
+
+                std::shared_ptr<const Plan> plan = make(size);
+                slot = plan;
+                return plan;
+            }
+
+            size_t UseCount(size_t size)
+            {
+                std::lock_guard<std::mutex> lock(_mutex);
+
+                const auto it = _plans.find(size);
+                return it == _plans.end() ? 0 : static_cast<size_t>(it->second.use_count());
+            }
+
+        private:
+            std::mutex _mutex;
+            std::unordered_map<size_t, std::weak_ptr<const Plan>> _plans;
+        };
+
     } // End of namespace detail
 
     // ================================================================
 
 #ifdef AM_FFT_PFFFT_USED
+
+    struct PffftPlan
+    {
+        PFFFT_Setup* setup = nullptr;
+
+        ~PffftPlan()
+        {
+            if (setup != nullptr)
+                pffft_destroy_setup(setup);
+        }
+    };
+
+    static detail::PlanCache<PffftPlan>& PffftPlans()
+    {
+        static detail::PlanCache<PffftPlan> cache;
+        return cache;
+    }
 
     /**
      * @internal
@@ -119,11 +177,7 @@ namespace SparkyStudios::Audio::Amplitude
 
         void init(size_t size) override
         {
-            if (_pffft_setup != nullptr)
-            {
-                pffft_destroy_setup(_pffft_setup);
-                _pffft_setup = nullptr;
-            }
+            _plan.reset();
 
             if (_buffer != nullptr)
             {
@@ -142,7 +196,18 @@ namespace SparkyStudios::Audio::Amplitude
             if (_size == 0)
                 return;
 
-            _pffft_setup = pffft_new_setup(_size, PFFFT_REAL);
+            _plan = PffftPlans().Acquire(
+                _size,
+                [](size_t n)
+                {
+                    auto plan = std::make_shared<PffftPlan>();
+                    plan->setup = pffft_new_setup(static_cast<int>(n), PFFFT_REAL);
+                    return plan;
+                });
+
+            // PFFFT rejects sizes that are not a multiple of 32.
+            assert(_plan->setup != nullptr);
+
             _buffer = static_cast<float*>(pffft_aligned_malloc(_size * sizeof(float)));
             _scratch = static_cast<float*>(pffft_aligned_malloc(_size * sizeof(float)));
         }
@@ -151,7 +216,7 @@ namespace SparkyStudios::Audio::Amplitude
         {
             detail::ConvertBuffer(_buffer, data, _size);
 
-            pffft_transform_ordered(_pffft_setup, _buffer, _buffer, _scratch, PFFFT_FORWARD);
+            pffft_transform_ordered(_plan->setup, _buffer, _buffer, _scratch, PFFFT_FORWARD);
 
             // Convert back to split-complex
             {
@@ -189,7 +254,7 @@ namespace SparkyStudios::Audio::Amplitude
                 _buffer[1] = re[_size / 2];
             }
 
-            pffft_transform_ordered(_pffft_setup, _buffer, _buffer, _scratch, PFFFT_BACKWARD);
+            pffft_transform_ordered(_plan->setup, _buffer, _buffer, _scratch, PFFFT_BACKWARD);
 
             // Convert back to split-complex
             detail::ScaleBuffer(data, _buffer, 1.0f / static_cast<float>(_size), _size);
@@ -197,7 +262,7 @@ namespace SparkyStudios::Audio::Amplitude
 
     private:
         size_t _size = 0;
-        PFFFT_Setup* _pffft_setup = nullptr;
+        std::shared_ptr<const PffftPlan> _plan;
 
         float* _buffer = nullptr;
         float* _scratch = nullptr;
@@ -209,11 +274,28 @@ namespace SparkyStudios::Audio::Amplitude
      */
     typedef PFFFT AudioFFTImplementation;
 
+    size_t GetFFTPlanUseCount(size_t size)
+    {
+        return PffftPlans().UseCount(size);
+    }
+
 #endif // AM_FFT_PFFFT_USED
 
     // ================================================================
 
 #ifdef AM_FFT_OOURA_USED
+
+    struct OouraPlan
+    {
+        std::vector<int> ip;
+        std::vector<double> w;
+    };
+
+    static detail::PlanCache<OouraPlan>& OouraPlans()
+    {
+        static detail::PlanCache<OouraPlan> cache;
+        return cache;
+    }
 
     /**
      * @internal
@@ -226,8 +308,8 @@ namespace SparkyStudios::Audio::Amplitude
         OouraFFT()
             : detail::AudioFFTImpl()
             , _size(0)
+            , _plan()
             , _ip()
-            , _w()
             , _buffer()
         {}
 
@@ -236,17 +318,34 @@ namespace SparkyStudios::Audio::Amplitude
 
         virtual void init(size_t size) override
         {
-            if (_size != size)
-            {
-                _ip.resize(2 + static_cast<int>(std::sqrt(static_cast<double>(size))));
-                _w.resize(size / 2);
-                _buffer.resize(size);
-                _size = size;
+            if (_size == size)
+                return;
 
-                const int size4 = static_cast<int>(_size) / 4;
-                makewt(size4, _ip.data(), _w.data());
-                makect(size4, _ip.data(), _w.data() + size4);
-            }
+            _size = size;
+            _plan.reset();
+            _ip.clear();
+            _buffer.clear();
+
+            if (_size == 0)
+                return;
+
+            _plan = OouraPlans().Acquire(
+                _size,
+                [this](size_t n)
+                {
+                    auto plan = std::make_shared<OouraPlan>();
+                    plan->ip.resize(2 + static_cast<int>(std::sqrt(static_cast<double>(n))));
+                    plan->w.resize(n / 2);
+
+                    const int size4 = static_cast<int>(n) / 4;
+                    makewt(size4, plan->ip.data(), plan->w.data());
+                    makect(size4, plan->ip.data(), plan->w.data() + size4);
+                    return plan;
+                });
+
+            // bitrv2() rewrites the ip table on every transform, so each instance owns its copy; only w is shared.
+            _ip = _plan->ip;
+            _buffer.resize(_size);
         }
 
         virtual void fft(const float* data, float* re, float* im) override
@@ -254,7 +353,7 @@ namespace SparkyStudios::Audio::Amplitude
             // Convert into the format as required by the Ooura FFT
             detail::ConvertBuffer(_buffer.data(), data, _size);
 
-            rdft(static_cast<int>(_size), +1, _buffer.data(), _ip.data(), _w.data());
+            rdft(static_cast<int>(_size), +1, _buffer.data(), _ip.data(), W());
 
             // Convert back to split-complex
             {
@@ -290,16 +389,22 @@ namespace SparkyStudios::Audio::Amplitude
                 _buffer[1] = re[_size / 2];
             }
 
-            rdft(static_cast<int>(_size), -1, _buffer.data(), _ip.data(), _w.data());
+            rdft(static_cast<int>(_size), -1, _buffer.data(), _ip.data(), W());
 
             // Convert back to split-complex
             detail::ScaleBuffer(data, _buffer.data(), 2.0 / static_cast<double>(_size), _size);
         }
 
     private:
+        // Only w is shared between instances: rdft() reads it and never writes it once makewt()/makect() have filled it.
+        double* W() const
+        {
+            return const_cast<double*>(_plan->w.data());
+        }
+
         size_t _size;
+        std::shared_ptr<const OouraPlan> _plan;
         std::vector<int> _ip;
-        std::vector<double> _w;
         std::vector<double> _buffer;
 
         void rdft(int n, int isgn, double* a, int* ip, double* w)
@@ -910,11 +1015,35 @@ namespace SparkyStudios::Audio::Amplitude
      */
     typedef OouraFFT AudioFFTImplementation;
 
+    size_t GetFFTPlanUseCount(size_t size)
+    {
+        return OouraPlans().UseCount(size);
+    }
+
 #endif // AM_FFT_OOURA_USED
 
     // ================================================================
 
 #ifdef AM_FFT_INTEL_IPP_USED
+
+    struct IppPlan
+    {
+        IppsFFTSpec_R_32f* spec = nullptr;
+        Ipp8u* specBuffer = nullptr;
+        int workBufferSize = 0;
+
+        ~IppPlan()
+        {
+            if (specBuffer != nullptr)
+                ippFree(specBuffer);
+        }
+    };
+
+    static detail::PlanCache<IppPlan>& IppPlans()
+    {
+        static detail::PlanCache<IppPlan> cache;
+        return cache;
+    }
 
     /**
      * @internal
@@ -929,8 +1058,7 @@ namespace SparkyStudios::Audio::Amplitude
             , _size(0)
             , _operationalBufferSize(0)
             , _powerOf2(0)
-            , _fftSpec(nullptr)
-            , _fftSpecBuf(0)
+            , _plan()
             , _fftWorkBuf(0)
             , _operationalBuffer(nullptr)
         {
@@ -947,18 +1075,18 @@ namespace SparkyStudios::Audio::Amplitude
 
         virtual void init(size_t size) override
         {
-            if (_fftSpec)
+            if (_plan != nullptr)
             {
                 if (_fftWorkBuf)
                     ippFree(_fftWorkBuf);
-                if (_fftSpecBuf)
-                    ippFree(_fftSpecBuf);
                 ippFree(_operationalBuffer);
 
+                _fftWorkBuf = nullptr;
+                _operationalBuffer = nullptr;
                 _size = 0;
                 _operationalBufferSize = 0;
                 _powerOf2 = 0;
-                _fftSpec = 0;
+                _plan.reset();
             }
 
             if (size > 0)
@@ -967,23 +1095,27 @@ namespace SparkyStudios::Audio::Amplitude
                 _operationalBufferSize = _size + 2;
                 _powerOf2 = (int)(log((double)_size) / log(2.0));
 
-                // Query to get buffer sizes
-                int sizeFFTSpec, sizeFFTInitBuf, sizeFFTWorkBuf;
-                ippsFFTGetSize_R_32f(_powerOf2, IPP_FFT_NODIV_BY_ANY, ippAlgHintAccurate, &sizeFFTSpec, &sizeFFTInitBuf, &sizeFFTWorkBuf);
+                _plan = IppPlans().Acquire(
+                    _size,
+                    [](size_t n)
+                    {
+                        const int order = (int)(log((double)n) / log(2.0));
+                        int sizeFFTSpec, sizeFFTInitBuf, sizeFFTWorkBuf;
+                        ippsFFTGetSize_R_32f(order, IPP_FFT_NODIV_BY_ANY, ippAlgHintAccurate, &sizeFFTSpec, &sizeFFTInitBuf, &sizeFFTWorkBuf);
 
-                Ipp8u* fftInitBuf;
+                        auto plan = std::make_shared<IppPlan>();
+                        plan->specBuffer = ippsMalloc_8u(sizeFFTSpec);
+                        plan->workBufferSize = sizeFFTWorkBuf;
 
-                // init buffers
-                _fftSpecBuf = ippsMalloc_8u(sizeFFTSpec);
-                _fftWorkBuf = ippsMalloc_8u(sizeFFTWorkBuf);
-                fftInitBuf = ippsMalloc_8u(sizeFFTInitBuf);
+                        Ipp8u* fftInitBuf = ippsMalloc_8u(sizeFFTInitBuf);
+                        ippsFFTInit_R_32f(&plan->spec, order, IPP_FFT_NODIV_BY_ANY, ippAlgHintAccurate, plan->specBuffer, fftInitBuf);
+                        if (fftInitBuf)
+                            ippFree(fftInitBuf);
 
-                // Initialize FFT
-                ippsFFTInit_R_32f(&_fftSpec, _powerOf2, IPP_FFT_NODIV_BY_ANY, ippAlgHintAccurate, _fftSpecBuf, fftInitBuf);
-                if (fftInitBuf)
-                    ippFree(fftInitBuf);
+                        return plan;
+                    });
 
-                // init operational buffer
+                _fftWorkBuf = ippsMalloc_8u(_plan->workBufferSize);
                 _operationalBuffer = ippsMalloc_32f(_operationalBufferSize);
             }
         }
@@ -991,7 +1123,7 @@ namespace SparkyStudios::Audio::Amplitude
         virtual void fft(const float* data, float* re, float* im) override
         {
             size_t complexNumbersCount = _operationalBufferSize / 2;
-            ippsFFTFwd_RToCCS_32f(data, _operationalBuffer, _fftSpec, _fftWorkBuf);
+            ippsFFTFwd_RToCCS_32f(data, _operationalBuffer, _plan->spec, _fftWorkBuf);
 
             // no need to scale
 
@@ -1014,7 +1146,7 @@ namespace SparkyStudios::Audio::Amplitude
                 _operationalBuffer[complexCounter++] = im[i];
             }
 
-            ippsFFTInv_CCSToR_32f(_operationalBuffer, data, _fftSpec, _fftWorkBuf);
+            ippsFFTInv_CCSToR_32f(_operationalBuffer, data, _plan->spec, _fftWorkBuf);
 
             // scaling
             const float factor = 1.0f / static_cast<float>(_size);
@@ -1025,8 +1157,7 @@ namespace SparkyStudios::Audio::Amplitude
         size_t _size;
         size_t _operationalBufferSize;
         size_t _powerOf2;
-        IppsFFTSpec_R_32f* _fftSpec;
-        Ipp8u* _fftSpecBuf;
+        std::shared_ptr<const IppPlan> _plan;
         Ipp8u* _fftWorkBuf;
         Ipp32f* _operationalBuffer;
     };
@@ -1037,11 +1168,34 @@ namespace SparkyStudios::Audio::Amplitude
      */
     typedef IntelIppFFT AudioFFTImplementation;
 
+    size_t GetFFTPlanUseCount(size_t size)
+    {
+        return IppPlans().UseCount(size);
+    }
+
 #endif // AM_FFT_INTEL_IPP_USED
 
     // ================================================================
 
 #ifdef AM_FFT_APPLE_ACCELERATE_USED
+
+    struct ApplePlan
+    {
+        FFTSetup setup = nullptr;
+        size_t powerOf2 = 0;
+
+        ~ApplePlan()
+        {
+            if (setup != nullptr)
+                vDSP_destroy_fftsetup(setup);
+        }
+    };
+
+    static detail::PlanCache<ApplePlan>& ApplePlans()
+    {
+        static detail::PlanCache<ApplePlan> cache;
+        return cache;
+    }
 
     /**
      * @internal
@@ -1055,7 +1209,7 @@ namespace SparkyStudios::Audio::Amplitude
             : detail::AudioFFTImpl()
             , _size(0)
             , _powerOf2(0)
-            , _fftSetup(0)
+            , _plan()
             , _re()
             , _im()
         {}
@@ -1070,28 +1224,30 @@ namespace SparkyStudios::Audio::Amplitude
 
         virtual void init(size_t size) override
         {
-            if (_fftSetup)
-            {
-                vDSP_destroy_fftsetup(_fftSetup);
-                _size = 0;
-                _powerOf2 = 0;
-                _fftSetup = 0;
-                _re.clear();
-                _im.clear();
-            }
+            _plan.reset();
+            _size = 0;
+            _powerOf2 = 0;
+            _re.clear();
+            _im.clear();
 
-            if (size > 0)
-            {
-                _size = size;
-                _powerOf2 = 0;
-                while ((1 << _powerOf2) < _size)
+            if (size == 0)
+                return;
+
+            _size = size;
+            _plan = ApplePlans().Acquire(
+                _size,
+                [](size_t n)
                 {
-                    ++_powerOf2;
-                }
-                _fftSetup = vDSP_create_fftsetup(_powerOf2, FFT_RADIX2);
-                _re.resize(_size / 2);
-                _im.resize(_size / 2);
-            }
+                    auto plan = std::make_shared<ApplePlan>();
+                    while ((static_cast<size_t>(1) << plan->powerOf2) < n)
+                        ++plan->powerOf2;
+                    plan->setup = vDSP_create_fftsetup(plan->powerOf2, FFT_RADIX2);
+                    return plan;
+                });
+
+            _powerOf2 = _plan->powerOf2;
+            _re.resize(_size / 2);
+            _im.resize(_size / 2);
         }
 
         virtual void fft(const float* data, float* re, float* im) override
@@ -1101,7 +1257,7 @@ namespace SparkyStudios::Audio::Amplitude
             splitComplex.realp = re;
             splitComplex.imagp = im;
             vDSP_ctoz(reinterpret_cast<const COMPLEX*>(data), 2, &splitComplex, 1, size2);
-            vDSP_fft_zrip(_fftSetup, &splitComplex, 1, _powerOf2, FFT_FORWARD);
+            vDSP_fft_zrip(_plan->setup, &splitComplex, 1, _powerOf2, FFT_FORWARD);
             const float factor = 0.5f;
             vDSP_vsmul(re, 1, &factor, re, 1, size2);
             vDSP_vsmul(im, 1, &factor, im, 1, size2);
@@ -1119,7 +1275,7 @@ namespace SparkyStudios::Audio::Amplitude
             DSPSplitComplex splitComplex;
             splitComplex.realp = _re.data();
             splitComplex.imagp = _im.data();
-            vDSP_fft_zrip(_fftSetup, &splitComplex, 1, _powerOf2, FFT_INVERSE);
+            vDSP_fft_zrip(_plan->setup, &splitComplex, 1, _powerOf2, FFT_INVERSE);
             vDSP_ztoc(&splitComplex, 1, reinterpret_cast<COMPLEX*>(data), 2, size2);
             const float factor = 1.0f / static_cast<float>(_size);
             vDSP_vsmul(data, 1, &factor, data, 1, _size);
@@ -1128,7 +1284,7 @@ namespace SparkyStudios::Audio::Amplitude
     private:
         size_t _size;
         size_t _powerOf2;
-        FFTSetup _fftSetup;
+        std::shared_ptr<const ApplePlan> _plan;
         std::vector<float> _re;
         std::vector<float> _im;
     };
@@ -1138,6 +1294,11 @@ namespace SparkyStudios::Audio::Amplitude
      * @brief Concrete FFT implementation
      */
     typedef AppleAccelerateFFT AudioFFTImplementation;
+
+    size_t GetFFTPlanUseCount(size_t size)
+    {
+        return ApplePlans().UseCount(size);
+    }
 
 #endif // AM_FFT_APPLE_ACCELERATE_USED
 
@@ -1254,6 +1415,12 @@ namespace SparkyStudios::Audio::Amplitude
      * @brief Concrete FFT implementation
      */
     typedef FFTW3FFT AudioFFTImplementation;
+
+    size_t GetFFTPlanUseCount(size_t)
+    {
+        // FFTW3 plans are bound to the instance buffers: they are not shared.
+        return 0;
+    }
 
 #endif // AM_FFT_FFTW3_USED
 

@@ -15,6 +15,9 @@
 #define CONVHULL_3D_ENABLE
 #include "convhull_3d.h"
 
+#include <utility>
+#include <vector>
+
 #include <SparkyStudios/Audio/Amplitude/Amplitude.h>
 
 #include <CLI/CLI.hpp>
@@ -400,23 +403,75 @@ void processVertex(
     std::memcpy(vertex.m_RightIR.data(), !mirror ? rightChannel.begin() : leftChannel.begin(), irLength * sizeof(AmReal32));
 }
 
-void resampleIR(const AppOptions& state, AudioBuffer& buffer, AmUInt32& sampleRate, AmUInt64& irLength)
+bool resampleIR(const AppOptions& state, AudioBuffer& buffer, AmUInt32& sampleRate, AmUInt64& irLength)
 {
     if (!state.resampling.enabled)
-        return;
+        return true;
+
+    if (sampleRate == 0)
+    {
+        // The caller names the file it was processing.
+        log(stderr, "\tThe IR declares a sample rate of 0 Hz. Nothing to resample from.\n");
+        return false;
+    }
 
     auto resampler = Resampler::Construct("default");
     resampler->Initialize(2, sampleRate, state.resampling.targetSampleRate);
 
-    auto resampledTotalFrames = resampler->GetExpectedOutputFrames(irLength);
-    AudioBuffer resampledBuffer(resampledTotalFrames, 2);
+    constexpr AmUInt64 kOutputChunkFrames = 8192;
+    const AmUInt64 targetRate = state.resampling.targetSampleRate;
+    const AmUInt64 expectedOut = (irLength * targetRate + sampleRate - 1) / sampleRate;
+    std::vector<AudioBuffer> chunks;
+    std::vector<AmUInt64> chunkFrames;
+    AmUInt64 offset = 0;
+    AmUInt64 totalOutFrames = 0;
 
-    resampler->Process(buffer, irLength, resampledBuffer, resampledTotalFrames);
+    // The resampler reads ahead of each output: past the end of the IR it is fed zeros.
+    while (totalOutFrames < expectedOut)
+    {
+        const AmUInt64 want = AM_MIN(kOutputChunkFrames, expectedOut - totalOutFrames);
+        const AmUInt64 needed = resampler->GetInputFramesNeeded(want);
+        const AmUInt64 available = offset < irLength ? AM_MIN(needed, irLength - offset) : 0;
 
-    irLength = resampledTotalFrames;
+        AudioBuffer chunkIn(needed, 2);
+        chunkIn.Clear();
+        if (available > 0)
+            AudioBuffer::Copy(buffer, offset, chunkIn, 0, available);
+
+        AudioBuffer chunkOut(want, 2);
+        AmUInt64 inFrames = needed;
+        AmUInt64 outFrames = want;
+
+        if (!resampler->Process(chunkIn, inFrames, chunkOut, outFrames))
+            return false;
+
+        if (inFrames == 0 && outFrames == 0)
+            return false; // No progress: bail instead of looping or silently truncating.
+
+        if (outFrames > 0)
+        {
+            chunks.push_back(std::move(chunkOut));
+            chunkFrames.push_back(outFrames);
+            totalOutFrames += outFrames;
+        }
+
+        offset += inFrames;
+    }
+
+    AudioBuffer resampledBuffer(totalOutFrames, 2);
+    AmUInt64 writeOffset = 0;
+    for (AmSize i = 0; i < chunks.size(); ++i)
+    {
+        AudioBuffer::Copy(chunks[i], 0, resampledBuffer, writeOffset, chunkFrames[i]);
+        writeOffset += chunkFrames[i];
+    }
+
+    irLength = totalOutFrames;
     sampleRate = state.resampling.targetSampleRate;
 
     buffer = resampledBuffer;
+
+    return true;
 }
 
 int process(const AmOsString& inFileName, const AmOsString& outFileName, const AppOptions& state)
@@ -527,7 +582,11 @@ int process(const AmOsString& inFileName, const AmOsString& outFileName, const A
             AudioBuffer buffer(totalFrames, 2);
             decoder->Load(&buffer);
 
-            resampleIR(state, buffer, sampleRate, irLength);
+            if (!resampleIR(state, buffer, sampleRate, irLength))
+            {
+                log(stderr, "\tError while resampling %s.\n", path.c_str());
+                return EXIT_FAILURE;
+            }
 
             const AmUInt32 max = state.datasetModel == eHRIRSphereDatasetModel_MIT ? 2 : 1;
             for (AmUInt32 i = 0; i < max; ++i)

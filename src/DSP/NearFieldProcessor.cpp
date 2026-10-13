@@ -37,6 +37,8 @@ namespace SparkyStudios::Audio::Amplitude
         , _lowPassFilter(nullptr)
         , _highPassFilter(nullptr)
         , _lowPassBuffer(framesCount, 1)
+        , _tempIn(framesCount, 1)
+        , _tempOut(framesCount, 1)
         , _delay(_delayCompensation, framesCount)
     {
         AMPLITUDE_ASSERT(sampleRate > 0 && framesCount > 0);
@@ -65,19 +67,16 @@ namespace SparkyStudios::Audio::Amplitude
         AMPLITUDE_ASSERT(out.size() == _framesCount);
 
         {
-            AudioBuffer tempIn(in.size(), 1);
-            tempIn[0] = in;
-
-            AudioBuffer tempOut(in.size(), 1);
-            tempOut[0] = out;
+            _tempIn[0] = in;
+            _tempOut[0] = out;
 
             // Apply low-pass filter to the input signal.
-            _lowPassFilter->Process(tempIn, _lowPassBuffer, _framesCount, _sampleRate);
+            _lowPassFilter->Process(_tempIn, _lowPassBuffer, _framesCount, _sampleRate);
 
             // Apply high-pass filter to the output signal.
-            _highPassFilter->Process(tempIn, tempOut, _framesCount, _sampleRate);
+            _highPassFilter->Process(_tempIn, _tempOut, _framesCount, _sampleRate);
 
-            out = tempOut[0];
+            out = _tempOut[0];
         }
 
         // Apply bass boost to the output signal.

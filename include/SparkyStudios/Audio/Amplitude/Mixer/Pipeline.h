@@ -84,8 +84,12 @@ namespace SparkyStudios::Audio::Amplitude
          * @param[in] inputChannelCount The expected number of channels in the input buffer.
          * @param[in] outputFrameCount The expected number of frames in the output buffer.
          * @param[in] outputChannelCount The expected number of channels in the output buffer.
+         *
+         * @return @c false when the graph cannot render these dimensions: an output that is not a named layout, a mixer whose
+         * providers disagree on the channel count, a fold-down of a channel count without a layout, or a last node that does not
+         * produce the output channel count. The reason is logged. Execute() renders silence until a configuration succeeds.
          */
-        virtual void Configure(
+        virtual bool Configure(
             AmUInt64 inputFrameCount, AmUInt16 inputChannelCount, AmUInt64 outputFrameCount, AmUInt16 outputChannelCount) = 0;
     };
 

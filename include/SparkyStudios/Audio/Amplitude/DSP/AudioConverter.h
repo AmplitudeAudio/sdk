@@ -107,36 +107,28 @@ namespace SparkyStudios::Audio::Amplitude
         void SetSampleRate(AmUInt64 sourceSampleRate, AmUInt64 targetSampleRate);
 
         /**
-         * @brief Returns the required number of frames to have as input for the given amount of output frames.
+         * @brief Sets the resampling ratio (input frames per output frame), pitch and speed included.
          *
-         * @param[in] outputFrameCount The number of output frames.
-         *
-         * @return The input frame count needed to produce the given output frame count.
+         * @param[in] inputPerOutput The number of input frames consumed per output frame. Non-finite or non-positive values
+         * mean 1.
          */
-        [[nodiscard]] AmUInt64 GetRequiredInputFrameCount(AmUInt64 outputFrameCount) const;
+        void SetRatio(AmReal64 inputPerOutput);
 
         /**
-         * @brief Returns the expected number of frames to have as output for the given amount of input frames.
+         * @brief Returns the exact number of input frames needed to produce the given output frame count.
          *
-         * @param[in] inputFrameCount The number of input frames.
+         * @param[in] outputFrameCount The number of output frames to produce.
          *
-         * @return The expected number of output frames for the given input frame count.
+         * @return The number of input frames the next @c Process() call consumes to produce them.
          */
-        [[nodiscard]] AmUInt64 GetExpectedOutputFrameCount(AmUInt64 inputFrameCount) const;
+        [[nodiscard]] AmUInt64 GetInputFramesNeeded(AmUInt64 outputFrameCount) const;
 
         /**
-         * @brief Returns the current input latency in frames.
+         * @brief Returns the resampler group delay in input frames.
          *
-         * @return The current input latency in frames.
+         * @return The number of input frames between the first input frame and the first output frame that reflects it.
          */
-        [[nodiscard]] AmUInt64 GetInputLatency() const;
-
-        /**
-         * @brief Returns the current output latency in frames.
-         *
-         * @return The current output latency in frames.
-         */
-        [[nodiscard]] AmUInt64 GetOutputLatency() const;
+        [[nodiscard]] AmUInt64 GetLatency() const;
 
         /**
          * @brief Returns the current conversion settings, including the sample rates last set with @c SetSampleRate().

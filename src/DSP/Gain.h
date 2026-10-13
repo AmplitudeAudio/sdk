@@ -50,9 +50,6 @@ namespace SparkyStudios::Audio::Amplitude
         bool IsZero(AmReal32 gain);
         bool IsOne(AmReal32 gain);
 
-        AmVector2 CalculateStereoPannedGain(AmReal32 gain, AmVector3 sourcePosition, AmMatrix4 listenerViewMatrix);
-        AmVector2 CalculateStereoPannedGain(AmReal32 gain, SphericalPosition sourcePosition);
-        AmVector2 CalculateStereoPannedGain(AmReal32 gain, AmReal32 pan);
     } // namespace Gain
 
     /**
