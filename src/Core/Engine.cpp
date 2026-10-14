@@ -429,6 +429,7 @@ namespace SparkyStudios::Audio::Amplitude
 
         // Instances are rendered one by one in separate mode, each one with its own reverb, so each of them
         // needs a room of its own. In blended mode they share the room of the channel.
+        const auto instancesLock = channel->LockInstances();
         if (channel->GetInstancingMode() != eChannelInstanceMode_Separate)
             return;
 

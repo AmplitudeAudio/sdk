@@ -661,6 +661,23 @@ namespace SparkyStudios::Audio::Amplitude
          */
         [[nodiscard]] eChannelInstanceMode GetPublishedInstancingMode() const;
 
+        /**
+         * @brief Gets a copy of the last published snapshot.
+         *
+         * The instancing state, the cursor slots and the instances all come from the same publish, which separate
+         * calls to the getters above cannot promise.
+         *
+         * @note Not for the audio thread.
+         */
+        [[nodiscard]] ChannelInstanceSnapshot GetPublishedSnapshot() const;
+
+        /**
+         * @brief Locks the instances against being added or removed.
+         *
+         * Hold it for as long as @c GetInstances() is walked outside of the channel's own methods. Never taken by the
+         * audio thread.
+         */
+        [[nodiscard]] std::unique_lock<std::recursive_mutex> LockInstances() const;
 
         // The node that tracks the location in the priority list.
         fplutil::intrusive_list_node priority_node;

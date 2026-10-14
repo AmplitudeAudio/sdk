@@ -1410,14 +1410,30 @@ namespace SparkyStudios::Audio::Amplitude
         return _instanceSnapshotState.published.instancingMode;
     }
 
+    ChannelInstanceSnapshot ChannelInternalState::GetPublishedSnapshot() const
+    {
+        const std::lock_guard<std::recursive_mutex> lock(_instanceSnapshotState.mutex);
+
+        return _instanceSnapshotState.published;
+    }
+
+    std::unique_lock<std::recursive_mutex> ChannelInternalState::LockInstances() const
+    {
+        return std::unique_lock<std::recursive_mutex>(_instanceSnapshotState.mutex);
+    }
+
     ChannelInstanceInternalState* ChannelInternalState::GetInstance(AmChannelInstanceID instanceId)
     {
+        const std::lock_guard<std::recursive_mutex> lock(_instanceSnapshotState.mutex);
+
         auto it = _instancesMap.find(instanceId);
         return it != _instancesMap.end() ? it->second : nullptr;
     }
 
     const ChannelInstanceInternalState* ChannelInternalState::GetInstance(AmChannelInstanceID instanceId) const
     {
+        const std::lock_guard<std::recursive_mutex> lock(_instanceSnapshotState.mutex);
+
         auto it = _instancesMap.find(instanceId);
         return it != _instancesMap.end() ? it->second : nullptr;
     }

@@ -760,11 +760,15 @@ namespace SparkyStudios::Audio::Amplitude
 
     void RealChannel::SyncCurrentInstancePipelines()
     {
-        if (_parentChannelState == nullptr || !_parentChannelState->IsInstancingEnabled() ||
-            _parentChannelState->GetInstancingMode() != eChannelInstanceMode_Separate)
+        if (_parentChannelState == nullptr)
             return;
 
-        SyncInstancePipelines(_parentChannelState->GetPublishedInstanceSnapshot());
+        // One publish says whether the channel is instanced, in which mode, and with which instances.
+        const ChannelInstanceSnapshot snapshot = _parentChannelState->GetPublishedSnapshot();
+        if (!snapshot.instancingEnabled || snapshot.instancingMode != eChannelInstanceMode_Separate)
+            return;
+
+        SyncInstancePipelines(snapshot.instances);
     }
 
     AmUInt32 RealChannel::FindFreeLayer(AmUInt32 layerIndex) const
