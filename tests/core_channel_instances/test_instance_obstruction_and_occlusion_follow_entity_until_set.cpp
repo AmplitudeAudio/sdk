@@ -12,6 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+#include <optional>
+
 #include <SparkyStudios/Audio/Amplitude/Amplitude.h>
 
 #include <Core/Playback/ChannelInternalState.h>
@@ -25,13 +27,13 @@ namespace SparkyStudios::Audio::Amplitude::Tests
 {
     namespace
     {
-        const ChannelInstanceData* FindPublished(const Channel& channel, AmChannelInstanceID id)
+        std::optional<ChannelInstanceData> FindPublished(const Channel& channel, AmChannelInstanceID id)
         {
             for (const auto& data : channel.GetState()->GetPublishedInstanceSnapshot())
                 if (data.instanceId == id)
-                    return &data;
+                    return data;
 
-            return nullptr;
+            return std::nullopt;
         }
     } // namespace
 
@@ -61,10 +63,10 @@ namespace SparkyStudios::Audio::Amplitude::Tests
             AM_EXPECT_EQ(instance.GetObstruction(), 0.3f);
             AM_EXPECT_EQ(instance.GetOcclusion(), 0.6f);
 
-            const ChannelInstanceData* published = FindPublished(channel, instance.GetId());
-            AM_EXPECT_NOT(published == nullptr);
-            AM_EXPECT_NOT(published != nullptr && published->hasObstruction);
-            AM_EXPECT_NOT(published != nullptr && published->hasOcclusion);
+            auto published = FindPublished(channel, instance.GetId());
+            AM_EXPECT(published.has_value());
+            AM_EXPECT_NOT(published->hasObstruction);
+            AM_EXPECT_NOT(published->hasOcclusion);
 
             // Values set on the instance win, and are published to the mixer. The entity's no longer applies.
             instance.SetObstruction(0.9f);
@@ -78,9 +80,9 @@ namespace SparkyStudios::Audio::Amplitude::Tests
             amEngine->WaitUntilFrames(3);
 
             published = FindPublished(channel, instance.GetId());
-            AM_EXPECT_NOT(published == nullptr);
-            AM_EXPECT(published != nullptr && published->hasObstruction && published->obstruction == 0.9f);
-            AM_EXPECT(published != nullptr && published->hasOcclusion && published->occlusion == 0.0f);
+            AM_EXPECT(published.has_value());
+            AM_EXPECT(published->hasObstruction && published->obstruction == 0.9f);
+            AM_EXPECT(published->hasOcclusion && published->occlusion == 0.0f);
 
             // Resetting one makes it follow the entity again, independently of the other.
             instance.ResetObstruction();
@@ -90,9 +92,9 @@ namespace SparkyStudios::Audio::Amplitude::Tests
             amEngine->WaitUntilFrames(3);
 
             published = FindPublished(channel, instance.GetId());
-            AM_EXPECT_NOT(published == nullptr);
-            AM_EXPECT_NOT(published != nullptr && published->hasObstruction);
-            AM_EXPECT(published != nullptr && published->hasOcclusion);
+            AM_EXPECT(published.has_value());
+            AM_EXPECT_NOT(published->hasObstruction);
+            AM_EXPECT(published->hasOcclusion);
 
             instance.ResetOcclusion();
             AM_EXPECT_EQ(instance.GetOcclusion(), 0.2f);

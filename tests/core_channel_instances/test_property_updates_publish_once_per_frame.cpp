@@ -12,6 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+#include <optional>
+
 #include <SparkyStudios/Audio/Amplitude/Amplitude.h>
 
 #include <Core/Playback/ChannelInternalState.h>
@@ -27,21 +29,21 @@ namespace SparkyStudios::Audio::Amplitude::Tests
     {
         constexpr AmSize kInstanceCount = 8;
 
-        const ChannelInstanceData* FindPublished(const Channel& channel, AmChannelInstanceID id)
+        std::optional<ChannelInstanceData> FindPublished(const Channel& channel, AmChannelInstanceID id)
         {
             for (const auto& data : channel.GetState()->GetPublishedInstanceSnapshot())
                 if (data.instanceId == id)
-                    return &data;
+                    return data;
 
-            return nullptr;
+            return std::nullopt;
         }
 
         bool PublishedMatches(const Channel& channel, const std::vector<ChannelInstance>& instances, AmReal32 x, AmReal32 weight)
         {
             for (const auto& instance : instances)
             {
-                const ChannelInstanceData* data = FindPublished(channel, instance.GetId());
-                if (data == nullptr || std::abs(data->location.x - x) > kEpsilon || std::abs(data->weight - weight) > kEpsilon)
+                auto data = FindPublished(channel, instance.GetId());
+                if (!data.has_value() || std::abs(data->location.x - x) > kEpsilon || std::abs(data->weight - weight) > kEpsilon)
                     return false;
             }
 

@@ -79,10 +79,8 @@ namespace SparkyStudios::Audio::Amplitude
 
         _eventsMap.clear();
 
-        ClearInstances();
-
-        _instancingEnabled = false;
-        _instancingMode = eChannelInstanceMode_Blended;
+        // A recycled channel must publish that it is no longer instanced, not only drop its instances.
+        DisableInstancing();
         _nextInstanceId = 1;
 
         _room = Room();
@@ -1181,11 +1179,9 @@ namespace SparkyStudios::Audio::Amplitude
         if (_instancingEnabled)
             return; // Already enabled
 
-        _instancingEnabled = true;
-        _instancingMode = mode;
         _nextInstanceId = 1;
 
-        PublishInstanceSnapshot();
+        SetInstancingState(true, mode);
     }
 
     void ChannelInternalState::DisableInstancing()
@@ -1195,11 +1191,35 @@ namespace SparkyStudios::Audio::Amplitude
         if (!_instancingEnabled)
             return;
 
-        ClearInstances();
-
-        _instancingEnabled = false;
-        _instancingMode = eChannelInstanceMode_Blended;
+        DestroyInstances();
         _nextInstanceId = 1;
+
+        // One snapshot says both: no instances, and no instancing.
+        SetInstancingState(false, eChannelInstanceMode_Blended);
+    }
+
+    void ChannelInternalState::SetInstancingState(bool enabled, eChannelInstanceMode mode)
+    {
+        const std::lock_guard<std::recursive_mutex> lock(_instanceSnapshotState.mutex);
+
+        _instancingEnabled = enabled;
+        _instancingMode = mode;
+
+        // The audio thread only learns about the state from the snapshot.
+        PublishInstanceSnapshot();
+    }
+
+    void ChannelInternalState::DestroyInstances()
+    {
+        while (!_instances.empty())
+        {
+            ChannelInstanceInternalState& instance = _instances.front();
+            instance.instance_node.remove();
+            instance.Invalidate();
+            ampooldelete(eMemoryPoolKind_Engine, ChannelInstanceInternalState, &instance);
+        }
+
+        _instancesMap.clear();
     }
 
     ChannelInstanceInternalState* ChannelInternalState::AddInstance(const AmVector3& location)
@@ -1209,7 +1229,7 @@ namespace SparkyStudios::Audio::Amplitude
         if (!_instancingEnabled)
             return nullptr;
 
-        if (_instances.size() >= kAmMaxChannelInstances)
+        if (_instancesMap.size() >= kAmMaxChannelInstances)
         {
             amLogWarning("Cannot add instance: maximum limit of %zu instances reached.", kAmMaxChannelInstances);
             return nullptr;
@@ -1257,17 +1277,17 @@ namespace SparkyStudios::Audio::Amplitude
     {
         const std::lock_guard<std::recursive_mutex> lock(_instanceSnapshotState.mutex);
 
-        while (!_instances.empty())
-        {
-            ChannelInstanceInternalState& instance = _instances.front();
-            instance.instance_node.remove();
-            instance.Invalidate();
-            ampooldelete(eMemoryPoolKind_Engine, ChannelInstanceInternalState, &instance);
-        }
-
-        _instancesMap.clear();
+        DestroyInstances();
 
         PublishInstanceSnapshot();
+    }
+
+    AmSize ChannelInternalState::GetInstanceCount() const
+    {
+        const std::lock_guard<std::recursive_mutex> lock(_instanceSnapshotState.mutex);
+
+        // The map is the O(1) one: counting the intrusive list walks it.
+        return _instancesMap.size();
     }
 
     void ChannelInternalState::FlushInstanceSnapshot()
@@ -1287,7 +1307,8 @@ namespace SparkyStudios::Audio::Amplitude
         ++_instanceSnapshotPublishCount;
 #endif
 
-        // Lazily allocate the cursor write-back slots. Only instanced channels pay for it.
+        // Lazily allocate the cursor write-back slots. Only instanced channels pay for it. The audio thread reaches
+        // them through the snapshot, so it never sees the pointer before the slots are initialized.
         if (_instancingEnabled && _instanceSnapshotState.cursors == nullptr)
         {
             _instanceSnapshotState.cursors = std::make_unique<ChannelInstanceCursorSlot[]>(kAmMaxChannelInstances);
@@ -1298,16 +1319,13 @@ namespace SparkyStudios::Audio::Amplitude
             }
         }
 
-        // Drain audio-thread cursor write-backs into the authoritative states, using
-        // the currently published snapshot's slot pairing.
+        // Drain audio-thread cursor write-backs into the authoritative states: each slot names its instance.
         if (_instanceSnapshotState.cursors != nullptr)
         {
-            const auto& published =
-                _instanceSnapshotState.snapshots[_instanceSnapshotState.publishedSnapshot.load(std::memory_order_acquire)];
-            for (AmSize i = 0; i < published.size(); ++i)
+            for (AmSize i = 0; i < kAmMaxChannelInstances; ++i)
             {
                 const AmChannelInstanceID id = _instanceSnapshotState.cursors[i].id.load(std::memory_order_acquire);
-                if (id == kAmInvalidObjectId || id != published[i].instanceId)
+                if (id == kAmInvalidObjectId)
                     continue;
 
                 if (auto it = _instancesMap.find(id); it != _instancesMap.end())
@@ -1315,13 +1333,14 @@ namespace SparkyStudios::Audio::Amplitude
             }
         }
 
-        // Rebuild the back buffer from the authoritative list.
-        const AmUInt32 current = _instanceSnapshotState.publishedSnapshot.load(std::memory_order_relaxed);
-        const AmUInt32 next = 1 - current;
-        auto& snapshot = _instanceSnapshotState.snapshots[next];
+        // Rebuild the publisher's private buffer from the authoritative state. The audio thread cannot be holding it.
+        ChannelInstanceSnapshot& snapshot = _instanceSnapshotState.buffers.Write();
+        snapshot.instancingEnabled = _instancingEnabled;
+        snapshot.instancingMode = _instancingMode;
+        snapshot.cursorSlots = _instanceSnapshotState.cursors.get();
 
-        snapshot.clear();
-        snapshot.reserve(_instances.size());
+        snapshot.instances.clear();
+        snapshot.instances.reserve(_instancesMap.size());
         for (const auto& instance : _instances)
         {
             ChannelInstanceData data;
@@ -1343,7 +1362,7 @@ namespace SparkyStudios::Audio::Amplitude
             if (data.hasOcclusion)
                 data.occlusion = instance._occlusion;
 
-            snapshot.push_back(data);
+            snapshot.instances.push_back(data);
         }
 
         // Re-pair the write-back slots with the new snapshot before publishing it.
@@ -1351,13 +1370,14 @@ namespace SparkyStudios::Audio::Amplitude
         {
             for (AmSize i = 0; i < kAmMaxChannelInstances; ++i)
             {
-                const AmChannelInstanceID id = i < snapshot.size() ? snapshot[i].instanceId : kAmInvalidObjectId;
+                const AmChannelInstanceID id = i < snapshot.instances.size() ? snapshot.instances[i].instanceId : kAmInvalidObjectId;
                 _instanceSnapshotState.cursors[i].id.store(id, std::memory_order_release);
             }
         }
 
-        // Publish: this release store pairs with the acquire load in AcquireInstanceSnapshot().
-        _instanceSnapshotState.publishedSnapshot.store(next, std::memory_order_release);
+        // Keep a copy for the game thread, then hand the snapshot over to the audio thread.
+        _instanceSnapshotState.published = snapshot;
+        _instanceSnapshotState.buffers.Publish();
 
         // Keep per-instance mixer pipelines in step with the published instances (game thread). Blended mode
         // and disabled instancing use the shared layer pipeline, so they sync with an empty list.
@@ -1365,13 +1385,29 @@ namespace SparkyStudios::Audio::Amplitude
         {
             static const std::vector<ChannelInstanceData> kNoInstances;
             const bool separate = _instancingEnabled && _instancingMode == eChannelInstanceMode_Separate;
-            _realChannel.SyncInstancePipelines(separate ? snapshot : kNoInstances);
+            _realChannel.SyncInstancePipelines(separate ? _instanceSnapshotState.published.instances : kNoInstances);
         }
     }
 
-    const std::vector<ChannelInstanceData>& ChannelInternalState::GetPublishedInstanceSnapshot() const
+    std::vector<ChannelInstanceData> ChannelInternalState::GetPublishedInstanceSnapshot() const
     {
-        return _instanceSnapshotState.snapshots[_instanceSnapshotState.publishedSnapshot.load(std::memory_order_acquire)];
+        const std::lock_guard<std::recursive_mutex> lock(_instanceSnapshotState.mutex);
+
+        return _instanceSnapshotState.published.instances;
+    }
+
+    bool ChannelInternalState::GetPublishedInstancingEnabled() const
+    {
+        const std::lock_guard<std::recursive_mutex> lock(_instanceSnapshotState.mutex);
+
+        return _instanceSnapshotState.published.instancingEnabled;
+    }
+
+    eChannelInstanceMode ChannelInternalState::GetPublishedInstancingMode() const
+    {
+        const std::lock_guard<std::recursive_mutex> lock(_instanceSnapshotState.mutex);
+
+        return _instanceSnapshotState.published.instancingMode;
     }
 
     ChannelInstanceInternalState* ChannelInternalState::GetInstance(AmChannelInstanceID instanceId)

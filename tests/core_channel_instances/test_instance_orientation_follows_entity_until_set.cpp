@@ -12,6 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+#include <optional>
+
 #include <SparkyStudios/Audio/Amplitude/Amplitude.h>
 
 #include <Core/Playback/ChannelInternalState.h>
@@ -31,13 +33,13 @@ namespace SparkyStudios::Audio::Amplitude::Tests
                 std::abs(a.GetForward().z - b.GetForward().z) < 1e-4f;
         }
 
-        const ChannelInstanceData* FindPublished(const Channel& channel, AmChannelInstanceID id)
+        std::optional<ChannelInstanceData> FindPublished(const Channel& channel, AmChannelInstanceID id)
         {
             for (const auto& data : channel.GetState()->GetPublishedInstanceSnapshot())
                 if (data.instanceId == id)
-                    return &data;
+                    return data;
 
-            return nullptr;
+            return std::nullopt;
         }
     } // namespace
 
@@ -68,9 +70,9 @@ namespace SparkyStudios::Audio::Amplitude::Tests
             // Without an orientation of its own, the instance follows the entity's, and the mixer is told so.
             AM_EXPECT(SameForward(instance.GetOrientation(), entityOrientation));
 
-            const ChannelInstanceData* published = FindPublished(channel, instance.GetId());
-            AM_EXPECT_NOT(published == nullptr);
-            AM_EXPECT_NOT(published != nullptr && published->hasOrientation);
+            auto published = FindPublished(channel, instance.GetId());
+            AM_EXPECT(published.has_value());
+            AM_EXPECT_NOT(published->hasOrientation);
 
             // An orientation set on the instance wins, and is published to the mixer.
             const Orientation instanceOrientation(-0.5f, 0.0f, 0.0f);
@@ -83,9 +85,9 @@ namespace SparkyStudios::Audio::Amplitude::Tests
             amEngine->WaitUntilFrames(3);
 
             published = FindPublished(channel, instance.GetId());
-            AM_EXPECT_NOT(published == nullptr);
-            AM_EXPECT(published != nullptr && published->hasOrientation);
-            AM_EXPECT(published != nullptr && SameForward(published->orientation, instanceOrientation));
+            AM_EXPECT(published.has_value());
+            AM_EXPECT(published->hasOrientation);
+            AM_EXPECT(SameForward(published->orientation, instanceOrientation));
 
             // Resetting makes it follow the entity again.
             instance.ResetOrientation();
@@ -94,8 +96,8 @@ namespace SparkyStudios::Audio::Amplitude::Tests
             amEngine->WaitUntilFrames(3);
 
             published = FindPublished(channel, instance.GetId());
-            AM_EXPECT_NOT(published == nullptr);
-            AM_EXPECT_NOT(published != nullptr && published->hasOrientation);
+            AM_EXPECT(published.has_value());
+            AM_EXPECT_NOT(published->hasOrientation);
 
             channel.Stop(0.0);
             amEngine->RemoveEntity(4242);

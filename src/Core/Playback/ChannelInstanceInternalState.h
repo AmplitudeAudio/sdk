@@ -19,6 +19,7 @@
 
 #include <atomic>
 #include <unordered_map>
+#include <vector>
 
 #include <SparkyStudios/Audio/Amplitude/Core/Common.h>
 #include <SparkyStudios/Audio/Amplitude/Core/Playback/ChannelInstance.h>
@@ -66,6 +67,24 @@ namespace SparkyStudios::Audio::Amplitude
     {
         std::atomic<AmChannelInstanceID> id;
         std::atomic<AmUInt64> cursor;
+    };
+
+    /**
+     * @brief Immutable snapshot of a channel's instancing state, for audio-thread consumption.
+     *
+     * Everything the audio thread needs to know about a channel's instances comes from here, never from the
+     * game-owned containers or fields of the channel: whether it is instanced, in which mode, the instances, and
+     * where to write the cursors back.
+     */
+    struct ChannelInstanceSnapshot
+    {
+        bool instancingEnabled = false;
+        eChannelInstanceMode instancingMode = eChannelInstanceMode_Blended;
+
+        /// The channel's cursor write-back slots. They live as long as the channel, so the pointer stays valid.
+        ChannelInstanceCursorSlot* cursorSlots = nullptr;
+
+        std::vector<ChannelInstanceData> instances;
     };
 
     /**

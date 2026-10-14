@@ -1051,9 +1051,7 @@ namespace SparkyStudios::Audio::Amplitude
 
     bool AmplimixImpl::IsSeparateMode(const AmplimixLayerImpl* layer)
     {
-        const auto& channel = layer->GetChannel();
-        return channel.Valid() && channel.GetState()->IsInstancingEnabled() &&
-            channel.GetState()->GetInstancingMode() == eChannelInstanceMode_Separate && !layer->instanceData.empty();
+        return layer->instancingEnabled && layer->instancingMode == eChannelInstanceMode_Separate && !layer->instanceData.empty();
     }
 
     void AmplimixImpl::UpdateSpeed(AmplimixLayerImpl* layer, AmUInt64 frames)
@@ -1079,10 +1077,6 @@ namespace SparkyStudios::Audio::Amplitude
         AmplimixLayerImpl* layer, AudioBuffer* buffer, AmUInt64 offset, AmUInt64 frames, AmReal32 gain, AmUInt16 outputChannels)
     {
         Voice* voice = layer->voice;
-
-        // Cursor write-back goes through the channel's atomic slots: the game-owned instance containers are never
-        // touched from the audio thread.
-        auto* channelState = layer->GetChannel().GetState();
 
         SoundChunk* source = layer->_chunkPool.Acquire(frames, voice->GetChannelCount());
         SoundChunk* out = layer->_chunkPool.Acquire(source->frames, outputChannels);
@@ -1129,11 +1123,13 @@ namespace SparkyStudios::Audio::Amplitude
             else
                 allFinished = false;
 
+            // Cursor write-back goes through the channel's atomic slots: the game-owned instance containers are never
+            // touched from the audio thread.
             // Write the cursor back through the channel's write-back slots, so the game thread can restore it if this
             // layer is recreated. The id check drops stores that race a re-publication.
-            if (auto* slots = channelState->GetInstanceCursorSlots(); slots != nullptr && index < kAmMaxChannelInstances)
+            if (layer->cursorSlots != nullptr && index < kAmMaxChannelInstances)
             {
-                auto& cursorSlot = slots[index];
+                auto& cursorSlot = layer->cursorSlots[index];
                 if (cursorSlot.id.load(std::memory_order_acquire) == data.instanceId)
                     cursorSlot.cursor.store(data.cursor, std::memory_order_release);
             }
@@ -1509,30 +1505,13 @@ namespace SparkyStudios::Audio::Amplitude
 
     bool AmplimixLayerImpl::IsMultiPosition() const
     {
-        if (snd == nullptr || snd->sound == nullptr)
-            return false;
-
-        if (processingInstance)
-            return false;
-
-        const auto& channel = snd->sound->GetChannel();
-        if (!channel.Valid())
-            return false;
-
-        auto* channelState = channel.GetState();
-        return channelState->IsInstancingEnabled() && channelState->GetInstanceCount() > 0;
+        // While one instance is processed on its own, the layer is not a multi-position source.
+        return !processingInstance && instancingEnabled && !instanceData.empty();
     }
 
     eChannelInstanceMode AmplimixLayerImpl::GetInstancingMode() const
     {
-        if (snd == nullptr || snd->sound == nullptr)
-            return eChannelInstanceMode_Blended;
-
-        const auto& channel = snd->sound->GetChannel();
-        if (!channel.Valid())
-            return eChannelInstanceMode_Blended;
-
-        return channel.GetState()->GetInstancingMode();
+        return instancingMode;
     }
 
     AmSize AmplimixLayerImpl::GetInstanceCount() const
@@ -1626,6 +1605,9 @@ namespace SparkyStudios::Audio::Amplitude
         previousInstanceData.clear();
         previousInstanceData.swap(instanceData);
 
+        instancingEnabled = false;
+        instancingMode = eChannelInstanceMode_Blended;
+        cursorSlots = nullptr;
         hasBlendedObstruction = false;
         hasBlendedOcclusion = false;
 
@@ -1636,14 +1618,18 @@ namespace SparkyStudios::Audio::Amplitude
         if (!channel.Valid())
             return;
 
-        auto* channelState = channel.GetState();
-        if (!channelState->IsInstancingEnabled())
+        // The only read of the channel: the snapshot, which stays unchanged until the next block.
+        const ChannelInstanceSnapshot& snapshot = channel.GetState()->AcquireInstanceSnapshot();
+
+        instancingEnabled = snapshot.instancingEnabled;
+        instancingMode = snapshot.instancingMode;
+        cursorSlots = snapshot.cursorSlots;
+
+        if (!snapshot.instancingEnabled)
             return;
 
-        const auto* snapshot = channelState->AcquireInstanceSnapshot();
-
-        instanceData.reserve(snapshot->size());
-        for (const auto& entry : *snapshot)
+        instanceData.reserve(snapshot.instances.size());
+        for (const auto& entry : snapshot.instances)
         {
             InstanceData data = entry;
 

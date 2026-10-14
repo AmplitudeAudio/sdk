@@ -231,6 +231,12 @@ namespace SparkyStudios::Audio::Amplitude
         AmReal32 blendedOcclusion = 0.0f;
         bool hasBlendedObstruction = false;
         bool hasBlendedOcclusion = false;
+
+        // The channel's instancing state, as of the snapshot taken at the start of the block. The audio thread never
+        // reads it from the channel: those fields belong to the game thread. Refreshed by UpdateInstanceData().
+        bool instancingEnabled = false;
+        eChannelInstanceMode instancingMode = eChannelInstanceMode_Blended;
+        ChannelInstanceCursorSlot* cursorSlots = nullptr;
     };
 
     struct MixerCommand
