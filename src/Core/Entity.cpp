@@ -149,6 +149,18 @@ namespace SparkyStudios::Audio::Amplitude
         return _state->GetEnvironments();
     }
 
+    void Entity::SetRoom(const Room& room) const
+    {
+        AMPLITUDE_ASSERT(Valid());
+        _state->SetRoom(room);
+    }
+
+    Room Entity::GetRoom() const
+    {
+        AMPLITUDE_ASSERT(Valid());
+        return _state->GetRoom();
+    }
+
     AmUInt64 Entity::GetActiveChannelCount() const
     {
         AMPLITUDE_ASSERT(Valid());

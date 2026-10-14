@@ -172,6 +172,13 @@ table GameSyncConfig {
   /// levels to the engine.
   /// This implies that the shapes defined in environments (if any) will not be used.
   track_environments:bool = true;
+
+  /// Defines if the game is tracking rooms or not.
+  /// This means that the game will compute and send the room of each entity
+  /// to the engine, through Entity::SetRoom().
+  /// This implies that the shapes defined in rooms will not be used to assign
+  /// a room to the sounds played by an entity.
+  track_rooms:bool = false;
 }
 
 /// HRTF and Ambisonics binauralization configuration

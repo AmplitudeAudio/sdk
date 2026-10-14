@@ -185,6 +185,7 @@ namespace SparkyStudios::Audio::Amplitude
             , obstruction_config()
             , occlusion_config()
             , track_environments(false)
+            , track_rooms(false)
             , samples_per_stream(512)
             , panning_mode(ePanningMode_Stereo)
             , hrir_sampling_mode(eHRIRSphereSamplingMode_NearestNeighbor)
@@ -316,6 +317,8 @@ namespace SparkyStudios::Audio::Amplitude
         ObstructionOcclusionState occlusion_config;
 
         bool track_environments;
+
+        bool track_rooms;
 
         AmUInt32 samples_per_stream;
 

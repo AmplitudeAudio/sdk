@@ -208,6 +208,7 @@ namespace SparkyStudios::Audio::Amplitude
         [[nodiscard]] AmUInt32 GetSamplesPerStream() const override;
         [[nodiscard]] const ChannelLayout& GetOutputLayout() const override;
         [[nodiscard]] bool IsGameTrackingEnvironmentAmounts() const override;
+        [[nodiscard]] bool IsGameTrackingRooms() const override;
         [[nodiscard]] AmUInt32 GetMaxListenersCount() const override;
         [[nodiscard]] AmUInt32 GetMaxEntitiesCount() const override;
         [[nodiscard]] AmUInt32 GetMaxEnvironmentsCount() const override;

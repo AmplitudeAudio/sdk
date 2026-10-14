@@ -406,29 +406,45 @@ namespace SparkyStudios::Audio::Amplitude
         }
     }
 
-    void AssignBestRoom(ChannelInternalState* newChannel, const AmVector3& location, std::shared_ptr<EngineInternalState> state)
+    RoomInternalState* FindRoomContaining(const AmVector3& location, const std::shared_ptr<EngineInternalState>& state)
     {
-        RoomInternalState* bestRoom = nullptr;
-        AmReal32 minDistanceSquared = std::numeric_limits<AmReal32>::max();
-
         for (auto&& room : state->room_list)
         {
-            auto& shape = room.GetShape();
-
-            if (shape.Contains(location))
-            {
-                bestRoom = &room;
-                break;
-            }
-
-            if (const AmReal32 distance = shape.GetShortestDistanceToEdge(location); distance < minDistanceSquared)
-            {
-                minDistanceSquared = distance;
-                bestRoom = &room;
-            }
+            if (room.GetShape().Contains(location))
+                return &room;
         }
 
-        newChannel->SetRoom(Room(bestRoom));
+        return nullptr;
+    }
+
+    void UpdateChannelRoom(ChannelInternalState* channel, std::shared_ptr<EngineInternalState> state)
+    {
+        const Entity& entity = channel->GetEntity();
+        const bool gameTrackingRooms = state->track_rooms && entity.Valid();
+
+        if (gameTrackingRooms)
+            channel->SetRoom(entity.GetRoom());
+        else
+            channel->SetRoom(Room(FindRoomContaining(channel->GetLocation(), state)));
+
+        // Instances are rendered one by one in separate mode, each one with its own reverb, so each of them
+        // needs a room of its own. In blended mode they share the room of the channel.
+        if (channel->GetInstancingMode() != eChannelInstanceMode_Separate)
+            return;
+
+        for (auto&& instance : channel->GetInstances())
+        {
+            if (gameTrackingRooms)
+            {
+                // The game is in charge: an instance with a room of its own keeps it, the others follow the entity.
+                if (!instance.HasRoom())
+                    instance.AssignRoom(entity.GetRoom());
+            }
+            else
+            {
+                instance.AssignRoom(Room(FindRoomContaining(instance.GetLocation(), state)));
+            }
+        }
     }
 
     EngineImpl::EngineImpl()
@@ -1163,6 +1179,9 @@ namespace SparkyStudios::Audio::Amplitude
 
         // Environment Amounts
         _state->track_environments = config->game()->track_environments();
+
+        // Rooms
+        _state->track_rooms = config->game()->track_rooms();
 
         // Engine state
         _state->mute = false;
@@ -2708,7 +2727,7 @@ namespace SparkyStudios::Audio::Amplitude
         }
 
         if (isEntityScope)
-            AssignBestRoom(channel, channel->GetLocation(), state);
+            UpdateChannelRoom(channel, state);
 
         channel->SetGain(gain);
         channel->SetPitch(pitch);
@@ -3019,6 +3038,11 @@ namespace SparkyStudios::Audio::Amplitude
         return _state->track_environments;
     }
 
+    bool EngineImpl::IsGameTrackingRooms() const
+    {
+        return _state->track_rooms;
+    }
+
     AmUInt32 EngineImpl::GetMaxListenersCount() const
     {
         return GetEngineConfigDefinition()->game()->listeners();
@@ -3156,7 +3180,7 @@ namespace SparkyStudios::Audio::Amplitude
         newChannel->SetUserGain(userGain);
 
         if (isEntityScope)
-            AssignBestRoom(newChannel, location, _state);
+            UpdateChannelRoom(newChannel, _state);
 
         newChannel->SetGain(gain);
         newChannel->SetPitch(pitch);
@@ -3242,7 +3266,7 @@ namespace SparkyStudios::Audio::Amplitude
         newChannel->SetUserGain(userGain);
 
         if (isEntityScope)
-            AssignBestRoom(newChannel, location, _state);
+            UpdateChannelRoom(newChannel, _state);
 
         newChannel->SetGain(gain);
         newChannel->SetPitch(pitch);
@@ -3327,7 +3351,7 @@ namespace SparkyStudios::Audio::Amplitude
         newChannel->SetUserGain(userGain);
 
         if (isEntityScope)
-            AssignBestRoom(newChannel, location, _state);
+            UpdateChannelRoom(newChannel, _state);
 
         newChannel->SetGain(gain);
         newChannel->SetPitch(pitch);

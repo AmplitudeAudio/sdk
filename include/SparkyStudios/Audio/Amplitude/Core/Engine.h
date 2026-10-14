@@ -1721,6 +1721,17 @@ namespace SparkyStudios::Audio::Amplitude
         [[nodiscard]] virtual bool IsGameTrackingEnvironmentAmounts() const = 0;
 
         /**
+         * @brief Checks whether the game is tracking rooms himself.
+         *
+         * When this is @c false, the engine assigns a room to the sounds of an entity by looking for the registered
+         * room containing the entity location. When this is @c true, the room of each entity is the one set through
+         * @ref Entity::SetRoom "`Entity::SetRoom()`", and a sound outside every room is in no room at all.
+         *
+         * @return Whether the game is tracking the rooms.
+         */
+        [[nodiscard]] virtual bool IsGameTrackingRooms() const = 0;
+
+        /**
          * @brief Gets the maximum number of listeners handled by the engine.
          *
          * @return The maximum number of listeners.

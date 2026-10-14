@@ -24,6 +24,7 @@
 namespace SparkyStudios::Audio::Amplitude
 {
     class EntityInternalState;
+    class Room;
 
     /**
      * @brief An Entity represents a spatially positioned object in the game.
@@ -227,6 +228,32 @@ namespace SparkyStudios::Audio::Amplitude
          * @return The list of environments where this entity belongs or has visited.
          */
         [[nodiscard]] const std::unordered_map<AmEnvironmentID, AmReal32>& GetEnvironments() const;
+
+        /**
+         * @brief Sets the room this entity belongs to.
+         *
+         * Sounds played from this entity will be routed through the reverb and reflections buses of the
+         * given room.
+         *
+         * This method is only taken into account when the game is tracking rooms, which is disabled by
+         * default. When it is disabled, the @c Engine assigns a room to the sounds of this entity by
+         * looking for the registered room containing its location.
+         *
+         * @note Passing an invalid room clears the room of this entity.
+         *
+         * @note The sounds already played by this entity are moved to the new room on the next frame.
+         *
+         * @param[in] room The room this entity belongs to.
+         */
+        void SetRoom(const Room& room) const;
+
+        /**
+         * @brief Gets the room this entity belongs to.
+         *
+         * @return The room this entity belongs to. May be invalid, in particular when the game is not
+         * tracking rooms, in which case the @c Engine computes the room of each sound from the entity location.
+         */
+        [[nodiscard]] Room GetRoom() const;
 
         /**
          * @brief Gets the number of active channels for this entity.

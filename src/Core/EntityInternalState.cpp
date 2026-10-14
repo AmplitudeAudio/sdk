@@ -28,6 +28,7 @@ namespace SparkyStudios::Audio::Amplitude
         , _directivity(0.0f)
         , _directivitySharpness(1.0f)
         , _environmentFactors()
+        , _room()
         , _environmentFactorsDirty(true)
         , _environmentVersions()
         , _playingSoundList(&ChannelInternalState::entity_node)

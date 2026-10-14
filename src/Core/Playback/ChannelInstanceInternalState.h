@@ -291,6 +291,27 @@ namespace SparkyStudios::Audio::Amplitude
         void SetRoom(const Room& room);
 
         /**
+         * @brief Assigns the room of this instance without marking it as set by the game.
+         *
+         * The Engine uses this to give this instance the room it is in, or the room of its entity when
+         * the game is tracking rooms. Unlike @c SetRoom, an assigned room is replaced on the next frame
+         * and does not count as a room of its own.
+         *
+         * @param room The room to associate.
+         */
+        void AssignRoom(const Room& room);
+
+        /**
+         * @brief Checks whether this instance has a room of its own.
+         *
+         * @return @c true if a room was set on this instance through @c SetRoom, @c false otherwise.
+         */
+        [[nodiscard]] AM_INLINE bool HasRoom() const
+        {
+            return _hasRoom;
+        }
+
+        /**
          * @brief Gets the attenuation weight for blended mode.
          *
          * @return The weight value.
@@ -452,6 +473,7 @@ namespace SparkyStudios::Audio::Amplitude
 
         // Environment
         Room _room;
+        bool _hasRoom;
 
         // Blended mode weight
         AmReal32 _weight;

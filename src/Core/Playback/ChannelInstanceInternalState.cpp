@@ -30,6 +30,7 @@ namespace SparkyStudios::Audio::Amplitude
         , _occlusion(0.0f)
         , _hasOcclusion(false)
         , _room()
+        , _hasRoom(false)
         , _weight(1.0f)
         , _cursor(0)
         , _loopCount(0)
@@ -51,6 +52,7 @@ namespace SparkyStudios::Audio::Amplitude
         , _occlusion(0.0f)
         , _hasOcclusion(false)
         , _room()
+        , _hasRoom(false)
         , _weight(1.0f)
         , _cursor(0)
         , _loopCount(0)
@@ -72,6 +74,7 @@ namespace SparkyStudios::Audio::Amplitude
         _occlusion = 0.0f;
         _hasOcclusion = false;
         _room.Clear();
+        _hasRoom = false;
         _weight = 1.0f;
         _cursor = 0;
         _loopCount = 0;
@@ -180,6 +183,16 @@ namespace SparkyStudios::Audio::Amplitude
 
     void ChannelInstanceInternalState::SetRoom(const Room& room)
     {
+        _hasRoom = true;
+
+        AssignRoom(room);
+    }
+
+    void ChannelInstanceInternalState::AssignRoom(const Room& room)
+    {
+        if (room.GetState() == _room.GetState())
+            return;
+
         _room = room;
 
         if (_parentChannel != nullptr)

@@ -219,6 +219,29 @@ namespace SparkyStudios::Audio::Amplitude
         }
 
         /**
+         * @brief Sets the room this Entity belongs to.
+         *
+         * The Engine only reads this room when the game is tracking rooms. Otherwise, the room is
+         * computed from the Entity location and the shapes of the registered rooms.
+         *
+         * @param room The room of this Entity.
+         */
+        AM_INLINE void SetRoom(const Room& room)
+        {
+            _room = room;
+        }
+
+        /**
+         * @brief Gets the room this Entity belongs to.
+         *
+         * @return The room of this Entity. May be invalid if the game is not tracking rooms.
+         */
+        [[nodiscard]] AM_INLINE const Room& GetRoom() const
+        {
+            return _room;
+        }
+
+        /**
          * @brief Updates the inverse matrix of this Entity.
          *
          * The Engine calls this method automatically on
@@ -307,6 +330,8 @@ namespace SparkyStudios::Audio::Amplitude
         AmReal32 _directivitySharpness;
 
         std::unordered_map<AmEnvironmentID, AmReal32> _environmentFactors;
+
+        Room _room;
 
         // Cache invalidation for environment factors
         bool _environmentFactorsDirty;
