@@ -59,7 +59,6 @@ jobs:
       - name: Build Test Assets
         run: |
           xmake f -y -m debug --build_assets=y --build_tools=y --unit_tests=y
-          xmake b -y build_sample_project
           xmake b -y generate_test_package
 
       - name: Build iOS Test Runner
@@ -252,7 +251,6 @@ jobs:
       - name: Build Test Assets
         run: |
           xmake f -y -m debug --build_assets=y --build_tools=y --unit_tests=y
-          xmake b -y build_sample_project
           xmake b -y generate_test_package
 
       - name: Setup Android NDK
@@ -408,10 +406,27 @@ jobs:
           xmake f -y -a ${{ matrix.config.arch }} -p ${{ matrix.config.plat }} -m coverage ${{ matrix.config.toolchain && format('--toolchain={0}', matrix.config.toolchain) || '' }} --build_samples=n --build_tools=y --unit_tests=y --build_assets=y
 
       - name: Build
-        run: xmake b -y
+        run: xmake b -y amplitude_tests test_plugin
 
       - name: Test
-        run: xmake test -y
+        shell: bash
+        run: |
+          set -o pipefail
+
+          # The runner is launched from the build directory, where it expects
+          # the generated assets to be.
+          cd build
+
+          RUNNER="${{ matrix.config.plat }}/${{ matrix.config.arch }}/coverage/static/amplitude_tests"
+          if [ "$RUNNER_OS" = "Windows" ]; then
+            RUNNER="$RUNNER.exe"
+          fi
+
+          # Same coverage data as `xmake test` produces.
+          mkdir -p "$GITHUB_WORKSPACE/coverage"
+          export LLVM_PROFILE_FILE="$GITHUB_WORKSPACE/coverage/amplitude_tests-%p.profraw"
+
+          "$RUNNER" -v 2>&1 | tee "$GITHUB_WORKSPACE/test_output.log"
 
       - name: Generate coverage
         continue-on-error: true
@@ -433,6 +448,7 @@ jobs:
         with:
           name: desktop-test-results-${{ matrix.config.arch }}-${{ matrix.config.plat }}${{ matrix.config.toolchain && format('-{0}', matrix.config.toolchain) || '' }}
           path: |
-            build/**/test_*.log
+            test_output.log
             coverage/merged/coverage.lcov
+          if-no-files-found: ignore
           retention-days: 7
