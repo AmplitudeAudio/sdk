@@ -20,6 +20,7 @@
 #include <Core/Playback/ChannelInternalState.h>
 #include <Mixer/Amplimix.h>
 #include <Mixer/InstanceBlending.h>
+#include <Mixer/InstanceCursors.h>
 #include <Mixer/Pipeline.h>
 
 #define AMPLIMIX_STORE(A, C) std::atomic_store_explicit(A, (C), std::memory_order_release)
@@ -1628,24 +1629,11 @@ namespace SparkyStudios::Audio::Amplitude
         if (!snapshot.instancingEnabled)
             return;
 
-        instanceData.reserve(snapshot.instances.size());
-        for (const auto& entry : snapshot.instances)
-        {
-            InstanceData data = entry;
+        instanceData.assign(snapshot.instances.begin(), snapshot.instances.end());
 
-            // Preserve the layer-side cursor for instances that were already present;
-            // the snapshot's cursor is only the initial value for (re)discovered ones.
-            for (const auto& prev : previousInstanceData)
-            {
-                if (prev.instanceId == entry.instanceId)
-                {
-                    data.cursor = prev.cursor;
-                    break;
-                }
-            }
-
-            instanceData.push_back(data);
-        }
+        // Only separate mode plays instances from a cursor of their own.
+        if (instancingMode == eChannelInstanceMode_Separate)
+            CarryOverInstanceCursors(previousInstanceData, instanceData);
 
         UpdateBlendedInstanceValues();
     }

@@ -200,8 +200,8 @@ namespace SparkyStudios::Audio::Amplitude
         std::vector<InstanceData> instanceData;
 
         /**
-         * @brief Scratch storage used by UpdateInstanceData() to preserve cursors
-         * across snapshot refreshes without allocating on the audio thread.
+         * @brief The instances of the previous block, so that UpdateInstanceData() can carry their cursors over
+         * without allocating on the audio thread.
          */
         std::vector<InstanceData> previousInstanceData;
 
