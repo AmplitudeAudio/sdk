@@ -89,6 +89,13 @@ All notable changes to the Amplitude Audio SDK are recorded here. The format fol
 - Room reflections arrive from the right walls. They came from the mirrored side (left and right swapped), the front and
   back walls were timed from the listener's height and the floor and ceiling from its depth, and a rotated room placed
   the listener with the room's rotation instead of its inverse and turned the reflections the wrong way about pitch.
+- Instanced channels no longer rescan the previous instances for every instance, every audio block: the cursors are
+  carried over in one linear pass, and only in separate mode (up to about 230 us per block with 1024 instances).
+- A recycled cursor write-back slot no longer hands the previous instance's playback position to the instance that
+  takes its place.
+- Instance snapshots are handed to the audio thread through a lock-free triple buffer, and carry the channel's
+  instancing state: publishing several snapshots within one mix block can no longer free the one being read, and the
+  audio thread no longer reads game-owned channel fields.
 
 ### Known issues
 

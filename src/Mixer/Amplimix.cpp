@@ -1124,10 +1124,9 @@ namespace SparkyStudios::Audio::Amplitude
             else
                 allFinished = false;
 
-            // Cursor write-back goes through the channel's atomic slots: the game-owned instance containers are never
-            // touched from the audio thread.
-            // Write the cursor back through the channel's write-back slots, so the game thread can restore it if this
-            // layer is recreated. The id check drops stores that race a re-publication.
+            // Write the cursor back through the channel's atomic slots (the game-owned instance containers are never
+            // touched from the audio thread), so the game thread can restore it if this layer is recreated. The id
+            // check drops stores that race a re-publication.
             if (layer->cursorSlots != nullptr && index < kAmMaxChannelInstances)
             {
                 auto& cursorSlot = layer->cursorSlots[index];
