@@ -32,27 +32,30 @@ namespace SparkyStudios::Audio::Amplitude::Tests
             Logger* prevLogger = Logger::GetLogger();
 
             const AmOsString logPath = AM_OS_STRING("./samples/assets/test_data/logger_test_creation.log");
+            const std::filesystem::path fsPath(logPath);
 
-            // Create FileLogger
-            FileLogger fileLogger(logPath);
+            {
+                // Create FileLogger
+                FileLogger fileLogger(logPath);
 
-            // Verify file was opened successfully
-            AM_EXPECT(fileLogger.IsValid());
+                // Verify file was opened successfully
+                AM_EXPECT(fileLogger.IsValid());
 
-            // Set as global logger
-            Logger::SetLogger(&fileLogger);
+                // Set as global logger
+                Logger::SetLogger(&fileLogger);
 
-            // Log a message
-            amLogInfo("FileLogger creation test message");
+                // Log a message
+                amLogInfo("FileLogger creation test message");
 
-            // Restore previous logger before destroying FileLogger
-            Logger::SetLogger(prevLogger);
+                // Restore previous logger before destroying FileLogger
+                Logger::SetLogger(prevLogger);
 
-            // Verify file exists
-            AM_EXPECT(std::filesystem::exists(std::filesystem::path(logPath)));
+                // Verify file exists
+                AM_EXPECT(std::filesystem::exists(fsPath));
+            }
 
             // Cleanup - delete test file
-            std::filesystem::remove(std::filesystem::path(logPath));
+            std::filesystem::remove(fsPath);
         }
     };
 

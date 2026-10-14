@@ -19,7 +19,6 @@
 
 #include <filesystem>
 #include <fstream>
-#include <sstream>
 #include <thread>
 #include <vector>
 
@@ -42,41 +41,38 @@ namespace SparkyStudios::Audio::Amplitude::Tests
             constexpr int messagesPerThread = 100;
             constexpr int totalMessages = numThreads * messagesPerThread;
 
-            // Create FileLogger
-            FileLogger fileLogger(logPath);
-            AM_EXPECT(fileLogger.IsValid());
-            Logger::SetLogger(&fileLogger);
-
-            // Thread function to log messages
-            auto logThreadFunc = [](int threadId)
             {
-                for (int i = 0; i < messagesPerThread; ++i)
+                // Create FileLogger
+                FileLogger fileLogger(logPath);
+                AM_EXPECT(fileLogger.IsValid());
+                Logger::SetLogger(&fileLogger);
+
+                // Thread function to log messages
+                auto logThreadFunc = [](int threadId)
                 {
-                    amLogInfo("Thread %d Message %d", threadId, i);
+                    for (int i = 0; i < messagesPerThread; ++i)
+                    {
+                        amLogInfo("Thread %d Message %d", threadId, i);
+                    }
+                };
+
+                // Spawn threads
+                std::vector<std::thread> threads;
+                threads.reserve(numThreads);
+                for (int t = 0; t < numThreads; ++t)
+                {
+                    threads.emplace_back(logThreadFunc, t);
                 }
-            };
 
-            // Spawn threads
-            std::vector<std::thread> threads;
-            threads.reserve(numThreads);
-            for (int t = 0; t < numThreads; ++t)
-            {
-                threads.emplace_back(logThreadFunc, t);
+                // Join all threads
+                for (auto& thread : threads)
+                {
+                    thread.join();
+                }
+
+                // Restore logger before it goes out of scope
+                Logger::SetLogger(prevLogger);
             }
-
-            // Join all threads
-            for (auto& thread : threads)
-            {
-                thread.join();
-            }
-
-            // Restore logger before closing file
-            Logger::SetLogger(prevLogger);
-
-            // Close logger by going out of scope handled implicitly, but we set prev first
-            // Force the fileLogger destructor by this scope block
-            // We need to explicitly close the file to read it
-            // Actually, the fileLogger is still in scope - let's restructure
 
             // Read file and verify
             {
