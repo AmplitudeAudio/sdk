@@ -59,9 +59,10 @@ namespace SparkyStudios::Audio::Amplitude
      * The audio thread writes the latest cursor, the game thread drains it into the
      * authoritative state at publish time. The @c id is written by the game thread at
      * publish time and checked by the audio thread before storing, so a store is never
-     * applied to an instance whose id doesn't match. A store that passed the check but
-     * races a re-pair may be drained into the slot's new owner or dropped; both are
-     * bounded and harmless for cursor write-back.
+     * applied to an instance whose id doesn't match.
+     * Re-pairing writes the new owner's own cursor together with its id, so a slot never serves one instance with the
+     * value of another. A store that passed the id check but races a re-pair may still be drained into the slot's
+     * new owner or dropped; that window is one mix block wide and only affects where a recreated layer starts.
      */
     struct ChannelInstanceCursorSlot
     {

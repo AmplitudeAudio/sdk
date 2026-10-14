@@ -1365,13 +1365,17 @@ namespace SparkyStudios::Audio::Amplitude
             snapshot.instances.push_back(data);
         }
 
-        // Re-pair the write-back slots with the new snapshot before publishing it.
+        // Re-pair the write-back slots with the new snapshot before publishing it. A slot hands its new owner the
+        // cursor that owner already has: the previous owner's value would be drained into it by the next publish if
+        // the audio thread did not write the slot in between.
         if (_instanceSnapshotState.cursors != nullptr)
         {
             for (AmSize i = 0; i < kAmMaxChannelInstances; ++i)
             {
-                const AmChannelInstanceID id = i < snapshot.instances.size() ? snapshot.instances[i].instanceId : kAmInvalidObjectId;
-                _instanceSnapshotState.cursors[i].id.store(id, std::memory_order_release);
+                const bool owned = i < snapshot.instances.size();
+                _instanceSnapshotState.cursors[i].cursor.store(owned ? snapshot.instances[i].cursor : 0, std::memory_order_release);
+                _instanceSnapshotState.cursors[i].id.store(
+                    owned ? snapshot.instances[i].instanceId : kAmInvalidObjectId, std::memory_order_release);
             }
         }
 
