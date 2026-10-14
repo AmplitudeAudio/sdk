@@ -35,6 +35,11 @@ namespace SparkyStudios::Audio::Amplitude
         return m_maxAttenuationFactor;
     }
 
+    AmReal32 AttenuationZoneImpl::GetAttenuationFactor(const Attenuation*, const AmVector3&, const Orientation&, const Listener&)
+    {
+        return m_maxAttenuationFactor;
+    }
+
     AttenuationZone* AttenuationZoneImpl::Create(const AttenuationShapeDefinition* definition)
     {
         if (definition == nullptr)
@@ -83,13 +88,19 @@ namespace SparkyStudios::Audio::Amplitude
 
     AmReal32 ConeAttenuationZone::GetAttenuationFactor(const Attenuation* attenuation, const Entity& entity, const Listener& listener)
     {
-        m_innerShape->SetLocation(entity.GetLocation());
-        m_innerShape->SetOrientation(entity.GetOrientation());
+        return GetAttenuationFactor(attenuation, entity.GetLocation(), entity.GetOrientation(), listener);
+    }
 
-        m_outerShape->SetLocation(entity.GetLocation());
-        m_outerShape->SetOrientation(entity.GetOrientation());
+    AmReal32 ConeAttenuationZone::GetAttenuationFactor(
+        const Attenuation* attenuation, const AmVector3& soundLocation, const Orientation& soundOrientation, const Listener& listener)
+    {
+        m_innerShape->SetLocation(soundLocation);
+        m_innerShape->SetOrientation(soundOrientation);
 
-        const AmVector3& soundToListener = Sub(listener.GetLocation(), entity.GetLocation());
+        m_outerShape->SetLocation(soundLocation);
+        m_outerShape->SetOrientation(soundOrientation);
+
+        const AmVector3& soundToListener = Sub(listener.GetLocation(), soundLocation);
         const AmReal32 distance = Length(soundToListener);
         if (distance >= attenuation->GetMaxDistance())
             return 0.0f;
@@ -126,6 +137,13 @@ namespace SparkyStudios::Audio::Amplitude
         return GetAttenuationFactor(attenuation, entity.GetLocation(), listener);
     }
 
+    AmReal32 SphereAttenuationZone::GetAttenuationFactor(
+        const Attenuation* attenuation, const AmVector3& soundLocation, const Orientation&, const Listener& listener)
+    {
+        // A sphere has no facing direction.
+        return GetAttenuationFactor(attenuation, soundLocation, listener);
+    }
+
     AmReal32 BoxAttenuationZone::GetAttenuationFactor(
         const Attenuation* attenuation, const AmVector3& soundLocation, const Listener& listener)
     {
@@ -147,13 +165,19 @@ namespace SparkyStudios::Audio::Amplitude
 
     AmReal32 BoxAttenuationZone::GetAttenuationFactor(const Attenuation* attenuation, const Entity& entity, const Listener& listener)
     {
-        m_innerShape->SetLocation(entity.GetLocation());
-        m_innerShape->SetOrientation(entity.GetOrientation());
+        return GetAttenuationFactor(attenuation, entity.GetLocation(), entity.GetOrientation(), listener);
+    }
 
-        m_outerShape->SetLocation(entity.GetLocation());
-        m_outerShape->SetOrientation(entity.GetOrientation());
+    AmReal32 BoxAttenuationZone::GetAttenuationFactor(
+        const Attenuation* attenuation, const AmVector3& soundLocation, const Orientation& soundOrientation, const Listener& listener)
+    {
+        m_innerShape->SetLocation(soundLocation);
+        m_innerShape->SetOrientation(soundOrientation);
 
-        const AmVector3& soundToListener = Sub(listener.GetLocation(), entity.GetLocation());
+        m_outerShape->SetLocation(soundLocation);
+        m_outerShape->SetOrientation(soundOrientation);
+
+        const AmVector3& soundToListener = Sub(listener.GetLocation(), soundLocation);
         const AmReal32 distance = Length(soundToListener);
         if (distance >= attenuation->GetMaxDistance())
             return 0.0f;
@@ -290,13 +314,19 @@ namespace SparkyStudios::Audio::Amplitude
 
     AmReal32 CapsuleAttenuationZone::GetAttenuationFactor(const Attenuation* attenuation, const Entity& entity, const Listener& listener)
     {
-        m_innerShape->SetLocation(entity.GetLocation());
-        m_innerShape->SetOrientation(entity.GetOrientation());
+        return GetAttenuationFactor(attenuation, entity.GetLocation(), entity.GetOrientation(), listener);
+    }
 
-        m_outerShape->SetLocation(entity.GetLocation());
-        m_outerShape->SetOrientation(entity.GetOrientation());
+    AmReal32 CapsuleAttenuationZone::GetAttenuationFactor(
+        const Attenuation* attenuation, const AmVector3& soundLocation, const Orientation& soundOrientation, const Listener& listener)
+    {
+        m_innerShape->SetLocation(soundLocation);
+        m_innerShape->SetOrientation(soundOrientation);
 
-        return GetFactor(attenuation, entity.GetLocation(), listener, entity.GetOrientation().GetLookAtMatrix(kVector3Zero));
+        m_outerShape->SetLocation(soundLocation);
+        m_outerShape->SetOrientation(soundOrientation);
+
+        return GetFactor(attenuation, soundLocation, listener, soundOrientation.GetLookAtMatrix(kVector3Zero));
     }
 
     AmReal32 CapsuleAttenuationZone::GetFactor(

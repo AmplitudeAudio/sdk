@@ -42,6 +42,8 @@ namespace SparkyStudios::Audio::Amplitude
 
         float GetAttenuationFactor(const Attenuation*, const AmVector3& soundLocation, const Listener& listener) override;
         float GetAttenuationFactor(const Attenuation*, const Entity& entity, const Listener& listener) override;
+        float GetAttenuationFactor(
+            const Attenuation*, const AmVector3& soundLocation, const Orientation& soundOrientation, const Listener& listener) override;
     };
 
     class SphereAttenuationZone final
@@ -56,6 +58,8 @@ namespace SparkyStudios::Audio::Amplitude
 
         float GetAttenuationFactor(const Attenuation*, const AmVector3& soundLocation, const Listener& listener) override;
         float GetAttenuationFactor(const Attenuation*, const Entity& entity, const Listener& listener) override;
+        float GetAttenuationFactor(
+            const Attenuation*, const AmVector3& soundLocation, const Orientation& soundOrientation, const Listener& listener) override;
     };
 
     class BoxAttenuationZone final
@@ -70,6 +74,8 @@ namespace SparkyStudios::Audio::Amplitude
 
         float GetAttenuationFactor(const Attenuation*, const AmVector3& soundLocation, const Listener& listener) override;
         float GetAttenuationFactor(const Attenuation*, const Entity& entity, const Listener& listener) override;
+        float GetAttenuationFactor(
+            const Attenuation*, const AmVector3& soundLocation, const Orientation& soundOrientation, const Listener& listener) override;
     };
 
     class CapsuleAttenuationZone final
@@ -84,6 +90,8 @@ namespace SparkyStudios::Audio::Amplitude
 
         float GetAttenuationFactor(const Attenuation*, const AmVector3& soundLocation, const Listener& listener) override;
         float GetAttenuationFactor(const Attenuation*, const Entity& entity, const Listener& listener) override;
+        float GetAttenuationFactor(
+            const Attenuation*, const AmVector3& soundLocation, const Orientation& soundOrientation, const Listener& listener) override;
 
         float GetFactor(const Attenuation* attenuation, const AmVector3& soundLocation, const Listener& listener, AmMatrix4 lookAt);
     };

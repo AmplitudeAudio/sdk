@@ -70,6 +70,27 @@ namespace SparkyStudios::Audio::Amplitude
          * @return The attenuation factor.
          */
         virtual AmReal32 GetAttenuationFactor(const Attenuation* attenuation, const Entity& entity, const Listener& listener) = 0;
+
+        /**
+         * @brief Returns the attenuation factor.
+         *
+         * This method is used by position-based and orientation-based sound sources which are not
+         * necessarily bound to an @c Entity, such as the instances of a multi-position channel.
+         *
+         * @param[in] attenuation The Attenuation object to use for distance attenuation.
+         * @param[in] soundLocation The location of the sound source.
+         * @param[in] soundOrientation The orientation of the sound source.
+         * @param[in] listener The listener for which the attenuation is computed.
+         *
+         * @return The attenuation factor. The default implementation ignores the orientation.
+         */
+        virtual AmReal32 GetAttenuationFactor(
+            const Attenuation* attenuation, const AmVector3& soundLocation, const Orientation& soundOrientation, const Listener& listener)
+        {
+            AM_UNUSED(soundOrientation);
+
+            return GetAttenuationFactor(attenuation, soundLocation, listener);
+        }
     };
 
     /**
@@ -106,6 +127,27 @@ namespace SparkyStudios::Audio::Amplitude
          * @return The computed gain value from the curve.
          */
         [[nodiscard]] virtual AmReal32 GetGain(const Entity& entity, const Listener& listener) const = 0;
+
+        /**
+         * @brief Returns the gain of the sound from the given distance to the listener.
+         *
+         * Unlike the @c Entity overload, this does not require the sound source to be bound to an @c Entity,
+         * which allows computing orientation-based attenuation for sources such as the instances of a
+         * multi-position channel.
+         *
+         * @param[in] soundLocation The location of the sound source.
+         * @param[in] soundOrientation The orientation of the sound source.
+         * @param[in] listener The listener which is hearing the sound.
+         *
+         * @return The computed gain value from the curve. The default implementation ignores the orientation.
+         */
+        [[nodiscard]] virtual AmReal32 GetGain(
+            const AmVector3& soundLocation, const Orientation& soundOrientation, const Listener& listener) const
+        {
+            AM_UNUSED(soundOrientation);
+
+            return GetGain(soundLocation, listener);
+        }
 
         /**
          * @brief Returns the shape object of this Attenuation.

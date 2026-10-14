@@ -42,6 +42,9 @@ namespace SparkyStudios::Audio::Amplitude
 
         AmReal32 GetAttenuationFactor(const Attenuation* attenuation, const AmVector3& soundLocation, const Listener& listener) override;
         AmReal32 GetAttenuationFactor(const Attenuation* attenuation, const Entity& entity, const Listener& listener) override;
+        AmReal32 GetAttenuationFactor(
+            const Attenuation* attenuation, const AmVector3& soundLocation, const Orientation& soundOrientation,
+            const Listener& listener) override;
 
     protected:
         AttenuationZoneImpl();
@@ -95,6 +98,12 @@ namespace SparkyStudios::Audio::Amplitude
          * @copydoc Attenuation::GetGain
          */
         [[nodiscard]] AmReal32 GetGain(const Entity& entity, const Listener& listener) const override;
+
+        /**
+         * @copydoc Attenuation::GetGain
+         */
+        [[nodiscard]] AmReal32 GetGain(
+            const AmVector3& soundLocation, const Orientation& soundOrientation, const Listener& listener) const override;
 
         /**
          * @copydoc Attenuation::GetShape

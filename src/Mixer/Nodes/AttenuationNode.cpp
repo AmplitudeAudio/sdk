@@ -260,11 +260,12 @@ namespace SparkyStudios::Audio::Amplitude
                     if (spatialization == eSpatialization_PositionOrientation)
                     {
                         AMPLITUDE_ASSERT(entity.Valid());
-                        targetGain *= attenuation->GetGain(entity, listener);
+                        targetGain *= attenuation->GetGain(
+                            effectiveLocation, entity.Valid() ? entity.GetOrientation() : Orientation::Zero(), listener);
                     }
                     else if (spatialization == eSpatialization_HRTF && entity.Valid())
                     {
-                        targetGain *= attenuation->GetGain(entity, listener);
+                        targetGain *= attenuation->GetGain(effectiveLocation, entity.GetOrientation(), listener);
                     }
                     else if (spatialization == eSpatialization_Position)
                     {

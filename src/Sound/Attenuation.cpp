@@ -46,6 +46,11 @@ namespace SparkyStudios::Audio::Amplitude
         return _shape->GetAttenuationFactor(this, entity, listener);
     }
 
+    AmReal32 AttenuationImpl::GetGain(const AmVector3& soundLocation, const Orientation& soundOrientation, const Listener& listener) const
+    {
+        return _shape->GetAttenuationFactor(this, soundLocation, soundOrientation, listener);
+    }
+
     AmReal32 AttenuationImpl::GetSpreadFactor(AmReal64 distance) const
     {
         if (!_hasSpreadCurve)
