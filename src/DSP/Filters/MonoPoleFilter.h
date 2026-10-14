@@ -36,6 +36,10 @@ namespace SparkyStudios::Audio::Amplitude
 
     private:
         std::array<AmAudioSample, kAmMaxSupportedChannelCount> _previousSample{};
+
+        // The highest coefficient honoured at _sampleRate, see ProcessSample().
+        AmUInt32 _sampleRate = 0;
+        AmReal32 _maxCoefficient = 1.0f;
     };
 
     class MonoPoleFilter : public Filter

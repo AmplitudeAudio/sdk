@@ -12,6 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+#include <algorithm>
+
 #include <SparkyStudios/Audio/Amplitude/Core/Memory.h>
 
 #include <DSP/Filters/MonoPoleFilter.h>
@@ -19,6 +21,15 @@
 
 namespace SparkyStudios::Audio::Amplitude
 {
+    namespace
+    {
+        // The lowest cutoff frequency the filter honours, the same floor ComputeMonopoleFilterCoefficient() applies.
+        constexpr AmReal32 kLowestCutoffFrequency = 20.0f;
+
+        // Rate used when a caller does not provide one.
+        constexpr AmUInt32 kFallbackSampleRate = 48000;
+    } // namespace
+
     MonoPoleFilterInstance::MonoPoleFilterInstance(MonoPoleFilter* parent)
         : FilterInstance(parent)
     {
@@ -37,8 +48,16 @@ namespace SparkyStudios::Audio::Amplitude
             return 0.0f;
         }
 
+        if (sampleRate != _sampleRate)
+        {
+            const AmReal32 rate = static_cast<AmReal32>(sampleRate != 0 ? sampleRate : kFallbackSampleRate);
+
+            _sampleRate = sampleRate;
+            _maxCoefficient = rate / (AM_PI32 * 2.0f * kLowestCutoffFrequency + rate);
+        }
+
         const AmReal32 x = sample;
-        /* */ AmReal32 y = coefficient * (previous - x) + x;
+        /* */ AmReal32 y = std::min(coefficient, _maxCoefficient) * (previous - x) + x;
         previous = y;
 
         y = x + (y - x) * m_parameters[MonoPoleFilter::ATTRIBUTE_WET];
